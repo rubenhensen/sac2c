@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.32  1998/06/29 08:52:19  cg
+ * streamlined tracing facilities
+ * tracing on new with-loop and multi-threading operations implemented
+ *
  * Revision 1.31  1998/06/23 15:04:05  cg
  * added global variables show_syscall and gen_cccall
  *
@@ -183,15 +187,25 @@ extern int show_icm;
 extern int traceflag;
 
 #define NO_TRACE 0x0000
-#define TRACE_UDF 0x0001
+/* don't trace at all */
+
+#define TRACE_FUN 0x0001
+/* trace user-defined function applications */
 #define TRACE_PRF 0x0002
-#define TRACE_WST 0x0004
+/* trace primitive function applications */
+#define TRACE_OWL 0x0004
+/* trace old with-loop execution */
 #define TRACE_REF 0x0008
+/* trace refernce counting operations */
 #define TRACE_MEM 0x0010
+/* trace memory allocation/de-allocation operations */
+#define TRACE_WL 0x0020
+/* trace new with-loop execution */
+#define TRACE_MT 0x0040
+/* trace multi-threading specific operations */
+
 #define TRACE_ALL 0xffff
-/*
- * Allowed values of traceflag
- */
+/* enable all implemented trace options */
 
 extern int profileflag;
 

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/06/29 08:52:19  cg
+ * streamlined tracing facilities
+ * tracing on new with-loop and multi-threading operations implemented
+ *
  * Revision 1.5  1998/05/18 09:43:57  dkr
  * fixed a bug in SAC_ND_IDX_MODARRAY_AxVxA_CHECK_REUSE
  *   'i' renamed to '__i'
@@ -42,11 +46,11 @@
  */
 
 #define SAC_ND_IDX_PSI_S(s, a, res)                                                      \
-    SAC_TR_PRINT_PRF (("ND_IDX_PSI_S( %s, %s, %s)\n", #s, #a, #res));                    \
+    SAC_TR_PRF_PRINT (("ND_IDX_PSI_S( %s, %s, %s)\n", #s, #a, #res));                    \
     res = SAC_ND_A_FIELD (a)[s];
 
 #define SAC_ND_IDX_PSI_A(s, a, res)                                                      \
-    SAC_TR_PRINT_PRF (("ND_IDX_PSI_A( %s, %s, %s)\n", #s, #a, #res));                    \
+    SAC_TR_PRF_PRINT (("ND_IDX_PSI_A( %s, %s, %s)\n", #s, #a, #res));                    \
     {                                                                                    \
         int __i, __s = s;                                                                \
         for (__i = 0; __i < SAC_ND_A_SIZE (res); __i++)                                  \
@@ -59,7 +63,7 @@
  */
 
 #define SAC_ND_IDX_MODARRAY_AxVxA_CHECK_REUSE(line, basetype, res, a, s, val)            \
-    SAC_TR_PRINT_PRF (("ND_IDX_MODARRAY_AxVxA_CHECK_REUSE( %s, %s, %s, %s, %s, %s)\n",   \
+    SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxA_CHECK_REUSE( %s, %s, %s, %s, %s, %s)\n",   \
                        #line, #basetype, #res, #a, #s, #val));                           \
     SAC_ND_CHECK_REUSE_ARRAY (a, res)                                                    \
     {                                                                                    \
@@ -77,7 +81,7 @@
     }
 
 #define SAC_ND_IDX_MODARRAY_AxVxA(line, basetype, res, a, s, val)                        \
-    SAC_TR_PRINT_PRF (("ND_IDX_MODARRAY_AxVxA( %s, %s, %s, %s, %s, %s)\n", #line,        \
+    SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxA( %s, %s, %s, %s, %s, %s)\n", #line,        \
                        #basetype, #res, #a, #s, #val));                                  \
     {                                                                                    \
         int __i, __s;                                                                    \
@@ -91,7 +95,7 @@
     }
 
 #define SAC_ND_IDX_MODARRAY_AxVxS_CHECK_REUSE(line, basetype, res, a, s, val)            \
-    SAC_TR_PRINT_PRF (("ND_IDX_MODARRAY_AxVxS_CHECK_REUSE( %s, %s, %s, %s, %s, %s)\n",   \
+    SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxS_CHECK_REUSE( %s, %s, %s, %s, %s, %s)\n",   \
                        #line, #basetype, #res, #a, #s, #val));                           \
     SAC_ND_CHECK_REUSE_ARRAY (a, res)                                                    \
     {                                                                                    \
@@ -103,7 +107,7 @@
     SAC_ND_A_FIELD (res)[s] = val;
 
 #define SAC_ND_IDX_MODARRAY_AxVxS(line, basetype, res, a, s, val)                        \
-    SAC_TR_PRINT_PRF (("ND_IDX_MODARRAY_AxVxS( %s, %s, %s, %s, %s, %s)\n", #line,        \
+    SAC_TR_PRF_PRINT (("ND_IDX_MODARRAY_AxVxS( %s, %s, %s, %s, %s, %s)\n", #line,        \
                        #basetype, #res, #a, #s, #val));                                  \
     {                                                                                    \
         int __i;                                                                         \

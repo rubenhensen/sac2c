@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.72  1998/06/29 08:52:19  cg
+ * streamlined tracing facilities
+ * tracing on new with-loop and multi-threading operations implemented
+ *
  * Revision 1.71  1998/06/23 15:05:58  cg
  * added command line options -dcccall and -dshow_syscall
  *
@@ -376,14 +380,16 @@ usage ()
 
     printf ("\n\nDEBUG OPTIONS:\n\n"
 
-            "\t -t [arupwm] \t\ttrace program execution\n"
-            "\t\t\t\t  a: trace all (same as rupwm)\n"
+            "\t -t [amrfpowt] \t\ttrace program execution\n"
+            "\t\t\t\t  a: trace all (same as mrfpowt)\n"
             "\t\t\t\t  m: trace memory operations\n"
             "\t\t\t\t  r: trace refcount operations\n"
-            "\t\t\t\t  u: trace user defined function calls\n"
+            "\t\t\t\t  f: trace user defined function calls\n"
             "\t\t\t\t  p: trace primitive function calls\n"
-            "\t\t\t\t  w: trace with loop execution\n"
-
+            "\t\t\t\t  o: trace old with-loop execution\n"
+            "\t\t\t\t  w: trace new with-loop execution\n"
+            "\t\t\t\t  t: trace multi-threading specific operations\n"
+            "\n"
             "\t -dcheck_boundary\tcheck boundary of arrays upon access\n"
             "\t -dnocleanup\t\tdon't remove temporary files and directories\n"
             "\t -dshow_syscall\t\tshow all system calls during compilation\n"

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1998/06/29 08:52:19  cg
+ * streamlined tracing facilities
+ * tracing on new with-loop and multi-threading operations implemented
+ *
  * Revision 1.9  1998/06/25 08:08:37  cg
  * definition of NULL-pointer added.
  *
@@ -128,10 +132,14 @@ PrintGlobalSwitches ()
              (traceflag & TRACE_MEM) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_TRACE_PRF       %d\n",
              (traceflag & TRACE_PRF) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_TRACE_UDF       %d\n",
-             (traceflag & TRACE_UDF) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_TRACE_WST       %d\n",
-             (traceflag & TRACE_WST) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_TRACE_FUN       %d\n",
+             (traceflag & TRACE_FUN) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_TRACE_OWL       %d\n",
+             (traceflag & TRACE_OWL) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_TRACE_WL        %d\n",
+             (traceflag & TRACE_WL) ? 1 : 0);
+    fprintf (outfile, "#define SAC_DO_TRACE_MT        %d\n",
+             (traceflag & TRACE_MT) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_MULTITHREAD     %d\n", (num_threads == 1) ? 0 : 1);
     fprintf (outfile, "#define SAC_DO_THREADS_STATIC  %d\n", (num_threads == 0) ? 0 : 1);
 
@@ -256,7 +264,7 @@ PrintGlobalSettings (node *syntax_tree)
 
     fprintf (outfile, "\n\n/*\n *  Global Settings\n */\n\n");
 
-    fprintf (outfile, "#define NULL                      %d\n\n", NULL);
+    fprintf (outfile, "#define NULL                      (void*) 0\n\n");
 
     fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD     %d\n", max_sync_fold);
     fprintf (outfile, "#define SAC_SET_THREADS_MAX       %d\n", max_threads);

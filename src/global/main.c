@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.135  1998/06/29 08:52:19  cg
+ * streamlined tracing facilities
+ * tracing on new with-loop and multi-threading operations implemented
+ *
  * Revision 1.134  1998/06/23 15:05:58  cg
  * added command line options -dcccall and -dshow_syscall
  *
@@ -771,19 +775,25 @@ MAIN
                     traceflag = TRACE_ALL;
                     break;
                 case 'm':
-                    traceflag = traceflag | TRACE_MEM;
+                    traceflag |= TRACE_MEM;
                     break;
                 case 'r':
-                    traceflag = traceflag | TRACE_REF;
+                    traceflag |= TRACE_REF;
                     break;
-                case 'u':
-                    traceflag = traceflag | TRACE_UDF;
+                case 'f':
+                    traceflag |= TRACE_FUN;
                     break;
                 case 'p':
-                    traceflag = traceflag | TRACE_PRF;
+                    traceflag |= TRACE_PRF;
+                    break;
+                case 'o':
+                    traceflag |= TRACE_OWL;
                     break;
                 case 'w':
-                    traceflag = traceflag | TRACE_WST;
+                    traceflag |= TRACE_WL;
+                    break;
+                case 't':
+                    traceflag |= TRACE_MT;
                     break;
                 default:
                     SYSWARN (("Unknown trace flag '%c`", **argv));

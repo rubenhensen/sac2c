@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/06/29 08:52:19  cg
+ * streamlined tracing facilities
+ * tracing on new with-loop and multi-threading operations implemented
+ *
  * Revision 1.3  1998/05/07 08:17:51  cg
  * SAC header files converted to new naming conventions.
  *
@@ -44,12 +48,149 @@
 extern int SAC_TR_hidden_memcnt;
 extern int SAC_TR_array_memcnt;
 
-extern void SAC_TR_PrintTraceHeader (char *format, ...);
-extern void SAC_TR_PrintTraceInfo (char *format, ...);
+#if SAC_DO_MULTITHREAD
+
+extern void SAC_TRMT_Print (char *format, ...);
+
+extern pthread_mutex_t SAC_TRMT_array_memcnt_lock;
+extern pthread_mutex_t SAC_TRMT_hidden_memcnt_lock;
+
+#define SAC_TR_PRINT(msg) SAC_TRMT_Print msg
+
+#define SAC_TR_GET_ACCESS_MEMCNT(lock) pthread_mutex_lock (&lock)
+#define SAC_TR_RELEASE_ACCESS_MEMCNT(lock) pthread_mutex_unlock (&lock)
+
+#else /* SAC_DO_MULTITHREAD */
+
+extern void SAC_TR_Print (char *format, ...);
+
+#define SAC_TR_PRINT(msg) SAC_TR_Print msg
+
+#define SAC_TR_GET_ACCESS_MEMCNT(lock)
+#define SAC_TR_RELEASE_ACCESS_MEMCNT(lock)
+
+#endif /* SAC_DO_MULTITHREAD */
 
 #endif /* SAC_DO_TRACE */
 
-/*
+#if SAC_DO_TRACE_FUN
+
+#define SAC_TR_FUN_PRINT(msg) SAC_TR_PRINT (msg)
+
+#else
+
+#define SAC_TR_FUN_PRINT(msg)
+
+#endif
+
+#if SAC_DO_TRACE_PRF
+
+#define SAC_TR_PRF_PRINT(msg) SAC_TR_PRINT (msg)
+
+#else
+
+#define SAC_TR_PRF_PRINT(msg)
+
+#endif
+
+#if SAC_DO_TRACE_REF
+
+#define SAC_TR_REF_PRINT(msg) SAC_TR_PRINT (msg)
+
+#else
+
+#define SAC_TR_REF_PRINT(msg)
+
+#endif
+
+#if SAC_DO_TRACE_OWL
+
+#define SAC_TR_OWL_PRINT(msg) SAC_TR_PRINT (msg)
+
+#else
+
+#define SAC_TR_OWL_PRINT(msg)
+
+#endif
+
+#if SAC_DO_TRACE_WL
+
+#define SAC_TR_WL_PRINT(msg) SAC_TR_PRINT (msg)
+
+#else
+
+#define SAC_TR_WL_PRINT(msg)
+
+#endif
+
+#if SAC_DO_TRACE_MT
+
+#define SAC_TR_MT_PRINT(msg) SAC_TR_PRINT (msg)
+
+#else
+
+#define SAC_TR_MT_PRINT(msg)
+
+#endif
+
+#if SAC_DO_TRACE_MEM
+
+#define SAC_TR_MEM_PRINT(msg) SAC_TR_PRINT (msg)
+
+#define SAC_TR_INC_ARRAY_MEMCNT(size)                                                    \
+    {                                                                                    \
+        SAC_TR_GET_ACCESS_MEMCNT (SAC_TR_array_memcnt_lock);                             \
+        SAC_TR_array_memcnt += size;                                                     \
+        SAC_TR_PRINT (                                                                   \
+          ("%d array elements allocated, total now: %d.", size, SAC_TR_array_memcnt));   \
+        SAC_TR_RELEASE_ACCESS_MEMCNT (SAC_TR_array_memcnt_lock);                         \
+    }
+
+#define SAC_TR_DEC_ARRAY_MEMCNT(size)                                                    \
+    {                                                                                    \
+        SAC_TR_GET_ACCESS_MEMCNT (SAC_TR_array_memcnt_lock);                             \
+        SAC_TR_array_memcnt -= size;                                                     \
+        SAC_TR_PRINT (("%d array elements de-allocated, total now: %d.", size,           \
+                       SAC_TR_array_memcnt));                                            \
+        SAC_TR_RELEASE_ACCESS_MEMCNT (SAC_TR_array_memcnt_lock);                         \
+    }
+
+#define SAC_TR_INC_HIDDEN_MEMCNT(size)                                                   \
+    {                                                                                    \
+        SAC_TR_GET_ACCESS_MEMCNT (SAC_TR_hidden_memcnt_lock);                            \
+        SAC_TR_hidden_memcnt += size;                                                    \
+        SAC_TR_PRINT (("%d hidden object(s) allocated, total now: %d.", size,            \
+                       SAC_TR_hidden_memcnt));                                           \
+        SAC_TR_RELEASE_ACCESS_MEMCNT (SAC_TR_hidden_memcnt_lock);                        \
+    }
+
+#define SAC_TR_DEC_HIDDEN_MEMCNT(size)                                                   \
+    {                                                                                    \
+        SAC_TR_GET_ACCESS_MEMCNT (SAC_TR_hidden_memcnt_lock);                            \
+        SAC_TR_hidden_memcnt -= size;                                                    \
+        SAC_TR_PRINT (("%d hidden object(s) de-allocated, total now: %d.", size,         \
+                       SAC_TR_hidden_memcnt));                                           \
+        SAC_TR_RELEASE_ACCESS_MEMCNT (SAC_TR_hidden_memcnt_lock);                        \
+    }
+
+#else /* SAC_DO_TRACE_MEM */
+
+#define SAC_TR_MEM_PRINT(msg)
+
+#define SAC_TR_INC_ARRAY_MEMCNT(size)
+#define SAC_TR_DEC_ARRAY_MEMCNT(size)
+
+#define SAC_TR_INC_HIDDEN_MEMCNT(size)
+#define SAC_TR_DEC_HIDDEN_MEMCNT(size)
+
+#endif /* SAC_DO_TRACE_MEM */
+
+#define SAC_TR_REF_PRINT_RC(name)                                                        \
+    SAC_TR_REF_PRINT (("refcnt of %s: %d", #name, SAC_ND_A_RC (name)));
+
+#if 0
+
+/* 
  *  Macros for tracing memory and/or refcount operations
  */
 
@@ -71,7 +212,9 @@ extern void SAC_TR_PrintTraceInfo (char *format, ...);
 
 #endif /* SAC_DO_TRACE_MEM || SAC_DO_TRACE_REF */
 
-/*
+
+
+/* 
  *  Macros for tracing refcount operations
  */
 
@@ -89,7 +232,10 @@ extern void SAC_TR_PrintTraceInfo (char *format, ...);
 
 #endif /* SAC_DO_TRACE_REF */
 
-/*
+
+
+
+/* 
  *  Macros for tracing memory operations
  */
 
@@ -124,7 +270,9 @@ extern void SAC_TR_PrintTraceInfo (char *format, ...);
 
 #endif /* SAC_DO_TRACE_MEM */
 
-/*
+
+
+/* 
  *  Macros for tracing primitive functions calls
  */
 
@@ -139,3 +287,5 @@ extern void SAC_TR_PrintTraceInfo (char *format, ...);
 #endif /* SAC_DO_TRACE_PRF */
 
 #endif /* SAC_TRACE_H */
+
+#endif

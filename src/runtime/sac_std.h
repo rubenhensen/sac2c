@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/06/29 08:52:19  cg
+ * streamlined tracing facilities
+ * tracing on new with-loop and multi-threading operations implemented
+ *
  * Revision 1.3  1998/06/19 18:31:01  dkr
  * *** empty log message ***
  *
@@ -131,31 +135,25 @@
 #define SAC_ND_FREE_HIDDEN(name, freefun)                                                \
     freefun (name);                                                                      \
     SAC_FREE (SAC_ND_A_RCP (name));                                                      \
-    SAC_TR_PRINT_TRACEHEADER_ALL (("ND_FREE_HIDDEN(%s, %s)", #name, #freefun));          \
-    SAC_TR_PRINT_HIDDEN_FREE (name);                                                     \
-    SAC_TR_DEC_HIDDEN_MEMCNT (1);                                                        \
-    SAC_TR_PRINT_HIDDEN_MEM (name);
+    SAC_TR_MEM_PRINT (("ND_FREE_HIDDEN(%s, %s) at adr: %p", #name, #freefun, name));     \
+    SAC_TR_DEC_HIDDEN_MEMCNT (1);
 
 #define SAC_ND_NO_RC_FREE_HIDDEN(name, freefun)                                          \
     freefun (name);                                                                      \
-    SAC_TR_PRINT_TRACEHEADER_ALL (("ND_NO_RC_FREE_HIDDEN(%s, %s)", #name, #freefun));    \
-    SAC_TR_PRINT_HIDDEN_FREE (name);                                                     \
-    SAC_TR_PRINT_HIDDEN_MEM (name);
+    SAC_TR_MEM_PRINT (                                                                   \
+      ("ND_NO_RC_FREE_HIDDEN(%s, %s) at adr: %p", #name, #freefun, name));               \
+    SAC_TR_DEC_HIDDEN_MEMCNT (1);
 
 #define SAC_ND_FREE_ARRAY(name)                                                          \
     SAC_FREE (SAC_ND_A_FIELD (name));                                                    \
     SAC_FREE (SAC_ND_A_RCP (name));                                                      \
-    SAC_TR_PRINT_TRACEHEADER_ALL (("ND_FREE_ARRAY(%s)", #name));                         \
-    SAC_TR_PRINT_ARRAY_FREE (name);                                                      \
-    SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                      \
-    SAC_TR_PRINT_ARRAY_MEM (name);
+    SAC_TR_MEM_PRINT (("ND_FREE_ARRAY(%s) at adr: %p", #name, name));                    \
+    SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));
 
 #define SAC_ND_NO_RC_FREE_ARRAY(name)                                                    \
     SAC_FREE (SAC_ND_A_FIELD (name));                                                    \
-    SAC_TR_PRINT_TRACEHEADER_ALL (("ND_NO_RC_FREE_ARRAY(%s)", #name));                   \
-    SAC_TR_PRINT_ARRAY_FREE (name);                                                      \
-    SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                      \
-    SAC_TR_PRINT_ARRAY_MEM (name);
+    SAC_TR_MEM_PRINT (("ND_NO_RC_FREE_ARRAY(%s) at adr: %p", #name, name));              \
+    SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));
 
 /*
  * ICMs for assigning refcounted data :
@@ -182,35 +180,42 @@
  */
 
 #define SAC_ND_ASSIGN_HIDDEN(old, new)                                                   \
-    new = old;                                                                           \
-    SAC_ND_A_RCP (new) = SAC_ND_A_RCP (old);
+    {                                                                                    \
+        new = old;                                                                       \
+        SAC_ND_A_RCP (new) = SAC_ND_A_RCP (old);                                         \
+    }
 
 #define SAC_ND_NO_RC_ASSIGN_HIDDEN(old, new) new = old;
 
 #define SAC_ND_COPY_HIDDEN(old, new, copyfun)                                            \
-    new = copyfun (old);                                                                 \
-    SAC_TR_PRINT_TRACEHEADER_ALL (("ND_COPY_HIDDEN(%s, %s, %s)", #old, #new, #copyfun)); \
-    SAC_TR_PRINT_REF (old);                                                              \
-    SAC_TR_PRINT_HIDDEN_MEM (new);
+    {                                                                                    \
+        new = copyfun (old);                                                             \
+        SAC_TR_MEM_PRINT (("ND_COPY_HIDDEN(%s, %s, %s)", #old, #new, #copyfun));         \
+        SAC_TR_MEM_PRINT (("new hidden object at adr: %p", new));                        \
+        SAC_TR_INC_HIDDEN_MEMCNT (1);                                                    \
+        SAC_TR_REF_PRINT_RC (new);                                                       \
+    }
 
 #define SAC_ND_KS_ASSIGN_ARRAY(name, res)                                                \
-    SAC_ND_A_RCP (res) = SAC_ND_A_RCP (name);                                            \
-    SAC_ND_A_FIELD (res) = SAC_ND_A_FIELD (name);
+    {                                                                                    \
+        SAC_ND_A_RCP (res) = SAC_ND_A_RCP (name);                                        \
+        SAC_ND_A_FIELD (res) = SAC_ND_A_FIELD (name);                                    \
+    }
 
 #define SAC_ND_KS_NO_RC_ASSIGN_ARRAY(name, res)                                          \
     SAC_ND_A_FIELD (res) = SAC_ND_A_FIELD (name);
 
 #define SAC_ND_KS_COPY_ARRAY(old, new, basetypesize)                                     \
-    SAC_ND_A_FIELD (new) = SAC_MALLOC (basetypesize * SAC_ND_A_SIZE (old));              \
     {                                                                                    \
         int __i;                                                                         \
-        for (__i = 0; __i < SAC_ND_A_SIZE (old); __i++)                                  \
+        SAC_ND_A_FIELD (new) = SAC_MALLOC (basetypesize * SAC_ND_A_SIZE (old));          \
+        for (__i = 0; __i < SAC_ND_A_SIZE (old); __i++) {                                \
             SAC_ND_A_FIELD (new)[__i] = SAC_ND_A_FIELD (old)[__i];                       \
-    }                                                                                    \
-    SAC_TR_PRINT_TRACEHEADER_ALL (("ND_KS_COPY_ARRAY(%s, %s)", #old, #new));             \
-    SAC_TR_PRINT_REF (old);                                                              \
-    SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (old));                                       \
-    SAC_TR_PRINT_ARRAY_MEM (new);
+        }                                                                                \
+        SAC_TR_MEM_PRINT_TRACEHEADER_ALL (("ND_KS_COPY_ARRAY(%s, %s)", #old, #new));     \
+        SAC_TR_PRINT_REF (old);                                                          \
+        SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (new));                                   \
+    }
 
 /*
  * ICMs for creating refcounted data:
@@ -236,21 +241,18 @@
  *   Also see ND_CREATE_CONST_ARRAY_S for the creation of scalar arrays.
  */
 
-#define SAC_ND_ALLOC_RC(name)                                                            \
-    SAC_ND_A_RCP (name) = (int *)SAC_MALLOC (sizeof (int));                              \
-    SAC_TR_INC_HIDDEN_MEMCNT (1);
+#define SAC_ND_ALLOC_RC(name) SAC_ND_A_RCP (name) = (int *)SAC_MALLOC (sizeof (int));
 
 #define SAC_ND_ALLOC_ARRAY(basetype, name, rc)                                           \
     {                                                                                    \
-        SAC_TR_PRINT_TRACEHEADER_ALL (                                                   \
-          ("ND_ALLOC_ARRAY(%s, %s, %d)", #basetype, #name, rc));                         \
         SAC_ND_A_FIELD (name)                                                            \
           = (basetype *)SAC_MALLOC (sizeof (basetype) * SAC_ND_A_SIZE (name));           \
         SAC_ND_A_RCP (name) = (int *)SAC_MALLOC (sizeof (int));                          \
         SAC_ND_A_RC (name) = rc;                                                         \
+        SAC_TR_MEM_PRINT (("ND_ALLOC_ARRAY(%s, %s, %d) at adr: %d", #basetype, #name,    \
+                           rc, SAC_ND_A_FIELD (name)));                                  \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                  \
-        SAC_TR_PRINT_REF (name);                                                         \
-        SAC_TR_PRINT_ARRAY_MEM (name);                                                   \
+        SAC_TR_REF_PRINT_RC (name);                                                      \
     }
 
 #define SAC_ND_SET_SIZE(name, num) SAC_ND_A_SIZE (name) = num;
@@ -306,92 +308,111 @@
  */
 
 #define SAC_ND_SET_RC(name, num)                                                         \
-    SAC_TR_PRINT_TRACEHEADER_REF (("ND_SET_RC(%s, %d)", #name, num));                    \
-    SAC_ND_A_RC (name) = num;                                                            \
-    SAC_TR_PRINT_REF (name);
+    {                                                                                    \
+        SAC_ND_A_RC (name) = num;                                                        \
+        SAC_TR_REF_PRINT (("ND_SET_RC(%s, %d)", #name, num));                            \
+        SAC_TR_REF_PRINT_RC (name);                                                      \
+    }
 
 #define SAC_ND_INC_RC(name, num)                                                         \
-    SAC_TR_PRINT_TRACEHEADER_REF (("ND_INC_RC(%s, %d)", #name, num));                    \
-    SAC_ND_A_RC (name) += num;                                                           \
-    SAC_TR_PRINT_REF (name);
+    {                                                                                    \
+        SAC_ND_A_RC (name) += num;                                                       \
+        SAC_TR_REF_PRINT (("ND_INC_RC(%s, %d)", #name, num));                            \
+        SAC_TR_REF_PRINT_RC (name);                                                      \
+    }
 
 #define SAC_ND_DEC_RC(name, num)                                                         \
-    SAC_TR_PRINT_TRACEHEADER_REF (("ND_DEC_RC(%s, %d)", #name, num));                    \
-    SAC_ND_A_RC (name) -= num;                                                           \
-    SAC_TR_PRINT_REF (name);
+    {                                                                                    \
+        SAC_ND_A_RC (name) -= num;                                                       \
+        SAC_TR_REF_PRINT (("ND_DEC_RC(%s, %d)", #name, num));                            \
+        SAC_TR_REF_PRINT_RC (name);                                                      \
+    }
 
 #define SAC_ND_DEC_RC_FREE_ARRAY(name, num)                                              \
-    SAC_TR_PRINT_TRACEHEADER_REF (("ND_DEC_RC_FREE(%s, %d)", #name, num));               \
-    if ((SAC_ND_A_RC (name) -= num) == 0) {                                              \
-        SAC_TR_PRINT_REF (name);                                                         \
-        SAC_ND_FREE_ARRAY (name);                                                        \
-    } else                                                                               \
-        SAC_TR_PRINT_REF (name);
+    {                                                                                    \
+        SAC_TR_REF_PRINT (("ND_DEC_RC_FREE(%s, %d)", #name, num));                       \
+        if ((SAC_ND_A_RC (name) -= num) == 0) {                                          \
+            SAC_TR_REF_PRINT_RC (name);                                                  \
+            SAC_ND_FREE_ARRAY (name);                                                    \
+        } else {                                                                         \
+            SAC_TR_REF_PRINT_RC (name);                                                  \
+        }                                                                                \
+    }
 
 #define SAC_ND_DEC_RC_FREE_HIDDEN(name, num, freefun)                                    \
-    SAC_TR_PRINT_TRACEHEADER_REF (("ND_DEC_RC_FREE(%s, %d)", #name, num));               \
-    if ((SAC_ND_A_RC (name) -= num) == 0) {                                              \
-        SAC_TR_PRINT_REF (name);                                                         \
-        SAC_ND_FREE_HIDDEN (name, freefun);                                              \
-    } else                                                                               \
-        SAC_TR_PRINT_REF (name);
+    {                                                                                    \
+        SAC_TR_REF_PRINT (("ND_DEC_RC_FREE(%s, %d)", #name, num));                       \
+        if ((SAC_ND_A_RC (name) -= num) == 0) {                                          \
+            SAC_TR_REF_PRINT_RC (name);                                                  \
+            SAC_ND_FREE_HIDDEN (name, freefun);                                          \
+        } else {                                                                         \
+            SAC_TR_REF_PRINT_RC (name);                                                  \
+        }                                                                                \
+    }
 
 #define SAC_ND_CHECK_REUSE_ARRAY(old, new)                                               \
     if (SAC_ND_A_RC (old) == 1) {                                                        \
         SAC_ND_KS_ASSIGN_ARRAY (old, new);                                               \
+        SAC_TR_MEM_PRINT (("reuse memory of %s at %p for %s", #old, old, #new));         \
     } else
 
-#if 0
-#define SAC_ND_CHECK_REUSE_HIDDEN(old, new, copyfun)                                     \
-    new = SAC_ND_A_RC (old) == 1 ? old : copyfun (old);
-#endif
-
 #define SAC_ND_MAKE_UNIQUE_HIDDEN(old, new, copyfun)                                     \
-    SAC_TR_PRINT_TRACEHEADER_REF (                                                       \
-      ("ND_MAKE_UNIQUE_HIDDEN(%s, %s, %s)", #old, #new, #copyfun));                      \
-    SAC_TR_PRINT_REF (old);                                                              \
-    if (SAC_ND_A_RC (old) == 1) {                                                        \
-        SAC_ND_ASSIGN_HIDDEN (old, new);                                                 \
-    } else {                                                                             \
-        SAC_ND_ALLOC_RC (new);                                                           \
-        SAC_ND_COPY_HIDDEN (old, new, copyfun);                                          \
-        SAC_ND_DEC_RC (old, 1);                                                          \
+    {                                                                                    \
+        SAC_TR_MEM_PRINT (("ND_MAKE_UNIQUE_HIDDEN(%s, %s, %s)", #old, #new, #copyfun));  \
+        SAC_TR_PRINT_RC (old);                                                           \
+        if (SAC_ND_A_RC (old) == 1) {                                                    \
+            SAC_ND_ASSIGN_HIDDEN (old, new);                                             \
+            SAC_TR_MEM_PRINT (("%s is already unique.", old));                           \
+        } else {                                                                         \
+            SAC_ND_ALLOC_RC (new);                                                       \
+            SAC_ND_COPY_HIDDEN (old, new, copyfun);                                      \
+            SAC_ND_DEC_RC (old, 1);                                                      \
+        }                                                                                \
     }
 
 #define SAC_ND_KS_MAKE_UNIQUE_ARRAY(old, new, basetypesize)                              \
-    SAC_TR_PRINT_TRACEHEADER_REF (                                                       \
-      ("ND_KS_MAKE_UNIQUE_ARRAY(%s, %s, %d)", #old, #new, basetypesize));                \
-    SAC_TR_PRINT_REF (old);                                                              \
-    if ((SAC_ND_A_RC (old)) == 1) {                                                      \
-        SAC_ND_KS_ASSIGN_ARRAY (old, new);                                               \
-    } else {                                                                             \
-        SAC_ND_KS_COPY_ARRAY (old, new, basetypesize);                                   \
-        SAC_ND_ALLOC_RC (new);                                                           \
-        SAC_ND_DEC_RC (old, 1);                                                          \
+    {                                                                                    \
+        SAC_TR_PRINT (                                                                   \
+          ("ND_KS_MAKE_UNIQUE_ARRAY(%s, %s, %d)", #old, #new, basetypesize));            \
+        SAC_TR_PRINT_RC (old);                                                           \
+        if ((SAC_ND_A_RC (old)) == 1) {                                                  \
+            SAC_ND_KS_ASSIGN_ARRAY (old, new);                                           \
+            SAC_TR_MEM_PRINT (("%s is already unique.", old));                           \
+        } else {                                                                         \
+            SAC_ND_KS_COPY_ARRAY (old, new, basetypesize);                               \
+            SAC_ND_ALLOC_RC (new);                                                       \
+            SAC_ND_DEC_RC (old, 1);                                                      \
+        }                                                                                \
     }
 
 #define SAC_ND_NO_RC_MAKE_UNIQUE_HIDDEN(old, new, copyfun)                               \
-    SAC_TR_PRINT_TRACEHEADER_REF (                                                       \
-      ("ND_NO_RC_MAKE_UNIQUE_HIDDEN(%s, %s, %s)", #old, #new, #copyfun));                \
-    SAC_TR_PRINT_REF (old);                                                              \
-    if (SAC_ND_A_RC (old) == 1) {                                                        \
-        SAC_ND_NO_RC_ASSIGN_HIDDEN (old, new);                                           \
-        SAC_FREE (SAC_ND_A_RCP (old));                                                   \
-    } else {                                                                             \
-        SAC_ND_COPY_HIDDEN (old, new, copyfun);                                          \
-        SAC_ND_DEC_RC (old, 1);                                                          \
+    {                                                                                    \
+        SAC_TR_PRINT (                                                                   \
+          ("ND_NO_RC_MAKE_UNIQUE_HIDDEN(%s, %s, %s)", #old, #new, #copyfun));            \
+        SAC_TR_PRINT_RC (old);                                                           \
+        if (SAC_ND_A_RC (old) == 1) {                                                    \
+            SAC_ND_NO_RC_ASSIGN_HIDDEN (old, new);                                       \
+            SAC_FREE (SAC_ND_A_RCP (old));                                               \
+            SAC_TR_MEM_PRINT (("%s is already unique.", old));                           \
+        } else {                                                                         \
+            SAC_ND_COPY_HIDDEN (old, new, copyfun);                                      \
+            SAC_ND_DEC_RC (old, 1);                                                      \
+        }                                                                                \
     }
 
 #define SAC_ND_KS_NO_RC_MAKE_UNIQUE_ARRAY(old, new, basetypesize)                        \
-    SAC_TR_PRINT_TRACEHEADER_REF (                                                       \
-      ("ND_KS_NO_RC_MAKE_UNIQUE_ARRAY(%s, %s, %d)", #old, #new, basetypesize));          \
-    SAC_TR_PRINT_REF (old);                                                              \
-    if ((SAC_ND_A_RC (old)) == 1) {                                                      \
-        SAC_ND_KS_NO_RC_ASSIGN_ARRAY (old, new);                                         \
-        SAC_FREE (SAC_ND_A_RCP (old));                                                   \
-    } else {                                                                             \
-        SAC_ND_KS_COPY_ARRAY (old, new, basetypesize);                                   \
-        SAC_ND_DEC_RC (old, 1);                                                          \
+    {                                                                                    \
+        SAC_TR_PRINT (                                                                   \
+          ("ND_KS_NO_RC_MAKE_UNIQUE_ARRAY(%s, %s, %d)", #old, #new, basetypesize));      \
+        SAC_TR_PRINT_RC (old);                                                           \
+        if ((SAC_ND_A_RC (old)) == 1) {                                                  \
+            SAC_ND_KS_NO_RC_ASSIGN_ARRAY (old, new);                                     \
+            SAC_FREE (SAC_ND_A_RCP (old));                                               \
+            SAC_TR_MEM_PRINT (("%s is already unique.", old));                           \
+        } else {                                                                         \
+            SAC_ND_KS_COPY_ARRAY (old, new, basetypesize);                               \
+            SAC_ND_DEC_RC (old, 1);                                                      \
+        }                                                                                \
     }
 
 /*
