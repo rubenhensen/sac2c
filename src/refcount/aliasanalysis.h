@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/26 11:19:38  ktr
+ * Intermediate update for stephan
+ *
  * Revision 1.1  2004/10/15 09:05:14  ktr
  * Initial revision
  *
@@ -27,10 +30,19 @@ extern node *EMAAfundef (node *arg_node, info *arg_info);
 extern node *EMAAid (node *arg_node, info *arg_info);
 extern node *EMAAlet (node *arg_node, info *arg_info);
 extern node *EMAAprf (node *arg_node, info *arg_info);
-extern node *EMAAreturn (node *arg_node, info *arg_info);
 extern node *EMAAwith (node *arg_node, info *arg_info);
 extern node *EMAAwith2 (node *arg_node, info *arg_info);
 extern node *EMAAwithop (node *arg_node, info *arg_info);
 extern node *EMAAvardec (node *arg_node, info *arg_info);
+
+/****************************************************************************
+ *
+ * Nodes which MUST NOT be traversed
+ *
+ * - N_icm
+ * - N_return
+ * - N_array
+ *
+ ****************************************************************************/
 
 #endif
