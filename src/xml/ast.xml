@@ -97,7 +97,7 @@
           <node name="Icm" />
         </travuser>
       </traversal>
-      <traversal id="PRT" name="Print Syntax Tree" default="user" include="print.h" prefun="PRTtravPre" postfun="PRTtravPost" >
+      <traversal id="PRT" name="Print Syntax Tree" default="user" include="print.h" >
         <travsons>
           <node name="Vinfo" />
           <node name="SSAstack" />
@@ -974,8 +974,8 @@
           <node name="Ap" />
           <node name="Assign" />
           <node name="Code" />
+          <node name="Cond" />
           <node name="Fundef" />
-          <node name="Id" />
           <node name="Let" />
           <node name="Prf" />
         </travuser>
@@ -983,9 +983,7 @@
           <node name="Module" />
           <node name="With" />
           <node name="With2" />
-          <node name="Cond" />
           <node name="Block" />
-          <node name="Exprs" />
         </travsons>
       </traversal>
       <traversal id="EMEC" name="Explicit Copy" default="none" include="explicitcopy.h" >
@@ -1100,6 +1098,7 @@
         </travuser>
         <travsons>
           <node name="Module" />
+          <node name="Fundef" />
           <node name="Assign" />
           <node name="Let" />
           <node name="With" />
@@ -1413,6 +1412,7 @@
       <traversal id="EMRE" name="Reuse elimination" default="none" include="reuseelimination.h" >
         <travuser>
           <node name="Assign" />
+          <node name="Block" />
           <node name="Cond" />
           <node name="Fundef" />
           <node name="Genarray" />
@@ -1892,7 +1892,7 @@
             <node name="Block" />
           </target>
         </son>
-        <son name="Next" mandatory="yes">
+        <son name="Next" mandatory="no">
           <target>
             <node name="Fundef" />
           </target>
@@ -2223,7 +2223,7 @@
             <node name="Empty" />
           </target>
         </son>
-        <son name="Vardec" >
+        <son name="Vardec" mandatory="no">
           <target>
             <node name="Vardec" />
           </target>
@@ -2453,7 +2453,7 @@
 -->
     <node name="Let">
       <sons>
-        <son name="Ids" mandatory="yes">
+        <son name="Ids" mandatory="no">
           <target>
             <node name="Ids" />
           </target>
@@ -2863,7 +2863,7 @@
 -->
     <node name="Array">
       <sons>
-        <son name="AElems" mandatory="yes">
+        <son name="AElems" mandatory="no">
           <target>
             <node name="Exprs" />
           </target>
@@ -3147,7 +3147,7 @@
 -->
     <node name="Prf">
       <sons>
-        <son name="Args" mandatory="yes">
+        <son name="Args" mandatory="no">
           <target>
             <node name="Exprs" />
           </target>
@@ -4037,7 +4037,7 @@
 	    <node name="Ids" />
 	  </target>
 	</son>
-        <son name="Ids" mandatory="yes">
+        <son name="Ids" mandatory="no">
 	  <target>
 	    <node name="Ids" />
 	  </target>
@@ -4056,13 +4056,13 @@
 -->
     <node name="Generator">
       <sons>
-        <son name="Bound1" mandatory="no">
+        <son name="Bound1" mandatory="yes">
           <target>
             <set name="Expr" />
 	    <node name="Dot" />
           </target>
         </son>
-        <son name="Bound2" mandatory="no">
+        <son name="Bound2" mandatory="yes">
           <target>
             <set name="Expr" />
 	    <node name="Dot" />
@@ -4257,7 +4257,7 @@
     <node name="Genarray">
       <description>withloop operation</description>
       <sons>
-        <son name="Shape" mandatory="no">
+        <son name="Shape" mandatory="yes">
           <target>
             <set name="Expr" />
           </target>
@@ -4297,7 +4297,7 @@
     <node name="Modarray">
       <description>withloop operation</description>
       <sons>
-        <son name="Array" mandatory="no">
+        <son name="Array" mandatory="yes">
           <target>
             <set name="Expr" />
           </target>
@@ -4332,7 +4332,7 @@
     <node name="Fold">
       <description>withloop operation</description>
       <sons>
-        <son name="Neutral" mandatory="no">
+        <son name="Neutral" mandatory="yes">
           <target>
             <set name="Expr" />
           </target>
