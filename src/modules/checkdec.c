@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1996/01/02 16:02:04  cg
+ * Revision 1.11  1996/01/02 17:49:40  cg
+ * bug fixed in generating dec-file
+ *
+ * Revision 1.10  1996/01/02  16:02:04  cg
  * handling of global vaariable outfile modified.
  *
  * Revision 1.9  1995/11/16  19:44:22  cg
@@ -171,8 +174,8 @@ CheckDec (node *syntax_tree)
 
     DBUG_ENTER ("CheckDec");
 
-    strcpy (filename, MODUL_NAME (syntax_tree));
-    strcat (filename, ".dec");
+    strcpy (decfilename, MODUL_NAME (syntax_tree));
+    strcat (decfilename, ".dec");
     filename = decfilename;
 
     decl = ImportOwnDeclaration (MODUL_NAME (syntax_tree), MODUL_FILETYPE (syntax_tree));
@@ -215,7 +218,7 @@ CheckDec (node *syntax_tree)
 
     MODUL_DECL (syntax_tree) = Trav (decl, syntax_tree);
 
-    filename = decfilename;
+    filename = sacfilename;
 
     DBUG_RETURN (syntax_tree);
 }
