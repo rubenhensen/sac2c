@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.36  2005/01/26 10:32:10  mwe
+ * only edit last log message ...
+ *
  * Revision 1.35  2005/01/26 10:24:38  mwe
- * AVIS_SSAASSIGN removed and replaced by usage of akv types
+ * AVIS_SSACONST removed and replaced by usage of akv types
  *
  * Revision 1.34  2005/01/11 11:19:19  cg
  * Converted output from Error.h to ctinfo.c
