@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/07/10 19:25:51  dkr
+ * several ICM_... types added and renamed
+ *
  * Revision 3.4  2002/07/10 16:23:59  dkr
  * ICM_ANY added, ICM_VAR renamed into ICM_VARANY
  *
@@ -27,7 +30,7 @@
  */
 
 #define STR_DUP(buffer, name)                                                            \
-    name = (char *)malloc (sizeof (char) * strlen (buffer) + 1);                         \
+    name = (char *)malloc ((strlen (buffer) + 1) * sizeof (char));                       \
     strcpy (name, buffer)
 
 #define ICM_DEF(prf, trf)                                                                \
@@ -44,9 +47,14 @@
     DBUG_PRINT ("BEtest", ("icm-arg: %s\n", buffer));                                    \
     STR_DUP (buffer, name);
 
-#define ICM_STR(name)                                                                    \
+#define ICM_NT(name)                                                                     \
     scanf ("%s", buffer);                                                                \
-    DBUG_PRINT ("BEtest", ("string-arg: %s\n", buffer));                                 \
+    DBUG_PRINT ("BEtest", ("nt-arg: %s\n", buffer));                                     \
+    STR_DUP (buffer, name);
+
+#define ICM_ID(name)                                                                     \
+    scanf ("%s", buffer);                                                                \
+    DBUG_PRINT ("BEtest", ("id-arg: %s\n", buffer));                                     \
     STR_DUP (buffer, name);
 
 #define ICM_INT(name)                                                                    \
@@ -59,9 +67,27 @@
         name = (char **)malloc (dim * sizeof (char *));                                  \
         DBUG_PRINT ("BEtest", ("varany-arg with %d elems:\n", dim));                     \
         for (i = 0; i < dim; i++) {                                                      \
-            scanf ("%s", buffer);                                                        \
-            STR_DUP (buffer, name[i]);                                                   \
-            DBUG_PRINT ("BEtest", ("  any-arg: %s\n", name[i]));                         \
+            ICM_ANY (name[i])                                                            \
+        }                                                                                \
+    }
+
+#define ICM_VARNT(dim, name)                                                             \
+    {                                                                                    \
+        int i;                                                                           \
+        name = (char **)malloc (dim * sizeof (char *));                                  \
+        DBUG_PRINT ("BEtest", ("varnt-arg with %d elems:\n", dim));                      \
+        for (i = 0; i < dim; i++) {                                                      \
+            ICM_NT (name[i])                                                             \
+        }                                                                                \
+    }
+
+#define ICM_VARID(dim, name)                                                             \
+    {                                                                                    \
+        int i;                                                                           \
+        name = (char **)malloc (dim * sizeof (char *));                                  \
+        DBUG_PRINT ("BEtest", ("varid-arg with %d elems:\n", dim));                      \
+        for (i = 0; i < dim; i++) {                                                      \
+            ICM_ID (name[i])                                                             \
         }                                                                                \
     }
 
@@ -71,8 +97,7 @@
         varint = (int *)malloc (dim * sizeof (int));                                     \
         DBUG_PRINT ("BEtest", ("varint-arg with %d elems:\n", dim));                     \
         for (i = 0; i < dim; i++) {                                                      \
-            scanf ("%d", &(varint[i]));                                                  \
-            DBUG_PRINT ("BEtest", ("  int-arg: %d\n", varint[i]));                       \
+            ICM_INT (varint[i])                                                          \
         }                                                                                \
     }
 
@@ -83,10 +108,16 @@
 
 #include "icm.data"
 
+#undef STR_DUP
+
 #undef ICM_DEF
+#undef ICM_ANY
 #undef ICM_ICM
-#undef ICM_STR
+#undef ICM_NT
+#undef ICM_ID
 #undef ICM_INT
 #undef ICM_VARANY
+#undef ICM_VARNT
+#undef ICM_VARID
 #undef ICM_VARINT
 #undef ICM_END

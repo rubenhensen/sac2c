@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/07/10 19:24:14  dkr
+ * several ICM_... types added and renamed
+ *
  * Revision 3.8  2002/07/10 16:24:15  dkr
  * ICM_ANY added, ICM_VAR renamed into ICM_VARANY
  *
@@ -51,13 +54,33 @@
 
 #define ICM_ICM(name) exprs = GetNextIcm (&name, exprs);
 
-#define ICM_STR(name) exprs = GetNextId (&name, exprs);
+#ifdef TAGGED_ARRAYS
+#define ICM_NT(name) exprs = GetNextNt (&name, exprs);
+#else
+#define ICM_NT(name) ICM_ID (name)
+#endif
+
+#define ICM_ID(name) exprs = GetNextId (&name, exprs);
 
 #define ICM_INT(name) exprs = GetNextInt (&name, exprs);
 
 #define ICM_VARANY(cnt, name)                                                            \
     if (cnt > 0) {                                                                       \
-        exprs = GetNextVar (&name, NULL, cnt, exprs);                                    \
+        exprs = GetNextVarAny (&name, NULL, cnt, exprs);                                 \
+    }
+
+#ifdef TAGGED_ARRAYS
+#define ICM_VARNT(cnt, name)                                                             \
+    if (cnt > 0) {                                                                       \
+        exprs = GetNextVarNt (&name, cnt, exprs);                                        \
+    }
+#else
+#define ICM_VARNT(cnt, name) ICM_VARID (cnt, name)
+#endif
+
+#define ICM_VARID(cnt, name)                                                             \
+    if (cnt > 0) {                                                                       \
+        exprs = GetNextVarId (&name, cnt, exprs);                                        \
     }
 
 #define ICM_VARINT(cnt, name)                                                            \
@@ -72,7 +95,7 @@
     }
 
 /* forward declarations */
-static node *GetNextVar (char ***ret, int *ret_len, int cnt, node *exprs);
+static node *GetNextVarAny (char ***ret, int *ret_len, int cnt, node *exprs);
 
 static node *
 GetNextIcm (char **ret, node *exprs)
@@ -93,7 +116,7 @@ GetNextIcm (char **ret, node *exprs)
 
     cnt = CountExprs (ICM_ARGS (expr));
 
-    GetNextVar (&v, &len, cnt, ICM_ARGS (expr));
+    GetNextVarAny (&v, &len, cnt, ICM_ARGS (expr));
     len += strlen (ICM_NAME (expr));
     len += 5 + 2 * cnt;
 
@@ -121,6 +144,29 @@ GetNextIcm (char **ret, node *exprs)
 }
 
 static node *
+GetNextNt (char **ret, node *exprs)
+{
+    node *expr;
+
+    DBUG_ENTER ("GetNextNt");
+
+    DBUG_ASSERT ((ret != NULL), "no return value found!");
+
+    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    expr = EXPRS_EXPR (exprs);
+
+    DBUG_ASSERT ((NODE_TYPE (expr) == N_id), "wrong icm-arg: N_id expected");
+    DBUG_ASSERT ((ID_NT_TAG (expr) != NULL), "wrong icm-arg: no tag found");
+    (*ret) = StringCopy (ID_NT_TAG (expr));
+
+    DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
+
+    exprs = EXPRS_NEXT (exprs);
+
+    DBUG_RETURN (exprs);
+}
+
+static node *
 GetNextId (char **ret, node *exprs)
 {
     node *expr;
@@ -133,7 +179,8 @@ GetNextId (char **ret, node *exprs)
     expr = EXPRS_EXPR (exprs);
 
     DBUG_ASSERT ((NODE_TYPE (expr) == N_id), "wrong icm-arg: N_id expected");
-    (*ret) = StringCopy ((ID_NT_TAG (expr) != NULL) ? ID_NT_TAG (expr) : ID_NAME (expr));
+    DBUG_ASSERT ((ID_NT_TAG (expr) == NULL), "wrong icm-arg: tag found");
+    (*ret) = StringCopy (ID_NAME (expr));
 
     DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
 
@@ -293,7 +340,11 @@ GetNextAny (char **ret, node *exprs)
         exprs = GetNextIcm (ret, exprs);
         break;
     case N_id:
-        exprs = GetNextId (ret, exprs);
+        if (ID_NT_TAG (expr) != NULL) {
+            exprs = GetNextNt (ret, exprs);
+        } else {
+            exprs = GetNextId (ret, exprs);
+        }
         break;
     case N_str:
         exprs = GetNextString (ret, exprs);
@@ -329,18 +380,16 @@ GetNextAny (char **ret, node *exprs)
         DBUG_ASSERT ((0), "illegal icm-arg found!");
     }
 
-    exprs = EXPRS_NEXT (exprs);
-
     DBUG_RETURN (exprs);
 }
 
 static node *
-GetNextVar (char ***ret, int *ret_len, int cnt, node *exprs)
+GetNextVarAny (char ***ret, int *ret_len, int cnt, node *exprs)
 {
     int i;
     int len = 0;
 
-    DBUG_ENTER ("GetNextVar");
+    DBUG_ENTER ("GetNextVarAny");
 
     (*ret) = (char **)Malloc (cnt * sizeof (char *));
 
@@ -360,6 +409,50 @@ GetNextVar (char ***ret, int *ret_len, int cnt, node *exprs)
 }
 
 static node *
+GetNextVarNt (char ***ret, int cnt, node *exprs)
+{
+    node *expr;
+    int i;
+
+    DBUG_ENTER ("GetNextVarNt");
+
+    (*ret) = (char **)Malloc (cnt * sizeof (char *));
+
+    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    expr = EXPRS_EXPR (exprs);
+
+    for (i = 0; i < cnt; i++) {
+        exprs = GetNextNt (&((*ret)[i]), exprs);
+    }
+
+    DBUG_RETURN (exprs);
+}
+
+#if 0
+/* not used yet */
+static
+node *GetNextVarId( char ***ret, int cnt, node *exprs)
+{
+  node *expr;
+  int i;
+
+  DBUG_ENTER( "GetNextVarId");
+
+  (*ret) = (char **) Malloc( cnt * sizeof( char*));
+
+  DBUG_ASSERT( (NODE_TYPE( exprs) == N_exprs),
+               "wrong icm-arg: N_exprs expected");
+  expr = EXPRS_EXPR( exprs);
+
+  for (i = 0; i < cnt; i++) {
+    exprs = GetNextId( &((*ret)[i]), exprs);
+  }
+
+  DBUG_RETURN( exprs);
+}
+#endif
+
+static node *
 GetNextVarInt (int **ret, int cnt, node *exprs)
 {
     node *expr;
@@ -367,13 +460,12 @@ GetNextVarInt (int **ret, int cnt, node *exprs)
 
     DBUG_ENTER ("GetNextVarInt");
 
-    (*ret) = (int *)Malloc (sizeof (int) * cnt);
+    (*ret) = (int *)Malloc (cnt * sizeof (int));
 
     DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
     for (i = 0; i < cnt; i++) {
-        DBUG_ASSERT ((NODE_TYPE (expr) == N_num), "wrong icm-arg: N_num expected");
         exprs = GetNextInt (&((*ret)[i]), exprs);
     }
 
@@ -383,9 +475,13 @@ GetNextVarInt (int **ret, int cnt, node *exprs)
 #include "icm.data"
 
 #undef ICM_DEF
+#undef ICM_ANY
 #undef ICM_ICM
-#undef ICM_STR
+#undef ICM_NT
+#undef ICM_ID
 #undef ICM_INT
-#undef ICM_VAR
+#undef ICM_VARANY
+#undef ICM_VARNT
+#undef ICM_VARID
 #undef ICM_VARINT
 #undef ICM_END

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/07/10 19:24:48  dkr
+ * several ICM_... types added and renamed
+ *
  * Revision 3.6  2002/07/10 16:24:11  dkr
  * ICM_ANY added, ICM_VAR renamed into ICM_VARANY
  *
@@ -69,50 +72,46 @@
     fprintf (outfile, "%s", name);                                                       \
     sep = 1;
 
-#define ICM_ICM(name)                                                                    \
-    SEP;                                                                                 \
-    fprintf (outfile, "%s", name);                                                       \
-    sep = 1;
+#define ICM_ICM(name) ICM_ANY (name)
 
-#define ICM_STR(name)                                                                    \
-    SEP;                                                                                 \
-    fprintf (outfile, "%s", name);                                                       \
-    sep = 1;
+#define ICM_NT(name) ICM_ANY (name)
+
+#define ICM_ID(name) ICM_ANY (name)
 
 #define ICM_INT(name)                                                                    \
     SEP;                                                                                 \
     fprintf (outfile, "%d", name);                                                       \
     sep = 1;
 
-#ifdef TAGGED_ARRAYS
 #define ICM_VARANY(dim, name)                                                            \
     {                                                                                    \
         int i;                                                                           \
         for (i = 0; i < dim; i++) {                                                      \
-            SEP;                                                                         \
-            AccessConst (name, NULL, i);                                                 \
-            sep = 1;                                                                     \
+            ICM_ANY (name[i])                                                            \
         }                                                                                \
     }
-#else
-#define ICM_VARANY(dim, name)                                                            \
+
+#define ICM_VARNT(dim, name)                                                             \
     {                                                                                    \
         int i;                                                                           \
         for (i = 0; i < dim; i++) {                                                      \
-            SEP;                                                                         \
-            AccessConst (name, i);                                                       \
-            sep = 1;                                                                     \
+            ICM_NT (name[i])                                                             \
         }                                                                                \
     }
-#endif
+
+#define ICM_VARID(dim, name)                                                             \
+    {                                                                                    \
+        int i;                                                                           \
+        for (i = 0; i < dim; i++) {                                                      \
+            ICM_ID (name[i])                                                             \
+        }                                                                                \
+    }
 
 #define ICM_VARINT(dim, name)                                                            \
     {                                                                                    \
         int i;                                                                           \
         for (i = 0; i < dim; i++) {                                                      \
-            SEP;                                                                         \
-            fprintf (outfile, "%d", name[i]);                                            \
-            sep = 1;                                                                     \
+            ICM_INT (name[i])                                                            \
         }                                                                                \
     }
 
@@ -125,11 +124,15 @@
 #include "icm.data"
 
 #undef SEP
+
 #undef ICM_DEF
 #undef ICM_ANY
 #undef ICM_ICM
-#undef ICM_STR
+#undef ICM_NT
+#undef ICM_ID
 #undef ICM_INT
 #undef ICM_VARANY
+#undef ICM_VARNT
+#undef ICM_VARID
 #undef ICM_VARINT
 #undef ICM_END

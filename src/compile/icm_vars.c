@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/07/10 19:25:03  dkr
+ * several ICM_... types added and renamed
+ *
  * Revision 3.4  2002/07/10 16:24:05  dkr
  * ICM_ANY added, ICM_VAR renamed into ICM_VARANY
  *
@@ -26,10 +29,13 @@
 
 #define ICM_DEF(prf, trf)
 #define ICM_ANY(name) static char *name;
-#define ICM_ICM(name) static char *name;
-#define ICM_STR(name) static char *name;
+#define ICM_ICM(name) ICM_ANY (name)
+#define ICM_NT(name) ICM_ANY (name)
+#define ICM_ID(name) ICM_ANY (name)
 #define ICM_INT(name) static int name;
 #define ICM_VARANY(cnt, name) static char **name;
+#define ICM_VARNT(cnt, name) ICM_VARANY (cnt, name)
+#define ICM_VARID(cnt, name) ICM_VARANY (cnt, name)
 #define ICM_VARINT(cnt, name) static int *name;
 #define ICM_END(prf, args)
 
@@ -38,8 +44,11 @@
 #undef ICM_DEF
 #undef ICM_ANY
 #undef ICM_ICM
-#undef ICM_STR
+#undef ICM_NT
+#undef ICM_ID
 #undef ICM_INT
 #undef ICM_VARANY
+#undef ICM_VARNT
+#undef ICM_VARID
 #undef ICM_VARINT
 #undef ICM_END

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.103  2002/07/10 19:25:07  dkr
+ * several ICM_... types added and renamed
+ *
  * Revision 3.102  2002/07/10 16:23:21  dkr
  * ICM_ANY added, ICM_VAR renamed into ICM_VARANY
  *
@@ -199,18 +202,24 @@
 #define ICM_DEF(prf, trf) extern void Print##prf (node *exprs, node *arg_info);
 #define ICM_ANY(name)
 #define ICM_ICM(name)
-#define ICM_STR(name)
+#define ICM_NT(name)
+#define ICM_ID(name)
 #define ICM_INT(name)
 #define ICM_VARANY(dim, name)
+#define ICM_VARNT(dim, name)
+#define ICM_VARID(dim, name)
 #define ICM_VARINT(dim, name)
 #define ICM_END(prf, args)
 #include "icm.data"
 #undef ICM_DEF
 #undef ICM_ANY
 #undef ICM_ICM
-#undef ICM_STR
+#undef ICM_NT
+#undef ICM_ID
 #undef ICM_INT
 #undef ICM_VARANY
+#undef ICM_VARNT
+#undef ICM_VARID
 #undef ICM_VARINT
 #undef ICM_END
 #undef ICM_ALL
@@ -2594,18 +2603,25 @@ PrintIcm (node *arg_node, node *arg_info)
     } else
 #define ICM_ANY(name)
 #define ICM_ICM(name)
-#define ICM_STR(name)
+#define ICM_NT(name)
+#define ICM_ID(name)
 #define ICM_INT(name)
 #define ICM_VARANY(dim, name)
+#define ICM_VARNT(dim, name)
+#define ICM_VARID(dim, name)
 #define ICM_VARINT(dim, name)
 #define ICM_END(prf, args)
 #include "icm.data"
 #undef ICM_ALL
 #undef ICM_DEF
+#undef ICM_ANY
 #undef ICM_ICM
-#undef ICM_STR
+#undef ICM_NT
+#undef ICM_ID
 #undef ICM_INT
 #undef ICM_VARANY
+#undef ICM_VARNT
+#undef ICM_VARID
 #undef ICM_VARINT
 #undef ICM_END
         ;

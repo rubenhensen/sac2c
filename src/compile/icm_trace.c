@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/07/10 19:24:53  dkr
+ * several ICM_... types added and renamed
+ *
  * Revision 3.3  2002/07/10 16:23:53  dkr
  * ICM_ANY added, ICM_VAR renamed into ICM_VARANY
  *
@@ -62,21 +65,11 @@
     fprintf (outfile, "SAC_Print( \"%s \");\n", name);                                   \
     sep = 1;
 
-#define ICM_ICM(name)                                                                    \
-    SEP;                                                                                 \
-    INDENT;                                                                              \
-    fprintf (outfile, "SAC_Print( \"%s \");\n", name);                                   \
-    sep = 1;
+#define ICM_ICM(name) ICM_ANY (name)
 
-#define ICM_STR(name)                                                                    \
-    SEP;                                                                                 \
-    INDENT;                                                                              \
-    if (name[0] == '"') {                                                                \
-        fprintf (outfile, "SAC_Print( %s );\n", name);                                   \
-    } else {                                                                             \
-        fprintf (outfile, "SAC_Print( \"%s \");\n", name);                               \
-    }                                                                                    \
-    sep = 1;
+#define ICM_NT(name) ICM_ANY (name)
+
+#define ICM_ID(name) ICM_ANY (name)
 
 #define ICM_INT(name)                                                                    \
     SEP;                                                                                 \
@@ -88,14 +81,23 @@
     {                                                                                    \
         int i;                                                                           \
         for (i = 0; i < dim; i++) {                                                      \
-            SEP;                                                                         \
-            INDENT;                                                                      \
-            if (name[i][0] == '"') {                                                     \
-                fprintf (outfile, "SAC_Print( \"\\%s\"\\\"\" );\n", name[i]);            \
-            } else {                                                                     \
-                fprintf (outfile, "SAC_Print( \"%s \");\n", name[i]);                    \
-            }                                                                            \
-            sep = 1;                                                                     \
+            ICM_ANY (name[i])                                                            \
+        }                                                                                \
+    }
+
+#define ICM_VARNT(dim, name)                                                             \
+    {                                                                                    \
+        int i;                                                                           \
+        for (i = 0; i < dim; i++) {                                                      \
+            ICM_NT (name[i])                                                             \
+        }                                                                                \
+    }
+
+#define ICM_VARID(dim, name)                                                             \
+    {                                                                                    \
+        int i;                                                                           \
+        for (i = 0; i < dim; i++) {                                                      \
+            ICM_ID (name[i])                                                             \
         }                                                                                \
     }
 
@@ -103,10 +105,7 @@
     {                                                                                    \
         int i;                                                                           \
         for (i = 0; i < dim; i++) {                                                      \
-            SEP;                                                                         \
-            INDENT;                                                                      \
-            fprintf (outfile, "SAC_Print( \"%d \");\n", name[i]);                        \
-            sep = 1;                                                                     \
+            ICM_INT (name[i])                                                            \
         }                                                                                \
     }
 
@@ -118,11 +117,15 @@
 #include "icm.data"
 
 #undef SEP
+
 #undef ICM_DEF
 #undef ICM_ANY
 #undef ICM_ICM
-#undef ICM_STR
+#undef ICM_NT
+#undef ICM_ID
 #undef ICM_INT
 #undef ICM_VARANY
+#undef ICM_VARNT
+#undef ICM_VARID
 #undef ICM_VARINT
 #undef ICM_END
