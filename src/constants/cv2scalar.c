@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/03/22 14:27:31  nmw
+ * functions to convert float, bool, char added
+ *
  * Revision 1.1  2001/03/02 14:33:02  sbs
  * Initial revision
  *
@@ -41,6 +44,30 @@ COCv2Double (void *elems, int offset)
     DBUG_ENTER ("COCv2Num");
 
     DBUG_RETURN (MakeDouble (((double *)elems)[offset]));
+}
+
+node *
+COCv2Bool (void *elems, int offset)
+{
+    DBUG_ENTER ("COCv2Bool");
+
+    DBUG_RETURN (MakeBool (((bool *)elems)[offset]));
+}
+
+node *
+COCv2Float (void *elems, int offset)
+{
+    DBUG_ENTER ("COCv2Float");
+
+    DBUG_RETURN (MakeFloat (((float *)elems)[offset]));
+}
+
+node *
+COCv2Char (void *elems, int offset)
+{
+    DBUG_ENTER ("COCv2Char");
+
+    DBUG_RETURN (MakeBool (((char *)elems)[offset]));
 }
 
 node *
