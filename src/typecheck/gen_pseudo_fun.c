@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/03/22 20:39:28  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.1  2000/11/20 18:00:06  sacbase
  * new release made
  *
@@ -43,14 +46,14 @@
 
 #include <stdlib.h>
 
-#include "dbug.h"
 #include "types.h"
-#include "prf.h"
 #include "tree_basic.h"
-#include "tree.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
+#include "dbug.h"
+#include "prf.h"
 #include "free.h"
 #include "DupTree.h"
-#include "internal_lib.h"
 #include "gen_pseudo_fun.h"
 #include "typecheck.h"
 

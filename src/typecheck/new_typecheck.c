@@ -1,6 +1,10 @@
 
 /*
+ *
  * $Log$
+ * Revision 3.2  2001/03/22 20:39:02  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.1  2000/11/20 18:00:07  sacbase
  * new release made
  *
@@ -16,14 +20,16 @@
  * Revision 1.1  1999/10/20 12:51:11  sbs
  * Initial revision
  *
- *
  */
 
 #include <stdio.h>
 #include <string.h>
 #include "dbug.h"
 
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "traverse.h"
 #include "globals.h"
 
