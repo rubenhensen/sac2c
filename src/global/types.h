@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/03/01 02:33:36  dkr
+ * types argtag_t and argtab_t added
+ * type clsconv_t renamed into unqconv_t
+ *
  * Revision 3.11  2002/02/22 12:55:08  dkr
  * argtab_info.mac deactivated
  *
@@ -192,13 +196,6 @@ typedef enum {
 #include "status_info.mac"
 } statustype;
 
-#if 0
-typedef enum {
-#define SELECTelement(it_element) it_element
-#include "argtag_info.mac"
-} argtag_t;
-#endif
-
 typedef enum { DOLLAR, VECT, IDX } useflag;
 
 typedef enum {
@@ -219,7 +216,7 @@ typedef enum { ACL_irregular, ACL_unknown, ACL_offset, ACL_const } accessclass_t
 
 typedef enum { ADIR_read, ADIR_write } accessdir_t;
 
-typedef enum { NO_CLSCONV, TO_CLASS, FROM_CLASS } clsconv_t;
+typedef enum { NO_UNQCONV, TO_UNQ, FROM_UNQ } unqconv_t;
 
 typedef enum { LOC_usr, LOC_stdlib } locationtype;
 
@@ -473,8 +470,10 @@ typedef struct INDEX_INFO {
                        If arg_no is 0, prf is undefined */
 } index_info;
 
-/* internal representation of WL generators on which the intersection
-   creation is based. */
+/*
+ * internal representation of WL generators on which the intersection
+ * creation is based.
+ */
 typedef struct INTERN_GEN {
     int shape;
     int *l, *u;
@@ -493,5 +492,21 @@ typedef struct FM {
     node *foldop;
     struct FM *next;
 } DFMfoldmask_t;
+
+/*
+ * used in precompile/compile
+ */
+
+typedef enum {
+#define SELECTelement(it_element) it_element
+#include "argtag_info.mac"
+} argtag_t;
+
+typedef struct {
+    int size;
+    node **ptr_in;  /* N_arg or N_exprs node */
+    void **ptr_out; /* 'types*' or 'ids*' */
+    argtag_t *tag;
+} argtab_t;
 
 #endif /* _sac_types_h */
