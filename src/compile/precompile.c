@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.36  2000/11/14 13:38:39  dkr
+ * some '... might be used uninitialized in this function' warnings
+ * removed
+ *
  * Revision 2.35  2000/10/31 23:17:51  dkr
  * Trav: NWITH2_CODE might be NULL
  *
@@ -467,18 +471,18 @@ PREC1let (node *arg_node, node *arg_info)
         ids_name = IDS_NAME (let_ids);
 
         flatten = FALSE;
-        if (NODE_TYPE (expr) == N_ap) {
-            flatten = TRUE;
-            is_prf = FALSE;
-
-            DBUG_ASSERT ((AP_FUNDEF (expr) != NULL),
-                         "no definition of user-defined function found!");
-        } else if (NODE_TYPE (expr) == N_prf) {
+        is_prf = FALSE;
+        if (NODE_TYPE (expr) == N_prf) {
             prf = PRF_PRF (expr);
             if (ARRAY_ARGS (prf) && (prf != F_dim) && (prf != F_idx_psi)) {
                 flatten = TRUE;
             }
             is_prf = TRUE;
+        } else if (NODE_TYPE (expr) == N_ap) {
+            flatten = TRUE;
+
+            DBUG_ASSERT ((AP_FUNDEF (expr) != NULL),
+                         "no definition of user-defined function found!");
         }
 
         if (flatten) {

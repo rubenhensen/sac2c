@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.102  2000/11/14 13:38:56  dkr
+ * some '... might be used uninitialized in this function' warnings
+ * removed
+ *
  * Revision 2.101  2000/11/13 17:06:21  dkr
  * code streamlined: MergeIcmsFundef, MergeIcmsAp, AdjustAddedAssigns
  *
@@ -2278,7 +2282,7 @@ COMPFundef (node *arg_node, node *arg_info)
 
         return_node = ICM_EXPRS2 (return_icm);
     } else {
-        return_node = NULL;
+        return_icm = return_node = NULL;
     }
 
     cnt_param = 0;
@@ -4172,6 +4176,7 @@ COMPPrfConvertArr (node *arg_node, node *arg_info)
         icm_name = "ND_2D_A";
         break;
     default:
+        icm_name = NULL;
         DBUG_ASSERT ((0), "Illegal array conversion function found!");
         break;
     }
@@ -4228,6 +4233,7 @@ COMPPrfTakeDrop (node *arg_node, node *arg_info)
         icm_name = "ND_KD_DROP_CxA_A";
         break;
     default:
+        icm_name = NULL;
         DBUG_ASSERT ((0), "Illegal take/drop function found!");
         break;
     }
@@ -5324,9 +5330,6 @@ COMPNwith2 (node *arg_node, node *arg_info)
         icm_name2 = "WL_FOLD_END";
         profile_name = "fold";
         break;
-
-    default:
-        DBUG_ASSERT ((0), "wrong withop type found");
     }
 
     /*

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.23  2000/11/14 13:39:12  dkr
+ * some '... might be used uninitialized in this function' warnings
+ * removed
+ *
  * Revision 2.22  2000/10/31 23:40:24  dkr
  * GenerateShapeStrides: wrong DBUG_ASSERT removed
  *
@@ -1692,6 +1696,7 @@ CompareWLnode (node *node1, node *node2, int outline)
             break;
 
         default:
+            result = 0;
             DBUG_ASSERT ((0), "wrong node type");
         }
 
@@ -3668,6 +3673,7 @@ OptWL (node *nodes)
                 break;
 
             default:
+                comp1 = comp2 = NULL;
                 DBUG_ASSERT ((0), "wrong node type");
             }
 
@@ -3898,6 +3904,7 @@ FitWL (node *nodes)
                     break;
 
                 default:
+                    unroll = 0;
                     DBUG_ASSERT ((0), "wrong node type");
                 }
 
@@ -4336,11 +4343,13 @@ GenerateCompleteDomain (node *strides, int dims, shpseg *shape)
 
     DBUG_ASSERT ((shape != NULL), "no shape found");
 
+    DBUG_ASSERT ((strides != NULL), "no stride found");
+    DBUG_ASSERT ((WLSTRIDE_NEXT (strides) == NULL), "more than one stride found");
+
     /*
      * we duplicate 'strides'
      *  -> later on we use this to generate complement strides
      */
-    DBUG_ASSERT ((WLSTRIDE_NEXT (strides) == NULL), "more than one stride found");
     comp_strides = DupNode (strides);
     /*
      * in the duplicated chain we set all steps to '1'
@@ -6082,7 +6091,8 @@ WLTRAwith (node *arg_node, node *arg_info)
      */
     DBUG_EXECUTE ("WLprec", NOTE (("step 0.2: checking disjointness of strides\n")));
     DBUG_ASSERT ((CheckDisjointness (strides)),
-                 "Consistence check failed: Not all strides are pairwise disjoint!\n"
+                 "Consistence check failed:"
+                 " Not all strides are pairwise disjoint!\n"
                  "This is probably due to an error during with-loop-folding.");
 
     if (strides != NULL) {
