@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.33  1995/06/26 14:37:51  hw
+ * Revision 1.34  1995/06/30 11:53:54  hw
+ * renamed MOD to MODARRAY
+ *
+ * Revision 1.33  1995/06/26  14:37:51  hw
  * now arrays in the modarray-part of a with-loop will be extracted
  *
  * Revision 1.32  1995/05/31  14:19:12  hw
@@ -154,7 +157,7 @@
 #define RET 2
 #define LOOP 3
 #define COND 4
-#define MOD 5
+#define MODARRAY 5
 
 #define STACK_SIZE 1000
 #define PUSH(old, new, n)                                                                \
@@ -500,7 +503,7 @@ FltnExprs (node *arg_node, node *arg_info)
                     || (tmp_arg->nodetype == N_prf) || (tmp_arg->nodetype == N_with));
         break;
     case AP:
-    case MOD:
+    case MODARRAY:
         abstract = ((tmp_arg->nodetype == N_array) || (tmp_arg->nodetype == N_prf)
                     || (tmp_arg->nodetype == N_ap) || (tmp_arg->nodetype == N_with));
         break;
@@ -1270,7 +1273,7 @@ FltnArgs (node *arg_node, node *arg_info)
  *  global vars   :
  *  internal funs :
  *  external funs : Trav
- *  macros        : DBUG, NULL, AP, MOD
+ *  macros        : DBUG, NULL, AP, MODARRAY
  *
  *  remarks       : if the argument of modarray is a N_prf, N_ap or N_array
  *                  node a temporary N_exprs node will be created and
@@ -1294,7 +1297,7 @@ FltnCon (node *arg_node, node *arg_info)
             node *exprs = MakeNode (N_exprs);
             exprs->node[0] = arg_node->node[0];
             exprs->nnode = 1;
-            arg_info->info.cint = MOD;
+            arg_info->info.cint = MODARRAY;
             exprs = Trav (exprs, arg_info);
             arg_info->info.cint = old_tag;
             arg_node->node[0] = exprs->node[0];
