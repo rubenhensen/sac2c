@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.127  1998/04/16 16:00:04  srs
+ * added INFO_INL* macros
+ *
  * Revision 1.126  1998/04/16 15:42:21  dkr
  * new macro INFO_COMP_CONCFUNS
  *
@@ -2206,6 +2209,10 @@ extern node *MakeInfo ();
 
 /* optimize */
 #define INFO_MASK(n, x) (n->mask[x])
+
+/* inline */
+#define INFO_INL_FIRST_FUNC(n) (n->node[0])
+#define INFO_INL_TYPES(n) (n->node[2])
 
 /* WLF, all phases of WLF use these macros, not only WLI. */
 #define INFO_WLI_NEXT(n) (n->node[0])
