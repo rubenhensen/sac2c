@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.112  2004/10/20 08:04:09  khf
+ * added NWITH_MTO_OFFSET_NEEDED, NCODE_RESOLVEABLE_DEPEND
+ *
  * Revision 3.111  2004/10/19 11:52:18  ktr
  * Added FUNDEF_RETALIAS
  *
@@ -2030,6 +2033,8 @@ DupNwith (node *arg_node, info *arg_info)
     NWITH_REFERENCES_FOLDED (new_node) = NWITH_REFERENCES_FOLDED (arg_node);
     NWITH_FOLDABLE (new_node) = NWITH_FOLDABLE (arg_node);
     NWITH_NO_CHANCE (new_node) = NWITH_NO_CHANCE (arg_node);
+    NWITH_DEPENDENT (new_node) = NWITH_DEPENDENT (arg_node);
+    NWITH_MTO_OFFSET_NEEDED (new_node) = NWITH_MTO_OFFSET_NEEDED (arg_node);
 
 #if 0
   NWITH_TSI( new_node) = ???;
@@ -2149,6 +2154,8 @@ DupNcode (node *arg_node, info *arg_info)
     NCODE_FLAG (new_node) = NCODE_FLAG (arg_node);
 
     NCODE_INC_RC_IDS (new_node) = DupIds_ (NCODE_INC_RC_IDS (arg_node), arg_info);
+
+    NCODE_RESOLVEABLE_DEPEND (new_node) = NCODE_RESOLVEABLE_DEPEND (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
