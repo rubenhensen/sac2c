@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1998/05/30 15:45:07  dkr
+ * added some macros for unrolling
+ *
  * Revision 1.11  1998/05/28 23:53:17  dkr
  * fixed a bug in WL_STRIDE_LOOP0_BEGIN
  *
@@ -62,32 +65,40 @@
  *   It provides definitions of Intermediate Code Macros (ICM)
  *   implemented as real macros.
  *
+ *   This macros are used for compilation of the with-loop
+ *
  *****************************************************************************/
 
 #ifndef _sac_wl_h
 
 #define _sac_wl_h
 
-/*****************************************************************************
- * Macros used for compilation of with-loop:
- */
+/*****************************************************************************/
 
-/*
- * this macro is used to generate names of aux-variables
- */
+/***
+ *** this macro is used to generate names of aux-variables
+ ***/
 
 #define SAC_VAR(type, idx_scalar) __##type##idx_scalar
 
-/*
- * minimum, maximum of two values
- */
+/*****************************************************************************/
+
+/***
+ *** minimum, maximum of two values
+ ***/
 
 #define MIN(x, y) SAC_ND_MIN (x, y)
 
 #define MAX(x, y) SAC_ND_MAX (x, y)
 
+/*****************************************************************************/
+
+/***
+ *** blocking-loop
+ ***/
+
 /*
- * blocking-loop
+ * if (BLOCK_LEVEL == 0)
  */
 
 #if SAC_DO_MULTITHREAD
@@ -107,6 +118,10 @@
             int SAC_VAR (stop, idx_scalar)                                               \
               = MIN (SAC_VAR (start, idx_scalar) + step, bound2);
 #endif /* SAC_DO_MULTITHREAD */
+
+/*
+ * if (BLOCK_LEVEL > 0)
+ */
 
 #define SAC_WL_BLOCK_LOOP_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)          \
     {                                                                                    \
@@ -121,8 +136,14 @@
     }                                                                                    \
     }
 
+/*****************************************************************************/
+
+/***
+ *** unrolling-blocking-loop
+ ***/
+
 /*
- * unrolling-blocking-loop
+ * if (UBLOCK_LEVEL == 0)
  */
 
 #if SAC_DO_MULTITHREAD
@@ -143,6 +164,10 @@
               = MIN (SAC_VAR (start, idx_scalar) + step, bound2);
 #endif /* SAC_DO_MULTITHREAD */
 
+/*
+ * if (UBLOCK_LEVEL > 0)
+ */
+
 #define SAC_WL_UBLOCK_LOOP_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)         \
     {                                                                                    \
         for (idx_scalar = SAC_VAR (start, idx_scalar);                                   \
@@ -153,8 +178,14 @@
     }                                                                                    \
     }
 
+/*****************************************************************************/
+
+/***
+ *** stride-loop
+ ***/
+
 /*
- * stride-loop
+ * if (STRIDE_LEVEL == 0), (STRIDE_UNROLLING == 0)
  */
 
 #if SAC_DO_MULTITHREAD
@@ -171,6 +202,10 @@
         for (idx_scalar = bound1; idx_scalar < bound2;) {
 #endif /* SAC_DO_MULTITHREAD */
 
+/*
+ * if (STRIDE_LEVEL > 0), (STRIDE_UNROLLING == 0)
+ */
+
 #define SAC_WL_STRIDE_LOOP_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)         \
     {                                                                                    \
         for (idx_scalar = SAC_VAR (start, idx_scalar);                                   \
@@ -181,8 +216,22 @@
     }
 
 /*
- * grid-loop (constant step)
- *
+ * if (STRIDE_UNROLLING == 1)
+ */
+
+#define SAC_WL_STRIDE_UNROLL_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)       \
+    idx_scalar = SAC_VAR (start, idx_scalar);
+
+#define SAC_WL_STRIDE_UNROLL_END(dim, idx_vec, idx_scalar, bound1, bound2, step)         \
+    /* empty */
+
+/*****************************************************************************/
+
+/***
+ *** grid-loop (constant step)
+ ***/
+
+/*
  * CAUTION: This macro executes unconditionlly the whole grid.
  *          Therefore we must take care that the parent stride meets the condition
  *                step | (bound2 - bound1).
@@ -218,6 +267,10 @@
  *            must be cut or not ('WL_GRIDVAR_LOOP_...').
  */
 
+/*
+ * if (GRID_UNROLLING == 0)
+ */
+
 #define SAC_WL_GRID_LOOP_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2)                 \
     {                                                                                    \
         int grid_##idx_scalar = idx_scalar + bound2 - bound1;                            \
@@ -226,6 +279,20 @@
 #define SAC_WL_GRID_LOOP_END(dim, idx_vec, idx_scalar, bound1, bound2)                   \
     }                                                                                    \
     }
+
+/*
+ * if (GRID_UNROLLING == 1)
+ */
+
+#define SAC_WL_GRID_UNROLL_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2) /* empty */
+
+#define SAC_WL_GRID_UNROLL_END(dim, idx_vec, idx_scalar, bound1, bound2) idx_scalar++;
+
+/*****************************************************************************/
+
+/***
+ *** grid-loop (variable step)
+ ***/
 
 #define SAC_WL_GRIDVAR_LOOP_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2)              \
     {                                                                                    \
@@ -237,14 +304,24 @@
     }                                                                                    \
     }
 
-/*
- * This macro is needed, if the index-vector is referenced somewhere in the
- *  with-loop-body.
- */
+/*****************************************************************************/
+
+/***
+ *** This macro is needed, if the index-vector is referenced somewhere in the
+ ***  with-loop-body.
+ ***/
 
 #define SAC_WL_GRID_SET_IDX(dim, idx_vec, idx_scalar, bound1, bound2)                    \
     SAC_ND_A_FIELD (idx_vec)[dim] = idx_scalar;
 
+/*****************************************************************************/
+
+/***
+ *** end of with-loop
+ ***/
+
 #define SAC_WL_END() }
+
+/*****************************************************************************/
 
 #endif /* _sac_wl_h */
