@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.31  2000/06/13 13:39:31  dkr
+ * Make_Old2NewWith renamed into make_patchwith
+ *
  * Revision 2.30  2000/06/08 12:12:48  jhs
  * Fixed comment.
  *
@@ -291,7 +294,7 @@ int cc_optimize = 0;
  * Options concerning the new with-loop format
  */
 
-int Make_Old2NewWith = 0;
+int make_patchwith = 0;
 
 /*
  * Command line options for triggering optimizations

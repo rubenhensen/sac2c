@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.32  2000/06/13 13:39:39  dkr
+ * Make_Old2NewWith renamed into make_patchwith
+ *
  * Revision 2.31  2000/06/07 11:41:26  nmw
  * additional define for GENERATELIBRARY added
  *
@@ -115,7 +118,7 @@ extern int num_cpp_vars;
 extern int cc_debug;
 extern int cc_optimize;
 
-extern int Make_Old2NewWith;
+extern int make_patchwith;
 
 extern unsigned int optimize;
 
