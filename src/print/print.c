@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.53  2000/02/24 17:59:35  dkr
+ * Fixed a bug: PrintIds() has an arg_info now
+ *
  * Revision 2.52  2000/02/24 16:52:08  dkr
  * some brushing done
  * functions for old with-loop removed
@@ -650,7 +653,7 @@ TSIprintInfo (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 void
-PrintIds (ids *arg)
+PrintIds (ids *arg, node *arg_info)
 {
     DBUG_ENTER ("PrintIds");
 
@@ -674,7 +677,7 @@ PrintIds (ids *arg)
             fprintf (outfile, "**");
         }
         if (show_idx && IDS_USE (arg)) {
-            Trav (IDS_USE (arg), NULL);
+            Trav (IDS_USE (arg), arg_info);
         }
         if (NULL != IDS_NEXT (arg)) {
             fprintf (outfile, ", ");
@@ -781,9 +784,7 @@ PrintBlock (node *arg_node, node *arg_info)
         fprintf (outfile, "\n");
     }
 
-    if (arg_info && /* arg_info may be NULL if Print() is called from within
-                       a debugger (PrintFundef did not create an info node). */
-        not_yet_done_print_main_begin && (NODE_TYPE (arg_info) == N_info)
+    if (not_yet_done_print_main_begin && (NODE_TYPE (arg_info) == N_info)
         && (INFO_PRINT_FUNDEF (arg_info) != NULL)
         && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)
         && (compiler_phase == PH_genccode)) {
@@ -812,7 +813,7 @@ PrintLet (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
     if (LET_IDS (arg_node)) {
-        PrintIds (LET_IDS (arg_node));
+        PrintIds (LET_IDS (arg_node), arg_info);
         fprintf (outfile, " = ");
     }
     Trav (LET_EXPR (arg_node), arg_info);
@@ -1020,22 +1021,26 @@ PrintImplist (node *arg_node, node *arg_info)
         fprintf (outfile, "{");
         if (IMPLIST_ITYPES (arg_node) != NULL) {
             fprintf (outfile, "\n  implicit types: ");
-            PrintIds (IMPLIST_ITYPES (arg_node)); /* dirty trick for keeping ids */
+            PrintIds (IMPLIST_ITYPES (arg_node),
+                      arg_info); /* dirty trick for keeping ids */
             fprintf (outfile, ";");
         }
         if (IMPLIST_ETYPES (arg_node) != NULL) {
             fprintf (outfile, "\n  explicit types: ");
-            PrintIds (IMPLIST_ETYPES (arg_node)); /* dirty trick for keeping ids */
+            PrintIds (IMPLIST_ETYPES (arg_node),
+                      arg_info); /* dirty trick for keeping ids */
             fprintf (outfile, ";");
         }
         if (IMPLIST_OBJS (arg_node) != NULL) {
             fprintf (outfile, "\n  global objects: ");
-            PrintIds (IMPLIST_OBJS (arg_node)); /* dirty trick for keeping ids */
+            PrintIds (IMPLIST_OBJS (arg_node),
+                      arg_info); /* dirty trick for keeping ids */
             fprintf (outfile, ";");
         }
         if (IMPLIST_FUNS (arg_node) != NULL) {
             fprintf (outfile, "\n  funs: ");
-            PrintIds (IMPLIST_FUNS (arg_node)); /* dirty trick for keeping ids */
+            PrintIds (IMPLIST_FUNS (arg_node),
+                      arg_info); /* dirty trick for keeping ids */
             fprintf (outfile, ";");
         }
         fprintf (outfile, "\n}\n");
@@ -1456,8 +1461,7 @@ PrintReturn (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintReturn");
 
     if (RETURN_EXPRS (arg_node) != NULL) {
-        if (arg_info && /* may be NULL if call from within debugger */
-            (NODE_TYPE (arg_info) = N_info) && (compiler_phase == PH_genccode)
+        if ((NODE_TYPE (arg_info) = N_info) && (compiler_phase == PH_genccode)
             && (INFO_PRINT_FUNDEF (arg_info) != NULL)
             && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)) {
             GSCPrintMainEnd ();
@@ -1483,8 +1487,6 @@ PrintAp (node *arg_node, node *arg_info)
         fprintf (outfile, "%s:", AP_MOD (arg_node));
     }
     fprintf (outfile, "%s(", AP_NAME (arg_node));
-
-    DBUG_ASSERT ((arg_info != NULL), "PrintAp() called with arg_info==NULL");
 
     if (INFO_PRINT_PRAGMA_WLCOMP (arg_info)) {
         /*
@@ -1620,11 +1622,12 @@ PrintDo (node *arg_node, node *arg_info)
     fprintf (outfile, "do \n");
 
     DBUG_EXECUTE ("VARS", fprintf (outfile, "**(NAIVE)DEFVARS\n");
-                  PrintIds (DO_DEFVARS (arg_node)); fprintf (outfile, "\n");
-                  PrintIds (DO_NAIVE_DEFVARS (arg_node));
+                  PrintIds (DO_DEFVARS (arg_node), arg_info); fprintf (outfile, "\n");
+                  PrintIds (DO_NAIVE_DEFVARS (arg_node), arg_info);
                   fprintf (outfile, "\n**(NAIVE)USEVARS\n");
-                  PrintIds (DO_USEVARS (arg_node)); fprintf (outfile, "\n");
-                  PrintIds (DO_NAIVE_USEVARS (arg_node)); fprintf (outfile, "\n"););
+                  PrintIds (DO_USEVARS (arg_node), arg_info); fprintf (outfile, "\n");
+                  PrintIds (DO_NAIVE_USEVARS (arg_node), arg_info);
+                  fprintf (outfile, "\n"););
 
     if (DO_BODY (arg_node) != NULL) {
 
@@ -1676,11 +1679,12 @@ PrintWhile (node *arg_node, node *arg_info)
     fprintf (outfile, ") \n");
 
     DBUG_EXECUTE ("VARS", fprintf (outfile, "**(NAIVE)DEFVARS\n");
-                  PrintIds (WHILE_DEFVARS (arg_node)); fprintf (outfile, "\n");
-                  PrintIds (WHILE_NAIVE_DEFVARS (arg_node));
+                  PrintIds (WHILE_DEFVARS (arg_node), arg_info); fprintf (outfile, "\n");
+                  PrintIds (WHILE_NAIVE_DEFVARS (arg_node), arg_info);
                   fprintf (outfile, "\n**(NAIVE)USEVARS\n");
-                  PrintIds (WHILE_USEVARS (arg_node)); fprintf (outfile, "\n");
-                  PrintIds (WHILE_NAIVE_USEVARS (arg_node)); fprintf (outfile, "\n"););
+                  PrintIds (WHILE_USEVARS (arg_node), arg_info); fprintf (outfile, "\n");
+                  PrintIds (WHILE_NAIVE_USEVARS (arg_node), arg_info);
+                  fprintf (outfile, "\n"););
 
     if (WHILE_BODY (arg_node) != NULL) {
 
@@ -1721,8 +1725,9 @@ PrintCond (node *arg_node, node *arg_info)
                                         INFO_PRINT_VARNO (arg_info)););
 
         DBUG_EXECUTE ("VARS", fprintf (outfile, "\n**(NAIVE)VARS - then\n");
-                      PrintIds (COND_THENVARS (arg_node)); fprintf (outfile, "\n");
-                      PrintIds (COND_NAIVE_THENVARS (arg_node));
+                      PrintIds (COND_THENVARS (arg_node), arg_info);
+                      fprintf (outfile, "\n");
+                      PrintIds (COND_NAIVE_THENVARS (arg_node), arg_info);
                       fprintf (outfile, "\n"););
 
         Trav (COND_THEN (arg_node), arg_info);
@@ -1740,8 +1745,9 @@ PrintCond (node *arg_node, node *arg_info)
                                         INFO_PRINT_VARNO (arg_info)););
 
         DBUG_EXECUTE ("VARS", fprintf (outfile, "\n**(NAIVE)VARS - else\n");
-                      PrintIds (COND_ELSEVARS (arg_node)); fprintf (outfile, "\n");
-                      PrintIds (COND_NAIVE_ELSEVARS (arg_node));
+                      PrintIds (COND_ELSEVARS (arg_node), arg_info);
+                      fprintf (outfile, "\n");
+                      PrintIds (COND_NAIVE_ELSEVARS (arg_node), arg_info);
                       fprintf (outfile, "\n"););
 
         Trav (COND_ELSE (arg_node), arg_info);
@@ -1803,7 +1809,7 @@ PrintPost (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintPost");
 
-    PrintIds (arg_node->info.ids);
+    PrintIds (arg_node->info.ids, arg_info);
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, ";");
 
@@ -1818,7 +1824,7 @@ PrintPre (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintPre");
 
     Trav (arg_node->node[0], arg_info);
-    PrintIds (arg_node->info.ids);
+    PrintIds (arg_node->info.ids, arg_info);
     fprintf (outfile, ";");
 
     DBUG_RETURN (arg_node);
@@ -1996,13 +2002,13 @@ PrintPragma (node *arg_node, node *arg_info)
 
     if (PRAGMA_EFFECT (arg_node) != NULL) {
         fprintf (outfile, "#pragma effect ");
-        PrintIds (PRAGMA_EFFECT (arg_node));
+        PrintIds (PRAGMA_EFFECT (arg_node), arg_info);
         fprintf (outfile, "\n");
     }
 
     if (PRAGMA_TOUCH (arg_node) != NULL) {
         fprintf (outfile, "#pragma touch ");
-        PrintIds (PRAGMA_TOUCH (arg_node));
+        PrintIds (PRAGMA_TOUCH (arg_node), arg_info);
         fprintf (outfile, "\n");
     }
 
@@ -2020,7 +2026,6 @@ PrintPragma (node *arg_node, node *arg_info)
 
     if (PRAGMA_WLCOMP_APS (arg_node) != NULL) {
         fprintf (outfile, "#pragma wlcomp ");
-        DBUG_ASSERT ((arg_info != NULL), "No arg_info node in print traversal");
         INFO_PRINT_PRAGMA_WLCOMP (arg_info) = 1;
         Trav (PRAGMA_WLCOMP_APS (arg_node), arg_info);
         INFO_PRINT_PRAGMA_WLCOMP (arg_info) = 0;
@@ -2214,8 +2219,6 @@ PrintNwith (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintNwith");
 
-    DBUG_ASSERT (arg_info, "arg_info is NULL");
-
     buffer = INFO_PRINT_INT_SYN (arg_info);
     tmp_nwith = INFO_PRINT_NWITH (arg_info);
     INFO_PRINT_NWITH (arg_info) = arg_node;
@@ -2297,7 +2300,7 @@ PrintNwithid (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintNwithid");
 
     if (NWITHID_VEC (arg_node)) {
-        PrintIds (NWITHID_VEC (arg_node));
+        PrintIds (NWITHID_VEC (arg_node), arg_info);
         if (NWITHID_IDS (arg_node)) {
             fprintf (outfile, "=");
         }
@@ -2305,7 +2308,7 @@ PrintNwithid (node *arg_node, node *arg_info)
 
     if (NWITHID_IDS (arg_node)) {
         fprintf (outfile, "[");
-        PrintIds (NWITHID_IDS (arg_node));
+        PrintIds (NWITHID_IDS (arg_node), arg_info);
         fprintf (outfile, "]");
     }
 
@@ -2650,7 +2653,8 @@ PrintWLseg (node *arg_node, node *arg_info)
         }
 
         WLSEG_CONTENTS (seg) = Trav (WLSEG_CONTENTS (seg), arg_info);
-        PRINT_CONT (seg = WLSEG_NEXT (seg)) else
+        PRINT_CONT (seg = WLSEG_NEXT (seg))
+        else
         {
             seg = NULL;
         }
@@ -2873,7 +2877,8 @@ PrintWLsegVar (node *arg_node, node *arg_info)
         }
 
         WLSEGVAR_CONTENTS (seg) = Trav (WLSEGVAR_CONTENTS (seg), arg_info);
-        PRINT_CONT (seg = WLSEGVAR_NEXT (seg)) else
+        PRINT_CONT (seg = WLSEGVAR_NEXT (seg))
+        else
         {
             seg = NULL;
         }
