@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2003/05/30 14:21:56  dkr
+ * TYStaticDispatchWrapper() removed
+ *
  * Revision 3.47  2003/05/29 12:30:41  dkr
  * comment for TYStaticDispatchWrapper() added
  *
@@ -4734,54 +4737,6 @@ TYSplitWrapperType (ntype *type, bool *finished)
     type = SplitWrapperType (type, finished);
 
     DBUG_RETURN (type);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *TYStaticDispatchWrapper( node *fundef)
- *
- * Description:
- *   If the given wrapper function can be dispatched statically (i.e. only a
- *   single instance is applicable to [*]-arguments) the appropriate pointer
- *   to the function instance is returned. Otherwise the function returns NULL.
- *
- ******************************************************************************/
-
-node *
-TYStaticDispatchWrapper (node *fundef)
-{
-    node *disp_fundef;
-    ntype *type = FUNDEF_TYPE (fundef);
-
-    DBUG_ENTER ("TYStaticDispatchWrapper");
-
-    DBUG_ASSERT ((type != NULL), "FUNDEF_TYPE not found!");
-    if (TYGetConstr (type) == TC_prod) {
-        /*
-         * pure TC_prod type (function with no arguments)!!
-         *   -> fundef can be found in FUNDEF_IMPL (dirty hack!)
-         */
-        DBUG_ASSERT ((FUNDEF_IMPL (fundef) != NULL), "FUNDEF_IMPL not found!");
-        disp_fundef = FUNDEF_IMPL (fundef);
-    } else {
-        ntype *ires;
-
-        DBUG_ASSERT ((NTYPE_ARITY (type) == 1), "multiple FUN_IBASE found!");
-        ires = IBASE_GEN (FUN_IBASE (type, 0));
-        DBUG_ASSERT ((ires != NULL), "IBASE_GEN not found!");
-        DBUG_ASSERT ((IRES_NUMFUNS (ires) > 0), "no fundefs found in IBASE_GEN!");
-
-        if (IRES_NUMFUNS (ires) == 1) {
-            /* only one fundef -> static dispatch */
-            disp_fundef = IRES_FUNDEF (ires, 0);
-        } else {
-            /* static dispatch impossible */
-            disp_fundef = NULL;
-        }
-    }
-
-    DBUG_RETURN (disp_fundef);
 }
 
 /******************************************************************************

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2003/05/30 14:21:43  dkr
+ * TYStaticDispatchWrapper() removed
+ *
  * Revision 3.16  2003/04/07 14:31:32  sbs
  * support for AKV types added.
  * functions TYGetValue, TYIsProdOfAKV, and TYIsProdContainingAKV built
@@ -384,7 +387,6 @@ extern ntype *TYOldTypes2ProdType (types *old);
  * Functions for converting types into SAC code for wrapper functions
  */
 extern ntype *TYSplitWrapperType (ntype *type, bool *finished);
-extern node *TYStaticDispatchWrapper (node *fundef);
 extern ntype *TYGetWrapperRetType (ntype *type);
 extern node *TYCorrectWrapperArgTypes (node *args, ntype *type);
 extern node *TYCreateWrapperVardecs (node *fundef);
