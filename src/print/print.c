@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.66  2000/03/21 17:55:55  dkr
+ * PRINT_CONT modified: arg_info might be NULL
+ *
  * Revision 2.65  2000/03/21 17:21:02  dkr
  * I really hope that the indentation is now *always* correct ... %-]
  *
@@ -120,11 +123,30 @@
  *  -> traverses next-node if and only if its parent is not the root.
  * Print(): INFO_PRINT_CONT(arg_info) is NULL.
  *  -> traverses all next-nodes.
+ *
+ * This behaviour is implemented with the macro PRINT_CONT.
  */
-#define PRINT_CONT(code)                                                                 \
+
+#if 0 /* Trav() is used in icm2c_wl.c -> (arg_info == NULL) !! */
+#define PRINT_CONT(code_then, code_else)                                                 \
+    DBUG_ASSERT ((arg_info != NULL), "Print(): arg_info is NULL!");                      \
     if (INFO_PRINT_CONT (arg_info) != arg_node) {                                        \
-        code;                                                                            \
+        code_then;                                                                       \
+    } else {                                                                             \
+        code_else;                                                                       \
     }
+#else
+#define PRINT_CONT(code_then, code_else)                                                 \
+    if (arg_info != NULL) {                                                              \
+        if (INFO_PRINT_CONT (arg_info) != arg_node) {                                    \
+            code_then;                                                                   \
+        } else {                                                                         \
+            code_else;                                                                   \
+        }                                                                                \
+    } else {                                                                             \
+        code_then;                                                                       \
+    }
+#endif
 
 #define ACLT(arg)                                                                        \
     (arg == ACL_unknown)                                                                 \
@@ -601,7 +623,7 @@ PrintAssign (node *arg_node, node *arg_info)
         PrintIcm (ASSIGN_INSTR (arg_node), arg_info);
         fprintf (outfile, "\n");
         if (ASSIGN_NEXT (arg_node) != NULL) {
-            PRINT_CONT (Trav (ASSIGN_NEXT (arg_node), arg_info));
+            PRINT_CONT (Trav (ASSIGN_NEXT (arg_node), arg_info), );
         }
     } else {
         PRINT_LINE_PRAGMA_IN_SIB (outfile, arg_node);
@@ -616,7 +638,7 @@ PrintAssign (node *arg_node, node *arg_info)
         }
 
         if (ASSIGN_NEXT (arg_node) != NULL) {
-            PRINT_CONT (Trav (ASSIGN_NEXT (arg_node), arg_info));
+            PRINT_CONT (Trav (ASSIGN_NEXT (arg_node), arg_info), );
         }
     }
 
@@ -939,7 +961,7 @@ PrintImplist (node *arg_node, node *arg_info)
     }
 
     if (IMPLIST_NEXT (arg_node) != NULL) { /* print further imports */
-        PRINT_CONT (Trav (IMPLIST_NEXT (arg_node), arg_info));
+        PRINT_CONT (Trav (IMPLIST_NEXT (arg_node), arg_info), );
     }
 
     DBUG_RETURN (arg_node);
@@ -966,7 +988,7 @@ PrintTypedef (node *arg_node, node *arg_info)
     }
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
-        PRINT_CONT (Trav (TYPEDEF_NEXT (arg_node), arg_info));
+        PRINT_CONT (Trav (TYPEDEF_NEXT (arg_node), arg_info), );
     }
 
     DBUG_RETURN (arg_node);
@@ -1014,7 +1036,7 @@ PrintObjdef (node *arg_node, node *arg_info)
     }
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
-        PRINT_CONT (Trav (OBJDEF_NEXT (arg_node), arg_info));
+        PRINT_CONT (Trav (OBJDEF_NEXT (arg_node), arg_info), );
     }
 
     DBUG_RETURN (arg_node);
@@ -1176,7 +1198,7 @@ PrintFundef (node *arg_node, node *arg_info)
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) { /* traverse next function */
-        PRINT_CONT (Trav (FUNDEF_NEXT (arg_node), arg_info));
+        PRINT_CONT (Trav (FUNDEF_NEXT (arg_node), arg_info), );
     }
 
     DBUG_RETURN (arg_node);
@@ -1463,7 +1485,7 @@ PrintExprs (node *arg_node, node *arg_info)
 
     if (EXPRS_NEXT (arg_node) != NULL) {
         fprintf (outfile, ", ");
-        PRINT_CONT (Trav (EXPRS_NEXT (arg_node), arg_info));
+        PRINT_CONT (Trav (EXPRS_NEXT (arg_node), arg_info), );
     }
 
     DBUG_RETURN (arg_node);
@@ -1501,7 +1523,7 @@ PrintArg (node *arg_node, node *arg_info)
 
     if (ARG_NEXT (arg_node) != NULL) {
         fprintf (outfile, ",");
-        PRINT_CONT (Trav (ARG_NEXT (arg_node), arg_info));
+        PRINT_CONT (Trav (ARG_NEXT (arg_node), arg_info), );
     }
 
     DBUG_RETURN (arg_node);
@@ -1524,7 +1546,7 @@ PrintVardec (node *arg_node, node *arg_info)
     }
     fprintf (outfile, ";\n");
     if (VARDEC_NEXT (arg_node)) {
-        PRINT_CONT (Trav (VARDEC_NEXT (arg_node), arg_info));
+        PRINT_CONT (Trav (VARDEC_NEXT (arg_node), arg_info), );
     }
 
     DBUG_RETURN (arg_node);
@@ -1774,7 +1796,7 @@ PrintVectInfo (node *arg_node, node *arg_info)
         }
 
         if (VINFO_NEXT (arg_node) != NULL) {
-            PRINT_CONT (Trav (VINFO_NEXT (arg_node), arg_info));
+            PRINT_CONT (Trav (VINFO_NEXT (arg_node), arg_info), );
         }
         fprintf (outfile, " ");
     }
@@ -1850,7 +1872,7 @@ PrintIcm (node *arg_node, node *arg_info)
                 fprintf (outfile, ", ");
             }
 
-            PRINT_CONT (Trav (ICM_NEXT (arg_node), arg_info));
+            PRINT_CONT (Trav (ICM_NEXT (arg_node), arg_info), );
         }
     }
 
@@ -2460,7 +2482,7 @@ PrintNpart (node *arg_node, node *arg_info)
         /*
          * continue with other parts
          */
-        PRINT_CONT (Trav (NPART_NEXT (arg_node), arg_info));
+        PRINT_CONT (Trav (NPART_NEXT (arg_node), arg_info), );
     } else {
         fprintf (outfile, "\n");
     }
@@ -2624,11 +2646,7 @@ PrintWLseg (node *arg_node, node *arg_info)
         }
 
         WLSEG_CONTENTS (seg) = Trav (WLSEG_CONTENTS (seg), arg_info);
-        PRINT_CONT (seg = WLSEG_NEXT (seg))
-        else
-        {
-            seg = NULL;
-        }
+        PRINT_CONT (seg = WLSEG_NEXT (seg), seg = NULL)
     }
 
     DBUG_RETURN (arg_node);
@@ -2669,7 +2687,7 @@ PrintWLblock (node *arg_node, node *arg_info)
     }
 
     if (WLBLOCK_NEXT (arg_node) != NULL) {
-        PRINT_CONT (Trav (WLBLOCK_NEXT (arg_node), arg_info));
+        PRINT_CONT (Trav (WLBLOCK_NEXT (arg_node), arg_info), );
     }
 
     DBUG_RETURN (arg_node);
@@ -2710,7 +2728,7 @@ PrintWLublock (node *arg_node, node *arg_info)
     }
 
     if (WLUBLOCK_NEXT (arg_node) != NULL) {
-        PRINT_CONT (Trav (WLUBLOCK_NEXT (arg_node), arg_info));
+        PRINT_CONT (Trav (WLUBLOCK_NEXT (arg_node), arg_info), );
     }
 
     DBUG_RETURN (arg_node);
@@ -2745,7 +2763,7 @@ PrintWLstride (node *arg_node, node *arg_info)
     indent--;
 
     if (WLSTRIDE_NEXT (arg_node) != NULL) {
-        PRINT_CONT (Trav (WLSTRIDE_NEXT (arg_node), arg_info));
+        PRINT_CONT (Trav (WLSTRIDE_NEXT (arg_node), arg_info), );
     }
 
     DBUG_RETURN (arg_node);
@@ -2807,7 +2825,7 @@ PrintWLgrid (node *arg_node, node *arg_info)
     indent--;
 
     if (WLGRID_NEXT (arg_node) != NULL) {
-        PRINT_CONT (Trav (WLGRID_NEXT (arg_node), arg_info));
+        PRINT_CONT (Trav (WLGRID_NEXT (arg_node), arg_info), );
     }
 
     DBUG_RETURN (arg_node);
@@ -2848,11 +2866,7 @@ PrintWLsegVar (node *arg_node, node *arg_info)
         }
 
         WLSEGVAR_CONTENTS (seg) = Trav (WLSEGVAR_CONTENTS (seg), arg_info);
-        PRINT_CONT (seg = WLSEGVAR_NEXT (seg))
-        else
-        {
-            seg = NULL;
-        }
+        PRINT_CONT (seg = WLSEGVAR_NEXT (seg), seg = NULL);
     }
 
     DBUG_RETURN (arg_node);
@@ -2926,7 +2940,7 @@ PrintWLstriVar (node *arg_node, node *arg_info)
     indent--;
 
     if (WLSTRIVAR_NEXT (arg_node) != NULL) {
-        PRINT_CONT (Trav (WLSTRIVAR_NEXT (arg_node), arg_info));
+        PRINT_CONT (Trav (WLSTRIVAR_NEXT (arg_node), arg_info), );
     }
 
     DBUG_RETURN (arg_node);
@@ -2992,7 +3006,7 @@ PrintWLgridVar (node *arg_node, node *arg_info)
     indent--;
 
     if (WLGRIDVAR_NEXT (arg_node) != NULL) {
-        PRINT_CONT (Trav (WLGRIDVAR_NEXT (arg_node), arg_info));
+        PRINT_CONT (Trav (WLGRIDVAR_NEXT (arg_node), arg_info), );
     }
 
     DBUG_RETURN (arg_node);
