@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/10/06 17:19:36  cg
+ * Revision 1.5  1995/10/16 12:28:56  cg
+ * Bugs in macros FUNDEF_NEEDFUNS and FUNDEF_NEEDTYPES fixed.
+ *
+ * Revision 1.4  1995/10/06  17:19:36  cg
  * functions InsertNode InsertNodes and InsertUnresolvedNodes for dealing with
  * type nodelist added.
  *
@@ -449,6 +452,27 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
                                    : ((!strcmp (OBJDEF_NAME (a), OBJDEF_NAME (b)))       \
                                       && (!strcmp (OBJDEF_MOD (a), OBJDEF_MOD (b))))))
 
+/*
+ *
+ *  macro name    : CMP_OBJ_OBJDEF
+ *  arg types     : 1) char*
+ *                  2) char*
+ *                  3) node*  (N_objdef)
+ *  result type   : int
+ *  description   : compares name and module name of an object with the
+ *                  defined name and module name of an objdef
+ *                  result: 1 - equal, 0 - not equal
+ *  global vars   : ---
+ *  funs          : ---
+ *
+ *  remarks       :
+ *
+ */
+
+#define CMP_OBJ_OBJDEF(name, mod, odef)                                                  \
+    ((!strcmp (name, OBJDEF_NAME (odef)))                                                \
+     && (!strcmp (MOD (mod), MOD (OBJDEF_MOD (odef)))))
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -479,7 +503,7 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
  *  global vars   : ----
  *  internal funs : ----
  *  external funs : ----
- *  macros        : CMP_TYPE_ID
+ *  macros        : CMP_TYPE_USER
  *
  *  remarks       : similar to function CmpFunParams of typechecker.
  *                  some minor changes to fix appearing segmentation
