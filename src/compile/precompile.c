@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2002/04/16 21:12:34  dkr
+ * renaming of identifiers is done in a separate traversal now
+ *
  * Revision 3.35  2002/04/09 16:35:16  dkr
  * break specifier added
  *
@@ -98,10 +101,7 @@
  *
  * Things done during first traversal:
  *   - Artificial arguments and return values are removed.
- *   - All names and identifiers are renamed in order to avoid name clashes.
- * REMARK (dkr): It would be much more convenient to perform the renaming
- *               during the *last* traversal. But for now I have no time to
- *               reorganize it this way :-(
+ *   - A function with code for object initialization is created.
  *
  * Things done during second traversal:
  *   - Function signatures are transformed into the final form:
@@ -121,6 +121,14 @@
  *     generated.
  *   - It is checked whether NCODE_CEXPR is identical for all N_Ncode nodes
  *     of a single with-loop.
+ *
+ * Things done during fourth traversal:
+ *   - All names and identifiers are renamed in order to avoid name clashes.
+ *
+ * Remark:
+ *   It would be possible to combine the third and fourth traversal, but
+ *   separate traversals are more easy to understand and can be swapped
+ *   if necessary one day.
  *
  ******************************************************************************/
 
@@ -167,404 +175,11 @@
        ? (FUNDEF_LINKSIGN (fundef))[idx]                                                 \
        : ((dots) ? (idx) : ((idx) + 1)))
 
-/******************************************************************************
- *
- * function:
- *   char *ObjInitFunctionName()
- *
- * description:
- *   Returns new allocated string with objinitfunction name
- *
- * parameters:
- *   uses global variable modulename!
- *
- ******************************************************************************/
-
-char *
-ObjInitFunctionName ()
-{
-    char *new_name;
-
-    DBUG_ENTER ("ObjInitFunctionName");
-
-    new_name = StringConcat ("SACf_GlobalObjInit_for_", modulename);
-
-    DBUG_RETURN (new_name);
-}
-
-/******************************************************************************
- *
- * function:
- *   char *RenameLocalIdentifier( char *id)
- *
- * description:
- *   This function renames a given local identifier name for precompiling
- *   purposes. If the identifier has been inserted by sac2c, i.e. it starts
- *   with an underscore, it is prefixed by SACp. Otherwise, it is prefixed
- *   by SACl.
- *
- *   It also maps the name into an nt (Name Tuple) for tagged arrays.
- *
- ******************************************************************************/
-
-char *
-RenameLocalIdentifier (char *id)
-{
-    char *name_prefix;
-    char *new_name;
-
-    DBUG_ENTER ("RenameLocalIdentifier");
-
-    if (id[0] == '_') {
-        /*
-         * This local identifier was inserted by sac2c.
-         */
-        name_prefix = "SACp";
-        /*
-         * Here, we don't need an underscore after the prefix because the name
-         * already starts with one.
-         */
-    } else {
-        /*
-         * This local identifier originates from the source code.
-         */
-        name_prefix = "SACl_";
-    }
-
-    new_name = (char *)Malloc (sizeof (char) * (strlen (id) + strlen (name_prefix) + 1));
-    sprintf (new_name, "%s%s", name_prefix, id);
-
-    id = Free (id);
-
-    DBUG_RETURN (new_name);
-}
-
 /*
  *
  * FIRST TRAVERSAL
  *
  */
-
-/******************************************************************************
- *
- * function:
- *   node *CreateObjInitFundef(node *module, node *arg_info)
- *
- * description:
- *   builds up new fundef with empty block, that will contain all init calls
- *   for global objects. This functions will be called during the startup in
- *   the main function or from a separate init functions when used in
- *   a c library
- *
- * parameters:
- *   module where to add fundef
- *   arg_info, to tag new inserted fundef
- *
- * returns:
- *   modified module
- *
- ******************************************************************************/
-
-static node *
-CreateObjInitFundef (node *module, node *arg_info)
-{
-    node *fundef;
-    node *assign;
-    node *returns;
-
-    DBUG_ENTER ("CreateObjInitFundef");
-
-    returns = MakeReturn (NULL);
-    assign = MakeAssign (returns, NULL);
-
-    /* create void procedure without args and with empty return in body */
-    fundef = MakeFundef (ObjInitFunctionName (), MODUL_NAME (module), MakeTypes1 (T_void),
-                         NULL, MakeBlock (assign, NULL), MODUL_FUNS (module));
-
-    FUNDEF_RETURN (fundef) = returns;
-
-    MODUL_FUNS (module) = fundef;
-
-    INFO_PREC1_OBJINITFUNDEF (arg_info) = fundef;
-
-    DBUG_RETURN (module);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *InsertObjInit( node *block, node *objdef)
- *
- * Description:
- *   For this global object defined in SAC an application of its generic
- *   initialization function is inserted at the beginning of block.
- *
- * Remarks:
- *   The Let_nodes are generated by PRECObjdef.
- *
- ******************************************************************************/
-
-static node *
-InsertObjInit (node *block, node *objdef)
-{
-    ids *new_ids;
-    node *assign_end;
-    node *assign_ap;
-    node *assign_begin;
-
-    DBUG_ENTER ("InsertObjInit");
-
-    new_ids = MakeIds (StringCopy (OBJDEF_NAME (objdef)), NULL, ST_regular);
-    IDS_VARDEC (new_ids) = objdef;
-    IDS_ATTRIB (new_ids) = ST_global;
-    if (MUST_REFCOUNT (OBJDEF_TYPE (objdef))) {
-        IDS_REFCNT (new_ids) = 1;
-    } else {
-        IDS_REFCNT (new_ids) = RC_INACTIVE;
-    }
-
-    assign_end = MakeAssignIcm0 ("INITGLOBALOBJECT_END", BLOCK_INSTR (block));
-
-    assign_ap = MakeAssign (MakeLet (OBJDEF_EXPR (objdef), new_ids), assign_end);
-
-    assign_begin = MakeAssignIcm1 ("INITGLOBALOBJECT_BEGIN",
-                                   MakeId_Copy (StringConcat ("SAC_INIT_FLAG_",
-                                                              OBJDEF_NAME (objdef))),
-                                   assign_ap);
-
-    BLOCK_INSTR (block) = assign_begin;
-
-    OBJDEF_EXPR (objdef) = NULL;
-
-    DBUG_RETURN (block);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *RenameId( node *idnode)
- *
- * description:
- *   This function performs the renaming of identifiers on the right hand
- *   side of assignments, i.e. the original identifiers are prefixed with
- *   SACl or SACp or are renamed according to the renaming conventions of
- *   global objects.
- *
- ******************************************************************************/
-
-static node *
-RenameId (node *idnode)
-{
-    DBUG_ENTER ("RenameId");
-
-    DBUG_ASSERT ((NODE_TYPE (idnode) == N_id), "Wrong argument to function RenameId()");
-
-    DBUG_PRINT ("PREC", ("id-name == %s", ID_NAME (idnode)));
-
-    DBUG_ASSERT ((ID_VARDEC (idnode) != NULL), "Vardec not found in function RenameId()");
-
-    if (NODE_TYPE (ID_VARDEC (idnode)) == N_objdef) {
-        Free (ID_NAME (idnode));
-        ID_NAME (idnode) = StringCopy (OBJDEF_NAME (ID_VARDEC (idnode)));
-        /*
-         * The global object's definition has already been renamed.
-         */
-    } else {
-        ID_NAME (idnode) = RenameLocalIdentifier (ID_NAME (idnode));
-    }
-
-    DBUG_RETURN (idnode);
-}
-
-/******************************************************************************
- *
- * Function:
- *   types *RenameTypes( types *type)
- *
- * Description:
- *   Renames the given type if it is a user-defined SAC-type.
- *   Chains of types structures are considered.
- *
- * Remarks:
- *   The complete new name is stored in NAME while MOD is set to NULL.
- *
- ******************************************************************************/
-
-static types *
-RenameTypes (types *type)
-{
-    char *tmp;
-
-    DBUG_ENTER ("RenameTypes");
-
-    if (TYPES_BASETYPE (type) == T_user) {
-        if (TYPES_MOD (type) != NULL) {
-            /*
-             * This is a SAC data type.
-             */
-            if (!strcmp (TYPES_MOD (type), MAIN_MOD_NAME)) {
-                tmp = (char *)Malloc (sizeof (char) * (strlen (TYPES_NAME (type)) + 6));
-                sprintf (tmp, "SACt_%s", TYPES_NAME (type));
-            } else {
-                tmp = (char *)Malloc (
-                  sizeof (char)
-                  * (strlen (TYPES_NAME (type)) + strlen (TYPES_MOD (type)) + 8));
-                sprintf (tmp, "SACt_%s__%s", TYPES_MOD (type), TYPES_NAME (type));
-            }
-
-            DBUG_PRINT ("PREC", ("renaming type %s:%s to %s", TYPES_MOD (type),
-                                 TYPES_NAME (type), tmp));
-
-            Free (TYPES_NAME (type));
-            TYPES_NAME (type) = tmp;
-            TYPES_MOD (type) = NULL;
-        } else {
-            /*
-             * This is an imported C data type.
-             */
-            tmp = (char *)Malloc (sizeof (char) * (strlen (TYPES_NAME (type)) + 6));
-            sprintf (tmp, "SACe_%s", TYPES_NAME (type));
-
-            DBUG_PRINT ("PREC", ("renaming type %s to %s", TYPES_NAME (type), tmp));
-
-            Free (TYPES_NAME (type));
-            TYPES_NAME (type) = tmp;
-        }
-    }
-
-    if (TYPES_NEXT (type) != NULL) {
-        TYPES_NEXT (type) = RenameTypes (TYPES_NEXT (type));
-    }
-
-    DBUG_RETURN (type);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *RenameFun(node *fun)
- *
- * Description:
- *   Renames the given function.
- *   For SAC-functions, a new name is created from the module name, the
- *   original name and the argument's types.
- *   For C-functions, a new name is taken from the pragma 'linkname' if present.
- *
- ******************************************************************************/
-
-static node *
-RenameFun (node *fun)
-{
-    node *args;
-    char *new_name;
-    int length = 0;
-
-    DBUG_ENTER ("RenameFun");
-
-    if (FUNDEF_MOD (fun) != NULL) {
-        /*
-         * These are SAC-functions which may be overloaded.
-         */
-
-        if (FUNDEF_STATUS (fun) == ST_spmdfun) {
-            new_name = (char *)Malloc (sizeof (char) * (strlen (FUNDEF_NAME (fun)) + 6));
-            sprintf (new_name, "SACf_%s", FUNDEF_NAME (fun));
-        } else {
-            args = FUNDEF_ARGS (fun);
-
-            while (args != NULL) {
-                length += strlen (ARG_TYPESTRING (args)) + 1;
-                args = ARG_NEXT (args);
-            }
-
-            if (!strcmp (FUNDEF_MOD (fun), MAIN_MOD_NAME)) {
-                length += (strlen (FUNDEF_NAME (fun)) + 7);
-
-                new_name = (char *)Malloc (sizeof (char) * length);
-
-                sprintf (new_name, "SACf_%s_", FUNDEF_NAME (fun));
-            } else {
-                length += (strlen (FUNDEF_NAME (fun)) + strlen (FUNDEF_MOD (fun)) + 9);
-
-                new_name = (char *)Malloc (sizeof (char) * length);
-
-                sprintf (new_name, "SACf_%s__%s_", FUNDEF_MOD (fun), FUNDEF_NAME (fun));
-            }
-
-            args = FUNDEF_ARGS (fun);
-
-            while (args != NULL) {
-                strcat (new_name, "_");
-                strcat (new_name, ARG_TYPESTRING (args));
-                ARG_TYPESTRING (args) = Free (ARG_TYPESTRING (args));
-                args = ARG_NEXT (args);
-            }
-        }
-
-        DBUG_PRINT ("PREC", ("renaming function %s:%s to %s", FUNDEF_MOD (fun),
-                             FUNDEF_NAME (fun), new_name));
-
-        Free (FUNDEF_NAME (fun));
-        /* don't free FUNDEF_MOD(fun) because it is shared !! */
-
-        FUNDEF_NAME (fun) = new_name;
-        FUNDEF_MOD (fun) = NULL;
-    } else {
-        if ((FUNDEF_PRAGMA (fun) != NULL) && (FUNDEF_LINKNAME (fun) != NULL)) {
-            /*
-             * These are C-functions with additional pragma 'linkname'.
-             */
-
-            DBUG_PRINT ("PREC", ("renaming function %s to %s", FUNDEF_NAME (fun),
-                                 FUNDEF_LINKNAME (fun)));
-
-            Free (FUNDEF_NAME (fun));
-            /* don't free FUNDEF_MOD(fun) because it is shared !! */
-
-            FUNDEF_NAME (fun) = StringCopy (FUNDEF_LINKNAME (fun));
-            /*
-            FUNDEF_MOD( fun) = NULL;
-            */
-        }
-    }
-
-    DBUG_RETURN (fun);
-}
-
-/******************************************************************************
- *
- * function:
- *   ids *RenameIds( ids *arg)
- *
- * description:
- *   This function performs the renaming of identifiers stored within
- *   ids-chains.
- *
- ******************************************************************************/
-
-static ids *
-RenameIds (ids *arg)
-{
-    DBUG_ENTER ("RenameIds");
-
-    if (arg != NULL) {
-        if (NODE_TYPE (IDS_VARDEC (arg)) == N_objdef) {
-            Free (IDS_NAME (arg));
-            IDS_NAME (arg) = StringCopy (OBJDEF_NAME (IDS_VARDEC (arg)));
-            /*
-             * The global object's definition has already been renamed.
-             */
-        } else {
-            IDS_NAME (arg) = RenameLocalIdentifier (IDS_NAME (arg));
-        }
-
-        if (IDS_NEXT (arg) != NULL) {
-            IDS_NEXT (arg) = RenameIds (IDS_NEXT (arg));
-        }
-    }
-
-    DBUG_RETURN (arg);
-}
 
 /******************************************************************************
  *
@@ -653,10 +268,105 @@ RemoveArtificialIds (ids *arg, node *rhs)
 /******************************************************************************
  *
  * function:
+ *   node *CreateObjInitFundef( node *module, node *arg_info)
+ *
+ * description:
+ *   builds up new fundef with empty block, that will contain all init calls
+ *   for global objects. This functions will be called during the startup in
+ *   the main function or from a separate init functions when used in
+ *   a c library
+ *
+ * parameters:
+ *   module where to add fundef
+ *   arg_info, to tag new inserted fundef
+ *
+ * returns:
+ *   modified module
+ *
+ ******************************************************************************/
+
+static node *
+CreateObjInitFundef (node *module, node *arg_info)
+{
+    node *fundef;
+    node *assign;
+    node *returns;
+
+    DBUG_ENTER ("CreateObjInitFundef");
+
+    returns = MakeReturn (NULL);
+    assign = MakeAssign (returns, NULL);
+
+    /* create void procedure without args and with empty return in body */
+    fundef
+      = MakeFundef (ObjInitFunctionName (TRUE), MODUL_NAME (module), MakeTypes1 (T_void),
+                    NULL, MakeBlock (assign, NULL), MODUL_FUNS (module));
+
+    FUNDEF_RETURN (fundef) = returns;
+
+    MODUL_FUNS (module) = fundef;
+
+    INFO_PREC1_OBJINITFUNDEF (arg_info) = fundef;
+
+    DBUG_RETURN (module);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *InsertObjInit( node *block, node *objdef)
+ *
+ * Description:
+ *   For this global object defined in SAC an application of its generic
+ *   initialization function is inserted at the beginning of block.
+ *
+ * Remarks:
+ *   The Let_nodes are generated by PRECObjdef.
+ *
+ ******************************************************************************/
+
+static node *
+InsertObjInit (node *block, node *objdef)
+{
+    ids *new_ids;
+    node *assign_end;
+    node *assign_ap;
+    node *assign_begin;
+
+    DBUG_ENTER ("InsertObjInit");
+
+    new_ids = MakeIds (StringCopy (OBJDEF_NAME (objdef)), NULL, ST_regular);
+    IDS_VARDEC (new_ids) = objdef;
+    IDS_ATTRIB (new_ids) = ST_global;
+    if (MUST_REFCOUNT (OBJDEF_TYPE (objdef))) {
+        IDS_REFCNT (new_ids) = 1;
+    } else {
+        IDS_REFCNT (new_ids) = RC_INACTIVE;
+    }
+
+    assign_end = MakeAssignIcm0 ("INITGLOBALOBJECT_END", BLOCK_INSTR (block));
+
+    assign_ap = MakeAssign (MakeLet (OBJDEF_EXPR (objdef), new_ids), assign_end);
+
+    assign_begin = MakeAssignIcm1 ("INITGLOBALOBJECT_BEGIN",
+                                   MakeId_Copy (StringConcat ("SAC_INIT_FLAG_",
+                                                              OBJDEF_NAME (objdef))),
+                                   assign_ap);
+
+    BLOCK_INSTR (block) = assign_begin;
+
+    OBJDEF_EXPR (objdef) = NULL;
+
+    DBUG_RETURN (block);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *PREC1modul( node *arg_node, node *arg_info)
  *
  * description:
- *   starts traversal mechanism for objdef and fundef nodes.
+ *   Creates fundef for object-initialization code.
  *
  ******************************************************************************/
 
@@ -685,130 +395,23 @@ PREC1modul (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC1typedef( node *arg_node, node *arg_info)
- *
- * Description:
- *   Renames types. All types defined in SAC get the prefix "SAC_" to avoid
- *   name clashes with C identifiers.
- *
- ******************************************************************************/
-
-node *
-PREC1typedef (node *arg_node, node *arg_info)
-{
-    char *tmp;
-
-    DBUG_ENTER ("PREC1typedef");
-
-    if (TYPEDEF_MOD (arg_node) != NULL) {
-        /*
-         * This is a SAC typedef.
-         */
-        if (!strcmp (TYPEDEF_MOD (arg_node), MAIN_MOD_NAME)) {
-            tmp = (char *)Malloc (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
-            sprintf (tmp, "SACt_%s", TYPEDEF_NAME (arg_node));
-        } else {
-            tmp = (char *)Malloc (
-              sizeof (char)
-              * (strlen (TYPEDEF_NAME (arg_node)) + strlen (TYPEDEF_MOD (arg_node)) + 8));
-            sprintf (tmp, "SACt_%s__%s", TYPEDEF_MOD (arg_node), TYPEDEF_NAME (arg_node));
-        }
-
-        Free (TYPEDEF_NAME (arg_node));
-        TYPEDEF_NAME (arg_node) = tmp;
-        TYPEDEF_MOD (arg_node) = NULL;
-
-        TYPEDEF_TYPE (arg_node) = RenameTypes (TYPEDEF_TYPE (arg_node));
-    } else {
-        /*
-         * This is an imported C typedef.
-         */
-        tmp = (char *)Malloc (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
-        sprintf (tmp, "SACe_%s", TYPEDEF_NAME (arg_node));
-
-        Free (TYPEDEF_NAME (arg_node));
-        TYPEDEF_NAME (arg_node) = tmp;
-        /*
-         * Why are imported C types renamed unlike imported C functions or
-         * global objects?
-         *
-         * Imported C types do not have a real counterpart in the C module/class
-         * implementation. So, there must be no coincidence at link time.
-         * As the type name actually does only exist for the sake of the SAC world,
-         * which maps it directly to either void* or some basic type, its renaming
-         * avoids potential name clashes with other external symbols.
-         */
-    }
-
-    if (TYPEDEF_NEXT (arg_node) != NULL) {
-        TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *PREC1objdef( node *arg_node, node *arg_info)
  *
  * Description:
- *   Renames global objects.
- *   For SAC-functions the VARNAME, a combination of module name and object
- *   name is used, for C-functions the optional 'linkname' is used if present.
- *   Additionally, the object's type is renamed as well.
- *   After all the init code is added in the body of the ObjInitFunction.
+ *
  *
  ******************************************************************************/
 
 node *
 PREC1objdef (node *arg_node, node *arg_info)
 {
-    char *new_name;
-
     DBUG_ENTER ("PREC1objdef");
-
-    DBUG_PRINT ("PREC", ("precompiling object %s", ItemName (arg_node)));
-
-    if (OBJDEF_MOD (arg_node) == NULL) {
-        if (OBJDEF_LINKNAME (arg_node) != NULL) {
-            Free (OBJDEF_NAME (arg_node));
-            OBJDEF_NAME (arg_node) = OBJDEF_LINKNAME (arg_node);
-            OBJDEF_PRAGMA (arg_node) = Free (OBJDEF_PRAGMA (arg_node));
-        }
-    } else {
-        OBJDEF_VARNAME (arg_node) = Free (OBJDEF_VARNAME (arg_node));
-        /*
-         * OBJDEF_VARNAME is no longer used for the generation of the final C code
-         * identifier of a global object.
-         */
-
-        if (!strcmp (OBJDEF_MOD (arg_node), MAIN_MOD_NAME)) {
-            new_name
-              = (char *)Malloc (sizeof (char) * (strlen (OBJDEF_NAME (arg_node)) + 6));
-
-            sprintf (new_name, "SACo_%s", OBJDEF_NAME (arg_node));
-        } else {
-            new_name = (char *)Malloc (
-              sizeof (char)
-              * (strlen (OBJDEF_NAME (arg_node)) + strlen (OBJDEF_MOD (arg_node)) + 8));
-
-            sprintf (new_name, "SACo_%s__%s", OBJDEF_MOD (arg_node),
-                     OBJDEF_NAME (arg_node));
-        }
-
-        Free (OBJDEF_NAME (arg_node));
-        OBJDEF_NAME (arg_node) = new_name;
-        OBJDEF_MOD (arg_node) = NULL;
-    }
-
-    OBJDEF_TYPE (arg_node) = RenameTypes (OBJDEF_TYPE (arg_node));
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
         OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
     }
 
-    /*insert init code */
+    /* insert init code */
     FUNDEF_BODY (INFO_PREC1_OBJINITFUNDEF (arg_info))
       = InsertObjInit (FUNDEF_BODY (INFO_PREC1_OBJINITFUNDEF (arg_info)), arg_node);
 
@@ -821,7 +424,7 @@ PREC1objdef (node *arg_node, node *arg_info)
  *   node *PREC1fundef(node *arg_node, node *arg_info)
  *
  * description:
- *   precompilation of an N_fundef node.
+ *
  *
  ******************************************************************************/
 
@@ -834,8 +437,6 @@ PREC1fundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PREC1fundef");
 
-    DBUG_PRINT ("PREC", ("entering %s", FUNDEF_NAME (arg_node)));
-
     /*
      * The body of an imported inline function is removed.
      */
@@ -844,6 +445,11 @@ PREC1fundef (node *arg_node, node *arg_info)
         && (FUNDEF_ATTRIB (arg_node) != ST_generic) && (FUNDEF_BODY (arg_node) != NULL)) {
         FUNDEF_BODY (arg_node) = FreeTree (FUNDEF_BODY (arg_node));
         FUNDEF_RETURN (arg_node) = NULL;
+
+        /*
+         * no body -> free DFM base
+         */
+        FUNDEF_DFM_BASE (arg_node) = DFMRemoveMaskBase (FUNDEF_DFM_BASE (arg_node));
     }
 
     /*
@@ -871,6 +477,9 @@ PREC1fundef (node *arg_node, node *arg_info)
          * tree for further compilation steps.
          */
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    } else {
+        DBUG_ASSERT ((FUNDEF_DFM_BASE (arg_node) == NULL),
+                     "FUNDEF_DFM_BASE without body found!");
     }
 
     /*
@@ -931,26 +540,6 @@ PREC1fundef (node *arg_node, node *arg_info)
     FUNDEF_STATUS (arg_node) = keep_status;
     FUNDEF_ATTRIB (arg_node) = keep_attrib;
 
-    if (arg_node != INFO_PREC1_OBJINITFUNDEF (arg_info)) {
-        /*
-         * Now, the data flow mask base is updated.
-         * This is necessary because some local identifiers are removed while all
-         * others are renamed. This is skipped, when a object-init-function is
-         * processed
-         */
-        if (FUNDEF_BODY (arg_node) != NULL) {
-            FUNDEF_DFM_BASE (arg_node)
-              = DFMUpdateMaskBaseAfterRenaming (FUNDEF_DFM_BASE (arg_node),
-                                                FUNDEF_ARGS (arg_node),
-                                                FUNDEF_VARDEC (arg_node));
-        }
-
-        /* no renaming of obj-init-functions */
-        arg_node = RenameFun (arg_node);
-    }
-
-    FUNDEF_TYPES (arg_node) = RenameTypes (FUNDEF_TYPES (arg_node));
-
     DBUG_RETURN (arg_node);
 }
 
@@ -978,27 +567,12 @@ PREC1arg (node *arg_node, node *arg_info)
             arg_node = Trav (arg_node, arg_info);
         }
     } else {
-        ARG_TYPESTRING (arg_node) = Type2String (ARG_TYPE (arg_node), 2, TRUE);
-        ARG_TYPE (arg_node) = RenameTypes (ARG_TYPE (arg_node));
-        /*
-         * ARG_TYPESTRING is only used for renaming functions, so the
-         * type's actual name may be changed afterwards.
-         */
-
         if (ARG_ATTRIB (arg_node) == ST_readonly_reference) {
             ARG_ATTRIB (arg_node) = ST_regular;
         } else {
             if (ARG_ATTRIB (arg_node) == ST_was_reference) {
                 ARG_ATTRIB (arg_node) = ST_reference;
             }
-        }
-
-        if (ARG_NAME (arg_node) != NULL) {
-            /*
-             * The attribute ARG_NAME may not be set in the case of imported function
-             * declarations.
-             */
-            ARG_NAME (arg_node) = RenameLocalIdentifier (ARG_NAME (arg_node));
         }
 
         if (ARG_NEXT (arg_node) != NULL) {
@@ -1015,8 +589,7 @@ PREC1arg (node *arg_node, node *arg_info)
  *   node *PREC1vardec( node *arg_node, node *arg_info)
  *
  * Description:
- *   Renames types of declared variables.
- *   Remove artificial variable declarations.
+ *   Removes artificial variable declarations.
  *
  ******************************************************************************/
 
@@ -1032,9 +605,6 @@ PREC1vardec (node *arg_node, node *arg_info)
             arg_node = Trav (arg_node, arg_info);
         }
     } else {
-        VARDEC_TYPE (arg_node) = RenameTypes (VARDEC_TYPE (arg_node));
-        VARDEC_NAME (arg_node) = RenameLocalIdentifier (VARDEC_NAME (arg_node));
-
         if (VARDEC_NEXT (arg_node) != NULL) {
             VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
         }
@@ -1080,7 +650,7 @@ PREC1assign (node *arg_node, node *arg_info)
  *   node *PREC1let( node *arg_node, node *arg_info)
  *
  * description:
- *   removes all artificial identifiers on the left hand side of a let.
+ *   Removes all artificial identifiers on the left hand side of a let.
  *
  ******************************************************************************/
 
@@ -1091,13 +661,33 @@ PREC1let (node *arg_node, node *arg_info)
 
     LET_IDS (arg_node) = RemoveArtificialIds (LET_IDS (arg_node), LET_EXPR (arg_node));
 
-    LET_IDS (arg_node) = RenameIds (LET_IDS (arg_node));
-
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     if (LET_EXPR (arg_node) == NULL) {
         arg_node = FreeTree (arg_node);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC1icm( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC1icm (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC1icm");
+
+    /*
+     * content of ICMs is not traversed!!
+     */
 
     DBUG_RETURN (arg_node);
 }
@@ -1144,8 +734,6 @@ PREC1exprs_ap (node *current, node *formal)
             if ((VARDEC_OR_ARG_STATUS (ID_VARDEC (expr)) == ST_artificial)) {
                 ID_VARDEC (expr) = VARDEC_OR_ARG_OBJDEF (ID_VARDEC (expr));
             }
-
-            EXPRS_EXPR (current) = RenameId (EXPRS_EXPR (current));
         }
     }
 
@@ -1193,16 +781,9 @@ PREC1exprs_return (node *ret_exprs, node *ret_node)
 
             tmp = ret_exprs;
             ret_exprs = EXPRS_NEXT (ret_exprs);
-            EXPRS_EXPR (tmp) = RenameId (EXPRS_EXPR (tmp));
             EXPRS_NEXT (tmp) = RETURN_REFERENCE (ret_node);
             RETURN_REFERENCE (ret_node) = tmp;
         }
-    } else {
-        /*
-         * All expressions in a return-statement are guaranteed to be of
-         * node type N_id.
-         */
-        EXPRS_EXPR (ret_exprs) = RenameId (EXPRS_EXPR (ret_exprs));
     }
 
     DBUG_RETURN (ret_exprs);
@@ -1232,7 +813,6 @@ PREC1ap (node *arg_node, node *arg_info)
 
         if (NODE_TYPE (arg_node) == N_id) {
             if (!strncmp (AP_NAME (ap), "to_", 3)) {
-                arg_node = RenameId (arg_node);
                 DBUG_ASSERT ((!IsUnique (ID_TYPE (arg_node))),
                              "Argument of to_class function is unique already!");
 
@@ -1242,7 +822,6 @@ PREC1ap (node *arg_node, node *arg_info)
                  * This must be a "from" function. So, the argument is of a class
                  * type which implies that it is an identifier.
                  */
-                arg_node = RenameId (arg_node);
 
                 ID_UNQCONV (arg_node) = FROM_UNQ;
             }
@@ -1255,7 +834,7 @@ PREC1ap (node *arg_node, node *arg_info)
              */
         }
 
-        Free (AP_NAME (ap));
+        AP_NAME (ap) = Free (AP_NAME (ap));
         ap = Free (ap);
     } else {
         if (AP_ARGS (arg_node) != NULL) {
@@ -1295,8 +874,7 @@ PREC1return (node *arg_node, node *arg_info)
  *   node *PREC1id( node *arg_node, node *arg_info)
  *
  * Description:
- *   Applied occurrences of global objects may be renamed, if the global
- *   object was renamed.
+ *
  *
  ******************************************************************************/
 
@@ -1308,272 +886,13 @@ PREC1id (node *arg_node, node *arg_info)
     if (ID_STATUS (arg_node) == ST_artificial) {
         arg_node = FreeTree (arg_node);
     } else {
-        /* ID_VARDEC is NULL for IDs in ObjInitFunctions !!! */
-        if (ID_VARDEC (arg_node) != NULL) {
-            if (VARDEC_OR_ARG_STATUS (ID_VARDEC (arg_node)) == ST_artificial) {
-                ID_VARDEC (arg_node) = VARDEC_OR_ARG_OBJDEF (ID_VARDEC (arg_node));
-            }
+        DBUG_ASSERT ((ID_VARDEC (arg_node) != NULL), "no ID_VARDEC found!");
 
-            arg_node = RenameId (arg_node);
-
-            ID_UNQCONV (arg_node) = NO_UNQCONV;
+        if (VARDEC_OR_ARG_STATUS (ID_VARDEC (arg_node)) == ST_artificial) {
+            ID_VARDEC (arg_node) = VARDEC_OR_ARG_OBJDEF (ID_VARDEC (arg_node));
         }
-    }
 
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *PREC1array( node *arg_node, node *arg_info)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-PREC1array (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PREC1array");
-
-    if (ARRAY_AELEMS (arg_node) != NULL) {
-        ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
-    }
-
-    ARRAY_TYPE (arg_node) = RenameTypes (ARRAY_TYPE (arg_node));
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PREC1withid( node *arg_node, node *arg_info)
- *
- * description:
- *   This function does the renaming of the index vector variable
- *   as well as its scalar counterparts for the new with-loop.
- *
- ******************************************************************************/
-
-node *
-PREC1withid (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PREC1withid");
-
-    NWITHID_VEC (arg_node) = RenameIds (NWITHID_VEC (arg_node));
-    NWITHID_IDS (arg_node) = RenameIds (NWITHID_IDS (arg_node));
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PREC1do( node *arg_node, node *arg_info)
- *
- * description:
- *   The compiler phase refcount unfortunately produces chains of identifiers
- *   for which refcounting operations must be inserted during code generation.
- *   These must be renamed in addition to those identifiers that are "really"
- *   part of the code.
- *
- ******************************************************************************/
-
-node *
-PREC1do (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PREC1do");
-
-    DO_COND (arg_node) = Trav (DO_COND (arg_node), arg_info);
-    DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
-
-    DO_USEVARS (arg_node) = RenameIds (DO_USEVARS (arg_node));
-    DO_DEFVARS (arg_node) = RenameIds (DO_DEFVARS (arg_node));
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PREC1while(node *arg_node, node *arg_info)
- *
- * description:
- *   The compiler phase refcount unfortunately produces chains of identifiers
- *   for which refcounting operations must be inserted during code generation.
- *   These must be renamed in addition to those identifiers that are "really"
- *   part of the code.
- *
- ******************************************************************************/
-
-node *
-PREC1while (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PREC1while");
-
-    WHILE_COND (arg_node) = Trav (WHILE_COND (arg_node), arg_info);
-    WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
-
-    WHILE_USEVARS (arg_node) = RenameIds (WHILE_USEVARS (arg_node));
-    WHILE_DEFVARS (arg_node) = RenameIds (WHILE_DEFVARS (arg_node));
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PREC1cond( node *arg_node, node *arg_info)
- *
- * description:
- *   The compiler phase refcount unfortunately produces chains of identifiers
- *   for which refcounting operations must be inserted during code generation.
- *   These must be renamed in addition to those identifiers that are "really"
- *   part of the code.
- *
- ******************************************************************************/
-
-node *
-PREC1cond (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PREC1cond");
-
-    COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
-    COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
-    COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
-
-    COND_THENVARS (arg_node) = RenameIds (COND_THENVARS (arg_node));
-    COND_ELSEVARS (arg_node) = RenameIds (COND_ELSEVARS (arg_node));
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PREC1with2(node *arg_node, node *arg_info)
- *
- * description:
- *   The compiler phase refcount unfortunately produces chains of identifiers
- *   for which refcounting operations must be inserted during code generation.
- *   These must be renamed in addition to those identifiers that are "really"
- *   part of the code.
- *
- ******************************************************************************/
-
-node *
-PREC1with2 (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PREC1with2");
-
-    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
-    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
-
-    if (NWITH2_CODE (arg_node) != NULL) {
-        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
-    }
-
-    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
-
-    NWITH2_DEC_RC_IDS (arg_node) = RenameIds (NWITH2_DEC_RC_IDS (arg_node));
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PREC1code( node *arg_node, node *arg_info)
- *
- * description:
- *   The compiler phase refcount unfortunately produces chains of identifiers
- *   for which refcounting operations must be inserted during code generation.
- *   These must be renamed in addition to those identifiers that are "really"
- *   part of the code.
- *
- ******************************************************************************/
-
-node *
-PREC1code (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PREC1code");
-
-    NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
-    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
-
-    NCODE_INC_RC_IDS (arg_node) = RenameIds (NCODE_INC_RC_IDS (arg_node));
-
-    if (NCODE_NEXT (arg_node) != NULL) {
-        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PREC1sync( node *arg_node, node *arg_info)
- *
- * description:
- *   Was used for renaming SYNC_SCHEDULE, since this has move to the
- *   with-loops it's not done here anymore, but i kept the function, not
- *   knowing if there would be any problems if if i killed it. (jhs)
- *
- ******************************************************************************/
-
-node *
-PREC1sync (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PREC1sync");
-
-    SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PREC1WLsegx( node *arg_node, node *arg_info)
- *
- * description:
- *   Since the scheduling specification and WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX
- *   may contain the names of local identifiers, these have to be renamed
- *   according to the general renaming scheme implemented by this compiler
- *   phase.
- *
- ******************************************************************************/
-
-node *
-PREC1WLsegx (node *arg_node, node *arg_info)
-{
-    int d;
-
-    DBUG_ENTER ("PREC1WLsegx");
-
-    if (WLSEGX_SCHEDULING (arg_node) != NULL) {
-        WLSEGX_SCHEDULING (arg_node)
-          = SCHPrecompileScheduling (WLSEGX_SCHEDULING (arg_node));
-        WLSEGX_TASKSEL (arg_node) = SCHPrecompileTasksel (WLSEGX_TASKSEL (arg_node));
-    }
-
-    if (NODE_TYPE (arg_node) == N_WLsegVar) {
-        for (d = 0; d < WLSEGVAR_DIMS (arg_node); d++) {
-            (WLSEGVAR_IDX_MIN (arg_node))[d]
-              = Trav ((WLSEGVAR_IDX_MIN (arg_node))[d], arg_info);
-            (WLSEGVAR_IDX_MAX (arg_node))[d]
-              = Trav ((WLSEGVAR_IDX_MAX (arg_node))[d], arg_info);
-        }
-    }
-
-    WLSEGX_CONTENTS (arg_node) = Trav (WLSEGX_CONTENTS (arg_node), arg_info);
-
-    if (WLSEGX_NEXT (arg_node) != NULL) {
-        WLSEGX_NEXT (arg_node) = Trav (WLSEGX_NEXT (arg_node), arg_info);
+        ID_UNQCONV (arg_node) = NO_UNQCONV;
     }
 
     DBUG_RETURN (arg_node);
@@ -1951,11 +1270,9 @@ PREC2fundef (node *arg_node, node *arg_info)
         }
 
         /*
-         * we can remove the pragmas
+         * FUNDEF_PRAGMA is still needed during the last traversal!!!
+         *  -> it is removed later
          */
-        if (FUNDEF_PRAGMA (arg_node) != NULL) {
-            FUNDEF_PRAGMA (arg_node) = FreeNode (FUNDEF_PRAGMA (arg_node));
-        }
     }
 
     DBUG_RETURN (arg_node);
@@ -2200,53 +1517,6 @@ PREC2let (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   char *ToggleTmpName( char *name)
- *
- * Description:
- *   Ugly hack (dkr):
- *   Identifiers have already been renamed during the first traversal. So, the
- *   renaming has to be done by hand here...
- *   It would be much better to do the renaming at the last traversal, but for
- *   now I have no time to reorganize this stuff :-(
- *
- ******************************************************************************/
-
-static char *
-ToggleTmpName (char *name)
-{
-    char *last, *tmp;
-    char *buf;
-    int buf_len;
-
-    DBUG_ENTER ("ToggleTmpName");
-
-    if (strncmp (name, "SAC", 3)) {
-        tmp = strstr (name, "SAC");
-        buf_len = 3;
-        last = tmp + 2;
-        while ((*(last + 1)) != '_') {
-            last++;
-            buf_len++;
-        }
-
-        buf = Malloc (buf_len * sizeof (char));
-        strncpy (buf, tmp, buf_len);
-
-        while ((last - buf_len + 1) != name) {
-            (*last) = (*(last - buf_len));
-            last--;
-        }
-        strncpy (name, buf, buf_len);
-
-        buf = Free (buf);
-    }
-
-    DBUG_RETURN (name);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *AddVardec( node *fundef, types *type, char *name)
  *
  * Description:
@@ -2350,7 +1620,7 @@ AdjustFoldFundef (node *fundef, ids *acc, node *cexpr)
  *   node *PREC3fundef( node *arg_node, node *arg_info)
  *
  * Description:
- *   Traverses the function body and the next function.
+ *
  *
  ******************************************************************************/
 
@@ -2469,7 +1739,7 @@ LiftArg (ids *let_ids, node *arg, node *new_id, node *arg_info)
         DBUG_PRINT ("PREC3",
                     ("abtracting LHS (%s) of function application", IDS_NAME (let_ids)));
 
-        new_name = ToggleTmpName (TmpVarName (IDS_NAME (let_ids)));
+        new_name = TmpVarName (IDS_NAME (let_ids));
         /* Insert vardec for new var */
         new_vardec
           = AddVardec (INFO_PREC3_FUNDEF (arg_info), IDS_TYPE (let_ids), new_name);
@@ -2704,8 +1974,7 @@ PREC3withop (node *arg_node, node *arg_info)
          * (this is needed for SearchFoldImplementation() in icm2c_mt.c !!)
          */
         old_name = FUNDEF_NAME (new_foldfun);
-        FUNDEF_NAME (new_foldfun)
-          = ToggleTmpName (TmpVarName (FUNDEF_NAME (new_foldfun)));
+        FUNDEF_NAME (new_foldfun) = TmpVarName (FUNDEF_NAME (new_foldfun));
         old_name = Free (old_name);
 
         new_foldfun = AdjustFoldFundef (new_foldfun, let_ids,
@@ -2785,6 +2054,857 @@ PREC3code (node *arg_node, node *arg_info)
 
 /*
  *
+ * FOURTH TRAVERSAL
+ *
+ */
+
+/******************************************************************************
+ *
+ * function:
+ *   node *RenameId( node *idnode)
+ *
+ * description:
+ *   This function performs the renaming of identifiers on the right hand
+ *   side of assignments, i.e. the original identifiers are prefixed with
+ *   SACl or SACp or are renamed according to the renaming conventions of
+ *   global objects.
+ *
+ ******************************************************************************/
+
+static node *
+RenameId (node *idnode)
+{
+    DBUG_ENTER ("RenameId");
+
+    DBUG_ASSERT ((NODE_TYPE (idnode) == N_id), "Wrong argument to function RenameId()");
+
+    DBUG_PRINT ("PREC", ("renaming id %s", ID_NAME (idnode)));
+
+    DBUG_ASSERT ((ID_VARDEC (idnode) != NULL), "Vardec not found in function RenameId()");
+
+    if (NODE_TYPE (ID_VARDEC (idnode)) == N_objdef) {
+        ID_NAME (idnode) = Free (ID_NAME (idnode));
+        ID_NAME (idnode) = StringCopy (OBJDEF_NAME (ID_VARDEC (idnode)));
+        /*
+         * The global object's definition has already been renamed.
+         */
+    } else {
+        ID_NAME (idnode) = RenameLocalIdentifier (ID_NAME (idnode));
+    }
+
+    DBUG_RETURN (idnode);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   types *RenameTypes( types *type)
+ *
+ * Description:
+ *   Renames the given type if it is a user-defined SAC-type.
+ *   Chains of types structures are considered.
+ *
+ * Remarks:
+ *   The complete new name is stored in NAME while MOD is set to NULL.
+ *
+ ******************************************************************************/
+
+static types *
+RenameTypes (types *type)
+{
+    char *tmp;
+
+    DBUG_ENTER ("RenameTypes");
+
+    if (TYPES_BASETYPE (type) == T_user) {
+        if (TYPES_MOD (type) != NULL) {
+            /*
+             * This is a SAC data type.
+             */
+            if (!strcmp (TYPES_MOD (type), MAIN_MOD_NAME)) {
+                tmp = (char *)Malloc (sizeof (char) * (strlen (TYPES_NAME (type)) + 6));
+                sprintf (tmp, "SACt_%s", TYPES_NAME (type));
+            } else {
+                tmp = (char *)Malloc (
+                  sizeof (char)
+                  * (strlen (TYPES_NAME (type)) + strlen (TYPES_MOD (type)) + 8));
+                sprintf (tmp, "SACt_%s__%s", TYPES_MOD (type), TYPES_NAME (type));
+            }
+
+            DBUG_PRINT ("PREC", ("renaming type %s:%s to %s", TYPES_MOD (type),
+                                 TYPES_NAME (type), tmp));
+
+            TYPES_NAME (type) = Free (TYPES_NAME (type));
+            TYPES_NAME (type) = tmp;
+            TYPES_MOD (type) = NULL;
+        } else {
+            /*
+             * This is an imported C data type.
+             */
+            tmp = (char *)Malloc (sizeof (char) * (strlen (TYPES_NAME (type)) + 6));
+            sprintf (tmp, "SACe_%s", TYPES_NAME (type));
+
+            DBUG_PRINT ("PREC", ("renaming type %s to %s", TYPES_NAME (type), tmp));
+
+            TYPES_NAME (type) = Free (TYPES_NAME (type));
+            TYPES_NAME (type) = tmp;
+        }
+    }
+
+    if (TYPES_NEXT (type) != NULL) {
+        TYPES_NEXT (type) = RenameTypes (TYPES_NEXT (type));
+    }
+
+    DBUG_RETURN (type);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   char *RenameFunName( char *mod, char *name,
+ *                        statustype status, node *args)
+ *
+ * Description:
+ *   Renames the given name of a SAC-function.
+ *   A new name is created from the module name, the original name and the
+ *   argument's types.
+ *
+ ******************************************************************************/
+
+static char *
+RenameFunName (char *mod, char *name, statustype status, node *args)
+{
+    char *new_name = NULL;
+
+    DBUG_ENTER ("RenameFunName");
+
+    if (status == ST_spmdfun) {
+        new_name = (char *)Malloc (sizeof (char) * (strlen (name) + 6));
+        sprintf (new_name, "SACf_%s", name);
+    } else {
+        node *arg;
+        int length = 0;
+
+        arg = args;
+        while (arg != NULL) {
+            length += strlen (ARG_TYPESTRING (arg)) + 1;
+            arg = ARG_NEXT (arg);
+        }
+
+        if (!strcmp (mod, MAIN_MOD_NAME)) {
+            length += (strlen (name) + 7);
+            new_name = (char *)Malloc (sizeof (char) * length);
+            sprintf (new_name, "SACf_%s_", name);
+        } else {
+            length += (strlen (mod) + strlen (name) + 9);
+            new_name = (char *)Malloc (sizeof (char) * length);
+            sprintf (new_name, "SACf_%s__%s_", mod, name);
+        }
+
+        arg = args;
+        while (arg != NULL) {
+            strcat (new_name, "_");
+            strcat (new_name, ARG_TYPESTRING (arg));
+            ARG_TYPESTRING (arg) = Free (ARG_TYPESTRING (arg));
+            arg = ARG_NEXT (arg);
+        }
+    }
+
+    DBUG_RETURN (new_name);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *RenameFun( node *fun)
+ *
+ * Description:
+ *   Renames the given function.
+ *   For SAC-functions, a new name is created from the module name, the
+ *   original name and the argument's types.
+ *   For C-functions, a new name is taken from the pragma 'linkname' if present.
+ *
+ ******************************************************************************/
+
+static node *
+RenameFun (node *fun)
+{
+    char *new_name;
+
+    DBUG_ENTER ("RenameFun");
+
+    if (FUNDEF_MOD (fun) != NULL) {
+        /*
+         * These are SAC-functions which may be overloaded.
+         */
+
+        new_name = RenameFunName (FUNDEF_MOD (fun), FUNDEF_NAME (fun),
+                                  FUNDEF_STATUS (fun), FUNDEF_ARGS (fun));
+
+        DBUG_PRINT ("PREC", ("renaming function %s:%s to %s", FUNDEF_MOD (fun),
+                             FUNDEF_NAME (fun), new_name));
+
+        FUNDEF_NAME (fun) = Free (FUNDEF_NAME (fun));
+        FUNDEF_NAME (fun) = new_name;
+        /* don't free FUNDEF_MOD(fun) because it is shared !! */
+        FUNDEF_MOD (fun) = NULL;
+    } else {
+        if ((FUNDEF_PRAGMA (fun) != NULL) && (FUNDEF_LINKNAME (fun) != NULL)) {
+            /*
+             * These are C-functions with additional pragma 'linkname'.
+             */
+
+            DBUG_PRINT ("PREC", ("renaming function %s to %s", FUNDEF_NAME (fun),
+                                 FUNDEF_LINKNAME (fun)));
+
+            FUNDEF_NAME (fun) = Free (FUNDEF_NAME (fun));
+            FUNDEF_NAME (fun) = StringCopy (FUNDEF_LINKNAME (fun));
+        }
+    }
+
+    DBUG_RETURN (fun);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   ids *RenameIds( ids *arg)
+ *
+ * description:
+ *   This function performs the renaming of identifiers stored within
+ *   ids-chains.
+ *
+ ******************************************************************************/
+
+static ids *
+RenameIds (ids *arg)
+{
+    DBUG_ENTER ("RenameIds");
+
+    if (arg != NULL) {
+        if (NODE_TYPE (IDS_VARDEC (arg)) == N_objdef) {
+            IDS_NAME (arg) = Free (IDS_NAME (arg));
+            IDS_NAME (arg) = StringCopy (OBJDEF_NAME (IDS_VARDEC (arg)));
+            /*
+             * The global object's definition has already been renamed.
+             */
+        } else {
+            IDS_NAME (arg) = RenameLocalIdentifier (IDS_NAME (arg));
+        }
+
+        if (IDS_NEXT (arg) != NULL) {
+            IDS_NEXT (arg) = RenameIds (IDS_NEXT (arg));
+        }
+    }
+
+    DBUG_RETURN (arg);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PREC4modul( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC4modul (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC4modul");
+
+    if (MODUL_TYPES (arg_node) != NULL) {
+        MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
+    }
+
+    if (MODUL_OBJS (arg_node) != NULL) {
+        MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
+    }
+
+    if (MODUL_FUNS (arg_node) != NULL) {
+        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC4typedef( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Renames types. All types defined in SAC get the prefix "SAC_" to avoid
+ *   name clashes with C identifiers.
+ *
+ ******************************************************************************/
+
+node *
+PREC4typedef (node *arg_node, node *arg_info)
+{
+    char *tmp;
+
+    DBUG_ENTER ("PREC4typedef");
+
+    if (TYPEDEF_MOD (arg_node) != NULL) {
+        /*
+         * This is a SAC typedef.
+         */
+        if (!strcmp (TYPEDEF_MOD (arg_node), MAIN_MOD_NAME)) {
+            tmp = (char *)Malloc (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
+            sprintf (tmp, "SACt_%s", TYPEDEF_NAME (arg_node));
+        } else {
+            tmp = (char *)Malloc (
+              sizeof (char)
+              * (strlen (TYPEDEF_NAME (arg_node)) + strlen (TYPEDEF_MOD (arg_node)) + 8));
+            sprintf (tmp, "SACt_%s__%s", TYPEDEF_MOD (arg_node), TYPEDEF_NAME (arg_node));
+        }
+
+        TYPEDEF_NAME (arg_node) = Free (TYPEDEF_NAME (arg_node));
+        TYPEDEF_NAME (arg_node) = tmp;
+        TYPEDEF_MOD (arg_node) = NULL;
+
+        TYPEDEF_TYPE (arg_node) = RenameTypes (TYPEDEF_TYPE (arg_node));
+    } else {
+        /*
+         * This is an imported C typedef.
+         */
+        tmp = (char *)Malloc (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
+        sprintf (tmp, "SACe_%s", TYPEDEF_NAME (arg_node));
+
+        TYPEDEF_NAME (arg_node) = Free (TYPEDEF_NAME (arg_node));
+        TYPEDEF_NAME (arg_node) = tmp;
+        /*
+         * Why are imported C types renamed unlike imported C functions or
+         * global objects?
+         *
+         * Imported C types do not have a real counterpart in the C module/class
+         * implementation. So, there must be no coincidence at link time.
+         * As the type name actually does only exist for the sake of the SAC world,
+         * which maps it directly to either void* or some basic type, its renaming
+         * avoids potential name clashes with other external symbols.
+         */
+    }
+
+    if (TYPEDEF_NEXT (arg_node) != NULL) {
+        TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC4objdef( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Renames global objects.
+ *   For SAC-functions the VARNAME, a combination of module name and object
+ *   name is used, for C-functions the optional 'linkname' is used if present.
+ *   Additionally, the object's type is renamed as well.
+ *
+ ******************************************************************************/
+
+node *
+PREC4objdef (node *arg_node, node *arg_info)
+{
+    char *new_name;
+
+    DBUG_ENTER ("PREC4objdef");
+
+    if (OBJDEF_MOD (arg_node) == NULL) {
+        if (OBJDEF_LINKNAME (arg_node) != NULL) {
+            OBJDEF_NAME (arg_node) = Free (OBJDEF_NAME (arg_node));
+            OBJDEF_NAME (arg_node) = OBJDEF_LINKNAME (arg_node);
+            OBJDEF_PRAGMA (arg_node) = Free (OBJDEF_PRAGMA (arg_node));
+        }
+    } else {
+        OBJDEF_VARNAME (arg_node) = Free (OBJDEF_VARNAME (arg_node));
+        /*
+         * OBJDEF_VARNAME is no longer used for the generation of the final C code
+         * identifier of a global object.
+         */
+
+        if (!strcmp (OBJDEF_MOD (arg_node), MAIN_MOD_NAME)) {
+            new_name
+              = (char *)Malloc (sizeof (char) * (strlen (OBJDEF_NAME (arg_node)) + 6));
+
+            sprintf (new_name, "SACo_%s", OBJDEF_NAME (arg_node));
+        } else {
+            new_name = (char *)Malloc (
+              sizeof (char)
+              * (strlen (OBJDEF_NAME (arg_node)) + strlen (OBJDEF_MOD (arg_node)) + 8));
+
+            sprintf (new_name, "SACo_%s__%s", OBJDEF_MOD (arg_node),
+                     OBJDEF_NAME (arg_node));
+        }
+
+        OBJDEF_NAME (arg_node) = Free (OBJDEF_NAME (arg_node));
+        OBJDEF_NAME (arg_node) = new_name;
+        OBJDEF_MOD (arg_node) = NULL;
+    }
+
+    OBJDEF_TYPE (arg_node) = RenameTypes (OBJDEF_TYPE (arg_node));
+
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PREC4fundef( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC4fundef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC4fundef");
+
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+    }
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    /*
+     * Now, the data flow mask base is updated.
+     * This is necessary because some local identifiers are removed while all
+     * others are renamed.
+     */
+    if (FUNDEF_DFM_BASE (arg_node) != NULL) {
+        DBUG_ASSERT ((FUNDEF_BODY (arg_node) != NULL),
+                     "FUNDEF_DFM_BASE without body found!");
+
+        FUNDEF_DFM_BASE (arg_node)
+          = DFMUpdateMaskBaseAfterRenaming (FUNDEF_DFM_BASE (arg_node),
+                                            FUNDEF_ARGS (arg_node),
+                                            FUNDEF_VARDEC (arg_node));
+    }
+
+    arg_node = RenameFun (arg_node);
+
+    FUNDEF_TYPES (arg_node) = RenameTypes (FUNDEF_TYPES (arg_node));
+
+    /*
+     * FUNDEF_PRAGMA is no longer needed
+     */
+    if (FUNDEF_PRAGMA (arg_node) != NULL) {
+        FUNDEF_PRAGMA (arg_node) = FreeNode (FUNDEF_PRAGMA (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PREC4arg( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC4arg (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC4arg");
+
+    ARG_TYPESTRING (arg_node) = Type2String (ARG_TYPE (arg_node), 2, TRUE);
+    ARG_TYPE (arg_node) = RenameTypes (ARG_TYPE (arg_node));
+    /*
+     * ARG_TYPESTRING is only used for renaming functions, so the
+     * type's actual name may be changed afterwards.
+     */
+
+    if (ARG_NAME (arg_node) != NULL) {
+        /*
+         * The attribute ARG_NAME may not be set in the case of imported function
+         * declarations.
+         */
+        ARG_NAME (arg_node) = RenameLocalIdentifier (ARG_NAME (arg_node));
+    }
+
+    if (ARG_NEXT (arg_node) != NULL) {
+        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC4vardec( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Renames types of declared variables.
+ *
+ ******************************************************************************/
+
+node *
+PREC4vardec (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC4vardec");
+
+    VARDEC_TYPE (arg_node) = RenameTypes (VARDEC_TYPE (arg_node));
+    VARDEC_NAME (arg_node) = RenameLocalIdentifier (VARDEC_NAME (arg_node));
+
+    if (VARDEC_NEXT (arg_node) != NULL) {
+        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PREC4let( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC4let (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC4let");
+
+    LET_IDS (arg_node) = RenameIds (LET_IDS (arg_node));
+
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC4return( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC4return (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC4return");
+
+    if (RETURN_REFERENCE (arg_node) != NULL) {
+        RETURN_REFERENCE (arg_node) = Trav (RETURN_REFERENCE (arg_node), arg_info);
+    }
+
+    if (RETURN_EXPRS (arg_node) != NULL) {
+        RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC4icm( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC4icm (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC4icm");
+
+    if (ICM_ARGS (arg_node) != NULL) {
+        ICM_ARGS (arg_node) = Trav (ICM_ARGS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC4array( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC4array (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC4array");
+
+    if (ARRAY_AELEMS (arg_node) != NULL) {
+        ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+    }
+
+    ARRAY_TYPE (arg_node) = RenameTypes (ARRAY_TYPE (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PREC4id( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC4id (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC4id");
+
+    /*
+     * ID_VARDEC is NULL for ICMs inside of ObjInitFunctions!!!
+     */
+    if (ID_VARDEC (arg_node) != NULL) {
+        arg_node = RenameId (arg_node);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PREC4do( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   The compiler phase refcount unfortunately produces chains of identifiers
+ *   for which refcounting operations must be inserted during code generation.
+ *   These must be renamed in addition to those identifiers that are "really"
+ *   part of the code.
+ *
+ ******************************************************************************/
+
+node *
+PREC4do (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC4do");
+
+    DO_COND (arg_node) = Trav (DO_COND (arg_node), arg_info);
+    DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
+
+    DO_USEVARS (arg_node) = RenameIds (DO_USEVARS (arg_node));
+    DO_DEFVARS (arg_node) = RenameIds (DO_DEFVARS (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PREC4while(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   The compiler phase refcount unfortunately produces chains of identifiers
+ *   for which refcounting operations must be inserted during code generation.
+ *   These must be renamed in addition to those identifiers that are "really"
+ *   part of the code.
+ *
+ ******************************************************************************/
+
+node *
+PREC4while (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC4while");
+
+    WHILE_COND (arg_node) = Trav (WHILE_COND (arg_node), arg_info);
+    WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
+
+    WHILE_USEVARS (arg_node) = RenameIds (WHILE_USEVARS (arg_node));
+    WHILE_DEFVARS (arg_node) = RenameIds (WHILE_DEFVARS (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PREC4cond( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   The compiler phase refcount unfortunately produces chains of identifiers
+ *   for which refcounting operations must be inserted during code generation.
+ *   These must be renamed in addition to those identifiers that are "really"
+ *   part of the code.
+ *
+ ******************************************************************************/
+
+node *
+PREC4cond (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC4cond");
+
+    COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
+    COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+    COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+
+    COND_THENVARS (arg_node) = RenameIds (COND_THENVARS (arg_node));
+    COND_ELSEVARS (arg_node) = RenameIds (COND_ELSEVARS (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PREC4with2(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   The compiler phase refcount unfortunately produces chains of identifiers
+ *   for which refcounting operations must be inserted during code generation.
+ *   These must be renamed in addition to those identifiers that are "really"
+ *   part of the code.
+ *
+ ******************************************************************************/
+
+node *
+PREC4with2 (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC4with2");
+
+    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
+    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+
+    if (NWITH2_CODE (arg_node) != NULL) {
+        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    }
+
+    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+
+    NWITH2_DEC_RC_IDS (arg_node) = RenameIds (NWITH2_DEC_RC_IDS (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PREC4withid( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   This function does the renaming of the index vector variable
+ *   as well as its scalar counterparts for the new with-loop.
+ *
+ ******************************************************************************/
+
+node *
+PREC4withid (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC4withid");
+
+    NWITHID_VEC (arg_node) = RenameIds (NWITHID_VEC (arg_node));
+    NWITHID_IDS (arg_node) = RenameIds (NWITHID_IDS (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PREC4code( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   The compiler phase refcount unfortunately produces chains of identifiers
+ *   for which refcounting operations must be inserted during code generation.
+ *   These must be renamed in addition to those identifiers that are "really"
+ *   part of the code.
+ *
+ ******************************************************************************/
+
+node *
+PREC4code (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC4code");
+
+    NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+
+    NCODE_INC_RC_IDS (arg_node) = RenameIds (NCODE_INC_RC_IDS (arg_node));
+
+    if (NCODE_NEXT (arg_node) != NULL) {
+        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PREC4WLsegx( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Since the scheduling specification and WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX
+ *   may contain the names of local identifiers, these have to be renamed
+ *   according to the general renaming scheme implemented by this compiler
+ *   phase.
+ *
+ ******************************************************************************/
+
+node *
+PREC4WLsegx (node *arg_node, node *arg_info)
+{
+    int d;
+
+    DBUG_ENTER ("PREC4WLsegx");
+
+    if (WLSEGX_SCHEDULING (arg_node) != NULL) {
+        WLSEGX_SCHEDULING (arg_node)
+          = SCHPrecompileScheduling (WLSEGX_SCHEDULING (arg_node));
+        WLSEGX_TASKSEL (arg_node) = SCHPrecompileTasksel (WLSEGX_TASKSEL (arg_node));
+    }
+
+    if (NODE_TYPE (arg_node) == N_WLsegVar) {
+        for (d = 0; d < WLSEGVAR_DIMS (arg_node); d++) {
+            (WLSEGVAR_IDX_MIN (arg_node))[d]
+              = Trav ((WLSEGVAR_IDX_MIN (arg_node))[d], arg_info);
+            (WLSEGVAR_IDX_MAX (arg_node))[d]
+              = Trav ((WLSEGVAR_IDX_MAX (arg_node))[d], arg_info);
+        }
+    }
+
+    WLSEGX_CONTENTS (arg_node) = Trav (WLSEGX_CONTENTS (arg_node), arg_info);
+
+    if (WLSEGX_NEXT (arg_node) != NULL) {
+        WLSEGX_NEXT (arg_node) = Trav (WLSEGX_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
  * Precompile()
  *
  */
@@ -2813,22 +2933,120 @@ Precompile (node *syntax_tree)
 
     syntax_tree = MapCWrapper (syntax_tree);
 
-    info = MakeInfo ();
-
+    DBUG_EXECUTE ("PREC", NOTE (("step 1: remove artificial args\n")));
     act_tab = precomp1_tab;
+    info = MakeInfo ();
     syntax_tree = Trav (syntax_tree, info);
+    info = FreeTree (info);
 
     if (strcmp (break_specifier, "prec1")) {
+        DBUG_EXECUTE ("PREC", NOTE (("step 2: transform fundefs/aps\n")));
         act_tab = precomp2_tab;
+        info = MakeInfo ();
         syntax_tree = Trav (syntax_tree, info);
+        info = FreeTree (info);
 
         if (strcmp (break_specifier, "prec2")) {
+            DBUG_EXECUTE ("PREC", NOTE (("step 3: flatten code\n")));
             act_tab = precomp3_tab;
+            info = MakeInfo ();
             syntax_tree = Trav (syntax_tree, info);
+            info = FreeTree (info);
+
+            if (strcmp (break_specifier, "prec3")) {
+                DBUG_EXECUTE ("PREC", NOTE (("step 4: rename identifiers\n")));
+                act_tab = precomp4_tab;
+                info = MakeInfo ();
+                syntax_tree = Trav (syntax_tree, info);
+                info = FreeTree (info);
+            }
         }
     }
 
-    info = FreeTree (info);
-
     DBUG_RETURN (syntax_tree);
+}
+
+/*
+ *
+ * Other exported functions
+ *
+ */
+
+/******************************************************************************
+ *
+ * function:
+ *   char *ObjInitFunctionName( bool before_rename)
+ *
+ * description:
+ *   Returns new allocated string with objinitfunction name
+ *
+ * parameters:
+ *   uses global variable modulename!
+ *
+ ******************************************************************************/
+
+char *
+ObjInitFunctionName (bool before_rename)
+{
+    char *name = "GlobalObjInit";
+    char *new_name;
+
+    DBUG_ENTER ("ObjInitFunctionName");
+
+    if (before_rename) {
+        new_name = (char *)Malloc (strlen (name) + 1);
+
+        strcpy (new_name, name);
+    } else {
+        new_name = RenameFunName (modulename, name, ST_regular, NULL);
+    }
+
+    DBUG_RETURN (new_name);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char *RenameLocalIdentifier( char *id)
+ *
+ * description:
+ *   This function renames a given local identifier name for precompiling
+ *   purposes. If the identifier has been inserted by sac2c, i.e. it starts
+ *   with an underscore, it is prefixed by SACp. Otherwise, it is prefixed
+ *   by SACl.
+ *
+ *   It also maps the name into an nt (Name Tuple) for tagged arrays.
+ *
+ ******************************************************************************/
+
+char *
+RenameLocalIdentifier (char *id)
+{
+    char *name_prefix;
+    char *new_name;
+
+    DBUG_ENTER ("RenameLocalIdentifier");
+
+    if (id[0] == '_') {
+        /*
+         * This local identifier was inserted by sac2c.
+         */
+        name_prefix = "SACp";
+        /*
+         * Here, we don't need an underscore after the prefix because the name
+         * already starts with one.
+         */
+    } else {
+        /*
+         * This local identifier originates from the source code.
+         */
+        name_prefix = "SACl_";
+    }
+
+    new_name = (char *)Malloc (sizeof (char) * (strlen (id) + strlen (name_prefix) + 1));
+    sprintf (new_name, "%s%s", name_prefix, id);
+
+    id = Free (id);
+
+    DBUG_RETURN (new_name);
 }
