@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2000/07/07 12:05:41  mab
+ * completed first version of padding-transformation :-)
+ *
  * Revision 1.9  2000/07/05 15:33:43  mab
  * with-loop completed (with-op, with-code and supporting functions)
  *
@@ -50,6 +53,12 @@
 #include "pad_transform.h"
 
 #include "my_debug.h"
+
+#define PRF_IF(n, s, x, y) x
+static char *prf_string[] = {
+#include "prf_node_info.mac"
+};
+#undef PRF_IF
 
 /*****************************************************************************
  *
@@ -157,7 +166,8 @@ PadIds (ids *arg, node *arg_info)
         INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
     } else {
         DBUG_PRINT ("APT", (" leaving unpadded: '%s''", IDS_NAME (arg)));
-        if (NODE_TYPE (IDS_VARDEC (arg)) == N_vardec) {
+        if ((NODE_TYPE (IDS_VARDEC (arg)) == N_vardec)
+            && (VARDEC_PADDED (IDS_VARDEC (arg)))) {
             IDS_VARDEC (arg) = IDS_VARDEC_NEXT (arg);
             /* do not reset PADDED-flag in arg_info */
         }
@@ -190,7 +200,7 @@ LBound (shpseg *old_shape, int dims, int current_dim)
     lbound_shape = MakeShpseg (NULL);
     for (j = 0; j < dims; j++) {
         if (j == current_dim) {
-            SHPSEG_SHAPE (lbound_shape, j) = SHPSEG_SHAPE (old_shape, j) - 1;
+            SHPSEG_SHAPE (lbound_shape, j) = SHPSEG_SHAPE (old_shape, j);
         } else {
             SHPSEG_SHAPE (lbound_shape, j) = 0;
         }
@@ -299,6 +309,7 @@ AddDummyPart (node *with_node, shpseg *old_shape, shpseg *new_shape, int dims)
  *
  * description:
  *   add dummy assignment (_apt_#=0;) as first code block to with-node
+ *   returns pointer to newly inserted vardec
  *
  *****************************************************************************/
 
@@ -327,7 +338,7 @@ AddDummyCode (node *with_node)
 
     /* append new vardec-node */
     DBUG_ASSERT ((TYPES_NEXT (ID_TYPE (NCODE_CEXPR (NWITH_CODE (with_node)))) == NULL),
-                 "single type expected");
+                 " single type expected");
     newvardec_type = DupTypes (ID_TYPE (NCODE_CEXPR (NWITH_CODE (with_node))));
     TYPES_NAME (newvardec_type) = TmpVar ();
     VARDEC_NEXT (vardec_node)
@@ -335,7 +346,33 @@ AddDummyCode (node *with_node)
     vardec_node = VARDEC_NEXT (vardec_node);
 
     /* add dummy code */
-    expr_node = MakeNum (0);
+    switch (TYPES_BASETYPE (newvardec_type)) {
+
+    case T_int:
+        expr_node = MakeNum (0);
+        break;
+
+    case T_double:
+        expr_node = MakeDouble (0.0);
+        break;
+
+    case T_float:
+        expr_node = MakeFloat (0.0);
+        break;
+
+    case T_bool:
+        expr_node = MakeBool (FALSE);
+        break;
+
+    case T_char:
+        expr_node = MakeChar ('\0');
+        break;
+
+    default:
+        DBUG_ASSERT (FALSE, " unsupported type in with-loop!");
+        break;
+    }
+
     ids_attrib = MakeIds (StringCopy (VARDEC_NAME (vardec_node)), NULL, ST_regular);
     IDS_VARDEC (ids_attrib) = vardec_node;
     instr_node = MakeLet (expr_node, ids_attrib);
@@ -383,15 +420,13 @@ InsertWithLoopGenerator (types *oldtype, types *newtype, node *with_node)
         if (SHPSEG_SHAPE (shape_diff, i) > 0) {
             different = TRUE;
         }
-        DBUG_ASSERT ((SHPSEG_SHAPE (shape_diff, i) >= 0), "negative shape difference");
+        DBUG_ASSERT ((SHPSEG_SHAPE (shape_diff, i) >= 0), " negative shape difference");
     }
 
     if (different) {
 
         /* add code block */
         assignment_vardec = AddDummyCode (with_node);
-
-        /* @@@ WHERE TO LINK assignment_vardec ??? */
 
         /* add nodes to part */
         with_node = AddDummyPart (with_node, TYPES_SHPSEG (oldtype),
@@ -470,6 +505,7 @@ APTvardec (node *arg_node, node *arg_info)
     new_type = PIgetNewType (VARDEC_TYPE (arg_node));
     if (new_type != NULL) {
         /* found shape to be padded */
+        VARDEC_NEXT (original_vardec) = VARDEC_NEXT (arg_node);
         VARDEC_TYPE (arg_node) = new_type;
         DBUG_PRINT ("APT", (" padding: %s -> %s__PAD", VARDEC_NAME (arg_node),
                             VARDEC_NAME (arg_node)));
@@ -485,7 +521,6 @@ APTvardec (node *arg_node, node *arg_info)
         }
 
     } else {
-        VARDEC_NEXT (original_vardec) = NULL;
         FreeVardec (original_vardec, arg_info);
         VARDEC_PADDED (arg_node) = FALSE;
 
@@ -495,6 +530,63 @@ APTvardec (node *arg_node, node *arg_info)
     }
 
     DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APTassign(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   insert new assignments before itself, if necessarry
+ *   traverse next assignment
+ *
+ *****************************************************************************/
+
+node *
+APTassign (node *arg_node, node *arg_info)
+{
+
+    node *tmp;
+    node *new_assigns;
+    node *new_node;
+
+    DBUG_ENTER ("APTassign");
+
+    DBUG_PRINT ("APT", ("assign-node detected"));
+
+    INFO_APT_ASSIGNMENTS (arg_info) = NULL;
+
+    DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), " unexpected empty INSTR!");
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
+    /* save new assigments */
+    new_assigns = INFO_APT_ASSIGNMENTS (arg_info);
+
+    /* traverse next assignment */
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    /* APTassign will insert assignments stored in INFO_APT_ASSIGNMENTS
+     * before the current assignment
+     *
+     * This is not needed yet, but maybe we need it later to insert
+     * code for unpadding
+     */
+
+    if (new_assigns != NULL) {
+        tmp = new_assigns;
+        while (ASSIGN_NEXT (tmp) != NULL) {
+            tmp = ASSIGN_NEXT (tmp);
+        }
+        ASSIGN_NEXT (tmp) = arg_node;
+        new_node = new_assigns;
+    } else {
+        new_node = arg_node;
+    }
+
+    DBUG_RETURN (new_node);
 }
 
 /*****************************************************************************
@@ -549,11 +641,14 @@ APTwith (node *arg_node, node *arg_info)
     INFO_APT_WITH (arg_info) = arg_node;
 
     /* check withop, if with-loop needs to be padded */
+    DBUG_ASSERT ((NWITH_WITHOP (arg_node) != NULL), " unexpected empty WITHOP!");
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
-    /* arg_info passes check result to part- and code-nodes */
+    /* @@@ arg_info passes check result to part- and code-nodes */
+    DBUG_ASSERT ((NWITH_PART (arg_node) != NULL), " unexpected empty PART!");
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
 
+    DBUG_ASSERT ((NWITH_CODE (arg_node) != NULL), " unexpected empty CODE!");
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
     /* EXPRESSION_PADDED is returned to upper function */
@@ -639,28 +734,37 @@ APTcode (node *arg_node, node *arg_info)
 {
 
     bool rhs_padded;
+    bool save_padded_state;
 
     DBUG_ENTER ("APTcode");
 
     DBUG_PRINT ("APT", ("code-node detected"));
 
+    save_padded_state = INFO_APT_EXPRESSION_PADDED (arg_info);
+
     /* traverse code block */
+    DBUG_ASSERT ((NCODE_CBLOCK (arg_node) != NULL), " unexpected empty CBLOCK!");
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
     rhs_padded = INFO_APT_EXPRESSION_PADDED (arg_info);
 
-    /* pad ids-attribute, if necessarry */
-    arg_info = PadIds (NCODE_CEXPR (arg_node), arg_info);
+    /* traverse id-node (lvalue of assignment) */
+    DBUG_ASSERT ((NCODE_CEXPR (arg_node) != NULL), " unexpected empty CEXPR!");
+    NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
 
     /*
      * enable for consistency checking
      * requires shape information from pad_infer!
-     * @@@
-     * DBUG_ASSERT((!rhs_padded&&INFO_APT_EXPRESSION_PADDED(arg_info))," padded lvalue
-     * does not match unpadded rvalue!");
-     */
+     * @@@ */
+    DBUG_ASSERT (((!INFO_APT_EXPRESSION_PADDED (arg_info)) || rhs_padded),
+                 " padding of lvalue does not match rvalue!");
+    /* */
 
-    /* traverse following code blocks */
-    NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    /* traverse following code blocks (rvalue of assignment) */
+    if (NCODE_NEXT (arg_node) != NULL) {
+        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    }
+
+    INFO_APT_EXPRESSION_PADDED (arg_info) = save_padded_state;
 
     DBUG_RETURN (arg_node);
 }
@@ -682,7 +786,7 @@ APTwithop (node *arg_node, node *arg_info)
     shpseg *shape;
     int dim;
     int simpletype;
-    types *oldtype;
+    types *oldtype = NULL;
     types *newtype = NULL;
 
     DBUG_ENTER ("APTwithop");
@@ -696,6 +800,8 @@ APTwithop (node *arg_node, node *arg_info)
 
     switch (NWITHOP_TYPE (arg_node)) {
     case WO_genarray:
+        DBUG_PRINT ("APT", (" genarray-loop"));
+
         shape = Array2Shpseg (NWITHOP_SHAPE (arg_node));
         /* constant array has dim=1
          * => number of elements is stored in shpseg[0]
@@ -714,7 +820,6 @@ APTwithop (node *arg_node, node *arg_info)
 
         if (newtype != NULL) {
             /* apply padding (genarray-specific)*/
-            INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
 
             /* pad shape of new array specified in NWITHOP_SHAPE (pointing to array-node)
              */
@@ -722,27 +827,34 @@ APTwithop (node *arg_node, node *arg_info)
             FreeNode (NWITHOP_SHAPE (arg_node));
             NWITHOP_SHAPE (arg_node)
               = Shpseg2Array (TYPES_SHPSEG (newtype), TYPES_DIM (newtype));
+
+            INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
         }
 
         break;
 
     case WO_modarray:
 
-        oldtype = DupTypes (ID_TYPE (NWITHOP_ARRAY (arg_node)));
-        newtype = PIgetNewType (DupTypes (oldtype));
+        DBUG_PRINT ("APT", (" modarray-loop"));
 
-        if (newtype != NULL) {
+        if (ID_PADDED (NWITHOP_ARRAY (arg_node))) {
             /* apply padding (modarray-specific)*/
-            INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
+
+            /* attention: id-node already points to padded shape! */
+            newtype = DupTypes (ID_TYPE (NWITHOP_ARRAY (arg_node)));
+            oldtype = PIgetOldType (DupTypes (newtype));
 
             /* pad array referenced by NWITHOP_ARRAY (pointing to id-node)*/
+            DBUG_ASSERT ((NWITHOP_ARRAY (arg_node) != NULL), " unexpected empty ARRAY!");
             NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
+
+            INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
         }
 
         break;
 
     default:
-        DBUG_ASSERT (FALSE, "unsupported withop-type");
+        DBUG_ASSERT (FALSE, " unsupported withop-type");
         break;
     }
 
@@ -821,6 +933,7 @@ APTexprs (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("APT", ("exprs-node detected"));
 
+    DBUG_ASSERT ((EXPRS_EXPR (arg_node) != NULL), " unexpected empty EXPR!");
     EXPRS_EXPR (arg_node) = Trav (EXPRS_EXPR (arg_node), arg_info);
     if (EXPRS_NEXT (arg_node) != NULL) {
         EXPRS_NEXT (arg_node) = Trav (EXPRS_NEXT (arg_node), arg_info);
@@ -859,7 +972,8 @@ APTid (node *arg_node, node *arg_info)
     } else {
         /* if not padded, update pointer to vardec */
         DBUG_PRINT ("APT", (" leaving unpadded: '%s''", ID_NAME (arg_node)));
-        if (NODE_TYPE (ID_VARDEC (arg_node)) == N_vardec) {
+        if ((NODE_TYPE (ID_VARDEC (arg_node)) == N_vardec)
+            && (VARDEC_PADDED (ID_VARDEC (arg_node)))) {
             ID_VARDEC (arg_node) = ID_VARDEC_NEXT (arg_node);
             INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
         }
@@ -877,7 +991,7 @@ APTid (node *arg_node, node *arg_info)
  *   node *APTprf(node *arg_node, node *arg_info)
  *
  * description:
- *   not really supported yet => PRFs return unpadded results only!
+ *   only some functions supported yet
  *
  *****************************************************************************/
 
@@ -887,16 +1001,67 @@ APTprf (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("APTprf");
 
-    DBUG_PRINT ("APT", ("prf-node detected"));
+    DBUG_PRINT ("APT", ("prf-node detected: '%s'", prf_string[PRF_PRF (arg_node)]));
 
-    /* no support for primitive functions yet
-     * => every argument of a prf has to be in unpadded shape!!!
-     * some exceptions may be handled later */
+    /* only some PRFs may be padded successfully (without conversion) */
 
-    /* therefore every result will also have an unpadded shape */
-    INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
+    switch (PRF_PRF (arg_node)) {
 
-    /* do not traverse sons */
+    case F_psi:
+        DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL), " psi() has empty argmuent list!");
+        /* traverse arguments to apply padding */
+        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+
+        /* even if PRF_ARGS is padded, the result of PRF will have an
+         * unpadded shape => return FALSE */
+        INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
+
+        break;
+
+    case F_dim:
+        DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL), " dim() has empty argmuent list!");
+        /* traverse arguments to apply padding */
+        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+
+        /* even if PRF_ARGS is padded, the result of PRF will have an
+         * unpadded shape => return FALSE */
+        INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
+
+        break;
+
+    case F_shape:
+        DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL), " shape() has empty argmuent list!");
+        /* check, if argument has paddable shape */
+
+        if (ID_PADDED (PRF_ARG1 (arg_node))) {
+            /* substitute paddable argument with reference to constant vector
+               containing padded shape */
+            types *old_type;
+
+            old_type
+              = PIgetOldType (DupTypes (VARDEC_TYPE (ID_VARDEC (PRF_ARG1 (arg_node)))));
+            arg_node = Shpseg2Array (TYPES_SHPSEG (old_type), TYPES_DIM (old_type));
+            Free (old_type);
+        }
+        /* even if PRF_ARG1 is padded, the result of PRF will have an
+         * unpadded shape => return FALSE */
+        INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
+
+        break;
+
+    default:
+
+        /* results of unsupported functions have unpadded shape */
+
+        /* do not traverse sons */
+
+        DBUG_PRINT ("APT", (" unsupported PRF '%s'!", prf_string[PRF_PRF (arg_node)]));
+
+        INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
+        break;
+    }
+
+    /* enable consistency checking in let-nodes, etc. !!! */
 
     DBUG_RETURN (arg_node);
 }
@@ -921,6 +1086,8 @@ APTfundef (node *arg_node, node *arg_info)
                   if (FUNDEF_NAME (arg_node) != NULL) {
                       DBUG_PRINT ("APT", (" trav fundef: %s", FUNDEF_NAME (arg_node)));
                   } else { DBUG_PRINT ("APT", (" trav fundef: (NULL)")); });
+
+    INFO_APT_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
@@ -965,8 +1132,7 @@ APTblock (node *arg_node, node *arg_info)
         DBUG_PRINT ("APT", (" no vardec"));
     }
 
-    DBUG_ASSERT ((BLOCK_INSTR (arg_node) != NULL),
-                 " block without instructions found!!!");
+    DBUG_ASSERT ((BLOCK_INSTR (arg_node) != NULL), " unexpected empty INSTR!");
     BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -1010,6 +1176,7 @@ APTlet (node *arg_node, node *arg_info)
      * right hand side may be an ap refering to fundef without a body,
      * prf, array, constant (num, ...) or a variable with unpadded shape */
 
+    INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
     /* manually traverse ids */
     ids_ptr = LET_IDS (arg_node);
     while (ids_ptr != NULL) {
@@ -1020,10 +1187,10 @@ APTlet (node *arg_node, node *arg_info)
     /*
      * enable for consistency checking
      * requires shape information from pad_infer!
-     * @@@
-     * DBUG_ASSERT((!rhs_padded&&INFO_APT_EXPRESSION_PADDED(arg_info))," padded lvalue
-     * does not match unpadded rvalue!");
-     */
+     * @@@ */
+    DBUG_ASSERT (((!INFO_APT_EXPRESSION_PADDED (arg_info)) || rhs_padded),
+                 " padding of lvalue does not match rvalue!");
+    /* */
 
     DBUG_RETURN (arg_node);
 }
