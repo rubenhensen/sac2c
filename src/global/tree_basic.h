@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.43  1999/07/30 13:50:30  jhs
+ * Deleted INFO_SPMDT_FIRSTOUT.
+ *
  * Revision 2.42  1999/07/29 07:30:53  cg
  * Added new access macro ASSIGN_CF to hold temporary sub assign
  * chains during constant folding. This was necessary to make a
@@ -2259,7 +2262,6 @@ extern node *MakePragma ();
  ***    int        INFO_SPMD_MT
  ***
  ***    node*      ACTUAL_FUNDEF
- ***    DFMmask_t  INFO_SPMDT_FIRSTOUT
  ***    DFMmask_t  INFO_SPMDT_RESULT
  ***    DFMmask_t  INFO_SPMDT_CHECK
  ***    int*       INFO_SPMDT_COUTERS
@@ -2388,9 +2390,8 @@ extern node *MakeInfo ();
 #define INFO_SPMD_MT(n) (n->counter)
 
 #define INFO_SPMDT_ACTUAL_FUNDEF(n) (n->node[0])
-#define INFO_SPMDT_FIRSTOUT(n) (n->dfmask[0])
-#define INFO_SPMDT_RESULT(n) (n->dfmask[1])
-#define INFO_SPMDT_CHECK(n) (n->dfmask[2])
+#define INFO_SPMDT_RESULT(n) (n->dfmask[0])
+#define INFO_SPMDT_CHECK(n) (n->dfmask[1])
 #define INFO_SPMDT_COUNTERS(n) ((int *)(n->node[0]))
 
 #define INFO_SYNCO_THISASSIGN(n) (n->node[0])
