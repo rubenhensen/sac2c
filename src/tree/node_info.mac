@@ -1,5 +1,10 @@
 /*
+ *
  * $Log$
+ * Revision 3.12  2001/01/29 16:07:04  dkr
+ * PrintWLstrideVar and PrintWLstride replaced by PrintWLstridex
+ * PrintWLgridVar and PrintWLgrid replaced by PrintWLgridx
+ *
  * Revision 3.11  2001/01/24 23:39:42  dkr
  * PrintWLseg and PrintWLsegVar replaced by PrintWLsegx
  * PrintWLblock and PrintWLublock replaced by PrintWLxblock
@@ -228,6 +233,7 @@
  *
  * Revision 1.3  1994/11/10  15:44:34  sbs
  * RCS-header inserted
+ *
  */
 
 /******************************************************************************
@@ -1740,7 +1746,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
-  NIF (N_WLstride, "N_WLstride", TravSons, TravSons, PrintWLstride, TravSons, TravSons,
+  NIF (N_WLstride, "N_WLstride", TravSons, TravSons, PrintWLstridex, TravSons, TravSons,
        TravSons, TravSons, FreeWLstride, TravSons, TravSons, COMPWLstride, TravSons,
        DupWLstride, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -1759,7 +1765,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
-  NIF (N_WLgrid, "N_WLgrid", TravSons, TravSons, PrintWLgrid, TravSons, TravSons,
+  NIF (N_WLgrid, "N_WLgrid", TravSons, TravSons, PrintWLgridx, TravSons, TravSons,
        TravSons, TravSons, FreeWLgrid, TravSons, TravSons, COMPWLgrid, TravSons,
        DupWLgrid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
@@ -1797,7 +1803,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
-  NIF (N_WLstrideVar, "N_WLstrideVar", TravSons, TravSons, PrintWLstrideVar, TravSons,
+  NIF (N_WLstrideVar, "N_WLstrideVar", TravSons, TravSons, PrintWLstridex, TravSons,
        TravSons, TravSons, TravSons, FreeWLstrideVar, TravSons, TravSons, COMPWLstrideVar,
        TravSons, DupWLstrideVar, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons,
@@ -1817,7 +1823,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 5),
 
-  NIF (N_WLgridVar, "N_WLgridVar", TravSons, TravSons, PrintWLgridVar, TravSons, TravSons,
+  NIF (N_WLgridVar, "N_WLgridVar", TravSons, TravSons, PrintWLgridx, TravSons, TravSons,
        TravSons, TravSons, FreeWLgridVar, TravSons, TravSons, COMPWLgridVar, TravSons,
        DupWLgridVar, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 

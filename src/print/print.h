@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/01/29 16:07:10  dkr
+ * PrintWLstrideVar and PrintWLstride replaced by PrintWLstridex
+ * PrintWLgridVar and PrintWLgrid replaced by PrintWLgridx
+ *
  * Revision 3.5  2001/01/24 23:41:20  dkr
  * PrintWLseg and PrintWLsegVar replaced by PrintWLsegx
  * PrintWLblock and PrintWLublock replaced by PrintWLxblock
@@ -225,10 +229,8 @@ extern node *PrintNwithop (node *arg_node, node *arg_info);
 extern node *PrintNwith2 (node *arg_node, node *arg_info);
 extern node *PrintWLsegx (node *arg_node, node *arg_info);
 extern node *PrintWLxblock (node *arg_node, node *arg_info);
-extern node *PrintWLstride (node *arg_node, node *arg_info);
-extern node *PrintWLstrideVar (node *arg_node, node *arg_info);
-extern node *PrintWLgrid (node *arg_node, node *arg_info);
-extern node *PrintWLgridVar (node *arg_node, node *arg_info);
+extern node *PrintWLstridex (node *arg_node, node *arg_info);
+extern node *PrintWLgridx (node *arg_node, node *arg_info);
 
 extern node *PrintCWrapper (node *arg_node, node *arg_info);
 
