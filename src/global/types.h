@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/06 13:19:10  nmw
+ * type cmptree_t added
+ *
  * Revision 3.3  2001/02/12 17:07:33  nmw
  * avis attribute in ids structure added
  *
@@ -247,6 +250,8 @@ typedef enum { ADIR_read, ADIR_write } accessdir_t;
 typedef enum { NO_CLSCONV, TO_CLASS, FROM_CLASS } clsconv_t;
 
 typedef enum { LOC_usr, LOC_stdlib } locationtype;
+
+typedef enum { CMPT_EQ, CMPT_NEQ, CMPT_UKNWN } cmptree_t;
 
 /*
  * new nodes for yacc and the syntax tree
