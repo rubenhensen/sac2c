@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/11/13 21:00:06  dkr
+ * flag SAC_FOR_OSX_MAC added
+ *
  * Revision 3.5  2001/05/22 12:31:20  nmw
  * ; after SAC_HM_DEFINE_INITIAL_THREAD_STATUS( ) eliminated since it either
  * extends to nothing or to a declaration ended by ; !
@@ -110,6 +113,10 @@ typedef long int SAC_HM_size_unit_t;
 /* typedef unsigned int size_t;  */
 
 #elif defined(SAC_FOR_OSF_ALPHA)
+#include <sys/types.h>
+/* typedef unsigned int size_t;  */
+
+#elif defined(SAC_FOR_OSX_MAC)
 #include <sys/types.h>
 /* typedef unsigned int size_t;  */
 
