@@ -1,8 +1,11 @@
 /*
  *  $Log$
- *  Revision 1.4  1995/02/13 17:54:50  hw
- *  added FT for primitive function NOT
+ *  Revision 1.5  1995/02/20 08:54:20  hw
+ *  added FT for primitive function F_and , F_or
  *
+;; Revision 1.4  1995/02/13  17:54:50  hw
+;; added FT for primitive function NOT
+;;
 ;; Revision 1.3  1995/02/09  11:08:58  hw
 ;; changed and added FT`s
 ;;
@@ -45,3 +48,5 @@ FT (F_reshape, VxA_Ar, F_reshape)
 FT (F_cat, SxAxA_A, F_cat)
 FT (F_rotate, SxSxA_A, F_rotate)
 FT (F_not, B_B, F_not)
+FT (F_and, BxB_B, F_and)
+FT (F_or, BxB_B, F_or)
