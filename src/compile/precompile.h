@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/09/11 23:14:41  dkr
+ * PREC4ap added
+ *
  * Revision 3.13  2002/07/15 08:53:30  dkr
  * PREC2ap added
  *
@@ -108,6 +111,7 @@ extern node *PREC4arg (node *arg_node, node *arg_info);
 extern node *PREC4vardec (node *arg_node, node *arg_info);
 extern node *PREC4let (node *arg_node, node *arg_info);
 extern node *PREC4return (node *arg_node, node *arg_info);
+extern node *PREC4ap (node *arg_node, node *arg_info);
 extern node *PREC4icm (node *arg_node, node *arg_info);
 extern node *PREC4array (node *arg_node, node *arg_info);
 extern node *PREC4id (node *arg_node, node *arg_info);
