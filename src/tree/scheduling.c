@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2002/07/15 14:44:38  dkr
+ * function signatures modified
+ *
  * Revision 3.33  2001/11/21 13:43:57  dkr
  * print routines modified
  *
@@ -924,7 +927,7 @@ CompileSchedulingArgs (int seg_id, sched_t *sched, node *args)
 /******************************************************************************
  *
  * function:
- *   node *CompileConstSegSchedulingArgs( char *wl_name, node *wlseg,
+ *   node *CompileConstSegSchedulingArgs( ids *wl_ids, node *wlseg,
  *                                        sched_t *sched)
  *
  * description:
@@ -936,7 +939,7 @@ CompileSchedulingArgs (int seg_id, sched_t *sched, node *args)
  ******************************************************************************/
 
 static node *
-CompileConstSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
+CompileConstSegSchedulingArgs (ids *wl_ids, node *wlseg, sched_t *sched)
 {
     node *index, *args;
     int d;
@@ -959,16 +962,14 @@ CompileConstSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
 
     for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
         index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
-                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_name,
-                                     TRUE, TRUE);
+                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal supremum found!");
         args = MakeExprs (index, args);
     }
 
     for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
         index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
-                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_name,
-                                     TRUE, TRUE);
+                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal infimum found!");
         args = MakeExprs (index, args);
     }
@@ -981,7 +982,7 @@ CompileConstSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
 /******************************************************************************
  *
  * function:
- *   node *CompileVarSegSchedulingArgs( char *wl_name, node *wlseg,
+ *   node *CompileVarSegSchedulingArgs( ids *wl_ids, node *wlseg,
  *                                      sched_t *sched)
  *
  * description:
@@ -992,7 +993,7 @@ CompileConstSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
  ******************************************************************************/
 
 static node *
-CompileVarSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
+CompileVarSegSchedulingArgs (ids *wl_ids, node *wlseg, sched_t *sched)
 {
     node *index, *args;
     int d;
@@ -1011,16 +1012,14 @@ CompileVarSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
 
     for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
         index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
-                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_name,
-                                     TRUE, TRUE);
+                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal supremum found!");
         args = MakeExprs (index, args);
     }
 
     for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
         index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
-                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_name,
-                                     TRUE, TRUE);
+                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal infimum found!");
         args = MakeExprs (index, args);
     }
@@ -1033,7 +1032,7 @@ CompileVarSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
 /******************************************************************************
  *
  * function:
- *   node *CompileScheduling( int seg_id, char *wl_name, sched_t *sched,
+ *   node *CompileScheduling( int seg_id, ids *wl_ids, sched_t *sched,
  *                            node *arg_node, char *suffix)
  *
  * description:
@@ -1046,8 +1045,7 @@ CompileVarSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
  ******************************************************************************/
 
 static node *
-CompileScheduling (int seg_id, char *wl_name, sched_t *sched, node *arg_node,
-                   char *suffix)
+CompileScheduling (int seg_id, ids *wl_ids, sched_t *sched, node *arg_node, char *suffix)
 {
     node *icm, *general_args;
     char *name;
@@ -1065,11 +1063,11 @@ CompileScheduling (int seg_id, char *wl_name, sched_t *sched, node *arg_node,
 
     switch (NODE_TYPE (arg_node)) {
     case N_WLseg:
-        general_args = CompileConstSegSchedulingArgs (wl_name, arg_node, sched);
+        general_args = CompileConstSegSchedulingArgs (wl_ids, arg_node, sched);
         break;
 
     case N_WLsegVar:
-        general_args = CompileVarSegSchedulingArgs (wl_name, arg_node, sched);
+        general_args = CompileVarSegSchedulingArgs (wl_ids, arg_node, sched);
         break;
 
     default:
@@ -1085,13 +1083,13 @@ CompileScheduling (int seg_id, char *wl_name, sched_t *sched, node *arg_node,
 /******************************************************************************
  *
  * function:
- *   node *SCHCompileSchedulingBegin( int seg_id, char *wl_name, sched_t *sched,
+ *   node *SCHCompileSchedulingBegin( int seg_id, ids *wl_ids, sched_t *sched,
  *                                    node *arg_node)
  *
- *   node *SCHCompileSchedulingEnd( int seg_id, char *wl_name, sched_t *sched,
+ *   node *SCHCompileSchedulingEnd( int seg_id, ids *wl_ids, sched_t *sched,
  *                                  node *arg_node)
  *
- *   node *SCHCompileSchedulingInit( int seg_id, char *wl_name, sched_t *sched,
+ *   node *SCHCompileSchedulingInit( int seg_id, ids *wl_ids, sched_t *sched,
  *                                   node *arg_node)
  *
  * description:
@@ -1109,37 +1107,37 @@ CompileScheduling (int seg_id, char *wl_name, sched_t *sched, node *arg_node,
  ******************************************************************************/
 
 node *
-SCHCompileSchedulingBegin (int seg_id, char *wl_name, sched_t *sched, node *arg_node)
+SCHCompileSchedulingBegin (int seg_id, ids *wl_ids, sched_t *sched, node *arg_node)
 {
     node *ret_node;
 
     DBUG_ENTER ("SCHCompileSchedulingBegin");
 
-    ret_node = CompileScheduling (seg_id, wl_name, sched, arg_node, "BEGIN");
+    ret_node = CompileScheduling (seg_id, wl_ids, sched, arg_node, "BEGIN");
 
     DBUG_RETURN (ret_node);
 }
 
 node *
-SCHCompileSchedulingEnd (int seg_id, char *wl_name, sched_t *sched, node *arg_node)
+SCHCompileSchedulingEnd (int seg_id, ids *wl_ids, sched_t *sched, node *arg_node)
 {
     node *ret_node;
 
     DBUG_ENTER ("SCHCompileSchedulingEnd");
 
-    ret_node = CompileScheduling (seg_id, wl_name, sched, arg_node, "END");
+    ret_node = CompileScheduling (seg_id, wl_ids, sched, arg_node, "END");
 
     DBUG_RETURN (ret_node);
 }
 
 node *
-SCHCompileSchedulingInit (int seg_id, char *wl_name, sched_t *sched, node *arg_node)
+SCHCompileSchedulingInit (int seg_id, ids *wl_ids, sched_t *sched, node *arg_node)
 {
     node *ret_node;
 
     DBUG_ENTER ("SCHCompileSchedulingInit");
 
-    ret_node = CompileScheduling (seg_id, wl_name, sched, arg_node, "INIT");
+    ret_node = CompileScheduling (seg_id, wl_ids, sched, arg_node, "INIT");
 
     DBUG_RETURN (ret_node);
 }
@@ -1447,8 +1445,9 @@ CompileSchedulingWithTaskselArgs (int seg_id, sched_t *sched, tasksel_t *tasksel
     if (sched != NULL) {
 
         if (tasksel != NULL) {
-            for (i = tasksel->dims; i < tasksel->num_args; i++)
+            for (i = tasksel->dims; i < tasksel->num_args; i++) {
                 args = MakeExprs (MakeNum (tasksel->arg[i]), args);
+            }
 
             args = MakeExprs (MakeNum (tasksel->num_args - tasksel->dims), args);
             args = MakeExprs (MakeNum (tasksel->dims), args);
@@ -1488,7 +1487,7 @@ CompileSchedulingWithTaskselArgs (int seg_id, sched_t *sched, tasksel_t *tasksel
 /******************************************************************************
  *
  * function:
- *   node *CompileConstSegSchedulingWithTaskselArgs( char *wl_name, node *wlseg,
+ *   node *CompileConstSegSchedulingWithTaskselArgs( ids *wl_ids, node *wlseg,
  *                                        sched_t *sched, tasksel_t *tasksel)
  *
  * description:
@@ -1501,7 +1500,7 @@ CompileSchedulingWithTaskselArgs (int seg_id, sched_t *sched, tasksel_t *tasksel
  ******************************************************************************/
 
 static node *
-CompileConstSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *sched,
+CompileConstSegSchedulingWithTaskselArgs (ids *wl_ids, node *wlseg, sched_t *sched,
                                           tasksel_t *tasksel)
 {
     node *index, *args;
@@ -1517,8 +1516,10 @@ CompileConstSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *s
     if (sched != NULL) {
 
         if (tasksel != NULL) {
-            /* creating a int vararg-vektor, where for each taskselector dimension
-               1 is set, and for all other 0*/
+            /*
+             * creating a int vararg-vektor,
+             * where for each taskselector dimension 1 is set, and for all other 0
+             */
 
             pos = tasksel->dims - 1;
             for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
@@ -1544,16 +1545,14 @@ CompileConstSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *s
 
     for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
         index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
-                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_name,
-                                     TRUE, TRUE);
+                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal supremum found!");
         args = MakeExprs (index, args);
     }
 
     for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
         index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
-                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_name,
-                                     TRUE, TRUE);
+                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_ids);
 
         DBUG_ASSERT ((index != NULL), "illegal infimum found!");
         args = MakeExprs (index, args);
@@ -1567,7 +1566,7 @@ CompileConstSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *s
 /******************************************************************************
  *
  * function:
- *   node *CompileVarSegSchedulingWithTaskselArgs( char *wl_name, node *wlseg,
+ *   node *CompileVarSegSchedulingWithTaskselArgs( ids *wl_ids, node *wlseg,
  *                                      sched_t *sched, tasksel_t *tasksel)
  *
  * description:
@@ -1579,7 +1578,7 @@ CompileConstSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *s
  ******************************************************************************/
 
 static node *
-CompileVarSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *sched,
+CompileVarSegSchedulingWithTaskselArgs (ids *wl_ids, node *wlseg, sched_t *sched,
                                         tasksel_t *tasksel)
 {
     node *index, *args;
@@ -1620,16 +1619,14 @@ CompileVarSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *sch
 
     for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
         index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
-                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_name,
-                                     TRUE, TRUE);
+                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal supremum found!");
         args = MakeExprs (index, args);
     }
 
     for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
         index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
-                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_name,
-                                     TRUE, TRUE);
+                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal infimum found!");
         args = MakeExprs (index, args);
     }
@@ -1642,7 +1639,7 @@ CompileVarSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *sch
 /******************************************************************************
  *
  * function:
- *   node *CompileSchedulingWithTasksel( int seg_id, char *wl_name,
+ *   node *CompileSchedulingWithTasksel( int seg_id, ids *wl_ids,
  *                                       sched_t *sched,tasksel_t *tasksel,
  *                                       node *arg_node, char *suffix)
  *
@@ -1656,8 +1653,8 @@ CompileVarSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *sch
  ******************************************************************************/
 
 static node *
-CompileSchedulingWithTasksel (int seg_id, char *wl_name, sched_t *sched,
-                              tasksel_t *tasksel, node *arg_node, char *suffix)
+CompileSchedulingWithTasksel (int seg_id, ids *wl_ids, sched_t *sched, tasksel_t *tasksel,
+                              node *arg_node, char *suffix)
 {
     node *icm, *general_args;
     char *name;
@@ -1676,12 +1673,12 @@ CompileSchedulingWithTasksel (int seg_id, char *wl_name, sched_t *sched,
     switch (NODE_TYPE (arg_node)) {
     case N_WLseg:
         general_args
-          = CompileConstSegSchedulingWithTaskselArgs (wl_name, arg_node, sched, tasksel);
+          = CompileConstSegSchedulingWithTaskselArgs (wl_ids, arg_node, sched, tasksel);
         break;
 
     case N_WLsegVar:
         general_args
-          = CompileVarSegSchedulingWithTaskselArgs (wl_name, arg_node, sched, tasksel);
+          = CompileVarSegSchedulingWithTaskselArgs (wl_ids, arg_node, sched, tasksel);
         break;
 
     default:
@@ -1698,15 +1695,15 @@ CompileSchedulingWithTasksel (int seg_id, char *wl_name, sched_t *sched,
 /******************************************************************************
  *
  * function:
- *   node *SCHCompileSchedulingWithTaskselBegin( int seg_id, char *wl_name,
+ *   node *SCHCompileSchedulingWithTaskselBegin( int seg_id, ids *wl_ids,
  *                                      sched_t *sched, tasksel_t *tasksel,
  *                                      node *arg_node)
  *
- *   node *SCHCompileSchedulingWithTaskselEnd( int seg_id, char *wl_name,
+ *   node *SCHCompileSchedulingWithTaskselEnd( int seg_id, ids *wl_ids,
  *                                   sched_t *sched,  tasksel_t *tasksel,
  *                                   node *arg_node)
  *
- *   node *SCHCompileSchedulingWithTaskselInit( int seg_id, char *wl_name,
+ *   node *SCHCompileSchedulingWithTaskselInit( int seg_id, ids *wl_ids,
  *                                    sched_t *sched,  tasksel_t *tasksel,
  *                                    node *arg_node)
  *
@@ -1726,7 +1723,7 @@ CompileSchedulingWithTasksel (int seg_id, char *wl_name, sched_t *sched,
  ******************************************************************************/
 
 node *
-SCHCompileSchedulingWithTaskselBegin (int seg_id, char *wl_name, sched_t *sched,
+SCHCompileSchedulingWithTaskselBegin (int seg_id, ids *wl_ids, sched_t *sched,
                                       tasksel_t *tasksel, node *arg_node)
 {
     node *ret_node;
@@ -1734,13 +1731,13 @@ SCHCompileSchedulingWithTaskselBegin (int seg_id, char *wl_name, sched_t *sched,
     DBUG_ENTER ("SCHCompileSchedulingWithTaskselBegin");
 
     ret_node
-      = CompileSchedulingWithTasksel (seg_id, wl_name, sched, tasksel, arg_node, "BEGIN");
+      = CompileSchedulingWithTasksel (seg_id, wl_ids, sched, tasksel, arg_node, "BEGIN");
 
     DBUG_RETURN (ret_node);
 }
 
 node *
-SCHCompileSchedulingWithTaskselEnd (int seg_id, char *wl_name, sched_t *sched,
+SCHCompileSchedulingWithTaskselEnd (int seg_id, ids *wl_ids, sched_t *sched,
                                     tasksel_t *tasksel, node *arg_node)
 {
     node *ret_node;
@@ -1748,13 +1745,13 @@ SCHCompileSchedulingWithTaskselEnd (int seg_id, char *wl_name, sched_t *sched,
     DBUG_ENTER ("SCHCompileSchedulingWithTaskselEnd");
 
     ret_node
-      = CompileSchedulingWithTasksel (seg_id, wl_name, sched, tasksel, arg_node, "END");
+      = CompileSchedulingWithTasksel (seg_id, wl_ids, sched, tasksel, arg_node, "END");
 
     DBUG_RETURN (ret_node);
 }
 
 node *
-SCHCompileSchedulingWithTaskselInit (int seg_id, char *wl_name, sched_t *sched,
+SCHCompileSchedulingWithTaskselInit (int seg_id, ids *wl_ids, sched_t *sched,
                                      tasksel_t *tasksel, node *arg_node)
 {
     node *ret_node;
@@ -1762,7 +1759,7 @@ SCHCompileSchedulingWithTaskselInit (int seg_id, char *wl_name, sched_t *sched,
     DBUG_ENTER ("SCHCompileSchedulingWithTaskselInit");
 
     ret_node
-      = CompileSchedulingWithTasksel (seg_id, wl_name, sched, tasksel, arg_node, "INIT");
+      = CompileSchedulingWithTasksel (seg_id, wl_ids, sched, tasksel, arg_node, "INIT");
 
     DBUG_RETURN (ret_node);
 }

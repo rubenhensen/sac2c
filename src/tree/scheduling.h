@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/07/15 14:44:31  dkr
+ * function signatures modified
+ *
  * Revision 3.7  2001/06/27 14:36:22  ben
  * last routines for tasksel-pragma implemented
  *
@@ -88,11 +91,11 @@ extern void SCHCheckSuitabilityVarSeg (SCHsched_t *sched);
 extern void SCHCheckSuitabilityWithloop (SCHsched_t *sched);
 extern bool SCHAdjustmentRequired (int dim, node *wlseg);
 
-extern node *SCHCompileSchedulingBegin (int seg_id, char *wl_name, SCHsched_t sched,
+extern node *SCHCompileSchedulingBegin (int seg_id, ids *wl_ids, SCHsched_t sched,
                                         node *arg_node);
-extern node *SCHCompileSchedulingEnd (int seg_id, char *wl_name, SCHsched_t sched,
+extern node *SCHCompileSchedulingEnd (int seg_id, ids *wl_ids, SCHsched_t sched,
                                       node *arg_node);
-extern node *SCHCompileSchedulingInit (int seg_id, char *wl_name, SCHsched_t sched,
+extern node *SCHCompileSchedulingInit (int seg_id, ids *wl_ids, SCHsched_t sched,
                                        node *arg_node);
 
 typedef void *SCHtasksel_t;
@@ -104,13 +107,13 @@ extern SCHtasksel_t SCHCopyTasksel (SCHtasksel_t tasksel);
 extern SCHtasksel_t SCHPrecompileTasksel (SCHtasksel_t tasksel);
 extern void SCHPrintTasksel (FILE *outfile, SCHtasksel_t *tasksel);
 
-extern node *SCHCompileSchedulingWithTaskselBegin (int seg_id, char *wl_name,
+extern node *SCHCompileSchedulingWithTaskselBegin (int seg_id, ids *wl_ids,
                                                    SCHsched_t sched, SCHtasksel_t tasksel,
                                                    node *arg_node);
-extern node *SCHCompileSchedulingWithTaskselEnd (int seg_id, char *wl_name,
+extern node *SCHCompileSchedulingWithTaskselEnd (int seg_id, ids *wl_ids,
                                                  SCHsched_t sched, SCHtasksel_t tasksel,
                                                  node *arg_node);
-extern node *SCHCompileSchedulingWithTaskselInit (int seg_id, char *wl_name,
+extern node *SCHCompileSchedulingWithTaskselInit (int seg_id, ids *wl_ids,
                                                   SCHsched_t sched, SCHtasksel_t tasksel,
                                                   node *arg_node);
 
