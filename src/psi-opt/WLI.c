@@ -1,6 +1,8 @@
-/*    $Id$
- *
+/*
  * $Log$
+ * Revision 2.12  2000/06/23 14:17:34  dkr
+ * NWITH_COMPLEX removed
+ *
  * Revision 2.11  2000/05/30 12:35:00  dkr
  * functions for old with-loop removed
  *
@@ -61,7 +63,6 @@
  *
  * Revision 1.1  1998/03/22 18:21:43  srs
  * Initial revision
- *
  */
 
 /*******************************************************************************
@@ -189,10 +190,12 @@ CheckArrayFoldable (node *indexn, node *idn, node *arg_info)
             /* We have to assure that the access index and the generator
                index of the substitution WL have the same shape. */
             if (NWITH_FOLDABLE (substn)
-                && IDS_SHAPE (NPART_VEC (NWITH_PART (substn)), 0) == ID_SHAPE (indexn, 0))
+                && IDS_SHAPE (NPART_VEC (NWITH_PART (substn)), 0)
+                     == ID_SHAPE (indexn, 0)) {
                 NWITH_REFERENCED_FOLD (substn)++;
-            else
+            } else {
                 substn = NULL;
+            }
         }
     }
 
@@ -891,15 +894,14 @@ WLINwith (node *arg_node, node *arg_info)
     INFO_WLI_WL (arg_info) = arg_node; /* store the current node for later */
     tmpn = NWITH_CODE (arg_node);
     while (tmpn) { /* reset traversal flag for each code */
-        NCODE_FLAG (tmpn) = 0;
+        NCODE_FLAG (tmpn) = FALSE;
         tmpn = NCODE_NEXT (tmpn);
     }
     /* Attribut FOLDABLE has been set in WLT. The others are initialized here. */
     NWITH_REFERENCED (arg_node) = 0;
     NWITH_REFERENCED_FOLD (arg_node) = 0;
     NWITH_REFERENCES_FOLDED (arg_node) = 0;
-    NWITH_COMPLEX (arg_node) = 0;
-    NWITH_NO_CHANCE (arg_node) = 0;
+    NWITH_NO_CHANCE (arg_node) = FALSE;
 
     /* traverse N_Nwithop */
     NWITH_WITHOP (arg_node) = OPTTrav (NWITH_WITHOP (arg_node), arg_info, arg_node);
@@ -948,13 +950,14 @@ WLINwithop (node *arg_node, node *arg_info)
 
     arg_node = TravSons (arg_node, arg_info);
 
-    if (2 == wli_phase && WO_modarray == NWITHOP_TYPE (arg_node)
+    if ((2 == wli_phase) && (WO_modarray == NWITHOP_TYPE (arg_node))
         && NWITH_FOLDABLE (INFO_WLI_WL (arg_info))) {
         substn = ID_WL (NWITHOP_ARRAY (arg_node));
         /* we just traversed through the sons so SearchWL for NWITHOP_ARRAY
          has been called and its result is stored in ID_WL(). */
-        if (substn)
+        if (substn) {
             NWITH_REFERENCED_FOLD (LET_EXPR (ASSIGN_INSTR (substn)))++;
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1007,7 +1010,7 @@ WLINcode (node *arg_node, node *arg_info)
     /*
      * this body has been traversed and all information has been gathered.
      */
-    NCODE_FLAG (arg_node) = 1;
+    NCODE_FLAG (arg_node) = TRUE;
 
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
     NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);

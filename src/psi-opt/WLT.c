@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.16  2000/06/23 14:17:43  dkr
+ * NWITH_COMPLEX removed
+ *
  * Revision 2.15  2000/05/30 12:35:08  dkr
  * functions for old with-loop removed
  *
@@ -794,11 +797,11 @@ WLTNwith (node *arg_node, node *arg_info)
 
     tmpn = NWITH_CODE (arg_node);
     while (tmpn) { /* reset traversal flag for each code */
-        NCODE_FLAG (tmpn) = 0;
+        NCODE_FLAG (tmpn) = FALSE;
         tmpn = NCODE_NEXT (tmpn);
     }
 
-    NWITH_FOLDABLE (arg_node) = 1;
+    NWITH_FOLDABLE (arg_node) = TRUE;
 
     /*
      * traverse all parts (and implicitely bodies).
@@ -823,8 +826,9 @@ WLTNwith (node *arg_node, node *arg_info)
         /*
          * arg_node can only be an N_id, an N_array or a scalar (-node).
          */
-        if (N_id == NODE_TYPE (arg_node))
+        if (N_id == NODE_TYPE (arg_node)) {
             INFO_USE[ID_VARNO (arg_node)]++;
+        }
     } else {
         /*
          * traverse N_Nwithop
@@ -836,16 +840,18 @@ WLTNwith (node *arg_node, node *arg_info)
          */
         if (NWITH_FOLDABLE (arg_node)
             && (WO_genarray == NWITH_TYPE (arg_node)
-                || WO_modarray == NWITH_TYPE (arg_node)))
+                || WO_modarray == NWITH_TYPE (arg_node))) {
             arg_node = CreateFullPartition (arg_node, arg_info);
+        }
 
         /*
          * If withop is fold, we cannot create additional N_Npart nodes (based on what?)
          */
         if (NWITH_FOLDABLE (arg_node)
             && (WO_foldfun == NWITH_TYPE (arg_node)
-                || WO_foldprf == NWITH_TYPE (arg_node)))
+                || WO_foldprf == NWITH_TYPE (arg_node))) {
             NWITH_PARTS (arg_node) = 1;
+        }
     }
 
     /*
@@ -884,8 +890,9 @@ WLTNpart (node *arg_node, node *arg_info)
        This is just a cross reference, so just traverse, do not assign the
        resulting node.
        Only enter in case of !INFO_WLI_REPLACE() because of USE mask. */
-    if (!NCODE_FLAG (NPART_CODE (arg_node)) && !INFO_WLI_REPLACE (arg_info))
+    if ((!NCODE_FLAG (NPART_CODE (arg_node))) && (!INFO_WLI_REPLACE (arg_info))) {
         OPTTrav (NPART_CODE (arg_node), arg_info, INFO_WLI_WL (arg_info));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -960,9 +967,10 @@ WLTNgenerator (node *arg_node, node *arg_info)
                                  "generator contains non constant vector!!");
 
                 } else { /* not all sons are constant */
-                    if (i < 3)
+                    if (i < 3) {
                         check_bounds = 0;
-                    NWITH_FOLDABLE (wln) = 0;
+                    }
+                    NWITH_FOLDABLE (wln) = FALSE;
                 }
             }
         }
@@ -1138,7 +1146,7 @@ WLTNcode (node *arg_node, node *arg_info)
     /*
      * this body has been traversed and all information has been gathered.
      */
-    NCODE_FLAG (arg_node) = 1;
+    NCODE_FLAG (arg_node) = TRUE;
 
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
     NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
