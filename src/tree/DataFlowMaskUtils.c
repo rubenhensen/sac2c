@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/03/23 12:33:55  dkr
+ * DFM2Vardecs modified: VARDEC_ATTRIB is now set correctly
+ *
  * Revision 1.4  2000/03/17 21:02:25  dkr
  * added type declarations and functios for a DFM stack
  *
@@ -293,7 +296,7 @@ DFM2Vardecs (DFMmask_t mask, LUT_t lut)
                          "mask entry is neither an arg nor a vardec.");
             vardecs = MakeVardec (StringCopy (ARG_NAME (decl)),
                                   DuplicateTypes (ARG_TYPE (decl), 1), vardecs);
-            VARDEC_REFCNT (vardecs) = ARG_REFCNT (decl);
+            VARDEC_ATTRIB (vardecs) = ARG_ATTRIB (decl);
         }
         lut = InsertIntoLUT (lut, decl, vardecs);
         decl = DFMGetMaskEntryDeclSet (NULL);
@@ -347,7 +350,7 @@ DFM2Args (DFMmask_t mask, LUT_t lut)
  *   node *DFM2Exprs( DFMmask_t mask, LUT_t lut)
  *
  * description:
- *   Creates a exprs-node chain based on the given DFmask.
+ *   Creates a exprs/id-node chain based on the given DFmask.
  *   If (lut != NULL) the attribute ID_VARDEC of the created IDs is set
  *   according to the given LUT, which should contain the old/new declarations.
  *
