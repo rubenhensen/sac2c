@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.22  2000/06/13 14:18:53  dkr
+ * macros L_NWITH_OR_NWITH2_... used (for the cc-compiler)
+ *
  * Revision 2.21  2000/06/08 12:13:54  jhs
  * abstraction of InferWithDFM, used to infer DFMs of with-loops,
  * can be used by other phases now
@@ -733,6 +736,7 @@ RCvardec (node *arg_node, node *arg_info)
  *   fundef contains the function the assigment is in
  *
  ******************************************************************************/
+
 void
 InferWithDFM (node *arg_node, node *fundef)
 {
@@ -780,11 +784,11 @@ InferWithDFM (node *arg_node, node *fundef)
 
         if ((NWITH_OR_NWITH2_TYPE (with) == WO_genarray)
             || (NWITH_OR_NWITH2_TYPE (with) == WO_modarray)) {
-            NWITH_OR_NWITH2_OUT (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
-            NWITH_OR_NWITH2_INOUT (with) = ids_mask;
+            L_NWITH_OR_NWITH2_OUT (with, DFMGenMaskClear (FUNDEF_DFM_BASE (fundef)));
+            L_NWITH_OR_NWITH2_INOUT (with, ids_mask);
         } else {
-            NWITH_OR_NWITH2_OUT (with) = ids_mask;
-            NWITH_OR_NWITH2_INOUT (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
+            L_NWITH_OR_NWITH2_OUT (with, ids_mask);
+            L_NWITH_OR_NWITH2_INOUT (with, DFMGenMaskClear (FUNDEF_DFM_BASE (fundef)));
         }
 
         /*
@@ -794,7 +798,7 @@ InferWithDFM (node *arg_node, node *fundef)
          *  for the let-var (ids_mask), are local.
          */
 
-        NWITH_OR_NWITH2_LOCAL (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
+        L_NWITH_OR_NWITH2_LOCAL (with, DFMGenMaskClear (FUNDEF_DFM_BASE (fundef)));
         for (i = 0; i < FUNDEF_VARNO (fundef); i++) {
             if ((ASSIGN_DEFMASK (arg_node))[i] > 0) {
                 DFMSetMaskEntrySet (NWITH_OR_NWITH2_LOCAL (with), NULL,
@@ -810,7 +814,7 @@ InferWithDFM (node *arg_node, node *fundef)
          *  except for local vars.
          */
 
-        NWITH_OR_NWITH2_IN (with) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
+        L_NWITH_OR_NWITH2_IN (with, DFMGenMaskClear (FUNDEF_DFM_BASE (fundef)));
         for (i = 0; i < FUNDEF_VARNO (fundef); i++) {
             if ((ASSIGN_USEMASK (arg_node))[i] > 0) {
                 DFMSetMaskEntrySet (NWITH_OR_NWITH2_IN (with), NULL,
