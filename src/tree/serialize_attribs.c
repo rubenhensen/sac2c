@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/10/19 14:04:49  sah
+ * implemented SerializeIdsAttrib
+ *
  * Revision 1.8  2004/10/17 17:03:20  sah
  * noew the generated code no more contains
  * any sac2c specific types o [3~´´r enums (hopefully)
@@ -60,7 +63,6 @@
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -68,7 +70,7 @@
  ***************************************************************************/
 
 void
-SerializeStringAttrib (char *vname, info *info, char *attr, node *parent)
+SerializeStringAttrib (info *info, char *attr, node *parent)
 {
     DBUG_ENTER ("SerializeStringAttrib");
 
@@ -91,7 +93,6 @@ SerializeStringAttrib (char *vname, info *info, char *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -99,7 +100,7 @@ SerializeStringAttrib (char *vname, info *info, char *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeSharedStringAttrib (char *vname, info *info, char *attr, node *parent)
+SerializeSharedStringAttrib (info *info, char *attr, node *parent)
 {
     DBUG_ENTER ("SerializeSharedStringAttrib");
 
@@ -122,7 +123,6 @@ SerializeSharedStringAttrib (char *vname, info *info, char *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -130,7 +130,7 @@ SerializeSharedStringAttrib (char *vname, info *info, char *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeIntegerAttrib (char *vname, info *info, int attr, node *parent)
+SerializeIntegerAttrib (info *info, int attr, node *parent)
 {
     DBUG_ENTER ("SerializeIntegerAttrib");
 
@@ -145,7 +145,6 @@ SerializeIntegerAttrib (char *vname, info *info, int attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -153,7 +152,7 @@ SerializeIntegerAttrib (char *vname, info *info, int attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeLongAttrib (char *vname, info *info, long attr, node *parent)
+SerializeLongAttrib (info *info, long attr, node *parent)
 {
     DBUG_ENTER ("SerializeLongAttrib");
 
@@ -168,7 +167,6 @@ SerializeLongAttrib (char *vname, info *info, long attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -176,7 +174,7 @@ SerializeLongAttrib (char *vname, info *info, long attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeBoolAttrib (char *vname, info *info, bool attr, node *parent)
+SerializeBoolAttrib (info *info, bool attr, node *parent)
 {
     DBUG_ENTER ("SerializeBoolAttrib");
 
@@ -191,7 +189,6 @@ SerializeBoolAttrib (char *vname, info *info, bool attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -199,7 +196,7 @@ SerializeBoolAttrib (char *vname, info *info, bool attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeFloatAttrib (char *vname, info *info, float attr, node *parent)
+SerializeFloatAttrib (info *info, float attr, node *parent)
 {
     DBUG_ENTER ("SerializeFloatAttrib");
 
@@ -214,7 +211,6 @@ SerializeFloatAttrib (char *vname, info *info, float attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -222,7 +218,7 @@ SerializeFloatAttrib (char *vname, info *info, float attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeDoubleAttrib (char *vname, info *info, double attr, node *parent)
+SerializeDoubleAttrib (info *info, double attr, node *parent)
 {
     DBUG_ENTER ("SerializeDoubleAttrib");
 
@@ -237,7 +233,6 @@ SerializeDoubleAttrib (char *vname, info *info, double attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -245,7 +240,7 @@ SerializeDoubleAttrib (char *vname, info *info, double attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeCharAttrib (char *vname, info *info, char attr, node *parent)
+SerializeCharAttrib (info *info, char attr, node *parent)
 {
     DBUG_ENTER ("SerializeCharAttrib");
 
@@ -260,7 +255,6 @@ SerializeCharAttrib (char *vname, info *info, char attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -268,7 +262,7 @@ SerializeCharAttrib (char *vname, info *info, char attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeOldTypeAttrib (char *vname, info *info, types *attr, node *parent)
+SerializeOldTypeAttrib (info *info, types *attr, node *parent)
 {
     DBUG_ENTER ("SerializeOldTypeAttrib");
 
@@ -287,7 +281,6 @@ SerializeOldTypeAttrib (char *vname, info *info, types *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -295,7 +288,7 @@ SerializeOldTypeAttrib (char *vname, info *info, types *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeNodeAttrib (char *vname, info *info, node *attr, node *parent)
+SerializeNodeAttrib (info *info, node *attr, node *parent)
 {
     DBUG_ENTER ("SerializeNodeAttrib");
 
@@ -317,7 +310,6 @@ SerializeNodeAttrib (char *vname, info *info, node *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -325,7 +317,7 @@ SerializeNodeAttrib (char *vname, info *info, node *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeLinkAttrib (char *vname, info *info, node *attr, node *parent)
+SerializeLinkAttrib (info *info, node *attr, node *parent)
 {
     DBUG_ENTER ("SerializeLinkAttrib");
 
@@ -340,7 +332,6 @@ SerializeLinkAttrib (char *vname, info *info, node *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -348,7 +339,7 @@ SerializeLinkAttrib (char *vname, info *info, node *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeApLinkAttrib (char *vname, info *info, node *attr, node *parent)
+SerializeApLinkAttrib (info *info, node *attr, node *parent)
 {
     DBUG_ENTER ("SerializeApLinkAttrib");
 
@@ -363,7 +354,6 @@ SerializeApLinkAttrib (char *vname, info *info, node *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -371,7 +361,7 @@ SerializeApLinkAttrib (char *vname, info *info, node *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeIntegerArrayAttrib (char *vname, info *info, int *attr, node *parent)
+SerializeIntegerArrayAttrib (info *info, int *attr, node *parent)
 {
     DBUG_ENTER ("SerializeIntegerArrayAttrib");
 
@@ -386,7 +376,6 @@ SerializeIntegerArrayAttrib (char *vname, info *info, int *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -394,7 +383,7 @@ SerializeIntegerArrayAttrib (char *vname, info *info, int *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeNumsAttrib (char *vname, info *info, nums *attr, node *parent)
+SerializeNumsAttrib (info *info, nums *attr, node *parent)
 {
     DBUG_ENTER ("SerializeNumsAttrib");
 
@@ -409,7 +398,6 @@ SerializeNumsAttrib (char *vname, info *info, nums *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -417,7 +405,7 @@ SerializeNumsAttrib (char *vname, info *info, nums *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeFileTypeAttrib (char *vname, info *info, file_type attr, node *parent)
+SerializeFileTypeAttrib (info *info, file_type attr, node *parent)
 {
     DBUG_ENTER ("SerializeFileTypeAttrib");
 
@@ -432,7 +420,6 @@ SerializeFileTypeAttrib (char *vname, info *info, file_type attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -440,7 +427,7 @@ SerializeFileTypeAttrib (char *vname, info *info, file_type attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeLUTAttrib (char *vname, info *info, LUT_t attr, node *parent)
+SerializeLUTAttrib (info *info, LUT_t attr, node *parent)
 {
     DBUG_ENTER ("SerializeLUTAttrib");
 
@@ -455,7 +442,6 @@ SerializeLUTAttrib (char *vname, info *info, LUT_t attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -463,7 +449,7 @@ SerializeLUTAttrib (char *vname, info *info, LUT_t attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeWithOpTypeAttrib (char *vname, info *info, WithOpType attr, node *parent)
+SerializeWithOpTypeAttrib (info *info, WithOpType attr, node *parent)
 {
     DBUG_ENTER ("SerializeWithOpTypeAttrib");
 
@@ -478,7 +464,6 @@ SerializeWithOpTypeAttrib (char *vname, info *info, WithOpType attr, node *paren
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -486,7 +471,7 @@ SerializeWithOpTypeAttrib (char *vname, info *info, WithOpType attr, node *paren
  ***************************************************************************/
 
 void
-SerializePrfAttrib (char *vname, info *info, prf attr, node *parent)
+SerializePrfAttrib (info *info, prf attr, node *parent)
 {
     DBUG_ENTER ("SerializePrfAttrib");
 
@@ -501,7 +486,6 @@ SerializePrfAttrib (char *vname, info *info, prf attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param pos    position within the current array
  * @param attr   the attribute itself
@@ -510,7 +494,7 @@ SerializePrfAttrib (char *vname, info *info, prf attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeMaskAttrib (char *vname, info *info, int pos, long *attr, node *parent)
+SerializeMaskAttrib (info *info, int pos, long *attr, node *parent)
 {
     DBUG_ENTER ("SerializeMaskAttrib");
 
@@ -525,7 +509,6 @@ SerializeMaskAttrib (char *vname, info *info, int pos, long *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -533,7 +516,7 @@ SerializeMaskAttrib (char *vname, info *info, int pos, long *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeDepsAttrib (char *vname, info *info, deps *attr, node *parent)
+SerializeDepsAttrib (info *info, deps *attr, node *parent)
 {
     DBUG_ENTER ("SerializeDepsAttrib");
 
@@ -548,7 +531,6 @@ SerializeDepsAttrib (char *vname, info *info, deps *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -556,11 +538,30 @@ SerializeDepsAttrib (char *vname, info *info, deps *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeIdsAttrib (char *vname, info *info, ids *attr, node *parent)
+SerializeIdsAttrib (info *info, ids *attr, node *parent)
 {
     DBUG_ENTER ("SerializeIdsAttrib");
 
-    fprintf (INFO_SER_FILE (info), "NULL");
+    if (attr == NULL) {
+        fprintf (INFO_SER_FILE (info), "NULL ");
+    } else {
+        fprintf (INFO_SER_FILE (info), "CreateIds( \"%s\", ", IDS_NAME (attr));
+
+        if (IDS_MOD (attr) != NULL) {
+            fprintf (INFO_SER_FILE (info), "\"%s\", ", IDS_MOD (attr));
+        } else {
+            fprintf (INFO_SER_FILE (info), "NULL, ");
+        }
+
+        fprintf (INFO_SER_FILE (info), "%d, %d, ", IDS_STATUS (attr), IDS_ATTRIB (attr));
+
+        fprintf (INFO_SER_FILE (info), "%d, %d, ", IDS_REFCNT (attr),
+                 IDS_NAIVE_REFCNT (attr));
+
+        SerializeIdsAttrib (info, IDS_NEXT (attr), parent);
+
+        fprintf (INFO_SER_FILE (info), ")");
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -571,7 +572,6 @@ SerializeIdsAttrib (char *vname, info *info, ids *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -579,7 +579,7 @@ SerializeIdsAttrib (char *vname, info *info, ids *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeStatusTypeAttrib (char *vname, info *info, statustype attr, node *parent)
+SerializeStatusTypeAttrib (info *info, statustype attr, node *parent)
 {
     DBUG_ENTER ("SerializeStatusTypeAttrib");
 
@@ -594,7 +594,6 @@ SerializeStatusTypeAttrib (char *vname, info *info, statustype attr, node *paren
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -602,7 +601,7 @@ SerializeStatusTypeAttrib (char *vname, info *info, statustype attr, node *paren
  ***************************************************************************/
 
 void
-SerializeNodeListAttrib (char *vname, info *info, nodelist *attr, node *parent)
+SerializeNodeListAttrib (info *info, nodelist *attr, node *parent)
 {
     DBUG_ENTER ("SerializeNodeListAttrib");
 
@@ -617,7 +616,6 @@ SerializeNodeListAttrib (char *vname, info *info, nodelist *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -625,7 +623,7 @@ SerializeNodeListAttrib (char *vname, info *info, nodelist *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeSharedNodeListAttrib (char *vname, info *info, nodelist *attr, node *parent)
+SerializeSharedNodeListAttrib (info *info, nodelist *attr, node *parent)
 {
     DBUG_ENTER ("SerializeSharedNodeListAttrib");
 
@@ -640,7 +638,6 @@ SerializeSharedNodeListAttrib (char *vname, info *info, nodelist *attr, node *pa
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -648,7 +645,7 @@ SerializeSharedNodeListAttrib (char *vname, info *info, nodelist *attr, node *pa
  ***************************************************************************/
 
 void
-SerializePragmaLinkAttrib (char *vname, info *info, node *attr, node *parent)
+SerializePragmaLinkAttrib (info *info, node *attr, node *parent)
 {
     DBUG_ENTER ("SerializePragmaLinkAttrib");
 
@@ -663,7 +660,6 @@ SerializePragmaLinkAttrib (char *vname, info *info, node *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -671,7 +667,7 @@ SerializePragmaLinkAttrib (char *vname, info *info, node *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeDFMMaskAttrib (char *vname, info *info, DFMmask_t attr, node *parent)
+SerializeDFMMaskAttrib (info *info, DFMmask_t attr, node *parent)
 {
     DBUG_ENTER ("SerializeDFMMaskAttrib");
 
@@ -686,7 +682,6 @@ SerializeDFMMaskAttrib (char *vname, info *info, DFMmask_t attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -694,7 +689,7 @@ SerializeDFMMaskAttrib (char *vname, info *info, DFMmask_t attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeDFMMaskBaseAttrib (char *vname, info *info, DFMmask_base_t attr, node *parent)
+SerializeDFMMaskBaseAttrib (info *info, DFMmask_base_t attr, node *parent)
 {
     DBUG_ENTER ("SerializeDFMMaskBaseAttrib");
 
@@ -709,7 +704,6 @@ SerializeDFMMaskBaseAttrib (char *vname, info *info, DFMmask_base_t attr, node *
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -717,7 +711,7 @@ SerializeDFMMaskBaseAttrib (char *vname, info *info, DFMmask_base_t attr, node *
  ***************************************************************************/
 
 void
-SerializeDFMFoldMaskAttrib (char *vname, info *info, DFMfoldmask_t *attr, node *parent)
+SerializeDFMFoldMaskAttrib (info *info, DFMfoldmask_t *attr, node *parent)
 {
     DBUG_ENTER ("SerializeDFMFoldMaskAttrib");
 
@@ -732,7 +726,6 @@ SerializeDFMFoldMaskAttrib (char *vname, info *info, DFMfoldmask_t *attr, node *
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -740,7 +733,7 @@ SerializeDFMFoldMaskAttrib (char *vname, info *info, DFMfoldmask_t *attr, node *
  ***************************************************************************/
 
 void
-SerializeNewTypeAttrib (char *vname, info *info, ntype *attr, node *parent)
+SerializeNewTypeAttrib (info *info, ntype *attr, node *parent)
 {
     DBUG_ENTER ("SerializeNewTypeAttrib");
 
@@ -759,7 +752,6 @@ SerializeNewTypeAttrib (char *vname, info *info, ntype *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -767,7 +759,7 @@ SerializeNewTypeAttrib (char *vname, info *info, ntype *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeArgTabAttrib (char *vname, info *info, argtab_t *attr, node *parent)
+SerializeArgTabAttrib (info *info, argtab_t *attr, node *parent)
 {
     DBUG_ENTER ("SerializeArgTabAttrib");
 
@@ -782,7 +774,6 @@ SerializeArgTabAttrib (char *vname, info *info, argtab_t *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -790,7 +781,7 @@ SerializeArgTabAttrib (char *vname, info *info, argtab_t *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeIndexPointerAttrib (char *vname, info *info, index_info *attr, node *parent)
+SerializeIndexPointerAttrib (info *info, index_info *attr, node *parent)
 {
     DBUG_ENTER ("SerializeIndexPointerAttrib");
 
@@ -805,7 +796,6 @@ SerializeIndexPointerAttrib (char *vname, info *info, index_info *attr, node *pa
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -813,7 +803,7 @@ SerializeIndexPointerAttrib (char *vname, info *info, index_info *attr, node *pa
  ***************************************************************************/
 
 void
-SerializeShapeAttrib (char *vname, info *info, shape *attr, node *parent)
+SerializeShapeAttrib (info *info, shape *attr, node *parent)
 {
     DBUG_ENTER ("SerializeShapeAttrib");
 
@@ -828,7 +818,6 @@ SerializeShapeAttrib (char *vname, info *info, shape *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -836,7 +825,7 @@ SerializeShapeAttrib (char *vname, info *info, shape *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeSimpleTypeAttrib (char *vname, info *info, simpletype attr, node *parent)
+SerializeSimpleTypeAttrib (info *info, simpletype attr, node *parent)
 {
     DBUG_ENTER ("SerializeSimpleTypeAttrib");
 
@@ -851,7 +840,6 @@ SerializeSimpleTypeAttrib (char *vname, info *info, simpletype attr, node *paren
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -859,7 +847,7 @@ SerializeSimpleTypeAttrib (char *vname, info *info, simpletype attr, node *paren
  ***************************************************************************/
 
 void
-SerializeConstVecPointerAttrib (char *vname, info *info, void *attr, node *parent)
+SerializeConstVecPointerAttrib (info *info, void *attr, node *parent)
 {
     DBUG_ENTER ("SerializeConstVecPointerAttrib");
 
@@ -874,7 +862,6 @@ SerializeConstVecPointerAttrib (char *vname, info *info, void *attr, node *paren
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -882,7 +869,7 @@ SerializeConstVecPointerAttrib (char *vname, info *info, void *attr, node *paren
  ***************************************************************************/
 
 void
-SerializeUseFlagAttrib (char *vname, info *info, useflag attr, node *parent)
+SerializeUseFlagAttrib (info *info, useflag attr, node *parent)
 {
     DBUG_ENTER ("SerializeUseFlagAttrib");
 
@@ -897,7 +884,6 @@ SerializeUseFlagAttrib (char *vname, info *info, useflag attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -905,7 +891,7 @@ SerializeUseFlagAttrib (char *vname, info *info, useflag attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeAccessInfoAttrib (char *vname, info *info, access_info_t *attr, node *parent)
+SerializeAccessInfoAttrib (info *info, access_info_t *attr, node *parent)
 {
     DBUG_ENTER ("SerializeAccessInfoAttrib");
 
@@ -920,7 +906,6 @@ SerializeAccessInfoAttrib (char *vname, info *info, access_info_t *attr, node *p
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -928,7 +913,7 @@ SerializeAccessInfoAttrib (char *vname, info *info, access_info_t *attr, node *p
  ***************************************************************************/
 
 void
-SerializeShpSegAttrib (char *vname, info *info, shpseg *attr, node *parent)
+SerializeShpSegAttrib (info *info, shpseg *attr, node *parent)
 {
     DBUG_ENTER ("SerializeShpSegAttrib");
 
@@ -943,7 +928,6 @@ SerializeShpSegAttrib (char *vname, info *info, shpseg *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -951,7 +935,7 @@ SerializeShpSegAttrib (char *vname, info *info, shpseg *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeIntegerPointerAttrib (char *vname, info *info, int *attr, node *parent)
+SerializeIntegerPointerAttrib (info *info, int *attr, node *parent)
 {
     DBUG_ENTER ("SerializeIntegerPointerAttrib");
 
@@ -966,7 +950,6 @@ SerializeIntegerPointerAttrib (char *vname, info *info, int *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param pos    position within the current array
  * @param attr   the attribute itself
@@ -975,8 +958,7 @@ SerializeIntegerPointerAttrib (char *vname, info *info, int *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeIntegerPointerArrayAttrib (char *vname, info *info, int pos, int *attr,
-                                    node *parent)
+SerializeIntegerPointerArrayAttrib (info *info, int pos, int *attr, node *parent)
 {
     DBUG_ENTER ("SerializeIntegerPointerArrayAttrib");
 
@@ -991,7 +973,6 @@ SerializeIntegerPointerArrayAttrib (char *vname, info *info, int pos, int *attr,
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -999,7 +980,7 @@ SerializeIntegerPointerArrayAttrib (char *vname, info *info, int pos, int *attr,
  ***************************************************************************/
 
 void
-SerializeSchedulingAttrib (char *vname, info *info, SCHsched_t attr, node *parent)
+SerializeSchedulingAttrib (info *info, SCHsched_t attr, node *parent)
 {
     DBUG_ENTER ("SerializeSchedulingAttrib");
 
@@ -1014,7 +995,6 @@ SerializeSchedulingAttrib (char *vname, info *info, SCHsched_t attr, node *paren
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -1022,7 +1002,7 @@ SerializeSchedulingAttrib (char *vname, info *info, SCHsched_t attr, node *paren
  ***************************************************************************/
 
 void
-SerializeTaskSelAttrib (char *vname, info *info, SCHtasksel_t attr, node *parent)
+SerializeTaskSelAttrib (info *info, SCHtasksel_t attr, node *parent)
 {
     DBUG_ENTER ("SerializeTaskSelAttrib");
 
@@ -1037,7 +1017,6 @@ SerializeTaskSelAttrib (char *vname, info *info, SCHtasksel_t attr, node *parent
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -1045,7 +1024,7 @@ SerializeTaskSelAttrib (char *vname, info *info, SCHtasksel_t attr, node *parent
  ***************************************************************************/
 
 void
-SerializeNodePointerAttrib (char *vname, info *info, node **attr, node *parent)
+SerializeNodePointerAttrib (info *info, node **attr, node *parent)
 {
     DBUG_ENTER ("SerializeNodePointerAttrib");
 
@@ -1060,7 +1039,6 @@ SerializeNodePointerAttrib (char *vname, info *info, node **attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -1068,7 +1046,7 @@ SerializeNodePointerAttrib (char *vname, info *info, node **attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeSSAPhiAttrib (char *vname, info *info, ssaphit_t attr, node *parent)
+SerializeSSAPhiAttrib (info *info, ssaphit_t attr, node *parent)
 {
     DBUG_ENTER ("SerializeSSAPhiAttrib");
 
@@ -1083,7 +1061,6 @@ SerializeSSAPhiAttrib (char *vname, info *info, ssaphit_t attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -1091,7 +1068,7 @@ SerializeSSAPhiAttrib (char *vname, info *info, ssaphit_t attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeBitFieldAttrib (char *vname, info *info, int attr, node *parent)
+SerializeBitFieldAttrib (info *info, int attr, node *parent)
 {
     DBUG_ENTER ("SerializeBitFieldAttrib");
 
@@ -1106,7 +1083,6 @@ SerializeBitFieldAttrib (char *vname, info *info, int attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -1114,7 +1090,7 @@ SerializeBitFieldAttrib (char *vname, info *info, int attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeConstantAttrib (char *vname, info *info, constant *attr, node *parent)
+SerializeConstantAttrib (info *info, constant *attr, node *parent)
 {
     DBUG_ENTER ("SerializeConstantAttrib");
 
@@ -1129,7 +1105,6 @@ SerializeConstantAttrib (char *vname, info *info, constant *attr, node *parent)
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -1137,7 +1112,7 @@ SerializeConstantAttrib (char *vname, info *info, constant *attr, node *parent)
  ***************************************************************************/
 
 void
-SerializeMTExecModeAttrib (char *vname, info *info, mtexecmode_t attr, node *parent)
+SerializeMTExecModeAttrib (info *info, mtexecmode_t attr, node *parent)
 {
     DBUG_ENTER ("SerializeMTExecModeAttrib");
 
@@ -1152,7 +1127,6 @@ SerializeMTExecModeAttrib (char *vname, info *info, mtexecmode_t attr, node *par
  *
  * @brief generates code to de-serialize the given attribute
  *
- * @param vname  name of the variable holding the result in the generated code
  * @param info   info structure of serialize traversal
  * @param attr   the attribute itself
  * @param parent the parent node
@@ -1160,7 +1134,7 @@ SerializeMTExecModeAttrib (char *vname, info *info, mtexecmode_t attr, node *par
  ***************************************************************************/
 
 void
-SerializeRCCounterAttrib (char *vname, info *info, rc_counter *attr, node *parent)
+SerializeRCCounterAttrib (info *info, rc_counter *attr, node *parent)
 {
     DBUG_ENTER ("SerializeMTExecModeAttrib");
 
