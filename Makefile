@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.47  2002/02/21 15:14:34  sbs
+# src/flatten/insert_vardec.o added
+#
 # Revision 3.46  2002/01/18 12:00:23  sacbase
 # dependencies check_os and tools/bin/cse added for distrib_product!
 #
@@ -102,7 +105,7 @@ SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/fun2lac.o \
-         src/flatten/while2do.o
+         src/flatten/while2do.o src/flatten/insert_vardec.o
 CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/constants_struc_ops.o src/constants/constants_ari_ops.o \
            src/constants/cv2cv.o src/constants/cv2scalar.o src/constants/cv2str.o \
