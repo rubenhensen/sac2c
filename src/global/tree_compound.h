@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/03/31 10:51:57  bs
+ *  Function Array2CharVec added.
+ *
  * Revision 2.3  1999/03/15 14:10:13  bs
  * Access macros renamed (take a look at tree_basic.h).
  * Functions Array2FloatVec and Array2Dblvec added.
@@ -1575,15 +1578,17 @@ extern node *IntVec2Array (int length, int *intvec);
  *   Returns an N_exprs node containing the elements of intvec. */
 
 extern int *Array2IntVec (node *aelems, int *length);
-
-/* description:
- *   Returns an iteger vector and stores the number of constant integer
- *   elements in *length if first argument is an N_exprs and all its elements
- *   are N_num otherwise the result is not defined.
- *   If the length of the vector is not of interest, length may be NULL. */
-
+extern char *Array2CharVec (node *aelems, int *length);
 extern float *Array2FloatVec (node *aelems, int *length);
 extern double *Array2DblVec (node *aelems, int *length);
+
+/* description:
+ *   Returns an iteger (char | float | double) vector and stores the number of
+ *   constant integer (char | float | double) elements in *length if first
+ *   argument is an N_exprs and all its elements are N_num otherwise the
+ *   result is not defined.
+ *   If the length of the vector is not of interest, length may be NULL.
+ */
 
 /*--------------------------------------------------------------------------*/
 
