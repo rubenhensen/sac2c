@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.50  1997/08/07 11:13:38  dkr
+ * added option -_DBUG<from>/<to>/<string>
+ *
  * Revision 1.49  1997/06/03 08:40:21  sbs
  * -D option added
  *
@@ -178,26 +181,30 @@ usage (char *prg_name)
 
     printf ("\n\nOVERALL OPTIONS:\n\n");
 
-    printf ("\t -h\t\t\tthis helptext\n");
-    printf ("\t -libstat\t\tprint status information about a SAC library file\n");
-    printf (
-      "\t -D<cpp-var><=value>\tset <cpp-var> (to <value>) when running C-preprocessor\n");
-    printf ("\t -M\t\t\tonly detect dependencies and write them to stdout\n");
-    printf ("\t\t\t\tdependencies from imported modules/classes.\n");
+    printf ("\t -h\t\t\t\tthis helptext\n");
+    printf ("\t -libstat\t\t\tprint status information about a SAC library file\n");
+    printf ("\t -D <cpp-var><=value>\t\tset <cpp-var> (to <value>) when running "
+            "C-preprocessor\n");
+    printf ("\t -M\t\t\t\tonly detect dependencies and write them to stdout\n");
+    printf ("\t\t\t\t\tdependencies from imported modules/classes.\n");
 
-    printf ("\t -#string\t\toptions (string) for DBUG information\n");
-    printf ("\t -I path\t\tspecify additional declaration path\n");
-    printf ("\t -L path\t\tspecify additional library path\n");
-    printf ("\t -o name\t\tfor compilation of programs:\n");
-    printf ("\t\t\t\t  write executable to specified file\n");
-    printf ("\t\t\t\tfor compilation of module/class implementations:\n");
-    printf ("\t\t\t\t  write library to specified directory\n");
-    printf ("\t -c \t\t\tgenerate C-file only\n");
-    printf ("\t -v<n> \t\t\tverbose level\n");
-    printf ("\t\t\t\t\t0: error messages only\n");
-    printf ("\t\t\t\t\t1: error messages and warnings\n");
-    printf ("\t\t\t\t\t2: basic compile time information\n");
-    printf ("\t\t\t\t\t3: full compile time information (default)\n");
+    printf ("\t -# <string>\t\t\toptions (string) for DBUG information\n"
+            "\t\t\t\t\t  (\"-#<string>\" is aquivalent to \"-_DBUG //<string>\")\n");
+    printf ("\t -_DBUG <from>/<to>/<string>\tDBUG information only in compiler phases "
+            "<from>..<to>\n"
+            "\t\t\t\t\t  Default: <from> = 1, <to> = last compiler phase\n");
+    printf ("\t -I <path>\t\t\tspecify additional declaration path\n");
+    printf ("\t -L <path>\t\t\tspecify additional library path\n");
+    printf ("\t -o <name>\t\t\tfor compilation of programs:\n");
+    printf ("\t\t\t\t\t  write executable to specified file\n");
+    printf ("\t\t\t\t\tfor compilation of module/class implementations:\n");
+    printf ("\t\t\t\t\t  write library to specified directory\n");
+    printf ("\t -c \t\t\t\tgenerate C-file only\n");
+    printf ("\t -v <n> \t\t\tverbose level\n");
+    printf ("\t\t\t\t\t  0: error messages only\n");
+    printf ("\t\t\t\t\t  1: error messages and warnings\n");
+    printf ("\t\t\t\t\t  2: basic compile time information\n");
+    printf ("\t\t\t\t\t  3: full compile time information (default)\n");
 
     printf ("\n\nBREAK OPTIONS:\n\n");
 
@@ -230,7 +237,7 @@ usage (char *prg_name)
     printf ("\t -nounroll_loops or -noUNR \t\t  no loop unrolling \n");
     printf ("\t -nounswitch_loops or -noUNS \t\t  no loop unswitching \n");
     printf ("\t -nodead_code_removal or -noDCR \t  no dead code removal \n");
-    printf ("\t -nodead_function_removal or -noDFR  no dead function removal \n");
+    printf ("\t -nodead_function_removal or -noDFR \t  no dead function removal \n");
     printf ("\t -noloop_invariant_removal or -noLIR \t  no loop invariant removal \n");
     printf ("\t -nocse or -noCSE \t\t\t  no common subexpression elimination \n");
     printf ("\n\t -nopsiopt\t\t\t\t  no psi optimisations\n");
@@ -239,31 +246,31 @@ usage (char *prg_name)
     printf ("\n\t -norefcount_opt or -noRCO \t\t  no refcount optimization \n");
 
     printf ("\n\t -maxoptvar <no>\treserve <no> variables for optimization\n"
-            "\t\t\t\tDefault: -maxoptvar %d\n",
+            "\t\t\t\t  Default: -maxoptvar %d\n",
             optvar);
     printf ("\t -maxinline <no>\tinline recursive functions <no> times\n"
-            "\t\t\t\tDefault: -maxinline %d\n",
+            "\t\t\t\t  Default: -maxinline %d\n",
             inlnum);
     printf ("\t -maxunroll <no>\tunroll loops having no more than <no> iterations\n"
-            "\t\t\t\tDefault: -maxunroll %d\n",
+            "\t\t\t\t  Default: -maxunroll %d\n",
             unrnum);
     printf ("\t -minarray <no>\t\ttry array elimination for arrays with length <= <no>\n"
-            "\t\t\t\tDefault: -minarray %d\n",
+            "\t\t\t\t  Default: -minarray %d\n",
             minarray);
-    printf ("\t -maxoverload <no>\tfunctions with unknown shape will <no> times"
-            " overloaded\n"
-            "\t\t\t\tDefault: -maxoverload %d\n",
-            max_overload);
+    printf (
+      "\t -maxoverload <no>\tfunctions with unknown shape will <no> times overloaded\n"
+      "\t\t\t\t  Default: -maxoverload %d\n",
+      max_overload);
 
     printf ("\n\nDEBUG OPTIONS:\n\n");
 
     printf ("\t -t [arupwm] \t\ttrace program execution\n");
-    printf ("\t\t\t\ta: trace all (same as rupwm)\n");
-    printf ("\t\t\t\tm: trace memory operations\n");
-    printf ("\t\t\t\tr: trace refcount operations\n");
-    printf ("\t\t\t\tu: trace user defined function calls\n");
-    printf ("\t\t\t\tp: trace primitive function calls\n");
-    printf ("\t\t\t\tw: trace with loop execution\n");
+    printf ("\t\t\t\t  a: trace all (same as rupwm)\n");
+    printf ("\t\t\t\t  m: trace memory operations\n");
+    printf ("\t\t\t\t  r: trace refcount operations\n");
+    printf ("\t\t\t\t  u: trace user defined function calls\n");
+    printf ("\t\t\t\t  p: trace primitive function calls\n");
+    printf ("\t\t\t\t  w: trace with loop execution\n");
 
     printf ("\t -dcheck_boundary\tcheck boundary of arrays upon access\n");
     printf ("\t -dnocleanup\t\tdon't remove temporary files and directories\n");
@@ -272,24 +279,24 @@ usage (char *prg_name)
     printf ("\n\nPROFILING OPTIONS:\n\n");
 
     printf ("\t -p [afilw] \t\tinclude runtime analysis\n");
-    printf ("\t\t\t\ta: analyse all (same as filw)\n");
-    printf ("\t\t\t\tf: analyse time spend in non-inline functions\n");
-    printf ("\t\t\t\ti: analyse time spend in inline functions\n");
-    printf ("\t\t\t\tl: analyse time spend in library functions\n");
-    printf ("\t\t\t\tw: analyse time spent in with-loops\n");
+    printf ("\t\t\t\t  a: analyse all (same as filw)\n");
+    printf ("\t\t\t\t  f: analyse time spend in non-inline functions\n");
+    printf ("\t\t\t\t  i: analyse time spend in inline functions\n");
+    printf ("\t\t\t\t  l: analyse time spend in library functions\n");
+    printf ("\t\t\t\t  w: analyse time spent in with-loops\n");
 
     printf ("\n\nLINK OPTIONS:\n\n");
 
     printf ("\t -noranlib\t\tdon't use ranlib (for systems without ranlib)\n");
-    printf ("\t -l<n>\t\t\tlink level for generating SAC library\n");
-    printf ("\t\t\t\t1: compile to one large object file\n");
-    printf ("\t\t\t\t2: compile to archive of object files (default)\n");
+    printf ("\t -l <n>\t\t\tlink level for generating SAC library\n");
+    printf ("\t\t\t\t  1: compile to one large object file\n");
+    printf ("\t\t\t\t  2: compile to archive of object files (default)\n");
 
     printf ("\n\nC-COMPILER OPTIONS:\t(handed to the C-compiler)\n\n");
 
     /*   printf("\t  (These options are handed to the C-compiler)\n");*/
     printf ("\t -g \t\t\tinclude debug information\n");
-    printf ("\t -O[123] \t\tC-compiler level of optimization\n");
+    printf ("\t -O [123] \t\tC-compiler level of optimization\n");
 
     printf ("\n\nENVIRONMENT VARIABLES:\n\n");
 
