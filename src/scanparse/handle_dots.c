@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2002/10/21 18:49:34  sah
+ * bug fixing.
+ *
  * Revision 1.15  2002/10/20 16:57:28  sah
  * fixed bug when substituting '.' in nested WLs
  * implemented setnotation for indexvectors
@@ -657,8 +660,8 @@ BuildMiddleIndex (node *args, node *iv, dotinfo *info)
 
     DBUG_ENTER ("BuildMiddleIndex");
 
-    from = MakeNum (LDot2Pos (info->triplepos, info) - 1);
-    to = MakeNum (info->selcnt - RDot2Pos (info->triplepos, info));
+    from = MakeNum (LDot2Pos (info->tripledot, info) - 1);
+    to = MakeNum (info->selcnt - RDot2Pos (info->tripledot, info));
 
     result = BuildTakeDrop (from, to, DupTree (iv));
 
@@ -863,6 +866,8 @@ void
 ScanVector (node *vector, node *array, idtable *ids)
 {
     int poscnt = 0;
+    int tripledotflag = 0;
+    int exprslen = CountExprs (vector);
 
     DBUG_ENTER ("ScanVector");
 
@@ -873,12 +878,24 @@ ScanVector (node *vector, node *array, idtable *ids)
             while (handle != NULL) {
                 if ((handle->type == ID_scalar)
                     && (strcmp (handle->id, ID_NAME (EXPRS_EXPR (vector))) == 0)) {
-                    node *shape
-                      = MAKE_BIN_PRF (F_sel,
-                                      MakeArray (MakeExprs (MakeNum (poscnt), NULL)),
-                                      MakePrf (F_shape,
-                                               MakeExprs (DupTree (array), NULL)));
-                    shpchain *chain = Malloc (sizeof (shpchain));
+                    node *position = NULL;
+                    node *shape = NULL;
+                    shpchain *chain = NULL;
+
+                    if (tripledotflag) {
+                        position
+                          = MAKE_BIN_PRF (F_sub_SxS,
+                                          MakePrf (F_dim,
+                                                   MakeExprs (DupTree (array), NULL)),
+                                          MakeNum (exprslen - poscnt));
+                    } else {
+                        position = MakeNum (poscnt);
+                    }
+
+                    shape = MAKE_BIN_PRF (F_sel, MakeArray (MakeExprs (position, NULL)),
+                                          MakePrf (F_shape,
+                                                   MakeExprs (DupTree (array), NULL)));
+                    chain = Malloc (sizeof (shpchain));
 
                     chain->shape = shape;
                     chain->next = handle->shapes;
@@ -889,6 +906,13 @@ ScanVector (node *vector, node *array, idtable *ids)
 
                 handle = handle->next;
             }
+        }
+
+        /* check for occurence of '...' */
+
+        if ((NODE_TYPE (EXPRS_EXPR (vector)) == N_dot)
+            && (DOT_NUM (EXPRS_EXPR (vector)) == 3)) {
+            tripledotflag = 1;
         }
 
         poscnt++;
@@ -987,9 +1011,7 @@ BuildWLShape (idtable *table, idtable *end)
         }
 
         result = MakeArray (result);
-    }
-
-    if (table->type == ID_vector) {
+    } else if (table->type == ID_vector) {
         if (table->shapes == NULL) {
             ERROR (linenum, ("no shape information found for %s", table->id));
         } else {
@@ -1352,7 +1374,7 @@ HDprf (node *arg_node, node *arg_info)
 
     /* if in HD_scan mode, scan for shapes */
 
-    if ((INFO_HD_TRAVSTATE (arg_info) == HD_scan) && (PRF_PRF (arg_info) == F_sel)) {
+    if ((INFO_HD_TRAVSTATE (arg_info) == HD_scan) && (PRF_PRF (arg_node) == F_sel)) {
         if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_array) {
             ScanVector (ARRAY_AELEMS (PRF_ARG1 (arg_node)), PRF_ARG2 (arg_node),
                         INFO_HD_IDTABLE (arg_info));
@@ -1392,7 +1414,10 @@ HDassign (node *arg_node, node *arg_info)
     /* check for assigns that are to be inserted */
 
     if (INFO_HD_ASSIGNS (arg_info) != NULL) {
-        result = INFO_HD_ASSIGNS (arg_info);
+        /* we need to traverse them once more in order */
+        /* to do dot elemination in wl generators      */
+        /* and simplification of boundaries            */
+        result = Trav (INFO_HD_ASSIGNS (arg_info), arg_info);
         AppendAssign (result, arg_node);
     }
 
