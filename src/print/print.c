@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.63  2000/03/21 15:52:04  jhs
+ * Prints some masks for DFA now.
+ *
  * Revision 2.62  2000/03/21 13:41:22  dkr
  * macro PRINT_VECT used
  *
@@ -685,12 +688,13 @@ PrintLet (node *arg_node, node *arg_info)
         fprintf (outfile, "/* use:");
         DFMPrintMask (outfile, " %s", LET_USEMASK (arg_node));
         fprintf (outfile, " */\n");
+        INDENT;
     }
     if (LET_DEFMASK (arg_node) != NULL) {
-        INDENT;
         fprintf (outfile, "/* def:");
         DFMPrintMask (outfile, " %s", LET_DEFMASK (arg_node));
         fprintf (outfile, " */\n");
+        INDENT;
     }
 
     if (LET_IDS (arg_node)) {
@@ -2068,8 +2072,27 @@ PrintMT (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintMT");
 
-    /* PrintAssign alredy indents*/
+    /* PrintAssign alredy indents */
     fprintf (outfile, "/*** begin of mt region ***/\n");
+
+    if (MT_USEMASK (arg_node) != NULL) {
+        INDENT;
+        fprintf (outfile, "/* use:");
+        DFMPrintMask (outfile, " %s", MT_USEMASK (arg_node));
+        fprintf (outfile, " */\n");
+    }
+    if (MT_DEFMASK (arg_node) != NULL) {
+        INDENT;
+        fprintf (outfile, "/* def:");
+        DFMPrintMask (outfile, " %s", MT_DEFMASK (arg_node));
+        fprintf (outfile, " */\n");
+    }
+    if (MT_NEEDLATER (arg_node) != NULL) {
+        INDENT;
+        fprintf (outfile, "/* needlater:");
+        DFMPrintMask (outfile, " %s", MT_NEEDLATER (arg_node));
+        fprintf (outfile, " */\n");
+    }
 
     indent++;
     MT_REGION (arg_node) = Trav (MT_REGION (arg_node), arg_info);
@@ -2089,8 +2112,33 @@ PrintST (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintST");
 
-    /* PrintAssign alredy indents*/
+    /* PrintAssign alredy indents */
     fprintf (outfile, "/*** begin of st region ***/\n");
+
+    if (ST_USEMASK (arg_node) != NULL) {
+        INDENT;
+        fprintf (outfile, "/* use:");
+        DFMPrintMask (outfile, " %s", ST_USEMASK (arg_node));
+        fprintf (outfile, " */\n");
+    }
+    if (ST_DEFMASK (arg_node) != NULL) {
+        INDENT;
+        fprintf (outfile, "/* def:");
+        DFMPrintMask (outfile, " %s", ST_DEFMASK (arg_node));
+        fprintf (outfile, " */\n");
+    }
+    if (ST_NEEDLATER_ST (arg_node) != NULL) {
+        INDENT;
+        fprintf (outfile, "/* needlater_st:");
+        DFMPrintMask (outfile, " %s", ST_NEEDLATER_ST (arg_node));
+        fprintf (outfile, " */\n");
+    }
+    if (ST_NEEDLATER_MT (arg_node) != NULL) {
+        INDENT;
+        fprintf (outfile, "/* needlater_mt");
+        DFMPrintMask (outfile, " %s", ST_NEEDLATER_MT (arg_node));
+        fprintf (outfile, " */\n");
+    }
 
     indent++;
     ST_REGION (arg_node) = Trav (ST_REGION (arg_node), arg_info);
