@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/05/17 14:37:58  hw
+ * Revision 1.13  1995/05/18 15:46:17  hw
+ * - changed RCwith ( increase refcount of array that will be modified
+ *    in modarray_with-loop in all cases (used or not used in the
+ *    with-loop body))
+ *
+ * Revision 1.12  1995/05/17  14:37:58  hw
  * bug fixed in RCloop ( refcounts of variables that belongs to
  *  'virtual function application' will be set correctly now, i hope ;-)
  *
@@ -782,7 +787,7 @@ RCcond (node *arg_node, node *arg_info)
 node *
 RCwith (node *arg_node, node *arg_info)
 {
-    int *ref_dump, *with_dump, index_vec_varno, i;
+    int *ref_dump, *with_dump, index_vec_varno, i, mod_array_varno;
     node *var_dec, *new_info, *id_node;
     long *used_mask;
 
@@ -794,6 +799,10 @@ RCwith (node *arg_node, node *arg_info)
     arg_node->node[1] = Trav (arg_node->node[1], arg_info);
     arg_node->node[0] = Trav (arg_node->node[0], arg_info);
     index_vec_varno = arg_node->node[0]->VAR_DEC->varno;
+    if (N_modarray == arg_node->node[1]->nodetype)
+        mod_array_varno = arg_node->node[1]->node[0]->VAR_DEC->varno;
+    else
+        mod_array_varno = -1;
 
     with_dump = Store ();
 
@@ -824,7 +833,7 @@ RCwith (node *arg_node, node *arg_info)
      * defined in a with_loop.
      */
     for (i = 0; i < varno; i++) {
-        if ((with_dump[i] > 0) && (i != index_vec_varno)) {
+        if ((with_dump[i] > 0) && (i != index_vec_varno) && (i != mod_array_varno)) {
             var_dec = FindVarDec (i);
             DBUG_ASSERT ((NULL != var_dec), "var not found");
             if (0 < var_dec->refcnt) {
@@ -834,6 +843,16 @@ RCwith (node *arg_node, node *arg_info)
             }
         }
     }
+    if (-1 != mod_array_varno) {
+
+        /* now increase refcount of modified array */
+        var_dec = FindVarDec (mod_array_varno);
+        DBUG_ASSERT ((NULL != var_dec), "var not found");
+        ref_dump[mod_array_varno] += 1;
+        DBUG_PRINT ("RC", ("set refcount of %s to %d:", var_dec->info.types->id,
+                           ref_dump[mod_array_varno]));
+    }
+
     Restore (ref_dump);
 
     DBUG_RETURN (arg_node);
