@@ -2,6 +2,9 @@
 
 <!--
   $Log$
+  Revision 1.5  2005/02/03 16:08:33  jhb
+  change Name  of function
+
   Revision 1.4  2005/01/21 13:45:48  jhb
   some little things
 
@@ -200,7 +203,7 @@ static info *FreeInfo(info *info)
    <xsl:value-of select="'  // this son is mandatory = '"/>
    <xsl:value-of select="@mandatory"/>
    <xsl:value-of select="$newline"/>
-   <xsl:value-of select="'  CHKexistChild( '"/>
+   <xsl:value-of select="'  CHKexistSon( '"/>
    <xsl:apply-templates select="../../@name" mode="uppercase"/>
    <xsl:value-of select="'_'"/>
    <xsl:apply-templates select="@name" mode="uppercase"/>
