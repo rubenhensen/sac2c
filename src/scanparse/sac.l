@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.34  1996/05/21 20:16:52  sbs
+ * Revision 1.35  1996/09/09 10:05:29  cg
+ * new primitive functions toi, tod, etc. are now treated like the old ones
+ *
+ * Revision 1.34  1996/05/21  20:16:52  sbs
  * default type for floating numbers set to double! (like in C)
  * and leading zeros for exponents enabled!
  *
@@ -249,15 +252,15 @@ int start_token;
 "rotate"			{FILTER7( ROTATE,prf_name_str[F_rotate] );}
 "cat"                           {FILTER7( CAT,prf_name_str[F_cat] );}
 "psi"                           {FILTER7( PSI,prf_name_str[F_psi] );}
-"ftoi"                          {FILTER( F2I );}
-"ftod"                          {FILTER( F2D );}
-"itof"                          {FILTER( I2F );}
-"itod"                          {FILTER( I2D );}
-"dtoi"                          {FILTER( D2I );}
-"dtof"                          {FILTER( D2F );}
-"toi"                           {FILTER( TOI );}
-"tof"                           {FILTER( TOF );}
-"tod"                           {FILTER( TOD );}
+"ftoi"                          {FILTER7( F2I,prf_name_str[F_ftoi] );}
+"ftod"                          {FILTER7( F2D,prf_name_str[F_ftod] );}
+"itof"                          {FILTER7( I2F,prf_name_str[F_itof] );}
+"itod"                          {FILTER7( I2D,prf_name_str[F_itod] );}
+"dtoi"                          {FILTER7( D2I,prf_name_str[F_dtoi] );}
+"dtof"                          {FILTER7( D2F,prf_name_str[F_dtof] );}
+"toi"                           {FILTER7( TOI,prf_name_str[F_toi] );}
+"tof"                           {FILTER7( TOF,prf_name_str[F_tof] );}
+"tod"                           {FILTER7( TOD,prf_name_str[F_tod] );}
 "typedef"			{FILTER( TYPEDEF );}
 "classtype"			{FILTER( CLASSTYPE );}
 "constdef"		        {FILTER( CONSTDEF );}
