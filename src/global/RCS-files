@@ -2,6 +2,7 @@ Error.c
 Error.h
 Makefile
 free.c
+free.h
 main.c
 my_debug.c
 my_debug.h
