@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/12/23 17:02:41  cg
+ * Revision 1.3  1995/12/29 10:43:13  cg
+ * All preparations for several link styles removed
+ *
+ * Revision 1.2  1995/12/23  17:02:41  cg
  * first running version for SIB grammar v0.5
  *
  * Revision 1.1  1995/12/21  16:17:49  cg
@@ -29,8 +32,7 @@
 #include "filemgr.h"
 #include "print.h"
 
-extern FILE *outfile;   /* is set in main.c */
-extern int link_module; /* is set in main.c */
+extern FILE *outfile; /* is set in main.c */
 
 #define PRINTMODNAME(mod, name)                                                          \
     if (mod == NULL) {                                                                   \
@@ -525,7 +527,6 @@ PrintSibTypes (FILE *sibfile, nodelist *tdeflist, char *modname)
 {
     node *tdef;
     nodelist *tmp;
-    int did_print = 0;
 
     DBUG_ENTER ("PrintSibTypes");
 
@@ -534,31 +535,22 @@ PrintSibTypes (FILE *sibfile, nodelist *tdeflist, char *modname)
     while (tmp != NULL) {
         tdef = NODELIST_NODE (tmp);
 
-        if (link_module || (TYPEDEF_MOD (tdef) == NULL)
-            || (0 == strcmp (MOD (TYPEDEF_MOD (tdef)), modname))) {
-            did_print = 1;
+        if (TYPEDEF_ATTRIB (tdef) == ST_unique) {
+            fprintf (sibfile, "class ");
+        }
 
-            if (TYPEDEF_ATTRIB (tdef) == ST_unique) {
-                fprintf (sibfile, "class ");
-            }
+        fprintf (sibfile, "typedef %s ", Type2String (TYPEDEF_TYPE (tdef), 0));
+        PRINTMODNAME (TYPEDEF_MOD (tdef), TYPEDEF_NAME (tdef));
+        fprintf (sibfile, ";\n");
 
-            fprintf (sibfile, "typedef %s ", Type2String (TYPEDEF_TYPE (tdef), 0));
-            PRINTMODNAME (TYPEDEF_MOD (tdef), TYPEDEF_NAME (tdef));
-            fprintf (sibfile, ";\n");
-
-            if (TYPEDEF_PRAGMA (tdef) != NULL) {
-                PrintPragma (TYPEDEF_PRAGMA (tdef), tdef);
-            }
-
-            if (TYPEDEF_CMOD (tdef) != NULL) {
-                fprintf (sibfile, "#pragma external %s\n", TYPEDEF_CMOD (tdef));
-            }
+        if (TYPEDEF_PRAGMA (tdef) != NULL) {
+            PrintPragma (TYPEDEF_PRAGMA (tdef), tdef);
         }
 
         tmp = NODELIST_NEXT (tmp);
     }
 
-    if (did_print) {
+    if (tdeflist != NULL) {
         fprintf (sibfile, "\n");
     }
 
@@ -583,34 +575,32 @@ void
 PrintSibObjs (FILE *sibfile, nodelist *objdeflist, char *modname)
 {
     node *objdef;
-    int did_print = 0;
+    nodelist *tmp;
 
     DBUG_ENTER ("PrintSibObjs");
 
-    while (objdeflist != NULL) {
-        objdef = NODELIST_NODE (objdeflist);
+    tmp = objdeflist;
 
-        if (link_module || (OBJDEF_MOD (objdef) == NULL)
-            || (0 == strcmp (MOD (OBJDEF_MOD (objdef)), modname))) {
-            did_print = 1;
+    while (tmp != NULL) {
+        objdef = NODELIST_NODE (tmp);
 
-            fprintf (sibfile, "objdef %s ", Type2String (OBJDEF_TYPE (objdef), 0));
-            PRINTMODNAME (OBJDEF_MOD (objdef), OBJDEF_NAME (objdef));
-            fprintf (sibfile, ";\n");
+        fprintf (sibfile, "objdef %s ", Type2String (OBJDEF_TYPE (objdef), 0));
+        PRINTMODNAME (OBJDEF_MOD (objdef), OBJDEF_NAME (objdef));
+        fprintf (sibfile, ";\n");
 
-            if (OBJDEF_PRAGMA (objdef) != NULL) {
-                PrintPragma (OBJDEF_PRAGMA (objdef), objdef);
-            }
-
-            if (OBJDEF_CMOD (objdef) != NULL) {
-                fprintf (sibfile, "#pragma external %s\n", OBJDEF_CMOD (objdef));
-            }
+        if (OBJDEF_PRAGMA (objdef) != NULL) {
+            PrintPragma (OBJDEF_PRAGMA (objdef), objdef);
         }
-
-        objdeflist = NODELIST_NEXT (objdeflist);
+        /*
+            if (OBJDEF_LINKMOD(objdef)!=NULL)
+            {
+              fprintf(sibfile, "#pragma external %s\n", OBJDEF_LINKMOD(objdef));
+            }
+        */
+        tmp = NODELIST_NEXT (tmp);
     }
 
-    if (did_print) {
+    if (objdeflist != NULL) {
         fprintf (sibfile, "\n");
     }
 
@@ -641,31 +631,29 @@ PrintSibFuns (FILE *sibfile, nodelist *fundeflist, char *modname)
     while (fundeflist != NULL) {
         fundef = NODELIST_NODE (fundeflist);
 
-        if (link_module || (FUNDEF_MOD (fundef) == NULL)
-            || (0 == strcmp (MOD (FUNDEF_MOD (fundef)), modname))) {
-            PrintFunctionHeader (fundef, fundef);
+        PrintFunctionHeader (fundef, fundef);
 
-            if ((FUNDEF_INLINE (fundef)) || (FUNDEF_ATTRIB (fundef) == ST_independent)) {
-                fprintf (sibfile, "\n");
-                Trav (FUNDEF_BODY (fundef), NULL);
-            } else {
-                fprintf (sibfile, ";\n");
+        if ((FUNDEF_INLINE (fundef)) || (FUNDEF_ATTRIB (fundef) == ST_independent)) {
+            fprintf (sibfile, "\n");
+            Trav (FUNDEF_BODY (fundef), NULL);
+        } else {
+            fprintf (sibfile, ";\n");
+        }
+
+        if (FUNDEF_PRAGMA (fundef) != NULL) {
+            PrintPragma (FUNDEF_PRAGMA (fundef), fundef);
+        }
+        /*
+            if (FUNDEF_LINKMOD(fundef)!=NULL)
+            {
+              fprintf(sibfile, "#pragma external %s\n", FUNDEF_LINKMOD(fundef));
             }
+        */
+        PrintNeededObjects (sibfile, FUNDEF_NEEDOBJS (fundef));
 
-            if (FUNDEF_PRAGMA (fundef) != NULL) {
-                PrintPragma (FUNDEF_PRAGMA (fundef), fundef);
-            }
-
-            if (FUNDEF_CMOD (fundef) != NULL) {
-                fprintf (sibfile, "#pragma external %s\n", FUNDEF_CMOD (fundef));
-            }
-
-            PrintNeededObjects (sibfile, FUNDEF_NEEDOBJS (fundef));
-
-            if ((FUNDEF_INLINE (fundef)) || (FUNDEF_ATTRIB (fundef) == ST_independent)) {
-                PrintNeededTypes (sibfile, FUNDEF_NEEDTYPES (fundef));
-                PrintNeededFunctions (sibfile, FUNDEF_NEEDFUNS (fundef));
-            }
+        if ((FUNDEF_INLINE (fundef)) || (FUNDEF_ATTRIB (fundef) == ST_independent)) {
+            PrintNeededTypes (sibfile, FUNDEF_NEEDTYPES (fundef));
+            PrintNeededFunctions (sibfile, FUNDEF_NEEDFUNS (fundef));
         }
 
         fprintf (sibfile, "\n");
@@ -822,11 +810,7 @@ WSIBmodul (node *arg_node, node *arg_info)
 
     sibfile = OpenSibFile (MODUL_NAME (arg_node));
 
-    if (link_module) {
-        fprintf (sibfile, "<%s:all>\n\n", MODUL_NAME (arg_node));
-    } else {
-        fprintf (sibfile, "<%s>\n\n", MODUL_NAME (arg_node));
-    }
+    fprintf (sibfile, "<%s>\n\n", MODUL_NAME (arg_node));
 
     if (MODDEC_OWN (MODUL_DECL (arg_node)) != NULL) {
         /*
@@ -865,7 +849,7 @@ WSIBmodul (node *arg_node, node *arg_info)
         FreeNode (export);
     }
 
-    fprintf (sibfile, "\n&&&");
+    fprintf (sibfile, "\n<###>");
 
     fclose (sibfile);
 
