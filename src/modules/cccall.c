@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/07/24 14:52:43  nmw
+ * compiling of object init flag c files added
+ * minor bugs in shell scripts removed
+ *
  * Revision 2.13  2000/07/12 15:53:36  nmw
  * add generation of one big library file, including all neccessary object files
  *
@@ -727,14 +731,17 @@ InvokeCC ()
              */
             NOTE (("collecting used sac-libraries...\n"))
             SystemCall ("%s %s ;"
-                        "for archive in *.a ;"
-                        "  do ar -x $archive ;"
-                        "  for file in *.o ;"
-                        "    do %s $file \"$archive.$file\" ;"
-                        "  done ;"
-                        "  %s SAC_full.archive *.o ;"
-                        "  %s *.o ;"
-                        "done",
+                        "filelist=`ls *.a 2>/dev/null` ; " /* check for any archives */
+                        "if [ -n \"$filelist\" ]; then"
+                        "  for archive in *.a ;"
+                        "    do ar -x $archive ;" /* extract file from archive */
+                        "    for file in *.o ;"   /* rename all files of this archive */
+                        "      do %s $file \"$archive.$file\" ;"
+                        "    done ;"
+                        "    %s SAC_full.archive *.o ;" /* add to new archive */
+                        "    %s *.o ;"
+                        "  done;"
+                        "fi",
                         config.chdir, tmp_dirname, config.move, config.ar_create,
                         config.rmdir);
 
@@ -743,6 +750,14 @@ InvokeCC ()
                         config.ccflags, config.ccdir, opt_buffer, tmp_dirname,
                         tmp_dirname);
             NOTEDOT;
+            /* compile global object initflag files */
+
+            for (i = 1; i <= object_counter; i++) {
+                SystemCall ("%s %s %s %s -o %s/objinitflag%d.o -c %s/objinitflag%d.c",
+                            config.cc, config.ccflags, config.ccdir, opt_buffer,
+                            tmp_dirname, i, tmp_dirname, i);
+                NOTEDOT;
+            }
         }
 
         if (linkstyle == 1) {
