@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2004/07/19 12:42:48  ktr
+ * updated EMRC traversal.
+ *
  * Revision 3.58  2004/07/16 14:41:34  sah
  * switch to new INFO structure
  * PHASE I
@@ -224,6 +227,7 @@
 #include "uniquecheck.h"
 #include "refcount.h"
 #include "alloc.h"
+#include "refcounting.h"
 #include "wltransform.h"
 #include "precompile.h"
 #include "compile.h"
