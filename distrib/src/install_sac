@@ -15,29 +15,29 @@ make=gmake
 
 
 add_search_path () {
-                    PATH=$1\:$PATH
-                    export PATH
+                     PATH=$1\:$PATH
+                     export PATH
                    }
 
 err () {
-       echo "error: " $1 
-       echo
+         echo "error: " $1 
+         echo
        }
 
 mess () {
-        echo
-        echo ">>>>> " $1 
-        echo
+          echo
+          echo ">>>>> " $1 
+          echo
         }
 
 warn () {
-        echo "warning: " $1 
-        echo
+          echo "warning: " $1 
+          echo
         }
 
 error () {
-         err "$1"
-         exit 1
+           err "$1"
+           exit 1
          }
 
 ask () {
@@ -83,34 +83,34 @@ insert_component() {
    # $3: destination-file/directory
    # $4: flag {r,n} indicating whether to re-use / not re-use existing stuff
    #
-                    if [ -f $2 ] 
-                    then
-                      if [ -$1 $3 -a $4 = "r" ] ; then
-                        ask '"'$3'" exists! Overwrite?' "y"
-                        if [ $ask_res != "y" ] ; then
-                          warn '"'$2'" neglected - using "'$3'"!'
-                          warn '"'$2'" NOT INSTALLED AGAIN !!'
-                        else
-                          mv -f $2 $3
-                          chmod u+w $3
-                          mess '"'$2'" INSTALLED !!'
-                        fi
-                      else
-                        if [ $1 = "d" ] ; then
-                          mkdir -p $3
-                        fi
-                        mv -f $2 $3
-                        chmod u+w $3
-                        mess '"'$2'" INSTALLED !!'
-                      fi
-                    else
-                      if [ -$1 $3 ] ; then
-                        warn '"'$2'" not found - using "'$3'"!'
-                        warn '"'$2'" NOT INSTALLED AGAIN !!'
-                      else
-                        error '"'$2'" not found!'
-                      fi
-                    fi
+                     if [ -f $2 ] 
+                     then
+                       if [ -$1 $3 -a $4 = "r" ] ; then
+                         ask '"'$3'" exists! Overwrite?' "y"
+                         if [ $ask_res != "y" ] ; then
+                           warn '"'$2'" neglected - using "'$3'"!'
+                           warn '"'$2'" NOT INSTALLED AGAIN !!'
+                         else
+                           mv -f $2 $3
+                           chmod u+w $3
+                           mess '"'$2'" INSTALLED !!'
+                         fi
+                       else
+                         if [ $1 = "d" ] ; then
+                           mkdir -p $3
+                         fi
+                         mv -f $2 $3
+                         chmod u+w $3
+                         mess '"'$2'" INSTALLED !!'
+                       fi
+                     else
+                       if [ -$1 $3 ] ; then
+                         warn '"'$2'" not found - using "'$3'"!'
+                         warn '"'$2'" NOT INSTALLED AGAIN !!'
+                       else
+                         error '"'$2'" not found!'
+                       fi
+                     fi
                    }
 
 
@@ -175,15 +175,6 @@ else
   warn "runtime.tar NOT UNPACKED !!"
 fi
 
-insert_component d libsac.tar $base/runtime r
-if [ -f $SACBASE/runtime/libsac.tar ] ; then
-  (cd $SACBASE/runtime; tar xvf libsac.tar; rm -f libsac.tar)
-  chmod -R u+w $SACBASE/runtime
-  mess "libsac.tar UNPACKED !!"
-else
-  warn "libsac.tar NOT UNPACKED !!"
-fi
-
 insert_component f sac2crc $base/runtime/sac2crc r
 
 echo
@@ -195,12 +186,9 @@ if [ -f $SACBASE/stdlib/stdlib.tar ] ; then
   (cd $SACBASE/stdlib; tar xvf stdlib.tar; $make untar TARGET=untar; rm -f stdlib.tar )
   chmod -R u+w $SACBASE/stdlib
   mess "stdlib.tar UNPACKED !!"
-  rm -f $base/stdlib/Makefiles/Makefile.Config
 else
   warn "stdlib.tar NOT UNPACKED !!"
 fi
-
-insert_component f Makefile.Config $base/stdlib/Makefiles/Makefile.Config r
 
 if [ -f $SACBASE/stdlib/Makefile ] ; then
   ask 'Do you want to compile the standard library right now?' "y"
