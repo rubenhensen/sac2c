@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/04/17 15:55:48  dkr
+ * ooops... bug in SAC_INITGLOBALOBJECT_BEGIN fixed...
+ *
  * Revision 3.7  2002/04/17 15:46:07  dkr
  * definition of SAC_INITGLOBALOBJECT_BEGIN modified
  *
@@ -701,8 +704,8 @@
 #ifdef SAC_GENERATE_CLIBRARY
 /* with check */
 #define SAC_INITGLOBALOBJECT_BEGIN(varname)                                              \
-    if (!CAT0 (varname, SAC_INIT_FLAG_)) {                                               \
-        varname = true;
+    if (!CAT0 (SAC_INIT_FLAG_, varname)) {                                               \
+        CAT0 (SAC_INIT_FLAG_, varname) = true;
 #define SAC_INITGLOBALOBJECT_END() }
 #else
 /* without check -> NOP */
