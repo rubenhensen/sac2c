@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/12/20 08:19:59  cg
+ * Revision 1.8  1996/01/26 15:32:21  cg
+ * function status ST_classfun now supported
+ *
+ * Revision 1.7  1995/12/20  08:19:59  cg
  * converted usage of macro WITH_BODY to WITH_OPERATOR
  *
  * Revision 1.6  1995/11/10  15:05:38  cg
@@ -711,7 +714,7 @@ UNQfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("UNQfundef");
 
-    if (FUNDEF_STATUS (arg_node) != ST_imported) {
+    if (FUNDEF_BODY (arg_node) != NULL) {
         argno = 0;
 
         if (FUNDEF_ARGS (arg_node) != NULL) {

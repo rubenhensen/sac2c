@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1996/01/25 18:46:09  cg
+ * Revision 1.8  1996/01/26 15:32:21  cg
+ * function status ST_classfun now supported
+ *
+ * Revision 1.7  1996/01/25  18:46:09  cg
  * In class implementations, the typedef node for the class type
  * is generated here as well as the fundef nodes of the generic
  * conversion functions.
@@ -81,7 +84,8 @@ OImodul (node *arg_node, node *arg_info)
 
         MODUL_TYPES (arg_node)
           = MakeTypedef (StringCopy (MODUL_NAME (arg_node)), MODUL_NAME (arg_node),
-                         MODUL_CLASSTYPE (arg_node), ST_unique, MODUL_TYPES (arg_node));
+                         DuplicateTypes (MODUL_CLASSTYPE (arg_node), 1), ST_unique,
+                         MODUL_TYPES (arg_node));
 
         toclass = (char *)Malloc (MAX_FILE_NAME);
         fromclass = (char *)Malloc (MAX_FILE_NAME);
@@ -100,11 +104,10 @@ OImodul (node *arg_node, node *arg_info)
                                  ST_regular, ST_regular, NULL),
                         NULL, MODUL_FUNS (arg_node));
 
-        FUNDEF_STATUS (MODUL_FUNS (arg_node)) = ST_generic;
+        FUNDEF_STATUS (MODUL_FUNS (arg_node)) = ST_classfun;
 
         MODUL_FUNS (arg_node)
-          = MakeFundef (fromclass, MODUL_NAME (arg_node),
-                        DuplicateTypes (MODUL_CLASSTYPE (arg_node), 1),
+          = MakeFundef (fromclass, MODUL_NAME (arg_node), MODUL_CLASSTYPE (arg_node),
                         MakeArg (NULL,
                                  MakeType (T_user, 0, NULL,
                                            StringCopy (MODUL_NAME (arg_node)),
@@ -112,7 +115,7 @@ OImodul (node *arg_node, node *arg_info)
                                  ST_regular, ST_regular, NULL),
                         NULL, MODUL_FUNS (arg_node));
 
-        FUNDEF_STATUS (MODUL_FUNS (arg_node)) = ST_generic;
+        FUNDEF_STATUS (MODUL_FUNS (arg_node)) = ST_classfun;
 
         MODUL_CLASSTYPE (arg_node) = NULL;
 

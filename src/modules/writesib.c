@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1996/01/22 18:35:31  cg
+ * Revision 1.9  1996/01/26 15:32:21  cg
+ * function status ST_classfun now supported
+ *
+ * Revision 1.8  1996/01/22  18:35:31  cg
  * added new pragmas for global objects: effect, initfun
  *
  * Revision 1.7  1996/01/07  17:01:26  cg
@@ -685,18 +688,24 @@ PrintSibObjs (FILE *sibfile, nodelist *objdeflist, char *modname)
 void
 PrintSibFuns (FILE *sibfile, nodelist *fundeflist, char *modname)
 {
-    node *fundef;
+    node *fundef, *info;
 
     DBUG_ENTER ("PrintSibFuns");
 
     while (fundeflist != NULL) {
         fundef = NODELIST_NODE (fundeflist);
 
+        if (FUNDEF_STATUS (fundef) == ST_classfun) {
+            fprintf (outfile, "class ");
+        }
+
         PrintFunctionHeader (fundef, fundef);
 
         if ((FUNDEF_INLINE (fundef)) || (FUNDEF_ATTRIB (fundef) == ST_independent)) {
             fprintf (sibfile, "\n");
-            Trav (FUNDEF_BODY (fundef), NULL);
+            info = MakeInfo ();
+            Trav (FUNDEF_BODY (fundef), info);
+            FREE (info);
         } else {
             fprintf (sibfile, ";\n");
         }

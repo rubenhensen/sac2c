@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/12/01 17:20:31  cg
+ * Revision 1.8  1996/01/26 15:32:21  cg
+ * function status ST_classfun now supported
+ *
+ * Revision 1.7  1995/12/01  17:20:31  cg
  * objinitfuns are now analysed as well.
  *
  * Revision 1.6  1995/11/01  16:29:55  cg
@@ -93,7 +96,8 @@ FindAllNeededObjects (node *arg_node)
 
     DBUG_ENTER ("FindAllNeededObjects");
 
-    if (FUNDEF_STATUS (arg_node) != ST_imported) {
+    if ((FUNDEF_STATUS (arg_node) == ST_regular)
+        || (FUNDEF_STATUS (arg_node) == ST_objinitfun)) {
         /*
          *  For each not imported function the list of called functions
          *  is traversed.
@@ -111,7 +115,8 @@ FindAllNeededObjects (node *arg_node)
             StoreNeededNodes (FUNDEF_NEEDOBJS (NODELIST_NODE (tmp)), arg_node,
                               ST_artificial);
 
-            if (FUNDEF_STATUS (NODELIST_NODE (tmp)) != ST_imported) {
+            if ((FUNDEF_STATUS (NODELIST_NODE (tmp)) == ST_regular)
+                || (FUNDEF_STATUS (NODELIST_NODE (tmp)) == ST_objinitfun)) {
                 /*
                  *  If the called function is not imported, its called functions
                  *  are added to this function's list of needed functions.
