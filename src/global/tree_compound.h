@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/12/07 16:24:46  asi
+ * Revision 1.19  1995/12/12 15:49:08  hw
+ * added macros LET_NAME, LET_MOD, LET_STATUS
+ *
+ * Revision 1.18  1995/12/07  16:24:46  asi
  * added function MakeAssignLet
  *
  * Revision 1.17  1995/12/01  17:10:45  cg
@@ -887,6 +890,13 @@ extern node *MakeAssignLet (char *var_name, node *vardec_node, node *let_expr);
 /***
  ***  N_let :
  ***/
+/*
+ *  compound access macros
+ */
+
+#define LET_NAME(n) (IDS_NAME (LET_IDS (n)))
+#define LET_MOD(n) (IDS_MOD (LET_IDS (n)))
+#define LET_STATUS(n) (IDS_STATUS (LET_IDS (n)))
 
 /*--------------------------------------------------------------------------*/
 
