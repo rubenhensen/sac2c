@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2002/07/11 13:37:19  dkr
+ * functions renamed
+ *
  * Revision 1.2  2002/07/10 19:27:26  dkr
  * TAGGED_ARRAYS: access macros are functions now
  *
@@ -12,6 +15,8 @@
 #include "dbug.h"
 #include "globals.h"
 #include "print.h"
+#include "NameTuples.h"
+#include "icm2c_utils.h"
 
 int print_comment = 0; /* bool */
 
@@ -20,7 +25,7 @@ int print_comment = 0; /* bool */
 /******************************************************************************
  *
  * Function:
- *   void AccessVect( void *v, char *i_str, int i)
+ *   void ReadId( void *nt, char *idx_str, int idx)
  *
  * Description:
  *
@@ -28,14 +33,17 @@ int print_comment = 0; /* bool */
  ******************************************************************************/
 
 void
-AccessVect (void *v, char *i_str, int i)
+ReadId (void *nt, char *idx_str, int idx)
 {
-    DBUG_ENTER ("AccessVect");
+    DBUG_ENTER ("ReadId");
 
-    if (i_str != NULL) {
-        fprintf (outfile, "SAC_ND_READ( %s, %s)", (char *)v, i_str);
+    DBUG_ASSERT ((((char *)nt)[0] == '('), "no tag found!");
+
+    if (idx_str != NULL) {
+        fprintf (outfile, "SAC_ND_READ( %s, %s)", (char *)nt, idx_str);
     } else {
-        fprintf (outfile, "SAC_ND_READ( %s, %d)", (char *)v, i);
+        DBUG_ASSERT ((idx >= 0), "illegal index found!");
+        fprintf (outfile, "SAC_ND_READ( %s, %d)", (char *)nt, idx);
     }
 
     DBUG_VOID_RETURN;
@@ -44,7 +52,7 @@ AccessVect (void *v, char *i_str, int i)
 /******************************************************************************
  *
  * Function:
- *   void AccessConst( void *v, char *i_str, int i)
+ *   void ReadScalar( void *scl, char *idx_str, int idx)
  *
  * Description:
  *
@@ -52,14 +60,23 @@ AccessVect (void *v, char *i_str, int i)
  ******************************************************************************/
 
 void
-AccessConst (void *v, char *i_str, int i)
+ReadScalar (void *scl, char *idx_str, int idx)
 {
-    DBUG_ENTER ("AccessConst");
+    DBUG_ENTER ("ReadScalar");
 
-    if (i_str != NULL) {
-        DBUG_ASSERT ((0), "illegal argument for AccessConst() found!");
+    if (((char *)scl)[0] == '(') {
+        /* 'scl' is a tagged id */
+        data_class_t dc = ICUGetDataClass (scl);
+
+        DBUG_ASSERT (((dc == C_scl) || (dc == C_aud)), "tagged id is no scalar!");
+        ReadId (scl, idx_str, idx);
     } else {
-        fprintf (outfile, "%s", ((char **)v)[i]);
+        if (idx_str == NULL) {
+            DBUG_ASSERT ((idx == 0), "illegal index found!");
+        }
+
+        /* 'scl' is a scalar constant */
+        fprintf (outfile, "%s", (char *)scl);
     }
 
     DBUG_VOID_RETURN;
@@ -68,7 +85,7 @@ AccessConst (void *v, char *i_str, int i)
 /******************************************************************************
  *
  * Function:
- *   void AccessDim( void *v)
+ *   void ReadScalar_Check( void *scl, char *idx_str, int idx)
  *
  * Description:
  *
@@ -76,11 +93,36 @@ AccessConst (void *v, char *i_str, int i)
  ******************************************************************************/
 
 void
-AccessDim (void *v)
+ReadScalar_Check (void *scl, char *idx_str, int idx)
 {
-    DBUG_ENTER ("AccessDim");
+    DBUG_ENTER ("ReadScalar_Check");
 
-    fprintf (outfile, "SAC_ND_A_DIM( %s)", (char *)v);
+    if (((char *)scl)[0] == '(') {
+        /* 'scl' is a tagged id */
+        data_class_t dc = ICUGetDataClass (scl);
+
+        DBUG_ASSERT (((dc == C_scl) || (dc == C_aud)), "tagged id is no scalar!");
+        if (dc == C_aud) {
+            fprintf (outfile, "\n");
+            indent++;
+            INDENT;
+            fprintf (outfile,
+                     "( SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == 0),"
+                     " (\"Scalar expected but array with (dim > 0)"
+                     " found!\")) , \n",
+                     (char *)scl);
+            INDENT;
+            fprintf (outfile, "  ");
+            ReadId (scl, idx_str, idx);
+            fprintf (outfile, " )");
+            indent--;
+        } else {
+            ReadId (scl, idx_str, idx);
+        }
+    } else {
+        /* 'scl' is a scalar constant */
+        fprintf (outfile, "%s", (char *)scl);
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -88,7 +130,7 @@ AccessDim (void *v)
 /******************************************************************************
  *
  * Function:
- *   void AccessShape( void *v, char *i_str, int i)
+ *   void ReadConstArray( void *v, char *idx_str, int idx)
  *
  * Description:
  *
@@ -96,14 +138,58 @@ AccessDim (void *v)
  ******************************************************************************/
 
 void
-AccessShape (void *v, char *i_str, int i)
+ReadConstArray (void *v, char *idx_str, int idx)
 {
-    DBUG_ENTER ("AccessShape");
+    DBUG_ENTER ("ReadConstArray");
 
-    if (i_str != NULL) {
-        fprintf (outfile, "SAC_ND_A_SHAPE( %s, %s)", (char *)v, i_str);
+    if (idx_str != NULL) {
+        DBUG_ASSERT ((0), "illegal argument for ReadConstArray() found!");
     } else {
-        fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", (char *)v, i);
+        ReadScalar (((char **)v)[idx], NULL, 0);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void DimId( void *nt)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+void
+DimId (void *nt)
+{
+    DBUG_ENTER ("DimId");
+
+    fprintf (outfile, "SAC_ND_A_DIM( %s)", (char *)nt);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void ShapeId( void *nt, char *idx_str, int idx)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+void
+ShapeId (void *nt, char *idx_str, int idx)
+{
+    DBUG_ENTER ("ShapeId");
+
+    if (idx_str != NULL) {
+        fprintf (outfile, "SAC_ND_A_SHAPE( %s, %s)", (char *)nt, idx_str);
+    } else {
+        fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", (char *)nt, idx);
     }
 
     DBUG_VOID_RETURN;
@@ -272,8 +358,7 @@ VectToOffset (char *offset, void *v, int dimv, void (*v_acc_dim) (void *),
 {
     DBUG_ENTER ("VectToOffset");
 
-    VectToOffset2 (offset, v, dimv, v_acc_dim, v_acc_shp, a, dima, AccessDim,
-                   AccessShape);
+    VectToOffset2 (offset, v, dimv, v_acc_dim, v_acc_shp, a, dima, DimId, ShapeId);
 
     DBUG_VOID_RETURN;
 }
