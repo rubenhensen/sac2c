@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/07/07 15:53:51  jhs
+ * Added comments, code brushed and assertions ordered correctly.
+ *
  * Revision 2.5  1999/07/02 09:57:39  jhs
  * Removed some memory leaks when combinig masks in MeltSpmds.
  *
@@ -55,8 +58,8 @@
  *
  * description:
  *   Asserts whether the block is an N_block and has only the attribute
- *   BLOCK_INSTR set. This checkis needed at various places to check wheter
- *   the block was newly introduced, and hos no extra information that cannot
+ *   BLOCK_INSTR set. This check is needed at various places to check wether
+ *   the block was newly introduced, and has no extra information that cannot
  *   be handled by the calling routines.
  *
  ******************************************************************************/
@@ -111,19 +114,19 @@ BlocksLastInstruction (node *block)
 }
 
 /******************************************************************************
- *
+ * #### used by sync_opt also, move to more global place
  * functions:
- * (1) node *MeltBlocks (node *first_block, node *second_block)
- * (2) node *MeltBlocksOnCopies (node *first_block, node *second_block)
+ *   (1) node *MeltBlocks (node *first_block, node *second_block)
+ *   (2) node *MeltBlocksOnCopies (node *first_block, node *second_block)
  *
  * description:
  *   Melts to N_blocks to one.
  *
- * (1) normal version:
+ *   (1) normal version:
  *   If the normal version is used the first entry is reused, and the second
  *   one is given free. That means both arguments are modified!
  *
- * (2) copying version:
+ *   (2) copying version:
  *   Both arguments (and also the two complete trees!) are copied here, and
  *   no harm is done to them, one gets a complety new node as result.
  *
@@ -179,20 +182,25 @@ MeltBlocksOnCopies (node *first_block, node *second_block)
  * attention:
  *   There are some sideeffects!
  *   first_spmd will be used to build the result, while second_spmd will be
- *   freed. Use MeltSPMDsOnCopies (see below) to avoid this, that function
- *   first copies both arguments, so no sideeffects occur.
+ *   freed. Use MeltSPMDsOnCopies (see below) to avoid this. That function
+ *   first copies both arguments, so no sideeffects occur to the outside.
+ *
+ * remark:
+ *   - A version without sideeffects is also available
+ *     (see MeltSPMDsOnCopies below).
+ *   - fundef is only needed for debugging.
  *
  ******************************************************************************/
 node *
 MeltSPMDs (node *first_spmd, node *second_spmd, node *fundef)
 {
     int i;
-    node *result; /* result value of this function */
-    DFMmask_t newin;
+    node *result;    /* result value of this function            */
+    DFMmask_t newin; /* masks to combine old masks               */
     DFMmask_t newout;
     DFMmask_t newshared;
-    int *counters;
-    node *vv;
+    int *counters; /* mask to save counted occurences          */
+    node *vardec;  /* only needed to traverse in debug-section */
 
     DBUG_ENTER ("MeltSPMDs");
 
@@ -206,7 +214,7 @@ MeltSPMDs (node *first_spmd, node *second_spmd, node *fundef)
                  "SPMD_STATIC differs in SPMDs to be melted");
 
     /*
-     *  Count which varibales are consumned how often in second block and ...
+     *  Count which variables are consumned how often in second block and ...
      */
     DBUG_PRINT ("SPMD", ("Entering CountOccurences"));
     counters = CountOccurences (SPMD_REGION (second_spmd), SPMD_OUT (first_spmd));
@@ -216,12 +224,12 @@ MeltSPMDs (node *first_spmd, node *second_spmd, node *fundef)
      *  this is only to debug, it prints out all variables (each with a varno
      *  and the corresponding value of counter[varno].
      */
-    vv = BLOCK_VARDEC (FUNDEF_BODY (fundef));
+    vardec = BLOCK_VARDEC (FUNDEF_BODY (fundef));
     for (i = 0; i < 20; i++) {
-        if (vv != NULL) {
-            DBUG_PRINT ("SPMD", ("%i %i %s(varno=%i)", i, counters[VARDEC_VARNO (vv)],
-                                 VARDEC_NAME (vv), VARDEC_VARNO (vv)));
-            vv = VARDEC_NEXT (vv);
+        if (vardec != NULL) {
+            DBUG_PRINT ("SPMD", ("%i %i %s(varno=%i)", i, counters[VARDEC_VARNO (vardec)],
+                                 VARDEC_NAME (vardec), VARDEC_VARNO (vardec)));
+            vardec = VARDEC_NEXT (vardec);
         } else {
             /* rest will be NULL, so we jump out of here */
             DBUG_PRINT ("SPMD", ("Rest NULL!!!"));
@@ -309,7 +317,8 @@ MeltSPMDs (node *first_spmd, node *second_spmd, node *fundef)
  *   value is a completly new node.
  *
  * remark:
- *   A simple version without any copying is alos available (see above).
+ *   A simple version without any copying is also available
+ *   (see MeltSPMDs above).
  *
  ******************************************************************************/
 node *
@@ -352,21 +361,21 @@ SPMDOspmd (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("SPMDOspmd");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_spmd), "Wrong NODE_TYPE");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_spmd), "Wrong NODE_TYPE: N_sync expected");
+    DBUG_ASSERT ((arg_info != NULL), ("arg_info is NULL"));
     DBUG_ASSERT ((arg_node == ASSIGN_INSTR (INFO_SPMDO_THISASSIGN (arg_info))),
                  "arg_node differs from thisasssign");
-    DBUG_ASSERT ((arg_info != NULL), "arg_info is NULL");
 
     result = arg_node;
     /*
-     *  if this SPMD-Block is followed directly (!) by another SPMD-Block both blocks
-     *  are melted here.
+     *  if this SPMD-Block is followed directly (!) by another SPMD-Block both
+     *  blocks are melted here.
      */
     while ((INFO_SPMDO_NEXTASSIGN (arg_info) != NULL)
            && (NODE_TYPE (ASSIGN_INSTR (INFO_SPMDO_NEXTASSIGN (arg_info))) == N_spmd)) {
-        DBUG_PRINT ("SPMDO", ("melting"));
+        DBUG_PRINT ("SPMDO", ("melting spmd-blocks"));
         /*
-         *  The actual optimisation takes place here.
+         *  The actual optimization of SPMD-blocks takes place here.
          */
         result = MeltSPMDs (arg_node, ASSIGN_INSTR (INFO_SPMDO_NEXTASSIGN (arg_info)),
                             INFO_SPMDT_ACTUAL_FUNDEF (arg_info));
