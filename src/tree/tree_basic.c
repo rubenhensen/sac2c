@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/02/10 15:48:13  jhs
+ * Added NWITH2_ISSCHEDULED.
+ *
  * Revision 1.5  2000/02/09 14:14:07  dkr
  * WLSEGVAR_MAXHOMDIM removed
  *
@@ -1708,6 +1711,7 @@ MakeNWith2 (node *withid, node *seg, node *code, node *withop, int dims)
     NWITH2_CODE (tmp) = code;
     NWITH2_WITHOP (tmp) = withop;
     NWITH2_DIMS (tmp) = dims;
+    NWITH2_ISSCHEDULED (tmp) = FALSE;
 
     DBUG_RETURN (tmp);
 }

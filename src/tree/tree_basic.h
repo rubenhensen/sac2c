@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2000/02/10 15:48:13  jhs
+ * Added NWITH2_ISSCHEDULED.
+ *
  * Revision 1.11  2000/02/09 14:14:22  dkr
  * WLSEGVAR_MAXHOMDIM removed
  * INFO_LAC2FUN_FUNDEF added
@@ -3093,6 +3096,10 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***    ids*       DEC_RC_IDS         (wltransform -> compile )
  ***
+ ***    bool (int) ISSCHEDULED        (new mt -> ...)
+ ***                                   Signals whether any segment is
+ ***                                   scheduled or not
+ ***
  ***    DFMmask_t  REUSE              (compile ! )
  ***
  ***    SCHsched_t SCHEDULING   (O)   (wltransform -> compile )
@@ -3109,6 +3116,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define NWITH2_WITHOP(n) (n->node[3])
 
 #define NWITH2_SCHEDULING(n) ((SCHsched_t) (n->node[4]))
+#define NWITH2_ISSCHEDULED(n) (n->int_data)
 #define NWITH2_DEC_RC_IDS(n) ((ids *)(n->node[5]))
 
 #define NWITH2_IN(n) ((DFMmask_t)n->dfmask[0])
