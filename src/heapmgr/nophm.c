@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/17 16:25:58  cg
+ * nophm.c moved to directory libsac.
+ *
  * Revision 1.1  2000/01/03 17:33:17  cg
  * Initial revision
  *
@@ -41,35 +44,23 @@
  *
  *****************************************************************************/
 
+#include <stdlib.h>
+
 #include "sac_message.h"
 #include "heapmgr.h"
 
-void
-SAC_HM_Setup_mt (unsigned int num_threads,
-                 size_byte_t initial_master_arena_of_arenas_size,
-                 size_byte_t initial_worker_arena_of_arenas_size,
-                 size_byte_t initial_top_arena_size)
-{
-    return;
-}
+SAC_HM_arena_t SAC_HM_arenas[1][SAC_HM_NUM_ARENAS + 2];
 
-void
-SAC_HM_Setup (size_byte_t initial_master_arena_of_arenas_size,
-              size_byte_t initial_top_arena_size)
+void *
+SAC_HM_MallocSmallChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena)
 {
-    return;
+    return (malloc (units * SAC_HM_UNIT_SIZE));
 }
 
 void *
-SAC_HM_MallocSmallChunk (size_unit_t units, SAC_HM_arena_t *arena)
+SAC_HM_MallocLargeChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena)
 {
-    return (malloc (units * UNIT_SIZE));
-}
-
-void *
-SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
-{
-    return (malloc (units * UNIT_SIZE));
+    return (malloc (units * SAC_HM_UNIT_SIZE));
 }
 
 void
@@ -97,43 +88,49 @@ SAC_HM_FreeTopArena_at (SAC_HM_header_t *addr)
 }
 
 void *
-SAC_HM_MallocAnyChunk_st (size_byte_t size)
+SAC_HM_MallocAnyChunk_st (SAC_HM_size_byte_t size)
 {
     return (malloc (size));
 }
 
 void *
-SAC_HM_MallocAnyChunk_mt (size_byte_t size, unsigned int thread_id)
+SAC_HM_MallocAnyChunk_mt (SAC_HM_size_byte_t size, unsigned int thread_id)
 {
     return (malloc (size));
 }
 
 void *
-SAC_HM_MallocSmallChunk_at (size_unit_t units, int arena_num)
+SAC_HM_MallocAnyChunk_at (SAC_HM_size_byte_t size)
 {
-    return (malloc (units * UNIT_SIZE));
+    return (malloc (size));
 }
 
 void *
-SAC_HM_MallocLargeChunk_at (size_unit_t units, int arena_num)
+SAC_HM_MallocSmallChunk_at (SAC_HM_size_unit_t units, int arena_num)
 {
-    return (malloc (units * UNIT_SIZE));
+    return (malloc (units * SAC_HM_UNIT_SIZE));
 }
 
 void *
-SAC_HM_MallocTopArena_at (size_unit_t units)
+SAC_HM_MallocLargeChunk_at (SAC_HM_size_unit_t units, int arena_num)
 {
-    return (malloc (units * UNIT_SIZE));
+    return (malloc (units * SAC_HM_UNIT_SIZE));
 }
 
 void *
-SAC_HM_MallocTopArena_mt (size_unit_t units)
+SAC_HM_MallocTopArena_at (SAC_HM_size_unit_t units)
 {
-    return (malloc (units * UNIT_SIZE));
+    return (malloc (units * SAC_HM_UNIT_SIZE));
 }
 
 void *
-SAC_HM_MallocCheck (unsigned long int size)
+SAC_HM_MallocTopArena_mt (SAC_HM_size_unit_t units)
+{
+    return (malloc (units * SAC_HM_UNIT_SIZE));
+}
+
+void *
+SAC_HM_MallocCheck (SAC_HM_size_byte_t size)
 {
     void *tmp;
 
