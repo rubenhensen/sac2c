@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.34  1999/10/26 19:03:52  dkr
+ * Fixed a bug in COMPPrf: ICMs are now correctly wrapped by an
+ * assign-node
+ *
  * Revision 2.33  1999/10/19 13:11:00  sbs
  * inclusion of type_info.mac adapted to the new .mac style
  *
@@ -314,24 +318,31 @@ int basetype_size[] = {
 
 static int label_nr = 0;
 
-node *
-AdjustRC (ids *varname, int num)
+#if 0
+node *AdjustRC(ids *varname, int num)
 {
-    node *result;
+  node *result;
 
-    if (num > 0) {
-        result = MakeIcm2 ("ND_INC_RC", MakeId2 (DupOneIds (varname, NULL)), MakeNum (1));
-    } else if (num == 0) {
-        result = NULL;
-    } else if (num == -1) {
-        result = MakeIcm2 ("ND_DEC_RC_FREE_ARRAY", MakeId2 (DupOneIds (varname, NULL)),
-                           MakeNum (1));
-    } else /* if (num < -1) */ {
-        result = MakeIcm2 ("ND_DEC_RC", MakeId2 (DupOneIds (varname, NULL)), MakeNum (1));
-    }
 
-    return (result);
+  if (num > 0) {
+     result = MakeIcm2( "ND_INC_RC",
+                        MakeId2( DupOneIds( varname, NULL)),
+                        MakeNum( 1));
+  } else if (num == 0) {
+    result = NULL;
+  } else if (num == -1) {
+    result = MakeIcm2( "ND_DEC_RC_FREE_ARRAY", 
+                       MakeId2( DupOneIds( varname, NULL)), 
+                       MakeNum( 1));
+  } else /* if (num < -1) */ {
+    result = MakeIcm2( "ND_DEC_RC", 
+                       MakeId2( DupOneIds( varname, NULL)), 
+                       MakeNum( 1));
+  }
+  
+  return( result);
 }
+#endif
 
 /*
           if (IDS_REFCNT( usevar) > 1) {
@@ -2883,8 +2894,9 @@ node *
 COMPPrf (node *arg_node, node *arg_info)
 {
     node *array, *scalar, *tmp, *res, *res_ref, *icm_arg, *prf_id_node, *type_id_node,
-      *arg1, *arg2, *arg3, *first_assign, *next_assign, *last_assign, *length_node,
-      *tmp_array1, *tmp_array2, *dim_node, *tmp_rc, *exprs;
+      *arg1, *arg2, *arg3, *first_assign = NULL, *next_assign = NULL, *last_assign = NULL,
+                           *length_node, *tmp_array1, *tmp_array2, *dim_node, *tmp_rc,
+                           *exprs;
     node *old_arg_node;
     simpletype res_stype = LET_BASETYPE (INFO_COMP_LASTLET (arg_info));
     int dim, is_SxA = 0, n_elems = 0, is_drop = 0, array_is_const = 0;
@@ -3169,21 +3181,27 @@ COMPPrf (node *arg_node, node *arg_info)
 
             switch (array_is_const) {
             case 0:
-                next_assign = MakeIcm2 ("ND_INC_RC", res, res_ref);
+                next_assign = MakeAssign (MakeIcm2 ("ND_INC_RC", res, res_ref), NULL);
                 APPEND_ASSIGNS (first_assign, next_assign);
                 DEC_OR_FREE_RC_ND (arg2, MakeNum (1));
                 DEC_OR_FREE_RC_ND (arg1, MakeNum (1));
                 break;
             case 1:
-                next_assign = MakeIcm2 ("ND_DEC_RC_FREE_ARRAY", arg2, MakeNum (1));
+                next_assign
+                  = MakeAssign (MakeIcm2 ("ND_DEC_RC_FREE_ARRAY", arg2, MakeNum (1)),
+                                NULL);
                 APPEND_ASSIGNS (first_assign, next_assign);
                 break;
             case 2:
-                next_assign = MakeIcm2 ("ND_DEC_RC_FREE_ARRAY", arg1, MakeNum (1));
+                next_assign
+                  = MakeAssign (MakeIcm2 ("ND_DEC_RC_FREE_ARRAY", arg1, MakeNum (1)),
+                                NULL);
                 APPEND_ASSIGNS (first_assign, next_assign);
                 break;
             case 3:
-                next_assign = MakeIcm2 ("ND_DEC_RC_FREE_ARRAY", arg2, MakeNum (1));
+                next_assign
+                  = MakeAssign (MakeIcm2 ("ND_DEC_RC_FREE_ARRAY", arg2, MakeNum (1)),
+                                NULL);
                 APPEND_ASSIGNS (first_assign, next_assign);
                 break;
             default:
