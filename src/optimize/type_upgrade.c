@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.12  2005/01/21 17:37:59  mwe
+ * small changes
+ *
  * Revision 1.11  2005/01/21 13:20:17  mwe
  * more implementation done
  *
@@ -705,7 +708,7 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
             FUNDEF_ARGS (tmp) = AdjustSignatureToArgs (FUNDEF_ARGS (tmp), args);
 
             FUNDEF_ISDOFUN (tmp) = FUNDEF_ISDOFUN (fundef);
-            FUNDEF_USED (tmp) = FUNDEF_USED (fundef);
+            /*FUNDEF_USED( tmp) = FUNDEF_USED( fundef);*/
             /*
              * die selbe Funktionalität wie TUPdoTypeUpgrade, aber:
              * prüft bei N_ap auf rekursiven Aufruf und prüft auf passende Typen
@@ -735,12 +738,12 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
                  * TODO: add counter
                  */
 
-                /*FREEdoFreeTree( tmp);*/
+                FREEdoFreeTree (tmp);
             } else {
                 /*
                  * it is not possible to specialize loop function
                  */
-                /*FREEdoFreeTree( tmp);*/
+                FREEdoFreeTree (tmp);
             }
         } else {
 
@@ -1555,9 +1558,11 @@ TUPap (node *arg_node, info *arg_info)
                  * use more special function
                  */
                 AP_FUNDEF (arg_node) = result;
-                if ((!FUNDEF_ISDOFUN (result)) && (!FUNDEF_ISCONDFUN (result))) {
-                    (FUNDEF_USED (result))++;
-                }
+                /*	if ( (!FUNDEF_ISDOFUN( result)) &&
+                     (!FUNDEF_ISCONDFUN( result)) &&
+                     (!(FUNDEF_USED( result) != USED_INACTIVE)) ) {
+                  (FUNDEF_USED( result))++;
+                  }*/
                 /*
                  * TODO: add counter
                  */
