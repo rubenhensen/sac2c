@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.4  1998/04/07 08:18:41  srs
+ * CreateFullPartition() does not use StartSearchWL() anymore.
+ *
  * Revision 1.3  1998/04/03 12:20:13  srs
  * *** empty log message ***
  *
@@ -232,13 +235,18 @@ CreateFullPartition (node *wln, node *arg_info)
 
     /* modarray check */
     if (do_create && WO_modarray == NWITH_TYPE (wln)) {
-        base_wl = StartSearchWL (NWITHOP_ARRAY (NWITH_WITHOP (wln)),
-                                 INFO_WLI_ASSIGN (arg_info), 2);
-        do_create
-          = (base_wl
-             && N_Nwith == NODE_TYPE ((base_wl = LET_EXPR (ASSIGN_INSTR (base_wl))))
-             && gen_shape == IDS_SHAPE (NPART_VEC (NWITH_PART (base_wl)), 0)
-             && NWITH_FOLDABLE (base_wl));
+        /* this check has been deactivated because we cannot be sure
+           to have MRD-information (needed for StartSearchWL()) at this
+           time. So we always create a full partition, even if we cannot
+           fold this WL later. But this doen't matter because the same
+           code will be derived. */
+        /*     base_wl = StartSearchWL(NWITHOP_ARRAY(NWITH_WITHOP(wln)), */
+        /*                             INFO_WLI_ASSIGN(arg_info), 2); */
+        /*     do_create = (base_wl && */
+        /*                  N_Nwith == NODE_TYPE((base_wl =  */
+        /*                                        LET_EXPR(ASSIGN_INSTR(base_wl)))) && */
+        /*                  gen_shape == IDS_SHAPE(NPART_VEC(NWITH_PART(base_wl)),0) && */
+        /*                  NWITH_FOLDABLE(base_wl)); */
     }
 
     /* start creation*/
@@ -264,7 +272,7 @@ CreateFullPartition (node *wln, node *arg_info)
             _ids = NPART_VEC (NWITH_PART (wln));
             psi_index = MakeId (StringCopy (IDS_NAME (_ids)), NULL, ST_regular);
             ID_VARDEC (psi_index) = IDS_VARDEC (_ids);
-            psi_array = DupTree (NWITHOP_OPARG (NWITH_WITHOP (wln)), NULL);
+            psi_array = DupTree (NWITHOP_ARRAY (NWITH_WITHOP (wln)), NULL);
             coden = MakePrf (F_psi, MakeExprs (psi_index, MakeExprs (psi_array, NULL)));
         }
         varname = TmpVar ();
