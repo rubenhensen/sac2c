@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/07/20 16:57:01  jhs
+ * Added SAC_MT_SYNC_MULTIFOLD_[1|2|3][A|B].
+ *
  * Revision 2.6  1999/07/01 13:05:00  jhs
  * Added macros SAC_MT_[MASTER|WORKER]_[BEGIN|END] and SAC_MT_RESTART being
  * part of the new values exchange ICMseries between SYNC-BLOCKS.
@@ -531,6 +534,69 @@ typedef union {
         SAC_TR_MT_PRINT (("Synchronisation block %d finished", id));                     \
         SAC_TR_MT_PRINT_FOLD_RESULT (type, accu_var, "Partial fold result:");            \
         goto label_master_continue_##id;                                                 \
+    }                                                                                    \
+    SAC_MT_ready_count >>= 1;                                                            \
+    }                                                                                    \
+    }                                                                                    \
+    while (SAC_MT_son_id >>= 1)                                                          \
+        ;                                                                                \
+    }                                                                                    \
+    }                                                                                    \
+    }
+
+#define SAC_MT_SYNC_MULTIFOLD_1A(id)                                                     \
+    {                                                                                    \
+        if (!SAC_MT_MYWORKERCLASS ()) {
+
+#define SAC_MT_SYNC_MULTIFOLD_1B(id)                                                     \
+    if (SAC_MT_MYTHREAD ()) {                                                            \
+        goto label_worker_continue_##id;                                                 \
+    }                                                                                    \
+    goto label_master_continue_##id;                                                     \
+    }                                                                                    \
+                                                                                         \
+    if (SAC_MT_MYTHREAD ()) {                                                            \
+        unsigned int SAC_MT_ready_count = SAC_MT_MYWORKERCLASS () >> 1;                  \
+        unsigned int SAC_MT_son_id;                                                      \
+        unsigned int SAC_MT_i;                                                           \
+                                                                                         \
+        for (;;) {                                                                       \
+            SAC_MT_i = SAC_MT_MYWORKERCLASS ();                                          \
+                                                                                         \
+            do {                                                                         \
+                SAC_MT_son_id = SAC_MT_MYTHREAD () + SAC_MT_i;                           \
+                                                                                         \
+                if (SAC_MT_CHECK_BARRIER (SAC_MT_son_id)) {                              \
+                    SAC_MT_CLEAR_BARRIER (SAC_MT_son_id);
+
+#define SAC_MT_SYNC_MULTIFOLD_2A(id) if (!SAC_MT_ready_count) {
+
+#define SAC_MT_SYNC_MULTIFOLD_2B(id)                                                     \
+    goto label_worker_continue_##id;                                                     \
+    }                                                                                    \
+    SAC_MT_ready_count >>= 1;                                                            \
+    }                                                                                    \
+    }                                                                                    \
+    while (SAC_MT_i >>= 1)                                                               \
+        ;                                                                                \
+    }                                                                                    \
+    }                                                                                    \
+    else                                                                                 \
+    {                                                                                    \
+        unsigned int SAC_MT_ready_count = SAC_MT_MASTERCLASS () >> 1;                    \
+        unsigned int SAC_MT_son_id;                                                      \
+                                                                                         \
+        for (;;) {                                                                       \
+            SAC_MT_son_id = SAC_MT_MASTERCLASS ();                                       \
+                                                                                         \
+            do {                                                                         \
+                if (SAC_MT_CHECK_BARRIER (SAC_MT_son_id)) {                              \
+                    SAC_MT_CLEAR_BARRIER (SAC_MT_son_id);
+
+#define SAC_MT_SYNC_MULTIFOLD_3A(id) if (!SAC_MT_ready_count) {
+
+#define SAC_MT_SYNC_MULTIFOLD_3B(id)                                                     \
+    goto label_master_continue_##id;                                                     \
     }                                                                                    \
     SAC_MT_ready_count >>= 1;                                                            \
     }                                                                                    \
