@@ -168,12 +168,10 @@ extern void _db_longjmp_ (); /* Restore debugger environment */
 #define DBUG_LONGJMP(a1, a2) (_db_longjmp_ (), longjmp (a1, a2))
 
 #define DBUG_ASSERT(expr, text)                                                          \
-    if (!(expr)) {                                                                       \
-        fprintf (stderr, "Assertion 'expr' failed: file '%s', line %d\n** %s\n",         \
-                 __FILE__, __LINE__, text);                                              \
-        exit (1);                                                                        \
-    } else                                                                               \
-        NOOP
+    (!(expr) ? (fprintf (stderr, "Assertion 'expr' failed: file '%s', line %d\n** %s\n", \
+                         __FILE__, __LINE__, text),                                      \
+                exit (1), 0)                                                             \
+             : (NOOP, 0))
 
 #define DBUG_LPRINT(key1, key2, arglist)                                                 \
     {                                                                                    \
