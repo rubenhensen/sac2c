@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2002/10/17 17:53:08  ktr
+ * added option -wlsx for aggressive WLS
+ *
  * Revision 3.27  2002/10/09 13:09:18  dkr
  * TAGGED_ARRAYS: warning about RCAO added
  *
@@ -784,6 +787,8 @@ AnalyseCommandline (int argc, char *argv[])
     });
 
     ARGS_FLAG ("ssa", use_ssaform = TRUE);
+
+    ARGS_FLAG ("wlsx", wls_aggressive = TRUE);
 
     ARGS_OPTION ("o", {
         strcpy (outfilename, ARG);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/10/17 17:53:08  ktr
+ * added option -wlsx for aggressive WLS
+ *
  * Revision 3.16  2002/07/03 15:27:23  dkr
  * RUNTIMECHECK_TYPE added
  *
@@ -221,6 +224,9 @@ extern bool use_ssaform;
 
 /* ast is in ssa form */
 extern bool valid_ssaform;
+
+/* aggressive behaviour in WLS */
+extern bool wls_aggressive;
 
 extern int optvar;
 extern int inlnum;

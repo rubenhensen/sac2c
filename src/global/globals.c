@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/10/17 17:53:08  ktr
+ * added option -wlsx for aggressive WLS
+ *
  * Revision 3.20  2002/10/16 13:59:37  cg
  * Associative Law optimization enabled by default.
  *
@@ -408,6 +411,11 @@ unsigned int optimize
  */
 bool use_ssaform = FALSE;
 bool valid_ssaform = FALSE;
+
+/*
+ * per default do not use aggressive WLS
+ */
+bool wls_aggressive = FALSE;
 
 /*
  * Command line options for specifying particular side conditions

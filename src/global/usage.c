@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2002/10/17 17:53:08  ktr
+ * added option -wlsx for aggressive WLS
+ *
  * Revision 3.27  2002/09/05 12:05:08  dkr
  * -b7:n2o added
  *
@@ -478,6 +481,8 @@ usage ()
             "\t\t\t\t  -apdiag option to approximately <n> lines.\n"
             "\t\t\t\tdefault: -apdiaglimit %d\n\n",
             apdiag_limit);
+
+    printf ("\t -wlsx \t\t\tenable aggressive WLS\n\n");
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
