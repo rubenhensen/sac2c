@@ -1,6 +1,10 @@
 /*
  * $Log$
- * Revision 1.8  1995/04/13 10:00:22  hw
+ * Revision 1.9  1995/04/13 14:38:53  hw
+ * bug fixed in 'Cat' (type of concatenated array will be computed
+ *  correct now)
+ *
+ * Revision 1.8  1995/04/13  10:00:22  hw
  * changed typecheck of primitive function cat ( types *Cat(..) )
  *
  * Revision 1.7  1995/03/28  12:17:27  hw
@@ -744,7 +748,7 @@ Cat (node *s_node, types *array1, types *array2)
                 ret_type->dim = dim1;
                 for (i = 0; i < dim1; i++)
                     ret_type->shpseg->shp[i] = array1->shpseg->shp[i];
-                ret_type->shpseg->shp[axis - 1] += array2->shpseg->shp[axis - 1];
+                ret_type->shpseg->shp[axis] += array2->shpseg->shp[axis];
             } else
                 GEN_TYPE_NODE (ret_type, T_unknown);
         } else
