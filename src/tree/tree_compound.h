@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.143  2004/11/25 15:41:23  jhb
+ * added new macros L_WLSEGX_TASKSEL and L_WLSEGX_SCHEDULING
+ *
  * Revision 3.142  2004/11/25 11:49:55  skt
  * OVRLD_FUN bitmask added
  *
@@ -1936,6 +1939,27 @@ extern int TCcountParts (node *parts);
         WLSEG_IDX_PRINT (handle, n, field);                                              \
     } else {                                                                             \
         WLSEGVAR_IDX_PRINT (handle, n, field);                                           \
+    }
+
+#define L_WLSEGX_NEXT(n, rhs)                                                            \
+    if (NODE_TYPE (n) == N_wlseg) {                                                      \
+        WLSEG_NEXT (n) = (rhs);                                                          \
+    } else {                                                                             \
+        WLSEGVAR_NEXT (n) = (rhs);                                                       \
+    }
+
+#define L_WLSEGX_SCHEDULING(n, rhs)                                                      \
+    if (NODE_TYPE (n) == N_wlseg) {                                                      \
+        WLSEG_SCHEDULING (n) = (rhs);                                                    \
+    } else {                                                                             \
+        WLSEGVAR_SCHEDULING (n) = (rhs);                                                 \
+    }
+
+#define L_WLSEGX_TASKSEL(n, rhs)                                                         \
+    if (NODE_TYPE (n) == N_wlseg) {                                                      \
+        WLSEG_TASKSEL (n) = (rhs);                                                       \
+    } else {                                                                             \
+        WLSEGVAR_TASKSEL (n) = (rhs);                                                    \
     }
 
 extern node *MakeWLsegX (int dims, node *contents, node *next);
