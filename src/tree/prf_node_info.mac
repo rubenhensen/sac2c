@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2004/02/03 11:26:41  sbs
+ * NTCPRF_phi activated.
+ *
  * Revision 3.20  2004/02/02 14:25:55  mwe
  * F_phi added
  *
@@ -157,4 +160,4 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCPRF_toiS, COToi),
   PRF_IF (F_type_error, "F_type_error", "_type_error_", "type_error", FALSE, 1,
           NTCPRF_dummy, NULL),
 
-  PRF_IF (F_phi, "F_phi", "_phi_", "phi", FALSE, 2, NTCPRF_dummy, NULL)
+  PRF_IF (F_phi, "F_phi", "_phi_", "phi", FALSE, 2, NTCPRF_phi, NULL)
