@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.97  2004/11/20 17:25:31  sah
+ * added some defines
+ *
  * Revision 3.96  2004/11/19 21:04:13  sah
  * added some linklist features
  *
@@ -4657,6 +4660,8 @@ MakeStr_Copy (char *str)
  *** N_linklist
  ***/
 
+#ifdef NEW_AST
+
 int
 AddLinkToLinks (node **links, node *link)
 {
@@ -4732,3 +4737,5 @@ LinklistIsSubset (node *super, node *sub)
 
     DBUG_RETURN (result);
 }
+
+#endif

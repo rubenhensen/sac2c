@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.107  2004/11/20 17:25:31  sah
+ * added some defines
+ *
  * Revision 3.106  2004/11/19 21:04:13  sah
  * added some linklist features
  *
@@ -2825,9 +2828,13 @@ extern node *MakeStr_Copy (char *str);
  ***  N_linklist
  ***/
 
+#ifdef NEW_AST
+
 extern int AddLinkToLinks (node **links, node *link);
 extern int AddLinksToLinks (node **links, node *add);
 extern bool LinklistContains (node *set, node *link);
 extern bool LinklistIsSubset (node *super, node *sub);
+
+#endif
 
 #endif /* _sac_tree_compound_h */
