@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/01/19 11:56:10  dkr
+ * NWITH2_OFFSET_NEEDED added
+ *
  * Revision 3.15  2001/01/17 17:38:11  dkr
  * NPART_PADDED removed (superfluous)
  *
@@ -3207,6 +3210,7 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***    ids*       DEC_RC_IDS               (wltransform -> compile )
  ***
+ ***    bool       OFFSET_NEEDED            (wltransform -> compile )
  ***    bool       NAIVE_COMP               (wltransform -> compile )
  ***                            [do naive compilation or not?]
  ***
@@ -3226,6 +3230,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define NWITH2_PRAGMA(n) ((n)->node[4])
 
 #define NWITH2_DEC_RC_IDS(n) ((ids *)(n)->node[5])
+#define NWITH2_OFFSET_NEEDED(n) ((bool)(n)->int_data)
 #define NWITH2_NAIVE_COMP(n) ((bool)(n)->varno)
 #define NWITH2_SCHEDULING(n) ((SCHsched_t) (n)->info2)
 #define NWITH2_ISSCHEDULED(n) ((n)->int_data)
