@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.159  2004/11/25 22:15:01  skt
+ * according to some very special change for mwe
+ *
  * Revision 3.158  2004/11/25 21:48:21  sbs
  * TCmakeIdsCopyString added
  *
@@ -868,9 +871,7 @@ extern node *TCreturnTypes2Ret (types *type);
  */
 #define VARDEC_OR_ARG_NAME(n) (AVIS_NAME (DECL_AVIS (n)))
 #define VARDEC_OR_ARG_TYPE(n)                                                            \
-    ((NODE_TYPE (n) == N_arg)                                                            \
-       ? ARG_TYPE (n)                                                                    \
-       : ((NODE_TYPE (n) == N_vardec) ? VARDEC_TYPE (n) : OBJDEF_TYPE (n)))
+  ((NODE_TYPE(n) == N_arg) ? ARG_TYPE(n) : VARDEC_TYPE(n)
 #define VARDEC_OR_ARG_STATUS(n)                                                          \
     ((NODE_TYPE (n) == N_arg)                                                            \
        ? ARG_STATUS (n)                                                                  \
@@ -1380,7 +1381,7 @@ extern node *TCcreateZeroVector (int length, simpletype btype);
 /******************************************************************************
  *
  * Function:
- *   int TCisConstArray( node *array);
+ *   bool TCisConstArray( node *array);
  *
  * Description:
  *   Returns number of constant elements if argument is an N_array and all
@@ -1392,7 +1393,7 @@ extern node *TCcreateZeroVector (int length, simpletype btype);
  *
  ******************************************************************************/
 
-extern int TCisConstArray (node *array);
+extern bool TCisConstArray (node *array);
 
 extern node *TCids2Exprs (node *ids_arg);
 extern node *TCids2Array (node *ids_arg);
@@ -1506,8 +1507,9 @@ extern node *TCmakeVinfoDollar (node *next);
 #define ID_DECL(n) (AVIS_DECL (ID_AVIS (n)))
 
 extern node *TCmakeIdCopyString (const char *str);
-extern node *TCmakeIdsCopyString (const char *str, node *next);
 extern node *TCmakeIdCopyStringNt (const char *str, types *type);
+
+extern node *TCmakeIdsCopyString (const char *str, node *next);
 
 /***************************************************************************
  *
