@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.23  1995/06/07 13:36:53  hw
+ * Revision 1.24  1995/06/08 18:30:13  hw
+ * - changed names in call of ND_BEGIN_FOLDPRF & ND_BEGIN_FOLDFUN for BEtest
+ *
+ * Revision 1.23  1995/06/07  13:36:53  hw
  * - exchanges N_icm ND_CREATE_CONST_ARRAY with ND_CREATE_CONST_ARRAY_S
  * - N_icm ND_CREATE_CONST_ARRAY_A (array out of arrays) inserted
  *
@@ -429,6 +432,7 @@ MAIN
     char *rotdimstr[] = {"rotindim"};
     char *numstr[] = {"rotnum"};
     char *valstr[] = {"ret-val"};
+    char *neutral[] = {"neural"};
     char v[] = "vector";
     char a[] = "arg";
     char reta[] = "ret-array";
@@ -1113,7 +1117,7 @@ DBUG_VOID_RETURN;
 #include "icm_comment.c"
 #include "icm_trace.c"
 
-BeginFoldWith (res, dimres, valstr, from, to, idx, idxlen, 1);
+BeginFoldWith (res, dimres, neutral, from, to, idx, idxlen, 1);
 
 #ifdef TEST_BACKEND
 indent -= idxlen + 1;
@@ -1140,7 +1144,7 @@ DBUG_VOID_RETURN;
 #include "icm_comment.c"
 #include "icm_trace.c"
 
-BeginFoldWith (res, dimres, valstr, from, to, idx, idxlen, 0);
+BeginFoldWith (res, dimres, neutral, from, to, idx, idxlen, 0);
 
 #ifdef TEST_BACKEND
 indent -= idxlen + 1;
