@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.64  1998/04/20 00:05:36  dkr
+ * changed DupIds:
+ *    duplicates new REFCNT, too!
+ *
  * Revision 1.63  1998/04/19 23:50:16  dkr
  * changed DupIds:
  *   arg_info now can be NULL
@@ -398,17 +402,19 @@ DupIds (ids *old_ids, node *arg_info)
     DBUG_ENTER ("DupIds");
 
     if ((arg_info != NULL) && (DUPTYPE == DUP_INLINE)) {
-        new_ids = MakeIds (RenameInlinedVar (IDS_NAME (old_ids)), NULL, ST_regular);
+        new_ids = MakeIds (RenameInlinedVar (IDS_NAME (old_ids)),
+                           StringCopy (IDS_MOD (old_ids)), IDS_STATUS (old_ids));
         IDS_VARDEC (new_ids) = SearchDecl (IDS_NAME (new_ids), INFO_INL_TYPES (arg_info));
         DBUG_ASSERT ((NULL != IDS_VARDEC (new_ids)), "No declaration found for ids-node");
     } else {
-        new_ids = MakeIds (StringCopy (IDS_NAME (old_ids)), NULL, ST_regular);
+        new_ids = MakeIds (StringCopy (IDS_NAME (old_ids)),
+                           StringCopy (IDS_MOD (old_ids)), IDS_STATUS (old_ids));
         IDS_VARDEC (new_ids) = IDS_VARDEC (old_ids);
         IDS_USE (new_ids) = IDS_USE (old_ids);
     }
 
-    IDS_STATUS (new_ids) = IDS_STATUS (old_ids);
     IDS_ATTRIB (new_ids) = IDS_ATTRIB (old_ids);
+    IDS_REFCNT (new_ids) = IDS_REFCNT (old_ids);
 
     if (NULL != IDS_NEXT (old_ids)) {
         IDS_NEXT (new_ids) = DupIds (IDS_NEXT (old_ids), arg_info);
