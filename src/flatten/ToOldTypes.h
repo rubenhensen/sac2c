@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/24 17:18:19  mwe
+ * interface changes
+ *
  * Revision 1.3  2004/11/22 12:37:33  ktr
  * Ismop SacDevCamp 04
  * ,.
@@ -30,17 +33,14 @@
  *
  *
  *****************************************************************************/
-node *TOTdoToOldTypes (node *syntax_tree);
+extern node *TOTdoToOldTypes (node *syntax_tree);
 
-node *TOTcast (node *arg_node, info *arg_info);
-node *TOTarray (node *arg_node, info *arg_info);
-node *TOTlet (node *arg_node, info *arg_info);
-node *TOTassign (node *arg_node, info *arg_info);
-node *TOTvardec (node *arg_node, info *arg_info);
-node *TOTarg (node *arg_node, info *arg_info);
-node *TOTblock (node *arg_node, info *arg_info);
-node *TOTfundef (node *arg_node, info *arg_info);
-node *TOTobjdef (node *arg_node, info *arg_info);
-node *TOTtypedef (node *arg_node, info *arg_info);
+extern node *TOTarray (node *arg_node, info *arg_info);
+extern node *TOTlet (node *arg_node, info *arg_info);
+extern node *TOTassign (node *arg_node, info *arg_info);
+extern node *TOTvardec (node *arg_node, info *arg_info);
+extern node *TOTarg (node *arg_node, info *arg_info);
+extern node *TOTblock (node *arg_node, info *arg_info);
+extern node *TOTfundef (node *arg_node, info *arg_info);
 
 #endif /* _SAC_TOOLDTYPES_H_ */

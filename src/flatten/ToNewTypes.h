@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/24 17:18:19  mwe
+ * interface changes
+ *
  * Revision 1.3  2004/11/22 12:37:33  ktr
  * Ismop SacDevCamp 04
  * ,.
@@ -70,6 +73,7 @@ extern node *TNTarg (node *arg_node, info *arg_info);
 extern node *TNTvardec (node *arg_node, info *arg_info);
 extern node *TNTobjdef (node *arg_node, info *arg_info);
 extern node *TNTid (node *arg_node, info *arg_info);
+extern node *TNTids (node *arg_node, info *arg_info);
 extern node *TNTlet (node *arg_node, info *arg_info);
 extern node *TNTfundef (node *arg_node, info *arg_info);
 extern node *TNTblock (node *arg_node, info *arg_info);
