@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2004/12/07 14:37:45  sbs
+ * eliminated CVoldTypeSignature2String
+ *
  * Revision 3.18  2004/11/25 18:10:15  jhb
  * compile
  *
@@ -439,41 +442,4 @@ CVintBytes2String (unsigned int bytes)
     }
 
     DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *    char *CVoldTypeSignature2String( node *fundef)
- *
- * description:
- *   constructs a string that represents the signature of a fundef
- *   specified by the user
- *
- ******************************************************************************/
-
-char *
-CVoldTypeSignature2String (node *fundef)
-{
-    static char buf[4096];
-    char *tmp = &buf[0];
-
-    char *tmp_str;
-    node *arg;
-
-    DBUG_ENTER ("CVoldTypeSignature2String");
-
-    arg = FUNDEF_ARGS (fundef);
-    while (arg != NULL) {
-        tmp_str = CVtype2String (ARG_TYPE (arg), 0, FALSE);
-        tmp += sprintf (tmp, "%s ", tmp_str);
-        tmp_str = ILIBfree (tmp_str);
-        arg = ARG_NEXT (arg);
-    }
-
-    tmp_str = CVtype2String (FUNDEF_TYPES (fundef), 0, TRUE);
-    tmp += sprintf (tmp, "-> %s", tmp_str);
-    tmp_str = ILIBfree (tmp_str);
-
-    DBUG_RETURN (ILIBstringCopy (buf));
 }

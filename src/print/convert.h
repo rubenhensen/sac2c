@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/12/07 14:37:45  sbs
+ * eliminated CVoldTypeSignature2String
+ *
  * Revision 3.6  2004/11/22 16:10:11  sbs
  * SACDevCamp04
  *
@@ -38,7 +41,5 @@ extern char *CVfloat2String (float);
 extern char *CVbasetype2String (simpletype type);
 extern char *CVshpseg2String (int dim, shpseg *shape);
 extern char *CVintBytes2String (unsigned int bytes);
-
-extern char *CVoldTypeSignature2String (node *fundef);
 
 #endif /* _SAC_CONVERT_H_ */
