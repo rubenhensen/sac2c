@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.237  2004/11/12 10:19:49  ktr
+ * Added EMAAicm
+ *
  * Revision 3.236  2004/11/11 14:29:40  sah
  * added some traversal functions for USS traversal
  *
@@ -2443,7 +2446,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravNone, TravSons,
 
        TravSons, TravSons, TravSons, EMALicm, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravNone, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, EMAAicm, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   /*
