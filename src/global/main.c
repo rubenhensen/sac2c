@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.22  1995/01/16 09:32:06  asi
+ * Revision 1.23  1995/01/18 17:31:48  asi
+ * Added FreeTree ad end of program
+ *
+ * Revision 1.22  1995/01/16  09:32:06  asi
  * moved output for optimizations from main.c to optimize.c
  *
  * Revision 1.21  1995/01/12  13:11:01  asi
@@ -78,6 +81,7 @@
 
 #include "main.h"
 #include "tree.h"
+#include "free.h"
 
 #include "Error.h"
 #include "usage.h"
@@ -189,7 +193,7 @@ MAIN
     }
 
     Print (syntax_tree);
+    FreeTree (syntax_tree);
 
-    /*  GenCCode(); */
     return (0);
 }
