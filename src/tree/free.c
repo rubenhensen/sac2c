@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2002/10/11 16:26:23  dkr
+ * FreeNwith, FreeNwith2 modified
+ *
  * Revision 3.44  2002/09/13 23:00:28  dkr
  * INFO_FREE_ASSIGN no longer initialized twice
  *
@@ -1744,6 +1747,7 @@ FreePragma (node *arg_node, node *arg_info)
     PRAGMA_INITFUN (arg_node) = Free (PRAGMA_INITFUN (arg_node));
 
     PRAGMA_WLCOMP_APS (arg_node) = FREETRAV (PRAGMA_WLCOMP_APS (arg_node));
+    PRAGMA_APL (arg_node) = FREETRAV (PRAGMA_APL (arg_node));
 
 #if 0
   PRAGMA_NEEDTYPES( arg_node) = FreeAllIds( PRAGMA_NEEDTYPES( arg_node));
@@ -1909,6 +1913,10 @@ FreeNWith (node *arg_node, node *arg_info)
 
     arg_node->info2 = Free (arg_node->info2);
 
+    if (NWITH_PRAGMA (arg_node) != NULL) {
+        NWITH_PRAGMA (arg_node) = FREETRAV (NWITH_PRAGMA (arg_node));
+    }
+
     if (NWITH_IN_MASK (arg_node) != NULL) {
         NWITH_IN_MASK (arg_node) = DFMRemoveMask (NWITH_IN_MASK (arg_node));
     }
@@ -2058,6 +2066,10 @@ FreeNwith2 (node *arg_node, node *arg_info)
     NWITH2_SEGS (arg_node) = FREETRAV (NWITH2_SEGS (arg_node));
     NWITH2_CODE (arg_node) = FREETRAV (NWITH2_CODE (arg_node));
     NWITH2_WITHOP (arg_node) = FREETRAV (NWITH2_WITHOP (arg_node));
+
+    if (NWITH2_PRAGMA (arg_node) != NULL) {
+        NWITH2_PRAGMA (arg_node) = FREETRAV (NWITH2_PRAGMA (arg_node));
+    }
 
     if (NWITH2_IN_MASK (arg_node) != NULL) {
         NWITH2_IN_MASK (arg_node) = DFMRemoveMask (NWITH2_IN_MASK (arg_node));
