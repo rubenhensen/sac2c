@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.89  2004/11/26 11:03:01  sah
+  *** empty log message ***
+
   Revision 1.88  2004/11/25 23:39:00  sbs
   ASSIGN_INDEX and IndexInfo added.
 
@@ -526,7 +529,15 @@
       </traversal>
     </phase>
     <phase id="sacopt" name="Running SAC optimizations">
-       <traversal id="AE" name="Array Elimination" default="sons" include="ArrayElimination.h" >
+      <traversal id="DFR" name="Dead Function Removal" default="sons" include="DeadFunctionRemoval.h" >
+        <travuser>
+	  <node name="Module" />
+	  <node name="Fundef" />
+	  <node name="Ap" />
+	  <node name="Fold" />
+	</travuser>
+      </traversal>
+      <traversal id="AE" name="Array Elimination" default="sons" include="ArrayElimination.h" >
         <travuser>
           <node name="Fundef" />
           <node name="Assign" />
