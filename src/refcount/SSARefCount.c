@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/05/12 13:05:05  ktr
+ * UndeSSA removed
+ *
  * Revision 1.13  2004/05/10 16:23:28  ktr
  * RCOracle inserted.
  *
@@ -363,7 +366,6 @@ MakeAdjustRCfromRLS (rc_list_struct *rls, node *next_node)
 node *
 SSARCfundef (node *fundef, node *arg_info)
 {
-    int i;
     node *arg;
 
     DBUG_ENTER ("SSARCfundef");
@@ -1071,6 +1073,8 @@ SSARefCount (node *syntax_tree)
 
     DBUG_ENTER ("SSARefCount");
 
+    show_refcnt = FALSE;
+
     info = MakeInfo ();
 
     INFO_SSARC_INCLIST (info) = NULL;
@@ -1084,10 +1088,6 @@ SSARefCount (node *syntax_tree)
     syntax_tree = Trav (syntax_tree, info);
 
     info = FreeTree (info);
-
-    /*  syntax_tree = UndoSSA( syntax_tree ); */
-
-    show_refcnt = FALSE;
 
     DBUG_RETURN (syntax_tree);
 }
