@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.77  2004/11/27 02:55:25  ktr
+ * YO!
+ *
  * Revision 1.76  2004/11/26 19:46:41  khf
  * SacDevCamp04: COMPILES!!!
  *
@@ -3078,7 +3081,7 @@ CFfoldPrfExpr (prf op, node **arg_expr)
     constant **arg_co = &arg_co_mem[0];
     int i;
 
-    DBUG_ENTER ("FoldPrfExpr");
+    DBUG_ENTER ("CFfoldPrfExpr");
 
     /* init local variables */
     new_node = NULL;
