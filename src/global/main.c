@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2004/07/21 17:26:35  ktr
+ * removed blir.h
+ *
  * Revision 3.47  2004/07/21 12:40:38  khf
  * phase WLPartitionGeneration exchanged by phase WLEnhancement
  *
@@ -213,7 +216,6 @@
 #include "interrupt.h"
 #include "options.h"
 #include "multithread.h"
-#include "blir.h"
 #include "WLEnhancement.h"
 
 #include <stdlib.h>
