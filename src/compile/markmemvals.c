@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2005/01/08 09:53:08  ktr
+ * Added traversal for do-loop
+ *
  * Revision 1.23  2004/12/13 18:45:45  ktr
  * suballocated arrays are now given new types.
  *
@@ -272,6 +275,34 @@ MMVblock (node *arg_node, info *arg_info)
     if (BLOCK_VARDEC (arg_node) != NULL) {
         BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn MMVdo
+ *
+ *  @brief Traverses a do loop's bodies and the condition afterwards
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+node *
+MMVdo (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("MMVdo");
+
+    DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
+
+    if (DO_SKIP (arg_node) != NULL) {
+        DO_SKIP (arg_node) = TRAVdo (DO_SKIP (arg_node), arg_info);
+    }
+
+    DO_COND (arg_node) = TRAVdo (DO_COND (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

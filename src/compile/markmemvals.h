@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/01/08 09:53:37  ktr
+ * Added traversal for do-loop
+ *
  * Revision 1.9  2004/11/28 22:14:30  ktr
  * added MMVblock
  *
@@ -48,6 +51,7 @@ extern node *MMVdoMarkMemVals (node *syntax_tree);
 
 extern node *MMVblock (node *arg_node, info *arg_info);
 extern node *MMVcode (node *arg_node, info *arg_info);
+extern node *MMVdo (node *arg_node, info *arg_info);
 extern node *MMVfold (node *arg_node, info *arg_info);
 extern node *MMVfundef (node *arg_node, info *arg_info);
 extern node *MMVgenarray (node *arg_node, info *arg_info);
