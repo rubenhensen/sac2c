@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/02/09 14:39:12  nmw
+ * global ssa flag added
+ *
  * Revision 3.5  2001/01/23 18:18:51  cg
  * Increased default value for maxspecialize to 20.
  *
@@ -338,6 +341,11 @@ unsigned int optimize
 #else  /* PRODUCTION */
 unsigned int optimize = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL);
 #endif /* PRODUCTION */
+
+/*
+ * per default do not use ssa-form based optimizations (yet)
+ */
+bool use_ssaform = FALSE;
 
 /*
  * Command line options for specifying particular side conditions

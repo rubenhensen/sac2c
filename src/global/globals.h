@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/02/09 14:39:29  nmw
+ * global ssa flag added
+ *
  * Revision 3.4  2000/12/12 12:15:22  dkr
  * internal flag 'dkr' added
  *
@@ -183,6 +186,8 @@ extern unsigned int optimize;
 #define OPT_MSCA 0x01000000 /* memory size cache adjustment (for PHM)      */
 #define OPT_AP 0x02000000   /* array padding                               */
 #define OPT_APL 0x04000000  /* array placement                             */
+
+extern bool use_ssaform; /* use ssa-form based optimizations instead of old opts */
 
 extern int optvar;
 extern int inlnum;
