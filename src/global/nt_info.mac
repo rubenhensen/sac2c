@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/03/23 14:02:11  jhs
+ * Brushing, same system as in node_info.mac now.
+ *
  * Revision 1.1  1999/06/25 15:13:01  rob
  * Initial revision
  *
@@ -12,14 +15,39 @@
  * info:
  *   Names are presumed to be 3 characters long. This affects NT_OVERHEAD in types.h
  *   Note that C_lastc and C_lastu must be the last entries in the lists.
+ *
+ * USAGE:
+ *   Before you include this file youhave to define macros for ATTRIB
+ *   and NTIFxxx as selector. Both macros will be undefined in this file.
+ *   This is the same system used in node_info.mac.
  */
+
+#ifndef NTIFtype
+#define NTIFtype(it_type)
+#endif
+#ifndef NTIFstr
+#define NTIFstr(it_str)
+#endif
+
+#ifndef ATTRIB
+YOU HAVE TO DEFINE ATTRIB !!!Do this before you include this file.
+#endif
+
+#define NTIF(it_type, it_str) NTIFtype (it_type) NTIFstr (it_str)
 
 #if (ATTRIB == 1)
 
-NTIF (C_aks, "AKS"), NTIF (C_akd, "AKD"), NTIF (C_hid, "HID"), NTIF (C_scl, "SCL"),
-  NTIF (C_lastc, "")
+  NTIF (C_aks, "AKS"),
+  NTIF (C_akd, "AKD"), NTIF (C_hid, "HID"), NTIF (C_scl, "SCL"), NTIF (C_lastc, "")
 
 #elif (ATTRIB == 2)
+
 NTIF (C_unq, "UNQ"), NTIF (C_nuq, "NUQ"), NTIF (C_lastu, "")
 
 #endif
+
+#undef NTIF
+#undef ATTRIB
+
+#undef NTIFtype
+#undef NTIFstr
