@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.25  1999/11/11 20:06:01  dkr
+ * Signature and name of function IsConstantArray changed.
+ * Fixed a bug in CFArray:
+ *   After IsConstArray-check, the type of the array elements must also be checked.
+ *
  * Revision 2.24  1999/11/10 09:10:18  cg
  * Bug fixed: folding of psi() with prior modarray() to the same index
  * location now works correctly even if the variable pointing to the
@@ -292,8 +297,8 @@ CalculateArrayOffset (types *array, node *index)
     int i, n, m;
 
     DBUG_ENTER ("CalculateArrayOffset");
-    DBUG_ASSERT (IsConstantArray (index, N_num), ("not a constant index vector"));
-    DBUG_ASSERT (1 == TYPES_DIM (ARRAY_TYPE (index)), ("wrong index vector dimension"));
+    DBUG_ASSERT (IsConstArray (index), "not a constant index vector");
+    DBUG_ASSERT ((1 == TYPES_DIM (ARRAY_TYPE (index))), "wrong index vector dimension");
 
     n = TYPES_SHAPE (ARRAY_TYPE (index), 0); /* length of index vector */
     m = TYPES_DIM (array);                   /* dimension of array */
@@ -333,14 +338,16 @@ CompareNumArrayType (node *array1, node *array2)
     DBUG_ENTER ("CompareNumArrayType");
 
     /* check misc */
-    ok = !(N_array != NODE_TYPE (array1) || N_array != NODE_TYPE (array2)
-           || T_int != ARRAY_BASETYPE (array1) || T_int != ARRAY_BASETYPE (array2)
-           || ARRAY_DIM (array1) != ARRAY_DIM (array2));
+    ok = ((N_array == NODE_TYPE (array1)) && (N_array == NODE_TYPE (array2))
+          && (T_int == ARRAY_BASETYPE (array1)) && (T_int == ARRAY_BASETYPE (array2))
+          && (ARRAY_DIM (array1) == ARRAY_DIM (array2)));
 
     /* compare shape */
-    for (i = 0; i < ARRAY_DIM (array1); i++)
-        if (ARRAY_SHAPE (array1, i) != ARRAY_SHAPE (array2, i))
+    for (i = 0; i < ARRAY_DIM (array1); i++) {
+        if (ARRAY_SHAPE (array1, i) != ARRAY_SHAPE (array2, i)) {
             ok = 0;
+        }
+    }
 
     DBUG_RETURN (ok);
 }
@@ -687,7 +694,7 @@ CFarray (node *arg_node, node *arg_info)
     if (ARRAY_AELEMS (arg_node) != NULL)
         ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
 
-    if (IsConstantArray (arg_node, T_unknown)) {
+    if (IsConstArray (arg_node) && (ARRAY_NODETYPE (arg_node) == N_num)) {
         ARRAY_ISCONST (arg_node) = TRUE;
         ARRAY_VECTYPE (arg_node) = T_int;
         ARRAY_CONSTVEC (arg_node)
@@ -879,6 +886,7 @@ node *CFcast(node *arg_node, node *arg_info)
 {
   node *next_node;
   
+          
   DBUG_ENTER("CFcast");
   
   next_node = Trav(CAST_EXPR(arg_node), arg_info);
@@ -2317,8 +2325,9 @@ ArrayPrf (node *arg_node, node *arg_info)
                     && (N_let == NODE_TYPE (ASSIGN_INSTR (assign)))) {
                     mrdmask = (node **)ASSIGN_MRDMASK (assign);
                     array = LET_EXPR (ASSIGN_INSTR (assign));
-                } else
+                } else {
                     array = NULL;
+                }
 
                 if (array && (N_array == NODE_TYPE (array)))
                     ; /* leave do-loop */
@@ -2326,10 +2335,11 @@ ArrayPrf (node *arg_node, node *arg_info)
                          && (F_modarray == PRF_PRF (array))) {
                     /* check index of prf modarray */
                     modindex = PRF_ARG2 (array);
-                    if (N_id == NODE_TYPE (modindex))
+                    if (N_id == NODE_TYPE (modindex)) {
                         modindex
                           = MRD_GETDATA (ID_VARNO (modindex), INFO_CF_VARNO (arg_info));
-                    if (IsConstantArray (modindex, N_num)
+                    }
+                    if (IsConstArray (modindex)
                         && CompareNumArrayType (shape, modindex)) {
                         if (CompareNumArrayElts (shape, modindex)) {
                             node *val = PRF_ARG3 (array);
@@ -2569,8 +2579,8 @@ ArrayPrf (node *arg_node, node *arg_info)
         if (N_id == NODE_TYPE (valn))
             valn = MRD_GETDATA (ID_VARNO (valn), INFO_CF_VARNO (arg_info));
 
-        if (base_array && vectorn && valn && N_array == NODE_TYPE (base_array)
-            && IsConstantArray (vectorn, N_num) &&
+        if (base_array && vectorn && valn && (N_array == NODE_TYPE (base_array))
+            && IsConstArray (vectorn) &&
             /* valn should be an N_array or a scalar value, not an id. */
             (N_array == NODE_TYPE (valn) || N_num == NODE_TYPE (valn)
              || N_char == NODE_TYPE (valn) || N_float == NODE_TYPE (valn)
