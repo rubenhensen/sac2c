@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/12/18 16:29:25  cg
+ * Revision 1.10  1996/01/21 14:14:51  cg
+ * bug fixed in printing strings in function applications
+ *
+ * Revision 1.9  1995/12/18  16:29:25  cg
  * now, icm args with no occurrence at all are supported as well.
  *
  * Revision 1.8  1995/08/04  13:47:46  sbs
@@ -46,7 +49,8 @@
     {                                                                                    \
         DBUG_ASSERT ((ex->nodetype == N_exprs), "wrong icm-arg: N_exprs expected");      \
         DBUG_ASSERT ((ex->node[0]->nodetype == N_str), "wrong icm-arg: N_str expected"); \
-        res = ex->node[0]->info.id;                                                      \
+        res = Malloc (strlen (ex->node[0]->info.id) + 3);                                \
+        sprintf (res, "\"%s\"", ex->node[0]->info.id);                                   \
         DBUG_PRINT ("PRINT", ("icm-arg found: %s", res));                                \
         ex = ex->node[1];                                                                \
     }
