@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/07/25 07:37:10  cg
+ * Revision 1.14  1995/07/31 07:10:12  cg
+ * sibs will be read and stored in modtab.
+ *
+ * Revision 1.13  1995/07/25  07:37:10  cg
  * global objects may be imported now.
  * class types are automatically imported.
  *
@@ -206,7 +209,8 @@ InsertClassType (node *classdec)
  *  functionname  : GenMod
  *  arguments     : 1) name of modul to be read
  *  description   : Scans and parses the respective declaration
- *                  file and generates/initilizes a new mod-node
+ *                  file and SIB-file and generates/initilizes a
+ *                  new mod-node
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : malloc
@@ -259,23 +263,19 @@ GenMod (char *name)
         InsertClassType (tmp->moddec);
     }
 
-    /*
-      strcpy(buffer,name);
-      strcat(buffer,".sib");
-      yyin=fopen(FindFile(MODDEC_PATH, buffer),"r");
+    strcpy (buffer, name);
+    strcat (buffer, ".sib");
+    yyin = fopen (FindFile (MODDEC_PATH, buffer), "r");
 
-      if (yyin==NULL)
-        DBUG_PRINT("Modul", ("Module %s has no SIB-file",name));
-      else
-      {
-        linenum=1;
-        start_token=PARSE_SIB;
-        yyparse();
-
-        ProcessSibInfo(tmp->moddec, sib_tree);
-      }
-
-    */
+    if (yyin == NULL) {
+        tmp->sib = NULL;
+        DBUG_PRINT ("Modul", ("Module %s has no SIB-file", name));
+    } else {
+        linenum = 1;
+        start_token = PARSE_SIB;
+        yyparse ();
+        tmp->sib = sib_tree;
+    }
 
     DBUG_RETURN (tmp);
 }
