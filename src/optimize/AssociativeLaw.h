@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2002/11/02 21:01:25  mwe
+ * removed unused functions
+ *
  * Revision 1.6  2002/10/10 09:28:16  mwe
  * new functions added
  * seems to be the first correct working version
@@ -46,8 +49,6 @@ extern int IsAssociativeAndCommutative (node *);
 extern int IsConstant (node *);
 extern node *AddNode (node *, node *, bool);
 extern bool OtherPrfOp (node *, node *);
-extern int CountConst (node *);
-extern int CountVar (node *);
 extern node *SortList (node *);
 extern node *CreateNAssignNodes (node *);
 extern node *CommitNAssignNodes (node *);
