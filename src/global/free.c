@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/02/28 21:08:56  srs
+ * bugfix in FreeAssign()
+ *
  * Revision 2.2  1999/02/25 09:41:24  bs
  * FreeId and FreeArray modified: compact propagation of constant
  * integer vectors will be deallocated now.
@@ -887,6 +890,7 @@ node *
 FreeAssign (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
+    index_info *index;
 
     DBUG_ENTER ("FreeAssign");
 
@@ -896,9 +900,9 @@ FreeAssign (node *arg_node, node *arg_info)
 
     FREETRAV (ASSIGN_INSTR (arg_node));
     FREEMASK (ASSIGN_MASK);
-    if (ASSIGN_INDEX (arg_node)) {
-        FREE (ASSIGN_INDEX (arg_node));
-    }
+    index = (index_info *)ASSIGN_INDEX (arg_node);
+    if (index)
+        FREE_INDEX_INFO (index);
 
     DBUG_PRINT ("FREE", ("Removing N_assign node ..."));
 
