@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.94  1995/09/01 07:47:18  cg
- * call of SIBmodul added to SIB-tab.
+ * Revision 1.95  1995/10/05 14:23:47  sbs
+ * IDX... funs adjusted
  *
+;; Revision 1.94  1995/09/01  07:47:18  cg
+;; call of SIBmodul added to SIB-tab.
+;;
 ;; Revision 1.93  1995/08/16  09:23:55  asi
 ;; changed DupChain to DupTypes for N_array (duplicating info.types now)
 ;;
@@ -363,7 +366,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun),
   NIF (N_fundef, "N_fundef", IMfundef, FltnFundef, PrintFundef, TCfundef, OPTfundef,
        DEADfundef, WRfundef, FreeInfoType, CFfundef, RCfundef, CompFundef, LIRfundef,
-       DupFundef, INLfundef, UNRfundef, DummyFun, DummyFun2, UNSfundef, DummyFun,
+       DupFundef, INLfundef, UNRfundef, DummyFun, IdxFundef, UNSfundef, DummyFun,
        AEfundef, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_vardec, "N_vardec", DummyFun, DummyFun, PrintVardec, DummyFun, OPTvardec,
        DEADvardec, DummyFun, FreeInfoType, DummyFun, DummyFun, CompVardec, DummyFun,
@@ -487,7 +490,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
   NIF (N_icm, "N_icm", DummyFun, DummyFun, PrintIcm, DummyFun, DummyFun, DummyFun,
-       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun, DummyFun, DummyFun, NoTrav, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
   NIF (N_vinfo, "N_vinfo", DummyFun, DummyFun, PrintVectInfo, DummyFun, DummyFun,
