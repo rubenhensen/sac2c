@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2003/09/11 08:21:21  sbs
+ * DBUG_PRINTs OPT inserted.
+ *
  * Revision 1.3  2001/05/17 11:44:02  dkr
  * FREE eliminated
  *
@@ -109,7 +112,19 @@ TransformWhile2Do (node *syntax_tree)
     old_tab = act_tab;
     act_tab = w2d_tab;
 
+#ifndef DBUG_OFF
+    if (compiler_phase == PH_sacopt) {
+        DBUG_PRINT ("OPT", ("WHILE2DO"));
+    }
+#endif
+
     syntax_tree = Trav (syntax_tree, arg_info);
+
+#ifndef DBUG_OFF
+    if (compiler_phase == PH_sacopt) {
+        DBUG_PRINT ("OPT", ("                        done"));
+    }
+#endif
 
     act_tab = old_tab;
 
