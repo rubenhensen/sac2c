@@ -30,3 +30,4 @@ tools/src/clock_skew_detection
 tools/src/echo
 config
 tools/src/code_beautifier
+tools/src/icm_tester
