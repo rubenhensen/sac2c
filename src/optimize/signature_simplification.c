@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/02/02 21:09:25  mwe
+ * corrected traversal
+ *
  * Revision 1.1  2005/02/02 18:13:25  mwe
  * Initial revision
  *
@@ -31,6 +34,8 @@ struct INFO {
     bool retex;
     bool isapnode;
     node *postassign;
+    node *apfunrets;
+    bool remassign;
 };
 
 #define INFO_SISI_FUNDEF(n) (n->fundef)
@@ -38,6 +43,8 @@ struct INFO {
 #define INFO_SISI_REMOVEEXPRS(n) (n->remex)
 #define INFO_SISI_ISAPNODE(n) (n->isapnode)
 #define INFO_SISI_POSTASSIGN(n) (n->postassign)
+#define INFO_SISI_APFUNRETS(n) (n->apfunrets)
+#define INFO_SISI_REMOVEASSIGN(n) (n->remassign)
 
 static info *
 MakeInfo ()
@@ -52,6 +59,8 @@ MakeInfo ()
     INFO_SISI_REMOVEEXPRS (result) = FALSE;
     INFO_SISI_ISAPNODE (result) = FALSE;
     INFO_SISI_POSTASSIGN (result) = NULL;
+    INFO_SISI_APFUNRETS (result) = NULL;
+    INFO_SISI_REMOVEASSIGN (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -106,6 +115,11 @@ SISIfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    INFO_SISI_FUNDEF (arg_info) = arg_node;
     if ((FUNDEF_RETS (arg_node) != NULL) && (!FUNDEF_ISLACFUN (arg_node))) {
         FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
     }
@@ -114,10 +128,6 @@ SISIfundef (node *arg_node, info *arg_info)
         /*
          * TODO: create N_empty?
          */
-    }
-
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_ARGS (arg_node) != NULL)
@@ -219,6 +229,7 @@ SISIassign (node *arg_node, info *arg_info)
     }
 
     INFO_SISI_POSTASSIGN (arg_info) = NULL;
+    INFO_SISI_REMOVEASSIGN (arg_info) = FALSE;
 
     if (ASSIGN_INSTR (arg_node) != NULL) {
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -231,6 +242,15 @@ SISIassign (node *arg_node, info *arg_info)
          */
         ASSIGN_NEXT (arg_node)
           = TCappendAssign (INFO_SISI_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
+    }
+
+    if (INFO_SISI_REMOVEASSIGN (arg_info)) {
+        node *tmp;
+
+        tmp = ASSIGN_NEXT (arg_node);
+        ASSIGN_NEXT (arg_node) = NULL;
+        arg_node = FREEdoFreeNode (arg_node);
+        arg_node = tmp;
     }
 
     DBUG_RETURN (arg_node);
@@ -248,6 +268,7 @@ SISIlet (node *arg_node, info *arg_info)
     }
 
     if ((INFO_SISI_ISAPNODE (arg_info)) && (LET_IDS (arg_node) != NULL)) {
+        INFO_SISI_REMOVEASSIGN (arg_info) = TRUE;
         LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     }
 
@@ -262,8 +283,9 @@ SISIap (node *arg_node, info *arg_info)
 
     fundef = AP_FUNDEF (arg_node);
 
-    if (!FUNDEF_ISLACFUN (fundef)) {
+    if ((!FUNDEF_ISLACFUN (fundef))) {
 
+        INFO_SISI_APFUNRETS (arg_info) = FUNDEF_RETS (AP_FUNDEF (arg_node));
         fun_args = FUNDEF_ARGS (fundef);
         curr_args = AP_ARGS (arg_node);
         new_args = NULL;
@@ -271,23 +293,26 @@ SISIap (node *arg_node, info *arg_info)
 
         while (fun_args != NULL) {
 
-            if (!TYisAKV (AVIS_TYPE (ARG_AVIS (fun_args)))) {
+            if ((!TYisAKV (AVIS_TYPE (ARG_AVIS (fun_args))))
+                || (0 < TYgetDim (AVIS_TYPE (ARG_AVIS (fun_args))))) {
                 if (NULL == new_args) {
-                    AP_ARGS (arg_node) = curr_args;
                     new_args = curr_args;
+                    AP_ARGS (arg_node) = new_args;
                 } else {
                     EXPRS_NEXT (new_args) = curr_args;
+                    new_args = EXPRS_NEXT (new_args);
                 }
                 curr_args = EXPRS_NEXT (curr_args);
             } else {
 
                 /*
-                 * argument is of type akv
+                 * argument is of type akv and scalar
                  */
                 tmp = curr_args;
                 curr_args = EXPRS_NEXT (curr_args);
                 EXPRS_NEXT (tmp) = NULL;
                 tmp = FREEdoFreeNode (tmp);
+                EXPRS_NEXT (new_args) = NULL;
             }
             fun_args = ARG_NEXT (fun_args);
         }
@@ -304,11 +329,17 @@ SISIap (node *arg_node, info *arg_info)
 node *
 SISIids (node *arg_node, info *arg_info)
 {
-    node *assign_let, *succ;
-    constant *new_co;
+    node *assign_let, *succ, *ret;
+    constant *new_co = NULL;
 
     DBUG_ENTER ("SISIids");
 
+    ret = INFO_SISI_APFUNRETS (arg_info);
+    if (RET_NEXT (INFO_SISI_APFUNRETS (arg_info)) != NULL) {
+        INFO_SISI_APFUNRETS (arg_info) = RET_NEXT (INFO_SISI_APFUNRETS (arg_info));
+    } else {
+        DBUG_ASSERT ((IDS_NEXT (arg_node) == NULL), "ret and ids do not fit together");
+    }
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
     }
@@ -316,9 +347,25 @@ SISIids (node *arg_node, info *arg_info)
     /*
      * remove bottom-up ids
      */
-    if (TYisAKV (AVIS_TYPE (IDS_AVIS (arg_node)))) {
-        new_co = TYgetValue (AVIS_TYPE (IDS_AVIS (arg_node)));
 
+    if (TYisAKV (RET_TYPE (ret))) {
+        new_co = TYgetValue (RET_TYPE (ret));
+    } else if (TYisAKV (AVIS_TYPE (IDS_AVIS (arg_node)))) {
+        new_co = TYgetValue (AVIS_TYPE (IDS_AVIS (arg_node)));
+    } else {
+        /*
+         * non akv-node found, expression has to remain in AST
+         */
+
+        INFO_SISI_REMOVEASSIGN (arg_info) = FALSE;
+    }
+
+    if ((TYisAKV (RET_TYPE (ret))) && (TYisAKV (AVIS_TYPE (IDS_AVIS (arg_node))))) {
+        DBUG_ASSERT ((TYeqTypes (RET_TYPE (ret), AVIS_TYPE (IDS_AVIS (arg_node)))),
+                     "Types are not equal!");
+    }
+
+    if (new_co != NULL) {
         assign_let = TCmakeAssignLet (IDS_AVIS (arg_node), COconstant2AST (new_co));
         /* append new copy assignment to assignment chain later */
         INFO_SISI_POSTASSIGN (arg_info)
