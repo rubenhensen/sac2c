@@ -1,6 +1,14 @@
 ArrayElimination.c
 ArrayElimination.h
 Makefile
+WLF.c
+WLF.h
+WLI.c
+WLI.h
+WLT.c
+WLT.h
+WithloopFolding.c
+WithloopFolding.h
 index.c
 index.h
 psi-opt.c
