@@ -1,5 +1,12 @@
 #
 # $Log$
+# Revision 1.60  1998/05/19 09:17:57  cg
+# Now, different object files for icm2c_XX.c are generated when
+# compiling for target BEtest. This allows for slightly different
+# icm implementations which is required by some mt-icms that
+# refer to the syntax tree which is obviously not existing when
+# compiling for target BEtest.
+#
 # Revision 1.59  1998/05/14 15:50:04  cg
 # make now also looks in ../scanparse for files to be included.
 #
@@ -196,10 +203,6 @@ MACS=icm.data icm_comment.c icm_trace.c
 all: wltransform.o wlpragma_funs.o precompile.o compile.o icm2c.o icm2c_std.o \
      icm2c_wl.o icm2c_mt.o gen_startup_code.o Old2NewWith.o
 
-BEtest: BEtest.c icm_vars.c icm_betest.c icm.data icm2c_std.o icm2c_wl.o icm2c_mt.o
-	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest BEtest.c $(INCS) \
-	../../lib/dbug.o icm2c_std.o icm2c_wl.o icm2c_mt.o ../global/globals.o
-
 wltransform.o: wltransform.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o wltransform.o -c wltransform.c $(INCS)
 
@@ -232,6 +235,23 @@ gen_startup_code.o: gen_startup_code.c
 
 Old2NewWith.o: Old2NewWith.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o Old2NewWith.o -c Old2NewWith.c $(INCS)
+
+
+
+BEtest: BEtest.c icm_vars.c icm_betest.c icm.data icm2c_std.BEtest.o \
+        icm2c_wl.BEtest.o icm2c_mt.BEtest.o
+	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest BEtest.c $(INCS) \
+        ../../lib/dbug.o icm2c_std.BEtest.o icm2c_wl.BEtest.o \
+        icm2c_mt.BEtest.o ../global/globals.o
+
+icm2c_std.BEtest.o: icm2c_std.c $(MACS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_std.BEtest.o -c icm2c_std.c $(INCS)
+
+icm2c_wl.BEtest.o: icm2c_wl.c $(MACS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_wl.BEtest.o -c icm2c_wl.c $(INCS)
+
+icm2c_mt.BEtest.o: icm2c_mt.c $(MACS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_mt.BEtest.o -c icm2c_mt.c $(INCS)
 
 
 deps:
