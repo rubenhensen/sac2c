@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.68  2003/03/21 16:40:07  sbs
+# if DISABLE_PHM is set, libsac_heapmgr_xxx.a will not be created anymore!
+#
 # Revision 3.67  2003/03/20 14:07:38  sbs
 # auto-configure-mechanism created; check_os adjusted.
 #
@@ -258,7 +261,9 @@ dummy:
 	(cd src/profile; $(MAKE_NORM) )
 	(cd src/psi-opt; $(MAKE_NORM) )
 	(cd src/libsac; $(MAKE_PROD) )
+ifneq ($(DISABLE_PHM),yes)
 	(cd src/heapmgr; $(MAKE_PROD) )
+endif
 	(cd src/runtime; $(MAKE_NORM) )
 	(cd src/tools; $(MAKE_PROD) )
 	(cd src/c-interface; $(MAKE_NORM) )
@@ -290,7 +295,9 @@ prod:
 	(cd src/profile; $(MAKE_PROD) )
 	(cd src/psi-opt; $(MAKE_PROD) )
 	(cd src/libsac; $(MAKE_PROD) )
+ifneq ($(DISABLE_PHM),yes)
 	(cd src/heapmgr; $(MAKE_PROD) )
+endif
 	(cd src/runtime; $(MAKE_PROD) )
 	(cd src/tools; $(MAKE_PROD) )
 	(cd src/c-interface; $(MAKE_PROD) )
