@@ -933,11 +933,16 @@
       </traversal>
       <traversal id="EMAL" name="Allocation" default="sons" include="alloc.h" >
         <travuser>
+          <node name="Num" />
+          <node name="Char" />
+          <node name="Bool" />
+          <node name="Float" />
+          <node name="Double" />
+
           <node name="Ap" />
           <node name="Array" />
           <node name="Assign" />
           <node name="Code" />
-          <node name="Const" />
           <node name="Fold" />
           <node name="Funcond" />
           <node name="Fundef" />
