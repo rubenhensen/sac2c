@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/01/26 13:47:00  jhs
+ * L_BLOCK_INSTR_OR_ASSIGN_NEXT added.
+ *
  * Revision 1.2  2000/01/25 13:40:34  dkr
  * some rearrangements made
  * all the constvec stuff moved from internal_lib.h
@@ -558,6 +561,13 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
 #define BLOCK_INSTR_OR_ASSIGN_NEXT(n)                                                    \
     (NODE_TYPE (n) == N_assign ? ASSIGN_NEXT (n)                                         \
                                : (NODE_TYPE (n) == N_block ? BLOCK_INSTR (n) : NULL))
+
+#define L_BLOCK_INSTR_OR_ASSIGN_NEXT(n, rhs)                                             \
+    if (NODE_TYPE (n) == N_assign) {                                                     \
+        ASSIGN_NEXT (n) = (rhs);                                                         \
+    } else if (NODE_TYPE (n) == N_block) {                                               \
+        BLOCK_INSTR (n) = (rhs);                                                         \
+    }
 
 /*--------------------------------------------------------------------------*/
 
