@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2004/09/30 15:12:15  sbs
+ * NTY_MEM DBUG_PRINTs added.
+ *
  * Revision 3.57  2004/09/29 17:28:44  sbs
  * fixed three DBUG_PRINT memory leaks.
  *
@@ -1131,6 +1134,8 @@ TYMakeFunType (ntype *arg, ntype *res_type, node *fundef)
 #endif
 
     DBUG_ENTER ("TYMakeFunType");
+    DBUG_PRINT ("NTY_MEM",
+                ("Allocated mem on entering TYMakeFunType: %u", current_allocated_mem));
 
     res = MakeNtype (TC_ires, 1);
 
@@ -1228,6 +1233,9 @@ TYMakeFunType (ntype *arg, ntype *res_type, node *fundef)
     DBUG_EXECUTE ("NTY", tmp = TYType2DebugString (fun, TRUE, 0););
     DBUG_PRINT ("NTY", ("fun type built: %s\n", tmp));
     DBUG_EXECUTE ("NTY", tmp = Free (tmp););
+
+    DBUG_PRINT ("NTY_MEM",
+                ("Allocated mem on leaving  TYMakeFunType: %u", current_allocated_mem));
 
     DBUG_RETURN (fun);
 }
@@ -3650,8 +3658,13 @@ TYCopyType (ntype *type)
 {
     ntype *res;
     int i;
+#ifndef DBUG_OFF
+    int mem_entry;
+#endif
 
     DBUG_ENTER ("TYCopyType");
+
+    DBUG_EXECUTE ("NTY_MEM", mem_entry = current_allocated_mem;);
 
     res = CopyTypeConstructor (type, tv_id);
     if (res != NULL) {
@@ -3661,6 +3674,9 @@ TYCopyType (ntype *type)
             NTYPE_SON (res, i) = TYCopyType (NTYPE_SON (type, i));
         }
     }
+
+    DBUG_PRINT ("NTY_MEM", ("size of type copied by TYCopyType: %u",
+                            current_allocated_mem - mem_entry));
 
     DBUG_RETURN (res);
 }
