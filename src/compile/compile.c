@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2002/04/03 14:10:35  dkr
+ * some comments added
+ *
  * Revision 3.78  2002/03/07 21:46:54  dkr
  * CheckAp() corrected
  *
@@ -12,9 +15,6 @@
  * Revision 3.76  2002/03/07 02:23:22  dkr
  * COMPArg() replaced by COMPFundefArgs()
  * code brushed
- *
- * Revision 3.75  2002/03/01 17:29:40  dkr
- * minor changes done
  *
  * Revision 3.74  2002/03/01 03:19:53  dkr
  * all the stuff about reorganisation of fundefs and aps, remapping of
@@ -34,9 +34,6 @@
  * code brushed.
  * ALLOC_ARRAY, CHECK_REUSE ICMs seperated (they no longer occur in other
  * ICMs).
- *
- * Revision 3.69  2001/12/17 12:36:51  dkr
- * code brushed
  *
  * Revision 3.67  2001/12/11 17:29:18  dkr
  * Compile: traverse tab is stacked now
@@ -69,50 +66,6 @@
  *
  * Revision 3.59  2001/05/22 14:56:21  nmw
  * duplicated Free() in COMPCast() and COMPLet removed
- *
- * Revision 3.58  2001/05/22 10:03:21  dkr
- * fixed a bug in COMPPrf:
- * ICMs for RC are build *before* the arguments are traversed!!
- *
- * Revision 3.57  2001/05/17 12:02:37  dkr
- * MALLOC, FREE eliminated
- *
- * Revision 3.56  2001/05/14 11:27:19  cg
- * Bug fixed in storing SCHEDULER_INIT ICMs.
- *
- * Revision 3.55  2001/05/14 10:21:20  cg
- * Added facilities to collect maximum number of schedulers in single
- * SPMD functions.
- *
- * Revision 3.54  2001/05/11 14:41:35  cg
- * New ICMs for scheduler initialization are now inserted
- * when setting up environment for multithreaded execution.
- *
- * Revision 3.53  2001/05/11 14:36:56  cg
- * Scheduler ICMs now always get an additional generic argument
- * which specifies the scheduler ID for selecting an appropriate
- * set of local data structures where required by the scheduling
- * technique.
- *
- * Revision 3.52  2001/05/09 15:13:00  cg
- * All scheduling ICMs get an additional first parameter,
- * i.e. the segment ID. This is required to identify the appropriate
- * set of scheduler internal variables.
- *
- * Revision 3.51  2001/05/08 13:28:04  dkr
- * new RC macros used
- *
- * Revision 3.50  2001/05/07 16:45:06  dkr
- * COMPIdLet: DBUG_ASSERT message modified
- *
- * Revision 3.49  2001/04/27 17:33:00  nmw
- * refcounting for special fundef (non recursive) AP icms added
- *
- * Revision 3.48  2001/04/26 21:07:54  dkr
- * fixed a bug in COMPPrfIdxPsi: DBUG_ASSERT too regide
- *
- * Revision 3.47  2001/04/26 17:10:08  dkr
- * COMPCast reactivated
  *
  * [ eliminated ]
  *
@@ -744,7 +697,7 @@ MakeAllocArrayIcm_IncRc (char *name, types *type, int rc, node *pragma, node *as
     new_assigns = MakeAllocArrayIcm (name, type, 0, pragma, NULL);
 
     if (new_assigns != NULL) {
-        DBUG_ASSERT (RC_IS_VITAL (rc), "INC_RC(rc) with (rc <= 0) found!");
+        DBUG_ASSERT ((RC_IS_VITAL (rc)), "INC_RC(rc) with (rc <= 0) found!");
         assigns
           = AppendAssign (new_assigns, MakeAssignIcm2 ("ND_INC_RC", MakeId_Copy (name),
                                                        MakeNum (rc), assigns));
@@ -1886,6 +1839,8 @@ COMPFundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPFundef");
 
+    DBUG_PRINT ("COMP", ("compiling %s", FUNDEF_NAME (arg_node)));
+
     /*
      * traverse special fold-funs only if INFO_COMP_FOLDFUNS is true,
      * traverse other functions only if INFO_COMP_FOLDFUNS is false.
@@ -2308,7 +2263,7 @@ COMPNormalFunReturn (node *arg_node, node *arg_info)
  *   node *COMPSpmdFunReturn( node *arg_node, node *arg_info)
  *
  * Description:
- *   generates ICMs for N_return-node found in body of a SPMD-function.
+ *   Generates ICMs for N_return-node found in body of a SPMD-function.
  *
  ******************************************************************************/
 
@@ -2378,7 +2333,7 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
  *   node *COMPMT2FunReturn( node *arg_node, node *arg_info)
  *
  * Description:
- *   generates ICMs for N_return-node found in body of a MT2-function.
+ *   Generates ICMs for N_return-node found in body of a MT2-function.
  *
  ******************************************************************************/
 
@@ -2396,7 +2351,7 @@ COMPMT2FunReturn (node *arg_node, node *arg_info)
  *   node *COMPReturn( node *arg_node, node *arg_info)
  *
  * Description:
- *   generates N_icm for N_return of a function (ND or MT).
+ *   Generates ICMs for N_return of a function (ND or MT).
  *
  ******************************************************************************/
 
@@ -5624,7 +5579,6 @@ COMPSpmd (node *arg_node, node *arg_info)
     /*
      * build ICM for SPMD-region
      */
-
     SPMD_ICM_BEGIN (arg_node)
       = MakeIcm1 ("MT_SPMD_BEGIN", MakeId_Copy (FUNDEF_NAME (SPMD_FUNDEF (arg_node))));
     SPMD_ICM_ALTSEQ (arg_node)
