@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.32  1995/12/06 09:49:36  cg
+ * Revision 1.33  1995/12/18 18:26:19  cg
+ * Now, we look in MODIMP-Path for SIBs instead of MODDEC-Path.
+ *
+ * Revision 1.32  1995/12/06  09:49:36  cg
  * Name of class and its respective type are no longer shared.
  *
  * Revision 1.31  1995/11/10  15:04:53  cg
@@ -370,7 +373,7 @@ GenMod (char *name, int checkdec)
             strcpy (buffer, name);
             strcat (buffer, ".sib");
 
-            pathname = FindFile (MODDEC_PATH, buffer);
+            pathname = FindFile (MODIMP_PATH, buffer);
             yyin = fopen (pathname, "r");
 
             if (yyin == NULL) {
