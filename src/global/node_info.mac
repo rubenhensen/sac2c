@@ -1,10 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.33  1995/01/16 10:54:50  asi
- * added opt3_tab for loop independent removal
- * and free_tree for deletion of a syntax(sub)-tree
+ * Revision 1.34  1995/01/17 11:03:39  asi
+ * added OPT2loop and OPT3assign
  *
+;; Revision 1.33  1995/01/16  10:54:50  asi
+;; added opt3_tab for loop independent removal
+;; and free_tree for deletion of a syntax(sub)-tree
+;;
 ;; Revision 1.32  1995/01/12  13:11:59  asi
 ;; inserted OPT2fundef OPT2block OPT2assign OPT2while OPT2cond
 ;;
@@ -142,12 +145,12 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_arg, "N_arg", DummyFun, DummyFun, PrintArg, DummyFun, OPT1arg, DummyFun,
        DummyFun, DummyFun),
   NIF (N_assign, "N_assign", DummyFun, FltnAssign, PrintAssign, TCassign, OPT1assign,
-       OPT2assign, DummyFun, DummyFun),
+       OPT2assign, OPT3assign, DummyFun),
   NIF (N_return, "N_return", DummyFun, DummyFun, PrintReturn, TCreturn, DummyFun,
        DummyFun, DummyFun, DummyFun),
-  NIF (N_do, "N_do", DummyFun, FltnDo, PrintDo, TCdo, DummyFun, DummyFun, DummyFun,
+  NIF (N_do, "N_do", DummyFun, FltnDo, PrintDo, TCdo, DummyFun, OPT2loop, DummyFun,
        DummyFun),
-  NIF (N_while, "N_while", DummyFun, FltnWhile, PrintWhile, TCwhile, DummyFun, OPT2while,
+  NIF (N_while, "N_while", DummyFun, FltnWhile, PrintWhile, TCwhile, DummyFun, OPT2loop,
        DummyFun, DummyFun),
   NIF (N_cond, "N_cond", DummyFun, FltnCond, PrintCond, TCcond, OPT1cond, OPT2cond,
        DummyFun, DummyFun),
