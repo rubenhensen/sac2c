@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.19  2000/08/01 15:05:17  nmw
+# c-interface in libsab_mt.a, too
+#
 # Revision 1.18  2000/08/01 14:00:41  nmw
 # *** empty log message ***
 #
@@ -86,7 +89,7 @@ OBJS_LIBSAC := boundcheck.o message.o misc.o profile.o trace.o nophm.o \
                cachesim_basic.o ../../lib/main_args.o sac_arg.o cinterface.o
 
 OBJS_LIBSAC_MT := boundcheck_mt.o message_mt.o misc_mt.o trace_mt.o mt.o  \
-                  mt_trace.o nophm_mt.o
+                  mt_trace.o nophm_mt.o sac_arg.o cinterface.o
 
 
 .PHONY: all tar clean prod
