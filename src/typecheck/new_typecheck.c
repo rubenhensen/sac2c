@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2004/08/12 16:13:11  sbs
+ * made a warning from 3.37 available again.
+ *
  * Revision 3.43  2004/07/30 17:27:38  sbs
  * switch to new INFO structure
  * PHASE I
@@ -1191,6 +1194,16 @@ NTClet (node *arg_node, info *arg_info)
                             "return type -- missing type declaration",
                             IDS_NAME (lhs)));
                 } else {
+                    /**
+                     * ' commented out the following warning as it was issued to often
+                    with
+                     * StdIO; left it here as I do not know whether a warning in principle
+                     * would be the better way to go for anyways....
+                     *
+                    WARN( linenum, ("cannot infer type of \"%s\" as it corresponds to
+                    \"...\" " "return type -- relying on type declaration", IDS_NAME(
+                    lhs)));
+                     */
                     DBUG_ASSERT (TYIsAlpha (existing_type),
                                  "non-alpha type for LHS found!");
                     max = SSIGetMax (TYGetAlpha (existing_type));
