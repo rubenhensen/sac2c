@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/31 15:10:18  bs
+ * MrdGet: a flag for CFid added. And
+ * I did some code cosmetics with the MRD_GET... macros.
+ *
  * Revision 2.1  1999/02/23 12:41:49  sacbase
  * new release made
  *
@@ -299,12 +303,17 @@ CheckScope (long *act_mrdl, node *assign_node, int varno, int checkdef)
  *                     1 : MRD_GETLAST
  *                     2 : MRD_GETDATA
  *                     3 : MRD_GETCSE
+ *                     4 : MRD_GETCFID
  *                  R) 0 : Get last node, without traversing through reshape
  *                     1 : Get last node, without traversing through reshape, but
  *                         through compound nodes that are lower in level as
  *                         current node
  *                     2 : Get data or NULL
  *                     3 : Get data or compound-node
+ *                     4 : Get last node, without traversing through reshape.
+ *                         If the let-expression is an array, it will be resulted.
+ *                         It is necessary to do so to get a correct constant folding.
+ *
  *  description   : traverses through most recently defined chain
  *  global vars   : mrd_stack, syntax_tree (with mrd-lists at assign-nodes)
  *  internal funs : CheckScope
@@ -333,10 +342,11 @@ MrdGet (int i, int varno, int what)
         case N_while:
         case N_do:
         case N_cond:
-            if (1 == what) {
+            if (what == 1) {
                 new = (node *)ASSIGN_MRDMASK (new)[i];
                 mrd_change = TRUE;
-            } else if (0 == what || 2 == what)
+            } else if (what == 0 || what == 2 || what == 4)
+                /* May be "what != 4" have to be erased! Im prooving... */
                 new = old;
             break;
         case N_let:
@@ -344,7 +354,8 @@ MrdGet (int i, int varno, int what)
                 let_expr = LET_EXPR (ASSIGN_INSTR (new));
                 switch (NODE_TYPE (let_expr)) {
                 case N_id:
-                    if (0 != what) {
+                    if (what != 0 && what != 4) {
+                        /* May be "what != 4" have to be erased! Im prooving... */
                         old = new;
                         new = (node *)ASSIGN_MRDMASK (new)[ID_VARNO (let_expr)];
                         mrd_change = TRUE;
@@ -361,6 +372,7 @@ MrdGet (int i, int varno, int what)
                             mrd_change = TRUE;
                         }
                     }
+                    break;
                 case N_array:
                 case N_with:
                 case N_Nwith:
