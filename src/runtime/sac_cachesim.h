@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.10  1999/05/12 16:44:08  cg
+ * Added facilities to invoke piped cache simulation.
+ *
  * Revision 2.9  1999/05/10 10:59:20  her
  * adjusted in SAC_CS_Setup the functioncall of SAC_CS_CheckArguments,
  * because SAC_CS_CheckArguments got a new parameter: profilinglevel
@@ -230,11 +233,28 @@ extern void (*SAC_CS_Stop) (void);
 
 #if (SAC_DO_CACHESIM)
 
+#if (SAC_DO_CACHESIM_FILE)
+#define SAC_CS_LEVEL SAC_CS_file
+#else
+
+#if (SAC_DO_CACHESIM_PIPE)
+
+#if (SAC_DO_CACHESIM_ADV)
+#define SAC_CS_LEVEL SAC_CS_piped_advanced
+#else
+#define SAC_CS_LEVEL SAC_CS_piped_simple
+#endif
+
+#else /* SAC_DO_CACHESIM_PIPE */
+
 #if (SAC_DO_CACHESIM_ADV)
 #define SAC_CS_LEVEL SAC_CS_advanced
 #else
 #define SAC_CS_LEVEL SAC_CS_simple
 #endif
+
+#endif /* SAC_DO_CACHESIM_PIPE */
+#endif /* SAC_DO_CACHESIM_FILE */
 
 #define SAC_CS_SETUP()                                                                   \
     {                                                                                    \
@@ -297,7 +317,7 @@ extern void (*SAC_CS_Stop) (void);
 
 #else
 
-#define SAC_CS_START_GLOBAL() SAC_CS_Start (NULL);
+#define SAC_CS_START_GLOBAL() SAC_CS_Start ("global");
 #define SAC_CS_STOP_GLOBAL() SAC_CS_Stop ();
 
 #define SAC_CS_START_PRAGMA(tag)
