@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2002/03/07 02:22:17  dkr
+ * definition for INFO_COMP_FIRSTASSIGN added
+ *
  * Revision 1.7  2002/03/01 03:20:27  dkr
  * minor changes done
  *
@@ -115,6 +118,7 @@ static node *wlstride = NULL;
 #define INFO_COMP_TYPETAB(n) ((types **)(n->dfmask[0]))
 #define INFO_COMP_ICMTAB(n) ((node **)(n->dfmask[1]))
 #define INFO_COMP_TABSIZE(n) (n->flag)
+#define INFO_COMP_FIRSTASSIGN(n) (n->node[2])
 
 #define FUNDEF_DOES_REFCOUNT(n, idx)                                                     \
     ((FUNDEF_STATUS (n) != ST_Cfun) || (FUNDEF_WANTS_REFCOUNT (n, idx)))
