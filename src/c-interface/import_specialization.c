@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.7  2000/10/31 18:19:13  cg
+ * New fundef nodes introduced via specialization file are tagged
+ * ST_exported to prevent them from subsequent elimination by
+ * dead function removal.
+ *
  * Revision 1.6  2000/10/31 15:07:41  sbs
  * ST_gen_remove not set anymore --- I'm not sure what implications
  * this change has therefore it's marked SBS
@@ -329,6 +334,12 @@ AddSpecializedFundef (node *fundefs, node *spec_fundef, node *gen_fundef)
     (FUNDEF_TYPES (new_fundef))->attrib = old_type->attrib;
 
     old_type = FreeAllTypes (old_type);
+
+    /*
+     * Mark specialized function as being exported in order to prevent its
+     * elimination by dead function removal.
+     */
+    FUNDEF_STATUS (new_fundef) = ST_exported;
 
     /* add new_fundef to modules' list of fundefs */
     FUNDEF_NEXT (new_fundef) = fundefs;
