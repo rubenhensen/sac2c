@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.31  1995/01/06 16:45:15  hw
- * added FltnFundef
+ * Revision 1.32  1995/01/12 13:11:59  asi
+ * inserted OPT2fundef OPT2block OPT2assign OPT2while OPT2cond
  *
+;; Revision 1.31  1995/01/06  16:45:15  hw
+;; added FltnFundef
+;;
 ;; Revision 1.30  1995/01/06  14:56:09  asi
 ;; Dead-Vardec-Removal implemented
 ;;
@@ -140,9 +143,9 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun),
   NIF (N_do, "N_do", DummyFun, FltnDo, PrintDo, TCdo, DummyFun, DummyFun, DummyFun,
        DummyFun),
-  NIF (N_while, "N_while", DummyFun, FltnWhile, PrintWhile, TCwhile, DummyFun, DummyFun,
+  NIF (N_while, "N_while", DummyFun, FltnWhile, PrintWhile, TCwhile, DummyFun, OPT2while,
        DummyFun, DummyFun),
-  NIF (N_cond, "N_cond", DummyFun, FltnCond, PrintCond, TCcond, DummyFun, DummyFun,
+  NIF (N_cond, "N_cond", DummyFun, FltnCond, PrintCond, TCcond, OPT1cond, OPT2cond,
        DummyFun, DummyFun),
   NIF (N_let, "N_let", DummyFun, DummyFun, PrintLet, TClet, OPT1let, DummyFun, DummyFun,
        DummyFun),
