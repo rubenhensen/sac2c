@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2004/09/30 10:56:25  khf
+ * generate a scalar WL instead of a vector of zeros
+ * to fill a genarray WL
+ *
  * Revision 1.19  2004/09/28 11:37:47  khf
  * changed to new types
  *
@@ -1085,8 +1089,6 @@ CreateZeros (node *array, node **nassigns, node *fundef)
 
     if (dim == 0) {
         zero = CreateZeroScalar (btype);
-    } else if (dim == 1) {
-        zero = CreateZeroVector (SHGetUnrLen (shape), btype);
     } else {
         node *array_shape = NULL;
 
