@@ -1,14 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/04/24 14:12:18  dkr
+ * fixed a bug with FreeNode: inner NEXT-sons are freed now :-/
+ *
  * Revision 3.19  2001/04/24 09:36:40  dkr
  * CHECK_NULL renamed into STR_OR_EMPTY
  *
  * Revision 3.18  2001/04/03 14:25:11  nmw
  * unconditional free in FreeAp when removing syntax_tree
- *
- * Revision 3.17  2001/04/02 16:24:19  dkr
- * minor changes done
  *
  * Revision 3.16  2001/04/02 11:16:15  nmw
  * FreeAp decrements the used counter for special fundefs and
@@ -16,12 +16,6 @@
  *
  * Revision 3.15  2001/03/29 14:24:19  dkr
  * NWITH2_SCHEDULING removed
- *
- * Revision 3.14  2001/03/29 14:04:37  dkr
- * no changes done
- *
- * Revision 3.13  2001/03/28 14:54:53  dkr
- * minor changes done
  *
  * Revision 3.12  2001/03/22 20:02:31  dkr
  * include of tree.h eliminated
@@ -40,9 +34,6 @@
  *
  * Revision 3.7  2001/02/12 10:53:00  nmw
  * N_ssacnt and N_cseinfo added
- *
- * Revision 3.6  2001/02/02 09:22:13  dkr
- * no changes done
  *
  * Revision 3.5  2001/01/29 18:32:28  dkr
  * some superfluous attributes of N_WLsegVar removed
@@ -65,9 +56,6 @@
  *
  * Revision 1.12  2000/10/27 14:49:53  dkr
  * cpp-flag FREE_MODNAMES added
- *
- * Revision 1.11  2000/10/27 14:26:06  dkr
- * no changes done
  *
  * Revision 1.10  2000/10/26 14:28:57  dkr
  * FreeNCodeWLAA inlined
@@ -144,10 +132,10 @@
 
 #define FREEMASK(mac)                                                                    \
     {                                                                                    \
-        int i;                                                                           \
+        int _i;                                                                          \
                                                                                          \
-        for (i = 0; i < MAX_MASK; i++) {                                                 \
-            FREE (mac (arg_node, i));                                                    \
+        for (_i = 0; _i < MAX_MASK; _i++) {                                              \
+            FREE (mac (arg_node, _i));                                                   \
         }                                                                                \
     }
 
@@ -160,8 +148,9 @@
     }
 
 #define FREECONT(node)                                                                   \
-    ((INFO_FREE_FLAG (arg_info) != NULL) && ((node) != NULL)) ? Trav (node, arg_info)    \
-                                                              : (node)
+    ((INFO_FREE_FLAG (arg_info) != arg_node) && ((node) != NULL))                        \
+      ? Trav (node, arg_info)                                                            \
+      : (node)
 
 /*--------------------------------------------------------------------------*/
 /*  Free-function wrapper for debugging purposes                            */
@@ -469,9 +458,9 @@ FreeOneAccess (access_t *fr)
                   (NODE_TYPE( ACCESS_ARRAY( fr)) == N_arg)),
                  "ACCESS_ARRAY is neither a N_vardec- nor a N_arg-node!");
 
-    DBUG_PRINT("FREE",("Removing Access: psi(%s, %s)", 
-                       VARDEC_OR_ARG_NAME( ACCESS_IV( fr)),
-                       VARDEC_OR_ARG_NAME( ACCESS_ARRAY( fr))));
+    DBUG_PRINT( "FREE", ("Removing Access: psi(%s, %s)", 
+                         VARDEC_OR_ARG_NAME( ACCESS_IV( fr)),
+                         VARDEC_OR_ARG_NAME( ACCESS_ARRAY( fr))));
 
     tmp = fr;
     fr = ACCESS_NEXT( fr);
@@ -531,7 +520,7 @@ FreeNode (node *free_node)
     act_tab = free_tab;
 
     arg_info = MakeInfo ();
-    INFO_FREE_FLAG (arg_info) = NULL;
+    INFO_FREE_FLAG (arg_info) = free_node;
 
     free_node = Trav (free_node, arg_info);
 
@@ -557,7 +546,7 @@ FreeTree (node *free_node)
     act_tab = free_tab;
 
     arg_info = MakeInfo ();
-    INFO_FREE_FLAG (arg_info) = free_node;
+    INFO_FREE_FLAG (arg_info) = NULL;
 
     Trav (free_node, arg_info);
 
@@ -1128,9 +1117,10 @@ FreeAp (node *arg_node, node *arg_info)
 
     /* decrement used counter */
     if ((AP_FUNDEF (arg_node) != NULL)
-        && (FUNDEF_USED (AP_FUNDEF (arg_node)) != FUN_UNUSED)) {
-
+        && (FUNDEF_USED (AP_FUNDEF (arg_node)) != USED_INACTIVE)) {
         (FUNDEF_USED (AP_FUNDEF (arg_node)))--;
+        DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (arg_node)) >= 0),
+                     "FUNDEF_USED dropped below 0");
 
         if (compiler_phase < PH_precompile) {
             /* remove assignment from external assignment list) */
@@ -1633,7 +1623,8 @@ FreeNPart (node *arg_node, node *arg_info)
     FREETRAV (NPART_GEN (arg_node));
 
     if (NPART_CODE (arg_node) != NULL) {
-        NCODE_USED (NPART_CODE (arg_node))--; /* see remarks of N_Ncode in tree_basic.h */
+        /* see remarks of N_Ncode in tree_basic.h */
+        NCODE_USED (NPART_CODE (arg_node))--;
         DBUG_ASSERT ((NCODE_USED (NPART_CODE (arg_node)) >= 0),
                      "NCODE_USED dropped below 0");
     }
@@ -1944,6 +1935,8 @@ FreeWLgrid (node *arg_node, node *arg_info)
 
     if (WLGRID_CODE (arg_node) != NULL) {
         NCODE_USED (WLGRID_CODE (arg_node))--;
+        DBUG_ASSERT ((NCODE_USED (WLGRID_CODE (arg_node)) >= 0),
+                     "NCODE_USED dropped below 0");
     }
 
     FREE (arg_node);
@@ -1969,6 +1962,8 @@ FreeWLgridVar (node *arg_node, node *arg_info)
 
     if (WLGRIDVAR_CODE (arg_node) != NULL) {
         NCODE_USED (WLGRIDVAR_CODE (arg_node))--;
+        DBUG_ASSERT ((NCODE_USED (WLGRIDVAR_CODE (arg_node)) >= 0),
+                     "NCODE_USED dropped below 0");
     }
 
     FREE (arg_node);
