@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/02/12 09:56:40  dkr
+ * FUNDEF_EXT_ASSIGN, FUNDEF_INT_ASSIGN added
+ *
  * Revision 3.21  2001/02/07 20:17:02  dkr
  * N_WL?block, N_WLstride?: NOOP not an attribute but a macro now
  *
@@ -819,22 +822,21 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    int             VARNO                     (optimize -> )
  ***    long*           MASK[x]                   (optimize -> )
  ***    int             INLREC                    (inl !!)
- ***
- ***    DFMmask_base_t  DFM_BASE              (lac2fun/refcount -> spmd -> compile -> )
- ***
- ***
- ***    node*           FUNDEC_DEF  (N_fundef)    (checkdec -> writesib !!)
- ***
  ***    bool            EXPORT                    ( -> dfr !!)
  ***
+ ***    DFMmask_base_t  DFM_BASE            (lac2fun/rc -> spmd -> compile -> )
  ***
- ***  temporary attributes for ST_foldfun fundefs only:
+ ***    node*           FUNDEC_DEF     (N_fundef) (checkdec -> writesib !!)
  ***
- ***    ---
+ ***  temporary attributes for ST_condfun, ST_dofun, ST_whilefun fundefs only:
+ ***
+ ***    node*           EXT_ASSIGN                (lac2fun -> )
+ ***    node*           INT_ASSIGN                (lac2fun -> )
  ***
  ***  temporary attributes for ST_spmdfun fundefs only:
  ***
  ***    node*           LIFTEDFROM  (N_fundef)    (liftspmd -> compile -> )
+ ***    node*           WORKER      ( ?? )
  ***    node*           COMPANION   (N_fundef)    (rfin and mtfin)
  ***                                      FLAG WILL BE CLEANED before mt-phases!
  ***/
@@ -916,6 +918,8 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_LIFTEDFROM(n) ((node *)(n->dfmask[3]))
 #define FUNDEF_WORKER(n) ((node *)(n->dfmask[4]))
 #define FUNDEF_COMPANION(n) ((node *)(n->dfmask[5]))
+#define FUNDEF_EXT_ASSIGN(n) ((node *)(n->dfmask[3]))
+#define FUNDEF_INT_ASSIGN(n) ((node *)(n->dfmask[4]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3384,7 +3388,7 @@ extern node *MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, no
  ***      operation.
  ***      If also (NOOP == TRUE) is hold, this dummy grid represents a noop
  ***      even in genarray/modarray with-loops (-> naive compilation,
- ***      array padding, ...) !!!
+ ***      array padding, ...) !!
  ***/
 
 extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, bool unrolling,
@@ -3436,7 +3440,7 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, bool unroll
  ***      operation.
  ***      If also (NOOP == TRUE) is hold, this dummy grid represents a noop
  ***      even in genarray/modarray with-loops (-> naive compilation,
- ***      array padding, ...) !!!
+ ***      array padding, ...) !!
  ***/
 
 extern node *MakeWLgridVar (int level, int dim, node *bound1, node *bound2, node *nextdim,
