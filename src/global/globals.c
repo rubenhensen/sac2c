@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/01/23 18:18:51  cg
+ * Increased default value for maxspecialize to 20.
+ *
  * Revision 3.4  2000/12/12 12:15:40  dkr
  * internal flag 'dkr' added
  *
@@ -346,7 +349,7 @@ int inlnum = 1;
 int unrnum = 2;
 int wlunrnum = 9;
 int minarray = 4;
-int max_overload = 10;
+int max_overload = 20;
 int max_optcycles = 4;
 
 int initial_master_heapsize = 1024;
