@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/08/09 03:47:34  skt
+ * master run warning fixed
+ *
  * Revision 3.11  2004/08/06 10:45:41  skt
  * MUTHDecodeExecmode added
  *
@@ -610,6 +613,9 @@ MUTHDecodeExecmode (int execmode)
         break;
     case MUTH_MULTI:
         result = "MT";
+        break;
+    default:
+        result = "";
         break;
     }
     DBUG_RETURN (result);
