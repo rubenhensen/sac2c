@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.19  2004/11/03 17:22:21  sah
+ * typedefs and objdefs are serialized now as well
+ *
  * Revision 1.18  2004/11/02 14:59:01  sah
  * extended serialize traversal
  *
@@ -388,10 +391,12 @@ GenerateSerFunName (STentrytype_t type, node *node)
 
         break;
     case SET_typedef:
-        result[0] = '\0';
+        snprintf (result, MAX_FUN_NAME_LEN, "STD_%s_%s_", TYPEDEF_MOD (node),
+                  TYPEDEF_NAME (node));
         break;
     case SET_objdef:
-        result[0] = '\0';
+        snprintf (result, MAX_FUN_NAME_LEN, "SOD_%s_%s_", OBJDEF_MOD (node),
+                  OBJDEF_NAME (node));
         break;
     default:
         DBUG_ASSERT (0, "Unexpected symboltype found!");
@@ -411,12 +416,12 @@ GenerateSerFunName (STentrytype_t type, node *node)
 }
 
 static void
-GenerateSerFunHead (node *fundef, STentrytype_t type, info *info)
+GenerateSerFunHead (node *elem, STentrytype_t type, info *info)
 {
     DBUG_ENTER ("GenerateSerFunBodyHead");
 
     fprintf (INFO_SER_FILE (info), "void *%s(void *info)",
-             GenerateSerFunName (type, fundef));
+             GenerateSerFunName (type, elem));
     fprintf (INFO_SER_FILE (info), "{\n");
     fprintf (INFO_SER_FILE (info), "void *result;\n");
     fprintf (INFO_SER_FILE (info), "void *stack;\n");
@@ -426,7 +431,7 @@ GenerateSerFunHead (node *fundef, STentrytype_t type, info *info)
 }
 
 static void
-GenerateSerFunMiddle (node *fundef, STentrytype_t type, info *info)
+GenerateSerFunMiddle (node *elem, STentrytype_t type, info *info)
 {
     DBUG_ENTER ("GenerateSerFunMiddle");
 
@@ -436,7 +441,7 @@ GenerateSerFunMiddle (node *fundef, STentrytype_t type, info *info)
 }
 
 static void
-GenerateSerFunTail (node *fundef, STentrytype_t type, info *info)
+GenerateSerFunTail (node *elem, STentrytype_t type, info *info)
 {
     DBUG_ENTER ("GenerateSerFunBodyTail");
 
@@ -493,6 +498,60 @@ SerializeFundefHead (node *fundef, info *info)
     fundef = StartSerializeLinkTraversal (fundef, info);
 
     GenerateSerFunTail (fundef, SET_funhead, info);
+
+    INFO_SER_STACK (info) = SerStackDestroy (INFO_SER_STACK (info));
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeTypedef (node *tdef, info *info)
+{
+    DBUG_ENTER ("SerializeTypedef");
+
+    INFO_SER_STACK (info) = SerializeBuildSerStack (tdef);
+
+    TYPEDEF_SYMBOLNAME (tdef) = StringCopy (GenerateSerFunName (SET_typedef, tdef));
+
+    STAdd (TYPEDEF_NAME (tdef), TYPEDEF_SYMBOLNAME (tdef), SET_typedef,
+           INFO_SER_TABLE (info));
+
+    GenerateSerFunHead (tdef, SET_typedef, info);
+
+    tdef = StartSerializeTraversal (tdef, info);
+
+    GenerateSerFunMiddle (tdef, SET_typedef, info);
+
+    tdef = StartSerializeLinkTraversal (tdef, info);
+
+    GenerateSerFunTail (tdef, SET_typedef, info);
+
+    INFO_SER_STACK (info) = SerStackDestroy (INFO_SER_STACK (info));
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+SerializeObjdef (node *objdef, info *info)
+{
+    DBUG_ENTER ("SerializeObjdef");
+
+    INFO_SER_STACK (info) = SerializeBuildSerStack (objdef);
+
+    TYPEDEF_SYMBOLNAME (objdef) = StringCopy (GenerateSerFunName (SET_objdef, objdef));
+
+    STAdd (TYPEDEF_NAME (objdef), TYPEDEF_SYMBOLNAME (objdef), SET_objdef,
+           INFO_SER_TABLE (info));
+
+    GenerateSerFunHead (objdef, SET_objdef, info);
+
+    objdef = StartSerializeTraversal (objdef, info);
+
+    GenerateSerFunMiddle (objdef, SET_objdef, info);
+
+    objdef = StartSerializeLinkTraversal (objdef, info);
+
+    GenerateSerFunTail (objdef, SET_objdef, info);
 
     INFO_SER_STACK (info) = SerStackDestroy (INFO_SER_STACK (info));
 
@@ -570,6 +629,14 @@ SERTypedef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SERTypedef");
 
+    DBUG_PRINT ("SER", ("Serializing typedef %s", TYPEDEF_NAME (arg_node)));
+
+    SerializeTypedef (arg_node, arg_info);
+
+    if (TYPEDEF_NEXT (arg_node) != NULL) {
+        TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -577,6 +644,14 @@ node *
 SERObjdef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SERObjdef");
+
+    DBUG_PRINT ("SER", ("Serializing objdef %s", OBJDEF_NAME (arg_node)));
+
+    SerializeObjdef (arg_node, arg_info);
+
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
