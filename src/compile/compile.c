@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2001/04/26 12:28:25  dkr
+ * GetExprsLength() renamed into CountExprs()
+ *
  * Revision 3.45  2001/04/26 11:56:25  nmw
  * CreateIcmND_FUN_AP() sets ICM_FUNDEF attribute
  *
@@ -4076,7 +4079,7 @@ COMPPrfPsi (node *arg_node, node *arg_info)
             /* 'arg1' is a N_array node */
             ret_node
               = MakeAssignIcm4 ("ND_KD_PSI_CxA_S", DupNode (arg2), DupIds_Id (let_ids),
-                                MakeNum (GetExprsLength (ARRAY_AELEMS (arg1))),
+                                MakeNum (CountExprs (ARRAY_AELEMS (arg1))),
                                 DupTree (ARRAY_AELEMS (arg1)));
             last_node = ret_node;
         }
@@ -4100,7 +4103,7 @@ COMPPrfPsi (node *arg_node, node *arg_info)
             icm_node
               = MakeAssignIcm5 ("ND_KD_PSI_CxA_A", MakeNum (GetDim (ID_TYPE (arg2))),
                                 DupNode (arg2), DupIds_Id (let_ids),
-                                MakeNum (GetExprsLength (ARRAY_AELEMS (arg1))),
+                                MakeNum (CountExprs (ARRAY_AELEMS (arg1))),
                                 DupTree (ARRAY_AELEMS (arg1)));
             last_node = ASSIGN_NEXT (last_node) = icm_node;
         }
@@ -4183,7 +4186,7 @@ COMPPrfModarray (node *arg_node, node *arg_info)
 
         ret_node = MakeAssignIcm7 (icm_name, res_type, res_dim, DupIds_Id (let_ids),
                                    DupNode (arg1), DupNode (arg3),
-                                   MakeNum (GetExprsLength (ARRAY_AELEMS (arg2))),
+                                   MakeNum (CountExprs (ARRAY_AELEMS (arg2))),
                                    DupTree (ARRAY_AELEMS (arg2)));
         last_node = ret_node;
     } else {
@@ -4975,7 +4978,7 @@ COMPArray (node *arg_node, node *arg_info)
     /*
      * Count number of array elements.
      */
-    num_elems = GetExprsLength (ARRAY_AELEMS (arg_node));
+    num_elems = CountExprs (ARRAY_AELEMS (arg_node));
 
     if (num_elems > 0) {
         array_elem = EXPRS_EXPR (ARRAY_AELEMS (arg_node));

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2001/04/26 12:30:09  dkr
+ * GetExprsLength() renamed into CountExprs()
+ *
  * Revision 3.34  2001/04/25 12:27:57  dkr
  * NodeListDelete: works correctly even for empty nodelists now
  *
@@ -1886,9 +1889,8 @@ CountArgs (node *args)
 
     DBUG_ENTER ("CountArgs");
 
-    DBUG_ASSERT (((args == NULL) || (NODE_TYPE (args) == N_arg)), "no N_arg node found!");
-
     while (args != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_arg node found!");
         count++;
         args = ARG_NEXT (args);
     }
@@ -2286,7 +2288,7 @@ MakeExprsNum (int num)
 /******************************************************************************
  *
  * function:
- *   node *GetExprsLength( node *exprs)
+ *   int CountExprs( node *exprs)
  *
  * description:
  *   Computes the length of the given N_exprs chain.
@@ -2294,14 +2296,15 @@ MakeExprsNum (int num)
  ******************************************************************************/
 
 int
-GetExprsLength (node *exprs)
+CountExprs (node *exprs)
 {
     int length;
 
-    DBUG_ENTER ("GetExprsLength");
+    DBUG_ENTER ("CountExprs");
 
     length = 0;
     while (exprs != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "no N_exprs node found!");
         length++;
         exprs = EXPRS_NEXT (exprs);
     }
