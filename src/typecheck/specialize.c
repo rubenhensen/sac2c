@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2002/09/03 14:41:45  sbs
+ * DupTree machanism for duplicating condi funs established
+ *
  * Revision 1.1  2002/08/05 16:58:37  sbs
  * Initial revision
  *
@@ -36,17 +39,23 @@ static node *specialized_fundefs = NULL;
 /******************************************************************************
  *
  * function:
- *    bool SpecializationOracle( node *wrapper, node *fundef, ntype *args)
+ *    ntype * SpecializationOracle( node *wrapper, node *fundef, ntype *args)
  *
  * description:
+ *    for a given argument type and a given fundef the oracle computes a new
+ *    type which indicates the version to be actually built (specialized).
+ *    Contra-intuitively, NULL is returned iff a FULL specialization is desired!
  *
  ******************************************************************************/
 
-static bool
+static ntype *
 SpecializationOracle (node *wrapper, node *fundef, ntype *args)
 {
+    ntype *res;
+
     DBUG_ENTER ("SpecializationOracle");
-    DBUG_RETURN (TRUE);
+    res = NULL;
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -58,9 +67,10 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args)
  *    Here, we assume that all argument types are either array types or
  *    type variables with identical Min and Max!
  *    This function replaces the old type siganture (in the N_arg nodes)
- *    by the given argument types (arg_ts), and updates the function type
- *    ( FUNDEF_TYPE( fundef) ) as well. It returns the modified N_fundef
- *    node.
+ *    by the MINIMUM of the old type and the given argument types (arg_ts),
+ *    and updates the function type ( FUNDEF_TYPE( fundef) ) as well.
+ *    Such a minimum MUST exist as we want to specialize the function!!
+ *    It returns the modified N_fundef node.
  *
  ******************************************************************************/
 
@@ -68,7 +78,7 @@ static node *
 UpdateSignature (node *fundef, ntype *arg_ts)
 {
     node *args;
-    ntype *type;
+    ntype *type, *old_type, *new_type;
     int i = 0;
 
     DBUG_ENTER ("UpdateSignature");
@@ -80,8 +90,23 @@ UpdateSignature (node *fundef, ntype *arg_ts)
     args = FUNDEF_ARGS (fundef);
     while (args) {
         type = TYGetProductMember (arg_ts, i);
+        old_type = TYOldType2Type (ARG_TYPE (args));
+        if (old_type == NULL) {
+            new_type = TYCopyType (type);
+        } else {
+            if (TYLeTypes (type, old_type)) {
+                new_type = TYCopyType (type);
+                TYFreeType (old_type);
+            } else {
+                DBUG_ASSERT (TYLeTypes (old_type, type),
+                             "UpdateSignature called with incompatible args");
+                new_type = old_type;
+            }
+        }
         ARG_TYPE (args) = FreeOneTypes (ARG_TYPE (args));
-        ARG_TYPE (args) = TYType2OldType (type);
+        ARG_TYPE (args) = TYType2OldType (new_type);
+        AVIS_TYPE (ARG_AVIS (args)) = new_type;
+
         args = ARG_NEXT (args);
         i++;
     }
@@ -163,22 +188,34 @@ DFT_res *
 SPECHandleDownProjections (DFT_res *dft, node *wrapper, ntype *args)
 {
     node *new_fundef;
+    ntype *new_args;
+    int i;
 
     DBUG_ENTER ("HandleDownProjections");
-    if (dft->deriveable != NULL) {
-        /*
-         * down case:
-         */
-        if (SpecializationOracle (wrapper, dft->deriveable, args)) {
+
+    while (dft->deriveable != NULL) {
+        new_args = SpecializationOracle (wrapper, dft->deriveable, args);
+        if (new_args == NULL) {
             new_fundef = DoSpecialize (wrapper, dft->deriveable, args);
-            dft = NTCFUNDispatchFunType (wrapper, args);
+            for (i = 0; i < dft->num_deriveable_partials; i++) {
+                new_fundef = DoSpecialize (wrapper, dft->deriveable_partials[i], args);
+            }
         } else {
-            /* not yet ok! */
-            DBUG_ASSERT (FALSE, "non-specialization not yet implemented!");
+            args = new_args;
         }
+        dft = NTCFUNDispatchFunType (wrapper, args);
     }
-    if (dft->num_deriveable_partials > 0) {
-        DBUG_ASSERT (FALSE, "specialization of partials not yet implemented");
+
+    while (dft->num_deriveable_partials > 0) {
+        new_args = SpecializationOracle (wrapper, dft->deriveable_partials[0], args);
+        if (new_args == NULL) {
+            for (i = 0; i < dft->num_deriveable_partials; i++) {
+                new_fundef = DoSpecialize (wrapper, dft->deriveable_partials[i], args);
+            }
+        } else {
+            args = new_args;
+        }
+        dft = NTCFUNDispatchFunType (wrapper, args);
     }
 
     /*
@@ -194,16 +231,16 @@ SPECHandleDownProjections (DFT_res *dft, node *wrapper, ntype *args)
 /******************************************************************************
  *
  * function:
- *    node *SPECHandleLacFun( node *fundef, ntype *args)
+ *    node *SPECHandleLacFun( node *fundef, node *assign, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-SPECHandleLacFun (node *fundef, ntype *args)
+SPECHandleLacFun (node *fundef, node *assign, ntype *args)
 {
-    node *tmp, *fun;
+    node *fun, *module;
 
     DBUG_ENTER ("SPECHandleLacFun");
     DBUG_ASSERT (FUNDEF_IS_LACFUN (fundef), "SPECHandleLacFun called with non LaC fun!");
@@ -214,15 +251,12 @@ SPECHandleLacFun (node *fundef, ntype *args)
          * Unfortunately, the "specialization" of LAC functions is postponed
          * until actualy found for type checking, i.e., until here:
          */
-        FUNDEF_USED (fundef) = FUNDEF_USED (fundef) - 1;
-
-        tmp = FUNDEF_NEXT (fundef);
-        FUNDEF_NEXT (fundef) = NULL;
-        fun = DupTree (fundef);
-        FUNDEF_NEXT (fundef) = tmp;
+        module = MakeModul ("dummy", F_prog, NULL, NULL, NULL, NULL);
+        module = CheckAndDupSpecialFundef (module, fundef, assign);
+        fun = MODUL_FUNS (module);
+        module = FreeNode (module);
 
         FUNDEF_TCSTAT (fun) = 0; /* NTC_not_checked; */
-        FUNDEF_USED (fun) = 1;
 
         /* insert the new fundef into the specialized chain */
         FUNDEF_NEXT (fun) = specialized_fundefs;
@@ -234,7 +268,7 @@ SPECHandleLacFun (node *fundef, ntype *args)
     UpdateSignature (fun, args);
     FUNDEF_TYPE (fun) = CreateFuntype (fun);
 
-    DBUG_RETURN (fundef);
+    DBUG_RETURN (fun);
 }
 
 /******************************************************************************

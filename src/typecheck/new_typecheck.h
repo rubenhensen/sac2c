@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/09/03 14:41:45  sbs
+ * DupTree machanism for duplicating condi funs established
+ *
  * Revision 3.5  2002/08/30 16:36:45  dkr
  * NewTypeCheck_Expr() added
  *
@@ -38,6 +41,7 @@ extern node *NTCmodul (node *arg_node, node *arg_info);
 extern node *NTCfundef (node *arg_node, node *arg_info);
 extern node *NTCarg (node *arg_node, node *arg_info);
 extern node *NTCblock (node *arg_node, node *arg_info);
+extern node *NTCassign (node *arg_node, node *arg_info);
 extern node *NTCcond (node *arg_node, node *arg_info);
 extern node *NTClet (node *arg_node, node *arg_info);
 extern node *NTCreturn (node *arg_node, node *arg_info);

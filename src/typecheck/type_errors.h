@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2002/09/03 14:41:45  sbs
+ * DupTree machanism for duplicating condi funs established
+ *
  * Revision 1.2  2002/08/07 09:51:07  sbs
  * TEAssureIntS added.
  *
@@ -30,10 +33,12 @@ extern void TEAssureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *
 extern void TEAssureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern ntype *TEAssureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 
-extern te_info *TEMakeInfo (int linenum, char *kind_str, char *name_str, node *wrapper);
+extern te_info *TEMakeInfo (int linenum, char *kind_str, char *name_str, node *wrapper,
+                            node *assign);
 extern int TEGetLine (te_info *info);
 extern char *TEGetKindStr (te_info *info);
 extern char *TEGetNameStr (te_info *info);
 extern node *TEGetWrapper (te_info *info);
+extern node *TEGetAssign (te_info *info);
 
 #endif /* _type_errors_h */

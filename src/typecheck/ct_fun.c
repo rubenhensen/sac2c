@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2002/09/03 14:41:45  sbs
+ * DupTree machanism for duplicating condi funs established
+ *
  * Revision 1.1  2002/08/05 16:57:48  sbs
  * Initial revision
  *
@@ -162,19 +165,20 @@ ntype *
 NTCFUN_udf (te_info *info, ntype *args)
 {
     ntype *res;
-    node *fundef;
+    node *fundef, *assign;
     DFT_res *dft_res;
 
     DBUG_ENTER ("NTCFUN_udf");
     DBUG_ASSERT ((TYIsProdOfArray (args)), "NTCFUN_udf called with non-fixed args!");
 
     fundef = TEGetWrapper (info);
+    assign = TEGetAssign (info);
 
     if (FUNDEF_IS_LACFUN (fundef)) {
         /*
          * specialize it, trigger its typecheck, and pick its return type:
          */
-        fundef = SPECHandleLacFun (fundef, args);
+        fundef = SPECHandleLacFun (fundef, assign, args);
         fundef = NTCTriggerTypeCheck (fundef);
         res = TYCopyType (FUNDEF_RET_TYPE (fundef));
 

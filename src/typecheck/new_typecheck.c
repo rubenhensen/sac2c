@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2002/09/03 14:41:45  sbs
+ * DupTree machanism for duplicating condi funs established
+ *
  * Revision 3.14  2002/08/31 04:57:09  dkr
  * NewTypeCheck_Expr() added
  *
@@ -111,6 +114,7 @@
 #define INFO_NTC_TYPE(n) ((ntype *)(n->dfmask[0]))
 #define INFO_NTC_GEN_TYPE(n) ((ntype *)(n->dfmask[1]))
 #define INFO_NTC_NUM_EXPRS_SOFAR(n) (n->flag)
+#define INFO_NTC_LAST_ASSIGN(n) (n->node[0])
 
 typedef enum { NTC_not_checked, NTC_checking, NTC_checked } NTC_stat;
 
@@ -651,6 +655,37 @@ NTCblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *    node *NTCassign(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+NTCassign (node *arg_node, node *arg_info)
+{
+    node *tmp;
+
+    DBUG_ENTER ("NTCassign");
+
+    tmp = INFO_NTC_LAST_ASSIGN (arg_info);
+
+    INFO_NTC_LAST_ASSIGN (arg_info) = arg_node;
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    INFO_NTC_LAST_ASSIGN (arg_info) = tmp;
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *    node *NTCcond(node *arg_node, node *arg_info)
  *
  * description:
@@ -843,7 +878,8 @@ NTCap (node *arg_node, node *arg_info)
     INFO_NTC_TYPE (arg_info) = NULL;
 
     wrapper = AP_FUNDEF (arg_node);
-    info = TEMakeInfo (linenum, "udf", FUNDEF_NAME (wrapper), wrapper);
+    info = TEMakeInfo (linenum, "udf", FUNDEF_NAME (wrapper), wrapper,
+                       INFO_NTC_LAST_ASSIGN (arg_info));
     res = NTCCTComputeType (NTCFUN_udf, info, args);
 
     TYFreeType (args);
@@ -890,7 +926,7 @@ NTCprf (node *arg_node, node *arg_info)
     INFO_NTC_TYPE (arg_info) = NULL;
 
     prf = PRF_PRF (arg_node);
-    info = TEMakeInfo (linenum, "prf", prf_name_str[prf], NULL);
+    info = TEMakeInfo (linenum, "prf", prf_name_str[prf], NULL, NULL);
     res = NTCCTComputeType (NTCPRF_funtab[prf], info, args);
 
     TYFreeType (args);
@@ -1261,7 +1297,7 @@ NTCNgenerator (node *arg_node, node *arg_info)
         gen = TYMakeProductType (3, lb, idx, ub);
     }
 
-    info = TEMakeInfo (linenum, "wl", "generator", NULL);
+    info = TEMakeInfo (linenum, "wl", "generator", NULL, NULL);
     res = NTCCTComputeType (NTCWL_idx, info, gen);
     TYFreeType (gen);
 
@@ -1369,7 +1405,7 @@ NTCNwithop (node *arg_node, node *arg_info)
         INFO_NTC_TYPE (arg_info) = NULL;
 
         args = TYMakeProductType (3, gen, shp, body);
-        info = TEMakeInfo (linenum, "with", "genarray", NULL);
+        info = TEMakeInfo (linenum, "with", "genarray", NULL, NULL);
         res = NTCCTComputeType (NTCWL_gen, info, args);
 
         break;
@@ -1383,7 +1419,7 @@ NTCNwithop (node *arg_node, node *arg_info)
         INFO_NTC_TYPE (arg_info) = NULL;
 
         args = TYMakeProductType (3, gen, shp, body);
-        info = TEMakeInfo (linenum, "with", "modarray", NULL);
+        info = TEMakeInfo (linenum, "with", "modarray", NULL, NULL);
         res = NTCCTComputeType (NTCWL_mod, info, args);
 
         break;
@@ -1403,7 +1439,7 @@ NTCNwithop (node *arg_node, node *arg_info)
          * Then, we compute the type of the elements to be folded:
          */
         args = TYMakeProductType (2, shp, body);
-        info = TEMakeInfo (linenum, "with", "fold", NULL);
+        info = TEMakeInfo (linenum, "with", "fold", NULL, NULL);
         res = NTCCTComputeType (NTCWL_fold, info, args);
         elems = TYGetProductMember (res, 0);
 
@@ -1412,7 +1448,8 @@ NTCNwithop (node *arg_node, node *arg_info)
          */
         args = TYMakeProductType (2, TYCopyType (elems), TYCopyType (elems));
         wrapper = NWITHOP_FUNDEF (arg_node);
-        info = TEMakeInfo (linenum, "fold fun", FUNDEF_NAME (wrapper), wrapper);
+        info = TEMakeInfo (linenum, "fold fun", FUNDEF_NAME (wrapper), wrapper,
+                           INFO_NTC_LAST_ASSIGN (arg_info));
         fold_res = NTCCTComputeType (NTCFUN_udf, info, args);
 
         ok = SSINewTypeRel (TYGetProductMember (fold_res, 0), elems);

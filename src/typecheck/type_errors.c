@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2002/09/03 14:41:45  sbs
+ * DupTree machanism for duplicating condi funs established
+ *
  * Revision 1.3  2002/08/07 09:51:07  sbs
  * TEAssureIntS added.
  *
@@ -20,12 +23,14 @@ struct TE_INFO {
     char *kind_str; /* kind of function we are dealing with */
     char *name_str; /* name of the function */
     node *wrapper;  /* for udfs, this pointer points to the wrapper function */
+    node *assign;   /* for udfs, this pointer points to the assign node of the ap */
 };
 
 #define TI_LINE(n) (n->line)
 #define TI_KIND(n) (n->kind_str)
 #define TI_NAME(n) (n->name_str)
 #define TI_FUNDEF(n) (n->wrapper)
+#define TI_ASSIGN(n) (n->assign)
 
 /******************************************************************************
  ***
@@ -114,7 +119,7 @@ MatchBoolA (ntype *type)
  ******************************************************************************/
 
 te_info *
-TEMakeInfo (int linenum, char *kind_str, char *name_str, node *wrapper)
+TEMakeInfo (int linenum, char *kind_str, char *name_str, node *wrapper, node *assign)
 {
     te_info *res;
 
@@ -125,6 +130,7 @@ TEMakeInfo (int linenum, char *kind_str, char *name_str, node *wrapper)
     TI_KIND (res) = kind_str;
     TI_NAME (res) = name_str;
     TI_FUNDEF (res) = wrapper;
+    TI_ASSIGN (res) = assign;
 
     DBUG_RETURN (res);
 }
@@ -155,6 +161,13 @@ TEGetWrapper (te_info *info)
 {
     DBUG_ENTER ("TEGetWrapper");
     DBUG_RETURN (TI_FUNDEF (info));
+}
+
+node *
+TEGetAssign (te_info *info)
+{
+    DBUG_ENTER ("TEGetAssign");
+    DBUG_RETURN (TI_ASSIGN (info));
 }
 
 /******************************************************************************
