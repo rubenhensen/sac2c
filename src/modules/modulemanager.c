@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/10/21 17:20:24  sah
+ * modules are now pooled internally
+ *
  * Revision 1.2  2004/09/23 21:14:23  sah
  * ongoing implementation
  *
@@ -21,9 +24,88 @@ struct MODULE_T {
     char *name;
     char *sofile;
     dynlib_t lib;
+    module_t *next;
+    int usecount;
 };
 
+static module_t *modulepool = NULL;
+
 typedef symboltable_t *(*symtabfun_p) ();
+
+static module_t *
+LookupModuleInPool (const char *name)
+{
+    module_t *result = NULL;
+    module_t *pos = modulepool;
+
+    DBUG_ENTER ("LookupModuleInPool");
+
+    while ((result == NULL) && (pos != NULL)) {
+        if (!strcmp (pos->name, name)) {
+            result = pos;
+        }
+        pos = pos->next;
+    }
+
+    DBUG_RETURN (result);
+}
+
+static module_t *
+AddModuleToPool (const char *name)
+{
+    module_t *result;
+
+    DBUG_ENTER ("AddModuleToPool");
+
+    result = Malloc (sizeof (module_t));
+
+    result->sofile = Malloc (sizeof (char) * (strlen (name) + 6));
+    sprintf (result->sofile, "lib%s.so", name);
+
+    result->name = StringCopy (name);
+    result->lib = LoadLibrary (result->sofile);
+    result->next = modulepool;
+    modulepool = result;
+    result->usecount = 1;
+
+    DBUG_RETURN (result);
+}
+
+static module_t *
+RemoveModuleFromPool (module_t *module)
+{
+    DBUG_ENTER ("RemoveModuleFromPool");
+
+    module->usecount--;
+
+    if (module->usecount == 0) {
+
+        /* unpool the module */
+
+        if (modulepool == module) {
+            modulepool = module->next;
+        } else {
+            module_t *pos = modulepool;
+            while (pos->next != module) {
+                pos = pos->next;
+            }
+            pos->next = module->next;
+        }
+
+        /* unload the library */
+
+        module->lib = UnLoadLibrary (module->lib);
+
+        /* free the structure */
+
+        module->sofile = Free (module->sofile);
+        module->name = Free (module->name);
+    }
+
+    module = NULL;
+
+    DBUG_RETURN (module);
+}
 
 const char *
 GetModuleName (module_t *module)
@@ -42,13 +124,11 @@ LoadModule (const char *name)
 
     DBUG_ENTER ("LoadModule");
 
-    result = Malloc (sizeof (module_t));
+    result = LookupModuleInPool (name);
 
-    result->sofile = Malloc (sizeof (char) * (strlen (name) + 6));
-    sprintf (result->sofile, "lib%s.so", name);
-
-    result->name = StringCopy (name);
-    result->lib = LoadLibrary (result->sofile);
+    if (result == NULL) {
+        result = AddModuleToPool (name);
+    }
 
     DBUG_RETURN (result);
 }
@@ -58,16 +138,12 @@ UnLoadModule (module_t *module)
 {
     DBUG_ENTER ("UnLoadModule");
 
-    module->lib = UnLoadLibrary (module->lib);
-    module->name = Free (module->name);
-    module->sofile = Free (module->sofile);
-
-    module = Free (module);
+    module = RemoveModuleFromPool (module);
 
     DBUG_RETURN (module);
 }
 
-symtabfun_p
+static symtabfun_p
 GetSymbolTableFunction (module_t *module)
 {
     char *name;
