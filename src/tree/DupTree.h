@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/04/09 15:55:02  dkr
+ * some comments added
+ *
  * Revision 3.19  2002/02/22 13:57:50  dkr
  * functions Dup...TypesOnly(), DupOneTypesOnly_Inplace() removed
  * (no longer needed after redesign of the TYPES structure :-)
@@ -51,50 +54,6 @@
  *
  * Revision 3.3  2001/01/09 17:26:31  dkr
  * N_WLstriVar renamed into N_WLstrideVar
- *
- * Revision 3.2  2000/12/06 19:26:31  dkr
- * DupTreePre renamed into DupTreeTravPre
- * DupTreePost renamed into DupTreeTravPost
- *
- * Revision 3.1  2000/11/20 18:03:20  sacbase
- * new release made
- *
- * Revision 1.18  2000/10/26 12:45:18  dkr
- * function DupId_Ids added
- * signature of DupOneIds, DupNodelist changed
- * function DupIds renamed into DupAllIds
- *
- * Revision 1.17  2000/10/23 10:37:43  dkr
- * function DupIds_Id added
- *
- * Revision 1.16  2000/07/14 12:47:54  dkr
- * DupModul and DupImplist added
- *
- * Revision 1.15  2000/07/14 10:08:50  dkr
- * signature of DupNodelist changed
- *
- * Revision 1.14  2000/07/14 09:48:27  dkr
- * some comments about function prototypes added
- *
- * Revision 1.13  2000/07/14 09:38:20  dkr
- * CopyNodelist renamed into DupNodelist and moved from tree_compound.h
- * to DupTree.h
- *
- * Revision 1.12  2000/07/12 15:20:38  dkr
- * DuplicateTypes removed (use DupTypes instead!)
- *
- * Revision 1.11  2000/07/04 14:38:11  jhs
- * Added Dups for MTalloc, MTsignal, MTsync.
- *
- * Revision 1.10  2000/06/23 15:33:27  dkr
- * signature of DupTree changed
- * function DupTreeInfo added
- *
- * Revision 1.9  2000/03/17 18:30:44  dkr
- * type lut_t* replaced by LUT_t
- *
- * Revision 1.8  2000/03/15 12:58:46  dkr
- * macro DUPVECT added
  *
  * [ ... ]
  *
@@ -149,6 +108,12 @@ extern ids *DupId_Ids (node *arg_id);
  */
 extern node *DupIds_Id_NT (ids *arg_ids);
 extern node *DupId_NT (node *arg_id);
+
+/*
+ * Other functions for external use
+ */
+/* handling of multiple used special functions */
+extern node *CheckAndDupSpecialFundef (node *module, node *fundef, node *assign);
 
 /*
  * Functions for internal use during AST traversal only!
@@ -217,8 +182,5 @@ extern node *DupWLgridVar (node *arg_node, node *arg_info);
 /* pre- and post-processing during traversal */
 extern node *DupTreeTravPre (node *arg_node, node *arg_info);
 extern node *DupTreeTravPost (node *arg_node, node *arg_info);
-
-/* handling for multiple used special functions */
-extern node *CheckAndDupSpecialFundef (node *module, node *fundef, node *assign);
 
 #endif /* _sac_DupTree_h_ */
