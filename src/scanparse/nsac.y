@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.29  2004/12/05 21:05:00  sah
+* fixed objdefs rule
+*
 * Revision 1.28  2004/12/05 16:45:38  sah
 * added SPIds SPId SPAp in frontend
 *
@@ -517,7 +520,7 @@ typedef: TYPEDEF ntype ID SEMIC
 
 objdefs: objdef objdefs
          { $$ = $1;
-           OBJDEF_NEXT( $$) = $1;
+           OBJDEF_NEXT( $$) = $2;
          }
        | objdef
          { $$ = $1;
