@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.29  1995/10/31 15:37:46  sbs
+ * Revision 1.30  1995/11/01 16:31:36  cg
+ * bug fixed in usage of attributes of global objects derived from
+ * sib file as implicitly needed. Now, the specific attribute is removed.
+ * Later it can be used to distinguish between read-objects and
+ * read-write-objects.
+ *
+ * Revision 1.29  1995/10/31  15:37:46  sbs
  * error in mod init: sib not set to NULL for external imports!
  *
  * Revision 1.28  1995/10/31  14:47:21  sbs
@@ -1380,11 +1386,14 @@ EnsureExistObjects (node *object, node *modul)
 {
     node *find_obj, *next;
     nodelist *objlist = NULL;
+    statustype keep_attrib;
 
     DBUG_ENTER ("EnsureExistObjects");
 
     while (object != NULL) {
         find_obj = modul->node[3];
+        keep_attrib = object->info.types->attrib;
+        object->info.types->attrib = ST_regular;
 
         while ((find_obj != NULL) && (!CMP_OBJDEF (object, find_obj))) {
             find_obj = find_obj->node[0];
