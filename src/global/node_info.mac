@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.23  1994/12/19 14:48:07  asi
- * Added - OPTfundef OPTarg OPTvardec OPTmodul OPTlet OPTblock
+ * Revision 1.24  1994/12/19 15:27:07  asi
+ * Added - OPTid
  *
+;; Revision 1.23  1994/12/19  14:48:07  asi
+;; Added - OPTfundef OPTarg OPTvardec OPTmodul OPTlet OPTblock
+;;
 ;; Revision 1.22  1994/12/19  13:00:44  hw
 ;; inserted TCdo & TCwhile
 ;;
@@ -81,7 +84,7 @@
 
 NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun, DummyFun,
      DummyFun),
-  NIF (N_id, "N_id", DummyFun, DummyFun, PrintId, DummyFun, DummyFun, DummyFun, DummyFun,
+  NIF (N_id, "N_id", DummyFun, DummyFun, PrintId, DummyFun, OPTid, DummyFun, DummyFun,
        DummyFun),
   NIF (N_float, "N_float", DummyFun, DummyFun, PrintFloat, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
