@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/04/05 15:50:24  sbs
+ * Revision 1.9  1995/04/05 15:52:05  sbs
+ * bug fixed
+ *
+ * Revision 1.8  1995/04/05  15:50:24  sbs
  * -c inserted
  *
  * Revision 1.7  1995/04/03  06:19:49  sbs
@@ -40,7 +43,7 @@ usage (char *prg_name)
     printf ("\t -I path\t\tspecify additional declaration path\n");
     printf ("\t -L path\t\tspecify additional library path\n");
     printf ("\t -o outfilename\t\tset output to outfilename\n");
-    printf ("\t -c \t\t\tproduce C-file only");
+    printf ("\t -c \t\t\tgenerate C-file only\n");
     printf ("\t -s \t\t\tcompile silently\n");
 
     printf ("\n");
