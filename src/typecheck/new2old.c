@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2002/10/28 14:54:55  sbs
+ * NT2OTcast added.
+ *
  * Revision 1.10  2002/10/24 14:09:35  sbs
  * bug in vardec handling fixed
  *
@@ -335,6 +338,30 @@ NT2OTarray (node *arg_node, node *arg_info)
     }
 
     DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *NT2OTcast( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+NT2OTcast (node *arg_node, node *arg_info)
+{
+    node *res;
+
+    DBUG_ENTER ("NT2OTcast");
+
+    res = Trav (CAST_EXPR (arg_node), arg_info);
+    CAST_EXPR (arg_node) = NULL;
+    arg_node = FreeNode (arg_node);
+
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
