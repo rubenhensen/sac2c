@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2003/03/26 13:54:31  sbs
+ * groups slightly restructured.
+ *
  * Revision 3.44  2003/03/26 13:25:41  sbs
  * group IVE defined
  *
@@ -191,20 +194,13 @@
 
 /**
  *
- * @file index.c
  * @defgroup IVE
- * @{
+ * @ingroup Optimizations
  *
- *  This file contains the implementation of IVE (index vector elimination).
- *
+ * The "index vector elimination" (IVE for short) tries to eliminate index vectors
+ * which are used for array selections only.
  *
  * <pre>
- *
- * 1) Basics
- * ---------
- *
- * The "index optimization" tries to eliminate index vectors which are
- * only used for array selections.
  * Example:
  *
  *            a = reshape([4,4], [1,2,...,16]);
@@ -216,10 +212,23 @@
  *            a = reshape([4,4], [1,2,...,16]);
  *            __i_4_4 = 11;
  *            z = idx_sel(a, __i_4_4);
+ * </pre>
  *
- * For doing so, an attribute "Uses" has to be infered. It is attached to each
- * left hand side of an array assignment, and to each variable/argument
- * declaration of an array.
+ * @{
+ *
+ * @file index.c
+ *
+ *  This file contains the implementation of IVE (index vector elimination).
+ *
+ *
+ * <pre>
+ *
+ * 1) Basics
+ * ---------
+ *
+ * For eliminating index vectors, "Uses" attributes are inferred for all integer
+ * vectors. They are attached to each left hand side of assignments and to
+ * variable/argument declarations.
  * Since we want to eliminate index vectors the attribute attachment is
  * restricted to one-dimensional integer arrays( array identifiers)!
  * The "Uses" attribute consists of a set (chain) of attributes of the kind:
@@ -921,7 +930,7 @@ MergeVinfoChn (node *ca, node *cb)
 
 /**
  *
- * @name functions that are applied to the entire vardec chain:
+ * @name Functions that are applied to the entire vardec chain:
  *
  * <!--
  * node *DuplicateTop( node * actchn)
@@ -1096,7 +1105,7 @@ MergeCopyTop (node *actchn)
 
 /**
  *
- * @name "helper" functions used by the traversal functions:
+ * @name Helper functions used by the traversal functions:
  *
  * <!--
  *  char *IdxChangeId( char *varname, types *type) :
