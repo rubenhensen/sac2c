@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/10/19 17:03:51  sbs
+ * yy_init only reset for OSF_ALPHA...
+ *
  * Revision 2.8  1999/10/08 09:16:41  sbs
  * for compliance with older versions of lex/yacc yy_init = 1 is forced
  * whenever a new start token is smuggled in!
@@ -139,7 +142,10 @@ int start_token;
 
      if(start_token) {
        int mem=start_token;
+
+#ifdef OSF_ALPHA
        yy_init = 1;  /* force new initialization of lex! */
+#endif
 
        start_token=0;
        return(mem);
