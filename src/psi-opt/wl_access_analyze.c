@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.20  2000/10/26 13:47:52  dkr
+ * MakeShpseg used now :-)
+ *
  * Revision 2.19  2000/08/03 19:29:39  bs
  * Bug fixed in WLAAprf, case F_sub_AxS
  *
@@ -178,6 +181,7 @@ WLAccessAnalyze (node *arg_node)
  *   vectors, i.e. the lists are quite short.
  *
  *****************************************************************************/
+
 static nums *
 NumVect2NumsList (int coeff, node *exprs)
 {
@@ -204,11 +208,11 @@ NumVect2NumsList (int coeff, node *exprs)
 /******************************************************************************
  *
  * function:
- *   shpseg *Shpseg2Shpseg(int coeff, shpseg *shp_seg)
+ *   shpseg *Shpseg2Shpseg(int coeff, shpseg *old_shpseg)
  *
  * description:
  *   This function creates a new shape vector. The new shape vector
- *   is made of the shp_seg multiplied by <coeff>.
+ *   is made of 'old_shpseg' multiplied by <coeff>.
  *
  * remark:
  *   Here, a recursive implementation is used although recrsion is not without
@@ -220,29 +224,30 @@ NumVect2NumsList (int coeff, node *exprs)
  ******************************************************************************/
 
 static shpseg *
-Shpseg2Shpseg (int coeff, shpseg *shp_seg)
+Shpseg2Shpseg (int coeff, shpseg *old_shpseg)
 {
     int i;
-    shpseg *result;
+    shpseg *new_shpseg;
 
     DBUG_ENTER ("Shpseg2Shpseg");
 
-    if (shp_seg == NULL)
-        result = NULL;
-    else {
-        result = Malloc (sizeof (shpseg));
-        for (i = 0; i < SHP_SEG_SIZE; i++)
-            SHPSEG_SHAPE (result, i) = coeff * SHPSEG_SHAPE (shp_seg, i);
-        SHPSEG_NEXT (result) = Shpseg2Shpseg (coeff, SHPSEG_NEXT (shp_seg));
+    if (old_shpseg == NULL) {
+        new_shpseg = NULL;
+    } else {
+        new_shpseg = MakeShpseg (NULL);
+        for (i = 0; i < SHP_SEG_SIZE; i++) {
+            SHPSEG_SHAPE (new_shpseg, i) = coeff * SHPSEG_SHAPE (old_shpseg, i);
+        }
+        SHPSEG_NEXT (new_shpseg) = Shpseg2Shpseg (coeff, SHPSEG_NEXT (old_shpseg));
     }
 
-    DBUG_RETURN (result);
+    DBUG_RETURN (new_shpseg);
 }
 
 /******************************************************************************
  *
  * function:
- *   shpseg *IntVec2Shpseg(int coeff, int length, int *intvec)
+ *   shpseg *IntVec2Shpseg(int coeff, int length, int *intvec, shpseg *next)
  *
  * description:
  *   This functions convert a vector of constant integers into a shape vector.
@@ -258,16 +263,19 @@ IntVec2Shpseg (int coeff, int length, int *intvec, shpseg *next)
 
     DBUG_ENTER ("IntVec2Shpseg");
 
-    result = Malloc (sizeof (shpseg));
+    result = MakeShpseg (NULL);
 
     if (length == 0) {
-        for (i = 0; i < SHP_SEG_SIZE; i++)
+        for (i = 0; i < SHP_SEG_SIZE; i++) {
             SHPSEG_SHAPE (result, i) = 0;
+        }
     } else {
-        for (i = 0; i < length; i++)
+        for (i = 0; i < length; i++) {
             SHPSEG_SHAPE (result, i) = coeff * intvec[i];
-        for (i = length; i < SHP_SEG_SIZE; i++)
+        }
+        for (i = length; i < SHP_SEG_SIZE; i++) {
             SHPSEG_SHAPE (result, i) = 0;
+        }
     }
     SHPSEG_NEXT (result) = next;
 
@@ -277,7 +285,7 @@ IntVec2Shpseg (int coeff, int length, int *intvec, shpseg *next)
 /******************************************************************************
  *
  * function:
- *   shpseg *AddIntVec2Shpseg(int coeff, int length, int *intvec)
+ *   shpseg *AddIntVec2Shpseg(int coeff, int length, int *intvec, shpseg *next)
  *
  * description:
  *   This functions convert a vector of constant integers into a shape vector.
@@ -295,16 +303,17 @@ AddIntVec2Shpseg (int coeff, int length, int *intvec, shpseg *next)
     DBUG_ENTER ("IntVec2Shpseg");
 
     if (next == NULL) {
-        result = Malloc (sizeof (shpseg));
-        for (i = 0; i < SHP_SEG_SIZE; i++)
+        result = MakeShpseg (NULL);
+        for (i = 0; i < SHP_SEG_SIZE; i++) {
             SHPSEG_SHAPE (result, i) = 0;
-        SHPSEG_NEXT (result) = next;
+        }
     } else {
         result = next;
     }
 
-    for (i = 0; i < length; i++)
+    for (i = 0; i < length; i++) {
         SHPSEG_SHAPE (result, i) += (coeff * intvec[i]);
+    }
 
     DBUG_RETURN (result);
 }
@@ -312,7 +321,7 @@ AddIntVec2Shpseg (int coeff, int length, int *intvec, shpseg *next)
 /******************************************************************************
  *
  * function:
- *   int IsIndexVect(types *type)
+ *   bool IsIndexVect(types *type)
  *
  * description:
  *
@@ -322,10 +331,10 @@ AddIntVec2Shpseg (int coeff, int length, int *intvec, shpseg *next)
  *
  *****************************************************************************/
 
-static int
+static bool
 IsIndexVect (types *type)
 {
-    int res = FALSE;
+    bool res = FALSE;
 
     DBUG_ENTER ("IsIndexVect");
 
@@ -393,7 +402,7 @@ AccessInAccesslist (access_t *access, access_t *access_list)
  *****************************************************************************/
 #if 0
 /*
- *   not needed at this time
+ *  not needed for the time being
  */
 static access_t* KillDoubleAccesses(access_t* access_list) 
 {
@@ -1114,7 +1123,7 @@ WLAAprf (node *arg_node, node *arg_info)
                     if (NODE_TYPE (arg_node_arg1) == N_num) {
                         if (ID_VARDEC (arg_node_arg2) == INFO_WLAA_INDEXVAR (arg_info)) {
                             ACCESS_CLASS (access) = ACL_offset;
-                            offset = Malloc (VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access))
+                            offset = MALLOC (VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access))
                                              * sizeof (int));
                             for (i = 0; i < VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access));
                                  i++) {
@@ -1160,7 +1169,7 @@ WLAAprf (node *arg_node, node *arg_info)
                     if (NODE_TYPE (arg_node_arg2) == N_num) {
                         if (ID_VARDEC (arg_node_arg1) == INFO_WLAA_INDEXVAR (arg_info)) {
                             ACCESS_CLASS (access) = ACL_offset;
-                            offset = Malloc (VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access))
+                            offset = MALLOC (VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access))
                                              * sizeof (int));
                             for (i = 0; i < VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access));
                                  i++) {
@@ -1322,7 +1331,7 @@ WLAAprf (node *arg_node, node *arg_info)
                     if (ID_VARDEC (arg_node_arg1) == INFO_WLAA_INDEXVAR (arg_info)) {
                         if (NODE_TYPE (arg_node_arg2) == N_num) {
                             ACCESS_CLASS (access) = ACL_offset;
-                            offset = Malloc (VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access))
+                            offset = MALLOC (VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access))
                                              * sizeof (int));
                             for (i = 0; i < VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access));
                                  i++) {
