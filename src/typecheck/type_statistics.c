@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/01/11 14:20:44  cg
+ * Converted output generation from Error.h to ctinfo.c
+ *
  * Revision 1.8  2004/11/25 17:52:55  sbs
  * compiles
  *
@@ -39,7 +42,7 @@
 #include "internal_lib.h"
 #include "globals.h"
 #include "new_types.h"
-#include "Error.h"
+#include "ctinfo.h"
 
 /**
  *
@@ -189,7 +192,7 @@ PrintStatistics (node *fundef, info *info)
     }
     if (flag) {
         tmp = ILIBstrBuf2String (buf);
-        NOTE (("%s", tmp));
+        CTInote ("%s", tmp);
         tmp = ILIBfree (tmp);
     }
     buf = ILIBstrBufFree (buf);
@@ -217,19 +220,18 @@ TSdoPrintTypeStatistics (node *arg_node)
 
     TRAVpush (TR_ts);
 
-    NOTE ((""));
-    NOTE (("type statistics:"));
+    CTInote ("\nType statistics:");
 
     arg_info = MakeInfo ();
     INFO_TS_ANY (arg_info) = FALSE;
     arg_node = TRAVdo (arg_node, arg_info);
 
     if (INFO_TS_ANY (arg_info)) {
-        NOTE (("  ... for all other functions %s-info could be inferred.",
-               spec_mode_str[global.spec_mode]));
+        CTInote ("  ... for all other functions %s-info could be inferred.",
+                 spec_mode_str[global.spec_mode]);
     } else {
-        NOTE (("  for all functions %s-info could be inferred.",
-               spec_mode_str[global.spec_mode]));
+        CTInote ("  for all functions %s-info could be inferred.",
+                 spec_mode_str[global.spec_mode]);
     }
     arg_info = FreeInfo (arg_info);
 

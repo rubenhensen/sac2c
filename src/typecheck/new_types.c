@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2005/01/11 14:20:44  cg
+ * Converted output generation from Error.h to ctinfo.c
+ *
  * Revision 3.82  2004/12/07 14:35:37  sbs
  * replaced CVoldTypeSignature2String by TUtypeSignature2String
  *
@@ -309,6 +312,7 @@
  */
 
 #include <stdarg.h>
+#include <string.h>
 #include <limits.h>
 
 #include "new_types.h"
@@ -318,7 +322,7 @@
 #include "internal_lib.h"
 #include "LookUpTable.h"
 
-#include "Error.h"
+#include "ctinfo.h"
 #include "DupTree.h"
 #include "free.h"
 #include "convert.h"
@@ -1770,7 +1774,7 @@ TYmakeOverloadedFunType (ntype *fun1, ntype *fun2)
 
     if ((fun1 != NULL) && (NTYPE_CON (fun1) != TC_fun) && (fun2 != NULL)
         && (NTYPE_CON (fun2) != TC_fun)) {
-        ABORT (global.linenum, ("cannot overload functions of arity 0"));
+        CTIabortLine (global.linenum, "Cannot overload functions of arity 0");
     }
 
     res = MakeOverloadedFunType (fun1, fun2);
@@ -1914,11 +1918,14 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
                     lub = TYlubOfTypes (SSIgetMax (ALPHA_SSI (fun1)),
                                         SSIgetMax (ALPHA_SSI (fun2)));
                     if (lub == NULL) {
-                        ABORT (global.linenum,
-                               ("cannot overload functions with disjoint result type;"
-                                " types found: \"%s\" and \"%s\"",
-                                TYtype2String (SSIgetMax (ALPHA_SSI (fun1)), FALSE, 0),
-                                TYtype2String (SSIgetMax (ALPHA_SSI (fun2)), FALSE, 0)));
+                        CTIabortLine (global.linenum,
+                                      "Cannot overload functions with disjoint result "
+                                      "type;"
+                                      " types found: \"%s\" and \"%s\"",
+                                      TYtype2String (SSIgetMax (ALPHA_SSI (fun1)), FALSE,
+                                                     0),
+                                      TYtype2String (SSIgetMax (ALPHA_SSI (fun2)), FALSE,
+                                                     0));
                     } else {
                         res = TYmakeAlphaType (lub);
                         ok = SSInewRel (ALPHA_SSI (fun1), ALPHA_SSI (res));
@@ -2610,11 +2617,11 @@ TYdispatchFunType (ntype *fun, ntype *args)
             ires = DispatchOneArg (&lower, fun, arg);
             if (ires == NULL) {
                 fundef = IRES_FUNDEF (IBASE_GEN (FUN_IBASE (fun, 0)), 0);
-                ABORT (global.linenum,
-                       ("no definition found for a function \"%s\" that"
-                        " accepts an argument of type \"%s\" as parameter"
-                        " no %d",
-                        FUNDEF_NAME (fundef), TYtype2String (arg, FALSE, 0), i + 1));
+                CTIabortLine (global.linenum,
+                              "No definition found for a function \"%s\" that"
+                              " accepts an argument of type \"%s\" as parameter"
+                              " no %d",
+                              FUNDEF_NAME (fundef), TYtype2String (arg, FALSE, 0), i + 1);
             }
 
             DBUG_EXECUTE ("NTDIS", tmp_str = TYtype2String (arg, FALSE, 0););
@@ -3138,8 +3145,8 @@ TYcmpTypes (ntype *t1, ntype *t2)
         if ((NTYPE_CON (t2) == TC_symbol)
             && (((SYMBOL_MOD (t1) == NULL) && (SYMBOL_MOD (t2) == NULL))
                 || ((SYMBOL_MOD (t1) != NULL) && (SYMBOL_MOD (t2) != NULL)
-                    && strcmp (SYMBOL_MOD (t1), SYMBOL_MOD (t2)) == 0))
-            && (strcmp (SYMBOL_NAME (t1), SYMBOL_NAME (t2)) == 0)) {
+                    && ILIBstringCompare (SYMBOL_MOD (t1), SYMBOL_MOD (t2))))
+            && ILIBstringCompare (SYMBOL_NAME (t1), SYMBOL_NAME (t2))) {
             res = TY_eq;
         }
         break;

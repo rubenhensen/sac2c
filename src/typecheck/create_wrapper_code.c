@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2005/01/11 14:20:44  cg
+ * Converted output generation from Error.h to ctinfo.c
+ *
  * Revision 1.30  2004/12/09 00:39:41  sbs
  * bug in CWCfold
  *
@@ -110,7 +113,7 @@
 #include "tree_compound.h"
 #include "internal_lib.h"
 #include "dbug.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "LookUpTable.h"
 #include "traverse.h"
 #include "free.h"
@@ -561,10 +564,10 @@ CorrectFundefPointer (node *fundef, char *funname, ntype *arg_types)
                 && (dft_res->def == NULL) && (dft_res->deriveable == NULL)) {
                 fundef = (dft_res->num_partials == 1) ? dft_res->partials[0]
                                                       : dft_res->deriveable_partials[0];
-                WARN (global.linenum,
-                      ("application of var-arg function %s found which may"
-                       " cause a type error",
-                       FUNDEF_NAME (fundef)));
+                CTIwarnLine (global.linenum,
+                             "Application of var-arg function %s found which may"
+                             " cause a type error",
+                             FUNDEF_NAME (fundef));
                 DBUG_PRINT ("CWC", ("  dispatched statically although only partial"
                                     " has been found (T_dots)!",
                                     funname));
@@ -580,8 +583,8 @@ CorrectFundefPointer (node *fundef, char *funname, ntype *arg_types)
             do {
                 fundef = FUNDEF_NEXT (fundef);
                 DBUG_ASSERT (((fundef != NULL)
-                              && (!strcmp (funname, FUNDEF_NAME (fundef)))
-                              && (FUNDEF_ISWRAPPERFUN (fundef))),
+                              && ILIBstringCompare (funname, FUNDEF_NAME (fundef))
+                              && FUNDEF_ISWRAPPERFUN (fundef)),
                              "no appropriate wrapper function found!");
             } while (!SignatureMatches (FUNDEF_ARGS (fundef), arg_types));
             DBUG_PRINT ("CWC", ("  correct wrapper found"));

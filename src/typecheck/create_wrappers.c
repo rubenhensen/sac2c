@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2005/01/11 14:20:44  cg
+ * Converted output generation from Error.h to ctinfo.c
+ *
  * Revision 1.28  2004/12/08 22:52:07  sbs
  * FindWrapper call corrected in CRTWRPfold
  *
@@ -93,7 +96,7 @@
 #include <string.h>
 #include "create_wrappers.h"
 #include "dbug.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "free.h"
 
 #include "types.h"
@@ -511,16 +514,18 @@ CRTWRPfundef (node *arg_node, info *arg_info)
         } else {
             if ((dot_args != FUNDEF_HASDOTARGS (wrapper))
                 || (dot_rets != FUNDEF_HASDOTRETS (wrapper))) {
-                ABORT (
-                  global.linenum,
-                  ("trying to overload function \"%s:%s\" that expects %s %d argument(s) "
-                   "and %s %d return value(s) with a version that expects %s %d "
-                   "argument(s) "
-                   "and %s %d return value(s)",
-                   FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node),
-                   (FUNDEF_HASDOTARGS (wrapper) ? ">=" : ""), TCcountArgs (wrapper),
-                   (FUNDEF_HASDOTRETS (wrapper) ? ">=" : ""), TCcountRets (wrapper),
-                   (dot_args ? ">=" : ""), num_args, (dot_rets ? ">=" : ""), num_rets));
+                CTIabortLine (global.linenum,
+                              "Trying to overload function \"%s:%s\" that expects %s %d "
+                              "argument(s) "
+                              "and %s %d return value(s) with a version that expects %s "
+                              "%d argument(s) "
+                              "and %s %d return value(s)",
+                              FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node),
+                              (FUNDEF_HASDOTARGS (wrapper) ? ">=" : ""),
+                              TCcountArgs (wrapper),
+                              (FUNDEF_HASDOTRETS (wrapper) ? ">=" : ""),
+                              TCcountRets (wrapper), (dot_args ? ">=" : ""), num_args,
+                              (dot_rets ? ">=" : ""), num_rets);
             }
         }
 
@@ -612,11 +617,11 @@ CRTWRPspap (node *arg_node, info *arg_info)
                            SPAP_MOD (arg_node), SPAP_NAME (arg_node), wrapper));
 
     if (wrapper == NULL) {
-        ABORT (NODE_LINE (arg_node),
-               ("No definition found for a function \"%s:%s\" that expects"
-                " %i argument(s) and yields %i return value(s)",
-                SPAP_MOD (arg_node), SPAP_NAME (arg_node), num_args,
-                INFO_CRTWRP_EXPRETS (arg_info)));
+        CTIabortLine (NODE_LINE (arg_node),
+                      "No definition found for a function \"%s:%s\" that expects"
+                      " %i argument(s) and yields %i return value(s)",
+                      SPAP_MOD (arg_node), SPAP_NAME (arg_node), num_args,
+                      INFO_CRTWRP_EXPRETS (arg_info));
     } else {
         /*
          * as the function is dispatched now, we can create a real
@@ -680,10 +685,10 @@ CRTWRPfold (node *arg_node, info *arg_info)
                                INFO_CRTWRP_WRAPPERFUNS (arg_info));
 
         if (wrapper == NULL) {
-            ABORT (NODE_LINE (arg_node),
-                   ("No definition found for a function \"%s\" that expects"
-                    " 2 arguments and yields 1 return value",
-                    FOLD_FUN (arg_node)));
+            CTIabortLine (NODE_LINE (arg_node),
+                          "No definition found for a function \"%s\" that expects"
+                          " 2 arguments and yields 1 return value",
+                          FOLD_FUN (arg_node));
         } else {
             FOLD_FUNDEF (arg_node) = wrapper;
         }

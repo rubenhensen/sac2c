@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.9  2005/01/11 14:20:44  cg
+ * Converted output generation from Error.h to ctinfo.c
+ *
  * Revision 3.8  2005/01/10 17:27:06  cg
  * Converted error messages from Error.h to ctinfo.c
  *
@@ -31,9 +34,9 @@
  */
 
 #include <string.h>
-#include "Error.h"
-#include "dbug.h"
 
+#include "dbug.h"
+#include "ctinfo.h"
 #include "free.h"
 #include "internal_lib.h"
 #include "new_types.h"

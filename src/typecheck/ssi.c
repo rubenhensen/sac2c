@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/01/11 14:20:44  cg
+ * Converted output generation from Error.h to ctinfo.c
+ *
  * Revision 1.8  2004/11/23 15:23:18  sbs
  * SacDevCamp04 done
  *
@@ -33,7 +36,7 @@
 #include "dbug.h"
 #include "new_types.h"
 #include "internal_lib.h"
-#include "Error.h"
+#include "ctinfo.h"
 
 /**
  *
@@ -365,7 +368,7 @@ InsertMinAndCheckAssumption (tvar *var, ntype *new_min)
         }
 
         if (!ok) {
-            ABORT (global.linenum, ("ugly squad type contradiction"));
+            CTIabortLine (global.linenum, "Ugly squad type contradiction");
         }
     } else {
         TVAR_MIN (var) = new_min;
