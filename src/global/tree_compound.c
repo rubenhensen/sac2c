@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/11/16 19:42:36  cg
+ * Revision 1.17  1995/12/07 16:25:14  asi
+ * added function MakeAssignLet
+ *
+ * Revision 1.16  1995/11/16  19:42:36  cg
  * Function FreeNodelist moved to free.c
  *
  * Revision 1.15  1995/11/06  14:16:51  cg
@@ -502,4 +505,21 @@ AppendIdsChain (ids *first, ids *second)
     }
 
     DBUG_RETURN (first);
+}
+
+/***
+ ***  MakeAssignLet
+ ***/
+node *
+MakeAssignLet (char *var_name, node *vardec_node, node *let_expr)
+{
+    ids *tmp_ids;
+    node *tmp_node;
+
+    DBUG_ENTER ("MakeAssignLet");
+    tmp_ids = MakeIds (var_name, NULL, ST_regular);
+    IDS_VARDEC (tmp_ids) = vardec_node;
+    tmp_node = MakeLet (let_expr, tmp_ids);
+    tmp_node = MakeAssign (tmp_node, NULL);
+    DBUG_RETURN (tmp_node);
 }

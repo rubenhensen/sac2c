@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/12/01 17:10:45  cg
+ * Revision 1.18  1995/12/07 16:24:46  asi
+ * added function MakeAssignLet
+ *
+ * Revision 1.17  1995/12/01  17:10:45  cg
  * new compound access macros for pragmas of functions,
  * objects and types.
  *
@@ -859,6 +862,25 @@ extern void ObjList2ArgList (node *objdef);
 
 #define ASSIGN_DEFMASK(n) (ASSIGN_MASK (n, 0))
 #define ASSIGN_USEMASK(n) (ASSIGN_MASK (n, 1))
+
+/*
+ *
+ *  functionname  : MakeAssignLet
+ *  arguments     : 1) name of the variable
+ *                  2) vardec-node
+ *                  3) let-expression
+ *                  R) assign-node with complete let-subtree
+ *  description   : returns a assign-node with let-node : var_name = expr;
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : MakeIds, MakeLet, MakeAssign
+ *  macros        : IDS_VARDEC, NULL
+ *
+ *  remarks       : the nnode's will get the new value !!!
+ *                  ASSIGN_NEXT is set to NULL
+ *
+ */
+extern node *MakeAssignLet (char *var_name, node *vardec_node, node *let_expr);
 
 /*--------------------------------------------------------------------------*/
 
