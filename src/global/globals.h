@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.38  1999/01/07 14:01:01  sbs
+ * more sophisticated breaking facilities inserted;
+ * Now, a break in a specific cycle can be triggered!
+ *
  * Revision 1.37  1998/12/07 17:29:55  cg
  * added variables version_id and target_platform to keep track
  * of this information used in usage.c and gen_startup_code.c
@@ -283,6 +287,7 @@ extern int makedeps;
 extern int gen_cccall;
 extern int show_syscall;
 extern compiler_phase_t break_after;
+extern int break_cycle_specifier;
 extern char break_specifier[];
 
 extern int print_objdef_for_header_file;

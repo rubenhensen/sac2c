@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.81  1999/01/07 14:01:01  sbs
+ * more sophisticated breaking facilities inserted;
+ * Now, a break in a specific cycle can be triggered!
+ *
  * Revision 1.80  1998/12/07 17:31:04  cg
  * Now, the version identifier and the target platform are
  * printed as well with the -h and -i options.
@@ -233,9 +237,16 @@ usage ()
             "\tCurrently supported:\n\n"
 
             "\t-b15:inl      \tstop after function inlining\n"
+            "\t-b15:dfr      \tstop after dead function removal\n"
             "\t-b15:ae       \tstop after array elimination\n"
-            "\t-b15:wli      \tstop after withloop information gathering\n"
-            "\t-b15:cyc      \tstop after one complete optimization cycle\n"
+            "\t-b15:dcr      \tstop after dead code removal\n"
+            "\t-b15:cycN:cse \tstop after common subexpression elimination in cycle N\n"
+            "\t-b15:cycN:cf  \tstop after constant folding in cycle N\n"
+            "\t-b15:cycN:wli \tstop after withloop information gathering in cycle N\n"
+            "\t-b15:cycN:dcr \tstop after dead code removal in cycle N\n"
+            "\t-b15:cycN:unr \tstop after (with-) loop unrolling in cycle N\n"
+            "\t-b15:cycN:uns \tstop after loop unswitching in cycle N\n"
+            "\t-b15:cycN:lir \tstop after loop invariant removal in cycle N\n"
             "\n"
             "\t-b18:conv     \tstop after converting\n"
             "\t-b18:cubes    \tstop after cube-building\n"

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.27  1999/01/07 14:01:01  sbs
+ * more sophisticated breaking facilities inserted;
+ * Now, a break in a specific cycle can be triggered!
+ *
  * Revision 1.26  1998/12/10 12:38:02  cg
  * Loop invariant removal is disabled by default for production
  * versions of sac2c.
@@ -396,6 +400,10 @@ int show_syscall = 0;
 
 compiler_phase_t break_after = PH_final;
 /* Stop compilation process after given phase. */
+
+int break_cycle_specifier;
+/* Additional break specifier that allows a designated break within
+   a particular (optimization) loop */
 
 char break_specifier[MAX_BREAK_SPECIFIER] = "";
 /* Additional break specifier to allow breaking within a particular
