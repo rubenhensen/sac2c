@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.72  1998/05/05 13:19:07  srs
+ * new WL: constant array bounds are not flattened anymore.
+ *
  * Revision 1.71  1998/04/29 13:44:40  srs
  * functions which are imported from moduls are not flattened anymore.
  * This has already been done while compiling the module.
@@ -1711,7 +1714,9 @@ FltnNgenerator (node *arg_node, node *arg_info)
         default:;
         }
 
-        if (*act_son && N_id != NODE_TYPE (*act_son)) {
+        /* flatten evreything but Ids and constant arrays */
+        if (*act_son
+            && (N_id != NODE_TYPE (*act_son) && !IsConstantArray (*act_son, N_num))) {
             new_id = TmpVar ();
             let_node = MakeLet (NULL, MakeIds (new_id, NULL, ST_regular));
             arg_info->node[0] = MakeAssign (let_node, arg_info->node[0]);
