@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/02/24 20:23:04  bs
+ * New function added: CopyIntArray
+ *
  * Revision 2.1  1999/02/23 12:39:24  sacbase
  * new release made
  *
@@ -64,6 +67,7 @@
 
 extern void *Malloc (int size);
 extern char *StringCopy (char *source);
+extern int *CopyIntArray (int len, int *array);
 extern int lcm (int x, int y);
 extern char *itoa (long number);
 extern void SystemCall (char *format, ...);

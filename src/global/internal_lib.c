@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/02/24 20:21:59  bs
+ * New function added: CopyIntArray
+ *
  * Revision 2.1  1999/02/23 12:39:23  sacbase
  * new release made
  *
@@ -158,7 +161,7 @@ typedef struct {
 } malloc_header_type;
 #endif
 
-/*
+/******************************************************************************
  *
  *  functionname  : Malloc
  *  arguments     :  1) size of memory to allocate
@@ -170,7 +173,7 @@ typedef struct {
  *
  *  remarks       : exit if there is not enough memory
  *
- */
+ ******************************************************************************/
 
 void *
 Malloc (int size)
@@ -203,7 +206,7 @@ Malloc (int size)
     DBUG_RETURN (tmp);
 }
 
-/*
+/******************************************************************************
  *
  *  functionname  : StringCopy
  *  arguments     : 1) source string
@@ -215,7 +218,7 @@ Malloc (int size)
  *
  *  remarks       :
  *
- */
+ ******************************************************************************/
 
 char *
 StringCopy (char *source)
@@ -235,7 +238,35 @@ StringCopy (char *source)
     DBUG_RETURN (ret);
 }
 
-/*
+/******************************************************************************
+ *
+ * function:
+ *  int *CopyIntArray(int len, int* array)
+ *
+ * description:
+ *   - this function is only used for copying (the first) len integers
+ *     of a (large) integer array.
+ *
+ ******************************************************************************/
+
+int *
+CopyIntArray (int len, int *array)
+{
+    int i, *res;
+
+    DBUG_ENTER ("CopyIntArray");
+
+    if ((array == NULL) || (len <= 0))
+        res = NULL;
+    else {
+        res = MALLOC (len * sizeof (int));
+        for (i = 0; i < len; i++)
+            res[i] = array[i];
+    }
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
  *
  *  functionname  : itoa
  *  arguments     : 1) number
@@ -248,7 +279,7 @@ StringCopy (char *source)
  *
  *  remarks       :
  *
- */
+ ******************************************************************************/
 char *
 itoa (long number)
 {
@@ -302,7 +333,7 @@ lcm (int x, int y)
     DBUG_RETURN (u);
 }
 
-/*
+/******************************************************************************
  *
  *  functionname  : SystemCall
  *  arguments     : 1) format string like that of printf
@@ -317,7 +348,7 @@ lcm (int x, int y)
  *
  *  remarks       :
  *
- */
+ ******************************************************************************/
 
 void
 SystemCall (char *format, ...)
@@ -351,7 +382,7 @@ SystemCall (char *format, ...)
     DBUG_VOID_RETURN;
 }
 
-/*
+/******************************************************************************
  *
  *  functionname  : SystemCall2
  *  arguments     : 1) format string like that of printf
@@ -366,7 +397,7 @@ SystemCall (char *format, ...)
  *
  *  remarks       :
  *
- */
+ ******************************************************************************/
 
 int
 SystemCall2 (char *format, ...)
@@ -391,7 +422,7 @@ SystemCall2 (char *format, ...)
     DBUG_RETURN (system (syscall));
 }
 
-/*
+/******************************************************************************
  *
  *  functionname  : SystemTest
  *  arguments     : 1) format string like that of printf
@@ -406,7 +437,7 @@ SystemCall2 (char *format, ...)
  *
  *  remarks       :
  *
- */
+ ******************************************************************************/
 
 int
 SystemTest (char *format, ...)
@@ -438,7 +469,7 @@ SystemTest (char *format, ...)
     DBUG_RETURN (exit_code);
 }
 
-/*
+/******************************************************************************
  *
  *  functionname  : TmpVar
  *  arguments     : ---
@@ -451,7 +482,8 @@ SystemTest (char *format, ...)
  *  remarks       : The variable name is different in each call of TmpVar.
  *                  The string has the form "__tmp_" plus compiler phase
  *                  plus consecutive number.
- */
+ *
+ ******************************************************************************/
 
 char *
 TmpVar ()
