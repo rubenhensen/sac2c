@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  1998/04/14 21:44:56  dkr
+ * added CompModul
+ *
  * Revision 1.24  1998/04/07 14:50:15  dkr
  * added CompNcode
  *
@@ -10,9 +13,6 @@
  * Revision 1.22  1998/03/02 22:25:57  dkr
  * macros for new with-loop moved to tree_basic
  *
- * Revision 1.21  1998/02/16 21:33:51  dkr
- * *** empty log message ***
- *
  * Revision 1.20  1998/02/16 01:08:01  dkr
  * bugs fixed
  *
@@ -21,9 +21,6 @@
  *
  * Revision 1.18  1998/02/11 16:31:05  dkr
  * removed NEWTREE, access-macros used
- *
- * Revision 1.17  1998/02/11 11:02:53  dkr
- * *** empty log message ***
  *
  * Revision 1.16  1997/11/25 10:33:19  dkr
  * prototype CompNWith added
@@ -81,6 +78,8 @@
 #define _sac_compile_h
 
 extern node *Compile (node *arg_node);
+
+extern node *CompModul (node *arg_node, node *arg_info);
 extern node *CompVardec (node *arg_node, node *arg_info);
 extern node *CompPrf (node *arg_node, node *arg_info);
 extern node *CompAssign (node *arg_node, node *arg_info);

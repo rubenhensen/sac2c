@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.179  1998/04/14 21:45:24  dkr
+ * added CompModul
+ *
  * Revision 1.178  1998/04/11 15:09:32  srs
  * added DupNwith
  *
@@ -616,7 +619,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, 2),
 
   NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, TravSons, OPTmodul, OPTmodul,
-       OPTmodul, FreeModul, OPTmodul, TravSons, TravSons, OPTmodul, OPTmodul, INLmodul,
+       OPTmodul, FreeModul, OPTmodul, TravSons, CompModul, OPTmodul, OPTmodul, INLmodul,
        OPTmodul, TravSons, IdxModul, OPTmodul, TravSons, OPTmodul, WSIBmodul, OBJmodul,
        IMPLmodul, OImodul, ANAmodul, TravSons, WDECmodul, UNQmodul, RMVmodul, PRECmodul,
        OPTmodul, RSIBmodul, TravSons, OPTmodul, DFRmodul, TravSons, TravSons, 4),
