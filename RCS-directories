@@ -24,3 +24,4 @@ src/libsac
 src/tools
 src/heapmgr
 src/multithread
+src/tree
