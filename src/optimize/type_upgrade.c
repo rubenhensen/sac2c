@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.7  2005/01/11 16:05:37  mwe
+ * changes in todo-list :-)
+ *
  * Revision 1.6  2005/01/11 15:21:11  mwe
  * ongoing implementation
  *
@@ -23,8 +26,8 @@
 /* TODO:
  *   ast.xml, DupTree, print: implement FUNGROUP (DONE)
  *   DeadFunctionRemoval: remove function from FUNGROUP_FUNLIST and decrease REFCOUNTER
- *   DupTree: check if all necessary attributes of FUNDEF are copied (DONE)
- *   ast.xml: add missing arguments to FUNDEF (DONE)
+ * (DONE) DupTree: check if all necessary attributes of FUNDEF are copied (DONE) ast.xml:
+ * add missing arguments to FUNDEF (DONE)
  *
  */
 
