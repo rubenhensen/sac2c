@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/03/15 10:57:22  nmw
+ * missing init added
+ *
  * Revision 3.19  2001/03/15 10:54:29  nmw
  * AVIS_SSAUNDOFLAG added
  *
@@ -1387,7 +1390,7 @@ MakeAvis (node *vardecOrArg)
     AVIS_SSAPHITARGET (tmp) = FALSE;
     AVIS_SSALPINV (tmp) = FALSE;
     AVIS_SSADEFINED (tmp) = FALSE;
-    AVIS_SSAUNDOFLAG (tmp) = TRUE;
+    AVIS_SSAUNDOFLAG (tmp) = FALSE;
 
     /* create empty stack */
     AVIS_SSASTACK (tmp) = MakeSSAstack (NULL, NULL);
