@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.154  2002/10/15 11:03:54  mwe
+ * new INFO_AL_-macro added
+ *
  * Revision 3.153  2002/10/10 23:51:41  dkr
  * comment for N_Nwith modified
  *
@@ -2740,6 +2743,7 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    int        NUMBEROFVARIABLES (number of variable elements in VARIABLELIST)
  ***    node*      BLOCKNODE         (current block node)
  ***    prf        CURRENTPRF        (current used primitive function)
+ ***    node*      LETNODE           (current optimized let node)
  ***
  ***  remarks:
  ***
@@ -3236,7 +3240,8 @@ extern node *MakeInfo ();
 #define INFO_AL_NUMBEROFCONSTANTS(n) (n->counter)
 #define INFO_AL_NUMBEROFVARIABLES(n) (n->varno)
 #define INFO_AL_BLOCKNODE(n) (n->node[0])
-#define INFO_AL_CURRENTPRF(n) (n->info->prf)
+#define INFO_AL_CURRENTPRF(n) (n->info.prf)
+#define INFO_AL_LETNODE(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
