@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/06/16 17:36:03  rob
+ * Include ifdef to pick different sac_std.h file to ease
+ * mental anguish and angry programmers over transition to
+ * TAGGED_ARRAYS.
+ *
  * Revision 2.2  1999/04/06 13:43:12  cg
  * added include of sac_cachesim.h
  *
@@ -47,7 +52,12 @@
 #include "sac_misc.h"
 #include "sac_message.h"
 #include "sac_bool.h"
+#include "sac_icm.h"
+#ifdef TAGGED_ARRAYS
+#include "sac_std.tagged.h"
+#else
 #include "sac_std.h"
+#endif /* TAGGED_ARRAYS */
 #include "sac_idx.h"
 #include "sac_prf.h"
 #include "sac_mt.h"
