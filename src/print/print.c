@@ -1,5 +1,11 @@
 /*
  * $Log$
+ * Revision 2.91  2000/07/28 17:17:10  cg
+ * Compilation of N_vardec nodes modified: ICM now is temporary
+ * attribute of N_vardec node which is no longer removed during
+ * code generation.
+ * Printing of N_vardec nodes adjusted accordingly.
+ *
  * Revision 2.90  2000/07/28 14:40:04  nmw
  * flag generation in PrintObjdef moved, because some traversals
  * do not return
@@ -1604,17 +1610,29 @@ PrintArg (node *arg_node, node *arg_info)
 node *
 PrintVardec (node *arg_node, node *arg_info)
 {
+    char *type_string;
+
     DBUG_ENTER ("PrintVardec");
 
     INDENT;
 
     DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**%d: ", VARDEC_VARNO (arg_node)););
 
-    fprintf (outfile, "%s", Type2String (VARDEC_TYPE (arg_node), 1));
-    if (VARDEC_COLCHN (arg_node) && show_idx) {
-        Trav (VARDEC_COLCHN (arg_node), arg_info);
+    if (VARDEC_ICM (arg_node) == NULL) {
+        type_string = Type2String (VARDEC_TYPE (arg_node), 1);
+        fprintf (outfile, "%s", type_string);
+        FREE (type_string);
+
+        if (VARDEC_COLCHN (arg_node) && show_idx) {
+            Trav (VARDEC_COLCHN (arg_node), arg_info);
+        }
+
+        fprintf (outfile, ";\n");
+    } else {
+        Trav (VARDEC_ICM (arg_node), arg_info);
+        fprintf (outfile, "\n");
     }
-    fprintf (outfile, ";\n");
+
     if (VARDEC_NEXT (arg_node)) {
         PRINT_CONT (Trav (VARDEC_NEXT (arg_node), arg_info), );
     }
