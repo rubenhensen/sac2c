@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.45  1995/02/28 18:24:01  asi
- * CFwith added
+ * Revision 1.46  1995/03/07 10:22:03  asi
+ * added CFwith,DEADwith,OPTwith and CFcast
  *
+;; Revision 1.45  1995/02/28  18:24:01  asi
+;; CFwith added
+;;
 ;; Revision 1.44  1995/02/22  18:13:16  asi
 ;; Added CFfundef, CFassign, CFdo, CFwhile, CFcond, CFprf
 ;;
@@ -200,7 +203,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeInfoIds, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_divon, "N_divon", DummyFun, DummyFun, PrintLeton, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeInfoIds, DummyFun, DummyFun, DummyFun, DummyFun),
-  NIF (N_with, "N_with", DummyFun, FltnWith, PrintWith, DummyFun, DummyFun, DummyFun,
+  NIF (N_with, "N_with", DummyFun, FltnWith, PrintWith, DummyFun, OPTwith, DEADwith,
        DummyFun, FreeNoInfo, CFwith, DummyFun, DummyFun, DummyFun),
   NIF (N_generator, "N_generator", DummyFun, DummyFun, PrintGenator, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeInfoId, DummyFun, DummyFun, DummyFun, DummyFun),
@@ -217,7 +220,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_ap, "N_ap", DummyFun, DummyFun, PrintAp, DummyFun, DummyFun, DummyFun, DummyFun,
        FreeInfoId, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_cast, "N_cast", DummyFun, DummyFun, PrintCast, DummyFun, DummyFun, DummyFun,
-       DummyFun, FreeInfoType, DummyFun, DummyFun, DummyFun, DummyFun),
+       DummyFun, FreeInfoType, CFcast, DummyFun, DummyFun, DummyFun),
   NIF (N_exprs, "N_exprs", DummyFun, FltnExprs, PrintExprs, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_array, "N_array", DummyFun, DummyFun, PrintArray, DummyFun, DummyFun, DummyFun,
