@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.27  2004/10/22 14:14:01  ktr
+# added reuseelimination.o
+#
 # Revision 3.26  2004/10/21 16:19:09  ktr
 # added staticreuse.o
 #
@@ -108,7 +111,7 @@ INCS = -I../global -I../tree -I../../inc -I../flatten -I../typecheck \
 
 
 all: allocation.o alloc.o refcounting.o reuse.o rcopt.o rcphase.o \
-     filterrc.o aliasanalysis.o staticreuse.o
+     filterrc.o aliasanalysis.o staticreuse.o reuseelimination.o
 
 
 %.o: %.c
