@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2003/04/15 18:25:52  dkr
+ * ReadConstArray(): DBUG_ASSERT added
+ *
  * Revision 1.15  2003/03/28 15:04:23  dkr
  * DBUG_OFF flag used
  *
@@ -211,6 +214,7 @@ ReadConstArray (void *v, char *idx_str, int idx)
     if (idx_str != NULL) {
         DBUG_ASSERT ((0), "illegal argument for ReadConstArray() found!");
     } else {
+        DBUG_ASSERT ((idx >= 0), "illegal argument for ReadConstArray() found!");
         ReadScalar (((char **)v)[idx], NULL, 0);
     }
 
