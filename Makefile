@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.45  1997/04/24 16:09:53  sbs
+# Revision 1.46  1997/04/25 09:38:38  sbs
+# *** empty log message ***
+#
+# Revision 1.45  1997/04/24  16:09:53  sbs
 # /usr/lib/debug/malloc.o commented out
 #
 # Revision 1.44  1996/05/24  14:23:00  sbs
@@ -240,5 +243,5 @@ clean:
 	(cd src/psi-opt; $(MAKE) clean)
 	$(RM) sac2c
 
-tags:
+tags: 
 	ctags src/*/*.[ch] >/dev/null
