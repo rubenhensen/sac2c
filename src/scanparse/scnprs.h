@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/11/21 20:25:08  sbs
+ * SACDevCamp2004
+ *
  * Revision 3.3  2001/02/02 10:00:56  dkr
  * no changes done
  *
@@ -54,23 +57,13 @@
  * provided by the scanner/parser which are used from outside.
  */
 
-#ifndef _scnprs_h
-#define _scnprs_h
+#ifndef _SAC_SCNPRS_H_
+#define _SAC_SCNPRS_H_
 
-#include "resource.h"
 #include "types.h"
-#include "globals.h"
 #include "y.tab.h"
 
-extern FILE *yyin;
-extern int start_token;
+extern node *SPdoScanParse ();
+extern int SPmyYyparse ();
 
-extern node *syntax_tree;
-extern node *decl_tree;
-extern node *sib_tree;
-extern node *spec_tree;
-
-extern node *ScanParse ();
-extern int My_yyparse ();
-
-#endif /* _scnprs_h */
+#endif /* _SAC_SCNPRS_H_ */
