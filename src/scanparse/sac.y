@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1994/11/22 13:42:58  hw
+ * Revision 1.17  1994/11/22 14:22:53  hw
+ * error in declaration of arrays without shape fixed
+ *
+ * Revision 1.16  1994/11/22  13:42:58  hw
  * - error fixed in Append
  * - changed rule expr -> ID [ exprs ]  into expr -> expr [ expr ]
  *
@@ -892,6 +895,20 @@ complextype:  TYPE_INT SQBR_L nums SQBR_R
             | TYPE_INT  SQBR_L SQBR_R  
                { $$=GEN_NODE(types);
                  $$->simpletype=T_int; 
+                 $$->dim=-1;
+                 $$->next=NULL; 
+                 $$->id=NULL;     /* not used in this case */
+               }
+            | TYPE_FLOAT  SQBR_L SQBR_R  
+               { $$=GEN_NODE(types);
+                 $$->simpletype=T_float; 
+                 $$->dim=-1;
+                 $$->next=NULL; 
+                 $$->id=NULL;     /* not used in this case */
+               }
+            | TYPE_BOOL  SQBR_L SQBR_R  
+               { $$=GEN_NODE(types);
+                 $$->simpletype=T_bool; 
                  $$->dim=-1;
                  $$->next=NULL; 
                  $$->id=NULL;     /* not used in this case */
