@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/11/14 19:10:00  sbs
+ * generic preprocessor-flag -DSAC_FOR_OSxxx inserted.
+ *
  * Revision 3.2  2001/03/28 14:36:59  dkr
  * include of internal_lib.h added
  *
@@ -248,6 +251,11 @@ ScanParse ()
 
     if (sacfilename[0] == '\0') {
         strcpy (cccallstr, config.cpp_stdin);
+
+        strcat (cccallstr, " ");
+        strcat (cccallstr, config.opt_D);
+        strcat (cccallstr, "SAC_FOR_");
+        strcat (cccallstr, target_platform);
 
         for (i = 0; i < num_cpp_vars; i++) {
             strcat (cccallstr, " ");
