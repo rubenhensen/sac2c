@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2000/02/23 23:07:24  dkr
+ * ..._IN_VARS, ..._OUT_VARS, ..._LOCAL_VARS for COND, DO and WHILE added
+ * INFO_LAC2FUN_DFMBASE removed
+ *
  * Revision 1.18  2000/02/23 13:18:21  jhs
  * Added INFO_BLKEX_BLOCKABOVE.
  *
@@ -452,7 +456,7 @@ extern shpseg *MakeShpseg (nums *num);
 
 /*
  *  TDEF is a reference to the defining N_typedef node of a user-defined
- *  type (not yet implemented).
+ *  type.
  */
 
 extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name,
@@ -997,8 +1001,9 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    long*           MASK[x]                   (optimize -> )
  ***    int             INLREC                    (inl !!)
  ***
- ***    DFMmask_base_t  DFM_BASE                  (refcount -> spmd -> )
- ***                                              ( -> compile -> )
+ ***    DFMmask_base_t  DFM_BASE                  (lac2fun/refcount -> spmd -> compile ->
+ *)
+ ***
  ***
  ***    node*           FUNDEC_DEF (O) (N_fundef) (checkdec -> writesib !!)
  ***    node*           LIFTEDFROM (O) (N_fundef) (liftspmd -> compile -> )
@@ -1363,15 +1368,18 @@ extern node *MakeReturn (node *exprs);
  ***
  ***  sons:
  ***
- ***    node*  COND         ("N_expr")
- ***    node*  THEN         (N_block)
- ***    node*  ELSE         (N_block)
+ ***    node*     COND        ("N_expr")
+ ***    node*     THEN        (N_block)
+ ***    node*     ELSE        (N_block)
  ***
  ***  temporary attributes:
  ***
- ***    ids*   THENVARS                 (refcount -> compile -> )
- ***    ids*   ELSEVARS                 (refcount -> compile -> )
- ***    long*  MASK[x]                  (optimize -> )
+ ***    ids*      THENVARS               (refcount -> compile -> )
+ ***    ids*      ELSEVARS               (refcount -> compile -> )
+ ***    long*     MASK[x]                (optimize -> )
+ ***    DFMmask_t IN_MASK                (lac2fun !!)
+ ***    DFMmask_t OUT_MASK               (lac2fun !!)
+ ***    DFMmask_t LOCAL_MASK             (lac2fun !!)
  ***/
 
 /*
@@ -1391,6 +1399,9 @@ extern node *MakeCond (node *cond, node *thenpart, node *elsepart);
 #define COND_NAIVE_THENVARS(n) ((ids *)n->info2)
 #define COND_NAIVE_ELSEVARS(n) ((ids *)n->node[5])
 #define COND_MASK(n, x) (n->mask[x])
+#define COND_IN_MASK(n) (n->dfmask[1])
+#define COND_OUT_MASK(n) (n->dfmask[2])
+#define COND_LOCAL_MASK(n) (n->dfmask[3])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1399,14 +1410,17 @@ extern node *MakeCond (node *cond, node *thenpart, node *elsepart);
  ***
  ***  sons:
  ***
- ***    node*  COND       ("N_expr")
- ***    node*  BODY       (N_block)
+ ***    node*     COND       ("N_expr")
+ ***    node*     BODY       (N_block)
  ***
  ***  temporary attributes:
  ***
- ***    ids*   USEVARS                (refcount -> compile -> )
- ***    ids*   DEFVARS                (refcount -> compile -> )
- ***    long*  MASK[x]                (optimize -> )
+ ***    ids*      USEVARS                (refcount -> compile -> )
+ ***    ids*      DEFVARS                (refcount -> compile -> )
+ ***    long*     MASK[x]                (optimize -> )
+ ***    DFMmask_t IN_MASK                (lac2fun !!)
+ ***    DFMmask_t OUT_MASK               (lac2fun !!)
+ ***    DFMmask_t LOCAL_MASK             (lac2fun !!)
  ***
  ***  attention:
  ***    - Don't mix up USEVARS and USEMASK resp DEFVARS and USEMASK!!!
@@ -1431,6 +1445,9 @@ extern node *MakeDo (node *cond, node *body);
 #define DO_NAIVE_USEVARS(n) ((ids *)n->node[4])
 #define DO_NAIVE_DEFVARS(n) ((ids *)n->node[5])
 #define DO_MASK(n, x) (n->mask[x])
+#define DO_IN_MASK(n) (n->dfmask[1])
+#define DO_OUT_MASK(n) (n->dfmask[2])
+#define DO_LOCAL_MASK(n) (n->dfmask[3])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1439,14 +1456,17 @@ extern node *MakeDo (node *cond, node *body);
  ***
  ***  sons:
  ***
- ***    node*  COND       ("N_expr")
- ***    node*  BODY       (N_block)
+ ***    node*     COND       ("N_expr")
+ ***    node*     BODY       (N_block)
  ***
  ***  temporary attributes:
  ***
- ***    ids*   USEVARS                (refcount -> compile -> )
- ***    ids*   DEFVARS                (refcount -> compile -> )
- ***    long*  MASK[x]                (optimize -> )
+ ***    ids*      USEVARS                (refcount -> compile -> )
+ ***    ids*      DEFVARS                (refcount -> compile -> )
+ ***    long*     MASK[x]                (optimize -> )
+ ***    DFMmask_t IN_MASK                (lac2fun !!)
+ ***    DFMmask_t OUT_MASK               (lac2fun !!)
+ ***    DFMmask_t LOCAL_MASK             (lac2fun !!)
  ***
  ***  attention:
  ***    - Don't mix up USEVARS and USEMASK resp DEFVARS and USEMASK!!!
@@ -1473,6 +1493,9 @@ extern node *While2Do (node *while_node);
 #define WHILE_NAIVE_USEVARS(n) ((ids *)n->node[4])
 #define WHILE_NAIVE_DEFVARS(n) ((ids *)n->node[5])
 #define WHILE_MASK(n, x) (n->mask[x])
+#define WHILE_IN_MASK(n) (n->dfmask[1])
+#define WHILE_OUT_MASK(n) (n->dfmask[2])
+#define WHILE_LOCAL_MASK(n) (n->dfmask[3])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2709,13 +2732,13 @@ extern node *MakeInfo ();
 #define INFO_TSI_ARRAYDIM(n) VARDEC_DIM (INFO_TSI_WLARRAY (n))
 
 /* converting loops and conditionals to functions (lac2fun.c) */
-#define INFO_LAC2FUN_DFMBASE(n) (n->dfmask[0])
+#define INFO_LAC2FUN_FUNDEF(n) (n->node[0])
 #define INFO_LAC2FUN_IN(n) ((DFMmask_t) (n->dfmask[1]))
 #define INFO_LAC2FUN_OUT(n) ((DFMmask_t) (n->dfmask[2]))
 #define INFO_LAC2FUN_LOCAL(n) ((DFMmask_t) (n->dfmask[3]))
 #define INFO_LAC2FUN_NEEDED(n) ((DFMmask_t) (n->dfmask[4]))
+#define INFO_LAC2FUN_ISFIX(n) (n->counter)
 #define INFO_LAC2FUN_ISTRANS(n) (n->flag)
-#define INFO_LAC2FUN_FUNDEF(n) (n->node[0])
 #define INFO_LAC2FUN_FUNS(n) (n->node[1])
 
 /* reconverting functions to loops and conditionals (fun2lac.c) */
