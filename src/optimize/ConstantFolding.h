@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  1998/02/15 19:52:39  srs
+ * added CF for new WL
+ *
  * Revision 1.12  1997/09/05 13:46:04  cg
  * All cast expressions are now removed by rmvoidfun.c. Therefore,
  * the respective attempts in precompile.c and ConstantFolding.c
@@ -64,5 +67,9 @@ extern node *CFvar (node *arg_node, node *arg_info);
 extern node *CFassign (node *arg_node, node *arg_info);
 extern node *CFwith (node *arg_node, node *arg_info);
 extern node *CFap (node *arg_node, node *arg_info);
+
+extern node *CFNwith (node *, node *);
+extern node *CFNpart (node *, node *);
+extern node *CFNcode (node *, node *);
 
 #endif /* _ConstantFolding_h */
