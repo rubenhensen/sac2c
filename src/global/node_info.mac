@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.91  1995/08/08 09:56:28  cg
- * IMtypedef for SIB-retrieval added.
+ * Revision 1.92  1995/08/09 15:53:59  cg
+ * IMfundef inserted for inline functions from other modules.
  *
+;; Revision 1.91  1995/08/08  09:56:28  cg
+;; IMtypedef for SIB-retrieval added.
+;;
 ;; Revision 1.90  1995/08/03  14:54:24  cg
 ;; 4 new entries added to each NIF-macro.
 ;; 2 of these used for sib_tab and obj_tab.
@@ -352,7 +355,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun),
-  NIF (N_fundef, "N_fundef", DummyFun, FltnFundef, PrintFundef, TCfundef, OPTfundef,
+  NIF (N_fundef, "N_fundef", IMfundef, FltnFundef, PrintFundef, TCfundef, OPTfundef,
        DEADfundef, WRfundef, FreeInfoType, CFfundef, RCfundef, CompFundef, LIRfundef,
        DupFundef, INLfundef, UNRfundef, DummyFun, DummyFun2, UNSfundef, DummyFun,
        AEfundef, DummyFun, DummyFun, DummyFun, DummyFun),
