@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.54  1997/09/13 15:15:24  dkr
+ * fixed an error in the desription of the flag -M
+ *
  * Revision 1.53  1997/08/07 15:59:36  dkr
  * eleminated spelling mistake
  *
@@ -194,9 +197,8 @@ usage (char *prg_name)
     printf ("\t -libstat\t\t\tprint status information about a SAC library file\n");
     printf ("\t -D <cpp-var><=value>\t\tset <cpp-var> (to <value>) when running "
             "C-preprocessor\n");
-    printf ("\t -M\t\t\t\tonly detect dependencies and write them to stdout\n");
-    printf ("\t\t\t\t\tdependencies from imported modules/classes.\n");
-
+    printf ("\t -M\t\t\t\tonly detect dependencies from imported modules/classes\n");
+    printf ("\t\t\t\t\t  and write them to stdout\n");
     printf ("\t -# <string>\t\t\toptions (string) for DBUG information\n"
             "\t\t\t\t\t  (\"-#<string>\" is equivalent to \"-_DBUG//<string>\")\n");
     printf ("\t -_DBUG<from>/<to>/<string>\tDBUG information only in compiler phases "
