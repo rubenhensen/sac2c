@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2003/03/26 13:25:41  sbs
+ * group IVE defined
+ *
  * Revision 3.43  2003/03/25 17:16:16  sbs
  * further doxygen
  *
@@ -189,6 +192,8 @@
 /**
  *
  * @file index.c
+ * @defgroup IVE
+ * @{
  *
  *  This file contains the implementation of IVE (index vector elimination).
  *
@@ -647,8 +652,8 @@ int ive_expr, ive_op;
  * node * SetIdx( node *chain, types *shape)    : inserts IDX-node if not
  *                                                  already present
  * -->
+ * @{
  */
-/*@{*/
 
 /** <!--********************************************************************-->
  *
@@ -812,8 +817,9 @@ SetIdx (node *chain, types *vartype)
  *           Expects ca to contain one chain only!
  * -->
  *
+ * @{
  */
-/*@{*/
+
 /** <!--********************************************************************-->
  *
  * @fn node *CutVinfoChn( node * chain)
@@ -928,8 +934,8 @@ MergeVinfoChn (node *ca, node *cb)
  * all these functions can be applied to the entire vardec-chain
  * by using the macro MAP_TO_ALL_VARDEC_ACTCHNS as a
  * "higher-order-function"
+ * @{
  */
-/*@{*/
 
 #define MAP_TO_ALL_VARDEC_ACTCHNS(fun, vardecin)                                         \
     {                                                                                    \
@@ -1105,8 +1111,9 @@ MergeCopyTop (node *actchn)
  *  node *CreateVect2OffsetIcm(node *vardec, types *type) :
  *            for creating Vect2Offset that initialize "shapely" iv's.
  * -->
+ *
+ * @{
  */
-/*@{*/
 
 /******************************************************************************
  *
@@ -1343,8 +1350,9 @@ CreateVect2OffsetIcm (node *vardec, types *type)
 /**
  *
  * @name Traversal Functions for IVE:
+ *
+ * @{
  */
-/*@{*/
 
 /******************************************************************************
  *
@@ -2677,8 +2685,8 @@ IdxDo (node *arg_node, node *arg_info)
  *
  * @name Entry Function for Calling IVE:
  *
+ * @{
  */
-/*@{*/
 
 /** <!--*********************************************************************-->
  *
@@ -2718,3 +2726,4 @@ IndexVectorElimination (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 /*@}*/
+/*@}*/ /* defgroup IVE */
