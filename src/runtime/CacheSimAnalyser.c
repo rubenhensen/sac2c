@@ -19,6 +19,35 @@ main ()
     while (fgets (buffer, 255, stdin) != 0) {
         /*printf("r: %s", buffer);*/
         switch (buffer[0]) {
+        case 'R':
+            sscanf (buffer, "R %lx %lx\n", &baseaddress, &elemaddress);
+            SAC_CS_ReadAccess ((void *)baseaddress, (void *)elemaddress);
+            break;
+
+        case 'W':
+            sscanf (buffer, "W %lx %lx\n", &baseaddress, &elemaddress);
+            SAC_CS_WriteAccess ((void *)baseaddress, (void *)elemaddress);
+            break;
+
+        case 'G':
+            sscanf (buffer, "G %lx %u\n", &baseaddress, &size);
+            SAC_CS_RegisterArray ((void *)baseaddress, size);
+            break;
+
+        case 'U':
+            sscanf (buffer, "U %lx\n", &baseaddress);
+            SAC_CS_UnregisterArray ((void *)baseaddress);
+            break;
+
+        case 'B':
+            strcpy (tag, &(buffer[2]));
+            SAC_CS_Start (tag);
+            break;
+
+        case 'E':
+            SAC_CS_Stop ();
+            break;
+
         case 'I':
             sscanf (buffer,
                     "I %d %d "
@@ -38,35 +67,6 @@ main ()
 
         case 'F':
             SAC_CS_Finalize ();
-            break;
-
-        case 'G':
-            sscanf (buffer, "G %lx %u\n", &baseaddress, &size);
-            SAC_CS_RegisterArray ((void *)baseaddress, size);
-            break;
-
-        case 'U':
-            sscanf (buffer, "U %lx\n", &baseaddress);
-            SAC_CS_UnregisterArray ((void *)baseaddress);
-            break;
-
-        case 'R':
-            sscanf (buffer, "R %lx %lx\n", &baseaddress, &elemaddress);
-            SAC_CS_ReadAccess ((void *)baseaddress, (void *)elemaddress);
-            break;
-
-        case 'W':
-            sscanf (buffer, "W %lx %lx\n", &baseaddress, &elemaddress);
-            SAC_CS_WriteAccess ((void *)baseaddress, (void *)elemaddress);
-            break;
-
-        case 'B':
-            strcpy (tag, &(buffer[2]));
-            SAC_CS_Start (tag);
-            break;
-
-        case 'E':
-            SAC_CS_Stop ();
             break;
 
         default:
