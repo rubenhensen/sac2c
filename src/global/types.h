@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2004/11/22 18:03:33  cg
+ * Added optimize_t and global_t.
+ *
  * Revision 3.52  2004/11/22 16:44:40  ktr
  * typedefs moved from symboltable SacDevCamp 04
  *
@@ -235,6 +238,8 @@
 
 #ifndef _SAC_TYPES_H_
 #define _SAC_TYPES_H_
+
+#include "config.h"
 
 /*
  * bool values
@@ -1030,5 +1035,39 @@ typedef struct ST_SYMBOLITERATOR_T STsymboliterator_t;
 typedef struct ST_ENTRYITERATOR_T STentryiterator_t;
 typedef struct ST_SYMBOLTABLE_T STtable_t;
 typedef struct ST_SYMBOL_T STsymbol_t;
+
+/*
+ * New types for global
+ */
+
+/*
+ * Read in optimization flags from optimize.mac
+ */
+
+#define OPTabbr(abbr) unsigned int do##abbr : 1
+#define GLOBALdelim ;
+
+typedef struct {
+#include "optimize.mac"
+} optimize_t;
+
+#undef GLOBALdelim
+#undef OPTabbr
+
+/*
+ * Read in global variables from globals.mac
+ */
+
+#define GLOBALtype(it_type) it_type
+#define GLOBALid(it_id) it_id
+#define GLOBALdelim ;
+
+typedef struct {
+#include "globals.mac"
+} globals_t;
+
+#undef GLOBALdelim
+#undef GLOBALid
+#undef GLOBALtype
 
 #endif /* _SAC_TYPES_H_ */
