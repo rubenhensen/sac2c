@@ -162,6 +162,17 @@ CACHE2_LINE    :=  32
 CACHE2_ASSOC   :=  1
 
 
+target ultra2:
+
+CACHE1_SIZE    :=  16
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  1
+
+CACHE2_SIZE    :=  512
+CACHE2_LINE    :=  64
+CACHE2_ASSOC   :=  1
+
+
 target ultra_entr3000:
 
 CACHE1_SIZE    :=  16
@@ -200,6 +211,9 @@ target cheops::sparc_20_61:
 target twice::sparc_20_71:
 
 
+target dali::ultra2:
+
+
 target blitz::ultra_entr3000:
 
 
@@ -227,6 +241,11 @@ CCFLAGS        +=  "-xtarget=ss20/71 -xcache=16/32/4"
 target twice_cc::suncc::sparc_20_71:
 
 CCFLAGS        +=  "-xtarget=ss20/71"
+
+
+target dali_cc::suncc::ultra2:
+
+CCFLAGS        +=  "-xtarget=ultra2"
 
 
 target blitz_cc::suncc::ultra_entr3000:
