@@ -2,3 +2,4 @@ ast2attribs_h.xsl
 ast2check_c.xsl
 ast2free_attribs_h.xsl
 ast2free_node_c.xsl
+ast2free_node_h.xsl
