@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2004/09/02 12:23:49  skt
+ * added repfun_tab into PrefixForTmpVar
+ *
  * Revision 3.49  2004/08/26 14:17:00  skt
  * added crwiw_tab into PrefixForTmpVar
  *
@@ -1155,6 +1158,8 @@ PrefixForTmpVar (void)
         s = "ea";
     } else if (act_tab == crwiw_tab) {
         s = "crwiw";
+    } else if (act_tab == repfun_tab) {
+        s = "repfun";
     } else
 #else
     if (act_tab == flat_tab) {
