@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2003/09/19 12:26:45  dkr
+ * postfixes _nt, _any of varnames renamed into _NT, _ANY
+ *
  * Revision 1.4  2003/09/17 17:18:36  dkr
  * MT_DECL_LOCAL_DESC, MT_INIT_DESC added.
  * This revision is not working correctly yet :(
@@ -170,90 +173,90 @@ typedef union {
  * MT_GET_BARRIER_RESULT
  */
 
-#define SAC_MT_SET_BARRIER_RESULT(n, m, basetype, res_nt)                                \
+#define SAC_MT_SET_BARRIER_RESULT(n, m, basetype, res_NT)                                \
     CAT11 (SAC_MT_SET_BARRIER_RESULT__,                                                  \
-           NT_SHP (res_nt) BuildArgs4 (n, m, basetype, res_nt))
+           NT_SHP (res_NT) BuildArgs4 (n, m, basetype, res_NT))
 
-#define SAC_MT_GET_BARRIER_RESULT(n, m, basetype, res_nt)                                \
+#define SAC_MT_GET_BARRIER_RESULT(n, m, basetype, res_NT)                                \
     CAT11 (SAC_MT_GET_BARRIER_RESULT__,                                                  \
-           NT_SHP (res_nt) BuildArgs4 (n, m, basetype, res_nt))
+           NT_SHP (res_NT) BuildArgs4 (n, m, basetype, res_NT))
 
 /*
  * SCL
  */
 
-#define SAC_MT_SET_BARRIER_RESULT__SCL(n, m, basetype, res_nt)                           \
+#define SAC_MT_SET_BARRIER_RESULT__SCL(n, m, basetype, res_NT)                           \
     CAT12 (SAC_MT_SET_BARRIER_RESULT__SCL_,                                              \
-           NT_HID (res_nt) BuildArgs4 (n, m, basetype, res_nt))
-#define SAC_MT_SET_BARRIER_RESULT__SCL_NHD(n, m, basetype, res_nt)                       \
+           NT_HID (res_NT) BuildArgs4 (n, m, basetype, res_NT))
+#define SAC_MT_SET_BARRIER_RESULT__SCL_NHD(n, m, basetype, res_NT)                       \
     {                                                                                    \
         SAC_MT_BARRIER_RESULT (SAC_MT_barrier, n, m, basetype)                           \
-          = SAC_ND_A_FIELD (res_nt);                                                     \
+          = SAC_ND_A_FIELD (res_NT);                                                     \
         SAC_MT_BARRIER_READY (SAC_MT_barrier, n) = m;                                    \
     }
-#define SAC_MT_SET_BARRIER_RESULT__SCL_HID(n, m, basetype, res_nt)                       \
+#define SAC_MT_SET_BARRIER_RESULT__SCL_HID(n, m, basetype, res_NT)                       \
     CAT13 (SAC_MT_SET_BARRIER_RESULT__SCL_HID_,                                          \
-           NT_UNQ (res_nt) BuildArgs4 (n, m, basetype, res_nt))
-#define SAC_MT_SET_BARRIER_RESULT__SCL_HID_NUQ(n, m, basetype, res_nt)                   \
-    SAC_MT_SET_BARRIER_RESULT__AKS (n, m, basetype, res_nt)
-#define SAC_MT_SET_BARRIER_RESULT__SCL_HID_UNQ(n, m, basetype, res_nt)                   \
-    SAC_MT_SET_BARRIER_RESULT__SCL_NHD (n, m, basetype, res_nt)
+           NT_UNQ (res_NT) BuildArgs4 (n, m, basetype, res_NT))
+#define SAC_MT_SET_BARRIER_RESULT__SCL_HID_NUQ(n, m, basetype, res_NT)                   \
+    SAC_MT_SET_BARRIER_RESULT__AKS (n, m, basetype, res_NT)
+#define SAC_MT_SET_BARRIER_RESULT__SCL_HID_UNQ(n, m, basetype, res_NT)                   \
+    SAC_MT_SET_BARRIER_RESULT__SCL_NHD (n, m, basetype, res_NT)
 
-#define SAC_MT_GET_BARRIER_RESULT__SCL(n, m, basetype, res_nt)                           \
+#define SAC_MT_GET_BARRIER_RESULT__SCL(n, m, basetype, res_NT)                           \
     CAT12 (SAC_MT_GET_BARRIER_RESULT__SCL_,                                              \
-           NT_HID (res_nt) BuildArgs4 (n, m, basetype, res_nt))
-#define SAC_MT_GET_BARRIER_RESULT__SCL_NHD(n, m, basetype, res_nt)                       \
+           NT_HID (res_NT) BuildArgs4 (n, m, basetype, res_NT))
+#define SAC_MT_GET_BARRIER_RESULT__SCL_NHD(n, m, basetype, res_NT)                       \
     {                                                                                    \
-        SAC_ND_A_FIELD (res_nt)                                                          \
+        SAC_ND_A_FIELD (res_NT)                                                          \
           = (SAC_MT_BARRIER_RESULT (SAC_MT_barrier, n, m, basetype));                    \
     }
-#define SAC_MT_GET_BARRIER_RESULT__SCL_HID(n, m, basetype, res_nt)                       \
+#define SAC_MT_GET_BARRIER_RESULT__SCL_HID(n, m, basetype, res_NT)                       \
     CAT13 (SAC_MT_GET_BARRIER_RESULT__SCL_HID_,                                          \
-           NT_UNQ (res_nt) BuildArgs4 (n, m, basetype, res_nt))
-#define SAC_MT_GET_BARRIER_RESULT__SCL_HID_NUQ(n, m, basetype, res_nt)                   \
-    SAC_MT_GET_BARRIER_RESULT__AKS (n, m, basetype, res_nt)
-#define SAC_MT_GET_BARRIER_RESULT__SCL_HID_UNQ(n, m, basetype, res_nt)                   \
-    SAC_MT_GET_BARRIER_RESULT__SCL_NHD (n, m, basetype, res_nt)
+           NT_UNQ (res_NT) BuildArgs4 (n, m, basetype, res_NT))
+#define SAC_MT_GET_BARRIER_RESULT__SCL_HID_NUQ(n, m, basetype, res_NT)                   \
+    SAC_MT_GET_BARRIER_RESULT__AKS (n, m, basetype, res_NT)
+#define SAC_MT_GET_BARRIER_RESULT__SCL_HID_UNQ(n, m, basetype, res_NT)                   \
+    SAC_MT_GET_BARRIER_RESULT__SCL_NHD (n, m, basetype, res_NT)
 
 /*
  * AKS
  */
 
-#define SAC_MT_SET_BARRIER_RESULT__AKS(n, m, basetype, res_nt)                           \
+#define SAC_MT_SET_BARRIER_RESULT__AKS(n, m, basetype, res_NT)                           \
     {                                                                                    \
         SAC_MT_BARRIER_DESC_RESULT_PTR (SAC_MT_barrier, n, m, basetype)                  \
-          = SAC_ND_A_FIELD (res_nt);                                                     \
+          = SAC_ND_A_FIELD (res_NT);                                                     \
         SAC_MT_BARRIER_DESC_RESULT_DESC (SAC_MT_barrier, n, m, basetype)                 \
-          = SAC_ND_A_DESC (res_nt);                                                      \
+          = SAC_ND_A_DESC (res_NT);                                                      \
         SAC_MT_BARRIER_READY (SAC_MT_barrier, n) = m;                                    \
     }
 
-#define SAC_MT_GET_BARRIER_RESULT__AKS(n, m, basetype, res_nt)                           \
+#define SAC_MT_GET_BARRIER_RESULT__AKS(n, m, basetype, res_NT)                           \
     {                                                                                    \
-        SAC_ND_A_FIELD (res_nt)                                                          \
+        SAC_ND_A_FIELD (res_NT)                                                          \
           = (SAC_MT_BARRIER_DESC_RESULT_PTR (SAC_MT_barrier, n, m, basetype));           \
-        SAC_ND_A_DESC (res_nt)                                                           \
+        SAC_ND_A_DESC (res_NT)                                                           \
           = (SAC_MT_BARRIER_DESC_RESULT_DESC (SAC_MT_barrier, n, m, basetype));          \
     }
 /*
  * AKD
  */
 
-#define SAC_MT_SET_BARRIER_RESULT__AKD(n, m, basetype, res_nt)                           \
-    SAC_MT_SET_BARRIER_RESULT__AKS (n, m, basetype, res_nt)
+#define SAC_MT_SET_BARRIER_RESULT__AKD(n, m, basetype, res_NT)                           \
+    SAC_MT_SET_BARRIER_RESULT__AKS (n, m, basetype, res_NT)
 
-#define SAC_MT_GET_BARRIER_RESULT__AKD(n, m, basetype, res_nt)                           \
-    SAC_MT_GET_BARRIER_RESULT__AKS (n, m, basetype, res_nt)
+#define SAC_MT_GET_BARRIER_RESULT__AKD(n, m, basetype, res_NT)                           \
+    SAC_MT_GET_BARRIER_RESULT__AKS (n, m, basetype, res_NT)
 
 /*
  * AUD
  */
 
-#define SAC_MT_SET_BARRIER_RESULT__AUD(n, m, basetype, res_nt)                           \
-    SAC_MT_SET_BARRIER_RESULT__AKS (n, m, basetype, res_nt)
+#define SAC_MT_SET_BARRIER_RESULT__AUD(n, m, basetype, res_NT)                           \
+    SAC_MT_SET_BARRIER_RESULT__AKS (n, m, basetype, res_NT)
 
-#define SAC_MT_GET_BARRIER_RESULT__AUD(n, m, basetype, res_nt)                           \
-    SAC_MT_GET_BARRIER_RESULT__AKS (n, m, basetype, res_nt)
+#define SAC_MT_GET_BARRIER_RESULT__AUD(n, m, basetype, res_NT)                           \
+    SAC_MT_GET_BARRIER_RESULT__AKS (n, m, basetype, res_NT)
 
 /******************************************************************************/
 
@@ -362,59 +365,63 @@ typedef union {
 
 /******************************************************************************
  *
- * MT_DECL_LOCAL_DESC( nt)
- * MT_INIT_DESC( nt, new_desc)
+ * MT_DECL_LOCAL_DESC( var_NT)
+ * MT_INIT_DESC( var_NT, new_desc)
  *
  */
 
-#define SAC_MT_DECL_LOCAL_DESC(nt) CAT11 (SAC_MT_DECL_LOCAL_DESC__, NT_SHP (nt) (nt))
+#define SAC_MT_DECL_LOCAL_DESC(var_NT)                                                   \
+    CAT11 (SAC_MT_DECL_LOCAL_DESC__, NT_SHP (var_NT) (var_NT))
 
-#define SAC_MT_INIT_DESC(nt) CAT11 (SAC_MT_INIT_DESC__, NT_SHP (nt) (nt))
+#define SAC_MT_INIT_DESC(var_NT) CAT11 (SAC_MT_INIT_DESC__, NT_SHP (var_NT) (var_NT))
 /*
  * SCL
  */
 
-#define SAC_MT_DECL_LOCAL_DESC__SCL(nt)                                                  \
-    CAT12 (SAC_MT_DECL_LOCAL_DESC__SCL_, NT_HID (nt) (nt))
-#define SAC_MT_DECL_LOCAL_DESC__SCL_NHD(nt) SAC_NOTHING ()
-#define SAC_MT_DECL_LOCAL_DESC__SCL_HID(nt)                                              \
-    CAT13 (SAC_MT_DECL_LOCAL_DESC__SCL_HID_, NT_UNQ (nt) (nt))
-#define SAC_MT_DECL_LOCAL_DESC__SCL_HID_NUQ(nt) SAC_MT_DECL_LOCAL_DESC__AKS (nt)
-#define SAC_MT_DECL_LOCAL_DESC__SCL_HID_UNQ(nt) SAC_MT_DECL_LOCAL_DESC__SCL_NHD (nt)
+#define SAC_MT_DECL_LOCAL_DESC__SCL(var_NT)                                              \
+    CAT12 (SAC_MT_DECL_LOCAL_DESC__SCL_, NT_HID (var_NT) (var_NT))
+#define SAC_MT_DECL_LOCAL_DESC__SCL_NHD(var_NT) SAC_NOTHING ()
+#define SAC_MT_DECL_LOCAL_DESC__SCL_HID(var_NT)                                          \
+    CAT13 (SAC_MT_DECL_LOCAL_DESC__SCL_HID_, NT_UNQ (var_NT) (var_NT))
+#define SAC_MT_DECL_LOCAL_DESC__SCL_HID_NUQ(var_NT) SAC_MT_DECL_LOCAL_DESC__AKS (var_NT)
+#define SAC_MT_DECL_LOCAL_DESC__SCL_HID_UNQ(var_NT)                                      \
+    SAC_MT_DECL_LOCAL_DESC__SCL_NHD (var_NT)
 
-#define SAC_MT_INIT_DESC__SCL(nt) CAT12 (SAC_MT_INIT_DESC__SCL_, NT_HID (nt) (nt))
-#define SAC_MT_INIT_DESC__SCL_NHD(nt) SAC_NOOP ()
-#define SAC_MT_INIT_DESC__SCL_HID(nt) CAT13 (SAC_MT_INIT_DESC__SCL_HID_, NT_UNQ (nt) (nt))
-#define SAC_MT_INIT_DESC__SCL_HID_NUQ(nt) SAC_MT_INIT_DESC__AKS (nt)
-#define SAC_MT_INIT_DESC__SCL_HID_UNQ(nt) SAC_MT_INIT_DESC__SCL_NHD (nt)
+#define SAC_MT_INIT_DESC__SCL(var_NT)                                                    \
+    CAT12 (SAC_MT_INIT_DESC__SCL_, NT_HID (var_NT) (var_NT))
+#define SAC_MT_INIT_DESC__SCL_NHD(var_NT) SAC_NOOP ()
+#define SAC_MT_INIT_DESC__SCL_HID(var_NT)                                                \
+    CAT13 (SAC_MT_INIT_DESC__SCL_HID_, NT_UNQ (var_NT) (var_NT))
+#define SAC_MT_INIT_DESC__SCL_HID_NUQ(var_NT) SAC_MT_INIT_DESC__AKS (var_NT)
+#define SAC_MT_INIT_DESC__SCL_HID_UNQ(var_NT) SAC_MT_INIT_DESC__SCL_NHD (var_NT)
 
 /*
  * AKS
  */
 
-#define SAC_MT_DECL_LOCAL_DESC__AKS(nt)                                                  \
-    /* SAC_ND_DESC_TYPE( nt) */ int CAT0 (SAC_local_, SAC_ND_A_DESC (nt))[10];
+#define SAC_MT_DECL_LOCAL_DESC__AKS(var_NT)                                              \
+    /* SAC_ND_DESC_TYPE( var_NT) */ int CAT0 (SAC_local_, SAC_ND_A_DESC (var_NT))[10];
 
-#define SAC_MT_INIT_DESC__AKS(nt)                                                        \
+#define SAC_MT_INIT_DESC__AKS(var_NT)                                                    \
     {                                                                                    \
-        SAC_ND_A_DESC (nt) = CAT0 (SAC_local_, SAC_ND_A_DESC (nt));                      \
+        SAC_ND_A_DESC (var_NT) = CAT0 (SAC_local_, SAC_ND_A_DESC (var_NT));              \
     }
 
 /*
  * AKD
  */
 
-#define SAC_MT_DECL_LOCAL_DESC__AKD(nt) SAC_MT_DECL_LOCAL_DESC__AKS (nt)
+#define SAC_MT_DECL_LOCAL_DESC__AKD(var_NT) SAC_MT_DECL_LOCAL_DESC__AKS (var_NT)
 
-#define SAC_MT_INIT_DESC__AKD(nt) SAC_MT_INIT_DESC__AKS (nt)
+#define SAC_MT_INIT_DESC__AKD(var_NT) SAC_MT_INIT_DESC__AKS (var_NT)
 
 /*
  * AUD
  */
 
-#define SAC_MT_DECL_LOCAL_DESC__AUD(nt) SAC_MT_DECL_LOCAL_DESC__AKS (nt)
+#define SAC_MT_DECL_LOCAL_DESC__AUD(var_NT) SAC_MT_DECL_LOCAL_DESC__AKS (var_NT)
 
-#define SAC_MT_INIT_DESC__AUD(nt) SAC_MT_INIT_DESC__AKS (nt)
+#define SAC_MT_INIT_DESC__AUD(var_NT) SAC_MT_INIT_DESC__AKS (var_NT)
 
 /******************************************************************************
  *
@@ -427,118 +434,125 @@ typedef union {
  *
  */
 
-#define SAC_MT_SPMD_ARG_in(basetype, nt)                                                 \
-    CAT11 (SAC_MT_SPMD_ARG_in__, NT_SHP (nt) BuildArgs2 (basetype, nt))
+#define SAC_MT_SPMD_ARG_in(basetype, var_NT)                                             \
+    CAT11 (SAC_MT_SPMD_ARG_in__, NT_SHP (var_NT) BuildArgs2 (basetype, var_NT))
 
-#define SAC_MT_SPMD_ARG_out(basetype, nt)                                                \
-    CAT11 (SAC_MT_SPMD_ARG_out__, NT_SHP (nt) BuildArgs2 (basetype, nt))
+#define SAC_MT_SPMD_ARG_out(basetype, var_NT)                                            \
+    CAT11 (SAC_MT_SPMD_ARG_out__, NT_SHP (var_NT) BuildArgs2 (basetype, var_NT))
 
-#define SAC_MT_SPMD_ARG_inout(basetype, nt) not implemented yet
+#define SAC_MT_SPMD_ARG_inout(basetype, var_NT) not implemented yet
 
-#define SAC_MT_SPMD_ARG_shared(basetype, nt)                                             \
-    CAT11 (SAC_MT_SPMD_ARG_shared__, NT_SHP (nt) BuildArgs2 (basetype, nt))
+#define SAC_MT_SPMD_ARG_shared(basetype, var_NT)                                         \
+    CAT11 (SAC_MT_SPMD_ARG_shared__, NT_SHP (var_NT) BuildArgs2 (basetype, var_NT))
 
-#define SAC_MT_SPMD_ARG_preset(basetype, nt)                                             \
-    CAT11 (SAC_MT_SPMD_ARG_preset__, NT_SHP (nt) BuildArgs2 (basetype, nt))
+#define SAC_MT_SPMD_ARG_preset(basetype, var_NT)                                         \
+    CAT11 (SAC_MT_SPMD_ARG_preset__, NT_SHP (var_NT) BuildArgs2 (basetype, var_NT))
 
 /*
  * SCL
  */
 
-#define SAC_MT_SPMD_ARG_in__SCL(basetype, nt)                                            \
-    CAT12 (SAC_MT_SPMD_ARG_in__SCL_, NT_HID (nt) BuildArgs2 (basetype, nt))
-#define SAC_MT_SPMD_ARG_in__SCL_NHD(basetype, nt)                                        \
-    SAC_ND_TYPE (nt, basetype)                                                           \
-    SAC_ND_A_FIELD (nt);
-#define SAC_MT_SPMD_ARG_in__SCL_HID(basetype, nt)                                        \
-    CAT13 (SAC_MT_SPMD_ARG_in__SCL_HID_, NT_UNQ (nt) BuildArgs2 (basetype, nt))
-#define SAC_MT_SPMD_ARG_in__SCL_HID_NUQ(basetype, nt)                                    \
-    SAC_MT_SPMD_ARG_in__AKS (basetype, nt)
-#define SAC_MT_SPMD_ARG_in__SCL_HID_UNQ(basetype, nt)                                    \
-    SAC_MT_SPMD_ARG_in__SCL_NHD (basetype, nt)
+#define SAC_MT_SPMD_ARG_in__SCL(basetype, var_NT)                                        \
+    CAT12 (SAC_MT_SPMD_ARG_in__SCL_, NT_HID (var_NT) BuildArgs2 (basetype, var_NT))
+#define SAC_MT_SPMD_ARG_in__SCL_NHD(basetype, var_NT)                                    \
+    SAC_ND_TYPE (var_NT, basetype)                                                       \
+    SAC_ND_A_FIELD (var_NT);
+#define SAC_MT_SPMD_ARG_in__SCL_HID(basetype, var_NT)                                    \
+    CAT13 (SAC_MT_SPMD_ARG_in__SCL_HID_, NT_UNQ (var_NT) BuildArgs2 (basetype, var_NT))
+#define SAC_MT_SPMD_ARG_in__SCL_HID_NUQ(basetype, var_NT)                                \
+    SAC_MT_SPMD_ARG_in__AKS (basetype, var_NT)
+#define SAC_MT_SPMD_ARG_in__SCL_HID_UNQ(basetype, var_NT)                                \
+    SAC_MT_SPMD_ARG_in__SCL_NHD (basetype, var_NT)
 
-#define SAC_MT_SPMD_ARG_out__SCL(basetype, nt)                                           \
-    CAT12 (SAC_MT_SPMD_ARG_out__SCL_, NT_HID (nt) BuildArgs2 (basetype, nt))
-#define SAC_MT_SPMD_ARG_out__SCL_NHD(basetype, nt)                                       \
-    SAC_ND_TYPE (nt, basetype)                                                           \
-    *O_POST (SAC_ND_A_FIELD (nt));
-#define SAC_MT_SPMD_ARG_out__SCL_HID(basetype, nt)                                       \
-    CAT13 (SAC_MT_SPMD_ARG_out__SCL_HID_, NT_UNQ (nt) BuildArgs2 (basetype, nt))
-#define SAC_MT_SPMD_ARG_out__SCL_HID_NUQ(basetype, nt)                                   \
-    SAC_MT_SPMD_ARG_out__AKS (basetype, nt)
-#define SAC_MT_SPMD_ARG_out__SCL_HID_UNQ(basetype, nt)                                   \
-    SAC_MT_SPMD_ARG_out__SCL_NHD (basetype, nt)
+#define SAC_MT_SPMD_ARG_out__SCL(basetype, var_NT)                                       \
+    CAT12 (SAC_MT_SPMD_ARG_out__SCL_, NT_HID (var_NT) BuildArgs2 (basetype, var_NT))
+#define SAC_MT_SPMD_ARG_out__SCL_NHD(basetype, var_NT)                                   \
+    SAC_ND_TYPE (var_NT, basetype)                                                       \
+    *O_POST (SAC_ND_A_FIELD (var_NT));
+#define SAC_MT_SPMD_ARG_out__SCL_HID(basetype, var_NT)                                   \
+    CAT13 (SAC_MT_SPMD_ARG_out__SCL_HID_, NT_UNQ (var_NT) BuildArgs2 (basetype, var_NT))
+#define SAC_MT_SPMD_ARG_out__SCL_HID_NUQ(basetype, var_NT)                               \
+    SAC_MT_SPMD_ARG_out__AKS (basetype, var_NT)
+#define SAC_MT_SPMD_ARG_out__SCL_HID_UNQ(basetype, var_NT)                               \
+    SAC_MT_SPMD_ARG_out__SCL_NHD (basetype, var_NT)
 
-#define SAC_MT_SPMD_ARG_shared__SCL(basetype, nt)                                        \
-    CAT12 (SAC_MT_SPMD_ARG_shared__SCL_, NT_HID (nt) BuildArgs2 (basetype, nt))
-#define SAC_MT_SPMD_ARG_shared__SCL_NHD(basetype, nt)                                    \
-    SAC_ND_TYPE (nt, basetype)                                                           \
-    S_POST (SAC_ND_A_FIELD (nt));
-#define SAC_MT_SPMD_ARG_shared__SCL_HID(basetype, nt)                                    \
-    CAT13 (SAC_MT_SPMD_ARG_shared__SCL_HID_, NT_UNQ (nt) BuildArgs2 (basetype, nt))
-#define SAC_MT_SPMD_ARG_shared__SCL_HID_NUQ(basetype, nt)                                \
-    SAC_MT_SPMD_ARG_shared__AKS (basetype, nt)
-#define SAC_MT_SPMD_ARG_shared__SCL_HID_UNQ(basetype, nt)                                \
-    SAC_MT_SPMD_ARG_shared__SCL_NHD (basetype, nt)
+#define SAC_MT_SPMD_ARG_shared__SCL(basetype, var_NT)                                    \
+    CAT12 (SAC_MT_SPMD_ARG_shared__SCL_, NT_HID (var_NT) BuildArgs2 (basetype, var_NT))
+#define SAC_MT_SPMD_ARG_shared__SCL_NHD(basetype, var_NT)                                \
+    SAC_ND_TYPE (var_NT, basetype)                                                       \
+    S_POST (SAC_ND_A_FIELD (var_NT));
+#define SAC_MT_SPMD_ARG_shared__SCL_HID(basetype, var_NT)                                \
+    CAT13 (SAC_MT_SPMD_ARG_shared__SCL_HID_,                                             \
+           NT_UNQ (var_NT) BuildArgs2 (basetype, var_NT))
+#define SAC_MT_SPMD_ARG_shared__SCL_HID_NUQ(basetype, var_NT)                            \
+    SAC_MT_SPMD_ARG_shared__AKS (basetype, var_NT)
+#define SAC_MT_SPMD_ARG_shared__SCL_HID_UNQ(basetype, var_NT)                            \
+    SAC_MT_SPMD_ARG_shared__SCL_NHD (basetype, var_NT)
 
-#define SAC_MT_SPMD_ARG_preset__SCL(basetype, nt)                                        \
-    CAT12 (SAC_MT_SPMD_ARG_preset__SCL_, NT_HID (nt) BuildArgs2 (basetype, nt))
-#define SAC_MT_SPMD_ARG_preset__SCL_NHD(basetype, nt)                                    \
-    SAC_ND_TYPE (nt, basetype)                                                           \
-    SAC_ND_A_FIELD (nt);
-#define SAC_MT_SPMD_ARG_preset__SCL_HID(basetype, nt)                                    \
-    CAT13 (SAC_MT_SPMD_ARG_preset__SCL_HID_, NT_UNQ (nt) BuildArgs2 (basetype, nt))
-#define SAC_MT_SPMD_ARG_preset__SCL_HID_NUQ(basetype, nt)                                \
-    SAC_MT_SPMD_ARG_preset__AKS (basetype, nt)
-#define SAC_MT_SPMD_ARG_preset__SCL_HID_UNQ(basetype, nt)                                \
-    SAC_MT_SPMD_ARG_preset__SCL_NHD (basetype, nt)
+#define SAC_MT_SPMD_ARG_preset__SCL(basetype, var_NT)                                    \
+    CAT12 (SAC_MT_SPMD_ARG_preset__SCL_, NT_HID (var_NT) BuildArgs2 (basetype, var_NT))
+#define SAC_MT_SPMD_ARG_preset__SCL_NHD(basetype, var_NT)                                \
+    SAC_ND_TYPE (var_NT, basetype)                                                       \
+    SAC_ND_A_FIELD (var_NT);
+#define SAC_MT_SPMD_ARG_preset__SCL_HID(basetype, var_NT)                                \
+    CAT13 (SAC_MT_SPMD_ARG_preset__SCL_HID_,                                             \
+           NT_UNQ (var_NT) BuildArgs2 (basetype, var_NT))
+#define SAC_MT_SPMD_ARG_preset__SCL_HID_NUQ(basetype, var_NT)                            \
+    SAC_MT_SPMD_ARG_preset__AKS (basetype, var_NT)
+#define SAC_MT_SPMD_ARG_preset__SCL_HID_UNQ(basetype, var_NT)                            \
+    SAC_MT_SPMD_ARG_preset__SCL_NHD (basetype, var_NT)
 
 /*
  * AKS
  */
 
-#define SAC_MT_SPMD_ARG_in__AKS(basetype, nt)                                            \
-    SAC_MT_SPMD_ARG_in__SCL_NHD (basetype, nt) SAC_ND_DESC_TYPE (nt) SAC_ND_A_DESC (nt);
+#define SAC_MT_SPMD_ARG_in__AKS(basetype, var_NT)                                        \
+    SAC_MT_SPMD_ARG_in__SCL_NHD (basetype, var_NT) SAC_ND_DESC_TYPE (var_NT)             \
+      SAC_ND_A_DESC (var_NT);
 
-#define SAC_MT_SPMD_ARG_out__AKS(basetype, nt)                                           \
-    SAC_MT_SPMD_ARG_out__SCL_NHD (basetype, nt) SAC_ND_DESC_TYPE (nt)                    \
-      * O_POST (SAC_ND_A_DESC (nt));
+#define SAC_MT_SPMD_ARG_out__AKS(basetype, var_NT)                                       \
+    SAC_MT_SPMD_ARG_out__SCL_NHD (basetype, var_NT) SAC_ND_DESC_TYPE (var_NT)            \
+      * O_POST (SAC_ND_A_DESC (var_NT));
 
-#define SAC_MT_SPMD_ARG_shared__AKS(basetype, nt)                                        \
-    SAC_MT_SPMD_ARG_shared__SCL_NHD (basetype, nt) SAC_ND_DESC_TYPE (nt)                 \
-      S_POST (SAC_ND_A_DESC (nt));
+#define SAC_MT_SPMD_ARG_shared__AKS(basetype, var_NT)                                    \
+    SAC_MT_SPMD_ARG_shared__SCL_NHD (basetype, var_NT) SAC_ND_DESC_TYPE (var_NT)         \
+      S_POST (SAC_ND_A_DESC (var_NT));
 
-#define SAC_MT_SPMD_ARG_preset__AKS(basetype, nt)                                        \
-    SAC_MT_SPMD_ARG_preset__SCL_NHD (basetype, nt) SAC_ND_DESC_TYPE (nt)                 \
-      SAC_ND_A_DESC (nt);
+#define SAC_MT_SPMD_ARG_preset__AKS(basetype, var_NT)                                    \
+    SAC_MT_SPMD_ARG_preset__SCL_NHD (basetype, var_NT) SAC_ND_DESC_TYPE (var_NT)         \
+      SAC_ND_A_DESC (var_NT);
 
 /*
  * AKD
  */
 
-#define SAC_MT_SPMD_ARG_in__AKD(basetype, nt) SAC_MT_SPMD_ARG_in__AKS (basetype, nt)
+#define SAC_MT_SPMD_ARG_in__AKD(basetype, var_NT)                                        \
+    SAC_MT_SPMD_ARG_in__AKS (basetype, var_NT)
 
-#define SAC_MT_SPMD_ARG_out__AKD(basetype, nt) SAC_MT_SPMD_ARG_out__AKS (basetype, nt)
+#define SAC_MT_SPMD_ARG_out__AKD(basetype, var_NT)                                       \
+    SAC_MT_SPMD_ARG_out__AKS (basetype, var_NT)
 
-#define SAC_MT_SPMD_ARG_shared__AKD(basetype, nt)                                        \
-    SAC_MT_SPMD_ARG_shared__AKS (basetype, nt)
+#define SAC_MT_SPMD_ARG_shared__AKD(basetype, var_NT)                                    \
+    SAC_MT_SPMD_ARG_shared__AKS (basetype, var_NT)
 
-#define SAC_MT_SPMD_ARG_preset__AKD(basetype, nt)                                        \
-    SAC_MT_SPMD_ARG_preset__AKS (basetype, nt)
+#define SAC_MT_SPMD_ARG_preset__AKD(basetype, var_NT)                                    \
+    SAC_MT_SPMD_ARG_preset__AKS (basetype, var_NT)
 
 /*
  * AUD
  */
 
-#define SAC_MT_SPMD_ARG_in__AUD(basetype, nt) SAC_MT_SPMD_ARG_in__AKS (basetype, nt)
+#define SAC_MT_SPMD_ARG_in__AUD(basetype, var_NT)                                        \
+    SAC_MT_SPMD_ARG_in__AKS (basetype, var_NT)
 
-#define SAC_MT_SPMD_ARG_out__AUD(basetype, nt) SAC_MT_SPMD_ARG_out__AKS (basetype, nt)
+#define SAC_MT_SPMD_ARG_out__AUD(basetype, var_NT)                                       \
+    SAC_MT_SPMD_ARG_out__AKS (basetype, var_NT)
 
-#define SAC_MT_SPMD_ARG_shared__AUD(basetype, nt)                                        \
-    SAC_MT_SPMD_ARG_shared__AKS (basetype, nt)
+#define SAC_MT_SPMD_ARG_shared__AUD(basetype, var_NT)                                    \
+    SAC_MT_SPMD_ARG_shared__AKS (basetype, var_NT)
 
-#define SAC_MT_SPMD_ARG_preset__AUD(basetype, nt)                                        \
-    SAC_MT_SPMD_ARG_preset__AKS (basetype, nt)
+#define SAC_MT_SPMD_ARG_preset__AUD(basetype, var_NT)                                    \
+    SAC_MT_SPMD_ARG_preset__AKS (basetype, var_NT)
 
 /******************************************************************************/
 
@@ -624,47 +638,49 @@ typedef union {
  *
  */
 
-#define SAC_MT_SPMD_PARAM_in(basetype, nt)                                               \
-    CAT11 (SAC_MT_SPMD_PARAM_in__, NT_SHP (nt) BuildArgs2 (basetype, nt))
+#define SAC_MT_SPMD_PARAM_in(basetype, var_NT)                                           \
+    CAT11 (SAC_MT_SPMD_PARAM_in__, NT_SHP (var_NT) BuildArgs2 (basetype, var_NT))
 
-#define SAC_MT_SPMD_PARAM_out(basetype, nt) SAC_NOTHING ()
+#define SAC_MT_SPMD_PARAM_out(basetype, var_NT) SAC_NOTHING ()
 
 /*
  * SCL
  */
 
-#define SAC_MT_SPMD_PARAM_in__SCL(basetype, nt)                                          \
-    CAT12 (SAC_MT_SPMD_PARAM_in__SCL_, NT_HID (nt) BuildArgs2 (basetype, nt))
-#define SAC_MT_SPMD_PARAM_in__SCL_NHD(basetype, nt)                                      \
-    SAC_ND_TYPE (nt, basetype)                                                           \
-    SAC_ND_A_FIELD (nt) = SAC_MT_SPMD_CURRENT_FRAME.SAC_ND_A_FIELD (nt);
-#define SAC_MT_SPMD_PARAM_in__SCL_HID(basetype, nt)                                      \
-    CAT13 (SAC_MT_SPMD_PARAM_in__SCL_HID_, NT_UNQ (nt) BuildArgs2 (basetype, nt))
-#define SAC_MT_SPMD_PARAM_in__SCL_HID_NUQ(basetype, nt)                                  \
-    SAC_MT_SPMD_PARAM_in__AKS (basetype, nt)
-#define SAC_MT_SPMD_PARAM_in__SCL_HID_UNQ(basetype, nt)                                  \
-    SAC_MT_SPMD_PARAM_in__SCL_NHD (basetype, nt)
+#define SAC_MT_SPMD_PARAM_in__SCL(basetype, var_NT)                                      \
+    CAT12 (SAC_MT_SPMD_PARAM_in__SCL_, NT_HID (var_NT) BuildArgs2 (basetype, var_NT))
+#define SAC_MT_SPMD_PARAM_in__SCL_NHD(basetype, var_NT)                                  \
+    SAC_ND_TYPE (var_NT, basetype)                                                       \
+    SAC_ND_A_FIELD (var_NT) = SAC_MT_SPMD_CURRENT_FRAME.SAC_ND_A_FIELD (var_NT);
+#define SAC_MT_SPMD_PARAM_in__SCL_HID(basetype, var_NT)                                  \
+    CAT13 (SAC_MT_SPMD_PARAM_in__SCL_HID_, NT_UNQ (var_NT) BuildArgs2 (basetype, var_NT))
+#define SAC_MT_SPMD_PARAM_in__SCL_HID_NUQ(basetype, var_NT)                              \
+    SAC_MT_SPMD_PARAM_in__AKS (basetype, var_NT)
+#define SAC_MT_SPMD_PARAM_in__SCL_HID_UNQ(basetype, var_NT)                              \
+    SAC_MT_SPMD_PARAM_in__SCL_NHD (basetype, var_NT)
 
 /*
  * AKS
  */
 
-#define SAC_MT_SPMD_PARAM_in__AKS(basetype, nt)                                          \
-    SAC_MT_SPMD_PARAM_in__SCL_NHD (basetype, nt) SAC_ND_DESC_TYPE (nt)                   \
-      SAC_ND_A_DESC (nt)                                                                 \
-      = SAC_MT_SPMD_CURRENT_FRAME.SAC_ND_A_DESC (nt);
+#define SAC_MT_SPMD_PARAM_in__AKS(basetype, var_NT)                                      \
+    SAC_MT_SPMD_PARAM_in__SCL_NHD (basetype, var_NT) SAC_ND_DESC_TYPE (var_NT)           \
+      SAC_ND_A_DESC (var_NT)                                                             \
+      = SAC_MT_SPMD_CURRENT_FRAME.SAC_ND_A_DESC (var_NT);
 
 /*
  * AKD
  */
 
-#define SAC_MT_SPMD_PARAM_in__AKD(basetype, nt) SAC_MT_SPMD_PARAM_in__AKS (basetype, nt)
+#define SAC_MT_SPMD_PARAM_in__AKD(basetype, var_NT)                                      \
+    SAC_MT_SPMD_PARAM_in__AKS (basetype, var_NT)
 
 /*
  * AUD
  */
 
-#define SAC_MT_SPMD_PARAM_in__AUD(basetype, nt) SAC_MT_SPMD_PARAM_in__AKS (basetype, nt)
+#define SAC_MT_SPMD_PARAM_in__AUD(basetype, var_NT)                                      \
+    SAC_MT_SPMD_PARAM_in__AKS (basetype, var_NT)
 
 /******************************************************************************
  *
@@ -674,97 +690,104 @@ typedef union {
  *
  */
 
-#define SAC_MT_SPMD_SETARG_in(spmdname, nt)                                              \
-    CAT11 (SAC_MT_SPMD_SETARG_in__, NT_SHP (nt) BuildArgs2 (spmdname, nt))
+#define SAC_MT_SPMD_SETARG_in(spmdname, var_NT)                                          \
+    CAT11 (SAC_MT_SPMD_SETARG_in__, NT_SHP (var_NT) BuildArgs2 (spmdname, var_NT))
 
-#define SAC_MT_SPMD_SETARG_out(spmdname, nt)                                             \
-    CAT11 (SAC_MT_SPMD_SETARG_out__, NT_SHP (nt) BuildArgs2 (spmdname, nt))
+#define SAC_MT_SPMD_SETARG_out(spmdname, var_NT)                                         \
+    CAT11 (SAC_MT_SPMD_SETARG_out__, NT_SHP (var_NT) BuildArgs2 (spmdname, var_NT))
 
-#define SAC_MT_SPMD_SETARG_shared(spmdname, nt)                                          \
-    CAT11 (SAC_MT_SPMD_SETARG_shared__, NT_SHP (nt) BuildArgs2 (spmdname, nt))
+#define SAC_MT_SPMD_SETARG_shared(spmdname, var_NT)                                      \
+    CAT11 (SAC_MT_SPMD_SETARG_shared__, NT_SHP (var_NT) BuildArgs2 (spmdname, var_NT))
 
 /*
  * SCL
  */
 
-#define SAC_MT_SPMD_SETARG_in__SCL(spmdname, nt)                                         \
-    CAT12 (SAC_MT_SPMD_SETARG_in__SCL_, NT_HID (nt) BuildArgs2 (spmdname, nt))
-#define SAC_MT_SPMD_SETARG_in__SCL_NHD(spmdname, nt)                                     \
-    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).SAC_ND_A_FIELD (nt) = SAC_ND_A_FIELD (nt);
-#define SAC_MT_SPMD_SETARG_in__SCL_HID(spmdname, nt)                                     \
-    CAT13 (SAC_MT_SPMD_SETARG_in__SCL_HID_, NT_UNQ (nt) BuildArgs2 (spmdname, nt))
-#define SAC_MT_SPMD_SETARG_in__SCL_HID_NUQ(spmdname, nt)                                 \
-    SAC_MT_SPMD_SETARG_in__AKS (spmdname, nt)
-#define SAC_MT_SPMD_SETARG_in__SCL_HID_UNQ(spmdname, nt)                                 \
-    SAC_MT_SPMD_SETARG_in__SCL_NHD (spmdname, nt)
+#define SAC_MT_SPMD_SETARG_in__SCL(spmdname, var_NT)                                     \
+    CAT12 (SAC_MT_SPMD_SETARG_in__SCL_, NT_HID (var_NT) BuildArgs2 (spmdname, var_NT))
+#define SAC_MT_SPMD_SETARG_in__SCL_NHD(spmdname, var_NT)                                 \
+    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).SAC_ND_A_FIELD (var_NT)                         \
+      = SAC_ND_A_FIELD (var_NT);
+#define SAC_MT_SPMD_SETARG_in__SCL_HID(spmdname, var_NT)                                 \
+    CAT13 (SAC_MT_SPMD_SETARG_in__SCL_HID_, NT_UNQ (var_NT) BuildArgs2 (spmdname, var_NT))
+#define SAC_MT_SPMD_SETARG_in__SCL_HID_NUQ(spmdname, var_NT)                             \
+    SAC_MT_SPMD_SETARG_in__AKS (spmdname, var_NT)
+#define SAC_MT_SPMD_SETARG_in__SCL_HID_UNQ(spmdname, var_NT)                             \
+    SAC_MT_SPMD_SETARG_in__SCL_NHD (spmdname, var_NT)
 
-#define SAC_MT_SPMD_SETARG_out__SCL(spmdname, nt)                                        \
-    CAT12 (SAC_MT_SPMD_SETARG_out__SCL_, NT_HID (nt) BuildArgs2 (spmdname, nt))
-#define SAC_MT_SPMD_SETARG_out__SCL_NHD(spmdname, nt)                                    \
-    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).O_POST (SAC_ND_A_FIELD (nt))                    \
-      = &SAC_ND_A_FIELD (nt);
-#define SAC_MT_SPMD_SETARG_out__SCL_HID(spmdname, nt)                                    \
-    CAT13 (SAC_MT_SPMD_SETARG_out__SCL_HID_, NT_UNQ (nt) BuildArgs2 (spmdname, nt))
-#define SAC_MT_SPMD_SETARG_out__SCL_HID_NUQ(spmdname, nt)                                \
-    SAC_MT_SPMD_SETARG_out__AKS (spmdname, nt)
-#define SAC_MT_SPMD_SETARG_out__SCL_HID_UNQ(spmdname, nt)                                \
-    SAC_MT_SPMD_SETARG_out__SCL_NHD (spmdname, nt)
+#define SAC_MT_SPMD_SETARG_out__SCL(spmdname, var_NT)                                    \
+    CAT12 (SAC_MT_SPMD_SETARG_out__SCL_, NT_HID (var_NT) BuildArgs2 (spmdname, var_NT))
+#define SAC_MT_SPMD_SETARG_out__SCL_NHD(spmdname, var_NT)                                \
+    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).O_POST (SAC_ND_A_FIELD (var_NT))                \
+      = &SAC_ND_A_FIELD (var_NT);
+#define SAC_MT_SPMD_SETARG_out__SCL_HID(spmdname, var_NT)                                \
+    CAT13 (SAC_MT_SPMD_SETARG_out__SCL_HID_,                                             \
+           NT_UNQ (var_NT) BuildArgs2 (spmdname, var_NT))
+#define SAC_MT_SPMD_SETARG_out__SCL_HID_NUQ(spmdname, var_NT)                            \
+    SAC_MT_SPMD_SETARG_out__AKS (spmdname, var_NT)
+#define SAC_MT_SPMD_SETARG_out__SCL_HID_UNQ(spmdname, var_NT)                            \
+    SAC_MT_SPMD_SETARG_out__SCL_NHD (spmdname, var_NT)
 
-#define SAC_MT_SPMD_SETARG_shared__SCL(spmdname, nt)                                     \
-    CAT12 (SAC_MT_SPMD_SETARG_shared__SCL_, NT_HID (nt) BuildArgs2 (spmdname, nt))
-#define SAC_MT_SPMD_SETARG_shared__SCL_NHD(spmdname, nt)                                 \
-    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).S_POST (SAC_ND_A_FIELD (nt))                    \
-      = SAC_ND_A_FIELD (nt);
-#define SAC_MT_SPMD_SETARG_shared__SCL_HID(spmdname, nt)                                 \
-    CAT13 (SAC_MT_SPMD_SETARG_shared__SCL_HID_, NT_UNQ (nt) BuildArgs2 (spmdname, nt))
-#define SAC_MT_SPMD_SETARG_shared__SCL_HID_NUQ(spmdname, nt)                             \
-    SAC_MT_SPMD_SETARG_shared__AKS (spmdname, nt)
-#define SAC_MT_SPMD_SETARG_shared__SCL_HID_UNQ(spmdname, nt)                             \
-    SAC_MT_SPMD_SETARG_shared__SCL_NHD (spmdname, nt)
+#define SAC_MT_SPMD_SETARG_shared__SCL(spmdname, var_NT)                                 \
+    CAT12 (SAC_MT_SPMD_SETARG_shared__SCL_, NT_HID (var_NT) BuildArgs2 (spmdname, var_NT))
+#define SAC_MT_SPMD_SETARG_shared__SCL_NHD(spmdname, var_NT)                             \
+    SAC_MT_SPMD_SPECIAL_FRAME (spmdname).S_POST (SAC_ND_A_FIELD (var_NT))                \
+      = SAC_ND_A_FIELD (var_NT);
+#define SAC_MT_SPMD_SETARG_shared__SCL_HID(spmdname, var_NT)                             \
+    CAT13 (SAC_MT_SPMD_SETARG_shared__SCL_HID_,                                          \
+           NT_UNQ (var_NT) BuildArgs2 (spmdname, var_NT))
+#define SAC_MT_SPMD_SETARG_shared__SCL_HID_NUQ(spmdname, var_NT)                         \
+    SAC_MT_SPMD_SETARG_shared__AKS (spmdname, var_NT)
+#define SAC_MT_SPMD_SETARG_shared__SCL_HID_UNQ(spmdname, var_NT)                         \
+    SAC_MT_SPMD_SETARG_shared__SCL_NHD (spmdname, var_NT)
 
 /*
  * AKS
  */
 
-#define SAC_MT_SPMD_SETARG_in__AKS(spmdname, nt)                                         \
-    SAC_MT_SPMD_SETARG_in__SCL_NHD (spmdname, nt) SAC_MT_SPMD_SPECIAL_FRAME (spmdname)   \
-      .SAC_ND_A_DESC (nt)                                                                \
-      = SAC_ND_A_DESC (nt);
-
-#define SAC_MT_SPMD_SETARG_out__AKS(spmdname, nt)                                        \
-    SAC_MT_SPMD_SETARG_out__SCL_NHD (spmdname, nt) SAC_MT_SPMD_SPECIAL_FRAME (spmdname)  \
-      .O_POST (SAC_ND_A_DESC (nt))                                                       \
-      = &SAC_ND_A_DESC (nt);
-
-#define SAC_MT_SPMD_SETARG_shared__AKS(spmdname, nt)                                     \
-    SAC_MT_SPMD_SETARG_shared__SCL_NHD (spmdname, nt)                                    \
+#define SAC_MT_SPMD_SETARG_in__AKS(spmdname, var_NT)                                     \
+    SAC_MT_SPMD_SETARG_in__SCL_NHD (spmdname, var_NT)                                    \
       SAC_MT_SPMD_SPECIAL_FRAME (spmdname)                                               \
-        .S_POST (SAC_ND_A_DESC (nt))                                                     \
-      = SAC_ND_A_DESC (nt);
+        .SAC_ND_A_DESC (var_NT)                                                          \
+      = SAC_ND_A_DESC (var_NT);
+
+#define SAC_MT_SPMD_SETARG_out__AKS(spmdname, var_NT)                                    \
+    SAC_MT_SPMD_SETARG_out__SCL_NHD (spmdname, var_NT)                                   \
+      SAC_MT_SPMD_SPECIAL_FRAME (spmdname)                                               \
+        .O_POST (SAC_ND_A_DESC (var_NT))                                                 \
+      = &SAC_ND_A_DESC (var_NT);
+
+#define SAC_MT_SPMD_SETARG_shared__AKS(spmdname, var_NT)                                 \
+    SAC_MT_SPMD_SETARG_shared__SCL_NHD (spmdname, var_NT)                                \
+      SAC_MT_SPMD_SPECIAL_FRAME (spmdname)                                               \
+        .S_POST (SAC_ND_A_DESC (var_NT))                                                 \
+      = SAC_ND_A_DESC (var_NT);
 
 /*
  * AKD
  */
 
-#define SAC_MT_SPMD_SETARG_in__AKD(spmdname, nt) SAC_MT_SPMD_SETARG_in__AKS (spmdname, nt)
+#define SAC_MT_SPMD_SETARG_in__AKD(spmdname, var_NT)                                     \
+    SAC_MT_SPMD_SETARG_in__AKS (spmdname, var_NT)
 
-#define SAC_MT_SPMD_SETARG_out__AKD(spmdname, nt)                                        \
-    SAC_MT_SPMD_SETARG_out__AKS (spmdname, nt)
+#define SAC_MT_SPMD_SETARG_out__AKD(spmdname, var_NT)                                    \
+    SAC_MT_SPMD_SETARG_out__AKS (spmdname, var_NT)
 
-#define SAC_MT_SPMD_SETARG_shared__AKD(spmdname, nt)                                     \
-    SAC_MT_SPMD_SETARG_shared__AKS (spmdname, nt)
+#define SAC_MT_SPMD_SETARG_shared__AKD(spmdname, var_NT)                                 \
+    SAC_MT_SPMD_SETARG_shared__AKS (spmdname, var_NT)
 
 /*
  * AUD
  */
 
-#define SAC_MT_SPMD_SETARG_in__AUD(spmdname, nt) SAC_MT_SPMD_SETARG_in__AKS (spmdname, nt)
+#define SAC_MT_SPMD_SETARG_in__AUD(spmdname, var_NT)                                     \
+    SAC_MT_SPMD_SETARG_in__AKS (spmdname, var_NT)
 
-#define SAC_MT_SPMD_SETARG_out__AUD(spmdname, nt)                                        \
-    SAC_MT_SPMD_SETARG_out__AKS (spmdname, nt)
+#define SAC_MT_SPMD_SETARG_out__AUD(spmdname, var_NT)                                    \
+    SAC_MT_SPMD_SETARG_out__AKS (spmdname, var_NT)
 
-#define SAC_MT_SPMD_SETARG_shared__AUD(spmdname, nt)                                     \
-    SAC_MT_SPMD_SETARG_shared__AKS (spmdname, nt)
+#define SAC_MT_SPMD_SETARG_shared__AUD(spmdname, var_NT)                                 \
+    SAC_MT_SPMD_SETARG_shared__AKS (spmdname, var_NT)
 
 /******************************************************************************
  *
@@ -773,60 +796,65 @@ typedef union {
  *
  */
 
-#define SAC_MT_SPMD_RET_out(nt) CAT11 (SAC_MT_SPMD_RET_out__, NT_SHP (nt) (nt))
+#define SAC_MT_SPMD_RET_out(var_NT)                                                      \
+    CAT11 (SAC_MT_SPMD_RET_out__, NT_SHP (var_NT) (var_NT))
 
-#define SAC_MT_SPMD_RET_shared(nt) CAT11 (SAC_MT_SPMD_RET_shared__, NT_SHP (nt) (nt))
+#define SAC_MT_SPMD_RET_shared(var_NT)                                                   \
+    CAT11 (SAC_MT_SPMD_RET_shared__, NT_SHP (var_NT) (var_NT))
 
 /*
  * SCL
  */
 
-#define SAC_MT_SPMD_RET_out__SCL(nt) CAT12 (SAC_MT_SPMD_RET_out__SCL_, NT_HID (nt) (nt))
-#define SAC_MT_SPMD_RET_out__SCL_NHD(nt)                                                 \
-    *(SAC_MT_SPMD_CURRENT_FRAME.O_POST (SAC_ND_A_FIELD (nt))) = SAC_ND_A_FIELD (nt);
-#define SAC_MT_SPMD_RET_out__SCL_HID(nt)                                                 \
-    CAT13 (SAC_MT_SPMD_RET_out__SCL_HID_, NT_UNQ (nt) (nt))
-#define SAC_MT_SPMD_RET_out__SCL_HID_NUQ(nt) SAC_MT_SPMD_RET_out__AKS (nt)
-#define SAC_MT_SPMD_RET_out__SCL_HID_UNQ(nt) SAC_MT_SPMD_RET_out__SCL_NHD (nt)
+#define SAC_MT_SPMD_RET_out__SCL(var_NT)                                                 \
+    CAT12 (SAC_MT_SPMD_RET_out__SCL_, NT_HID (var_NT) (var_NT))
+#define SAC_MT_SPMD_RET_out__SCL_NHD(var_NT)                                             \
+    *(SAC_MT_SPMD_CURRENT_FRAME.O_POST (SAC_ND_A_FIELD (var_NT)))                        \
+      = SAC_ND_A_FIELD (var_NT);
+#define SAC_MT_SPMD_RET_out__SCL_HID(var_NT)                                             \
+    CAT13 (SAC_MT_SPMD_RET_out__SCL_HID_, NT_UNQ (var_NT) (var_NT))
+#define SAC_MT_SPMD_RET_out__SCL_HID_NUQ(var_NT) SAC_MT_SPMD_RET_out__AKS (var_NT)
+#define SAC_MT_SPMD_RET_out__SCL_HID_UNQ(var_NT) SAC_MT_SPMD_RET_out__SCL_NHD (var_NT)
 
-#define SAC_MT_SPMD_RET_shared__SCL(nt)                                                  \
-    CAT12 (SAC_MT_SPMD_RET_shared__SCL_, NT_HID (nt) (nt))
-#define SAC_MT_SPMD_RET_shared__SCL_NHD(nt)                                              \
-    SAC_MT_SPMD_CURRENT_FRAME.S_POST (SAC_ND_A_FIELD (nt)) = SAC_ND_A_FIELD (nt);
-#define SAC_MT_SPMD_RET_shared__SCL_HID(nt)                                              \
-    CAT13 (SAC_MT_SPMD_RET_shared__SCL_HID_, NT_UNQ (nt) (nt))
-#define SAC_MT_SPMD_RET_shared__SCL_HID_NUQ(nt) SAC_MT_SPMD_RET_shared__AKS (nt)
-#define SAC_MT_SPMD_RET_shared__SCL_HID_UNQ(nt) SAC_MT_SPMD_RET_shared__SCL_NHD (nt)
+#define SAC_MT_SPMD_RET_shared__SCL(var_NT)                                              \
+    CAT12 (SAC_MT_SPMD_RET_shared__SCL_, NT_HID (var_NT) (var_NT))
+#define SAC_MT_SPMD_RET_shared__SCL_NHD(var_NT)                                          \
+    SAC_MT_SPMD_CURRENT_FRAME.S_POST (SAC_ND_A_FIELD (var_NT)) = SAC_ND_A_FIELD (var_NT);
+#define SAC_MT_SPMD_RET_shared__SCL_HID(var_NT)                                          \
+    CAT13 (SAC_MT_SPMD_RET_shared__SCL_HID_, NT_UNQ (var_NT) (var_NT))
+#define SAC_MT_SPMD_RET_shared__SCL_HID_NUQ(var_NT) SAC_MT_SPMD_RET_shared__AKS (var_NT)
+#define SAC_MT_SPMD_RET_shared__SCL_HID_UNQ(var_NT)                                      \
+    SAC_MT_SPMD_RET_shared__SCL_NHD (var_NT)
 
 /*
  * AKS
  */
 
-#define SAC_MT_SPMD_RET_out__AKS(nt)                                                     \
-    SAC_MT_SPMD_RET_out__SCL_NHD (nt)                                                    \
-      * (SAC_MT_SPMD_CURRENT_FRAME.O_POST (SAC_ND_A_DESC (nt)))                          \
-      = SAC_ND_A_DESC (nt);
+#define SAC_MT_SPMD_RET_out__AKS(var_NT)                                                 \
+    SAC_MT_SPMD_RET_out__SCL_NHD (var_NT)                                                \
+      * (SAC_MT_SPMD_CURRENT_FRAME.O_POST (SAC_ND_A_DESC (var_NT)))                      \
+      = SAC_ND_A_DESC (var_NT);
 
-#define SAC_MT_SPMD_RET_shared__AKS(nt)                                                  \
-    SAC_MT_SPMD_RET_shared__SCL_NHD (nt)                                                 \
-      SAC_MT_SPMD_CURRENT_FRAME.S_POST (SAC_ND_A_DESC (nt))                              \
-      = SAC_ND_A_DESC (nt);
+#define SAC_MT_SPMD_RET_shared__AKS(var_NT)                                              \
+    SAC_MT_SPMD_RET_shared__SCL_NHD (var_NT)                                             \
+      SAC_MT_SPMD_CURRENT_FRAME.S_POST (SAC_ND_A_DESC (var_NT))                          \
+      = SAC_ND_A_DESC (var_NT);
 
 /*
  * AKD
  */
 
-#define SAC_MT_SPMD_RET_out__AKD(nt) SAC_MT_SPMD_RET_out__AKS (nt)
+#define SAC_MT_SPMD_RET_out__AKD(var_NT) SAC_MT_SPMD_RET_out__AKS (var_NT)
 
-#define SAC_MT_SPMD_RET_shared__AKD(nt) SAC_MT_SPMD_RET_shared__AKS (nt)
+#define SAC_MT_SPMD_RET_shared__AKD(var_NT) SAC_MT_SPMD_RET_shared__AKS (var_NT)
 
 /*
  * AUD
  */
 
-#define SAC_MT_SPMD_RET_out__AUD(nt) SAC_MT_SPMD_RET_out__AKS (nt)
+#define SAC_MT_SPMD_RET_out__AUD(var_NT) SAC_MT_SPMD_RET_out__AKS (var_NT)
 
-#define SAC_MT_SPMD_RET_shared__AUD(nt) SAC_MT_SPMD_RET_shared__AKS (nt)
+#define SAC_MT_SPMD_RET_shared__AUD(var_NT) SAC_MT_SPMD_RET_shared__AKS (var_NT)
 
 /******************************************************************************
  *
@@ -834,40 +862,42 @@ typedef union {
  *
  */
 
-#define SAC_MT_SPMD_GET_shared(nt) CAT11 (SAC_MT_SPMD_GET_shared__, NT_SHP (nt) (nt))
+#define SAC_MT_SPMD_GET_shared(var_NT)                                                   \
+    CAT11 (SAC_MT_SPMD_GET_shared__, NT_SHP (var_NT) (var_NT))
 
 /*
  * SCL
  */
 
-#define SAC_MT_SPMD_GET_shared__SCL(nt)                                                  \
-    CAT12 (SAC_MT_SPMD_GET_shared__SCL_, NT_HID (nt) (nt))
-#define SAC_MT_SPMD_GET_shared__SCL_NHD(nt)                                              \
-    SAC_ND_A_FIELD (nt) = SAC_MT_SPMD_CURRENT_FRAME.S_POST (SAC_ND_A_FIELD (nt));
-#define SAC_MT_SPMD_GET_shared__SCL_HID(nt)                                              \
-    CAT13 (SAC_MT_SPMD_GET_shared__SCL_HID_, NT_UNQ (nt) (nt))
-#define SAC_MT_SPMD_GET_shared__SCL_HID_NUQ(nt) SAC_MT_SPMD_GET_shared__AKS (nt)
-#define SAC_MT_SPMD_GET_shared__SCL_HID_UNQ(nt) SAC_MT_SPMD_GET_shared__SCL_NHD (nt)
+#define SAC_MT_SPMD_GET_shared__SCL(var_NT)                                              \
+    CAT12 (SAC_MT_SPMD_GET_shared__SCL_, NT_HID (var_NT) (var_NT))
+#define SAC_MT_SPMD_GET_shared__SCL_NHD(var_NT)                                          \
+    SAC_ND_A_FIELD (var_NT) = SAC_MT_SPMD_CURRENT_FRAME.S_POST (SAC_ND_A_FIELD (var_NT));
+#define SAC_MT_SPMD_GET_shared__SCL_HID(var_NT)                                          \
+    CAT13 (SAC_MT_SPMD_GET_shared__SCL_HID_, NT_UNQ (var_NT) (var_NT))
+#define SAC_MT_SPMD_GET_shared__SCL_HID_NUQ(var_NT) SAC_MT_SPMD_GET_shared__AKS (var_NT)
+#define SAC_MT_SPMD_GET_shared__SCL_HID_UNQ(var_NT)                                      \
+    SAC_MT_SPMD_GET_shared__SCL_NHD (var_NT)
 
 /*
  * AKS
  */
 
-#define SAC_MT_SPMD_GET_shared__AKS(nt)                                                  \
-    SAC_MT_SPMD_GET_shared__SCL_NHD (nt) SAC_ND_A_DESC (nt)                              \
-      = SAC_MT_SPMD_CURRENT_FRAME.S_POST (SAC_ND_A_DESC (nt));
+#define SAC_MT_SPMD_GET_shared__AKS(var_NT)                                              \
+    SAC_MT_SPMD_GET_shared__SCL_NHD (var_NT) SAC_ND_A_DESC (var_NT)                      \
+      = SAC_MT_SPMD_CURRENT_FRAME.S_POST (SAC_ND_A_DESC (var_NT));
 
 /*
  * AKD
  */
 
-#define SAC_MT_SPMD_GET_shared__AKD(nt) SAC_MT_SPMD_GET_shared__AKS (nt)
+#define SAC_MT_SPMD_GET_shared__AKD(var_NT) SAC_MT_SPMD_GET_shared__AKS (var_NT)
 
 /*
  * AUD
  */
 
-#define SAC_MT_SPMD_GET_shared__AUD(nt) SAC_MT_SPMD_GET_shared__AKS (nt)
+#define SAC_MT_SPMD_GET_shared__AUD(var_NT) SAC_MT_SPMD_GET_shared__AKS (var_NT)
 
 /******************************************************************************/
 
@@ -1094,7 +1124,7 @@ typedef union {
         }                                                                                \
     }
 
-#define SAC_MT_ADJUST_SCHEDULER__OFFSET(to_nt, dims, dim, lower, upper, unrolling,       \
+#define SAC_MT_ADJUST_SCHEDULER__OFFSET(to_NT, dims, dim, lower, upper, unrolling,       \
                                         offset)                                          \
     {                                                                                    \
         int diff_start, diff_stop;                                                       \
@@ -1104,13 +1134,13 @@ typedef union {
         SAC_MT_ADJUST_SCHEDULER_BOUND (diff_stop, SAC_WL_MT_SCHEDULE_STOP (dim), lower,  \
                                        upper, unrolling)                                 \
                                                                                          \
-        SAC_WL_OFFSET (to_nt) += diff_start * (offset);                                  \
+        SAC_WL_OFFSET (to_NT) += diff_start * (offset);                                  \
         SAC_TR_MT_PRINT (("Scheduler Adjustment: dim %d: %d -> %d", dim,                 \
                           SAC_WL_MT_SCHEDULE_START (dim),                                \
                           SAC_WL_MT_SCHEDULE_STOP (dim)));                               \
     }
 
-#define SAC_MT_ADJUST_SCHEDULER(to_nt, dims, dim, lower, upper, unrolling)               \
+#define SAC_MT_ADJUST_SCHEDULER(to_NT, dims, dim, lower, upper, unrolling)               \
     {                                                                                    \
         int diff_start, diff_stop;                                                       \
                                                                                          \

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2003/09/19 12:26:58  dkr
+ * postfixes _nt, _any of varnames renamed into _NT, _ANY
+ *
  * Revision 3.11  2002/10/29 14:34:56  dkr
  * dummy macros for TAGGED_ARRAYS added
  *
@@ -144,9 +147,9 @@
 /*
  * dummy macros for tagged identifiers (TAGGED_ARRAYS)
  */
-#define NT_NAME(nt) nt
-#define SAC_ND_WRITE(nt, idx) SAC_ND_WRITE_ARRAY (nt, idx)
-#define SAC_ND_READ(nt, idx) SAC_ND_READ_ARRAY (nt, idx)
+#define NT_NAME(var_NT) var_NT
+#define SAC_ND_WRITE(var_NT, idx) SAC_ND_WRITE_ARRAY (var_NT, idx)
+#define SAC_ND_READ(var_NT, idx) SAC_ND_READ_ARRAY (var_NT, idx)
 
 /*
  * ICMs for array access:

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2003/09/19 12:26:40  dkr
+ * postfixes _nt, _any of varnames renamed into _NT, _ANY
+ *
  * Revision 3.10  2002/07/31 16:34:25  dkr
  * parameter 'copyfun' added for several ICMs
  *
@@ -92,10 +95,10 @@
  * ICMs for primitive functions after IVE
  * ======================================
  *
- * ND_PRF_IDX_SEL__SHAPE( to_nt, to_sdim, from_nt, from_sdim, idx_any, copyfun)
- * ND_PRF_IDX_SEL__DATA( to_nt, to_sdim, from_nt, from_sdim, idx_any, copyfun)
+ * ND_PRF_IDX_SEL__SHAPE( to_NT, to_sdim, from_NT, from_sdim, idx_ANY, copyfun)
+ * ND_PRF_IDX_SEL__DATA( to_NT, to_sdim, from_NT, from_sdim, idx_ANY, copyfun)
  *
- * ND_PRF_IDX_MODARRAY__DATA( to_nt, to_sdim, from_nt, from_sdim, idx, val,
+ * ND_PRF_IDX_MODARRAY__DATA( to_NT, to_sdim, from_NT, from_sdim, idx, val,
  *                            copyfun)
  *
  * ND_USE_GENVAR_OFFSET( offset, wl)
@@ -107,8 +110,8 @@
 
 /* ND_PRF_IDX_MODARRAY__DATA( ...) is a C-ICM */
 
-#define SAC_ND_USE_GENVAR_OFFSET(off_nt, wl_nt)                                          \
-    SAC_ND_WRITE (off_nt, 0) = SAC_WL_OFFSET (wl_nt);
+#define SAC_ND_USE_GENVAR_OFFSET(off_NT, wl_NT)                                          \
+    SAC_ND_WRITE (off_NT, 0) = SAC_WL_OFFSET (wl_NT);
 
 #else /* TAGGED_ARRAYS */
 

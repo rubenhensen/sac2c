@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2003/09/19 12:27:56  dkr
+ * postfixes _nt, _any of varnames renamed into _NT, _ANY
+ *
  * Revision 3.2  2002/04/30 08:35:24  dkr
  * no changes done
  *
@@ -332,17 +335,17 @@ extern void (*SAC_CS_Stop) (void);
         SAC_CS_Finalize ();                                                              \
     }
 
-#define SAC_CS_READ_ARRAY(nt, pos)                                                       \
-    SAC_CS_ReadAccess (SAC_ND_A_FIELD (nt), SAC_ND_A_FIELD (nt) + (pos)),
+#define SAC_CS_READ_ARRAY(var_NT, pos)                                                   \
+    SAC_CS_ReadAccess (SAC_ND_A_FIELD (var_NT), SAC_ND_A_FIELD (var_NT) + (pos)),
 
-#define SAC_CS_WRITE_ARRAY(nt, pos)                                                      \
-    SAC_CS_WriteAccess (SAC_ND_A_FIELD (nt), SAC_ND_A_FIELD (nt) + (pos)),
+#define SAC_CS_WRITE_ARRAY(var_NT, pos)                                                  \
+    SAC_CS_WriteAccess (SAC_ND_A_FIELD (var_NT), SAC_ND_A_FIELD (var_NT) + (pos)),
 
-#define SAC_CS_REGISTER_ARRAY(nt)                                                        \
-  SAC_CS_RegisterArray( SAC_ND_A_FIELD( nt),
-                        SAC_ND_A_SIZE( nt) * sizeof( *(SAC_ND_A_FIELD( nt))));
+#define SAC_CS_REGISTER_ARRAY(var_NT)                                                    \
+  SAC_CS_RegisterArray( SAC_ND_A_FIELD( var_NT),
+                        SAC_ND_A_SIZE( var_NT) * sizeof( *(SAC_ND_A_FIELD( var_NT))));
 
-#define SAC_CS_UNREGISTER_ARRAY(nt) SAC_CS_UnregisterArray (SAC_ND_A_FIELD (nt));
+#define SAC_CS_UNREGISTER_ARRAY(var_NT) SAC_CS_UnregisterArray (SAC_ND_A_FIELD (var_NT));
 
 #define SAC_CS_START(tag) SAC_CS_Start (tag);
 #define SAC_CS_STOP(tag) SAC_CS_Stop ();
@@ -352,10 +355,10 @@ extern void (*SAC_CS_Stop) (void);
 #define SAC_CS_LEVEL SAC_CS_none
 #define SAC_CS_SETUP()
 #define SAC_CS_FINALIZE()
-#define SAC_CS_READ_ARRAY(nt, pos)
-#define SAC_CS_WRITE_ARRAY(nt, pos)
-#define SAC_CS_REGISTER_ARRAY(nt)
-#define SAC_CS_UNREGISTER_ARRAY(nt)
+#define SAC_CS_READ_ARRAY(var_NT, pos)
+#define SAC_CS_WRITE_ARRAY(var_NT, pos)
+#define SAC_CS_REGISTER_ARRAY(var_NT)
+#define SAC_CS_UNREGISTER_ARRAY(var_NT)
 #define SAC_CS_START(tag)
 #define SAC_CS_STOP(tag)
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2003/09/19 12:26:54  dkr
+ * postfixes _nt, _any of varnames renamed into _NT, _ANY
+ *
  * Revision 1.5  2002/08/05 18:22:49  dkr
  * SAC_ASSURE_TYPE modified
  *
@@ -88,8 +91,8 @@
  * ICMs for boundary checks
  * ========================
  *
- * BC_READ( nt, pos)
- * BC_WRITE( nt, pos)
+ * BC_READ( var_NT, pos)
+ * BC_WRITE( var_NT, pos)
  *
  ******************************************************************************
  *
@@ -105,26 +108,26 @@
 
 #if SAC_DO_CHECK_BOUNDARY
 
-#define SAC_BC_READ(nt, pos)                                                             \
-    (((pos >= 0) && (pos < SAC_ND_A_SIZE (nt)))                                          \
+#define SAC_BC_READ(var_NT, pos)                                                         \
+    (((pos >= 0) && (pos < SAC_ND_A_SIZE (var_NT)))                                      \
        ? 0                                                                               \
        : (SAC_RuntimeError ("Memory access violation on reading from array %s\n"         \
                             "*** with size %d at index position %d !\n",                 \
-                            #nt, SAC_ND_A_SIZE (nt), pos),                               \
+                            #var_NT, SAC_ND_A_SIZE (var_NT), pos),                       \
           0)),
 
-#define SAC_BC_WRITE(nt, pos)                                                            \
-    (((pos >= 0) && (pos < SAC_ND_A_SIZE (nt)))                                          \
+#define SAC_BC_WRITE(var_NT, pos)                                                        \
+    (((pos >= 0) && (pos < SAC_ND_A_SIZE (var_NT)))                                      \
        ? 0                                                                               \
        : (SAC_RuntimeError ("Memory access violation on writing into array %s\n"         \
                             "*** with size %d at index position %d !\n",                 \
-                            #nt, SAC_ND_A_SIZE (nt), pos),                               \
+                            #var_NT, SAC_ND_A_SIZE (var_NT), pos),                       \
           0)),
 
 #else /* SAC_DO_CHECK_BOUNDARY */
 
-#define SAC_BC_WRITE(nt, pos)
-#define SAC_BC_READ(nt, pos)
+#define SAC_BC_WRITE(var_NT, pos)
+#define SAC_BC_READ(var_NT, pos)
 
 #endif /* SAC_DO_CHECK_BOUNDARY */
 
