@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.2  2000/11/21 17:35:37  cg
+ * Extended length of tag strings in piped cache simulation to have
+ * enough space for block characterization.
+ *
  * Revision 3.1  2000/11/20 18:02:41  sacbase
  * new release made
  *
@@ -115,6 +119,6 @@ extern tFunRWAccess SAC_CS_ReadAccess, SAC_CS_WriteAccess,
  *   for dummy/MainMem */
 /* END: */
 
-#define MAX_TAG_LENGTH 70
+#define MAX_TAG_LENGTH 512
 
 #endif /* LIBSAC_CACHESIM_H */
