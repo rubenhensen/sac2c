@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2001/05/08 12:28:23  dkr
+ * new macros for RC used
+ *
  * Revision 3.35  2001/05/03 17:25:56  dkr
  * MAXHOMDIM replaced by HOMSV
  *
@@ -123,6 +126,7 @@
 #include "my_debug.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "refcount.h"
 
 #define NAMES_IN_TYPES 1
 
@@ -292,8 +296,8 @@ MakeIds (char *name, char *mod, statustype status)
     tmp = ALLOCATE (ids);
     IDS_NAME (tmp) = name;
     IDS_MOD (tmp) = mod;
-    IDS_REFCNT (tmp) = 0;
-    IDS_NAIVE_REFCNT (tmp) = 0;
+    IDS_REFCNT (tmp) = RC_UNDEF;
+    IDS_NAIVE_REFCNT (tmp) = RC_UNDEF;
     IDS_NEXT (tmp) = NULL;
     IDS_VARDEC (tmp) = NULL;
     IDS_AVIS (tmp) = NULL;

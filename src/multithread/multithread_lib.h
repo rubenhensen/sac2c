@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/05/08 12:27:57  dkr
+ * new macros for RC used
+ *
  * Revision 3.1  2000/11/20 18:03:12  sacbase
  * new release made
  *
@@ -25,22 +28,24 @@
  * Revision 1.1  2000/02/21 17:48:22  jhs
  * Initial revision
  *
- *
  */
 
-#ifndef MULTITHREAD_LIB_H
+#ifndef _SAC_MULTITHREAD_LIB_H_
+#define _SAC_MULTITHREAD_LIB_H_
 
-#define MULTITHREAD_LIB_H
+#include "refcount.h"
 
 /*
  *  returns 0 for refcounting-objects and -1 otherwise
  */
-#define GET_ZERO_REFCNT(prefix, node) ((prefix##_REFCNT (node) >= 0) ? 0 : -1)
+#define GET_ZERO_REFCNT(prefix, node)                                                    \
+    (RC_IS_ACTIVE (prefix##_REFCNT (node)) ? 0 : RC_INACTIVE)
 
 /*
  *  returns 1 for refcounting-objects and -1 otherwise
  */
-#define GET_STD_REFCNT(prefix, node) ((prefix##_REFCNT (node) >= 0) ? 1 : -1)
+#define GET_STD_REFCNT(prefix, node)                                                     \
+    (RC_IS_ACTIVE (prefix##_REFCNT (node)) ? 1 : RC_INACTIVE)
 
 extern node *MUTHBlocksLastInstruction (node *block);
 extern node *MUTHMeltBlocks (node *first_block, node *second_block);
@@ -51,4 +56,4 @@ extern node *MUTHReduceFundefName (node *fundef, int count);
 extern node *MUTHInsertST (node *assign, node *arg_info);
 extern node *MUTHInsertMT (node *assign, node *arg_info);
 
-#endif /* CONCURRENT_LIB_H */
+#endif /* _SAC_CONCURRENT_LIB_H_ */
