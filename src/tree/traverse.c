@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/02/13 15:19:00  nmw
+ * ssafrm_tab travseral added
+ *
  * Revision 3.6  2001/02/12 17:04:36  nmw
  * chkavis_tab added
  *
@@ -291,6 +294,7 @@
 #include "map_cwrapper.h"
 #include "import_specialization.h"
 #include "CheckAvis.h"
+#include "SSATransform.h"
 
 #include "traverse.h"
 
