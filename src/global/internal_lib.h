@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2003/03/20 23:24:50  sah
+ * NEED_0X_PREFIX renamed to NEED_PTR_PREFIX
+ *
  * Revision 3.21  2003/03/20 14:01:58  sbs
  * config.h included; NEED_0x_PREFIX used.
  *
@@ -171,7 +174,7 @@ extern void DbugMemoryLeakCheck (void);
  *********************************/
 
 /* format string for pointers */
-#ifdef NEED_0x_PREFIX
+#ifdef NEED_PTR_PREFIX
 #define F_PTR "0x%p"
 #else
 #define F_PTR "%p"
