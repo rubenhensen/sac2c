@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1997/12/08 19:19:34  dkr
+ * no arithmetic on void-pointers anymore (Malloc())
+ *
  * Revision 1.21  1997/12/06 17:15:13  srs
  * changed Malloc (SHOW_MALLOC)
  *
@@ -130,7 +133,7 @@ Malloc (int size)
     if (NULL == tmp)
         SYSABORT (("Out of memory"));
     *(int *)tmp = size;
-    tmp += malloc_align_step;
+    tmp = (char *)tmp + malloc_align_step;
 
     total_allocated_mem += size;
     current_allocated_mem += size;
