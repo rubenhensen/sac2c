@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2004/11/26 23:16:29  jhb
+ * the ONE before the LASt
+ *
  * Revision 1.20  2004/11/26 21:43:51  sbs
  * change run
  *
@@ -144,6 +147,8 @@
 #include "SSAWithloopFolding.h"
 #include "SSAWLF.h"
 #include "shape.h"
+#include "type_utils.h"
+#include "new_types.h"
 
 /*
  * INFO structure
@@ -431,13 +436,13 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
                     lbuf += cut - ig->width[dim];
                 } else if (cut < ig->width[dim]) {
                     /* make newig */
-                    newig = SSACopyInternGen (ig);
+                    newig = WLFcopyInternGen (ig);
                     newig->l[dim] = ig->l[dim] + cut;
                     newig->width[dim] = ig->width[dim] - cut;
                     ig->width[dim] = cut;
                     /* if u - l is smaller than width, the newig is empty */
                     if (newig->u[dim] <= newig->l[dim]) {
-                        newig = SSAFreeInternGen (newig);
+                        newig = WLFfreeInternGen (newig);
                     } else {
                         buf = (constval - newig->u[dim] + 1 + newig->step[dim]
                                - newig->width[dim]);
@@ -718,7 +723,7 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
 
         if (ok) {
             /* start transformations */
-            newig = SSACreateInternGen (target_dim, NULL != tmpig->step);
+            newig = WLFcreateInternGen (target_dim, NULL != tmpig->step);
             for (i = 0; i < target_dim; i++) {
                 if (help[i]) {
                     newig->l[i] = tmpig->l[help[i] - 1];
@@ -736,7 +741,7 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
                     }
                 }
             }
-            DBUG_ASSERT (0 == SSANormalizeInternGen (newig),
+            DBUG_ASSERT (0 == WLFnormalizeInternGen (newig),
                          ("Error while normalizing ig"));
 
             newig->code = tmpig->code;
@@ -749,7 +754,7 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
     }
 
     help = ILIBfree (help);
-    SSAFreeInternGenChain (substig);
+    WLFfreeInternGenChain (substig);
 
     DBUG_RETURN (rootig);
 }
@@ -776,8 +781,8 @@ CreateCode (node *target, node *subst)
 
     DBUG_ENTER ("CreateCode");
 
-    DBUG_ASSERT ((N_Ncode == NODE_TYPE (target)), "wrong Parameter");
-    DBUG_ASSERT ((N_Ncode == NODE_TYPE (subst)), "wrong Parameter");
+    DBUG_ASSERT ((N_code == NODE_TYPE (target)), "wrong Parameter");
+    DBUG_ASSERT ((N_code == NODE_TYPE (subst)), "wrong Parameter");
 
     wlf_mode = wlfm_replace;
 
@@ -797,9 +802,9 @@ CreateCode (node *target, node *subst)
      * DUPdoDupTree() shall fill ID_WL of Id nodes with special information.
      * So we have to call DUPdoDupTree() with DUP_WLF.
      */
-    coden = DUPdoDupTree_Type (CODE_CBLOCK (target), DUP_WLF);
+    coden = DUPdoDupTreeType (CODE_CBLOCK (target), DUP_WLF);
     coden = TRAVdo (coden, new_arg_info);
-    coden = MakeNCode (coden, DUPdoDupTree_Type (CODE_CEXPRS (target), DUP_WLF));
+    coden = TBmakeCode (coden, DUPdoDupTreeType (CODE_CEXPRS (target), DUP_WLF));
 
     new_arg_info = FreeInfo (new_arg_info);
 
@@ -870,7 +875,7 @@ IntersectGrids (int dim)
                    if lower bound is less then upper bound. */
                 if (intersect_grids_baseig->l[dim] + first
                     < intersect_grids_baseig->u[dim]) {
-                    ig = SSACreateInternGen (intersect_grids_baseig->shape, 1);
+                    ig = WLFcreateInternGen (intersect_grids_baseig->shape, 1);
                     for (d = 0; d < intersect_grids_baseig->shape; d++) {
                         ig->l[d] = intersect_grids_baseig->l[d];
                         ig->u[d] = intersect_grids_baseig->u[d];
@@ -941,10 +946,10 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
         sig = subst_ig;
         while (sig) {
             if (!new_gen_step) {
-                new_gen_step = SSACreateInternGen (target_ig->shape, 1);
+                new_gen_step = WLFcreateInternGen (target_ig->shape, 1);
             }
             if (!new_gen_nostep) {
-                new_gen_nostep = SSACreateInternGen (target_ig->shape, 0);
+                new_gen_nostep = WLFcreateInternGen (target_ig->shape, 0);
             }
 
             create_steps = target_ig->step || sig->step;
@@ -987,7 +992,7 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
                         }
                     } else {
                         for (d = 0; d < max_dim; d++) {
-                            new_gen->step[d] = lcm (target_ig->step[d], sig->step[d]);
+                            new_gen->step[d] = ILIBlcm (target_ig->step[d], sig->step[d]);
                         }
                     }
 
@@ -1039,10 +1044,10 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
     }
 
     if (new_gen_step) {
-        new_gen_step = SSAFreeInternGen (new_gen_step);
+        new_gen_step = WLFfreeInternGen (new_gen_step);
     }
     if (new_gen_nostep) {
-        new_gen_nostep = SSAFreeInternGen (new_gen_nostep);
+        new_gen_nostep = WLFfreeInternGen (new_gen_nostep);
     }
 
     DBUG_RETURN (intersect_intern_gen);
@@ -1149,10 +1154,10 @@ TransformationRangeCheck (index_info *transformations, node *substwln,
 
     /* create bounds of substwln in whole_ig */
     dim = transformations->vector;
-    whole_ig = SSACreateInternGen (dim, 0);
-    switch (WITH_TYPE (substwln)) {
-    case WO_genarray:
-        tmpn = ARRAY_AELEMS (WITH_SHAPE (substwln));
+    whole_ig = WLFcreateInternGen (dim, 0);
+    switch (NODE_TYPE (WITH_WITHOP (substwln))) {
+    case N_genarray:
+        tmpn = ARRAY_AELEMS (GENARRAY_SHAPE (WITH_WITHOP (substwln)));
         for (i = 0; i < dim; i++) {
             whole_ig->l[i] = 0;
             whole_ig->u[i] = NUM_VAL (EXPRS_EXPR (tmpn));
@@ -1160,10 +1165,10 @@ TransformationRangeCheck (index_info *transformations, node *substwln,
         }
         break;
 
-    case WO_modarray:
+    case N_modarray:
         for (i = 0; i < dim; i++) {
             whole_ig->l[i] = 0;
-            whole_ig->u[i] = ID_SHAPE (WITH_ARRAY (substwln), i);
+            whole_ig->u[i] = ID_SHAPE (MODARRAY_ARRAY (WITH_WITHOP (substwln)), i);
         }
         break;
 
@@ -1224,21 +1229,21 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
     /* the 'old' new_ig is not needed anymore because we create a new list of
        intern gens which represents the same set of index elements as the
        'old' list. */
-    new_ig = SSAFreeInternGenChain (new_ig);
+    new_ig = WLFfreeInternGenChain (new_ig);
 
     /* check if array access is in range. Don't use the original *transformations
        because RemoveDoubleIndexVectors() modifies it.  */
     DBUG_PRINT ("WLF", ("  ...starting transformations..."));
-    transf2 = SSADuplicateIndexInfo (transformations);
+    transf2 = WLFduplicateIndexInfo (transformations);
     error = TransformationRangeCheck (transf2, substwln, target_ig);
-    transf2 = FreeIndexInfo (transf2);
+    transf2 = FREEfreeIndexInfo (transf2);
     if (error) {
         ABORT (NODE_LINE (idn),
                ("array access to %s out of range in dimension %i", ID_NAME (idn), error));
     }
 
     /* create subst_ig */
-    subst_ig = SSATree2InternGen (substwln, NULL);
+    subst_ig = WLFtree2InternGen (substwln, NULL);
     subst_ig = LinearTransformationsVector (subst_ig, transformations);
     /* We can use the original *transformations here because we don't need it
        anymore. */
@@ -1270,8 +1275,8 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
     }
 
     /* free all created lists */
-    SSAFreeInternGenChain (target_ig);
-    SSAFreeInternGenChain (subst_ig);
+    WLFfreeInternGenChain (target_ig);
+    WLFfreeInternGenChain (subst_ig);
     FreeCC (code_constr);
 
     DBUG_VOID_RETURN;
@@ -1305,11 +1310,11 @@ FoldDecision (node *target_wl, node *subst_wl)
 
     subst_wl = LET_EXPR (ASSIGN_INSTR (subst_wl));
 
-    result
-      = (WITH_PARTS (target_wl) > 0 && WITH_PARTS (subst_wl) > 0
-         && WITH_FOLDABLE (target_wl) > 0
-         && WITH_REFERENCED (subst_wl) == WITH_REFERENCED_FOLD (subst_wl)
-         && (WO_genarray == WITH_TYPE (subst_wl) || WO_modarray == WITH_TYPE (subst_wl)));
+    result = (WITH_PARTS (target_wl) > 0 && WITH_PARTS (subst_wl) > 0
+              && WITH_ISFOLDABLE (target_wl)
+              && WITH_REFERENCED (subst_wl) == WITH_REFERENCED_FOLD (subst_wl)
+              && (N_genarray == NODE_TYPE (WITH_WITHOP (subst_wl))
+                  || N_modarray == NODE_TYPE (WITH_WITHOP (subst_wl))));
 
     DBUG_RETURN (result);
 }
@@ -1320,7 +1325,7 @@ FoldDecision (node *target_wl, node *subst_wl)
  *   node *CheckForSuperfluousCodes(node *wln)
  *
  * description:
- *   remove all unused N_Ncode nodes of the given WL.
+ *   remove all unused N_code nodes of the given WL.
  *
  *
  ******************************************************************************/
@@ -1370,7 +1375,8 @@ Modarray2Genarray (node *wln, node *substwln)
 
     DBUG_ENTER ("Modarray2Genarray");
 
-    DBUG_ASSERT ((WO_modarray == WITH_TYPE (wln)), "wrong withop for Modarray2Genarray");
+    DBUG_ASSERT ((N_modarray == NODE_TYPE (WITH_WITHOP (wln))),
+                 "wrong withop for Modarray2Genarray");
     DBUG_ASSERT (substwln, "substwln ist NULL");
 
     /* at the moment, substwln points to the assignment of the WL. */
@@ -1378,23 +1384,23 @@ Modarray2Genarray (node *wln, node *substwln)
     (WITH_REFERENCES_FOLDED (substwln))++; /* removed another reference */
 
     /* compute shape of WL for NWITHOP_SHAPE() */
-    type = ID_TYPE (WITH_ARRAY (wln));
-    dimensions = IDS_SHAPE (WITH_VEC (wln), 0);
+    type = ID_TYPE (MODARRAY_ARRAY (WITH_WITHOP (wln)));
+    dimensions = IDS_SHAPE (WITH_VEC (wln), 0); /* TODO IDS_SHAPE contains shpseg */
 
     eltn = NULL;
     for (i = dimensions - 1; i >= 0; i--) {
-        eltn = TBmakeExprs (MakeNum (TYPES_SHAPE (type, i)), eltn);
+        eltn = TBmakeExprs (TBmakeNum (TYPES_SHAPE (type, i)), eltn);
     }
 
     shape = TCmakeFlatArray (eltn);
 
-    shpseg = MakeShpseg (
-      MakeNums (dimensions, NULL)); /* nums struct is freed inside MakeShpseg. */
-    ARRAY_TYPE (shape) = MakeTypes (T_int, 1, shpseg, NULL, NULL);
+    shpseg = TBmakeShpseg (
+      TBmakeNums (dimensions, NULL)); /* nums struct is freed inside MakeShpseg. */
+    ARRAY_TYPE (shape) = TBmakeTypes (T_int, 1, shpseg, NULL, NULL);
 
     /* delete old withop and create new one */
     FREEdoFreeTree (WITH_WITHOP (wln));
-    WITH_WITHOP (wln) = MakeNWithOp (WO_genarray, shape);
+    WITH_WITHOP (wln) = TBmakeGenarray (shape, NULL);
 
     DBUG_RETURN (wln);
 }
@@ -1415,9 +1421,9 @@ Modarray2Genarray (node *wln, node *substwln)
  *
  ******************************************************************************/
 node *
-SSAWLFfundef (node *arg_node, info *arg_info)
+WLFfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSAWLFfundef");
+    DBUG_ENTER ("WLFfundef");
 
     DBUG_PRINT ("WLF", ("entering %s for WLF", FUNDEF_NAME (arg_node)));
     INFO_SSAWLF_WL (arg_info) = NULL;
@@ -1437,20 +1443,20 @@ SSAWLFfundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLFassign( node *arg_node, info *arg_info)
+ *   node *WLFassign( node *arg_node, info *arg_info)
  *
  * description:
  *   set arg_info to remember this N_assign node.
  *
  ******************************************************************************/
 node *
-SSAWLFassign (node *arg_node, info *arg_info)
+WLFassign (node *arg_node, info *arg_info)
 {
     node *tmpn, *last_assign, *substn;
-    types *idt;
+    ntype *idt;
     int i;
 
-    DBUG_ENTER ("SSAWLFassign");
+    DBUG_ENTER ("WLFassign");
 
     INFO_SSAWLF_ASSIGN (arg_info) = arg_node;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -1472,11 +1478,11 @@ SSAWLFassign (node *arg_node, info *arg_info)
            are not referenced anymore. DCR could remove the WLs later, but we
            hope that the mem requirement in GenerateMasks will go down dramatically.
            */
-        if (optimize & OPT_DCR) {
+        if (global.optimize.dodcr) {
             tmpn = ASSIGN_INSTR (arg_node);
             if ((N_let == NODE_TYPE (tmpn))
-                && (TYPES_BASETYPE (IDS_TYPE (LET_IDS (tmpn))) != T_user)) {
-                if (N_Nwith == NODE_TYPE (LET_EXPR (tmpn))
+                && !(TUisArrayOfUser (AVIS_TYPE (IDS_AVIS (LET_IDS (tmpn)))))) {
+                if (N_with == NODE_TYPE (LET_EXPR (tmpn))
                     && WITH_REFERENCED (LET_EXPR (tmpn)) > 0
                     && WITH_REFERENCED (LET_EXPR (tmpn))
                          == WITH_REFERENCES_FOLDED (LET_EXPR (tmpn))) {
@@ -1484,20 +1490,22 @@ SSAWLFassign (node *arg_node, info *arg_info)
                     /* create genarray([..],0) and replace the WL. This does not change
                        the program symantically because the WL is not referenced
                        anymore.*/
-                    idt = IDS_TYPE (LET_IDS (tmpn));
+                    idt = AVIS_TYPE (IDS_AVIS (LET_IDS (tmpn)));
                     tmpn = NULL;
-                    for (i = TYPES_DIM (idt); i > 0; i--)
-                        tmpn = TBmakeExprs (MakeNum (TYPES_SHAPE (idt, i - 1)),
+                    for (i = TYgetDim (idt); i > 0; i--)
+                        tmpn = TBmakeExprs (TBmakeNum (
+                                              TYPES_SHAPE (TYtype2OldType (idt), i - 1)),
                                             tmpn); /* Array elements */
                     tmpn = TCmakeFlatArray (tmpn); /* N_Array */
-                    ARRAY_TYPE (tmpn)
-                      = MakeTypes (T_int, 1,
-                                   SHshape2OldShpseg (SHCreateShape (1, TYPES_DIM (idt))),
-                                   NULL, NULL);
+
+                    ARRAY_NTYPE (tmpn) = TYmakeAKS (TYmakeSimpleType (T_int),
+                                                    SHcreateShape (1, TYgetDim (idt)));
+
                     tmpn = TBmakePrf (F_genarray, /* prf N_genarray */
                                       TBmakeExprs (tmpn,
-                                                   TBmakeExprs (CreateZeroScalar (
-                                                                  TYPES_BASETYPE (idt)),
+                                                   TBmakeExprs (TCcreateZeroScalar (
+                                                                  TYgetSimpleType (
+                                                                    TYgetScalar (idt))),
                                                                 NULL)));
                     LET_EXPR (ASSIGN_INSTR (arg_node)) = tmpn;
                 }
@@ -1572,13 +1580,12 @@ SSAWLFassign (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSAWLFid (node *arg_node, info *arg_info)
+WLFid (node *arg_node, info *arg_info)
 {
     node *substn, *coden, *vectorn, *argsn, *letn, *subst_wl_partn, *subst_header;
     node *old_arg_info_assign, *arrayn;
-    ids *subst_wl_ids, *_ids;
+    node *subst_wl_ids, *_ids;
     int count;
-    shpseg *shpseg;
 
     DBUG_ENTER ("SSAWLFid");
 
@@ -1639,7 +1646,7 @@ SSAWLFid (node *arg_node, info *arg_info)
             count = 0;
             /* This ID_WL is used in case (1) here (see header of file) */
             subst_wl_partn = WITH_PART (ASSIGN_RHS (ID_WL (INFO_SSAWLF_ID (arg_info))));
-            subst_wl_ids = NPART_IDS (subst_wl_partn);
+            subst_wl_ids = PART_IDS (subst_wl_partn);
             while (subst_wl_ids) {
                 /* Here we use masks which have been generated before WLI. These masks
                    are never modified in WLI and WLF (although new VARDECs are inserted),
@@ -1650,16 +1657,17 @@ SSAWLFid (node *arg_node, info *arg_info)
                      but I guess that would cost more time than speculatively inserting
                      (and DC-removing) some new variables. */
 
-                arrayn = TCmakeFlatArray (TBmakeExprs (MakeNum (count), NULL));
-                shpseg = MakeShpseg (
-                  MakeNums (1, NULL)); /* nums struct is freed inside MakeShpseg. */
-                ARRAY_TYPE (arrayn) = MakeTypes (T_int, 1, shpseg, NULL, NULL);
+                arrayn = TCmakeFlatArray (TBmakeExprs (TBmakeNum (count), NULL));
+
+                ARRAY_NTYPE (arrayn)
+                  = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 1));
+
                 argsn = TBmakeExprs (arrayn, TBmakeExprs (DUPdoDupTree (vectorn), NULL));
 
                 /* keep original name */
-                _ids = DupOneIds (subst_wl_ids);
+                _ids = DUPdoDupNode (subst_wl_ids);
 
-                letn = MakeLet (TBmakePrf (F_sel, argsn), _ids);
+                letn = TBmakeLet (_ids, TBmakePrf (F_sel, argsn));
                 subst_header = TBmakeAssign (letn, subst_header);
 
                 count++;
@@ -1667,11 +1675,11 @@ SSAWLFid (node *arg_node, info *arg_info)
             }
 
             /* now add "iv = sel" (see example above) */
-            subst_wl_ids = NPART_VEC (subst_wl_partn);
+            subst_wl_ids = PART_VEC (subst_wl_partn);
 
-            _ids = DupOneIds (subst_wl_ids);
+            _ids = DUPdoDupNode (subst_wl_ids);
 
-            letn = MakeLet (DUPdoDupTree (vectorn), _ids);
+            letn = TBmakeLet (_ids, DUPdoDupTree (vectorn));
             subst_header = TBmakeAssign (letn, subst_header);
 
             /* trav subst code with wlfm_rename to solve name clashes. */
@@ -1712,7 +1720,7 @@ SSAWLFid (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLFlet(node *arg_node, info *arg_info)
+ *   node *WLFlet(node *arg_node, info *arg_info)
  *
  * description:
  *   If in wlfm_search_ref mode, initiate folding.
@@ -1720,12 +1728,12 @@ SSAWLFid (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSAWLFlet (node *arg_node, info *arg_info)
+WLFlet (node *arg_node, info *arg_info)
 {
     node *prfn, *idn, *targetwln, *substwln;
     index_info *transformation;
 
-    DBUG_ENTER ("SSAWLFlet");
+    DBUG_ENTER ("WLFlet");
 
     switch (wlf_mode) {
     case wlfm_rename:
@@ -1781,7 +1789,7 @@ SSAWLFlet (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLFNwith(node *arg_node, info *arg_info)
+ *   node *WLFwith(node *arg_node, info *arg_info)
  *
  * description:
  *   First, traverse all bodies to fold WLs inside. Afterwards traverse
@@ -1791,12 +1799,12 @@ SSAWLFlet (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSAWLFNwith (node *arg_node, info *arg_info)
+WLFwith (node *arg_node, info *arg_info)
 {
     info *tmpi;
     node *tmpn, *substwln = NULL;
 
-    DBUG_ENTER ("SSAWLFNwith");
+    DBUG_ENTER ("WLFwith");
 
     switch (wlf_mode) {
     case wlfm_search_WL:
@@ -1812,9 +1820,9 @@ SSAWLFNwith (node *arg_node, info *arg_info)
 
         /* if WO_modarray, save referenced WL to transform modarray into
            genarray later. */
-        if (WO_modarray == WITH_TYPE (arg_node)) {
+        if (N_modarray == NODE_TYPE (WITH_WITHOP (arg_node))) {
             /* This ID_WL is used in case (1) here (see header of file) */
-            substwln = ID_WL (WITH_ARRAY (arg_node));
+            substwln = ID_WL (MODARRAY_ARRAY (WITH_WITHOP (arg_node)));
         }
 
         /* It's faster to
@@ -1823,7 +1831,7 @@ SSAWLFNwith (node *arg_node, info *arg_info)
            */
         INFO_SSAWLF_FLAG (arg_info) = 0;
         DBUG_PRINT ("WLF", ("traversing body of WL in line %d", NODE_LINE (arg_node)));
-        arg_node = TravSons (arg_node, arg_info);
+        arg_node = TRAVcont (arg_node, arg_info);
 
         if (INFO_SSAWLF_FLAG (arg_info)) {
             /* traverse bodies of this WL again and fold now.
@@ -1860,8 +1868,8 @@ SSAWLFNwith (node *arg_node, info *arg_info)
                    can try to merge several of the new generators. */
                 all_new_ig = MergeGenerators (all_new_ig);
 
-                arg_node = SSAInternGen2Tree (arg_node, all_new_ig);
-                all_new_ig = SSAFreeInternGenChain (all_new_ig);
+                arg_node = WLFinternGen2Tree (arg_node, all_new_ig);
+                all_new_ig = WLFfreeInternGenChain (all_new_ig);
                 arg_node = CheckForSuperfluousCodes (arg_node);
                 DBUG_PRINT ("WLF", ("<= new generators created"));
             }
@@ -1874,7 +1882,7 @@ SSAWLFNwith (node *arg_node, info *arg_info)
            array in its operator part. If this array was chosen to be folded
            (FoldDecision) we have to eleminate the reference to it. Else DCR
            would not remove the subst WL.*/
-        if (WO_modarray == WITH_TYPE (arg_node) && substwln
+        if (N_modarray == NODE_TYPE (WITH_WITHOP (arg_node)) && substwln
             && /* can be NULL if array is not in reach (loops, function argument)*/
             FoldDecision (arg_node, substwln)) {
             arg_node = Modarray2Genarray (arg_node, substwln);
@@ -1906,7 +1914,7 @@ SSAWLFNwith (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSAWLFNcode( node *arg_node, info *arg_info)
+ *   node *WLFcode( node *arg_node, info *arg_info)
  *
  * description:
  *   If in wlfm_search_ref phase, create list new_ig of gererators which
@@ -1914,11 +1922,11 @@ SSAWLFNwith (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSAWLFNcode (node *arg_node, info *arg_info)
+WLFcode (node *arg_node, info *arg_info)
 {
     intern_gen *ig;
 
-    DBUG_ENTER ("WLFNcode");
+    DBUG_ENTER ("WLFcode");
     DBUG_ASSERT ((CODE_USED (arg_node)), "traversing unused code");
 
     switch (wlf_mode) {
@@ -1926,18 +1934,18 @@ SSAWLFNcode (node *arg_node, info *arg_info)
         /* here is no break missing! */
     case wlfm_rename:
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-        CODE_CEXPR (arg_node) = TRAVdo (CODE_CEXPR (arg_node), arg_info);
+        CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
         break;
 
     case wlfm_search_ref:
         /* create generator list. Copy all generators of the target-WL
            to this list which point to the current N_Ncode node. Don't use
            the traversal mechanism because it's slow. */
-        new_ig = SSATree2InternGen (INFO_SSAWLF_WL (arg_info), arg_node);
+        new_ig = WLFtree2InternGen (INFO_SSAWLF_WL (arg_info), arg_node);
 
         /* traverse Code, create new_ig, fold. */
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-        CODE_CEXPR (arg_node) = TRAVdo (CODE_CEXPR (arg_node), arg_info);
+        CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
         /* copy new generators to all_new_ig and clear new_ig. */
         if (!all_new_ig) {
