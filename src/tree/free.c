@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2004/07/29 17:18:58  sah
+ * as NCODE_WLAA_INFO now is of type access_info_t,
+ * it has to be freed using Free instead of FreeNode.
+ *
  * Revision 3.59  2004/07/28 17:45:11  skt
  * FreeEX added
  *
@@ -2141,7 +2145,7 @@ FreeNCode (node *arg_node, node *arg_info)
 
     if (NCODE_WLAA_INFO (arg_node) != NULL) {
         NCODE_WLAA_ACCESS (arg_node) = FreeAllAccess (NCODE_WLAA_ACCESS (arg_node));
-        NCODE_WLAA_INFO (arg_node) = FreeNode (NCODE_WLAA_INFO (arg_node));
+        NCODE_WLAA_INFO (arg_node) = Free (NCODE_WLAA_INFO (arg_node));
     }
 
     ret_node = FREECONT (NCODE_NEXT (arg_node));
