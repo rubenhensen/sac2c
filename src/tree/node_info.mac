@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.170  2004/07/28 17:50:31  skt
+ * added PrintEX and FreeEX
+ * removed a roaming GNMmodul
+ *
  * Revision 3.169  2004/07/28 12:25:55  khf
  * MMVassign removed
  *
@@ -1230,7 +1234,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
-  NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, TravSons, GNMmodul, GNMmodul,
+  NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, TravSons, GNMmodul, TravSons,
        GNMmodul, FreeModul, GNMmodul, TravSons, TravSons, GNMmodul, DupModul, INLmodul,
        GNMmodul, TravSons, IdxModul, GNMmodul, TravSons, GNMmodul,
 
@@ -1371,7 +1375,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_fundef, "N_fundef", IMfundef, FltnFundef, PrintFundef, TCfundef, GNMfundef,
-       TravSons, TravSons, FreeFundef, TravSons, RCfundef, EMRCfundef, TravSons,
+       CRECEfundef, TravSons, FreeFundef, TravSons, RCfundef, EMRCfundef, TravSons,
        DupFundef, INLfundef, TravSons, TravSons, IdxFundef, TravSons, TravSons, AEfundef,
 
        WSIBfundef, OBJfundef, TravSons, TravSons, ANAfundef, CDECfundef, WDECfundef,
@@ -1540,8 +1544,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
-  NIF (N_ex, "N_ex", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+  NIF (N_ex, "N_ex", TravSons, TravSons, PrintEX, TravSons, TravSons, TravSons, TravSons,
+       FreeEX, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
