@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.58  1998/04/24 01:15:43  dkr
+ * added PrecSync
+ *
  * Revision 1.57  1998/04/21 13:31:14  dkr
  * NWITH2_SEG renamed to NWITH2_SEGS
  *
@@ -877,7 +880,7 @@ PrecAssign (node *arg_node, node *arg_info)
  *                  2) arg_info unused
  *  description   : removes all artificial identifiers on the left hand
  *                   side of a let.
- *                  collects the remaining let ids in INFO_PREC_LETIDS(arg_info)
+ *                  collects the other let ids in INFO_PREC_LETIDS(arg_info)
  *                   if lied within a SPMD-region.
  *  remarks       : this let lies within a SPMD-region if and only if
  *                   (INFO_PREC_LETIDS(arg_info) != NULL).
@@ -1146,7 +1149,7 @@ PrecId (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PrecSPMD(node *arg_node, node *arg_info)
+ *   node *PrecSPMD( node *arg_node, node *arg_info)
  *
  * description:
  *   precompiles a N_spmd node:
@@ -1385,6 +1388,26 @@ PrecSPMD (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
+ * function:
+ *   node *PrecSync( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PrecSync (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrecSync");
+
+    SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
  * precompilaton of new with-loop
  *
  */
@@ -1392,7 +1415,7 @@ PrecSPMD (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   int CompareWLnode(node *node1, node *node2, int outline)
+ *   int CompareWLnode( node *node1, node *node2, int outline)
  *
  * description:
  *   compares the N_WL...-nodes 'node1' and 'node2' IN ALL DIMS.
@@ -1506,7 +1529,7 @@ CompareWLnode (node *node1, node *node2, int outline)
 /******************************************************************************
  *
  * function:
- *   node *InsertWLnodes(node *nodes, node *insert_nodes)
+ *   node *InsertWLnodes( node *nodes, node *insert_nodes)
  *
  * description:
  *   inserts all elements of the chain 'insert_nodes' into the sorted chain
@@ -1574,7 +1597,7 @@ InsertWLnodes (node *nodes, node *insert_nodes)
 /******************************************************************************
  *
  * function:
- *   node *NormalizeStride_1(node *stride)
+ *   node *NormalizeStride_1( node *stride)
  *
  * description:
  *   returns the IN THE FIRST DIMENSION normalized N_WLstride-node 'stride'.
@@ -1645,7 +1668,7 @@ NormalizeStride_1 (node *stride)
 /******************************************************************************
  *
  * function:
- *   node* Parts2Strides(node *parts, int dims)
+ *   node* Parts2Strides( node *parts, int dims)
  *
  * description:
  *   converts a N_Npart-chain ('parts') into a N_WLstride-chain (return).
@@ -1792,7 +1815,7 @@ Parts2Strides (node *parts, int dims)
 /******************************************************************************
  *
  * function:
- *   int IndexHeadStride(node *stride)
+ *   int IndexHeadStride( node *stride)
  *
  * description:
  *   returns the index position of the first element of 'stride'
@@ -1814,7 +1837,7 @@ IndexHeadStride (node *stride)
 /******************************************************************************
  *
  * function:
- *   int IndexRearStride(node *stride)
+ *   int IndexRearStride( node *stride)
  *
  * description:
  *   returns the index position '+1' of the last element of 'stride'
@@ -1847,8 +1870,8 @@ IndexRearStride (node *stride)
 /******************************************************************************
  *
  * function:
- *   int GridOffset(int new_bound1,
- *                  int bound1, int step, int grid_b2)
+ *   int GridOffset( int new_bound1,
+ *                   int bound1, int step, int grid_b2)
  *
  * description:
  *   computes a offset for a grid relating to 'new_bound1':
@@ -1882,8 +1905,8 @@ GridOffset (int new_bound1, int bound1, int step, int grid_b2)
 /******************************************************************************
  *
  * function:
- *   int IntersectOutline(node *stride1, node *stride2,
- *                        node **i_stride1, node **i_stride2)
+ *   int IntersectOutline( node *stride1, node *stride2,
+ *                         node **i_stride1, node **i_stride2)
  *
  * description:
  *   returns in 'i_stride1' and 'i_stride2' the part of 'stride1', 'stride2'
@@ -2053,7 +2076,7 @@ IntersectOutline (node *stride1, node *stride2, node **i_stride1, node **i_strid
 /******************************************************************************
  *
  * function:
- *   node *SetSegs(node *pragma, node *cubes, int dims)
+ *   node *SetSegs( node *pragma, node *cubes, int dims)
  *
  * description:
  *   returns chain of segments (based on the calculated cubes 'cubes')
@@ -2104,8 +2127,8 @@ SetSegs (node *pragma, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *NewBoundsStride(node *stride, int dim,
- *                         int new_bound1, int new_bound2)
+ *   node *NewBoundsStride( node *stride, int dim,
+ *                          int new_bound1, int new_bound2)
  *
  * description:
  *   returns modified 'stride':
@@ -2204,8 +2227,8 @@ NewBoundsStride (node *stride, int dim, int new_bound1, int new_bound2)
 /******************************************************************************
  *
  * function:
- *   void SplitStride(node *stride1, node *stride2
- *                    node **s_stride1, node **s_stride2)
+ *   void SplitStride( node *stride1, node *stride2
+ *                     node **s_stride1, node **s_stride2)
  *
  * description:
  *   returns in 's_stride1', 's_stride2' the splitted stride 'stride1',
@@ -2270,7 +2293,7 @@ SplitStride (node *stride1, node *stride2, node **s_stride1, node **s_stride2)
 /******************************************************************************
  *
  * function:
- *   node *SplitWL(node *strides)
+ *   node *SplitWL( node *strides)
  *
  * description:
  *   returns the splitted stride-tree 'strides'.
@@ -2354,7 +2377,7 @@ SplitWL (node *strides)
 /******************************************************************************
  *
  * function:
- *   node *BlockStride(node *stride, long *bv)
+ *   node *BlockStride( node *stride, long *bv)
  *
  * description:
  *   returns 'stride' with corrected bounds, blocking levels and
@@ -2413,7 +2436,7 @@ BlockStride (node *stride, long *bv)
 /******************************************************************************
  *
  * function:
- *   node *BlockWL(node *stride, int dims, long *bv, int unroll)
+ *   node *BlockWL( node *stride, int dims, long *bv, int unroll)
  *
  * description:
  *   returns with blocking-vector 'bv' blocked 'stride'.
@@ -2576,7 +2599,7 @@ BlockWL (node *stride, int dims, long *bv, int unroll)
 /******************************************************************************
  *
  * function:
- *   node *NewStepGrids(node *grids, int step, int new_step, int offset)
+ *   node *NewStepGrids( node *grids, int step, int new_step, int offset)
  *
  * description:
  *   returns the modified 'grids' chain:
@@ -2642,8 +2665,8 @@ NewStepGrids (node *grids, int step, int new_step, int offset)
 /******************************************************************************
  *
  * function:
- *   node *IntersectGrid(node *grid1, node *grid2, int step,
- *                       node **i_grid1, node **i_grid2)
+ *   node *IntersectGrid( node *grid1, node *grid2, int step,
+ *                        node **i_grid1, node **i_grid2)
  *
  * description:
  *   returns in 'i_grid1', 'i_grid2' the intersection of 'grid1' and 'grid2'.
@@ -2693,7 +2716,7 @@ IntersectGrid (node *grid1, node *grid2, int step, node **i_grid1, node **i_grid
 /******************************************************************************
  *
  * function:
- *   node *MergeWL(node *nodes)
+ *   node *MergeWL( node *nodes)
  *
  * description:
  *   returns the merged chain 'nodes'.
@@ -2748,7 +2771,7 @@ MergeWL (node *nodes)
                 /* the remaining block node is useless now */
                 WLNODE_NEXTDIM (WLNODE_NEXT (node1)) = NULL;
                 WLNODE_NEXT (node1) = FreeNode (WLNODE_NEXT (node1));
-                /* 'WLNODE_NEXT(node1)' points to his successor now */
+                /* 'WLNODE_NEXT( node1)' points to his successor now */
 
                 /* merge next dimension */
                 WLNODE_NEXTDIM (node1) = MergeWL (WLNODE_NEXTDIM (node1));
@@ -2798,7 +2821,7 @@ MergeWL (node *nodes)
                 /* the remaining block node is useless now */
                 WLSTRIDE_CONTENTS (WLSTRIDE_NEXT (node1)) = NULL;
                 WLSTRIDE_NEXT (node1) = FreeNode (WLSTRIDE_NEXT (node1));
-                /* 'WLSTRIDE_NEXT(node1)' points to his successor now */
+                /* 'WLSTRIDE_NEXT( node1)' points to his successor now */
             }
 
             /*
@@ -2876,7 +2899,7 @@ MergeWL (node *nodes)
 /******************************************************************************
  *
  * function:
- *   int IsEqualWLnodes(node *tree1, node *tree2)
+ *   int IsEqualWLnodes( node *tree1, node *tree2)
  *
  * description:
  *   returns 1 if the N_WL...-trees 'tree1' and 'tree2' are equal.
@@ -3000,7 +3023,7 @@ IsEqualWLnodes (node *tree1, node *tree2)
 /******************************************************************************
  *
  * function:
- *   node *OptimizeWL(node *nodes)
+ *   node *OptimizeWL( node *nodes)
  *
  * description:
  *   returns the optimized N_WL...-tree 'nodes'.
@@ -3140,7 +3163,7 @@ OptimizeWL (node *nodes)
 /******************************************************************************
  *
  * function:
- *   int GetMaxUnroll(node *nodes, int unroll, int dim)
+ *   int GetMaxUnroll( node *nodes, int unroll, int dim)
  *
  * description:
  *   returns the maximally number elements that must be unrolled
@@ -3207,7 +3230,7 @@ GetMaxUnroll (node *nodes, int unroll, int dim)
 /******************************************************************************
  *
  * function:
- *   node *FitWL(node *nodes, int curr_dim, int dims)
+ *   node *FitWL( node *nodes, int curr_dim, int dims)
  *
  * description:
  *   returns the fitted N_WL...-tree 'nodes'.
@@ -3312,7 +3335,7 @@ FitWL (node *nodes, int curr_dim, int dims)
 /******************************************************************************
  *
  * function:
- *   node *NormalizeWLnodes(node *nodes, int *width)
+ *   node *NormalizeWLnodes( node *nodes, int *width)
  *
  * description:
  *   returns the normalized N_WL...-tree 'nodes'.
@@ -3411,7 +3434,7 @@ NormalizeWLnodes (node *nodes, int *width)
 /******************************************************************************
  *
  * function:
- *   node *NormalizeWL(node *nodes, int dims)
+ *   node *NormalizeWL( node *nodes, int dims)
  *
  * description:
  *   returns the normalized N_WL...-tree 'nodes'.
@@ -3445,7 +3468,7 @@ NormalizeWL (node *nodes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *ComputeCubes(node *strides)
+ *   node *ComputeCubes( node *strides)
  *
  * description:
  *   returns the set of cubes as a N_WLstride-chain
@@ -3605,7 +3628,7 @@ ComputeCubes (node *strides)
 /******************************************************************************
  *
  * function:
- *   node *PrecNwith(node *arg_node, node *arg_info)
+ *   node *PrecNwith( node *arg_node, node *arg_info)
  *
  * description:
  *   precompilation of new with-loop (N_Nwith-node)
@@ -3688,9 +3711,7 @@ PrecNwith (node *arg_node, node *arg_info)
     /*
      * get number of dims of with-loop index range
      */
-    dims
-      = SHPSEG_SHAPE (VARDEC_SHPSEG (IDS_VARDEC (NWITHID_VEC (NWITH2_WITHID (new_node)))),
-                      0);
+    dims = IDS_SHAPE (NWITHID_VEC (NWITH2_WITHID (new_node)), 0);
 
     DBUG_EXECUTE ("WLprec", NOTE (("step 0: converting parts to strides\n")));
     strides = Parts2Strides (NWITH_PART (arg_node), dims);
@@ -3802,7 +3823,7 @@ PrecNwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PrecNcode(node *arg_node, node *arg_info)
+ *   node *PrecNcode( node *arg_node, node *arg_info)
  *
  * description:
  *   precompilation of Ncode-nodes:
