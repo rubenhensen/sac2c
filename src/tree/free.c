@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2005/01/11 16:04:43  mwe
+ * FUNGROUP_REFCOUNTER added
+ *
  * Revision 3.76  2005/01/11 15:55:07  mwe
  * support for N_fungroup added (remove references to ZombieFuns)
  *
@@ -422,6 +425,9 @@ FREEfreeZombie (node *fundef)
                 FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (fundef)) = LINKLIST_NEXT (p1);
                 LINKLIST_NEXT (p1) = NULL;
                 p1 = FREEdoFreeNode (p1);
+
+                /* decrement reference counter */
+                FUNGROUP_REFCOUNTER (FUNDEF_FUNGROUP (fundef)) -= 1;
             } else {
                 /* reference is somewhere inside the linklist */
                 p2 = p1;
@@ -433,6 +439,9 @@ FREEfreeZombie (node *fundef)
                         LINKLIST_NEXT (p2) = LINKLIST_NEXT (p1);
                         LINKLIST_NEXT (p1) = NULL;
                         p1 = FREEdoFreeNode (p1);
+
+                        /* decrement reference counter */
+                        FUNGROUP_REFCOUNTER (FUNDEF_FUNGROUP (fundef)) -= 1;
                         break;
                     }
                     p2 = p1;
