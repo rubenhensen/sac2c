@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.28  1995/09/27 13:04:32  cg
+# Revision 1.29  1995/10/08 11:29:45  sbs
+# make deps done
+#
+# Revision 1.28  1995/09/27  13:04:32  cg
 # included tree_basic.c and tree_compound.c
 #
 # Revision 1.27  1995/07/24  11:56:01  asi
@@ -164,7 +167,7 @@ main.o: ../flatten/flatten.h ../print/print.h ../typecheck/typecheck.h
 main.o: ../optimize/optimize.h ../modules/filemgr.h ../modules/import.h
 main.o: ../refcount/refcount.h ../scanparse/scnprs.h ../scanparse/y.tab.h
 main.o: ../compile/trace.h ../compile/compile.h ../psi-opt/psi-opt.h
-main.o: ../modules/sib.h
+main.o: ../modules/sib.h ../modules/implicittypes.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
@@ -182,7 +185,8 @@ traverse.o: ../optimize/WorkReduction.h ../optimize/LoopInvariantRemoval.h
 traverse.o: ../modules/import.h ../refcount/refcount.h ../compile/compile.h
 traverse.o: ../optimize/DupTree.h ../optimize/Inline.h ../optimize/Unroll.h
 traverse.o: ../optimize/Unswitch.h ../psi-opt/ArrayElimination.h
-traverse.o: ../psi-opt/index.h ../modules/sib.h traverse.h node_info.mac
+traverse.o: ../psi-opt/index.h ../modules/sib.h ../modules/implicittypes.h
+traverse.o: traverse.h node_info.mac
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 tree.o: tree.h types.h tree_basic.h tree_compound.h ../../inc/dbug.h

@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.9  1995/10/05 16:14:11  cg
+# Revision 1.10  1995/10/08 11:29:54  sbs
+# make deps done
+#
+# Revision 1.9  1995/10/05  16:14:11  cg
 # now implicittypes.o will be removed by make clean
 #
 # Revision 1.8  1995/10/05  16:04:54  cg
@@ -60,9 +63,11 @@ clean:
 filemgr.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
 filemgr.o: /usr/include/string.h ../../inc/dbug.h /usr/include/stdio.h
 filemgr.o: filemgr.h
-implicittypes.o: ../global/types.h ../global/tree_basic.h
-implicittypes.o: ../global/tree_compound.h ../global/free.h ../global/Error.h
+implicittypes.o: /usr/include/malloc.h ../global/types.h
+implicittypes.o: ../global/tree_basic.h ../global/tree_compound.h
+implicittypes.o: ../print/convert.h ../global/free.h ../global/Error.h
 implicittypes.o: /usr/include/stdio.h ../../inc/dbug.h ../global/my_debug.h
+implicittypes.o: ../global/traverse.h
 import.o: /usr/include/malloc.h /usr/include/string.h
 import.o: /usr/include/sys/stdtypes.h /usr/include/limits.h ../global/tree.h
 import.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h

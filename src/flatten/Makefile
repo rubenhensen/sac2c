@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.6  1995/05/15 13:38:40  asi
+# Revision 1.7  1995/10/08 11:29:44  sbs
+# make deps done
+#
+# Revision 1.6  1995/05/15  13:38:40  asi
 # make deps done
 #
 # Revision 1.5  1995/04/04  11:03:44  sbs
@@ -33,8 +36,7 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 flatten.o: /usr/include/stdio.h /usr/include/stdlib.h
-flatten.o: /usr/include/sys/stdtypes.h ../global/tree.h
-flatten.o: ../global/type_info.mac ../global/node_info.mac
-flatten.o: ../global/prf_node_info.mac ../global/Error.h ../../inc/dbug.h
-flatten.o: ../global/my_debug.h ../global/traverse.h ../global/internal_lib.h
-flatten.o: ../global/access_macros.h
+flatten.o: /usr/include/sys/stdtypes.h ../global/tree.h ../global/types.h
+flatten.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+flatten.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
+flatten.o: ../global/internal_lib.h ../global/access_macros.h

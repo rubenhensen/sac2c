@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.2  1995/03/28 12:09:23  hw
+# Revision 1.3  1995/10/08 11:29:58  sbs
+# make deps done
+#
+# Revision 1.2  1995/03/28  12:09:23  hw
 # make deps done
 #
 # Revision 1.1  1995/03/09  16:17:01  hw
@@ -28,7 +31,7 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 refcount.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
-refcount.o: ../global/tree.h ../global/type_info.mac ../global/node_info.mac
-refcount.o: ../global/prf_node_info.mac ../global/my_debug.h ../../inc/dbug.h
+refcount.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
+refcount.o: ../global/tree_compound.h ../global/my_debug.h ../../inc/dbug.h
 refcount.o: /usr/include/stdio.h ../typecheck/typecheck.h
 refcount.o: ../global/traverse.h ../global/internal_lib.h refcount.h

@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.11  1995/05/26 12:12:23  asi
+# Revision 1.12  1995/10/08 11:29:46  sbs
+# make deps done
+#
+# Revision 1.11  1995/05/26  12:12:23  asi
 # make deps done
 #
 # Revision 1.10  1995/05/15  13:38:44  asi
@@ -48,12 +51,13 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 convert.o: /usr/include/string.h /usr/include/sys/stdtypes.h
-convert.o: /usr/include/stdlib.h ../global/tree.h ../global/type_info.mac
-convert.o: ../global/node_info.mac ../global/prf_node_info.mac
-convert.o: ../../inc/dbug.h /usr/include/stdio.h convert.h
+convert.o: /usr/include/stdlib.h ../global/tree.h ../global/types.h
+convert.o: ../global/tree_basic.h ../global/tree_compound.h ../../inc/dbug.h
+convert.o: /usr/include/stdio.h convert.h ../global/type_info.mac
 print.o: /usr/include/stdio.h /usr/include/stdlib.h
 print.o: /usr/include/sys/stdtypes.h /usr/include/string.h print.h
-print.o: ../global/tree.h ../global/type_info.mac ../global/node_info.mac
-print.o: ../global/prf_node_info.mac ../global/my_debug.h ../../inc/dbug.h
+print.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
+print.o: ../global/tree_compound.h ../global/my_debug.h ../../inc/dbug.h
 print.o: ../global/traverse.h ../global/Error.h convert.h
 print.o: ../optimize/optimize.h ../compile/trace.h ../compile/icm.data
+print.o: ../global/prf_node_info.mac

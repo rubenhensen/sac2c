@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.10  1995/06/30 11:28:05  hw
+# Revision 1.11  1995/10/08 11:29:48  sbs
+# make deps done
+#
+# Revision 1.10  1995/06/30  11:28:05  hw
 # parameter( -n) to call of lex inserted
 #
 # Revision 1.9  1995/05/15  13:38:46  asi
@@ -61,11 +64,10 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 lex.yy.o: /usr/include/stdio.h /usr/include/stdlib.h
-lex.yy.o: /usr/include/sys/stdtypes.h ../global/tree.h
-lex.yy.o: ../global/type_info.mac ../global/node_info.mac
-lex.yy.o: ../global/prf_node_info.mac y.tab.h
+lex.yy.o: /usr/include/sys/stdtypes.h ../global/tree.h ../global/types.h
+lex.yy.o: ../global/tree_basic.h ../global/tree_compound.h y.tab.h
 y.tab.o: /usr/include/stdio.h /usr/include/stdlib.h
 y.tab.o: /usr/include/sys/stdtypes.h /usr/include/memory.h ../../inc/dbug.h
-y.tab.o: ../global/tree.h ../global/type_info.mac ../global/node_info.mac
-y.tab.o: ../global/prf_node_info.mac ../global/my_debug.h
+y.tab.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
+y.tab.o: ../global/tree_compound.h ../global/my_debug.h
 y.tab.o: ../global/internal_lib.h

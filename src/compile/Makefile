@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.13  1995/07/07 15:47:53  asi
+# Revision 1.14  1995/10/08 11:29:56  sbs
+# make deps done
+#
+# Revision 1.13  1995/07/07  15:47:53  asi
 # make deps done
 #
 # Revision 1.12  1995/05/26  12:12:30  asi
@@ -70,15 +73,15 @@ clean:
 
 compile.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
 compile.o: /usr/include/string.h ../print/print.h ../global/tree.h
-compile.o: ../global/type_info.mac ../global/node_info.mac
-compile.o: ../global/prf_node_info.mac ../../inc/dbug.h /usr/include/stdio.h
-compile.o: ../global/my_debug.h ../global/internal_lib.h
-compile.o: ../global/access_macros.h ../global/Error.h ../global/traverse.h
-compile.o: compile.h ../print/convert.h ../refcount/refcount.h
-compile.o: ../typecheck/typecheck.h ../global/free.h
+compile.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
+compile.o: ../../inc/dbug.h /usr/include/stdio.h ../global/my_debug.h
+compile.o: ../global/internal_lib.h ../global/access_macros.h
+compile.o: ../global/Error.h ../global/traverse.h compile.h
+compile.o: ../print/convert.h ../refcount/refcount.h ../typecheck/typecheck.h
+compile.o: ../global/free.h
 icm2c.o: /usr/include/malloc.h /usr/include/stdio.h ../print/print.h
-icm2c.o: ../global/tree.h ../global/type_info.mac ../global/node_info.mac
-icm2c.o: ../global/prf_node_info.mac ../../inc/dbug.h ../global/my_debug.h
+icm2c.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
+icm2c.o: ../global/tree_compound.h ../../inc/dbug.h ../global/my_debug.h
 icm2c.o: ../../inc/main.h trace.h icm_decl.c icm.data icm_args.c
 icm2c.o: icm_comment.c icm_trace.c
 icm_args.o: icm.data
