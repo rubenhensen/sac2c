@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/24 14:33:21  khf
+ * SacDevCamp04: Compiles
+ *
  * Revision 1.4  2004/10/20 08:10:29  khf
  * added some DBUG_PRINTs
  *
@@ -41,15 +44,14 @@
  *
  */
 
-#define NEW_INFO
-
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "types.h"
 #include "new_types.h"
 #include "tree_basic.h"
+#include "node_basic.h"
 #include "tree_compound.h"
+#include "internal_lib.h"
 #include "free.h"
 #include "DupTree.h"
 #include "Error.h"
@@ -81,7 +83,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_TDEPEND_INSIDEWL (result) = FALSE;
     INFO_TDEPEND_FUSIONABLE_WL (result) = NULL;
@@ -94,7 +96,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -130,25 +132,25 @@ TDEPENDassign (node *arg_node, info *arg_info)
          * the next assignment
          */
 
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
         if (ASSIGN_NEXT (arg_node) != NULL) {
-            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
         }
-    } else if (NODE_TYPE (ASSIGN_RHS (arg_node)) == N_Nwith) {
+    } else if (NODE_TYPE (ASSIGN_RHS (arg_node)) == N_with) {
         /*
          * We are not inside a WL but we traverse in one, so we had to
          * set INFO_TDEPEND_INSIDEWL( arg_info) TRUE and traverse into
          * instruction
          */
         INFO_TDEPEND_INSIDEWL (arg_info) = TRUE;
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     } else {
         /*
          * We are not inside a WL and we traverse in none, so we only had to
          * traverse in the instruction.
          */
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -190,7 +192,7 @@ TDEPENDid (node *arg_node, info *arg_info)
             /* stack INFO_WLFS_INSIDEWL( arg_info) */
             insidewl_tmp = INFO_TDEPEND_INSIDEWL (arg_info);
             INFO_TDEPEND_INSIDEWL (arg_info) = FALSE;
-            assignn = Trav (assignn, arg_info);
+            assignn = TRAVdo (assignn, arg_info);
             INFO_TDEPEND_INSIDEWL (arg_info) = insidewl_tmp;
         }
     }
@@ -205,9 +207,9 @@ TDEPENDid (node *arg_node, info *arg_info)
  *   @brief to find dependent assignments we had to traverse
  *          into N_CODE and N_WITHOP.
  *
- *   @param  node *arg_node:  N_Nwith
+ *   @param  node *arg_node:  N_with
  *           info *arg_info:  N_info
- *   @return node *        :  N_Nwith
+ *   @return node *        :  N_with
  ******************************************************************************/
 
 node *
@@ -215,29 +217,28 @@ TDEPENDwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TDEPENDwith");
 
-    DBUG_PRINT ("WLFS", ("reaching with node!"));
     /*
      * Traverse into parts
      */
-    DBUG_ASSERT ((NWITH_PART (arg_node) != NULL), "no Part is available!");
-    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    DBUG_ASSERT ((WITH_PART (arg_node) != NULL), "no Part is available!");
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
     /*
      * Traverse into codes
      */
-    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     /*
      * Traverse into withop
      */
-    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *TagDependencies( node *arg_node, node *fusionable_wl)
+ * @fn node *TDEPENDdoTagDependencies( node *arg_node, node *fusionable_wl)
  *
  *   @brief  Starting point for traversal TagDependencies.
  *
@@ -247,34 +248,31 @@ TDEPENDwith (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-TagDependencies (node *with, node *fusionable_wl)
+TDEPENDdoTagDependencies (node *with, node *fusionable_wl)
 {
-    funtab *tmp_tab;
     info *arg_info;
 
-    DBUG_ENTER ("TagDependencies");
+    DBUG_ENTER ("TDEPENDdoTagDependencies");
 
-    DBUG_ASSERT ((NODE_TYPE (with) == N_Nwith),
-                 "TagDependencies not started with N_Nwith node");
+    DBUG_ASSERT ((NODE_TYPE (with) == N_with),
+                 "TDEPENDdoTagDependencies not started with N_with node");
 
     DBUG_ASSERT ((fusionable_wl != NULL), "no fusionable withloop found");
 
-    DBUG_PRINT ("WLFS", ("starting TagDependencies"));
+    DBUG_PRINT ("WLFS", ("starting TDEPENDdoTagDependencies"));
 
     arg_info = MakeInfo ();
-
-    tmp_tab = act_tab;
-    act_tab = tdepend_tab;
 
     INFO_TDEPEND_FUSIONABLE_WL (arg_info) = fusionable_wl;
     INFO_TDEPEND_INSIDEWL (arg_info) = TRUE;
 
-    with = Trav (with, arg_info);
+    TRAVpush (TR_tdepend);
+    with = TRAVdo (with, arg_info);
+    TRAVpop ();
 
     DBUG_PRINT ("WLFS", ("tagging of dependencies complete"));
 
     arg_info = FreeInfo (arg_info);
-    act_tab = tmp_tab;
 
     DBUG_RETURN (with);
 }
