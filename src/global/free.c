@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  1998/03/16 00:06:57  dkr
+ * added FreeWLseg, FreeWLblock, FreeWLublock, FreeWLproj, FreeWLgrid
+ *
  * Revision 1.32  1998/03/06 13:19:47  srs
  * added free node->info2 of N_Nwith node
  *
@@ -146,13 +149,6 @@
  *  impossible to decide whether it is a private heap location or
  *  a heap location shared with other nodes.
  *
- *  To guarantee the compatibility with old code, 'nnode' is used
- *  temporarily in some free functions for node structures,
- *  i.e. the next node in chained lists is only traversed if there
- *  is one and if 'nnode' allows it concerning its old usage.
- *
- *
- *
  */
 
 /*--------------------------------------------------------------------------*/
@@ -175,19 +171,8 @@
         }                                                                                \
     }
 
-#ifndef NEWTREE
-
-#define FREECONT(node)                                                                   \
-    ((arg_info != NULL) && (node != NULL) && (arg_node->nnode == nnode_default))         \
-      ? Trav (node, arg_info)                                                            \
-      : node
-
-#else /* NEWTREE */
-
 #define FREECONT(node)                                                                   \
     ((arg_info != NULL) && (node != NULL)) ? Trav (node, arg_info) : node
-
-#endif /* NEWTREE */
 
 /*--------------------------------------------------------------------------*/
 /*  Free-functions for non-node structures                                  */
@@ -242,6 +227,7 @@ FreeOneTypes (types *fr)
          */
         FREE (tmp);
     }
+
     DBUG_RETURN (fr);
 }
 
@@ -498,10 +484,12 @@ FreeModul (node *arg_node, node *arg_info)
     FREETRAV (MODUL_DECL (arg_node));
     FREETRAV (MODUL_STORE_IMPORTS (arg_node));
 
-    /* srs: module_name __MAIN is allocated statically in sac.y
-       the string of the module name is potentially shared.
-       FREE(MODUL_NAME(arg_node));
-       */
+/* srs: module_name __MAIN is allocated statically in sac.y
+ *      the string of the module name is potentially shared.
+ */
+#if 0
+  FREE(MODUL_NAME(arg_node));
+#endif
 
     DBUG_PRINT ("FREE", ("Removing N_modul node ..."));
 
@@ -581,9 +569,6 @@ node *
 FreeImplist (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
-#ifndef NEWTREE
-    int nnode_default = arg_node->nnode;
-#endif
 
     DBUG_ENTER ("FreeImplist");
 
@@ -630,9 +615,6 @@ node *
 FreeTypedef (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
-#ifndef NEWTREE
-    int nnode_default = arg_node->nnode;
-#endif
 
     DBUG_ENTER ("FreeTypedef");
 
@@ -657,9 +639,6 @@ node *
 FreeObjdef (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
-#ifndef NEWTREE
-    int nnode_default = arg_node->nnode;
-#endif
 
     DBUG_ENTER ("FreeObjdef");
 
@@ -674,7 +653,9 @@ FreeObjdef (node *arg_node, node *arg_info)
     FREE (OBJDEF_NAME (arg_node));
     FREE (OBJDEF_VARNAME (arg_node));
     FreeOneTypes (OBJDEF_TYPE (arg_node));
-    /*  FreeNodelist(OBJDEF_NEEDOBJS(arg_node));  */
+#if 0
+  FreeNodelist(OBJDEF_NEEDOBJS(arg_node));
+#endif
 
     DBUG_PRINT ("FREE", ("Removing N_objdef node ..."));
 
@@ -687,9 +668,6 @@ node *
 FreeFundef (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
-#ifndef NEWTREE
-    int nnode_default = arg_node->nnode;
-#endif
 
     DBUG_ENTER ("FreeFundef");
 
@@ -728,9 +706,6 @@ node *
 FreeArg (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
-#ifndef NEWTREE
-    int nnode_default = 1;
-#endif
 
     DBUG_ENTER ("FreeArg");
 
@@ -774,9 +749,6 @@ node *
 FreeVardec (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
-#ifndef NEWTREE
-    int nnode_default = 1;
-#endif
 
     DBUG_ENTER ("FreeVardec");
 
@@ -799,9 +771,6 @@ node *
 FreeAssign (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
-#ifndef NEWTREE
-    int nnode_default = 2;
-#endif
 
     DBUG_ENTER ("FreeAssign");
 
@@ -921,10 +890,10 @@ FreeDo (node *arg_node, node *arg_info)
      * N_info does not fit into virtual syntax tree.
      */
 
-    if (arg_node->node[2] != NULL) {
+    if (DO_VARINFO (arg_node) != NULL) {
         FREETRAV (DO_USEVARS (arg_node));
         FREETRAV (DO_DEFVARS (arg_node));
-        FREE (arg_node->node[2]);
+        FREE (DO_VARINFO (arg_node));
     }
 
     FREEMASK (DO_MASK);
@@ -952,10 +921,10 @@ FreeWhile (node *arg_node, node *arg_info)
      * N_info does not fit into virtual syntax tree.
      */
 
-    if (arg_node->node[2] != NULL) {
+    if (WHILE_VARINFO (arg_node) != NULL) {
         FREETRAV (WHILE_USEVARS (arg_node));
         FREETRAV (WHILE_DEFVARS (arg_node));
-        FREE (arg_node->node[2]);
+        FREE (WHILE_VARINFO (arg_node));
     }
 
     FREEMASK (WHILE_MASK);
@@ -1110,9 +1079,6 @@ node *
 FreeExprs (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
-#ifndef NEWTREE
-    int nnode_default = 2;
-#endif
 
     DBUG_ENTER ("FreeExprs");
 
@@ -1152,9 +1118,6 @@ node *
 FreeVinfo (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
-#ifndef NEWTREE
-    int nnode_default = 1;
-#endif
 
     DBUG_ENTER ("FreeVinfo");
 
@@ -1378,9 +1341,6 @@ node *
 FreeIcm (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
-#ifndef NEWTREE
-    int nnode_default = 2;
-#endif
 
     DBUG_ENTER ("FreeIcm");
 
@@ -1388,12 +1348,15 @@ FreeIcm (node *arg_node, node *arg_info)
 
     tmp = FREECONT (ICM_NEXT (arg_node));
 
-    /* brute force try!
-      FREETRAV(ICM_ARGS(arg_node));
-    */
-    /* Since the name in most (all?) cases is static, please no freeing!
-      FREE(ICM_NAME(arg_node));
-     */
+/* brute force try! */
+#if 0
+  FREETRAV(ICM_ARGS(arg_node));
+#endif
+
+/* Since the name in most (all?) cases is static, please no freeing! */
+#if 0
+  FREE(ICM_NAME(arg_node));
+#endif
 
     DBUG_PRINT ("FREE", ("Removing N_icm node ..."));
 
@@ -1450,6 +1413,8 @@ FreeInfo (node *arg_node, node *arg_info)
 node *
 FreeNWith (node *arg_node, node *arg_info)
 {
+    node *tmp = NULL;
+
     DBUG_ENTER ("FreeNWith");
     DBUG_PRINT ("FREE", ("Removing N_with node ..."));
 
@@ -1457,27 +1422,25 @@ FreeNWith (node *arg_node, node *arg_info)
     FREETRAV (NWITH_CODE (arg_node));
     FREETRAV (NWITH_WITHOP (arg_node));
     FREE (arg_node->info2);
+
     FREE (arg_node);
 
-    DBUG_RETURN ((node *)NULL);
+    DBUG_RETURN (tmp);
 }
 /*--------------------------------------------------------------------------*/
 
 node *
 FreeNPart (node *arg_node, node *arg_info)
 {
-#ifndef NEWTREE
-    int nnode_default = arg_node->nnode;
-#endif
-    node *tmp;
+    node *tmp = NULL;
 
     DBUG_ENTER ("FreeNPart");
     DBUG_PRINT ("FREE", ("Removing N_NPart node ..."));
 
-    tmp = FREECONT (NPART_NEXT (arg_node));
-    FREETRAV (NPART_NEXT (arg_node));
     FREETRAV (NPART_WITHID (arg_node));
     FREETRAV (NPART_GEN (arg_node));
+    tmp = FREECONT (NPART_NEXT (arg_node));
+
     FREE (arg_node);
 
     DBUG_RETURN (tmp);
@@ -1487,19 +1450,24 @@ FreeNPart (node *arg_node, node *arg_info)
 node *
 FreeNWithID (node *arg_node, node *arg_info)
 {
+    node *tmp = NULL;
+
     DBUG_ENTER ("FreeNWithID");
     DBUG_PRINT ("FREE", ("Removing N_Nwithid node ..."));
 
     FreeAllIds (NWITHID_IDS (arg_node));
+
     FREE (arg_node);
 
-    DBUG_RETURN ((node *)NULL);
+    DBUG_RETURN (tmp);
 }
 /*--------------------------------------------------------------------------*/
 
 node *
 FreeNGenerator (node *arg_node, node *arg_info)
 {
+    node *tmp = NULL;
+
     DBUG_ENTER ("FreeNGenerator");
     DBUG_PRINT ("FREE", ("Removing N_NGenerator node ..."));
 
@@ -1507,22 +1475,25 @@ FreeNGenerator (node *arg_node, node *arg_info)
     FREETRAV (NGEN_BOUND2 (arg_node));
     FREETRAV (NGEN_STEP (arg_node));
     FREETRAV (NGEN_WIDTH (arg_node));
+
     FREE (arg_node);
 
-    DBUG_RETURN ((node *)NULL);
+    DBUG_RETURN (tmp);
 }
 /*--------------------------------------------------------------------------*/
 
 node *
 FreeNWithOp (node *arg_node, node *arg_info)
 {
+    node *tmp = NULL;
+
     DBUG_ENTER ("FreeNWithOp");
     DBUG_PRINT ("FREE", ("Removing N_Nwithop node ..."));
 
     FREETRAV (NWITHOP_NEUTRAL (arg_node)); /* removes _SHAPE or _ARRAY as well */
 
-    /* if WithOp is WO_foldfun then the function function name has to be
-       set free. The modul_name is shared. */
+    /* if WithOp is WO_foldfun the function name has to be freed.
+       The modul_name is shared. */
     if (WO_foldfun == NWITHOP_TYPE (arg_node))
         FREE (NWITHOP_FUN (arg_node));
 
@@ -1531,16 +1502,13 @@ FreeNWithOp (node *arg_node, node *arg_info)
 
     FREE (arg_node);
 
-    DBUG_RETURN ((node *)NULL);
+    DBUG_RETURN (tmp);
 }
 /*--------------------------------------------------------------------------*/
 
 node *
 FreeNCode (node *arg_node, node *arg_info)
 {
-#ifndef NEWTREE
-    int nnode_default = arg_node->nnode;
-#endif
     node *tmp;
 
     DBUG_ENTER ("FreeNCode");
@@ -1549,6 +1517,113 @@ FreeNCode (node *arg_node, node *arg_info)
     tmp = FREECONT (NCODE_NEXT (arg_node));
     FREETRAV (NCODE_CBLOCK (arg_node));
     FREETRAV (NCODE_CEXPR (arg_node));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeNwith2 (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeNWith2");
+    DBUG_PRINT ("FREE", ("Removing N_Nwith2 node ..."));
+
+    FREETRAV (NWITH2_WITHID (arg_node));
+    FREETRAV (NWITH2_SEG (arg_node));
+    FREETRAV (NWITH2_CODE (arg_node));
+    FREETRAV (NWITH2_WITHOP (arg_node));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeWLseg (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeWLseg");
+    DBUG_PRINT ("FREE", ("Removing N_WLseg node ..."));
+
+    FREETRAV (WLSEG_INNER (arg_node));
+    tmp = FREECONT (WLSEG_NEXT (arg_node));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeWLblock (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeWLblock");
+    DBUG_PRINT ("FREE", ("Removing N_WLblock node ..."));
+
+    FREETRAV (WLBLOCK_NEXTDIM (arg_node));
+    FREETRAV (WLBLOCK_INNER (arg_node));
+    tmp = FREECONT (WLBLOCK_NEXT (arg_node));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeWLublock (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeWLublock");
+    DBUG_PRINT ("FREE", ("Removing N_WLublock node ..."));
+
+    FREETRAV (WLUBLOCK_NEXTDIM (arg_node));
+    FREETRAV (WLUBLOCK_INNER (arg_node));
+    tmp = FREECONT (WLUBLOCK_NEXT (arg_node));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeWLproj (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeWLproj");
+    DBUG_PRINT ("FREE", ("Removing N_WLproj node ..."));
+
+    FREETRAV (WLPROJ_INNER (arg_node));
+    tmp = FREECONT (WLPROJ_NEXT (arg_node));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeWLgrid (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeWLgrid");
+    DBUG_PRINT ("FREE", ("Removing N_WLgrid node ..."));
+
+    FREETRAV (WLGRID_NEXTDIM (arg_node));
+    FREETRAV (WLGRID_CODE (arg_node));
+    tmp = FREECONT (WLGRID_NEXT (arg_node));
 
     FREE (arg_node);
 
