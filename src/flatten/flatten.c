@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.42  1996/01/26 16:28:54  hw
+ * Revision 1.43  1996/09/11 06:10:04  cg
+ * Now, arrays as arguments to psi and modarray are abstracted.
+ * This is necessary to overload these functiond with user-defined ones.
+ *
+ * Revision 1.42  1996/01/26  16:28:54  hw
  * bug fixed in FltnExprs (exprs that contain casts will be flattend in the
  * right way now
  *
@@ -1103,6 +1107,46 @@ FltnAp (node *arg_node, node *arg_info)
     if (NULL != arg_node->node[0]) {
         old_tag = arg_info->info.cint;
         arg_info->info.cint = AP;
+        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+        arg_info->info.cint = old_tag;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : FltnPrf
+ *  arguments     : 1) argument node
+ *                  2) last assignment in arg_info->node[0]
+ *  description   : set tag arg_info->info.cint for flatten of arguments
+ *                  call Trav to flatten arguments
+ *                  if function body is not empty
+ *  global vars   :
+ *  internal funs :
+ *  external funs : Trav
+ *  macros        : DBUG, AP, NULL
+ *
+ *  remarks       : calls to psi are treated as user-defined function
+ *                  applications.
+ *                  This is due to abstract array arguments in the case
+ *                  of overloaded primitive functions.
+ *
+ *
+ */
+node *
+FltnPrf (node *arg_node, node *arg_info)
+{
+    int old_tag;
+
+    DBUG_ENTER ("FltnAp");
+
+    if (NULL != arg_node->node[0]) {
+        old_tag = arg_info->info.cint;
+        if ((arg_node->info.prf == F_psi) || (arg_node->info.prf == F_modarray)) {
+            arg_info->info.cint = AP;
+        }
+
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
         arg_info->info.cint = old_tag;
     }
