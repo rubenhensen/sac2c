@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2004/12/09 12:33:10  sbs
+ * when specializing LaCfuns we have to call TUrettypes2alphaAUD as well rather than
+ * TUrettypes2AUD
+ *
  * Revision 1.21  2004/12/09 00:37:35  sbs
  * UpdateVarSignature debugged
  *
@@ -481,7 +485,7 @@ SPEChandleLacFun (node *fundef, node *assign, ntype *args)
         UpdateVarSignature (fun, args);
     }
 
-    FUNDEF_RETS (fun) = TUrettypes2AUD (FUNDEF_RETS (fun));
+    FUNDEF_RETS (fun) = TUrettypes2alphaAUD (FUNDEF_RETS (fun));
 
     DBUG_RETURN (fun);
 }
