@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2003/09/18 15:24:47  sbs
+ * prf applications whose return values are not taken
+ * properly care of by the user result in an appropriate
+ * error message now.
+ *
  * Revision 3.33  2003/09/09 14:56:11  sbs
  * extended type error reporting added
  *
@@ -1017,8 +1022,16 @@ NTClet (node *arg_node, node *arg_info)
 
     if ((NODE_TYPE (LET_EXPR (arg_node)) == N_ap)
         || (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)) {
-        DBUG_ASSERT ((CountIds (lhs) >= TYGetProductSize (rhs_type)),
-                     "fun ap yields more return values  than lhs vars available!");
+        if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
+            DBUG_ASSERT ((CountIds (lhs) >= TYGetProductSize (rhs_type)),
+                         "fun ap yields more return values  than lhs vars available!");
+        } else {
+            if (CountIds (lhs) != 1) {
+                ABORT (linenum,
+                       ("%s yields 1 instead of %d return values",
+                        prf_string[PRF_PRF (LET_EXPR (arg_node))], CountIds (lhs)));
+            }
+        }
         i = 0;
         while (lhs) {
             if (i < TYGetProductSize (rhs_type)) {
