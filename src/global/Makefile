@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.12  1994/12/20 15:44:22  sbs
+# Revision 1.13  1995/01/18 17:28:00  asi
+# make deps
+#
+# Revision 1.12  1994/12/20  15:44:22  sbs
 # tree.c and free.c added.
 #
 # Revision 1.11  1994/12/20  10:26:03  hw
@@ -79,28 +82,39 @@ clean:
 Error.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
 Error.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 Error.o: Error.h ../../inc/dbug.h
-free.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/malloc.h
-free.o: tree.h node_info.mac prf_node_info.mac
+free.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
+free.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
+free.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
+free.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
+free.o: ../../inc/dbug.h tree.h type_info.mac node_info.mac prf_node_info.mac
+free.o: traverse.h
 main.o: ../../inc/main.h ../../inc/dbug.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
-main.o: tree.h node_info.mac prf_node_info.mac Error.h usage.h
+main.o: tree.h type_info.mac node_info.mac prf_node_info.mac Error.h usage.h
 main.o: ../flatten/flatten.h ../print/print.h ../typecheck/typecheck.h
 main.o: ../optimize/optimize.h ../modules/filemgr.h ../modules/import.h
 main.o: ../scanparse/scnprs.h ../scanparse/y.tab.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
-my_debug.o: tree.h node_info.mac prf_node_info.mac ../print/convert.h
+my_debug.o: tree.h type_info.mac node_info.mac prf_node_info.mac
+my_debug.o: ../print/convert.h
 traverse.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 traverse.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
 traverse.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 traverse.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
-traverse.o: tree.h node_info.mac prf_node_info.mac Error.h ../../inc/dbug.h
-traverse.o: my_debug.h ../flatten/flatten.h ../print/print.h
+traverse.o: tree.h type_info.mac node_info.mac prf_node_info.mac Error.h
+traverse.o: ../../inc/dbug.h my_debug.h ../flatten/flatten.h ../print/print.h
 traverse.o: ../typecheck/typecheck.h ../optimize/optimize.h
-traverse.o: ../modules/import.h traverse.h
-tree.o: tree.h node_info.mac prf_node_info.mac
+traverse.o: ../modules/import.h free.h traverse.h
+tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
+tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
+tree.o: tree.h type_info.mac node_info.mac prf_node_info.mac ../../inc/dbug.h
+tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
+tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
+tree.o: my_debug.h ../scanparse/scnprs.h ../scanparse/y.tab.h
+tree.o: ../optimize/optimize.h
 usage.o: usage.h
 usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
