@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  1999/02/19 18:43:21  dkr
+ * usage of efence added (first hack only :((
+ *
  * Revision 1.19  1998/11/19 16:12:36  cg
  * new configuration entry: CCMTLINK
  * specifies libraries to link with for multi-threaded programs only.
@@ -545,6 +548,21 @@ InvokeCC ()
     if (filetype == F_prog) {
         char *linklist = GenLinklist (dependencies);
         FILE *shellscript;
+
+        if (use_efence) {
+            /*
+             * caution: -lefence should be last -l<...> parameter!
+             */
+#if 1
+            /*
+             * ugly workaround so far:
+             *   "/home/sacbase/efence" has been added to SYSTEM_LINKPATH in sac2crc.
+             *   Now sac2c should search for the correct path of 'efence' automaticly.
+             *   How can this be done??
+             */
+            strcat (linklist, " -L/home/sacbase/efence -lefence");
+#endif
+        }
 
         if (gen_cccall) {
             shellscript = WriteOpen (".sac2c");
