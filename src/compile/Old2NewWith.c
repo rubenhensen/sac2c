@@ -315,6 +315,8 @@ O2Nnwith (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("O2Nnwith");
 
+    NPART_NEXT (NWITH_PART (arg_node)) = FreeTree (NPART_NEXT (NWITH_PART (arg_node)));
+
     NWITH_CODE (arg_node) = FreeTree (NWITH_CODE (arg_node));
 
     /* generate a new code table */
