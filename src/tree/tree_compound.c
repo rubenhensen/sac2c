@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/02/22 11:59:06  jhs
+ * Adapted NODE_TEXT.
+ *
  * Revision 1.2  2000/01/25 13:41:15  dkr
  * some rearrangements made
  * all the constvec stuff moved from internal_lib.c
@@ -460,7 +463,7 @@ StoreNeededNode (node *insert, node *fundef, statustype status)
     DBUG_ENTER ("StoreNeededNode");
 
     DBUG_PRINT ("ANA", ("Function '%s` needs '%s` (%s)", ItemName (fundef),
-                        ItemName (insert), mdb_nodetype[NODE_TYPE (insert)]));
+                        ItemName (insert), NODE_TEXT (insert)));
 
     switch (NODE_TYPE (insert)) {
     case N_fundef:
