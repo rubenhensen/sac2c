@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.131  2004/08/19 10:28:22  khf
+ * fixed bug in COMPWLgridx: used wrong cexpr
+ *
  * Revision 3.130  2004/08/16 17:47:12  khf
  * some code brushing done
  *
@@ -6241,7 +6244,7 @@ MakeIcm_WL_INIT_OFFSET (node *arg_node, node *assigns)
     tmp_ids = wlids;
     withop = NWITH2_WITHOP (wlnode);
     if (NWITHOP_NEXT (withop) != NULL) {
-        DBUG_ASSERT ((emm), "withloop fusion enabled while emm is disabled!");
+        DBUG_ASSERT ((emm), "no withloop fusion while emm is disabled!");
     }
 
     while (tmp_ids != NULL) {
@@ -6277,7 +6280,7 @@ MakeIcm_WL_ADJUST_OFFSET (node *arg_node, node *assigns)
     tmp_ids = wlids;
     withop = NWITH2_WITHOP (wlnode);
     if (NWITHOP_NEXT (withop) != NULL) {
-        DBUG_ASSERT ((emm), "withloop fusion enabled while emm is disabled!");
+        DBUG_ASSERT ((emm), "no withloop fusion while emm is disabled!");
     }
 
     while (tmp_ids != NULL) {
@@ -6325,7 +6328,7 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
     tmp_ids = wlids;
     withop = NWITH2_WITHOP (wlnode);
     if (NWITHOP_NEXT (withop) != NULL) {
-        DBUG_ASSERT ((emm), "withloop fusion enabled while emm is disabled!");
+        DBUG_ASSERT ((emm), "no withloop fusion while emm is disabled!");
     }
 
     while (tmp_ids != NULL) {
@@ -7505,7 +7508,7 @@ COMPWLgridx (node *arg_node, info *arg_info)
 
                         icm_name = "WL_ASSIGN__COPY";
                         icm_args
-                          = AppendExprs (MakeExprs (DupId_NT (NWITHOP_ARRAY (wlnode)),
+                          = AppendExprs (MakeExprs (DupId_NT (NWITH2_ARRAY (wlnode)),
                                                     MakeIcmArgs_WL_OP2 (arg_node, wlids)),
                                          MakeExprs (MakeId_Copy (
                                                       GenericFun (0,
@@ -7539,7 +7542,7 @@ COMPWLgridx (node *arg_node, info *arg_info)
                     /*
                      * insert compiled code.
                      */
-                    cexpr = NWITH2_CEXPR (wlnode);
+                    cexpr = WLGRIDX_CEXPR (arg_node);
                     DBUG_ASSERT ((cexpr != NULL), "no code expr found");
 
                     DBUG_ASSERT ((WLGRIDX_CBLOCK (arg_node) != NULL),
