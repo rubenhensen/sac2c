@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.35  2001/11/13 20:02:35  dkr
+# new system OSX_MAC added
+#
 # Revision 3.34  2001/07/18 12:57:45  cg
 # Linking of file tree.o eliminated.
 #
@@ -153,6 +156,7 @@ cc_PROD_FLAGS := -erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4
 #    SOLARIS_SPARC
 #    LINUX_X86
 #    OSF_ALPHA
+#    OSX_MAC
 #
 # to allow easy changes: 
 # do not delete os lines, but "comment" all not used lines
@@ -160,6 +164,7 @@ cc_PROD_FLAGS := -erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4
 OS        := SOLARIS_SPARC
 #OS        := LINUX_X86
 #OS        := OSF_ALPHA
+#OS        := OSX_MAC
 
 #
 # SOLARIS_SPARC specific flags and libraries:
@@ -183,6 +188,12 @@ LINUX_X86_LIBS      := -lfl
 #
 OSF_ALPHA_FLAGS    := -D_OSF_SOURCE 
 OSF_ALPHA_LIBS     := -ll
+
+#
+# UNIX_ALPHA specific flags and libraries:
+#
+OSX_MAC_FLAGS    := 
+OSX_MAC_LIBS     := -lfl
 
 ################################################################################
 #
