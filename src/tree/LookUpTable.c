@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/07/12 13:37:26  dkr
+ * lut->size counts the number of pointer-PAIRS now
+ * Output of PrintLUT modified
+ *
  * Revision 1.5  2000/07/12 12:24:34  dkr
  * DBUG_ASSERT in InsertIntoLUT added
  *
@@ -28,7 +32,7 @@
  * Size of a single hash table.
  * (-> # pairs of data that can be stored in the table.)
  */
-#define LUT_SIZE 5
+#define LUT_SIZE 3
 
 /*
  * number of different hash values (-> tables)
@@ -71,12 +75,14 @@ typedef single_lut_t *lut_t;
 static long
 GetHashKey (void *data)
 {
-    long hash_key = 0;
+    long hash_key;
 
     DBUG_ENTER ("GetHashKey");
 
+    hash_key = 0;
+
     DBUG_ASSERT ((data != NULL), "NULL has no hash key!");
-    DBUG_ASSERT (((hash_key >= 0) && (hash_key < LUT_KEYS)), "hash key out of bounds!");
+    DBUG_ASSERT (((hash_key >= 0) && (hash_key < (LUT_KEYS))), "hash key out of bounds!");
 
     DBUG_RETURN (hash_key);
 }
@@ -100,10 +106,10 @@ GenerateLUT (void)
 
     DBUG_ENTER ("GenerateLUT");
 
-    lut = (lut_t *)MALLOC (LUT_KEYS * sizeof (lut_t));
-    for (k = 0; k < LUT_KEYS; k++) {
+    lut = (lut_t *)MALLOC ((LUT_KEYS) * sizeof (lut_t));
+    for (k = 0; k < (LUT_KEYS); k++) {
         lut[k] = (single_lut_t *)MALLOC (sizeof (single_lut_t));
-        lut[k]->first = (void **)MALLOC ((2 * LUT_SIZE + 1) * sizeof (void *));
+        lut[k]->first = (void **)MALLOC ((2 * (LUT_SIZE) + 1) * sizeof (void *));
         lut[k]->act = lut[k]->first;
         lut[k]->size = 0;
     }
@@ -130,11 +136,11 @@ RemoveLUT (lut_t *lut)
 
     DBUG_ENTER ("RemoveLUT");
 
-    for (k = 0; k < LUT_KEYS; k++) {
+    for (k = 0; k < (LUT_KEYS); k++) {
         DBUG_ASSERT ((lut[k] != NULL), "lut is NULL!");
-        for (i = 0; i <= lut[k]->size / (2 * LUT_SIZE); i++) {
+        for (i = 0; i <= lut[k]->size / (LUT_SIZE); i++) {
             tmp = lut[k]->first;
-            lut[k]->first = lut[k]->first[2 * LUT_SIZE];
+            lut[k]->first = lut[k]->first[2 * (LUT_SIZE)];
             FREE (tmp);
         }
         FREE (lut[k]);
@@ -169,16 +175,16 @@ InsertIntoLUT (lut_t *lut, void *old_entry, void *new_entry)
         k = GetHashKey (old_entry);
         *(lut[k]->act++) = old_entry;
         *(lut[k]->act++) = new_entry;
-        lut[k]->size += 2;
+        lut[k]->size++;
         DBUG_PRINT ("LUT", ("new nodes inserted (hash key %li) -> [ 0x%p , 0x%p ]", k,
                             old_entry, new_entry));
 
-        if (lut[k]->size % (2 * LUT_SIZE) == 0) {
+        if (lut[k]->size % (LUT_SIZE) == 0) {
             /*
              * the last table entry has been used -> allocate a new one.
              */
-            *lut[k]->act = (void **)MALLOC (((2 * LUT_SIZE) + 1) * sizeof (void *));
-            DBUG_PRINT ("LUT", ("new LUT created -> 0x%p", lut[k]->act));
+            *lut[k]->act = (void **)MALLOC ((2 * (LUT_SIZE) + 1) * sizeof (void *));
+            DBUG_PRINT ("LUT", ("new LUT segment created -> 0x%p", lut[k]->act));
             /*
              * move 'act' to the first entry of the new table.
              */
@@ -219,13 +225,13 @@ SearchInLUT (lut_t *lut, void *old_entry)
         if (old_entry != NULL) {
             k = GetHashKey (old_entry);
             tmp = lut[k]->first;
-            for (i = 0; i < lut[k]->size; i += 2) {
+            for (i = 0; i < lut[k]->size; i++) {
                 if (tmp[0] == old_entry) {
                     new_entry = tmp[1];
                     break;
                 }
                 tmp += 2;
-                if ((i + 2) % (2 * LUT_SIZE) == 0) {
+                if ((i + 1) % (LUT_SIZE) == 0) {
                     /*
                      * the last table entry is reached
                      *  -> enter the next table of the chain
@@ -273,14 +279,13 @@ PrintLUT (FILE *handle, lut_t *lut)
     }
 
     if (lut != NULL) {
-        for (k = 0; k < LUT_KEYS; k++) {
+        for (k = 0; k < (LUT_KEYS); k++) {
             fprintf (handle, "*** hash key %li ***\n", k);
             tmp = lut[k]->first;
-            for (i = 0; i < lut[k]->size; i += 2) {
-                fprintf (handle, "%li %li: [ 0x%p ] - [ 0x%p ]\n", i, i + 1, tmp[0],
-                         tmp[1]);
+            for (i = 0; i < lut[k]->size; i++) {
+                fprintf (handle, "%li: [ 0x%p -> 0x%p ]\n", i, tmp[0], tmp[1]);
                 tmp += 2;
-                if ((i + 2) % (2 * LUT_SIZE) == 0) {
+                if ((i + 1) % (LUT_SIZE) == 0) {
                     /*
                      * the last table entry is reached
                      *  -> enter the next table of the chain
