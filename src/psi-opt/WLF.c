@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/10/26 12:54:34  dkr
+ * signature of DupOneIds changed
+ *
  * Revision 2.14  2000/10/24 11:54:25  dkr
  * MakeType renamed into MakeTypes
  *
@@ -1838,7 +1841,7 @@ WLFid (node *arg_node, node *arg_info)
                         IDS_VARDEC (_ids) = ren->vardec;
                     } else {
                         /* keep original name */
-                        _ids = DupOneIds (subst_wl_ids, NULL);
+                        _ids = DupOneIds (subst_wl_ids);
                     }
 
                     letn = MakeLet (MakePrf (F_psi, argsn), _ids);
@@ -1862,7 +1865,7 @@ WLFid (node *arg_node, node *arg_info)
                     IDS_VARDEC (_ids) = ren->vardec;
                 } else {
                     /* keep original name */
-                    _ids = DupOneIds (subst_wl_ids, NULL);
+                    _ids = DupOneIds (subst_wl_ids);
                 }
 
                 letn = MakeLet (DupTree (vectorn), _ids);

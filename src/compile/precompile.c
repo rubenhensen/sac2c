@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.31  2000/10/26 12:49:36  dkr
+ * signature of DupOneIds changed
+ *
  * Revision 2.30  2000/10/24 13:23:33  dkr
  * MakeTypes renamed into MakeTypes1
  *
@@ -282,7 +285,7 @@ AdjustFoldFundef (node *fundef, ids *acc, node *cexpr)
                     MakeExprs (accvar, MakeExprs (DupTree (cexpr), NULL)));
     AP_FUNDEF (funap) = fundef;
 
-    fold_let = MakeLet (funap, DupOneIds (acc, NULL));
+    fold_let = MakeLet (funap, DupOneIds (acc));
 
     /*
      * then we use this dummy let-expression to adjust the fundef
