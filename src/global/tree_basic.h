@@ -1,6 +1,9 @@
-/
+/*
  *
  * $Log$
+ * Revision 2.10  1999/04/20 12:35:01  jhs
+ * Corrected corrupted comment.
+ *
  * Revision 2.9  1999/04/19 17:09:50  jhs
  * New Macro ID_CONSTARRAY added.
  *
@@ -269,7 +272,6 @@ file can be found in tree_basic.c
  */
 
 #define NEWTREE
-
 
 /*
  *   Decalarations of global variables exported by tree_basic.c
