@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.239  2004/11/23 23:01:11  khf
+ * added global.mdb..
+ *
  * Revision 3.238  2004/11/23 12:58:16  ktr
  * invalid storage specifier removed.
  *
@@ -40,7 +43,7 @@
 #define NODE_LINE(n) ((n)->lineno)
 #define NODE_FILE(n) ((n)->src_file)
 
-#define NODE_TEXT(n) (mdb_nodetype[NODE_TYPE (n)])
+#define NODE_TEXT(n) (global.mdb_nodetype[NODE_TYPE (n)])
 
 /*
  *   Non-node-structures
