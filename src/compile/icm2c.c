@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.21  1995/05/24 15:31:22  sbs
+ * Revision 1.22  1995/06/02 11:28:16  hw
+ * - added macros BeginFoldWith & EndFoldWith
+ * - implementation of N_icm's ND_BEGIN_FOLDPRF, ND_BEGIN_FOLDFUN & ND_END_FOLD
+ *   inserted
+ *
+ * Revision 1.21  1995/05/24  15:31:22  sbs
  * trace.h included
  *
  * Revision 1.20  1995/05/24  13:58:31  sbs
@@ -143,6 +148,36 @@
         fprintf (outfile, "\n");                                                         \
     }
 
+#define BeginFoldWith(res, dimres, neutral, form, to, idx, idixlen, fun_tag)             \
+    INDENT;                                                                              \
+    fprintf (outfile, "{ int __i;\n");                                                   \
+    indent++;                                                                            \
+    INDENT;                                                                              \
+    if (0 < dimres) {                                                                    \
+        fprintf (outfile, "for(__i=0; __i < ND_A_SIZE(%s); __i++)\n", res);              \
+        indent++;                                                                        \
+        INDENT;                                                                          \
+        if (1 == fun_tag)                                                                \
+            fprintf (outfile, " %s[__i]=%s;\n", res, neutral[0]);                        \
+        else                                                                             \
+            fprintf (outfile, " %s[__i]=ND_A_FIELD(%s)[__i];\n", res, neutral[0]);       \
+        indent--;                                                                        \
+    } else                                                                               \
+        fprintf (outfile, " %s=%s;\n", res, neutral[0]);                                 \
+    {                                                                                    \
+        int i;                                                                           \
+        for (i = 0; i < idxlen; i++) {                                                   \
+            INDENT;                                                                      \
+            fprintf (outfile,                                                            \
+                     "for( ND_A_FIELD(%s)[%d]=ND_A_FIELD(%s)[%d]; "                      \
+                     "ND_A_FIELD(%s)[%d]<=ND_A_FIELD(%s)[%d]; ND_A_FIELD(%s)[%d]++) "    \
+                     "{\n",                                                              \
+                     idx, i, from, i, idx, i, to, i, idx, i);                            \
+            indent++;                                                                    \
+        }                                                                                \
+    }                                                                                    \
+    fprintf (outfile, "\n")
+
 #define EndWith(res, dimres, idxlen, fillstr)                                            \
     indent--;                                                                            \
     INDENT;                                                                              \
@@ -182,6 +217,16 @@
     indent--;                                                                            \
     INDENT;                                                                              \
     fprintf (outfile, "}\n\n")
+
+#define EndFoldWith(idxlen)                                                              \
+    {                                                                                    \
+        int i;                                                                           \
+        for (i = 0; i <= idxlen; i++) {                                                  \
+            indent--;                                                                    \
+            INDENT;                                                                      \
+            fprintf (outfile, "}\n");                                                    \
+        }                                                                                \
+    }
 
 #define FirstOut(arg, n, body, default, step)                                            \
     {                                                                                    \
@@ -1015,6 +1060,60 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 /*
+ * ND_BEGIN_FOLDPRF( res, dimres, neutral, from, to, idx, idxlen)
+ */
+
+#define ND_BEGIN_FOLDPRF
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+BeginFoldWith (res, dimres, valstr, from, to, idx, idxlen, 1);
+
+#ifdef TEST_BACKEND
+indent -= idxlen + 1;
+#endif /* TEST_BACKEND */
+
+#undef ND_BEGIN_FOLDPRF
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_BEGIN_FOLDFUN( res, dimres, neutral, from, to, idx, idxlen)
+ */
+
+#define ND_BEGIN_FOLDFUN
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+BeginFoldWith (res, dimres, valstr, from, to, idx, idxlen, 0);
+
+#ifdef TEST_BACKEND
+indent -= idxlen + 1;
+#endif /* TEST_BACKEND */
+
+#undef ND_BEGIN_FOLDFUN
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
  * ND_END_GENARRAY_S( res, dimres, valstr):
  */
 
@@ -1097,6 +1196,37 @@ EndWith (res, dimres, dimres, fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]", a
 DBUG_VOID_RETURN;
 }
 #endif /* no TEST_BACKEND */
+
+/*
+ * ND_END_FOLD( idxlen )
+ */
+
+#define ND_END_FOLD
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+#ifdef TEST_BACKEND
+indent += idxlen + 1;
+#endif /* TEST_BACKEND */
+
+EndFoldWith (idxlen);
+
+#undef ND_END_FOLD
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*      !!!!!! NOTE !!!!!!!!!
+ *   ND_END_MODARRAY_A should be the last N_icm implementation
+ */
 
 /*
  * ND_END_MODARRAY_A( res, dimres, a, reta, idxlen):
