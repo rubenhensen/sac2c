@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.18  2000/11/14 10:53:57  sbs
+ * changed OSF_ALPHA into SAC_FOR_OSF_ALPHA
+ *
  * Revision 2.17  2000/11/03 14:04:10  dkr
  * unterminated comments are detected now
  *
@@ -169,7 +172,7 @@ int charpos = 0;
 /* the next few lines allow for smuggling in a start_token! */
      if (start_token) {
        int mem=start_token;
-#ifdef OSF_ALPHA
+#ifdef SAC_FOR_OSF_ALPHA
        yy_init = 1;  /* force new initialization of lex! */
 #endif
        start_token = 0;
