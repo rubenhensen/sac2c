@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.65  1998/03/12 13:11:41  srs
+ * fixed bug in FlatnNpart()
+ *
  * Revision 1.64  1998/03/03 23:15:02  dkr
  * *** empty log message ***
  *
@@ -1613,7 +1616,7 @@ FltnNpart (node *arg_node, node *arg_info)
     /* rename index scalars */
     /* in the old WL renaming was only done if a variable of the same name
        was found before. Here we rename all index variables. */
-    _ids = NWITHID_VEC (NPART_WITHID (arg_node));
+    _ids = NWITHID_IDS (NPART_WITHID (arg_node));
     while (_ids) {
         /*     lstack = FindId(IDS_NAME(_ids)); */
         /*     if (lstack) { */
@@ -1628,7 +1631,7 @@ FltnNpart (node *arg_node, node *arg_info)
     }
 
     /* rename index-vector */
-    _ids = NWITHID_IDS (NPART_WITHID (arg_node));
+    _ids = NWITHID_VEC (NPART_WITHID (arg_node));
     if (_ids) {
         old_name = IDS_NAME (_ids);
         /*     IDS_NAME(_ids) = RenameWithVar(old_name, -with_level); */
@@ -1682,7 +1685,7 @@ FltnNgenerator (node *arg_node, node *arg_info)
     }
 
     /* extract bound1/2, step or width if not id. Even constant arrays are removed
-       and eventually reinserted later (in phase WLF, if WLF is possible). */
+       and eventually reinserted later (in phase WLI, if WLF is enabled). */
     for (i = 0; i < 4; i++) {
         switch (i) {
         case 0:
