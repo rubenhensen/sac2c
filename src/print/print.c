@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.214  1998/05/07 10:02:10  dkr
+ * changed PrintSpmd, PrintSync
+ *
  * Revision 1.213  1998/05/07 08:07:24  cg
  * Macro ICMs are prefixed with SAC_ now.
  *
@@ -709,6 +712,7 @@
 #include "traverse.h"
 #include "Error.h"
 #include "convert.h"
+#include "DataFlowMask.h"
 #include "optimize.h"
 #include "filemgr.h"
 #include "globals.h"
@@ -2143,7 +2147,30 @@ PrintSpmd (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintSpmd");
 
     if (SPMD_ICM (arg_node) == NULL) {
-        fprintf (outfile, "/*** begin of SPMD region ***/\n");
+        fprintf (outfile, "/*** begin of SPMD region ***\n");
+
+        INDENT
+        fprintf (outfile, " * in:");
+        DFMPrintMask (outfile, " %s", SYNC_IN (arg_node));
+        fprintf (outfile, "\n");
+
+        INDENT
+        fprintf (outfile, " * inout:");
+        DFMPrintMask (outfile, " %s", SYNC_INOUT (arg_node));
+        fprintf (outfile, "\n");
+
+        INDENT
+        fprintf (outfile, " * out:");
+        DFMPrintMask (outfile, " %s", SYNC_OUT (arg_node));
+        fprintf (outfile, "\n");
+
+        INDENT
+        fprintf (outfile, " * local:");
+        DFMPrintMask (outfile, " %s", SYNC_LOCAL (arg_node));
+        fprintf (outfile, "\n");
+
+        INDENT
+        fprintf (outfile, " */\n");
     } else {
         /*
          * print ICM
@@ -2152,16 +2179,6 @@ PrintSpmd (node *arg_node, node *arg_info)
         SPMD_ICM (arg_node) = Trav (SPMD_ICM (arg_node), arg_info);
         fprintf (outfile, "\n");
     }
-
-    DBUG_EXECUTE ("MASK", char *text;
-                  text = PrintMask (SPMD_IN (arg_node), SPMD_VARNO (arg_node));
-                  fprintf (outfile, "**IN:    %s\n", text);
-                  text = PrintMask (SPMD_INOUT (arg_node), SPMD_VARNO (arg_node));
-                  fprintf (outfile, "**INOUT: %s\n", text);
-                  text = PrintMask (SPMD_OUT (arg_node), SPMD_VARNO (arg_node));
-                  fprintf (outfile, "**OUT:   %s\n", text);
-                  text = PrintMask (SPMD_LOCAL (arg_node), SPMD_VARNO (arg_node));
-                  fprintf (outfile, "**LOCAL: %s\n", text); FREE (text););
 
     SPMD_REGION (arg_node) = Trav (SPMD_REGION (arg_node), arg_info);
 
@@ -2180,16 +2197,30 @@ PrintSync (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintSync");
 
-    fprintf (outfile, "/*** begin of sync region ***/\n");
-    DBUG_EXECUTE ("MASK", char *text;
-                  text = PrintMask (SYNC_IN (arg_node), SYNC_VARNO (arg_node));
-                  fprintf (outfile, "**IN:    %s\n", text);
-                  text = PrintMask (SYNC_INOUT (arg_node), SYNC_VARNO (arg_node));
-                  fprintf (outfile, "**INOUT: %s\n", text);
-                  text = PrintMask (SYNC_OUT (arg_node), SYNC_VARNO (arg_node));
-                  fprintf (outfile, "**OUT:   %s\n", text);
-                  text = PrintMask (SYNC_LOCAL (arg_node), SYNC_VARNO (arg_node));
-                  fprintf (outfile, "**LOCAL: %s\n", text); FREE (text););
+    fprintf (outfile, "/*** begin of sync region ***\n");
+
+    INDENT
+    fprintf (outfile, " * in:");
+    DFMPrintMask (outfile, " %s", SYNC_IN (arg_node));
+    fprintf (outfile, "\n");
+
+    INDENT
+    fprintf (outfile, " * inout:");
+    DFMPrintMask (outfile, " %s", SYNC_INOUT (arg_node));
+    fprintf (outfile, "\n");
+
+    INDENT
+    fprintf (outfile, " * out:");
+    DFMPrintMask (outfile, " %s", SYNC_OUT (arg_node));
+    fprintf (outfile, "\n");
+
+    INDENT
+    fprintf (outfile, " * local:");
+    DFMPrintMask (outfile, " %s", SYNC_LOCAL (arg_node));
+    fprintf (outfile, "\n");
+
+    INDENT
+    fprintf (outfile, " */\n");
 
     indent++;
     SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
