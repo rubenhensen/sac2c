@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/12/01 16:16:12  cg
+ * Revision 1.6  1995/12/18 16:14:08  cg
+ * macro FREE modified: now you can compile with -DNOFREE to disable
+ * all memory deallocation caused by this macro.
+ *
+ * Revision 1.5  1995/12/01  16:16:12  cg
  * new macro FREE is designed to replace macros with the same name
  * in typecheck, compile, optimize, etc.
  *
@@ -30,12 +34,23 @@
 
 #define _sac_free_h
 
+#include "dbug.h"
+#include "my_debug.h"
+
+#ifndef NOFREE
+
 #define FREE(address)                                                                    \
-    if (address != NULL) {                                                               \
-        DBUG_PRINT ("MEM", ("Free memory at adress: %08x", address));                    \
-        free (address);                                                                  \
+    if ((address) != NULL) {                                                             \
+        DBUG_PRINT ("MEM", ("Free memory at adress: " P_FORMAT, (address)));             \
+        free ((address));                                                                \
         address = NULL;                                                                  \
     }
+
+#else
+
+#define FREE(address)
+
+#endif /* NOFREE */
 
 extern node *FreeNode (node *);
 extern node *FreeTree (node *);
@@ -96,6 +111,8 @@ extern node *FreeInc (node *arg_node, node *arg_info);
 extern node *FreePragma (node *arg_node, node *arg_info);
 
 extern void FreePrf2 (node *arg_node, int arg_no);
+
+/*******************************************************************/
 
 #if 0 /* Old Stuff from first version of free.c */
 
