@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/01/06 17:50:43  sbs
+ * Revision 1.7  1995/04/05 15:23:20  sbs
+ * GenLinkerList added
+ *
+ * Revision 1.6  1995/01/06  17:50:43  sbs
  * no_mod_ext pragma inserted
  *
  * Revision 1.5  1995/01/04  12:35:56  sbs
@@ -64,5 +67,6 @@ extern mods *FindSymbolInModul (char *modname, char *name, int symbkind, mods *f
 
 extern node *IMmodul (node *, node *);
 extern node *Import (node *);
+extern char *GenLinkerList ();
 
 #endif /* _import_h */

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/01/16 15:34:06  hw
+ * Revision 1.11  1995/04/05 15:23:20  sbs
+ * GenLinkerList added
+ *
+ * Revision 1.10  1995/01/16  15:34:06  hw
  * changed description of FindSymbolInModul
  *
  * Revision 1.9  1995/01/06  19:30:30  sbs
@@ -736,4 +739,25 @@ IMmodul (node *arg_node, node *arg_info)
         NOTE (("\n"));
     }
     DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  :
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+char *
+GenLinkerList ()
+{
+    DBUG_ENTER ("GenLinkerList");
+    DBUG_RETURN ("");
 }
