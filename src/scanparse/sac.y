@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/04/19 13:08:21  jhs
+ * Renamed TRUE and FALSE token to TRUETOKEN and FALSETOKEN to
+ * avoid conflicts with TRUE and FALSE macros.
+ *
  * Revision 2.5  1999/04/14 09:19:54  cg
  * The tag in pragma cachesim is now optional.
  *
@@ -334,7 +338,7 @@ static file_type file_kind = F_prog;
        K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, NWITH, FOLD,
        MODDEC, MODIMP, CLASSDEC, IMPORT, IMPLICIT, EXPLICIT, TYPES, FUNS,
        OWN, CONSTANTS, GLOBAL, OBJECTS, CLASSIMP,
-       ARRAY,SC, TRUE, FALSE, EXTERN, C_KEYWORD,
+       ARRAY,SC, TRUETOKEN, FALSETOKEN, EXTERN, C_KEYWORD,
        PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
        TOUCH, COPYFUN, FREEFUN, INITFUN, LINKWITH,
        WLCOMP, DEFAULT, CACHESIM,
@@ -1839,8 +1843,8 @@ expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
          | DOUBLE                    { $$=MakeDouble( $1);         }
          | MINUS DOUBLE %prec UMINUS { $$=MakeDouble( -$2);        }
          | PLUS DOUBLE %prec UMINUS  { $$=MakeDouble( $2);         }
-         | TRUE                      { $$=MakeBool( 1);            }
-         | FALSE                     { $$=MakeBool( 0);            }
+         | TRUETOKEN                 { $$=MakeBool( 1);            }
+         | FALSETOKEN                { $$=MakeBool( 0);            }
          | string                    { $$=string2array($1);        }
          | wlcomp_pragma_local
            NWITH {$<cint>$=linenum;} BRACKET_L Ngenerator BRACKET_R

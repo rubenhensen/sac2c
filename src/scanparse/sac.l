@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/04/19 13:07:28  jhs
+ * Renamed TRUE and FALSE token to TRUETOKEN and FALSETOKEN to
+ * avoid conflicts with TRUE and FALSE macros.
+ *
  * Revision 2.2  1999/04/13 14:00:40  cg
  * added #pragma cachesim.
  *
@@ -331,8 +335,8 @@ int start_token;
 "void"		                {FILTER( TYPE_VOID );}
 "..."		                {FILTER( TYPE_DOTS );}
 
-"true"                          {FILTER( TRUE );}
-"false"                         {FILTER( FALSE );}
+"true"                          {FILTER( TRUETOKEN );}
+"false"                         {FILTER( FALSETOKEN );}
 
 "const"                         {FILTER( C_KEYWORD);}
 "auto"                          {FILTER( C_KEYWORD);}
