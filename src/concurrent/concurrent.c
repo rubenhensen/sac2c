@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/05/17 11:41:33  dkr
+ * FREE replaced by FreeTree
+ *
  * Revision 3.5  2001/01/25 10:18:01  dkr
  * PH_spmdregions renamed into PH_multithread
  *
@@ -130,8 +133,10 @@ BuildSpmdRegions (node *syntax_tree)
 
     arg_info = MakeInfo ();
     act_tab = conc_tab;
+
     syntax_tree = Trav (syntax_tree, arg_info);
-    FREE (arg_info);
+
+    arg_info = FreeTree (arg_info);
 
     DBUG_RETURN (syntax_tree);
 }
