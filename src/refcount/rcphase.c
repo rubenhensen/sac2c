@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/28 18:14:21  ktr
+ * Changed name of starting function to EMRdoRefCountPhase
+ *
  * Revision 1.8  2004/11/26 23:56:06  jhb
  * fixed DBUG_Enter Statement of EMRdoRefcounting
  *
@@ -57,7 +60,7 @@
 
 /** <!--*******************************************************************-->
  *
- * @fn node *EMRdoRefcounting( node *syntax_tree)
+ * @fn node *EMRdoRefCountPhase( node *syntax_tree)
  *
  * @brief
  *
@@ -67,21 +70,25 @@
  *
  ****************************************************************************/
 node *
-EMRdoRefcounting (node *syntax_tree)
+EMRdoRefCountPhase (node *syntax_tree)
 {
-    DBUG_ENTER ("EMRdoRefcounting");
+    DBUG_ENTER ("EMRdoRefCountPhase");
 
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  "RCphase not started with N_module node");
 
+    DBUG_PRINT ("EMM", ("Performing reference counting (rc)"));
+
     /*
      * Reference counting
      */
-    syntax_tree = EMRdoRefcounting (syntax_tree);
+    syntax_tree = EMRCdoRefCounting (syntax_tree);
     if ((global.break_after == PH_refcnt)
         && (0 == strcmp (global.break_specifier, "rc"))) {
         goto DONE;
     }
+
+    DBUG_PRINT ("EMM", ("Performing reference counting optmizations (rco)"));
 
     /*
      * Reference counting optimizations
@@ -93,6 +100,8 @@ EMRdoRefcounting (node *syntax_tree)
         && (0 == strcmp (global.break_specifier, "rco"))) {
         goto DONE;
     }
+
+    DBUG_PRINT ("EMM", ("Removing reuse operations (re)"));
 
     /*
      * Reuse elimination

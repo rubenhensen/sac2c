@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/28 18:14:21  ktr
+ * Changed name of starting function to EMRdoRefCountPhase
+ *
  * Revision 1.3  2004/11/24 20:54:47  ktr
  * Fuer Steffen
  *
@@ -24,6 +27,6 @@
  * prefix: EMR
  *
  *****************************************************************************/
-extern node *EMRdoRefcounting (node *syntax_tree);
+extern node *EMRdoRefCountPhase (node *syntax_tree);
 
 #endif /* _SAC_RCPHASE_H_ */
