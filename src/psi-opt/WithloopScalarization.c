@@ -1,15 +1,18 @@
 /*
  *
-<<<<<<< WithloopScalarization.c
  * $Log$
+ * Revision 1.6  2002/06/09 21:04:46  ktr
+ * Update due to problems with RCS/CVS
+ *
+ * Revision 1.3  2002/06/09 20:52:12  trojahne
+ * Das update der SACBASE
+ *
  * Revision 1.5  2002/06/09 20:40:09  ktr
  * works so good, it should be called alpha. :)
  *
  * Revision 1.4  2002/06/09 19:59:49  ktr
  * works even better, still some known bugs
  *
-=======
->>>>>>> 1.2
  * Revision 1.3  2002/05/16 09:40:07  ktr
  * an early version of a working WithLoop-Scalarization
  *
