@@ -1,9 +1,10 @@
-#ifndef _import_h
-
 /*
  *
  * $Log$
- * Revision 1.13  1995/09/01 08:44:29  cg
+ * Revision 1.14  1995/09/26 16:52:52  cg
+ * declaration of CmpDomain moved to tree_compound.h
+ *
+ * Revision 1.13  1995/09/01  08:44:29  cg
  * function CmpDomain added
  *
  * Revision 1.12  1995/08/30  14:04:17  cg
@@ -50,7 +51,9 @@
  *
  */
 
-#define _import_h
+#ifndef _sac_import_h
+
+#define _sac_import_h
 
 #define IMPORTED 1
 #define NOT_IMPORTED 0
@@ -92,6 +95,5 @@ extern node *Import (node *);
 extern char *GenLinkerList ();
 extern charlist *GenExtmodlistList ();
 extern void InsertClassType (node *);
-extern int CmpDomain (node *, node *);
 
-#endif /* _import_h */
+#endif /* _sac_import_h */
