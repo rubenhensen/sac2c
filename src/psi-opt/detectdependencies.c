@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/27 00:44:46  khf
+ * adjusted startfunction
+ *
  * Revision 1.7  2004/11/24 23:16:39  khf
  * SacDevCamp04
  *
@@ -421,7 +424,7 @@ DDEPENDcode (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-DEPENDdoDetectDependencies (node *with, node *fusionable_wl, nodelist *references_fwl)
+DDEPENDdoDetectDependencies (node *with, node *fusionable_wl, nodelist *references_fwl)
 {
     info *arg_info;
 
