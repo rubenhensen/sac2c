@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1997/04/24 14:59:22  sbs
+ * Revision 1.16  1997/08/04 15:11:18  dkr
+ * changed DBUG_PRINT-strings in Malloc
+ *
+ * Revision 1.15  1997/04/24  14:59:22  sbs
  * HAVE_MALLOC_O inserted
  *
  * Revision 1.14  1996/09/11  06:13:14  cg
@@ -91,13 +94,13 @@ Malloc (int size)
 
     DBUG_ENTER ("Malloc");
 
-    DBUG_PRINT ("MEM", ("trying to allocate %d bytes", size));
+    DBUG_PRINT ("MEMALLOC_TRY", ("trying to allocate %d bytes", size));
 
     tmp = malloc (size);
     if (NULL == tmp)
         SYSABORT (("Out of memory"));
 
-    DBUG_PRINT ("MEM", ("new memory: " P_FORMAT, tmp));
+    DBUG_PRINT ("MEMALLOC", ("new memory: " P_FORMAT, tmp));
 
 #ifdef HAVE_MALLOC_O
     DBUG_EXECUTE ("MEMVERIFY", malloc_verify (););
