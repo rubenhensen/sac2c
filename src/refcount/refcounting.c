@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/07/19 14:53:38  ktr
+ * Fixed a bug related to reference counting of conditionals.
+ *
  * Revision 1.4  2004/07/19 12:39:37  ktr
  * Traversals for Nwithid, funcond and array reintroduced.
  *
@@ -967,6 +970,8 @@ TravRightIds (ids *arg_ids, info *arg_info)
         IDS_AVIS (INFO_EMRC_LHS (arg_info))
           = PopEnvironment (IDS_AVIS (INFO_EMRC_LHS (arg_info)),
                             INFO_EMRC_DEPTH (arg_info));
+
+        INFO_EMRC_MEMVAL (arg_info) = FALSE;
         break;
 
     case rc_apuse:
@@ -1309,6 +1314,7 @@ EMRCcond (node *arg_node, info *arg_info)
     if (INFO_EMRC_MODE (arg_info) == rc_default) {
         COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
 
+        INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
         if (COND_COND (arg_node) != NULL) {
             COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
         }
@@ -1322,6 +1328,7 @@ EMRCcond (node *arg_node, info *arg_info)
     } else {
         COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
 
+        INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
         if (COND_COND (arg_node) != NULL) {
             COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
         }
