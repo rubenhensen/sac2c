@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.59  1998/03/10 17:30:55  srs
+ * improved orthography
+ *
  * Revision 1.58  1998/03/04 15:36:12  srs
  * added N_Npart node to switch in CFid
  *
@@ -1122,7 +1125,7 @@ FoundZero (node *arg_node)
 
 /*
  *
- *  functionname  : SkalarPrf
+ *  functionname  : ScalarPrf
  *  arguments     : 1) arguments for prim-function
  *		    2) type of prim-function
  *		    3) result type
@@ -1139,7 +1142,7 @@ FoundZero (node *arg_node)
  *
  */
 node *
-SkalarPrf (node **arg, prf prf_type, types *res_type, int swap)
+ScalarPrf (node **arg, prf prf_type, types *res_type, int swap)
 {
 
     /*
@@ -1206,7 +1209,7 @@ SkalarPrf (node **arg, prf prf_type, types *res_type, int swap)
         DBUG_PRINT ("CF", ("primitive function %s folded", prf_string[prf_type]));       \
     }
 
-    DBUG_ENTER ("SkalarPrf");
+    DBUG_ENTER ("ScalarPrf");
 
     /*
      * Calculate primitive Functions
@@ -1349,7 +1352,7 @@ FoldExpr (node *arg_node, int test_arg, int res_arg, int test_pattern, node *arg
 
 /*
  *
- *  functionname  : NoConstSkalarPrf
+ *  functionname  : NoConstScalarPrf
  *  arguments     : 1) prf-node
  *		    2) arg_info includes used mask to be updated and varno
  *		    R) result-node
@@ -1363,9 +1366,9 @@ FoldExpr (node *arg_node, int test_arg, int res_arg, int test_pattern, node *arg
  *
  */
 node *
-NoConstSkalarPrf (node *arg_node, node *arg_info)
+NoConstScalarPrf (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("NoConstSkalarPrf");
+    DBUG_ENTER ("NoConstScalarPrf");
 
     /*
      * Calculate prim-functions with non constant arguments
@@ -1705,7 +1708,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                 expr_arg[0] = expr[0]->node[0];
                 expr_arg[1] = expr[1]->node[0];
                 expr[0]->node[0]
-                  = SkalarPrf (expr_arg, arg_node->info.prf, INFO_TYPE (arg_info), swap);
+                  = ScalarPrf (expr_arg, arg_node->info.prf, INFO_TYPE (arg_info), swap);
                 expr[0] = expr[0]->node[1];
                 expr[1] = expr[1]->node[1];
             } while ((NULL != expr[0]) && (NULL != expr[1]));
@@ -1718,7 +1721,7 @@ ArrayPrf (node *arg_node, node *arg_info)
             do {
                 expr_arg[0] = expr[0]->node[0];
                 expr[0]->node[0]
-                  = SkalarPrf (expr_arg, arg_node->info.prf, INFO_TYPE (arg_info), swap);
+                  = ScalarPrf (expr_arg, arg_node->info.prf, INFO_TYPE (arg_info), swap);
                 expr[0] = expr[0]->node[1];
             } while ((NULL != expr[0]));
         }
@@ -1927,7 +1930,7 @@ ArrayPrf (node *arg_node, node *arg_info)
  *  description   : first replace constant values for variables in expression
  *		    then calculate primitive function.
  *  global vars   : syntax_tree, info_node, mrdl_stack
- *  internal funs : SkalarPrf, ArrayPrf
+ *  internal funs : ScalarPrf, ArrayPrf
  *  external funs : Trav
  *  macros        : DBUG...
  *
@@ -1968,7 +1971,7 @@ CFprf (node *arg_node, node *arg_info)
             && (F_abs == PRF_PRF (arg_node) || F_not == PRF_PRF (arg_node)
                 || IsConst (arg[1]))) {
             if (F_div != PRF_PRF (arg_node) || !FoundZero (arg[1])) {
-                arg[0] = SkalarPrf (arg, PRF_PRF (arg_node), INFO_TYPE (arg_info), FALSE);
+                arg[0] = ScalarPrf (arg, PRF_PRF (arg_node), INFO_TYPE (arg_info), FALSE);
                 FreePrf2 (arg_node, 0);
                 arg_node = arg[0];
             }
@@ -1995,7 +1998,7 @@ CFprf (node *arg_node, node *arg_info)
     /*
      * Do some foldings like 1 * x = x, etc.
      */
-    arg_node = NoConstSkalarPrf (arg_node, arg_info);
+    arg_node = NoConstScalarPrf (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
