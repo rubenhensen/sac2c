@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.245  1998/08/06 15:30:40  dkr
+ * fixed a minor bug in PrintNodeTree
+ *
  * Revision 1.244  1998/07/24 00:27:42  dkr
  * fixed some minor bugs in PrintNodeTree
  *
@@ -3333,8 +3336,8 @@ PrintNodeTree (node *node)
             fprintf (outfile, "(%s)\n", FUNDEF_NAME (node));
             break;
         case N_Nwith:
+            fprintf (outfile, "\n");
             if (NWITH_PRAGMA (node) != NULL) {
-                fprintf (outfile, "\n");
                 indent++;
                 PrintNodeTreeSon (-1, NWITH_PRAGMA (node));
                 indent--;
