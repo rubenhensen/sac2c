@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2001/03/12 17:20:43  nmw
+ * Pointer Sharing fixed
+ *
  * Revision 1.2  2001/03/12 13:41:53  nmw
  * UndoSSA creates unique result variables in multigenerator fold-withloops.
  *
@@ -224,9 +227,8 @@ USSANcode (node *arg_node, node *arg_info)
 
     if (INFO_USSA_FOLDTARGET (arg_info) != NULL) {
         /* create source id node */
-        src_id = MakeId (VARDEC_OR_ARG_NAME (
-                           AVIS_VARDECORARG (ID_AVIS (NCODE_CEXPR (arg_node)))),
-                         NULL, ST_regular);
+        src_id = MakeId_Copy (
+          VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (NCODE_CEXPR (arg_node)))));
         ID_VARDEC (src_id) = AVIS_VARDECORARG (ID_AVIS (NCODE_CEXPR (arg_node)));
         ID_AVIS (src_id) = ID_AVIS (NCODE_CEXPR (arg_node));
 
@@ -236,8 +238,8 @@ USSANcode (node *arg_node, node *arg_info)
          */
         BLOCK_INSTR (NCODE_CBLOCK (arg_node))
           = AppendAssign (BLOCK_INSTR (NCODE_CBLOCK (arg_node)),
-                          MakeAssignLet (VARDEC_NAME (AVIS_VARDECORARG (
-                                           INFO_USSA_FOLDTARGET (arg_info))),
+                          MakeAssignLet (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (
+                                           INFO_USSA_FOLDTARGET (arg_info)))),
                                          AVIS_VARDECORARG (
                                            INFO_USSA_FOLDTARGET (arg_info)),
                                          src_id));
