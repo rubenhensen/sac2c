@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/12/01 14:33:07  sah
+ * added support for TRAVsetPreFun TRAVsetPostFun
+ *
  * Revision 1.17  2004/11/26 16:29:55  khf
  * changed struct_constant to STRUCT_CONSTANT
  *
@@ -1045,6 +1048,11 @@ typedef struct GLOBAL_T {
 #define GLOBALname(it_name) it_name;
 #include "globals.mac"
 } global_t;
+
+/*
+ * type of traversal functions
+ */
+typedef node *(*travfun_p) (node *, info *);
 
 /*******************************************************************************
  * moved from SSAConstantFolding.h:

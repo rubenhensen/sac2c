@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.119  2004/12/01 14:33:07  sah
+ * added support for TRAVsetPreFun TRAVsetPostFun
+ *
  * Revision 3.118  2004/11/28 22:15:57  ktr
  * NODE_TYPE is rescued before traversal as it might return NULL.
  *
@@ -146,4 +149,24 @@ TRAVgetName ()
     }
 
     DBUG_RETURN (result);
+}
+
+void
+TRAVsetPreFun (trav_t traversal, travfun_p prefun)
+{
+    DBUG_ENTER ("TRAVsetPreFun");
+
+    pretable[traversal] = prefun;
+
+    DBUG_VOID_RETURN;
+}
+
+void
+TRAVsetPostFun (trav_t traversal, travfun_p postfun)
+{
+    DBUG_ENTER ("TRAVsetPreFun");
+
+    posttable[traversal] = postfun;
+
+    DBUG_VOID_RETURN;
 }

@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/12/01 14:33:07  sah
+  added support for TRAVsetPreFun TRAVsetPostFun
+
   Revision 1.3  2004/11/27 01:33:56  sah
   implemented TRAVgetName
 
@@ -40,8 +43,6 @@
 #define _SAC_TRAVERSE_TABLES_H_
 
 #include "types.h"
-
-typedef node *(*travfun_p)(node *, info *);
 
 typedef travfun_p travfunarray_t [ </xsl:text><xsl:value-of select="count(//syntaxtree/node)+1" /><xsl:text>] ;
 
