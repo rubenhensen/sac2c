@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.154  1998/05/06 14:27:41  dkr
+ * added macros for DataFlowMasks
+ *
  * Revision 1.153  1998/05/04 18:04:09  dkr
  * removed VARDEC in comment for N_let
  *
@@ -1119,37 +1122,39 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***
  ***  sons:
  ***
- ***    node*       BODY     (O)  (N_block)
- ***    node*       ARGS     (O)  (N_arg)
- ***    node*       NEXT     (O)  (N_fundef)
+ ***    node*           BODY     (O)   (N_block)
+ ***    node*           ARGS     (O)   (N_arg)
+ ***    node*           NEXT     (O)   (N_fundef)
  ***
  ***  permanent attributes:
  ***
- ***    char*       NAME
- ***    char*       MOD      (O)
- ***    char*       LINKMOD  (O)
- ***    types*      TYPES
- ***    statustype  STATUS
- ***    statustype  ATTRIB
- ***    int         INLINE
- ***    int         FUNNO
- ***    node*       PRAGMA   (O)  (N_pragma)
+ ***    char*           NAME
+ ***    char*           MOD      (O)
+ ***    char*           LINKMOD  (O)
+ ***    types*          TYPES
+ ***    statustype      STATUS
+ ***    statustype      ATTRIB
+ ***    int             INLINE
+ ***    int             FUNNO
+ ***    node*           PRAGMA   (O)   (N_pragma)
  ***
  ***  temporary attributes:
  ***
- ***    node*      SIB      (O)  (N_sib)     (readsib !!)
- ***    node*      RETURN        (N_return)  (typecheck -> compile !!)
- ***    nodelist*  NEEDOBJS (O)              (import -> )
- ***                                         (analysis -> )
- ***                                         ( -> analysis -> )
- ***                                         ( -> write-SIB -> )
- ***                                         ( -> obj-handling -> )
- ***    node*      ICM           (N_icm)     (compile -> print )
- ***    int        VARNO                     (optimize -> )
- ***    long*      MASK[x]                   (optimize -> )
- ***    int        INLREC                    (inl !!)
+ ***    node*           SIB      (O)   (N_sib)    (readsib !!)
+ ***    node*           RETURN         (N_return) (typecheck -> compile !!)
+ ***    nodelist*       NEEDOBJS (O)              (import -> )
+ ***                                              ( -> analysis -> )
+ ***                                              ( -> write-SIB -> )
+ ***                                              ( -> obj-handling -> )
+ ***    node*           ICM            (N_icm)    (compile -> print )
+ ***    int             VARNO                     (optimize -> )
+ ***    long*           MASK[x]                   (optimize -> )
+ ***    int             INLREC                    (inl !!)
  ***
- ***    node*      FUNDEC_DEF (O) (N_fundef) (checkdec -> writesib !!)
+ ***    DFMmask_base_t  DFM_BASE                  (refcount -> spmd -> )
+ ***                                              ( -> compile -> )
+ ***
+ ***    node*           FUNDEC_DEF (O) (N_fundef) (checkdec -> writesib !!)
  ***/
 
 /*
@@ -1196,6 +1201,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_ATTRIB(n) (n->info.types->attrib)
 #define FUNDEF_INLINE(n) (n->flag)
 #define FUNDEF_INLREC(n) (n->refcnt)
+#define FUNDEF_DFM_BASE(n) (n->dfmask[0])
 
 #define FUNDEC_DEF(n) (n->node[3])
 
@@ -2271,9 +2277,6 @@ extern node *MakeInfo ();
 #define INFO_EXPORTOBJS(n) ((nodelist *)(n->node[1]))
 #define INFO_EXPORTFUNS(n) ((nodelist *)(n->node[2]))
 
-/* wltranform */
-#define INFO_WL_FUNDEF(n) (n->node[0])
-
 /* spmdregions */
 #define INFO_SPMD_FUNDEF(n) (n->node[0])
 #define INFO_SPMD_FIRST(n) (n->flag)
@@ -2427,25 +2430,29 @@ extern node *MakeSync (node *region, int first);
  ***
  ***  sons:
  ***
- ***    node*  PART      (N_Npart)
- ***    node*  CODE      (N_Ncode)
- ***    node*  WITHOP    (N_Nwithop)
+ ***    node*      PART       (N_Npart)
+ ***    node*      CODE       (N_Ncode)
+ ***    node*      WITHOP     (N_Nwithop)
  ***
  ***  permanent attributes:
  ***
- ***    int    PARTS     (number of N_Npart nodes for this WL.
- ***                      -1: no complete partition, exactly one N_Npart,
- ***                      >0: complete partition.
+ ***    int        PARTS   (number of N_Npart nodes for this WL.
+ ***                         -1: no complete partition, exactly one N_Npart,
+ ***                         >0: complete partition.
  ***
  ***  temporary attributes:
  ***
- ***    node*  PRAGMA    (N_pragma)    (scanparse -> precompile ! )
- ***    int    REFERENCED              (wli -> wlf !!
- ***    int    REFERENCED_FOLD         (wli -> wlf !!)
- ***    int    COMPLEX                 (wli -> wlf !!)
- ***    int    FOLDABLE                (wli -> wlf !!)
- ***    int    NO_CHANCE               (wli -> wlf !!)
+ ***    node*      PRAGMA     (N_pragma)  (scanparse -> precompile ! )
+ ***    int        REFERENCED             (wli -> wlf !!
+ ***    int        REFERENCED_FOLD        (wli -> wlf !!)
+ ***    int        COMPLEX                (wli -> wlf !!)
+ ***    int        FOLDABLE               (wli -> wlf !!)
+ ***    int        NO_CHANCE              (wli -> wlf !!)
  ***
+ ***    DFMmask_t  IN                     (refcount -> wltransform -> )
+ ***    DFMmask_t  INOUT                  (refcount -> wltransform -> )
+ ***    DFMmask_t  OUT                    (refcount -> wltransform -> )
+ ***    DFMmask_t  LOCAL                  (refcount -> wltransform -> )
  ***/
 
 extern node *MakeNWith (node *part, node *code, node *withop);
@@ -2461,6 +2468,11 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_COMPLEX(n) (((wl_info *)(n->info2))->complex)
 #define NWITH_FOLDABLE(n) (((wl_info *)(n->info2))->foldable)
 #define NWITH_NO_CHANCE(n) (((wl_info *)(n->info2))->no_chance)
+
+#define NWITH_IN(n) ((DFMmask_t)n->dfmask[0])
+#define NWITH_INOUT(n) ((DFMmask_t)n->dfmask[1])
+#define NWITH_OUT(n) ((DFMmask_t)n->dfmask[2])
+#define NWITH_LOCAL(n) ((DFMmask_t)n->dfmask[3])
 
 /*--------------------------------------------------------------------------*/
 
