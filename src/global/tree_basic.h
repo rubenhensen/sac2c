@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.153  1998/05/04 18:04:09  dkr
+ * removed VARDEC in comment for N_let
+ *
  * Revision 1.152  1998/05/04 17:56:41  sbs
  * LET_VARDEC(n) moved from tree_basic.h to tree_compound.h!!!!
  *
@@ -1391,10 +1394,6 @@ extern node *MakeAssign (node *instr, node *next);
  ***  permanent attributes:
  ***
  ***    ids*   IDS   (O)
- ***
- ***  temporary attributes:
- ***
- ***    node*  VARDEC    (N_vardec)  (typecheck -> )
  ***
  ***/
 
