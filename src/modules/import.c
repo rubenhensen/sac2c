@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/02/14 10:16:42  dkr
+ * MakeNode eliminated
+ *
  * Revision 3.3  2001/02/02 10:13:44  dkr
  * superfluous import of access_macros.h removed
  *
@@ -285,11 +288,6 @@ static mod *mod_tab = NULL;
  *  arguments     : 1) syntax tree
  *  description   : Recursively scans and parses modul.dec's
  *  global vars   : syntax_tree, act_tab, imp_tab
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : ---
- *
- *  remarks       :
  *
  */
 
@@ -316,11 +314,6 @@ Import (node *arg_node)
  *  arguments     : 1) name of modul to be looked for
  *  description   : finds the entry of given modul in the global mod_tab
  *  global vars   : mod_tab
- *  internal funs : ---
- *  external funs : ---
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
@@ -332,9 +325,11 @@ FindModul (char *name)
     DBUG_ENTER ("FindModul");
 
     DBUG_PRINT ("IMPORT", ("searching for modul/class: %s", name));
+
     tmp = mod_tab;
-    while ((tmp != NULL) && (strcmp (tmp->name, name) != 0))
+    while ((tmp != NULL) && (strcmp (tmp->name, name) != 0)) {
         tmp = tmp->next;
+    }
 
     DBUG_RETURN (tmp);
 }
@@ -378,11 +373,6 @@ FreeMods (mods *mod)
  *  description   : adds implicitly imported symbol to global mod_tab if
  *                  it is yet unknown
  *  global vars   : mod_tab
- *  internal funs : FindModul
- *  external funs : Malloc
- *  macros        :
- *
- *  remarks       :
  *
  */
 
@@ -454,15 +444,13 @@ InsertClassType (node *classdec)
 
     DBUG_ENTER ("InsertClassType");
 
-    tmp = MakeNode (N_typedef);
-    tmp->info.types = MakeTypes1 (T_hidden);
-    tmp->info.types->id = StringCopy (classdec->info.fun_name.id);
-    tmp->info.types->id_mod
-      = CLASSDEC_ISEXTERNAL (classdec) ? NULL : StringCopy (classdec->info.fun_name.id);
-
-    tmp->info.types->attrib = ST_unique;
-    tmp->info.types->status = ST_imported_class;
-    tmp->lineno = 0;
+    tmp = MakeTypedef (StringCopy (CLASSDEC_NAME (classdec)),
+                       CLASSDEC_ISEXTERNAL (classdec)
+                         ? NULL
+                         : StringCopy (CLASSDEC_NAME (classdec)),
+                       MakeTypes1 (T_hidden), ST_unique, NULL);
+    TYPEDEF_STATUS (tmp) = ST_imported_class;
+    NODE_LINE (tmp) = 0;
 
     explist = classdec->node[0];
 
@@ -489,12 +477,6 @@ InsertClassType (node *classdec)
  *                  exist in the current context.
  *                  A node list of needed objects for this particular
  *                  function is returned.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : SearchObjdef, MakeNodelist, ModName, FreeOneIds
- *  macros        : DBUG, TREE, ERROR
- *
- *  remarks       :
  *
  */
 
@@ -536,10 +518,6 @@ CheckExistObjects (ids *object, node *modul, statustype attrib, int line)
  *                  3) start of nums chain
  *  description   : traverses the nums chain and initializes the
  *                  returned array with these numbers.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : Malloc, FreeAllNums
- *  macros        : DBUG, TREE, ERROR
  *
  *  remarks       : used for converting linksign pragmas
  *
@@ -601,12 +579,6 @@ Nums2IntArray (int line, int size, nums *numsp)
  *  description   : allocates an int array of given size and initializes
  *                  all elements with 0. Afterwards, those positions which
  *                  are in the nums chain are set to 1.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : Malloc, FreeAllNums
- *  macros        : DBUG, TREE, ERROR
- *
- *  remarks       :
  *
  */
 
@@ -649,19 +621,15 @@ Nums2BoolArray (int line, int size, nums *numsp)
     DBUG_RETURN (ret);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : InitGenericFuns
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *InitGenericFuns(node *arg_node, node *pragma)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
 
 node *
 InitGenericFuns (node *arg_node, node *pragma)
@@ -708,19 +676,15 @@ InitGenericFuns (node *arg_node, node *pragma)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : ResolvePragmaReadonly
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs : Nums2BoolArray
- *  external funs :
- *  macros        :
+ * Function:
+ *   node *ResolvePragmaReadonly(node *arg_node, node *pragma, int count_params)
  *
- *  remarks       :
+ * Description:
  *
- */
+ *
+ ******************************************************************************/
 
 node *
 ResolvePragmaReadonly (node *arg_node, node *pragma, int count_params)
@@ -776,12 +740,6 @@ ResolvePragmaReadonly (node *arg_node, node *pragma, int count_params)
  *  description   : checks the correctness of pragmas for a typedef.
  *                  The whole pragma node is removed afterwards.
  *                  The slots FREEFUN and COPYFUN are initialized.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : Trav, FreeAllNums, FreeAllIds, FreeTree, FreeNode
- *  macros        : DBUG, FREE, ERROR, TREE
- *
- *  remarks       :
  *
  */
 
@@ -890,12 +848,6 @@ IMtypedef (node *arg_node, node *arg_info)
  *                  The readonly pragma is resolved by traversing the
  *                  function's arguments and switching from attribute
  *                  ST_reference to ST_readonly_reference.
- *  global vars   : ---
- *  internal funs : Nums2IntArray, Nums2BoolArray, CheckExistObjects
- *  external funs : FreeAllIds, FreeTree, FreeNode, ConcatNodelist
- *  macros        : DBUG, TREE, ERROR, FREE
- *
- *  remarks       :
  *
  */
 
@@ -1101,10 +1053,6 @@ IMobjdef (node *arg_node, node *arg_info)
  *  arguments     : 1) N_moddec node
  *                  2) prefix of respective module
  *  description   : checks pragmas of the given module
- *  global vars   : ---
- *  internal funs : CheckPragmaTypedef, CheckPragmaObjdef, CheckPragmaFundef
- *  external funs : ---
- *  macros        : DBUG, TREE
  *
  *  remarks       : 2) is used to distinguish between external and SAC
  *                     modules and classes.
@@ -1115,28 +1063,23 @@ node *CheckPragmas(node *moddec, char *prefix)
 {
   DBUG_ENTER("CheckPragmas");
   
-  if (MODDEC_OWN(moddec)!=NULL)
-  {
-    if (MODDEC_ITYPES(moddec)!=NULL)
-    {
+  if (MODDEC_OWN(moddec)!=NULL) {
+    if (MODDEC_ITYPES(moddec)!=NULL) {
       MODDEC_ITYPES(moddec)
         =CheckPragmaTypedef(MODDEC_ITYPES(moddec), (node*)prefix);
     }
     
-    if (MODDEC_ETYPES(moddec)!=NULL)
-    {
+    if (MODDEC_ETYPES(moddec)!=NULL) {
       MODDEC_ETYPES(moddec)
         =CheckPragmaTypedef(MODDEC_ETYPES(moddec), (node*)prefix);
     }
     
-    if (MODDEC_OBJS(moddec)!=NULL)
-    {
+    if (MODDEC_OBJS(moddec)!=NULL) {
       MODDEC_OBJS(moddec)
         =CheckPragmaObjdef(MODDEC_OBJS(moddec), (node*)prefix);
     }
     
-    if (MODDEC_FUNS(moddec)!=NULL)
-    {
+    if (MODDEC_FUNS(moddec)!=NULL) {
       MODDEC_FUNS(moddec)
         =CheckPragmaFundef(MODDEC_FUNS(moddec), (node*)prefix);
     }
@@ -1156,12 +1099,6 @@ node *CheckPragmas(node *moddec, char *prefix)
  *                     implementation(1).
  *  description   : Scans and parses the respective declaration
  *                  file and generates/initilizes a new mod-node
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : Malloc, strcpy, strcat
- *  macros        : NOTE, ERROR, DBUG...
- *
- *  remarks       :
  *
  */
 
@@ -1272,8 +1209,9 @@ GenMod (char *name, int checkdec)
              */
         }
 
-        for (i = 0; i < 4; i++)
+        for (i = 0; i < 4; i++) {
             tmp->syms[i] = NULL;
+        }
 
         if (tmp->moddec->nodetype == N_classdec) {
             InsertClassType (tmp->moddec);
@@ -1295,17 +1233,11 @@ GenMod (char *name, int checkdec)
  *                  not be found, a new mod_tab entry is generated
  *                  and appended to mod_tab.
  *  global vars   : mod_tab
- *  internal funs : GenMod
- *  external funs :
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
 void
 FindOrAppend (node *implist, int checkdec)
-
 {
     mod *current, *last;
     int tmp;
@@ -1314,8 +1246,7 @@ FindOrAppend (node *implist, int checkdec)
 
     DBUG_ASSERT ((implist), "FindOrAppend called with NULL-import-list!");
 
-    if (mod_tab == NULL) /* the first modul has to be inserted anyway! */
-    {
+    if (mod_tab == NULL) { /* the first modul has to be inserted anyway! */
         mod_tab = GenMod (implist->info.id, checkdec);
         implist = implist->node[0];
     }
@@ -1348,18 +1279,11 @@ FindOrAppend (node *implist, int checkdec)
  *  functionname  : GenSyms
  *  arguments     : 1) mod-node
  *  description   : generates the symbol tables for the given mod-node.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : Malloc
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
 void
 GenSyms (mod *mod)
-
 {
     node *explist, *ptr;
     syms *new;
@@ -1412,18 +1336,11 @@ GenSyms (mod *mod)
  *                  modul; returns a pointer linked list of modul-entries
  *                  for all those modules which own a definition of the
  *                  given symbol and are imported into the given modul.
- *  global vars   : ---
- *  internal funs : FindModul
- *  external funs : Malloc
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
 mods *
 FindSymbolInModul (char *modname, char *name, int symbkind, mods *found, int recursive)
-
 {
     node *imports;
     mods *new;
@@ -1449,10 +1366,8 @@ FindSymbolInModul (char *modname, char *name, int symbkind, mods *found, int rec
             while ((syms != NULL) && (strcmp (syms->id, name) != 0))
                 syms = syms->next;
 
-            if (syms != NULL) /* name is declared in this modul; */
-                              /* insert it in result!            */
-            {
-
+            if (syms != NULL) { /* name is declared in this modul; */
+                                /* insert it in result!            */
                 DBUG_PRINT ("IMPORT",
                             ("symbol %s found in module/class %s...", name, modname));
 
@@ -1475,9 +1390,7 @@ FindSymbolInModul (char *modname, char *name, int symbkind, mods *found, int rec
 
                 while (imports != NULL) {
                     if ((imports->node[1] == NULL) && (imports->node[2] == NULL)
-                        && (imports->node[3] == NULL) && (imports->node[4] == NULL))
-
-                    {
+                        && (imports->node[3] == NULL) && (imports->node[4] == NULL)) {
                         /* import all ! */
                         cnt--;
                         found = FindSymbolInModul (imports->info.id, name, symbkind,
@@ -1490,8 +1403,7 @@ FindSymbolInModul (char *modname, char *name, int symbkind, mods *found, int rec
                         while ((tmpids != NULL) && (strcmp (tmpids->id, name) != 0))
                             tmpids = tmpids->next;
 
-                        if (tmpids != NULL) /* Symbol found! */
-                        {
+                        if (tmpids != NULL) { /* Symbol found! */
                             cnt--;
                             found = FindSymbolInModul (imports->info.id, name, symbkind,
                                                        found, 1);
@@ -1514,16 +1426,11 @@ FindSymbolInModul (char *modname, char *name, int symbkind, mods *found, int rec
  *                  2) name of the modul which owns the symbol
  *  description   : runs for all user defined types FindSymbolInModul
  *                  and inserts the respective modul-name in types->name_mod.
- *  global vars   : ---
- *  internal funs : FindSymbolInModul, FreeMods
- *  external funs : ---
- *  macros        : DBUG...
  *
  */
 
 void
 AppendModnameToSymbol (node *symbol, char *modname)
-
 {
     node *arg = symbol->node[2];
     mods *mods, *mods2;
@@ -1615,27 +1522,29 @@ AppendModnameToSymbol (node *symbol, char *modname)
                         }
                     }
 
-                } else /* mods == NULL */
-                  if (mods2 == NULL) {
-                    ERROR (symbol->lineno, ("No type '%s` available "
-                                            "in module/class '%s`",
-                                            types->name, modname));
+                } else { /* mods == NULL */
+                    if (mods2 == NULL) {
+                        ERROR (symbol->lineno, ("No type '%s` available "
+                                                "in module/class '%s`",
+                                                types->name, modname));
+                    } else { /* mods2 != NULL */
+                        if (mods2->next != NULL) {
+                            ERROR (symbol->lineno,
+                                   ("Explicit types '%s:%s` and '%s:%s` available ",
+                                    "in module/class '%s`", mods2->mod->name, types->name,
+                                    mods2->next->mod->name, types->name, modname));
+                        } else {
+                            types->name_mod = mods2->mod->prefix;
+                        }
+                    }
                 }
-
-                else /* mods2 != NULL */
-                  if (mods2->next != NULL) {
-                    ERROR (symbol->lineno,
-                           ("Explicit types '%s:%s` and '%s:%s` available ",
-                            "in module/class '%s`", mods2->mod->name, types->name,
-                            mods2->next->mod->name, types->name, modname));
-                } else
-                    types->name_mod = mods2->mod->prefix;
 
                 FreeMods (mods);
                 FreeMods (mods2);
             }
         }
         types = types->next;
+
         if ((types == NULL) && (symbol->nodetype == N_fundef) && (arg != NULL)) {
             types = arg->info.types;
             arg = arg->node[0];
@@ -1653,18 +1562,11 @@ AppendModnameToSymbol (node *symbol, char *modname)
  *  arguments     : 1) modtab of modul to be inserted
  *                  2) N_modul node where the imports have to be inserted
  *  description   : inserts all symbols from a given mod * into a given modul.
- *  global vars   : ---
- *  internal funs : DoImport, AppendModnameToSymbol
- *  external funs : AppendNodeChain
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
 void
 ImportAll (mod *mod, node *modul)
-
 {
     syms *symptr;
     node *explist, *tmpnode;
@@ -1678,10 +1580,11 @@ ImportAll (mod *mod, node *modul)
         explist = mod->moddec->node[0];
 
         for (i = 0; i < 4; i++) {
-            if (i == 2)
+            if (i == 2) {
                 next = 1;
-            else
+            } else {
                 next = 0;
+            }
 
             tmpnode = explist->node[i];
 
@@ -1690,10 +1593,11 @@ ImportAll (mod *mod, node *modul)
                 tmpnode = tmpnode->node[next];
             }
 
-            if (i == 0)
+            if (i == 0) {
                 son = 1;
-            else
+            } else {
                 son = i;
+            }
 
             modul->node[son] = AppendNodeChain (next, explist->node[i], modul->node[son]);
         }
@@ -1712,8 +1616,9 @@ ImportAll (mod *mod, node *modul)
         /* Last, but not least,
            we recursively import the imported modules imports! */
 
-        if (mod->moddec->node[1] != NULL)
+        if (mod->moddec->node[1] != NULL) {
             DoImport (modul, mod->moddec->node[1], mod->name);
+        }
     } else {
         DBUG_PRINT ("IMPORT", ("import of modul/class %s skipped", mod->name));
     }
@@ -1760,21 +1665,23 @@ ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
 
     explist = mod->moddec->node[0];
 
-    if (symbtype == 2)
+    if (symbtype == 2) {
         next = 1; /* next pointer in N_fundef nodes */
-    else
+    } else {
         next = 0; /* next pointer in N_typedef and N_objdef nodes */
+    }
 
-    if (symbtype == 0)
+    if (symbtype == 0) {
         son = 1;
-    else
+    } else {
         son = symbtype;
+    }
 
     tmpdef = explist->node[symbtype];
 
-    while ((tmpdef != NULL) && (strcmp (tmpdef->info.types->id, name) == 0))
-    /* The first entry has to be moved ! */
-    {
+    while ((tmpdef != NULL) && (strcmp (tmpdef->info.types->id, name) == 0)) {
+        /* The first entry has to be moved ! */
+
         explist->node[symbtype] = tmpdef->node[next];
         /* eliminating tmpdef from the chain */
         /* tmpdef points on the def which is to be inserted */
@@ -1847,33 +1754,14 @@ DoImport (node *modul, node *implist, char *filename)
             && (implist->node[3] == NULL) && (implist->node[4] == NULL)) {
             /* this is an import all!! */
             ImportAll (mod, modul);
-        } else /* selective import! */
-        {
-
-#if 0
-The whole stuff is moved to function AddClasstypeOnSelectiveImport
-
-      if (mod->moddec->nodetype==N_classdec)
-      {
-        /*
-         *  If the imported module/class actually is a class then the
-         *  respective class type is added to the import list in the
-         *  case of a selective import.
-         */
-        tmp=MakeIds(implist->info.id, NULL, ST_regular);
-        tmp->next= (ids*) implist->node[1];
-        implist->node[1]= (node*) tmp;
-      }
-
-#endif
-
+        } else { /* selective import! */
             for (i = 0; i < 4; i++) {
                 tmp = (ids *)implist->node[i + 1];
 
                 while (tmp != NULL) { /* importing some symbol! */
                     mods = FindSymbolInModul (implist->info.id, tmp->id, i, NULL, 1);
 
-                    if (mods == NULL)
+                    if (mods == NULL) {
                         switch (i) {
                         case 0:
                             ERROR (implist->lineno,
@@ -1899,8 +1787,7 @@ The whole stuff is moved to function AddClasstypeOnSelectiveImport
                                     implist->info.id));
                             break;
                         }
-
-                    else {
+                    } else {
                         do {
                             tmpmods = mods;
                             if (mods->syms->flag == NOT_IMPORTED) {
@@ -1931,12 +1818,6 @@ The whole stuff is moved to function AddClasstypeOnSelectiveImport
  *                  is added to the list of imported implicit types.
  *                  So, a programmer may or may not include the class type
  *                  when importing selectively from a class.
- *  global vars   : ---
- *  internal funs : FindModul
- *  external funs : MakeIds
- *  macros        :
- *
- *  remarks       :
  *
  */
 
@@ -1985,12 +1866,6 @@ AddClasstypeOnSelectiveImport (mod *modptr)
  *                  of typedefs and fundefs necessary to retrieve
  *                  information from SIBs.
  *  global vars   : mod_tab
- *  internal funs : FindOrAppend, GenSyms, DoImport,
- *                  AddClasstypeOnSelectiveImport
- *  external funs : Trav
- *  macros        : DBUG, TREE
- *
- *  remarks       :
  *
  */
 
@@ -2001,8 +1876,7 @@ IMmodul (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("IMmodul");
 
-    if (arg_node->node[0] != NULL) /* there are any imports! */
-    {
+    if (arg_node->node[0] != NULL) { /* there are any imports! */
         FindOrAppend (arg_node->node[0], 0);
         modptr = mod_tab;
 
@@ -2058,13 +1932,6 @@ IMmodul (node *arg_node, node *arg_info)
  *                  declaration when compiling a module or class
  *                  implementation
  *  global vars   : decl_tree, linenum, start_token, yyin
- *  internal funs : InsertClassType, AppendModnameToSymbol,
- *                  AddClasstypeOnSelectiveImport
- *  external funs : strcmp, fopen, fclose, yyparse,
- *                  Malloc, FindFile
- *  macros        : DBUG, ERROR
- *
- *  remarks       :
  *
  */
 
@@ -2180,10 +2047,6 @@ ImportOwnDeclaration (char *name, file_type modtype)
  *                  to stdout. All declaration files of imported modules
  *                  and classes are printed including the own declaration
  *                  when compiling a module/class implementation.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : printf
- *  macros        :
  *
  *  remarks       : This function corresponds to the -M, -Mlib, -MM, and -MMlib
  *                  compiler options.
