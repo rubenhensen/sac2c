@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.181  1998/04/04 20:33:54  dkr
+ * added an INDENT in PrintIcm
+ *
  * Revision 1.180  1998/04/03 19:43:19  dkr
  * changed output for N_conc
  *
@@ -1873,6 +1876,7 @@ PrintIcm (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintIcm");
     DBUG_PRINT ("PRINT", ("icm-node %s\n", arg_node->info.fun_name.id));
 
+    INDENT
     if (show_icm == 0)
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
@@ -1885,14 +1889,15 @@ PrintIcm (node *arg_node, node *arg_info)
 #define ICM_VAR(dim, name)
 #define ICM_END(prf)
 #include "icm.data"
+#undef ICM_ALL
 #undef ICM_DEF
 #undef ICM_STR
 #undef ICM_INT
 #undef ICM_VAR
 #undef ICM_END
-#undef ICM_ALL
-        if (strcmp (ICM_NAME (arg_node), "NOOP") == 0)
+        if (strcmp (ICM_NAME (arg_node), "NOOP") == 0) {
             compiled_icm = 1;
+        }
 
     if ((show_icm == 1) || (compiled_icm == 0)) {
         if ((strcmp (ICM_NAME (arg_node), "ND_FUN_RET") == 0)
@@ -1903,8 +1908,9 @@ PrintIcm (node *arg_node, node *arg_info)
         }
 
         fprintf (outfile, "%s(", ICM_NAME (arg_node));
-        if (NULL != arg_node->node[0])
+        if (NULL != arg_node->node[0]) {
             Trav (arg_node->node[0], arg_info);
+        }
         fprintf (outfile, ")");
     }
 
