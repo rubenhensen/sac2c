@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 3.15  2004/04/27 10:01:17  skt
+# target assignments_rearrange added
+#
 # Revision 3.14  2003/06/11 21:54:11  ktr
 # included ../constants
 #
@@ -68,7 +71,7 @@ INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../flatt
 
 all: multithread.o multithread_lib.o schedule_init.o repfuns_init.o mtfuns_init.o \
      blocks_init.o blocks_propagate.o blocks_expand.o blocks_cons.o blocks_lift.o \
-     dataflow_analysis.o barriers_init.o adjust_calls.o
+     dataflow_analysis.o barriers_init.o adjust_calls.o assignments_rearrange.o
 
 
 %.o: %.c 
