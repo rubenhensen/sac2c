@@ -1,7 +1,6 @@
 Makefile
 concurrent.c
 concurrent.h
-concurrent_lib.c
 schedule.c
 schedule.h
 spmd_init.c
