@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.227  2004/10/26 11:28:20  sah
+ * extended DS traversal
+ *
  * Revision 3.226  2004/10/26 11:17:07  ktr
  * added emia_tab
  *
@@ -1322,7 +1325,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
   NIF (N_id, "N_id", TravSons, FltnId, PrintId, TravSons, SBTId, TravSons, CDFGid, FreeId,
        TravSons, TravSons, EMRCid, TravSons, DupId, TravSons, SETId, TravSons, IdxId,
-       TravSons, TravSons, TravSons,
+       TravSons, DSId, TravSons,
 
        PrintId, OBJid, TravSons, TravSons, ANAid, TravSons, TravSons, UNQid, TravSons,
        PREC1id, TravSons, TravSons, TravSons, TravSons, TravSons, TCWLnull, TravSons,
@@ -2054,7 +2057,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
   NIF (N_let, "N_let", TravSons, FltnLet, PrintLet, TClet, SBTLet, TravNone, TravSons,
        FreeLet, SPMDEMMlet, TravSons, EMRClet, RIlet, DupLet, TravSons, SETLet, TravSons,
-       IdxLet, TravSons, TravSons, TravSons,
+       IdxLet, TravSons, DSLet, TravSons,
 
        PrintLet, OBJlet, TravSons, TravSons, TravSons, TravSons, TravSons, UNQlet,
        TravSons, PREC1let, TravSons, TravSons, TravSons, EAlet, TravSons, TravSons,
@@ -2478,7 +2481,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
   NIF (N_nwithid, "N_nwithid", TravSons, FltnNwithid, PrintNwithid, TravSons, SBTNWithid,
        TravSons, CDFGwithid, FreeNWithid, TravSons, TravSons, EMRCNwithid, TravSons,
-       DupNwithid, TravSons, SETNWithid, TravSons, TravSons, TravSons, TravSons, TravSons,
+       DupNwithid, TravSons, SETNWithid, TravSons, TravSons, TravSons, DSNWithid,
+       TravSons,
 
        PrintNwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
