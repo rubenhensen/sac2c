@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.3  1999/02/28 21:44:12  srs
+ * renamed FREE_INDEX to FREE_INDEX_INFO
+ *
  * Revision 2.2  1999/02/26 14:45:53  dkr
  * file moved from folder /optimize
  *
@@ -591,12 +594,13 @@ WLIassign (node *arg_node, node *arg_info)
     INFO_WLI_ASSIGN (arg_info) = arg_node;
 
     if (INDEX (arg_node))
-        FREE_INDEX (INDEX (arg_node)); /* this is important. Only index transformations
-                                          with a non-null INDEX are valid. See WLIlet. */
+        /* this is important. Only index transformations
+           with a non-null INDEX are valid. See WLIlet. Before WLI, this
+           pointer may be non null (somwhere wrong initialisation -> better
+           use MakeAssign()!!! ) */
+        FREE_INDEX_INFO (INDEX (arg_node));
 
     ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
-    /*   if (INDEX(arg_node)) */
-    /*     DbugIndexInfo(INDEX(arg_node)); */
     ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
 
     DBUG_RETURN (arg_node);
@@ -841,7 +845,7 @@ WLIlet (node *arg_node, node *arg_info)
                     tmpn
                       = CheckArrayFoldable (PRF_ARG1 (exprn), PRF_ARG2 (exprn), arg_info);
                     if (!tmpn)
-                        FREE_INDEX (INDEX (INFO_WLI_ASSIGN (arg_info)));
+                        FREE_INDEX_INFO (INDEX (INFO_WLI_ASSIGN (arg_info)));
                 }
                 break;
 
