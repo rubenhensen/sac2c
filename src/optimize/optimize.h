@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.48  1998/02/13 13:40:15  srs
+ * removed macro TOS (same as MRD_TOS)
+ *
  * Revision 1.47  1998/02/12 11:10:26  srs
  * added OPTNwith
  *
@@ -202,7 +205,6 @@ stack *mrdl_stack;
     FREE (mrdl_stack->stack);                                                            \
     FREE (mrdl_stack);
 
-#define TOS mrdl_stack->stack[mrdl_stack->tos]
 #define MRD_TOS mrdl_stack->stack[mrdl_stack->tos]
 #define MRD_TAB                                                                          \
     ((cf_tab == act_tab) || (unroll_tab == act_tab) || (unswitch_tab == act_tab)         \
