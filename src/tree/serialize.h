@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/10/26 09:35:55  sah
+ * added serialization of links
+ *
  * Revision 1.5  2004/10/25 11:58:47  sah
  * major code cleanup
  *
@@ -32,8 +35,6 @@ extern void SerializeFundefLink (node *fundef, FILE *file);
 extern const char *GenerateSerFunName (STentrytype_t type, node *node);
 
 extern serstack_t *SerializeBuildSerStack (node *arg_node);
-
-extern node *SerializeLookupFunction (const char *module, const char *name);
 
 extern node *SERFundef (node *arg_node, info *arg_info);
 

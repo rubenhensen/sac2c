@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/10/26 09:35:55  sah
+ * added serialization of links
+ *
  * Revision 1.10  2004/10/25 11:58:47  sah
  * major code cleanup
  *
@@ -346,7 +349,7 @@ SerializeApLinkAttrib (info *info, node *attr, node *parent)
 {
     DBUG_ENTER ("SerializeApLinkAttrib");
 
-    fprintf (INFO_SER_FILE (info), "NULL");
+    SerializeFundefLink (attr, INFO_SER_FILE (info));
 
     DBUG_VOID_RETURN;
 }

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.15  2004/10/26 09:35:55  sah
+ * added serialization of links
+ *
  * Revision 1.14  2004/10/25 11:58:47  sah
  * major code cleanup
  *
@@ -81,6 +84,7 @@ MakeInfo ()
     INFO_SER_FILE (result) = NULL;
     INFO_SER_STACK (result) = NULL;
     INFO_SER_TABLE (result) = STInit ();
+    INFO_SER_AST (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -95,14 +99,6 @@ FreeInfo (info *info)
     info = Free (info);
 
     DBUG_RETURN (info);
-}
-
-node *
-SerializeLookupFunction (const char *module, const char *name)
-{
-    DBUG_ENTER ("SerializeLookupFunction");
-
-    DBUG_RETURN ((node *)NULL);
 }
 
 serstack_t *
@@ -140,6 +136,23 @@ StartSerializeTraversal (node *node, info *info)
 
     store_tab = act_tab;
     act_tab = set_tab;
+
+    node = Trav (node, info);
+
+    act_tab = store_tab;
+
+    DBUG_RETURN (node);
+}
+
+static node *
+StartSerializeLinkTraversal (node *node, info *info)
+{
+    funtab *store_tab;
+
+    DBUG_ENTER ("StartSerializeLinkTraversal");
+
+    store_tab = act_tab;
+    act_tab = sel_tab;
 
     node = Trav (node, info);
 
@@ -313,10 +326,22 @@ GenerateSerFunHead (node *fundef, STentrytype_t type, info *info)
 {
     DBUG_ENTER ("GenerateSerFunBodyHead");
 
-    fprintf (INFO_SER_FILE (info), "void *%s()", GenerateSerFunName (type, fundef));
+    fprintf (INFO_SER_FILE (info), "void *%s(void *info)",
+             GenerateSerFunName (type, fundef));
     fprintf (INFO_SER_FILE (info), "{\n");
     fprintf (INFO_SER_FILE (info), "void *result;\n");
+    fprintf (INFO_SER_FILE (info), "void *stack;\n");
     fprintf (INFO_SER_FILE (info), "result = DROP( x");
+
+    DBUG_VOID_RETURN;
+}
+
+static void
+GenerateSerFunMiddle (node *fundef, STentrytype_t type, info *info)
+{
+    DBUG_ENTER ("GenerateSerFunMiddle");
+
+    fprintf (INFO_SER_FILE (info), ");\nstack = SerializeBuildSerStack( result);");
 
     DBUG_VOID_RETURN;
 }
@@ -325,8 +350,6 @@ static void
 GenerateSerFunTail (node *fundef, STentrytype_t type, info *info)
 {
     DBUG_ENTER ("GenerateSerFunBodyTail");
-
-    fprintf (INFO_SER_FILE (info), ");\n");
 
     fprintf (INFO_SER_FILE (info), "return( result);\n}\n");
 
@@ -348,6 +371,10 @@ SerializeFundefBody (node *fundef, info *info)
 
     FUNDEF_BODY (fundef) = StartSerializeTraversal (FUNDEF_BODY (fundef), info);
 
+    GenerateSerFunMiddle (fundef, SET_funbody, info);
+
+    FUNDEF_BODY (fundef) = StartSerializeLinkTraversal (FUNDEF_BODY (fundef), info);
+
     GenerateSerFunTail (fundef, SET_funbody, info);
 
     INFO_SER_STACK (info) = SerStackDestroy (INFO_SER_STACK (info));
@@ -362,13 +389,19 @@ SerializeFundefHead (node *fundef, info *info)
 
     INFO_SER_STACK (info) = SerializeBuildSerStack (fundef);
 
-    STAdd (FUNDEF_NAME (fundef), GenerateSerFunName (SET_funhead, fundef),
+    FUNDEF_SYMBOLNAME (fundef) = StringCopy (GenerateSerFunName (SET_funhead, fundef));
+
+    STAdd (FUNDEF_NAME (fundef), FUNDEF_SYMBOLNAME (fundef),
            (FUNDEF_STATUS (fundef) == ST_wrapperfun) ? SET_wrapperhead : SET_funhead,
            INFO_SER_TABLE (info));
 
     GenerateSerFunHead (fundef, SET_funhead, info);
 
     fundef = StartSerializeTraversal (fundef, info);
+
+    GenerateSerFunMiddle (fundef, SET_funhead, info);
+
+    fundef = StartSerializeLinkTraversal (fundef, info);
 
     GenerateSerFunTail (fundef, SET_funhead, info);
 
@@ -415,8 +448,12 @@ SerializeFundefLink (node *fundef, FILE *file)
 {
     DBUG_ENTER ("SerializeFundefLink");
 
-    fprintf (file, "SHLPLookupFunction( \"%s\")",
-             GenerateSerFunName (SET_funhead, fundef));
+    if (fundef == NULL) {
+        fprintf (file, "NULL");
+    } else {
+        fprintf (file, "DeserializeLookupFunction( \"%s\", \"%s\", info)",
+                 FUNDEF_MOD (fundef), GenerateSerFunName (SET_funhead, fundef));
+    }
 
     DBUG_VOID_RETURN;
 }
