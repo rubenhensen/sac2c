@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2002/09/06 11:28:09  sbs
+ * V2O patch made permanent!
+ * For index vars, now IDXS2OFFSET is used instead of VECT2OFFSET which
+ * has quite some performance improvement.
+ * However, non-WL-defined vectors require VECT2OFFSET to persist.
+ *
  * Revision 3.23  2002/09/06 10:03:34  sbs
  * V2Opatch added
  *
@@ -572,8 +578,6 @@ int ive_expr, ive_op;
  * node * SetIdx( node *chain, types *shape)    : inserts IDX-node if not
  *                                                  already present
  */
-
-#define V2Opatch 1
 
 /*
  *
@@ -1366,6 +1370,11 @@ IdxArg (node *arg_node, node *arg_info)
             while ((vinfo != NULL) && (VINFO_FLAG (vinfo) != DOLLAR)) {
                 /* loop over all "Uses" attributes */
                 if (VINFO_FLAG (vinfo) == IDX) {
+                    /*
+                     * since arg_node is a function argument, a scalarized
+                     * version is not available => CreateIdxs2OffsetIcm  cannot
+                     * be used 8-(
+                     */
                     newassign = CreateVect2OffsetIcm (arg_node, VINFO_TYPE (vinfo));
 
                     ASSIGN_NEXT (newassign) = BLOCK_INSTR (block);
@@ -1746,6 +1755,11 @@ IdxLet (node *arg_node, node *arg_info)
                      */
                     while (vinfo != NULL) { /* loop over all "Uses" attributes */
                         if (VINFO_FLAG (vinfo) == IDX) {
+                            /*
+                             * I cannot imagine a case, where Idxs2Offset could be used
+                             * instead of Vect2Offset here. However, I'm not entirely
+                             * sure....
+                             */
                             newassign = CreateVect2OffsetIcm (vardec, VINFO_TYPE (vinfo));
 
                             current_assign = INFO_IVE_CURRENTASSIGN (arg_info);
@@ -2385,22 +2399,18 @@ IdxNcode (node *arg_node, node *arg_info)
                                              NULL);
 #endif
                 } else {
-#if V2Opatch
                     /*
                      * we have to instanciate the idx-variable by an ICM of the form:
                      *   ND_IDXS2OFFSET( <off-name>, <num idxs>, idx-names,
                      *                               <dim of array>, shape_elems)
+                     *
+                     * NB: we do not use ND_VECT2OFFSET here, as the index scalars will
+                     * be created anyways, and, using them, may
+                     *   a) speedup the access times (better opts in the C compiler)
+                     *   b) avoid the allocation of the vector entirely!
                      */
                     new_assign
                       = CreateIdxs2OffsetIcm (idx_decl, idxs, VINFO_TYPE (vinfo));
-#else
-                    /*
-                     * we have to instanciate the idx-variable by an ICM of the form:
-                     *   ND_VECT2OFFSET( <off-name>, <var-name>,
-                     *                   <dim of var>, <dim of array>, shape_elems)
-                     */
-                    new_assign = CreateVect2OffsetIcm (idx_decl, VINFO_TYPE (vinfo));
-#endif
                 }
 
                 ASSIGN_NEXT (new_assign) = BLOCK_INSTR (NCODE_CBLOCK (arg_node));
