@@ -1,6 +1,11 @@
 /*
  * $Log$
- * Revision 1.22  1996/02/06 13:14:14  hw
+ * Revision 1.23  1996/02/06 16:17:19  hw
+ * added macros CHAR, CHAR
+ * added type-class CxC_B to enum (for use with primitive functions
+ *  eq, neq, ...)
+ *
+ * Revision 1.22  1996/02/06  13:14:14  hw
  * bug fixed in Genarray_S ( checking whether the elements of the
  *  shape-vector are konstant)
  *
@@ -106,6 +111,7 @@ enum type_class {
     AxA_A,
     BxB_B,
     SxS_B,
+    CxC_B,
     AxS_A,
     SxS_F,
     AxA_F,
@@ -192,6 +198,7 @@ enum type_class {
 #define INT GEN_TYPE_NODE (type, T_int)
 #define FLOAT GEN_TYPE_NODE (type, T_float)
 #define BOOL GEN_TYPE_NODE (type, T_bool)
+#define CHAR GEN_TYPE_NODE (type, T_char)
 #define INT_A                                                                            \
     type = MakeTypes (T_int);                                                            \
     type->dim = -1;                                                                      \
@@ -204,6 +211,10 @@ enum type_class {
     type = MakeTypes (T_bool);                                                           \
     type->dim = -1;                                                                      \
     DBUG_PRINT ("PRIM_FUN", ("param: bool[]" P_FORMAT, type))
+#define CHAR_A                                                                           \
+    type = MakeTypes (T_char);                                                           \
+    type->dim = -1;                                                                      \
+    DBUG_PRINT ("PRIM_FUN", ("param: char[]" P_FORMAT, type))
 #define DOUBLE GEN_TYPE_NODE (type, T_double)
 #define DOUBLE_A                                                                         \
     type = MakeTypes (T_double);                                                         \
