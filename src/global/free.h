@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1998/04/23 17:32:19  dkr
+ * added FreeSync
+ *
  * Revision 1.21  1998/04/17 17:26:00  dkr
  * 'concurrent regions' are now called 'SPMD regions'
  *
@@ -176,6 +179,7 @@ extern node *FreeInc (node *arg_node, node *arg_info);
 extern node *FreePragma (node *arg_node, node *arg_info);
 extern node *FreeInfo (node *arg_node, node *arg_info);
 extern node *FreeSPMD (node *arg_node, node *arg_info);
+extern node *FreeSync (node *arg_node, node *arg_info);
 
 /* new with-loops */
 extern node *FreeNWith (node *arg_node, node *arg_info);
