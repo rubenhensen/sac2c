@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2002/05/03 12:48:44  dkr
+ * ND_KD_SET_SHAPE removed
+ *
  * Revision 3.28  2002/03/07 20:07:49  dkr
  * ND_FUN_RET: parameter arg_info removed
  *
@@ -41,7 +44,8 @@
  * MT_ADJUST_SCHEDULER is a h-icm now.
  *
  * Revision 3.17  2001/03/28 12:49:48  ben
- * For MT_SCHEDULER_Cyclic_..., MT_SCHEDULER_Self_..., MT_SCHEDULER_Afs_...  ICM_INT(param) added
+ * For MT_SCHEDULER_Cyclic_..., MT_SCHEDULER_Self_..., MT_SCHEDULER_Afs_...
+ * ICM_INT(param) added
  *
  * Revision 3.16  2001/03/27 11:51:17  ben
  * MT_SCHEDULER_Afs_... added
@@ -70,64 +74,7 @@
  * Revision 3.8  2001/02/06 01:44:03  dkr
  * WL_NOOP_... replaced by WL_ADJUST_OFFSET
  *
- * Revision 3.7  2001/01/30 12:22:22  dkr
- * signature of ICMs WL_NOOP, WL_NOOP__OFFSET modified
- *
- * Revision 3.6  2001/01/24 23:38:28  dkr
- * type of arguments of ICMs MT_SCHEDULER_..._BEGIN, MT_SCHEDULER_..._END
- * changed from int* to char**
- *
- * Revision 3.5  2001/01/22 13:45:21  dkr
- * signature of ICMCompileMT_ADJUST_SCHEDULER modified
- *
- * Revision 3.4  2001/01/19 11:53:48  dkr
- * some with-loop ICMs renamed
- *
- * Revision 3.2  2001/01/10 18:33:07  dkr
- * icm WL_ADJUST_OFFSET renamed into WL_SET_OFFSET
- *
- * Revision 3.1  2000/11/20 18:01:13  sacbase
- * new release made
- *
- * Revision 2.12  2000/08/18 23:02:06  dkr
- * signature of ND_FUN_RET changed
- *
- * Revision 2.11  2000/07/28 11:43:37  cg
- * Added new ICM WL_ASSIGN_NOOP for efficient handling of dummy
- * iteration space segments introduced through array padding.
- *
- * Revision 2.10  2000/07/24 15:06:44  dkr
- * redundant parameter 'line' removed from ICMs for array-prfs
- *
- * Revision 2.9  2000/06/23 16:03:17  dkr
- * ICMs for old with-loop removed
- *
- * Revision 2.8  2000/01/17 16:25:58  cg
- * Removed static and dynamic versions of the ICMs
- * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END].
- * General version now is identical with the former dynamic
- * version.
- *
- * Revision 2.7  1999/07/20 16:54:11  jhs
- * Added barrier_id to signature of MT_SYNC_FOLD.
- *
- * Revision 2.6  1999/06/30 16:00:11  jhs
- * Expanded backend, so compilation of fold-with-loops is now possible
- * during SPMD-Blocks containing more than one SYNC-Block.
- *
- * Revision 2.5  1999/06/25 14:52:25  rob
- * Introduce definitions and utility infrastructure for tagged array support.
- *
- * Revision 2.4  1999/06/16 17:10:15  rob
- * add new C macros for TAGGED_ARRAYS.
- *
- * Revision 2.3  1999/06/03 13:19:00  jhs
- * Changed parameters for MT_CONTINUE.
- *
  * ... [eliminated] ...
- *
- * Revision 1.1  1995/03/10  17:26:51  sbs
- * Initial revision
  *
  */
 
@@ -195,6 +142,7 @@ ICM_END( ND_CREATE_CONST_ARRAY_A, (name, length, dim, A))
 #endif
 
 #ifdef TAGGED_ARRAYS 
+
 #if defined(ND_DECL_AKS) || defined(ICM_ALL)
 ICM_DEF( ND_DECL_AKS, TRACE_NONE)
   ICM_STR(type)
@@ -241,14 +189,6 @@ ICM_DEF( ND_KS_DECL_ARRAY_ARG, TRACE_NONE)
   ICM_INT(dim)
   ICM_VAR( dim, s)
 ICM_END( ND_KS_DECL_ARRAY_ARG, (name, dim, s))
-#endif
-
-#if defined(ND_KD_SET_SHAPE) || defined(ICM_ALL)
-ICM_DEF( ND_KD_SET_SHAPE, TRACE_NONE)
-  ICM_STR(name)
-  ICM_INT(dim)
-  ICM_VAR( dim, s)
-ICM_END( ND_KD_SET_SHAPE, (name, dim, s))
 #endif
 
 #if defined(ND_KD_SEL_CxA_S) || defined(ICM_ALL)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/05/03 12:48:36  dkr
+ * ND_KD_SET_SHAPE removed
+ *
  * Revision 3.10  2002/04/16 21:17:36  dkr
  * ICMCompileND_FUN_DEC:
  * no special treatment for main() function needed anymore
@@ -34,36 +37,6 @@
  *
  * Revision 3.1  2000/11/20 18:01:17  sacbase
  * new release made
- *
- * Revision 2.22  2000/09/27 16:47:08  dkr
- * __p replaced by SAC_NAMEP
- *
- * Revision 2.21  2000/08/18 23:03:12  dkr
- * signature of ND_FUN_RET changed (renaming of out-args in case of name
- * conflicts is now supported)
- *
- * Revision 2.20  2000/07/28 21:48:04  dkr
- * some minor indentation error fixed
- *
- * Revision 2.19  2000/07/28 14:55:53  dkr
- * typo in ICMCompileND_PRF_MODARRAY_CHECK_REUSE corrected
- * indentation in ICMCompileND_PRF_MODARRAY... is balanced now
- *
- * Revision 2.18  2000/07/25 10:03:44  nmw
- * special function handling for SAC_ObjectInit... with
- * argc and argv to allow TheCommandLine to initialize
- *
- * Revision 2.17  2000/07/24 15:06:53  dkr
- * redundant parameter 'line' removed from ICMs for array-prfs
- *
- * Revision 2.16  2000/07/06 17:02:01  dkr
- * SAC_ND_KD_A_SHAPE renamed into SAC_ND_A_SHAPE
- *
- * Revision 2.15  2000/06/23 16:02:56  dkr
- * ICMs for old with-loop removed
- *
- * Revision 2.14  2000/02/09 12:03:46  dkr
- * superfluous space in output of ND_FUN_DEC removed
  *
  * [...]
  *
@@ -653,6 +626,39 @@ ICMCompileND_KD_DECL_EXTERN_ARRAY (char *type, char *name, int dim)
  *
  ******************************************************************************/
 
+#ifdef TAGGED_ARRAYS
+
+void
+ICMCompileND_DECL_ARG (char *name, int dim, char **s)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileND_DECL_ARG");
+
+#define ND_DECL_ARG
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_DECL_ARG
+
+    INDENT;
+    fprintf (outfile, "const int SAC_ND_A_SIZE(%s)=", name);
+    fprintf (outfile, "%s", s[0]);
+    for (i = 1; i < dim; i++) {
+        fprintf (outfile, "*%s", s[i]);
+    }
+    fprintf (outfile, ";\n");
+    INDENT;
+    fprintf (outfile, "const int SAC_ND_A_DIM(%s)=%d;\n", name, dim);
+    for (i = 0; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "const int SAC_ND_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+#else
+
 void
 ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s)
 {
@@ -682,41 +688,7 @@ ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s)
     DBUG_VOID_RETURN;
 }
 
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_KD_SET_SHAPE( char *name, int dim, char **s)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_KD_SET_SHAPE( name, dim, s0,..., sn)
- *   sets all shape components of an array
- *
- * remark:
- *   This ICM is *not* used for the time being!!!
- *
- ******************************************************************************/
-
-void
-ICMCompileND_KD_SET_SHAPE (char *name, int dim, char **s)
-{
-    int i;
-
-    DBUG_ENTER ("ICMCompileND_KD_SET_SHAPE");
-
-#define ND_KD_SET_SHAPE
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_KD_SET_SHAPE
-
-    for (i = 0; i < dim; i++) {
-        INDENT;
-        fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d) = %s;\n", name, i, s[i]);
-    }
-
-    DBUG_VOID_RETURN;
-}
+#endif
 
 /******************************************************************************
  *

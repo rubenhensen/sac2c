@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/05/03 12:48:48  dkr
+ * ND_KD_SET_SHAPE removed
+ *
  * Revision 3.4  2002/03/07 20:08:33  dkr
  * ND_FUN_RET: parameter 'arg_info' removed
  *
@@ -72,8 +75,6 @@ extern void ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *type, char *name, int dim, 
 extern void ICMCompileND_KD_DECL_EXTERN_ARRAY (char *basetype, char *name, int dim);
 
 extern void ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s);
-
-extern void ICMCompileND_KD_SET_SHAPE (char *name, int dim, char **s);
 
 extern void ICMCompileND_KD_SEL_CxA_S (char *a, char *res, int dim, char **vi);
 
