@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.2  2001/01/09 14:51:35  dkr
+ * no changes done
+ *
  * Revision 3.1  2000/11/20 18:01:33  sacbase
  * new release made
  *
@@ -26,10 +30,10 @@
  *
  * Revision 1.1  1998/04/29 17:17:17  dkr
  * Initial revision
+ *
  */
 
 #ifndef _sac_wltransform_h
-
 #define _sac_wltransform_h
 
 extern node *WlTransform (node *syntax_tree);
