@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2004/10/14 13:56:27  sbs
+ * fixed a bug in IdxNcode
+ *
  * Revision 3.58  2004/10/14 13:40:11  sbs
  * changed types component within Vinfo into shape and copied these explicihan sharing a
  * pointer.
@@ -2582,7 +2585,9 @@ IdxNcode (node *arg_node, info *arg_info)
                         break;
                     }
 
-                    arr_shape = SHFreeShape (arr_shape);
+                    if (arr_shape != NULL) {
+                        arr_shape = SHFreeShape (arr_shape);
+                    }
                     tmp_ids = IDS_NEXT (tmp_ids);
                     tmp_withop = NWITHOP_NEXT (tmp_withop);
                 }
