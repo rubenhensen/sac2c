@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.142  1997/12/20 15:49:40  srs
+ * enhanced PrintNodeTree and
+ * changed some functions headers to new style
+ *
  * Revision 1.141  1997/12/10 18:36:27  srs
  * changed output of new WLs
  *
@@ -1878,10 +1882,14 @@ PrintPragma (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-/* ----------------------------------------------------------------------- */
 
-/* -------------------------------------------------------------------------- *
- * task: prints Nwith node.
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintNWith(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints Nwith node.
  *
  * remarks: there are syntactic alternatives to print the new WLs.
  * If only one Npart node exists the WL is printed in the way the
@@ -1892,7 +1900,9 @@ PrintPragma (node *arg_node, node *arg_info)
  *
  * node[2] of arg_info is NULL for the internal syntax or != NULL if
  * PrintNpart shall return the last expr.
- * -------------------------------------------------------------------------- */
+ *
+ ******************************************************************************/
+
 node *
 PrintNWith (node *arg_node, node *arg_info)
 {
@@ -1963,15 +1973,20 @@ PrintNWith (node *arg_node, node *arg_info)
     arg_info->node[2] = buffer;
     DBUG_RETURN (arg_node);
 }
-/* ----------------------------------------------------------------------- */
 
-/* -------------------------------------------------------------------------- *
- * task: prints a generator
+/******************************************************************************
  *
- * remarks: ATTENTION: this fkt. is not being used by the conventional
- * traversation algorithm but from within PrintNPart.
- * Unusual arguments.
- * -------------------------------------------------------------------------- */
+ * function:
+ *   node *PrintNGenerator(node *gen, node *idx, node *arg_info)
+ *
+ * description:
+ *   prints a generator
+ *
+ *   ATTENTION: this function is not being used by the conventional
+ *   traversation algorithm but from within PrintNPart.
+ *
+ ******************************************************************************/
+
 node *
 PrintNGenerator (node *gen, node *idx, node *arg_info)
 {
@@ -2014,13 +2029,18 @@ PrintNGenerator (node *gen, node *idx, node *arg_info)
 
     DBUG_RETURN ((node *)NULL);
 }
-/* ----------------------------------------------------------------------- */
 
-/* -------------------------------------------------------------------------- *
- * task: prints N_Npart nodes
+/******************************************************************************
  *
- * remarks: -
- * -------------------------------------------------------------------------- */
+ * function:
+ *   node *PrintNPart(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_Npart nodes
+ *
+ *
+ ******************************************************************************/
+
 node *
 PrintNPart (node *arg_node, node *arg_info)
 {
@@ -2071,13 +2091,17 @@ PrintNPart (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-/* ----------------------------------------------------------------------- */
 
-/* -------------------------------------------------------------------------- *
- * task: initiates traversal of print functions
+/******************************************************************************
  *
- * remarks: -
- * -------------------------------------------------------------------------- */
+ * function:
+ *   node *Print(node *arg_node)
+ *
+ * description:
+ *   initiates print of (sub-)tree
+ *
+ ******************************************************************************/
+
 node *
 Print (node *arg_node)
 {
@@ -2123,13 +2147,20 @@ Print (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
-/* ---------------------------------------------------------------- */
 
-/* -------------------------------------------------------------------------- *
- * task: print syntax tree without any interpretation
+/******************************************************************************
  *
- * remarks: mostly used for debugging
- * -------------------------------------------------------------------------- */
+ * function:
+ *   void PrintNodeTree(node *node)
+ *
+ * description:
+ *   this function is for debug assistance.
+ *   It prints the syntax tree without any interpretation.
+ *   Some attribues of interrest are printed inside of parenthesizes behind
+ *   the node name.
+ *
+ ******************************************************************************/
+
 void
 PrintNodeTree (node *node)
 {
@@ -2162,6 +2193,10 @@ PrintNodeTree (node *node)
         case N_prf:
             fprintf (outfile, "(%s)\n", mdb_prf[PRF_PRF (node)]);
             break;
+        case N_vardec:
+            fprintf (outfile, "(%s %s)\n", mdb_type[VARDEC_TYPE (node)->simpletype],
+                     VARDEC_NAME (node));
+            break;
         default:
             fprintf (outfile, "\n");
         }
@@ -2177,4 +2212,3 @@ PrintNodeTree (node *node)
     } else
         fprintf (outfile, "NULL\n");
 }
-/* ---------------------------------------------------------------- */
