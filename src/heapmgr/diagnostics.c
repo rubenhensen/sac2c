@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2003/04/14 14:47:56  sbs
+ * t casted into unisgned int for comparison with num_threads.
+ *
  * Revision 3.1  2000/11/20 18:02:52  sacbase
  * new release made
  *
@@ -480,7 +483,7 @@ SAC_HM_ShowDiagnostics ()
                  num_threads - 1);
 
         for (i = 0; i < SAC_HM_TOP_ARENA; i++) {
-            for (t = 2; t < num_threads; t++) {
+            for (t = 2; (unsigned int)t < num_threads; t++) {
                 SAC_HM_AddDiagCounters (&(SAC_HM_arenas[1][i]), &(SAC_HM_arenas[t][i]));
             }
 
