@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.70  1998/06/12 14:06:37  cg
+ * core renaming of local identifiers moved to new function
+ * PRECRenameLocalIdentifier() which is also exported for
+ * usage in other compiler modules.
+ *
  * Revision 1.69  1998/06/05 15:27:49  cg
  * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
  * Now, module name and symbol name are combined correctly by ':'.
@@ -282,6 +287,50 @@ precompile (node *syntax_tree)
 /******************************************************************************
  *
  * function:
+ *   char *PRECRenameLocalIdentifier(char *id)
+ *
+ * description:
+ *
+ *   This function renames a given local identifier name for precompiling
+ *   purposes. If the identifier has been inserted by sac2c, i.e. it starts
+ *   with an underscore, it is prefixed by SACp. Otherwise, it is prefixed
+ *   by SACl.
+ *
+ ******************************************************************************/
+
+char *
+PRECRenameLocalIdentifier (char *id)
+{
+    char *new_name;
+
+    DBUG_ENTER ("RenameLocalIdentifier");
+
+    if (id[0] == '_') {
+        /*
+         * This local identifier was inserted by sac2c.
+         */
+        new_name = (char *)Malloc (sizeof (char) * (strlen (id) + 5));
+        sprintf (new_name, "SACp%s", id);
+        /*
+         * Here, we don't need an underscore after the prefix because the name already
+         * starts with one.
+         */
+    } else {
+        /*
+         * This local identifier originates from the source code.
+         */
+        new_name = (char *)Malloc (sizeof (char) * (strlen (id) + 6));
+        sprintf (new_name, "SACl_%s", id);
+    }
+
+    FREE (id);
+
+    DBUG_RETURN (new_name);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *RenameId(node *idnode)
  *
  * description:
@@ -296,8 +345,6 @@ precompile (node *syntax_tree)
 static node *
 RenameId (node *idnode)
 {
-    char *new_name;
-
     DBUG_ENTER ("RenameId");
 
     DBUG_ASSERT ((NODE_TYPE (idnode) == N_id), "Wrong argument to function RenameId()");
@@ -309,26 +356,7 @@ RenameId (node *idnode)
          * The global object's definition has already been renamed.
          */
     } else {
-        if (ID_NAME (idnode)[0] == '_') {
-            /*
-             * This local identifier was inserted by sac2c.
-             */
-            new_name = (char *)Malloc (sizeof (char) * (strlen (ID_NAME (idnode)) + 5));
-            sprintf (new_name, "SACp%s", ID_NAME (idnode));
-            /*
-             * Here, we don't need an underscore after the prefix because the name already
-             * starts with one.
-             */
-        } else {
-            /*
-             * This local identifier originates from the source code.
-             */
-            new_name = (char *)Malloc (sizeof (char) * (strlen (ID_NAME (idnode)) + 6));
-            sprintf (new_name, "SACl_%s", ID_NAME (idnode));
-        }
-
-        FREE (ID_NAME (idnode));
-        ID_NAME (idnode) = new_name;
+        ID_NAME (idnode) = PRECRenameLocalIdentifier (ID_NAME (idnode));
     }
 
     DBUG_RETURN (idnode);
@@ -351,8 +379,6 @@ RenameId (node *idnode)
 static ids *
 PrecompileIds (ids *id)
 {
-    char *new_name;
-
     DBUG_ENTER ("PrecompileIds");
 
     while ((id != NULL) && (IDS_STATUS (id) == ST_artificial)) {
@@ -368,26 +394,7 @@ PrecompileIds (ids *id)
              * The global object's definition has already been renamed.
              */
         } else {
-            if (IDS_NAME (id)[0] == '_') {
-                /*
-                 * This local identifier was inserted by sac2c.
-                 */
-                new_name = (char *)Malloc (sizeof (char) * (strlen (IDS_NAME (id)) + 5));
-                sprintf (new_name, "SACp%s", IDS_NAME (id));
-                /*
-                 * Here, we don't need an underscore after the prefix because the name
-                 * already starts with one.
-                 */
-            } else {
-                /*
-                 * This local identifier originates from the source code.
-                 */
-                new_name = (char *)Malloc (sizeof (char) * (strlen (IDS_NAME (id)) + 6));
-                sprintf (new_name, "SACl_%s", IDS_NAME (id));
-            }
-
-            FREE (IDS_NAME (id));
-            IDS_NAME (id) = new_name;
+            IDS_NAME (id) = PRECRenameLocalIdentifier (IDS_NAME (id));
         }
 
         if (IDS_NEXT (id) != NULL) {
@@ -908,8 +915,6 @@ PRECfundef (node *arg_node, node *arg_info)
 node *
 PRECarg (node *arg_node, node *arg_info)
 {
-    char *new_name;
-
     DBUG_ENTER ("PRECarg");
 
     if (ARG_ATTRIB (arg_node) == ST_was_reference) {
@@ -943,18 +948,7 @@ PRECarg (node *arg_node, node *arg_info)
              * The attribute ARG_NAME may not be set in the case of imported function
              * declarations.
              */
-            if (ARG_NAME (arg_node)[0] == '_') {
-                new_name
-                  = (char *)Malloc (sizeof (char) * (strlen (ARG_NAME (arg_node)) + 5));
-                sprintf (new_name, "SACp%s", ARG_NAME (arg_node));
-            } else {
-                new_name
-                  = (char *)Malloc (sizeof (char) * (strlen (ARG_NAME (arg_node)) + 6));
-                sprintf (new_name, "SACl_%s", ARG_NAME (arg_node));
-            }
-
-            FREE (ARG_NAME (arg_node));
-            ARG_NAME (arg_node) = new_name;
+            ARG_NAME (arg_node) = PRECRenameLocalIdentifier (ARG_NAME (arg_node));
         }
 
         if (ARG_NEXT (arg_node) != NULL) {
@@ -984,8 +978,6 @@ PRECarg (node *arg_node, node *arg_info)
 node *
 PRECvardec (node *arg_node, node *arg_info)
 {
-    char *new_name;
-
     DBUG_ENTER ("PRECvardec");
 
     if (VARDEC_STATUS (arg_node) == ST_artificial) {
@@ -996,29 +988,7 @@ PRECvardec (node *arg_node, node *arg_info)
         }
     } else {
         VARDEC_TYPE (arg_node) = RenameTypes (VARDEC_TYPE (arg_node));
-
-        if (VARDEC_NAME (arg_node)[0] == '_') {
-            /*
-             * This local identifier was inserted by sac2c.
-             */
-            new_name
-              = (char *)Malloc (sizeof (char) * (strlen (VARDEC_NAME (arg_node)) + 5));
-            sprintf (new_name, "SACp%s", VARDEC_NAME (arg_node));
-            /*
-             * Here, we don't need an underscore after the prefix because the name already
-             * starts with one.
-             */
-        } else {
-            /*
-             * This local identifier originates from the source code.
-             */
-            new_name
-              = (char *)Malloc (sizeof (char) * (strlen (VARDEC_NAME (arg_node)) + 6));
-            sprintf (new_name, "SACl_%s", VARDEC_NAME (arg_node));
-        }
-
-        FREE (VARDEC_NAME (arg_node));
-        VARDEC_NAME (arg_node) = new_name;
+        VARDEC_NAME (arg_node) = PRECRenameLocalIdentifier (VARDEC_NAME (arg_node));
 
         if (VARDEC_NEXT (arg_node) != NULL) {
             VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);

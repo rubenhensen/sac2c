@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1998/06/12 14:06:37  cg
+ * core renaming of local identifiers moved to new function
+ * PRECRenameLocalIdentifier() which is also exported for
+ * usage in other compiler modules.
+ *
  * Revision 1.18  1998/06/04 17:00:54  cg
  * information about refcounted variables in the context of loops,
  * conditionals and the old with-loop are now stored in ids-chains
@@ -91,5 +96,7 @@ extern node *PRECcond (node *arg_node, node *arg_info);
 extern node *PRECwith (node *arg_node, node *arg_info);
 extern node *PRECNwith2 (node *arg_node, node *arg_info);
 extern node *PRECNcode (node *arg_node, node *arg_info);
+
+extern char *PRECRenameLocalIdentifier (char *id);
 
 #endif /* _sac_precompile_h */
