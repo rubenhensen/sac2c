@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2001/05/17 14:16:21  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 1.4  2001/05/07 07:40:00  nmw
  * dbug output corrected
  *
@@ -537,7 +540,7 @@ COShape (constant *a)
     DBUG_ENTER ("COShape");
 
     if (CONSTANT_DIM (a) > 0) {
-        shape_vec = (int *)MALLOC (CONSTANT_DIM (a) * sizeof (int));
+        shape_vec = (int *)Malloc (CONSTANT_DIM (a) * sizeof (int));
         for (i = 0; i < CONSTANT_DIM (a); i++)
             shape_vec[i] = SHGetExtent (CONSTANT_SHAPE (a), i);
         res = COMakeConstant (T_int, SHCreateShape (1, CONSTANT_DIM (a)), shape_vec);

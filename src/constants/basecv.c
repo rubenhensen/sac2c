@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2001/05/17 14:16:21  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 1.1  2001/05/02 08:00:21  nmw
  * Initial revision
  *
@@ -65,7 +68,7 @@ basecvfunptr basecv_one[] = {
         arg_t *data_vec;                                                                 \
         DBUG_ENTER (str (COBaseCv##arg_ext##fun_ext));                                   \
         unrlen = SHGetUnrLen (shp);                                                      \
-        data_vec = (arg_t *)MALLOC (unrlen * sizeof (arg_t));                            \
+        data_vec = (arg_t *)Malloc (unrlen * sizeof (arg_t));                            \
         for (i = 0; i < unrlen; i++)                                                     \
             data_vec[i] = value;                                                         \
         DBUG_RETURN (COMakeConstant (s_type, shp, (void *)data_vec));                    \

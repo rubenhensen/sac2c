@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2001/05/17 14:16:21  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 1.4  2001/03/22 14:25:08  nmw
  * primitive ari ops implemented
  *
@@ -73,7 +76,7 @@ COZip (zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_type)
         if (target_type != T_unknown) {
             res
               = COMakeConstant (target_type, SHCopyShape (COGetShape (b)),
-                                MALLOC (CONSTANT_VLEN (b) * basetype_size[target_type]));
+                                Malloc (CONSTANT_VLEN (b) * basetype_size[target_type]));
         } else {
             res = COCopyConstant (b);
         }
@@ -90,7 +93,7 @@ COZip (zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_type)
              */
             if (target_type != T_unknown) {
                 res = COMakeConstant (target_type, SHCopyShape (COGetShape (a)),
-                                      MALLOC (CONSTANT_VLEN (a)
+                                      Malloc (CONSTANT_VLEN (a)
                                               * basetype_size[target_type]));
             } else {
                 res = COCopyConstant (a);
@@ -110,7 +113,7 @@ COZip (zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_type)
             if (SHCompareShapes (CONSTANT_SHAPE (a), CONSTANT_SHAPE (b)) == TRUE) {
                 if (target_type != T_unknown) {
                     res = COMakeConstant (target_type, SHCopyShape (COGetShape (a)),
-                                          MALLOC (CONSTANT_VLEN (a)
+                                          Malloc (CONSTANT_VLEN (a)
                                                   * basetype_size[target_type]));
                 } else {
                     res = COCopyConstant (a);
@@ -158,7 +161,7 @@ COZipUnary (zipcvfunptr *fun_arr, constant *a, simpletype target_type)
 
     if (target_type != T_unknown) {
         res = COMakeConstant (target_type, SHCopyShape (COGetShape (a)),
-                              MALLOC (CONSTANT_VLEN (a) * basetype_size[target_type]));
+                              Malloc (CONSTANT_VLEN (a) * basetype_size[target_type]));
     } else {
         res = COCopyConstant (a);
     }
