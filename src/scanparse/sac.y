@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.118  1996/08/01 08:54:03  cg
+ * Revision 1.119  1996/09/09 10:06:47  cg
+ * new primitive functions toi, tof, tod, etc. may now be overloaded
+ * by library functions.
+ *
+ * Revision 1.118  1996/08/01  08:54:03  cg
  * Bug fixed: module name is now initialized when parsing N_ap nodes
  *
  * Revision 1.117  1996/04/02  19:37:26  cg
@@ -474,8 +478,6 @@ static file_type file_kind = F_prog;
 %token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC,
        COMMA, AMPERS, ASSIGN, DOT,
        INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF, CLASSTYPE,
-       F2I, F2D, I2F,I2D, D2I, D2F,
-       TOI, TOF, TOD, 
        INC, DEC, ADDON, SUBON, MULON, DIVON,
        K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, FOLD,
        MODDEC, MODIMP, CLASSDEC, IMPORT, ALL, IMPLICIT, EXPLICIT, TYPES, FUNS,
@@ -484,7 +486,9 @@ static file_type file_kind = F_prog;
        PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
        TOUCH, COPYFUN, FREEFUN, INITFUN, SIBLIMIT
 %token <id> ID, STR,AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PLUS,
-            MINUS, PRIVATEID
+            F2I, F2D, I2F,I2D, D2I, D2F,
+            TOI, TOF, TOD, 
+            MINUS, PRIVATEID,
             RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE,CAT,PSI,GENARRAY, MODARRAY
 %token <types> TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_UNS, TYPE_SHORT,
                TYPE_LONG, TYPE_CHAR, TYPE_DBL, TYPE_VOID, TYPE_DOTS
@@ -1414,6 +1418,15 @@ prf_name : AND { $$=$1; }
          | PSI { $$=$1; }
          | GENARRAY { $$=$1; }
          | MODARRAY { $$=$1; }
+         | TOI { $$=$1; }
+         | TOF { $$=$1; }
+         | TOD { $$=$1; }
+         | I2F { $$=$1; }
+         | I2D { $$=$1; }
+         | F2I { $$=$1; }
+         | F2D { $$=$1; }
+         | D2I { $$=$1; }
+         | D2F { $$=$1; }
         ;
 
 main: TYPE_INT K_MAIN BRACKET_L BRACKET_R {$$=MakeNode(N_fundef);} exprblock 
@@ -2744,7 +2757,7 @@ sibheader: LT id GT
 
 siblimit: SIBLIMIT
           {
-            CreateArchive(mod_name);
+            /* CreateArchive(mod_name); */
           }
         ;
 
