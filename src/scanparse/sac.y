@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.149  1998/03/02 19:47:55  srs
+ * removed now unused rule 'unaryop' from %type declaration
+ *
  * Revision 1.148  1998/03/02 13:54:47  srs
  * the parser flattens the operators ++ and -- to the equivalent
  * binary functions.
@@ -621,7 +624,7 @@ static file_type file_kind = F_prog;
              exprsNOar, exprNOdot, exprORdot, exprNOar, exprNOnum,
              expr, expr_main, expr_ap, expr_ar, expr_num, exprs,
              Ngenerator, Nsteps, Nwidth, Nwithop, Ngenidx,
-             conexpr, generator, unaryop,
+             conexpr, generator,
              moddec, expdesc, expdesc2, expdesc3, expdesc4, fundecs, fundec,
              exptypes, exptype, objdecs, objdec, evimport, modheader,
              imptypes, imptype,import, imports, impdesc, impdesc2, impdesc3,
@@ -2227,7 +2230,7 @@ monop: ABS   { $$=F_abs;   }
      ;
 
 /* left for later BRUSHING BEGIN */
-
+/*
 unaryop: INC
           { $$=MakeNode(N_inc);
           }
@@ -2237,7 +2240,7 @@ unaryop: INC
           { $$=MakeNode(N_dec);
           }
            ;
-
+*/
 /* left for later BRUSHING END */
 
 binop: PSI      { $$=F_psi;      }
