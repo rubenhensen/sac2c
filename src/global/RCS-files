@@ -16,6 +16,7 @@ options.c
 options.h
 resource.c
 resource.h
+status_info.mac
 types.h
 usage.c
 usage.h
