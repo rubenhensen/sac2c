@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.165  1998/05/13 14:39:48  srs
+ * added NPART_COPY
+ *
  * Revision 1.164  1998/05/13 13:45:56  srs
  * added comment to N_id
  *
@@ -2536,7 +2539,9 @@ extern node *MakeNWith (node *part, node *code, node *withop);
  ***
  ***  temporary attributes:
  ***
- ***    long*  MASK                    (optimize -> )
+ ***    long*  MASK          (optimize -> )
+ ***    int    COPY          (Unroll!)
+ ***
  ***
  ***/
 
@@ -2547,6 +2552,7 @@ extern node *MakeNPart (node *withid, node *generator, node *code);
 #define NPART_NEXT(n) (n->node[2])
 #define NPART_CODE(n) (n->node[3])
 #define NPART_MASK(n, x) (n->mask[x])
+#define NPART_COPY(n) (n->flag)
 
 /*--------------------------------------------------------------------------*/
 
