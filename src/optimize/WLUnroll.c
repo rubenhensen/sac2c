@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/06/21 12:31:36  dkr
+ * new function CreateZeroFromType() used now
+ *
  * Revision 3.10  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -271,8 +274,9 @@ CreateModGenarray (node *assignn, node *index)
     /* append assignn to bodyn */
     if (bodyn) {
         tmpn = bodyn;
-        while (ASSIGN_NEXT (tmpn))
+        while (ASSIGN_NEXT (tmpn)) {
             tmpn = ASSIGN_NEXT (tmpn);
+        }
         ASSIGN_NEXT (tmpn) = assignn;
     } else
         bodyn = assignn;
@@ -417,7 +421,6 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
  *
  * description:
  *   Calls function opfun for every index of the generator given in partn.
- *
  *
  ******************************************************************************/
 
@@ -706,7 +709,7 @@ DoUnrollModarray (node *wln, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   int CheckUnrollGenarray(node *wln, node *arg_info)
+ *   int CheckUnrollGenarray( node *wln, node *arg_info)
  *
  * description:
  *   Unrolling of arrays is done if number of array elements is smaller
@@ -723,15 +726,18 @@ CheckUnrollGenarray (node *wln, node *arg_info)
 
     DBUG_ENTER ("CheckUnrollGenarray");
 
-    /* everything constant? If the first part is constant, all others are
-       constant, too. */
-    genn = NPART_GEN (NWITH_PART (wln));
-    ok = (IsConstArray (NGEN_BOUND1 (genn)) && IsConstArray (NGEN_BOUND2 (genn))
-          && (!NGEN_STEP (genn) || IsConstArray (NGEN_STEP (genn)))
-          && (!NGEN_WIDTH (genn) || IsConstArray (NGEN_WIDTH (genn))));
-
     type = IDS_TYPE (LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info))));
     length = GetTypesLength (type);
+
+    /*
+     * Everything constant?
+     * If the first part is constant, all others are constant, too.
+     */
+    genn = NPART_GEN (NWITH_PART (wln));
+    ok = ((length >= 0) && IsConstArray (NGEN_BOUND1 (genn))
+          && IsConstArray (NGEN_BOUND2 (genn))
+          && ((NGEN_STEP (genn) == NULL) || IsConstArray (NGEN_STEP (genn)))
+          && ((NGEN_WIDTH (genn) == NULL) || IsConstArray (NGEN_WIDTH (genn))));
 
     if (ok && (length > wlunrnum)) {
         ok = 0;
@@ -764,8 +770,6 @@ DoUnrollGenarray (node *wln, node *arg_info)
     node *letn, *let_expr;
     void *arg[2];
     ids *arrayname;
-    int elements;
-    simpletype stype;
     types *type;
 
     DBUG_ENTER ("DoUnrollGenarray");
@@ -787,28 +791,8 @@ DoUnrollGenarray (node *wln, node *arg_info)
     /*
      * finally add   arrayname = reshape( ..., [0,...,0])
      */
-
     type = LET_TYPE (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info)));
-    elements = GetTypesLength (type);
-    stype = GetBasetype (type);
-
-#if 0
-  let_expr = MakePrf( F_reshape,
-                      MakeExprs( DupTree( NWITH_SHAPE(wln)),
-                                 MakeExprs( CreateZeroVector( elements, stype),
-                                            NULL)));
-#else
-    /*
-     * attention: the above reshape() is correct. But it seems that it
-     * is not necessary anymore after the TC. reshape() is ignored in
-     * compile phase.
-     * If WLT is deactivated, not all elements of the WL are rewritten by
-     * prf modarray. CF cannot handle prf reshape() so unrolling might fail
-     * here. If we drop the reshape, further compilation should(!!!)
-     * work without problems and CF can fold all elements.
-     */
-    let_expr = CreateZeroVector (elements, stype);
-#endif
+    let_expr = CreateZeroFromType (type, TRUE, INFO_UNR_FUNDEF (arg_info));
     letn = MakeLet (let_expr, DupOneIds (arrayname));
     res = MakeAssign (letn, res);
 
@@ -818,7 +802,7 @@ DoUnrollGenarray (node *wln, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   int CheckUnrollFold(node *wln)
+ *   int CheckUnrollFold( node *wln)
  *
  * description:
  *   Unrolling of fold-WLs is done if the total number of function calls is
