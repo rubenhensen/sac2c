@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/08/05 17:03:01  sbs
+ * OldTypeSignature2String added
+ *
  * Revision 3.10  2002/03/05 17:49:22  sbs
  * Type2String now handles NULL pointers as well 8-))
  *
@@ -412,4 +415,41 @@ IntBytes2String (int bytes)
     }
 
     DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    char *OldTypeSignature2String( node *fundef)
+ *
+ * description:
+ *   constructs a string that represents the signature of a fundef
+ *   specified by the user
+ *
+ ******************************************************************************/
+
+char *
+OldTypeSignature2String (node *fundef)
+{
+    static char buf[4096];
+    char *tmp = &buf[0];
+
+    char *tmp_str;
+    node *arg;
+
+    DBUG_ENTER ("OldTypeSignature2String");
+
+    arg = FUNDEF_ARGS (fundef);
+    while (arg != NULL) {
+        tmp_str = Type2String (ARG_TYPE (arg), 0, FALSE);
+        tmp += sprintf (tmp, "%s ", tmp_str);
+        tmp_str = Free (tmp_str);
+        arg = ARG_NEXT (arg);
+    }
+
+    tmp_str = Type2String (FUNDEF_TYPES (fundef), 0, TRUE);
+    tmp += sprintf (tmp, "-> %s", tmp_str);
+    tmp_str = Free (tmp_str);
+
+    DBUG_RETURN (StringCopy (buf));
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/08/05 17:03:01  sbs
+ * OldTypeSignature2String added
+ *
  * Revision 3.3  2001/05/17 07:35:11  sbs
  * IntBytes2String added
  * Malloc / Free checked
@@ -58,5 +61,7 @@ extern char *Float2String (float);
 extern char *Basetype2String (simpletype type);
 extern char *Shpseg2String (int dim, shpseg *shape);
 extern char *IntBytes2String (int bytes);
+
+extern char *OldTypeSignature2String (node *fundef);
 
 #endif /* _convert_h */
