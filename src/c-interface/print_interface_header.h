@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/22 11:00:05  ktr
+ * Ismop 2004 SacDevCamp 04
+ *
  * Revision 3.2  2001/03/22 18:55:32  dkr
  * include of tree.h eliminated
  *
@@ -12,20 +15,23 @@
  *
  */
 
-#ifndef _sac_print_interfaceheader_h
-#define _sac_print_interfaceheader_h
+#ifndef _SAC_PRINT_INTERFACEHEADER_H_
+#define _SAC_PRINT_INTERFACEHEADER_H_
 
 #include "types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "internal_lib.h"
-#include "globals.h"
 
-extern node *PIHmodul (node *arg_node, node *arg_info);
-extern node *PIHcwrapper (node *arg_node, node *arg_info);
-extern node *PIHfundef (node *arg_node, node *arg_info);
-extern node *PIHarg (node *arg_node, node *arg_info);
+/******************************************************************************
+ *
+ * Print interface header traversal ( pih_tab)
+ *
+ * Prefix: PIH
+ *
+ *****************************************************************************/
+extern node *PIHmodule (node *arg_node, info *arg_info);
+extern node *PIHcwrapper (node *arg_node, info *arg_info);
+extern node *PIHfundef (node *arg_node, info *arg_info);
+extern node *PIHarg (node *arg_node, info *arg_info);
 
-node *PIHcwrapperPrototype (node *wrapper, node *arg_info);
+extern node *PIHcwrapperPrototype (node *wrapper, info *arg_info);
 
-#endif /* _sac_print_interfaceheader_h */
+#endif /* _SAC_PRINT_INTERFACEHEADER_H_ */

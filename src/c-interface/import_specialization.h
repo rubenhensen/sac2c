@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/22 11:00:05  ktr
+ * Ismop 2004 SacDevCamp 04
+ *
  * Revision 3.2  2001/03/22 18:02:55  dkr
  * tree.h no longer included
  *
@@ -12,18 +15,22 @@
  *
  */
 
-#ifndef _sac_import_specialization_h
-#define _sac_import_specialization_h
+#ifndef _SAC_IMPORT_SPECIALIZATION_H_
+#define _SAC_IMPORT_SPECIALIZATION_H_
 
 #include "types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "internal_lib.h"
 
-extern node *IMPSPECfundef (node *arg_node, node *arg_info);
-extern node *IMPSPECmodspec (node *arg_node, node *arg_info);
-extern node *IMPSPECarg (node *arg_node, node *arg_info);
+/******************************************************************************
+ *
+ * Import Specialization traversal (impspec_tab)
+ *
+ * Prefix: IMPSPEC
+ *
+ *****************************************************************************/
+extern node *IMPSPECdoImportSpecialization (node *syntax_tree);
 
-extern node *ImportSpecialization (node *syntax_tree);
+extern node *IMPSPECfundef (node *arg_node, info *arg_info);
+extern node *IMPSPECmodspec (node *arg_node, info *arg_info);
+extern node *IMPSPECarg (node *arg_node, info *arg_info);
 
-#endif /* _sac_map_cwrapper_h */
+#endif /* _SAC_IMPORT_SPECIALIZATION_H_ */

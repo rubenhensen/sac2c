@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/22 11:00:05  ktr
+ * Ismop 2004 SacDevCamp 04
+ *
  * Revision 3.2  2001/03/22 18:05:24  dkr
  * include of tree.h eliminated
  *
@@ -12,18 +15,23 @@
  *
  */
 
-#ifndef _sac_map_cwrapper_h
-#define _sac_map_cwrapper_h
+#ifndef _SAC_MAP_CWRAPPER_H_
+#define _SAC_MAP_CWRAPPER_H_
 
 #include "types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "internal_lib.h"
 
-extern node *MCWcwrapper (node *arg_node, node *arg_info);
-extern node *MCWmodul (node *arg_node, node *arg_info);
-extern node *MCWfundef (node *arg_node, node *arg_info);
-extern node *MCWarg (node *arg_node, node *arg_info);
-extern node *MapCWrapper (node *syntax_tree);
+/******************************************************************************
+ *
+ * Map CWrappers traversal ( mapcw_tab)
+ *
+ * Prefix: MCW
+ *
+ *****************************************************************************/
+extern node *MCWdoMapCWrapper (node *syntax_tree);
 
-#endif /* _sac_map_cwrapper_h */
+extern node *MCWarg (node *arg_node, info *arg_info);
+extern node *MCWcwrapper (node *arg_node, info *arg_info);
+extern node *MCWfundef (node *arg_node, info *arg_info);
+extern node *MCWmodule (node *arg_node, info *arg_info);
+
+#endif /* _SAC_MAP_CWRAPPER_H_ */

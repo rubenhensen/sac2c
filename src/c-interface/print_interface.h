@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/22 11:00:05  ktr
+ * Ismop 2004 SacDevCamp 04
+ *
  * Revision 3.2  2001/03/22 18:54:38  dkr
  * include of tree.h eliminated
  *
@@ -18,15 +21,18 @@
  *
  */
 
-#ifndef _sac_print_interface_h
-#define _sac_print_interface_h
+#ifndef _SAC_PRINT_INTERFACE_H_
+#define _SAC_PRINT_INTERFACE_H_
 
-#include "globals.h"
 #include "types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "internal_lib.h"
 
-extern node *PrintInterface (node *syntax_tree);
+/******************************************************************************
+ *
+ * Print Interface
+ *
+ * Prefix: PI
+ *
+ *****************************************************************************/
+extern node *PIdoPrintInterface (node *syntax_tree);
 
-#endif /* _sac_print_interface_h */
+#endif /* _SAC_PRINT_INTERFACE_H_ */
