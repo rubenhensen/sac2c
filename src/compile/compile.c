@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.144  2004/11/08 14:49:56  ktr
+ * added COMPPrfNoop.
+ *
  * Revision 3.143  2004/10/28 17:54:20  khf
  * splitted building of offset_icms into offset_icms
  * and offset_shp_icms to avoid mixed declarations and code
@@ -5486,6 +5489,26 @@ COMPPrfTypeError (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node *COMPPrfNoop( node *arg_node, info *arg_info)
+ *
+ * @brief  ...
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfNoop (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfNoop");
+
+    ret_node = MakeAssign (MakeIcm ("NOOP", NULL), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *COMPPrf( node *arg_node, info *arg_info)
  *
  * @brief  Compilation of a N_prf node.
@@ -5580,6 +5603,10 @@ COMPPrf (node *arg_node, info *arg_info)
 
         case F_copy:
             ret_node = COMPPrfCopy (arg_node, arg_info);
+            break;
+
+        case F_noop:
+            ret_node = COMPPrfNoop (arg_node, arg_info);
             break;
 
         case F_free:
