@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/06/07 12:39:33  ktr
+ * Invalid assumptions about C evaluation order had been made which led
+ * to nasty lockups on x86-Systems.
+ *
  * Revision 1.15  2004/06/03 15:22:53  ktr
  * New version featuring:
  * - alloc_or_reuse
@@ -498,10 +502,11 @@ AllocList_Insert (node *arg_info, node *avis, node *shp1, node *shp2, node *cand
 node *
 MakeDecAssignments (node *arg_info, node *next_node)
 {
+    rc_list_struct *rls;
+
     if (DecList_HasNext (arg_info, INFO_SSARC_DEPTH (arg_info))) {
-        return (
-          MakeAdjustRCFromRLS (DecList_PopNext (arg_info, INFO_SSARC_DEPTH (arg_info)),
-                               MakeDecAssignments (arg_info, next_node)));
+        rls = DecList_PopNext (arg_info, INFO_SSARC_DEPTH (arg_info));
+        return (MakeAdjustRCFromRLS (rls, MakeDecAssignments (arg_info, next_node)));
     } else {
         return (next_node);
     }
@@ -510,9 +515,11 @@ MakeDecAssignments (node *arg_info, node *next_node)
 node *
 MakeIncAssignments (node *arg_info, node *next_node)
 {
+    rc_list_struct *rls;
+
     if (IncList_HasNext (arg_info)) {
-        return (MakeAdjustRCFromRLS (IncList_PopNext (arg_info),
-                                     MakeDecAssignments (arg_info, next_node)));
+        rls = IncList_PopNext (arg_info);
+        return (MakeAdjustRCFromRLS (rls, MakeIncAssignments (arg_info, next_node)));
     } else {
         return (next_node);
     }
@@ -521,9 +528,12 @@ MakeIncAssignments (node *arg_info, node *next_node)
 node *
 MakeAllocAssignments (node *arg_info, node *next_node)
 {
+    ar_list_struct *als;
+
     if (AllocList_HasNext (arg_info)) {
-        return (MakeAllocOrReuseFromALS (AllocList_PopNext (arg_info),
-                                         MakeAllocAssignments (arg_info, next_node)));
+        als = AllocList_PopNext (arg_info);
+        return (
+          MakeAllocOrReuseFromALS (als, MakeAllocAssignments (arg_info, next_node)));
     } else {
         return (next_node);
     }
@@ -579,7 +589,6 @@ SSARCfundef (node *fundef, node *arg_info)
         BLOCK_INSTR (FUNDEF_BODY (fundef))
           = MakeIncAssignments (arg_info, BLOCK_INSTR (FUNDEF_BODY (fundef)));
 
-        PrintNode (fundef);
         /* Restore SSA form */
         fundef = RestoreSSAOneFundef (fundef);
     }
