@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/27 11:13:17  nmw
+ * fixed bug in dummy genarray assignment with missing
+ * ARRAY_TYPE attribute in WLFassign
+ *
  * Revision 3.5  2001/03/22 19:41:16  dkr
  * include of tree.h eliminated
  *
@@ -234,6 +238,7 @@
 #include "ConstantFolding.h"
 #include "WithloopFolding.h"
 #include "WLF.h"
+#include "shape.h"
 
 /******************************************************************************
  *
@@ -1660,6 +1665,10 @@ WLFassign (node *arg_node, node *arg_info)
                         tmpn = MakeExprs (MakeNum (TYPES_SHAPE (idt, i - 1)),
                                           tmpn); /* Array elements */
                     tmpn = MakeArray (tmpn);     /* N_Array */
+                    ARRAY_TYPE (tmpn)
+                      = MakeTypes (T_int, 1,
+                                   SHShape2OldShpseg (SHCreateShape (1, TYPES_DIM (idt))),
+                                   NULL, NULL);
                     ARRAY_ISCONST (tmpn) = TRUE;
                     ARRAY_VECTYPE (tmpn) = T_int;
                     ARRAY_VECLEN (tmpn) = TYPES_DIM (idt);
