@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2003/06/16 15:57:55  sbs
+ * some DBUG reporting improved.
+ *
  * Revision 3.31  2003/05/14 19:59:07  ktr
  * replaced createInlineName with TmpVarName
  *
@@ -497,8 +500,8 @@ InlineRetExprs (node *arg_node, node *arg_info)
         /* set the correct AVIS_SSAASSIGN() attribute for this new assignment */
         avis = IDS_AVIS (INFO_INL_IDS (arg_info));
         if (avis != NULL) {
-            DBUG_PRINT ("INL", ("set correct SSAASSIGN attribute for %s",
-                                VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (avis))));
+            DBUG_PRINT ("INLAVIS", ("set correct SSAASSIGN attribute for %s",
+                                    VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (avis))));
             AVIS_SSAASSIGN (avis) = INFO_INL_EPILOG (arg_info);
         }
     }
@@ -776,9 +779,11 @@ INLassign (node *arg_node, node *arg_info)
          */
         inl_fundef = AP_FUNDEF (LET_EXPR (instr));
 
-        DBUG_PRINT ("INL", ("Function call %s found in line %d with"
-                            " inline %d and to do %d",
+        DBUG_PRINT ("INL", ("Ap of fun %s in line %d."
+                            " Fundef status:"
+                            " wrapper %d inline %d max-rec-inl left %d",
                             AP_NAME (LET_EXPR (instr)), NODE_LINE (arg_node),
+                            (FUNDEF_STATUS (inl_fundef) == ST_wrapperfun),
                             FUNDEF_INLINE (inl_fundef), FUNDEF_INLREC (inl_fundef)));
 
         if (FUNDEF_INLINE (inl_fundef)) {
@@ -797,9 +802,13 @@ INLassign (node *arg_node, node *arg_info)
          */
 
         /* 'inl_fundef' definitly is set, since (inlined_nodes != NULL) */
-        FUNDEF_INLREC (inl_fundef)--;
+        if (FUNDEF_STATUS (inl_fundef) != ST_wrapperfun) {
+            FUNDEF_INLREC (inl_fundef)--;
+        }
         inlined_nodes = Trav (inlined_nodes, arg_info);
-        FUNDEF_INLREC (inl_fundef)++;
+        if (FUNDEF_STATUS (inl_fundef) != ST_wrapperfun) {
+            FUNDEF_INLREC (inl_fundef)++;
+        }
 
         if (ASSIGN_NEXT (arg_node)) {
             ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
