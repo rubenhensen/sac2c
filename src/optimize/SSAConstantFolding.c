@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.59  2004/08/25 16:07:29  ktr
+ * cat_VxV of an empty vector now yields the other vector.
+ *
  * Revision 1.58  2004/07/23 13:59:13  ktr
  * AP arguments are no longer replaced by constants as this is now done
  * by ConstVarPropagation.
@@ -1432,6 +1435,7 @@ SSACFCatVxV (node *vec1, node *vec2)
     node *result;
     struct_constant *sc_vec1;
     struct_constant *sc_vec2;
+    struct_constant *sc_res;
 
     DBUG_ENTER ("SSACFVxV");
 
@@ -1441,9 +1445,30 @@ SSACFCatVxV (node *vec1, node *vec2)
     sc_vec2 = SCOExpr2StructConstant (vec2);
 
     if ((sc_vec1 != NULL) && (sc_vec2 != NULL)) {
-        SCO_HIDDENCO (sc_vec1) = COCat (SCO_HIDDENCO (sc_vec1), SCO_HIDDENCO (sc_vec2));
+        /*
+         * if both vectors are structural constant we can concatenate then
+         */
+        SCO_HIDDENCO (sc_res) = COCat (SCO_HIDDENCO (sc_vec1), SCO_HIDDENCO (sc_vec2));
 
-        result = SCODupStructConstant2Expr (sc_vec1);
+        result = SCODupStructConstant2Expr (sc_res);
+
+        SCOFreeStructConstant (sc_res);
+    } else if (sc_vec1 != NULL) {
+        /*
+         * if vec1 is a structural constant of shape [0],
+         * the result is a copy of vec2
+         */
+        if (SHGetUnrLen (COGetShape (sc_vec1)) == 0) {
+            result = DupNode (vec2);
+        }
+    } else if (sc_vec2 != NULL) {
+        /*
+         * if vec2 is a structural constant of shape [0],
+         * the result is a copy of vec1
+         */
+        if (SHGetUnrLen (COGetShape (sc_vec2)) == 0) {
+            result = DupNode (vec1);
+        }
     }
 
     if (sc_vec1 != NULL)
