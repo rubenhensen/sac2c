@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/07/10 19:24:36  dkr
+ * no changes done
+ *
  * Revision 3.6  2001/02/06 01:44:13  dkr
  * WL_NOOP_... replaced by WL_ADJUST_OFFSET
  *
@@ -32,28 +35,28 @@ extern void ICMCompileWL_END__OFFSET (char *target, char *idx_vec, int dims);
 extern void ICMCompileWL_END (char *target, char *idx_vec, int dims);
 
 extern void ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
-                                 char *idx_vec, int dims, char **idx_scalars);
+                                 char *idx_vec, int dims, char **idxs_nt);
 
 extern void ICMCompileWL_ASSIGN__INIT (int dims_target, char *target, char *idx_vec,
-                                       int dims, char **idx_scalars);
+                                       int dims, char **idxs_nt);
 
 extern void ICMCompileWL_ASSIGN__COPY (char *source, int dims_target, char *target,
-                                       char *idx_vec, int dims, char **idx_scalars);
+                                       char *idx_vec, int dims, char **idxs_nt);
 
 extern void ICMCompileWL_FOLD__OFFSET (int dims_target, char *target, char *idx_vec,
-                                       int dims, char **idx_scalars);
+                                       int dims, char **idxs_nt);
 
 extern void ICMCompileWL_FOLD (int dims_target, char *target, char *idx_vec, int dims,
-                               char **idx_scalars);
+                               char **idxs_nt);
 
 extern void ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec,
                                       int dims);
 
 extern void ICMCompileWL_ADJUST_OFFSET (int dim, int dims_target, char *target,
-                                        char *idx_vec, int dims, char **idx_scalars);
+                                        char *idx_vec, int dims, char **idxs_nt);
 
 extern void ICMCompileWL_SET_OFFSET (int dim, int first_block_dim, int dims_target,
                                      char *target, char *idx_vec, int dims,
-                                     char **idx_scalars);
+                                     char **idxs_nt);
 
 #endif /* _icm2c_wl_h */
