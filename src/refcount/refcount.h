@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1998/05/11 13:43:42  dkr
+ * added RCicm
+ *
  * Revision 1.18  1998/05/06 21:21:24  dkr
  * new macro FOREACH_VARDEC_AND_ARG
  *
@@ -89,6 +92,7 @@ extern node *RCcond (node *arg_node, node *arg_info);
 extern node *RCfundef (node *arg_node, node *arg_info);
 extern node *RCarg (node *arg_node, node *arg_info);
 extern node *RCprepost (node *arg_node, node *arg_info);
+extern node *RCicm (node *arg_node, node *arg_info);
 
 /* old with-loop */
 extern node *RCwith (node *arg_node, node *arg_info);

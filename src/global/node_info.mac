@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.205  1998/05/11 13:43:21  dkr
+ * added RCicm
+ *
  * Revision 1.204  1998/05/11 09:43:44  cg
  * added syntax tree traversal for generating startup code.
  *
@@ -901,11 +904,11 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_icm, "N_icm", TravSons, TravSons, PrintIcm, TravSons, TravSons, TravSons,
-       TravSons, FreeIcm, TravSons, TravSons, NoTrav, TravSons, DupIcm, TravSons,
+       TravSons, FreeIcm, TravSons, RCicm, NoTrav, TravSons, DupIcm, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, GSCicm, TravSons, TravSons, 2),
+       TravSons, TravSons, TravSons, GSCicm, TravSons, TravSons, 2),
 
   NIF (N_vinfo, "N_vinfo", TravSons, TravSons, PrintVectInfo, TravSons, TravSons,
        TravSons, TravSons, FreeVinfo, TravSons, TravSons, TravSons, TravSons, TravSons,
