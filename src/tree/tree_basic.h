@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2001/03/09 11:50:28  sbs
+ * INFO_PF_FUNDEF added.
+ *
  * Revision 3.43  2001/03/07 14:06:22  nmw
  * AVIS_SSASTACK changed
  *
@@ -2762,6 +2765,9 @@ extern node *MakeInfo ();
 /* when used in compare_tree.c */
 #define INFO_CMPT_EQFLAG(n) ((cmptree_t) (n->flag))
 #define INFO_CMPT_TREE(n) (n->node[0])
+
+/* when used in annotate_fun_calls.c */
+#define INFO_PF_FUNDEF(n) (n->node[0])
 
 /*--------------------------------------------------------------------------*/
 
