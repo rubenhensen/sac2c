@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.200  1998/08/11 10:59:57  dkr
+ * WLSEG_INNERSTEP changed
+ *
  * Revision 1.199  1998/08/11 00:04:53  dkr
  * N_WLsegVar changed
  *
@@ -3192,7 +3195,7 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
 
 #define WLSTRIDE_PART(n) (n->node[5])
 #define WLSTRIDE_MODIFIED(n) (n->info.prf_dec.tc)
-#define WLSTRIDE_INNERSTEP(n) ((int)(n->node[4]))
+#define WLSTRIDE_INNERSTEP(n) (*((int *)(n->node[4])))
 
 /*--------------------------------------------------------------------------*/
 
