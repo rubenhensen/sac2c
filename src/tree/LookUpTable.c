@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2004/11/25 20:10:51  ktr
+ * COMPILES!
+ *
  * Revision 3.26  2002/09/13 19:04:35  dkr
  * bug in UpdateLUT() fixed: 'old_item' is duplicated if it is a string!
  *
@@ -193,6 +196,8 @@
  *
  */
 
+#include "LookUpTable.h"
+
 #include <string.h>
 #include <math.h>
 
@@ -229,11 +234,11 @@ typedef int hash_key_t;
  * of a newly allocated table is stored in the last entry of the current table.
  * 'size' contains the number of items stored in the whole chain of tables.
  */
-typedef struct LUT_T {
+struct LUT_T {
     void **first;
     void **next;
     lut_size_t size;
-} lut_t;
+};
 
 typedef hash_key_t (*hash_key_fun_t) (void *);
 typedef bool (*is_equal_fun_t) (void *, void *);
@@ -469,14 +474,6 @@ SearchInLUT_ (lut_size_t size, lut_size_t i, void **entry, void *old_item,
 
     DBUG_ENTER ("SearchInLUT_");
 
-#if 0
-  /* lut, hash_key -> size, i, entry */
-  size = lut[ hash_key].size;
-  DBUG_ASSERT( (size >= 0), "illegal LUT size found!");
-  i = 0;
-  entry = lut[ hash_key].first;
-#endif
-
     /* search in the collision table for 'old_item' */
     for (; i < size; i++) {
         if (is_equal_fun (entry[0], old_item)) {
@@ -658,7 +655,8 @@ InsertIntoLUT_noDBUG (lut_t *lut, void *old_item, void *new_item, hash_key_t has
 
     if (lut[hash_key].size % (LUT_SIZE) == 0) {
         /* the last table entry has been used -> allocate a new one */
-        *lut[hash_key].next = (void **)Malloc ((2 * (LUT_SIZE) + 1) * sizeof (void *));
+        *lut[hash_key].next
+          = (void **)ILIBmalloc ((2 * (LUT_SIZE) + 1) * sizeof (void *));
 
         DBUG_PRINT ("LUT", ("new LUT segment created: " F_PTR, lut[hash_key].next));
 
@@ -742,7 +740,7 @@ UpdateLUT (lut_t *lut, void *old_item, void *new_item, hash_key_t hash_key,
     if (found_item_p == NULL) {
         lut = InsertIntoLUT (lut,
                              (hash_key < (HASH_KEYS_POINTER)) ? old_item
-                                                              : StringCopy (old_item),
+                                                              : ILIBstringCopy (old_item),
                              new_item, hash_key, old_format, new_format);
 
         if (found_item != NULL) {
@@ -864,7 +862,7 @@ FoldLUT (lut_t *lut, void *init, void *(*fun) (void *, void *), hash_key_t start
 /******************************************************************************
  *
  * function:
- *   lut_t *GenerateLUT( void)
+ *   lut_t *LUTgenerateLut()
  *
  * description:
  *   Generates a new LUT: All the needed collision tables are created and the
@@ -873,19 +871,19 @@ FoldLUT (lut_t *lut, void *init, void *(*fun) (void *, void *), hash_key_t start
  ******************************************************************************/
 
 lut_t *
-GenerateLUT (void)
+LUTgenerateLut (void)
 {
     lut_t *lut;
     hash_key_t k;
 
-    DBUG_ENTER ("GenerateLUT");
+    DBUG_ENTER ("LUTgenerateLut");
 
-    lut = (lut_t *)Malloc ((HASH_KEYS) * sizeof (lut_t));
+    lut = (lut_t *)ILIBmalloc ((HASH_KEYS) * sizeof (lut_t));
 
     DBUG_PRINT ("LUT", ("> lut (" F_PTR ")", lut));
 
     for (k = 0; k < (HASH_KEYS); k++) {
-        lut[k].first = (void **)Malloc ((2 * (LUT_SIZE) + 1) * sizeof (void *));
+        lut[k].first = (void **)ILIBmalloc ((2 * (LUT_SIZE) + 1) * sizeof (void *));
         lut[k].next = lut[k].first;
         lut[k].size = 0;
     }
@@ -898,7 +896,7 @@ GenerateLUT (void)
 /******************************************************************************
  *
  * function:
- *   lut_t *DuplicateLUT( lut_t *lut)
+ *   lut_t *LUTduplicateLut( lut_t *lut)
  *
  * description:
  *   Duplicates the given LUT.
@@ -906,19 +904,19 @@ GenerateLUT (void)
  ******************************************************************************/
 
 lut_t *
-DuplicateLUT (lut_t *lut)
+LUTduplicateLut (lut_t *lut)
 {
     lut_t *new_lut;
     void **tmp;
     hash_key_t k;
     lut_size_t i;
 
-    DBUG_ENTER ("DuplicateLUT");
+    DBUG_ENTER ("LUTduplicateLut");
 
     DBUG_PRINT ("LUT", ("> lut (" F_PTR ")", lut));
 
     if (lut != NULL) {
-        new_lut = GenerateLUT ();
+        new_lut = LUTgenerateLut ();
 
         for (k = 0; k < (HASH_KEYS_POINTER); k++) {
             DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
@@ -936,8 +934,9 @@ DuplicateLUT (lut_t *lut)
             DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
             tmp = lut[k].first;
             for (i = 0; i < lut[k].size; i++) {
-                new_lut = InsertIntoLUT_noDBUG (new_lut, StringCopy ((char *)(tmp[0])),
-                                                tmp[1], k);
+                new_lut
+                  = InsertIntoLUT_noDBUG (new_lut, ILIBstringCopy ((char *)(tmp[0])),
+                                          tmp[1], k);
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
@@ -959,7 +958,7 @@ DuplicateLUT (lut_t *lut)
 /******************************************************************************
  *
  * function:
- *   lut_t *RemoveContentLUT( lut_t *lut)
+ *   lut_t *LUTremoveContentLut( lut_t *lut)
  *
  * description:
  *   Removes the content of the given LUT from memory.
@@ -967,13 +966,13 @@ DuplicateLUT (lut_t *lut)
  ******************************************************************************/
 
 lut_t *
-RemoveContentLUT (lut_t *lut)
+LUTremoveContentLut (lut_t *lut)
 {
     void **first, **tmp;
     hash_key_t k;
     lut_size_t i;
 
-    DBUG_ENTER ("RemoveContentLUT");
+    DBUG_ENTER ("LUTremoveContentLut");
 
     DBUG_PRINT ("LUT", ("> lut (" F_PTR ")", lut));
 
@@ -985,7 +984,7 @@ RemoveContentLUT (lut_t *lut)
             for (i = 1; i <= lut[k].size / (LUT_SIZE); i++) {
                 tmp = lut[k].first;
                 lut[k].first = lut[k].first[2 * (LUT_SIZE)];
-                tmp = Free (tmp);
+                tmp = ILIBfree (tmp);
             }
             lut[k].next = lut[k].first;
             lut[k].size = 0;
@@ -997,12 +996,12 @@ RemoveContentLUT (lut_t *lut)
             first = tmp;
             /* remove all strings and all but the first collision table fragments */
             for (i = 0; i < lut[k].size; i++) {
-                tmp[0] = Free (tmp[0]);
+                tmp[0] = ILIBfree (tmp[0]);
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
                     tmp = *tmp;
-                    first = Free (first);
+                    first = ILIBfree (first);
                     first = tmp;
                 }
             }
@@ -1021,7 +1020,7 @@ RemoveContentLUT (lut_t *lut)
 /******************************************************************************
  *
  * function:
- *   lut_t *RemoveLUT( lut_t *lut)
+ *   lut_t *LUTremoveLut( lut_t *lut)
  *
  * description:
  *   Removes the given LUT from memory.
@@ -1029,24 +1028,24 @@ RemoveContentLUT (lut_t *lut)
  ******************************************************************************/
 
 lut_t *
-RemoveLUT (lut_t *lut)
+LUTremoveLut (lut_t *lut)
 {
     hash_key_t k;
 
-    DBUG_ENTER ("RemoveLUT");
+    DBUG_ENTER ("LUTremoveLut");
 
     DBUG_PRINT ("LUT", ("> lut (" F_PTR ")", lut));
 
     if (lut != NULL) {
         /* remove content of LUT */
-        lut = RemoveContentLUT (lut);
+        lut = LUTremoveContentLut (lut);
 
         /* remove empty LUT */
         for (k = 0; k < (HASH_KEYS); k++) {
             DBUG_ASSERT ((lut[k].size == 0), "LUT not empty!");
-            lut[k].first = Free (lut[k].first);
+            lut[k].first = ILIBfree (lut[k].first);
         }
-        lut = Free (lut);
+        lut = ILIBfree (lut);
 
         DBUG_PRINT ("LUT", ("< finished"));
     } else {
@@ -1059,7 +1058,7 @@ RemoveLUT (lut_t *lut)
 /******************************************************************************
  *
  * Function:
- *   bool IsEmptyLUT( lut_t *lut)
+ *   bool LUTisEmptyLut( lut_t *lut)
  *
  * Description:
  *   Returns TRUE iff the given LUT is empty.
@@ -1067,12 +1066,12 @@ RemoveLUT (lut_t *lut)
  ******************************************************************************/
 
 bool
-IsEmptyLUT (lut_t *lut)
+LUTisEmptyLut (lut_t *lut)
 {
     hash_key_t k;
     bool empty = TRUE;
 
-    DBUG_ENTER ("IsEmptyLUT");
+    DBUG_ENTER ("LUTisEmptyLut");
 
     if (lut != NULL) {
         for (k = 0; k < (HASH_KEYS); k++) {
@@ -1091,7 +1090,7 @@ IsEmptyLUT (lut_t *lut)
 /******************************************************************************
  *
  * function:
- *   void **SearchInLUT_P( lut_t *lut, void *old_item)
+ *   void **LUTsearchInLutP( lut_t *lut, void *old_item)
  *
  * description:
  *   Searches for the given pointer in the LUT.
@@ -1108,11 +1107,11 @@ IsEmptyLUT (lut_t *lut)
  ******************************************************************************/
 
 void **
-SearchInLUT_P (lut_t *lut, void *old_item)
+LUTsearchInLutP (lut_t *lut, void *old_item)
 {
     void **new_item_p;
 
-    DBUG_ENTER ("SearchInLUT_P");
+    DBUG_ENTER ("LUTsearchInLutP");
 
     new_item_p = SearchInLUT_state (lut, old_item, GetHashKey_Pointer (old_item),
                                     IsEqual_Pointer, TRUE, F_PTR, F_PTR);
@@ -1123,7 +1122,7 @@ SearchInLUT_P (lut_t *lut, void *old_item)
 /******************************************************************************
  *
  * function:
- *   void **SearchInLUT_S( lut_t *lut, char *old_item)
+ *   void **LUTsearchInLutS( lut_t *lut, char *old_item)
  *
  * description:
  *   Searches for the given string in the LUT.
@@ -1140,11 +1139,11 @@ SearchInLUT_P (lut_t *lut, void *old_item)
  ******************************************************************************/
 
 void **
-SearchInLUT_S (lut_t *lut, char *old_item)
+LUTsearchInLutS (lut_t *lut, char *old_item)
 {
     void **new_item_p;
 
-    DBUG_ENTER ("SearchInLUT_S");
+    DBUG_ENTER ("LUTsearchInLutS");
 
     new_item_p = SearchInLUT_state (lut, old_item, GetHashKey_String (old_item),
                                     IsEqual_String, TRUE, "\"%s\"", F_PTR);
@@ -1155,23 +1154,23 @@ SearchInLUT_S (lut_t *lut, char *old_item)
 /******************************************************************************
  *
  * function:
- *   void **SearchInLUT_NextP( void)
+ *   void **LUTsearchInLutNextP( void)
  *
  * description:
  *   Searches for the next entry matching for the given pointer.
  *   Iff no more matching entries are found in the LUT, NULL is returned.
  *
  * caution:
- *   The function SearchInLUT_P() must be called first!!
+ *   The function LUTsearchInLutP() must be called first!!
  *
  ******************************************************************************/
 
 void **
-SearchInLUT_NextP (void)
+LUTsearchInLutNextP (void)
 {
     void **new_item_p;
 
-    DBUG_ENTER ("SearchInLUT_NextP");
+    DBUG_ENTER ("LUTsearchInLutNextP");
 
     new_item_p = SearchInLUT_state (NULL, NULL, 0, IsEqual_Pointer, FALSE, F_PTR, F_PTR);
 
@@ -1181,23 +1180,23 @@ SearchInLUT_NextP (void)
 /******************************************************************************
  *
  * function:
- *   void **SearchInLUT_NextS( void)
+ *   void **LUTsearchInLutNextS( void)
  *
  * description:
  *   Searches for the next entry matching for the given string.
  *   Iff no more matching entries are found in the LUT, NULL is returned.
  *
  * caution:
- *   The function SearchInLUT_S() must be called first!!
+ *   The function LUTsearchInLutS() must be called first!!
  *
  ******************************************************************************/
 
 void **
-SearchInLUT_NextS (void)
+LUTsearchInLutNextS (void)
 {
     void **new_item_p;
 
-    DBUG_ENTER ("SearchInLUT_NextS");
+    DBUG_ENTER ("LUTsearchInLutNextS");
 
     new_item_p
       = SearchInLUT_state (NULL, NULL, 0, IsEqual_String, FALSE, "\"%s\"", F_PTR);
@@ -1208,7 +1207,7 @@ SearchInLUT_NextS (void)
 /******************************************************************************
  *
  * function:
- *   void *SearchInLUT_PP( lut_t *lut, void *old_item)
+ *   void *LUTsearchInLutPp( lut_t *lut, void *old_item)
  *
  * description:
  *   Searches for the given pointer in the LUT.
@@ -1224,14 +1223,14 @@ SearchInLUT_NextS (void)
  ******************************************************************************/
 
 void *
-SearchInLUT_PP (lut_t *lut, void *old_item)
+LUTsearchInLutPp (lut_t *lut, void *old_item)
 {
     void **new_item_p;
     void *new_item;
 
-    DBUG_ENTER ("SearchInLUT_PP");
+    DBUG_ENTER ("LUTsearchInLutPp");
 
-    new_item_p = SearchInLUT_P (lut, old_item);
+    new_item_p = LUTsearchInLutP (lut, old_item);
 
     new_item = (new_item_p == NULL) ? old_item : *new_item_p;
 
@@ -1241,7 +1240,7 @@ SearchInLUT_PP (lut_t *lut, void *old_item)
 /******************************************************************************
  *
  * function:
- *   char *SearchInLUT_SS( lut_t *lut, char *old_item)
+ *   char *LUTsearchInLutSs( lut_t *lut, char *old_item)
  *
  * description:
  *   Searches for the given string in the LUT.
@@ -1260,12 +1259,12 @@ SearchInLUT_PP (lut_t *lut, void *old_item)
  ******************************************************************************/
 
 char *
-SearchInLUT_SS (lut_t *lut, char *old_item)
+LUTsearchInLutSs (lut_t *lut, char *old_item)
 {
     char **new_item_p;
     char *new_item;
 
-    DBUG_ENTER ("SearchInLUT_SS");
+    DBUG_ENTER ("LUTsearchInLutSs");
 
     new_item_p = (char **)SearchInLUT_state (lut, old_item, GetHashKey_String (old_item),
                                              IsEqual_String, TRUE, "\"%s\"", "\"%s\"");
@@ -1278,7 +1277,7 @@ SearchInLUT_SS (lut_t *lut, char *old_item)
 /******************************************************************************
  *
  * function:
- *   lut_t *InsertIntoLUT_P( lut_t *lut, void *old_item, void *new_item)
+ *   lut_t *LUTinsertIntoLutP( lut_t *lut, void *old_item, void *new_item)
  *
  * description:
  *   Inserts the given pair of pointers (old_item, new_item) into the correct
@@ -1292,12 +1291,12 @@ SearchInLUT_SS (lut_t *lut, char *old_item)
  *   If doubles are not welcome, it may be better to use the function
  *   UpdateLUT_P() instead!
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 lut_t *
-InsertIntoLUT_P (lut_t *lut, void *old_item, void *new_item)
+LUTinsertIntoLutP (lut_t *lut, void *old_item, void *new_item)
 {
-    DBUG_ENTER ("InsertIntoLUT_P");
+    DBUG_ENTER ("LUTinsertIntoLutP");
 
     lut = InsertIntoLUT (lut, old_item, new_item, GetHashKey_Pointer (old_item), F_PTR,
                          F_PTR);
@@ -1308,7 +1307,7 @@ InsertIntoLUT_P (lut_t *lut, void *old_item, void *new_item)
 /******************************************************************************
  *
  * function:
- *   lut_t *InsertIntoLUT_S( lut_t *lut, char *old_item, void *new_item)
+ *   lut_t *LUTinsertIntoLutS( lut_t *lut, char *old_item, void *new_item)
  *
  * description:
  *   Inserts the given pair of strings (old_item, new_item) into the correct
@@ -1325,11 +1324,11 @@ InsertIntoLUT_P (lut_t *lut, void *old_item, void *new_item)
  ******************************************************************************/
 
 lut_t *
-InsertIntoLUT_S (lut_t *lut, char *old_item, void *new_item)
+LUTinsertIntoLutS (lut_t *lut, char *old_item, void *new_item)
 {
-    DBUG_ENTER ("InsertIntoLUT_S");
+    DBUG_ENTER ("LUTinsertIntoLutS");
 
-    lut = InsertIntoLUT (lut, StringCopy (old_item), new_item,
+    lut = InsertIntoLUT (lut, ILIBstringCopy (old_item), new_item,
                          GetHashKey_String (old_item), "\"%s\"", F_PTR);
 
     DBUG_RETURN (lut);
@@ -1338,8 +1337,8 @@ InsertIntoLUT_S (lut_t *lut, char *old_item, void *new_item)
 /******************************************************************************
  *
  * function:
- *   lut_t *UpdateLUT_P( lut_t *lut, void *old_item, void *new_item,
- *                       void **found_item)
+ *   lut_t *LUTupdateLutP( lut_t *lut, void *old_item, void *new_item,
+ *                         void **found_item)
  *
  * description:
  *   Inserts the given pair of pointers (old_item, new_item) into the correct
@@ -1350,12 +1349,12 @@ InsertIntoLUT_S (lut_t *lut, char *old_item, void *new_item)
  *   Otherwise a new entry is put into the collision table and NULL is stored
  *   in '*found_item'.
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 lut_t *
-UpdateLUT_P (lut_t *lut, void *old_item, void *new_item, void **found_item)
+LUTupdateLutP (lut_t *lut, void *old_item, void *new_item, void **found_item)
 {
-    DBUG_ENTER ("UpdateLUT_P");
+    DBUG_ENTER ("LUTupdateLutP");
 
     lut = UpdateLUT (lut, old_item, new_item, GetHashKey_Pointer (old_item),
                      IsEqual_Pointer, F_PTR, F_PTR, found_item);
@@ -1366,8 +1365,8 @@ UpdateLUT_P (lut_t *lut, void *old_item, void *new_item, void **found_item)
 /******************************************************************************
  *
  * function:
- *   lut_t *UpdateLUT_S( lut_t *lut, char *old_item, void *new_item,
- *                       void **found_item)
+ *   lut_t *LUTupdateLutS( lut_t *lut, char *old_item, void *new_item,
+ *                         void **found_item)
  *
  * description:
  *   Inserts the given pair of strings (old_item, new_item) into the correct
@@ -1381,9 +1380,9 @@ UpdateLUT_P (lut_t *lut, void *old_item, void *new_item, void **found_item)
  ******************************************************************************/
 
 lut_t *
-UpdateLUT_S (lut_t *lut, char *old_item, void *new_item, void **found_item)
+LUTupdateLutS (lut_t *lut, char *old_item, void *new_item, void **found_item)
 {
-    DBUG_ENTER ("UpdateLUT_S");
+    DBUG_ENTER ("LUTupdateLutS");
 
     lut = UpdateLUT (lut, old_item, new_item, GetHashKey_String (old_item),
                      IsEqual_String, "\"%s\"", F_PTR, found_item);
@@ -1394,7 +1393,7 @@ UpdateLUT_S (lut_t *lut, char *old_item, void *new_item, void **found_item)
 /******************************************************************************
  *
  * Function:
- *   lut_t *MapLUT_S( lut_t *lut, void *(*fun)( void *))
+ *   lut_t *LUTmapLutS( lut_t *lut, void *(*fun)( void *))
  *
  * Description:
  *   Applies 'fun' to all data found in the LUT which is associated to strings.
@@ -1402,9 +1401,9 @@ UpdateLUT_S (lut_t *lut, char *old_item, void *new_item, void **found_item)
  ******************************************************************************/
 
 lut_t *
-MapLUT_S (lut_t *lut, void *(*fun) (void *))
+LUTmapLutS (lut_t *lut, void *(*fun) (void *))
 {
-    DBUG_ENTER ("MapLUT_S");
+    DBUG_ENTER ("LUTmapLutS");
 
     lut = MapLUT (lut, fun, HASH_KEYS_POINTER, HASH_KEYS);
 
@@ -1414,7 +1413,7 @@ MapLUT_S (lut_t *lut, void *(*fun) (void *))
 /******************************************************************************
  *
  * Function:
- *   lut_t *MapLUT_P( lut_t *lut, void *(*fun)( void *))
+ *   lut_t *LUTmapLutP( lut_t *lut, void *(*fun)( void *))
  *
  * Description:
  *   Applies 'fun' to all data found in the LUT which is associated to pointers.
@@ -1422,9 +1421,9 @@ MapLUT_S (lut_t *lut, void *(*fun) (void *))
  ******************************************************************************/
 
 lut_t *
-MapLUT_P (lut_t *lut, void *(*fun) (void *))
+LUTmapLutP (lut_t *lut, void *(*fun) (void *))
 {
-    DBUG_ENTER ("MapLUT_P");
+    DBUG_ENTER ("LUTmapLutP");
 
     lut = MapLUT (lut, fun, 0, HASH_KEYS_POINTER);
 
@@ -1434,7 +1433,7 @@ MapLUT_P (lut_t *lut, void *(*fun) (void *))
 /******************************************************************************
  *
  * Function:
- *   void *FoldLUT_S( lut_t *lut, void *init, void *(*fun)( void *, void *))
+ *   void *LUTfoldLutS( lut_t *lut, void *init, void *(*fun)( void *, void *))
  *
  * Description:
  *   Applies 'fun' to all data found in the LUT which is associated to strings.
@@ -1442,9 +1441,9 @@ MapLUT_P (lut_t *lut, void *(*fun) (void *))
  ******************************************************************************/
 
 void *
-FoldLUT_S (lut_t *lut, void *init, void *(*fun) (void *, void *))
+LUTfoldLutS (lut_t *lut, void *init, void *(*fun) (void *, void *))
 {
-    DBUG_ENTER ("FoldLUT_S");
+    DBUG_ENTER ("LUTfoldLutS");
 
     init = FoldLUT (lut, init, fun, HASH_KEYS_POINTER, HASH_KEYS);
 
@@ -1454,7 +1453,7 @@ FoldLUT_S (lut_t *lut, void *init, void *(*fun) (void *, void *))
 /******************************************************************************
  *
  * Function:
- *   void *FoldLUT_P( lut_t *lut, void *init, void *(*fun)( void *, void *))
+ *   void *LUTfoldLutP( lut_t *lut, void *init, void *(*fun)( void *, void *))
  *
  * Description:
  *   Applies 'fun' to all data found in the LUT which is associated to pointers.
@@ -1462,9 +1461,9 @@ FoldLUT_S (lut_t *lut, void *init, void *(*fun) (void *, void *))
  ******************************************************************************/
 
 void *
-FoldLUT_P (lut_t *lut, void *init, void *(*fun) (void *, void *))
+LUTfoldLutP (lut_t *lut, void *init, void *(*fun) (void *, void *))
 {
-    DBUG_ENTER ("FoldLUT_P");
+    DBUG_ENTER ("LUTfoldLutP");
 
     init = FoldLUT (lut, init, fun, 0, HASH_KEYS_POINTER);
 
@@ -1474,7 +1473,7 @@ FoldLUT_P (lut_t *lut, void *init, void *(*fun) (void *, void *))
 /******************************************************************************
  *
  * function:
- *   void PrintLUT( FILE *handle, lut_t *lut)
+ *   void LUTprintLut( FILE *handle, lut_t *lut)
  *
  * description:
  *   Prints the contents of the given LUT.
@@ -1482,13 +1481,13 @@ FoldLUT_P (lut_t *lut, void *init, void *(*fun) (void *, void *))
  ******************************************************************************/
 
 void
-PrintLUT (FILE *handle, lut_t *lut)
+LUTprintLut (FILE *handle, lut_t *lut)
 {
     void **tmp;
     hash_key_t k;
     lut_size_t i;
 
-    DBUG_ENTER ("PrintLUT");
+    DBUG_ENTER ("LUTprintLut");
 
     DBUG_PRINT ("LUT", ("> lut (" F_PTR ")", lut));
 
