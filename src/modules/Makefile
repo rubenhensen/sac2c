@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.4  1994/12/31 14:31:32  sbs
+# Revision 1.5  1995/08/08 09:52:15  cg
+# include of typecheck.h made possible.
+#
+# Revision 1.4  1994/12/31  14:31:32  sbs
 # preliminary (working) version
 #
 # Revision 1.3  1994/12/21  12:22:07  sbs
@@ -18,7 +21,7 @@
 MAKE=make
 CC=gcc -ansi -g
 
-INCS=-I../global -I../../inc -I../scanparse
+INCS=-I../global -I../../inc -I../scanparse -I../typecheck
 
 all: filemgr.o import.o
 
@@ -45,4 +48,4 @@ import.o: /usr/include/stdio.h ../global/tree.h ../global/type_info.mac
 import.o: ../global/node_info.mac ../global/prf_node_info.mac
 import.o: ../global/free.h ../global/Error.h ../global/my_debug.h
 import.o: ../scanparse/scnprs.h ../scanparse/y.tab.h ../global/traverse.h
-import.o: filemgr.h import.h
+import.o: ../typecheck/typecheck.h filemgr.h import.h
