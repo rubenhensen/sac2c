@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/07/28 13:00:09  jhs
+ * Added: funptr spmdcons_tab[].
+ *
  * Revision 2.7  1999/07/23 17:17:46  jhs
  * Restructured node_info.mac and simplified it's usage.
  *
@@ -127,6 +130,7 @@
 #include "sync_init.h"
 #include "sync_opt.h"
 #include "spmd_trav.h"
+#include "spmd_cons.h"
 #include "schedule.h"
 #include "wl_access_analyze.h"
 #include "scnprs.h" /* needed for linenum only!!! */
@@ -603,6 +607,15 @@ funptr spmdrmtrav_tab[] = {
 
 #define NIFspmdro(it_spmdro) it_spmdro
 funptr spmdrotrav_tab[] = {
+#include "node_info.mac"
+};
+
+/*
+ *  53) spmdcons_tab
+ */
+
+#define NIFspmdcons(it_spmdcons) it_spmdcons
+funptr spmdcons_tab[] = {
 #include "node_info.mac"
 };
 

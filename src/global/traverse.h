@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/07/28 13:00:09  jhs
+ * Added: funptr spmdcons_tab[].
+ *
  * Revision 2.4  1999/06/25 14:58:34  jhs
  * Splitted spmdtrav_tab into spmdrmtrav_tab and spmdrotrav_tab.
  *
@@ -240,6 +243,7 @@ extern funptr opt_tab[];
 extern funptr wlaa_tab[];
 extern funptr spmdrmtrav_tab[];
 extern funptr spmdrotrav_tab[];
+extern funptr spmdcons_tab[];
 
 extern int nnode[];
 
