@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2004/11/29 20:44:49  sah
+ * post-DK bugfixing
+ *
  * Revision 3.38  2004/11/29 10:56:46  sah
  * fixed naming convention bug
  *
@@ -44,190 +47,6 @@
  *
  * Revision 3.26  2003/11/14 15:40:47  sbs
  * mechanism for flattening MG WLs corrected.
- *
- * Revision 3.25  2003/11/12 14:36:41  sbs
- * handling for mgWLs added.
- *
- * Revision 3.24  2003/11/12 08:33:46  sbs
- * With-loop default expression flattened out in case of -sbs
- *
- * Revision 3.23  2003/02/10 17:51:49  dkr
- * flattening of nested arrays even for old backend now
- *
- * Revision 3.22  2002/09/11 23:18:45  dkr
- * prf_node_info.mac modified
- *
- * Revision 3.21  2002/08/15 12:44:25  sbs
- * minor error in flattening wls eliminated
- *
- * Revision 3.20  2002/08/13 13:35:33  sbs
- * handle_mops.h included
- *
- * Revision 3.19  2002/08/13 10:21:52  sbs
- * HandleMops traversal added.
- *
- * Revision 3.18  2002/08/07 12:56:58  dkr
- * FltnNwithid() added, NWITHID_VEC is created if missing
- *
- * Revision 3.17  2002/08/07 12:14:46  dkr
- * FltnPrf: dirty hack for new backend no longer needed
- *
- * Revision 3.16  2002/08/06 15:53:47  sbs
- * in case sbs == 1 , i.e., the new TS, shape exprs of genarray WLS are
- * flattened as well now
- *
- * Revision 3.15  2002/08/06 08:39:17  sbs
- * bug in FltnNgenerator (new TS version) fixed
- *
- * Revision 3.14  2002/08/05 17:02:07  sbs
- * patched for additional support concerning the wl shortcuts
- * and the new type checker
- *
- * Revision 3.13  2002/07/24 18:53:33  dkr
- * new backend: scalar arguments are flattened in precompile now
- *
- * Revision 3.12  2002/07/12 18:48:20  dkr
- * CT_prf removed (okay, that idea was bullshit... @1)
- *
- * Revision 3.11  2002/07/08 21:18:38  dkr
- * CT_prf added
- *
- * Revision 3.10  2002/07/08 11:05:32  dkr
- * FltnPrf(): N_array arguments of F_reshape are not flattened (for
- * new backend only)
- *
- * Revision 3.9  2002/07/02 15:26:30  sah
- * added support for N_dot nodes in WL generators
- *
- * Revision 3.8  2002/06/03 13:42:57  dkr
- * behaviour for new backend modified
- *
- * Revision 3.7  2002/06/02 22:02:11  dkr
- * support for new backend added
- *
- * Revision 3.6  2001/11/22 08:46:31  sbs
- * DbugPrintStack compiled when DBUG package is active only!
- *
- * Revision 3.5  2001/05/17 11:43:57  dkr
- * FREE eliminated
- *
- * Revision 3.4  2001/04/26 17:09:48  dkr
- * cast are flattened now
- *
- * Revision 3.3  2001/04/24 09:15:40  dkr
- * P_FORMAT replaced by F_PTR
- *
- * Revision 3.2  2001/04/19 07:47:34  dkr
- * macro F_PTR used as format string for pointers
- *
- * Revision 3.1  2000/11/20 17:59:19  sacbase
- * new release made
- *
- * Revision 2.30  2000/11/15 20:05:28  sbs
- * FindIdInSeg could not handlw seg_sz=0 && seg==NULL properly;
- * Now, it can!
- *
- * Revision 2.29  2000/10/31 23:30:43  dkr
- * nothing changed
- *
- * Revision 2.28  2000/10/17 17:06:35  dkr
- * flattening of applications moved to precompile.c
- *
- * Revision 2.27  2000/10/10 14:57:23  dkr
- * some comments in FltnLet added
- *
- * Revision 2.26  2000/10/10 14:36:35  dkr
- * flattening of applications modified: the temp-assignment is placed in
- * front of the application now (not behind it)
- *
- * Revision 2.25  2000/10/09 19:19:21  dkr
- * a = prf( a) is flattened now, too
- *
- * Revision 2.24  2000/09/27 16:47:52  dkr
- * a = fun( a) is flattened now
- *
- * Revision 2.23  2000/06/23 13:53:39  dkr
- * nodetype N_with removed
- *
- * Revision 2.22  2000/05/30 12:35:26  dkr
- * functions for old with-loop removed
- *
- * Revision 2.21  2000/05/17 15:14:23  dkr
- * Use of INFO_FLTN_LASTASSIGN and INFO_FLTN_FINALASSIGN in loops
- * corrected. (Especially in case of empty loop bodies.)
- *
- * Function FltnCon removed (old with-loop only).
- *
- * Revision 2.20  2000/02/23 20:16:34  cg
- * Node status ST_imported replaced by ST_imported_mod and
- * ST_imported_class in order to allow distinction between enteties
- * that are imported from a module and those that are imported from a
- * class.
- *
- * Revision 2.19  1999/06/02 09:46:31  jhs
- * Fixed a bug in FltnArray occuring when a constant array was nested
- * somehow in a non-constant one (e.g. in a primitive function) and the
- * values needed for infering were overwritten.
- *
- * Revision 2.18  1999/05/14 10:36:53  jhs
- * Corrected little Bug in FltnNwithop, Bug was inserted while changeing
- * Annotation to AnnotateIdWithConstVec.
- *
- * Revision 2.17  1999/05/14 09:25:13  jhs
- * Dbugged constvec annotations and their housekeeping in various compilation
- * stages.
- *
- * Revision 2.16  1999/05/12 15:30:16  jhs
- * Annotate... added; const-annotation dbugged.
- *
- * Revision 2.15  1999/05/12 08:42:26  sbs
- * brushed handling of CONSTVECs; adjusted to new macros.
- *
- * Revision 2.14  1999/05/11 16:18:27  jhs
- * Done4 some cosmetics to learn about the code.
- *
- * Revision 2.13  1999/05/06 12:08:50  sbs
- * includes brushed!.
- *
- * Revision 2.12  1999/04/20 12:58:24  jhs
- * Changes made for emty arrays.
- *
- * Revision 2.11  1999/04/08 17:10:21  jhs
- * FltnArray expanded for EmptyArrays.
- *
- * Revision 2.10  1999/03/19 09:40:19  bs
- * PreTypecheck mutated to the global function FltnPreTypecheck
- *
- * Revision 2.9  1999/03/17 21:44:22  bs
- * Flattening of costant boolean arrays and constant character arrays!
- *
- * Revision 2.8  1999/03/17 15:35:04  bs
- * Bug fixed in FltnArray and FltnExprs. Macro EXPR_VAL added.
- *
- * Revision 2.7  1999/03/15 14:13:37  bs
- * Access macros renamed (take a look at tree_basic.h).
- * FltnArray and FltnExprs modified: Now compact propagation of float and double
- * vectors were stored additionally.
- *
- * Revision 2.6  1999/03/09 10:44:07  bs
- * DbugPrintArray removed.
- * This debugging-information will be printed from print.c .
- *
- * Revision 2.5  1999/03/05 17:35:13  bs
- * Another bug fixed in DbugPrintArray.
- *
- * Revision 2.4  1999/03/05 17:20:36  bs
- * Bug fixed in DbugPrintArray.
- *
- * Revision 2.3  1999/02/26 10:53:04  bs
- * FltnPrf() modified: the primitive functions take, drop, reshape and genarray
- * will be flattened like the other primitive functions.
- *
- * Revision 2.2  1999/02/24 20:24:09  bs
- * Function CopyIntArray moved to internal_lib.c .
- *
- * Revision 2.1  1999/02/23 12:39:08  sacbase
- * new release made
  *
  * ... [eliminated] ...
  *
@@ -1125,18 +944,18 @@ FLATlet (node *arg_node, info *arg_info)
 
     if (ids != NULL) {
         DBUG_PRINT ("FLATTEN",
-                    ("flattening RHS of let-assignment to %s", IDS_NAME (ids)));
+                    ("flattening RHS of let-assignment to %s", IDS_SPNAME (ids)));
     }
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     if (ids != NULL) {
         DBUG_PRINT ("RENAME", ("checking LHS of let-assignment to %s for renaming",
-                               IDS_NAME (ids)));
+                               IDS_SPNAME (ids)));
     }
 
     while (ids != NULL) {
-        ids_name = IDS_NAME (ids);
+        ids_name = IDS_SPNAME (ids);
         tmp = FindId (ids_name);
 
         if (tmp == 0) {
@@ -1162,7 +981,7 @@ FLATlet (node *arg_node, info *arg_info)
                  * and we rename the actual LHS:
                  */
                 ids_name = ILIBfree (ids_name);
-                IDS_NAME (ids) = tmp_name;
+                IDS_SPNAME (ids) = tmp_name;
             } else {                  /* the let expr is not a WL */
                 if (with_level > 0) { /* we are in the body of a WL */
                     if (tmp->w_level
@@ -1178,7 +997,7 @@ FLATlet (node *arg_node, info *arg_info)
                         tmp_name = ILIBstringCopy (tmp->id_new);
                     }
                     ids_name = ILIBfree (ids_name);
-                    IDS_NAME (ids) = tmp_name;
+                    IDS_SPNAME (ids) = tmp_name;
                 }
             }
         }
@@ -1504,19 +1323,19 @@ FLATid (node *arg_node, info *arg_info)
     DBUG_ENTER ("FLATid");
 
     if (0 < with_level) {
-        tmp = FindId (ID_NAME (arg_node));
+        tmp = FindId (ID_SPNAME (arg_node));
         if (tmp) {
             DBUG_ASSERT ((with_level >= tmp->w_level), "actual with-level is smaller "
                                                        "than with-level pushed on the "
                                                        "stack!");
             if (tmp->id_new != tmp->id_old) {
-                old_name = ID_NAME (arg_node);
-                ID_NAME (arg_node) = ILIBstringCopy (tmp->id_new);
+                old_name = ID_SPNAME (arg_node);
+                ID_SPNAME (arg_node) = ILIBstringCopy (tmp->id_new);
 
                 old_name = ILIBfree (old_name);
             }
         } else
-            DBUG_PRINT ("RENAME", ("not found: %s", ID_NAME (arg_node)));
+            DBUG_PRINT ("RENAME", ("not found: %s", ID_SPNAME (arg_node)));
     }
 
     DBUG_RETURN (arg_node);
@@ -1637,7 +1456,6 @@ FLATcond (node *arg_node, info *arg_info)
 node *
 FLATwhile (node *arg_node, info *arg_info)
 {
-
     node *new_cond;
     node *new_do;
 
@@ -1941,9 +1759,9 @@ FLATwithid (node *arg_node, info *arg_info)
      */
     _ids = WITHID_IDS (arg_node);
     while (_ids != NULL) {
-        old_name = IDS_NAME (_ids);
-        IDS_NAME (_ids) = ILIBtmpVarName (old_name);
-        PUSH (old_name, IDS_NAME (_ids), with_level - 1);
+        old_name = IDS_SPNAME (_ids);
+        IDS_SPNAME (_ids) = ILIBtmpVarName (old_name);
+        PUSH (old_name, IDS_SPNAME (_ids), with_level - 1);
         _ids = IDS_NEXT (_ids);
     }
 
@@ -1952,9 +1770,9 @@ FLATwithid (node *arg_node, info *arg_info)
      */
     _ids = WITHID_VEC (arg_node);
     if (_ids != NULL) {
-        old_name = IDS_NAME (_ids);
-        IDS_NAME (_ids) = ILIBtmpVarName (old_name);
-        PUSH (old_name, IDS_NAME (_ids), with_level - 1);
+        old_name = IDS_SPNAME (_ids);
+        IDS_SPNAME (_ids) = ILIBtmpVarName (old_name);
+        PUSH (old_name, IDS_SPNAME (_ids), with_level - 1);
     }
 
     if (WITHID_VEC (arg_node) == NULL) {

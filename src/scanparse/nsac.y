@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.26  2004/11/29 20:44:49  sah
+* post-DK bugfixing
+*
 * Revision 1.25  2004/11/27 02:49:06  cg
 * include of my_debug.h removed.
 *
@@ -1280,7 +1283,7 @@ with: BRACKET_L generator BRACKET_R wlassignblock withop
           cexpr = FOLD_SPEXPR($5);
           FOLD_SPEXPR($5) = NULL;
         }
-        $$ = TBmakeWith( $2, TBmakeCode( $4, TBmakeExprs( NULL, cexpr)), $5);
+        $$ = TBmakeWith( $2, TBmakeCode( $4, TBmakeExprs( cexpr, NULL)), $5);
         CODE_USED( WITH_CODE( $$))++;
         /*
          * Finally, we generate the link between the (only) partition

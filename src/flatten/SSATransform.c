@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.24  2004/11/29 20:44:49  sah
+ * post-DK bugfixing
+ *
  * Revision 1.23  2004/11/27 03:07:40  cg
  * Functions renamed.
  *
@@ -466,7 +469,7 @@ DupTopSsastack (node *avis)
 
     if (AVIS_SSASTACK_INUSE (avis)) {
         ssastack = AVIS_SSASTACK (avis);
-        AVIS_SSASTACK (avis) = TBmakeSsastack (ssastack, SSASTACK_AVIS (ssastack));
+        AVIS_SSASTACK (avis) = TBmakeSsastack (SSASTACK_AVIS (ssastack), ssastack);
         AVIS_SSASTACK_INUSE (avis) = TRUE;
     }
 
