@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.159  2004/08/06 10:44:12  skt
+ * support for printing executionmode of assignments added
+ *
  * Revision 3.158  2004/08/02 20:46:54  sah
  * added lots if ifdefs for mini sac compiler
  * using the new ast...
@@ -296,6 +299,7 @@
 #include "refcount.h"
 #include "wl_bounds.h"
 #include "wltransform.h"
+#include "multithread.h"
 #include "constants.h"
 #include "print_interface.h"
 #include "print.h"
@@ -2178,6 +2182,10 @@ PrintAssign (node *arg_node, info *arg_info)
     });
 
     PRINT_LINE_PRAGMA_IN_SIB (outfile, arg_node);
+
+    if (executionmodes_available == TRUE) {
+        fprintf (outfile, "%s:", MUTHDecodeExecmode (ASSIGN_EXECMODE (arg_node)));
+    }
 
     DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", NODE_LINE (arg_node)););
 
