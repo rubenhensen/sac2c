@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2004/06/30 12:13:39  khf
+ * wlpg_expr removed, comments modified
+ *
  * Revision 3.60  2004/05/04 15:47:20  khf
  * appliance of SSACSE and SSADCR after WLFS added
  *
@@ -379,7 +382,6 @@ int al_expr;
 int dl_expr;
 int sp_expr;
 int cvp_expr;
-int wlpg_expr;
 int wlfs_expr;
 
 /**
@@ -437,7 +439,6 @@ ResetCounters ()
     dl_expr = 0;
     sp_expr = 0;
     cvp_expr = 0;
-    wlpg_expr = 0;
     wlfs_expr = 0;
 
     DBUG_VOID_RETURN;
@@ -453,8 +454,7 @@ ResetCounters ()
  *                          int off_cse_expr, int off_ap_padded,
  *                          int off_ap_unsupported,
  *                          int off_wls_expr, int off_al_expr, int off_dl_expr,
- *                          int off_sp_expr, int off_cvp_expr,
- *                          int off_wlpg_expr, int off_wlfs_expr,
+ *                          int off_sp_expr, int off_cvp_expr, int off_wlfs_expr,
  *                          int flag)
  *
  *   @brief prints all counters - specified offset provided that the respective
@@ -471,8 +471,8 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
                  int off_wlunr_expr, int off_uns_expr, int off_elim_arrays,
                  int off_wlf_expr, int off_wlt_expr, int off_cse_expr, int off_ap_padded,
                  int off_ap_unsupported, int off_wls_expr, int off_al_expr,
-                 int off_dl_expr, int off_sp_expr, int off_cvp_expr, int off_wlpg_expr,
-                 int off_wlfs_expr, int flag)
+                 int off_dl_expr, int off_sp_expr, int off_cvp_expr, int off_wlfs_expr,
+                 int flag)
 {
     int diff;
     DBUG_ENTER ("PrintStatistics");
@@ -510,10 +510,6 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     diff = cse_expr - off_cse_expr;
     if ((optimize & OPT_CSE) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d common subexpression(s) eliminated", diff));
-
-    diff = wlpg_expr - off_wlpg_expr;
-    if ((optimize & OPT_WLPG) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d full partitions generated", diff));
 
     diff = wlf_expr - off_wlf_expr;
     if ((optimize & OPT_WLF) && ((ALL == flag) || (diff > 0)))
@@ -561,7 +557,7 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
 
     diff = wlfs_expr - off_wlfs_expr;
     if ((optimize & OPT_WLFS) && ((ALL == flag) || (diff > 0)))
-        NOTE (("  %d withloop(s) fused", diff));
+        NOTE (("  %d with-loop(s) fused", diff));
 
     DBUG_VOID_RETURN;
 }
@@ -798,7 +794,7 @@ OPTmodul (node *arg_node, node *arg_info)
 
     NOTE ((""));
     NOTE (("overall optimization statistics:"));
-    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                      ALL);
 
     /*
@@ -865,6 +861,8 @@ DONE:
  *         |--------/
  *        DCR
  *        WLFS
+ *        (CSE)          (applied only if WLFS succeeded!)
+ *        (DCR)          (applied only if WLFS succeeded!)
  *
  *   </pre>
  ******************************************************************************/
@@ -891,7 +889,6 @@ OPTfundef (node *arg_node, node *arg_info)
     int mem_dl_expr = dl_expr;
     int mem_sp_expr = sp_expr;
     int mem_cvp_expr = cvp_expr;
-    int mem_wlpg_expr = wlpg_expr;
     int mem_wlfs_expr = wlfs_expr;
 
     int old_cse_expr = cse_expr;
@@ -909,7 +906,6 @@ OPTfundef (node *arg_node, node *arg_info)
     int old_dl_expr = dl_expr;
     int old_sp_expr = sp_expr;
     int old_cvp_expr = cvp_expr;
-    int old_wlpg_expr = wlpg_expr;
 
     int loop1 = 0;
     int loop2 = 0;
@@ -1030,7 +1026,8 @@ OPTfundef (node *arg_node, node *arg_info)
 
         /*
          * Now, we enter the first loop. It consists of:
-         *   CSE, CF, WLT, WLF, (CF), DCR, LUNR/ WLUNR, UNS, LIR WLS, (ESD), AL and DL.
+         *   CSE, CF, WLT, WLF, (CF), DCR, LUNR/ WLUNR, UNS, LIR WLS, (ESD), AL, DL
+         *   and WLPG.
          */
         do {
             loop1++;
@@ -1053,7 +1050,6 @@ OPTfundef (node *arg_node, node *arg_info)
             old_dl_expr = dl_expr;
             old_sp_expr = sp_expr;
             old_cvp_expr = cvp_expr;
-            old_wlpg_expr = wlpg_expr;
 
             /*
              * !! Important !!
@@ -1083,19 +1079,6 @@ OPTfundef (node *arg_node, node *arg_info)
                     arg_node
                       = SSAConstantFolding (arg_node,
                                             INFO_OPT_MODUL (arg_info)); /* ssacf_tab */
-
-                    /* srs: CF does not handle the USE mask correctly. For example
-                       a = f(3);
-                       b = a;
-                       c = b;
-                       will be transformed to
-                       a = f(3);
-                       b = a;
-                       c = a;
-                       after CF. But the USE mask of b is not reduced.
-                       This leads to a DCR problem (b = a is removed but variable
-                       declaration for b not. */
-                    /* quick fix: always rebuild masks after CF */
                 }
 
                 if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
@@ -1405,8 +1388,7 @@ OPTfundef (node *arg_node, node *arg_info)
                   || (uns_expr != old_uns_expr) || (lir_expr != old_lir_expr)
                   || (wlir_expr != old_wlir_expr) || (wls_expr != old_wls_expr)
                   || (al_expr != old_al_expr) || (dl_expr != old_dl_expr)
-                  || (sp_expr != old_sp_expr) || (cvp_expr != old_cvp_expr)
-                  || (wlpg_expr != old_wlpg_expr))
+                  || (sp_expr != old_sp_expr) || (cvp_expr != old_cvp_expr))
                  && (loop1 < max_optcycles));
         /* dkr:
          * How about  cf_expr, wlt_expr, dcr_expr  ??
@@ -1518,7 +1500,7 @@ OPTfundef (node *arg_node, node *arg_info)
         }
 
         /*
-         * Finally, we apply WLFS followed by CSE and DCR, first without a loop:
+         * Finally, we apply WLFS followed by CSE and DCR:
          */
         if (use_ssaform) {
             if (optimize & OPT_WLFS) {
@@ -1560,8 +1542,8 @@ OPTfundef (node *arg_node, node *arg_info)
                          mem_lir_expr, mem_wlir_expr, mem_cf_expr, mem_lunr_expr,
                          mem_wlunr_expr, mem_uns_expr, mem_elim_arrays, mem_wlf_expr,
                          mem_wlt_expr, mem_cse_expr, 0, 0, mem_wls_expr, mem_al_expr,
-                         mem_dl_expr, mem_sp_expr, mem_cvp_expr, mem_wlpg_expr,
-                         mem_wlfs_expr, NON_ZERO_ONLY);
+                         mem_dl_expr, mem_sp_expr, mem_cvp_expr, mem_wlfs_expr,
+                         NON_ZERO_ONLY);
 
         if (!(use_ssaform)) {
             DBUG_DO_NOT_EXECUTE ("PRINT_MASKS", arg_node = FreeMasks (arg_node););
