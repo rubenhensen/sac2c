@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  2000/08/24 11:16:16  dkr
+ * macros cat? renamed to CAT?
+ *
  * Revision 2.8  2000/08/18 14:06:04  dkr
  * ## replaced by cat0
  *
@@ -120,7 +123,7 @@
  *** current array entry.
  ***/
 
-#define SAC_WL_DEST(var) cat0 (var, __destptr)
+#define SAC_WL_DEST(var) CAT0 (var, __destptr)
 
 /*****************************************************************************/
 
@@ -128,11 +131,11 @@
  *** these macros is used to generate names of aux-variables
  ***/
 
-#define SAC_WL_VAR(type, idx_sca) cat0 (cat0 (cat0 (SAC__, type), _), idx_sca)
+#define SAC_WL_VAR(type, idx_sca) CAT0 (CAT0 (CAT0 (SAC__, type), _), idx_sca)
 
-#define SAC_WL_MT_SCHEDULE_START(dim) cat0 (SAC__schedule_start, dim)
+#define SAC_WL_MT_SCHEDULE_START(dim) CAT0 (SAC__schedule_start, dim)
 
-#define SAC_WL_MT_SCHEDULE_STOP(dim) cat0 (SAC__schedule_stop, dim)
+#define SAC_WL_MT_SCHEDULE_STOP(dim) CAT0 (SAC__schedule_stop, dim)
 
 /*****************************************************************************/
 

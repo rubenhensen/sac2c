@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/08/24 11:16:36  dkr
+ * macros cat? renamed to CAT?
+ *
  * Revision 1.8  2000/08/17 10:21:12  dkr
  * some comments modified
  * macro ICM_UNDEF added
@@ -73,27 +76,27 @@
  *
  *  Parameters are specified as (parm0, (parm1, (parm2, (parm3 ...)))).
  *
- *  The cat? macros are used to glue items together. Thus, the result of:
+ *  The CAT? macros are used to glue items together. Thus, the result of:
  *    #define foo( tuple) \
- *      cat0( cat0( Item4 tuple, Item3 tuple), Item2 tuple)
+ *      CAT0( CAT0( Item4 tuple, Item3 tuple), Item2 tuple)
  *    foo( (I, (see, (rats, (and, (mice,))))))
  *  is:
  *    miceandrats
  *  NB. Note the trailing comma in the invocation's innermost nest
  *
  *  If nested macro expansion is used on each expansion level different
- *  cat? macros have to be used!!! The result of:
- *    #define TEST1 cat0( TEST, 2)
- *    #define TEST2 cat1( TEST, 3)
+ *  CAT? macros have to be used!!! The result of:
+ *    #define TEST1 CAT0( TEST, 2)
+ *    #define TEST2 CAT1( TEST, 3)
  *    TEST1
  *  is:
  *    TEST3
  *  But the result of:
- *    #define TEST1 cat0( TEST, 2)
- *    #define TEST2 cat0( TEST, 3)
+ *    #define TEST1 CAT0( TEST, 2)
+ *    #define TEST2 CAT0( TEST, 3)
  *    TEST1
  *  is:
- *    cat0( TEST, 3)
+ *    CAT0( TEST, 3)
  */
 
 #define Item0(a, b) a
@@ -104,10 +107,10 @@
 #define Item5(a, b) Item4 b
 
 /*
- * The odd-looking cat? macros is required to provide a degree of indirection
+ * The odd-looking CAT? macros is required to provide a degree of indirection
  * for mixed catenates and macro expansions.
  * Replacing it with ## will NOT work.
- * Replacing [x]cat?() with [x]cat1() will NOT work either.
+ * Replacing [x]CAT?() with [x]CAT1() will NOT work either.
  * This is documented in K&R, Section A.12.3.
  *
  * For the same reason, we define AddParens to wrap parentheses around a
@@ -116,23 +119,23 @@
  * If you need a 3-parameter argument list, write BuildArgs3, etc.
  */
 
-#define cat0(x, y) xcat0 (x, y)
-#define xcat0(x, y) x##y
+#define CAT0(x, y) xCAT0 (x, y)
+#define xCAT0(x, y) x##y
 
-#define cat1(x, y) xcat1 (x, y)
-#define xcat1(x, y) x##y
+#define CAT1(x, y) xCAT1 (x, y)
+#define xCAT1(x, y) x##y
 
-#define cat2(x, y) xcat2 (x, y)
-#define xcat2(x, y) x##y
+#define CAT2(x, y) xCAT2 (x, y)
+#define xCAT2(x, y) x##y
 
-#define cat3(x, y) xcat3 (x, y)
-#define xcat3(x, y) x##y
+#define CAT3(x, y) xCAT3 (x, y)
+#define xCAT3(x, y) x##y
 
-#define cat4(x, y) xcat4 (x, y)
-#define xcat4(x, y) x##y
+#define CAT4(x, y) xCAT4 (x, y)
+#define xCAT4(x, y) x##y
 
-#define cat5(x, y) xcat5 (x, y)
-#define xcat5(x, y) x##y
+#define CAT5(x, y) xCAT5 (x, y)
+#define xCAT5(x, y) x##y
 
 #define AddParens(a) xAddParens (a)
 #define xAddParens(a) (##a##)
