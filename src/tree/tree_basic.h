@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.132  2002/07/02 13:42:54  sah
+ * added DOT_ISSINGLE macro.
+ *
  * Revision 3.131  2002/06/27 12:50:49  dkr
  * INFO_WLI_NEXT modified
  *
@@ -1922,6 +1925,7 @@ extern node *MakePrf (prf prf, node *args);
 extern node *MakeDot (int num);
 
 #define DOT_NUM(n) (n->counter)
+#define DOT_ISSINGLE(n) ((NODE_TYPE (n) == N_dot) && (DOT_NUM (n) == 1))
 
 /*--------------------------------------------------------------------------*/
 
