@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/12/10 15:00:48  dkr
+ * flag 'dkr' removed
+ *
  * Revision 3.11  2001/11/19 20:19:59  dkr
  * global vars 'errors' and 'warnings' renamed into
  * 'errors_cnt' and 'warnings_cnt' respectively in order
@@ -122,7 +125,6 @@
 #define MAIN_MOD_NAME "_MAIN"
 
 extern bool sbs;
-extern bool dkr;
 
 extern char version_id[];
 extern char target_platform[];
