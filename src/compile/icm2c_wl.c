@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1998/07/02 09:26:16  cg
+ * tracing capabilities improved
+ *
  * Revision 1.20  1998/06/29 08:55:51  cg
  * added new multi-threaded versions of new with-loop begin/end ICMs
  * added compilation of ICM WL_MT_SCHEDULER_SET_OFFSET
@@ -346,6 +349,8 @@ void
 ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
                      char *idx_vec, int dims, char **idx_scalars)
 {
+    int i;
+
     DBUG_ENTER ("ICMCompileWL_ASSIGN");
 
 #define WL_ASSIGN
@@ -388,10 +393,15 @@ ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
     } else {
 
         INDENT;
-        fprintf (outfile,
-                 "SAC_TR_WL_PRINT((\"Assigning scalar element to %s at offset %%d.\","
-                 " %s__destptr));",
-                 target, target);
+        fprintf (outfile, "SAC_TR_WL_PRINT((\"Array element %s[[%%d", target);
+        for (i = 1; i < dims; i++) {
+            fprintf (outfile, ", %%d");
+        }
+        fprintf (outfile, "]] at offset %%d set.\", %s", idx_scalars[0]);
+        for (i = 1; i < dims; i++) {
+            fprintf (outfile, ", %s", idx_scalars[i]);
+        }
+        fprintf (outfile, ", %s__destptr));\n", target);
 
         INDENT;
         fprintf (outfile, "SAC_ND_A_FIELD( %s)[ %s__destptr++] = %s;\n", target, target,

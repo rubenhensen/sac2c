@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/07/02 09:27:04  cg
+ * tracing capabilities improved
+ *
  * Revision 1.5  1998/06/29 08:57:13  cg
  * added tracing facilities
  *
@@ -152,11 +155,12 @@ ThreadControl (void *arg)
     }
 
     TRACE_PRINT (
-      ("This is worker thread #%u of class %u.", my_thread_id, my_worker_class));
+      ("This is worker thread #%u with class %u.", my_thread_id, my_worker_class));
 
     for (i = my_worker_class; i; i >>= 1) {
 
-        TRACE_PRINT (("Creating thread #%u of class %u.", my_thread_id + i, i));
+        TRACE_PRINT (
+          ("Creating thread #%u with maximum class %u.", my_thread_id + i, i >> 1));
 
         pthread_create (NULL, &SAC_MT_thread_attribs, (void *(*)(void *))ThreadControl,
                         (void *)((i << 16) + (my_thread_id + i)));
@@ -191,11 +195,11 @@ SAC_MT_ThreadControl (void *arg)
     pthread_setspecific (SAC_TRMT_threadid_key, &my_thread_id);
 #endif
 
-    TRACE_PRINT (("This is worker thread #1 of class 0."));
+    TRACE_PRINT (("This is worker thread #1 with class 0."));
 
     for (i = SAC_MT_masterclass; i > 1; i >>= 1) {
 
-        TRACE_PRINT (("Creating thread #%u of class %u.", i, i));
+        TRACE_PRINT (("Creating thread #%u with maximum class %u.", i, i >> 1));
 
         pthread_create (NULL, &SAC_MT_thread_attribs, (void *(*)(void *))ThreadControl,
                         (void *)((i << 16) + i));
