@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.31  1995/05/31 13:21:11  hw
+ * Revision 1.32  1995/05/31 14:19:12  hw
+ * bug fixed in FtlnCon (body after N_modarray will be flattened
+ *   correctly now)
+ *
+ * Revision 1.31  1995/05/31  13:21:11  hw
  * changed flatten of with-loop and of N_foldfun
  *
  * Revision 1.30  1995/05/30  11:59:06  hw
@@ -1288,7 +1292,7 @@ FltnCon (node *arg_node, node *arg_info)
             FREE (exprs);
         } else
             arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-        arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+        arg_node->node[1] = Trav (arg_node->node[1], info_node);
         break;
     }
     case N_foldfun: {
