@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/03/03 09:46:49  bs
+ * I did some code-cosmetics in DupArray for a better understanding.
+ *
  * Revision 2.2  1999/02/25 10:58:42  bs
  * DupArray added.
  *
@@ -677,15 +680,15 @@ DupArray (node *arg_node, node *arg_info)
     node *new_node;
     int i;
 
-    DBUG_ENTER ("DupTypes");
+    DBUG_ENTER ("DupArray");
 
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
+    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[NODE_TYPE (arg_node)]));
 
-    new_node = MakeNode (arg_node->nodetype);
-    if (arg_node->info.types != NULL)
-        new_node->info.types = DuplicateTypes (arg_node->info.types, 1);
+    new_node = MakeArray (NULL);
+    if (ARRAY_TYPE (arg_node) != NULL)
+        ARRAY_TYPE (new_node) = DuplicateTypes (ARRAY_TYPE (arg_node), 1);
     else
-        new_node->info.types = NULL;
+        ARRAY_TYPE (new_node) = NULL;
 
     DUP (arg_node, new_node);
     for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++) {
