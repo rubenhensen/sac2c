@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.101  2001/07/16 08:23:11  cg
+ * Added function MakeOk for construction of N_ok nodes.
+ *
  * Revision 3.100  2001/06/14 12:32:36  dkr
  * some minor changes in definition of WL nodes done
  *
@@ -4132,6 +4135,26 @@ extern node *MakeModspec (char *name, node *exports);
 
 #define MODSPEC_NAME(n) (n->info.fun_name.id)
 #define MODSPEC_OWN(n) (n->node[0])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_ok :
+ ***
+ ***  sons:
+ ***
+ ***  permanent attributes:
+ ***
+ ***  temporary attributes:
+ ***
+ ***/
+
+/*
+ * This special node is used to mark the upper limit of integers associated
+ * with node types. It is also used by the typechecker for various purposes.
+ */
+
+extern node *MakeOk ();
 
 /*--------------------------------------------------------------------------*/
 
