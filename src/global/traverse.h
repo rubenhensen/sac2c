@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.22  1995/10/05 16:03:28  cg
+ * Revision 1.23  1995/10/16 12:03:24  cg
+ * added new function table objinit_tab.
+ *
+ * Revision 1.22  1995/10/05  16:03:28  cg
  * new traversal tab: impltype_tab
  *
  * Revision 1.21  1995/08/03  14:55:20  cg
@@ -132,5 +135,7 @@ extern funptr sib_tab[];
 extern funptr obj_tab[];
 
 extern funptr impltype_tab[];
+
+extern funptr objinit_tab[];
 
 #endif /* _sac_traverse_h */

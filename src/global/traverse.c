@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.30  1995/10/05 16:03:28  cg
+ * Revision 1.31  1995/10/16 12:03:24  cg
+ * added new function table objinit_tab.
+ *
+ * Revision 1.30  1995/10/05  16:03:28  cg
  * new traversal tab: impltype_tab
  *
  * Revision 1.29  1995/09/01  07:48:13  cg
@@ -125,6 +128,8 @@
 #include "index.h"
 #include "sib.h"
 #include "implicittypes.h"
+#include "objinit.h"
+
 #include "traverse.h"
 
 funptr *act_tab;
@@ -442,7 +447,7 @@ funptr obj_tab[] = {
 #undef NIF
 
 /*
- * 22) impltyp_tab
+ * 22) impltype_tab
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
@@ -450,6 +455,20 @@ funptr obj_tab[] = {
     ac
 
 funptr impltype_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 23) objinit_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
+            ac, ad)                                                                      \
+    ad
+
+funptr objinit_tab[] = {
 #include "node_info.mac"
 };
 
