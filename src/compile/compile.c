@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.151  2004/12/18 15:29:48  sbs
+ * initial AUD wl support added.
+ *
  * Revision 3.150  2004/12/15 11:40:01  sbs
  * started implementing AUDwl
  *
@@ -152,289 +155,7 @@
  * file compile.tagged.c renamed into compile.c
  * old backend removed
  *
- * Revision 1.96  2004/02/20 08:25:40  mwe
- * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
- * changed tree traversal according to that
- *
- * Revision 1.95  2004/02/05 10:37:14  cg
- * Re-factorized handling of different modes in multithreaded code
- * generation:
- * - Added enumeration type for representation of modes
- * - Renamed mode identifiers to more descriptive names.
- *
- * Revision 1.94  2003/12/17 15:07:36  skt
- * enabled GEN_MT_LIFTWAIT-options for GEN_MT_STARTSTOP
- *
- * Revision 1.93  2003/12/11 22:02:12  dkrHH
- * DBUG_ASSERT added: CODE_CBLOCK should be a N_block node!
- *
- * Revision 1.92  2003/12/10 16:07:14  skt
- * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
- *
- * Revision 1.91  2003/11/14 22:19:01  dkrHH
- * new with-loop syntax incorporated: DEFAULT value used for elements
- * not covered by generators.
- *
- * Revision 1.90  2003/11/11 19:12:07  dkr
- * COMPWith2(): NWITH2_DEFAULT used if necessary
- *
- * Revision 1.89  2003/10/20 15:39:14  dkr
- * COMPSync(): MT_SYNCBLOCK_UPDATE added
- *
- * Revision 1.88  2003/10/15 12:28:34  dkrHH
- * MT_START_SYNCBLOCK renamed into MT_SYNCBLOCK_BEGIN.
- * MT_SYNCBLOCK_END added.
- *
- * Revision 1.87  2003/10/15 01:06:03  dkrHH
- * some superfluous code removed
- * signature of START_SYNCBLOCK icm modified
- *
- * Revision 1.86  2003/10/14 12:18:16  cg
- * COMPSync(): code for moving ALLOC-ICMs corrected with
- * respect to the new ICM names
- *
- * Revision 1.85  2003/10/01 21:47:31  dkrHH
- * COMPPrfReshape() recoded:
- * code generation for F_reshape is correct now
- *
- * Revision 1.84  2003/09/29 22:51:06  dkr
- * icm SET__SHAPE renamed into SET__SHAPE_arr.
- * icm CREATE__ARRAY__DIM replaced.
- *
- * Revision 1.83  2003/09/29 19:10:03  dkr
- * COMPPrfReshape(): can handle scalars on 2nd arg position as well now
- *
- * Revision 1.82  2003/09/25 19:05:08  dkr
- * new argument 'copyfun' added to some ICMs
- *
- * Revision 1.81  2003/09/25 13:42:58  dkr
- * new argument 'copyfun' added to some ICMs
- *
- * Revision 1.80  2003/09/25 10:54:17  dkr
- * to_unq() and from_unq() are prfs now
- *
- * Revision 1.79  2003/09/20 14:23:57  dkr
- * signature of some prf ICMs modified
- *
- * Revision 1.78  2003/09/19 15:37:58  dkr
- * some missing PRFs added
- *
- * Revision 1.75  2003/09/18 14:57:02  dkr
- * support for F_neg added
- *
- * Revision 1.74  2003/09/17 17:20:09  dkr
- * more NT-tags for MT added
- *
- * Revision 1.73  2003/09/15 16:46:25  dkr
- * several modifications for MT done
- *
- * Revision 1.72  2003/09/13 13:45:34  dkr
- * COMPSpmdFunReturn(): NT-tags added
- *
- * Revision 1.71  2003/08/04 18:04:58  dkr
- * some modifications for MT done
- *
- * Revision 1.70  2003/06/17 09:37:49  dkr
- * bug in COMPArray() fixed
- *
- * Revision 1.69  2003/06/12 17:22:54  dkr
- * support for multi-dimensional constant arrays added:
- * COMPArray() modified.
- *
- * Revision 1.68  2003/04/15 15:28:14  dkr
- * COMPApIds(): WARNing is an ERROR now
- *
- * Revision 1.67  2003/04/15 14:17:01  dkr
- * workaround for non-AKS return values without descriptor removed
- *
- * Revision 1.66  2003/04/14 18:58:08  dkr
- * @file added
- *
- * Revision 1.65  2003/04/14 16:37:47  dkr
- * functions headers corrected (Doxygen)
- *
- * Revision 1.64  2003/04/14 15:16:09  dkr
- * COMPPrfReshape(): reuse of 2nd arg added
- *
- * Revision 1.63  2003/03/18 16:30:34  sah
- * added new prf cat_VxV, take_SxV, drop_SxV
- *
- * Revision 1.62  2003/03/17 14:32:19  dkr
- * memory allocatation for NWITHID_IDS added
- *
- * Revision 1.61  2003/03/14 13:22:06  dkr
- * MakeIcmArgs_WL_OP1(): 3rd argument is tagged now
- *
- * Revision 1.60  2003/03/14 11:41:24  dkr
- * MakeIcmArgs_WL_LOOP1(): 3rd arg is tagged now
- *
- * Revision 1.59  2003/03/13 19:12:01  dkr
- * GetShapeDim() used instead of GetShapeClassFromTypes()
- *
- * Revision 1.58  2003/03/08 20:56:36  dkr
- * COMPPrf... functions for arithmetical operations revisited
- *
- * Revision 1.57  2002/11/13 07:18:09  dkr
- * no cc warnings anymore
- *
- * Revision 1.56  2002/10/29 20:42:35  dkr
- * bug in COMPArray() fixed
- *
- * Revision 1.55  2002/10/29 19:09:11  dkr
- * signature of some ICMs modified
- *
- * Revision 1.54  2002/10/28 09:23:54  dkr
- * DBUG_ASSERT in COMPwith2() corrected
- *
- * Revision 1.53  2002/10/24 20:53:36  dkr
- * MakeDimArg(), MakeShapeArg(), MakeSizeArg() added.
- * signature of some WL ICMs modified.
- * bugs in compilation of WL fixed.
- *
- * Revision 1.52  2002/10/10 23:53:02  dkr
- * signature of TYPE_ERROR modified
- *
- * Revision 1.51  2002/10/08 16:50:30  dkr
- * MakeIcmArgs_WL_OP2(): DBUG_ASSERT modified
- *
- * Revision 1.50  2002/10/08 16:37:41  dkr
- * COMPObjdef() modified
- *
- * Revision 1.49  2002/09/13 23:23:01  dkr
- * COMPPrfTypeError() corrected
- *
- * Revision 1.48  2002/09/11 23:09:33  dkr
- * rf_node_info.mac modified.
- *
- * Revision 1.47  2002/09/09 17:38:13  dkr
- * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
- *
- * Revision 1.46  2002/09/09 14:35:04  dkr
- * COMPPrfTypeError() added
- *
- * Revision 1.45  2002/09/06 09:37:45  dkr
- * ND_IDXS2OFFSET added
- *
- * Revision 1.44  2002/08/14 15:18:27  dkr
- * DBUG_OFF flag used
- *
- * Revision 1.43  2002/08/13 16:27:30  dkr
- * DBUG_PRINT in GenericFun() corrected
- *
- * Revision 1.42  2002/08/09 12:45:47  dkr
- * INFO_COMP_... macros moved from tree_basic.h to compile.tagged.c
- * and renamed into INFO_COMP2_...
- *
- * Revision 1.41  2002/08/08 12:35:21  dkr
- * DBUG_ASSERT added
- *
- * Revision 1.40  2002/08/07 15:49:10  dkr
- * COMPWith: DBUG_ASSERT added
- *
- * Revision 1.39  2002/08/07 13:49:58  dkr
- * COMPWith() added
- *
- * Revision 1.38  2002/08/06 20:02:21  dkr
- * some variables initialized to please the cc (prod version)
- *
- * Revision 1.37  2002/08/05 20:41:14  dkr
- * shape computation for AKD with-loops added
- *
- * Revision 1.36  2002/08/03 03:16:01  dkr
- * ND_PRF_SEL__DIM icms replaced by ND_PRF_BINOP
- *
- * Revision 1.35  2002/08/02 20:49:44  dkr
- * - ..__DIM.. icms added
- * - support for descriptors with dynamic dimension added
- *
- * Revision 1.34  2002/07/31 16:36:05  dkr
- * - tags reorganized: HID/NHD are seperate classes now
- * - support for arrays of hidden added
- *
- * Revision 1.33  2002/07/31 15:34:15  dkr
- * - new hidden tag added
- * - some bugs fixed
- *
- * Revision 1.32  2002/07/24 15:06:49  dkr
- * COMPIcm() corrected
- *
- * Revision 1.31  2002/07/24 13:22:02  dkr
- * GenericFun: DBUG_ASSERT added
- *
- * Revision 1.30  2002/07/16 11:57:27  dkr
- * MT_ADJUST_SCHEDULER__OFFSET(): first argument is NT now
- *
- * Revision 1.29  2002/07/15 19:00:51  dkr
- * minor changes done
- *
- * Revision 1.28  2002/07/15 18:39:27  dkr
- * COMPPrf(): more prfs added
- *
- * Revision 1.27  2002/07/15 15:26:27  dkr
- * - some bugs fixed
- * - COMPPrfArray(), COMPPrfConvertArray() added
- *
- * Revision 1.26  2002/07/12 23:33:39  dkr
- * AddReadIcms() corrected and renamed into DupAndAddReadIcms()
- *
- * Revision 1.25  2002/07/12 22:09:15  dkr
- * bug in COMPPrfConvertScalar() fixed
- *
- * Revision 1.24  2002/07/12 20:45:03  dkr
- * fixed a bug in compilation of N_ap nodes
- *
- * Revision 1.23  2002/07/12 19:11:06  dkr
- * MakeIcm_ND_FUN_DEC(): handling of T_dots parameter corrected
- *
- * Revision 1.22  2002/07/12 18:55:26  dkr
- * first complete revision for new backend :-)))
- *
- * Revision 1.21  2002/07/10 19:27:02  dkr
- * F_modarray for new backend added
- *
- * Revision 1.20  2002/07/08 21:19:11  dkr
- * compilation of scalar prfs completed :-)
- *
- * Revision 1.19  2002/07/04 15:45:35  dkr
- * compilation of from_unq() and to_unq() assignments corrected
- *
- * Revision 1.17  2002/07/02 14:03:09  dkr
- * DupExprs_NT() moved to DupTree.[ch]
- *
- * Revision 1.16  2002/06/07 16:09:35  dkr
- * - some ICMs renamed
- * - new ATG_... arrays used
- *
- * Revision 1.15  2002/06/06 18:23:22  dkr
- * some bugs fixed
- *
- * Revision 1.14  2002/06/02 21:39:02  dkr
- * some more stuff for new backend added
- *
- * Revision 1.13  2002/05/31 17:38:08  dkr
- * bug about new backend fixed
- *
- * Revision 1.12  2002/05/31 17:26:27  dkr
- * new argtags for new backend used
- *
- * Revision 1.11  2002/04/16 21:16:18  dkr
- * AddThreadIdVardec() no longer needed.
- * This is done by GSCPrintMain() now.
- *
- * Revision 1.10  2002/04/03 14:47:50  dkr
- * COMPAp() renamed into COMPAp()
- *
- * Revision 1.9  2002/04/03 14:11:09  dkr
- * code updated (compile.c)
- *
- * Revision 1.8  2002/03/07 02:22:17  dkr
- * definition for INFO_COMP_FIRSTASSIGN added
- *
- * Revision 1.6  2002/02/22 13:48:19  dkr
- * error in COMPMT2FunReturn() corrected
- *
- * Revision 1.5  2002/02/20 14:57:01  dkr
- * fundef DupTypes() renamed into DupAllTypes()
+ * [...eliminated ...]
  *
  * Revision 1.1  2001/12/10 15:34:14  dkr
  * Initial revision
@@ -503,6 +224,8 @@ struct INFO {
     node *assign;
     int schedid;
     node *schedinit;
+    node *idxvec;
+    node *icmchain;
 };
 /*
  * INFO macros
@@ -514,6 +237,8 @@ struct INFO {
 #define INFO_COMP_ASSIGN(n) (n->assign)
 #define INFO_COMP_SCHEDULERID(n) (n->schedid)
 #define INFO_COMP_SCHEDULERINIT(n) (n->schedinit)
+#define INFO_COMP_IDXVEC(n) (n->idxvec)
+#define INFO_COMP_ICMCHAIN(n) (n->icmchain)
 
 /*
  * INFO functions
@@ -534,6 +259,8 @@ MakeInfo ()
     INFO_COMP_ASSIGN (result) = NULL;
     INFO_COMP_SCHEDULERID (result) = 0;
     INFO_COMP_SCHEDULERINIT (result) = NULL;
+    INFO_COMP_IDXVEC (result) = NULL;
+    INFO_COMP_ICMCHAIN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -5111,7 +4838,7 @@ MakeIcmArgs_WL_LOOP1 (node *arg_node)
       TBmakeExprs (
         DUPdupIdNt (WITH2_VEC (wlnode)),
         TBmakeExprs (
-          DUPdupIdNt (TCgetNthExpr (dim, WITH2_IDS (wlnode))),
+          DUPdupIdNt (TCgetNthExpr (dim + 1, WITH2_IDS (wlnode))),
           TBmakeExprs (WLBnodeOrIntMakeIndex (NODE_TYPE (arg_node),
                                               WLNODE_GET_ADDR (arg_node, BOUND1), dim,
                                               wlids),
@@ -5512,27 +5239,152 @@ node *
 COMPwith (node *arg_node, info *arg_info)
 {
     node *icm_chain = NULL, *body_icms;
+    node *res_ids, *idx_id;
 
     DBUG_ENTER ("COMPwith");
 
+    res_ids = INFO_COMP_LASTIDS (arg_info);
+
+    /**
+     * First, we traverse the partition.
+     * This will yield the index vector var in INFO_COMP_IDXVEC (cf. COMPwithid) and
+     * the generator-check icms in INFO_COMP_ICMCHAIN (cf. COMPgenerator).
+     * Whereas the former is a back-link only (and thus has to be copied!), the latter
+     * has been produced for insertion here (and thus can be used as is!).
+     *  Furthermore, note that the index vector comes as N_id as we are after EMM!!
+     */
     DBUG_ASSERT ((WITH_PARTS (arg_node) < 2),
                  "with-loop with non-AKS withid and multiple generators found!");
+
+    DBUG_ASSERT (WITH_PART (arg_node) != NULL, "missing part in AUD with loop!");
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+
+    idx_id = INFO_COMP_IDXVEC (arg_info);
+    INFO_COMP_IDXVEC (arg_info) = NULL;
 
     DBUG_ASSERT (WITH_CODE (arg_node) != NULL, "missing code in AUD with loop!");
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     body_icms = DUPdoDupTree (BLOCK_INSTR (WITH_CBLOCK (arg_node)));
 
-    icm_chain = TCmakeAssignIcm0 ("AUD_WL_END", icm_chain);
+    icm_chain
+      = TCmakeAssignIcm2 ("AUD_WL_END",
+                          TCmakeIdCopyStringNt (ID_NAME (idx_id), ID_TYPE (idx_id)),
+                          TCmakeIdCopyStringNt (IDS_NAME (res_ids), IDS_TYPE (res_ids)),
+                          icm_chain);
     icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_END", icm_chain);
     icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_DEFAULT", icm_chain);
     icm_chain = TCappendAssign (body_icms, icm_chain);
     icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_BODY", icm_chain);
-    icm_chain = TCmakeAssignIcm0 ("AUD_WL_LUSW_GEN", icm_chain);
-    icm_chain = TCmakeAssignIcm0 ("AUD_WL_LU_GEN", icm_chain);
-    icm_chain = TCmakeAssignIcm0 ("AUD_WL_BEGIN", icm_chain);
+    icm_chain = TCappendAssign (INFO_COMP_ICMCHAIN (arg_info), icm_chain);
+    icm_chain
+      = TCmakeAssignIcm2 ("AUD_WL_BEGIN",
+                          TCmakeIdCopyStringNt (ID_NAME (idx_id), ID_TYPE (idx_id)),
+                          TCmakeIdCopyStringNt (IDS_NAME (res_ids), IDS_TYPE (res_ids)),
+                          icm_chain);
+
+    INFO_COMP_ICMCHAIN (arg_info) = NULL;
 
     DBUG_RETURN (icm_chain);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPpart( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *    make sure the N_withid node is visited BEFORE the N_generator!
+ *     ATTENTION: this is used in case of AUD only! i.e. when being called
+ *     from N_with but NOT from N_with2!
+ *
+ ******************************************************************************/
+
+node *
+COMPpart (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("COMPpart");
+    DBUG_ASSERT ((PART_WITHID (arg_node) != NULL), "N_part without N_withid!");
+    PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
+
+    DBUG_ASSERT ((PART_GENERATOR (arg_node) != NULL), "N_part without N_generator!");
+    PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPwithid( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *     passes up pointer to the generator vector variable via INFO_COMP_IDXVEC.
+ *     ATTENTION: this is used in case of AUD only! i.e. when being called
+ *     from N_with but NOT from N_with2!
+ *
+ ******************************************************************************/
+
+node *
+COMPwithid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("COMPwithid");
+    DBUG_ASSERT (WITHID_IDS (arg_node) == NULL, "AUD with loop with WITHID_IDS found! "
+                                                "Should have been transformed into "
+                                                "N_with2 (AKD)!");
+    INFO_COMP_IDXVEC (arg_info) = WITHID_VEC (arg_node);
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPgenerator( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *     creates an ICM for the generator-check and returns it via INFO_COMP_ICMCHAIN.
+ *     expects INFO_COMP_IDXVEC to be set properly!
+ *     ATTENTION: this is used in case of AUD only! i.e. when being called
+ *     from N_with but NOT from N_with2!
+ *
+ ******************************************************************************/
+
+node *
+COMPgenerator (node *arg_node, info *arg_info)
+{
+    node *lower, *upper, *step, *width, *idx;
+
+    DBUG_ENTER ("COMPgenerator");
+    lower = GENERATOR_BOUND1 (arg_node);
+    upper = GENERATOR_BOUND2 (arg_node);
+    step = GENERATOR_STEP (arg_node);
+    width = GENERATOR_WIDTH (arg_node);
+
+    idx = INFO_COMP_IDXVEC (arg_info);
+
+    if (step == NULL) {
+        INFO_COMP_ICMCHAIN (arg_info)
+          = TCmakeAssignIcm3 ("AUD_WL_LU_GEN",
+                              TCmakeIdCopyStringNt (ID_NAME (lower), ID_TYPE (lower)),
+                              TCmakeIdCopyStringNt (ID_NAME (idx), ID_TYPE (idx)),
+                              TCmakeIdCopyStringNt (ID_NAME (upper), ID_TYPE (upper)),
+                              NULL);
+    } else if (width == NULL) {
+        INFO_COMP_ICMCHAIN (arg_info)
+          = TCmakeAssignIcm4 ("AUD_WL_LUS_GEN",
+                              TCmakeIdCopyStringNt (ID_NAME (lower), ID_TYPE (lower)),
+                              TCmakeIdCopyStringNt (ID_NAME (idx), ID_TYPE (idx)),
+                              TCmakeIdCopyStringNt (ID_NAME (upper), ID_TYPE (upper)),
+                              TCmakeIdCopyStringNt (ID_NAME (step), ID_TYPE (step)),
+                              NULL);
+    } else {
+        INFO_COMP_ICMCHAIN (arg_info)
+          = TCmakeAssignIcm5 ("AUD_WL_LUSW_GEN",
+                              TCmakeIdCopyStringNt (ID_NAME (lower), ID_TYPE (lower)),
+                              TCmakeIdCopyStringNt (ID_NAME (idx), ID_TYPE (idx)),
+                              TCmakeIdCopyStringNt (ID_NAME (upper), ID_TYPE (upper)),
+                              TCmakeIdCopyStringNt (ID_NAME (step), ID_TYPE (step)),
+                              TCmakeIdCopyStringNt (ID_NAME (width), ID_TYPE (width)),
+                              NULL);
+    }
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
