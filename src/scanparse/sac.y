@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2003/02/11 19:30:29  sbs
+ * prf modarray and genarray added
+ *
  * Revision 3.75  2003/01/16 12:03:09  cg
  * '#' and 'pragma' scanned separately to please gcc 3.0 and SUN cc.
  *
@@ -1465,6 +1468,8 @@ prf: foldop        { $$ = $1;        }
    | PRF_SHAPE     { $$ = F_shape;   }
    | PRF_RESHAPE   { $$ = F_reshape; }
    | PRF_SEL       { $$ = F_sel;     }
+   | PRF_GENARRAY  { $$ = F_genarray;}
+   | PRF_MODARRAY  { $$ = F_modarray;}
    | PRF_ADD_SxA   { $$ = F_add_SxA; }
    | PRF_ADD_AxS   { $$ = F_add_AxS; }
    | PRF_SUB_SxS   { $$ = F_sub_SxS; }
