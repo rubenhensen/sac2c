@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.62  2000/01/18 16:57:07  bs
+ * Access macro NCODE_TSI_TILESHP(n) added.
+ *
  * Revision 2.61  2000/01/05 17:26:51  dkr
  * status type ST_loopfun in comment for N_fundef added
  *
@@ -3024,6 +3027,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    feature_t* WLAA_FEATURE            (wlaa -> )
  ***    shpseg*    WLAA_ARRAYSHP(n)        (wlaa -> )
  ***    node*      WLAA_WLARRAY(n)         (wlaa -> )
+ ***    shpseg*    TSI_TILESHP(n)          (tsi  -> )
  ***
  ***  remarks:
  ***
@@ -3071,6 +3075,7 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_WLAA_INDEXDIM(n) VARDEC_SHAPE (NCODE_WLAA_INDEXVAR (n), 0)
 #define NCODE_WLAA_ARRAYDIM(n) VARDEC_DIM (NCODE_WLAA_WLARRAY (n))
 
+#define NCODE_TSI_TILESHP(n) ((shpseg *)(((node *)n->info2)->node[4]))
 /*--------------------------------------------------------------------------*/
 
 /***
