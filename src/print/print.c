@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.191  2004/11/29 19:13:33  ktr
+ * Better support for named tuples. In the long run, we need a node N_nt which
+ * could directly be printed as a named tuple.
+ *
  * Revision 3.190  2004/11/29 16:42:13  sah
  * reactivated printing of old types
  *
@@ -2403,18 +2407,20 @@ PRTexprs (node *arg_node, info *arg_info)
 node *
 PRTid (node *arg_node, info *arg_info)
 {
-    bool print_nt = FALSE;
-
     DBUG_ENTER ("PRTid");
 
     if (ID_AVIS (arg_node) != NULL) {
         fprintf (global.outfile, "%s",
-                 (((global.compiler_phase == PH_genccode) || print_nt)
+                 ((global.compiler_phase == PH_genccode)
                   && (ID_NT_TAG (arg_node) != NULL))
                    ? ID_NT_TAG (arg_node)
                    : ID_NAME (arg_node));
     } else {
-        fprintf (global.outfile, "%s", ID_SPNAME (arg_node));
+        fprintf (global.outfile, "%s",
+                 ((global.compiler_phase == PH_genccode)
+                  && (ID_NT_TAG (arg_node) != NULL))
+                   ? ID_NT_TAG (arg_node)
+                   : ID_SPNAME (arg_node));
     }
 
     DBUG_RETURN (arg_node);
