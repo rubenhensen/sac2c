@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1994/11/14 16:57:44  hw
+ * Revision 1.11  1994/11/15 10:06:15  sbs
+ * typo for modarray eliminated
+ *
+ * Revision 1.10  1994/11/14  16:57:44  hw
  * make nicer output
  *
  * Revision 1.9  1994/11/11  16:43:07  hw
@@ -516,7 +519,7 @@ PrintConexpr (node *arg_node, node *arg_info)
     if (N_genarray == arg_node->nodetype)
         fprintf (outfile, "genarray( ");
     else
-        fprintf (outfile, "modaray( ");
+        fprintf (outfile, "modarray( ");
     Trav (arg_node->node[0], arg_info);
     fprintf (outfile, " )\n");
     Trav (arg_node->node[1], arg_info);
