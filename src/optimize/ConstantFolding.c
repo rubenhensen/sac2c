@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.33  1995/07/20 15:00:37  asi
+ * Revision 1.34  1995/07/21 13:16:52  asi
+ * substitutes also within prim. functions
+ *
+ * Revision 1.33  1995/07/20  15:00:37  asi
  * substitutes y for x if x = y occures in program before
  *
  * Revision 1.32  1995/07/19  18:44:48  asi
@@ -1341,7 +1344,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
     tmp = arg_node->node[0];
     for (i = 0; i < MAXARG; i++) {
         if (tmp != NULL) {
-            arg[i] = tmp->node[0];
+            arg[i] = NodeBehindCast (tmp->node[0]);
             tmp = tmp->node[1];
         } else
             arg[i] = NULL;
@@ -1825,6 +1828,11 @@ CFprf (node *arg_node, node *arg_info)
                 }
             }
         } else {
+            /*
+             * substitute all arguments
+             */
+            arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+
             /*
              * Calculate primitive functions with arrays
              */
