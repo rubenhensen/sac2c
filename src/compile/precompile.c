@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1998/03/03 23:54:39  dkr
+ * *** empty log message ***
+ *
  * Revision 1.18  1998/03/03 23:00:11  dkr
  * added PRECncode()
  *
@@ -1297,6 +1300,8 @@ SetSegs (node *rects)
     node *segs;
 
     DBUG_ENTER ("SetSegs");
+
+    segs = MakeWLseg (rects, NULL);
 
     DBUG_RETURN (segs);
 }
