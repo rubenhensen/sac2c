@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.196  1998/04/20 02:37:26  dkr
+ * changed PrintNodeTree
+ *
  * Revision 1.195  1998/04/19 13:17:02  dkr
  * changed output for N_icm in PrintNodeTree
  *
@@ -647,9 +650,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
+#include "tree.h"
 
 #include "print.h"
 #include "my_debug.h"
