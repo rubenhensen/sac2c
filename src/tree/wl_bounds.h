@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2002/08/08 13:02:40  dkr
+ * GET_SHAPE_IDX modified: shape is no SHPSEG but a int*
+ *
  * Revision 1.6  2002/07/15 14:45:55  dkr
  * signature of NodeOrInt_MakeIndex() modified
  *
@@ -57,8 +60,7 @@
 
 #define IDX_IS_NUM(idx) ((idx) >= 0)
 
-#define GET_SHAPE_IDX(shape, dim)                                                        \
-    (((shape) != NULL) ? SHPSEG_SHAPE ((shape), (dim)) : IDX_SHAPE)
+#define GET_SHAPE_IDX(shape, dim) (((shape) != NULL) ? (shape)[dim] : IDX_SHAPE)
 
 extern bool NameOrVal_CheckConsistency (char *name, int val);
 
