@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.138  2002/08/05 17:03:45  sbs
+ * several extensions required for the alpha version of the new type checker
+ *
  * Revision 3.137  2002/08/01 13:56:30  cg
  * Added INFO_PREC1_MODUL.
  *
@@ -2646,6 +2649,13 @@ extern node *MakeAvis (node *vardecOrArg);
 
 extern node *MakeInfo ();
 
+/*
+ * WARNING WARNING WARNING!!!
+ *
+ * all these INFO_xxx_yyy macros should move to the modules where they are used!!
+ * This has been done for a few modules only yet!!!
+ */
+
 /* DupTree */
 #define INFO_DUP_TYPE(n) (n->flag)
 #define INFO_DUP_CONT(n) (n->node[0])
@@ -2653,17 +2663,6 @@ extern node *MakeInfo ();
 #define INFO_DUP_LUT(n) ((LUT_t) (n->dfmask[0]))
 #define INFO_DUP_INSPECIAL(n) ((bool)(n->counter))
 #define INFO_DUP_ASSIGN(n) (n->node[2])
-
-/* flatten */
-#define INFO_FLTN_CONTEXT(n) (n->flag)
-#define INFO_FLTN_LASTASSIGN(n) (n->node[0])
-#define INFO_FLTN_LASTWLBLOCK(n) (n->node[1])
-#define INFO_FLTN_FINALASSIGN(n) (n->node[2])
-
-#define INFO_FLTN_CONSTVEC(n) (n->info2)
-#define INFO_FLTN_VECLEN(n) (n->counter)
-#define INFO_FLTN_VECTYPE(n) ((simpletype)n->varno)
-#define INFO_FLTN_ISCONST(n) (n->refcnt)
 
 /* readsib */
 #define INFO_RSIB_FOLDFUNS(n) (n->node[0])

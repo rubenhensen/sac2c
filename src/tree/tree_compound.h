@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2002/08/05 17:03:45  sbs
+ * several extensions required for the alpha version of the new type checker
+ *
  * Revision 3.64  2002/07/15 17:25:02  dkr
  * LiftArg() moved from precompile.c to tree_compound.[ch]
  *
@@ -1769,6 +1772,16 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
 #define AP_ARG1(n) EXPRS_EXPR (AP_EXPRS1 (n))
 #define AP_ARG2(n) EXPRS_EXPR (AP_EXPRS2 (n))
 #define AP_ARG3(n) EXPRS_EXPR (AP_EXPRS3 (n))
+
+/*
+ *  function declarations
+ */
+
+extern node *MakeAp1 (char *name, char *mod, node *arg1);
+
+extern node *MakeAp2 (char *name, char *mod, node *arg1, node *arg2);
+
+extern node *MakeAp3 (char *name, char *mod, node *arg1, node *arg2, node *arg3);
 
 /*--------------------------------------------------------------------------*/
 

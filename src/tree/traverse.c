@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2002/08/05 17:03:45  sbs
+ * several extensions required for the alpha version of the new type checker
+ *
  * Revision 3.34  2002/07/09 12:53:19  sbs
  * hd_tab added
  *
@@ -223,6 +226,7 @@
 #include "SSAInferLI.h"
 #include "create_wrappers.h"
 #include "handle_dots.h"
+#include "new2old.h"
 
 #include "traverse.h"
 
@@ -1430,6 +1434,17 @@ static funtab hd_tab_rec = {{
                             NULL,
                             NULL};
 funtab *hd_tab = &hd_tab_rec;
+
+/*
+ *  (110) nt2ot_tab
+ */
+static funtab nt2ot_tab_rec = {{
+#define NIFnt2ot(it_nt2ot) it_nt2ot
+#include "node_info.mac"
+                               },
+                               NULL,
+                               NULL};
+funtab *nt2ot_tab = &nt2ot_tab_rec;
 
 /*
  *  nnode

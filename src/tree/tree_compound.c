@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2002/08/05 17:03:45  sbs
+ * several extensions required for the alpha version of the new type checker
+ *
  * Revision 3.67  2002/08/03 00:35:13  dkr
  * DBUG-output for CreateScalarWith() corrected
  *
@@ -3642,6 +3645,55 @@ MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3)
 /***
  ***  N_ap :
  ***/
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeAp1( char *name, char *mod, node *arg1)
+ *   node *MakeAp2( char *name, char *mod, node *arg1, node *arg2)
+ *   node *MakeAp3( char *name, char *mod, node *arg1, node *arg2, node *arg3)
+ *
+ * description:
+ *   create N_prf node for primitive function application with 1, 2, or 3
+ *   arguments, respectively.
+ *
+ ******************************************************************************/
+
+node *
+MakeAp1 (char *name, char *mod, node *arg1)
+{
+    node *res;
+
+    DBUG_ENTER ("MakeAp1");
+
+    res = MakeAp (name, mod, MakeExprs (arg1, NULL));
+
+    DBUG_RETURN (res);
+}
+
+node *
+MakeAp2 (char *name, char *mod, node *arg1, node *arg2)
+{
+    node *res;
+
+    DBUG_ENTER ("MakeAp2");
+
+    res = MakeAp (name, mod, MakeExprs (arg1, MakeExprs (arg2, NULL)));
+
+    DBUG_RETURN (res);
+}
+
+node *
+MakeAp3 (char *name, char *mod, node *arg1, node *arg2, node *arg3)
+{
+    node *res;
+
+    DBUG_ENTER ("MakeAp3");
+
+    res = MakeAp (name, mod, MakeExprs (arg1, MakeExprs (arg2, MakeExprs (arg3, NULL))));
+
+    DBUG_RETURN (res);
+}
 
 /*--------------------------------------------------------------------------*/
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2002/08/05 17:03:45  sbs
+ * several extensions required for the alpha version of the new type checker
+ *
  * Revision 3.27  2002/07/09 12:53:19  sbs
  * hd_tab added
  *
@@ -298,6 +301,7 @@ extern funtab *crtwrp_tab;
 extern funtab *wls_tab;
 extern funtab *al_tab;
 extern funtab *hd_tab;
+extern funtab *nt2ot_tab;
 
 extern int nnode[];
 
