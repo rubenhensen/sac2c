@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/07/10 07:31:59  asi
+ * Revision 1.21  1995/07/14 13:21:12  asi
+ * DBUG_PRINT("APP",... added to AppendNodeChain
+ *
+ * Revision 1.20  1995/07/10  07:31:59  asi
  * removed bblock from structure node and added def to structure ids
  *
  * Revision 1.19  1995/07/07  16:21:19  hw
@@ -192,6 +195,7 @@ AppendNodeChain (int pos, node *first, node *second)
         while (tmp->node[pos] != NULL)
             tmp = tmp->node[pos];
         tmp->node[pos] = second;
+        DBUG_PRINT ("APP", ("Append node chain behind line %d", tmp->lineno));
         if (second != NULL)
             tmp->nnode++;
     }
