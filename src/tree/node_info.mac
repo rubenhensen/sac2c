@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.95  2002/08/13 17:06:51  sbs
+ * HMfundef eliminated again
+ *
  * Revision 3.94  2002/08/13 16:34:46  sbs
  * HMfundef added.
  *
@@ -1142,7 +1145,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSAWLFfundef,
 
        SSAILIfundef, COMP2Fundef, PREC2fundef, INSVDfundef, CRTWRPfundef, WLSfundef,
-       PREC4fundef, TravSons, TravSons, NT2OTfundef, CWCfundef, HMfundef, TravSons,
+       PREC4fundef, TravSons, TravSons, NT2OTfundef, CWCfundef, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_arg, "N_arg", TravSons, FltnArgs, PrintArg, TravSons, GNMarg, TravSons, TravSons,
