@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.81  1998/05/06 13:18:00  dkr
+ * Changed DupFundef
+ *
  * Revision 1.80  1998/05/06 12:24:17  dkr
  * insert access macros
  *
@@ -749,7 +752,7 @@ DupFundef (node *arg_node, node *arg_info)
 
     FUNDEF_NEXT (new_node) = DUPCONT (FUNDEF_NEXT (arg_node));
 
-  DBUG_RETURN new_node);
+    DBUG_RETURN (new_node);
 }
 
 /******************************************************************************/
