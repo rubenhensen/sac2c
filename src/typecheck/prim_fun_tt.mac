@@ -1,8 +1,12 @@
 
 /* $Log$
- * Revision 1.9  1995/08/11 17:33:21  hw
- *  added macros-calls for typechecking of function 'modarray'
+ * Revision 1.10  1995/09/05 11:06:41  hw
+ * added macros-calls for typechecking of function 'modarray'
+ *  with 'double[]' args
  *
+;; Revision 1.9  1995/08/11  17:33:21  hw
+;;  added macros-calls for typechecking of function 'modarray'
+;;
 ;; Revision 1.8  1995/07/04  08:45:52  hw
 ;; - new type_classes( f_d, F_D, i_d, I_D, d_f, D_F, d_i, D_I) inserted
 ;; - new primitive type 'double' integrated
@@ -181,12 +185,16 @@ TT3 (321, AxAxS_A, FLOAT_A, INT_A, FLOAT,
      Modarray (arg_type[0], arg_type[1], arg_type[2], arg_node->lineno))
 TT3 (322, AxAxS_A, BOOL_A, INT_A, BOOL,
      Modarray (arg_type[0], arg_type[1], arg_type[2], arg_node->lineno))
+TT3 (323, AxAxS_A, DOUBLE_A, INT_A, DOUBLE,
+     Modarray (arg_type[0], arg_type[1], arg_type[2], arg_node->lineno))
 
 TT3 (330, AxAxA_A, INT_A, INT_A, INT_A,
      Modarray (arg_type[0], arg_type[1], arg_type[2], arg_node->lineno))
 TT3 (331, AxAxA_A, FLOAT_A, INT_A, FLOAT_A,
      Modarray (arg_type[0], arg_type[1], arg_type[2], arg_node->lineno))
 TT3 (332, AxAxA_A, BOOL_A, INT_A, BOOL_A,
+     Modarray (arg_type[0], arg_type[1], arg_type[2], arg_node->lineno))
+TT3 (333, AxAxA_A, DOUBLE_A, INT_A, DOUBLE_A,
      Modarray (arg_type[0], arg_type[1], arg_type[2], arg_node->lineno))
 
 TT1 (500, V_As, INT_A, Shp (arg_type[0]))
