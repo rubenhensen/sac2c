@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/07/28 17:47:40  skt
+ * superfluous FreeTree removed
+ *
  * Revision 3.6  2004/07/26 17:04:37  skt
  * create_cells added
  *
@@ -622,9 +625,6 @@ MUTHmodul (node *arg_node, node *arg_info)
     DBUG_PRINT ("MUTH", ("begin PropagateExecutionmode"));
 
     arg_node = PropagateExecutionmode (arg_node, arg_info);
-
-    arg_info = FreeTree (arg_info);
-    arg_info = old_arg_info;
 
     DBUG_PRINT ("MUTH", ("end PropagateExecutionmode"));
 
