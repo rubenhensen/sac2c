@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2003/08/11 16:16:18  sbs
+ * Now, COCv2Char indeed creates Chars (instead of Booleans) in COCv2Char!
+ *
  * Revision 1.2  2001/03/22 14:27:31  nmw
  * functions to convert float, bool, char added
  *
@@ -67,7 +70,7 @@ COCv2Char (void *elems, int offset)
 {
     DBUG_ENTER ("COCv2Char");
 
-    DBUG_RETURN (MakeBool (((char *)elems)[offset]));
+    DBUG_RETURN (MakeChar (((char *)elems)[offset]));
 }
 
 node *
