@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.29  1997/11/23 14:23:48  dkr
+ * 2nd argument of MakeType(): NULL -> 0
+ *
  * Revision 1.28  1997/11/04 11:37:59  srs
  * NEWTREE: nnode is ignored
  *
@@ -1791,10 +1794,10 @@ Genarray_S (node *v_node, types *vec, types *scalar)
                   = MakeType (TYPES_BASETYPE (scalar), dim, shpseg_p,
                               StringCopy (TYPES_NAME (scalar)), TYPES_MOD (scalar));
             else
-                ret_type = MakeType (T_unknown, NULL, NULL, NULL, NULL);
+                ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
 
         } else
-            ret_type = MakeType (T_unknown, NULL, NULL, NULL, NULL);
+            ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
         /*
          * DBUG_ASSERT(0," wrong first argument of primitive function genarray");
          */
@@ -1822,7 +1825,7 @@ Genarray_S (node *v_node, types *vec, types *scalar)
                   = MakeType (TYPES_BASETYPE (scalar), UNKNOWN_SHAPE, NULL,
                               StringCopy (TYPES_NAME (scalar)), TYPES_MOD (scalar));
             else
-                ret_type = MakeType (T_unknown, NULL, NULL, NULL, NULL);
+                ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
         }
     }
 
@@ -1863,7 +1866,7 @@ Genarray_A (node *v_node, types *vec, types *array)
             }
             TYPES_DIM (ret_type) = dim;
         } else
-            ret_type = MakeType (T_unknown, NULL, NULL, NULL, NULL);
+            ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
     } else if (SAC_MOD == kind_of_file) {
         /* we are checking a funktion in a module */
         if (N_array == NODE_TYPE (v_node)) {
@@ -1913,12 +1916,12 @@ Genarray_A (node *v_node, types *vec, types *array)
                 ret_type
                   = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);
             else
-                ret_type = MakeType (T_unknown, NULL, NULL, NULL, NULL);
+                ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
         } else if ((UNKNOWN_SHAPE == TYPES_DIM (vec))
                    || ((KNOWN_DIM_OFFSET - 1) == TYPES_DIM (vec)))
             ret_type = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);
         else
-            ret_type = MakeType (T_unknown, NULL, NULL, NULL, NULL);
+            ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
     }
 
     DBUG_RETURN (ret_type);
