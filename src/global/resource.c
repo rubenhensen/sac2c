@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/31 08:50:49  cg
+ * added new resource entries CACHEx_WRITEPOL
+ *
  * Revision 2.1  1999/02/23 12:39:39  sacbase
  * new release made
  *
@@ -180,14 +183,17 @@ static struct {
   {"CACHE1_SIZE", num, &config.cache1_size},
   {"CACHE1_LINE", num, &config.cache1_line},
   {"CACHE1_ASSOC", num, &config.cache1_assoc},
+  {"CACHE1_WRITEPOL", str, &config.cache1_writepol},
 
   {"CACHE2_SIZE", num, &config.cache2_size},
   {"CACHE2_LINE", num, &config.cache2_line},
   {"CACHE2_ASSOC", num, &config.cache2_assoc},
+  {"CACHE2_WRITEPOL", str, &config.cache2_writepol},
 
   {"CACHE3_SIZE", num, &config.cache3_size},
   {"CACHE3_LINE", num, &config.cache3_line},
   {"CACHE3_ASSOC", num, &config.cache3_assoc},
+  {"CACHE3_WRITEPOL", str, &config.cache3_writepol},
 
   {"", 0, NULL},
 };

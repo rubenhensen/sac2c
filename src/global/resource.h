@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/31 08:50:49  cg
+ * added new resource entries CACHEx_WRITEPOL
+ *
  * Revision 2.1  1999/02/23 12:39:42  sacbase
  * new release made
  *
@@ -119,14 +122,17 @@ typedef struct {
     int cache1_size;
     int cache1_line;
     int cache1_assoc;
+    int cache1_writepol;
 
     int cache2_size;
     int cache2_line;
     int cache2_assoc;
+    int cache2_writepol;
 
     int cache3_size;
     int cache3_line;
     int cache3_assoc;
+    int cache3_writepol;
 } configuration_t;
 
 /*****************************************************************************

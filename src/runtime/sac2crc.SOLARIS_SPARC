@@ -18,76 +18,79 @@
 
 target default:
  
-CC             :=  gcc
-CCFLAGS        :=  "-Wall -Wno-unused -fno-builtin"
-CCDIR          :=  "-I$SACBASE/runtime/ "
+CC               :=  gcc
+CCFLAGS          :=  "-Wall -Wno-unused -fno-builtin"
+CCDIR            :=  "-I$SACBASE/runtime/ "
                    "-L$SACBASE/runtime/"
-CCLINK         :=  -lsac
-CCMTLINK       :=  -lpthread
+CCLINK           :=  -lsac
+CCMTLINK         :=  -lpthread
  
-OPT_O0         :=  ""
-OPT_O1         :=  -O1
-OPT_O2         :=  -O2
-OPT_O3         :=  -O3
-OPT_g          :=  -g
+OPT_O0           :=  ""
+OPT_O1           :=  -O1
+OPT_O2           :=  -O2
+OPT_O3           :=  -O3
+OPT_g            :=  -g
  
-CPP_STDIN      :=  "cpp -C"
-CPP_FILE       :=  "gcc -E -C -x c"
-OPT_D          :=  -D
-TAR_CREATE     :=  "tar cf"
-TAR_EXTRACT    :=  "tar xf"
-AR_CREATE      :=  "ar cr"
-RANLIB         :=  ""
-MKDIR          :=  mkdir
-RMDIR          :=  "rm -rf"
-CHDIR          :=  cd
-CAT            :=  cat
-MOVE           :=  mv
-DUMP_OUTPUT    :=  ">/dev/null 2>&1"
+CPP_STDIN        :=  "cpp -C"
+CPP_FILE         :=  "gcc -E -C -x c"
+OPT_D            :=  -D
+TAR_CREATE       :=  "tar cf"
+TAR_EXTRACT      :=  "tar xf"
+AR_CREATE        :=  "ar cr"
+RANLIB           :=  ""
+MKDIR            :=  mkdir
+RMDIR            :=  "rm -rf"
+CHDIR            :=  cd
+CAT              :=  cat
+MOVE             :=  mv
+DUMP_OUTPUT      :=  ">/dev/null 2>&1"
  
-STDLIB_DECPATH :=  "$SACBASE/stdlib/modules/structures:"
-                   "$SACBASE/stdlib/modules/numerical:"
-                   "$SACBASE/stdlib/classes/random:"
-                   "$SACBASE/stdlib/world/stdio:"
-                   "$SACBASE/stdlib/world/system:"
-                   "$SACBASE/stdlib/world/x-window:"
-                   "$SACBASE/stdlib/hidden"
+STDLIB_DECPATH   :=  "$SACBASE/stdlib/modules/structures:"
+                     "$SACBASE/stdlib/modules/numerical:"
+                     "$SACBASE/stdlib/classes/random:"
+                     "$SACBASE/stdlib/world/stdio:"
+                     "$SACBASE/stdlib/world/system:"
+                     "$SACBASE/stdlib/world/x-window:"
+                     "$SACBASE/stdlib/hidden"
  
-STDLIB_LIBPATH :=  "$SACBASE/stdlib/modules/structures/lib:"
-                   "$SACBASE/stdlib/modules/numerical/lib:"
-                   "$SACBASE/stdlib/classes/random/lib:"
-                   "$SACBASE/stdlib/world/stdio/lib:"
-                   "$SACBASE/stdlib/world/system/lib:"
-                   "$SACBASE/stdlib/world/x-window/lib:"
-                   "$SACBASE/stdlib/hidden/lib"
+STDLIB_LIBPATH   :=  "$SACBASE/stdlib/modules/structures/lib:"
+                     "$SACBASE/stdlib/modules/numerical/lib:"
+                     "$SACBASE/stdlib/classes/random/lib:"
+                     "$SACBASE/stdlib/world/stdio/lib:"
+                     "$SACBASE/stdlib/world/system/lib:"
+                     "$SACBASE/stdlib/world/x-window/lib:"
+                     "$SACBASE/stdlib/hidden/lib"
  
-SYSTEM_LIBPATH :=  "/opt/gnu/lib/gcc-lib/sparc-sun-solaris2.5.1/2.7.2.1:"
-                   "/usr/lib/gcc/sparc-sun-solaris2.5.1/2.7.2.1:"
-                   "/opt/gnu/sparc-sun-solaris2.5.1/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
-                   "/opt/gnu/sparc-sun-solaris2.5.1/lib:"
-                   "/usr/ccs/bin/sparc-sun-solaris2.5.1/2.7.2.1:"
-                   "/usr/ccs/bin:"
-                   "/usr/ccs/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
-                   "/usr/ccs/lib:"
-                   "/opt/gnu/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
-                   "/opt/gnu/lib:"
-                   "/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
-                   "/lib:"
-                   "/usr/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
-                   "/usr/lib:"
-                   "/home/sacbase/efence"
+SYSTEM_LIBPATH   :=  "/opt/gnu/lib/gcc-lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                     "/usr/lib/gcc/sparc-sun-solaris2.5.1/2.7.2.1:"
+                     "/opt/gnu/sparc-sun-solaris2.5.1/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                     "/opt/gnu/sparc-sun-solaris2.5.1/lib:"
+                     "/usr/ccs/bin/sparc-sun-solaris2.5.1/2.7.2.1:"
+                     "/usr/ccs/bin:"
+                     "/usr/ccs/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                     "/usr/ccs/lib:"
+                     "/opt/gnu/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                     "/opt/gnu/lib:"
+                     "/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                     "/lib:"
+                     "/usr/lib/sparc-sun-solaris2.5.1/2.7.2.1:"
+                     "/usr/lib:"
+                     "/home/sacbase/efence"
 
-CACHE1_SIZE    :=  0
-CACHE1_LINE    :=  0
-CACHE1_ASSOC   :=  0
+CACHE1_SIZE      :=  0
+CACHE1_LINE      :=  0
+CACHE1_ASSOC     :=  0
+CACHE1_WRITEPOL  :=  Default
+
+CACHE2_SIZE      :=  0
+CACHE2_LINE      :=  0
+CACHE2_ASSOC     :=  0
+CACHE2_WRITEPOL  :=  Default
  
-CACHE2_SIZE    :=  0
-CACHE2_LINE    :=  0
-CACHE2_ASSOC   :=  0
- 
-CACHE3_SIZE    :=  0
-CACHE3_LINE    :=  0
-CACHE3_ASSOC   :=  0
+CACHE3_SIZE      :=  0
+CACHE3_LINE      :=  0
+CACHE3_ASSOC     :=  0
+CACHE2_WRITEPOL  :=  Default
  
  
  

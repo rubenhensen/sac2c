@@ -136,6 +136,10 @@
  *                  
  *  CACHE1_ASSOC    CACHE1_ASSOC specifies the set associativity of the L1 cache.
  *
+ *  CACHE1_WRITEPOL CACHE1_WRITEPOL specifies the write policy of the L1 cache.
+ *                  Supported policies are Default, fetch_on_write, write_validate, 
+ *                  and write_around.
+ *
  *  CACHE2_SIZE     CACHE2_SIZE specifies the size of the L2 (data) cache in kb.
  *                  A size of 0 means that the system has no L2 cache or its
  *                  characteristics are unknown.
@@ -143,6 +147,10 @@
  *  CACHE2_LINE     CACHE2_LINE specifies the length of a L2 cache line in bytes.
  *                  
  *  CACHE2_ASSOC    CACHE2_ASSOC specifies the set associativity of the L2 cache.
+ *
+ *  CACHE2_WRITEPOL CACHE1_WRITEPOL specifies the write policy of the L1 cache.
+ *                  Supported policies are Default, fetch_on_write, write_validate, 
+ *                  and write_around.
  *
  *  CACHE3_SIZE     CACHE3_SIZE specifies the size of the L3 (data) cache in kb.
  *                  A size of 0 means that the system has no L3 cache or its
@@ -152,6 +160,10 @@
  *                  
  *  CACHE3_ASSOC    CACHE3_ASSOC specifies the set associativity of the L3 cache.
  *  
+ *  CACHE3_WRITEPOL CACHE1_WRITEPOL specifies the write policy of the L1 cache.
+ *                  Supported policies are Default, fetch_on_write, write_validate, 
+ *                  and write_around.
+ *
  * 
  *
  ******************************************************************************/
