@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.157  1998/04/09 23:32:28  dkr
+ * renamed PRAGMA_WLCOMP to PRAGMA_WLCOMP_APS
+ *
  * Revision 1.156  1998/04/09 22:51:23  dkr
  * added parsing of wlcomp-pragmas
  *
@@ -1612,7 +1615,7 @@ wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_expr
                             = FreeTree(store_wlcomp_pragma_global);
                         }
                         store_wlcomp_pragma_global = MakePragma();
-                        PRAGMA_WLCOMP(store_wlcomp_pragma_global) = $3;
+                        PRAGMA_WLCOMP_APS(store_wlcomp_pragma_global) = $3;
                       }
                     | /* empty */
                       {
@@ -1621,7 +1624,7 @@ wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_expr
 
 wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_expr
                      { $$ = MakePragma();
-                       PRAGMA_WLCOMP($$) = $3;
+                       PRAGMA_WLCOMP_APS($$) = $3;
                      }
                    | /* empty */
                      { $$ = NULL;
@@ -2065,8 +2068,8 @@ expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
              if ($1 == NULL) {
                if (store_wlcomp_pragma_global != NULL) {
                  NWITH_PRAGMA($$) = MakePragma();
-                 PRAGMA_WLCOMP(NWITH_PRAGMA($$))
-                   = DupTree(PRAGMA_WLCOMP(store_wlcomp_pragma_global), NULL);
+                 PRAGMA_WLCOMP_APS(NWITH_PRAGMA($$))
+                   = DupTree(PRAGMA_WLCOMP_APS(store_wlcomp_pragma_global), NULL);
                }
              }
              else {
