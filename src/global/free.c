@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  1997/11/24 16:12:38  sbs
+ * usage of NWITHOP_FUN in FreeNWithOp adapted to the changed tree_basic.h
+ *
  * Revision 1.28  1997/11/23 14:24:31  dkr
  * FreeFundef():
  * FUNDEF_ICM, FUNDEF_RETURN are stored in the same real son.
@@ -1517,7 +1520,7 @@ FreeNWithOp (node *arg_node, node *arg_info)
     /* if WithOp is WO_foldfun then the function function name has to be
        set free. The modul_name is shared. */
     if (WO_foldfun == NWITHOP_TYPE (arg_node))
-        FREE (NWITHOP_FUN (arg_node).id);
+        FREE (NWITHOP_FUN (arg_node));
 
     /* free mem allocated in MakeNWithOp */
     FREE (arg_node->info2);
