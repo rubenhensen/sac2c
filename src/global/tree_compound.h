@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.30  1995/12/29 16:04:12  asi
+ * Revision 1.31  1996/01/02 12:48:41  cg
+ * added function StringsLength
+ *
+ * Revision 1.30  1995/12/29  16:04:12  asi
  * added ASSIGN_MRDMASK
  *
  * Revision 1.29  1995/12/29  14:49:00  asi
@@ -357,6 +360,24 @@ extern int CountNums (nums *numsp);
  */
 
 extern strings *AddToLinkList (strings *list, char *str);
+
+/*
+ *
+ *  functionname  : StringsLength
+ *  arguments     : 1) list of strings
+ *  description   : counts the total length of all strings
+ *                  in the given list including the terminating 0.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : strlen
+ *  macros        : ---
+ *
+ *  remarks       :
+ *
+ *
+ */
+
+extern int StringsLength (strings *list);
 
 /*--------------------------------------------------------------------------*/
 

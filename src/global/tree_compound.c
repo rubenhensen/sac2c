@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.21  1995/12/29 12:53:23  cg
+ * Revision 1.22  1996/01/02 12:48:41  cg
+ * added function StringsLength
+ *
+ * Revision 1.21  1995/12/29  12:53:23  cg
  * added function StoreString
  *
  * Revision 1.20  1995/12/29  10:33:11  cg
@@ -123,6 +126,25 @@ StoreString (strings *list, char *str)
     }
 
     DBUG_RETURN (tmp);
+}
+
+/***
+ ***  StringsLength
+ ***/
+
+int
+StringsLength (strings *list)
+{
+    int counter = 0;
+
+    DBUG_ENTER ("StringsLength");
+
+    while (list != NULL) {
+        counter += strlen (STRINGS_STRING (list)) + 1;
+        list = STRINGS_NEXT (list);
+    }
+
+    DBUG_RETURN (counter);
 }
 
 /***
