@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.53  1998/03/22 18:11:56  srs
+ * added wlt_expr and NOTE_OPTIMIZER_PHASE()
+ *
  * Revision 1.52  1998/03/21 22:46:54  srs
  * added wlt_tab to MRD_TAB
  *
@@ -191,6 +194,7 @@ extern int optvar_counter;
 extern int elim_arrays;
 extern int cse_expr;
 extern int wlf_expr;
+extern int wlt_expr;
 
 typedef struct STELM {
     int vl_len;
@@ -250,6 +254,12 @@ extern void PopMRDL2 ();
 #define INFO_USE arg_info->mask[1] /* added or removed variable useages         */
 
 #define VAR_LENGTH 10
+
+#define NOTE_OPTIMIZER_PHASE(phase)                                                      \
+    {                                                                                    \
+        if (verbose_level == 3)                                                          \
+            fprintf (stderr, "         %s ...\n", phase);                                \
+    }
 
 /*
  *  The following lines should no longer be used.
