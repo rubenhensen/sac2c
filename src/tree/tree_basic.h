@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.99  2001/06/13 13:05:15  ben
+ * WLSEGX_TASKSEL added
+ *
  * Revision 3.98  2001/05/30 14:04:43  nmw
  * some arg_info macros moved from SSALIR to SSALIL
  *
@@ -3683,6 +3686,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLSEGX_CONTENTS(n) ((n)->node[0])
 #define WLSEGX_NEXT(n) (WLNODE_NEXT (n))
 #define WLSEGX_SCHEDULING(n) ((SCHsched_t *)((n)->info2))
+#define WLSEGX_TASKSEL(n) ((SCHtasksel_t *)((n)->node[4]))
 
 /*
  * some macros for N_WLblock, N_WLublock nodes
@@ -3747,7 +3751,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***    int*       HOMSV      [hom. step vector]   (wltransform -> )
  ***
  ***    SCHsched_t SCHEDULING                      (wltransform -> compile -> )
- ***
+ ***    SCHtasksel TASKSELCETOR                    (wltransform -> compile -> )
  ***  remarks:
  ***
  ***    - BV[ 0 .. (BLOCKS-1) ]
@@ -3774,6 +3778,7 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 #define WLSEG_IDX_MAX(n) (*((int **)(&((n)->node[3]))))
 
 #define WLSEG_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
+#define WLSEG_TASKSEL(n) (WLSEGX_TASKSEL (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3795,6 +3800,7 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***  temporary attributes:
  ***
  ***    SCHsched_t SCHEDULING                     (wltransform -> compile -> )
+ ***    SCHtasksel_t TASKSELECTOR                 (wltransform -> compile -> )
  ***
  ***  remarks:
  ***
@@ -3811,6 +3817,7 @@ extern node *MakeWLsegVar (int dims, node *contents, node *next);
 #define WLSEGVAR_IDX_MAX(n) ((node **)((n)->node[3]))
 
 #define WLSEGVAR_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
+#define WLSEGVAR_TASKSEL(n) (WLSEGX_TASKSEL (n))
 
 /*--------------------------------------------------------------------------*/
 
