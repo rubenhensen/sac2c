@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.50  1998/03/24 10:18:14  srs
+ * Changed MakeNPart
+ *
  * Revision 1.49  1998/03/22 15:32:31  dkr
  * N_WLproj: OFFSET, WIDTH -> BOUND1, BOUND2.
  *
@@ -1302,7 +1305,7 @@ MakeNWith (node *part, node *code, node *withop)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeNPart (node *withid, node *generator)
+MakeNPart (node *withid, node *generator, node *code)
 {
     node *tmp;
     DBUG_ENTER ("MakeNPart");
@@ -1311,6 +1314,9 @@ MakeNPart (node *withid, node *generator)
     NODE_TYPE (tmp) = N_Npart;
     NPART_GEN (tmp) = generator;
     NPART_WITHID (tmp) = withid;
+    NPART_CODE (tmp) = code;
+    if (code)                /* may be NULL in sac.y */
+        NCODE_USED (code)++; /* see remarks of N_Ncode in tree_basic.h */
 
     DBUG_RETURN (tmp);
 }
