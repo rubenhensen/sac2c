@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1996/01/25 15:04:57  cg
+ * Revision 1.5  1996/02/21 16:27:57  cg
+ * minor layout change in funtion RuntimeError
+ *
+ * Revision 1.4  1996/01/25  15:04:57  cg
  * added __SAC__Runtime_hidden_memcnt and __SAC__Runtime_array_memcnt
  *
  * Revision 1.3  1996/01/21  14:16:55  cg
@@ -48,14 +51,14 @@ __SAC__Runtime_Error (char *format, ...)
 {
     va_list arg_p;
 
-    fprintf (stderr, "*** SAC runtime error\n");
+    fprintf (stderr, "\n\n*** SAC runtime error\n");
     fprintf (stderr, "*** ");
 
     va_start (arg_p, format);
     vfprintf (stderr, format, arg_p);
     va_end (arg_p);
 
-    fprintf (stderr, "\n");
+    fprintf (stderr, "\n\n");
 
     exit (1);
 }
