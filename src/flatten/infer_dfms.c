@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/12/15 11:05:02  dkr
+ * mechanism for hiding of local variables added
+ *
  * Revision 1.3  2000/12/12 11:37:39  dkr
  * INFDFMSicm added
  *
@@ -38,6 +41,7 @@
  *          LOCAL-var)
  *
  *   ...ISFIX    flag: fixpoint reached?
+ *   ...HIDELOC  bit field: steers hiding of local vars
  *
  *****************************************************************************/
 
@@ -617,16 +621,33 @@ InferMasks (DFMmask_t *in, DFMmask_t *out, DFMmask_t *local, node *arg_node,
     INFO_INFDFMS_NEEDED (arg_info) = old_needed;
 
     /*
-     * restore old in-, out-, local-masks
+     * restore old in-, out-, local-mask
      */
     INFO_INFDFMS_IN (arg_info) = old_in;
     INFO_INFDFMS_OUT (arg_info) = old_out;
     INFO_INFDFMS_LOCAL (arg_info) = old_local;
 
     /*
+     * update local-mask
+     */
+    if (TEST_HIDE_LOCALS (INFO_INFDFMS_HIDELOC (arg_info), arg_node)) {
+        /*
+         * we have to hide the local vars!!
+         */
+        DBUG_PRINT ("INFDFMS",
+                    ("local vars of node %s are hid!!!\n", NODE_TEXT (arg_node)));
+    } else {
+        DBUG_PRINT ("INFDFMS",
+                    ("local vars of node %s are not hid.\n", NODE_TEXT (arg_node)));
+        DFMSetMaskOr (INFO_INFDFMS_LOCAL (arg_info), *local);
+    }
+
+    /*
      * The whole conditional/loop can be represented by a single function call
      *     ...out-vars... dummy-fun( ...in-vars... )
-     * Therefore we must adjust the current in-, out-mask accordingly.
+     * Therefore we must adjust the current masks accordingly.
+     *
+     * Note, that the local-mask must has been updated already!!!!
      */
     DefinedMask (*out, arg_info);
     UsedMask (*in, arg_info);
@@ -902,6 +923,39 @@ INFDFMSwith (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("INFDFMSwith");
 
+    /*
+     * Stricly speaking, the scope of all vars defined within a with-loop
+     * is restricted to the with-loop itself:
+     *
+     *   val = 1;
+     *   with (...) {
+     *     val = 2;
+     *   }
+     *   genarray( ...)
+     *   ... val ...         <---  here, 'val' still contains the value 1
+     *
+     * That means, we have to clear the INFO_INFDFMS_NEEDED mask here!
+     *
+     * BUT, in case of global objects this behaviour is NOT wanted.
+     * Therefore, during the flattening phase all not-global vars defined
+     * within a with-loop are renamed:
+     *
+     *   val = 1;
+     *   with (...) {
+     *     _val = val;
+     *     _val = 2;
+     *   }
+     *   genarray( ...)
+     *   ... val ...         <---  here, 'val' still contains the value 1
+     *
+     * Because of that, we can leave the INFO_INFDFMS_NEEDED mask untouched
+     * here in order to detect OUT- (global-) vars :-)
+     */
+#if 0
+  INFO_INFDFMS_NEEDED( arg_info) = DFMRemoveMask( INFO_INFDFMS_NEEDED( arg_info));
+  INFO_INFDFMS_NEEDED( arg_info) = DFMGenMaskClear( INFO_DFMBASE( arg_info));
+#endif
+
     arg_node = InferMasks (&(NWITH_IN_MASK (arg_node)), &(NWITH_OUT_MASK (arg_node)),
                            &(NWITH_LOCAL_MASK (arg_node)), arg_node, arg_info,
                            InferMasksWith, FALSE);
@@ -912,7 +966,7 @@ INFDFMSwith (node *arg_node, node *arg_info)
      * in SAC although it can cause non-deterministic results!
      * Therfore, we print a warning message here.
      */
-    out = NWITH2_OUT_MASK (arg_node);
+    out = NWITH_OUT_MASK (arg_node);
     if ((out != NULL) && (DFMGetMaskEntryDeclSet (out) != NULL)) {
         WARN (NODE_LINE (arg_node), ("with-loop with out-vars detected"));
     }
@@ -938,12 +992,45 @@ INFDFMSwith2 (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("INFDFMSwith2");
 
+    /*
+     * Stricly speaking, the scope of all vars defined within a with-loop
+     * is restricted to the with-loop itself:
+     *
+     *   val = 1;
+     *   with (...) {
+     *     val = 2;
+     *   }
+     *   genarray( ...)
+     *   ... val ...         <---  here, 'val' still contains the value 1
+     *
+     * That means, we have to clear the INFO_INFDFMS_NEEDED mask here!
+     *
+     * BUT, in case of global objects this behaviour is NOT wanted.
+     * Therefore, during the flattening phase all not-global vars defined
+     * within a with-loop are renamed:
+     *
+     *   val = 1;
+     *   with (...) {
+     *     _val = val;
+     *     _val = 2;
+     *   }
+     *   genarray( ...)
+     *   ... val ...         <---  here, 'val' still contains the value 1
+     *
+     * Because of that, we can leave the INFO_INFDFMS_NEEDED mask untouched
+     * here in order to detect OUT- (global-) vars :-)
+     */
+#if 0
+  INFO_INFDFMS_NEEDED( arg_info) = DFMRemoveMask( INFO_INFDFMS_NEEDED( arg_info));
+  INFO_INFDFMS_NEEDED( arg_info) = DFMGenMaskClear( INFO_DFMBASE( arg_info));
+#endif
+
     arg_node = InferMasks (&(NWITH2_IN_MASK (arg_node)), &(NWITH2_OUT_MASK (arg_node)),
                            &(NWITH2_LOCAL_MASK (arg_node)), arg_node, arg_info,
                            InferMasksWith2, FALSE);
 
     /*
-     * A with-loop really *can* have out-vars:
+     * A with-loop really *can* have OUT-vars:
      * Some global objects might be modified within the with-loop. This is legal
      * in SAC although it can cause non-deterministic results!
      * Therfore, we print a warning message here.
@@ -1119,22 +1206,40 @@ INFDFMSicm (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *InferDFMs( node *syntax_tree)
+ *   node *InferDFMs( node *syntax_tree, int hide_locals)
  *
  * description:
  *   Infers the in-, out- and local-masks of each conditional or loop
  *   (via fixpoint iteration).
  *
+ *   'hide_locals' is a bit field. It defines which node types are hiding
+ *   their local variables during inference:
+ *
+ *     while (...) {
+ *       ...
+ *       while (...) {    <--- 'a' is local in respect to the inner while-loop
+ *         a = 1;
+ *         ... a ...
+ *       }
+ *       ...
+ *     }
+ *
+ *   The question is: Should 'a' be a local variable for the outer loop, too?
+ *   In most cases the answer would be 'yes', but e.g. during the inference for
+ *   lac2fun this is not the correct behaviour, because after lifting the inner
+ *   while-loop their local vars are invisible for the outer loop.
+ *
  ******************************************************************************/
 
 node *
-InferDFMs (node *syntax_tree)
+InferDFMs (node *syntax_tree, int hide_locals)
 {
     node *info_node;
 
     DBUG_ENTER ("InferDFMs");
 
     info_node = MakeInfo ();
+    INFO_INFDFMS_HIDELOC (info_node) = hide_locals;
 
     act_tab = infdfms_tab;
     syntax_tree = Trav (syntax_tree, info_node);
