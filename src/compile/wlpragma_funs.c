@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/04/13 19:58:40  dkr
+ * added ConstSegs (dummy)
+ *
  * Revision 1.3  1998/04/13 18:10:59  dkr
  * rcs-header added
  *
@@ -162,6 +165,45 @@ Cubes (node *segs, node *parms, node *cubes, int dims)
     }
 
     segs = NoBlocking (segs, parms, cubes, dims);
+
+    DBUG_RETURN (segs);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *ConstSegs(node *segs, node *parms, node *cubes, int dims)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+ConstSegs (node *segs, node *parms, node *cubes, int dims)
+{
+    node *new_seg, *last_seg, *new_cubes;
+
+    DBUG_ENTER ("ConstSegs");
+
+    DBUG_ASSERT ((0), "ConstSegs(): not yet implemented :(");
+
+    segs = NULL;
+    while (parms != NULL) {
+
+        DBUG_ASSERT ((NODE_TYPE (parms) == N_array),
+                     "ConstSegs(): argument is not an array");
+
+        new_cubes = NULL;
+        new_seg = MakeWLseg (dims, DupNode (new_cubes), NULL);
+
+        if (segs == NULL) {
+            segs = new_seg;
+        } else {
+            WLSEG_NEXT (last_seg) = new_seg;
+        }
+        last_seg = new_seg;
+    }
 
     DBUG_RETURN (segs);
 }
