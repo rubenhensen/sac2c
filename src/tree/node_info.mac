@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.53  2000/06/29 10:26:13  mab
+ * added functions for APTpart, APTwithid, APTgenerator, APTcode, APTwithop
+ * renamed APTNwith to APTwith
+ *
  * Revision 1.52  2000/06/28 15:11:05  nmw
  * functions for PIH, PIW and MCW funtab added
  *
@@ -1480,7 +1484,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIwith, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, APCNwith, APTNwith,
+       TravSons, TravSons, APCwith, APTwith,
 
        TravSons, TravSons, TravSons, TravSons, 3),
 
@@ -1498,7 +1502,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, APTpart,
 
        TravSons, TravSons, TravSons, TravSons, 3),
 
@@ -1516,7 +1520,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIwithid, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, CUDwithid, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, APTwithid,
 
        TravSons, TravSons, TravSons, TravSons, 0),
 
@@ -1534,7 +1538,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, APTgenerator,
 
        TravSons, TravSons, TravSons, TravSons, 4),
 
@@ -1552,7 +1556,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, APTwithop,
 
        TravSons, TravSons, TravSons, TravSons, 1),
 
@@ -1570,7 +1574,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIcode, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, APTcode,
 
        TravSons, TravSons, TravSons, TravSons, 3),
 

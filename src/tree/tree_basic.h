@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.58  2000/06/29 10:25:02  mab
+ * added functions for APTpart, APTwithid, APTgenerator, APTcode, APTwithop
+ * renamed APTNwith to APTwith
+ *
  * Revision 1.57  2000/06/28 15:12:46  nmw
  * added macros for INFO_PIW and INFO_PIH
  *
@@ -947,7 +951,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  ***    int         VARNO                        (optimize -> )
  ***    int         REFCNT                       (refcount -> compile -> )
  ***    int         NAIVE_REFCNT                 (refcount -> concurrent -> )
- ***    int         PADDED                       (ap -> )
+ ***    bool        PADDED                       (ap -> )
  ***    char*       TYPESTRING (O)               (precompile -> )
  ***    node*       OBJDEF     (O)  (N_objdef)   (obj-handling ->
  ***                                             ( -> precompile !!)
@@ -984,7 +988,7 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
 #define ARG_VARNO(n) (n->varno)
 #define ARG_REFCNT(n) (n->refcnt)
 #define ARG_NAIVE_REFCNT(n) (n->int_data)
-#define ARG_PADDED(n) (n->flag)
+#define ARG_PADDED(n) ((bool)(n->flag))
 #define ARG_NEXT(n) (n->node[0])
 #define ARG_TYPESTRING(n) ((char *)(n->node[1]))
 #define ARG_OBJDEF(n) (n->node[2])
@@ -1066,7 +1070,7 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***    int         VARNO                      (optimize -> )
  ***    statustype  ATTRIB                     (typecheck -> uniquecheck -> )
  ***    int         FLAG                       (ael  -> dcr2 !! )
- ***    int         PADDED                     (ap -> )
+ ***    bool        PADDED                     (ap -> )
  ***/
 
 /*
@@ -1097,7 +1101,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
 #define VARDEC_REFCNT(n) (n->refcnt)
 #define VARDEC_NAIVE_REFCNT(n) (n->int_data)
 #define VARDEC_FLAG(n) (n->flag)
-#define VARDEC_PADDED(n) (n->flag)
+#define VARDEC_PADDED(n) ((bool)(n->flag))
 #define VARDEC_NEXT(n) (n->node[0])
 #define VARDEC_TYPEDEF(n) (n->node[1])
 #define VARDEC_ACTCHN(n) (n->node[2])
@@ -2170,7 +2174,7 @@ extern node *MakePragma ();
  ***
  ***  when used in pad_transform.c
  ***
- ***    int        EXPRESSION_PADDED
+ ***    bool       EXPRESSION_PADDED
  ***
  ***
  ***
@@ -2551,7 +2555,7 @@ extern node *MakeInfo ();
 #define INFO_PIW_COUNTER(n) (n->counter)
 
 /* when used in pad_transform.c */
-#define INFO_APT_EXPRESSION_PADDED(n) (n->flag)
+#define INFO_APT_EXPRESSION_PADDED(n) ((bool)(n->flag))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2828,6 +2832,7 @@ extern node *MakeNWith (node *part, node *code, node *withop);
  ***
  ***    long*  MASK          (optimize -> )
  ***    bool   COPY          (Unroll !)
+ ***    bool   PADDED        (ap->)
  ***/
 
 extern node *MakeNPart (node *withid, node *generator, node *code);
@@ -2838,6 +2843,7 @@ extern node *MakeNPart (node *withid, node *generator, node *code);
 #define NPART_CODE(n) ((n)->node[3])
 #define NPART_COPY(n) ((bool)((n)->flag))
 #define NPART_MASK(n, x) ((n)->mask[x])
+#define NPART_PADDED(n) ((bool)((n)->flag))
 
 /*--------------------------------------------------------------------------*/
 
