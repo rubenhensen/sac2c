@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1997/03/19 13:51:15  cg
+ * Revision 1.13  1997/04/24 10:04:25  cg
+ * function PrintDependencies moved to import.[ch]
+ *
+ * Revision 1.12  1997/03/19  13:51:15  cg
  * Now, all required libraries are checked at this stage of the compilation.
  * Linkwith information is retrieved form SIBs.
  *
@@ -336,39 +339,6 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
     }
 
     DBUG_RETURN (done);
-}
-
-/*
- *
- *  functionname  : PrintDependencies
- *  arguments     : 1) list of dependencies
- *  description   : prints a list of dependencies in a Makefile-like style
- *                  to stdout. All declaration files of imported modules
- *                  and classes are printed including the own declaration
- *                  when compiling a module/class implementation.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : printf
- *  macros        :
- *
- *  remarks       : This function corresponds to the -M compiler option.
- *
- */
-
-void
-PrintDependencies (deps *depends)
-{
-    DBUG_ENTER ("PrintDependencies");
-
-    printf ("%s: ", outfilename);
-
-    while (depends != NULL) {
-        printf ("  \\\n  %s", DEPS_DECNAME (depends));
-        depends = DEPS_NEXT (depends);
-    }
-    printf ("\n");
-
-    DBUG_VOID_RETURN;
 }
 
 /*

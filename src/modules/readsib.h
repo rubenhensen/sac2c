@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1997/03/19 13:52:48  cg
+ * Revision 1.5  1997/04/24 10:04:25  cg
+ * function PrintDependencies moved to import.[ch]
+ *
+ * Revision 1.4  1997/03/19  13:52:48  cg
  * new function PrintDependencies() which corresponds to -M compiler option
  * (moved from import.c to this place)
  *
@@ -28,7 +31,5 @@ extern node *RSIBmodul (node *arg_node, node *arg_info);
 extern node *RSIBtypedef (node *arg_node, node *arg_info);
 extern node *RSIBfundef (node *arg_node, node *arg_info);
 extern node *RSIBobjdef (node *arg_node, node *arg_info);
-
-extern void PrintDependencies (deps *depends);
 
 #endif /* _sac_readsib_h  */
