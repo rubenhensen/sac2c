@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/07/21 12:28:17  jhs
+ * Improved indenting.
+ *
  * Revision 2.3  1999/05/12 16:38:22  cg
  * include main.h removed
  *
@@ -234,6 +237,7 @@ ICMCompileWL_NONFOLD_END (char *target, char *idx_vec, int dims)
 #undef WL_NONFOLD_END
 
     indent--;
+    INDENT;
     fprintf (outfile, "}\n");
 
     DBUG_VOID_RETURN;
@@ -263,6 +267,7 @@ ICMCompileWL_FOLD_END (char *target, char *idx_vec, int dims)
 #undef WL_FOLD_END
 
     indent--;
+    INDENT;
     fprintf (outfile, "}\n");
 
     DBUG_VOID_RETURN;
