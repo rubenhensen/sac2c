@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.32  1996/01/02 15:49:35  cg
+ * Revision 1.33  1996/01/17 16:49:21  asi
+ * added common subexpression elimination
+ *
+ * Revision 1.32  1996/01/02  15:49:35  cg
  * added link_tab, macro NIF extended.
  *
  * Revision 1.31  1995/12/29  10:27:33  cg
@@ -182,5 +185,7 @@ extern funptr precomp_tab[];
 extern funptr readsib_tab[];
 
 extern funptr link_tab[];
+
+extern funptr cse_tab[];
 
 #endif /* _sac_traverse_h */

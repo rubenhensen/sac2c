@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.38  1996/01/16 16:44:04  cg
+ * Revision 1.39  1996/01/17 16:49:21  asi
+ * added common subexpression elimination
+ *
+ * Revision 1.38  1996/01/16  16:44:04  cg
  * added/modified debug options -dnocleanup, -dcheck_malloc
  * and -dcheck_boundary
  *
@@ -172,6 +175,7 @@ usage (char *prg_name)
     printf ("\t -bq \t\t\tstop after checking uniqueness\n");
     printf ("\t -bv \t\t\tstop after generating purely functional code\n");
     printf ("\t -bo \t\t\tstop after sac-optimizations\n");
+    printf ("\t -ba \t\t\tstop after array-elimination\n");
     printf ("\t -bs \t\t\tstop after psi-optimizations\n");
     printf ("\t -br \t\t\tstop after refcount inference\n");
     printf ("\t -bl \t\t\tstop after preparing code generation\n");
@@ -189,6 +193,7 @@ usage (char *prg_name)
     printf (
       "\t -nopartial_dead_code_removal or -noPDCR  no partial_dead code removal \n");
     printf ("\t -noloop_invariant_removal or -noLIR \t  no loop invariant removal \n");
+    printf ("\t -nocse or -noCSE \t\t\t  no common subexpression elimination \n");
     printf ("\n\t -nopsiopt\t\t\t\t  no psi optimisations\n");
     printf ("\t -noindex_vect_elimination or -noIVE \t  no index vector elimination \n");
     printf ("\t -noarray_elimination or -noAE \t\t  no array elimination \n");

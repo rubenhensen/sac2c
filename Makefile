@@ -1,10 +1,7 @@
 #
 # $Log$
-# Revision 1.41  1996/01/17 15:59:52  asi
+# Revision 1.42  1996/01/17 16:49:21  asi
 # added common subexpression elimination
-#
-# Revision 1.40  1996/01/02  15:37:13  cg
-# added linking of scnprs.o and cccall.o
 #
 # Revision 1.40  1996/01/02  15:37:13  cg
 # added linking of scnprs.o and cccall.o
@@ -157,8 +154,8 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/DeadCodeRemoval.o src/optimize/WorkReduction.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/DupTree.o \
 	  src/optimize/Inline.o src/optimize/Unroll.o \
-          src/optimize/Unswitch.o \
-	  src/psi-opt/ArrayElimination.o
+          src/optimize/Unswitch.o src/psi-opt/ArrayElimination.o \
+	  src/optimize/CSE.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
          src/modules/implicittypes.o src/modules/analysis.o \

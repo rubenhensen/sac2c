@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1996/01/16 16:42:22  cg
+ * Revision 1.5  1996/01/17 16:49:21  asi
+ * added common subexpression elimination
+ *
+ * Revision 1.4  1996/01/16  16:42:22  cg
  * added global variable int check_malloc
  *
  * Revision 1.3  1996/01/05  12:25:18  cg
@@ -49,6 +52,7 @@ extern int opt_inl;
 extern int opt_unr;
 extern int opt_uns;
 extern int opt_ae;
+extern int opt_cse;
 
 extern int optvar;
 extern int inlnum;

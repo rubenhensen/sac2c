@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.41  1996/01/02 15:49:35  cg
+ * Revision 1.42  1996/01/17 16:49:21  asi
+ * added common subexpression elimination
+ *
+ * Revision 1.41  1996/01/02  15:49:35  cg
  * added link_tab, macro NIF extended.
  *
  * Revision 1.40  1995/12/29  10:27:33  cg
@@ -637,6 +640,20 @@ funptr readsib_tab[] = {
     am
 
 funptr link_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 34) cse_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+    an
+
+funptr cse_tab[] = {
 #include "node_info.mac"
 };
 

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.82  1996/01/16 16:43:14  cg
+ * Revision 1.83  1996/01/17 16:49:21  asi
+ * added common subexpression elimination
+ *
+ * Revision 1.82  1996/01/16  16:43:14  cg
  * added/modified debug options -dnocleanup, -dcheck_malloc
  * and -dcheck_boundary
  *
@@ -341,7 +344,7 @@ int break_compilation = 0;
 int optimize = 1;
 int sac_optimize = 1;
 int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1, opt_inl = 1, opt_unr = 1,
-    opt_uns = 1, opt_ae = 1;
+    opt_uns = 1, opt_ae = 1, opt_cse = 1;
 
 int optvar = 50;
 int inlnum = 1;
@@ -599,6 +602,10 @@ MAIN
             opt_ae = 0;
         else if (!strncmp (*argv, "oAE", 3))
             opt_ae = 0;
+        else if (!strncmp (*argv, "ocse", 4))
+            opt_cse = 0;
+        else if (!strncmp (*argv, "oCSE", 4))
+            opt_cse = 0;
         else
             SYSWARN (("Unknown compiler option '-n%s`", *argv));
     }
