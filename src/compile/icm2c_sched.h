@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/10/05 17:36:41  khf
+ * MT_ADJUST_SCHEDULER__OFFSET removed
+ *
  * Revision 3.5  2003/09/19 15:32:01  dkr
  * postfix _nt of varnames renamed into _NT
  *
@@ -33,10 +36,6 @@
 
 #ifndef _SAC_ICM2C_SCHED_H_
 #define _SAC_ICM2C_SCHED_H_
-
-extern void ICMCompileMT_ADJUST_SCHEDULER__OFFSET (char *to_NT, int to_dim,
-                                                   int current_dim, char *lower,
-                                                   char *upper, char *unrolling);
 
 extern void ICMCompileMT_SCHEDULER_BEGIN (int sched_id, int dim, char **vararg);
 extern void ICMCompileMT_SCHEDULER_END (int sched_id, int dim, char **vararg);

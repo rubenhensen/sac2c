@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2004/10/05 17:36:41  khf
+ * MT_ADJUST_SCHEDULER__OFFSET removed
+ *
  * Revision 3.74  2004/08/13 16:38:37  khf
  * splitted WL_BEGIN_OFFSET into WL_SCHEDULE__BEGIN and
  * WL_OFFSET, added WL_SCHEDULE__END, removed WL_BEGIN_OFFSET,
@@ -976,19 +979,6 @@ ICM_DEF( MT_CREATE_LOCAL_DESC, TRACE_NONE)
   ICM_ID( var_NT)
   ICM_INT( dim)
 ICM_END( MT_CREATE_LOCAL_DESC, (var_NT, dim))
-#endif
-
-
-#if defined(MT_ADJUST_SCHEDULER__OFFSET) || defined(ICM_ALL)
-ICM_DEF( MT_ADJUST_SCHEDULER__OFFSET, TRACE_NONE)
-  ICM_NT( to_NT)
-  ICM_INT( to_sdim)
-  ICM_INT( current_dim)
-  ICM_ANY( lower)
-  ICM_ANY( upper)
-  ICM_ANY( unrolling)
-ICM_END( MT_ADJUST_SCHEDULER__OFFSET, (to_NT, to_sdim, current_dim,
-                                       lower, upper, unrolling))
 #endif
 
 

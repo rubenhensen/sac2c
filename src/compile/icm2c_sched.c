@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2004/10/05 17:36:41  khf
+ * MT_ADJUST_SCHEDULER__OFFSET removed
+ *
  * Revision 3.23  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -263,53 +266,6 @@ TaskSelector (int sched_id, char *ts_name, int ts_dims, int ts_arg_num, char **t
     fprintf (outfile, "%s, %s);\n", taskid, worktodo);
 
     tasks_on_dim = Free (tasks_on_dim);
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileMT_ADJUST_SCHEDULER__OFFSET( char *to_NT, int to_dim,
- *                                               int current_dim,
- *                                               char *lower, char *upper,
- *                                               char *unrolling)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-void
-ICMCompileMT_ADJUST_SCHEDULER__OFFSET (char *to_NT, int to_dim, int current_dim,
-                                       char *lower, char *upper, char *unrolling)
-{
-    int i;
-
-    DBUG_ENTER ("ICMCompileMT_ADJUST_SCHEDULER__OFFSET");
-
-#define MT_ADJUST_SCHEDULER
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef MT_ADJUST_SCHEDULER
-
-    INDENT;
-    fprintf (outfile,
-             "SAC_MT_ADJUST_SCHEDULER__OFFSET( %s, %d, %d, %s, %s, %s"
-             ", (",
-             to_NT, to_dim, current_dim, lower, upper, unrolling);
-
-    if (current_dim == (to_dim - 1)) {
-        fprintf (outfile, "1");
-    } else {
-        fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", to_NT, current_dim + 1);
-
-        for (i = (current_dim + 2); i < to_dim; i++) {
-            fprintf (outfile, " * SAC_ND_A_SHAPE( %s, %d)", to_NT, current_dim + i);
-        }
-    }
-
-    fprintf (outfile, "));\n");
 
     DBUG_VOID_RETURN;
 }
