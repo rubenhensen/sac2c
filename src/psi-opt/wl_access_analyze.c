@@ -77,9 +77,7 @@ WLAccessAnalyze (node *arg_node)
                  "WLAccessAnalyze not initiated on N_fundef level");
 
     tmp_tab = act_tab;
-    act_tab = WLAA_tab;
-    outfile = stdout;
-    indent = 2;
+    act_tab = wlaa_tab;
     arg_info = MakeInfo ();
     INFO_WLAA_WLLEVEL (arg_info) = 0;
 
@@ -91,150 +89,150 @@ WLAccessAnalyze (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
-void
-WLAAprintAccesses (node *arg_node, node *arg_info)
+#if 0
+
+void WLAAprintAccesses(node* arg_node, node* arg_info)
 {
-    int i, dim, iv;
-    access_t *access;
-    shpseg *offset;
-
-    DBUG_ENTER ("WLAAprintAccesses");
-
-    dim = SHP_SEG_SIZE;
-    access = NCODE_ACCESS (arg_node);
-    fprintf (outfile, "\n");
-    INDENT;
-    fprintf (outfile, "/*\n");
-    INDENT;
-    fprintf (outfile, " * WLAA:\n");
-    do {
-        if (access == NULL) {
-            INDENT;
-            fprintf (outfile, " * No accesses! \n");
-        } else {
-            dim = VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access));
-            iv = 0;
-            offset = ACCESS_OFFSET (access);
-            INDENT;
-            fprintf (outfile, " * %s : ", ACLT (ACCESS_CLASS (access)));
-            switch (ACCESS_CLASS (access)) {
-            case ACL_irregular:
-                /*
-                 * here's no break missing !
-                 */
-            case ACL_unknown:
-                fprintf (outfile, "\n");
-                access = NULL;
-                break;
-            case ACL_offset:
-                iv = 1;
-                /*
-                 * here's no break missing !
-                 */
-            case ACL_const:
-                do {
-                    if (offset == NULL)
-                        fprintf (outfile, "no offset\n");
-                    else {
-                        if (ACCESS_DIR (access) == ADIR_read)
-                            fprintf (outfile, "read ( %s[ %d", IV (iv),
-                                     SHPSEG_SHAPE (offset, 0));
-                        else
-                            /* break; */
-                            fprintf (outfile, "write( %s[ %d", IV (iv),
-                                     SHPSEG_SHAPE (offset, 0));
-                        for (i = 1; i < dim; i++)
-                            fprintf (outfile, ",%d", SHPSEG_SHAPE (offset, i));
-                        if (VARDEC_NAME (ACCESS_ARRAY (access)) != NULL)
-                            fprintf (outfile, " ], %s)\n",
-                                     VARDEC_NAME (ACCESS_ARRAY (access)));
-                        else
-                            fprintf (outfile, " ], ??)\n");
-                        offset = SHPSEG_NEXT (offset);
-                    }
-                } while (offset != NULL);
-                access = ACCESS_NEXT (access);
-                break;
-            default:
-                break;
-            }
-        }
-    } while (access != NULL);
-    INDENT;
-    fprintf (outfile, " */\n");
-    INDENT;
-
-    DBUG_VOID_RETURN;
+  int      i, dim, iv;
+  access_t *access;
+  shpseg   *offset;
+  
+  DBUG_ENTER("WLAAprintAccesses");
+  
+  dim = SHP_SEG_SIZE;
+  access = NCODE_ACCESS(arg_node);
+  fprintf(outfile,"\n");
+  INDENT;
+  fprintf(outfile,"/*\n");
+  INDENT;
+  fprintf(outfile," * WLAA:\n");
+  do {
+    if (access == NULL) {
+      INDENT;
+      fprintf(outfile," * No accesses! \n");
+    }
+    else {
+      dim = VARDEC_OR_ARG_DIM(ACCESS_ARRAY(access));
+      iv = 0;
+      offset = ACCESS_OFFSET(access);
+      INDENT;
+      fprintf(outfile," * %s : ",ACLT(ACCESS_CLASS(access)));
+      switch (ACCESS_CLASS(access)) {
+      case ACL_irregular:
+        /*
+         * here's no break missing !
+         */
+      case ACL_unknown:
+        fprintf(outfile,"\n");
+        access = NULL;
+        break;
+      case ACL_offset:
+        iv = 1;
+        /*
+         * here's no break missing !
+         */
+      case ACL_const:
+        do {
+          if (offset == NULL)
+            fprintf(outfile,"no offset\n");
+          else {
+            if (ACCESS_DIR(access) == ADIR_read)
+              fprintf(outfile,"read ( %s[ %d",IV(iv),SHPSEG_SHAPE(offset,0));
+            else
+              /* break; */
+              fprintf(outfile,"write( %s[ %d",IV(iv),SHPSEG_SHAPE(offset,0)); 
+            for (i=1; i<dim; i++)
+              fprintf(outfile,",%d",SHPSEG_SHAPE(offset,i));
+            if (VARDEC_NAME(ACCESS_ARRAY(access)) != NULL)
+              fprintf(outfile," ], %s)\n", VARDEC_NAME(ACCESS_ARRAY(access)));
+            else
+              fprintf(outfile," ], ??)\n");
+            offset = SHPSEG_NEXT(offset);
+          }
+        } while (offset != NULL);
+        access = ACCESS_NEXT(access);
+        break;
+      default:
+        break;
+      }
+    }
+  } while (access != NULL);
+  INDENT;
+  fprintf(outfile," */\n");
+  INDENT;
+  
+  DBUG_VOID_RETURN;
 }
 
-void
-WLAAprintFeatures (node *arg_node, node *arg_info)
+
+void WLAAprintFeatures(node* arg_node, node* arg_info)
 {
-    feature_t feature;
-
-    DBUG_ENTER ("WLAAprintFeatures");
-
-    feature = INFO_WLAA_FEATURE (INFO_PRINT_ACCESS (arg_info));
-    fprintf (outfile, "\n");
-    INDENT;
-    fprintf (outfile, "/*\n");
-    INDENT;
-    fprintf (outfile, " * WITH-LOOP features:\n");
-    if (feature == FEATURE_NONE) {
-        INDENT;
-        fprintf (outfile, " *   no special features\n");
-    }
-    if ((feature & FEATURE_WL) == FEATURE_WL) {
-        INDENT;
-        fprintf (outfile, " *   with-loop containing array access(es)\n");
-    }
-    if ((feature & FEATURE_LOOP) == FEATURE_LOOP) {
-        INDENT;
-        fprintf (outfile, " *   while-/do-/for-loop containing array access(es)\n");
-    }
-    if ((feature & FEATURE_TAKE) == FEATURE_TAKE) {
-        INDENT;
-        fprintf (outfile, " *   primitive function take\n");
-    }
-    if ((feature & FEATURE_DROP) == FEATURE_DROP) {
-        INDENT;
-        fprintf (outfile, " *   primitive function drop\n");
-    }
-    if ((feature & FEATURE_AP) == FEATURE_AP) {
-        INDENT;
-        fprintf (outfile, " *   function aplication\n");
-    }
-    if ((feature & FEATURE_APSI) == FEATURE_APSI) {
-        INDENT;
-        fprintf (outfile, " *   primitive function psi with array return value\n");
-    }
-    if ((feature & FEATURE_MODA) == FEATURE_MODA) {
-        INDENT;
-        fprintf (outfile, " *   primitive function modarray\n");
-    }
-    if ((feature & FEATURE_CAT) == FEATURE_CAT) {
-        INDENT;
-        fprintf (outfile, " *   primitive function cat\n");
-    }
-    if ((feature & FEATURE_ROT) == FEATURE_ROT) {
-        INDENT;
-        fprintf (outfile, " *   primitive function rotate\n");
-    }
-    if ((feature & FEATURE_COND) == FEATURE_COND) {
-        INDENT;
-        fprintf (outfile, " *   conditional containing array access(es)\n");
-    }
-    if ((feature & FEATURE_AARI) == FEATURE_AARI) {
-        INDENT;
-        fprintf (outfile, " *   primitive arithmetic operation on arrays "
-                          "(without index vector access)\n");
-    }
-    INDENT;
-    fprintf (outfile, " */\n");
-    INDENT;
-
-    DBUG_VOID_RETURN;
+  feature_t feature;
+  
+  DBUG_ENTER("WLAAprintFeatures");
+  
+  feature = INFO_WLAA_FEATURE(INFO_PRINT_ACCESS(arg_info));
+  fprintf(outfile,"\n");
+  INDENT;
+  fprintf(outfile,"/*\n");
+  INDENT;
+  fprintf(outfile," * WITH-LOOP features:\n");
+  if (feature == FEATURE_NONE) {
+    INDENT; 
+    fprintf(outfile," *   no special features\n"); 
+  }
+  if ((feature & FEATURE_WL) == FEATURE_WL) {
+    INDENT; 
+    fprintf(outfile," *   with-loop containing array access(es)\n"); 
+  }
+  if ((feature & FEATURE_LOOP) == FEATURE_LOOP) {
+    INDENT; 
+    fprintf(outfile," *   while-/do-/for-loop containing array access(es)\n"); 
+  }
+  if ((feature & FEATURE_TAKE) == FEATURE_TAKE) {
+    INDENT; 
+    fprintf(outfile," *   primitive function take\n"); 
+  }
+  if ((feature & FEATURE_DROP) == FEATURE_DROP) {
+    INDENT; 
+    fprintf(outfile," *   primitive function drop\n"); 
+  }
+  if ((feature & FEATURE_AP) == FEATURE_AP) {
+    INDENT; 
+    fprintf(outfile," *   function aplication\n"); 
+  }
+  if ((feature & FEATURE_APSI) == FEATURE_APSI) {
+    INDENT; 
+    fprintf(outfile," *   primitive function psi with array return value\n"); 
+  }
+  if ((feature & FEATURE_MODA) == FEATURE_MODA) {
+    INDENT; 
+    fprintf(outfile," *   primitive function modarray\n"); 
+  }
+  if ((feature & FEATURE_CAT) == FEATURE_CAT) {
+    INDENT; 
+    fprintf(outfile," *   primitive function cat\n"); 
+  }
+  if ((feature & FEATURE_ROT) == FEATURE_ROT) {
+    INDENT; 
+    fprintf(outfile," *   primitive function rotate\n"); 
+  }
+  if ((feature & FEATURE_COND) == FEATURE_COND) {
+    INDENT; 
+    fprintf(outfile," *   conditional containing array access(es)\n"); 
+  }
+  if ((feature & FEATURE_AARI) == FEATURE_AARI) {
+    INDENT; 
+    fprintf(outfile," *   primitive arithmetic operation on arrays "
+            "(without index vector access)\n"); 
+  }
+  INDENT;
+  fprintf(outfile," */\n");
+  INDENT;
+  
+  DBUG_VOID_RETURN;
 }
+#endif
 
 /******************************************************************************
  *

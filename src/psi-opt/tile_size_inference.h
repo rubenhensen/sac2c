@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/05/10 11:12:59  bs
+ * All functions of the tsi moved to wl_access_analyze.c
+ *
  * Revision 2.4  1999/04/12 18:01:46  bs
  * Two functions added: TSIprintAccesses and TSIprintFestures.
  *
@@ -37,29 +40,6 @@
 
 #define _tile_size_inference_h
 
-#ifndef TRUE
-
-#define TRUE 1
-#define FALSE 0
-
-#endif
-
 extern node *TileSizeInference (node *arg_node);
-
-extern node *TSIfundef (node *arg_node, node *arg_info);
-extern node *TSIblock (node *arg_node, node *arg_info);
-extern node *TSInwith (node *arg_node, node *arg_info);
-extern node *TSIncode (node *arg_node, node *arg_info);
-extern node *TSIassign (node *arg_node, node *arg_info);
-extern node *TSIlet (node *arg_node, node *arg_info);
-extern node *TSIap (node *arg_node, node *arg_info);
-extern node *TSIid (node *arg_node, node *arg_info);
-extern node *TSIwhile (node *arg_node, node *arg_info);
-extern node *TSIdo (node *arg_node, node *arg_info);
-extern node *TSIcond (node *arg_node, node *arg_info);
-extern node *TSIprf (node *arg_node, node *arg_info);
-
-extern void TSIprintAccesses (node *arg_node, node *arg_info);
-extern void TSIprintFeatures (node *arg_node, node *arg_info);
 
 #endif /* _tile_size_inference_h  */
