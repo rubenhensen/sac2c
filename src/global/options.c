@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.22  1999/11/23 12:17:57  dkr
+ * PRINT_RC, PRINT_NRC can be used not only with -b17 but with -b17 ... -b20
+ *
  * Revision 2.21  1999/10/04 11:58:34  sbs
  * secret option "sbs" added!
  *
@@ -139,6 +142,9 @@ AnalyseCommandline (int argc, char *argv[])
             show_idx = 1;
             break;
         case PH_refcnt:
+        case PH_wltrans:
+        case PH_spmdregions:
+        case PH_precompile:
             show_refcnt = 1;
             break;
         default:
