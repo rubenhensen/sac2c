@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/12 12:07:53  dkr
+ * NWITH_IN renamed into NWITH_IN_MASK, ...
+ *
  * Revision 3.2  2000/12/06 19:26:53  dkr
  * DupTreePre renamed into DupTreeTravPre
  * DupTreePost renamed into DupTreeTravPost
@@ -1532,10 +1535,9 @@ DupNwith (node *arg_node, node *arg_info)
         NWITH_DEC_RC_IDS (new_node) = DupIds_ (NWITH_DEC_RC_IDS (arg_node), arg_info);
     }
 
-    NWITH_IN (new_node) = DupDFMmask (NWITH_IN (arg_node), arg_info);
-    NWITH_INOUT (new_node) = DupDFMmask (NWITH_INOUT (arg_node), arg_info);
-    NWITH_OUT (new_node) = DupDFMmask (NWITH_OUT (arg_node), arg_info);
-    NWITH_LOCAL (new_node) = DupDFMmask (NWITH_LOCAL (arg_node), arg_info);
+    NWITH_IN_MASK (new_node) = DupDFMmask (NWITH_IN_MASK (arg_node), arg_info);
+    NWITH_OUT_MASK (new_node) = DupDFMmask (NWITH_OUT_MASK (arg_node), arg_info);
+    NWITH_LOCAL_MASK (new_node) = DupDFMmask (NWITH_LOCAL_MASK (arg_node), arg_info);
 
     NODE_LINE (new_node) = NODE_LINE (arg_node);
     NODE_FILE (new_node) = NODE_FILE (arg_node);
@@ -1700,10 +1702,9 @@ DupNwith2 (node *arg_node, node *arg_info)
         NWITH2_DEC_RC_IDS (new_node) = DupIds_ (NWITH2_DEC_RC_IDS (arg_node), arg_info);
     }
 
-    NWITH2_IN (new_node) = DupDFMmask (NWITH2_IN (arg_node), arg_info);
-    NWITH2_INOUT (new_node) = DupDFMmask (NWITH2_INOUT (arg_node), arg_info);
-    NWITH2_OUT (new_node) = DupDFMmask (NWITH2_OUT (arg_node), arg_info);
-    NWITH2_LOCAL (new_node) = DupDFMmask (NWITH2_LOCAL (arg_node), arg_info);
+    NWITH2_IN_MASK (new_node) = DupDFMmask (NWITH2_IN_MASK (arg_node), arg_info);
+    NWITH2_OUT_MASK (new_node) = DupDFMmask (NWITH2_OUT_MASK (arg_node), arg_info);
+    NWITH2_LOCAL_MASK (new_node) = DupDFMmask (NWITH2_LOCAL_MASK (arg_node), arg_info);
 
     if (NWITH2_SCHEDULING (arg_node) != NULL) {
         NWITH2_SCHEDULING (new_node) = SCHCopyScheduling (NWITH2_SCHEDULING (arg_node));
