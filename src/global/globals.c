@@ -1,8 +1,12 @@
 /*
  *
- * $Log$
  * Revision 1.3  1998/02/27 13:37:25  srs
  * activated opt_wlf again
+ *
+ * $Log$
+ * Revision 1.4  1998/03/02 13:56:02  cg
+ * global variables psi_optimize and backend_optimize removed.
+ * Loop Invariant Removal disabled by default.
  *
  * Revision 1.2  1998/02/26 15:22:58  cg
  * target_name now initialized as 'default'
@@ -110,8 +114,8 @@ int Make_Old2NewWith = 0;
  * Command line options for triggering optimizations
  */
 
-int sac_optimize = 1;
-/* enable/disable all standard optimizations  */
+int optimize = 1;
+/* enable/disable optimizations in general */
 
 int opt_dcr = 1;
 /* enable/disable dead code removal */
@@ -119,7 +123,7 @@ int opt_dcr = 1;
 int opt_cf = 1;
 /* enable/disable constant folding */
 
-int opt_lir = 1;
+int opt_lir = 0;
 /* enable/disable loop invariant removal */
 
 int opt_inl = 1;
@@ -140,17 +144,11 @@ int opt_dfr = 1;
 int opt_wlf = 1;
 /* enable/disable with loop folding */
 
-int psi_optimize = 1;
-/* enable/disable all array optimizations  */
-
 int opt_ive = 1;
 /* enable/disable index vector elimination  */
 
 int opt_ae = 1;
 /* enable/disable array elimination */
-
-int backend_optimize = 1;
-/* enable/disable all backend optimizations  */
 
 int opt_rco = 1;
 /* enable/disable refcount optimization */
