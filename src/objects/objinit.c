@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1996/01/26 15:32:21  cg
+ * Revision 1.9  1997/04/25 14:23:48  sbs
+ * OIobjdef: pragma is deleted (FreeNode) iff it is != NULL !
+ *
+ * Revision 1.8  1996/01/26  15:32:21  cg
  * function status ST_classfun now supported
  *
  * Revision 1.7  1996/01/25  18:46:09  cg
@@ -271,7 +274,8 @@ OIobjdef (node *arg_node, node *arg_info)
         AP_FUNDEF (OBJDEF_EXPR (arg_node)) = MODUL_FUNS (arg_info);
     }
 
-    if (OBJDEF_LINKNAME (arg_node) == NULL) {
+    if ((OBJDEF_PRAGMA (arg_node) != NULL)
+        && (PRAGMA_LINKNAME (OBJDEF_PRAGMA (arg_node)) == NULL)) {
         OBJDEF_PRAGMA (arg_node) = FreeNode (OBJDEF_PRAGMA (arg_node));
     }
 
