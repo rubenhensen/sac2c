@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.63  2003/02/08 16:01:26  mwe
+# DistributiveLaw.o for linker added
+#
 # Revision 3.62  2002/10/28 06:35:56  sbs
 # new target "tagged" added and new pattern rule for suffix ".tagged"
 # added. You make use  make tagged  or make twice.tagged now; but make sure
@@ -139,7 +142,8 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/SSADeadCodeRemoval.o src/optimize/SSACSE.o \
           src/optimize/SSAConstantFolding.o src/optimize/SSALIR.o \
           src/optimize/SSALUR.o src/optimize/SSAInferLI.o \
-          src/optimize/SSAWLUnroll.o src/optimize/rmcasts.o
+          src/optimize/SSAWLUnroll.o src/optimize/rmcasts.o \
+          src/optimize/DistributiveLaw.o
 
 PROFILE= src/profile/annotate_fun_calls.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
