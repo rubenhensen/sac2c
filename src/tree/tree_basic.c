@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/28 12:41:15  dkr
+ * NCODE_CODE removed
+ *
  * Revision 1.1  2000/01/21 15:38:37  dkr
  * Initial revision
  *
@@ -1643,7 +1646,6 @@ MakeNCode (node *block, node *expr)
     NCODE_CBLOCK (tmp) = block;
     NCODE_CEXPR (tmp) = expr;
     NCODE_USED (tmp) = 0;
-    NCODE_COPY (tmp) = NULL;
     NCODE_WLAA_INFO (tmp) = NULL;
 
     DBUG_RETURN (tmp);
