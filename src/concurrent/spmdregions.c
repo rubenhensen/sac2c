@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.29  1998/06/03 15:00:20  cg
+ * bugs fixed in lifting spmd function.
+ * Now, a link back to the original function is stored for each spmd function.
+ *
  * Revision 1.28  1998/05/21 15:08:08  dkr
  * fixed a bug in SPMDLiftFundef
  *
@@ -108,33 +112,6 @@
  * returns 1 for refcounting-objects and -1 otherwise
  */
 #define GET_STD_REFCNT(prefix, node) ((prefix##_REFCNT (node) >= 0) ? 1 : -1)
-
-/******************************************************************************
- *
- * function:
- *   char *SpmdFunName( char *name)
- *
- * description:
- *   Creates a name for a spmd-fun.
- *   This name is build from the name of the current scope ('name') and an
- *    unambiguous number.
- *
- ******************************************************************************/
-
-static char *
-SpmdFunName (char *name)
-{
-    static no;
-    char *funname;
-
-    DBUG_ENTER ("SpmdFunName");
-
-    funname = (char *)Malloc ((strlen (name) + 10) * sizeof (char));
-    sprintf (funname, "SPMD_%s_%d", name, no);
-    no++;
-
-    DBUG_RETURN (funname);
-}
 
 /******************************************************************************
  * build SPMD-regions
@@ -358,7 +335,7 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
             new_vardec = DupNode (vardec);
             VARDEC_NEXT (new_vardec) = last_vardec;
         } else {
-            new_vardec = MakeVardec (ARG_NAME (vardec),
+            new_vardec = MakeVardec (StringCopy (ARG_NAME (vardec)),
                                      DuplicateTypes (ARG_TYPE (vardec), 1), last_vardec);
             VARDEC_REFCNT (new_vardec) = ARG_REFCNT (vardec);
         }
@@ -372,7 +349,7 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
             new_vardec = DupNode (vardec);
             VARDEC_NEXT (new_vardec) = last_vardec;
         } else {
-            new_vardec = MakeVardec (ARG_NAME (vardec),
+            new_vardec = MakeVardec (StringCopy (ARG_NAME (vardec)),
                                      DuplicateTypes (ARG_TYPE (vardec), 1), last_vardec);
             VARDEC_REFCNT (new_vardec) = ARG_REFCNT (vardec);
         }
@@ -406,7 +383,7 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
                                 }
                                 if (DFMTestMaskEntry (SPMD_IN (arg_node),
                                                       VARDEC_NAME (vardec))) {
-                                    ARG_ATTRIB (new_farg) = ST_inout;
+                                    ARG_ATTRIB (new_farg) = ST_spmd_inout;
                                 }
 
                                 if (fargs == NULL) {
@@ -424,9 +401,9 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
             new_farg = DupNode (vardec);
             ARG_NEXT (new_farg) = fargs;
         } else {
-            new_farg
-              = MakeArg (ARG_NAME (vardec), DuplicateTypes (VARDEC_TYPE (vardec), 1),
-                         ST_regular, ST_regular, fargs);
+            new_farg = MakeArg (StringCopy (ARG_NAME (vardec)),
+                                DuplicateTypes (VARDEC_TYPE (vardec), 1), ST_regular,
+                                ST_regular, fargs);
             ARG_REFCNT (new_farg) = GET_STD_REFCNT (VARDEC, vardec);
         }
         fargs = new_farg;
@@ -439,9 +416,9 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
             new_farg = DupNode (vardec);
             ARG_NEXT (new_farg) = fargs;
         } else {
-            new_farg
-              = MakeArg (ARG_NAME (vardec), DuplicateTypes (VARDEC_TYPE (vardec), 1),
-                         ST_regular, ST_inout, fargs);
+            new_farg = MakeArg (StringCopy (ARG_NAME (vardec)),
+                                DuplicateTypes (VARDEC_TYPE (vardec), 1), ST_regular,
+                                ST_spmd_inout, fargs);
             ARG_REFCNT (new_farg) = GET_STD_REFCNT (VARDEC, vardec);
         }
         fargs = new_farg;
@@ -547,12 +524,13 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
         rettypes = MakeType (T_void, 0, NULL, NULL, NULL);
     }
 
-    new_fundef = MakeFundef (SpmdFunName (FUNDEF_NAME (fundef)), NULL, rettypes, fargs,
+    new_fundef = MakeFundef (TmpVarName (FUNDEF_NAME (fundef)), "_SPMD", rettypes, fargs,
                              body, NULL);
     FUNDEF_STATUS (new_fundef) = ST_spmdfun;
+    FUNDEF_LIFTEDFROM (new_fundef) = fundef;
 
-    SPMD_LIFTED_FROM (arg_node) = FUNDEF_NAME (fundef);
-    SPMD_FUNNAME (arg_node) = FUNDEF_NAME (new_fundef);
+    SPMD_LIFTED_FROM (arg_node) = StringCopy (FUNDEF_NAME (fundef));
+    SPMD_FUNNAME (arg_node) = StringCopy (FUNDEF_NAME (new_fundef));
 
     /*
      * append return expressions to body of SPMD-function
@@ -573,7 +551,7 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
      *          because it must be traversed to correct the vardec-pointers of
      *          all id's and to generate new DFMasks!!
      */
-#if 00
+#if 1
     if (FUNDEF_NEXT (fundef) != NULL) {
         FUNDEF_NEXT (new_fundef) = FUNDEF_NEXT (fundef);
         FUNDEF_NEXT (fundef) = new_fundef;
