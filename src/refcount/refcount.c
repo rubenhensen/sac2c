@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.38  1998/03/25 18:10:05  srs
+ * renamed IDS_VARDEC_TYPE to IDS_TYPE
+ *
  * Revision 1.37  1998/03/02 22:24:30  dkr
  * changed RCloop(), RCcond():
  *   DO_VARINFO contains now a N_expr-chain
@@ -990,7 +993,7 @@ RClet (node *arg_node, node *arg_info)
 
     ids = LET_IDS (arg_node);
     while (NULL != ids) {
-        if (MUST_REFCOUNT (IDS_VARDEC_TYPE (ids))) {
+        if (MUST_REFCOUNT (IDS_TYPE (ids))) {
             IDS_REFCNT (ids) = VARDEC_REFCNT (IDS_VARDEC (ids));
             VARDEC_REFCNT (IDS_VARDEC (ids)) = 0;
         } else {
