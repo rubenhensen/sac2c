@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.64  1998/03/03 23:15:02  dkr
+ * *** empty log message ***
+ *
  * Revision 1.63  1998/02/25 13:20:16  srs
  * all index variables of new WL are renamed
  *
@@ -1597,7 +1600,9 @@ node *
 FltnNpart (node *arg_node, node *arg_info)
 {
     ids *_ids;
-    local_stack *lstack;
+#if 0
+  local_stack *lstack;
+#endif
     char *old_name;
 
     DBUG_ENTER ("FltnNpart");

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.117  1998/03/03 23:16:37  dkr
+ * *** empty log message ***
+ *
  * Revision 1.116  1998/03/02 22:25:30  dkr
  * code for new with-loop moved to precompile
  *
@@ -5314,8 +5317,6 @@ CompWith (node *arg_node, node *arg_info)
 node *
 CompNwith2 (node *arg_node, node *arg_info)
 {
-    node *partition;
-
     DBUG_ENTER ("CompNwith2");
 
     NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
