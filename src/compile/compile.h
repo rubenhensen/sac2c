@@ -1,12 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/02/11 11:02:53  dkr
+ * *** empty log message ***
+ *
  * Revision 1.16  1997/11/25 10:33:19  dkr
  * prototype CompNWith added
  *
  * Revision 1.15  1997/11/02 13:58:03  dkr
- * with defined NEWTREE, node->nnode is not used anymorewith defined NEWTREE, node->nnode
- * is not used anymore
+ * with defined NEWTREE, node->nnode is not used anymore
  *
  * Revision 1.14  1997/10/31 11:04:11  dkr
  * with defined NEWTREE, node->nnode is not used anymore
