@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.65  1998/01/30 17:54:15  srs
+ * changed node structure of N_Nwithid
+ *
  * Revision 1.64  1997/12/20 17:33:24  srs
  * changed comment for N_vardec
  *
@@ -1350,12 +1353,16 @@ extern node *MakeWith (node *gen, node *body);
  ***  permanent attributes:
  ***
  ***    char*  ID
+ ***    ids*   IDS
  ***
  ***  temporary attributes:
  ***
  ***    node*  VARDEC                  (typechecker -> )
  ***    long*  MASK[x]                 (optimize -> )
  ***    node*  USE     (O) (N_vinfo)   (psi-optimize -> )
+ ***
+ ***  remark: IDS->id == ID
+ ***
  ***/
 
 extern node *MakeGenerator (node *left, node *right, char *id);
@@ -1363,6 +1370,7 @@ extern node *MakeGenerator (node *left, node *right, char *id);
 #define GEN_LEFT(n) (n->node[0])
 #define GEN_RIGHT(n) (n->node[1])
 #define GEN_ID(n) (n->info.ids->id)
+#define GEN_IDS(n) (n->info.ids)
 #define GEN_USE(n) (n->info.ids->use)
 #define GEN_VARDEC(n) (n->info.ids->node)
 #define GEN_MASK(n, x) (n->mask[x])
@@ -1984,13 +1992,24 @@ extern node *MakeNPart (node *withid, node *generator);
  ***
  ***  permanent attributes:
  ***
+
+old:
  ***    WithIdType   TYPE
+
+ ***    ids*         VEC
  ***    ids*         IDS
  ***/
 
+/* old: */
 extern node *MakeNWithid (WithIdType type, ids *_ids);
 
+/* new:
+   extern node *MakeNWithid(ids* vec, ids* scalars); */
+
+/* old: */
 #define NWITHID_TYPE(n) (n->info.withid)
+
+#define NWITHID_VEC(n) (n->info.ids)
 #define NWITHID_IDS(n) ((ids *)n->info2)
 
 /*--------------------------------------------------------------------------*/
@@ -2022,8 +2041,8 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
 
 #define NGEN_BOUND1(n) (n->node[0])
 #define NGEN_BOUND2(n) (n->node[1])
-#define NGEN_STEP(n) (n->node[4])
-#define NGEN_WIDTH(n) (n->node[5])
+#define NGEN_STEP(n) (n->node[2])
+#define NGEN_WIDTH(n) (n->node[3])
 #define NGEN_OP1(n) (n->info.genrel.op1)
 #define NGEN_OP2(n) (n->info.genrel.op2)
 
@@ -2032,8 +2051,9 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
 /***
  ***  N_Nwithop :
  ***
+ ***  the meaning of the sons/attributes of this node depend on WithOpType.
+ ***
  ***  sons:
- ***  exactly one of these sons exists (depends on WithOpType):
  ***    node*  SHAPE      ("N_expr": N_array, N_id) (iff WithOpType == WO_genarray)
  ***    node*  ARRAY      ("N_expr": N_array, N_id) (iff WithOpType == WO_modarray)
  ***    node*  NEUTRAL    ("N_expr")                (otherwise )
