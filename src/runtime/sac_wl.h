@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/06/29 08:58:09  cg
+ * added new arguments for new with-loop begin/end ICMs
+ *
  * Revision 1.16  1998/06/24 10:35:53  dkr
  * WL_(NON)FOLD_BEGIN/END are now h-icms
  *
@@ -78,11 +81,11 @@
  *** these macros is used to generate names of aux-variables
  ***/
 
-#define SAC_WL_VAR(type, idx_scalar) __##type##idx_scalar
+#define SAC_WL_VAR(type, idx_scalar) SAC__##type##idx_scalar
 
-#define SAC_WL_SCHEDULE_START(dim) __schedule_start##dim
+#define SAC_WL_MT_SCHEDULE_START(dim) SAC__schedule_start##dim
 
-#define SAC_WL_SCHEDULE_STOP(dim) __schedule_stop##dim
+#define SAC_WL_MT_SCHEDULE_STOP(dim) SAC__schedule_stop##dim
 
 /*****************************************************************************/
 
@@ -100,11 +103,11 @@
  *** WL-begin
  ***/
 
-#define SAC_WL_NONFOLD_BEGIN(target, idx_vec)                                            \
+#define SAC_WL_NONFOLD_BEGIN(target, idx_vec, dims)                                      \
     {                                                                                    \
         int target##__destptr = 0;
 
-#define SAC_WL_FOLD_BEGIN(target, idx_vec) {
+#define SAC_WL_FOLD_BEGIN(target, idx_vec, dims) {
 
 /*****************************************************************************/
 
@@ -119,8 +122,8 @@
 #define SAC_WL_MT_BLOCK_LOOP0_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)      \
     {                                                                                    \
         int SAC_WL_VAR (block, idx_scalar)                                               \
-          = SAC_WL_MIN (bound2, SAC_WL_SCHEDULE_STOP (dim));                             \
-        for (idx_scalar = SAC_WL_MAX (bound1, SAC_WL_SCHEDULE_START (dim));              \
+          = SAC_WL_MIN (bound2, SAC_WL_MT_SCHEDULE_STOP (dim));                          \
+        for (idx_scalar = SAC_WL_MAX (bound1, SAC_WL_MT_SCHEDULE_START (dim));           \
              idx_scalar < SAC_WL_VAR (block, idx_scalar);) {                             \
             int SAC_WL_VAR (start, idx_scalar) = idx_scalar;                             \
             int SAC_WL_VAR (stop, idx_scalar)                                            \
@@ -183,8 +186,8 @@
 #define SAC_WL_MT_UBLOCK_LOOP0_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)     \
     {                                                                                    \
         int SAC_WL_VAR (block, idx_scalar)                                               \
-          = SAC_WL_MIN (bound2, SAC_WL_SCHEDULE_STOP (dim));                             \
-        for (idx_scalar = SAC_WL_MAX (bound1, SAC_WL_SCHEDULE_START (dim));              \
+          = SAC_WL_MIN (bound2, SAC_WL_MT_SCHEDULE_STOP (dim));                          \
+        for (idx_scalar = SAC_WL_MAX (bound1, SAC_WL_MT_SCHEDULE_START (dim));           \
              idx_scalar < SAC_WL_VAR (block, idx_scalar);) {                             \
             int SAC_WL_VAR (start, idx_scalar) = idx_scalar;                             \
             int SAC_WL_VAR (stop, idx_scalar)                                            \
@@ -239,9 +242,9 @@
 #define SAC_WL_MT_STRIDE_LOOP0_BEGIN(dim, idx_vec, idx_scalar, bound1, bound2, step)     \
     {                                                                                    \
         int SAC_WL_VAR (start, idx_scalar)                                               \
-          = SAC_WL_MAX (bound1, SAC_WL_SCHEDULE_START (dim));                            \
+          = SAC_WL_MAX (bound1, SAC_WL_MT_SCHEDULE_START (dim));                         \
         int SAC_WL_VAR (stop, idx_scalar)                                                \
-          = SAC_WL_MIN (bound2, SAC_WL_SCHEDULE_STOP (dim));                             \
+          = SAC_WL_MIN (bound2, SAC_WL_MT_SCHEDULE_STOP (dim));                          \
         for (idx_scalar = SAC_WL_VAR (start, idx_scalar);                                \
              idx_scalar < SAC_WL_VAR (stop, idx_scalar);) {
 
@@ -431,9 +434,9 @@
  *** WL-end
  ***/
 
-#define SAC_WL_NONFOLD_END(target, idx_vec) }
+#define SAC_WL_NONFOLD_END(target, idx_vec, dims) }
 
-#define SAC_WL_FOLD_END(target, idx_vec) }
+#define SAC_WL_FOLD_END(target, idx_vec, dims) }
 
 /*****************************************************************************/
 
