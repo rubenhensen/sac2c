@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/10/12 08:33:07  cg
+ * Revision 1.10  1995/12/29 15:24:45  asi
+ * new #undef IDS_VARNO avoids many warnings due to macro redefining
+ *
+ * Revision 1.9  1995/10/12  08:33:07  cg
  * new #undef ID_MOD avoids many warnings due to macro redefining
  *
  * Revision 1.8  1995/09/27  15:58:57  cg
@@ -40,6 +43,7 @@
 #undef IDS_REFCNT
 #undef IDS_NEXT
 #undef ID_MOD
+#undef IDS_VARNO
 
 /* macros for access to elements of struct info.types */
 #define TYPES info.types
