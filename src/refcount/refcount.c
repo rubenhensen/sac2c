@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/06/30 09:49:15  cg
+ * Bug fixed in handling of naive refcounts
+ *
  * Revision 2.3  1999/06/15 12:37:23  jhs
  * Added naive refcounting. The naive refcounters will be infered besides the
  * normal refcounters. The naive refcounters will NOT be optimized, no matter
@@ -1706,7 +1709,7 @@ RCNwith (node *arg_node, node *arg_info)
      *  now we set up 'INFO_RC_RCDUMP( arg_info)' (needed in RCNcode)
      */
     tmp_rcdump = INFO_RC_RCDUMP (arg_info);
-    tmp_naive_rcdump = INFO_RC_RCDUMP (arg_info);
+    tmp_naive_rcdump = INFO_RC_NAIVE_RCDUMP (arg_info);
     INFO_RC_RCDUMP (arg_info) = StoreAndInitRC (RC_REAL, INFO_RC_VARNO (arg_info), 0);
     INFO_RC_NAIVE_RCDUMP (arg_info)
       = StoreAndInitRC (RC_NAIVE, INFO_RC_VARNO (arg_info), 0);
