@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2003/03/09 21:31:26  dkr
+ * , moved from SAC_ND_WRITE__AKS to SAC_TR_AA_PRINT
+ *
  * Revision 3.7  2003/03/09 21:26:41  dkr
  * SAC_TR_AA_PRINT modified
  *
@@ -146,7 +149,7 @@ extern void SAC_TR_DecHiddenMemcnt (int size);
 #if SAC_DO_TRACE_AA
 
 #define SAC_TR_AA_PRINT(str, array, pos)                                                 \
-    SAC_TR_PRINT (("%s access to array %s at position %d", str, #array, pos))
+    SAC_TR_PRINT (("%s access to array %s at position %d", str, #array, pos)),
 
 #else /* SAC_DO_TRACE_AA */
 
