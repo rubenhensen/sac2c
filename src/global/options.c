@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.31  2000/03/16 16:22:07  dkr
+ * options -lac2fun and -fun2lac extended:
+ * activates lac2fun conversion and vice versa for the given compiler
+ * phases
+ *
  * Revision 2.30  2000/03/02 18:50:04  cg
  * Added new option -lac2fun that activates lac2fun conversion and
  * vice versa between psi optimizations and precompiling.
@@ -104,7 +109,6 @@
  *
  * Revision 2.1  1999/05/12 14:27:24  cg
  * initial revision
- *
  *
  */
 
@@ -379,7 +383,46 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_FLAG ("libstat", libstat = 1);
 
-    ARGS_FLAG ("lac2fun", do_lac_fun_conversion = 1);
+#define LAC_FUN(array)                                                                   \
+    {                                                                                    \
+        int phase;                                                                       \
+        char *old_s;                                                                     \
+        char *new_s;                                                                     \
+                                                                                         \
+        for (phase = 0; phase < PH_final; phase++) {                                     \
+            array[phase] = 0;                                                            \
+        }                                                                                \
+                                                                                         \
+        old_s = ARG;                                                                     \
+        while (*old_s) {                                                                 \
+            if (*old_s == ':') {                                                         \
+                old_s++;                                                                 \
+            } else {                                                                     \
+                if (old_s != ARG) {                                                      \
+                    ARGS_ERROR ("illegal separation symbol found");                      \
+                    break;                                                               \
+                }                                                                        \
+            }                                                                            \
+                                                                                         \
+            phase = strtol (old_s, &new_s, 10);                                          \
+                                                                                         \
+            if (phase > PH_final) {                                                      \
+                ARGS_ERROR ("illegal phase number found");                               \
+                break;                                                                   \
+            } else {                                                                     \
+                if (new_s != old_s) {                                                    \
+                    do_lac2fun[phase] = 1;                                               \
+                } else {                                                                 \
+                    ARGS_ERROR ("no phase number found");                                \
+                    break;                                                               \
+                }                                                                        \
+            }                                                                            \
+                                                                                         \
+            old_s = new_s;                                                               \
+        }                                                                                \
+    }
+    ARGS_OPTION ("lac2fun", LAC_FUN (do_lac2fun));
+    ARGS_OPTION ("fun2lac", LAC_FUN (do_fun2lac));
 
     ARGS_OPTION ("l", { ARG_RANGE (linkstyle, 1, 2); });
 
