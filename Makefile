@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.87  2004/07/01 14:35:30  sah
+# added newast target
+#
 # Revision 3.86  2004/06/08 14:21:52  skt
 # tag_executionmode.o added
 #
@@ -281,7 +284,7 @@ OBJ= $(GLOBAL) $(TREE) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
 #  Rules section
 #
 
-.PHONY: all efence product check_os dummy prod clean tar floppy distrib distrib_product linux
+.PHONY: all efence product check_os dummy prod clean tar floppy distrib distrib_product linux newast
 
 all: check_os tools/bin/cse dummy sac2c
 
@@ -466,4 +469,7 @@ linux: src.tar.gz
             'tar xvf src.tar;'             \
             'chmod 644 $(SOURCE_FILES);'   \
             'make OS=LINUX_X86'
+
+newast:
+	touch _NEW_AST
 
