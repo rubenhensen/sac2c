@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  2002/09/09 17:47:07  dkr
+ * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
+ *
  * Revision 1.32  2002/09/05 20:51:23  dkr
  * SSACFGetShapeOfExpr(): DBUG_ASSERTs about unknown shapes removed
  *
@@ -771,9 +774,7 @@ SCOFreeStructConstant (struc_constant *struc_co)
 /******************************************************************************
  *
  * function:
- *   node *SSACFArithmOpWrapper(prf op,
- *                              constant **arg_co,
- *                              node **arg_expr)
+ *   node *SSACFArithmOpWrapper( prf op, constant **arg_co, node **arg_expr)
  *
  * description:
  * implements arithmetical optimizations for add, sub, mul, div, and, or on one
@@ -809,19 +810,19 @@ SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
     tmp_co = NULL;
 
     switch (op) {
-    case F_add:
+    case F_add_SxS:
         if (COIsZero (co, TRUE)) { /* x+0 -> x  or 0+x -> x */
             result = DupTree (expr);
         }
         break;
 
-    case F_sub:
+    case F_sub_SxS:
         if (swap && COIsZero (co, TRUE)) { /* x-0 -> x */
             result = DupTree (expr);
         }
         break;
 
-    case F_mul:
+    case F_mul_SxS:
         if (COIsZero (co, TRUE)) { /* x*0 -> 0 or 0*x -> 0 */
             target_shp = SSACFGetShapeOfExpr (expr);
             if (target_shp != NULL) {
@@ -833,7 +834,7 @@ SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr)
         }
         break;
 
-    case F_div:
+    case F_div_SxS:
         if (swap && COIsZero (co, FALSE)) {
             /* any 0 in divisor, x/0 -> err */
             ABORT (expr->lineno, ("Division by zero expected"));
@@ -2114,7 +2115,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             }
         break;
 
-    case F_add:
+    case F_add_SxS:
     case F_add_AxS:
     case F_add_SxA:
     case F_add_AxA:
@@ -2126,11 +2127,11 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
-                new_node = SSACFArithmOpWrapper (F_add, arg_co, arg_expr);
+                new_node = SSACFArithmOpWrapper (F_add_SxS, arg_co, arg_expr);
             }
         break;
 
-    case F_sub:
+    case F_sub_SxS:
     case F_sub_AxS:
     case F_sub_SxA:
     case F_sub_AxA:
@@ -2142,7 +2143,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         else if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
-                new_node = SSACFArithmOpWrapper (F_sub, arg_co, arg_expr);
+                new_node = SSACFArithmOpWrapper (F_sub_SxS, arg_co, arg_expr);
             }
         else if
             TWO_ARG (arg_expr)
@@ -2151,7 +2152,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             }
         break;
 
-    case F_mul:
+    case F_mul_SxS:
     case F_mul_AxS:
     case F_mul_SxA:
     case F_mul_AxA:
@@ -2163,11 +2164,11 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
-                new_node = SSACFArithmOpWrapper (F_mul, arg_co, arg_expr);
+                new_node = SSACFArithmOpWrapper (F_mul_SxS, arg_co, arg_expr);
             }
         break;
 
-    case F_div:
+    case F_div_SxS:
     case F_div_SxA:
     case F_div_AxS:
     case F_div_AxA:
@@ -2183,7 +2184,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
         if
             ONE_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
-                new_node = SSACFArithmOpWrapper (F_div, arg_co, arg_expr);
+                new_node = SSACFArithmOpWrapper (F_div_SxS, arg_co, arg_expr);
             }
         break;
 

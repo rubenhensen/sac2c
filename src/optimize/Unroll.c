@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/09/09 17:52:31  dkr
+ * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
+ *
  * Revision 3.9  2002/02/21 13:39:19  dkr
  * access macros used
  *
@@ -13,9 +16,6 @@
  *
  * Revision 3.6  2001/04/30 12:23:16  nmw
  * integrate traversal of special fundefs in unroll traversal
- *
- * Revision 3.5  2001/03/22 21:10:51  dkr
- * no changes done
  *
  * Revision 3.4  2001/02/13 17:16:59  dkr
  * MakeNode() eliminated
@@ -31,9 +31,6 @@
  *
  * Revision 2.11  2000/10/10 14:28:17  dkr
  * comment added
- *
- * Revision 2.10  2000/10/10 12:45:28  dkr
- * no changes done
  *
  * Revision 2.9  2000/06/23 15:19:38  dkr
  * signature of DupTree changed
@@ -196,7 +193,7 @@ LoopIterations (linfo *loop_info)
 
     DBUG_ENTER ("LoopIterations");
     switch (loop_info->mod_prf) {
-    case F_add:
+    case F_add_SxS:
         num = (loop_info->test_num - loop_info->start_num) / loop_info->mod_num;
         rest = (loop_info->test_num - loop_info->start_num) % loop_info->mod_num;
         if (0 < num) {
@@ -220,7 +217,7 @@ LoopIterations (linfo *loop_info)
           = loop_info->start_num + (loop_info->loop_num * loop_info->mod_num);
         break;
 
-    case F_sub:
+    case F_sub_SxS:
         num = (loop_info->start_num - loop_info->test_num) / loop_info->mod_num;
         rest = (loop_info->start_num - loop_info->test_num) % loop_info->mod_num;
         if (0 < num) {
@@ -244,7 +241,7 @@ LoopIterations (linfo *loop_info)
           = loop_info->start_num - (loop_info->loop_num * loop_info->mod_num);
         break;
 
-    case F_mul:
+    case F_mul_SxS:
         num = loop_info->test_num / (loop_info->start_num * loop_info->mod_num);
         rest = loop_info->test_num % (loop_info->start_num * loop_info->mod_num);
         if (0 < num) {
@@ -342,8 +339,8 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
     if (allright) { /* this implies that index is set!! */
         mod = ID_DEF (index);
         if ((NULL != mod) && (N_prf == NODE_TYPE (mod))
-            && ((F_add == (loop_info->mod_prf = PRF_PRF (mod)))
-                || (F_sub == loop_info->mod_prf) || (F_mul == loop_info->mod_prf))
+            && ((F_add_SxS == (loop_info->mod_prf = PRF_PRF (mod)))
+                || (F_sub_SxS == loop_info->mod_prf) || (F_mul_SxS == loop_info->mod_prf))
             && (mod->flag == level)) {
 
             arg[0] = PRF_ARG1 (mod);
@@ -358,7 +355,7 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
                 if ((N_id == NODE_TYPE (arg[1]))
                     && (loop_info->decl_node->varno == ID_VARNO (arg[1]))
                     && (N_num == NODE_TYPE (arg[0])) && (0 != NUM_VAL (arg[0]))
-                    && (F_sub != loop_info->mod_prf)) {
+                    && (F_sub_SxS != loop_info->mod_prf)) {
                     loop_info->mod_num = NUM_VAL (arg[0]);
                     index = arg[1];
                 } else {
@@ -382,7 +379,7 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
     }
 
     if (allright) {
-        if ((F_mul == loop_info->mod_prf)
+        if ((F_mul_SxS == loop_info->mod_prf)
             && ((0 == loop_info->mod_num) || (0 == loop_info->start_num))) {
             allright = FALSE;
         } else {
@@ -391,9 +388,9 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
             } else {
                 if (0 > loop_info->mod_num) {
                     switch (loop_info->mod_prf) {
-                    case F_add:
+                    case F_add_SxS:
                         loop_info->mod_num = -loop_info->mod_num;
-                        loop_info->mod_prf = F_sub;
+                        loop_info->mod_prf = F_sub_SxS;
                         break;
                     default:
                         allright = FALSE;
@@ -408,7 +405,7 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
     if (allright) {
         switch (loop_info->test_prf) {
         case F_gt:
-            if (F_sub == loop_info->mod_prf) {
+            if (F_sub_SxS == loop_info->mod_prf) {
                 loop_info->test_prf = F_ge;
                 loop_info->test_num++;
             } else {
@@ -417,7 +414,7 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
             break;
 
         case F_lt:
-            if ((F_add == loop_info->mod_prf) || (F_mul == loop_info->mod_prf)) {
+            if ((F_add_SxS == loop_info->mod_prf) || (F_mul_SxS == loop_info->mod_prf)) {
                 loop_info->test_prf = F_le;
                 loop_info->test_num--;
             } else {
@@ -426,13 +423,17 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
             break;
 
         case F_le:
-            if (!((F_add == loop_info->mod_prf) || (F_mul == loop_info->mod_prf))) {
+            if ((F_add_SxS == loop_info->mod_prf) || (F_mul_SxS == loop_info->mod_prf)) {
+                /* noop */
+            } else {
                 allright = FALSE;
             }
             break;
 
         case F_ge:
-            if (!(F_sub == loop_info->mod_prf)) {
+            if (F_sub_SxS == loop_info->mod_prf) {
+                /* noop */
+            } else {
                 allright = FALSE;
             }
             break;

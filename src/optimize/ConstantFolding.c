@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/09/09 17:47:11  dkr
+ * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
+ *
  * Revision 3.21  2002/07/12 19:08:05  dkr
  * CFid(): N_char added
  *
@@ -410,6 +413,8 @@ static inside_wl *inside_wl_root;
                  ? DOUBLE_VAL (n)                                                        \
                  : ((NODE_TYPE (n) == N_char) ? CHAR_VAL (n) : BOOL_VAL (n)))))
 
+#define SCALAR_ARGS(prf) TRUE
+
 /*
  *
  *  functionname  : FreePrf2
@@ -592,8 +597,8 @@ CompareNumArrayElts (node *array1, node *array2)
  *
  *  functionname  : IsConst
  *  arguments     : 1) node to be examine
- *		    R) TRUE  - if node is a constant
- *		       FALSE - if node isn't a constant, or if node is a array, but
+ *                  R) TRUE  - if node is a constant
+ *                     FALSE - if node isn't a constant, or if node is a array, but
  *                             containing non constant elements
  *  description   : determines if expression is a constant
  *  global vars   : syntax_tree, N_num, N_float, N_array, N_str, N_bool, N_id
@@ -647,11 +652,11 @@ IsConst (node *arg_node)
  *
  *  functionname  : ConstantFolding
  *  arguments     : 1) ptr to root of the syntaxtree or a N_fundef - node.
- *		    2) NULL
+ *                  2) NULL
  *                  R) ptr to root of the optimized syntax-tree
  *  description   : initiates constant folding for the intermediate sac-code:
- *		    - the most-recently-defined- stack (mrdl_stack) will be initialize
- *		    - call Trav to start constant-folding
+ *                  - the most-recently-defined- stack (mrdl_stack) will be initialize
+ *                  - call Trav to start constant-folding
  *  global vars   : syntax_tree, cf_tab, act_tab, mrdl_stack
  *
  */
@@ -688,8 +693,8 @@ ConstantFolding (node *arg_node, node *info_node)
  *
  *  functionname  : CFfundef
  *  arguments     : 1) N_fundef - node
- *		    2) N_info - node
- *		    R) N_fundef - node
+ *                  2) N_info - node
+ *                  R) N_fundef - node
  *  description   : calls OPTTrav to fold constants in current and following functions
  *  global vars   : syntax_tree, mrdl_stack
  *  internal funs : ---
@@ -717,7 +722,7 @@ CFfundef (node *arg_node, node *arg_info)
  *                  2) N_info - node
  *                  R) N_assign - node
  *  description   : - constant folding of the instructions
- *		    - construction of a new assign-list if nessessary
+ *                  - construction of a new assign-list if nessessary
  *  global vars   : syntax_tree, mrdl_stack
  *  internal funs : CFassign
  *  external funs : OPTTrav (optimize.h), FreeNode (free.h),
@@ -816,11 +821,11 @@ GetType (types *type)
  *
  *  functionname  : CFlet
  *  arguments     : 1) N_let  - node
- *		    2) N_info - node
+ *                  2) N_info - node
  *                  R) N_let  - node
  *  description   : - stores alink to the type of expression at the left hand side
- *		      of the let in the info_node
- *		    - initiates constant folding for the right hand side
+ *                    of the let in the info_node
+ *                  - initiates constant folding for the right hand side
  *  global vars   : syntax_tree, mrdl_stack
  *  internal funs :
  *  external funs :
@@ -885,9 +890,9 @@ CFarray (node *arg_node, node *arg_info)
  *
  *  functionname  : CFid
  *  arguments     : 1) id-node
- *		    2) info-node
- *		    R) id-node or modified node representing constant value:
- *		       num-, float-, bool- or array-node.
+ *                  2) info-node
+ *                  R) id-node or modified node representing constant value:
+ *                     num-, float-, bool- or array-node.
  *  description   : the id-node will be replaced with a new node reppresenting the
  *                  constant value of the identificator in this context
  *
@@ -989,8 +994,8 @@ CFid (node *arg_node, node *arg_info)
          *   double[2] mrd;
          *   double[2] arg_node;
          */
-	VARDEC_DIM(ID_VARDEC(mrd)) = VARDEC_DIM(ID_VARDEC(arg_node));
-	VARDEC_SHPSEG(ID_VARDEC(mrd)) = DupShpseg(VARDEC_SHPSEG(ID_VARDEC(arg_node)));
+        VARDEC_DIM(ID_VARDEC(mrd)) = VARDEC_DIM(ID_VARDEC(arg_node));
+        VARDEC_SHPSEG(ID_VARDEC(mrd)) = DupShpseg(VARDEC_SHPSEG(ID_VARDEC(arg_node)));
 #else
                 L_VARDEC_OR_ARG_TYPE (ID_VARDEC (mrd), FreeAllTypes (ID_TYPE (mrd)));
                 L_VARDEC_OR_ARG_TYPE (ID_VARDEC (mrd), DupAllTypes (ID_TYPE (arg_node)));
@@ -1086,8 +1091,8 @@ CFcast (node *arg_node, node *arg_info)
  *
  *  functionname  : CFwhile
  *  arguments     : 1) N_while - node
- *		    2) N_info  - node
- *		    R) N_while - node
+ *                  2) N_info  - node
+ *                  R) N_while - node
  *  description   : initiates constant folding inside while-loop
  *
  */
@@ -1143,8 +1148,8 @@ CFwhile (node *arg_node, node *arg_info)
  *
  *  functionname  : CFdo
  *  arguments     : 1) N_do   - node
- *		    2) N_info - node
- *		    R) N_do   - node
+ *                  2) N_info - node
+ *                  R) N_do   - node
  *  description   : initiates constant-folding inside do-loop and eliminates
  *                  do-loop if possible
  *  global vars   : syntax_tree, mrdl_stack, cf_expr
@@ -1185,10 +1190,10 @@ CFdo (node *arg_node, node *arg_info)
  *
  *  functionname  : CFcond
  *  arguments     : 1) N_cond - node
- *		    2) N_info - node
- *		    R) N_cond - node , N_assign - node or N_empty - node
+ *                  2) N_info - node
+ *                  R) N_cond - node , N_assign - node or N_empty - node
  *  description   : initiates constant folding for the conditional, if conditional
- *		    is true or false, return then or elseinstruction_chain,
+ *                  is true or false, return then or elseinstruction_chain,
  *                   otherwise constant-folding inside the conditional.
  *  global vars   : syntax_tree, mrdl_stack, cf_expr
  *  internal funs : ---
@@ -1339,8 +1344,8 @@ CFNcode (node *arg_node, node *arg_info)
  *
  *  functionname  : GetShapeVector
  *  arguments     : 1) ptr to an array
- *		    2) ptr to an C-array, contains shape-vector after GetShapeVector
- *		    R) dimension of 1)
+ *                  2) ptr to an C-array, contains shape-vector after GetShapeVector
+ *                  R) dimension of 1)
  *  description   : calulates dimension and shape-vector
  *  global vars   : --
  *  internal funs : --
@@ -1392,7 +1397,7 @@ GetShapeVector (node *array, int *vec_shape)
  *
  *  functionname  : ArraySize
  *  arguments     : 1) ptr to th array
- *		    R) size of the array
+ *                  R) size of the array
  *  description   : Counts the elements of the given array
  *  global vars   : --
  *  internal funs : --
@@ -1522,8 +1527,8 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
  *
  *  functionname  : FoundZero
  *  arguments     : 1) node to be examine
- *		    R) TRUE if node contains a 0, 0.0 , [0, ..., 0] or [0.0, ..., 0.0]
- *		       FALSE otherwise
+ *                  R) TRUE if node contains a 0, 0.0 , [0, ..., 0] or [0.0, ..., 0.0]
+ *                     FALSE otherwise
  *  description   : determines if expression is a constant containing zero
  *  global vars   : syntax_tree, N_num, N_float, N_array
  *  internal funs : --
@@ -1634,25 +1639,25 @@ FoldPrfScalars (prf prf_name, node **arg, types *res_type, bool swap)
         ABS_OP (abs, arg[0], res, res_type);
         break;
 
-    case F_add:
+    case F_add_SxS:
     case F_add_AxA:
     case F_add_AxS:
     case F_add_SxA:
         ARI_OP (+, arg[0], arg[1], res, res_type);
         break;
-    case F_sub:
+    case F_sub_SxS:
     case F_sub_AxA:
     case F_sub_AxS:
     case F_sub_SxA:
         ARI_OP (-, arg[0], arg[1], res, res_type);
         break;
-    case F_mul:
+    case F_mul_SxS:
     case F_mul_AxA:
     case F_mul_AxS:
     case F_mul_SxA:
         ARI_OP (*, arg[0], arg[1], res, res_type);
         break;
-    case F_div:
+    case F_div_SxS:
     case F_div_AxA:
     case F_div_AxS:
     case F_div_SxA:
@@ -1716,14 +1721,14 @@ FoldPrfScalars (prf prf_name, node **arg, types *res_type, bool swap)
  *
  *  functionname  : FoldExpr
  *  arguments     : 1) prf-node
- *		    2) argument number, which should be tested
- *		    3) argument number, which should be retured if test was successfully
- *		    4) test-pattern
- *		    5) arg_info-node needed for mask update
- *		    R) argument number res_arg or prf-node
+ *                  2) argument number, which should be tested
+ *                  3) argument number, which should be retured if test was successfully
+ *                  4) test-pattern
+ *                  5) arg_info-node needed for mask update
+ *                  R) argument number res_arg or prf-node
  *  description   : folds the given prf to the argument number res_arg, if argument
- *		    number test_arg is an int, float or bool and this argument contains
- *		    the test_pattern
+ *                  number test_arg is an int, float or bool and this argument contains
+ *                  the test_pattern
  *  global vars   : syntax_tree, N_num, N_bool, N_float, N_id
  *  internal funs : --
  *  external funs : FreePrf2
@@ -1762,8 +1767,8 @@ FoldExpr (node *arg_node, int test_arg, int res_arg, int test_pattern, node *arg
  *
  *  functionname  : NoConstScalarPrf
  *  arguments     : 1) prf-node
- *		    2) arg_info includes used mask to be updated and varno
- *		    R) result-node
+ *                  2) arg_info includes used mask to be updated and varno
+ *                  R) result-node
  *  description   : Calculates some  prim-functions with one non constant argument
  *  global vars   : N_float, ... , N_not, ..., prf_string
  *  internal funs : FreePrf2
@@ -1806,7 +1811,7 @@ NoConstScalarPrf (node *arg_node, node *arg_info)
                 arg_node
                   = FoldExpr (arg_node, 1, 0, FALSE, arg_info); /* FALSE || x = x */
             break;
-        case F_mul:
+        case F_mul_SxS:
             arg_node = FoldExpr (arg_node, 0, 0, 0, arg_info); /* 0 * x = 0 */
             if (N_prf == NODE_TYPE (arg_node))
                 arg_node = FoldExpr (arg_node, 1, 1, 0, arg_info); /* x * 0 = 0 */
@@ -1823,8 +1828,8 @@ NoConstScalarPrf (node *arg_node, node *arg_info)
                 arg_node = FoldExpr (arg_node, 1, 0, 1, arg_info); /* x * 1 = x */
 
             break;
-        case F_div:
-            if (TRUE == FoundZero (arg_node->node[0]->node[1]->node[0])) {
+        case F_div_SxS:
+            if (FoundZero (arg_node->node[0]->node[1]->node[0])) {
                 WARN (arg_node->lineno, ("Division by zero expected"));
             }
             arg_node = FoldExpr (arg_node, 0, 0, 0, arg_info); /* 0 / x = 0 */
@@ -1838,14 +1843,14 @@ NoConstScalarPrf (node *arg_node, node *arg_info)
             if (N_prf == NODE_TYPE (arg_node))
                 arg_node = FoldExpr (arg_node, 1, 0, 1, arg_info); /* x / 1 = x */
             break;
-        case F_add:
+        case F_add_SxS:
         case F_add_AxS:
         case F_add_SxA:
             arg_node = FoldExpr (arg_node, 0, 1, 0, arg_info); /* 0 + x = x */
             if (N_prf == NODE_TYPE (arg_node))
                 arg_node = FoldExpr (arg_node, 1, 0, 0, arg_info); /* x + 0 = x */
             break;
-        case F_sub:
+        case F_sub_SxS:
         case F_sub_AxS:
         case F_sub_SxA:
             arg_node = FoldExpr (arg_node, 1, 0, 0, arg_info); /* x - 0 = x */
@@ -1910,10 +1915,10 @@ FetchElem (int pos, node *array)
  *
  *  functionname  : CalcSel
  *  arguments     : 1) shape vector function sel is applied to
- *		    2) array the function sel is applied to
- *		    3) type of array the function sel is applied to
- *		    4) arg_info containing f.e. type of result
- *		    R) calculated result
+ *                  2) array the function sel is applied to
+ *                  3) type of array the function sel is applied to
+ *                  4) arg_info containing f.e. type of result
+ *                  R) calculated result
  *  description   :
  *  global vars   :
  *  internal funs : --
@@ -1974,8 +1979,8 @@ CalcSel (node *shape, node *array, types *array_type, node *arg_info)
  *
  *  functionname  : ArrayPrf
  *  arguments     : 1) prf-node
- *		    2) arg_info
- *		    R) result-node
+ *                  2) arg_info
+ *                  R) result-node
  *  description   : Calculates array prim-functions
  *  global vars   : N_float, ... , N_not, ..., prf_string
  *  internal funs : --
@@ -2085,7 +2090,7 @@ ArrayPrf (node *arg_node, node *arg_info)
             }
         }
 
-        if (((F_div == arg_node->info.prf) || (F_div_SxA == arg_node->info.prf)
+        if (((F_div_SxS == arg_node->info.prf) || (F_div_SxA == arg_node->info.prf)
              || (F_div_AxS == arg_node->info.prf) || (F_div_AxA == arg_node->info.prf))
             && (TRUE == FoundZero (arg[1]))) {
             if (N_id == NODE_TYPE (old_arg[0])) {
@@ -2204,9 +2209,9 @@ ArrayPrf (node *arg_node, node *arg_info)
             if (EXPRS_NEXT (ARRAY_AELEMS (arg[0])) != NULL)
                 FreeTree (EXPRS_NEXT (ARRAY_AELEMS (arg[0])));
             EXPRS_NEXT (ARRAY_AELEMS (arg[0])) = NULL; /* ??? */
-                                                       /*
-                                                        * Gives Array the correct type
-                                                        */
+            /*
+             * Gives Array the correct type
+             */
             ARRAY_TYPE (arg[0]) = FreeAllTypes (ARRAY_TYPE (arg[0]));
             ARRAY_TYPE (arg[0]) = DupAllTypes (INFO_CF_TYPE (arg_info));
             ARRAY_VECLEN (arg[0]) = 1;
@@ -2799,16 +2804,14 @@ ArrayPrf (node *arg_node, node *arg_info)
  *
  *  functionname  : CFprf
  *  arguments     : 1) prf-node
- *		    2) info_node
- *		    R) prf-node or calculated constant value
+ *                  2) info_node
+ *                  R) prf-node or calculated constant value
  *  description   : first replace constant values for variables in expression
- *		    then calculate primitive function.
+ *                  then calculate primitive function.
  *  global vars   : syntax_tree, info_node, mrdl_stack
  *  internal funs : FoldPrfScalars, ArrayPrf
  *  external funs : Trav
  *  macros        : DBUG...
- *
- *  remarks       : --
  *
  */
 node *
@@ -2840,13 +2843,33 @@ CFprf (node *arg_node, node *arg_info)
         }
     }
 
-    if (SCALAR_ARGS (PRF_PRF (arg_node))) { /* prfs on scalars only !! */
-        if (IsConst (arg[0])
-            && (SINGLE_SCALAR_ARG (PRF_PRF (arg_node)) || IsConst (arg[1]))) {
+    switch (PRF_PRF (arg_node)) {
+    case F_toi:
+    case F_tof:
+    case F_tod:
+    case F_abs:
+    case F_min:
+    case F_max:
+    case F_add_SxS:
+    case F_sub_SxS:
+    case F_mul_SxS:
+    case F_div_SxS:
+    case F_mod:
+    case F_le:
+    case F_lt:
+    case F_eq:
+    case F_neq:
+    case F_ge:
+    case F_gt:
+    case F_and:
+    case F_or:
+    case F_not:
+        /* prfs on scalars only !! */
+        if (IsConst (arg[0]) && ((arg[1] == NULL) || IsConst (arg[1]))) {
             /*
              * this is a constants only application!
              */
-            if ((PRF_PRF (arg_node) == F_div) && FoundZero (arg[1])) {
+            if ((PRF_PRF (arg_node) == F_div_SxS) && FoundZero (arg[1])) {
                 WARN (NODE_LINE (arg_node), ("Division by zero expected"));
             } else {
                 tmp = FoldPrfScalars (PRF_PRF (arg_node), arg, INFO_CF_TYPE (arg_info),
@@ -2857,15 +2880,19 @@ CFprf (node *arg_node, node *arg_info)
                 }
             }
         }
-    } else { /* prfs that require at least one array as argument! */
+        break;
+
+    default:
+        /* prfs that require at least one array as argument! */
         /*
          * Calculate primitive functions with arrays
          */
         arg_node = ArrayPrf (arg_node, arg_info);
+        break;
     }
 
     /*
-     * Do some foldings like 1 * x = x, etc.
+     * do some foldings like  1 * x = x
      */
     arg_node = NoConstScalarPrf (arg_node, arg_info);
 

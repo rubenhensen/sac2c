@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/09/09 17:56:51  dkr
+ * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
+ *
  * Revision 3.9  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -146,7 +149,7 @@ int wli_phase;
  *   prf SimplifyFun(prf prf)
  *
  * description:
- *   Transforms special prf names (e.g. F_add_SxA) to the base name (F_add).
+ *   Transforms special prf names (e.g. F_add_SxA) to the base name (F_add_SxS).
  *   Does this for add, sub, mul, div.
  *
  ******************************************************************************/
@@ -157,28 +160,32 @@ SimplifyFun (prf prf)
     DBUG_ENTER ("SimplifyFun");
 
     switch (prf) {
+    case F_add_SxS:
     case F_add_SxA:
     case F_add_AxS:
     case F_add_AxA:
-        prf = F_add;
+        prf = F_add_SxS;
         break;
 
+    case F_sub_SxS:
     case F_sub_SxA:
     case F_sub_AxS:
     case F_sub_AxA:
-        prf = F_sub;
+        prf = F_sub_SxS;
         break;
 
+    case F_mul_SxS:
     case F_mul_SxA:
     case F_mul_AxS:
     case F_mul_AxA:
-        prf = F_mul;
+        prf = F_mul_SxS;
         break;
 
+    case F_div_SxS:
     case F_div_SxA:
     case F_div_AxS:
     case F_div_AxA:
-        prf = F_div;
+        prf = F_div_SxS;
         break;
 
     default:
@@ -906,10 +913,10 @@ WLIlet (node *arg_node, node *arg_info)
             switch (prf) {
             /* this may ba an assignment which calculates an index for an
                array to fold. */
-            case F_add:
-            case F_sub:
-            case F_mul:
-            case F_div: /* both args are scalars */
+            case F_add_SxS:
+            case F_sub_SxS:
+            case F_mul_SxS:
+            case F_div_SxS: /* both args are scalars */
                 CreateIndexInfoSxS (exprn, arg_info);
                 break;
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.7  2002/09/09 17:48:33  dkr
+ * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
+ *
  * Revision 3.6  2002/07/29 12:12:53  sbs
  * PRF_IF macro extended by z.
  *
@@ -511,10 +514,10 @@ APCprf (node *arg_node, node *arg_info)
     case F_not:
     case F_min:
     case F_max:
-    case F_add:
-    case F_sub:
-    case F_mul:
-    case F_div:
+    case F_add_SxS:
+    case F_sub_SxS:
+    case F_mul_SxS:
+    case F_div_SxS:
     case F_mod:
     case F_and:
     case F_or:

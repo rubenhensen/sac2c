@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2002/09/09 17:56:33  dkr
+ * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
+ *
  * Revision 1.12  2002/06/20 23:03:15  dkr
  * no changes done
  *
@@ -306,13 +309,13 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
     DBUG_ASSERT (((1 == arg_no) || (2 == arg_no)), "wrong parameters");
 
     switch (prf) {
-    case F_add:
+    case F_add_SxS:
         /* addition is commutable, grids are not affected. */
         ig->l[dim] -= constval;
         ig->u[dim] -= constval;
         break;
 
-    case F_sub:
+    case F_sub_SxS:
         if (2 == arg_no) {
             /* index - scalar, grids are not affected */
             ig->l[dim] += constval;
@@ -358,7 +361,7 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
         }
         break;
 
-    case F_mul:
+    case F_mul_SxS:
         /*
          * first try  (srs):  ig->l[dim] = (ig->l[dim] + constval - 1) / constval;
          *                    ig->u[dim] = (ig->u[dim] - 1) / constval +1;
@@ -411,7 +414,7 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
         }
         break;
 
-    case F_div:
+    case F_div_SxS:
         DBUG_ASSERT ((arg_no == 2),
                      "WLF transformation (scalar / index) not yet implemented!");
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2002/09/09 17:53:04  dkr
+ * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
+ *
  * Revision 1.11  2002/07/29 12:12:53  sbs
  * PRF_IF macro extended by z.
  *
@@ -407,7 +410,7 @@ SSALURAnalyseLURPredicate (node *expr, prf loop_prf, loopc_t init_counter,
 
     case F_lt:
         /* include upper border (only for add, mul) */
-        if ((loop_prf == F_add) || (loop_prf == F_mul)) {
+        if ((loop_prf == F_add_SxS) || (loop_prf == F_mul_SxS)) {
             pred = F_le;
             term = term - 1;
             result = TRUE;
@@ -418,7 +421,7 @@ SSALURAnalyseLURPredicate (node *expr, prf loop_prf, loopc_t init_counter,
 
     case F_gt:
         /* include lower border: only for sub */
-        if (loop_prf == F_sub) {
+        if (loop_prf == F_sub_SxS) {
             pred = F_ge;
             term = term + 1;
             result = TRUE;
@@ -428,13 +431,13 @@ SSALURAnalyseLURPredicate (node *expr, prf loop_prf, loopc_t init_counter,
         break;
 
     case F_neq:
-        if ((loop_prf == F_add) && ((init_counter + loop_increment) <= term)
+        if ((loop_prf == F_add_SxS) && ((init_counter + loop_increment) <= term)
             && (((term - init_counter) % loop_increment) == 0)) {
             /* change F_neq to F_le for increments */
             pred = F_le;
             term = term - 1;
             result = TRUE;
-        } else if ((loop_prf == F_sub) && (term <= (init_counter - loop_increment))
+        } else if ((loop_prf == F_sub_SxS) && (term <= (init_counter - loop_increment))
                    && (((init_counter - term) % loop_increment) == 0)) {
             /* change F_neq to F_ge for decrements */
             pred = F_ge;
@@ -552,7 +555,7 @@ SSALURIsLURModifier (node *modifier)
     /* prf must be one of +, -, * */
     mod_prf = PRF_PRF (modifier);
 
-    if ((mod_prf != F_add) && (mod_prf != F_sub) && (mod_prf != F_mul)) {
+    if ((mod_prf != F_add_SxS) && (mod_prf != F_sub_SxS) && (mod_prf != F_mul_SxS)) {
         DBUG_PRINT ("SSALUR", ("modifier with unsupported prf"));
         DBUG_RETURN (FALSE);
     }
@@ -568,7 +571,8 @@ SSALURIsLURModifier (node *modifier)
     arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (modifier)));
 
     /* if prf is F_sub the first arg must be the identifier */
-    if (((NODE_TYPE (arg1) == N_num) && (NODE_TYPE (arg2) == N_id) && (mod_prf != F_sub))
+    if (((NODE_TYPE (arg1) == N_num) && (NODE_TYPE (arg2) == N_id)
+         && (mod_prf != F_sub_SxS))
         || ((NODE_TYPE (arg1) == N_id) && (NODE_TYPE (arg2) == N_num))) {
 
         DBUG_PRINT ("SSALUR", ("loop modifier has correct form"));
@@ -804,12 +808,12 @@ SSALURCalcUnrolling (loopc_t init_counter, loopc_t term_counter, loopc_t loop_in
     DBUG_ENTER ("SSALURCalcUnrolling");
 
     /* some security checks for parameter to avoid math errors */
-    if (((loop_prf == F_add) || (loop_prf == F_sub)) && (loop_increment <= 0)) {
+    if (((loop_prf == F_add_SxS) || (loop_prf == F_sub_SxS)) && (loop_increment <= 0)) {
         DBUG_PRINT ("SSALUR", ("illegal increment %d for add/sub", loop_increment));
         DBUG_RETURN (UNR_NONE);
     }
 
-    if ((loop_prf == F_mul)
+    if ((loop_prf == F_mul_SxS)
         && ((loop_increment <= 1) || (init_counter <= 0) || (term_counter <= 0))) {
         DBUG_PRINT ("SSALUR", ("illegal data for mul"));
         DBUG_RETURN (UNR_NONE);
@@ -817,7 +821,7 @@ SSALURCalcUnrolling (loopc_t init_counter, loopc_t term_counter, loopc_t loop_in
 
     /* calc unrolling for the different operations */
     switch (loop_prf) {
-    case F_add:
+    case F_add_SxS:
         if ((((term_counter - init_counter) / loop_increment) > 0)
             && (pred_prf == F_le)) {
             unrolling = ((term_counter - init_counter) / loop_increment) + 1;
@@ -829,7 +833,7 @@ SSALURCalcUnrolling (loopc_t init_counter, loopc_t term_counter, loopc_t loop_in
         }
         break;
 
-    case F_sub:
+    case F_sub_SxS:
         if ((((init_counter - term_counter) / loop_increment) > 0)
             && (pred_prf == F_ge)) {
             unrolling = ((init_counter - term_counter) / loop_increment) + 1;
@@ -841,7 +845,7 @@ SSALURCalcUnrolling (loopc_t init_counter, loopc_t term_counter, loopc_t loop_in
         }
         break;
 
-    case F_mul:
+    case F_mul_SxS:
         mul_unr = CalcMulUnroll (init_counter, loop_increment, term_counter);
         if ((mul_unr > 0) && (pred_prf == F_le)) {
             unrolling = (loopc_t) (floor (mul_unr) + 1);

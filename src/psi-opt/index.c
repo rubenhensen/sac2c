@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2002/09/09 17:48:05  dkr
+ * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
+ *
  * Revision 3.24  2002/09/06 11:28:09  sbs
  * V2O patch made permanent!
  * For index vars, now IDXS2OFFSET is used instead of VECT2OFFSET which
@@ -1860,6 +1863,7 @@ IdxPrf (node *arg_node, node *arg_info)
         INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
         PRF_ARG2 (arg_node) = Trav (arg2, arg_info);
         break;
+
     case F_modarray:
         arg1 = PRF_ARG1 (arg_node);
         arg2 = PRF_ARG2 (arg_node);
@@ -1898,76 +1902,87 @@ IdxPrf (node *arg_node, node *arg_info)
         PRF_ARG1 (arg_node) = Trav (arg1, arg_info);
         PRF_ARG3 (arg_node) = Trav (arg3, arg_info);
         break;
+
     case F_add_SxA:
         INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_add;
+            PRF_PRF (arg_node) = F_add_SxS;
         }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         ive_op++;
         break;
+
     case F_add_AxS:
         INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
+        /* here is no break missing */
     case F_add_AxA:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_add;
+            PRF_PRF (arg_node) = F_add_SxS;
         }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         ive_op++;
         break;
+
     case F_sub_SxA:
         INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG2 (arg_node), 0);
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_sub;
+            PRF_PRF (arg_node) = F_sub_SxS;
         }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         ive_op++;
         break;
+
     case F_sub_AxS:
         INFO_IVE_NON_SCAL_LEN (arg_info) = ID_SHAPE (PRF_ARG1 (arg_node), 0);
+        /* here is no break missing */
     case F_sub_AxA:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_sub;
+            PRF_PRF (arg_node) = F_sub_SxS;
         }
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
         ive_op++;
         break;
+
     case F_mul_SxA:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_mul;
+            PRF_PRF (arg_node) = F_mul_SxS;
         }
         PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
         ive_op++;
         break;
+
     case F_mul_AxS:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_mul;
+            PRF_PRF (arg_node) = F_mul_SxS;
         }
         PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
         ive_op++;
         break;
+
     case F_div_SxA:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_div;
+            PRF_PRF (arg_node) = F_div_SxS;
         }
         PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
         ive_op++;
         break;
+
     case F_div_AxS:
         if ((INFO_IVE_MODE (arg_info) == M_uses_and_transform)
             && (INFO_IVE_TRANSFORM_VINFO (arg_info) != NULL)) {
-            PRF_PRF (arg_node) = F_div;
+            PRF_PRF (arg_node) = F_div_SxS;
         }
         PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
         ive_op++;
         break;
+
     default:
         DBUG_ASSERT ((INFO_IVE_TRANSFORM_VINFO (arg_info) == NULL),
                      "Inconsistency between IdxLet and IdxPrf");
@@ -2111,16 +2126,16 @@ IdxArray (node *arg_node, node *arg_info)
                     idx
                       = MakeExprs (idx, MakeExprs (MakeNum (SHPSEG_SHAPE (tmp_shpseg, i)),
                                                    NULL));
-                    idx = MakePrf (F_mul, idx);
+                    idx = MakePrf (F_mul_SxS, idx);
                     idx = MakeExprs (idx, expr);
                     expr = EXPRS_NEXT (expr);
                     EXPRS_NEXT (EXPRS_NEXT (idx)) = NULL;
-                    idx = MakePrf (F_add, idx);
+                    idx = MakePrf (F_add_SxS, idx);
                 } else {
                     idx
                       = MakeExprs (idx, MakeExprs (MakeNum (SHPSEG_SHAPE (tmp_shpseg, i)),
                                                    NULL));
-                    idx = MakePrf (F_mul, idx);
+                    idx = MakePrf (F_mul_SxS, idx);
                 }
             }
             arg_node = idx;

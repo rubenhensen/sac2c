@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/09/09 17:52:36  dkr
+ * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
+ *
  * Revision 3.10  2002/02/21 13:41:15  dkr
  * access macros used
  *
@@ -328,25 +331,23 @@ DoesItHappen1 (cinfo *cond_info, linfo *loop_info)
     DBUG_ENTER ("DoesItHappen1");
 
     switch (loop_info->test_prf) {
-
     case F_le:
         switch (loop_info->mod_prf) {
-        case F_add:
+        case F_add_SxS:
             cond_info->last_test = loop_info->end_num - loop_info->mod_num;
             rest = (cond_info->test_num - loop_info->start_num) % loop_info->mod_num;
             break;
-        case F_mul:
+        case F_mul_SxS:
             cond_info->last_test = loop_info->end_num / loop_info->mod_num;
             rest = (cond_info->test_num / loop_info->start_num) % loop_info->mod_num;
             break;
         default:
             /*
-             * to please the compiler, the following line is inserted. To make sure that
-             * it doesn't harm, a DBUG_ASSERT follows!!
+             * to please the compiler, the following line is inserted.
+             * To make sure that it doesn't harm, a DBUG_ASSERT follows!!
              */
+            DBUG_ASSERT ((0), "illegal prf found!");
             rest = 0;
-            DBUG_ASSERT ((0),
-                         "the variable rest will be referred to without initialization!");
             break;
         }
 
@@ -403,10 +404,10 @@ DoesItHappen2 (cinfo *cond_info, linfo *loop_info)
 
     case F_le:
         switch (loop_info->mod_prf) {
-        case F_add:
+        case F_add_SxS:
             cond_info->last_test = loop_info->end_num - loop_info->mod_num;
             break;
-        case F_mul:
+        case F_mul_SxS:
             cond_info->last_test = loop_info->end_num / loop_info->mod_num;
             break;
         default:

@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.10  2002/09/09 17:49:04  dkr
+ * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
+ *
  * Revision 3.9  2002/07/29 12:12:53  sbs
  * PRF_IF macro extended by z.
  *
@@ -44,9 +48,6 @@
  * debugged transformation
  * (conversion functions not yet supported)
  *
- * Revision 1.12  2000/07/19 12:38:23  mab
- * *** empty log message ***
- *
  * Revision 1.11  2000/07/13 14:17:58  mab
  * changed padding of with-loops
  * added support for further PRFs
@@ -62,8 +63,9 @@
  * implemented dummy code generation for with loop
  *
  * Revision 1.7  2000/06/29 10:23:38  mab
- * added dummy functions for APTpart, APTwithid, APTgenerator, APTcode, APTwithop
- * renamed APTNwith to APTwith
+ * - added dummy functions for APTpart, APTwithid, APTgenerator, APTcode,
+ *   APTwithop
+ * - renamed APTNwith to APTwith
  *
  * Revision 1.6  2000/06/28 10:41:35  mab
  * completed padding functions except with node
@@ -85,7 +87,6 @@
  *
  * Revision 1.1  2000/05/26 13:42:33  sbs
  * Initial revision
- *
  *
  */
 
@@ -1068,10 +1069,10 @@ APTprf (node *arg_node, node *arg_info)
     case F_not:
     case F_min:
     case F_max:
-    case F_add:
-    case F_sub:
-    case F_mul:
-    case F_div:
+    case F_add_SxS:
+    case F_sub_SxS:
+    case F_mul_SxS:
+    case F_div_SxS:
     case F_mod:
     case F_and:
     case F_or:
@@ -1192,7 +1193,7 @@ APTblock (node *arg_node, node *arg_info)
         DBUG_PRINT ("APT", (" no vardec"));
     }
 
-    DBUG_ASSERT ((BLOCK_INSTR (arg_node) != NULL), " unexpected empty INSTR!");
+    DBUG_ASSERT ((BLOCK_INSTR (arg_node) != NULL), "unexpected empty INSTR!");
     BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -1224,7 +1225,7 @@ APTlet (node *arg_node, node *arg_info)
        N_double, N_char, N_bool are not needed */
     INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
 
-    DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), " let-node without rvalues detected!");
+    DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "let-node without rvalues detected!");
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     rhs_padded = INFO_APT_EXPRESSION_PADDED (arg_info);
@@ -1250,7 +1251,7 @@ APTlet (node *arg_node, node *arg_info)
      * requires shape information from pad_infer!
      * @@@ */
     DBUG_ASSERT (((!INFO_APT_EXPRESSION_PADDED (arg_info)) || rhs_padded),
-                 " padding of lvalue does not match rvalue!");
+                 "padding of lvalue does not match rvalue!");
     /* */
 
     DBUG_RETURN (arg_node);
