@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/29 17:29:49  sah
+ * fixed a traversal bug
+ *
  * Revision 1.6  2004/11/29 15:03:57  sah
  * made it more obust wrt missing old types.
  *
@@ -539,9 +542,7 @@ RIDarg (node *arg_node, info *arg_info)
         ARG_TYPE (arg_node) = RenameTypes (ARG_TYPE (arg_node));
     }
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -565,9 +566,7 @@ RIDvardec (node *arg_node, info *arg_info)
         VARDEC_TYPE (arg_node) = RenameTypes (VARDEC_TYPE (arg_node));
     }
 
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
-    }
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -746,7 +745,6 @@ RIDavis (node *arg_node, info *arg_info)
 
     newname = RIDrenameLocalIdentifier (AVIS_NAME (arg_node));
 
-    AVIS_NAME (arg_node) = ILIBfree (AVIS_NAME (arg_node));
     AVIS_NAME (arg_node) = newname;
 
     DBUG_RETURN (arg_node);
