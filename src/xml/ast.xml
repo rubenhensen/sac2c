@@ -2588,9 +2588,9 @@
       <sons>
         <son name="Cond" mandatory="yes">
           <target>
+            <set name="Spexpr" />
             <node name="Id" />
             <node name="Bool" />
-            <nodeset name="Spexpr" />
           </target>
         </son>
         <son name="Then" mandatory="yes">
