@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.84  1996/01/22 17:28:30  cg
+ * Revision 1.85  1996/01/25 18:37:50  cg
+ * added new stop options using compiler phase numbers
+ *
+ * Revision 1.84  1996/01/22  17:28:30  cg
  * Now, paths are initialized with the current directory
  *
  * Revision 1.83  1996/01/17  16:49:21  asi
@@ -430,18 +433,23 @@ MAIN
         Ccodeonly = 1;
         switch (**argv) {
         case 'p':
+        case '2':
             breakparse = 1;
             break;
         case 'j':
+        case '5':
             breakobjinit = 1;
             break;
         case 'i':
+        case '3':
             breakimport = 1;
             break;
         case 'f':
+        case '6':
             breakflatten = 1;
             break;
         case 't':
+        case '7':
             breaktype = 1;
             break;
         case 'o':
@@ -467,12 +475,15 @@ MAIN
             breakwritesib = 1;
             break;
         case 'b':
+        case '4':
             breakreadsib = 1;
             break;
         case 'd':
+        case '8':
             breakcheckdec = 1;
             break;
         case 'm':
+        case '9':
             breakimpltype = 1;
             break;
         case 'y':
@@ -489,6 +500,45 @@ MAIN
             break;
         case 'l':
             breakprecompile = 1;
+            break;
+        case '1':
+            switch (*(*argv + 1)) {
+            case '0':
+                breakanalysis = 1;
+                break;
+            case '1':
+                breakwritesib = 1;
+                break;
+            case '2':
+                breakobjects = 1;
+                break;
+            case '3':
+                breakuniquecheck = 1;
+                break;
+            case '4':
+                breakrmvoidfun = 1;
+                break;
+            case '5':
+                breakopt = 1;
+                break;
+            case '6':
+                breakpsiopt = 1;
+                show_idx = 1;
+                break;
+            case '7':
+                breakref = 1;
+                show_refcnt = 1;
+                break;
+            case '8':
+                breakprecompile = 1;
+                break;
+            case '9':
+                breakcompile = 1;
+                show_icm = 1;
+                break;
+            default:
+                SYSWARN (("Unknown break parameter '%s`", *argv));
+            }
             break;
         default:
             SYSWARN (("Unknown break parameter '%s`", *argv));
@@ -756,11 +806,9 @@ MAIN
             compiler_phase++;
 
             if (!breakreadsib) {
-                if (MODUL_OBJS (syntax_tree) != NULL) {
-                    NOTE_COMPILER_PHASE;
-                    syntax_tree = objinit (syntax_tree);
-                    ABORT_ON_ERROR;
-                }
+                NOTE_COMPILER_PHASE;
+                syntax_tree = objinit (syntax_tree);
+                ABORT_ON_ERROR;
                 compiler_phase++;
 
                 if (!breakobjinit) {
