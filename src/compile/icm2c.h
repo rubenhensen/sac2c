@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/03/31 13:57:34  sbs
+ * Revision 1.5  1995/04/03 13:58:57  sbs
+ * first "complete" version
+ *
+ * Revision 1.4  1995/03/31  13:57:34  sbs
  * ND_CREATE_CONST_ARRAY,ND_KS_ARG_ARRAY & ND_KS_RET_ARRAY inserted
  *
  * Revision 1.3  1995/03/10  17:24:37  sbs
@@ -48,6 +51,7 @@
 
 #define ND_A_FIELD(name) name
 #define ND_A_RC(name) *__##name##_rc
+#define ND_A_RCP(name) __##name##_rc
 #define ND_A_SIZE(name) __##name##_sz
 #define ND_A_DIM(name) __##name##_d
 #define ND_KD_A_SHAPE(name, dim) __##name##_s##dim
@@ -76,8 +80,8 @@
  */
 
 #define ND_ALLOC_ARRAY(type, name)                                                       \
-    ND_A_FIELD (name) = (type *)malloc (sizeof (type) * ND_CHECK_SIZE (name));           \
-    ND_A_RC (name) = (int *)malloc (sizeof (int));
+    ND_A_FIELD (name) = (type *)malloc (sizeof (type) * ND_A_SIZE (name));               \
+    ND_A_RCP (name) = (int *)malloc (sizeof (int));
 
 #define ND_REUSE(old, new)                                                               \
     new = old;                                                                           \
@@ -95,7 +99,7 @@
 
 #define ND_SET_SIZE(name, num) ND_A_SIZE (name) = num;
 
-#define ND_SET_DIME(name, num) ND_A_DIM (name) = num;
+#define ND_SET_DIM(name, num) ND_A_DIM (name) = num;
 
 #define ND_SET_SHAPE(name, dim, s) ND_A_SHAPE (name, dim) = s;
 
@@ -121,7 +125,5 @@
         for (__i = 0; __i < ND_A_SIZE (res); __i++)                                      \
             ND_A_FIELD (res)[__i] = s op ND_A_FIELD (a2)[__i];                           \
     };
-
-#endif /* _sac_icm2c_h */
 
 #endif /* _sac_icm2c_h */

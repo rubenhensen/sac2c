@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/03/31 13:57:34  sbs
+ * Revision 1.6  1995/04/03 13:58:57  sbs
+ * first "complete" version
+ *
+ * Revision 1.5  1995/03/31  13:57:34  sbs
  * ND_CREATE_CONST_ARRAY,ND_KS_ARG_ARRAY & ND_KS_RET_ARRAY inserted
  *
  * Revision 1.4  1995/03/15  07:55:11  sbs
@@ -19,9 +22,11 @@
  *
  */
 
+#include <malloc.h>
 #include "stdio.h"
 #include "print.h"
 #include "dbug.h"
+#include "my_debug.h"
 
 #define AccessVect(v, i) fprintf (outfile, "ND_A_FIELD(%s)[%i])", v, i)
 
@@ -104,8 +109,7 @@
     }
 
 #define CopyBlock(a, offset, res)                                                        \
-    NewBlock (InitPtr (VectToOffset (dim, AccessVect (v, i), a),                         \
-                       fprintf (outfile, "0")),                                          \
+    NewBlock (InitPtr (offset, fprintf (outfile, "0")),                                  \
               FillRes (res, INDENT;                                                      \
                        fprintf (outfile,                                                 \
                                 "ND_A_FIELD(%s)[__idest++]=ND_A_FIELD(%s)[__isrc++];\n", \
@@ -142,6 +146,10 @@ main ()
     int i;
     int indent = 1;
 
+#else /* TEST_BACKEND */
+
+extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
+
 #endif /* TEST_BACKEND */
 
     /*
@@ -154,8 +162,10 @@ main ()
      */
 
 #define ND_CREATE_CONST_ARRAY
+
 #ifndef TEST_BACKEND
 #include "icm_decl.c"
+#include "icm_args.c"
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
@@ -173,223 +183,262 @@ main ()
 
 #undef ND_CREATE_CONST_ARRAY
 
-    /*
-     * ND_KS_DECL_ARRAY( basic_type, name, dim, s0,..., sn)   : declares an array
-     *
-     * char *type, *name;
-     * int dim;
-     * char **s;
-     */
+#ifndef TEST_BACKEND
+    DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_KS_DECL_ARRAY( basic_type, name, dim, s0,..., sn)   : declares an array
+ *
+ * char *type, *name;
+ * int dim;
+ * char **s;
+ */
 
 #define ND_KS_DECL_ARRAY
 
 #ifndef TEST_BACKEND
 #include "icm_decl.c"
+#include "icm_args.c"
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
 
-    INDENT;
-    fprintf (outfile, "%s *%s;\n", type, name);
-    INDENT;
-    fprintf (outfile, "int *__%s_rc;\n", name);
-    INDENT;
-    fprintf (outfile, "int __%s_sz=", name);
-    fprintf (outfile, "%s", s[0]);
+INDENT;
+fprintf (outfile, "%s *%s;\n", type, name);
+INDENT;
+fprintf (outfile, "int *__%s_rc;\n", name);
+INDENT;
+fprintf (outfile, "int __%s_sz=", name);
+fprintf (outfile, "%s", s[0]);
+{
+    int i;
     for (i = 1; i < dim; i++)
         fprintf (outfile, "*%s", s[i]);
-    fprintf (outfile, ";\n", s[i]);
+    fprintf (outfile, ";\n");
     INDENT;
     fprintf (outfile, "int __%s_d=%d;\n", name, dim);
     for (i = 0; i < dim; i++) {
         INDENT;
         fprintf (outfile, "int __%s_s%d=%s;\n", name, i, s[i]);
     }
-    fprintf (outfile, "\n");
+}
+fprintf (outfile, "\n");
 
 #undef ND_KS_DECL_ARRAY
 
-    /*
-     * ND_KD_SET_SHAPE( name, dim, s0,..., sn)        : sets all shape components of an
-     * array
-     *
-     * char *name;
-     * int dim;
-     * char **s;
-     */
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_KD_SET_SHAPE( name, dim, s0,..., sn)        : sets all shape components of an array
+ *
+ * char *name;
+ * int dim;
+ * char **s;
+ */
 
 #define ND_KD_SET_SHAPE
 
 #ifndef TEST_BACKEND
 #include "icm_decl.c"
+#include "icm_args.c"
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
 
+{
+    int i;
     for (i = 0; i < dim; i++) {
         INDENT;
         fprintf (outfile, "ND_KD_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
     }
-    fprintf (outfile, "\n");
-
-#ifndef TEST_BACKEND
-    free (s);
-#endif /* no TEST_BACKEND */
+}
+fprintf (outfile, "\n");
 
 #undef ND_KD_SET_SHAPE
 
-    /*
-     * ND_KD_PSI_CxA_S( a, res, dim, v0,..., vn): selects a single element of the array
-     *
-     *
-     * char *type, *a, *res;
-     * int dim;
-     * char **vi;
-     */
+#ifndef TEST_BACKEND
+free (s);
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_KD_PSI_CxA_S( a, res, dim, v0,..., vn): selects a single element of the array
+ *
+ *
+ * char *type, *a, *res;
+ * int dim;
+ * char **vi;
+ */
 
 #define ND_KD_PSI_CxA_S
 
 #ifndef TEST_BACKEND
 #include "icm_decl.c"
+#include "icm_args.c"
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
 
-    INDENT;
-    fprintf (outfile, "%s=ND_A_FIELD(%s)[", res, a);
-    VectToOffset (dim, AccessConst (vi, i), a);
-    fprintf (outfile, "];\n\n");
-
-#ifndef TEST_BACKEND
-    free (v);
-#endif /* no TEST_BACKEND */
+INDENT;
+fprintf (outfile, "%s=ND_A_FIELD(%s)[", res, a);
+VectToOffset (dim, AccessConst (vi, i), a);
+fprintf (outfile, "];\n\n");
 
 #undef ND_KD_PSI_CxA_S
 
-    /*
-     * ND_KD_PSI_VxA_S( a, res, dim, v ) : selects a single element of the array
-     *
-     * char *a, *res, *v;
-     * int dim;
-     */
+#ifndef TEST_BACKEND
+free (vi);
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_KD_PSI_VxA_S( a, res, dim, v ) : selects a single element of the array
+ *
+ * char *a, *res, *v;
+ * int dim;
+ */
 
 #define ND_KD_PSI_VxA_S
 
 #ifndef TEST_BACKEND
 #include "icm_decl.c"
+#include "icm_args.c"
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
 
-    INDENT;
-    fprintf (outfile, "%s=ND_A_FIELD(%s)[", res, a);
-    VectToOffset (dim, AccessVect (v, i), a);
-    fprintf (outfile, "];\n\n");
-
-#ifndef TEST_BACKEND
-    free (v);
-#endif /* no TEST_BACKEND */
+INDENT;
+fprintf (outfile, "%s=ND_A_FIELD(%s)[", res, a);
+VectToOffset (dim, AccessVect (v, i), a);
+fprintf (outfile, "];\n\n");
 
 #undef ND_KD_PSI_VxA_S
 
-    /*
-     * ND_KD_PSI_CxA_A( a, res, dim, v0,..., vn): selects a sub-array
-     *
-     * char *a, *res;
-     * int dim;
-     * char **vi;
-     */
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_KD_PSI_CxA_A( a, res, dim, v0,..., vn): selects a sub-array
+ *
+ * char *a, *res;
+ * int dim;
+ * char **vi;
+ */
 
 #define ND_KD_PSI_CxA_A
 
 #ifndef TEST_BACKEND
 #include "icm_decl.c"
+#include "icm_args.c"
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
 
-    INDENT;
-    CopyBlock (a, VectToOffset (dim, AccessConst (vi, i), a), res);
-    fprintf (outfile, "\n\n");
-
-#ifndef TEST_BACKEND
-    free (v);
-#endif /* no TEST_BACKEND */
+INDENT;
+CopyBlock (a, VectToOffset (dim, AccessConst (vi, i), a), res);
+fprintf (outfile, "\n\n");
 
 #undef ND_KD_PSI_CxA_A
 
-    /*
-     * ND_KD_PSI_VxA_A( a, res, dim, v )       : selects a sub-array
-     *
-     * char *a, *res, *v;
-     * int dim;
-     */
+#ifndef TEST_BACKEND
+free (vi);
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_KD_PSI_VxA_A( a, res, dim, v )       : selects a sub-array
+ *
+ * char *a, *res, *v;
+ * int dim;
+ */
 
 #define ND_KD_PSI_VxA_A
 
 #ifndef TEST_BACKEND
 #include "icm_decl.c"
+#include "icm_args.c"
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
 
-    INDENT;
-    CopyBlock (a, VectToOffset (dim, AccessVect (v, i), a), res);
-    fprintf (outfile, "\n\n");
-
-#ifndef TEST_BACKEND
-    free (v);
-#endif /* no TEST_BACKEND */
+INDENT;
+CopyBlock (a, VectToOffset (dim, AccessVect (v, i), a), res);
+fprintf (outfile, "\n\n");
 
 #undef ND_KD_PSI_VxA_A
 
-    /*
-     * ND_KD_TAKE_CxA_A( a, res, dim, v0,..., vn):
-     */
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_KD_TAKE_CxA_A( a, res, dim, v0,..., vn):
+ */
 
 #define ND_KD_TAKE_CxA_A
 
 #ifndef TEST_BACKEND
 #include "icm_decl.c"
+#include "icm_args.c"
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
 
-    INDENT;
-    TakeSeg (a, dim, fprintf (outfile, "0"), /* offset */
-             fprintf (outfile, "ND_KD_A_SHAPE(%s, %d) - ", a, i);
-             AccessConst (vi, i), /* offsets */
-             AccessConst (vi, i), /* sizes */
-             res);
+INDENT;
+TakeSeg (a, dim, fprintf (outfile, "0"), /* offset */
+         fprintf (outfile, "ND_KD_A_SHAPE(%s, %d) - ", a, i);
+         AccessConst (vi, i), /* offsets */
+         AccessConst (vi, i), /* sizes */
+         res);
 
-    fprintf (outfile, "\n\n");
+fprintf (outfile, "\n\n");
 
 #undef ND_KD_TAKE_CxA_A
 
-    /*
-     * ND_KD_DROP_CxA_A( a, res, dim, v0,..., vn):
-     */
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_KD_DROP_CxA_A( a, res, dim, v0,..., vn):
+ */
 
 #define ND_KD_DROP_CxA_A
 
 #ifndef TEST_BACKEND
 #include "icm_decl.c"
+#include "icm_args.c"
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
 
-    INDENT;
-    TakeSeg (a, dim, VectToOffset (dim, AccessConst (vi, i), a), /* offset */
-             AccessConst (vi, i),                                /* offsets */
-             fprintf (outfile, "ND_KD_A_SHAPE(%s, %d) - ", a, i);
-             AccessConst (vi, i), /* sizes */
-             res);
+INDENT;
+TakeSeg (a, dim, VectToOffset (dim, AccessConst (vi, i), a), /* offset */
+         AccessConst (vi, i),                                /* offsets */
+         fprintf (outfile, "ND_KD_A_SHAPE(%s, %d) - ", a, i);
+         AccessConst (vi, i), /* sizes */
+         res);
 
-    fprintf (outfile, "\n\n");
+fprintf (outfile, "\n\n");
 
 #undef ND_KD_DROP_CxA_A
 
 #ifdef TEST_BACKEND
-    return (0);
+return (0);
+}
+#else  /* TEST_BACKEND */
+DBUG_VOID_RETURN;
 }
 #endif /* TEST_BACKEND */
