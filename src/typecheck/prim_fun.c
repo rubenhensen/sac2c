@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.6  1995/03/08 14:03:54  hw
+ * Revision 1.7  1995/03/28 12:17:27  hw
+ * internal_lib.h included
+ *
+ * Revision 1.6  1995/03/08  14:03:54  hw
  * added enumerator  SxA_A, SxA_F to enum type_class
  *
  * Revision 1.5  1995/02/27  11:09:35  hw
@@ -32,8 +35,8 @@
 #include "dbug.h"
 #include "Error.h"
 #include "my_debug.h"
+#include "internal_lib.h"
 
-extern void *Malloc (int);                    /*imported from typecheck.c */
 extern types *DuplicateTypes (types *source); /* imported form typecheck.c */
 
 enum type_class {
