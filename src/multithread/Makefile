@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 1.10  2000/03/16 14:32:52  dkr
+# make deps done
+#
 # Revision 1.9  2000/03/09 18:32:39  jhs
 # Added dfa and blkpp.
 #
@@ -62,6 +65,19 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
+blocks_cons.o: ../../inc/dbug.h /usr/include/stdio.h
+blocks_cons.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+blocks_cons.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+blocks_cons.o: /usr/include/stdio_impl.h ../global/types.h
+blocks_cons.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+blocks_cons.o: /usr/include/string.h /usr/include/stdlib.h
+blocks_cons.o: ../global/globals.h ../tree/traverse.h ../tree/scheduling.h
+blocks_cons.o: ../tree/DupTree.h ../tree/LookUpTable.h
+blocks_cons.o: ../optimize/generatemasks.h ../tree/free.h
+blocks_cons.o: ../global/my_debug.h /usr/include/malloc.h
+blocks_cons.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+blocks_cons.o: /usr/include/sys/int_types.h ../global/internal_lib.h
+blocks_cons.o: multithread_lib.h
 blocks_expand.o: ../../inc/dbug.h /usr/include/stdio.h
 blocks_expand.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 blocks_expand.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -84,6 +100,48 @@ blocks_init.o: ../global/globals.h ../tree/traverse.h ../tree/scheduling.h
 blocks_init.o: ../tree/DupTree.h ../tree/LookUpTable.h
 blocks_init.o: ../optimize/generatemasks.h ../global/my_debug.h
 blocks_init.o: ../global/internal_lib.h
+blocks_propagate.o: ../../inc/dbug.h /usr/include/stdio.h
+blocks_propagate.o: /usr/include/sys/feature_tests.h
+blocks_propagate.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+blocks_propagate.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+blocks_propagate.o: ../global/types.h ../tree/tree_basic.h
+blocks_propagate.o: ../tree/tree_compound.h ../global/Error.h
+blocks_propagate.o: /usr/include/string.h /usr/include/stdlib.h
+blocks_propagate.o: ../global/globals.h ../tree/traverse.h
+blocks_propagate.o: ../tree/scheduling.h ../tree/DupTree.h
+blocks_propagate.o: ../tree/LookUpTable.h ../optimize/generatemasks.h
+blocks_propagate.o: ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
+blocks_propagate.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+blocks_propagate.o: /usr/include/sys/int_types.h ../global/internal_lib.h
+blocks_propagate.o: blocks_init.h multithread_lib.h
+dataflow_analysis.o: ../../inc/dbug.h /usr/include/stdio.h
+dataflow_analysis.o: /usr/include/sys/feature_tests.h
+dataflow_analysis.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+dataflow_analysis.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+dataflow_analysis.o: ../global/types.h ../tree/tree_basic.h
+dataflow_analysis.o: ../tree/tree_compound.h ../global/Error.h
+dataflow_analysis.o: /usr/include/string.h /usr/include/stdlib.h
+dataflow_analysis.o: ../global/globals.h ../tree/traverse.h
+dataflow_analysis.o: ../tree/scheduling.h ../tree/DupTree.h
+dataflow_analysis.o: ../tree/LookUpTable.h ../optimize/generatemasks.h
+dataflow_analysis.o: ../tree/free.h ../global/my_debug.h
+dataflow_analysis.o: /usr/include/malloc.h /usr/include/sys/types.h
+dataflow_analysis.o: /usr/include/sys/machtypes.h
+dataflow_analysis.o: /usr/include/sys/int_types.h ../global/internal_lib.h
+dataflow_analysis.o: ../tree/DataFlowMask.h multithread_lib.h mtfuns_init.h
+mtfuns_init.o: ../../inc/dbug.h /usr/include/stdio.h
+mtfuns_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+mtfuns_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+mtfuns_init.o: /usr/include/stdio_impl.h ../global/types.h
+mtfuns_init.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+mtfuns_init.o: /usr/include/string.h /usr/include/stdlib.h
+mtfuns_init.o: ../global/globals.h ../tree/traverse.h ../tree/scheduling.h
+mtfuns_init.o: ../tree/DupTree.h ../tree/LookUpTable.h
+mtfuns_init.o: ../optimize/generatemasks.h ../tree/free.h
+mtfuns_init.o: ../global/my_debug.h /usr/include/malloc.h
+mtfuns_init.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+mtfuns_init.o: /usr/include/sys/int_types.h ../global/internal_lib.h
+mtfuns_init.o: multithread_lib.h mtfuns_init.h
 multithread.o: ../../inc/dbug.h /usr/include/stdio.h
 multithread.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 multithread.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -93,17 +151,20 @@ multithread.o: ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
 multithread.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 multithread.o: /usr/include/sys/int_types.h ../global/internal_lib.h
 multithread.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
-multithread.o: schedule_init.h repfuns_init.h blocks_init.h blocks_expand.h
+multithread.o: schedule_init.h repfuns_init.h blocks_init.h
+multithread.o: blocks_propagate.h blocks_expand.h mtfuns_init.h blocks_cons.h
+multithread.o: dataflow_analysis.h
 multithread_lib.o: ../../inc/dbug.h /usr/include/stdio.h
 multithread_lib.o: /usr/include/sys/feature_tests.h
 multithread_lib.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 multithread_lib.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-multithread_lib.o: ../tree/tree_basic.h ../global/types.h ../tree/free.h
-multithread_lib.o: ../global/my_debug.h /usr/include/malloc.h
-multithread_lib.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-multithread_lib.o: /usr/include/sys/int_types.h ../global/globals.h
-multithread_lib.o: ../global/internal_lib.h ../tree/DupTree.h
-multithread_lib.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h
+multithread_lib.o: /usr/include/string.h ../tree/tree_basic.h
+multithread_lib.o: ../global/types.h ../tree/free.h ../global/my_debug.h
+multithread_lib.o: /usr/include/malloc.h /usr/include/sys/types.h
+multithread_lib.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+multithread_lib.o: ../global/globals.h ../global/internal_lib.h
+multithread_lib.o: ../tree/DupTree.h ../tree/LookUpTable.h
+multithread_lib.o: ../tree/DataFlowMask.h
 repfuns_init.o: ../../inc/dbug.h /usr/include/stdio.h
 repfuns_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 repfuns_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -116,6 +177,7 @@ repfuns_init.o: ../optimize/generatemasks.h ../tree/free.h
 repfuns_init.o: ../global/my_debug.h /usr/include/malloc.h
 repfuns_init.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 repfuns_init.o: /usr/include/sys/int_types.h ../global/internal_lib.h
+repfuns_init.o: multithread_lib.h
 schedule_init.o: ../../inc/dbug.h /usr/include/stdio.h
 schedule_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 schedule_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h

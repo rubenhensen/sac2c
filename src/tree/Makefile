@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.10  2000/03/16 14:32:53  dkr
+# make deps done
+#
 # Revision 1.9  2000/03/01 14:52:44  dkr
 # make deps done
 #
@@ -93,8 +96,8 @@ DupTree.o: ../global/globals.h ../global/internal_lib.h traverse.h free.h
 DupTree.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 DupTree.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 DupTree.o: /usr/include/sys/int_types.h DupTree.h LookUpTable.h
-DupTree.o: DataFlowMask.h ../optimize/Inline.h ../typecheck/typecheck.h
-DupTree.o: scheduling.h ../optimize/generatemasks.h
+DupTree.o: DataFlowMask.h DataFlowMaskUtils.h ../optimize/Inline.h
+DupTree.o: ../typecheck/typecheck.h scheduling.h ../optimize/generatemasks.h
 LookUpTable.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 LookUpTable.o: /usr/include/sys/isa_defs.h tree.h ../global/types.h
 LookUpTable.o: tree_basic.h tree_compound.h ../global/Error.h
@@ -160,7 +163,9 @@ traverse.o: ../typecheck/new_typecheck.h ../multithread/multithread.h
 traverse.o: ../flatten/lac2fun.h ../flatten/fun2lac.h ../flatten/adjust_ids.h
 traverse.o: ../multithread/schedule_init.h ../multithread/blocks_init.h
 traverse.o: ../multithread/blocks_expand.h ../multithread/repfuns_init.h
-traverse.o: traverse.h
+traverse.o: ../multithread/mtfuns_init.h ../multithread/blocks_cons.h
+traverse.o: ../multithread/dataflow_analysis.h
+traverse.o: ../multithread/blocks_propagate.h traverse.h
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 tree.o: /usr/include/sys/isa_defs.h tree.h ../global/types.h tree_basic.h
 tree.o: tree_compound.h ../global/Error.h /usr/include/stdio.h

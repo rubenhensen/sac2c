@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.20  2000/03/16 14:32:41  dkr
+# make deps done
+#
 # Revision 2.19  2000/03/16 14:16:43  dkr
 # target types.h updated
 #
@@ -209,8 +212,6 @@ main.o: ../compile/wltransform.h ../concurrent/concurrent.h
 main.o: ../compile/precompile.h ../compile/compile.h ../modules/cccall.h
 main.o: ../compile/Old2NewWith.h interrupt.h options.h
 main.o: ../multithread/multithread.h
-my_debug.o: ../tree/node_info.mac ../tree/prf_node_info.mac
-my_debug.o: ../tree/type_info.mac
 options.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 options.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h /usr/include/stdio.h
 options.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
