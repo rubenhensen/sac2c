@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2001/03/23 09:29:29  nmw
+ * SSACSEdo/while removed
+ *
  * Revision 1.2  2001/03/07 15:58:35  nmw
  * SSA Common Subexpression Elimination implemented
  *
@@ -41,7 +44,5 @@ extern node *SSACSEap (node *arg_node, node *arg_info);
 extern node *SSACSEid (node *arg_node, node *arg_info);
 extern node *SSACSENwith (node *arg_node, node *arg_info);
 extern node *SSACSENcode (node *arg_node, node *arg_info);
-extern node *SSACSEwhile (node *arg_node, node *arg_info);
-extern node *SSACSEdo (node *arg_node, node *arg_info);
 
 #endif /* SAC_SSACSE_H */
