@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2003/11/18 17:51:20  dkr
+ * NWITHOP_DEFAULT added
+ *
  * Revision 3.15  2003/06/11 21:52:05  ktr
  * Added support for multidimensional arrays.
  *
@@ -864,6 +867,10 @@ APTwithop (node *arg_node, node *arg_info)
             INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
         }
 
+        /* check all sons for paddable code */
+        if (NWITHOP_DEFAULT (arg_node) != NULL) {
+            NWITHOP_DEFAULT (arg_node) = Trav (NWITHOP_DEFAULT (arg_node), arg_info);
+        }
         break;
 
     case WO_modarray:
@@ -882,11 +889,9 @@ APTwithop (node *arg_node, node *arg_info)
 
             INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
         }
-
         break;
 
     case WO_foldfun:
-
         DBUG_PRINT ("APT", (" foldfun-loop"));
 
         /* check all sons for paddable code */
