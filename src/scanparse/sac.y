@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.30  2000/10/31 18:06:27  cg
+ * main() function is now tagged ST_exported.
+ *
  * Revision 2.29  2000/10/26 14:17:48  dkr
  * MakeShpseg used :-)
  *
@@ -1451,7 +1454,8 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R { $$=MakeNode(N_fundef); } exprblock
           $$->info.types=MakeTypes1(T_int);  /* Knoten fu"r Typinformation */ 
           $$->info.types->id=(char *)MALLOC(sizeof(char)*5); 
           strcpy($$->info.types->id, "main");   /* Funktionsnamen eintragen */
-
+          FUNDEF_STATUS($$) = ST_exported;
+          
           DBUG_PRINT("GENTREE",("%s:"P_FORMAT", main "P_FORMAT
                                 "  %s (" P_FORMAT ") ",
                                 mdb_nodetype[$$->nodetype], $$, 
