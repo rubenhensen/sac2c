@@ -1,14 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.109  2004/12/19 20:05:38  sbs
- * TOT call eliminated
- *
- * Revision 3.108  2004/12/19 14:32:42  sbs
- * TOT header included
- *
- * Revision 3.107  2004/12/19 13:37:17  sbs
- * replaced NT2OT by TOT traversal
+ * Revision 3.110  2004/12/19 22:34:42  sbs
+ * *** empty log message ***
  *
  * Revision 3.106  2004/11/29 16:50:43  sah
  * added another nt2ot traversal
@@ -38,7 +32,7 @@
 #include "functionprecompile.h"
 #include "typeconv_precompile.h"
 #include "renameidentifiers.h"
-#include "ToOldTypes.h"
+#include "new2old.h"
 #include "setlinksign.h"
 
 #include <string.h>
@@ -61,6 +55,12 @@ node *
 PRECdoPrecompile (node *syntax_tree)
 {
     DBUG_ENTER ("Precompile");
+
+    /*
+     * Fix Oldtypes in ast
+     */
+    DBUG_EXECUTE ("PREC", NOTE (("step -1: fix oldtypes\n")));
+    syntax_tree = NT2OTdoTransform (syntax_tree);
 
     /*
      * Set Linksign
@@ -137,14 +137,8 @@ DONE:
 /*
  *
  * $Log$
- * Revision 3.109  2004/12/19 20:05:38  sbs
- * TOT call eliminated
- *
- * Revision 3.108  2004/12/19 14:32:42  sbs
- * TOT header included
- *
- * Revision 3.107  2004/12/19 13:37:17  sbs
- * replaced NT2OT by TOT traversal
+ * Revision 3.110  2004/12/19 22:34:42  sbs
+ * *** empty log message ***
  *
  * Revision 3.106  2004/11/29 16:50:43  sah
  * added another nt2ot traversal
