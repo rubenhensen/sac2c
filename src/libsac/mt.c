@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/06/15 12:34:44  ben
+ * SAC_MT_TS_Tasklock[] initialaztion added
+ *
  * Revision 3.8  2001/05/21 12:41:17  ben
  * SAC_MT_Setup modified for initilization of SAC_MT_TASK_LOCKS depending on
  * SAC_MT_SET_NUM_SCHEDULERS
@@ -126,6 +129,8 @@
 extern volatile SAC_MT_barrier_t SAC_MT_barrier_space[];
 
 extern pthread_mutex_t SAC_MT_Tasklock[];
+
+extern pthread_mutex_t SAC_MT_TS_Tasklock[];
 
 extern volatile int SAC_MT_Task[];
 
@@ -401,10 +406,12 @@ SAC_MT_Setup (int cache_line_max, int barrier_offset, int num_schedulers)
 
     SAC_TR_PRINT (("Initialzing Tasklocks."));
 
-    for (n = 0; n < num_schedulers; n++)
+    for (n = 0; n < num_schedulers; n++) {
+        pthread_mutex_init (&(SAC_MT_TS_TASKLOCK (n)), NULL);
         for (i = 0; i < SAC_MT_threads; i++) {
-            pthread_mutex_init (&(SAC_MT_TASKLOCK (n, i, num_schedulers)), NULL);
+            pthread_mutex_init (&(SAC_MT_TASKLOCK_INIT (n, i, num_schedulers)), NULL);
         }
+    }
 
     SAC_TR_PRINT (("Computing thread class of master thread."));
 
