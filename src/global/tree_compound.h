@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.25  1995/12/21 10:36:55  cg
+ * Revision 1.26  1995/12/21 13:25:55  asi
+ * added WITH_OPERATORDEFMASK, WITH_OPERATORUSEMASK, OPERATOR_DEFMASK and OPERATOR_USEMASK
+ *
+ * Revision 1.25  1995/12/21  10:36:55  cg
  * added function CountFunctionParams
  *
  * Revision 1.24  1995/12/20  08:16:50  cg
@@ -1055,9 +1058,12 @@ extern node *GetCompoundNode (node *arg_node);
 #define WITH_RIGHT(n) (GEN_RIGHT (WITH_GEN (n)))
 #define WITH_ID(n) (GEN_ID (WITH_GEN (n)))
 
-#define WITH_ARRAYUSEMASK(n) (BLOCK_USEMASK (WITH_BODY (n)))
 #define WITH_GENDEFMASK(n) (GEN_DEFMASK (WITH_GEN (n)))
 #define WITH_GENUSEMASK(n) (GEN_USEMASK (WITH_GEN (n)))
+
+#define WITH_OPERATORDEFMASK(n) (OPERATOR_USEMASK (WITH_OPERATOR (n)))
+#define WITH_OPERATORUSEMASK(n) (OPERATOR_USEMASK (WITH_OPERATOR (n)))
+
 #define WITH_BODYDEFMASK(n) (WITH_MASK (n, 0))
 #define WITH_BODYUSEMASK(n) (WITH_MASK (n, 0))
 
@@ -1067,11 +1073,16 @@ extern node *GetCompoundNode (node *arg_node);
  ***  N_genarray :
  ***/
 
+#define OPERATOR_DEFMASK(n) OPERATOR_MASK (n, 0)
+#define OPERATOR_USEMASK(n) OPERATOR_MASK (n, 1)
+
 /*--------------------------------------------------------------------------*/
 
 /***
  ***  N_modarray :
  ***/
+
+/* see N_genarray for OPERATOR_DEFMASK and OPERATOR_USEMASK */
 
 /*--------------------------------------------------------------------------*/
 
@@ -1079,11 +1090,15 @@ extern node *GetCompoundNode (node *arg_node);
  ***  N_foldprf :
  ***/
 
+/* see N_genarray for OPERATOR_DEFMASK and OPERATOR_USEMASK */
+
 /*--------------------------------------------------------------------------*/
 
 /***
  ***  N_foldfun :
  ***/
+
+/* see N_genarray for OPERATOR_DEFMASK and OPERATOR_USEMASK */
 
 /*--------------------------------------------------------------------------*/
 
