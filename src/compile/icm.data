@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.49  1998/08/07 12:30:57  dkr
+ * fixed signature of MT_ADJUST_SCHEDULER
+ *
  * Revision 1.48  1998/08/06 17:19:34  dkr
  * changed signature of ICM ND_KS_VECT2OFFSET
  *
@@ -623,12 +626,14 @@ ICM_END( WL_FOLD_NOOP, (dim, dims_target, target, idx_vec, dims, idx_scalars,
 #if defined(WL_ADJUST_OFFSET) || defined(ICM_ALL)
 ICM_DEF( WL_ADJUST_OFFSET, NO_TRACE)
   ICM_INT(dim)
+  ICM_INT(first_block_dim)
   ICM_INT(dims_target)
   ICM_STR(target)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
-ICM_END( WL_ADJUST_OFFSET, (dim, dims_target, target, idx_vec, dims, idx_scalars))
+ICM_END( WL_ADJUST_OFFSET, (dim, first_block_dim,
+                            dims_target, target, idx_vec, dims, idx_scalars))
 #endif
 
 
@@ -764,7 +769,7 @@ ICM_DEF( MT_ADJUST_SCHEDULER, NO_TRACE)
   ICM_INT(lower)
   ICM_INT(unrolling)
   ICM_STR(array)
-ICM_END( MT_ADJUST_SCHEDULER, (current_dim, array_dim, lower, unrolling))
+ICM_END( MT_ADJUST_SCHEDULER, (current_dim, array_dim, lower, unrolling, array))
 #endif
 
 
