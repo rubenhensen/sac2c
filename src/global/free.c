@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1996/01/22 09:38:55  cg
+ * Revision 1.19  1996/02/11 20:19:01  sbs
+ * some minor corrections on stuff concerning N_vinfo
+ *
+ * Revision 1.18  1996/01/22  09:38:55  cg
  * modified FreeObjdef with respect to new pragmas
  *
  * Revision 1.17  1996/01/07  16:52:11  cg
@@ -1053,7 +1056,7 @@ FreeVinfo (node *arg_node, node *arg_info)
 
     tmp = FREECONT (VINFO_NEXT (arg_node));
 
-    FREE (VINFO_SHP (arg_node));
+    FREE (VINFO_TYPE (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_vinfo node ..."));
 
