@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2001/04/26 21:06:21  dkr
+ * DupTypesOnly() added
+ *
  * Revision 3.45  2001/04/26 11:55:56  nmw
  * ICM_FUNDEF attribute added to DupIcm
  *
@@ -2534,7 +2537,10 @@ DupShpseg (shpseg *old_shpseg)
  *   types *DupTypes( types* type)
  *
  * Description:
+ *   This function duplicates the (real) types-structure. Unfortunately, it
+ *   is *not* identical to the (virtual) TYPES-structure  8-((
  *
+ *   For duplicating the (virtual) TYPES-structure only, use DupTypesOnly() !!!
  *
  ******************************************************************************/
 
@@ -2547,7 +2553,6 @@ DupTypes (types *old_types)
 
     new_types = DupTypes_ (old_types, NULL);
 
-#if 1
     /*
      * these entries are *not* part of the TYPES structure
      *  but part of the TYPEDEF/OBDEF/FUNDEF/ARG/VARDEC node!!
@@ -2557,9 +2562,48 @@ DupTypes (types *old_types)
     new_types->id_cmod = StringCopy (old_types->id_cmod);
     new_types->attrib = old_types->attrib;
     new_types->status = old_types->status;
-#endif
 
     DBUG_RETURN (new_types);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void DupTypesOnly( types** target, types* source)
+ *
+ * Description:
+ *   Duplicates the (virtual) TYPES-structure. Unfortunately, the (real)
+ *   types-structure contains *more* items than TYPES. Therefore, the target
+ *   must be given as a reference parameter und some items must be restored
+ *   after generating the new types-structure.
+ *
+ *   See also DupTypes()
+ *
+ ******************************************************************************/
+
+void
+DupTypesOnly (types **target, types *source)
+{
+    types *old_types;
+
+    DBUG_ENTER ("DupTypesOnly");
+
+    DBUG_ASSERT ((target != NULL), "no target given!");
+
+    old_types = (*target);
+
+    (*target) = DupTypes (source);
+    FREE ((*target)->id);
+    FREE ((*target)->id_mod);
+    FREE ((*target)->id_cmod);
+
+    (*target)->id = old_types->id;
+    (*target)->id_mod = old_types->id_mod;
+    (*target)->id_cmod = old_types->id_cmod;
+
+    old_types = FreeOneTypes (old_types);
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************

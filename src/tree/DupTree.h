@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/04/26 21:06:30  dkr
+ * DupTypesOnly() added
+ *
  * Revision 3.13  2001/04/04 09:57:26  nmw
  * DupSSAcnt added
  *
@@ -108,6 +111,7 @@ extern ids *DupOneIds (ids *old_ids);
 extern ids *DupAllIds (ids *old_ids);
 extern shpseg *DupShpseg (shpseg *old_shpseg);
 extern types *DupTypes (types *old_types);
+extern void DupTypesOnly (types **target, types *source);
 extern nodelist *DupNodelist (nodelist *old_nl);
 
 /*
