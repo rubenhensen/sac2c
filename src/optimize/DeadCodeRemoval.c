@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  1998/02/26 12:34:40  srs
+ * changed traversal of new WL
+ *
  * Revision 1.19  1998/02/24 15:46:19  srs
  * fixed bug in DCRfundef
  *
@@ -851,7 +854,9 @@ ACTNwith (node *arg_node, node *arg_info)
  *
  * description:
  *   All variables which are used in the generator are activated.
- *   Bodies belonging to the generator are traversed.
+ *   The body is traversed in a new active-list scope, the index variables
+ *   are removed from this list and the active variables are added to the
+ *   superior active-list.
  *
  * remarks:
  *   The variables which are DEFined in the N_Nwithid node do not have to
@@ -866,21 +871,31 @@ node *
 ACTNpart (node *arg_node, node *arg_info)
 {
     int i;
+    long *old_INFOACT;
 
     DBUG_ENTER ("ACTNpart");
 
+    /* create new scope */
+    old_INFOACT = INFO_ACT;
+    INFO_ACT = GenMask (INFO_VARNO);
+
     /* activate all used vars in body. */
     /* if code is shared between Nparts this code will be traversed
-       multiple times. */
+       multiple times. But this is necessary because the generators may
+       differ. (Well, practically the index variables will be identical.) */
     NPART_CODE (arg_node) = Trav (NPART_CODE (arg_node), arg_info);
 
-    /* activate all vars which are used in the generator */
     for (i = 0; i < INFO_VARNO; i++)
-        INFO_ACT[i] = INFO_ACT[i] || NPART_MASK (arg_node, 1)[i];
+        INFO_ACT[i]
+          = (INFO_ACT[i] && !NPART_MASK (arg_node, 0)[i]) || /* deactivate withid vars */
+            NPART_MASK (arg_node,
+                        1)[i]; /* activate all vars which are used in the generator */
 
-    /* deactivate withid vars */
+    /* merge ACT lists */
     for (i = 0; i < INFO_VARNO; i++)
-        INFO_ACT[i] = INFO_ACT[i] && !NPART_MASK (arg_node, 0)[i];
+        INFO_ACT[i] = INFO_ACT[i] || old_INFOACT[i];
+
+    FREE (old_INFOACT);
 
     /* next N_Npart */
     if (NPART_NEXT (arg_node))
@@ -895,8 +910,7 @@ ACTNpart (node *arg_node, node *arg_info)
  *   node *ACTNcode(node *arg_node, node *arg_info)
  *
  * description:
- *   create active-list for current body and add active variables to the
- *   superior active-list.
+ *   count active variables for body
  *
  * attention:
  *   We need to activate the NCODE_CEXPR before traversing the NCODE_CBLOCK
@@ -909,12 +923,8 @@ node *
 ACTNcode (node *arg_node, node *arg_info)
 {
     int i;
-    long *old_INFOACT;
 
     DBUG_ENTER ("ACTNcode");
-
-    old_INFOACT = INFO_ACT;
-    INFO_ACT = GenMask (INFO_VARNO);
 
     /* activate NCODE_CEXPR */
     /* we should have an id since flatten phase */
@@ -925,11 +935,6 @@ ACTNcode (node *arg_node, node *arg_info)
     /* traverse body */
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
-    for (i = 0; i < INFO_VARNO; i++)
-        INFO_ACT[i] = INFO_ACT[i] || old_INFOACT[i];
-
-    FREE (old_INFOACT);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -939,7 +944,7 @@ ACTNcode (node *arg_node, node *arg_info)
  *   node *DCRNwith(node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   Traverses into the WL bodies of active WLs.
  *
  *
  ******************************************************************************/
