@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.35  1995/11/13 09:04:35  asi
+ * Revision 1.36  1995/12/01 17:19:48  cg
+ * macro FREE removed.
+ *
+ * Revision 1.35  1995/11/13  09:04:35  asi
  * added breakae
  *
  * Revision 1.34  1995/07/24  11:48:52  asi
@@ -123,6 +126,8 @@
 
 #define _optimize_h
 
+#include "free.h"
+
 /*
  * Global variables defined in main.c
  */
@@ -165,6 +170,14 @@ extern int elim_arrays;
 
 #define VAR_LENGTH 10
 
+/*
+ *  The following lines should no longer be used.
+ *  Concerning memory allocation/deallocation see free and internal_lib
+ *  Concerning warnings see Error.[ch]
+ */
+
+#if 0
+
 #define WARNO(s)                                                                         \
     if (!silent) {                                                                       \
         DoPrint s;                                                                       \
@@ -172,8 +185,8 @@ extern int elim_arrays;
     }
 
 #ifdef MALLOC_OPT
-extern int malloc_verify ();
-extern int malloc_debug (int level);
+extern int malloc_verify();
+extern int malloc_debug(int level);
 #endif /*MALLOC_OPT */
 
 #ifdef MALLOC_OPT
@@ -186,6 +199,8 @@ extern int malloc_debug (int level);
     DBUG_PRINT ("MEM", ("Give memory free at adress: %08x", address));                   \
     free (address)
 #endif /*MALLOC_OPT */
+
+#endif /* 0 */
 
 extern node *Optimize (node *arg_node);
 
