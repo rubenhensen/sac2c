@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.181  2004/08/08 15:47:55  ktr
+ * PREC1prf added.
+ *
  * Revision 3.180  2004/08/07 16:01:01  sbs
  * SSAwith2 added for N_Nwith2 support
  *
@@ -1946,7 +1949,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, IdxPrf, TravSons, TravSons, AEprf,
 
        PrintPrf, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TCWLprf,
+       TravSons, PREC1prf, TravSons, TravSons, TravSons, TravSons, TravSons, TCWLprf,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
