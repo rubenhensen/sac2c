@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/11/01 16:25:01  cg
+ * Revision 1.14  1995/11/02 16:26:28  cg
+ * new compound access macros FUNDEF_VARDEC and FUNDEF_INSTR.
+ *
+ * Revision 1.13  1995/11/01  16:25:01  cg
  * new function AppendIdsChain from tree.c and converted to new macros
  *
  * Revision 1.12  1995/10/31  08:54:43  cg
@@ -643,6 +646,9 @@ extern node *SearchObjdef (char *name, char *mod, node *implementations);
 
 #define FUNDEF_NEEDFUNS(n) (BLOCK_NEEDFUNS (FUNDEF_BODY (n)))
 #define FUNDEF_NEEDTYPES(n) (BLOCK_NEEDTYPES (FUNDEF_BODY (n)))
+
+#define FUNDEF_VARDEC(n) (BLOCK_VARDEC (FUNDEF_BODY (n)))
+#define FUNDEF_INSTR(n) (BLOCK_INSTR (FUNDEF_BODY (n)))
 
 /*
  *  The following compound access macros are useful whenever a fundef
