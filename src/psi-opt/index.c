@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2004/11/27 01:49:28  mwe
+ * remaining Idx to IVE renaimed
+ *
  * Revision 3.66  2004/11/27 00:53:53  jhb
  * fixed bug in LiftArg
  *
@@ -1304,13 +1307,13 @@ MergeCopyTop (node *actchn)
  ******************************************************************************/
 
 char *
-IdxChangeId (char *varname, shape *shp)
+IVEchangeId (char *varname, shape *shp)
 {
     static char buffer[1024];
     static char buffer2[32];
     int i;
 
-    DBUG_ENTER ("IdxChangeId");
+    DBUG_ENTER ("IVEchangeId");
 
     sprintf (buffer, "%s", varname);
     for (i = 0; i < SHgetDim (shp); i++) {
@@ -1336,14 +1339,14 @@ IdxChangeId (char *varname, shape *shp)
  ******************************************************************************/
 
 char *
-IdxChangeIdOld (char *varname, types *type)
+IVEchangeIdOld (char *varname, types *type)
 {
     shpseg *tmp_shpseg;
     static char buffer[1024];
     static char buffer2[32];
     int i;
 
-    DBUG_ENTER ("IdxChangeIdExt");
+    DBUG_ENTER ("IVEchangeIdExt");
 
     sprintf (buffer, "%s", varname);
     tmp_shpseg = TCtype2Shpseg (type, NULL);
@@ -2936,7 +2939,7 @@ IVEdo (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-IndexVectorElimination (node *syntax_tree)
+IVEdoIndexVectorElimination (node *syntax_tree)
 {
     info *info;
 
