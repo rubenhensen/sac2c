@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.11  2000/10/26 12:49:53  dkr
+ * DupIds renamed into DupAllIds
+ *
  * Revision 2.10  2000/10/23 10:36:55  dkr
  * function MakeId2 removed
  *
@@ -534,10 +537,10 @@ Eliminate (node *arg_node, node *equal_node, node *arg_info)
     case N_double:
     case N_str:
     case N_bool:
-        ids_node = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), NULL);
+        ids_node = DupAllIds (LET_IDS (ASSIGN_INSTR (equal_node)));
         id_node = MakeId (NULL, NULL, ST_regular);
         ID_IDS (id_node) = ids_node;
-        ids_node = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), NULL);
+        ids_node = DupAllIds (LET_IDS (ASSIGN_INSTR (arg_node)));
         let_node = MakeLet (id_node, ids_node);
         new_node = MakeAssign (let_node, NULL);
         break;
@@ -546,10 +549,10 @@ Eliminate (node *arg_node, node *equal_node, node *arg_info)
 #endif
     case N_prf:
         if (CheckScope (MRD_LIST, equal_node, INFO_VARNO (arg_info), TRUE)) {
-            ids_node = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), NULL);
+            ids_node = DupAllIds (LET_IDS (ASSIGN_INSTR (equal_node)));
             id_node = MakeId (NULL, NULL, ST_regular);
             ID_IDS (id_node) = ids_node;
-            ids_node = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), NULL);
+            ids_node = DupAllIds (LET_IDS (ASSIGN_INSTR (arg_node)));
             let_node = MakeLet (id_node, ids_node);
             new_node = MakeAssign (let_node, NULL);
         } else {
@@ -560,8 +563,8 @@ Eliminate (node *arg_node, node *equal_node, node *arg_info)
         if (CheckScope (MRD_LIST, equal_node, INFO_VARNO (arg_info), TRUE)) {
             ids *ids1, *ids2;
 
-            ids1 = DupIds (LET_IDS (ASSIGN_INSTR (arg_node)), NULL);
-            ids2 = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), NULL);
+            ids1 = DupAllIds (LET_IDS (ASSIGN_INSTR (arg_node)));
+            ids2 = DupAllIds (LET_IDS (ASSIGN_INSTR (equal_node)));
             new_node = GenNodes4Ap (ids1, ids2, arg_info);
         } else {
             new_node = NULL;

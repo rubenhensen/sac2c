@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/10/26 12:53:18  dkr
+ * DupIds renamed into DupAllIds
+ *
  * Revision 2.15  2000/10/24 11:53:55  dkr
  * MakeType renamed into MakeTypes
  *
@@ -294,7 +297,7 @@ GenPsi (ids *ids_node, node *arg_info)
           = MakeTypes (T_int, 1, MakeShpseg (MakeNums (1, NULL)), NULL, NULL);
 
         arg[1] = MakeNode (N_id);
-        arg[1]->info.ids = DupIds (ids_node, NULL);
+        arg[1]->info.ids = DupAllIds (ids_node);
 
         new_let = MakeNode (N_let);
         new_let->info.ids = GenIds (arg);

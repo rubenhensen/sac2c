@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.55  2000/10/26 12:47:58  dkr
+ * DupIds renamed into DupAllIds
+ *
  * Revision 2.54  2000/10/24 13:22:43  dkr
  * MakeTypes renamed into MakeTypes1
  * MakeType renamed into MakeTypes
@@ -7256,7 +7259,7 @@ TI_Nwith (node *arg_node, node *arg_info)
                       = MakeAssign (MakeLet (MakeCast (MakeArray (NULL),
                                                        MakeTypes (T_int, UNKNOWN_SHAPE,
                                                                   NULL, NULL, NULL)),
-                                             DupIds (NWITH_VEC (arg_node), NULL)),
+                                             DupAllIds (NWITH_VEC (arg_node))),
                                     BLOCK_INSTR (
                                       NCODE_CBLOCK (NPART_CODE (NWITH_PART (arg_node)))));
 
