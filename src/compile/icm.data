@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/05/24 15:28:01  sbs
- * inclusion of trace.h eliminated
+ * Revision 1.16  1995/06/02 08:48:13  hw
+ * ND_BEGIN_FOLDPRF, ND_BEGIN_FOLDFUN and ND_END_FOLD inserted
  *
+# Revision 1.15  1995/05/24  15:28:01  sbs
+# inclusion of trace.h eliminated
+#
 # Revision 1.14  1995/05/24  13:58:31  sbs
 # ND_KS_DECL_ARRAY_ARG inserted
 #
@@ -239,5 +242,36 @@ ICM_DEF( ND_END_MODARRAY_A, TRACE_WST)
   ICM_STR( reta)
   ICM_INT(idxlen)
 ICM_END( ND_END_MODARRAY_S )
+#endif
+
+#if defined(ND_BEGIN_FOLDPRF) || defined(ICM_ALL)
+ICM_DEF( ND_BEGIN_FOLDPRF, TRACE_WST)
+  ICM_STR( res)
+  ICM_INT(dimres)
+  ICM_VAR( 1, valstr)
+  ICM_STR( from)
+  ICM_STR( to)
+  ICM_STR( idx)
+  ICM_INT( idxlen)
+ICM_END( ND_BEGIN_FOLDPRF )
+#endif
+
+
+#if defined(ND_END_FOLD) || defined(ICM_ALL)
+ICM_DEF( ND_END_FOLD, TRACE_WST)
+   ICM_INT( idxlen)
+ICM_END( ND_END_FOLD)
+#endif
+
+#if defined(ND_BEGIN_FOLDFUN) || defined(ICM_ALL)
+ICM_DEF( ND_BEGIN_FOLDFUN, TRACE_WST)
+  ICM_STR( res)
+  ICM_INT(dimres)
+  ICM_VAR( 1, valstr)
+  ICM_STR( from)
+  ICM_STR( to)
+  ICM_STR( idx)
+  ICM_INT( idxlen)
+ICM_END( ND_BEGIN_FOLDFUN )
 #endif
 
