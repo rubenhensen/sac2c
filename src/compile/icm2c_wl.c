@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/01/30 12:21:58  dkr
+ * PrintTraceICM() modified
+ * implementation of ICMs WL_NOOP, WL_NOOP__OFFSET modified
+ *
  * Revision 3.9  2001/01/25 12:08:16  dkr
  * layout of ICMs WL_SET_OFFSET and WL_INIT_OFFSET modified.
  *
@@ -174,13 +178,13 @@ PrintTraceICM (char *target, char *idx_vec, int dims, char **idx_scalars, char *
     DBUG_ENTER ("PrintTraceICM");
 
     INDENT;
-    fprintf (outfile, "SAC_TR_WL_PRINT((\"index vector [%%d");
+    fprintf (outfile, "SAC_TR_WL_PRINT( (\"index vector [%%d");
     for (i = 1; i < dims; i++) {
         fprintf (outfile, ", %%d");
     }
     fprintf (outfile, "]");
     if (print_offset) {
-        fprintf (outfile, " -- offset %%d");
+        fprintf (outfile, " (== offset %%d) -- offset %%d");
     }
     fprintf (outfile, " -- %s", operation);
     fprintf (outfile, "\", %s", idx_scalars[0]);
@@ -188,6 +192,14 @@ PrintTraceICM (char *target, char *idx_vec, int dims, char **idx_scalars, char *
         fprintf (outfile, ", %s", idx_scalars[i]);
     }
     if (print_offset) {
+        fprintf (outfile, ", ");
+        for (i = dims - 1; i > 0; i--) {
+            fprintf (outfile, "( SAC_ND_A_SHAPE( %s, %d) * ", target, i);
+        }
+        fprintf (outfile, "%s ", idx_scalars[0]);
+        for (i = 1; i < dims; i++) {
+            fprintf (outfile, "+ %s )", idx_scalars[i]);
+        }
         fprintf (outfile, ", SAC_WL_OFFSET( %s)", target);
     }
     fprintf (outfile, "));\n");
@@ -198,7 +210,7 @@ PrintTraceICM (char *target, char *idx_vec, int dims, char **idx_scalars, char *
 /******************************************************************************
  *
  * Function:
- *   void PrintShapeFactor( int current_dim, int target_dim, char *target)
+ *   void PrintShapeFactor( int current_dim, int dims_target, char *target)
  *
  * Description:
  *
@@ -206,13 +218,13 @@ PrintTraceICM (char *target, char *idx_vec, int dims, char **idx_scalars, char *
  ******************************************************************************/
 
 static void
-PrintShapeFactor (int current_dim, int target_dim, char *target)
+PrintShapeFactor (int current_dim, int dims_target, char *target)
 {
     int j;
 
     DBUG_ENTER ("PrintShapeFactor");
 
-    for (j = current_dim + 1; j < target_dim; j++) {
+    for (j = current_dim + 1; j < dims_target; j++) {
         fprintf (outfile, " * SAC_ND_A_SHAPE( %s, %d)", target, j);
     }
 
@@ -629,10 +641,10 @@ ICMCompileWL_FOLD__OFFSET (int dims_target, char *target, char *idx_vec, int dim
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_NOOP__OFFSET( int dims_target, char *target,
+ *   void ICMCompileWL_NOOP__OFFSET( int dim,
+ *                                   int dims_target, char *target,
  *                                   char *idx_vec,
- *                                   int dims, char **idx_scalars,
- *                                   int cnt_bounds, char **bounds)
+ *                                   int dims, char **idx_scalars)
  *
  * description:
  *   Implements the compilation of the following ICM:
@@ -642,8 +654,8 @@ ICMCompileWL_FOLD__OFFSET (int dims_target, char *target, char *idx_vec, int dim
  ******************************************************************************/
 
 void
-ICMCompileWL_NOOP__OFFSET (int dims_target, char *target, char *idx_vec, int dims,
-                           char **idx_scalars)
+ICMCompileWL_NOOP__OFFSET (int dim, int dims_target, char *target, char *idx_vec,
+                           int dims, char **idx_scalars)
 {
     DBUG_ENTER ("ICMCompileWL_NOOP__OFFSET");
 
@@ -655,7 +667,9 @@ ICMCompileWL_NOOP__OFFSET (int dims_target, char *target, char *idx_vec, int dim
     INDENT;
     fprintf (outfile, "/* noop */\n");
     INDENT;
-    fprintf (outfile, "SAC_WL_OFFSET( %s)++;\n", target);
+    fprintf (outfile, "SAC_WL_OFFSET( %s) += 1", target);
+    PrintShapeFactor (dim, dims_target, target);
+    fprintf (outfile, ";\n");
 
     DBUG_VOID_RETURN;
 }
@@ -663,10 +677,10 @@ ICMCompileWL_NOOP__OFFSET (int dims_target, char *target, char *idx_vec, int dim
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_NOOP( int dims_target, char *target,
+ *   void ICMCompileWL_NOOP( int dim,
+ *                           int dims_target, char *target,
  *                           char *idx_vec,
- *                           int dims, char **idx_scalars,
- *                           int cnt_bounds, char **bounds)
+ *                           int dims, char **idx_scalars)
  *
  * description:
  *   Implements the compilation of the following ICM:
@@ -676,7 +690,7 @@ ICMCompileWL_NOOP__OFFSET (int dims_target, char *target, char *idx_vec, int dim
  ******************************************************************************/
 
 void
-ICMCompileWL_NOOP (int dims_target, char *target, char *idx_vec, int dims,
+ICMCompileWL_NOOP (int dim, int dims_target, char *target, char *idx_vec, int dims,
                    char **idx_scalars)
 {
     DBUG_ENTER ("ICMCompileWL_NOOP");
