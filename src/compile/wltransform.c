@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2001/04/03 09:31:02  dkr
+ * no changes done
+ *
  * Revision 3.42  2001/04/02 17:06:42  dkr
  * illegal wlcomp-pragma functions produce a warning now instead of an
  * error
@@ -275,13 +278,14 @@ For every segment the following steps must be performed:
 
     The splitting is a preparation for the merging (see step 6). At first glance
     it seems to be a good idea to perform splitting and merging alternating on
-    each dimension: Each group formed after splitting a single dimension contains
-    exactly the projections that must be joined in the merging step.
+    each dimension: Each group formed after splitting a single dimension
+    contains exactly the projections that must be joined in the merging step.
     Nevertheless it is easier and clearer to separate these two steps from each
-    other: On the one hand the merging can be performed *after* the blocking step
-    only (for the reasons see step 4.), on the other hand the splitting is
+    other: On the one hand the merging can be performed *after* the blocking
+    step only (for the reasons see step 4.), on the other hand the splitting is
     carried out best just *before* the blocking, because while doing so, some
-    grids might move (see example) --- i.e. the contents of a block would change!
+    grids might move (see example) --- i.e. the contents of a block would
+    change!
 
   In the example:
 
@@ -315,9 +319,9 @@ For every segment the following steps must be performed:
 4.) Blocking (without fitting) according to the values in bv
     --------
 
-  The blocking is performed that early because the blocking changes the iteration
-  order on the array. That means, all the following steps --- in perticulary
-  merging and optimize --- must know the concrete blocking.
+  The blocking is performed that early because the blocking changes the
+  iteration order on the array. That means, all the following steps --- in
+  perticulary merging and optimize --- must know the concrete blocking.
   For example: Without blocking the e1-cube is given a step of 9 while merging
                with the e2/e3-cube in the 0th dimension. Afterwards in the
                optimization phase the (0->2)-branches of the two parts can be
@@ -653,8 +657,8 @@ For every segment the following steps must be performed:
 6.) Cube Merging (Makes cubes with identical subtrees compatible and joins them)
     ------------
 
-    -> The tree forms in each dimension a partition of the relevant index-vector-set
-       projection.
+    -> The tree forms in each dimension a partition of the relevant
+       index-vector-set projection.
 
   In the example with bv = (180,158):
 
@@ -761,8 +765,8 @@ For every segment the following steps must be performed:
 7.) Tree Optimization (Joins identical subtrees)
     -----------------
 
-    Projections with consecutive index ranges and identical operations (subtrees)
-    are joined.
+    Projections with consecutive index ranges and identical operations
+    (subtrees) are joined.
 
   In the example with bv = (1,158):
 
@@ -840,7 +844,7 @@ For every segment the following steps must be performed:
 
   In the example with bv = (180,158):
 
-    000->045, block[0] 180:      // boundaries: (050 - 000 = 50) % (step[0] = 9)  =  5
+    000->045, block[0] 180:      // bounds: (050 - 000 = 50) % (step[0] = 9) = 5
         000->150, block[1] 156:  // blocking factor: 158 % (ublock[1] = 6)  =  2
               0->180, step[0] 1
                            0->1: 0->156, ublock[1] 6:
