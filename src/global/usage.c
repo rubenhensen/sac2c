@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/06/23 14:05:49  hw
+ * Revision 1.18  1995/06/26 15:10:50  asi
+ * added shortcuts -noCF -noINL -noUNR -noDCR -noPDCR -noLIR and -noIVE
+ *
+ * Revision 1.17  1995/06/23  14:05:49  hw
  * added -maxoverload
  *
  * Revision 1.16  1995/06/13  08:30:27  asi
@@ -85,15 +88,16 @@ usage (char *prg_name)
     printf ("\t -bc \t\t\tstop unresolved ICM code\n");
 
     printf ("\nOPTIMIZATION OPTIONS:\n");
-    printf ("\t -noopt \t\t\tno optimizations\n");
-    printf ("\t -noconstant_folding  \t\tno constant folding \n");
-    printf ("\t -noinline_functions \t\tno function inlineing \n");
-    printf ("\t -nounroll_loops \t\tno loop unrolling \n");
-    printf ("\t -nodead_code_removal\t\tno dead code removal \n");
-    printf ("\t -nopartial_dead_code_removal\tno partial_dead code removal \n");
-    printf ("\t -noloop_invariant_removal\tno loop invariant removal \n");
-    printf ("\t -nopsi_opt\t\t\tno psi optimisations\n");
-    printf ("\t -noindex_vect_elimination\tno index vector elimination \n");
+    printf ("\t -noopt \t\t\t\t  no optimizations\n");
+    printf ("\t -noconstant_folding or -noCF \t\t  no constant folding \n");
+    printf ("\t -noinline_functions or -noINL\t\t  no function inlineing \n");
+    printf ("\t -nounroll_loops or -noUNR \t\t  no loop unrolling \n");
+    printf ("\t -nodead_code_removal or -noDCR \t  no dead code removal \n");
+    printf (
+      "\t -nopartial_dead_code_removal or -noPDCR  no partial_dead code removal \n");
+    printf ("\t -noloop_invariant_removal or -noLIR \t  no loop invariant removal \n");
+    printf ("\t -nopsi_opt\t\t\t\t  no psi optimisations\n");
+    printf ("\t -noindex_vect_elimination or -noIVE \t  no index vector elimination \n");
 
     printf ("\n\t -maxoptvar <no>\treserve <no> variables for optimization\n"
             "\t\t\t\tDefault: -maxoptvar %d\n",
