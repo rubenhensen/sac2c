@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/01/19 11:57:40  dkr
+ * usage of NodeOrInt_GetNameOrVal() modified
+ *
  * Revision 3.14  2001/01/17 17:42:15  dkr
  * naive compilation finished
  *
@@ -5788,6 +5791,7 @@ static node *
 GenerateCompleteGrids (node *stride)
 {
     node *grid, *grid_next, *tmp;
+    void *pnode1, *pnode2;
     int offset;
     char *name1, *name2;
     int val1, val2;
@@ -5832,11 +5836,11 @@ GenerateCompleteGrids (node *stride)
         while (WLGRIDX_NEXT (grid) != NULL) {
             grid_next = WLGRIDX_NEXT (grid);
 
-            NodeOrInt_GetNameOrVal (&name1, &val1, NODE_TYPE (grid),
-                                    WL_GET_ADDRESS (grid, N_WLgrid, WLGRID, BOUND2));
+            pnode1 = WL_GET_ADDRESS (grid, N_WLgrid, WLGRID, BOUND2);
+            NodeOrInt_GetNameOrVal (&name1, &val1, NODE_TYPE (grid), pnode1);
 
-            NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (grid_next),
-                                    WL_GET_ADDRESS (grid_next, N_WLgrid, WLGRID, BOUND1));
+            pnode2 = WL_GET_ADDRESS (grid_next, N_WLgrid, WLGRID, BOUND1);
+            NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (grid_next), pnode2);
 
             if (!NameOrVal_Eq (name1, val1, name2, val2)) {
                 if ((NODE_TYPE (stride) == N_WLstride) || (val2 - val1 == 1)) {
@@ -5853,9 +5857,9 @@ GenerateCompleteGrids (node *stride)
                      */
                     WLGRIDX_NEXT (grid)
                       = MakeWLgridVar (WLGRIDX_LEVEL (grid), WLGRIDX_DIM (grid),
-                                       NameOrVal_MakeNode (name1, val1),
-                                       NameOrVal_MakeNode (name2, val2), NULL, grid_next,
-                                       NULL);
+                                       NameOrVal_MakeNode (name1, val1, pnode1),
+                                       NameOrVal_MakeNode (name2, val2, pnode2), NULL,
+                                       grid_next, NULL);
                 }
             }
 
@@ -5870,11 +5874,11 @@ GenerateCompleteGrids (node *stride)
         /*
          * fill the gap after the last grid of the current dim
          */
-        NodeOrInt_GetNameOrVal (&name1, &val1, NODE_TYPE (grid),
-                                WL_GET_ADDRESS (grid, N_WLgrid, WLGRID, BOUND2));
+        pnode1 = WL_GET_ADDRESS (grid, N_WLgrid, WLGRID, BOUND2);
+        NodeOrInt_GetNameOrVal (&name1, &val1, NODE_TYPE (grid), pnode1);
 
-        NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (stride),
-                                WL_GET_ADDRESS (stride, N_WLstride, WLSTRIDE, STEP));
+        pnode2 = WL_GET_ADDRESS (stride, N_WLstride, WLSTRIDE, STEP);
+        NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (stride), pnode2);
 
         if (!NameOrVal_Eq (name1, val1, name2, val2)) {
             if ((NODE_TYPE (stride) == N_WLstride) || (val2 - val1 == 1)) {
@@ -5891,8 +5895,8 @@ GenerateCompleteGrids (node *stride)
                  */
                 WLGRIDX_NEXT (grid)
                   = MakeWLgridVar (WLGRIDX_LEVEL (grid), WLGRIDX_DIM (grid),
-                                   NameOrVal_MakeNode (name1, val1),
-                                   NameOrVal_MakeNode (name2, val2), NULL,
+                                   NameOrVal_MakeNode (name1, val1, pnode1),
+                                   NameOrVal_MakeNode (name2, val2, pnode2), NULL,
                                    WLGRIDX_NEXT (grid), NULL);
             }
         }
@@ -6352,6 +6356,9 @@ WLTRAwith (node *arg_node, node *arg_info)
              */
             NWITH2_PRAGMA (new_node) = FreeTree (NWITH2_PRAGMA (new_node));
         }
+
+        NWITH2_OFFSET_NEEDED (new_node) = ((NWITH_TYPE (arg_node) == WO_genarray)
+                                           || (NWITH_TYPE (arg_node) == WO_modarray));
 
         NWITH2_DEC_RC_IDS (new_node) = NWITH_DEC_RC_IDS (arg_node);
         NWITH2_IN_MASK (new_node) = NWITH_IN_MASK (arg_node);
