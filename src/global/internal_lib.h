@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1997/08/07 11:12:33  dkr
+ * added macros CHECK_DBUG_START, CHECK_DBUG_STOP for new compiler option -_DBUG (main.c)
+ *
  * Revision 1.7  1996/09/11 06:13:14  cg
  * Function SystemCall2 added that executes a system call and returns the
  * exit code rather than terminating with an error message upon failure.
@@ -48,5 +51,20 @@ extern char *TmpVar ();
 
 #define MAX(a, b) ((a < b) ? b : a)
 #define MIN(a, b) ((a < b) ? a : b)
+
+#define CHECK_DBUG_START                                                                 \
+    {                                                                                    \
+        if ((!dbug_active) && (compiler_phase >= dbug_from)                              \
+            && (compiler_phase <= dbug_to)) {                                            \
+            DBUG_PUSH (dbug_str);                                                        \
+            dbug_active = 1;                                                             \
+        }                                                                                \
+    }
+
+#define CHECK_DBUG_STOP                                                                  \
+    {                                                                                    \
+        if ((dbug_active) && (compiler_phase <= dbug_to))                                \
+            DBUG_POP ();                                                                 \
+    }
 
 #endif /* _internal_lib_h */
