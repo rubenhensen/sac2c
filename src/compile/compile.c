@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2001/04/26 21:07:54  dkr
+ * fixed a bug in COMPPrfIdxPsi: DBUG_ASSERT too regide
+ *
  * Revision 3.47  2001/04/26 17:10:08  dkr
  * COMPCast reactivated
  *
@@ -3925,8 +3928,14 @@ COMPPrfIdxPsi (node *arg_node, node *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_num)),
-                 "N_id or N_num as 1st arg of F_idx_psi expected!");
+    if ((NODE_TYPE (arg1) != N_prf) || (NODE_TYPE (PRF_ARG1 (arg1)) != N_num)) {
+        /*
+         * CAUTION: AE, IVE generate unflattened code!
+         * The 1st argument of idx_psi() may be a N_prf node with N_num arguments
+         */
+        DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_num)),
+                     "N_id or N_num as 1st arg of F_idx_psi expected!");
+    }
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "N_id as 2nd arg of F_idx_psi expected!");
 
     if (IsArray (IDS_TYPE (let_ids))) {
