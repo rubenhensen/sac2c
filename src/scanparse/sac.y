@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.116  1996/04/02 14:40:52  cg
+ * Revision 1.117  1996/04/02 19:37:26  cg
+ * reimplemented handling of string constants
+ *
+ * Revision 1.116  1996/04/02  14:40:52  cg
  * bug fixed in parsing function applications
  *
  * Revision 1.115  1996/04/02  14:26:49  hw
@@ -2240,23 +2243,8 @@ expr:   apl {$$=$1;}
          }
       | STR
         {
-          char *funname=(char*)Malloc(10);
-          char *funmod=(char*)Malloc(11);
-          node *len_exprs;
+          $$=string2array2string($1);
           
-          strcpy(funname, "to_string");
-          strcpy(funmod, "StringBase");
-          
-          len_exprs=MakeExprs(MakeNum(strlen($1)+1), NULL);
-          
-/***********************************************/
-#ifndef NEWTREE
-          len_exprs->nnode=1;
-#endif
-/***********************************************/
-
-          $$=MakeAp(funname, NULL, MakeExprs(string2array($1), len_exprs));
-
           DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %s",
                                 mdb_nodetype[$$->nodetype],$$,
                                 $1));
@@ -3087,6 +3075,104 @@ int yyerror(char *errname)
   ABORT(linenum,("%s at '%s`", errname, yytext));
 }
 
+
+
+/***
+ ***  string2array
+ ***/
+
+node *string2array2string(char *str)
+{
+  node *new_exprs;
+  int i, cnt;
+  char *funname;
+  char *funmod;
+  node *len_exprs;
+  
+  DBUG_ENTER("string2array2string");
+  
+  new_exprs=MakeExprs(MakeChar('\0'), NULL);
+
+/*********************************************************/
+#ifndef NEWTREE 
+  new_exprs->nnode=1;
+#endif
+/*********************************************************/
+
+  cnt=0;
+  
+  for (i=strlen(str)-1; i>=0; i--)
+  {
+    if ((i>0) && (str[i-1]=='\\'))
+    {
+      switch (str[i])
+      {
+      case 'n':
+        new_exprs=MakeExprs(MakeChar('\n'), new_exprs);
+        i-=1;
+        break;
+      case 't':
+        new_exprs=MakeExprs(MakeChar('\t'), new_exprs);
+        i-=1;
+        break;
+      case 'v':
+        new_exprs=MakeExprs(MakeChar('\v'), new_exprs);
+        i-=1;
+        break;
+      case 'b':
+        new_exprs=MakeExprs(MakeChar('\b'), new_exprs);
+        i-=1;
+        break;
+      case 'r':
+        new_exprs=MakeExprs(MakeChar('\r'), new_exprs);
+        i-=1;
+        break;
+      case 'f':
+        new_exprs=MakeExprs(MakeChar('\f'), new_exprs);
+        i-=1;
+        break;
+      case 'a':
+        new_exprs=MakeExprs(MakeChar('\a'), new_exprs);
+        i-=1;
+        break;
+      case '"':
+        new_exprs=MakeExprs(MakeChar('"'), new_exprs);
+        i-=1;
+        break;
+      default:
+        new_exprs=MakeExprs(MakeChar(str[i]), new_exprs);
+        break;
+      }
+    }
+    else
+    {
+      new_exprs=MakeExprs(MakeChar(str[i]), new_exprs);
+    }
+    
+    cnt+=1;
+  }
+
+  FREE(str);
+
+  
+  funname=(char*)Malloc(10);
+  funmod=(char*)Malloc(11);
+  len_exprs;
+          
+  strcpy(funname, "to_string");
+  strcpy(funmod, "StringBase");
+          
+  len_exprs=MakeExprs(MakeNum(cnt), NULL);
+          
+/***********************************************/
+#ifndef NEWTREE
+          len_exprs->nnode=1;
+#endif
+/***********************************************/
+
+  DBUG_RETURN(MakeAp(funname, NULL, 
+                     MakeExprs(MakeArray(new_exprs), len_exprs))); 
+}
 
 
 node *GenPrfNode( prf prf, node *arg1, node *arg2)
