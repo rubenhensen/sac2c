@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.2  2000/06/13 12:31:01  dkr
+ * function for old with-loop removed
+ *
  * Revision 2.1  1999/02/23 12:41:28  sacbase
  * new release made
  *
@@ -27,8 +29,6 @@
  *
  * Revision 1.1  1995/05/26  14:22:26  asi
  * Initial revision
- *
- *
  */
 
 #ifndef _Unroll_h
@@ -74,7 +74,6 @@ extern prf ReversePrf (prf fun);
 extern node *UNRfundef (node *arg_node, node *arg_info);
 extern node *UNRdo (node *arg_node, node *arg_info);
 extern node *UNRwhile (node *arg_node, node *arg_info);
-extern node *UNRwith (node *arg_node, node *arg_info);
 extern node *UNRcond (node *arg_node, node *arg_info);
 extern node *UNRid (node *arg_node, node *arg_info);
 extern node *UNRlet (node *arg_node, node *arg_info);

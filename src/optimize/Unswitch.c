@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.7  2000/06/13 12:24:06  dkr
+ * function for old with-loop removed
+ *
  * Revision 2.6  2000/06/13 12:14:07  dkr
  * obsolete NEW_TREE code removed
  * bug in GenLetNode() fixed: IDS_NAME is no longer shared but duplicated
@@ -958,52 +961,6 @@ UNScond (node *arg_node, node *arg_info)
     LEVEL++;
     COND_THENINSTR (arg_node) = OPTTrav (COND_THENINSTR (arg_node), arg_info, arg_node);
     COND_ELSEINSTR (arg_node) = OPTTrav (COND_ELSEINSTR (arg_node), arg_info, arg_node);
-    LEVEL--;
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *UNSwith(node *arg_node, node *arg_info)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-UNSwith (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("UNSwith");
-
-    LEVEL++;
-    switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
-    case N_genarray:
-        BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_modarray:
-        BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_foldprf:
-        BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_foldfun:
-        BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    default:
-        DBUG_ASSERT ((FALSE), "Operator not implemented for with_node");
-        break;
-    }
     LEVEL--;
 
     DBUG_RETURN (arg_node);

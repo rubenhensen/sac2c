@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/06/13 12:28:37  dkr
+ * function for old with-loop removed
+ *
  * Revision 2.1  1999/02/23 12:41:03  sacbase
  * new release made
  *
@@ -29,7 +32,6 @@ extern node *CSEfundef (node *arg_node, node *arg_info);
 extern node *CSEwhile (node *arg_node, node *arg_info);
 extern node *CSEdo (node *arg_node, node *arg_info);
 extern node *CSEcond (node *arg_node, node *arg_info);
-extern node *CSEwith (node *arg_node, node *arg_info);
 extern node *CSEassign (node *arg_node, node *arg_info);
 extern node *CSEid (node *arg_node, node *arg_info);
 extern node *CSENwith (node *arg_node, node *arg_info);

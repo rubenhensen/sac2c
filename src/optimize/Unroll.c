@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  2000/06/13 12:31:12  dkr
+ * function for old with-loop removed
+ *
  * Revision 2.7  2000/02/23 19:08:50  cg
  * The optimizations LUR and WLUR now issue a notification if
  * the setting of -maxlur or -maxwlur, respectively, prevents
@@ -688,55 +691,6 @@ UNRcond (node *arg_node, node *arg_info)
     LEVEL++;
     COND_THENINSTR (arg_node) = OPTTrav (COND_THENINSTR (arg_node), arg_info, arg_node);
     COND_ELSEINSTR (arg_node) = OPTTrav (COND_ELSEINSTR (arg_node), arg_info, arg_node);
-    LEVEL--;
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : UNRwith
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-node *
-UNRwith (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("UNRwith");
-
-    LEVEL++;
-    switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
-    case N_genarray:
-        BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_modarray:
-        BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_foldprf:
-        BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_foldfun:
-        BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    default:
-        DBUG_ASSERT ((FALSE), "Operator not implemented for with_node");
-        break;
-    }
     LEVEL--;
 
     DBUG_RETURN (arg_node);

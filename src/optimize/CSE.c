@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 2.8  2000/06/13 12:28:55  dkr
+ * function for old with-loop removed
+ *
  * Revision 2.7  2000/01/26 17:26:39  dkr
  * type of traverse-function-table changed.
  *
@@ -61,7 +63,6 @@
  *
  * Revision 1.1  1996/01/17  15:54:09  asi
  * Initial revision
- *
  */
 
 #include <stdio.h>
@@ -232,57 +233,6 @@ CSEcond (node *arg_node, node *arg_info)
     COND_ELSEINSTR (arg_node) = OPTTrav (COND_ELSEINSTR (arg_node), arg_info, arg_node);
     DBUG_PRINT ("CSE", ("CSE cond-else in line: %d END", NODE_LINE (arg_node)));
 
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : CSEwith
- *  arguments     : 1) N_with - node
- *                  2) N_info - node
- *                  R) N_with - node
- *  description   : Travereses generator, then opertator
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : OPTTrav (optimize.h)
- *
- *  remarks       : ---
- *
- */
-node *
-CSEwith (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("CSEwith");
-    DBUG_PRINT ("CSE", ("CSE with-loop in line: %d START", NODE_LINE (arg_node)));
-
-    WITH_GEN (arg_node) = OPTTrav (WITH_GEN (arg_node), arg_info, arg_node);
-
-    switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
-    case N_genarray:
-        BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_modarray:
-        BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_foldprf:
-        BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_foldfun:
-        BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    default:
-        DBUG_ASSERT ((FALSE), "Operator not implemented for with_node");
-        break;
-    }
-    DBUG_PRINT ("CSE", ("CSE with-loop in line: %d END", NODE_LINE (arg_node)));
     DBUG_RETURN (arg_node);
 }
 

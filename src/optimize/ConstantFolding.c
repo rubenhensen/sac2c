@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.35  2000/06/13 12:23:54  dkr
+ * function for old with-loop removed
+ *
  * Revision 2.34  2000/05/11 10:39:32  dkr
  * Macro SHAPE_2_ARRAY replaced by function Types2Array
  *
@@ -1101,67 +1104,6 @@ CFcond (node *arg_node, node *arg_info)
     }
 
     DBUG_RETURN (returnnode);
-}
-
-/*
- *
- *  functionname  : CFwith
- *  arguments     : 1) N_with - node
- *                  2) N_info - node
- *                  R) N_with - node
- *  description   : Travereses generator, then opertator
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : OPTTrav (optimize.h)
- *  macros        : INFO_CF_TYPE, WITH_GEN, GEN_VARDEC, VARDEC_TYPE, WITH_OPERATOR,
- *                  NODE_TYPE, GENARRAY_BODY, MODARRAY_BODY, FOLDPRF_BODY, FOLDFUN_BODY,
- *                  BLOCK_INSTR
- *
- *  remarks       : ---
- *
- */
-node *
-CFwith (node *arg_node, node *arg_info)
-{
-    types *oldtype;
-
-    DBUG_ENTER ("CFwith");
-    oldtype = INFO_CF_TYPE (arg_info);
-
-    /* srs: this is the analogy to the storage of the return type of a prf in CFlet.
-       But I wonder if this is necessary. A bound can only be an identifyer. And
-       as far as I know the type information is only needed if we try to fold a
-       prf (in CFprf). */
-    INFO_CF_TYPE (arg_info) = VARDEC_TYPE (GEN_VARDEC (WITH_GEN (arg_node)));
-    WITH_GEN (arg_node) = OPTTrav (WITH_GEN (arg_node), arg_info, arg_node);
-    INFO_CF_TYPE (arg_info) = oldtype;
-
-    switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
-    case N_genarray:
-        BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (GENARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_modarray:
-        BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (MODARRAY_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_foldprf:
-        BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (FOLDPRF_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    case N_foldfun:
-        BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node)))
-          = OPTTrav (BLOCK_INSTR (FOLDFUN_BODY (WITH_OPERATOR (arg_node))), arg_info,
-                     arg_node);
-        break;
-    default:
-        DBUG_ASSERT ((FALSE), "Operator not implemented for with_node");
-        break;
-    }
-    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/06/13 12:32:00  dkr
+ * function for old with-loop removed
+ *
  * Revision 2.1  1999/02/23 12:43:09  sacbase
  * new release made
  *
@@ -25,7 +28,6 @@ extern node *AEassign (node *arg_node, node *arg_info);
 extern node *AEcond (node *arg_node, node *arg_info);
 extern node *AEdo (node *arg_node, node *arg_info);
 extern node *AEwhile (node *arg_node, node *arg_info);
-extern node *AEwith (node *arg_node, node *arg_info);
 extern node *AENwith (node *arg_node, node *arg_info);
 
 #endif /* _ArrayElimination_h */

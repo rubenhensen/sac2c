@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/06/13 12:23:45  dkr
+ * function for old with-loop removed
+ *
  * Revision 2.2  1999/07/15 20:39:07  sbs
  * CFarray added.
  *
@@ -78,7 +81,6 @@ extern node *CFdo (node *arg_node, node *arg_info);
 extern node *CFcond (node *arg_node, node *arg_info);
 extern node *CFvar (node *arg_node, node *arg_info);
 extern node *CFassign (node *arg_node, node *arg_info);
-extern node *CFwith (node *arg_node, node *arg_info);
 extern node *CFap (node *arg_node, node *arg_info);
 
 extern node *CFNwith (node *, node *);
