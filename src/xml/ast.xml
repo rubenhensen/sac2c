@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.38  2004/11/24 11:23:26  sbs
+  some new flags in N_arg
+
   Revision 1.37  2004/11/24 11:18:53  sah
   added rsp
 
@@ -1432,9 +1435,11 @@
         </attribute>
       </attributes>
       <flags>
+        <flag name="IsReadonly" />
+        <flag name="IsReference" />
+        <flag name="IsArtificial" />
         <flag name="IsPadded" />
         <flag name="IsAliasing" default="TRUE" />
-        <flag name="IsArtificial" />
         <flag name="IsRefcounted" default="TRUE" />
       </flags>
     </node>
