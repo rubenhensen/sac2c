@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/03/05 18:33:30  dkr
+ * ups! missing \n in message of DBUG_ASSERT added ...
+ *
  * Revision 3.10  2001/03/05 18:30:00  dkr
  * PREC1code: DBUG_ASSERT added
  *
@@ -782,7 +785,7 @@ PREC1code (node *arg_node, node *arg_info)
             DBUG_ASSERT ((!strcmp (ID_NAME (INFO_PREC1_CEXPR (arg_info)),
                                    ID_NAME (NCODE_CEXPR (arg_node)))),
                          "Not all NCODE_CEXPR nodes of the fold with-loop have"
-                         " identical names!"
+                         " identical names!\n"
                          "This is probably due to an error during undo-SSA.");
         } else {
             INFO_PREC1_CEXPR (arg_info) = NCODE_CEXPR (arg_node);
