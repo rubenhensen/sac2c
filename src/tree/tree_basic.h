@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.83  2000/07/21 15:14:45  mab
+ * added INFO_APC_UNSUPPORTED
+ *
  * Revision 1.82  2000/07/21 14:47:01  nmw
  * macros for INFO_IMPSPEC_ added
  *
@@ -2648,6 +2651,9 @@ extern node *MakeInfo ();
 #define INFO_PIW_FLAG(n) (n->flag)
 #define INFO_PIW_COMMA(n) (n->varno)
 #define INFO_PIW_COUNTER(n) (n->counter)
+
+/* when used in pad_collect.c */
+#define INFO_APC_UNSUPPORTED(n) (n->flag)
 
 /* when used in pad_transform.c */
 #define INFO_APT_EXPRESSION_PADDED(n) ((bool)(n->flag))
