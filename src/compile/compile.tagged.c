@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.66  2003/04/14 18:58:08  dkr
+ * @file added
+ *
  * Revision 1.65  2003/04/14 16:37:47  dkr
  * functions headers corrected (Doxygen)
  *
@@ -190,6 +193,13 @@
  * Revision 1.1  2001/12/10 15:34:14  dkr
  * Initial revision
  *
+ */
+
+/*
+ * @file
+ *
+ * This file implements the code generation (SAC code -> C code with ICMs) for
+ * the new backend (TAGGED_ARRAYS)
  */
 
 #include <stdlib.h>
