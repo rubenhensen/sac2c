@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/10/19 10:04:45  cg
+ * Revision 1.13  1995/10/26 15:56:48  cg
+ * modified lay-out of error messages slightly.
+ *
+ * Revision 1.12  1995/10/19  10:04:45  cg
  * new function ItemName for convenient output of combined names
  * of types, functions, or global objects.
  *
@@ -76,7 +79,7 @@
  */
 
 #define ABORT_MESSAGE                                                                    \
-    fprintf (stderr, "*** Compilation failed ***  Exit code %d\n", compiler_phase);      \
+    fprintf (stderr, "\n*** Compilation failed ***  Exit code %d\n", compiler_phase);    \
     fprintf (stderr, "*** %d Error(s), %d Warning(s)\n\n", errors, warnings);
 
 /*
@@ -102,7 +105,7 @@
 #define WARN(line, message)                                                              \
     {                                                                                    \
         if (!silent) {                                                                   \
-            fprintf (stderr, "%s:%d:WARNING: ", filename, line);                         \
+            fprintf (stderr, "  %s:%d:WARNING: ", filename, line);                       \
             DoPrint message;                                                             \
             fprintf (stderr, " !\n");                                                    \
         }                                                                                \
@@ -120,7 +123,7 @@
 
 #define ERROR(line, message)                                                             \
     {                                                                                    \
-        fprintf (stderr, "%s:%d: ERROR : ", filename, line);                             \
+        fprintf (stderr, "  %s:%d: ERROR : ", filename, line);                           \
         DoPrint message;                                                                 \
         fprintf (stderr, " !\n");                                                        \
         errors++;                                                                        \
@@ -150,7 +153,7 @@
 #define SYSWARN(message)                                                                 \
     {                                                                                    \
         if (!silent) {                                                                   \
-            fprintf (stderr, "SYSTEM::WARNING: ");                                       \
+            fprintf (stderr, "  SYSTEM::WARNING: ");                                     \
             DoPrint message;                                                             \
             fprintf (stderr, " !\n");                                                    \
         }                                                                                \
@@ -166,7 +169,7 @@
 
 #define SYSERROR(message)                                                                \
     {                                                                                    \
-        fprintf (stderr, "SYSTEM::ERROR: ");                                             \
+        fprintf (stderr, "  SYSTEM::ERROR: ");                                           \
         DoPrint message;                                                                 \
         fprintf (stderr, " !\n");                                                        \
         errors++;                                                                        \
