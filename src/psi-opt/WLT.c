@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2003/04/10 11:59:23  dkr
+ * check_genarray_full_part(): DBUG_ASSERT messages corrected
+ *
  * Revision 3.17  2002/10/07 04:51:05  dkr
  * some modifications for dynamic shapes added
  *
@@ -291,9 +294,9 @@ check_genarray_full_part (node *wln)
         shapen = ARRAY_AELEMS (shapen);
         while (result && uppern) {
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (uppern)) == N_num),
-                         "shape must be constant!");
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (shapen)) == N_num),
                          "upper generator bound must be constant!");
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (shapen)) == N_num),
+                         "shape must be constant!");
             if (NUM_VAL (EXPRS_EXPR (shapen)) != NUM_VAL (EXPRS_EXPR (uppern))) {
                 result = FALSE;
             }
