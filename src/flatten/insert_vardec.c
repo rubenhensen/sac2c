@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/11/25 14:14:35  khf
+ * SacDevCamp04: COMPILES!
+ *
  * Revision 1.9  2004/08/29 18:08:38  sah
  * added some DBUG_PRINTS
  *
@@ -63,14 +66,17 @@
  *
  *****************************************************************************/
 
-#define NEW_INFO
+#include <string.h>
 
-#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "node_basic.h"
+#include "new_types.h"
 #include "internal_lib.h"
 #include "traverse.h"
+#include "globals.h"
 #include "free.h"
+#include "Error.h"
 #include "dbug.h"
 #include "DupTree.h"
 
@@ -102,7 +108,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_INSVD_OBJDEFS (result) = NULL;
     INFO_INSVD_VARDECS (result) = NULL;
@@ -116,7 +122,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -131,8 +137,7 @@ FreeInfo (info *info)
  *   if found, NULL otherwise.
  *
  ******************************************************************************/
-
-node *
+static node *
 SearchForNameInVardecs (char *name, node *vardecs)
 {
     DBUG_ENTER ("SearchForNameInVardecs");
@@ -153,8 +158,7 @@ SearchForNameInVardecs (char *name, node *vardecs)
  *   if found, NULL otherwise.
  *
  ******************************************************************************/
-
-node *
+static node *
 SearchForNameInArgs (char *name, node *args)
 {
     DBUG_ENTER ("SearchForNameInArgs");
@@ -177,8 +181,7 @@ SearchForNameInArgs (char *name, node *args)
  *   an Error message is issued!
  *
  ******************************************************************************/
-
-node *
+static node *
 SearchForNameInObjs (char *mod, char *name, node *objs)
 {
     int num_found, num_found_in_main;
@@ -214,7 +217,7 @@ SearchForNameInObjs (char *mod, char *name, node *objs)
         } else if ((num_found_in_main == 0) && (num_found == 1)) {
             objs = last_found;
         } else if (num_found > 1) {
-            ERROR (linenum,
+            ERROR (global.linenum,
                    ("Identifier '%s` matches more than one global object", name));
         }
     }
@@ -225,7 +228,7 @@ SearchForNameInObjs (char *mod, char *name, node *objs)
 /******************************************************************************
  *
  * function:
- *  node * SearchForNameLHS( char *mod, char *name,
+ *  node * SearchForNameLhs( char *mod, char *name,
  *                           node *vardecs, node *args, node *objs)
  *
  * description:
@@ -236,21 +239,20 @@ SearchForNameInObjs (char *mod, char *name, node *objs)
  *    - and an Error-Message otherwise.
  *
  ******************************************************************************/
-
-node *
-SearchForNameLHS (char *mod, char *name, node *vardecs, node *args, node *objs)
+static node *
+SearchForNameLhs (char *mod, char *name, node *vardecs, node *args, node *objs)
 {
-    DBUG_ENTER ("SearchForNameLHS");
+    DBUG_ENTER ("SearchForNameLhs");
 
     if (mod != NULL) {
-        ERROR (linenum, ("Identifier with module/class prefix '%s:%s` not allowed"
-                         " as local variable name",
-                         mod, name));
+        ERROR (global.linenum, ("Identifier with module/class prefix '%s:%s` not allowed"
+                                " as local variable name",
+                                mod, name));
     } else {
         if (SearchForNameInObjs (mod, name, objs) != NULL) {
-            ERROR (linenum, ("Identifier '%s` as local variable name not allowed"
-                             " as it is identical to the name of a global object",
-                             name));
+            ERROR (global.linenum, ("Identifier '%s` as local variable name not allowed"
+                                    " as it is identical to the name of a global object",
+                                    name));
         } else {
             vardecs = SearchForNameInVardecs (name, vardecs);
             if (vardecs == NULL) {
@@ -265,7 +267,7 @@ SearchForNameLHS (char *mod, char *name, node *vardecs, node *args, node *objs)
 /******************************************************************************
  *
  * function:
- *  node * SearchForNameRHS( char *mod, char *name,
+ *  node * SearchForNameRhs( char *mod, char *name,
  *                           node *vardecs, node *args, node *objs)
  *
  * description:
@@ -276,16 +278,15 @@ SearchForNameLHS (char *mod, char *name, node *vardecs, node *args, node *objs)
  *    - and an Error-Message otherwise.
  *
  ******************************************************************************/
-
-node *
-SearchForNameRHS (char *mod, char *name, node *vardecs, node *args, node *objs)
+static node *
+SearchForNameRhs (char *mod, char *name, node *vardecs, node *args, node *objs)
 {
-    DBUG_ENTER ("SearchForNameRHS");
+    DBUG_ENTER ("SearchForNameRhs");
 
     if (mod != NULL) {
         vardecs = SearchForNameInObjs (mod, name, objs);
         if (vardecs == NULL) {
-            ERROR (linenum, ("Global object '%s:%s` not available", mod, name));
+            ERROR (global.linenum, ("Global object '%s:%s` not available", mod, name));
         }
     } else {
         vardecs = SearchForNameInVardecs (name, vardecs);
@@ -297,53 +298,6 @@ SearchForNameRHS (char *mod, char *name, node *vardecs, node *args, node *objs)
         }
     }
 
-    DBUG_RETURN (vardecs);
-}
-
-/******************************************************************************
- *
- * function:
- *  node * CheckIds( ids *idents, node *vardecs, node *args)
- *
- * description:
- *   looks up each identifyer of the idents within the identifyers available in
- *   vardecs, args, objs. If found a propoer backref is set. Otherwise, an
- *   appropriate vardec is prepanded to the vardecs.
- *   The (potentially enlarged) vardecs are returned.
- *   Since the lookup mechanism differs depending on the (LHS/RHS) position of
- *   the idents, the SearchForName - function is given as argument!
- *
- ******************************************************************************/
-
-typedef node *(*search_for_name_fun_t) (char *, char *, node *, node *, node *);
-
-static node *
-CheckIds (ids *idents, search_for_name_fun_t SearchForName, node *vardecs, node *args,
-          node *objs)
-{
-    node *vardec;
-
-    DBUG_ENTER ("CheckIds");
-
-    while (idents != NULL) {
-        vardec = SearchForName (IDS_MOD (idents), IDS_NAME (idents), vardecs, args, objs);
-        if (vardec == NULL) {
-            /*
-             * The identifyer we are looking for does not have a
-             * vardec yet! So we allocate one and prepand it to vardecs.
-             */
-            vardec = MakeVardec (StringCopy (IDS_NAME (idents)), MakeTypes1 (T_unknown),
-                                 vardecs);
-            vardecs = vardec;
-            DBUG_PRINT ("IVD", ("inserting new vardec (" F_PTR ") for id %s.", vardec,
-                                IDS_NAME (idents)));
-        }
-        IDS_VARDEC (idents) = vardec;
-        if (NODE_TYPE (vardec) == N_objdef) {
-            IDS_MOD (idents) = OBJDEF_MOD (vardec);
-        }
-        idents = IDS_NEXT (idents);
-    }
     DBUG_RETURN (vardecs);
 }
 
@@ -365,12 +319,12 @@ INSVDfundef (node *arg_node, info *arg_info)
         INFO_INSVD_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
         INFO_INSVD_ARGS (arg_info) = FUNDEF_ARGS (arg_node);
 
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         FUNDEF_VARDEC (arg_node) = INFO_INSVD_VARDECS (arg_info);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -390,11 +344,9 @@ INSVDlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("INSVDlet");
 
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
-    INFO_INSVD_VARDECS (arg_info)
-      = CheckIds (LET_IDS (arg_node), SearchForNameLHS, INFO_INSVD_VARDECS (arg_info),
-                  INFO_INSVD_ARGS (arg_info), INFO_INSVD_OBJDEFS (arg_info));
+    LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -411,12 +363,31 @@ INSVDlet (node *arg_node, info *arg_info)
 node *
 INSVDid (node *arg_node, info *arg_info)
 {
+    node *vardec, *avis;
+
     DBUG_ENTER ("INSVDid");
 
-    INFO_INSVD_VARDECS (arg_info)
-      = CheckIds (ID_IDS (arg_node), SearchForNameRHS, INFO_INSVD_VARDECS (arg_info),
-                  INFO_INSVD_ARGS (arg_info), INFO_INSVD_OBJDEFS (arg_info));
-    SET_FLAG (ID, arg_node, IS_GLOBAL, (NODE_TYPE (ID_VARDEC (arg_node)) == N_objdef));
+    vardec = SearchForNameRhs (ID_SPMOD (arg_node), ID_SPNAME (arg_node),
+                               INFO_INSVD_VARDECS (arg_info), INFO_INSVD_ARGS (arg_info),
+                               INFO_INSVD_OBJDEFS (arg_info));
+
+    if (vardec == NULL) {
+        /*
+         * The identifyer we are looking for does not have a
+         * vardec yet! So we allocate one and prepand it to vardecs.
+         */
+
+        avis = TBmakeAvis (ILIBstringCopy (ID_SPNAME (arg_node)),
+                           TYmakeAUD (TYmakeSimpleType (T_unknown)));
+        vardec = TBmakeVardec (avis, INFO_INSVD_VARDECS (arg_info));
+
+        INFO_INSVD_VARDECS (arg_info) = vardec;
+
+        DBUG_PRINT ("IVD", ("inserting new vardec (" F_PTR ") for id %s.", vardec,
+                            ID_SPNAME (arg_node)));
+    }
+
+    ID_AVIS (arg_node) = VARDEC_AVIS (vardec);
 
     DBUG_RETURN (arg_node);
 }
@@ -424,23 +395,39 @@ INSVDid (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INSVDwithid( node *arg_node, info *arg_info)
+ *   node *INSVDid( node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-INSVDwithid (node *arg_node, info *arg_info)
+INSVDids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INSVDwithid");
+    node *vardec, *avis;
+    DBUG_ENTER ("INSVDids");
 
-    INFO_INSVD_VARDECS (arg_info)
-      = CheckIds (NWITHID_IDS (arg_node), SearchForNameLHS, INFO_INSVD_VARDECS (arg_info),
-                  INFO_INSVD_ARGS (arg_info), INFO_INSVD_OBJDEFS (arg_info));
-    INFO_INSVD_VARDECS (arg_info)
-      = CheckIds (NWITHID_VEC (arg_node), SearchForNameLHS, INFO_INSVD_VARDECS (arg_info),
-                  INFO_INSVD_ARGS (arg_info), INFO_INSVD_OBJDEFS (arg_info));
+    vardec = SearchForNameLhs (IDS_SPMOD (arg_node), IDS_SPNAME (arg_node),
+                               INFO_INSVD_VARDECS (arg_info), INFO_INSVD_ARGS (arg_info),
+                               INFO_INSVD_OBJDEFS (arg_info));
+
+    if (vardec == NULL) {
+        /*
+         * The identifyer we are looking for does not have a
+         * vardec yet! So we allocate one and prepand it to vardecs.
+         */
+
+        avis = TBmakeAvis (ILIBstringCopy (IDS_SPNAME (arg_node)),
+                           TYmakeAUD (TYmakeSimpleType (T_unknown)));
+        vardec = TBmakeVardec (avis, INFO_INSVD_VARDECS (arg_info));
+
+        INFO_INSVD_VARDECS (arg_info) = vardec;
+
+        DBUG_PRINT ("IVD", ("inserting new vardec (" F_PTR ") for id %s.", vardec,
+                            IDS_SPNAME (arg_node)));
+    }
+
+    IDS_AVIS (arg_node) = VARDEC_AVIS (vardec);
 
     DBUG_RETURN (arg_node);
 }
@@ -448,7 +435,65 @@ INSVDwithid (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *  node * InsertVardecs( node *syntax_tree)
+ *   node *INSVDwith( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+INSVDwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("INSVDwith");
+
+    /* traverse all sons in following order:*/
+
+    if (WITH_PART (arg_node) != NULL) {
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    }
+
+    if (WITH_WITHOP (arg_node) != NULL) {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    }
+
+    if (WITH_CODE (arg_node) != NULL) {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *INSVDpart( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+INSVDpart (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("INSVDpart");
+
+    /* withid has to be traversed first */
+
+    if (PART_WITHID (arg_node) != NULL) {
+        PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
+    }
+
+    if (PART_GENERATOR (arg_node) != NULL) {
+        PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node * INSVDdoInsertVardecs( node *syntax_tree)
  *
  * description:
  *   Traverses through all functions and inserts vardecs for all identifyers
@@ -460,25 +505,22 @@ INSVDwithid (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-InsertVardec (node *syntax_tree)
+INSVDdoInsertVardec (node *syntax_tree)
 {
-    funtab *old_funtab;
     info *info;
 
-    DBUG_ENTER ("InsertVardecs");
-
-    old_funtab = act_tab;
-    act_tab = insvd_tab;
+    DBUG_ENTER ("INSVDdoInsertVardecs");
 
     info = MakeInfo ();
 
-    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_modul),
+    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  ("InsertVardec can only be called on N_modul nodes"));
 
-    INFO_INSVD_OBJDEFS (info) = MODUL_OBJS (syntax_tree);
+    INFO_INSVD_OBJDEFS (info) = MODULE_OBJS (syntax_tree);
 
-    syntax_tree = Trav (syntax_tree, info);
-    act_tab = old_funtab;
+    TRAVpush (TR_insvd);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
 
     info = FreeInfo (info);
 
