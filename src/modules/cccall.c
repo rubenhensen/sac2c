@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2003/03/20 13:56:09  sbs
+ * config.h included; MUST_KILL_AR_MAGIC_FILE used.
+ *
  * Revision 3.8  2003/02/11 16:36:38  dkr
  * TAGGED_ARRAYS: CCFLAGS is patched in resource.c instead of cccall.c
  * now
@@ -188,6 +191,7 @@
 #include <time.h>
 #include <stdlib.h>
 
+#include "config.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -648,7 +652,7 @@ CreateLibrary ()
                     "if [ -n \"$filelist\" ]; then"
                     "  for archive in *.a ;"
                     "    do ar -x $archive ;" /* extract file from archive */
-#ifdef SAC_FOR_OSF_ALPHA
+#ifdef MUST_KILL_AR_MAGIC_FILE
                     "    rm -f ________64ELEL_ ;" /* kill ar extracted magic file */
 #endif
                     "    for file in *.o ;" /* rename all files of this archive */
