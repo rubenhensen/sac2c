@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1997/11/12 10:38:24  sbs
+ * break in default of switch constructs added (as required by cc)
+ *
  * Revision 1.14  1997/04/30 11:54:05  cg
  * Now, full library path names are stored in all external entries of
  * global dependency tree, including copies of identical ones.
@@ -229,6 +232,7 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
                 libtype = "system";
                 break;
             default:
+                break;
             }
 
             NOTE (("Searching for %s library \"%s\" ...", libtype, buffer));

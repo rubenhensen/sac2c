@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1997/11/12 10:38:24  sbs
+ * break in default of switch constructs added (as required by cc)
+ *
  * Revision 1.15  1997/10/29 14:38:00  srs
  * free -> FREE
  *
@@ -168,6 +171,7 @@ SIBPrintDependencies (FILE *sibfile, deps *depends, int level)
                 fprintf (sibfile, "linkwith \"%s\"", DEPS_NAME (tmp));
                 break;
             default:
+                break;
             }
 
             if (DEPS_SUB (tmp) != NULL) {
