@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.61  2004/08/25 20:22:03  sbs
+ * bad bug in SSACFCatVxV fixed!
+ * result structural constant was NEVER allocated.
+ * Now, it is reused and the constant is taken care of
+ * by vec2_hidden_co.
+ *
  * Revision 1.60  2004/08/25 16:28:19  ktr
  * ...now it even works :)
  *
@@ -1438,7 +1444,6 @@ SSACFCatVxV (node *vec1, node *vec2)
     node *result;
     struct_constant *sc_vec1;
     struct_constant *sc_vec2;
-    struct_constant *sc_res;
 
     DBUG_ENTER ("SSACFVxV");
 
@@ -1448,14 +1453,17 @@ SSACFCatVxV (node *vec1, node *vec2)
     sc_vec2 = SCOExpr2StructConstant (vec2);
 
     if ((sc_vec1 != NULL) && (sc_vec2 != NULL)) {
+        constant *vec2_hidden_co;
+
         /*
          * if both vectors are structural constant we can concatenate then
          */
-        SCO_HIDDENCO (sc_res) = COCat (SCO_HIDDENCO (sc_vec1), SCO_HIDDENCO (sc_vec2));
+        vec2_hidden_co = SCO_HIDDENCO (sc_vec2);
+        SCO_HIDDENCO (sc_vec2) = COCat (SCO_HIDDENCO (sc_vec1), SCO_HIDDENCO (sc_vec2));
 
-        result = SCODupStructConstant2Expr (sc_res);
+        result = SCODupStructConstant2Expr (sc_vec2);
 
-        SCOFreeStructConstant (sc_res);
+        vec2_hidden_co = COFreeConstant (vec2_hidden_co);
     } else if (sc_vec1 != NULL) {
         /*
          * if vec1 is a structural constant of shape [0],
