@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.5  1998/02/05 17:08:45  dkr
+# make deps done
+#
 # Revision 1.4  1997/12/04 15:28:30  srs
 # removed generation of debug information for dbug.c
 #
@@ -33,3 +36,7 @@ deps:
 clean:
 	$(RM) ../dbug.o *.bak
 
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+dbug.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+dbug.o: /usr/include/sys/va_list.h

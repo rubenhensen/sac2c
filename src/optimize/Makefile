@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.33  1998/02/05 17:08:40  dkr
+# make deps done
+#
 # Revision 1.32  1998/02/05 17:03:44  srs
 # removed file WorkReduction (from all:) and rebuild dependencies
 #
@@ -231,5 +234,6 @@ optimize.o: ../global/tree_compound.h ../global/Error.h /usr/include/string.h
 optimize.o: ../global/globals.h ../global/internal_lib.h ../global/free.h
 optimize.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 optimize.o: ../global/traverse.h ../print/print.h optimize.h
-optimize.o: ConstantFolding.h DeadCodeRemoval.h LoopInvariantRemoval.h
-optimize.o: Inline.h Unroll.h Unswitch.h ../psi-opt/ArrayElimination.h CSE.h
+optimize.o: ConstantFolding.h DeadCodeRemoval.h WorkReduction.h
+optimize.o: LoopInvariantRemoval.h Inline.h Unroll.h Unswitch.h
+optimize.o: ../psi-opt/ArrayElimination.h CSE.h

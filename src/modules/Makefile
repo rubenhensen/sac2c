@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.26  1998/02/05 17:08:41  dkr
+# make deps done
+#
 # Revision 1.25  1997/11/20 15:02:08  dkr
 # make deps done
 #
@@ -143,9 +146,9 @@ checkdec.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
 checkdec.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 checkdec.o: ../global/globals.h ../../inc/dbug.h ../global/my_debug.h
 checkdec.o: ../global/traverse.h ../global/free.h /usr/include/malloc.h
-checkdec.o: import.h ../print/convert.h filemgr.h ../scanparse/scnprs.h
-checkdec.o: ../scanparse/y.tab.h implicittypes.h ../print/print.h
-checkdec.o: ../global/tree.h ../global/internal_lib.h
+checkdec.o: ../global/internal_lib.h import.h ../print/convert.h filemgr.h
+checkdec.o: ../scanparse/scnprs.h ../scanparse/y.tab.h implicittypes.h
+checkdec.o: ../print/print.h ../global/tree.h
 filemgr.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 filemgr.o: /usr/include/string.h /usr/include/stdarg.h /usr/include/varargs.h
 filemgr.o: /usr/include/sys/va_list.h /usr/include/unistd.h
@@ -159,7 +162,8 @@ implicittypes.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 implicittypes.o: /usr/include/sys/va_list.h /usr/include/string.h
 implicittypes.o: /usr/include/stdlib.h ../global/globals.h ../print/convert.h
 implicittypes.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
-implicittypes.o: /usr/include/malloc.h ../global/traverse.h
+implicittypes.o: /usr/include/malloc.h ../global/internal_lib.h
+implicittypes.o: ../global/traverse.h
 import.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 import.o: /usr/include/limits.h /usr/include/sys/isa_defs.h ../global/tree.h
 import.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
@@ -181,6 +185,7 @@ writesib.o: ../global/types.h ../global/tree_basic.h
 writesib.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
 writesib.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 writesib.o: ../global/globals.h ../global/free.h ../../inc/dbug.h
-writesib.o: ../global/my_debug.h /usr/include/malloc.h ../global/traverse.h
-writesib.o: ../print/convert.h filemgr.h ../print/print.h ../global/tree.h
-writesib.o: ../global/internal_lib.h ../typecheck/typecheck.h
+writesib.o: ../global/my_debug.h /usr/include/malloc.h
+writesib.o: ../global/internal_lib.h ../global/traverse.h ../print/convert.h
+writesib.o: filemgr.h ../print/print.h ../global/tree.h
+writesib.o: ../typecheck/typecheck.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.49  1998/02/05 17:08:36  dkr
+# make deps done
+#
 # Revision 1.48  1997/11/20 15:02:03  dkr
 # make deps done
 #
@@ -219,12 +222,13 @@ free.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 free.o: /usr/include/stdio.h /usr/include/sys/va_list.h ../../inc/dbug.h
 free.o: my_debug.h types.h tree_basic.h tree_compound.h Error.h
 free.o: /usr/include/string.h globals.h traverse.h free.h
-free.o: /usr/include/malloc.h
+free.o: /usr/include/malloc.h internal_lib.h
 internal_lib.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 internal_lib.o: /usr/include/math.h /usr/include/string.h
 internal_lib.o: /usr/include/stdarg.h /usr/include/varargs.h
 internal_lib.o: /usr/include/sys/va_list.h Error.h /usr/include/stdio.h
 internal_lib.o: types.h globals.h ../../inc/dbug.h my_debug.h internal_lib.h
+internal_lib.o: traverse.h
 main.o: ../../inc/main.h ../../inc/dbug.h /usr/include/stdio.h
 main.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h tree.h
 main.o: types.h tree_basic.h tree_compound.h Error.h /usr/include/string.h
@@ -277,7 +281,7 @@ tree_compound.o: types.h tree_basic.h tree_compound.h Error.h
 tree_compound.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 tree_compound.o: /usr/include/sys/va_list.h /usr/include/string.h
 tree_compound.o: /usr/include/stdlib.h globals.h ../../inc/dbug.h my_debug.h
-tree_compound.o: free.h /usr/include/malloc.h
+tree_compound.o: free.h /usr/include/malloc.h internal_lib.h
 usage.o: usage.h /usr/include/stdio.h /usr/include/sys/feature_tests.h
 usage.o: /usr/include/sys/va_list.h globals.h types.h ../../inc/dbug.h tree.h
 usage.o: tree_basic.h tree_compound.h Error.h /usr/include/string.h

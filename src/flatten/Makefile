@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.14  1998/02/05 17:08:35  dkr
+# make deps done
+#
 # Revision 1.13  1997/11/20 15:02:02  dkr
 # make deps done
 #
@@ -63,4 +66,4 @@ flatten.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
 flatten.o: ../global/Error.h /usr/include/string.h ../global/globals.h
 flatten.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
 flatten.o: ../global/traverse.h ../global/access_macros.h ../global/free.h
-flatten.o: /usr/include/malloc.h
+flatten.o: /usr/include/malloc.h flatten.h

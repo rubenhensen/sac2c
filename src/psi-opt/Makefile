@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.18  1998/02/05 17:08:43  dkr
+# make deps done
+#
 # Revision 1.17  1997/11/20 15:02:11  dkr
 # make deps done
 #
@@ -87,9 +90,9 @@ ArrayElimination.o: /usr/include/string.h ../global/globals.h
 ArrayElimination.o: ../global/types.h ../global/Error.h ../../inc/dbug.h
 ArrayElimination.o: ../global/my_debug.h ../global/traverse.h
 ArrayElimination.o: ../typecheck/typecheck.h ../global/free.h
-ArrayElimination.o: /usr/include/malloc.h ../optimize/DupTree.h
-ArrayElimination.o: ../global/tree.h ../global/tree_basic.h
-ArrayElimination.o: ../global/tree_compound.h ../global/internal_lib.h
+ArrayElimination.o: /usr/include/malloc.h ../global/internal_lib.h
+ArrayElimination.o: ../optimize/DupTree.h ../global/tree.h
+ArrayElimination.o: ../global/tree_basic.h ../global/tree_compound.h
 ArrayElimination.o: ../optimize/optimize.h ../optimize/Inline.h
 ArrayElimination.o: ../optimize/LoopInvariantRemoval.h ArrayElimination.h
 index.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
