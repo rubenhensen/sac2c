@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2000/03/21 13:10:57  jhs
+ * DBUG_PRINT used instaed of NOTE.
+ * Annotates first N_mt, N_st for further traversals.
+ *
  * Revision 1.11  2000/03/15 15:49:46  dkr
  * fixed a bug:
  *   argument of KNOWN_SHAPE is not the type itself but its dimension
@@ -86,6 +90,7 @@ BlocksInit (node *arg_node, node *arg_info)
     act_tab = blkin_tab;
 
     /* push info ... */
+    FUNDEF_COMPANION (arg_node) = NULL;
 
     FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 
@@ -132,6 +137,7 @@ CheckLHSforBigArrays (node *let, int max_small_size)
                 sum = sum * TYPES_SHAPE (type, i);
             }
             result = (result || (sum > max_small_size));
+            DBUG_PRINT ("BLKIN", ("array elements %i => result %i", sum, result));
         } else {
             /* nothing happens #### error? warning?  */
         }
@@ -142,8 +148,16 @@ CheckLHSforBigArrays (node *let, int max_small_size)
     DBUG_RETURN (result);
 }
 
-/* #### returns bool */
-/* browses left hand side */
+/******************************************************************************
+ *
+ * function:
+ *   static int CheckLHSforHeavyTypes(node *let)
+ *
+ * description:
+ *   test whether any result on the lhs is an array, with more elements
+ *   as max_small_size.
+ *
+ ******************************************************************************/
 static int
 CheckLHSforHeavyTypes (node *let)
 {
@@ -163,13 +177,8 @@ CheckLHSforHeavyTypes (node *let)
 
         DBUG_PRINT ("BLKIN", ("type: %s %i %i", mdb_type[TYPES_BASETYPE (type)],
                               type->attrib, type->status));
-        if ((type->attrib) == ST_was_reference) {
-            DBUG_PRINT ("BLKIN", ("wrf"));
-        }
 
-        if (TYPES_BASETYPE (type) == T_user) {
-            result = TRUE;
-        }
+        result = result || IsUnique (type);
 
         letids = IDS_NEXT (letids);
     }
@@ -269,8 +278,10 @@ MustExecuteSingleThreaded (node *arg_node, node *arg_info)
         }
     } else if (NODE_TYPE (instr) == N_while) {
         /* ??? #### */
+        DBUG_ASSERT (0, "N_while not supported");
         result = FALSE;
     } else if (NODE_TYPE (instr) == N_do) {
+        DBUG_ASSERT (0, "N_do not supported");
         /* ??? #### */
         result = FALSE;
     } else if (NODE_TYPE (instr) == N_cond) {
@@ -278,6 +289,7 @@ MustExecuteSingleThreaded (node *arg_node, node *arg_info)
         result = FALSE;
     } else if (NODE_TYPE (instr) == N_return) {
         /* ??? #### */
+        /* N_return does not need to be inserted in Blocks */
         result = FALSE;
     } else {
         DBUG_ASSERT (0, "unknown type of instr");
@@ -313,18 +325,18 @@ WillExecuteMultiThreaded (node *arg_node, node *arg_info)
     if (NODE_TYPE (instr) == N_let) {
         if (NODE_TYPE (LET_EXPR (instr)) == N_Nwith2) {
             if (NWITH2_ISSCHEDULED (LET_EXPR (instr))) {
-                NOTE (("hit wemt 1 t"));
+                DBUG_PRINT ("BLKIN", ("multi? N_Nwith2, scheduled: yes"));
                 result = TRUE;
             } else {
-                NOTE (("hit wemt 4 f"));
+                DBUG_PRINT ("BLKIN", ("multi? N_Nwith2, not scheduled: no"));
                 result = FALSE;
             }
         } else {
-            NOTE (("hit wemt 2 f"));
+            DBUG_PRINT ("BLKIN", ("multi? let, but no N_Nwith2: no"));
             result = FALSE;
         }
     } else {
-        NOTE (("hit wemt 3 f"));
+        DBUG_PRINT ("BLKIN", ("multi? no let: no"));
         result = FALSE;
     }
 
@@ -454,17 +466,30 @@ BLKINassign (node *arg_node, node *arg_info)
         /*
          *  Insert ST-Block
          */
-        InsertST (arg_node, arg_info);
+        arg_node = InsertST (arg_node, arg_info);
+        if (FUNDEF_COMPANION (INFO_MUTH_FUNDEF (arg_info)) == NULL) {
+            DBUG_PRINT ("BLKIN", ("first is st"));
+            FUNDEF_COMPANION (INFO_MUTH_FUNDEF (arg_info)) = ASSIGN_INSTR (arg_node);
+        }
     } else if (WillExecuteMultiThreaded (arg_node, arg_info)) {
         /*
          *  Insert MT-Block
          */
-        InsertMT (arg_node, arg_info);
+        arg_node = InsertMT (arg_node, arg_info);
+        if (FUNDEF_COMPANION (INFO_MUTH_FUNDEF (arg_info)) == NULL) {
+            DBUG_PRINT ("BLKIN", ("first is mt"));
+            FUNDEF_COMPANION (INFO_MUTH_FUNDEF (arg_info)) = ASSIGN_INSTR (arg_node);
+        }
     } else {
         /*
          *  can be executed sequential or multithreaded
          *  this decision is made later
          */
+    }
+    if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_cond) {
+        DBUG_PRINT ("BLKIN", ("into instr"));
+        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        DBUG_PRINT ("BLKIN", ("from instr"));
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
