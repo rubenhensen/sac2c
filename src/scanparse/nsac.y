@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.30  2004/12/06 20:44:56  sah
+* fixed withlop withid rule
+*
 * Revision 1.29  2004/12/05 21:05:00  sah
 * fixed objdefs rule
 *
@@ -1415,10 +1418,10 @@ width: /* empty */   { $$ = NULL; }
      ;
 
 genidx: ID LET SQBR_L ids SQBR_R
-        { $$ = TBmakeWithid( TCmakeIdsCopyString( $1, NULL), $4);
+        { $$ = TBmakeWithid( TBmakeSpids( ILIBstringCopy( $1), NULL), $4);
         }
       | ID
-        { $$ = TBmakeWithid( TCmakeIdsCopyString( $1, NULL), NULL);
+        { $$ = TBmakeWithid( TBmakeSpids( ILIBstringCopy( $1), NULL), NULL);
         }
       | SQBR_L ids SQBR_R
         { $$ = TBmakeWithid( NULL, $2);
