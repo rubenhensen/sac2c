@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2003/03/25 16:30:20  sbs
+ * ...
+ *
  * Revision 3.41  2003/03/25 16:18:07  sbs
  * d.....
  *
@@ -648,10 +651,10 @@ int ive_expr, ive_op;
  *
  * @fn node *FindVect( node *chain)
  *
+ *   @brief checks whether VECT is in the chain.
  *   @param chain  chain of vinfo-nodes to be searched
  *   @return the address of the VECT-node or the address of a vinfo-node with
  *           DOLLAR-flag (= no VECT in chain)
- *   @brief checks whether VECT is in the chain.
  *
  ******************************************************************************/
 
@@ -671,13 +674,13 @@ FindVect (node *chain)
  *
  * @fn  bool EqTypes( types *type1, types *type2)
  *
- *   @param  type1
- *   @param  type2
- *   @return 1 iff the types are equal, 0 otherwise
  *   @brief  compares two types with respect to the shape.
  *
  *           In case of UDFs the implementation-type is compared.
  *           This is a helper function needed from FindIdx only!
+ *   @param  type1
+ *   @param  type2
+ *   @return 1 iff the types are equal, 0 otherwise
  *
  ******************************************************************************/
 
@@ -710,16 +713,14 @@ EqTypes (types *type1, types *type2)
     DBUG_RETURN (res);
 }
 
-/*!*****************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   @fn  node *FindIdx( node *chain, types *vshape)
+ * @fn  node *FindIdx( node *chain, types *vshape)
  *
- * description:
+ *   @brief  checks whether IDX(vshape) is in the chain.
  *   @param  chain
  *   @param  vshape
  *   @return NULL (= IDX(idx-shape) not in chain) or the adress of the IDX-node
- *   @brief  checks whether IDX(vshape) is in the chain.
  *
  ******************************************************************************/
 
@@ -736,15 +737,13 @@ FindIdx (node *chain, types *vshape)
     DBUG_RETURN (chain);
 }
 
-/*!*****************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   @fn  node *SetVect( node *chain)
+ * @fn  node *SetVect( node *chain)
  *
- * description:
+ *   @brief  inserts a VECT node in the given node-chain if there exists none yet.
  *   @param  chain
  *   @return potentially extended chain
- *   @brief  inserts a VECT node in the given node-chain if there exists none yet.
  *
  ******************************************************************************/
 
@@ -765,11 +764,11 @@ SetVect (node *chain)
  *
  * @fn  node *SetIdx( node *chain, types *vartype)
  *
+ *   @brief  inserts an IDX(shape) node in the given node-chain if there exists
+ *           none yet.
  *   @param  chain
  *   @param  vartype shape to be inserted
  *   @return potentially extended chain
- *   @brief  inserts an IDX(shape) node in the given node-chain if there exists
- *           none yet.
  *
  ******************************************************************************/
 
@@ -812,19 +811,21 @@ SetIdx (node *chain, types *vartype)
  *
  */
 /*@{*/
-/*!****************************************************************************
+/** <!--********************************************************************-->
  *
  * @fn node *CutVinfoChn( node * chain)
  *
- *   @param chain $-ended chain of info nodes
- *   @return trailing chain (after $)
  *   @brief cuts off the topmost chain and returns the rest.
  *
+ *   <pre>
  *   if we give a cinfo-chain as argument, e.g.
  *     VECT : IDX([2,2]) : $ : VECT : $
  *   CutVinfoChn cuts off the first list by setting the NEXT pointer of the first
  *   $-symbol to NULL, and returns a pointer to the rest of the chain, e.g.
  *                             VECT : $
+ *   </pre>
+ *   @param chain $-ended chain of info nodes
+ *   @return trailing chain (after $)
  *
  ******************************************************************************/
 
@@ -842,14 +843,18 @@ CutVinfoChn (node *chain)
     DBUG_RETURN (rest);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *AppendVinfoChn( node *ca, node *cb)
+ * @fn node *AppendVinfoChn( node *ca, node *cb)
  *
- * description:
- *   Expects ca to contain one chain only.
- *   If that assumption holds cb is appended to ca.
+ *   @brief prepands ca to cb.
+ *
+ *          Expects ca to contain one chain only.
+ *          If that assumption holds cb is appended to ca.
+ *          Otherwise, a DBUG_ASSERT is issued.
+ *   @param ca vinfo chain that contains one chain only (i.e. one $)
+ *   @param cb vinfo chain
+ *   @return returns ca.
  *
  ******************************************************************************/
 
@@ -867,12 +872,10 @@ AppendVinfoChn (node *ca, node *cb)
     DBUG_RETURN (ca);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *  node *MergeVinfoChn( node *ca, node *cb)
+ * @fn node *MergeVinfoChn( node *ca, node *cb)
  *
- * description:
  *   Expects ca to contain one chain only. If that assumption holds the entries
  *   of that chain are merged into the topmost chain of cb.
  *
