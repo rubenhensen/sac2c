@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2003/09/17 17:47:42  dkr
+ * SAC_TR_MT_PRINT_FOLD_RESULT redefined for TAGGED_ARRAYS
+ *
  * Revision 3.8  2003/03/09 21:31:26  dkr
  * , moved from SAC_ND_WRITE__AKS to SAC_TR_AA_PRINT
  *
@@ -163,13 +166,46 @@ typedef enum {
     SAC_TR_foldres_int,
     SAC_TR_foldres_float,
     SAC_TR_foldres_double,
+#ifndef TAGGED_ARRAYS
     SAC_TR_foldres_array,
     SAC_TR_foldres_array_rc,
+#endif
     SAC_TR_foldres_hidden
 } SAC_TR_foldres_t;
 
 #define SAC_TR_MT_PRINT(msg) SAC_TR_PRINT (msg);
 
+#ifdef TAGGED_ARRAYS
+#define SAC_TR_MT_PRINT_FOLD_RESULT(type, accu_NT, msg)                                  \
+    CAT13 (SAC_TR_MT_PRINT_FOLD_RESULT__,                                                \
+           NT_SHP (accu_NT) BuildArgs3 (type, accu_NT, msg))
+#define SAC_TR_MT_PRINT_FOLD_RESULT__SCL(type, accu_NT, msg)                             \
+    {                                                                                    \
+        const SAC_TR_foldres_t SAC_TR_foldres = SAC_TR_foldres_##type;                   \
+        switch (SAC_TR_foldres) {                                                        \
+        case SAC_TR_foldres_int:                                                         \
+            SAC_TR_MT_PRINT ((msg " (int) %d", SAC_ND_A_FIELD (accu_NT)));               \
+            break;                                                                       \
+        case SAC_TR_foldres_float:                                                       \
+            SAC_TR_MT_PRINT ((msg " (float) %.15g", SAC_ND_A_FIELD (accu_NT)));          \
+            break;                                                                       \
+        case SAC_TR_foldres_double:                                                      \
+            SAC_TR_MT_PRINT ((msg " (double) %.15g", SAC_ND_A_FIELD (accu_NT)));         \
+            break;                                                                       \
+        case SAC_TR_foldres_hidden:                                                      \
+            SAC_TR_MT_PRINT ((msg " (hidden)"));                                         \
+            break;                                                                       \
+        }                                                                                \
+    }
+#define SAC_TR_MT_PRINT_FOLD_RESULT__AKS(type, accu_NT, msg)                             \
+    {                                                                                    \
+        SAC_TR_MT_PRINT ((msg " (array) %p", SAC_ND_A_FIELD (accu_NT)));                 \
+    }
+#define SAC_TR_MT_PRINT_FOLD_RESULT__AKD(type, accu_NT, msg)                             \
+    SAC_TR_MT_PRINT_FOLD_RESULT__AKS (type, accu_NT, msg)
+#define SAC_TR_MT_PRINT_FOLD_RESULT__AUD(type, accu_NT, msg)                             \
+    SAC_TR_MT_PRINT_FOLD_RESULT__AKS (type, accu_NT, msg)
+#else /* TAGGED_ARRAYS */
 #define SAC_TR_MT_PRINT_FOLD_RESULT(type, accu_var, msg)                                 \
     {                                                                                    \
         const SAC_TR_foldres_t SAC_TR_foldres = SAC_TR_foldres_##type;                   \
@@ -194,6 +230,7 @@ typedef enum {
             break;                                                                       \
         }                                                                                \
     }
+#endif /* TAGGED_ARRAYS */
 
 #else /* SAC_DO_TRACE_MT */
 
