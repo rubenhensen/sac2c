@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.89  2002/08/09 12:45:18  dkr
+ * INFO_COMP_... macros moved from tree_basic.h to compile.c
+ *
  * Revision 3.88  2002/07/15 14:45:43  dkr
  * signature of NodeOrInt_MakeIndex() modified
  *
@@ -165,6 +168,18 @@ static ids *wlids = NULL;
 static node *wlnode = NULL;
 static node *wlseg = NULL;
 static node *wlstride = NULL;
+
+/*
+ * access macros for 'arg_info'
+ */
+#define INFO_COMP_MODUL(n) (n->node[0])
+#define INFO_COMP_FUNDEF(n) (n->node[1])
+#define INFO_COMP_LASTSYNC(n) (n->node[3])
+#define INFO_COMP_LASTIDS(n) (n->info.ids)
+#define INFO_COMP_FOLDFUNS(n) ((bool)(n->varno))
+#define INFO_COMP_ASSIGN(n) (n->node[5])
+#define INFO_COMP_SCHEDULERID(n) (n->counter)
+#define INFO_COMP_SCHEDULERINIT(n) (n->info2)
 
 /* postfix for goto labels */
 #define LABEL_POSTFIX "SAC__label"
@@ -1767,7 +1782,6 @@ COMPFundefArgs (node *fundef, node *arg_info)
                 /*
                  * put ICMs for RC-adjustment at beginning of function block
                  *   BUT BEHIND THE DECLARATION ICMs!!!
-                 *   -> put them at the tail of INFO_COMP_FIRSTASSIGN
                  */
                 if (FUNDEF_STATUS (fundef) != ST_spmdfun) {
                     assigns
@@ -1785,7 +1799,6 @@ COMPFundefArgs (node *fundef, node *arg_info)
                     /*
                      * put "ND_KS_DECL_ARRAY_ARG" ICMs at beginning of function block
                      *   AND IN FRONT OF THE DECLARATION ICMs!!!
-                     *   -> put ICM at the head of INFO_COMP_FIRSTASSIGN
                      */
                     dim = GetDim (ARG_TYPE (arg));
                     if (dim > 0) {
@@ -1799,7 +1812,6 @@ COMPFundefArgs (node *fundef, node *arg_info)
                     /*
                      * put "ND_DECL_PARAM_..." ICM at beginning of function block
                      *   AND IN FRONT OF THE DECLARATION ICMs!!!
-                     *   -> put ICM at the head of INFO_COMP_FIRSTASSIGN
                      */
                     if (argtab->tag[i] == ATG_inout) {
                         assigns = MakeAssignIcm2 ("ND_DECL_PARAM_inout",
