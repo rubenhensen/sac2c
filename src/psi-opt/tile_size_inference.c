@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/15 15:49:54  bs
+ * access macros changed
+ *
  * Revision 2.1  1999/02/23 12:43:17  sacbase
  * new release made
  *
@@ -47,9 +50,10 @@
  ******************************************************************************/
 
 node *
-TileSizeInference (node *arg_node, node *arg_info)
+TileSizeInference (node *arg_node)
 {
     funptr *tmp_tab;
+    node *arg_info;
 
     DBUG_ENTER ("TileSizeInference");
 
@@ -58,9 +62,11 @@ TileSizeInference (node *arg_node, node *arg_info)
 
     tmp_tab = act_tab;
     act_tab = tsi_tab;
+    arg_info = MakeInfo ();
 
-    arg_node = Trav (arg_node, NULL);
+    arg_node = Trav (arg_node, arg_info);
 
+    FREE (arg_info);
     act_tab = tmp_tab;
 
     DBUG_RETURN (arg_node);
@@ -69,25 +75,22 @@ TileSizeInference (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   nums *NumVect2NumsList(int coeff, node *exprs)
+ *   nums   *NumVect2NumsList(int coeff, node *exprs)
  *
  * description:
- *
  *   This function converts an N_exprs list from an N_array node into a list
  *   of type nums, i.e. the elements of a constant int vector are transformed
- *   into a format suitable to build a shape segment. During the format conversion
- *   each element is multiplied by <coeff>.
+ *   into a format suitable to build a shape segment. During the format
+ *   conversion each element is multiplied by <coeff>.
  *
  * remark:
- *
  *   Here, a recursive implementation is used although recrsion is not without
- *   problems concerning the stack size and the performance. However, a recursive
- *   implementation where the order of the list is untouched is much easier
- *   than an iterative one and this function is only used for index vectors,
- *   i.e. the lists are quite short.
+ *   problems concerning the stack size and the performance. However, a
+ *   recursive implementation where the order of the list is untouched is much
+ *   easier than an iterative one and this function is only used for index
+ *   vectors, i.e. the lists are quite short.
  *
  ******************************************************************************/
-
 static nums *
 NumVect2NumsList (int coeff, node *exprs)
 {
@@ -109,6 +112,85 @@ NumVect2NumsList (int coeff, node *exprs)
     }
 
     DBUG_RETURN (tmp);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   shpseg *Shpseg2Shpseg(int coeff, shpseg *shp_seg)
+ *
+ * description:
+ *   This function creates a new shape vector. The new shape vector
+ *   is made of the shp_seg multiplied by <coeff>.
+ *
+ * remark:
+ *   Here, a recursive implementation is used although recrsion is not without
+ *   problems concerning the stack size and the performance. However, a
+ *   recursive implementation where the order of the list is untouched is much
+ *   easier than an iterative one and this function is only used for index
+ *   vectors, i.e. the lists are quite short.
+ *
+ ******************************************************************************/
+
+static shpseg *
+Shpseg2Shpseg (int coeff, shpseg *shp_seg)
+{
+    int i;
+    shpseg *result;
+
+    DBUG_ENTER ("Shpseg2Shpseg");
+
+    if (shp_seg == NULL)
+        result = NULL;
+    else {
+        result = Malloc (sizeof (shpseg));
+        for (i = 0; i < SHP_SEG_SIZE; i++)
+            SHPSEG_SHAPE (result, i) = coeff * SHPSEG_SHAPE (shp_seg, i);
+#ifdef 0
+        SHPSEG_NEXT (result) = Shpseg2Shpseg (coeff, SHPSEG_NEXT (shp_seg));
+#endif
+        result->next = Shpseg2Shpseg (coeff, result->next);
+    }
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   shpseg *IntVec2Shpseg(int coeff, int length, int *intvec)
+ *
+ * description:
+ *   This functions convert a vector of constant integers into a shape vector.
+ *   During the format conversion each element is multiplied by <coeff>.
+ *
+ ******************************************************************************/
+
+static shpseg *
+IntVec2Shpseg (int coeff, int length, int *intvec)
+{
+    int i;
+    shpseg *result;
+
+    DBUG_ENTER ("IntVec2Shpseg");
+
+    result = Malloc (sizeof (shpseg));
+
+    if (length == 0) {
+        for (i = 0; i < SHP_SEG_SIZE; i++)
+            SHPSEG_SHAPE (result, i) = 0;
+    } else {
+        for (i = 0; i < length; i++)
+            SHPSEG_SHAPE (result, i) = coeff * intvec[i];
+        for (i = length; i < SHP_SEG_SIZE; i++)
+            SHPSEG_SHAPE (result, i) = 0;
+    }
+#ifdef 0
+    SHPSEG_NEXT (result) = NULL;
+#endif
+    result->next = NULL;
+
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************
@@ -193,7 +275,7 @@ TSIfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("TSIfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        arg_node = Trav (arg_node, arg_info);
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -220,7 +302,7 @@ TSIblock (node *arg_node, node *arg_info)
     DBUG_ENTER ("TSIblock");
 
     if (BLOCK_INSTR (arg_node) != NULL) {
-        arg_node = Trav (arg_node, arg_info);
+        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -252,12 +334,13 @@ TSInwith (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("TSInwith");
 
-    old_arg_info = arg_info;
     /*
      * Store old arg_info for the case of nested with-loops.
      */
-
+#ifdef 0
+    old_arg_info = arg_info;
     arg_info = MakeInfo ();
+#endif
     INFO_TSI_ACCESS (arg_info) = NULL;
     INFO_TSI_INDEXVAR (arg_info) = IDS_VARDEC (NWITH_VEC (arg_node));
     INFO_TSI_FEATURE (arg_info) = FEATURE_NONE;
@@ -265,11 +348,11 @@ TSInwith (node *arg_node, node *arg_info)
     INFO_TSI_BELOWAP (arg_info) = 0;
 
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-
+#ifdef 0
     FREE (arg_info);
 
     arg_info = old_arg_info;
-
+#endif
     if (arg_info != NULL) {
         INFO_TSI_FEATURE (arg_info) = INFO_TSI_FEATURE (arg_info) | FEATURE_WL;
     }
@@ -550,13 +633,14 @@ node *
 TSIprf (node *arg_node, node *arg_info)
 {
     int i;
-    nums *offset;
+    int *offset;
     access_t *access;
 
     DBUG_ENTER ("TSIprf");
 
-    if (arg_info != NULL) {
+    if (1) {
         /*
+      if (INFO_TSI_WLLEVEL(arg_info) > 0) {
          * Here, we are beyond a with-loop.
          */
         switch (PRF_PRF (arg_node)) {
@@ -583,24 +667,19 @@ TSIprf (node *arg_node, node *arg_info)
                     DBUG_ASSERT ((ID_DIM (PRF_ARG2 (arg_node)) > 0),
                                  "Unknown dimension for 2nd arg of psi");
 
-                    offset = NULL;
-                    for (i = 0; i < ID_DIM (PRF_ARG2 (arg_node)); i++) {
-                        offset = MakeNums (0, offset);
-                    }
-
-                    ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info)) = MakeShpseg (offset);
+                    ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info))
+                      = IntVec2Shpseg (1, 0, NULL);
                 } else {
-                    if (ID_VAL (PRF_ARG1 (arg_node)) != NULL) {
+                    if (ID_INTVEC (PRF_ARG1 (arg_node)) != NULL) {
                         ACCESS_CLASS (INFO_TSI_ACCESS (arg_info)) = ACL_const;
 
-                        DBUG_ASSERT ((NODE_TYPE (ID_VAL (PRF_ARG1 (arg_node)))
-                                      == N_array),
+                        DBUG_ASSERT ((ID_VECLEN (PRF_ARG1 (arg_node)) > SCALAR),
                                      "propagated constant vector is not of node type "
                                      "N_array");
 
-                        ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info)) = MakeShpseg (
-                          NumVect2NumsList (1,
-                                            ARRAY_AELEMS (ID_VAL (PRF_ARG1 (arg_node)))));
+                        ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info))
+                          = IntVec2Shpseg (1, ID_VECLEN (PRF_ARG1 (arg_node)),
+                                           ID_INTVEC (PRF_ARG1 (arg_node)));
                     }
                 }
             } else {
@@ -635,12 +714,15 @@ TSIprf (node *arg_node, node *arg_info)
                     && (ID_VARDEC (PRF_ARG2 (arg_node))
                         == INFO_TSI_INDEXVAR (arg_info))) {
                     ACCESS_CLASS (access) = ACL_offset;
-                    offset = NULL;
+                    offset
+                      = Malloc (VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access)) * sizeof (int));
                     for (i = 0; i < VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access)); i++) {
-                        offset = MakeNums (NUM_VAL (PRF_ARG1 (arg_node)), offset);
+                        offset[i] = NUM_VAL (PRF_ARG1 (arg_node));
                     }
 
-                    ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info)) = MakeShpseg (offset);
+                    ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info))
+                      = IntVec2Shpseg (1, VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access)),
+                                       offset);
                 }
             } else {
                 if (!IsIndexVect (IDS_TYPE (INFO_TSI_LASTLETIDS (arg_info)))) {
@@ -657,12 +739,15 @@ TSIprf (node *arg_node, node *arg_info)
                     && (ID_VARDEC (PRF_ARG1 (arg_node))
                         == INFO_TSI_INDEXVAR (arg_info))) {
                     ACCESS_CLASS (access) = ACL_offset;
-                    offset = NULL;
+                    offset
+                      = Malloc (VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access)) * sizeof (int));
                     for (i = 0; i < VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access)); i++) {
-                        offset = MakeNums (NUM_VAL (PRF_ARG2 (arg_node)), offset);
+                        offset[i] = NUM_VAL (PRF_ARG1 (arg_node));
                     }
 
-                    ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info)) = MakeShpseg (offset);
+                    ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info))
+                      = IntVec2Shpseg (1, VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access)),
+                                       offset);
                 }
             } else {
                 if (!IsIndexVect (IDS_TYPE (INFO_TSI_LASTLETIDS (arg_info)))) {
@@ -675,31 +760,31 @@ TSIprf (node *arg_node, node *arg_info)
         case F_add_AxA:
             access = SearchAccess (arg_info);
             if (access != NULL) {
-                if ((ID_VAL (PRF_ARG1 (arg_node)) != NULL)
-                    && (ID_VARDEC (PRF_ARG2 (arg_node))
+                if ((ID_INTVEC (PRF_ARG2 (arg_node)) != NULL)
+                    && (ID_VARDEC (PRF_ARG1 (arg_node))
                         == INFO_TSI_INDEXVAR (arg_info))) {
                     ACCESS_CLASS (access) = ACL_offset;
 
-                    DBUG_ASSERT ((NODE_TYPE (ID_VAL (PRF_ARG1 (arg_node))) == N_array),
+                    DBUG_ASSERT ((ID_VECLEN (PRF_ARG1 (arg_node)) > SCALAR),
                                  "propagated constant vector is not of node type "
                                  "N_array");
 
-                    ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info)) = MakeShpseg (
-                      NumVect2NumsList (1, ARRAY_AELEMS (ID_VAL (PRF_ARG1 (arg_node)))));
+                    ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info))
+                      = IntVec2Shpseg (1, ID_VECLEN (PRF_ARG1 (arg_node)),
+                                       ID_INTVEC (PRF_ARG1 (arg_node)));
                 } else {
-                    if ((ID_VAL (PRF_ARG2 (arg_node)) != NULL)
-                        && (ID_VARDEC (PRF_ARG1 (arg_node))
+                    if ((ID_INTVEC (PRF_ARG1 (arg_node)) != NULL)
+                        && (ID_VARDEC (PRF_ARG2 (arg_node))
                             == INFO_TSI_INDEXVAR (arg_info))) {
                         ACCESS_CLASS (access) = ACL_offset;
 
-                        DBUG_ASSERT ((NODE_TYPE (ID_VAL (PRF_ARG1 (arg_node)))
-                                      == N_array),
+                        DBUG_ASSERT ((ID_VECLEN (PRF_ARG1 (arg_node)) > SCALAR),
                                      "propagated constant vector is not of node type "
                                      "N_array");
 
-                        ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info)) = MakeShpseg (
-                          NumVect2NumsList (1,
-                                            ARRAY_AELEMS (ID_VAL (PRF_ARG1 (arg_node)))));
+                        ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info))
+                          = IntVec2Shpseg (1, ID_VECLEN (PRF_ARG2 (arg_node)),
+                                           ID_INTVEC (PRF_ARG2 (arg_node)));
                     }
                 }
             } else {
@@ -717,12 +802,10 @@ TSIprf (node *arg_node, node *arg_info)
                     && (ID_VARDEC (PRF_ARG1 (arg_node))
                         == INFO_TSI_INDEXVAR (arg_info))) {
                     ACCESS_CLASS (access) = ACL_offset;
-                    offset = NULL;
-                    for (i = 0; i < VARDEC_OR_ARG_DIM (ACCESS_ARRAY (access)); i++) {
-                        offset = MakeNums (-1 * NUM_VAL (PRF_ARG2 (arg_node)), offset);
-                    }
 
-                    ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info)) = MakeShpseg (offset);
+                    ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info))
+                      = IntVec2Shpseg (-1, ID_VECLEN (PRF_ARG2 (arg_node)),
+                                       ID_INTVEC (PRF_ARG2 (arg_node)));
                 }
             } else {
                 if (!IsIndexVect (IDS_TYPE (INFO_TSI_LASTLETIDS (arg_info)))) {
@@ -735,17 +818,18 @@ TSIprf (node *arg_node, node *arg_info)
         case F_sub_AxA:
             access = SearchAccess (arg_info);
             if (access != NULL) {
-                if ((ID_VAL (PRF_ARG2 (arg_node)) != NULL)
+                if ((ID_INTVEC (PRF_ARG2 (arg_node)) != NULL)
                     && (ID_VARDEC (PRF_ARG1 (arg_node))
                         == INFO_TSI_INDEXVAR (arg_info))) {
                     ACCESS_CLASS (access) = ACL_offset;
 
-                    DBUG_ASSERT ((NODE_TYPE (ID_VAL (PRF_ARG1 (arg_node))) == N_array),
+                    DBUG_ASSERT ((ID_VECLEN (PRF_ARG1 (arg_node)) > SCALAR),
                                  "propagated constant vector is not of node type "
                                  "N_array");
 
-                    ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info)) = MakeShpseg (
-                      NumVect2NumsList (-1, ARRAY_AELEMS (ID_VAL (PRF_ARG1 (arg_node)))));
+                    ACCESS_OFFSET (INFO_TSI_ACCESS (arg_info))
+                      = IntVec2Shpseg (-1, ID_VECLEN (PRF_ARG1 (arg_node)),
+                                       ID_INTVEC (PRF_ARG1 (arg_node)));
                 }
             } else {
                 if (!IsIndexVect (IDS_TYPE (INFO_TSI_LASTLETIDS (arg_info)))) {
@@ -803,9 +887,9 @@ TSIprf (node *arg_node, node *arg_info)
  *   This function detects function applications within with-loop operators
  *   and sets the features bit mask accordingly. However, functions which do
  *   not deal with arrays are no problem for tile size inference. We could
- *   investigate this by an inter-functional analysis. But for now, we only check
- *   whether one of the arguments or one of the return values is of an array
- *   type.
+ *   investigate this by an inter-functional analysis. But for now, we only
+ *   check whether one of the arguments or one of the return values is of an
+ *   array type.
  *
  ******************************************************************************/
 
@@ -820,7 +904,6 @@ TSIap (node *arg_node, node *arg_info)
         /*
          * Here, we are beyond a with-loop.
          */
-
         ret_var = INFO_TSI_LASTLETIDS (arg_info);
 
         while (ret_var != NULL) {
