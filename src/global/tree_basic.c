@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.59  1998/04/10 02:24:52  dkr
+ * changed MakeWLseg
+ *
  * Revision 1.58  1998/04/02 17:39:23  dkr
  * added MakeConc
  *
@@ -1557,6 +1560,7 @@ node *
 MakeWLseg (int dims, node *contents, node *next)
 {
     node *new_node;
+    int b, d;
 
     DBUG_ENTER ("MakeWLseg");
     INIT_NODE (new_node);
@@ -1566,6 +1570,18 @@ MakeWLseg (int dims, node *contents, node *next)
 
     WLSEG_CONTENTS (new_node) = contents;
     WLSEG_NEXT (new_node) = next;
+
+    WLSEG_BLOCKS (new_node) = 3; /* three blocking levels */
+    for (b = 0; b < WLSEG_BLOCKS (new_node); b++) {
+        WLSEG_BV (new_node, b) = (long *)MALLOC (sizeof (long) * dims);
+    }
+    WLSEG_UBV (new_node) = (long *)MALLOC (sizeof (long) * dims);
+
+    WLSEG_SV (new_node) = (long *)MALLOC (sizeof (long) * dims);
+    /* init SV */
+    for (d = 0; d < dims; d++) {
+        (WLSEG_SV (new_node))[d] = 1;
+    }
 
     DBUG_RETURN (new_node);
 }
