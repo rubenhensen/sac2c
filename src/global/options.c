@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.32  2000/03/17 10:38:50  dkr
+ * comment for -lac2fun and -fun2lac added
+ *
  * Revision 2.31  2000/03/16 16:22:07  dkr
  * options -lac2fun and -fun2lac extended:
  * activates lac2fun conversion and vice versa for the given compiler
@@ -421,7 +424,9 @@ AnalyseCommandline (int argc, char *argv[])
             old_s = new_s;                                                               \
         }                                                                                \
     }
+    /* "-lac2fun 8:14" means: call Lac2fun() before phases 8 and 14 */
     ARGS_OPTION ("lac2fun", LAC_FUN (do_lac2fun));
+    /* "-fun2lac 8:21" means: call Fun2lac() after phases 8 and 21 */
     ARGS_OPTION ("fun2lac", LAC_FUN (do_fun2lac));
 
     ARGS_OPTION ("l", { ARG_RANGE (linkstyle, 1, 2); });
