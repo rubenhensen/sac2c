@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2004/09/20 16:15:16  sah
+  fixed a comment and a define
+
   Revision 1.4  2004/08/29 18:10:05  sah
   general improvements
 
@@ -25,8 +28,8 @@ version="1.0">
 <xsl:output method="text" indent="no"/>
 <xsl:strip-space elements="*"/>
 
-<!-- This stylesheet generates a free_node.h file implementing all
-     functions needed to free a node -->
+<!-- This stylesheet generates a free_attribs.h file defining all
+     functions needed to free the attributes of a node -->
 
 <xsl:template match="/">
 <xsl:call-template name="travfun-file">
@@ -49,7 +52,8 @@ version="1.0">
   </xsl:text>
   <xsl:apply-templates select="//attributetypes/type[@copy != &quot;literal&quot;]"/>
   <xsl:text>
-#endif /* _SAC_FREE_NODE_H */
+
+#endif /* _SAC_FREE_ATTRIBS_H */
   </xsl:text>
 </xsl:template>
 
