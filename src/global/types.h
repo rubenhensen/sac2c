@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2004/11/22 16:23:58  ktr
+ * moved typedefs from libmanager.c
+ *
  * Revision 3.48  2004/11/22 16:18:29  ktr
  * ISMOP SacDevCamp 04
  *
@@ -935,5 +938,11 @@ typedef void *(*SSfoldfun_p) (const char *elem, SStype_t kind, void *rest);
  */
 
 typedef enum { PK_path, PK_moddec_path, PK_modimp_path, PK_systemlib_path } pathkind;
+
+/*
+ * moved from libmanager.h
+ */
+typedef void *dynlib_t;
+typedef void *dynfun_t;
 
 #endif /* _SAC_TYPES_H_ */
