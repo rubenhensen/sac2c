@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2004/12/07 14:35:37  sbs
+ * replaced CVoldTypeSignature2String by TUtypeSignature2String
+ *
  * Revision 3.81  2004/12/06 17:31:05  sbs
  * some post DK cleanup 8-)
  *
@@ -2685,19 +2688,19 @@ TYdft_res2DebugString (dft_res *dft)
         buf = ILIBstrBufPrintf (buf, "--");
     } else {
         if (dft->def) {
-            tmp_str = CVoldTypeSignature2String (dft->def);
+            tmp_str = TUtypeSignature2String (dft->def);
             buf = ILIBstrBufPrintf (buf, "exact : (%s) ", tmp_str);
             tmp_str = ILIBfree (tmp_str);
         }
         if (dft->deriveable) {
-            tmp_str = CVoldTypeSignature2String (dft->deriveable);
+            tmp_str = TUtypeSignature2String (dft->deriveable);
             buf = ILIBstrBufPrintf (buf, "deriveable : (%s) ", tmp_str);
             tmp_str = ILIBfree (tmp_str);
         }
         if (dft->num_partials > 0) {
             buf = ILIBstrBufPrintf (buf, "partials : ");
             for (i = 0; i < dft->num_partials; i++) {
-                tmp_str = CVoldTypeSignature2String (dft->partials[i]);
+                tmp_str = TUtypeSignature2String (dft->partials[i]);
                 buf = ILIBstrBufPrintf (buf, "%s ", tmp_str);
                 tmp_str = ILIBfree (tmp_str);
             }
@@ -2705,7 +2708,7 @@ TYdft_res2DebugString (dft_res *dft)
         if (dft->num_deriveable_partials > 0) {
             buf = ILIBstrBufPrintf (buf, "deriveable_partials : ");
             for (i = 0; i < dft->num_deriveable_partials; i++) {
-                tmp_str = CVoldTypeSignature2String (dft->deriveable_partials[i]);
+                tmp_str = TUtypeSignature2String (dft->deriveable_partials[i]);
                 buf = ILIBstrBufPrintf (buf, "%s ", tmp_str);
                 tmp_str = ILIBfree (tmp_str);
             }
