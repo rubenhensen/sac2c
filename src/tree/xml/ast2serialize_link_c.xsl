@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/11/01 21:53:56  sah
+  added support fo r DownLink attributes and tweaked
+  the entire serialization proeccess a bit
+
   Revision 1.3  2004/10/26 16:14:56  sah
   now node attributes are properly processed
 
@@ -130,7 +134,7 @@ version="1.0">
   <xsl:value-of select="@name" />
   <xsl:value-of select="'&quot;);'" />
   <!-- serialize link attributes -->
-  <xsl:apply-templates select="attributes/attribute[type/@name=&quot;Link&quot;]" />
+  <xsl:apply-templates select="attributes/attribute[type/@name=&quot;Link&quot;] | attributes/attribute[type/@name=&quot;DownLink&quot;]" />
   <!-- trav sons -->
   <xsl:apply-templates select="sons" />
   <!-- trav node attributes -->
@@ -179,6 +183,20 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="' != NULL) {'" />
+  <!-- and only those, where the target is on the stack -->
+  <xsl:value-of select="'if (SerStackFindPos( '" />
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">
+      <xsl:value-of select="'arg_node'" />
+    </xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name" />
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="', INFO_SER_STACK( arg_info)) != SERSTACK_NOT_FOUND) {'" />
   <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;/* fix link for '" />
   <xsl:value-of select="@name" />
   <xsl:value-of select="' attribute */\n&quot;);'" />
@@ -196,7 +214,7 @@ version="1.0">
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="', INFO_SER_STACK( arg_info))); }'" />
+  <xsl:value-of select="', INFO_SER_STACK( arg_info))); }}'" />
 </xsl:template>
 
 <xsl:template match="sons[../@name=&quot;Fundef&quot;]" >

@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2004/11/01 21:53:56  sah
+  added support fo r DownLink attributes and tweaked
+  the entire serialization proeccess a bit
+
   Revision 1.4  2004/09/24 20:20:08  sah
   now the new types are not
   freed for fundefs as well
@@ -166,10 +170,12 @@ version="1.0">
     <xsl:with-param name="field">Status</xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="' = ST_zombiefun;'"/>
-  <!-- free all sons -->
-  <xsl:apply-templates select="sons/son"/>
+  <!-- first free everything downwards in the ast -->
+  <xsl:apply-templates select="sons/son[@name = &quot;Next&quot;]"/>
   <!-- free all attributes, except NAME, MOD, LINKMOD and TYPES --> 
   <xsl:apply-templates select="attributes/attribute[@name != &quot;Name&quot;][@name != &quot;Mod&quot;][@name!=&quot;LinkMod&quot;][@name != &quot;Types&quot;][@name != &quot;Type&quot;]"/>
+  <!-- call free for all other sons -->
+  <xsl:apply-templates select="sons/son[not( @name= &quot;Next&quot;)]"/>
   <!-- DBUG_RETURN call -->
   <xsl:value-of select="'DBUG_RETURN( arg_node);'"/>
   <!-- end of body -->
@@ -222,10 +228,12 @@ version="1.0">
   <xsl:value-of select="'&quot;);'"/>
   <!-- give hint we start to free now -->
   <xsl:value-of select="'DBUG_PRINT( &quot;FREE&quot;, (&quot;Processing node %s at &quot; F_PTR, mdb_nodetype[ NODE_TYPE( arg_node)], arg_node));'"/>
-  <!-- call free for sons -->
-  <xsl:apply-templates select="sons/son"/>
+  <!-- first free everything downwards in the ast -->
+  <xsl:apply-templates select="sons/son[@name = &quot;Next&quot;]"/>
   <!-- call free for attributes -->
   <xsl:apply-templates select="attributes/attribute"/>
+  <!-- call free for all other sons -->
+  <xsl:apply-templates select="sons/son[not( @name= &quot;Next&quot;)]"/>
   <!-- free attribute structure -->
   <xsl:value-of select="'arg_node->attribs.N_'"/>
   <xsl:value-of select="@name"/>

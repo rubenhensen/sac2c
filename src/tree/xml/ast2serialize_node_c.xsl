@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.7  2004/11/01 21:53:56  sah
+  added support fo r DownLink attributes and tweaked
+  the entire serialization proeccess a bit
+
   Revision 1.6  2004/10/19 14:07:27  sah
   added support for persist attribute
   some code cleanup
@@ -118,7 +122,7 @@ version="1.0">
 <!-- 
      traversal main node
 
-     generates a free functions for each node type
+     generates a serialize function for each node type
 
      layout of output:
 
@@ -201,12 +205,14 @@ version="1.0">
   <!-- generate all sons and attributes for Fundef node -->
   <xsl:apply-templates select="attributes/attribute" mode="gen-values"/>
   <xsl:apply-templates select="sons/son" mode="gen-values-fundef"/>
+  <xsl:apply-templates select="flags" mode="gen-values"/>
 </xsl:template>
 
 <xsl:template match="node" mode="gen-values">
   <!-- generate all sons and attributes -->
   <xsl:apply-templates select="attributes/attribute" mode="gen-values"/>
   <xsl:apply-templates select="sons/son" mode="gen-values"/>
+  <xsl:apply-templates select="flags" mode="gen-values"/>
 </xsl:template>
 
 <!--
@@ -303,6 +309,30 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="', arg_info); }'" />
+</xsl:template>
+
+<xsl:template match="flags[flag]" mode="gen-values">
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, %d, %d&quot;, '" />
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">arg_node</xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../@name"/>
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="'FLAGS'"/>
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="', '" />
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">arg_node</xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../@name"/>
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="'DBUG_FLAGS'"/>
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="');'" />
 </xsl:template>
 
 </xsl:stylesheet>
