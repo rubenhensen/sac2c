@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2003/07/28 15:35:06  cg
+ * Changed quoted mail addresses to sac-home.org.
+ *
  * Revision 3.2  2001/11/13 19:35:36  dkr
  * *** empty log message ***
  *
@@ -57,14 +60,14 @@ CompilerErrorBreak (int sig)
 
     /* should we use SYSERROR from Error.h here?? */
     fprintf (stderr, "\n\nOOOPS your program crashed the compiler 8-((\n");
-    fprintf (stderr, "Please send a bug report to sacbase@informatik.uni-kiel.de.\n\n");
+    fprintf (stderr, "Please send a bug report to bug@sac-home.org.\n\n");
     fprintf (stderr,
              "For your convenience, the compiler pre-fabricated a bug report in\n"
              "the file \"SACbugreport\" which was created in the current directory!\n"
              "Besides some infos concerning the compiler version and its\n"
              "usage it contains the specified source file.\n"
              "If you want to send that bug report to us you may simply use\n\n"
-             "  mail sacbase@informatik.uni-kiel.de < SACbugreport\n\n");
+             "  mail bug@sac-home.org < SACbugreport\n\n");
 
     error_file = fopen ("SACbugreport", "w");
     if (error_file != NULL) {

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2003/07/28 15:35:06  cg
+ * Changed quoted mail addresses to sac-home.org.
+ *
  * Revision 3.2  2000/11/21 17:35:37  cg
  * Bug fixed in piped cache simulation on selected blocks:
  * Block characterization tags are encoded for piping in a way that
@@ -507,8 +510,8 @@ Usage (int is_analyser, char *pureprogname, int cachesim, int cs_global, char *c
 
             "\n\nCONTACT%s:\n\n"
 
-            "\tWorld Wide Web: http://www.informatik.uni-kiel.de/~sacbase/\n"
-            "\tE-Mail: sacbase@informatik.uni-kiel.de\n"
+            "\tWorld Wide Web: http://www.sac-home.org/\n"
+            "\tE-Mail: info@sac-home.org\n"
             "\n",
             csim, csim);
 }
