@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.22  1994/12/31 13:54:17  sbs
+ * Revision 1.23  1994/12/31 14:07:01  sbs
+ * types->id_mod prepanded at function declarations.
+ * This is needed for external functions only!
+ *
+ * Revision 1.22  1994/12/31  13:54:17  sbs
  * id_mod for N_ap inserted
  *
  * Revision 1.21  1994/12/21  13:25:39  sbs
@@ -253,9 +257,10 @@ PrintFundef (node *arg_node, node *arg_info)
     fprintf (outfile, "\n");
     if (arg_node->node[0] == NULL) /* pure fundec! */
         fprintf (outfile, "extern ");
-    fprintf (outfile, "%s %s", Type2String (arg_node->info.types, 0),
-             arg_node->info.types->id);
-    fprintf (outfile, "(");
+    fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
+    if (arg_node->info.types->id_mod != NULL)
+        fprintf (outfile, "%s__", arg_node->info.types->id_mod);
+    fprintf (outfile, "%s(", arg_node->info.types->id);
     if (arg_node->node[2] != NULL)
         Trav (arg_node->node[2], arg_info); /* print args of function */
     fprintf (outfile, ")");
