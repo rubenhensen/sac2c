@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.35  1996/09/09 10:05:29  cg
+ * Revision 1.36  1997/03/19 13:44:45  cg
+ * new token LINKWITH for respective pragma
+ *
+ * Revision 1.35  1996/09/09  10:05:29  cg
  * new primitive functions toi, tod, etc. are now treated like the old ones
  *
  * Revision 1.34  1996/05/21  20:16:52  sbs
@@ -308,6 +311,7 @@ int start_token;
 "copyfun"                       {FILTER( COPYFUN );}
 "freefun"                       {FILTER( FREEFUN );}
 "initfun"                       {FILTER( INITFUN );}
+"linkwith"                      {FILTER( LINKWITH );}
 
 "int"				{FILTER( TYPE_INT );}
 "float"				{FILTER( TYPE_FLOAT );}
