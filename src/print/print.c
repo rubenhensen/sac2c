@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.74  2000/05/29 11:56:28  dkr
+ * error in DoPrintAST corrected
+ *
  * Revision 2.73  2000/05/12 17:17:46  dkr
  * implementation of PrintNodeAST completed
  *
@@ -3533,7 +3536,6 @@ DoPrintAST (node *arg_node, int skip_next)
             fprintf (outfile, ", homsv: ");
             PRINT_VECT (outfile, WLSEG_HOMSV (arg_node), WLSEG_DIMS (arg_node), "%i");
             fprintf (outfile, ", maxhomdim: %i)\n", WLSEG_MAXHOMDIM (arg_node));
-            PRINT_VECT (outfile, WLSEG_HOMSV (arg_node), WLSEG_DIMS (arg_node), "%i");
 
             skip = WLSEG_NEXT (arg_node);
             break;
