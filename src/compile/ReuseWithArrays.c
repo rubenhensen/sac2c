@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/06/08 14:27:46  ktr
+ * New Entryfunction GetReuseCandidates yields an N_exprs chain of
+ * identifiers which could be reused.
+ * Important: NWITH2_DEC_RC_IDS is ignored, the caller must assure that
+ * the current reference is the last in the given context.
+ *
  * Revision 3.6  2003/11/18 17:16:59  dkr
  * bug fixed: NWITHOP_DEFAULT may be NULL
  *
@@ -101,6 +107,14 @@
 #include "traverse.h"
 #include "DataFlowMask.h"
 #include "index.h"
+
+#define INFO_REUSE_WL_IDS(n) (n->info.ids)
+#define INFO_REUSE_FUNDEF(n) (n->node[0])
+#define INFO_REUSE_IDX(n) ((ids *)(n->node[1]))
+#define INFO_REUSE_DEC_RC_IDS(n) ((ids *)(n->node[2]))
+#define INFO_REUSE_MASK(n) (n->dfmask[0])
+#define INFO_REUSE_NEGMASK(n) (n->dfmask[1])
+#define INFO_REUSE_NODEC(n) (n->flag)
 
 /******************************************************************************
  *
@@ -210,6 +224,8 @@ ReuseFundef (node *arg_node, node *arg_info)
  *     node.
  *   'INFO_REUSE_IDX( arg_info)' contains a pointer to the index vector of
  *     the current with-loop.
+ *   'INFO_REUSE_NODEC( arg_info)' contains a flag specifying whether
+ *     'INFO_REUSE_DEC_RC_IDS( arg_info)' shall be ignored
  *   'INFO_REUSE_DEC_RC_IDS( arg_info)' contains a pointer to
  *     'NWITH2_DEC_RC_IDS( arg_node)'.
  *
@@ -238,7 +254,9 @@ ReuseNwith2 (node *arg_node, node *arg_info)
             INFO_REUSE_NEGMASK (arg_info)
               = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_REUSE_FUNDEF (arg_info)));
             INFO_REUSE_IDX (arg_info) = NWITH2_VEC (arg_node);
-            INFO_REUSE_DEC_RC_IDS (arg_info) = NWITH2_DEC_RC_IDS (arg_node);
+            if (!INFO_REUSE_NODEC (arg_info)) {
+                INFO_REUSE_DEC_RC_IDS (arg_info) = NWITH2_DEC_RC_IDS (arg_node);
+            }
         }
     } else {
         /*
@@ -288,8 +306,9 @@ ReuseNwithop (node *arg_node, node *arg_info)
          * we can possibly reuse the modarray-array.
          */
         if ((NODE_TYPE (NWITHOP_ARRAY (arg_node)) == N_id)
-            && (IsFound (ID_NAME (NWITHOP_ARRAY (arg_node)),
-                         INFO_REUSE_DEC_RC_IDS (arg_info)))
+            && ((INFO_REUSE_NODEC (arg_info))
+                || (IsFound (ID_NAME (NWITHOP_ARRAY (arg_node)),
+                             INFO_REUSE_DEC_RC_IDS (arg_info))))
             && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info),
                                   ID_NAME (NWITHOP_ARRAY (arg_node)), NULL)
                 == 0)) {
@@ -306,7 +325,68 @@ ReuseNwithop (node *arg_node, node *arg_info)
         DBUG_ASSERT ((0), "wrong node type found");
     }
 
+    if (NWITHOP_NEXT (arg_node) != NULL) {
+        NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
+}
+
+bool
+ReuseSel (node *arg1, node *arg2, node *arg_info)
+{
+    if ((NODE_TYPE (arg1) == N_id)
+        && (!strcmp (ID_NAME (arg1), IDS_NAME (INFO_REUSE_IDX (arg_info))))
+        && (NODE_TYPE (arg2) == N_id)
+        && TypesAreEqual (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)))
+        && ((INFO_REUSE_NODEC (arg_info))
+            || (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info))))
+        && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
+            == 0)) {
+        /*
+         * 'arg2' is used in a normal WL-sel()
+         *  -> we can possibly reuse this array
+         */
+        DFMSetMaskEntrySet (INFO_REUSE_MASK (arg_info), ID_NAME (arg2), NULL);
+        /*
+         * we must not traverse the args!
+         */
+        return (FALSE);
+    } else {
+        return (TRUE);
+    }
+}
+
+bool
+ReuseIdxSel (node *arg1, node *arg2, node *arg_info)
+{
+    bool traverse;
+    char *idx_sel_name;
+
+    traverse = TRUE;
+
+    if ((NODE_TYPE (arg1) == N_id) && (NODE_TYPE (arg2) == N_id)
+        && TypesAreEqual (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)))
+        && ((INFO_REUSE_NODEC (arg_info))
+            || (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info))))
+        && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
+            == 0)) {
+        idx_sel_name = IdxChangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)),
+                                    IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)));
+        if (!strcmp (ID_NAME (arg1), idx_sel_name)) {
+            /*
+             * 'arg2' is used in a (flattened) normal WL-sel()
+             *  -> we can possibly reuse this array
+             */
+            DFMSetMaskEntrySet (INFO_REUSE_MASK (arg_info), ID_NAME (arg2), NULL);
+            /*
+             * we must not traverse the args!
+             */
+            traverse = FALSE;
+        }
+        idx_sel_name = Free (idx_sel_name);
+    }
+    return (traverse);
 }
 
 /******************************************************************************
@@ -331,7 +411,7 @@ ReuseNwithop (node *arg_node, node *arg_info)
 node *
 ReuseLet (node *arg_node, node *arg_info)
 {
-    node *arg1, *arg2;
+    node *arg1, *arg2, *tmpnode;
     ids *tmp;
     char *idx_sel_name;
     bool traverse;
@@ -352,56 +432,55 @@ ReuseLet (node *arg_node, node *arg_info)
     traverse = TRUE;
     DBUG_ASSERT ((INFO_REUSE_IDX (arg_info) != NULL), "no idx found");
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf) {
-        switch (PRF_PRF (LET_EXPR (arg_node))) {
-        case F_sel:
-            arg1 = EXPRS_EXPR (PRF_ARGS (LET_EXPR (arg_node)));
-            arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (arg_node))));
-            if ((NODE_TYPE (arg1) == N_id)
-                && (!strcmp (ID_NAME (arg1), IDS_NAME (INFO_REUSE_IDX (arg_info))))
-                && (NODE_TYPE (arg2) == N_id)
-                && TypesAreEqual (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)))
-                && (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info)))
-                && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
-                    == 0)) {
-                /*
-                 * 'arg2' is used in a normal WL-sel()
-                 *  -> we can possibly reuse this array
-                 */
-                DFMSetMaskEntrySet (INFO_REUSE_MASK (arg_info), ID_NAME (arg2), NULL);
-                /*
-                 * we must not traverse the args!
-                 */
-                traverse = FALSE;
-            }
-            break;
+        if (PRF_PRF (LET_EXPR (arg_node)) == F_fill) {
+            tmpnode = PRF_ARGS (LET_EXPR (arg_node));
+            while (EXPRS_NEXT (tmpnode) != NULL) {
+                DFMSetMaskEntryClear (INFO_REUSE_MASK (arg_info),
+                                      IDS_NAME (ID_IDS (EXPRS_EXPR (tmpnode))), NULL);
+                DFMSetMaskEntrySet (INFO_REUSE_NEGMASK (arg_info),
+                                    IDS_NAME (ID_IDS (EXPRS_EXPR (tmpnode))), NULL);
 
-        case F_idx_sel:
-            arg1 = EXPRS_EXPR (PRF_ARGS (LET_EXPR (arg_node)));
-            arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (arg_node))));
-            if ((NODE_TYPE (arg1) == N_id) && (NODE_TYPE (arg2) == N_id)
-                && TypesAreEqual (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)))
-                && (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info)))
-                && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
-                    == 0)) {
-                idx_sel_name = IdxChangeId (IDS_NAME (INFO_REUSE_IDX (arg_info)),
-                                            IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)));
-                if (!strcmp (ID_NAME (arg1), idx_sel_name)) {
-                    /*
-                     * 'arg2' is used in a (flattened) normal WL-sel()
-                     *  -> we can possibly reuse this array
-                     */
-                    DFMSetMaskEntrySet (INFO_REUSE_MASK (arg_info), ID_NAME (arg2), NULL);
-                    /*
-                     * we must not traverse the args!
-                     */
-                    traverse = FALSE;
+                tmpnode = EXPRS_NEXT (tmpnode);
+            }
+            if (NODE_TYPE (EXPRS_EXPR (tmpnode)) == N_prf) {
+                switch (PRF_PRF (EXPRS_EXPR (tmpnode))) {
+                case F_sel:
+                    arg1 = EXPRS_EXPR (PRF_ARGS (EXPRS_EXPR (tmpnode)));
+                    arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (EXPRS_EXPR (tmpnode))));
+                    traverse = ReuseSel (arg1, arg2, arg_info);
+                    break;
+
+                case F_idx_sel:
+                    arg1 = EXPRS_EXPR (PRF_ARGS (EXPRS_EXPR (tmpnode)));
+                    arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (EXPRS_EXPR (tmpnode))));
+                    traverse = ReuseIdxSel (arg1, arg2, arg_info);
+                    break;
+
+                default:
+                    break;
                 }
-                idx_sel_name = Free (idx_sel_name);
             }
-            break;
+        } else {
+            switch (PRF_PRF (LET_EXPR (arg_node))) {
+            case F_alloc_or_reuse:
+                /* Probably the first two arguments should be traversed */
+                traverse = FALSE;
+                break;
+            case F_sel:
+                arg1 = EXPRS_EXPR (PRF_ARGS (LET_EXPR (arg_node)));
+                arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (arg_node))));
+                traverse = ReuseSel (arg1, arg2, arg_info);
+                break;
 
-        default:
-            break;
+            case F_idx_sel:
+                arg1 = EXPRS_EXPR (PRF_ARGS (LET_EXPR (arg_node)));
+                arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (arg_node))));
+                traverse = ReuseIdxSel (arg1, arg2, arg_info);
+                break;
+
+            default:
+                break;
+            }
         }
     }
 
@@ -456,6 +535,7 @@ GetReuseArrays (node *syntax_tree, node *fundef, ids *wl_ids)
     info = MakeInfo ();
     INFO_REUSE_FUNDEF (info) = fundef;
     INFO_REUSE_WL_IDS (info) = wl_ids;
+    INFO_REUSE_NODEC (info) = FALSE;
 
     old_tab = act_tab;
     act_tab = reuse_tab;
@@ -465,4 +545,41 @@ GetReuseArrays (node *syntax_tree, node *fundef, ids *wl_ids)
     info = FreeTree (info);
 
     DBUG_RETURN (syntax_tree);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *GetReuseCandidates( node *syntax_tree, node *fundef, ids *wl_ids)
+ *
+ * description:
+ *   starts the traversal to search for reuseable arrays.
+ *   - Ignores whether an ids is in INFO_REUSE_DEC_RC_IDS
+ *   - returns an N_exprs chain of Reuse Candidates
+ *
+ ******************************************************************************/
+
+node *
+GetReuseCandidates (node *syntax_tree, node *fundef, ids *wl_ids)
+{
+    node *info;
+    funtab *old_tab;
+
+    DBUG_ENTER ("GetReuseArrays");
+
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_Nwith2, "Illegal Node Type");
+
+    info = MakeInfo ();
+    INFO_REUSE_FUNDEF (info) = fundef;
+    INFO_REUSE_WL_IDS (info) = wl_ids;
+    INFO_REUSE_NODEC (info) = TRUE;
+
+    old_tab = act_tab;
+    act_tab = reuse_tab;
+    syntax_tree = Trav (syntax_tree, info);
+    act_tab = old_tab;
+
+    info = FreeTree (info);
+
+    DBUG_RETURN (Ids2Exprs (DFM2LetIds (NWITH2_REUSE (syntax_tree), NULL)));
 }

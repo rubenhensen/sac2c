@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/06/08 14:27:46  ktr
+ * New Entryfunction GetReuseCandidates yields an N_exprs chain of
+ * identifiers which could be reused.
+ * Important: NWITH2_DEC_RC_IDS is ignored, the caller must assure that
+ * the current reference is the last in the given context.
+ *
  * Revision 3.1  2000/11/20 18:01:03  sacbase
  * new release made
  *
@@ -19,6 +25,7 @@
 #define _sac_ReuseWithArrays_h
 
 extern node *GetReuseArrays (node *syntax_tree, node *fundef, ids *wl_ids);
+extern node *GetReuseCandidates (node *syntax_tree, node *fundef, ids *wl_ids);
 
 extern node *ReuseFundef (node *arg_node, node *arg_info);
 extern node *ReuseNwith2 (node *arg_node, node *arg_info);
