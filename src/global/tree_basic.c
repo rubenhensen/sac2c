@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/09/10 14:22:52  jhs
+ * Added COND_NAIVE_(THEN|ELSE)VARS.
+ * Added MakeId1 und MakeId3 for those ugly macros i killed in tree.[ch].
+ *
  * Revision 2.10  1999/08/25 15:30:44  bs
  * MakeNCode modified.
  *
@@ -1056,6 +1060,20 @@ MakeId (char *name, char *mod, statustype status)
 /*--------------------------------------------------------------------------*/
 
 node *
+MakeId1 (char *str)
+{
+    node *result;
+
+    DBUG_ENTER ("MakeId1");
+
+    result = MakeId (StringCopy (str), NULL, ST_regular);
+
+    DBUG_RETURN (result);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
 MakeId2 (ids *ids_node)
 {
     node *tmp;
@@ -1065,6 +1083,26 @@ MakeId2 (ids *ids_node)
     tmp = CreateCleanNode (N_id);
 
     tmp->info.ids = ids_node;
+
+    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
+                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeId3 (ids *ids_node)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeId3");
+
+    tmp = CreateCleanNode (N_id);
+
+    tmp->info.ids = ids_node;
+    tmp->refcnt = ids_node->refcnt;
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));

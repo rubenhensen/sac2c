@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.54  1999/09/10 14:22:52  jhs
+ * Added COND_NAIVE_(THEN|ELSE)VARS.
+ * Added MakeId1 und MakeId3 for those ugly macros i killed in tree.[ch].
+ *
  * Revision 2.53  1999/09/01 17:50:36  jhs
  * And again again ...
  *
@@ -1408,6 +1412,8 @@ extern node *MakeCond (node *cond, node *thenpart, node *elsepart);
 #define COND_ELSE(n) (n->node[2])
 #define COND_THENVARS(n) ((ids *)n->node[3])
 #define COND_ELSEVARS(n) ((ids *)n->node[4])
+#define COND_NAIVE_THENVARS(n) ((ids *)n->flag)
+#define COND_NAIVE_ELSEVARS(n) ((ids *)n->node[5])
 #define COND_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
@@ -1425,6 +1431,12 @@ extern node *MakeCond (node *cond, node *thenpart, node *elsepart);
  ***    ids*   USEVARS                (refcount -> compile -> )
  ***    ids*   DEFVARS                (refcount -> compile -> )
  ***    long*  MASK[x]                (optimize -> )
+ ***
+ ***  attention:
+ ***    - Don't mix up USEVARS and USEMASK resp DEFVARS and USEMASK!!!
+ ***      Btw. the masks are defined in tree_compound.
+ ***    - To access do-loops and while-loops with one macro use the
+ ***      compound macros DO_OR_WHILE_xxx!!!
  ***/
 
 /*
@@ -1459,6 +1471,12 @@ extern node *MakeDo (node *cond, node *body);
  ***    ids*   USEVARS                (refcount -> compile -> )
  ***    ids*   DEFVARS                (refcount -> compile -> )
  ***    long*  MASK[x]                (optimize -> )
+ ***
+ ***  attention:
+ ***    - Don't mix up USEVARS and USEMASK resp DEFVARS and USEMASK!!!
+ ***      Btw. the masks are defined in tree_compound.
+ ***    - To access do-loops and while-loops with one macro use the
+ ***      compound macros DO_OR_WHILE_xxx!!!
  ***/
 
 /*
@@ -1867,7 +1885,9 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
 
 extern node *MakeId (char *name, char *mod, statustype status);
 
+extern node *MakeId1 (char *str);
 extern node *MakeId2 (ids *ids_node);
+extern node *MakeId3 (ids *ids_node);
 
 #define ID_IDS(n) (n->info.ids)
 #define ID_NAME(n) (n->info.ids->id)
@@ -2462,6 +2482,7 @@ extern node *MakeInfo ();
 #define INFO_RC_RCDUMP(n) ((int *)(n->node[2]))
 #define INFO_RC_NAIVE_RCDUMP(n) ((int *)(n->node[3]))
 #define INFO_RC_VARNO(n) (n->varno)
+#define INFO_RC_ONLYNAIVE(n) (n->flag)
 
 /* wltransform */
 #define INFO_WL_SHPSEG(n) ((shpseg *)(n->node[0]))
