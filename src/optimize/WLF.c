@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.13  1998/07/14 14:27:19  srs
+ * modarray->modarray transformation from version 1.11 reverted
+ *
  * Revision 1.12  1998/07/14 12:57:41  srs
  * fixed bug in AddRen()
  *
@@ -1300,14 +1303,7 @@ CheckForSuperfluousCodes (node *wln)
  *   transforms the withop of the given WL. The goal is remove a reference
  *   to a WL which can be folded so that DCR can eleminate the WL.
  *
- * remarks:
- *   despite the functions name, it not always creates genarray-operators.
- *   See examples.
- *
- * examples:
- *   B = WL() modarray(A,...);
- *   C = WL() modarray(C,...);         =>  C = WL() modarray(A,...)
- *
+ * example:
  *   B = WL() genarray([shape],...);
  *   C = WL() modarray(B,...);         =>  C = WL() genarray([newshape],...)
  *     where newshape depends on shape and the given index vector of C.
@@ -1329,31 +1325,24 @@ Modarray2Genarray (node *wln, node *substwln)
     /* at the moment, substwln points to the assignment of the WL. */
     substwln = LET_EXPR (ASSIGN_INSTR (substwln));
 
-    if (WO_modarray == NWITH_TYPE (substwln)) {
-        /* modarray(modarray) -> modarray */
-        FreeNode (NWITHOP_ARRAY (NWITH_WITHOP (wln)));
-        NWITHOP_ARRAY (NWITH_WITHOP (wln))
-          = DupTree (NWITHOP_ARRAY (NWITH_WITHOP (substwln)), NULL);
-    } else { /* modarray(genarray) -> genarray */
-        /* compute shape of WL for NWITHOP_SHAPE() */
-        type = ID_TYPE (NWITHOP_ARRAY (NWITH_WITHOP (wln)));
-        dimensions = IDS_SHAPE (NPART_VEC (NWITH_PART (wln)), 0);
+    /* compute shape of WL for NWITHOP_SHAPE() */
+    type = ID_TYPE (NWITHOP_ARRAY (NWITH_WITHOP (wln)));
+    dimensions = IDS_SHAPE (NPART_VEC (NWITH_PART (wln)), 0);
 
-        eltn = NULL;
-        for (i = dimensions - 1; i >= 0; i--)
-            eltn = MakeExprs (MakeNum (TYPES_SHAPE (type, i)), eltn);
+    eltn = NULL;
+    for (i = dimensions - 1; i >= 0; i--)
+        eltn = MakeExprs (MakeNum (TYPES_SHAPE (type, i)), eltn);
 
-        shape = MakeArray (eltn);
+    shape = MakeArray (eltn);
 
-        shpseg = MakeShpseg (
-          MakeNums (dimensions, NULL)); /* nums struct is freed inside MakeShpseg. */
-        ARRAY_TYPE (shape) = MakeType (T_int, 1, shpseg, NULL, NULL);
+    shpseg = MakeShpseg (
+      MakeNums (dimensions, NULL)); /* nums struct is freed inside MakeShpseg. */
+    ARRAY_TYPE (shape) = MakeType (T_int, 1, shpseg, NULL, NULL);
 
-        /* delete old withop and create new one */
-        FreeTree (NWITH_WITHOP (wln));
-        NWITH_WITHOP (wln) = MakeNWithOp (WO_genarray);
-        NWITHOP_SHAPE (NWITH_WITHOP (wln)) = shape;
-    }
+    /* delete old withop and create new one */
+    FreeTree (NWITH_WITHOP (wln));
+    NWITH_WITHOP (wln) = MakeNWithOp (WO_genarray);
+    NWITHOP_SHAPE (NWITH_WITHOP (wln)) = shape;
 
     DBUG_RETURN (wln);
 }
