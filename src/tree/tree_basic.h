@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/24 18:21:51  jhs
+ * Added some INFO macros for schedule_init.[ch].
+ *
  * Revision 1.1  2000/01/21 15:38:35  dkr
  * Initial revision
  *
@@ -212,136 +215,12 @@
  * Revision 1.216  1999/02/12 17:44:51  cg
  * WLSEGX mechanism now also used for WLSEG_SCHEDULING and WLSEGVAR_SCHEDULING
  *
- * Revision 1.215  1999/02/12 12:32:28  bs
- * ID_CONSTARRAY and ID_ARRAYLENGTH inserted
- *
- * Revision 1.214  1999/02/11 13:35:22  cg
- * OBJDEC_DEF() and OBJDEF_VARNAME() no longer use the same entry in the
- * underlying node structure. This caused severe memory management problems
- * when freeing the own declaration of a module/class implementation after
- * writing the SIB.
- *
- * Revision 1.213  1999/02/11 08:31:22  bs
- * INFO_FLTN_INTARRAY and INFO_FLTN_ARRAYLENGTH inserted
- *
- * Revision 1.212  1999/02/11 08:21:21  bs
- * added access macros for the storage of constant integer arrays as
- * arrays of integer ( int []).
- *
- * Revision 1.211  1999/02/06 12:52:47  srs
- * added MakeNodelistNode() and macro ATTRIB2 for struct NODELIST
- *
- * Revision 1.210  1999/01/27 16:01:52  dkr
- * comment about NWITH_PRAGMA changed
- *
- * Revision 1.209  1999/01/19 20:31:40  srs
- * inserted NWITH_REFERENCES_FOLDED
- *
- * Revision 1.208  1999/01/18 10:05:31  cg
- * added access macros for the usage of N_info in readsib.c
- *
- * Revision 1.207  1999/01/15 15:18:55  cg
- * added access macros for new data structure access_t used in tile size
- * selection.
- *
- * Revision 1.206  1999/01/07 14:02:33  sbs
- * new tab opt_tab inserted and old "opt_tab" renamed to genmask_tab!
- *
- * Revision 1.205  1999/01/06 13:03:33  cg
- * extern declaration of prf_name_str moved from tree.h to tree_basic.h
- *
- * Revision 1.204  1998/12/09 08:52:29  sbs
- * INFO_CF_VARNO added
- *
- * Revision 1.203  1998/11/08 13:25:33  dkr
- * remark about NCODE_CBLOCK corrected
- *
- * Revision 1.202  1998/08/13 22:20:23  dkr
- * WLNODE_INNERSTEP added
- *
- * Revision 1.201  1998/08/11 14:32:56  dkr
- * some WL... stuff changed
- *
- * Revision 1.200  1998/08/11 10:59:57  dkr
- * WLSEG_INNERSTEP changed
- *
- * Revision 1.199  1998/08/11 00:04:53  dkr
- * N_WLsegVar changed
- *
- * Revision 1.198  1998/08/10 18:04:16  dkr
- * changed a comment for N_Nwithop
- *
- * Revision 1.197  1998/08/07 14:35:24  dkr
- * stuff for N_WLsegVar added
- *
- * Revision 1.196  1998/07/16 15:55:55  srs
- * added INFO_UNR_FUNDEF
- *
- * Revision 1.195  1998/07/16 15:27:02  dkr
- * WL..._INNERSTEP, WLSEG_MAXHOMDIM, WLSEGVAR_MAXHOMDIM inserted
- *
- * Revision 1.194  1998/07/14 12:58:47  srs
- * added remarks to N_id, N_vardec and N_arg
- *
- * Revision 1.193  1998/07/03 10:16:03  cg
- * attributes of N_spmd node completely changed.
- *
- * Revision 1.192  1998/06/23 12:42:13  cg
- * Attribute SPMD_LIFTED_FROM removed
- * Attribute SPMD_FUNNAME replaced by SPMD_FUNDEF
- * Attribute NWITH2_MT added to specify those with-loops which
- * are to executed in parallel.
- *
- * Revision 1.191  1998/06/19 19:36:58  dkr
- * added INFO_REUSE_NEGMASK
- *
- * Revision 1.190  1998/06/12 14:05:23  cg
- * added access macros/attributes for schedulings
- *
- * Revision 1.189  1998/06/09 16:46:09  dkr
- * IDX_MIN, IDX_MAX now segment-specific
- *
- * Revision 1.188  1998/06/08 13:48:06  dkr
- * added INFO_REUSE_DEC_RC_IDS
- *
- * Revision 1.187  1998/06/07 18:38:12  dkr
- * added INFO_REUSE_... macros
- *
- * Revision 1.186  1998/06/06 18:30:35  dkr
- * added SYNC_WITH_PTRS
- *
- * Revision 1.185  1998/06/04 16:58:52  cg
- *  information about refcounted variables in the context of loops,
- * conditionals and the old with-loop are now stored in ids-chains
- *  instead of N_exprs lists.
- *
- * Revision 1.183  1998/06/03 14:29:04  cg
- * Attribute WITH_USEDVARS renamed to WITH_USEVARS analogously to the
- * loop nodes.
- * Attributes WLGRIDVAR_BOUND[12] made sons
- * Attributes WLSTRIVAR_BOUND[12] and WLSTRIVAR_STEP made sons
- *
- * Revision 1.182  1998/05/28 16:32:02  dkr
- * added ICM_INDENT: indent-mechanismus for H-ICMs
- *
- * Revision 1.181  1998/05/28 07:49:45  cg
- * added temporary attribute FUNDEF_LIFTEDFROM for spmd functions
- *
- * Revision 1.180  1998/05/27 13:16:38  sbs
- * INFO_TC_LHSVARS added
- *
- * Revision 1.179  1998/05/24 00:40:00  dkr
- * removed WLGRID_CODE_TEMPLATE
- *
- * Revision 1.178  1998/05/21 13:29:42  dkrnode *PRECWith(node *arg_node, node *arg_info)
- * renamed NCODE_DEC_RC_IDS into NCODE_INC_RC_IDS
- *
- * Revision 1.177  1998/05/21 10:14:42  dkr
- * changed some comments
+ * [...]
  *
  * Revision 1.176  1998/05/17 00:08:15  dkr
  * WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
  *
+ * [...]
  *
  */
 
@@ -2345,45 +2224,46 @@ extern node *MakePragma ();
  ***    node *     INFO_IVE_TRANSFORM_VINFO  (N_vinfo)
  ***    int        INFO_IVE_NON_SCAL_LEN
  ***
- ***  when used in managing spmd- and sync blocks :
- ***    (a) concurrent.[ch]
- ***    (b) spmd_init.[ch]
- ***    (c) spmd_opt.[ch]
- ***    (d) spmd_lift.[ch]
- ***    (e) sync_init.[ch]
- ***    (f) sync_opt.[ch]
- ***    (g) spmd_cons.[ch]
- ***    (h) spmd_trav.[ch]
+ ***  old mt!!!
+ ***  when used in managing spmd- and sync blocks in concurrent :
+ ***    (oa) concurrent.[ch]
+ ***    (ob) spmd_init.[ch]
+ ***    (oc) spmd_opt.[ch]
+ ***    (od) spmd_lift.[ch]
+ ***    (oe) sync_init.[ch]
+ ***    (of) sync_opt.[ch]
+ ***    (og) spmd_cons.[ch]
+ ***    (oh) spmd_trav.[ch]
  ***
  ***  in all:
  ***    node*      INFO_CONC_FUNDEF   (N_fundef)
  ***
- ***  in (a), (b):
+ ***  in (oa), (ob):
  ***    boolean    INFO_SPMDI_LASTSPMD(n)
  ***    boolean    INFO_SPMDI_NEXTSPMD(n)
  ***    nodetype   INFO_SPMDI_CONTEXT(n)
  ***    boolean    INFO_SPMDI_EXPANDCONTEXT(n)
  ***    boolean    INFO_SPMDI_EXPANDSTEP(n)
  ***
- ***  in (a), (c):
+ ***  in (oa), (oc):
  ***    node*      INFO_SPMDO_THISASSIGN(n)          (N_assign)
  ***    node*      INFO_SPMDO_NEXTASSIGN(n)          (N_assign)
  ***
- ***  in (a), (d):
+ ***  in (oa), (od):
  ***    boolean    INFO_SPMDL_MT(n)
  ***
- ***  in (a), (e):
+ ***  in (oa), (oe):
  ***    boolean    INFO_SYNCI_FIRST(n)
  ***    boolean    INFO_SYNCI_LAST(n)
  ***
- ***  in (a), (f):
+ ***  in (oa), (of):
  ***    node*      INFO_SYNCO_THISASSIGN(n)          (N_assign)
  ***    node*      INFO_SYNCO_NEXTASSIGN(n)          (N_assign)
  ***
- ***  in (a), (g):
+ ***  in (oa), (og):
  ***    node*      INFO_SPMDC_FIRSTSYNC(n)           (N_sync)
  ***
- ***  in (a), (h) in different traversals:
+ ***  in (oa), (oh) in different traversals:
  ***    DFM_mask_t INFO_SPMDRM_RESULT(n)
  ***    DFM_mask_t INFO_SPMDRM_CHECK(n)
  ***    DFM_mask_t INFO_SPMDRO_CHECK(n)
@@ -2405,6 +2285,15 @@ extern node *MakePragma ();
  ***    node*      INFO_SYNCO_THISASSIGN
  ***
  ***    node*      INFO_SPMDC_FIRSTSYNC
+ ***
+ ***  old mt!!!
+ ***  when used in multithread ...
+ ***    (na) multithread.[ch]
+ ***    (nb) schedule_init.[ch]
+ ***
+ ***  in (na), (nb):
+ ***    node*      INFO_SCHIN_SCHEDULING
+ ***    int        INFO_SCHIN_INNERWLS
  ***
  ***  when used in tile_size_inference.c :
  ***
@@ -2585,6 +2474,11 @@ extern node *MakeInfo ();
 #define INFO_SPMDPM_OUT(n) ((DFMmask_t) (n->dfmask[2]))
 #define INFO_SPMDPM_LOCAL(n) ((DFMmask_t) (n->dfmask[3]))
 #define INFO_SPMDPM_SHARED(n) ((DFMmask_t) (n->dfmask[4]))
+
+/* multithread-schedule_init */
+/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
+#define INFO_SCHIN_SCHEDULING(n) (n->node[1])
+#define INFO_SCHIN_INNERWLS(n) (n->int_data);
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
