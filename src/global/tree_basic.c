@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  1998/03/03 17:50:18  dkr
+ * changed MakeWLgrid(), MakeWLindex()
+ *
  * Revision 1.35  1998/03/03 16:13:03  dkr
  * changed something in WLindex, WLgrid
  *
@@ -1373,7 +1376,7 @@ MakeWLseg (node *seg, node *next)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLindex (node *bound1, node *bound2, node *step, node *grid, node *next)
+MakeWLindex (int bound1, int bound2, int step, node *grid, node *next)
 {
     node *new_node;
 
@@ -1393,7 +1396,7 @@ MakeWLindex (node *bound1, node *bound2, node *step, node *grid, node *next)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLgrid (node *offset, node *width, node *next)
+MakeWLgrid (int offset, int width, node *nextdim, node *code, node *next)
 {
     node *new_node;
 
@@ -1403,6 +1406,8 @@ MakeWLgrid (node *offset, node *width, node *next)
     NODE_TYPE (new_node) = N_WLgrid;
     WLGRID_OFFSET (new_node) = offset;
     WLGRID_WIDTH (new_node) = width;
+    WLGRID_NEXTDIM (new_node) = nextdim;
+    WLGRID_CODE (new_node) = code;
     WLGRID_NEXT (new_node) = next;
 
     DBUG_RETURN (new_node);
