@@ -25,3 +25,4 @@ ast2serialize_node_h.xsl
 ast2serialize_attribs_h.xsl
 ast2serialize_helper_c.xsl
 ast2serialize_buildstack_c.xsl
+ast2serialize_buildstack_h.xsl
