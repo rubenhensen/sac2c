@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 1.164  1998/11/08 14:24:43  dkr
+ * an empty assignment block of a with-loop is represented by a
+ * N_block node containing a N_empty node.
+ *
  * Revision 1.163  1998/10/30 09:53:12  cg
  * key word 'all' is now allowed as function name,
  * required by array library.
@@ -1766,8 +1770,14 @@ exprblock2: typeNOudt_arr ids SEMIC exprblock2
           ;
 
 
-optassignblock: assignblock {$$ = $1;}
-              | {$$ = NULL;}
+optassignblock: assignblock
+                {
+                  $$ = $1;
+                }
+              |
+                {
+                  $$ = MAKE_EMPTY_BLOCK();
+                }
               ;
 
 assignblock: SEMIC     
