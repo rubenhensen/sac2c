@@ -2,6 +2,10 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2001/05/17 09:43:44  nmw
+ * bug fixed when moving down argument expressions
+ * InsertLUT changed to UpdateLUT to avoid duplicate entries
+ *
  * Revision 1.18  2001/05/15 08:01:21  nmw
  * unnecessary update of AVIS_SSAASSIGN attributes removed
  *
@@ -315,8 +319,9 @@ CreateNewResult (node *avis, node *arg_info)
  *   LUT_t InsertMappingsIntoLUT(LUT_t move_table, nodelist *mappings)
  *
  * description:
- *   inserts all mappings from nodelist for vardec/avis/name into LUT.
+ *   update all mappings from nodelist for vardec/avis/name into LUT.
  *   the nodelist contains pairs of [int. avis -> ext. avis].
+ *
  *
  *****************************************************************************/
 static LUT_t
@@ -328,19 +333,30 @@ InsertMappingsIntoLUT (LUT_t move_table, nodelist *mappings)
     while (mappings != NULL) {
         /* vardec */
         move_table
-          = InsertIntoLUT_P (move_table, AVIS_VARDECORARG (NODELIST_NODE (mappings)),
-                             AVIS_VARDECORARG (((node *)NODELIST_ATTRIB2 (mappings))));
+          = UpdateLUT_P (move_table, AVIS_VARDECORARG (NODELIST_NODE (mappings)),
+                         AVIS_VARDECORARG (((node *)NODELIST_ATTRIB2 (mappings))), NULL);
 
         /* avis */
-        move_table = InsertIntoLUT_P (move_table, NODELIST_NODE (mappings),
-                                      ((node *)NODELIST_ATTRIB2 (mappings)));
+        move_table = UpdateLUT_P (move_table, NODELIST_NODE (mappings),
+                                  ((node *)NODELIST_ATTRIB2 (mappings)), NULL);
 
         /* id name */
-        move_table = InsertIntoLUT_S (move_table,
-                                      VARDEC_OR_ARG_NAME (
-                                        AVIS_VARDECORARG (NODELIST_NODE (mappings))),
-                                      VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (
-                                        ((node *)NODELIST_ATTRIB2 (mappings)))));
+        move_table
+          = UpdateLUT_S (move_table,
+                         VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (NODELIST_NODE (mappings))),
+                         VARDEC_OR_ARG_NAME (
+                           AVIS_VARDECORARG (((node *)NODELIST_ATTRIB2 (mappings)))),
+                         NULL);
+
+        DBUG_PRINT ("SSALIR",
+                    ("update %s(%p, %p) -> %s(%p, %p) into LUT for mapping",
+                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (NODELIST_NODE (mappings))),
+                     NODELIST_NODE (mappings),
+                     AVIS_VARDECORARG (NODELIST_NODE (mappings)),
+                     VARDEC_OR_ARG_NAME (
+                       AVIS_VARDECORARG (((node *)NODELIST_ATTRIB2 (mappings)))),
+                     ((node *)NODELIST_ATTRIB2 (mappings)),
+                     AVIS_VARDECORARG (((node *)NODELIST_ATTRIB2 (mappings)))));
 
         mappings = NODELIST_NEXT (mappings);
     }
@@ -746,6 +762,14 @@ SSALIRarg (node *arg_node, node *arg_info)
           = InsertIntoLUT_S (INFO_SSALIR_MOVELUT (arg_info), ARG_NAME (arg_node),
                              VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (
                                EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))))));
+
+        DBUG_PRINT ("SSALIR",
+                    ("insert arg %s(%p, %p) -> %s(%p, %p) into LUT for mapping",
+                     ARG_NAME (arg_node), ARG_AVIS (arg_node), arg_node,
+                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (
+                       ID_AVIS (EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))))),
+                     ID_AVIS (EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))),
+                     ID_VARDEC (EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info)))));
     }
 
     /* init avis data for argument */
@@ -1882,6 +1906,11 @@ LIRMOVleftids (ids *arg_ids, node *arg_info)
         /* id name */
         INFO_SSALIR_MOVELUT (arg_info) = InsertIntoLUT_S (INFO_SSALIR_MOVELUT (arg_info),
                                                           IDS_NAME (arg_ids), new_name);
+
+        DBUG_PRINT ("SSALIR",
+                    ("insert local %s(%p, %p) -> ext. %s(%p, %p) into LUT for mapping",
+                     IDS_NAME (arg_ids), IDS_AVIS (arg_ids), IDS_VARDEC (arg_ids),
+                     new_name, new_avis, new_vardec));
 
         /*
          *  modify functions signature:
