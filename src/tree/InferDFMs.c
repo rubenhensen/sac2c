@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2002/10/16 12:11:50  dkr
+ * code for RESOLVE_REFERENCES removed:
+ * reference parameters are considered in-parameters only (not
+ * out-params!)
+ *
  * Revision 1.26  2002/10/16 11:57:00  dkr
  * cpp flag RESOLVE_REFERENCES added
  *
@@ -360,7 +365,6 @@ DefinedVar (node *arg_info, node *decl)
                      "Declaration is neither a N_arg/N_vardec node nor a N_objdef"
                      " node");
     } else {
-#ifndef RESOLVE_REFERENCES
         if ((NODE_TYPE (decl) == N_arg)
             && ((ARG_ATTRIB (decl) == ST_reference)
                 || (ARG_ATTRIB (decl) == ST_readonly_reference))) {
@@ -371,15 +375,12 @@ DefinedVar (node *arg_info, node *decl)
              */
             arg_info = UsedVar (arg_info, decl);
         } else {
-#endif
             DFMSetMaskEntryClear (INFO_INFDFMS_IN (arg_info), NULL, decl);
             if (DFMTestMaskEntry (INFO_INFDFMS_NEEDED (arg_info), NULL, decl)) {
                 DFMSetMaskEntrySet (INFO_INFDFMS_OUT (arg_info), NULL, decl);
             }
             DFMSetMaskEntrySet (INFO_INFDFMS_LOCAL (arg_info), NULL, decl);
-#ifndef RESOLVE_REFERENCES
         }
-#endif
     }
 
     DBUG_RETURN (arg_info);
@@ -1281,16 +1282,6 @@ INFDFMSfundef (node *arg_node, node *arg_info)
         INFO_INFDFMS_LOCAL (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
         INFO_INFDFMS_NEEDED (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
 
-#ifdef RESOLVE_REFERENCES
-        /*
-         * search in formal args for reference parameters
-         *  -> adjust INFO_INFDFMS_IN accordingly (resolve the reference parameters)
-         */
-        if (FUNDEF_ARGS (arg_node) != NULL) {
-            FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
-        }
-#endif
-
         INFO_INFDFMS_FIRST (arg_info) = TRUE;
         do {
             DBUG_EXECUTE ("INFDFMS", cnt++;
@@ -1330,7 +1321,7 @@ INFDFMSfundef (node *arg_node, node *arg_info)
  *   node *INFDFMSarg( node *arg_node, node *arg_info)
  *
  * description:
- *   Searches for reference parameters and marks them in INFO_INFDFMS_IN.
+ *
  *
  ******************************************************************************/
 
@@ -1338,42 +1329,6 @@ node *
 INFDFMSarg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INFDFMSarg");
-
-#ifdef RESOLVE_REFERENCES
-    if ((ARG_ATTRIB (arg_node) == ST_reference)
-        || (ARG_ATTRIB (arg_node) == ST_readonly_reference)) {
-        /*
-         * Example:
-         *
-         *   int fun( type &a, int b)
-         *   {
-         *     if (true) {
-         *       a = ...;
-         *       b = 1;
-         *       c = 2;
-         *     }
-         *     return( c);
-         *   }
-         *
-         * Here, we must detect that 'a' is *not* a local- but a out-variable of
-         * the conditional:
-         *
-         *   in:    ...
-         *   out:   a, c
-         *   local: b
-         */
-
-        DBUG_PRINT ("INFDFMS",
-                    ("Reference parameter: .. %s( .. %s .. ) { .. }",
-                     FUNDEF_NAME (INFO_INFDFMS_FUNDEF (arg_info)), ARG_NAME (arg_node)));
-
-        DFMSetMaskEntrySet (INFO_INFDFMS_IN (arg_info), NULL, arg_node);
-    }
-
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
-    }
-#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -1479,7 +1434,6 @@ INFDFMSap (node *arg_node, node *arg_info)
                          "Reference parameter must be a N_id node!");
 
             decl = ID_VARDEC (EXPRS_EXPR (ap_args));
-#ifndef RESOLVE_REFERENCES
             if ((NODE_TYPE (decl) == N_arg)
                 && ((ARG_ATTRIB (decl) == ST_reference)
                     || (ARG_ATTRIB (decl) == ST_readonly_reference))) {
@@ -1500,7 +1454,6 @@ INFDFMSap (node *arg_node, node *arg_info)
                  * used as reference parameter of the application
                  *   -> mark as defined variable (must be a out-var as well)
                  */
-#endif
                 DBUG_PRINT ("INFDFMS",
                             ("N_ap in %s() with non-reference as ref. parameter:"
                              "  %s( .. %s .. )",
@@ -1508,9 +1461,7 @@ INFDFMSap (node *arg_node, node *arg_info)
                              FUNDEF_NAME (AP_FUNDEF (arg_node)),
                              ID_NAME (EXPRS_EXPR (ap_args))));
                 arg_info = DefinedVar (arg_info, decl);
-#ifndef RESOLVE_REFERENCES
             }
-#endif
         }
 
         if (ARG_BASETYPE (fundef_args) != T_dots) {
