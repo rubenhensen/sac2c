@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2004/07/15 13:36:59  ktr
+ * reorganized phases after wltransform.
+ *
  * Revision 3.43  2004/07/14 23:23:37  sah
  * removed all old ssa optimizations and the use_ssaform flag
  *
@@ -520,17 +523,16 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (!((ktr) || (mtmode == MT_mtstblock))) {
-        compiler_phase += 1;
+    if (!ktr) {
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
         syntax_tree = Refcount (syntax_tree); /* refcnt_tab */
         PHASE_DONE_EPILOG;
         PHASE_EPILOG;
-        if (break_after == PH_refcnt)
-            goto BREAK;
-        compiler_phase -= 1;
     }
+    if (break_after == PH_oldrefcnt)
+        goto BREAK;
+    compiler_phase++;
 
 #if 0
   if (patch_with) {
@@ -550,25 +552,22 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if ((ktr) || (mtmode == MT_mtstblock)) {
+    if (ktr) {
+        syntax_tree = DoSSA (syntax_tree);
+    }
+
+    if (ktr) {
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
         show_refcnt = FALSE;
-        syntax_tree = DoSSA (syntax_tree);
-        syntax_tree = EMALAllocateFill (syntax_tree); /* emalloc_tab */
+        syntax_tree = EMAllocateFill (syntax_tree); /* emalloc_tab */
         PHASE_DONE_EPILOG;
         PHASE_EPILOG;
     }
 
-    if (break_after == PH_refcnt)
+    if (break_after == PH_alloc)
         goto BREAK;
     compiler_phase++;
-
-    if ((ktr) && (optimize & OPT_BLIR)) {
-        /* Perform Backend Withloop Invariant Removal */
-        syntax_tree = Blir (syntax_tree);
-        goto BREAK;
-    }
 
     PHASE_PROLOG;
 
@@ -578,13 +577,15 @@ main (int argc, char *argv[])
     case MT_createjoin:
         NOTE_COMPILER_PHASE;
         NOTE (("Using create-join version of multithreading (MT1)"));
-        syntax_tree = BuildSpmdRegions (syntax_tree); /* spmd..._tab, sync..._tab */
+        /* spmd..._tab, sync..._tab */
+        syntax_tree = BuildSpmdRegions (syntax_tree);
         PHASE_DONE_EPILOG;
         break;
     case MT_startstop:
         NOTE_COMPILER_PHASE;
         NOTE (("Using start-stop version of multithreading (MT2)"));
-        syntax_tree = BuildSpmdRegions (syntax_tree); /* spmd..._tab, sync..._tab */
+        /* spmd..._tab, sync..._tab */
+        syntax_tree = BuildSpmdRegions (syntax_tree);
         PHASE_DONE_EPILOG;
         break;
     case MT_mtstblock:
@@ -602,10 +603,6 @@ main (int argc, char *argv[])
     }
     PHASE_EPILOG;
 
-    if (((ktr) || (mtmode == MT_mtstblock))) {
-        syntax_tree = UndoSSA (syntax_tree);
-    }
-
     if (break_after == PH_multithread)
         goto BREAK;
     compiler_phase++;
@@ -617,6 +614,34 @@ main (int argc, char *argv[])
          * and thereby destroys its old contents. Unfortunately, it has turned
          * that this information is vital for precompile.
          */
+    }
+
+    if (ktr) {
+        PHASE_PROLOG;
+        NOTE_COMPILER_PHASE;
+        /* syntax_tree = EMRefcount( syntax_tree); */ /* emrc_tab */
+        PHASE_DONE_EPILOG;
+        PHASE_EPILOG;
+    }
+
+    if (break_after == PH_refcnt)
+        goto BREAK;
+    compiler_phase++;
+
+    if (mtmode == MT_mtstblock) {
+        PHASE_PROLOG;
+        NOTE_COMPILER_PHASE;
+        /*syntax_tree = Precompile( syntax_tree);*/ /* ???_tab */
+        PHASE_DONE_EPILOG;
+        PHASE_EPILOG;
+    }
+
+    if (break_after == PH_multithread_finish)
+        goto BREAK;
+    compiler_phase++;
+
+    if (ktr) {
+        syntax_tree = UndoSSA (syntax_tree);
     }
 
     PHASE_PROLOG;
