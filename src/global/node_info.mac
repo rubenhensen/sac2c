@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.14  1994/12/14 10:11:08  sbs
- * *** empty log message ***
+ * Revision 1.15  1994/12/14 11:16:42  hw
+ * inserted TClet , TCassign, N_stop & N_ok
  *
+;; Revision 1.14  1994/12/14  10:11:08  sbs
+;; *** empty log message ***
+;;
 ;; Revision 1.13  1994/12/12  11:02:14  asi
 ;; added OPTdo
 ;;
@@ -63,11 +66,11 @@ NIF (N_num, "N_num", DummyFun, PrintNum, DummyFun, DummyFun),
   NIF (N_vardec, "N_vardec", DummyFun, PrintVardec, DummyFun, DummyFun),
   NIF (N_block, "N_block", DummyFun, PrintBlock, DummyFun, DummyFun),
   NIF (N_arg, "N_arg", DummyFun, PrintArg, DummyFun, DummyFun),
-  NIF (N_assign, "N_assign", FltnAssign, PrintAssign, DummyFun, DummyFun),
+  NIF (N_assign, "N_assign", FltnAssign, PrintAssign, TCassign, DummyFun),
   NIF (N_return, "N_return", DummyFun, PrintReturn, TCreturn, DummyFun),
   NIF (N_do, "N_do", FltnDo, PrintDo, DummyFun, OPTdo),
   NIF (N_while, "N_while", FltnWhile, PrintWhile, DummyFun, DummyFun),
-  NIF (N_cond, "N_cond", FltnCond, PrintCond, DummyFun, DummyFun),
+  NIF (N_cond, "N_cond", FltnCond, PrintCond, TCcond, DummyFun),
   NIF (N_let, "N_let", DummyFun, PrintLet, TClet, DummyFun),
   NIF (N_addon, "N_addon", DummyFun, PrintLeton, DummyFun, DummyFun),
   NIF (N_mulon, "N_mulon", DummyFun, PrintLeton, DummyFun, DummyFun),
@@ -87,7 +90,9 @@ NIF (N_num, "N_num", DummyFun, PrintNum, DummyFun, DummyFun),
   NIF (N_dec, "N_dec", DummyFun, PrintDec, DummyFun, DummyFun),
   NIF (N_post, "N_post", DummyFun, PrintPost, DummyFun, DummyFun),
   NIF (N_pre, "N_pre", DummyFun, PrintPre, DummyFun, DummyFun),
-  NIF (N_bool, "N_bool", DummyFun, PrintBool, DummyFun, DummyFun)
+  NIF (N_bool, "N_bool", DummyFun, PrintBool, DummyFun, DummyFun),
+  NIF (N_stop, "N_stop", DummyFun, DummyFun, DummyFun, DummyFun),
+  NIF (N_ok, "N_ok", DummyFun, DummyFun, DummyFun, DummyFun)
 
 #if 0
 NIF( N_and,      "N_and",      DummyFun, DummyFun, DummyFun ),
