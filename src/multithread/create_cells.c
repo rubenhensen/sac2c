@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2004/08/16 16:52:35  skt
+ * implementation expanded
+ *
  * Revision 1.8  2004/08/13 16:17:40  skt
  * *** empty log message ***
  *
@@ -65,14 +68,27 @@
  * INFO structure
  */
 struct INFO {
-    node *fundef;
+    node *cellassign;
+    node *firstanyassign;
+    node *lastpointer;
+    node *newblock;
 };
 
 /*
  * INFO macros
- *    node*    CRECE_FUNDEF            (the definition of the actual function)
+ *    node*    CRECE_ACTCELLASSIGN     (the actual, last assign in the actuell
+ *                                      cell, where the next assignment hat to
+ *                                      be added; NULL, if there's no cell yet)
+ *    node*    CRECE_FIRSTANYASSIGN    (the first assignment of the block, that
+ *                                      is any-threaded; only != NULL, if no
+ *                                      EXCLUSIVE/SINGLE/MULTI-cell exsits
+ *                                      before)
+ *    node*    CRECE_LASTPOINTER
  */
-#define INFO_CRECE_FUNDEF(n) (n->fundef)
+#define INFO_CRECE_ACTCELLASSIGN(n) (n->cellassign)
+#define INFO_CRECE_FIRSTANYASSIGN(n) (n->firstanyassign)
+#define INFO_CRECE_LASTPOINTER(n) (n->lastpointer)
+#define INFO_CRECE_NEWBLOCK(n) (n->newblock)
 
 /*
  * INFO functions
@@ -86,7 +102,10 @@ MakeInfo ()
 
     result = Malloc (sizeof (info));
 
-    INFO_CRECE_FUNDEF (result) = NULL;
+    INFO_CRECE_ACTCELLASSIGN (result) = NULL;
+    INFO_CRECE_FIRSTANYASSIGN (result) = NULL;
+    INFO_CRECE_LASTPOINTER (result) = NULL;
+    INFO_CRECE_NEWBLOCK (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -100,6 +119,10 @@ FreeInfo (info *info)
 
     DBUG_RETURN (info);
 }
+
+/* TODO: TravNone in node_info.mac for:
+ *                nwith2, N_let, N_return, N_ex, N_st, N_mt
+ */
 
 /** <!--********************************************************************-->
  *
@@ -149,31 +172,210 @@ CreateCells (node *arg_node)
  *   @return
  *
  *****************************************************************************/
+/*node *CRECEfundef(node *arg_node, info *arg_info) {
+  node *old_fundef;
+  DBUG_ENTER("CRECEfundef");
+  DBUG_ASSERT((NODE_TYPE(arg_node) == N_fundef),
+             "CRECEfundef expects a N_fundef as arg_node");
+
+  old_fundef = INFO_CRECE_FUNDEF(arg_info);
+  INFO_CRECE_FUNDEF(arg_info) = arg_node;
+
+  if (FUNDEF_BODY(arg_node) != NULL) {
+    DBUG_PRINT("CRECE",("trav into function-body"));
+    FUNDEF_BODY(arg_node) = Trav(FUNDEF_BODY(arg_node),arg_info);
+    DBUG_PRINT("CRECE",("trav from function-body"));
+  }
+
+  if (FUNDEF_NEXT(arg_node) != NULL) {
+    DBUG_PRINT("CRECE",("trav into function-next"));
+    FUNDEF_NEXT(arg_node) = Trav(FUNDEF_NEXT(arg_node),arg_info);
+    DBUG_PRINT("CRECE",("trav from function-next"));
+  }
+  INFO_CRECE_FUNDEF(arg_info) = old_fundef;
+
+  DBUG_RETURN(arg_node);
+  }*/
+
 node *
-CRECEfundef (node *arg_node, info *arg_info)
+CRECEblock (node *arg_node, info *arg_info)
 {
-    node *old_fundef;
-    DBUG_ENTER ("CRECEfundef");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "CRECEfundef expects a N_fundef as arg_node");
+    node *old_lastpointer;
+    node *old_newblock;
+    node *dummy;
+    DBUG_ENTER ("CRECEblock");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_block), "arg_node is not a N_block");
 
-    old_fundef = INFO_CRECE_FUNDEF (arg_info);
-    INFO_CRECE_FUNDEF (arg_info) = arg_node;
+    /* push info */
+    old_lastpointer = INFO_CRECE_LASTPOINTER (arg_info);
+    old_newblock = INFO_CRECE_NEWBLOCK (arg_info);
+    INFO_CRECE_LASTPOINTER (arg_info) = arg_node;
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_PRINT ("CRECE", ("trav into function-body"));
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-        DBUG_PRINT ("CRECE", ("trav from function-body"));
+    /* initialization */
+    INFO_CRECE_ACTCELLASSIGN (arg_info) = NULL;
+    INFO_CRECE_FIRSTANYASSIGN (arg_info) = NULL;
+
+    if (BLOCK_INSTR (arg_node) != NULL) {
+        /* continue traversal */
+        DBUG_PRINT ("CRECE", ("trav into instruction(s)"));
+        dummy = Trav (BLOCK_INSTR (arg_node), arg_info);
+        DBUG_PRINT ("CRECE", ("trav from instruction(s)"));
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        DBUG_PRINT ("CRECE", ("trav into function-next"));
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-        DBUG_PRINT ("CRECE", ("trav from function-next"));
-    }
-    INFO_CRECE_FUNDEF (arg_info) = old_fundef;
+    BLOCK_INSTR (arg_node) = INFO_CRECE_NEWBLOCK (arg_info);
+
+    /* pop info */
+    INFO_CRECE_LASTPOINTER (arg_info) = old_lastpointer;
+    INFO_CRECE_NEWBLOCK (arg_info) = old_newblock;
+
+    fprintf (stdout, "This block:\n");
+    PrintNode (arg_node);
+    fprintf (stdout, "Block end\n\n");
 
     DBUG_RETURN (arg_node);
+}
+
+node *
+CRECEassign (node *arg_node, info *arg_info)
+{
+    node *last_pointer;
+    node *act_cellassign;
+    node *old_firstanyassign;
+    node *dummy;
+    DBUG_ENTER ("CRECEassign");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign), "arg_node is no a N_assign");
+
+    /* push info */
+    act_cellassign = INFO_CRECE_ACTCELLASSIGN (arg_info);
+
+    if (ASSIGN_EXECMODE (arg_node) == MUTH_ANY) {
+        /* we've got an any-threaded assignment - add it to the actual cell, if it
+         * exists */
+        if (act_cellassign != NULL) {
+            ASSIGN_EXECMODE (arg_node) = ASSIGN_EXECMODE (act_cellassign);
+            ASSIGN_NEXT (act_cellassign) = arg_node;
+            /* we have to update the arg_info structure, not the local variable
+             * act_celllassign ! */
+            INFO_CRECE_ACTCELLASSIGN (arg_info) = arg_node;
+        }
+        /* so, no cell exists yet - let's look, if this assign is the first assign
+         * with MUTH_ANY execmode in this block */
+        else if (INFO_CRECE_FIRSTANYASSIGN (arg_info) == NULL) {
+            /* yes - set the firstassign */
+            INFO_CRECE_FIRSTANYASSIGN (arg_info) = arg_node;
+        }
+        /* no - do nothing */
+        else {
+        }
+    } else {
+        /* so this assignment has a MUTH_EXCLUSIVE, MUTH_SINLE or MUTH_MULTI
+         * execmode */
+
+        /* Does a cell exist and has it the correct executionmode? */
+        if ((act_cellassign != NULL)
+            && (ASSIGN_EXECMODE (act_cellassign) == ASSIGN_EXECMODE (arg_node))) {
+            /* yes - that's fine; just add the current assignment to the
+             * assign-chain */
+            ASSIGN_NEXT (act_cellassign) = arg_node;
+
+            /* we have to update the arg_info structure, not the local variable
+             * act_celllassign ! */
+            INFO_CRECE_ACTCELLASSIGN (arg_info) = arg_node;
+        } else {
+            /* no - well, we've got to build a new cell */
+
+            /* update info-structure before you get a new arg_node */
+            INFO_CRECE_ACTCELLASSIGN (arg_info) = arg_node;
+
+            arg_node = CRECEInsertCell (arg_node, INFO_CRECE_FIRSTANYASSIGN (arg_info));
+
+            last_pointer = INFO_CRECE_LASTPOINTER (arg_info);
+
+            if (NODE_TYPE (last_pointer) == N_block) {
+                INFO_CRECE_NEWBLOCK (arg_info) = arg_node;
+                BLOCK_INSTR (last_pointer) = arg_node;
+            } else {
+                DBUG_ASSERT ((NODE_TYPE (last_pointer) == N_assign),
+                             "N_assign as LASTPOINTER expected");
+                ASSIGN_NEXT (last_pointer) = arg_node;
+            }
+
+            /* now the arg_node isn't the same as former */
+            INFO_CRECE_LASTPOINTER (arg_info) = arg_node;
+            INFO_CRECE_FIRSTANYASSIGN (arg_info) = NULL;
+        }
+    }
+
+    fprintf (stdout, "act-assign:\n");
+    PrintNode (arg_node);
+    fprintf (stdout, "********************\n\n");
+
+    /* push info... */
+    old_firstanyassign = INFO_CRECE_FIRSTANYASSIGN (arg_info);
+    act_cellassign = INFO_CRECE_ACTCELLASSIGN (arg_info);
+
+    /* kill info */
+    INFO_CRECE_ACTCELLASSIGN (arg_info) = NULL;
+    INFO_CRECE_FIRSTANYASSIGN (arg_info) = NULL;
+
+    /* traverse into the instruction - it could be a conditional */
+    /* if (ASSIGN_INSTR(arg_node) != NULL) {
+      DBUG_PRINT( "CRECE", ("trav into instruction"));
+      dummy = Trav(ASSIGN_INSTR(arg_node), arg_info);
+      DBUG_PRINT( "CRECE", ("trav from instruction"));
+      } */
+
+    /* pop info... */
+    INFO_CRECE_ACTCELLASSIGN (arg_info) = act_cellassign;
+    INFO_CRECE_FIRSTANYASSIGN (arg_info) = old_firstanyassign;
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        DBUG_PRINT ("CRECE", ("trav into next"));
+        dummy = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        DBUG_PRINT ("CRECE", ("trav from next"));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+CRECEInsertCell (node *act_assign, node *first_anyassign)
+{
+    node *old_assign;
+    node *new_assign;
+    DBUG_ENTER ("MUTHInsertCell");
+    DBUG_ASSERT ((NODE_TYPE (act_assign) == N_assign), "N_assign expected");
+
+    /* set the executionmode of the any_assign-chain */
+    if (first_anyassign != NULL) {
+        /* set the old assign to the first_anyassign, cause its not NULL */
+        old_assign = first_anyassign;
+        while (first_anyassign != act_assign) {
+            ASSIGN_EXECMODE (first_anyassign) = ASSIGN_EXECMODE (act_assign);
+            first_anyassign = ASSIGN_NEXT (first_anyassign);
+        }
+    } else {
+        /* set the old_assign to the act_assign, cause there's no first_anyassign*/
+        old_assign = act_assign;
+    }
+
+    switch (ASSIGN_EXECMODE (old_assign)) {
+    case MUTH_EXCLUSIVE:
+        new_assign = MakeAssign (MakeEX (MakeBlock (old_assign, NULL)), NULL);
+        break;
+    case MUTH_SINGLE:
+        new_assign = MakeAssign (MakeST (MakeBlock (old_assign, NULL)), NULL);
+        break;
+    case MUTH_MULTI:
+        new_assign = MakeAssign (MakeMT (MakeBlock (old_assign, NULL)), NULL);
+        break;
+    }
+
+    ASSIGN_EXECMODE (new_assign) = ASSIGN_EXECMODE (act_assign);
+    ASSIGN_NEXT (new_assign) = ASSIGN_NEXT (act_assign);
+    ASSIGN_NEXT (act_assign) = NULL;
+
+    DBUG_RETURN (new_assign);
 }
 
 /** <!--********************************************************************-->
@@ -191,38 +393,34 @@ CRECEfundef (node *arg_node, info *arg_info)
  *   @return N_assign with probably added cell
  *
  *****************************************************************************/
-node *
-CRECEassign (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("CRECEassign");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign),
-                 "CRECEassign expects a N_assign as arg_node");
+/*node *CRECEassign(node *arg_node, info *arg_info) {
+  DBUG_ENTER("CRECEassign");
+  DBUG_ASSERT((NODE_TYPE(arg_node) == N_assign),
+             "CRECEassign expects a N_assign as arg_node");
 
-    switch (ASSIGN_EXECMODE (arg_node)) {
-    case MUTH_ANY:
-        break;
-    case MUTH_EXCLUSIVE:
-        DBUG_PRINT ("CRECE", ("Executionmode is MUTH_EXCLUSIVE"));
-        arg_node = MUTHInsertEX (arg_node, INFO_CRECE_FUNDEF (arg_info));
-        break;
-    case MUTH_SINGLE:
-        DBUG_PRINT ("CRECE", ("Executionmode is MUTH_SINGLE"));
-        arg_node = MUTHInsertST (arg_node, INFO_CRECE_FUNDEF (arg_info));
-        break;
-    case MUTH_MULTI:
-        DBUG_PRINT ("CRECE", ("Executionmode is MUTH_MULTI"));
-        arg_node = MUTHInsertMT (arg_node, INFO_CRECE_FUNDEF (arg_info));
-        break;
-    default:
-        DBUG_ASSERT (0, "CRECEassign expects an assignment with valid executionmode");
-        break;
-    }
+  switch (ASSIGN_EXECMODE(arg_node)) {
+  case MUTH_ANY: break;
+  case MUTH_EXCLUSIVE:
+    DBUG_PRINT("CRECE", ("Executionmode is MUTH_EXCLUSIVE"));
+    arg_node = MUTHInsertEX(arg_node, INFO_CRECE_FUNDEF(arg_info));
+    break;
+  case MUTH_SINGLE:
+    DBUG_PRINT("CRECE", ("Executionmode is MUTH_SINGLE"));
+    arg_node = MUTHInsertST(arg_node, INFO_CRECE_FUNDEF(arg_info));
+    break;
+  case MUTH_MULTI:
+    DBUG_PRINT("CRECE", ("Executionmode is MUTH_MULTI"));
+    arg_node = MUTHInsertMT(arg_node, INFO_CRECE_FUNDEF(arg_info));
+    break;
+  default: DBUG_ASSERT(0,"CRECEassign expects an assignment with valid executionmode");
+    break;
+  }
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        DBUG_PRINT ("CRECE", ("trav into next"));
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-        DBUG_PRINT ("CRECE", ("trav from next"));
-    }
+  if(ASSIGN_NEXT(arg_node) != NULL) {
+    DBUG_PRINT( "CRECE", ("trav into next"));
+    ASSIGN_NEXT(arg_node) = Trav(ASSIGN_NEXT(arg_node), arg_info);
+    DBUG_PRINT( "CRECE", ("trav from next"));
+  }
 
-    DBUG_RETURN (arg_node);
-}
+  DBUG_RETURN (arg_node);
+  }*/
