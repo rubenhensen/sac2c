@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.7  2000/03/01 14:52:38  dkr
+# make deps done
+#
 # Revision 2.6  2000/01/21 14:46:54  dkr
 # directory tree added
 #
@@ -119,7 +122,8 @@ objects.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 objects.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 objects.o: /usr/include/stdio_impl.h /usr/include/string.h
 objects.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
-objects.o: ../tree/traverse.h ../global/internal_lib.h
+objects.o: ../tree/traverse.h ../global/internal_lib.h ../tree/DupTree.h
+objects.o: ../tree/LookUpTable.h
 objinit.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 objinit.o: /usr/include/sys/isa_defs.h ../global/types.h ../tree/tree_basic.h
 objinit.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
@@ -129,7 +133,7 @@ objinit.o: ../global/globals.h ../tree/traverse.h ../../inc/dbug.h
 objinit.o: ../global/internal_lib.h ../tree/free.h ../global/my_debug.h
 objinit.o: /usr/include/malloc.h /usr/include/sys/types.h
 objinit.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-objinit.o: ../typecheck/typecheck.h ../modules/filemgr.h
+objinit.o: ../tree/DupTree.h ../tree/LookUpTable.h ../modules/filemgr.h
 rmvoidfun.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 rmvoidfun.o: ../global/Error.h /usr/include/stdio.h
 rmvoidfun.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h

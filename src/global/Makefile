@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.18  2000/03/01 14:52:32  dkr
+# make deps done
+#
 # Revision 2.17  2000/01/23 15:01:10  dkr
 # make deps done
 #
@@ -193,13 +196,13 @@ main.o: /usr/include/string.h /usr/include/stdlib.h globals.h internal_lib.h
 main.o: ../tree/free.h ../../inc/dbug.h my_debug.h /usr/include/malloc.h
 main.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 main.o: /usr/include/sys/int_types.h usage.h ../flatten/lac2fun.h
-main.o: ../flatten/flatten.h ../print/print.h ../typecheck/typecheck.h
-main.o: ../optimize/optimize.h ../modules/filemgr.h ../modules/import.h
-main.o: ../refcount/refcount.h ../scanparse/scnprs.h resource.h
-main.o: ../scanparse/y.tab.h ../psi-opt/psi-opt.h ../modules/writesib.h
-main.o: ../modules/readsib.h ../modules/implicittypes.h ../objects/objinit.h
-main.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
-main.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
+main.o: ../flatten/fun2lac.h ../flatten/flatten.h ../print/print.h
+main.o: ../typecheck/typecheck.h ../optimize/optimize.h ../modules/filemgr.h
+main.o: ../modules/import.h ../refcount/refcount.h ../scanparse/scnprs.h
+main.o: resource.h ../scanparse/y.tab.h ../psi-opt/psi-opt.h
+main.o: ../modules/writesib.h ../modules/readsib.h ../modules/implicittypes.h
+main.o: ../objects/objinit.h ../modules/analysis.h ../modules/checkdec.h
+main.o: ../objects/objects.h ../objects/uniquecheck.h ../objects/rmvoidfun.h
 main.o: ../compile/wltransform.h ../concurrent/concurrent.h
 main.o: ../compile/precompile.h ../compile/compile.h ../modules/cccall.h
 main.o: ../compile/Old2NewWith.h interrupt.h options.h

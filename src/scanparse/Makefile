@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.11  2000/03/01 14:52:33  dkr
+# make deps done
+#
 # Revision 2.10  2000/01/21 17:02:04  dkr
 # make deps done
 #
@@ -189,6 +192,6 @@ y.tab.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 y.tab.o: ../../inc/dbug.h ../tree/tree.h ../global/types.h
 y.tab.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
 y.tab.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-y.tab.o: ../typecheck/typecheck.h ../tree/DupTree.h ../global/my_debug.h
-y.tab.o: ../tree/free.h /usr/include/malloc.h ../modules/readsib.h
-y.tab.o: ../global/resource.h
+y.tab.o: ../typecheck/typecheck.h ../tree/DupTree.h ../tree/LookUpTable.h
+y.tab.o: ../global/my_debug.h ../tree/free.h /usr/include/malloc.h
+y.tab.o: ../modules/readsib.h ../global/resource.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.13  2000/03/01 14:52:34  dkr
+# make deps done
+#
 # Revision 2.12  2000/01/21 17:02:05  dkr
 # make deps done
 #
@@ -140,7 +143,8 @@ gen_pseudo_fun.o: /usr/include/string.h ../global/globals.h
 gen_pseudo_fun.o: ../global/internal_lib.h ../tree/free.h
 gen_pseudo_fun.o: ../global/my_debug.h /usr/include/malloc.h
 gen_pseudo_fun.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-gen_pseudo_fun.o: /usr/include/sys/int_types.h typecheck.h gen_pseudo_fun.h
+gen_pseudo_fun.o: /usr/include/sys/int_types.h ../tree/DupTree.h
+gen_pseudo_fun.o: ../tree/LookUpTable.h gen_pseudo_fun.h typecheck.h
 new_typecheck.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 new_typecheck.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 new_typecheck.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -170,11 +174,11 @@ prim_fun.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 prim_fun.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h ../tree/tree.h
 prim_fun.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
 prim_fun.o: /usr/include/string.h ../global/internal_lib.h prim_fun.h
-prim_fun.o: ../../inc/dbug.h ../global/my_debug.h typecheck.h
-prim_fun.o: ../tree/access_macros.h ../print/convert.h ../tree/free.h
-prim_fun.o: /usr/include/malloc.h /usr/include/sys/types.h
+prim_fun.o: ../../inc/dbug.h ../global/my_debug.h ../tree/DupTree.h
+prim_fun.o: ../tree/LookUpTable.h ../tree/access_macros.h ../print/convert.h
+prim_fun.o: ../tree/free.h /usr/include/malloc.h /usr/include/sys/types.h
 prim_fun.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-prim_fun.o: prim_fun_tt.mac prim_fun_ft.mac
+prim_fun.o: typecheck.h prim_fun_tt.mac prim_fun_ft.mac
 shape.o: ../../inc/dbug.h /usr/include/stdio.h
 shape.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 shape.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -195,8 +199,8 @@ typecheck.o: ../global/my_debug.h ../../inc/dbug.h ../tree/traverse.h
 typecheck.o: typecheck.h ../print/convert.h ../modules/import.h prim_fun.h
 typecheck.o: ../tree/free.h /usr/include/malloc.h /usr/include/sys/types.h
 typecheck.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-typecheck.o: ../tree/access_macros.h ../tree/DupTree.h typecheck_WL.h
-typecheck.o: gen_pseudo_fun.h new_typecheck.h prim_fun_tt.mac
+typecheck.o: ../tree/access_macros.h ../tree/DupTree.h ../tree/LookUpTable.h
+typecheck.o: typecheck_WL.h gen_pseudo_fun.h new_typecheck.h prim_fun_tt.mac
 typecheck_WL.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 typecheck_WL.o: /usr/include/sys/isa_defs.h /usr/include/stddef.h
 typecheck_WL.o: /usr/include/string.h ../tree/tree.h ../global/types.h

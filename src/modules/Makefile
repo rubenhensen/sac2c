@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.10  2000/03/01 14:52:36  dkr
+# make deps done
+#
 # Revision 2.9  2000/01/21 14:45:28  dkr
 # directory tree added
 #
@@ -282,4 +285,4 @@ writesib.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 writesib.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 writesib.o: /usr/include/sys/int_types.h ../global/internal_lib.h
 writesib.o: ../tree/traverse.h ../print/convert.h filemgr.h ../print/print.h
-writesib.o: ../tree/tree.h ../typecheck/typecheck.h
+writesib.o: ../tree/tree.h

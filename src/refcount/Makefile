@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.8  2000/03/01 14:52:37  dkr
+# make deps done
+#
 # Revision 2.7  2000/01/21 17:02:08  dkr
 # make deps done
 #
@@ -110,7 +113,7 @@ refcount.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 refcount.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 refcount.o: /usr/include/string.h ../global/globals.h
 refcount.o: ../global/internal_lib.h ../global/my_debug.h ../../inc/dbug.h
-refcount.o: ../tree/DupTree.h ../typecheck/typecheck.h ../tree/DataFlowMask.h
+refcount.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/DataFlowMask.h
 refcount.o: ../tree/traverse.h ../optimize/optimize.h ../tree/free.h
 refcount.o: /usr/include/malloc.h /usr/include/sys/types.h
 refcount.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h

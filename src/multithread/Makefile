@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 1.7  2000/03/01 14:52:44  dkr
+# make deps done
+#
 # Revision 1.6  2000/02/21 17:51:16  jhs
 # Added multithread_lib.o, blokcs_expand.o
 #
@@ -57,7 +60,9 @@ blocks_expand.o: ../global/Error.h /usr/include/string.h
 blocks_expand.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
 blocks_expand.o: ../tree/scheduling.h ../tree/DupTree.h ../tree/LookUpTable.h
 blocks_expand.o: ../optimize/generatemasks.h ../global/my_debug.h
-blocks_expand.o: ../global/internal_lib.h
+blocks_expand.o: multithread_lib.h ../tree/free.h /usr/include/malloc.h
+blocks_expand.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+blocks_expand.o: /usr/include/sys/int_types.h ../global/internal_lib.h
 blocks_init.o: ../../inc/dbug.h /usr/include/stdio.h
 blocks_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 blocks_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -75,11 +80,19 @@ multithread.o: /usr/include/stdio_impl.h ../global/types.h
 multithread.o: ../tree/tree_basic.h ../tree/traverse.h ../global/globals.h
 multithread.o: ../tree/free.h ../global/my_debug.h /usr/include/malloc.h
 multithread.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-multithread.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-multithread.o: /usr/include/sys/time.h /usr/include/sys/time.h
-multithread.o: ../global/internal_lib.h ../global/Error.h
-multithread.o: /usr/include/string.h /usr/include/stdlib.h schedule_init.h
-multithread.o: repfuns_init.h blocks_init.h blocks_expand.h
+multithread.o: /usr/include/sys/int_types.h ../global/internal_lib.h
+multithread.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
+multithread.o: schedule_init.h repfuns_init.h blocks_init.h blocks_expand.h
+multithread_lib.o: ../../inc/dbug.h /usr/include/stdio.h
+multithread_lib.o: /usr/include/sys/feature_tests.h
+multithread_lib.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+multithread_lib.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+multithread_lib.o: ../tree/tree_basic.h ../global/types.h ../tree/free.h
+multithread_lib.o: ../global/my_debug.h /usr/include/malloc.h
+multithread_lib.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+multithread_lib.o: /usr/include/sys/int_types.h ../global/globals.h
+multithread_lib.o: ../global/internal_lib.h ../tree/DupTree.h
+multithread_lib.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h
 repfuns_init.o: ../../inc/dbug.h /usr/include/stdio.h
 repfuns_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 repfuns_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -91,9 +104,7 @@ repfuns_init.o: ../tree/DupTree.h ../tree/LookUpTable.h
 repfuns_init.o: ../optimize/generatemasks.h ../tree/free.h
 repfuns_init.o: ../global/my_debug.h /usr/include/malloc.h
 repfuns_init.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-repfuns_init.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-repfuns_init.o: /usr/include/sys/time.h /usr/include/sys/time.h
-repfuns_init.o: ../global/internal_lib.h
+repfuns_init.o: /usr/include/sys/int_types.h ../global/internal_lib.h
 schedule_init.o: ../../inc/dbug.h /usr/include/stdio.h
 schedule_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 schedule_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
