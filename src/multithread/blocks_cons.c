@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/03/02 14:13:58  jhs
+ * Using mdb_statustype now.
+ *
  * Revision 1.1  2000/03/02 12:54:53  jhs
  * Initial revision
  *
@@ -24,33 +27,6 @@
 
 #include "internal_lib.h"
 #include "multithread_lib.h"
-
-/* build status_info.mac #### instead of this*/
-/* StatusTypeAsString */
-static char *
-STAS (statustype status)
-{
-    char *result;
-    DBUG_ENTER ("STAS");
-    switch (status) {
-    case ST_call_any:
-        result = "ST_call_any";
-        break;
-    case ST_call_st:
-        result = "ST_call_st";
-        break;
-    case ST_call_mt:
-        result = "ST_call_mt";
-        break;
-    case ST_call_rep:
-        result = "ST_call_rep";
-        break;
-    default:
-        result = malloc (11);
-        sprintf (result, "(%i)", (int)status);
-    }
-    DBUG_RETURN (result);
-}
 
 node *
 BlocksCons (node *arg_node, node *arg_info)
@@ -157,11 +133,11 @@ BLKCOfundef (node *arg_node, node *arg_info)
         old_attrib = INFO_BLKCO_CURRENTATTRIB (arg_info);
         INFO_BLKCO_CURRENTATTRIB (arg_info) = FUNDEF_ATTRIB (arg_node);
 
-        DBUG_PRINT ("BLKCO",
-                    ("traverse into body with %s", STAS (FUNDEF_ATTRIB (arg_node))));
+        DBUG_PRINT ("BLKCO", ("traverse into body with %s",
+                              mdb_statustype[FUNDEF_ATTRIB (arg_node)]));
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-        DBUG_PRINT ("BLKCO",
-                    ("traverse from body with %s", STAS (FUNDEF_ATTRIB (arg_node))));
+        DBUG_PRINT ("BLKCO", ("traverse from body with %s",
+                              mdb_statustype[FUNDEF_ATTRIB (arg_node)]));
 
         INFO_BLKCO_CURRENTATTRIB (arg_info) = old_attrib;
     } else if (FUNDEF_ATTRIB (arg_node) == ST_call_rep) {

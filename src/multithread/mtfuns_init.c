@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/03/02 14:13:58  jhs
+ * Using mdb_statustype now.
+ *
  * Revision 1.1  2000/03/02 12:54:00  jhs
  * Initial revision
  *
@@ -38,32 +41,7 @@
 
 #include "mtfuns_init.h"
 
-/* build status_info.mac #### instead of this*/
-/* StatusTypeAsString */
-static char *
-STAS (statustype status)
-{
-    char *result;
-    DBUG_ENTER ("STAS");
-    switch (status) {
-    case ST_call_any:
-        result = "ST_call_any";
-        break;
-    case ST_call_st:
-        result = "ST_call_st";
-        break;
-    case ST_call_mt:
-        result = "ST_call_mt";
-        break;
-    case ST_call_rep:
-        result = "ST_call_rep";
-        break;
-    default:
-        result = malloc (11);
-        sprintf (result, "(%i)", (int)status);
-    }
-    DBUG_RETURN (result);
-}
+/* #### */
 
 node *
 MtfunsInit (node *arg_node, node *arg_info)
@@ -119,11 +97,11 @@ MTFINxt (node *arg_node, node *arg_info)
         DBUG_ASSERT (0, ("not handled"));
     }
 
-    DBUG_PRINT ("MTFIN",
-                ("traverse into region %s", STAS (INFO_MTFIN_CURRENTATTRIB (arg_info))));
+    DBUG_PRINT ("MTFIN", ("traverse into region %s",
+                          mdb_statustype[INFO_MTFIN_CURRENTATTRIB (arg_info)]));
     MT_OR_ST_REGION (arg_node) = Trav (MT_OR_ST_REGION (arg_node), arg_info);
-    DBUG_PRINT ("MTFIN",
-                ("traverse from region %s", STAS (INFO_MTFIN_CURRENTATTRIB (arg_info))));
+    DBUG_PRINT ("MTFIN", ("traverse from region %s",
+                          mdb_statustype[INFO_MTFIN_CURRENTATTRIB (arg_info)]));
 
     INFO_MTFIN_CURRENTATTRIB (arg_info) = old_attrib;
 
@@ -145,8 +123,8 @@ MTFINlet (node *arg_node, node *arg_info)
         old_fundef = AP_FUNDEF (ap);
 
         if (FUNDEF_ATTRIB (old_fundef) == ST_call_any) {
-            DBUG_PRINT ("MTFIN",
-                        ("call_any %s %s", FUNDEF_NAME (old_fundef), STAS (ST_call_any)));
+            DBUG_PRINT ("MTFIN", ("call_any %s %s", FUNDEF_NAME (old_fundef),
+                                  mdb_statustype[ST_call_any]));
 
             DBUG_ASSERT (((FUNDEF_BODY (old_fundef) != NULL)
                           || (INFO_MTFIN_CURRENTATTRIB (arg_info) = ST_call_st)),
@@ -160,11 +138,11 @@ MTFINlet (node *arg_node, node *arg_info)
             DBUG_PRINT ("MTFIN", ("traverse from fundef"));
         } else if (FUNDEF_ATTRIB (old_fundef) == INFO_MTFIN_CURRENTATTRIB (arg_info)) {
             DBUG_PRINT ("MTFIN", ("== current %s %s", FUNDEF_NAME (old_fundef),
-                                  STAS (FUNDEF_ATTRIB (old_fundef))));
+                                  mdb_statustype[FUNDEF_ATTRIB (old_fundef)]));
             /* nothing happens */
         } else if (FUNDEF_ATTRIB (old_fundef) != INFO_MTFIN_CURRENTATTRIB (arg_info)) {
             DBUG_PRINT ("MTFIN", ("!= current %s %s", FUNDEF_NAME (old_fundef),
-                                  STAS (FUNDEF_ATTRIB (old_fundef))));
+                                  mdb_statustype[FUNDEF_ATTRIB (old_fundef)]));
             new_fundef = FUNDEF_COMPANION (old_fundef);
             if (new_fundef != NULL) {
                 DBUG_PRINT ("MTFIN", ("exists"));
