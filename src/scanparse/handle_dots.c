@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2002/10/20 16:57:28  sah
+ * fixed bug when substituting '.' in nested WLs
+ * implemented setnotation for indexvectors
+ * some code-cleanup
+ *
  * Revision 1.14  2002/10/02 09:39:37  sbs
  * in commission for sah; (don't blame me 8-))
  *
@@ -91,6 +96,7 @@ typedef struct DOTINFO {
  */
 
 typedef enum TRAVSTATE { HD_sel, HD_scan } travstate;
+typedef enum IDTYPE { ID_vector, ID_scalar } idtype;
 
 typedef struct SHPCHAIN {
     node *shape;
@@ -99,6 +105,7 @@ typedef struct SHPCHAIN {
 
 typedef struct IDTABLE {
     char *id;
+    idtype type;
     shpchain *shapes;
     struct IDTABLE *next;
 } idtable;
@@ -796,23 +803,33 @@ BuildIdTable (node *ids, idtable *appendto)
 
     DBUG_ENTER ("BuildIdTable");
 
-    while (ids != NULL) {
-        node *id = EXPRS_EXPR (ids);
+    if (NODE_TYPE (ids) == N_exprs) {
+        while (ids != NULL) {
+            node *id = EXPRS_EXPR (ids);
+            idtable *newtab = Malloc (sizeof (idtable));
+
+            if (NODE_TYPE (id) != N_id) {
+                ERROR (linenum, ("found non-id as index in WL set notation"));
+
+                /* we create a dummy entry within the idtable in order */
+                /* to go on and search for further errors.             */
+                newtab->id = StringCopy ("_non_id_expr");
+            } else
+                newtab->id = StringCopy (ID_NAME (id));
+
+            newtab->type = ID_scalar;
+            newtab->shapes = NULL;
+            newtab->next = result;
+            result = newtab;
+            ids = EXPRS_NEXT (ids);
+        }
+    } else {
         idtable *newtab = Malloc (sizeof (idtable));
-
-        if (NODE_TYPE (id) != N_id) {
-            ERROR (linenum, ("found non-id as index in WL set notation"));
-
-            /* we create a dummy entry within the idtable in order */
-            /* to go on and search for further errors.             */
-            newtab->id = StringCopy ("_non_id_expr");
-        } else
-            newtab->id = StringCopy (ID_NAME (id));
-
+        newtab->id = StringCopy (ID_NAME (ids));
+        newtab->type = ID_vector;
         newtab->shapes = NULL;
         newtab->next = result;
         result = newtab;
-        ids = EXPRS_NEXT (ids);
     }
 
     DBUG_RETURN (result);
@@ -825,6 +842,15 @@ FreeIdTable (idtable *table, idtable *until)
 
     while (table != until) {
         idtable *next = table->next;
+
+        /* free shape-chain but NOT shapes itself */
+        while (table->shapes != NULL) {
+            shpchain *next = table->shapes->next;
+            Free (table->shapes);
+            table->shapes = next;
+        }
+
+        /* free table */
         Free (table->id);
         Free (table);
         table = next;
@@ -845,7 +871,8 @@ ScanVector (node *vector, node *array, idtable *ids)
             idtable *handle = ids;
 
             while (handle != NULL) {
-                if (strcmp (handle->id, ID_NAME (EXPRS_EXPR (vector))) == 0) {
+                if ((handle->type == ID_scalar)
+                    && (strcmp (handle->id, ID_NAME (EXPRS_EXPR (vector))) == 0)) {
                     node *shape
                       = MAKE_BIN_PRF (F_sel,
                                       MakeArray (MakeExprs (MakeNum (poscnt), NULL)),
@@ -871,35 +898,104 @@ ScanVector (node *vector, node *array, idtable *ids)
     DBUG_VOID_RETURN;
 }
 
+void
+ScanId (node *id, node *array, idtable *ids)
+{
+    DBUG_ENTER ("ScanId");
+
+    while (ids != NULL) {
+        if ((ids->type == ID_vector) && (strcmp (ids->id, ID_NAME (id)) == 0)) {
+            node *shape = MakePrf (F_shape, MakeExprs (DupTree (array), NULL));
+            shpchain *chain = Malloc (sizeof (shpchain));
+
+            chain->shape = shape;
+            chain->next = ids->shapes;
+            ids->shapes = chain;
+
+            break;
+        }
+
+        ids = ids->next;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 node *
-BuildWLShape (idtable *table)
+BuildShapeVectorMin (shpchain *vectors)
+{
+    node *result = NULL;
+    node *index = MakeTmpId ();
+    node *shape = NULL;
+    node *expr = NULL;
+
+    DBUG_ENTER ("BuildVectorMin");
+
+    shape = MakePrf (F_shape, MakeExprs (vectors->shape, NULL));
+
+    expr = MAKE_BIN_PRF (F_sel, DupTree (index), vectors->shape);
+
+    vectors = vectors->next;
+
+    while (vectors != NULL) {
+        expr = MAKE_BIN_PRF (F_min, MAKE_BIN_PRF (F_sel, DupTree (index), vectors->shape),
+                             expr);
+        vectors = vectors->next;
+    }
+
+    result = MakeNWith (MakeNPart (MakeNWithid (DupId_Ids (index), NULL),
+                                   MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
+                                                   NULL, NULL),
+                                   NULL),
+                        MakeNCode (MAKE_EMPTY_BLOCK (), expr),
+                        MakeNWithOp (WO_genarray, shape));
+
+    NCODE_USED (NWITH_CODE (result))++;
+    NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
+
+    FreeTree (index);
+
+    DBUG_RETURN (result);
+}
+
+node *
+BuildWLShape (idtable *table, idtable *end)
 {
     node *result = NULL;
 
     DBUG_ENTER ("BuildWLShape");
 
-    while (table != NULL) {
-        node *shape = NULL;
-        shpchain *handle = table->shapes;
+    if (table->type == ID_scalar) {
+        while (table != end) {
+            node *shape = NULL;
+            shpchain *handle = table->shapes;
 
-        if (handle == NULL) {
-            ERROR (linenum, ("no shape information found for %s", table->id));
-            shape = MakeNum (0);
-        } else {
-            shape = handle->shape;
-            handle = handle->next;
-
-            while (handle != NULL) {
-                shape = MAKE_BIN_PRF (F_min, shape, handle->shape);
+            if (handle == NULL) {
+                ERROR (linenum, ("no shape information found for %s", table->id));
+            } else {
+                shape = handle->shape;
                 handle = handle->next;
+
+                while (handle != NULL) {
+                    shape = MAKE_BIN_PRF (F_min, shape, handle->shape);
+                    handle = handle->next;
+                }
             }
+
+            result = MakeExprs (shape, result);
+            table = table->next;
         }
 
-        result = MakeExprs (shape, result);
-        table = table->next;
+        result = MakeArray (result);
     }
 
-    result = MakeArray (result);
+    if (table->type == ID_vector) {
+        if (table->shapes == NULL) {
+            ERROR (linenum, ("no shape information found for %s", table->id));
+        } else {
+            result = BuildShapeVectorMin (table->shapes);
+        }
+    }
 
     DBUG_RETURN (result);
 }
@@ -985,6 +1081,12 @@ EliminateSelDots (node *arg_node)
 node *
 HDwith (node *arg_node, node *arg_info)
 {
+    /* INFO_HD_DOTSHAPE is used for '.'-substitution in WLgenerators */
+    /* in order to handle nested WLs correct, olddotshape stores not */
+    /* processed shapes until this (maybe inner) WL is processed.    */
+
+    node *olddotshape = INFO_HD_DOTSHAPE (arg_info);
+
     DBUG_ENTER ("HDwith");
 
     /*
@@ -997,6 +1099,8 @@ HDwith (node *arg_node, node *arg_info)
 
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+
+    INFO_HD_DOTSHAPE (arg_info) = olddotshape;
 
     DBUG_RETURN (arg_node);
 }
@@ -1210,10 +1314,13 @@ HDap (node *arg_node, node *arg_info)
     /* if in HD_scan mode, scan for shapes */
 
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_scan)
-        && (strcmp (AP_NAME (arg_node), "sel") == 0)
-        && (NODE_TYPE (AP_ARG1 (arg_node)) == N_array)) {
-        ScanVector (ARRAY_AELEMS (AP_ARG1 (arg_node)), AP_ARG2 (arg_node),
-                    INFO_HD_IDTABLE (arg_info));
+        && (strcmp (AP_NAME (arg_node), "sel") == 0)) {
+        if (NODE_TYPE (AP_ARG1 (arg_node)) == N_array) {
+            ScanVector (ARRAY_AELEMS (AP_ARG1 (arg_node)), AP_ARG2 (arg_node),
+                        INFO_HD_IDTABLE (arg_info));
+        } else if (NODE_TYPE (AP_ARG1 (arg_node)) == N_id) {
+            ScanId (AP_ARG1 (arg_node), AP_ARG2 (arg_node), INFO_HD_IDTABLE (arg_info));
+        }
     }
 
     /* Now we traverse our result in order to handle any */
@@ -1245,10 +1352,13 @@ HDprf (node *arg_node, node *arg_info)
 
     /* if in HD_scan mode, scan for shapes */
 
-    if ((INFO_HD_TRAVSTATE (arg_info) == HD_scan)
-        && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_array)) {
-        ScanVector (ARRAY_AELEMS (PRF_ARG1 (arg_node)), PRF_ARG2 (arg_node),
-                    INFO_HD_IDTABLE (arg_info));
+    if ((INFO_HD_TRAVSTATE (arg_info) == HD_scan) && (PRF_PRF (arg_info) == F_sel)) {
+        if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_array) {
+            ScanVector (ARRAY_AELEMS (PRF_ARG1 (arg_node)), PRF_ARG2 (arg_node),
+                        INFO_HD_IDTABLE (arg_info));
+        } else if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id) {
+            ScanId (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), INFO_HD_IDTABLE (arg_info));
+        }
     }
 
     arg_node = TravSons (arg_node, arg_info);
@@ -1274,7 +1384,7 @@ HDassign (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("HDassign");
 
-    /* first traverse sons with a fresg assigns-chain */
+    /* first traverse sons with a fresh assigns-chain */
 
     INFO_HD_ASSIGNS (arg_info) = NULL;
     result = TravSons (arg_node, arg_info);
@@ -1307,43 +1417,49 @@ node *
 HDsetwl (node *arg_node, node *arg_info)
 {
     node *result = NULL;
+    travstate oldstate = INFO_HD_TRAVSTATE (arg_info);
+    idtable *oldtable = INFO_HD_IDTABLE (arg_info);
+    node *shape = NULL;
 
     DBUG_ENTER ("HDsetwl");
 
-    if (NODE_TYPE (arg_node) == N_id) {
-        ERROR (linenum, ("indexvector not supported yet"));
-    } else {
-        travstate oldstate = INFO_HD_TRAVSTATE (arg_info);
-        idtable *oldtable = INFO_HD_IDTABLE (arg_info);
-        node *shape = NULL;
+    INFO_HD_TRAVSTATE (arg_info) = HD_scan;
+    INFO_HD_IDTABLE (arg_info)
+      = BuildIdTable (SETWL_IDS (arg_node), INFO_HD_IDTABLE (arg_info));
 
-        INFO_HD_TRAVSTATE (arg_info) = HD_scan;
-        INFO_HD_IDTABLE (arg_info)
-          = BuildIdTable (SETWL_IDS (arg_node), INFO_HD_IDTABLE (arg_info));
+    TravSons (arg_node, arg_info);
 
-        TravSons (arg_node, arg_info);
+    shape = BuildWLShape (INFO_HD_IDTABLE (arg_info), oldtable);
 
-        shape = BuildWLShape (INFO_HD_IDTABLE (arg_info));
-
+    if (INFO_HD_IDTABLE (arg_info)->type == ID_scalar) {
         result
           = MakeNWith (MakeNPart (MakeNWithid (NULL, Exprs2Ids (SETWL_IDS (arg_node))),
                                   MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
                                                   NULL, NULL),
                                   NULL),
-                       MakeNCode (MAKE_EMPTY_BLOCK (), SETWL_EXPR (arg_node)),
+                       MakeNCode (MAKE_EMPTY_BLOCK (), DupTree (SETWL_EXPR (arg_node))),
                        MakeNWithOp (WO_genarray, shape));
-
-        /* free anything except SETWL_EXPR */
-        FreeTree (SETWL_IDS (arg_node));
-        Free (arg_node);
-
-        NCODE_USED (NWITH_CODE (result))++;
-        NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
-
-        FreeIdTable (INFO_HD_IDTABLE (arg_info), oldtable);
-        INFO_HD_IDTABLE (arg_info) = oldtable;
-        INFO_HD_TRAVSTATE (arg_info) = oldstate;
+    } else {
+        result
+          = MakeNWith (MakeNPart (MakeNWithid (DupId_Ids (SETWL_IDS (arg_node)), NULL),
+                                  MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
+                                                  NULL, NULL),
+                                  NULL),
+                       MakeNCode (MAKE_EMPTY_BLOCK (), DupTree (SETWL_EXPR (arg_node))),
+                       MakeNWithOp (WO_genarray, shape));
     }
+
+    FreeTree (arg_node);
+
+    NCODE_USED (NWITH_CODE (result))++;
+    NPART_CODE (NWITH_PART (result)) = NWITH_CODE (result);
+
+    FreeIdTable (INFO_HD_IDTABLE (arg_info), oldtable);
+
+    INFO_HD_IDTABLE (arg_info) = oldtable;
+    INFO_HD_TRAVSTATE (arg_info) = oldstate;
+
+    result = Trav (result, arg_info);
 
     DBUG_RETURN (result);
 }
