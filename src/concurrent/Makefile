@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.4  1999/06/01 15:17:10  dkr
+# make deps done
+#
 # Revision 2.3  1999/03/11 18:18:28  dkr
 # make deps done
 #
@@ -128,7 +131,11 @@ spmd_opt.o: ../../inc/dbug.h /usr/include/stdio.h
 spmd_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 spmd_opt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 spmd_opt.o: /usr/include/stdio_impl.h ../global/types.h
-spmd_opt.o: ../global/tree_basic.h ../global/traverse.h
+spmd_opt.o: ../global/tree_basic.h ../global/traverse.h ../global/free.h
+spmd_opt.o: ../global/my_debug.h /usr/include/malloc.h
+spmd_opt.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
+spmd_opt.o: /usr/include/sys/int_types.h ../global/internal_lib.h
+spmd_opt.o: ../optimize/DupTree.h ../optimize/DataFlowMask.h
 sync_init.o: ../../inc/dbug.h /usr/include/stdio.h
 sync_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 sync_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h

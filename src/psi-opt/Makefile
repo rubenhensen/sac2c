@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.7  1999/06/01 15:17:07  dkr
+# make deps done
+#
 # Revision 2.6  1999/05/12 15:13:27  cg
 # make deps done
 #
@@ -215,4 +218,4 @@ wl_access_analyze.o: ../global/traverse.h ../global/free.h
 wl_access_analyze.o: ../global/my_debug.h /usr/include/malloc.h
 wl_access_analyze.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 wl_access_analyze.o: /usr/include/sys/int_types.h ../global/internal_lib.h
-wl_access_analyze.o: wl_access_analyze.h
+wl_access_analyze.o: ../print/print.h ../global/tree.h wl_access_analyze.h

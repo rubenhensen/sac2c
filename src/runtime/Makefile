@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.10  1999/06/01 15:17:09  dkr
+# make deps done
+#
 # Revision 2.9  1999/05/20 14:53:53  dkr
 # path to main_args.o ist now correct
 #
@@ -136,7 +139,7 @@ CacheSimTest: CacheSimTest.o libsac.a
 CacheSimAnalyser.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 CacheSimAnalyser.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 CacheSimAnalyser.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-CacheSimAnalyser.o: sac_cachesim.h libsac_cachesim.h
+CacheSimAnalyser.o: sac_cachesim.h libsac_cachesim.h sac_message.h
 CacheSimTest.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 CacheSimTest.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 CacheSimTest.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -158,6 +161,7 @@ libsac_cachesim_basic.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 libsac_cachesim_basic.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 libsac_cachesim_basic.o: /usr/include/string.h /usr/include/math.h
 libsac_cachesim_basic.o: sac_cachesim.h libsac_cachesim.h sac_message.h
+libsac_cachesim_basic.o: ../../inc/main_args.h
 libsac_malloc.o: /usr/include/malloc.h /usr/include/sys/types.h
 libsac_malloc.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
 libsac_malloc.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
