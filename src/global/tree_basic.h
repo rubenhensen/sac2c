@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.192  1998/06/23 12:42:13  cg
+ * Attribute SPMD_LIFTED_FROM removed
+ * Attribute SPMD_FUNNAME replaced by SPMD_FUNDEF
+ * Attribute NWITH2_MT added to specify those with-loops which
+ * are to executed in parallel.
+ *
  * Revision 1.191  1998/06/19 19:36:58  dkr
  * added INFO_REUSE_NEGMASK
  *
@@ -2407,7 +2413,7 @@ extern node *MakePragma ();
  ***
  ***    long*      MASK[x]
  ***
- ***  when used while withloop folding:
+ ***  when used during withloop folding:
  ***    node*      NEXT               (N_info)
  ***    node*      SUBST              (N_Ncode)
  ***    node*      WL                 (N_Nwith)
@@ -2423,6 +2429,12 @@ extern node *MakePragma ();
  ***  when used in ConstantFolding.c :
  ***    node*      ASSIGN             (N_assign)
  ***    types      TYPE               (no son)
+ ***
+ ***  when used in managing spmd- and sync blocks :
+ ***
+ ***    node*      INFO_SPMD_FUNDEF   (N_fundef)
+ ***    int        INFO_SPMD_FIRST
+ ***    int        INFO_SPMD_MT
  ***
  *** remarks:
  ***    N_info is used in many other phases without access macros :((
@@ -2474,6 +2486,7 @@ extern node *MakeInfo ();
 /* spmdregions */
 #define INFO_SPMD_FUNDEF(n) (n->node[0])
 #define INFO_SPMD_FIRST(n) (n->flag)
+#define INFO_SPMD_MT(n) (n->counter)
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
@@ -2557,8 +2570,7 @@ extern node *MakeInfo ();
  ***    DFMmask_t  INOUT
  ***    DFMmask_t  LOCAL
  ***
- ***    char*      LIFTED_FROM
- ***    char*      FUNNAME
+ ***    node*      FUNDEF      (N_fundef)
  ***
  ***  temporary attributes:
  ***
@@ -2582,11 +2594,10 @@ extern node *MakeSpmd (node *region);
 #define SPMD_OUT(n) ((DFMmask_t)n->dfmask[2])
 #define SPMD_LOCAL(n) ((DFMmask_t)n->dfmask[3])
 
-#define SPMD_LIFTED_FROM(n) ((char *)(n->node[3]))
-#define SPMD_FUNNAME(n) (n->info.id)
+#define SPMD_FUNDEF(n) (n->node[1])
 
 #define SPMD_ICM(n) (n->node[2])
-#define SPMD_INOUT_IDS(n) ((ids *)(n->node[1]))
+#define SPMD_INOUT_IDS(n) (n->info.ids)
 
 /*--------------------------------------------------------------------------*/
 
@@ -2886,6 +2897,8 @@ extern node *MakeNCode (node *block, node *expr);
  ***    DFMmask_t  INOUT
  ***    DFMmask_t  OUT
  ***    DFMmask_t  LOCAL
+ ***    int        MT
+ ***
  ***
  ***  temporary attributes:
  ***
@@ -2909,6 +2922,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define NWITH2_INOUT(n) ((DFMmask_t)n->dfmask[1])
 #define NWITH2_OUT(n) ((DFMmask_t)n->dfmask[2])
 #define NWITH2_LOCAL(n) ((DFMmask_t)n->dfmask[3])
+#define NWITH2_MT(n) (n->counter)
 
 #define NWITH2_DEC_RC_IDS(n) ((ids *)(n->node[5]))
 
