@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2002/10/18 13:50:20  sbs
+ * SSATransformAllowGOs implemented
+ * FLAGS for freshly made N_id nodes set correctly
+ *
  * Revision 1.25  2002/10/09 02:09:55  dkr
  * SSANpart(): transformation of multi-generator WLs corrected
  * (calls of SSArightids() added!)
@@ -172,6 +176,8 @@
 #define STACKFLAG_DUMMY 0
 #define STACKFLAG_THEN 1
 #define STACKFLAG_ELSE 2
+
+#define INFO_SSA_ALLOW_GOS(n) ((bool)(n->refcnt))
 
 /* global helper functions */
 node *SSANewVardec (node *old_vardec_or_arg);
@@ -374,6 +380,7 @@ SSAInsertCopyAssignments (node *condassign, node *avis, node *arg_info)
       = MakeId (StringCopy (VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (AVIS_SSATHEN (avis)))),
                 NULL, VARDEC_OR_ARG_STATUS (AVIS_VARDECORARG (AVIS_SSATHEN (avis))));
     ID_VARDEC (right_id) = AVIS_VARDECORARG (AVIS_SSATHEN (avis));
+    SET_FLAG (ID, right_id, IS_GLOBAL, (NODE_TYPE (ID_VARDEC (right_id)) == N_objdef));
     ID_AVIS (right_id) = AVIS_SSATHEN (avis);
 
     /* create one let assign for then part */
@@ -402,6 +409,7 @@ SSAInsertCopyAssignments (node *condassign, node *avis, node *arg_info)
       = MakeId (StringCopy (VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (AVIS_SSAELSE (avis)))),
                 NULL, VARDEC_OR_ARG_STATUS (AVIS_VARDECORARG (AVIS_SSAELSE (avis))));
     ID_VARDEC (right_id) = AVIS_VARDECORARG (AVIS_SSAELSE (avis));
+    SET_FLAG (ID, right_id, IS_GLOBAL, (NODE_TYPE (ID_VARDEC (right_id)) == N_objdef));
     ID_AVIS (right_id) = AVIS_SSAELSE (avis);
 
     /* create let assign for else part with same left side as then part */
@@ -1225,7 +1233,9 @@ SSArightids (ids *arg_ids, node *arg_info)
     if (AVIS_SSAPHITARGET (IDS_AVIS (arg_ids)) == PHIT_NONE) {
         /* do renaming to new ssa vardec */
         if (!AVIS_SSADEFINED (IDS_AVIS (arg_ids))) {
-            ERROR (linenum, ("var %s used without definition", IDS_NAME (arg_ids)));
+            if (INFO_SSA_ALLOW_GOS (arg_info) == FALSE) {
+                ERROR (linenum, ("var %s used without definition", IDS_NAME (arg_ids)));
+            }
         } else {
             IDS_AVIS (arg_ids) = AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids));
         }
@@ -1329,6 +1339,50 @@ SSATransform (node *syntax_tree)
 
     arg_info = MakeInfo ();
     INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_FUNDEFS;
+    INFO_SSA_ALLOW_GOS (arg_info) = FALSE;
+
+    old_tab = act_tab;
+    act_tab = ssafrm_tab;
+
+    syntax_tree = Trav (syntax_tree, arg_info);
+
+    act_tab = old_tab;
+
+    arg_info = FreeTree (arg_info);
+
+    valid_ssaform = TRUE;
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SSATransformAllowGOs(node *syntax_tree)
+ *
+ * description:
+ *   In principle, this is only a wrapper for SSATransform. The only difference
+ *   is that it does not require all variables to be defined before used!!!
+ *   This variant is required when the SSA form has to be built before
+ *   introducing explicit data dependencies for GOs (global objects).
+ *
+ ******************************************************************************/
+node *
+SSATransformAllowGOs (node *syntax_tree)
+{
+    node *arg_info;
+    funtab *old_tab;
+
+    DBUG_ENTER ("SSATransformAllowGOs");
+
+    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_modul),
+                 "SSATransformAllowGOs is used for module nodes only");
+
+    DBUG_PRINT ("OPT", ("starting ssa transformation allowing GOs for ast"));
+
+    arg_info = MakeInfo ();
+    INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_FUNDEFS;
+    INFO_SSA_ALLOW_GOS (arg_info) = TRUE;
 
     old_tab = act_tab;
     act_tab = ssafrm_tab;
