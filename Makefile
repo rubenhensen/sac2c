@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.156  2004/12/16 14:36:16  ktr
+# added src/refcount/inplacecomp.o
+#
 # Revision 3.155  2004/12/08 12:15:47  mwe
 # type_upgrade.o added
 #
@@ -180,7 +183,8 @@ REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
           src/refcount/staticreuse.o src/refcount/reuseelimination.o \
           src/refcount/interfaceanalysis.o src/refcount/loopreuseopt.o \
           src/refcount/datareuse.o src/refcount/explicitcopy.o \
-          src/refcount/reusebranching.o src/refcount/ReuseWithArrays.o
+          src/refcount/reusebranching.o src/refcount/ReuseWithArrays.o \
+          src/refcount/inplacecomp.o
 
 CONCURRENT= src/concurrent/concurrent.o src/concurrent/spmd_init.o  \
             src/concurrent/spmd_lift.o src/concurrent/sync_init.o \
