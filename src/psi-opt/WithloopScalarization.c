@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.38  2004/05/05 13:49:47  ktr
+ * Changed am application of DupTree into DupNode and enabled WLS in special functions.
+ *
  * Revision 1.37  2004/02/26 13:37:54  cg
  * Call to SSATransformOneFunction replaced by RestoreSSAOneFunction.
  *
@@ -1568,10 +1571,12 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
 
     tmp_node = newcode;
 
-    newcode = DupTreeLUT (innercode, lut);
-    if (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (newcode))) == N_empty)
+    newcode = DupNodeLUT (innercode, lut);
+    if (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (newcode))) == N_empty) {
+        BLOCK_INSTR (NCODE_CBLOCK (newcode))
+          = Free (BLOCK_INSTR (NCODE_CBLOCK (newcode)));
         BLOCK_INSTR (NCODE_CBLOCK (newcode)) = tmp_node;
-    else
+    } else
         BLOCK_INSTR (NCODE_CBLOCK (newcode))
           = AppendAssign (tmp_node, BLOCK_INSTR (NCODE_CBLOCK (newcode)));
 
@@ -1983,20 +1988,17 @@ WithloopScalarization (node *fundef, node *modul)
     DBUG_PRINT ("OPT", ("starting WithloopScalarization (ssa) in function %s",
                         FUNDEF_NAME (fundef)));
 
-    /* do not start traversal in special functions */
-    if (!(FUNDEF_IS_LACFUN (fundef))) {
-        arg_info = MakeInfo ();
+    arg_info = MakeInfo ();
 
-        old_tab = act_tab;
-        act_tab = wls_tab;
+    old_tab = act_tab;
+    act_tab = wls_tab;
 
-        fundef = Trav (fundef, arg_info);
-        fundef = RestoreSSAOneFunction (fundef);
+    fundef = Trav (fundef, arg_info);
+    fundef = RestoreSSAOneFunction (fundef);
 
-        act_tab = old_tab;
+    act_tab = old_tab;
 
-        arg_info = FreeTree (arg_info);
-    }
+    arg_info = FreeTree (arg_info);
 
     DBUG_RETURN (fundef);
 }
