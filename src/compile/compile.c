@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.141  2004/10/10 09:54:10  ktr
+ * dec_rc has a second argument now
+ *
  * Revision 3.140  2004/10/07 15:45:00  khf
  * COMPSync(): added support of multioperator WLs
  *
@@ -4078,13 +4081,15 @@ COMPPrfDecRC (node *arg_node, info *arg_info)
     char *name;
     types *type;
     node *ret_node;
+    int num;
 
     DBUG_ENTER ("COMPPrfDecRC");
 
     name = ID_NAME (PRF_ARG1 (arg_node));
     type = ID_TYPE (PRF_ARG1 (arg_node));
+    num = NUM_VAL (PRF_ARG2 (arg_node));
 
-    ret_node = MakeDecRcIcm (name, type, 1, 1, /* One argument is superflouos */
+    ret_node = MakeDecRcIcm (name, type, num, num, /* One argument is superflouos */
                              NULL);
 
     DBUG_RETURN (ret_node);
