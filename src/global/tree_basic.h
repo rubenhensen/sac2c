@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.115  1998/04/04 18:44:55  dkr
+ * renamed CONC_AP to CONC_AP_LET
+ *
  * Revision 1.114  1998/04/03 21:06:08  dkr
  * added N_info access macros for precompile
  * added attributes for N_conc: CONC_AP, CONC_MASK
@@ -2169,7 +2172,7 @@ extern node *MakeInfo ();
  ***
  ***  temporary attributes:
  ***
- ***    node*      AP          (0)  (N_ap)        (precompile -> compile ! )
+ ***    node*      AP_LET      (0)  (N_let)       (precompile -> compile ! )
  ***    long*      MASK[x]                        (precompile -> )
  ***
  ***/
@@ -2178,7 +2181,7 @@ extern node *MakeConc (node *region);
 
 #define CONC_REGION(n) (n->node[0])
 
-#define CONC_AP(n) (n->node[2])
+#define CONC_AP_LET(n) (n->node[1])
 #define CONC_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
