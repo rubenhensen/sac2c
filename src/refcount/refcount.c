@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/04/16 21:11:04  dkr
+ * cpp-flag MAIN_HAS_MODNAME no longer needed
+ *
  * Revision 3.16  2002/02/22 13:40:02  dkr
  * for cc: L_... access macros used on left-hand-sides
  *
@@ -659,11 +662,7 @@ RCfundef (node *arg_node, node *arg_info)
     /*
      * no module name -> must be an external C-fun
      */
-#ifdef MAIN_HAS_MODNAME
     if (FUNDEF_MOD (arg_node) == NULL) {
-#else
-    if ((FUNDEF_MOD (arg_node) == NULL) && strcmp (FUNDEF_NAME (arg_node), "main")) {
-#endif
         FUNDEF_STATUS (arg_node) = ST_Cfun;
     }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/04/16 21:11:15  dkr
+ * cpp-flag MAIN_HAS_MODNAME no longer needed
+ *
  * Revision 3.16  2001/04/23 13:38:27  dkr
  * fixed a bug in Lac2Fun:
  * after lifting and clean-up InferDFMs() is called once more in order
@@ -462,12 +465,6 @@ DoLifting (char *prefix, DFMmask_t in, DFMmask_t out, DFMmask_t local, node *arg
      */
     funname = GetDummyFunName (prefix);
     modname = FUNDEF_MOD (INFO_L2F_FUNDEF (arg_info));
-#ifndef MAIN_HAS_MODNAME
-    if (modname == NULL) {
-        /* okay, we are in the main() function ... */
-        modname = MAIN_MOD_NAME;
-    }
-#endif
     DBUG_ASSERT ((modname != NULL), "modul name for LAC function is NULL!");
     let = MakeL2fFunLet (funname, modname, in, out);
 
