@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/08/13 13:35:33  sbs
+ * handle_mops.h included
+ *
  * Revision 3.19  2002/08/13 10:21:52  sbs
  * HandleMops traversal added.
  *
@@ -185,6 +188,8 @@
 #include "traverse.h"
 #include "free.h"
 #include "DupTree.h"
+
+#include "handle_mops.h"
 
 #include "flatten.h"
 
