@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2002/04/09 08:24:47  dkr
+ * COMP2Arg removed
+ * PrintInfo added
+ *
  * Revision 3.68  2002/04/09 08:09:54  ktr
  * wls_tab added
  *
@@ -1021,7 +1025,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSACSEarg, CMPTunknown, TravSons, SSACFarg, SSALIRarg, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       SSAILIarg, COMP2Arg, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       SSAILIarg, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
@@ -1535,7 +1539,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, FreeInfo, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       PrintInfo, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
