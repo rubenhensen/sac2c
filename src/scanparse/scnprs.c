@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1998/03/04 16:23:27  cg
+ *  C compiler invocations and file handling converted to new
+ * to usage of new  configuration files.
+ *
  * Revision 1.15  1998/02/27 16:31:40  cg
  * added support for correct setting of file names for diagnostic output
  * while parsing (global variable 'filename'.
@@ -70,28 +74,7 @@
 #include "globals.h"
 
 #include "scnprs.h"
-
-/*
- *  Since the module/class name is used as basis for generating file names,
- *  its length must be limited because ar accepts only file names with a
- *  maximum of 15 characters.
- */
-
-#define MAX_MODNAME 12
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
+#include "resource.h"
 
 /*
  *
@@ -240,13 +223,14 @@ ScanParse ()
     DBUG_ENTER ("ScanParse");
 
     if (sacfilename[0] == '\0') {
-        sprintf (cccallstr, "cpp -C ");
-        if (num_cpp_vars > 0) {
-            for (i = 0; i < num_cpp_vars; i++) {
-                strcat (cccallstr, " -D");
-                strcat (cccallstr, cppvars[i]);
-            }
+        strcpy (cccallstr, config.cpp_stdin);
+
+        for (i = 0; i < num_cpp_vars; i++) {
+            strcat (cccallstr, " ");
+            strcat (cccallstr, config.opt_D);
+            strcat (cccallstr, cppvars[i]);
         }
+
         NOTE (("Parsing from stdin ..."));
         filename = "stdin"; /* set for better error messages only */
     } else {
@@ -256,13 +240,14 @@ ScanParse ()
             SYSABORT (("Unable to open file \"%s\"", sacfilename));
         }
 
-        sprintf (cccallstr, "gcc -E -C -x c ");
-        if (num_cpp_vars > 0) {
-            for (i = 0; i < num_cpp_vars; i++) {
-                strcat (cccallstr, " -D");
-                strcat (cccallstr, cppvars[i]);
-            }
+        strcpy (cccallstr, config.cpp_file);
+
+        for (i = 0; i < num_cpp_vars; i++) {
+            strcat (cccallstr, " ");
+            strcat (cccallstr, config.opt_D);
+            strcat (cccallstr, cppvars[i]);
         }
+
         strcat (cccallstr, " ");
         strcat (cccallstr, pathname);
         NOTE (("Parsing file \"%s\" ...", pathname));

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/03/04 16:23:27  cg
+ *  C compiler invocations and file handling converted to new
+ * to usage of new  configuration files.
+ *
  * Revision 1.16  1998/02/27 16:32:58  cg
  * added correct setting of file names for diagnostic output
  * while parsing (global variable 'filename')
@@ -76,6 +80,7 @@
 #include "scnprs.h"
 #include "filemgr.h"
 #include "cccall.h" /* for function AddToLinklist */
+#include "resource.h"
 
 /*
  *  global variables :
@@ -289,10 +294,11 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
 
                 if (DEPS_STATUS (tmp) == ST_sac) {
                     if (level == 1) {
-                        success = SystemCall2 ("cd %s; tar xf %s %s.a %s.sib "
-                                               ">/dev/null 2>&1",
-                                               tmp_dirname, abspathname, DEPS_NAME (tmp),
-                                               DEPS_NAME (tmp));
+                        success
+                          = SystemCall2 ("%s %s; %s %s %s.a %s.sib "
+                                         ">/dev/null 2>&1",
+                                         config.chdir, tmp_dirname, config.tar_extract,
+                                         abspathname, DEPS_NAME (tmp), DEPS_NAME (tmp));
 
                         if (success != 0) {
                             SYSERROR (
@@ -330,9 +336,11 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
                             SIB_LINKWITH (sib_tree) = NULL;
                         }
                     } else {
-                        success = SystemCall2 ("cd %s; tar xf %s %s.a "
-                                               ">/dev/null 2>&1",
-                                               tmp_dirname, abspathname, DEPS_NAME (tmp));
+                        success
+                          = SystemCall2 ("%s %s; %s %s %s.a "
+                                         ">/dev/null 2>&1",
+                                         config.chdir, tmp_dirname, config.tar_extract,
+                                         abspathname, DEPS_NAME (tmp));
 
                         if (success != 0) {
                             SYSERROR (

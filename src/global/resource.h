@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/03/04 16:23:27  cg
+ *  C compiler invocations and file handling converted to new
+ * to usage of new  configuration files.
+ *
  * Revision 1.1  1998/02/27 10:04:47  cg
  * Initial revision
  *
@@ -11,11 +15,12 @@
  *
  * file: resource.h
  *
- * This file contains type definitions, global variable declarations,
- * as well as function prototypes which are used for dealing with
- * sac2crc resource definition files. These allow for customization
- * of sac2c for various different hardware architectures, operating
- * systems, and C compilers.
+ * description:
+ *  This file contains type definitions, global variable declarations,
+ *  as well as function prototypes which are used for dealing with
+ *  sac2crc resource definition files. These allow for customization
+ *  of sac2c for various different hardware architectures, operating
+ *  systems, and C compilers.
  *
  ******************************************************************************/
 
@@ -25,11 +30,12 @@
 
 /*****************************************************************************
  *
- * type resource_list_t
- * type target_list_t
+ * type: resource_list_t
+ * type: target_list_t
  *
- * These types are used to build up a tree-like structure for temporaily
- * storing all information read in from sac2crc files.
+ * description:
+ *  These types are used to build up a tree-like structure for temporaily
+ *  storing all information read in from sac2crc files.
  *
  ******************************************************************************/
 
@@ -48,27 +54,41 @@ typedef struct target_list_t {
 
 /*****************************************************************************
  *
- * type resource_t
+ * type: resource_t
  *
- * This structure is used to permanently store all relevant resource
- * information for the selected target.
+ * description:
+ *  This structure is used to permanently store all relevant resource
+ *  information for the selected target.
  *
  ******************************************************************************/
 
 typedef struct {
     char *cc;
-    char *cflags;
-    char *o0_flag;
-    char *o1_flag;
-    char *o2_flag;
-    char *o3_flag;
-    char *g_flag;
+    char *ccflags;
+    char *ccdir;
+    char *cclink;
+    char *opt_O0;
+    char *opt_O1;
+    char *opt_O2;
+    char *opt_O3;
+    char *opt_g;
+    char *opt_D;
 
-    char *cpp;
+    char *cpp_stdin;
+    char *cpp_file;
     char *tar_create;
     char *tar_extract;
-    char *ar;
+    char *ar_create;
     char *ranlib;
+    char *mkdir;
+    char *rmdir;
+    char *chdir;
+    char *cat;
+    char *move;
+    char *dump_output;
+
+    char *stdlib_decpath;
+    char *stdlib_libpath;
 
     int cache1_size;
     int cache1_line;

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1998/03/04 16:23:27  cg
+ *  C compiler invocations and file handling converted to new
+ * to usage of new  configuration files.
+ *
  * Revision 1.13  1997/04/30 11:52:33  cg
  * full path names are used also for SAC modules in link list
  *
@@ -69,6 +73,7 @@
 
 #include "filemgr.h"
 #include "traverse.h"
+#include "resource.h"
 
 #if 0
 
@@ -718,14 +723,14 @@ PrintLibStat ()
 
     modname[strlen (modname) - 4] = 0;
 
-    success = SystemCall2 ("cd %s; tar xf %s %s.stt >/dev/null 2>&1", tmp_dirname,
-                           abspathname, modname);
+    success = SystemCall2 ("%s %s; %s %s %s.stt %s", config.chdir, tmp_dirname,
+                           config.tar_extract, abspathname, modname, config.dump_output);
 
     if (success != 0) {
         SYSABORT (("Corrupted library file format: \"%s\"", abspathname));
     }
 
-    SystemCall ("cat %s/%s.stt", tmp_dirname, modname);
+    SystemCall ("%s %s/%s.stt", config.cat, tmp_dirname, modname);
 
     DBUG_VOID_RETURN;
 }
@@ -887,18 +892,19 @@ CreateLibrary ()
 
     NOTE (("Creating SAC library \"%s%s.lib\"", targetdir, modulename));
 
-    SystemCall ("ar cr %s/%s.a %s/*.o", tmp_dirname, modulename, tmp_dirname);
+    SystemCall ("%s %s/%s.a %s/*.o", config.ar_create, tmp_dirname, modulename,
+                tmp_dirname);
 
-    if (useranlib) {
-        SystemCall ("ranlib %s/%s.a", tmp_dirname, modulename);
+    if (config.ranlib[0] != '\0') {
+        SystemCall ("%s %s/%s.a", config.ranlib, tmp_dirname, modulename);
     }
 
     GenLibStat ();
 
-    SystemCall ("cd %s; tar cf %s.lib %s.a %s.sib %s.stt", tmp_dirname, modulename,
-                modulename, modulename, modulename);
+    SystemCall ("%s %s; %s %s.lib %s.a %s.sib %s.stt", config.chdir, tmp_dirname,
+                config.tar_create, modulename, modulename, modulename, modulename);
 
-    SystemCall ("mv %s/%s.lib %s", tmp_dirname, modulename, targetdir);
+    SystemCall ("%s %s/%s.lib %s", config.move, tmp_dirname, modulename, targetdir);
 
     DBUG_VOID_RETURN;
 }
@@ -914,15 +920,6 @@ CreateLibrary ()
  *  external funs : SystemCall
  *  macros        :
  *
- *  The gcc compiler options:
- *  -Wall                    enable all warnings
- *  -Wno-unused              don't warn upon unused local variables
- *  -fno-builtin             don't use builtin functions not starting
- *                           with two underscores
- *  -I$RCSROOT/src/compile/  additional include path:
- *                             all files include icm2c.h and libsac.h
- *  -L$RCSROOT/src/compile/  additional link path:
- *                             all programs are linked with libsac.a
  *
  */
 
@@ -930,32 +927,51 @@ void
 InvokeCC ()
 {
     int i;
+    char opt_buffer[36];
 
     DBUG_ENTER ("InvokeCC");
 
+    switch (cc_optimize) {
+    case 0:
+        strcpy (opt_buffer, config.opt_O0);
+        break;
+    case 1:
+        strcpy (opt_buffer, config.opt_O1);
+        break;
+    case 2:
+        strcpy (opt_buffer, config.opt_O2);
+        break;
+    case 3:
+        strcpy (opt_buffer, config.opt_O3);
+        break;
+    default:
+        strcpy (opt_buffer, " ");
+    }
+
+    if (cc_debug) {
+        strcat (opt_buffer, " ");
+        strcat (opt_buffer, config.opt_g);
+    }
+
     if (filetype == F_prog) {
-        SystemCall ("gcc %s -Wall -Wno-unused -fno-builtin "
-                    "-I$SACBASE/runtime/ -L$SACBASE/runtime/ "
-                    "-o %s %s %s -lsac",
-                    ccflagsstr, outfilename, cfilename, GenLinklist (dependencies));
+        SystemCall ("%s %s %s %s -o %s %s %s %s", config.cc, config.ccflags, config.ccdir,
+                    opt_buffer, outfilename, cfilename, GenLinklist (dependencies),
+                    config.cclink);
     } else {
         if (linkstyle == 1) {
-            SystemCall ("gcc %s -Wall -Wno-unused -fno-builtin "
-                        "-I$SACBASE/runtime/ -L$SACBASE/runtime/ "
-                        "-o %s%s.o -c %s/%s.c",
-                        ccflagsstr, tmp_dirname, modulename, tmp_dirname, modulename);
+            SystemCall ("%s %s %s %s -o %s/%s.o -c %s/%s.c", config.cc, config.ccflags,
+                        config.ccdir, opt_buffer, tmp_dirname, modulename, tmp_dirname,
+                        modulename);
         } else {
-            SystemCall ("gcc %s -Wall -Wno-unused -fno-builtin "
-                        "-I$SACBASE/runtime/ -L$SACBASE/runtime/ "
-                        "-o %s/globals.o -c %s/globals.c",
-                        ccflagsstr, tmp_dirname, tmp_dirname);
+            SystemCall ("%s %s %s %s -o %s/globals.o -c %s/globals.c", config.cc,
+                        config.ccflags, config.ccdir, opt_buffer, tmp_dirname,
+                        tmp_dirname);
             NOTEDOT;
 
             for (i = 1; i < function_counter; i++) {
-                SystemCall ("gcc %s -Wall -Wno-unused -fno-builtin "
-                            "-I$SACBASE/runtime/ -L$SACBASE/runtime/ "
-                            "-o %s/fun%d.o -c %s/fun%d.c",
-                            ccflagsstr, tmp_dirname, i, tmp_dirname, i);
+                SystemCall ("%s %s %s %s -o %s/fun%d.o -c %s/fun%d.c", config.cc,
+                            config.ccflags, config.ccdir, opt_buffer, tmp_dirname, i,
+                            tmp_dirname, i);
                 NOTEDOT;
             }
             NOTE (("\n"));
@@ -964,17 +980,3 @@ InvokeCC ()
 
     DBUG_VOID_RETURN;
 }
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */

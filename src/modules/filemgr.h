@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/03/04 16:23:27  cg
+ *  C compiler invocations and file handling converted to new
+ * to usage of new  configuration files.
+ *
  * Revision 1.7  1997/04/24 09:55:55  cg
  * standard library search paths relative to environment variable SACBASE
  * added in addition to user-defined paths
@@ -41,17 +45,12 @@
 
 typedef enum { PATH, MODDEC_PATH, MODIMP_PATH } pathkind;
 
-extern char *tmp_dirname;
-
 extern char *FindFile (pathkind p, char *name);
 extern void InitPaths ();
 extern void AppendPath (pathkind p, char *path);
 extern void AppendEnvVar (pathkind p, char *var);
 extern void RearrangePaths ();
 extern char *AbsolutePathname (char *path);
-
 extern FILE *WriteOpen (char *format, ...);
-extern void CreateTmpDirectories ();
-extern void RemoveDirectory (char *name);
 
 #endif /* _filemgr_h */

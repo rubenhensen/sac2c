@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/03/04 16:23:27  cg
+ *  C compiler invocations and file handling converted to new
+ * to usage of new  configuration files.
+ *
  * Revision 1.1  1998/02/27 10:04:47  cg
  * Initial revision
  *
@@ -112,18 +116,31 @@ static struct {
 } resource_table[] = {
 
   {"CC", str, &config.cc},
-  {"CFLAGS", str, &config.cflags},
-  {"O0_FLAG", str, &config.o0_flag},
-  {"O1_FLAG", str, &config.o1_flag},
-  {"O2_FLAG", str, &config.o2_flag},
-  {"O3_FLAG", str, &config.o3_flag},
-  {"g_FLAG", str, &config.g_flag},
+  {"CCFLAGS", str, &config.ccflags},
+  {"CCDIR", str, &config.ccdir},
+  {"CCLINK", str, &config.cclink},
+  {"OPT_O0", str, &config.opt_O0},
+  {"OPT_O1", str, &config.opt_O1},
+  {"OPT_O2", str, &config.opt_O2},
+  {"OPT_O3", str, &config.opt_O3},
+  {"OPT_g", str, &config.opt_g},
+  {"OPT_D", str, &config.opt_D},
 
-  {"CPP", str, &config.cpp},
+  {"CPP_STDIN", str, &config.cpp_stdin},
+  {"CPP_FILE", str, &config.cpp_file},
   {"TAR_CREATE", str, &config.tar_create},
   {"TAR_EXTRACT", str, &config.tar_extract},
-  {"AR", str, &config.ar},
+  {"AR_CREATE", str, &config.ar_create},
   {"RANLIB", str, &config.ranlib},
+  {"MKDIR", str, &config.mkdir},
+  {"RMDIR", str, &config.rmdir},
+  {"CHDIR", str, &config.chdir},
+  {"CAT", str, &config.cat},
+  {"MOVE", str, &config.move},
+  {"DUMP_OUTPUT", str, &config.dump_output},
+
+  {"STDLIB_DECPATH", str, &config.stdlib_decpath},
+  {"STDLIB_LIBPATH", str, &config.stdlib_libpath},
 
   {"CACHE1_SIZE", num, &config.cache1_size},
   {"CACHE1_LINE", num, &config.cache1_line},
