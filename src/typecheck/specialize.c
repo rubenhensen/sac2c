@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2004/12/09 00:37:35  sbs
+ * UpdateVarSignature debugged
+ *
  * Revision 1.20  2004/12/07 16:49:30  sbs
  * FixSignature now handles unknown[*] args of LaCfuns properly
  *
@@ -268,7 +271,7 @@ UpdateVarSignature (node *fundef, ntype *arg_ts)
                 new_type = TYfreeType (new_type);
             }
             new_type = TYmakeAlphaType (NULL);
-            old_type = TYoldType2Type (ARG_TYPE (args));
+            old_type = ARG_NTYPE (args);
             if (old_type != NULL) {
                 ok = SSInewTypeRel (old_type, new_type);
             }
@@ -280,8 +283,6 @@ UpdateVarSignature (node *fundef, ntype *arg_ts)
             DBUG_ASSERT (ok, "UpdateVarSignature called with incompatible args");
         }
 
-        ARG_TYPE (args) = FREEfreeOneTypes (ARG_TYPE (args));
-        ARG_TYPE (args) = TYtype2OldType (SSIgetMin (TYgetAlpha (new_type)));
         AVIS_TYPE (ARG_AVIS (args)) = new_type;
 
         args = ARG_NEXT (args);
