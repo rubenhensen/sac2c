@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2002/03/06 03:45:57  dkr
+ * MakeArgtab() modified
+ *
  * Revision 3.47  2002/03/05 14:01:16  dkr
  * MakeId(): ID_UNQCONV added
  *
@@ -384,7 +387,7 @@ MakeArgtab (int size)
 
     argtab = Malloc (sizeof (argtab_t));
 
-    argtab->size = size + 1;
+    argtab->size = size;
     argtab->ptr_in = Malloc (argtab->size * sizeof (node *));
     argtab->ptr_out = Malloc (argtab->size * sizeof (types *));
     argtab->tag = Malloc (argtab->size * sizeof (argtag_t));
