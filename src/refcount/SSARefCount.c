@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/05/10 16:08:19  ktr
+ * Removed some printf output.
+ *
  * Revision 1.11  2004/05/06 17:51:10  ktr
  * SSARefCount now should handle IVE ICMs, too. :)
  *
@@ -368,13 +371,6 @@ SSARCfundef (node *fundef, node *arg_info)
         if (((sbs == 1) && (strcmp (FUNDEF_MOD (fundef), EXTERN_MOD_NAME) == 0))
             || ((sbs == 0) && (FUNDEF_MOD (fundef) == NULL))) {
             FUNDEF_STATUS (fundef) = ST_Cfun;
-
-            printf ("%s : ", FUNDEF_NAME (fundef));
-            if (FUNDEF_PRAGMA (fundef) && PRAGMA_REFCOUNTING (FUNDEF_PRAGMA (fundef)))
-                for (i = 0; i < PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (fundef)); i++) {
-                    printf ("%d ,", PRAGMA_REFCOUNTING (FUNDEF_PRAGMA (fundef))[i]);
-                }
-            printf ("\n");
         }
         if (FUNDEF_NEXT (fundef) != NULL)
             FUNDEF_NEXT (fundef) = Trav (FUNDEF_NEXT (fundef), arg_info);
@@ -488,19 +484,14 @@ SSARCap (node *arg_node, node *arg_info)
         if ((EXPRS_EXPR (args) != NULL) && (NODE_TYPE (EXPRS_EXPR (args)) == N_id)) {
             id = EXPRS_EXPR (args);
 
-            printf ("%s %d: ", FUNDEF_NAME (INFO_SSARC_FUNAP (arg_info)),
-                    INFO_SSARC_LHS_COUNT (arg_info));
-
             if (FUNDEF_EXT_NOT_REFCOUNTED (INFO_SSARC_FUNAP (arg_info),
                                            INFO_SSARC_LHS_COUNT (arg_info))) {
-                printf ("prfAp\n");
                 /* Add one to the environment iff it is zero */
                 if (IncreaseEnvOnZero (ID_AVIS (id), arg_info))
 
                     /* Put id into declist as we are traversing a N_prf */
                     DecList_Insert (arg_info, ID_AVIS (id));
             } else {
-                printf ("FunAp\n");
                 /* Add one to the environment */
                 IncreaseEnv (ID_AVIS (id), arg_info);
 
@@ -642,8 +633,6 @@ SSARClet (node *arg_node, node *arg_info)
                                                             n)
                                    ? 0
                                    : -1));
-            printf ("%s %d: %d\n", FUNDEF_NAME (INFO_SSARC_FUNAP (arg_info)), n,
-                    FUNDEF_EXT_NOT_REFCOUNTED (INFO_SSARC_FUNAP (arg_info), n) ? 0 : -1);
             n = n + 1;
             ids = IDS_NEXT (ids);
         }
@@ -1093,6 +1082,8 @@ SSARefCount (node *syntax_tree)
     info = FreeTree (info);
 
     /*  syntax_tree = UndoSSA( syntax_tree ); */
+
+    show_refcnt = FALSE;
 
     DBUG_RETURN (syntax_tree);
 }
