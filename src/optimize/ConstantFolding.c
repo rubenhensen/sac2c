@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.45  1996/05/31 13:51:24  asi
+ * Revision 1.46  1996/07/16 15:24:43  asi
+ * Psi-expessions with user defined typed second argument will now be folded
+ *
+ * Revision 1.45  1996/05/31  13:51:24  asi
  * bug fixed in CFid
  *
  * Revision 1.44  1996/05/02  14:03:44  asi
@@ -903,6 +906,7 @@ FoundZero (node *arg_node)
     switch (arg_node->nodetype) {
     case N_num:
     case N_float:
+    case N_double:
         if (0 == SELARG (arg_node))
             FoundZero = TRUE;
         break;
@@ -1251,6 +1255,8 @@ CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
     node *res_node = NULL;
 
     DBUG_ENTER ("CalcPsi");
+    GET_BASIC_TYPE (INFO_TYPE, INFO_TYPE, 47);
+    GET_BASIC_TYPE (array_type, array_type, 47);
     /* Calculate dimension and shape vector of first argument */
     vec_dim = GetShapeVector (shape, vec_shape);
 
@@ -1600,6 +1606,7 @@ ArrayPrf (node *arg_node, node *arg_info)
     /***********************/
     case F_psi: {
         int dim;
+        int i;
         node *shape, *array, *res_array = NULL, *first_elem;
         types *array_type;
 
@@ -1634,8 +1641,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                 break;
         }
 
-        if (T_user != array_type->simpletype)
-            res_array = CalcPsi (shape, array, array_type, arg_info);
+        res_array = CalcPsi (shape, array, array_type, arg_info);
 
         if (NULL != res_array) {
             DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
