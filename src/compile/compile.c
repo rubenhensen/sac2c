@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.172  1998/06/19 09:10:05  sbs
+ * added some DBUG_PRINTS
+ *
  * Revision 1.171  1998/06/18 23:39:58  dkr
  * removed unused vars in COMPNwith2
  *
@@ -2329,6 +2332,8 @@ COMPFundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPFundef");
 
+    DBUG_PRINT ("COMP", ("compiling %s", FUNDEF_NAME (arg_node)));
+
     INFO_COMP_FUNDEF (arg_info) = arg_node;
 
     /*
@@ -2659,6 +2664,8 @@ COMPLet (node *arg_node, node *arg_info)
 
     INFO_COMP_LASTLET (arg_info) = arg_node;
     INFO_COMP_LASTIDS (arg_info) = LET_IDS (arg_node);
+
+    DBUG_PRINT ("COMP", ("LHS of let-assignment: %s", CHECK_NULL (LET_NAME (arg_node))));
 
     expr = Trav (LET_EXPR (arg_node), arg_info);
 
