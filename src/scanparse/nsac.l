@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/17 14:52:30  sah
+ * added support for except
+ * in interface descriptions
+ *
  * Revision 1.1  2004/10/15 15:04:20  sah
  * Initial revision
  *
@@ -185,7 +189,8 @@ int charpos = 0;
 "provide"                  { FILTER( PROVIDE); }
 "use"                      { FILTER( USE); }
 "all"                      { FILTER( ALL); }
-"external"                   { FILTER( EXTERN); }
+"except"                   { FILTER( EXCEPT); }
+"external"                 { FILTER( EXTERN); }
 "global"                   { FILTER( GLOBAL); }
 
 "#"                        { FILTER( HASH); }

@@ -4,6 +4,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/17 14:52:30  sah
+ * added support for except
+ * in interface descriptions
+ *
  * Revision 1.1  2004/10/15 15:04:27  sah
  * Initial revision
  *
@@ -98,7 +102,7 @@ static int prf_arity[] = {
        INLINE  LET  TYPEDEF  OBJDEF  CLASSTYPE 
        INC  DEC  ADDON  SUBON  MULON  DIVON  MODON 
        K_MAIN  RETURN  IF  ELSE  DO  WHILE  FOR  NWITH  FOLD 
-       MODULE  IMPORT  EXPORT  PROVIDE  USE  GLOBAL  CLASS  ALL 
+       MODULE  IMPORT  EXPORT  PROVIDE  USE  GLOBAL  CLASS  ALL  EXCEPT
        MODSPEC
        SC  TRUETOKEN  FALSETOKEN  EXTERN  C_KEYWORD 
        HASH  PRAGMA  LINKNAME  LINKSIGN  EFFECT  READONLY  REFCOUNTING 
@@ -148,7 +152,7 @@ static int prf_arity[] = {
              part  parts
 %type <prf> genop  foldop  prf
 
-%type <id> id  string
+%type <id> id  reservedid  symbolid  string
 %type <ids> ids  local_fun_id  fun_id /* fun_ids */
 
 %type <types> returntypes  types  type  localtype  simpletype
@@ -344,6 +348,9 @@ interface: import interface
 import: IMPORT id COLON ALL SEMIC
         { $$ = MakeImport( $2, TRUE, NULL, NULL);
         }
+      | IMPORT id COLON ALL EXCEPT symbolset SEMIC
+        { $$ = MakeImport( $2, TRUE, NULL, $6);
+        }
       | IMPORT id COLON symbolset SEMIC
         { $$ = MakeImport( $2, FALSE, NULL, $4);
         }
@@ -351,6 +358,9 @@ import: IMPORT id COLON ALL SEMIC
 
 use: USE id COLON ALL SEMIC
        { $$ = MakeUse( $2, TRUE, NULL, NULL);
+       }
+     | USE id COLON ALL EXCEPT symbolset SEMIC
+       { $$ = MakeUse( $2, TRUE, NULL, $6);
        }
      | USE id COLON symbolset SEMIC
        { $$ = MakeUse( $2, FALSE, NULL, $4);
@@ -360,11 +370,17 @@ use: USE id COLON ALL SEMIC
 export: EXPORT ALL SEMIC
         { $$ = MakeExport( TRUE, NULL, NULL);
         }
+      | EXPORT ALL EXCEPT symbolset SEMIC
+        { $$ = MakeExport( TRUE, NULL, $4);
+        }
       | EXPORT symbolset SEMIC
         { $$ = MakeExport( FALSE, NULL, $2);
         }
 provide: PROVIDE ALL SEMIC
          { $$ = MakeProvide( TRUE, NULL, NULL);
+         }
+       | PROVIDE ALL EXCEPT symbolset SEMIC
+         { $$ = MakeProvide( TRUE, NULL, $4);
          }
        | PROVIDE symbolset SEMIC
          { $$ = MakeProvide( FALSE, NULL, $2);
@@ -376,13 +392,17 @@ symbolset: BRACE_L symbolsetentries BRACE_R
            }
          ;
 
-symbolsetentries: id COMMA symbolsetentries
+symbolsetentries: symbolid COMMA symbolsetentries
                { $$ = MakeSymbol( $1, $3);
                }
-             | id
+             | symbolid
                { $$ = MakeSymbol( $1, NULL);
                }
              ;
+
+symbolid: id                { $$ = $1; }
+        | reservedid        { $$ = $1; }
+        ;
 
 /*
 *********************************************************************
@@ -1412,9 +1432,6 @@ fun_ids: fun_id COMMA fun_ids
 */
 fun_id: local_fun_id
         { $$ = $1;
-          if( (file_kind == F_sib) && (sbs == 1) ) {
-            IDS_MOD( $$) = EXTERN_MOD_NAME;
-          }
         }
       | id COLON local_fun_id
         { $$ = $3;
@@ -1424,31 +1441,7 @@ fun_id: local_fun_id
 
 local_fun_id: id         { $$ = MakeIds( $1,
                                          NULL, ST_regular); }
-            | GENARRAY   { $$ = MakeIds( StringCopy( "genarray"),
-                                         NULL, ST_regular); }
-            | MODARRAY   { $$ = MakeIds( StringCopy( "modarray"),
-                                         NULL, ST_regular); }
-            | ALL        { $$ = MakeIds( StringCopy( "all"),
-                                         NULL, ST_regular); }
-            | AMPERS     { $$ = MakeIds( StringCopy( "&"),
-                                         NULL, ST_regular); }
-            | EXCL       { $$ = MakeIds( StringCopy( "!"),
-                                         NULL, ST_regular); }
-            | INC        { $$ = MakeIds( StringCopy( "++"),
-                                         NULL, ST_regular); }
-            | DEC        { $$ = MakeIds( StringCopy( "--"),
-                                         NULL, ST_regular); }
-            | PLUS       { $$ = MakeIds( StringCopy( "+"),
-                                         NULL, ST_regular); }
-            | MINUS      { $$ = MakeIds( StringCopy( "-"),
-                                         NULL, ST_regular); }
-            | STAR       { $$ = MakeIds( StringCopy( "*"),
-                                         NULL, ST_regular); }
-            | LE         { $$ = MakeIds( StringCopy( "<="),
-                                         NULL, ST_regular); }
-            | LT         { $$ = MakeIds( StringCopy( "<"),
-                                         NULL, ST_regular); }
-            | GT         { $$ = MakeIds( StringCopy( ">"),
+            | reservedid { $$ = MakeIds( $1,
                                          NULL, ST_regular); }
             ; 
 
@@ -1469,6 +1462,20 @@ id: ID
     }
   ;
 
+reservedid: GENARRAY          { $$ = StringCopy("genarray"); }
+          | MODARRAY          { $$ = StringCopy("modarray"); }
+          | ALL               { $$ = StringCopy("all"); }
+          | AMPERS            { $$ = StringCopy("&"); }
+          | EXCL              { $$ = StringCopy("!"); }
+          | INC               { $$ = StringCopy("++"); }
+          | DEC               { $$ = StringCopy("--"); }
+          | PLUS              { $$ = StringCopy("+"); }
+          | MINUS             { $$ = StringCopy("-"); }
+          | STAR              { $$ = StringCopy("*"); }
+          | LE                { $$ = StringCopy("<="); }
+          | LT                { $$ = StringCopy("<"); }
+          | GT                { $$ = StringCopy(">"); }
+          ; 
 string: STR       
         { $$ = $1;
         }
