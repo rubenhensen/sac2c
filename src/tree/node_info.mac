@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.150  2004/06/23 09:33:13  ktr
+ * SSARCNwith2 added.
+ *
  * Revision 3.149  2004/06/08 14:20:02  skt
  * support for tem_tab added
  *
@@ -2329,8 +2332,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    */
 
   NIF (N_Nwith2, "N_Nwith2", TravSons, TravSons, PrintNwith2, TravSons, GNMwith2,
-       TravSons, TravSons, FreeNwith2, TravSons, RCNwith, SSARCNwith, TravSons, DupNwith2,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, FreeNwith2, TravSons, RCNwith, SSARCNwith2, TravSons,
+       DupNwith2, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
