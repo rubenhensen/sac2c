@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.4  2003/02/13 20:15:43  mwe
+ * Warnings removed
+ *
  * Revision 1.3  2003/02/10 18:01:30  mwe
  * removed bugs
  * enforce_ieee support added
@@ -782,6 +785,8 @@ FindNodeInList (nodelist *list, node *arg_node, node *operator)
 
     DBUG_ENTER ("FindNodeInList");
 
+    equal_op = FALSE;
+
     result = NULL;
     result_found = FALSE;
 
@@ -1217,6 +1222,8 @@ RemoveMostFrequentNode (node *arg_info)
      *     - remove MOSTFREQUENTNODE, change prf/ap to let-node
      *     - copy all parent-nodes and update their arguments with the new copies
      */
+
+    new_son = NULL;
 
     current_elem = INFO_DL_MOSTFREQUENTNODE (arg_info);
     current_elem = DupTree (current_elem);
@@ -1775,7 +1782,10 @@ IntegrateResults (node *arg_info)
 
         original = LET_EXPR (original);
         EXPRS_NEXT (new_optnode) = new_nonoptnode;
-        AP_OR_PRF_ARGS (original) = new_optnode;
+        if (NODE_TYPE (original) == N_ap)
+            AP_ARGS (original) = new_optnode;
+        else
+            PRF_ARGS (original) = new_optnode;
 
     } else {
 
