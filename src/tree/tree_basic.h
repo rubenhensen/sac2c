@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2001/03/19 14:24:27  nmw
+ * AVIS_ASSIGN2, INFO_USSA_ macros added
+ *
  * Revision 3.51  2001/03/16 11:56:39  nmw
  * AVIS_SSAPHITRAGET type changed and AVIS macros changed. too
  *
@@ -2384,6 +2387,8 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      ARGS              (arg chain of fundef)
  ***    node*      TOPBLOCK          (toplevel block with vardec chain)
  ***    node*      FOLDTARGET        (new AVIS as unique fold-target)
+ ***    node*      CONSTASSIGNS      (assignments to move from else to pre-return)
+ ***    int        ASSIGNOP          (operation to perform on actual assignment)
  ***
  ***  when used in SSADeadCodeRemoval.c
  ***    int        DEPTH             (recursion depth of special functions)
@@ -2812,6 +2817,9 @@ extern node *MakeInfo ();
 #define INFO_USSA_ARGS(n) (n->node[0])
 #define INFO_USSA_TOPBLOCK(n) (n->node[1])
 #define INFO_USSA_FOLDTARGET(n) (n->node[2])
+/* ##nmw## */
+#define INFO_USSA_CONSTASSIGNS(n) (n->node[3])
+#define INFO_USSA_OPASSIGN(n) (n->int_data)
 
 /* when used in SSADeadCodeRemoval.c */
 #define INFO_SSADCR_DEPTH(n) (n->int_data)
