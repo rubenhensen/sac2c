@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/02/05 17:17:39  srs
+ * extern UNQNwith
+ *
  * Revision 1.1  1995/11/06 08:14:10  cg
  * Initial revision
  *
@@ -24,5 +27,6 @@ extern node *UNQdo (node *arg_node, node *arg_info);
 extern node *UNQwhile (node *arg_node, node *arg_info);
 extern node *UNQcond (node *arg_node, node *arg_info);
 extern node *UNQwith (node *arg_node, node *arg_info);
+extern node *UNQNwith (node *arg_node, node *arg_info);
 
 #endif /*  _sac_uniquecheck_h  */
