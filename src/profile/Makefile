@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.7  2003/06/11 22:07:36  ktr
+# included ../constants
+#
 # Revision 1.6  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -38,7 +41,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-INCS = -I../../inc -I../tree -I../global -I../print
+INCS = -I../../inc -I../tree -I../global -I../print -I../constants
 
 
 all: annotate_fun_calls.o

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.13  2003/06/11 22:05:36  ktr
+# included ../constants
+#
 # Revision 1.12  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -56,7 +59,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-INCS = -I../../inc -I../tree -I../global
+INCS = -I../../inc -I../tree -I../global -I.
 
 all: shape.o \
      constants_basic.o constants_struc_ops.o constants_ari_ops.o \
