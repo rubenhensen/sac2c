@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/07/03 17:27:40  dkr
+ * some ; added in macros
+ *
  * Revision 3.7  2002/04/30 08:47:35  dkr
  * no changes done
  *
@@ -474,8 +477,8 @@ extern void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
  */
 
 #if SAC_DO_CHECK_HEAP
-#define SAC_HM_PRINT() SAC_HM_ShowDiagnostics ()
-#define SAC_HM_INC_DIAG_COUNTER(counter) (counter)++
+#define SAC_HM_PRINT() SAC_HM_ShowDiagnostics ();
+#define SAC_HM_INC_DIAG_COUNTER(counter) (counter)++;
 #else
 #define SAC_HM_PRINT()
 #define SAC_HM_INC_DIAG_COUNTER(counter)
@@ -890,13 +893,13 @@ extern void SAC_HM_ShowDiagnostics ();
 
 extern void *SAC_HM_MallocCheck (unsigned int);
 
-#define SAC_HM_MALLOC(var, size) var = SAC_HM_MallocCheck (size)
-#define SAC_HM_FREE(addr) free (addr)
+#define SAC_HM_MALLOC(var, size) var = SAC_HM_MallocCheck (size);
+#define SAC_HM_FREE(addr) free (addr);
 
 #else /* SAC_DO_CHECK_MALLOC */
 
-#define SAC_HM_MALLOC(var, size) var = malloc (size)
-#define SAC_HM_FREE(addr) free (addr)
+#define SAC_HM_MALLOC(var, size) var = malloc (size);
+#define SAC_HM_FREE(addr) free (addr);
 
 #endif /* SAC_DO_CHECK_MALLOC */
 
