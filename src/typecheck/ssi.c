@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2003/03/28 17:19:30  sbs
+ * added to group ntc.
+ *
  * Revision 1.4  2002/08/05 17:00:38  sbs
  * first alpha version of the new type checker !!
  *
@@ -21,6 +24,23 @@
 #include "new_types.h"
 
 #include "ssi.h"
+
+/**
+ *
+ * @addtogroup ntc
+ *
+ * @{
+ */
+
+/**
+ *
+ * @file ssi.c
+ *
+ * This file provides all those functions that are needed for representing
+ * type variables as well as subtype inequalities imposed on them.
+ * Therefore, it is crucial for deciding the "satisfiability of Subtype
+ * Inequalities" problem (SSI in short).
+ */
 
 struct TVAR {
     int no;
@@ -726,3 +746,5 @@ SSIVariable2DebugString (tvar *var)
 
     DBUG_RETURN (StringCopy (buf));
 }
+
+/* @} */ /* addtogroup ntc */
