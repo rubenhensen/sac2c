@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.214  2004/08/13 12:00:42  skt
+ * ASSIGN_CELLID added
+ *
  * Revision 3.213  2004/08/11 09:36:56  skt
  * DATAFLOWNODE marcos added
  *
@@ -1639,7 +1642,8 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***    node*  CF                         (CF !!)
  ***    void*  INDEX    (O)               (wli -> wlf -> )
  ***    int    LEVEL                      (wli !!)
- ***    int    EXECMODE                   (BuildMultithread -> CreateCells)
+ ***    int    EXECMODE                   (TagExecutionmode -> CreateCells)
+ ***    int    CELLID                     (AssignmentsRearrange -> CreateCells)
  ***
  ***  remarks:
  ***
@@ -1664,6 +1668,7 @@ extern node *MakeAssign (node *instr, node *next);
 #define ASSIGN_INDEX(n) (n->info2)
 #define ASSIGN_LEVEL(n) (n->info.cint)
 #define ASSIGN_EXECMODE(n) (n->info.cint)
+#define ASSIGN_CELLID(n) (n->refcnt)
 
 /*--------------------------------------------------------------------------*/
 
