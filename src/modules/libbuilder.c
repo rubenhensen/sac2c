@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/01/11 12:32:52  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.4  2004/11/24 18:10:32  sah
  * COMPILES
  *
@@ -21,7 +24,7 @@
 
 #include "libbuilder.h"
 #include "dbug.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "internal_lib.h"
 #include "stringset.h"
 #include "resource.h"
@@ -62,7 +65,7 @@ LIBBcreateLibrary (stringset_t *deps)
 
     DBUG_ENTER ("LIBBcreateLibrary");
 
-    NOTE (("Creating static SAC library `lib%s.a'", global.modulename));
+    CTInote ("Creating static SAC library `lib%s.a'", global.modulename);
 
     deplibs = STRSfold (&BuildDepLibsStringMod, deps, ILIBstringCopy (""));
 
@@ -75,7 +78,7 @@ LIBBcreateLibrary (stringset_t *deps)
 
     deplibs = ILIBfree (deplibs);
 
-    NOTE (("Creating shared SAC library `lib%s.so'", global.modulename));
+    CTInote ("Creating shared SAC library `lib%s.so'", global.modulename);
 
     ILIBsystemCall ("%s -o lib%s.so %s/serialize.o %s/symboltable.o"
                     " %s/dependencytable.o",

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/01/11 12:32:52  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.7  2004/11/24 18:56:18  sah
  * COMPILES
  *
@@ -30,7 +33,7 @@
 #include "ccmanager.h"
 #include "internal_lib.h"
 #include "dbug.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "globals.h"
 #include "config.h"
 #include "filemgr.h"
@@ -164,7 +167,7 @@ AddEfenceLib (str_buf *buffer)
 
         efence = FMGRfindFile (PK_systemlib_path, "libefence.a");
         if (efence == NULL) {
-            SYSWARN (("Unable to find `libefence.a' in SYSTEMLIB_PATH"));
+            CTIwarn ("Unable to find `libefence.a' in SYSTEMLIB_PATH");
         } else {
             ILIBstrBufPrintf (buffer, "%s ", efence);
         }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/01/11 12:32:52  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.6  2004/11/26 20:01:01  sah
  * *** empty log message ***
  *
@@ -27,7 +30,8 @@
 
 #include "libmanager.h"
 #include "dbug.h"
-#include "Error.h"
+#include "ctinfo.h"
+
 #include <dlfcn.h>
 
 static const char *
@@ -39,8 +43,9 @@ LibManagerError ()
 
     error = dlerror ();
 
-    if (error == NULL)
+    if (error == NULL) {
         error = "unknown error";
+    }
 
     DBUG_RETURN (error);
 }
@@ -61,7 +66,7 @@ LIBMloadLibrary (const char *name)
 #endif
 
     if (result == NULL) {
-        SYSABORT (("Cannot open library `%s': %s", name, LibManagerError ()));
+        CTIabort ("Cannot open library `%s': %s", name, LibManagerError ());
     }
 
     DBUG_PRINT ("LIB", ("Done loading library"));
@@ -80,8 +85,9 @@ LIBMunLoadLibrary (dynlib_t lib)
 
     result = dlclose (lib);
 
-    if (result != 0)
-        SYSABORT (("Cannot close library: %s", LibManagerError ()));
+    if (result != 0) {
+        CTIabort ("Cannot close library: %s", LibManagerError ());
+    }
 
     DBUG_PRINT ("LIB", ("Done unloading library"));
 
@@ -100,7 +106,7 @@ LIBMgetLibraryFunction (const char *name, dynlib_t lib)
     result = dlsym (lib, name);
 
     if (result == NULL) {
-        SYSABORT (("Cannot open library function `%s': %s", name, LibManagerError ()));
+        CTIabort ("Cannot open library function `%s': %s", name, LibManagerError ());
     }
 
     DBUG_PRINT ("LIB", ("Done getting library function"));

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/01/11 12:32:52  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.8  2004/11/25 21:57:09  sah
  * COMPILES
  *
@@ -13,7 +16,7 @@
 #include "modulemanager.h"
 #include "libmanager.h"
 #include "dbug.h"
-#include "Error.h"
+
 #include <string.h>
 
 struct MODULE_T {

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/01/11 12:32:52  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.12  2004/12/19 17:54:26  sah
  * bugfix
  *
@@ -24,14 +27,18 @@
  *
  */
 
+#include "dbug.h"
+
 #include "export.h"
 #include "DeadFunctionRemoval.h"
 #include "serialize.h"
 #include "traverse.h"
 #include "types.h"
 #include "free.h"
+#include "globals.h"
+#include "internal_lib.h"
 #include "tree_basic.h"
-#include "Error.h"
+#include "ctinfo.h"
 
 #include <string.h>
 
@@ -162,7 +169,7 @@ EXPprovide (node *arg_node, info *arg_info)
             INFO_EXP_PROVIDED (arg_info) = TRUE;
         }
     } else {
-        WARN (NODE_LINE (arg_node), ("provide is only allowed in modules."));
+        CTIwarnLine (NODE_LINE (arg_node), "Provide is only allowed in modules");
 
         arg_node = FREEdoFreeNode (arg_node);
     }
@@ -184,7 +191,7 @@ EXPexport (node *arg_node, info *arg_info)
             INFO_EXP_EXPORTED (arg_info) = TRUE;
         }
     } else {
-        WARN (NODE_LINE (arg_node), ("export is only allowed in modules."));
+        CTIwarnLine (NODE_LINE (arg_node), "Export is only allowed in modules");
 
         arg_node = FREEdoFreeNode (arg_node);
     }
@@ -398,8 +405,8 @@ EXPdoExport (node *syntax_tree)
         if (global.optimize.dodfr) {
             syntax_tree = DFRdoDeadFunctionRemoval (syntax_tree);
         } else {
-            SYSWARN (("Dead Function Removal is disabled. This will lead to "
-                      "bigger modules."));
+            CTIwarn ("Dead Function Removal is disabled. This will lead to "
+                     "bigger modules.");
         }
 
         SERdoSerialize (syntax_tree);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/01/11 12:32:52  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.4  2004/11/25 20:51:53  sah
  * COMPILES
  *
@@ -25,8 +28,9 @@
 #include "dbug.h"
 #include "modulemanager.h"
 #include "symboltable.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "free.h"
+#include "internal_lib.h"
 
 static void
 SubSymbols (sttable_t *table, node *symbols)
@@ -78,8 +82,8 @@ CheckSymbolExistsRec (const char *mod, sttable_t *table, node *symbols, bool exp
                 && ((!(STsymbolVisibility (symbol) == SVT_provided)) || exportedonly))) {
             node *tmp;
 
-            WARN (NODE_LINE (symbols),
-                  ("Symbol `%s:%s' is undefined. Ignoring...", mod, SYMBOL_ID (symbols)));
+            CTIwarnLine (NODE_LINE (symbols), "Symbol `%s:%s' is undefined. Ignoring...",
+                         mod, SYMBOL_ID (symbols));
 
             tmp = symbols;
             symbols = SYMBOL_NEXT (symbols);
