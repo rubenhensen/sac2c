@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/14 15:25:38  sah
+ * implemented support for udts
+ * some cleanup
+ *
  * Revision 1.6  2004/11/07 18:11:04  sah
  * brushed the code
  *
@@ -35,6 +39,8 @@
 #include "symboltable.h"
 #include "serialize.h"
 #include "new2old.h"
+#include "user_types.h"
+#include "new_typecheck.h"
 
 #include "deserialize_info.h"
 
@@ -55,6 +61,7 @@ MakeInfo ()
     INFO_DS_MODULE (result) = NULL;
     INFO_DS_FUNDEFS (result) = NULL;
     INFO_DS_FUNDECS (result) = NULL;
+    INFO_DS_TYPEDEFS (result) = NULL;
     INFO_DS_VARDECS (result) = NULL;
     INFO_DS_ARGS (result) = NULL;
 
@@ -73,18 +80,51 @@ FreeInfo (info *info)
 
 static info *DSstate = NULL;
 
+/*
+ * functions handling the internal state
+ */
+
 static void
 InsertIntoState (node *item)
 {
+    usertype udt;
+
     DBUG_ENTER ("InsertIntoState");
 
     switch (NODE_TYPE (item)) {
     case N_fundef:
+        /*
+         * The fundef is neither local, nor is it provided/exported
+         */
+        SET_FLAG (FUNDEF, item, IS_LOCAL, FALSE);
+        SET_FLAG (FUNDEF, item, IS_EXPORTED, FALSE);
+        SET_FLAG (FUNDEF, item, IS_PROVIDED, FALSE);
+
         if (FUNDEF_STATUS (item) == ST_Cfun) {
-            INFO_DS_FUNDECS (DSstate) = AppendFundef (item, INFO_DS_FUNDECS (DSstate));
+            INFO_DS_FUNDECS (DSstate) = AppendFundef (INFO_DS_FUNDECS (DSstate), item);
         } else {
-            INFO_DS_FUNDEFS (DSstate) = AppendFundef (item, INFO_DS_FUNDEFS (DSstate));
+            INFO_DS_FUNDEFS (DSstate) = AppendFundef (INFO_DS_FUNDEFS (DSstate), item);
         }
+        break;
+    case N_typedef:
+        /*
+         * reset the flags of the typedef
+         */
+        SET_FLAG (TYPEDEF, item, IS_LOCAL, FALSE);
+        SET_FLAG (TYPEDEF, item, IS_PROVIDED, FALSE);
+        SET_FLAG (TYPEDEF, item, IS_EXPORTED, FALSE);
+
+        /*
+         * first add the type to the UDT repository
+         */
+        udt = UTAddUserType (TYPEDEF_NAME (item), TYPEDEF_MOD (item),
+                             TYPEDEF_NTYPE (item), NULL, NODE_LINE (item), item);
+        /*
+         * now compute the basetype
+         */
+        CheckUdtAndSetBaseType (udt, NULL);
+
+        INFO_DS_TYPEDEFS (DSstate) = AppendTypedef (INFO_DS_TYPEDEFS (DSstate), item);
         break;
     default:
         DBUG_ASSERT (0, "Unhandeled node in InsertIntoState!");
@@ -93,6 +133,7 @@ InsertIntoState (node *item)
 
     DBUG_VOID_RETURN;
 }
+
 void
 InitDeserialize (node *module)
 {
@@ -118,33 +159,17 @@ FinishDeserialize (node *module)
     MODUL_FUNDECS (module)
       = AppendFundef (MODUL_FUNDECS (module), INFO_DS_FUNDECS (DSstate));
 
+    MODUL_TYPES (module)
+      = AppendTypedef (MODUL_TYPES (module), INFO_DS_TYPEDEFS (DSstate));
+
     DSstate = FreeInfo (DSstate);
 
     DBUG_VOID_RETURN;
 }
 
-node *
-LoadFunctionBody (node *fundef)
-{
-    node *result;
-    module_t *module;
-    serfun_p serfun;
-
-    DBUG_ENTER ("LoadFunctionBody");
-
-    DBUG_ASSERT ((DSstate != NULL),
-                 "LoadFunctionBody called without calling InitDeserialize");
-
-    module = LoadModule (FUNDEF_MOD (fundef));
-
-    serfun = GetDeSerializeFunction (GenerateSerFunName (SET_funbody, fundef), module);
-
-    result = serfun (DSstate);
-
-    module = UnLoadModule (module);
-
-    DBUG_RETURN (result);
-}
+/*
+ * functions for symbol lookup in ast
+ */
 
 static node *
 FindSymbolInFundefChain (const char *symbol, node *fundefs)
@@ -160,6 +185,25 @@ FindSymbolInFundefChain (const char *symbol, node *fundefs)
             }
         }
         fundefs = FUNDEF_NEXT (fundefs);
+    }
+
+    DBUG_RETURN (result);
+}
+
+static node *
+FindSymbolInTypedefChain (const char *symbol, node *typedefs)
+{
+    node *result = NULL;
+
+    DBUG_ENTER ("FindSymbolInTypedefChain");
+
+    while ((result == NULL) && (typedefs != NULL)) {
+        if (TYPEDEF_SYMBOLNAME (typedefs) != NULL) {
+            if (!strcmp (TYPEDEF_SYMBOLNAME (typedefs), symbol)) {
+                result = typedefs;
+            }
+        }
+        typedefs = TYPEDEF_NEXT (typedefs);
     }
 
     DBUG_RETURN (result);
@@ -187,72 +231,156 @@ FindSymbolInAst (const char *symbol)
           = FindSymbolInFundefChain (symbol, MODUL_FUNDECS (INFO_DS_MODULE (DSstate)));
     }
 
+    if (result == NULL) {
+        result = FindSymbolInTypedefChain (symbol, INFO_DS_TYPEDEFS (DSstate));
+    }
+
+    if (result == NULL) {
+        result
+          = FindSymbolInTypedefChain (symbol, MODUL_TYPES (INFO_DS_MODULE (DSstate)));
+    }
+
     DBUG_RETURN (result);
 }
 
-static void
-AddEntryToAst (STentry_t *entry, module_t *module)
+/*
+ * functions for loading symbols
+ */
+
+static node *
+AddEntryToAst (STentry_t *entry, STentrytype_t type, module_t *module)
 {
-    node *entryp;
+    node *entryp = NULL;
     serfun_p serfun;
 
     DBUG_ENTER ("AddEntryToAst");
 
-    switch (STEntryType (entry)) {
-    case SET_funhead:
-    case SET_funbody:
-    case SET_wrapperbody:
-        /* these are ignored. All functions are loaded as a dependency
-         * of the wrapperfunction anyways and bodies are loaded on
-         * demand only!
-         */
-        break;
-    case SET_wrapperhead:
-        /* first check, whether it is not already available */
-        if (FindSymbolInAst (STEntryName (entry)) == NULL) {
-            serfun = GetDeSerializeFunction (STEntryName (entry), module);
-            entryp = serfun (DSstate);
+    if (STEntryType (entry) == type) {
 
-            /* add old types */
-            entryp = NT2OTTransform (entryp);
-
-            /* add to fundefs */
-            InsertIntoState (entryp);
+        switch (STEntryType (entry)) {
+        case SET_funbody:
+        case SET_wrapperbody:
+            /* these are ignored. All function bodies are loaded on
+             * demand only!
+             */
+            break;
+        case SET_funhead:
+        case SET_wrapperhead:
+        case SET_typedef:
+            /* first check, whether it is already available */
+            if (FindSymbolInAst (STEntryName (entry)) == NULL) {
+                serfun = GetDeSerializeFunction (STEntryName (entry), module);
+                entryp = serfun (DSstate);
+                /* add old types */
+                entryp = NT2OTTransform (entryp);
+                /* add to ast */
+                InsertIntoState (entryp);
+            }
+            break;
+        default:
+            DBUG_ASSERT (0, "unhandeled STentrytype");
+            break;
         }
-        break;
-    default:
-        break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (entryp);
 }
 
-void
-AddSymbolToAst (const char *symbol, module_t *module)
+node *
+AddSymbolByName (const char *symbol, STentrytype_t type, const char *module)
 {
+    node *result = NULL;
+    module_t *mod;
     STtable_t *table;
     STentryiterator_t *it;
 
-    DBUG_ENTER ("AddSymbolToAst");
+    DBUG_ENTER ("AddSymbolByName");
 
     DBUG_ASSERT ((DSstate != NULL),
-                 "AddSymbolToAst called without calling InitDeserialize.");
+                 "AddSymbolByName called without calling InitDeserialize.");
 
-    table = GetSymbolTable (module);
+    mod = LoadModule (module);
+
+    table = GetSymbolTable (mod);
     it = STEntryIteratorGet (symbol, table);
 
     while (STEntryIteratorHasMore (it)) {
-        AddEntryToAst (STEntryIteratorNext (it), module);
+        node *tmp = AddEntryToAst (STEntryIteratorNext (it), type, mod);
+        if (tmp != NULL) {
+            result = tmp;
+        }
     }
 
     it = STEntryIteratorRelease (it);
     table = STDestroy (table);
+    mod = UnLoadModule (mod);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (result);
 }
 
 node *
-DeserializeLookupFunction (const char *module, const char *symbol, info *info)
+AddSymbolById (const char *symbid, const char *module)
+{
+    module_t *mod;
+    serfun_p fun;
+    node *entryp;
+
+    DBUG_ENTER ("AddSymbolById");
+
+    mod = LoadModule (module);
+
+    fun = GetDeSerializeFunction (symbid, mod);
+
+    entryp = fun ();
+
+    /* add old types */
+    entryp = NT2OTTransform (entryp);
+    /* add to ast */
+    InsertIntoState (entryp);
+
+    mod = UnLoadModule (mod);
+
+    DBUG_RETURN (entryp);
+}
+
+/*
+ * hooks for the deserialisation process
+ */
+
+ntype *
+DeserializeLoadUserType (const char *name, const char *mod)
+{
+    ntype *result;
+    node *tdef;
+    usertype udt;
+
+    DBUG_ENTER ("DeserializeLoadUserType");
+
+    tdef = AddSymbolByName (name, SET_typedef, mod);
+
+    DBUG_ASSERT ((tdef != NULL), "deserialisation of typedef failed!");
+
+    udt = UTFindUserType (name, mod);
+
+    DBUG_ASSERT ((udt != UT_NOT_DEFINED), "typedef not in udt repository");
+
+    result = TYMakeUserType (udt);
+
+    DBUG_RETURN (result);
+}
+
+ntype *
+DeserializeLookupSymbolType (const char *mod, const char *name)
+{
+    ntype *result;
+
+    DBUG_ENTER ("DeserializeLookupSymbolType");
+
+    DBUG_RETURN (result);
+}
+
+node *
+DeserializeLookupFunction (const char *module, const char *symbol)
 {
     node *result = NULL;
     serfun_p serfun;
@@ -269,13 +397,40 @@ DeserializeLookupFunction (const char *module, const char *symbol, info *info)
 
         mod = LoadModule (module);
         serfun = GetDeSerializeFunction (symbol, mod);
-        result = serfun (info);
+        result = serfun ();
 
         /* generate the old types */
         result = NT2OTTransform (result);
 
         InsertIntoState (result);
     }
+
+    DBUG_RETURN (result);
+}
+
+/*
+ * deserialize traversal functions
+ */
+
+static node *
+LoadFunctionBody (node *fundef)
+{
+    node *result;
+    module_t *module;
+    serfun_p serfun;
+
+    DBUG_ENTER ("LoadFunctionBody");
+
+    DBUG_ASSERT ((DSstate != NULL),
+                 "LoadFunctionBody called without calling InitDeserialize");
+
+    module = LoadModule (FUNDEF_MOD (fundef));
+
+    serfun = GetDeSerializeFunction (GenerateSerFunName (SET_funbody, fundef), module);
+
+    result = serfun (DSstate);
+
+    module = UnLoadModule (module);
 
     DBUG_RETURN (result);
 }
@@ -313,6 +468,10 @@ AddFunctionBodyToHead (node *fundef)
 
     DBUG_RETURN (fundef);
 }
+
+/*
+ * Helper functions for deserialize traversal
+ */
 
 static node *
 LookUpSSACounter (node *cntchain, node *arg)
@@ -355,6 +514,10 @@ LookUpArg (ids *ids, node *args)
 
     DBUG_RETURN (args);
 }
+
+/*
+ * traversal functions
+ */
 
 static ids *
 DSIds (ids *arg_ids, info *arg_info)
