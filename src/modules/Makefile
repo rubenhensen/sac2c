@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.19  2004/10/17 17:49:05  sah
+# added libbuilder
+#
 # Revision 3.18  2004/10/17 17:02:58  sah
 # added new ccmanager
 #
@@ -90,7 +93,7 @@ ifeq ($(NEWAST),no)
           checkdec.o cccall.o $(OBJS)
 else
   OBJS := libmanager.o modulemanager.o libstat.o export.o \
-          ccmanager.o $(OBJS)
+          ccmanager.o libbuilder.o $(OBJS)
 endif
 
 all: $(OBJS)
