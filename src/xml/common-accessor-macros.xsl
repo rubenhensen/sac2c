@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/12/01 18:48:13  sah
+  added some extra () in flags macros
+
   Revision 1.2  2004/11/24 16:46:06  sah
   changed node representation
 
@@ -94,7 +97,7 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <!-- generate right side of macro -->
-  <xsl:value-of select="'(n)->attribs.'"/> 
+  <xsl:value-of select="'((n)->attribs.'"/> 
   <xsl:call-template name="name-to-nodeenum">
     <xsl:with-param name="name">
       <xsl:value-of select="../../@name"/>
@@ -102,6 +105,7 @@ version="1.0">
   </xsl:call-template>
   <xsl:value-of select="'->flags.'"/>
   <xsl:value-of select="@name"/>
+  <xsl:value-of select="')'" />
   <xsl:call-template name="newline"/>
 </xsl:template>
 
