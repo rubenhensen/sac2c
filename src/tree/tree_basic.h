@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2001/04/20 11:19:22  nmw
+ * macros INFO_SSALUR_XXX added
+ *
  * Revision 3.82  2001/04/19 16:33:31  nmw
  * INFO_SSALIR_INSLIST and INFO_SSALIR_MAXDEPTH added
  *
@@ -2474,7 +2477,6 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      MODUL             (current working modul)
  ***
  ***  when used in SSACSE.c
- ***    int        DEPTH             (stacked depth of special functions)
  ***    bool       REMASSIGN         (flag, if assignment can be removed)
  ***    node*      FUNDEF            (current working fundef)
  ***    node*      CSE               (cseinfo chain of available expressions)
@@ -2533,6 +2535,12 @@ extern node *MakeAvis (node *vardecOrArg);
  ***  when used in CheckAvis.c
  ***    node*      FUNDEF            (current working fundef)
  ***    bool       SINGLEFUNDEF      (traversal mode: all fundefs/single fundef)
+ ***
+ ***  when used in optimize.c
+ ***    node*      MODUL             (current working modul)
+ ***    node*      FUNDEF            (current working fundef)
+ ***    node*      ASSIGN            (current working assignment)
+ ***
  ***
  ***  remarks:
  ***
@@ -2954,7 +2962,6 @@ extern node *MakeInfo ();
 #define INFO_SSADCR_MODUL(n) (n->node[4])
 
 /* when used in SSACSE.c */
-#define INFO_SSACSE_DEPTH(n) (n->int_data)
 #define INFO_SSACSE_REMASSIGN(n) ((bool)(n->flag))
 #define INFO_SSACSE_FUNDEF(n) (n->node[0])
 #define INFO_SSACSE_CSE(n) (n->node[1])
@@ -3014,6 +3021,11 @@ extern node *MakeInfo ();
 /* when used in CheckAvis.c */
 #define INFO_CAV_FUNDEF(n) (n->node[0])
 #define INFO_CAV_SINGLEFUNDEF(n) ((bool)(n->counter))
+
+/* when used in SSALUR.c */
+#define INFO_SSALUR_FUNDEF(n) (n->node[0])
+#define INFO_SSALUR_MODUL(n) (n->node[1])
+#define INFO_SSALUR_ASSIGN(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
