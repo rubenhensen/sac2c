@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2001/12/11 15:57:12  dkr
+ * GetDim() added
+ *
  * Revision 1.22  2001/12/11 15:52:39  dkr
  * GetDim() replaced by GetShapeDim()
  *
@@ -397,7 +400,7 @@ SSACFDim (node *expr)
     DBUG_ENTER ("SSACFDim");
 
     if (NODE_TYPE (expr) == N_id) {
-        dim = GetDim_ (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
+        dim = GetDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
         if (dim >= 0) {
             result = COMakeConstantFromInt (dim);
         } else {
@@ -681,7 +684,8 @@ SSACFScalar2StructConstant (node *expr)
 
     if ((nt == N_num) || (nt == N_float) || (nt == N_double) || (nt == N_bool)
         || ((nt == N_id)
-            && (GetDim_ (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)))) == 0))) {
+            && (GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))))
+                == 0))) {
         /* create structural constant of scalar */
         ctype = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)));
 
