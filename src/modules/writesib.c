@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/08/09 14:11:47  dkr
+ * signature of PrintFunctionHeader() modified
+ *
  * Revision 3.4  2001/05/17 13:08:53  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -725,7 +728,7 @@ PrintSibFuns (FILE *sibfile, nodelist *fundeflist, char *modname, node *arg_info
             fprintf (outfile, "classtype ");
         }
 
-        PrintFunctionHeader (fundef, arg_info);
+        PrintFunctionHeader (fundef, arg_info, FALSE);
 
         if ((FUNDEF_INLINE (fundef)) || (FUNDEF_ATTRIB (fundef) == ST_shp_indep)
             || (FUNDEF_ATTRIB (fundef) == ST_dim_indep)
