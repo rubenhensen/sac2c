@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.231  2004/11/02 14:59:01  sah
+ * extended serialize traversal
+ *
  * Revision 3.230  2004/11/02 14:23:11  ktr
  * Added emlr_tab, emlro_tab, emdr_tab
  *
@@ -1445,7 +1448,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
   NIF (N_typedef, "N_typedef", IMtypedef, TravSons, PrintTypedef, TravSons, SBTTypedef,
        TravSons, TravSons, FreeTypedef, TravSons, TravSons, TravSons, TravSons,
-       DupTypedef, TravSons, SETTypedef, TravSons, TravSons, TravSons, TravSons, TravSons,
+       DupTypedef, TravSons, SETTypedef, TravSons, TravSons, SERTypedef, TravSons,
+       TravSons,
 
        WSIBtypedef, TravSons, TravSons, TravSons, TravSons, CDECtypedef, WDECtypedef,
        TravSons, TravSons, TravSons, TravSons, RSIBtypedef, TravSons, TravSons, TravSons,
@@ -1473,7 +1477,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
   NIF (N_objdef, "N_objdef", IMobjdef, TravSons, PrintObjdef, TCobjdef, SBTObjdef,
        TravSons, TravSons, FreeObjdef, TravSons, TravSons, TravNone, TravSons, DupObjdef,
-       TravSons, SETObjdef, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, SETObjdef, TravSons, TravSons, SERObjdef, TravSons, TravSons,
 
        WSIBobjdef, OBJobjdef, TravSons, OIobjdef, TravSons, CDECobjdef, WDECobjdef,
        TravSons, TravSons, PREC1objdef, TravSons, RSIBobjdef, TravSons, TravSons,

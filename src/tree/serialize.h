@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/11/02 14:59:01  sah
+ * extended serialize traversal
+ *
  * Revision 1.6  2004/10/26 09:35:55  sah
  * added serialization of links
  *
@@ -37,5 +40,7 @@ extern const char *GenerateSerFunName (STentrytype_t type, node *node);
 extern serstack_t *SerializeBuildSerStack (node *arg_node);
 
 extern node *SERFundef (node *arg_node, info *arg_info);
+extern node *SERTypedef (node *arg_node, info *arg_info);
+extern node *SERObjdef (node *arg_node, info *arg_info);
 
 #endif /* _SERIALIZE_H */

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.18  2004/11/02 14:59:01  sah
+ * extended serialize traversal
+ *
  * Revision 1.17  2004/11/01 21:56:26  sah
  * added a missing newline and some
  * further support for debugging
@@ -558,6 +561,22 @@ SERFundef (node *arg_node, info *arg_info)
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+SERTypedef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SERTypedef");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+SERObjdef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SERObjdef");
 
     DBUG_RETURN (arg_node);
 }
