@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/07/07 15:56:45  jhs
+ * Declared MeltBlocks(OnnCopies) as external
+ * (should be moved to another, more global place later).
+ *
  * Revision 2.3  1999/06/25 15:36:33  jhs
  * Checked these in just to provide compileabilty.
  *
@@ -37,5 +41,8 @@
 extern node *SPMDOspmd (node *arg_node, node *arg_info);
 extern node *SPMDOassign (node *arg_node, node *arg_info);
 extern node *SPMDOfundef (node *arg_node, node *arg_info);
+
+extern node *MeltBlocks (node *first_block, node *second_block);
+extern node *MeltBlocksOnCopies (node *first_block, node *second_block);
 
 #endif /* SPMD_OPT_H */
