@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.33  1996/01/12 15:53:28  asi
+ * Revision 1.34  1996/01/21 13:56:08  cg
+ * added compound access macros for N_icm node
+ *
+ * Revision 1.33  1996/01/12  15:53:28  asi
  * added LET_VARNO
  *
  * Revision 1.32  1996/01/07  16:55:09  cg
@@ -1261,6 +1264,21 @@ node *Shape2Array (shapes *shp);
 #define PRAGMA_LS(n, i) PRAGMA_LINKSIGN (n)[i]
 #define PRAGMA_RC(n, i) PRAGMA_REFCOUNTING (n)[i]
 #define PRAGMA_RO(n, i) PRAGMA_READONLY (n)[i]
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_icm :
+ ***/
+
+/*
+ *  compound access macros
+ */
+
+#define ICM_ARG1(n) EXPRS_EXPR (ICM_ARGS (n))
+#define ICM_ARG2(n) EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (n)))
+#define ICM_ARG3(n) EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n))))
+#define ICM_ARG4(n) EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n)))))
 
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
