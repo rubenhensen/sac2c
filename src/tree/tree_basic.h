@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.181  2004/03/02 16:41:27  mwe
+ * INFO_CVP macro added
+ *
  * Revision 3.180  2004/02/20 08:22:18  mwe
  * MODUL_FUNDECS macro added
  * added FUNDECS argument to MakeModul
@@ -3398,6 +3401,10 @@ extern node *MakeInfo ();
 #define INFO_AL_CURRENTPRF(n) (n->info.prf)
 #define INFO_AL_LETNODE(n) (n->node[1])
 #define INFO_AL_CURRENTASSIGN(n) (n->node[2])
+
+/* when used in ConstVarPropagation.c */
+#define INFO_CVP_CONTEXT(n) (n->counter)
+#define INFO_CVP_ATTRIB(n) (*((statustype *)(&(n->mask[0]))))
 
 /*--------------------------------------------------------------------------*/
 
