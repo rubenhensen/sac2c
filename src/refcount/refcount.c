@@ -1,12 +1,15 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/03/09 16:17:01  hw
+ * Revision 1.2  1995/03/13 15:18:47  hw
+ * RCfundef and Refcount inserted
+ *
+ * Revision 1.1  1995/03/09  16:17:01  hw
  * Initial revision
  *
  *
  */
-
+#include <stdlib.h>
 #include "tree.h"
 #include "my_debug.h"
 #include "dbug.h"
@@ -18,12 +21,14 @@
 #define LOOP 2
 #define COND 3
 
+#define ID info.id
 #define CONTEXT info.cint
 #define DUB_ID_NODE(a, b)                                                                \
     a = MakeNode (N_id);                                                                 \
     a->info.id = StringCopy (b->info.id);                                                \
-    a->node[1] = b->node[1]
+    a->node[0] = b->node[0]
 #define MAX(a, b) (a >= b) ? a : b
+#define FREE(a) free (a)
 
 /*
  *
@@ -45,6 +50,7 @@ IsArray (node *arg_node)
     int ret = 0;
 
     DBUG_ENTER ("IsArray");
+    DBUG_PRINT ("RC", ("looking for %s", arg_node->info.types->id));
 
     if (1 <= arg_node->info.types->dim)
         ret = 1;
@@ -55,6 +61,8 @@ IsArray (node *arg_node)
         if (1 <= type_node->info.types->dim)
             ret = 1;
     }
+    DBUG_PRINT ("RC", ("%d", ret));
+
     DBUG_RETURN (ret);
 }
 
@@ -80,6 +88,7 @@ LookupId (char *id, node *id_node)
     node *tmp, *ret_node = NULL;
 
     DBUG_ENTER ("LookupId");
+    DBUG_PRINT ("RC", ("looking for: %s", id));
 
     tmp = id_node;
     while (NULL != tmp)
@@ -88,12 +97,13 @@ LookupId (char *id, node *id_node)
             break;
         } else
             tmp = tmp->node[0];
+    DBUG_PRINT ("RC", ("found:" P_FORMAT, ret_node));
     DBUG_RETURN (ret_node);
 }
 
 /*
  *
- *  functionname  : MaxInRefs
+ *  functionname  : MaxRefs
  *  arguments     : 1)
  *                  2)
  *  description   :
@@ -106,12 +116,12 @@ LookupId (char *id, node *id_node)
  *
  */
 void
-MaxInRefs (node *id_nodes1, node *id_nodes2, node *ref_nodes)
+MaxRefs (node *id_nodes1, node *id_nodes2, node *ref_nodes)
 {
     node *done1, *done2, *last1, *last2, *tmp1, *tmp2, *ref_node, *new_id_node;
     int found;
 
-    DBUG_ENTER ("MaxInRefs");
+    DBUG_ENTER ("MaxRefs");
     while (NULL != id_nodes1) {
         found = 0;
         last2 = id_nodes2;
@@ -119,57 +129,74 @@ MaxInRefs (node *id_nodes1, node *id_nodes2, node *ref_nodes)
         while ((NULL != tmp2) && (0 == found))
             if (0 == strcmp (tmp2->info.id, id_nodes1->info.id)) {
                 /* store max refcount */
-                if (NULL == ref_nodes)
-                    id_nodes1->node[1]->refcnt = MAX (id_nodes1->refcnt, tmp2->refcnt);
-                else {
-                    ref_node = LookupId (id_nodes1->info.id, ref_nodes);
+                if (NULL == ref_nodes) {
+                    id_nodes1->node[0]->refcnt = MAX (id_nodes1->refcnt, tmp2->refcnt);
+                    DBUG_PRINT ("RC", ("set refcnt of %s to %d", id_nodes1->node[0]->ID,
+                                       id_nodes1->node[0]->refcnt));
+                } else {
+                    ref_node = LookupId (id_nodes1->ID, ref_nodes->node[0]);
                     if (NULL == ref_node) {
                         /* make new N_id node with information of id_nodes1 */
                         DUB_ID_NODE (new_id_node, id_nodes1);
                         new_id_node->refcnt = MAX (id_nodes1->refcnt, tmp2->refcnt);
-                        new_id_node->node[0] = ref_nodes;
+                        new_id_node->node[1] = ref_nodes;
                         ref_nodes = new_id_node;
-                    } else
+                    } else {
                         ref_node->refcnt = MAX (id_nodes1->refcnt, tmp2->refcnt);
+                        DBUG_PRINT ("RC", ("set refcnt of %s to %d", ref_node->ID,
+                                           ref_node->refcnt));
+                    }
                 }
 
                 /* displace current id_nodes1 to N_id node chain done1 */
-                tmp1 = id_nodes1->node[0];
-                id_nodes1->node[0] = done1;
+                tmp1 = id_nodes1->node[1];
+                id_nodes1->node[1] = done1;
                 done1 = id_nodes1;
                 id_nodes1 = tmp1;
 
                 /* displace tmp2 to N_id node chain done2 */
-                last2->node[0] = tmp2->node[0];
-                tmp2->node[0] = done2;
-                done2 = tmp2;
+                if (last2 != tmp2) {
+                    last2->node[1] = tmp2->node[1];
+                    tmp2->node[1] = done2;
+                    done2 = tmp2;
+                } else { /* displace first node of id_nodes2 to done2 */
+                    DBUG_ASSERT ((id_nodes2 == last2), " last2 != id_nodes2");
+                    id_nodes2 = id_nodes2->node[1];
+                    tmp2->node[1] = done2;
+                    done2 = tmp2;
+                }
+
                 found = 1;
             } else {
                 last2 = tmp2;
-                tmp2 = tmp2->node[0];
+                tmp2 = tmp2->node[1];
             }
 
         if (0 == found) {
-            id_nodes1->node[1]->refcnt = id_nodes1->refcnt;
             /* store max refcount */
-            if (NULL == ref_nodes)
-                id_nodes1->node[1]->refcnt = id_nodes1->refcnt;
-            else {
-                ref_node = LookupId (id_nodes1->info.id, ref_nodes);
+            if (NULL == ref_nodes) {
+                id_nodes1->node[0]->refcnt = id_nodes1->refcnt;
+                DBUG_PRINT ("RC", ("set refcnt of %s to %d", id_nodes1->node[0]->ID,
+                                   id_nodes1->node[0]->refcnt));
+            } else {
+                ref_node = LookupId (id_nodes1->info.id, ref_nodes->node[0]);
                 if (NULL == ref_node) {
                     /* make new N_id node with information of id_nodes1 */
                     DUB_ID_NODE (new_id_node, id_nodes1);
 
                     new_id_node->refcnt = id_nodes1->refcnt;
-                    new_id_node->node[0] = ref_nodes;
+                    new_id_node->node[1] = ref_nodes;
                     ref_nodes = new_id_node;
-                } else
+                } else {
                     ref_node->refcnt = id_nodes1->refcnt;
+                    DBUG_PRINT ("RC", ("set refcnt of %s to %d", ref_node->ID,
+                                       ref_node->refcnt));
+                }
             }
 
             /* displace current id_nodes1 to N_id node chain done1 */
-            tmp1 = id_nodes1->node[0];
-            id_nodes1->node[0] = done1;
+            tmp1 = id_nodes1->node[1];
+            id_nodes1->node[1] = done1;
             done1 = id_nodes1;
             id_nodes1 = tmp1;
         }
@@ -182,55 +209,75 @@ MaxInRefs (node *id_nodes1, node *id_nodes2, node *ref_nodes)
         while ((NULL != tmp1) && (0 == found))
             if (0 == strcmp (tmp1->info.id, id_nodes2->info.id)) {
                 /* store max refcount */
-                if (NULL == ref_nodes)
-                    id_nodes2->node[1]->refcnt = MAX (id_nodes2->refcnt, tmp1->refcnt);
-                else {
-                    ref_node = LookupId (id_nodes2->info.id, ref_nodes);
+                if (NULL == ref_nodes) {
+                    id_nodes2->node[0]->refcnt = MAX (id_nodes2->refcnt, tmp1->refcnt);
+                    DBUG_PRINT ("RC", ("set refcnt of %s to %d", id_nodes2->node[0]->ID,
+                                       id_nodes2->node[0]->refcnt));
+                } else {
+                    ref_node = LookupId (id_nodes2->info.id, ref_nodes->node[0]);
                     if (NULL == ref_node) {
                         /* make new N_id node with information of id_nodes1 */
                         DUB_ID_NODE (new_id_node, id_nodes1);
                         new_id_node->refcnt = MAX (id_nodes2->refcnt, tmp1->refcnt);
-                        new_id_node->node[0] = ref_nodes;
+                        new_id_node->node[1] = ref_nodes;
                         ref_nodes = new_id_node;
-                    } else
+                    } else {
+
                         ref_node->refcnt = MAX (id_nodes2->refcnt, tmp1->refcnt);
+                        DBUG_PRINT ("RC", ("set refcnt of %s to %d", ref_node->ID,
+                                           ref_node->refcnt));
+                    }
                 }
 
                 /* displace current id_nodes2 to N_id node chain done2 */
-                tmp2 = id_nodes2->node[0];
-                id_nodes2->node[0] = done2;
+                tmp2 = id_nodes2->node[1];
+                id_nodes2->node[1] = done2;
                 done2 = id_nodes2;
                 id_nodes2 = tmp2;
 
                 /* displace tmp1 to N_id node chain done1 */
-                last1->node[0] = tmp1->node[0];
-                tmp1->node[0] = done1;
-                done1 = tmp1;
+                if (last1 != tmp1) {
+                    last1->node[1] = tmp1->node[1];
+                    tmp1->node[1] = done1;
+                    done1 = tmp1;
+                } else {
+                    /* displace first node of id_nodes1 to done1 */
+                    DBUG_ASSERT ((id_nodes1 == last1), " last1 != id_nodes1");
+                    id_nodes1 = id_nodes1->node[1];
+                    tmp1->node[1] = done1;
+                    done1 = tmp1;
+                }
+
                 found = 1;
             } else {
                 last1 = tmp1;
-                tmp1 = tmp1->node[0];
+                tmp1 = tmp1->node[1];
             }
 
         if (0 == found) {
             /* store max refcount */
-            if (NULL == ref_nodes)
-                id_nodes2->node[1]->refcnt = id_nodes2->refcnt;
-            else {
-                ref_node = LookupId (id_nodes2->info.id, ref_nodes);
+            if (NULL == ref_nodes) {
+                id_nodes2->node[0]->refcnt = id_nodes2->refcnt;
+                DBUG_PRINT ("RC", ("set refcnt of %s to %d", id_nodes2->node[0]->ID,
+                                   id_nodes2->node[0]->refcnt));
+            } else {
+                ref_node = LookupId (id_nodes2->info.id, ref_nodes->node[0]);
                 if (NULL == ref_node) {
                     /* make new N_id node with information of id_nodes1 */
                     DUB_ID_NODE (new_id_node, id_nodes1);
                     new_id_node->refcnt = id_nodes2->refcnt;
-                    new_id_node->node[0] = ref_nodes;
+                    new_id_node->node[1] = ref_nodes;
                     ref_nodes = new_id_node;
-                } else
+                } else {
                     ref_node->refcnt = id_nodes2->refcnt;
+                    DBUG_PRINT ("RC", ("set refcnt of %s to %d", ref_node->ID,
+                                       ref_node->refcnt));
+                }
             }
 
             /* displace current id_nodes2 to N_id node chain done1 */
-            tmp2 = id_nodes2->node[0];
-            id_nodes2->node[0] = done2;
+            tmp2 = id_nodes2->node[1];
+            id_nodes2->node[1] = done2;
             done2 = id_nodes2;
             id_nodes2 = tmp2;
         }
@@ -245,6 +292,70 @@ MaxInRefs (node *id_nodes1, node *id_nodes2, node *ref_nodes)
     DBUG_ASSERT ((NULL != id_nodes2), "id_nodes2 is NULL");
 
     DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : Refcount
+ *  arguments     : 1) argument node
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
+node *
+Refcount (node *arg_node)
+{
+    node *info_node;
+
+    DBUG_ENTER ("Refcount");
+
+    act_tab = refcnt_tab;
+
+    info_node = MakeNode (N_info);
+    if (N_modul == arg_node->nodetype) {
+        DBUG_ASSERT ((N_fundef == arg_node->node[2]->nodetype), "wrong node ");
+        arg_node->node[2] = Trav (arg_node->node[2], info_node);
+    } else {
+        DBUG_ASSERT ((N_fundef == arg_node->nodetype), "wrong node ");
+        Trav (arg_node, info_node);
+    }
+    FREE (info_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : RCfundef
+ *  arguments     : 1) argument node
+ *                  2) info node
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
+node *
+RCfundef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCfundef");
+
+    if (NULL != arg_node->node[0]) {
+        arg_info->CONTEXT = BODY;
+        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+    }
+    if (NULL != arg_node->node[1])
+        arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+
+    DBUG_RETURN (arg_node);
 }
 
 /*
@@ -296,8 +407,6 @@ RCwhile (node *arg_node, node *arg_info)
     node *new_info;
 
     DBUG_ENTER ("RCwhile");
-    /* first traverse termination condition */
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
 
     /* create new info node */
     new_info = MakeNode (N_info);
@@ -308,6 +417,9 @@ RCwhile (node *arg_node, node *arg_info)
 
     /* store new_info for use while compilation */
     arg_node->node[2] = new_info;
+
+    /* traverse termination condition */
+    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -376,10 +488,11 @@ RCid (node *arg_node, node *arg_info)
             arg_node->refcnt = arg_node->node[0]->refcnt;
             break;
         }
-        case LOOP: {
+        case LOOP:
+        case COND: {
             if (NULL == arg_info->node[0]) {
                 DUB_ID_NODE (id_node, arg_node);
-                id_node->refcnt = 1;
+                id_node->refcnt = arg_node->node[0]->refcnt + 1;
                 arg_info->node[0] = id_node;
             } else {
                 id_node = LookupId (arg_node->info.id, arg_info->node[0]);
@@ -387,7 +500,7 @@ RCid (node *arg_node, node *arg_info)
                     DUB_ID_NODE (id_node, arg_node);
                     id_node->refcnt = 1;
                     /* now put id_node in front of list of N_id */
-                    id_node->node[0] = arg_info->node[0];
+                    id_node->node[1] = arg_info->node[0];
                     arg_info->node[0] = id_node;
                 } else
                     id_node->refcnt += 1;
@@ -426,6 +539,7 @@ RClet (node *arg_node, node *arg_info)
     node *id_node;
 
     DBUG_ENTER ("RClet");
+    DBUG_PRINT ("RC", ("line: %d", arg_node->lineno));
 
     ids = arg_node->info.ids;
     while (NULL != ids) {
@@ -435,11 +549,12 @@ RClet (node *arg_node, node *arg_info)
                 ids->refcnt = ids->node->refcnt;
                 break;
             }
-            case LOOP: {
+            case LOOP:
+            case COND: {
                 if (NULL == arg_info->node[0])
-                    ids->refcnt = 0;
+                    ids->refcnt = ids->node->refcnt;
                 else {
-                    id_node = LookupId (arg_node->info.id, arg_info->node[0]);
+                    id_node = LookupId (ids->id, arg_info->node[0]);
                     if (NULL == id_node)
                         ids->refcnt = 0;
                     else {
