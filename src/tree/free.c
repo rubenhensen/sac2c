@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2001/05/18 12:04:35  dkr
+ * FREE_VECT used
+ *
  * Revision 3.25  2001/05/17 13:29:29  cg
  * Moved function Free() to internal_lib.c
  * Converted FREE() into Free().
@@ -2025,14 +2028,14 @@ FreeWLseg (node *arg_node, node *arg_info)
 
     for (b = 0; b < WLSEG_BLOCKS (arg_node); b++) {
         if (WLSEG_BV (arg_node, b) != NULL) {
-            Free (WLSEG_BV (arg_node, b));
+            FREE_VECT (WLSEG_BV (arg_node, b));
         }
     }
-    Free (WLSEG_UBV (arg_node));
+    FREE_VECT (WLSEG_UBV (arg_node));
 
-    Free (WLSEG_SV (arg_node));
-    Free (WLSEG_IDX_MIN (arg_node));
-    Free (WLSEG_IDX_MAX (arg_node));
+    FREE_VECT (WLSEG_SV (arg_node));
+    FREE_VECT (WLSEG_IDX_MIN (arg_node));
+    FREE_VECT (WLSEG_IDX_MAX (arg_node));
 
     if (WLSEG_SCHEDULING (arg_node) != NULL) {
         WLSEG_SCHEDULING (arg_node) = SCHRemoveScheduling (WLSEG_SCHEDULING (arg_node));
@@ -2063,13 +2066,14 @@ FreeWLsegVar (node *arg_node, node *arg_info)
             FREETRAV ((WLSEGVAR_IDX_MIN (arg_node)[d]));
         }
     }
-    Free (WLSEGVAR_IDX_MIN (arg_node));
+    FREE_VECT (WLSEGVAR_IDX_MIN (arg_node));
+
     if (WLSEGVAR_IDX_MAX (arg_node) != NULL) {
         for (d = 0; d < WLSEGVAR_DIMS (arg_node); d++) {
             FREETRAV ((WLSEGVAR_IDX_MAX (arg_node)[d]));
         }
     }
-    Free (WLSEGVAR_IDX_MAX (arg_node));
+    FREE_VECT (WLSEGVAR_IDX_MAX (arg_node));
 
     if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
         WLSEGVAR_SCHEDULING (arg_node)
