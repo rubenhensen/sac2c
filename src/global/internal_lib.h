@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2004/09/22 13:19:11  sah
+ * changed argument to StringCopy to const char*
+ * as the functions does not modify it
+ *
  * Revision 3.24  2003/09/09 14:57:23  sbs
  * PtrBuf support added.
  *
@@ -160,7 +164,7 @@ extern void StrBufFlush (str_buf *s);
 extern bool StrBufIsEmpty (str_buf *s);
 extern void *StrBufFree (str_buf *s);
 
-extern char *StringCopy (char *source);
+extern char *StringCopy (const char *source);
 extern char *StringConcat (char *first, char *second);
 extern char *StrTok (char *first, char *sep);
 

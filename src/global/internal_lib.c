@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2004/09/22 13:19:11  sah
+ * changed argument to StringCopy to const char*
+ * as the functions does not modify it
+ *
  * Revision 3.50  2004/09/02 12:23:49  skt
  * added repfun_tab into PrefixForTmpVar
  *
@@ -703,7 +707,7 @@ StrBufFree (str_buf *s)
 /******************************************************************************
  *
  * Function:
- *   char *StringCopy( char *source)
+ *   char *StringCopy( const char *source)
  *
  * Description:
  *   Allocates memory and returns a pointer to the copy of 'source'.
@@ -711,7 +715,7 @@ StrBufFree (str_buf *s)
  ******************************************************************************/
 
 char *
-StringCopy (char *source)
+StringCopy (const char *source)
 {
     char *ret;
 
