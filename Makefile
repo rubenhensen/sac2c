@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.149  2004/11/27 02:22:25  sbs
+# *** empty log message ***
+#
 # Revision 3.148  2004/11/27 00:06:54  sbs
 # *** empty log message ***
 #
@@ -184,6 +187,8 @@ COMPILE= src/compile/wlpragma_funs.o src/compile/wltransform.o \
          src/compile/icm2c_prf.o src/compile/markmemvals.o \
          src/compile/icm2c_mt.o src/compile/icm2c_sched.o \
          src/compile/icm2c_wl.o src/compile/icm2c_error.o \
+         src/compile/renameidentifiers.o src/compile/functionprecompile.o \
+         src/compile/type_conversions.o 
 
 CINTERFACE=
 #CINTERFACE= src/c-interface/map_cwrapper.o \
@@ -194,7 +199,7 @@ CINTERFACE=
 
 OBJ:= $(GLOBAL) $(TREE) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
      $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT) \
-     $(MULTITHREAD) $(CINTERFACE) $(CONSTANTS) $(PROFILE)
+     $(MULTITHREAD) $(CINTERFACE) $(CONSTANTS) $(PROFILE) $(SERIALIZE)
 
 #
 #  Rules section
