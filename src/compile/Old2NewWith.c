@@ -1,78 +1,63 @@
 
 #include "tree.h"
 #include "traverse.h"
+#include "typecheck.h"
 #include "free.h"
 #include "dbug.h"
 #include "DupTree.h"
 
-#if 0
+static int error = 1;
+
 /******************************************************************************
  *
  * function:
- *   int ReadOneGenPart(infile, node * ngentree)
+ *   node *ReadOneGenPart(FILE *infile, node *id_node)
  *
  * description:
- *   
+ *
  *
  *
  ******************************************************************************/
-
-int ReadOneGenPart(FILE * infile, node * id_node)
+node *
+ReadOneGenPart (FILE *infile, node *id_node)
 {
-  node * arr_node;
-  int error = 0;
+    node *arr_node, *aelem1, *aelems = NULL;
+    int val, i;
 
-  DBUG_ENTER("ReadOneGenPart");
+    DBUG_ENTER ("ReadOneGenPart");
 
-  aelems = MakeExprs();
-  for (i = 0; TYPES_DIM(VARDEC_TYPE(ID_VARDEC(id_node))) ; i++)
+    for (i = 0; i < SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (ID_VARDEC (id_node))), 0);
+         i++) {
+        if (error
+            = (feof (infile) || (fscanf (infile, "%i", &val) == EOF) || ferror (infile)))
+            break;
+        if (aelems == NULL) {
+            aelem1 = aelems = MakeExprs (MakeNum (val), NULL);
+        } else {
+            EXPRS_NEXT (aelem1) = MakeExprs (MakeNum (val), NULL);
+            aelem1 = EXPRS_NEXT (aelem1);
+        }
+    }
+    if (error) {
+        if (aelems != NULL)
+            FreeTree (aelems);
+        arr_node = id_node;
+    } else {
+        arr_node = MakeArray (aelems);
+        ARRAY_TYPE (arr_node) = DuplicateTypes (VARDEC_TYPE (ID_VARDEC (id_node)), 1);
+    }
 
-  arr_node = MakeArray(aelems);
-  ARRAY_TYPE(arr_node) = DuplicateTypes(VARDEC_TYPE(ID_VARDEC(id_node)) ,1);
-
-  DBUG_RETURN(error);
+    DBUG_RETURN (arr_node);
 }
-
-
 
 /******************************************************************************
  *
  * function:
- *   int ReadOneGen(FILE * infile, node * nparttree)
- *
- * description:
- *   
- *
- *
- ******************************************************************************/
-
-int ReadOneGen(FILE * infile, node * ngen_node)
-{
-  int error = 0;
-
-  DBUG_ENTER("ReadOneGen");
-
-  if (! error)
-    error = ReadOneGenPart(infile, NGEN_BOUND1(ngen_node));
-  if (! error)
-    error = ReadOneGenPart(infile, NGEN_BOUND2(ngen_node));
-  if (! error)
-    error = ReadOneGenPart(infile, NGEN_STEP(ngen_node));
-  if (! error)
-    error = ReadOneGenPart(infile, NGEN_WIDTH(ngen_node));
-
-  DBUG_RETURN(error);
-}
-#endif
-
-/******************************************************************************
- *
- * function:
- *   node * BuildNpart(FILE * infile, node * arg_node)
+ *   node *BuildNpart(FILE *infile, node *arg_node)
  *
  * description:
  *   reads the file 'infile' and generates with this data a more complex
- *   N_Npart syntaxtree based on 'arg_node'.
+ *   N_Npart-syntaxtree based on 'arg_node'.
  *
  *   syntax of the inputfile:
  *       a1 b1 s1 w1
@@ -85,25 +70,45 @@ int ReadOneGen(FILE * infile, node * ngen_node)
 node *
 BuildNpart (FILE *infile, node *arg_node)
 {
-    node *topnode, *npart_node = NULL;
+    node *del_node, *new_node = NULL;
     node *a, *b, *s, *w;
-    int error = 0;
 
-    DBUG_ENTER ("BuildNWithTree");
+    DBUG_ENTER ("BuildNpart");
 
-#if 0
-  while (! feof(infile)) {
-    NPART_NEXT(npart_node) = npart_node;
-    npart_node = DupTree(arg_node, NULL);
-    error = ReadOneGen(infile, NPART_GEN(npart_node));
-  }
-#endif
+    error = 0;
 
-    if (error != 0)
-        FreeTree (npart_node);
-    else {
+    do {
+        del_node = new_node;
+        new_node
+          = DupTree (arg_node, NULL); /* arg_node is the base of the new syntaxtree */
+        NPART_NEXT (new_node) = del_node;
+
+        /* replace now the generator-nodes */
+        if (!error)
+            NGEN_BOUND1 (NPART_GEN (new_node))
+              = ReadOneGenPart (infile, NGEN_BOUND1 (NPART_GEN (arg_node)));
+        if (!error)
+            NGEN_BOUND2 (NPART_GEN (new_node))
+              = ReadOneGenPart (infile, NGEN_BOUND2 (NPART_GEN (arg_node)));
+        if (!error)
+            NGEN_STEP (NPART_GEN (new_node))
+              = ReadOneGenPart (infile, NGEN_STEP (NPART_GEN (arg_node)));
+        if (!error)
+            NGEN_WIDTH (NPART_GEN (new_node))
+              = ReadOneGenPart (infile, NGEN_WIDTH (NPART_GEN (arg_node)));
+    } while (!error);
+
+    if (error) {
+        /* remove uncompleted part of the new Npart-syntaxtree */
+        del_node = new_node;
+        new_node = NPART_NEXT (new_node);
+        NPART_NEXT (del_node) = NULL;
+        FreeTree (del_node);
+    }
+    /* if generation was succesful, only use new Npart-syntaxtree */
+    if (new_node != NULL) {
         FreeTree (arg_node);
-        arg_node = npart_node;
+        arg_node = new_node;
     }
 
     DBUG_RETURN (arg_node);
@@ -263,10 +268,10 @@ O2Nwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node * O2NNpart(node * arg_node, node * arg_info)
+ *   node *O2NNpart(node *arg_node, node *arg_info)
  *
  * description:
- *   generates a more complex N_Npart syntaxtree
+ *   generates a more complex N_Npart syntaxtree (reads data from stdin)
  *
  *
  ******************************************************************************/
@@ -275,17 +280,13 @@ node *
 O2NNpart (node *arg_node, node *arg_info)
 {
     FILE *infile;
-    node *nwithtree;
 
     DBUG_ENTER ("O2NNpart");
 
     infile = stdin; /* use standard input */
-    nwithtree
-      = BuildNpart (infile, arg_node); /* generate a more complex N_Npart syntaxtree */
-
-    if (nwithtree != NULL) {
-        FreeTree (arg_node); /* replace old N_Npart syntaxtree by the generated one */
-        arg_node = nwithtree;
+    if (infile != NULL) {
+        arg_node = BuildNpart (infile,
+                               arg_node); /* generate a more complex N_Npart syntaxtree */
     }
 
     DBUG_RETURN (arg_node);
