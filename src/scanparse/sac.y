@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/03/22 20:11:28  dkr
+ * no changes done
+ *
  * Revision 3.12  2001/03/22 09:49:19  dkr
  * ooops ...! bug with global wlcomp pragmas fixed
  *
@@ -56,12 +59,15 @@
 #include <stdlib.h>
 #include <memory.h>
 
+#include "tree.h"           /* old tree definition */
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "dbug.h"
-#include "tree.h"
 #include "typecheck.h"
 #include "DupTree.h"        /* for use of DupTree */
 #include "my_debug.h"
-#include "internal_lib.h"   /* for use of StringCopy */
 #include "Error.h"
 #include "free.h"
 #include "globals.h"
