@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 1.86  1998/06/18 13:24:00  cg
+# added linking of spmd_init.o spmd_opt.o spmd_lift.o sync_init.o
+# sync_opt.o sched.o and scheduling.o
+# removed linking of spmdregions.o
+#
 # Revision 1.85  1998/06/12 14:18:33  cg
 # added linking of concurrent/scheduling.o
 #
@@ -320,7 +325,10 @@ MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
 OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/rmvoidfun.o
 REFCOUNT= src/refcount/refcount.o
-CONCURRENT= src/concurrent/spmdregions.o src/concurrent/scheduling.o
+CONCURRENT= src/concurrent/concurrent.o src/concurrent/scheduling.o  \
+            src/concurrent/spmd_init.o src/concurrent/spmd_opt.o   \
+            src/concurrent/spmd_lift.o src/concurrent/sync_init.o   \
+            src/concurrent/sync_opt.o src/concurrent/schedule.o 
 COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/precompile.o \
           src/compile/compile.o src/compile/gen_startup_code.o \
