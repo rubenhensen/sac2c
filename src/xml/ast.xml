@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.55  2004/11/24 19:38:09  sah
+  fixed it
+
   Revision 1.54  2004/11/24 17:47:01  sah
   update
 
@@ -1697,7 +1700,7 @@
       <sons>
         <son name="Avis" mandatory="yes">
 	  <target>
-	    <son name="Avis" />
+	    <node name="Avis" />
 	  </target>
 	</son>
         <son name="Next" mandatory="no">
@@ -2012,12 +2015,12 @@
       <sons>
         <son name="Ids" mandatory="yes">
           <target>
-            <set name="Ids" />
+            <node name="Ids" />
           </target>
         </son>
         <son name="Expr" mandatory="yes">
 	  <target>
-	    <node name="Expr" />
+	    <set name="Expr" />
 	  </target>
 	</son>
       </sons>
@@ -2357,7 +2360,7 @@
       <sons>
         <son name="Ops" mandatory="yes" >
 	  <target>
-	    <son name="Ids" />
+	    <node name="Ids" />
 	  </target>
 	</son>
         <son name="Exprs" mandatory="no">
@@ -4841,7 +4844,7 @@
       <sons>
         <son name="Next" mandatory="no">
 	  <target>
-	    <node name="Next" />
+	    <node name="Ids" />
 	  </target>
 	</son>
       </sons>
@@ -4880,7 +4883,7 @@
       <sons>
         <son name="Next" mandatory="no">
 	  <target>
-	    <son name="Nums" />
+	    <node name="Nums" />
 	  </target>
 	</son>
       </sons>
