@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/12/07 17:32:24  cg
+ * Now, the platform identification is taken from the global
+ * variable target_platform.
+ *
  * Revision 1.14  1998/12/07 09:59:00  cg
  * added switch for target platform for multi-platform sac2c
  *
@@ -135,16 +139,7 @@ PrintTargetPlatform ()
 
     fprintf (outfile, "/*\n *  Target Platform\n */\n\n");
 
-#if defined(SOLARIS_SPARC)
-    fprintf (outfile, "#define SAC_FOR_SOLARIS_SPARC\n");
-#elif defined(LINUX_X86)
-    fprintf (outfile, "#define SAC_FOR_LINUX_X86\n");
-#else
-    /*
-     * This case should never happen since the Makefile guarantees that any one
-     * of the supported platforms is selected.
-     */
-#endif
+    fprintf (outfile, "#define SAC_FOR_%s\n", target_platform);
 
     DBUG_VOID_RETURN;
 }
