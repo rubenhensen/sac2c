@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  1999/11/15 14:24:16  dkr
+ * assert in IsConstArray removed
+ *
  * Revision 2.16  1999/11/12 12:41:40  dkr
  * IsConstArray revisited: accidentaly the new version was not activated.
  *   some comments added, some minor changes done.
@@ -1162,8 +1165,7 @@ IsConstArray (node *array)
             isconst = ID_ISCONST (array);
             break;
         default:
-            /* dkr: I think this is an error ... */
-            DBUG_ASSERT ((0), "node in array position is neither N_array nor N_id");
+            isconst = 0;
         }
     } else {
         isconst = 0;
