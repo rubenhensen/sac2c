@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.240  1998/06/25 08:02:45  cg
+ * printing of spmd-functions modified
+ *
  * Revision 1.239  1998/06/23 12:44:34  cg
  * bug fixed in indentation mechanism for ICMs
  *
@@ -1356,6 +1359,9 @@ PrintFundef (node *arg_node, node *arg_info)
 
             if ((FUNDEF_ICM (arg_node) != NULL)
                 && (N_icm == NODE_TYPE (FUNDEF_ICM (arg_node)))) {
+                fprintf (outfile, "#undef SAC_MT_CURRENT_FUN\n");
+                fprintf (outfile, "#define SAC_MT_CURRENT_FUN() %s\n",
+                         FUNDEF_NAME (arg_node));
                 Trav (FUNDEF_ICM (arg_node), new_info); /* print N_icm ND_FUN_DEC */
             } else {
                 PrintFunctionHeader (arg_node, new_info);
@@ -1383,14 +1389,7 @@ PrintFundef (node *arg_node, node *arg_info)
          * print function declaration
          */
 
-        if (FUNDEF_STATUS (arg_node) == ST_spmdfun) {
-            fprintf (outfile, "#if SAC_DO_MULTITHREAD\n");
-            fprintf (outfile,
-                     "SAC_MT_SPMD_FUN_REAL_RETTYPE()"
-                     " %s( SAC_MT_SPMD_FUN_REAL_PARAM_LIST());\n",
-                     FUNDEF_NAME (arg_node));
-            fprintf (outfile, "#endif  /* SAC_DO_MULTITHREAD */\n");
-        } else {
+        if (FUNDEF_STATUS (arg_node) != ST_spmdfun) {
             if ((FUNDEF_BODY (arg_node) == NULL)
                 || ((NULL != FUNDEF_RETURN (arg_node))
                     && (N_icm == NODE_TYPE (FUNDEF_RETURN (arg_node)))
