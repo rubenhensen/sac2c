@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.135  2004/03/05 19:32:06  sbs
+ * NTCfuncond added.
+ *
  * Revision 3.134  2004/03/05 19:14:27  mwe
  * support for new node N_funcond added
  *
@@ -2452,7 +2455,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, NTCfuncond, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2004/03/05 19:32:28  sbs
+ * NTCfuncond added.
+ *
  * Revision 3.38  2004/03/05 16:19:36  sbs
  * changed behavior on ... return types
  * traversing fundecs as well now to get fixed types for back conversion
@@ -923,7 +926,7 @@ NTCcond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCfcond(node *arg_node, node *arg_info)
+ *    node *NTCfuncond(node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -932,7 +935,7 @@ NTCcond (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NTCfcond (node *arg_node, node *arg_info)
+NTCfuncond (node *arg_node, node *arg_info)
 {
     ids *lhs;
     node *avis, *rhs1, *rhs2;
@@ -943,7 +946,7 @@ NTCfcond (node *arg_node, node *arg_info)
     char *tmp_str, *tmp2_str;
 #endif
 
-    DBUG_ENTER ("NTCfcond");
+    DBUG_ENTER ("NTCfuncond");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_let)
                    && (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)

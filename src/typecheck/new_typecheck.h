@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/03/05 19:32:28  sbs
+ * NTCfuncond added.
+ *
  * Revision 3.9  2002/10/30 12:12:51  sbs
  * NTCvardec added for converting old vardecs in ntype ones.
  *
@@ -54,6 +57,7 @@ extern node *NTCblock (node *arg_node, node *arg_info);
 extern node *NTCvardec (node *arg_node, node *arg_info);
 extern node *NTCassign (node *arg_node, node *arg_info);
 extern node *NTCcond (node *arg_node, node *arg_info);
+extern node *NTCfuncond (node *arg_node, node *arg_info);
 extern node *NTClet (node *arg_node, node *arg_info);
 extern node *NTCreturn (node *arg_node, node *arg_info);
 extern node *NTCap (node *arg_node, node *arg_info);
