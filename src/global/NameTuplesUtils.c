@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2002/06/04 08:37:17  dkr
+ * C_unknownc renamed into C_unknownd
+ *
  * Revision 1.2  2002/06/02 21:42:42  dkr
  * symbols renamed
  *
@@ -14,34 +17,7 @@
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "NameTuples.h"
-
-/******************************************************************************
- *
- * function:
- *   char *CreateNtTag( char *name, types *type)
- *
- * description:
- *   Creates the tag of an object (usually an array) from its type.
- *
- ******************************************************************************/
-
-char *
-CreateNtTag (char *name, types *type)
-{
-    char *res;
-
-    DBUG_ENTER ("CreateNtTag");
-
-    DBUG_ASSERT ((type != NULL), "No type found!");
-
-    res = (char *)Malloc ((strlen (name) + 20) * sizeof (char));
-
-    sprintf (res, "(%s, (%s, (%s,)))", name, nt_data_string[GetDataClassFromTypes (type)],
-             nt_unq_string[GetUnqClassFromTypes (type)]);
-
-    DBUG_RETURN (res);
-}
+#include "NameTuplesUtils.h"
 
 /******************************************************************************
  *
@@ -76,7 +52,7 @@ GetDataClassFromTypes (types *type)
         /*
          * the TC has probably not been called yet :-(
          */
-        z = C_unknownc;
+        z = C_unknownd;
     } else if (IsHidden (type)) {
         z = C_hid;
     } else if (TYPES_DIM (type) == SCALAR) {
@@ -124,4 +100,31 @@ GetUnqClassFromTypes (types *type)
     }
 
     DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char *CreateNtTag( char *name, types *type)
+ *
+ * description:
+ *   Creates the tag of an object (usually an array) from its type.
+ *
+ ******************************************************************************/
+
+char *
+CreateNtTag (char *name, types *type)
+{
+    char *res;
+
+    DBUG_ENTER ("CreateNtTag");
+
+    DBUG_ASSERT ((type != NULL), "No type found!");
+
+    res = (char *)Malloc ((strlen (name) + 20) * sizeof (char));
+
+    sprintf (res, "(%s, (%s, (%s,)))", name, nt_data_string[GetDataClassFromTypes (type)],
+             nt_unq_string[GetUnqClassFromTypes (type)]);
+
+    DBUG_RETURN (res);
 }

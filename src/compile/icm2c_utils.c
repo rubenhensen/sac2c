@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/06/04 08:35:45  dkr
+ * C_unknownc renamed into C_unknownd
+ *
  * Revision 3.3  2002/06/02 21:36:56  dkr
  * functions renamed
  *
@@ -102,15 +105,15 @@ ICUGetDataClass (char *nt)
 
     nc = FindParen (nt, NT_DATA_INDEX + 1) + 1;
     i = 0;
-    z = C_unknownc;
-    while ((i != C_unknownc) && (z == C_unknownc)) {
+    z = C_unknownd;
+    while ((i != C_unknownd) && (z == C_unknownd)) {
         if (!strncmp (nt + nc, nt_data_string[i], 3)) {
             z = i;
         }
         i++;
     }
 
-    DBUG_ASSERT ((z != C_unknownc), "ICUGetDataClass() did not find valid class tag");
+    DBUG_ASSERT ((z != C_unknownd), "ICUGetDataClass() did not find valid class tag");
 
     DBUG_RETURN (z);
 }

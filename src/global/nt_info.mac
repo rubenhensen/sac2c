@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/06/04 08:35:54  dkr
+ * C_unknownc renamed into C_unknownd
+ *
  * Revision 3.2  2001/12/12 09:41:52  dkr
  * some minor changes done
  *
@@ -47,7 +50,7 @@ YOU HAVE TO DEFINE ATTRIB !!!Do this before you include this file.
 
   NTIF (C_scl, "SCL"),
   NTIF (C_aks, "AKS"), NTIF (C_akd, "AKD"), NTIF (C_aud, "AUD"), NTIF (C_hid, "HID"),
-  NTIF (C_unknownc, "???") /* should be the last entry! */
+  NTIF (C_unknownd, "???") /* should be the last entry! */
 
 #elif (ATTRIB == 2)
 
