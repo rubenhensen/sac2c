@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/03/15 13:51:15  bs
+ * CopyIntArray renamed into CopyIntVector, CopyFloatVector and CopyDoubleVector added.
+ *
  * Revision 2.2  1999/02/24 20:21:59  bs
  * New function added: CopyIntArray
  *
@@ -250,18 +253,54 @@ StringCopy (char *source)
  ******************************************************************************/
 
 int *
-CopyIntArray (int len, int *array)
+CopyIntVector (int len, int *intvec)
 {
     int i, *res;
 
-    DBUG_ENTER ("CopyIntArray");
+    DBUG_ENTER ("CopyIntVector");
 
-    if ((array == NULL) || (len <= 0))
+    if ((intvec == NULL) || (len <= 0))
         res = NULL;
     else {
         res = MALLOC (len * sizeof (int));
         for (i = 0; i < len; i++)
-            res[i] = array[i];
+            res[i] = intvec[i];
+    }
+    DBUG_RETURN (res);
+}
+
+float *
+CopyFloatVector (int len, float *floatvec)
+{
+    int i;
+    float *res;
+
+    DBUG_ENTER ("CopyFloatVector");
+
+    if ((floatvec == NULL) || (len <= 0))
+        res = NULL;
+    else {
+        res = MALLOC (len * sizeof (float));
+        for (i = 0; i < len; i++)
+            res[i] = floatvec[i];
+    }
+    DBUG_RETURN (res);
+}
+
+double *
+CopyDoubleVector (int len, double *doublevec)
+{
+    int i;
+    double *res;
+
+    DBUG_ENTER ("CopyDoubleVector");
+
+    if ((doublevec == NULL) || (len <= 0))
+        res = NULL;
+    else {
+        res = MALLOC (len * sizeof (double));
+        for (i = 0; i < len; i++)
+            res[i] = doublevec[i];
     }
     DBUG_RETURN (res);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/03/15 13:53:25  bs
+ * CopyIntArray renamed into CopyIntVector, CopyFloatVector and CopyDoubleVector added.
+ *
  * Revision 2.2  1999/02/24 20:23:04  bs
  * New function added: CopyIntArray
  *
@@ -67,7 +70,9 @@
 
 extern void *Malloc (int size);
 extern char *StringCopy (char *source);
-extern int *CopyIntArray (int len, int *array);
+extern int *CopyIntVector (int len, int *intvec);
+extern float *CopyFloatVector (int len, float *floatvec);
+extern double *CopyDoubleVector (int len, double *doublevec);
 extern int lcm (int x, int y);
 extern char *itoa (long number);
 extern void SystemCall (char *format, ...);
