@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/02/02 16:28:24  bs
+ * unused variable declaration erased
+ *
  * Revision 2.14  2000/01/31 19:35:21  bs
  * Function CalcTSOuterDims modified.
  *
@@ -698,7 +701,6 @@ TSInwith (node *arg_node, node *arg_info)
 node *
 TSIncode (node *arg_node, node *arg_info)
 {
-    node *pragma;
     int *cacheparam;
 
     DBUG_ENTER ("TSIncode");
