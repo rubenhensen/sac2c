@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.2  2001/02/23 18:04:22  sbs
+ * extended for negative take's and drop's
+ * added print facility
+ *
  * Revision 3.1  2000/11/20 18:00:02  sacbase
  * new release made
  *
@@ -51,12 +55,16 @@
  * - If the result is a shape structure, it has been freshly allocated!
  */
 
+#include <stdlib.h>
+
 #include "globals.h"
 #include "free.h"
 #include "dbug.h"
+#include "my_debug.h"
 #include "shape.h"
 #include "cv2scalar.h"
 #include "cv2cv.h"
+#include "cv2str.h"
 #include "tree_compound.h"
 
 typedef struct CONSTANT {
@@ -581,6 +589,57 @@ COCopyConstant (constant *a)
 /******************************************************************************
  *
  * function:
+ *    void COPrintConstant( FILE * file, constant *a)
+ *
+ * description:
+ *    prints the value of a to file
+ *
+ ******************************************************************************/
+
+void
+COPrintConstant (FILE *file, constant *a)
+{
+    DBUG_ENTER ("COPrintConstant");
+
+    fprintf (file, "constant at %p: type %s, ", a, mdb_type[CONSTANT_TYPE (a)]);
+    SHPrintShape (file, CONSTANT_SHAPE (a));
+    fprintf (file, " [%s]\n",
+             cv2str[CONSTANT_TYPE (a)](CONSTANT_ELEMS (a), 0, CONSTANT_VLEN (a)));
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void DbugPrintBinOp( char *fun,
+ *                         constant *arg1,
+ *                          constant *arg2,
+ *                           constant *res)
+ *
+ * description:
+ *   logs the args and result of binary ops to stderr.
+ *
+ ******************************************************************************/
+
+static void
+DbugPrintBinOp (char *fun, constant *arg1, constant *arg2, constant *res)
+{
+    DBUG_ENTER ("DbugPrintBinOp");
+
+    fprintf (stderr, "%s applied to\n ", fun);
+    COPrintConstant (stderr, arg1);
+    fprintf (stderr, " ");
+    COPrintConstant (stderr, arg2);
+    fprintf (stderr, "results in: ");
+    COPrintConstant (stderr, res);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *    constant *COFreeConstant( constant *a)
  *
  * description:
@@ -774,9 +833,12 @@ COPsi (constant *idx, constant *a)
  *    constant *COTake( constant *idx, constant *a)
  *
  * description:
- *    takes elements from the upper left corner of a. The shape of the result
- *    is idx ++ drop( len(idx), shape(a))!
- *    ATTENTION: expects all components of idx to be positive!
+ *    picks elements from a! The shape of the result equals
+ *       |idx| ++ drop( len(idx), shape(a)).
+ *    In case of positive idx_i, the elements in axis i are picked from the
+ *    "beginning", i.e., starting at position 0 upto idx_i - 1.
+ *    Otherwise (negative idx_i), the elements in axis i are taken from the
+ *    "end", i.e., from shape(a)_i + idx_i upto shape(a)_i - 1.
  *
  ******************************************************************************/
 
@@ -785,10 +847,8 @@ COTake (constant *idx, constant *a)
 {
     shape *res_shp;
     int i, curr_val_idx;
-    int off_len;
-    shape *off_shp;
-    void *off_elems;
-    constant *off, *res;
+    int idx_i, shp_i;
+    constant *offset, *res;
 
     DBUG_ENTER ("COTake");
     DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to COTake not vector!");
@@ -803,32 +863,33 @@ COTake (constant *idx, constant *a)
         /*
          * First, we create the result shape:
          *
-         * res_shp = idx ++ drop( len(idx), shape(a))!
+         * res_shp = |idx| ++ drop( len(idx), shape(a))!
          */
         res_shp = SHCopyShape (CONSTANT_SHAPE (a));
         for (i = 0; i < CONSTANT_VLEN (idx); i++) {
-            curr_val_idx = ((int *)CONSTANT_ELEMS (idx))[i];
+            curr_val_idx = abs (((int *)CONSTANT_ELEMS (idx))[i]);
             res_shp = SHSetExtent (res_shp, i, curr_val_idx);
         }
 
         /*
-         * Now, we create an offset-vector with length len(idx) and values 0!
+         * Now, we create an offset-vector with length len(idx):
+         *
+         * offset_i = ( idx_i >= 0 ? 0 : shape(a)_i + idx_i )
          */
-        off_shp = SHMakeShape (1);
-        off_len = CONSTANT_VLEN (idx);
-        SHSetExtent (off_shp, 0, off_len);
-        off_elems = AllocCV (T_int, off_len);
-        for (i = 0; i < off_len; i++) {
-            ((int *)off_elems)[i] = 0;
+        offset = COCopyConstant (idx);
+        for (i = 0; i < CONSTANT_VLEN (offset); i++) {
+            shp_i = SHGetExtent (CONSTANT_SHAPE (a), i);
+            idx_i = ((int *)CONSTANT_ELEMS (offset))[i];
+            ((int *)CONSTANT_ELEMS (offset))[i] = (idx_i >= 0 ? 0 : shp_i + idx_i);
         }
-        off = MakeConstant (T_int, off_shp, off_elems, off_len);
 
         /*
-         * Finally, we pick the tile of shape 'res_shp' from a starting at position 'off'
+         * Finally, we pick the tile of shape 'res_shp' from a starting at position
+         * 'offset'
          */
-        res = TileFromArray (off, res_shp, a);
+        res = TileFromArray (offset, res_shp, a);
 
-        off = COFreeConstant (off);
+        offset = COFreeConstant (offset);
     } else {
         /* 'idx' is an empty array  ->  res = a */
 
@@ -842,6 +903,7 @@ COTake (constant *idx, constant *a)
 
         res = COCopyConstant (a);
     }
+    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COTake", idx, a, res););
 
     DBUG_RETURN (res);
 }
@@ -852,9 +914,12 @@ COTake (constant *idx, constant *a)
  *    constant *CODrop( constant *idx, constant *a)
  *
  * description:
- *    picks elements from the lower right corner of a! The shape of the result
- *    equals (take( len(idx), shape(a)) - idx ) ++ drop( len(idx), shape(a)).
- *    ATTENTION: expects all components of idx to be positive!
+ *    picks elements from a! The shape of the result equals
+ *           (take( len(idx), shape(a)) - |idx| ) ++ drop( len(idx), shape(a)).
+ *    In case of positive idx_i, the elements in axis i are picked from the
+ *    "end", i.e., starting at position idx_i upto shape(a)_i - 1.
+ *    Otherwise (negative idx_i), the elements in axis i are taken from the
+ *    "start", i.e., from 0 upto shape(a)_i + idx_i - 1.
  *
  ******************************************************************************/
 
@@ -863,6 +928,8 @@ CODrop (constant *idx, constant *a)
 {
     shape *res_shp;
     int i, curr_val_idx;
+    int idx_i;
+    constant *offset;
     constant *res;
 
     DBUG_ENTER ("CODrop");
@@ -879,18 +946,30 @@ CODrop (constant *idx, constant *a)
         /*
          * First, we create the result shape:
          *
-         * res_shp = (take( len(idx), shape(a)) - idx ) ++ drop( len(idx), shape(a))!
+         * res_shp = (take( len(idx), shape(a)) - |idx| ) ++ drop( len(idx), shape(a))!
          */
         res_shp = SHCopyShape (CONSTANT_SHAPE (a));
         for (i = 0; i < CONSTANT_VLEN (idx); i++) {
-            curr_val_idx = SHGetExtent (res_shp, i) - ((int *)CONSTANT_ELEMS (idx))[i];
+            curr_val_idx
+              = SHGetExtent (res_shp, i) - abs (((int *)CONSTANT_ELEMS (idx))[i]);
             res_shp = SHSetExtent (res_shp, i, curr_val_idx);
         }
 
         /*
-         * Now, we pick the tile of shape 'res_shp' from a starting at position 'idx'
+         * Now, we compute the offset of the tile from a to be selected:
+         *
+         * offset_i = ( idx_i < 0 ? 0 : idx_i )
          */
-        res = TileFromArray (idx, res_shp, a);
+        offset = COCopyConstant (idx);
+        for (i = 0; i < CONSTANT_VLEN (offset); i++) {
+            idx_i = ((int *)CONSTANT_ELEMS (offset))[i];
+            ((int *)CONSTANT_ELEMS (offset))[i] = (idx_i < 0 ? 0 : idx_i);
+        }
+
+        /*
+         * Now, we pick the tile of shape 'res_shp' from a starting at position 'offset'
+         */
+        res = TileFromArray (offset, res_shp, a);
     } else {
         /* 'idx' is an empty array  ->  res = a */
 
@@ -904,6 +983,8 @@ CODrop (constant *idx, constant *a)
 
         res = COCopyConstant (a);
     }
+
+    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("CODrop", idx, a, res););
 
     DBUG_RETURN (res);
 }

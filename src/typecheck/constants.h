@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.2  2001/02/23 18:04:22  sbs
+ * extended for negative take's and drop's
+ * added print facility
+ *
  * Revision 3.1  2000/11/20 18:00:03  sacbase
  * new release made
  *
@@ -65,6 +69,7 @@ extern shape *COGetShape (constant *a);
  * Functions for handling / converting constants:
  */
 extern constant *COCopyConstant (constant *a);
+extern void COPrintConstant (FILE *file, constant *a);
 extern constant *COFreeConstant (constant *a);
 extern node *COConstant2AST (constant *a);
 
