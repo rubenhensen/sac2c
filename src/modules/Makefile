@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.16  1996/01/02 16:01:02  cg
+# Revision 1.17  1996/01/04 18:11:09  cg
+# make deps done
+#
+# Revision 1.16  1996/01/02  16:01:02  cg
 # added compilation of cccall.c
 #
 # Revision 1.15  1995/12/29  10:38:56  cg
@@ -116,7 +119,8 @@ checkdec.o: ../scanparse/scnprs.h ../scanparse/y.tab.h implicittypes.h
 checkdec.o: ../print/print.h ../global/tree.h ../global/internal_lib.h
 filemgr.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
 filemgr.o: /usr/include/string.h ../../inc/dbug.h /usr/include/stdio.h
-filemgr.o: filemgr.h
+filemgr.o: ../global/internal_lib.h ../global/Error.h ../global/types.h
+filemgr.o: ../global/globals.h filemgr.h
 implicittypes.o: /usr/include/malloc.h ../global/types.h
 implicittypes.o: ../global/tree_basic.h ../global/tree_compound.h
 implicittypes.o: ../global/Error.h /usr/include/stdio.h /usr/include/string.h
@@ -138,12 +142,6 @@ readsib.o: ../global/globals.h ../global/free.h ../../inc/dbug.h
 readsib.o: ../global/my_debug.h /usr/include/malloc.h
 readsib.o: ../global/internal_lib.h ../global/traverse.h import.h
 readsib.o: ../scanparse/scnprs.h ../scanparse/y.tab.h filemgr.h
-sib.o: /usr/include/string.h /usr/include/sys/stdtypes.h
-sib.o: /usr/include/malloc.h ../global/types.h ../global/tree_basic.h
-sib.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
-sib.o: /usr/include/stdlib.h ../global/globals.h ../global/free.h
-sib.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
-sib.o: ../print/convert.h filemgr.h sib.h
 writesib.o: /usr/include/string.h /usr/include/sys/stdtypes.h
 writesib.o: /usr/include/malloc.h ../global/types.h ../global/tree_basic.h
 writesib.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h

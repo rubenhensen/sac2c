@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.13  1995/12/15 10:41:07  cg
+# Revision 1.14  1996/01/04 18:11:06  cg
+# make deps done
+#
+# Revision 1.13  1995/12/15  10:41:07  cg
 # make deps done
 #
 # Revision 1.12  1995/10/08  11:29:46  sbs
@@ -56,12 +59,13 @@ clean:
 convert.o: /usr/include/string.h /usr/include/sys/stdtypes.h
 convert.o: /usr/include/stdlib.h ../global/tree.h ../global/types.h
 convert.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
-convert.o: /usr/include/stdio.h ../global/internal_lib.h ../../inc/dbug.h
-convert.o: convert.h ../global/type_info.mac
+convert.o: /usr/include/stdio.h ../global/globals.h ../global/internal_lib.h
+convert.o: ../../inc/dbug.h convert.h ../global/type_info.mac
 print.o: /usr/include/stdio.h /usr/include/stdlib.h
-print.o: /usr/include/sys/stdtypes.h /usr/include/string.h print.h
-print.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
-print.o: ../global/tree_compound.h ../global/Error.h ../global/internal_lib.h
-print.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h convert.h
-print.o: ../optimize/optimize.h ../global/free.h ../compile/trace.h
+print.o: /usr/include/sys/stdtypes.h /usr/include/string.h ../global/types.h
+print.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
+print.o: ../global/globals.h print.h ../global/tree.h
+print.o: ../global/internal_lib.h ../global/my_debug.h ../../inc/dbug.h
+print.o: ../global/traverse.h convert.h ../optimize/optimize.h
+print.o: ../global/free.h /usr/include/malloc.h ../compile/trace.h
 print.o: ../compile/icm.data ../global/prf_node_info.mac

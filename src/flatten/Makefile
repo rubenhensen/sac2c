@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.8  1995/12/15 10:41:06  cg
+# Revision 1.9  1996/01/04 18:11:05  cg
+# make deps done
+#
+# Revision 1.8  1995/12/15  10:41:06  cg
 # make deps done
 #
 # Revision 1.7  1995/10/08  11:29:44  sbs
@@ -41,6 +44,6 @@ clean:
 flatten.o: /usr/include/stdio.h /usr/include/stdlib.h
 flatten.o: /usr/include/sys/stdtypes.h ../global/tree.h ../global/types.h
 flatten.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
-flatten.o: /usr/include/string.h ../global/internal_lib.h ../../inc/dbug.h
-flatten.o: ../global/my_debug.h ../global/traverse.h
-flatten.o: ../global/access_macros.h ../global/free.h
+flatten.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
+flatten.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
+flatten.o: ../global/access_macros.h ../global/free.h /usr/include/malloc.h

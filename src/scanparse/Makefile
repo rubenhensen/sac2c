@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.13  1996/01/02 15:55:15  cg
+# Revision 1.14  1996/01/04 18:11:07  cg
+# make deps done
+#
+# Revision 1.13  1996/01/02  15:55:15  cg
 # added compilation of scnprs.c
 #
 # Revision 1.12  1995/12/15  10:41:08  cg
@@ -79,9 +82,15 @@ clean:
 lex.yy.o: /usr/include/stdio.h /usr/include/stdlib.h
 lex.yy.o: /usr/include/sys/stdtypes.h ../global/tree.h ../global/types.h
 lex.yy.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
-lex.yy.o: /usr/include/string.h ../global/internal_lib.h y.tab.h
+lex.yy.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
+lex.yy.o: y.tab.h
+scnprs.o: /usr/include/stdio.h ../global/types.h ../global/tree_basic.h
+scnprs.o: ../global/Error.h /usr/include/string.h /usr/include/sys/stdtypes.h
+scnprs.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
+scnprs.o: ../modules/filemgr.h scnprs.h y.tab.h
 y.tab.o: /usr/include/stdio.h /usr/include/stdlib.h
 y.tab.o: /usr/include/sys/stdtypes.h /usr/include/memory.h ../../inc/dbug.h
 y.tab.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
 y.tab.o: ../global/tree_compound.h ../global/Error.h /usr/include/string.h
-y.tab.o: ../global/internal_lib.h ../global/my_debug.h
+y.tab.o: ../global/globals.h ../global/internal_lib.h ../global/my_debug.h
+y.tab.o: ../global/free.h /usr/include/malloc.h ../modules/readsib.h

@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.34  1995/12/15 10:41:06  cg
+# Revision 1.35  1996/01/04 18:11:05  cg
+# make deps done
+#
+# Revision 1.34  1995/12/15  10:41:06  cg
 # make deps done
 #
 # Revision 1.33  1995/11/01  08:01:27  cg
@@ -162,7 +165,12 @@ Error.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
 Error.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 Error.o: Error.h
 Error.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
-Error.o: types.h tree_basic.h ../../inc/dbug.h internal_lib.h
+Error.o: types.h globals.h tree_basic.h ../../inc/dbug.h internal_lib.h
+Error.o: ../modules/filemgr.h
+a.out.o: ../compile/icm2c.h
+a.out.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/malloc.h
+a.out.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
+a.out.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
 free.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 free.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 free.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
@@ -170,17 +178,18 @@ free.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
 free.o: ../../inc/dbug.h my_debug.h types.h tree_basic.h tree_compound.h
 free.o: Error.h
 free.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
-free.o: traverse.h free.h
+free.o: globals.h traverse.h free.h
+free.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/malloc.h
 internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/math.h
 internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/floatingpoint.h
 internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/ieeefp.h
+internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
+internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
 internal_lib.o: Error.h
 internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
-internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
-internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
-internal_lib.o: types.h ../../inc/dbug.h my_debug.h internal_lib.h
+internal_lib.o: types.h globals.h ../../inc/dbug.h my_debug.h internal_lib.h
 main.o: ../../inc/main.h ../../inc/dbug.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
@@ -188,48 +197,55 @@ main.o: tree.h types.h tree_basic.h tree_compound.h Error.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
-main.o: internal_lib.h free.h my_debug.h usage.h ../flatten/flatten.h
-main.o: ../print/print.h ../typecheck/typecheck.h ../optimize/optimize.h
-main.o: ../modules/filemgr.h ../modules/import.h ../refcount/refcount.h
-main.o: ../scanparse/scnprs.h ../scanparse/y.tab.h ../compile/trace.h
-main.o: ../compile/compile.h ../psi-opt/psi-opt.h ../modules/sib.h
+main.o: globals.h internal_lib.h free.h my_debug.h
+main.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/malloc.h
+main.o: usage.h ../flatten/flatten.h ../print/print.h
+main.o: ../typecheck/typecheck.h ../optimize/optimize.h ../modules/filemgr.h
+main.o: ../modules/import.h ../refcount/refcount.h ../scanparse/scnprs.h
+main.o: ../scanparse/y.tab.h ../compile/trace.h ../compile/compile.h
+main.o: ../psi-opt/psi-opt.h ../modules/writesib.h ../modules/readsib.h
 main.o: ../modules/implicittypes.h ../objects/objinit.h ../modules/analysis.h
 main.o: ../modules/checkdec.h ../objects/objects.h ../objects/uniquecheck.h
-main.o: ../objects/rmvoidfun.h ../compile/precompile.h
+main.o: ../objects/rmvoidfun.h ../compile/precompile.h ../modules/cccall.h
 my_debug.o: tree.h types.h tree_basic.h tree_compound.h Error.h
 my_debug.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 my_debug.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
 my_debug.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
 my_debug.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 my_debug.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
-my_debug.o: internal_lib.h ../print/convert.h node_info.mac prf_node_info.mac
-my_debug.o: type_info.mac
+my_debug.o: globals.h internal_lib.h ../print/convert.h node_info.mac
+my_debug.o: prf_node_info.mac type_info.mac
 traverse.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 traverse.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
 traverse.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 traverse.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 traverse.o: tree.h types.h tree_basic.h tree_compound.h Error.h
 traverse.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
-traverse.o: internal_lib.h ../../inc/dbug.h my_debug.h ../flatten/flatten.h
-traverse.o: ../print/print.h ../typecheck/typecheck.h ../optimize/optimize.h
-traverse.o: free.h ../optimize/ConstantFolding.h
-traverse.o: ../optimize/DeadCodeRemoval.h ../optimize/WorkReduction.h
-traverse.o: ../optimize/LoopInvariantRemoval.h ../modules/import.h
-traverse.o: ../refcount/refcount.h ../compile/compile.h ../optimize/DupTree.h
-traverse.o: ../optimize/Inline.h ../optimize/Unroll.h ../optimize/Unswitch.h
-traverse.o: ../psi-opt/ArrayElimination.h ../psi-opt/index.h ../modules/sib.h
+traverse.o: globals.h internal_lib.h ../../inc/dbug.h my_debug.h
+traverse.o: ../flatten/flatten.h ../print/print.h ../typecheck/typecheck.h
+traverse.o: ../optimize/optimize.h free.h
+traverse.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/malloc.h
+traverse.o: ../optimize/ConstantFolding.h ../optimize/DeadCodeRemoval.h
+traverse.o: ../optimize/WorkReduction.h ../optimize/LoopInvariantRemoval.h
+traverse.o: ../modules/import.h ../refcount/refcount.h ../compile/compile.h
+traverse.o: ../optimize/DupTree.h ../optimize/Inline.h ../optimize/Unroll.h
+traverse.o: ../optimize/Unswitch.h ../psi-opt/ArrayElimination.h
+traverse.o: ../psi-opt/index.h ../modules/writesib.h ../modules/readsib.h
 traverse.o: ../modules/implicittypes.h ../objects/objinit.h
 traverse.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
 traverse.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
-traverse.o: ../compile/precompile.h traverse.h node_info.mac
+traverse.o: ../compile/precompile.h ../modules/cccall.h traverse.h
+traverse.o: node_info.mac
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 tree.o: tree.h types.h tree_basic.h tree_compound.h Error.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
-tree.o: internal_lib.h ../../inc/dbug.h my_debug.h ../scanparse/scnprs.h
-tree.o: ../scanparse/y.tab.h ../optimize/optimize.h free.h
+tree.o: globals.h internal_lib.h ../../inc/dbug.h my_debug.h
+tree.o: ../scanparse/scnprs.h ../scanparse/y.tab.h ../optimize/optimize.h
+tree.o: free.h
+tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/malloc.h
 tree_basic.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/malloc.h
 tree_basic.o: types.h tree_basic.h Error.h
 tree_basic.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
@@ -237,7 +253,7 @@ tree_basic.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
 tree_basic.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
 tree_basic.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 tree_basic.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
-tree_basic.o: ../../inc/dbug.h my_debug.h ../scanparse/scnprs.h
+tree_basic.o: globals.h ../../inc/dbug.h my_debug.h ../scanparse/scnprs.h
 tree_basic.o: ../scanparse/y.tab.h free.h internal_lib.h prf_node_info.mac
 tree_compound.o: types.h tree_basic.h tree_compound.h Error.h
 tree_compound.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
@@ -245,13 +261,15 @@ tree_compound.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdar
 tree_compound.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
 tree_compound.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 tree_compound.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
-tree_compound.o: ../../inc/dbug.h my_debug.h
+tree_compound.o: globals.h ../../inc/dbug.h my_debug.h
 tree_compound.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/malloc.h
 usage.o: usage.h
 usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
-usage.o: ../../inc/dbug.h tree.h types.h tree_basic.h tree_compound.h Error.h
+usage.o: globals.h ../../inc/dbug.h tree.h types.h tree_basic.h
+usage.o: tree_compound.h Error.h
 usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/string.h
 usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 usage.o: internal_lib.h ../optimize/optimize.h free.h my_debug.h
+usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/malloc.h
