@@ -3,6 +3,11 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/08/15 19:39:18  dkr
+ * rule '#\ .*\n':
+ * yyless(yyleng-1) added in order to leave the '\n' in input.
+ * This '\n' is needed for the look-ahead-rule '\n.*', too!!!
+ *
  * Revision 2.14  2000/07/21 14:47:35  nmw
  * keyword ModuleSpec for specialization files added
  *
@@ -436,6 +441,7 @@ int start_token;
                                     strncpy( filename , yytext + start, len);
                                     filename[len] = '\0';
                                   }
+                                  yyless(yyleng-1);
                                 }
 .                               { charpos += yyleng;
                                   FILTER( SC );
