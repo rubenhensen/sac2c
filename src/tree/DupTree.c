@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.101  2004/09/27 09:18:25  sah
+ * now, for Avis nodes the new type is copied as well
+ * see bug #64
+ *
  * Revision 3.100  2004/08/30 14:26:58  skt
  * changed NWITH2_ISSCHEDULED into NWITH2_CALCPARALLEL
  *
@@ -2623,6 +2627,8 @@ DupAvis (node *arg_node, info *arg_info)
       = SearchInLUT_PP (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN2 (arg_node));
     AVIS_WITHID (new_node)
       = SearchInLUT_PP (INFO_DUP_LUT (arg_info), AVIS_WITHID (arg_node));
+
+    AVIS_TYPE (new_node) = TYCopyType (AVIS_TYPE (arg_node));
 
     if (AVIS_SSACONST (arg_node) != NULL) {
         AVIS_SSACONST (new_node) = COCopyConstant (AVIS_SSACONST (arg_node));
