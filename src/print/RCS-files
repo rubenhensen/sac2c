@@ -1,9 +1,5 @@
 Makefile
 convert.c
 convert.h
-map_cwrapper.c
-map_cwrapper.h
 print.c
 print.h
-print_interface.c
-print_interface.h

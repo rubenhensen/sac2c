@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.45  2000/07/05 11:41:16  nmw
+# moved cinterface files from print to c-interface
+#
 # Revision 2.44  2000/06/23 16:38:02  nmw
 # map_cwrapper.o inserted
 #
@@ -232,8 +235,8 @@ TREE= src/tree/traverse.o src/tree/tree.o src/tree/tree_basic.o src/tree/free.o 
       src/tree/scheduling.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
-PRINT= src/print/print.o src/print/convert.o src/print/print_interface.o \
-       src/print/map_cwrapper.o
+PRINT= src/print/print.o src/print/convert.o
+
 FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/cleanup_decls.o \
          src/flatten/fun2lac.o src/flatten/adjust_ids.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
@@ -282,9 +285,11 @@ COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/icm2c_wl.o src/compile/ReuseWithArrays.o \
           src/compile/PatchWith.o
 
+CINTERFACE= src/c-interface/map_cwrapper.o src/c-interface/print_interface.o
+
 OBJ=$(GLOBAL) $(TREE) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
     $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT) \
-    $(MULTITHREAD)
+    $(MULTITHREAD) $(CINTERFACE)
 
 
 #
@@ -336,6 +341,7 @@ dummy:
 	(cd src/heapmgr; $(MAKE_PROD) )
 	(cd src/runtime; $(MAKE_NORM) )
 	(cd src/tools; $(MAKE_PROD) )
+	(cd src/c-interface; $(MAKE_NORM) )
 #
 # $(MAKE_PROD) is used in the above lines by purpose in order to compile
 # the SAC runtime library, the privat heap manager, and the additional 
@@ -365,6 +371,7 @@ prod:
 	(cd src/heapmgr; $(MAKE_PROD) )
 	(cd src/runtime; $(MAKE_PROD) )
 	(cd src/tools; $(MAKE_PROD) )
+	(cd src/c-interface; $(MAKE_PROD) )
 
 sac2c: $(OBJ) $(LIB)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS)
@@ -395,6 +402,7 @@ deps:
 	(cd src/heapmgr; $(MAKE) deps)
 	(cd src/tools; $(MAKE) deps)
 	(cd src/runtime; $(MAKE) deps)
+	(cd src/c-interface; $(MAKE) deps)
 
 clean:
 	(cd lib/src; $(MAKE) clean)
@@ -416,6 +424,7 @@ clean:
 	(cd src/heapmgr; $(MAKE) clean)
 	(cd src/tools; $(MAKE) clean)
 	(cd src/runtime; $(MAKE) clean)
+	(cd src/c-interface; $(MAKE) clean)
 	$(RM) sac2c
 	$(RM) sac2c.efence
 	$(RM) -r .sb SunWS_cache

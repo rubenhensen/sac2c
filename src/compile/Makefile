@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.26  2000/07/05 11:42:09  nmw
+# moved cinterface files from print to c-interface
+#
 # Revision 2.25  2000/06/28 09:10:00  nmw
 # makedeps
 #
@@ -99,7 +102,8 @@ CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
 CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../tree -I../../inc -I../print -I../typecheck -I../refcount \
-     -I../optimize -I../psi-opt -I../scanparse -I../concurrent -I../flatten
+     -I../optimize -I../psi-opt -I../scanparse -I../concurrent -I../flatten \
+     -I../c-interface
 
 MACS=icm.data icm_comment.c icm_trace.c
 
@@ -290,7 +294,7 @@ precompile.o: /usr/include/sys/select.h /usr/include/sys/time.h
 precompile.o: /usr/include/sys/time.h ../tree/traverse.h ../print/convert.h
 precompile.o: ../tree/DataFlowMask.h ../typecheck/typecheck.h
 precompile.o: ../tree/scheduling.h ../flatten/adjust_ids.h precompile.h
-precompile.o: ../print/map_cwrapper.h
+precompile.o: ../c-interface/map_cwrapper.h
 wlpragma_funs.o: ../../inc/dbug.h /usr/include/stdio.h
 wlpragma_funs.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 wlpragma_funs.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
