@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.44  1995/01/25 16:01:45  sbs
+ * Revision 1.45  1995/02/02 14:57:46  hw
+ * chnaged N_prf node
+ *
+ * Revision 1.44  1995/01/25  16:01:45  sbs
  * Priority of cast changed to %right CAST
  *
  * Revision 1.43  1995/01/09  12:16:07  sbs
@@ -992,40 +995,69 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
                       mdb_nodetype[ $$->node[0]->nodetype], $$->node[0]));
          }
       | monop BRACKET_L expr BRACKET_R 
-         { $$=$1;          /* Monop-Knoten u"bernehmen */
-           $$->node[0]=$3;   /* Argument  */
-           $$->nnode=1;
-           DBUG_PRINT("GENTREE",
-                      ("%s (%s)" P_FORMAT ": %s " P_FORMAT "",
-                       mdb_nodetype[$$->nodetype], mdb_prf[$$->info.prf], $$,
-                       mdb_nodetype[ $$->node[0]->nodetype], $$->node[0] ));
+         { 
+            node *exprs;
+            exprs=MakeNode(N_exprs);
+            exprs->node[0]=$3;
+            exprs->nnode=1;
+                           
+            $$=$1;          /* Monop-Knoten u"bernehmen */
+            $$->node[0]=exprs;   /* Argument  */
+            $$->nnode=1;
+            DBUG_PRINT("GENTREE",
+                       ("%s (%s)" P_FORMAT ": %s " P_FORMAT "",
+                        mdb_nodetype[$$->nodetype], mdb_prf[$$->info.prf], $$,
+                        mdb_nodetype[ $$->node[0]->nodetype], $$->node[0] ));
          }
       | binop BRACKET_L expr COMMA expr  BRACKET_R 
-         { $$=$1;         /* Binop-Knoten u"berbnehmmen  */
-           $$->node[0]=$3;  /* 1. Argument  */
-           $$->node[1]=$5;  /* 2. Argument  */
-           $$->nnode=2;
+         { 
+            node *exprs1, *exprs2;
 
-           DBUG_PRINT("GENTREE",
-                      ("%s (%s)"P_FORMAT": %s " P_FORMAT ", %s " P_FORMAT,
-                       mdb_nodetype[$$->nodetype], mdb_prf[$$->info.prf], $$,
-                       mdb_nodetype[$$->node[0]->nodetype], $$->node[0], 
-                       mdb_nodetype[$$->node[1]->nodetype], $$->node[1] ));
+            exprs2=MakeNode(N_exprs);
+            exprs2->node[0]=$5;       /* 2. Argument  */
+            exprs2->nnode=1;
+            exprs1=MakeNode(N_exprs);
+            exprs1->node[0]=$3;       /* 1. Argument  */
+            exprs1->node[1]=exprs2;
+            exprs1->nnode=2;
+            
+            $$=$1;         /* Binop-Knoten u"berbnehmmen  */
+            $$->node[0]=exprs1;  
+            $$->nnode=1;
+            
+            DBUG_PRINT("GENTREE",
+                       ("%s (%s)"P_FORMAT": %s " P_FORMAT ", %s " P_FORMAT,
+                        mdb_nodetype[$$->nodetype], mdb_prf[$$->info.prf], $$,
+                        mdb_nodetype[$3->nodetype], $3, 
+                        mdb_nodetype[$5->nodetype], $5 ));
           }
       | triop BRACKET_L expr COMMA expr COMMA expr BRACKET_R 
-         { $$=$1;         /* Triop-Knoten u"berbnehmmen  */
-           $$->node[0]=$3;  /* 1. Argument  */
-           $$->node[1]=$5;  /* 2. Argument  */
-           $$->node[2]=$7;  /* 3. Argument  */
-           $$->nnode=3;
+         { 
+            node *exprs1, *exprs2, *exprs3;
+            
+            exprs3=MakeNode(N_exprs);
+            exprs3->node[0]=$7;            /* 3. Argument  */
+            exprs3->nnode=1;
+            exprs2=MakeNode(N_exprs);
+            exprs2->node[0]=$5;           /* 2. Argument  */
+            exprs2->node[1]=exprs1;
+            exprs2->nnode=2;
+            exprs1=MakeNode(N_exprs);
+            exprs1->node[0]=$3;           /* 1. Argument  */
+            exprs1->node[1]=exprs2;
+            exprs1->nnode=2;
+            
+            $$=$1;         /* Triop-Knoten u"berbnehmmen  */
+            $$->node[0]=exprs1;  
+            $$->nnode=1;
 
-           DBUG_PRINT("GENTREE",
+            DBUG_PRINT("GENTREE",
                       ("%s (%s)"P_FORMAT": %s"P_FORMAT", %s"P_FORMAT
                        ", %s"P_FORMAT,
                        mdb_nodetype[$$->nodetype], mdb_prf[$$->info.prf], $$,
-                       mdb_nodetype[$$->node[0]->nodetype], $$->node[0], 
-                       mdb_nodetype[$$->node[1]->nodetype], $$->node[1],
-                       mdb_nodetype[$$->node[2]->nodetype], $$->node[2] ));
+                       mdb_nodetype[$3->nodetype], $3, 
+                       mdb_nodetype[$5->nodetype], $5,
+                       mdb_nodetype[$7->nodetype], $7));
          }
       | expr PLUS expr 
         { $$=GenPrfNode(F_add,$1,$3);
@@ -1327,14 +1359,24 @@ int warn( char *warnname)
 
 node *GenPrfNode( prf prf, node *arg1, node *arg2)
 { 
-  node *tmp;
-
+  node *tmp, *exprs1, *exprs2;
+  
   DBUG_ENTER("GenPrfNode");
-  tmp=MakeNode(N_prf);
+
+  exprs2=MakeNode(N_exprs);
+  exprs2->node[0]=arg2;
+  exprs2->nnode=1;
+
+  exprs1=MakeNode(N_exprs);
+  exprs1->node[0]=arg1;
+  exprs1->node[1]=exprs2;
+  exprs1->nnode=2;
+
+  tmp=MakeNode(N_prf);  
   tmp->info.prf=prf;
-  tmp->node[0]=arg1;
-  tmp->node[1]=arg2;
-  tmp->nnode=2;
+  tmp->node[0]=exprs1;
+  
+  tmp->nnode=1;
   
   DBUG_PRINT("GENTREE",
              ("%s (%s) " P_FORMAT ": %s " P_FORMAT ", %s" P_FORMAT,
@@ -1472,7 +1514,7 @@ node *Append(node *target_node, node *append_node)
 
 /*
  *
- *  functionname  : MakeEmptyNode
+ *  functionname  : MakeEmptyBlock
  *  arguments     : ---
  *  description   : genarates an tree that describes an empty block
  *  global vars   : ---
