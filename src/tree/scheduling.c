@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2004/11/26 00:22:56  mwe
+ * SacDevCamp Dk: Compiles!
+ *
  * Revision 3.42  2004/11/24 22:52:53  ktr
  * dependency from precompile.h removed.
  *
@@ -218,6 +221,7 @@
 
 #include <string.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 #include "scheduling.h"
 
@@ -229,6 +233,7 @@
 #include "Error.h"
 #include "wl_bounds.h"
 #include "dbug.h"
+#include "precompile.h"
 
 /******************************************************************************
  *
@@ -369,7 +374,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
 
     DBUG_ENTER ("CheckSchedulingArgs");
 
-    arg_spec = StrTok (spec, ",");
+    arg_spec = ILIBstrTok (spec, ",");
 
     for (i = 0; i < sched->num_args; i++) {
         DBUG_ASSERT ((arg_spec != NULL), "Illegal scheduling specification");
@@ -402,7 +407,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
                                   i, sched->discipline));
                 }
                 sched->args[i].arg_type = AT_id;
-                sched->args[i].arg.id = StringCopy (ID_NAME (expr));
+                sched->args[i].arg.id = ILIBstringCopy (ID_NAME (expr));
                 break;
 
             case 'x':
@@ -413,7 +418,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
                     break;
                 case N_id:
                     sched->args[i].arg_type = AT_id;
-                    sched->args[i].arg.id = StringCopy (ID_NAME (expr));
+                    sched->args[i].arg.id = ILIBstringCopy (ID_NAME (expr));
                     break;
                 default:
                     ABORT (line, ("Argument %d of scheduling discipline '%s` must be"
@@ -436,7 +441,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
             DBUG_ASSERT ((arg_spec != NULL), "Illegal scheduling specification");
         }
 
-        arg_spec = StrTok (NULL, ",");
+        arg_spec = ILIBstrTok (NULL, ",");
         exprs = EXPRS_NEXT (exprs);
     }
 
@@ -468,14 +473,14 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
  ******************************************************************************/
 
 sched_t *
-SCHMakeScheduling (char *discipline, ...)
+SCHmakeScheduling (char *discipline, ...)
 {
     va_list args;
     char *arg_spec, *tmp_id;
     sched_t *sched;
     int i, disc_no, tmp_num;
 
-    DBUG_ENTER ("MakeScheduling");
+    DBUG_ENTER ("SCHmakeScheduling");
 
     va_start (args, discipline);
 
@@ -489,7 +494,7 @@ SCHMakeScheduling (char *discipline, ...)
     DBUG_ASSERT ((scheduler_table[disc_no].discipline[0] != '\0'),
                  "Infered scheduling discipline not implemented");
 
-    sched = (sched_t *)Malloc (sizeof (sched_t));
+    sched = (sched_t *)ILIBmalloc (sizeof (sched_t));
 
     sched->discipline = scheduler_table[disc_no].discipline;
     sched->class = scheduler_table[disc_no].class;
@@ -500,10 +505,10 @@ SCHMakeScheduling (char *discipline, ...)
     if (sched->num_args == 0) {
         sched->args = NULL;
     } else {
-        sched->args = (sched_arg_t *)Malloc (sched->num_args * sizeof (sched_arg_t));
+        sched->args = (sched_arg_t *)ILIBmalloc (sched->num_args * sizeof (sched_arg_t));
     }
 
-    arg_spec = StrTok (scheduler_table[disc_no].arg_spec, ",");
+    arg_spec = ILIBstrTok (scheduler_table[disc_no].arg_spec, ",");
 
     for (i = 0; i < sched->num_args; i++) {
         DBUG_ASSERT ((arg_spec != NULL), "Illegal scheduling specification");
@@ -547,7 +552,7 @@ SCHMakeScheduling (char *discipline, ...)
             DBUG_ASSERT ((arg_spec != NULL), "Illegal scheduling specification");
         }
 
-        arg_spec = StrTok (NULL, ",");
+        arg_spec = ILIBstrTok (NULL, ",");
     }
 
     va_end (args);
@@ -569,12 +574,12 @@ SCHMakeScheduling (char *discipline, ...)
  ******************************************************************************/
 
 sched_t *
-SCHMakeSchedulingByPragma (node *ap_node, int line)
+SCHmakeSchedulingByPragma (node *ap_node, int line)
 {
     sched_t *sched = NULL;
     int i = 0;
 
-    DBUG_ENTER ("MakeSchedulingByPragma");
+    DBUG_ENTER ("SCHmakeSchedulingByPragma");
 
     while ((scheduler_table[i].discipline[0] != '\0')
            && (0 != strcmp (scheduler_table[i].discipline, AP_NAME (ap_node)))) {
@@ -582,7 +587,7 @@ SCHMakeSchedulingByPragma (node *ap_node, int line)
     }
 
     if (scheduler_table[i].discipline[0] != '\0') {
-        sched = (sched_t *)Malloc (sizeof (sched_t));
+        sched = (sched_t *)ILIBmalloc (sizeof (sched_t));
         sched->discipline = scheduler_table[i].discipline;
         /*
          * Because sched is an object of an abstract data type, we may share it
@@ -593,7 +598,8 @@ SCHMakeSchedulingByPragma (node *ap_node, int line)
         if (sched->num_args == 0) {
             sched->args = NULL;
         } else {
-            sched->args = (sched_arg_t *)Malloc (sched->num_args * sizeof (sched_arg_t));
+            sched->args
+              = (sched_arg_t *)ILIBmalloc (sched->num_args * sizeof (sched_arg_t));
         }
         sched->line = line;
 
@@ -619,11 +625,11 @@ SCHMakeSchedulingByPragma (node *ap_node, int line)
  ******************************************************************************/
 
 sched_t *
-SCHRemoveScheduling (sched_t *sched)
+SCHremoveScheduling (sched_t *sched)
 {
     int i;
 
-    DBUG_ENTER ("SCHRemoveScheduling");
+    DBUG_ENTER ("SCHremoveScheduling");
 
     /*
      * The discipline string must not be freed since it is only a pointer
@@ -636,11 +642,11 @@ SCHRemoveScheduling (sched_t *sched)
             case AT_num_vec:
                 /* here is no break missing! */
             case AT_num_for_id_vec:
-                Free (sched->args[i].arg.num_vec);
+                ILIBfree (sched->args[i].arg.num_vec);
                 break;
 
             case AT_id_vec:
-                Free (sched->args[i].arg.id_vec);
+                ILIBfree (sched->args[i].arg.id_vec);
                 break;
 
             default:
@@ -648,10 +654,10 @@ SCHRemoveScheduling (sched_t *sched)
             }
         }
 
-        Free (sched->args);
+        ILIBfree (sched->args);
     }
 
-    sched = Free (sched);
+    sched = ILIBfree (sched);
 
     DBUG_RETURN (sched);
 }
@@ -668,14 +674,14 @@ SCHRemoveScheduling (sched_t *sched)
  ******************************************************************************/
 
 sched_t *
-SCHCopyScheduling (sched_t *sched)
+SCHcopyScheduling (sched_t *sched)
 {
     int i;
     sched_t *new_sched;
 
-    DBUG_ENTER ("SCHCopyScheduling");
+    DBUG_ENTER ("SCHcopyScheduling");
 
-    new_sched = (sched_t *)Malloc (sizeof (sched_t));
+    new_sched = (sched_t *)ILIBmalloc (sizeof (sched_t));
 
     new_sched->discipline = sched->discipline;
     /*
@@ -688,7 +694,8 @@ SCHCopyScheduling (sched_t *sched)
     new_sched->num_args = sched->num_args;
 
     if (sched->num_args > 0) {
-        new_sched->args = (sched_arg_t *)Malloc (sched->num_args * sizeof (sched_arg_t));
+        new_sched->args
+          = (sched_arg_t *)ILIBmalloc (sched->num_args * sizeof (sched_arg_t));
 
         for (i = 0; i < sched->num_args; i++) {
             new_sched->args[i].arg_type = sched->args[i].arg_type;
@@ -727,15 +734,15 @@ SCHCopyScheduling (sched_t *sched)
  ******************************************************************************/
 
 sched_t *
-SCHPrecompileScheduling (sched_t *sched)
+SCHprecompileScheduling (sched_t *sched)
 {
     int i;
 
-    DBUG_ENTER ("SCHPrecompileScheduling");
+    DBUG_ENTER ("SCHprecompileScheduling");
 
     for (i = 0; i < sched->num_args; i++) {
         if (sched->args[i].arg_type == AT_id) {
-            sched->args[i].arg.id = RenameLocalIdentifier (sched->args[i].arg.id);
+            sched->args[i].arg.id = PRECrenameLocalIdentifier (sched->args[i].arg.id);
         }
     }
 
@@ -755,19 +762,19 @@ SCHPrecompileScheduling (sched_t *sched)
  ******************************************************************************/
 
 sched_t *
-SCHMMVScheduling (sched_t *sched, LUT_t lut)
+SCHmarkmemvalScheduling (sched_t *sched, lut_t *lut)
 {
     int i;
     char *new_name;
 
-    DBUG_ENTER ("SCHMMVScheduling");
+    DBUG_ENTER ("SCHmarkmemvalsScheduling");
 
     for (i = 0; i < sched->num_args; i++) {
         if (sched->args[i].arg_type == AT_id) {
-            new_name = SearchInLUT_SS (lut, sched->args[i].arg.id);
+            new_name = LUTsearchInLutSs (lut, sched->args[i].arg.id);
             if (new_name != sched->args[i].arg.id) {
-                sched->args[i].arg.id = Free (sched->args[i].arg.id);
-                sched->args[i].arg.id = StringCopy (new_name);
+                sched->args[i].arg.id = ILIBfree (sched->args[i].arg.id);
+                sched->args[i].arg.id = ILIBstringCopy (new_name);
             }
         }
     }
@@ -786,7 +793,7 @@ SCHMMVScheduling (sched_t *sched, LUT_t lut)
  ******************************************************************************/
 
 void
-SCHPrintScheduling (FILE *outfile, sched_t *sched)
+SCHprintScheduling (FILE *outfile, sched_t *sched)
 {
     int i;
 
@@ -858,9 +865,9 @@ SCHPrintScheduling (FILE *outfile, sched_t *sched)
  ******************************************************************************/
 
 void
-SCHCheckSuitabilityConstSeg (sched_t *sched)
+SCHcheckSuitabilityConstSeg (sched_t *sched)
 {
-    DBUG_ENTER ("SCHCheckSuitabilityConstSeg");
+    DBUG_ENTER ("SCHcheckSuitabilityConstSeg");
 
     if ((sched->class != SC_const_seg) && (sched->class != SC_var_seg)) {
         ERROR (sched->line, ("Scheduling discipline '%s` is not suitable for "
@@ -872,9 +879,9 @@ SCHCheckSuitabilityConstSeg (sched_t *sched)
 }
 
 void
-SCHCheckSuitabilityVarSeg (sched_t *sched)
+SCHcheckSuitabilityVarSeg (sched_t *sched)
 {
-    DBUG_ENTER ("SCHCheckSuitabilityVarSeg");
+    DBUG_ENTER ("SCHcheckSuitabilityVarSeg");
 
     if (sched->class != SC_var_seg) {
         ERROR (sched->line, ("Scheduling discipline '%s` is not suitable for "
@@ -886,9 +893,9 @@ SCHCheckSuitabilityVarSeg (sched_t *sched)
 }
 
 void
-SCHCheckSuitabilityWithloop (sched_t *sched)
+SCHcheckSuitabilityWithloop (sched_t *sched)
 {
-    DBUG_ENTER ("SCHCheckSuitabilityWithloop");
+    DBUG_ENTER ("SCHcheckSuitabilityWithloop");
 
     if (sched->class != SC_withloop) {
         ERROR (sched->line, ("Scheduling discipline '%s` is not suitable for "
@@ -912,12 +919,12 @@ SCHCheckSuitabilityWithloop (sched_t *sched)
  ******************************************************************************/
 
 bool
-SCHAdjustmentRequired (int dim, node *wlseg)
+SCHadjustmentRequired (int dim, node *wlseg)
 {
     int i = 0;
     bool adjust;
 
-    DBUG_ENTER ("SCHAdjustmentRequired");
+    DBUG_ENTER ("SCHadjustmentRequired");
 
     while (0
            != strcmp (((sched_t *)WLSEGX_SCHEDULING (wlseg))->discipline,
@@ -927,7 +934,7 @@ SCHAdjustmentRequired (int dim, node *wlseg)
 
     adjust
       = ((dim <= scheduler_table[i].max_sched_dim)
-         && ((NODE_TYPE (wlseg) == N_WLsegVar)
+         && ((NODE_TYPE (wlseg) == N_wlsegvar)
              || (((!scheduler_table[i].adjust_flag) || (WLSEG_HOMSV (wlseg)[dim] == 0))
                  && (WLSEG_SV (wlseg)[dim] > 1))));
 
@@ -961,15 +968,15 @@ CompileSchedulingArgs (int seg_id, sched_t *sched, node *args)
         for (i = 0; i < sched->num_args; i++) {
             switch (sched->args[i].arg_type) {
             case AT_num:
-                new_arg = MakeNum (sched->args[i].arg.num);
+                new_arg = TBmakeNum (sched->args[i].arg.num);
                 break;
 
             case AT_id:
-                new_arg = MakeId (StringCopy (sched->args[i].arg.id), NULL, ST_regular);
+                new_arg = TCmakeIdCopyString (sched->args[i].arg.id);
                 break;
 
             case AT_num_for_id:
-                new_arg = MakeId (itoa (sched->args[i].arg.num), NULL, ST_regular);
+                new_arg = TCmakeIdCopyString (ILIBitoa (sched->args[i].arg.num));
                 break;
 
             default:
@@ -978,11 +985,11 @@ CompileSchedulingArgs (int seg_id, sched_t *sched, node *args)
                                 " implemented");
             }
 
-            args = MakeExprs (new_arg, args);
+            args = TBmakeExprs (new_arg, args);
         }
     }
 
-    args = MakeExprs (MakeNum (seg_id), args);
+    args = TBmakeExprs (TBmakeNum (seg_id), args);
 
     DBUG_RETURN (args);
 }
@@ -1002,42 +1009,44 @@ CompileSchedulingArgs (int seg_id, sched_t *sched, node *args)
  ******************************************************************************/
 
 static node *
-CompileConstSegSchedulingArgs (ids *wl_ids, node *wlseg, sched_t *sched)
+CompileConstSegSchedulingArgs (node *wl_ids, node *wlseg, sched_t *sched)
 {
     node *index, *args;
     int d;
 
     DBUG_ENTER ("CompileConstSegSchedulingArgs");
 
-    DBUG_ASSERT ((NODE_TYPE (wlseg) == N_WLseg), "no constant segment found!");
+    DBUG_ASSERT ((NODE_TYPE (wlseg) == N_wlseg), "no constant segment found!");
 
     args = NULL;
 
     if (sched != NULL) {
         for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
-            if (SCHAdjustmentRequired (d, wlseg)) {
-                args = MakeExprs (MakeNum (1), args);
+            if (SCHadjustmentRequired (d, wlseg)) {
+                args = TBmakeExprs (TBmakeNum (1), args);
             } else {
-                args = MakeExprs (MakeNum (WLSEG_SV (wlseg)[d]), args);
+                args = TBmakeExprs (TBmakeNum (WLSEG_SV (wlseg)[d]), args);
             }
         }
     }
 
     for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
-        index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
-                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_ids);
+        index
+          = WLBnodeOrIntMakeIndex (NODE_TYPE (wlseg),
+                                   WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal supremum found!");
-        args = MakeExprs (index, args);
+        args = TBmakeExprs (index, args);
     }
 
     for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
-        index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
-                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_ids);
+        index
+          = WLBnodeOrIntMakeIndex (NODE_TYPE (wlseg),
+                                   WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal infimum found!");
-        args = MakeExprs (index, args);
+        args = TBmakeExprs (index, args);
     }
 
-    args = MakeExprs (MakeNum (WLSEG_DIMS (wlseg)), args);
+    args = TBmakeExprs (TBmakeNum (WLSEG_DIMS (wlseg)), args);
 
     DBUG_RETURN (args);
 }
@@ -1056,38 +1065,40 @@ CompileConstSegSchedulingArgs (ids *wl_ids, node *wlseg, sched_t *sched)
  ******************************************************************************/
 
 static node *
-CompileVarSegSchedulingArgs (ids *wl_ids, node *wlseg, sched_t *sched)
+CompileVarSegSchedulingArgs (node *wl_ids, node *wlseg, sched_t *sched)
 {
     node *index, *args;
     int d;
 
     DBUG_ENTER ("CompileVarSegSchedulingArgs");
 
-    DBUG_ASSERT ((NODE_TYPE (wlseg) == N_WLsegVar), "no var. segment found!");
+    DBUG_ASSERT ((NODE_TYPE (wlseg) == N_wlsegvar), "no var. segment found!");
 
     args = NULL;
 
     if (sched != NULL) {
         for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
-            args = MakeExprs (MakeNum (1), args);
+            args = TBmakeExprs (TBmakeNum (1), args);
         }
     }
 
     for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
-        index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
-                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_ids);
+        index
+          = WLBnodeOrIntMakeIndex (NODE_TYPE (wlseg),
+                                   WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal supremum found!");
-        args = MakeExprs (index, args);
+        args = TBmakeExprs (index, args);
     }
 
     for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
-        index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
-                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_ids);
+        index
+          = WLBnodeOrIntMakeIndex (NODE_TYPE (wlseg),
+                                   WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal infimum found!");
-        args = MakeExprs (index, args);
+        args = TBmakeExprs (index, args);
     }
 
-    args = MakeExprs (MakeNum (WLSEGVAR_DIMS (wlseg)), args);
+    args = TBmakeExprs (TBmakeNum (WLSEGVAR_DIMS (wlseg)), args);
 
     DBUG_RETURN (args);
 }
@@ -1108,7 +1119,7 @@ CompileVarSegSchedulingArgs (ids *wl_ids, node *wlseg, sched_t *sched)
  ******************************************************************************/
 
 static node *
-CompileScheduling (int seg_id, ids *wl_ids, sched_t *sched, node *arg_node, char *suffix)
+CompileScheduling (int seg_id, node *wl_ids, sched_t *sched, node *arg_node, char *suffix)
 {
     node *icm, *general_args;
     char *name;
@@ -1116,20 +1127,20 @@ CompileScheduling (int seg_id, ids *wl_ids, sched_t *sched, node *arg_node, char
     DBUG_ENTER ("CompileScheduling");
 
     if (sched != NULL) {
-        name = (char *)Malloc (sizeof (char)
-                               * (strlen (sched->discipline) + strlen (suffix) + 15));
+        name = (char *)ILIBmalloc (sizeof (char)
+                                   * (strlen (sched->discipline) + strlen (suffix) + 15));
         sprintf (name, "MT_SCHEDULER_%s_%s", sched->discipline, suffix);
     } else {
-        name = (char *)Malloc (sizeof (char) * (strlen (suffix) + 15));
+        name = (char *)ILIBmalloc (sizeof (char) * (strlen (suffix) + 15));
         sprintf (name, "MT_SCHEDULER_%s", suffix);
     }
 
     switch (NODE_TYPE (arg_node)) {
-    case N_WLseg:
+    case N_wlseg:
         general_args = CompileConstSegSchedulingArgs (wl_ids, arg_node, sched);
         break;
 
-    case N_WLsegVar:
+    case N_wlsegvar:
         general_args = CompileVarSegSchedulingArgs (wl_ids, arg_node, sched);
         break;
 
@@ -1138,7 +1149,7 @@ CompileScheduling (int seg_id, ids *wl_ids, sched_t *sched, node *arg_node, char
         DBUG_ASSERT ((0), "wrong node type found");
     }
 
-    icm = MakeIcm (name, CompileSchedulingArgs (seg_id, sched, general_args));
+    icm = TBmakeIcm (name, CompileSchedulingArgs (seg_id, sched, general_args));
 
     DBUG_RETURN (icm);
 }
@@ -1170,11 +1181,11 @@ CompileScheduling (int seg_id, ids *wl_ids, sched_t *sched, node *arg_node, char
  ******************************************************************************/
 
 node *
-SCHCompileSchedulingBegin (int seg_id, ids *wl_ids, sched_t *sched, node *arg_node)
+SCHcompileSchedulingBegin (int seg_id, node *wl_ids, sched_t *sched, node *arg_node)
 {
     node *ret_node;
 
-    DBUG_ENTER ("SCHCompileSchedulingBegin");
+    DBUG_ENTER ("SCHcompileSchedulingBegin");
 
     ret_node = CompileScheduling (seg_id, wl_ids, sched, arg_node, "BEGIN");
 
@@ -1182,11 +1193,11 @@ SCHCompileSchedulingBegin (int seg_id, ids *wl_ids, sched_t *sched, node *arg_no
 }
 
 node *
-SCHCompileSchedulingEnd (int seg_id, ids *wl_ids, sched_t *sched, node *arg_node)
+SCHcompileSchedulingEnd (int seg_id, node *wl_ids, sched_t *sched, node *arg_node)
 {
     node *ret_node;
 
-    DBUG_ENTER ("SCHCompileSchedulingEnd");
+    DBUG_ENTER ("SCHcompileSchedulingEnd");
 
     ret_node = CompileScheduling (seg_id, wl_ids, sched, arg_node, "END");
 
@@ -1194,11 +1205,11 @@ SCHCompileSchedulingEnd (int seg_id, ids *wl_ids, sched_t *sched, node *arg_node
 }
 
 node *
-SCHCompileSchedulingInit (int seg_id, ids *wl_ids, sched_t *sched, node *arg_node)
+SCHcompileSchedulingInit (int seg_id, node *wl_ids, sched_t *sched, node *arg_node)
 {
     node *ret_node;
 
-    DBUG_ENTER ("SCHCompileSchedulingInit");
+    DBUG_ENTER ("SCHcompileSchedulingInit");
 
     ret_node = CompileScheduling (seg_id, wl_ids, sched, arg_node, "INIT");
 
@@ -1219,13 +1230,13 @@ SCHCompileSchedulingInit (int seg_id, ids *wl_ids, sched_t *sched, node *arg_nod
  *
  ******************************************************************************/
 
-typedef struct TASKSEL_T {
+struct TASKSEL_T {
     char *discipline;
     int line;
     int num_args;
     int *arg;
     int dims;
-} tasksel_t;
+};
 
 /******************************************************************************
  *
@@ -1312,12 +1323,12 @@ CheckTaskselArgs (tasksel_t *tasksel, node *exprs, int line)
  ******************************************************************************/
 
 tasksel_t *
-SCHMakeTaskselByPragma (node *ap_node, int line)
+SCHmakeTaskselByPragma (node *ap_node, int line)
 {
     tasksel_t *tasksel = NULL;
     int i = 0;
 
-    DBUG_ENTER ("MakeTaskselByPragma");
+    DBUG_ENTER ("SCHmakeTaskselByPragma");
 
     while ((taskselector_table[i].discipline[0] != '\0')
            && (0 != strcmp (taskselector_table[i].discipline, AP_NAME (ap_node)))) {
@@ -1325,7 +1336,7 @@ SCHMakeTaskselByPragma (node *ap_node, int line)
     }
 
     if (taskselector_table[i].discipline[0] != '\0') {
-        tasksel = (tasksel_t *)Malloc (sizeof (tasksel_t));
+        tasksel = (tasksel_t *)ILIBmalloc (sizeof (tasksel_t));
         tasksel->discipline = taskselector_table[i].discipline;
 
         tasksel->num_args = taskselector_table[i].num_args;
@@ -1333,7 +1344,7 @@ SCHMakeTaskselByPragma (node *ap_node, int line)
         if (tasksel->num_args == 0) {
             tasksel->arg = NULL;
         } else {
-            tasksel->arg = (int *)Malloc (tasksel->num_args * sizeof (int));
+            tasksel->arg = (int *)ILIBmalloc (tasksel->num_args * sizeof (int));
         }
         tasksel->line = line;
 
@@ -1358,19 +1369,19 @@ SCHMakeTaskselByPragma (node *ap_node, int line)
  ******************************************************************************/
 
 tasksel_t *
-SCHRemoveTasksel (tasksel_t *tasksel)
+SCHremoveTasksel (tasksel_t *tasksel)
 {
-    DBUG_ENTER ("SCHRemoveTasksel");
+    DBUG_ENTER ("SCHremoveTasksel");
 
     /*
      * The discipline string must not be freed since it is only a pointer
      * to the respective entry of the taskselector table.
      */
     if (tasksel->num_args > 0) {
-        Free (tasksel->arg);
+        ILIBfree (tasksel->arg);
     }
 
-    tasksel = Free (tasksel);
+    tasksel = ILIBfree (tasksel);
 
     DBUG_RETURN (tasksel);
 }
@@ -1387,14 +1398,14 @@ SCHRemoveTasksel (tasksel_t *tasksel)
  ******************************************************************************/
 
 tasksel_t *
-SCHCopyTasksel (tasksel_t *tasksel)
+SCHcopyTasksel (tasksel_t *tasksel)
 {
     int i;
     tasksel_t *new_tasksel;
 
-    DBUG_ENTER ("SCHCopyTasksel");
+    DBUG_ENTER ("SCHcopyTasksel");
 
-    new_tasksel = (tasksel_t *)Malloc (sizeof (tasksel_t));
+    new_tasksel = (tasksel_t *)ILIBmalloc (sizeof (tasksel_t));
 
     new_tasksel->discipline = tasksel->discipline;
     /*
@@ -1407,7 +1418,7 @@ SCHCopyTasksel (tasksel_t *tasksel)
     new_tasksel->dims = tasksel->dims;
 
     if (tasksel->num_args > 0) {
-        new_tasksel->arg = (int *)Malloc (tasksel->num_args * sizeof (int));
+        new_tasksel->arg = (int *)ILIBmalloc (tasksel->num_args * sizeof (int));
 
         for (i = 0; i < tasksel->num_args; i++) {
             new_tasksel->arg[i] = tasksel->arg[i];
@@ -1422,7 +1433,7 @@ SCHCopyTasksel (tasksel_t *tasksel)
 /******************************************************************************
  *
  * function:
- *   tasksel_t *SCHPrecompileTasksel( tasksel_t *tasksel)
+ *   tasksel_t *SCHprecompileTasksel( tasksel_t *tasksel)
  *
  * description:
  *
@@ -1430,9 +1441,9 @@ SCHCopyTasksel (tasksel_t *tasksel)
  ******************************************************************************/
 
 tasksel_t *
-SCHPrecompileTasksel (tasksel_t *tasksel)
+SCHprecompileTasksel (tasksel_t *tasksel)
 {
-    DBUG_ENTER ("SCHPrecompileTasksel");
+    DBUG_ENTER ("SCHprecompileTasksel");
 
     DBUG_RETURN (tasksel);
 }
@@ -1448,9 +1459,9 @@ SCHPrecompileTasksel (tasksel_t *tasksel)
  ******************************************************************************/
 
 tasksel_t *
-SCHMMVTasksel (tasksel_t *tasksel, LUT_t lut)
+SCHmarkmemvalTasksel (tasksel_t *tasksel, lut_t *lut)
 {
-    DBUG_ENTER ("SCHMMVTasksel");
+    DBUG_ENTER ("SCHmarkmemvalTasksel");
 
     DBUG_RETURN (tasksel);
 }
@@ -1466,11 +1477,11 @@ SCHMMVTasksel (tasksel_t *tasksel, LUT_t lut)
  ******************************************************************************/
 
 void
-SCHPrintTasksel (FILE *outfile, tasksel_t *tasksel)
+SCHprintTasksel (FILE *outfile, tasksel_t *tasksel)
 {
     int i;
 
-    DBUG_ENTER ("SCHPrintTasksel");
+    DBUG_ENTER ("SCHprintTasksel");
 
     if (outfile == NULL) {
         /*
@@ -1525,27 +1536,26 @@ CompileSchedulingWithTaskselArgs (int seg_id, sched_t *sched, tasksel_t *tasksel
 
         if (tasksel != NULL) {
             for (i = tasksel->dims; i < tasksel->num_args; i++) {
-                args = MakeExprs (MakeNum (tasksel->arg[i]), args);
+                args = TBmakeExprs (TBmakeNum (tasksel->arg[i]), args);
             }
 
-            args = MakeExprs (MakeNum (tasksel->num_args - tasksel->dims), args);
-            args = MakeExprs (MakeNum (tasksel->dims), args);
-            args = MakeExprs (MakeId (StringCopy (tasksel->discipline), NULL, ST_regular),
-                              args);
+            args = TBmakeExprs (TBmakeNum (tasksel->num_args - tasksel->dims), args);
+            args = TBmakeExprs (TBmakeNum (tasksel->dims), args);
+            args = TBmakeExprs (TCmakeIdCopyString (tasksel->discipline), args);
         }
 
         for (i = 0; i < sched->num_args; i++) {
             switch (sched->args[i].arg_type) {
             case AT_num:
-                new_arg = MakeNum (sched->args[i].arg.num);
+                new_arg = TBmakeNum (sched->args[i].arg.num);
                 break;
 
             case AT_id:
-                new_arg = MakeId (StringCopy (sched->args[i].arg.id), NULL, ST_regular);
+                new_arg = TCmakeIdCopyString (sched->args[i].arg.id);
                 break;
 
             case AT_num_for_id:
-                new_arg = MakeId (itoa (sched->args[i].arg.num), NULL, ST_regular);
+                new_arg = TCmakeIdCopyString (ILIBitoa (sched->args[i].arg.num));
                 break;
 
             default:
@@ -1554,11 +1564,11 @@ CompileSchedulingWithTaskselArgs (int seg_id, sched_t *sched, tasksel_t *tasksel
                                 " implemented");
             }
 
-            args = MakeExprs (new_arg, args);
+            args = TBmakeExprs (new_arg, args);
         }
     }
 
-    args = MakeExprs (MakeNum (seg_id), args);
+    args = TBmakeExprs (TBmakeNum (seg_id), args);
 
     DBUG_RETURN (args);
 }
@@ -1579,7 +1589,7 @@ CompileSchedulingWithTaskselArgs (int seg_id, sched_t *sched, tasksel_t *tasksel
  ******************************************************************************/
 
 static node *
-CompileConstSegSchedulingWithTaskselArgs (ids *wl_ids, node *wlseg, sched_t *sched,
+CompileConstSegSchedulingWithTaskselArgs (node *wl_ids, node *wlseg, sched_t *sched,
                                           tasksel_t *tasksel)
 {
     node *index, *args;
@@ -1588,7 +1598,7 @@ CompileConstSegSchedulingWithTaskselArgs (ids *wl_ids, node *wlseg, sched_t *sch
 
     DBUG_ENTER ("CompileConstSegSchedulingWithTaskselArgs");
 
-    DBUG_ASSERT ((NODE_TYPE (wlseg) == N_WLseg), "no constant segment found!");
+    DBUG_ASSERT ((NODE_TYPE (wlseg) == N_wlseg), "no constant segment found!");
 
     args = NULL;
 
@@ -1606,38 +1616,40 @@ CompileConstSegSchedulingWithTaskselArgs (ids *wl_ids, node *wlseg, sched_t *sch
                     if (pos > 0) {
                         pos--;
                     }
-                    args = MakeExprs (MakeNum (1), args);
+                    args = TBmakeExprs (TBmakeNum (1), args);
                 } else {
-                    args = MakeExprs (MakeNum (0), args);
+                    args = TBmakeExprs (TBmakeNum (0), args);
                 }
             }
         }
 
         for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
-            if (SCHAdjustmentRequired (d, wlseg)) {
-                args = MakeExprs (MakeNum (1), args);
+            if (SCHadjustmentRequired (d, wlseg)) {
+                args = TBmakeExprs (TBmakeNum (1), args);
             } else {
-                args = MakeExprs (MakeNum (WLSEG_SV (wlseg)[d]), args);
+                args = TBmakeExprs (TBmakeNum (WLSEG_SV (wlseg)[d]), args);
             }
         }
     }
 
     for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
-        index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
-                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_ids);
+        index
+          = WLBnodeOrIntMakeIndex (NODE_TYPE (wlseg),
+                                   WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal supremum found!");
-        args = MakeExprs (index, args);
+        args = TBmakeExprs (index, args);
     }
 
     for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
-        index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
-                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_ids);
+        index
+          = WLBnodeOrIntMakeIndex (NODE_TYPE (wlseg),
+                                   WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_ids);
 
         DBUG_ASSERT ((index != NULL), "illegal infimum found!");
-        args = MakeExprs (index, args);
+        args = TBmakeExprs (index, args);
     }
 
-    args = MakeExprs (MakeNum (WLSEG_DIMS (wlseg)), args);
+    args = TBmakeExprs (TBmakeNum (WLSEG_DIMS (wlseg)), args);
 
     DBUG_RETURN (args);
 }
@@ -1657,7 +1669,7 @@ CompileConstSegSchedulingWithTaskselArgs (ids *wl_ids, node *wlseg, sched_t *sch
  ******************************************************************************/
 
 static node *
-CompileVarSegSchedulingWithTaskselArgs (ids *wl_ids, node *wlseg, sched_t *sched,
+CompileVarSegSchedulingWithTaskselArgs (node *wl_ids, node *wlseg, sched_t *sched,
                                         tasksel_t *tasksel)
 {
     node *index, *args;
@@ -1666,7 +1678,7 @@ CompileVarSegSchedulingWithTaskselArgs (ids *wl_ids, node *wlseg, sched_t *sched
 
     DBUG_ENTER ("CompileVarSegSchedulingWithTaskselArgs");
 
-    DBUG_ASSERT ((NODE_TYPE (wlseg) == N_WLsegVar), "no var. segment found!");
+    DBUG_ASSERT ((NODE_TYPE (wlseg) == N_wlsegvar), "no var. segment found!");
 
     args = NULL;
 
@@ -1684,33 +1696,35 @@ CompileVarSegSchedulingWithTaskselArgs (ids *wl_ids, node *wlseg, sched_t *sched
                     if (pos > 0) {
                         pos--;
                     }
-                    args = MakeExprs (MakeNum (1), args);
+                    args = TBmakeExprs (TBmakeNum (1), args);
                 } else {
-                    args = MakeExprs (MakeNum (0), args);
+                    args = TBmakeExprs (TBmakeNum (0), args);
                 }
             }
         }
 
         for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
-            args = MakeExprs (MakeNum (1), args);
+            args = TBmakeExprs (TBmakeNum (1), args);
         }
     }
 
     for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
-        index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
-                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_ids);
+        index
+          = WLBnodeOrIntMakeIndex (NODE_TYPE (wlseg),
+                                   WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal supremum found!");
-        args = MakeExprs (index, args);
+        args = TBmakeExprs (index, args);
     }
 
     for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
-        index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
-                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_ids);
+        index
+          = WLBnodeOrIntMakeIndex (NODE_TYPE (wlseg),
+                                   WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_ids);
         DBUG_ASSERT ((index != NULL), "illegal infimum found!");
-        args = MakeExprs (index, args);
+        args = TBmakeExprs (index, args);
     }
 
-    args = MakeExprs (MakeNum (WLSEGVAR_DIMS (wlseg)), args);
+    args = TBmakeExprs (TBmakeNum (WLSEGVAR_DIMS (wlseg)), args);
 
     DBUG_RETURN (args);
 }
@@ -1732,8 +1746,8 @@ CompileVarSegSchedulingWithTaskselArgs (ids *wl_ids, node *wlseg, sched_t *sched
  ******************************************************************************/
 
 static node *
-CompileSchedulingWithTasksel (int seg_id, ids *wl_ids, sched_t *sched, tasksel_t *tasksel,
-                              node *arg_node, char *suffix)
+CompileSchedulingWithTasksel (int seg_id, node *wl_ids, sched_t *sched,
+                              tasksel_t *tasksel, node *arg_node, char *suffix)
 {
     node *icm, *general_args;
     char *name;
@@ -1741,21 +1755,21 @@ CompileSchedulingWithTasksel (int seg_id, ids *wl_ids, sched_t *sched, tasksel_t
     DBUG_ENTER ("CompileSchedulingWithTasksel");
 
     if (sched != NULL) {
-        name = (char *)Malloc (sizeof (char)
-                               * (strlen (sched->discipline) + strlen (suffix) + 15));
+        name = (char *)ILIBmalloc (sizeof (char)
+                                   * (strlen (sched->discipline) + strlen (suffix) + 15));
         sprintf (name, "MT_SCHEDULER_%s_%s", sched->discipline, suffix);
     } else {
-        name = (char *)Malloc (sizeof (char) * (strlen (suffix) + 15));
+        name = (char *)ILIBmalloc (sizeof (char) * (strlen (suffix) + 15));
         sprintf (name, "MT_SCHEDULER_%s", suffix);
     }
 
     switch (NODE_TYPE (arg_node)) {
-    case N_WLseg:
+    case N_wlseg:
         general_args
           = CompileConstSegSchedulingWithTaskselArgs (wl_ids, arg_node, sched, tasksel);
         break;
 
-    case N_WLsegVar:
+    case N_wlsegvar:
         general_args
           = CompileVarSegSchedulingWithTaskselArgs (wl_ids, arg_node, sched, tasksel);
         break;
@@ -1765,8 +1779,8 @@ CompileSchedulingWithTasksel (int seg_id, ids *wl_ids, sched_t *sched, tasksel_t
         DBUG_ASSERT ((0), "wrong node type found");
     }
 
-    icm = MakeIcm (name, CompileSchedulingWithTaskselArgs (seg_id, sched, tasksel,
-                                                           general_args));
+    icm = TBmakeIcm (name, CompileSchedulingWithTaskselArgs (seg_id, sched, tasksel,
+                                                             general_args));
 
     DBUG_RETURN (icm);
 }
@@ -1802,12 +1816,12 @@ CompileSchedulingWithTasksel (int seg_id, ids *wl_ids, sched_t *sched, tasksel_t
  ******************************************************************************/
 
 node *
-SCHCompileSchedulingWithTaskselBegin (int seg_id, ids *wl_ids, sched_t *sched,
+SCHcompileSchedulingWithTaskselBegin (int seg_id, node *wl_ids, sched_t *sched,
                                       tasksel_t *tasksel, node *arg_node)
 {
     node *ret_node;
 
-    DBUG_ENTER ("SCHCompileSchedulingWithTaskselBegin");
+    DBUG_ENTER ("SCHcompileSchedulingWithTaskselBegin");
 
     ret_node
       = CompileSchedulingWithTasksel (seg_id, wl_ids, sched, tasksel, arg_node, "BEGIN");
@@ -1816,12 +1830,12 @@ SCHCompileSchedulingWithTaskselBegin (int seg_id, ids *wl_ids, sched_t *sched,
 }
 
 node *
-SCHCompileSchedulingWithTaskselEnd (int seg_id, ids *wl_ids, sched_t *sched,
+SCHcompileSchedulingWithTaskselEnd (int seg_id, node *wl_ids, sched_t *sched,
                                     tasksel_t *tasksel, node *arg_node)
 {
     node *ret_node;
 
-    DBUG_ENTER ("SCHCompileSchedulingWithTaskselEnd");
+    DBUG_ENTER ("SCHcompileSchedulingWithTaskselEnd");
 
     ret_node
       = CompileSchedulingWithTasksel (seg_id, wl_ids, sched, tasksel, arg_node, "END");
@@ -1830,12 +1844,12 @@ SCHCompileSchedulingWithTaskselEnd (int seg_id, ids *wl_ids, sched_t *sched,
 }
 
 node *
-SCHCompileSchedulingWithTaskselInit (int seg_id, ids *wl_ids, sched_t *sched,
+SCHcompileSchedulingWithTaskselInit (int seg_id, node *wl_ids, sched_t *sched,
                                      tasksel_t *tasksel, node *arg_node)
 {
     node *ret_node;
 
-    DBUG_ENTER ("SCHCompileSchedulingWithTaskselInit");
+    DBUG_ENTER ("SCHcompileSchedulingWithTaskselInit");
 
     ret_node
       = CompileSchedulingWithTasksel (seg_id, wl_ids, sched, tasksel, arg_node, "INIT");
