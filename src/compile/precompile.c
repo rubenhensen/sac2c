@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.13  2000/05/29 14:32:13  dkr
+ * precompile() renamed into Precompile()
+ * precompile now performs *two* tree traversals
+ *
  * Revision 2.12  2000/05/29 11:56:00  dkr
  * fixed a bug in PREClet:
  * AdjustFoldFundef() is called now *before* the traversal of the
@@ -76,6 +80,109 @@
 #include "precompile.h"
 
 #include <string.h>
+
+/*
+ *
+ * FIRST TRAVERSAL
+ *
+ */
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AdjustFoldFundef( node *fundef,
+ *                           ids *acc, node *cexpr)
+ *
+ * description:
+ *   Returns the given fold-fun definition 'fundef' with adjusted var-names.
+ *
+ * parameters:
+ *   'acc' is the accumulator variable.
+ *   'cexpr' is the expression in the operation part.
+ *
+ ******************************************************************************/
+
+node *
+AdjustFoldFundef (node *fundef, ids *acc, node *cexpr)
+{
+    node *accvar, *funap, *fold_let;
+
+    DBUG_ENTER ("AdjustFoldFundef");
+
+    DBUG_ASSERT ((fundef != NULL), "fundef is NULL!");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "no fundef found!");
+
+    /*
+     * first, we create a let-expression of the form
+     *    <acc> = <funname>( <acc>, <cexpr>);
+     */
+
+    accvar = MakeId (StringCopy (IDS_NAME (acc)), StringCopy (IDS_MOD (acc)), ST_regular);
+    ID_VARDEC (accvar) = IDS_VARDEC (acc);
+    DBUG_ASSERT ((ID_VARDEC (accvar) != NULL), "vardec is missing");
+
+    funap = MakeAp (StringCopy (FUNDEF_NAME (fundef)), StringCopy (FUNDEF_MOD (fundef)),
+                    MakeExprs (accvar, MakeExprs (DupTree (cexpr, NULL), NULL)));
+    AP_FUNDEF (funap) = fundef;
+
+    fold_let = MakeLet (funap, DupOneIds (acc, NULL));
+
+    /*
+     * then we use this dummy let-expression to adjust the fundef
+     */
+    fundef = AdjustIdentifiers (fundef, fold_let);
+
+    /*
+     * let-expression is useless now
+     */
+    fold_let = FreeTree (fold_let);
+
+    DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PREC1let( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   removes all artificial identifiers on the left hand side of a let.
+ *
+ ******************************************************************************/
+
+node *
+PREC1let (node *arg_node, node *arg_info)
+{
+    node *wl_node;
+    ids *wl_ids;
+
+    DBUG_ENTER ("PREC1let");
+
+    /*
+     * Adjust definition of the pseudo fold-fun.
+     *
+     * Note: It is sufficient to take the CEXPR of the first code-node, because
+     *       in a fold with-loop all CEXPR-ids have the same name!
+     */
+    wl_ids = LET_IDS (arg_node);
+    wl_node = LET_EXPR (arg_node);
+    if ((NODE_TYPE (wl_node) == N_Nwith2)
+        && ((NWITH2_TYPE (wl_node) == WO_foldfun)
+            || (NWITH2_TYPE (wl_node) == WO_foldprf))) {
+        NWITH2_FUNDEF (wl_node) = AdjustFoldFundef (NWITH2_FUNDEF (wl_node), wl_ids,
+                                                    NCODE_CEXPR (NWITH2_CODE (wl_node)));
+    }
+
+    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ * SECOND TRAVERSAL
+ *
+ */
 
 #ifdef TAGGED_ARRAYS
 
@@ -240,7 +347,7 @@ RenameId (node *idnode)
     DBUG_ENTER ("RenameId");
 
     DBUG_ASSERT ((NODE_TYPE (idnode) == N_id), "Wrong argument to function RenameId()");
-    DBUG_PRINT ("PRECjhs", ("id-name == %s", ID_NAME (idnode)));
+    DBUG_PRINT ("PREC", ("id-name == %s", ID_NAME (idnode)));
     DBUG_ASSERT ((ID_VARDEC (idnode) != NULL), "Vardec not found in function RenameId()");
 
     if (NODE_TYPE (ID_VARDEC (idnode)) == N_objdef) {
@@ -315,22 +422,19 @@ PrecompileIds (ids *id)
     DBUG_RETURN (id);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : RenameTypes
- *  arguments     : 1) types structure
- *  description   : renames the given type if it is a user-defined
- *                  SAC-type.
- *                  Chains of types structures are considered.
- *  global vars   :
- *  internal funs : ---
- *  external funs : Malloc, sprintf, strlen
- *  macros        : TREE, DBUG, FREE
+ * Function:
+ *   types *RenameTypes( types *type)
  *
- *  remarks       : The complete new name is stored in NAME while
- *                  MOD is set to NULL.
+ * Description:
+ *   Renames the given type if it is a user-defined SAC-type.
+ *   Chains of types structures are considered.
  *
- */
+ * Remarks:
+ *   The complete new name is stored in NAME while MOD is set to NULL.
+ *
+ ******************************************************************************/
 
 static types *
 RenameTypes (types *type)
@@ -365,22 +469,19 @@ RenameTypes (types *type)
     DBUG_RETURN (type);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : InsertObjInits
- *  arguments     : 1) fundef node of main function
- *                  2) chain of objdef nodes
- *  description   : For each global object defined in SAC an application
- *                  of its generic initialization function is inserted
- *                  at the beginning of main.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : MakeAssign
- *  macros        : DBUG, TREE
+ * Function:
+ *   node *InsertObjInits( node *block, node *objects)
  *
- *  remarks       : The Let_nodes are generated by PRECObjdef
+ * Description:
+ *   For each global object defined in SAC an application of its generic
+ *   initialization function is inserted at the beginning of main.
  *
- */
+ * Remarks:
+ *   The Let_nodes are generated by PRECObjdef.
+ *
+ ******************************************************************************/
 
 static node *
 InsertObjInits (node *block, node *objects)
@@ -423,23 +524,18 @@ InsertObjInits (node *block, node *objects)
     DBUG_RETURN (block);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : RenameFun
- *  arguments     : 1) N_fundef node
- *  description   : renames the given function.
- *                  For SAC-functions, a new name is created from the module
- *                  name, the original name and the argument's types.
- *                  For C-functions, a new name is taken from the pragma
- *                  'linkname' if present.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : Malloc, strlen, strcat, sprintf, Type2String
- *  macros        : DBUG, TREE, FREE
+ * Function:
+ *   node *RenameFun(node *fun)
  *
- *  remarks       :
+ * Description:
+ *   Renames the given function.
+ *   For SAC-functions, a new name is created from the module name, the
+ *   original name and the argument's types.
+ *   For C-functions, a new name is taken from the pragma 'linkname' if present.
  *
- */
+ ******************************************************************************/
 
 static node *
 RenameFun (node *fun)
@@ -521,60 +617,7 @@ RenameFun (node *fun)
 /******************************************************************************
  *
  * function:
- *   node *AdjustFoldFundef( node *fundef,
- *                           ids *acc, node *cexpr)
- *
- * description:
- *   Returns the given fold-fun definition 'fundef' with adjusted var-names.
- *
- * parameters:
- *   'acc' is the accumulator variable.
- *   'cexpr' is the expression in the operation part.
- *
- ******************************************************************************/
-
-node *
-AdjustFoldFundef (node *fundef, ids *acc, node *cexpr)
-{
-    node *accvar, *funap, *fold_let;
-
-    DBUG_ENTER ("AdjustFoldFundef");
-
-    DBUG_ASSERT ((fundef != NULL), "fundef is NULL!");
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "no fundef found!");
-
-    /*
-     * first, we create a let-expression of the form
-     *    <acc> = <funname>( <acc>, <cexpr>);
-     */
-
-    accvar = MakeId (StringCopy (IDS_NAME (acc)), StringCopy (IDS_MOD (acc)), ST_regular);
-    ID_VARDEC (accvar) = IDS_VARDEC (acc);
-    DBUG_ASSERT ((ID_VARDEC (accvar) != NULL), "vardec is missing");
-
-    funap = MakeAp (StringCopy (FUNDEF_NAME (fundef)), StringCopy (FUNDEF_MOD (fundef)),
-                    MakeExprs (accvar, MakeExprs (DupTree (cexpr, NULL), NULL)));
-    AP_FUNDEF (funap) = fundef;
-
-    fold_let = MakeLet (funap, DupOneIds (acc, NULL));
-
-    /*
-     * then we use this dummy let-expression to adjust the fundef
-     */
-    fundef = AdjustIdentifiers (fundef, fold_let);
-
-    /*
-     * let-expression is useless now
-     */
-    fold_let = FreeTree (fold_let);
-
-    DBUG_RETURN (fundef);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PRECmodul( node *arg_node, node *arg_info)
+ *   node *PREC2modul( node *arg_node, node *arg_info)
  *
  * description:
  *   starts traversal mechanism for objdef and fundef nodes.
@@ -582,9 +625,9 @@ AdjustFoldFundef (node *fundef, ids *acc, node *cexpr)
  ******************************************************************************/
 
 node *
-PRECmodul (node *arg_node, node *arg_info)
+PREC2modul (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PRECmodul");
+    DBUG_ENTER ("PREC2modul");
 
     INFO_PREC_MODUL (arg_info) = arg_node;
 
@@ -605,7 +648,7 @@ PRECmodul (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  : PRECtypedef
+ *  functionname  : PREC2typedef
  *  arguments     : 1) N_typedef node
  *                  2) arg_info unused
  *  description   : renames types,
@@ -621,11 +664,11 @@ PRECmodul (node *arg_node, node *arg_info)
  */
 
 node *
-PRECtypedef (node *arg_node, node *arg_info)
+PREC2typedef (node *arg_node, node *arg_info)
 {
     char *tmp;
 
-    DBUG_ENTER ("PRECtypedef");
+    DBUG_ENTER ("PREC2typedef");
 
     if (TYPEDEF_MOD (arg_node) != NULL) {
         if (0 == strcmp (TYPEDEF_MOD (arg_node), "_MAIN")) {
@@ -652,32 +695,25 @@ PRECtypedef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : PRECobjdef
- *  arguments     : 1) N_objdef node
- *                  2) arg_info unused
- *  description   : renames global objects.
- *                  For SAC-functions the VARNAME, a combination of module
- *                  name and object name is used, for C-functions the
- *                  optional 'linkname' is used if present.
- *                  Additionally, the object's type is renamed as well.
- *  global vars   : ---
- *  internal funs : RenameTypes
- *  external funs : Trav, Malloc, strcpy, strcat, MakeIds, MakeAp,
- *                  MakeLet, sprintf
- *  macros        : DBUG, TREE, FREE
+ * Function:
+ *   node *PREC2objdef(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
+ *   Renames global objects.
+ *   For SAC-functions the VARNAME, a combination of module name and object
+ *   name is used, for C-functions the optional 'linkname' is used if present.
+ *   Additionally, the object's type is renamed as well.
  *
- */
+ ******************************************************************************/
 
 node *
-PRECobjdef (node *arg_node, node *arg_info)
+PREC2objdef (node *arg_node, node *arg_info)
 {
     char *new_name;
 
-    DBUG_ENTER ("PRECobjdef");
+    DBUG_ENTER ("PREC2objdef");
 
     DBUG_PRINT ("PREC", ("precompiling object %s", ItemName (arg_node)));
 
@@ -725,7 +761,7 @@ PRECobjdef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRECfundef(node *arg_node, node *arg_info)
+ *   node *PREC2fundef(node *arg_node, node *arg_info)
  *
  * description:
  *   precompilation of an N_fundef node.
@@ -733,15 +769,15 @@ PRECobjdef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PRECfundef (node *arg_node, node *arg_info)
+PREC2fundef (node *arg_node, node *arg_info)
 {
     char *keep_name, *keep_mod;
     statustype keep_status, keep_attrib;
     int i;
 
-    DBUG_ENTER ("PRECfundef");
+    DBUG_ENTER ("PREC2fundef");
 
-    DBUG_PRINT ("PRECjhs", ("entering %s", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("PREC", ("entering %s", FUNDEF_NAME (arg_node)));
 
     /*
      * The body of an imported inline function is removed.
@@ -869,7 +905,7 @@ PRECfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRECarg(node *arg_node, node *arg_info)
+ *   node *PREC2arg(node *arg_node, node *arg_info)
  *
  * description:
  *   An artificial argument is removed, the attribs are switched:
@@ -882,9 +918,9 @@ PRECfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PRECarg (node *arg_node, node *arg_info)
+PREC2arg (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PRECarg");
+    DBUG_ENTER ("PREC2arg");
 
     if (ARG_ATTRIB (arg_node) == ST_was_reference) {
         INFO_PREC_CNT_ARTIFICIAL (arg_info)++;
@@ -935,26 +971,21 @@ PRECarg (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : PRECvardec
- *  arguments     : 1) N_vardec node
- *                  2) arg_info unused
- *  description   : renames types of declared variables
- *                  remove artificial variable declarations
- *  global vars   : ---
- *  internal funs : RenameTypes
- *  external funs : Trav
- *  macros        : TREE, DBUG
+ * Function:
+ *   node *PREC2vardec(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
+ *   Renames types of declared variables.
+ *   Remove artificial variable declarations.
  *
- */
+ ******************************************************************************/
 
 node *
-PRECvardec (node *arg_node, node *arg_info)
+PREC2vardec (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PRECvardec");
+    DBUG_ENTER ("PREC2vardec");
 
     if (VARDEC_STATUS (arg_node) == ST_artificial) {
         arg_node = FreeNode (arg_node);
@@ -984,7 +1015,7 @@ PRECvardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRECassign( node *arg_node, node *arg_info)
+ *   node *PREC2assign( node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -992,9 +1023,9 @@ PRECvardec (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PRECassign (node *arg_node, node *arg_info)
+PREC2assign (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PRECassign");
+    DBUG_ENTER ("PREC2assign");
 
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -1015,7 +1046,7 @@ PRECassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREClet( node *arg_node, node *arg_info)
+ *   node *PREC2let( node *arg_node, node *arg_info)
  *
  * description:
  *   removes all artificial identifiers on the left hand side of a let.
@@ -1023,27 +1054,9 @@ PRECassign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREClet (node *arg_node, node *arg_info)
+PREC2let (node *arg_node, node *arg_info)
 {
-    node *wl_node;
-    ids *wl_ids;
-
-    DBUG_ENTER ("PREClet");
-
-    /*
-     * Adjust definition of the pseudo fold-fun.
-     *
-     * Note: It is sufficient to take the CEXPR of the first code-node, because
-     *       in a fold with-loop all CEXPR-ids have the same name!
-     */
-    wl_ids = LET_IDS (arg_node);
-    wl_node = LET_EXPR (arg_node);
-    if ((NODE_TYPE (wl_node) == N_Nwith2)
-        && ((NWITH2_TYPE (wl_node) == WO_foldfun)
-            || (NWITH2_TYPE (wl_node) == WO_foldprf))) {
-        NWITH2_FUNDEF (wl_node) = AdjustFoldFundef (NWITH2_FUNDEF (wl_node), wl_ids,
-                                                    NCODE_CEXPR (NWITH2_CODE (wl_node)));
-    }
+    DBUG_ENTER ("PREC2let");
 
     LET_IDS (arg_node) = PrecompileIds (LET_IDS (arg_node));
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
@@ -1055,34 +1068,32 @@ PREClet (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : PRECexprs_ap
- *  arguments     : 1) N_exprs chain of current parameters of a
- *                     function application
- *                  2) N_arg chain of formal parameters of the
- *                     respective function definition
- *  description   : removes all artificial parameters.
- *                  The status of those current parameters which belong
- *                  to formal reference parameters is modified to ST_inout.
- *                  Global objects given as parameters to the applied
- *                  function get a reference to the object definition
- *                  and are renamed with the new name of the global object.
- *  remarks       :
+ * Function:
+ *   node *PREC2exprs_ap(node *current, node *formal)
  *
- */
+ * Description:
+ *   Removes all artificial parameters.
+ *   The status of those current parameters which belong to formal reference
+ *   parameters is modified to ST_inout.
+ *   Global objects given as parameters to the applied function get a reference
+ *   to the object definition and are renamed with the new name of the global
+ *   object.
+ *
+ ******************************************************************************/
 
 static node *
-PRECexprs_ap (node *current, node *formal)
+PREC2exprs_ap (node *current, node *formal)
 {
     node *expr;
 
-    DBUG_ENTER ("PRECexprs_ap");
+    DBUG_ENTER ("PREC2exprs_ap");
 
     if (EXPRS_NEXT (current) != NULL) {
         EXPRS_NEXT (current)
-          = PRECexprs_ap (EXPRS_NEXT (current),
-                          ARG_BASETYPE (formal) == T_dots ? formal : ARG_NEXT (formal));
+          = PREC2exprs_ap (EXPRS_NEXT (current),
+                           ARG_BASETYPE (formal) == T_dots ? formal : ARG_NEXT (formal));
     }
 
     expr = EXPRS_EXPR (current);
@@ -1112,29 +1123,28 @@ PRECexprs_ap (node *current, node *formal)
     DBUG_RETURN (current);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : PRECexprs_return
- *  arguments     : 1) N_exprs chain of an N_return node
- *                  2) respective N_return node
- *  description   : removes all artificial return values from the chain.
- *                  A new chain is built up for all those return values
- *                  which belong to original reference parameters.
- *                  These are stored in RETURN_REFERENCE for later use
- *                  in compile.c
- *  remarks       :
+ * Function:
+ *   node *PREC2exprs_return(node *ret_exprs, node *ret_node)
  *
- */
+ * Description:
+ *   Removes all artificial return values from the chain.
+ *   A new chain is built up for all those return values which belong to
+ *   original reference parameters. These are stored in RETURN_REFERENCE for
+ *   later use in compile.c.
+ *
+ ******************************************************************************/
 
 static node *
-PRECexprs_return (node *ret_exprs, node *ret_node)
+PREC2exprs_return (node *ret_exprs, node *ret_node)
 {
     node *tmp;
 
-    DBUG_ENTER ("PRECexprs_return");
+    DBUG_ENTER ("PREC2exprs_return");
 
     if (EXPRS_NEXT (ret_exprs) != NULL) {
-        EXPRS_NEXT (ret_exprs) = PRECexprs_return (EXPRS_NEXT (ret_exprs), ret_node);
+        EXPRS_NEXT (ret_exprs) = PREC2exprs_return (EXPRS_NEXT (ret_exprs), ret_node);
     }
 
     if (ID_STATUS (EXPRS_EXPR (ret_exprs)) == ST_artificial) {
@@ -1169,24 +1179,23 @@ PRECexprs_return (node *ret_exprs, node *ret_node)
     DBUG_RETURN (ret_exprs);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : PRECap
- *  arguments     : 1) N_ap node
- *                  2) arg_info unused
- *  description   : traverses the current arguments using function
- *                  PRECexprs_ap that is given a pointer
- *                  to the first formal parameter of the applied function.
- *  remarks       :
+ * Function:
+ *   node *PREC2ap(node *arg_node, node *arg_info)
  *
- */
+ * Description:
+ *   Traverses the current arguments using function PREC2exprs_ap that is given
+ *   a pointer to the first formal parameter of the applied function.
+ *
+ ******************************************************************************/
 
 node *
-PRECap (node *arg_node, node *arg_info)
+PREC2ap (node *arg_node, node *arg_info)
 {
     node *ap;
 
-    DBUG_ENTER ("PRECap");
+    DBUG_ENTER ("PREC2ap");
 
     if (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_classfun) {
         ap = arg_node;
@@ -1222,51 +1231,50 @@ PRECap (node *arg_node, node *arg_info)
     } else {
         if (AP_ARGS (arg_node) != NULL) {
             AP_ARGS (arg_node)
-              = PRECexprs_ap (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)));
+              = PREC2exprs_ap (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)));
         }
     }
 
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : PRECreturn
- *  arguments     : 1) N_return node
- *                  2) arg_info unused
- *  description   : traverses the return values using function
- *                  PRECexprs_return.
- *  remarks       :
+ * Function:
+ *   node *PREC2return(node *arg_node, node *arg_info)
  *
- */
+ * Description:
+ *   Traverses the return values using function PREC2exprs_return.
+ *
+ ******************************************************************************/
 
 node *
-PRECreturn (node *arg_node, node *arg_info)
+PREC2return (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PRECreturn");
+    DBUG_ENTER ("PREC2return");
 
     if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = PRECexprs_return (RETURN_EXPRS (arg_node), arg_node);
+        RETURN_EXPRS (arg_node) = PREC2exprs_return (RETURN_EXPRS (arg_node), arg_node);
     }
 
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : PRECid
- *  arguments     : 1) N_id node;
- *                  2) arg_info unused
- *  description   : Applied occurrences of global objects may be renamed,
- *                  if the global object was renamed.
- *  remarks       :
+ * Function:
+ *   node *PREC2id(node *arg_node, node *arg_info)
  *
- */
+ * Description:
+ *   Applied occurrences of global objects may be renamed, if the global
+ *   object was renamed.
+ *
+ ******************************************************************************/
 
 node *
-PRECid (node *arg_node, node *arg_info)
+PREC2id (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PRECid");
+    DBUG_ENTER ("PREC2id");
 
     if (ID_STATUS (arg_node) == ST_artificial) {
         arg_node = FreeTree (arg_node);
@@ -1292,31 +1300,7 @@ PRECid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRECgenerator(node *arg_node, node *arg_info)
- *
- * description:
- *   This function does the renaming of the index vector variable
- *   for the old with-loop.
- *
- ******************************************************************************/
-
-node *
-PRECgenerator (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PRECgenerator");
-
-    GEN_LEFT (arg_node) = Trav (GEN_LEFT (arg_node), arg_info);
-    GEN_RIGHT (arg_node) = Trav (GEN_RIGHT (arg_node), arg_info);
-
-    GEN_IDS (arg_node) = PrecompileIds (GEN_IDS (arg_node));
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PRECNwithid(node *arg_node, node *arg_info)
+ *   node *PREC2Nwithid(node *arg_node, node *arg_info)
  *
  * description:
  *   This function does the renaming of the index vector variable
@@ -1325,9 +1309,9 @@ PRECgenerator (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PRECNwithid (node *arg_node, node *arg_info)
+PREC2Nwithid (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PRECNwithid");
+    DBUG_ENTER ("PREC2Nwithid");
 
     NWITHID_VEC (arg_node) = PrecompileIds (NWITHID_VEC (arg_node));
     NWITHID_IDS (arg_node) = PrecompileIds (NWITHID_IDS (arg_node));
@@ -1338,7 +1322,7 @@ PRECNwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRECdo(node *arg_node, node *arg_info)
+ *   node *PREC2do(node *arg_node, node *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -1349,16 +1333,14 @@ PRECNwithid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PRECdo (node *arg_node, node *arg_info)
+PREC2do (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PRECdo");
+    DBUG_ENTER ("PREC2do");
 
     DO_COND (arg_node) = Trav (DO_COND (arg_node), arg_info);
-
     DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
 
     DO_USEVARS (arg_node) = PrecompileIds (DO_USEVARS (arg_node));
-
     DO_DEFVARS (arg_node) = PrecompileIds (DO_DEFVARS (arg_node));
 
     DBUG_RETURN (arg_node);
@@ -1367,7 +1349,7 @@ PRECdo (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRECwhile(node *arg_node, node *arg_info)
+ *   node *PREC2while(node *arg_node, node *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -1378,16 +1360,14 @@ PRECdo (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PRECwhile (node *arg_node, node *arg_info)
+PREC2while (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PRECwhile");
+    DBUG_ENTER ("PREC2while");
 
     WHILE_COND (arg_node) = Trav (WHILE_COND (arg_node), arg_info);
-
     WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
 
     WHILE_USEVARS (arg_node) = PrecompileIds (WHILE_USEVARS (arg_node));
-
     WHILE_DEFVARS (arg_node) = PrecompileIds (WHILE_DEFVARS (arg_node));
 
     DBUG_RETURN (arg_node);
@@ -1396,7 +1376,7 @@ PRECwhile (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRECcond(node *arg_node, node *arg_info)
+ *   node *PREC2cond(node *arg_node, node *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -1407,18 +1387,15 @@ PRECwhile (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PRECcond (node *arg_node, node *arg_info)
+PREC2cond (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PRECcond");
+    DBUG_ENTER ("PREC2cond");
 
     COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
-
     COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
-
     COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
 
     COND_THENVARS (arg_node) = PrecompileIds (COND_THENVARS (arg_node));
-
     COND_ELSEVARS (arg_node) = PrecompileIds (COND_ELSEVARS (arg_node));
 
     DBUG_RETURN (arg_node);
@@ -1427,7 +1404,7 @@ PRECcond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRECwith( node *arg_node, node *arg_info)
+ *   node *PREC2Nwith2(node *arg_node, node *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -1438,36 +1415,9 @@ PRECcond (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PRECwith (node *arg_node, node *arg_info)
+PREC2Nwith2 (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PRECwith");
-
-    WITH_GEN (arg_node) = Trav (WITH_GEN (arg_node), arg_info);
-
-    WITH_OPERATOR (arg_node) = Trav (WITH_OPERATOR (arg_node), arg_info);
-
-    WITH_USEVARS (arg_node) = PrecompileIds (WITH_USEVARS (arg_node));
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *PRECNwith2(node *arg_node, node *arg_info)
- *
- * description:
- *   The compiler phase refcount unfortunately produces chains of identifiers
- *   for which refcounting operations must be inserted during code generation.
- *   These must be renamed in addition to those identifiers that are "really"
- *   part of the code.
- *
- ******************************************************************************/
-
-node *
-PRECNwith2 (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PRECNwith2");
+    DBUG_ENTER ("PREC2Nwith2");
 
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
@@ -1492,7 +1442,7 @@ PRECNwith2 (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRECNcode( node *arg_node, node *arg_info)
+ *   node *PREC2Ncode( node *arg_node, node *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -1503,9 +1453,9 @@ PRECNwith2 (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PRECNcode (node *arg_node, node *arg_info)
+PREC2Ncode (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PRECNcode");
+    DBUG_ENTER ("PREC2Ncode");
 
     NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
@@ -1522,7 +1472,7 @@ PRECNcode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRECsync( node *arg_node, node *arg_info)
+ *   node *PREC2sync( node *arg_node, node *arg_info)
  *
  * description:
  *   Was used for renaming SYNC_SCHEDULE, since this has move to the
@@ -1532,9 +1482,9 @@ PRECNcode (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PRECsync (node *arg_node, node *arg_info)
+PREC2sync (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PRECsync");
+    DBUG_ENTER ("PREC2sync");
 
     SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
 
@@ -1544,7 +1494,7 @@ PRECsync (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRECWLseg(node *arg_node, node *arg_info)
+ *   node *PREC2WLseg(node *arg_node, node *arg_info)
  *
  * description:
  *   Since the scheduling specification may contain the names of local
@@ -1554,9 +1504,9 @@ PRECsync (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PRECWLseg (node *arg_node, node *arg_info)
+PREC2WLseg (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PRECWLseg");
+    DBUG_ENTER ("PREC2WLseg");
 
     if (WLSEG_SCHEDULING (arg_node) != NULL) {
         WLSEG_SCHEDULING (arg_node)
@@ -1575,7 +1525,7 @@ PRECWLseg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRECWLsegVar(node *arg_node, node *arg_info)
+ *   node *PREC2WLsegVar(node *arg_node, node *arg_info)
  *
  * description:
  *   Since the scheduling specification may contain the names of local
@@ -1585,9 +1535,9 @@ PRECWLseg (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PRECWLsegVar (node *arg_node, node *arg_info)
+PREC2WLsegVar (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PRECWLsegVar");
+    DBUG_ENTER ("PREC2WLsegVar");
 
     if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
         WLSEGVAR_SCHEDULING (arg_node)
@@ -1606,32 +1556,42 @@ PRECWLsegVar (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *precompile( node *syntax_tree)
+ *   node *Precompile( node *syntax_tree)
  *
  * description:
- *   prepares syntax tree for code generation.
+ *   Prepares syntax tree for code generation.
+ *
+ *   First traversal of the AST:
+ *     - renaming of the local identifiers of each dummy fold-function
+ *       definition in order to prepare them for naive inlining during
+ *       compilation.
+ *   Second traversal of the AST:
  *     - renames functions and global objects
  *     - removes all casts
  *     - inserts extern declarations for function definitions
  *     - removes all artificial parameters and return values
  *     - marks reference parameters in function applications
- *     - transforms new with-loops
+ *   Unfortunately it is impossible to merge these two traversals in a concise
+ *   way ...
  *
  ******************************************************************************/
 
 node *
-precompile (node *syntax_tree)
+Precompile (node *syntax_tree)
 {
     node *info;
 
-    DBUG_ENTER ("precompile");
+    DBUG_ENTER ("Precompile");
 
     info = MakeInfo ();
-    act_tab = precomp_tab;
 
+    act_tab = precomp1_tab;
     syntax_tree = Trav (syntax_tree, info);
 
-    FREE (info);
+    act_tab = precomp2_tab;
+    syntax_tree = Trav (syntax_tree, info);
+
+    info = FreeTree (info);
 
     DBUG_RETURN (syntax_tree);
 }
