@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2001/04/19 10:09:26  dkr
+ * InferMasksWith(), InferMasksWith2() replaced by InferMasksWithx()
+ *
  * Revision 1.8  2001/04/19 07:40:33  dkr
  * macro F_PTR used as format string for pointers
  *
@@ -377,7 +380,8 @@ AdjustNeeded (DFMmask_t needed, DFMmask_t in, DFMmask_t out)
  *   node *InferMasksWith( node *arg_node, node *arg_info)
  *
  * Description:
- *
+ *   In order to infer the withid-ids as local-vars, withop and code must be
+ *   traversed *before* the withid (contained in part)!
  *
  ******************************************************************************/
 
@@ -404,7 +408,8 @@ InferMasksWith (node *arg_node, node *arg_info)
  *   node *InferMasksWith2( node *arg_node, node *arg_info)
  *
  * Description:
- *
+ *   In order to infer the withid-ids as local-vars, the withop, segments and
+ *   code must be traversed *before* the withid!
  *
  ******************************************************************************/
 
@@ -529,22 +534,27 @@ InferMasksWhile (node *arg_node, node *arg_info)
      * a = 1;
      * b = 1;
      * c = 1;
-     * while (...) {  <--- 'a' is in- and out-var, 'b' is local- and out-var,
-     *   ... a ...         'c' is in-var,          'd' is local-var.
+     * while (...)    <--- in: a,b   out: a,b   local: c,d
+     * {              <--- in: a     out: b     local: b,c,d
+     *   ... a ...
      *   a = 2;
      *   b = 2;
-     *   ... c ...
      *   c = 2;
+     *   ... c ...
      *   d = 1;
      * }
-     * ... a ... b ...
+     * ... b ...
      *
      * All vars that are out-vars of the loop body have to be arguments of the
      * loop-dummy-function as well. (Even if they are local-vars!) This is
      * important in the case that the loop body is not executed at all.
      */
-    /* in' = in u out' */
+    /* in' = in u out */
     DFMSetMaskOr (INFO_INFDFMS_IN (arg_info), INFO_INFDFMS_OUT (arg_info));
+    /* out' = out u ... */
+#if 0
+  DFMSetMaskOr( INFO_INFDFMS_OUT( arg_info), ...);
+#endif
     /* local' = local \ in' */
     DFMSetMaskMinus (INFO_INFDFMS_LOCAL (arg_info), INFO_INFDFMS_IN (arg_info));
 
@@ -969,20 +979,19 @@ INFDFMSid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INFDFMSwith( node *arg_node, node *arg_info)
+ *   node *INFDFMSwithx( node *arg_node, node *arg_info)
  *
  * description:
- *   In order to infer the withid-ids as local-vars, withop and code must be
- *   traversed *before* the withid (contained in part)!
+ *
  *
  ******************************************************************************/
 
 node *
-INFDFMSwith (node *arg_node, node *arg_info)
+INFDFMSwithx (node *arg_node, node *arg_info)
 {
     DFMmask_t out;
 
-    DBUG_ENTER ("INFDFMSwith");
+    DBUG_ENTER ("INFDFMSwithx");
 
 #if 0
   /*
@@ -1018,9 +1027,12 @@ INFDFMSwith (node *arg_node, node *arg_info)
   INFO_INFDFMS_NEEDED( arg_info) = DFMGenMaskClear( INFO_DFMBASE( arg_info));
 #endif
 
-    arg_node = InferMasks (&(NWITH_IN_MASK (arg_node)), &(NWITH_OUT_MASK (arg_node)),
-                           &(NWITH_LOCAL_MASK (arg_node)), arg_node, arg_info,
-                           InferMasksWith, FALSE);
+    arg_node
+      = InferMasks (&(NWITH_OR_NWITH2_IN_MASK (arg_node)),
+                    &(NWITH_OR_NWITH2_OUT_MASK (arg_node)),
+                    &(NWITH_OR_NWITH2_LOCAL_MASK (arg_node)), arg_node, arg_info,
+                    (NODE_TYPE (arg_node) == N_Nwith) ? InferMasksWith : InferMasksWith2,
+                    FALSE);
 
     /*
      * A with-loop really *can* have out-vars:
@@ -1028,83 +1040,13 @@ INFDFMSwith (node *arg_node, node *arg_info)
      * in SAC although it can cause non-deterministic results!
      * Therfore, we print a warning message here.
      */
-    out = NWITH_OUT_MASK (arg_node);
+    out = NWITH_OR_NWITH2_OUT_MASK (arg_node);
     if ((out != NULL) && (DFMGetMaskEntryDeclSet (out) != NULL)) {
 #if 0
     WARN( NODE_LINE( arg_node), ("with-loop with out-vars detected"));
 #else
         DBUG_PRINT ("INFDFMS", ("with-loop with out-vars detected!"));
 #endif
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *INFDFMSwith2( node *arg_node, node *arg_info)
- *
- * description:
- *   In order to infer the withid-ids as local-vars, the withop, segments and
- *   code must be traversed *before* the withid!
- *
- ******************************************************************************/
-
-node *
-INFDFMSwith2 (node *arg_node, node *arg_info)
-{
-    DFMmask_t out;
-
-    DBUG_ENTER ("INFDFMSwith2");
-
-#if 0
-  /*
-   * Stricly speaking, the scope of all vars defined within a with-loop
-   * is restricted to the with-loop itself:
-   *
-   *   val = 1;
-   *   with (...) {
-   *     val = 2;
-   *   }
-   *   genarray( ...)
-   *   ... val ...         <---  here, 'val' still contains the value 1
-   *
-   * That means, we have to clear the INFO_INFDFMS_NEEDED mask here!
-   *
-   * BUT, in case of global objects this behaviour is NOT wanted.
-   * Therefore, during the flattening phase all not-global vars defined
-   * within a with-loop are renamed:
-   *
-   *   val = 1;
-   *   with (...) {
-   *     _val = val;
-   *     _val = 2;
-   *   }
-   *   genarray( ...)
-   *   ... val ...         <---  here, 'val' still contains the value 1
-   *
-   * Because of that, we can leave the INFO_INFDFMS_NEEDED mask untouched
-   * here in order to detect OUT- (global-) vars :-)
-   */
-  INFO_INFDFMS_NEEDED( arg_info)
-    = DFMRemoveMask( INFO_INFDFMS_NEEDED( arg_info));
-  INFO_INFDFMS_NEEDED( arg_info) = DFMGenMaskClear( INFO_DFMBASE( arg_info));
-#endif
-
-    arg_node = InferMasks (&(NWITH2_IN_MASK (arg_node)), &(NWITH2_OUT_MASK (arg_node)),
-                           &(NWITH2_LOCAL_MASK (arg_node)), arg_node, arg_info,
-                           InferMasksWith2, FALSE);
-
-    /*
-     * A with-loop really *can* have OUT-vars:
-     * Some global objects might be modified within the with-loop. This is legal
-     * in SAC although it can cause non-deterministic results!
-     * Therfore, we print a warning message here.
-     */
-    out = NWITH2_OUT_MASK (arg_node);
-    if ((out != NULL) && (DFMGetMaskEntryDeclSet (out) != NULL)) {
-        WARN (NODE_LINE (arg_node), ("with-loop with out-vars detected"));
     }
 
     DBUG_RETURN (arg_node);
