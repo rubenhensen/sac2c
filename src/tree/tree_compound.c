@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2001/12/10 13:46:03  dkr
+ * function MakeAssignInstr() added
+ * functions MakeAssigns?() added
+ *
  * Revision 3.45  2001/11/09 11:48:45  sbs
  * res now initialized in default case of functions IsExternal and friends!
  * (Just top please gcc 8-)
@@ -2297,41 +2301,8 @@ SearchDecl (char *name, node *decl_node)
 
 /******************************************************************************
  *
- * function:
- *   node *AppendAssign( node *assign_chain, node *assign)
- *
- * description:
- *   Appends 'assign' to 'assing_chain' and returns the new chain.
- *   If 'assign_chain' was a N_empty node, this node is removed first.
- *
- ******************************************************************************/
-
-node *
-AppendAssign (node *assign_chain, node *assign)
-{
-    node *ret;
-
-    DBUG_ENTER ("AppendAssign");
-
-    DBUG_ASSERT (((assign_chain == NULL) || (NODE_TYPE (assign_chain) == N_assign)
-                  || (NODE_TYPE (assign_chain) == N_empty)),
-                 ("First argument of AppendAssign() has wrong node type."));
-    DBUG_ASSERT (((assign == NULL) || (NODE_TYPE (assign) == N_assign)),
-                 ("Second argument of AppendAssign() has wrong node type."));
-
-    if ((assign_chain != NULL) && (NODE_TYPE (assign_chain) == N_empty)) {
-        assign_chain = FreeNode (assign_chain);
-    }
-
-    APPEND (ret, node *, ASSIGN, assign_chain, assign);
-
-    DBUG_RETURN (ret);
-}
-
-/******************************************************************************
- *
  * Function:
- *   node *MakeAssignLet(char *var_name, node *vardec_node, node *let_expr)
+ *   node *MakeAssignLet( char *var_name, node *vardec_node, node *let_expr)
  *
  * Description:
  *
@@ -2356,16 +2327,104 @@ MakeAssignLet (char *var_name, node *vardec_node, node *let_expr)
 
 /******************************************************************************
  *
+ * Function:
+ *   node *MakeAssignInstr( node *instr, node *next)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+MakeAssignInstr (node *instr, node *next)
+{
+    node *result;
+
+    if (NODE_TYPE (instr) == N_assign) {
+        result = AppendAssign (instr, next);
+    } else {
+        result = MakeAssign (instr, next);
+    }
+
+    return (result);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *MakeAssign?( node *part?, ...)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+MakeAssigns1 (node *part1)
+{
+    return (MakeAssignInstr (part1, NULL));
+}
+
+node *
+MakeAssigns2 (node *part1, node *part2)
+{
+    return (MakeAssignInstr (part1, MakeAssigns1 (part2)));
+}
+
+node *
+MakeAssigns3 (node *part1, node *part2, node *part3)
+{
+    return (MakeAssignInstr (part1, MakeAssigns2 (part2, part3)));
+}
+
+node *
+MakeAssigns4 (node *part1, node *part2, node *part3, node *part4)
+{
+    return (MakeAssignInstr (part1, MakeAssigns3 (part2, part3, part4)));
+}
+
+node *
+MakeAssigns5 (node *part1, node *part2, node *part3, node *part4, node *part5)
+{
+    return (MakeAssignInstr (part1, MakeAssigns4 (part2, part3, part4, part5)));
+}
+
+node *
+MakeAssigns6 (node *part1, node *part2, node *part3, node *part4, node *part5,
+              node *part6)
+{
+    return (MakeAssignInstr (part1, MakeAssigns5 (part2, part3, part4, part5, part6)));
+}
+
+node *
+MakeAssigns7 (node *part1, node *part2, node *part3, node *part4, node *part5,
+              node *part6, node *part7)
+{
+    return (
+      MakeAssignInstr (part1, MakeAssigns6 (part2, part3, part4, part5, part6, part7)));
+}
+
+node *
+MakeAssigns8 (node *part1, node *part2, node *part3, node *part4, node *part5,
+              node *part6, node *part7, node *part8)
+{
+    return (MakeAssignInstr (part1, MakeAssigns7 (part2, part3, part4, part5, part6,
+                                                  part7, part8)));
+}
+
+node *
+MakeAssigns9 (node *part1, node *part2, node *part3, node *part4, node *part5,
+              node *part6, node *part7, node *part8, node *part9)
+{
+    return (MakeAssignInstr (part1, MakeAssigns8 (part2, part3, part4, part5, part6,
+                                                  part7, part8, part9)));
+}
+
+/******************************************************************************
+ *
  * function:
- *   node *MakeAssignIcm0(char *name)
- *   node *MakeAssignIcm1(char *name, node *arg1)
- *   node *MakeAssignIcm3(char *name, node *arg1, node *arg2)
- *   node *MakeAssignIcm4(char *name, node *arg1, node *arg2, node *arg3,
- *                                    node *arg4)
- *   node *MakeAssignIcm5(char *name, node *arg1, node *arg2, node *arg3,
- *                                    node *arg4, node *arg5)
- *   node *MakeAssignIcm6(char *name, node *arg1, node *arg2, node *arg3,
- *                                    node *arg4, node *arg5, node *arg6)
+ *   node *MakeAssignIcm0( char *name)
+ *   node *MakeAssignIcm?( char *name, node *arg?, ...)
  *
  * description:
  *   These functions generate an N_assign node with a complete ICM
@@ -2473,6 +2532,39 @@ GetCompoundNode (node *arg_node)
     }
 
     DBUG_RETURN (compound_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AppendAssign( node *assign_chain, node *assign)
+ *
+ * description:
+ *   Appends 'assign' to 'assing_chain' and returns the new chain.
+ *   If 'assign_chain' was a N_empty node, this node is removed first.
+ *
+ ******************************************************************************/
+
+node *
+AppendAssign (node *assign_chain, node *assign)
+{
+    node *ret;
+
+    DBUG_ENTER ("AppendAssign");
+
+    DBUG_ASSERT (((assign_chain == NULL) || (NODE_TYPE (assign_chain) == N_assign)
+                  || (NODE_TYPE (assign_chain) == N_empty)),
+                 ("First argument of AppendAssign() has wrong node type."));
+    DBUG_ASSERT (((assign == NULL) || (NODE_TYPE (assign) == N_assign)),
+                 ("Second argument of AppendAssign() has wrong node type."));
+
+    if ((assign_chain != NULL) && (NODE_TYPE (assign_chain) == N_empty)) {
+        assign_chain = FreeNode (assign_chain);
+    }
+
+    APPEND (ret, node *, ASSIGN, assign_chain, assign);
+
+    DBUG_RETURN (ret);
 }
 
 /******************************************************************************

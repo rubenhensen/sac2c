@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2001/12/10 13:45:58  dkr
+ * function MakeAssignInstr() added
+ * functions MakeAssigns?() added
+ *
  * Revision 3.47  2001/07/19 16:19:57  cg
  * Added new inquiery functions IsImported, IsExternal, IsFromModule
  * and IsFromClass to avoid clumsy direct checks for import status
@@ -1121,20 +1125,6 @@ extern node *SearchDecl (char *name, node *decl_node);
 #define ASSIGN_LHS(n) LET_IDS (ASSIGN_INSTR (n))
 #define ASSIGN_RHS(n) LET_EXPR (ASSIGN_INSTR (n))
 
-/*****************************************************************************
- *
- * function:
- *   AppendAssign( node *assign_chain, node *assign)
- *
- * description:
- *
- *   This function concatenates two chains of N_assign nodes.
- *   However, the first one may simply be a single N_empty node.
- *
- *****************************************************************************/
-
-extern node *AppendAssign (node *assign_chain, node *assign);
-
 /******************************************************************************
  *
  * function:
@@ -1157,19 +1147,47 @@ extern node *MakeAssignLet (char *var_name, node *vardec_node, node *let_expr);
 
 /******************************************************************************
  *
+ * Function:
+ *   node *MakeAssignInstr( node *instr, node *next)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+extern node *MakeAssignInstr (node *instr, node *next);
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *MakeAssign?( node *part?, ...)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+extern node *MakeAssigns1 (node *part1);
+extern node *MakeAssigns2 (node *part1, node *part2);
+extern node *MakeAssigns3 (node *part1, node *part2, node *part3);
+extern node *MakeAssigns4 (node *part1, node *part2, node *part3, node *part4);
+extern node *MakeAssigns5 (node *part1, node *part2, node *part3, node *part4,
+                           node *part5);
+extern node *MakeAssigns6 (node *part1, node *part2, node *part3, node *part4,
+                           node *part5, node *part6);
+extern node *MakeAssigns7 (node *part1, node *part2, node *part3, node *part4,
+                           node *part5, node *part6, node *part7);
+extern node *MakeAssigns8 (node *part1, node *part2, node *part3, node *part4,
+                           node *part5, node *part6, node *part7, node *part8);
+extern node *MakeAssigns9 (node *part1, node *part2, node *part3, node *part4,
+                           node *part5, node *part6, node *part7, node *part8,
+                           node *part9);
+
+/******************************************************************************
+ *
  * function:
- *   node *MakeAssignIcm0(char *name)
- *   node *MakeAssignIcm1(char *name, node *arg1)
- *   node *MakeAssignIcm3(char *name, node *arg1, node *arg2)
- *   node *MakeAssignIcm4(char *name, node *arg1, node *arg2, node *arg3,
- *                                    node *arg4)
- *   node *MakeAssignIcm5(char *name, node *arg1, node *arg2, node *arg3,
- *                                    node *arg4, node *arg5)
- *   node *MakeAssignIcm6(char *name, node *arg1, node *arg2, node *arg3,
- *                                    node *arg4, node *arg5, node *arg6)
- *   node *MakeAssignIcm7(char *name, node *arg1, node *arg2, node *arg3,
- *                                    node *arg4, node *arg5, node *arg6,
- *                                    node *arg7)
+ *   node *MakeAssignIcm0( char *name)
+ *   node *MakeAssignIcm?( char *name, node *arg?, ...)
  *
  * description:
  *   These functions generate an N_assign node with a complete ICM
@@ -1203,6 +1221,20 @@ extern node *MakeAssignIcm7 (char *name, node *arg1, node *arg2, node *arg3, nod
  ******************************************************************************/
 
 extern node *GetCompoundNode (node *arg_node);
+
+/*****************************************************************************
+ *
+ * function:
+ *   AppendAssign( node *assign_chain, node *assign)
+ *
+ * description:
+ *
+ *   This function concatenates two chains of N_assign nodes.
+ *   However, the first one may simply be a single N_empty node.
+ *
+ *****************************************************************************/
+
+extern node *AppendAssign (node *assign_chain, node *assign);
 
 /******************************************************************************
  *
