@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.66  1995/07/06 17:01:25  hw
+ * Revision 1.67  1995/07/06 17:27:05  cg
+ * new Tokens ASSIGN and AMPERS added
+ *
+ * Revision 1.66  1995/07/06  17:01:25  hw
  * - behind 'all' in the import declaration has to be a semicolon now
  * - behind 'while' of a do-loop has to be a semicolon now
  * - userdefined functins can have the same name like primitive functions now
@@ -266,7 +269,7 @@ static char *mod_name;
 
 %token PARSE_PRG, PARSE_DEC
 %token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC,
-       COMMA,
+       COMMA, ASSIGN, AMPERS,
        INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF,
        F2I, F2D, I2F,I2D, D2I, D2F,
        INC, DEC, ADDON, SUBON, MULON, DIVON,
