@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.18  2000/01/17 16:25:58  cg
+# New handling of heap manager library in new directory.
+#
 # Revision 2.17  1999/12/13 11:27:07  dkr
 # *** empty log message ***
 #
@@ -95,12 +98,19 @@ OS        := SOLARIS_SPARC
 .PHONY: all tar deps clean
 
 
-all:  libsac.a libsac_mt.a libsac_heapmgr.a libsac_noheapmgr.a  libsac_noheapmgr_mt.a  \
-      libsac_heapmgr_diag.a CacheSimAnalyser sac2crc
+all:  libsac.a libsac_mt.a libsac_heapmgr.a  \
+      libsac_heapmgr_diag.a libsac_heapmgr_mt.a libsac_heapmgr_mt_diag.a  \
+      CacheSimAnalyser sac2crc
 
 tar: runtime.tar
 
-%.a : 
+libsac_heap%.a : 
+	@ if [ ! -f $@ ]; \
+	    then ln -s ../heapmgr/$@;  \
+                 echo ln -s ../heapmgr/$@;  \
+	  fi
+
+lib%.a : 
 	@ if [ ! -f $@ ]; \
 	    then ln -s ../libsac/$@;  \
                  echo ln -s ../libsac/$@;  \
