@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/11/02 16:26:28  cg
+ * Revision 1.15  1995/11/03 16:04:48  cg
+ * no changes
+ *
+ * Revision 1.14  1995/11/02  16:26:28  cg
  * new compound access macros FUNDEF_VARDEC and FUNDEF_INSTR.
  *
  * Revision 1.13  1995/11/01  16:25:01  cg
@@ -220,6 +223,26 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
 /***
  ***  IDS :
  ***/
+
+/*
+ *
+ *  macro name    : IDS_IS_UNIQUE
+ *  arg types     : 1) ids*
+ *  result type   : int (bool)
+ *  description   : checks if the given ids is unique or not
+ *  global vars   : ---
+ *  funs          : ---
+ *
+ *  remarks       : This macro will only work properly with the VARNO
+ *                  settings done in uniquecheck.c
+ *
+ *
+ *
+ */
+
+#define IDS_IS_UNIQUE(i)                                                                 \
+    ((NODE_TYPE (IDS_VARDEC (i)) == N_vardec) ? (VARDEC_VARNO (IDS_VARDEC (i)) >= 0)     \
+                                              : (ARG_VARNO (IDS_VARDEC (i)) >= 0))
 
 /*
  *
