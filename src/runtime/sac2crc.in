@@ -18,35 +18,29 @@
 
 target default:
  
-CC               :=  gcc
-CC               :=  cc     (alpha / mac)
-CCFLAGS          :=  "-Wall -Wno-unused -fno-builtin "
-                     "-D__EXTENSIONS__ -D__STDC__=0"
-CCFLAGS          :=  "-Wall -Wno-unused -fno-builtin"    (mac, linux)
-CCFLAGS          :=  "" (alpha)
+CC               :=  "@CC@"
+CCFLAGS          :=  "@RCCCFLAGS@"
+                   /*  "-D__EXTENSIONS__ -D__STDC__=0" */
 CCDIR            :=  "-I$SACBASE/runtime/ "
                      "-L$SACBASE/runtime/"
-LDFLAGS          :=  ""
-LDFLAGS          :=  "-Wl,-multiply_defined,suppress"  (mac)
+LDFLAGS          :=  "@RCLDFLAGS@"
 CCLINK           :=  ""    
 CCMTLINK         :=  -lpthread
  
-OPT_O0           :=  ""
-OPT_O1           :=  -O1
-OPT_O2           :=  -O2
-OPT_O3           :=  -O3
-OPT_g            :=  -g
+OPT_O0           :=  "@OPT_O0@"
+OPT_O1           :=  "@OPT_O1@"
+OPT_O2           :=  "@OPT_O2@"
+OPT_O3           :=  "@OPT_O3@"
+OPT_g            :=  "@OPT_g@"
  
-CPP_STDIN        :=  "cpp -C"
-CPP_FILE         :=  "gcc -E -C -x c"
-CPP_FILE         :=  "cc -E -C -x c"   (alpha)
-CPP_FILE         :=  "cpp -C"          (mac)
+CPP_STDIN        :=  "@CPP@"
+CPP_FILE         :=  "@CC@ -E -C -x c"
+/*CPP_FILE         :=  "cpp -C"          (mac)*/
 OPT_D            :=  -D
 TAR_CREATE       :=  "tar cf"
 TAR_EXTRACT      :=  "tar xf"
 AR_CREATE        :=  "ar cr"
-RANLIB           :=  ""
-RANLIB           :=  "ranlib -c"  (mac)
+RANLIB           :=  "@RANLIB@"
 MKDIR            :=  mkdir
 RMDIR            :=  "rm -rf"
 CHDIR            :=  cd
@@ -199,9 +193,9 @@ CCMTLINK        +=  -lglib
  ***
  ***/
 
-#include "sac2crc.SUN"
-#include "sac2crc.X86"
-#include "sac2crc.ALPHA"
-#include "sac2crc.MAC"
+@RCSUN@
+@RCX86@
+@RCALPHA@
+@RCMAC@
 
 
