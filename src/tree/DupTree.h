@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2000/07/14 09:48:27  dkr
+ * some comments about function prototypes added
+ *
  * Revision 1.13  2000/07/14 09:38:20  dkr
  * CopyNodelist renamed into DupNodelist and moved from tree_compound.h
  * to DupTree.h
@@ -93,18 +96,32 @@
         }                                                                                \
     }
 
+/*
+ * Functions for duplicating (parts of) the AST
+ */
 extern node *DupTreeLUT (node *arg_node, LUT_t lut);
 extern node *DupTree (node *arg_node);
 extern node *DupTreeInfo (node *arg_node, node *arg_info);
 extern node *DupNodeLUT (node *arg_node, LUT_t lut);
 extern node *DupNode (node *arg_node);
 
-extern shpseg *DupShpSeg (shpseg *shp_seg);
+/*
+ * Functions for duplicating non-node parts of the AST
+ *
+ ******
+ *
+ * Please do NOT call these functions with (arg_info != NULL) !!
+ * arg_info should be used by DupTree/DupNode only!
+ */
 extern ids *DupOneIds (ids *ids, node *arg_info);
 extern ids *DupIds (ids *ids, node *arg_info);
+extern shpseg *DupShpSeg (shpseg *shp_seg);
 extern nodelist *DupNodelist (nodelist *nl);
 extern types *DupTypes (types *source);
 
+/*
+ * Functions for internal use during AST traversal only!
+ */
 extern node *DupVinfo (node *arg_node, node *arg_info);
 extern node *DupNum (node *arg_node, node *arg_info);
 extern node *DupBool (node *arg_node, node *arg_info);
@@ -142,7 +159,7 @@ extern node *DupMTsignal (node *arg_node, node *arg_info);
 extern node *DupMTsync (node *arg_node, node *arg_info);
 extern node *DupMTalloc (node *arg_node, node *arg_info);
 
-/* frontend with-loop */
+/* frontend with-loop: */
 extern node *DupNwith (node *arg_node, node *arg_info);
 extern node *DupNwithop (node *arg_node, node *arg_info);
 extern node *DupNpart (node *arg_node, node *arg_info);
@@ -150,7 +167,7 @@ extern node *DupNcode (node *arg_node, node *arg_info);
 extern node *DupNwithid (node *arg_node, node *arg_info);
 extern node *DupNgen (node *arg_node, node *arg_info);
 
-/* backend with-loop */
+/* backend with-loop: */
 extern node *DupNwith2 (node *arg_node, node *arg_info);
 extern node *DupWLseg (node *arg_node, node *arg_info);
 extern node *DupWLblock (node *arg_node, node *arg_info);
@@ -161,6 +178,7 @@ extern node *DupWLsegVar (node *arg_node, node *arg_info);
 extern node *DupWLstriVar (node *arg_node, node *arg_info);
 extern node *DupWLgridVar (node *arg_node, node *arg_info);
 
+/* pre- and post-processing during traversal */
 extern node *DupTreePre (node *arg_node, node *arg_info);
 extern node *DupTreePost (node *arg_node, node *arg_info);
 
