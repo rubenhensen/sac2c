@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/09 19:32:33  ktr
+ * Bugfix
+ *
  * Revision 1.2  2004/11/02 14:28:44  ktr
  * Better loop support.
  *
@@ -588,7 +591,10 @@ EMIAid (node *arg_node, info *arg_info)
                 retcount += 1;
             }
         }
-        INFO_IA_APFUNARGS (arg_info) = ARG_NEXT (INFO_IA_APFUNARGS (arg_info));
+
+        if (TYPES_BASETYPE (ARG_TYPE (INFO_IA_APFUNARGS (arg_info))) != T_dots) {
+            INFO_IA_APFUNARGS (arg_info) = ARG_NEXT (INFO_IA_APFUNARGS (arg_info));
+        }
         break;
 
     default:
@@ -795,7 +801,7 @@ EMIAwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMIAwith2");
 
-    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
