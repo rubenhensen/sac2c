@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/05/04 15:36:06  dkr
+ * WL_ASSIGN is now a C-ICM
+ *
  * Revision 1.3  1998/05/04 09:35:37  dkr
  * fixed a bug in BLOCK_LOOP_BEGIN...
  *
@@ -110,9 +113,5 @@
 #define WL_GRID_LOOP_END(level, next_level, dim, idx_vec, idx_scalar, bound1, bound2)    \
     }                                                                                    \
     }
-
-#define WL_ASSIGN(wl_id, idx_vec, idx_scalar, offset, expr)                              \
-    wl_id[offset] = expr;                                                                \
-    offset++;
 
 #endif /* _sac_icm_wl_h */
