@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.22  1999/06/08 08:32:42  cg
+ * The print phase now always carries an N_info node with it in order
+ * to distinguish between different layouts. The distinction between
+ * arg_info ==NULL and arg_info !=NULL is no longer used.
+ *
  * Revision 2.21  1999/06/03 08:45:00  cg
  * Added correct printing of wlcomp pragmas.
  *
@@ -159,10 +164,13 @@
     if (compiler_phase == PH_writesib) {                                                 \
         fprintf (file_handle, "# %d \"%s\"\n", NODE_LINE (node), NODE_FILE (node));      \
     }
-
-/******************************************************************************/
-
-static int print_separate = 0;
+/*
+ * The selection of when to write a line pragma is actually not correctly
+ * implemented because pragmas are now printed not only to the SIB but also
+ * when stopping the compilation phase after having generated the SIB.
+ * However, for the time being we keep this implementation for debugging
+ * purposes.
+ */
 
 /******************************************************************************/
 
@@ -644,7 +652,7 @@ PrintModul (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
-    if (print_separate) {
+    if (INFO_PRINT_SEPARATE (arg_info)) {
         /*
          * In this case, we print a module or class implementation and we want
          * each function to appear in a separate file to create a real archive
@@ -667,11 +675,9 @@ PrintModul (node *arg_node, node *arg_info)
 
         if (NULL != MODUL_FUNS (arg_node)) {
             fprintf (outfile, "\n\n");
-            Trav (MODUL_FUNS (arg_node), arg_node); /* print function declarations */
-                                                    /*
-                                                     * Here, we do print only function declarations. This is done by traversing
-                                                     * with arg_info != NULL !!
-                                                     */
+            INFO_PRINT_PROTOTYPE (arg_info) = 1;
+            Trav (MODUL_FUNS (arg_node), arg_info); /* print function declarations */
+            INFO_PRINT_PROTOTYPE (arg_info) = 0;
         }
 
         if (NULL != MODUL_OBJS (arg_node)) {
@@ -707,14 +713,11 @@ PrintModul (node *arg_node, node *arg_info)
          */
 
         if (NULL != MODUL_FUNS (arg_node)) {
-            Trav (MODUL_FUNS (arg_node), NULL); /* print function definitions */
-                                                /*
-                                                 * Here, we do print full function definitions. This is done by traversing
-                                                 * with arg_info == NULL !!
-                                                 *
-                                                 * Note that in this case a separate file is created for each function.
-                                                 * These files are opened and closed in PrintFundef().
-                                                 */
+            Trav (MODUL_FUNS (arg_node), arg_info); /* print function definitions */
+                                                    /*
+                                                     * Note that in this case a separate file is created for each function.
+                                                     * These files are opened and closed in PrintFundef().
+                                                     */
         }
     } else {
         switch (MODUL_FILETYPE (arg_node)) {
@@ -735,12 +738,12 @@ PrintModul (node *arg_node, node *arg_info)
         default:;
         }
 
-        if (MODUL_IMPORTS (arg_node)) {
+        if (MODUL_IMPORTS (arg_node) != NULL) {
             fprintf (outfile, "\n");
             Trav (MODUL_IMPORTS (arg_node), arg_info); /* print import-list */
         }
 
-        if (MODUL_TYPES (arg_node)) {
+        if (MODUL_TYPES (arg_node) != NULL) {
             fprintf (outfile, "\n\n");
             fprintf (outfile, "/*\n");
             fprintf (outfile, " *  type definitions\n");
@@ -748,15 +751,17 @@ PrintModul (node *arg_node, node *arg_info)
             Trav (MODUL_TYPES (arg_node), arg_info); /* print typedefs */
         }
 
-        if (MODUL_FUNS (arg_node)) {
+        if (MODUL_FUNS (arg_node) != NULL) {
             fprintf (outfile, "\n\n");
             fprintf (outfile, "/*\n");
             fprintf (outfile, " *  function declarations\n");
             fprintf (outfile, " */\n\n");
-            Trav (MODUL_FUNS (arg_node), arg_node); /* print functions */
+            INFO_PRINT_PROTOTYPE (arg_info) = 1;
+            Trav (MODUL_FUNS (arg_node), arg_info); /* print function declarations*/
+            INFO_PRINT_PROTOTYPE (arg_info) = 0;
         }
 
-        if (MODUL_OBJS (arg_node)) {
+        if (MODUL_OBJS (arg_node) != NULL) {
             fprintf (outfile, "\n\n");
             fprintf (outfile, "/*\n");
             fprintf (outfile, " *  global objects\n");
@@ -764,12 +769,12 @@ PrintModul (node *arg_node, node *arg_info)
             Trav (MODUL_OBJS (arg_node), arg_info); /* print objdefs */
         }
 
-        if (MODUL_FUNS (arg_node)) {
+        if (MODUL_FUNS (arg_node) != NULL) {
             fprintf (outfile, "\n\n");
             fprintf (outfile, "/*\n");
             fprintf (outfile, " *  function definitions\n");
             fprintf (outfile, " */\n");
-            Trav (MODUL_FUNS (arg_node), NULL); /* print functions */
+            Trav (MODUL_FUNS (arg_node), arg_info); /* print function definitions */
         }
     }
 
@@ -927,10 +932,6 @@ PrintFunctionHeader (node *arg_node, node *arg_info)
 /*
  * Remark for PrintFundef:
  *
- *  arg_info is used as flag :
- *  arg_info == NULL: print function definitions (with body)
- *  arg_info != NULL: print function declarations (without body)
- *
  *  If C-code is to be generated, which means that an N_icm node already
  *  hangs on node[3], additional extern declarations for function
  *  definitions are printed.
@@ -939,66 +940,20 @@ PrintFunctionHeader (node *arg_node, node *arg_info)
 node *
 PrintFundef (node *arg_node, node *arg_info)
 {
-    node *new_info;
-
     DBUG_ENTER ("PrintFundef");
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
-    new_info = MakeInfo ();
-    new_info->varno = FUNDEF_VARNO (arg_node);
+    INFO_PRINT_VARNO (arg_info) = FUNDEF_VARNO (arg_node);
     /*
      * needed for the introduction of PROFILE_... MACROS in the
      *  function body.
      */
-    INFO_PRINT_FUNDEF (new_info) = arg_node;
+    INFO_PRINT_FUNDEF (arg_info) = arg_node;
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - function\n");
-                  PrintMasks (arg_node, new_info););
+                  PrintMasks (arg_node, arg_info););
 
-    if (arg_info == NULL) {
-        /*
-         * print function definition
-         */
-
-        if (FUNDEF_BODY (arg_node) != NULL) {
-            if (print_separate) {
-                outfile = WriteOpen ("%s/fun%d.c", tmp_dirname, function_counter);
-
-                fprintf (outfile, "#include \"header.h\"\n");
-            }
-
-            fprintf (outfile, "\n");
-
-            if ((FUNDEF_STATUS (arg_node) == ST_spmdfun)
-                && (compiler_phase == PH_genccode)) {
-                fprintf (outfile, "#if SAC_DO_MULTITHREAD\n\n");
-            }
-
-            if ((FUNDEF_ICM (arg_node) != NULL)
-                && (N_icm == NODE_TYPE (FUNDEF_ICM (arg_node)))) {
-                Trav (FUNDEF_ICM (arg_node), new_info); /* print N_icm ND_FUN_DEC */
-            } else {
-                PrintFunctionHeader (arg_node, new_info);
-            }
-
-            fprintf (outfile, "\n");
-            Trav (FUNDEF_BODY (arg_node), new_info); /* traverse function body */
-
-            if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                Trav (FUNDEF_PRAGMA (arg_node), NULL);
-            }
-
-            if ((FUNDEF_STATUS (arg_node) == ST_spmdfun)
-                && (compiler_phase == PH_genccode)) {
-                fprintf (outfile, "\n#endif  /* SAC_DO_MULTITHREAD */\n\n");
-            }
-
-            if (print_separate) {
-                fclose (outfile);
-                function_counter++;
-            }
-        }
-    } else {
+    if (INFO_PRINT_PROTOTYPE (arg_info)) {
         /*
          * print function declaration
          */
@@ -1014,21 +969,62 @@ PrintFundef (node *arg_node, node *arg_info)
                 if ((NULL != FUNDEF_ICM (arg_node))
                     && (N_icm == NODE_TYPE (FUNDEF_ICM (arg_node)))
                     && (FUNDEF_STATUS (arg_node) != ST_spmdfun)) {
-                    Trav (FUNDEF_ICM (arg_node), new_info); /* print N_icm ND_FUN_DEC */
+                    Trav (FUNDEF_ICM (arg_node), arg_info); /* print N_icm ND_FUN_DEC */
                 } else {
-                    PrintFunctionHeader (arg_node, new_info);
+                    PrintFunctionHeader (arg_node, arg_info);
                 }
 
                 fprintf (outfile, ";\n");
 
                 if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                    Trav (FUNDEF_PRAGMA (arg_node), NULL);
+                    Trav (FUNDEF_PRAGMA (arg_node), arg_info);
                 }
             }
         }
-    }
+    } else {
+        /*
+         * print function definition
+         */
 
-    FREE (new_info);
+        if (FUNDEF_BODY (arg_node) != NULL) {
+            if (INFO_PRINT_SEPARATE (arg_info)) {
+                outfile = WriteOpen ("%s/fun%d.c", tmp_dirname, function_counter);
+
+                fprintf (outfile, "#include \"header.h\"\n");
+            }
+
+            fprintf (outfile, "\n");
+
+            if ((FUNDEF_STATUS (arg_node) == ST_spmdfun)
+                && (compiler_phase == PH_genccode)) {
+                fprintf (outfile, "#if SAC_DO_MULTITHREAD\n\n");
+            }
+
+            if ((FUNDEF_ICM (arg_node) != NULL)
+                && (N_icm == NODE_TYPE (FUNDEF_ICM (arg_node)))) {
+                Trav (FUNDEF_ICM (arg_node), arg_info); /* print N_icm ND_FUN_DEC */
+            } else {
+                PrintFunctionHeader (arg_node, arg_info);
+            }
+
+            fprintf (outfile, "\n");
+            Trav (FUNDEF_BODY (arg_node), arg_info); /* traverse function body */
+
+            if (FUNDEF_PRAGMA (arg_node) != NULL) {
+                Trav (FUNDEF_PRAGMA (arg_node), arg_info);
+            }
+
+            if ((FUNDEF_STATUS (arg_node) == ST_spmdfun)
+                && (compiler_phase == PH_genccode)) {
+                fprintf (outfile, "\n#endif  /* SAC_DO_MULTITHREAD */\n\n");
+            }
+
+            if (INFO_PRINT_SEPARATE (arg_info)) {
+                fclose (outfile);
+                function_counter++;
+            }
+        }
+    }
 
     if (FUNDEF_NEXT (arg_node)) {
         Trav (FUNDEF_NEXT (arg_node), arg_info); /* traverse next function */
@@ -1218,9 +1214,9 @@ PrintReturn (node *arg_node, node *arg_info)
 
     if (RETURN_EXPRS (arg_node) && (!RETURN_INWITH (arg_node))) {
         if (arg_info && /* may be NULL if call from within debugger */
-            (NODE_TYPE (arg_info) = N_info) && (INFO_PRINT_FUNDEF (arg_info) != NULL)
-            && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)
-            && (compiler_phase == PH_genccode)) {
+            (NODE_TYPE (arg_info) = N_info) && (compiler_phase == PH_genccode)
+            && (INFO_PRINT_FUNDEF (arg_info) != NULL)
+            && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)) {
             GSCPrintMainEnd ();
             INDENT;
         }
@@ -1248,6 +1244,8 @@ PrintAp (node *arg_node, node *arg_info)
         fprintf (outfile, "%s:", AP_MOD (arg_node));
     }
     fprintf (outfile, "%s(", AP_NAME (arg_node));
+
+    DBUG_ASSERT ((arg_info != NULL), "PrintAp() called with arg_info==NULL");
 
     if (INFO_PRINT_PRAGMA_WLCOMP (arg_info)) {
         /*
@@ -1315,7 +1313,8 @@ PrintArg (node *arg_node, node *arg_info)
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**Number %d -> ", ARG_VARNO (arg_node)););
 
     fprintf (outfile, "%s",
-             Type2String (ARG_TYPE (arg_node), (arg_info == NULL) ? 0 : 1));
+             Type2String (ARG_TYPE (arg_node),
+                          INFO_PRINT_OMIT_FORMAL_PARAMS (arg_info) ? 0 : 1));
 
     if ((1 == show_refcnt) && (-1 != ARG_REFCNT (arg_node))) {
         fprintf (outfile, ":%d", ARG_REFCNT (arg_node));
@@ -2835,6 +2834,7 @@ node *
 Print (node *syntax_tree)
 {
     funptr *old_tab;
+    node *arg_info;
 
     DBUG_ENTER ("Print");
 
@@ -2845,6 +2845,8 @@ Print (node *syntax_tree)
     act_tab = print_tab;
 
     indent = 0;
+
+    arg_info = MakeInfo ();
 
     if (compiler_phase == PH_genccode) {
         switch (linkstyle) {
@@ -2857,7 +2859,7 @@ Print (node *syntax_tree)
             outfile = WriteOpen ("%s%s", targetdir, cfilename);
             NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
             GSCPrintFileHeader (syntax_tree);
-            syntax_tree = Trav (syntax_tree, NULL);
+            syntax_tree = Trav (syntax_tree, arg_info);
             fclose (outfile);
             break;
 
@@ -2871,7 +2873,7 @@ Print (node *syntax_tree)
             outfile = WriteOpen ("%s/%s", tmp_dirname, cfilename);
             NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
             GSCPrintFileHeader (syntax_tree);
-            syntax_tree = Trav (syntax_tree, NULL);
+            syntax_tree = Trav (syntax_tree, arg_info);
             fclose (outfile);
             break;
 
@@ -2883,8 +2885,9 @@ Print (node *syntax_tree)
              * is generated for global variable and type declarations as well as
              * function prototypes.
              */
-            print_separate = 1;
-            syntax_tree = Trav (syntax_tree, NULL);
+            INFO_PRINT_SEPARATE (arg_info) = 1;
+            syntax_tree = Trav (syntax_tree, arg_info);
+            INFO_PRINT_SEPARATE (arg_info) = 0;
             break;
         }
     }
@@ -2892,9 +2895,11 @@ Print (node *syntax_tree)
     else {
         outfile = stdout;
         fprintf (outfile, "\n-----------------------------------------------\n");
-        syntax_tree = Trav (syntax_tree, NULL);
+        syntax_tree = Trav (syntax_tree, arg_info);
         fprintf (outfile, "\n-----------------------------------------------\n");
     }
+
+    FREE (arg_info);
 
     act_tab = old_tab;
 
