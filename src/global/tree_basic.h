@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  1999/05/11 16:12:21  jhs
+ * Added some missing comments.
+ *
  * Revision 2.15  1999/05/10 11:04:21  bs
  * NWITH_TSI renamed to NWITH_WLAA.
  * all access macros INFO_TSI_xxx renamed to INFO_WLAA_xxx.
@@ -2060,6 +2063,9 @@ extern node *MakePragma ();
  ***    node *      LASTASSIGN    (O)  (N_assign)
  ***    node *      LASTWLBLOCK   (O)  (N_block)
  ***    node *      FINALASSIGN   (O)  (N_assign)
+ ***    void *      CONSTVEC      (O)  (compact c array)
+ ***    int         VECLEN        (O)
+ ***    int         VECTYPE       (O)
  ***
  ***  when used in readsib.c :
  ***
