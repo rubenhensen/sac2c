@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/02/12 17:07:33  nmw
+ * avis attribute in ids structure added
+ *
  * Revision 3.2  2001/01/24 23:32:08  dkr
  * macro DIM_NO_OFFSET added
  *
@@ -314,6 +317,7 @@ typedef struct IDS {
     int flag;          /* the flag is used for ids-status */
                        /* (loop invariant/not loop invariant , ...) */
     struct NODE *node; /* ptr. to declaration */
+    struct NODE *avis; /* ptr. to common used attribs of vardec/arg */
     struct NODE *def;  /* ptr. to definition(s) resp. usage(s) */
     struct NODE *use;  /* ptr. to usage chain (used only if the var */
                        /* is a one dimensional array! */
