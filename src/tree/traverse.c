@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/03/07 10:03:06  nmw
+ * pretraversal function for cmptree_tab added
+ *
  * Revision 3.11  2001/03/06 13:17:41  nmw
  * compare_tree added
  *
@@ -1317,7 +1320,7 @@ static funtab cmptree_tab_rec = {{
 #define NIFcmptree(it_cmptree) it_cmptree
 #include "node_info.mac"
                                  },
-                                 NULL,
+                                 CMPTnodeType,
                                  NULL};
 funtab *cmptree_tab = &cmptree_tab_rec;
 
