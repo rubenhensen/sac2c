@@ -1,6 +1,12 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.35  2004/11/01 21:54:54  sah
+  added new type DownLink for links that point
+  downwards in tehhe ast.
+  Fixed Icm attribute to SHareharedString as the name
+  seems to be used in sharing
+
   Revision 1.34  2004/10/28 17:26:09  sah
   added dependencies attribute to module node
 
@@ -134,8 +140,9 @@
     <type name="OldType" ctype="types*" init="NULL"
     copy="function" persist="no" />
     <type name="Node" ctype="node*" init="NULL" copy="function" />
-    <type name="Link" ctype="node*" init="NULL" copy="hash" persist="yes" />
-    <type name="ApLink" ctype="node*" init="NULL" copy="hash" persist="yes" />
+    <type name="Link" ctype="node*" init="NULL" copy="hash" persist="no" />
+    <type name="ExtLink" ctype="node*" init="NULL" copy="hash" persist="yes" />
+    <type name="DownLink" ctype="node*" init="NULL" copy="hash" persist="no" />
     <type name="IntegerArray" ctype="int*" init="NULL"
     copy="function" />
     <type name="Nums" ctype="nums*" init="NULL" copy="function" />
@@ -703,7 +710,7 @@
           </phases>
         </attribute>
         <attribute name="Return" mandatory="yes">
-          <type name="Link">
+          <type name="DownLink">
             <target>
               <node name="Return" />
             </target>
@@ -713,7 +720,7 @@
           </phases>
         </attribute>
         <attribute name="Impl" mandatory="no">
-          <type name="ApLink">
+          <type name="ExtLink">
             <target>
               <node name="Fundef" />
             </target>
@@ -1612,7 +1619,7 @@
           </phases>
         </attribute>
         <attribute name="Fundef" mandatory="yes">
-          <type name="ApLink">
+          <type name="ExtLink">
             <target>
               <node name="Fundef" />
             </target>
@@ -2007,7 +2014,7 @@
       </sons>
       <attributes>
         <attribute name="Name" mandatory="yes">
-          <type name="String" />
+          <type name="SharedString" />
           <phases>
             <all />
           </phases>
@@ -2293,7 +2300,7 @@
           </phases>
         </attribute>
         <attribute name="SSAAssign" mandatory="yes">
-          <type name="Link">
+          <type name="DownLink">
             <target>
               <node name="Assign" />
             </target>
@@ -2303,7 +2310,7 @@
           </phases>
         </attribute>
         <attribute name="SSAAssign2" mandatory="yes">
-          <type name="Link">
+          <type name="DownLink">
             <target>
               <node name="Assign" />
             </target>
@@ -2358,7 +2365,7 @@
           </phases>
         </attribute>
         <attribute name="SSAThen" mandatory="no">
-          <type name="Link">
+          <type name="DownLink">
             <target>
               <node name="Avis" />
             </target>
@@ -2368,7 +2375,7 @@
           </phases>
         </attribute>
         <attribute name="SSAElse" mandatory="no">
-          <type name="Link">
+          <type name="DownLink">
             <target>
               <node name="Avis" />
             </target>
@@ -2385,7 +2392,7 @@
           </phases>
         </attribute>
         <attribute name="Subst" mandatory="no">
-          <type name="Link">
+          <type name="DownLink">
             <target>
               <node name="Avis" />
             </target>
@@ -2396,7 +2403,7 @@
           </phases>
         </attribute>
         <attribute name="SubstUSSA" mandatory="no">
-          <type name="Link">
+          <type name="DownLink">
             <target>
               <node name="Avis" />
             </target>
@@ -2508,7 +2515,7 @@
           </phases>
         </attribute>
         <attribute name="Fundef" default="NULL" mandatory="yes">
-          <type name="Link">
+          <type name="ExtLink">
             <target>
               <node name="Fundef" />
             </target>
@@ -2689,7 +2696,7 @@
           </phases>
         </attribute>
         <attribute name="Fundef" mandatory="yes">
-          <type name="Link">
+          <type name="ExtLink">
             <target>
               <node name="Fundef" />
             </target>
