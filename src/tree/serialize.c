@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/09/30 20:15:52  sah
+ * removed some compiler warnings
+ *
  * Revision 1.6  2004/09/27 13:18:12  sah
  * implemented new serialization scheme
  *
@@ -75,7 +78,7 @@ SerializeLookupFunction (const char *module, const char *name)
 {
     DBUG_ENTER ("SerializeLookupFunction");
 
-    DBUG_RETURN (NULL);
+    DBUG_RETURN ((node *)NULL);
 }
 
 static node *
@@ -267,8 +270,6 @@ GenerateSerFunHead (node *fundef, symbolentrytype_t type, info *info)
 static void
 GenerateSerFunTail (node *fundef, symbolentrytype_t type, info *info)
 {
-    int pos;
-
     DBUG_ENTER ("GenerateSerFunBodyTail");
 
     fprintf (INFO_SER_FILE (info), ");\n");
