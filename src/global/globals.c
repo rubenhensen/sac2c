@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  1999/02/19 18:08:04  dkr
+ * added use_efence
+ *
  * Revision 1.29  1999/02/15 13:34:09  sbs
  * added -noDLAW opt_dlaw;
  *
@@ -256,7 +259,6 @@ int num_cpp_vars = 0;
 
 /*
  * C compiler options
- *
  */
 
 int cc_debug = 0;
@@ -390,6 +392,9 @@ int PFfunapmax = 1;
  *
  * These options specify the way sac2c behaves.
  */
+
+int use_efence = 0;
+/* link executable with ElectricFence (Malloc Debugger) */
 
 int cleanup = 1;
 /* Don't remove temporary files and directory when compiling
