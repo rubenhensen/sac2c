@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2004/10/11 14:46:39  ktr
+ * Replaced EMRefcount with rcphase.
+ *
  * Revision 3.60  2004/10/05 14:16:01  sah
  * fixed a include problem :(
  *
@@ -234,7 +237,7 @@
 #include "filemgr.h"
 #include "import.h"
 #include "allocation.h"
-#include "refcounting.h"
+#include "rcphase.h"
 #include "scnprs.h"
 #include "writesib.h"
 #include "readsib.h"
@@ -667,7 +670,7 @@ main (int argc, char *argv[])
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-    syntax_tree = EMRefCount (syntax_tree); /* emrefcnt_tab */
+    syntax_tree = RCphase (syntax_tree);
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
