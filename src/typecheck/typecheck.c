@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2004/07/27 11:50:20  sbs
+ * PROFILE_IN_TC eliminated!
+ *
  * Revision 3.57  2004/07/14 23:25:28  sah
  *  removed all old ssa optimizations and the use_ssaform flag
  *
@@ -2952,19 +2955,6 @@ Typecheck (node *arg_node)
         arg_node = ImportSpecialization (arg_node);
     }
 
-#ifdef PROFILE_IN_TC
-    {
-        int i;
-        /*
-         * initialize profile-tool !
-         */
-        PFfunapcntr[0] = 1; /* main-function */
-        for (i = 1; i < PF_MAXFUN; i++) {
-            PFfunapcntr[i] = 0;
-        }
-    }
-#endif
-
     if (sbs == 1) {
         arg_node = NewTypeCheck (arg_node);
     } else {
@@ -5517,12 +5507,6 @@ TI_ap (node *arg_node, node *arg_info)
     node *current_args;
     char *fun_name = arg_node->FUN_NAME;
     char *mod_name = arg_node->FUN_MOD_NAME;
-#ifdef PROFILE_IN_TC
-    char *str_buff, *tmp_str;
-    int str_spc = PF_MAXFUNNAMELEN - 1;
-    int tmp_fun, tmp_funap, funtypemask;
-    node *arg;
-#endif
 
     DBUG_ENTER ("TI_ap");
 
@@ -5584,152 +5568,6 @@ TI_ap (node *arg_node, node *arg_info)
      * one checks the functions fast (fun_p->tag == FAST_CHECK))
      */
     AP_FUNDEF (arg_node) = fun_p->node; /* set pointer to function declaration */
-
-#ifdef PROFILE_IN_TC
-    if (profileflag != 0) {
-        if (AP_ATFLAG (arg_node) != 1) { /* we did not yet inspect this application! */
-
-            AP_ATFLAG (arg_node) = 1;
-
-            /*
-             * prepare a string holding the fun-signature
-             */
-
-            str_buff = (char *)Malloc (sizeof (char) * PF_MAXFUNNAMELEN);
-            str_buff[0] = '\0';
-            str_buff = strncpy (str_buff, FUNDEF_NAME (fun_p->node), str_spc);
-            str_spc -= strlen (FUNDEF_NAME (fun_p->node));
-            str_spc = MAX (str_spc, 0);
-            str_buff = strncat (str_buff, "( ", str_spc);
-            str_spc -= 2;
-            str_spc = MAX (str_spc, 0);
-            arg = FUNDEF_ARGS (fun_p->node);
-            while (arg != NULL) {
-                tmp_str = Type2String (ARG_TYPE (arg), 0, TRUE);
-                if (ARG_ATTRIB (arg) == ST_reference) {
-                    tmp_str = strcat (tmp_str, " & ");
-                } else if (ARG_ATTRIB (arg) == ST_readonly_reference) {
-                    tmp_str = strcat (tmp_str, " (&) ");
-                } else {
-                    tmp_str = strcat (tmp_str, " ");
-                }
-                if (ARG_NAME (arg) != NULL) {
-                    tmp_str = strcat (tmp_str, ARG_NAME (arg));
-                }
-                str_buff = strncat (str_buff, tmp_str, str_spc);
-                str_spc -= strlen (tmp_str);
-                str_spc = MAX (str_spc, 0);
-                tmp_str = Free (tmp_str);
-                arg = ARG_NEXT (arg);
-                if (arg != NULL) {
-                    str_buff = strncat (str_buff, ", ", str_spc);
-                    str_spc -= 2;
-                    str_spc = MAX (str_spc, 0);
-                }
-            }
-            str_buff = strncat (str_buff, ")", str_spc);
-            str_spc -= 2;
-            str_spc = MAX (str_spc, 0);
-
-            /*
-             * Enumerate the actual funtion iff necessary and possible!
-             */
-
-            if (FUNDEF_FUNNO (fun_p->node) == 0) { /* this function is not yet counted! */
-                if (PFfuncntr == PF_MAXFUN) {
-                    SYSWARN (("\"PF_MAXFUN\" too low"));
-                    CONT_WARN (("function \"%s\" will not be profiled !", str_buff));
-                    str_buff = Free (str_buff);
-                } else {
-                    PFfunnme[PFfuncntr] = str_buff;
-                    FUNDEF_FUNNO (fun_p->node) = PFfuncntr++;
-                }
-            }
-            tmp_fun = FUNDEF_FUNNO (fun_p->node);
-
-            if (tmp_fun != 0) { /* we want to insert profiling-macros! */
-
-                /*
-                 * Enumerate the actual function application!
-                 */
-                if (PFfunapcntr[FUNDEF_FUNNO (fun_p->node)] == PF_MAXFUNAP) {
-                    SYSWARN (("\"PF_MAXFUNAP\" too low"));
-                    CONT_WARN (
-                      ("application of function \"%s\" in line %d will not "
-                       "be profiled separately but be accounted to the application "
-                       "in line %d !",
-                       str_buff, NODE_LINE (arg_node), PFfunapline[tmp_fun][0]));
-                    tmp_funap = 0;
-                } else {
-                    tmp_funap = PFfunapcntr[tmp_fun]++;
-                    if (PFfunapcntr[tmp_fun] > PFfunapmax) {
-                        PFfunapmax = PFfunapcntr[tmp_fun];
-                    }
-                    /*
-                     * The above lines allow for determining the actual maximum of
-                     * applications of a single function.
-                     */
-
-                    PFfunapline[tmp_fun][tmp_funap] = NODE_LINE (arg_node);
-                }
-
-                /*
-                 * insert N_assign node and N_annotate node above and below the actual
-                 * N_assign:
-                 * BEFORE:    INFO_TC_LASSIGN    ->
-                 *            actual N_assign -> fun_p (...)
-                 *            INFO_TC_NEXTASSIGN ->
-                 *
-                 * AFTER:     INFO_TC_LASSIGN    ->
-                 *            new N_assign    -> N_annotate CALL_FUN
-                 *            actual N_assign -> fun_p (...)
-                 *            new N_assign    -> N_annotate RETURN_FROM_FUN
-                 *            INFO_TC_NEXTASSIGN ->
-                 */
-
-                funtypemask = 0;
-
-                if (FUNDEF_INLINE (fun_p->node))
-                    funtypemask = funtypemask | INL_FUN;
-                if ((FUNDEF_STATUS (fun_p->node) == ST_imported_mod)
-                    || (FUNDEF_STATUS (fun_p->node) == ST_imported_class)) {
-                    funtypemask = funtypemask | LIB_FUN;
-                }
-                if (FUNDEF_ATTRIB (fun_p->node) == ST_generic) {
-                    funtypemask = funtypemask | OVRLD_FUN;
-                }
-
-                if (NODE_TYPE (INFO_TC_LASSIGN (arg_info)) == N_block) {
-                    ASSIGN_NEXT (BLOCK_INSTR (INFO_TC_LASSIGN (arg_info)))
-                      = MakeAssign (MakeAnnotate (funtypemask | RETURN_FROM_FUN, tmp_fun,
-                                                  tmp_funap),
-                                    INFO_TC_NEXTASSIGN (arg_info));
-                    if (INFO_TC_NEXTASSIGN (arg_info) == NULL) { /* ??? */
-                        ASSIGN_NEXT (BLOCK_INSTR (INFO_TC_LASSIGN (arg_info)))->node[1]
-                          = NULL;
-                    }
-                    BLOCK_INSTR (INFO_TC_LASSIGN (arg_info))
-                      = MakeAssign (MakeAnnotate (funtypemask | CALL_FUN, tmp_fun,
-                                                  tmp_funap),
-                                    BLOCK_INSTR (INFO_TC_LASSIGN (arg_info)));
-                } else {
-                    ASSIGN_NEXT (ASSIGN_NEXT (INFO_TC_LASSIGN (arg_info)))
-                      = MakeAssign (MakeAnnotate (funtypemask | RETURN_FROM_FUN, tmp_fun,
-                                                  tmp_funap),
-                                    INFO_TC_NEXTASSIGN (arg_info));
-                    if (INFO_TC_NEXTASSIGN (arg_info) == NULL) { /* ??? */
-                        ASSIGN_NEXT (ASSIGN_NEXT (INFO_TC_LASSIGN (arg_info)))->node[1]
-                          = NULL;
-                    }
-                    ASSIGN_NEXT (INFO_TC_LASSIGN (arg_info))
-                      = MakeAssign (MakeAnnotate (funtypemask | CALL_FUN, tmp_fun,
-                                                  tmp_funap),
-                                    ASSIGN_NEXT (INFO_TC_LASSIGN (arg_info)));
-                }
-            }
-        }
-    }
-#endif /* PROFILE_IN_TC */
 
     /* now free the infered type information */
     for (i = 0; i < count_args; i++) {
