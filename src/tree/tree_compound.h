@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/02/02 10:49:09  dkr
+ * no changes done
+ *
  * Revision 3.12  2001/01/29 16:08:19  dkr
  * WL_GET_ADDRESS replaced by WLNODE_GET_ADDR, WLSTRIDEX_GET_ADDR,
  * WLGRIDX_GET_ADDR
@@ -1732,6 +1735,18 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***  N_WLstride :  *and*  N_WLstrideVar :
+ ***/
+
+#define WLSTRIDEX_GET_ADDR(node, field)                                                  \
+    (NODE_TYPE (node) == N_WLstride)                                                     \
+      ? (void *)&(WLSTRIDE_##field (node))                                               \
+      : ((NODE_TYPE (node) == N_WLstrideVar) ? (void *)&(WLSTRIDEVAR_##field (node))     \
+                                             : NULL)
+
+/*--------------------------------------------------------------------------*/
+
+/***
  ***  N_WLgrid :
  ***/
 
@@ -1762,24 +1777,6 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
 
 #define WLGRIDX_CBLOCK_INSTR(n) (BLOCK_INSTR (WLGRIDX_CBLOCK (n)))
 
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_WLstride :  *and*  N_WLstrideVar :
- ***/
-
-#define WLSTRIDEX_GET_ADDR(node, field)                                                  \
-    (NODE_TYPE (node) == N_WLstride)                                                     \
-      ? (void *)&(WLSTRIDE_##field (node))                                               \
-      : ((NODE_TYPE (node) == N_WLstrideVar) ? (void *)&(WLSTRIDEVAR_##field (node))     \
-                                             : NULL)
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_WLgrid :    *and*  N_WLgridVar :
- ***/
-
 #define WLGRIDX_GET_ADDR(node, field)                                                    \
     (NODE_TYPE (node) == N_WLgrid)                                                       \
       ? (void *)&(WLGRID_##field (node))                                                 \
@@ -1788,9 +1785,9 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***  N_WLblock :   *and*  N_WLublock :     *and*
  ***  N_WLstride :  *and*  N_WLstrideVar :  *and*
- ***  N_WLgrid :    *and*  N_WLgridVar :    *and*
- ***  N_WLblock :   *and*  N_WLublock :
+ ***  N_WLgrid :    *and*  N_WLgridVar :
  ***/
 
 #define WLNODE_GET_ADDR(node, field)                                                     \
