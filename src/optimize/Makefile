@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.55  1999/01/15 16:59:24  sbs
+# rule for freemasks.o added
+#
 # Revision 1.54  1999/01/07 13:55:20  sbs
 # generatemasks and DeadFunctionRemoval inserted.
 #
@@ -61,7 +64,10 @@ INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules
 all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o DupTree.o Inline.o Unroll.o Unswitch.o CSE.o \
      WithloopFolding.o WLT.o WLI.o WLF.o DataFlowMask.o WLUnroll.o \
-     DeadFunctionRemoval.o
+     DeadFunctionRemoval.o freemasks.o
+
+freemasks.o: freemasks.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o freemasks.o -c freemasks.c $(INCS)
 
 generatemasks.o: generatemasks.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o generatemasks.o -c generatemasks.c $(INCS)
