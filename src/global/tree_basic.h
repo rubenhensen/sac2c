@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.33  1996/01/05 14:14:10  asi
+ * Revision 1.34  1996/01/05 14:33:22  cg
+ * removed macros MODARRAY_RETURN, GENARRAY_RETURN,
+ * FOLDFUN_RETURN, FOLDPRF_RETURN
+ *
+ * Revision 1.33  1996/01/05  14:14:10  asi
  * added While2Do: This function converts a while-loop into a do-loop
  *
  * Revision 1.32  1996/01/02  14:44:35  cg
@@ -1171,26 +1175,15 @@ extern node *MakeGenerator (node *left, node *right, char *id);
  ***    node*  BODY   (N_block)
  ***
  ***
- ***  permanent attributes:
- ***
- ***    node*  RETURN (N_return)  (O)
- ***
- ***
  ***  temporary attributes:
  ***
  ***    long*  MASK[x]                 (optimize -> )
  ***/
 
-/*
- *  RETURN is a reference to the return statement in the internal
- *  representation of a with loop.
- */
-
 extern node *MakeGenarray (node *array, node *body);
 
 #define GENARRAY_ARRAY(n) (n->node[0])
 #define GENARRAY_BODY(n) (n->node[1])
-#define GENARRAY_RETURN(n) (n->node[2])
 #define OPERATOR_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
@@ -1206,7 +1199,6 @@ extern node *MakeGenarray (node *array, node *body);
  ***
  ***  permanent attributes:
  ***
- ***    node*  RETURN (N_return)  (O)
  ***    char*  ID
  ***
  ***
@@ -1215,16 +1207,10 @@ extern node *MakeGenarray (node *array, node *body);
  ***    long*  MASK[x]                 (optimize -> )  (see N_genarray)
  ***/
 
-/*
- *  RETURN is a reference to the return statement in the internal
- *  representation of a with loop.
- */
-
 extern node *MakeModarray (node *array, node *body);
 
 #define MODARRAY_ARRAY(n) (n->node[0])
 #define MODARRAY_BODY(n) (n->node[1])
-#define MODARRAY_RETURN(n) (n->node[2])
 #define MODARRAY_ID(n) (n->info.id)
 
 /*--------------------------------------------------------------------------*/
@@ -1240,24 +1226,17 @@ extern node *MakeModarray (node *array, node *body);
  ***  permanent attributes:
  ***
  ***    prf    PRF
- ***    node*  RETURN (N_return)  (O)
  ***
  ***  temporary attributes:
  ***
  ***    long*  MASK[x]                 (optimize -> )  (see N_genarray)
  ***/
 
-/*
- *  RETURN is a reference to the return statement in the internal
- *  representation of a with loop.
- */
-
 extern node *MakeFoldprf (prf prf, node *body, node *neutral);
 
 #define FOLDPRF_PRF(n) (n->info.prf)
 #define FOLDPRF_BODY(n) (n->node[0])
 #define FOLDPRF_NEUTRAL(n) (n->node[1])
-#define FOLDPRF_RETURN(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1273,18 +1252,12 @@ extern node *MakeFoldprf (prf prf, node *body, node *neutral);
  ***
  ***    char*  NAME
  ***    char*  MOD                (O)
- ***    node*  RETURN (N_return)  (O)
  ***
  ***  temporary attributes:
  ***
  ***    node*  FUNDEF        (N_fundef)  (typecheck -> )
  ***    long*  MASK[x]                   (optimize -> )  (see N_genarray)
  ***/
-
-/*
- *  RETURN is a reference to the return statement in the internal
- *  representation of a with loop.
- */
 
 extern node *MakeFoldfun (char *name, char *mod, node *body, node *neutral);
 
@@ -1293,7 +1266,6 @@ extern node *MakeFoldfun (char *name, char *mod, node *body, node *neutral);
 #define FOLDFUN_BODY(n) (n->node[0])
 #define FOLDFUN_NEUTRAL(n) (n->node[1])
 #define FOLDFUN_FUNDEF(n) (n->node[2])
-#define FOLDFUN_RETURN(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
 
