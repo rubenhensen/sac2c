@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/01/09 17:26:26  dkr
+ * N_WLstriVar renamed into N_WLstrideVar
+ *
  * Revision 3.4  2000/12/15 17:11:40  sbs
  * changed malloc.h into stdlib.h because some systems do not provide
  * free in the former (e.g. the alpha)!.
@@ -20,11 +23,9 @@
  * Revision 1.1  1994/12/27  09:28:19  sbs
  * Initial revision
  *
- *
  */
 
 #ifndef _sac_free_h
-
 #define _sac_free_h
 
 #include <stdlib.h>
@@ -159,7 +160,7 @@ extern node *FreeWLublock (node *arg_node, node *arg_info);
 extern node *FreeWLstride (node *arg_node, node *arg_info);
 extern node *FreeWLgrid (node *arg_node, node *arg_info);
 extern node *FreeWLsegVar (node *arg_node, node *arg_info);
-extern node *FreeWLstriVar (node *arg_node, node *arg_info);
+extern node *FreeWLstrideVar (node *arg_node, node *arg_info);
 extern node *FreeWLgridVar (node *arg_node, node *arg_info);
 
 extern node *FreeCWrapper (node *arg_node, node *arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/01/09 17:28:52  dkr
+ * N_WLstriVar renamed into N_WLstrideVar
+ *
  * Revision 3.5  2001/01/09 16:40:12  dkr
  * tree_compound.h included
  *
@@ -1771,22 +1774,22 @@ MakeWLsegVar (int dims, node *contents, node *next)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLstriVar (int level, int dim, node *bound1, node *bound2, node *step, node *contents,
-               node *next)
+MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, node *step,
+                 node *contents, node *next)
 {
     node *new_node;
 
-    DBUG_ENTER ("MakeWLstriVar");
+    DBUG_ENTER ("MakeWLstrideVar");
 
-    new_node = CreateCleanNode (N_WLstriVar);
+    new_node = CreateCleanNode (N_WLstrideVar);
 
-    WLSTRIVAR_LEVEL (new_node) = level;
-    WLSTRIVAR_DIM (new_node) = dim;
-    WLSTRIVAR_BOUND1 (new_node) = bound1;
-    WLSTRIVAR_BOUND2 (new_node) = bound2;
-    WLSTRIVAR_STEP (new_node) = step;
-    WLSTRIVAR_CONTENTS (new_node) = contents;
-    WLSTRIVAR_NEXT (new_node) = next;
+    WLSTRIDEVAR_LEVEL (new_node) = level;
+    WLSTRIDEVAR_DIM (new_node) = dim;
+    WLSTRIDEVAR_BOUND1 (new_node) = bound1;
+    WLSTRIDEVAR_BOUND2 (new_node) = bound2;
+    WLSTRIDEVAR_STEP (new_node) = step;
+    WLSTRIDEVAR_CONTENTS (new_node) = contents;
+    WLSTRIDEVAR_NEXT (new_node) = next;
 
     DBUG_RETURN (new_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/01/09 17:25:45  dkr
+ * N_WLstriVar renamed into N_WLstrideVar
+ *
  * Revision 3.8  2000/12/14 17:42:24  dkr
  * indentation warning deactivated for old MT
  *
@@ -3337,7 +3340,7 @@ PrintWLublock (node *arg_node, node *arg_info)
  *   prints N_WLstride-nodes
  *
  * remark:
- *   N_WLstride, N_WLstriVar differs in output.
+ *   N_WLstride, N_WLstrideVar differs in output.
  *   The former prints '->', the latter '=>' !!!
  *
  ******************************************************************************/
@@ -3472,7 +3475,7 @@ PrintWLsegVar (node *arg_node, node *arg_info)
  *   void PrintWLvar(node *arg_node, node *arg_info)
  *
  * description:
- *   prints a son of N_WLstriVar- and N_WLgridVar-nodes.
+ *   prints a son of N_WLstrideVar- and N_WLgridVar-nodes.
  *
  ******************************************************************************/
 
@@ -3500,38 +3503,38 @@ PrintWLvar (node *arg_node, int dim)
 /******************************************************************************
  *
  * function:
- *   node *PrintWLstriVar(node *arg_node, node *arg_info)
+ *   node *PrintWLstrideVar(node *arg_node, node *arg_info)
  *
  * description:
- *   prints N_WLstriVar-nodes
+ *   prints N_WLstrideVar-nodes
  *
  * remark:
- *   N_WLstride, N_WLstriVar differs in output.
+ *   N_WLstride, N_WLstrideVar differs in output.
  *   The former prints '->', the latter '=>' !!!
  *
  ******************************************************************************/
 
 node *
-PrintWLstriVar (node *arg_node, node *arg_info)
+PrintWLstrideVar (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PrintWLstriVar");
+    DBUG_ENTER ("PrintWLstrideVar");
 
     INDENT;
     fprintf (outfile, "(");
-    PrintWLvar (WLSTRIVAR_BOUND1 (arg_node), WLSTRIVAR_DIM (arg_node));
+    PrintWLvar (WLSTRIDEVAR_BOUND1 (arg_node), WLSTRIDEVAR_DIM (arg_node));
     fprintf (outfile, " => ");
-    PrintWLvar (WLSTRIVAR_BOUND2 (arg_node), WLSTRIVAR_DIM (arg_node));
-    fprintf (outfile, "), step%d[%d] ", WLSTRIVAR_LEVEL (arg_node),
-             WLSTRIVAR_DIM (arg_node));
-    PrintWLvar (WLSTRIVAR_STEP (arg_node), WLSTRIVAR_DIM (arg_node));
+    PrintWLvar (WLSTRIDEVAR_BOUND2 (arg_node), WLSTRIDEVAR_DIM (arg_node));
+    fprintf (outfile, "), step%d[%d] ", WLSTRIDEVAR_LEVEL (arg_node),
+             WLSTRIDEVAR_DIM (arg_node));
+    PrintWLvar (WLSTRIDEVAR_STEP (arg_node), WLSTRIDEVAR_DIM (arg_node));
     fprintf (outfile, "\n");
 
     indent++;
-    Trav (WLSTRIVAR_CONTENTS (arg_node), arg_info);
+    Trav (WLSTRIDEVAR_CONTENTS (arg_node), arg_info);
     indent--;
 
-    if (WLSTRIVAR_NEXT (arg_node) != NULL) {
-        PRINT_CONT (Trav (WLSTRIVAR_NEXT (arg_node), arg_info), );
+    if (WLSTRIDEVAR_NEXT (arg_node) != NULL) {
+        PRINT_CONT (Trav (WLSTRIDEVAR_NEXT (arg_node), arg_info), );
     }
 
     DBUG_RETURN (arg_node);
@@ -4342,17 +4345,17 @@ DoPrintAST (node *arg_node, bool skip_next)
             skip = WLGRID_NEXT (arg_node);
             break;
 
-        case N_WLstriVar:
+        case N_WLstrideVar:
             fprintf (outfile, "(");
-            PrintWLvar (WLSTRIVAR_BOUND1 (arg_node), WLSTRIVAR_DIM (arg_node));
+            PrintWLvar (WLSTRIDEVAR_BOUND1 (arg_node), WLSTRIDEVAR_DIM (arg_node));
             fprintf (outfile, "->");
-            PrintWLvar (WLSTRIVAR_BOUND2 (arg_node), WLSTRIVAR_DIM (arg_node));
-            fprintf (outfile, ", step%d[%d] ", WLSTRIVAR_LEVEL (arg_node),
-                     WLSTRIVAR_DIM (arg_node));
-            PrintWLvar (WLSTRIVAR_STEP (arg_node), WLSTRIVAR_DIM (arg_node));
+            PrintWLvar (WLSTRIDEVAR_BOUND2 (arg_node), WLSTRIDEVAR_DIM (arg_node));
+            fprintf (outfile, ", step%d[%d] ", WLSTRIDEVAR_LEVEL (arg_node),
+                     WLSTRIDEVAR_DIM (arg_node));
+            PrintWLvar (WLSTRIDEVAR_STEP (arg_node), WLSTRIDEVAR_DIM (arg_node));
             fprintf (outfile, ")\n");
 
-            skip = WLSTRIVAR_NEXT (arg_node);
+            skip = WLSTRIDEVAR_NEXT (arg_node);
             break;
 
         case N_WLgridVar:

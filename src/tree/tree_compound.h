@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/01/09 17:26:49  dkr
+ * N_WLstriVar renamed into N_WLstrideVar
+ *
  * Revision 3.5  2001/01/09 16:55:13  dkr
  * some redundant macros for WL-nodes removed
  *
@@ -1813,13 +1816,13 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 #define WLSEGX_SCHEDULING(n) ((SCHsched_t *)(n)->info2)
 
 /*
- * some macros for N_WLstride, N_WLstriVar nodes
+ * some macros for N_WLstride, N_WLstrideVar nodes
  */
 
-#define WLSTRIX_LEVEL(n) (WLNODE_LEVEL (n))
-#define WLSTRIX_DIM(n) (WLNODE_DIM (n))
-#define WLSTRIX_CONTENTS(n) ((n)->node[0])
-#define WLSTRIX_NEXT(n) (WLNODE_NEXT (n))
+#define WLSTRIDEX_LEVEL(n) (WLNODE_LEVEL (n))
+#define WLSTRIDEX_DIM(n) (WLNODE_DIM (n))
+#define WLSTRIDEX_CONTENTS(n) ((n)->node[0])
+#define WLSTRIDEX_NEXT(n) (WLNODE_NEXT (n))
 
 /*
  * some macros for N_WLgrid, N_WLgridVar nodes

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/01/09 17:26:01  dkr
+ * N_WLstriVar renamed into N_WLstrideVar
+ *
  * Revision 3.3  2000/12/12 12:07:53  dkr
  * NWITH_IN renamed into NWITH_IN_MASK, ...
  *
@@ -1878,18 +1881,18 @@ DupWLsegVar (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupWLstriVar (node *arg_node, node *arg_info)
+DupWLstrideVar (node *arg_node, node *arg_info)
 {
     node *new_node;
 
-    DBUG_ENTER ("DupWLstriVar");
+    DBUG_ENTER ("DupWLstrideVar");
 
-    new_node = MakeWLstriVar (WLSTRIVAR_LEVEL (arg_node), WLSTRIVAR_DIM (arg_node),
-                              DUPTRAV (WLSTRIVAR_BOUND1 (arg_node)),
-                              DUPTRAV (WLSTRIVAR_BOUND2 (arg_node)),
-                              DUPTRAV (WLSTRIVAR_STEP (arg_node)),
-                              DUPTRAV (WLSTRIVAR_CONTENTS (arg_node)),
-                              DUPCONT (WLSTRIVAR_NEXT (arg_node)));
+    new_node = MakeWLstrideVar (WLSTRIDEVAR_LEVEL (arg_node), WLSTRIDEVAR_DIM (arg_node),
+                                DUPTRAV (WLSTRIDEVAR_BOUND1 (arg_node)),
+                                DUPTRAV (WLSTRIDEVAR_BOUND2 (arg_node)),
+                                DUPTRAV (WLSTRIDEVAR_STEP (arg_node)),
+                                DUPTRAV (WLSTRIDEVAR_CONTENTS (arg_node)),
+                                DUPCONT (WLSTRIDEVAR_NEXT (arg_node)));
 
     DBUG_RETURN (new_node);
 }

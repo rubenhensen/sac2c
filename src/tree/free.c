@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/01/09 17:26:18  dkr
+ * N_WLstriVar renamed into N_WLstrideVar
+ *
  * Revision 3.3  2000/12/12 12:05:13  dkr
  * nodes N_pre, N_post, N_inc, N_dec removed
  *
@@ -1876,19 +1879,19 @@ FreeWLsegVar (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeWLstriVar (node *arg_node, node *arg_info)
+FreeWLstrideVar (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
 
-    DBUG_ENTER ("FreeWLstriVar");
+    DBUG_ENTER ("FreeWLstrideVar");
 
-    DBUG_PRINT ("FREE", ("Removing N_WLstriVar node ..."));
+    DBUG_PRINT ("FREE", ("Removing N_WLstrideVar node ..."));
 
-    FREETRAV (WLSTRIVAR_BOUND1 (arg_node));
-    FREETRAV (WLSTRIVAR_BOUND2 (arg_node));
-    FREETRAV (WLSTRIVAR_STEP (arg_node));
-    FREETRAV (WLSTRIVAR_CONTENTS (arg_node));
-    tmp = FREECONT (WLSTRIVAR_NEXT (arg_node));
+    FREETRAV (WLSTRIDEVAR_BOUND1 (arg_node));
+    FREETRAV (WLSTRIDEVAR_BOUND2 (arg_node));
+    FREETRAV (WLSTRIDEVAR_STEP (arg_node));
+    FREETRAV (WLSTRIDEVAR_CONTENTS (arg_node));
+    tmp = FREECONT (WLSTRIDEVAR_NEXT (arg_node));
 
     FREE (arg_node);
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2001/01/09 17:26:31  dkr
+ * N_WLstriVar renamed into N_WLstrideVar
+ *
  * Revision 3.2  2000/12/06 19:26:31  dkr
  * DupTreePre renamed into DupTreeTravPre
  * DupTreePost renamed into DupTreeTravPost
@@ -199,7 +202,7 @@ extern node *DupWLublock (node *arg_node, node *arg_info);
 extern node *DupWLstride (node *arg_node, node *arg_info);
 extern node *DupWLgrid (node *arg_node, node *arg_info);
 extern node *DupWLsegVar (node *arg_node, node *arg_info);
-extern node *DupWLstriVar (node *arg_node, node *arg_info);
+extern node *DupWLstrideVar (node *arg_node, node *arg_info);
 extern node *DupWLgridVar (node *arg_node, node *arg_info);
 
 /* pre- and post-processing during traversal */

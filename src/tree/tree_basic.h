@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/01/09 17:26:37  dkr
+ * N_WLstriVar renamed into N_WLstrideVar
+ *
  * Revision 3.10  2001/01/09 16:42:05  dkr
  * macros WLNODE_..., WLSEGX_..., WLSTRIX_..., WLGRIDX_... moved to
  * tree_compound.h
@@ -3420,14 +3423,14 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
 extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
                            bool unrolling, node *contents, node *next);
 
-#define WLSTRIDE_LEVEL(n) (WLSTRIX_LEVEL (n))
-#define WLSTRIDE_DIM(n) (WLSTRIX_DIM (n))
+#define WLSTRIDE_LEVEL(n) (WLSTRIDEX_LEVEL (n))
+#define WLSTRIDE_DIM(n) (WLSTRIDEX_DIM (n))
 #define WLSTRIDE_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLSTRIDE_BOUND2(n) (WLNODE_BOUND2 (n))
 #define WLSTRIDE_STEP(n) (WLNODE_STEP (n))
 #define WLSTRIDE_UNROLLING(n) ((bool)((n)->info.prf_dec.tc))
-#define WLSTRIDE_CONTENTS(n) (WLSTRIX_CONTENTS (n))
-#define WLSTRIDE_NEXT(n) (WLSTRIX_NEXT (n))
+#define WLSTRIDE_CONTENTS(n) (WLSTRIDEX_CONTENTS (n))
+#define WLSTRIDE_NEXT(n) (WLSTRIDEX_NEXT (n))
 
 #define WLSTRIDE_PART(n) ((n)->node[2])
 #define WLSTRIDE_MODIFIED(n) ((n)->node[3])
@@ -3439,7 +3442,7 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  sons:
  ***
- ***    node*   NEXTDIM     (N_WLblock, N_WLublock, N_WLstride, N_WLstriVar)
+ ***    node*   NEXTDIM     (N_WLblock, N_WLublock, N_WLstride, N_WLstrideVar)
  ***    node*   NEXT        (N_WLgrid, N_WLgridVar)
  ***
  ***  permanent attributes:
@@ -3484,7 +3487,7 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, bool unroll
  ***
  ***  sons:
  ***
- ***    node*      CONTENTS       (N_WLstride, N_WLstriVar)
+ ***    node*      CONTENTS       (N_WLstride, N_WLstrideVar)
  ***    node*      NEXT           (N_WLsegVar)
  ***
  ***  permanent attributes:
@@ -3530,12 +3533,12 @@ extern node *MakeWLsegVar (int dims, node *contents, node *next);
 /*--------------------------------------------------------------------------*/
 
 /***
- *** N_WLstriVar :
+ *** N_WLstrideVar :
  ***
  ***  sons:
  ***
  ***    node*    CONTENTS      (N_WLgridVar, N_WLgrid)
- ***    node*    NEXT          (N_WLstriVar)
+ ***    node*    NEXT          (N_WLstrideVar)
  ***    node*    BOUND1        (N_num, N_id)
  ***    node*    BOUND2        (N_num, N_id)
  ***    node*    STEP          (N_num, N_id)
@@ -3550,16 +3553,16 @@ extern node *MakeWLsegVar (int dims, node *contents, node *next);
  ***    ---
  ***/
 
-extern node *MakeWLstriVar (int level, int dim, node *bound1, node *bound2, node *step,
-                            node *contents, node *next);
+extern node *MakeWLstrideVar (int level, int dim, node *bound1, node *bound2, node *step,
+                              node *contents, node *next);
 
-#define WLSTRIVAR_LEVEL(n) (WLSTRIX_LEVEL (n))
-#define WLSTRIVAR_DIM(n) (WLSTRIX_DIM (n))
-#define WLSTRIVAR_BOUND1(n) ((n)->node[2])
-#define WLSTRIVAR_BOUND2(n) ((n)->node[3])
-#define WLSTRIVAR_STEP(n) ((n)->node[4])
-#define WLSTRIVAR_CONTENTS(n) (WLSTRIX_CONTENTS (n))
-#define WLSTRIVAR_NEXT(n) (WLSTRIX_NEXT (n))
+#define WLSTRIDEVAR_LEVEL(n) (WLSTRIDEX_LEVEL (n))
+#define WLSTRIDEVAR_DIM(n) (WLSTRIDEX_DIM (n))
+#define WLSTRIDEVAR_BOUND1(n) ((n)->node[2])
+#define WLSTRIDEVAR_BOUND2(n) ((n)->node[3])
+#define WLSTRIDEVAR_STEP(n) ((n)->node[4])
+#define WLSTRIDEVAR_CONTENTS(n) (WLSTRIDEX_CONTENTS (n))
+#define WLSTRIDEVAR_NEXT(n) (WLSTRIDEX_NEXT (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3568,7 +3571,7 @@ extern node *MakeWLstriVar (int level, int dim, node *bound1, node *bound2, node
  ***
  ***  sons:
  ***
- ***    node*    NEXTDIM         (N_WLstriVar)
+ ***    node*    NEXTDIM         (N_WLstrideVar)
  ***    node*    NEXT            (N_WLgridVar, N_WLgrid)
  ***    node*    BOUND1          (N_num, N_id)
  ***    node*    BOUND2          (N_num, N_id)
