@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2001/05/16 10:20:11  ben
+ * RESET_TASKS changed to SET_TASKS
+ *
  * Revision 3.20  2001/05/04 11:51:01  ben
  * Select_block renamed to SAC_MT_SCHEDULER_TS_Even
  * SAC_MT_SCHEDULER_..._FIRST_TASK/NEXT_TASK added
@@ -849,19 +852,13 @@ typedef union {
                           SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim), taskid));              \
     }
 
-#define SAC_MT_SCHEDULER_Reset_Tasks()                                                   \
+#define SAC_MT_SCHEDULER_SET_TASKS(sched_id)                                             \
     {                                                                                    \
         int i;                                                                           \
-        int ThreadsDone;                                                                 \
-        SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (SAC_MT_THREADS ()));                       \
-        SAC_MT_TASK (SAC_MT_THREADS ())++;                                               \
-        ThreadsDone = SAC_MT_TASK (SAC_MT_THREADS ());                                   \
-        SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (SAC_MT_THREADS ()));                       \
-        if (ThreadsDone == SAC_MT_THREADS ()) {                                          \
-            for (i = 0; i < SAC_MT_THREADS () + 1; i++)                                  \
-                SAC_MT_TASK (i) = 0;                                                     \
-            SAC_TR_MT_PRINT (("SAC_MT_TASK reseted"));                                   \
-        }                                                                                \
+                                                                                         \
+        for (i = 0; i < SAC_MT_THREADS () + 1; i++)                                      \
+            SAC_MT_TASK (i) = 0;                                                         \
+        SAC_TR_MT_PRINT (("SAC_MT_TASK set for sched_id %d", sched_id));                 \
     }
 
 #define SAC_MT_SCHEDULER_Static_FIRST_TASK(tasks_per_thread, taskid, worktodo)           \
@@ -876,13 +873,24 @@ typedef union {
         worktodo = (taskid < SAC_MT_THREADS () * tasks_per_thread);                      \
     }
 
-#define SAC_MT_SCHEDULER_Self_FIRST_TASK(tasks_per_thread, taskid, worktodo)             \
+#define SAC_MT_SCHEDULER_Self_FIRST_TASK_STATIC(sched_id, tasks_per_thread, taskid,      \
+                                                worktodo)                                \
     {                                                                                    \
         taskid = SAC_MT_MYTHREAD ();                                                     \
         worktodo = (taskid < SAC_MT_THREADS () * tasks_per_thread);                      \
     }
 
-#define SAC_MT_SCHEDULER_Self_NEXT_TASK(tasks_per_thread, taskid, worktodo)              \
+#define SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC(sched_id, tasks_per_thread, taskid,     \
+                                                 worktodo)                               \
+    {                                                                                    \
+        SAC_MT_SCHEDULER_Self_NEXT_TASK_WITH_DYNAMIC_FIRST_TASK (sched_id,               \
+                                                                 tasks_per_thread,       \
+                                                                 taskid, worktodo);      \
+    }
+
+#define SAC_MT_SCHEDULER_Self_NEXT_TASK_WITH_STATIC_FIRST_TASK(sched_id,                 \
+                                                               tasks_per_thread, taskid, \
+                                                               worktodo)                 \
     {                                                                                    \
         SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (0));                                       \
                                                                                          \
@@ -895,16 +903,28 @@ typedef union {
         SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (0));                                       \
         worktodo = (taskid < SAC_MT_THREADS () * tasks_per_thread);                      \
     }
-
-#define SAC_MT_SCHEDULER_Affinity_FIRST_TASK(tasks_per_thread, taskid, worktodo,         \
-                                             maxloadthread, mintask)                     \
+#define SAC_MT_SCHEDULER_Self_NEXT_TASK_WITH_DYNAMIC_FIRST_TASK(sched_id,                \
+                                                                tasks_per_thread,        \
+                                                                taskid, worktodo)        \
     {                                                                                    \
-        SAC_MT_SCHEDULER_Affinity_NEXT_TASK (tasks_per_thread, taskid, worktodo,         \
-                                             maxloadthread, mintask)                     \
+        SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (0));                                       \
+                                                                                         \
+        taskid = SAC_MT_TASK (0);                                                        \
+        (SAC_MT_TASK (0))++;                                                             \
+                                                                                         \
+        SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (0));                                       \
+        worktodo = (taskid < SAC_MT_THREADS () * tasks_per_thread);                      \
     }
 
-#define SAC_MT_SCHEDULER_Affinity_NEXT_TASK(tasks_per_thread, taskid, worktodo,          \
-                                            maxloadthread, mintask)                      \
+#define SAC_MT_SCHEDULER_Affinity_FIRST_TASK(sched_id, tasks_per_thread, taskid,         \
+                                             worktodo, maxloadthread, mintask)           \
+    {                                                                                    \
+        SAC_MT_SCHEDULER_Affinity_NEXT_TASK (sched_id, tasks_per_thread, taskid,         \
+                                             worktodo, maxloadthread, mintask)           \
+    }
+
+#define SAC_MT_SCHEDULER_Affinity_NEXT_TASK(sched_id, tasks_per_thread, taskid,          \
+                                            worktodo, maxloadthread, mintask)            \
     {                                                                                    \
         int queueid;                                                                     \
         worktodo = 0;                                                                    \
