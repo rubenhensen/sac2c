@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.18  2005/01/31 22:08:28  mwe
+ * some changes done for withloops
+ *
  * Revision 1.17  2005/01/30 23:09:03  mwe
  * ... and one more time: debugging
  *
@@ -100,7 +103,7 @@
  */
 struct INFO {
     node *fundef;
-    ntype *withindex;
+    node *withidvec;
     node *withid;
     bool corrlf;
     bool chklf;
@@ -112,10 +115,12 @@ struct INFO {
     bool else_terr;
     bool type_error;
     node *assign;
+    ntype *withidtype;
 };
 
+#define INFO_TUP_WITHIDTYPE(n) (n->withidtype)
 #define INFO_TUP_FUNDEF(n) (n->fundef)
-#define INFO_TUP_WITHINDEX(n) (n->withindex)
+#define INFO_TUP_WITHIDVEC(n) (n->withidvec)
 #define INFO_TUP_WITHID(n) (n->withid)
 #define INFO_TUP_CORRECTFUNCTION(n) (n->corrlf)
 #define INFO_TUP_CHECKLOOPFUN(n) (n->chklf)
@@ -137,7 +142,7 @@ MakeInfo ()
 
     INFO_TUP_FUNDEF (result) = NULL;
     INFO_TUP_WITHID (result) = NULL;
-    INFO_TUP_WITHINDEX (result) = NULL;
+    INFO_TUP_WITHIDVEC (result) = NULL;
     INFO_TUP_CORRECTFUNCTION (result) = TRUE;
     INFO_TUP_CHECKLOOPFUN (result) = FALSE;
     INFO_TUP_TYPE (result) = NULL;
@@ -660,9 +665,8 @@ GetBestPossibleType (ntype *type)
          */
         break;
     case SSP_akd:
-        if ((TYisAUD (type)) || (TYisAUDGZ (type))) {
-            DBUG_ASSERT ((FALSE), "current type could not be transformed to akd type");
-        } else if (TYisAKD (type)) {
+        if ((TYisAUD (type)) || (TYisAUDGZ (type)) || TYisAKD (type)) {
+
             result = TYcopyType (type);
         } else if ((TYisAKS (type)) || TYisAKV (type)) {
             result = TYmakeAKD (TYcopyType (TYgetScalar (type)), 0,
@@ -672,16 +676,12 @@ GetBestPossibleType (ntype *type)
         }
         break;
     case SSP_aks:
-        if ((TYisAUD (type)) || (TYisAUDGZ (type)) || (TYisAKD (type))) {
-            DBUG_ASSERT ((FALSE), "current type could not be transformed to aks type");
-        } else if (TYisAKS (type)) {
-            result = TYcopyType (type);
-        } else if (TYisAKV (type)) {
+        if (TYisAKV (type)) {
 
             result = TYmakeAKS (TYcopyType (TYgetScalar (type)),
                                 SHcopyShape (TYgetShape (type)));
         } else {
-            DBUG_ASSERT ((FALSE), "unexpected type");
+            result = TYcopyType (type);
         }
         break;
     case SSP_akv:
@@ -1281,7 +1281,7 @@ TUPfundef (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("TUPfundef");
-
+    NOTE (("   --- Enter TUPfundef ---"));
     INFO_TUP_FUNDEF (arg_info) = arg_node;
 
     if (NULL != FUNDEF_BODY (arg_node)) {
@@ -1498,8 +1498,8 @@ node *
 TUPpart (node *arg_node, info *arg_info)
 {
     node *idxs;
-    int num_ids;
     ntype *idx;
+    int num_ids;
     DBUG_ENTER ("TUPpart");
 
     /*
@@ -1511,6 +1511,7 @@ TUPpart (node *arg_node, info *arg_info)
      * First, we check whether we can extract some shape info from the
      * generator variable, i.e, we check whether we do have scalar indices:
      */
+
     idxs = WITHID_IDS (PART_WITHID (arg_node));
 
     if (idxs != NULL) {
@@ -1522,7 +1523,11 @@ TUPpart (node *arg_node, info *arg_info)
         idx = TYmakeAKD (TYmakeSimpleType (T_int), 1, SHcreateShape (0));
     }
 
-    INFO_TUP_WITHINDEX (arg_info) = idx;
+    INFO_TUP_WITHIDTYPE (arg_info) = idx;
+#if 0
+  INFO_TUP_WITHIDVEC( arg_info) = WITHID_VEC( PART_WITHID( arg_node));
+#endif
+
     INFO_TUP_WITHID (arg_info) = PART_WITHID (arg_node);
 
     if (PART_GENERATOR (arg_node) != NULL) {
@@ -1693,7 +1698,7 @@ TUPgenerator (node *arg_node, info *arg_info)
 node *
 TUPcode (node *arg_node, info *arg_info)
 {
-    ntype *tmp;
+    ntype *prod, *tmp;
     DBUG_ENTER ("TUPcode");
 
     /*
@@ -1707,6 +1712,17 @@ TUPcode (node *arg_node, info *arg_info)
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     }
 
+    prod = NTCnewTypeCheck_Expr (CODE_CEXPRS (arg_node));
+    tmp = TYcopyType (TYgetProductMember (prod, 0));
+    prod = TYfreeType (prod);
+    if (NULL == INFO_TUP_WLEXPRS (arg_info)) {
+
+        INFO_TUP_WLEXPRS (arg_info) = tmp;
+    } else {
+
+        INFO_TUP_WLEXPRS (arg_info) = GetLowestType (tmp, INFO_TUP_WLEXPRS (arg_info));
+    }
+
     if (CODE_NEXT (arg_node) != NULL) {
 
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
@@ -1714,8 +1730,9 @@ TUPcode (node *arg_node, info *arg_info)
 
     /*
      * WLEXPRS needed later for computation of final type of withloop
+     * reverse upgrade of type not possible, because exprs-chain is
+     * used occurence, no defining! Could cause assertions!
      */
-    tmp = NTCnewTypeCheck_Expr (CODE_CEXPRS (arg_node));
 
     INFO_TUP_WLEXPRS (arg_info) = tmp;
 
@@ -1849,12 +1866,12 @@ TUPids (node *arg_node, info *arg_info)
         /*
          * correct AVIS_SSAASSIGN pointer
          */
-        /*    AVIS_SSAASSIGN( IDS_AVIS( arg_node)) = INFO_TUP_ASSIGN( arg_info);*/
-        /*    if ( N_assign != NODE_TYPE( AVIS_SSAASSIGN( IDS_AVIS( arg_node)))) {*/
+        AVIS_SSAASSIGN (IDS_AVIS (arg_node)) = INFO_TUP_ASSIGN (arg_info);
+        if (N_assign != NODE_TYPE (AVIS_SSAASSIGN (IDS_AVIS (arg_node)))) {
 
-        DBUG_ASSERT ((N_assign == NODE_TYPE (AVIS_SSAASSIGN (IDS_AVIS (arg_node)))),
-                     "wrong backref...");
-        /* }*/
+            DBUG_ASSERT ((N_assign == NODE_TYPE (AVIS_SSAASSIGN (IDS_AVIS (arg_node)))),
+                         "wrong backref...");
+        }
 
         oldtype = AVIS_TYPE (IDS_AVIS (arg_node));
 
@@ -1918,40 +1935,31 @@ TUPids (node *arg_node, info *arg_info)
 node *
 TUPmodarray (node *arg_node, info *arg_info)
 {
-    ntype *idx, *array, *expr, *prod, *wlexprs, *result, *tmp;
+    ntype *idx, *array, *expr, *prod, *tmp;
     te_info *info;
-    int count, i;
+
     DBUG_ENTER ("TUPmodarray");
 
-    wlexprs = INFO_TUP_WLEXPRS (arg_info);
-    count = TYgetProductSize (wlexprs);
+    expr = INFO_TUP_WLEXPRS (arg_info);
+#if 0
+  idx   =  TYcopyType(  AVIS_TYPE( IDS_AVIS( INFO_TUP_WITHIDVEC(arg_info))));
+#endif
+    idx = INFO_TUP_WITHIDTYPE (arg_info);
+    array = NTCnewTypeCheck_Expr (MODARRAY_ARRAY (arg_node));
 
-    DBUG_ASSERT ((count > 0), "empty product type found");
+    if (!TYisArray (expr)) {
 
-    result = TYmakeEmptyProductType (count);
-
-    for (i = 0; i < count; i++) {
-
-        idx = TYcopyType (INFO_TUP_WITHINDEX (arg_info));
-        array = NTCnewTypeCheck_Expr (MODARRAY_ARRAY (arg_node));
-        expr = TYcopyType (TYgetProductMember (wlexprs, i));
-
-        if (!TYisArray (expr)) {
-
-            DBUG_ASSERT ((TYisArray (expr)), "array type expected");
-        }
-
-        info
-          = TEmakeInfo (global.linenum, "with", "", "modarray", NULL, NULL, NULL, NULL);
-        prod = TYmakeProductType (3, idx, array, expr);
-
-        tmp = NTCCTwl_mod (info, prod);
-        result = TYsetProductMember (result, i, TYcopyType (TYgetProductMember (tmp, 0)));
-
-        prod = TYfreeType (prod);
+        DBUG_ASSERT ((TYisArray (expr)), "array type expected");
     }
 
-    INFO_TUP_TYPE (arg_info) = result;
+    info = TEmakeInfo (global.linenum, "with", "", "modarray", NULL, NULL, NULL, NULL);
+    prod = TYmakeProductType (3, idx, array, expr);
+
+    tmp = NTCCTwl_mod (info, prod);
+
+    prod = TYfreeType (prod);
+
+    INFO_TUP_TYPE (arg_info) = tmp;
     INFO_TUP_WLEXPRS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
@@ -1968,37 +1976,27 @@ TUPmodarray (node *arg_node, info *arg_info)
 node *
 TUPgenarray (node *arg_node, info *arg_info)
 {
-    ntype *idx, *shp, *expr, *dexpr, *prod, *wlexprs, *result, *tmp;
+    ntype *idx, *shp, *expr, *dexpr, *prod, *tmp;
     te_info *info;
-    int count, i;
+
     DBUG_ENTER ("TUPgenarray");
 
-    wlexprs = INFO_TUP_WLEXPRS (arg_info);
-    count = TYgetProductSize (wlexprs);
+    expr = INFO_TUP_WLEXPRS (arg_info);
+    idx = INFO_TUP_WITHIDTYPE (arg_info);
+#if 0
+  idx   =  TYcopyType( AVIS_TYPE( IDS_AVIS( INFO_TUP_WITHIDVEC(arg_info))));
+#endif
+    shp = NTCnewTypeCheck_Expr (GENARRAY_SHAPE (arg_node));
+    dexpr = NTCnewTypeCheck_Expr (GENARRAY_DEFAULT (arg_node));
 
-    DBUG_ASSERT ((count > 0), "empty product type found");
+    prod = TYmakeProductType (4, idx, shp, expr, dexpr);
+    info = TEmakeInfo (global.linenum, "with", "", "genarray", NULL, NULL, NULL, NULL);
 
-    result = TYmakeEmptyProductType (count);
+    tmp = NTCCTwl_gen (info, prod);
 
-    for (i = 0; i < count; i++) {
+    prod = TYfreeType (prod);
 
-        idx = TYcopyType ((INFO_TUP_WITHINDEX (arg_info)));
-        shp = NTCnewTypeCheck_Expr (GENARRAY_SHAPE (arg_node));
-        expr = TYcopyType (TYgetProductMember (wlexprs, i));
-        dexpr = NTCnewTypeCheck_Expr (GENARRAY_DEFAULT (arg_node));
-
-        prod = TYmakeProductType (4, idx, shp, expr, dexpr);
-        info
-          = TEmakeInfo (global.linenum, "with", "", "genarray", NULL, NULL, NULL, NULL);
-
-        tmp = NTCCTwl_gen (info, prod);
-        result = TYsetProductMember (result, i, TYcopyType (TYgetProductMember (tmp, 0)));
-
-        prod = TYfreeType (prod);
-    }
-
-    INFO_TUP_TYPE (arg_info) = result;
-    INFO_TUP_WLEXPRS (arg_info) = NULL;
+    INFO_TUP_TYPE (arg_info) = tmp;
 
     DBUG_RETURN (arg_node);
 }
@@ -2014,37 +2012,25 @@ TUPgenarray (node *arg_node, info *arg_info)
 node *
 TUPfold (node *arg_node, info *arg_info)
 {
-    ntype *neutr, *expr, *prod, *wlexprs, *result, *tmp;
+    ntype *neutr, *expr, *prod, *tmp;
     te_info *info;
-    int count, i;
+
     DBUG_ENTER ("TUPfold");
 
-    wlexprs = INFO_TUP_WLEXPRS (arg_info);
-    count = TYgetProductSize (wlexprs);
+    expr = INFO_TUP_WLEXPRS (arg_info);
+    neutr = NTCnewTypeCheck_Expr (FOLD_NEUTRAL (arg_node));
 
-    DBUG_ASSERT ((count > 0), "empty product type found");
+    DBUG_ASSERT ((TYisArray (neutr)), "non array node!");
+    DBUG_ASSERT ((TYisArray (expr)), "non array node!");
 
-    result = TYmakeEmptyProductType (count);
+    prod = TYmakeProductType (2, neutr, expr);
+    info = TEmakeInfo (global.linenum, "with", "", "fold", NULL, NULL, NULL, NULL);
 
-    for (i = 0; i < count; i++) {
+    tmp = NTCCTwl_fold (info, prod);
 
-        neutr = NTCnewTypeCheck_Expr (FOLD_NEUTRAL (arg_node));
-        expr = TYcopyType (TYgetProductMember (wlexprs, i));
+    prod = TYfreeType (prod);
 
-        DBUG_ASSERT ((TYisArray (neutr)), "non array node!");
-        DBUG_ASSERT ((TYisArray (expr)), "non array node!");
-
-        prod = TYmakeProductType (2, neutr, expr);
-        info = TEmakeInfo (global.linenum, "with", "", "fold", NULL, NULL, NULL, NULL);
-
-        tmp = NTCCTwl_fold (info, prod);
-        result = TYsetProductMember (result, i, TYcopyType (TYgetProductMember (tmp, 0)));
-
-        prod = TYfreeType (prod);
-    }
-
-    INFO_TUP_TYPE (arg_info) = result;
-    INFO_TUP_WLEXPRS (arg_info) = NULL;
+    INFO_TUP_TYPE (arg_info) = tmp;
 
     DBUG_RETURN (arg_node);
 }
