@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.107  2004/11/26 18:13:19  ktr
+  Added some comments to COMP trversal.
+
   Revision 1.106  2004/11/26 18:04:30  skt
   fixed some traversal bugs
 
@@ -1476,10 +1479,29 @@
           <node name="Spmd" />
           <node name="Sync" />
         </travuser>
+        <travnone>
+          <node name="Icm">
+            <description>
+              Using TRAVsons, COMPid would be applied to ICM_ARG1.
+            </description>
+          </node>
+        </travnone>
         <traverror>
-          <node name="Cast" />
-          <node name="While" />
-          <node name="Funcond" />
+          <node name="Cast">
+            <description>
+              Node is already eliminated.
+            </description>
+          </node>
+          <node name="While">
+            <description>
+              Node is already eliminated.
+            </description>
+          </node>
+          <node name="Funcond">
+            <description>
+              Node is already eliminated.
+            </description>
+          </node>
         </traverror>
       </traversal>
     </phase>
