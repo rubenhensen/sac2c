@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.92  2000/08/24 12:26:37  dkr
+ * INFO_PRINT_RET no longer needed and thus removed
+ *
  * Revision 1.91  2000/08/07 13:41:23  dkr
  * ST_independent replaced by ST_shp_indep and ST_dim_indep
  *
@@ -2602,10 +2605,8 @@ extern node *MakeInfo ();
 #define INFO_PRINT_CONT(n) ((node *)(n->info2))
 #define INFO_PRINT_FUNDEF(n) (n->node[0])
 #define INFO_PRINT_INT_SYN(n) (n->node[2])
-#define INFO_PRINT_WITH_RET(n) (n->node[3])
 #define INFO_PRINT_NWITH(n) (n->node[4])
 #define INFO_PRINT_ACCESS(n) (n->node[5])
-#define INFO_PRINT_PRAGMA_WLCOMP(n) (n->info.cint)
 #define INFO_PRINT_SIB(n) (n->flag)
 #define INFO_PRINT_OMIT_FORMAL_PARAMS(n) (n->counter)
 #define INFO_PRINT_VARNO(n) (n->varno)
