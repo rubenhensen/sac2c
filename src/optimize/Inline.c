@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/06/02 15:55:56  asi
+ * Revision 1.4  1995/06/08 10:03:44  asi
+ * added multi inlineing and some bugs fixed
+ *
+ * Revision 1.3  1995/06/02  15:55:56  asi
  * Bug fixed in INLfundef
  *
  * Revision 1.2  1995/06/02  11:28:18  asi
@@ -25,6 +28,7 @@
 #include "free.h"
 #include "string.h"
 #include "typecheck.h"
+#include "internal_lib.h"
 
 #include "optimize.h"
 #include "LoopInvariantRemoval.h"
@@ -32,12 +36,11 @@
 #include "Inline.h"
 #include "optimize.h"
 
-#define FUNBLOCK arg_info->node[0]
-#define TYPES arg_info->node[1]
-#define VARDEC FUNBLOCK->node[1]
+#define FIRST_FUNC arg_info->node[0]
+#define CURNT_FUNC arg_info->node[1]
 
-#define INLINE_PREFIX "__in"
-#define INLINE_PREFIX_LENGTH 4
+#define INLINE_PREFIX "__inl"
+#define INLINE_PREFIX_LENGTH 5
 
 static int inline_nr = 0;
 
@@ -69,6 +72,63 @@ Inline (node *arg_node, node *arg_info)
 
 /*
  *
+ *  functionname  : INLmodul
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+node *
+INLmodul (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("INLmodul");
+    if (NULL != arg_node->node[2]) {
+        FIRST_FUNC = arg_node->node[2];
+        arg_node->node[2] = Trav (arg_node->node[2], arg_info);
+    }
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : RestoreInlineNo
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+void
+RestoreInlineNo (node *first_func, node *curnt_func)
+{
+    node *fun_node;
+    int no;
+
+    DBUG_ENTER ("RestoreInlineNo");
+
+    no = 1;
+    fun_node = first_func;
+    while (NULL != fun_node) {
+        if (fun_node == curnt_func)
+            no = inlnum;
+        if (fun_node->flag)
+            fun_node->refcnt = no;
+        fun_node = fun_node->node[1];
+    }
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
  *  functionname  : INLfundef
  *  arguments     :
  *  description   :
@@ -85,7 +145,9 @@ INLfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INLfundef");
     if (NULL != arg_node->node[0]) {
-        FUNBLOCK = arg_node->node[0];
+        DBUG_PRINT ("INL", ("Trav function %s\n", arg_node->info.types->id));
+        CURNT_FUNC = arg_node;
+        RestoreInlineNo (FIRST_FUNC, CURNT_FUNC);
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
         arg_node->node[0]->node[1]
           = AppendNodeChain (0, TYPES, arg_node->node[0]->node[1]);
@@ -93,6 +155,7 @@ INLfundef (node *arg_node, node *arg_info)
     }
     if (NULL != arg_node->node[1])
         arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+    arg_node->refcnt = 0;
     DBUG_RETURN (arg_node);
 }
 
@@ -163,14 +226,16 @@ INLMakeLet (char *var_name, node *expr)
 node *
 DoInline (node *let_node, node *ap_node, node *arg_info)
 {
-    node *inl_nodes, *header_nodes = NULL, *bottom_nodes = NULL, *var_node, *expr_node;
+    node *inl_nodes, *header_nodes = NULL, *bottom_nodes = NULL, *var_node, *expr_node,
+                     *new_expr;
     ids *ids_node;
+    char *new_name;
 
     DBUG_ENTER ("DoInline");
     DBUG_PRINT ("INL", ("Inlineing function %s\n", ap_node->node[1]->info.types->id));
 
     inl_fun++;
-    ap_node->node[1]->flag--;
+    ap_node->node[1]->refcnt--;
 
     /*
      * Generate new variables
@@ -188,10 +253,11 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
     DUPTYPE = NORMAL;
 
     while ((NULL != var_node) && (NULL != expr_node)) {
-        inl_nodes = INLMakeLet (RenameInlinedVar (var_node->info.types->id),
-                                DupTree (expr_node->node[0], arg_info));
-        inl_nodes->node[0]->info.ids
-          = SetDeclPtr (inl_nodes->node[0]->info.ids, arg_info);
+        new_name = RenameInlinedVar (var_node->info.types->id);
+        new_expr = DupTree (expr_node->node[0], arg_info);
+        inl_nodes = INLMakeLet (new_name, new_expr);
+        inl_nodes->node[0]->info.ids->node
+          = SearchDecl (inl_nodes->node[0]->info.ids->id, TYPES);
         header_nodes = AppendNodeChain (1, inl_nodes, header_nodes);
         var_node = var_node->node[0];
         expr_node = expr_node->node[1];
@@ -206,8 +272,9 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
     DUPTYPE = INLINE;
 
     while ((NULL != ids_node) && (NULL != expr_node)) {
-        inl_nodes
-          = INLMakeLet (strdup (ids_node->id), DupTree (expr_node->node[0], arg_info));
+        new_name = StringCopy (ids_node->id);
+        new_expr = DupTree (expr_node->node[0], arg_info);
+        inl_nodes = INLMakeLet (new_name, new_expr);
         inl_nodes->node[0]->info.ids->node = ids_node->node;
         bottom_nodes = AppendNodeChain (1, inl_nodes, bottom_nodes);
         ids_node = ids_node->next;
@@ -246,25 +313,38 @@ node *
 INLassign (node *arg_node, node *arg_info)
 {
     node *node_behind;
-    node *inlined_nodes;
+    node *inlined_nodes = NULL;
 
     DBUG_ENTER ("INLassign");
-    inlined_nodes = arg_node;
     if (N_let == arg_node->node[0]->nodetype) {
         node_behind = NodeBehindCast (arg_node->node[0]->node[0]);
         if (N_ap == node_behind->nodetype) {
-            if (0 < node_behind->node[1]->flag) {
+            DBUG_PRINT ("INL",
+                        ("Function call %s found in line %d with inline %d and to do %d",
+                         node_behind->info.fun_name.id, arg_node->lineno,
+                         node_behind->node[1]->flag, node_behind->node[1]->refcnt));
+            if (0 < node_behind->node[1]->refcnt) {
                 inlined_nodes = DoInline (arg_node->node[0], node_behind, arg_info);
-                AppendNodeChain (1, inlined_nodes, arg_node->node[1]);
-                arg_node->nnode = 1;
-                FreeTree (arg_node);
-                arg_node = inlined_nodes;
             }
         }
     }
 
-    if (2 <= arg_node->nnode)
-        arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+    if (NULL == inlined_nodes) {
+        if (1 <= arg_node->nnode)
+            arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+        if (2 <= arg_node->nnode)
+            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+    } else {
+        inlined_nodes = Trav (inlined_nodes, arg_info);
+        RestoreInlineNo (FIRST_FUNC, CURNT_FUNC);
+        if (2 <= arg_node->nnode)
+            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+        inlined_nodes = AppendNodeChain (1, inlined_nodes, arg_node->node[1]);
+        arg_node->nnode = 1;
+        FreeTree (arg_node);
+        arg_node = inlined_nodes;
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -287,13 +367,9 @@ RenameInlinedVar (char *old_name)
     char *new_name;
 
     DBUG_ENTER ("RenameInlinedVar");
-    if (!strncmp (old_name, "__", 2)) {
-        new_name = strdup (old_name);
-    } else {
-        new_name = (char *)MAlloc ((sizeof (char))
-                                   * (strlen (old_name) + INLINE_PREFIX_LENGTH + 5));
-        sprintf (new_name, INLINE_PREFIX "%d_%s", inline_nr, old_name);
-    }
+    new_name
+      = (char *)MAlloc ((sizeof (char)) * (strlen (old_name) + INLINE_PREFIX_LENGTH + 5));
+    sprintf (new_name, INLINE_PREFIX "%d_%s", inline_nr, old_name);
     DBUG_RETURN (new_name);
 }
 
@@ -310,25 +386,22 @@ RenameInlinedVar (char *old_name)
  *  remarks       :
  *
  */
-ids *
-SetDeclPtr (ids *ids_node, node *arg_info)
+node *
+SearchDecl (char *name, node *decl_node)
 {
-    node *decl_node;
+    node *found = NULL;
 
-    DBUG_ENTER ("SetDeclPtr");
-    DBUG_PRINT ("INL", ("Searching decleration for %s", ids_node->id));
-    ids_node->node = NULL;
-    decl_node = TYPES;
+    DBUG_ENTER ("SearchDecl");
+    DBUG_PRINT ("INL", ("Searching decleration for %s", name));
     while (NULL != decl_node) {
-        if (!strcmp (ids_node->id, decl_node->info.types->id)) {
-            ids_node->node = decl_node;
+        if (!strcmp (name, decl_node->info.types->id)) {
+            found = decl_node;
             decl_node = NULL;
         } else {
             decl_node = decl_node->node[0];
         }
     }
-    DBUG_ASSERT ((NULL != ids_node->node), ("No decleration found"));
-    DBUG_RETURN (ids_node);
+    DBUG_RETURN (found);
 }
 
 /*
@@ -348,14 +421,26 @@ node *
 INLvar (node *arg_node, node *arg_info)
 {
     node *new_vardec;
-    char *old_name;
+    char *new_name;
 
     DBUG_ENTER ("INLvar");
-    new_vardec = MakeNode (N_vardec);
-    new_vardec->info.types = DuplicateTypes (arg_node->info.types);
-    old_name = new_vardec->info.types->id;
-    new_vardec->info.types->id = RenameInlinedVar (old_name);
-    FREE (old_name);
-    TYPES = AppendNodeChain (0, new_vardec, TYPES);
+    DBUG_PRINT ("INL", ("Old decleration for %s", arg_node->info.types->id));
+
+    new_name = RenameInlinedVar (arg_node->info.types->id);
+    if (NULL == SearchDecl (new_name, TYPES)) {
+        new_vardec = MakeNode (N_vardec);
+        new_vardec->info.types = DuplicateTypes (arg_node->info.types);
+#if 0
+    FREE(new_vardec->info.types->id);
+#endif
+        new_vardec->info.types->id = new_name;
+        TYPES = AppendNodeChain (0, new_vardec, TYPES);
+        DBUG_PRINT ("INL", ("New decleration for %s generated", new_name));
+    } else {
+        DBUG_PRINT ("INL", ("New decleration for %s already exists", new_name));
+        FREE (new_name);
+    }
+    if (NULL != arg_node->node[0])
+        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
     DBUG_RETURN (arg_node);
 }
