@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.75  2003/09/18 14:57:02  dkr
+ * support for F_neg added
+ *
  * Revision 1.74  2003/09/17 17:20:09  dkr
  * more NT-tags for MT added
  *
@@ -3479,6 +3482,133 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **check_reuse1, node **chec
 
 /** <!--********************************************************************-->
  *
+ * @fn  node *COMPPrfIdxSel( node *arg_node, node *arg_info,
+ *                           node **check_reuse1, node **check_reuse2,
+ *                           node **get_dim, node **set_shape_icm)
+ *
+ * @brief  Compiles N_prf node of type F_idx_sel.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_COMP2_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfIdxSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
+               node **get_dim, node **set_shape_icm)
+{
+    node *arg1, *arg2;
+    ids *let_ids;
+    int dim;
+    node *icm_args;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfIdxSel");
+
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+
+    /*
+     * CAUTION: AE, IVE generate unflattened code!
+     * The 1st argument of idx_sel() may be a N_prf node with N_num arguments
+     */
+    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_num)
+                  || ((NODE_TYPE (arg1) == N_prf))),
+                 "1st arg of F_idx_sel is neither N_id nor N_num, N_prf!");
+    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_idx_sel is no N_id!");
+
+    icm_args = MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE, FALSE,
+                             MakeExprs (DupNode_NT (arg1), NULL));
+
+    (*check_reuse1) = (*check_reuse2) = NULL;
+
+    /* idx_sel() works only for arrays with known dimension!!! */
+    dim = GetDim (IDS_TYPE (let_ids));
+    DBUG_ASSERT ((dim >= 0), "unknown dimension found!");
+    (*get_dim) = MakeNum (dim);
+
+    (*set_shape_icm) = MakeIcm1 ("ND_PRF_IDX_SEL__SHAPE",
+                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                               FALSE, TRUE, FALSE, DupTree (icm_args)));
+
+    ret_node = MakeAssignIcm2 ("ND_PRF_IDX_SEL__DATA",
+                               MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                             FALSE, TRUE, FALSE, DupTree (icm_args)),
+                               MakeId_Copy (GenericFun (0, ID_TYPE (arg2))), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPPrfIdxModarray( node *arg_node, node *arg_info,
+ *                                node **check_reuse1, node **check_reuse2,
+ *                                node **get_dim, node **set_shape_icm)
+ *
+ * @brief  Compiles N_prf node of type F_idx_modarray.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_COMP2_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfIdxModarray (node *arg_node, node *arg_info, node **check_reuse1,
+                    node **check_reuse2, node **get_dim, node **set_shape_icm)
+{
+    node *arg1, *arg2, *arg3;
+    ids *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfIdxModarray");
+
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+    arg3 = PRF_ARG3 (arg_node);
+
+    DBUG_ASSERT ((NODE_TYPE (arg1) == N_id), "1st arg of F_idx_modarray is no N_id!");
+    /*
+     * Because of IVE, at the 2nd argument position of F_idx_modarray might occur
+     * an arithmetical expression (see function IdxArray)!!!
+     */
+    DBUG_ASSERT (((NODE_TYPE (arg2) == N_id) || (NODE_TYPE (arg2) == N_num)
+                  || (NODE_TYPE (arg2) == N_prf)),
+                 "2nd arg of F_idx_modarray is neither N_id nor N_num, N_prf!");
+    DBUG_ASSERT (((NODE_TYPE (arg2) != N_id) || (GetBasetype (ID_TYPE (arg2)) == T_int)),
+                 "2nd arg of F_modarray is a illegal indexing var!");
+    DBUG_ASSERT ((NODE_TYPE (arg3) != N_array),
+                 "3rd arg of F_idx_modarray is a N_array!");
+
+    (*check_reuse1) = arg1;
+    (*check_reuse2) = NULL;
+    (*get_dim) = MakeDimArg (arg1, FALSE);
+
+    (*set_shape_icm)
+      = MakeIcm1 ("ND_COPY__SHAPE",
+                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
+                                FALSE,
+                                MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE,
+                                              FALSE, NULL)));
+
+    ret_node = MakeAssignIcm5 ("ND_PRF_IDX_MODARRAY__DATA",
+                               MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                             FALSE, TRUE, FALSE, NULL),
+                               MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE,
+                                             FALSE, NULL),
+                               DupNode_NT (arg2), DupNode_NT (arg3),
+                               MakeId_Copy (GenericFun (0, ID_TYPE (arg1))), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *COMPPrfSel( node *arg_node, node *arg_info,
  *                        node **check_reuse1, node **check_reuse2,
  *                        node **get_dim, node **set_shape_icm)
@@ -3625,11 +3755,11 @@ COMPPrfModarray (node *arg_node, node *arg_info, node **check_reuse1, node **che
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfIdxSel( node *arg_node, node *arg_info,
- *                           node **check_reuse1, node **check_reuse2,
- *                           node **get_dim, node **set_shape_icm)
+ * @fn  node *COMPPrfGenarray( node *arg_node, node *arg_info,
+ *                             node **check_reuse1, node **check_reuse2,
+ *                             node **get_dim, node **set_shape_icm)
  *
- * @brief  Compiles N_prf node of type F_idx_sel.
+ * @brief  Compiles N_prf node of type F_genarray.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -3639,59 +3769,38 @@ COMPPrfModarray (node *arg_node, node *arg_info, node **check_reuse1, node **che
  ******************************************************************************/
 
 static node *
-COMPPrfIdxSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
-               node **get_dim, node **set_shape_icm)
+COMPPrfGenarray (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
+                 node **get_dim, node **set_shape_icm)
 {
     node *arg1, *arg2;
     ids *let_ids;
-    int dim;
-    node *icm_args;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfIdxSel");
+    DBUG_ENTER ("COMPPrfGenarray");
 
     let_ids = INFO_COMP2_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    /*
-     * CAUTION: AE, IVE generate unflattened code!
-     * The 1st argument of idx_sel() may be a N_prf node with N_num arguments
-     */
-    DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_num)
-                  || ((NODE_TYPE (arg1) == N_prf))),
-                 "1st arg of F_idx_sel is neither N_id nor N_num, N_prf!");
-    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_idx_sel is no N_id!");
+    DBUG_ASSERT ((0), "prf F_genarray not implemented yet!");
 
-    icm_args = MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE, FALSE,
-                             MakeExprs (DupNode_NT (arg1), NULL));
+    (*check_reuse1) = NULL;
+    (*check_reuse2) = NULL;
+    (*get_dim) = NULL;
+    (*set_shape_icm) = NULL;
 
-    (*check_reuse1) = (*check_reuse2) = NULL;
-
-    /* idx_sel() works only for arrays with known dimension!!! */
-    dim = GetDim (IDS_TYPE (let_ids));
-    DBUG_ASSERT ((dim >= 0), "unknown dimension found!");
-    (*get_dim) = MakeNum (dim);
-
-    (*set_shape_icm) = MakeIcm1 ("ND_PRF_IDX_SEL__SHAPE",
-                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                               FALSE, TRUE, FALSE, DupTree (icm_args)));
-
-    ret_node = MakeAssignIcm2 ("ND_PRF_IDX_SEL__DATA",
-                               MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                             FALSE, TRUE, FALSE, DupTree (icm_args)),
-                               MakeId_Copy (GenericFun (0, ID_TYPE (arg2))), NULL);
+    ret_node = NULL;
 
     DBUG_RETURN (ret_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPPrfIdxModarray( node *arg_node, node *arg_info,
- *                                node **check_reuse1, node **check_reuse2,
- *                                node **get_dim, node **set_shape_icm)
+ * @fn  node *COMPPrfTake( node *arg_node, node *arg_info,
+ *                         node **check_reuse1, node **check_reuse2,
+ *                         node **get_dim, node **set_shape_icm)
  *
- * @brief  Compiles N_prf node of type F_idx_modarray.
+ * @brief  Compiles N_prf node of type F_take_SxV.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -3701,51 +3810,116 @@ COMPPrfIdxSel (node *arg_node, node *arg_info, node **check_reuse1, node **check
  ******************************************************************************/
 
 static node *
-COMPPrfIdxModarray (node *arg_node, node *arg_info, node **check_reuse1,
-                    node **check_reuse2, node **get_dim, node **set_shape_icm)
+COMPPrfTake (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
+             node **get_dim, node **set_shape_icm)
 {
-    node *arg1, *arg2, *arg3;
+    node *arg1, *arg2;
     ids *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPPrfIdxModarray");
+    DBUG_ENTER ("COMPPrfTake");
 
     let_ids = INFO_COMP2_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
-    arg3 = PRF_ARG3 (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (arg1) == N_id), "1st arg of F_idx_modarray is no N_id!");
-    /*
-     * Because of IVE, at the 2nd argument position of F_idx_modarray might occur
-     * an arithmetical expression (see function IdxArray)!!!
-     */
-    DBUG_ASSERT (((NODE_TYPE (arg2) == N_id) || (NODE_TYPE (arg2) == N_num)
-                  || (NODE_TYPE (arg2) == N_prf)),
-                 "2nd arg of F_idx_modarray is neither N_id nor N_num, N_prf!");
-    DBUG_ASSERT (((NODE_TYPE (arg2) != N_id) || (GetBasetype (ID_TYPE (arg2)) == T_int)),
-                 "2nd arg of F_modarray is a illegal indexing var!");
-    DBUG_ASSERT ((NODE_TYPE (arg3) != N_array),
-                 "3rd arg of F_idx_modarray is a N_array!");
+    DBUG_ASSERT ((0), "prf F_take_SxV not implemented yet!");
 
-    (*check_reuse1) = arg1;
+    (*check_reuse1) = NULL;
     (*check_reuse2) = NULL;
-    (*get_dim) = MakeDimArg (arg1, FALSE);
 
-    (*set_shape_icm)
-      = MakeIcm1 ("ND_COPY__SHAPE",
-                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
-                                FALSE,
-                                MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE,
-                                              FALSE, NULL)));
+    (*get_dim) = MakeNum (1);
 
-    ret_node = MakeAssignIcm5 ("ND_PRF_IDX_MODARRAY__DATA",
-                               MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                             FALSE, TRUE, FALSE, NULL),
-                               MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE,
-                                             FALSE, NULL),
-                               DupNode_NT (arg2), DupNode_NT (arg3),
-                               MakeId_Copy (GenericFun (0, ID_TYPE (arg1))), NULL);
+    (*set_shape_icm) = MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (1),
+                                 DupNode (arg1)); /* NT missing!!! */
+
+    ret_node = NULL;
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPPrfDrop( node *arg_node, node *arg_info,
+ *                         node **check_reuse1, node **check_reuse2,
+ *                         node **get_dim, node **set_shape_icm)
+ *
+ * @brief  Compiles N_prf node of type F_drop_SxV.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_COMP2_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfDrop (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
+             node **get_dim, node **set_shape_icm)
+{
+    node *arg1, *arg2;
+    ids *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfDrop");
+
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+
+    DBUG_ASSERT ((0), "prf F_drop_SxV not implemented yet!");
+
+    (*check_reuse1) = NULL;
+    (*check_reuse2) = NULL;
+
+    (*get_dim) = MakeNum (1);
+
+    (*set_shape_icm) = NULL;
+
+    ret_node = NULL;
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPPrfCat( node *arg_node, node *arg_info,
+ *                        node **check_reuse1, node **check_reuse2,
+ *                        node **get_dim, node **set_shape_icm)
+ *
+ * @brief  Compiles N_prf node of type F_cat_VxV.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_COMP2_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfCat (node *arg_node, node *arg_info, node **check_reuse1, node **check_reuse2,
+            node **get_dim, node **set_shape_icm)
+{
+    node *arg1, *arg2;
+    ids *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfCat");
+
+    let_ids = INFO_COMP2_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+
+    DBUG_ASSERT ((0), "prf F_cat_VxV not implemented yet!");
+
+    (*check_reuse1) = NULL;
+    (*check_reuse2) = NULL;
+
+    (*get_dim) = MakeNum (1);
+
+    (*set_shape_icm) = NULL;
+
+    ret_node = NULL;
 
     DBUG_RETURN (ret_node);
 }
@@ -4051,6 +4225,11 @@ COMP2Prf (node *arg_node, node *arg_info)
              *  arithmetical operations
              */
 
+        case F_neg:
+            ret_node = COMPPrfUniScalar ("SAC_PRF_NEG", arg_node, arg_info, &check_reuse1,
+                                         &check_reuse2, &get_dim, &set_shape_icm);
+            break;
+
         case F_abs:
             ret_node = COMPPrfUniScalar ("SAC_PRF_ABS", arg_node, arg_info, &check_reuse1,
                                          &check_reuse2, &get_dim, &set_shape_icm);
@@ -4140,6 +4319,23 @@ COMP2Prf (node *arg_node, node *arg_info)
                                         &get_dim, &set_shape_icm);
             break;
 
+        case F_genarray:
+            ret_node = COMPPrfGenarray (arg_node, arg_info, &check_reuse1, &check_reuse2,
+                                        &get_dim, &set_shape_icm);
+            break;
+
+        case F_cat_VxV:
+            ret_node = COMPPrfCat (arg_node, arg_info, &check_reuse1, &check_reuse2,
+                                   &get_dim, &set_shape_icm);
+
+        case F_take_SxV:
+            ret_node = COMPPrfTake (arg_node, arg_info, &check_reuse1, &check_reuse2,
+                                    &get_dim, &set_shape_icm);
+
+        case F_drop_SxV:
+            ret_node = COMPPrfDrop (arg_node, arg_info, &check_reuse1, &check_reuse2,
+                                    &get_dim, &set_shape_icm);
+
             /*
              *  array operations (non-intrinsics)
              */
@@ -4155,9 +4351,6 @@ COMP2Prf (node *arg_node, node *arg_info)
         case F_drop:
         case F_cat:
         case F_rotate:
-        case F_cat_VxV:
-        case F_take_SxV:
-        case F_drop_SxV:
             DBUG_ASSERT ((0), "Non-instrinsic primitive functions not implemented!"
                               " Use array.lib instead!");
             ret_node = NULL;
@@ -4962,7 +5155,11 @@ COMP2With (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NWITH_PARTS (arg_node) < 2),
                  "with-loop with non-AKS withid and multiple generators found!");
 
-    DBUG_ASSERT ((0), "with-loops with non-AKS withid not implemented yet!");
+    /*
+     * with-loops with non-AKS withid not implemented yet!
+     */
+    DBUG_ASSERT ((0), "with-loops with iteration space of unknown dimension"
+                      " not implemented yet!");
 
     DBUG_RETURN (arg_node);
 }
