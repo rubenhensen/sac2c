@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2001/05/11 14:36:56  cg
+ * Scheduler ICMs now always get an additional generic argument
+ * which specifies the scheduler ID for selecting an appropriate
+ * set of local data structures where required by the scheduling
+ * technique.
+ *
  * Revision 3.52  2001/05/09 15:13:00  cg
  * All scheduling ICMs get an additional first parameter,
  * i.e. the segment ID. This is required to identify the appropriate
@@ -2530,11 +2536,33 @@ COMPFundef (node *arg_node, node *arg_info)
         INFO_COMP_LASTSYNC (arg_info) = NULL;
 
         /*
+         * Each scheduler within a single SPMD function must be associated with a
+         * unique segment ID. This is realized by means of the following counter.
+         */
+        INFO_COMP_SCHEDULERID (arg_info) = 0;
+
+        /*
+         * For each scheduler a specific initialization ICM is created during the
+         * traversal of an SPMD function. They are chained by means of N_assign nodes
+         * and will later be inserted into the code which sets up the environment
+         * for multithreaded execution.
+         */
+        INFO_COMP_SCHEDULERINIT (arg_info) = NULL;
+
+        /*
          * traverse body
          */
         if (FUNDEF_BODY (arg_node) != NULL) {
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
         }
+
+        /*
+         * Store collected scheduler information in block node.
+         */
+        BLOCK_SCHEDULER_NUM (FUNDEF_BODY (arg_node)) = INFO_COMP_SCHEDULERID (arg_info);
+
+        BLOCK_SCHEDULER_INIT (FUNDEF_BODY (arg_node))
+          = INFO_COMP_SCHEDULERINIT (arg_info);
 
         /*
          * Destruction of last known N_sync is done here, all others have been killed
@@ -6089,14 +6117,28 @@ COMPWLsegx (node *arg_node, node *arg_info)
      */
     assigns
       = AppendAssign (assigns,
-                      MakeAssign (SCHCompileSchedulingEnd (0, IDS_NAME (wlids),
+                      MakeAssign (SCHCompileSchedulingEnd (INFO_COMP_SCHEDULERID (
+                                                             arg_info),
+                                                           IDS_NAME (wlids),
                                                            WLSEGX_SCHEDULING (arg_node),
                                                            arg_node),
                                   NULL));
     assigns
-      = MakeAssign (SCHCompileSchedulingBegin (0, IDS_NAME (wlids),
+      = MakeAssign (SCHCompileSchedulingBegin (INFO_COMP_SCHEDULERID (arg_info),
+                                               IDS_NAME (wlids),
                                                WLSEGX_SCHEDULING (arg_node), arg_node),
                     assigns);
+
+    /*
+     * Collect initialization ICMs for schedulers.
+     */
+    INFO_COMP_SCHEDULERINIT (arg_info)
+      = MakeAssign (SCHCompileSchedulingInit (INFO_COMP_SCHEDULERID (arg_info),
+                                              IDS_NAME (wlids),
+                                              WLSEGX_SCHEDULING (arg_node), arg_node),
+                    INFO_COMP_SCHEDULERINIT (arg_info));
+
+    INFO_COMP_SCHEDULERID (arg_info) += 1;
 
     /*
      * append compilat (assignment-chain) of next segment to 'assigns'
@@ -6817,6 +6859,9 @@ COMPSpmd (node *arg_node, node *arg_info)
     assigns = MakeAssign (MakeIcm1 ("MT_SPMD_SETUP", icm_args), assigns);
 
     assigns = AppendAssign (BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (SPMD_FUNDEF (arg_node))),
+                            assigns);
+
+    assigns = AppendAssign (BLOCK_SCHEDULER_INIT (FUNDEF_BODY (SPMD_FUNDEF (arg_node))),
                             assigns);
 
     SPMD_ICM_PARALLEL (arg_node) = MakeBlock (assigns, NULL);
