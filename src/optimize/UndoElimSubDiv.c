@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.8  2004/11/24 12:05:40  mwe
+ * changed signature of TBmakeLet
+ *
  * Revision 1.7  2004/11/23 20:29:02  khf
  * SacDevCamp04: Compiles
  *
@@ -39,6 +42,7 @@
 #include "globals.h"
 #include "tree_compound.h"
 #include "traverse.h"
+#include "new_types.h"
 #include "dbug.h"
 #include "internal_lib.h"
 #include "optimize.h"

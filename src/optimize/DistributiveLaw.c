@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.19  2004/11/24 12:05:40  mwe
+ * changed signature of TBmakeLet
+ *
  * Revision 1.18  2004/11/24 10:53:05  mwe
  * SacDevCamp Dk: compiles!!!
  *
@@ -1357,7 +1360,7 @@ MakeAssignLetNodeFromCurrentNode (node *newnode, info *arg_info, int flag)
 
     BLOCK_VARDEC (INFO_DL_BLOCKNODE (arg_info)) = newvardec;
 
-    newnode = TBmakeAssign (TBmakeLet (newnode, TBmakeIds (newavis, NULL)), NULL);
+    newnode = TBmakeAssign (TBmakeLet (TBmakeIds (newavis, NULL), newnode), NULL);
 
     DBUG_RETURN (newnode);
 }

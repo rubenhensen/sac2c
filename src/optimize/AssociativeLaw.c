@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.28  2004/11/24 12:05:40  mwe
+ * changed signature of TBmakeLet
+ *
  * Revision 1.27  2004/11/10 18:27:29  mwe
  * code for type upgrade added
  * use ntype-structure instead of type-structure
@@ -274,14 +277,15 @@
  *     the assign node is marked as used.
  ***********************************************************************/
 
-#define NEW_INFO
-
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "node_basic.h"
+#include "globals.h"
+#include "new_types.h"
 #include "traverse.h"
 #include "dbug.h"
 #include "internal_lib.h"
@@ -344,7 +348,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_AL_CONSTANTLIST (result) = NULL;
     INFO_AL_VARIABLELIST (result) = NULL;
@@ -370,7 +374,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -385,11 +389,11 @@ FreeInfo (info *info)
  *
  ****************************************************************************/
 
-static int
+static bool
 IsAssociativeAndCommutative (node *arg_node)
 {
 
-    int return_bool;
+    bool return_bool;
     DBUG_ENTER ("IsAssociativeAndCommutative");
     switch (PRF_PRF (arg_node)) {
     case F_add_SxS:
@@ -406,11 +410,11 @@ IsAssociativeAndCommutative (node *arg_node)
     case F_min:
     case F_and:
     case F_or:
-        return_bool = 1;
+        return_bool = TRUE;
         break;
 
     default:
-        return_bool = 0;
+        return_bool = FALSE;
     }
 
     DBUG_RETURN (return_bool);
@@ -419,7 +423,7 @@ IsAssociativeAndCommutative (node *arg_node)
 /*****************************************************************************
  *
  * function:
- *   int ReachedArgument(node *arg_node)
+ *   bool ReachedArgument(node *arg_node)
  *
  * description:
  *   returns '1' if the arg_node is an argument defined outside current
@@ -427,20 +431,25 @@ IsAssociativeAndCommutative (node *arg_node)
  *
  ****************************************************************************/
 
-static int
+static bool
 ReachedArgument (node *arg_node)
 {
 
-    int return_bool;
+    bool return_bool;
     DBUG_ENTER ("ReachedArgument");
 
     if (NODE_TYPE (arg_node) == N_id) {
-        if (AVIS_SSAASSIGN (ID_AVIS (arg_node)) == NULL)
-            return_bool = 1;
-        else
-            return_bool = 0;
-    } else
-        return_bool = 0;
+        if (AVIS_SSAASSIGN (ID_AVIS (arg_node)) == NULL) {
+
+            return_bool = TRUE;
+        } else {
+
+            return_bool = FALSE;
+        }
+    } else {
+
+        return_bool = FALSE;
+    }
 
     DBUG_RETURN (return_bool);
 }
@@ -448,31 +457,34 @@ ReachedArgument (node *arg_node)
 /*****************************************************************************
  *
  * function:
- *   int ReachedDefinition(node *arg_node)
+ *   bool ReachedDefinition(node *arg_node)
  *
  * description:
- *   returns '1' if the definition of the arg_node contain no prf-node
+ *   returns TRUE if the definition of the arg_node contain no prf-node
  *
  ****************************************************************************/
 
-static int
+static bool
 ReachedDefinition (node *arg_node)
 {
 
-    int return_bool;
+    bool return_bool;
     DBUG_ENTER ("ReachedDefinition");
 
     if (NODE_TYPE (arg_node) == N_id) {
-        if (AVIS_SSAASSIGN (ID_AVIS (arg_node)) == NULL)
-            return_bool = 0;
-        else if ((NODE_TYPE (
-                    LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node)))))
-                  != N_prf))
-            return_bool = 1;
-        else
-            return_bool = 0;
-    } else
-        return_bool = 0;
+        if (AVIS_SSAASSIGN (ID_AVIS (arg_node)) == NULL) {
+            return_bool = FALSE;
+        } else {
+            if ((NODE_TYPE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node)))))
+                 != N_prf)) {
+                return_bool = TRUE;
+            } else {
+                return_bool = FALSE;
+            }
+        }
+    } else {
+        return_bool = FALSE;
+    }
 
     DBUG_RETURN (return_bool);
 }
@@ -480,14 +492,14 @@ ReachedDefinition (node *arg_node)
 /*****************************************************************************
  *
  * function:
- *   int IsConstant(node *arg_node)
+ *   bool IsConstant(node *arg_node)
  *
  * description:
- *   returns '1' if the arg_node is a constant value
+ *   returns TRUE if the arg_node is a constant value
  *
  ****************************************************************************/
 
-static int
+static bool
 IsConstant (node *arg_node)
 {
 
@@ -500,11 +512,11 @@ IsConstant (node *arg_node)
     case N_float:
     case N_bool:
     case N_char:
-        return_bool = 1;
+        return_bool = TRUE;
         break;
 
     default:
-        return_bool = 0;
+        return_bool = FALSE;
     }
 
     DBUG_RETURN (return_bool);
@@ -549,7 +561,7 @@ IsConstantArray (node *arg_node)
 static info *
 AddNode (node *arg_node, info *arg_info, int nodetype)
 {
-    nodelist *newnodelistnode = MakeNodelistNode (EXPRS_EXPR (arg_node), NULL);
+    nodelist *newnodelistnode = TBmakeNodelistNode (EXPRS_EXPR (arg_node), NULL);
 
     DBUG_ENTER ("AddNode");
 
@@ -601,19 +613,22 @@ AddNode (node *arg_node, info *arg_info, int nodetype)
  *
  ****************************************************************************/
 
-static int
+static bool
 OtherPrfOp (node *arg_node, info *arg_info)
 {
-    int otherOp;
+    bool otherOp;
     prf otherPrf;
+
     DBUG_ENTER ("OtherPrfOp");
+
     if (NODE_TYPE (EXPRS_EXPR (arg_node)) == N_id) {
         if ((AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))) == NULL)
             || (NODE_TYPE (LET_EXPR (
                   ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))))
                 != N_prf))
-            otherOp = 0;
+            otherOp = FALSE;
         else {
+
             otherPrf = PRF_PRF (
               LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node))))));
 
@@ -623,10 +638,11 @@ OtherPrfOp (node *arg_node, info *arg_info)
             case F_add_SxA:
             case F_add_AxA: {
                 if ((otherPrf == F_add_SxS) || (otherPrf == F_add_AxS)
-                    || (otherPrf == F_add_SxA) || (otherPrf == F_add_AxA))
-                    otherOp = 0;
-                else
-                    otherOp = 1;
+                    || (otherPrf == F_add_SxA) || (otherPrf == F_add_AxA)) {
+                    otherOp = FALSE;
+                } else {
+                    otherOp = TRUE;
+                }
                 break;
             } break;
             case F_mul_SxS:
@@ -634,22 +650,23 @@ OtherPrfOp (node *arg_node, info *arg_info)
             case F_mul_SxA:
             case F_mul_AxA: {
                 if ((otherPrf == F_mul_SxS) || (otherPrf == F_mul_AxS)
-                    || (otherPrf == F_mul_SxA) || (otherPrf == F_mul_AxA))
-                    otherOp = 0;
-                else
-                    otherOp = 1;
+                    || (otherPrf == F_mul_SxA) || (otherPrf == F_mul_AxA)) {
+                    otherOp = FALSE;
+                } else {
+                    otherOp = TRUE;
+                }
                 break;
             } break;
             default: {
                 if (INFO_AL_CURRENTPRF (arg_info) == otherPrf)
-                    otherOp = 0;
+                    otherOp = FALSE;
                 else
-                    otherOp = 1;
+                    otherOp = TRUE;
             }
             }
         }
     } else
-        otherOp = 0;
+        otherOp = FALSE;
 
     DBUG_RETURN (otherOp);
 }
@@ -700,88 +717,17 @@ static node *
 MakeAssignNodeFromCurrentNode (node *newnode, info *arg_info, int dim)
 {
 
-    node *newvardec;
-#ifdef MWE_NTYPE_READY
-    ntype *type;
-#else
-    types *type;
-#endif
-    char *newname1, *newname2;
-#if 0
-  shpseg* shp;
-  node *shpnode;
-  int shpint;
-#endif
+    node *newvardec, *newavis;
+
     DBUG_ENTER ("MakeAssignNodeFromCurrentNode");
 
-#if 0
-  if (NODE_TYPE(newnode) == N_id){
+    newavis = TBmakeAvis (ILIBtmpVar (), TYcopyType (INFO_AL_NTYPE (arg_info)));
 
-    shpint = TYPES_DIM(( INFO_AL_TYPE(arg_info)));
-    shpnode = Shpseg2Array(TYPES_SHPSEG( INFO_AL_TYPE(arg_info)), shpint);
-    shp = Array2Shpseg(shpnode, &shpint);
-
-
-    type = VARDEC_TYPE( ID_VARDEC( newnode));
-    type = MakeTypes( TYPES_BASETYPE( type ),
-		      TYPES_DIM(type ),
-		      shp,
-		      NULL,
-		      NULL);
-
-  }
-  else{
-
-    if (dim > 0){
-
-
-      shpint = TYPES_DIM(( INFO_AL_TYPE(arg_info)));
-      shpnode = Shpseg2Array(TYPES_SHPSEG( INFO_AL_TYPE(arg_info)), shpint);
-      shp = Array2Shpseg(shpnode, &shpint);
-      type = MakeTypes( TYPES_BASETYPE( (INFO_AL_TYPE(arg_info)) ),
-			TYPES_DIM(( INFO_AL_TYPE(arg_info)) ),
-			shp,
-			NULL,
-			NULL);
-    }
-    else{
-
-      type = MakeTypes( TYPES_BASETYPE( (INFO_AL_TYPE(arg_info)) ),
-			0,
-			NULL,
-			NULL,
-			NULL);
-    }
-  }
-#endif
-
-#ifdef MWE_NTYPES_READY
-    type = TYCopyType (INFO_AL_NTYPE (arg_info));
-#else
-    if (NODE_TYPE (newnode) == N_id)
-        type = DupAllTypes (VARDEC_TYPE (ID_VARDEC (newnode)));
-    else
-        type = DupAllTypes (INFO_AL_TYPE (arg_info));
-#endif
-
-    newname1 = TmpVar ();
-
-#ifdef MWE_NTYPE_READY
-    newvardec = MakeVardec (newname1, type, newtype,
-                            (BLOCK_VARDEC (INFO_AL_BLOCKNODE (arg_info))));
-
-#else
-    newvardec
-      = MakeVardec (newname1, type, (BLOCK_VARDEC (INFO_AL_BLOCKNODE (arg_info))));
-#endif
+    newvardec = TBmakeVardec (newavis, (BLOCK_VARDEC (INFO_AL_BLOCKNODE (arg_info))));
 
     BLOCK_VARDEC (INFO_AL_BLOCKNODE (arg_info)) = newvardec;
 
-    newname2 = StringCopy (newname1);
-    newnode = MakeAssignLet (newname2, newvardec, newnode);
-
-    VARDEC_OBJDEF (newvardec) = newnode;
-    AVIS_SSAASSIGN (VARDEC_AVIS (newvardec)) = newnode;
+    newnode = TBmakeAssign (TBmakeLet (TBmakeIds (newavis, NULL), newnode), NULL);
 
     DBUG_RETURN (newnode);
 }
@@ -802,7 +748,7 @@ static node *
 MakeAssignNodeFromExprsNode (node *newnode, info *arg_info, int dim)
 {
     DBUG_ENTER ("MakeAssignNodeFromExprsNode");
-    newnode = MakePrf (INFO_AL_CURRENTPRF (arg_info), newnode);
+    newnode = TBmakePrf (INFO_AL_CURRENTPRF (arg_info), newnode);
 
     newnode = MakeAssignNodeFromCurrentNode (newnode, arg_info, dim);
 
@@ -825,46 +771,12 @@ MakeExprsNodeFromAssignNodes (node *elem1, node *elem2)
 {
 
     node *newnode;
-    statustype status1, status2;
-    char *varname1, *newname1, *varmod1, *newmod1, *varname2, *newname2, *varmod2,
-      *newmod2;
 
     DBUG_ENTER ("MakeExprsNodeFromAssignNodes");
 
-    newname1 = NULL;
-    newname2 = NULL;
-    varname1 = IDS_NAME (LET_IDS (ASSIGN_INSTR (elem1)));
-    DBUG_ASSERT ((varname1 != NULL),
-                 "Unexpected error, existing variable has no name: IDS_NAME == NULL");
-    newname1 = StringCopy (varname1);
-    varmod1 = IDS_MOD (LET_IDS (ASSIGN_INSTR (elem1)));
-    if (varmod1 != NULL)
-        newmod1 = StringCopy (varmod1);
-    else
-        newmod1 = NULL;
-    status1 = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (elem1)));
-
-    varname2 = IDS_NAME (LET_IDS (ASSIGN_INSTR (elem2)));
-    DBUG_ASSERT ((varname2 != NULL),
-                 "Unexpected error, existing variable has no name: IDS_NAME == NULL");
-    newname2 = StringCopy (varname2);
-    varmod2 = IDS_MOD (LET_IDS (ASSIGN_INSTR (elem2)));
-    if (varmod2 != NULL)
-        newmod2 = StringCopy (varmod2);
-    else
-        newmod2 = NULL;
-    status2 = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (elem2)));
-
-    newnode = MakeExprs (MakeId (newname1, newmod1, status1),
-                         MakeExprs (MakeId (newname2, newmod2, status2), NULL));
-
-    ID_AVIS (EXPRS_EXPR (newnode)) = IDS_AVIS (LET_IDS (ASSIGN_INSTR (elem1)));
-    ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (newnode)))
-      = IDS_AVIS (LET_IDS (ASSIGN_INSTR (elem2)));
-
-    ID_VARDEC (EXPRS_EXPR (newnode)) = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (elem1)));
-    ID_VARDEC (EXPRS_EXPR (EXPRS_NEXT (newnode)))
-      = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (elem2)));
+    newnode
+      = TBmakeExprs (DUPdupIdsId (LET_IDS (ASSIGN_INSTR (elem1))),
+                     TBmakeExprs (DUPdupIdsId (LET_IDS (ASSIGN_INSTR (elem2))), NULL));
 
     DBUG_RETURN (newnode);
 }
@@ -887,34 +799,14 @@ MakeExprsNodeFromExprsAndAssignNode (nodelist *assignnode, nodelist *exprsnode)
 {
 
     node *listElem, *listElem2, *newnode;
-    char *newname1, *newname2, *mod, *mod2;
-    statustype status;
 
     DBUG_ENTER ("MakeExprsNodeFromExprsAndAssignNode");
 
     listElem = NODELIST_NODE (assignnode); /* pointer on last constant N_assign-node */
     listElem2 = NODELIST_NODE (exprsnode); /* pointer on node in list */
 
-    newname2 = NULL;
-    newname1 = IDS_NAME (LET_IDS (ASSIGN_INSTR (listElem)));
-    DBUG_ASSERT ((newname1 != NULL),
-                 "Unexpected error, existing variable has no name: IDS_NAME == NULL");
-    newname2 = StringCopy (newname1);
-    mod = IDS_MOD (LET_IDS (ASSIGN_INSTR (listElem)));
-
-    if (mod != NULL)
-        mod2 = StringCopy (mod);
-    else
-        mod2 = NULL;
-
-    status = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (listElem)));
-
-    newnode = MakeId (newname2, mod2, status);
-    newnode = MakeExprs (newnode, listElem2); /* create new N_Expr-node */
-
-    ID_AVIS (EXPRS_EXPR (newnode)) = IDS_AVIS (LET_IDS (ASSIGN_INSTR (listElem)));
-
-    ID_VARDEC (EXPRS_EXPR (newnode)) = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (listElem)));
+    newnode = DUPdupIdsId (LET_IDS (ASSIGN_INSTR (listElem)));
+    newnode = TBmakeExprs (newnode, listElem2); /* create new N_Expr-node */
 
     DBUG_RETURN (newnode);
 }
@@ -965,7 +857,7 @@ CommitAssignNodes (nodelist *currentList, info *arg_info, int dim)
             newnode = MakeExprsNodeFromAssignNodes (elem1, elem2);
             newnode = MakeAssignNodeFromExprsNode (newnode, arg_info, dim);
 
-            NODELIST_NEXT (lastListElem) = MakeNodelistNode (newnode, NULL);
+            NODELIST_NEXT (lastListElem) = TBmakeNodelistNode (newnode, NULL);
             lastListElem = NODELIST_NEXT (lastListElem);
             currentList = NODELIST_NEXT (currentList);
         }
@@ -1004,8 +896,8 @@ CommitAssignNodes (nodelist *currentList, info *arg_info, int dim)
 static info *
 CreateAssignNodes (nodelist *currentList, info *arg_info, int dim)
 {
-
     node *listElem;
+
     DBUG_ENTER ("CreateAssignNodes");
 
     /*
@@ -1015,7 +907,7 @@ CreateAssignNodes (nodelist *currentList, info *arg_info, int dim)
     while (currentList != NULL) {
 
         listElem = NODELIST_NODE (currentList);
-        listElem = DupTree (listElem);
+        listElem = DUPdoDupTree (listElem);
         listElem = MakeAssignNodeFromCurrentNode (listElem, arg_info, dim);
         NODELIST_NODE (currentList) = listElem;
         currentList = NODELIST_NEXT (currentList);
@@ -1099,12 +991,7 @@ ContainsAnArray (node *expr)
 
     DBUG_ENTER ("ContainsAnArray");
 
-#ifdef MWE_NTYPE_READY
-    result = TYIsArray (VARDEC_NTYPE (ID_VARDEC (EXPRS_EXPR (expr))));
-#else
-    if (TYPES_DIM (VARDEC_TYPE (ID_VARDEC (EXPRS_EXPR (expr)))) > 0)
-        result = TRUE;
-#endif
+    result = TYisArray (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (expr))));
 
     DBUG_RETURN (result);
 }
@@ -1166,7 +1053,7 @@ TravElems (node *arg_node, info *arg_info)
                         node *tmp;
                         tmp = LET_EXPR (ASSIGN_INSTR (
                           AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)))));
-                        tmp = MakeExprs (tmp, NULL);
+                        tmp = TBmakeExprs (tmp, NULL);
                         arg_info = AddNode (tmp, arg_info, 3);
                     } else
                         arg_info = AddNode (arg_node, arg_info, 2);
@@ -1178,7 +1065,7 @@ TravElems (node *arg_node, info *arg_info)
                  */
             } else {
 
-                ASSIGN_STATUS (INFO_AL_CURRENTASSIGN (arg_info)) = 0;
+                ASSIGN_ISUNUSED (INFO_AL_CURRENTASSIGN (arg_info)) = FALSE;
                 INFO_AL_CURRENTASSIGN (arg_info)
                   = AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (arg_node)));
 
@@ -1210,32 +1097,38 @@ GetOperator (prf op, int flag)
     case F_add_SxS:
     case F_add_AxS:
     case F_add_SxA:
-    case F_add_AxA: {
-        if (flag == 0)
+    case F_add_AxA:
+        if (flag == 0) {
             newop = F_add_SxS;
-        if (flag == 1)
+        }
+        if (flag == 1) {
             newop = F_add_SxA;
-        if (flag == 2)
+        }
+        if (flag == 2) {
             newop = F_add_AxS;
-        if (flag == 3)
+        }
+        if (flag == 3) {
             newop = F_add_AxA;
+        }
         break;
-    }
 
     case F_mul_SxS:
     case F_mul_AxS:
     case F_mul_SxA:
-    case F_mul_AxA: {
-        if (flag == 0)
+    case F_mul_AxA:
+        if (flag == 0) {
             newop = F_mul_SxS;
-        if (flag == 1)
+        }
+        if (flag == 1) {
             newop = F_mul_SxA;
-        if (flag == 2)
+        }
+        if (flag == 2) {
             newop = F_mul_AxS;
-        if (flag == 3)
+        }
+        if (flag == 3) {
             newop = F_mul_AxA;
+        }
         break;
-    }
     default:
         newop = op;
     }
@@ -1256,19 +1149,19 @@ JoinResults (nodelist *nodelist1, nodelist *nodelist2, info *arg_info, int flag)
 
             tmp = MakeExprsNodeFromAssignNodes (NODELIST_NODE (nodelist1),
                                                 NODELIST_NODE (nodelist2));
-            tmp = MakePrf (GetOperator (INFO_AL_CURRENTPRF (arg_info), flag), tmp);
+            tmp = TBmakePrf (GetOperator (INFO_AL_CURRENTPRF (arg_info), flag), tmp);
             tmp = MakeAssignNodeFromCurrentNode (tmp, arg_info, flag);
 
         } else {
 
             tmp = MakeExprsNodeFromExprsAndAssignNode (nodelist1,
-                                                       MakeNodelistNode (NULL, NULL));
+                                                       TBmakeNodelistNode (NULL, NULL));
             tmp = MakeAssignNodeFromCurrentNode (EXPRS_EXPR (tmp), arg_info, -1);
         }
     } else if (nodelist2 != NULL) {
 
         tmp = MakeExprsNodeFromExprsAndAssignNode (nodelist2,
-                                                   MakeNodelistNode (NULL, NULL));
+                                                   TBmakeNodelistNode (NULL, NULL));
         tmp = MakeAssignNodeFromCurrentNode (EXPRS_EXPR (tmp), arg_info, -1);
     } else {
 
@@ -1281,7 +1174,7 @@ JoinResults (nodelist *nodelist1, nodelist *nodelist2, info *arg_info, int flag)
 /*****************************************************************************
  *
  * function:
- *   node *AssociativeLaw(node *arg_node)
+ *   node *ALdoAssociativeLaw(node *arg_node)
  *
  * description:
  *   is called from optimize.c
@@ -1289,12 +1182,11 @@ JoinResults (nodelist *nodelist1, nodelist *nodelist2, info *arg_info, int flag)
  *****************************************************************************/
 
 node *
-AssociativeLaw (node *arg_node)
+ALdoAssociativeLaw (node *arg_node)
 {
     info *arg_info;
-    funtab *old_tab;
 
-    DBUG_ENTER ("AssociativeLaw");
+    DBUG_ENTER ("ALdoAssociativeLaw");
 
     if (arg_node != NULL) {
         DBUG_PRINT ("OPT",
@@ -1302,12 +1194,9 @@ AssociativeLaw (node *arg_node)
 
         arg_info = MakeInfo ();
 
-        old_tab = act_tab;
-        act_tab = al_tab;
-
-        arg_node = Trav (arg_node, arg_info);
-
-        act_tab = old_tab;
+        TRAVpush (TR_al);
+        arg_node = TRAVdo (arg_node, arg_info);
+        TRAVpop ();
 
         INFO_AL_NTYPE (arg_info) = NULL;
         arg_info = FreeInfo (arg_info);
@@ -1346,7 +1235,7 @@ ALblock (node *arg_node, info *arg_info)
         INFO_AL_OPTCONSTANTLIST (arg_info) = NULL;
         INFO_AL_OPTVARIABLELIST (arg_info) = NULL;
 
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1373,11 +1262,11 @@ ALassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ALassign");
 
-    ASSIGN_STATUS (arg_node) = 1;
+    ASSIGN_ISUNUSED (arg_node) = TRUE;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
 
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
 
         if (INFO_AL_OPTLIST (arg_info) != NULL) {
 
@@ -1422,7 +1311,7 @@ ALassign (node *arg_node, info *arg_info)
             (INFO_AL_OPTLIST (arg_info))
               = RemoveNodelistNodes (INFO_AL_OPTLIST (arg_info));
 
-            FreeNodelist (INFO_AL_OPTLIST (arg_info));
+            FREEfreeNodelist (INFO_AL_OPTLIST (arg_info));
             (INFO_AL_CONSTANTLIST (arg_info)) = NULL;
             (INFO_AL_VARIABLELIST (arg_info)) = NULL;
             INFO_AL_ARRAYLIST (arg_info) = NULL;
@@ -1436,11 +1325,11 @@ ALassign (node *arg_node, info *arg_info)
      * traverse in N_let-node
      */
 
-    if ((ASSIGN_INSTR (arg_node) != NULL) && (ASSIGN_STATUS (arg_node) == 1)) {
+    if ((ASSIGN_INSTR (arg_node) != NULL) && (ASSIGN_ISUNUSED (arg_node) == TRUE)) {
 
         INFO_AL_CURRENTASSIGN (arg_info) = arg_node;
 
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1465,10 +1354,10 @@ ALlet (node *arg_node, info *arg_info)
         INFO_AL_LETNODE (arg_info) = arg_node;
         if ((LET_IDS (arg_node) != NULL) && (IDS_AVIS (LET_IDS (arg_node)) != NULL))
             INFO_AL_TYPE (arg_info)
-              = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (IDS_AVIS (LET_IDS (arg_node))));
+              = VARDEC_TYPE (AVIS_DECL (IDS_AVIS (LET_IDS (arg_node))));
         INFO_AL_NTYPE (arg_info) = AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)));
 
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1500,14 +1389,12 @@ ALprf (node *arg_node, info *arg_info)
     node *node1, *node2;
     nodelist *tmp;
     nodelist *tmp1;
-#ifdef MWE_NTYPE_READY
     ntype *basetype;
-#endif
 
-    DBUG_ENTER ("AssociativeLawOptimize");
+    DBUG_ENTER ("ALprf");
 
     if (NODE_TYPE (PRF_ARGS (arg_node)) == N_exprs) {
-        if (IsAssociativeAndCommutative (arg_node) == 1) {
+        if (IsAssociativeAndCommutative (arg_node) == TRUE) {
 
             INFO_AL_NUMBEROFVARIABLES (arg_info) = 0;
             INFO_AL_NUMBEROFCONSTANTS (arg_info) = 0;
@@ -1540,25 +1427,19 @@ ALprf (node *arg_node, info *arg_info)
 
                 nodetype = IDS_VARDEC (LET_IDS (INFO_AL_LETNODE (arg_info)));
 
-#ifdef MWE_NTYPE_READY
-
-                if (TYIsSimple (VARDEC_NTYPE (nodetype)))
+                if (TYisSimple (VARDEC_NTYPE (nodetype)))
                     basetype = VARDEC_NTYPE (nodetype);
-                else if (TYIsArray (VARDEC_NTYPE (nodetype)))
-                    basetype = TYGetScalar (VARDEC_NTYPE (nodetype));
+                else if (TYisArray (VARDEC_NTYPE (nodetype)))
+                    basetype = TYgetScalar (VARDEC_NTYPE (nodetype));
                 else {
                     basetype = NULL;
                     DBUG_ASSERT ((FALSE), "unhandled kind of ntype occured");
                 }
 
-                if (!(enforce_ieee)
-                    || ((TYGetSimpleType (basetype) != T_float)
-                        && (TYGetSimpleType (basetype) != T_double))) {
-#else
-                if (!(enforce_ieee)
-                    || ((TYPES_BASETYPE (VARDEC_TYPE (nodetype)) != T_float)
-                        && (TYPES_BASETYPE (VARDEC_TYPE (nodetype)) != T_double))) {
-#endif
+                if (!(global.enforce_ieee)
+                    || ((TYgetSimpleType (basetype) != T_float)
+                        && (TYgetSimpleType (basetype) != T_double))) {
+
                     /*
                      * start optimization
                      */
@@ -1618,44 +1499,26 @@ ALprf (node *arg_node, info *arg_info)
                     if (node1 != NULL) {
                         if (node2 != NULL) {
 
-                            int dim, tmp;
+                            int dim;
 
-#ifdef MWE_NTYPE_READY
-                            tmp = TYGetDim (
-                              VARDEC_NTYPE (IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node1)))));
-                            if (tmp == 0) {
-                                if (TYGetDim (VARDEC_NTYPE (
-                                      IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node2)))))
-                                    == 0)
+                            if (TYisSimple (AVIS_TYPE (
+                                  IDS_AVIS (LET_IDS (ASSIGN_INSTR (node1)))))) {
+                                if (TYisSimple (VARDEC_NTYPE (
+                                      IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node2)))))) {
                                     dim = 0;
-                                else
+                                } else {
                                     dim = 1;
-                            } else if (TYGetDim (VARDEC_NTYPE (
-                                         IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node2)))))
-                                       == 0)
+                                }
+                            } else if (TYisSimple (VARDEC_NTYPE (
+                                         IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node2)))))) {
                                 dim = 2;
-                            else
+                            } else {
                                 dim = 3;
-#else
-                            tmp = TYPES_DIM (
-                              VARDEC_TYPE (IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node1)))));
-                            if (tmp == 0) {
-                                if (TYPES_DIM (VARDEC_TYPE (
-                                      IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node2)))))
-                                    == 0)
-                                    dim = 0;
-                                else
-                                    dim = 1;
-                            } else if (TYPES_DIM (VARDEC_TYPE (
-                                         IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node2)))))
-                                       == 0)
-                                dim = 2;
-                            else
-                                dim = 3;
-#endif
+                            }
 
                             INFO_AL_CONSTANTLIST (arg_info)
-                              = MakeNodelistNode (node1, MakeNodelistNode (node2, NULL));
+                              = TBmakeNodelistNode (node1,
+                                                    TBmakeNodelistNode (node2, NULL));
                             tmp1 = INFO_AL_CONSTANTLIST (arg_info);
                             INFO_AL_CONSTANTLIST (arg_info) = INFO_AL_OPTLIST (arg_info);
                             NODELIST_NEXT (NODELIST_NEXT (tmp1))
@@ -1668,41 +1531,40 @@ ALprf (node *arg_node, info *arg_info)
                             PRF_PRF (arg_node) = GetOperator (PRF_PRF (arg_node), dim);
                         } else {
                             INFO_AL_CONSTANTLIST (arg_info)
-                              = MakeNodelistNode (node1, NULL);
+                              = TBmakeNodelistNode (node1, NULL);
                             tmp1 = INFO_AL_CONSTANTLIST (arg_info);
                             INFO_AL_CONSTANTLIST (arg_info) = INFO_AL_OPTLIST (arg_info);
                             NODELIST_NEXT (tmp1) = INFO_AL_CONSTANTLIST (arg_info);
                             INFO_AL_OPTLIST (arg_info) = tmp1;
                             node1 = MakeExprsNodeFromExprsAndAssignNode (
-                              MakeNodelistNode (node1, NULL),
-                              MakeNodelistNode (NULL, NULL));
+                              TBmakeNodelistNode (node1, NULL),
+                              TBmakeNodelistNode (NULL, NULL));
                             node2 = arg_node;
                             arg_node = node1;
                         }
                     } else {
-                        INFO_AL_CONSTANTLIST (arg_info) = MakeNodelistNode (node2, NULL);
+                        INFO_AL_CONSTANTLIST (arg_info)
+                          = TBmakeNodelistNode (node2, NULL);
                         tmp1 = INFO_AL_CONSTANTLIST (arg_info);
                         INFO_AL_CONSTANTLIST (arg_info) = INFO_AL_OPTLIST (arg_info);
                         NODELIST_NEXT (tmp1) = INFO_AL_CONSTANTLIST (arg_info);
                         INFO_AL_OPTLIST (arg_info) = tmp1;
-                        node1
-                          = MakeExprsNodeFromExprsAndAssignNode (MakeNodelistNode (node2,
-                                                                                   NULL),
-                                                                 MakeNodelistNode (NULL,
-                                                                                   NULL));
+                        node1 = MakeExprsNodeFromExprsAndAssignNode (
+                          TBmakeNodelistNode (node2, NULL),
+                          TBmakeNodelistNode (NULL, NULL));
                         node2 = arg_node;
                         arg_node = node1;
                     }
-                    Free (node2);
+                    ILIBfree (node2);
 
                 } else {
                     /*
                      * nothing to optimize
                      */
-                    FreeNodelist (INFO_AL_CONSTANTLIST (arg_info));
-                    FreeNodelist (INFO_AL_VARIABLELIST (arg_info));
-                    FreeNodelist (INFO_AL_CONSTARRAYLIST (arg_info));
-                    FreeNodelist (INFO_AL_ARRAYLIST (arg_info));
+                    FREEfreeNodelist (INFO_AL_CONSTANTLIST (arg_info));
+                    FREEfreeNodelist (INFO_AL_VARIABLELIST (arg_info));
+                    FREEfreeNodelist (INFO_AL_CONSTARRAYLIST (arg_info));
+                    FREEfreeNodelist (INFO_AL_ARRAYLIST (arg_info));
                     INFO_AL_NUMBEROFVARIABLES (arg_info) = 0;
                     INFO_AL_NUMBEROFCONSTANTS (arg_info) = 0;
                 }
@@ -1710,10 +1572,10 @@ ALprf (node *arg_node, info *arg_info)
                 /*
                  * nothing to optimize
                  */
-                FreeNodelist (INFO_AL_CONSTANTLIST (arg_info));
-                FreeNodelist (INFO_AL_VARIABLELIST (arg_info));
-                FreeNodelist (INFO_AL_CONSTARRAYLIST (arg_info));
-                FreeNodelist (INFO_AL_ARRAYLIST (arg_info));
+                FREEfreeNodelist (INFO_AL_CONSTANTLIST (arg_info));
+                FREEfreeNodelist (INFO_AL_VARIABLELIST (arg_info));
+                FREEfreeNodelist (INFO_AL_CONSTARRAYLIST (arg_info));
+                FREEfreeNodelist (INFO_AL_ARRAYLIST (arg_info));
                 INFO_AL_NUMBEROFVARIABLES (arg_info) = 0;
                 INFO_AL_NUMBEROFCONSTANTS (arg_info) = 0;
             }

@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.12  2004/11/24 12:05:40  mwe
+ * changed signature of TBmakeLet
+ *
  * Revision 1.11  2004/11/10 18:27:29  mwe
  * code for type upgrade added
  * use ntype-structure instead of type-structure
@@ -48,14 +51,14 @@
  *Initial revision
  */
 
-#define NEW_INFO
-
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "node_basic.h"
+#include "new_types.h"
 #include "traverse.h"
 #include "dbug.h"
 #include "internal_lib.h"
@@ -99,7 +102,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_ESD_TYPE (result) = NULL;
     INFO_ESD_NTYPE (result) = NULL;
@@ -116,7 +119,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -137,29 +140,10 @@ MakeExprsNodeFromAssignNode (node *elem1)
 {
 
     node *newnode;
-    statustype status1;
-    char *varname1, *newname1, *varmod1, *newmod1;
 
     DBUG_ENTER ("MakeExprsNodeFromAssignNode");
 
-    newname1 = NULL;
-
-    varname1 = IDS_NAME (LET_IDS (ASSIGN_INSTR (elem1)));
-    DBUG_ASSERT ((varname1 != NULL),
-                 "Unexpected error, existing variable has no name: IDS_NAME == NULL");
-    newname1 = StringCopy (varname1);
-    varmod1 = IDS_MOD (LET_IDS (ASSIGN_INSTR (elem1)));
-    if (varmod1 != NULL)
-        newmod1 = StringCopy (varmod1);
-    else
-        newmod1 = NULL;
-    status1 = IDS_ATTRIB (LET_IDS (ASSIGN_INSTR (elem1)));
-
-    newnode = MakeExprs (MakeId (newname1, newmod1, status1), NULL);
-
-    ID_AVIS (EXPRS_EXPR (newnode)) = IDS_AVIS (LET_IDS (ASSIGN_INSTR (elem1)));
-
-    ID_VARDEC (EXPRS_EXPR (newnode)) = IDS_VARDEC (LET_IDS (ASSIGN_INSTR (elem1)));
+    newnode = TBmakeExprs (DUPdupIdsId (elem1), NULL);
 
     DBUG_RETURN (newnode);
 }
@@ -180,15 +164,7 @@ static node *
 MakeAssignNode (node *newnode, info *arg_info)
 {
 
-    node *newvardec;
-    types *type;
-    char *newname1, *newname2;
-#if 0
-  char *newname, *newmod;
-  shpseg* shp;
-  node *shpnode;
-  int shpint;
-#endif
+    node *newavis, *newvardec;
 
     DBUG_ENTER ("MakeAssignNode");
 
@@ -196,54 +172,12 @@ MakeAssignNode (node *newnode, info *arg_info)
      * try to investigate the correct BASETYPE
      */
 
-#if 0
-  if  (TYPES_NAME( INFO_ESD_TYPE(arg_info)) != NULL)
-    newname = StringCopy(TYPES_NAME( INFO_ESD_TYPE(arg_info)));
-  if  (TYPES_MOD( INFO_ESD_TYPE(arg_info)) != NULL)
-    newmod = StringCopy(TYPES_MOD( INFO_ESD_TYPE(arg_info)));
-
-
-  if ((PRF_PRF(newnode) == F_mul_SxS) || (PRF_PRF(newnode) == F_div_SxS)){
-    type = MakeTypes(TYPES_BASETYPE( (INFO_ESD_TYPE(arg_info))  ) ,
-                      0,
-		    NULL,
-		    NULL,
-		    NULL);
-  }
-  else{
-    newshpseg = NULL;
-    shpint = TYPES_DIM(( INFO_ESD_TYPE(arg_info)));
-    shpnode = Shpseg2Array(TYPES_SHPSEG( INFO_ESD_TYPE(arg_info)), shpint);
-    shp = Array2Shpseg(shpnode, &shpint);
-
-
-    type = VARDEC_TYPE( ID_VARDEC( EXPRS_EXPR( EXPRS_NEXT( PRF_ARGS( newnode)))));
-    type = MakeTypes( TYPES_BASETYPE( (INFO_ESD_TYPE(arg_info))  ),
-                      TYPES_DIM(( INFO_ESD_TYPE(arg_info)) ),
-		    shp,
-		    NULL,
-		    NULL);
-  }
-#endif
-    newname1 = TmpVar ();
-
-#ifdef MWE_NTYPE_READY
-    newtype = TYCopyType (INFO_ESD_NTYPE (arg_info));
-    newvardec = MakeVardec (newname1, NULL, newtype,
-                            (BLOCK_VARDEC (INFO_ESD_BLOCKNODE (arg_info))));
-
-#else
-    type = DupAllTypes (INFO_ESD_TYPE (arg_info));
-    newvardec
-      = MakeVardec (newname1, type, (BLOCK_VARDEC (INFO_ESD_BLOCKNODE (arg_info))));
-#endif
+    newavis = TBmakeAvis (ILIBtmpVar (), TYcopyType (INFO_ESD_NTYPE (arg_info)));
+    newvardec = TBmakeVardec (newavis, BLOCK_VARDEC (INFO_ESD_BLOCKNODE (arg_info)));
     BLOCK_VARDEC (INFO_ESD_BLOCKNODE (arg_info)) = newvardec;
 
-    newname2 = StringCopy (newname1);
-    newnode = MakeAssignLet (newname2, newvardec, newnode);
-
-    VARDEC_OBJDEF (newvardec) = newnode;
-    AVIS_SSAASSIGN (VARDEC_AVIS (newvardec)) = newnode;
+    newnode = TBmakeAssign (TBmakeLet (TBmakeIds (newavis, NULL), newnode), NULL);
+    ;
 
     DBUG_RETURN (newnode);
 }
@@ -253,74 +187,64 @@ CreateNegOne (info *arg_info)
 {
 
     node *newnode;
-#ifdef MWE_NTYPE_READY
     simpletype basetype;
-#endif
 
     DBUG_ENTER ("CreateNegOne");
 
     newnode = NULL;
-#ifdef MWE_NTYPE_READY
-    basetype = TYGetBaseType (INFO_ESD_NTYPE (arg_info));
 
-    if (basetype == T_int) {
+    if (TYisArray (INFO_ESD_NTYPE (arg_info))) {
 
-        newnode = MakeNum (-1);
+        basetype = TYgetSimpleType (TYgetScalar (INFO_ESD_NTYPE (arg_info)));
+    } else if (TYisSimple (INFO_ESD_NTYPE (arg_info))) {
 
-    } else if (basetype == T_double) {
-
-        newnode = MakeDouble (-1.0);
-
-    } else if (basetype == T_float) {
-
-        newnode = MakeFloat (-1.0f);
-
-    } else if (basetype == T_bool) {
-        newnode = MakeBool (TRUE);
-    }
-#else
-    if (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_int) {
-
-        newnode = MakeNum (-1);
-
-    } else if (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_double) {
-
-        newnode = MakeDouble (-1.0);
-
-    } else if (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_float) {
-
-        newnode = MakeFloat (-1.0f);
-
-    } else if (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_bool) {
-        newnode = MakeBool (TRUE);
-    }
-#endif
-    else {
-        DBUG_ASSERT (FALSE, "Unexpected BASETYPE!");
+        basetype = TYgetSimpleType (INFO_ESD_NTYPE (arg_info));
     }
 
-    newnode = MakeExprs (newnode, NULL);
+    if ((TYisArray (INFO_ESD_NTYPE (arg_info)))
+        || (TYisSimple (INFO_ESD_NTYPE (arg_info)))) {
+
+        if (basetype == T_int) {
+
+            newnode = TBmakeNum (-1);
+
+        } else if (basetype == T_double) {
+
+            newnode = TBmakeDouble (-1.0);
+
+        } else if (basetype == T_float) {
+
+            newnode = TBmakeFloat (-1.0f);
+
+        } else if (basetype == T_bool) {
+            newnode = TBmakeBool (TRUE);
+        } else {
+            DBUG_ASSERT (FALSE, "Unexpected BASETYPE!");
+        }
+    }
+
+    newnode = TBmakeExprs (newnode, NULL);
 
     DBUG_RETURN (newnode);
 }
 
 static void
-CreateNegative (node *arg, info *arg_info, int flag)
+CreateNegative (node *arg, info *arg_info, bool flag)
 {
 
     node *node1, *newnode;
 
     DBUG_ENTER ("CreateNegative");
 
-    node1 = MakeExprs (arg, NULL);
+    node1 = TBmakeExprs (arg, NULL);
     newnode = CreateNegOne (arg_info);
 
     EXPRS_NEXT (newnode) = node1;
 
-    if (flag == 0)
-        newnode = MakePrf (F_mul_SxS, newnode);
+    if (flag)
+        newnode = TBmakePrf (F_mul_SxA, newnode);
     else
-        newnode = MakePrf (F_mul_SxA, newnode);
+        newnode = TBmakePrf (F_mul_SxS, newnode);
 
     newnode = MakeAssignNode (newnode, arg_info);
 
@@ -334,77 +258,66 @@ CreateOne (info *arg_info)
 {
 
     node *newnode;
-#ifdef MWE_NTYPE_READY
     simpletype basetype;
-#endif
+
     DBUG_ENTER ("CreateOne");
 
     newnode = NULL;
 
-#ifdef MWE_NTYPE_READY
-    basetype = TYGetBaseType (INFO_ESD_NTYPE (arg_info));
-    if (basetype == T_int) {
+    if (TYisArray (INFO_ESD_NTYPE (arg_info))) {
 
-        newnode = MakeNum (1);
+        basetype = TYgetSimpleType (TYgetScalar (INFO_ESD_NTYPE (arg_info)));
+    } else if (TYisSimple (INFO_ESD_NTYPE (arg_info))) {
 
-    } else if (basetype == T_double) {
-
-        newnode = MakeDouble (1.0);
-
-    } else if (basetype == T_float) {
-
-        newnode = MakeFloat (1.0f);
-
-    } else if (basetype == T_bool) {
-
-        newnode = MakeBool (TRUE);
-
-    }
-#else
-    if (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_int) {
-
-        newnode = MakeNum (1);
-
-    } else if (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_double) {
-
-        newnode = MakeDouble (1.0);
-
-    } else if (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_float) {
-
-        newnode = MakeFloat (1.0f);
-
-    } else if (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_bool) {
-
-        newnode = MakeBool (TRUE);
-
-    }
-#endif
-    else {
-        DBUG_ASSERT (FALSE, "Unexpected BASETYPE!");
+        basetype = TYgetSimpleType (INFO_ESD_NTYPE (arg_info));
     }
 
-    newnode = MakeExprs (newnode, NULL);
+    if ((TYisArray (INFO_ESD_NTYPE (arg_info)))
+        || (TYisSimple (INFO_ESD_NTYPE (arg_info)))) {
+
+        if (basetype == T_int) {
+
+            newnode = TBmakeNum (1);
+
+        } else if (basetype == T_double) {
+
+            newnode = TBmakeDouble (1.0);
+
+        } else if (basetype == T_float) {
+
+            newnode = TBmakeFloat (1.0f);
+
+        } else if (basetype == T_bool) {
+
+            newnode = TBmakeBool (TRUE);
+
+        } else {
+            DBUG_ASSERT (FALSE, "Unexpected BASETYPE!");
+        }
+    }
+
+    newnode = TBmakeExprs (newnode, NULL);
 
     DBUG_RETURN (newnode);
 }
 
 static void
-CreateInverse (node *arg, info *arg_info, int flag)
+CreateInverse (node *arg, info *arg_info, bool flag)
 {
 
     node *node1, *newnode;
 
     DBUG_ENTER ("CreateInverse");
 
-    node1 = MakeExprs (arg, NULL);
+    node1 = TBmakeExprs (arg, NULL);
     newnode = CreateOne (arg_info);
 
     EXPRS_NEXT (newnode) = node1;
 
-    if (flag == 0)
-        newnode = MakePrf (F_div_SxS, newnode);
+    if (flag)
+        newnode = TBmakePrf (F_div_SxA, newnode);
     else
-        newnode = MakePrf (F_div_SxA, newnode);
+        newnode = TBmakePrf (F_div_SxS, newnode);
 
     newnode = MakeAssignNode (newnode, arg_info);
 
@@ -414,25 +327,20 @@ CreateInverse (node *arg, info *arg_info, int flag)
 }
 
 node *
-ElimSubDiv (node *arg_node)
+ESDdoElimSubDiv (node *arg_node)
 {
     info *info;
-    funtab *old_tab;
 
-    DBUG_ENTER ("ElimSubDiv");
+    DBUG_ENTER ("ESDdoElimSubDiv");
 
     if (arg_node != NULL) {
         DBUG_PRINT ("OPT",
                     ("starting elim sub div in function %s", FUNDEF_NAME (arg_node)));
 
         info = MakeInfo ();
-
-        old_tab = act_tab;
-        act_tab = esd_tab;
-
-        arg_node = Trav (arg_node, info);
-
-        act_tab = old_tab;
+        TRAVpush (TR_esd);
+        arg_node = TRAVdo (arg_node, info);
+        TRAVpop ();
 
         info = FreeInfo (info);
     }
@@ -443,7 +351,7 @@ ElimSubDiv (node *arg_node)
 /*****************************************************************************
  *
  * function:
- *   ALblock(node *arg_node, info *arg_info)
+ *   ESDblock(node *arg_node, info *arg_info)
  *
  * description:
  *   store block-node for access to vardec-nodes
@@ -464,12 +372,11 @@ ESDblock (node *arg_node, info *arg_info)
          * store pointer on actual N_block-node for append of new N_vardec nodes
          */
         if (BLOCK_VARDEC (arg_node) != NULL) {
-            INFO_ESD_TYPE (arg_info) = VARDEC_TYPE (BLOCK_VARDEC (arg_node));
             INFO_ESD_NTYPE (arg_info) = AVIS_TYPE (VARDEC_AVIS (BLOCK_VARDEC (arg_node)));
             INFO_ESD_BLOCKNODE (arg_info) = arg_node;
         }
 
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
 
     if (INFO_ESD_NEWNODE (arg_info) != NULL) {
@@ -485,7 +392,7 @@ ESDblock (node *arg_node, info *arg_info)
 /*****************************************************************************
  *
  * function:
- *   ALassign(node *arg_node, info *arg_info)
+ *   ESDassign(node *arg_node, info *arg_info)
  *
  * description:
  *   Set flag ASSIGN_STATUS to mark unused nodes in optimization-process
@@ -505,9 +412,9 @@ ESDassign (node *arg_node, info *arg_info)
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
 
-        ASSIGN_STATUS (arg_node) = 1;
+        ASSIGN_ISUNUSED (arg_node) = TRUE;
 
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
 
         if (INFO_ESD_NEWNODE (arg_info) != NULL) {
 
@@ -521,9 +428,9 @@ ESDassign (node *arg_node, info *arg_info)
          * traverse in N_let-node
          */
 
-        if ((ASSIGN_INSTR (arg_node) != NULL) && (ASSIGN_STATUS (arg_node) == 1)) {
+        if ((ASSIGN_INSTR (arg_node) != NULL) && (ASSIGN_ISUNUSED (arg_node))) {
 
-            ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+            ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
         }
     }
     DBUG_RETURN (arg_node);
@@ -532,7 +439,7 @@ ESDassign (node *arg_node, info *arg_info)
 /*****************************************************************************
  *
  * function:
- *   ALlet(node *arg_node, info *arg_info)
+ *   ESDlet(node *arg_node, info *arg_info)
  *
  * description:
  *   store current let-node to include last created new primitive-node
@@ -543,25 +450,29 @@ ESDassign (node *arg_node, info *arg_info)
 node *
 ESDlet (node *arg_node, info *arg_info)
 {
+
+    ntype *tmp;
+
     DBUG_ENTER ("ESDlet");
     if (LET_EXPR (arg_node) != NULL) {
 
         INFO_ESD_LETNODE (arg_info) = arg_node;
         if ((LET_IDS (arg_node) != NULL) && (IDS_AVIS (LET_IDS (arg_node)) != NULL)) {
-            INFO_ESD_TYPE (arg_info)
-              = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (IDS_AVIS (LET_IDS (arg_node))));
             INFO_ESD_NTYPE (arg_info) = AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)));
 
-#ifdef MWE_NTYPE_READY
-            if ((!enforce_ieee)
-                || ((TYGetBaseType (INFO_ESD_NTYPE (arg_info)) != T_double)
-                    && (TYGetBaseType (INFO_ESD_NTYPE (arg_info)) != T_float)))
-#else
-            if ((!enforce_ieee)
-                || ((TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) != T_double)
-                    && (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) != T_float)))
-#endif
-                LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+            tmp = AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)));
+
+            if (TYisArray (tmp)) {
+                tmp = TYgetScalar (tmp);
+            }
+
+            if (TYisSimple (tmp)
+                && ((!global.enforce_ieee)
+                    || ((TYgetSimpleType (tmp) != T_double)
+                        && (TYgetSimpleType (tmp) != T_float)))) {
+
+                LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+            }
         }
     }
 
@@ -571,7 +482,7 @@ ESDlet (node *arg_node, info *arg_info)
 /*****************************************************************************
  *
  * function:
- *   ALprf(node *arg_node, info *arg_info)
+ *   ESDprf(node *arg_node, info *arg_info)
  *
  * description:
  *   If primitive is associative and commutative start optimization-routines:
@@ -590,50 +501,47 @@ ESDprf (node *arg_node, info *arg_info)
 {
 
     node *newnode;
-#ifdef MWE_NTYPE_READY
     simpletype basetype;
-#endif
+
     DBUG_ENTER ("ESDprf");
 
     if ((NODE_TYPE (PRF_ARGS (arg_node)) == N_exprs)
         && (INFO_ESD_COUNTER (arg_info) < 20000)) {
 
-#ifdef MWE_NTYPE_READY
-        basetype = TYGetBaseType (INFO_ESD_NTYPE (arg_info));
-        if ((PRF_PRF (arg_node) == F_sub_SxS)
-            && ((basetype == T_double) || (basetype == T_float) || (basetype == T_int)
-                || (basetype == T_bool))) {
-#else
-        if ((PRF_PRF (arg_node) == F_sub_SxS)
-            && ((TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_double)
-                || (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_float)
-                || (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_int)
-                || (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_bool))) {
-#endif
+        if (TYisArray (INFO_ESD_NTYPE (arg_info))) {
 
-            PRF_PRF (arg_node) = F_add_SxS;
-            CreateNegative (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 0);
+            basetype = TYgetSimpleType (TYgetScalar (INFO_ESD_NTYPE (arg_info)));
 
-            newnode = MakeExprsNodeFromAssignNode (INFO_ESD_NEWNODE (arg_info));
+        } else if (TYisSimple (INFO_ESD_NTYPE (arg_info))) {
 
-            EXPRS_NEXT (PRF_ARGS (arg_node)) = newnode;
-
-            INFO_ESD_COUNTER (arg_info) = INFO_ESD_COUNTER (arg_info) + 0;
+            basetype = TYgetSimpleType (INFO_ESD_NTYPE (arg_info));
         }
 
-#ifdef MWE_NTYPE_READY
-        basetype = TYGetBaseType (INFO_ESD_NTYPE (arg_info));
+        if ((TYisArray (INFO_ESD_NTYPE (arg_info)))
+            || (TYisSimple (INFO_ESD_NTYPE (arg_info)))) {
+            if ((PRF_PRF (arg_node) == F_sub_SxS)
+                && ((basetype == T_double) || (basetype == T_float) || (basetype == T_int)
+                    || (basetype == T_bool))) {
+
+                PRF_PRF (arg_node) = F_add_SxS;
+                CreateNegative (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info,
+                                FALSE);
+
+                newnode = MakeExprsNodeFromAssignNode (INFO_ESD_NEWNODE (arg_info));
+
+                EXPRS_NEXT (PRF_ARGS (arg_node)) = newnode;
+
+                INFO_ESD_COUNTER (arg_info) = INFO_ESD_COUNTER (arg_info) + 0;
+            }
+        }
+
         if ((PRF_PRF (arg_node) == F_div_SxS)
             && (NODE_TYPE (EXPRS_EXPR (PRF_ARGS (arg_node))) == N_id)
             && ((basetype == T_double) || (basetype == T_float))) {
-#else
-        if ((PRF_PRF (arg_node) == F_div_SxS)
-            && (NODE_TYPE (EXPRS_EXPR (PRF_ARGS (arg_node))) == N_id)
-            && ((TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_double)
-                || (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) == T_float))) {
-#endif
+
             PRF_PRF (arg_node) = F_mul_SxS;
-            CreateInverse (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 0);
+            CreateInverse (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info,
+                           FALSE);
 
             newnode = MakeExprsNodeFromAssignNode (INFO_ESD_NEWNODE (arg_info));
 
@@ -644,53 +552,41 @@ ESDprf (node *arg_node, info *arg_info)
 
         if (PRF_PRF (arg_node) == F_sub_AxS) {
             PRF_PRF (arg_node) = F_add_AxS;
-            CreateNegative (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 0);
+            CreateNegative (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info,
+                            FALSE);
 
             newnode = MakeExprsNodeFromAssignNode (INFO_ESD_NEWNODE (arg_info));
 
             EXPRS_NEXT (PRF_ARGS (arg_node)) = newnode;
         }
-#ifdef MWE_NTYPE_READY
-        if ((PRF_PRF (arg_node) == F_div_AxS)
-            && (TYGetBaseType (INFO_ESD_NTYPE (arg_info)) != T_int)) {
-#else
-        if ((PRF_PRF (arg_node) == F_div_AxS)
-            && (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) != T_int)) {
-#endif
+
+        if ((PRF_PRF (arg_node) == F_div_AxS) && (basetype != T_int)) {
+
             PRF_PRF (arg_node) = F_mul_AxS;
-            CreateInverse (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 0);
+            CreateInverse (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info,
+                           FALSE);
 
             newnode = MakeExprsNodeFromAssignNode (INFO_ESD_NEWNODE (arg_info));
 
             EXPRS_NEXT (PRF_ARGS (arg_node)) = newnode;
         }
 
-#ifdef MWE_NTYPE_READY
         if ((PRF_PRF (arg_node) == F_div_SxA)
             && (NODE_TYPE (EXPRS_EXPR (PRF_ARGS (arg_node))) == N_id)
-            && (TYGetBaseType (INFO_ESD_NTYPE (arg_info)) != T_int)) {
-#else
-        if ((PRF_PRF (arg_node) == F_div_SxA)
-            && (NODE_TYPE (EXPRS_EXPR (PRF_ARGS (arg_node))) == N_id)
-            && (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) != T_int)) {
-#endif
+            && (basetype != T_int)) {
+
             PRF_PRF (arg_node) = F_mul_SxA;
-            CreateInverse (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 1);
+            CreateInverse (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, TRUE);
 
             newnode = MakeExprsNodeFromAssignNode (INFO_ESD_NEWNODE (arg_info));
 
             EXPRS_NEXT (PRF_ARGS (arg_node)) = newnode;
         }
 
-#ifdef MWE_NTYPE_READY
-        if ((PRF_PRF (arg_node) == F_div_AxA)
-            && (TYGetBaseType (INFO_ESD_NTYPE (arg_info)) != T_int)) {
-#else
-        if ((PRF_PRF (arg_node) == F_div_AxA)
-            && (TYPES_BASETYPE (INFO_ESD_TYPE (arg_info)) != T_int)) {
-#endif
+        if ((PRF_PRF (arg_node) == F_div_AxA) && (basetype != T_int)) {
+
             PRF_PRF (arg_node) = F_mul_AxA;
-            CreateInverse (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 1);
+            CreateInverse (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, TRUE);
 
             newnode = MakeExprsNodeFromAssignNode (INFO_ESD_NEWNODE (arg_info));
 
@@ -700,7 +596,8 @@ ESDprf (node *arg_node, info *arg_info)
         if (PRF_PRF (arg_node) == F_sub_AxA) {
 
             PRF_PRF (arg_node) = F_add_AxA;
-            CreateNegative (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 1);
+            CreateNegative (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info,
+                            TRUE);
 
             newnode = MakeExprsNodeFromAssignNode (INFO_ESD_NEWNODE (arg_info));
 
@@ -710,7 +607,8 @@ ESDprf (node *arg_node, info *arg_info)
         if (PRF_PRF (arg_node) == F_sub_SxA) {
 
             PRF_PRF (arg_node) = F_add_SxA;
-            CreateNegative (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info, 1);
+            CreateNegative (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), arg_info,
+                            TRUE);
 
             newnode = MakeExprsNodeFromAssignNode (INFO_ESD_NEWNODE (arg_info));
 
