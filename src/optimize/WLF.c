@@ -1,6 +1,10 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.23  1999/02/10 10:02:57  srs
+ * Unreferenced WLs are replaced instantly with an N_empty node.
+ * (see version 1.20)
+ *
  * Revision 1.22  1999/02/02 19:30:02  srs
  * reverted changes from version 1.20
  *
@@ -1342,6 +1346,7 @@ Modarray2Genarray (node *wln, node *substwln)
 
     /* at the moment, substwln points to the assignment of the WL. */
     substwln = LET_EXPR (ASSIGN_INSTR (substwln));
+    (NWITH_REFERENCES_FOLDED (substwln))++; /* removed another reference */
 
     /* compute shape of WL for NWITHOP_SHAPE() */
     type = ID_TYPE (NWITHOP_ARRAY (NWITH_WITHOP (wln)));
@@ -1447,8 +1452,10 @@ WLFassign (node *arg_node, node *arg_info)
                 if (N_Nwith == NODE_TYPE (LET_EXPR (tmpn))
                     && NWITH_REFERENCED (LET_EXPR (tmpn))
                          == NWITH_REFERENCES_FOLDED (LET_EXPR (tmpn))) {
-                    /*           FreeTree(tmpn); */
-                    /*           ASSIGN_INSTR(arg_node) = MakeEmpty(); */
+                    FreeTree (tmpn);
+                    ASSIGN_INSTR (arg_node) = MakeEmpty ();
+                    /* the N_empty node will ne removed in GenerateMasks, which
+                       is called directly after WLF. */
                 }
             }
         }
