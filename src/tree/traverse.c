@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2004/08/24 16:51:19  skt
+ * crwiw_tab added
+ *
  * Revision 3.68  2004/08/17 15:48:32  skt
  * support for cell-groth added (CEGRO)
  *
@@ -298,6 +301,7 @@
 #include "blocks_propagate.h"
 #include "barriers_init.h"
 #include "tag_executionmode.h"
+#include "create_withinwith.h"
 #include "propagate_executionmode.h"
 #include "create_cells.h"
 #include "cell_growth.h"
@@ -1010,15 +1014,15 @@ static funtab muth_tab_rec = {{
 funtab *muth_tab = &muth_tab_rec;
 
 /*
- *  (61) unused_tab38
+ *  (61) crwiw_tab
  */
-static funtab unused_tab38_rec = {{
-#define NIFunused_38(it_unused_38) it_unused_38
+static funtab crwiw_tab_rec = {{
+#define NIFcrwiw(it_crwiw) it_crwiw
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab38 = &unused_tab38_rec;
+                               },
+                               NULL,
+                               NULL};
+funtab *crwiw_tab = &crwiw_tab_rec;
 
 /*
  *  (62) unused_tab32

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2004/08/24 16:51:19  skt
+ * crwiw_tab added
+ *
  * Revision 3.54  2004/08/17 15:48:32  skt
  * support for cell-groth added (CEGRO)
  *
@@ -338,7 +341,7 @@ extern funtab *spmdpm_tab;
 extern funtab *spmdco_tab;
 extern funtab *ntc_tab;
 extern funtab *muth_tab;
-extern funtab *unused_tab38;
+extern funtab *crwiw_tab;
 extern funtab *unused_tab32;
 extern funtab *unused_tab37;
 extern funtab *fun2lac_tab;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.192  2004/08/24 16:51:19  skt
+ * crwiw_tab added
+ *
  * Revision 3.191  2004/08/17 15:48:32  skt
  * support for cell-groth added (CEGRO)
  *
@@ -373,7 +376,7 @@
  *   spmdcons_tab    tsi_tab         spmdlc_tab      spmddn_tab
  *   spmdpm_tab      spmdco_tab      ntc_tab         infdfms_tab
  *
- *   muth_tab        unused_tab38    unused_tab32    unused_tab37
+ *   muth_tab        crwiw_tab       unused_tab32    unused_tab37
  *   func2lac_tab    ai_tab          unused_tab31    unused_tab36
  *   l2f_tab         unused_tab30    unused_tab35    unused_tab34
  *   cudecls_tab     unused_tab29    unused_tab33    unused_tab27
@@ -643,8 +646,8 @@
 #ifndef NIFmuth
 #define NIFmuth(it_muth)
 #endif
-#ifndef NIFunused_38
-#define NIFunused_38(it_unused_38)
+#ifndef NIFcrwiw
+#define NIFcrwiw(it_crwiw)
 #endif
 #ifndef NIFunused_32
 #define NIFunused_32(it_unused_32)
@@ -928,7 +931,7 @@
   it_wlaa, it_mmv, it_spmdrm, it_spmdro, it_spmdcons, it_tsi, it_spmdlc, it_spmddn,                              \
   it_spmdpm, it_spmdco, it_ntc, it_infdfms,                                                                      \
                                                                                                                  \
-  it_muth, it_unused_38, it_unused_32, it_unused_37, it_fun2lac, it_ai, it_unused_31,                            \
+  it_muth, it_crwiw, it_unused_32, it_unused_37, it_fun2lac, it_ai, it_unused_31,                                \
   it_unused_36, it_l2f, it_unused_30, it_unused_35, it_unused_34, it_cudecls,                                    \
   it_unused_29, it_unused_33, it_unused_27, it_unused_28, it_precomp3, it_apc, it_apt,                           \
                                                                                                                  \
@@ -974,7 +977,7 @@
                           NIFspmdpm (it_spmdpm) NIFspmdco (it_spmdco) NIFntc (                                   \
                             it_ntc) NIFinfdfms (it_infdfms)                                                      \
                                                                                                                  \
-                            NIFmuth (it_muth) NIFunused_38 (it_unused_38) NIFunused_32 (                         \
+                            NIFmuth (it_muth) NIFcrwiw (it_crwiw) NIFunused_32 (                                 \
                               it_unused_32) NIFunused_37 (it_unused_37) NIFfun2lac (it_fun2lac)                  \
                               NIFai (it_ai) NIFunused_31 (it_unused_31) NIFunused_36 (                           \
                                 it_unused_36) NIFl2f (it_l2f) NIFunused_30 (it_unused_30)                        \
@@ -1791,7 +1794,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, WLAAassign, TravSons, SPMDRMassign, SPMDROassign, TravSons, TravSons,
        TravSons, TravSons, SPMDPMassign, SPMDCOassign, NTCassign, INFDFMSassign,
 
-       MUTHassign, TravSons, TravSons, TravSons, FUN2LACassign, AIassign, TravSons,
+       MUTHassign, CRWIWassign, TravSons, TravSons, FUN2LACassign, AIassign, TravSons,
        TravSons, L2Fassign, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, PREC3assign, TravSons, APTassign,
 
@@ -2017,7 +2020,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        WLAAap, TravSons, TravSons, TravSons, TravSons, TravSons, SPMDLCap, TravSons,
        TravSons, TravSons, NTCap, INFDFMSap,
 
-       TravSons, TravSons, TravSons, TravSons, FUN2LACap, AIap, TravSons, TravSons,
+       TravSons, CRWIWap, TravSons, TravSons, FUN2LACap, AIap, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, APCap, APTap,
 
@@ -3234,7 +3237,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFinfdfms
 
 #undef NIFmuth
-#undef NIFunused_38
+#undef NIFcrwiw
 #undef NIFunused_32
 #undef NIFunused_37
 
