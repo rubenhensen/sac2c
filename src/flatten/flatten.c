@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.3  1994/11/14 17:49:23  hw
+ * Revision 1.4  1994/11/15 14:49:29  hw
+ * deleted FltFor
+ * bug fixed in FltnPrf
+ *
+ * Revision 1.3  1994/11/14  17:49:23  hw
  * added FltnCond FltnFor
  * last one doesn`t work correkt at all
  *
@@ -162,7 +166,7 @@ FltnPrf (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("FltnPrf");
 
-    for (i = 0; i < 2; i++)
+    for (i = 0; i < arg_node->nnode; i++)
         if ((arg_node->node[i]->nodetype == N_ap)
             || (arg_node->node[i]->nodetype == N_prf)) {
 
@@ -296,77 +300,6 @@ FltnCond (node *arg_node, node *arg_info)
         arg_node->node[i] = Trav (arg_node->node[i], info_node);
     }
     free (info_node);
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : FltnFor
- *  arguments     : 1) argument node
- *                  2) last assignment in arg_info->node[0]
- *  description   : Flatten each argument of the given node if neccessary
- *  global vars   :
- *  internal funs : Flatten
- *  external funs : Trav
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-node *
-FltnFor (node *arg_node, node *arg_info)
-{
-    int i;
-    node *info_node, *assign_node, *tmp_node;
-
-    DBUG_ENTER ("FltnFor");
-
-    info_node = MakeNode (N_info);
-    info_node->nnode = 1;
-    info_node->node[0] = arg_info->node[0];
-
-    DBUG_PRINT ("FLATTEN", ("info_node->node[0]:" P_FORMAT, info_node->node[0]));
-    DBUG_PRINT ("FLATTEN", ("arg_info->node[0]:" P_FORMAT, arg_info->node[0]));
-
-    arg_node->node[0] = Trav (arg_node->node[0], info_node);
-    tmp_node = arg_node->node[0];
-    DBUG_PRINT ("FLATTEN", ("befor while: tmp_node:" P_FORMAT, tmp_node));
-
-    /* looking for last and last but one assign node  */
-    while (NULL != tmp_node->node[1]) {
-        if (NULL == tmp_node->node[1]->node[1])
-            assign_node = tmp_node;
-        tmp_node = tmp_node->node[1];
-    }
-    /* last assign node: tmp_node */
-    /* last but one assign node: assign_node */
-
-    /* bend info node pointer to assign node child */
-    assign_node->node[1] = arg_info->node[0];
-    if (NULL != assign_node->node[1])
-        assign_node->nnode = 2;
-    arg_info->node[0] = arg_node->node[0]; /* new info node */
-    arg_node->node[0] = tmp_node;          /* tmp_node is initial part of for statement */
-
-    DBUG_PRINT ("FLATTEN", ("arg_node->node[0]: %s" P_FORMAT " number of nodes:%d",
-                            mdb_nodetype[arg_node->node[0]->nodetype], arg_node->node[0],
-                            arg_node->node[0]->nnode));
-
-    DBUG_PRINT ("FLATTEN", ("info_node->node[0]:" P_FORMAT, info_node->node[0]));
-    DBUG_PRINT ("FLATTEN", ("arg_info->node[0]:" P_FORMAT, arg_info->node[0]));
-
-#ifdef 0
-    for (i = 1; i < arg_node->nnode; i++) {
-        info_node->node[0] = NULL;
-        arg_node->node[i] = Trav (arg_node->node[i], info_node);
-    }
-#endif
-    free (info_node);
-
-    DBUG_PRINT ("FLATTEN", ("return node: %s" P_FORMAT " number of nodes:%d",
-                            mdb_nodetype[arg_node->nodetype], arg_node, arg_node->nnode));
 
     DBUG_RETURN (arg_node);
 }
