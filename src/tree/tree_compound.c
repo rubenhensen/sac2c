@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2001/12/12 14:40:25  dkr
+ * function CombineExprs() added
+ *
  * Revision 3.47  2001/12/11 15:58:16  dkr
  * GetDim() renamed into GetShapeDim()
  * GetDim() added
@@ -2670,6 +2673,43 @@ AppendExprs (node *exprs_chain, node *exprs)
 /******************************************************************************
  *
  * function:
+ *   node *CombineExprs( node *first, node *second)
+ *
+ * description:
+ *   'first' and 'second' are N_exprs chains or expression nodes (N_id, N_num,
+ *   ...) that will be conactenated to a single N_exprs chain.
+ *
+ ******************************************************************************/
+
+node *
+CombineExprs (node *first, node *second)
+{
+    node *result;
+
+    DBUG_ENTER ("CombineExprs");
+
+    if (first != NULL) {
+        if (NODE_TYPE (first) != N_exprs) {
+            result = MakeExprs (first, second);
+        } else {
+            result = AppendExprs (first, second);
+        }
+    } else if (second != NULL) {
+        if (NODE_TYPE (second) != N_exprs) {
+            result = MakeExprs (second, NULL);
+        } else {
+            result = second;
+        }
+    } else {
+        result = NULL;
+    }
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *MakeExprsNum( int num)
  *
  * description:
@@ -3250,44 +3290,6 @@ MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3)
 /***
  ***  N_icm :
  ***/
-
-/******************************************************************************
- *
- * function:
- *   node *CombineExprs( node *first, node *second)
- *
- * description:
- *   This function is used only within MakeIcmXXX.
- *   'first' and 'second' are N_exprs chains or expression nodes (N_id, N_num,
- *   ...) that will be conactenated to a single N_exprs chain.
- *
- ******************************************************************************/
-
-static node *
-CombineExprs (node *first, node *second)
-{
-    node *result;
-
-    DBUG_ENTER ("CombineExprs");
-
-    if (first != NULL) {
-        if (NODE_TYPE (first) != N_exprs) {
-            result = MakeExprs (first, second);
-        } else {
-            result = AppendExprs (first, second);
-        }
-    } else if (second != NULL) {
-        if (NODE_TYPE (second) != N_exprs) {
-            result = MakeExprs (second, NULL);
-        } else {
-            result = second;
-        }
-    } else {
-        result = NULL;
-    }
-
-    DBUG_RETURN (result);
-}
 
 /******************************************************************************
  *
