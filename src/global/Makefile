@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.23  2004/11/27 02:39:02  sbs
+# *** empty log message ***
+#
 # Revision 3.22  2004/11/23 12:51:04  cg
 # Removed legacy code.
 #
@@ -73,7 +76,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 
 all: main.o Error.o usage.o internal_lib.o globals.o resource.o \
-     build.o interrupt.o options.o NameTuplesUtils.o
+     build.o interrupt.o options.o NameTuplesUtils.o filemgr.o
 
 build.c: 
 	echo "char build_date[] = \"`date`\";"  >  build.c
