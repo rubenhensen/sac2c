@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/10/18 13:37:37  sbs
+ * access to ID_ATTRIB replaced by FLAG inspection.
+ *
  * Revision 3.4  2001/03/05 16:42:04  dkr
  * no macros NWITH???_IS_FOLD used
  *
@@ -271,7 +274,7 @@ ANAid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("ANAid");
 
-    if (ID_ATTRIB (arg_node) == ST_global) {
+    if (GET_FLAG (ID, arg_node, IS_GLOBAL)) {
         StoreNeededNode (ID_OBJDEF (arg_node), arg_info, ST_regular);
     }
 
