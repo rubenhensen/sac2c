@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/11/26 20:36:07  jhb
+ * compile
+ *
  * Revision 3.7  2004/07/19 14:19:38  sah
  * switch to new INFO structure
  * PHASE I
@@ -137,6 +140,7 @@
 #include "print.h"
 #include "tile_size_inference.h"
 
+#ifndef TSI_DEACTIVATED
 /*
  * INFO structure
  */
@@ -723,24 +727,25 @@ TSIMakePragmaWLComp (int tilesize, info *arg_info)
  *   on single function definitions rather than on the entire syntax tree.
  *
  *****************************************************************************/
+#endif /* TSI_DEACTIVATED*/
 
 node *
 TileSizeInference (node *arg_node)
 {
-    info *arg_info;
-    funtab *tmp_tab;
-
     DBUG_ENTER ("TileSizeInference");
 
-    DBUG_PRINT ("TSI", ("TileSizeInference"));
+#ifndef TSI_DEACTIVATED
 
-    tmp_tab = act_tab;
-    act_tab = tsi_tab;
+    info *arg_info;
+
+    DBUG_PRINT ("TSI", ("TileSizeInference"));
 
     arg_info = MakeInfo ();
 
     if ((config.cache1_size > 0) && (config.cache1_line > 0)) {
-        arg_node = Trav (arg_node, arg_info);
+        TRAVpush (TR_tsi);
+        arg_node = TRAVdo (arg_node, arg_info);
+        TRAVpop ();
     } else {
         /*
          *   If there's no target specified, it's not possibile to infere a
@@ -750,10 +755,13 @@ TileSizeInference (node *arg_node)
     }
 
     arg_info = FreeInfo (arg_info);
-    act_tab = tmp_tab;
+
+#endif /* TSI_DEACTIVATED */
 
     DBUG_RETURN (arg_node);
 }
+
+#ifndef TSI_DEACTIVATED
 
 /******************************************************************************
  *
@@ -948,3 +956,5 @@ TSIncode (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#endif /* TSI_DEACTIVATED */

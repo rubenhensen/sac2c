@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/11/26 20:37:15  jhb
+ * compile
+ *
  * Revision 3.4  2004/11/22 17:29:51  sbs
  * SacDevCamp04
  *
@@ -58,6 +61,8 @@
 
 extern node *WLAAdoAccessAnalyze (node *arg_node);
 
+#ifndef WLAA_DEACTIVATED
+
 extern node *WLAAfundef (node *arg_node, info *arg_info);
 extern node *WLAAblock (node *arg_node, info *arg_info);
 extern node *WLAAwith (node *arg_node, info *arg_info);
@@ -69,5 +74,5 @@ extern node *WLAAid (node *arg_node, info *arg_info);
 extern node *WLAAdo (node *arg_node, info *arg_info);
 extern node *WLAAcond (node *arg_node, info *arg_info);
 extern node *WLAAprf (node *arg_node, info *arg_info);
-
+#endif /* WLAA_DEACTIVATED */
 #endif /* _SAC_WL_ACCESS_ANALYZE_H_  */

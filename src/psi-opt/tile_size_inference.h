@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/11/26 20:36:43  jhb
+ * compile
+ *
  * Revision 3.3  2004/11/26 15:21:07  mwe
  * SacDevCamp
  *
@@ -63,9 +66,11 @@
 #define DTYPE_INDEX 2
 
 extern node *TSIdoTileSizeInference (node *arg_node);
+
+#ifndef TSI_DEACTIVATED
 extern node *TSIfundef (node *arg_node, info *arg_info);
 extern node *TSIblock (node *arg_node, info *arg_info);
 extern node *TSInwith (node *arg_node, info *arg_info);
 extern node *TSIncode (node *arg_node, info *arg_info);
-
+#endif /* TSI_DEACTIVATED */
 #endif /* _SAC_TILE_SIZE_INFERENCE_H_  */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2004/11/26 20:33:33  jhb
+ * compile
+ *
  * Revision 3.14  2004/11/23 13:48:40  skt
  * moved 2 INFO compound macros from tree_compound.h
  *
@@ -169,6 +172,8 @@
 #include "Error.h"
 #include "wl_access_analyze.h"
 
+#ifndef WLAA_DEACTIVATED
+
 /*
  * INFO structure
  */
@@ -235,6 +240,7 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+#endif /* ! WLAA_DEACTIVATED */
 /******************************************************************************
  *
  * function:
@@ -249,12 +255,13 @@ FreeInfo (info *info)
  *****************************************************************************/
 
 node *
-WLAccessAnalyze (node *arg_node)
+WLAdoAccessAnalyze (node *arg_node)
 {
-    funtab *tmp_tab;
-    info *arg_info;
-
     DBUG_ENTER ("WLAccessAnalyze");
+
+#ifndef WLAA_DEACTIVATED
+
+    info *arg_info;
 
     DBUG_PRINT ("WLAA", ("WLAccessAnalyze"));
 
@@ -262,19 +269,21 @@ WLAccessAnalyze (node *arg_node)
                   || (NODE_TYPE (arg_node) == N_fundef)),
                  "WLAccessAnalyze not initiated on N_modul or N_fundef level");
 
-    tmp_tab = act_tab;
-    act_tab = wlaa_tab;
     arg_info = MakeInfo ();
     INFO_WLAA_WLLEVEL (arg_info) = 0;
 
-    arg_node = Trav (arg_node, arg_info);
+    TRAVpush (TR_wlaa);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
-    act_tab = tmp_tab;
+
+#endif
 
     DBUG_RETURN (arg_node);
 }
 
+#ifndef WLAA_DEACTIVATED
 /******************************************************************************
  *
  * function:
@@ -1650,3 +1659,4 @@ WLAAid (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+#endif /* WLAA_DEACTIVATED */

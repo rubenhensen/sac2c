@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/11/26 20:36:07  jhb
+ * compile
+ *
  * Revision 3.1  2000/11/20 18:01:47  sacbase
  * new release made
  *
@@ -70,6 +73,7 @@
 #include "globals.h"
 #include "filemgr.h"
 #include "resource.h"
+#include "Error.h"
 
 #include "pad.h"
 #include "pad_info.h"
@@ -128,12 +132,12 @@ APprintDiag (char *format, ...)
 
     DBUG_ENTER ("APprintDiag");
 
-    if (apdiag && (cnt <= correction * apdiag_limit)) {
+    if (global.apdiag && (cnt <= correction * global.apdiag_limit)) {
         va_start (arg_p, format);
         vfprintf (apdiag_file, format, arg_p);
         va_end (arg_p);
         cnt++;
-        if (cnt > apdiag_limit) {
+        if (cnt > global.apdiag_limit) {
             fprintf (apdiag_file,
                      "\n\n************************************************************\n"
                      "*\n"
@@ -145,7 +149,7 @@ APprintDiag (char *format, ...)
                      "*      to increase / decrease this limit.\n"
                      "*\n"
                      "************************************************************\n\n",
-                     apdiag_limit);
+                     global.apdiag_limit);
         }
     }
 
@@ -176,14 +180,14 @@ ArrayPadding (node *arg_node)
     NOTE ((""));
     NOTE (("optimizing array types:"));
 
-    if (config.cache1_size > 0) {
+    if (global.config.cache1_size > 0) {
 
         /* init pad_info structure */
         PIinit ();
 
         /* open apdiag_file for output */
-        if (apdiag) {
-            apdiag_file = WriteOpen ("%s.ap", outfilename);
+        if (global.apdiag) {
+            apdiag_file = FMGRwriteOpen ("%s.ap", global.outfilename);
 
             fprintf (apdiag_file,
                      "     **************************************************\n"
@@ -194,16 +198,16 @@ ArrayPadding (node *arg_node)
         }
 
         /* collect information for inference phase */
-        APcollect (arg_node);
+        APCdoCollect (arg_node);
 
         /* apply array padding */
         APinfer ();
 
         /* apply array padding */
-        APtransform (arg_node);
+        APTdoTransform (arg_node);
 
         /* close apdiag_file */
-        if (apdiag) {
+        if (global.apdiag) {
             fclose (apdiag_file);
         }
 
@@ -215,8 +219,8 @@ ArrayPadding (node *arg_node)
         /*
          * Padding is enabled but no cache specification is given.
          */
-        if (apdiag) {
-            apdiag_file = WriteOpen ("%s.ap", outfilename);
+        if (global.apdiag) {
+            apdiag_file = FMGRwriteOpen ("%s.ap", global.outfilename);
 
             fprintf (apdiag_file,
                      "     **************************************************\n"
