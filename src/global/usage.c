@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2003/03/12 23:32:57  dkr
+ * some break specifiers for -b15 removed
+ *
  * Revision 3.39  2003/03/12 19:04:18  dkr
  * error corrected
  *
@@ -328,11 +331,6 @@ usage ()
 
     printf ("\n");
 
-    PRINT_BREAK_SPEC (PH_wltrans, "l2f",
-                      "Stop after converting loops and conditionals into");
-    CONT_BREAK_SPEC ("functions.");
-    PRINT_BREAK_SPEC (PH_wltrans, "cha", "Stop after checking avis consistency.");
-    PRINT_BREAK_SPEC (PH_wltrans, "ssa", "Stop after converting into SSA form.");
     PRINT_BREAK_SPEC (PH_wltrans, "conv", "Stop after converting.");
     PRINT_BREAK_SPEC (PH_wltrans, "cubes", "Stop after cube-building.");
     PRINT_BREAK_SPEC (PH_wltrans, "fill1", "Stop after gap filling (grids only).");
@@ -345,9 +343,6 @@ usage ()
     PRINT_BREAK_SPEC (PH_wltrans, "fit", "Stop after fitting.");
     PRINT_BREAK_SPEC (PH_wltrans, "norm", "Stop after normalization.");
     PRINT_BREAK_SPEC (PH_wltrans, "fill2", "Stop after gap filling (all nodes).");
-    PRINT_BREAK_SPEC (PH_wltrans, "ussa", "Stop after undo SSA transformation.");
-    PRINT_BREAK_SPEC (PH_wltrans, "f2l",
-                      "Stop after transforming into LaC representation.");
 
     printf ("\n");
     printf ("    with \"-mt\"\n");
