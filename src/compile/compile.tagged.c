@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.40  2002/08/07 15:49:10  dkr
+ * COMP2With: DBUG_ASSERT added
+ *
  * Revision 1.39  2002/08/07 13:49:58  dkr
  * COMP2With() added
  *
@@ -4856,6 +4859,9 @@ node *
 COMP2With (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("COMP2With");
+
+    DBUG_ASSERT ((NWITH_PARTS (arg_node) < 2),
+                 "with-loop with unknown dimension and multiple generators found!");
 
     DBUG_ASSERT ((0), "with-loops with unknown dimension not implemented yet!");
 
