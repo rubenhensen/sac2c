@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2003/09/17 14:17:27  dkr
+ * some function parameters renamed
+ *
  * Revision 3.17  2003/09/17 13:03:03  dkr
  * postfixes _nt, _any renamed into _NT, _ANY
  *
@@ -130,28 +133,27 @@
 #ifndef _SAC_ICM2C_MT_H_
 #define _SAC_ICM2C_MT_H_
 
-extern void ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **arg_ANY);
-extern void ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **arg_ANY);
+extern void ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int vararg_cnt,
+                                       char **vararg);
+extern void ICMCompileMT_SPMD_FUN_RET (int barrier_id, int vararg_cnt, char **vararg);
 
-extern void ICMCompileMT_START_SYNCBLOCK (int barrier_id, int narg, char **vararg);
+extern void ICMCompileMT_START_SYNCBLOCK (int barrier_id, int vararg_cnt, char **vararg);
 
-extern void ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg);
+extern void ICMCompileMT_SYNC_FOLD (int barrier_id, int vararg_cnt, char **vararg);
 extern void ICMCompileMT_SYNC_NONFOLD (int barrier_id);
 extern void ICMCompileMT_SYNC_ONEFOLD (int barrier_id, char *foldtype, char *accu_var,
                                        char *tmp_var, char *foldop);
 extern void ICMCompileMT_SYNC_ONEFOLD_NONFOLD (char *foldtype, char *accu_var,
                                                char *tmp_var, char *foldop);
-extern void ICMCompileMT_SYNC_FOLD_NONFOLD (int narg, char **vararg);
+extern void ICMCompileMT_SYNC_FOLD_NONFOLD (int vararg_cnt, char **vararg);
 
-extern void ICMCompileMT_MASTER_SEND_FOLDRESULTS (int nfoldargs, char **foldargs);
-extern void ICMCompileMT_MASTER_RECEIVE_FOLDRESULTS (int nfoldargs, char **foldargs);
-extern void ICMCompileMT_MASTER_SEND_SYNCARGS (int nsyncargs, char **syncargs);
-extern void ICMCompileMT_MASTER_RECEIVE_SYNCARGS (int nsyncargs, char **syncargs);
+extern void ICMCompileMT_MASTER_SEND_FOLDRESULTS (int foldargs_cnt, char **foldargs);
+extern void ICMCompileMT_MASTER_RECEIVE_FOLDRESULTS (int foldargs_cnt, char **foldargs);
+extern void ICMCompileMT_MASTER_SEND_SYNCARGS (int syncargs_cnt, char **syncargs);
+extern void ICMCompileMT_MASTER_RECEIVE_SYNCARGS (int syncargs_cnt, char **syncargs);
 
-extern void ICMCompileMT_CONTINUE (int nfoldargs, char **vararg, int nsyncargs,
-                                   char **syncargs);
-extern void ICMCompileMT_SPMD_SETUP (char *name, int narg, char **vararg);
-extern void ICMCompileMT_SPMD_PRESET (char *name, int narg, char **vararg);
+extern void ICMCompileMT_SPMD_SETUP (char *name, int vararg_cnt, char **vararg);
+extern void ICMCompileMT_SPMD_PRESET (char *name, int vararg_cnt, char **vararg);
 
 extern void ICMCompileMT_SPMD_BEGIN (char *name);
 extern void ICMCompileMT_SPMD_ALTSEQ (char *name);

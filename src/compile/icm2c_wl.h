@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2003/09/17 14:17:14  dkr
+ * some function parameters renamed
+ *
  * Revision 3.16  2003/09/17 12:57:29  dkr
  * postfixes _nt, _any renamed into _NT, _ANY
  *
@@ -56,7 +59,7 @@
 extern void ICMCompileND_WL_GENARRAY__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT,
                                                 char *val_NT, int val_sdim);
 extern void ICMCompileND_WL_GENARRAY__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
-                                                 char **shpa_ANY, char *val_NT,
+                                                 char **shp_ANY, char *val_NT,
                                                  int val_sdim);
 
 extern void ICMCompileWL_BEGIN__OFFSET (char *to_NT, int to_sdim, char *idx_vec_NT,
