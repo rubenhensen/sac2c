@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2001/04/30 12:28:43  nmw
+ * GetDataVec added
+ *
  * Revision 1.5  2001/04/25 13:36:50  nmw
  * *** empty log message ***
  *
@@ -81,6 +84,7 @@ extern constant *COMakeConstantFromArray (node *a);
 extern simpletype COGetType (constant *a);
 extern int COGetDim (constant *a);
 extern shape *COGetShape (constant *a);
+extern void **COGetDataVec (constant *a);
 
 /*
  * Functions for handling / converting constants:
