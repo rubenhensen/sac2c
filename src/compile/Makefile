@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.41  1998/03/24 15:38:56  dkr
+# make deps done
+#
 # Revision 1.40  1998/03/24 15:31:19  cg
 # libsac.a and profile.o removed as targets
 #
@@ -209,6 +212,3 @@ precompile.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 precompile.o: ../global/internal_lib.h ../print/convert.h
 precompile.o: ../global/traverse.h ../refcount/refcount.h
 precompile.o: ../optimize/DupTree.h
-profile.o: ../../inc/dbug.h /usr/include/stdio.h
-profile.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
-profile.o: ../global/globals.h ../global/types.h profile.h
