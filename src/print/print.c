@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/05/05 12:20:31  jhs
+ * PrintNGenerators enhanced, with ORIG_GENERATORS it is possible to
+ * see the original operators of any generator. These values are not
+ * modified by flatten or elsewhere.
+ *
  * Revision 2.12  1999/04/19 17:08:56  jhs
  * DbugPrintArray now fit for empty arrays.
  *
@@ -2052,18 +2057,26 @@ PrintNgenerator (node *gen, node *idx, node *arg_info)
 
     fprintf (outfile, "(");
 
-    /* print upper bound and first operator*/
+    /* print upper bound */
     if (NGEN_BOUND1 (gen))
         Trav (NGEN_BOUND1 (gen), arg_info);
     else
         fprintf (outfile, ".");
-    fprintf (outfile, " %s ", prf_string[NGEN_OP1 (gen)]);
+    /* print first operator and eventually original first operator */
+    fprintf (outfile, " %s", prf_string[NGEN_OP1 (gen)]);
+    DBUG_EXECUTE ("ORIG_GENERATORS",
+                  fprintf (outfile, "::%s", prf_string[NGEN_OP1_ORIG (gen)]););
+    fprintf (outfile, " ");
 
     /* print indices */
     idx = Trav (idx, arg_info);
 
-    /* print second operator and lower bound */
-    fprintf (outfile, " %s ", prf_string[NGEN_OP2 (gen)]);
+    /* print second operator and eventually original operator */
+    fprintf (outfile, " %s", prf_string[NGEN_OP2 (gen)]);
+    DBUG_EXECUTE ("ORIG_GENERATORS",
+                  fprintf (outfile, "::%s", prf_string[NGEN_OP2_ORIG (gen)]););
+    fprintf (outfile, " ");
+    /* print lower bound */
     if (NGEN_BOUND2 (gen))
         Trav (NGEN_BOUND2 (gen), arg_info);
     else
