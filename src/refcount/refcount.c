@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/11/09 21:16:13  dkr
+ * In RCNwith(): call of Trav() with NWITH_PART restored.
+ *
  * Revision 2.10  1999/11/02 14:30:47  sbs
  * Now, the IVE-created ICM Index2Offset is refcounted the same way as user
  * defined functions are! This makes sure, that the vector's refcount always
@@ -2197,6 +2200,7 @@ RCNwith (node *arg_node, node *arg_info)
      */
 
     DBUG_PRINT ("RC", ("Entering: count references in with-loop."));
+    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     DBUG_PRINT ("RC", ("Leaving: count references in with-loop."));
 
@@ -2286,7 +2290,7 @@ RCNwith (node *arg_node, node *arg_info)
         if ((MUST_NAIVEREFCOUNT (VARDEC_OR_ARG_TYPE (vardec)))
             && (vardec != neutral_vardec)) {
             /*
-             *  Naive refcounting is always done.
+             * Naive refcounting is always done.
              */
             L_VARDEC_OR_ARG_NAIVE_REFCNT (vardec,
                                           VARDEC_OR_ARG_NAIVE_REFCNT (vardec) + 1);
