@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.48  1998/03/29 23:28:24  dkr
+ * added temp. attribute WLGRID_MODIFIED
+ *
  * Revision 1.47  1998/03/27 18:38:46  dkr
  * WLproj renamed in WLstride:
  *   WLPROJ... -> WLSTRIDE...
@@ -821,10 +824,10 @@ DupWLstride (node *arg_node, node *arg_info)
                              WLSTRIDE_STEP (arg_node), WLSTRIDE_UNROLLING (arg_node),
                              DUPTRAV (WLSTRIDE_CONTENTS (arg_node)), NULL);
 
+    WLSTRIDE_NEXT (new_node) = DUPCONT (WLSTRIDE_NEXT (arg_node));
+
     WLSTRIDE_PART (new_node) = WLSTRIDE_PART (arg_node);
     WLSTRIDE_MODIFIED (new_node) = 0;
-
-    WLSTRIDE_NEXT (new_node) = DUPCONT (WLSTRIDE_NEXT (arg_node));
 
     DBUG_RETURN (new_node);
 }
@@ -841,12 +844,14 @@ DupWLgrid (node *arg_node, node *arg_info)
                            WLGRID_BOUND2 (arg_node), WLGRID_UNROLLING (arg_node), NULL,
                            NULL, WLGRID_CODE (arg_node));
 
+    WLGRID_NEXTDIM (new_node) = DUPTRAV (WLGRID_NEXTDIM (arg_node));
+    WLGRID_NEXT (new_node) = DUPCONT (WLGRID_NEXT (arg_node));
+
     if (WLGRID_CODE (new_node) != NULL) {
         NCODE_USED (WLGRID_CODE (new_node))++;
     }
 
-    WLGRID_NEXTDIM (new_node) = DUPTRAV (WLGRID_NEXTDIM (arg_node));
-    WLGRID_NEXT (new_node) = DUPCONT (WLGRID_NEXT (arg_node));
+    WLSTRIDE_MODIFIED (new_node) = 0;
 
     DBUG_RETURN (new_node);
 }

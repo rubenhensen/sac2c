@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.54  1998/03/29 23:27:21  dkr
+ * added temp. attribute WLGRID_MODIFIED
+ *
  * Revision 1.53  1998/03/27 18:37:02  dkr
  * WLPROJ... renamed in WLSTRIDE
  *
@@ -1522,6 +1525,7 @@ MakeWLgrid (int dim, int bound1, int bound2, int unrolling, node *nextdim, node 
     WLGRID_NEXT (new_node) = next;
 
     WLGRID_CODE (new_node) = code;
+    WLGRID_MODIFIED (new_node) = 0;
 
     DBUG_RETURN (new_node);
 }

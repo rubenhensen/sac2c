@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.105  1998/03/29 23:27:45  dkr
+ * added temp. attribute WLGRID_MODIFIED
+ *
  * Revision 1.104  1998/03/27 18:37:16  dkr
  * WLproj renamed in WLstride
  * WLPROJ... renamed in WLSTRIDE
@@ -2374,6 +2377,7 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 #define WLNODE_BOUND1(n) (n->flag)
 #define WLNODE_BOUND2(n) (n->counter)
 #define WLNODE_STEP(n) (n->varno)
+#define WLNODE_NEXTDIM(n) (n->node[0])
 #define WLNODE_NEXT(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
@@ -2413,7 +2417,7 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
 #define WLBLOCK_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLBLOCK_BOUND2(n) (WLNODE_BOUND2 (n))
 #define WLBLOCK_STEP(n) (WLNODE_STEP (n))
-#define WLBLOCK_NEXTDIM(n) (n->node[0])
+#define WLBLOCK_NEXTDIM(n) (WLNODE_NEXTDIM (n))
 #define WLBLOCK_CONTENTS(n) (n->node[2])
 #define WLBLOCK_NEXT(n) (WLNODE_NEXT (n))
 
@@ -2517,6 +2521,10 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***    int      BOUND2    (0)
  ***    int      UNROLLING (0)
  ***
+ ***  temporary attributes:
+ ***
+ ***    int      MODIFIED  (0)    (Precompile ! )
+ ***
  ***
  ***  remark:
  ***    it makes no sense to use the nodes NEXTDIM and CODE simultaneous!
@@ -2530,8 +2538,10 @@ extern node *MakeWLgrid (int dim, int bound1, int bound2, int unrolling, node *n
 #define WLGRID_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLGRID_BOUND2(n) (WLNODE_BOUND2 (n))
 #define WLGRID_UNROLLING(n) (n->info.prf_dec.tag)
-#define WLGRID_NEXTDIM(n) (n->node[0])
+#define WLGRID_NEXTDIM(n) (WLNODE_NEXTDIM (n))
 #define WLGRID_NEXT(n) (WLNODE_NEXT (n))
 #define WLGRID_CODE(n) (n->node[2])
+
+#define WLGRID_MODIFIED(n) (n->info.prf_dec.tc)
 
 #endif /* _sac_tree_basic_h */
