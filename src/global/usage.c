@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.79  1998/12/01 09:41:24  cg
+ * bug fixed in description of -trace, -profile, and -intrinsic options.
+ * added new section DESCRIPTION with general information on sac2c.
+ * some more polishing on the help text
+ * copyright/license notice updated.
+ *
  * Revision 1.78  1998/10/26 12:50:18  cg
  * Mechanism to store sac2c build information now works correctly.
  * Compiler options renamed:
@@ -97,152 +103,6 @@
  * Revision 1.50  1997/08/07 11:13:38  dkr
  * added option -_DBUG<from>/<to>/<string>
  *
- * Revision 1.49  1997/06/03 08:40:21  sbs
- * -D option added
- *
- * Revision 1.48  1997/05/28  12:36:51  sbs
- * Profiling integrated
- *
- * Revision 1.46  1997/05/06  13:54:18  sbs
- * -a[at] option included
- *
- * Revision 1.45  1997/03/19  13:42:02  cg
- * compiler option -l3 no longer supported
- *
- * Revision 1.44  1997/03/11  16:32:44  cg
- * compiler option -deps replaced by -M
- *
- * Revision 1.43  1996/09/11  06:15:08  cg
- * Added options -libstat, -deps, -noranlib, -l1, l2, l3
- *
- * Revision 1.42  1996/08/09  16:44:12  asi
- * dead function removal added
- *
- * Revision 1.41  1996/05/29  14:18:57  sbs
- * inserted noRCO opt_rco!
- *
- * Revision 1.40  1996/01/25  18:39:25  cg
- * added new stop options  using compiler phase numbers
- *
- * Revision 1.39  1996/01/17  16:49:21  asi
- * added common subexpression elimination
- *
- * Revision 1.38  1996/01/16  16:44:04  cg
- * added/modified debug options -dnocleanup, -dcheck_malloc
- * and -dcheck_boundary
- *
- * Revision 1.37  1996/01/05  12:30:23  cg
- * new command line option -noclean and -o may specify target
- * directory for compiling module/class implementations
- *
- * Revision 1.36  1996/01/04  16:58:04  asi
- * includes now globals.h instead of optimize.h
- *
- * Revision 1.35  1995/12/21  16:08:56  cg
- * added option -flink_module
- *
- * Revision 1.34  1995/12/01  20:26:49  cg
- * changed compilation sequence: objinit.c now after import.c
- *
- * Revision 1.33  1995/12/01  17:12:23  cg
- * added break parameter -bl to stop after precompiler
- *
- * Revision 1.32  1995/11/16  19:43:21  cg
- * added new break parameter -bv to stop after removing void-functions
- *
- * Revision 1.31  1995/11/10  15:01:59  cg
- * new command line option -v<n> to set verbose level
- *
- * Revision 1.30  1995/11/06  14:16:14  cg
- * added new break option -bq to break after uniqueness check
- *
- * Revision 1.29  1995/11/01  08:02:34  cg
- * added new break paramter -be to break after object handling.
- *
- * Revision 1.28  1995/10/26  18:20:43  cg
- * modified sequence of compiler phases considered
- * (checkdec moved behind typechecker)
- *
- * Revision 1.27  1995/10/22  17:27:04  cg
- * added new break option -bd to stop after checking
- * module/class declaration.
- *
- * Revision 1.26  1995/10/20  09:23:32  cg
- * added new break parameter to -by to break after analysis
- *
- * Revision 1.25  1995/10/16  17:56:25  cg
- * new break option '-bj' to stop after object init transformation
- *
- * Revision 1.24  1995/10/05  16:04:03  cg
- * break option -bm added.
- *
- * Revision 1.23  1995/09/01  07:48:46  cg
- * new options -bb (break after writing SIB-file) and
- * -noSIB (don't write SIB-file) explained
- *
- * Revision 1.22  1995/07/24  13:38:56  asi
- * bug fixed
- *
- * Revision 1.21  1995/07/24  13:35:22  asi
- * added -minarray and -noarray_elimination (-noAE)
- *
- * Revision 1.20  1995/07/14  13:28:11  sbs
- * nosacopt inserted.
- *
- * Revision 1.19  1995/07/07  14:58:38  asi
- * added loop unswitching - basic version
- *
- * Revision 1.18  1995/06/26  15:10:50  asi
- * added shortcuts -noCF -noINL -noUNR -noDCR -noPDCR -noLIR and -noIVE
- *
- * Revision 1.17  1995/06/23  14:05:49  hw
- * added -maxoverload
- *
- * Revision 1.16  1995/06/13  08:30:27  asi
- * added -maxoptvar, -maxinline und -maxunroll
- *
- * Revision 1.15  1995/06/09  15:28:46  hw
- *  new option '-fcheck_boundary'  inserted
- *
- * Revision 1.14  1995/06/02  09:54:53  sbs
- * -bs, -nopsiopt, and -noidex_vect_elimination inserted
- *
- * Revision 1.13  1995/05/26  14:26:02  asi
- * function inlineing and loop unrolling added
- *
- * Revision 1.12  1995/05/22  12:06:24  sbs
- * tr option inserted
- *
- * Revision 1.11  1995/05/04  11:40:51  sbs
- * trace option added
- *
- * Revision 1.10  1995/04/10  11:19:36  sbs
- * options I,L,O & g included
- *
- * Revision 1.9  1995/04/05  15:52:05  sbs
- * bug fixed
- *
- * Revision 1.8  1995/04/05  15:50:24  sbs
- * -c inserted
- *
- * Revision 1.7  1995/04/03  06:19:49  sbs
- * options converted to -b[piftorc] and show_icm inserted
- *
- * Revision 1.6  1995/03/17  16:00:35  hw
- * options -noRC , -r inserted
- *
- * Revision 1.5  1995/02/13  17:21:03  asi
- * parmeters noOPT, noCF and noDCR added
- *
- * Revision 1.4  1994/12/11  17:28:52  sbs
- * -I, -L + enivironment vars inserted
- *
- * Revision 1.3  1994/12/02  12:37:34  sbs
- * Options -pfts inserted
- *
- * Revision 1.2  1994/11/10  15:44:34  sbs
- * RCS-header inserted
- *
  *
  */
 
@@ -273,41 +133,67 @@ usage ()
 
             "BUILD:    \t%s\n\n"
 
-            "SYNOPSIS: \tsac2c [options] [filename]\n\n"
-
-            "OVERALL OPTIONS:\n\n"
-
-            "\t -h\t\t\t\tdisplay this helptext\n"
-            "\t -i\t\t\t\tdisplay copyright/disclaimer\n\n"
-            "\t -libstat\t\t\tprint status information about a SAC library file\n"
-            "\t -D <cpp-var><=value>\t\tset <cpp-var> (to <value>) when running\n"
-            "\t\t\t\t\t C-preprocessor\n"
-            "\t -M\t\t\t\tonly detect dependencies from imported\n"
-            "\t\t\t\t\t  modules/classes and write them to stdout.\n"
-            "\t\t\t\t\t  Dependences from declaration files are\n"
-            "\t\t\t\t\t  considered.\n"
-            "\t -Mlib\t\t\t\tonly detect dependencies from imported\n"
-            "\t\t\t\t\t  modules/classes and write them to stdout.\n"
-            "\t\t\t\t\t  Dependences from declaration files as well as\n"
-            "\t\t\t\t\t  library files are (recursively) considered.\n"
-            "\t -# <string>\t\t\toptions (string) for DBUG information\n"
-            "\t\t\t\t\t  (\"-#<string>\" is equivalent to \"-_DBUG//<string>\")\n"
-            "\t -_DBUG<from>/<to>/<string>\tDBUG information only in compiler phases\n"
-            "\t\t\t\t\t <from>..<to>\n"
-            "\t\t\t\t\t  Default: <from> = 1, <to> = last compiler phase\n"
-            "\t -I <path>\t\t\tspecify additional declaration path\n"
-            "\t -L <path>\t\t\tspecify additional library path\n"
-            "\t -o <name>\t\t\tfor compilation of programs:\n"
-            "\t\t\t\t\t  write executable to specified file\n"
-            "\t\t\t\t\tfor compilation of module/class implementations:\n"
-            "\t\t\t\t\t  write library to specified directory\n"
-            "\t -c \t\t\t\tgenerate C-file only\n"
-            "\t -v <n> \t\t\tverbose level\n"
-            "\t\t\t\t\t  0: error messages only\n"
-            "\t\t\t\t\t  1: error messages and warnings\n"
-            "\t\t\t\t\t  2: basic compile time information\n"
-            "\t\t\t\t\t  3: full compile time information (default)\n",
+            "SYNOPSIS: \tsac2c [options] [filename]\n",
             build_date_time);
+
+    printf (
+      "\n\nDESCRIPTION:\n\n"
+
+      "\tThe sac2c compiler transforms SAC source code into executable programs\n"
+      "\t(SAC programs) or into a SAC specific library format (SAC module and\n"
+      "\tclass implementations), respectively.\n"
+      "\t\n"
+      "\tThe compilation process is performed in 4 separate stages:\n"
+      "\t1. sac2c uses any C preprocessor to preprocess the given SAC source;\n"
+      "\t2. sac2c itself transforms preprocessed SAC source code into C code;\n"
+      "\t3. sac2c uses any C compiler to generate target machine code;\n"
+      "\t4. sac2c uses any C linker to create an executable program\n"
+      "\t   or sac2c itself creates a SAC library file.\n"
+      "\t\n"
+      "\tWhen compiling a SAC program, sac2c stores the corresponding intermediate\n"
+      "\tC code either in the file a.out.c in the current directory (default) \n"
+      "\tor in the file <file>.c if <file> is specified using the -o option. \n"
+      "\tHere, any absolute or relative path name may be used.\n"
+      "\tThe executable program is either written to the file a.out or to any\n"
+      "\tfile specified using the -o option.\n"
+      "\t\n"
+      "\tHowever, when compiling a SAC module/class implementation, the resulting\n"
+      "\tSAC library is stored in the file <mod/class name>.lib in the current\n"
+      "\tdirectory. In this case, the -o option may be used to specify a different\n"
+      "\tdirectory but not a different file name.\n"
+
+      "\n\nSPECIAL OPTIONS:\n\n"
+
+      "\t -h\t\t\tdisplay this helptext\n"
+      "\t -i\t\t\tdisplay copyright/disclaimer\n\n"
+      "\t -libstat\t\tprint status information about a SAC library file\n"
+      "\t -M\t\t\tonly detect dependencies from imported\n"
+      "\t\t\t\t  modules/classes and write them to stdout\n"
+      "\t\t\t\t  in a way suitable for the make utility.\n"
+      "\t\t\t\t  Dependences from declaration files are\n"
+      "\t\t\t\t  considered exclusively.\n"
+      "\t -Mlib\t\t\tonly detect dependencies from imported\n"
+      "\t\t\t\t  modules/classes and write them to stdout\n"
+      "\t\t\t\t  in a way suitable for the make utility.\n"
+      "\t\t\t\t  Dependences from declaration files as well as\n"
+      "\t\t\t\t  library files are (recursively) considered.\n"
+
+      "\n\nGENERAL OPTIONS:\n\n"
+
+      "\t -D <cpp-var>[=<value>]?\tset <cpp-var> (to <value>) when \n"
+      "\t\t\t\t\t running C preprocessor\n"
+      "\t -I <path>\t\t\tspecify additional declaration path\n"
+      "\t -L <path>\t\t\tspecify additional library path\n"
+      "\t -o <name>\t\t\tfor compilation of programs:\n"
+      "\t\t\t\t\t  write executable to specified file\n"
+      "\t\t\t\t\tfor compilation of module/class implementations:\n"
+      "\t\t\t\t\t  write library to specified directory\n"
+      "\t -c \t\t\t\tgenerate C-file only\n"
+      "\t -v <n> \t\t\tverbose level\n"
+      "\t\t\t\t\t  0: error messages only\n"
+      "\t\t\t\t\t  1: error messages and warnings\n"
+      "\t\t\t\t\t  2: basic compile time information\n"
+      "\t\t\t\t\t  3: full compile time information (default)\n");
 
     printf ("\n\nBREAK OPTIONS:\n\n");
 
@@ -434,10 +320,15 @@ usage ()
             "\t -dcheck_malloc\t\tcheck success of memory allocations\n"
             "\t -dcccall\t\tgenerate shell script '.sac2c' that contains C compiler\n"
             "\t\t\t\tcall. This implies option -dnocleanup.\n"
+            "\t -# <string>\t\t\toptions (string) for DBUG information\n"
+            "\t\t\t\t\t  (\"-#<string>\" is equivalent to \"-_DBUG//<string>\")\n"
+            "\t -_DBUG<from>/<to>/<string>\tDBUG information only in compiler phases\n"
+            "\t\t\t\t\t <from>..<to>\n"
+            "\t\t\t\t\t  Default: <from> = 1, <to> = last compiler phase\n"
 
             "\n\nTRACE OPTIONS:\n\n"
 
-            "\t -trace [amrfpowt] \ttrace program execution\n"
+            "\t -trace [amrfpowt]+ \ttrace program execution\n"
             "\t\t\t\t  a: trace all (same as mrfpowt)\n"
             "\t\t\t\t  m: trace memory operations\n"
             "\t\t\t\t  r: trace refcount operations\n"
@@ -449,7 +340,7 @@ usage ()
 
             "\n\nPROFILING OPTIONS:\n\n"
 
-            "\t -profile [afilw] \tinclude runtime analysis\n"
+            "\t -profile [afilw]+ \tinclude runtime analysis\n"
             "\t\t\t\t  a: analyse all (same as filw)\n"
             "\t\t\t\t  f: analyse time spend in non-inline functions\n"
             "\t\t\t\t  i: analyse time spend in inline functions\n"
@@ -458,7 +349,7 @@ usage ()
 
             "\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
 
-            "\t -intrinsic [a+-*/ptdcr] \tuse intrinsic array operations\n"
+            "\t -intrinsic [a+-*/ptdcr]+ \tuse intrinsic array operations\n"
             "\t\t\t\t\t  a: use all intrinsic operations available\n"
             "\t\t\t\t\t     (same as +-*/ptdcr)\n"
             "\t\t\t\t\t  +: use intrinsic add\n"
@@ -530,7 +421,7 @@ copyright ()
 
     printf ("\n\t\tSAC - Single Assignment C\n"
             "\t--------------------------------------------\n"
-            "\tBUILD:    \t%s\n\n"
+            "\tBUILD: \t%s\n\n"
             "\tSAC COPYRIGHT NOTICE, LICENSE AND DISCLAIMER\n\n"
             "(c) Copyright 1994 - 1999 by\n\n"
 
@@ -538,26 +429,56 @@ copyright ()
             "  Institut fuer Informatik und Praktische Mathematik\n"
             "  Preusserstrasse 1 - 9\n"
             "  D-24105 Kiel\n"
-            "  Germany\n"
-            "  (in the following named CAU Kiel)\n\n"
+            "  Germany\n\n",
+            build_date_time);
 
-            "Permission to use, copy, modify, and distribute this software and its\n"
-            "documentation for any purpose and without fee is hereby granted,\n"
-            "provided that the above copyright notice appear in all copies and that\n"
-            "both the copyright notice and this permission notice and warranty\n"
-            "disclaimer appear in supporting documentation, and that the name of\n"
-            "CAU Kiel or any CAU Kiel entity not be used in advertising\n"
-            "or publicity pertaining to distribution of the software without\n"
-            "specific, written prior permission.\n\n"
-
-            "CAU Kiel disclaims all warranties with regard to this software, including\n"
+    printf ("The SAC compiler, the SAC standard library, and all accompanying\n"
+            "software and documentation (in the following named this software)\n"
+            "is developed by the SAC group as part of the Chair of Computer \n"
+            "Organization within the Department of Computer Science and Applied\n"
+            "Mathematics of the University of Kiel (in the following named CAU Kiel)\n"
+            "which reserves all rights on this software.\n"
+            " \n"
+            "Permission to use this software is hereby granted free of charge\n"
+            "for any non-profit purpose in a non-commercial environment, i.e. for\n"
+            "educational or research purposes in a non-profit institute or for\n"
+            "personal, non-commercial use. For this kind of use it is allowed to\n"
+            "copy or redistribute this software under the condition that the \n"
+            "complete distribution for a certain platform is copied or \n"
+            "redistributed and this copyright notice, license agreement, and \n"
+            "warranty disclaimer appears in each copy. ANY use of this software with \n"
+            "a commercial purpose or in a commercial environment is not granted by \n"
+            "this license. \n"
+            "\n"
+            "CAU Kiel disclaims all warranties with regard to this software, including \n"
             "all implied warranties of merchantability and fitness.  In no event\n"
             "shall CAU Kiel be liable for any special, indirect or consequential\n"
-            "damages or any damages whatsoever resulting from loss of use, data or\n"
-            "profits, whether in an action of contract, negligence or other\n"
-            "tortious action, arising out of or in connection with the use or\n"
-            "performance of this software.\n\n",
-            build_date_time);
+            "damages or any damages whatsoever resulting from loss of use, data, or\n"
+            "profits, whether in an action of contract, negligence, or other\n"
+            "tortuous action, arising out of or in connection with the use or\n"
+            "performance of this software. The entire risk as to the quality and\n"
+            "performance of this software is with you. Should this software prove\n"
+            "defective, you assume the cost of all servicing, repair, or correction.\n"
+            " \n");
+
+#if 0
+  printf("Permission to use, copy, modify, and distribute this software and its\n"
+         "documentation for any purpose and without fee is hereby granted,\n"
+         "provided that the above copyright notice appear in all copies and that\n"
+         "both the copyright notice and this permission notice and warranty\n"
+         "disclaimer appear in supporting documentation, and that the name of\n"
+         "CAU Kiel or any CAU Kiel entity not be used in advertising\n"
+         "or publicity pertaining to distribution of the software without\n"
+         "specific, written prior permission.\n\n"
+
+         "CAU Kiel disclaims all warranties with regard to this software, including\n"
+         "all implied warranties of merchantability and fitness.  In no event\n"
+         "shall CAU Kiel be liable for any special, indirect or consequential\n"
+         "damages or any damages whatsoever resulting from loss of use, data or\n"
+         "profits, whether in an action of contract, negligence or other\n"
+         "tortious action, arising out of or in connection with the use or\n"
+         "performance of this software.\n\n");
+#endif
 
     DBUG_VOID_RETURN;
 }
