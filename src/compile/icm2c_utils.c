@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2003/09/19 15:32:11  dkr
+ * postfix _nt of varnames renamed into _NT
+ *
  * Revision 3.5  2002/07/31 15:37:19  dkr
  * new hidden tag added
  *
@@ -57,25 +60,25 @@
 /******************************************************************************
  *
  * function:
- *   int FindParen( char *nt, int n)
+ *   int FindParen( char *var_NT, int n)
  *
  * description:
- *   Returns the offset of the n-th left parenthesis within nt.
+ *   Returns the offset of the n-th left parenthesis within var_NT.
  *   It makes NO checks for right parentheses nor for quotes, etc.
  *
  ******************************************************************************/
 
 static int
-FindParen (char *nt, int n)
+FindParen (char *var_NT, int n)
 {
     int i;
 
     DBUG_ENTER ("FindParen");
 
-    DBUG_ASSERT ((nt != NULL), "FindParen was called with NULL nt");
+    DBUG_ASSERT ((var_NT != NULL), "FindParen was called with NULL var_NT");
 
-    for (i = 0; nt[i] != '\0'; i++) {
-        if (nt[i] == '(') {
+    for (i = 0; var_NT[i] != '\0'; i++) {
+        if (var_NT[i] == '(') {
             n--;
             if (n == 0) {
                 break;
@@ -83,7 +86,7 @@ FindParen (char *nt, int n)
         }
     }
 
-    DBUG_ASSERT ((nt[i] != '\0'), "FindParen() did not find the parenthesis");
+    DBUG_ASSERT ((var_NT[i] != '\0'), "FindParen() did not find the parenthesis");
 
     DBUG_RETURN (i);
 }
@@ -91,7 +94,7 @@ FindParen (char *nt, int n)
 /******************************************************************************
  *
  * function:
- *   shape_class_t ICUGetShapeClass( char *nt)
+ *   shape_class_t ICUGetShapeClass( char *var_NT)
  *
  * description:
  *   Returns the class tag of an array or other object
@@ -99,18 +102,18 @@ FindParen (char *nt, int n)
  ******************************************************************************/
 
 shape_class_t
-ICUGetShapeClass (char *nt)
+ICUGetShapeClass (char *var_NT)
 {
     int nc, i;
     shape_class_t z;
 
     DBUG_ENTER ("ICUGetShapeClass");
 
-    nc = FindParen (nt, NT_SHAPE_INDEX + 1) + 1;
+    nc = FindParen (var_NT, NT_SHAPE_INDEX + 1) + 1;
     i = 0;
     z = C_unknowns;
     while ((i != C_unknowns) && (z == C_unknowns)) {
-        if (!strncmp (nt + nc, nt_shape_string[i], 3)) {
+        if (!strncmp (var_NT + nc, nt_shape_string[i], 3)) {
             z = i;
         }
         i++;
@@ -124,7 +127,7 @@ ICUGetShapeClass (char *nt)
 /******************************************************************************
  *
  * function:
- *   hidden_class_t ICUGetHiddenClass( char *nt)
+ *   hidden_class_t ICUGetHiddenClass( char *var_NT)
  *
  * description:
  *   Returns the hidden tag of an array or other object
@@ -132,18 +135,18 @@ ICUGetShapeClass (char *nt)
  ******************************************************************************/
 
 hidden_class_t
-ICUGetHiddenClass (char *nt)
+ICUGetHiddenClass (char *var_NT)
 {
     int nc, i;
     hidden_class_t z;
 
     DBUG_ENTER ("ICUGetHiddenClass");
 
-    nc = FindParen (nt, NT_HIDDEN_INDEX + 1) + 1;
+    nc = FindParen (var_NT, NT_HIDDEN_INDEX + 1) + 1;
     i = 0;
     z = C_unknownh;
     while ((i != C_unknownh) && (z == C_unknownh)) {
-        if (!strncmp (nt + nc, nt_hidden_string[i], 3)) {
+        if (!strncmp (var_NT + nc, nt_hidden_string[i], 3)) {
             z = i;
         }
         i++;
@@ -157,7 +160,7 @@ ICUGetHiddenClass (char *nt)
 /******************************************************************************
  *
  * function:
- *   unique_class_t ICUGetUniqueClass( char *nt)
+ *   unique_class_t ICUGetUniqueClass( char *var_NT)
  *
  * description:
  *   Returns the uniqueness tag of an array or other object
@@ -165,18 +168,18 @@ ICUGetHiddenClass (char *nt)
  ******************************************************************************/
 
 unique_class_t
-ICUGetUniqueClass (char *nt)
+ICUGetUniqueClass (char *var_NT)
 {
     int nc, i;
     unique_class_t z;
 
     DBUG_ENTER ("ICUGetUniqueClass");
 
-    nc = FindParen (nt, NT_UNIQUE_INDEX + 1) + 1;
+    nc = FindParen (var_NT, NT_UNIQUE_INDEX + 1) + 1;
     i = 0;
     z = C_unknownu;
     while ((i != C_unknownu) && (z == C_unknownu)) {
-        if (!strncmp (nt + nc, nt_unique_string[i], 3)) {
+        if (!strncmp (var_NT + nc, nt_unique_string[i], 3)) {
             z = i;
         }
         i++;

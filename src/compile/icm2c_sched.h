@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2003/09/19 15:32:01  dkr
+ * postfix _nt of varnames renamed into _NT
+ *
  * Revision 3.4  2001/06/27 14:35:57  ben
  * modified for cooperation with tasksel-pragma
  *
@@ -12,7 +15,6 @@
  *
  * Revision 3.1  2001/05/11 14:35:09  cg
  * Initial revision.
- *
  *
  */
 
@@ -32,7 +34,7 @@
 #ifndef _SAC_ICM2C_SCHED_H_
 #define _SAC_ICM2C_SCHED_H_
 
-extern void ICMCompileMT_ADJUST_SCHEDULER__OFFSET (char *array, int array_dim,
+extern void ICMCompileMT_ADJUST_SCHEDULER__OFFSET (char *to_NT, int to_dim,
                                                    int current_dim, char *lower,
                                                    char *upper, char *unrolling);
 

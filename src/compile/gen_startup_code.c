@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2003/09/19 15:33:28  dkr
+ * postfix _nt of varnames renamed into _NT
+ *
  * Revision 3.32  2003/09/17 19:04:30  dkr
  * RCAO renamed into DAO for TAGGED_ARRAYS
  *
@@ -865,7 +868,7 @@ void
 GSCPrintMain ()
 {
 #ifdef TAGGED_ARRAYS
-    char *res_nt, *mythread_nt;
+    char *res_NT, *mythread_NT;
     types *tmp_type;
 #endif
     bool print_thread_id = ((gen_mt_code == GEN_MT_OLD) && (optimize & OPT_PHM));
@@ -879,10 +882,10 @@ GSCPrintMain ()
     }
 #ifdef TAGGED_ARRAYS
     tmp_type = MakeTypes1 (T_int);
-    res_nt = CreateNtTag ("SAC_res", tmp_type);
-    mythread_nt = CreateNtTag ("SAC_MT_mythread", tmp_type);
+    res_NT = CreateNtTag ("SAC_res", tmp_type);
+    mythread_NT = CreateNtTag ("SAC_MT_mythread", tmp_type);
     tmp_type = FreeAllTypes (tmp_type);
-    ICMCompileND_DECL (res_nt, "int", 0, NULL); /* create ND_DECL icm */
+    ICMCompileND_DECL (res_NT, "int", 0, NULL); /* create ND_DECL icm */
 #else
     fprintf (outfile, "  int SAC_res;\n\n");
 #endif
@@ -891,9 +894,9 @@ GSCPrintMain ()
 #ifdef TAGGED_ARRAYS
     fprintf (outfile, "  SACf_main( ");
     if (print_thread_id) {
-        fprintf (outfile, "SAC_ND_ARG_in( %s), ", mythread_nt);
+        fprintf (outfile, "SAC_ND_ARG_in( %s), ", mythread_NT);
     }
-    fprintf (outfile, "SAC_ND_ARG_out( %s)", res_nt);
+    fprintf (outfile, "SAC_ND_ARG_out( %s)", res_NT);
 #else
     fprintf (outfile, "  SAC_res = SACf_main(");
     if (print_thread_id) {
@@ -903,9 +906,9 @@ GSCPrintMain ()
     fprintf (outfile, ");\n\n");
     GSCPrintMainEnd ();
 #ifdef TAGGED_ARRAYS
-    fprintf (outfile, "  return( SAC_ND_READ( %s, 0));\n", res_nt);
-    res_nt = Free (res_nt);
-    mythread_nt = Free (mythread_nt);
+    fprintf (outfile, "  return( SAC_ND_READ( %s, 0));\n", res_NT);
+    res_NT = Free (res_NT);
+    mythread_NT = Free (mythread_NT);
 #else
     fprintf (outfile, "  return( SAC_res);\n");
 #endif

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2003/09/19 15:32:05  dkr
+ * postfix _nt of varnames renamed into _NT
+ *
  * Revision 3.21  2002/07/16 11:56:44  dkr
  * MT_ADJUST_SCHEDULER__OFFSET(): modification for TAGGED_ARRAYS done
  *
@@ -264,7 +267,7 @@ TaskSelector (int sched_id, char *ts_name, int ts_dims, int ts_arg_num, char **t
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_ADJUST_SCHEDULER__OFFSET( char *to_nt, int to_dim,
+ *   void ICMCompileMT_ADJUST_SCHEDULER__OFFSET( char *to_NT, int to_dim,
  *                                               int current_dim,
  *                                               char *lower, char *upper,
  *                                               char *unrolling)
@@ -275,7 +278,7 @@ TaskSelector (int sched_id, char *ts_name, int ts_dims, int ts_arg_num, char **t
  ******************************************************************************/
 
 void
-ICMCompileMT_ADJUST_SCHEDULER__OFFSET (char *to_nt, int to_dim, int current_dim,
+ICMCompileMT_ADJUST_SCHEDULER__OFFSET (char *to_NT, int to_dim, int current_dim,
                                        char *lower, char *upper, char *unrolling)
 {
     int i;
@@ -291,15 +294,15 @@ ICMCompileMT_ADJUST_SCHEDULER__OFFSET (char *to_nt, int to_dim, int current_dim,
     fprintf (outfile,
              "SAC_MT_ADJUST_SCHEDULER__OFFSET( %s, %d, %d, %s, %s, %s"
              ", (",
-             to_nt, to_dim, current_dim, lower, upper, unrolling);
+             to_NT, to_dim, current_dim, lower, upper, unrolling);
 
     if (current_dim == (to_dim - 1)) {
         fprintf (outfile, "1");
     } else {
-        fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", to_nt, current_dim + 1);
+        fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", to_NT, current_dim + 1);
 
         for (i = (current_dim + 2); i < to_dim; i++) {
-            fprintf (outfile, " * SAC_ND_A_SHAPE( %s, %d)", to_nt, current_dim + i);
+            fprintf (outfile, " * SAC_ND_A_SHAPE( %s, %d)", to_NT, current_dim + i);
         }
     }
 

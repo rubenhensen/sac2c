@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2003/09/19 15:32:08  dkr
+ * postfix _nt of varnames renamed into _NT
+ *
  * Revision 3.4  2002/07/31 15:37:28  dkr
  * new hidden tag added
  *
@@ -45,8 +48,8 @@
 
 #include "NameTuples.h"
 
-extern shape_class_t ICUGetShapeClass (char *nt);
-extern hidden_class_t ICUGetHiddenClass (char *nt);
-extern unique_class_t ICUGetUniqueClass (char *nt);
+extern shape_class_t ICUGetShapeClass (char *var_NT);
+extern hidden_class_t ICUGetHiddenClass (char *var_NT);
+extern unique_class_t ICUGetUniqueClass (char *var_NT);
 
 #endif /* _icm2c_utils_h */

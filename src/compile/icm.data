@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2003/09/19 15:33:31  dkr
+ * postfix _nt of varnames renamed into _NT
+ *
  * Revision 3.61  2003/09/17 14:17:08  dkr
  * some function parameters renamed
  *
@@ -186,36 +189,36 @@ ICM_END( ND_FUN_RET, (retname, vararg_cnt, vararg))
 
 #if defined(ND_OBJDEF) || defined(ICM_ALL)
 ICM_DEF( ND_OBJDEF, TRACE_NONE)
-  ICM_NT( nt)
+  ICM_NT( var_NT)
   ICM_ID( basetype)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
-ICM_END( ND_OBJDEF, (nt, basetype, sdim, shp))
+ICM_END( ND_OBJDEF, (var_NT, basetype, sdim, shp))
 #endif
 
 #if defined(ND_OBJDEF_EXTERN) || defined(ICM_ALL)
 ICM_DEF( ND_OBJDEF_EXTERN, TRACE_NONE)
-  ICM_NT( nt)
+  ICM_NT( var_NT)
   ICM_ID( basetype)
   ICM_INT( sdim)
-ICM_END( ND_OBJDEF_EXTERN, (nt, basetype, sdim))
+ICM_END( ND_OBJDEF_EXTERN, (var_NT, basetype, sdim))
 #endif
 
 #if defined(ND_DECL) || defined(ICM_ALL)
 ICM_DEF( ND_DECL, TRACE_NONE)
-  ICM_NT( nt)
+  ICM_NT( var_NT)
   ICM_ID( basetype)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
-ICM_END( ND_DECL, (nt, basetype, sdim, shp))
+ICM_END( ND_DECL, (var_NT, basetype, sdim, shp))
 #endif
 
 #if defined(ND_DECL_EXTERN) || defined(ICM_ALL)
 ICM_DEF( ND_DECL_EXTERN, TRACE_NONE)
-  ICM_NT( nt)
+  ICM_NT( var_NT)
   ICM_ID( basetype)
   ICM_INT( sdim)
-ICM_END( ND_DECL_EXTERN, (nt, basetype, sdim))
+ICM_END( ND_DECL_EXTERN, (var_NT, basetype, sdim))
 #endif
 
 /* ND_DECL__DATA( ...) is a H-ICM */
@@ -224,25 +227,25 @@ ICM_END( ND_DECL_EXTERN, (nt, basetype, sdim))
 
 #if defined(ND_DECL__MIRROR) || defined(ICM_ALL)
 ICM_DEF( ND_DECL__MIRROR, TRACE_NONE)
-  ICM_NT( nt)
+  ICM_NT( var_NT)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
-ICM_END( ND_DECL__MIRROR, (nt, sdim, shp))
+ICM_END( ND_DECL__MIRROR, (var_NT, sdim, shp))
 #endif
 
 #if defined(ND_DECL__MIRROR_PARAM) || defined(ICM_ALL)
 ICM_DEF( ND_DECL__MIRROR_PARAM, TRACE_NONE)
-  ICM_NT( nt)
+  ICM_NT( var_NT)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
-ICM_END( ND_DECL__MIRROR_PARAM, (nt, sdim, shp))
+ICM_END( ND_DECL__MIRROR_PARAM, (var_NT, sdim, shp))
 #endif
 
 #if defined(ND_DECL__MIRROR_EXTERN) || defined(ICM_ALL)
 ICM_DEF( ND_DECL__MIRROR_EXTERN, TRACE_NONE)
-  ICM_NT( nt)
+  ICM_NT( var_NT)
   ICM_INT( sdim)
-ICM_END( ND_DECL__MIRROR_EXTERN, (nt, sdim))
+ICM_END( ND_DECL__MIRROR_EXTERN, (var_NT, sdim))
 #endif
 
 
@@ -276,9 +279,9 @@ ICM_END( ND_SET__SHAPE, (to_NT, dim, shp_ANY))
 
 #if defined(ND_REFRESH_MIRROR) || defined(ICM_ALL)
 ICM_DEF( ND_REFRESH_MIRROR, TRACE_NONE)
-  ICM_NT( nt)
+  ICM_NT( var_NT)
   ICM_INT( sdim)
-ICM_END( ND_REFRESH_MIRROR, (nt, sdim))
+ICM_END( ND_REFRESH_MIRROR, (var_NT, sdim))
 #endif
 
 #if defined(ND_CHECK_MIRROR) || defined(ICM_ALL)
