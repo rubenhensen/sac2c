@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.29  2000/02/21 17:59:42  jhs
+# Added multithread_lib.o and blocks_expand.o.
+#
 # Revision 2.28  2000/02/17 16:10:58  cg
 # Added linking of new files flatten/fun2lac.o and flatten/adjust_ids.o.
 #
@@ -216,7 +219,8 @@ CONCURRENT= src/concurrent/concurrent.o \
             src/concurrent/spmd_trav.o src/concurrent/spmd_cons.o    \
             src/concurrent/concurrent_lib.o
 MULTITHREAD= src/multithread/multithread.o src/multithread/schedule_init.o \
-             src/multithread/repfuns_init.o src/multithread/blocks_init.o
+             src/multithread/repfuns_init.o src/multithread/blocks_init.o \
+             src/multithread/blocks_expand.o src/multithread/multithread_lib.o
 COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/precompile.o \
           src/compile/compile.o src/compile/gen_startup_code.o \
