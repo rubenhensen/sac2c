@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/02/09 13:35:28  dkr
+ * DEC_RC_FREE in ND_KS_VECT2OFFSET removed:
+ * the RC is done by Refcount/Compile now :-)
+ *
  * Revision 3.3  2001/02/06 01:37:16  dkr
  * some superfluous '\n' removed
  *
@@ -1860,8 +1864,6 @@ ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim, int dims, 
     fprintf (outfile, "%s = ", off_name);
     VectToOffset2 (dim, AccessVect (arr_name, i), dims, AccessConst (s, i));
     fprintf (outfile, ";\n");
-    INDENT;
-    fprintf (outfile, "SAC_ND_DEC_RC_FREE_ARRAY( %s, 1)\n", arr_name);
 
     DBUG_VOID_RETURN;
 }
