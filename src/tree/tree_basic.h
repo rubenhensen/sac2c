@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.177  2003/12/30 15:25:12  dkrHH
+ * INFO_PRINT_INT_SYN removed (no longer needed)
+ *
  * Revision 3.176  2003/12/23 10:43:58  khf
  * NWITHOP_NEXT for more operations for withloop-fusion added. Other NWITHOP attributes
  * shifted. NCODE_CEXPR changed to NCODE_CEXPRS. Macro adjusted. Second MakeNCode
@@ -3135,9 +3138,8 @@ extern node *MakeInfo ();
 /* Print */
 #define INFO_PRINT_CONT(n) (n->node[0])
 #define INFO_PRINT_FUNDEF(n) (n->node[2])
-#define INFO_PRINT_INT_SYN(n) (n->node[3])
-#define INFO_PRINT_NPART(n) (n->node[4])
-#define INFO_PRINT_NWITH2(n) (n->node[5])
+#define INFO_PRINT_NPART(n) (n->node[3])
+#define INFO_PRINT_NWITH2(n) (n->node[4])
 #define INFO_PRINT_SIB(n) (n->flag)
 #define INFO_PRINT_OMIT_FORMAL_PARAMS(n) (n->counter)
 #define INFO_PRINT_VARNO(n) (n->varno)
