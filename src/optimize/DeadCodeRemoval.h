@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/02/13 16:38:56  asi
+ * Revision 1.2  1995/03/07 10:23:59  asi
+ * added DEADwith
+ *
+ * Revision 1.1  1995/02/13  16:38:56  asi
  * Initial revision
  *
  *
@@ -19,5 +22,6 @@ extern node *DEADblock (node *arg_node, node *arg_info);
 extern node *DEADvardec (node *arg_node, node *arg_info);
 extern node *DEADcond (node *arg_node, node *arg_info);
 extern node *DEADloop (node *arg_node, node *arg_info);
+extern node *DEADwith (node *arg_node, node *arg_info);
 
 #endif /* _DeadCodeRemoval_h */

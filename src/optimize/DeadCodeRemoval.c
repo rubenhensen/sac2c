@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/02/28 18:33:20  asi
+ * Revision 1.3  1995/03/07 10:23:59  asi
+ * added DEADwith
+ *
+ * Revision 1.2  1995/02/28  18:33:20  asi
  * changed arguments for functioncalls ...Mask(..)
  *
  * Revision 1.1  1995/02/13  16:37:42  asi
@@ -22,6 +25,8 @@
 
 #include "optimize.h"
 #include "DeadCodeRemoval.h"
+
+#define TRAV_1 arg_info->lineno
 
 /*
  *
@@ -76,17 +81,17 @@ DEADfundef (node *arg_node, node *arg_info)
     VARNO = arg_node->varno;
     arg_info->nodetype = N_fundef;
     if (arg_node->node[0] != NULL) {
-        arg_info->lineno = 0;
-        arg_info->mask[0] = GenMask (VARNO);
-        arg_info->mask[1] = GenMask (VARNO);
-        arg_info->mask[2] = GenMask (VARNO);
+        TRAV_1 = 1; /* used as flag for the two differnt passes */
+        arg_info->mask[0] = GenMask (VARNO); /* defined-mask */
+        arg_info->mask[1] = GenMask (VARNO); /* used-mask */
+        arg_info->mask[2] = GenMask (VARNO); /* later-used-mask (LU-mask) */
         arg_node->node[0]
           = Trav (arg_node->node[0], arg_info); /* Trav body of function */
         free (arg_info->mask[0]);               /* Gathering loop infos */
         free (arg_info->mask[1]);
         free (arg_info->mask[2]);
 
-        arg_info->lineno = 1;
+        TRAV_1 = 0;
         arg_info->mask[0] = GenMask (VARNO);
         arg_info->mask[1] = GenMask (VARNO);
         arg_info->mask[2] = GenMask (VARNO);
@@ -141,7 +146,7 @@ DEADvardec (node *arg_node, node *arg_info)
         if (arg_node->node[0] == NULL)
             arg_node->nnode--;
     }
-    if (arg_info->mask[1][arg_node->lineno] == 0) {
+    if (arg_info->mask[1][arg_node->varno] == 0) {
         dead_var++;
         DBUG_PRINT ("DEAD",
                     ("Variable decleration %s removed", arg_node->info.types->id));
@@ -157,7 +162,7 @@ DEADvardec (node *arg_node, node *arg_info)
  *                  2) ptr to info_node
  *                  R) modified assign_node 1) or next assign-node if whole assign is
  *                     not important for sac-programm.
- *  description   : if arg_info->lineno == 0 this function gathers informations about
+ *  description   : if TRAV_1 == 1 this function gathers informations about
  *                  used variables in the further controll flow,
  *                  otherwise the function performs dead code removal with this
  * assignment. global vars   : syntax_tree, info_node, dead_expr internal funs : ---
@@ -186,13 +191,13 @@ DEADassign (node *arg_node, node *arg_info)
 
     switch (arg_node->node[0]->nodetype) {
     case N_return:
-        DBUG_EXECUTE ("DEAD", if ((arg_info->lineno) == 1) arg_node->mask[2]
+        DBUG_EXECUTE ("DEAD", if (TRAV_1) arg_node->mask[2]
                               = DupMask (arg_info->mask[2], VARNO););
         OrMask (arg_info->mask[2], arg_node->mask[1], VARNO);
         break;
     case N_do:
     case N_while:
-        if (arg_info->lineno != 0) {
+        if (!TRAV_1) {
             if (CheckMask (arg_info->mask[2], arg_node->mask[0], VARNO)) {
                 DBUG_PRINT ("DEAD", ("Removed node: %08x in line %d", arg_node,
                                      arg_node->lineno));
@@ -236,14 +241,14 @@ DEADassign (node *arg_node, node *arg_info)
                 DBUG_EXECUTE ("DEAD", arg_node->mask[2] = oldmask[1];);
             }
         } else {
-            oldmask[2] = DupMask (arg_info->mask[2], VARNO);
-            arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+            oldmask[2] = DupMask (arg_info->mask[2], VARNO);        /* save  LU-mask */
+            arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* gen new LU-mask */
             OrMask (arg_info->mask[2], oldmask[2], VARNO);
             arg_node->mask[2] = DupMask (arg_info->mask[2], VARNO);
         }
         break;
     case N_cond:
-        if (CheckMask (arg_info->mask[2], arg_node->mask[0], VARNO) && arg_info->lineno) {
+        if (CheckMask (arg_info->mask[2], arg_node->mask[0], VARNO) && !TRAV_1) {
             DBUG_PRINT ("DEAD",
                         ("Removed node: %08x in line %d", arg_node, arg_node->lineno));
             PlusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
@@ -256,14 +261,42 @@ DEADassign (node *arg_node, node *arg_info)
             FreeTree (arg_node);
             dead_expr++;
         } else {
-            DBUG_EXECUTE ("DEAD", if ((arg_info->lineno) == 1) arg_node->mask[2]
+            DBUG_EXECUTE ("DEAD", if (!TRAV_1) arg_node->mask[2]
                                   = DupMask (arg_info->mask[2], VARNO););
-            DBUG_ASSERT ((arg_node->node[0] != NULL), "While-expr. without body.");
             arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+            if (!TRAV_1) {
+                MinusMask (arg_node->mask[0], arg_info->mask[0], VARNO);
+                MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
+            }
         }
         break;
+    case N_let:
+        if (arg_node->node[0]->node[0]->nodetype == N_with) {
+            if (CheckMask (arg_info->mask[2], arg_node->mask[0], VARNO) && !TRAV_1) {
+                DBUG_PRINT ("DEAD", ("Removed node: %08x in line %d", arg_node,
+                                     arg_node->lineno));
+                PlusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
+                PlusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
+                if (olditype != N_fundef)
+                    MinusMask (arg_info->mask[2], arg_node->mask[1], VARNO);
+                return_node = arg_node->node[1]; /* remove this assignment */
+                arg_node->node[1] = NULL;
+                arg_node->nnode = 1;
+                FreeTree (arg_node);
+                dead_expr++;
+            } else {
+                DBUG_EXECUTE ("DEAD", if (TRAV_1) arg_node->mask[2]
+                                      = DupMask (arg_info->mask[2], VARNO););
+                arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+                if (!TRAV_1) {
+                    MinusMask (arg_node->mask[0], arg_info->mask[0], VARNO);
+                    MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
+                }
+            }
+            break;
+        }
     default:
-        if (CheckMask (arg_info->mask[2], arg_node->mask[0], VARNO) && arg_info->lineno) {
+        if (CheckMask (arg_info->mask[2], arg_node->mask[0], VARNO) && !TRAV_1) {
             DBUG_PRINT ("DEAD",
                         ("Removed node: %08x in line %d", arg_node, arg_node->lineno));
             PlusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
@@ -276,7 +309,7 @@ DEADassign (node *arg_node, node *arg_info)
             FreeTree (arg_node);
             dead_expr++;
         } else {
-            DBUG_EXECUTE ("DEAD", if ((arg_info->lineno) == 1) arg_node->mask[2]
+            DBUG_EXECUTE ("DEAD", if (!TRAV_1) arg_node->mask[2]
                                   = DupMask (arg_info->mask[2], VARNO););
             If3_2Mask (arg_info->mask[2], arg_node->mask[1], arg_node->mask[0], VARNO);
         }
@@ -314,7 +347,7 @@ DEADloop (node *arg_node, node *arg_info)
  *  arguments     : 1) ptr to cond-node
  *                  2) ptr to info_node
  *                  R) node 1) without dead code in subtrees then and else.
- *  description   : if arg_info->lineno == 0 information gathering phase, see DEADassign.
+ *  description   : if TRAV_1 == 1 information gathering phase, see DEADassign.
  *                  otherwise delete whole then- or else- subtrees or traverse into it.
  *  global vars   : syntax_tree, info_node
  *  internal funs : ---
@@ -327,20 +360,27 @@ DEADloop (node *arg_node, node *arg_info)
 node *
 DEADcond (node *arg_node, node *arg_info)
 {
-    long *oldmask[3];
+    long *oldmask[4];
+    long *tmp;
 
     DBUG_ENTER ("DEADcond");
-    if (arg_info->lineno == 0) {
-        oldmask[2] = DupMask (arg_info->mask[2], VARNO);
-        oldmask[3] = DupMask (arg_info->mask[2], VARNO);
+    if (TRAV_1) {
+        oldmask[2] = DupMask (arg_info->mask[2], VARNO); /* save LU-mask */
+
         arg_node->node[1] = Trav (arg_node->node[1], arg_info); /* Trav then-subtree */
-        OrMask (oldmask[3], arg_info->mask[2], VARNO);
-        arg_info->mask[2] = oldmask[2];
+
+        tmp = DupMask (oldmask[2], VARNO);
+        OrMask (oldmask[2], arg_info->mask[2], VARNO); /* update old LU-mask */
+        arg_info->mask[2] = tmp;                       /* restore old LU-mask */
+
         arg_node->node[2] = Trav (arg_node->node[2], arg_info); /* Trav else-subtree */
-        OrMask (arg_info->mask[2], oldmask[3], VARNO);
-        free (oldmask[3]);
-        OrMask (arg_info->mask[2], arg_node->mask[1], VARNO);
-    } else {
+
+        OrMask (arg_info->mask[2], oldmask[2], VARNO); /* calculate new LU-MASK */
+        free (oldmask[2]);
+        OrMask (arg_info->mask[2], arg_node->mask[1],
+                VARNO); /* consider used variables */
+    }                   /* in the condition        */
+    else {
         oldmask[3] = DupMask (arg_info->mask[2], VARNO);
         if (arg_node->node[1] != NULL) {
             if (MaskIsNotZero (arg_node->node[1]->mask[0], VARNO)
@@ -455,6 +495,60 @@ DEADblock (node *arg_node, node *arg_info)
     DBUG_ENTER ("OPTblock");
     if (arg_node->node[0] != NULL)
         arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* Dead-Code-Removal */
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : DEADwith
+ *  arguments     : 1) ptr to with-node
+ *                  2) ptr to info-node
+ *                  R) modified 1)
+ *  description   :
+ *  global vars   : syntax_tree, info_node
+ *  internal funs : ---
+ *  external funs : Trav
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
+node *
+DEADwith (node *arg_node, node *arg_info)
+{
+    long *oldmask[3];
+
+    DBUG_ENTER ("OPTwith");
+    if (TRAV_1) {                                        /* first pass */
+        oldmask[2] = DupMask (arg_info->mask[2], VARNO); /* save LU-mask */
+
+        if ((arg_node->node[1]->nodetype == N_genarray)
+            || (arg_node->node[1]->nodetype == N_modarray))
+            arg_node->node[1]->node[1]
+              = Trav (arg_node->node[1]->node[1], arg_info); /* Trav body */
+        else
+            arg_node->node[1]->node[0]
+              = Trav (arg_node->node[1]->node[0], arg_info); /* Trav body */
+
+        OrMask (arg_info->mask[2], oldmask[2], VARNO); /* calculate new LU-MASK */
+        free (oldmask[2]);                             /* consider used variables in */
+        OrMask (arg_info->mask[2], arg_node->node[0]->mask[1],
+                VARNO); /* generator expr. */
+        OrMask (arg_info->mask[2], arg_node->node[1]->mask[1],
+                VARNO); /* gen-mod-fold expr. */
+    } else {            /* second pass */
+        OrMask (arg_info->mask[2], arg_node->mask[1], VARNO);
+        DBUG_EXECUTE ("DEAD", arg_node->mask[2] = DupMask (arg_info->mask[2], VARNO););
+        if ((arg_node->node[1]->nodetype == N_genarray)
+            || (arg_node->node[1]->nodetype == N_modarray))
+            arg_node->node[1]->node[1]
+              = Trav (arg_node->node[1]->node[1], arg_info); /* Trav body */
+        else
+            arg_node->node[1]->node[0]
+              = Trav (arg_node->node[1]->node[0], arg_info); /* Trav body */
+        OrMask (arg_info->mask[2], arg_node->node[0]->mask[1], VARNO);
+        OrMask (arg_info->mask[2], arg_node->node[1]->mask[1], VARNO);
+    }
     DBUG_RETURN (arg_node);
 }
 
