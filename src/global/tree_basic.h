@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.201  1998/08/11 14:32:56  dkr
+ * some WL... stuff changed
+ *
  * Revision 1.200  1998/08/11 10:59:57  dkr
  * WLSEG_INNERSTEP changed
  *
@@ -2991,6 +2994,47 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 
 /*--------------------------------------------------------------------------*/
 
+/*
+ * here are some macros for N_WL... nodes:
+ *
+ * CAUTION: not every macro is suitable for all node tpyes.
+ *          e.g. NEXTDIM is not a son of N_WLstride nodes
+ *
+ *          it would be better to contruct these macros like this:
+ *            #define WLNODE_NEXTDIM(n) ((NODE_TYPE(n) == N_WLstride) ?
+ *                                        DBUG_ASSERT(...) :
+ *                                        (NODE_TYPE(n) == N_WLblock) ?
+ *                                         WLBLOCK_NEXTDIM(n) :
+ *                                         (NODE_TYPE(n) == N_WLublock) ?
+ *                                          WLUBLOCK_NEXTDIM(n) : ...)
+ *          but unfortunately this is not a modifiable l-value in ANSI-C :(
+ *          so it would be impossible to use them on the left side of an
+ *          assignment.
+ *          because of that I designed this "static" macros to make a
+ *          concise modelling of routines still possible.
+ */
+
+#define WLSEGX_DIMS(n) (n->refcnt)
+#define WLSEGX_CONTENTS(n) (n->node[0])
+#define WLSEGX_NEXT(n) (n->node[1])
+#define WLSEGX_IDX_MIN(n) (*((int **)(&(n->node[2]))))
+#define WLSEGX_IDX_MAX(n) (*((int **)(&(n->node[3]))))
+#define WLSEGX_BLOCKS(n) (n->flag)
+#define WLSEGX_BV(n, level) (n->mask[level + 2])
+#define WLSEGX_UBV(n) (n->mask[1])
+#define WLSEGX_SV(n) (n->mask[0])
+#define WLSEGX_MAXHOMDIM(n) (n->varno)
+
+#define WLNODE_LEVEL(n) (n->lineno)
+#define WLNODE_DIM(n) (n->refcnt)
+#define WLNODE_BOUND1(n) (n->flag)
+#define WLNODE_BOUND2(n) (n->counter)
+#define WLNODE_STEP(n) (n->varno)
+#define WLNODE_NEXTDIM(n) (n->node[0])
+#define WLNODE_NEXT(n) (n->node[1])
+
+/*--------------------------------------------------------------------------*/
+
 /***
  *** N_WLseg :
  ***
@@ -3021,51 +3065,21 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 
 extern node *MakeWLseg (int dims, node *contents, node *next);
 
-#define WLSEG_DIMS(n) (n->refcnt)
-#define WLSEG_CONTENTS(n) (n->node[0])
-#define WLSEG_NEXT(n) (n->node[1])
+#define WLSEG_DIMS(n) (WLSEGX_DIMS (n))
+#define WLSEG_CONTENTS(n) (WLSEGX_CONTENTS (n))
+#define WLSEG_NEXT(n) (WLSEGX_NEXT (n))
 
-#define WLSEG_IDX_MIN(n) (*((int **)(&(n->node[2]))))
-#define WLSEG_IDX_MAX(n) (*((int **)(&(n->node[3]))))
+#define WLSEG_IDX_MIN(n) (WLSEGX_IDX_MIN (n))
+#define WLSEG_IDX_MAX(n) (WLSEGX_IDX_MAX (n))
 
-#define WLSEG_BLOCKS(n) (n->flag)
+#define WLSEG_BLOCKS(n) (WLSEGX_BLOCKS (n))
 
-#define WLSEG_SV(n) (n->mask[0])
-#define WLSEG_BV(n, level) (n->mask[level + 2])
-#define WLSEG_UBV(n) (n->mask[1])
+#define WLSEG_SV(n) (WLSEGX_SV (n))
+#define WLSEG_BV(n, level) (WLSEGX_BV (n, level))
+#define WLSEG_UBV(n) (WLSEGX_UBV (n))
 
 #define WLSEG_SCHEDULING(n) ((SCHsched_t) (n->node[4]))
-#define WLSEG_MAXHOMDIM(n) (n->varno)
-
-/*--------------------------------------------------------------------------*/
-
-/*
- * here are some macros for N_WL... nodes:
- *
- * CAUTION: not every macro is suitable for all node tpyes.
- *          e.g. NEXTDIM is not a son of N_WLstride nodes
- *
- *          it would be better to contruct these macros like this:
- *            #define WLNODE_NEXTDIM(n) ((NODE_TYPE(n) == N_WLstride) ?
- *                                        DBUG_ASSERT(...) :
- *                                        (NODE_TYPE(n) == N_WLblock) ?
- *                                         WLBLOCK_NEXTDIM(n) :
- *                                         (NODE_TYPE(n) == N_WLublock) ?
- *                                          WLUBLOCK_NEXTDIM(n) : ...)
- *          but unfortunately this is not a modifiable l-value in ANSI-C :(
- *          so it would be impossible to use them on the left side of an
- *          assignment.
- *          because of that I designed this "static" macros to make a
- *          concise modelling of routines still possible.
- */
-
-#define WLNODE_LEVEL(n) (n->lineno)
-#define WLNODE_DIM(n) (n->refcnt)
-#define WLNODE_BOUND1(n) (n->flag)
-#define WLNODE_BOUND2(n) (n->counter)
-#define WLNODE_STEP(n) (n->varno)
-#define WLNODE_NEXTDIM(n) (n->node[0])
-#define WLNODE_NEXT(n) (n->node[1])
+#define WLSEG_MAXHOMDIM(n) (WLSEGX_MAXHOMDIM (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3092,7 +3106,8 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***
  ***  remarks:
  ***
- ***    it makes no sense to use the nodes NEXTDIM and CONTENTS simultaneous!
+ ***    - it makes no sense to use the nodes NEXTDIM and CONTENTS simultaneous!
+ ***    - INNERSTEP is only valid, iff (LEVEL == 0).
  ***
  ***/
 
@@ -3135,7 +3150,8 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  remarks:
  ***
- ***    it makes no sense to use the nodes NEXTDIM and CONTENTS simultaneous!
+ ***    - it makes no sense to use the nodes NEXTDIM and CONTENTS simultaneous!
+ ***    - INNERSTEP is only valid, iff (LEVEL == 0).
  ***
  ***/
 
@@ -3176,8 +3192,12 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
  ***
  ***    node*    PART         (part this stride is generated from)
  ***                                          (wltransform ! )
- ***    int      MODIFIED                     (wltransform ! )
+ ***    node*    MODIFIED                     (wltransform ! )
  ***    int      INNERSTEP                    (wltransform -> compile )
+ ***
+ ***  remarks:
+ ***
+ ***    - INNERSTEP is only valid, iff (LEVEL == 0).
  ***
  ***/
 
@@ -3193,9 +3213,9 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
 #define WLSTRIDE_CONTENTS(n) (n->node[0])
 #define WLSTRIDE_NEXT(n) (WLNODE_NEXT (n))
 
-#define WLSTRIDE_PART(n) (n->node[5])
-#define WLSTRIDE_MODIFIED(n) (n->info.prf_dec.tc)
-#define WLSTRIDE_INNERSTEP(n) (*((int *)(n->node[4])))
+#define WLSTRIDE_PART(n) (n->node[4])
+#define WLSTRIDE_MODIFIED(n) (n->node[5])
+#define WLSTRIDE_INNERSTEP(n) (n->info.prf_dec.tc)
 
 /*--------------------------------------------------------------------------*/
 
@@ -3218,7 +3238,7 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  temporary attributes:
  ***
- ***    int     MODIFIED                      (wltransform ! )
+ ***    node*   MODIFIED                      (wltransform ! )
  ***
  ***  remarks:
  ***
@@ -3241,7 +3261,7 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
 #define WLGRID_NEXT(n) (WLNODE_NEXT (n))
 #define WLGRID_CODE(n) (n->node[2])
 
-#define WLGRID_MODIFIED(n) (n->info.prf_dec.tc)
+#define WLGRID_MODIFIED(n) (n->node[4])
 
 /*--------------------------------------------------------------------------*/
 
@@ -3278,20 +3298,21 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
 
 extern node *MakeWLsegVar (int dims, node *contents, node *next);
 
-#define WLSEGVAR_DIMS(n) (n->refcnt)
-#define WLSEGVAR_CONTENTS(n) (n->node[0])
-#define WLSEGVAR_NEXT(n) (n->node[1])
+#define WLSEGVAR_DIMS(n) (WLSEGX_DIMS (n))
+#define WLSEGVAR_CONTENTS(n) (WLSEGX_CONTENTS (n))
+#define WLSEGVAR_NEXT(n) (WLSEGX_NEXT (n))
 
-#define WLSEGVAR_IDX_MIN(n) (*((int **)(&(n->node[2]))))
-#define WLSEGVAR_IDX_MAX(n) (*((int **)(&(n->node[3]))))
+#define WLSEGVAR_IDX_MIN(n) (WLSEGX_IDX_MIN (n))
+#define WLSEGVAR_IDX_MAX(n) (WLSEGX_IDX_MAX (n))
 
-#define WLSEGVAR_BLOCKS(n) (n->flag)
+#define WLSEGVAR_BLOCKS(n) (WLSEGX_BLOCKS (n))
 
-#define WLSEGVAR_BV(n, level) (n->mask[level + 2])
-#define WLSEGVAR_UBV(n) (n->mask[1])
+#define WLSEGVAR_SV(n) (WLSEGX_SV (n))
+#define WLSEGVAR_BV(n, level) (WLSEGX_BV (n, level))
+#define WLSEGVAR_UBV(n) (WLSEGX_UBV (n))
 
 #define WLSEGVAR_SCHEDULING(n) ((SCHsched_t)n->node[5])
-#define WLSEGVAR_MAXHOMDIM(n) (n->varno)
+#define WLSEGVAR_MAXHOMDIM(n) (WLSEGX_MAXHOMDIM (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -3308,23 +3329,29 @@ extern node *MakeWLsegVar (int dims, node *contents, node *next);
  ***
  ***  permanent attributes:
  ***
+ ***    int      LEVEL
  ***    int      DIM
  ***
  ***  temporary attributes:
  ***
  ***    int      INNERSTEP                 (wltransform -> compile )
  ***
+ ***  remarks:
+ ***
+ ***    - INNERSTEP is only valid, iff (LEVEL == 0).
+ ***
  ***/
 
-extern node *MakeWLstriVar (int dim, node *bound1, node *bound2, node *step,
+extern node *MakeWLstriVar (int level, int dim, node *bound1, node *bound2, node *step,
                             node *contents, node *next);
 
-#define WLSTRIVAR_DIM(n) (n->refcnt)
+#define WLSTRIVAR_LEVEL(n) (WLNODE_LEVEL (n))
+#define WLSTRIVAR_DIM(n) (WLNODE_DIM (n))
 #define WLSTRIVAR_BOUND1(n) (n->node[2])
 #define WLSTRIVAR_BOUND2(n) (n->node[3])
 #define WLSTRIVAR_STEP(n) (n->node[4])
 #define WLSTRIVAR_CONTENTS(n) (n->node[0])
-#define WLSTRIVAR_NEXT(n) (n->node[1])
+#define WLSTRIVAR_NEXT(n) (WLNODE_NEXT (n))
 
 #define WLSTRIVAR_INNERSTEP(n) (n->flag)
 
@@ -3343,11 +3370,12 @@ extern node *MakeWLstriVar (int dim, node *bound1, node *bound2, node *step,
  ***  permanent attributes:
  ***
  ***    node*    CODE            (N_Ncode)
+ ***    int      LEVEL
  ***    int      DIM
  ***
  ***  temporary attributes:
  ***
- ***    int      INNERSTEP                 (wltransform -> compile )
+ ***    ---
  ***
  ***  remarks:
  ***
@@ -3358,16 +3386,15 @@ extern node *MakeWLstriVar (int dim, node *bound1, node *bound2, node *step,
  ***
  ***/
 
-extern node *MakeWLgridVar (int dim, node *bound1, node *bound2, node *nextdim,
+extern node *MakeWLgridVar (int level, int dim, node *bound1, node *bound2, node *nextdim,
                             node *next, node *code);
 
-#define WLGRIDVAR_DIM(n) (n->refcnt)
+#define WLGRIDVAR_LEVEL(n) (WLNODE_LEVEL (n))
+#define WLGRIDVAR_DIM(n) (WLNODE_DIM (n))
 #define WLGRIDVAR_BOUND1(n) (n->node[2])
 #define WLGRIDVAR_BOUND2(n) (n->node[3])
-#define WLGRIDVAR_NEXTDIM(n) (n->node[0])
-#define WLGRIDVAR_NEXT(n) (n->node[1])
+#define WLGRIDVAR_NEXTDIM(n) (WLNODE_NEXTDIM (n))
+#define WLGRIDVAR_NEXT(n) (WLNODE_NEXT (n))
 #define WLGRIDVAR_CODE(n) (n->node[4])
-
-#define WLGRIDVAR_INNERSTEP(n) (n->flag)
 
 #endif /* _sac_tree_basic_h */
