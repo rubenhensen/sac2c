@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.15  2004/11/23 20:53:52  sbs
+ * SacDevCamp 04 done
+ *
  * Revision 1.14  2004/10/26 10:46:59  sbs
  * type_info now holds the module name as well.
  *
@@ -49,8 +52,14 @@
  *
  */
 
-#include "dbug.h"
 #include "type_errors.h"
+#include "dbug.h"
+#include "Error.h"
+#include "internal_lib.h"
+#include "shape.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "new_types.h"
 #include "new_typecheck.h"
 
 struct TE_INFO {
@@ -87,11 +96,11 @@ MatchScalar (ntype *type)
 
     DBUG_ENTER ("MatchScalar");
 
-    switch (TYGetConstr (type)) {
+    switch (TYgetConstr (type)) {
     case TC_akv:
     case TC_aks:
     case TC_akd:
-        res = (TYGetDim (type) == 0);
+        res = (TYgetDim (type) == 0);
         break;
     case TC_audgz:
     case TC_aud:
@@ -111,11 +120,11 @@ MatchVect (ntype *type)
     bool res = FALSE;
     DBUG_ENTER ("MatchVect");
 
-    switch (TYGetConstr (type)) {
+    switch (TYgetConstr (type)) {
     case TC_akv:
     case TC_aks:
     case TC_akd:
-        res = (TYGetDim (type) == 1);
+        res = (TYgetDim (type) == 1);
         break;
     case TC_audgz:
     case TC_aud:
@@ -135,8 +144,8 @@ MatchIntA (ntype *type)
 
     DBUG_ENTER ("MatchIntA");
 
-    res = ((TYGetConstr (TYGetScalar (type)) == TC_simple)
-           && (TYGetSimpleType (TYGetScalar (type)) == T_int));
+    res = ((TYgetConstr (TYgetScalar (type)) == TC_simple)
+           && (TYgetSimpleType (TYgetScalar (type)) == T_int));
 
     DBUG_RETURN (res);
 }
@@ -148,8 +157,8 @@ MatchBoolA (ntype *type)
 
     DBUG_ENTER ("MatchBoolA");
 
-    res = ((TYGetConstr (TYGetScalar (type)) == TC_simple)
-           && (TYGetSimpleType (TYGetScalar (type)) == T_bool));
+    res = ((TYgetConstr (TYgetScalar (type)) == TC_simple)
+           && (TYgetSimpleType (TYgetScalar (type)) == T_bool));
 
     DBUG_RETURN (res);
 }
@@ -161,10 +170,10 @@ MatchNumA (ntype *type)
 
     DBUG_ENTER ("MatchNumA");
 
-    res = ((TYGetConstr (TYGetScalar (type)) == TC_simple)
-           && ((TYGetSimpleType (TYGetScalar (type)) == T_int)
-               || (TYGetSimpleType (TYGetScalar (type)) == T_float)
-               || (TYGetSimpleType (TYGetScalar (type)) == T_double)));
+    res = ((TYgetConstr (TYgetScalar (type)) == TC_simple)
+           && ((TYgetSimpleType (TYgetScalar (type)) == T_int)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_float)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_double)));
 
     DBUG_RETURN (res);
 }
@@ -177,14 +186,14 @@ MatchNumA (ntype *type)
  ******************************************************************************/
 
 te_info *
-TEMakeInfo (int linenum, char *kind_str, char *mod_str, char *name_str, node *wrapper,
+TEmakeInfo (int linenum, char *kind_str, char *mod_str, char *name_str, node *wrapper,
             node *assign, void *cffun, te_info *parent)
 {
     te_info *res;
 
-    DBUG_ENTER ("TEMakeInfo");
+    DBUG_ENTER ("TEmakeInfo");
 
-    res = (te_info *)Malloc (sizeof (te_info));
+    res = (te_info *)ILIBmalloc (sizeof (te_info));
     TI_LINE (res) = linenum;
     TI_KIND (res) = kind_str;
     TI_MOD (res) = mod_str;
@@ -198,82 +207,84 @@ TEMakeInfo (int linenum, char *kind_str, char *mod_str, char *name_str, node *wr
 }
 
 int
-TEGetLine (te_info *info)
+TEgetLine (te_info *info)
 {
-    DBUG_ENTER ("TEGetLine");
+    DBUG_ENTER ("TEgetLine");
     DBUG_RETURN (TI_LINE (info));
 }
 
 char *
-TEGetKindStr (te_info *info)
+TEgetKindStr (te_info *info)
 {
-    DBUG_ENTER ("TEGetKindStr");
+    DBUG_ENTER ("TEgetKindStr");
     DBUG_RETURN (TI_KIND (info));
 }
 
 char *
-TEGetModStr (te_info *info)
+TEgetModStr (te_info *info)
 {
-    DBUG_ENTER ("TEGetModStr");
+    DBUG_ENTER ("TEgetModStr");
     DBUG_RETURN (TI_MOD (info));
 }
 
 char *
-TEGetNameStr (te_info *info)
+TEgetNameStr (te_info *info)
 {
-    DBUG_ENTER ("TEGetNameStr");
+    DBUG_ENTER ("TEgetNameStr");
     DBUG_RETURN (TI_NAME (info));
 }
 
 node *
-TEGetWrapper (te_info *info)
+TEgetWrapper (te_info *info)
 {
-    DBUG_ENTER ("TEGetWrapper");
+    DBUG_ENTER ("TEgetWrapper");
     DBUG_RETURN (TI_FUNDEF (info));
 }
 
 node *
-TEGetAssign (te_info *info)
+TEgetAssign (te_info *info)
 {
-    DBUG_ENTER ("TEGetAssign");
+    DBUG_ENTER ("TEgetAssign");
     DBUG_RETURN (TI_ASSIGN (info));
 }
 
 void *
-TEGetCFFun (te_info *info)
+TEgetCFFun (te_info *info)
 {
-    DBUG_ENTER ("TEGetCFFun");
+    DBUG_ENTER ("TEgetCFFun");
     DBUG_RETURN (TI_CFFUN (info));
 }
 
 te_info *
-TEGetParent (te_info *info)
+TEgetParent (te_info *info)
 {
-    DBUG_ENTER ("TEGetParent");
+    DBUG_ENTER ("TEgetParent");
     DBUG_RETURN (TI_CHN (info));
 }
 
 void
-TEExtendedAbort ()
+TEextendedAbort ()
 {
     node *assign;
     ntype *args;
 
-    DBUG_ENTER ("TEExtendedAbort");
-    DBUG_PRINT ("NTC_INFOCHN", ("act_info_chn is %p", act_info_chn));
-    if (act_info_chn != NULL) {
+    DBUG_ENTER ("TEextendedAbort");
+    DBUG_PRINT ("NTC_INFOCHN", ("act_info_chn is %p", global.act_info_chn));
+    if (global.act_info_chn != NULL) {
         CONT_ERROR ((""));
         CONT_ERROR (("TYPE ERROR TRACE:"));
-        while (act_info_chn != NULL) {
-            assign = TI_ASSIGN (act_info_chn);
-            if (!FUNDEF_IS_LACFUN (TI_FUNDEF (act_info_chn))) {
-                args = NewTypeCheck_Expr (AP_ARGS (ASSIGN_RHS (assign)));
+        while (global.act_info_chn != NULL) {
+            assign = TI_ASSIGN (global.act_info_chn);
+            if (!FUNDEF_ISLACFUN (TI_FUNDEF (global.act_info_chn))) {
+                args = NTCnewTypeCheck_Expr (AP_ARGS (ASSIGN_RHS (assign)));
                 CONT_ERROR (
-                  ("-- %s(?): %d: %s:%s%s", filename, TI_LINE (act_info_chn),
-                   ((TI_MOD (act_info_chn) != NULL) ? TI_MOD (act_info_chn) : "--"),
-                   TI_NAME (act_info_chn), TYType2String (args, FALSE, 0)));
+                  ("-- %s(?): %d: %s:%s%s", global.filename,
+                   TI_LINE (global.act_info_chn),
+                   ((TI_MOD (global.act_info_chn) != NULL) ? TI_MOD (global.act_info_chn)
+                                                           : "--"),
+                   TI_NAME (global.act_info_chn), TYtype2String (args, FALSE, 0)));
             }
-            act_info_chn = TI_CHN (act_info_chn);
+            global.act_info_chn = TI_CHN (global.act_info_chn);
         }
     }
     ABORT_ON_ERROR;
@@ -366,7 +377,7 @@ TEArrayElem2Obj (int pos)
 /******************************************************************************
  *
  * function:
- *    void TEAssureScalar( char *obj, ntype *type)
+ *    void TEassureScalar( char *obj, ntype *type)
  *
  * description:
  *
@@ -374,14 +385,14 @@ TEArrayElem2Obj (int pos)
  ******************************************************************************/
 
 void
-TEAssureScalar (char *obj, ntype *type)
+TEassureScalar (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEAssureScalar");
+    DBUG_ENTER ("TEassureScalar");
 
     if (!MatchScalar (type)) {
-        ERROR (linenum, ("%s should be a scalar; type found: %s", obj,
-                         TYType2String (type, FALSE, 0)));
-        TEExtendedAbort ();
+        ERROR (global.linenum, ("%s should be a scalar; type found: %s", obj,
+                                TYtype2String (type, FALSE, 0)));
+        TEextendedAbort ();
     }
 
     DBUG_VOID_RETURN;
@@ -390,7 +401,7 @@ TEAssureScalar (char *obj, ntype *type)
 /******************************************************************************
  *
  * function:
- *    void TEAssureVect( char *obj, ntype *type)
+ *    void TEassureVect( char *obj, ntype *type)
  *
  * description:
  *
@@ -398,14 +409,14 @@ TEAssureScalar (char *obj, ntype *type)
  ******************************************************************************/
 
 void
-TEAssureVect (char *obj, ntype *type)
+TEassureVect (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEAssureVect");
+    DBUG_ENTER ("TEassureVect");
 
     if (!MatchVect (type)) {
-        ERROR (linenum, ("%s should be a vector; type found: %s", obj,
-                         TYType2String (type, FALSE, 0)));
-        TEExtendedAbort ();
+        ERROR (global.linenum, ("%s should be a vector; type found: %s", obj,
+                                TYtype2String (type, FALSE, 0)));
+        TEextendedAbort ();
     }
 
     DBUG_VOID_RETURN;
@@ -414,7 +425,7 @@ TEAssureVect (char *obj, ntype *type)
 /******************************************************************************
  *
  * function:
- *    void TEAssureIntS( char *obj, ntype *type)
+ *    void TEassureIntS( char *obj, ntype *type)
  *
  * description:
  *
@@ -422,14 +433,14 @@ TEAssureVect (char *obj, ntype *type)
  ******************************************************************************/
 
 void
-TEAssureIntS (char *obj, ntype *type)
+TEassureIntS (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEAssureIntS");
+    DBUG_ENTER ("TEassureIntS");
 
     if (!MatchScalar (type) || !MatchIntA (type)) {
-        ERROR (linenum, ("%s should be of type int; type found: %s", obj,
-                         TYType2String (type, FALSE, 0)));
-        TEExtendedAbort ();
+        ERROR (global.linenum, ("%s should be of type int; type found: %s", obj,
+                                TYtype2String (type, FALSE, 0)));
+        TEextendedAbort ();
     }
     DBUG_VOID_RETURN;
 }
@@ -437,7 +448,7 @@ TEAssureIntS (char *obj, ntype *type)
 /******************************************************************************
  *
  * function:
- *    void TEAssureBoolS( char *obj, ntype *type)
+ *    void TEassureBoolS( char *obj, ntype *type)
  *
  * description:
  *
@@ -445,14 +456,14 @@ TEAssureIntS (char *obj, ntype *type)
  ******************************************************************************/
 
 void
-TEAssureBoolS (char *obj, ntype *type)
+TEassureBoolS (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEAssureBoolS");
+    DBUG_ENTER ("TEassureBoolS");
 
     if (!MatchScalar (type) || !MatchBoolA (type)) {
-        ERROR (linenum, ("%s should be of type bool; type found: %s", obj,
-                         TYType2String (type, FALSE, 0)));
-        TEExtendedAbort ();
+        ERROR (global.linenum, ("%s should be of type bool; type found: %s", obj,
+                                TYtype2String (type, FALSE, 0)));
+        TEextendedAbort ();
     }
     DBUG_VOID_RETURN;
 }
@@ -460,7 +471,7 @@ TEAssureBoolS (char *obj, ntype *type)
 /******************************************************************************
  *
  * function:
- *    void TEAssureBoolA( char *obj, ntype *type)
+ *    void TEassureBoolA( char *obj, ntype *type)
  *
  * description:
  *
@@ -468,14 +479,14 @@ TEAssureBoolS (char *obj, ntype *type)
  ******************************************************************************/
 
 void
-TEAssureBoolA (char *obj, ntype *type)
+TEassureBoolA (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEAssureBoolA");
+    DBUG_ENTER ("TEassureBoolA");
 
     if (!MatchBoolA (type)) {
-        ERROR (linenum, ("element type of %s should be boolean; type found: %s", obj,
-                         TYType2String (type, FALSE, 0)));
-        TEExtendedAbort ();
+        ERROR (global.linenum, ("element type of %s should be boolean; type found: %s",
+                                obj, TYtype2String (type, FALSE, 0)));
+        TEextendedAbort ();
     }
     DBUG_VOID_RETURN;
 }
@@ -483,7 +494,7 @@ TEAssureBoolA (char *obj, ntype *type)
 /******************************************************************************
  *
  * function:
- *    void TEAssureNumS( char *obj, ntype *type)
+ *    void TEassureNumS( char *obj, ntype *type)
  *
  * description:
  *
@@ -491,14 +502,15 @@ TEAssureBoolA (char *obj, ntype *type)
  ******************************************************************************/
 
 void
-TEAssureNumS (char *obj, ntype *type)
+TEassureNumS (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEAssureNumS");
+    DBUG_ENTER ("TEassureNumS");
 
     if (!MatchScalar (type) || !MatchNumA (type)) {
-        ERROR (linenum, ("%s should be of type int / float / double; type found: %s", obj,
-                         TYType2String (type, FALSE, 0)));
-        TEExtendedAbort ();
+        ERROR (global.linenum,
+               ("%s should be of type int / float / double; type found: %s", obj,
+                TYtype2String (type, FALSE, 0)));
+        TEextendedAbort ();
     }
     DBUG_VOID_RETURN;
 }
@@ -506,7 +518,7 @@ TEAssureNumS (char *obj, ntype *type)
 /******************************************************************************
  *
  * function:
- *    void TEAssureNumA( char *obj, ntype *type)
+ *    void TEassureNumA( char *obj, ntype *type)
  *
  * description:
  *
@@ -514,14 +526,14 @@ TEAssureNumS (char *obj, ntype *type)
  ******************************************************************************/
 
 void
-TEAssureNumA (char *obj, ntype *type)
+TEassureNumA (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEAssureNumA");
+    DBUG_ENTER ("TEassureNumA");
 
     if (!MatchNumA (type)) {
-        ERROR (linenum, ("element type of %s should be numeric; type found: %s", obj,
-                         TYType2String (type, FALSE, 0)));
-        TEExtendedAbort ();
+        ERROR (global.linenum, ("element type of %s should be numeric; type found: %s",
+                                obj, TYtype2String (type, FALSE, 0)));
+        TEextendedAbort ();
     }
     DBUG_VOID_RETURN;
 }
@@ -529,7 +541,7 @@ TEAssureNumA (char *obj, ntype *type)
 /******************************************************************************
  *
  * function:
- *    void TEAssureSimpleType( char *obj, ntype *type)
+ *    void TEassureSimpleType( char *obj, ntype *type)
  *
  * description:
  *
@@ -537,14 +549,14 @@ TEAssureNumA (char *obj, ntype *type)
  ******************************************************************************/
 
 void
-TEAssureSimpleType (char *obj, ntype *type)
+TEassureSimpleType (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEAssureSimpleType");
+    DBUG_ENTER ("TEassureSimpleType");
 
-    if (!TYIsSimple (TYGetScalar (type))) {
-        ERROR (linenum, ("%s should be a built-in type; type found: %s", obj,
-                         TYType2String (type, FALSE, 0)));
-        TEExtendedAbort ();
+    if (!TYisSimple (TYgetScalar (type))) {
+        ERROR (global.linenum, ("%s should be a built-in type; type found: %s", obj,
+                                TYtype2String (type, FALSE, 0)));
+        TEextendedAbort ();
     }
     DBUG_VOID_RETURN;
 }
@@ -552,7 +564,7 @@ TEAssureSimpleType (char *obj, ntype *type)
 /******************************************************************************
  *
  * function:
- *    void TEAssureIntVect( char *obj, ntype *type)
+ *    void TEassureIntVect( char *obj, ntype *type)
  *
  * description:
  *
@@ -560,14 +572,14 @@ TEAssureSimpleType (char *obj, ntype *type)
  ******************************************************************************/
 
 void
-TEAssureIntVect (char *obj, ntype *type)
+TEassureIntVect (char *obj, ntype *type)
 {
     DBUG_ENTER ("AssureIntVect");
 
     if (!MatchIntA (type) || !MatchVect (type)) {
-        ERROR (linenum, ("%s should be an integer vector; type found: %s", obj,
-                         TYType2String (type, FALSE, 0)));
-        TEExtendedAbort ();
+        ERROR (global.linenum, ("%s should be an integer vector; type found: %s", obj,
+                                TYtype2String (type, FALSE, 0)));
+        TEextendedAbort ();
     }
     DBUG_VOID_RETURN;
 }
@@ -575,7 +587,7 @@ TEAssureIntVect (char *obj, ntype *type)
 /******************************************************************************
  *
  * function:
- *    void TEAssureNonNegativeValues( char *obj, ntype *type)
+ *    void TEassureNonNegativeValues( char *obj, ntype *type)
  *
  * description:
  *
@@ -583,22 +595,23 @@ TEAssureIntVect (char *obj, ntype *type)
  ******************************************************************************/
 
 void
-TEAssureNonNegativeValues (char *obj, ntype *type)
+TEassureNonNegativeValues (char *obj, ntype *type)
 {
     int i, dim;
     int *dv;
 
-    DBUG_ENTER ("TEAssureNonNegativeValues");
+    DBUG_ENTER ("TEassureNonNegativeValues");
 
-    if (TYGetConstr (type) == TC_akv) {
-        dim = SHGetExtent (TYGetShape (type), 0);
-        dv = (int *)COGetDataVec (TYGetValue (type));
+    if (TYgetConstr (type) == TC_akv) {
+        dim = SHgetExtent (TYgetShape (type), 0);
+        dv = (int *)COgetDataVec (TYgetValue (type));
 
         for (i = 0; i < dim; i++) {
             if (dv[i] < 0) {
-                ERROR (linenum, ("%s should not contain negative values; type found: %s",
-                                 obj, TYType2String (type, FALSE, 0)));
-                TEExtendedAbort ();
+                ERROR (global.linenum,
+                       ("%s should not contain negative values; type found: %s", obj,
+                        TYtype2String (type, FALSE, 0)));
+                TEextendedAbort ();
             }
         }
     }
@@ -608,7 +621,7 @@ TEAssureNonNegativeValues (char *obj, ntype *type)
 /******************************************************************************
  *
  * function:
- *    void TEAssureShpMatchesDim( char *obj1, ntype *type1,
+ *    void TEassureShpMatchesDim( char *obj1, ntype *type1,
  *                                char *obj2, ntype *type2)
  *
  * description:
@@ -617,19 +630,19 @@ TEAssureNonNegativeValues (char *obj, ntype *type)
  ******************************************************************************/
 
 void
-TEAssureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2)
+TEassureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
-    DBUG_ENTER ("TEAssureShpMatchesDim");
+    DBUG_ENTER ("TEassureShpMatchesDim");
 
-    if (((TYGetConstr (type1) == TC_aks) || (TYGetConstr (type1) == TC_akv))
-        && ((TYGetConstr (type2) == TC_akv) || (TYGetConstr (type2) == TC_aks)
-            || (TYGetConstr (type2) == TC_akd))
-        && (SHGetExtent (TYGetShape (type1), 0) != TYGetDim (type2))) {
-        ERROR (linenum, ("shape of %s should match dimensionality of %s;"
-                         " types found: %s  and  %s",
-                         obj1, obj2, TYType2String (type1, FALSE, 0),
-                         TYType2String (type2, FALSE, 0)));
-        TEExtendedAbort ();
+    if (((TYgetConstr (type1) == TC_aks) || (TYgetConstr (type1) == TC_akv))
+        && ((TYgetConstr (type2) == TC_akv) || (TYgetConstr (type2) == TC_aks)
+            || (TYgetConstr (type2) == TC_akd))
+        && (SHgetExtent (TYgetShape (type1), 0) != TYgetDim (type2))) {
+        ERROR (global.linenum, ("shape of %s should match dimensionality of %s;"
+                                " types found: %s  and  %s",
+                                obj1, obj2, TYtype2String (type1, FALSE, 0),
+                                TYtype2String (type2, FALSE, 0)));
+        TEextendedAbort ();
     }
 
     DBUG_VOID_RETURN;
@@ -637,7 +650,7 @@ TEAssureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2)
 
 /** <!--********************************************************************-->
  *
- * @fn void TEAssureValMatchesShape( char *obj1, ntype *type1,
+ * @fn void TEassureValMatchesShape( char *obj1, ntype *type1,
  *                                   char *obj2, ntype *type2)
  *
  *   @brief  makes shure, that if type1 is AKV and type2 is AKS, type1
@@ -648,24 +661,24 @@ TEAssureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2)
  ******************************************************************************/
 
 void
-TEAssureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
+TEassureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
     int i, dim;
     int *dv;
 
-    DBUG_ENTER ("TEAssureValMatchesShape");
+    DBUG_ENTER ("TEassureValMatchesShape");
 
-    if ((TYGetConstr (type1) == TC_akv)
-        && ((TYGetConstr (type2) == TC_aks) || (TYGetConstr (type2) == TC_akv))) {
-        dim = TYGetDim (type2);
-        dv = (int *)COGetDataVec (TYGetValue (type1));
+    if ((TYgetConstr (type1) == TC_akv)
+        && ((TYgetConstr (type2) == TC_aks) || (TYgetConstr (type2) == TC_akv))) {
+        dim = TYgetDim (type2);
+        dv = (int *)COgetDataVec (TYgetValue (type1));
         for (i = 0; i < dim; i++) {
-            if ((dv[i] < 0) || (dv[i] >= SHGetExtent (TYGetShape (type2), i))) {
-                ERROR (linenum, ("%s should be legal index into %s;"
-                                 " types found: %s  and  %s",
-                                 obj1, obj2, TYType2String (type1, FALSE, 0),
-                                 TYType2String (type2, FALSE, 0)));
-                TEExtendedAbort ();
+            if ((dv[i] < 0) || (dv[i] >= SHgetExtent (TYgetShape (type2), i))) {
+                ERROR (global.linenum, ("%s should be legal index into %s;"
+                                        " types found: %s  and  %s",
+                                        obj1, obj2, TYtype2String (type1, FALSE, 0),
+                                        TYtype2String (type2, FALSE, 0)));
+                TEextendedAbort ();
             }
         }
     }
@@ -675,7 +688,7 @@ TEAssureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
 
 /** <!--********************************************************************-->
  *
- * @fn void TEAssureAbsValFitsShape( char *obj1, ntype *type1,
+ * @fn void TEassureAbsValFitsShape( char *obj1, ntype *type1,
  *                                   char *obj2, ntype *type2)
  *
  *   @brief  makes shure, that if type1 is AKV and type2 is AKS, type1
@@ -686,24 +699,24 @@ TEAssureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
  ******************************************************************************/
 
 void
-TEAssureAbsValFitsShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
+TEassureAbsValFitsShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
     int i, dim;
     int *dv;
 
-    DBUG_ENTER ("TEAssureAbsValFitsShape");
+    DBUG_ENTER ("TEassureAbsValFitsShape");
 
-    if ((TYGetConstr (type1) == TC_akv)
-        && ((TYGetConstr (type2) == TC_aks) || (TYGetConstr (type2) == TC_akv))) {
-        dim = TYGetDim (type2);
-        dv = (int *)COGetDataVec (TYGetValue (type1));
+    if ((TYgetConstr (type1) == TC_akv)
+        && ((TYgetConstr (type2) == TC_aks) || (TYgetConstr (type2) == TC_akv))) {
+        dim = TYgetDim (type2);
+        dv = (int *)COgetDataVec (TYgetValue (type1));
         for (i = 0; i < dim; i++) {
-            if (abs (dv[i]) > SHGetExtent (TYGetShape (type2), i)) {
-                ERROR (linenum, ("%s should not exceed the shape of %s;"
-                                 " types found: %s  and  %s",
-                                 obj1, obj2, TYType2String (type1, FALSE, 0),
-                                 TYType2String (type2, FALSE, 0)));
-                TEExtendedAbort ();
+            if (abs (dv[i]) > SHgetExtent (TYgetShape (type2), i)) {
+                ERROR (global.linenum, ("%s should not exceed the shape of %s;"
+                                        " types found: %s  and  %s",
+                                        obj1, obj2, TYtype2String (type1, FALSE, 0),
+                                        TYtype2String (type2, FALSE, 0)));
+                TEextendedAbort ();
             }
         }
     }
@@ -713,7 +726,7 @@ TEAssureAbsValFitsShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
 
 /** <!--********************************************************************-->
  *
- * @fn void TEAssureProdValMatchesProdShape( char *obj1, ntype *type1,
+ * @fn void TEassureProdValMatchesProdShape( char *obj1, ntype *type1,
  *                                           char *obj2, ntype *type2)
  *
  *   @brief  makes shure, that if type1 is AKV and type2 is AKS, type1
@@ -723,27 +736,27 @@ TEAssureAbsValFitsShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
  ******************************************************************************/
 
 void
-TEAssureProdValMatchesProdShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
+TEassureProdValMatchesProdShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
     int i, dim, prod;
     int *dv;
 
-    DBUG_ENTER ("TEAssureProdValMatchesProdShape");
+    DBUG_ENTER ("TEassureProdValMatchesProdShape");
 
-    if ((TYGetConstr (type1) == TC_akv)
-        && ((TYGetConstr (type2) == TC_aks) || (TYGetConstr (type2) == TC_akv))) {
-        dim = SHGetExtent (TYGetShape (type1), 0);
-        dv = (int *)COGetDataVec (TYGetValue (type1));
+    if ((TYgetConstr (type1) == TC_akv)
+        && ((TYgetConstr (type2) == TC_aks) || (TYgetConstr (type2) == TC_akv))) {
+        dim = SHgetExtent (TYgetShape (type1), 0);
+        dv = (int *)COgetDataVec (TYgetValue (type1));
         prod = 1;
         for (i = 0; i < dim; i++) {
             prod *= dv[i];
         }
-        if (prod != SHGetUnrLen (TYGetShape (type2))) {
-            ERROR (linenum, ("%s should be legal shape for the data vector of %s;"
-                             " types found: %s  and  %s",
-                             obj1, obj2, TYType2String (type1, FALSE, 0),
-                             TYType2String (type2, FALSE, 0)));
-            TEExtendedAbort ();
+        if (prod != SHgetUnrLen (TYgetShape (type2))) {
+            ERROR (global.linenum, ("%s should be legal shape for the data vector of %s;"
+                                    " types found: %s  and  %s",
+                                    obj1, obj2, TYtype2String (type1, FALSE, 0),
+                                    TYtype2String (type2, FALSE, 0)));
+            TEextendedAbort ();
         }
     }
 
@@ -753,27 +766,27 @@ TEAssureProdValMatchesProdShape (char *obj1, ntype *type1, char *obj2, ntype *ty
 /******************************************************************************
  *
  * function:
- *    void TEAssureSameSimpleType( char *obj1, ntype *type1,
+ *    void TEassureSameSimpleType( char *obj1, ntype *type1,
  *                                 char *obj2, ntype *type2)
  *
  * description:
  *    expects two array types with  a simple type as scalar type!!!
- *    This property may be checked by applying   TEAssureSimpleType( )
+ *    This property may be checked by applying   TEassureSimpleType( )
  *    to the given argument types prior to calling this function.
  *
  ******************************************************************************/
 
 void
-TEAssureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2)
+TEassureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
-    DBUG_ENTER ("TEAssureSameSimpleType");
+    DBUG_ENTER ("TEassureSameSimpleType");
 
-    if (TYGetSimpleType (TYGetScalar (type1)) != TYGetSimpleType (TYGetScalar (type2))) {
-        ERROR (linenum, ("element types of %s and %s should be identical;"
-                         " types found: %s  and  %s",
-                         obj1, obj2, TYType2String (type1, FALSE, 0),
-                         TYType2String (type2, FALSE, 0)));
-        TEExtendedAbort ();
+    if (TYgetSimpleType (TYgetScalar (type1)) != TYgetSimpleType (TYgetScalar (type2))) {
+        ERROR (global.linenum, ("element types of %s and %s should be identical;"
+                                " types found: %s  and  %s",
+                                obj1, obj2, TYtype2String (type1, FALSE, 0),
+                                TYtype2String (type2, FALSE, 0)));
+        TEextendedAbort ();
     }
 
     DBUG_VOID_RETURN;
@@ -782,7 +795,7 @@ TEAssureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2)
 /******************************************************************************
  *
  * function:
- *    void TEAssureSameScalarType( char *obj1, ntype *type1,
+ *    void TEassureSameScalarType( char *obj1, ntype *type1,
  *                                 char *obj2, ntype *type2)
  *
  * description:
@@ -790,16 +803,16 @@ TEAssureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2)
  ******************************************************************************/
 
 void
-TEAssureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2)
+TEassureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
-    DBUG_ENTER ("TEAssureSameScalarType");
+    DBUG_ENTER ("TEassureSameScalarType");
 
-    if (!TYEqTypes (TYGetScalar (type1), TYGetScalar (type2))) {
-        ERROR (linenum, ("element types of %s and %s should be identical;"
-                         " types found: %s  and  %s",
-                         obj1, obj2, TYType2String (type1, FALSE, 0),
-                         TYType2String (type2, FALSE, 0)));
-        TEExtendedAbort ();
+    if (!TYeqTypes (TYgetScalar (type1), TYgetScalar (type2))) {
+        ERROR (global.linenum, ("element types of %s and %s should be identical;"
+                                " types found: %s  and  %s",
+                                obj1, obj2, TYtype2String (type1, FALSE, 0),
+                                TYtype2String (type2, FALSE, 0)));
+        TEextendedAbort ();
     }
 
     DBUG_VOID_RETURN;
@@ -808,7 +821,7 @@ TEAssureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2)
 /******************************************************************************
  *
  * function:
- *    ntype *TEAssureSameShape( char *obj1, ntype *type1,
+ *    ntype *TEassureSameShape( char *obj1, ntype *type1,
  *                              char *obj2, ntype *type2)
  *
  * description:
@@ -817,28 +830,28 @@ TEAssureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2)
  ******************************************************************************/
 
 ntype *
-TEAssureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
+TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
     ntype *res = NULL;
     ntype *pend1 = NULL, *pend2 = NULL;
     ntype *type1_org = NULL, *type2_org = NULL;
 
-    DBUG_ENTER ("TEAssureSameShape");
+    DBUG_ENTER ("TEassureSameShape");
 
     /**
      * lift AKVs to AKSs!
      * pend<i> indicates ntype structures that have to be deleted!
      * type<i>_org is needed for better error messages!
      */
-    if (TYGetConstr (type1) == TC_akv) {
-        pend1 = TYMakeAKS (TYCopyType (TYGetScalar (type1)),
-                           SHCopyShape (TYGetShape (type1)));
+    if (TYgetConstr (type1) == TC_akv) {
+        pend1 = TYmakeAKS (TYcopyType (TYgetScalar (type1)),
+                           SHcopyShape (TYgetShape (type1)));
         type1_org = type1;
         type1 = pend1;
     }
-    if (TYGetConstr (type2) == TC_akv) {
-        pend2 = TYMakeAKS (TYCopyType (TYGetScalar (type2)),
-                           SHCopyShape (TYGetShape (type2)));
+    if (TYgetConstr (type2) == TC_akv) {
+        pend2 = TYmakeAKS (TYcopyType (TYgetScalar (type2)),
+                           SHcopyShape (TYgetShape (type2)));
         type2_org = type2;
         type2 = pend2;
     }
@@ -847,26 +860,26 @@ TEAssureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
      *
      * Now, the AKV free switch:
      */
-    switch (TYGetConstr (type1)) {
+    switch (TYgetConstr (type1)) {
     case TC_aks:
-        switch (TYGetConstr (type2)) {
+        switch (TYgetConstr (type2)) {
         case TC_aks:
-            if (SHCompareShapes (TYGetShape (type2), TYGetShape (type1))) {
-                res = TYCopyType (type2);
+            if (SHcompareShapes (TYgetShape (type2), TYgetShape (type1))) {
+                res = TYcopyType (type2);
             }
             break;
         case TC_akd:
-            if (TYGetDim (type2) == TYGetDim (type1)) {
-                res = TYCopyType (type1);
+            if (TYgetDim (type2) == TYgetDim (type1)) {
+                res = TYcopyType (type1);
             }
             break;
         case TC_audgz:
-            if (TYGetDim (type1) > 0) {
-                res = TYCopyType (type1);
+            if (TYgetDim (type1) > 0) {
+                res = TYcopyType (type1);
             }
             break;
         case TC_aud:
-            res = TYCopyType (type1);
+            res = TYcopyType (type1);
             break;
         default:
             DBUG_ASSERT (FALSE, "AssureSameShape applied to non-array type");
@@ -874,20 +887,20 @@ TEAssureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
         break;
 
     case TC_akd:
-        switch (TYGetConstr (type2)) {
+        switch (TYgetConstr (type2)) {
         case TC_aks:
         case TC_akd:
-            if (TYGetDim (type2) == TYGetDim (type1)) {
-                res = TYCopyType (type2);
+            if (TYgetDim (type2) == TYgetDim (type1)) {
+                res = TYcopyType (type2);
             }
             break;
         case TC_audgz:
-            if (TYGetDim (type1) > 0) {
-                res = TYCopyType (type1);
+            if (TYgetDim (type1) > 0) {
+                res = TYcopyType (type1);
             }
             break;
         case TC_aud:
-            res = TYCopyType (type1);
+            res = TYcopyType (type1);
             break;
         default:
             DBUG_ASSERT (FALSE, "AssureSameShape applied to non-array type");
@@ -895,16 +908,16 @@ TEAssureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
         break;
 
     case TC_audgz:
-        switch (TYGetConstr (type2)) {
+        switch (TYgetConstr (type2)) {
         case TC_aks:
         case TC_akd:
-            if (TYGetDim (type2) > 0) {
-                res = TYCopyType (type2);
+            if (TYgetDim (type2) > 0) {
+                res = TYcopyType (type2);
             }
             break;
         case TC_audgz:
         case TC_aud:
-            res = TYCopyType (type1);
+            res = TYcopyType (type1);
             break;
         default:
             DBUG_ASSERT (FALSE, "AssureSameShape applied to non-array type");
@@ -912,7 +925,7 @@ TEAssureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
         break;
 
     case TC_aud:
-        res = TYCopyType (type2);
+        res = TYcopyType (type2);
         break;
 
     default:
@@ -921,19 +934,19 @@ TEAssureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
 
     if (pend1 != NULL) {
         type1 = type1_org;
-        pend1 = TYFreeType (pend1);
+        pend1 = TYfreeType (pend1);
     }
     if (pend2 != NULL) {
         type2 = type2_org;
-        pend2 = TYFreeType (pend2);
+        pend2 = TYfreeType (pend2);
     }
 
     if (res == NULL) {
-        ERROR (linenum, ("%s and %s should have identical shapes;"
-                         " types found: %s  and  %s",
-                         obj1, obj2, TYType2String (type1, FALSE, 0),
-                         TYType2String (type2, FALSE, 0)));
-        TEExtendedAbort ();
+        ERROR (global.linenum, ("%s and %s should have identical shapes;"
+                                " types found: %s  and  %s",
+                                obj1, obj2, TYtype2String (type1, FALSE, 0),
+                                TYtype2String (type2, FALSE, 0)));
+        TEextendedAbort ();
     }
 
     DBUG_RETURN (res);
