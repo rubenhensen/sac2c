@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2004/11/27 03:14:17  cg
+ * removed CDFGcond
+ *
  * Revision 1.8  2004/11/23 20:52:11  skt
  * big compiler brushing during SACDevCampDK 2k4
  *
@@ -49,7 +52,9 @@ extern node *CDFGblock (node *arg_node, info *arg_info);
 
 extern node *CDFGassign (node *arg_node, info *arg_info);
 
-extern node *CDFGcond (node *arg_node, info *arg_info);
+/*
+extern node *CDFGcond(node *arg_node, info *arg_info);
+*/
 
 extern node *CDFGid (node *arg_node, info *arg_info);
 
