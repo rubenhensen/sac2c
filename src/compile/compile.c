@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.99  2003/09/25 18:59:47  dkr
+ * new argument 'copyfun' added to icms WL_ASSIGN, WL_ASSIGN__COPY
+ *
  * Revision 3.98  2003/09/25 10:54:28  dkr
  * to_unq() and from_unq() are prfs now
  *
@@ -5345,8 +5348,13 @@ COMPWLgridx (node *arg_node, node *arg_info)
                 case WO_modarray:
                     DBUG_ASSERT ((offset_needed), "wrong value for OFFSET_NEEDED found!");
                     icm_name = "WL_ASSIGN__COPY";
-                    icm_args = MakeExprs (DupNode (NWITH2_ARRAY (wlnode)),
-                                          MakeIcmArgs_WL_OP2 (arg_node));
+                    icm_args
+                      = AppendExprs (MakeExprs (DupNode (NWITH2_ARRAY (wlnode)),
+                                                MakeIcmArgs_WL_OP2 (arg_node)),
+                                     MakeExprs (MakeId_Copy (
+                                                  GenericFun (0, ID_TYPE (NWITH2_ARRAY (
+                                                                   wlnode)))),
+                                                NULL));
                     break;
 
                 case WO_foldfun:
@@ -5393,9 +5401,14 @@ COMPWLgridx (node *arg_node, node *arg_info)
                     DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "code expr is not a id");
 
                     icm_name = "WL_ASSIGN";
-                    icm_args = MakeExprs (DupNode (cexpr),
-                                          MakeExprs (MakeNum (GetDim (ID_TYPE (cexpr))),
-                                                     MakeIcmArgs_WL_OP2 (arg_node)));
+                    icm_args = AppendExprs (MakeExprs (DupNode (cexpr),
+                                                       MakeExprs (MakeNum (GetDim (
+                                                                    ID_TYPE (cexpr))),
+                                                                  MakeIcmArgs_WL_OP2 (
+                                                                    arg_node))),
+                                            MakeExprs (MakeId_Copy (
+                                                         GenericFun (0, ID_TYPE (cexpr))),
+                                                       NULL));
                     /*
                      * we must decrement the RC of 'cexpr' (consumed argument)
                      */
