@@ -272,8 +272,6 @@ SSARCfundef (node *fundef, node *arg_info)
     INFO_SSARC_DEPTH (arg_info) = 0;
     INFO_SSARC_MODE (arg_info) = rc_default;
 
-    Print (fundef);
-
     /* Traverse args in order to initialize refcounting environment */
     if (FUNDEF_ARGS (fundef) != NULL)
         FUNDEF_ARGS (fundef) = Trav (FUNDEF_ARGS (fundef), arg_info);
@@ -408,53 +406,59 @@ SSARCcond (node *arg_node, node *arg_info)
 
     if (INFO_SSARC_MODE (arg_info) == rc_default) {
         COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
-        if (IncreaseEnvOnZero (ID_AVIS (COND_COND (arg_node)), arg_info))
-            BLOCK_INSTR (COND_THEN (arg_node))
-              = MakeAdjustRC (ID_AVIS (COND_COND (arg_node)), -1, arg_info);
+        /*     if (IncreaseEnvOnZero(ID_AVIS(COND_COND(arg_node)), arg_info)) */
+        /*       BLOCK_INSTR(COND_THEN(arg_node)) =  */
+        /*         MakeAdjustRC(ID_AVIS(COND_COND(arg_node)),-1, */
+        /* 		     BLOCK_INSTR(COND_THEN(arg_node))); */
 
     } else {
         COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
-        if (IncreaseEnvOnZero (ID_AVIS (COND_COND (arg_node)), arg_info))
-            BLOCK_INSTR (COND_ELSE (arg_node))
-              = MakeAdjustRC (ID_AVIS (COND_COND (arg_node)), -1, arg_info);
+        /*     if (IncreaseEnvOnZero(ID_AVIS(COND_COND(arg_node)), arg_info)) */
+        /*       BLOCK_INSTR(COND_ELSE(arg_node)) =  */
+        /*         MakeAdjustRC(ID_AVIS(COND_COND(arg_node)),-1, */
+        /* 		     BLOCK_INSTR(COND_ELSE(arg_node))); */
 
         /* After both environments have been created,
            annote missing ADJUST_RCs at the beginning of blocks and
            simultaneously merge both environments */
         n = FUNDEF_ARGS (INFO_SSARC_FUNDEF (arg_info));
         while (n != NULL) {
-            t = PopEnv (ARG_AVIS (n), arg_info);
-            KillSecondEnv (ARG_AVIS (n));
             e = PopEnv (ARG_AVIS (n), arg_info);
             KillSecondEnv (ARG_AVIS (n));
+            t = PopEnv (ARG_AVIS (n), arg_info);
+            KillSecondEnv (ARG_AVIS (n));
             m = e < t ? e : t;
-            AddEnv (ARG_AVIS (n), arg_info, m);
+            AddEnv (ARG_AVIS (n), arg_info, m + 1);
             BLOCK_INSTR (COND_THEN (arg_node))
-              = MakeAdjustRC (ARG_AVIS (n), t - m, BLOCK_INSTR (COND_THEN (arg_node)));
+              = MakeAdjustRC (ARG_AVIS (n), t - m - 1,
+                              BLOCK_INSTR (COND_THEN (arg_node)));
             BLOCK_INSTR (COND_ELSE (arg_node))
-              = MakeAdjustRC (ARG_AVIS (n), e - m, BLOCK_INSTR (COND_ELSE (arg_node)));
+              = MakeAdjustRC (ARG_AVIS (n), e - m - 1,
+                              BLOCK_INSTR (COND_ELSE (arg_node)));
             n = ARG_NEXT (n);
         }
 
         n = BLOCK_VARDEC (FUNDEF_BODY (INFO_SSARC_FUNDEF (arg_info)));
         while (n != NULL) {
             if (AVIS_SSARC_COUNTED (VARDEC_AVIS (n)) == FALSE) {
-                t = PopEnv (VARDEC_AVIS (n), arg_info);
-                KillSecondEnv (VARDEC_AVIS (n));
                 e = PopEnv (VARDEC_AVIS (n), arg_info);
                 KillSecondEnv (VARDEC_AVIS (n));
+                t = PopEnv (VARDEC_AVIS (n), arg_info);
+                KillSecondEnv (VARDEC_AVIS (n));
                 m = e < t ? e : t;
-                AddEnv (VARDEC_AVIS (n), arg_info, m);
+                AddEnv (VARDEC_AVIS (n), arg_info, m + 1);
                 BLOCK_INSTR (COND_THEN (arg_node))
-                  = MakeAdjustRC (VARDEC_AVIS (n), t - m,
+                  = MakeAdjustRC (VARDEC_AVIS (n), t - m - 1,
                                   BLOCK_INSTR (COND_THEN (arg_node)));
                 BLOCK_INSTR (COND_ELSE (arg_node))
-                  = MakeAdjustRC (VARDEC_AVIS (n), e - m,
+                  = MakeAdjustRC (VARDEC_AVIS (n), e - m - 1,
                                   BLOCK_INSTR (COND_ELSE (arg_node)));
             }
             n = VARDEC_NEXT (n);
         }
     }
+
+    INFO_SSARC_RHS (arg_info) = rc_cond;
 
     DBUG_RETURN (arg_node);
 }
@@ -485,7 +489,18 @@ SSARClet (node *arg_node, node *arg_info)
                 PopEnv (IDS_AVIS (LET_IDS (arg_node)), arg_info));
         DBUG_RETURN (arg_node);
     case rc_funcond:
-        /* Don't do anything as FunCond is a pseudo function */
+        /* Treat FunCond like a variable Copy assignment */
+        switch (INFO_SSARC_MODE (arg_info)) {
+        case rc_default:
+            AddEnv (IDS_AVIS (ID_IDS (EXPRS_EXPR (FUNCOND_THEN (LET_EXPR (arg_node))))),
+                    arg_info, PopEnv (IDS_AVIS (LET_IDS (arg_node)), arg_info));
+            KillSecondEnv (IDS_AVIS (LET_IDS (arg_node)));
+            break;
+        case rc_else:
+            AddEnv (IDS_AVIS (ID_IDS (EXPRS_EXPR (FUNCOND_ELSE (LET_EXPR (arg_node))))),
+                    arg_info, PopEnv (IDS_AVIS (LET_IDS (arg_node)), arg_info));
+            break;
+        }
         DBUG_RETURN (arg_node);
     default:
         Print (arg_node);
@@ -510,16 +525,6 @@ SSARCfuncond (node *arg_node, node *arg_info)
 
     INFO_SSARC_RHS (arg_info) = rc_funcond;
 
-    switch (INFO_SSARC_MODE (arg_info)) {
-    case rc_default:
-        if (FUNCOND_THEN (arg_node) != NULL)
-            FUNCOND_THEN (arg_node) = Trav (FUNCOND_THEN (arg_node), arg_info);
-        break;
-    case rc_else:
-        if (FUNCOND_ELSE (arg_node) != NULL)
-            FUNCOND_ELSE (arg_node) = Trav (FUNCOND_ELSE (arg_node), arg_info);
-        break;
-    }
     DBUG_RETURN (arg_node);
 }
 
@@ -531,13 +536,12 @@ SSARCid (node *arg_node, node *arg_info)
     switch (INFO_SSARC_RHS (arg_info)) {
     case rc_undef:
         INFO_SSARC_RHS (arg_info) = rc_copy;
-        /* Add one to the environment */
-        /*      IncreaseEnv(ID_AVIS(arg_node), arg_info);*/
-        /* Don't put id into declist as this is a copy assignment */
+        break;
+    case rc_funcond:
+        DBUG_ASSERT (FALSE, "Cannot arrive in Funcond");
         break;
     case rc_funap:
     case rc_return:
-    case rc_funcond:
         /* Add one to the environment */
         IncreaseEnv (ID_AVIS (arg_node), arg_info);
 
@@ -648,7 +652,7 @@ SSARCassign (node *arg_node, node *arg_info)
 
     /* If this node happens to be a conditional,
        traverse again! */
-    if (INFO_SSARC_RHS (arg_info) = rc_cond) {
+    if (INFO_SSARC_RHS (arg_info) == rc_cond) {
         INFO_SSARC_MODE (arg_info) = rc_else;
 
         n = FUNDEF_ARGS (INFO_SSARC_FUNDEF (arg_info));
@@ -707,7 +711,7 @@ SSARefCount (node *syntax_tree)
 
     info = FreeTree (info);
 
-    syntax_tree = UndoSSA (syntax_tree);
+    /*   syntax_tree = UndoSSA( syntax_tree ); */
 
     DBUG_RETURN (syntax_tree);
 }
