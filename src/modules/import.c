@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/08/28 16:15:00  cg
+ * Revision 1.19  1995/08/30 14:05:12  cg
+ * compare-macros extracted to new header-file.
+ *
+ * Revision 1.18  1995/08/28  16:15:00  cg
  * Bugs in GenLinkerList fixed.
  *
  * Revision 1.17  1995/08/24  14:17:09  cg
@@ -97,49 +100,12 @@
 #include "filemgr.h"
 #include "import.h"
 
+#include "compare_macros.h"
+
 extern void DoImport (node *modul, node *implist, char *mastermod);
 
 static mod *mod_tab = NULL;
 /* static charlist *linker_tab=NULL; */
-
-/* Some macros for comparing types, names, modules, etc. */
-
-#define MOD(a) (NULL == a) ? "" : a
-
-#define CMP_TYPE_ID(a, b)                                                                \
-    ((NULL == a->id_mod)                                                                 \
-       ? ((!strcmp (a->id, b->id)) && (NULL == b->id_mod))                               \
-       : ((NULL == b->id_mod)                                                            \
-            ? 0                                                                          \
-            : ((!strcmp (a->id, b->id)) && (!strcmp (a->id_mod, b->id_mod)))))
-
-#define CMP_TYPE_USER(a, b)                                                              \
-    ((NULL == a->name_mod)                                                               \
-       ? ((!strcmp (a->name, b->name)) && (NULL == b->name_mod))                         \
-       : ((NULL == b->name_mod)                                                          \
-            ? 0                                                                          \
-            : ((!strcmp (a->name, b->name)) && (!strcmp (a->name_mod, b->name_mod)))))
-
-#define CMP_TYPE_HIDDEN(a, b)                                                            \
-    ((NULL == a->name)                                                                   \
-       ? ((NULL == b->name)                                                              \
-            ? 0                                                                          \
-            : (!(strcmp (a->id, b->name) && CMP_MOD (a->id_mod, b->name_mod))))          \
-       : ((NULL == b->name)                                                              \
-            ? (!(strcmp (a->name, b->id) && CMP_MOD (a->name_mod, b->id_mod)))           \
-            : (!(strcmp (a->name, b->name) && CMP_MOD (a->name_mod, b->name_mod)))))
-
-#define CMP_FUN_ID(a, b) CMP_TYPE_ID (a, b)
-
-#define CMP_MOD(a, b) ((NULL == a) ? (NULL == b) : ((NULL == b) ? 0 : (!strcmp (a, b))))
-
-#define CMP_TYPEDEF(a, b) CMP_TYPE_ID (a->info.types, b->info.types)
-
-#define CMP_OBJDEF(a, b) CMP_TYPE_ID (a->info.types, b->info.types)
-
-#define CMP_FUNDEF(a, b)                                                                 \
-    ((CMP_FUN_ID (a->info.types, b->info.types)) ? (CmpDomain (a->node[2], b->node[2]))  \
-                                                 : 0)
 
 /*
  *
