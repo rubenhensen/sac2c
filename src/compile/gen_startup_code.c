@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1999/02/22 12:54:34  cg
+ * SPMD frame is now printed iff multi-threaded code is desired.
+ *
  * Revision 1.16  1999/01/08 17:23:21  cg
  * Bug fixed in generation of SPMD-frames: now imported functions
  * with body are also checked for containing SPMD-blocks.
@@ -74,7 +77,7 @@
  *
  * description:
  *
- *   This file provides routines that write C code that is independent from
+ *   This file provides routines that write C code that is rather independent from
  *   the specific SAC source file. It is essentially required to specify
  *   and initialize the SAC runtime system. For this reason, additional code
  *   is produced at 3 different positions: at the beginning of each C source,
@@ -93,18 +96,30 @@
 #include "tree_basic.h"
 #include "traverse.h"
 
+/******************************************************************************
+ *
+ * global variable: static int spmd_block_counter
+ *
+ * description:
+ *
+ *   This variable is used to detect whether a given function definition contains
+ *   any SPMD blocks. If not, a dummy entry has to be inserted at the respective
+ *   position of the global SPMD frame.
+ *
+ ******************************************************************************/
+
 static int spmd_block_counter;
 
 /******************************************************************************
  *
  * function:
- *
+ *   int GSCCalcMasterclass(int num_threads)
  *
  * description:
  *
- *
- *
- *
+ *   For a given number of thread used, this function calculates the worker
+ *   class of the master thread, i.e. the number of worker threads the master
+ *   thread has to synchronize itslef with.
  *
  ******************************************************************************/
 
@@ -126,12 +141,12 @@ GSCCalcMasterclass (int num_threads)
 /******************************************************************************
  *
  * function:
- *
+ *   void PrintTargetPlatform()
  *
  * description:
  *
- *
- *
+ *   This function prints macro definitions concerning the respective
+ *   target platform.
  *
  *
  ******************************************************************************/
@@ -151,13 +166,14 @@ PrintTargetPlatform ()
 /******************************************************************************
  *
  * function:
- *
+ *   void PrintGlobalSwitches()
  *
  * description:
  *
- *
- *
- *
+ *   This function prints macro definitions representing global switches, i.e.
+ *   their value always is either 0 (disabled) or 1 (enabled). The value of
+ *   any switch triggers the selection of custom code during the inclusion
+ *   of the standard header file sac.h.
  *
  ******************************************************************************/
 
@@ -209,13 +225,18 @@ PrintGlobalSwitches ()
 /******************************************************************************
  *
  * function:
- *
+ *   void PrintSpmdData(node *syntax_tree)
  *
  * description:
  *
- *
- *
- *
+ *   This function initializes an additional traversal of the syntax tree
+ *   during which the so-called SPMD-frame is infered and printed. This
+ *   SPMD-frame is required as temporary storage for arguments in the
+ *   specialized parameter passing mechanism of SPMD functions. Actually,
+ *   a union type is built over all SPMD functions. For each SPMD function
+ *   it contains a struct of all parameters. The SPMD frame itself is nothing
+ *   but a global variable of this type. This simple solution exploits the
+ *   fact that SPMD functions may never be called in a nested way.
  *
  ******************************************************************************/
 
@@ -246,11 +267,11 @@ PrintSpmdData (node *syntax_tree)
 /******************************************************************************
  *
  * function:
- *
+ *   void PrintProfileData()
  *
  * description:
  *
- *
+ *   This function prints macro definitions related to the profiling feature.
  *
  *
  *
@@ -309,7 +330,7 @@ PrintProfileData ()
 /******************************************************************************
  *
  * function:
- *
+ *   void PrintGlobalSettings(node *syntax_tree)
  *
  * description:
  *
@@ -360,7 +381,9 @@ PrintGlobalSettings (node *syntax_tree)
 
     PrintProfileData ();
 
-    PrintSpmdData (syntax_tree);
+    if (gen_mt_code) {
+        PrintSpmdData (syntax_tree);
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -541,6 +564,7 @@ GSCfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("GSCfundef");
 
     if ((FUNDEF_STATUS (arg_node) == ST_regular)
+        /*      || (FUNDEF_STATUS(arg_node) == ST_foldfun) */
         || ((FUNDEF_STATUS (arg_node) == ST_imported)
             && (FUNDEF_BODY (arg_node) != NULL))) {
         /*
