@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.56  2000/07/14 12:05:05  dkr
+ * DFRblock added
+ *
  * Revision 1.55  2000/07/07 12:04:26  mab
  * added APTassign
  *
@@ -886,7 +889,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, LIRMblock, IdxBlock, TravSons, TravSons, TravSons,
 
        PrintBlock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, UNQblock,
-       RMVblock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       RMVblock, TravSons, TravSons, TravSons, TravSons, TravSons, DFRblock, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
