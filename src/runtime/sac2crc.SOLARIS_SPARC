@@ -19,9 +19,10 @@
 target default:
  
 CC               :=  gcc
-CCFLAGS          :=  "-Wall -Wno-unused -fno-builtin"
+CCFLAGS          :=  "-Wall -Wno-unused -fno-builtin "
+                     "-D__EXTENSIONS__ -D__STDC__=0"
 CCDIR            :=  "-I$SACBASE/runtime/ "
-                   "-L$SACBASE/runtime/"
+                     "-L$SACBASE/runtime/"
 LDFLAGS          :=  ""
 CCLINK           :=  ""    
 CCMTLINK         :=  -lpthread
