@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.3  1994/12/01 17:38:47  hw
+ * Revision 1.4  1994/12/02 11:08:54  hw
+ * inserted  char *type_string[]..
+ * deleted  some preprosessor statemenmts
+ *
+ * Revision 1.3  1994/12/01  17:38:47  hw
  * changed parameters of NIF
  *
  * Revision 1.2  1994/11/10  15:44:34  sbs
@@ -11,10 +15,6 @@
  */
 
 #ifndef DBUG_OFF /* All this stuff is only used in connection with DBUG */
-
-#ifndef _my_debug_h
-
-#define _my_debug_h
 
 /*
 ** global array used for DBUG purposes only
@@ -36,6 +36,6 @@ char *mdb_prf[] = {
 
 #undef PRF_IF
 
-#endif /* _my_debug_h */
+char *type_string[] = {"int", "float", "bool"}; /* used for DBUG_PRINT */
 
 #endif /* DBUG_OFF */
