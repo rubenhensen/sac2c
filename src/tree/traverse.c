@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.96  2004/10/22 08:32:10  sah
+ * rsa tab is now hidden in old sac2c
+ *
  * Revision 3.95  2004/10/21 17:19:26  sah
  * added rsa (resolve all) traversal
  *
@@ -809,8 +812,13 @@ funtab *precomp2_tab = &precomp2_tab_rec;
  *  (31) rsa_tab
  */
 static funtab rsa_tab_rec = {{
+#ifdef NEW_AST
 #define NIFrsa(it_rsa) it_rsa
 #include "node_info.mac"
+#else
+#define NIFunused_39(it_unused39) it_unused39
+#include "node_info.mac"
+#endif /* NEW_AST */
                              },
                              NULL,
                              NULL};
