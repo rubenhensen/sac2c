@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1999/01/27 16:58:46  dkr
+ * wrong asserts removed in DFMGetMask*Clear/Set*
+ *
  * Revision 1.13  1999/01/26 14:27:14  cg
  * Added various DBUG_ASSERTS.
  *
@@ -1105,8 +1108,6 @@ DFMGetMaskEntryNameClear (mask_t *mask)
 
     DBUG_ENTER ("DFMGetMaskEntryNameClear");
 
-    DBUG_ASSERT ((mask != NULL), "DFMGetMaskEntryNameClear() called with mask NULL");
-
     if (mask != NULL) {
         CHECK_MASK (mask);
         store_mask = mask;
@@ -1133,8 +1134,6 @@ DFMGetMaskEntryNameSet (mask_t *mask)
     static int i;
 
     DBUG_ENTER ("DFMGetMaskEntryNameClear");
-
-    DBUG_ASSERT ((mask != NULL), "DFMGetMaskEntryNameClear() called with mask NULL");
 
     if (mask != NULL) {
         CHECK_MASK (mask);
@@ -1163,8 +1162,6 @@ DFMGetMaskEntryDeclClear (mask_t *mask)
 
     DBUG_ENTER ("DFMGetMaskEntryDeclClear");
 
-    DBUG_ASSERT ((mask != NULL), "DFMGetMaskEntryDeclClear() called with mask NULL");
-
     if (mask != NULL) {
         CHECK_MASK (mask);
         store_mask = mask;
@@ -1192,8 +1189,6 @@ DFMGetMaskEntryDeclSet (mask_t *mask)
     static int i;
 
     DBUG_ENTER ("DFMGetMaskEntryDeclClear");
-
-    DBUG_ASSERT ((mask != NULL), "DFMGetMaskEntryDeclClear() called with mask NULL");
 
     if (mask != NULL) {
         CHECK_MASK (mask);
