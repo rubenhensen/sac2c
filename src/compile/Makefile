@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.43  1998/04/03 11:38:31  dkr
+# concregions now in directory concurrent
+#
 # Revision 1.42  1998/04/02 16:07:31  dkr
 # added concregs.o (temporary ...)
 #
@@ -140,13 +143,10 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount -I../optimize
 MACS=icm.data icm_decl.c icm_args.c icm_comment.c icm_trace.c
 
-all: concregs.o compile.o icm2c.o precompile.o Old2NewWith.o gen_startup_code.o
+all: compile.o icm2c.o precompile.o Old2NewWith.o gen_startup_code.o
 
 BEtest: icm2c.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest icm2c.c -DTEST_BACKEND $(INCS) ../../lib/dbug.o
-
-concregs.o: concregs.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o concregs.o -c concregs.c $(INCS)
 
 compile.o: compile.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o compile.o -c compile.c $(INCS)
