@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.35  1996/01/07 16:54:49  cg
+ * Revision 1.36  1996/01/09 12:04:59  cg
+ * added macro ARG_REFCNT
+ *
+ * Revision 1.35  1996/01/07  16:54:49  cg
  * modified some pragma-related macros
  *
  * Revision 1.34  1996/01/05  14:33:22  cg
@@ -806,6 +809,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  ***  temporary attributes:
  ***
  ***    int         VARNO                     (optimize -> )
+ ***    int         REFCNT                    (refcount -> compile -> )
  ***    char*       TYPESTRING (O)            (precompile -> )
  ***    node*       OBJDEF     (O)            (obj-handling ->
  ***                                          ( -> precompile !!)
@@ -834,6 +838,7 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
 #define ARG_ATTRIB(n) (n->info.types->attrib)
 #define ARG_NEXT(n) (n->node[0])
 #define ARG_VARNO(n) (n->varno)
+#define ARG_REFCNT(n) (n->refcnt)
 #define ARG_TYPESTRING(n) ((char *)n->node[1])
 #define ARG_OBJDEF(n) (n->node[2])
 
