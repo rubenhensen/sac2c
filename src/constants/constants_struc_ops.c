@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2001/05/07 07:40:00  nmw
+ * dbug output corrected
+ *
  * Revision 1.3  2001/05/03 16:54:49  nmw
  * COModarray implemented
  *
@@ -565,7 +568,7 @@ COModarray (constant *a, constant *idx, constant *elem)
     DBUG_ASSERT ((CONSTANT_TYPE (a) == CONSTANT_TYPE (elem)),
                  "mixed types for array and inserted elements");
     DBUG_ASSERT (((CONSTANT_DIM (a)) == (CONSTANT_VLEN (idx) + CONSTANT_DIM (elem))),
-                 "idx-vector exceeds dim of array in COPsi!");
+                 "idx-vector exceeds dim of array in COModarray!");
 
     /* first we create the modified target constant as copy of a */
     res = COCopyConstant (a);
