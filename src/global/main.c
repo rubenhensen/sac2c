@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.88  2004/11/29 19:10:02  sah
+ * removed old phases
+ *
  * Revision 3.87  2004/11/28 18:13:40  ktr
  * changed call to EMRdoRefCountPhase
  *
@@ -474,6 +477,9 @@ main (int argc, char *argv[])
      *  Finally the compilation process is started.
      */
 
+    /*
+     * Scan/Parse
+     */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = SPdoScanParse ();
@@ -489,6 +495,9 @@ main (int argc, char *argv[])
 
     PHASE_PROLOG;
 
+    /*
+     * Module system use
+     */
     NOTE_COMPILER_PHASE;
     NOTE (("Processing use and import statements..."));
     RSAdoResolveAll (syntax_tree);
@@ -502,22 +511,15 @@ main (int argc, char *argv[])
     ABORT_ON_ERROR;
 
     PHASE_DONE_EPILOG;
-
     PHASE_EPILOG;
 
-    if (global.break_after == PH_import)
+    if (global.break_after == PH_use)
         goto BREAK;
     global.compiler_phase++;
 
     /*
-     * TODO: eliminate PH_readsib from phase_info.mac
+     * Object init phase
      */
-    PHASE_PROLOG;
-    NOTE_COMPILER_PHASE;
-    PHASE_DONE_EPILOG;
-    PHASE_EPILOG;
-    global.compiler_phase++;
-
 #if 0
   PHASE_PROLOG;
   NOTE_COMPILER_PHASE;
@@ -529,6 +531,9 @@ main (int argc, char *argv[])
 #endif
     global.compiler_phase++;
 
+    /*
+     * flatten
+     */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = FLATdoFlatten (syntax_tree); /* flat_tab */
@@ -539,6 +544,9 @@ main (int argc, char *argv[])
         goto BREAK;
     global.compiler_phase++;
 
+    /*
+     * typecheck
+     */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
 
@@ -556,6 +564,9 @@ main (int argc, char *argv[])
         goto BREAK;
     global.compiler_phase++;
 
+    /*
+     * export
+     */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     OANdoObjectAnalysis (syntax_tree);
@@ -565,12 +576,13 @@ main (int argc, char *argv[])
 
     PHASE_EPILOG;
 
-    if (global.break_after == PH_checkdec)
+    if (global.break_after == PH_export)
         goto BREAK;
     global.compiler_phase++;
 
-    global.compiler_phase += 3;
-
+    /*
+     * Object handling
+     */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = OBJdoHandleObjects (syntax_tree); /* obj_tab */
@@ -581,6 +593,9 @@ main (int argc, char *argv[])
         goto BREAK;
     global.compiler_phase++;
 
+    /*
+     * uniqueness checks
+     */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = UNQdoUniquenessCheck (syntax_tree); /* unique_tab */
@@ -591,6 +606,9 @@ main (int argc, char *argv[])
         goto BREAK;
     global.compiler_phase++;
 
+    /*
+     * withloop enhancement
+     */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = WLEdoWlEnhancement (syntax_tree); /* see WLEnhancement.c */
@@ -601,6 +619,9 @@ main (int argc, char *argv[])
         goto BREAK;
     global.compiler_phase++;
 
+    /*
+     * Optimizations
+     */
     PHASE_PROLOG;
     /*if (optimize) {*/
     /* TODO - the new optimize flags disables the old kind of checking for
@@ -617,6 +638,9 @@ main (int argc, char *argv[])
         goto BREAK;
     global.compiler_phase++;
 
+    /*
+     * WLtransform
+     */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = WLTRAdoWlTransform (syntax_tree); /* wltrans_tab */
@@ -627,6 +651,9 @@ main (int argc, char *argv[])
         goto BREAK;
     global.compiler_phase++;
 
+    /*
+     * Refcount I
+     */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = EMAdoAllocation (syntax_tree); /* emalloc_tab */
@@ -639,6 +666,9 @@ main (int argc, char *argv[])
 
     PHASE_PROLOG;
 
+    /*
+     * MT I
+     */
     switch (global.mtmode) {
     case MT_none:
         break;
@@ -662,6 +692,9 @@ main (int argc, char *argv[])
         goto BREAK;
     global.compiler_phase++;
 
+    /*
+     * Refcount II
+     */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = EMRdoRefCountPhase (syntax_tree);
@@ -672,6 +705,9 @@ main (int argc, char *argv[])
         goto BREAK;
     global.compiler_phase++;
 
+    /*
+     * MT II
+     */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
 
@@ -712,6 +748,9 @@ main (int argc, char *argv[])
         goto BREAK;
     global.compiler_phase++;
 
+    /*
+     * Precompile
+     */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = PRECdoPrecompile (syntax_tree); /* precomp_tab */
@@ -722,6 +761,9 @@ main (int argc, char *argv[])
         goto BREAK;
     global.compiler_phase++;
 
+    /*
+     * Compile
+     */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = COMPdoCompile (syntax_tree); /* comp_tab */
@@ -732,6 +774,9 @@ main (int argc, char *argv[])
         goto BREAK;
     global.compiler_phase++;
 
+    /*
+     * Code generation
+     */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     PRTdoPrint (syntax_tree);
@@ -756,6 +801,9 @@ main (int argc, char *argv[])
 
     syntax_tree = FREEdoFreeTree (syntax_tree);
 
+    /*
+     * Invoke CC
+     */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
 
@@ -766,6 +814,9 @@ main (int argc, char *argv[])
 
     global.compiler_phase++;
 
+    /*
+     * Create Library
+     */
     PHASE_PROLOG;
     if (global.filetype != F_prog) {
         NOTE_COMPILER_PHASE;

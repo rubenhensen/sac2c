@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2004/11/29 19:10:02  sah
+ * removed old phases
+ *
  * Revision 3.14  2004/11/23 19:42:09  cg
  * Converted boolean entries from int to bool.
  *
@@ -85,9 +88,7 @@ PH_SEL (PH_initial, "", FALSE, FALSE),
 
   PH_SEL (PH_scanparse, "Loading SAC program", FALSE, FALSE),
 
-  PH_SEL (PH_import, "Resolving imports from modules and classes", FALSE, FALSE),
-
-  PH_SEL (PH_readsib, "Checking required libraries", FALSE, FALSE),
+  PH_SEL (PH_use, "Resolving used symbols from modules and classes", FALSE, FALSE),
 
   PH_SEL (PH_objinit, "Generating generic types and functions", FALSE, FALSE),
 
@@ -95,17 +96,7 @@ PH_SEL (PH_initial, "", FALSE, FALSE),
 
   PH_SEL (PH_typecheck, "Running type inference system", FALSE, FALSE),
 
-#ifndef NEW_AST
-  PH_SEL (PH_checkdec, "Checking module/class declaration file", FALSE, FALSE),
-#else
-  PH_SEL (PH_checkdec, "Processing exports", FALSE, FALSE),
-#endif /* NEW_AST */
-
-  PH_SEL (PH_impltype, "Resolving implicit types", FALSE, FALSE),
-
-  PH_SEL (PH_analysis, "Analysing functions and global objects", FALSE, FALSE),
-
-  PH_SEL (PH_writesib, "Generating SAC-Information-Block", FALSE, FALSE),
+  PH_SEL (PH_export, "Processing exports", FALSE, FALSE),
 
   PH_SEL (PH_objects, "Resolving global objects and reference parameters", FALSE, FALSE),
 
