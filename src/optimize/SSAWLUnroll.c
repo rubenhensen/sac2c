@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/11/26 18:11:34  mwe
+ * SacDevCamp: compiles!
+ *
  * Revision 1.13  2004/11/11 18:57:15  khf
  * CreateFold(): removed non emm part,
  *               add new assign instead of replace cexpr
@@ -58,8 +61,6 @@
 
  *******************************************************************************/
 
-#define NEW_INFO
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -67,12 +68,15 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
+#include "node_basic.h"
 #include "globals.h"
 #include "free.h"
 #include "Error.h"
 #include "dbug.h"
 #include "traverse.h"
 #include "constants.h"
+#include "new_types.h"
+#include "shape.h"
 
 #include "optimize.h"
 #include "Inline.h"
@@ -129,27 +133,27 @@ static node *
 CreateBodyCode (node *partn, node *index)
 {
     node *res, *letn, *coden;
-    ids *_ids;
+    node *_ids;
 
     DBUG_ENTER ("CreateBodyCode");
 
-    coden = NPART_CODE (partn);
-    if (N_empty == NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (coden))))
+    coden = PART_CODE (partn);
+    if (N_empty == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (coden))))
         res = NULL;
     else
-        res = DupTree (BLOCK_INSTR (NCODE_CBLOCK (coden)));
+        res = DUPdoDupTree (BLOCK_INSTR (CODE_CBLOCK (coden)));
 
     /* index vector */
-    letn = MakeLet (DupTree (index), DupOneIds (NPART_VEC (partn)));
-    res = MakeAssign (letn, res);
+    letn = TBmakeLet (DUPdoDupNode (PART_VEC (partn)), DUPdoDupTree (index));
+    res = TBmakeAssign (letn, res);
 
     /* index scalars */
-    _ids = NPART_IDS (partn);
+    _ids = PART_IDS (partn);
     index = ARRAY_AELEMS (index);
 
     while (_ids) {
-        letn = MakeLet (DupTree (EXPRS_EXPR (index)), DupOneIds (_ids));
-        res = MakeAssign (letn, res);
+        letn = TBmakeLet (DUPdoDupNode (_ids), DUPdoDupTree (EXPRS_EXPR (index)));
+        res = TBmakeAssign (letn, res);
 
         index = EXPRS_NEXT (index);
         _ids = IDS_NEXT (_ids);
@@ -173,7 +177,7 @@ static node *
 CreateModGenarray (node *assignn, node *index)
 {
     node *exprs, *letexpr, *cexpr, *tmpn, *bodyn;
-    ids *array;
+    node *array;
     node *partn;
 
     DBUG_ENTER ("CreateModGenarray");
@@ -184,14 +188,15 @@ CreateModGenarray (node *assignn, node *index)
     bodyn = CreateBodyCode (partn, index);
 
     /* create prf modarray */
-    cexpr = NCODE_CEXPR (NPART_CODE (partn));
-    tmpn = MakeId (StringCopy (IDS_NAME (array)), IDS_MOD (array), ST_regular);
-    ID_VARDEC (tmpn) = IDS_VARDEC (array);
-    exprs = MakeExprs (tmpn, MakeExprs (index, MakeExprs (DupTree (cexpr), NULL)));
+    cexpr = CODE_CEXPRS (PART_CODE (partn));
+    tmpn = TBmakeId (IDS_AVIS (array));
 
-    letexpr = MakePrf (F_modarray, exprs);
+    exprs
+      = TBmakeExprs (tmpn, TBmakeExprs (index, TBmakeExprs (DUPdoDupTree (cexpr), NULL)));
 
-    assignn = MakeAssign (MakeLet (letexpr, DupOneIds (array)), assignn);
+    letexpr = TBmakePrf (F_modarray, exprs);
+
+    assignn = TBmakeAssign (TBmakeLet (letexpr, DUPdoDupNode (array)), assignn);
 
     /* append assignn to bodyn */
     if (bodyn) {
@@ -220,7 +225,7 @@ static node *
 CreateFold (node *assignn, node *index)
 {
     node *partn, *cexpr, *bodyn, *tmp, *letn;
-    ids *acc;
+    node *acc;
     bool F_accu_found = FALSE;
 
     DBUG_ENTER ("CreateFold");
@@ -252,8 +257,8 @@ CreateFold (node *assignn, node *index)
     while (tmp != NULL) {
         if ((NODE_TYPE (ASSIGN_RHS (tmp)) == N_prf)
             && (PRF_PRF (ASSIGN_RHS (tmp)) == F_accu)) {
-            ASSIGN_RHS (tmp) = FreeNode (ASSIGN_RHS (tmp));
-            ASSIGN_RHS (tmp) = DupIds_Id (acc);
+            ASSIGN_RHS (tmp) = FREEdoFreeNode (ASSIGN_RHS (tmp));
+            ASSIGN_RHS (tmp) = DUPdupIdsId (acc);
             F_accu_found = TRUE;
         }
 
@@ -261,8 +266,8 @@ CreateFold (node *assignn, node *index)
             DBUG_ASSERT ((F_accu_found), "No F_accu found!");
 
             /* Append new assign: lhs(wl) = cexpr; */
-            letn = MakeLet (DupNode (cexpr), DupOneIds (acc));
-            ASSIGN_NEXT (tmp) = MakeAssign (letn, NULL);
+            letn = TBmakeLet (DUPdoDupNode (acc), DUPdoDupNode (cexpr));
+            ASSIGN_NEXT (tmp) = TBmakeAssign (letn, NULL);
             tmp = ASSIGN_NEXT (tmp);
         }
 
@@ -270,7 +275,7 @@ CreateFold (node *assignn, node *index)
     }
 
     if (bodyn != NULL) {
-        assignn = AppendAssign (bodyn, assignn);
+        assignn = TCappendAssign (bodyn, assignn);
     }
 
     DBUG_RETURN (assignn);
@@ -292,8 +297,6 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
     int count, act_w, i;
     static int ind[SHP_SEG_SIZE];
     node *index;
-    types *type;
-    shpseg *shpseg;
 
     DBUG_ENTER ("ForEachElementHelp");
 
@@ -306,18 +309,13 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
             /* create index */
             index = NULL;
             for (i = maxdim; i > 0; i--) {
-                index = MakeExprs (MakeNum (ind[i - 1]), index);
+                index = TBmakeExprs (TBmakeNum (ind[i - 1]), index);
             }
-            index = MakeFlatArray (index);
+            index = TCmakeFlatArray (index);
             /* nums struct is freed inside MakeShpseg() */
-#ifdef MWE_NTYPE_READY
             ARRAY_NTYPE (index)
-              = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (1, maxdim));
-#else
-            shpseg = MakeShpseg (MakeNums (maxdim, NULL));
-            type = MakeTypes (T_int, 1, shpseg, NULL, NULL);
-            ARRAY_TYPE (index) = type;
-#endif
+              = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, maxdim));
+
             assignn = opfun (assignn, index);
         } else {
             assignn = ForEachElementHelp (l, u, s, w, dim + 1, maxdim, assignn);
@@ -354,40 +352,36 @@ ForEachElement (node *partn, node *assignn)
 
     DBUG_ENTER ("ForEachElement");
 
-    maxdim = IDS_SHAPE (NPART_VEC (partn), 0);
+    maxdim = IDS_SHAPE (PART_VEC (partn), 0);
     l = u = s = w = NULL;
     res = NULL;
 
-    SSAArrayST2ArrayInt (NGEN_BOUND1 (NPART_GEN (partn)), &l, maxdim);
-    SSAArrayST2ArrayInt (NGEN_BOUND2 (NPART_GEN (partn)), &u, maxdim);
-    if (NGEN_STEP (NPART_GEN (partn))) {
-        SSAArrayST2ArrayInt (NGEN_STEP (NPART_GEN (partn)), &s, maxdim);
+    WLFarrayST2ArrayInt (GENERATOR_BOUND1 (PART_GENERATOR (partn)), &l, maxdim);
+    WLFarrayST2ArrayInt (GENERATOR_BOUND2 (PART_GENERATOR (partn)), &u, maxdim);
+    if (GENERATOR_STEP (PART_GENERATOR (partn))) {
+        WLFarrayST2ArrayInt (GENERATOR_STEP (PART_GENERATOR (partn)), &s, maxdim);
     }
-    if (NGEN_WIDTH (NPART_GEN (partn))) {
-        SSAArrayST2ArrayInt (NGEN_WIDTH (NPART_GEN (partn)), &w, maxdim);
+    if (GENERATOR_WIDTH (PART_GENERATOR (partn))) {
+        WLFarrayST2ArrayInt (GENERATOR_WIDTH (PART_GENERATOR (partn)), &w, maxdim);
     }
 
     if (maxdim == 0) {
         /* create index */
-        index = MakeFlatArray (NULL);
+        index = TCmakeFlatArray (NULL);
         /* nums struct is freed inside MakeShpseg() */
-#ifdef MWE_NTYPE_READY
+
         ARRAY_NTYPE (index)
-          = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (1, maxdim));
-#else
-        ARRAY_TYPE (index)
-          = MakeTypes (T_int, 1, MakeShpseg (MakeNums (maxdim, NULL)), NULL, NULL);
-#endif
+          = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, maxdim));
 
         res = opfun (assignn, index);
     } else {
         res = ForEachElementHelp (l, u, s, w, 0, maxdim, assignn);
     }
 
-    l = Free (l);
-    u = Free (u);
-    s = Free (s);
-    w = Free (w);
+    l = ILIBfree (l);
+    u = ILIBfree (u);
+    s = ILIBfree (s);
+    w = ILIBfree (w);
 
     DBUG_RETURN (res);
 }
@@ -412,30 +406,30 @@ CountElements (node *genn)
 
     DBUG_ENTER ("CountElements");
 
-    const_l = COAST2Constant (NGEN_BOUND1 (genn));
-    l = COGetDataVec (const_l);
-    DBUG_ASSERT ((COGetDim (const_l) == 1), "inconsistant wl bounds found!");
-    dim = SHGetExtent (COGetShape (const_l), 0);
+    const_l = COaST2Constant (GENERATOR_BOUND1 (genn));
+    l = COgetDataVec (const_l);
+    DBUG_ASSERT ((COgetDim (const_l) == 1), "inconsistant wl bounds found!");
+    dim = SHgetExtent (COgetShape (const_l), 0);
 
-    const_u = COAST2Constant (NGEN_BOUND2 (genn));
-    u = COGetDataVec (const_u);
-    DBUG_ASSERT ((SHGetExtent (COGetShape (const_u), 0) == dim),
+    const_u = COaST2Constant (GENERATOR_BOUND2 (genn));
+    u = COgetDataVec (const_u);
+    DBUG_ASSERT ((SHgetExtent (COgetShape (const_u), 0) == dim),
                  "inconsistant wl bounds found!");
 
-    if (NGEN_STEP (genn) != NULL) {
-        const_s = COAST2Constant (NGEN_STEP (genn));
-        s = COGetDataVec (const_s);
-        DBUG_ASSERT ((SHGetExtent (COGetShape (const_s), 0) == dim),
+    if (GENERATOR_STEP (genn) != NULL) {
+        const_s = COaST2Constant (GENERATOR_STEP (genn));
+        s = COgetDataVec (const_s);
+        DBUG_ASSERT ((SHgetExtent (COgetShape (const_s), 0) == dim),
                      "inconsistant wl bounds found!");
     } else {
         const_s = NULL;
         s = NULL;
     }
 
-    if (NGEN_WIDTH (genn) != NULL) {
-        const_w = COAST2Constant (NGEN_WIDTH (genn));
-        w = COGetDataVec (const_w);
-        DBUG_ASSERT ((SHGetExtent (COGetShape (const_w), 0) == dim),
+    if (GENERATOR_WIDTH (genn) != NULL) {
+        const_w = COaST2Constant (GENERATOR_WIDTH (genn));
+        w = COgetDataVec (const_w);
+        DBUG_ASSERT ((SHgetExtent (COgetShape (const_w), 0) == dim),
                      "inconsistant wl bounds found!");
     } else {
         const_w = NULL;
@@ -449,7 +443,7 @@ CountElements (node *genn)
         /* check step/width */
         if ((w && !s) || (w && (w[i] < 1)) || (s && w && (s[i] < w[i]))) {
             /* illegal */
-            elts = wlunrnum + 1;
+            elts = global.wlunrnum + 1;
             break;
         }
 
@@ -468,13 +462,13 @@ CountElements (node *genn)
         elts *= tmp;
     }
 
-    const_l = COFreeConstant (const_l);
-    const_u = COFreeConstant (const_u);
+    const_l = COfreeConstant (const_l);
+    const_u = COfreeConstant (const_u);
     if (const_s != NULL) {
-        const_s = COFreeConstant (const_s);
+        const_s = COfreeConstant (const_s);
     }
     if (const_w != NULL) {
-        const_w = COFreeConstant (const_w);
+        const_w = COfreeConstant (const_w);
     }
 
     DBUG_RETURN (elts);
@@ -494,30 +488,30 @@ CountElements (node *genn)
  ******************************************************************************/
 
 int
-SSACheckUnrollModarray (node *wln)
+WLUcheckUnrollModarray (node *wln)
 {
     int ok, elts;
     node *partn, *genn, *coden, *tmpn, *exprn;
 
-    DBUG_ENTER ("SSACheckUnrollModarray");
+    DBUG_ENTER ("WLUcheckUnrollModarray");
 
     /* check all N_parts.
      All bounds (step, width) have to be constant. Count the number of
      elements which do NOT just copy the original array
      (e.g. body = {__flat = A[iv]} ) */
 
-    partn = NWITH_PART (wln);
+    partn = WITH_PART (wln);
     elts = 0;
 
     /* everything constant? If the first part is constant, all others are
        constant, too. */
-    genn = NPART_GEN (partn);
-    ok = (COIsConstant (NGEN_BOUND1 (genn)) && COIsConstant (NGEN_BOUND2 (genn))
-          && (!NGEN_STEP (genn) || COIsConstant (NGEN_STEP (genn)))
-          && (!NGEN_WIDTH (genn) || COIsConstant (NGEN_WIDTH (genn))));
+    genn = PART_GENERATOR (partn);
+    ok = (COisConstant (GENERATOR_BOUND1 (genn)) && COisConstant (GENERATOR_BOUND2 (genn))
+          && (!GENERATOR_STEP (genn) || COisConstant (GENERATOR_STEP (genn)))
+          && (!GENERATOR_WIDTH (genn) || COisConstant (GENERATOR_WIDTH (genn))));
 
     while (ok && partn) {
-        genn = NPART_GEN (partn);
+        genn = PART_GENERATOR (partn);
         /* check if code is a copy of the original array and set NPART_COPY
            for later usage in SSADoUnrollModarray().
 
@@ -531,30 +525,32 @@ SSACheckUnrollModarray (node *wln)
            We need DCR to be done before to detect identity written by the
            programmer. */
 
-        coden = NPART_CODE (partn);
-        if (N_empty == NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (coden)))) {
-            NPART_COPY (partn) = FALSE;
+        coden = PART_CODE (partn);
+        if (N_empty == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (coden)))) {
+            PART_ISCOPY (partn) = FALSE;
         } else {
-            tmpn = ASSIGN_INSTR (BLOCK_INSTR (NCODE_CBLOCK (coden)));
+            tmpn = ASSIGN_INSTR (BLOCK_INSTR (CODE_CBLOCK (coden)));
             exprn = LET_EXPR (tmpn);
-            NPART_COPY (partn)
+            PART_ISCOPY (partn)
               = (N_let == NODE_TYPE (tmpn)
-                 && !strcmp (ID_NAME (NCODE_CEXPR (coden)), IDS_NAME (LET_IDS (tmpn)))
+                 && !strcmp (ID_NAME (EXPRS_EXPR (CODE_CEXPRS (coden))),
+                             IDS_NAME (LET_IDS (tmpn)))
                  && N_prf == NODE_TYPE (exprn) && F_sel == PRF_PRF (exprn)
                  && N_id == NODE_TYPE (PRF_ARG1 (exprn))
-                 && !strcmp (IDS_NAME (NPART_VEC (partn)), ID_NAME (PRF_ARG1 (exprn)))
+                 && !strcmp (IDS_NAME (PART_VEC (partn)), ID_NAME (PRF_ARG1 (exprn)))
                  && N_id == NODE_TYPE (PRF_ARG2 (exprn))
-                 && !strcmp (ID_NAME (NWITH_ARRAY (wln)), ID_NAME (PRF_ARG2 (exprn))));
+                 && !strcmp (ID_NAME (MODARRAY_ARRAY (WITH_WITHOP (wln))),
+                             ID_NAME (PRF_ARG2 (exprn))));
         }
 
-        if (!NPART_COPY (partn)) {
+        if (!PART_ISCOPY (partn)) {
             elts += CountElements (genn);
         }
 
-        partn = NPART_NEXT (partn);
+        partn = PART_NEXT (partn);
     }
 
-    if (ok && (elts > wlunrnum)) {
+    if (ok && (elts > global.wlunrnum)) {
         ok = 0;
         if (elts <= 32) {
             /*
@@ -579,7 +575,7 @@ SSACheckUnrollModarray (node *wln)
  ******************************************************************************/
 
 node *
-SSADoUnrollModarray (node *wln, info *arg_info)
+WLUdoUnrollModarray (node *wln, info *arg_info)
 {
     node *partn, *res;
     void *arg[2];
@@ -587,11 +583,11 @@ SSADoUnrollModarray (node *wln, info *arg_info)
 
     DBUG_ENTER ("SSADoUnrollModarray");
 
-    partn = NWITH_PART (wln);
+    partn = WITH_PART (wln);
 
     res = NULL;
     while (partn) {
-        if (!NPART_COPY (partn)) {
+        if (!PART_ISCOPY (partn)) {
             /* unroll this part */
             opfun = CreateModGenarray;
             arg[0] = partn;                                                  /* (node*) */
@@ -600,13 +596,14 @@ SSADoUnrollModarray (node *wln, info *arg_info)
             res = ForEachElement (partn, res);
         }
 
-        partn = NPART_NEXT (partn);
+        partn = PART_NEXT (partn);
     }
 
     /* finally add Dupilcation of new array name */
-    letn = MakeLet (DupTree (NWITH_ARRAY (wln)),
-                    DupOneIds (LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)))));
-    res = MakeAssign (letn, res);
+    letn
+      = TBmakeLet (DUPdoDupNode (LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)))),
+                   DUPdoDupTree (MODARRAY_ARRAY (WITH_WITHOP (wln))));
+    res = TBmakeAssign (letn, res);
 
     DBUG_RETURN (res);
 }
@@ -623,32 +620,27 @@ SSADoUnrollModarray (node *wln, info *arg_info)
  ******************************************************************************/
 
 int
-SSACheckUnrollGenarray (node *wln, info *arg_info)
+WLUcheckUnrollGenarray (node *wln, info *arg_info)
 {
     int ok, length;
     node *genn;
-    types *type;
 
     DBUG_ENTER ("SSACheckUnrollGenarray");
 
-#ifdef MWE_NTYPE_READY
-    length = SHGetUnrLen (TYGetShape (
+    length = SHgetUnrLen (TYgetShape (
       AVIS_TYPE (IDS_AVIS (LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)))))));
-#else
-    type = IDS_TYPE (LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info))));
-    length = GetTypesLength (type);
-#endif
+
     /*
      * Everything constant?
      * If the first part is constant, all others are constant, too.
      */
-    genn = NPART_GEN (NWITH_PART (wln));
-    ok = ((length >= 0) && COIsConstant (NGEN_BOUND1 (genn))
-          && COIsConstant (NGEN_BOUND2 (genn))
-          && ((NGEN_STEP (genn) == NULL) || COIsConstant (NGEN_STEP (genn)))
-          && ((NGEN_WIDTH (genn) == NULL) || COIsConstant (NGEN_WIDTH (genn))));
+    genn = PART_GENERATOR (WITH_PART (wln));
+    ok = ((length >= 0) && COisConstant (GENERATOR_BOUND1 (genn))
+          && COisConstant (GENERATOR_BOUND2 (genn))
+          && ((GENERATOR_STEP (genn) == NULL) || COisConstant (GENERATOR_STEP (genn)))
+          && ((GENERATOR_WIDTH (genn) == NULL) || COisConstant (GENERATOR_WIDTH (genn))));
 
-    if (ok && (length > wlunrnum)) {
+    if (ok && (length > global.wlunrnum)) {
         ok = 0;
         if (length <= 32) {
             NOTE (("WLUR: -maxwlur %d would unroll genarray with-loop", length));
@@ -673,17 +665,16 @@ SSACheckUnrollGenarray (node *wln, info *arg_info)
  ******************************************************************************/
 
 node *
-SSADoUnrollGenarray (node *wln, info *arg_info)
+WLUdoUnrollGenarray (node *wln, info *arg_info)
 {
     node *partn, *res;
     node *letn, *let_expr;
     void *arg[2];
-    ids *arrayname;
-    types *type;
+    node *arrayname;
 
-    DBUG_ENTER ("SSADoUnrollGenarray");
+    DBUG_ENTER ("WLUdoUnrollGenarray");
 
-    partn = NWITH_PART (wln);
+    partn = WITH_PART (wln);
     arrayname = LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)));
 
     res = NULL;
@@ -694,7 +685,7 @@ SSADoUnrollGenarray (node *wln, info *arg_info)
         opfunarg = arg;
         res = ForEachElement (partn, res);
 
-        partn = NPART_NEXT (partn);
+        partn = PART_NEXT (partn);
     }
 
     /*
@@ -706,11 +697,14 @@ SSADoUnrollGenarray (node *wln, info *arg_info)
                                      ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)))),
                                    TRUE, INFO_SSALUR_FUNDEF (arg_info));
 #else
-    type = LET_TYPE (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)));
-    let_expr = CreateZeroFromType (type, TRUE, INFO_SSALUR_FUNDEF (arg_info));
+    /*type = LET_TYPE( ASSIGN_INSTR( INFO_SSALUR_ASSIGN( arg_info)));*/
+    let_expr = TCcreateZeroFromType (/*type*/
+                                     TYtype2OldType (AVIS_TYPE (IDS_AVIS (LET_IDS (
+                                       ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)))))),
+                                     TRUE, INFO_SSALUR_FUNDEF (arg_info));
 #endif
-    letn = MakeLet (let_expr, DupOneIds (arrayname));
-    res = MakeAssign (letn, res);
+    letn = TBmakeLet (DUPdoDupNode (arrayname), let_expr);
+    res = TBmakeAssign (letn, res);
 
     DBUG_RETURN (res);
 }
@@ -727,7 +721,7 @@ SSADoUnrollGenarray (node *wln, info *arg_info)
  ******************************************************************************/
 
 int
-SSACheckUnrollFold (node *wln)
+WLUcheckUnrollFold (node *wln)
 {
     int ok, elts;
     node *partn, *genn;
@@ -737,22 +731,22 @@ SSACheckUnrollFold (node *wln)
     /* check all N_parts.
        All bounds (step, width) have to be constant. */
 
-    partn = NWITH_PART (wln);
+    partn = WITH_PART (wln);
     elts = 0;
 
     /* everything constant? If the first part is constant, all others are
        constant, too. */
-    genn = NPART_GEN (partn);
-    ok = (COIsConstant (NGEN_BOUND1 (genn)) && COIsConstant (NGEN_BOUND2 (genn))
-          && (!NGEN_STEP (genn) || COIsConstant (NGEN_STEP (genn)))
-          && (!NGEN_WIDTH (genn) || COIsConstant (NGEN_WIDTH (genn))));
+    genn = PART_GENERATOR (partn);
+    ok = (COisConstant (GENERATOR_BOUND1 (genn)) && COisConstant (GENERATOR_BOUND2 (genn))
+          && ((GENERATOR_STEP (genn) != 0) || COisConstant (GENERATOR_STEP (genn)))
+          && ((GENERATOR_WIDTH (genn) != 0) || COisConstant (GENERATOR_WIDTH (genn))));
 
     while (ok && (partn != NULL)) {
-        elts += CountElements (NPART_GEN (partn));
-        partn = NPART_NEXT (partn);
+        elts += CountElements (PART_GENERATOR (partn));
+        partn = PART_NEXT (partn);
     }
 
-    if (ok && (elts > wlunrnum)) {
+    if (ok && (elts > global.wlunrnum)) {
         ok = 0;
         if (elts <= 32) {
             NOTE (("WLUR: -maxwlur %d would unroll fold with-loop", elts));
@@ -769,7 +763,7 @@ SSACheckUnrollFold (node *wln)
 /******************************************************************************
  *
  * function:
- *   node *SSADoUnrollFold(node *wln, info *arg_info)
+ *   node *WLUdoUnrollFold(node *wln, info *arg_info)
  *
  * description:
  *   INFO_SSALUR_FUNDEF( arg_info) contains the pointer to the N_fundef node
@@ -783,15 +777,15 @@ SSACheckUnrollFold (node *wln)
  ******************************************************************************/
 
 node *
-SSADoUnrollFold (node *wln, info *arg_info)
+WLUdoUnrollFold (node *wln, info *arg_info)
 {
     node *partn, *res;
     void *arg[5];
     node *letn;
 
-    DBUG_ENTER ("SSADoUnrollFold");
+    DBUG_ENTER ("WLUdoUnrollFold");
 
-    partn = NWITH_PART (wln);
+    partn = WITH_PART (wln);
 
     res = NULL;
     while (partn != NULL) {
@@ -799,20 +793,20 @@ SSADoUnrollFold (node *wln, info *arg_info)
         opfun = CreateFold;
         arg[0] = partn; /* N_Npart node */
         arg[1] = LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info))); /* (ids*)  */
-        arg[2] = NCODE_CEXPR (NPART_CODE (partn));                       /* (node*) */
-        arg[3] = NWITH_WITHOP (wln);            /* N_Nwithop node */
+        arg[2] = CODE_CEXPRS (PART_CODE (partn));                        /* (node*) */
+        arg[3] = WITH_WITHOP (wln);             /* N_Nwithop node */
         arg[4] = INFO_SSALUR_FUNDEF (arg_info); /* N_fundef node */
         opfunarg = arg;
         res = ForEachElement (partn, res);
 
-        partn = NPART_NEXT (partn);
+        partn = PART_NEXT (partn);
     }
 
     /* finally add initialisation of accumulator with neutral element. */
-    letn = MakeLet (DupTree (NWITH_NEUTRAL (wln)),
-                    DupOneIds (LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)))));
-
-    res = MakeAssign (letn, res);
+    letn
+      = TBmakeLet (DUPdoDupNode (LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)))),
+                   DUPdoDupTree (WITH_NEUTRAL (wln)));
+    res = TBmakeAssign (letn, res);
 
     DBUG_RETURN (res);
 }
