@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/12/07 17:24:30  sah
+ * added INSVDdo to fix dependency on ast
+ * defined traversal order
+ *
  * Revision 1.15  2004/12/05 20:12:26  sah
  * fixes
  *
@@ -436,6 +440,37 @@ INSVDwith (node *arg_node, info *arg_info)
 
     if (WITH_WITHOP (arg_node) != NULL) {
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *INSVDdo( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+INSVDdo (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("INSVDdo");
+
+    /* traverse all sons in following order:*/
+
+    if (DO_BODY (arg_node) != NULL) {
+        DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
+    }
+
+    if (DO_SKIP (arg_node) != NULL) {
+        DO_SKIP (arg_node) = TRAVdo (DO_SKIP (arg_node), arg_info);
+    }
+
+    if (DO_COND (arg_node) != NULL) {
+        DO_COND (arg_node) = TRAVdo (DO_COND (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

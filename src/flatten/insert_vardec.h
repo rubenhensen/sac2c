@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/12/07 17:24:30  sah
+ * added INSVDdo to fix dependency on ast
+ * defined traversal order
+ *
  * Revision 1.7  2004/12/05 20:12:26  sah
  * fixes
  *
@@ -50,5 +54,6 @@ extern node *INSVDwith (node *arg_node, info *arg_info);
 extern node *INSVDpart (node *arg_node, info *arg_info);
 extern node *INSVDcode (node *arg_node, info *arg_info);
 extern node *INSVDlet (node *arg_node, info *arg_info);
+extern node *INSVDdo (node *arg_node, info *arg_info);
 
 #endif /* _SAC_INSERT_VARDEC_H_ */
