@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2001/03/05 15:01:18  dkr
+ * some comments added
+ * NCODE_NO renamed into NCODE_ID
+ * INFO_PREC1_CEXPR added
+ *
  * Revision 3.37  2001/03/05 13:39:15  nmw
  * AVIS_SUBST added
  *
@@ -1171,6 +1176,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***    int    LEVEL                      (wli !!)
  ***
  ***  remarks:
+ ***
  ***    there is no easy way to remove the INDEX information after wlf (another
  ***    tree traversal would be necessary), so it stays afterwards.
  ***    Nevertheless only wlf will use it. The type of INDEX is index_info*,
@@ -1571,7 +1577,8 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***    int         NUM         (O)
  ***    node*       AVIS        (O)             (ssafrm -> )
  ***
- ***  remark:
+ ***  remarks:
+ ***
  ***    ID_WL is only used in wli, wlf. But every call of DupTree() initializes
  ***    the copy's WL_ID with a pointer to it's original N_id node. The function
  ***    SearchWL() can define ID_WL in another way (pointer to N_assign node
@@ -1580,13 +1587,11 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***    Unroll uses ->flag without a macro :(
  ***    Even worse: Unroll uses ->flag of *every* LET_EXPR node :(((
  ***
- ***  remark:
  ***    ID_VARDEC points to an N_vardec or an N_arg node. This is not
  ***    distinguished in many places of the code. So for example
  ***    VARDEC_NAME and ARG_NAME should both be substitutions for
  ***    node->info.types->id
  ***
- ***  remark:
  ***    ISCONST, VECTYPE, VECLEN, CONSTVEC, and NUM are used for propagation
  ***    of constant integer arrays.
  ***    Usually, there is no constant propagation for arrays since this
@@ -1784,7 +1789,8 @@ extern node *MakeEmpty ();
  ***    int    INDENT_AFTER
  ***    bool   END_OF_STATEMENT
  ***
- *** remarks:
+ ***  remarks:
+ ***
  ***    INDENT_??? are used for indenting ICMs in output. This values are set
  ***    by 'MakeIcm' and used by 'PrintIcm'.
  ***
@@ -2024,7 +2030,6 @@ extern node *MakeAvis (node *vardecOrArg);
  ***  specific task.
  ***
  ***  when used in flatten.c:
- ***
  ***    contextflag CONTEXT       (O)
  ***    node *      LASTASSIGN    (O)  (N_assign)
  ***    node *      LASTWLBLOCK   (O)  (N_block)
@@ -2035,12 +2040,10 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    int         ISCONST       (O)
  ***
  ***  when used in readsib.c :
- ***
  ***    node *     FOLDFUNS       (O)  (N_fundef)
  ***    node *     MODUL          (O)  (N_modul)
  ***
  ***  when used in typecheck.c :
- ***
  ***    int        STATUS        (O)
  ***    node *     VARDEC        (O)  (N_vardec)
  ***    node *     FUNDEF        (O)  (N_fundef)
@@ -2052,19 +2055,11 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    bool       ISGWLSHAPE    (O)
  ***
  ***  when used in writesib.c :
- ***
  ***    nodelist*  EXPORTTYPES   (O)
  ***    nodelist*  EXPORTOBJS    (O)
  ***    nodelist*  EXPORTFUNS    (O)
  ***
- ***  when used in precompile.c :
- ***
- ***    char*      NAME          (0)
- ***    node*      FUNDEFS       (0) (N_fundef)
- ***    node*      OBJINITFUNDEF (O) (N_fundef)
- ***
  ***  when used in compile.c :
- ***
  ***    ids*       LASTIDS       (O)
  ***    node*      LASTLET       (O)  (N_let)
  ***    node*      LASTASSIGN    (O)  (N_assign)
@@ -2079,11 +2074,9 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    types**    TYPETAB       (O)
  ***
  ***  when used in optimize.c :
- ***
  ***    long*      MASK[x]
  ***
  ***  when used during withloop folding:
- ***
  ***    node*      NEXT               (N_info)
  ***    node*      SUBST              (N_Ncode)
  ***    node*      WL                 (N_Nwith)
@@ -2097,29 +2090,25 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      REPLACE            (N_id, N_array or N_num/float...)
  ***
  ***  when used in ConstantFolding.c :
- ***
  ***    node*      ASSIGN             (N_assign)
  ***    types      TYPE               (no son)
  ***    int        VARNO
  ***
  ***  when used in DeadCodeRemoval.c:
- ***
  ***    nodetype   TRAVTYPE
  ***    int        VARNO
  ***    int        NEWACT
  ***    long*      ACT
  ***
  ***  when used in DeadFunctionRemoval.c:
- ***
  ***    int        SPINE
  ***
  ***  when used in index.c:
- ***
- ***    node *     INFO_IVE_FUNDEF           (N_fundef)
- ***    node *     INFO_IVE_VARDECS          (N_vardec)
+ ***    node*      INFO_IVE_FUNDEF           (N_fundef)
+ ***    node*      INFO_IVE_VARDECS          (N_vardec)
  ***    ive_mode   INFO_IVE_MODE
- ***    node *     INFO_IVE_CURRENTASSIGN    (N_assign)
- ***    node *     INFO_IVE_TRANSFORM_VINFO  (N_vinfo)
+ ***    node*      INFO_IVE_CURRENTASSIGN    (N_assign)
+ ***    node*      INFO_IVE_TRANSFORM_VINFO  (N_vinfo)
  ***    int        INFO_IVE_NON_SCAL_LEN
  ***
  ***
@@ -2247,7 +2236,6 @@ extern node *MakeAvis (node *vardecOrArg);
  ***
  ***
  ***  when used in tile_size_inference.c :
- ***
  ***    access_t*  ACCESS
  ***    node*      INDEXVAR           (N_vardec/N_arg)
  ***    feature_t  FEATURE
@@ -2257,13 +2245,11 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    access_t*  TMPACCESS
  ***
  ***  when used in spmd_opt.c :
- ***
  ***    node*      LASTASSIGN
  ***    node*      THISASSIGN
  ***    node*      NEXTASSIGN
  ***
  ***  when used in print.c :
- ***
  ***    node*      FUNDEF             (N_fundef)
  ***    node*      INT_SYN
  ***    node*      WITH_RET
@@ -2276,7 +2262,6 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    int        SEPARATE
  ***
  ***  when used in refcount.c
- ***
  ***    node*      PRF
  ***    node*      WITH
  ***    int*       RCDUMP             (only while traversing a group of N_code's)
@@ -2284,7 +2269,6 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    int        VARNO
  ***
  ***  when used in print_interface.c
- ***
  ***    int        PIH_FLAG     (switch between comment and prototype)
  ***    int        PIH_COMMA    (flag, comma neede between outputs)
  ***    int        PIH_COUNTER  (arg or type position)
@@ -2293,18 +2277,15 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    int        PIW_COUNTER
  ***
  ***  when used in map_wrapper.c
- ***
  ***    node*      MODUL             (access to module node)
  ***    node*      FUNDEF            (fundef parameter)
  ***    int        FLAG
  ***    int        CNT_STANDARD      (counter for standard args)
  ***
  ***  when used in pad_transform.c
- ***
  ***    bool       EXPRESSION_PADDED
  ***
  ***  when used in import_specializations.c
- ***
  ***    node*      SPECS             (chain of specialized fundefs)
  ***    node*      FUNDEF            (actual working fundef)
  ***
@@ -2332,7 +2313,8 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      LET               (actual let node)
  ***    node*      ASSIGN            (actual assign node)
  ***
- *** remarks:
+ ***  remarks:
+ ***
  ***    N_info is used in many other phases without access macros :((
  ***/
 
@@ -2537,9 +2519,10 @@ extern node *MakeInfo ();
 #define INFO_ADJCA_ATTRIB(n) ((statustype) (n->int_data))
 
 /* precompile */
-#define INFO_PREC1_FUNDEF(n) (n->node[1])
-#define INFO_PREC1_LET(n) (n->node[2])
-#define INFO_PREC1_LASTASSIGN(n) (n->node[3])
+#define INFO_PREC1_FUNDEF(n) (n->node[0])
+#define INFO_PREC1_LET(n) (n->node[1])
+#define INFO_PREC1_LASTASSIGN(n) (n->node[2])
+#define INFO_PREC1_CEXPR(n) (n->node[3])
 #define INFO_PREC2_OBJINITFUNDEF(n) (n->node[4])
 
 /* ArrayElemination */
@@ -2847,14 +2830,17 @@ extern node *MakeSync (node *region);
  ***  N_mt :
  ***
  ***  sons:
+ ***
  ***    node*      REGION     (N_block)
  ***
  ***  permanent attributes:
+ ***
  ***    int        IDENTIFIER             Will be created by MakeMT, an copied
  ***                                      within DupTree, to identfy
  ***                                      corresponding blocks
  ***
  ***  temporary attributes:
+ ***
  ***    DFMmask_t  USEMASK                (multithread.dfa -> )
  ***    DFMmask_t  DEFMASK                (multithread.dfa -> )
  ***    DFMmask_t  NEEDLATER              (multithread.dfa -> )
@@ -3040,6 +3026,12 @@ extern node *MakeNPart (node *withid, node *generator, node *code);
  ***
  ***    ids*         VEC
  ***    ids*         IDS
+ ***
+ ***  remarks:
+ ***
+ ***    Even for N_Nwith-nodes with multiple parts all with-ids must have
+ ***    identical names before phase 16 (with-loop transformation) can
+ ***    be applied!!!
  ***/
 
 extern node *MakeNWithid (ids *vec, ids *scalars);
@@ -3067,6 +3059,7 @@ extern node *MakeNWithid (ids *vec, ids *scalars);
  ****   prf    OP2_ORIG     Set in MakeNGenerator, not to be changed!
  ***
  ***  remarks:
+ ***
  ***    the BOUNDs are NULL if upper or lower bounds are not specified.
  ***    if STEP is NULL, step 1 is assumed (no grid)
  ***    if WIDTH is NULL, width 1 is assumed
@@ -3145,8 +3138,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***
  ***  temporary attributes:
  ***
- ***    int        NO         (unambiguous number for PrintNwith2())
- ***                                       (precompile -> )
+ ***    int        ID                      (print !!)
  ***    long*      MASK                    (optimize -> )
  ***    node *     USE         (N_vinfo)   (IVE -> )
  ***    bool       FLAG                    (WLI -> WLF)
@@ -3164,6 +3156,9 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    bool       AP_DUMMY_CODE           (ap -> wltransform -> compile )
  ***
  ***  remarks:
+ ***
+ ***    Even for N_Nwith-nodes with multiple codes all NCODE_CEXPR must have
+ ***    identical names before phase 19 (pre-compilation) can be applied!!!
  ***
  ***    The CBLOCK 'plus' the CEXPR is the whole assignment block
  ***    to calculate each element of the WL. The CEXPR is the pseudo
@@ -3194,7 +3189,7 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_USE(n) ((n)->node[3])
 #define NCODE_USED(n) ((n)->info.cint)
 #define NCODE_MASK(n, x) ((n)->mask[x])
-#define NCODE_NO(n) ((n)->refcnt)
+#define NCODE_ID(n) ((n)->refcnt)
 #define NCODE_FLAG(n) ((bool)((n)->flag))
 
 #define NCODE_WLAA_INFO(n) ((node *)(n)->info2)
