@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2001/05/03 16:50:08  nmw
+ * increment fundef used counter in DupIcm for ND_AP icm
+ *
  * Revision 3.46  2001/04/26 21:06:21  dkr
  * DupTypesOnly() added
  *
@@ -1252,6 +1255,7 @@ node *
 DupAssign (node *arg_node, node *arg_info)
 {
     node *new_node = NULL;
+    node *stacked_assign;
 
     DBUG_ENTER ("DupAssign");
 
@@ -1259,9 +1263,10 @@ DupAssign (node *arg_node, node *arg_info)
         || (NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return)) {
         new_node = MakeAssign (NULL, NULL);
 
+        stacked_assign = INFO_DUP_ASSIGN (arg_info);
         INFO_DUP_ASSIGN (arg_info) = new_node;
         ASSIGN_INSTR (new_node) = DUPTRAV (ASSIGN_INSTR (arg_node));
-        INFO_DUP_ASSIGN (arg_info) = NULL;
+        INFO_DUP_ASSIGN (arg_info) = stacked_assign;
 
         ASSIGN_NEXT (new_node) = DUPCONT (ASSIGN_NEXT (arg_node));
 
@@ -1578,6 +1583,7 @@ node *
 DupIcm (node *arg_node, node *arg_info)
 {
     node *new_node;
+    node *fundef;
 
     DBUG_ENTER ("DupIcm");
 
@@ -1585,6 +1591,7 @@ DupIcm (node *arg_node, node *arg_info)
 
     /*
      * The ICM name is not copied here because ICM names are predominantly static
+
      * string constants and therefore aren't freed anyway.
      */
 
@@ -1594,6 +1601,19 @@ DupIcm (node *arg_node, node *arg_info)
       = SearchInLUT_P (INFO_DUP_LUT (arg_info), ICM_FUNDEF (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    /* increment the fundef used counter for refcounted fundefs */
+    fundef = ICM_FUNDEF (new_node);
+    if ((fundef != NULL) && (FUNDEF_USED (fundef) != USED_INACTIVE)
+        && ((!FUNDEF_IS_LOOPFUN (fundef))
+            || (INFO_DUP_ASSIGN (arg_info) != ASSIGN_RHS (FUNDEF_INT_ASSIGN (fundef))))) {
+        DBUG_ASSERT ((FUNDEF_USED (fundef) >= 0), "FUNDEF_USED dropped below 0!");
+
+        (FUNDEF_USED (fundef))++;
+
+        DBUG_PRINT ("DUP", ("used counter for %s incremented to %d", FUNDEF_NAME (fundef),
+                            FUNDEF_USED (fundef)));
+    }
 
     DBUG_RETURN (new_node);
 }
