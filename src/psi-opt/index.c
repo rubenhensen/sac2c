@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2003/03/26 14:56:13  sbs
+ * more subtle adjustments of the grouping hierarchy.
+ *
  * Revision 3.48  2003/03/26 14:41:53  sbs
  * doxygenic
  *
@@ -208,7 +211,6 @@
  *
  * @brief The "index vector elimination" (IVE for short) tries to eliminate index vectors
  *        which are used for array selections only.
- *
  * <pre>
  * Example:
  *
@@ -247,7 +249,13 @@
  *
  *     VECT/ IDX(<shape>).
  *
- * In the above example we obtain:
+ * For
+ *
+ *            a = reshape([4,4], [1,2,...,16]);
+ *            i = [2,3];
+ *            z = a[i];
+ *
+ * we obtain:
  *
  *            int z;
  *            int[2] i:IDX(int[4,4]) ;
