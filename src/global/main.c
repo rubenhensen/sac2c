@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.91  2004/12/08 20:01:08  ktr
+ * added some NT2OT traversals (before wltransform, compile)
+ *
  * Revision 3.90  2004/12/01 16:33:04  ktr
  * Call to SSAundoSsa corrected.
  *
@@ -70,6 +73,7 @@
 #include "WLEnhancement.h"
 #include "export.h"
 #include "traverse.h"
+#include "new2old.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -368,6 +372,12 @@ main (int argc, char *argv[])
      */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
+    /*
+     * TODO:
+     * - WLtransform must work with new types
+     * - WLtransform must work in SSA-form
+     */
+    syntax_tree = NT2OTdoTransform (syntax_tree);
     syntax_tree = WLTRAdoWlTransform (syntax_tree); /* wltrans_tab */
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
@@ -491,6 +501,10 @@ main (int argc, char *argv[])
      */
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
+    /*
+     * TODO: Compile should work with new types
+     */
+    syntax_tree = NT2OTdoTransform (syntax_tree);
     syntax_tree = COMPdoCompile (syntax_tree); /* comp_tab */
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
