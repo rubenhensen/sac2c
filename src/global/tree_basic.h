@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/12/04 15:03:58  asi
+ * Revision 1.21  1995/12/07 16:23:29  asi
+ * comment added for INLREC
+ *
+ * Revision 1.20  1995/12/04  15:03:58  asi
  * added temporary attribute FUNDEF_INLREC(n)
  *
  * Revision 1.19  1995/12/01  20:26:14  cg
@@ -144,6 +147,7 @@ The following compilation steps are used:
  - unique-check
  - rm-void-fun
  - optimize
+   - inlining
  - psi-optimize
  - refcount
  - precompile
@@ -635,6 +639,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    int        VARNO                     (optimize -> )
  ***    long*      MASK[x]                   (optimize -> )
  ***    node*      EXTERN        (N_fundef)  (precompile -> compile -> )
+ ***    int        INLREC                    (inlining !!)
  ***
  ***    node*      FUNDEC_DEF (O) (N_fundef) (checkdec -> writesib !!)
  ***/
