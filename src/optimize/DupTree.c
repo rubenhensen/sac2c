@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.84  1998/05/08 00:56:24  dkr
+ * removed unused var
+ *
  * Revision 1.83  1998/05/06 21:17:08  dkr
  * added support for DFMasks
  *
@@ -658,7 +661,6 @@ node *
 DupAssign (node *arg_node, node *arg_info)
 {
     node *new_node = NULL;
-    int i;
 
     DBUG_ENTER ("DupAssign");
 
