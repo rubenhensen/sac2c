@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/12/01 14:14:09  dkr
+ * DBUG_ASSERTs in function WLTRALet() added
+ *
  * Revision 2.6  1999/11/30 20:30:22  dkr
  * finally I have done it 8-)))
  * The "must-resign" problem is fixed now!
@@ -5686,6 +5689,10 @@ WLTRALet (node *arg_node, node *arg_info)
     DBUG_ENTER ("WLTRALet");
 
     tmp = INFO_WL_SHPSEG (arg_info);
+
+    DBUG_ASSERT ((LET_VARDEC (arg_node) != NULL), "vardec of let-variable not found!");
+    DBUG_ASSERT ((NODE_TYPE (LET_VARDEC (arg_node)) == N_vardec),
+                 "vardec-node of let-variable has wrong type!");
     INFO_WL_SHPSEG (arg_info) = VARDEC_SHPSEG (LET_VARDEC (arg_node));
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
