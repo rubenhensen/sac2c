@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.13  2001/03/27 17:45:09  dkr
+# INCS updated
+#
 # Revision 3.12  2001/03/22 20:19:56  dkr
 # make deps done
 #
@@ -100,7 +103,7 @@ CCFLAGS   := -ansi -Wall -g -DSAC_FOR_$(OS)
 CFLAGS    := -D__EXTENSIONS__
 
 
-INCS=-I../global -I../../inc -I../tree -I../print
+INCS = -I../global -I../../inc -I../tree -I../print -I../optimize
 
 all: flatten.o lac2fun.o fun2lac.o
 
