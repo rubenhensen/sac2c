@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/09/07 11:25:09  khf
+ * added support for multioperator WLs
+ *
  * Revision 3.11  2004/08/16 11:58:50  ktr
  * Inserted some break after default labels.
  *
@@ -300,6 +303,9 @@ ReuseFundef (node *arg_node, info *arg_info)
 node *
 ReuseNwith2 (node *arg_node, info *arg_info)
 {
+    node *withop;
+    bool gen_mod_wl = FALSE;
+
     DBUG_ENTER ("REUSENwith2");
 
     if (INFO_REUSE_MASK (arg_info) == NULL) {
@@ -308,8 +314,17 @@ ReuseNwith2 (node *arg_node, info *arg_info)
          *   -> Create new reuse-mask
          */
 
-        if ((NWITH2_TYPE (arg_node) == WO_genarray)
-            || (NWITH2_TYPE (arg_node) == WO_modarray)) {
+        withop = NWITH2_WITHOP (arg_node);
+        while (withop != NULL) {
+            if ((NWITHOP_TYPE (withop) == WO_genarray)
+                || (NWITHOP_TYPE (withop) == WO_modarray)) {
+                gen_mod_wl = TRUE;
+                break;
+            }
+            withop = NWITHOP_NEXT (withop);
+        }
+
+        if (gen_mod_wl) {
             /*
              * Generate new mask for reuse-arrays
              */
