@@ -1,6 +1,11 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/12/09 18:53:05  sah
+  extended signature of free functions for
+  attributes so that they contain a link
+  to the parent node, now
+
   Revision 1.1  2004/11/23 11:30:04  sah
   Initial revision
 
@@ -52,7 +57,7 @@ version="1.0">
   <xsl:value-of select="@name"/>
   <xsl:value-of select="'( '"/>
   <xsl:value-of select="@ctype"/>
-  <xsl:value-of select="' );'"/>
+  <xsl:value-of select="'attr, node *parent );'"/>
 </xsl:template>
 
 </xsl:stylesheet>

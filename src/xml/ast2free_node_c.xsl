@@ -1,6 +1,11 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/12/09 18:53:05  sah
+  extended signature of free functions for
+  attributes so that they contain a link
+  to the parent node, now
+
   Revision 1.3  2004/11/28 22:12:49  ktr
   NEXT is rescued now before removing sons union.
 
@@ -420,7 +425,7 @@ version="1.0">
           </xsl:if>
         </xsl:with-param>
       </xsl:call-template>
-      <xsl:value-of select="');'"/>
+      <xsl:value-of select="', arg_node);'"/>
       <!-- if it is an array, we have to complete the for loop -->
       <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
         <xsl:value-of select="'}'"/>

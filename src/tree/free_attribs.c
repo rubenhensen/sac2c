@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2004/12/09 18:53:05  sah
+ * extended signature of free functions for
+ * attributes so that they contain a link
+ * to the parent node, now
+ *
  * Revision 1.19  2004/12/09 16:39:41  sbs
  * FUNDEF_USED in loops constitutes a problem in the newAST!!!
  * FREEattribExtLink lacks the context in which it is called
@@ -85,12 +90,13 @@
  * @brief Frees String attribute
  *
  * @param attr String node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 char *
-FREEattribString (char *attr)
+FREEattribString (char *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribString");
 
@@ -109,12 +115,13 @@ FREEattribString (char *attr)
  * @brief Frees String attribute
  *
  * @param attr String node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 char *
-FREEattribSharedString (char *attr)
+FREEattribSharedString (char *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribSharedString");
 
@@ -130,12 +137,13 @@ FREEattribSharedString (char *attr)
  * @brief Frees OldType attribute
  *
  * @param attr OldType node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 types *
-FREEattribOldType (types *attr)
+FREEattribOldType (types *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribOldType");
 
@@ -153,12 +161,13 @@ FREEattribOldType (types *attr)
  * @brief Frees Node attribute
  *
  * @param attr Node node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 node *
-FREEattribNode (node *attr)
+FREEattribNode (node *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribNode");
 
@@ -178,12 +187,13 @@ FREEattribNode (node *attr)
  * @brief Frees Link attribute
  *
  * @param attr Link node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 node *
-FREEattribLink (node *attr)
+FREEattribLink (node *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribLink");
 
@@ -206,12 +216,13 @@ FREEattribLink (node *attr)
  * @brief Frees Link attribute
  *
  * @param attr Link node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 node *
-FREEattribExtLink (node *attr)
+FREEattribExtLink (node *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribExtLink");
 
@@ -230,12 +241,11 @@ FREEattribExtLink (node *attr)
                 /* check whether this function is use-counted */
                 if ((FUNDEF_USED (attr) != USED_INACTIVE)
                     && ((!FUNDEF_ISDOFUN (attr))
-                        || (attr != ASSIGN_RHS (FUNDEF_INT_ASSIGN (attr))))) {
-                    /** TODO:  ^^^^ this is wrong! it should be the N_ap node
-                     *  that has attr as AP_FUNDEF!!!! However this is not available
-                     *  .... This way, we will face problemswhen freeing loops!
-                     * Most likely, the "FUNDEF_USED dropped below 0" a few lines
-                     * down below will strike....
+                        || (parent != ASSIGN_RHS (FUNDEF_INT_ASSIGN (attr))))) {
+                    /*
+                     * if the function is no dofun or
+                     * if it is a dofun, but this Ap was not the inner recursive call
+                     * decrement use counter
                      */
                     (FUNDEF_USED (attr))--;
 
@@ -269,13 +279,14 @@ FREEattribExtLink (node *attr)
  * @brief Frees Link attribute
  *
  * @param attr Link node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 
 node *
-FREEattribDownLink (node *attr)
+FREEattribDownLink (node *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribDownLink");
 
@@ -293,6 +304,7 @@ FREEattribDownLink (node *attr)
  * @brief Frees IntegerArray attribute
  *
  * @param attr IntegerArray node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
@@ -314,12 +326,13 @@ FREEattribIntegerArray (int *attr)
  * @brief Frees LUT attribute
  *
  * @param attr LUT node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 lut_t *
-FREEattribLUT (lut_t *attr)
+FREEattribLUT (lut_t *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribLUT");
 
@@ -337,12 +350,13 @@ FREEattribLUT (lut_t *attr)
  * @brief Frees Mask attribute
  *
  * @param attr Mask node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 long *
-FREEattribMask (long *attr)
+FREEattribMask (long *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribMask");
 
@@ -361,12 +375,13 @@ FREEattribMask (long *attr)
  * @brief Frees NodeList attribute
  *
  * @param attr NodeList node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 nodelist *
-FREEattribNodeList (nodelist *attr)
+FREEattribNodeList (nodelist *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribNodeList");
 
@@ -382,12 +397,13 @@ FREEattribNodeList (nodelist *attr)
  * @brief Frees SharedNodeList attribute
  *
  * @param attr SharedNodeList node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 nodelist *
-FREEattribSharedNodeList (nodelist *attr)
+FREEattribSharedNodeList (nodelist *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribSharedNodeList");
 
@@ -403,6 +419,7 @@ FREEattribSharedNodeList (nodelist *attr)
  * @brief Frees DFMask attribute
  *
  * @param attr DFMask node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
@@ -432,12 +449,13 @@ FREEattribDFMask (dfmask_t *attr)
  * @brief Frees DFMaskBase attribute
  *
  * @param attr DFMaskBase node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 dfmask_base_t *
-FREEattribDFMaskBase (dfmask_base_t *attr)
+FREEattribDFMaskBase (dfmask_base_t *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribDFMaskBase");
 
@@ -455,12 +473,13 @@ FREEattribDFMaskBase (dfmask_base_t *attr)
  * @brief Frees NewType attribute
  *
  * @param attr NewType node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 ntype *
-FREEattribNewType (ntype *attr)
+FREEattribNewType (ntype *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribNewType");
 
@@ -479,12 +498,13 @@ FREEattribNewType (ntype *attr)
  * @brief Frees ArgTab attribute
  *
  * @param attr ArgTab node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 argtab_t *
-FREEattribArgTab (argtab_t *attr)
+FREEattribArgTab (argtab_t *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribArgTab");
 
@@ -507,12 +527,13 @@ FREEattribArgTab (argtab_t *attr)
  * @brief Frees IndexPointer attribute
  *
  * @param attr IndexPointer node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 index_info *
-FREEattribIndexPointer (index_info *attr)
+FREEattribIndexPointer (index_info *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribIndexPointer");
 
@@ -530,12 +551,13 @@ FREEattribIndexPointer (index_info *attr)
  * @brief Frees Shape attribute
  *
  * @param attr Shape node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 shape *
-FREEattribShape (shape *attr)
+FREEattribShape (shape *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribShape");
 
@@ -553,12 +575,13 @@ FREEattribShape (shape *attr)
  * @brief Frees ConstVecPointer attribute
  *
  * @param attr ConstVecPointer node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 void *
-FREEattribConstVecPointer (void *attr)
+FREEattribConstVecPointer (void *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribConstVecPointer");
 
@@ -576,12 +599,13 @@ FREEattribConstVecPointer (void *attr)
  * @brief Frees Access attribute
  *
  * @param attr Access node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 access_t *
-FREEattribAccess (access_t *attr)
+FREEattribAccess (access_t *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribAccess");
 
@@ -602,17 +626,18 @@ FREEattribAccess (access_t *attr)
  * @brief Frees AccessInfo attribute
  *
  * @param attr AccessInfo node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 access_info_t *
-FREEattribAccessInfo (access_info_t *attr)
+FREEattribAccessInfo (access_info_t *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribAccessInfo");
 
     if (attr != NULL) {
-        attr->access = FREEattribAccess (attr->access);
+        attr->access = FREEattribAccess (attr->access, parent);
         attr = ILIBfree (attr);
     }
 
@@ -626,17 +651,18 @@ FREEattribAccessInfo (access_info_t *attr)
  * @brief Frees ShpSeg attribute
  *
  * @param attr ShpSeg node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 shpseg *
-FREEattribShpSeg (shpseg *attr)
+FREEattribShpSeg (shpseg *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribShpSeg");
 
     if (attr != NULL) {
-        SHPSEG_NEXT (attr) = FREEattribShpSeg (SHPSEG_NEXT (attr));
+        SHPSEG_NEXT (attr) = FREEattribShpSeg (SHPSEG_NEXT (attr), parent);
         attr = ILIBfree (attr);
     }
 
@@ -650,12 +676,13 @@ FREEattribShpSeg (shpseg *attr)
  * @brief Frees IntegerPointer attribute
  *
  * @param attr IntegerPointer node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 int *
-FREEattribIntegerPointer (int *attr)
+FREEattribIntegerPointer (int *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribIntegerPointer");
 
@@ -673,12 +700,13 @@ FREEattribIntegerPointer (int *attr)
  * @brief Frees IntegerPointerArray attribute
  *
  * @param attr IntegerPointerArray node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 int *
-FREEattribIntegerPointerArray (int *attr)
+FREEattribIntegerPointerArray (int *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribIntegerPointerArray");
 
@@ -696,12 +724,13 @@ FREEattribIntegerPointerArray (int *attr)
  * @brief Frees Scheduling attribute
  *
  * @param attr Scheduling node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 sched_t *
-FREEattribScheduling (sched_t *attr)
+FREEattribScheduling (sched_t *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribScheduling");
 
@@ -719,12 +748,13 @@ FREEattribScheduling (sched_t *attr)
  * @brief Frees TaskSel attribute
  *
  * @param attr TaskSel node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 tasksel_t *
-FREEattribTaskSel (tasksel_t *attr)
+FREEattribTaskSel (tasksel_t *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribTaskSel");
 
@@ -742,12 +772,13 @@ FREEattribTaskSel (tasksel_t *attr)
  * @brief Frees NodePointer attribute
  *
  * @param attr NodePointer node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 node **
-FREEattribNodePointer (node **attr)
+FREEattribNodePointer (node **attr, node *parent)
 {
     DBUG_ENTER ("FREEattribNodePointer");
 
@@ -763,12 +794,13 @@ FREEattribNodePointer (node **attr)
  * @brief Frees Constant attribute
  *
  * @param attr Constant node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 constant *
-FREEattribConstant (constant *attr)
+FREEattribConstant (constant *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribConstant");
 
@@ -786,12 +818,13 @@ FREEattribConstant (constant *attr)
  * @brief Frees RCCounter attribute
  *
  * @param attr RCCounter node to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 rc_counter *
-FREEattribRCCounter (rc_counter *attr)
+FREEattribRCCounter (rc_counter *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribRCCounter");
 
@@ -807,12 +840,13 @@ FREEattribRCCounter (rc_counter *attr)
  * @brief Frees RCCounter attribute
  *
  * @param attr StringSet attrib to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 stringset_t *
-FREEattribStringSet (stringset_t *attr)
+FREEattribStringSet (stringset_t *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribRCCounter");
 
@@ -828,12 +862,13 @@ FREEattribStringSet (stringset_t *attr)
  * @brief Frees index_info attribute
  *
  * @param attr StringSet attrib to process
+ * @param parent parent node
  *
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
 index_info *
-FREEattribIndexInfo (index_info *attr)
+FREEattribIndexInfo (index_info *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribIndexInfo");
 
