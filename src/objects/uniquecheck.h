@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2004/11/22 17:53:27  ktr
+ * SacDevCamp 2004 Get Ready for Rumble!
+ *
  * Revision 3.3  2004/07/17 14:30:09  sah
  * switch to INFO structure
  * PHASE I
@@ -27,12 +30,21 @@
  * Initial revision
  */
 
-#ifndef _sac_uniquecheck_h
-#define _sac_uniquecheck_h
+#ifndef _SAC_UNIQUECHECK_H_
+#define _SAC_UNIQUECHECK_H_
 
-extern node *UniquenessCheck (node *syntax_tree);
+#include "types.h"
 
-extern node *UNQmodul (node *arg_node, info *arg_info);
+/******************************************************************************
+ *
+ * Unique check traversal ( unq_tab)
+ *
+ * Prefix: UNQ
+ *
+ *****************************************************************************/
+extern node *UNQdoUniquenessCheck (node *syntax_tree);
+
+extern node *UNQmodule (node *arg_node, info *arg_info);
 extern node *UNQfundef (node *arg_node, info *arg_info);
 extern node *UNQblock (node *arg_node, info *arg_info);
 extern node *UNQvardec (node *arg_node, info *arg_info);
@@ -41,6 +53,6 @@ extern node *UNQlet (node *arg_node, info *arg_info);
 extern node *UNQid (node *arg_node, info *arg_info);
 extern node *UNQdo (node *arg_node, info *arg_info);
 extern node *UNQcond (node *arg_node, info *arg_info);
-extern node *UNQNwith (node *arg_node, info *arg_info);
+extern node *UNQwith (node *arg_node, info *arg_info);
 
-#endif /*  _sac_uniquecheck_h  */
+#endif /* _SAC_UNIQUECHECK_H_  */

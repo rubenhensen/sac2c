@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/22 17:53:27  ktr
+ * SacDevCamp 2004 Get Ready for Rumble!
+ *
  * Revision 3.2  2004/07/17 14:30:09  sah
  * switch to INFO structure
  * PHASE I
@@ -21,12 +24,21 @@
  *
  */
 
-#ifndef _sac_objinit_h
-#define _sac_objinit_h
+#ifndef _SAC_OBJINIT_H_
+#define _SAC_OBJINIT_H_
 
-extern node *OImodul (node *arg_node, info *arg_info);
+#include "types.h"
+
+/******************************************************************************
+ *
+ * Object initialization traversal ( objinit_tab)
+ *
+ * Prefix: OI
+ *
+ *****************************************************************************/
+extern node *OIdoObjInit (node *syntax_tree);
+
+extern node *OImodule (node *arg_node, info *arg_info);
 extern node *OIobjdef (node *arg_node, info *arg_info);
 
-extern node *objinit (node *syntax_tree);
-
-#endif /* _sac_objinit_h  */
+#endif /* _SAC_OBJINIT_H_  */

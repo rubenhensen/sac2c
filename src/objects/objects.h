@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/22 17:53:27  ktr
+ * SacDevCamp 2004 Get Ready for Rumble!
+ *
  * Revision 3.2  2004/07/17 14:30:09  sah
  * switch to INFO structure
  * PHASE I
@@ -24,12 +27,21 @@
  *
  */
 
-#ifndef _sac_objects_h
-#define _sac_objects_h
+#ifndef _SAC_OBJECTS_H_
+#define _SAC_OBJECTS_H_
 
-extern node *HandleObjects (node *syntax_tree);
+#include "types.h"
 
-extern node *OBJmodul (node *arg_node, info *arg_info);
+/******************************************************************************
+ *
+ * Objects traversal ( obj_tab)
+ *
+ * Prefix: OBJ
+ *
+ *****************************************************************************/
+extern node *OBJdoHandleObjects (node *syntax_tree);
+
+extern node *OBJmodule (node *arg_node, info *arg_info);
 extern node *OBJfundef (node *arg_node, info *arg_info);
 extern node *OBJobjdef (node *arg_node, info *arg_info);
 extern node *OBJarg (node *arg_node, info *arg_info);
@@ -37,4 +49,4 @@ extern node *OBJap (node *arg_node, info *arg_info);
 extern node *OBJid (node *arg_node, info *arg_info);
 extern node *OBJlet (node *arg_node, info *arg_info);
 
-#endif /* _sac_objects_h */
+#endif /* _SAC_OBJECTS_H_ */
