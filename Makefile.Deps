@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.9  2004/08/09 09:49:45  sah
+# xml .h files always created now
+#
 # Revision 1.8  2004/07/03 17:12:57  sah
 # xml files are only precessed if in new ast mode
 #
@@ -47,19 +50,15 @@ endif
 YACC_H_FILES   := $(patsubst %.y, y.tab.h, $(wildcard *.y))
 
 #
-# the xml processing is only done if new ast is used
+# files for xml processing. the makefile for that files 
+# either generates them (if new ast in use) or generates
+# empty files
 #
-ifeq ($(shell test -f $(PROJECT_ROOT)/_NEW_AST && echo yes),yes)
-  XSL_FILES      := $(wildcard $(PROJECT_ROOT)/src/tree/xml/*_h.xsl)
-  XML_FILES      := $(wildcard $(PROJECT_ROOT)/src/tree/xml/*.xml)
-  XML_H_FILES    := $(patsubst ast2%_h.xsl, $(PROJECT_ROOT)/src/tree/%.h, \
-                      $(notdir                                          \
-                         $(XSL_FILES)))
-else
-  XSL_FILES      :=
-  XML_FILES      :=
-  XML_H_FILES    :=
-endif
+XSL_FILES      := $(wildcard $(PROJECT_ROOT)/src/tree/xml/*_h.xsl)
+XML_FILES      := $(wildcard $(PROJECT_ROOT)/src/tree/xml/*.xml)
+XML_H_FILES    := $(patsubst ast2%_h.xsl, $(PROJECT_ROOT)/src/tree/%.h, \
+                    $(notdir                                          \
+                       $(XSL_FILES)))
 #
 # $(YACC_H_FILES) might be included by any .c files.
 # Therefore, bison has to be run before any dependency
