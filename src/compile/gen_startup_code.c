@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.13  1998/10/29 16:55:03  cg
+ * Bug fixed in PrintSpmdData():
+ * works now also if no functions are present at all,
+ * e.g. in the case of module implementations
+ *
  * Revision 1.12  1998/07/07 13:43:12  cg
  * Global flags SAC_DO_MULTITHREAD, SAC_DO_THREADS_STATC and
  * settings for multithreaded execution may now be set by the C
@@ -191,7 +196,9 @@ PrintSpmdData (node *syntax_tree)
     fprintf (outfile, "#define SAC_SET_SPMD_FRAME    \\\n");
     fprintf (outfile, "  {    \\\n");
 
-    Trav (MODUL_FUNS (syntax_tree), NULL);
+    if (MODUL_FUNS (syntax_tree) != NULL) {
+        Trav (MODUL_FUNS (syntax_tree), NULL);
+    }
 
     fprintf (outfile, "  }\n\n");
 
