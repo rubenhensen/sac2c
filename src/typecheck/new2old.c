@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2004/10/26 09:38:38  sah
+ * TYFixAndEliminateAlpha is called on funtion types now as well
+ *
  * Revision 1.22  2004/09/27 19:07:18  sbs
  * FUNDEF_RET_TYPES can be replaced by fixed types as all sharing
  * has been eliminated (cf. create_wrapper_code.c)
@@ -270,6 +273,13 @@ NT2OTfundef (node *arg_node, info *arg_info)
     type = TYFixAndEliminateAlpha (type);
     FUNDEF_RET_TYPE (arg_node) = TYFreeType (FUNDEF_RET_TYPE (arg_node));
     FUNDEF_RET_TYPE (arg_node) = type;
+
+    /* process the real function type as well */
+    if (FUNDEF_TYPE (arg_node) != NULL) {
+        ntype *funtype = TYFixAndEliminateAlpha (FUNDEF_TYPE (arg_node));
+        FUNDEF_TYPE (arg_node) = TYFreeType (FUNDEF_TYPE (arg_node));
+        FUNDEF_TYPE (arg_node) = funtype;
+    }
 
     if (TYIsProdOfArray (type)) {
         old_type = FUNDEF_TYPES (arg_node);
