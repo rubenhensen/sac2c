@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/03/27 23:25:01  dkr
+ * no changes done
+ *
  * Revision 3.9  2001/02/15 16:58:05  nmw
  * FreeSSAstack added
  *
@@ -53,10 +56,10 @@
 #endif
 
 /*
- * For debugging purposes, free() is not called directly but through the wrapper
- * function Free(). This allows us to set a break point on Free(). Together with
- * conditions on breakpoints, this feature allows to detect when a certain address
- * is freed.
+ * For debugging purposes, free() is not called directly but through the
+ * wrapper function Free(). This allows us to set a break point on Free().
+ * Together with conditions on breakpoints, this feature allows to detect
+ * when a certain address is freed.
  */
 
 #ifndef NOFREE
@@ -68,7 +71,7 @@
         address = (void *)((char *)address - malloc_align_step);                         \
         current_allocated_mem -= *(int *)(address);                                      \
                                                                                          \
-        DOFREE (address);                                                                \
+        DOFREE ((address));                                                              \
         address = NULL;                                                                  \
     }
 #else /* not SHOW_MALLOC */
