@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2005/01/11 15:55:07  mwe
+ * support for N_fungroup added (remove references to ZombieFuns)
+ *
  * Revision 3.75  2004/12/12 08:00:49  ktr
  * removed sons.any, attribs.any, NODE_ISALIVE because they were incompatible
  * with CLEANMEM.
@@ -406,6 +409,36 @@ FREEfreeZombie (node *fundef)
 
         if (FUNDEF_WRAPPERTYPE (fundef) != NULL) {
             FUNDEF_WRAPPERTYPE (fundef) = TYfreeType (FUNDEF_WRAPPERTYPE (fundef));
+        }
+
+        /*
+         * remove reference to fundef from fungroup
+         */
+        if (FUNDEF_FUNGROUP (fundef) != NULL) {
+            node *p1, *p2;
+            p1 = FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (fundef));
+            if (LINKLIST_LINK (p1) == fundef) {
+                /* head of FUNLIST is reference to fundef */
+                FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (fundef)) = LINKLIST_NEXT (p1);
+                LINKLIST_NEXT (p1) = NULL;
+                p1 = FREEdoFreeNode (p1);
+            } else {
+                /* reference is somewhere inside the linklist */
+                p2 = p1;
+                p1 = LINKLIST_NEXT (p1);
+
+                while (p1 != NULL) {
+                    if (LINKLIST_LINK (p1) == fundef) {
+                        /* p1 is refernce to fundef */
+                        LINKLIST_NEXT (p2) = LINKLIST_NEXT (p1);
+                        LINKLIST_NEXT (p1) = NULL;
+                        p1 = FREEdoFreeNode (p1);
+                        break;
+                    }
+                    p2 = p1;
+                    p1 = LINKLIST_NEXT (p1);
+                }
+            }
         }
 
         tmp = fundef;
