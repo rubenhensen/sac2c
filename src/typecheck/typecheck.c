@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.46  2000/08/04 17:22:32  dkr
+ * NEWTREE removed
+ * comment about TT1, TT2, TT3 updated
+ *
  * Revision 2.45  2000/07/21 14:44:48  nmw
  * typechecker calls import specializations first
  * generates fundefs with specified shaped
@@ -348,7 +352,7 @@ static node *pseudo_fold_fundefs;
 #define GEN_TYPE_NODE(node, type) node = MakeType (type, 0, NULL, NULL, NULL)
 
 /*
- *  The following defines are *only* used in function TI_prf,
+ *  The following defines are *only* used in functions TI_prf, TI_Nfoldprf.
  *  USAGES CANNOT BE FOUND IN THIS FILE (typecheck.c)!!!
  *  They are used to select the function that computes the result type
  *  of the belonging primitive function.
