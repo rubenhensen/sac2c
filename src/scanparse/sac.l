@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.53  1998/04/09 21:32:40  dkr
+ * new tokens DEFAULT, WLCOMP for wlcomp-pragmas
+ *
  * Revision 1.52  1998/03/04 16:24:27  cg
  * Bug fixed in scanning configuration file resource 'cat'
  * (same as primitive array function), fixed by new filter
@@ -421,6 +424,8 @@ int start_token;
 "freefun"                       {FILTER( FREEFUN );}
 "initfun"                       {FILTER( INITFUN );}
 "linkwith"                      {FILTER( LINKWITH );}
+"wlcomp"                        {FILTER( WLCOMP );}
+"Default"                       {FILTER( DEFAULT );}
 
 "int"				{FILTER( TYPE_INT );}
 "float"				{FILTER( TYPE_FLOAT );}
