@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2004/11/25 10:37:56  jhb
+ * maybe compile
+ *
  * Revision 3.40  2004/11/23 23:08:54  cg
  * removed CACHESIM_YES.
  *
@@ -152,6 +155,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "free.h"
 #include "dbug.h"
 #include "globals.h"
 #include "resource.h"
@@ -159,12 +163,12 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "free.h"
 #include "NameTuplesUtils.h"
 #include "precompile.h"
 #include "icm2c_std.h"
 #include "print.h"
 #include "gen_startup_code.h"
+#include "internal_lib.h"
 
 /******************************************************************************
  *
@@ -224,84 +228,90 @@ PrintGlobalSwitches ()
 {
     DBUG_ENTER ("PrintGlobalSwitches");
 
-    fprintf (outfile, "\n\n"
-                      "/*\n"
-                      " *  Global Switches\n */\n\n");
+    fprintf (global.outfile, "\n\n"
+                             "/*\n"
+                             " *  Global Switches\n */\n\n");
 
-    fprintf (outfile, "#define SAC_DO_CHECK           %d\n", runtimecheck ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_CHECK_TYPE      %d\n",
-             (runtimecheck & RUNTIMECHECK_TYPE) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_CHECK_BOUNDARY  %d\n",
-             (runtimecheck & RUNTIMECHECK_BOUNDARY) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_CHECK_MALLOC    %d\n",
-             (runtimecheck & RUNTIMECHECK_MALLOC) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_CHECK_ERRNO     %d\n",
-             (runtimecheck & RUNTIMECHECK_ERRNO) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_CHECK_HEAP      %d\n",
-             (runtimecheck & RUNTIMECHECK_HEAP) ? 1 : 0);
-    fprintf (outfile, "\n");
+    fprintf (global.outfile, "#define SAC_DO_CHECK           %d\n",
+             (global.doruntimecheck) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_CHECK_TYPE      %d\n",
+             (global.runtimecheck.type) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_CHECK_BOUNDARY  %d\n",
+             (global.runtimecheck.boundary) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_CHECK_MALLOC    %d\n",
+             (global.runtimecheck.malloc) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_CHECK_ERRNO     %d\n",
+             (global.runtimecheck.errno) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_CHECK_HEAP      %d\n",
+             (global.runtimecheck.heap) ? 1 : 0);
+    fprintf (global.outfile, "\n");
 
-    fprintf (outfile, "#define SAC_DO_PHM             %d\n",
-             (optimize & OPT_PHM) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_APS             %d\n",
-             (optimize & OPT_APS) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_DAO             %d\n",
-             (optimize & OPT_DAO) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_MSCA            %d\n",
-             (optimize & OPT_MSCA) ? 1 : 0);
-    fprintf (outfile, "\n");
+    fprintf (global.outfile, "#define SAC_DO_PHM             %d\n",
+             (global.optimize.dophm) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_APS             %d\n",
+             (global.optimize.doaps) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_DAO             %d\n",
+             (global.optimize.dodao) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_MSCA            %d\n",
+             (global.optimize.domsca) ? 1 : 0);
+    fprintf (global.outfile, "\n");
 
-    fprintf (outfile, "#define SAC_DO_PROFILE         %d\n", profileflag ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_PROFILE_WITH    %d\n",
-             (profileflag & PROFILE_WITH) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_PROFILE_FUN     %d\n",
-             (profileflag & PROFILE_FUN) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_PROFILE_INL     %d\n",
-             (profileflag & PROFILE_INL) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_PROFILE_LIB     %d\n",
-             (profileflag & PROFILE_LIB) ? 1 : 0);
-    fprintf (outfile, "\n");
+    fprintf (global.outfile, "#define SAC_DO_PROFILE         %d\n",
+             (global.doprofile) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_PROFILE_WITH    %d\n",
+             (global.profile.with) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_PROFILE_FUN     %d\n",
+             (global.profile.fun) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_PROFILE_INL     %d\n",
+             (global.profile.inl) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_PROFILE_LIB     %d\n",
+             (global.profile.lib) ? 1 : 0);
+    fprintf (global.outfile, "\n");
 
-    fprintf (outfile, "#define SAC_DO_TRACE           %d\n", traceflag ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_TRACE_REF       %d\n",
-             (traceflag & TRACE_REF) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_TRACE_MEM       %d\n",
-             (traceflag & TRACE_MEM) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_TRACE_PRF       %d\n",
-             (traceflag & TRACE_PRF) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_TRACE_FUN       %d\n",
-             (traceflag & TRACE_FUN) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_TRACE_WL        %d\n",
-             (traceflag & TRACE_WL) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_TRACE_AA        %d\n",
-             (traceflag & TRACE_AA) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_TRACE_MT        %d\n",
-             (traceflag & TRACE_MT) ? 1 : 0);
-    fprintf (outfile, "\n");
+    fprintf (global.outfile, "#define SAC_DO_TRACE           %d\n",
+             (global.dotrace) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_TRACE_REF       %d\n",
+             (global.trace.ref) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_TRACE_MEM       %d\n",
+             (global.trace.mem) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_TRACE_PRF       %d\n",
+             (global.trace.prf) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_TRACE_FUN       %d\n",
+             (global.trace.fun) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_TRACE_WL        %d\n",
+             (global.trace.wl) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_TRACE_AA        %d\n",
+             (global.trace.aa) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_TRACE_MT        %d\n",
+             (global.trace.mt) ? 1 : 0);
+    fprintf (global.outfile, "\n");
 
-    fprintf (outfile, "#define SAC_DO_CACHESIM        %d\n", (docachesim) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_CACHESIM_ADV    %d\n",
-             (cachesim & CACHESIM_ADVANCED) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_CACHESIM_GLOBAL %d\n",
-             (cachesim & CACHESIM_BLOCK) ? 0 : 1);
-    fprintf (outfile, "#define SAC_DO_CACHESIM_FILE   %d\n",
-             (cachesim & CACHESIM_FILE) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_CACHESIM_PIPE   %d\n",
-             (cachesim & CACHESIM_PIPE) ? 1 : 0);
-    fprintf (outfile, "#define SAC_DO_CACHESIM_IMDT   %d\n",
-             (cachesim & CACHESIM_IMMEDIATE) ? 1 : 0);
-    fprintf (outfile, "\n");
+    fprintf (global.outfile, "#define SAC_DO_CACHESIM        %d\n",
+             (global.docachesim) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_CACHESIM_ADV    %d\n",
+             (global.cachesim.advanced) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_CACHESIM_GLOBAL %d\n",
+             (global.cachesim.block) ? 0 : 1);
+    fprintf (global.outfile, "#define SAC_DO_CACHESIM_FILE   %d\n",
+             (global.cachesim.file) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_CACHESIM_PIPE   %d\n",
+             (global.cachesim.pipe) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_CACHESIM_IMDT   %d\n",
+             (global.cachesim.immediate) ? 1 : 0);
+    fprintf (global.outfile, "\n");
 
-    fprintf (outfile, "#define SAC_DO_MULTITHREAD     %d\n", (num_threads == 1) ? 0 : 1);
-    fprintf (outfile, "#define SAC_DO_THREADS_STATIC  %d\n", (num_threads == 0) ? 0 : 1);
-    fprintf (outfile, "\n");
+    fprintf (global.outfile, "#define SAC_DO_MULTITHREAD     %d\n",
+             (global.num_threads == 1) ? 0 : 1);
+    fprintf (global.outfile, "#define SAC_DO_THREADS_STATIC  %d\n",
+             (global.num_threads == 0) ? 0 : 1);
+    fprintf (global.outfile, "\n");
 
-    fprintf (outfile, "#define SAC_DO_COMPILE_MODULE  %d\n",
-             ((filetype == F_modimp) || (filetype == F_classimp)) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_COMPILE_MODULE  %d\n",
+             ((global.filetype == F_modimp) || (global.filetype == F_classimp)) ? 1 : 0);
     if (global.genlib.c) {
-        fprintf (outfile, "#define SAC_GENERATE_CLIBRARY\n");
+        fprintf (global.outfile, "#define SAC_GENERATE_CLIBRARY\n");
     }
-    fprintf (outfile, "\n");
+    fprintf (global.outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -326,23 +336,18 @@ PrintGlobalSwitches ()
 static void
 PrintSpmdData (node *syntax_tree)
 {
-    funtab *old_tab;
-
     DBUG_ENTER ("PrintSpmdData");
 
-    old_tab = act_tab;
-    act_tab = gsc_tab;
+    fprintf (global.outfile, "#define SAC_SET_SPMD_FRAME    \\\n");
+    fprintf (global.outfile, "  {    \\\n");
 
-    fprintf (outfile, "#define SAC_SET_SPMD_FRAME    \\\n");
-    fprintf (outfile, "  {    \\\n");
-
-    if (MODUL_FUNS (syntax_tree) != NULL) {
-        Trav (MODUL_FUNS (syntax_tree), NULL);
+    if (MODULE_FUNS (syntax_tree) != NULL) {
+        TRAVpush (TR_gsc);
+        TRAVdo (MODULE_FUNS (syntax_tree), NULL);
+        TRAVpop ();
     }
 
-    fprintf (outfile, "  }\n\n");
-
-    act_tab = old_tab;
+    fprintf (global.outfile, "  }\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -364,57 +369,57 @@ PrintProfileData ()
 
     DBUG_ENTER ("PrintProfileData");
 
-    fprintf (outfile, "#define SAC_SET_FUN_NAMES    \\\n");
-    fprintf (outfile, "  {    \\\n");
-    fprintf (outfile, "    \"%s\"", PFfunnme[0]);
-    for (i = 1; i < PFfuncntr; i++) {
-        fprintf (outfile,
+    fprintf (global.outfile, "#define SAC_SET_FUN_NAMES    \\\n");
+    fprintf (global.outfile, "  {    \\\n");
+    fprintf (global.outfile, "    \"%s\"", (global.profile_funnme[0]));
+    for (i = 1; i < global.profile_funcntr; i++) {
+        fprintf (global.outfile,
                  ",   \\\n"
                  "    \"%s\"",
-                 PFfunnme[i]);
+                 global.profile_funnme[i]);
     };
-    fprintf (outfile, "   \\\n"
-                      "  }\n");
+    fprintf (global.outfile, "   \\\n"
+                             "  }\n");
 
-    fprintf (outfile, "\n");
+    fprintf (global.outfile, "\n");
 
-    fprintf (outfile, "#define SAC_SET_FUN_APPS    \\\n");
-    fprintf (outfile, "  {    \\\n");
-    fprintf (outfile, "    %d", PFfunapcntr[0]);
-    for (i = 1; i < PFfuncntr; i++) {
-        fprintf (outfile,
+    fprintf (global.outfile, "#define SAC_SET_FUN_APPS    \\\n");
+    fprintf (global.outfile, "  {    \\\n");
+    fprintf (global.outfile, "    %d", global.profile_funapcntr[0]);
+    for (i = 1; i < global.profile_funcntr; i++) {
+        fprintf (global.outfile,
                  ",   \\\n"
                  "    %d",
-                 PFfunapcntr[i]);
+                 global.profile_funapcntr[i]);
     }
-    fprintf (outfile, "   \\\n"
-                      "  }\n");
+    fprintf (global.outfile, "   \\\n"
+                             "  }\n");
 
-    fprintf (outfile, "\n");
+    fprintf (global.outfile, "\n");
 
-    fprintf (outfile, "#define SAC_SET_FUN_AP_LINES    \\\n");
-    fprintf (outfile, "  {    \\\n");
-    fprintf (outfile, "    {    \\\n");
-    fprintf (outfile, "      %d", PFfunapline[0][0]);
-    for (j = 1; j < PFfunapcntr[0]; j++) {
-        fprintf (outfile, ", %d", PFfunapline[0][j]);
+    fprintf (global.outfile, "#define SAC_SET_FUN_AP_LINES    \\\n");
+    fprintf (global.outfile, "  {    \\\n");
+    fprintf (global.outfile, "    {    \\\n");
+    fprintf (global.outfile, "      %d", global.profile_funapline[0][0]);
+    for (j = 1; j < global.profile_funapcntr[0]; j++) {
+        fprintf (global.outfile, ", %d", global.profile_funapline[0][j]);
     }
-    fprintf (outfile, "   \\\n"
-                      "    }");
-    for (i = 1; i < PFfuncntr; i++) {
-        fprintf (outfile, ",   \\\n"
-                          "    {     \\\n");
-        fprintf (outfile, "      %d", PFfunapline[i][0]);
-        for (j = 1; j < PFfunapcntr[i]; j++) {
-            fprintf (outfile, ", %d", PFfunapline[i][j]);
+    fprintf (global.outfile, "   \\\n"
+                             "    }");
+    for (i = 1; i < global.profile_funcntr; i++) {
+        fprintf (global.outfile, ",   \\\n"
+                                 "    {     \\\n");
+        fprintf (global.outfile, "      %d", global.profile_funapline[i][0]);
+        for (j = 1; j < global.profile_funapcntr[i]; j++) {
+            fprintf (global.outfile, ", %d", global.profile_funapline[i][j]);
         }
-        fprintf (outfile, "   \\\n"
-                          "    }");
+        fprintf (global.outfile, "   \\\n"
+                                 "    }");
     }
-    fprintf (outfile, "   \\\n"
-                      "  }");
+    fprintf (global.outfile, "   \\\n"
+                             "  }");
 
-    fprintf (outfile, "\n");
+    fprintf (global.outfile, "\n");
 
     DBUG_VOID_RETURN;
 }
@@ -434,101 +439,112 @@ PrintGlobalSettings (node *syntax_tree)
 {
     DBUG_ENTER ("PrintGlobalSettings");
 
-    fprintf (outfile, "\n\n/*\n *  Global Settings\n */\n\n");
+    fprintf (global.outfile, "\n\n/*\n *  Global Settings\n */\n\n");
 
-    fprintf (outfile, "#ifndef NULL\n"
-                      "#define NULL                      (void*) 0\n"
-                      "#endif\n\n");
+    fprintf (global.outfile, "#ifndef NULL\n"
+                             "#define NULL                      (void*) 0\n"
+                             "#endif\n\n");
 
-    fprintf (outfile, "#define SAC_SET_INITIAL_MASTER_HEAPSIZE      %d\n",
-             initial_master_heapsize * 1024);
-    fprintf (outfile, "#define SAC_SET_INITIAL_WORKER_HEAPSIZE      %d\n",
-             initial_worker_heapsize * 1024);
-    fprintf (outfile, "#define SAC_SET_INITIAL_UNIFIED_HEAPSIZE     %d\n\n",
-             initial_unified_heapsize * 1024);
+    fprintf (global.outfile, "#define SAC_SET_INITIAL_MASTER_HEAPSIZE      %d\n",
+             global.initial_master_heapsize * 1024);
+    fprintf (global.outfile, "#define SAC_SET_INITIAL_WORKER_HEAPSIZE      %d\n",
+             global.initial_worker_heapsize * 1024);
+    fprintf (global.outfile, "#define SAC_SET_INITIAL_UNIFIED_HEAPSIZE     %d\n\n",
+             global.initial_unified_heapsize * 1024);
 
-    fprintf (outfile, "#ifndef SAC_SET_MTMODE\n");
-    fprintf (outfile, "#define SAC_SET_MTMODE               %d\n", (int)mtmode);
-    fprintf (outfile, "#endif\n\n");
+    fprintf (global.outfile, "#ifndef SAC_SET_MTMODE\n");
+    fprintf (global.outfile, "#define SAC_SET_MTMODE               %d\n",
+             (int)global.mtmode);
+    fprintf (global.outfile, "#endif\n\n");
 
-    fprintf (outfile, "#ifndef SAC_SET_THREADS_MAX\n");
-    fprintf (outfile, "#define SAC_SET_THREADS_MAX          %d\n", max_threads);
-    fprintf (outfile, "#endif\n\n");
+    fprintf (global.outfile, "#ifndef SAC_SET_THREADS_MAX\n");
+    fprintf (global.outfile, "#define SAC_SET_THREADS_MAX          %d\n",
+             global.max_threads);
+    fprintf (global.outfile, "#endif\n\n");
 
-    fprintf (outfile, "#ifndef SAC_SET_THREADS\n");
-    fprintf (outfile, "#define SAC_SET_THREADS              %d\n", num_threads);
-    fprintf (outfile, "#endif\n\n");
+    fprintf (global.outfile, "#ifndef SAC_SET_THREADS\n");
+    fprintf (global.outfile, "#define SAC_SET_THREADS              %d\n",
+             global.num_threads);
+    fprintf (global.outfile, "#endif\n\n");
 
-    fprintf (outfile, "#ifndef SAC_SET_MASTERCLASS\n");
-    fprintf (outfile, "#define SAC_SET_MASTERCLASS          %d\n",
-             GSCCalcMasterclass (num_threads));
-    fprintf (outfile, "#endif\n\n");
+    fprintf (global.outfile, "#ifndef SAC_SET_MASTERCLASS\n");
+    fprintf (global.outfile, "#define SAC_SET_MASTERCLASS          %d\n",
+             GSCCalcMasterclass (global.num_threads));
+    fprintf (global.outfile, "#endif\n\n");
 
-    if (max_sync_fold == -1) {
-        fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD        %d\n", needed_sync_fold);
+    if (global.max_sync_fold == -1) {
+        fprintf (global.outfile, "#define SAC_SET_MAX_SYNC_FOLD        %d\n",
+                 global.needed_sync_fold);
     } else {
-        fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD        %d\n", max_sync_fold);
+        fprintf (global.outfile, "#define SAC_SET_MAX_SYNC_FOLD        %d\n",
+                 global.max_sync_fold);
     }
 
-    fprintf (outfile, "#define SAC_SET_NUM_SCHEDULERS       %d\n\n", max_schedulers);
+    fprintf (global.outfile, "#define SAC_SET_NUM_SCHEDULERS       %d\n\n",
+             global.max_schedulers);
 
-    fprintf (outfile, "#define SAC_SET_CACHE_1_SIZE         %d\n",
-             config.cache1_size == 0 ? -1 : config.cache1_size);
-    fprintf (outfile, "#define SAC_SET_CACHE_1_LINE         %d\n",
-             config.cache1_line == 0 ? 4 : config.cache1_line);
-    fprintf (outfile, "#define SAC_SET_CACHE_1_ASSOC        %d\n",
-             config.cache1_assoc == 0 ? 1 : config.cache1_assoc);
-    fprintf (outfile, "#define SAC_SET_CACHE_1_WRITEPOL     SAC_CS_%s\n",
-             config.cache1_writepol);
-    fprintf (outfile, "#define SAC_SET_CACHE_1_MSCA_FACTOR  %.2f\n\n",
-             ((float)config.cache1_msca_factor) / 100);
+    fprintf (global.outfile, "#define SAC_SET_CACHE_1_SIZE         %d\n",
+             global.config.cache1_size == 0 ? -1 : global.config.cache1_size);
+    fprintf (global.outfile, "#define SAC_SET_CACHE_1_LINE         %d\n",
+             global.config.cache1_line == 0 ? 4 : global.config.cache1_line);
+    fprintf (global.outfile, "#define SAC_SET_CACHE_1_ASSOC        %d\n",
+             global.config.cache1_assoc == 0 ? 1 : global.config.cache1_assoc);
+    fprintf (global.outfile, "#define SAC_SET_CACHE_1_WRITEPOL     SAC_CS_%s\n",
+             global.config.cache1_writepol);
+    fprintf (global.outfile, "#define SAC_SET_CACHE_1_MSCA_FACTOR  %.2f\n\n",
+             ((float)global.config.cache1_msca_factor) / 100);
 
-    fprintf (outfile, "#define SAC_SET_CACHE_2_SIZE         %d\n",
-             config.cache2_size == 0 ? -1 : config.cache2_size);
-    fprintf (outfile, "#define SAC_SET_CACHE_2_LINE         %d\n",
-             config.cache2_line == 0 ? 4 : config.cache2_line);
-    fprintf (outfile, "#define SAC_SET_CACHE_2_ASSOC        %d\n",
-             config.cache2_assoc == 0 ? 1 : config.cache2_assoc);
-    fprintf (outfile, "#define SAC_SET_CACHE_2_WRITEPOL     SAC_CS_%s\n",
-             config.cache2_writepol);
-    fprintf (outfile, "#define SAC_SET_CACHE_2_MSCA_FACTOR  %.2f\n\n",
-             ((float)config.cache2_msca_factor) / 100);
+    fprintf (global.outfile, "#define SAC_SET_CACHE_2_SIZE         %d\n",
+             global.config.cache2_size == 0 ? -1 : global.config.cache2_size);
+    fprintf (global.outfile, "#define SAC_SET_CACHE_2_LINE         %d\n",
+             global.config.cache2_line == 0 ? 4 : global.config.cache2_line);
+    fprintf (global.outfile, "#define SAC_SET_CACHE_2_ASSOC        %d\n",
+             global.config.cache2_assoc == 0 ? 1 : global.config.cache2_assoc);
+    fprintf (global.outfile, "#define SAC_SET_CACHE_2_WRITEPOL     SAC_CS_%s\n",
+             global.config.cache2_writepol);
+    fprintf (global.outfile, "#define SAC_SET_CACHE_2_MSCA_FACTOR  %.2f\n\n",
+             ((float)global.config.cache2_msca_factor) / 100);
 
-    fprintf (outfile, "#define SAC_SET_CACHE_3_SIZE         %d\n",
-             config.cache3_size == 0 ? -1 : config.cache3_size);
-    fprintf (outfile, "#define SAC_SET_CACHE_3_LINE         %d\n",
-             config.cache3_line == 0 ? 4 : config.cache3_line);
-    fprintf (outfile, "#define SAC_SET_CACHE_3_ASSOC        %d\n",
-             config.cache3_assoc == 0 ? 1 : config.cache3_assoc);
-    fprintf (outfile, "#define SAC_SET_CACHE_3_WRITEPOL     SAC_CS_%s\n",
-             config.cache3_writepol);
-    fprintf (outfile, "#define SAC_SET_CACHE_3_MSCA_FACTOR  %.2f\n\n",
-             ((float)config.cache3_msca_factor) / 100);
+    fprintf (global.outfile, "#define SAC_SET_CACHE_3_SIZE         %d\n",
+             global.config.cache3_size == 0 ? -1 : global.config.cache3_size);
+    fprintf (global.outfile, "#define SAC_SET_CACHE_3_LINE         %d\n",
+             global.config.cache3_line == 0 ? 4 : global.config.cache3_line);
+    fprintf (global.outfile, "#define SAC_SET_CACHE_3_ASSOC        %d\n",
+             global.config.cache3_assoc == 0 ? 1 : global.config.cache3_assoc);
+    fprintf (global.outfile, "#define SAC_SET_CACHE_3_WRITEPOL     SAC_CS_%s\n",
+             global.config.cache3_writepol);
+    fprintf (global.outfile, "#define SAC_SET_CACHE_3_MSCA_FACTOR  %.2f\n\n",
+             ((float)global.config.cache3_msca_factor) / 100);
 
-    fprintf (outfile, "#define SAC_SET_CACHESIM_HOST        \"%s\"\n",
-             STR_OR_EMPTY (cachesim_host));
+    fprintf (global.outfile, "#define SAC_SET_CACHESIM_HOST        \"%s\"\n",
+             STR_OR_EMPTY (global.cachesim_host));
 
-    if (cachesim_file[0] == '\0') {
-        fprintf (outfile, "#define SAC_SET_CACHESIM_FILE        \"%s.cs\"\n",
-                 outfilename);
+    if (global.cachesim_file[0] == '\0') {
+        fprintf (global.outfile, "#define SAC_SET_CACHESIM_FILE        \"%s.cs\"\n",
+                 global.outfilename);
     } else {
-        fprintf (outfile, "#define SAC_SET_CACHESIM_FILE        \"%s\"\n", cachesim_file);
+        fprintf (global.outfile, "#define SAC_SET_CACHESIM_FILE        \"%s\"\n",
+                 global.cachesim_file);
     }
 
-    if (cachesim_dir[0] == '\0') {
-        fprintf (outfile, "#define SAC_SET_CACHESIM_DIR         \"%s\"\n", config.tmpdir);
+    if (global.cachesim_dir[0] == '\0') {
+        fprintf (global.outfile, "#define SAC_SET_CACHESIM_DIR         \"%s\"\n",
+                 global.config.tmpdir);
     } else {
-        fprintf (outfile, "#define SAC_SET_CACHESIM_DIR         \"%s\"\n", cachesim_dir);
+        fprintf (global.outfile, "#define SAC_SET_CACHESIM_DIR         \"%s\"\n",
+                 global.cachesim_dir);
     }
 
-    fprintf (outfile, "#define SAC_SET_MAXFUN               %d\n", PFfuncntr);
-    fprintf (outfile, "#define SAC_SET_MAXFUNAP             %d\n", PFfunapmax);
+    fprintf (global.outfile, "#define SAC_SET_MAXFUN               %d\n",
+             (global.profile_funcntr));
+    fprintf (global.outfile, "#define SAC_SET_MAXFUNAP             %d\n",
+             global.profile_funapmax);
 
-    fprintf (outfile, "\n");
+    fprintf (global.outfile, "\n");
 
     PrintProfileData ();
 
-    if (mtmode != MT_none) {
+    if (global.mtmode != MT_none) {
         PrintSpmdData (syntax_tree);
     }
 
@@ -550,12 +566,12 @@ PrintIncludes ()
 {
     DBUG_ENTER ("PrintIncludes");
 
-    fprintf (outfile, "\n\n"
-                      "/*\n"
-                      " *  Includes\n */\n\n");
+    fprintf (global.outfile, "\n\n"
+                             "/*\n"
+                             " *  Includes\n */\n\n");
 
-    fprintf (outfile, "\n"
-                      "#include \"sac.h\"\n\n");
+    fprintf (global.outfile, "\n"
+                             "#include \"sac.h\"\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -575,14 +591,14 @@ PrintDefines ()
 {
     DBUG_ENTER ("PrintDefines");
 
-    fprintf (outfile, "\n\n"
-                      "/*\n"
-                      " *  Global Definitions\n"
-                      " */\n\n");
+    fprintf (global.outfile, "\n\n"
+                             "/*\n"
+                             " *  Global Definitions\n"
+                             " */\n\n");
 
-    fprintf (outfile, "SAC_MT_DEFINE()\n");
-    fprintf (outfile, "SAC_PF_DEFINE()\n");
-    fprintf (outfile, "SAC_HM_DEFINE()\n");
+    fprintf (global.outfile, "SAC_MT_DEFINE()\n");
+    fprintf (global.outfile, "SAC_PF_DEFINE()\n");
+    fprintf (global.outfile, "SAC_HM_DEFINE()\n");
 
     DBUG_VOID_RETURN;
 }
@@ -644,8 +660,8 @@ GSCicm (node *arg_node, info *arg_info)
 
             name = ID_NT_TAG (EXPRS_EXPR3 (icm_arg));
 
-            fprintf (outfile, "        SAC_MT_SPMD_ARG_%s( %s, %s)    \\\n", tag, type,
-                     name);
+            fprintf (global.outfile, "        SAC_MT_SPMD_ARG_%s( %s, %s)    \\\n", tag,
+                     type, name);
 
             icm_arg = EXPRS_EXPRS4 (icm_arg);
         }
@@ -671,7 +687,7 @@ GSCspmd (node *arg_node, info *arg_info)
 
     spmd_block_counter++;
 
-    fprintf (outfile, "      SAC_MT_BLOCK_FRAME( %s,  {  \\\n",
+    fprintf (global.outfile, "      SAC_MT_BLOCK_FRAME( %s,  {  \\\n",
              FUNDEF_NAME (SPMD_FUNDEF (arg_node)));
 
     /*
@@ -679,10 +695,10 @@ GSCspmd (node *arg_node, info *arg_info)
      * Therefore, we have to traverse the respective block.
      */
     if (SPMD_ICM_PARALLEL (arg_node) != NULL) {
-        Trav (SPMD_ICM_PARALLEL (arg_node), arg_info);
+        TRAVdo (SPMD_ICM_PARALLEL (arg_node), arg_info);
     }
 
-    fprintf (outfile, "      })     \\\n");
+    fprintf (global.outfile, "      })     \\\n");
 
     DBUG_RETURN (arg_node);
 }
@@ -702,34 +718,28 @@ GSCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("GSCfundef");
 
-    if ((FUNDEF_STATUS (arg_node) == ST_regular) ||
-#if 0
-      (FUNDEF_IS_LACFUN( arg_node)) ||
-#endif
-        (FUNDEF_STATUS (arg_node) == ST_exported)
-        || (((FUNDEF_STATUS (arg_node) == ST_imported_mod)
-             || (FUNDEF_STATUS (arg_node) == ST_imported_class))
-            && (FUNDEF_BODY (arg_node) != NULL))) {
+    if (FUNDEF_BODY (arg_node) != NULL) {
         /*
          * Here, we want to check all functions which may contain an SPMD-block.
          */
-        fprintf (outfile, "    SAC_MT_FUN_FRAME( %s, {   \\\n", FUNDEF_NAME (arg_node));
+        fprintf (global.outfile, "    SAC_MT_FUN_FRAME( %s, {   \\\n",
+                 FUNDEF_NAME (arg_node));
         spmd_block_counter = 0;
 
-        Trav (FUNDEF_BODY (arg_node), arg_info);
+        TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
         /*
          *  if there is no dummy frame, one is inserted in front here
          */
         if (spmd_block_counter == 0) {
-            fprintf (outfile, "      SAC_MT_BLOCK_FRAME_DUMMY()    \\\n");
+            fprintf (global.outfile, "      SAC_MT_BLOCK_FRAME_DUMMY()    \\\n");
         }
 
-        fprintf (outfile, "    })    \\\n");
+        fprintf (global.outfile, "    })    \\\n");
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        Trav (FUNDEF_NEXT (arg_node), arg_info);
+        TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -778,8 +788,8 @@ GSCPrintInternalInitFileHeader (node *syntax_tree)
     PrintGlobalSwitches ();
     PrintGlobalSettings (syntax_tree);
 
-    fprintf (outfile, "#undef SAC_DO_COMPILE_MODULE\n");
-    fprintf (outfile, "#define SAC_DO_COMPILE_MODULE 0\n");
+    fprintf (global.outfile, "#undef SAC_DO_COMPILE_MODULE\n");
+    fprintf (global.outfile, "#define SAC_DO_COMPILE_MODULE 0\n");
 
     PrintIncludes ();
 
@@ -826,28 +836,28 @@ GSCPrintMainBegin ()
 
     DBUG_ENTER ("GSCPrintMainBegin");
 
-    funname = ObjInitFunctionName (FALSE);
+    funname = PRECobjInitFunctionName (FALSE);
 
     /* call init function for a c library - no command line available */
     if (global.genlib.c) {
         /* only call obj init function - runtimesystem already initialized */
         INDENT;
-        fprintf (outfile, "%s( 0 , NULL);\n\n", funname);
+        fprintf (global.outfile, "%s( 0 , NULL);\n\n", funname);
     } else {
         INDENT;
-        fprintf (outfile, "SAC_MT_SETUP_INITIAL();\n");
+        fprintf (global.outfile, "SAC_MT_SETUP_INITIAL();\n");
         INDENT;
-        fprintf (outfile, "SAC_PF_SETUP();\n");
+        fprintf (global.outfile, "SAC_PF_SETUP();\n");
         INDENT;
-        fprintf (outfile, "SAC_HM_SETUP();\n");
+        fprintf (global.outfile, "SAC_HM_SETUP();\n");
         INDENT;
-        fprintf (outfile, "SAC_MT_SETUP();\n");
+        fprintf (global.outfile, "SAC_MT_SETUP();\n");
         INDENT;
-        fprintf (outfile, "SAC_CS_SETUP();\n");
+        fprintf (global.outfile, "SAC_CS_SETUP();\n");
         INDENT;
-        fprintf (outfile, "%s( __argc, __argv);\n\n", funname);
+        fprintf (global.outfile, "%s( __argc, __argv);\n\n", funname);
     }
-    funname = Free (funname);
+    funname = ILIBfree (funname);
 
     DBUG_VOID_RETURN;
 }
@@ -868,14 +878,14 @@ GSCPrintMainEnd ()
     DBUG_ENTER ("GSCPrintMainEnd");
 
     /*
-     * outfile is already indented by 2
+     * global.outfile is already indented by 2
      */
     INDENT;
-    fprintf (outfile, "SAC_PF_PRINT();\n");
+    fprintf (global.outfile, "SAC_PF_PRINT();\n");
     INDENT;
-    fprintf (outfile, "SAC_CS_FINALIZE();\n");
+    fprintf (global.outfile, "SAC_CS_FINALIZE();\n");
     INDENT;
-    fprintf (outfile, "SAC_HM_PRINT();\n\n");
+    fprintf (global.outfile, "SAC_HM_PRINT();\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -896,41 +906,42 @@ GSCPrintMain ()
     char *res_NT, *mythread_NT;
     types *tmp_type;
     bool print_thread_id
-      = (((mtmode == MT_createjoin) || (mtmode == MT_startstop)) && (optimize & OPT_PHM));
+      = (((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop))
+         && (global.optimize.dophm));
 
     DBUG_ENTER ("GSCPrintMain");
 
     INDENT;
-    fprintf (outfile, "int main( int __argc, char *__argv[])\n");
+    fprintf (global.outfile, "int main( int __argc, char *__argv[])\n");
     INDENT;
-    fprintf (outfile, "{\n");
-    indent++;
+    fprintf (global.outfile, "{\n");
+    global.indent++;
     if (print_thread_id) {
         INDENT;
-        fprintf (outfile, "SAC_MT_DECL_MYTHREAD()\n");
+        fprintf (global.outfile, "SAC_MT_DECL_MYTHREAD()\n");
     }
-    tmp_type = MakeTypes1 (T_int);
-    res_NT = CreateNtTag ("SAC_res", tmp_type);
-    mythread_NT = CreateNtTag ("SAC_MT_mythread", tmp_type);
-    tmp_type = FreeAllTypes (tmp_type);
+    tmp_type = TBmakeTypes1 (T_int);
+    res_NT = NTUcreateNtTag ("SAC_res", tmp_type);
+    mythread_NT = NTUcreateNtTag ("SAC_MT_mythread", tmp_type);
+    tmp_type = FREEfreeAllTypes (tmp_type);
     ICMCompileND_DECL (res_NT, "int", 0, NULL); /* create ND_DECL icm */
     GSCPrintMainBegin ();
 
     INDENT;
-    fprintf (outfile, "SACf_main( ");
+    fprintf (global.outfile, "SACf_main( ");
     if (print_thread_id) {
-        fprintf (outfile, "SAC_ND_ARG_in( %s), ", mythread_NT);
+        fprintf (global.outfile, "SAC_ND_ARG_in( %s), ", mythread_NT);
     }
-    fprintf (outfile, "SAC_ND_ARG_out( %s)", res_NT);
-    fprintf (outfile, ");\n\n");
+    fprintf (global.outfile, "SAC_ND_ARG_out( %s)", res_NT);
+    fprintf (global.outfile, ");\n\n");
     GSCPrintMainEnd ();
     INDENT;
-    fprintf (outfile, "return( SAC_ND_READ( %s, 0));\n", res_NT);
-    res_NT = Free (res_NT);
-    mythread_NT = Free (mythread_NT);
-    indent--;
+    fprintf (global.outfile, "return( SAC_ND_READ( %s, 0));\n", res_NT);
+    res_NT = ILIBfree (res_NT);
+    mythread_NT = ILIBfree (mythread_NT);
+    global.indent--;
     INDENT;
-    fprintf (outfile, "}\n");
+    fprintf (global.outfile, "}\n");
 
     DBUG_VOID_RETURN;
 }
