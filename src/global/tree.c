@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/07 13:00:22  jhs
+ * initialization of src_file in Make Node added.
+ *
  * Revision 2.1  1999/02/23 12:39:49  sacbase
  * new release made
  *
@@ -235,6 +238,7 @@ MakeNode (nodetype nodetype)
     tmp->flag = 0;
     tmp->varno = 0;
     tmp->lineno = linenum;
+    tmp->src_file = filename;
     tmp->refcnt = 0;
     tmp->counter = 0;
     tmp->info2 = NULL;
