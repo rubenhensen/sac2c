@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/05/07 13:26:18  dkr
+ * DBUG string 'AST' added: calls PrintAST(syntax_tree) if flag -b... is
+ * given.
+ *
  * Revision 3.10  2001/04/26 21:08:22  dkr
  * ups, include of rmcasts.h removed
  *
@@ -553,6 +557,7 @@ BREAK:
             RSCShowResources ();
         } else {
             if ((print_after_break == PAB_YES) && (compiler_phase <= PH_compile)) {
+                DBUG_EXECUTE ("AST", PrintAST (syntax_tree););
                 Print (syntax_tree);
             }
             syntax_tree = FreeTree (syntax_tree);
