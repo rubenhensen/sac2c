@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.10  1994/12/16 14:41:26  sbs
+# Revision 1.11  1994/12/20 17:33:45  hw
+# added free.o & tree.o
+#
+# Revision 1.10  1994/12/16  14:41:26  sbs
 # Put the invokation of make in scanparse in front, since
 # some other files include y.tab.h (via scnprs.h)
 #
@@ -36,7 +39,8 @@ RM=rm -f
 
 LIB=lib/dbug.o
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
-        src/global/my_debug.o src/global/traverse.o
+        src/global/my_debug.o src/global/traverse.o  src/global/tree.o \
+         src/global/free.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o
 PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o
