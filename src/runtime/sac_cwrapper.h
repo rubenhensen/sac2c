@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2000/07/28 14:42:59  nmw
+ * macros changed to handle T_user types
+ *
  * Revision 1.7  2000/07/24 14:53:41  nmw
  * macros changed for refcounter check
  *
@@ -30,9 +33,11 @@
 
 /* check for refcount >=1 , decrement refcounter */
 #define SAC_IW_CHECKDEC_RC(a)                                                            \
-    SAC_ARG_LRC (a) = SAC_ARG_LRC (a) - 1;                                               \
-    if (SAC_ARG_LRC (a) < 0) {                                                           \
+    if (SAC_ARG_LRC (a) <= 0) {                                                          \
         SAC_RuntimeError ("Referencecounter reaches 0, no data available!\n");           \
+    }                                                                                    \
+    if (SAC_ARG_DIM (a) > 0) { /* decrement only if refcounted arg */                    \
+        SAC_ARG_LRC (a) = SAC_ARG_LRC (a) - 1;                                           \
     }
 
 /* restore old refcounter */
@@ -44,10 +49,19 @@
 /* argument is array type - expand with additional refcounter */
 #define SAC_ARGCALL_REFCNT(var, type) (type *)(SAC_ARG_ELEMS (var)), (SAC_ARG_RC (var))
 
+/* argument is simple type */
+#define SAC_ARGCALL_INOUT_SIMPLE(var, type) ((type *)(SAC_ARG_ELEMS ((var))))
+
+/* argument is array type - expand with additional refcounter */
+#define SAC_ARGCALL_INOUT_REFCNT(var, type)                                              \
+    (type **)(&SAC_ARG_ELEMS ((var))), (int **)(&SAC_ARG_RC ((var)))
+
 /* result is simple type */
 #define SAC_RESULT_SIMPLE(var, type) ((type *)(SAC_ARG_ELEMS ((*var))))
 
-/* result is array type - expand with additional refcounter */
+/* result is array type - expand with additional refcounter
+ * also used if arg is tagged as inout
+ */
 #define SAC_RESULT_REFCNT(var, type)                                                     \
     (type **)(&SAC_ARG_ELEMS ((*var))), (int **)(&SAC_ARG_RC ((*var)))
 
