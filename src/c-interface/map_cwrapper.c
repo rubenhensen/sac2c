@@ -38,13 +38,19 @@ MCWmodul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("MCWmodul");
 
-    if (MODUL_FUNS (arg_node) != NULL) {
-        /* if there are some fundefs, traverse them */
-        NOTE (("analyse overloading of sac-functions...\n"));
-        INFO_MCW_MODUL (arg_info) = arg_node;
+    if (MODUL_OBJS (arg_node) != NULL) {
+        SYSWARN (("the c interface cannot handle global objects so far"));
+        CONT_WARN (("creating no c-library and interface"));
+        generatelibrary &= (!GENERATELIBRARY_C);
+    } else {
+        if (MODUL_FUNS (arg_node) != NULL) {
+            /* if there are some fundefs, traverse them */
+            NOTE (("analyse overloading of sac-functions...\n"));
+            INFO_MCW_MODUL (arg_info) = arg_node;
 
-        /* the modul node is needed to hang the wrapperchain in N_module */
-        Trav (MODUL_FUNS (arg_node), arg_info);
+            /* the modul node is needed to hang the wrapperchain in N_module */
+            Trav (MODUL_FUNS (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -107,7 +113,7 @@ MCWfundef (node *arg_node, node *arg_info)
  *   node *MCWarg(node *arg_node, node *arg_info)
  *
  * description:
- *   traverses N_arg nodes
+ *   traverses N_arg nodes, count artificial args
  *
  ******************************************************************************/
 
@@ -115,6 +121,14 @@ node *
 MCWarg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("MCWarg");
+
+    if (ARG_ATTRIB (arg_node) == ST_was_reference) {
+        INFO_MCW_CNT_ARTIFICIAL (arg_info)++;
+    }
+
+    if (ARG_NEXT (arg_node) != NULL) {
+        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -246,7 +260,7 @@ CountFunArgs (node *fundef)
  *   int CountFunResults( node *fundef)
  *
  * description:
- *   counts the number of results of this function
+ *   counts the number of standard results of this function
  *
  * return:
  *   number of results
@@ -257,6 +271,7 @@ static int
 CountFunResults (node *fundef)
 {
     int count = 0;
+    node *arg_info;
     types *rettypes;
 
     DBUG_ENTER ("CountFunResults");
@@ -267,5 +282,14 @@ CountFunResults (node *fundef)
         count++;
         rettypes = TYPES_NEXT (rettypes);
     }
+
+    arg_info = MakeInfo ();
+    INFO_MCW_CNT_ARTIFICIAL (arg_info) = 0;
+    if (FUNDEF_ARGS (fundef) != NULL) {
+        Trav (FUNDEF_ARGS (fundef), arg_info);
+    }
+    count -= INFO_MCW_CNT_ARTIFICIAL (arg_info);
+    FREE (arg_info);
+
     DBUG_RETURN (count);
 }
