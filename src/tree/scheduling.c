@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/07/11 09:56:19  dkr
+ * minor changed for TAGGED ARRAYS done
+ *
  * Revision 1.2  2000/01/28 13:51:50  jhs
  * SCHCopyScheduling does not retun NULL any more, but the
  * real copy of the scheduling.
@@ -37,7 +40,6 @@
  * file now only contains implementation of abstract data type
  * for the representation of schedulings
  *
- *
  */
 
 /*****************************************************************************
@@ -47,7 +49,6 @@
  * prefix: SCH
  *
  * description:
- *
  *   Scheduling is needed nor the non-sequential execution of with-loops.
  *   In this context, it means a mechanism which guarantees that each array
  *   element selected by a generator is calculated by exactly one thread.
@@ -84,7 +85,6 @@
  *            sched_t
  *
  * description:
- *
  *   These data types are used for the representation of schedulings. Each
  *   scheduling consists of a name called 'discipline', a class, a line
  *   number, and an argument specification.
@@ -142,15 +142,14 @@ typedef sched_t *SCHsched_t;
  * global variable: scheduler_table[]
  *
  * description:
- *
  *   This global variable defines a table of scheduling specifications. Each
- *   scheduling is described by six entries: the scheduling name, the scheduling
- *   class, an adjustment flag, maximum scheduling dimension, the number
- *   of its arguments, and a type specification of the arguments.
+ *   scheduling is described by six entries: the scheduling name, the
+ *   scheduling class, an adjustment flag, maximum scheduling dimension, the
+ *   number of its arguments, and a type specification of the arguments.
  *
- *   Schedulings may be defined for synchronisation blocks/with-loops as well as for
- *   variable or constant segments. Note that schedulings for variable segments
- *   may also be applied to constant segments but not vice versa.
+ *   Schedulings may be defined for synchronisation blocks/with-loops as well
+ *   as for variable or constant segments. Note that schedulings for variable
+ *   segments may also be applied to constant segments but not vice versa.
  *
  *   The adjustment flag specifies whether a particular scheduling produces
  *   legal subsegments with respect to unrolled loops.
@@ -183,10 +182,10 @@ static struct {
 /******************************************************************************
  *
  * function:
- *   sched_t *CheckSchedulingArgs(sched_t *sched, char *spec, node *exprs, int line)
+ *   sched_t *CheckSchedulingArgs( sched_t *sched, char *spec, node *exprs,
+ *                                 int line)
  *
  * description:
- *
  *   This function produces the arguments of a scheduling specification that
  *   is derived from a wlcomp pragma. All given arguments are compared with
  *   the respective argument specification from the scheduler table. The line
@@ -222,9 +221,9 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
             switch (arg_spec[0]) {
             case 'n':
                 if (NODE_TYPE (expr) != N_num) {
-                    ABORT (line,
-                           ("Argument %d of scheduling discipline '%s` must be a number",
-                            i, sched->discipline));
+                    ABORT (line, ("Argument %d of scheduling discipline '%s` must be"
+                                  " a number",
+                                  i, sched->discipline));
                 }
                 sched->args[i].arg_type = AT_num;
                 sched->args[i].arg.num = NUM_VAL (expr);
@@ -232,10 +231,9 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
 
             case 'i':
                 if (NODE_TYPE (expr) != N_id) {
-                    ABORT (
-                      line,
-                      ("Argument %d of scheduling discipline '%s` must be an identifier",
-                       i, sched->discipline));
+                    ABORT (line, ("Argument %d of scheduling discipline '%s` must be"
+                                  " an identifier",
+                                  i, sched->discipline));
                 }
                 sched->args[i].arg_type = AT_id;
                 sched->args[i].arg.id = StringCopy (ID_NAME (expr));
@@ -252,11 +250,9 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
                     sched->args[i].arg.id = StringCopy (ID_NAME (expr));
                     break;
                 default:
-                    ABORT (
-                      line,
-                      ("Argument %d of scheduling discipline '%s` must be an identifier"
-                       "or a number",
-                       i, sched->discipline));
+                    ABORT (line, ("Argument %d of scheduling discipline '%s` must be"
+                                  " an identifier or a number",
+                                  i, sched->discipline));
                 }
 
                 break;
@@ -268,8 +264,8 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
             break;
 
         case 'v':
-            DBUG_ASSERT (0, "Vector arguments for scheduling disciplines not yet "
-                            "implemented");
+            DBUG_ASSERT (0, "Vector arguments for scheduling disciplines not yet"
+                            " implemented");
             break;
 
         default:
@@ -295,7 +291,6 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
  *   sched_t *SCHMakeSchedulingByPragma(node *ap_node, int line)
  *
  * description:
- *
  *   This function constructs a scheduling specification from a 'ScheduleWL'
  *   or 'ScheduleSeg' entry of the wlcomp pragma. The pragma information is
  *   compared with the scheduling specification table. The line number of
@@ -318,7 +313,7 @@ SCHMakeSchedulingByPragma (node *ap_node, int line)
     }
 
     if (scheduler_table[i].discipline[0] != '\0') {
-        sched = (sched_t *)Malloc (sizeof (sched_t));
+        sched = (sched_t *)MALLOC (sizeof (sched_t));
         sched->discipline = scheduler_table[i].discipline;
         /*
          * Because sched is an object of an abstract data type, we may share it
@@ -343,7 +338,6 @@ SCHMakeSchedulingByPragma (node *ap_node, int line)
  *   void SCHCheckSuitabilityWithloop(sched_t *sched)
  *
  * description:
- *
  *   These functions check whether the given scheduling is suitable for the
  *   respective case. If not, an error message is produced and the compilation
  *   is stopped automatically after the current compilation phase.
@@ -401,7 +395,6 @@ These functions are probably no longer required.
  *   int SCHSchedulingDoesAdjustment(sched_t *sched)
  *
  * description:
- * 
  *   This function returns a flag that specifies whether the given scheduling
  *   adjusts subsegements with respect to unrolled loops or not.
  *   This information is directly retrieved from the scheduler table.
@@ -429,7 +422,6 @@ int SCHSchedulingDoesAdjustment(sched_t *sched)
  *   int SCHMaxSchedulingDim(sched_t *sched)
  *
  * description:
- * 
  *   This function returns the maximum scheduling dimension of the given
  *   scheduling. This information is directly retrieved from the
  *   scheduler table.
@@ -457,7 +449,6 @@ int SCHMaxSchedulingDim(sched_t *sched)
  *   int SCHAdjustmentRequired(int dim, node *wlseg)
  *
  * description:
- *
  *   This function decides whether or not bounds generated by a particular
  *   scheduling for a particular segment must be adjusted to be compatible
  *   to a given unrolling.
@@ -495,7 +486,6 @@ SCHAdjustmentRequired (int dim, node *wlseg)
  *   sched_t *SCHRemoveScheduling(sched_t *sched)
  *
  * description:
- *
  *   This function may be used to release the resources bound to a data object
  *   of the abstract data type for the representation of schedulings.
  *
@@ -542,7 +532,6 @@ SCHRemoveScheduling (sched_t *sched)
  *   sched_t *SCHCopyScheduling(sched_t *sched)
  *
  * description:
- *
  *   This function may be used to copy a data object
  *   of the abstract data type for the representation of schedulings.
  *
@@ -556,7 +545,7 @@ SCHCopyScheduling (sched_t *sched)
 
     DBUG_ENTER ("SCHCopyScheduling");
 
-    new_sched = (sched_t *)Malloc (sizeof (sched_t));
+    new_sched = (sched_t *)MALLOC (sizeof (sched_t));
 
     new_sched->discipline = sched->discipline;
     /*
@@ -569,7 +558,7 @@ SCHCopyScheduling (sched_t *sched)
     new_sched->num_args = sched->num_args;
 
     if (sched->num_args > 0) {
-        new_sched->args = (sched_arg_t *)Malloc (sched->num_args * sizeof (sched_arg_t));
+        new_sched->args = (sched_arg_t *)MALLOC (sched->num_args * sizeof (sched_arg_t));
 
         for (i = 0; i < sched->num_args; i++) {
             new_sched->args[i].arg_type = sched->args[i].arg_type;
@@ -600,7 +589,6 @@ SCHCopyScheduling (sched_t *sched)
  *   void SCHPrintScheduling(FILE *handle, sched_t *sched)
  *
  * description:
- *
  *
  *
  *
@@ -652,13 +640,12 @@ SCHPrintScheduling (FILE *outfile, sched_t *sched)
 /******************************************************************************
  *
  * function:
- *   sched_t *SCHMakeCompatibleSyncblockScheduling(sched_t *old_sched, sched_t *new_sched
+ *   sched_t *SCHMakeCompatibleSyncblockScheduling( sched_t *old_sched,
+ *                                                  sched_t *new_sched
  *
  * description:
- *
- *   This function checks whether two schedulings tied to with-loops fit together
- *   wihtin a single synchronisation block.
- *
+ *   This function checks whether two schedulings tied to with-loops fit
+ *   together wihtin a single synchronisation block.
  *
  ******************************************************************************/
 
@@ -685,7 +672,6 @@ SCHMakeCompatibleSyncblockScheduling (sched_t *old_sched, sched_t *new_sched)
  *   sched_t *SCHMakeScheduling(va_alist)
  *
  * description:
- *
  *   This may be used to generate arbitray schedulings. The first paramter in
  *   the variable parameter list must always be of type 'char*' and provide the
  *   name of the scheduling discipline. The following parameters must be defined
@@ -720,7 +706,7 @@ sched_t *SCHMakeScheduling (va_alist) va_dcl
     DBUG_ASSERT ((scheduler_table[disc_no].discipline[0] != '\0'),
                  "Infered scheduling discipline not implemented");
 
-    sched = (sched_t *)Malloc (sizeof (sched_t));
+    sched = (sched_t *)MALLOC (sizeof (sched_t));
 
     sched->discipline = scheduler_table[disc_no].discipline;
     sched->class = scheduler_table[disc_no].class;
@@ -731,7 +717,7 @@ sched_t *SCHMakeScheduling (va_alist) va_dcl
     if (sched->num_args == 0) {
         sched->args = NULL;
     } else {
-        sched->args = (sched_arg_t *)Malloc (sched->num_args * sizeof (sched_arg_t));
+        sched->args = (sched_arg_t *)MALLOC (sched->num_args * sizeof (sched_arg_t));
     }
 
     arg_spec = strtok (scheduler_table[disc_no].arg_spec, ",");
@@ -772,8 +758,8 @@ sched_t *SCHMakeScheduling (va_alist) va_dcl
             break;
 
         case 'v':
-            DBUG_ASSERT (0, "Vector arguments for scheduling disciplines not yet "
-                            "implemented");
+            DBUG_ASSERT (0, "Vector arguments for scheduling disciplines not yet"
+                            " implemented");
             break;
 
         default:
@@ -791,10 +777,9 @@ sched_t *SCHMakeScheduling (va_alist) va_dcl
 /******************************************************************************
  *
  * function:
- *   sched_t *SCHPrecompileScheduling(sched_t *sched)
+ *   sched_t *SCHPrecompileScheduling( sched_t *sched)
  *
  * description:
- *
  *   Since identifier names are stored within the abstract scheduling
  *   representations, these are subject to renaming during the precompilation
  *   compiler phase. The actual renaming is done by the help of the function
@@ -811,12 +796,12 @@ SCHPrecompileScheduling (sched_t *sched)
 
     for (i = 0; i < sched->num_args; i++) {
         if (sched->args[i].arg_type == AT_id) {
+            sched->args[i].arg.id = PRECRenameLocalIdentifier (sched->args[i].arg.id
 #ifdef TAGGED_ARRAYS
-            sched->args[i].arg.id
-              = PRECRenameLocalIdentifier (sched->args[i].arg.id, C_scl, C_nuq);
-#else  /* TAGGED_ARRAYS */
-            sched->args[i].arg.id = PRECRenameLocalIdentifier (sched->args[i].arg.id);
+                                                               ,
+                                                               C_scl, C_nuq
 #endif /* TAGGED_ARRAYS */
+            );
         }
     }
 
@@ -829,10 +814,10 @@ SCHPrecompileScheduling (sched_t *sched)
  *   node *CompileSchedulingArgs(sched_t *sched, node *args)
  *
  * description:
- *
- *   This function converts the arguments of an abstract scheduling specification
- *   into ICM arguments. Numbers in the case of type 'x' scheduling arguments
- *   are transformed into string representations.
+ *   This function converts the arguments of an abstract scheduling
+ *   specification into ICM arguments.
+ *   Numbers in the case of type 'x' scheduling arguments are transformed
+ *   into string representations.
  *
  ******************************************************************************/
 
@@ -857,8 +842,8 @@ CompileSchedulingArgs (sched_t *sched, node *args)
                 new_arg = MakeId (itoa (sched->args[i].arg.num), NULL, ST_regular);
                 break;
             default:
-                DBUG_ASSERT (0, "Vector arguments for scheduling disciplines not yet "
-                                "implemented");
+                DBUG_ASSERT (0, "Vector arguments for scheduling disciplines not yet"
+                                " implemented");
             }
 
             args = MakeExprs (new_arg, args);
@@ -874,7 +859,6 @@ CompileSchedulingArgs (sched_t *sched, node *args)
  *   node *CompileConstSegSchedulingArgs(node *wlseg)
  *
  * description:
- *
  *   In addition to their individual arguments, scheduling ICMs have addtional
  *   arguments depending on their position. Schedulings for constant segments
  *   are equipped with detailed segment information. These are the segment's
@@ -929,7 +913,6 @@ CompileConstSegSchedulingArgs (node *wlseg, sched_t *sched)
  *   node *CompileVarSegSchedulingArgs(node *wlseg)
  *
  * description:
- *
  *   In addition to their individual arguments, scheduling ICMs have addtional
  *   arguments depending on their position. Currently, schedulings for variable
  *   segments do not have general arguments.
@@ -982,10 +965,9 @@ CompileVarSegSchedulingArgs (node *wlseg, sched_t *sched)
  *   node *CompileSyncblockSchedulingArgs(node *wlseg)
  *
  * description:
- *
  *   In addition to their individual arguments, scheduling ICMs have addtional
- *   arguments depending on their position. Currently, schedulings for synchronisation
- *   blocks do not have general arguments.
+ *   arguments depending on their position. Currently, schedulings for
+ *   synchronisation blocks do not have general arguments.
  *
  ******************************************************************************/
 
@@ -1007,7 +989,6 @@ CompileSyncblockSchedulingArgs (node *wlseg, sched_t *sched)
  *   node *CompileScheduling(sched_t *sched, node *arg_node, char *suffix)
  *
  * description:
- *
  *   This function compiles abstract scheduling specifications to ICMs
  *    "SAC_MT_SCHEDULER_<discipline>_BEGIN"
  *    "SAC_MT_SCHEDULER_<discipline>_END"
@@ -1024,11 +1005,11 @@ CompileScheduling (sched_t *sched, node *arg_node, char *suffix)
     DBUG_ENTER ("CompileScheduling");
 
     if (sched != NULL) {
-        name = (char *)Malloc (sizeof (char)
+        name = (char *)MALLOC (sizeof (char)
                                * (strlen (sched->discipline) + strlen (suffix) + 15));
         sprintf (name, "MT_SCHEDULER_%s_%s", sched->discipline, suffix);
     } else {
-        name = (char *)Malloc (sizeof (char) * (strlen (suffix) + 15));
+        name = (char *)MALLOC (sizeof (char) * (strlen (suffix) + 15));
         sprintf (name, "MT_SCHEDULER_%s", suffix);
     }
 
@@ -1058,7 +1039,6 @@ CompileScheduling (sched_t *sched, node *arg_node, char *suffix)
  *   node *SCHCompileSchedulingEnd(sched_t *sched, node *arg_node)
  *
  * description:
- *
  *   These two functions initiate the compilation of abstract scheduling
  *   specifications into ICMs.
  *
