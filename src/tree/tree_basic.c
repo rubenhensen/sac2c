@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/03/15 10:54:29  nmw
+ * AVIS_SSAUNDOFLAG added
+ *
  * Revision 3.18  2001/02/20 15:51:27  nmw
  * minor changes in INFO_SSA nodes
  *
@@ -1384,6 +1387,7 @@ MakeAvis (node *vardecOrArg)
     AVIS_SSAPHITARGET (tmp) = FALSE;
     AVIS_SSALPINV (tmp) = FALSE;
     AVIS_SSADEFINED (tmp) = FALSE;
+    AVIS_SSAUNDOFLAG (tmp) = TRUE;
 
     /* create empty stack */
     AVIS_SSASTACK (tmp) = MakeSSAstack (NULL, NULL);

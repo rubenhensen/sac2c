@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2001/03/15 10:54:29  nmw
+ * AVIS_SSAUNDOFLAG added
+ *
  * Revision 3.45  2001/03/12 13:41:08  nmw
  * macros for INFO_USSA_ modified
  *
@@ -1139,7 +1142,6 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***    int         FLAG                       (ael -> dcr2 !!)
  ***    bool        PADDED                     (ap -> )
  ***    node*       ICM      (O)  (N_icm)      (compile -> )
- ***    node*       UNDOAVIS (O)  (N_avis)     (undossa !!)
  ***/
 
 /*
@@ -1174,7 +1176,6 @@ extern node *MakeVardec (char *name, types *type, node *next);
 #define VARDEC_OBJDEF(n) (n->node[4])
 #define VARDEC_ICM(n) (n->node[5])
 #define VARDEC_AVIS(n) ((node *)(n->dfmask[0]))
-#define VARDEC_UNDOAVIS(n) ((node *)(n->dfmask[1]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1998,23 +1999,27 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***  temporary attributes:
  ***
  ***    node*       VARDECORARG     (N_vardec/N_arg)
- ***    node*       SSACOUNT        (N_ssacnt)       (ssaform -> optimize !!)
- ***    node*       SSAASSIGN       (N_assign)       (ssaform -> optimize !!)
- ***    constant*   SSACONST (O)                     (cf -> optimize !!)
- ***    bool        SSAPHITARGET (O)                 (ssaform -> optimize !!)
- ***    bool        SSALPINV (O)                     (lir -> optimize !!)
- ***    node*       SSASTACK (O)    (N_ssastack)     (ssaform -> optimize !!)
+ ***    node*       SSACOUNT        (N_ssacnt)       (ssaform -> undossa !!)
+ ***    node*       SSAASSIGN       (N_assign)       (ssaform -> undossa !!)
+ ***    constant*   SSACONST (O)                     (cf -> undossa !!)
+ ***    bool        SSAPHITARGET (O)                 (ssaform -> undossa !!)
+ ***    bool        SSALPINV (O)                     (lir -> undossa !!)
+ ***    node*       SSASTACK (O)    (N_ssastack)     (ssaform -> undossa !!)
+ ***    bool        SSAUNDOFLAG (O)                  (ssaform -> undossa !!)
  ***
  ***    the following attributes are only used within ssaform traversal:
  ***    bool        SSADEFINED (O)                   (ssaform!!)
  ***    node*       SSATHEN (O)     (N_avis)         (ssaform!!)
  ***    node*       SSAELSE (O)     (N_avis)         (ssaform!!)
  ***
- ***    the following attributes are only used within SSADeadCodeRemoval
+ ***    the following attributes are only used within SSADeadCodeRemoval:
  ***    bool        NEEDCOUNT                        (ssadcr!!)
  ***
  ***    the following attributes are only used within SSACSE
  ***    bool        SUBST (O)       (N_avis)         (ssacse!!)
+ ***
+ ***    the following attributes are only used within UndoSSATransform:
+ ***    node*       UNDOAVIS (O)    (N_avis)         (undossa !!)
  ***/
 
 /*
@@ -2031,7 +2036,8 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_SSAPHITARGET(n) ((bool)(n->flag))
 #define AVIS_SSALPINV(n) ((bool)(n->refcnt))
 #define AVIS_SSASTACK(n) (n->node[3])
-/* used only in ssatranform */
+#define AVIS_SSAUNDOFLAG(n) ((bool)(n->counter))
+/* used only in ssatransform */
 #define AVIS_SSADEFINED(n) ((bool)(n->int_data))
 #define AVIS_SSATHEN(n) ((node *)(n->dfmask[1]))
 #define AVIS_SSAELSE(n) ((node *)(n->dfmask[2]))
@@ -2039,6 +2045,8 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_NEEDCOUNT(n) (n->int_data)
 /* used only in ssacse */
 #define AVIS_SUBST(n) ((node *)(n->dfmask[0]))
+/* used only in UndoSSAtransform */
+#define AVIS_UNDOAVIS(n) ((node *)(n->dfmask[0]))
 
 /*--------------------------------------------------------------------------*/
 
