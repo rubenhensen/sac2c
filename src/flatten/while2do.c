@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2001/05/17 11:44:02  dkr
+ * FREE eliminated
+ *
  * Revision 1.2  2001/04/19 11:48:13  nmw
  * missing recursive traversal in converted while loops added
  *
@@ -110,7 +113,7 @@ TransformWhile2Do (node *syntax_tree)
 
     act_tab = old_tab;
 
-    FREE (arg_info);
+    arg_info = FreeTree (arg_info);
 
     DBUG_RETURN (syntax_tree);
 }

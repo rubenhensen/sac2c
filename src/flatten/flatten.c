@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/05/17 11:43:57  dkr
+ * FREE eliminated
+ *
  * Revision 3.4  2001/04/26 17:09:48  dkr
  * cast are flattened now
  *
@@ -596,7 +599,7 @@ Flatten (node *arg_node)
     /*
      * de-initialize the static variables :
      */
-    FREE (stack);
+    stack = Free (stack);
 
     DBUG_RETURN (arg_node);
 }
@@ -896,7 +899,7 @@ FltnLet (node *arg_node, node *arg_info)
                 /*
                  * and we rename the actual LHS:
                  */
-                FREE (ids_name);
+                ids_name = Free (ids_name);
                 IDS_NAME (ids) = tmp_name;
             } else {                  /* the let expr is not a WL */
                 if (with_level > 0) { /* we are in the body of a WL */
@@ -912,7 +915,7 @@ FltnLet (node *arg_node, node *arg_info)
                     } else {
                         tmp_name = StringCopy (tmp->id_new);
                     }
-                    FREE (ids_name);
+                    ids_name = Free (ids_name);
                     IDS_NAME (ids) = tmp_name;
                 }
             }
@@ -1327,7 +1330,7 @@ FltnId (node *arg_node, node *arg_info)
                 old_name = ID_NAME (arg_node);
                 ID_NAME (arg_node) = StringCopy (tmp->id_new);
 
-                FREE (old_name);
+                old_name = Free (old_name);
             }
         } else
             DBUG_PRINT ("RENAME", ("not found: %s", ID_NAME (arg_node)));
@@ -1422,8 +1425,8 @@ FltnCond (node *arg_node, node *arg_info)
         }
     }
 
-    FREE (then_stack_seg);
-    FREE (else_stack_seg);
+    then_stack_seg = Free (then_stack_seg);
+    else_stack_seg = Free (else_stack_seg);
 
     INFO_FLTN_LASTASSIGN (arg_info) = mem_last_assign;
 
@@ -1486,7 +1489,7 @@ FltnWhile (node *arg_node, node *arg_info)
         }
     }
 
-    FREE (body_stack_seg);
+    body_stack_seg = Free (body_stack_seg);
     INFO_FLTN_LASTASSIGN (arg_info) = mem_last_assign;
 
     /*

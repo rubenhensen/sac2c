@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/05/17 11:50:46  dkr
+ * FREE eliminated
+ *
  * Revision 3.13  2001/05/08 13:28:29  dkr
  * new RC macros used
  *
@@ -305,7 +308,7 @@ AllocDump (int *dump, int varno)
     DBUG_ENTER (" AllocDump");
 
     if (dump != NULL) {
-        FREE (dump);
+        Free (dump);
     }
     dump = (int *)Malloc (sizeof (int) * varno);
 
@@ -327,7 +330,7 @@ FreeDump (int *dump)
 {
     DBUG_ENTER (" FreeDump");
 
-    FREE (dump);
+    dump = Free (dump);
 
     DBUG_VOID_RETURN;
 }
@@ -579,7 +582,7 @@ Refcount (node *arg_node)
         arg_node = Trav (arg_node, arg_info);
     }
 
-    FREE (arg_info);
+    arg_info = FreeTree (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1228,8 +1231,8 @@ RCloop (node *arg_node, node *arg_info)
     /* restore old vardec refcounts */
     RestoreRC (RC_REAL, ref_dump, arg_info);
     RestoreRC (RC_NAIVE, naive_ref_dump, arg_info);
-    FREE (ref_dump);
-    FREE (naive_ref_dump);
+    ref_dump = Free (ref_dump);
+    naive_ref_dump = Free (naive_ref_dump);
 
     DBUG_RETURN (arg_node);
 }

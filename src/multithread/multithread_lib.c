@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/05/17 11:46:31  dkr
+ * FREE eliminated
+ *
  * Revision 3.2  2001/03/21 18:05:11  dkr
  * INFO_DUP_... no longer used here
  *
@@ -219,12 +222,12 @@ MUTHExchangeApplication (node *arg_node, node *new_fundef)
     AP_FUNDEF (arg_node) = new_fundef;
 
     if (AP_NAME (arg_node) != NULL) {
-        FREE (AP_NAME (arg_node));
+        Free (AP_NAME (arg_node));
     }
     AP_NAME (arg_node) = StringCopy (FUNDEF_NAME (new_fundef));
     /*  DBUG_ASSERT((AP_MOD( arg_node) != NULL), ("null1!!")); */
     if (AP_MOD (arg_node) != NULL) {
-        /*    FREE( AP_MOD( arg_node)); */
+        /*    Free( AP_MOD( arg_node)); */
     }
 
     /*  DBUG_ASSERT((FUNDEF_MOD( new_fundef) != NULL), ("null2!!"));  */
@@ -267,7 +270,7 @@ MUTHExpandFundefName (node *fundef, char *prefix)
     strcpy (new_name, prefix);
     strcat (new_name, old_name);
     FUNDEF_NAME (fundef) = new_name;
-    FREE (old_name);
+    old_name = Free (old_name);
 
     DBUG_RETURN (fundef);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/05/17 11:47:00  dkr
+ * FREE eliminated
+ *
  * Revision 3.2  2001/01/25 10:17:57  dkr
  * PH_spmdregions renamed into PH_multithread
  *
@@ -168,7 +171,7 @@ BuildMultiThread (node *syntax_tree)
 
     act_tab = old_tab;
 
-    FREE (arg_info);
+    arg_info = FreeTree (arg_info);
 
     DBUG_RETURN (syntax_tree);
 }

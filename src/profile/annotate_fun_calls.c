@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2001/05/17 11:49:40  dkr
+ * FREE eliminated
+ *
  * Revision 1.7  2001/03/22 19:33:54  dkr
  * include of tree.h eliminated
  *
@@ -147,7 +150,7 @@ Fundef2ProfileString (node *fundef)
         str_buff = strncat (str_buff, tmp_str, str_spc);
         str_spc -= strlen (tmp_str);
         str_spc = MAX (str_spc, 0);
-        FREE (tmp_str);
+        tmp_str = Free (tmp_str);
         arg = ARG_NEXT (arg);
         if (arg != NULL) {
             str_buff = strncat (str_buff, ", ", str_spc);
@@ -233,7 +236,7 @@ PFfundef (node *arg_node, node *arg_info)
             CONT_WARN (("function \"%s\" will not be profiled separately!", str_buff));
             CONT_WARN (("Instead, it's time will be accounted to \"main\""));
             FUNDEF_FUNNO (arg_node) = 1;
-            FREE (str_buff);
+            str_buff = Free (str_buff);
         } else {
             PFfunnme[PFfuncntr] = str_buff;
             FUNDEF_FUNNO (arg_node) = ++PFfuncntr;
@@ -302,7 +305,7 @@ PFassign (node *arg_node, node *arg_info)
                         "be profiled separately but be accounted to the application "
                         "in line %d !",
                         str_buff, NODE_LINE (arg_node), PFfunapline[funno][0]));
-            FREE (str_buff);
+            str_buff = Free (str_buff);
             funap_cnt = 0;
         } else {
             funap_cnt = PFfunapcntr[funno]++;
