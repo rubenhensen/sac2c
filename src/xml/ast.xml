@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.60  2004/11/24 23:42:43  ktr
+  DO_SKIP is a son now.
+
   Revision 1.59  2004/11/24 21:00:47  mwe
   lac2fun added
 
@@ -2222,18 +2225,13 @@
             <node name="Block" />
           </target>
         </son>
+        <son name="Skip" mandatory="no" default="NULL" >
+          <target>
+            <node name="Block" />
+          </target>
+        </son>
       </sons>
       <attributes>
-        <attribute name="Skip" mandatory="yes">
-          <type name="Link">
-            <target>
-              <node name="Block" />
-            </target>
-          </type>
-          <phases>
-            <range from="fun2lac" to="final" />
-          </phases>
-        </attribute>
         <attribute name="Label" mandatory="yes">
           <type name="String" />
           <phases>
