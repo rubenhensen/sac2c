@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.219  2004/08/26 15:02:08  khf
+ * new macros ASSIGN_VISITED_WITH, ASSIGN_TAG, NWITH_DEPENDENT,
+ * NWITH_FUSIONABLE_WL, NWITH_REFERENCES_FUSIONABLE added
+ *
  * Revision 3.218  2004/08/19 15:25:08  skt
  * moved FUNDEF_COMPANION
  *
@@ -1658,6 +1662,8 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***    int    CELLID                     (AssignmentsRearrange -> CreateCells)
  ***    node*  DATAFLOWNODE  (N_dataflownode) (CreateDataflowgraph
  ***                                                    -> DeleteDataflowgraph)
+ ***    node*  VISITED_WITH               (wlfs !!)
+ ***    node*  TAG                        (wlfs !!)
  ***
  ***  remarks:
  ***
@@ -1684,6 +1690,8 @@ extern node *MakeAssign (node *instr, node *next);
 #define ASSIGN_EXECMODE(n) ((mtexecmode_t) (n->info.cint))
 #define ASSIGN_CELLID(n) (n->refcnt)
 #define ASSIGN_DATAFLOWNODE(n) ((node *)(n->info3))
+#define ASSIGN_VISITED_WITH(n) (n->dfmask[0])
+#define ASSIGN_TAG(n) (n->dfmask[1])
 
 /*--------------------------------------------------------------------------*/
 
@@ -3829,6 +3837,9 @@ extern node *MakeMTalloc ();
  ***    int        REFERENCES_FOLDED     (wlt -> wlf !!)
  ***    bool       FOLDABLE              (wlt -> wlf !!)
  ***    bool       NO_CHANCE             (wlt -> wlf !!)
+ ***    bool       DEPENDENT             (wlfs !!)
+ ***    node*      FUSIONABLE_WL         (wlfs !!)
+ ***    nodelist*  REFERENCES_FUSIONABLE (wlfs !!)
  ***    ids*       DEC_RC_IDS            (refcount -> wltransform !!)
  ***
  ***    DFMmask_t  IN_MASK            (infer_dfms -> lac2fun -> wltransform !!)
@@ -3850,6 +3861,9 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_REFERENCES_FOLDED(n) (((wl_info *)((n)->info2))->references_folded)
 #define NWITH_FOLDABLE(n) (((wl_info *)((n)->info2))->foldable)
 #define NWITH_NO_CHANCE(n) (((wl_info *)((n)->info2))->no_chance)
+#define NWITH_DEPENDENT(n) (((wl_info *)((n)->info2))->dependent)
+#define NWITH_FUSIONABLE_WL(n) (((wl_info *)((n)->info2))->fusionable_wl)
+#define NWITH_REFERENCES_FUSIONABLE(n) (((wl_info *)((n)->info2))->references_fusionable)
 
 #define NWITH_IN_MASK(n) ((n)->dfmask[0])
 #define NWITH_OUT_MASK(n) ((n)->dfmask[1])
