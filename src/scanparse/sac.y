@@ -3,6 +3,11 @@
 /*
  *
  * $Log$
+ * Revision 1.168  1999/01/19 16:17:08  cg
+ * added types like int[?] which match both scalars and arrays;
+ * removed special handling of psi and modarray when applied to
+ * an integer constant instead of an index vector.
+ *
  * Revision 1.167  1999/01/07 10:47:46  cg
  * User-defined overloadings of primitive functions may now
  * have a different number of arguments than the primitive ones.
@@ -304,7 +309,7 @@ static file_type file_kind = F_prog;
 %token PARSE_PRG, PARSE_DEC, PARSE_SIB, PARSE_RC
 
 %token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC,
-       COMMA, AMPERS, ASSIGN, DOT,
+       COMMA, AMPERS, ASSIGN, DOT, QUESTION,
        INLINE, LET, TYPEDEF, CONSTDEF, OBJDEF, CLASSTYPE,
        INC, DEC, ADDON, SUBON, MULON, DIVON, MODON
        K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, WITH, NWITH, FOLD,
@@ -314,7 +319,7 @@ static file_type file_kind = F_prog;
        PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
        TOUCH, COPYFUN, FREEFUN, INITFUN, LINKWITH,
        WLCOMP, DEFAULT
-       STEP, WIDTH, TARGET, EQUALS,
+       STEP, WIDTH, TARGET,
        AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PRF_MOD, PLUS,
        TOI, TOF, TOD, ABS, PRF_MIN, PRF_MAX, ALL,
        RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE, CAT, PSI, GENARRAY, MODARRAY
@@ -347,7 +352,7 @@ static file_type file_kind = F_prog;
              objdefs, objdef, exprblock, exprblock2,
              assign, assigns, assignblock, letassign, 
              selassign, forassign, assignsOPTret, wlassignblock, optelse,
-             exprsNOar, exprNOdot, exprORdot, exprNOar, exprNOnum,
+             exprsNOar, exprNOdot, exprORdot, exprNOar, 
              expr, expr_main, expr_ap, expr_ar, expr_num, exprs,
              Ngenerator, Nsteps, Nwidth, Nwithop, Ngenidx,
              conexpr, generator,
@@ -1546,12 +1551,20 @@ assign: letassign SEMIC { $$=$1; }
 letassign: ids LET expr 
            { $$=MakeLet($3, $1);
            }
-         | id SQBR_L exprNOnum SQBR_R LET expr
+         | id SQBR_L expr SQBR_R LET expr
            { $$=MakeLet( MakePrf( F_modarray,
                            MakeExprs( MakeId( $1, NULL, ST_regular) ,
                              MakeExprs( $3,
                                MakeExprs($6,
                                  NULL))) ),
+                         MakeIds(StringCopy($1), NULL, ST_regular) );
+           }
+         | id SQBR_L expr COMMA exprs SQBR_R LET expr
+           { $$=MakeLet( MakePrf( F_modarray,
+                           MakeExprs( MakeId( $1, NULL, ST_regular) ,
+                                      MakeExprs( MakeArray(MakeExprs($3, $5)),
+                                                 MakeExprs($8,
+                                                           NULL))) ),
                          MakeIds(StringCopy($1), NULL, ST_regular) );
            }
          | expr_ap 
@@ -1648,18 +1661,13 @@ exprNOar: expr_main {$$ = $1;}
         | expr_num  {$$ = $1;}
         ;
  
-exprNOnum: expr_main {$$ = $1;}
-         | expr_ar   {$$ = $1;}
-         | expr_ap   {$$ = $1;}
-         ;
- 
 expr: expr_main {$$ = $1;}
     | expr_ar   {$$ = $1;}
     | expr_ap   {$$ = $1;}
     | expr_num  {$$ = $1;}
     ;
  
-expr_num: NUM {$$=MakeNum( yylval.cint);}
+expr_num: NUM {$$=MakeNum( $1);}
         ;
 
 expr_ar: SQBR_L {$<cint>$=linenum;} exprsNOar SQBR_R
@@ -1756,15 +1764,8 @@ expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
                          MakeExprs( $2, NULL));
            }
          | BRACKET_L expr BRACKET_R { $$=$2; }
-         | expr SQBR_L exprNOnum SQBR_R
+         | expr SQBR_L expr SQBR_R
            { $$ = MAKE_BIN_PRF( F_psi, $3, $1);
-             NODE_LINE($$) = NODE_LINE( $1);
-           }
-         | expr SQBR_L expr_num SQBR_R
-           { $$ = MakePrf( F_psi,
-                    MakeExprs( MakeArray( MakeExprs( $3, NULL)),
-                      MakeExprs( $1,
-                        NULL)) );
              NODE_LINE($$) = NODE_LINE( $1);
            }
          | expr SQBR_L expr COMMA exprs SQBR_R
@@ -1787,9 +1788,9 @@ expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
          | expr DIV expr     { $$=MAKE_BIN_PRF( F_div,$1,$3); }
          | expr MUL expr     { $$=MAKE_BIN_PRF( F_mul,$1,$3); }
          | expr PRF_MOD expr { $$=MAKE_BIN_PRF( F_mod,$1,$3); }
-         | MINUS NUM %prec UMINUS    { $$=MakeNum( -yylval.cint);  }
-         | PLUS  NUM %prec UMINUS    { $$=MakeNum( yylval.cint);   }
-         | CHAR                      { $$=MakeChar(yylval.cchar);  }
+         | MINUS NUM %prec UMINUS    { $$=MakeNum( -$2);           }
+         | PLUS  NUM %prec UMINUS    { $$=MakeNum( $2);            }
+         | CHAR                      { $$=MakeChar( $1);           }
          | FLOAT                     { $$=MakeFloat( $1);          }
          | MINUS FLOAT %prec UMINUS  { $$=MakeFloat( -$2);         }
          | PLUS FLOAT %prec UMINUS   { $$=MakeFloat( $2);          }
@@ -2108,7 +2109,11 @@ localtype_main: simpletype {$$ = $1; }
                 { $$=GenComplexType($1,$3); }
               | simpletype_main  SQBR_L SQBR_R  
                 { $$ = $1;
-                  TYPES_DIM($$) = -1;
+                  TYPES_DIM($$) = UNKNOWN_SHAPE;
+                }
+              | simpletype_main  SQBR_L QUESTION SQBR_R  
+                { $$ = $1;
+                  TYPES_DIM($$) = ARRAY_OR_SCALAR;
                 }
               | simpletype_main SQBR_L dots SQBR_R
                 { $$ = $1;
@@ -2117,7 +2122,12 @@ localtype_main: simpletype {$$ = $1; }
               | id SQBR_L SQBR_R
                 { $$=MakeTypes(T_user);
                   TYPES_NAME($$) = $1;
-                  TYPES_DIM($$)  = -1;
+                  TYPES_DIM($$)  = UNKNOWN_SHAPE;
+                }
+              | id SQBR_L QUESTION SQBR_R
+                { $$=MakeTypes(T_user);
+                  TYPES_NAME($$) = $1;
+                  TYPES_DIM($$)  = ARRAY_OR_SCALAR;
                 }
               | id SQBR_L dots SQBR_R
                 { $$=MakeTypes(T_user);
@@ -2582,34 +2592,34 @@ inherits: COLON ID COLON inherits
 	  } 
         ;
 
-resources: ID EQUALS string resources
+resources: ID COLON LET string resources
            {
-             $$=RSCMakeResourceListEntry($1, $3, 0, 0, $4);
+             $$=RSCMakeResourceListEntry($1, $4, 0, 0, $5);
 	   }
          | ID ADDON string resources
            {
              $$=RSCMakeResourceListEntry($1, $3, 0, 1, $4);
 	   }
          | 
-           ID EQUALS OPTION resources
+           ID COLON LET OPTION resources
            {
-             $$=RSCMakeResourceListEntry($1, $3, 0, 0, $4);
+             $$=RSCMakeResourceListEntry($1, $4, 0, 0, $5);
 	   }
          | ID ADDON OPTION resources
            {
              $$=RSCMakeResourceListEntry($1, $3, 0, 1, $4);
 	   }
-         | ID EQUALS ID resources
+         | ID COLON LET ID resources
            {
-             $$=RSCMakeResourceListEntry($1, $3, 0, 0, $4);
+             $$=RSCMakeResourceListEntry($1, $4, 0, 0, $5);
 	   }
          | ID ADDON ID resources
            {
              $$=RSCMakeResourceListEntry($1, $3, 0, 1, $4);
 	   }
-         | ID EQUALS PRIVATEID resources
+         | ID COLON LET PRIVATEID resources
            {
-             $$=RSCMakeResourceListEntry($1, $3, 0, 0, $4);
+             $$=RSCMakeResourceListEntry($1, $4, 0, 0, $5);
 	   }
          | 
            ID ADDON PRIVATEID resources
@@ -2617,9 +2627,9 @@ resources: ID EQUALS string resources
              $$=RSCMakeResourceListEntry($1, $3, 0, 1, $4);
 	   }
          | 
-           ID EQUALS NUM resources
+           ID COLON LET NUM resources
            {
-             $$=RSCMakeResourceListEntry($1, NULL, $3, 0, $4);
+             $$=RSCMakeResourceListEntry($1, NULL, $4, 0, $5);
 	   }
          | 
            ID ADDON NUM resources
@@ -2631,7 +2641,6 @@ resources: ID EQUALS string resources
 	     $$=NULL;
 	   }
          ;
-
 
 
 %%
