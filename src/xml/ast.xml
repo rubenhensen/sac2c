@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.7  2004/11/23 13:51:02  ktr
+  added aliasanalysis.c
+
   Revision 1.6  2004/11/23 13:02:38  sah
   signature fixes
 
@@ -112,6 +115,7 @@
     -->
     <traversal id="CF" name="Constant Folding" default="sons" include="SSAConstantFolding.h" />
     <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
+    <traversal id="EMAA" name="Alias analysis" default="sons" include="aliasanalysis.h" />
   </traversals>
   <nodesets>
     <nodeset name="Expr">
