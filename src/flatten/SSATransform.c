@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2004/06/21 19:01:15  mwe
+ * check compiler phase before creating new types (create no types before PH_typecheck)
+ *
  * Revision 1.8  2004/06/10 14:46:53  mwe
  * after usage of SSANewVardec a ntype added to new avis node
  *
@@ -1298,8 +1301,11 @@ SSAleftids (ids *arg_ids, node *arg_info)
 
         /* new rename-to target for old vardec */
         AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = VARDEC_AVIS (new_vardec);
-        AVIS_TYPE (VARDEC_AVIS (new_vardec))
-          = TYCopyType (AVIS_TYPE (IDS_AVIS (arg_ids)));
+
+        if ((compiler_phase != PH_flatten) && (compiler_phase != PH_typecheck))
+            AVIS_TYPE (VARDEC_AVIS (new_vardec))
+              = TYCopyType (AVIS_TYPE (IDS_AVIS (arg_ids)));
+
         /* rename this ids */
         IDS_VARDEC (arg_ids) = new_vardec;
         IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
