@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2003/08/21 17:01:31  cg
+ * Detection of tagged arrays backend now uses the dedicated
+ * compiler option -has_tagged_backend.
+ *
  * Revision 3.46  2003/08/16 08:38:03  ktr
  * SelectionPropagation added. Must currently be activated with -dosp.
  *
@@ -645,6 +649,12 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('o', intrinsics |= INTRINSIC_TO);
         ARG_FLAGMASK_END ();
     });
+#endif
+
+#ifdef TAGGED_ARRAYS
+    ARGS_FLAG ("has_tagged_backend", printf ("yes\n"); exit (0));
+#else
+    ARGS_FLAG ("has_tagged_backend", printf ("no\n"); exit (0));
 #endif
 
     ARGS_OPTION ("I", AppendPath (MODDEC_PATH, AbsolutePathname (ARG)));
