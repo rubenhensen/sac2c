@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2004/12/12 08:00:49  ktr
+ * removed sons.any, attribs.any, NODE_ISALIVE because they were incompatible
+ * with CLEANMEM.
+ *
  * Revision 1.20  2004/12/09 18:53:05  sah
  * extended signature of free functions for
  * attributes so that they contain a link
@@ -197,12 +201,20 @@ FREEattribLink (node *attr, node *parent)
 {
     DBUG_ENTER ("FREEattribLink");
 
-    /* when handling link attributes, always check whether the target   */
-    /* has already been freed. This can be done using the NODE_ISALIVE  */
-    /* macro...                                                         */
-    if ((attr != NULL) && (NODE_ISALIVE (attr))) {
-        if (NODE_TYPE (attr) == N_code) {
-            CODE_DEC_USED (attr);
+    /*
+     * when handling link attributes, always check whether the target
+     * has already been freed. ( This is checked via the attribs union)
+     */
+    if (attr != NULL) {
+        switch (NODE_TYPE (attr)) {
+        case N_code:
+            if (attr->attribs.N_code != NULL) {
+                CODE_DEC_USED (attr);
+            }
+            break;
+
+        default:
+            break;
         }
     }
 
@@ -227,8 +239,8 @@ FREEattribExtLink (node *attr, node *parent)
     DBUG_ENTER ("FREEattribExtLink");
 
     if (attr != NULL) {
-        if (NODE_ISALIVE (attr)) {
-            if (NODE_TYPE (attr) == N_fundef) {
+        if (NODE_TYPE (attr) == N_fundef) {
+            if (attr->attribs.N_fundef != NULL) {
                 DBUG_PRINT ("FREE", ("Decrementing use count for '%s' at " F_PTR,
                                      FUNDEF_NAME (attr), attr));
                 DBUG_ASSERT ((NODE_TYPE (attr) == N_fundef),

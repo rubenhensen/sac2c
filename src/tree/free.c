@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2004/12/12 08:00:49  ktr
+ * removed sons.any, attribs.any, NODE_ISALIVE because they were incompatible
+ * with CLEANMEM.
+ *
  * Revision 3.74  2004/11/29 15:05:30  sah
  * minor change.
  *
@@ -408,8 +412,8 @@ FREEfreeZombie (node *fundef)
         fundef = FUNDEF_NEXT (fundef);
 
         /* free entire structure */
-        tmp->sons.any = ILIBfree (tmp->sons.any);
-        tmp->attribs.any = ILIBfree (tmp->attribs.any);
+        tmp->sons.N_fundef = ILIBfree (tmp->sons.N_fundef);
+        tmp->attribs.N_fundef = ILIBfree (tmp->attribs.N_fundef);
         tmp = ILIBfree (tmp);
     }
 

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.184  2004/12/12 08:00:49  ktr
+ * removed sons.any, attribs.any, NODE_ISALIVE because they were incompatible
+ * with CLEANMEM.
+ *
  * Revision 3.183  2004/12/08 18:02:40  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -429,38 +433,6 @@ extern nodelist *TCnodeListFind (nodelist *nl, node *node);
  ***  general :
  ***/
 
-#define NODE_NEXT(n)                                                                     \
-                                                                                         \
-    (NODE_TYPE (n) == N_fundef                                                           \
-       ? FUNDEF_NEXT (n)                                                                 \
-       : (NODE_TYPE (n) == N_objdef                                                      \
-            ? OBJDEF_NEXT (n)                                                            \
-            : (NODE_TYPE (n) == N_typedef                                                \
-                 ? TYPEDEF_NEXT (n)                                                      \
-                 : (NODE_TYPE (n) == N_implist                                           \
-                      ? IMPLIST_NEXT (n)                                                 \
-                      : (NODE_TYPE (n) == N_arg                                          \
-                           ? ARG_NEXT (n)                                                \
-                           : (NODE_TYPE (n) == N_vardec                                  \
-                                ? VARDEC_NEXT (n)                                        \
-                                : (NODE_TYPE (n) == N_assign                             \
-                                     ? ASSIGN_NEXT (n)                                   \
-                                     : (NODE_TYPE (n) == N_exprs ? EXPRS_NEXT (n)        \
-                                                                 : NULL))))))))
-
-#define BLOCK_INSTR_OR_ASSIGN_NEXT(n)                                                    \
-    (NODE_TYPE (n) == N_assign ? ASSIGN_NEXT (n)                                         \
-                               : (NODE_TYPE (n) == N_block ? BLOCK_INSTR (n) : NULL))
-
-#define L_BLOCK_INSTR_OR_ASSIGN_NEXT(n, rhs)                                             \
-    if (NODE_TYPE (n) == N_assign) {                                                     \
-        ASSIGN_NEXT (n) = (rhs);                                                         \
-    } else if (NODE_TYPE (n) == N_block) {                                               \
-        BLOCK_INSTR (n) = (rhs);                                                         \
-    }
-
-#define NODE_ISALIVE(n) (n->attribs.any != NULL)
-
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -585,7 +557,6 @@ extern node *TCappendObjdef (node *objdef_chain, node *objdef);
  *  compound access macros
  */
 
-#define FUNDEF_NEEDFUNS(n) (BLOCK_NEEDFUNS (FUNDEF_BODY (n)))
 #define FUNDEF_VARDEC(n) (BLOCK_VARDEC (FUNDEF_BODY (n)))
 #define FUNDEF_INSTR(n) (BLOCK_INSTR (FUNDEF_BODY (n)))
 
