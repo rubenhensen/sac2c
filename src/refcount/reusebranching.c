@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2005/03/04 21:21:42  cg
+ * Creation of names for new cond functions made local to this
+ * compiler module in order to reduce unnecessary and counter-intuitive
+ * cross dependencies.
+ *
  * Revision 1.17  2005/01/08 09:54:07  ktr
  * Fixed some issues related to loops.
  *
@@ -77,7 +82,6 @@
 #include "internal_lib.h"
 #include "dbug.h"
 #include "print.h"
-#include "lac2fun.h"
 #include "InferDFMs.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
@@ -190,6 +194,32 @@ EMRBdoReuseBranching (node *syntax_tree)
  *
  *****************************************************************************/
 
+/******************************************************************************
+ *
+ * function:
+ *   char *CreateLacFunName( char *suffix)
+ *
+ * description:
+ *   Creates a new name for a LaC function. 'suffix' should be
+ *   "Cond" or "Loop".
+ *
+ ******************************************************************************/
+
+static char *
+CreateLacFunName (char *root_funname)
+{
+    static int number = 0;
+    char *name;
+
+    DBUG_ENTER ("CreateLacFunName");
+
+    name = (char *)ILIBmalloc ((strlen (root_funname) + 10 + 20 + 3) * sizeof (char));
+    sprintf (name, "%s__ReuseCond_%i", root_funname, number);
+    number++;
+
+    DBUG_RETURN (name);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *GetReuseBranches( node *drcs, node *memop)
@@ -228,7 +258,13 @@ GetReuseBranches (dfmask_t *drcs, node *memop)
 
 /** <!--********************************************************************-->
  *
- * @fn node *BuildCondTree( node *let, node *branches, node *locals)
+ * @fn static node *BuildCondTree( node *ass,
+ *                                 node *branches,
+ *                                 node *memvars,
+ *                                 node *fundef,
+ *                                 char *root_funname,
+ *                                 dfmask_t *inmask,
+ *                                 lut_t *lut)
  *
  * @brief Build the reuse decision tree
  *
@@ -236,14 +272,15 @@ GetReuseBranches (dfmask_t *drcs, node *memop)
  * @param branches id list list of data reuse candidates
  * @param memvars id list of memory veriables
  * @param fundef Fundef to put the new vardecs into
+ * @param root_funname Name of root function
  * @param inmask DFM containing the in parameters of the assignment chain
  * @param lut LUT
  * @return Assignment chain
  *
  *****************************************************************************/
 static node *
-BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, dfmask_t *inmask,
-               lut_t *lut)
+BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *root_funname,
+               dfmask_t *inmask, lut_t *lut)
 {
     node *res = NULL;
 
@@ -254,7 +291,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, dfmask_t 
     } else {
         if (EXPRS_EXPR (branches) == NULL) {
             res = BuildCondTree (ass, EXPRS_NEXT (branches), EXPRS_NEXT (memvars), fundef,
-                                 inmask, lut);
+                                 root_funname, inmask, lut);
         } else {
             node *condfun;
             node *cond;
@@ -307,7 +344,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, dfmask_t 
                                                        SHmakeShape (0))),
                                 cfargs);
 
-            condfun = TBmakeFundef (L2FgetLacFunName ("ReuseCond"),
+            condfun = TBmakeFundef (CreateLacFunName (root_funname),
                                     ILIBstringCopy (FUNDEF_MOD (fundef)), cfrets, cfargs,
                                     TBmakeBlock (NULL, NULL), FUNDEF_NEXT (fundef));
 
@@ -323,7 +360,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, dfmask_t 
 
             tmplut = LUTduplicateLut (cflut);
             thenass = BuildCondTree (ass, EXPRS_NEXT (branches), EXPRS_NEXT (memvars),
-                                     condfun, inmask, tmplut);
+                                     condfun, root_funname, inmask, tmplut);
             tmplut = LUTremoveLut (tmplut);
 
             /*
@@ -331,7 +368,8 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, dfmask_t 
              */
             rc = EXPRS_EXPR (branches);
             EXPRS_EXPR (branches) = EXPRS_NEXT (EXPRS_EXPR (branches));
-            elseass = BuildCondTree (ass, branches, memvars, condfun, inmask, cflut);
+            elseass = BuildCondTree (ass, branches, memvars, condfun, root_funname,
+                                     inmask, cflut);
             EXPRS_EXPR (branches) = rc;
             cflut = LUTremoveLut (cflut);
 
@@ -473,8 +511,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, dfmask_t 
                 cfids = IDS_NEXT (cfids);
             }
 
-            FUNDEF_EXT_ASSIGNS (condfun) = TCnodeListAppend (NULL, res, NULL);
-            FUNDEF_USED (condfun) = 1;
+            FUNDEF_EXT_ASSIGN (condfun) = res;
 
             /*
              * Create  c  = fill( isreused( a, b), c');
@@ -566,7 +603,7 @@ EMRBassign (node *arg_node, info *arg_info)
             newass
               = BuildCondTree (INFO_RB_PRECODE (arg_info), INFO_RB_BRANCHES (arg_info),
                                INFO_RB_MEMVARS (arg_info), INFO_RB_FUNDEF (arg_info),
-                               inmask, lut);
+                               FUNDEF_NAME (INFO_RB_FUNDEF (arg_info)), inmask, lut);
 
             INFO_RB_BRANCHES (arg_info) = FREEdoFreeTree (INFO_RB_BRANCHES (arg_info));
             INFO_RB_MEMVARS (arg_info) = FREEdoFreeTree (INFO_RB_MEMVARS (arg_info));
