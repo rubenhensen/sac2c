@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.199  1998/08/11 00:04:53  dkr
+ * N_WLsegVar changed
+ *
  * Revision 1.198  1998/08/10 18:04:16  dkr
  * changed a comment for N_Nwithop
  *
@@ -2498,6 +2501,7 @@ extern node *MakeInfo ();
  *            to avoid overlapping addresses.
  */
 #define INFO_DUP_CONT(n) (n->node[1])
+#define INFO_DUP_FOLDINL(n) (n->node[3])
 
 /* flatten */
 #define INFO_FLTN_CONTEXT(n) (n->flag)
@@ -2998,14 +3002,14 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***
  ***  temporary attributes:
  ***
+ ***    int*       IDX_MIN                           (wltransform -> compile )
+ ***    int*       IDX_MAX                           (wltransform -> compile )
+ ***
  ***    int        BLOCKS    (number of blocking levels
  ***                           --- without unrolling-blocking)
  ***    long*      SV        (step vector)           (wltransform -> )
  ***    long*      BV        (blocking vector)       (wltransform -> compile )
  ***    long*      UBV       (unrolling-b. vector)   (wltransform -> compile )
- ***
- ***    int*       IDX_MIN                           (wltransform -> compile )
- ***    int*       IDX_MAX                           (wltransform -> compile )
  ***
  ***    SCHsched_t SCHEDULING  (O)                   (wltransform -> compile )
  ***    int        MAXHOMDIM (last homog. dimension) (wltransform -> compile )
@@ -3018,14 +3022,14 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 #define WLSEG_CONTENTS(n) (n->node[0])
 #define WLSEG_NEXT(n) (n->node[1])
 
+#define WLSEG_IDX_MIN(n) (*((int **)(&(n->node[2]))))
+#define WLSEG_IDX_MAX(n) (*((int **)(&(n->node[3]))))
+
 #define WLSEG_BLOCKS(n) (n->flag)
 
 #define WLSEG_SV(n) (n->mask[0])
 #define WLSEG_BV(n, level) (n->mask[level + 2])
 #define WLSEG_UBV(n) (n->mask[1])
-
-#define WLSEG_IDX_MIN(n) (*((int **)(&(n->node[2]))))
-#define WLSEG_IDX_MAX(n) (*((int **)(&(n->node[3]))))
 
 #define WLSEG_SCHEDULING(n) ((SCHsched_t) (n->node[4]))
 #define WLSEG_MAXHOMDIM(n) (n->varno)
@@ -3252,7 +3256,14 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
  ***
  ***  temporary attributes:
  ***
- ***    ???
+ ***    int*       IDX_MIN                           (wltransform -> compile )
+ ***    int*       IDX_MAX                           (wltransform -> compile )
+ ***
+ ***    int        BLOCKS    (number of blocking levels
+ ***                           --- without unrolling-blocking)
+ ***    long*      SV        (step vector)           (wltransform -> )
+ ***    long*      BV        (blocking vector)       (wltransform -> compile )
+ ***    long*      UBV       (unrolling-b. vector)   (wltransform -> compile )
  ***
  ***    SCHsched_t SCHEDULING  (O)                   (wltransform -> compile )
  ***    int        MAXHOMDIM (last homog. dimension) (wltransform -> compile )
@@ -3267,6 +3278,14 @@ extern node *MakeWLsegVar (int dims, node *contents, node *next);
 #define WLSEGVAR_DIMS(n) (n->refcnt)
 #define WLSEGVAR_CONTENTS(n) (n->node[0])
 #define WLSEGVAR_NEXT(n) (n->node[1])
+
+#define WLSEGVAR_IDX_MIN(n) (*((int **)(&(n->node[2]))))
+#define WLSEGVAR_IDX_MAX(n) (*((int **)(&(n->node[3]))))
+
+#define WLSEGVAR_BLOCKS(n) (n->flag)
+
+#define WLSEGVAR_BV(n, level) (n->mask[level + 2])
+#define WLSEGVAR_UBV(n) (n->mask[1])
 
 #define WLSEGVAR_SCHEDULING(n) ((SCHsched_t)n->node[5])
 #define WLSEGVAR_MAXHOMDIM(n) (n->varno)
