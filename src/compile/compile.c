@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.69  1995/12/18 18:28:55  cg
+ * Revision 1.70  1995/12/21 15:09:15  cg
+ * converted from nums to array representation of pragma linksign.
+ *
+ * Revision 1.69  1995/12/18  18:28:55  cg
  * compilation of objdef nodes modified, now ICMs for global arrays
  * will be printed correctly.
  *
@@ -615,7 +618,7 @@ ReorganizeParameters (int tag, node *icm_args, node *pragma)
     int header_length, varblock_length, i, n_vars;
     node *tmp, *n_vars_arg, *vars_arg_start, *ret_arg, *last_header_arg, *last,
       **icm_arg_tab;
-    nums *linksign;
+    int *linksign;
 
     DBUG_ENTER ("ReorganizeParameters");
 
