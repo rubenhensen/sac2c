@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/03/29 11:52:22  hw
+ * Revision 1.3  1995/03/31 15:46:33  hw
+ * added macro IDS_REFCNT
+ *
+ * Revision 1.2  1995/03/29  11:52:22  hw
  * macros for access to elements of struct info.ids inserted
  *
  * Revision 1.1  1995/03/28  12:01:50  hw
@@ -32,5 +35,6 @@
 #define IDS info.ids
 #define IDS_ID IDS->id
 #define IDS_NODE IDS->node
+#define IDS_REFCNT IDS->refcnt
 
 #endif /* _access_macros_h */
