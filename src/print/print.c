@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.179  1998/04/02 18:12:01  dkr
+ * added PrintConc
+ *
  * Revision 1.178  1998/04/01 23:56:46  dkr
  * added PrintWLstriVar, PrintWLgridVar
  *
@@ -607,9 +610,13 @@
 #include "globals.h"
 #include "gen_startup_code.h"
 
+/******************************************************************************/
+
 int indent = 0;
 
 static int print_separate = 0;
+
+/******************************************************************************/
 
 /*
  * First, we generate the external declarations for all functions that
@@ -630,6 +637,8 @@ static int print_separate = 0;
 #undef ICM_END
 #undef ICM_ALL
 
+/******************************************************************************/
+
 #define PRF_IF(n, s, x, y) x
 
 char *prf_string[] = {
@@ -637,6 +646,8 @@ char *prf_string[] = {
 };
 
 #undef PRF_IF
+
+/******************************************************************************/
 
 /*
  * prints ids-information to outfile
@@ -665,6 +676,8 @@ PrintIds (ids *arg)
     DBUG_VOID_RETURN;
 }
 
+/******************************************************************************/
+
 void
 PrintNums (nums *n)
 {
@@ -682,6 +695,8 @@ PrintNums (nums *n)
 
     DBUG_VOID_RETURN;
 }
+
+/******************************************************************************/
 
 node *
 PrintAssign (node *arg_node, node *arg_info)
@@ -717,6 +732,8 @@ PrintAssign (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintBlock (node *arg_node, node *arg_info)
@@ -760,6 +777,8 @@ PrintBlock (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintLet (node *arg_node, node *arg_info)
 {
@@ -776,6 +795,8 @@ PrintLet (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintAnnotate (node *arg_node, node *arg_info)
@@ -813,6 +834,8 @@ PrintAnnotate (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintModul (node *arg_node, node *arg_info)
@@ -934,6 +957,8 @@ PrintModul (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintImplist (node *arg_node, node *arg_info)
 {
@@ -977,6 +1002,8 @@ PrintImplist (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintTypedef (node *arg_node, node *arg_info)
 {
@@ -999,6 +1026,8 @@ PrintTypedef (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintObjdef (node *arg_node, node *arg_info)
@@ -1043,6 +1072,8 @@ PrintObjdef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 void
 PrintFunctionHeader (node *arg_node, node *arg_info)
 {
@@ -1065,6 +1096,8 @@ PrintFunctionHeader (node *arg_node, node *arg_info)
 
     DBUG_VOID_RETURN;
 }
+
+/******************************************************************************/
 
 /*
  * Remark for PrintFundef:
@@ -1160,6 +1193,8 @@ PrintFundef (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintPrf (node *arg_node, node *arg_info)
 {
@@ -1220,6 +1255,8 @@ PrintPrf (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintStr (node *arg_node, node *arg_info)
 {
@@ -1231,6 +1268,8 @@ PrintStr (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintId (node *arg_node, node *arg_info)
@@ -1251,6 +1290,8 @@ PrintId (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintNum (node *arg_node, node *arg_info)
 {
@@ -1261,6 +1302,8 @@ PrintNum (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintChar (node *arg_node, node *arg_info)
@@ -1278,6 +1321,8 @@ PrintChar (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintFloat (node *arg_node, node *arg_info)
 {
@@ -1291,6 +1336,8 @@ PrintFloat (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintDouble (node *arg_node, node *arg_info)
@@ -1307,6 +1354,8 @@ PrintDouble (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintBool (node *arg_node, node *arg_info)
 {
@@ -1320,6 +1369,8 @@ PrintBool (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintReturn (node *arg_node, node *arg_info)
@@ -1346,6 +1397,8 @@ PrintReturn (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintAp (node *arg_node, node *arg_info)
 {
@@ -1361,6 +1414,8 @@ PrintAp (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintCast (node *arg_node, node *arg_info)
 {
@@ -1371,6 +1426,8 @@ PrintCast (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintExprs (node *arg_node, node *arg_info)
@@ -1386,6 +1443,8 @@ PrintExprs (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintArg (node *arg_node, node *arg_info)
@@ -1413,6 +1472,8 @@ PrintArg (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintVardec (node *arg_node, node *arg_info)
 {
@@ -1433,6 +1494,8 @@ PrintVardec (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintDo (node *arg_node, node *arg_info)
@@ -1461,6 +1524,8 @@ PrintDo (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintEmpty (node *arg_node, node *arg_info)
 {
@@ -1471,6 +1536,8 @@ PrintEmpty (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintWhile (node *arg_node, node *arg_info)
@@ -1492,6 +1559,8 @@ PrintWhile (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintCond (node *arg_node, node *arg_info)
@@ -1522,6 +1591,8 @@ PrintCond (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintWith (node *arg_node, node *arg_info)
 {
@@ -1545,6 +1616,8 @@ PrintWith (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintGenator (node *arg_node, node *arg_info)
 {
@@ -1560,6 +1633,8 @@ PrintGenator (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintGenarray (node *arg_node, node *arg_info)
@@ -1594,6 +1669,8 @@ PrintGenarray (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintModarray (node *arg_node, node *arg_info)
 {
@@ -1623,6 +1700,8 @@ PrintModarray (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintFoldfun (node *arg_node, node *arg_info)
@@ -1660,6 +1739,8 @@ PrintFoldfun (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintFoldprf (node *arg_node, node *arg_info)
 {
@@ -1694,6 +1775,8 @@ PrintFoldprf (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintArray (node *arg_node, node *arg_info)
 {
@@ -1706,6 +1789,8 @@ PrintArray (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintDec (node *arg_node, node *arg_info)
 {
@@ -1716,6 +1801,8 @@ PrintDec (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintInc (node *arg_node, node *arg_info)
 {
@@ -1725,6 +1812,8 @@ PrintInc (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintPost (node *arg_node, node *arg_info)
@@ -1738,6 +1827,8 @@ PrintPost (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
 node *
 PrintPre (node *arg_node, node *arg_info)
 {
@@ -1749,6 +1840,8 @@ PrintPre (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintVectInfo (node *arg_node, node *arg_info)
@@ -1767,6 +1860,8 @@ PrintVectInfo (node *arg_node, node *arg_info)
     }
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintIcm (node *arg_node, node *arg_info)
@@ -1825,6 +1920,8 @@ PrintIcm (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************/
 
 node *
 PrintPragma (node *arg_node, node *arg_info)
@@ -1912,6 +2009,26 @@ PrintPragma (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************/
+
+node *
+PrintConc (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintConc");
+
+    INDENT
+    fprintf (outfile, "{ /*** begin of concurrent region ***/\n");
+
+    indent++;
+    CONC_REGION (arg_node) = Trav (CONC_REGION (arg_node), arg_info);
+    indent--;
+
+    INDENT
+    fprintf (outfile, "} /*** end of concurrent region ***/\n");
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * function:
@@ -1950,9 +2067,11 @@ PrintNwith (node *arg_node, node *arg_info)
                            NWITH_REFERENCED_FOLD (arg_node), NWITH_COMPLEX (arg_node),
                            NWITH_FOLDABLE (arg_node), NWITH_NO_CHANCE (arg_node)););
 
-    /* check wether to use output format 1 (multiple
-       NParts) or 2 (only one NPart) and use
-       arg_info->node[2] as flag for traversal. */
+    /*
+     * check wether to use output format 1 (multiple NParts)
+     * or 2 (only one NPart) and use arg_info->node[2]
+     * as flag for traversal.
+     */
     if (NPART_NEXT (NWITH_PART (arg_node))) {
         /* output format 1 */
         arg_info->node[2] = NULL;
@@ -2145,8 +2264,10 @@ PrintNpart (node *arg_node, node *arg_info)
 
     if (NPART_NEXT (arg_node) != NULL) {
         fprintf (outfile, ",\n");
-        NPART_NEXT (arg_node)
-          = Trav (NPART_NEXT (arg_node), arg_info); /* continue with other parts */
+        /*
+         * continue with other parts
+         */
+        NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
     } else {
         fprintf (outfile, "\n");
     }
@@ -2549,7 +2670,7 @@ PrintWLgridVar (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *Print(node *arg_node)
+ *   node *Print(node *syntax_tree)
  *
  * description:
  *   initiates print of (sub-)tree
@@ -2557,7 +2678,7 @@ PrintWLgridVar (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-Print (node *arg_node)
+Print (node *syntax_tree)
 {
     DBUG_ENTER ("Print");
 
@@ -2576,7 +2697,7 @@ Print (node *arg_node)
             outfile = WriteOpen ("%s%s", targetdir, cfilename);
             NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
             GSCPrintFileHeader ();
-            arg_node = Trav (arg_node, NULL);
+            syntax_tree = Trav (syntax_tree, NULL);
             fclose (outfile);
             break;
 
@@ -2590,7 +2711,7 @@ Print (node *arg_node)
             outfile = WriteOpen ("%s/%s", tmp_dirname, cfilename);
             NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
             GSCPrintFileHeader ();
-            arg_node = Trav (arg_node, NULL);
+            syntax_tree = Trav (syntax_tree, NULL);
             fclose (outfile);
             break;
 
@@ -2603,7 +2724,7 @@ Print (node *arg_node)
              * function prototypes.
              */
             print_separate = 1;
-            arg_node = Trav (arg_node, NULL);
+            syntax_tree = Trav (syntax_tree, NULL);
             break;
         }
     }
@@ -2611,11 +2732,11 @@ Print (node *arg_node)
     else {
         outfile = stdout;
         fprintf (outfile, "\n-----------------------------------------------\n");
-        arg_node = Trav (arg_node, NULL);
+        syntax_tree = Trav (syntax_tree, NULL);
         fprintf (outfile, "\n-----------------------------------------------\n");
     }
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (syntax_tree);
 }
 
 /******************************************************************************
