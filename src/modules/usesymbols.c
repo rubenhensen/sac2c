@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/11 14:29:40  sah
+ * added some traversal functions for USS traversal
+ *
  * Revision 1.5  2004/11/07 18:06:05  sah
  * fixed a minor bug
  *
@@ -73,6 +76,38 @@ FreeInfo (info *info)
 /*
  * Traversal functions
  */
+
+node *
+USSTypedef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("USSTypedef");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+USSArg (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("USSArg");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+USSVardec (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("USSVardec");
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+USSNWithOp (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("USSNWithOp");
+
+    DBUG_RETURN (arg_node);
+}
 
 node *
 USSAp (node *arg_node, info *arg_info)
