@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/06/25 15:19:43  rob
+ * Avoid genning GetUniFromTypes if not TAGGED_ARRAYS
+ *
  * Revision 2.2  1999/06/25 14:52:25  rob
  * Introduce definitions and utility infrastructure for tagged array support.
  *
@@ -1735,6 +1738,8 @@ PRECWLsegVar (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+#ifdef TAGGED_ARRAYS
+
 /******************************************************************************
  *
  * function:
@@ -1793,3 +1798,5 @@ GetUniFromTypes (types *typ)
 
     DBUG_RETURN (z);
 }
+
+#endif /* TAGGED_ARRAYS */
