@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/05/22 12:14:29  nmw
+ * SAC_ND_TYPEDEF_ARRAY terminating ; stripped off
+ * due to error message by suncc.
+ *
  * Revision 3.2  2000/11/27 21:10:01  cg
  * Added implementation of new ICM ND_ALLOC_ARRAY_PLACE.
  *
@@ -169,7 +173,7 @@
 
 #define SAC_ND_TYPEDEF_HIDDEN(name) typedef void *name
 
-#define SAC_ND_TYPEDEF_ARRAY(basetype, name) typedef basetype *name;
+#define SAC_ND_TYPEDEF_ARRAY(basetype, name) typedef basetype *name
 
 /*
  * ICMs for declaring refcounted data:
