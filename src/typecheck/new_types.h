@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/10/18 14:34:18  sbs
+ * TYSetSimpleType, TYGetUserType, nad TYOldTypes2ProdType added.
+ *
  * Revision 3.10  2002/09/06 17:29:31  sbs
  * TC_poly added.
  *
@@ -206,7 +209,10 @@ extern ntype *TYMakeSimpleType (simpletype base);
 extern ntype *TYMakeUserType (usertype base);
 extern ntype *TYMakeSymbType (char *name, char *mod);
 
+extern ntype *TYSetSimpleType (ntype *simple, simpletype base);
+
 extern simpletype TYGetSimpleType (ntype *simple);
+extern usertype TYGetUserType (ntype *user);
 extern char *TYGetName (ntype *symb);
 extern char *TYGetMod (ntype *symb);
 
@@ -347,6 +353,7 @@ typedef enum { TY_symb, TY_user } type_conversion_flag;
 
 extern ntype *TYOldType2Type (types *old);
 extern types *TYType2OldType (ntype *new);
+extern ntype *TYOldTypes2ProdType (types *old);
 
 /*
  * Functions for converting types into SAC code for wrapper functions
