@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/03/24 16:01:08  asi
+ * Revision 1.6  1995/03/24 16:08:00  asi
+ * ci - Error removed
+ *
+ * Revision 1.5  1995/03/24  16:01:08  asi
  * changed DEADwith - with-loops handeled like lokal funktions now
  * changed free() -> FREE()
  *
@@ -579,5 +582,3 @@ DEADwith (node *arg_node, node *arg_info)
     }
     DBUG_RETURN (arg_node);
 }
-
-            
