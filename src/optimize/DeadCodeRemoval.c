@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.16  1997/04/23 12:52:36  cg
+ * Revision 1.17  1997/05/13 16:31:49  sbs
+ * N_assign node with N_annotate-instr generally marked as
+ * active!
+ *
+ * Revision 1.16  1997/04/23  12:52:36  cg
  * decleration changed to declaration
  *
  * Revision 1.15  1996/09/11  14:25:55  asi
@@ -405,7 +409,8 @@ ACTassign (node *arg_node, node *arg_info)
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
 
     if (redundant == ASSIGN_STATUS (arg_node)) {
-        if (N_return == ASSIGN_INSTRTYPE (arg_node))
+        if ((N_return == ASSIGN_INSTRTYPE (arg_node))
+            || (N_annotate == ASSIGN_INSTRTYPE (arg_node)))
             ASSIGN_STATUS (arg_node) = active;
         else {
             int egal = FALSE;
