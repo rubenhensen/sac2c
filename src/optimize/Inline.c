@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2002/10/18 17:01:13  dkr
+ * InlineArg() modified: support for ID_FLAGs added
+ *
  * Revision 3.29  2002/10/18 14:07:49  dkr
  * InlineArg() modified: inlining of reference args corrected
  *
@@ -327,7 +330,8 @@ InlineArg (node *arg_node, node *arg_info)
     node *new_vardec;
     char *new_name;
     node *new_avis;
-    ids *tmp_ids1, *tmp_ids2;
+    node *tmp_id;
+    ids *tmp_ids;
 
     DBUG_ENTER ("InlineArg");
 
@@ -365,10 +369,12 @@ InlineArg (node *arg_node, node *arg_info)
      *   VARDEC_NAME( new_vardec) = arg;
      * into INFO_INL_PROLOG
      */
-    tmp_ids1 = MakeIds_Copy (new_name);
-    IDS_VARDEC (tmp_ids1) = new_vardec;
-    IDS_AVIS (tmp_ids1) = VARDEC_OR_ARG_AVIS (new_vardec);
-    new_ass = MakeAssign (MakeLet (DupNode (arg), tmp_ids1), NULL);
+    tmp_ids = MakeIds_Copy (new_name);
+    IDS_VARDEC (tmp_ids) = new_vardec;
+    IDS_AVIS (tmp_ids) = VARDEC_OR_ARG_AVIS (new_vardec);
+
+    new_ass = MakeAssign (MakeLet (DupNode (arg), tmp_ids), NULL);
+
     /* store definition assignment of this new vardec (only in ssaform) */
     if (valid_ssaform && (VARDEC_AVIS (new_vardec) != NULL)) {
         AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = new_ass;
@@ -384,11 +390,17 @@ InlineArg (node *arg_node, node *arg_info)
      */
     if (ARG_ATTRIB (arg_node) == ST_reference) {
         DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "reference argument must be a N_id node");
-        tmp_ids2 = MakeIds_Copy (ID_NAME (arg));
-        IDS_VARDEC (tmp_ids2) = ID_VARDEC (arg);
-        IDS_AVIS (tmp_ids2) = ID_AVIS (arg);
-        new_ass = MakeAssign (MakeLet (DupIds_Id (tmp_ids1), tmp_ids2), NULL);
-        valid_ssaform = FALSE; /* no SSA form anymore ... */
+        tmp_id = DupIds_Id (tmp_ids);
+        SET_FLAG (ID, tmp_id, IS_GLOBAL, GET_FLAG (ID, arg, IS_GLOBAL));
+        SET_FLAG (ID, tmp_id, IS_REFERENCE, FALSE);
+
+        tmp_ids = MakeIds_Copy (ID_NAME (arg));
+        IDS_VARDEC (tmp_ids) = ID_VARDEC (arg);
+        IDS_AVIS (tmp_ids) = ID_AVIS (arg);
+
+        new_ass = MakeAssign (MakeLet (tmp_id, tmp_ids), NULL);
+        valid_ssaform = FALSE; /* no valid SSA form anymore ... */
+
         ASSIGN_NEXT (new_ass) = INFO_INL_EPILOG (arg_info);
         INFO_INL_EPILOG (arg_info) = new_ass;
     }
