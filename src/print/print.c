@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.105  2000/10/23 12:34:52  dkr
+ * PrintAST now prints addresses of attribute notes.
+ *
  * Revision 2.104  2000/10/09 19:22:39  dkr
  * DBUG-string PRINT_PRF added
  *
@@ -3815,26 +3818,22 @@ PrintNode (node *syntax_tree)
  *  debug output
  */
 
-/* forward declaration */
-static void DoPrintAST (node *arg_node, int skip_next);
-
 /******************************************************************************
  *
- * function:
- *   void DoPrintSonAST( int num, node *arg_node, int skip_node)
+ * Function:
+ *   void DoIndentAST( void);
  *
- * description:
- *   This function is called from 'DoPrintAST' only.
- *   Prints a son or attribute containing a hole sub-tree.
+ * Description:
+ *
  *
  ******************************************************************************/
 
 static void
-DoPrintSonAST (int num, node *arg_node, int skip_node)
+DoIndentAST (void)
 {
     int j;
 
-    DBUG_ENTER ("DoPrintSonAST");
+    DBUG_ENTER ("DoIndentAST");
 
     for (j = 0; j < indent; j++) {
         if (j % 4) {
@@ -3844,16 +3843,73 @@ DoPrintSonAST (int num, node *arg_node, int skip_node)
         }
     }
 
+    DBUG_VOID_RETURN;
+}
+
+/* forward declaration */
+static void DoPrintAST (node *arg_node, bool skip_next);
+
+/******************************************************************************
+ *
+ * function:
+ *   void DoPrintSonAST( int num, node *arg_node, bool skip_node)
+ *
+ * description:
+ *   This function is called from 'DoPrintAST' only.
+ *   Prints a son containing a hole sub-tree.
+ *
+ ******************************************************************************/
+
+static void
+DoPrintSonAST (int num, node *arg_node, bool skip_node)
+{
+    DBUG_ENTER ("DoPrintSonAST");
+
+    DoIndentAST ();
+
     if (num >= 0) {
-        fprintf (outfile, "%i-", num);
+        fprintf (outfile, "%i=", num);
     } else {
-        fprintf (outfile, "+-");
+        fprintf (outfile, "+=");
     }
 
     if (skip_node) {
         fprintf (outfile, "(NEXT)\n");
     } else {
         DoPrintAST (arg_node, 0); /* inner node -> do not skip NEXT-nodes */
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void DoPrintAttrAST( int num, node *arg_node)
+ *
+ * description:
+ *   This function is called from 'DoPrintAST' only.
+ *   Prints an attribute containing a node-pointer.
+ *
+ ******************************************************************************/
+
+static void
+DoPrintAttrAST (int num, node *arg_node)
+{
+    DBUG_ENTER ("DoPrintAttrAST");
+
+    DoIndentAST ();
+
+    if (num >= 0) {
+        fprintf (outfile, "%i-", num);
+    } else {
+        fprintf (outfile, "+-");
+    }
+
+    if (arg_node != NULL) {
+        fprintf (outfile, "0x%p\n", arg_node);
+    } else {
+        fprintf (outfile, "NULL\n");
     }
 
     DBUG_VOID_RETURN;
@@ -3936,7 +3992,7 @@ DoPrintIdsAST (ids *vars)
 /******************************************************************************
  *
  * function:
- *   void DoPrintAST( node *arg_node, int skip_next)
+ *   void DoPrintAST( node *arg_node, bool skip_next)
  *
  * description:
  *   This function prints the syntax tree without any interpretation.
@@ -3946,7 +4002,7 @@ DoPrintIdsAST (ids *vars)
  ******************************************************************************/
 
 static void
-DoPrintAST (node *arg_node, int skip_next)
+DoPrintAST (node *arg_node, bool skip_next)
 {
     node *skip;
     int i;
@@ -4218,8 +4274,13 @@ DoPrintAST (node *arg_node, int skip_next)
         indent++;
         for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++) {
             DoPrintSonAST (i, arg_node->node[i],
-                           ((arg_node->node[i] != NULL) && (skip_next == 1)
+                           ((arg_node->node[i] != NULL) && skip_next
                             && (arg_node->node[i] == skip)));
+        }
+        for (i = nnode[NODE_TYPE (arg_node)]; i < MAX_SONS; i++) {
+            if (arg_node->node[i] != NULL) {
+                DoPrintAttrAST (i, arg_node->node[i]);
+            }
         }
         indent--;
     } else
