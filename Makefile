@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.57  1997/11/20 15:11:50  dkr
+# changed the path to Old2NewWith.o
+#
 # Revision 1.56  1997/11/20 14:57:47  dkr
 # added Old2NewWith.o to the COMPILE-project
 #
@@ -236,10 +239,10 @@ OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/rmvoidfun.o
 REFCOUNT= src/refcount/refcount.o
 COMPILE= src/compile/compile.o src/compile/icm2c.o src/compile/precompile.o \
-         src/compile/profile.o src/Old2NewWith/Old2NewWith.o
+         src/compile/profile.o src/compile/Old2NewWith.o
 
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
-    $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(O2NWITH)
+    $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT)
 
 all: dummy sac2c
 
