@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/12/01 17:11:45  cg
+ * Revision 1.9  1995/12/11 14:01:09  cg
+ * added statustype entry ST_Cfun
+ *
+ * Revision 1.8  1995/12/01  17:11:45  cg
  * removed statustype entries ST_ref and ST_deref
  * added statustype entry ST_inout
  *
@@ -84,6 +87,7 @@ typedef enum {
     ST_global,             /* identifier is global object            */
     ST_imported,           /* function, type, or object imported     */
                            /* from other module                      */
+    ST_Cfun,               /* function implemented in C              */
     ST_used,               /* var declaration is used in body        */
     ST_objinitfun          /* function is automatically generated    */
                            /* to contain global object init expr     */
