@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/07/22 14:13:50  ktr
+ * a = fill( b, c) is now converted into c = b
+ * which appears to be easier to compile.
+ *
  * Revision 1.1  2004/07/21 16:52:24  ktr
  * Initial revision
  *
@@ -11,25 +15,18 @@
  *
  * @file markmemvals.c
  *
- * In this traversal unnecessary MemVal-variables are removed by means
- * of a substitution traversal.
+ * In this traversal all fill operations and unnecessary MemVal-variables
+ * are removed by means of a substitution traversal.
  *
  * Ex.:
- *   c = alloc( ...);
- *   a = fill( b, c)
+ *   c = alloc();
+ *   a = fill( ..., c)
  *
  * is transformed into
- *   c = alloc( ...);
- *   c = fill( b, c)
+ *   c = alloc();
+ *   c = ...;
  *
  * All subsequent references to a are renamed into references to c.
- *
- * Furthermore the left hand side of this assignment and a's VARDEC
- * are marked ST_artificial such that they will be eliminated during
- * precompile.
- *
- *   c = alloc( ...);
- *   fill( b, c);
  *
  * As genarray-withloops are nothing but fancy fill-operations after
  * the explicit alloc-operations are inserted, their result is treated
@@ -94,6 +91,38 @@ FreeInfo (info *info)
 
 /** <!--******************************************************************-->
  *
+ * @fn MMVdo
+ *
+ *  @brief Traverses the loop body, the condition and the skip-block
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+node *
+MMVdo (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("MMVdo");
+
+    if (DO_BODY (arg_node) != NULL) {
+        DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
+    }
+
+    if (DO_COND (arg_node) != NULL) {
+        DO_COND (arg_node) = Trav (DO_COND (arg_node), arg_info);
+    }
+
+    if (DO_SKIP (arg_node) != NULL) {
+        DO_SKIP (arg_node) = Trav (DO_SKIP (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn MMVfundef
  *
  *  @brief Traverses a FUNDEF's body and clears the LUT afterwards.
@@ -110,7 +139,10 @@ MMVfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("MMVfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
+        DBUG_EXECUTE ("MMV", PrintNode (arg_node););
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+
+        DBUG_EXECUTE ("MMV", PrintNode (arg_node););
     }
 
     INFO_MMV_LUT (arg_info) = RemoveContentLUT (INFO_MMV_LUT (arg_info));
@@ -188,11 +220,15 @@ MMVlet (node *arg_node, info *arg_info)
         newname = SearchInLUT_SS (INFO_MMV_LUT (arg_info), IDS_NAME (i));
 
         if (newname != IDS_NAME (i)) {
+            /*
+             * Mark the old lhs vardec ST_artificial such that it
+             * will be removed by precompile
+             */
+            VARDEC_STATUS (IDS_VARDEC (i)) = ST_artificial;
+
             IDS_NAME (i) = Free (IDS_NAME (i));
             IDS_NAME (i) = StringCopy (newname);
-            VARDEC_STATUS (IDS_VARDEC (i)) = ST_artificial;
             IDS_VARDEC (i) = SearchInLUT_PP (INFO_MMV_LUT (arg_info), IDS_VARDEC (i));
-            IDS_STATUS (i) = ST_artificial;
         }
 
         i = IDS_NEXT (i);
@@ -217,15 +253,38 @@ MMVlet (node *arg_node, info *arg_info)
 node *
 MMVprf (node *arg_node, info *arg_info)
 {
+    node *temp;
+
     DBUG_ENTER ("MMVprf");
 
     if (PRF_PRF (arg_node) == F_fill) {
-        PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+        /*
+         * a = fill( ..., b)
+         *
+         * rename: a -> b
+         */
         InsertIntoLUT_S (INFO_MMV_LUT (arg_info), IDS_NAME (INFO_MMV_LHS (arg_info)),
-                         ID_NAME (PRF_ARG2 (arg_node)));
+                         VARDEC_NAME (ID_VARDEC (PRF_ARG2 (arg_node))));
 
         InsertIntoLUT_P (INFO_MMV_LUT (arg_info), IDS_VARDEC (INFO_MMV_LHS (arg_info)),
                          ID_VARDEC (PRF_ARG2 (arg_node)));
+
+        /*
+         * eliminate the fill operation
+         *
+         * b = ...;
+         */
+        temp = PRF_ARG1 (arg_node);
+        PRF_ARG1 (arg_node) = NULL;
+        arg_node = FreeTree (arg_node);
+        arg_node = temp;
+
+        /*
+         * Traverse the new rhs
+         */
+        if (arg_node != NULL) {
+            arg_node = Trav (arg_node, arg_info);
+        }
     } else {
         if (PRF_ARGS (arg_node) != NULL) {
             PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
@@ -393,6 +452,7 @@ MarkMemVals (node *syntax_tree)
     info = MakeInfo ();
 
     act_tab = mmv_tab;
+
     syntax_tree = Trav (syntax_tree, info);
 
     info = FreeInfo (info);
