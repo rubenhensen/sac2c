@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/06/02 08:46:33  hw
+ * Revision 1.7  1995/07/04 09:27:22  hw
+ * - macro GetNextDouble inserted
+ * - N_double in GetShape integrated
+ *
+ * Revision 1.6  1995/06/02  08:46:33  hw
  * - macro GetNextFloat inserted
  * - changed macro GetShape ( N_float added)
  *
@@ -61,10 +65,21 @@
         ex = ex->node[1];                                                                \
     }
 
+#define GetNextDouble(res, ex)                                                           \
+    {                                                                                    \
+        DBUG_ASSERT ((ex->nodetype == N_exprs), "wrong icm-arg: N_exprs expected");      \
+        DBUG_ASSERT ((ex->node[0]->nodetype == N_double),                                \
+                     "wrong icm-arg: N_double expected");                                \
+        res = ex->node[0]->info.cdbl;                                                    \
+        DBUG_PRINT ("PRINT", ("icm-arg found: %d", res));                                \
+        ex = ex->node[1];                                                                \
+    }
+
 #define GetShape(dim, v, ex)                                                             \
     {                                                                                    \
         int i, num;                                                                      \
         float cfloat;                                                                    \
+        double cdbl;                                                                     \
         v = (char **)malloc (sizeof (char *) * dim);                                     \
         DBUG_ASSERT ((ex->nodetype == N_exprs), "wrong icm-arg: N_exprs expected");      \
         for (i = 0; i < dim; i++)                                                        \
@@ -87,8 +102,13 @@
                 break;                                                                   \
             case N_float:                                                                \
                 GetNextFloat (cfloat, ex);                                               \
-                v[i] = (char *)malloc (sizeof (char) * 32);                              \
-                sprintf (v[i], "%f", cfloat);                                            \
+                v[i] = (char *)malloc (sizeof (char) * 40);                              \
+                sprintf (v[i], "%16.16g", cfloat);                                       \
+                break;                                                                   \
+            case N_double:                                                               \
+                GetNextDouble (cdbl, ex);                                                \
+                v[i] = (char *)malloc (sizeof (char) * 40);                              \
+                sprintf (v[i], "%16.16g", cdbl);                                         \
                 break;                                                                   \
             default:                                                                     \
                 DBUG_PRINT ("PRINT", ("found icm_arg of type: %s",                       \
