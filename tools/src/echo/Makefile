@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.4  2001/12/06 14:39:52  dkr
+# target 'clean' corrected
+#
 # Revision 1.3  2001/11/20 10:42:09  sacbase
 # mkdir integrated into make rule rather than separate rule
 #
@@ -22,7 +25,6 @@ $(TOOLS)/bin/%: %.c
 	mkdir -p $(TOOLS)/bin
 	$(CC) $(CCFLAGS) -o $@ $<
 
-
 clean:
 	$(RM) *~ *.o
-	$(RM) ../echo
+	$(RM) $(TOOLS)/bin/echo

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.8  2001/12/06 14:39:46  dkr
+# target 'clean' corrected
+#
 # Revision 1.7  2001/11/20 10:42:09  sacbase
 # mkdir integrated into make rule rather than separate rule
 #
@@ -16,7 +19,6 @@
 # Revision 1.3  2001/11/19 18:20:33  dkr
 # rcs header added
 # Makefile.Config included
-#
 #
 #
 
@@ -43,7 +45,6 @@ bits.o: bits.c bits.h
 $(TOOLS)/bin/ctest: accesstime.o ctest.o verbose.o l1.o l2.o bits.o $(LIBS)
 	mkdir -p $(TOOLS)/bin
 	$(CC) $(CCFLAGS) -o $@ $(LIBS) accesstime.o ctest.o verbose.o l1.o l2.o bits.o
-
 
 $(LIBS):
 	$(MAKE) -C $(LIBDIR)/src

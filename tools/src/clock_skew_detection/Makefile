@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.9  2001/12/06 14:39:38  dkr
+# target 'clean' corrected
+#
 # Revision 1.8  2001/11/20 10:42:09  sacbase
 # mkdir integrated into make rule rather than separate rule
 #
@@ -33,10 +36,9 @@ $(TOOLS)/bin/cse: cse.c $(LIBS)
 	mkdir -p $(TOOLS)/bin
 	$(CC) $(CCFLAGS) -o $@ cse.c $(INCS) $(LIBS) 
 
-
 $(LIBS):
 	$(MAKE) -C $(LIBDIR)/src
 
 clean:
 	$(RM) *~ *.o
-	$(RM) ../csd ../cse
+	$(RM) $(TOOLS)/bin/csd $(TOOLS)/bin/cse
