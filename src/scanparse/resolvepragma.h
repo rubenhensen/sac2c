@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/26 19:18:30  skt
+ * RSPmodule added
+ *
  * Revision 1.3  2004/11/26 18:50:16  sbs
  * arg and ret added
  *
@@ -19,6 +22,7 @@
 
 #include "types.h"
 
+extern node *RSPmodule (node *arg_node, info *info);
 extern node *RSPfundef (node *arg_node, info *info);
 extern node *RSParg (node *arg_node, info *info);
 extern node *RSPret (node *arg_node, info *info);
