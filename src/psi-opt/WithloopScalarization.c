@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2002/06/18 10:23:15  ktr
+ * Support for N_id nodes in generator's N_array nodes added.
+ *
  * Revision 1.9  2002/06/14 23:02:15  ktr
  * Code improved by definition of compund access macros.
  *
@@ -139,9 +142,18 @@
    purposes. This enum determines ths function, see description at the
    beginning of this file for details */
 
-typedef enum { wls_probe, wls_distribute, wls_scalarize, wls_codecorrect } wls_phase_type;
+typedef enum {
+    wls_probe,
+    wls_normgen,
+    wls_partition,
+    wls_distribute,
+    wls_scalarize,
+    wls_codecorrect
+} wls_phase_type;
 
 #define WLS_PHASE(n) ((wls_phase_type)INFO_WLS_PHASE (n))
+
+#define wls_perfect FALSE
 
 /*
  *  compound access macros
@@ -152,7 +164,17 @@ typedef enum { wls_probe, wls_distribute, wls_scalarize, wls_codecorrect } wls_p
 #define NPART_CBLOCK(n) (NCODE_CBLOCK (NPART_CODE (n)))
 #define ID_SSAASSIGN(n) (AVIS_SSAASSIGN (ID_AVIS (n)))
 
-#define INNERWITHLOOP(n) (LET_EXPR (ASSIGN_INSTR (ID_SSAASSIGN (NPART_CEXPR (n)))))
+/****************************************************************************
+ *
+ * Helper macros
+ *
+ ****************************************************************************/
+
+/* NPART_SSAASSIGN returns the assignment of the parts' CEXPR */
+#define NPART_SSAASSIGN(n) (ID_SSAASSIGN (NPART_CEXPR (n)))
+
+/* NPART_LETEXPR returns the defining node of the part's CEXPR  */
+#define NPART_LETEXPR(n) (LET_EXPR (ASSIGN_INSTR (NPART_SSAASSIGN (n))))
 
 /****************************************************************************
  *
@@ -234,28 +256,13 @@ node *
 ConcatVecs (node *vec1, node *vec2)
 {
     node *res;
-    node *quelle, *ziel;
 
     DBUG_ENTER ("CONCAT_VECS");
 
     res = CreateZeroVector (ARRAY_SHAPE (vec1, 0) + ARRAY_SHAPE (vec2, 0), T_int);
 
-    ziel = ARRAY_AELEMS (res);
-    quelle = ARRAY_AELEMS (vec1);
-
-    while (quelle != NULL) {
-        NUM_VAL (EXPRS_EXPR (ziel)) = NUM_VAL (EXPRS_EXPR (quelle));
-        quelle = EXPRS_NEXT (quelle);
-        ziel = EXPRS_NEXT (ziel);
-    }
-
-    quelle = ARRAY_AELEMS (vec2);
-
-    while (quelle != NULL) {
-        NUM_VAL (EXPRS_EXPR (ziel)) = NUM_VAL (EXPRS_EXPR (quelle));
-        quelle = EXPRS_NEXT (quelle);
-        ziel = EXPRS_NEXT (ziel);
-    }
+    ARRAY_AELEMS (res)
+      = CombineExprs (DupTree (ARRAY_AELEMS (vec1)), DupTree (ARRAY_AELEMS (vec2)));
 
     DBUG_RETURN (res);
 }
@@ -298,13 +305,54 @@ isAssignInsideBlock (node *assign, node *instr)
     DBUG_RETURN (res);
 }
 
+int
+checkIdDefinition (node *outerpart, ids *id)
+{
+    int res = TRUE;
+    ids *idtemp;
+    node *assigntemp;
+
+    DBUG_ENTER ("checkIdDefinition");
+
+    /* check withvec */
+    res
+      = res && strcmp (IDS_NAME (id), IDS_NAME (NWITHID_VEC (NPART_WITHID (outerpart))));
+
+    /* check withids */
+    idtemp = NWITHID_IDS (NPART_WITHID (outerpart));
+
+    while ((res) && (idtemp != NULL)) {
+        res = res && strcmp (IDS_NAME (id), IDS_NAME (idtemp));
+
+        idtemp = IDS_NEXT (idtemp);
+    }
+
+    /* check codeblock */
+    assigntemp = BLOCK_INSTR (NPART_CBLOCK (outerpart));
+
+    while ((res) && (assigntemp != NULL) && (NODE_TYPE (assigntemp) != N_empty)) {
+
+        if (NODE_TYPE (ASSIGN_INSTR (assigntemp)) == N_let) {
+            idtemp = LET_IDS (ASSIGN_INSTR (assigntemp));
+
+            while ((res) && (idtemp != NULL)) {
+                res = res && strcmp (IDS_NAME (id), IDS_NAME (idtemp));
+
+                idtemp = IDS_NEXT (idtemp);
+            }
+        }
+        assigntemp = ASSIGN_NEXT (assigntemp);
+    }
+    DBUG_RETURN (res);
+}
+
 /******************************************************************************
  *
  * function:
- *   int checkExprsDependencies(node *outerpart, node *exprs)
+ *   int checkExprsDependencies(node *outerpart, node *expr)
  *
  * description:
- *   checks if one of the Expressions in exprs is computed inside
+ *   checks if one of the Expressions in expr is computed inside
  *   the withloop-part outerpart.
  *   In this case a WLS would be impossible and FALSE is returned.
  *
@@ -312,22 +360,33 @@ isAssignInsideBlock (node *assign, node *instr)
  *
  * parameters:
  *   node *outerpart:   N_NPART
- *   node *exprs:       N_exprs
+ *   node *expr:        "N_expr"
  *
  ******************************************************************************/
 int
-checkExprsDependencies (node *outerpart, node *exprs)
+checkExprsDependencies (node *outerpart, node *expr)
 {
     int res = TRUE;
+    node *exprs;
 
     DBUG_ENTER ("checkExprsDependencies");
 
-    if (exprs == NULL)
+    if (expr == NULL)
         res = TRUE;
-    else if (NODE_TYPE (exprs) != N_array)
-        res = FALSE; /* INTERESTING!!! */
     else
-        res = checkExprsDependencies (outerpart, EXPRS_NEXT (exprs));
+      /* Generator parameters can be */
+      /* a) N_array with N_nums or N_ids */
+      if (NODE_TYPE (expr) == N_array) {
+        exprs = ARRAY_AELEMS (expr);
+        while (exprs != NULL) {
+            if (NODE_TYPE (EXPRS_EXPR (exprs)) == N_id)
+                res = res && checkIdDefinition (outerpart, ID_IDS (EXPRS_EXPR (exprs)));
+            exprs = EXPRS_NEXT (exprs);
+        }
+    } else
+        /* b) N_id
+           res = checkIdDefinition(outerpart,ID_IDS(expr)); */
+        res = FALSE;
 
     DBUG_RETURN (res);
 }
@@ -367,9 +426,11 @@ checkGeneratorDependencies (node *outerpart, node *innerpart)
 
         if ((res) && (!(checkExprsDependencies (outerpart, NGEN_BOUND2 (innergen)))))
             res = FALSE;
+
         if ((res) && (NGEN_STEP (innergen) != NULL))
             if (!(checkExprsDependencies (outerpart, NGEN_STEP (innergen))))
                 res = FALSE;
+
         if ((res) && (NGEN_WIDTH (innergen) != NULL))
             if (!(checkExprsDependencies (outerpart, NGEN_WIDTH (innergen))))
                 res = FALSE;
@@ -422,36 +483,53 @@ probePart (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("probePart");
 
-    INFO_WLS_POSSIBLE (arg_info)
-      = (INFO_WLS_POSSIBLE (arg_info) &&
-         /* Is the inner CEXPR a nonscalar? */
-         (VARDEC_DIM (AVIS_VARDECORARG (ID_AVIS (NPART_CEXPR (arg_node)))) > 0) &&
+    /* Is the inner CEXPR a nonscalar? */
+    if (INFO_WLS_POSSIBLE (arg_info))
+        INFO_WLS_POSSIBLE (arg_info)
+          = (VARDEC_DIM (AVIS_VARDECORARG (ID_AVIS (NPART_CEXPR (arg_node)))) > 0);
 
-         /* Is the inner CEXPR computed by a withloop? */
-         (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (ID_SSAASSIGN (NPART_CEXPR (arg_node)))))
-          == N_Nwith)
-         &&
+    /* Is the inner CEXPR computed by a withloop? */
+    if (INFO_WLS_POSSIBLE (arg_info))
+        INFO_WLS_POSSIBLE (arg_info) = (NODE_TYPE (NPART_LETEXPR (arg_node)) == N_Nwith);
 
-         /* Is the inner WL fully partitioned? */
-         (NWITH_PARTS (LET_EXPR (ASSIGN_INSTR (ID_SSAASSIGN (NPART_CEXPR (arg_node)))))
-          > 0)
-         &&
+    /* Is the inner WL fully partitioned? */
+    /* if (INFO_WLS_POSSIBLE(arg_info))
+      INFO_WLS_POSSIBLE(arg_info) =
+      (NWITH_PARTS(NPART_LETEXPR(arg_node)) > 0); */
 
-         /* Is the inner Withloop really inside of this part? */
-         (isAssignInsideBlock (ID_SSAASSIGN (NPART_CEXPR (arg_node)),
-                               BLOCK_INSTR (NPART_CBLOCK (arg_node))))
-         &&
+    /* Is the inner Withloop really inside of this part? */
+    if (INFO_WLS_POSSIBLE (arg_info))
+        INFO_WLS_POSSIBLE (arg_info)
+          = (isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
+                                  BLOCK_INSTR (NPART_CBLOCK (arg_node))));
 
-         /* Is this a perfect nesting of WLs? */
-         (BLOCK_INSTR (NPART_CBLOCK (arg_node)) == ID_SSAASSIGN (NPART_CEXPR (arg_node)))
-         &&
+    /* Is this a perfect nesting of WLs? */
+    if ((INFO_WLS_POSSIBLE (arg_info)) && (wls_perfect))
+        INFO_WLS_POSSIBLE (arg_info)
+          = (BLOCK_INSTR (NPART_CBLOCK (arg_node)) == NPART_SSAASSIGN (arg_node));
 
-         /* Is the inner Generator independent from the outer? */
-         (checkGeneratorDependencies (arg_node, NWITH_PART (INNERWITHLOOP (arg_node)))) &&
+    /* Is the inner Generator independent from the outer? */
+    if (INFO_WLS_POSSIBLE (arg_info))
+        INFO_WLS_POSSIBLE (arg_info)
+          = (checkGeneratorDependencies (arg_node,
+                                         NWITH_PART (NPART_LETEXPR (arg_node))));
 
-         /* Are both WLs of compatible Type? */
-         (compatWLTypes (INFO_WLS_WITHOP (arg_info),
-                         NWITH_WITHOP (INNERWITHLOOP (arg_node)))));
+    /* Are both WLs of compatible Type? */
+    if (INFO_WLS_POSSIBLE (arg_info))
+        INFO_WLS_POSSIBLE (arg_info)
+          = (compatWLTypes (INFO_WLS_WITHOP (arg_info),
+                            NWITH_WITHOP (NPART_LETEXPR (arg_node))));
+
+    /* Do all inner WLs iterate over the same dimensions? */
+    if (INFO_WLS_POSSIBLE (arg_info)) {
+        if (INFO_WLS_DIMS (arg_info) == -1)
+            INFO_WLS_DIMS (arg_info)
+              = VARDEC_DIM (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))));
+        else
+            INFO_WLS_POSSIBLE (arg_info)
+              = (INFO_WLS_DIMS (arg_info)
+                 == VARDEC_DIM (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node)))));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -485,45 +563,81 @@ distributePart (node *arg_node, node *arg_info)
     LUT_t lut;
 
     node *vardec;
+    ids *ids;
+    node *vardec_chain;
     char *new_name;
     node *temp;
 
     DBUG_ENTER ("distributePart");
 
-    innerwith = INNERWITHLOOP (arg_node);
+    innerwith = NPART_LETEXPR (arg_node);
 
     /* are there more two or more inner parts to dirtribute? */
     if (NWITH_PARTS (innerwith) == 1)
         res = arg_node;
     else {
-        /* duplicate this part and make the copy the next part in the chain.
-           Therefore we have to create a new vardec that can hold the new
-           part's cexpr */
-        new_name = TmpVar ();
-        vardec = DupNode (ID_VARDEC (NPART_CEXPR (arg_node)));
-        VARDEC_NAME (vardec) = StringCopy (new_name);
-        ;
+        /* duplicate this part and make the copy the next part in the chain. */
 
-        FUNDEF_VARDEC (INFO_WLS_FUNDEF (arg_info))
-          = AppendVardec (FUNDEF_VARDEC (INFO_WLS_FUNDEF (arg_info)), vardec);
+        /* Therefore we have to rename all assignments, we use a LUT */
 
         lut = GenerateLUT ();
-        InsertIntoLUT_S (lut, ID_NAME (NPART_CEXPR (arg_node)), new_name);
-        InsertIntoLUT_P (lut, ID_VARDEC (NPART_CEXPR (arg_node)), vardec);
-        InsertIntoLUT_P (lut, ID_AVIS (NPART_CEXPR (arg_node)), VARDEC_AVIS (vardec));
+        vardec = NULL;
+        vardec_chain = NULL;
+        temp = BLOCK_INSTR (NPART_CBLOCK (arg_node));
 
+        /* Create all vardec and insert the names and pointers into the LUT */
+        while ((temp != NULL) && (NODE_TYPE (temp) != N_empty)) {
+            if (NODE_TYPE (ASSIGN_INSTR (temp)) == N_let) {
+                ids = LET_IDS (ASSIGN_INSTR (temp));
+
+                while (ids != NULL) {
+                    new_name = TmpVar ();
+                    vardec = DupNode (IDS_VARDEC (ids));
+                    VARDEC_NAME (vardec) = StringCopy (new_name);
+
+                    InsertIntoLUT_S (lut, IDS_NAME (ids), new_name);
+                    InsertIntoLUT_P (lut, IDS_VARDEC (ids), vardec);
+                    InsertIntoLUT_P (lut, IDS_AVIS (ids), VARDEC_AVIS (vardec));
+
+                    if (vardec_chain == NULL)
+                        vardec_chain = vardec;
+                    else
+                        AppendVardec (vardec_chain, vardec);
+
+                    ids = IDS_NEXT (ids);
+                }
+            }
+            temp = ASSIGN_NEXT (temp);
+        }
+
+        /* append the vardecs the the function's vardecs */
+        FUNDEF_VARDEC (INFO_WLS_FUNDEF (arg_info))
+          = AppendVardec (FUNDEF_VARDEC (INFO_WLS_FUNDEF (arg_info)), vardec_chain);
+
+        /* Duplicate the part */
         tmpnode = DupTreeLUT (arg_node, lut);
         NPART_CODE (tmpnode) = DupTreeLUT (NPART_CODE (arg_node), lut);
         NCODE_USED (NPART_CODE (tmpnode))++;
 
         RemoveLUT (lut);
 
-        /* Make the AVIS-node point to the correct assignment */
+        /* Make the AVIS-nodes point to the correct assignments */
         temp = BLOCK_INSTR (NPART_CBLOCK (tmpnode));
-        while (strcmp (ASSIGN_NAME (temp), new_name))
-            temp = ASSIGN_NEXT (temp);
-        AVIS_SSAASSIGN (VARDEC_AVIS (vardec)) = temp;
+        vardec = vardec_chain;
 
+        while ((temp != NULL) && (NODE_TYPE (temp) != N_empty)) {
+            if (NODE_TYPE (ASSIGN_INSTR (temp)) == N_let) {
+                ids = LET_IDS (ASSIGN_INSTR (temp));
+                while (ids != NULL) {
+                    AVIS_SSAASSIGN (VARDEC_AVIS (vardec)) = temp;
+                    ids = IDS_NEXT (ids);
+                }
+                vardec = VARDEC_NEXT (vardec);
+            }
+            temp = ASSIGN_NEXT (temp);
+        }
+
+        /* Insert the part into the chain of parts */
         NCODE_NEXT (NPART_CODE (arg_node)) = NPART_CODE (tmpnode);
         NPART_NEXT (arg_node) = tmpnode;
 
@@ -533,10 +647,10 @@ distributePart (node *arg_node, node *arg_info)
         NCODE_NEXT (NWITH_CODE (innerwith)) = NULL;
 
         /* Drop the first part from the inner withloop of the next part */
-        innerwith = INNERWITHLOOP (tmpnode);
+        innerwith = NPART_LETEXPR (tmpnode);
         NWITH_PARTS (innerwith) -= 1;
         NWITH_PART (innerwith) = NPART_NEXT (NWITH_PART (innerwith));
-        NWITH_CODE (innerwith) = NCODE_NEXT (NWITH_CODE (innerwith));
+        NWITH_CODE (innerwith) = NPART_CODE (NWITH_PART (innerwith));
 
         /* increase the outer withloop's partcounter */
         INFO_WLS_PARTS (arg_info) += 1;
@@ -554,7 +668,7 @@ distributePart (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *joinGenerators(node *outergen, node *innergen)
+ *   node *joinGenerators(node *outerpart, node *innerpart)
  *
  * description:
  *   Creates a new generator that iterates over the same space as the
@@ -562,19 +676,23 @@ distributePart (node *arg_node, node *arg_info)
  *   all the vectors.
  *
  * parameters:
- *   node *outergen:   N_NGEN
- *   node *innergen:   N_NGEN
+ *   node *outerpart:   N_NPART
+ *   node *innerpart:   N_NPART
  *
  ******************************************************************************/
 node *
-joinGenerators (node *outergen, node *innergen)
+joinGenerators (node *outerpart, node *innerpart)
 {
     node *newgen;
+    node *outergen, *innergen;
 
     node *b1, *b2, *s, *w;
     int d1, d2;
 
     DBUG_ENTER ("joinGenerators");
+
+    innergen = NPART_GEN (innerpart);
+    outergen = NPART_GEN (outerpart);
 
     d1 = CountExprs (ARRAY_AELEMS (NGEN_BOUND1 (outergen)));
     d2 = CountExprs (ARRAY_AELEMS (NGEN_BOUND1 (innergen)));
@@ -700,12 +818,26 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
 {
     node *newcode;
     node *tmp_node;
+    node *tmp_node2;
     node *array;
 
     DBUG_ENTER ("joinCodes");
 
     /* The new code is the old INNER part's code ... */
     newcode = DupTree (innercode);
+    tmp_node = BLOCK_INSTR (NCODE_CBLOCK (newcode));
+
+    BLOCK_INSTR (NCODE_CBLOCK (newcode))
+      = DupTree (BLOCK_INSTR (NCODE_CBLOCK (outercode)));
+
+    tmp_node2 = BLOCK_INSTR (NCODE_CBLOCK (newcode));
+    if (ASSIGN_NEXT (tmp_node2) == NULL)
+        BLOCK_INSTR (NCODE_CBLOCK (newcode)) = tmp_node;
+    else {
+        while (ASSIGN_NEXT (ASSIGN_NEXT (tmp_node2)) != NULL)
+            tmp_node2 = ASSIGN_NEXT (tmp_node2);
+        ASSIGN_NEXT (tmp_node2) = tmp_node;
+    }
 
     /* prepended with definitions of the two old WITHVECs */
     array = MakeArray (MakeExprsIdChain (DupAllIds (NWITHID_IDS (outerwithid))));
@@ -770,10 +902,10 @@ scalarizePart (node *outerpart, node *arg_info)
 
     DBUG_ENTER ("scalarizePart");
 
-    innerpart = NWITH_PART (INNERWITHLOOP (outerpart));
+    innerpart = NWITH_PART (NPART_LETEXPR (outerpart));
 
     /* Make a new generator */
-    generator = joinGenerators (NPART_GEN (outerpart), NPART_GEN (innerpart));
+    generator = joinGenerators (outerpart, innerpart);
 
     /* Make a new withid */
     withid = joinWithids (NPART_WITHID (outerpart), NPART_WITHID (innerpart), arg_info);
@@ -825,6 +957,34 @@ WLSfundef (node *arg_node, node *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         /* traverse block of fundef */
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    }
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *WLSblock(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   This function's sole purpose is to annotate N_block in which the WLS
+ *   is about to take place
+ *
+ * parameters:
+ *   node *arg_node:   N_block
+ *   node *arg_info:   N_INFO
+ *
+ ******************************************************************************/
+node *
+WLSblock (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("WLSblock");
+
+    INFO_WLS_BLOCK (arg_info) = arg_node;
+
+    if (BLOCK_INSTR (arg_node) != NULL) {
+        /* traverse instructions of block */
+        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
 }
@@ -890,29 +1050,60 @@ WLSNwith (node *arg_node, node *arg_info)
     if (INFO_WLS_POSSIBLE (arg_info)) {
         WLS_PHASE (arg_info) = wls_probe;
         INFO_WLS_WITHOP (arg_info) = NWITH_WITHOP (arg_node);
+        INFO_WLS_DIMS (arg_info) = -1;
 
         if (NWITH_PART (arg_node) != NULL) {
             NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
         }
     }
 
-    /* create a full partitioned outer Withloop */
-    if (INFO_WLS_PARTS (arg_info) < 0) {
-        /*
-
-          CODE TO CREATE A FULL PARTITIONED WITHLOOP
-
-        */
-
-        INFO_WLS_PARTS (arg_info) = NWITH_PARTS (arg_node);
-    }
-
-    /* Scalarize only complete partitions */
-    INFO_WLS_POSSIBLE (arg_info)
-      = INFO_WLS_POSSIBLE (arg_info) && (INFO_WLS_PARTS (arg_info) > 0);
-
-    /* If everything is ok, we can start phase 2 */
+    /* If everything is ok, we can start the scalarization */
     if (INFO_WLS_POSSIBLE (arg_info)) {
+
+        /***************************************************************************
+         *
+         *  GENERATOR NORMALIZATION
+         *
+         *  Scalarazization can only be done if all vectors in all generators
+         *  are N_array-nodes. The must not be N_id-nodes.
+         *
+         *  This still needs to be implemented
+         *
+         ***************************************************************************/
+
+        WLS_PHASE (arg_info) = wls_normgen;
+
+        if (NWITH_PART (arg_node) != NULL) {
+            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+        }
+
+        /***************************************************************************
+         *
+         *  PARTITIONING
+         *
+         *  It it is important that all involved WLs are fully partitioned.
+         *  In this phase, we make all WLs meet this criterium
+         *
+         *  This still needs to be implemented
+         *
+         ***************************************************************************/
+
+        WLS_PHASE (arg_info) = wls_partition;
+
+        if (NWITH_PART (arg_node) != NULL) {
+            NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+        }
+
+        /* create a full partitioned outer Withloop */
+        /*  if (INFO_WLS_PARTS(arg_info) < 0) {
+
+
+            INFO_WLS_PARTS(arg_info) = NWITH_PARTS(arg_node);
+          }
+        */
+        /* Scalarize only complete partitions */
+        /* INFO_WLS_POSSIBLE(arg_info) = INFO_WLS_POSSIBLE(arg_info) &&
+           (INFO_WLS_PARTS(arg_info) > 0); */
 
         /***************************************************************************
          *
@@ -948,7 +1139,7 @@ WLSNwith (node *arg_node, node *arg_info)
 
         NWITH_SHAPE (arg_node)
           = ConcatVecs (NWITH_SHAPE (arg_node),
-                        NWITH_SHAPE (INNERWITHLOOP (NWITH_PART (arg_node))));
+                        NWITH_SHAPE (NPART_LETEXPR (NWITH_PART (arg_node))));
 
         /* traverse all PARTS  */
 
@@ -1026,8 +1217,17 @@ WLSNpart (node *arg_node, node *arg_info)
             NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
         }
         break;
-    }
 
+    case wls_partition:
+        if (NPART_NEXT (arg_node) != NULL) {
+            NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+        }
+
+    case wls_normgen:
+        if (NPART_NEXT (arg_node) != NULL) {
+            NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+        }
+    }
     DBUG_RETURN (arg_node);
 }
 

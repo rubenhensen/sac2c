@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2002/06/18 10:23:15  ktr
+ * Support for N_id nodes in generator's N_array nodes added.
+ *
  * Revision 1.4  2002/06/09 19:59:49  ktr
  * works even better, still some known bugs
  *
@@ -24,9 +27,6 @@ extern node *WithloopScalarization (node *fundef, node *modul);
 extern node *WLSfundef (node *arg_node, node *arg_info);
 extern node *WLSNwith (node *arg_node, node *arg_info);
 extern node *WLSNpart (node *arg_node, node *arg_info);
-extern node *WLSNcode (node *arg_node, node *arg_info);
-extern node *WLSNwithid (node *arg_node, node *arg_info);
-extern node *WLSNgenerator (node *arg_node, node *arg_info);
-extern node *WLSNwithop (node *arg_node, node *arg_info);
+extern node *WLSblock (node *arg_node, node *arg_info);
 
 #endif
