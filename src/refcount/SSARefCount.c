@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/05/05 19:18:44  ktr
+ * C functions should now be correctly refcounted.
+ *
  * Revision 1.8  2004/05/05 15:34:05  ktr
  * Log added.
  *
@@ -35,7 +38,7 @@ typedef enum {
     rc_with
 } rc_rhs_type;
 
-typedef enum { rc_default, rc_else } rc_mode;
+typedef enum { rc_default, rc_else, rc_annotate_cfuns } rc_mode;
 
 typedef struct RC_LIST_STRUCT {
     node *avis;
@@ -49,6 +52,14 @@ typedef struct RC_COUNTER {
     struct RC_COUNTER *next;
 } rc_counter;
 
+/* Oracle to tell which paramters of a external function must be
+   refcounted like primitive function parameters */
+#define FUNDEF_EXT_NOT_REFCOUNTED(n, idx)                                                \
+    ((FUNDEF_STATUS (n) == ST_Cfun)                                                      \
+     && ((FUNDEF_PRAGMA (n) == NULL) || (FUNDEF_REFCOUNTING (n) == NULL)                 \
+         || (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) <= (idx))                              \
+         || (!(FUNDEF_REFCOUNTING (n)[idx]))))
+
 #define INFO_SSARC_MODE(n) ((rc_mode) (n->counter))
 #define INFO_SSARC_DEPTH(n) (n->varno)
 #define INFO_SSARC_RHS(n) ((rc_rhs_type) (n->flag))
@@ -56,6 +67,8 @@ typedef struct RC_COUNTER {
 #define INFO_SSARC_INCLIST(n) ((rc_list_struct *)(n->node[1]))
 #define INFO_SSARC_FUNDEF(n) (n->node[2])
 #define INFO_SSARC_WITHID(n) (n->node[3])
+#define INFO_SSARC_LHS_COUNT(n) (n->counter)
+#define INFO_SSARC_FUNAP(n) (n->node[4])
 
 #define AVIS_SSARC_COUNTED(n) ((bool)(n->info.cint))
 #define AVIS_SSARC_COUNTER(n) ((rc_counter *)(n->dfmask[0]))
@@ -340,6 +353,20 @@ SSARCfundef (node *fundef, node *arg_info)
 
     DBUG_ENTER ("SSARCfundef");
 
+    if (INFO_SSARC_MODE (arg_info) == rc_annotate_cfuns) {
+        /*
+         * special module name -> must be an external C-fun
+         */
+        if (((sbs == 1) && (strcmp (FUNDEF_MOD (fundef), EXTERN_MOD_NAME) == 0))
+            || ((sbs == 0) && (FUNDEF_MOD (fundef) == NULL))) {
+            FUNDEF_STATUS (fundef) = ST_Cfun;
+        }
+        if (FUNDEF_NEXT (fundef) != NULL)
+            FUNDEF_NEXT (fundef) = Trav (FUNDEF_NEXT (fundef), arg_info);
+
+        DBUG_RETURN (fundef);
+    }
+
     INFO_SSARC_FUNDEF (arg_info) = fundef;
     INFO_SSARC_DEPTH (arg_info) = 0;
     INFO_SSARC_MODE (arg_info) = rc_default;
@@ -437,6 +464,8 @@ SSARCap (node *arg_node, node *arg_info)
     DBUG_ENTER ("SSARCap");
 
     INFO_SSARC_RHS (arg_info) = rc_funap;
+
+    INFO_SSARC_FUNAP (arg_info) = AP_FUNDEF (arg_node);
 
     if (AP_ARGS (arg_node) != NULL)
         AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
@@ -549,28 +578,48 @@ node *
 SSARClet (node *arg_node, node *arg_info)
 {
     ids *ids;
-    int rhs_val;
+    int n;
 
     DBUG_ENTER ("SSARClet");
+
+    /* Count LHS values such that we can identify which fun ap parameters
+       must be refcounted like prf paramters using PRAGMA_REFCOUNTING */
+    INFO_SSARC_LHS_COUNT (arg_info) = CountIds (LET_IDS (arg_node));
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     switch (INFO_SSARC_RHS (arg_info)) {
     case rc_funap:
-        rhs_val = -1;
+        /* Add all lhs ids to inclist */
+        n = 0;
+        ids = LET_IDS (arg_node);
+        while (ids != NULL) {
+            IncList_Insert (arg_info, IDS_AVIS (ids),
+                            PopEnv (IDS_AVIS (ids), arg_info)
+                              + (FUNDEF_EXT_NOT_REFCOUNTED (INFO_SSARC_FUNAP (arg_info),
+                                                            n++)
+                                   ? 0
+                                   : -1));
+            ids = IDS_NEXT (ids);
+        }
         break;
     case rc_prfap:
     case rc_const:
     case rc_array:
     case rc_with:
-        rhs_val = 0;
+        /* Add all lhs ids to inclist */
+        ids = LET_IDS (arg_node);
+        while (ids != NULL) {
+            IncList_Insert (arg_info, IDS_AVIS (ids), PopEnv (IDS_AVIS (ids), arg_info));
+            ids = IDS_NEXT (ids);
+        }
         break;
     case rc_copy:
         /* Copy assignment: a=b */
         /* Env(b) += Env(a) */
         AddEnv (IDS_AVIS (ID_IDS (LET_EXPR (arg_node))), arg_info,
                 PopEnv (IDS_AVIS (LET_IDS (arg_node)), arg_info));
-        DBUG_RETURN (arg_node);
+        break;
     case rc_funcond:
         /* Treat FunCond like a variable Copy assignment */
         switch (INFO_SSARC_MODE (arg_info)) {
@@ -583,21 +632,14 @@ SSARClet (node *arg_node, node *arg_info)
             AddEnv (IDS_AVIS (ID_IDS (EXPRS_EXPR (FUNCOND_ELSE (LET_EXPR (arg_node))))),
                     arg_info, PopEnv (IDS_AVIS (LET_IDS (arg_node)), arg_info));
             break;
+        default:
+            DBUG_ASSERT (FALSE, "Cannot happen");
         }
-        DBUG_RETURN (arg_node);
+        break;
     default:
         Print (arg_node);
         DBUG_ASSERT (FALSE, "Cannot happen");
     }
-
-    /* Add all lhs ids to inclist */
-    ids = LET_IDS (arg_node);
-    while (ids != NULL) {
-        IncList_Insert (arg_info, IDS_AVIS (ids),
-                        PopEnv (IDS_AVIS (ids), arg_info) + rhs_val);
-        ids = IDS_NEXT (ids);
-    }
-
     DBUG_RETURN (arg_node);
 }
 
@@ -624,6 +666,22 @@ SSARCid (node *arg_node, node *arg_info)
         /* We don't need to do anything */
         break;
     case rc_funap:
+        if (FUNDEF_EXT_NOT_REFCOUNTED (INFO_SSARC_FUNAP (arg_info),
+                                       INFO_SSARC_LHS_COUNT (arg_info))) {
+            /* Add one to the environment iff it is zero */
+            if (IncreaseEnvOnZero (ID_AVIS (arg_node), arg_info))
+
+                /* Put id into declist as we are traversing a N_prf */
+                DecList_Insert (arg_info, ID_AVIS (arg_node));
+        } else {
+            /* Add one to the environment */
+            IncreaseEnv (ID_AVIS (arg_node), arg_info);
+
+            /* Don't put id into declist as we N_return and N_funap
+               are implicitly consuming references */
+        }
+        INFO_SSARC_LHS_COUNT (arg_info) += 1;
+        break;
     case rc_return:
         /* Add one to the environment */
         IncreaseEnv (ID_AVIS (arg_node), arg_info);
@@ -934,6 +992,10 @@ SSARefCount (node *syntax_tree)
     INFO_SSARC_DECLIST (info) = NULL;
 
     act_tab = ssarefcnt_tab;
+    INFO_SSARC_MODE (info) = rc_annotate_cfuns;
+    syntax_tree = Trav (syntax_tree, info);
+
+    INFO_SSARC_MODE (info) = rc_default;
     syntax_tree = Trav (syntax_tree, info);
 
     info = FreeTree (info);
