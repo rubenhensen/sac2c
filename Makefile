@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.49  2002/03/10 16:41:19  sbs
+# ssi.o included
+#
 # Revision 3.48  2002/03/05 15:35:08  sbs
 # create_wrappers.o added
 #
@@ -116,7 +119,8 @@ CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o \
            src/typecheck/new_typecheck.o src/typecheck/new_types.o \
-           src/typecheck/user_types.o src/typecheck/create_wrappers.o
+           src/typecheck/user_types.o src/typecheck/create_wrappers.o \
+           src/typecheck/ssi.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/generatemasks.o src/optimize/DeadCodeRemoval.o \
           src/optimize/DeadFunctionRemoval.o src/optimize/freemasks.o \
