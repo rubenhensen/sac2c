@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  2000/03/29 16:10:49  jhs
+ * MT_WORKERFUN and MTMASTERFUN added.
+ *
  * Revision 1.34  2000/03/24 00:50:24  dkr
  * INFO_DUP_LUT added
  *
@@ -2781,12 +2784,13 @@ extern node *MakeSync (node *region);
  ***  N_mt :
  ***
  ***  sons:
- ***    node*     REGION      (N_block)
+ ***    node*      REGION     (N_block)
  ***
  ***  temporary attributes:
- ***    DFMmask_t  USEMASK       (multithread.dfa ->)
- ***    DFMmask_t  DEFMASK       (multithread.dfa ->)
- ***    DFMmask_t  NEEDLATER     (multithread.dfa ->)
+ ***    DFMmask_t  USEMASK                (multithread.dfa   ->)
+ ***    DFMmask_t  DEFMASK                (multithread.dfa   ->)
+ ***    DFMmask_t  NEEDLATER              (multithread.dfa   ->)
+ ***    node*      FUNDEF     (N_fundef)  (multithread.blkli ->)
  ***/
 
 extern node *MakeMT (node *region);
@@ -2795,6 +2799,8 @@ extern node *MakeMT (node *region);
 #define MT_USEMASK(n) (n->dfmask[0])
 #define MT_DEFMASK(n) (n->dfmask[1])
 #define MT_NEEDLATER(n) (n->dfmask[2])
+#define MT_MASTERFUN(n) (n->node[1])
+#define MT_WORKERFUN(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
