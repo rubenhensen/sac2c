@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.220  1998/05/14 21:38:15  dkr
+ * changed output in PrintWLgrid
+ *
  * Revision 1.219  1998/05/14 15:09:25  dkr
  * changed PrintWLgrid
  *
@@ -2787,13 +2790,13 @@ PrintWLgrid (node *arg_node, node *arg_info)
             case WO_genarray:
                 fprintf (outfile, "init\n");
                 break;
+            case WO_modarray:
+                fprintf (outfile, "copy\n");
+                break;
             case WO_foldfun:
                 /* here is no break missing! */
             case WO_foldprf:
                 fprintf (outfile, "noop\n");
-                break;
-            case WO_modarray:
-                DBUG_ASSERT ((0), "no code found");
                 break;
             default:
                 DBUG_ASSERT ((0), "wrong with-loop type found");
