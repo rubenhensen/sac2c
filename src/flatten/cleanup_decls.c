@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/03/19 15:46:44  dkr
+ * DFMstack removed (ups, SAC allows no nested/local vardecs ...)
+ * comments added
+ *
  * Revision 1.2  2000/03/17 21:06:17  dkr
  * the elimination of superfluous vardecs works :)
  * comments are fairly rare for now ...
@@ -18,18 +22,18 @@
 #include "DataFlowMaskUtils.h"
 
 /*
+ *
+ * This modul removes all superfluous vardecs from the AST.
+ *
+ */
+
+/*
  * usage of arg_info (INFO_CUD_...)
  * ------------------------------------
  *
  *   ...FUNDEF   pointer to the current fundef
- *
- *   ...REF      stacked DFMmasks (type DFMstack_t):
- *               one DFMmask for each N_block nesting.
+ *   ...REF      DFMmask
  */
-
-#ifndef DBUG_OFF
-static int level; /* contains the current N_block nesting level */
-#endif
 
 /*
  * compound macro
@@ -39,56 +43,32 @@ static int level; /* contains the current N_block nesting level */
 /******************************************************************************
  *
  * Function:
- *   int MarkVar( DFMmask_t mask, char *id, node *decl)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-int
-MarkVar (DFMmask_t mask, char *id, node *decl)
-{
-    int res;
-
-    DBUG_ENTER ("MarkVar");
-
-    if ((NODE_TYPE (decl) != N_vardec) && (NODE_TYPE (decl) != N_arg)) {
-        DBUG_ASSERT ((NODE_TYPE (decl) == N_objdef),
-                     "declaration is neither a N_arg/N_vardec-node nor a N_objdef-node");
-        res = 2;
-    } else {
-        if (DFMTestMaskEntry (mask, id, decl)) {
-            DFMSetMaskEntryClear (mask, id, decl);
-            res = 1;
-        } else {
-            res = 0;
-        }
-    }
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * Function:
  *   ids *CUDids( ids *id, node *arg_info)
  *
  * Description:
- *
+ *   Unsets the corresponding DFMmask entry of the id.
  *
  ******************************************************************************/
 
 static ids *
 CUDids (ids *id, node *arg_info)
 {
+    node *decl;
     ids *tmp;
 
     DBUG_ENTER ("CUDids");
 
     tmp = id;
     while (tmp != NULL) {
-        WhileDFMstack (INFO_CUD_REF (arg_info), &MarkVar, NULL, IDS_VARDEC (tmp));
+        decl = IDS_VARDEC (tmp);
+
+        if ((NODE_TYPE (decl) != N_vardec) && (NODE_TYPE (decl) != N_arg)) {
+            DBUG_ASSERT ((NODE_TYPE (decl) == N_objdef), "declaration is neither a "
+                                                         "N_arg/N_vardec-node nor a "
+                                                         "N_objdef-node");
+        } else {
+            DFMSetMaskEntryClear (INFO_CUD_REF (arg_info), NULL, decl);
+        }
 
         tmp = IDS_NEXT (tmp);
     }
@@ -102,7 +82,7 @@ CUDids (ids *id, node *arg_info)
  *   node *CUDfundef( node *arg_node, node *arg_info)
  *
  * Description:
- *
+ *   Creates a new DFM base if not available already.
  *
  ******************************************************************************/
 
@@ -112,7 +92,6 @@ CUDfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("CUDfundef");
 
     INFO_CUD_FUNDEF (arg_info) = arg_node;
-    level = -1;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         if (FUNDEF_DFM_BASE (arg_node) == NULL) {
@@ -120,11 +99,9 @@ CUDfundef (node *arg_node, node *arg_info)
               = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
         }
 
-        INFO_CUD_REF (arg_info) = GenerateDFMstack ();
+        INFO_CUD_REF (arg_info) = NULL;
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-        DBUG_ASSERT ((IsEmptyDFMstack (INFO_CUD_REF (arg_info))),
-                     "The DFMstack is not empty!");
-        RemoveDFMstack (&(INFO_CUD_REF (arg_info)));
+        DBUG_ASSERT ((INFO_CUD_REF (arg_info) == NULL), "INFO_CUD_REF not freed!");
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -140,7 +117,13 @@ CUDfundef (node *arg_node, node *arg_info)
  *   node *CUDblock( node *arg_node, node *arg_info)
  *
  * Description:
- *
+ *   Eliminates all superfluous vardecs of the block:
+ *   In a first traversal of the vardecs all the found vars are set in a
+ *   DFM mask.
+ *   Subsequently during the traversal of the instructions all occuring vars
+ *   are unset in this mask.
+ *   After this all declarations of vars that are still set in the DFM mask
+ *   can be removed.
  *
  ******************************************************************************/
 
@@ -152,11 +135,10 @@ CUDblock (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CUDblock");
 
-    level++;
-
-    PushDFMstack (&(INFO_CUD_REF (arg_info)), DFMGenMaskClear (INFO_DFMBASE (arg_info)));
-
     if (BLOCK_VARDEC (arg_node) != NULL) {
+        DBUG_ASSERT ((INFO_CUD_REF (arg_info) == NULL), "(nested) local vardecs found!");
+        INFO_CUD_REF (arg_info) = DFMGenMaskClear (INFO_DFMBASE (arg_info));
+
         BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
     }
 
@@ -164,34 +146,33 @@ CUDblock (node *arg_node, node *arg_info)
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
     }
 
-    mask = PopDFMstack (&(INFO_CUD_REF (arg_info)));
-
-    /*
-     * remove superfluous vardecs
-     */
     if (BLOCK_VARDEC (arg_node) != NULL) {
+        mask = INFO_CUD_REF (arg_info);
+        INFO_CUD_REF (arg_info) = NULL;
+
+        /*
+         * remove superfluous vardecs
+         */
         vardec = BLOCK_VARDEC (arg_node);
         while (VARDEC_NEXT (vardec) != NULL) {
             if (DFMTestMaskEntry (mask, NULL, VARDEC_NEXT (vardec))) {
-                DBUG_PRINT ("CUD", ("Variable %s removed in function %s (block level %i)",
+                DBUG_PRINT ("CUD", ("Variable %s removed in function %s",
                                     VARDEC_NAME (VARDEC_NEXT (vardec)),
-                                    FUNDEF_NAME (INFO_CUD_FUNDEF (arg_info)), level));
+                                    FUNDEF_NAME (INFO_CUD_FUNDEF (arg_info))));
                 VARDEC_NEXT (vardec) = FreeNode (VARDEC_NEXT (vardec));
             } else {
                 vardec = VARDEC_NEXT (vardec);
             }
         }
         if (DFMTestMaskEntry (mask, NULL, BLOCK_VARDEC (arg_node))) {
-            DBUG_PRINT ("CUD", ("Variable %s removed in function %s (block level %i)",
+            DBUG_PRINT ("CUD", ("Variable %s removed in function %s",
                                 VARDEC_NAME (BLOCK_VARDEC (arg_node)),
-                                FUNDEF_NAME (INFO_CUD_FUNDEF (arg_info)), level));
+                                FUNDEF_NAME (INFO_CUD_FUNDEF (arg_info))));
             BLOCK_VARDEC (arg_node) = FreeNode (BLOCK_VARDEC (arg_node));
         }
+
+        mask = DFMRemoveMask (mask);
     }
-
-    DFMRemoveMask (mask);
-
-    level--;
 
     DBUG_RETURN (arg_node);
 }
@@ -202,20 +183,16 @@ CUDblock (node *arg_node, node *arg_info)
  *   node *CUDvardec( node *arg_node, node *arg_info)
  *
  * Description:
- *
+ *   First traversal of the vardecs: set the found vardec in the DFMmask.
  *
  ******************************************************************************/
 
 node *
 CUDvardec (node *arg_node, node *arg_info)
 {
-    DFMmask_t mask;
-
     DBUG_ENTER ("CUDvardec");
 
-    mask = PopDFMstack (&(INFO_CUD_REF (arg_info)));
-    DFMSetMaskEntrySet (mask, NULL, arg_node);
-    PushDFMstack (&(INFO_CUD_REF (arg_info)), mask);
+    DFMSetMaskEntrySet (INFO_CUD_REF (arg_info), NULL, arg_node);
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
@@ -230,7 +207,7 @@ CUDvardec (node *arg_node, node *arg_info)
  *   node *CUDlet( node *arg_node, node *arg_info)
  *
  * Description:
- *
+ *   ---
  *
  ******************************************************************************/
 
@@ -251,7 +228,7 @@ CUDlet (node *arg_node, node *arg_info)
  *   node *CUDid( node *arg_node, node *arg_info)
  *
  * Description:
- *
+ *   ---
  *
  ******************************************************************************/
 
@@ -271,7 +248,7 @@ CUDid (node *arg_node, node *arg_info)
  *   node *CUDwithid( node *arg_node, node *arg_info)
  *
  * Description:
- *
+ *   ---
  *
  ******************************************************************************/
 
@@ -292,7 +269,7 @@ CUDwithid (node *arg_node, node *arg_info)
  *   node *CleanupDecls( node *syntax_tree)
  *
  * Description:
- *
+ *   Removes all superfluous vardecs from the AST.
  *
  ******************************************************************************/
 
