@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/03/02 13:06:30  jhs
+ * Added DupSt and DupMt.
+ *
  * Revision 1.6  2000/02/17 16:18:37  cg
  * Function DuplicateTypes() moved from typecheck.c.
  * New function DupTypes() added.
@@ -106,6 +109,8 @@ extern node *DupPragma (node *arg_node, node *arg_info);
 extern node *DupIcm (node *arg_node, node *arg_info);
 extern node *DupSpmd (node *arg_node, node *arg_info);
 extern node *DupSync (node *arg_node, node *arg_info);
+extern node *DupMt (node *arg_node, node *arg_info);
+extern node *DupSt (node *arg_node, node *arg_info);
 
 /* new with-loop */
 extern node *DupNwith (node *arg_node, node *arg_info);

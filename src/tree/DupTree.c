@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2000/03/02 13:06:30  jhs
+ * Added DupSt and DupMt.
+ *
  * Revision 1.12  2000/02/24 15:55:53  dkr
  * RETURN_INWITH removed
  * (needed for old with-loop only, therefore obsolete now)
@@ -1805,6 +1808,34 @@ DupWLgridVar (node *arg_node, node *arg_info)
                               DUPTRAV (WLGRIDVAR_NEXTDIM (arg_node)),
                               DUPCONT (WLGRIDVAR_NEXT (arg_node)),
                               SearchInLUT (dup_lut, WLGRIDVAR_CODE (arg_node)));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupMt (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupMt");
+
+    new_node = MakeMT (DUPTRAV (MT_REGION (arg_node)));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupSt (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupSt");
+
+    new_node = MakeST (DUPTRAV (ST_REGION (arg_node)));
 
     DBUG_RETURN (new_node);
 }
