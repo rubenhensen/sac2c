@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2001/06/19 12:29:26  ben
+ * Entry of Self in SchedulerTable modified
+ *
  * Revision 3.28  2001/06/13 13:07:03  ben
  *  SCHMakeTaskselByPragma, SCHRemoveTasksel, SCHCopyTasksel,
  * SCHPrecompileTasksel, SCHPrintTasksel, CheckTaskselArgs
@@ -289,7 +292,7 @@ static struct {
   {"Block", SC_const_seg, 1, 0, 0, ""},
   {"BlockVar", SC_var_seg, 1, 0, 0, ""},
   {"Static", SC_var_seg, 1, 0, 1, "n"},
-  {"Self", SC_var_seg, 1, 0, 1, "n"},
+  {"Self", SC_var_seg, 1, 0, 2, "n,i"},
   {"Affinity", SC_var_seg, 1, 0, 1, "n"},
   {"AllByOne", SC_var_seg, 0, 0, 1, "i"},
   {"BlockBySome", SC_const_seg, 0, 0, 2, "i,i"},
