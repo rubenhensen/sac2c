@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2004/11/17 09:05:08  ktr
+ * GetLacFunName is now exported
+ *
  * Revision 3.28  2004/09/30 15:14:39  sbs
  * eliminated FunTypes from ALL but wrapper functions
  * (memory concerns!)
@@ -277,7 +280,7 @@ FreeInfo (info *info)
  *
  ******************************************************************************/
 
-static char *
+char *
 GetLacFunName (char *suffix)
 {
     static int number = 0;

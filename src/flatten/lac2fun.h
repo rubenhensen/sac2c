@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/11/17 09:05:08  ktr
+ * GetLacFunName is now exported
+ *
  * Revision 3.5  2004/07/16 17:36:23  sah
  * switch to new INFO structure
  * PHASE I
@@ -48,6 +51,7 @@
 #define _sac_lac2fun_h
 
 extern node *Lac2Fun (node *syntaxtree);
+extern char *GetLacFunName (char *suffix);
 
 extern node *L2Ffundef (node *arg_node, info *arg_info);
 extern node *L2Fcond (node *arg_node, info *arg_info);
