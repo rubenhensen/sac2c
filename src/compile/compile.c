@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.145  1998/05/07 16:18:06  dkr
+ * added INC_RCs in COMPNwith2
+ *
  * Revision 1.144  1998/05/07 10:15:44  dkr
  * changed compiling of new with-loop
  *
@@ -852,29 +855,6 @@ GetIndexIds (ids *index_ids, int dim)
 /******************************************************************************
  *
  * function:
- *   char *OffsetVar( ids *withidx)
- *
- * description:
- *   Generates the name of the offset-var for a with-loop.
- *
- ******************************************************************************/
-
-char *
-OffsetVar (ids *withidx)
-{
-    char *offset;
-
-    DBUG_ENTER ("OffsetVar");
-
-    offset = (char *)Malloc ((strlen (IDS_NAME (withidx)) + 10) * sizeof (char));
-    sprintf (offset, "__offset_%s", IDS_NAME (withidx));
-
-    DBUG_RETURN (offset);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *MakeAllocArrayICMs( ids *mm_ids)
  *
  * description:
@@ -1008,7 +988,7 @@ AddVardec (node *vardec, types *type, char *name, node *fundef)
      * we must update FUNDEF_DFM_BASE!!
      */
     FUNDEF_DFM_BASE (fundef)
-      = DFMExtendMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
+      = DFMUpdateMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
                            FUNDEF_VARDEC (fundef));
 
     DBUG_RETURN (vardec);
@@ -5998,7 +5978,7 @@ COMPSpmd (node *arg_node, node *arg_info)
     node *fundef, *vardec, *icm_arg, *last_icm_arg, *icm_args = NULL;
     char *tag;
     ids *my_ids;
-    int num_args, i;
+    int num_args;
 
     DBUG_ENTER ("COMPSpmd");
 
@@ -6341,9 +6321,6 @@ COMPNwith2 (node *arg_node, node *arg_info)
 
     icm_args = MakeExprs (MakeId2 (DupOneIds (NWITHID_VEC (wl_withid), NULL)), icm_args);
 
-    icm_args = MakeExprs (MakeId (OffsetVar (NWITHID_VEC (wl_withid)), NULL, ST_regular),
-                          icm_args);
-
     icm_args = MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)), icm_args);
 
     /*
@@ -6401,7 +6378,7 @@ COMPNcode (node *arg_node, node *arg_info)
     NCODE_RC_IDS (arg_node) = NULL;
 
     /*
-     * insert these ICMs into the code-block (at the head)
+     * insert these ICMs as first statement into the code-block
      */
     if (NCODE_CBLOCK (arg_node) != NULL) {
         NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
