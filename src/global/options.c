@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/05/18 13:43:16  cg
+ * bug fixed in analysing multi-threaded options.
+ *
  * Revision 2.3  1999/05/18 12:52:48  cg
  * File converted to consistently prefixed command line analysis macros.
  * Option -minae renamed to -maxae.
@@ -62,7 +65,7 @@
 void
 AnalyseCommandline (int argc, char *argv[])
 {
-    int store_num_threads;
+    int store_num_threads = 0;
 
     DBUG_ENTER ("AnalyseCommandline");
 
