@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.6  2001/03/02 14:55:22  sbs
+# constants included rather than typecheck now.
+# (shape has moved there)
+#
 # Revision 3.5  2001/03/02 14:46:04  sbs
 # make deps done
 #
@@ -44,7 +48,7 @@ CFLAGS    := -D__EXTENSIONS__
 
 
 INCS=-I../global -I../tree -I../../inc -I../compile -I../modules \
-     -I../typecheck -I../print -I../scanparse
+     -I../constants -I../print -I../scanparse
 
 all: print_interface.o map_cwrapper.o import_specialization.o \
      print_interface_header.o print_interface_wrapper.o
