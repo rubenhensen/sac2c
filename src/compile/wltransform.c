@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1998/05/12 22:42:54  dkr
+ * added attributes NWITH2_DIM, NWITH2_IDX_MIN, NWITH2_IDX_MAX
+ * added ComputeIndexMinMax()
+ *
  * Revision 1.9  1998/05/12 15:00:48  dkr
  * renamed ???_RC_IDS to ???_DEC_RC_IDS
  *
@@ -92,6 +96,42 @@
 #define COMP_END                                                                         \
     }                                                                                    \
     }
+
+/******************************************************************************
+ *
+ * function:
+ *   void ComputeIndexMinMax( int *idx_min, int *idx_max,
+ *                            int dims, node *strides)
+ *
+ * description:
+ *   Computes the minimum and maximum of the index-vector found in 'strides'.
+ *
+ ******************************************************************************/
+
+void
+ComputeIndexMinMax (int *idx_min, int *idx_max, int dims, node *strides)
+{
+    int d;
+
+    DBUG_ENTER (" ComputeIndexMinMax");
+
+    for (d = 0; d < dims; d++) {
+
+        DBUG_ASSERT (((strides != NULL) && (NODE_TYPE (strides) == N_WLstride)),
+                     "no stride found");
+
+        idx_min[d] = WLSTRIDE_BOUND1 (strides);
+
+        while (WLSTRIDE_NEXT (strides) != NULL) {
+            strides = WLSTRIDE_NEXT (strides);
+        }
+        idx_max[d] = WLSTRIDE_BOUND2 (strides);
+
+        strides = WLGRID_NEXTDIM (WLSTRIDE_CONTENTS (strides));
+    }
+
+    DBUG_VOID_RETURN;
+}
 
 /******************************************************************************
  *
@@ -1322,9 +1362,9 @@ BlockWL (node *stride, int dims, long *bv, int unroll)
  *   node *NewStepGrids( node *grids, int step, int new_step, int offset)
  *
  * description:
- *   returns the modified 'grids' chain:
- *     * the bounds of the grids are modified (relating to 'offset')
- *     * the step of the grids is now 'step'
+ *   returns a modified 'grids' chain:
+ *     - the bounds of the grids are modified (relating to 'offset')
+ *     - the step of the grids is now 'step'
  *        -> possibly the grids must be duplicated
  *
  ******************************************************************************/
@@ -2545,8 +2585,13 @@ WLTRANwith (node *arg_node, node *arg_info)
 
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
+    /*
+     * get number of dims of with-loop index range
+     */
+    dims = IDS_SHAPE (NWITHID_VEC (NPART_WITHID (NWITH_PART (arg_node))), 0);
+
     new_node = MakeNWith2 (NPART_WITHID (NWITH_PART (arg_node)), NULL,
-                           NWITH_CODE (arg_node), NWITH_WITHOP (arg_node));
+                           NWITH_CODE (arg_node), NWITH_WITHOP (arg_node), dims);
 
     NWITH2_DEC_RC_IDS (new_node) = NWITH_DEC_RC_IDS (arg_node);
     NWITH2_IN (new_node) = NWITH_IN (arg_node);
@@ -2571,11 +2616,6 @@ WLTRANwith (node *arg_node, node *arg_info)
     NWITH_OUT (arg_node) = NULL;
     NWITH_LOCAL (arg_node) = NULL;
 
-    /*
-     * get number of dims of with-loop index range
-     */
-    dims = IDS_SHAPE (NWITHID_VEC (NWITH2_WITHID (new_node)), 0);
-
     DBUG_EXECUTE ("WLprec", NOTE (("step 0: converting parts to strides\n")));
     strides = Parts2Strides (NWITH_PART (arg_node), dims);
 
@@ -2597,6 +2637,9 @@ WLTRANwith (node *arg_node, node *arg_info)
     }
 
     if (NODE_TYPE (strides) == N_WLstride) {
+
+        ComputeIndexMinMax (NWITH2_IDX_MIN (new_node), NWITH2_IDX_MAX (new_node),
+                            NWITH2_DIMS (new_node), strides);
 
         if (WL_break_after >= WL_PH_seg) {
             DBUG_EXECUTE ("WLprec", NOTE (("step 2: choice of segments\n")));
@@ -2627,7 +2670,6 @@ WLTRANwith (node *arg_node, node *arg_info)
                                          b + 1, b)));
                         WLSEG_CONTENTS (seg)
                           = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_BV (seg, b), 0);
-                        FREE (WLSEG_BV (seg, b));
                     }
                 }
 
@@ -2636,8 +2678,6 @@ WLTRANwith (node *arg_node, node *arg_info)
                     DBUG_EXECUTE ("WLprec", NOTE (("step 5: unrolling-blocking\n")));
                     WLSEG_CONTENTS (seg)
                       = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_UBV (seg), 1);
-                    FREE (WLSEG_UBV (seg));
-                    FREE (WLSEG_SV (seg));
                 }
 
                 /* merging */
