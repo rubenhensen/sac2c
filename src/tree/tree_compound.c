@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.91  2004/10/14 12:43:19  sbs
+ * Type2Shape added.
+ *
  * Revision 3.90  2004/10/13 15:18:28  sah
  * MakeIdFromIds works in NEW_AST mode now!
  *
@@ -1010,6 +1013,38 @@ Type2Shpseg (types *type, int *ret_dim)
     }
 
     DBUG_RETURN (new_shpseg);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   shape *Type2Shape( types *type, int *ret_dim)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+shape *
+Type2Shape (types *type, int *ret_dim)
+{
+    shape *shp = NULL;
+    shpseg *new_shpseg = NULL;
+    int dim;
+
+    DBUG_ENTER ("Type2Shape");
+
+    dim = GetShapeDim (type);
+    new_shpseg = Type2Shpseg (type, ret_dim);
+
+    if (new_shpseg != NULL) {
+        shp = SHOldShpseg2Shape (dim, new_shpseg);
+        new_shpseg = Free (new_shpseg);
+    } else {
+        DBUG_ASSERT (dim == 0, "shape inconsistency");
+    }
+
+    DBUG_RETURN (shp);
 }
 
 /******************************************************************************

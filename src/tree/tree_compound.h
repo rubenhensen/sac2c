@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.100  2004/10/14 12:43:19  sbs
+ * Type2Shape added.
+ *
  * Revision 3.99  2004/10/13 15:18:28  sah
  * MakeIdFromIds works in NEW_AST mode now!
  *
@@ -324,6 +327,7 @@ specific implementation of a function should remain with the source code.
 #define _sac_tree_compound_h
 
 #include "types.h"
+#include "shape.h"
 #include "tree_basic.h"
 #include "Error.h"
 #include "free.h"
@@ -525,6 +529,7 @@ extern int GetBasetypeSize (types *type);
 extern int GetTypesLength (types *type);
 extern int CompareTypesImplementation (types *t1, types *t2);
 extern shpseg *Type2Shpseg (types *type, int *ret_dim);
+extern shape *Type2Shape (types *type, int *ret_dim);
 extern node *Type2Exprs (types *type);
 extern node *CreateZeroFromType (types *type, bool unroll, node *fundef);
 
