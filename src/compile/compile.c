@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.121  2004/08/04 12:04:58  ktr
+ * substituted eacc by emm
+ *
  * Revision 3.120  2004/08/04 10:29:57  ktr
  * - MakeGetDimIcm now accepts N_id nodes, too
  * - Descriptors for external function are built with rc = 1 (EMM)
@@ -6361,7 +6364,7 @@ COMPWith2 (node *arg_node, info *arg_info)
     old_wlnode = wlnode; /* stack 'wlnode' */
     wlnode = arg_node;
 
-    if (!eacc) {
+    if (!emm) {
         /*
          * fold with-loop:
          *
@@ -7361,7 +7364,7 @@ COMPWLgridx (node *arg_node, info *arg_info)
                     }
                     icm_args = MakeIcmArgs_WL_OP2 (arg_node);
 
-                    if (!eacc) {
+                    if (!emm) {
                         /*
                          * insert code of the special fold-fun
                          */

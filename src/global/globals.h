@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2004/08/04 12:04:20  ktr
+ * substituted eacc by emm
+ *
  * Revision 3.43  2004/07/23 15:53:50  ktr
  * - removed OPT_BLIR
  * - removed -ktr
@@ -328,9 +331,6 @@ extern bool valid_ssaform;
 
 /* explicit memory management */
 extern bool emm;
-
-/* explicit accumulation */
-extern bool eacc;
 
 /* type inference flags */
 extern int max_overload;

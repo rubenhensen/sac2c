@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2004/08/04 12:04:20  ktr
+ * substituted eacc by emm
+ *
  * Revision 3.58  2004/07/23 15:53:50  ktr
  * - removed OPT_BLIR
  * - removed -ktr
@@ -510,8 +513,6 @@ Usage ()
       "        APS     arena preselection           (in conjunction with PHM)\n"
       "        DAO     descriptor allocation opt.   (in conjunction with PHM)\n"
       "        MSCA    memory size cache adjustment (in conjunction with PHM)\n"
-      "\n"
-      "        EACC    Explicit accumulation\n"
       "\n"
       "        OPT     enables/disables all optimizations at once.\n"
       "\n"

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/08/04 12:03:27  ktr
+ * substituted eacc by emm
+ *
  * Revision 1.10  2004/07/23 15:24:04  khf
  * changed flag for explicit accumulation from ktr to eacc
  *
@@ -215,7 +218,7 @@ CreateFold (node *assignn, node *index)
 
     partn = opfunarg[0]; /* N_Npart */
 
-    if (!eacc) {
+    if (!emm) {
 
         acc = opfunarg[1];    /* (ids*) */
         cexpr = opfunarg[2];  /* (node*) */
@@ -267,9 +270,9 @@ CreateFold (node *assignn, node *index)
      */
     bodyn = CreateBodyCode (partn, index);
 
-    if (eacc) {
+    if (emm) {
         /*
-         * case eacc -> ExplicitAccumulation() was applied.
+         * case emm -> ExplicitAccumulation() was applied.
          * special handling of
          *       acc = accu(iv,n);
          *       b = <body>

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2004/08/04 12:04:20  ktr
+ * substituted eacc by emm
+ *
  * Revision 3.65  2004/07/23 15:53:50  ktr
  * - removed OPT_BLIR
  * - removed -ktr
@@ -638,9 +641,6 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("pab", print_after_break = TRUE);
         ARG_CHOICE ("PAB", print_after_break = TRUE);
 
-        ARG_CHOICE ("eacc", eacc = emm);
-        ARG_CHOICE ("EACC", eacc = emm);
-
         ARG_CHOICE_END ();
     });
 
@@ -913,9 +913,6 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("pab", print_after_break = FALSE);
         ARG_CHOICE ("PAB", print_after_break = FALSE);
-
-        ARG_CHOICE ("eacc", eacc = FALSE);
-        ARG_CHOICE ("EACC", eacc = FALSE);
 
         ARG_CHOICE_END ();
     });

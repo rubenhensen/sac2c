@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2004/08/04 12:04:58  ktr
+ * substituted eacc by emm
+ *
  * Revision 3.82  2004/07/27 12:17:58  khf
  * PREC2apORprf(): args of F_alloc are not traversed
  *
@@ -2250,7 +2253,7 @@ PREC3with2 (node *arg_node, info *arg_info)
  *
  * description:
  *   New, unique and adjusted pseudo fold-funs are created,
- *   if Explicit Accumulate wasn't applied (flag eacc activated)
+ *   if Explicit Accumulate wasn't applied (flag emm activated)
  *
  * caution:
  *   The N_Nwithop node may be part of a N_Nwith *or* a N_Nwith2 node!!
@@ -2274,7 +2277,7 @@ PREC3withop (node *arg_node, info *arg_info)
                   || (NODE_TYPE (let_expr) == N_Nwith2)),
                  "neither N_Nwith nor N_Nwith2 node found!");
 
-    if (!eacc && NWITH_OR_NWITH2_IS_FOLD (let_expr)) {
+    if (!emm && NWITH_OR_NWITH2_IS_FOLD (let_expr)) {
         /*
          * We have to make the formal parameters of each pseudo fold-fun identical
          * to the corresponding application in order to allow for simple code
@@ -2322,7 +2325,7 @@ PREC3withop (node *arg_node, info *arg_info)
  * description:
  *   Checks whether all NCODE_CEXPR nodes of fold-WLs have identical names.
  *   (Only necessary if ExplicitAccumulation wasn't applied
- *    (flag eacc activated))
+ *    (flag emm activated))
  *
  * caution:
  *   The N_Nwithop node may be part of a N_Nwith *or* a N_Nwith2 node!!
@@ -2342,7 +2345,7 @@ PREC3code (node *arg_node, info *arg_info)
                   || (NODE_TYPE (let_expr) == N_Nwith2)),
                  "neither N_Nwith nor N_Nwith2 node found!");
 
-    if ((!eacc && NWITH_OR_NWITH2_IS_FOLD (let_expr))) {
+    if ((!emm && NWITH_OR_NWITH2_IS_FOLD (let_expr))) {
         /*
          * fold with-loop:
          * check whether all NCODE_CEXPR nodes have identical names

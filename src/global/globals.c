@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2004/08/04 12:04:20  ktr
+ * substituted eacc by emm
+ *
  * Revision 3.54  2004/07/29 15:25:51  sah
  * reenabled array padding
  * disabled wls
@@ -517,11 +520,6 @@ bool valid_ssaform = FALSE;
  * do not use explicit memory management by default
  */
 bool emm = FALSE;
-
-/*
- * do not use explicit accumulate by default
- */
-bool eacc = FALSE;
 
 /*
  * per default do not use aggressive WLS

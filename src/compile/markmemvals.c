@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/08/04 12:04:58  ktr
+ * substituted eacc by emm
+ *
  * Revision 1.8  2004/08/03 10:05:54  ktr
  * All genarray/modarray results are named equally now.
  *
@@ -774,7 +777,7 @@ MMVcode (node *arg_node, info *arg_info)
         NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
     }
 
-    if (eacc) {
+    if (emm) {
 
         /* A,B = with(iv)
          *        gen:{res1 = ...;

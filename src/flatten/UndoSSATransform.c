@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2004/08/04 12:04:41  ktr
+ * substituted eacc by emm
+ *
  * Revision 1.11  2004/07/23 15:24:04  khf
  * changed flag for explicit accumulation from ktr to eacc
  *
@@ -749,12 +752,12 @@ USSANwith (node *arg_node, info *arg_info)
     INFO_USSA_ARGS (new_arg_info) = INFO_USSA_ARGS (arg_info);
 
     /*
-     * If ExplicitAccumulate wasn't applied (activated by flag eacc):
+     * If ExplicitAccumulate wasn't applied (activated by flag emm):
      * check for fold-withloop with at least two code segments
      * (first code has a next attribute set) that needs a new
      * unique target variable
      */
-    if ((!eacc) && (NWITH_IS_FOLD (arg_node)) && (NWITH_CODE (arg_node) != NULL)
+    if ((!emm) && (NWITH_IS_FOLD (arg_node)) && (NWITH_CODE (arg_node) != NULL)
         && (NCODE_NEXT (NWITH_CODE (arg_node)) != NULL)) {
         /*
          * For the time beeing there are no fused multioperator WLs containing
