@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2001/04/02 16:02:51  dkr
+ * NodeOrInt_Print used
+ *
  * Revision 3.38  2001/04/02 11:41:53  dkr
  * include of wltransform.h replaced by wl_bounds.h
  *
@@ -3280,91 +3283,6 @@ PrintWLsegx (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   void PrintWLboundInt( int val)
- *
- * description:
- *   prints a parameter of a N_WLstride- or N_WLgrid-node.
- *
- ******************************************************************************/
-
-static void
-PrintWLboundInt (int val)
-{
-    DBUG_ENTER ("PrintWLboundInt");
-
-    if (val == IDX_OTHER) {
-        fprintf (outfile, "?");
-    } else if (val == IDX_SHAPE) {
-        fprintf (outfile, ".");
-    } else {
-        fprintf (outfile, "%d", val);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void PrintWLboundVar( node *wlnode, int dim)
- *
- * description:
- *   prints a parameter of a N_WLstrideVar- or N_WLgridVar-node.
- *
- ******************************************************************************/
-
-static void
-PrintWLboundVar (node *wlnode, int dim)
-{
-    DBUG_ENTER ("PrintWLboundVar");
-
-    if (NODE_TYPE (wlnode) == N_num) {
-        PrintWLboundInt (NUM_VAL (wlnode));
-    } else {
-        DBUG_ASSERT ((NODE_TYPE (wlnode) == N_id), "illegal node type found!");
-
-        fprintf (outfile, "%s[%d]", ID_NAME (wlnode), dim);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void PrintWLbound( nodetype nt, void *node_or_int, int dim)
- *
- * description:
- *   prints a parameter of a N_WLstride(Var)- or N_WLgrid(Var)-node.
- *
- ******************************************************************************/
-
-static void
-PrintWLbound (nodetype nt, void *node_or_int, int dim)
-{
-    char *name;
-    int val;
-
-    DBUG_ENTER ("PrintWLbound");
-
-    NodeOrInt_GetNameOrVal (&name, &val, nt, node_or_int);
-
-    if (val == IDX_OTHER) {
-        if (name == NULL) {
-            fprintf (outfile, "?");
-        } else {
-            PrintWLboundVar ((*(node **)node_or_int), dim);
-        }
-    } else {
-        PrintWLboundInt (val);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
  *   node *PrintWLxblock( node *arg_node, node *arg_info)
  *
  * description:
@@ -3379,9 +3297,12 @@ PrintWLxblock (node *arg_node, node *arg_info)
 
     INDENT;
     fprintf (outfile, "(");
-    PrintWLboundInt (WLXBLOCK_BOUND1 (arg_node));
+
+    NodeOrInt_Print (outfile, NODE_TYPE (arg_node), &(WLXBLOCK_BOUND1 (arg_node)),
+                     WLXBLOCK_DIM (arg_node));
     fprintf (outfile, " -> ");
-    PrintWLboundInt (WLXBLOCK_BOUND2 (arg_node));
+    NodeOrInt_Print (outfile, NODE_TYPE (arg_node), &(WLXBLOCK_BOUND2 (arg_node)),
+                     WLXBLOCK_DIM (arg_node));
     fprintf (outfile, "), ");
 
     fprintf (outfile, "%sblock%d[%d] %d:", (NODE_TYPE (arg_node) == N_WLblock) ? "" : "u",
@@ -3434,15 +3355,15 @@ PrintWLstridex (node *arg_node, node *arg_info)
 
     INDENT;
     fprintf (outfile, "(");
-    PrintWLbound (NODE_TYPE (arg_node), WLSTRIDEX_GET_ADDR (arg_node, BOUND1),
-                  WLSTRIDEX_DIM (arg_node));
+    NodeOrInt_Print (outfile, NODE_TYPE (arg_node), WLSTRIDEX_GET_ADDR (arg_node, BOUND1),
+                     WLSTRIDEX_DIM (arg_node));
     fprintf (outfile, " %s> ", (NODE_TYPE (arg_node) == N_WLstride) ? "-" : "=");
-    PrintWLbound (NODE_TYPE (arg_node), WLSTRIDEX_GET_ADDR (arg_node, BOUND2),
-                  WLSTRIDEX_DIM (arg_node));
+    NodeOrInt_Print (outfile, NODE_TYPE (arg_node), WLSTRIDEX_GET_ADDR (arg_node, BOUND2),
+                     WLSTRIDEX_DIM (arg_node));
     fprintf (outfile, "), step%d[%d] ", WLSTRIDEX_LEVEL (arg_node),
              WLSTRIDEX_DIM (arg_node));
-    PrintWLbound (NODE_TYPE (arg_node), WLSTRIDEX_GET_ADDR (arg_node, STEP),
-                  WLSTRIDEX_DIM (arg_node));
+    NodeOrInt_Print (outfile, NODE_TYPE (arg_node), WLSTRIDEX_GET_ADDR (arg_node, STEP),
+                     WLSTRIDEX_DIM (arg_node));
 
     if (WLSTRIDEX_NOOP (arg_node)) {
         fprintf (outfile, ": /* noop */");
@@ -3544,11 +3465,11 @@ PrintWLgridx (node *arg_node, node *arg_info)
 
     INDENT;
     fprintf (outfile, "(");
-    PrintWLbound (NODE_TYPE (arg_node), WLGRIDX_GET_ADDR (arg_node, BOUND1),
-                  WLGRIDX_DIM (arg_node));
+    NodeOrInt_Print (outfile, NODE_TYPE (arg_node), WLGRIDX_GET_ADDR (arg_node, BOUND1),
+                     WLGRIDX_DIM (arg_node));
     fprintf (outfile, " %s%s> ", str, WLGRIDX_FITTED (arg_node) ? str : ">");
-    PrintWLbound (NODE_TYPE (arg_node), WLGRIDX_GET_ADDR (arg_node, BOUND2),
-                  WLGRIDX_DIM (arg_node));
+    NodeOrInt_Print (outfile, NODE_TYPE (arg_node), WLGRIDX_GET_ADDR (arg_node, BOUND2),
+                     WLGRIDX_DIM (arg_node));
     fprintf (outfile, "):");
 
     if (WLGRIDX_NEXTDIM (arg_node) != NULL) {
@@ -4571,13 +4492,18 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_WLstrideVar:
             fprintf (outfile, "(");
 
-            PrintWLboundVar (WLSTRIDEVAR_BOUND1 (arg_node), WLSTRIDEVAR_DIM (arg_node));
+            NodeOrInt_Print (outfile, NODE_TYPE (arg_node),
+                             &(WLSTRIDEVAR_BOUND1 (arg_node)),
+                             WLSTRIDEVAR_DIM (arg_node));
             fprintf (outfile, "->");
-            PrintWLboundVar (WLSTRIDEVAR_BOUND2 (arg_node), WLSTRIDEVAR_DIM (arg_node));
+            NodeOrInt_Print (outfile, NODE_TYPE (arg_node),
+                             &(WLSTRIDEVAR_BOUND2 (arg_node)),
+                             WLSTRIDEVAR_DIM (arg_node));
             fprintf (outfile, ", ");
             fprintf (outfile, "step%d[%d] ", WLSTRIDEVAR_LEVEL (arg_node),
                      WLSTRIDEVAR_DIM (arg_node));
-            PrintWLboundVar (WLSTRIDEVAR_STEP (arg_node), WLSTRIDEVAR_DIM (arg_node));
+            NodeOrInt_Print (outfile, NODE_TYPE (arg_node),
+                             &(WLSTRIDEVAR_STEP (arg_node)), WLSTRIDEVAR_DIM (arg_node));
 
             fprintf (outfile, ", ");
             fprintf (outfile, "noop: %i", WLSTRIDEVAR_NOOP (arg_node));
@@ -4613,9 +4539,11 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         case N_WLgridVar:
             fprintf (outfile, "(");
 
-            PrintWLboundVar (WLGRIDVAR_BOUND1 (arg_node), WLGRIDVAR_DIM (arg_node));
+            NodeOrInt_Print (outfile, NODE_TYPE (arg_node),
+                             &(WLGRIDVAR_BOUND1 (arg_node)), WLGRIDVAR_DIM (arg_node));
             fprintf (outfile, "->");
-            PrintWLboundVar (WLGRIDVAR_BOUND2 (arg_node), WLGRIDVAR_DIM (arg_node));
+            NodeOrInt_Print (outfile, NODE_TYPE (arg_node),
+                             &(WLGRIDVAR_BOUND2 (arg_node)), WLGRIDVAR_DIM (arg_node));
             fprintf (outfile, " [%d]", WLGRIDVAR_DIM (arg_node));
 
             fprintf (outfile, ", ");
