@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/03/01 17:44:20  dkr
+ * macros for N_Nwith2 nodes reorganized
+ *
  * Revision 1.7  2000/02/23 17:49:22  cg
  * Type property functions IsUnique(<type>), IsBoxed(<type>)
  * moved from refcount.c to tree_compound.c.
@@ -1522,21 +1525,6 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
 
 #define NWITH2_TYPE(n) (NWITHOP_TYPE (NWITH2_WITHOP (n)))
 #define NWITH2_VEC(n) (NWITHID_VEC (NWITH2_WITHID (n)))
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  N_WL...:
- ***/
-
-#define WLSTRIANY_CONTENTS(n)                                                            \
-    ((NODE_TYPE (n) == N_WLstride) ? (WLSTRIDE_CONTENTS (n)) : (WLSTRIVAR_CONTENTS (n)))
-
-#define WLGRIDANY_NEXTDIM(n)                                                             \
-    ((NODE_TYPE (n) == N_WLgrid) ? (WLGRID_NEXTDIM (n)) : (WLGRIDVAR_NEXTDIM (n)))
-
-#define WLGRIDANY_CODE(n)                                                                \
-    ((NODE_TYPE (n) == N_WLgrid) ? (WLGRID_CODE (n)) : (WLGRIDVAR_CODE (n)))
 
 /*--------------------------------------------------------------------------*/
 
