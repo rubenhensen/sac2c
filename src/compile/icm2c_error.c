@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2002/10/29 20:41:21  dkr
+ * TYPE_ERROR ICM: 'exit(-1)' replaced by 'return' ...
+ *
  * Revision 1.4  2002/10/29 19:08:38  dkr
  * TYPE_ERROR ICM: 'break' replaced by 'exit(-1)'
  *
@@ -86,7 +89,7 @@ ICMCompileTYPE_ERROR (int cnt_to, char **to_any, char *funname, int cnt_from,
      * instruction simply prevents some optimizations of the c compiler???
      */
     INDENT;
-    fprintf (outfile, "exit(-1); /* dummy; is this really a good idea??? */\n");
+    fprintf (outfile, "return; /* dummy; is this really a good idea??? */\n");
 
     DBUG_VOID_RETURN;
 }
