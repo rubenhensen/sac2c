@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/11/26 14:12:51  ktr
+ * function application changed.
+ *
  * Revision 1.10  2004/11/23 22:24:25  ktr
  * some renaming.
  *
@@ -565,8 +568,9 @@ node *
 RIwith2 (node *arg_node, info *arg_info)
 {
     node *wlids;
-    node *rhc;
+    node *rhc = NULL;
     node *withop;
+    node *avis;
 
     DBUG_ENTER ("RIwith2");
 
@@ -576,7 +580,14 @@ RIwith2 (node *arg_node, info *arg_info)
     while (withop != NULL) {
         if ((NODE_TYPE (withop) == N_genarray) || (NODE_TYPE (withop) == N_modarray)) {
 
-            rhc = REUSEdoGetReuseCandidates (arg_node, INFO_RI_FUNDEF (arg_info), wlids);
+            arg_node = REUSEdoGetReuseArrays (arg_node, INFO_RI_FUNDEF (arg_info), wlids);
+
+            avis = DFMgetMaskEntryAvisSet (WITH2_REUSE (arg_node));
+            while (avis != NULL) {
+                rhc = TBmakeExprs (TBmakeId (avis), rhc);
+                avis = DFMgetMaskEntryAvisSet (NULL);
+            }
+
             INFO_RI_RHSCAND (arg_info) = CutExprs (INFO_RI_CANDIDATES (arg_info), rhc);
 
             if (INFO_RI_RHSCAND (arg_info) != NULL) {
