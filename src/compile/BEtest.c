@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/11/15 18:13:15  sbs
+ * included stdlib.h instead of malloc.h now
+ *
  * Revision 3.1  2000/11/20 18:00:59  sacbase
  * new release made
  *
@@ -39,7 +42,7 @@
  */
 
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include "dbug.h"
 
 #include "globals.h"
