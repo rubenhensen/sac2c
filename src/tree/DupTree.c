@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2002/02/20 16:09:31  dkr
+ * function DupOneTypesOnly_Inplace() added
+ *
  * Revision 3.54  2002/02/20 15:02:11  dkr
  * fundef DupTypes() renamed into DupAllTypes()
  * fundef DupTypesOnly() renamed into DupAllTypesOnly()
@@ -2438,7 +2441,7 @@ DupShpseg (shpseg *arg_shpseg)
  *   is *not* identical to the (virtual) TYPES-structure  8-((
  *
  *   For duplicating the (virtual) TYPES-structure only, use DupOneTypesOnly()
- *   !!!
+ *   or DupOneTypesOnly_Inplace() !!!
  *
  ******************************************************************************/
 
@@ -2550,6 +2553,49 @@ DupAllTypesOnly (types *arg_types)
     new_types = DupTypes_ (arg_types, NULL);
 
     DBUG_RETURN (new_types);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void DupOneTypesOnly_Inplace( types** target, types* source)
+ *
+ * Description:
+ *   Duplicates the (virtual) TYPES-structure. Unfortunately, the (real)
+ *   types-structure contains *more* items than TYPES. Therefore, the target
+ *   must be given as a reference parameter und some items must be restored
+ *   after generating the new types-structure.
+ *
+ *   See also DupOneTypes(), DupOneTypesOnly().
+ *
+ ******************************************************************************/
+
+void
+DupOneTypesOnly_Inplace (types **target, types *source)
+{
+    types *old_types, *tmp;
+
+    DBUG_ENTER ("DupAllTypesOnly_Inplace");
+
+    DBUG_ASSERT ((source != NULL), "DupOneTypesOnly_Inplace: argument is NULL!");
+    DBUG_ASSERT ((target != NULL), "no target given!");
+
+    old_types = (*target);
+
+    tmp = TYPES_NEXT (source);
+    TYPES_NEXT (source) = NULL;
+    (*target) = DupTypes_ (source, NULL);
+    TYPES_NEXT (source) = tmp;
+
+    (*target)->id = old_types->id;
+    (*target)->id_mod = old_types->id_mod;
+    (*target)->id_cmod = old_types->id_cmod;
+    (*target)->attrib = old_types->attrib;
+    (*target)->status = old_types->status;
+
+    TYPES_NEXT ((*target)) = FreeOneTypes (old_types);
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
