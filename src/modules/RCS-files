@@ -40,3 +40,4 @@ stringset.h
 prepareinline.h
 prepareinline.c
 dependencies.c
+dependencies.h
