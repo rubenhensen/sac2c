@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2004/10/05 14:16:01  sah
+ * fixed a include problem :(
+ *
  * Revision 3.59  2004/10/05 13:54:25  sah
  * more parts of compiler active in NEW_AST mode
  *
@@ -247,7 +250,9 @@
 #include "compile.h"
 #include "annotate_fun_calls.h"
 #include "cccall.h"
+#ifdef NEW_AST
 #include "libstat.h"
+#endif /* NEW_AST */
 #include "PatchWith.h"
 #include "resource.h"
 #include "interrupt.h"
