@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/04/14 16:29:49  jhs
+ * Adjustment for empty arrays.
+ *
  * Revision 2.3  1999/03/15 13:51:15  bs
  * CopyIntArray renamed into CopyIntVector, CopyFloatVector and CopyDoubleVector added.
  *
@@ -185,7 +188,9 @@ Malloc (int size)
 
     DBUG_ENTER ("Malloc");
     DBUG_PRINT ("MEMALLOC_TRY", ("trying to allocate %d bytes", size));
-
+    /*
+    DBUG_ASSERT(size > 0, ("must allocate more then zero Bytes."));
+    */
 #ifdef SHOW_MALLOC
     tmp = malloc (size + malloc_align_step);
     if (NULL == tmp)
