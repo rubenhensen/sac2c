@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/10/22 17:29:59  cg
+ * Revision 1.10  1995/10/24 13:13:31  cg
+ * new macro CMP_TYPE_USER_NONSTRICT
+ *
+ * Revision 1.9  1995/10/22  17:29:59  cg
  * new function SearchObjdef
  * new compound access macros for fundec and typedec
  * macro CMP_TYPE_USER now tests if argument actually is T_user.
@@ -178,20 +181,41 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
  *                  2) types*
  *  result type   : int
  *  description   : compares two user-defined types (name and module)
- *                  result: 1 - equal, 0 - not equal or not user-defined
+ *                  Names and module names must be equal.
  *  global vars   : ---
  *  funs          : ---
  *
- *  remarks       :
+ *  remarks       : result: 1 - equal, 0 - not equal
  *
  */
 
 #define CMP_TYPE_USER(a, b)                                                              \
                                                                                          \
-    ((T_user == TYPES_BASETYPE (a)) && (T_user == TYPES_BASETYPE (b)))                   \
-      ? ((!strcmp (TYPES_NAME (a), TYPES_NAME (b)))                                      \
-         && (!strcmp (MOD (TYPES_MOD (a)), MOD (TYPES_MOD (b)))))                        \
-      : 0
+    ((!strcmp (TYPES_NAME (a), TYPES_NAME (b)))                                          \
+     && (!strcmp (MOD (TYPES_MOD (a)), MOD (TYPES_MOD (b)))))
+
+/*
+ *
+ *  macro name    : CMP_TYPE_USER_NONSTRICT
+ *  arg types     : 1) types*
+ *                  2) types*
+ *  result type   : int
+ *  description   : compares two user-defined types (name and module)
+ *                  Names must be equal. Module names must be equal if
+ *                  both are present. If one module name is missing, this
+ *                  macro may nevertheless result in "1".
+ *  global vars   : ---
+ *  funs          : ---
+ *
+ *  remarks       : result: 1 - equal, 0 - not equal
+ *
+ */
+
+#define CMP_TYPE_USER_NONSTRICT(a, b)                                                    \
+                                                                                         \
+    ((!strcmp (TYPES_NAME (a), TYPES_NAME (b)))                                          \
+     && (!strcmp (MOD (TYPES_MOD (a)), MOD (TYPES_MOD (b))) || (TYPES_MOD (a) == NULL)   \
+         || (TYPES_MOD (b) == NULL)))
 
 /*--------------------------------------------------------------------------*/
 
