@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1994/11/15 14:49:29  hw
+ * Revision 1.5  1994/11/17 16:51:58  hw
+ * added FltnWhile & FltnWith
+ *
+ * Revision 1.4  1994/11/15  14:49:29  hw
  * deleted FltFor
  * bug fixed in FltnPrf
  *
@@ -276,7 +279,7 @@ FltnExprs (node *arg_node, node *arg_info)
  *  description   : Flatten each argument of the given node if neccessary
  *  global vars   :
  *  internal funs : Flatten
- *  external funs : Trav
+ *  external funs : Trav, MakeNode
  *  macros        :
  *
  *  remarks       :
@@ -299,6 +302,66 @@ FltnCond (node *arg_node, node *arg_info)
         info_node->node[0] = NULL;
         arg_node->node[i] = Trav (arg_node->node[i], info_node);
     }
+    free (info_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : FltnWhile
+ *  arguments     : 1) argument node
+ *                  2) last assignment in arg_info->node[0]
+ *  description   : Flatten each argument of the given node if neccessary
+ *  global vars   :
+ *  internal funs :
+ *  external funs : Trav, MakeNode
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+node *
+FltnWhile (node *arg_node, node *arg_info)
+{
+    node *info_node;
+
+    DBUG_ENTER ("FltnWhile");
+
+    info_node = MakeNode (N_info);
+    info_node->nnode = 1;
+    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+    arg_node->node[1] = Trav (arg_node->node[1], info_node);
+    free (info_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : FltnWith
+ *  arguments     : 1) argument node
+ *                  2) last assignment in arg_info->node[0]
+ *  description   : Flatten each argument of the given node if neccessary
+ *  global vars   :
+ *  internal funs :
+ *  external funs : Trav, MakeNode
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+node *
+FltnWith (node *arg_node, node *arg_info)
+{
+    node *info_node;
+
+    DBUG_ENTER ("FltnWhile");
+
+    info_node = MakeNode (N_info);
+    info_node->nnode = 1;
+    arg_node->node[0] = Trav (arg_node->node[0], arg_info);  /* traverse generator */
+    arg_node->node[1] = Trav (arg_node->node[1], info_node); /* traverse body */
     free (info_node);
 
     DBUG_RETURN (arg_node);
