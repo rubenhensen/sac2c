@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2002/08/15 20:58:30  dkr
+ * comment about implementation modified
+ *
  * Revision 3.24  2002/08/15 18:46:45  dkr
  * functions SearchInLUT_Next?() added
  *
@@ -150,10 +153,10 @@
  *  collision table has been occupied another fragment is allocated and appended
  *  to the table.
  *
- *  The amount of memory (in byte) needed for the whole LUT equals
+ *  The amount of memory (in words) needed for the whole LUT equals
  *
  *            (K - 1)
- *    MEM  =   SumOf  ( ( ( C[i] + S ) div S ) ( 2 S + 1 ) + 4 ) ,
+ *    MEM  =   SumOf  ( ( ( C[i] + S ) div S ) ( 2 S + 1 ) + 3 ) ,
  *             i = 0
  *
  *    where  K := HASH_KEYS ,  S := LUT_SIZE  and
@@ -162,14 +165,19 @@
  *  Let N be the number of pairs stored in the LUT. Suppose that
  *    C[i]  =  N / K
  *  is hold, i.e. we have an optimal hash key function.
- *  Then the best value for S is
- *    S  =  N / K + 1 ,
- *  thus the value for MEM equals approximately
+ *
+ *  Then the value for MEM equals
+ *    MEM  =  K ( ( ( N / K + S ) div S ) ( 2 S + 1 ) + 3 )
+ *  Thus, for the worst case (S = 1) we get
+ *    MEM  =  K ( ( N / K + 1 ) 3 + 3 )
+ *         =  3 N + 6 K .
+ *  and for the best case (S = N / K + 1) we get
  *    MEM  =  K ( ( ( N / K + N / K + 1 ) div ( N / K + 1 ) ) ( 2 S + 1 ) + 3 )
  *         =  K (                          1                  ( 2 S + 1 ) + 3 )
  *         =  K ( 2 S + 4 )
  *         =  K ( 2 ( N / K + 1 ) + 4 )
- *        ~=  2 N + 6 K .
+ *         =  2 N + 6 K .
+ *
  *  The time complexity for searching in the LUT is proportional to
  *    TC  =  N / K .
  *
