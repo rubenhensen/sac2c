@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.69  1998/02/10 14:57:05  dkr
+ * added macro WITH_USEDVARS
+ *
  * Revision 1.68  1998/02/10 12:28:54  srs
  * added macro for N_block
  *
@@ -1106,7 +1109,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***
  ***    long*  MASK[x]                    (optimize -> )
  ***    int    STATUS                     (dcr1 -> dcr2 !!)
- ***    node*  CSE                        (cse !!)
+ ***    node*  CSE                        (CSE (GenerateMasks()) -> ??? )
  ***
  ***/
 
@@ -1341,10 +1344,10 @@ extern node *MakeAp (char *name, char *mod, node *args);
  ***  temporary attributes:
  ***
  ***    long*  MASK[x]                 (optimize -> )
+ ***    node*  USEDVARS (N_info)       (refcount -> ) ???
  ***
+ ***  remark (srs): the 'body' of MakeWith() can be reached by WITH_OPERATOR.
  ***
- ***  remarks (srs): the 'body' of MakeWith() can be reached by WITH_OPERATOR.
- ***    In MakeWith() a 3rd (!!!) son is initialized.
  ***/
 
 extern node *MakeWith (node *gen, node *body);
@@ -1352,6 +1355,7 @@ extern node *MakeWith (node *gen, node *body);
 #define WITH_GEN(n) (n->node[0])
 #define WITH_OPERATOR(n) (n->node[1])
 #define WITH_MASK(n, x) (n->mask[x])
+#define WITH_USEDVARS(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1976,7 +1980,7 @@ extern node *MakeInfo ();
  ***
  ***  temporary attributes:
  ***
- ***    ?
+ ***    ???
  ***
  ***  remarks:
  ***    flatten: it's important that the Npart nodes are flattened before
