@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2003/09/30 21:56:49  dkrHH
+ * no changes done
+ *
  * Revision 3.50  2003/09/17 18:54:32  dkr
  * RCAO renamed into DAO for TAGGED_ARRAYS
  *
@@ -337,7 +340,6 @@
  * prefix:
  *
  * description:
- *
  *  This file provides means for the analysis of sac2c command line arguments.
  *  It uses the set macro definitions from main_args.h
  *
@@ -369,7 +371,6 @@
  *   void AnalyseCommandline(int argc, char *argv[])
  *
  * description:
- *
  *   This function analyses the commandline options given to sac2c.
  *   Usually selections made are stored in global variables for later
  *   reference.
@@ -1231,7 +1232,6 @@ AnalyseCommandline (int argc, char *argv[])
  *   void CheckOptionConsistency()
  *
  * description:
- *
  *   This function is called from main() right after command line arguments
  *   have been analysed. Errors and warnings are produced whenever the user
  *   has selected an incompatible combination of options.
@@ -1248,7 +1248,7 @@ CheckOptionConsistency ()
 
     if (runtimecheck & RUNTIMECHECK_BOUNDARY && (optimize & OPT_AP)) {
         optimize &= ~OPT_AP;
-        SYSWARN (("Boundary check (-checkb) and array padding (AP) may not be used"
+        SYSWARN (("Boundary check (-check b) and array padding (AP) may not be used"
                   " simultaneously.\n"
                   "Array padding disabled"));
     }
