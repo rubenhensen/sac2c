@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2002/07/12 19:11:06  dkr
+ * MakeIcm_ND_FUN_DEC(): handling of T_dots parameter corrected
+ *
  * Revision 1.22  2002/07/12 18:55:26  dkr
  * first complete TAGGED_ARRAYS revision :-)))
  *
@@ -1065,11 +1068,7 @@ MakeIcm_ND_FUN_DEC (node *fundef)
              * for ... arguments the name should expand to an empty string
              *  -> replace 'tag' and 'id'
              */
-#if TAGGED_ARRAYS
-            tag = ATG_in_nodesc;
-#else
             tag = ATG_notag;
-#endif
             id = FreeTree (id);
             id = MakeId_Copy (NULL);
         }
