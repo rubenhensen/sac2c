@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.18  2004/11/23 01:28:37  sbs
+* next one
+*
 * Revision 1.17  2004/11/22 21:34:29  sbs
 * SacDevCamp04
 *
@@ -623,7 +626,7 @@ main: TYPE_INT K_MAIN BRACKET_L mainargs BRACKET_R { $<cint>$ = linenum; } exprb
                            $4, $7, NULL);
         NODE_LINE( $$) = $<cint>6;
 
-        FUNDEF_NAME( $$) = ILIBStringCopy( "main");
+        FUNDEF_NAME( $$) = ILIBstringCopy( "main");
 
         DBUG_PRINT( "PARSE",
                     ("%s:"F_PTR", main "F_PTR " %s (" F_PTR ") ",
@@ -721,8 +724,8 @@ wlcomp_pragma_local: hash_pragma WLCOMP wlcomp_conf
                      }
                    ;
 
-wlcomp_conf: ID        { $$ = TBmakeId( $1, NULL, ST_regular); }
-           | expr_ap   { $$ = $1;                            }
+wlcomp_conf: ID        { $$ = TBmakeId( $1, NULL); }
+           | expr_ap   { $$ = $1; }
            ;
 
 
