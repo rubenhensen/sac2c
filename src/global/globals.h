@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.37  1998/12/07 17:29:55  cg
+ * added variables version_id and target_platform to keep track
+ * of this information used in usage.c and gen_startup_code.c
+ *
  * Revision 1.36  1998/10/26 12:34:14  cg
  * new compiler option:
  * use intrinsic array operations instead of with-loop based implementations
@@ -131,7 +135,7 @@
  */
 
 /*
- * File : globals.c
+ * File : globals.h
  *
  * Declaration of global variables
  * which are all defined and initialized in globals.c
@@ -151,6 +155,9 @@
 #define PF_MAXFUN 100
 #define PF_MAXFUNAP 100
 #define PF_MAXFUNNAMELEN 100
+
+extern char version_id[];
+extern char target_platform[];
 
 extern FILE *outfile;
 

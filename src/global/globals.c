@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.25  1998/12/07 17:29:55  cg
+ * added variables version_id and target_platform to keep track
+ * of this information used in usage.c and gen_startup_code.c
+ *
  * Revision 1.24  1998/10/26 12:34:14  cg
  * new compiler option:
  * use intrinsic array operations instead of with-loop based implementations
@@ -115,6 +119,31 @@
 #include "globals.h"
 #include "scnprs.h"
 #include "Error.h"
+
+/*
+ *  Version control
+ */
+
+char version_id[] = "v0.7";
+/* version identifier of sac2c */
+
+#if defined(SOLARIS_SPARC)
+
+char target_platform[] = "SOLARIS_SPARC";
+
+#elif defined(LINUX_X86)
+
+char target_platform[] = "LINUX_X86";
+
+#else
+/*
+ * This case should never happen since the Makefile guarantees that any one
+ * of the supported platforms is selected.
+ */
+
+char target_platform[] = "unknown";
+
+#endif
 
 /*
  *  File handling
