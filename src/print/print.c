@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1994/11/15 10:06:15  sbs
+ * Revision 1.12  1994/11/17 16:49:03  hw
+ * added ";" to output in PrintPost, PrintPre
+ *
+ * Revision 1.11  1994/11/15  10:06:15  sbs
  * typo for modarray eliminated
  *
  * Revision 1.10  1994/11/14  16:57:44  hw
@@ -185,9 +188,6 @@ PrintLet (node *arg_node, node *arg_info)
 node *
 PrintFundef (node *arg_node, node *arg_info)
 {
-    char fun_string[FUN_HEAD_LENGTH];
-    int i;
-
     DBUG_ENTER ("PrintFundef");
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
@@ -566,6 +566,7 @@ PrintPost (node *arg_node, node *arg_info)
 
     fprintf (outfile, "%s", arg_node->info.id);
     Trav (arg_node->node[0], arg_info);
+    fprintf (outfile, ";");
 
     DBUG_RETURN (arg_node);
 }
@@ -576,7 +577,7 @@ PrintPre (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintPre");
 
     Trav (arg_node->node[0], arg_info);
-    fprintf (outfile, "%s", arg_node->info.id);
+    fprintf (outfile, "%s;", arg_node->info.id);
 
     DBUG_RETURN (arg_node);
 }
