@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/05/25 17:29:32  asi
+ * Revision 1.6  1995/06/02 14:37:09  asi
+ * Corrected used-variables for conditional in inner loops
+ *
+ * Revision 1.5  1995/05/25  17:29:32  asi
  * algorithm enhanced - two definitions in a loop doesn't matter anymore ...
  *
  * Revision 1.4  1995/05/16  12:41:50  asi
@@ -88,15 +91,16 @@ int print_warning = TRUE;
  *
  */
 node *
-LoopInvariantRemoval (node *arg_node, node *info_node)
+LoopInvariantRemoval (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("LoopInvariantRemoval");
     act_tab = lir_tab;
-    info_node = MakeNode (N_info);
+    arg_info = MakeNode (N_info);
+    DUPTYPE = NORMAL;
 
-    arg_node = Trav (arg_node, info_node);
+    arg_node = Trav (arg_node, arg_info);
 
-    FREE (info_node);
+    FREE (arg_info);
     DBUG_RETURN (arg_node);
 }
 
@@ -318,6 +322,7 @@ DupDecleration (node *var_node, char *var_name, node *arg_info)
     new_node = MakeNode (N_vardec);
     new_node->info.types = DuplicateTypes (var_node->info.types);
     new_node->varno = VARNO++;
+    FREE (new_node->info.types->id);
     new_node->info.types->id = var_name;
 
     DBUG_RETURN (new_node);
@@ -1200,7 +1205,8 @@ LIRsubexpr (node *arg_node, node *arg_info)
                 new_node->node[0]->nnode = 3;
 
                 /* Duplicate while-condition and use it with if-then-else-clause */
-                new_node->node[0]->node[0] = DupTree (arg_node->node[0]->node[0], NULL);
+                new_node->node[0]->node[0]
+                  = DupTree (arg_node->node[0]->node[0], arg_info);
                 new_node->node[0]->mask[1] = DupMask (arg_node->node[0]->mask[1], VARNO);
                 PlusMask (new_node->mask[1], arg_node->node[0]->mask[1], VARNO);
                 PlusMask (arg_info->mask[1], arg_node->node[0]->mask[1], VARNO);
@@ -1443,9 +1449,15 @@ LIRassign (node *arg_node, node *arg_info)
     /******************/
     /* 2) conditional */
     /******************/
-    case N_cond:
+    case N_cond: {
+        node *node_behind;
+        long *used_vars;
+
+        node_behind = NodeBehindCast (arg_node->node[0]->node[0]);
+        used_vars = GetUsed (arg_node, node_behind);
+
         for (i = 0; i < VARNO; i++) {
-            if (0 < USE[i]) {
+            if (0 < used_vars[i]) {
                 if (UNDEF == UBD[i]) {
                     UBD[i] = TRUE;
                 }
@@ -1460,7 +1472,7 @@ LIRassign (node *arg_node, node *arg_info)
         if (2 <= arg_node->nnode) {
             arg_node->node[1] = Trav (arg_node->node[1], arg_info);
         }
-        break;
+    } break;
     /******************/
     /* 3) top level   */
     /******************/
