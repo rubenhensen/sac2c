@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/08/05 13:34:25  jhs
+ * Added spmdlc, spmddn and spmdpm.
+ *
  * Revision 2.9  1999/08/04 14:28:38  bs
  * traverse funtab entry for tsi added.
  *
@@ -629,6 +632,33 @@ funptr spmdcons_tab[] = {
 
 #define NIFtsi(it_tsi) it_tsi
 funptr tsi_tab[] = {
+#include "node_info.mac"
+};
+
+/*
+ *  55) spmdlc_tab
+ */
+
+#define NIFspmdlc(it_spmdlc) it_spmdlc
+funptr spmdlc_tab[] = {
+#include "node_info.mac"
+};
+
+/*
+ *  56) spmddn_tab
+ */
+
+#define NIFspmddn(it_spmddn) it_spmddn
+funptr spmddn_tab[] = {
+#include "node_info.mac"
+};
+
+/*
+ *  57) spmddn_tab
+ */
+
+#define NIFspmdpm(it_spmdpm) it_spmdpm
+funptr spmdpm_tab[] = {
 #include "node_info.mac"
 };
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/08/05 13:34:25  jhs
+ * Added spmdlc, spmddn and spmdpm.
+ *
  * Revision 2.6  1999/08/04 14:28:38  bs
  * traverse funtab entry for tsi added.
  *
@@ -248,6 +251,9 @@ extern funptr spmdrmtrav_tab[];
 extern funptr spmdrotrav_tab[];
 extern funptr spmdcons_tab[];
 extern funptr tsi_tab[];
+extern funptr spmdlc_tab[];
+extern funptr spmddn_tab[];
+extern funptr spmdpm_tab[];
 
 extern int nnode[];
 
