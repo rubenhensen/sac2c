@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.88  2000/09/20 18:20:41  dkr
+ * ID_MAKEUNIQUE renamed into ID_CLSCONV
+ * Compilation of  v = from_class( w)  corrected (COMPId())
+ *
  * Revision 2.87  2000/09/15 15:43:14  dkr
  * COMPId() revisited
  *
@@ -4231,20 +4235,72 @@ COMPId (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPId");
 
-    if (IS_REFCOUNTED (ID, arg_node)) {
-        res = INFO_COMP_LASTIDS (arg_info);
+    res = INFO_COMP_LASTIDS (arg_info);
 
-        if (ID_MAKEUNIQUE (arg_node)) {
+    switch (ID_CLSCONV (arg_node)) {
+    case NO_CLSCONV:
+        /*
+         * 'arg_node' and 'res' are both non-unique
+         *  or both unique
+         */
+        if (IsArray (ID_TYPE (arg_node))) {
+            ret_ass = MakeAssignIcm2 ("ND_KS_ASSIGN_ARRAY", DupNode (arg_node),
+                                      MakeId1 (IDS_NAME (res)));
+            last_ass = ret_ass;
+
+            icm_ass = MakeAdjustRcICM (IDS_NAME (res), IDS_TYPE (res), IDS_REFCNT (res),
+                                       IDS_REFCNT (res) - 1);
+            ASSIGN_NEXT (last_ass) = icm_ass;
+        } else if (IsNonUniqueHidden (ID_TYPE (arg_node))) {
+            ret_ass = MakeAssignIcm2 ("ND_ASSIGN_HIDDEN", DupNode (arg_node),
+                                      MakeId1 (IDS_NAME (res)));
+            last_ass = ret_ass;
+
+            icm_ass = MakeAdjustRcICM (IDS_NAME (res), IDS_TYPE (res), IDS_REFCNT (res),
+                                       IDS_REFCNT (res) - 1);
+            ASSIGN_NEXT (last_ass) = icm_ass;
+        }
+        break;
+
+    case FROM_CLASS:
+        /*
+         * 'arg_node' is unique and 'res' is non-unique
+         */
+        if (IsArray (ID_TYPE (arg_node))) {
+            ret_ass = MakeAssignIcm2 ("ND_KS_ASSIGN_ARRAY", DupNode (arg_node),
+                                      MakeId1 (IDS_NAME (res)));
+            last_ass = ret_ass;
+
+            icm_ass = MakeAdjustRcICM (IDS_NAME (res), IDS_TYPE (res), IDS_REFCNT (res),
+                                       IDS_REFCNT (res) - 1);
+            ASSIGN_NEXT (last_ass) = icm_ass;
+        } else if (IsHidden (ID_TYPE (arg_node))) {
+            ret_ass = MakeAssignIcm2 ("ND_NO_RC_ASSIGN_HIDDEN", DupNode (arg_node),
+                                      MakeId1 (IDS_NAME (res)));
+            last_ass = ret_ass;
+
+            icm_ass = MakeAssignIcm2 ("ND_SET_RC", MakeId1 (IDS_NAME (res)),
+                                      MakeNum (IDS_REFCNT (res)));
+            ASSIGN_NEXT (last_ass) = icm_ass;
+        }
+        break;
+
+    case TO_CLASS:
+        /*
+         * 'arg_node' is non-unique and 'res' is unique
+         */
+        if (IS_REFCOUNTED (ID, arg_node)) {
             if (ID_REFCNT (arg_node) == 1) {
                 if (IsArray (ID_TYPE (arg_node))) {
                     ret_ass
                       = MakeAssignIcm3 ("ND_KS_MAKE_UNIQUE_ARRAY", DupNode (arg_node),
                                         MakeId1 (IDS_NAME (res)),
                                         MakeNum (BasetypeSize (ID_TYPE (arg_node))));
+                    last_ass = ret_ass;
 
                     icm_ass = MakeAssignIcm2 ("ND_SET_RC", MakeId1 (IDS_NAME (res)),
                                               MakeNum (IDS_REFCNT (res)));
-                    ASSIGN_NEXT (ret_ass) = icm_ass;
+                    ASSIGN_NEXT (last_ass) = icm_ass;
                 } else {
                     ret_ass
                       = MakeAssignIcm3 ("ND_NO_RC_MAKE_UNIQUE_HIDDEN", DupNode (arg_node),
@@ -4274,26 +4330,22 @@ COMPId (node *arg_node, node *arg_info)
                       = MakeAssignIcm3 ("ND_COPY_HIDDEN", DupNode (arg_node),
                                         MakeId1 (IDS_NAME (res)),
                                         MakeId1 (GenericFun (0, ID_TYPE (arg_node))));
+                    last_ass = ret_ass;
 
                     icm_ass
                       = MakeAssignIcm2 ("ND_DEC_RC", DupNode (arg_node), MakeNum (1));
-                    ASSIGN_NEXT (ret_ass) = icm_ass;
+                    ASSIGN_NEXT (last_ass) = icm_ass;
                 }
             }
-        } else {
-            if (IsArray (ID_TYPE (arg_node))) {
-                ret_ass = MakeAssignIcm2 ("ND_KS_ASSIGN_ARRAY", DupNode (arg_node),
-                                          MakeId1 (IDS_NAME (res)));
-            } else {
-                ret_ass = MakeAssignIcm2 ("ND_ASSIGN_HIDDEN", DupNode (arg_node),
-                                          MakeId1 (IDS_NAME (res)));
-            }
-
-            icm_ass = MakeAdjustRcICM (IDS_NAME (res), IDS_TYPE (res), IDS_REFCNT (res),
-                                       IDS_REFCNT (res) - 1);
-            ASSIGN_NEXT (ret_ass) = icm_ass;
         }
-    } else {
+        break;
+
+    default:
+        DBUG_ASSERT (0, "unknown type of class conversion function found");
+        break;
+    }
+
+    if (ret_ass == NULL) {
         ret_ass = arg_node;
     }
 
