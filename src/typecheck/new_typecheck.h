@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/10/28 14:04:37  sbs
+ * NTCcast added.
+ *
  * Revision 3.7  2002/10/18 14:36:03  sbs
  * NTCobjdef added.
  *
@@ -52,6 +55,7 @@ extern node *NTCreturn (node *arg_node, node *arg_info);
 extern node *NTCap (node *arg_node, node *arg_info);
 extern node *NTCprf (node *arg_node, node *arg_info);
 extern node *NTCarray (node *arg_node, node *arg_info);
+extern node *NTCcast (node *arg_node, node *arg_info);
 extern node *NTCexprs (node *arg_node, node *arg_info);
 extern node *NTCid (node *arg_node, node *arg_info);
 extern node *NTCnum (node *arg_node, node *arg_info);

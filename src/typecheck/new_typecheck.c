@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2002/10/28 14:04:37  sbs
+ * NTCcast added.
+ *
  * Revision 3.22  2002/10/18 14:36:52  sbs
  * several additions made .
  * In particular, NTCobjdef added which generates ntypes for all
@@ -1250,6 +1253,37 @@ NTCBASIC (double, T_double)
 NTCBASIC (float, T_float)
 NTCBASIC (char, T_char)
 NTCBASIC (bool, T_bool)
+
+/******************************************************************************
+ *
+ * function:
+ *   node *NTCcast( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+NTCcast (node *arg_node, node *arg_info)
+{
+    te_info *info;
+    ntype *type, *cast_t, *expr_t;
+
+    DBUG_ENTER ("NTCcast");
+
+    CAST_EXPR (arg_node) = Trav (CAST_EXPR (arg_node), arg_info);
+    expr_t = INFO_NTC_TYPE (arg_info);
+    cast_t = TYOldType2Type (CAST_TYPE (arg_node));
+
+    info = TEMakeInfo (linenum, "prf", "type-cast", NULL, NULL);
+    type = NTCCTComputeType (NTCPRF_cast, info, TYMakeProductType (2, cast_t, expr_t));
+
+    INFO_NTC_TYPE (arg_info) = TYGetProductMember (type, 0);
+    TYFreeTypeConstructor (type);
+
+    DBUG_RETURN (arg_node);
+}
 
 /******************************************************************************
  *
