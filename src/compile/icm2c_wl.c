@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/01/09 20:01:25  dkr
+ * comment modified
+ *
  * Revision 3.1  2000/11/20 18:01:21  sacbase
  * new release made
  *
@@ -666,10 +669,10 @@ ICMCompileWL_INIT_OFFSET (int dims_target, char *target, char *idx_vec, int dims
  * remark:
  *   This ICM is needed (and usefull) in combination with the ICMs
  *   WL_(U)BLOCK_LOOP_BEGIN only!!
- *   If the C compiler reports an undeclared 'SAC__start...' there is probably
+ *   If the C compiler reports an undeclared 'SAC__start...' then there is
  *   an error in compile.c:
- *   Either an WL_(U)BLOCK_LOOP_BEGIN ICM is missing, or the WL_ADJUST_OFFSET
- *   ICM is obsolete (bug in the inference in function COMPWLgrid...?)
+ *   Either a WL_(U)BLOCK_LOOP_BEGIN ICM is missing, or the WL_ADJUST_OFFSET
+ *   ICM is obsolete (probably a bug in the inference function COMPWLgrid...).
  *
  *   The names of the variables WL_MT_SCHEDULE_START, WL_MT_SCHEDULE_STOP
  *   are a bit misleading. These variables are not only used in MT-mode but
