@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2000/05/25 22:54:16  dkr
+ * some macros for N_Nwith, N_Nwith2, N_WLgrid and N_WLgridVar added
+ *
  * Revision 1.14  2000/05/24 18:57:50  dkr
  * macros for old with-loop separated
  * macro NCODE_CBLOCK_INSTR added
@@ -1554,6 +1557,13 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
  */
 #define NWITH_CEXPR(n) (NCODE_CEXPR (NWITH_CODE (n)))
 
+#define NWITH_FUN(n) (NWITHOP_FUN (NWITH_WITHOP (n)))
+#define NWITH_MOD(n) (NWITHOP_MOD (NWITH_WITHOP (n)))
+#define NWITH_FUNDEF(n) (NWITHOP_FUNDEF (NWITH_WITHOP (n)))
+#define NWITH_SHAPE(n) (NWITHOP_SHAPE (NWITH_WITHOP (n)))
+#define NWITH_ARRAY(n) (NWITHOP_ARRAY (NWITH_WITHOP (n)))
+#define NWITH_NEUTRAL(n) (NWITHOP_NEUTRAL (NWITH_WITHOP (n)))
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1599,8 +1609,16 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
  ***/
 
 #define NWITH2_TYPE(n) (NWITHOP_TYPE (NWITH2_WITHOP (n)))
+
 #define NWITH2_IDS(n) (NWITHID_IDS (NWITH2_WITHID (n)))
 #define NWITH2_VEC(n) (NWITHID_VEC (NWITH2_WITHID (n)))
+
+#define NWITH2_FUN(n) (NWITHOP_FUN (NWITH2_WITHOP (n)))
+#define NWITH2_MOD(n) (NWITHOP_MOD (NWITH2_WITHOP (n)))
+#define NWITH2_FUNDEF(n) (NWITHOP_FUNDEF (NWITH2_WITHOP (n)))
+#define NWITH2_SHAPE(n) (NWITHOP_SHAPE (NWITH2_WITHOP (n)))
+#define NWITH2_ARRAY(n) (NWITHOP_ARRAY (NWITH2_WITHOP (n)))
+#define NWITH2_NEUTRAL(n) (NWITHOP_NEUTRAL (NWITH2_WITHOP (n)))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1622,6 +1640,24 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
     ((NODE_TYPE (n) == N_Nwith) ? NWITH_OUT (n) : NWITH2_OUT (n))
 #define NWITH_OR_NWITH2_LOCAL(n)                                                         \
     ((NODE_TYPE (n) == N_Nwith) ? NWITH_LOCAL (n) : NWITH2_LOCAL (n))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_WLgrid :
+ ***/
+
+#define WLGRID_CBLOCK(n) (NCODE_CBLOCK (WLGRID_CODE (n)))
+#define WLGRID_CEXPR(n) (NCODE_CEXPR (WLGRID_CODE (n)))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_WLgridVar :
+ ***/
+
+#define WLGRIDVAR_CBLOCK(n) (NCODE_CBLOCK (WLGRIDVAR_CODE (n)))
+#define WLGRIDVAR_CEXPR(n) (NCODE_CEXPR (WLGRIDVAR_CODE (n)))
 
 /*--------------------------------------------------------------------------*/
 
