@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/04/05 15:52:38  asi
+ * Revision 1.13  1995/04/07 10:16:26  hw
+ * added function NoTrav
+ *
+ * Revision 1.12  1995/04/05  15:52:38  asi
  * loop invariant removal added
  *
  * Revision 1.11  1995/03/29  12:00:31  hw
@@ -50,6 +53,8 @@ typedef node *(*funptr) (node *, node *);
 extern node *Trav (node *arg_node, node *arg_info);
 
 extern node *DummyFun (node *arg_node, node *arg_info);
+
+extern node *NoTrav (node *arg_node, node *arg_info);
 
 extern funptr *act_tab;
 

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/04/05 15:52:38  asi
+ * Revision 1.19  1995/04/07 10:16:26  hw
+ * added function NoTrav
+ *
+ * Revision 1.18  1995/04/05  15:52:38  asi
  * loop invariant removal added
  *
  * Revision 1.17  1995/04/04  12:21:56  asi
@@ -275,5 +278,16 @@ DummyFun (node *arg_node, node *arg_info)
     DBUG_ENTER ("DummyFun");
     for (i = 0; i < arg_node->nnode; i++)
         arg_node->node[i] = Trav (arg_node->node[i], arg_info);
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ * dummy function for funtab entries where noting is to do
+ *
+ */
+node *
+NoTrav (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DummyNoOp");
     DBUG_RETURN (arg_node);
 }
