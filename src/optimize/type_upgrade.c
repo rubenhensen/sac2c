@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.4  2004/12/09 13:38:43  mwe
+ * some small changes
+ *
  * Revision 1.3  2004/12/08 17:31:44  mwe
  * starting to implement TryToSpecializeFunction
  *
@@ -78,6 +81,12 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/*****************************************************************************
+ *
+ *
+ *
+ *
+ *****************************************************************************/
 static node *
 TryToDoTypeUpgrade (node *fundef)
 {
@@ -119,6 +128,8 @@ TryToDoTypeUpgrade (node *fundef)
  *
  * description:
  *   This function returns a copy of the lowest type of 'a' and 'b'.
+ *   If a or b are product-types, they contain only one element. Because
+ *   only this element is needed, the product-type is freed.
  *   !! 'a' and 'b' are released at the end of the function !!
  *
  ***********************************************************************/
@@ -126,9 +137,21 @@ static ntype *
 GetLowestType (ntype *a, ntype *b)
 {
 
-    ntype *result;
+    ntype *result, *tmp;
 
     DBUG_ENTER ("GetLowestType");
+
+    if (TYisProd (a)) {
+        tmp = TYcopyType (TYgetProductMember (a, 0));
+        a = TYfreeType (a);
+        a = tmp;
+    }
+
+    if (TYisProd (b)) {
+        tmp = TYcopyType (TYgetProductMember (b, 0));
+        b = TYfreeType (b);
+        b = tmp;
+    }
 
     result = (TYleTypes (a, b)) ? TYcopyType (a) : TYcopyType (b);
 
@@ -170,7 +193,7 @@ AssignTypeToExpr (node *expr, ntype *type)
     } else if (NODE_TYPE (expr) == N_array) {
 
         /*
-         * noting to do for array node
+         * nothing to do for array node
          */
 
     } else {
@@ -306,9 +329,10 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
         case TY_eq: /* same types: nothing to do */
             break;
 
-        case TY_gt: /* ? found a supertype of function signature in 'args': not allowed
+        case TY_lt: /* ? found a supertype of function signature in 'args': not allowed
                        until now ? */
             is_more_special = FALSE;
+            leave = TRUE;
             DBUG_ASSERT ((FALSE), "Argument of function is supertype of signature!");
             break;
 
@@ -317,7 +341,7 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
             DBUG_ASSERT ((FALSE), "Argument of function did not fit to signature!");
             break;
 
-        case TY_lt: /* found a more special type in argument than in signature */
+        case TY_gt: /* found a more special type in argument than in signature */
             is_more_special = TRUE;
             break;
 
@@ -404,6 +428,13 @@ static node *
 TryStaticDispatch (node *fundef, info *arg_info)
 {
     DBUG_ENTER ("TryStaticDispatch");
+
+    if (FUNDEF_ISWRAPPERFUN (fundef)) {
+
+        /*
+         * current fundef is fundef of wrapper function
+         */
+    }
 
     DBUG_RETURN (fundef);
 }
@@ -575,7 +606,7 @@ node *
 TUPlet (node *arg_node, info *arg_info)
 {
 
-    ntype *type;
+    ntype *type, *old_type, *tmp;
     node *ret, *ids;
 
     DBUG_ENTER ("TUPlet");
@@ -589,10 +620,39 @@ TUPlet (node *arg_node, info *arg_info)
         if (INFO_TUP_CHECKLOOPFUN (arg_info)) {
 
             /*
-             * at the moment we are checking, if the rucursive call of a loop function
+             * at the moment we are checking, if the recursive call of a loop function
              * will work with specialized signature
              */
 
+            node *signature, *args;
+
+            signature = FUNDEF_ARGS (AP_FUNDEF (LET_EXPR (arg_node)));
+            args = AP_ARGS (LET_EXPR (arg_node));
+
+            while ((INFO_TUP_CORRECTFUNCTION (arg_info)) && (signature != NULL)) {
+
+                switch (TYcmpTypes (AVIS_TYPE (ARG_AVIS (signature)),
+                                    AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))))) {
+
+                case TY_eq: /* same types, that's ok */
+                    break;
+                case TY_gt: /* argument is more special than signature, that's ok */
+                    break;
+                case TY_lt: /* signature is more special than argument, that's a problem
+                             */
+                    INFO_TUP_CORRECTFUNCTION (arg_info) = FALSE;
+                    break;
+                case TY_hcs:
+                case TY_dis: /* both types are unrelated, should not be possible */
+                    DBUG_ASSERT ((FALSE), "former type is unrelated to new type! ");
+                    break;
+
+                default: /* no other cases exist */
+                    DBUG_ASSERT ((FALSE), "New element in enumeration added?");
+                }
+                signature = ARG_NEXT (signature);
+                args = EXPRS_NEXT (args);
+            }
         } else {
 
             /* first of all, try to specialize function */
@@ -668,11 +728,22 @@ TUPlet (node *arg_node, info *arg_info)
         DBUG_ASSERT ((IDS_AVIS (LET_IDS (arg_node)) != NULL),
                      "AVIS is NULL in IDS node!");
 
-        type = NTCnewTypeCheck_Expr (arg_node);
+        old_type = AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)));
+        AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))) = NULL;
 
-        switch (TYcmpTypes (type, AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))))) {
+        type = NTCnewTypeCheck_Expr (LET_EXPR (arg_node));
+
+        if (TYisProd (type)) {
+            tmp = TYcopyType (TYgetProductMember (type, 0));
+            type = TYfreeType (type);
+            type = tmp;
+        }
+
+        switch (TYcmpTypes (type, old_type)) {
 
         case TY_eq: /* types are equal, nothing to do */
+            old_type = TYfreeType (old_type);
+            AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))) = type;
             break;
 
         case TY_gt: /* old type is more specific, lost type information */
@@ -685,9 +756,11 @@ TUPlet (node *arg_node, info *arg_info)
             break;
 
         case TY_lt: /* new type is more specific, do upgrade */
-            AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)))
-              = TYfreeType (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))));
+            /*AVIS_TYPE(IDS_AVIS(LET_IDS(arg_node))) =
+             * TYfreeType(AVIS_TYPE(IDS_AVIS(LET_IDS(arg_node))));*/
+            old_type = TYfreeType (old_type);
             AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))) = type;
+            tup_expr++;
             break;
 
         default: /* all cases are listed above, so default should never be entered*/
