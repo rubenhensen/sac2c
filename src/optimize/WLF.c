@@ -1,6 +1,11 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.11  1998/07/13 14:04:39  srs
+ * fixed a bug in Modarray2Genarray.
+ * Now a combination of two modarray-operators is not transformed into
+ * a genarray anymore.
+ *
  * Revision 1.10  1998/05/16 16:25:25  srs
  * fixed bug in WLFid
  *
@@ -1284,16 +1289,28 @@ CheckForSuperfluousCodes (node *wln)
 /******************************************************************************
  *
  * function:
- *   node *Modarray2Genarray(node *wln)
+ *   node *Modarray2Genarray(node *wln, node *substwln)
  *
  * description:
- *   transforms the withop of the given WL into genarray. This can always be
- *   done for WL which have a full partition.
+ *   transforms the withop of the given WL. The goal is remove a reference
+ *   to a WL which can be folded so that DCR can eleminate the WL.
+ *
+ * remarks:
+ *   despite the functions name, it not always creates genarray-operators.
+ *   See examples.
+ *
+ * examples:
+ *   B = WL() modarray(A,...);
+ *   C = WL() modarray(C,...);         =>  C = WL() modarray(A,...)
+ *
+ *   B = WL() genarray([shape],...);
+ *   C = WL() modarray(B,...);         =>  C = WL() genarray([newshape],...)
+ *     where newshape depends on shape and the given index vector of C.
  *
  ******************************************************************************/
 
 node *
-Modarray2Genarray (node *wln)
+Modarray2Genarray (node *wln, node *substwln)
 {
     node *shape, *eltn;
     types *type;
@@ -1302,25 +1319,36 @@ Modarray2Genarray (node *wln)
 
     DBUG_ENTER ("Modarray2Genarray");
     DBUG_ASSERT (WO_modarray == NWITH_TYPE (wln), ("wrong withop for Modarray2Genarray"));
+    DBUG_ASSERT (substwln, ("substwln ist NULL"));
 
-    /* compute shape of WL for NWITHOP_SHAPE() */
-    type = ID_TYPE (NWITHOP_ARRAY (NWITH_WITHOP (wln)));
-    dimensions = IDS_SHAPE (NPART_VEC (NWITH_PART (wln)), 0);
+    /* at the moment, substwln points to the assignment of the WL. */
+    substwln = LET_EXPR (ASSIGN_INSTR (substwln));
 
-    eltn = NULL;
-    for (i = 0; i < dimensions; i++)
-        eltn = MakeExprs (MakeNum (TYPES_SHAPE (type, i)), eltn);
+    if (WO_modarray == NWITH_TYPE (substwln)) {
+        /* modarray(modarray) -> modarray */
+        FreeNode (NWITHOP_ARRAY (NWITH_WITHOP (wln)));
+        NWITHOP_ARRAY (NWITH_WITHOP (wln))
+          = DupTree (NWITHOP_ARRAY (NWITH_WITHOP (substwln)), NULL);
+    } else { /* modarray(genarray) -> genarray */
+        /* compute shape of WL for NWITHOP_SHAPE() */
+        type = ID_TYPE (NWITHOP_ARRAY (NWITH_WITHOP (wln)));
+        dimensions = IDS_SHAPE (NPART_VEC (NWITH_PART (wln)), 0);
 
-    shape = MakeArray (eltn);
+        eltn = NULL;
+        for (i = dimensions - 1; i >= 0; i--)
+            eltn = MakeExprs (MakeNum (TYPES_SHAPE (type, i)), eltn);
 
-    shpseg = MakeShpseg (
-      MakeNums (dimensions, NULL)); /* nums struct is freed inside MakeShpseg. */
-    ARRAY_TYPE (shape) = MakeType (T_int, 1, shpseg, NULL, NULL);
+        shape = MakeArray (eltn);
 
-    /* delete old withop and create new one */
-    FreeTree (NWITH_WITHOP (wln));
-    NWITH_WITHOP (wln) = MakeNWithOp (WO_genarray);
-    NWITHOP_SHAPE (NWITH_WITHOP (wln)) = shape;
+        shpseg = MakeShpseg (
+          MakeNums (dimensions, NULL)); /* nums struct is freed inside MakeShpseg. */
+        ARRAY_TYPE (shape) = MakeType (T_int, 1, shpseg, NULL, NULL);
+
+        /* delete old withop and create new one */
+        FreeTree (NWITH_WITHOP (wln));
+        NWITH_WITHOP (wln) = MakeNWithOp (WO_genarray);
+        NWITHOP_SHAPE (NWITH_WITHOP (wln)) = shape;
+    }
 
     DBUG_RETURN (wln);
 }
@@ -1778,14 +1806,14 @@ WLFNwith (node *arg_node, node *arg_info)
             wlf_mode = wlfm_search_WL;
         }
 
-        /* If the current WL is a modarray-WL and the referenced base array
-             was chosen to be folded (FoldDecision) we have to eleminate
-             the modarray, epecially the reference to the base array.
-             Else DCR would not remove the subst WL. */
+        /* If the current WL has a modarray-operator there is a referene to another
+           array in its operator part. If this array was chosen to be folded
+           (FoldDecision) we have to eleminate the reference to it. Else DCR
+           would not remove the subst WL.*/
         if (WO_modarray == NWITH_TYPE (arg_node) && substwln
             && /* can be NULL if array is not in reach (loops, function argument)*/
             FoldDecision (arg_node, substwln))
-            arg_node = Modarray2Genarray (arg_node);
+            arg_node = Modarray2Genarray (arg_node, substwln);
 
         /* restore arg_info */
         tmpn = arg_info;
