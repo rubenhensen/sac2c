@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2004/11/23 16:22:15  cg
+ * Added call to GLOBinitializeGlobals().
+ *
  * Revision 3.77  2004/11/23 11:36:42  cg
  * Switched mac-file based declaration of global variables.
  *
@@ -339,6 +342,7 @@ main (int argc, char *argv[])
      * Initializations
      */
 
+    GLOBinitializeGlobals (global);
     InitPaths ();
     SetupInterruptHandlers ();
     InitDupTree ();
