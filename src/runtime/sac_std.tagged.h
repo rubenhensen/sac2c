@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2003/09/29 22:52:18  dkr
+ * some icms removed/renamed/added.
+ * some comments corrected
+ *
  * Revision 3.47  2003/09/25 14:03:13  dkr
  * ND_WRITE_READ corrected
  *
@@ -609,10 +613,10 @@ typedef int *SAC_array_descriptor_t;
  * ND_DECL_EXTERN( var_NT, basetype, sdim) :
  *   declares an external data object
  *
- * ND_DECL__DATA( var_NT, basetype, decoration) :
- *   declares a data object (without mirror and descriptor)
  * ND_DECL__DESC( var_NT, decoration) :
  *   declares descriptor of a data object
+ * ND_DECL__DATA( var_NT, basetype, decoration) :
+ *   declares a data object (without mirror and descriptor)
  *
  * ND_DECL__MIRROR( var_NT, sdim, ...shp...) :
  *   declares mirror of a data object
@@ -627,11 +631,11 @@ typedef int *SAC_array_descriptor_t;
 
 /* ND_DECL_EXTERN( ...)  is a C-ICM */
 
-#define SAC_ND_DECL__DATA(var_NT, basetype, decoration)                                  \
-    decoration SAC_ND_TYPE (var_NT, basetype) SAC_ND_A_FIELD (var_NT);
-
 #define SAC_ND_DECL__DESC(var_NT, decoration)                                            \
     CAT11 (SAC_ND_DECL__DESC__, NT_SHP (var_NT) BuildArgs2 (var_NT, decoration))
+
+#define SAC_ND_DECL__DATA(var_NT, basetype, decoration)                                  \
+    decoration SAC_ND_TYPE (var_NT, basetype) SAC_ND_A_FIELD (var_NT);
 
 /* ND_DECL__MIRROR( ...)  is a C-ICM */
 
@@ -680,7 +684,9 @@ typedef int *SAC_array_descriptor_t;
  *
  * ND_SET__RC( var_NT, rc) :
  *   sets the refcount (in the descriptor) of a data object
- * ND_SET__SHAPE( to_NT, to_sdim, dim, ...shp...) :
+ *
+ * ND_SET__SHAPE_id( to_NT, to_sdim, shp_NT) :
+ * ND_SET__SHAPE_arr( to_NT, dim, ...shp...) :
  *   sets the shape information (descriptor *and* mirror) of a data object
  *
  ******************************************************************************/
@@ -970,10 +976,10 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_ALLOC_END(var_NT, rc, dim)                                                \
     CAT10 (SAC_ND_ALLOC_END__, NT_SHP (var_NT) BuildArgs3 (var_NT, rc, dim))
 
-#define SAC_ND_ALLOC__DATA(var_NT) CAT11 (SAC_ND_ALLOC__DATA__, NT_SHP (var_NT) (var_NT))
-
 #define SAC_ND_ALLOC__DESC(var_NT, dim)                                                  \
     CAT11 (SAC_ND_ALLOC__DESC__, NT_SHP (var_NT) BuildArgs2 (var_NT, dim))
+
+#define SAC_ND_ALLOC__DATA(var_NT) CAT11 (SAC_ND_ALLOC__DATA__, NT_SHP (var_NT) (var_NT))
 
 #define SAC_ND_ALLOC__DESC_AND_DATA(var_NT, dim)                                         \
     CAT11 (SAC_ND_ALLOC__DESC_AND_DATA__, NT_SHP (var_NT) BuildArgs2 (var_NT, dim))
@@ -1251,21 +1257,21 @@ typedef int *SAC_array_descriptor_t;
  * ICMs for assigning data objects
  * ===============================
  *
- * ND_ASSIGN( to_NT, to_sdim, from_NT, copyfun) :
+ * ND_ASSIGN( to_NT, to_sdim, from_NT, from_sdim, copyfun) :
  *   assigns a data object to another one
- * ND_ASSIGN__DATA( to_NT, from_NT, copyfun) :
- *   assigns a data object to another one (without mirror)
  * ND_ASSIGN__DESC( to_NT, from_NT) :
  *   assigns a descriptor to another one
- * ND_ASSIGN__SHPDIM( to_NT, to_sdim, from_NT, from_sdim) :
+ * ND_ASSIGN__SHAPE( to_NT, to_sdim, from_NT, from_sdim) :
  *   assigns a shape information (descriptor *and* mirror) to another one
+ * ND_ASSIGN__DATA( to_NT, to_sdim, from_NT, from_sdim, copyfun) :
+ *   assigns a data object to another one (without mirror)
  *
  * ND_COPY( to_NT, to_sdim, from_NT, from_sdim, copyfun) :
  *   copies a data object to another one
+ * ND_COPY__SHAPE( to_NT, to_sdim, from_NT, from_sdim) :
+ *   copies a shape information (descriptor *and* mirror) to another one
  * ND_COPY__DATA( to_NT, from_NT, copyfun) :
  *   copies a data object to another one (without mirror)
- * ND_COPY__SHPDIM( to_NT, to_sdim, from_NT, from_sdim) :
- *   copies a shape information (descriptor *and* mirror) to another one
  *
  * ND_MAKE_UNIQUE( to_NT, to_sdim, from_NT, copyfun) :
  *   assigns a data object to another one iff RC is zero, copies it otherwise.
@@ -1274,23 +1280,23 @@ typedef int *SAC_array_descriptor_t;
 
 /* ND_ASSIGN( ...)  is a C-ICM */
 
+/* ND_ASSIGN__DESC( ...)  is a C-ICM */
+
+/* ND_ASSIGN__SHAPE( ...)  is a C-ICM */
+
 #define SAC_ND_ASSIGN__DATA(to_NT, from_NT, copyfun)                                     \
     CAT14 (SAC_ND_ASSIGN__DATA__,                                                        \
            CAT14 (NT_SHP (to_NT),                                                        \
                   CAT14 (__, NT_SHP (from_NT) BuildArgs3 (to_NT, from_NT, copyfun))))
 
-/* ND_ASSIGN__DESC( ...)  is a C-ICM */
-
-/* ND_ASSIGN__SHPDIM( ...)  is a C-ICM */
-
 /* ND_COPY( ...)  is a C-ICM */
+
+/* ND_COPY__SHAPE( ...)  is a C-ICM */
 
 #define SAC_ND_COPY__DATA(to_NT, from_NT, copyfun)                                       \
     CAT14 (SAC_ND_COPY__DATA__,                                                          \
            CAT14 (NT_SHP (to_NT),                                                        \
                   CAT14 (__, NT_SHP (from_NT) BuildArgs3 (to_NT, from_NT, copyfun))))
-
-/* ND_COPY__SHPDIM( ...)  is a C-ICM */
 
 /* ND_MAKE_UNIQUE( ...)  is a C-ICM */
 
@@ -1442,17 +1448,15 @@ typedef int *SAC_array_descriptor_t;
  * =====================================
  *
  * ND_CREATE__SCALAR__DATA( var_NT, val) :
- *   creates data of a constant scalar
+ *   sets data of a constant scalar
  *
  * ND_CREATE__STRING__DATA( var_NT, str) :
- *   creates data of a constant character array (string)
+ *   sets data of a constant character array (string)
  *
- * ND_CREATE__ARRAY__DIM( val_size, ...val...) :
- *   computes dim of a constant non-scalar array
  * ND_CREATE__ARRAY__SHAPE( var_NT, sdim, val_size, ...val...) :
- *   computes shape of a constant non-scalar array
+ *   sets shape of a constant non-scalar array
  * ND_CREATE__ARRAY__DATA( var_NT, sdim, val_size, ...val..., copyfun) :
- *   creates data of a constant non-scalar array
+ *   sets data of a constant non-scalar array
  *
  ******************************************************************************/
 
