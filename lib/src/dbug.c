@@ -277,7 +277,8 @@ IMPORT int processid;
 
 /* instead use:       (LINUX_X86 is defined  sac2c-Makefile) */
 
-#ifdef LINUX_X86
+/*  #ifdef LINUX_X86
+ * Now for all Arch */
 
 void
 Delay (int d_time)
@@ -286,11 +287,13 @@ Delay (int d_time)
         sleep (d_time);
 }
 
+/*
 #else
 
 #define Delay sleep
 
 #endif
+*/
 
 IMPORT unsigned sleep (); /* Pause for given number of seconds */
 
