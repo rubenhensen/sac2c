@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/06/10 15:02:38  cg
+ * Synchronisation ICMs now use function GetFoldCode to extract
+ * implementation of fold operation.
+ *
  * Revision 1.7  1998/06/03 14:52:44  cg
  * ICMs MT_SPMD_FUN_DEC and MT_SPMD_FUN_RET now longer generate preprocessor
  * conditional #if SAC_DO_MULTITHREAD
@@ -81,8 +85,8 @@ static int barrier_id = 0;
  * description:
  *
  *   This function traverses the fundef chain of the syntax tree in order to
- *   find the implementation of the given fold operation. A pointer to the
- *   respective code block is returned.
+ *   find the implementation of the given fold operation. The function GetFoldCode
+ *   is used afterwards to extract the relevant part of the function definition.
  *
  ******************************************************************************/
 
@@ -101,9 +105,9 @@ SearchFoldImplementation (char *foldop)
     }
 
     DBUG_ASSERT ((fundef != NULL),
-                 ("Unknown fold operation specified in sunchronisation ICM"));
+                 ("Unknown fold operation specified in synchronisation ICM"));
 
-    DBUG_RETURN (FUNDEF_BODY (fundef));
+    DBUG_RETURN (GetFoldCode (fundef));
 }
 #endif /* BEtest */
 
@@ -397,6 +401,8 @@ ICMCompileMT_SYNC_ONEFOLD (char *foldtype, char *accu_var, char *tmp_var, char *
 
     INDENT;
     fprintf (outfile, "label_master_continue_%d:\n", barrier_id);
+
+    FreeTree (fold_code);
 
     DBUG_VOID_RETURN;
 }
