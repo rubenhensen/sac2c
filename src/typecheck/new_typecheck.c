@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2005/03/19 23:16:24  sbs
+ * AUD AUD support requires traversal of CODE_NEXT
+ *
  * Revision 3.70  2005/02/16 22:29:13  sah
  * fixed handling of external funs
  *
@@ -1882,9 +1885,6 @@ NTCpart (node *arg_node, info *arg_info)
     DBUG_ASSERT (INFO_NTC_TYPE (arg_info) != NULL,
                  "inferred generator type corrupted in NTCNwithid");
 
-    DBUG_ASSERT ((PART_NEXT (arg_node) == NULL),
-                 "with-loop with more than one part found!");
-
     DBUG_RETURN (arg_node);
 }
 
@@ -2010,8 +2010,12 @@ NTCcode (node *arg_node, info *arg_info)
      */
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
-    DBUG_ASSERT ((CODE_NEXT (arg_node) == NULL),
-                 "with-loop with more than one code block found!");
+    /**
+     * traverse into defaut expressson iff existant
+     */
+    if (CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
