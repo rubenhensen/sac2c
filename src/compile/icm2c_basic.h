@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2003/04/15 18:59:54  dkr
+ * macro SET_SHAPES_AUD__XXX added
+ *
  * Revision 3.12  2002/10/30 14:20:30  dkr
  * some new macros added
  *
@@ -152,9 +155,21 @@ extern int print_comment; /* bool */
                          prolog_ass SET_SHAPE_AUD (to_nt, idx_ass, set_ass);)
 
 #define SET_SHAPES_AUD__NUM(to_nt, idx, idx_start, idx_stop, prolog_ass, set_ass)        \
+    DBUG_ASSERT ((idx_start >= 0), "illegal dimension found!");                          \
     DBUG_ASSERT ((idx_stop >= 0), "illegal dimension found!");                           \
     for (idx = idx_start; idx < idx_stop; i++) {                                         \
         prolog_ass SET_SHAPE_AUD__NUM (to_nt, idx, set_ass);                             \
+    }
+
+#define SET_SHAPES_AUD__XXX(to_nt, idx, idx_ass2, idx_start, idx_start_ass2, idx_stop,   \
+                            idx_stop_ass2, prolog_ass, set_ass, set_ass2)                \
+    if ((idx_start >= 0) && (idx_stop >= 0)) {                                           \
+        for (idx = idx_start; idx < idx_stop; i++) {                                     \
+            prolog_ass SET_SHAPE_AUD__NUM (to_nt, idx, set_ass);                         \
+        }                                                                                \
+    } else {                                                                             \
+        FOR_LOOP_INC_VARDEC (idx_ass2, idx_start_ass2, idx_stop_ass2,                    \
+                             prolog_ass SET_SHAPE_AUD (to_nt, idx_ass2, set_ass2););     \
     }
 
 #define SET_SHAPES_AKD(to_nt, idx, idx_start, idx_stop, prolog_ass, set_ass)             \
