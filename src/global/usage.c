@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/07/28 13:01:14  jhs
+ * Added information about spmdcons.
+ *
  * Revision 2.12  1999/07/21 16:28:19  jhs
  * needed_sync_fold introduced, max_sync_fold adjusted, command-line and usage
  * updated.
@@ -311,37 +314,40 @@ usage ()
             "\twithin a particular phase.\n\n"
             "\tCurrently supported:\n\n"
 
-            "\t-b15:inl      \tstop after function inlining\n"
-            "\t-b15:dfr      \tstop after dead function removal\n"
-            "\t-b15:ae       \tstop after array elimination\n"
-            "\t-b15:dcr      \tstop after dead code removal\n"
-            "\t-b15:cycN:cse \tstop after common subexpression elimination in cycle N\n"
-            "\t-b15:cycN:cf  \tstop after constant folding in cycle N\n"
-            "\t-b15:cycN:wlt \tstop after with-loop transformation in cycle N\n"
-            "\t-b15:cycN:wli \tstop after with-loop information gathering in cycle N\n"
-            "\t-b15:cycN:wlf \tstop after with-loop folding in cycle N\n"
-            "\t-b15:cycN:cf2 \tstop after second constant folding in cycle N\n"
-            "\t-b15:cycN:dcr \tstop after dead code removal in cycle N\n"
-            "\t-b15:cycN:lur \tstop after (with-)loop unrolling in cycle N\n"
-            "\t-b15:cycN:lus \tstop after loop unswitching in cycle N\n"
-            "\t-b15:cycN:lir \tstop after loop invariant removal in cycle N\n"
+            "\t-b15:inl       \tstop after function inlining\n"
+            "\t-b15:dfr       \tstop after dead function removal\n"
+            "\t-b15:ae        \tstop after array elimination\n"
+            "\t-b15:dcr       \tstop after dead code removal\n"
+            "\t-b15:cycN:cse  \tstop after common subexpression elimination in cycle N\n"
+            "\t-b15:cycN:cf   \tstop after constant folding in cycle N\n"
+            "\t-b15:cycN:wlt  \tstop after with-loop transformation in cycle N\n"
+            "\t-b15:cycN:wli  \tstop after with-loop information gathering in cycle N\n"
+            "\t-b15:cycN:wlf  \tstop after with-loop folding in cycle N\n"
+            "\t-b15:cycN:cf2  \tstop after second constant folding in cycle N\n"
+            "\t-b15:cycN:dcr  \tstop after dead code removal in cycle N\n"
+            "\t-b15:cycN:lur  \tstop after (with-)loop unrolling in cycle N\n"
+            "\t-b15:cycN:lus  \tstop after loop unswitching in cycle N\n"
+            "\t-b15:cycN:lir  \tstop after loop invariant removal in cycle N\n"
             "\n"
-            "\t-b18:conv     \tstop after converting\n"
-            "\t-b18:cubes    \tstop after cube-building\n"
-            "\t-b18:segs     \tstop after choice of segments\n"
-            "\t-b18:split    \tstop after splitting\n"
-            "\t-b18:block    \tstop after hierarchical blocking\n"
-            "\t-b18:ublock   \tstop after unrolling-blocking\n"
-            "\t-b18:merge    \tstop after merging\n"
-            "\t-b18:opt      \tstop after optimization\n"
-            "\t-b18:fit      \tstop after fitting\n"
-            "\t-b18:norm     \tstop after normalization\n"
+            "\t-b18:conv      \tstop after converting\n"
+            "\t-b18:cubes     \tstop after cube-building\n"
+            "\t-b18:segs      \tstop after choice of segments\n"
+            "\t-b18:split     \tstop after splitting\n"
+            "\t-b18:block     \tstop after hierarchical blocking\n"
+            "\t-b18:ublock    \tstop after unrolling-blocking\n"
+            "\t-b18:merge     \tstop after merging\n"
+            "\t-b18:opt       \tstop after optimization\n"
+            "\t-b18:fit       \tstop after fitting\n"
+            "\t-b18:norm      \tstop after normalization\n"
             "\n"
-            "\t-b19:spmdinit \tstop after building SPMD blocks\n"
-            "\t-b19:spmdopt  \tstop after optimizing SPMD blocks\n"
-            "\t-b19:spmdlift \tstop after lifting SPMD blocks\n"
-            "\t-b19:syncinit \tstop after building synchronisation blocks\n"
-            "\t-b19:syncopt  \tstop after optimizing synchronisation blocks\n");
+            "\t-b19:spmdinit  \tstop after building SPMD blocks\n"
+            "\t-b19:spmdopt   \tstop after optimizing SPMD blocks\n"
+            "\t-b19:spmdlift  \tstop after lifting SPMD blocks\n"
+            "\t-b19:syncinit  \tstop after building SYNC blocks\n"
+            "\t-b19:syncopt   \tstop after optimizing SYNC blocks\n"
+            "\t-b19:scheduling\tstop after scheduling SYNC blocks and with-loop segments"
+            "\t-b19:spmdcons  \tstop after constrainig SPMD blocks\n"
+            "\t               \t(same as -b19 only)");
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
 
