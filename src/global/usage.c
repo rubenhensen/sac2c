@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.45  1997/03/19 13:42:02  cg
+ * Revision 1.46  1997/05/06 13:54:18  sbs
+ * -a[at] option included
+ *
+ * Revision 1.45  1997/03/19  13:42:02  cg
  * compiler option -l3 no longer supported
  *
  * Revision 1.44  1997/03/11  16:32:44  cg
@@ -185,7 +188,7 @@ usage (char *prg_name)
     printf ("\t\t\t\t\t2: basic compile time information\n");
     printf ("\t\t\t\t\t3: full compile time information (default)\n");
 
-    printf ("\n\nSTOP OPTIONS:\n\n");
+    printf ("\n\nBREAK OPTIONS:\n\n");
 
     printf ("\t -bp -b2\tstop after: %s\n", compiler_phase_name[2]);
     printf ("\t -bi -b3\tstop after: %s\n", compiler_phase_name[3]);
@@ -254,6 +257,12 @@ usage (char *prg_name)
     printf ("\t -dcheck_boundary\tcheck boundary of arrays upon access\n");
     printf ("\t -dnocleanup\t\tdon't remove temporary files and directories\n");
     printf ("\t -dcheck_malloc\t\tcheck success of memory allocations\n");
+
+    printf ("\n\nRUNTIME ANALYSIS OPTIONS:\n\n");
+
+    printf ("\t -a [at] \t\tinclude runtime analysis\n");
+    printf ("\t\t\t\ta: analyse all (same as t)\n");
+    printf ("\t\t\t\tt: analyse time spend in different parts of the program\n");
 
     printf ("\n\nLINK OPTIONS:\n\n");
 
