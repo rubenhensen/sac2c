@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2003/09/25 19:19:54  dkr
+ * bug in WL_ASSIGN for non-TAGGED_ARRAYS fixed
+ *
  * Revision 3.32  2003/09/25 13:43:30  dkr
  * new argument 'copyfun' added to some ICMs.
  * ND_WRITE replaced by ND_WRITE_READ_COPY.
@@ -135,7 +138,7 @@ PrintTraceICM (char *to_NT, char *idx_vec_NT, int dims, char **idxs_scl_NT,
         }
         fprintf (outfile, ", SAC_WL_OFFSET( %s)", to_NT);
     }
-#else
+#else  /* TAGGED_ARRAYS */
     fprintf (outfile, "\", %s", idxs_scl_NT[0]);
     for (i = 1; i < dims; i++) {
         fprintf (outfile, ", %s", idxs_scl_NT[i]);
@@ -151,7 +154,7 @@ PrintTraceICM (char *to_NT, char *idx_vec_NT, int dims, char **idxs_scl_NT,
         }
         fprintf (outfile, ", SAC_WL_OFFSET( %s)", to_NT);
     }
-#endif
+#endif /* TAGGED_ARRAYS */
     fprintf (outfile, "));\n");
 
     DBUG_VOID_RETURN;
@@ -702,10 +705,17 @@ ICMCompileWL_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
 
     if ((val_dim == 0) || (to_dim == dims)) {
         INDENT;
+#ifdef TAGGED_ARRAYS
         fprintf (outfile,
                  "SAC_ND_WRITE_READ_COPY( %s, SAC_WL_OFFSET( %s),"
                  " %s, 0, %s);\n",
                  to_NT, to_NT, val_NT, copyfun);
+#else  /* TAGGED_ARRAYS */
+        fprintf (outfile,
+                 "SAC_ND_WRITE_COPY( %s, SAC_WL_OFFSET( %s),"
+                 " %s, %s);\n",
+                 to_NT, to_NT, val_NT, copyfun);
+#endif /* TAGGED_ARRAYS */
         INDENT;
         fprintf (outfile, "SAC_WL_OFFSET( %s)++;\n", to_NT);
     } else {
@@ -1065,18 +1075,18 @@ ICMCompileWL_SET_OFFSET (int dim, int first_block_dim, char *to_NT, int to_sdim,
     }
 #ifdef TAGGED_ARRAYS
     fprintf (outfile, "SAC_ND_READ( %s, 0)\n", idxs_scl_NT[0]);
-#else
+#else  /* TAGGED_ARRAYS */
     fprintf (outfile, "%s\n", idxs_scl_NT[0]);
-#endif
+#endif /* TAGGED_ARRAYS */
 
     INDENT;
     for (i = 1; i < dims; i++) {
         if (i <= dim) {
 #ifdef TAGGED_ARRAYS
             fprintf (outfile, "+ SAC_ND_READ( %s, 0) )", idxs_scl_NT[i]);
-#else
+#else  /* TAGGED_ARRAYS */
             fprintf (outfile, "+ %s )", idxs_scl_NT[i]);
-#endif
+#endif /* TAGGED_ARRAYS */
         } else {
             if (i <= first_block_dim) {
                 /*
