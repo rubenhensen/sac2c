@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1999/01/19 16:14:25  cg
+ * changed internal representation of overloaded primitive functions,
+ * e.g. _rotate is converted to rotate.
+ * All operators keep their internal function names beginning
+ * with an underscore.
+ *
  * Revision 1.21  1998/12/07 08:39:46  sbs
  * dbug-string (in comment) changed to mdb_prf !!
  *
@@ -71,7 +77,7 @@
 /*
  * NOTE: At the time being, there are 3 categories of prf's:
  *       - the first legal prf is "F_toi" !!
- *           USED IN : gen_pseudo_fun.c
+ *           USED IN : gen_pseudo_fun.c , checkdec.c
  *
  *       - funs with exactly 1 scalar arg. The last fun of this
  *         category HAS TO BE  "F_not"  !!
@@ -87,17 +93,17 @@
  *           USED IN : ... ?
  *
  *       - the last legal prf is "F_genarray" !!
- *           USED IN : gen_pseudo_fun.c
+ *           USED IN : gen_pseudo_fun.c  , checkdec.c
  *
  */
 
 /*   Node_name          mdb_prf[]    prf_string[]          prf_name_str[]*/
 
-PRF_IF (F_toi, "F_foi", "toi", "_toi"), PRF_IF (F_tof, "F_fof", "tof", "_tof"),
-  PRF_IF (F_tod, "F_fod", "tod", "_tod"), PRF_IF (F_abs, "F_abs", "abs", "_abs"),
+PRF_IF (F_toi, "F_foi", "toi", "toi"), PRF_IF (F_tof, "F_fof", "tof", "tof"),
+  PRF_IF (F_tod, "F_fod", "tod", "tod"), PRF_IF (F_abs, "F_abs", "abs", "abs"),
   PRF_IF (F_not, "F_not", "!", "_not"),
 
-  PRF_IF (F_min, "F_min", "min", "_min"), PRF_IF (F_max, "F_max", "max", "_max"),
+  PRF_IF (F_min, "F_min", "min", "min"), PRF_IF (F_max, "F_max", "max", "max"),
   PRF_IF (F_add, "F_add", "+", "_add"), PRF_IF (F_sub, "F_sub", "-", "_sub"),
   PRF_IF (F_mul, "F_mul", "*", "_mul"), PRF_IF (F_div, "F_div", "/", "_div"),
   PRF_IF (F_mod, "F_mod", "%", "_mod"), PRF_IF (F_and, "F_and", "&&", "_and"),
@@ -106,16 +112,15 @@ PRF_IF (F_toi, "F_foi", "toi", "_toi"), PRF_IF (F_tof, "F_fof", "tof", "_tof"),
   PRF_IF (F_ge, "F_ge", ">=", "_ge"), PRF_IF (F_gt, "F_gt", ">", "_gt"),
   PRF_IF (F_neq, "F_neq", "!=", "_neq"),
 
-  PRF_IF (F_take, "F_take", "take", "_take"), PRF_IF (F_drop, "F_drop", "drop", "_drop"),
-  PRF_IF (F_psi, "F_psi", "psi", "_psi"),
-  PRF_IF (F_idx_psi, "F_idx_psi", "idx_psi", "_idx_psi"),
-  PRF_IF (F_shape, "F_shape", "shape", "_shape"),
-  PRF_IF (F_reshape, "F_reshape", "reshape", "_reshape"),
-  PRF_IF (F_cat, "F_cat", "cat", "_cat"), PRF_IF (F_dim, "F_dim", "dim", "_dim"),
-  PRF_IF (F_rotate, "F_rotate", "rotate", "_rotate"),
-  PRF_IF (F_toi_A, "F_toi_A", "toi", "_toi"), PRF_IF (F_tof_A, "F_tof_A", "tof", "_tof"),
-  PRF_IF (F_tod_A, "F_tod_A", "tod", "_tod"),
-  PRF_IF (F_add_SxA, "F_add_SxA", "+", "_add"),
+  PRF_IF (F_take, "F_take", "take", "take"), PRF_IF (F_drop, "F_drop", "drop", "drop"),
+  PRF_IF (F_psi, "F_psi", "psi", "psi"),
+  PRF_IF (F_idx_psi, "F_idx_psi", "idx_psi", "idx_psi"),
+  PRF_IF (F_shape, "F_shape", "shape", "shape"),
+  PRF_IF (F_reshape, "F_reshape", "reshape", "reshape"),
+  PRF_IF (F_cat, "F_cat", "cat", "cat"), PRF_IF (F_dim, "F_dim", "dim", "dim"),
+  PRF_IF (F_rotate, "F_rotate", "rotate", "rotate"),
+  PRF_IF (F_toi_A, "F_toi_A", "toi", "toi"), PRF_IF (F_tof_A, "F_tof_A", "tof", "tof"),
+  PRF_IF (F_tod_A, "F_tod_A", "tod", "tod"), PRF_IF (F_add_SxA, "F_add_SxA", "+", "_add"),
   PRF_IF (F_add_AxS, "F_add_AxS", "+", "_add"),
   PRF_IF (F_add_AxA, "F_add_AxA", "+", "_add"),
   PRF_IF (F_sub_SxA, "F_sub_SxA", "-", "_sub"),
@@ -127,6 +132,6 @@ PRF_IF (F_toi, "F_foi", "toi", "_toi"), PRF_IF (F_tof, "F_fof", "tof", "_tof"),
   PRF_IF (F_div_SxA, "F_div_SxA", "/", "_div"),
   PRF_IF (F_div_AxS, "F_div_AxS", "/", "_div"),
   PRF_IF (F_div_AxA, "F_div_AxA", "/", "_div"),
-  PRF_IF (F_modarray, "F_modarray", "modarray", "_modarray"),
-  PRF_IF (F_idx_modarray, "F_idx_modarray", "idx_modarray", "_idx_modarray"),
-  PRF_IF (F_genarray, "F_genarray", "genarray", "_genarray")
+  PRF_IF (F_modarray, "F_modarray", "modarray", "modarray"),
+  PRF_IF (F_idx_modarray, "F_idx_modarray", "idx_modarray", "idx_modarray"),
+  PRF_IF (F_genarray, "F_genarray", "genarray", "genarray")
