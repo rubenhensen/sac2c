@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/06/23 09:33:44  ktr
+ * Major code brush done.
+ *
  * Revision 1.7  2004/06/03 15:22:53  ktr
  * New version featuring:
  * - alloc_or_reuse
@@ -36,6 +39,7 @@ extern node *SSARCarray (node *arg_node, node *arg_info);
 extern node *SSARCfuncond (node *arg_node, node *arg_info);
 extern node *SSARCcond (node *arg_node, node *arg_info);
 extern node *SSARCNwith (node *arg_node, node *arg_info);
+extern node *SSARCNwith2 (node *arg_node, node *arg_info);
 extern node *SSARCNcode (node *arg_node, node *arg_info);
 extern node *SSARCNwithid (node *arg_node, node *arg_info);
 extern node *SSARCicm (node *arg_node, node *arg_info);
