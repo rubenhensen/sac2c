@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.96  2004/10/11 16:48:33  sah
+ * fixed problem with NCODE_DEC_USED
+ *
  * Revision 3.95  2004/10/11 14:57:53  sah
  * made INC/DEC NCODE_USED explicit 
  *
@@ -313,6 +316,7 @@ specific implementation of a function should remain with the source code.
 #include "types.h"
 #include "tree_basic.h"
 #include "Error.h"
+#include "free.h"
 
 /*****************************************************************************/
 
@@ -2195,7 +2199,7 @@ extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
 #define NCODE_INC_USED(n) NCODE_USED (n) = NCODE_USED (n) + 1
 #define NCODE_DEC_USED(n)                                                                \
     if (NCODE_USED (n) == 1) {                                                           \
-        FreeTree (n)                                                                     \
+        FreeTree (n);                                                                    \
     } else {                                                                             \
         NCODE_USED (n) = NCODE_USED (n) - 1;                                             \
     }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/10/11 16:48:33  sah
+ * fixed problem with NCODE_DEC_USED
+ *
  * Revision 1.8  2004/10/11 14:57:53  sah
  * made INC/DEC NCODE_USED explicit 
  *
@@ -143,7 +146,7 @@ FreeLinkAttrib (node *attr)
     DBUG_ENTER ("FreeLinkAttrib");
 
     if (attr != NULL) {
-        if (NODE_TYPE (attr) = N_ncode) {
+        if (NODE_TYPE (attr) == N_ncode) {
             NCODE_DEC_USED (attr);
         }
     }
