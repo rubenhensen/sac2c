@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/09/27 15:13:12  cg
+ * Revision 1.2  1995/10/01 13:04:32  cg
+ * added functions SearchTypedef, CountNums, CopyShpseg, MergeShpseg
+ *
+ * Revision 1.1  1995/09/27  15:13:12  cg
  * Initial revision
  *
  *
@@ -14,24 +17,6 @@
 
 #include "dbug.h"
 #include "my_debug.h"
-
-/*
- *
- *  functionname  : CmpDomain
- *  arguments     : 1) N_arg node of one function
- *                  2) N_arg node of another function
- *  description   : checks whether the functions have equal domain
- *                  returns 1 if domain is equal, 0 else
- *  global vars   : ----
- *  internal funs : ----
- *  external funs : ----
- *  macros        : DBUG..., NULL, DIM, TYPES, CMP_TYPE_ID, SIMPLETYPE
- *
- *  remarks       : similar to function CmpFunParams of typechecker.
- *                  some minor changes to fix appearing segmentation
- *                  faults.
- *
- */
 
 int
 CmpDomain (node *arg1, node *arg2)
@@ -118,20 +103,6 @@ Shape2Array (shapes *shp)
     DBUG_RETURN (MakeArray (next));
 }
 
-/*
- *
- *  functionname  : ObjList2ArgList
- *  arguments     : 1) pointer to chain of objdef nodes
- *  description   : makes an argument list from an objdef chain
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : ---
- *
- *  remarks       :
- *
- */
-
 void
 ObjList2ArgList (node *objdef)
 {
@@ -147,4 +118,75 @@ ObjList2ArgList (node *objdef)
     }
 
     DBUG_VOID_RETURN;
+}
+
+node *
+SearchTypedef (char *name, char *mod, node *implementations)
+{
+    node *tmp;
+
+    DBUG_ENTER ("SearchType");
+
+    DBUG_PRINT ("WRITESIB", ("Searching type %s:%s", mod, name));
+
+    tmp = implementations;
+    while ((tmp != NULL) && (CMP_TYPE_TYPEDEF (name, mod, tmp) == 0)) {
+        tmp = TYPEDEF_NEXT (tmp);
+    }
+
+    DBUG_RETURN (tmp);
+}
+
+int
+CountNums (nums *numsp)
+{
+    int cnt = 0;
+
+    DBUG_ENTER ("CountNums");
+
+    while (numsp != NULL) {
+        cnt++;
+    }
+
+    DBUG_RETURN (cnt);
+}
+
+shpseg *
+CopyShpseg (shpseg *old)
+{
+    shpseg *new = NULL;
+    int i;
+
+    DBUG_ENTER ("CopyShpseg");
+
+    if (old != NULL) {
+        new = MakeShpseg (NULL);
+
+        for (i = 0; i < SHP_SEG_SIZE; i++) {
+            SHPSEG_SHAPE (new, i) = SHPSEG_SHAPE (old, i);
+        }
+    }
+
+    DBUG_RETURN (new);
+}
+
+shpseg *
+MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2)
+{
+    shpseg *new;
+    int i;
+
+    DBUG_ENTER ("MergeShpseg");
+
+    new = MakeShpseg (NULL);
+
+    for (i = 0; i < dim1; i++) {
+        SHPSEG_SHAPE (new, i) = SHPSEG_SHAPE (first, i);
+    }
+
+    for (i = 0; i < dim2; i++) {
+        SHPSEG_SHAPE (new, i + dim1) = SHPSEG_SHAPE (second, i);
+    }
+
+    DBUG_RETURN (new);
 }
