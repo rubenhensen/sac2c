@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.14  2003/04/08 12:27:09  sbs
+ * new typedefs monCF and triCF added.
+ *
  * Revision 1.13  2003/04/07 14:23:27  sbs
  * COMakeConstantFromShape, COCopyScalar2OneElementVector, COConstantData2String, and
  * COConstant2String added.
@@ -83,7 +86,9 @@
 #include "types.h"
 
 typedef struct CONSTANT constant;
+typedef constant *(*monCF) (constant *);
 typedef constant *(*binCF) (constant *, constant *);
+typedef constant *(*triCF) (constant *, constant *, constant *);
 
 /***
  ***
