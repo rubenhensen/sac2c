@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.73  2004/10/15 11:39:04  ktr
+ * Reactived constant propagation.
+ *
  * Revision 1.72  2004/10/07 12:38:00  ktr
  * Replaced the old With-Loop Scalarization with a new implementation.
  *
@@ -2718,19 +2721,17 @@ SSACFprf (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("SSACF", ("evaluating prf %s", mdb_prf[PRF_PRF (arg_node)]));
 
-#if 0
-  /* 
-   * ktr: There is no reason to do this as we have CVP now
-   *      SSACFFoldPrfExpr will look at the constant anyways
-   *
-   * substitute constant identifiers in prf. arguments 
-   */
-  INFO_SSACF_INSCONST(arg_info) = SUBST_ID_WITH_CONSTANT_IN_AP_ARGS;
-  if (PRF_ARGS(arg_node) != NULL) {
-    PRF_ARGS(arg_node) = Trav(PRF_ARGS(arg_node), arg_info);
-  }
-  INFO_SSACF_INSCONST(arg_info) = FALSE;
-#endif
+    /*
+     * ktr: There is no reason to do this as we have CVP now
+     *      SSACFFoldPrfExpr will look at the constant anyways
+     *
+     * substitute constant identifiers in prf. arguments
+     */
+    INFO_SSACF_INSCONST (arg_info) = SUBST_ID_WITH_CONSTANT_IN_AP_ARGS;
+    if (PRF_ARGS (arg_node) != NULL) {
+        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+    }
+    INFO_SSACF_INSCONST (arg_info) = FALSE;
 
     /* look up arguments */
     arg_expr = SSACFGetPrfArgs (arg_expr, PRF_ARGS (arg_node), PRF_MAX_ARGS);
