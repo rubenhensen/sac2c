@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.131  2004/10/28 19:47:30  sah
+# added NEWASTFLAGS to efence as well
+#
 # Revision 3.130  2004/10/28 17:15:49  sah
 # added stringset.o and prepareinline.o
 #
@@ -566,7 +569,7 @@ sac2c: $(OBJ) $(LIB)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS) $(NEWASTFLAGS)
 
 sac2c.efence: $(OBJ) $(LIB)
-	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c.efence $(OBJ) $(LIB) $(LIBS) $(EFLIBS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c.efence $(OBJ) $(LIB) $(LIBS) $(EFLIBS) $(NEWASTFLAGS)
 
 sac2c.prod:  $(OBJ) $(LIB)
 	$(CCPROD) $(CCPROD_FLAGS) $(CPROD_FLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS)
