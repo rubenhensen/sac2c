@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.39  2000/05/26 14:20:40  sbs
+# pad.o added
+#
 # Revision 2.38  2000/05/02 15:58:33  dkr
 # definition of gcc_FLAGS and cc_FLAGS changed
 # (-g moved from the definition of the compiler call to these flags definitions)
@@ -232,7 +235,7 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
 PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o src/psi-opt/ArrayElimination.o \
 	src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
 	src/psi-opt/WithloopFolding.o src/psi-opt/WLT.o src/psi-opt/WLI.o \
-	src/psi-opt/WLF.o
+	src/psi-opt/WLF.o src/psi-opt/pad.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
          src/modules/implicittypes.o src/modules/analysis.o \
          src/modules/checkdec.o src/modules/readsib.o \
