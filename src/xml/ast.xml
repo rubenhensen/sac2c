@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.34  2004/11/24 00:34:54  sah
+  added ds traversal
+
   Revision 1.33  2004/11/24 00:11:35  sah
   added FUNDEF_ISWRAPPERFUN
 
@@ -193,6 +196,7 @@
       <traversal id="SBT" name="Serialize Build Stack" default="user" include="serialize_buildstack.h" />
       <traversal id="SET" name="Serialize Node Traversal" default="user" include="serialize_node.h" />
       <traversal id="SEL" name="Serialize Link Traversal" default="user" include="serialize_link.h" />
+      <traversal id="DS" name="DeSerialize Traversal" default="sons" include="serialize_link.h" />
     </general>
     <phase id="typecheck" name="Running type inference system">
     </phase>
