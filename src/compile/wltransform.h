@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/11/25 15:15:07  skt
+ * renaming
+ *
  * Revision 3.12  2004/11/21 22:04:36  ktr
  * Ismop SacDevCamp 04
  *
@@ -97,7 +100,7 @@ extern node *WLTRAwith (node *arg_node, info *arg_info);
 
 extern bool WLTRAallStridesAreConstant (node *wlnode, bool trav_cont, bool trav_nextdim);
 
-extern node *WLTRAinsertWLnodes (node *nodes, node *insert_nodes);
+extern node *WLTRAinsertWlNodes (node *nodes, node *insert_nodes);
 extern int WLTRAgridOffset (int new_bound1, int bound1, int step, int grid_b2);
 
 #endif /* _SAC_WLTRANSFORM_H_ */
