@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2003/02/19 16:16:25  mwe
+ * DistributiveLaw activated in non-product-version by default
+ *
  * Revision 3.28  2003/02/08 15:58:00  mwe
  * OPT_DL deactivated by default
  *
@@ -422,8 +425,7 @@ bool patch_with = FALSE;
 unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI)
                         & (~OPT_APL) & (~OPT_WLS) & (~OPT_DL);
 #else /* PRODUCTION */
-unsigned int optimize
-  = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_DL);
+unsigned int optimize = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL);
 
 #endif /* PRODUCTION */
 
