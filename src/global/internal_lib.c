@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2002/09/05 21:17:40  dkr
+ * TmpVar() modified
+ *
  * Revision 3.27  2002/09/05 20:29:23  dkr
  * PrefixForTmpVar() added
  *
@@ -908,12 +911,14 @@ char *
 TmpVar (void)
 {
     static int counter = 0;
+    char *prefix;
     char *result;
 
     DBUG_ENTER ("TmpVar");
 
-    result = (char *)Malloc (sizeof (char) * 16);
-    sprintf (result, "_%s_%d", PrefixForTmpVar (), counter);
+    prefix = PrefixForTmpVar ();
+    result = (char *)Malloc ((strlen (prefix) + 20 + 3) * sizeof (char));
+    sprintf (result, "_%s_%d", prefix, counter);
     counter++;
 
     DBUG_RETURN (result);
