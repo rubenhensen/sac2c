@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/11/26 12:18:37  jhb
+ * IDS_VARDEC changed to IDS_DECL
+ *
  * Revision 3.13  2004/11/24 19:29:17  skt
  * Compiler Switch during SACDevCampDK 2k4
  *
@@ -144,11 +147,11 @@ WithLoopIsWorthConcurrentExecution (node *withloop, node *let_var)
         if (NODE_TYPE (withop) == N_fold) {
             res = TRUE;
         } else {
-            target_dim = VARDEC_DIM (IDS_VARDEC (let_var));
+            target_dim = VARDEC_DIM (IDS_DECL (let_var));
             if (target_dim > 0) {
                 size = 1;
                 for (i = 0; i < target_dim; i++) {
-                    size *= VARDEC_SHAPE (IDS_VARDEC (let_var), i);
+                    size *= VARDEC_SHAPE (IDS_DECL (let_var), i);
                 }
                 if (size < global.min_parallel_size) {
                     res = FALSE;
