@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2001/06/01 11:35:01  nmw
+ * handling for infinite loops improoved
+ *
  * Revision 1.19  2001/06/01 10:00:34  nmw
  * insert N_empty node in empty blocks
  *
@@ -202,6 +205,7 @@ static ids *SSACFSetSSAASSIGN (ids *chain, node *assign);
 static node **SSACFGetPrfArgs (node **array, node *prf_arg_chain, int max_args);
 static constant **SSACFArgs2Const (constant **co_array, node **arg_expr, int max_args);
 static shape *SSACFGetShapeOfExpr (node *expr);
+static node *RemovePhiCopyTargetAttributes (node *vardecs, bool thenpart);
 
 /*
  * primitive functions for non full-constant expressions like:
@@ -1179,6 +1183,46 @@ SSACFPsi (node *idx_expr, node *array_expr)
     DBUG_RETURN (result);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   static node *RemovePhiCopyTargetAttributes(node* vardecs, bool thenpart)
+ *
+ * description:
+ *   removes all phi copy target attributes from all vardecs and set
+ *   the SSAASSIGN(2) atrtribute to the correct assign in thenpart (== TRUE)
+ *   or elsepart (== FALSE)
+ *
+ *****************************************************************************/
+static node *
+RemovePhiCopyTargetAttributes (node *vardecs, bool thenpart)
+{
+    node *act_vardec;
+
+    DBUG_ENTER ("RemovePhiCopyTargetAttributes");
+
+    act_vardec = vardecs;
+    while (act_vardec != NULL) {
+
+        if (AVIS_SSAPHITARGET (VARDEC_AVIS (act_vardec)) != PHIT_NONE) {
+            if (thenpart) {
+                /* AVIS_SSAASSIGN() is correct */
+                AVIS_SSAASSIGN2 (VARDEC_AVIS (act_vardec)) = NULL;
+            } else {
+                AVIS_SSAASSIGN (VARDEC_AVIS (act_vardec))
+                  = AVIS_SSAASSIGN2 (VARDEC_AVIS (act_vardec));
+                AVIS_SSAASSIGN2 (VARDEC_AVIS (act_vardec)) = NULL;
+            }
+
+            /* vardec is no longer phi-copy target */
+            AVIS_SSAPHITARGET (VARDEC_AVIS (act_vardec)) = PHIT_NONE;
+        }
+        act_vardec = VARDEC_NEXT (act_vardec);
+    }
+
+    DBUG_RETURN (vardecs);
+}
+
 /* traversal functions for SSACF traversal*/
 /******************************************************************************
  *
@@ -1413,16 +1457,24 @@ SSACFcond (node *arg_node, node *arg_info)
          * to true we have an endless loop and will rise a warning message.
          */
         if ((BOOL_VAL (COND_COND (arg_node)) == TRUE)
-            && ((FUNDEF_STATUS (INFO_SSACF_FUNDEF (arg_info)) == ST_dofun)
-                || (FUNDEF_STATUS (INFO_SSACF_FUNDEF (arg_info)) == ST_whilefun))) {
+            && (FUNDEF_IS_LOOPFUN (INFO_SSACF_FUNDEF (arg_info)))) {
             WARN (NODE_LINE (arg_node),
                   ("infinite loop detected, program may not terminate"));
 
             /* ex special function cannot be inlined and is now a regular one */
             FUNDEF_STATUS (INFO_SSACF_FUNDEF (arg_info)) = ST_regular;
+            FUNDEF_USED (INFO_SSACF_FUNDEF (arg_info)) = USED_INACTIVE;
+            FUNDEF_VARDEC (INFO_SSACF_FUNDEF (arg_info))
+              = RemovePhiCopyTargetAttributes (FUNDEF_VARDEC (
+                                                 INFO_SSACF_FUNDEF (arg_info)),
+                                               TRUE);
         } else {
             /* ex special function can be simply inlined in calling context */
             INFO_SSACF_INLFUNDEF (arg_info) = TRUE;
+            FUNDEF_VARDEC (INFO_SSACF_FUNDEF (arg_info))
+              = RemovePhiCopyTargetAttributes (FUNDEF_VARDEC (
+                                                 INFO_SSACF_FUNDEF (arg_info)),
+                                               BOOL_VAL (COND_COND (arg_node)));
         }
 
     } else {
