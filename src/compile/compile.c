@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.38  1999/11/16 15:26:23  dkr
+ * some minor changes in COMPWlgrid:
+ *   initializing of 'insert_icm' added
+ *   some comments added
+ *
  * Revision 2.37  1999/11/09 21:21:12  dkr
  * support for FREE_HIDDEN, DEC_RC_FREE_HIDDEN added.
  * hidden objects are no longer handled by FREE_ARRAY, DEC_RC_FREE_ARRAY ICMs 8-))
@@ -6682,7 +6687,7 @@ COMPWLseg (node *arg_node, node *arg_info)
      * multiple segments found?
      *  -> modify 'multiple_segs'
      */
-    if ((multiple_segs == 0) && (WLSEG_NEXT (arg_node) != NULL)) {
+    if (WLSEG_NEXT (arg_node) != NULL) {
         multiple_segs = 1;
     }
 
@@ -7113,7 +7118,8 @@ COMPWLgrid (node *arg_node, node *arg_info)
                                                                   *dec_rc_cexpr = NULL;
     ids *ids_vector, *ids_scalar, *withid_ids;
     char *icm_name, *icm_name_begin, *icm_name_end;
-    int num_args, insert_icm, cnt_unroll, first_block_dim, d, i;
+    int num_args, cnt_unroll, first_block_dim, d, i;
+    int insert_icm = 0;
 
     DBUG_ENTER ("COMPWLgrid");
 
