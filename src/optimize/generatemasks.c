@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1999/02/10 09:52:06  srs
+ * inserted access macros in GNMassign
+ *
  * Revision 1.2  1999/01/18 15:46:02  sbs
  * DBUG_PRINT( "OPTMEM",...) inserted for mem-info during optimization
  *
@@ -2045,9 +2048,9 @@ GNMassign (node *arg_node, node *arg_info)
     switch (NODE_TYPE (ASSIGN_INSTR (arg_node))) {
     case N_empty:
         /* e.g. unswitching */
-        DBUG_PRINT ("UNS", ("emty assign node removed from tree"));
-        tmp_node = arg_node->node[1];
-        arg_node->node[1] = NULL;
+        DBUG_PRINT ("UNS", ("empty assign node removed from tree"));
+        tmp_node = ASSIGN_NEXT (arg_node);
+        ASSIGN_NEXT (arg_node) = NULL;
         FreeTree (arg_node);
         arg_node = Trav (tmp_node, arg_info);
         ;
@@ -2056,11 +2059,10 @@ GNMassign (node *arg_node, node *arg_info)
         /* e.g. unswitching */
         DBUG_PRINT ("UNS", ("double assign node moved into tree"));
         tmp_node = AppendNodeChain (1, arg_node->node[0], arg_node->node[1]);
-        arg_node->node[0] = NULL;
-        arg_node->node[1] = NULL;
+        ASSIGN_INSTR (arg_node) = NULL;
+        ASSIGN_NEXT (arg_node) = NULL;
         FreeTree (arg_node);
-        arg_node = tmp_node;
-        arg_node = Trav (arg_node, arg_info);
+        arg_node = Trav (tmp_node, arg_info);
         break;
     default:
         arg_node->mask[0] = ReGenMask (arg_node->mask[0], VARNO);
@@ -2069,7 +2071,7 @@ GNMassign (node *arg_node, node *arg_info)
         /* srs: Hmmm, arg_info->node[2] may be the last assignment
            of a completely different function. What is this chain for?
            CSE? */
-        arg_node->node[2] = arg_info->node[2];
+        ASSIGN_CSE (arg_node) = arg_info->node[2];
         arg_info->node[2] = arg_node;
 
         arg_node = OptTrav (arg_node, arg_info, 0); /* Trav instructions */
