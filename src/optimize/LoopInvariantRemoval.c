@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/07/07 15:00:57  asi
+ * Revision 1.14  1995/07/10 07:33:37  asi
+ * removed bblock from structure node
+ *
+ * Revision 1.13  1995/07/07  15:00:57  asi
  * debug output changed in LIRassign and LIRMassign
  *
  * Revision 1.12  1995/06/26  14:36:40  asi
@@ -425,7 +428,6 @@ LIRMassign (node *arg_node, node *arg_info)
             next_node = move_node->node[1];
             move_node->node[1] = NULL;
             move_node->flag = NONE;
-            move_node->bblock = arg_info->bblock;
             UP = AppendNodeChain (1, UP, move_node);
             arg_node = LIRMassign (next_node, arg_info);
         } else {
@@ -583,7 +585,6 @@ LIRMassign (node *arg_node, node *arg_info)
             next_node = move_node->node[1];
             move_node->node[1] = NULL;
             move_node->flag = NONE;
-            move_node->bblock = arg_info->bblock;
             DOWN = AppendNodeChain (1, DOWN, move_node);
             arg_node = LIRMassign (next_node, arg_info);
         } else {
@@ -1167,7 +1168,6 @@ LIRsubexpr (node *arg_node, node *arg_info)
         case N_do:
             arg_node->node[0] = Trav (arg_node->node[0], arg_info);
             act_tab = lir_mov_tab;
-            arg_info->bblock = arg_node->bblock;
 
             arg_node = OptTrav (arg_node, arg_info, 0);
 
@@ -1199,7 +1199,6 @@ LIRsubexpr (node *arg_node, node *arg_info)
 
             arg_node->node[0] = Trav (arg_node->node[0], arg_info);
             act_tab = lir_mov_tab;
-            arg_info->bblock = arg_node->bblock;
 
             arg_node = OptTrav (arg_node, arg_info, 0);
 
@@ -1294,7 +1293,6 @@ LIRsubexpr (node *arg_node, node *arg_info)
             if (N_with == node_behind->nodetype) {
                 arg_node->node[0] = Trav (arg_node->node[0], arg_info);
                 act_tab = lir_mov_tab;
-                arg_info->bblock = arg_node->bblock;
 
                 arg_node = OptTrav (arg_node, arg_info, 0);
 

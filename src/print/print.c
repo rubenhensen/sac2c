@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.77  1995/07/07 14:30:33  hw
+ * Revision 1.78  1995/07/10 07:33:37  asi
+ * removed bblock from structure node
+ *
+ * Revision 1.77  1995/07/07  14:30:33  hw
  * enlarged macro PRF_IF( there are 4 args now)
  *
  * Revision 1.76  1995/07/04  08:36:53  hw
@@ -308,8 +311,6 @@ PrintAssign (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintAssign");
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
-
-    DBUG_EXECUTE ("BBLOCK", fprintf (outfile, "[%d]", arg_node->bblock););
 
     DBUG_EXECUTE ("MASK", fprintf (outfile, "\n**MASKS - assign : %s\n",
                                    mdb_nodetype[arg_node->node[0]->nodetype]);
