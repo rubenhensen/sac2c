@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.59  1998/05/14 15:50:04  cg
+# make now also looks in ../scanparse for files to be included.
+#
 # Revision 1.58  1998/05/13 09:32:40  dkr
 # make deps
 #
@@ -185,7 +188,9 @@ CC        := gcc
 CCFLAGS   := -ansi -Wall -g
 CFLAGS    := -D__EXTENSIONS__
 
-INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount -I../optimize
+INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount -I../optimize  \
+     -I../scanparse
+
 MACS=icm.data icm_comment.c icm_trace.c
 
 all: wltransform.o wlpragma_funs.o precompile.o compile.o icm2c.o icm2c_std.o \
