@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/05/12 14:31:16  cg
+ * some global variables associated with options renamed.
+ * Optimizations are now triggered by bit field optimize instead
+ * of single individual int variables.
+ *
  * Revision 2.3  1999/04/14 09:20:40  cg
  * Settings for cache simulation improved.
  *
@@ -144,14 +149,13 @@
 #include "filemgr.h"
 #include "types.h"
 #include "globals.h"
-#include "scnprs.h"
 #include "Error.h"
 
 /*
  *  Version control
  */
 
-char version_id[] = "v0.8";
+char version_id[] = "v0.9";
 /* version identifier of sac2c */
 
 #if defined(SOLARIS_SPARC)
@@ -211,7 +215,7 @@ char *tmp_dirname = NULL;
  * Target architecture description
  */
 
-char target_name[MAX_FILE_NAME] = "default";
+char *target_name = "default";
 /* name of target architecture, information taken from sac2crc file  */
 
 /*
@@ -273,7 +277,11 @@ int num_cpp_vars = 0;
 int cc_debug = 0;
 /* Enable/disable inclusion of debug code into object files. */
 
+#ifdef PRODUCTION
+int cc_optimize = 3;
+#else  /* PRODUCTION */
 int cc_optimize = 0;
+#endif /* PRODUCTION */
 /* C compiler level of optimization */
 
 /*
@@ -286,68 +294,11 @@ int Make_Old2NewWith = 0;
  * Command line options for triggering optimizations
  */
 
-int optimize = 1;
-/* enable/disable optimizations in general */
-
-int opt_dcr = 1;
-/* enable/disable dead code removal */
-
-int opt_cf = 1;
-/* enable/disable constant folding */
-
 #ifdef PRODUCTION
-int opt_lir = 0;
-/*
- * Unfortunately, at the time being, loop invariant removal is rather
- * unstable. So, we disable this optimization in production versions
- * of sac2c.
- */
+unsigned int optimize = OPT_ALL & (~OPT_LIR);
 #else  /* PRODUCTION */
-int opt_lir = 1;
+unsigned int optimize = OPT_ALL;
 #endif /* PRODUCTION */
-/* enable/disable loop invariant removal */
-
-int opt_inl = 1;
-/* enable/disable function inlining */
-
-int opt_lunr = 1;
-/* enable/disable loop unrolling */
-
-int opt_wlunr = 1;
-/* enable/disable with-loop unrolling */
-
-int opt_uns = 1;
-/* enable/disable loop unswitching */
-
-int opt_cse = 1;
-/* enable/disable common subexpression elimination */
-
-int opt_dfr = 1;
-/* enable/disable dead function removal */
-
-int opt_wlt = 1;
-/* enable/disable withloop transformations */
-
-int opt_wlf = 1;
-/* enable/disable withloop folding */
-
-int opt_ive = 1;
-/* enable/disable index vector elimination  */
-
-int opt_ae = 1;
-/* enable/disable array elimination */
-
-int opt_dlaw = 1;
-/* enable/disable distributive law optimization */
-
-int opt_rco = 1;
-/* enable/disable refcount optimization */
-
-int opt_uip = 1;
-/* enable/disable update-in-place */
-
-int opt_tile = 1;
-/* enable/disable tiling */
 
 /*
  * Command line options for specifying particular side conditions
@@ -380,12 +331,11 @@ int show_icm = 0;
  * implementations of some array operations.
  */
 
-int traceflag = 0;
-int profileflag = 0;
-int check_malloc = 0;
-int check_boundary = 0;
-int intrinsics = 0;
-int cachesim = NO_CACHESIM;
+unsigned int traceflag = TRACE_NONE;
+unsigned int profileflag = PROFILE_NONE;
+unsigned int runtimecheck = RUNTIMECHECK_NONE;
+unsigned int intrinsics = INTRINSIC_NONE;
+unsigned int cachesim = CACHESIM_NO & CACHESIM_PIPE;
 
 /*
  * Profiling information storage facilities
@@ -429,7 +379,7 @@ int show_syscall = 0;
 compiler_phase_t break_after = PH_final;
 /* Stop compilation process after given phase. */
 
-int break_cycle_specifier;
+int break_cycle_specifier = -1;
 /* Additional break specifier that allows a designated break within
    a particular (optimization) loop */
 
@@ -448,8 +398,12 @@ int errors = 0;
 int warnings = 0;
 /* counter for number of warnings */
 
+#ifdef PRODUCTION
+int verbose_level = 1;
+#else  /* PRODUCTION */
 int verbose_level = 3;
-/* controls compile time output   */
+#endif /* PRODUCTION */
+       /* controls compile time output   */
 
 compiler_phase_t compiler_phase = PH_setup;
 /* counter for compilation phases */
@@ -483,7 +437,7 @@ char *compiler_phase_name[] = {"",
                                "Running PSI optimizations",
                                "Running reference count inference system",
                                "Transforming with-loop representation",
-                               "Generating SPMD- and sync-regions",
+                               "Generating SPMD- and SYNC-regions",
                                "Preparing C code generation",
                                "Generating C code",
                                "Creating C file",

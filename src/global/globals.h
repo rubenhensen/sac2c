@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/05/12 14:31:16  cg
+ * some global variables associated with options renamed.
+ * Optimizations are now triggered by bit field optimize instead
+ * of single individual int variables.
+ *
  * Revision 2.3  1999/04/14 09:20:40  cg
  * Settings for cache simulation improved.
  *
@@ -32,135 +37,10 @@
  * more sophisticated breaking facilities inserted;
  * Now, a break in a specific cycle can be triggered!
  *
- * Revision 1.37  1998/12/07 17:29:55  cg
- * added variables version_id and target_platform to keep track
- * of this information used in usage.c and gen_startup_code.c
- *
- * Revision 1.36  1998/10/26 12:34:14  cg
- * new compiler option:
- * use intrinsic array operations instead of with-loop based implementations
- * in the stdlib. The corresponding information is stored by the new
- * global variable intrinsics.
- *
- * Revision 1.35  1998/10/23 14:29:46  cg
- * added the new command line option -inparsize <no> which allows to
- * specify a minimum generator size for with-loops to be executed in
- * parallel if such execution is enabled.
- * The information stored by the global variable min_parallel_size.
- *
- * Revision 1.34  1998/08/07 18:11:29  sbs
- * inserted gen_mt_code; it prevents spmd regions from being created per default
- * only if one of the following options is set:
- * -mtstatic <no> / -mtdynamic <no> / -mtall <no>
- * spmd regions will be introduced!
- *
- * Revision 1.33  1998/07/07 13:40:08  cg
- * added global variable all_threads implementing the command line option -mt-all
- *
- * Revision 1.32  1998/06/29 08:52:19  cg
- * streamlined tracing facilities
- * tracing on new with-loop and multi-threading operations implemented
- *
- * Revision 1.31  1998/06/23 15:04:05  cg
- * added global variables show_syscall and gen_cccall
- *
- * Revision 1.30  1998/06/19 16:34:29  dkr
- * added opt_uip
- *
- * Revision 1.29  1998/05/27 11:17:57  cg
- * added global variable 'puresacfilename' which provides the file to be
- * compiled without leading path information as contained in sacfilename.
- *
- * Revision 1.28  1998/05/13 13:52:09  srs
- * added wlunrnum
- *
- * Revision 1.27  1998/05/13 13:38:30  srs
- * added opt_wlunr
- *
- * Revision 1.26  1998/05/06 11:40:45  cg
- * added globals max_sync_fold and max_threads
- *
- * Revision 1.25  1998/05/05 12:32:27  srs
- * inserted opt_wlt
- *
- * Revision 1.24  1998/04/25 12:36:44  sbs
- * sorry, I wrote level instead of indent 8-(
- *
- * Revision 1.23  1998/04/25 12:02:17  sbs
- * indent inserted
- *
- * Revision 1.22  1998/03/24 11:48:31  cg
- * added global variables used to gather compile time information
- * later used for profiling.
- *
- * Revision 1.21  1998/03/17 14:21:58  cg
- * file src/compile/trace.h removed.
- * definition of symbolic values of global variable traceflag moved to globals.h
- *
- * Revision 1.20  1998/03/13 13:15:57  dkr
- * removed a bug with flag _DBUG:
- *   new var 'my?dbug'
- *   vars 'dbug_...' renamed in 'my_dbug...'
- *
- * Revision 1.19  1998/03/04 16:20:08  cg
- * added  cc_debug,  cc_optimize, tmp_dirname.
- * removed ccflagsstr, useranlib.
- *
- * Revision 1.18  1998/03/02 13:57:07  cg
- *  global variables psi_optimize and backend_optimize removed.
- *
- * Revision 1.17  1998/02/26 15:22:58  cg
- * added declaration of target_name
- *
- * Revision 1.16  1998/02/25 09:21:08  cg
- * Unnecessary global variable removed.
- *
- * Revision 1.15  1998/02/06 13:33:19  srs
- * extern int opt_wlf;
- *
- * Revision 1.14  1997/10/29 14:34:53  srs
- * added more counters for malloc statistics
- *
- * Revision 1.13  1997/10/09 13:54:12  srs
- * counter for memory allocation
- *
- * Revision 1.12  1997/06/03 10:14:46  sbs
- * -D option integrated
- *
- * Revision 1.11  1997/05/27  09:18:25  sbs
- * analyseflag renamed to profileflag
- *
- * Revision 1.10  1997/05/14  08:17:34  sbs
- * analyseflag activated
- *
- * Revision 1.9  1997/03/19  13:35:34  cg
- * added new global variables deps *dependencies and file_type filetype
- *
- * Revision 1.8  1996/09/11  06:29:43  cg
- * Added some new global variables for new command line options.
- *
- * Revision 1.7  1996/08/09  16:44:12  asi
- * dead function removal added
- *
- * Revision 1.6  1996/05/29  14:18:57  sbs
- * inserted noRCO opt_rco!
- *
- * Revision 1.5  1996/01/17  16:49:21  asi
- * added common subexpression elimination
- *
- * Revision 1.4  1996/01/16  16:42:22  cg
- * added global variable int check_malloc
- *
- * Revision 1.3  1996/01/05  12:25:18  cg
- * added cleanup and targetdir[]
- *
- * Revision 1.2  1996/01/02  15:45:44  cg
- * include of filemgr.h no longer necessary
+ * [...]
  *
  * Revision 1.1  1995/12/30  14:47:06  cg
  * Initial revision
- *
- *
  *
  *
  */
@@ -202,7 +82,7 @@ extern char commandline[];
 extern file_type filetype;
 extern char *tmp_dirname;
 
-extern char target_name[];
+extern char *target_name;
 
 extern int gen_mt_code;
 extern int num_threads;
@@ -211,7 +91,9 @@ extern int max_threads;
 extern int all_threads;
 extern int min_parallel_size;
 
-extern char *cppvars[];
+#define MAX_CPP_VARS 32
+
+extern char *cppvars[MAX_CPP_VARS];
 extern int num_cpp_vars;
 
 extern int cc_debug;
@@ -219,24 +101,29 @@ extern int cc_optimize;
 
 extern int Make_Old2NewWith;
 
-extern int optimize;
-extern int opt_dcr;
-extern int opt_dfr;
-extern int opt_cf;
-extern int opt_lir;
-extern int opt_inl;
-extern int opt_lunr;
-extern int opt_wlunr;
-extern int opt_uns;
-extern int opt_cse;
-extern int opt_wlt;
-extern int opt_wlf;
-extern int opt_ae;
-extern int opt_ive;
-extern int opt_rco;
-extern int opt_uip;
-extern int opt_dlaw;
-extern int opt_tile;
+extern unsigned int optimize;
+
+#define OPT_NONE 0x00000000 /* all optimizations disabled       */
+#define OPT_ALL 0xFFFFFFFF  /* all optimizations enabled        */
+
+#define OPT_DCR 0x00000001  /* dead code removal                */
+#define OPT_CF 0x00000002   /* constant folding                 */
+#define OPT_LIR 0x00000004  /* loop invariant removal           */
+#define OPT_INL 0x00000008  /* function inlining                */
+#define OPT_LUR 0x00000010  /* loop unrolling                   */
+#define OPT_WLUR 0x00000020 /* with-loop unrolling              */
+#define OPT_LUS 0x00000040  /* loop unswitching                 */
+#define OPT_CSE 0x00000080  /* common subexpression elimination */
+#define OPT_DFR 0x00000100  /* dead function removal            */
+#define OPT_WLT 0x00000200  /* with-loop transformation         */
+#define OPT_WLF 0x00000400  /* with-loop folding                */
+#define OPT_IVE 0x00000800  /* index vector elimination         */
+#define OPT_AE 0x00001000   /* array elimination                */
+#define OPT_DLAW 0x00002000 /* distributive law                 */
+#define OPT_RCO 0x00004000  /* reference count optimization     */
+#define OPT_UIP 0x00008000  /* update-in-place analysis         */
+#define OPT_TSI 0x00010000  /* with-loop tile size inference    */
+#define OPT_TSP 0x00020000  /* with-loop tile size pragmas      */
 
 extern int optvar;
 extern int inlnum;
@@ -250,58 +137,53 @@ extern int show_refcnt;
 extern int show_idx;
 extern int show_icm;
 
-extern int traceflag;
+extern unsigned int traceflag;
 
-#define NO_TRACE 0x0000
-/* don't trace at all */
+#define TRACE_NONE 0x0000 /* don't trace at all */
+#define TRACE_ALL 0xffff  /* enable all implemented trace options */
 
-#define TRACE_FUN 0x0001
-/* trace user-defined function applications */
-#define TRACE_PRF 0x0002
-/* trace primitive function applications */
-#define TRACE_OWL 0x0004
-/* trace old with-loop execution */
-#define TRACE_REF 0x0008
-/* trace refernce counting operations */
-#define TRACE_MEM 0x0010
-/* trace memory allocation/de-allocation operations */
-#define TRACE_WL 0x0020
-/* trace new with-loop execution */
-#define TRACE_MT 0x0040
-/* trace multi-threading specific operations */
+#define TRACE_FUN 0x0001 /* trace user-defined fun apps */
+#define TRACE_PRF 0x0002 /* trace prim fun apps */
+#define TRACE_OWL 0x0004 /* trace old with-loop execution */
+#define TRACE_REF 0x0008 /* trace reference counting operations */
+#define TRACE_MEM 0x0010 /* trace malloc/free operations */
+#define TRACE_WL 0x0020  /* trace new with-loop execution */
+#define TRACE_MT 0x0040  /* trace multi-threading specific operations */
 
-#define TRACE_ALL 0xffff
-/* enable all implemented trace options */
+extern unsigned int profileflag;
 
-extern int profileflag;
+#define PROFILE_NONE 0x0000
+#define PROFILE_ALL 0xffff
 
-#define NO_PROFILE 0x0000
 #define PROFILE_FUN 0x0001
 #define PROFILE_INL 0x0002
 #define PROFILE_LIB 0x0004
 #define PROFILE_WITH 0x0008
-#define PROFILE_ALL 0xffff
-/*
- * Allowed values of profileflag
- */
 
-extern int cachesim;
+extern unsigned int cachesim;
 
-#define NO_CACHESIM 0x0000
-#define CACHESIM_SIMPLE 0x0001
+#define CACHESIM_NO 0x0000
+
+#define CACHESIM_YES 0x0001
 #define CACHESIM_ADVANCED 0x0002
 #define CACHESIM_FILE 0x0004
-#define CACHESIM_PRAGMA 0x0008
-/*
- * Allowed values of cachesim
- */
+#define CACHESIM_PIPE 0x0008
+#define CACHESIM_PRAGMA 0x0010
 
-extern int check_boundary;
-extern int check_malloc;
+extern unsigned int runtimecheck;
 
-extern int intrinsics;
+#define RUNTIMECHECK_NONE 0x0000
+#define RUNTIMECHECK_ALL 0xffff
+
+#define RUNTIMECHECK_MALLOC 0x0001
+#define RUNTIMECHECK_BOUNDARY 0x0002
+#define RUNTIMECHECK_ERRNO 0x0004
+
+extern unsigned int intrinsics;
 
 #define INTRINSIC_NONE 0x0000
+#define INTRINSIC_ALL 0xffff
+
 #define INTRINSIC_ADD 0x0001
 #define INTRINSIC_SUB 0x0002
 #define INTRINSIC_MUL 0x0004
@@ -313,10 +195,6 @@ extern int intrinsics;
 #define INTRINSIC_CAT 0x0100
 #define INTRINSIC_PSI 0x0200
 #define INTRINSIC_MODA 0x0400
-#define INTRINSIC_ALL 0xffff
-/*
- * Allowed values of intrinsics
- */
 
 extern int PFfuncntr;
 extern char *PFfunnme[PF_MAXFUN];
@@ -334,7 +212,7 @@ extern int show_syscall;
 
 extern compiler_phase_t break_after;
 extern int break_cycle_specifier;
-extern char break_specifier[];
+extern char break_specifier[MAX_BREAK_SPECIFIER];
 
 extern int errors;
 extern int warnings;
