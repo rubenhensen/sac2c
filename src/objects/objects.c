@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/11/01 08:30:25  cg
+ * Revision 1.4  1995/11/01 09:38:08  cg
+ * Now, the special meaning of the return type T_void is considered.
+ *
+ * Revision 1.3  1995/11/01  08:30:25  cg
  * some bug fixes in using nnode.
  *
  * Revision 1.2  1995/10/31  17:39:12  cg
@@ -250,11 +253,19 @@ OBJarg (node *arg_node, node *arg_info)
 
         RETURN_EXPRS (ret) = new_return_expr;
 
-        new_return_type
-          = MakeType (ARG_BASETYPE (arg_node), ARG_DIM (arg_node), ARG_SHPSEG (arg_node),
-                      ARG_TNAME (arg_node), ARG_TMOD (arg_node));
-        TYPES_NEXT (new_return_type) = FUNDEF_TYPES (arg_info);
-        FUNDEF_TYPES (arg_info) = new_return_type;
+        if (FUNDEF_BASETYPE (arg_info) == T_void) {
+            FUNDEF_BASETYPE (arg_info) = ARG_BASETYPE (arg_node);
+            FUNDEF_DIM (arg_info) = ARG_DIM (arg_node);
+            FUNDEF_SHPSEG (arg_info) = ARG_SHPSEG (arg_node);
+            FUNDEF_TNAME (arg_info) = ARG_TNAME (arg_node);
+            FUNDEF_TMOD (arg_info) = ARG_TMOD (arg_node);
+        } else {
+            new_return_type = MakeType (ARG_BASETYPE (arg_node), ARG_DIM (arg_node),
+                                        ARG_SHPSEG (arg_node), ARG_TNAME (arg_node),
+                                        ARG_TMOD (arg_node));
+            TYPES_NEXT (new_return_type) = FUNDEF_TYPES (arg_info);
+            FUNDEF_TYPES (arg_info) = new_return_type;
+        }
 
         ARG_ATTRIB (arg_node) = ST_was_reference;
     }
