@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/08/06 14:39:48  sah
+  some ast improvements
+
   Revision 1.3  2004/07/31 16:16:57  sah
   added support for flags and moved to memory saving attribute
   structure.
@@ -147,6 +150,11 @@
         <son name="FunDecs" mandatory="no">
           <target>
             <node name="Fundef" />
+          </target>
+        </son>
+        <son name="CWrapper" default="NULL" mandatory="no">
+          <target>
+            <node name="CWrapper" />
           </target>
         </son>
       </sons>
@@ -1593,6 +1601,22 @@
         </attribute>
         <attribute name="FunNumber" mandatory="yes">
           <type name="Integer" />
+          <phases>
+            <all />
+          </phases>
+        </attribute>
+        <attribute name="FunApNumber" mandatory="yes">
+          <type name="Integer" />
+          <phases>
+            <all />
+          </phases>
+        </attribute>
+        <attribute name="Fun" default="NULL" mandatory="yes">
+          <type name="Link">
+	    <target>
+	      <node name="Fundef" />
+	    </target>
+	  </type>
           <phases>
             <all />
           </phases>
@@ -3140,7 +3164,7 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="NT" default="FALSE" mandatory="yes">
+        <attribute name="MT" default="FALSE" mandatory="yes">
           <type name="Bool" />
           <phases>
             <all />
@@ -3275,6 +3299,16 @@
             <range from="optimize" to="final" />
           </phases>
         </attribute>
+	<attribute name="Mem" mandatory="no">
+	  <type name="Link">
+	    <target>
+	      <unknown/>
+	    </target>
+	  </type>
+	  <phases>
+	    <range from="emalloc" to="final" />
+	  </phases>
+	</attribute>
       </attributes>
       <flags></flags>
     </node>

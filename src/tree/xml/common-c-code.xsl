@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/08/06 14:39:48  sah
+  some ast improvements
+
   Revision 1.1  2004/07/11 18:21:28  sah
   Initial revision
 
@@ -14,6 +17,12 @@
 <xsl:template name="uppercase">
   <xsl:param name="string"/>
   <xsl:value-of select="translate($string, 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')"/>
+</xsl:template>
+
+<!-- function translating a string to lowercase -->
+<xsl:template name="lowercase">
+  <xsl:param name="string"/>
+  <xsl:value-of select="translate($string, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"/>
 </xsl:template>
 
 <!-- function generating a newline -->

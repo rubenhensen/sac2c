@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/08/06 14:39:48  sah
+  some ast improvements
+
   Revision 1.2  2004/07/11 18:24:57  sah
   modularizes the templates
   added support for default values and init values
@@ -31,6 +34,7 @@ version="1.0">
 #include "node_basic.h"
 #include "tree_basic.h"
 #include "internal_lib.h"
+#include "dbug.h"
 
 #define AST_NO_COMPAT
 #include "node_compat.h"
