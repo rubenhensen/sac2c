@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/02/13 16:55:00  asi
+ * Revision 1.2  1995/02/14 09:59:56  asi
+ * added CFid
+ *
+ * Revision 1.1  1995/02/13  16:55:00  asi
  * Initial revision
  *
  *
@@ -176,6 +179,10 @@ SkalarPrf (int res_int, node **arg, node *arg_node, node *arg_info)
         case F_or:
             ARI (||, arg[0], arg[1]);
             break;
+        case F_not:
+            arg[0]->info.cint = !arg[0]->info.cint;
+            returnnode = CleanupCF (res_int, arg, arg_node, arg_info);
+            break;
         default:
             break;
         }
@@ -250,4 +257,25 @@ CFprf (node *arg_node, node *arg_info)
     if (returnnode == NULL)
         returnnode = arg_node;
     DBUG_RETURN (returnnode);
+}
+
+/*
+ *
+ *  functionname  : CFid
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
+node *
+CFid (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("CFid");
+
+    DBUG_RETURN (arg_node);
 }

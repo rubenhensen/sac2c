@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.40  1995/02/13 17:24:25  asi
- * added CFlet
+ * Revision 1.41  1995/02/14 09:59:56  asi
+ * added CFid
  *
+;; Revision 1.40  1995/02/13  17:24:25  asi
+;; added CFlet
+;;
 ;; Revision 1.39  1995/02/07  11:03:21  asi
 ;; renamed opt1_tab -> opt_tab, opt2_tab -> dead_tab, opt3_tab -> lir.tab
 ;; resp. the functions OPT1* -> OPT*, OPT2* -> DEAD*, OPT3* -> LIR*
@@ -142,7 +145,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_str, "N_str", DummyFun, DummyFun, PrintId, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeInfoId, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_id, "N_id", DummyFun, DummyFun, PrintId, DummyFun, OPTid, DummyFun, DummyFun,
-       FreeInfoId, DummyFun, DummyFun, DummyFun, DummyFun),
+       FreeInfoId, CFid, DummyFun, DummyFun, DummyFun),
   NIF (N_float, "N_float", DummyFun, DummyFun, PrintFloat, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_typedef, "N_typedef", DummyFun, DummyFun, PrintTypedef, DummyFun, DummyFun,
