@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1998/06/25 08:08:37  cg
+ * definition of NULL-pointer added.
+ *
  * Revision 1.8  1998/06/23 12:47:21  cg
  * Now, the correct spmd-function name is used for the specification
  * of the spmd frame.
@@ -252,6 +255,8 @@ PrintGlobalSettings (node *syntax_tree)
     DBUG_ENTER ("PrintGlobalSettings");
 
     fprintf (outfile, "\n\n/*\n *  Global Settings\n */\n\n");
+
+    fprintf (outfile, "#define NULL                      %d\n\n", NULL);
 
     fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD     %d\n", max_sync_fold);
     fprintf (outfile, "#define SAC_SET_THREADS_MAX       %d\n", max_threads);
