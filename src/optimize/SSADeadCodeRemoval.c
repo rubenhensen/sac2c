@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2001/05/15 07:59:59  nmw
+ * macro FUNDEF_IS_LACFUN used
+ *
  * Revision 1.14  2001/04/30 12:06:37  nmw
  * count eliminated arrays for ArrayElimination statistic
  *
@@ -405,9 +408,7 @@ SSADCRlet (node *arg_node, node *arg_info)
 
     /* check for special function as N_ap expression */
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
-        if (((FUNDEF_STATUS (AP_FUNDEF (LET_EXPR (arg_node))) == ST_condfun)
-             || (FUNDEF_STATUS (AP_FUNDEF (LET_EXPR (arg_node))) == ST_dofun)
-             || (FUNDEF_STATUS (AP_FUNDEF (LET_EXPR (arg_node))) == ST_whilefun))
+        if ((FUNDEF_IS_LACFUN (AP_FUNDEF (LET_EXPR (arg_node))))
             && (AP_FUNDEF (LET_EXPR (arg_node)) != INFO_SSADCR_FUNDEF (arg_info))) {
 
             /*
@@ -422,12 +423,6 @@ SSADCRlet (node *arg_node, node *arg_info)
                                    FUNDEF_USED (AP_FUNDEF (LET_EXPR (arg_node)))));
             DBUG_ASSERT ((FUNDEF_EXT_ASSIGNS (AP_FUNDEF (LET_EXPR (arg_node))) != NULL),
                          "missing external application list");
-            /* set correct external assign reference in called fundef node */
-            /*	  if(AP_FUNDEF(LET_EXPR(arg_node)) != INFO_SSADCR_FUNDEF(arg_info)) { */
-            /* no recursive (internal) call must be the one external call */
-            /*	    FUNDEF_EXT_ASSIGN(AP_FUNDEF(LET_EXPR(arg_node))) =
-                INFO_SSADCR_ASSIGN(arg_info);
-                }*/
         }
     }
 
@@ -499,11 +494,13 @@ SSADCRcond (node *arg_node, node *arg_info)
 
     /* traverse else part */
     if (COND_ELSE (arg_node) != NULL) {
+        DBUG_PRINT ("SSADCR", ("processing else part of conditional"));
         COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
     }
 
     /* traverse then part */
     if (COND_THEN (arg_node) != NULL) {
+        DBUG_PRINT ("SSADCR", ("processing then part of conditional"));
         COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
     }
 
@@ -566,9 +563,7 @@ SSADCRap (node *arg_node, node *arg_info)
     DBUG_ENTER ("SSADCRap");
 
     /* traverse special fundef without recursion */
-    if (((FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_condfun)
-         || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_dofun)
-         || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_whilefun))
+    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) != INFO_SSADCR_FUNDEF (arg_info))) {
         DBUG_PRINT ("SSADCR", ("traverse in special fundef %s",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -604,7 +599,6 @@ SSADCRap (node *arg_node, node *arg_info)
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
     }
 
-    /* ##nmw## maybe remove whole function call if necessary ??? */
     /* mark all args as needed */
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
@@ -965,8 +959,7 @@ SSADeadCodeRemoval (node *fundef, node *modul)
                         FUNDEF_NAME (fundef)));
 
     /* do not start traversal in special functions */
-    if ((FUNDEF_STATUS (fundef) != ST_condfun) && (FUNDEF_STATUS (fundef) != ST_dofun)
-        && (FUNDEF_STATUS (fundef) != ST_whilefun)) {
+    if (!(FUNDEF_IS_LACFUN (fundef))) {
         arg_info = MakeInfo ();
 
         INFO_SSADCR_DEPTH (arg_info) = SSADCR_TOPLEVEL; /* start on toplevel */
