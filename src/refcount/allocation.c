@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/26 23:36:06  jhb
+ * ExplicitAllocation to EMAdoAllocation
+ *
  * Revision 1.6  2004/11/25 18:04:36  jhb
  * SSAdoSSA change d to SSAdoSsa
  *
@@ -53,7 +56,7 @@
  *
  *****************************************************************************/
 node *
-ExplicitAllocation (node *syntax_tree)
+EMAdoAllocation (node *syntax_tree)
 {
     node *fundef;
     DBUG_ENTER ("ExplicitAllocation");
