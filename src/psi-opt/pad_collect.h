@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2000/07/21 14:43:43  mab
+ * added APCcode and APCwithop dummies
+ *
  * Revision 1.6  2000/06/29 10:23:05  mab
  * renamed APCNwith to APCwith
  *
@@ -39,7 +42,7 @@
 
 #define sac_pad_collect_h
 
-void APcollect ();
+extern void APcollect ();
 extern node *APCarg (node *arg_node, node *arg_info);
 extern node *APCvardec (node *arg_node, node *arg_info);
 extern node *APCarray (node *arg_node, node *arg_info);
@@ -51,5 +54,7 @@ extern node *APCprf (node *arg_node, node *arg_info);
 extern node *APCfundef (node *arg_node, node *arg_info);
 extern node *APCblock (node *arg_node, node *arg_info);
 extern node *APClet (node *arg_node, node *arg_info);
+extern node *APCwithop (node *arg_node, node *arg_info);
+extern node *APCcode (node *arg_node, node *arg_info);
 
 #endif /* sac_pad_collect_h */

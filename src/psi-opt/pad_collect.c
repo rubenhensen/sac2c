@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2000/07/21 14:43:43  mab
+ * added APCcode and APCwithop dummies
+ *
  * Revision 1.7  2000/07/19 12:37:30  mab
  * added AccessClass2Group
  *
@@ -354,6 +357,46 @@ APClet (node *arg_node, node *arg_info)
     DBUG_ENTER ("APClet");
 
     DBUG_PRINT ("APC", ("let-node detected"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APCwithop(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+
+node *
+APCwithop (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("APCwithop");
+
+    DBUG_PRINT ("APC", ("withop-node detected"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APCcode(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+
+node *
+APCcode (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("APCcode");
+
+    DBUG_PRINT ("APC", ("code-node detected"));
 
     DBUG_RETURN (arg_node);
 }
