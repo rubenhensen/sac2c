@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.42  1999/01/15 15:21:24  cg
+ * added new types access_t, accessclass_t, and feature_t.
+ *
  * Revision 1.41  1998/06/18 13:40:07  cg
  * macro NIF used in node_info.mac enlarged,
  * new traversal function tables added.
@@ -153,6 +156,28 @@
 
 typedef char id; /* kept for compatibility reasons with old version only */
 
+/*
+ * The type faeture_t is used as a bit mask for tile size inference.
+ * It stores information about features found within an operator of a
+ * with-loop.
+ */
+
+typedef unsigned int feature_t;
+
+#define FEATURE_NONE 0  /* no special features at all */
+#define FEATURE_WL 1    /* with-loop containing array accesses */
+#define FEATURE_LOOP 2  /* while/do/for-loop containing array accesses */
+#define FEATURE_TAKE 4  /* primitive function take */
+#define FEATURE_DROP 8  /* primitive function drop */
+#define FEATURE_AP 16   /* function application */
+#define FEATURE_APSI 32 /* primitive function psi with array return value */
+#define FEATURE_MODA 64 /* primitive function modarray */
+#define FEATURE_CAT 128 /* primitive function cat */
+#define FEATURE_ROT 256 /* primitive function rotate */
+#define FEATURE_AARI                                                                     \
+    512 /* primitive arithmetic operation on arrays (not index vectors) */
+#define FEATURE_COND 1024 /* conditional containing array accesses */
+
 #define TYP_IF(n, s, p, f, sz) n
 
 typedef enum {
@@ -160,24 +185,6 @@ typedef enum {
 } simpletype;
 
 #undef TYP_IF
-
-#if 0 /* 10.02.97 unused types */
-typedef enum { 
-               A_let, A_sel, A_for, A_ret
-             } 
-             assigntype;
-
-typedef enum {
-               E_int, E_float, E_bool, E_prf,
-               E_id, E_ap, E_with, E_sel
-             }
-             exprtype;
-
-typedef enum {
-               L_for, L_do, L_while
-             }
-             looptype;
-#endif
 
 typedef enum { ARG_int, ARG_float, ARG_id } argtype;
 
@@ -287,6 +294,8 @@ typedef enum {
 
 typedef enum { CT_normal, CT_ap, CT_return, CT_wl } contextflag;
 
+typedef enum { ACL_irregular, ACL_unknown, ACL_offset, ACL_const } accessclass_t;
+
 /*
  * new nodes for yacc and the syntax tree
  */
@@ -294,7 +303,7 @@ typedef enum { CT_normal, CT_ap, CT_return, CT_wl } contextflag;
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
             t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, nn)                                                                \
+            t47, t48, t49, t50, t51, t52, nn)                                            \
     n
 
 typedef enum {
@@ -341,6 +350,19 @@ typedef struct DEPS {
     struct DEPS *next;
 } deps;
 
+typedef struct SHPSEG {
+    int shp[SHP_SEG_SIZE];
+    struct SHPSEG *next;
+} shpseg;
+
+typedef struct ACCESS_T {
+    struct NODE *array_vardec;
+    struct NODE *iv_vardec;
+    accessclass_t accessclass;
+    shpseg *offset;
+    struct ACCESS_T *next;
+} access_t;
+
 typedef struct IDS {
     char *id;
     char *mod;
@@ -355,11 +377,6 @@ typedef struct IDS {
     statustype status; /* regular or artificial */
     struct IDS *next;
 } ids;
-
-typedef struct SHPSEG {
-    int shp[SHP_SEG_SIZE];
-    struct SHPSEG *next;
-} shpseg;
 
 typedef struct TYPES {
     simpletype simpletype;
