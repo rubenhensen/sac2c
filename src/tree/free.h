@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/02/12 10:53:00  nmw
+ * N_ssacnt and N_cseinfo added
+ *
  * Revision 3.6  2001/02/02 09:22:42  dkr
  * no changes done
  *
@@ -168,6 +171,8 @@ extern node *FreeWLgridVar (node *arg_node, node *arg_info);
 
 extern node *FreeCWrapper (node *arg_node, node *arg_info);
 extern node *FreeModspec (node *arg_node, node *arg_info);
+extern node *FreeCSEinfo (node *arg_node, node *arg_info);
+extern node *FreeSSAcnt (node *arg_node, node *arg_info);
 
 /* special functions */
 extern void FreePrf2 (node *arg_node, int arg_no); /* CF */

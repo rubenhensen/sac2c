@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/02/12 10:53:00  nmw
+ * N_ssacnt and N_cseinfo added
+ *
  * Revision 3.6  2001/02/02 09:22:13  dkr
  * no changes done
  *
@@ -883,6 +886,7 @@ FreeBlock (node *arg_node, node *arg_info)
     FreeNodelist (BLOCK_NEEDTYPES (arg_node));
     FREEMASK (BLOCK_MASK);
     FREE (BLOCK_CACHESIM (arg_node));
+    FREETRAV (BLOCK_SSACOUNTER (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_block node ..."));
 
@@ -1963,6 +1967,47 @@ FreeModspec (node *arg_node, node *arg_info)
     FREE (MODSPEC_NAME (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_moddec node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeCSEinfo (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeCSEinfo");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_cseinfo node ..."));
+
+    FREETRAV (CSEINFO_NEXT (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_cseinfo node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeSSAcnt (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeSSAcnt");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_ssacnt node ..."));
+
+    FREETRAV (SSACNT_NEXT (arg_node));
+
+    FREE (SSACNT_BASEID (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_ssacnt node ..."));
 
     FREE (arg_node);
 
