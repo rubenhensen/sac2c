@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/02/02 12:28:18  jhs
+ *  Added INFO_MUTH_FUNDEF, improved BLKIN.
+ *
  * Revision 1.6  2000/01/28 13:50:16  jhs
  * blocks_init added.
  *
@@ -154,9 +157,12 @@ MUTHmodul (node *arg_node, node *arg_info)
 node *
 MUTHfundef (node *arg_node, node *arg_info)
 {
+    node *old_fundef;
+
     DBUG_ENTER ("MUTHfundef");
 
-    NOTE (("MUTHfundef not completly implemented yet"));
+    old_fundef = INFO_MUTH_FUNDEF (arg_info);
+    INFO_MUTH_FUNDEF (arg_info) = arg_node;
 
     NOTE (("%s", FUNDEF_NAME (arg_node)));
 
@@ -172,6 +178,8 @@ MUTHfundef (node *arg_node, node *arg_info)
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
+
+    INFO_MUTH_FUNDEF (arg_info) = old_fundef;
 
     DBUG_RETURN (arg_node);
 }
