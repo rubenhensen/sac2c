@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.116  2003/03/13 00:06:52  dkr
+ * SSAWLTNwithop added
+ *
  * Revision 3.115  2003/03/12 18:20:51  dkr
  * SSAicm added
  *
@@ -2025,7 +2028,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TCCPnwithop, TravSons, TravSons, TravSons,
        TravSons, TravSons, CMPTNwithop, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, SSAWLINwithop, TravSons,
+       TravSons, SSAWLTNwithop, SSAWLINwithop, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, CRTWRPNwithop, TravSons, TravSons,
        TravSons, HDwithop, NT2OTwithop, CWCwithop, HMNwithop, TravSons, TravSons,
