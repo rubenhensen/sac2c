@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/05/18 10:38:58  cg
+ * Old memory management macros MALLOC and FREE removed.
+ *
  * Revision 3.13  2001/05/17 13:29:29  cg
  * Eliminated some obsolete function prototypes.
  * Removed some ugly de-allocation macros.
@@ -51,12 +54,6 @@
 #include "my_debug.h"
 #include "globals.h"
 #include "internal_lib.h"
-
-/*
- * The following macro is only for compatibility with existing code
- * and MUST no longer be used.
- */
-#define FREE(n) (n) = Free (n)
 
 /*
  * Top-level free functions.

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/05/18 10:38:58  cg
+ * Old memory management macros MALLOC and FREE removed.
+ *
  * Revision 3.13  2001/05/17 13:29:29  cg
  * Moved de-allocation function Free() from free.c to internal_lib.c
  *
@@ -220,9 +223,6 @@ extern void DbugMemoryLeakCheck ();
             fprintf (handle, "NULL");                                                    \
         }                                                                                \
     }
-
-/* malloc */
-#define MALLOC(size) Malloc (size)
 
 /*
  * macros defining the prolog and epilog code for each phase
