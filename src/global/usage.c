@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/07/14 13:28:11  sbs
+ * Revision 1.21  1995/07/24 13:35:22  asi
+ * added -minarray and -noarray_elimination (-noAE)
+ *
+ * Revision 1.20  1995/07/14  13:28:11  sbs
  * nosacopt inserted.
  *
  * Revision 1.19  1995/07/07  14:58:38  asi
@@ -106,6 +109,7 @@ usage (char *prg_name)
     printf ("\t -noloop_invariant_removal or -noLIR \t  no loop invariant removal \n");
     printf ("\n\t -nopsiopt\t\t\t\t  no psi optimisations\n");
     printf ("\t -noindex_vect_elimination or -noIVE \t  no index vector elimination \n");
+    printf ("\t -noarray_elimination or -noAE \t\t  no array elimination \n");
 
     printf ("\n\t -maxoptvar <no>\treserve <no> variables for optimization\n"
             "\t\t\t\tDefault: -maxoptvar %d\n",
@@ -116,6 +120,9 @@ usage (char *prg_name)
     printf ("\t -maxunroll <no>\tunroll loops having no more than <no> iterations\n"
             "\t\t\t\tDefault: -maxunroll %d\n",
             unrnum);
+    printf ("\t -minarray <no>\t\ttry arrry elimination for arrays with length <= <no>\n"
+            "\t\t\t\tDefault: -minarray %d\n",
+            minarray);
     printf ("\t -maxoverload <no>\tfunctions with unknown shape will <no> times"
             " overloaded\n"
             "\t\t\t\tDefault: -maxoverload %d\n",
