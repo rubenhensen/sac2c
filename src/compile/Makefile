@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.5  1995/04/05 15:55:01  asi
+# Revision 1.6  1995/04/11 15:02:06  sbs
+# dbug.o added in BEtest-rule
+#
+# Revision 1.5  1995/04/05  15:55:01  asi
 # make deps done
 #
 # Revision 1.4  1995/04/04  11:03:54  sbs
@@ -28,7 +31,7 @@ MACS=icm.data icm_decl.c icm_args.c icm_comment.c
 all: compile.o icm2c.o
 
 BEtest: icm2c.c $(MACS)
-	$(CC) -o BEtest icm2c.c -DTEST_BACKEND $(INCS)
+	$(CC) -o BEtest icm2c.c -DTEST_BACKEND $(INCS) ../../lib/dbug.o
 
 compile.o: compile.c
 	$(CC) -o compile.o -c compile.c $(INCS)
