@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.71  2004/09/27 08:37:57  ktr
+ * yet another silly bug fixed.
+ *
  * Revision 1.70  2004/09/26 13:00:20  ktr
  * bugfix
  *
@@ -2916,7 +2919,7 @@ SSACFNpart (node *arg_node, info *arg_info)
             }
         }
 
-        _ids = NWITHID_VEC (NPART_WITHID (arg_node));
+        _ids = NWITHID_IDS (NPART_WITHID (arg_node));
         while (_ids != NULL) {
             if (AVIS_SSACONST (IDS_AVIS (_ids)) != NULL) {
                 AVIS_SSACONST (IDS_AVIS (_ids))
