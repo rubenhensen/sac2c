@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2001/03/02 14:34:15  nmw
+ * SSADeadCodeRemoval implemented
+ *
  * Revision 1.2  2001/02/27 16:05:35  nmw
  * SSADeadCodeRemoval for intraprocedural code implemented
  *
@@ -30,10 +33,283 @@
 #include "free.h"
 #include "DupTree.h"
 #include "SSADeadCodeRemoval.h"
+#include "optimize.h"
 
 /* local constants */
 #define SSADCR_TOPLEVEL 0
 #define SSADCR_NOTNEEDED 0
+
+/* ##nmw## to be moved to separate module */
+/* functions to modify fundef signatures */
+node *FUNRemoveArg (node *fundef, node *arg, nodelist *letlist, bool freearg);
+node *FUNRemoveResult (node *fundef, int position, nodelist *letlist);
+static node *FUNFreeApNarg (node *exprs, int actpos, int freepos);
+static node *FUNFreeFundefNarg (node *args, int actpos, int freepos);
+static ids *FUNFreeApNres (ids *idslist, int actpos, int freepos);
+static types *FUNFreeFundefNtype (types *typelist, int actpos, int freepos);
+
+/******************************************************************************
+ *
+ * function:
+ *   node *FUNRemoveArg(node *fundef,
+ *                      node *arg,
+ *                      nodelist *letlist,
+ *                      bool freearg)
+ *
+ * description:
+ *   remove given arg from fundef and adjust all given applications.
+ *   this function does NOT check if there are still any references to this
+ *   arg.
+ *   be carefull when removing args from traversing the arg chain: set
+ *   freearg to FALSE and remove the arg on your own.
+ *
+ ******************************************************************************/
+node *
+FUNRemoveArg (node *fundef, node *arg, nodelist *letlist, bool freearg)
+{
+    node *funap;
+    node *tmp;
+    int position;
+
+    DBUG_ENTER ("FUNRemoveArg");
+
+    /* get position in arg list */
+    position = 0;
+    tmp = FUNDEF_ARGS (fundef);
+    while (tmp != NULL) {
+        position++;
+        if (tmp == arg) {
+            tmp = NULL; /* terminate search */
+        } else {
+            tmp = ARG_NEXT (tmp);
+        }
+    }
+
+    DBUG_ASSERT ((position > 0), "given argument not found in fundef");
+
+    if (letlist != NULL) {
+        DBUG_PRINT ("MODFUN",
+                    ("remove parameter %s in position %d", ARG_NAME (arg), position));
+
+        /* adjust the first given function application */
+        DBUG_ASSERT ((NODELIST_NODE (letlist) != NULL), "no node in nodlist");
+        DBUG_ASSERT ((NODE_TYPE (NODELIST_NODE (letlist)) == N_let),
+                     "non let node in nodelist");
+
+        funap = LET_EXPR (NODELIST_NODE (letlist));
+        DBUG_ASSERT ((funap != NULL), "missing expr in let");
+        DBUG_ASSERT ((NODE_TYPE (funap) == N_ap), "no function application in let");
+        DBUG_ASSERT ((AP_FUNDEF (funap) == fundef), "application of different fundef");
+
+        AP_ARGS (funap) = FUNFreeApNarg (AP_ARGS (funap), 1, position);
+
+        /* traverse to next function application */
+        fundef = FUNRemoveArg (fundef, arg, NODELIST_NEXT (letlist), freearg);
+
+    } else {
+        /* no more adjustments - remove arg from fundef if flag is set */
+        DBUG_PRINT ("MODFUN", ("remove arg %s in position %d", ARG_NAME (arg), position));
+        if (freearg) {
+            FUNDEF_ARGS (fundef) = FUNFreeFundefNarg (FUNDEF_ARGS (fundef), 1, position);
+        }
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static node *FUNFreeApNarg(node *exprs, int actpos, int freepos)
+ *
+ * description:
+ *   recurive traversal of exprs list of
+ *   args to free the arg in position freepos.
+ *****************************************************************************/
+static node *
+FUNFreeApNarg (node *exprs, int actpos, int freepos)
+{
+    node *tmp;
+
+    DBUG_ENTER ("FUNFreeApNarg");
+
+    DBUG_ASSERT ((exprs != NULL), "unexpected end of exprs-list");
+
+    if (actpos == freepos) {
+        tmp = exprs;
+        exprs = EXPRS_NEXT (exprs);
+
+        /* free exprs-node and expression */
+        FreeNode (tmp);
+    } else {
+        EXPRS_NEXT (exprs) = FUNFreeApNarg (EXPRS_NEXT (exprs), actpos + 1, freepos);
+    }
+
+    DBUG_RETURN (exprs);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static node *FUNFreeFundefNarg(node *args, int actpos, int freepos)
+ *
+ * description:
+ *   recurive traversal of args list of
+ *   fundef to free the arg at freepos..
+ *****************************************************************************/
+static node *
+FUNFreeFundefNarg (node *args, int actpos, int freepos)
+{
+    node *tmp;
+
+    DBUG_ENTER ("FUNFreeFundefNarg");
+
+    DBUG_ASSERT ((args != NULL), "unexpected end of args-list");
+
+    if (actpos == freepos) {
+        tmp = args;
+        args = ARG_NEXT (args);
+
+        /* free arg-node */
+        FreeNode (tmp);
+    } else {
+        ARG_NEXT (args) = FUNFreeFundefNarg (ARG_NEXT (args), actpos + 1, freepos);
+    }
+
+    DBUG_RETURN (args);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *FUNRemoveResult(node *fundef,
+ *                         int position,
+ *                         nodelist *letlist)
+ *
+ * description:
+ *   removes result on given position from fundefs return and adjust all let
+ *   exprs in list.
+ *   also removes corresponding type from fundefs types list.
+ *   be carefull when removing the concering result from traversing a resultlist
+ *   of this function. Do not add this let to the letlist and remove this one
+ *   ids on your own.
+ *
+ ******************************************************************************/
+node *
+FUNRemoveResult (node *fundef, int position, nodelist *letlist)
+{
+    char *keep_name, *keep_mod, *keep_cmod;
+    statustype keep_status, keep_attrib;
+
+    DBUG_ENTER ("FUNRemoveResult");
+
+    if (letlist != NULL) {
+        /* adjust the first given function application */
+        DBUG_ASSERT ((NODELIST_NODE (letlist) != NULL), "no node in nodlist");
+        DBUG_ASSERT ((NODE_TYPE (NODELIST_NODE (letlist)) == N_let),
+                     "non let node in nodelist");
+        DBUG_ASSERT ((LET_EXPR (NODELIST_NODE (letlist)) != NULL), "missing expr in let");
+        DBUG_ASSERT ((NODE_TYPE (LET_EXPR (NODELIST_NODE (letlist))) == N_ap),
+                     "no function application in let");
+        DBUG_ASSERT ((AP_FUNDEF (LET_EXPR (NODELIST_NODE (letlist))) == fundef),
+                     "application of different fundef");
+
+        LET_IDS (NODELIST_NODE (letlist))
+          = FUNFreeApNres (LET_IDS (NODELIST_NODE (letlist)), 1, position);
+
+        /* traverse to next function application */
+        fundef = FUNRemoveResult (fundef, position, NODELIST_NEXT (letlist));
+    } else {
+        /* no more adjustments - remove result from return statement */
+        DBUG_ASSERT ((FUNDEF_RETURN (fundef) != NULL), "no return statement in fundef");
+        RETURN_EXPRS (FUNDEF_RETURN (fundef))
+          = FUNFreeApNarg (RETURN_EXPRS (FUNDEF_RETURN (fundef)), 1, position);
+
+        /* remove corresponding types entry - first save fundef information */
+        keep_name = FUNDEF_NAME (fundef);
+        keep_mod = FUNDEF_MOD (fundef);
+        keep_cmod = FUNDEF_LINKMOD (fundef);
+        keep_status = FUNDEF_STATUS (fundef);
+        keep_attrib = FUNDEF_ATTRIB (fundef);
+
+        FUNDEF_TYPES (fundef) = FUNFreeFundefNtype (FUNDEF_TYPES (fundef), 1, position);
+
+        if (FUNDEF_TYPES (fundef) == NULL) {
+            FUNDEF_TYPES (fundef) = MakeTypes1 (T_void);
+        }
+
+        /* restore fundef information */
+        FUNDEF_NAME (fundef) = keep_name;
+        FUNDEF_MOD (fundef) = keep_mod;
+        FUNDEF_LINKMOD (fundef) = keep_cmod;
+        FUNDEF_STATUS (fundef) = keep_status;
+        FUNDEF_ATTRIB (fundef) = keep_attrib;
+    }
+    DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static node *FUNFreeApNres(node *exprs, int actpos, int freepos)
+ *
+ * description:
+ *   recurive traversal of ids list of
+ *   results to free the result in position freepos.
+ *****************************************************************************/
+static ids *
+FUNFreeApNres (ids *idslist, int actpos, int freepos)
+{
+    ids *tmp;
+
+    DBUG_ENTER ("FUNFreeApNres");
+
+    DBUG_ASSERT ((idslist != NULL), "unexpected end of ids-list");
+
+    if (actpos == freepos) {
+        tmp = idslist;
+        idslist = IDS_NEXT (idslist);
+
+        /* free ids */
+        FreeOneIds (tmp);
+    } else {
+        IDS_NEXT (idslist) = FUNFreeApNres (IDS_NEXT (idslist), actpos + 1, freepos);
+    }
+
+    DBUG_RETURN (idslist);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static node *FUNFreeFundefNtype(types *typelist, int actpos, int freepos)
+ *
+ * description:
+ *   recurive traversal of type list of
+ *   results to free the type in position freepos.
+ *****************************************************************************/
+static types *
+FUNFreeFundefNtype (types *typelist, int actpos, int freepos)
+{
+    types *tmp;
+
+    DBUG_ENTER ("FUNFreeFundefNtype");
+
+    DBUG_ASSERT ((typelist != NULL), "unexpected end of type-list");
+
+    if (actpos == freepos) {
+        tmp = typelist;
+        typelist = TYPES_NEXT (typelist);
+
+        /* free type */
+        FreeOneTypes (tmp);
+    } else {
+        TYPES_NEXT (typelist)
+          = FUNFreeFundefNtype (TYPES_NEXT (typelist), actpos + 1, freepos);
+    }
+
+    DBUG_RETURN (typelist);
+}
 
 /* internal functions for traversing ids like nodes */
 static ids *TravLeftIDS (ids *arg_ids, node *arg_info);
@@ -138,7 +414,8 @@ SSADCRfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSADCRfundef");
 
-    DBUG_PRINT ("SSADCR", ("dead code removal in fundef %s.", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("SSADCR",
+                ("\nstarting dead code removal in fundef %s.", FUNDEF_NAME (arg_node)));
 
     /* store cuurent vardec for later access */
     INFO_SSADCR_FUNDEF (arg_info) = arg_node;
@@ -176,7 +453,8 @@ SSADCRfundef (node *arg_node, node *arg_info)
 node *
 SSADCRarg (node *arg_node, node *arg_info)
 {
-    /* node* tmp; */
+    node *tmp;
+    nodelist *letlist;
 
     DBUG_ENTER ("SSADCRarg");
 
@@ -185,12 +463,41 @@ SSADCRarg (node *arg_node, node *arg_info)
         ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
     }
 
-    /* process arg and remove it, if not needed anymore code */
-    if (AVIS_NEEDCOUNT (ARG_AVIS (arg_node)) == SSADCR_NOTNEEDED) {
-        /* RemoveArgument(arg, INFO_SSADCR_FUNDEF(arg_info))
+    /*
+     * process arg and remove it, if not needed anymore in code
+     * or the arg is tagged as loop-invariant, that means it
+     * occurs at least once in the recursive call. If the argument
+     * ONLY appears there, it is dead code, too.
+     */
+    if ((AVIS_NEEDCOUNT (ARG_AVIS (arg_node)) == SSADCR_NOTNEEDED)
+        || ((AVIS_NEEDCOUNT (ARG_AVIS (arg_node)) == 1)
+            && (AVIS_SSALPINV (ARG_AVIS (arg_node))))) {
+        DBUG_PRINT ("SSADCR", ("remove arg %sa", ARG_NAME (arg_node)));
+        /* remove this argument from all applciations */
+        letlist = NULL;
+        if (FUNDEF_EXT_ASSIGN (INFO_SSADCR_FUNDEF (arg_info)) != NULL) {
+            letlist = NodeListAppend (letlist,
+                                      ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (
+                                        INFO_SSADCR_FUNDEF (arg_info))),
+                                      NULL);
+        }
+        if (FUNDEF_INT_ASSIGN (INFO_SSADCR_FUNDEF (arg_info)) != NULL) {
+            letlist = NodeListAppend (letlist,
+                                      ASSIGN_INSTR (FUNDEF_INT_ASSIGN (
+                                        INFO_SSADCR_FUNDEF (arg_info))),
+                                      NULL);
+        }
+
+        INFO_SSADCR_FUNDEF (arg_info)
+          = FUNRemoveArg (INFO_SSADCR_FUNDEF (arg_info), arg_node, letlist, FALSE);
+
+        FreeNodelist (letlist);
+
+        /* remove arg from function signature */
         tmp = arg_node;
-        arg_node = ARG_NEXT(arg_node);
-        FreeNode(tmp); */
+        arg_node = ARG_NEXT (arg_node);
+        FreeNode (tmp);
+        dead_var++;
     }
 
     DBUG_RETURN (arg_node);
@@ -252,6 +559,7 @@ SSADCRvardec (node *arg_node, node *arg_info)
         tmp = arg_node;
         arg_node = VARDEC_NEXT (arg_node);
         FreeNode (tmp);
+        dead_var++;
     }
 
     DBUG_RETURN (arg_node);
@@ -280,6 +588,7 @@ SSADCRassign (node *arg_node, node *arg_info)
 
     /* traverse instruction */
     INFO_SSADCR_REMASSIGN (arg_info) = FALSE;
+    INFO_SSADCR_ASSIGN (arg_info) = arg_node;
     DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "missing instruction in assign");
 
     /* traverse instruction */
@@ -330,12 +639,20 @@ SSADCRlet (node *arg_node, node *arg_info)
              */
             INFO_SSADCR_REMRESULTS (arg_info) = TRUE;
             INFO_SSADCR_APFUNDEF (arg_info) = AP_FUNDEF (LET_EXPR (arg_node));
+
+            /* set correct external assign reference in called fundef node */
+            if (AP_FUNDEF (LET_EXPR (arg_node)) != INFO_SSADCR_FUNDEF (arg_info)) {
+                /* no recursive (internal) call must be the one external call */
+                FUNDEF_EXT_ASSIGN (AP_FUNDEF (LET_EXPR (arg_node)))
+                  = INFO_SSADCR_ASSIGN (arg_info);
+            }
         }
     }
 
     /* init ids counter for results */
     INFO_SSADCR_RESCOUNT (arg_info) = 0;
     INFO_SSADCR_RESNEEDED (arg_info) = 0;
+    INFO_SSADCR_LET (arg_info) = arg_node;
 
     /* traverse left side identifier */
     if (LET_IDS (arg_node) != NULL) {
@@ -344,7 +661,12 @@ SSADCRlet (node *arg_node, node *arg_info)
 
     if (INFO_SSADCR_RESNEEDED (arg_info) == 0) {
         /* let is useless -> can be removed! */
+
+        DBUG_PRINT ("SSADCR", ("removing assignment"));
         arg_node = FreeNode (arg_node);
+
+        dead_expr++;
+
         /* corresponding assign node can also be removed */
         INFO_SSADCR_REMASSIGN (arg_info) = TRUE;
     } else {
@@ -499,23 +821,28 @@ SSADCRap (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("SSADCRap");
 
-    DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing link to fundef in ap");
-
     /* traverse special fundef without recursion */
     if (((FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_condfun)
          || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_dofun)
          || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_whilefun))
         && (AP_FUNDEF (arg_node) != INFO_SSADCR_FUNDEF (arg_info))) {
-
+        DBUG_PRINT ("SSADCR", ("traverse in special fundef %s",
+                               FUNDEF_NAME (AP_FUNDEF (arg_node))));
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
 
         INFO_SSADCR_DEPTH (new_arg_info) = INFO_SSADCR_DEPTH (arg_info) + 1;
 
         /* start traversal of special fundef (and maybe reduce parameters!) */
-        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
+        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+
+        DBUG_PRINT ("SSADCR", ("traversal of special fundef %s finished\n",
+                               FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
         FREE (new_arg_info);
+    } else {
+        DBUG_PRINT ("SSADCR", ("do not traverse in normal fundef %s",
+                               FUNDEF_NAME (AP_FUNDEF (arg_node))));
     }
 
     /* ##nmw## maybe remove whole function call if necessary ??? */
@@ -667,10 +994,9 @@ static ids *
 SSADCRleftids (ids *arg_ids, node *arg_info)
 {
     ids *next_ids;
-    DBUG_ENTER ("SSADCRleftids");
+    nodelist *letlist;
 
-    DBUG_PRINT ("SSADCR", ("check left side %s for need",
-                           VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
+    DBUG_ENTER ("SSADCRleftids");
 
     /* position of result in result-list */
     INFO_SSADCR_RESCOUNT (arg_info) = INFO_SSADCR_RESCOUNT (arg_info) + 1;
@@ -685,8 +1011,38 @@ SSADCRleftids (ids *arg_ids, node *arg_info)
 
         next_ids = IDS_NEXT (arg_ids);
 
-        if (FALSE && INFO_SSADCR_REMRESULTS (arg_info)) {
-            /* ##nmw## FUNRemoveResult(INFO_SSADCR_APFUNDEF(arg_info) */
+        if (INFO_SSADCR_REMRESULTS (arg_info)) {
+            DBUG_PRINT ("SSADCR",
+                        ("check left side %s  - not needed -> remove from resultlist",
+                         VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
+
+            /* remove result from all function applications - except this one */
+            letlist = NULL;
+            if (FUNDEF_EXT_ASSIGN (INFO_SSADCR_APFUNDEF (arg_info)) != NULL) {
+                if (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (INFO_SSADCR_APFUNDEF (arg_info)))
+                    != INFO_SSADCR_LET (arg_info)) {
+                    letlist = NodeListAppend (letlist,
+                                              ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (
+                                                INFO_SSADCR_APFUNDEF (arg_info))),
+                                              NULL);
+                }
+            }
+            if (FUNDEF_INT_ASSIGN (INFO_SSADCR_APFUNDEF (arg_info)) != NULL) {
+                if (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (INFO_SSADCR_APFUNDEF (arg_info)))
+                    != INFO_SSADCR_LET (arg_info)) {
+                    letlist = NodeListAppend (letlist,
+                                              ASSIGN_INSTR (FUNDEF_INT_ASSIGN (
+                                                INFO_SSADCR_APFUNDEF (arg_info))),
+                                              NULL);
+                }
+            }
+
+            INFO_SSADCR_APFUNDEF (arg_info)
+              = FUNRemoveResult (INFO_SSADCR_APFUNDEF (arg_info),
+                                 INFO_SSADCR_RESCOUNT (arg_info), letlist);
+
+            FreeNodelist (letlist);
+            FreeOneIds (arg_ids);
 
             /* decrement position in resultlist after deleting the result */
             INFO_SSADCR_RESCOUNT (arg_info) = INFO_SSADCR_RESCOUNT (arg_info) - 1;
@@ -700,12 +1056,23 @@ SSADCRleftids (ids *arg_ids, node *arg_info)
             arg_ids = next_ids;
 
         } else {
+            DBUG_PRINT ("SSADCR",
+                        ("check left side %s  - not needed",
+                         VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
+
+            /* variable is not needed, but mark variable as needed to preserve vardec */
+            AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) = AVIS_NEEDCOUNT (IDS_AVIS (arg_ids)) + 1;
+
             /* traverse next ids as usual */
             if (IDS_NEXT (arg_ids) != NULL) {
                 IDS_NEXT (arg_ids) = TravLeftIDS (IDS_NEXT (arg_ids), arg_info);
             }
         }
     } else {
+        DBUG_PRINT ("SSADCR",
+                    ("check left side %s  - needed",
+                     VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))));
+
         /* result is needed, increment counter */
         INFO_SSADCR_RESNEEDED (arg_info) = INFO_SSADCR_RESNEEDED (arg_info) + 1;
 
