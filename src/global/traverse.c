@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.47  1997/11/05 09:35:00  dkr
+ * usage of NIF-macro has changed
+ * uses the new array nnode[]: TravSons traverses the sons 0 .. nnode[node->type]
+ *
  * Revision 1.46  1997/10/30 12:17:32  dkr
  * with defined NEWTREE, node->nnode is not used anymore
  *
@@ -201,7 +205,7 @@ funptr *act_tab;
 */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     f
 
 funptr flat_tab[] = {
@@ -215,7 +219,7 @@ funptr flat_tab[] = {
 */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     p
 
 funptr print_tab[] = {
@@ -229,7 +233,7 @@ funptr print_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     t
 
 funptr type_tab[] = {
@@ -243,7 +247,7 @@ funptr type_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     o
 
 funptr opt_tab[] = {
@@ -257,7 +261,7 @@ funptr opt_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     i
 
 funptr imp_tab[] = {
@@ -271,7 +275,7 @@ funptr imp_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     x
 
 funptr dcr_tab[] = {
@@ -285,7 +289,7 @@ funptr dcr_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     y
 
 funptr wr_tab[] = {
@@ -299,7 +303,7 @@ funptr wr_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     z
 
 funptr free_tab[] = {
@@ -313,7 +317,7 @@ funptr free_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     a
 
 funptr cf_tab[] = {
@@ -327,7 +331,7 @@ funptr cf_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     b
 
 funptr refcnt_tab[] = {
@@ -341,7 +345,7 @@ funptr refcnt_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     c
 
 funptr comp_tab[] = {
@@ -355,7 +359,7 @@ funptr comp_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     d
 
 funptr lir_tab[] = {
@@ -369,7 +373,7 @@ funptr lir_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     e
 
 funptr dup_tab[] = {
@@ -383,7 +387,7 @@ funptr dup_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     g
 
 funptr inline_tab[] = {
@@ -397,7 +401,7 @@ funptr inline_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     h
 
 funptr unroll_tab[] = {
@@ -411,7 +415,7 @@ funptr unroll_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     j
 
 funptr lir_mov_tab[] = {
@@ -425,7 +429,7 @@ funptr lir_mov_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     k
 
 funptr idx_tab[] = {
@@ -439,7 +443,7 @@ funptr idx_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     l
 
 funptr unswitch_tab[] = {
@@ -453,7 +457,7 @@ funptr unswitch_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     m
 
 funptr fusion_tab[] = {
@@ -467,7 +471,7 @@ funptr fusion_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     q
 
 funptr ae_tab[] = {
@@ -481,7 +485,7 @@ funptr ae_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     aa
 
 funptr writesib_tab[] = {
@@ -495,7 +499,7 @@ funptr writesib_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     ab
 
 funptr obj_tab[] = {
@@ -509,7 +513,7 @@ funptr obj_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     ac
 
 funptr impltype_tab[] = {
@@ -523,7 +527,7 @@ funptr impltype_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     ad
 
 funptr objinit_tab[] = {
@@ -537,7 +541,7 @@ funptr objinit_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     ae
 
 funptr analy_tab[] = {
@@ -551,7 +555,7 @@ funptr analy_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     af
 
 funptr checkdec_tab[] = {
@@ -565,7 +569,7 @@ funptr checkdec_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     ag
 
 funptr writedec_tab[] = {
@@ -579,7 +583,7 @@ funptr writedec_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     ah
 
 funptr unique_tab[] = {
@@ -593,7 +597,7 @@ funptr unique_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     ai
 
 funptr rmvoid_tab[] = {
@@ -607,7 +611,7 @@ funptr rmvoid_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     aj
 
 funptr precomp_tab[] = {
@@ -621,7 +625,7 @@ funptr precomp_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     ak
 
 funptr active_tab[] = {
@@ -635,7 +639,7 @@ funptr active_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     al
 
 funptr readsib_tab[] = {
@@ -649,7 +653,7 @@ funptr readsib_tab[] = {
  */
 /*
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, \
-  q, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap) am
+  q, aa, ab, ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn) am
 
 funptr link_tab[]={
 #include "node_info.mac"
@@ -662,7 +666,7 @@ funptr link_tab[]={
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     an
 
 funptr cse_tab[] = {
@@ -676,7 +680,7 @@ funptr cse_tab[] = {
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
-            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap)                      \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
     ao
 
 funptr dfr_tab[] = {
@@ -744,7 +748,7 @@ TravSons (node *arg_node, node *arg_info)
 #ifndef NEWTREE
     for (i = 0; i < arg_node->nnode; i++)
 #else
-    for (i = 0; i < MAX_SONS; i++)
+    for (i = 0; i < nnode[arg_node->type]; i++)
 #endif
     {
         if (arg_node->node[i] != NULL) {
