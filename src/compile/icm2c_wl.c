@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/05/12 22:29:57  dkr
+ * added new macros for fold
+ *
  * Revision 1.7  1998/05/12 18:49:56  dkr
  * changed some ICMs
  *
@@ -42,18 +45,19 @@
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_NONFOLD_BEGIN( char *array, char *idx_vec,
- *                                    int dims, char **idx_scalar)
+ *   void ICMCompileWL_NONFOLD_BEGIN( char *target, char *idx_vec,
+ *                                    int dims, char **args)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_NONFOLD_BEGIN( array, idx_vec, dims, [ idx_scalar ]* )
+ *   WL_NONFOLD_BEGIN( target, idx_vec,
+ *                     dims, [ idx_scalar, idx_min, idx_max ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_NONFOLD_BEGIN (char *array, char *idx_vec, int dims, char **idx_scalar)
+ICMCompileWL_NONFOLD_BEGIN (char *target, char *idx_vec, int dims, char **args)
 {
     int i;
 
@@ -69,19 +73,15 @@ ICMCompileWL_NONFOLD_BEGIN (char *array, char *idx_vec, int dims, char **idx_sca
 
     indent++;
     INDENT;
-    fprintf (outfile, "int %s__destptr = 0;\n", array);
+    fprintf (outfile, "int %s__destptr = 0;\n", target);
 
     for (i = 0; i < dims; i++) {
         INDENT;
-        fprintf (outfile, "%s = ", idx_scalar[i]);
-        fprintf (outfile, "0");
-        fprintf (outfile, ";\n");
+        fprintf (outfile, "int __stop_%s = %s;\n", args[3 * i], args[3 * i + 2]);
     }
     for (i = 0; i < dims; i++) {
         INDENT;
-        fprintf (outfile, "int __stop_%s = ", idx_scalar[i]);
-        AccessShape (array, i);
-        fprintf (outfile, ";\n");
+        fprintf (outfile, "%s = %s;\n", args[3 * i], args[3 * i + 1]);
     }
 
     DBUG_VOID_RETURN;
@@ -90,18 +90,18 @@ ICMCompileWL_NONFOLD_BEGIN (char *array, char *idx_vec, int dims, char **idx_sca
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_FOLD_BEGIN( char *array, char *idx_vec,
- *                                 int dims, char **idx_scalar)
+ *   void ICMCompileWL_FOLD_BEGIN( char *target, char *idx_vec,
+ *                                 int dims, char **args)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_FOLD_BEGIN( array, idx_vec, dims, [ idx_scalar ]* )
+ *   WL_FOLD_BEGIN( target, idx_vec, dims, [ idx_scalar, idx_min, idx_max ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_FOLD_BEGIN (char *array, char *idx_vec, int dims, char **idx_scalar)
+ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec, int dims, char **args)
 {
     int i;
 
@@ -116,20 +116,14 @@ ICMCompileWL_FOLD_BEGIN (char *array, char *idx_vec, int dims, char **idx_scalar
     fprintf (outfile, "{\n");
 
     indent++;
-    INDENT;
-    fprintf (outfile, "int %s__destptr = 0;\n", array);
 
     for (i = 0; i < dims; i++) {
         INDENT;
-        fprintf (outfile, "%s = ", idx_scalar[i]);
-        fprintf (outfile, "0");
-        fprintf (outfile, ";\n");
+        fprintf (outfile, "int __stop_%s = %s;\n", args[3 * i], args[3 * i + 2]);
     }
     for (i = 0; i < dims; i++) {
         INDENT;
-        fprintf (outfile, "int __stop_%s = ", idx_scalar[i]);
-        AccessShape (array, i);
-        fprintf (outfile, ";\n");
+        fprintf (outfile, "%s = %s;\n", args[3 * i], args[3 * i + 1]);
     }
 
     DBUG_VOID_RETURN;
@@ -138,18 +132,18 @@ ICMCompileWL_FOLD_BEGIN (char *array, char *idx_vec, int dims, char **idx_scalar
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_END( char *array, char *idx_vec,
- *                          int dims, char **idx_scalar)
+ *   void ICMCompileWL_END( char *target, char *idx_vec,
+ *                          int dims, char **args)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_END( array, idx_vec, dims, [ idx_scalar ]* )
+ *   WL_END( target, idx_vec, dims, [ idx_scalar, idx_min, idx_max ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_END (char *array, char *idx_vec, int dims, char **idx_scalar)
+ICMCompileWL_END (char *target, char *idx_vec, int dims, char **args)
 {
     DBUG_ENTER ("ICMCompileWL_END");
 
@@ -168,18 +162,18 @@ ICMCompileWL_END (char *array, char *idx_vec, int dims, char **idx_scalar)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_ASSIGN( char *expr, char *array, char *idx_vec,
+ *   void ICMCompileWL_ASSIGN( char *expr, char *target, char *idx_vec,
  *                             int dims, char **idx_scalar)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_ASSIGN( expr, array, idx_vec, dims, [ idx_scalar ]* )
+ *   WL_ASSIGN( expr, target, idx_vec, dims, [ idx_scalar ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_ASSIGN (char *expr, char *array, char *idx_vec, int dims, char **idx_scalar)
+ICMCompileWL_ASSIGN (char *expr, char *target, char *idx_vec, int dims, char **idx_scalar)
 {
     DBUG_ENTER ("ICMCompileWL_ASSIGN");
 
@@ -189,7 +183,7 @@ ICMCompileWL_ASSIGN (char *expr, char *array, char *idx_vec, int dims, char **id
 #undef WL_ASSIGN
 
     INDENT;
-    fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s__destptr] = %s;\n", array, array, expr);
+    fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s__destptr] = %s;\n", target, target, expr);
 
 #if 0
   {
@@ -208,7 +202,7 @@ ICMCompileWL_ASSIGN (char *expr, char *array, char *idx_vec, int dims, char **id
 #endif
 
     INDENT;
-    fprintf (outfile, "%s__destptr++;\n", array);
+    fprintf (outfile, "%s__destptr++;\n", target);
 
     DBUG_VOID_RETURN;
 }
@@ -216,18 +210,18 @@ ICMCompileWL_ASSIGN (char *expr, char *array, char *idx_vec, int dims, char **id
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_FOLD( char *expr, char *array, char *idx_vec,
+ *   void ICMCompileWL_FOLD( char *expr, char *target, char *idx_vec,
  *                           int dims, char **idx_scalar)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_FOLD( expr, array, idx_vec, dims, [ idx_scalar ]* )
+ *   WL_FOLD( expr, target, idx_vec, dims, [ idx_scalar ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_FOLD (char *expr, char *array, char *idx_vec, int dims, char **idx_scalar)
+ICMCompileWL_FOLD (char *expr, char *target, char *idx_vec, int dims, char **idx_scalar)
 {
     DBUG_ENTER ("ICMCompileWL_FOLD");
 
@@ -237,26 +231,7 @@ ICMCompileWL_FOLD (char *expr, char *array, char *idx_vec, int dims, char **idx_
 #undef WL_FOLD
 
     INDENT;
-    fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s__destptr] = %s;\n", array, array, expr);
-
-#if 0
-  {
-    int i;
-
-    fprintf( outfile, "fprintf( stderr, \"");
-    for (i = 0; i < dims; i++) {
-      fprintf( outfile, "idx%d=%%d ", i);
-    }
-    fprintf( outfile, "\\n\"");
-    for (i = 0; i < dims; i++) {
-      fprintf( outfile, ", %s", idx_scalar[ i]);
-    }
-    fprintf( outfile, ");\n");
-  }
-#endif
-
-    INDENT;
-    fprintf (outfile, "%s__destptr++;\n", array);
+    fprintf (outfile, "%s = %s + %s;\n", target, target, expr);
 
     DBUG_VOID_RETURN;
 }
