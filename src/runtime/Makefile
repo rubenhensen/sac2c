@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.12  1998/12/17 15:49:43  cg
+# added rm runtime.tar for phony target clean
+#
 # Revision 1.11  1998/12/17 09:50:28  cg
 # File libsac.a will no longer be added to runtime.tar because
 # it depends on the target architecture.
@@ -72,6 +75,9 @@ deps:
 clean:
 	$(RM) *.o libsac.a *.bak *.old *~
 	$(RM) -r .sb
+	$(RM) runtime.tar
+
+
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
