@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.78  1998/05/03 14:02:57  dkr
+# added icm2c_wl.o (compile)
+#
 # Revision 1.77  1998/04/29 17:12:43  dkr
 # added compile/wltransform.o
 #
@@ -300,7 +303,7 @@ CONCURRENT= src/concurrent/spmdregions.o
 COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/precompile.o \
           src/compile/compile.o src/compile/gen_startup_code.o \
-          src/compile/icm2c.o src/compile/icm2c_std.o \
+          src/compile/icm2c.o src/compile/icm2c_std.o src/compile/icm2c_wl.o \
           src/compile/Old2NewWith.o
 
 OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
