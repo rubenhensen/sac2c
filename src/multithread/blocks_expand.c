@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/02/22 15:49:33  jhs
+ * Melting now works for N_mt and N_st.
+ *
  * Revision 1.2  2000/02/21 17:52:07  jhs
  * Expansion on N_mt's finished.
  *
@@ -94,31 +97,30 @@ BLKEXassign (node *arg_node, node *arg_info)
             next_instr = ASSIGN_INSTR (next);
 
             if ((NODE_TYPE (next_instr) == N_mt) || (NODE_TYPE (next_instr) == N_st)) {
-
-                DBUG_PRINT ("BLKEX", ("swap"));
                 /* swap this assignment into the N_mt/N_st */
+                DBUG_PRINT ("BLKEX", ("swap into %s", NODE_TEXT (next_instr)));
 
                 ASSIGN_INSTR (this) = next_instr;
                 ASSIGN_NEXT (this) = ASSIGN_NEXT (next);
 
                 ASSIGN_INSTR (next) = this_instr;
-                block = MT_OR_ST_REGION (next_instr);
-                DBUG_ASSERT ((NODE_TYPE (block) == N_block), ("not a N_block"));
                 ASSIGN_NEXT (next) = BLOCK_INSTR (MT_OR_ST_REGION (next_instr));
-                BLOCK_INSTR (block) = next;
+                BLOCK_INSTR (MT_OR_ST_REGION (next_instr)) = next;
             }
         }
-    } else if (NODE_TYPE (this_instr) == N_mt) {
+    } else if ((NODE_TYPE (this_instr) == N_mt) || (NODE_TYPE (this_instr) == N_st)) {
         if (ASSIGN_NEXT (arg_node) != NULL) {
             next = ASSIGN_NEXT (arg_node);
             next_instr = ASSIGN_INSTR (next);
 
-            if (NODE_TYPE (next_instr) == N_mt) {
+            if (NODE_TYPE (this_instr) == NODE_TYPE (next_instr)) {
+                /* melt these blocks */
+                DBUG_PRINT ("BLKEX", ("melt %s", NODE_TEXT (this_instr)));
 
-                DBUG_PRINT ("BLKEX", ("melt mts"));
-                MT_REGION (this_instr)
-                  = MUTHMeltBlocks (MT_REGION (this_instr), MT_REGION (next_instr));
-                MT_REGION (next_instr) = NULL;
+                L_MT_OR_ST_REGION (this_instr,
+                                   MUTHMeltBlocks (MT_OR_ST_REGION (this_instr),
+                                                   MT_OR_ST_REGION (next_instr)));
+                MT_OR_ST_REGION (next_instr) = NULL;
                 FreeTree (next_instr);
 
                 ASSIGN_NEXT (this) = ASSIGN_NEXT (next);
@@ -130,22 +132,11 @@ BLKEXassign (node *arg_node, node *arg_info)
                 /* nothing happens */
             }
         }
-    } else if (NODE_TYPE (this_instr) == N_st) {
-        if (ASSIGN_NEXT (arg_node) != NULL) {
-            next = ASSIGN_NEXT (arg_node);
-            next_instr = ASSIGN_INSTR (next);
-
-            if (NODE_TYPE (next_instr) == N_st) {
-                /*        arg_node = MUTHMeltBlocksOnCopies(this_instr, next_instr); */
-            } else {
-                /* nothing happens */
-            }
-        }
     } else if (NODE_TYPE (this_instr) == N_return) {
         /* nothing happens */
     } else {
-        DBUG_PRINT ("BLKEX", ("node_type: %s", mdb_nodetype[NODE_TYPE (this_instr)]));
-        DBUG_ASSERT (0, ("unhandled type of ASSIGN_INSTR-node"));
+        DBUG_PRINT ("BLKEX", ("node_type: %s", NODE_TEXT (this_instr)));
+        DBUG_ASSERT (0, ("unhandled type of ASSIGN_INSTR (watch BLKEX)"));
     }
 
     DBUG_RETURN (arg_node);
