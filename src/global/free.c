@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/04/13 14:06:41  cg
+ * FreeBlock() now removes pragma cachesim.
+ *
  * Revision 2.4  1999/03/15 13:48:21  bs
  * Some minor modifications in FreeId and FreeArray in the train of renaming of
  * access macros. For more information take a look at tree_basic.h
@@ -856,6 +859,7 @@ FreeBlock (node *arg_node, node *arg_info)
     FreeNodelist (BLOCK_NEEDFUNS (arg_node));
     FreeNodelist (BLOCK_NEEDTYPES (arg_node));
     FREEMASK (BLOCK_MASK);
+    FREE (BLOCK_CACHESIM (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_block node ..."));
 
