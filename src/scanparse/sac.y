@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/04/24 14:13:51  dkr
+ * MakeNode( N_fundef) replaced by MakeFundef()
+ *
  * Revision 3.19  2001/04/24 13:04:40  dkr
  * type 'id' replaced by 'char'
  *
@@ -677,14 +680,12 @@ fundec: varreturntypes id BRACKET_L fundec2
 
 fundec2: varargtypes BRACKET_R SEMIC pragmas
            {
-             $$ = MakeNode( N_fundef);
-             FUNDEF_ARGS( $$) = $1;        /* argument declarations */
+             $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
              FUNDEF_PRAGMA( $$) = $4;
            }
        | varargs BRACKET_R SEMIC pragmas
            {
-             $$ = MakeNode( N_fundef);
-             FUNDEF_ARGS( $$) = $1;        /* argument declarations */
+             $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
              FUNDEF_PRAGMA( $$) = $4;
            }
        | TYPE_DOTS BRACKET_R SEMIC pragmas
@@ -694,36 +695,35 @@ fundec2: varargtypes BRACKET_R SEMIC pragmas
                yyerror( "syntax error");
              }
              else {
-               $$ = MakeNode( N_fundef);
-               FUNDEF_ARGS( $$) = MakeArg( NULL,
-                                           MakeTypes1( T_dots),
-                                           ST_regular, ST_regular,
-                                           NULL);
+               $$ = MakeFundef( NULL, NULL, NULL,
+                                MakeArg( NULL,
+                                         MakeTypes1( T_dots),
+                                         ST_regular, ST_regular,
+                                         NULL),
+                                NULL, NULL);
                FUNDEF_PRAGMA( $$) = $4;
              }
            }
        | BRACKET_R SEMIC pragmas
            {
-             $$ = MakeNode( N_fundef);
+             $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL);
              FUNDEF_PRAGMA( $$) = $3;
            }
        ;
 
 fundec3: argtypes BRACKET_R SEMIC pragmas
            {
-             $$ = MakeNode( N_fundef);
-             FUNDEF_ARGS( $$) = $1;        /* argument declarations */
+             $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
              FUNDEF_PRAGMA( $$) = $4;
            }
        | args BRACKET_R SEMIC pragmas
            {
-             $$ = MakeNode( N_fundef);
-             FUNDEF_ARGS( $$) = $1;        /* argument declarations */
+             $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
              FUNDEF_PRAGMA( $$) = $4;
            }
        | BRACKET_R SEMIC pragmas
            {
-             $$ = MakeNode( N_fundef);
+             $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL);
              FUNDEF_PRAGMA( $$) = $3;
            }
        ;
@@ -1014,7 +1014,8 @@ fundef: returntypes fun_name BRACKET_L fundef2
           }
       ;
 
-fundef2: args BRACKET_R { $$ = MakeNode( N_fundef); } exprblock
+fundef2: args BRACKET_R { $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL);
+         } exprblock
            { 
              $$ = $<node>3;
              FUNDEF_BODY( $$) = $4;             /* Funktionsrumpf  */
@@ -1030,7 +1031,8 @@ fundef2: args BRACKET_R { $$ = MakeNode( N_fundef); } exprblock
                          FUNDEF_ARGS( $$)));
            }
 
-       | BRACKET_R { $$ = MakeNode( N_fundef); } exprblock
+       | BRACKET_R { $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
+         exprblock
            { 
              $$ = $<node>2;
              FUNDEF_BODY( $$) = $3;             /* Funktionsrumpf  */
