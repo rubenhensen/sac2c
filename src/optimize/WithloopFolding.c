@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 1.11  1998/04/07 08:21:41  srs
+ * changed SearchWL() and inserted second WLI-phase
+ *
  * Revision 1.10  1998/04/03 11:38:52  srs
  * changed SearchWL, CreateArrayFromInternGen
  *
@@ -657,7 +660,7 @@ CreateVardec (char *name, types *type, node **vardecs)
  *
  * description:
  *   help function for SearchWL.
- *
+ *   search last definition of id_varno in this block and mark it invalid.
  *
  ******************************************************************************/
 
@@ -672,13 +675,13 @@ SearchWLHelp (int id_varno, node *assignn, int *valid, int mode, int ol)
     /* if Id is defined in this last instr of the body*/
     if (ASSIGN_DEFMASK (assignn)[id_varno]) {
         if (N_let == ASSIGN_INSTRTYPE (assignn)
-            && N_Nwith == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assignn))))
+            && N_Nwith == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assignn)))) {
             /* this is the bad boy */
             if (0 == mode || 1 == mode)
                 NWITH_NO_CHANCE (LET_EXPR (ASSIGN_INSTR (assignn))) = 1;
-        if (0 == mode)
-            NWITH_REFERENCED (LET_EXPR (ASSIGN_INSTR (assignn)))++;
-        else /* if not, this may be a blockassign. */
+            if (0 == mode)
+                NWITH_REFERENCED (LET_EXPR (ASSIGN_INSTR (assignn)))++;
+        } else /* if not, this may be a compound node. */
             SearchWL (id_varno, assignn, valid, mode, ol);
     } else { /* else it is defined somewhere above and we can use the ASSIGN_MRDMASK */
         assignn = (node *)ASSIGN_MRDMASK (assignn)[id_varno];
@@ -739,7 +742,7 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
 
         while (loop_level > original_level) {
             /* jumped INTO a do-loop. The MRDs of do loops are stored
-               differently as MRDs while loops. correct this: find
+               differently as the MRDs in while loops. Correct this: find
                do node of same level. That's the equivalent to
                while loops that we expect. */
             startn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
@@ -749,6 +752,11 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
         switch (ASSIGN_INSTRTYPE (startn)) {
         case N_while:
         case N_do:
+            if (N_while == ASSIGN_INSTRTYPE (startn))
+                tmpn = BLOCK_INSTR (WHILE_BODY (ASSIGN_INSTR (startn)));
+            else
+                tmpn = BLOCK_INSTR (DO_BODY (ASSIGN_INSTR (startn)));
+
             /* now we have to distinguish where the 'pointer comes from'. Do we
                use the Id from within the loop or from behind it? */
             if (loop_level == original_level) {
@@ -758,10 +766,6 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
                 /* we have to find out if idn references a WL. Therefore
                    we traverse the body to its last assignment and call SearchWL
                    again. This happens in SearchWLHelp. */
-                if (N_while == ASSIGN_INSTRTYPE (startn))
-                    tmpn = BLOCK_INSTR (WHILE_BODY (ASSIGN_INSTR (startn)));
-                else
-                    tmpn = BLOCK_INSTR (DO_BODY (ASSIGN_INSTR (startn)));
                 SearchWLHelp (id_varno, tmpn, valid, mode, original_level + 1);
 
                 /* additionally, in case of a while loop, we have to search
@@ -771,12 +775,21 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
                     *valid = -1;
                     SearchWL (id_varno, tmpn, valid, mode, original_level);
                 }
-
-                *valid = 0;
             } else { /* loop_level < original_level */
+                /* this means: Id is defined in this loop, but we did not find
+                   it directly by MRD. Hence it is defined below the occurence
+                   of the Id and we connot use it for folding. */
+
+                /* Search last definition in body and mark it invalid. This
+                   MAY be go wrong if we don't create MRDs in wli_phase 1. */
+                SearchWLHelp (id_varno, tmpn, valid, mode, original_level + 1);
+
+                /* Search definition above loop to mark it invalid. */
                 tmpn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
-                startn = SearchWL (id_varno, tmpn, valid, mode, loop_level);
+                *valid = -1;
+                SearchWL (id_varno, tmpn, valid, mode, loop_level);
             }
+            *valid = 0;
             break;
 
         case N_cond:
@@ -812,8 +825,8 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
                 /* if the Id we search for is renamed, let's search for the new
                    name to find a referenced WL. */
                 id_varno = ID_VARNO (LET_EXPR (ASSIGN_INSTR (startn)));
-                startn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
-                startn = SearchWL (id_varno, startn, valid, mode, original_level);
+                tmpn = (node *)ASSIGN_MRDMASK (startn)[id_varno];
+                startn = SearchWL (id_varno, tmpn, valid, mode, original_level);
             } else if (N_Nwith == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (startn)))) {
                 /* now we found a WL */
                 if (0 == mode)
@@ -918,8 +931,22 @@ WithloopFolding (node *arg_node, node *arg_info)
     DBUG_PRINT ("OPT", ("  GENERATEMASKS"));
     arg_node = GenerateMasks (arg_node, NULL);
 
+    /* WLI traversal: create MRD
+       This phase does NOTHING important but to create MRD lists which are needed
+       for SearchWL in phase 2. SearchWLHelp does not work properly when
+       the end of a compound node is searched and then (not existing) MRD
+       masks are needed. When the new flatten exists we can remove this
+       phase because SeachWLHelp will not need MRD masks. The DEF mask can be
+       used to finde the wanted definition (which IS the last definition
+       because of unique names. */
+    DBUG_PRINT ("OPT", ("  WLI 1"));
+    wli_phase = 1;
+    act_tab = wli_tab;
+    arg_node = Trav (arg_node, arg_info);
+
     /* WLI traversal: search information */
-    DBUG_PRINT ("OPT", ("  WLI"));
+    DBUG_PRINT ("OPT", ("  WLI 2"));
+    wli_phase = 2;
     act_tab = wli_tab;
     arg_node = Trav (arg_node, arg_info);
 
