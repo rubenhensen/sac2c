@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.32  2000/04/26 12:45:58  jhs
+ * Worked around bug while folding empty arrays ...
+ *
  * Revision 2.31  2000/02/23 17:27:01  cg
  * The entry TYPES_TDEF of the TYPES data structure now contains a
  * reference to the corresponding N_typedef node for all user-defined
@@ -713,15 +716,21 @@ node *
 CFarray (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("CFarray");
+
     if (ARRAY_AELEMS (arg_node) != NULL)
         ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
 
-    if (IsConstArray (arg_node) && (ARRAY_NODETYPE (arg_node) == N_num)) {
-        ARRAY_ISCONST (arg_node) = TRUE;
-        ARRAY_VECTYPE (arg_node) = T_int;
-        ARRAY_CONSTVEC (arg_node)
-          = Array2IntVec (ARRAY_AELEMS (arg_node), &ARRAY_VECLEN (arg_node));
+    if (IsConstArray (arg_node)) {
+        if (ARRAY_AELEMS (arg_node) != NULL) {
+            ARRAY_ISCONST (arg_node) = TRUE;
+            ARRAY_VECTYPE (arg_node) = T_int;
+            ARRAY_CONSTVEC (arg_node)
+              = Array2IntVec (ARRAY_AELEMS (arg_node), &ARRAY_VECLEN (arg_node));
+        } else {
+            /* we do not know the type of this :(, so we cannot fold here */
+        }
     }
+
     DBUG_RETURN (arg_node);
 }
 
