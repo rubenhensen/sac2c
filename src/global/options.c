@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2003/03/13 17:02:21  dkr
+ * flags ordered correctly now
+ *
  * Revision 3.35  2003/03/13 15:48:57  dkr
  * option -minarrayrep added
  *
@@ -393,8 +396,6 @@ AnalyseCommandline (int argc, char *argv[])
         break_arg = Free (break_arg);
     });
 
-    ARGS_FLAG ("c", break_after = PH_genccode);
-
 #ifdef TAGGED_ARRAYS
     ARGS_OPTION ("check", {
         ARG_FLAGMASK_BEGIN ();
@@ -420,8 +421,6 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_FLAG ("copyright", copyright (); exit (0));
 
-    ARGS_FLAG ("cs", cachesim |= CACHESIM_YES);
-
     ARGS_OPTION ("csdefaults", {
         ARG_FLAGMASK_BEGIN ();
         ARG_FLAGMASK ('s', cachesim &= ~CACHESIM_ADVANCED);
@@ -443,14 +442,9 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_OPTION ("cshost", strncpy (cachesim_host, ARG, MAX_FILE_NAME - 1));
 
-    ARGS_OPTION ("d", {
-        ARG_CHOICE_BEGIN ();
-        ARG_CHOICE ("efence", use_efence = TRUE);
-        ARG_CHOICE ("nocleanup", cleanup = FALSE);
-        ARG_CHOICE ("syscall", show_syscall = TRUE);
-        ARG_CHOICE ("cccall", gen_cccall = TRUE; cleanup = FALSE);
-        ARG_CHOICE_END ();
-    });
+    ARGS_FLAG ("cs", cachesim |= CACHESIM_YES);
+
+    ARGS_FLAG ("c", break_after = PH_genccode);
 
     ARGS_FLAG ("ds", dynamic_shapes = TRUE);
 
@@ -556,11 +550,18 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE_END ();
     });
 
+    ARGS_OPTION ("d", {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("efence", use_efence = TRUE);
+        ARG_CHOICE ("nocleanup", cleanup = FALSE);
+        ARG_CHOICE ("syscall", show_syscall = TRUE);
+        ARG_CHOICE ("cccall", gen_cccall = TRUE; cleanup = FALSE);
+        ARG_CHOICE_END ();
+    });
+
     ARGS_OPTION ("D", cppvars[num_cpp_vars++] = ARG);
 
     ARGS_FLAG ("enforceIEEE", enforce_ieee = TRUE);
-
-    ARGS_FLAG ("g", cc_debug = TRUE);
 
     ARGS_OPTION ("genlib", {
         ARG_CHOICE_BEGIN ();
@@ -569,8 +570,10 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE_END ();
     });
 
-    ARGS_FLAG ("help", usage (); exit (0));
+    ARGS_FLAG ("g", cc_debug = TRUE);
+
     ARGS_FLAG ("h", usage (); exit (0));
+    ARGS_FLAG ("help", usage (); exit (0));
 
     ARGS_OPTION ("initmheap", ARG_NUM (initial_master_heapsize));
     ARGS_OPTION ("initwheap", ARG_NUM (initial_worker_heapsize));
@@ -607,8 +610,6 @@ AnalyseCommandline (int argc, char *argv[])
 #endif
 
     ARGS_OPTION ("I", AppendPath (MODDEC_PATH, AbsolutePathname (ARG)));
-
-    ARGS_OPTION ("l", { ARG_RANGE (linkstyle, 1, 2); });
 
     ARGS_FLAG ("libstat", libstat = TRUE);
 
@@ -655,9 +656,29 @@ AnalyseCommandline (int argc, char *argv[])
     /* "-fun2lac 8:21" means: call Fun2lac() after phases 8 and 21 */
     ARGS_OPTION ("fun2lac", LAC_FUN (do_fun2lac));
 
+    ARGS_OPTION ("l", { ARG_RANGE (linkstyle, 1, 2); });
+
     ARGS_OPTION ("L", {
         AppendPath (MODIMP_PATH, AbsolutePathname (ARG));
         AppendPath (SYSTEMLIB_PATH, AbsolutePathname (ARG));
+    });
+
+    ARGS_FLAG ("mtn", {
+        gen_mt_code = GEN_MT_NEW;
+        if (store_num_threads > 0) {
+            num_threads = store_num_threads;
+        } else {
+            num_threads = 0;
+        }
+    });
+
+    ARGS_FLAG ("mt", {
+        gen_mt_code = GEN_MT_OLD;
+        if (store_num_threads > 0) {
+            num_threads = store_num_threads;
+        } else {
+            num_threads = 0;
+        }
     });
 
     ARGS_OPTION ("maxoptcyc", ARG_NUM (max_optcycles));
@@ -691,31 +712,10 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE_END ();
     });
 
-    ARGS_FLAG ("mt", {
-        gen_mt_code = GEN_MT_OLD;
-        if (store_num_threads > 0) {
-            num_threads = store_num_threads;
-        } else {
-            num_threads = 0;
-        }
-    });
-
-    ARGS_FLAG ("mtn", {
-        gen_mt_code = GEN_MT_NEW;
-        if (store_num_threads > 0) {
-            num_threads = store_num_threads;
-        } else {
-            num_threads = 0;
-        }
-    });
-
-    ARGS_FLAG ("M", makedeps = 1);
-
-    ARGS_FLAG ("Mlib", makedeps = 2);
-
-    ARGS_FLAG ("MM", makedeps = 3);
-
     ARGS_FLAG ("MMlib", makedeps = 4);
+    ARGS_FLAG ("MM", makedeps = 3);
+    ARGS_FLAG ("Mlib", makedeps = 2);
+    ARGS_FLAG ("M", makedeps = 1);
 
     ARGS_OPTION ("numthreads", {
         ARG_RANGE (store_num_threads, 1, max_threads);
