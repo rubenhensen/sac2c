@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2001/05/22 14:59:08  nmw
+ * OldTypes2Shape is now aware of user defined types
+ *
  * Revision 1.5  2001/05/17 12:57:46  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -41,6 +44,7 @@
 #include <stdarg.h>
 #include "dbug.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "free.h"
 
 /*
@@ -398,7 +402,6 @@ SHShape2String (int dots, shape *shp)
  *    shape info as the types-node does. Otherwise, NULL is returned.
  *
  ******************************************************************************/
-
 shape *
 SHOldTypes2Shape (types *types)
 {
@@ -409,13 +412,14 @@ SHOldTypes2Shape (types *types)
     DBUG_ENTER ("SHOldTypes2Shape");
     DBUG_ASSERT ((types != NULL), ("SHOldTypes2Shape called with NULL types!"));
 
-    dim = TYPES_DIM (types);
+    /* this function handle user defined types, too */
+    shpseg = Type2Shpseg (types, &dim);
+
     if (dim >= 0) {
         res = SHMakeShape (dim);
 
         if (dim > 0) {
             i = 0;
-            shpseg = TYPES_SHPSEG (types);
             while (dim > SHP_SEG_SIZE) {
                 DBUG_ASSERT ((shpseg != NULL), "types structure corrupted!");
                 for (j = 0; j < SHP_SEG_SIZE; j++, i++) {
@@ -427,6 +431,9 @@ SHOldTypes2Shape (types *types)
             for (j = 0; j < dim; j++, i++) {
                 SHAPE_EXT (res, i) = SHPSEG_SHAPE (shpseg, j);
             }
+
+            /* free tmp Shpseg */
+            shpseg = FreeShpseg (shpseg);
         }
     } else {
         res = NULL;
