@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  2000/08/24 11:29:05  dkr
+ * macros cat? renamed into CAT?
+ *
  * Revision 2.11  2000/08/18 23:04:34  dkr
  * definition of ND_KS_RET_OUT_RC and ND_KS_RET_INOUT_RC modified
  * in order to support renaming of out-paramters in case of name
@@ -121,11 +124,11 @@
  */
 
 #define SAC_ND_A_FIELD(name) name
-#define SAC_ND_A_SIZE(name) cat0 (name, __sz)
-#define SAC_ND_A_DIM(name) cat0 (name, __d)
-#define SAC_ND_A_SHAPE(name, dim) cat0 (cat0 (name, __s), dim)
-#define SAC_ND_A_SHAPEP_AKD(name) cat0 (name, __s)
-#define SAC_ND_A_SHAPE_AKD(name, dim) cat0 (name, __s[dim])
+#define SAC_ND_A_SIZE(name) CAT0 (name, __sz)
+#define SAC_ND_A_DIM(name) CAT0 (name, __d)
+#define SAC_ND_A_SHAPE(name, dim) CAT0 (CAT0 (name, __s), dim)
+#define SAC_ND_A_SHAPEP_AKD(name) CAT0 (name, __s)
+#define SAC_ND_A_SHAPE_AKD(name, dim) CAT0 (name, __s[dim])
 
 #define SAC_ND_WRITE_ARRAY(name, pos)                                                    \
     SAC_BC_WRITE (name, pos) SAC_CS_WRITE_ARRAY (name, pos) SAC_ND_A_FIELD (name)[pos]
@@ -142,8 +145,8 @@
  *
  */
 
-#define SAC_ND_A_RC(name) *cat0 (name, __rc)
-#define SAC_ND_A_RCP(name) cat0 (name, __rc)
+#define SAC_ND_A_RC(name) *CAT0 (name, __rc)
+#define SAC_ND_A_RCP(name) CAT0 (name, __rc)
 
 /*
  * ICMs for declaring refcounted data:
@@ -586,7 +589,7 @@
 /*
  * creates name for formal function parameter
  */
-#define SAC_NAMEP(name) cat0 (name, __p)
+#define SAC_NAMEP(name) CAT0 (name, __p)
 
 #define SAC_ND_KS_DEC_IN_RC(type, name)                                                  \
     type SAC_ND_A_FIELD (name), int *SAC_ND_A_RCP (name)
