@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1994/12/01 17:41:40  hw
+ * Revision 1.4  1994/12/09 10:13:19  sbs
+ * optimize inserted
+ *
+ * Revision 1.3  1994/12/01  17:41:40  hw
  * added funptr type_tab[]
  * changed parameters of NIF
  *
@@ -22,6 +25,7 @@
 #include "flatten.h"
 #include "print.h"
 #include "typecheck.h"
+#include "optimize.h"
 
 #include "traverse.h"
 
@@ -62,6 +66,18 @@ funptr print_tab[] = {
 #define NIF(n, s, f, p, t, z) t
 
 funptr type_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 4) opt_tab
+ */
+
+#define NIF(n, s, f, p, t, o) o
+
+funptr opt_tab[] = {
 #include "node_info.mac"
 };
 

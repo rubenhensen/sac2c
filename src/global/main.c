@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1994/12/08 17:55:18  hw
+ * Revision 1.8  1994/12/09 10:13:19  sbs
+ * optimize inserted
+ *
+ * Revision 1.7  1994/12/08  17:55:18  hw
  * put silent into Error.c
  * added output for niumber of errors and number of warnings
  *
@@ -38,6 +41,7 @@
 #include "flatten.h"
 #include "print.h"
 #include "typecheck.h"
+#include "optimize.h"
 
 #include "scnprs.h"
 #include <stdlib.h>
@@ -131,6 +135,8 @@ MAIN
             sprintf (message, "%d Warnings, %d Errors \n", warnings, errors);
             NOTE (message);
             if (!breaktype) {
+                NOTE ("Optimizing: ...");
+                syntax_tree = Optimize (syntax_tree);
                 /*  GenCCode(); */
             }
         }
