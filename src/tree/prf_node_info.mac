@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/10/12 15:44:51  dkr
+ * comments changed
+ *
  * Revision 1.2  2000/10/10 16:31:47  dkr
  * header modified
  *
@@ -83,26 +86,29 @@
 */
 
 /*
- * NOTE: At the time being, there are 3 categories of prf's:
+ * NOTE: At the time being, there are 4 categories of prf's:
+ *
  *       - the first legal prf is "F_toi" !!
- *           USED IN : gen_pseudo_fun.c , checkdec.c
  *
  *       - funs with exactly 1 scalar arg. The last fun of this
- *         category HAS TO BE  "F_not"  !!
- *           USED IN : CFprf, ... ?
+ *         category HAS TO BE  "F_not" !!
  *
  *       - funs which require more than one argument. All of the fun's
  *         arguments should be scalars (not arrays). The last fun of
- *         this category HAS TO BE  "F_neq"  !!
- *           USED IN : CFprf, compile.c, ... ?
+ *         this category HAS TO BE  "F_neq" !!
  *
- *       - funs that require at least one non-scalar (array) argument.
- *         The first fun of this category HAS TO BE  "F_take"  !!
- *           USED IN : ... ?
+ *       - funs that require at least one non-scalar (array) argument
+ *         and are purely intrinsics.
+ *         The last fun of this category HAS TO BE  "F_idx_modarray" !!
+ *
+ *       - funs that require at least one non-scalar (array) argument
+ *         and are not purely intrinsics (i.e. they can be found in the
+ *         Array module, too).
  *
  *       - the last legal prf is "F_genarray" !!
- *           USED IN : gen_pseudo_fun.c  , checkdec.c
  *
+ * These side-conditions are used in prf.h !!!
+ * And they should be be used ONLY in prf.h !!!!!!!
  */
 
 /*   Node_name          mdb_prf[]    prf_string[]          prf_name_str[]*/
@@ -120,12 +126,13 @@ PRF_IF (F_toi, "F_foi", "toi", "toi"), PRF_IF (F_tof, "F_fof", "tof", "tof"),
   PRF_IF (F_ge, "F_ge", ">=", "_ge"), PRF_IF (F_gt, "F_gt", ">", "_gt"),
   PRF_IF (F_neq, "F_neq", "!=", "_neq"),
 
-  PRF_IF (F_take, "F_take", "take", "take"), PRF_IF (F_drop, "F_drop", "drop", "drop"),
-  PRF_IF (F_psi, "F_psi", "psi", "psi"),
-  PRF_IF (F_idx_psi, "F_idx_psi", "idx_psi", "idx_psi"),
-  PRF_IF (F_shape, "F_shape", "shape", "shape"),
+  PRF_IF (F_dim, "F_dim", "dim", "dim"), PRF_IF (F_shape, "F_shape", "shape", "shape"),
   PRF_IF (F_reshape, "F_reshape", "reshape", "reshape"),
-  PRF_IF (F_cat, "F_cat", "cat", "cat"), PRF_IF (F_dim, "F_dim", "dim", "dim"),
+  PRF_IF (F_idx_psi, "F_idx_psi", "idx_psi", "idx_psi"),
+  PRF_IF (F_idx_modarray, "F_idx_modarray", "idx_modarray", "idx_modarray"),
+
+  PRF_IF (F_take, "F_take", "take", "take"), PRF_IF (F_psi, "F_psi", "psi", "psi"),
+  PRF_IF (F_drop, "F_drop", "drop", "drop"), PRF_IF (F_cat, "F_cat", "cat", "cat"),
   PRF_IF (F_rotate, "F_rotate", "rotate", "rotate"),
   PRF_IF (F_toi_A, "F_toi_A", "toi", "toi"), PRF_IF (F_tof_A, "F_tof_A", "tof", "tof"),
   PRF_IF (F_tod_A, "F_tod_A", "tod", "tod"), PRF_IF (F_add_SxA, "F_add_SxA", "+", "_add"),
@@ -141,5 +148,4 @@ PRF_IF (F_toi, "F_foi", "toi", "toi"), PRF_IF (F_tof, "F_fof", "tof", "tof"),
   PRF_IF (F_div_AxS, "F_div_AxS", "/", "_div"),
   PRF_IF (F_div_AxA, "F_div_AxA", "/", "_div"),
   PRF_IF (F_modarray, "F_modarray", "modarray", "modarray"),
-  PRF_IF (F_idx_modarray, "F_idx_modarray", "idx_modarray", "idx_modarray"),
   PRF_IF (F_genarray, "F_genarray", "genarray", "genarray")
