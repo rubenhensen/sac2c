@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.70  2000/03/31 09:48:30  jhs
+ * PrintMT and PrintST now handle REGIONS==NULL.
+ *
  * Revision 2.69  2000/03/27 14:53:12  dkr
  * indentation of ICM-assigns via ICM_INDENT works correctly now
  *
@@ -2136,7 +2139,12 @@ PrintMT (node *arg_node, node *arg_info)
     }
 
     indent++;
-    MT_REGION (arg_node) = Trav (MT_REGION (arg_node), arg_info);
+    if (MT_REGION (arg_node) != NULL) {
+        MT_REGION (arg_node) = Trav (MT_REGION (arg_node), arg_info);
+    } else {
+        INDENT;
+        fprintf (outfile, "/* ... Empty ... */");
+    }
     indent--;
 
     fprintf (outfile, "\n");
@@ -2182,7 +2190,12 @@ PrintST (node *arg_node, node *arg_info)
     }
 
     indent++;
-    ST_REGION (arg_node) = Trav (ST_REGION (arg_node), arg_info);
+    if (ST_REGION (arg_node) != NULL) {
+        ST_REGION (arg_node) = Trav (ST_REGION (arg_node), arg_info);
+    } else {
+        INDENT;
+        fprintf (outfile, "/* ... Empty ... */");
+    }
     indent--;
 
     fprintf (outfile, "\n");
