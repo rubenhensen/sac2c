@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.129  1998/04/17 11:39:54  srs
+ * added NCODE_COPY
+ *
  * Revision 1.128  1998/04/16 19:07:42  dkr
  * changed a comment for N_ap
  *
@@ -2460,6 +2463,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    int    NO         (unambiguous number for PrintNwith2())
  ***                                   (precompile -> )
  ***    int    FLAG                    (WLI -> WLF)
+ ***    node*  COPY                    (DUP!!)
  ***
  ***  remarks:
  ***   1)
@@ -2488,6 +2492,7 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_MASK(n, x) (n->mask[x])
 #define NCODE_NO(n) (n->refcnt)
 #define NCODE_FLAG(n) (n->flag)
+#define NCODE_COPY(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
 
