@@ -1,6 +1,12 @@
 /*
  * $Log$
- * Revision 1.10  1996/04/23 15:48:33  sbs
+ * Revision 1.11  1997/05/02 14:38:31  sbs
+ * IdxId : set vect   also if the array (of a psi application for example)
+ * is of unknown shape!!
+ * That can happen if an external function is involved that returns an
+ * array of unknown shape, e.g. FibreScanIntArray.
+ *
+ * Revision 1.10  1996/04/23  15:48:33  sbs
  * two bugfixes done:
  * 1) IdxArray: when arg_info == NULL traverse all elements
  *              with NULL as well, since we may have nested
@@ -239,7 +245,7 @@ EqTypes (types *type1, types *type2)
     if (TYPES_DIM (type1) == TYPES_DIM (type2)) {
         res = 1;
         DBUG_ASSERT ((TYPES_SHPSEG (type1) != NULL) && (TYPES_SHPSEG (type1) != NULL),
-                     "EqTypes used on known-dim type");
+                     "EqTypes used on type without shape");
         for (i = 0; i < TYPES_DIM (type2); i++)
             if (TYPES_SHAPE (type1, i) != TYPES_SHAPE (type2, i))
                 res = 0;
@@ -880,8 +886,9 @@ IdxPrf (node *arg_node, node *arg_info)
  *  arguments     :
  *  description   : examines whether variable is a one-dimensional array;
  *                  if so, examine arg_info:
- *                         if NULL: SetVect on "N_vardec" belonging to the "N_id" node.
- *                         otherwise: change varname according to shape from arg_info!
+ *                    if NULL or the shape of arg_info is unknown(NULL) :
+ *                        SetVect on "N_vardec" belonging to the "N_id" node.
+ *                    otherwise: change varname according to shape from arg_info!
  *  global vars   :
  *  internal funs :
  *  external funs :
@@ -904,7 +911,7 @@ IdxId (node *arg_node, node *arg_info)
                  "non vardec/arg node as backref in N_id!");
     if (NODE_TYPE (vardec) == N_vardec) {
         if (VARDEC_DIM (vardec) == 1) {
-            if (arg_info == NULL) {
+            if (arg_info == NULL || VINFO_SHPSEG (arg_info) == NULL) {
                 DBUG_PRINT ("IDX", ("assigning VECT to %s:", ID_NAME (arg_node)));
                 VARDEC_ACTCHN (vardec) = SetVect (VARDEC_ACTCHN (vardec));
                 VARDEC_COLCHN (vardec) = SetVect (VARDEC_COLCHN (vardec));
@@ -922,7 +929,7 @@ IdxId (node *arg_node, node *arg_info)
         }
     } else {
         if (ARG_DIM (vardec) == 1) {
-            if (arg_info == NULL) {
+            if (arg_info == NULL || VINFO_SHPSEG (arg_info) == NULL) {
                 DBUG_PRINT ("IDX", ("assigning VECT to %s:", ID_NAME (arg_node)));
                 ARG_ACTCHN (vardec) = SetVect (ARG_ACTCHN (vardec));
                 ARG_COLCHN (vardec) = SetVect (ARG_COLCHN (vardec));
