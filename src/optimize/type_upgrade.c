@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.14  2005/01/27 17:01:59  mwe
+ * debugging
+ *
  * Revision 1.13  2005/01/26 17:35:43  mwe
  * debugging
  *
@@ -74,8 +77,6 @@
 #include "shape.h"
 #include "ct_basic.h"
 #include "tree_compound.h"
-
-#include "Error.h"
 
 #include "type_upgrade.h"
 
@@ -499,20 +500,17 @@ ArgumentIsSpecializeable (ntype *type)
     DBUG_ENTER ("ArgumentIsSpecializeable");
 
     switch (global.spec_mode) {
-    case SS_aks:
-        result = TRUE;
+    case SS_aud:
+        result = FALSE;
         break;
     case SS_akd:
-        if (TYisAKS (type)) {
+        if (TYisAKD (type)) {
             result = FALSE;
         }
-        break;
-    case SS_aud:
-        if (TYisAKV (type)) {
-            result = TRUE;
-        } else {
-            result = FALSE;
-        }
+    case SS_aks:
+        /*if ((TYisAKV(type)) || (TYisAKS( type))) {
+          result = FALSE;
+          }*/
         break;
     default:
         DBUG_ASSERT ((FALSE),
@@ -554,8 +552,10 @@ IsSpecializeable (node *fundef, node *args)
          */
         fun_args = FUNDEF_ARGS (fundef);
         while (fun_args != NULL) {
-
-            if ((ArgumentIsSpecializeable (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args)))))
+#if 0
+      /*if ( (ArgumentIsSpecializeable(AVIS_TYPE( ID_AVIS( EXPRS_EXPR( args))))) &&*/
+#endif
+            if ((ArgumentIsSpecializeable (AVIS_TYPE (ARG_AVIS (fun_args))))
                 && (TY_lt
                     == TYcmpTypes (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))),
                                    AVIS_TYPE (ARG_AVIS (fun_args))))) {
@@ -576,6 +576,59 @@ IsSpecializeable (node *fundef, node *args)
 /***************************************************************************
  *
  *  function:
+ *    node *GetBestPossibleType(node *fundef, node *args)
+ *
+ *  description:
+ *
+ ***************************************************************************/
+static ntype *
+GetBestPossibleType (ntype *type)
+{
+    ntype *result = NULL;
+    DBUG_ENTER ("GetBestPossibleType");
+
+    switch (global.spec_mode) {
+    case SS_aud:
+        /*
+         * nothing to do
+         */
+        break;
+    case SS_akd:
+        if ((TYisAUD (type)) || (TYisAUDGZ (type))) {
+            DBUG_ASSERT ((FALSE), "current type could not be transformed to akd type");
+        } else if (TYisAKD (type)) {
+            result = TYcopyType (type);
+        } else if ((TYisAKS (type)) || TYisAKV (type)) {
+            result = TYmakeAKD (TYcopyType (TYgetScalar (type)), 0,
+                                SHcopyShape (TYgetShape (type)));
+        } else {
+            DBUG_ASSERT ((FALSE), "unexpected type");
+        }
+        break;
+    case SS_aks:
+        if ((TYisAUD (type)) || (TYisAUDGZ (type)) || (TYisAKD (type))) {
+            DBUG_ASSERT ((FALSE), "current type could not be transformed to aks type");
+        } else if (TYisAKS (type)) {
+            result = TYcopyType (type);
+        } else if (TYisAKV (type)) {
+
+            result = TYmakeAKS (TYcopyType (TYgetScalar (type)),
+                                SHcopyShape (TYgetShape (type)));
+        } else {
+            DBUG_ASSERT ((FALSE), "unexpected type");
+        }
+        break;
+    default:
+        DBUG_ASSERT ((FALSE),
+                     "Unknown enumeration element! Incomplete switch statement!");
+    }
+
+    DBUG_RETURN (result);
+}
+
+/***************************************************************************
+ *
+ *  function:
  *    node *SpecializationOracle(node *fundef, node *args)
  *
  *  description:
@@ -586,6 +639,8 @@ SpecializationOracle (node *fundef, node *args)
 {
     node *result = fundef;
     node *signature;
+    bool updated = FALSE;
+    ntype *new_type;
     DBUG_ENTER ("SpecializationOracle");
 
     if (IsSpecializeable (fundef, args)) {
@@ -595,21 +650,15 @@ SpecializationOracle (node *fundef, node *args)
          */
         result = DUPdoDupNode (fundef);
 
-        FUNDEF_FUNGROUP (result) = FUNDEF_FUNGROUP (fundef);
-
         /*
-         * increse reference and specialization counter in fungroup
+         * increse specialization counter in fungroup
          */
-        (FUNGROUP_REFCOUNTER (FUNDEF_FUNGROUP (result))) += 1;
         (FUNGROUP_SPECCOUNTER (FUNDEF_FUNGROUP (result))) += 1;
 
         /*
-         * append function to AST and add pointer in fungroup
+         * append function to AST
          */
         fundef = AppendFundef (fundef, result);
-
-        FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (result))
-          = TBmakeLinklist (result, FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (result)));
 
         /*
          * change signature
@@ -617,24 +666,45 @@ SpecializationOracle (node *fundef, node *args)
         signature = FUNDEF_ARGS (result);
         while (signature != NULL) {
 
-            /*      if ( ArgumentIsSpecializeable(AVIS_TYPE( ARG_AVIS( signature)))) {*/
-            if (ArgumentIsSpecializeable (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))))) {
+            if (ArgumentIsSpecializeable (AVIS_TYPE (ARG_AVIS (signature)))) {
+                /*      if (ArgumentIsSpecializeable( AVIS_TYPE( ID_AVIS( EXPRS_EXPR(
+                 * args))))) {*/
                 /* TODO: if argument is too special, try to find less special but better
                  * fitting argument*/
+
                 /*
-                 * type is not to special
+                 * signature could be updated
+                 * first: check if argument is more special
+                 * second: get the best inferable type
                  */
-                AVIS_TYPE (ARG_AVIS (signature))
-                  = TYfreeType (AVIS_TYPE (ARG_AVIS (signature)));
-                AVIS_TYPE (ARG_AVIS (signature))
-                  = TYcopyType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))));
+                if (TY_lt
+                    == TYcmpTypes (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))),
+                                   AVIS_TYPE (ARG_AVIS (signature)))) {
+
+                    new_type
+                      = GetBestPossibleType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))));
+
+                    /*
+                     * nwe_type is not to special
+                     */
+                    AVIS_TYPE (ARG_AVIS (signature))
+                      = TYfreeType (AVIS_TYPE (ARG_AVIS (signature)));
+                    AVIS_TYPE (ARG_AVIS (signature)) = new_type;
+
+                    updated = TRUE;
+                }
             }
             signature = ARG_NEXT (signature);
             args = EXPRS_NEXT (args);
         }
-        /*
-         * TODO: update new function
-         */
+    }
+
+    if (updated) {
+        if (FUNDEF_ISWRAPPERFUN (fundef)) {
+            tup_wdp_expr++;
+        } else {
+            tup_fdp_expr++;
+        }
     }
 
     DBUG_RETURN (result);
@@ -722,10 +792,7 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
              */
 
             FUNDEF_ARGS (fundef) = AdjustSignatureToArgs (FUNDEF_ARGS (fundef), args);
-
-            /*
-             * TODO: type-upgrade fundef
-             */
+            tup_fdp_expr++;
 
         } else if (FUNDEF_ISDOFUN (fundef)) {
 
@@ -762,14 +829,11 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
 	FUNDEF_BODY( fundef) = FUNDEF_BODY( tmp);
 	FUNDEF_BODY( tmp) = NULL;
 
-	/*
-	 * TODO: add counter
-	 */
-
 	FREEdoFreeTree( tmp);
 #else
                 AppendFundef (fundef, tmp);
                 fundef = tmp;
+                tup_fdp_expr++;
 #endif
             } else {
                 /*
@@ -1030,7 +1094,18 @@ TryToFindSpecializedFunction (node *fundef, node *args, info *arg_info)
                 funs = LINKLIST_NEXT (funs);
             }
             result = INFO_TUP_BESTFITTINGFUN (arg_info);
+            if (result != fundef) {
+                if (FUNDEF_ISWRAPPERFUN (fundef)) {
+                    tup_wdp_expr++;
+                } else {
+                    tup_fdp_expr++;
+                }
+            }
+        } else {
+            result = fundef;
         }
+    } else {
+        tup_fdp_expr++;
     }
 
     DBUG_RETURN (result);
@@ -1427,7 +1502,7 @@ TUPgenerator (node *arg_node, info *arg_info)
             AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))
               = TYfreeType (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid))));
             AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid))) = TYcopyType (current);
-            tup_expr++;
+            tup_tu_expr++;
             break;
 
         default:
@@ -1492,9 +1567,6 @@ TUPap (node *arg_node, info *arg_info)
     if (INFO_TUP_CHECKLOOPFUN (arg_info)) {
 
         /*
-         * TODO: put in a separate function
-         */
-        /*
          * at the moment we are checking, if the recursive call of a loop function
          * will work with specialized signature
          */
@@ -1554,10 +1626,6 @@ TUPap (node *arg_node, info *arg_info)
              * use more special function
              */
             AP_FUNDEF (arg_node) = result;
-
-            /*
-             * TODO: add counter
-             */
         }
     }
 
@@ -1617,7 +1685,7 @@ TUPids (node *arg_node, info *arg_info)
             AVIS_TYPE (IDS_AVIS (arg_node))
               = TYfreeType (AVIS_TYPE (IDS_AVIS (arg_node)));
             AVIS_TYPE (IDS_AVIS (arg_node)) = TYcopyType (type);
-            tup_expr++;
+            tup_tu_expr++;
             break;
 
         default: /* all cases are listed above, so default should never be entered*/
