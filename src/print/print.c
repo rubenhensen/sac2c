@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.249  1998/08/11 14:35:17  dkr
+ * PrintWLsegVar changed
+ *
  * Revision 1.248  1998/08/11 12:09:01  dkr
  * PrintNodeTree extended
  *
@@ -3024,10 +3027,10 @@ PrintWLsegVar (node *arg_node, node *arg_info)
     while (seg != NULL) {
         if (WLSEGVAR_SCHEDULING (seg) == NULL) {
             INDENT
-            fprintf (outfile, "/********** segment %d: **********/\n", i++);
+            fprintf (outfile, "/********** (var.) segment %d: **********/\n", i++);
         } else {
             INDENT
-            fprintf (outfile, "/********** segment %d: **********\n", i++);
+            fprintf (outfile, "/********** (var.) segment %d: **********\n", i++);
             INDENT
             fprintf (outfile, " * scheduling: ");
             SCHPrintScheduling (outfile, WLSEGVAR_SCHEDULING (seg));
@@ -3101,7 +3104,8 @@ PrintWLstriVar (node *arg_node, node *arg_info)
     PrintWLvar (WLSTRIVAR_BOUND1 (arg_node), WLSTRIVAR_DIM (arg_node));
     fprintf (outfile, " => ");
     PrintWLvar (WLSTRIVAR_BOUND2 (arg_node), WLSTRIVAR_DIM (arg_node));
-    fprintf (outfile, "), step[%d] ", WLSTRIVAR_DIM (arg_node));
+    fprintf (outfile, "), step%d[%d] ", WLSTRIVAR_LEVEL (arg_node),
+             WLSTRIVAR_DIM (arg_node));
     PrintWLvar (WLSTRIVAR_STEP (arg_node), WLSTRIVAR_DIM (arg_node));
     fprintf (outfile, "\n");
 
@@ -3489,7 +3493,8 @@ PrintNodeTree (node *node)
             PrintWLvar (WLSTRIVAR_BOUND1 (node), WLSTRIVAR_DIM (node));
             fprintf (outfile, "->");
             PrintWLvar (WLSTRIVAR_BOUND2 (node), WLSTRIVAR_DIM (node));
-            fprintf (outfile, ", step[%d] ", WLSTRIVAR_DIM (node));
+            fprintf (outfile, ", step%d[%d] ", WLSTRIVAR_LEVEL (node),
+                     WLSTRIVAR_DIM (node));
             PrintWLvar (WLSTRIVAR_STEP (node), WLSTRIVAR_DIM (node));
             fprintf (outfile, ")\n");
             break;
