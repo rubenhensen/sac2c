@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.42  2000/06/08 12:46:27  nmw
+# print_interface.o added
+#
 # Revision 2.41  2000/06/08 11:06:13  mab
 # added pad_info.o
 #
@@ -223,7 +226,7 @@ TREE= src/tree/traverse.o src/tree/tree.o src/tree/tree_basic.o src/tree/free.o 
       src/tree/scheduling.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
-PRINT= src/print/print.o src/print/convert.o
+PRINT= src/print/print.o src/print/convert.o src/print/print_interface.o
 FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/cleanup_decls.o \
          src/flatten/fun2lac.o src/flatten/adjust_ids.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
