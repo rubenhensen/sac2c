@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.25  1998/04/28 15:21:02  srs
+# made deps
+#
 # Revision 1.24  1998/03/24 14:41:47  dkr
 # make deps done
 #
@@ -86,7 +89,7 @@ CFLAGS    := -D__EXTENSIONS__
 RM=rm -f
 INCS=-I../global -I../../inc -I../print -I../modules -I../optimize -I../compile
 
-all: typecheck.o prim_fun.o
+all: typecheck.o prim_fun.o typecheck_WL.o
 
 typecheck.o: typecheck.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o typecheck.o -c typecheck.c $(INCS)
@@ -94,11 +97,14 @@ typecheck.o: typecheck.c
 prim_fun.o: prim_fun.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o prim_fun.o -c prim_fun.c $(INCS)
 
+typecheck_WL.o: typecheck_WL.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o typecheck_WL.o -c typecheck_WL.c $(INCS)
+
 deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) typecheck.o prim_fun.o *.bak
+	$(RM) typecheck.o prim_fun.o typecheck_WL.o *.bak
 	$(RM) -r .sb
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
@@ -120,4 +126,12 @@ typecheck.o: ../global/internal_lib.h ../print/print.h ../global/my_debug.h
 typecheck.o: ../../inc/dbug.h ../global/traverse.h typecheck.h
 typecheck.o: ../print/convert.h ../modules/import.h prim_fun.h
 typecheck.o: ../global/free.h /usr/include/malloc.h ../global/access_macros.h
-typecheck.o: ../optimize/DupTree.h prim_fun_tt.mac
+typecheck.o: ../optimize/DupTree.h typecheck_WL.h prim_fun_tt.mac
+typecheck_WL.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
+typecheck_WL.o: /usr/include/stddef.h /usr/include/string.h ../global/tree.h
+typecheck_WL.o: ../global/types.h ../global/tree_basic.h
+typecheck_WL.o: ../global/tree_compound.h ../global/Error.h
+typecheck_WL.o: /usr/include/stdio.h /usr/include/sys/va_list.h
+typecheck_WL.o: ../global/globals.h ../global/internal_lib.h ../print/print.h
+typecheck_WL.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h
+typecheck_WL.o: ../global/free.h /usr/include/malloc.h

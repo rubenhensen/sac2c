@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.63  1998/04/28 15:19:44  srs
+# made deps
+#
 # Revision 1.62  1998/04/20 01:09:26  dkr
 # make deps done
 #
@@ -261,6 +264,13 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
+DeadCodeRemoval.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+DeadCodeRemoval.o: /usr/include/sys/va_list.h /usr/include/stdlib.h tree.h
+DeadCodeRemoval.o: types.h tree_basic.h tree_compound.h Error.h
+DeadCodeRemoval.o: /usr/include/string.h globals.h internal_lib.h free.h
+DeadCodeRemoval.o: ../../inc/dbug.h my_debug.h /usr/include/malloc.h
+DeadCodeRemoval.o: traverse.h ../optimize/optimize.h
+DeadCodeRemoval.o: ../optimize/DeadCodeRemoval.h
 Error.o: /usr/include/stdarg.h /usr/include/varargs.h
 Error.o: /usr/include/sys/va_list.h /usr/include/stdio.h
 Error.o: /usr/include/sys/feature_tests.h /usr/include/string.h Error.h
@@ -312,11 +322,11 @@ traverse.o: /usr/include/sys/va_list.h /usr/include/stdlib.h tree.h types.h
 traverse.o: tree_basic.h tree_compound.h Error.h /usr/include/string.h
 traverse.o: globals.h internal_lib.h ../../inc/dbug.h my_debug.h
 traverse.o: ../flatten/flatten.h ../print/print.h ../typecheck/typecheck.h
-traverse.o: ../optimize/optimize.h free.h /usr/include/malloc.h
-traverse.o: ../optimize/ConstantFolding.h ../optimize/DeadCodeRemoval.h
-traverse.o: ../optimize/LoopInvariantRemoval.h ../optimize/CSE.h
-traverse.o: ../modules/import.h ../optimize/DupTree.h ../optimize/Inline.h
-traverse.o: ../optimize/Unroll.h ../optimize/Unswitch.h
+traverse.o: ../typecheck/typecheck_WL.h ../optimize/optimize.h free.h
+traverse.o: /usr/include/malloc.h ../optimize/ConstantFolding.h
+traverse.o: ../optimize/DeadCodeRemoval.h ../optimize/LoopInvariantRemoval.h
+traverse.o: ../optimize/CSE.h ../modules/import.h ../optimize/DupTree.h
+traverse.o: ../optimize/Inline.h ../optimize/Unroll.h ../optimize/Unswitch.h
 traverse.o: ../psi-opt/ArrayElimination.h ../psi-opt/index.h
 traverse.o: ../modules/writesib.h ../modules/readsib.h
 traverse.o: ../modules/implicittypes.h ../objects/objinit.h
