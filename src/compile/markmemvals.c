@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/07/28 11:29:53  khf
+ * insert N_empty node if BLOCK_INSTR is empty after removal
+ * of F_accu
+ *
  * Revision 1.3  2004/07/28 09:08:19  khf
  * support for ExplicitAccumulate added
  *
@@ -623,6 +627,14 @@ MMVcode (node *arg_node, info *arg_info)
     }
 
     if (eacc) {
+
+        /*
+         * BLOCK_INSTR can be empty after removal of F_accu,
+         * therefore insert N_empty node
+         */
+        if (BLOCK_INSTR (NCODE_CBLOCK (arg_node)) == NULL) {
+            BLOCK_INSTR (NCODE_CBLOCK (arg_node)) = MakeEmpty ();
+        }
 
         /* A,B = with(iv)
          *        gen:{res1 = ...;
