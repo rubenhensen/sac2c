@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/08/27 11:56:12  jhs
+ * Brushed code. Added handling of do loops. Corrected pulling spmd-blocks
+ * over while-loops.
+ *
  * Revision 2.6  1999/08/09 11:32:20  jhs
  * Cleaned up info-macros for concurrent-phase.
  *
@@ -62,6 +66,8 @@
 #include "internal_lib.h"
 #include "my_debug.h"
 #include "spmd_trav.h"
+#include "generatemasks.h"
+#include "spmd_opt.h"
 
 /******************************************************************************
  *
@@ -148,6 +154,22 @@ WithLoopIsAllowedConcurrentExecution (node *withloop)
     DBUG_RETURN (res);
 }
 
+long *
+DupMask_ (long *oldmask, int varno)
+{
+    long *result;
+
+    DBUG_ENTER ("DupMask_");
+
+    if (oldmask == NULL) {
+        result = NULL;
+    } else {
+        result = DupMask (oldmask, varno);
+    }
+
+    DBUG_RETURN (result);
+}
+
 /******************************************************************************
  *
  * function:
@@ -165,6 +187,7 @@ InsertSPMD (node *assign, node *fundef)
     node *spmd;
     node *with;
     node *newassign;
+    int varno;
 
     DBUG_ENTER ("InsertSPMD");
 
@@ -179,14 +202,14 @@ InsertSPMD (node *assign, node *fundef)
      */
     newassign = MakeAssign (instr, NULL);
     spmd = MakeSpmd (MakeBlock (newassign, NULL));
+    DBUG_PRINT ("SPMDI", ("before delete nested"));
     spmd = DeleteNested (spmd);
+    DBUG_PRINT ("SPMDI", ("after delete nested"));
     ASSIGN_INSTR (assign) = spmd;
-    ASSIGN_DEFMASK (newassign) = ASSIGN_DEFMASK (assign);
-    ASSIGN_USEMASK (newassign) = ASSIGN_USEMASK (assign);
-    ASSIGN_MRDMASK (newassign) = ASSIGN_MRDMASK (assign);
-    ASSIGN_DEFMASK (assign) = NULL;
-    ASSIGN_USEMASK (assign) = NULL;
-    ASSIGN_MRDMASK (assign) = NULL;
+    varno = FUNDEF_VARNO (fundef);
+    ASSIGN_DEFMASK (newassign) = DupMask_ (ASSIGN_DEFMASK (assign), varno);
+    ASSIGN_USEMASK (newassign) = DupMask_ (ASSIGN_USEMASK (assign), varno);
+    ASSIGN_MRDMASK (newassign) = DupMask_ (ASSIGN_MRDMASK (assign), varno);
 
     if (NODE_TYPE (instr) == N_let) {
         if (NODE_TYPE (LET_EXPR (instr)) == N_Nwith2) {
@@ -213,7 +236,9 @@ InsertSPMD (node *assign, node *fundef)
             SPMD_LOCAL (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
             SPMD_SHARED (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
 
+            DBUG_PRINT ("SPMDI", ("call pm let not with"));
             ProduceMasks (spmd, spmd, fundef);
+            DBUG_PRINT ("SPMDI", ("leave pm let not with"));
         }
     } else {
         /* #### ins outs missing ... */
@@ -223,7 +248,9 @@ InsertSPMD (node *assign, node *fundef)
         SPMD_LOCAL (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
         SPMD_SHARED (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
 
+        DBUG_PRINT ("SPMDI", ("call pm not let"));
         ProduceMasks (spmd, spmd, fundef);
+        DBUG_PRINT ("SPMDI", ("leave pm not let"));
     }
 
     DBUG_PRINT ("SPMDI", ("inserted new spmd-block"));
@@ -246,7 +273,7 @@ InsertSPMD (node *assign, node *fundef)
 node *
 SPMDIassign (node *arg_node, node *arg_info)
 {
-    node *with, *spmd_let, *spmd;
+    node *spmd_let;
     int old_lastspmd;
     int old_nextspmd;
     nodetype old_context;
@@ -254,6 +281,11 @@ SPMDIassign (node *arg_node, node *arg_info)
     int old_expandstep;
     int pullable;
     nodetype dummy;
+    node *block1;
+    node *assign1;
+    node *assign2;
+    node *block2;
+    node *assign3;
 
     DBUG_ENTER ("SPMDIassign");
 
@@ -277,11 +309,16 @@ SPMDIassign (node *arg_node, node *arg_info)
              *  Check if multithreaed execution would be possible ...
              */
             dummy = NODE_TYPE (ASSIGN_INSTR (arg_node));
+            DBUG_PRINT ("SPMDI", ("border1"));
             if (dummy == N_let) {
                 pullable = (!LetWithFunction (ASSIGN_INSTR (arg_node)));
             } else if (dummy == N_return) {
                 pullable = FALSE;
+            } else {
+                pullable = FALSE;
             }
+
+            DBUG_PRINT ("SPMDI", ("border2"));
             INFO_SPMDI_EXPANDSTEP (arg_info)
               = INFO_SPMDI_EXPANDSTEP (arg_info) && pullable;
             INFO_SPMDI_EXPANDCONTEXT (arg_info)
@@ -301,7 +338,7 @@ SPMDIassign (node *arg_node, node *arg_info)
 
         if (optimize & OPT_MTI) {
             dummy = NODE_TYPE (ASSIGN_INSTR (arg_node));
-            DBUG_ASSERT ((dummy == N_while), "unexpected node-type");
+            DBUG_ASSERT (((dummy == N_while) || (dummy = N_do)), "unexpected node-type");
 
             old_lastspmd = INFO_SPMDI_LASTSPMD (arg_info);
             old_nextspmd = INFO_SPMDI_NEXTSPMD (arg_info);
@@ -314,18 +351,59 @@ SPMDIassign (node *arg_node, node *arg_info)
             INFO_SPMDI_EXPANDCONTEXT (arg_info) = TRUE;
             INFO_SPMDI_EXPANDSTEP (arg_info) = FALSE;
         } else {
-            dummy = NULL;
+            dummy = N_empty;
         }
 
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
         if (optimize & OPT_MTI) {
-            if (dummy == N_while) {
+            if ((dummy == N_while) || (dummy == N_do)) {
                 if ((INFO_SPMDI_EXPANDCONTEXT (arg_info))
                     && ((INFO_SPMDI_LASTSPMD (arg_info) != -1)
                         || (INFO_SPMDI_NEXTSPMD (arg_info) != -1))) {
+                    /*
+                     *  The complete interior of the while/do-loop can be executed
+                     *  concurrently, so expansions over the while/do-loop happens now.
+                     */
                     DBUG_PRINT ("SPMDI", ("EXPAND OVER WHILE!!!"));
-                    arg_node = InsertSPMD (arg_node, INFO_CONC_FUNDEF (arg_info));
+                    /*
+                     *  After last steps the while/do-loop contains only spmd-blocks
+                     *  as assignments in it's first level. These are combined
+                     *  to one spmd-block.
+                     */
+                    if (dummy == N_while) {
+                        WHILE_BODY (ASSIGN_INSTR (arg_node))
+                          = SPMDoptimize (WHILE_BODY (ASSIGN_INSTR (arg_node)),
+                                          INFO_CONC_FUNDEF (arg_info));
+                    } else {
+                        /* N_do */
+                        DO_BODY (ASSIGN_INSTR (arg_node))
+                          = SPMDoptimize (DO_BODY (ASSIGN_INSTR (arg_node)),
+                                          INFO_CONC_FUNDEF (arg_info));
+                    }
+                    assign1 = arg_node;
+                    if (dummy == N_while) {
+                        block1 = WHILE_BODY (ASSIGN_INSTR (assign1));
+                    } else {
+                        block1 = DO_BODY (ASSIGN_INSTR (assign1));
+                    }
+                    assign2 = BLOCK_INSTR (block1);
+                    block2 = SPMD_REGION (ASSIGN_INSTR (assign2));
+                    assign3 = BLOCK_INSTR (block2);
+                    /*
+                     *  The while/do-loop should contain only one spmd now,
+                     *  that means assign2 has no next.
+                     */
+                    DBUG_ASSERT ((ASSIGN_NEXT (assign2) == NULL), ("what???"));
+                    /*
+                     *  spmd-block and while/do-loop are exchanged now.
+                     *  Do not forget to change the next!
+                     */
+                    arg_node = assign2;
+                    ASSIGN_NEXT (assign2) = ASSIGN_NEXT (assign1);
+                    ASSIGN_NEXT (assign1) = NULL;
+                    BLOCK_INSTR (block2) = assign1;
+                    BLOCK_INSTR (block1) = assign3;
                 }
             }
 
@@ -395,20 +473,25 @@ SPMDIassign (node *arg_node, node *arg_info)
                     }
                 }
             }
-        } else if (INFO_SPMDI_CONTEXT (arg_info) == N_while) {
+        } else if ((INFO_SPMDI_CONTEXT (arg_info) == N_while)
+                   || (INFO_SPMDI_CONTEXT (arg_info) == N_do)) {
             if ((INFO_SPMDI_LASTSPMD (arg_info) > 0)
                 || (INFO_SPMDI_NEXTSPMD (arg_info) > 0)) {
                 if (INFO_SPMDI_EXPANDSTEP (arg_info)) {
                     arg_node = InsertSPMD (arg_node, INFO_CONC_FUNDEF (arg_info));
                     old_lastspmd = INFO_SPMDI_LASTSPMD (arg_info);
                     old_expandstep = INFO_SPMDI_EXPANDSTEP (arg_info);
-                    DBUG_PRINT ("SPMDI", ("  would expand to spmd here (while-step)"));
+                    DBUG_PRINT ("SPMDI", ("  expand to spmd here (while-step)"));
                 } else if (INFO_SPMDI_EXPANDCONTEXT (arg_info)) {
                     /*
                      *  surrounding context will be expanded, so this one will be
-                     *  expanded anyway.
+                     *  expanded anyway, so one could leave it on it's on, but
+                     *  block-masks are needed for optimization.
                      */
-                    DBUG_PRINT ("SPMDI", ("  could expand to spmd here (while-context)"));
+                    arg_node = InsertSPMD (arg_node, INFO_CONC_FUNDEF (arg_info));
+                    old_lastspmd = INFO_SPMDI_LASTSPMD (arg_info);
+                    old_expandstep = INFO_SPMDI_EXPANDSTEP (arg_info);
+                    DBUG_PRINT ("SPMDI", ("  expand to spmd here (while-context)"));
                 }
             }
         }
@@ -417,6 +500,8 @@ SPMDIassign (node *arg_node, node *arg_info)
             INFO_SPMDI_LASTSPMD (arg_info) = old_lastspmd;
             INFO_SPMDI_EXPANDSTEP (arg_info) = old_expandstep;
         }
+    } else {
+        DBUG_PRINT ("SPMDI", ("no mti"));
     }
 
     DBUG_RETURN (arg_node);
