@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2002/09/17 16:17:44  dkr
+ * TYCreateWrapperCode() modified
+ *
  * Revision 3.28  2002/09/09 11:57:41  dkr
  * BuildApAssign() modified, BuildErrorAssign() added.
  * Some DBUG_ASSERTs added.
@@ -2059,7 +2062,7 @@ DFT_state2DFT_res (DFT_state *state)
 /******************************************************************************
  *
  * function:
- *   ntype * TYDispatchFunType( ntype *fun, ntype *args )
+ *   ntype * TYDispatchFunType( ntype *fun, ntype *args)
  *
  * description:
  *
@@ -2362,7 +2365,7 @@ TYDFT_res2DebugString (DFT_res *dft)
 /******************************************************************************
  *
  * function:
- *   ntype * TYMakeAlphaType( ntype *maxtype )
+ *   ntype * TYMakeAlphaType( ntype *maxtype)
  *
  * description:
  *  function for creating a not yet determined subtype of maxtype.
@@ -4403,98 +4406,180 @@ BuildTmpId (ntype *type, node **new_vardecs)
     DBUG_RETURN (id);
 }
 
-static bool
-IsTypeError (node *assigns)
+static ids *
+BuildTmpIds (ntype *type, node **new_vardecs)
 {
-    bool res;
+    ids *ids;
+    char *name;
 
-    DBUG_ENTER ("IsTypeError");
+    DBUG_ENTER ("BuildTmpIds");
+
+    name = TmpVar ();
+    ids = MakeIds (name, NULL, ST_regular);
+    *new_vardecs = IDS_VARDEC (ids) = MakeVardec (StringCopy (name), NULL, *new_vardecs);
+    IDS_AVIS (ids) = VARDEC_AVIS (IDS_VARDEC (ids));
+    AVIS_TYPE (IDS_AVIS (ids)) = type;
+
+    DBUG_RETURN (ids);
+}
+
+static node *
+GetPrfOrFundef (node *assigns)
+{
+    node *res;
+
+    DBUG_ENTER ("GetApOrPrf");
 
     DBUG_ASSERT (((assigns != NULL) && (NODE_TYPE (assigns) == N_assign)),
                  "no assignment found!");
 
-    res
-      = ((ASSIGN_NEXT (assigns) == NULL) && (NODE_TYPE (ASSIGN_INSTR (assigns)) == N_let)
-         && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assigns))) == N_prf)
-         && (PRF_PRF (LET_EXPR (ASSIGN_INSTR (assigns))) == F_type_error));
+    if ((ASSIGN_NEXT (assigns) == NULL)
+        && (NODE_TYPE (ASSIGN_INSTR (assigns)) == N_let)) {
+        if (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assigns))) == N_prf) {
+            res = LET_EXPR (ASSIGN_INSTR (assigns));
+        } else if (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assigns))) == N_ap) {
+            res = AP_FUNDEF (LET_EXPR (ASSIGN_INSTR (assigns)));
+            DBUG_ASSERT ((res != NULL), "AP_FUNDEF not found!");
+            DBUG_ASSERT ((NODE_TYPE (res) == N_fundef), "no N_fundef node found!");
+        } else {
+            res = NULL;
+        }
+    } else {
+        res = NULL;
+    }
+
+    DBUG_RETURN (res);
+}
+
+static bool
+BranchesAreEquivalent (node *assigns1, node *assigns2)
+{
+    node *prf_or_fundef1, *prf_or_fundef2;
+    bool res;
+
+    DBUG_ENTER ("BranchesAreEquivalent");
+
+    prf_or_fundef1 = GetPrfOrFundef (assigns1);
+    prf_or_fundef2 = GetPrfOrFundef (assigns2);
+
+    if ((prf_or_fundef1 != NULL) && (prf_or_fundef2 != NULL)) {
+        if ((NODE_TYPE (prf_or_fundef1) == N_prf)
+            && (NODE_TYPE (prf_or_fundef2) == N_prf)) {
+            DBUG_ASSERT (((PRF_PRF (prf_or_fundef1) == F_type_error)
+                          && (PRF_PRF (prf_or_fundef2) == F_type_error)),
+                         "illegal prf found!");
+            res = TRUE;
+        } else if ((NODE_TYPE (prf_or_fundef1) == N_fundef)
+                   && (NODE_TYPE (prf_or_fundef2) == N_fundef)) {
+            res = (prf_or_fundef1 == prf_or_fundef2);
+        } else {
+            res = FALSE;
+        }
+    } else {
+        res = FALSE;
+    }
 
     DBUG_RETURN (res);
 }
 
 static node *
-BuildCondAssign (prf prf, node *arg, node *expr, node *then_ass, node *else_ass,
+BuildDimAssign (node *arg, node **new_vardecs)
+{
+    node *assign;
+
+    DBUG_ENTER ("BuildDimAssign");
+
+    /*
+     * for user defined types we should use the appropriate N_ap
+     * implementation here if it is available!!
+     */
+    assign = MakeAssign (MakeLet (MakePrf (F_dim, /* !!! */
+                                           MakeExprs (Arg2Id (arg), NULL)),
+                                  BuildTmpIds (TYMakeAKS (TYMakeSimpleType (T_int),
+                                                          SHCreateShape (0)),
+                                               new_vardecs)),
+                         NULL);
+
+    DBUG_RETURN (assign);
+}
+
+static node *
+BuildShapeAssign (node *arg, node **new_vardecs)
+{
+    node *assign;
+
+    DBUG_ENTER ("BuildShapeAssign");
+
+    /*
+     * for user defined types we should use the appropriate N_ap
+     * implementation here if it is available!!
+     */
+    assign = MakeAssign (MakeLet (MakePrf (F_shape, /* !!! */
+                                           MakeExprs (Arg2Id (arg), NULL)),
+                                  BuildTmpIds (TYMakeAUDGZ (TYMakeSimpleType (T_int)),
+                                               new_vardecs)),
+                         NULL);
+
+    DBUG_RETURN (assign);
+}
+
+static node *
+BuildCondAssign (node *prf_ass, node *expr, node *then_ass, node *else_ass,
                  node **new_vardecs)
 {
+    ids *prf_ids;
+    prf prf;
     node *assigns;
 
     DBUG_ENTER ("BuildCondAssign");
 
-    if (IsTypeError (then_ass) && IsTypeError (else_ass)) {
+    if (BranchesAreEquivalent (then_ass, else_ass)) {
         /*
-         * both parts of the conditional produce a type error
+         * both parts of the conditional contain the same code
          *   -> no need to build the conditional!
          */
         assigns = then_ass;
         else_ass = FreeTree (else_ass);
     } else {
+        prf_ids = ASSIGN_LHS (prf_ass);
+        prf = PRF_PRF (ASSIGN_RHS (prf_ass));
 
         switch (prf) {
         case F_dim: {
-            node *prf1, *prf2;
-            node *flt_prf1, *flt_prf2;
+            node *prf2;
+            ids *prf_ids2;
 
             DBUG_ASSERT ((NODE_TYPE (expr) == N_num), "illegal expression found!");
 
-            /*
-             * for user defined types we should use the appropriate N_ap
-             * implementation here if it is available!!
-             */
-            prf1 = MakePrf (prf, MakeExprs (Arg2Id (arg), /* !!! */
-                                            NULL));
-            flt_prf1
-              = BuildTmpId (TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (0)),
-                            new_vardecs);
+            prf2
+              = MakePrf (F_eq, MakeExprs (DupIds_Id (prf_ids), MakeExprs (expr, NULL)));
+            prf_ids2
+              = BuildTmpIds (TYMakeAKS (TYMakeSimpleType (T_bool), SHCreateShape (0)),
+                             new_vardecs);
 
-            prf2 = MakePrf (F_eq, MakeExprs (flt_prf1, MakeExprs (expr, NULL)));
-            flt_prf2
-              = BuildTmpId (TYMakeAKS (TYMakeSimpleType (T_bool), SHCreateShape (0)),
-                            new_vardecs);
-
-            assigns
-              = MakeAssign (MakeLet (prf1, DupId_Ids (flt_prf1)),
-                            MakeAssign (MakeLet (prf2, DupId_Ids (flt_prf2)),
-                                        MakeAssign (MakeCond (flt_prf2,
-                                                              MakeBlock (then_ass, NULL),
-                                                              MakeBlock (else_ass, NULL)),
-                                                    NULL)));
+            assigns = MakeAssign (MakeLet (prf2, prf_ids2),
+                                  MakeAssign (MakeCond (DupIds_Id (prf_ids2),
+                                                        MakeBlock (then_ass, NULL),
+                                                        MakeBlock (else_ass, NULL)),
+                                              NULL));
         } break;
 
         case F_shape: {
-            node *prf1, *prf2, *prf3, *prf4;
-            node *flt_prf1, *flt_prf2, *flt_prf3, *flt_prf4;
+            node *prf2, *prf3, *prf4;
+            node *flt_prf2, *flt_prf3, *flt_prf4;
             node *aexprs, *last_ass;
             int dim;
 
             DBUG_ASSERT ((NODE_TYPE (expr) == N_array), "illegal expression found!");
 
-            /*
-             * for user defined types we should use the appropriate N_ap
-             * implementation here if it is available!!
-             */
-            prf1 = MakePrf (prf, MakeExprs (Arg2Id (arg), /* !!! */
-                                            NULL));
-            flt_prf1 = BuildTmpId (TYMakeAUDGZ (TYMakeSimpleType (T_int)), new_vardecs);
-
-            assigns = MakeAssign (MakeLet (prf1, DupId_Ids (flt_prf1)), NULL);
-            last_ass = assigns;
-
+            last_ass = assigns = MakeAssign (NULL, NULL); /* dummy assignment */
             aexprs = ARRAY_AELEMS (expr);
             dim = 0;
             flt_prf4 = MakeBool (TRUE);
             while (aexprs != NULL) {
                 prf2 = MakePrf (F_sel,
                                 MakeExprs (MakeArray (MakeExprs (MakeNum (dim), NULL)),
-                                           MakeExprs (DupNode (flt_prf1), NULL)));
+                                           MakeExprs (DupIds_Id (prf_ids), NULL)));
                 flt_prf2
                   = BuildTmpId (TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (0)),
                                 new_vardecs);
@@ -4525,8 +4610,8 @@ BuildCondAssign (prf prf, node *arg, node *expr, node *then_ass, node *else_ass,
               = MakeAssign (MakeCond (flt_prf4, MakeBlock (then_ass, NULL),
                                       MakeBlock (else_ass, NULL)),
                             NULL);
+            assigns = FreeNode (assigns); /* free dummy assignment */
 
-            flt_prf1 = FreeNode (flt_prf1);
             ARRAY_AELEMS (expr) = NULL;
             expr = FreeNode (expr);
         } break;
@@ -4603,6 +4688,7 @@ CreateWrapperCode (ntype *type, DFT_state *state, int lower, char *funname, node
                    node *args, node *vardecs, node **new_vardecs)
 {
     node *assigns;
+    node *tmp_ass;
     int i;
 
     DBUG_ENTER ("CreateWrapperCode");
@@ -4628,11 +4714,13 @@ CreateWrapperCode (ntype *type, DFT_state *state, int lower, char *funname, node
         }
 
         if (IBASE_SCAL (type) != NULL) {
+            tmp_ass = BuildDimAssign (arg, new_vardecs);
             assigns
-              = BuildCondAssign (F_dim, arg, MakeNum (0),
+              = BuildCondAssign (tmp_ass, MakeNum (0),
                                  CreateWrapperCode (IBASE_SCAL (type), state, 0, funname,
                                                     arg, args, vardecs, new_vardecs),
                                  assigns, new_vardecs);
+            assigns = AppendAssign (tmp_ass, assigns);
         }
         break;
 
@@ -4641,15 +4729,20 @@ CreateWrapperCode (ntype *type, DFT_state *state, int lower, char *funname, node
         assigns = CreateWrapperCode (IARR_GEN (type), state, 2, funname, arg, args,
                                      vardecs, new_vardecs);
 
-        for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
-            if (IARR_IDIM (type, i) != NULL) {
-                assigns
-                  = BuildCondAssign (F_dim, arg, MakeNum (IDIM_DIM (IARR_IDIM (type, i))),
-                                     CreateWrapperCode (IARR_IDIM (type, i), state, lower,
-                                                        funname, arg, args, vardecs,
-                                                        new_vardecs),
-                                     assigns, new_vardecs);
+        if (NTYPE_ARITY (type) >= 2) {
+            tmp_ass = BuildDimAssign (arg, new_vardecs);
+            for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
+                if (IARR_IDIM (type, i) != NULL) {
+                    assigns
+                      = BuildCondAssign (tmp_ass,
+                                         MakeNum (IDIM_DIM (IARR_IDIM (type, i))),
+                                         CreateWrapperCode (IARR_IDIM (type, i), state,
+                                                            lower, funname, arg, args,
+                                                            vardecs, new_vardecs),
+                                         assigns, new_vardecs);
+                }
             }
+            assigns = AppendAssign (tmp_ass, assigns);
         }
         break;
 
@@ -4658,16 +4751,21 @@ CreateWrapperCode (ntype *type, DFT_state *state, int lower, char *funname, node
         assigns = CreateWrapperCode (IDIM_GEN (type), state, 1, funname, arg, args,
                                      vardecs, new_vardecs);
 
-        for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
-            if (IDIM_ISHAPE (type, i) != NULL) {
-                assigns
-                  = BuildCondAssign (F_shape, arg,
-                                     SHShape2Array (ISHAPE_SHAPE (IDIM_ISHAPE (type, i))),
-                                     CreateWrapperCode (IDIM_ISHAPE (type, i), state,
-                                                        lower, funname, arg, args,
-                                                        vardecs, new_vardecs),
-                                     assigns, new_vardecs);
+        if (NTYPE_ARITY (type) >= 2) {
+            tmp_ass = BuildShapeAssign (arg, new_vardecs);
+            for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
+                if (IDIM_ISHAPE (type, i) != NULL) {
+                    assigns
+                      = BuildCondAssign (tmp_ass,
+                                         SHShape2Array (
+                                           ISHAPE_SHAPE (IDIM_ISHAPE (type, i))),
+                                         CreateWrapperCode (IDIM_ISHAPE (type, i), state,
+                                                            lower, funname, arg, args,
+                                                            vardecs, new_vardecs),
+                                         assigns, new_vardecs);
+                }
             }
+            assigns = AppendAssign (tmp_ass, assigns);
         }
         break;
 
