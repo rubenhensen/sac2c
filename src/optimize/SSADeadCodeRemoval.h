@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/02/27 16:05:35  nmw
+ * SSADeadCodeRemoval for intraprocedural code implemented
+ *
  * Revision 1.1  2001/02/23 13:37:50  nmw
  * Initial revision
  *
@@ -27,5 +30,6 @@ extern node *SSADCRap (node *arg_node, node *arg_info);
 extern node *SSADCRNwith (node *arg_node, node *arg_info);
 extern node *SSADCRNpart (node *arg_node, node *arg_info);
 extern node *SSADCRNcode (node *arg_node, node *arg_info);
+extern node *SSADCRNwithid (node *arg_node, node *arg_info);
 
 #endif /* SAC_SSADEADCODEREMOVAL_H */
