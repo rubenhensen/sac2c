@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.42  2000/07/11 15:51:03  dkr
+ * PH_psiopt removed
+ *
  * Revision 2.41  2000/06/13 13:39:02  dkr
  * options 'wltrans' renamed into 'wlpatch'
  *
@@ -205,7 +208,7 @@ AnalyseCommandline (int argc, char *argv[])
         ARG = strtok (ARG, ":");
         ARG_RANGE (break_after, 1, 21);
         switch (break_after) {
-        case PH_psiopt:
+        case PH_sacopt:
             show_idx = 1;
             break;
         case PH_refcnt:
