@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/08/13 15:59:30  dkr
+ * signature of TYCreateWrapper...() functions modified
+ *
  * Revision 3.13  2002/08/13 13:45:32  dkr
  * - SearchInLUT_PP used instead of SearchInLUT_P
  * - functions for creation of wrapper function code added
@@ -3713,7 +3716,7 @@ TYCorrectWrapperArgTypes (node *args, ntype *type)
 /******************************************************************************
  *
  * Function:
- *   node *TYCreateWrapperVardecs( ntype *ret_type)
+ *   node *TYCreateWrapperVardecs( node *fundef)
  *
  * Description:
  *
@@ -3721,12 +3724,15 @@ TYCorrectWrapperArgTypes (node *args, ntype *type)
  ******************************************************************************/
 
 node *
-TYCreateWrapperVardecs (ntype *ret_type)
+TYCreateWrapperVardecs (node *fundef)
 {
+    ntype *ret_type;
     int i;
     node *vardecs = NULL;
 
     DBUG_ENTER ("TYCreateWrapperVardecs");
+
+    ret_type = FUNDEF_RET_TYPE (fundef);
 
     if (ret_type != NULL) {
         DBUG_ASSERT ((TYIsProd (ret_type)), "no TC_prod found");
@@ -3806,7 +3812,7 @@ Vardecs2Ids (node *vardecs)
  *
  ******************************************************************************/
 
-node *
+static node *
 Args2Exprs (node *args)
 {
     node *exprs;
@@ -3827,6 +3833,61 @@ Args2Exprs (node *args)
 /******************************************************************************
  *
  * Function:
+ *   node *BuildApAssign( node *fundef, node *args, node *vardecs)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+BuildApAssign (node *fundef, node *args, node *vardecs)
+{
+    node *ap;
+    node *assigns;
+
+    DBUG_ENTER ("BuildApAssign");
+
+    if (fundef != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "no N_fundef node found!");
+
+        ap = MakeAp (StringCopy (FUNDEF_NAME (fundef)), NULL, Args2Exprs (args));
+        AP_FUNDEF (ap) = fundef;
+        assigns = MakeAssign (MakeLet (ap, Vardecs2Ids (vardecs)), NULL);
+    } else {
+        assigns = NULL; /* !!! */
+    }
+
+    DBUG_RETURN (assigns);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PickFundef( ntype *type)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+PickFundef (ntype *type)
+{
+    node *fundef;
+
+    DBUG_ENTER ("PickFundef");
+
+    DBUG_ASSERT ((TYGetConstr (type) == TC_ires), "no TC_ires found!");
+
+    fundef = IRES_FUNDEF (type, 0); /* !!! */
+
+    DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *TYCreateWrapperCode( ntype *type,
  *                              node *arg, node *args, node *vardecs)
  *
@@ -3835,130 +3896,144 @@ Args2Exprs (node *args)
  *
  ******************************************************************************/
 
-node *
-TYCreateWrapperCode (ntype *type, node *arg, node *args, node *vardecs)
+static node *
+CreateWrapperCode (ntype *type, node *arg, node *args, node *vardecs)
 {
     node *assigns;
     int i;
 
     DBUG_ENTER ("TYCreateWrapperCode");
 
+    DBUG_ASSERT ((type != NULL), "no type found!");
+
+    switch (TYGetConstr (type)) {
+    case TC_fun:
+        DBUG_ASSERT ((NTYPE_ARITY (type) == 1), "multipe FUN_IBASE found!");
+        assigns = CreateWrapperCode (FUN_IBASE (type, 0), arg, args, vardecs);
+        break;
+
+    case TC_ibase:
+        if (IBASE_IARR (type) != NULL) {
+            assigns = CreateWrapperCode (IBASE_IARR (type), arg, args, vardecs);
+        } else {
+            DBUG_ASSERT ((IBASE_GEN (type) != NULL),
+                         "neither IBASE_IARR nor IBASE_GEN found!");
+            assigns = CreateWrapperCode (IBASE_GEN (type), arg, args, vardecs);
+        }
+
+        if (IBASE_SCAL (type) != NULL) {
+            assigns
+              = MakeAssign (MakeCond (MakePrf (F_eq,
+                                               MakeExprs (MakePrf (F_dim,
+                                                                   MakeExprs (Arg2Id (
+                                                                                arg),
+                                                                              NULL)),
+                                                          MakeExprs (MakeNum (0), NULL))),
+                                      MakeBlock (CreateWrapperCode (IBASE_SCAL (type),
+                                                                    arg, args, vardecs),
+                                                 NULL),
+                                      MakeBlock (assigns, NULL)),
+                            NULL);
+        }
+        break;
+
+    case TC_iarr:
+        DBUG_ASSERT ((IARR_GEN (type) != NULL), "IARR_GEN not found!");
+        assigns = CreateWrapperCode (IARR_GEN (type), arg, args, vardecs);
+
+        for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
+            if (IARR_IDIM (type, i) != NULL) {
+                assigns = MakeAssign (
+                  MakeCond (MakePrf (F_eq,
+                                     MakeExprs (MakePrf (F_dim,
+                                                         MakeExprs (Arg2Id (arg), NULL)),
+                                                MakeExprs (MakeNum (IDIM_DIM (
+                                                             IARR_IDIM (type, i))),
+                                                           NULL))),
+                            MakeBlock (CreateWrapperCode (IARR_IDIM (type, i), arg, args,
+                                                          vardecs),
+                                       NULL),
+                            MakeBlock (assigns, NULL)),
+                  NULL);
+            }
+        }
+        break;
+
+    case TC_idim:
+        DBUG_ASSERT ((IDIM_GEN (type) != NULL), "IDIM_GEN not found!");
+        assigns = CreateWrapperCode (IDIM_GEN (type), arg, args, vardecs);
+
+        for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
+            if (IDIM_ISHAPE (type, i) != NULL) {
+                assigns = MakeAssign (
+                  MakeCond (MakePrf (F_eq,
+                                     MakeExprs (MakePrf (F_shape,
+                                                         MakeExprs (Arg2Id (arg), NULL)),
+                                                MakeExprs (SHShape2Array (ISHAPE_SHAPE (
+                                                             IDIM_ISHAPE (type, i))),
+                                                           NULL))),
+                            MakeBlock (CreateWrapperCode (IDIM_ISHAPE (type, i), arg,
+                                                          args, vardecs),
+                                       NULL),
+                            MakeBlock (assigns, NULL)),
+                  NULL);
+            }
+        }
+        break;
+
+    case TC_ishape:
+        DBUG_ASSERT ((ISHAPE_GEN (type) != NULL), "ISHAPE_GEN not found!");
+        assigns = CreateWrapperCode (ISHAPE_GEN (type), arg, args, vardecs);
+        break;
+
+    case TC_ires:
+        if (TYIsProd (IRES_TYPE (type))) {
+            assigns = BuildApAssign (PickFundef (type), args, vardecs);
+        } else {
+            assigns = CreateWrapperCode (IRES_TYPE (type), ARG_NEXT (arg), args, vardecs);
+        }
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "illegal ntype constructor found!");
+        assigns = NULL;
+        break;
+    }
+
+    DBUG_RETURN (assigns);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *TYCreateWrapperCode( node *fundef, node *vardecs)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+TYCreateWrapperCode (node *fundef, node *vardecs)
+{
+    node *assigns;
+    ntype *type = FUNDEF_TYPE (fundef);
+
+    DBUG_ENTER ("TYCreateWrapperCode");
+
     if (type == NULL) {
         assigns = NULL;
     } else {
-        switch (TYGetConstr (type)) {
-        case TC_fun:
-            DBUG_ASSERT ((NTYPE_ARITY (type) == 1), "multipe FUN_IBASE found!");
-            assigns = TYCreateWrapperCode (FUN_IBASE (type, 0), arg, args, vardecs);
-            break;
-
-        case TC_ibase:
-            if (IBASE_IARR (type) != NULL) {
-                assigns = TYCreateWrapperCode (IBASE_IARR (type), arg, args, vardecs);
-            } else {
-                DBUG_ASSERT ((IBASE_GEN (type) != NULL),
-                             "neither IBASE_IARR nor IBASE_GEN found!");
-                assigns = TYCreateWrapperCode (IBASE_GEN (type), arg, args, vardecs);
-            }
-
-            if (IBASE_SCAL (type) != NULL) {
-                assigns
-                  = MakeAssign (MakeCond (MakePrf (F_eq,
-                                                   MakeExprs (MakePrf (F_dim,
-                                                                       MakeExprs (Arg2Id (
-                                                                                    arg),
-                                                                                  NULL)),
-                                                              MakeExprs (MakeNum (0),
-                                                                         NULL))),
-                                          MakeBlock (TYCreateWrapperCode (IBASE_SCAL (
-                                                                            type),
-                                                                          arg, args,
-                                                                          vardecs),
-                                                     NULL),
-                                          MakeBlock (assigns, NULL)),
-                                NULL);
-            }
-            break;
-
-        case TC_iarr:
-            DBUG_ASSERT ((IARR_GEN (type) != NULL), "IARR_GEN not found!");
-            assigns = TYCreateWrapperCode (IARR_GEN (type), arg, args, vardecs);
-
-            for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
-                if (IARR_IDIM (type, i) != NULL) {
-                    assigns = MakeAssign (
-                      MakeCond (MakePrf (F_eq,
-                                         MakeExprs (MakePrf (F_dim,
-                                                             MakeExprs (Arg2Id (arg),
-                                                                        NULL)),
-                                                    MakeExprs (MakeNum (IDIM_DIM (
-                                                                 IARR_IDIM (type, i))),
-                                                               NULL))),
-                                MakeBlock (TYCreateWrapperCode (IARR_IDIM (type, i), arg,
-                                                                args, vardecs),
-                                           NULL),
-                                MakeBlock (assigns, NULL)),
-                      NULL);
-                }
-            }
-            break;
-
-        case TC_idim:
-            DBUG_ASSERT ((IDIM_GEN (type) != NULL), "IDIM_GEN not found!");
-            assigns = TYCreateWrapperCode (IDIM_GEN (type), arg, args, vardecs);
-
-            for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
-                if (IDIM_ISHAPE (type, i) != NULL) {
-                    assigns = MakeAssign (
-                      MakeCond (MakePrf (F_eq,
-                                         MakeExprs (MakePrf (F_shape,
-                                                             MakeExprs (Arg2Id (arg),
-                                                                        NULL)),
-                                                    MakeExprs (SHShape2Array (
-                                                                 ISHAPE_SHAPE (
-                                                                   IDIM_ISHAPE (type,
-                                                                                i))),
-                                                               NULL))),
-                                MakeBlock (TYCreateWrapperCode (IDIM_ISHAPE (type, i),
-                                                                arg, args, vardecs),
-                                           NULL),
-                                MakeBlock (assigns, NULL)),
-                      NULL);
-                }
-            }
-            break;
-
-        case TC_ishape:
-            DBUG_ASSERT ((ISHAPE_GEN (type) != NULL), "ISHAPE_GEN not found!");
-            assigns = TYCreateWrapperCode (ISHAPE_GEN (type), arg, args, vardecs);
-            break;
-
-        case TC_ires:
-            if (TYIsProd (IRES_TYPE (type))) {
-                node *fundef = IRES_FUNDEF (type, 0); /* !!! */
-                if (fundef != NULL) {
-                    node *ap = MakeAp (StringCopy (FUNDEF_NAME (fundef)), NULL,
-                                       Args2Exprs (args));
-                    AP_FUNDEF (ap) = fundef;
-                    assigns = MakeAssign (MakeLet (ap, Vardecs2Ids (vardecs)), NULL);
-                } else {
-                    assigns = NULL; /* !!! */
-                }
-            } else {
-                assigns
-                  = TYCreateWrapperCode (IRES_TYPE (type), ARG_NEXT (arg), args, vardecs);
-            }
-            break;
-
-        case TC_prod:
-            assigns = NULL;
-            /* pure TC_prod type!!! but this is senseless, isn't it??? */
-            break;
-
-        default:
-            DBUG_ASSERT ((0), "illegal ntype constructor found!");
-            assigns = NULL;
-            break;
+        if (TYGetConstr (type) == TC_prod) {
+            /*
+             * pure TC_prod type (function with no arguments)!!!
+             *   -> fundef can be found in FUNDEF_RETURN (dirty hack!)
+             */
+            assigns
+              = BuildApAssign (FUNDEF_RETURN (fundef), FUNDEF_ARGS (fundef), vardecs);
+        } else {
+            assigns = CreateWrapperCode (type, FUNDEF_ARGS (fundef), FUNDEF_ARGS (fundef),
+                                         vardecs);
         }
     }
 

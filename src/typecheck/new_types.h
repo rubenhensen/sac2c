@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/08/13 15:59:35  dkr
+ * signature of TYCreateWrapper...() functions modified
+ *
  * Revision 3.7  2002/08/13 13:46:11  dkr
  * functions for creating wrapper function code added
  *
@@ -332,7 +335,7 @@ extern types *TYType2OldType (ntype *new);
 extern ntype *TYSplitWrapperType (ntype *type, bool *finished);
 extern ntype *TYGetWrapperRetType (ntype *type);
 extern node *TYCorrectWrapperArgTypes (node *args, ntype *type);
-extern node *TYCreateWrapperVardecs (ntype *ret_type);
-extern node *TYCreateWrapperCode (ntype *type, node *arg, node *args, node *vardecs);
+extern node *TYCreateWrapperVardecs (node *fundef);
+extern node *TYCreateWrapperCode (node *fundef, node *vardecs);
 
 #endif /* _new_types_h */
