@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2001/04/24 13:12:49  dkr
+ * type 'id' replaced by 'char'
+ *
  * Revision 3.23  2001/04/24 09:16:01  dkr
  * P_FORMAT replaced by F_PTR
  *
@@ -510,8 +513,8 @@ typedef struct TYPE_TAB_ELEM {
 
 typedef struct FUN_TAB_ELEM {
     node *node;                /* pointer to declaration (N_fundef) */
-    id *id;                    /* name of function */
-    id *id_mod;                /* modul name of function */
+    char *id;                  /* name of function */
+    char *id_mod;              /* modul name of function */
     int tag;                   /* typecheck status */
     int n_dub;                 /* number of remaining dublications */
     struct FUN_TAB_ELEM *next; /* next fun_tab_elem node */
@@ -2170,7 +2173,7 @@ static int
 CheckIds (ids *arg_ids, node *vardec, int line)
 {
     ids *tmp, *not_checked_ids;
-    id *current_id;
+    char *current_id;
     int ret_value = 1;
 
     DBUG_ENTER ("CheckIds");
@@ -3088,7 +3091,7 @@ InitFunTable (node *arg_node)
 {
     node *fun_node;
     fun_tab_elem *fun_p, *last_fun_p, *dummy;
-    id *fun_name, *mod_name;
+    char *fun_name, *mod_name;
 
     DBUG_ENTER ("InitFunTable");
 

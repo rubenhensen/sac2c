@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.2  2001/02/06 16:15:34  dkr
- * no changes done
+ * Revision 3.3  2001/04/24 13:10:15  dkr
+ * type 'id' replaced by 'char'
  *
  * Revision 3.1  2000/11/20 18:00:12  sacbase
  * new release made
@@ -44,14 +44,13 @@
  *
  */
 
-#ifndef _prim_fun_h_
-#define _prim_fun_h_
+#ifndef _SAC_prim_fun_h_
+#define _SAC_prim_fun_h_
 
 typedef struct PRIM_FUN_TAB_ELEM {
     prf prf;       /* kind of primitive function */
-    id *id_mod;    /* name of module where userdefined
-                    * primitive function is defined
-                    */
+    char *id_mod;  /* name of module where user-defined primitive function
+                      is defined */
     node *node;    /* pointer to declaration (function header) */
     int typed_tag; /* tag whether function is typechecked */
     int user_tag;  /* tag whether function is userdefined */
@@ -77,4 +76,4 @@ extern types *Modarray (types *array, types *vec, types *value, int line);
 extern types *Genarray_S (node *v_node, types *vec, types *array);
 extern types *Genarray_A (node *v_node, types *vec, types *array);
 
-#endif /* _prim_fun_h_ */
+#endif /* _SAC_prim_fun_h_ */
