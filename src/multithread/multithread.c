@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/07/26 17:04:37  skt
+ * create_cells added
+ *
  * Revision 3.5  2004/07/06 12:50:54  skt
  * support for propagate_executionmode added
  *
@@ -157,6 +160,7 @@
 #include "tag_executionmode.h"
 #include "propagate_executionmode.h"
 #include "assignments_rearrange.h"
+#include "create_cells.h"
 
 /** <!--*********************************************************************->
  *
@@ -629,6 +633,22 @@ MUTHmodul (node *arg_node, node *arg_info)
     }
 
     /*
+     *  --- CreateCells (crece) ---
+     */
+    DBUG_PRINT ("MUTH", ("begin CreateCells"));
+
+    arg_node = CreateCells (arg_node, arg_info);
+
+    arg_info = FreeTree (arg_info);
+    arg_info = old_arg_info;
+
+    DBUG_PRINT ("MUTH", ("end CreateCells"));
+
+    if ((break_after == PH_multithread) && (strcmp ("crece", break_specifier) == 0)) {
+        goto cont;
+    }
+
+    /*
      *  --- RepfunsInit (rfin) ---
      *
      *  FUNDEF_COMPANION only used within this traversal!!
@@ -651,16 +671,17 @@ MUTHmodul (node *arg_node, node *arg_info)
      *  FUNDEF_COMPANION used to transport information from blkin to blkpp,
      *  it can be reused after blkpp.
      */
-    DBUG_PRINT ("MUTH", ("begin BlocksInit"));
-    MODUL_FUNS (arg_node) = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE,
-                                        ClearCOMPANION, MUTHignore_none);
-    MODUL_FUNS (arg_node)
-      = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE, BlocksInit, MUTHignore);
-    DBUG_PRINT ("MUTH", ("end BlocksInit"));
+    /*  DBUG_PRINT( "MUTH", ("begin BlocksInit"));
+    MODUL_FUNS( arg_node) =
+      MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, ClearCOMPANION,
+    MUTHignore_none); MODUL_FUNS( arg_node) = MUTHdriver (MODUL_FUNS( arg_node), arg_info,
+    FALSE, BlocksInit, MUTHignore); DBUG_PRINT( "MUTH", ("end BlocksInit"));
 
-    if ((break_after == PH_multithread) && (strcmp ("blkin", break_specifier) == 0)) {
-        goto cont;
+    if ((break_after == PH_multithread) &&
+        (strcmp("blkin", break_specifier)==0)) {
+      goto cont;
     }
+    */
 
     /*
      *  --- AssignmentsRearrange (asmra) ---
