@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.4  2001/03/02 10:36:02  dkr
+# /home/dkr/sac/BASE/sac2c/src/global/RCS/Makefile,v used in touch-rules
+#
 # Revision 3.3  2001/01/17 10:13:00  dkr
 # make deps done
 #
@@ -86,20 +89,20 @@ all: main.o Error.o usage.o my_debug.o internal_lib.o globals.o resource.o types
 #
 types.h: ../tree/type_info.mac ../global/phase_info.mac ../global/status_info.mac \
          ../tree/node_info.mac ../tree/prf_node_info.mac
-	touch types.h
+	touch $@
 
 NameTuples.h: ../global/nt_info.mac
-	touch NameTuples.h
+	touch $@
 
 NameTuples.c: ../global/nt_info.mac
-	touch NameTuples.c
+	touch $@
 
 globals.c: ../tree/type_info.mac ../global/phase_info.mac
-	touch globals.c
+	touch $@
 
 my_debug.c:  ../tree/node_info.mac ../tree/prf_node_info.mac ../tree/type_info.mac \
              ../global/status_info.mac
-	touch my_debug.c
+	touch $@
 
 
 build.c: 
