@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.44  2002/08/14 15:18:27  dkr
+ * DBUG_OFF flag used
+ *
  * Revision 1.43  2002/08/13 16:27:30  dkr
  * DBUG_PRINT in GenericFun() corrected
  *
@@ -4989,7 +4992,9 @@ COMP2With2 (node *arg_node, node *arg_info)
             node *shp = NWITH2_SHAPE (arg_node);
             get_dim = MakeNum (GetDim (IDS_TYPE (wlids))); /* AKD only!! */
             if (NODE_TYPE (shp) == N_id) {                 /* AKS only!! */
+#ifndef DBUG_OFF
                 shape_class_t shp_sc = GetShapeClassFromTypes (ID_TYPE (shp));
+#endif
                 DBUG_ASSERT (((shp_sc == C_scl) || (shp_sc == C_aks)),
                              "genarray-with-loop expression with unknown shape found!");
 
