@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/11/01 21:51:07  sah
+ * added FreeDownLinkAttrib and cleaned up some code
+ *
  * Revision 1.11  2004/10/28 17:25:13  sah
  * added FreeStringSetAttrib
  *
@@ -166,7 +169,7 @@ FreeLinkAttrib (node *attr)
 
 /** <!--******************************************************************-->
  *
- * @fn FreeApLinkAttrib
+ * @fn FreeExtLinkAttrib
  *
  * @brief Frees Link attribute
  *
@@ -176,39 +179,70 @@ FreeLinkAttrib (node *attr)
  *
  ***************************************************************************/
 node *
-FreeApLinkAttrib (node *attr)
+FreeExtLinkAttrib (node *attr)
 {
-    DBUG_ENTER ("FreeLinkAttrib");
+    DBUG_ENTER ("FreeExtLinkAttrib");
 
     if (attr != NULL) {
-        DBUG_PRINT ("FREE", ("Decrementing use count for '%s' at " F_PTR,
-                             FUNDEF_NAME (attr), attr));
-        DBUG_ASSERT ((NODE_TYPE (attr) == N_fundef), "illegal value in AP_FUNDEF found!");
-
-        DBUG_ASSERT (((!FUNDEF_IS_LACFUN (attr))
-                      || (FUNDEF_USED (attr) != USED_INACTIVE)),
-                     "FUNDEF_USED must be active for LaC functions!");
-
-        /* check whether this function is use-counted */
-        if ((FUNDEF_USED (attr) != USED_INACTIVE) && (!(FUNDEF_IS_LOOPFUN (attr)))) {
-            (FUNDEF_USED (attr))--;
-
-            DBUG_ASSERT ((FUNDEF_USED (attr) >= 0), "FUNDEF_USED dropped below 0");
-
-            DBUG_PRINT ("FREE", ("decrementing used counter of %s to %d",
-                                 FUNDEF_NAME (attr), FUNDEF_USED (attr)));
-
-            if (FUNDEF_USED (attr) == 0) {
-                /*
-                 * referenced fundef no longer used
-                 *  -> transform it into a zombie
-                 */
-                DBUG_PRINT ("FREE", ("Use count reached 0 for '%s' at " F_PTR,
+        if (NODE_ISALIVE (attr)) {
+            if (NODE_TYPE (attr) == N_fundef) {
+                DBUG_PRINT ("FREE", ("Decrementing use count for '%s' at " F_PTR,
                                      FUNDEF_NAME (attr), attr));
-                attr = FreeNode (attr);
+                DBUG_ASSERT ((NODE_TYPE (attr) == N_fundef),
+                             "illegal value in AP_FUNDEF found!");
+
+                DBUG_ASSERT (((!FUNDEF_IS_LACFUN (attr))
+                              || (FUNDEF_USED (attr) != USED_INACTIVE)),
+                             "FUNDEF_USED must be active for LaC functions!");
+
+                /* check whether this function is use-counted */
+                if ((FUNDEF_USED (attr) != USED_INACTIVE)
+                    && (!(FUNDEF_IS_LOOPFUN (attr)))) {
+                    (FUNDEF_USED (attr))--;
+
+                    DBUG_ASSERT ((FUNDEF_USED (attr) >= 0),
+                                 "FUNDEF_USED dropped below 0");
+
+                    DBUG_PRINT ("FREE", ("decrementing used counter of %s to %d",
+                                         FUNDEF_NAME (attr), FUNDEF_USED (attr)));
+
+                    if (FUNDEF_USED (attr) == 0) {
+                        /*
+                         * referenced fundef no longer used
+                         *  -> transform it into a zombie
+                         */
+                        DBUG_PRINT ("FREE", ("Use count reached 0 for '%s' at " F_PTR,
+                                             FUNDEF_NAME (attr), attr));
+                        attr = FreeNode (attr);
+                    }
+                }
             }
         }
     }
+
+    DBUG_RETURN ((node *)NULL);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn FreeDownLinkAttrib
+ *
+ * @brief Frees Link attribute
+ *
+ * @param attr Link node to process
+ *
+ * @return result of Free call, usually NULL
+ *
+ ***************************************************************************/
+
+node *
+FreeDownLinkAttrib (node *attr)
+{
+    DBUG_ENTER ("FreeDownLinkAttrib");
+
+    /* as this link points downwards in the ast, the
+     * referenced node is already freed.
+     */
 
     DBUG_RETURN ((node *)NULL);
 }
