@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.119  2002/09/13 22:11:01  dkr
+ * ->lineno replaced by NODE_LINE
+ *
  * Revision 3.118  2002/09/11 23:06:55  dkr
  * printing of PRFs modified, prf_node_info.mac modified.
  *
@@ -1935,7 +1938,7 @@ PrintAssign (node *arg_node, node *arg_info)
 
     PRINT_LINE_PRAGMA_IN_SIB (outfile, arg_node);
 
-    DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", arg_node->lineno););
+    DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", NODE_LINE (arg_node)););
 
     trav_instr = TRUE;
     if (NODE_TYPE (instr) == N_annotate) {
