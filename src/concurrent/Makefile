@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.3  1998/04/08 22:11:16  dkr
+# expanded INCS
+#
 # Revision 1.2  1998/04/03 11:52:52  srs
 # made deps
 #
@@ -16,7 +19,7 @@ CC        := gcc
 CCFLAGS   := -ansi -Wall -g
 CFLAGS    := -D__EXTENSIONS__
 
-INCS=-I../global -I../../inc -I../optimize
+INCS=-I../global -I../../inc -I../optimize -I../typecheck
 
 all: concregions.o
 
