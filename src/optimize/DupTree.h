@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1998/03/27 18:39:03  dkr
+ * DupWLproj -> DupWLstride
+ *
  * Revision 1.17  1998/03/21 17:35:19  dkr
  * new function DupNode added
  *
@@ -118,7 +121,7 @@ extern node *DupNgen (node *arg_node, node *arg_info);
 extern node *DupWLseg (node *arg_node, node *arg_info);
 extern node *DupWLblock (node *arg_node, node *arg_info);
 extern node *DupWLublock (node *arg_node, node *arg_info);
-extern node *DupWLproj (node *arg_node, node *arg_info);
+extern node *DupWLstride (node *arg_node, node *arg_info);
 extern node *DupWLgrid (node *arg_node, node *arg_info);
 
 #endif /* _DupTree_h */
