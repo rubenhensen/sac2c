@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.66  2004/09/22 22:14:09  ktr
+ * SSACFShapeSel is now called correctly.
+ *
  * Revision 1.65  2004/09/22 12:00:19  ktr
  * F_idx_shape_sel and F_shape_sel are now evaluated as well
  *
@@ -3177,7 +3180,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 /* for some none constant expression and constant index vector */
-                new_node = SSACFShapeSel (arg_co, arg_expr[1]);
+                new_node = SSACFShapeSel (arg_co[0], arg_expr[1]);
             }
         break;
 
