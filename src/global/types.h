@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2004/11/23 09:38:55  cg
+ * Fixed various typos.
+ * Remove DFMfoldmask_t.
+ *
  * Revision 3.59  2004/11/22 21:07:39  skt
  * moved 'typedef struct SERSTACK_T serstack_t' from serialize_stack.h
  *
@@ -257,6 +261,8 @@
 #ifndef _SAC_TYPES_H_
 #define _SAC_TYPES_H_
 
+#include <stdio.h>
+
 #include "config.h"
 
 /*
@@ -267,10 +273,6 @@ typedef int bool;
 
 #define FALSE 0
 #define TRUE 1
-
-#define SHP_SEG_SIZE 16
-#define MAX_MASK 7
-#define MAX_SONS 6
 
 /* value for FUNDEF_USED, if reference counting is inactive */
 #define USED_INACTIVE -99
@@ -320,22 +322,13 @@ typedef int usertype;
 typedef enum { ARG_int, ARG_float, ARG_id } argtype;
 
 typedef enum {
-    /* operation of withloop (N_Nwithop) */
-    WO_genarray,
-    WO_modarray,
-    WO_foldfun,
-    WO_foldprf,
-    WO_unknown
-} WithOpType;
-
-typedef enum {
     /* type of Ids within generator parts of a withloops (N_Nwithid).
      * WI_vector : e.g. [0,0] <= i < [5,5]
      * WI_scalars: e.g. [0,0] <= [i,j] <= [5,5]
      */
     WI_vector,
     WI_scalars
-} WithIdType;
+} withid_t;
 
 typedef enum { M_uses_only, M_uses_and_transform } ive_mode;
 
@@ -417,68 +410,67 @@ typedef enum {
  * structs
  */
 
-typedef struct STRINGS {
-    char *name;
-    struct STRINGS *next;
+#if 0
+typedef struct strings {
+  char            *name;
+  struct strings  *next;
 } strings;
+#endif
 
-typedef struct NUMS {
-    int num;
-    struct NUMS *next;
-} nums;
-
-typedef struct NODELIST {
+typedef struct nodelist {
     struct NODE *node;
     statustype attrib;
     statustype status;
     void *attrib2;
-    struct NODELIST *next;
+    struct nodelist *next;
 } nodelist;
 
-typedef struct DEPS {
+typedef struct deps {
     char *name;
     char *decname;
     char *libname;
     statustype status;
     locationtype location;
-    struct DEPS *sub;
-    struct DEPS *next;
+    struct deps *sub;
+    struct deps *next;
 } deps;
 
-typedef struct SHPSEG {
+typedef struct shpseg {
     int shp[SHP_SEG_SIZE];
-    struct SHPSEG *next;
+    struct shpseg *next;
 } shpseg;
 
-typedef struct ACCESS_T {
-    struct NODE *array_vardec; /* */
-    struct NODE *iv_vardec;    /* index vector */
+typedef struct access_t {
+    struct node *array_vardec; /* */
+    struct node *iv_vardec;    /* index vector */
     accessclass_t accessclass; /* */
     shpseg *offset;            /* */
     accessdir_t direction;     /* 0 == ADIR_read,  1 == ADIR_write */
-    struct ACCESS_T *next;     /* */
+    struct access_t *next;     /* */
 } access_t;
 
-/* this structure is used by wl_access_analyse to anotate
-   some information to N_CODE nodes. See NCODE_WLAA macros */
-typedef struct ACCESS_INFO_T {
+/*
+ * This structure is used by wl_access_analyse to anotate
+ * some information to N_CODE nodes. See NCODE_WLAA macros
+ */
+typedef struct access_info_t {
     access_t *access;
     int accesscnt;
     int feature;
-    struct NODE *indexvar;
-    struct NODE *wlarray;
+    struct node *indexvar;
+    struct node *wlarray;
 } access_info_t;
 
-typedef struct TYPESS {
+typedef struct types {
     simpletype simpletype;
     char *name;             /* only used for T_user !! */
     char *name_mod;         /* name of modul belonging to 'name' */
-    struct NODE *tdef;      /* typedef of user-defined type */
+    struct node *tdef;      /* typedef of user-defined type */
     int dim;                /* if (dim == 0) => simpletype */
     bool poly;              /* only needed for type templates (newTC !) */
     shpseg *shpseg;         /* pointer to shape specification */
     statustype type_status; /* regular/artificial/crettype */
-    struct TYPESS *next;    /* only needed for fun-results  */
+    struct types *next;     /* only needed for fun-results  */
                             /* and implementation of implicit types */
 } types;
 
@@ -493,12 +485,12 @@ typedef struct TYPESS {
  *  from that on.
  */
 
-typedef struct {
+typedef struct generator_rel {
     prf op1;      /* only <= and < allowed, later normalized to <= */
     prf op2;      /* only <= and < allowed, later normalized to <= */
     prf op1_orig; /* only <= and < allowed, not to be changed      */
     prf op2_orig; /* only <= and < allowed, not to be changed      */
-} GeneratorRel;
+} generator_rel;
 
 /*
  *  And now some constants (macros) for the use with TYPES_DIM
@@ -534,7 +526,7 @@ typedef types shapes; /* this definition is primarily needed for
                        * only( including the dim)...
                        */
 
-typedef struct WL_INFO {
+typedef struct wl_info {
     int referenced;         /* number of references in function */
     int referenced_fold;    /* number of foldable references */
     int references_folded;  /* number of refs eliminated by WLF */
@@ -546,7 +538,7 @@ typedef struct WL_INFO {
     bool mto_offset_needed; /* more than one offset needed */
 } wl_info;
 
-typedef struct FUN_NAME {
+typedef struct fun_name {
     char *id;     /* name of function */
     char *id_mod; /* name of modul belonging to 'id' */
 } fun_name;
@@ -556,24 +548,23 @@ typedef struct {
     int tc;  /* type class */
 } prf_tag;
 
-typedef union {
-    node *ids;           /* list  of identifiers               */
-    char *id;            /* identifier                         */
-    types *types;        /* type information                   */
-    int cint;            /* integer value                      */
-    float cfloat;        /* float value                        */
-    double cdbl;         /* double value                       */
-    char cchar;          /* char value                         */
-    prf prf;             /* tag for primitive functions        */
-    fun_name fun_name;   /* used in N_ap nodes                 */
-    useflag use;         /* used in N_vect_info nodes          */
-    prf_tag prf_dec;     /* used for declaration of primitive functions
-                          * this declarations are used to look for argument
-                          * and result type of primitive functions
-                          */
-    WithOpType withop;   /* used in N_Nwith node */
-    WithIdType withid;   /* used in N_Nwithid node */
-    GeneratorRel genrel; /* used in N_Ngenerator node */
+typedef union infotype {
+    struct node *ids;     /* list  of identifiers               */
+    char *id;             /* identifier                         */
+    types *types;         /* type information                   */
+    int cint;             /* integer value                      */
+    float cfloat;         /* float value                        */
+    double cdbl;          /* double value                       */
+    char cchar;           /* char value                         */
+    prf prf;              /* tag for primitive functions        */
+    fun_name fun_name;    /* used in N_ap nodes                 */
+    useflag use;          /* used in N_vect_info nodes          */
+    prf_tag prf_dec;      /* used for declaration of primitive functions
+                           * this declarations are used to look for argument
+                           * and result type of primitive functions
+                           */
+    withid_t withid;      /* used in N_Nwithid node */
+    generator_rel genrel; /* used in N_Ngenerator node */
 } infotype;
 
 #ifdef NEW_AST
@@ -583,14 +574,14 @@ typedef union {
  * than using tree_basic.h. Thus the structure is defined in
  * tree_basic.h. This as well solves dependency problems.
  */
-typedef struct NODE node;
+typedef struct node node;
 
 #else
 /*
  *  The node structure of the SAC syntax tree
  */
 
-typedef struct NODE {
+typedef struct node {
     nodetype nodetype;           /* type of node */
     infotype info;               /* node dependent information */
     void *info2;                 /* any node dependent information */
@@ -606,7 +597,7 @@ typedef struct NODE {
     void *dfmask[MAX_MASK];      /* dataflow masks */
     int lineno;                  /* line number in source code */
     char *src_file;              /* pointer to filename or source code */
-    struct NODE *node[MAX_SONS]; /* pointers to child nodes */
+    struct node *node[MAX_SONS]; /* pointers to child nodes */
 } node;
 #endif /* NEW_AST */
 
@@ -619,11 +610,8 @@ typedef struct NODE {
  * included by all .c files of your traversal. You as well have to create
  * a static MakeInfo/FreeInfo function.
  *****************************************************************************/
-#ifndef NEW_INFO
-typedef node info;
-#else
-typedef struct INFO info;
-#endif
+
+typedef struct info info;
 
 /******************************************************************************
  *
@@ -633,7 +621,7 @@ typedef struct INFO info;
 
 /* The following struct is only annotated to N_assign nodes which are
    inside a WL body and which have ASSIGN_INSTRs N_let and N_prf(F_sel). */
-typedef struct INDEX_INFO {
+typedef struct index_info {
     int vector;               /* this is an index vector (>0) or a scalar (0)
                                  in case of a vector this number is the
                                  shape of the vector. */
@@ -646,7 +634,7 @@ typedef struct INDEX_INFO {
                                  (ONLY a constant, else the vector is not
                                  valid) this value is 0 and the constant
                                  can be found in const_arg. */
-    struct INDEX_INFO **last; /* Vector of predecessores (in case of vector)
+    struct index_info **last; /* Vector of predecessores (in case of vector)
                                  or one predecessor (last[0] in case of scalar).
                                  Point to last transformations */
 
@@ -673,24 +661,13 @@ typedef struct INDEX_INFO {
  * internal representation of WL generators on which the intersection
  * creation is based.
  */
-typedef struct INTERN_GEN {
+typedef struct intern_gen {
     int shape;
     int *l, *u;
     int *step, *width;
     node *code;
-    struct INTERN_GEN *next;
+    struct intern_gen *next;
 } intern_gen;
-
-/*
- *  Structure to store information during multithread.
- *  It is needed to store by whcih fold-operation a variable is set.
- */
-
-typedef struct FM {
-    node *vardec;
-    node *foldop;
-    struct FM *next;
-} DFMfoldmask_t;
 
 /*
  * used in precompile/compile
@@ -701,18 +678,18 @@ typedef enum {
 #include "argtag_info.mac"
 } argtag_t;
 
-typedef struct {
+typedef struct argtab_t {
     int size;
     node **ptr_in;  /* N_arg or N_exprs node */
     void **ptr_out; /* 'types*' or 'ids*' */
-    argtag_t *tag;
+    struct argtag_t *tag;
 } argtab_t;
 
 /*
  * used in emm
  */
 
-typedef struct RC_COUNTER rc_counter;
+typedef struct rc_counter rc_counter;
 
 /*
  * The following defines indicate the position of tags within name tuples.
@@ -732,31 +709,37 @@ typedef enum {
 #define ATTRIB NT_SHAPE_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
+#undef NTIFtype
+#undef ATTRIB
 } shape_class_t;
 
 typedef enum {
 #define ATTRIB NT_HIDDEN_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
+#undef NTIFtype
+#undef ATTRIB
 } hidden_class_t;
 
 typedef enum {
 #define ATTRIB NT_UNIQUE_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
+#undef NTIFtype
+#undef ATTRIB
 } unique_class_t;
 
 /*
  * moved from shape.h
  */
 
-typedef struct SHAPE shape;
+typedef struct shape shape;
 
 /*
  * moved from constant.h
  */
 
-typedef struct CONSTANT constant;
+typedef struct constant constant;
 typedef constant *(*monCF) (constant *);
 typedef constant *(*binCF) (constant *, constant *);
 typedef constant *(*triCF) (constant *, constant *, constant *);
@@ -794,15 +777,15 @@ typedef void (*zipcvfunptr) (void *, int, void *, int, void *, int);
 /*
  * moved from internal_lib.h
  */
-typedef struct STR_BUF str_buf;
-typedef struct PTR_BUF ptr_buf;
+typedef struct str_buf str_buf;
+typedef struct ptr_buf ptr_buf;
 
 /*******************************************************************************
  *
  * moved from new_types.h
  */
 
-typedef struct NTYPE ntype;
+typedef struct ntype ntype;
 
 /*
  * basic stuff which should only be used if essential from a performance
@@ -812,6 +795,7 @@ typedef struct NTYPE ntype;
 typedef enum {
 #define TCITypeConstr(a) a
 #include "type_constructor_info.mac"
+#undef TCITypeConstr
 } typeconstr;
 
 typedef struct dft {
@@ -842,15 +826,23 @@ typedef enum { TY_symb, TY_user } type_conversion_flag;
 
 /*******************************************************************************
  *
+ * moved from type_errors.h
+ */
+
+typedef struct te_info te_info;
+
+/*******************************************************************************
+ *
  * moved from sig_deps.h
  */
 
 typedef ntype *(*ct_funptr) (te_info *, ntype *);
-typedef struct SIG_DEP sig_dep;
+typedef struct sig_dep sig_dep;
 
 /*
  * moved from resource.h
- *
+ */
+
 /*****************************************************************************
  *
  * type: resource_list_t
@@ -948,15 +940,8 @@ typedef struct {
  * moved from ssi.h
  */
 
-typedef struct TVAR tvar;
+typedef struct tvar tvar;
 typedef bool (*tvar_ass_handle_fun) (sig_dep *handle);
-
-/*******************************************************************************
- *
- * moved from type_errors.h
- */
-
-typedef struct TE_INFO te_info;
 
 /*
  * moved from stringset.h
@@ -983,38 +968,38 @@ typedef void *dynfun_t;
  */
 
 /* structure for storing access patterns */
-typedef struct PATTERN_T {
+typedef struct pattern_t {
     shpseg *pattern;
-    struct PATTERN_T *next;
+    struct pattern_t *next;
 } pattern_t;
 
 /* structure for grouping access patterns by conflict groups */
-typedef struct CONFLICT_GROUP_T {
+typedef struct conflict_group_t {
     shpseg *group;
     accessdir_t direction;
     pattern_t *patterns;
-    struct CONFLICT_GROUP_T *next;
+    struct conflict_group_t *next;
 } conflict_group_t;
 
 /* strcture for grouping conflict groups by array types */
-typedef struct ARRAY_TYPE_T {
+typedef struct array_type_t {
     simpletype type;
     int dim;
     shpseg *shape;
     conflict_group_t *groups;
-    struct ARRAY_TYPE_T *next;
+    struct array_type_t *next;
 } array_type_t;
 
 /* structure containing shapes of unsupported operations */
-typedef struct UNSUPPORTED_SHAPE_T {
+typedef struct unsupported_shape_t {
     simpletype type;
     int dim;
     shpseg *shape;
-    struct UNSUPPORTED_SHAPE_T *next;
+    struct unsupported_shape_t *next;
 } unsupported_shape_t;
 
-/* structure containing old and infered array shape */
-typedef struct PAD_INFO_T {
+/* structure containing old and inferred array shape */
+typedef struct pad_info_t {
     simpletype type;
     int dim;
     shpseg *old_shape;
@@ -1022,14 +1007,14 @@ typedef struct PAD_INFO_T {
     shpseg *padding;
     node *fundef_pad;
     node *fundef_unpad;
-    struct PAD_INFO_T *next;
+    struct pad_info_t *next;
 } pad_info_t;
 
 /*
  * moved from modulemanager.h
  */
 
-typedef struct MODULE_T module_t;
+typedef struct module_t module_t;
 typedef node *(*serfun_p) ();
 
 /*
@@ -1048,11 +1033,11 @@ typedef enum {
 
 typedef enum { SVT_local, SVT_provided, SVT_exported } stvisibility_t;
 
-typedef struct ST_ENTRY_T stentry_t;
-typedef struct ST_SYMBOLITERATOR_T stsymboliterator_t;
-typedef struct ST_ENTRYITERATOR_T stentryiterator_t;
-typedef struct ST_SYMBOLTABLE_T sttable_t;
-typedef struct ST_SYMBOL_T stsymbol_t;
+typedef struct st_entry_t stentry_t;
+typedef struct st_symboliterator_t stsymboliterator_t;
+typedef struct st_entryiterator_t stentryiterator_t;
+typedef struct st_symboltable_t sttable_t;
+typedef struct st_symbol_t stsymbol_t;
 
 /*
  * New types for global
@@ -1062,31 +1047,27 @@ typedef struct ST_SYMBOL_T stsymbol_t;
  * Read in optimization flags from optimize.mac
  */
 
+typedef struct optimize_t {
 #define OPTabbr(abbr) unsigned int do##abbr : 1
-#define GLOBALdelim ;
-
-typedef struct {
+#define OPTdelim ;
 #include "optimize.mac"
-} optimize_t;
-
-#undef GLOBALdelim
+#undef OPTdelim
 #undef OPTabbr
+} optimize_t;
 
 /*
  * Read in global variables from globals.mac
  */
 
+typedef struct globals_t {
 #define GLOBALtype(it_type) it_type
 #define GLOBALid(it_id) it_id
 #define GLOBALdelim ;
-
-typedef struct {
 #include "globals.mac"
-} globals_t;
-
 #undef GLOBALdelim
 #undef GLOBALid
 #undef GLOBALtype
+} globals_t;
 
 /*******************************************************************************
  * moved from SSAConstantFolding.h:
@@ -1094,32 +1075,32 @@ typedef struct {
  *
  * structural constant (SCO) should be integrated in constants.[ch] in future
  */
-typedef struct STRUCT_CONSTANT struct_constant;
+typedef struct struct_constant struct_constant;
 
 /*******************************************************************************
  * moved from DataFlowMask.h:
  */
-typedef struct MASK_BASE_T dfmask_base_t;
-typedef struct MASK_T dfmask_t;
+typedef struct mask_base_t dfmask_base_t;
+typedef struct mask_t dfmask_t;
 
 /*******************************************************************************
  * moved from DataFlowMaskUtils.h:
  */
-typedef struct STACK_T dfmstack_t;
+typedef struct stack_t dfmstack_t;
 
 /*******************************************************************************
  * moved from LookUpTable.h
  */
 
-typedef struct LUT_T lut_t;
+typedef struct lut_t lut_t;
 
 /*******************************************************************************
  * moved from scheduling.h
  */
 
-typedef struct SCHED_T sched_t;
+typedef struct sched_t sched_t;
 
-typedef struct TASKSEL_T tasksel_t;
+typedef struct tasksel_t tasksel_t;
 
 /*******************************************************************************
  * moved from traverse.h
@@ -1127,7 +1108,7 @@ typedef struct TASKSEL_T tasksel_t;
 
 typedef node *(*funptr) (node *, info *);
 
-typedef struct FUNREC {
+typedef struct funrec {
     funptr travtab[N_ok + 1];
     funptr prefun;
     funptr postfun;
@@ -1137,6 +1118,6 @@ typedef struct FUNREC {
  * moved from serialize_stack.h
  */
 
-typedef struct SERSTACK_T serstack_t;
+typedef struct serstack_t serstack_t;
 
 #endif /* _SAC_TYPES_H_ */
