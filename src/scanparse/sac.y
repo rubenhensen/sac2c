@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.75  1995/07/19 12:18:03  hw
+ * Revision 1.76  1995/07/24 09:10:17  hw
+ * moved 'enum' file_kind to tree.h
+ *
+ * Revision 1.75  1995/07/19  12:18:03  hw
  * in "extern" ModuleDec or ClassDec's the decaration of a primitive function
  * requires the declaration of the associated "non-SAC-function"
  * in braces after the name of the primitive function
@@ -281,10 +284,10 @@ node *syntax_tree;
 node *decl_tree;
 
 static char *mod_name;
-static enum { F_prog, F_modimp, F_classimp, F_moddec, F_extmoddec,
-              F_classdec, F_extclassdec } file_kind = F_prog;
-                      /* used to distinguish the different kinds of files  */
-                      /* which are parsed with this single parser          */
+
+/* used to distinguish the different kinds of files  */
+/* which are parsed with this single parser          */
+static file_type file_kind = F_prog;
 
 
 %}
