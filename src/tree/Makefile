@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.5  2000/01/24 17:58:43  dkr
+# make deps done
+#
 # Revision 1.4  2000/01/24 11:49:49  jhs
 # Added scheduling.o (moved here from concurrent).
 #
@@ -60,8 +63,6 @@ DataFlowMask.o: /usr/include/stdlib.h ../global/globals.h
 DataFlowMask.o: ../global/internal_lib.h free.h ../global/my_debug.h
 DataFlowMask.o: /usr/include/malloc.h /usr/include/sys/types.h
 DataFlowMask.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-DataFlowMask.o: /usr/include/sys/select.h /usr/include/sys/time.h
-DataFlowMask.o: /usr/include/sys/time.h
 DataFlowMaskUtils.o: tree.h ../global/types.h tree_basic.h tree_compound.h
 DataFlowMaskUtils.o: ../global/Error.h /usr/include/stdio.h
 DataFlowMaskUtils.o: /usr/include/sys/feature_tests.h
@@ -79,11 +80,9 @@ DupTree.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
 DupTree.o: ../global/globals.h ../global/internal_lib.h traverse.h free.h
 DupTree.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 DupTree.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-DupTree.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-DupTree.o: /usr/include/sys/time.h /usr/include/sys/time.h
-DupTree.o: ../typecheck/typecheck.h DupTree.h DataFlowMask.h
-DupTree.o: ../optimize/optimize.h ../optimize/Inline.h scheduling.h
-DupTree.o: ../optimize/generatemasks.h
+DupTree.o: /usr/include/sys/int_types.h ../typecheck/typecheck.h DupTree.h
+DupTree.o: DataFlowMask.h ../optimize/optimize.h ../optimize/Inline.h
+DupTree.o: scheduling.h ../optimize/generatemasks.h
 free.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 free.o: /usr/include/sys/isa_defs.h /usr/include/stdio.h
 free.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -93,8 +92,6 @@ free.o: ../global/Error.h /usr/include/string.h ../global/globals.h
 free.o: ../global/internal_lib.h traverse.h DataFlowMask.h scheduling.h
 free.o: free.h /usr/include/malloc.h /usr/include/sys/types.h
 free.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-free.o: /usr/include/sys/select.h /usr/include/sys/time.h
-free.o: /usr/include/sys/time.h
 scheduling.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 scheduling.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 scheduling.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -102,10 +99,8 @@ scheduling.o: /usr/include/string.h /usr/include/varargs.h ../global/types.h
 scheduling.o: tree_basic.h ../global/internal_lib.h free.h ../../inc/dbug.h
 scheduling.o: ../global/my_debug.h /usr/include/malloc.h
 scheduling.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-scheduling.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-scheduling.o: /usr/include/sys/time.h /usr/include/sys/time.h
-scheduling.o: ../global/globals.h traverse.h ../global/Error.h
-scheduling.o: /usr/include/stdlib.h ../compile/precompile.h
+scheduling.o: /usr/include/sys/int_types.h ../global/globals.h traverse.h
+scheduling.o: ../global/Error.h /usr/include/stdlib.h ../compile/precompile.h
 traverse.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 traverse.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 traverse.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -116,11 +111,9 @@ traverse.o: ../global/my_debug.h ../flatten/flatten.h ../print/print.h
 traverse.o: ../typecheck/typecheck.h ../typecheck/typecheck_WL.h
 traverse.o: ../optimize/optimize.h free.h /usr/include/malloc.h
 traverse.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-traverse.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-traverse.o: /usr/include/sys/time.h /usr/include/sys/time.h
-traverse.o: ../optimize/generatemasks.h ../optimize/freemasks.h
-traverse.o: ../optimize/ConstantFolding.h ../optimize/DeadCodeRemoval.h
-traverse.o: ../optimize/DeadFunctionRemoval.h
+traverse.o: /usr/include/sys/int_types.h ../optimize/generatemasks.h
+traverse.o: ../optimize/freemasks.h ../optimize/ConstantFolding.h
+traverse.o: ../optimize/DeadCodeRemoval.h ../optimize/DeadFunctionRemoval.h
 traverse.o: ../optimize/LoopInvariantRemoval.h ../optimize/CSE.h
 traverse.o: ../modules/import.h DupTree.h ../optimize/Inline.h
 traverse.o: ../optimize/Unroll.h ../optimize/Unswitch.h
@@ -152,8 +145,7 @@ tree.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
 tree.o: ../scanparse/scnprs.h ../global/resource.h ../scanparse/y.tab.h
 tree.o: ../optimize/optimize.h free.h /usr/include/malloc.h
 tree.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-tree.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-tree.o: /usr/include/sys/time.h /usr/include/sys/time.h
+tree.o: /usr/include/sys/int_types.h
 tree_basic.o: ../global/types.h tree_basic.h ../global/Error.h
 tree_basic.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 tree_basic.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
@@ -163,9 +155,7 @@ tree_basic.o: ../../inc/dbug.h ../global/my_debug.h ../scanparse/scnprs.h
 tree_basic.o: ../global/resource.h ../scanparse/y.tab.h free.h
 tree_basic.o: /usr/include/malloc.h /usr/include/sys/types.h
 tree_basic.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-tree_basic.o: /usr/include/sys/select.h /usr/include/sys/time.h
-tree_basic.o: /usr/include/sys/time.h ../global/internal_lib.h
-tree_basic.o: prf_node_info.mac
+tree_basic.o: ../global/internal_lib.h prf_node_info.mac
 tree_compound.o: ../global/types.h tree_basic.h tree_compound.h
 tree_compound.o: ../global/Error.h /usr/include/stdio.h
 tree_compound.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -174,6 +164,4 @@ tree_compound.o: /usr/include/stdio_impl.h /usr/include/string.h
 tree_compound.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
 tree_compound.o: ../global/my_debug.h free.h /usr/include/malloc.h
 tree_compound.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-tree_compound.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
-tree_compound.o: /usr/include/sys/time.h /usr/include/sys/time.h
-tree_compound.o: ../global/internal_lib.h
+tree_compound.o: /usr/include/sys/int_types.h ../global/internal_lib.h

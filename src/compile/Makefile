@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.13  2000/01/24 17:58:33  dkr
+# make deps done
+#
 # Revision 2.12  2000/01/21 17:02:08  dkr
 # make deps done
 #
@@ -180,7 +183,7 @@ compile.o: /usr/include/malloc.h /usr/include/sys/types.h
 compile.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 compile.o: compile.h ../print/convert.h ../tree/DupTree.h
 compile.o: ../refcount/refcount.h ../typecheck/typecheck.h ReuseWithArrays.h
-compile.o: ../concurrent/scheduling.h
+compile.o: ../tree/scheduling.h
 gen_startup_code.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 gen_startup_code.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 gen_startup_code.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -253,8 +256,8 @@ precompile.o: ../global/my_debug.h /usr/include/malloc.h
 precompile.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
 precompile.o: /usr/include/sys/int_types.h precompile.h ../print/convert.h
 precompile.o: ../tree/traverse.h ../refcount/refcount.h
-precompile.o: ../tree/DataFlowMask.h ../concurrent/scheduling.h
-precompile.o: ../tree/DupTree.h ../typecheck/typecheck.h
+precompile.o: ../tree/DataFlowMask.h ../tree/scheduling.h ../tree/DupTree.h
+precompile.o: ../typecheck/typecheck.h
 wlpragma_funs.o: ../../inc/dbug.h /usr/include/stdio.h
 wlpragma_funs.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 wlpragma_funs.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h

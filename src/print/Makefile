@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.9  2000/01/24 17:58:29  dkr
+# make deps done
+#
 # Revision 2.8  2000/01/21 17:02:04  dkr
 # make deps done
 #
@@ -131,6 +134,6 @@ print.o: ../tree/free.h /usr/include/malloc.h /usr/include/sys/types.h
 print.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 print.o: ../optimize/generatemasks.h ../modules/filemgr.h
 print.o: ../compile/gen_startup_code.h ../psi-opt/WithloopFolding.h
-print.o: ../concurrent/scheduling.h ../psi-opt/wl_access_analyze.h
+print.o: ../tree/scheduling.h ../psi-opt/wl_access_analyze.h
 print.o: ../psi-opt/tile_size_inference.h ../compile/icm.data
 print.o: ../tree/prf_node_info.mac
