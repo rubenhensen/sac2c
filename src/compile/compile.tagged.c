@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.67  2003/04/15 14:17:01  dkr
+ * workaround for non-AKS return values without descriptor removed
+ *
  * Revision 1.66  2003/04/14 18:58:08  dkr
  * @file added
  *
@@ -569,7 +572,7 @@ GenericFun (int which, types *type)
     DBUG_RETURN (ret);
 }
 
-#if 0
+#if 0 /* defined in compile.c already */
 
 /** <!--********************************************************************-->
  *
@@ -759,7 +762,7 @@ DupExprs_NT_AddReadIcms (node *exprs)
  ******************************************************************************/
 
 static node *
-MakeAllocDescIcm (char *name, types *type, int rc, int line, node *assigns)
+MakeAllocDescIcm (char *name, types *type, int rc, node *assigns)
 {
     DBUG_ENTER ("MakeAllocDescIcm");
 
@@ -769,11 +772,11 @@ MakeAllocDescIcm (char *name, types *type, int rc, int line, node *assigns)
         int dim = GetDim (type);
 
         if (dim < 0) {
-#if 0
-      DBUG_ASSERT( (0), "array with unknown shape/dimension found!");
-#else
-            WARN (line, ("Array with unknown shape/dimension found"));
-#endif
+            /**
+             * this is most likely a return value from an external C function which
+             * does not create a descriptor.
+             */
+            DBUG_ASSERT ((0), "dimension undefined -> size of descriptor unknown");
         }
 
         assigns = MakeAssignIcm2 ("ND_ALLOC__DESC", MakeId_Copy_NT (name, type),
@@ -2760,20 +2763,17 @@ COMPApIds (node *ap, node *arg_info)
                       = GetShapeClassFromTypes (IDS_TYPE (((ids *)argtab->ptr_out[i])));
                     DBUG_ASSERT ((sc != C_unknowns), "illegal data class found!");
                     if ((sc == C_akd) || (sc == C_aud)) {
-#if 0
-            DBUG_ASSERT( (0),
-                   "Array representation with unknown shape/dimension found!");
-            WARN( NODE_LINE( ap),
-                  ("Array representation with unknown shape/dimension found"));
-#endif
+                        DBUG_ASSERT ((0), "Return value with undefined shape/dimension "
+                                          "found!");
+                        WARN (linenum,
+                              ("Return value with undefined shape/dimension found"));
                     }
                 }
 
                 if (!ATG_has_desc[tag]) {
                     /* function uses no descriptor at all */
-                    ret_node
-                      = MakeAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                          IDS_REFCNT (let_ids), NODE_LINE (ap), ret_node);
+                    ret_node = MakeAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                                 IDS_REFCNT (let_ids), ret_node);
                 }
             }
         }
