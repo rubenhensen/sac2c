@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.54  1995/08/03 14:53:45  cg
+ * Revision 1.55  1995/08/15 16:52:11  hw
+ * new status ST_duplicted_fun & ST_artificial_fun inserted (they are used to
+ * tag functions while typechecking)
+ *
+ * Revision 1.54  1995/08/03  14:53:45  cg
  * NIF-macro adjusted to 26 parameters.
  *
  * Revision 1.53  1995/07/26  08:40:10  cg
@@ -207,6 +211,9 @@ typedef enum {
     ST_readonly_reference, /* readonly reference param (unique)  */
     ST_ref,                /* Id must be referenced                  */
     ST_deref,              /* Id must be dereferenced                */
+    ST_duplicted_fun,      /* function is duplicated while typecheking */
+    ST_artificial_fun,     /* function is only generated for temporary */
+                           /* typechecking                           */
     ST_artificial          /* unique type inserted during            */
                            /* signature expansion                    */
 } statustype;
