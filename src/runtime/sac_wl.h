@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2003/09/19 12:07:28  dkr
+ * code for TAGGED_ARRAYS removed
+ *
  * Revision 3.21  2003/09/15 13:00:51  dkr
  * SAC_ND_MIN, SAC_ND_MAX replaced by SAC_MIN, SAC_MAX
  *
@@ -98,11 +101,7 @@
  *** current array entry.
  ***/
 
-#ifdef TAGGED_ARRAYS
-#define SAC_WL_OFFSET(to_nt) CAT0 (NT_NAME (to_nt), __off)
-#else
 #define SAC_WL_OFFSET(target) CAT0 (target, __off)
-#endif
 
 /*****************************************************************************/
 
@@ -607,13 +606,8 @@
  *** with-loop-body.
  ***/
 
-#ifdef TAGGED_ARRAYS
-#define SAC_WL_SET_IDXVEC(dim, idx_vec_nt_nt, idx_scl, bnd1, bnd2)                       \
-    SAC_ND_WRITE (idx_vec_nt_nt, dim) = idx_scl;
-#else
 #define SAC_WL_SET_IDXVEC(dim, idx_vec, idx_scl, bnd1, bnd2)                             \
     SAC_ND_WRITE_ARRAY (idx_vec, dim) = idx_scl;
-#endif
 
 /*****************************************************************************/
 
