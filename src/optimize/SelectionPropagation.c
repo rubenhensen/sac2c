@@ -1,9 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.6  2004/06/09 13:17:07  mwe
- * using new types (ntype*) for type requests
- * changes on types are done for new types (ntype*) also
+ * Revision 1.7  2004/07/07 15:43:36  mwe
+ * last changes undone (all changes connected to new type representation with ntype*)
  *
  * Revision 1.5  2003/09/26 11:31:45  ktr
  * Fixed a crash that appeared for scalar with-loops (Had no idea they existed at all).
@@ -230,9 +229,6 @@ TryReplaceSelection (node *assign, node *arg_info)
 
         ARRAY_TYPE (ASSIGN_RHS (tmpnode))
           = MakeTypes (T_int, 1, MakeShpseg (MakeNums (1, NULL)), NULL, NULL);
-        /*type->ntype*/
-        ARRAY_NTYPE (ASSIGN_RHS (tmpnode))
-          = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (1, 1));
 
         AddVardecs (INFO_SP_FUNDEF (arg_info), vardec);
 
@@ -344,8 +340,7 @@ getScalarPrf (prf Prf)
 }
 
 node *
-selectOrIdentity (node *arg, node *index, bool isArray, types *t, ntype *n,
-                  node *arg_info)
+selectOrIdentity (node *arg, node *index, bool isArray, types *t, node *arg_info)
 {
     node *vardec = NULL;
     node *tmp;
@@ -359,8 +354,6 @@ selectOrIdentity (node *arg, node *index, bool isArray, types *t, ntype *n,
                                  : DupNode (arg));
 
     AVIS_SSAASSIGN (VARDEC_AVIS (vardec)) = tmp;
-    /*types->ntype*/
-    AVIS_TYPE (VARDEC_AVIS (vardec)) = TYCopyType (n);
 
     return tmp;
 }
@@ -390,16 +383,13 @@ propagateSelection (node *arg_node, node *arg_info)
 
     origop = ASSIGN_RHS (ID_SSAASSIGN (PRF_ARG2 (ASSIGN_RHS (arg_node))));
 
-    /*types->ntype*/
     left_sel = selectOrIdentity (PRF_ARG1 (origop), PRF_ARG1 (ASSIGN_RHS (arg_node)),
                                  isLeftArray (PRF_PRF (origop)),
-                                 IDS_TYPE (ASSIGN_LHS (arg_node)),
-                                 AVIS_TYPE (IDS_AVIS (ASSIGN_LHS (arg_node))), arg_info);
+                                 IDS_TYPE (ASSIGN_LHS (arg_node)), arg_info);
 
     right_sel = selectOrIdentity (PRF_ARG2 (origop), PRF_ARG1 (ASSIGN_RHS (arg_node)),
                                   isRightArray (PRF_PRF (origop)),
-                                  IDS_TYPE (ASSIGN_LHS (arg_node)),
-                                  AVIS_TYPE (IDS_AVIS (ASSIGN_LHS (arg_node))), arg_info);
+                                  IDS_TYPE (ASSIGN_LHS (arg_node)), arg_info);
 
     FreeNode (ASSIGN_RHS (arg_node));
 

@@ -1,9 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.6  2004/06/09 13:17:07  mwe
- * using new types (ntype*) for type requests
- * changes on types are done for new types (ntype*) also
+ * Revision 1.7  2004/07/07 15:43:36  mwe
+ * last changes undone (all changes connected to new type representation with ntype*)
  *
  * Revision 1.5  2003/06/17 13:36:42  dkr
  * bug in ForEachElement() fixed:
@@ -268,7 +267,6 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
     node *index;
     types *type;
     shpseg *shpseg;
-    ntype *newtype;
 
     DBUG_ENTER ("ForEachElementHelp");
 
@@ -288,11 +286,6 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
             shpseg = MakeShpseg (MakeNums (maxdim, NULL));
             type = MakeTypes (T_int, 1, shpseg, NULL, NULL);
             ARRAY_TYPE (index) = type;
-            /*
-             * type->ntype
-             */
-            newtype = TYMakeSimpleType (T_int);
-            ARRAY_NTYPE (index) = TYMakeAKS (newtype, SHOldShpseg2Shape (1, shpseg));
 
             assignn = opfun (assignn, index);
         } else {
@@ -349,10 +342,6 @@ ForEachElement (node *partn, node *assignn)
         /* nums struct is freed inside MakeShpseg() */
         ARRAY_TYPE (index)
           = MakeTypes (T_int, 1, MakeShpseg (MakeNums (maxdim, NULL)), NULL, NULL);
-
-        /*type->ntype*/
-        ARRAY_NTYPE (index)
-          = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (1, maxdim));
 
         res = opfun (assignn, index);
     } else {
@@ -603,15 +592,11 @@ SSACheckUnrollGenarray (node *wln, node *arg_info)
     int ok, length;
     node *genn;
     types *type;
-    ntype *newtype;
 
     DBUG_ENTER ("SSACheckUnrollGenarray");
 
-    /*types->ntype*/
     type = IDS_TYPE (LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info))));
     length = GetTypesLength (type);
-    newtype = AVIS_TYPE (IDS_AVIS (LET_IDS (ASSIGN_INSTR (INFO_UNR_ASSIGN (arg_info)))));
-    length = SHGetUnrLen (TYGetShape (newtype));
 
     /*
      * Everything constant?
