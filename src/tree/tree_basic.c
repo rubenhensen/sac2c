@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2002/09/06 10:36:45  sah
+ * added basic N_setwl support.
+ *
  * Revision 3.63  2002/08/12 14:58:52  sbs
  * N_mop representation changed
  *
@@ -1388,6 +1391,25 @@ MakeDot (int num)
 
     tmp = CreateCleanNode (N_dot);
     DOT_NUM (tmp) = num;
+
+    DBUG_PRINT ("MAKE",
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeSetWL (ids *index, node *expr)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeSetWL");
+
+    tmp = CreateCleanNode (N_setwl);
+    SETWL_IDS (tmp) = index;
+    SETWL_EXPR (tmp) = expr;
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));

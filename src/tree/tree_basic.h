@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.145  2002/09/06 10:36:45  sah
+ * added basic N_setwl support.
+ *
  * Revision 3.144  2002/09/02 12:23:01  dkr
  * N_vardec: comment corrected
  *
@@ -1990,6 +1993,27 @@ extern node *MakeDot (int num);
 
 #define DOT_NUM(n) (n->counter)
 #define DOT_ISSINGLE(n) ((NODE_TYPE (n) == N_dot) && (DOT_NUM (n) == 1))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_setwl :
+ ***
+ ***  permanent attributes:
+ ***
+ ***    ids*         IDS
+ ***    node*        EXPR
+ ***
+ ***  remarks:
+ ***
+ ***    This node represents the set-like WL shortcut notation within
+ ***    the syntax tree.
+ ***/
+
+extern node *MakeSetWL (ids *index, node *expr);
+
+#define SETWL_IDS(n) ((ids *)((n)->info2))
+#define SETWL_EXPR(n) (n->node[0])
 
 /*--------------------------------------------------------------------------*/
 
