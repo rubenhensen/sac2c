@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.114  1998/04/03 21:06:08  dkr
+ * added N_info access macros for precompile
+ * added attributes for N_conc: CONC_AP, CONC_MASK
+ *
  * Revision 1.113  1998/04/02 17:39:35  dkr
  * removed NWITH2_FUNAP
  * new node N_conc added
@@ -164,9 +168,6 @@
  *
  * Revision 1.60  1997/11/22 23:32:14  dkr
  * uups! it is not recommended to use c-comments in this message ... :(
- *
- * Revision 1.59  1997/11/22 23:26:03  dkr
- * "N_NCode :" -> "N_Ncode :"
  *
  * Revision 1.57  1997/11/18 18:05:43  srs
  * changed new WL-macros
@@ -713,7 +714,7 @@ extern node *MakeModul (char *name, file_type filetype, node *imports, node *typ
 #define MODUL_FUNS(n) (n->node[2])
 #define MODUL_DECL(n) (n->node[4])
 #define MODUL_STORE_IMPORTS(n) (n->node[4])
-#define MODUL_CLASSTYPE(n) ((types *)n->node[5])
+#define MODUL_CLASSTYPE(n) ((types *)(n->node[5]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -736,7 +737,7 @@ extern node *MakeModdec (char *name, deps *linkwith, int isexternal, node *impor
                          node *exports);
 
 #define MODDEC_NAME(n) (n->info.fun_name.id)
-#define MODDEC_LINKWITH(n) ((deps *)n->info.fun_name.id_mod)
+#define MODDEC_LINKWITH(n) ((deps *)(n->info.fun_name.id_mod))
 #define MODDEC_ISEXTERNAL(n) (n->refcnt)
 #define MODDEC_IMPORTS(n) (n->node[1])
 #define MODDEC_OWN(n) (n->node[0])
@@ -762,7 +763,7 @@ extern node *MakeClassdec (char *name, deps *linkwith, int isexternal, node *imp
                            node *exports);
 
 #define CLASSDEC_NAME(n) (n->info.fun_name.id)
-#define CLASSDEC_LINKWITH(n) ((deps *)n->info.fun_name.id_mod)
+#define CLASSDEC_LINKWITH(n) ((deps *)(n->info.fun_name.id_mod))
 #define CLASSDEC_ISEXTERNAL(n) (n->refcnt)
 #define CLASSDEC_IMPORTS(n) (n->node[1])
 #define CLASSDEC_OWN(n) (n->node[0])
@@ -799,7 +800,7 @@ extern node *MakeSib (char *name, int linkstyle, deps *linkwith, node *types, no
 #define SIB_FUNS(n) (n->node[2])
 #define SIB_LINKSTYLE(n) (n->varno)
 #define SIB_NAME(n) (n->info.fun_name.id)
-#define SIB_LINKWITH(n) ((deps *)n->info.fun_name.id_mod)
+#define SIB_LINKWITH(n) ((deps *)(n->info.fun_name.id_mod))
 #define SIB_NEXT(n) (n->node[3])
 
 /*--------------------------------------------------------------------------*/
@@ -824,10 +825,10 @@ extern node *MakeImplist (char *name, ids *itypes, ids *etypes, ids *objs, ids *
                           node *next);
 
 #define IMPLIST_NAME(n) (n->info.id)
-#define IMPLIST_ITYPES(n) ((ids *)n->node[1])
-#define IMPLIST_ETYPES(n) ((ids *)n->node[2])
-#define IMPLIST_OBJS(n) ((ids *)n->node[4])
-#define IMPLIST_FUNS(n) ((ids *)n->node[3])
+#define IMPLIST_ITYPES(n) ((ids *)(n->node[1]))
+#define IMPLIST_ETYPES(n) ((ids *)(n->node[2]))
+#define IMPLIST_OBJS(n) ((ids *)(n->node[4]))
+#define IMPLIST_FUNS(n) ((ids *)(n->node[3]))
 #define IMPLIST_NEXT(n) (n->node[0])
 
 /*--------------------------------------------------------------------------*/
@@ -902,8 +903,8 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
 #define TYPEDEF_IMPL(n) (n->info.types->next)
 #define TYPEDEF_NEXT(n) (n->node[0])
 #define TYPEDEF_PRAGMA(n) (n->node[2])
-#define TYPEDEF_COPYFUN(n) ((char *)n->node[3])
-#define TYPEDEF_FREEFUN(n) ((char *)n->node[4])
+#define TYPEDEF_COPYFUN(n) ((char *)(n->node[3]))
+#define TYPEDEF_FREEFUN(n) ((char *)(n->node[4]))
 
 #define TYPEDEC_DEF(n) (n->node[1])
 
@@ -984,7 +985,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 #define OBJDEF_ARG(n) (n->node[3])
 #define OBJDEF_PRAGMA(n) (n->node[4])
 #define OBJDEF_ICM(n) (n->node[3])
-#define OBJDEF_NEEDOBJS(n) ((nodelist *)n->node[5])
+#define OBJDEF_NEEDOBJS(n) ((nodelist *)(n->node[5]))
 #define OBJDEF_SIB(n) (n->node[3])
 
 #define OBJDEC_DEF(n) (n->node[2])
@@ -1127,7 +1128,7 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
 #define ARG_NEXT(n) (n->node[0])
 #define ARG_VARNO(n) (n->varno)
 #define ARG_REFCNT(n) (n->refcnt)
-#define ARG_TYPESTRING(n) ((char *)n->node[1])
+#define ARG_TYPESTRING(n) ((char *)(n->node[1]))
 #define ARG_OBJDEF(n) (n->node[2])
 #define ARG_ACTCHN(n) (n->node[3])
 #define ARG_COLCHN(n) (n->node[4])
@@ -1679,7 +1680,7 @@ extern node *MakeArray (node *aelems);
 
 #define ARRAY_AELEMS(n) (n->node[0])
 #define ARRAY_TYPE(n) (n->info.types)
-#define ARRAY_STRING(n) ((char *)n->node[1])
+#define ARRAY_STRING(n) ((char *)(n->node[1]))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1701,7 +1702,7 @@ extern node *MakeArray (node *aelems);
 extern node *MakeVinfo (useflag flag, types *type, node *next);
 
 #define VINFO_FLAG(n) (n->info.use)
-#define VINFO_TYPE(n) ((types *)n->node[1])
+#define VINFO_TYPE(n) ((types *)(n->node[1]))
 #define VINFO_NEXT(n) (n->node[0])
 #define VINFO_VARDEC(n) (n->node[2])
 
@@ -2030,19 +2031,19 @@ extern node *MakeIcm (char *name, node *args, node *next);
 extern node *MakePragma ();
 
 #define PRAGMA_LINKNAME(n) (n->info.id)
-#define PRAGMA_LINKSIGN(n) ((int *)n->mask[0])
-#define PRAGMA_LINKSIGNNUMS(n) ((nums *)n->mask[0])
-#define PRAGMA_REFCOUNTING(n) ((int *)n->mask[1])
-#define PRAGMA_REFCOUNTINGNUMS(n) ((nums *)n->mask[1])
-#define PRAGMA_READONLY(n) ((int *)n->mask[2])
-#define PRAGMA_READONLYNUMS(n) ((nums *)n->mask[2])
-#define PRAGMA_EFFECT(n) ((ids *)n->mask[3])
-#define PRAGMA_TOUCH(n) ((ids *)n->mask[4])
-#define PRAGMA_COPYFUN(n) ((char *)n->mask[5])
-#define PRAGMA_FREEFUN(n) ((char *)n->mask[6])
-#define PRAGMA_INITFUN(n) ((char *)n->node[3])
-#define PRAGMA_LINKMOD(n) ((char *)n->node[2])
-#define PRAGMA_NEEDTYPES(n) ((ids *)n->node[1])
+#define PRAGMA_LINKSIGN(n) ((int *)(n->mask[0]))
+#define PRAGMA_LINKSIGNNUMS(n) ((nums *)(n->mask[0]))
+#define PRAGMA_REFCOUNTING(n) ((int *)(n->mask[1]))
+#define PRAGMA_REFCOUNTINGNUMS(n) ((nums *)(n->mask[1]))
+#define PRAGMA_READONLY(n) ((int *)(n->mask[2]))
+#define PRAGMA_READONLYNUMS(n) ((nums *)(n->mask[2]))
+#define PRAGMA_EFFECT(n) ((ids *)(n->mask[3]))
+#define PRAGMA_TOUCH(n) ((ids *)(n->mask[4]))
+#define PRAGMA_COPYFUN(n) ((char *)(n->mask[5]))
+#define PRAGMA_FREEFUN(n) ((char *)(n->mask[6]))
+#define PRAGMA_INITFUN(n) ((char *)(n->node[3]))
+#define PRAGMA_LINKMOD(n) ((char *)(n->node[2]))
+#define PRAGMA_NEEDTYPES(n) ((ids *)(n->node[1]))
 #define PRAGMA_NEEDFUNS(n) (n->node[0])
 #define PRAGMA_NUMPARAMS(n) (n->flag)
 
@@ -2066,6 +2067,11 @@ extern node *MakePragma ();
  ***    nodelist*  EXPORTOBJS    (O)
  ***    nodelist*  EXPORTFUNS    (O)
  ***
+ ***  when used in precompile.c :
+ ***
+ ***    char*      NAME          (0)
+ ***    node*      FUNDEFS       (0)  (N_fundef)
+ ***
  ***  when used in compile.c :
  ***
  ***    ids*       LASTIDS       (O)
@@ -2079,6 +2085,10 @@ extern node *MakePragma ();
  ***    int        CNTPARAM
  ***    node**     ICMTAB        (O)
  ***    types**    TYPETAB       (O)
+ ***
+ ***  when used in optimize.c :
+ ***
+ ***    long*      MASK[x]
  ***
  ***  when used in WithloopFolding.c :
  ***    int        IS_WL              (0/1)
@@ -2108,9 +2118,15 @@ extern node *MakeInfo ();
 #define INFO_LASSIGN(n) (n->node[3])
 
 /* writesib */
-#define INFO_EXPORTTYPES(n) ((nodelist *)n->node[0])
-#define INFO_EXPORTOBJS(n) ((nodelist *)n->node[1])
-#define INFO_EXPORTFUNS(n) ((nodelist *)n->node[2])
+#define INFO_EXPORTTYPES(n) ((nodelist *)(n->node[0]))
+#define INFO_EXPORTOBJS(n) ((nodelist *)(n->node[1]))
+#define INFO_EXPORTFUNS(n) ((nodelist *)(n->node[2]))
+
+/* precompile */
+#define INFO_MODUL(n) (n->node[0])
+#define INFO_CNT_ARTIFICIAL(n) (n->lineno)
+#define INFO_NAME(n) (n->info.id)
+#define INFO_CONCFUNS(n) (n->node[1])
 
 /* compile */
 #define INFO_LASTIDS(n) (n->info.ids)
@@ -2119,12 +2135,14 @@ extern node *MakeInfo ();
 #define INFO_VARDECS(n) (n->node[3])
 #define INFO_WITHBEGIN(n) (n->node[2])
 
-/* compile */
 #define INFO_FIRSTASSIGN(n) (n->node[0])
 #define INFO_FUNDEF(n) (n->node[1])
 #define INFO_CNTPARAM(n) (n->lineno)
-#define INFO_ICMTAB(n) ((node **)n->node[2])
-#define INFO_TYPETAB(n) ((types **)n->info.types)
+#define INFO_ICMTAB(n) ((node **)(n->node[2]))
+#define INFO_TYPETAB(n) ((types **)(n->info.types))
+
+/* optimize */
+#define INFO_MASK(n, x) (n->mask[x])
 
 /* WLF, all phases, not only WLI. */
 #define INFO_WLI_NEXT(n) (n->node[0])
@@ -2143,7 +2161,7 @@ extern node *MakeInfo ();
  ***
  ***  sons:
  ***
- ***    node*  REGION             (0)  (N_assign)
+ ***    node*      REGION      (0)  (N_assign)
  ***
  ***  permanent attributes:
  ***
@@ -2151,13 +2169,17 @@ extern node *MakeInfo ();
  ***
  ***  temporary attributes:
  ***
- ***    ---
+ ***    node*      AP          (0)  (N_ap)        (precompile -> compile ! )
+ ***    long*      MASK[x]                        (precompile -> )
  ***
  ***/
 
 extern node *MakeConc (node *region);
 
 #define CONC_REGION(n) (n->node[0])
+
+#define CONC_AP(n) (n->node[2])
+#define CONC_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2193,12 +2215,12 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_WITHOP(n) (n->node[2])
 #define NWITH_MASK(n, x) (n->mask[x])
 
-#define NWITH_PARTS(n) (((wl_info *)n->info2)->parts)
-#define NWITH_REFERENCED(n) (((wl_info *)n->info2)->referenced)
-#define NWITH_REFERENCED_FOLD(n) (((wl_info *)n->info2)->referenced_fold)
-#define NWITH_COMPLEX(n) (((wl_info *)n->info2)->complex)
-#define NWITH_FOLDABLE(n) (((wl_info *)n->info2)->foldable)
-#define NWITH_NO_CHANCE(n) (((wl_info *)n->info2)->no_chance)
+#define NWITH_PARTS(n) (((wl_info *)(n->info2))->parts)
+#define NWITH_REFERENCED(n) (((wl_info *)(n->info2))->referenced)
+#define NWITH_REFERENCED_FOLD(n) (((wl_info *)(n->info2))->referenced_fold)
+#define NWITH_COMPLEX(n) (((wl_info *)(n->info2))->complex)
+#define NWITH_FOLDABLE(n) (((wl_info *)(n->info2))->foldable)
+#define NWITH_NO_CHANCE(n) (((wl_info *)(n->info2))->no_chance)
 
 /*--------------------------------------------------------------------------*/
 
@@ -2243,7 +2265,7 @@ extern node *MakeNPart (node *withid, node *generator, node *code);
 extern node *MakeNWithid (ids *vec, ids *scalars);
 
 #define NWITHID_VEC(n) (n->info.ids)
-#define NWITHID_IDS(n) ((ids *)n->info2)
+#define NWITHID_IDS(n) ((ids *)(n->info2))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2312,7 +2334,7 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
 
 extern node *MakeNWithOp (WithOpType WithOp);
 
-#define NWITHOP_TYPE(n) (*(WithOpType *)(n)->info2)
+#define NWITHOP_TYPE(n) (*((WithOpType *)(n)->info2))
 #define NWITHOP_SHAPE(n) (n->node[0])
 #define NWITHOP_ARRAY(n) (n->node[0])
 #define NWITHOP_NEUTRAL(n) (n->node[0])
