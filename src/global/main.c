@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.9  1994/12/11 17:29:31  sbs
+ * Revision 1.10  1994/12/13 11:23:54  hw
+ * changed call of NOTE
+ * changed call of Error to ERROR2
+ *
+ * Revision 1.9  1994/12/11  17:29:31  sbs
  * -I, -L + environment vars inserted
  *
  * Revision 1.8  1994/12/09  10:13:19  sbs
@@ -61,7 +65,6 @@ MAIN
     int breakparse = 0, breakflatten = 0, breaktype = 0;
     char prgname[256];
     char outfilename[256] = "out.txt";
-    char message[256];
 
     strcpy (prgname, argv[0]);
 
@@ -103,24 +106,23 @@ MAIN
      */
 
     if (AppendEnvVar (MODDEC_PATH, "SAC_DEC_PATH") == 0)
-        Error ("MAX_PATH_LEN too low!/n", 1);
+        ERROR2 (1, ("MAX_PATH_LEN too low!/n"));
     if (AppendEnvVar (MODIMP_PATH, "SAC_LIBRARY_PATH") == 0)
-        Error ("MAX_PATH_LEN too low!/n", 1);
+        ERROR2 (1, ("MAX_PATH_LEN too low!/n"));
     if (AppendEnvVar (PATH, "SAC_PATH") == 0)
-        Error ("MAX_PATH_LEN too low!/n", 1);
+        ERROR2 (1, ("MAX_PATH_LEN too low!/n"));
 
     if (argc == 1) {
         yyin = FindFile (PATH, *argv);
         if (yyin == NULL) {
-            sprintf (message, "Couldn't open file \"%s\"!\n", *argv);
-            Error (message, 1);
+            ERROR2 (1, ("Couldn't open file \"%s\"!\n", *argv));
         }
     }
 
     if (set_outfile) {
         outfile = fopen (outfilename, "w");
         if (outfile == NULL)
-            Error ("Couldn't open Outfile !\n", 1);
+            ERROR2 (1, ("Couldn't open Outfile !\n"));
     } else
         outfile = stdout;
 
@@ -129,12 +131,11 @@ MAIN
     if (!breakparse) {
         syntax_tree = Flatten (syntax_tree);
         if (!breakflatten) {
-            NOTE ("Typechecking: ...");
+            NOTE (("Typechecking: ..."));
             Typecheck (syntax_tree);
-            sprintf (message, "%d Warnings, %d Errors \n", warnings, errors);
-            NOTE (message);
+            NOTE (("%d Warnings, %d Errors \n", warnings, errors));
             if (!breaktype) {
-                NOTE ("Optimizing: ...");
+                NOTE (("Optimizing: ..."));
                 syntax_tree = Optimize (syntax_tree);
                 /*  GenCCode(); */
             }
