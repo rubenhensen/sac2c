@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.120  2004/11/24 18:37:11  mwe
+ * new DUP-functions added
+ * only few functions implemented, other functions contain DBUG_ASSERT
+ *
  * Revision 3.119  2004/11/24 12:27:43  mwe
  * TBmakeLet and N_pragma changed according to ast.xml
  *
@@ -1716,6 +1720,189 @@ DUPcseinfo (node *arg_node, info *arg_info)
                               DUPCONT (CSEINFO_NEXT (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPannotate (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPannotate");
+
+    new_node = TBmakeAnnotate (ANNOTATE_TAG (arg_node), ANNOTATE_FUNNUMBER (arg_node),
+                               ANNOTATE_FUNAPNUMBER (arg_node));
+
+    DBUG_ASSERT ((FALSE), "DUPannotate not implemented!! :-(");
+
+    DBUG_RETURN (new_node);
+}
+
+/*******************************************************************************/
+
+node *
+DUPex (node *arg_node, info *arg_info)
+{
+
+    node *new_node;
+
+    DBUG_ENTER ("DUPex");
+
+    new_node = TBmakeEx (DUPTRAV (EX_REGION (arg_node)));
+
+    DBUG_RETURN (new_node);
+}
+
+/*******************************************************************************/
+
+node *
+DUPcwrapper (node *arg_node, info *arg_info)
+{
+
+    node *new_node;
+
+    DBUG_ENTER ("DUPcwrapper");
+
+    new_node = TBmakeCwrapper (CWRAPPER_FUNS (arg_node),
+                               ILIBstringCopy (CWRAPPER_NAME (arg_node)),
+                               ILIBstringCopy (CWRAPPER_MOD (arg_node)),
+                               CWRAPPER_ARGCOUNT (arg_node), CWRAPPER_RESCOUNT (arg_node),
+                               DUPTRAV (CWRAPPER_NEXT (arg_node)));
+    DBUG_RETURN (new_node);
+}
+
+/*******************************************************************************/
+
+node *
+DUPdataflowgraph (node *arg_node, info *arg_info)
+{
+
+    node *new_node;
+
+    DBUG_ENTER ("DUPdataflowgraph");
+
+    DBUG_ASSERT ((FALSE), "DUPdataflowgraph until now not implemented!! :-(");
+    DBUG_RETURN (new_node);
+}
+
+/*******************************************************************************/
+
+node *
+DUPdataflownode (node *arg_node, info *arg_info)
+{
+
+    node *new_node;
+
+    DBUG_ENTER ("DUPdataflownode");
+    DBUG_ASSERT ((FALSE), "DUPdataflownode until now not implemented!! :-(");
+    DBUG_RETURN (new_node);
+}
+
+/*******************************************************************************/
+
+node *
+DUPimport (node *arg_node, info *arg_info)
+{
+
+    node *new_node;
+
+    DBUG_ENTER ("DUPimport");
+
+    DBUG_ASSERT ((FALSE), "DUPimport until now not implemented!! :-(");
+
+    DBUG_RETURN (new_node);
+}
+
+/*******************************************************************************/
+
+node *
+DUPexport (node *arg_node, info *arg_info)
+{
+
+    node *new_node;
+
+    DBUG_ENTER ("DUPexport");
+
+    new_node = TBmakeExport (DUPTRAV (EXPORT_NEXT (arg_node)),
+                             DUPTRAV (EXPORT_SYMBOL (arg_node)));
+
+    DBUG_RETURN (new_node);
+}
+
+/*******************************************************************************/
+
+node *
+DUPuse (node *arg_node, info *arg_info)
+{
+
+    node *new_node;
+
+    DBUG_ENTER ("DUPuse");
+
+    DBUG_ASSERT ((FALSE), "DUPuse until now not implemented!! :-(");
+
+    DBUG_RETURN (new_node);
+}
+
+/*******************************************************************************/
+
+node *
+DUPprovide (node *arg_node, info *arg_info)
+{
+
+    node *new_node;
+
+    DBUG_ENTER ("DUPprovide");
+
+    DBUG_ASSERT ((FALSE), "DUPprovide until now not implemented!! :-(");
+
+    DBUG_RETURN (new_node);
+}
+
+/*******************************************************************************/
+
+node *
+DUPlinklist (node *arg_node, info *arg_info)
+{
+
+    node *new_node;
+
+    DBUG_ENTER ("DUPlinklist");
+
+    DBUG_ASSERT ((FALSE), "DUPlinklist until now not implemented!! :-(");
+
+    DBUG_RETURN (new_node);
+}
+
+/*******************************************************************************/
+
+node *
+DUPnums (node *arg_node, info *arg_info)
+{
+
+    node *new_node;
+
+    DBUG_ENTER ("DUPnums");
+
+    DBUG_ASSERT ((FALSE), "DUPnums until now not implemented!! :-(");
+
+    DBUG_RETURN (new_node);
+}
+
+/*******************************************************************************/
+
+node *
+DUPsymbol (node *arg_node, info *arg_info)
+{
+
+    node *new_node;
+
+    DBUG_ENTER ("DUPsymbol");
+
+    DBUG_ASSERT ((FALSE), "DUPsymbol until now not implemented!! :-(");
 
     DBUG_RETURN (new_node);
 }
