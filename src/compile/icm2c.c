@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.49  1997/11/03 16:25:52  dkr
+ * free -> RT_FREE
+ *
  * Revision 1.48  1997/10/12 19:50:56  dkr
  * fixed a problem with illegal side-effects:
  *   in ND_FUN_DEC, ND_FUN_AP, ND_FUN_RET:
@@ -171,7 +174,7 @@
  */
 
 #include <malloc.h>
-#include "stdio.h"
+#include <stdio.h>
 #include "print.h"
 #include "dbug.h"
 #include "my_debug.h"
@@ -179,6 +182,7 @@
 #include "trace.h"
 #include "convert.h"
 #include "globals.h"
+#include "icm2c.h"
 
 #define RetWithScal(res, val)                                                            \
     INDENT;                                                                              \
@@ -1181,7 +1185,7 @@ fprintf (outfile, "\n");
 #undef ND_KD_SET_SHAPE
 
 #ifndef TEST_BACKEND
-free (s);
+RT_FREE (s);
 DBUG_VOID_RETURN;
 }
 #endif /* no TEST_BACKEND */
@@ -1233,7 +1237,7 @@ if (check_boundary) {
 #undef ND_KD_PSI_CxA_S
 
 #ifndef TEST_BACKEND
-free (vi);
+RT_FREE (vi);
 DBUG_VOID_RETURN;
 }
 #endif /* no TEST_BACKEND */
@@ -1313,7 +1317,7 @@ fprintf (outfile, "\n\n");
 #undef ND_KD_PSI_CxA_A
 
 #ifndef TEST_BACKEND
-free (vi);
+RT_FREE (vi);
 DBUG_VOID_RETURN;
 }
 #endif /* no TEST_BACKEND */
