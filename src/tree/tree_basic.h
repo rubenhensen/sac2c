@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.114  2002/03/06 03:45:34  dkr
+ * RETURN_CRET modified
+ *
  * Revision 3.113  2002/03/05 13:58:52  dkr
  * definition of ID_UNQCONV modified
  *
@@ -1020,7 +1023,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  ***
  ***  sons:
  ***
- ***    node*       NEXT       (O)  (N_arg)
+ ***    node*       NEXT         (N_arg)
  ***
  ***  permanent attributes:
  ***
@@ -1028,19 +1031,19 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  ***    types*      TYPE
  ***    statustype  STATUS
  ***    statustype  ATTRIB
- ***    node*       AVIS            (N_avis)
+ ***    node*       AVIS         (N_avis)
  ***
  ***  temporary attributes:
  ***
- ***    int         VARNO                        (optimize -> )
- ***    int         REFCNT                       (refcount -> compile -> )
- ***    int         NAIVE_REFCNT                 (refcount -> concurrent -> )
- ***    bool        PADDED                       (ap -> )
- ***    char*       TYPESTRING (O)               (precompile !!)
- ***    node*       OBJDEF     (O)  (N_objdef)   (obj-handling -> precompile !!)
- ***    node*       ACTCHN     (O)  (N_vinfo)    (psi-optimize -> )
- ***    node*       COLCHN     (O)  (N_vinfo)    (psi-optimize -> )
- ***    node*       FUNDEF     (O)  (N_fundef)   (psi-optimize -> )
+ ***    int         VARNO                     (optimize -> )
+ ***    int         REFCNT                    (refcount -> compile -> )
+ ***    int         NAIVE_REFCNT              (refcount -> concurrent -> )
+ ***    bool        PADDED                    (ap -> )
+ ***    char*       TYPESTRING                (precompile !!)
+ ***    node*       OBJDEF       (N_objdef)   (obj-handling -> precompile !!)
+ ***    node*       ACTCHN       (N_vinfo)    (psi-optimize -> )
+ ***    node*       COLCHN       (N_vinfo)    (psi-optimize -> )
+ ***    node*       FUNDEF       (N_fundef)   (psi-optimize -> )
  ***/
 
 /*
@@ -1090,28 +1093,28 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
  ***
  ***  sons:
  ***
- ***    node*      INSTR           (N_assign, N_empty)
- ***    node*      VARDEC     (O)  (N_vardec)
+ ***    node*      INSTR             (N_assign, N_empty)
+ ***    node*      VARDEC            (N_vardec)
  ***
  ***  permanent attributes:
  ***
- ***    char*      CACHESIM   (O)
+ ***    char*      CACHESIM
  ***
  ***  temporary attributes:
  ***
- ***    nodelist*  NEEDFUNS   (O)         (analysis -> )
- ***                                      ( -> analysis -> )
- ***                                      ( -> write-SIB -> DFR !!)
- ***    nodelist*  NEEDTYPES  (O)         (analysis -> )
- ***                                      ( -> write-SIB -> )
- ***    long*      MASK[x]                (optimize -> )
- ***    int        VARNO                  (optimize -> )
+ ***    nodelist*  NEEDFUNS                      (analysis -> )
+ ***                                             ( -> analysis -> )
+ ***                                             ( -> write-SIB -> DFR !!)
+ ***    nodelist*  NEEDTYPES                     (analysis -> )
+ ***                                             ( -> write-SIB -> )
+ ***    long*      MASK[x]                       (optimize -> )
+ ***    int        VARNO                         (optimize -> )
  ***
- ***    node*      SPMD_PROLOG_ICMS  (O)  (N_fundef)  (compile !!)
- ***    node*      SPMD_SETUP_ARGS   (O)  (N_fundef)  (compile !!)
- ***    node*      SCHEDULER_INIT    (O)  (N_assign)  (compile !!)
+ ***    node*      SPMD_PROLOG_ICMS  (N_fundef)  (compile !!)
+ ***    node*      SPMD_SETUP_ARGS   (N_fundef)  (compile !!)
+ ***    node*      SCHEDULER_INIT    (N_assign)  (compile !!)
  ***
- ***    node*      SSACOUNTER (0) (N_ssacnt) ( ssaform -> optimize !!)
+ ***    node*      SSACOUNTER        (N_ssacnt)  (ssaform -> optimize !!)
  ***/
 
 /*
@@ -1296,12 +1299,12 @@ extern node *MakeCast (node *expr, types *type);
  ***
  ***  sons:
  ***
- ***    node*     EXPRS      (N_exprs)  (O)
+ ***    node*     EXPRS      (N_exprs)
  ***
  ***  temporary attributes:
  ***
- ***    node*     REFERENCE  (N_exprs)  (O)  (precompile -> compile !!)
- ***    node*     CRET                       (precompile -> compile -> )
+ ***    node*     REFERENCE  (N_exprs)       (precompile -> compile -> )
+ ***    node*     CRET       (N_exprs)       (precompile -> compile -> )
  ***    DFMmask_t USEMASK                    (multithread -> )
  ***    DFMmask_t DEFMASK                    (multithread -> )
  ***/
