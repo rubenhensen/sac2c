@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/09/11 23:09:10  dkr
+ * IsRelPrf() used
+ *
  * Revision 3.11  2002/09/09 17:52:36  dkr
  * F_{add,sub,mul,div} replaced by F_{add,sub,mul,div}_SxS
  *
@@ -281,7 +284,7 @@ UNSlet (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
-prf
+static prf
 InversePrf (prf fun)
 {
     DBUG_ENTER ("InversePrf");
@@ -538,9 +541,8 @@ AnalyseCond (linfo *loop_info, node *cond, int level)
         if (N_id == cond_var->nodetype) {
             test = cond_var->info.ids->def;
             if ((NULL != test) && (N_prf == NODE_TYPE (test))
-                && (F_le <= (test_prf = test->info.prf)) && (F_neq >= test_prf)
-                && (test->flag == level)) {
-
+                && (IsRelPrf (test->info.prf)) && (test->flag == level)) {
+                test_prf = test->info.prf;
                 /* the constant value shall be on the right side of the expression */
                 /* i.e. cond = Num op i will be changed to cond = i op Num         */
                 if (IsConst (PRF_ARG2 (test))) {
