@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.50  1995/03/31 15:45:41  hw
+ * Revision 1.51  1995/04/03 14:02:56  sbs
+ * show_icm inserted
+ *
+ * Revision 1.50  1995/03/31  15:45:41  hw
  * changed PrintAssign
  *
  * Revision 1.49  1995/03/29  12:01:34  hw
@@ -160,9 +163,28 @@
 #include "optimize.h"
 
 extern show_refcnt;   /* imported from main.c */
+extern show_icm;      /* imported from main.c */
 extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
 
 int indent = 0;
+
+/* First, we generate the external declarations for all functions that
+ * expand ICMs to C.
+ */
+
+#define ICM_ALL
+#define ICM_DEF(prf) extern void Print##prf (node *ex);
+#define ICM_STR(name)
+#define ICM_INT(name)
+#define ICM_VAR(dim, name)
+#define ICM_END
+#include "icm.data"
+#undef ICM_DEF
+#undef ICM_STR
+#undef ICM_INT
+#undef ICM_VAR
+#undef ICM_END
+#undef ICM_ALL
 
 #define PRF_IF(n, s, x) x
 
@@ -806,13 +828,37 @@ PrintPre (node *arg_node, node *arg_info)
 node *
 PrintIcm (node *arg_node, node *arg_info)
 {
+    int compiled_icm = 0;
     DBUG_ENTER ("PrintIcm");
+    DBUG_PRINT ("PRINT", ("icm-node %s\n", arg_node->info.fun_name.id));
 
-    INDENT;
-    fprintf (outfile, "%s(", arg_node->info.fun_name.id);
-    if (NULL != arg_node->node[0])
-        Trav (arg_node->node[0], arg_info);
-    fprintf (outfile, ")");
+    if (show_icm == 0)
+#define ICM_ALL
+#define ICM_DEF(prf)                                                                     \
+    if (strcmp (arg_node->info.fun_name.id, #prf) == 0) {                                \
+        Print##prf (arg_node->node[0]);                                                  \
+        compiled_icm = 1;                                                                \
+    } else
+#define ICM_STR(name)
+#define ICM_INT(name)
+#define ICM_VAR(dim, name)
+#define ICM_END
+#include "icm.data"
+#undef ICM_DEF
+#undef ICM_STR
+#undef ICM_INT
+#undef ICM_VAR
+#undef ICM_END
+#undef ICM_ALL
+        compiled_icm = 0;
+
+    if ((show_icm == 1) || (compiled_icm == 0)) {
+        INDENT;
+        fprintf (outfile, "%s(", arg_node->info.fun_name.id);
+        if (NULL != arg_node->node[0])
+            Trav (arg_node->node[0], arg_info);
+        fprintf (outfile, ")");
+    }
 
     DBUG_RETURN (arg_node);
 }
