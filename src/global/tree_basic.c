@@ -1,14 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 1.45  1998/03/21 14:05:50  dkr
+ * changed MakeWLublock
+ *
  * Revision 1.44  1998/03/20 20:51:07  dkr
  * changed usage of MakeWLseg
  *
  * Revision 1.43  1998/03/20 17:24:47  dkr
  * in N_WL... nodes: INNER is now called CONTENTS
- *
- * Revision 1.42  1998/03/18 11:03:58  dkr
- * *** empty log message ***
  *
  * Revision 1.41  1998/03/18 10:48:38  dkr
  * changed MakeWLproj
@@ -1441,18 +1441,11 @@ MakeWLublock (int level, int dim, int bound1, int bound2, int blocking, node *ne
     node *new_node;
 
     DBUG_ENTER ("MakeWLublock");
-    INIT_NODE (new_node);
+
+    new_node
+      = MakeWLblock (level, dim, bound1, bound2, blocking, nextdim, contents, next);
 
     NODE_TYPE (new_node) = N_WLublock;
-
-    WLUBLOCK_LEVEL (new_node) = level;
-    WLUBLOCK_DIM (new_node) = dim;
-    WLUBLOCK_BOUND1 (new_node) = bound1;
-    WLUBLOCK_BOUND2 (new_node) = bound2;
-    WLUBLOCK_BLOCKING (new_node) = blocking;
-    WLUBLOCK_NEXTDIM (new_node) = nextdim;
-    WLUBLOCK_CONTENTS (new_node) = contents;
-    WLUBLOCK_NEXT (new_node) = next;
 
     DBUG_RETURN (new_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.92  1998/03/21 14:06:00  dkr
+ * changed MakeWLublock
+ *
  * Revision 1.91  1998/03/21 12:35:30  dkr
  * added comments for WLseg
  *
@@ -53,9 +56,6 @@
  *
  * Revision 1.74  1998/02/17 14:08:53  srs
  * changed comments for N_info
- *
- * Revision 1.73  1998/02/16 21:38:24  dkr
- * *** empty log message ***
  *
  * Revision 1.72  1998/02/16 16:33:55  srs
  * Changed MakeNwith
@@ -2378,14 +2378,14 @@ extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int blocki
 extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int blocking,
                            node *nextdim, node *contents, node *next);
 
-#define WLUBLOCK_LEVEL(n) (n->refcnt)
-#define WLUBLOCK_DIM(n) (n->flag)
-#define WLUBLOCK_BOUND1(n) (n->counter)
-#define WLUBLOCK_BOUND2(n) (n->varno)
-#define WLUBLOCK_BLOCKING(n) (n->lineno)
-#define WLUBLOCK_NEXTDIM(n) (n->node[0])
-#define WLUBLOCK_CONTENTS(n) (n->node[1])
-#define WLUBLOCK_NEXT(n) (n->node[2])
+#define WLUBLOCK_LEVEL(n) (WLBLOCK_LEVEL (n))
+#define WLUBLOCK_DIM(n) (WLBLOCK_DIM (n))
+#define WLUBLOCK_BOUND1(n) (WLBLOCK_BOUND1 (n))
+#define WLUBLOCK_BOUND2(n) (WLBLOCK_BOUND2 (n))
+#define WLUBLOCK_BLOCKING(n) (WLBLOCK_BLOCKING (n))
+#define WLUBLOCK_NEXTDIM(n) (WLBLOCK_NEXTDIM (n))
+#define WLUBLOCK_CONTENTS(n) (WLBLOCK_CONTENTS (n))
+#define WLUBLOCK_NEXT(n) (WLBLOCK_NEXT (n))
 
 /*--------------------------------------------------------------------------*/
 
