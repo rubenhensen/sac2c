@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.6  2004/11/23 13:25:10  sbs
+ * SacDevCamp04: compiles again
+ *
  * Revision 3.5  2004/11/17 19:46:19  sah
  * changed arguments from char to const char
  *
@@ -26,8 +29,9 @@
 #include "dbug.h"
 
 #include "free.h"
+#include "internal_lib.h"
+#include "new_types.h"
 #include "user_types.h"
-#include "types.h"
 
 /*
  * This module "user_type" implements a repository for user defined types.
@@ -97,7 +101,7 @@ static int udt_no = 0;
 /******************************************************************************
  *
  * function:
- *    usertype UTAddUserType( char *name, char *mod, ntype *type, ntype *base,
+ *    usertype UTaddUserType( char *name, char *mod, ntype *type, ntype *base,
  *                            int lineno, node *tdef)
  *
  * description:
@@ -107,18 +111,18 @@ static int udt_no = 0;
  ******************************************************************************/
 
 usertype
-UTAddUserType (char *name, char *mod, ntype *type, ntype *base, int lineno, node *tdef)
+UTaddUserType (char *name, char *mod, ntype *type, ntype *base, int lineno, node *tdef)
 {
     udt_entry *entry;
     udt_entry **new_rep;
     int i;
 
-    DBUG_ENTER ("UTAddUserType");
+    DBUG_ENTER ("UTaddUserType");
 
     /*
      * First, we generate the desired entry:
      */
-    entry = (udt_entry *)Malloc (sizeof (udt_entry));
+    entry = (udt_entry *)ILIBmalloc (sizeof (udt_entry));
     ENTRY_NAME (entry) = name;
     ENTRY_MOD (entry) = mod;
     ENTRY_DEF (entry) = type;
@@ -131,12 +135,12 @@ UTAddUserType (char *name, char *mod, ntype *type, ntype *base, int lineno, node
      * the repository is big enough!!
      */
     if (udt_no % CHUNKSIZE == 0) {
-        new_rep = (udt_entry **)Malloc ((udt_no + CHUNKSIZE) * sizeof (udt_entry *));
+        new_rep = (udt_entry **)ILIBmalloc ((udt_no + CHUNKSIZE) * sizeof (udt_entry *));
         for (i = 0; i < udt_no; i++) {
             new_rep[i] = udt_rep[i];
         }
         if (udt_rep != NULL) { /* to cope with the initial allocation */
-            Free (udt_rep);
+            ILIBfree (udt_rep);
         }
         udt_rep = new_rep;
     }
@@ -148,7 +152,7 @@ UTAddUserType (char *name, char *mod, ntype *type, ntype *base, int lineno, node
 /******************************************************************************
  *
  * function:
- *    usertype UTFindUserType( char *name, char *mod)
+ *    usertype UTfindUserType( char *name, char *mod)
  *
  * description:
  *   looks up the udf mod:name. If it is not within the udt_rep, UT_NOT_DEFINED
@@ -160,11 +164,11 @@ UTAddUserType (char *name, char *mod, ntype *type, ntype *base, int lineno, node
  ******************************************************************************/
 
 usertype
-UTFindUserType (const char *name, const char *mod)
+UTfindUserType (const char *name, const char *mod)
 {
     int res, res2;
 
-    DBUG_ENTER ("UTFindUserType");
+    DBUG_ENTER ("UTfindUserType");
 
     DBUG_ASSERT ((UT_NOT_DEFINED == -1), "Invalid definition of UT_NOT_DEFINED");
     DBUG_ASSERT ((name != NULL), "UTFindUserType called with NULL name!");
@@ -179,7 +183,7 @@ UTFindUserType (const char *name, const char *mod)
             res2--;
         }
         if (res2 >= 0) {
-            ERROR (linenum,
+            ERROR (global.linenum,
                    ("user defined type \"%s\" can not uniquely be determined", name));
         }
     } else {
@@ -196,7 +200,7 @@ UTFindUserType (const char *name, const char *mod)
 /******************************************************************************
  *
  * function:
- *    int UTGetNumberOfUserTypes()
+ *    int UTgetNumberOfUserTypes()
  *
  * description:
  *   returns the number of user defined types currently allocated.
@@ -204,9 +208,9 @@ UTFindUserType (const char *name, const char *mod)
  ******************************************************************************/
 
 int
-UTGetNumberOfUserTypes ()
+UTgetNumberOfUserTypes ()
 {
-    DBUG_ENTER ("UTGetNumberOfUserTypes");
+    DBUG_ENTER ("UTgetNumberOfUserTypes");
 
     DBUG_RETURN (udt_no);
 }
@@ -214,12 +218,12 @@ UTGetNumberOfUserTypes ()
 /******************************************************************************
  *
  * function:
- *    char *UTGetMod( usertype udt)
- *    char *UTGetName( usertype udt)
- *    ntype *UTGetTypedef( usertype udt)
- *    ntype *UTGetBaseType( usertype udt)
- *    int UTGetLine( usertype udt)
- *    node *UTGetTdef( usertype udt)
+ *    char *UTgetMod( usertype udt)
+ *    char *UTgetName( usertype udt)
+ *    ntype *UTgetTypedef( usertype udt)
+ *    ntype *UTgetBaseType( usertype udt)
+ *    int UTgetLine( usertype udt)
+ *    node *UTgetTdef( usertype udt)
  *
  * description:
  *   several functions for accessing the values of the definition of the user
@@ -228,55 +232,55 @@ UTGetNumberOfUserTypes ()
  ******************************************************************************/
 
 char *
-UTGetMod (usertype udt)
+UTgetMod (usertype udt)
 {
-    DBUG_ENTER ("UTGetMod");
-    DBUG_ASSERT ((udt < udt_no), "UTGetMod called with illegal udt!");
+    DBUG_ENTER ("UTgetMod");
+    DBUG_ASSERT ((udt < udt_no), "UTgetMod called with illegal udt!");
 
     DBUG_RETURN (ENTRY_MOD (udt_rep[udt]));
 }
 
 char *
-UTGetName (usertype udt)
+UTgetName (usertype udt)
 {
-    DBUG_ENTER ("UTGetName");
-    DBUG_ASSERT ((udt < udt_no), "UTGetName called with illegal udt!");
+    DBUG_ENTER ("UTgetName");
+    DBUG_ASSERT ((udt < udt_no), "UTgetName called with illegal udt!");
 
     DBUG_RETURN (ENTRY_NAME (udt_rep[udt]));
 }
 
 ntype *
-UTGetTypedef (usertype udt)
+UTgetTypedef (usertype udt)
 {
-    DBUG_ENTER ("UTGetTypedef");
-    DBUG_ASSERT ((udt < udt_no), "UTGetTypedef called with illegal udt!");
+    DBUG_ENTER ("UTgetTypedef");
+    DBUG_ASSERT ((udt < udt_no), "UTgetTypedef called with illegal udt!");
 
     DBUG_RETURN (ENTRY_DEF (udt_rep[udt]));
 }
 
 ntype *
-UTGetBaseType (usertype udt)
+UTgetBaseType (usertype udt)
 {
-    DBUG_ENTER ("UTGetBaseType");
-    DBUG_ASSERT ((udt < udt_no), "UTGetBaseType called with illegal udt!");
+    DBUG_ENTER ("UTgetBaseType");
+    DBUG_ASSERT ((udt < udt_no), "UTgetBaseType called with illegal udt!");
 
     DBUG_RETURN (ENTRY_BASE (udt_rep[udt]));
 }
 
 int
-UTGetLine (usertype udt)
+UTgetLine (usertype udt)
 {
-    DBUG_ENTER ("UTGetLine");
-    DBUG_ASSERT ((udt < udt_no), "UTGetLine called with illegal udt!");
+    DBUG_ENTER ("UTgetLine");
+    DBUG_ASSERT ((udt < udt_no), "UTgetLine called with illegal udt!");
 
     DBUG_RETURN (ENTRY_LINE (udt_rep[udt]));
 }
 
 node *
-UTGetTdef (usertype udt)
+UTgetTdef (usertype udt)
 {
-    DBUG_ENTER ("UTGetTdef");
-    DBUG_ASSERT ((udt < udt_no), "UTGetTdef called with illegal udt!");
+    DBUG_ENTER ("UTgetTdef");
+    DBUG_ASSERT ((udt < udt_no), "UTgetTdef called with illegal udt!");
 
     DBUG_RETURN (ENTRY_TDEF (udt_rep[udt]));
 }
@@ -284,8 +288,8 @@ UTGetTdef (usertype udt)
 /******************************************************************************
  *
  * function:
- *    ntype *UTSetTypedef( usertype udt)
- *    ntype *UTSetBaseType( usertype udt)
+ *    ntype *UTsetTypedef( usertype udt)
+ *    ntype *UTsetBaseType( usertype udt)
  *
  * description:
  *   several functions for changing the values of the definition of the user
@@ -294,10 +298,10 @@ UTGetTdef (usertype udt)
  ******************************************************************************/
 
 void
-UTSetTypedef (usertype udt, ntype *type)
+UTsetTypedef (usertype udt, ntype *type)
 {
-    DBUG_ENTER ("UTSetTypedef");
-    DBUG_ASSERT ((udt < udt_no), "UTSetTypedef called with illegal udt!");
+    DBUG_ENTER ("UTsetTypedef");
+    DBUG_ASSERT ((udt < udt_no), "UTsetTypedef called with illegal udt!");
 
     ENTRY_DEF (udt_rep[udt]) = type;
 
@@ -305,10 +309,10 @@ UTSetTypedef (usertype udt, ntype *type)
 }
 
 void
-UTSetBaseType (usertype udt, ntype *type)
+UTsetBaseType (usertype udt, ntype *type)
 {
-    DBUG_ENTER ("UTSetBaseType");
-    DBUG_ASSERT ((udt < udt_no), "UTSetBaseType called with illegal udt!");
+    DBUG_ENTER ("UTsetBaseType");
+    DBUG_ASSERT ((udt < udt_no), "UTsetBaseType called with illegal udt!");
 
     ENTRY_BASE (udt_rep[udt]) = type;
     DBUG_VOID_RETURN;
@@ -317,7 +321,7 @@ UTSetBaseType (usertype udt, ntype *type)
 /******************************************************************************
  *
  * function:
- *    void UTPrintRepository( FILE *outfile)
+ *    void UTprintRepository( FILE *outfile)
  *
  * description:
  *   prints the contents of udt_rep to outfile.
@@ -327,19 +331,19 @@ UTSetBaseType (usertype udt, ntype *type)
 #define UTPRINT_FORMAT "| %-10.10s | %-10.10s | %-20.20s | %-20.20s |"
 
 void
-UTPrintRepository (FILE *outfile)
+UTprintRepository (FILE *outfile)
 {
     int i;
 
-    DBUG_ENTER ("UTPrintRepository");
+    DBUG_ENTER ("UTprintRepository");
 
     fprintf (outfile, "\n %4.4s " UTPRINT_FORMAT " %6s | %9s\n", "udt:", "module:",
              "name:", "defining type:", "base type:", "line:", "def node:");
     for (i = 0; i < udt_no; i++) {
-        fprintf (outfile, " %4d " UTPRINT_FORMAT " %6d |  %8p\n", i, UTGetMod (i),
-                 UTGetName (i), TYType2String (UTGetTypedef (i), TRUE, 0),
-                 TYType2String (UTGetBaseType (i), TRUE, 0), UTGetLine (i),
-                 UTGetTdef (i));
+        fprintf (outfile, " %4d " UTPRINT_FORMAT " %6d |  %8p\n", i, UTgetMod (i),
+                 UTgetName (i), TYtype2String (UTgetTypedef (i), TRUE, 0),
+                 TYtype2String (UTgetBaseType (i), TRUE, 0), UTgetLine (i),
+                 UTgetTdef (i));
     }
 
     DBUG_VOID_RETURN;
