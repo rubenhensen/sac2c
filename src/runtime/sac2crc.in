@@ -39,6 +39,7 @@ OPT_I            :=  -I
 TAR_CREATE       :=  "tar cf"
 TAR_EXTRACT      :=  "tar xf"
 AR_CREATE        :=  "ar cr"
+LD_DYNAMIC       :=  "ld -dy -G"
 RANLIB           :=  "@RANLIB@"
 MKDIR            :=  mkdir
 RMDIR            :=  "rm -rf"

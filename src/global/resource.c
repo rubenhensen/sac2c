@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/10/17 17:48:42  sah
+ * added LD_DYNAMIC
+ *
  * Revision 3.9  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -210,6 +213,7 @@ static struct {
   {"TAR_CREATE", str, &config.tar_create},
   {"TAR_EXTRACT", str, &config.tar_extract},
   {"AR_CREATE", str, &config.ar_create},
+  {"LD_DYNAMIC", str, &config.ld_dynamic},
   {"RANLIB", str, &config.ranlib},
   {"MKDIR", str, &config.mkdir},
   {"RMDIR", str, &config.rmdir},

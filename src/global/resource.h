@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/10/17 17:48:42  sah
+ * added LD_DYNAMIC
+ *
  * Revision 3.4  2003/03/24 16:37:04  sbs
  * opt_I added.
  *
@@ -135,6 +138,7 @@ typedef struct {
     char *tar_create;
     char *tar_extract;
     char *ar_create;
+    char *ld_dynamic;
     char *ranlib;
     char *mkdir;
     char *rmdir;
