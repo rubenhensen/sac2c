@@ -1,5 +1,9 @@
 /* *
  * $Log$
+ * Revision 1.23  2004/07/05 18:41:04  mwe
+ * support for ntypes added
+ * everything done for types* is now done for ntype* also
+ *
  * Revision 1.22  2004/02/06 14:19:33  mwe
  * remove ASSIGN2
  *
@@ -266,6 +270,7 @@
 #define INFO_AL_OPTLIST(n) (nodelist *)(n->dfmask[4])
 #define INFO_AL_ARRAYLIST(n) (nodelist *)(n->dfmask[3])
 #define INFO_AL_CONSTARRAYLIST(n) (nodelist *)(n->dfmask[5])
+#define INFO_AL_AVIS(n) (n->node[3])
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -611,6 +616,7 @@ MakeAssignNodeFromCurrentNode (node *newnode, node *arg_info, int dim)
 
     node *newvardec;
     types *type;
+    ntype *newtype;
     char *newname1, *newname2;
 
     shpseg *shp;
@@ -621,27 +627,47 @@ MakeAssignNodeFromCurrentNode (node *newnode, node *arg_info, int dim)
 
     if (NODE_TYPE (newnode) == N_id) {
 
-        shpint = TYPES_DIM ((INFO_AL_TYPE (arg_info)));
-        shpnode = Shpseg2Array (TYPES_SHPSEG (INFO_AL_TYPE (arg_info)), shpint);
-        shp = Array2Shpseg (shpnode, &shpint);
+        /*    shpint = TYPES_DIM(( INFO_AL_TYPE(arg_info)));
+            shpnode = Shpseg2Array(TYPES_SHPSEG( INFO_AL_TYPE(arg_info)), shpint);
+            shp = Array2Shpseg(shpnode, &shpint);
 
-        type = VARDEC_TYPE (ID_VARDEC (newnode));
-        type = MakeTypes (TYPES_BASETYPE (type), TYPES_DIM (type), shp, NULL, NULL);
 
+            type = VARDEC_TYPE( ID_VARDEC( newnode));
+            type = MakeTypes( TYPES_BASETYPE( type ),
+                              TYPES_DIM(type ),
+                              shp,
+                              NULL,
+                              NULL);
+        */
+
+        type = DupAllTypes (VARDEC_TYPE (ID_VARDEC (newnode)));
+        newtype = TYCopyType (AVIS_TYPE (ID_AVIS (newnode)));
     } else {
 
-        if (dim > 0) {
+        /*  if (dim > 0){*/
 
-            shpint = TYPES_DIM ((INFO_AL_TYPE (arg_info)));
-            shpnode = Shpseg2Array (TYPES_SHPSEG (INFO_AL_TYPE (arg_info)), shpint);
-            shp = Array2Shpseg (shpnode, &shpint);
-            type = MakeTypes (TYPES_BASETYPE ((INFO_AL_TYPE (arg_info))),
-                              TYPES_DIM ((INFO_AL_TYPE (arg_info))), shp, NULL, NULL);
-        } else {
+        /*
+              shpint = TYPES_DIM(( INFO_AL_TYPE(arg_info)));
+              shpnode = Shpseg2Array(TYPES_SHPSEG( INFO_AL_TYPE(arg_info)), shpint);
+              shp = Array2Shpseg(shpnode, &shpint);
+              type = MakeTypes( TYPES_BASETYPE( (INFO_AL_TYPE(arg_info)) ),
+                                TYPES_DIM(( INFO_AL_TYPE(arg_info)) ),
+                                shp,
+                                NULL,
+                                NULL);
+        */
 
-            type = MakeTypes (TYPES_BASETYPE ((INFO_AL_TYPE (arg_info))), 0, NULL, NULL,
-                              NULL);
-        }
+        type = DupAllTypes (INFO_AL_TYPE (arg_info));
+        newtype = TYCopyType (AVIS_TYPE (INFO_AL_AVIS (arg_info)));
+        /* }*/
+        /*    else{
+
+              type = MakeTypes( TYPES_BASETYPE( (INFO_AL_TYPE(arg_info)) ),
+                                0,
+                                NULL,
+                                NULL,
+                                NULL);
+            }*/
     }
 
     newname1 = TmpVar ();
@@ -656,6 +682,8 @@ MakeAssignNodeFromCurrentNode (node *newnode, node *arg_info, int dim)
 
     VARDEC_OBJDEF (newvardec) = newnode;
     AVIS_SSAASSIGN (VARDEC_AVIS (newvardec)) = newnode;
+    /* types->ntype */
+    AVIS_TYPE (VARDEC_AVIS (newvardec)) = newtype;
 
     DBUG_RETURN (newnode);
 }
@@ -973,7 +1001,11 @@ ContainsAnArray (node *expr)
 
     DBUG_ENTER ("ContainsAnArray");
 
-    if (TYPES_DIM (VARDEC_TYPE (ID_VARDEC (EXPRS_EXPR (expr)))) > 0)
+    /*types->ntype*/
+    /*  if ( TYPES_DIM( VARDEC_TYPE( ID_VARDEC( EXPRS_EXPR(expr)))) > 0 )
+        result = TRUE;*/
+
+    if (TYGetDim (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (expr)))) > 0)
         result = TRUE;
 
     DBUG_RETURN (result);
@@ -1329,9 +1361,11 @@ ALlet (node *arg_node, node *arg_info)
     DBUG_ENTER ("ALlet");
     if (LET_EXPR (arg_node) != NULL) {
         INFO_AL_LETNODE (arg_info) = arg_node;
-        if ((LET_IDS (arg_node) != NULL) && (IDS_AVIS (LET_IDS (arg_node)) != NULL))
+        if ((LET_IDS (arg_node) != NULL) && (IDS_AVIS (LET_IDS (arg_node)) != NULL)) {
             INFO_AL_TYPE (arg_info)
               = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (IDS_AVIS (LET_IDS (arg_node))));
+            INFO_AL_AVIS (arg_info) = IDS_AVIS (LET_IDS (arg_node));
+        }
 
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
     }
@@ -1402,10 +1436,13 @@ ALprf (node *arg_node, node *arg_info)
 
                 nodetype = IDS_VARDEC (LET_IDS (INFO_AL_LETNODE (arg_info)));
 
+                /* types->ntype*/
+                /*if ( !(enforce_ieee) || (( TYPES_BASETYPE(VARDEC_TYPE(nodetype)) !=
+                 * T_float)&&( TYPES_BASETYPE(VARDEC_TYPE(nodetype)) != T_double)) ){*/
                 if (!(enforce_ieee)
-                    || ((TYPES_BASETYPE (VARDEC_TYPE (nodetype)) != T_float)
-                        && (TYPES_BASETYPE (VARDEC_TYPE (nodetype)) != T_double))) {
-
+                    || ((TYGetSimpleType (AVIS_TYPE (VARDEC_AVIS (nodetype))) != T_float)
+                        && (TYGetSimpleType (AVIS_TYPE (VARDEC_AVIS (nodetype)))
+                            != T_double))) {
                     /*
                      * start optimization
                      */
@@ -1467,17 +1504,27 @@ ALprf (node *arg_node, node *arg_info)
 
                             int dim, tmp;
 
-                            tmp = TYPES_DIM (
-                              VARDEC_TYPE (IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node1)))));
+                            /*types->ntype*/
+                            /*tmp = TYPES_DIM(VARDEC_TYPE(IDS_VARDEC(LET_IDS(ASSIGN_INSTR(
+                             *node1 ))))); if (tmp == 0){ if (
+                             *TYPES_DIM(VARDEC_TYPE(IDS_VARDEC(LET_IDS(ASSIGN_INSTR( node2
+                             *))))) == 0) dim = 0; else dim = 1;
+                             *}
+                             *else if (
+                             *TYPES_DIM(VARDEC_TYPE(IDS_VARDEC(LET_IDS(ASSIGN_INSTR( node2
+                             *))))) == 0) dim = 2; else dim = 3;
+                             */
+                            tmp = TYGetDim (
+                              AVIS_TYPE (IDS_AVIS (LET_IDS (ASSIGN_INSTR (node1)))));
                             if (tmp == 0) {
-                                if (TYPES_DIM (VARDEC_TYPE (
-                                      IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node2)))))
+                                if (TYGetDim (AVIS_TYPE (
+                                      IDS_AVIS (LET_IDS (ASSIGN_INSTR (node2)))))
                                     == 0)
                                     dim = 0;
                                 else
                                     dim = 1;
-                            } else if (TYPES_DIM (VARDEC_TYPE (
-                                         IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node2)))))
+                            } else if (TYGetDim (AVIS_TYPE (
+                                         IDS_AVIS (LET_IDS (ASSIGN_INSTR (node2)))))
                                        == 0)
                                 dim = 2;
                             else
