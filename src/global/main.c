@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.137  1998/07/10 15:20:04  cg
+ * included option -i to display copyright/disclaimer
+ *
  * Revision 1.136  1998/07/07 13:41:08  cg
  * implemented the command line option -mt-all
  *
@@ -607,6 +610,11 @@ MAIN
     ARG 'h':
     {
         usage ();
+        exit (0);
+    }
+    ARG 'i':
+    {
+        copyright ();
         exit (0);
     }
     ARG 'b' : PARM

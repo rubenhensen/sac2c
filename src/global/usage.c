@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.75  1998/07/10 15:20:04  cg
+ * included option -i to display copyright/disclaimer
+ *
  * Revision 1.74  1998/07/07 13:41:08  cg
  * implemented the command line option -mt-all
  *
@@ -235,19 +238,21 @@ usage ()
 {
     DBUG_ENTER ("usage");
 
-    printf ("\n\n\tsac2c  --  The ultimate SAC compiler\n\n"
+    printf ("\n\n\t  sac2c  --  The ultimate SAC compiler\n"
+            "\t----------------------------------------\n\n"
 
-            "\nNAME:\n\n"
+            "NAME:     \tsac2c\n\n"
 
-            "\tsac2c\n"
+            "BUILD:    \t"__DATE__
+            " "__TIME__
+            "\n\n"
 
-            "\n\nSYNOPSIS:\n\n"
+            "SYNOPSIS: \tsac2c [options] [filename]\n\n"
 
-            "\tsac2c [options] [filename]\n"
+            "OVERALL OPTIONS:\n\n"
 
-            "\n\nOVERALL OPTIONS:\n\n"
-
-            "\t -h\t\t\t\tthis helptext\n"
+            "\t -h\t\t\t\tdisplay this helptext\n"
+            "\t -i\t\t\t\tdisplay copyright/disclaimer\n\n"
             "\t -libstat\t\t\tprint status information about a SAC library file\n"
             "\t -D <cpp-var><=value>\t\tset <cpp-var> (to <value>) when running\n"
             "\t\t\t\t\t C-preprocessor\n"
@@ -459,6 +464,46 @@ usage ()
             "\t Bugs ??  We ????\n"
 
             "\n");
+
+    DBUG_VOID_RETURN;
+}
+
+void
+copyright ()
+{
+    DBUG_ENTER ("copyright");
+
+    printf ("\n\t\tSAC - Single Assignment C\n"
+            "\t--------------------------------------------\n"
+            "\tBUILD:    \t"__DATE__
+            " "__TIME__
+            "\n\n"
+            "\tSAC COPYRIGHT NOTICE, LICENSE AND DISCLAIMER\n\n"
+            "(c) Copyright 1994 - 1998 by\n\n"
+
+            "  Christian-Albrechts-Universitaet zu Kiel\n"
+            "  Institut fuer Informatik und Praktische Mathematik\n"
+            "  Preusserstrasse 1 - 9\n"
+            "  D-24105 Kiel\n"
+            "  Germany\n"
+            "  (in the following named CAU Kiel)\n\n"
+
+            "Permission to use, copy, modify, and distribute this software and its\n"
+            "documentation for any purpose and without fee is hereby granted,\n"
+            "provided that the above copyright notice appear in all copies and that\n"
+            "both the copyright notice and this permission notice and warranty\n"
+            "disclaimer appear in supporting documentation, and that the name of\n"
+            "CAU Kiel or any CAU Kiel entity not be used in advertising\n"
+            "or publicity pertaining to distribution of the software without\n"
+            "specific, written prior permission.\n\n"
+
+            "CAU Kiel disclaims all warranties with regard to this software, including\n"
+            "all implied warranties of merchantability and fitness.  In no event\n"
+            "shall CAU Kiel be liable for any special, indirect or consequential\n"
+            "damages or any damages whatsoever resulting from loss of use, data or\n"
+            "profits, whether in an action of contract, negligence or other\n"
+            "tortious action, arising out of or in connection with the use or\n"
+            "performance of this software.\n\n");
 
     DBUG_VOID_RETURN;
 }
