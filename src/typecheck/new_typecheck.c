@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/08/15 20:59:24  dkr
+ * Lac2Fun(), CheckAvis() added for wrapper code
+ *
  * Revision 3.12  2002/08/14 16:22:21  dkr
  * SSATransform() after CreateWrapperCode() added
  *
@@ -352,15 +355,17 @@ NTCmodul (node *arg_node, node *arg_info)
     if ((break_after == PH_typecheck) && (0 == strcmp (break_specifier, "cwc"))) {
         goto DONE;
     }
-    arg_node = SSATransform (arg_node);
 
     /*
-     *
      * Finally, we compute the old type representation from the ntypes
-     * we just inferred.
+     * we just inferred and convert the wrapper function code into SSA form.
      */
 
     arg_node = NT2OTTransform (arg_node);
+
+    arg_node = Lac2Fun (arg_node);
+    arg_node = CheckAvis (arg_node);
+    arg_node = SSATransform (arg_node);
 
 DONE:
     DBUG_RETURN (arg_node);
