@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.57  1998/04/02 12:11:09  srs
+ * fixed bug in MakeShpseg
+ *
  * Revision 1.56  1998/04/01 23:58:04  dkr
  * added MakeWLstriVar, MakeWLgridVar
  *
@@ -232,11 +235,12 @@ char *prf_name_str[] = {
 /*  Make-functions for non-node structures                                  */
 /*--------------------------------------------------------------------------*/
 
+/* attention: the given parameter chain of nums structs is set free here!!!  */
 shpseg *
 MakeShpseg (nums *numsp)
 {
     shpseg *tmp;
-    int i = 0;
+    int i;
     nums *oldnumsp;
 
     DBUG_ENTER ("MakeShpseg");
@@ -245,14 +249,13 @@ MakeShpseg (nums *numsp)
 
     tmp->next = NULL;
 
-    for (i = 0; i < SHP_SEG_SIZE; i++) {
-        SHPSEG_SHAPE (tmp, i) = -1;
-    }
+    /*   for (i=0;i<SHP_SEG_SIZE;i++) */
+    /*     SHPSEG_SHAPE(tmp,i)=-1; */
 
+    i = 0;
     while (numsp != NULL) {
-        if (i >= SHP_SEG_SIZE) {
+        if (i >= SHP_SEG_SIZE)
             SYSABORT (("Maximum number of dimensions exceeded"));
-        }
 
         SHPSEG_SHAPE (tmp, i) = NUMS_NUM (numsp);
 
