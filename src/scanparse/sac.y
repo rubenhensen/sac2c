@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/05/06 12:07:36  sbs
+ * line-numbers of let-nodes improved in "letassign:"-rule.
+ *
  * Revision 2.8  1999/05/05 14:05:15  sbs
  * Now, the error-message "points" to the beginning of the offending
  * token rather than it's last char!
@@ -1600,24 +1603,27 @@ assign: letassign SEMIC { $$=$1; }
       | forassign       { $$=$1; }
       ;
 
-letassign: ids LET expr 
-           { $$=MakeLet($3, $1);
+letassign: ids LET {$<cint>$=linenum;} expr 
+           { $$=MakeLet($4, $1);
+             NODE_LINE($$) = $<cint>3;
            }
-         | id SQBR_L expr SQBR_R LET expr
+         | id SQBR_L expr SQBR_R LET {$<cint>$=linenum;} expr
            { $$=MakeLet( MakePrf( F_modarray,
                            MakeExprs( MakeId( $1, NULL, ST_regular) ,
                              MakeExprs( $3,
-                               MakeExprs($6,
+                               MakeExprs($7,
                                  NULL))) ),
                          MakeIds(StringCopy($1), NULL, ST_regular) );
+             NODE_LINE($$) = $<cint>6;
            }
-         | id SQBR_L expr COMMA exprs SQBR_R LET expr
+         | id SQBR_L expr COMMA exprs SQBR_R LET {$<cint>$=linenum;} expr
            { $$=MakeLet( MakePrf( F_modarray,
                            MakeExprs( MakeId( $1, NULL, ST_regular) ,
                                       MakeExprs( MakeArray(MakeExprs($3, $5)),
-                                                 MakeExprs($8,
+                                                 MakeExprs($9,
                                                            NULL))) ),
                          MakeIds(StringCopy($1), NULL, ST_regular) );
+             NODE_LINE($$) = $<cint>8;
            }
          | expr_ap 
            { $$=MakeLet( $1, NULL);
