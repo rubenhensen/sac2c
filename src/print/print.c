@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/02/07 20:15:03  dkr
+ * fixed a bug in PrintWLgridx()
+ *
  * Revision 3.16  2001/02/06 01:43:28  dkr
  * output for new with-loop modified
  * PrintAST... updated
@@ -186,7 +189,7 @@ char *prf_string[] = {
 /******************************************************************************
  *
  * function:
- *   void DbugPrintArray(node *arg_node)
+ *   void DbugPrintArray( node *arg_node)
  *
  * description:
  *   This function is only used for printing of debugging informations in
@@ -204,6 +207,8 @@ DbugPrintArray (node *arg_node)
     float *fltptr;
     double *dblptr;
 
+    DBUG_ENTER ("DbugPrintArray");
+
     if (NODE_TYPE (arg_node) == N_array) {
         veclen = ARRAY_VECLEN (arg_node);
         vectype = ARRAY_VECTYPE (arg_node);
@@ -216,77 +221,77 @@ DbugPrintArray (node *arg_node)
         constvec = ID_CONSTVEC (arg_node);
     }
 
-    switch (vectype) {
-    case T_nothing:
+    if (constvec != NULL) {
         fprintf (outfile, ":[");
-        break;
-    case T_int:
-        intptr = (int *)constvec;
-        if ((intptr == NULL) || (veclen < 1))
-            return;
-        else {
-            fprintf (outfile, ":[%d", intptr[0]);
-            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++)
+    }
+
+    if ((constvec != NULL) && (veclen >= 1)) {
+        switch (vectype) {
+        case T_nothing:
+            break;
+
+        case T_int:
+            intptr = (int *)constvec;
+            fprintf (outfile, "%d", intptr[0]);
+            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++) {
                 fprintf (outfile, ",%d", intptr[i]);
-        }
-        break;
-    case T_float:
-        fltptr = (float *)constvec;
-        if ((fltptr == NULL) || (veclen < 1))
-            return;
-        else {
-            fprintf (outfile, ":[%f", fltptr[0]);
-            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++)
+            }
+            break;
+
+        case T_float:
+            fltptr = (float *)constvec;
+            fprintf (outfile, "%f", fltptr[0]);
+            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++) {
                 fprintf (outfile, ",%f", fltptr[i]);
-        }
-        break;
-    case T_double:
-        dblptr = (double *)constvec;
-        if ((dblptr == NULL) || (veclen < 1))
-            return;
-        else {
-            fprintf (outfile, ":[%f", dblptr[0]);
-            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++)
+            }
+            break;
+
+        case T_double:
+            dblptr = (double *)constvec;
+            fprintf (outfile, "%f", dblptr[0]);
+            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++) {
                 fprintf (outfile, ",%f", dblptr[i]);
-        }
-        break;
-    case T_bool:
-        intptr = (int *)constvec;
-        if ((intptr == NULL) || (veclen < 1))
-            return;
-        else {
-            fprintf (outfile, ":[%s", ((intptr[0] == 0) ? ("false") : ("true")));
-            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++)
+            }
+            break;
+
+        case T_bool:
+            intptr = (int *)constvec;
+            fprintf (outfile, "%s", ((intptr[0] == 0) ? ("false") : ("true")));
+            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++) {
                 fprintf (outfile, ",%s", ((intptr[i] == 0) ? ("false") : ("true")));
-        }
-        break;
-    case T_char:
-        chrptr = (char *)constvec;
-        if ((chrptr == NULL) || (veclen < 1))
-            return;
-        else {
-            fprintf (outfile, ":[");
+            }
+            break;
+
+        case T_char:
+            chrptr = (char *)constvec;
             if ((chrptr[0] >= ' ') && (chrptr[0] <= '~') && (chrptr[0] != '\'')) {
                 fprintf (outfile, ",'%c'", chrptr[0]);
             } else {
                 fprintf (outfile, ",'\\%o'", chrptr[0]);
             }
-            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++)
+            for (i = 1; i < ((veclen < 10) ? (veclen) : (10)); i++) {
                 if ((chrptr[i] >= ' ') && (chrptr[i] <= '~') && (chrptr[i] != '\'')) {
                     fprintf (outfile, ",'%c'", chrptr[i]);
                 } else {
                     fprintf (outfile, ",'\\%o'", chrptr[i]);
                 }
+            }
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "illegal type found!");
+            break;
         }
-        break;
-    default:
-        return;
     }
-    if (veclen > 10)
-        fprintf (outfile, ",..]");
-    else
+
+    if (constvec != NULL) {
+        if (veclen > 10) {
+            fprintf (outfile, ",..");
+        }
         fprintf (outfile, "]");
-    return;
+    }
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
@@ -2837,6 +2842,9 @@ PrintNcode (node *arg_node, node *arg_info)
     if (NCODE_AP_DUMMY_CODE (arg_node)) {
         fprintf (outfile, " /* dummy code for AP */");
     }
+    if (NCODE_USED (arg_node) == 0) {
+        fprintf (outfile, " /* unused! */");
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -2918,10 +2926,12 @@ PrintNwithop (node *arg_node, node *arg_info)
         fprintf (outfile, "genarray( ");
         Trav (NWITHOP_SHAPE (arg_node), arg_info);
         break;
+
     case WO_modarray:
         fprintf (outfile, "modarray( ");
         Trav (NWITHOP_ARRAY (arg_node), arg_info);
         break;
+
     case WO_foldfun:
         if (NWITHOP_MOD (arg_node) == NULL) {
             fprintf (outfile, "fold/*fun*/( %s, ", NWITHOP_FUN (arg_node));
@@ -2931,12 +2941,17 @@ PrintNwithop (node *arg_node, node *arg_info)
         }
         Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
         break;
+
     case WO_foldprf:
         fprintf (outfile, "fold/*prf*/( %s", prf_string[NWITHOP_PRF (arg_node)]);
         if (NWITHOP_NEUTRAL (arg_node)) {
             fprintf (outfile, ", ");
             Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
         }
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "illegal WL type found!");
         break;
     }
 
@@ -3173,7 +3188,7 @@ PrintWLxblock (node *arg_node, node *arg_info)
     fprintf (outfile, "block%d[%d] %d:", WLXBLOCK_LEVEL (arg_node),
              WLXBLOCK_DIM (arg_node), WLXBLOCK_STEP (arg_node));
 
-    if (WLSTRIDEX_NOOP (arg_node)) {
+    if (WLXBLOCK_NOOP (arg_node)) {
         fprintf (outfile, " /* noop */");
     }
 
@@ -3270,10 +3285,14 @@ PrintWLcode (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintWLcode");
 
+    fprintf (outfile, " ");
     if (arg_node != NULL) {
         DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Ncode), "illegal code node found!");
 
-        DBUG_ASSERT ((NCODE_USED (arg_node) >= 0), "illegal NCODE_USED value");
+        /*
+         * we use the code here, therefore the counter USED should be >0 !!
+         */
+        DBUG_ASSERT ((NCODE_USED (arg_node) > 0), "illegal NCODE_USED value!");
 
         fprintf (outfile, "op_%d", NCODE_NO (arg_node));
     } else {
@@ -3285,16 +3304,20 @@ PrintWLcode (node *arg_node, node *arg_info)
             case WO_genarray:
                 fprintf (outfile, "init");
                 break;
+
             case WO_modarray:
                 fprintf (outfile, "copy");
                 break;
+
             case WO_foldfun:
                 /* here is no break missing! */
             case WO_foldprf:
                 fprintf (outfile, "noop");
                 break;
+
             default:
-                DBUG_ASSERT ((0), "wrong with-loop type found");
+                DBUG_ASSERT ((0), "illegal with-loop type found");
+                break;
             }
         } else {
             fprintf (outfile, "?");
@@ -3347,21 +3370,19 @@ PrintWLgridx (node *arg_node, node *arg_info)
                   WLGRIDX_DIM (arg_node));
     fprintf (outfile, "):");
 
-    if (WLGRIDX_CODE (arg_node) != NULL) {
-        fprintf (outfile, " ");
-        PrintWLcode (WLGRIDX_CODE (arg_node), arg_info);
-    }
-
-    if (WLGRIDX_NOOP (arg_node)) {
-        fprintf (outfile, " /* noop */");
-    }
-
-    fprintf (outfile, "\n");
-
     if (WLGRIDX_NEXTDIM (arg_node) != NULL) {
+        fprintf (outfile, "\n");
         indent++;
         Trav (WLGRIDX_NEXTDIM (arg_node), arg_info);
         indent--;
+    } else {
+        if ((WLGRIDX_CODE (arg_node) != NULL) || (!WLGRIDX_NOOP (arg_node))) {
+            PrintWLcode (WLGRIDX_CODE (arg_node), arg_info);
+        }
+        if (WLGRIDX_NOOP (arg_node)) {
+            fprintf (outfile, " /* noop */");
+        }
+        fprintf (outfile, "\n");
     }
 
     if (WLGRIDX_NEXT (arg_node) != NULL) {
@@ -3494,10 +3515,12 @@ PrintTrav (node *syntax_tree, node *arg_info)
             Trav (syntax_tree, arg_info);
             INFO_PRINT_SEPARATE (arg_info) = 0;
             break;
-        }
-    }
 
-    else {
+        default:
+            DBUG_ASSERT ((0), "illegal link style found!");
+            break;
+        }
+    } else {
         outfile = stdout;
         fprintf (outfile, "\n-----------------------------------------------\n");
         Trav (syntax_tree, arg_info);
@@ -3897,16 +3920,13 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             skip = OBJDEF_NEXT (arg_node);
             break;
 
-        case N_assign:
-            skip = ASSIGN_NEXT (arg_node);
-            break;
+        case N_fundef:
+            fprintf (outfile, "(");
+            fprintf (outfile, "%s<" F_PTR ">", FUNDEF_NAME (arg_node),
+                     FUNDEF_NAME (arg_node));
+            fprintf (outfile, ")");
 
-        case N_exprs:
-            skip = EXPRS_NEXT (arg_node);
-            break;
-
-        case N_vinfo:
-            skip = VINFO_NEXT (arg_node);
+            skip = FUNDEF_NEXT (arg_node);
             break;
 
         case N_pragma:
@@ -3919,8 +3939,56 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             }
             break;
 
+        case N_arg:
+            fprintf (outfile, "(");
+            DoPrintTypesAST (ARG_TYPE (arg_node));
+            fprintf (outfile, " %s<" F_PTR ">", STR_OR_NULL (ARG_NAME (arg_node), "?"),
+                     ARG_NAME (arg_node));
+            PrintRC (ARG_REFCNT (arg_node), ARG_NAIVE_REFCNT (arg_node), 1);
+            fprintf (outfile, ", varno: %i", ARG_VARNO (arg_node));
+            fprintf (outfile, ")");
+
+            skip = ARG_NEXT (arg_node);
+            break;
+
+        case N_exprs:
+            skip = EXPRS_NEXT (arg_node);
+            break;
+
+        case N_vardec:
+            fprintf (outfile, "(");
+            DoPrintTypesAST (ARG_TYPE (arg_node));
+            fprintf (outfile, " %s<" F_PTR ">", STR_OR_NULL (VARDEC_NAME (arg_node), "?"),
+                     VARDEC_NAME (arg_node));
+            PrintRC (VARDEC_REFCNT (arg_node), VARDEC_NAIVE_REFCNT (arg_node), 1);
+            fprintf (outfile, ", varno: %i", VARDEC_VARNO (arg_node));
+            fprintf (outfile, ")");
+
+            skip = VARDEC_NEXT (arg_node);
+            break;
+
+        case N_vinfo:
+            skip = VINFO_NEXT (arg_node);
+            break;
+
+        case N_assign:
+            skip = ASSIGN_NEXT (arg_node);
+            break;
+
         case N_let:
             DoPrintIdsAST (LET_IDS (arg_node));
+            break;
+
+        case N_ap:
+            fprintf (outfile, "(");
+            fprintf (outfile, "%s<" F_PTR ">", AP_NAME (arg_node), AP_NAME (arg_node));
+            fprintf (outfile, ")");
+            break;
+
+        case N_prf:
+            fprintf (outfile, "(");
+            fprintf (outfile, "%s", mdb_prf[PRF_PRF (arg_node)]);
+            fprintf (outfile, ")");
             break;
 
         case N_id:
@@ -3946,49 +4014,10 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, ")");
             break;
 
-        case N_prf:
+        case N_icm:
             fprintf (outfile, "(");
-            fprintf (outfile, "%s", mdb_prf[PRF_PRF (arg_node)]);
+            fprintf (outfile, "%s", ICM_NAME (arg_node));
             fprintf (outfile, ")");
-            break;
-
-        case N_ap:
-            fprintf (outfile, "(");
-            fprintf (outfile, "%s<" F_PTR ">", AP_NAME (arg_node), AP_NAME (arg_node));
-            fprintf (outfile, ")");
-            break;
-
-        case N_arg:
-            fprintf (outfile, "(");
-            DoPrintTypesAST (ARG_TYPE (arg_node));
-            fprintf (outfile, " %s<" F_PTR ">", STR_OR_NULL (ARG_NAME (arg_node), "?"),
-                     ARG_NAME (arg_node));
-            PrintRC (ARG_REFCNT (arg_node), ARG_NAIVE_REFCNT (arg_node), 1);
-            fprintf (outfile, ", varno: %i", ARG_VARNO (arg_node));
-            fprintf (outfile, ")");
-
-            skip = ARG_NEXT (arg_node);
-            break;
-
-        case N_vardec:
-            fprintf (outfile, "(");
-            DoPrintTypesAST (ARG_TYPE (arg_node));
-            fprintf (outfile, " %s<" F_PTR ">", STR_OR_NULL (VARDEC_NAME (arg_node), "?"),
-                     VARDEC_NAME (arg_node));
-            PrintRC (VARDEC_REFCNT (arg_node), VARDEC_NAIVE_REFCNT (arg_node), 1);
-            fprintf (outfile, ", varno: %i", VARDEC_VARNO (arg_node));
-            fprintf (outfile, ")");
-
-            skip = VARDEC_NEXT (arg_node);
-            break;
-
-        case N_fundef:
-            fprintf (outfile, "(");
-            fprintf (outfile, "%s<" F_PTR ">", FUNDEF_NAME (arg_node),
-                     FUNDEF_NAME (arg_node));
-            fprintf (outfile, ")");
-
-            skip = FUNDEF_NEXT (arg_node);
             break;
 
         case N_Nwith:
@@ -4148,7 +4177,7 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, "%d->%d [%d]", WLGRID_BOUND1 (arg_node),
                      WLGRID_BOUND2 (arg_node), WLGRID_DIM (arg_node));
             fprintf (outfile, ", fitted: %i", WLGRID_FITTED (arg_node));
-            fprintf (outfile, ", noop: %i", WLSTRIDEVAR_NOOP (arg_node));
+            fprintf (outfile, ", noop: %i", WLGRID_NOOP (arg_node));
             fprintf (outfile, ")");
 
             if (WLGRID_CODE (arg_node) != NULL) {
@@ -4171,12 +4200,6 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, ")");
 
             skip = WLGRIDVAR_NEXT (arg_node);
-            break;
-
-        case N_icm:
-            fprintf (outfile, "(");
-            fprintf (outfile, "%s", ICM_NAME (arg_node));
-            fprintf (outfile, ")");
             break;
 
         default:
