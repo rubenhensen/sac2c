@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2002/04/08 19:54:12  dkr
+ * FreeMT(): Free(arg_node) added
+ * FreeST(): Free(arg_node) added
+ * FreeSSAcnt(): NEXT pointer is return now :-)
+ *
  * Revision 3.32  2002/03/07 02:20:53  dkr
  * RETURN_REFERENCE added in FreeReturn()
  *
@@ -700,8 +705,6 @@ FreeZombie (node *fundef)
 node *
 RemoveAllZombies (node *arg_node)
 {
-    node *ret_node;
-
     DBUG_ENTER ("RemoveAllZombies");
 
     DBUG_ASSERT ((arg_node != NULL), "RemoveAllZombies called with argument NULL");
@@ -711,24 +714,23 @@ RemoveAllZombies (node *arg_node)
         if (MODUL_FUNS (arg_node) != NULL) {
             MODUL_FUNS (arg_node) = RemoveAllZombies (MODUL_FUNS (arg_node));
         }
-        ret_node = arg_node;
         break;
 
     case N_fundef:
         if (FUNDEF_NEXT (arg_node) != NULL) {
             FUNDEF_NEXT (arg_node) = RemoveAllZombies (FUNDEF_NEXT (arg_node));
         }
-        ret_node = FreeZombie (arg_node);
+        arg_node = FreeZombie (arg_node);
         break;
 
     default:
         DBUG_ASSERT ((0), "RemoveAllZombies() is suitable for N_modul and"
                           " N_fundef nodes only!");
-        ret_node = NULL;
+        arg_node = NULL;
         break;
     }
 
-    DBUG_RETURN (ret_node);
+    DBUG_RETURN (arg_node);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1408,7 +1410,7 @@ FreeArray (node *arg_node, node *arg_info)
         ARRAY_TYPE (arg_node) = FreeOneTypes (ARRAY_TYPE (arg_node));
     }
 
-    if (ARRAY_ISCONST (arg_node) && ARRAY_VECLEN (arg_node) > 0) {
+    if (ARRAY_ISCONST (arg_node) && (ARRAY_VECLEN (arg_node) > 0)) {
         ARRAY_CONSTVEC (arg_node) = Free (ARRAY_CONSTVEC (arg_node));
     }
 
@@ -1655,8 +1657,8 @@ FreePragma (node *arg_node, node *arg_info)
     PRAGMA_WLCOMP_APS (arg_node) = FREETRAV (PRAGMA_WLCOMP_APS (arg_node));
 
 #if 0
-  PRAGMA_NEEDTYPES(arg_node) = FreeAllIds(PRAGMA_NEEDTYPES(arg_node));
-  PRAGMA_NEEDFUNS(arg_node)  = FREETRAV( PRAGMA_NEEDFUNS(arg_node));
+  PRAGMA_NEEDTYPES( arg_node) = FreeAllIds( PRAGMA_NEEDTYPES( arg_node));
+  PRAGMA_NEEDFUNS( arg_node)  = FREETRAV( PRAGMA_NEEDFUNS( arg_node));
 #endif
 
     DBUG_PRINT ("FREE", ("Removing N_pragma node ..."));
@@ -1758,6 +1760,8 @@ FreeMT (node *arg_node, node *arg_info)
         MT_NEEDLATER (arg_node) = DFMRemoveMask (MT_NEEDLATER (arg_node));
     }
 
+    arg_node = Free (arg_node);
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1784,6 +1788,8 @@ FreeST (node *arg_node, node *arg_info)
     if (ST_NEEDLATER_MT (arg_node) != NULL) {
         ST_NEEDLATER_MT (arg_node) = DFMRemoveMask (ST_NEEDLATER_MT (arg_node));
     }
+
+    arg_node = Free (arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -2268,23 +2274,27 @@ FreeCSEinfo (node *arg_node, node *arg_info)
 
     DBUG_RETURN (ret_node);
 }
+
 /*--------------------------------------------------------------------------*/
 
 node *
 FreeSSAcnt (node *arg_node, node *arg_info)
 {
+    node *ret_node;
+
     DBUG_ENTER ("FreeSSAcnt");
 
     DBUG_PRINT ("FREE", ("Removing contents of N_ssacnt node ..."));
 
-    SSACNT_NEXT (arg_node) = FREETRAV (SSACNT_NEXT (arg_node));
     SSACNT_BASEID (arg_node) = Free (SSACNT_BASEID (arg_node));
+
+    ret_node = FREECONT (SSACNT_NEXT (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_ssacnt node ..."));
 
     arg_node = Free (arg_node);
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (ret_node);
 }
 
 /*--------------------------------------------------------------------------*/
