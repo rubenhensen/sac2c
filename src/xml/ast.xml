@@ -1,203 +1,14 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.66  2004/11/25 12:01:38  sah
+  added travs
+
   Revision 1.65  2004/11/25 11:18:53  ktr
   Added MarkMemVals traversal, AVIS_ISDEAD
 
-  Revision 1.64  2004/11/25 11:05:02  sbs
-  *** empty log message ***
-
-  Revision 1.63  2004/11/25 10:40:26  khf
-  added FLAT, HM and INSVD
-
-  Revision 1.62  2004/11/25 00:11:37  mwe
-  fun2lac added
-
-  Revision 1.61  2004/11/25 00:07:10  skt
-  profiling traversal added
-
-  Revision 1.60  2004/11/24 23:42:43  ktr
-  DO_SKIP is a son now.
-
-  Revision 1.59  2004/11/24 21:00:47  mwe
-  lac2fun added
-
-  Revision 1.58  2004/11/24 20:29:50  sbs
-  CRTWRPmodarray
-  eliminated.
-
-  Revision 1.57  2004/11/24 20:29:25  sah
-  *** empty log message ***
-
-  Revision 1.56  2004/11/24 19:58:00  sbs
-  CRTWRP added.
-
-  Revision 1.55  2004/11/24 19:38:09  sah
-  fixed it
-
-  Revision 1.54  2004/11/24 17:47:01  sah
-  update
-
-  Revision 1.53  2004/11/24 17:29:33  ktr
-  added some header files.
-
-  Revision 1.52  2004/11/24 17:24:09  sah
-  fixed some .h files
-
-  Revision 1.51  2004/11/24 17:11:03  mwe
-  ToOldTypes added
-
-  Revision 1.50  2004/11/24 16:31:21  sbs
-  TR_nt2ot added
-
-  Revision 1.49  2004/11/24 15:37:43  sbs
-  NTCobjdef eliminated
-
-  Revision 1.48  2004/11/24 15:35:28  ktr
-  WLS traversals added.
-
-  Revision 1.47  2004/11/24 14:57:14  mwe
-  ToNewTypes added
-
-  Revision 1.46  2004/11/24 14:33:23  sah
-  added TR_hd
-
-  Revision 1.45  2004/11/24 14:28:53  sbs
-  ntc added
-
-  Revision 1.44  2004/11/24 14:10:11  khf
-  added DDEPEND, TDEPEND, RDEPEND, WLFS
-
-  Revision 1.43  2004/11/24 13:52:27  ktr
-  TYPEDEF_ISUNIQUE added.
-
-  Revision 1.42  2004/11/24 13:33:30  khf
-  added WLPG
-
-  Revision 1.41  2004/11/24 12:31:00  ktr
-  FUNDEF_TYPE -> FUNDEF_TYPES
-
-  Revision 1.40  2004/11/24 11:50:48  mwe
-  ConstVarPropagation added
-  N_let modified (rotate arguments)
-  IsUnique in N_avis added
-
-  Revision 1.39  2004/11/24 11:28:42  sah
-  *** empty log message ***
-
-  Revision 1.38  2004/11/24 11:23:26  sbs
-  some new flags in N_arg
-
-  Revision 1.37  2004/11/24 11:18:53  sah
-  added rsp
-
-  Revision 1.36  2004/11/24 10:51:07  mwe
-  DistributiveLaw added
-
-  Revision 1.35  2004/11/24 10:47:09  ktr
-  ARG_ISREFCOUNTED, RET_ISREFCOUNTED added.
-
-  Revision 1.34  2004/11/24 00:34:54  sah
-  added ds traversal
-
-  Revision 1.33  2004/11/24 00:11:35  sah
-  added FUNDEF_ISWRAPPERFUN
-
-  Revision 1.32  2004/11/23 23:46:53  mwe
-  AssociativeLaw added
-
-  Revision 1.31  2004/11/23 23:40:26  sah
-  added some traversals
-
-  Revision 1.30  2004/11/23 22:49:52  sah
-  removed ids attribute
-
-  Revision 1.29  2004/11/23 22:22:08  skt
-  flag IsSpmdfun added
-
-  Revision 1.28  2004/11/23 22:14:15  mwe
-  ElimSubDiv added
-
-  Revision 1.27  2004/11/23 22:07:26  ktr
-  added EMLR, EMLRO
-
-  Revision 1.26  2004/11/23 21:47:59  skt
-  traversals for concurrent added
-
-  Revision 1.25  2004/11/23 20:52:46  khf
-  added WLE and EA
-
-  Revision 1.24  2004/11/23 20:24:40  mwe
-  UndoElimSubDiv added
-
-  Revision 1.23  2004/11/23 19:56:28  ktr
-  Added ARG_ISARTIFICIAL
-
-  Revision 1.22  2004/11/23 19:46:27  sbs
-  traversal TS added.
-
-  Revision 1.21  2004/11/23 19:36:17  sbs
-  nu aber
-
-  Revision 1.20  2004/11/23 19:33:39  sbs
-  phases introduced
-
-  Revision 1.19  2004/11/23 18:56:45  skt
-  traversals for multithreading added
-
-  Revision 1.18  2004/11/23 17:13:46  khf
-  made numparams from N_pragma permanent, added Last in N_sync
-  and corrected flag IsFoldable
-
-  Revision 1.17  2004/11/23 16:47:25  skt
-  corrected the traversal id of explicit copy
-
-  Revision 1.16  2004/11/23 16:43:12  jhb
-  fixed bug
-
-  Revision 1.14  2004/11/23 16:10:47  jhb
-  all traversals of reference counting included
-
-  Revision 1.13  2004/11/23 15:55:40  jhb
-  several traversals of refcounting included
-
-  Revision 1.12  2004/11/23 14:58:16  sah
-  some more stuff for kts
-
-  Revision 1.11  2004/11/23 14:57:14  sah
-  added some stuff for ktr
-
-  Revision 1.10  2004/11/23 14:50:25  sah
-  added WithOp
-
-  Revision 1.9  2004/11/23 14:34:50  sah
-  added RET_ISALIAS
-
-  Revision 1.8  2004/11/23 14:32:09  sah
-  added FUNDEF_ISFOLDFUN
-
-  Revision 1.7  2004/11/23 13:51:02  ktr
-  added aliasanalysis.c
-
-  Revision 1.6  2004/11/23 13:02:38  sah
-  signature fixes
-
-  Revision 1.5  2004/11/23 12:59:02  sah
-  oldtype of vardec is NULL by default now
-
-  Revision 1.4  2004/11/23 12:34:52  khf
-  added DUP traversal
-
-  Revision 1.3  2004/11/23 12:31:28  sah
-  chnages ;)
-
-  Revision 1.2  2004/11/23 12:04:50  sah
-  changed Ids
-
   Revision 1.1  2004/11/23 11:37:46  sah
   Initial revision
-
-
 
 -->
 <?xml-stylesheet href="ast2html.xsl" type="text/xsl" name="HTML" media="screen"?>
@@ -289,11 +100,11 @@
     -->
     <general>
       <traversal id="GSC" name="Generate Startup Code" default="user" include="gen_startup_code.h" >
-        <user>
+        <travuser>
           <node name="Fundef" />
           <node name="Spmd" />
           <node name="Icm" />
-        </user>
+        </travuser>
       </traversal>
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
       <traversal id="FREE" name="Free Tree" default="sons" include="free_node.h" />
@@ -302,7 +113,7 @@
       <traversal id="SEL" name="Serialize Link Traversal" default="user" include="serialize_link.h" />
       <traversal id="DS" name="DeSerialize Traversal" default="sons" include="serialize_link.h" />
       <traversal id="TNT" name="ToNewTypes Traversal" default="sons" include="ToNewTypes.h" >
-	<user>
+	<travuser>
 	  <node name="Arg" />
 	  <node name="Vardec" />
 	  <node name="Objdef" />
@@ -316,10 +127,10 @@
 	  <node name="Cast" />
 	  <node name="Typedef" />
 	  <node name="Array" />
-	</user>
+	</travuser>
       </traversal>
       <traversal id="TOT" name="ToOldTypes Traversal" default="sons" include="ToOldTypes.h" >
-	<user>
+	<travuser>
 	  <node name="Block" />
 	  <node name="Assign" />
 	  <node name="Let" />
@@ -327,35 +138,35 @@
 	  <node name="Arg" />
 	  <node name="Fundef" />
 	  <node name="Array" />
-	</user>
+	</travuser>
       </traversal>
       <traversal id="L2F" name="Lac2Fun Traversal" default="sons" include="lac2fun.h" >
-	<user>
+	<travuser>
 	  <node name="Assign" />
 	  <node name="Do" />
 	  <node name="Fundef" />
 	  <node name="Cond" />
-	</user>
+	</travuser>
       </traversal>
       <traversal id="F2L" name="Fun2Lac Traversal" default="sons" include="fun2lac.h" >
-	<user>
+	<travuser>
 	  <node name="Assign" />
 	  <node name="Module" />
 	  <node name="Fundef" />
 	  <node name="Let" />
 	  <node name="Ap" />
 	  <node name="Block" />
-	</user>
+	</travuser>
       </traversal>
     </general>
     <phase id="scanparse" name="Parsing input file">
      <traversal id="HM" name="Handle Mops" default="sons" include="handle_mops.h" >
-	<user>
+	<travuser>
 	  <node name="Mop" />
-	</user>
+	</travuser>
       </traversal>
       <traversal id="HD" name="Handle Dots" default="sons" include="handle_dots.h">
-        <user>
+        <travuser>
 	  <node name="Id" />
 	  <node name="With" />
 	  <node name="Genarray" />
@@ -369,19 +180,19 @@
 	  <node name="Assign" />
 	  <node name="SetWL" />
 	  <node name="Id" />
-	</user>
+	</travuser>
       </traversal>
       <traversal id="RSP" name="Resolve pragmas" default="sons" include="resolvepragma.h">
-        <user>
+        <travuser>
 	  <node name="Fundef" />
 	  <node name="Arg" />
 	  <node name="Ret" />
-	</user>
+	</travuser>
       </traversal>
     </phase>
     <phase id="flatten" name="Simplifying source code" >
       <traversal id="FLAT" name="Flatten" default="sons" include="flatten.h" >
-        <user>
+        <travuser>
           <node name="Assign" />
           <node name="Module" />
           <node name="Fundef" />
@@ -405,20 +216,32 @@
           <node name="Modarray" />
           <node name="Fold" />
           <node name="Code" />
-        </user>
+        </travuser>
+      </traversal>
+    </phase>
+    <phase id="use" name="Processing use statements">
+      <traversal id="USS" name="Use Symbols" default="sons" include="usesymbols.h" >
+        <travuser>
+	  <node name="Typedef" />
+	  <node name="Fold" />
+	  <node name="Arg" />
+	  <node name="Vardec" />
+	  <node name="Ap" />
+	  <node name="Module" />
+	</travuser>
       </traversal>
     </phase>
     <phase id="typecheck" name="Running type inference system">
       <traversal id="INSVD" name="Insert Vardecs" default="sons" include="insert_vardecs.h" >
-	<user>
+	<travuser>
 	  <node name="Fundef" />
 	  <node name="Id" />
 	  <node name="Withid" />
 	  <node name="Let" />
-	</user>
+	</travuser>
       </traversal>
       <traversal id="CRTWRP" name="Create Wrappers" default="sons" include="create_wrappers.h">
-        <user>
+        <travuser>
           <node name="Module" />
           <node name="Fundef" />
           <node name="Let" />
@@ -426,7 +249,7 @@
           <node name="Id" />
           <node name="Genarray" />
           <node name="Fold" />
-        </user>  
+        </travuser>  
       </traversal>
       <traversal id="NTC" name="New Type Inference" default="sons" include="new_typecheck.h" >
         <travuser> 
@@ -477,11 +300,11 @@
         </travuser>
       </traversal>
       <traversal id="PF" name="Annotate Function Calls " default="sons" include="annotate_fun_calls.h">
-        <user>
+        <travuser>
           <node name="Ap" />
           <node name="Assign" />
           <node name="Fundef" />
-        </user>  
+        </travuser>  
       </traversal>
     </phase>
     <phase id="export" name="Exporting symbols">
@@ -489,14 +312,6 @@
     </phase>
     <phase id="wlenhance" name="Enhancement of With-Loops">
       <traversal id="WLE" name="With-Loop Enhancement" default="sons" include="WLEnhancement.h" >
-        <travuser>
-        </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
       <traversal id="EA" name="Explicit Accumulate" default="sons" include="ExplicitAccumulate.h" >
         <travuser>
@@ -506,12 +321,6 @@
           <node name="With" />
           <node name="Code" />
         </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
       <traversal id="WLPG" name="With-Loop Partition Generation" default="sons" include="WLPartitionGeneration.h" >
         <travuser>
@@ -525,12 +334,14 @@
           <node name="Generator" />
           <node name="Genarray" />
          </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
+      </traversal>
+    </phase>
+    <phase id="inlprepare" name="Prepare Inline">
+      <traversal id="PPI" name="Prepare Inline" default="sons" include="prepareinline.h">
+        <travuser>
+	  <node name="Fundef" />
+	  <node name="Module" />
+	</travuser>
       </traversal>
     </phase>
     <phase id="sacopt" name="Running SAC optimizations">
@@ -541,23 +352,11 @@
 	  <node name="Let" />
 	  <node name="Prf" />
 	</travuser>
-	<travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
       <traversal id="CF" name="Constant Folding" default="sons" include="SSAConstantFolding.h" >
         <travuser>
           <node name="Id" />
         </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
       <traversal id="CVP" name="Constant Variable Propagation" default="sons" include="ConstVarPropagation.h" >
 	<travuser>
@@ -579,12 +378,6 @@
 	  <node name="Array" />
 	  <node name="Funcond" />
 	</travuser>
-	<travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
       <traversal id="DDEPEND" name="Detect Dependencies" default="sons" include="detectdependencies.h" >
 	<travuser>
@@ -594,12 +387,6 @@
 	  <node name="With" />
           <node name="Code" />
 	</travuser>
-	<travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
       <traversal id="DL" name="DistributiveLaw" default="sons" include="DistributiveLaw.h" >
 	<travuser>
@@ -609,12 +396,6 @@
 	  <node name="Prf" />
 	  <node name="Ap" />
 	</travuser>
-	<travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
       <traversal id="ESD" name="ElimSubDiv" default="sons" include="ElimSubDiv.h" >
 	<travuser>
@@ -623,12 +404,6 @@
 	  <node name="Let" />
 	  <node name="Prf" />
 	</travuser>
-	<travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
       <traversal id="TS" name="Print Type Statistics" default="sons" include="type_statistics.h" >
         <travuser>
@@ -636,24 +411,12 @@
           <node name="Arg" />
           <node name="Vardec" />
         </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
       <traversal id="RDEPEND" name="Resolve Dependencies" default="sons" include="resolvedependencies.h" >
 	<travuser>
 	  <node name="Assign" />
 	  <node name="Prf" />
    	</travuser>
-	<travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
       <traversal id="TDEPEND" name="Tag Dependencies" default="sons" include="tagdependencies.h" >
 	<travuser>
@@ -661,12 +424,6 @@
 	  <node name="Id" />
 	  <node name="With" />
    	</travuser>
-	<travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
       <traversal id="UESD" name="UndoElimSubDiv" default="sons" include="UndoElimSubDiv.h" >
         <travuser>
@@ -675,12 +432,6 @@
 	  <node name="Assign" />
 	  <node name="Prf" />
         </travuser>
-        <travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
       <traversal id="WLFS" name="With-Loop-Fusion" default="sons" include="WithloopFusion.h" >
 	<travuser>
@@ -696,12 +447,6 @@
 	  <node name="Part" />
 	  <node name="Generator" />
 	</travuser>
-	<travsons>
-        </travsons>
-        <travnone>
-        </travnone>
-        <traverror>
-        </traverror>
       </traversal>
       <traversal id="WLS" name="With-Loop Scalarization" default="sons" include="wls.h">
         <travuser>
@@ -2442,13 +2187,13 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="Name" mandatory="yes">
+        <attribute name="SPName" mandatory="yes">
           <type name="String" />
           <phases>
             <range from="scanparse" to="cwr" />
           </phases>
         </attribute>
-        <attribute name="Mod" mandatory="no">
+        <attribute name="SPMod" mandatory="no">
           <type name="String" />
           <phases>
             <range from="scanparse" to="cwr" />
