@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1998/05/12 15:00:48  dkr
+ * renamed ???_RC_IDS to ???_DEC_RC_IDS
+ *
  * Revision 1.8  1998/05/08 15:45:29  dkr
  * fixed a bug in cube-generation:
  *   pathologic grids are eleminated now :)
@@ -662,10 +665,36 @@ IntersectOutline (node *stride1, node *stride2, node **i_stride1, node **i_strid
         i_offset1 = GridOffset (i_bound1, bound11, WLSTRIDE_STEP (stride1), grid1_b2);
         i_offset2 = GridOffset (i_bound1, bound12, WLSTRIDE_STEP (stride2), grid2_b2);
 
-        if ((head1 < rear2) && (head2 < rear1) &&
-            /* are the outlines of 'stride1' and 'stride2' not disjunkt? */
-            (i_offset1 <= grid1_b1) && (i_offset2 <= grid2_b1)) {
+        if (/* are the outlines of 'stride1' and 'stride2' not disjunkt? */
+            (head1 < rear2) && (head2 < rear1) &&
+
             /* are the grids compatible? */
+            (i_offset1 <= grid1_b1) && (i_offset2 <= grid2_b1) &&
+            /*
+             * Note: (i_offset_1 < grid1_b1) means, that the grid1 must be split
+             *        in two parts to fit the new upper bound in the current dim.
+             *       Then the *projections* of grid1, grid2 can not be disjunct,
+             *        therefore grid1, grid2 must have disjunct outlines!!!
+             */
+
+            /* is intersection of 'stride1' with the outline of 'stride2' not empty? */
+            (i_bound1 + grid1_b1 - i_offset1 < i_bound2) &&
+            /* is intersection of 'stride2' with the outline of 'stride1' not empty? */
+            (i_bound1 + grid2_b1 - i_offset2 < i_bound2)
+            /*
+             * example:
+             *
+             *   stride1: 0->5 step 2          stride2: 2->3 step 1
+             *                   1->2: ...                     0->1: ...
+             *
+             * Here we must notice, that the intersection of 'stride1' with the
+             *  outline of 'stride2' is empty:
+             *
+             *            2->3 step 2
+             *                   1->2: ...     !!!!!!!!!!!!
+             */
+
+        ) {
 
             if ((WLSTRIDE_PART (stride1) == WLSTRIDE_PART (stride2)) &&
                 /* are 'stride1' and 'stride2' descended from the same Npart? */
@@ -2297,6 +2326,14 @@ ComputeCubes (node *strides)
     DBUG_ASSERT ((NODE_TYPE (strides) == N_WLstride), "wrong node type found");
 
     /*
+     * first step:
+     *
+     * if a stride contains
+     */
+
+    /*
+     * second step:
+     *
      * create disjunct outlines
      *  -> every stride lies in one and only one cube
      */
@@ -2370,6 +2407,8 @@ ComputeCubes (node *strides)
     } while (!fixpoint);
 
     /*
+     * third step:
+     *
      * merge the strides of each cube
      */
     stride1 = strides;
@@ -2509,7 +2548,7 @@ WLTRANwith (node *arg_node, node *arg_info)
     new_node = MakeNWith2 (NPART_WITHID (NWITH_PART (arg_node)), NULL,
                            NWITH_CODE (arg_node), NWITH_WITHOP (arg_node));
 
-    NWITH2_RC_IDS (new_node) = NWITH_RC_IDS (arg_node);
+    NWITH2_DEC_RC_IDS (new_node) = NWITH_DEC_RC_IDS (arg_node);
     NWITH2_IN (new_node) = NWITH_IN (arg_node);
     NWITH2_INOUT (new_node) = NWITH_INOUT (arg_node);
     NWITH2_OUT (new_node) = NWITH_OUT (arg_node);
@@ -2526,7 +2565,7 @@ WLTRANwith (node *arg_node, node *arg_info)
     NWITH_CODE (arg_node) = NULL;
     NWITH_WITHOP (arg_node) = NULL;
 
-    NWITH_RC_IDS (arg_node) = NULL;
+    NWITH_DEC_RC_IDS (arg_node) = NULL;
     NWITH_IN (arg_node) = NULL;
     NWITH_INOUT (arg_node) = NULL;
     NWITH_OUT (arg_node) = NULL;
