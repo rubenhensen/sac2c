@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.41  2000/01/31 19:15:29  bs
+ * Function WLAAprintAccesse modified.
+ * Function TSIprintInfo added.
+ *
  * Revision 2.40  2000/01/26 17:29:30  dkr
  * type of traverse-function-table changed.
  *
@@ -216,6 +220,11 @@
            : ((arg == ACL_offset) ? ("ACL_offset:")                                      \
                                   : ((arg == ACL_const) ? ("ACL_const :") : (""))))
 
+#define NIFmdb_nodetype(mdb_nodetype) mdb_nodetype
+char *nametab[] = {
+#include "node_info.mac"
+};
+
 #define IV(a) ((a) == 0) ? ("") : ("%s + ", VARDEC_NAME ())
 
 #define PRINT_LINE_PRAGMA_IN_SIB(file_handle, node)                                      \
@@ -379,6 +388,8 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WLAAprintAccesses");
 
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Ncode), "Wrong node-type: N_Ncode exspected");
+
     feature = NCODE_WLAA_FEATURE (arg_node);
     fprintf (outfile, "/*\n");
     INDENT;
@@ -457,6 +468,12 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
                  * here's no break missing !
                  */
             case ACL_unknown:
+#if 0
+        fprintf(outfile,"ACCESS_IV: %s", nametab[NODE_TYPE(ACCESS_IV(access))]);
+#else
+                fprintf (outfile, "psi  ( %s ", VARDEC_NAME (ACCESS_IV (access)));
+                fprintf (outfile, ", %s)", VARDEC_NAME (ACCESS_ARRAY (access)));
+#endif
                 fprintf (outfile, "\n");
                 access = ACCESS_NEXT (access);
                 break;
@@ -517,6 +534,72 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
         }
     } while (access != NULL);
     INDENT;
+    fprintf (outfile, " */\n");
+    INDENT;
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************/
+
+static void
+TSIprintInfo (node *arg_node, node *arg_info)
+{
+    int count, iter, dim, i, tilesize;
+    node *pragma, *aelems;
+    char *ap_name;
+
+    DBUG_ENTER ("TSIprintInfo");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Ncode), "Wrong node-type: N_Ncode exspected");
+
+    count = 0;
+    iter = 0;
+    dim = NCODE_WLAA_ARRAYDIM (arg_node);
+    aelems = NULL;
+    if (NCODE_TSI_TILESHP (arg_node) == NULL) {
+        pragma = NULL;
+    } else {
+        pragma = MakePragma ();
+        for (i = dim - 1; i >= 0; i--) {
+            tilesize = SHPSEG_SHAPE (NCODE_TSI_TILESHP (arg_node), i);
+            aelems = MakeExprs (MakeNum (tilesize), aelems);
+        }
+        ap_name = Malloc (6 * sizeof (char));
+        ap_name = strcpy (ap_name, "BvL0");
+        PRAGMA_WLCOMP_APS (pragma)
+          = MakeExprs (MakeAp (ap_name, NULL, MakeExprs (MakeArray (aelems), NULL)),
+                       NULL);
+    }
+
+    fprintf (outfile, "/*\n");
+    INDENT;
+    fprintf (outfile, " * TSI-Infos:\n");
+    INDENT;
+    fprintf (outfile, " *   Number of relevant accesses: %d\n", count);
+    INDENT;
+    fprintf (outfile, " *   Number of iterations: %d\n", iter);
+    INDENT;
+    fprintf (outfile, " *\n");
+    INDENT;
+    fprintf (outfile, " * TSI-proposal:\n");
+    INDENT;
+    if (pragma != NULL) {
+#if 0
+    fprintf(outfile," *");
+    Print( pragma);
+    FreePragma(pragma, NULL);
+    INDENT;
+#else
+        fprintf (outfile, " *    ");
+        FreePragma (pragma, NULL);
+        fprintf (outfile, "\n");
+        INDENT;
+#endif
+    } else {
+        fprintf (outfile, " *   No proposal possible!\n");
+        INDENT;
+    }
     fprintf (outfile, " */\n");
     INDENT;
 
@@ -2439,6 +2522,11 @@ PrintNcode (node *arg_node, node *arg_info)
     DBUG_EXECUTE ("PRINT_WLAA", if ((compiler_phase == PH_sacopt)
                                     && (NCODE_WLAA_INFO (arg_node) != NULL)) {
         WLAAprintAccesses (arg_node, arg_info);
+    });
+
+    DBUG_EXECUTE ("PRINT_TSI", if ((compiler_phase == PH_sacopt)
+                                   && (NCODE_WLAA_INFO (arg_node) != NULL)) {
+        TSIprintInfo (arg_node, arg_info);
     });
 
     fprintf (outfile, "}");
