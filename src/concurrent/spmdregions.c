@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/04/26 21:54:21  dkr
+ * fixed a bug in SPMDInitAssign
+ *
  * Revision 1.10  1998/04/26 16:47:07  dkr
  * fixed a bug in SPMDAssign
  *
@@ -97,7 +100,7 @@ SPMDInitFundef (node *arg_node, node *arg_info)
  *   At the moment we simply generate a SPMD-region and sync-region for each
  *    first level with-loop.
 
- *   Then we store in SPMD_IN/OUT/INOUT/LOCAL, SYNC_INOUT the
+ *   Then we store in SPMD_IN/OUT/INOUT/LOCAL, SYNC_OUT/INOUT the
  *    in/out/inout/local-vars of the SPMD-, sync-region.
  *
  ******************************************************************************/
@@ -121,8 +124,8 @@ SPMDInitAssign (node *arg_node, node *arg_info)
          *  -> create a SPMD/sync-region containing the current assignment only
          *      and insert it into the syntaxtree.
          */
-        sync = MakeSync (MakeBlock (MakeAssign (spmd_let, NULL), NULL));
-        spmd = MakeSPMD (MakeBlock (MakeAssign (sync, NULL), NULL));
+        sync = MakeSync (MakeBlock (MakeAssign (spmd_let, NULL), NULL), 1);
+        spmd = MakeSpmd (MakeBlock (MakeAssign (sync, NULL), NULL));
         ASSIGN_INSTR (arg_node) = spmd;
 
         /*
@@ -156,6 +159,7 @@ SPMDInitAssign (node *arg_node, node *arg_info)
             SYNC_INOUT (sync) = DupIds (new_inout, NULL);
         } else {
             SPMD_OUT (spmd) = new_inout;
+            SYNC_OUT (sync) = DupIds (new_inout, NULL);
         }
 
         /*
