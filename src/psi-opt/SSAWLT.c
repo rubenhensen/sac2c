@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2003/04/14 14:53:41  sbs
+ * initialization of genshape adjusted to its type, i.e., to int 8-)
+ *
  * Revision 1.23  2003/04/11 17:48:35  sbs
  * genshape in CreateFullPartition initialized to NULL, just to please gcc 8-)
  *
@@ -346,7 +349,7 @@ CreateFullPartition (node *wln, node *arg_info)
     types *type;
     char *varname;
     int *array_null, *array_shape;
-    int dim, gen_shape = NULL;
+    int dim, gen_shape = 0;
     bool do_create;
 
     DBUG_ENTER ("CreateFullPartition");
