@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.7  1998/05/15 15:46:45  srs
+ * enhanced transformation power of CreateIndexInfoA()
+ *
  * Revision 1.6  1998/05/12 09:47:08  srs
  * removed unused lib DupTree.h
  *
@@ -368,8 +371,7 @@ CreateIndexInfoSxS (node *prfn, node *arg_info)
  *   vector.
  *
  *   We have to detect the following cases:
- *   (iv: id of an index vector, i : index scalar, c : constant.
- *    Something like [c,c,c] stands for [c1,c2,c3,...])
+ *   (iv: id of an index vector, i : index scalar, c : constant.)
  *
  *   AxS (SxA): iv prfop c
  *              [i,i,c] prfop c
@@ -377,6 +379,9 @@ CreateIndexInfoSxS (node *prfn, node *arg_info)
  *              [i,i,c] prfop [c,c,c]
  *
  *   not valid: i prfop [c,c,c]
+ *
+ * remark: arrays are not duplicated by CF, so if we sind an Id we have to
+ *   use MRD to find out if it's a constant array [c,c,c].
  *
  ******************************************************************************/
 
@@ -387,11 +392,18 @@ CreateIndexInfoA (node *prfn, node *arg_info)
     node *idn, *constn, *tmpn, *cf_node, *args[2], *assignn, *wln;
     index_info *iinfo, *tmpinfo;
     types *type;
+    node *data1, *data2;
 
     DBUG_ENTER (" CreateIndexInfoA");
 
     assignn = INFO_WLI_ASSIGN (arg_info);
     wln = INFO_WLI_WL (arg_info);
+
+    data1 = data2 = NULL;
+    if (N_id == NODE_TYPE (PRF_ARG1 (prfn)))
+        MRD_GETDATA (data1, ID_VARNO (PRF_ARG1 (prfn)), INFO_VARNO);
+    if (N_id == NODE_TYPE (PRF_ARG2 (prfn)))
+        MRD_GETDATA (data2, ID_VARNO (PRF_ARG2 (prfn)), INFO_VARNO);
 
     /* Which argument is the constant (so which will be the Id)? */
     if (N_num == NODE_TYPE (PRF_ARG1 (prfn))
@@ -399,11 +411,21 @@ CreateIndexInfoA (node *prfn, node *arg_info)
         id_no = 2;
         idn = PRF_ARG2 (prfn);
         constn = PRF_ARG1 (prfn);
-    } else if (N_num == NODE_TYPE (PRF_ARG2 (prfn))
-               || IsConstantArray (PRF_ARG2 (prfn), N_num)) {
+    } else if (data1 && IsConstantArray (data1, N_num)) {
+        id_no = 2;
+        idn = PRF_ARG2 (prfn);
+        constn = data1;
+    }
+
+    if (N_num == NODE_TYPE (PRF_ARG2 (prfn))
+        || IsConstantArray (PRF_ARG2 (prfn), N_num)) {
         id_no = 1;
         idn = PRF_ARG1 (prfn);
         constn = PRF_ARG2 (prfn);
+    } else if (data2 && IsConstantArray (data2, N_num)) {
+        id_no = 1;
+        idn = PRF_ARG1 (prfn);
+        constn = data2;
     }
 
     /* Is idn an Id of an index vector (or transformation)? */
