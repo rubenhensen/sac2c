@@ -8,3 +8,4 @@ scnprs.h
 nsac.l
 nsac.y
 resolvepragma.c
+resolvepragma.h
