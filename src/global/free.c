@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.34  1998/03/19 19:06:07  dkr
+ * fixed a bug in FreeWLgrid()
+ *
  * Revision 1.33  1998/03/16 00:06:57  dkr
  * added FreeWLseg, FreeWLblock, FreeWLublock, FreeWLproj, FreeWLgrid
  *
@@ -1622,7 +1625,9 @@ FreeWLgrid (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing N_WLgrid node ..."));
 
     FREETRAV (WLGRID_NEXTDIM (arg_node));
-    FREETRAV (WLGRID_CODE (arg_node));
+#if 0
+  NCODE_USED(WLGRID_CODE(arg_node))--;
+#endif
     tmp = FREECONT (WLGRID_NEXT (arg_node));
 
     FREE (arg_node);
