@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2004/03/26 14:36:23  khf
+ * support for wlpg added
+ *
  * Revision 3.59  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -615,6 +618,9 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("cvp", optimize |= OPT_CVP);
         ARG_CHOICE ("CVP", optimize |= OPT_CVP);
 
+        ARG_CHOICE ("wlpg", optimize |= OPT_WLPG);
+        ARG_CHOICE ("WLPG", optimize |= OPT_WLPG);
+
         ARG_CHOICE ("pab", print_after_break = TRUE);
         ARG_CHOICE ("PAB", print_after_break = TRUE);
 
@@ -887,6 +893,9 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("cvp", optimize &= ~OPT_CVP);
         ARG_CHOICE ("CVP", optimize &= ~OPT_CVP);
+
+        ARG_CHOICE ("wlpg", optimize &= ~OPT_WLPG);
+        ARG_CHOICE ("WLPG", optimize &= ~OPT_WLPG);
 
         ARG_CHOICE ("pab", print_after_break = FALSE);
         ARG_CHOICE ("PAB", print_after_break = FALSE);
