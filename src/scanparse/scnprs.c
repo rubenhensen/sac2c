@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2004/11/07 14:28:45  ktr
+ * Replaced piped communication with CPP with true file IO in order to
+ * be able to use gdb under Mac OS X.
+ *
  * Revision 3.14  2003/06/19 08:15:25  sbs
  * checks success of cpp run now and aborts in case of failure!
  *
@@ -278,14 +282,20 @@ ScanParse ()
 {
     char *pathname;
     char cccallstr[MAX_PATH_LEN];
+    char cppfile[MAX_PATH_LEN];
     int err;
 
     DBUG_ENTER ("ScanParse");
 
     filename = puresacfilename;
 
+    /*
+     * Create a name for the file containing the CPP's result
+     */
+    tmpnam (cppfile);
+
     if (sacfilename[0] == '\0') {
-        CreateCppCallString (sacfilename, cccallstr);
+        CreateCppCallString (sacfilename, cccallstr, cppfile);
         NOTE (("Parsing from stdin ..."));
     } else {
         pathname = FindFile (PATH, sacfilename);
@@ -294,17 +304,22 @@ ScanParse ()
             SYSABORT (("Unable to open file \"%s\"", sacfilename));
         }
 
-        CreateCppCallString (pathname, cccallstr);
+        CreateCppCallString (pathname, cccallstr, cppfile);
 
         NOTE (("Parsing file \"%s\" ...", pathname));
     }
 
     if (show_syscall)
-        NOTE (("yyin = popen( %s)", cccallstr));
+        NOTE (("err = system( %s)", cccallstr));
 
-    yyin = popen (cccallstr, "r");
+    err = system (cccallstr);
+    if (err) {
+        SYSABORT (("Unable to start C preprocessor"));
+    }
 
-    if (yyin == NULL) {
+    yyin = fopen (cppfile, "r");
+
+    if ((yyin == NULL) || (ferror (yyin))) {
         SYSABORT (("Unable to start C preprocessor"));
     }
 
@@ -312,9 +327,14 @@ ScanParse ()
 
     My_yyparse ();
 
-    err = pclose (yyin);
+    err = fclose (yyin);
     if (err) {
         SYSABORT (("C preprocessor error"));
+    }
+
+    err = remove (cppfile);
+    if (err) {
+        SYSABORT (("Could not delete /tmp-file"));
     }
 
     SetFileNames (syntax_tree);

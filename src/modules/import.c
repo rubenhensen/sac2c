@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2004/11/07 14:30:18  ktr
+ * Replaced piped communication with CPP with true file IO in order to
+ * be able to use gdb under Mac OS X.
+ *
  * Revision 3.21  2004/07/17 19:50:26  sah
  * switch to INFO structure
  * PHASE I
@@ -393,6 +397,8 @@ GenMod (char *name, int checkdec)
     static char buffer[MAX_FILE_NAME];
     char *pathname, *abspathname;
     char cccallstr[MAX_PATH_LEN];
+    char cppfile[MAX_PATH_LEN];
+    int err;
 
     DBUG_ENTER ("GenMod");
 
@@ -416,14 +422,20 @@ GenMod (char *name, int checkdec)
         SYSABORT (("Unable to open file \"%s\"", buffer));
     }
 
-    CreateCppCallString (pathname, cccallstr);
+    tmpnam (cppfile);
+    CreateCppCallString (pathname, cccallstr, cppfile);
 
-    if (show_syscall)
-        NOTE (("yyin = popen( %s)", cccallstr));
+    if (show_syscall) {
+        NOTE (("err = system( %s)", cccallstr));
+    }
 
-    yyin = popen (cccallstr, "r");
+    err = system (cccallstr);
+    if (err) {
+        SYSABORT (("Unable to start C preprocessor"));
+    }
 
-    if (yyin == NULL) {
+    yyin = fopen (cppfile, "r");
+    if ((yyin == NULL) || (ferror (yyin))) {
         SYSABORT (("Unable to start C preprocessor", buffer));
     } else {
         abspathname = AbsolutePathname (pathname);
@@ -435,6 +447,16 @@ GenMod (char *name, int checkdec)
         linenum = 1;
         start_token = PARSE_DEC;
         My_yyparse ();
+
+        err = fclose (yyin);
+        if (err) {
+            SYSABORT (("C preprocessor error"));
+        }
+
+        err = remove (cppfile);
+        if (err) {
+            SYSABORT (("Could not delete /tmp-file"));
+        }
 
         tmp->moddec = decl_tree;
 
@@ -1860,6 +1882,8 @@ ImportOwnDeclaration (char *name, file_type modtype)
     node *decl = NULL, *symbol;
     char *pathname, *abspathname, *old_filename;
     char cccallstr[MAX_PATH_LEN];
+    char cppfile[MAX_PATH_LEN];
+    int err;
 
     DBUG_ENTER ("ImportOwnDeclaration");
 
@@ -1878,14 +1902,21 @@ ImportOwnDeclaration (char *name, file_type modtype)
     if (pathname == NULL) {
         mod_tab = Free (mod_tab);
     } else {
-        CreateCppCallString (pathname, cccallstr);
+        tmpnam (cppfile);
+        CreateCppCallString (pathname, cccallstr, cppfile);
 
-        if (show_syscall)
-            NOTE (("yyin = popen( %s)", cccallstr));
+        if (show_syscall) {
+            NOTE (("err = system( %s)", cccallstr));
+        }
 
-        yyin = popen (cccallstr, "r");
+        err = system (cccallstr);
+        if (err) {
+            SYSABORT (("Unable to start C preprocessor"));
+        }
 
-        if (yyin == NULL) {
+        yyin = fopen (cppfile, "r");
+
+        if ((yyin == NULL) || (ferror (yyin))) {
             SYSABORT (("Unable to start C preprocessor"));
         }
 
@@ -1899,7 +1930,16 @@ ImportOwnDeclaration (char *name, file_type modtype)
         filename = buffer;
         start_token = PARSE_DEC;
         My_yyparse ();
-        fclose (yyin);
+
+        err = fclose (yyin);
+        if (err) {
+            SYSABORT (("C Preprocessor error"));
+        }
+
+        err = remove (cppfile);
+        if (err) {
+            SYSABORT (("Could not delete /tmp-file"));
+        }
 
         if ((strcmp (MODDEC_NAME (decl_tree), name) != 0)
             || ((NODE_TYPE (decl_tree) == N_classdec) && (modtype == F_modimp))
