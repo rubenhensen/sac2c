@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.83  2003/09/29 19:10:03  dkr
+ * COMPPrfReshape(): can handle scalars on 2nd arg position as well now
+ *
  * Revision 1.82  2003/09/25 19:05:08  dkr
  * new argument 'copyfun' added to some ICMs
  *
@@ -3339,6 +3342,33 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **check_reuse1, node **chec
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
+    /*
+     *   B = reshape( sv, A);
+     *
+     * If this is the last reference to 'A', 'B' can reuse some parts of 'A':
+     *   'B' can reuse the data vector of 'A'.
+     *   'B' can reuse the descriptor of 'A' if the dimension of 'B' is smaller
+     *     or equal the dimension of 'A'.
+     *
+     ****************************************************************************
+     *
+     * For efficiency reasons, constant arrays are excepted as arguments of
+     * reshape() as well:
+     *
+     *   A = fun( ...);
+     *   B = reshape( [3,4], A);
+     *
+     * Here, the backend can avoid the creation of the array containing the shape
+     * [3,4].
+     *
+     *   shp = fun( ...);
+     *   B = reshape( sv, [...]);
+     *
+     * Here, the backend can avoid the creation of a descriptor for the constant
+     * argument [...]. (Since the dimension of 'B' will most likely not equal the
+     * dimension of [...], the descriptor of [...] can not be reused by 'B'.)
+     */
+
     (*check_reuse1) = arg2;
     (*check_reuse2) = NULL;
     (*get_dim) = MakeSizeArg (arg1, FALSE);
@@ -3384,7 +3414,7 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **check_reuse1, node **chec
                                                        DupIds_Id_NT (let_ids),
                                                        DupId_NT (arg2), ret_node));
         }
-    } else {
+    } else if (NODE_TYPE (arg2) == N_array) {
         DBUG_ASSERT ((NODE_TYPE (arg2) == N_array),
                      "2nd arg of F_reshape is neither N_id nor N_array!");
 
@@ -3395,6 +3425,10 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **check_reuse1, node **chec
                                           MakeExprs (MakeSizeArg (arg2, TRUE),
                                                      DupExprs_NT (ARRAY_AELEMS (arg2)))),
                             MakeId_Copy (copyfun), NULL);
+    } else {
+        /* 'arg2' is a scalar */
+        ret_node = MakeAssignIcm2 ("ND_CREATE__SCALAR__DATA", DupIds_Id_NT (let_ids),
+                                   DupNode (arg2), NULL);
     }
 
     DBUG_RETURN (ret_node);
@@ -3557,6 +3591,21 @@ COMPPrfSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
+    /*
+     *   B = sel( iv, A);
+     *
+     ****************************************************************************
+     *
+     * For efficiency reasons, constant arrays are excepted as 1st argument of
+     * sel() as well:
+     *
+     *   A = fun( ...);
+     *   B = sel( [3,4], A);
+     *
+     * Here, the backend can avoid the creation of the array containing the shape
+     * [3,4].
+     */
+
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_sel is no N_id!");
 
     (*check_reuse1) = (*check_reuse2) = NULL;
@@ -3629,6 +3678,21 @@ COMPPrfModarray (node *arg_node, node *arg_info, node **check_reuse1, node **che
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
     arg3 = PRF_ARG3 (arg_node);
+
+    /*
+     *   B = modarray( A, iv, val);
+     *
+     ****************************************************************************
+     *
+     * For efficiency reasons, constant arrays are excepted as 2nd argument of
+     * modarray() as well:
+     *
+     *   A = fun( ...);
+     *   B = modarray( A, [3,4], val);
+     *
+     * Here, the backend can avoid the creation of the array containing the shape
+     * [3,4].
+     */
 
     DBUG_ASSERT ((NODE_TYPE (arg1) == N_id), "1st arg of F_modarray is no N_id!");
     DBUG_ASSERT ((NODE_TYPE (arg3) != N_array), "3rd arg of F_modarray is a N_array!");
@@ -3706,8 +3770,7 @@ COMPPrfGenarray (node *arg_node, node *arg_info, node **check_reuse1, node **che
 
     DBUG_ASSERT ((0), "prf F_genarray not implemented yet!");
 
-    (*check_reuse1) = NULL;
-    (*check_reuse2) = NULL;
+    (*check_reuse1) = (*check_reuse2) = NULL;
     (*get_dim) = NULL;
     (*set_shape_icm) = NULL;
 
@@ -3750,8 +3813,7 @@ COMPPrfTake (node *arg_node, node *arg_info, node **check_reuse1, node **check_r
                  "1st arg of F_take_SxV is neither N_id nor N_num!");
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_take_SxV is no N_id!");
 
-    (*check_reuse1) = NULL;
-    (*check_reuse2) = NULL;
+    (*check_reuse1) = (*check_reuse2) = NULL;
 
     (*get_dim) = MakeNum (1);
 
@@ -3801,8 +3863,7 @@ COMPPrfDrop (node *arg_node, node *arg_info, node **check_reuse1, node **check_r
                  "1st arg of F_drop_SxV is neither N_id nor N_num!");
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_drop_SxV is no N_id!");
 
-    (*check_reuse1) = NULL;
-    (*check_reuse2) = NULL;
+    (*check_reuse1) = (*check_reuse2) = NULL;
 
     (*get_dim) = MakeNum (1);
 
@@ -3852,8 +3913,7 @@ COMPPrfCat (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
     DBUG_ASSERT ((NODE_TYPE (arg1) == N_id), "1st arg of F_cat_VxV is no N_id!");
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_cat_VxV is no N_id!");
 
-    (*check_reuse1) = NULL;
-    (*check_reuse2) = NULL;
+    (*check_reuse1) = (*check_reuse2) = NULL;
 
     (*get_dim) = MakeNum (1);
 
