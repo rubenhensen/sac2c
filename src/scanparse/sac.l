@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.30  1996/02/08 18:05:21  hw
+ * Revision 1.31  1996/02/21 18:01:33  cg
+ * now, special characters such as '\n' or '\0' are accepted
+ *
+ * Revision 1.30  1996/02/08  18:05:21  hw
  * added token DOT
  *
  * Revision 1.29  1996/02/06  08:20:44  sbs
@@ -141,6 +144,19 @@
 
 #define FILTER8(token) if (0==commlevel) {                              \
                          yylval.cchar=yytext[1];		        \
+                         return(token); }
+        
+#define FILTER10(token) if (0==commlevel) {                              \
+                         yylval.cchar=(char)atoi(yytext+2);              \
+                         return(token); }
+        
+#define FILTER11(token) if (0==commlevel) {             \
+                              switch(yytext[2]){   \
+                              case 'n': yylval.cchar='\n';  \
+                                        break;  \
+                              case 't': yylval.cchar='\t';  \
+                                        break;   \
+                              }  \
                          return(token); }
         
 #define FILTER9(token) if (0==commlevel)  {                             \
@@ -319,6 +335,8 @@ int start_token;
 [_A-Za-z][_A-Za-z0-9]*          {FILTER2( PRIVATEID );}
 
 '.'                             {FILTER8( CHAR );}
+'\\[0-9]*'                 {FILTER10( CHAR );}
+'\\[nt]'                        {FILTER11( CHAR );}
 
 (0?|([1-9][0-9]*))              {FILTER3 ( NUM);}
 
