@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.72  1998/04/25 12:44:27  dkr
+ * added DupNwith2
+ * fixed a bug in DupNwith:
+ *   NCODE_COPY is now reseted for every code node after duplication
+ *
  * Revision 1.71  1998/04/24 17:16:12  dkr
  * changed usage of SPMD_IN/OUT/INOUT, SYNC_INOUT
  *
@@ -864,14 +869,27 @@ DupNwith (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupNwith");
 
     LEVEL++;
-    /* very important: copy codes before parts because NCODE_COPY has to
-       be set before the parts are traversed. */
-    coden = Trav (NWITH_CODE (arg_node), arg_info);
-    partn = Trav (NWITH_PART (arg_node), arg_info);
-    withopn = Trav (NWITH_WITHOP (arg_node), arg_info);
+    /*
+     * very important: duplicate codes before parts because NCODE_COPY has to
+     *  be set before the parts are traversed.
+     */
+    coden = DUPTRAV (NWITH_CODE (arg_node));
+    partn = DUPTRAV (NWITH_PART (arg_node));
+    withopn = DUPTRAV (NWITH_WITHOP (arg_node));
     LEVEL--;
 
     new_node = MakeNWith (partn, coden, withopn);
+
+    /*
+     * Now we must erase NCODE_COPY for every code node in 'arg_node'.
+     * Otherwise we get nice ;-> errors when duplicating N_Npart- or
+     * N_Ngrid-nodes from 'arg_node' without the parent N_Nwith-node !!!
+     */
+    coden = NWITH_CODE (arg_node);
+    while (coden != NULL) {
+        NCODE_COPY (coden) = NULL;
+        coden = NCODE_NEXT (coden);
+    }
 
     /* copy attributes */
     DUP (arg_node, new_node);
@@ -927,14 +945,20 @@ DupNwithop (node *arg_node, node *arg_info)
 node *
 DupNpart (node *arg_node, node *arg_info)
 {
-    node *new_node;
+    node *new_node, *code;
 
     DBUG_ENTER ("DupNpart");
-    DBUG_ASSERT (NPART_CODE (arg_node), ("N_Npart node has no valid NPART_CODE"));
+    DBUG_ASSERT (NPART_CODE (arg_node), "N_Npart node has no valid NPART_CODE");
 
-    new_node
-      = MakeNPart (DUPTRAV (NPART_WITHID (arg_node)), DUPTRAV (NPART_GEN (arg_node)),
-                   NCODE_COPY (NPART_CODE (arg_node)));
+    /* get pointer to duplicated code!!! */
+    code = NCODE_COPY (NPART_CODE (arg_node));
+    if (code == NULL) {
+        /* code has not been duplicated, so we take the original one!! */
+        code = NPART_CODE (arg_node);
+    }
+
+    new_node = MakeNPart (DUPTRAV (NPART_WITHID (arg_node)),
+                          DUPTRAV (NPART_GEN (arg_node)), code);
     NPART_NEXT (new_node) = DUPCONT (NPART_NEXT (arg_node));
 
     DBUG_RETURN (new_node);
@@ -950,15 +974,20 @@ DupNcode (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupNcode");
 
-    new_node = MakeNode (arg_node->nodetype);
-    DUP (arg_node, new_node);
     LEVEL++;
-    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
-        if (arg_node->node[i])
-            new_node->node[i] = Trav (arg_node->node[i], arg_info);
+    new_node
+      = MakeNCode (DUPTRAV (NCODE_CBLOCK (arg_node)), DUPTRAV (NCODE_CEXPR (arg_node)));
+    NCODE_NEXT (new_node) = DUPCONT (NCODE_NEXT (arg_node));
     LEVEL--;
 
-    NCODE_USED (new_node) = 0; /* incremented in DupNpart() */
+    /*
+     * NCODE_USED is incremented in DupNpart() via MakeNPart(),
+     *                           in DupWLgrid() via MakeWLgrid(), respectively
+     */
+    NCODE_USED (new_node) = 0;
+    NCODE_NO (new_node) = NCODE_NO (arg_node);
+    NCODE_FLAG (new_node) = NCODE_FLAG (arg_node);
+
     NCODE_COPY (arg_node) = new_node;
 
     DBUG_RETURN (new_node);
@@ -997,6 +1026,40 @@ DupNgen (node *arg_node, node *arg_info)
                                DUPTRAV (NGEN_BOUND2 (arg_node)), NGEN_OP1 (arg_node),
                                NGEN_OP2 (arg_node), DUPTRAV (NGEN_STEP (arg_node)),
                                DUPTRAV (NGEN_WIDTH (arg_node)));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupNwith2 (node *arg_node, node *arg_info)
+{
+    node *new_node, *id, *seg, *code, *withop;
+
+    DBUG_ENTER ("DupNwith2");
+
+    /*
+     * very important: copy codes before segs because NCODE_COPY has to
+     *  be set before the segs (containing N_WLgrid nodes) are traversed.
+     */
+    code = DUPTRAV (NWITH2_CODE (arg_node));
+    id = DUPTRAV (NWITH2_WITHID (arg_node));
+    seg = DUPTRAV (NWITH2_SEGS (arg_node));
+    withop = DUPTRAV (NWITH2_WITHOP (arg_node));
+
+    new_node = MakeNWith2 (id, seg, code, withop);
+
+    /*
+     * Now we must erase NCODE_COPY for every code node in 'arg_node'.
+     * Otherwise we get nice ;-> errors when duplicating N_Npart- or
+     * N_Ngrid-nodes from 'arg_node' without the parent N_Nwith2-node !!!
+     */
+    code = NWITH2_CODE (arg_node);
+    while (code != NULL) {
+        NCODE_COPY (code) = NULL;
+        code = NCODE_NEXT (code);
+    }
 
     DBUG_RETURN (new_node);
 }
@@ -1079,15 +1142,22 @@ DupWLstride (node *arg_node, node *arg_info)
 node *
 DupWLgrid (node *arg_node, node *arg_info)
 {
-    node *new_node;
+    node *new_node, *code;
 
     DBUG_ENTER ("DupWLgrid");
+
+    /* get pointer to duplicated code!!! */
+    code = NCODE_COPY (WLGRID_CODE (arg_node));
+    if (code == NULL) {
+        /* code has not been duplicated, so we take the original one!! */
+        code = WLGRID_CODE (arg_node);
+    }
 
     new_node
       = MakeWLgrid (WLGRID_LEVEL (arg_node), WLGRID_DIM (arg_node),
                     WLGRID_BOUND1 (arg_node), WLGRID_BOUND2 (arg_node),
                     WLGRID_UNROLLING (arg_node), DUPTRAV (WLGRID_NEXTDIM (arg_node)),
-                    DUPCONT (WLGRID_NEXT (arg_node)), WLGRID_CODE (arg_node));
+                    DUPCONT (WLGRID_NEXT (arg_node)), code);
 
     WLGRID_MODIFIED (new_node) = 0;
 
