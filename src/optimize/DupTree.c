@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/06/27 09:40:09  hw
+ * Revision 1.10  1995/06/27 16:03:05  asi
+ * added DUP-macro : Duplicating simple structure elements
+ * and DUP inserted in each DUP... function
+ *
+ * Revision 1.9  1995/06/27  09:40:09  hw
  * bug fixed in DubIds( an ids-chain will be duplicated correctly now)
  *
  * Revision 1.8  1995/06/26  10:03:52  sbs
@@ -46,6 +50,12 @@
 #include "Inline.h"
 
 #define LEVEL arg_info->lineno
+#define DUP(s, d)                                                                        \
+    d->refcnt = s->refcnt;                                                               \
+    d->flag = s->flag;                                                                   \
+    d->varno = s->varno;                                                                 \
+    d->nnode = s->nnode;                                                                 \
+    d->lineno = s->lineno;
 
 node *
 DupTree (node *arg_node, node *arg_info)
@@ -78,6 +88,7 @@ DupInt (node *arg_node, node *arg_info)
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     new_node = MakeNode (arg_node->nodetype);
     new_node->info.cint = arg_node->info.cint;
+    DUP (arg_node, new_node);
     DBUG_RETURN (new_node);
 }
 
@@ -90,6 +101,7 @@ DupFloat (node *arg_node, node *arg_info)
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     new_node = MakeNode (arg_node->nodetype);
     new_node->info.cfloat = arg_node->info.cfloat;
+    DUP (arg_node, new_node);
     DBUG_RETURN (new_node);
 }
 
@@ -102,6 +114,7 @@ DupStr (node *arg_node, node *arg_info)
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     new_node = MakeNode (arg_node->nodetype);
     new_node->info.id = StringCopy (arg_node->info.id);
+    DUP (arg_node, new_node);
     DBUG_RETURN (new_node);
 }
 
@@ -138,9 +151,8 @@ DupIIds (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupIIds");
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     new_node = MakeNode (arg_node->nodetype);
-    new_node->lineno = arg_node->lineno;
     new_node->info.ids = DupIds (arg_node->info.ids, arg_info);
-    new_node->nnode = arg_node->nnode;
+    DUP (arg_node, new_node);
     for (i = 0; i < arg_node->nnode; i++) {
         new_node->node[i] = Trav (arg_node->node[i], arg_info);
     }
@@ -156,8 +168,7 @@ DupChain (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupChain");
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     new_node = MakeNode (arg_node->nodetype);
-    new_node->lineno = arg_node->lineno;
-    new_node->nnode = arg_node->nnode;
+    DUP (arg_node, new_node);
     for (i = 0; i < arg_node->nnode; i++) {
         LEVEL++;
         new_node->node[i] = Trav (arg_node->node[i], arg_info);
@@ -180,9 +191,7 @@ DupAssign (node *arg_node, node *arg_info)
             break;
     default:
         new_node = MakeNode (arg_node->nodetype);
-        new_node->lineno = arg_node->lineno;
-        new_node->nnode = arg_node->nnode;
-
+        DUP (arg_node, new_node);
         for (i = 0; i < arg_node->nnode; i++) {
             new_node->node[i] = Trav (arg_node->node[i], arg_info);
             if (NULL == new_node->node[i])
@@ -202,9 +211,8 @@ DupCast (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupCast");
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     new_node = MakeNode (arg_node->nodetype);
-    new_node->lineno = arg_node->lineno;
     new_node->info.types = DuplicateTypes (arg_node->info.types, 1);
-    new_node->nnode = arg_node->nnode;
+    DUP (arg_node, new_node);
     for (i = 0; i < arg_node->nnode; i++) {
         new_node->node[i] = Trav (arg_node->node[i], arg_info);
     }
@@ -220,9 +228,8 @@ DupPrf (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupPrf");
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     new_node = MakeNode (arg_node->nodetype);
-    new_node->lineno = arg_node->lineno;
     new_node->info.prf = arg_node->info.prf;
-    new_node->nnode = arg_node->nnode;
+    DUP (arg_node, new_node);
     for (i = 0; i < arg_node->nnode; i++) {
         new_node->node[i] = Trav (arg_node->node[i], arg_info);
     }
@@ -238,10 +245,9 @@ DupFun (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupFun");
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     new_node = MakeNode (arg_node->nodetype);
-    new_node->lineno = arg_node->lineno;
     new_node->info.fun_name.id = StringCopy (arg_node->info.fun_name.id);
     new_node->info.fun_name.id_mod = StringCopy (arg_node->info.fun_name.id_mod);
-    new_node->nnode = arg_node->nnode;
+    DUP (arg_node, new_node);
     new_node->node[1] = arg_node->node[1];
     new_node->node[2] = arg_node->node[2];
     for (i = 0; i < arg_node->nnode; i++) {
@@ -259,9 +265,8 @@ DupFundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupFundef");
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     new_node = MakeNode (arg_node->nodetype);
-    new_node->lineno = arg_node->lineno;
     new_node->info.types = DuplicateTypes (arg_node->info.types, 1);
-    new_node->nnode = arg_node->nnode;
+    DUP (arg_node, new_node);
     for (i = 0; i < MAX_SONS; i++)
         if (NULL != arg_node->node[i])
             new_node->node[i] = Trav (arg_node->node[i], arg_info);
@@ -282,7 +287,7 @@ DupDec (node *arg_node, node *arg_info)
                  "wrong nodetype");
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     new_node = MakeNode (arg_node->nodetype);
-    new_node->lineno = arg_node->lineno;
+    DUP (arg_node, new_node);
     new_node->info.types = DuplicateTypes (arg_node->info.types, 1);
     if (NULL != arg_node->node[0]) {
         new_node->node[0] = Trav (arg_node->node[0], arg_info);
