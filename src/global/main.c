@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.21  2000/06/13 13:40:01  dkr
+ * Old2NewWith() renamed into PatchWith()
+ *
  * Revision 2.20  2000/06/08 12:13:04  jhs
  * Phase 17 (refcount) will de done after phase 19 (multithreading)
  * when -mtn is set.
@@ -208,7 +211,7 @@
 #include "precompile.h"
 #include "compile.h"
 #include "cccall.h"
-#include "Old2NewWith.h"
+#include "PatchWith.h"
 #include "internal_lib.h"
 #include "resource.h"
 #include "interrupt.h"
@@ -522,11 +525,10 @@ main (int argc, char *argv[])
         compiler_phase++;
     }
 
-    if (Make_Old2NewWith) {
+    if (make_patchwith) {
         NOTE2 (("   \n"
-                "** Convert old with-loops into new ones ...\n"
-                "   Generate multiple parts in new with-loops ...\n"));
-        syntax_tree = Old2NewWith (syntax_tree); /* o2nWith_tab */
+                "** Patching with-loops (generating multiple parts) ...\n"));
+        syntax_tree = PatchWith (syntax_tree); /* patchwith_tab */
     }
 
     PHASE_PROLOG;
