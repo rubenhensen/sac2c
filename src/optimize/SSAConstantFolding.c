@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2001/12/11 15:52:39  dkr
+ * GetDim() replaced by GetShapeDim()
+ *
  * Revision 1.21  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -390,11 +393,12 @@ SSACFDim (node *expr)
 {
     constant *result;
     int dim;
+
     DBUG_ENTER ("SSACFDim");
 
     if (NODE_TYPE (expr) == N_id) {
-        dim = GetDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
-        if (dim != UNKNOWN_SHAPE) {
+        dim = GetDim_ (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
+        if (dim >= 0) {
             result = COMakeConstantFromInt (dim);
         } else {
             result = NULL;
@@ -428,8 +432,8 @@ SSACFShape (node *expr)
     DBUG_ENTER ("SSACFDim");
 
     if (NODE_TYPE (expr) == N_id) {
-        dim = GetDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
-        if (dim != UNKNOWN_SHAPE) {
+        dim = GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
+        if (KNOWN_SHAPE (dim)) {
             /* store known shape as constant (int vector of len dim) */
             cshape
               = SHOldTypes2Shape (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
@@ -536,22 +540,23 @@ static struc_constant *
 SSACFExpr2StructConstant (node *expr)
 {
     struc_constant *struc_co;
+    int dim;
 
     DBUG_ENTER ("SSACFExpr2StructConstant");
 
     struc_co = NULL;
 
+    dim = GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
+
     if (NODE_TYPE (expr) == N_array) {
         /* this expression is an array */
         struc_co = SSACFArray2StructConstant (expr);
-
     } else if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)) {
         /* expression is an identifier */
-        if (GetDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)))) > 0) {
+        if (dim > 0) {
             /* id is a defined array */
             struc_co = SSACFArray2StructConstant (expr);
-
-        } else if (GetDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)))) == 0) {
+        } else if (dim == 0) {
             /* id is a defined scalar */
             struc_co = SSACFScalar2StructConstant (expr);
         }
@@ -624,14 +629,14 @@ SSACFArray2StructConstant (node *expr)
         tmp = ARRAY_AELEMS (array);
         for (i = 0; i < elem_count; i++) {
             if (tmp == NULL) {
-                /* array contains to few elements - there must be non scalar elemets */
+                /* array contains too few elements - there must be non scalar elements */
                 valid_const = FALSE;
             } else {
                 node_vec[i] = EXPRS_EXPR (tmp);
                 tmp = EXPRS_NEXT (tmp);
             }
         }
-        DBUG_ASSERT ((tmp == NULL), "array contains to much elements");
+        DBUG_ASSERT ((tmp == NULL), "array contains too much elements");
 
         /* create struc_constant */
         struc_co = (struc_constant *)Malloc (sizeof (struc_constant));
@@ -676,7 +681,7 @@ SSACFScalar2StructConstant (node *expr)
 
     if ((nt == N_num) || (nt == N_float) || (nt == N_double) || (nt == N_bool)
         || ((nt == N_id)
-            && (GetDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)))) == 0))) {
+            && (GetDim_ (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)))) == 0))) {
         /* create structural constant of scalar */
         ctype = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)));
 
@@ -1727,9 +1732,9 @@ SSACFap (node *arg_node, node *arg_info)
  *
  * description:
  *   substitute identifers with their computed constant
- *   ( only when INFO_SSACF_INSCONST flag is set)
- *   in EXPRS chain of N_ap ARGS (if SUBST_ID_WITH_CONSTANT_IN_AP_ARGS == TRUE)
- *      EXPRS chain of N_prf ARGS(if SUBST_ID_WITH_CONSTANT_IN_AP_ARGS == TRUE)
+ *   (only when INFO_SSACF_INSCONST flag is set)
+ *   in EXPRS chain of N_ap ARGS  (if SUBST_ID_WITH_CONSTANT_IN_AP_ARGS == TRUE)
+ *      EXPRS chain of N_prf ARGS (if SUBST_ID_WITH_CONSTANT_IN_AP_ARGS == TRUE)
  *      EXPRS chain of N_array AELEMS
  *
  *****************************************************************************/
@@ -1737,15 +1742,16 @@ node *
 SSACFid (node *arg_node, node *arg_info)
 {
     node *new_node;
+    int dim;
+
     DBUG_ENTER ("SSACFid");
+
+    dim = GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (arg_node))));
 
     /* check for constant scalar identifier */
     if ((AVIS_SSACONST (ID_AVIS (arg_node)) != NULL)
-        && (((GetDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (arg_node))))
-              == SCALAR)
-             && (INFO_SSACF_INSCONST (arg_info) >= SUBST_SCALAR))
-            || ((GetDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (arg_node))))
-                 > SCALAR)
+        && (((dim == SCALAR) && (INFO_SSACF_INSCONST (arg_info) >= SUBST_SCALAR))
+            || ((dim > SCALAR)
                 && (INFO_SSACF_INSCONST (arg_info)) == SUBST_SCALAR_AND_ARRAY))) {
 
         DBUG_PRINT ("SSACF",
