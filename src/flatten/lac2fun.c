@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2000/12/06 20:09:34  dkr
+ * InferDFMs used
+ *
  * Revision 3.3  2000/12/06 19:58:00  dkr
  * inference parts are moved into a new module infer_dfms.[ch]
  *
@@ -636,12 +639,6 @@ L2Fdo (node *arg_node, node *arg_info)
  * description:
  *   Converts all loops and conditions into (annotated) functions.
  *
- *   First traversal(s):
- *     Infers the in-, out- and local-masks of each conditional or loop
- *     (via fixpoint iteration).
- *   Second traversal:
- *     Lifts each conditional or loop.
- *
  ******************************************************************************/
 
 node *
@@ -651,14 +648,15 @@ Lac2Fun (node *syntax_tree)
 
     DBUG_ENTER ("Lac2Fun");
 
+    /*
+     * infer the in-, out- and local-masks of each conditional or loop
+     * (via fixpoint iteration)
+     */
+    syntax_tree = InferDFMs (syntax_tree);
+
     info_node = MakeInfo ();
-
-    act_tab = infdfms_tab;
-    syntax_tree = Trav (syntax_tree, info_node);
-
     act_tab = l2f_tab;
     syntax_tree = Trav (syntax_tree, info_node);
-
     info_node = FreeNode (info_node);
 
     /*
