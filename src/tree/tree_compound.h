@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.98  2004/10/12 13:22:14  sah
+ * modified NCODE_DEC_USED and added
+ * NODE_ISALIVE
+ *
  * Revision 3.97  2004/10/12 10:26:32  ktr
  * Corrected IDS_NTYPE.
  *
@@ -748,6 +752,10 @@ extern int GetArgtabIndexIn (types *type, argtab_t *argtab);
     } else if (NODE_TYPE (n) == N_block) {                                               \
         BLOCK_INSTR (n) = (rhs);                                                         \
     }
+
+#ifdef NEW_AST
+#define NODE_ISALIVE(n) (n->attribs.any != NULL)
+#endif /* NEW_AST */
 
 /*****************************************************************************
  *
@@ -2201,8 +2209,8 @@ extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
 
 #define NCODE_INC_USED(n) NCODE_USED (n) = NCODE_USED (n) + 1
 #define NCODE_DEC_USED(n)                                                                \
-    if (NCODE_USED (n) == 1) {                                                           \
-        FreeTree (n);                                                                    \
+    if (NCODE_USED (n) == 0) {                                                           \
+        DBUG_ASSERT (0, "NCODE_USED dropped below 0");                                   \
     } else {                                                                             \
         NCODE_USED (n) = NCODE_USED (n) - 1;                                             \
     }
