@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/06/02 10:06:56  sbs
+ * Revision 1.2  1995/06/06 15:19:13  sbs
+ * first usable version ; does not include conditional stuff
+ *
+ * Revision 1.1  1995/06/02  10:06:56  sbs
  * Initial revision
  *
  *
@@ -36,10 +39,11 @@ node *
 PsiOpt (node *arg_node)
 {
     DBUG_ENTER ("PsiOpt");
-    if (optimize && psi_optimize) {
+    if (psi_optimize) {
         NOTE (("Optimizing arrays: ...\n"));
         if (psi_opt_ive) {
-            NOTE (("traversing :->\n"));
+            act_tab = idx_tab;
+            arg_node = Trav (arg_node, NULL);
         }
     }
     DBUG_RETURN (arg_node);

@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.2  1995/06/02 17:05:47  sbs
+ * Revision 1.3  1995/06/06 15:18:10  sbs
+ * first usable version ; does not include conditional stuff
+ *
+ * Revision 1.2  1995/06/02  17:05:47  sbs
  * IdxAssign, IdxLet inserted.
  *
  * Revision 1.1  1995/06/02  10:06:56  sbs
@@ -221,7 +224,7 @@ InsertInChain (node *elem, node *chain)
  */
 
 node *
-SetVect (node *chain, types *vartype)
+SetVect (node *chain)
 {
     DBUG_ENTER ("SetVect");
     DBUG_PRINT ("IDX", ("VECT assigned"));
@@ -256,6 +259,33 @@ SetIdx (node *chain, types *vartype)
 
 /*
  *
+ *  functionname  : CpyIdx
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs : CheckVect, GenVect, InsertInChain
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+CpyIdx (node *from, node *to)
+{
+    DBUG_ENTER ("CpyIdx");
+    while (from) {
+        if (from->info.use == IDX)
+            to = SetIdx (to, (types *)from->node[1]);
+        from = from->node[0];
+    }
+    DBUG_PRINT ("IDX", ("IDX() assigned"));
+    DBUG_RETURN (to);
+}
+
+/*
+ *
  *  functionname  : IdxModul
  *  arguments     :
  *  description   : Quasi-dummy
@@ -273,7 +303,7 @@ IdxModul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("IdxModul");
     if (NULL != arg_node->node[2])
-        arg_node->node[2] = Trav (arg_node->node[2], (node *)SetVect);
+        arg_node->node[2] = Trav (arg_node->node[2], NULL);
     DBUG_RETURN (arg_node);
 }
 
@@ -326,43 +356,22 @@ IdxLet (node *arg_node, node *arg_info)
     /* first, we move the actual chain to the respective variabledef
        and supply copies to the vardec-collected chain! */
     vars = arg_node->info.ids;
-    while (vars->next) {
+    do {
         vardec = vars->node;
         vars->use = vardec->node[1];
+        vardec->node[1] = NULL; /* freeing the actual chain! */
         vinfo = vars->use;
-        while (vinfo)
+        while (vinfo) {
             if (vinfo->info.use == VECT)
-                vardec->node[2] = SetVect (vardec->node[2], NULL);
+                vardec->node[2] = SetVect (vardec->node[2]);
             else
                 vardec->node[2] = SetIdx (vardec->node[2], (types *)vinfo->node[1]);
+            vinfo = vinfo->node[0];
+        }
         vars = vars->next;
-    }
+    } while (vars);
     /* then, we traverse the body of the let */
-    arg_node->node[0] = Trav (arg_node->node[0], (node *)SetVect);
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : IdxAp
- *  arguments     :
- *  description   : Since this is a user defined function all uses of "vector"-variables
- *                  do per definitionem need them as vectors. Hence, "SetVect" is
- *                  given as modification function.
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-node *
-IdxAp (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("IdxAp");
-    Trav (arg_node->node[0], (node *)SetVect);
+    arg_node->node[0] = Trav (arg_node->node[0], arg_node->info.ids->use);
     DBUG_RETURN (arg_node);
 }
 
@@ -386,20 +395,56 @@ IdxAp (node *arg_node, node *arg_info)
 node *
 IdxPrf (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("IdxAp");
+    node *arg1, *arg2;
+    types *shp;
+
+    DBUG_ENTER ("IdxPrf");
     switch (arg_node->info.prf) {
     case F_psi:
-        Trav (arg_node->node[0]->node[0], (node *)SetIdx);
-        Trav (arg_node->node[0]->node[1], (node *)SetVect);
+        arg1 = arg_node->node[0]->node[0];
+        arg2 = arg_node->node[0]->node[1]->node[0];
+        if (arg1->nodetype == N_id) {
+            if (arg2->nodetype == N_id)
+                shp = arg2->info.ids->node->info.types;
+            else
+                DBUG_ASSERT ((NULL), "not yet implemented constant arg in psi!");
+            arg1->info.ids->node->node[1] = SetIdx (arg1->info.ids->node->node[1], shp);
+        }
+        Trav (arg2, arg_info);
         break;
-    case F_add:
-    case F_sub:
-    case F_mul:
-    case F_div:
-        Trav (arg_node->node[0], (node *)SetVect);
+    case F_add_AxA:
+    case F_sub_AxA:
+    case F_mul_AxA:
+    case F_div_AxA:
+        arg1 = arg_node->node[0]->node[0];
+        arg2 = arg_node->node[0]->node[1]->node[0];
+        if (arg1->nodetype == N_id)
+            arg1->info.ids->node->node[1]
+              = CpyIdx (arg_info, arg1->info.ids->node->node[1]);
+        if (arg2->nodetype == N_id)
+            arg2->info.ids->node->node[1]
+              = CpyIdx (arg_info, arg2->info.ids->node->node[1]);
+        break;
+    case F_add_SxA:
+    case F_sub_SxA:
+    case F_mul_SxA:
+    case F_div_SxA:
+        arg2 = arg_node->node[0]->node[1]->node[0];
+        if (arg2->nodetype == N_id)
+            arg2->info.ids->node->node[1]
+              = CpyIdx (arg_info, arg2->info.ids->node->node[1]);
+        break;
+    case F_add_AxS:
+    case F_sub_AxS:
+    case F_mul_AxS:
+    case F_div_AxS:
+        arg1 = arg_node->node[0]->node[0];
+        if (arg1->nodetype == N_id)
+            arg1->info.ids->node->node[1]
+              = CpyIdx (arg_info, arg1->info.ids->node->node[1]);
         break;
     default:
-        Trav (arg_node->node[0], (node *)SetVect);
+        Trav (arg_node->node[0], arg_info);
         break;
     }
     DBUG_RETURN (arg_node);
@@ -410,8 +455,7 @@ IdxPrf (node *arg_node, node *arg_info)
  *  functionname  : IdxId
  *  arguments     :
  *  description   : examines whether variable is a one-dimensional array;
- *                  if so, it applies the given modification function (arg_info)
- *                  to the "N_vardec" node belonging to the "N_id" node.
+ *                  if so, SetVect to the "N_vardec" node belonging to the "N_id" node.
  *  global vars   :
  *  internal funs :
  *  external funs :
@@ -432,8 +476,7 @@ IdxId (node *arg_node, node *arg_info)
                  "non vardec node as backref in N_id!");
     if (vardec->info.types->dim == 1) {
         DBUG_PRINT ("IDX", ("assigning to %s:", arg_node->info.ids->id));
-        vardec->node[1]
-          = ((chainmodfunptr)arg_info) (vardec->node[1], vardec->info.types);
+        vardec->node[1] = SetVect (vardec->node[1]);
     }
     DBUG_RETURN (arg_node);
 }
