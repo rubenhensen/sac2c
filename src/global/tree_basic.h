@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.131  1998/04/17 18:55:34  dkr
+ * added INFO_PREC_FUNDEF
+ *
  * Revision 1.130  1998/04/17 17:26:25  dkr
  * 'concurrent regions' are now called 'SPMD regions'
  *
@@ -2199,6 +2202,7 @@ extern node *MakeInfo ();
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
+#define INFO_PREC_FUNDEF(n) (n->node[1])
 #define INFO_PREC_CNT_ARTIFICIAL(n) (n->lineno)
 
 /* compile */
@@ -2261,9 +2265,9 @@ extern node *MakeInfo ();
  ***
  ***  temporary attributes:
  ***
- ***    node*      FUNDEC      (0)  (N_fundef)    (spmdregions -> compile ! )
- ***    node*      VARDEC      (0)  (N_vardec)    (spmdregions -> compile ! )
- ***    node*      AP_LET      (0)  (N_let)       (spmdregions -> compile ! )
+ ***    node*      FUNDEC      (0)  (N_fundef)    (precompile -> compile ! )
+ ***    node*      VARDEC      (0)  (N_vardec)    (precompile -> compile ! )
+ ***    node*      AP_LET      (0)  (N_let)       (precompile -> compile ! )
  ***    long*      MASK[x]                        (spmdregions -> )
  ***
  ***/
