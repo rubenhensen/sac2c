@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.27  2000/04/13 08:20:42  jhs
+ * Updated -mtn break-specifiers.
+ *
  * Revision 2.26  2000/04/10 15:46:22  jhs
  * Added some mtn-infos..
  *
@@ -246,7 +249,7 @@ usage ()
       "\t-b19:syncopt   \tstop after optimizing SYNC blocks\n"
       "\t-b19:scheduling\tstop after scheduling SYNC blocks and with-loop segments\n"
       "\t-b19:spmdcons  \tstop after constrainig SPMD blocks\n"
-      "\t               \t(same as -b19 only)\n"
+      "\t               \t(same as [-mt] -b19 only)\n"
       "\n"
       "with -mtn (UNDER CONSTRUCTION!!!)\n"
       "\t-b19:init      \tstop after internal initialization\n"
@@ -256,11 +259,11 @@ usage ()
       "\t-b19:blkpp     \tstop after blocks propagated\n"
       "\t-b19:blkex     \tstop after blocks expanded\n"
       "\t-b19:mtfin     \tstop after multithread functions builded\n"
-      "\t-b19:blkco     \t...\n"
-      "\t-b19:dfa       \t...\n"
-      "\t-b19:barin     \t...\n"
-      "\t-b19:blkli     \t...\n"
-      "\t-b19:adjca     \t...\n"
+      "\t-b19:blkco     \tstop after blocks consolidated\n"
+      "\t-b19:dfa       \tstop after datafloa-analysis\n"
+      "\t-b19:barin     \tstop after barriers initialized\n"
+      "\t-b19:blkli     \tstop after blocks lifted\n"
+      "\t-b19:adjca     \tstop after adjusted calls\n"
       "\t ... to be continued ...");
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
