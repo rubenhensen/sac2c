@@ -1,5 +1,10 @@
 /*
+ *
  * $Log$
+ * Revision 1.40  2000/11/05 13:39:18  dkr
+ * bug in DupIds_Id fixed:
+ * NAME and MOD are copied now ...
+ *
  * Revision 1.39  2000/10/27 00:09:53  dkr
  * Pfffff... typo corrected. I should go to bed now 8-(((
  *
@@ -160,6 +165,7 @@
  *
  * Revision 1.1  1995/05/01  15:32:27  asi
  * Initial revision
+ *
  */
 
 /******************************************************************************
@@ -2270,7 +2276,9 @@ DupId_Ids (node *old_id)
 
     DBUG_ENTER ("DupId_Ids");
 
-    new_ids = MakeIds (ID_NAME (old_id), ID_MOD (old_id), ID_STATUS (old_id));
+    new_ids = MakeIds (StringCopy (ID_NAME (old_id)), StringCopy (ID_MOD (old_id)),
+                       ID_STATUS (old_id));
+
     IDS_REFCNT (new_ids) = ID_REFCNT (old_id);
     IDS_NAIVE_REFCNT (new_ids) = ID_NAIVE_REFCNT (old_id);
     IDS_VARDEC (new_ids) = ID_VARDEC (old_id);
