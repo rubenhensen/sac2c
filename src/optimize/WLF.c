@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.12  1998/07/14 12:57:41  srs
+ * fixed bug in AddRen()
+ *
  * Revision 1.11  1998/07/13 14:04:39  srs
  * fixed a bug in Modarray2Genarray.
  * Now a combination of two modarray-operators is not transformed into
@@ -191,12 +194,12 @@ long *subst_mask;  /* mrd mask of subst WL. */
 /******************************************************************************
  *
  * function:
- *   renaming_type *AddRen(char *old_name, char *new_name, types *type, node *arg_info)
+ *   renaming_type *AddRen(node *old_name, char *new_name, types *type, node *arg_info)
  *
  * description:
  *   Add new entry to renaiming list. No own mem for strings (old and new) is
  *   allocated. So the char pointers should point to string which will not be
- *   deleted soon (especially old_name: best point to vardec).
+ *   deleted soon (especially old_name: best let it point to vardec).
  *
  *   Additionally, if var insert is != 0, this function inserts the assignment
  *   'new_name = old_name' after! the subst-WL. The N_assign node of the subst
@@ -206,10 +209,13 @@ long *subst_mask;  /* mrd mask of subst WL. */
  *  If new_name does not exist, a vardec is installed (therefor type and
  *   arg_info are necessary).
  *
+ *  Attention:
+ *    old_name is a vardec node. VARDEC_NAME(old_name) is the real name.
+ *
  ******************************************************************************/
 
 renaming_type *
-AddRen (char *old_name, char *new_name, types *type, node *arg_info, int insert)
+AddRen (node *old_name, char *new_name, types *type, node *arg_info, int insert)
 {
     renaming_type *ren;
     node *assignn, *letn, *idn;
@@ -220,7 +226,7 @@ AddRen (char *old_name, char *new_name, types *type, node *arg_info, int insert)
     /* alloc new mem, search (or create) vardec for new_name and insert
        new element into renaming list. */
     ren = Malloc (sizeof (renaming_type));
-    ren->old = old_name;
+    ren->old = VARDEC_NAME (old_name);
     ren->new = new_name;
     ren->vardec
       = CreateVardec (new_name, type, &FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info)));
@@ -230,9 +236,8 @@ AddRen (char *old_name, char *new_name, types *type, node *arg_info, int insert)
 
     /* assign old value to new variable */
     if (insert) {
-        idn = MakeId (StringCopy (old_name), NULL, ST_regular);
-        ID_VARDEC (idn)
-          = CreateVardec (old_name, NULL, &FUNDEF_VARDEC (INFO_WLI_FUNDEF (arg_info)));
+        idn = MakeId (StringCopy (VARDEC_NAME (old_name)), NULL, ST_regular);
+        ID_VARDEC (idn) = old_name; /* the vardec node */
         _ids = MakeIds (StringCopy (new_name), NULL, ST_regular);
         IDS_VARDEC (_ids) = ren->vardec;
         letn = MakeLet (idn, _ids);
@@ -1512,7 +1517,7 @@ WLFid (node *arg_node, node *arg_info)
             if (target_mask[varno]) { /* target_mask was initialized before Fold() */
                 new_name = TmpVarName (ID_NAME (NCODE_CEXPR (coden)));
                 /* Get vardec's name because ID_NAME will be deleted soon. */
-                ren = AddRen (VARDEC_NAME (ID_VARDEC (NCODE_CEXPR (coden))), new_name,
+                ren = AddRen (ID_VARDEC (NCODE_CEXPR (coden)), new_name,
                               ID_TYPE (NCODE_CEXPR (coden)), arg_info, 0);
                 INFO_WLI_NEW_ID (arg_info) = MakeId (new_name, NULL, ST_regular);
                 ID_VARDEC (INFO_WLI_NEW_ID (arg_info)) = ren->vardec;
@@ -1602,8 +1607,8 @@ WLFid (node *arg_node, node *arg_info)
             else {
                 new_name = TmpVarName (ID_NAME (arg_node));
                 /* Get vardec's name because ID_NAME will be deleted soon. */
-                ren = AddRen (VARDEC_NAME (ID_VARDEC (arg_node)), new_name,
-                              ID_TYPE (arg_node), arg_info, 1);
+                ren = AddRen (ID_VARDEC (arg_node), new_name, ID_TYPE (arg_node),
+                              arg_info, 1);
             }
             /* replace old name now. */
             FREE (ID_NAME (arg_node));
@@ -1693,7 +1698,7 @@ WLFlet (node *arg_node, node *arg_info)
                 new_name = StringCopy (ren->new);
             else {
                 new_name = TmpVarName (IDS_NAME (LET_IDS (arg_node)));
-                ren = AddRen (VARDEC_NAME (IDS_VARDEC (LET_IDS (arg_node))), new_name,
+                ren = AddRen (IDS_VARDEC (LET_IDS (arg_node)), new_name,
                               IDS_TYPE (LET_IDS (arg_node)), arg_info, 0);
             }
             /* replace old name now. */
