@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/01/25 12:07:08  dkr
+ * ResetBV() added
+ *
  * Revision 3.18  2001/01/25 00:40:31  dkr
  * fixed a bug in WLTRAwith:
  * split, block, merge, opt, fit, norm are skipped for var. segments now
@@ -6067,6 +6070,38 @@ InferSchedulingParams (node *seg)
 /******************************************************************************
  *
  * Function:
+ *   int* ResetBV( int *bv, int dims, bool warn, char *warn_message)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+int *
+ResetBV (int *bv, int dims, bool warn, char *warn_message)
+{
+    int d;
+    bool modified = FALSE;
+
+    DBUG_ENTER ("ResetBV");
+
+    for (d = 0; d < dims; d++) {
+        if (bv[d] != 1) {
+            bv[d] = 1;
+            modified = TRUE;
+        }
+    }
+
+    if (warn && modified) {
+        WARN (line, (warn_message));
+    }
+
+    DBUG_RETURN (bv);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   wl_bs_t AnalyzeBreakSpecifier( void)
  *
  * Description:
@@ -6128,7 +6163,7 @@ WLTRAwith (node *arg_node, node *arg_info)
     node *strides, *cubes, *segs, *seg;
     types *wl_type;
     bool is_fold;
-    int wl_dims, b, d;
+    int wl_dims, b;
     wl_bs_t WL_break_after;
     node *new_node = NULL;
 
@@ -6353,15 +6388,14 @@ WLTRAwith (node *arg_node, node *arg_info)
                             } else {
                                 /*
                                  * on variable segments no blocking can be done!
-                                 *   -> reset blocking vector
+                                 *   -> reset bv
                                  */
                                 for (b = 0; b < WLSEGX_BLOCKS (seg); b++) {
-                                    for (d = 0; d < wl_dims; d++) {
-                                        (WLSEGX_BV (seg, b))[d] = 1;
-                                    }
+                                    WLSEGX_BV (seg, b)
+                                      = ResetBV (WLSEGX_BV (seg, b), wl_dims, (b == 0),
+                                                 "Blocking on variable segments not "
+                                                 "supported");
                                 }
-                                WARN (line,
-                                      ("Blocking on variable segments is not supported"));
                             }
                         }
 
@@ -6376,14 +6410,12 @@ WLTRAwith (node *arg_node, node *arg_info)
                             } else {
                                 /*
                                  * on variable segments no unrollong-blocking can be done!
-                                 *   -> reset blocking vector
+                                 *   -> reset ubv
                                  */
-                                for (d = 0; d < wl_dims; d++) {
-                                    (WLSEGX_UBV (seg))[d] = 1;
-                                }
-                                WARN (line,
-                                      ("Unrolling-blocking on variable segments is not"
-                                       " supported"));
+                                WLSEGX_UBV (seg)
+                                  = ResetBV (WLSEGX_UBV (seg), wl_dims, TRUE,
+                                             "Unrolling-blocking on variable segments "
+                                             "not supported");
                             }
                         }
 
