@@ -1,9 +1,14 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/02/09 09:00:28  hw
- * changed string of F_cat
+ * Revision 1.5  1995/03/08 14:21:53  hw
+ * added new enumerators for primitive functions add, mul, sub, div
+ * to  distinguish weather one argument is a scalar or array
+ * (these enumerators are inserted while typechecking)
  *
+;; Revision 1.4  1995/02/09  09:00:28  hw
+;; changed string of F_cat
+;;
 ;; Revision 1.3  1994/11/10  15:44:34  sbs
 ;; RCS-header inserted
 ;;
@@ -18,14 +23,27 @@
 **
 */
 
-/*   Node_name       dbug-string    */
+/* NOTE: F_neq should be the last "function enumerator" that hasn't
+         arrays as arguments.
+         F_take should be the first "function enumerator" that has at
+         least one array as argument.
+*/
+
+/*   Node_name       dbug-string[]  prf_string[]*/
 
 PRF_IF (F_add, "F_add", "+"), PRF_IF (F_sub, "F_sub", "-"), PRF_IF (F_mul, "F_mul", "*"),
-  PRF_IF (F_div, "F_div", "/"), PRF_IF (F_take, "F_take", "take"),
-  PRF_IF (F_drop, "F_drop", "drop"), PRF_IF (F_psi, "F_psi", "psi"),
-  PRF_IF (F_shape, "F_shape", "shape"), PRF_IF (F_reshape, "F_reshape", "reshape"),
-  PRF_IF (F_cat, "F_cat", "cat"), PRF_IF (F_dim, "F_dim", "dim"),
-  PRF_IF (F_rotate, "F_rotate", "rotate"), PRF_IF (F_and, "F_and", "&&"),
+  PRF_IF (F_div, "F_div", "/"), PRF_IF (F_and, "F_and", "&&"),
   PRF_IF (F_or, "F_or", "||"), PRF_IF (F_not, "F_not", "!"), PRF_IF (F_le, "F_le", "<="),
   PRF_IF (F_lt, "F_lt", "<"), PRF_IF (F_eq, "F_eq", "=="), PRF_IF (F_ge, "F_ge", ">="),
-  PRF_IF (F_gt, "F_gt", ">"), PRF_IF (F_neq, "F_neq", "!=")
+  PRF_IF (F_gt, "F_gt", ">"), PRF_IF (F_neq, "F_neq", "!="),
+
+  PRF_IF (F_take, "F_take", "take"), PRF_IF (F_drop, "F_drop", "drop"),
+  PRF_IF (F_psi, "F_psi", "psi"), PRF_IF (F_shape, "F_shape", "shape"),
+  PRF_IF (F_reshape, "F_reshape", "reshape"), PRF_IF (F_cat, "F_cat", "cat"),
+  PRF_IF (F_dim, "F_dim", "dim"), PRF_IF (F_rotate, "F_rotate", "rotate"),
+  PRF_IF (F_add_SxA, "F_add_SxA", "+"), PRF_IF (F_add_AxS, "F_add_AxS", "+"),
+  PRF_IF (F_add_AxA, "F_add_AxA", "+"), PRF_IF (F_sub_SxA, "F_sub_SxA", "-"),
+  PRF_IF (F_sub_AxS, "F_sub_AxS", "-"), PRF_IF (F_sub_AxA, "F_sub_AxA", "-"),
+  PRF_IF (F_mul_SxA, "F_mul_SxA", "*"), PRF_IF (F_mul_AxS, "F_mul_AxS", "*"),
+  PRF_IF (F_mul_AxA, "F_mul_AxA", "*"), PRF_IF (F_div_SxA, "F_div_SxA", "/"),
+  PRF_IF (F_div_AxS, "F_div_AxS", "/"), PRF_IF (F_div_AxA, "F_div_AxA", "/")
