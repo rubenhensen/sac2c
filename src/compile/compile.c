@@ -1,7 +1,14 @@
 /*
  *
  * $Log$
- * Revision 1.44  1995/06/12 09:19:17  hw
+ * Revision 1.45  1995/06/13 15:11:08  hw
+ * - changed RenameVar (added new parameter)
+ * - added function RenameReturn
+ * inserted renameing of varaibles of a return_statement  and things
+ * beloning to it
+ * - cast in a return_statement will be deleted
+ *
+ * Revision 1.44  1995/06/12  09:19:17  hw
  * bug fixed in CompVardec ( arg_node->nnode is set correctly)
  *
  * Revision 1.43  1995/06/09  17:35:53  hw
@@ -459,6 +466,14 @@ extern int malloc_debug (int level);
         arg_info->node[0]->node[1] = Node;                                               \
     }
 
+#define ELIMINATE_CAST(exprs)                                                            \
+    if (N_cast == exprs->node[0]->nodetype) {                                            \
+        tmp = exprs->node[0]->node[0];                                                   \
+        FREE_TYPE (exprs->node[0]->TYPES);                                               \
+        FREE (exprs->node[0]);                                                           \
+        exprs->node[0] = tmp;                                                            \
+    }
+
 #define FREE(a)                                                                          \
     DBUG_PRINT ("FREE", (P_FORMAT, a));                                                  \
     free (a)
@@ -488,6 +503,7 @@ extern int malloc_debug (int level);
 #endif
 
 static int label_nr = 0;
+
 /*
  *
  *  functionname  : RenameVar
@@ -502,15 +518,121 @@ static int label_nr = 0;
  *
  */
 char *
-RenameVar (char *string)
+RenameVar (char *string, int i)
 {
     char *new_name;
     DBUG_ENTER ("RenameVar");
-
-    new_name = (char *)Malloc (sizeof (char) * (strlen (string) + 3));
-    sprintf (new_name, "__%s", string);
+    if (0 == i) {
+        new_name = (char *)Malloc (sizeof (char) * (strlen (string) + 3));
+        sprintf (new_name, "__%s", string);
+    } else {
+        new_name = (char *)Malloc (sizeof (char) * (strlen (string) + 5));
+        sprintf (new_name, "__%s_%d", string, i);
+    }
 
     DBUG_RETURN (new_name);
+}
+
+/*
+ *
+ *  functionname  : RenameReturn
+ *  arguments     : 1) N_return node
+ *                  2) arg_info
+ *  description   : - renames the variables in a return_sttatement,
+ *                  - adds variable declaration
+ *                  - inserts new assignments (after LAST_ASSIGN(arg_info))
+ *  global vars   :
+ *  internal funs : RenameVar,
+ *  external funs : MakeNode, StringCopy, strcmp, DuplicateTypes,
+ *  macros        : DBUG..., ELIMINATE_CAST, IDS_ID, ISD_NODE, ID, TYPES,
+ *                  FREE, MAKENODE_ID, LAST_ASSIGN, NULL
+ *
+ *  remarks       : - pointer to variable declaration is stored in
+ *                    arg_info->node[3]
+ *                  - returns N_let of last inserted new assign if
+ *                     there renameing had to be done
+ *                    returns N_return if no renaming had to be done
+ *                  - puts new assignments after LAST_ASSIGN(arg_info).
+ *                    node[0] of LAST_ASSIGN(arg_info) will be set in
+ *                    last CompAssign (return value of CompReturn)) again
+ *
+ */
+node *
+RenameReturn (node *return_node, node *arg_info)
+{
+    node *exprs, *tmp_exprs, *assign, *let, *next_assign, *new_vardec, *vardec, *tmp;
+    int i;
+    char *old_id, *new_id;
+
+    DBUG_ENTER ("RenameReturn");
+
+    exprs = return_node->node[0];
+    next_assign = MakeNode (N_assign);
+    next_assign->node[0] = return_node;
+    ;
+    next_assign->nnode = 1;
+    vardec = arg_info->node[3];
+
+    while (NULL != exprs) {
+        tmp_exprs = exprs->node[1];
+        i = 1;
+        ELIMINATE_CAST (exprs);
+        old_id = exprs->node[0]->IDS_ID;
+        while (NULL != tmp_exprs) {
+            ELIMINATE_CAST (tmp_exprs);
+            if (0 == strcmp (tmp_exprs->node[0]->IDS_ID, old_id)) {
+                /* generates new nodes */
+                assign = MakeNode (N_assign);
+                let = MakeNode (N_let);
+                assign->node[0] = let;
+                assign->node[1] = next_assign;
+                assign->nnode = 2;
+                next_assign = assign;
+                let->IDS = MakeIds (exprs->node[0]->IDS_ID);
+                let->IDS_NODE = exprs->node[0]->IDS_NODE;
+                MAKENODE_ID (let->node[0], RenameVar (old_id, i));
+                let->nnode = 1;
+                new_id = let->node[0]->IDS_ID;
+                new_vardec = MakeNode (N_vardec);
+                new_vardec->TYPES = DuplicateTypes (tmp_exprs->node[0]->IDS_NODE->TYPES);
+                new_vardec->ID = StringCopy (new_id); /* set new variable name */
+                let->node[0]->IDS_NODE = new_vardec;  /* set pointer to vardec */
+
+                /* rename current ret_value */
+                FREE (tmp_exprs->node[0]->IDS_ID);
+                tmp_exprs->node[0]->IDS_ID = StringCopy (new_id);
+                /* insert vardec */
+                if (NULL == vardec)
+                    vardec = new_vardec;
+                else {
+                    if (1 == vardec->nnode) {
+                        new_vardec->node[0] = vardec->node[0];
+                        new_vardec->nnode = 1;
+                        vardec = new_vardec;
+                    } else {
+                        vardec->node[0] = new_vardec;
+                        vardec->nnode = 1;
+                    }
+                }
+            }
+            tmp_exprs = tmp_exprs->node[1];
+            i += 1;
+        }
+        exprs = exprs->node[1];
+    }
+    if (next_assign->node[0] != return_node) {
+        /* new nodes have been inserted */
+        node *last_assign = LAST_ASSIGN (arg_info);
+        last_assign->node[0] = assign->node[0];
+        last_assign->node[1] = assign->node[1];
+        last_assign->nnode = 2;
+        FREE (assign);
+        arg_info->node[3] = vardec;
+
+        return_node = assign->node[0];
+    }
+
+    DBUG_RETURN (return_node);
 }
 
 /*
@@ -841,7 +963,7 @@ CompPrf (node *arg_node, node *arg_info)
             if (N_id == exprs->node[0]->nodetype)
                 if (0 == strcmp (let_ids->id, exprs->node[0]->IDS_ID)) {
                     if (0 == insert_assign) {
-                        MAKENODE_ID (new_name, RenameVar (let_ids->id));
+                        MAKENODE_ID (new_name, RenameVar (let_ids->id, 0));
                         MAKENODE_ID_REUSE_IDS (old_name, let_ids);
                         CREATE_2_ARY_ICM (new_assign, "ND_KS_ASSIGN_ARRAY", old_name,
                                           new_name);
@@ -864,7 +986,7 @@ CompPrf (node *arg_node, node *arg_info)
                         if (1 == insert_vardec) {
                             new_vardec = MakeNode (N_vardec);
                             new_vardec->TYPES = DuplicateTypes (vardec_p->TYPES);
-                            new_vardec->ID = RenameVar (let_ids->id);
+                            new_vardec->ID = RenameVar (let_ids->id, 0);
                             new_vardec->node[0] = vardec_p->node[0];
                             vardec_p->node[0] = new_vardec;
                         }
@@ -872,7 +994,7 @@ CompPrf (node *arg_node, node *arg_info)
 
                     /* now rename N_id */
                     FREE (exprs->node[0]->IDS_ID);
-                    exprs->node[0]->IDS_ID = RenameVar (let_ids->id);
+                    exprs->node[0]->IDS_ID = RenameVar (let_ids->id, 0);
                 }
 
             exprs = exprs->node[1];
@@ -1907,7 +2029,7 @@ CompAp (node *arg_node, node *arg_info)
  *  description   : generates N_icms for N_return of a function or of a
  *                  with-loop
  *  global vars   :
- *  internal funs :
+ *  internal funs : RenameReturn
  *  external funs :
  *  macros        : DBUG...,
  *  remarks       : if N_return node contains to a with_loop, then
@@ -1928,7 +2050,10 @@ CompReturn (node *arg_node, node *arg_info)
 
     exprs = arg_node->node[0];
     if (NULL == arg_info->node[2]) {
+        node *ret;
+
         /* this is a N_return of a function-body */
+        ret = RenameReturn (arg_node, arg_info);
         last = arg_node;
         /* the new N_exprs chain will be stored in arg_node->node[1]
          * temporaryly
@@ -1957,10 +2082,15 @@ CompReturn (node *arg_node, node *arg_info)
         MAKE_ICM_NAME (arg_node, "ND_FUN_RET");
         exprs = MakeNode (N_exprs);
         MAKENODE_NUM (exprs->node[0], n);
-        exprs->node[1] = arg_node->node[1];
+        exprs->node[1] = arg_node->node[1]; /* put number of ret-values in front */
         exprs->nnode = 2;
         arg_node->node[0] = exprs;
-        arg_node->node[1] = NULL;
+        arg_node->node[1] = NULL; /* was only used temporaryly */
+
+        arg_node = ret; /* set new return_value of current function
+                         * (N_let node if at least one variable in the "return"
+                         * statement has been renamed, or  N_return otherwise)
+                         */
     } else {
         /* this is a N_return of a with_loop.
          * arg_info->node[2] points to the N_icm that desribes the begin of
@@ -2452,21 +2582,32 @@ CompArg (node *arg_node, node *arg_info)
  *  internal funs :
  *  external funs : Trav
  *  macros        : DBUG...,, NULL
- *  remarks       : sets arg_info->node[0] to first N_assign of function before
- *                  traversing the function's arguments
- *
+ *  remarks       :-sets arg_info->node[0] to first N_assign of function before
+ *                 - traversing the function's arguments
+ *                 - sets arg_info->node[3] to variable declaration
+ *                 - calls Trav to `compile` varbiable declarations
  *
  */
 node *
 CompFundef (node *arg_node, node *arg_info)
 {
     node *return_node, *icm, *icm_arg, *type_id_node, *var_name_node, *n_node,
-      *fun_name_node, *tag_node, *tmp;
+      *fun_name_node, *tag_node, *tmp, *return_id;
     types *types;
     simpletype s_type;
     int i = 0;
 
     DBUG_ENTER ("CompFundef");
+
+    if (NULL != arg_node->node[0]) {
+        arg_info->node[3] = arg_node->node[0]->node[1]; /* set pointer to vardec */
+        arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* body */
+        if (NULL != arg_info->node[3]) {
+            /* compile vardecs */
+            arg_node->node[0]->node[1] = Trav (arg_info->node[3], arg_info);
+            arg_node->node[0]->nnode = 2;
+        }
+    }
 
     /* now create N_icm ND_FUN_DEC and put it to arg_node->node[3] */
     icm = MakeNode (N_icm);
@@ -2480,7 +2621,10 @@ CompFundef (node *arg_node, node *arg_info)
                                           */
     types = arg_node->TYPES;
     if (NULL != arg_node->node[3])
-        return_node = arg_node->node[3]->node[0];
+        /* arg_node->node[3] points to a N_icm (ND_FUN_RET)
+         * return_node will point to the first N_exprs belonging to a return_value
+         */
+        return_node = arg_node->node[3]->node[0]->node[1]->node[1];
 
     do {
         if (1 == IsArray (types)) {
@@ -2496,8 +2640,14 @@ CompFundef (node *arg_node, node *arg_info)
             /* it is an extern declaration */
             MAKENODE_ID (var_name_node, GenName (i, DUMMY_NAME));
         } else {
-            MAKENODE_ID_REUSE_IDS (var_name_node, return_node->node[0]->IDS);
-            return_node = return_node->node[1];
+            return_id = return_node->node[0];
+            DBUG_ASSERT (N_id == return_id->nodetype, "wrong nodetype != N_id");
+            MAKENODE_ID_REUSE_IDS (var_name_node, return_id->IDS);
+            if (2 == return_node->nnode)
+                /* put return_node to next N_exprs where a function return_value
+                 * is behinde
+                 */
+                return_node = return_node->node[1]->node[1];
         }
         MAKE_NEXT_ICM_ARG (icm_arg, var_name_node);
         i += 1;
@@ -2505,11 +2655,9 @@ CompFundef (node *arg_node, node *arg_info)
     } while (NULL != types);
     arg_node->node[3] = icm; /* put N_icm ND_FUN_DEC to arg_node->node[3] */
 
-    if (NULL != arg_node->node[0])
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
     if (NULL != arg_node->node[2]) {
-        /* count number of arguments */
-        tmp = arg_node->node[2];
+        /* count number of formal parameters */
+        tmp = arg_node->node[2]; /* formal parameters */
         do {
             i += 1;
             tmp = tmp->node[0];
@@ -2518,16 +2666,14 @@ CompFundef (node *arg_node, node *arg_info)
         if (NULL != arg_node->node[0])
             /* first assign of body */
             arg_info->node[0] = arg_node->node[0]->node[0];
-
+        /* traverse formal parameters (N_arg) */
         arg_node->node[2] = Trav (arg_node->node[2], arg_info);
         if (NULL != arg_node->node[0]) {
             /* new first assign of body */
             arg_node->node[0]->node[0] = arg_info->node[0];
             arg_info->node[0] = NULL;
         }
-    }
 
-    if (NULL != arg_node->node[2]) {
         /* append formal parameters  to N_icm args*/
         icm_arg->node[1] = arg_node->node[2];
         icm_arg->nnode = 2;
@@ -2784,8 +2930,13 @@ CompBlock (node *arg_node, node *arg_info)
     arg_info->node[0] = arg_node;
     Trav (arg_node->node[0], arg_info);
     arg_info->node[0] = old_info;
-    if (2 == arg_node->nnode)
-        arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+#if 0
+   if(NULL != arg_info->node[3])
+   {
+      arg_node->node[1]=Trav(arg_info->node[3], arg_info);
+      arg_node->nnode=2;
+   }
+#endif
 
     DBUG_RETURN (arg_node);
 }
