@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.72  1998/04/03 12:12:21  dkr
+# added dir concurrent in prod, clean, ...
+#
 # Revision 1.71  1998/04/03 12:10:56  srs
 # added $(CONCURRENT) to OBJ
 #
@@ -300,6 +303,7 @@ dummy:
 	(cd src/modules; $(MAKE) )
 	(cd src/objects; $(MAKE) )
 	(cd src/refcount; $(MAKE) )       
+	(cd src/concurrent; $(MAKE) )
 	(cd src/compile; $(MAKE) )
 	(cd src/psi-opt; $(MAKE) )
 	(cd src/runtime; $(MAKE) )
@@ -315,6 +319,7 @@ prod:
 	(cd src/modules; $(MAKEPROD) )
 	(cd src/objects; $(MAKEPROD) )
 	(cd src/refcount; $(MAKEPROD) )       
+	(cd src/concurrent; $(MAKEPROD) )
 	(cd src/compile; $(MAKEPROD) )
 	(cd src/psi-opt; $(MAKEPROD) )
 	(cd src/runtime; $(MAKEPROD) )
@@ -336,6 +341,7 @@ deps:
 	(cd src/modules; $(MAKE) deps)
 	(cd src/objects; $(MAKE) deps)
 	(cd src/refcount; $(MAKE) deps)
+	(cd src/concurrent; $(MAKE) deps)
 	(cd src/compile; $(MAKE) deps)
 	(cd src/psi-opt; $(MAKE) deps)
 	(cd src/runtime; $(MAKE) deps)
@@ -351,6 +357,7 @@ clean:
 	(cd src/modules; $(MAKE) clean)
 	(cd src/objects; $(MAKE) clean)
 	(cd src/refcount; $(MAKE) clean)
+	(cd src/concurrent; $(MAKE) clean)
 	(cd src/compile; $(MAKE) clean )
 	(cd src/psi-opt; $(MAKE) clean)
 	(cd src/runtime; $(MAKE) clean)
