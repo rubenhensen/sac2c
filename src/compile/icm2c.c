@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/05/24 13:58:31  sbs
+ * Revision 1.21  1995/05/24 15:31:22  sbs
+ * trace.h included
+ *
+ * Revision 1.20  1995/05/24  13:58:31  sbs
  * ND_KS_DECL_ARRAY_ARG inserted
  *
  * Revision 1.19  1995/05/04  11:43:51  sbs
@@ -70,6 +73,7 @@
 #include "dbug.h"
 #include "my_debug.h"
 #include "main.h"
+#include "trace.h"
 
 #define RetWithScal(res, val)                                                            \
     INDENT;                                                                              \
