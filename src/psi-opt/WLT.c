@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/09/13 19:05:15  dkr
+ * genarray-wls with empty index sets are no longer allowed
+ *
  * Revision 3.13  2002/06/27 17:01:48  dkr
  * - CheckOptimize...() works also for nested WLs now
  * - CreateSel() used now
@@ -1062,12 +1065,16 @@ WLTNpart (node *arg_node, node *arg_info)
 node *
 WLTNgenerator (node *arg_node, node *arg_info)
 {
-    node *tmpn, **bound, *lb, *ub, *lbe, *ube, *assignn, *blockn, *wln, *idn;
+    node *tmpn, **bound, *lb, *ub, *lbe, *ube, *wln;
     int i, check_bounds, empty, warning;
     int lbnum, ubnum, tnum, dim;
-    ids *_ids, *let_ids;
-    char *varname;
-    types *type;
+    ids *let_ids;
+#if 0
+  node *assignn, *blockn, *idn;
+  ids *_ids;
+  char *varname;
+  types *type;
+#endif
 
     DBUG_ENTER ("WLTNgenerator");
 
@@ -1203,10 +1210,28 @@ WLTNgenerator (node *arg_node, node *arg_info)
 
             /* the one and only N_Npart is empty. Transform WL. */
             if (empty) {
-                WARN (NODE_LINE (arg_node),
-                      ("With-loop generator specifies empty index set"));
-
                 if (WO_genarray == NWITH_TYPE (INFO_WLI_WL (arg_info))) {
+#if 1
+                    /*
+                     * genarray wls with empty index set are not allowed!!!
+                     *
+                     * Example:
+                     *    A = with( ... < iv < ...)
+                     *        genarray( [10], val( iv));
+                     *
+                     *    That means:  shape(A) = [10] ++ shape( val( iv))
+                     *                                    ^^^^^^^^^^^^^^^^
+                     *                 (should be identical for all 'iv' of index set)
+                     *
+                     *    If the index set is empty, 'val(iv)' may is undefined.
+                     *    Thus, the shape of A is undefined!!!!
+                     */
+                    ERROR (NODE_LINE (arg_node),
+                           ("Genarray-with-loop with empty index set found"));
+#else
+                    WARN (NODE_LINE (arg_node),
+                          ("With-loop generator specifies empty index set"));
+
                     /* change generator: full scope.  */
                     dim = GetDim (IDS_TYPE (let_ids));
                     lb = NGEN_BOUND1 (arg_node);
@@ -1296,7 +1321,11 @@ WLTNgenerator (node *arg_node, node *arg_info)
                         ASSIGN_MASK (assignn, 0) = GenMask (INFO_VARNO (arg_info));
                         ASSIGN_MASK (assignn, 1) = GenMask (INFO_VARNO (arg_info));
                     }
+#endif
                 } else {
+                    WARN (NODE_LINE (arg_node),
+                          ("With-loop generator specifies empty index set"));
+
                     if (WO_modarray == NWITH_TYPE (INFO_WLI_WL (arg_info))) {
                         /* replace WL with the base array (modarray). */
                         tmpn = NWITH_ARRAY (INFO_WLI_WL (arg_info));
