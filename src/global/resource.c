@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2003/03/24 16:37:04  sbs
+ * opt_I added.
+ *
  * Revision 3.7  2003/03/21 15:24:04  sbs
  * RSCParseResourceFile added
  *
@@ -197,6 +200,7 @@ static struct {
   {"OPT_O3", str, &config.opt_O3},
   {"OPT_g", str, &config.opt_g},
   {"OPT_D", str, &config.opt_D},
+  {"OPT_I", str, &config.opt_I},
 
   {"CPP_STDIN", str, &config.cpp_stdin},
   {"CPP_FILE", str, &config.cpp_file},

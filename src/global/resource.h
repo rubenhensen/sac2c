@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2003/03/24 16:37:04  sbs
+ * opt_I added.
+ *
  * Revision 3.3  2003/03/21 15:24:04  sbs
  * RSCParseResourceFile added
  *
@@ -125,6 +128,7 @@ typedef struct {
     char *opt_O3;
     char *opt_g;
     char *opt_D;
+    char *opt_I;
 
     char *cpp_stdin;
     char *cpp_file;
