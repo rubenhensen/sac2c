@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.14  1994/12/21 11:34:50  hw
+ * Revision 1.15  1994/12/30 13:22:09  hw
+ * changed struct types (added id_mod & name_mod)
+ * new struct fun_name
+ * added fun_name to node.info
+ *
+ * Revision 1.14  1994/12/21  11:34:50  hw
  * changed definition of simpletype (now with macro & include)
  *
  * Revision 1.13  1994/12/20  15:56:58  sbs
@@ -91,12 +96,19 @@ typedef struct SHPSEG {
 
 typedef struct TYPES {
     simpletype simpletype;
-    char *name; /* only used for T_user !! */
-    int dim;    /* if (dim == 0) => simpletype */
+    char *name;     /* only used for T_user !! */
+    char *name_mod; /* name of modul belonging to 'name' */
+    int dim;        /* if (dim == 0) => simpletype */
     shpseg *shpseg;
     struct TYPES *next; /* only needed for fun-results */
     id *id;             /* Bezeichner  */
+    char *id_mod;       /* name of modul belonging to 'id' */
 } types;
+
+typedef struct FUN_NAME {
+    char *id;     /* name of function */
+    char *id_mod; /* name of modul belonging to 'id' */
+} fun_name;
 
 /*
  * Neue Knoten fu"r yacc un den Syntabaum
@@ -131,6 +143,7 @@ typedef struct NODE {
         char *mask[2];    /* Variablen, die in einem Grundblock */
                           /* 1) "uberschrieben werden           */
                           /* 2) benutzt werden                  */
+        fun_name fun_name /* used in N_ap nodes */
     } info;               /* fu"r spezielle Informationen */
     int nnode;            /* Anzahl der benutzten Knoten */
     int lineno;           /* Zeilennummer in der ein Befehl steht */
