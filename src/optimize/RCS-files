@@ -1,6 +1,5 @@
 AssociativeLaw.c
 AssociativeLaw.h
-CSE.c
 CSE.h
 ConstantFolding.c
 ConstantFolding.h
@@ -13,7 +12,6 @@ Inline.h
 LoopInvariantRemoval.c
 LoopInvariantRemoval.h
 Makefile
-SSACSE.c
 SSACSE.h
 SSAConstantFolding.c
 SSAConstantFolding.h
