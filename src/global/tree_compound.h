@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/10/26 16:01:44  cg
+ * Revision 1.12  1995/10/31 08:54:43  cg
+ * added new functions FreeNodelist and TidyUpNodelist.
+ *
+ * Revision 1.11  1995/10/26  16:01:44  cg
  *  macro MOD_NAME_CON replaced by new global variable mod_name_con
  *  Now, different strings can be used for combining module name and
  * item name with respect to the compilation phase.
@@ -304,6 +307,39 @@ extern void StoreNeededNodes (nodelist *inserts, node *fundef, statustype status
  */
 
 extern void StoreUnresolvedNodes (nodelist *inserts, node *fundef, statustype status);
+
+/*
+ *
+ *  functionname  : FreeNodelist
+ *  arguments     : 1) beginning of nodelist
+ *  description   : frees an entire nodelist
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : free
+ *  macros        : DBUG, TREE
+ *
+ *  remarks       : returns always NULL
+ *
+ */
+
+extern nodelist *FreeNodelist (nodelist *list);
+
+/*
+ *
+ *  functionname  : TidyUpNodelist
+ *  arguments     : 1) beginning of nodelist
+ *  description   : frees all those entries of a node list which have
+ *                  status 'ST_artificial'
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : free
+ *  macros        : DBUG, TREE
+ *
+ *  remarks       : returns the beginning of the resulting nodelist
+ *
+ */
+
+extern nodelist *TidyUpNodelist (nodelist *list);
 
 /*--------------------------------------------------------------------------*/
 

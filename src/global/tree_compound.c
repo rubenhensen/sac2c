@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/10/26 15:59:54  cg
+ * Revision 1.12  1995/10/31 08:54:43  cg
+ * added new functions FreeNodelist and TidyUpNodelist.
+ *
+ * Revision 1.11  1995/10/26  15:59:54  cg
  * macro MOD_NAME_CON replaced by new global variable mod_name_con
  * Now, different strings can be used for combining module name and
  * item name with respect to the compilation phase.
@@ -405,4 +408,58 @@ StoreUnresolvedNodes (nodelist *inserts, node *fundef, statustype status)
     }
 
     DBUG_VOID_RETURN;
+}
+
+/***
+ ***  FreeNodelist
+ ***/
+
+nodelist *
+FreeNodelist (nodelist *list)
+{
+    nodelist *tmp;
+
+    DBUG_ENTER ("FreeNodelist");
+
+    while (list != NULL) {
+        tmp = list;
+        list = NODELIST_NEXT (list);
+        free (tmp);
+    }
+
+    DBUG_RETURN (NULL);
+}
+
+/***
+ ***  TidyUpNodelist
+ ***/
+
+nodelist *
+TidyUpNodelist (nodelist *list)
+{
+    nodelist *tmp, *first, *last;
+
+    DBUG_ENTER ("TidyUpNodelist");
+
+    while ((list != NULL) && (NODELIST_STATUS (list) == ST_artificial)) {
+        tmp = list;
+        list = NODELIST_NEXT (list);
+        free (tmp);
+    }
+
+    first = list;
+
+    while (list != NULL) {
+        if (NODELIST_STATUS (list) == ST_artificial) {
+            tmp = list;
+            NODELIST_NEXT (last) = NODELIST_NEXT (list);
+            list = NODELIST_NEXT (list);
+            free (tmp);
+        } else {
+            last = list;
+            list = NODELIST_NEXT (list);
+        }
+    }
+
+    DBUG_RETURN (first);
 }
