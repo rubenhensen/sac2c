@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/07/20 13:47:08  ktr
+ * Removed need for RedoSSATransform-.
+ * Especially this means that only regular identifiers are built that must
+ * be marked artificial before precompile.
+ *
  * Revision 1.7  2004/07/19 14:53:38  ktr
  * Genarray-WL results are now markes ST_artificial such that they are
  * removed by precompile. This nicely reflects that genarray-wls are nothing
@@ -442,7 +447,8 @@ EMALcode (node *arg_node, info *arg_info)
 {
     ids *lhs, *arg1, *arg2;
     alloclist_struct *als;
-    node *withops, *indexvector, *cexprs, *assign, *avis, *cexavis;
+    node *withops, *indexvector, *cexprs, *assign;
+    node *memavis, *valavis, *cexavis, *wlavis;
 
     DBUG_ENTER ("EMALcode");
 
@@ -489,6 +495,16 @@ EMALcode (node *arg_node, info *arg_info)
          * Set shape of genarray-wls if not already done and possible
          */
         if (NWITHOP_TYPE (withops) == WO_genarray) {
+
+            FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
+              = MakeVardec (TmpVarName (VARDEC_NAME (AVIS_VARDECORARG (als->avis))),
+                            DupOneTypes (VARDEC_TYPE (AVIS_VARDECORARG (als->avis))),
+                            FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+
+            wlavis = VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+            AVIS_TYPE (wlavis) = TYCopyType (AVIS_TYPE (als->avis));
+            als->avis = wlavis;
+
             if (als->dim == NULL) {
                 if (TYIsAKS (AVIS_TYPE (cexavis))) {
                     als->dim
@@ -510,39 +526,60 @@ EMALcode (node *arg_node, info *arg_info)
 
         /*
          * Insert suballoc/fill combinations for genarray-modarray operators
+         *
+         * Ex:
+         *   ...
+         * }: a;
          */
         if ((NWITHOP_TYPE (withops) == WO_genarray)
             || (NWITHOP_TYPE (withops) == WO_modarray)) {
 
             /*
              * Create a new memory variable
+             * Ex: a_mem
              */
             FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
-              = MakeVardec (TmpVar (),
+              = MakeVardec (TmpVarName ("mem"),
                             DupOneTypes (VARDEC_TYPE (AVIS_VARDECORARG (cexavis))),
                             FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
 
-            avis = MakeAvis (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
-            AVIS_TYPE (avis) = TYCopyType (AVIS_TYPE (cexavis));
-            VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))) = avis;
+            memavis = VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+            AVIS_TYPE (memavis) = TYCopyType (AVIS_TYPE (cexavis));
+
+            /*
+             * Create a new value variable
+             * Ex: a_val
+             */
+            FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
+              = MakeVardec (TmpVarName ("val"),
+                            DupOneTypes (VARDEC_TYPE (AVIS_VARDECORARG (cexavis))),
+                            FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+
+            valavis = VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+            AVIS_TYPE (valavis) = TYCopyType (AVIS_TYPE (cexavis));
 
             /*
              * Create fill operation
+             *
+             * Ex:
+             *   ...
+             *   a_val = fill( copy( a), a_mem);
+             * }: a;
              */
-            lhs = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (avis))), NULL,
-                           ST_artificial);
-            IDS_AVIS (lhs) = avis;
-            IDS_VARDEC (lhs) = AVIS_VARDECORARG (avis);
+            lhs = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (valavis))), NULL,
+                           ST_regular);
+            IDS_AVIS (lhs) = valavis;
+            IDS_VARDEC (lhs) = AVIS_VARDECORARG (valavis);
 
             arg1 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (cexavis))), NULL,
                             ST_regular);
             IDS_AVIS (arg1) = cexavis;
             IDS_VARDEC (arg1) = AVIS_VARDECORARG (cexavis);
 
-            arg2 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (avis))), NULL,
+            arg2 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (memavis))), NULL,
                             ST_regular);
-            IDS_AVIS (arg2) = avis;
-            IDS_VARDEC (arg2) = AVIS_VARDECORARG (avis);
+            IDS_AVIS (arg2) = memavis;
+            IDS_VARDEC (arg2) = AVIS_VARDECORARG (memavis);
 
             assign
               = MakeAssign (MakeLet (MakePrf2 (F_fill,
@@ -550,9 +587,27 @@ EMALcode (node *arg_node, info *arg_info)
                                                MakeIdFromIds (arg2)),
                                      lhs),
                             assign);
+            AVIS_SSAASSIGN (IDS_AVIS (lhs)) = assign;
+
+            /*
+             * Substitute cexpr
+             *
+             * Ex:
+             *   ...
+             *   a_val = fill( copy( a), a_mem);
+             * }: a_val;
+             */
+            EXPRS_EXPR (cexprs) = FreeTree (EXPRS_EXPR (cexprs));
+            EXPRS_EXPR (cexprs) = MakeIdFromIds (DupOneIds (lhs));
 
             /*
              * Create suballoc assignment
+             *
+             * Ex:
+             *   ...
+             *   a_mem = suballoc( A, iv);
+             *   a_val = fill( copy( a), a_mem);
+             * }: a_val;
              */
             lhs = DupOneIds (arg2);
 
@@ -566,12 +621,7 @@ EMALcode (node *arg_node, info *arg_info)
                                                       INFO_EMAL_INDEXVECTOR (arg_info))),
                                           lhs),
                                  assign);
-
-            /*
-             * Substitute cexpr
-             */
-            EXPRS_EXPR (cexprs) = FreeTree (EXPRS_EXPR (cexprs));
-            EXPRS_EXPR (cexprs) = MakeIdFromIds (DupOneIds (lhs));
+            AVIS_SSAASSIGN (IDS_AVIS (lhs)) = assign;
         }
 
         als = als->next;
@@ -669,10 +719,7 @@ EMALfundef (node *fundef, info *arg_info)
     if (FUNDEF_BODY (fundef) != NULL) {
         FUNDEF_BODY (fundef) = Trav (FUNDEF_BODY (fundef), arg_info);
 
-        /*
-         * Restore SSA form
-         */
-        fundef = RestoreSSAOneFundef (fundef);
+        DBUG_EXECUTE ("EMAL", PrintNode (fundef););
     }
 
     /*
@@ -682,7 +729,7 @@ EMALfundef (node *fundef, info *arg_info)
         FUNDEF_NEXT (fundef) = Trav (FUNDEF_NEXT (fundef), arg_info);
     }
 
-    return (fundef);
+    DBUG_RETURN (fundef);
 }
 
 /** <!--******************************************************************-->
@@ -757,6 +804,7 @@ node *
 EMALlet (node *arg_node, info *arg_info)
 {
     ids *ids;
+    node *avis;
 
     DBUG_ENTER ("EMALlet");
 
@@ -780,31 +828,36 @@ EMALlet (node *arg_node, info *arg_info)
         /*
          * Wrap RHS in Fill-operation if necessary
          */
-        ids = LET_IDS (arg_node);
-
         if (INFO_EMAL_MUSTFILL (arg_info)) {
+            /*
+             * a = b + c;
+             *
+             * is transformed into
+             *
+             * a' = alloc(...);
+             * a = fill( b + c, a');
+             */
+            ids = MakeIds (TmpVarName (IDS_NAME (LET_IDS (arg_node))), NULL, ST_regular);
+
+            FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info))
+              = MakeVardec (IDS_NAME (ids),
+                            DupOneTypes (VARDEC_TYPE (IDS_VARDEC (LET_IDS (arg_node)))),
+                            FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+
+            avis = VARDEC_AVIS (FUNDEF_VARDEC (INFO_EMAL_FUNDEF (arg_info)));
+            AVIS_TYPE (avis) = TYCopyType (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))));
+
+            IDS_AVIS (ids) = avis;
+            IDS_VARDEC (ids) = AVIS_VARDECORARG (avis);
+
             LET_EXPR (arg_node)
               = MakePrf (F_fill, MakeExprs (LET_EXPR (arg_node), Ids2Exprs (ids)));
-        }
 
-        /*
-         * By setting IDS_STATUS of LHS identifiers to ST_artificial,
-         * SSATransform will mark these with SSAUNDOFLAG causing
-         * UndoSSATransform to rename these into their original identifiers:
-         *
-         * Before UndoSSATransform:
-         * a' = fill( ..., a);
-         *
-         * After UndoSSATransform:
-         * a  = fill( ..., a);
-         */
-        while (ids != NULL) {
-            if (AlloclistContains (INFO_EMAL_ALLOCLIST (arg_info), IDS_AVIS (ids))) {
-                IDS_STATUS (ids) = ST_artificial;
-            }
-            ids = IDS_NEXT (ids);
+            /*
+             * Set the avis of the freshly allocated variable
+             */
+            INFO_EMAL_ALLOCLIST (arg_info)->avis = avis;
         }
-
         INFO_EMAL_MUSTFILL (arg_info) = FALSE;
     }
 
