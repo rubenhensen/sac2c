@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2004/12/13 18:43:47  ktr
+ * NT2OTwithid will only perform syntax tree modification as long as
+ * withid is given by N_ids nodes ( before explicit allocation)
+ *
  * Revision 1.28  2004/12/08 18:00:11  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -556,27 +560,34 @@ NT2OTwithid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NT2OTwithid");
 
-    vec_type = AVIS_TYPE (IDS_AVIS (WITHID_VEC (arg_node)));
-    vec_type = TYfixAndEliminateAlpha (vec_type);
+    /*
+     * The following code will only work before explicit allocation
+     * where WITHID variables are given by N_ids nodes
+     */
+    if (NODE_TYPE (WITHID_VEC (arg_node)) == N_ids) {
+        vec_type = AVIS_TYPE (IDS_AVIS (WITHID_VEC (arg_node)));
+        vec_type = TYfixAndEliminateAlpha (vec_type);
 
-    if (WITHID_IDS (arg_node) == NULL) {
-        if (TYisAKS (vec_type)) {
-            DBUG_PRINT ("NT2OT",
-                        ("WITHID_IDS for %s built", IDS_NAME (WITHID_VEC (arg_node))));
-            num_vars = SHgetExtent (TYgetShape (vec_type), 0);
-            new_ids = NULL;
-            new_vardecs = INFO_NT2OT_VARDECS (arg_info);
-            for (i = 0; i < num_vars; i++) {
-                tmp_avis = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
-                                                                 SHcreateShape (0)));
-                new_vardecs = TBmakeVardec (tmp_avis, new_vardecs);
-                new_ids = TBmakeIds (tmp_avis, new_ids);
+        if (WITHID_IDS (arg_node) == NULL) {
+            if (TYisAKS (vec_type)) {
+                DBUG_PRINT ("NT2OT", ("WITHID_IDS for %s built",
+                                      IDS_NAME (WITHID_VEC (arg_node))));
+                num_vars = SHgetExtent (TYgetShape (vec_type), 0);
+                new_ids = NULL;
+                new_vardecs = INFO_NT2OT_VARDECS (arg_info);
+                for (i = 0; i < num_vars; i++) {
+                    tmp_avis
+                      = TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+                                                              SHcreateShape (0)));
+                    new_vardecs = TBmakeVardec (tmp_avis, new_vardecs);
+                    new_ids = TBmakeIds (tmp_avis, new_ids);
+                }
+                WITHID_IDS (arg_node) = new_ids;
+                INFO_NT2OT_VARDECS (arg_info) = new_vardecs;
+            } else {
+                DBUG_PRINT ("NT2OT", ("no WITHID_IDS for %s built",
+                                      IDS_NAME (WITHID_VEC (arg_node))));
             }
-            WITHID_IDS (arg_node) = new_ids;
-            INFO_NT2OT_VARDECS (arg_info) = new_vardecs;
-        } else {
-            DBUG_PRINT ("NT2OT",
-                        ("no WITHID_IDS for %s built", IDS_NAME (WITHID_VEC (arg_node))));
         }
     }
 
