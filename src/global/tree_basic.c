@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.74  1998/05/30 15:41:43  dkr
+ * added some ICM_INDENT cases
+ *
  * Revision 1.73  1998/05/28 23:55:58  dkr
  * in MakeIcm:
  *   added some ICM_INDENTs
@@ -1418,7 +1421,11 @@ MakeIcm (char *name, node *args, node *next)
         ICM_INDENT (tmp) = 1;
     else if (strcmp (name, "WL_STRIDE_LOOP_BEGIN") == 0)
         ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_STRIDE_UNROLL_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
     else if (strcmp (name, "WL_GRID_LOOP_BEGIN") == 0)
+        ICM_INDENT (tmp) = 1;
+    else if (strcmp (name, "WL_GRID_UNROLL_BEGIN") == 0)
         ICM_INDENT (tmp) = 1;
     else if (strcmp (name, "WL_BLOCK_LOOP_END") == 0)
         ICM_INDENT (tmp) = -1;
@@ -1426,7 +1433,11 @@ MakeIcm (char *name, node *args, node *next)
         ICM_INDENT (tmp) = -1;
     else if (strcmp (name, "WL_STRIDE_LOOP_END") == 0)
         ICM_INDENT (tmp) = -1;
+    else if (strcmp (name, "WL_STRIDE_UNROLL_END") == 0)
+        ICM_INDENT (tmp) = -1;
     else if (strcmp (name, "WL_GRID_LOOP_END") == 0)
+        ICM_INDENT (tmp) = -1;
+    else if (strcmp (name, "WL_GRID_UNROLL_END") == 0)
         ICM_INDENT (tmp) = -1;
     else if (strcmp (name, "WL_END") == 0)
         ICM_INDENT (tmp) = -1;
