@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  1998/04/11 15:16:54  srs
+ * inserted DupNwith()
+ *
  * Revision 1.22  1998/04/09 21:20:57  dkr
  * renamed macros:
  *   INLINE -> DUP_INLINE
@@ -132,6 +135,7 @@ extern node *DupPragma (node *arg_node, node *arg_info);
 extern node *DupConc (node *arg_node, node *arg_info);
 
 /* new with-loop */
+extern node *DupNwith (node *arg_node, node *arg_info);
 extern node *DupNwithop (node *arg_node, node *arg_info);
 extern node *DupNpart (node *arg_node, node *arg_info);
 extern node *DupNwithid (node *arg_node, node *arg_info);
