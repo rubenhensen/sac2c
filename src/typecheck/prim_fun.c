@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.36  1999/01/07 17:53:53  sbs
+ * some breaks were missing in GenPrimTabEntries!
+ * => rotate and friends couldn't be used from the stdlib!
+ *
  * Revision 1.35  1999/01/07 10:50:49  cg
  * The rotate function now accepts 1. arguments (rotation dimension)
  * which are not constants. However, if a constant is provided, it
@@ -464,14 +468,19 @@ GenPrimTabEntries (prf prf_old, int type_c, prf prf_new)
         break;
     case F_psi:
         intrinsic = (INTRINSIC_PSI & intrinsics);
+        break;
     case F_take:
         intrinsic = (INTRINSIC_TAKE & intrinsics);
+        break;
     case F_drop:
         intrinsic = (INTRINSIC_DROP & intrinsics);
+        break;
     case F_cat:
         intrinsic = (INTRINSIC_CAT & intrinsics);
+        break;
     case F_rotate:
         intrinsic = (INTRINSIC_ROT & intrinsics);
+        break;
     default:
         intrinsic = 1;
     }
