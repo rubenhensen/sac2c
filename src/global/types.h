@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  1998/03/26 18:05:10  srs
+ * modified struct WL_INFO
+ *
  * Revision 1.26  1998/03/17 11:23:11  srs
  * added comments to WL_INFO
  *
@@ -352,6 +355,7 @@ typedef struct WL_INFO {
     int parts;           /* number of N_part nodes */
     int complex;         /* indicator of fold complexity */
     int foldable;        /* has constant generator */
+    int no_chance;       /* 1 if WL is defined within loop/cond */
 } wl_info;
 
 typedef struct FUN_NAME {
