@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2001/03/27 21:40:53  dkr
+ * MakeWLseg() modified
+ *
  * Revision 3.25  2001/03/27 18:25:39  dkr
  * argument of MakeBool() is of type 'bool' now
  *
@@ -30,7 +33,6 @@
  *
  * Revision 3.16  2001/02/15 16:59:03  nmw
  * node N_ssastack added
- * ,
  *
  * Revision 3.15  2001/02/14 15:05:35  dkr
  * ATTRIB/STATUS are always initialized now.
@@ -85,9 +87,6 @@
  * new release made
  *
  * [...]
- *
- * Revision 1.1  1995/09/27  15:13:12  cg
- * Initial revision
  *
  */
 
@@ -1741,16 +1740,15 @@ MakeWLseg (int dims, node *contents, node *next)
     WLSEG_CONTENTS (new_node) = contents;
     WLSEG_NEXT (new_node) = next;
 
-    WLSEG_IDX_MIN (new_node) = NULL;
-    WLSEG_IDX_MAX (new_node) = NULL;
-
     WLSEG_BLOCKS (new_node) = 0;
     for (b = 0; b < WLSEG_BLOCKS (new_node); b++) {
-        WLSEG_BV (new_node, b) = NULL;
+        MALLOC_INIT_VECT (WLSEG_BV (new_node, b), WLSEGX_DIMS (new_node), int, 1);
     }
-    WLSEG_UBV (new_node) = NULL;
+    MALLOC_INIT_VECT (WLSEG_UBV (new_node), WLSEGX_DIMS (new_node), int, 1);
 
     WLSEG_SV (new_node) = NULL;
+    WLSEG_IDX_MIN (new_node) = NULL;
+    WLSEG_IDX_MAX (new_node) = NULL;
 
     /*
      * By default, no dimension is homogenious. Since dimensions are counted
