@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/10/01 16:40:31  cg
+ * Revision 1.4  1995/10/06 17:19:36  cg
+ * functions InsertNode InsertNodes and InsertUnresolvedNodes for dealing with
+ * type nodelist added.
+ *
+ * Revision 1.3  1995/10/01  16:40:31  cg
  * function SearchFundef added.
  *
  * Revision 1.2  1995/10/01  13:04:32  cg
@@ -203,6 +207,67 @@ extern int CountNums (nums *numsp);
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***  NODELIST :
+ ***/
+
+/*
+ *
+ *  functionname  : InsertNode
+ *  arguments     : 1) pointer to node which has to be inserted
+ *                  2) pointer to nodelist
+ *  description   : inserts a given node at the end of a nodelist and
+ *                  returns a pointer to the extended nodelist.
+ *                  If node is already a member of the nodelist, then
+ *                  the list is returned unchanged.
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+extern nodelist *InsertNode (node *, nodelist *);
+
+/*
+ *
+ *  functionname  : InsertNodes
+ *  arguments     : 1) list of nodes
+ *                  2) list of nodes
+ *  description   : inserts each node of the first list into the second one
+ *  global vars   : ---
+ *  internal funs : InsertNode
+ *  external funs : ---
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+extern nodelist *InsertNodes (nodelist *inserts, nodelist *list);
+
+/*
+ *
+ *  functionname  : InsertUnresolvedNodes
+ *  arguments     : 1) list of nodes
+ *                  2) list of nodes
+ *  description   : inserts all those nodes of the first list into the
+ *                  second one which have attribute 'unresolved'.
+ *  global vars   : ---
+ *  internal funs : InsertNode
+ *  external funs : ---
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+extern nodelist *InsertUnresolvedNodes (nodelist *inserts, nodelist *list);
+
+/*--------------------------------------------------------------------------*/
+
+/***
  ***  OTHERS :
  ***/
 
@@ -400,6 +465,9 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
 #define FUNDEF_SHPSEG(n) (TYPES_SHPSEG (FUNDEF_TYPES (n)))
 #define FUNDEF_TNAME(n) (TYPES_NAME (FUNDEF_TYPES (n)))
 #define FUNDEF_TMOD(n) (TYPES_MOD (FUNDEF_TYPES (n)))
+
+#define FUNDEF_NEEDFUNS(n) (BLOCK_NEEDFUNS (FUNDEF_BODY (n)))
+#define FUNDEF_NEEDTYPES(n) (BLOCK_NEEDTYPES (FUNDEF_BODY (n)))
 
 /*
  *

@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/10/01 16:40:31  cg
+ * Revision 1.4  1995/10/06 17:19:36  cg
+ * functions InsertNode InsertNodes and InsertUnresolvedNodes for dealing with
+ * type nodelist added.
+ *
+ * Revision 1.3  1995/10/01  16:40:31  cg
  * function SearchFundef added.
  *
  * Revision 1.2  1995/10/01  13:04:32  cg
@@ -207,4 +211,58 @@ MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2)
     }
 
     DBUG_RETURN (new);
+}
+
+nodelist *
+InsertNode (node *insert, nodelist *list)
+{
+    nodelist *act, *last;
+
+    DBUG_ENTER ("InsertNode");
+
+    if (list == NULL) {
+        list = MakeNodelist (insert, ST_artificial, NULL);
+    } else {
+        act = list;
+        last = list;
+
+        while ((act != NULL) && (NODELIST_NODE (act) != insert)) {
+            last = act;
+            act = NODELIST_NEXT (act);
+        }
+
+        if (act == NULL) {
+            NODELIST_NEXT (last) = MakeNodelist (insert, ST_artificial, NULL);
+        }
+    }
+
+    DBUG_RETURN (list);
+}
+
+nodelist *
+InsertNodes (nodelist *inserts, nodelist *list)
+{
+    DBUG_ENTER ("InsertNodes");
+
+    while (inserts != NULL) {
+        list = InsertNode (NODELIST_NODE (inserts), list);
+        inserts = NODELIST_NEXT (inserts);
+    }
+
+    DBUG_RETURN (list);
+}
+
+nodelist *
+InsertUnresolvedNodes (nodelist *inserts, nodelist *list)
+{
+    DBUG_ENTER ("InsertNodes");
+
+    while (inserts != NULL) {
+        if (NODELIST_ATTRIB (inserts) == ST_unresolved) {
+            list = InsertNode (NODELIST_NODE (inserts), list);
+        }
+        inserts = NODELIST_NEXT (inserts);
+    }
+
+    DBUG_RETURN (list);
 }
