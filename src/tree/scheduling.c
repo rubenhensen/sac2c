@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2003/04/14 14:16:56  sbs
+ * second parameter for va_start created in SCHMakeScheduling.
+ *
  * Revision 3.35  2003/04/14 13:54:07  sbs
  * header file stdarg.h used instead of varargs.h which is not
  * available under Linux.
@@ -426,7 +429,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
 /******************************************************************************
  *
  * function:
- *   sched_t *SCHMakeScheduling( va_alist)
+ *   sched_t *SCHMakeScheduling( char *discipline, ...)
  *
  * description:
  *   This may be used to generate arbitray schedulings. The first paramter in
@@ -441,7 +444,8 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
  *
  ******************************************************************************/
 
-sched_t *SCHMakeScheduling (va_alist) va_dcl
+sched_t *
+SCHMakeScheduling (char *discipline, ...)
 {
     va_list args;
     char *discipline, *arg_spec, *tmp_id;
@@ -450,8 +454,7 @@ sched_t *SCHMakeScheduling (va_alist) va_dcl
 
     DBUG_ENTER ("MakeScheduling");
 
-    va_start (args);
-    discipline = va_arg (args, char *);
+    va_start (args, discipline);
 
     disc_no = 0;
 
