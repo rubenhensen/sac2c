@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2001/03/28 19:54:33  dkr
+ * NodeOrInt functions modified
+ *
  * Revision 3.26  2001/03/28 14:53:49  dkr
  * CHECK_NULL moved from tree_compound.h to internal_lib.h
  *
@@ -1933,6 +1936,12 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
                            : ((NODE_TYPE (n) == N_WLgridVar) ? WLGRIDVAR_NOOP (n)        \
                                                              : FALSE))))))
 
+/*
+ * functions for NodeOrInt
+ */
+
+extern bool NameOrVal_CheckConsistency (char *name, int val);
+
 extern void NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt,
                                     void *node_or_int);
 extern void NodeOrInt_SetNameOrVal (char *name, int val, nodetype nt, void *node_or_int);
@@ -1945,15 +1954,15 @@ extern node *NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name,
 extern node *NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, char *wl_name,
                                   bool no_num, bool no_icm);
 
-extern bool NameOrVal_Eq (char *name1, int val1, char *name2, int val2);
+extern bool NameOrVal_Eq (char *name1, int val1, char *name2, int val2, int shape);
 extern bool NodeOrInt_Eq (nodetype nt1, void *node_or_int1, nodetype nt2,
-                          void *node_or_int2);
-extern bool NodeOrInt_IntEq (nodetype nt1, void *node_or_int1, int val2);
-extern bool NodeOrInt_StrEq (nodetype nt1, void *node_or_int1, char *name2);
+                          void *node_or_int2, int shape);
+extern bool NodeOrInt_IntEq (nodetype nt1, void *node_or_int1, int val2, int shape);
+extern bool NodeOrInt_StrEq (nodetype nt1, void *node_or_int1, char *name2, int shape);
 
-extern bool NameOrVal_Le (char *name1, int val1, char *name2, int val2);
+extern bool NameOrVal_Le (char *name1, int val1, char *name2, int val2, int shape);
 extern bool NodeOrInt_Le (nodetype nt1, void *node_or_int1, nodetype nt2,
-                          void *node_or_int2);
+                          void *node_or_int2, int shape);
 
 /*--------------------------------------------------------------------------*/
 

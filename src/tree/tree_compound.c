@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2001/03/28 19:54:19  dkr
+ * NodeOrInt functions modified
+ *
  * Revision 3.23  2001/03/28 14:56:31  dkr
  * NodeOrInt_SetNameOrVal added
  *
@@ -2894,6 +2897,31 @@ MakeWLsegX (int dims, node *contents, node *next)
 /******************************************************************************
  *
  * Function:
+ *   bool NameOrVal_CheckConsistency( char *name, int val)
+ *
+ * Description:
+ *   Checks whether  (name != NULL) <-> (val == IDX_OTHER)  is hold.
+ *
+ ******************************************************************************/
+
+bool
+NameOrVal_CheckConsistency (char *name, int val)
+{
+    bool res;
+
+    DBUG_ENTER ("NameOrVal");
+
+    res = (((name != NULL) && (val == IDX_OTHER))
+           || ((name == NULL) && (val != IDX_OTHER)));
+
+    DBUG_ASSERT ((res), "Consistency check for NameOrVal failed!");
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   void NodeOrInt_GetNameOrVal( char **ret_name, int *ret_val,
  *                                nodetype nt, void *node_or_int)
  *
@@ -2994,7 +3022,8 @@ NodeOrInt_SetNameOrVal (char *name, int val, nodetype nt, void *node_or_int)
 /******************************************************************************
  *
  * Function:
- *   node *NameOrVal_MakeNode( char *name, int val, void *node_or_int)
+ *   node *NameOrVal_MakeNode( char *name, int val,
+ *                             void *node_or_int)
  *
  * Description:
  *
@@ -3007,6 +3036,8 @@ NameOrVal_MakeNode (char *name, int val, void *node_or_int)
     node *ret = FALSE;
 
     DBUG_ENTER ("NameOrVal_MakeNode");
+
+    NameOrVal_CheckConsistency (name, val);
 
     if (val != IDX_OTHER) {
         ret = MakeNum (val);
@@ -3089,6 +3120,8 @@ NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name, bool no_num,
 
     DBUG_ENTER ("NodeOrVal_MakeIndex");
 
+    NameOrVal_CheckConsistency (name, val);
+
     if (name == NULL) {
         if (val == IDX_SHAPE) {
             if (no_icm) {
@@ -3149,25 +3182,47 @@ NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, char *wl_name, boo
 /******************************************************************************
  *
  * Function:
- *   bool NameOrVal_Eq( char *name1, int val1, char *name2, int val2)
+ *   bool NameOrVal_Eq( char *name1, int val1,
+ *                      char *name2, int val2,
+ *                      int shape)
  *
  * Description:
  *   This function is used to compare two parameters of N_WLstride(Var)
  *   or N_WLgrid(Var) nodes.
  *
+ *   'shape' denotes the shape component of the current dimension.
+ *   If the concrete value of the shape is unknown (i.e. dynamically shaped
+ *   or fold with-loop) 'shape' must equal IDX_SHAPE.
+ *
  ******************************************************************************/
 
 bool
-NameOrVal_Eq (char *name1, int val1, char *name2, int val2)
+NameOrVal_Eq (char *name1, int val1, char *name2, int val2, int shape)
 {
     bool ret = FALSE;
 
     DBUG_ENTER ("NameOrVal_Eq");
 
+    DBUG_ASSERT (((shape >= 0) || (shape == IDX_SHAPE)), "illegal shape found!");
+
+    NameOrVal_CheckConsistency (name1, val1);
+    NameOrVal_CheckConsistency (name2, val2);
+
     if ((val1 != IDX_OTHER) && (val2 != IDX_OTHER)) {
+        if (val1 == IDX_SHAPE) {
+            /*
+             * here we deal with the situation
+             *   val1 == shape == 16, val == IDX_SHAPE
+             */
+            val1 = IDX_SHAPE;
+        }
+        if (val2 == IDX_SHAPE) {
+            val2 = IDX_SHAPE;
+        }
+
         ret = (val1 == val2);
     } else if ((name1 != NULL) && (name2 != NULL)) {
-        ret = (strcmp (name1, name2) == 0);
+        ret = (!strcmp (name1, name2));
     }
 
     DBUG_RETURN (ret);
@@ -3177,16 +3232,22 @@ NameOrVal_Eq (char *name1, int val1, char *name2, int val2)
  *
  * Function:
  *   bool NodeOrInt_Eq( nodetype nt1, void *node_or_int1,
- *                      nodetype nt2, void *node_or_int2)
+ *                      nodetype nt2, void *node_or_int2,
+ *                      int shape)
  *
  * Description:
  *   This function is used to compare two parameters of N_WLstride(Var)
  *   or N_WLgrid(Var) nodes.
  *
+ *   'shape' denotes the shape component of the current dimension.
+ *   If the concrete value of the shape is unknown (i.e. dynamically shaped
+ *   or fold with-loop) it must be set to IDX_SHAPE.
+ *
  ******************************************************************************/
 
 bool
-NodeOrInt_Eq (nodetype nt1, void *node_or_int1, nodetype nt2, void *node_or_int2)
+NodeOrInt_Eq (nodetype nt1, void *node_or_int1, nodetype nt2, void *node_or_int2,
+              int shape)
 {
     char *name1, *name2;
     int val1, val2;
@@ -3196,7 +3257,7 @@ NodeOrInt_Eq (nodetype nt1, void *node_or_int1, nodetype nt2, void *node_or_int2
 
     NodeOrInt_GetNameOrVal (&name1, &val1, nt1, node_or_int1);
     NodeOrInt_GetNameOrVal (&name2, &val2, nt2, node_or_int2);
-    ret = NameOrVal_Eq (name1, val1, name2, val2);
+    ret = NameOrVal_Eq (name1, val1, name2, val2, shape);
 
     DBUG_RETURN (ret);
 }
@@ -3204,16 +3265,22 @@ NodeOrInt_Eq (nodetype nt1, void *node_or_int1, nodetype nt2, void *node_or_int2
 /******************************************************************************
  *
  * Function:
- *   bool NodeOrInt_IntEq( nodetype nt1, void *node_or_int1, int val2)
+ *   bool NodeOrInt_IntEq( nodetype nt1, void *node_or_int1,
+ *                         int val2,
+ *                         int shape)
  *
  * Description:
  *   This function is used to compare a parameters of a N_WLstride(Var)
  *   or N_WLgrid(Var) node with an integer value.
  *
+ *   'shape' denotes the shape component of the current dimension.
+ *   If the concrete value of the shape is unknown (i.e. dynamically shaped
+ *   or fold with-loop) it must be set to IDX_SHAPE.
+ *
  ******************************************************************************/
 
 bool
-NodeOrInt_IntEq (nodetype nt1, void *node_or_int1, int val2)
+NodeOrInt_IntEq (nodetype nt1, void *node_or_int1, int val2, int shape)
 {
     char *name1;
     int val1;
@@ -3222,7 +3289,7 @@ NodeOrInt_IntEq (nodetype nt1, void *node_or_int1, int val2)
     DBUG_ENTER ("NodeOrInt_IntEq");
 
     NodeOrInt_GetNameOrVal (&name1, &val1, nt1, node_or_int1);
-    ret = NameOrVal_Eq (name1, val1, NULL, val2);
+    ret = NameOrVal_Eq (name1, val1, NULL, val2, shape);
 
     DBUG_RETURN (ret);
 }
@@ -3230,16 +3297,22 @@ NodeOrInt_IntEq (nodetype nt1, void *node_or_int1, int val2)
 /******************************************************************************
  *
  * Function:
- *   bool NodeOrInt_StrEq( nodetype nt1, void *node_or_int1, char *name2)
+ *   bool NodeOrInt_StrEq( nodetype nt1, void *node_or_int1,
+ *                         char *name2,
+ *                         int shape)
  *
  * Description:
  *   This function is used to compare a parameters of a N_WLstride(Var)
  *   or N_WLgrid(Var) node with a string.
  *
+ *   'shape' denotes the shape component of the current dimension.
+ *   If the concrete value of the shape is unknown (i.e. dynamically shaped
+ *   or fold with-loop) it must be set to IDX_SHAPE.
+ *
  ******************************************************************************/
 
 bool
-NodeOrInt_StrEq (nodetype nt1, void *node_or_int1, char *name2)
+NodeOrInt_StrEq (nodetype nt1, void *node_or_int1, char *name2, int shape)
 {
     char *name1;
     int val1;
@@ -3248,7 +3321,7 @@ NodeOrInt_StrEq (nodetype nt1, void *node_or_int1, char *name2)
     DBUG_ENTER ("NodeOrInt_StrEq");
 
     NodeOrInt_GetNameOrVal (&name1, &val1, nt1, node_or_int1);
-    ret = NameOrVal_Eq (name1, val1, name2, IDX_OTHER);
+    ret = NameOrVal_Eq (name1, val1, name2, IDX_OTHER, shape);
 
     DBUG_RETURN (ret);
 }
@@ -3256,23 +3329,29 @@ NodeOrInt_StrEq (nodetype nt1, void *node_or_int1, char *name2)
 /******************************************************************************
  *
  * Function:
- *   bool NameOrVal_Le( char *name1, int val1, char *name2, int val2)
+ *   bool NameOrVal_Le( char *name1, int val1,
+ *                      char *name2, int val2,
+ *                      int shape)
  *
  * Description:
  *   This function is used to compare two parameters of N_WLstride(Var)
  *   or N_WLgrid(Var) nodes.
  *
+ *   'shape' denotes the shape component of the current dimension.
+ *   If the concrete value of the shape is unknown (i.e. dynamically shaped
+ *   or fold with-loop) 'shape' must equal IDX_SHAPE.
+ *
  ******************************************************************************/
 
 bool
-NameOrVal_Le (char *name1, int val1, char *name2, int val2)
+NameOrVal_Le (char *name1, int val1, char *name2, int val2, int shape)
 {
     bool ret;
 
     DBUG_ENTER ("NameOrVal_Le");
 
-    ret = NameOrVal_Eq (name1, val1, name2, val2);
-    if ((val1 == 0) || (val2 == IDX_SHAPE)
+    ret = NameOrVal_Eq (name1, val1, name2, val2, shape);
+    if ((val1 == 0) || (val2 == IDX_SHAPE) || (val2 == shape)
         || ((val2 > 0) && (val1 > 0) && (val1 < val2))) {
         ret = TRUE;
     }
@@ -3288,16 +3367,22 @@ NameOrVal_Le (char *name1, int val1, char *name2, int val2)
  *
  * Function:
  *   bool NodeOrInt_Le( nodetype nt1, void *node_or_int1,
- *                      nodetype nt2, void *node_or_int2)
+ *                      nodetype nt2, void *node_or_int2,
+ *                      int shape)
  *
  * Description:
  *   This function is used to compare two parameters of N_WLstride(Var)
  *   or N_WLgrid(Var) nodes.
  *
+ *   'shape' denotes the shape component of the current dimension.
+ *   If the concrete value of the shape is unknown (i.e. dynamically shaped
+ *   or fold with-loop) 'shape' must equal IDX_SHAPE.
+ *
  ******************************************************************************/
 
 bool
-NodeOrInt_Le (nodetype nt1, void *node_or_int1, nodetype nt2, void *node_or_int2)
+NodeOrInt_Le (nodetype nt1, void *node_or_int1, nodetype nt2, void *node_or_int2,
+              int shape)
 {
     char *name1, *name2;
     int val1, val2;
@@ -3307,7 +3392,7 @@ NodeOrInt_Le (nodetype nt1, void *node_or_int1, nodetype nt2, void *node_or_int2
 
     NodeOrInt_GetNameOrVal (&name1, &val1, nt1, node_or_int1);
     NodeOrInt_GetNameOrVal (&name2, &val2, nt2, node_or_int2);
-    ret = NameOrVal_Le (name1, val1, name2, val2);
+    ret = NameOrVal_Le (name1, val1, name2, val2, shape);
 
     DBUG_RETURN (ret);
 }
