@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.4  2000/10/09 19:17:52  dkr
+ * CreatePseudoFoldFun():
+ *   tmp-var used in body of fold-fun
+ *
  * Revision 2.3  2000/07/12 15:13:33  dkr
  * function DuplicateTypes renamed into DupTypes
  *
@@ -47,7 +51,7 @@
  * function:
  *   node *CreatePseudoFoldFun( types *elem_type,
  *                              char *fold_fun,
- *                              prf   fold_prf,
+ *                              prf fold_prf,
  *                              char *res_var,
  *                              char *body_expr)
  *
@@ -57,7 +61,8 @@
  *      <elem_type> _FOLD: _type_<n>_<mod>__<fold_fun>( <elem_type> <res_var>,
  *                                                      <elem_type> <body_expr>)
  *      {
- *        <res_var> = <fold_fun>( <res_var>, <body_expr>);
+ *        tmp__<res_var> = <fold_fun>( <res_var>, <body_expr>)
+ *        <res_var> = tmp__<res_var>;
  *        return( <res_var>);
  *      }
  *    NOTE, that all(!) arguments are NOT inserted in the new AST!
@@ -66,14 +71,13 @@
  *    for the arguments!
  *    NOTE as well, that fold_prf is valid  iff  (fold_fun == NULL)
  *
- *
  ******************************************************************************/
 
 node *
 CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_var,
                      char *body_expr)
 {
-    char *pseudo_fold_fun, *buffer;
+    char *pseudo_fold_fun, *buffer, *tmp_res_var;
     node *new_fundef, *application, *args;
 
     DBUG_ENTER ("CreatePseudoFoldFun");
@@ -104,25 +108,28 @@ CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_v
     strcat (buffer, pseudo_fold_fun);
     pseudo_fold_fun = TmpVarName (buffer);
     FREE (buffer);
+    tmp_res_var = TmpVarName (res_var);
 
-    new_fundef
-      = MakeFundef (pseudo_fold_fun, PSEUDO_MOD_FOLD, DupTypes (elem_type),
-                    MakeArg (StringCopy (res_var), DupTypes (elem_type), ST_regular,
-                             ST_regular,
-                             MakeArg (StringCopy (body_expr), DupTypes (elem_type),
-                                      ST_regular, ST_regular, NULL)),
-                    MakeBlock (MakeAssign (MakeLet (application,
-                                                    MakeIds (StringCopy (res_var), NULL,
-                                                             ST_regular)),
-                                           MakeAssign (MakeReturn (
-                                                         MakeExprs (MakeId (StringCopy (
-                                                                              res_var),
-                                                                            NULL,
-                                                                            ST_regular),
-                                                                    NULL)),
-                                                       NULL)),
-                               NULL),
-                    NULL);
+    new_fundef = MakeFundef (
+      pseudo_fold_fun, PSEUDO_MOD_FOLD, DupTypes (elem_type),
+      MakeArg (StringCopy (res_var), DupTypes (elem_type), ST_regular, ST_regular,
+               MakeArg (StringCopy (body_expr), DupTypes (elem_type), ST_regular,
+                        ST_regular, NULL)),
+      MakeBlock (MakeAssign (MakeLet (application,
+                                      MakeIds (tmp_res_var, NULL, ST_regular)),
+                             MakeAssign (MakeLet (MakeId (StringCopy (tmp_res_var), NULL,
+                                                          ST_regular),
+                                                  MakeIds (StringCopy (res_var), NULL,
+                                                           ST_regular)),
+                                         MakeAssign (MakeReturn (
+                                                       MakeExprs (MakeId (StringCopy (
+                                                                            res_var),
+                                                                          NULL,
+                                                                          ST_regular),
+                                                                  NULL)),
+                                                     NULL))),
+                 NULL),
+      NULL);
     FUNDEF_STATUS (new_fundef) = ST_foldfun;
 
     DBUG_RETURN (new_fundef);
