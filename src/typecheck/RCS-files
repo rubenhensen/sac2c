@@ -33,6 +33,8 @@ ssi.h
 type_constructor_info.mac
 type_errors.c
 type_errors.h
+type_statistics.c
+type_statistics.h
 typecheck.c
 typecheck.h
 typecheck_WL.c
