@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  1998/04/14 22:50:16  dkr
+ * *** empty log message ***
+ *
  * Revision 1.23  1998/04/11 15:16:54  srs
  * inserted DupNwith()
  *
@@ -117,7 +120,6 @@ extern node *DupChar (node *arg_node, node *arg_info);
 extern node *DupFloat (node *arg_node, node *arg_info);
 extern node *DupDouble (node *arg_node, node *arg_info);
 extern node *DupStr (node *arg_node, node *arg_info);
-extern ids *DupIds (ids *ids, node *arg_info);
 extern node *DupModarray (node *arg_node, node *arg_info);
 extern node *DupId (node *arg_node, node *arg_info);
 extern node *DupCond (node *arg_node, node *arg_info);
@@ -125,7 +127,6 @@ extern node *DupLoop (node *arg_node, node *arg_info);
 extern node *DupChain (node *arg_node, node *arg_info);
 extern node *DupAssign (node *arg_node, node *arg_info);
 extern node *DupTypes (node *arg_node, node *arg_info);
-extern shpseg *DupShpSeg (shpseg *shp_seg);
 extern node *DupPrf (node *arg_node, node *arg_info);
 extern node *DupFun (node *arg_node, node *arg_info);
 extern node *DupFundef (node *arg_node, node *arg_info);
@@ -148,5 +149,8 @@ extern node *DupWLstride (node *arg_node, node *arg_info);
 extern node *DupWLgrid (node *arg_node, node *arg_info);
 extern node *DupWLstriVar (node *arg_node, node *arg_info);
 extern node *DupWLgridVar (node *arg_node, node *arg_info);
+
+extern ids *DupIds (ids *ids, node *arg_info);
+extern shpseg *DupShpSeg (shpseg *shp_seg);
 
 #endif /* _sac_DupTree_h */
