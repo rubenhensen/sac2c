@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.193  1998/11/08 15:10:42  dkr
+ * changed representation of empty assignment blocks in with-loops:
+ *  - NCODE_CBLOCK contains always an N_block node
+ *  - empty blocks contain a N_empty node only
+ *
  * Revision 1.192  1998/10/29 20:37:00  dkr
  * signature of WL_FOLD_NOOP changed
  *
@@ -17,10 +22,7 @@
  * Revision 1.188  1998/08/11 00:14:46  dkr
  * unused vars removed
  *
- * Revision 1.187  1998/08/11 00:08:12  dkr
- * *** empty log message ***
- *
- * Revision 1.186  1998/08/10 17:45:32  cg
+ * * Revision 1.186  1998/08/10 17:45:32  cg
  * Bug fixed in generation of ICM MT_ADJUST_SCHEDULER
  *
  * Revision 1.184  1998/08/07 19:46:47  dkr
@@ -6806,19 +6808,28 @@ COMPNcode (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPNcode");
 
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+
     /*
      * build a 'ND_INC_RC'-ICM for each ids in 'NCODE_INC_RC_IDS( arg_node)'.
      */
     icm_assigns = MakeIncRcICMs (NCODE_INC_RC_IDS (arg_node));
 
-    /*
-     * insert these ICMs as first statement into the code-block
-     */
-    if (NCODE_CBLOCK (arg_node) != NULL) {
-        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    if (icm_assigns != NULL) {
+        /*
+         * insert these ICMs as first statement into the code-block
+         */
+        if (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (arg_node))) == N_empty) {
+            /*
+             * remove a N_empty node
+             */
+            BLOCK_INSTR (NCODE_CBLOCK (arg_node))
+              = FreeTree (BLOCK_INSTR (NCODE_CBLOCK (arg_node)));
+        }
         BLOCK_INSTR (NCODE_CBLOCK (arg_node))
           = AppendAssign (icm_assigns, BLOCK_INSTR (NCODE_CBLOCK (arg_node)));
     }
+
     if (NCODE_NEXT (arg_node) != NULL) {
         NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
     }
@@ -7458,7 +7469,10 @@ COMPWLgrid (node *arg_node, node *arg_info)
             cexpr = NCODE_CEXPR (WLGRID_CODE (arg_node));
             DBUG_ASSERT ((cexpr != NULL), "no code expr found");
 
-            if (NCODE_CBLOCK (WLGRID_CODE (arg_node)) != NULL) {
+            DBUG_ASSERT ((NCODE_CBLOCK (WLGRID_CODE (arg_node)) != NULL),
+                         "no code block found");
+            if (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (WLGRID_CODE (arg_node))))
+                != N_empty) {
                 assigns
                   = DupTree (BLOCK_INSTR (NCODE_CBLOCK (WLGRID_CODE (arg_node))), NULL);
             }
@@ -7921,7 +7935,10 @@ COMPWLgridVar (node *arg_node, node *arg_info)
             cexpr = NCODE_CEXPR (WLGRIDVAR_CODE (arg_node));
             DBUG_ASSERT ((cexpr != NULL), "no code expr found");
 
-            if (NCODE_CBLOCK (WLGRIDVAR_CODE (arg_node)) != NULL) {
+            DBUG_ASSERT ((NCODE_CBLOCK (WLGRIDVAR_CODE (arg_node)) != NULL),
+                         "no code block found");
+            if (NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (WLGRIDVAR_CODE (arg_node))))
+                != N_empty) {
                 assigns = DupTree (BLOCK_INSTR (NCODE_CBLOCK (WLGRIDVAR_CODE (arg_node))),
                                    NULL);
             }
