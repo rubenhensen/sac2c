@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/04/04 16:47:20  dkr
+ * FUN_DOES_REFCOUNT moved to tree_compound.h
+ *
  * Revision 3.3  2000/12/12 15:33:25  dkr
  * macro FUN_DOES_REFCOUNT corrected
  *
@@ -100,12 +103,6 @@
  */
 #define MUST_REFCOUNT(type) (IsArray (type) || IsNonUniqueHidden (type))
 #define MUST_NAIVEREFCOUNT(type) (TRUE)
-
-#define FUN_DOES_REFCOUNT(fundef, i)                                                     \
-    ((FUNDEF_STATUS (fundef) != ST_Cfun)                                                 \
-     || ((FUNDEF_PRAGMA (fundef) != NULL) && (FUNDEF_REFCOUNTING (fundef) != NULL)       \
-         && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (fundef)) > i)                              \
-         && FUNDEF_REFCOUNTING (fundef)[i]))
 
 extern node *Refcount (node *arg_node);
 
