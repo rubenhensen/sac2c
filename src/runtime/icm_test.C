@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2003/09/25 13:45:33  dkr
+ * some ICMs added
+ *
  * Revision 1.6  2003/09/22 11:59:46  dkr
  * SAC_ND_PRF_CAT__DATA added
  *
@@ -59,6 +62,11 @@ CHECK (SAC_ND_A_SHAPE ((nt, (_SHP_, (_HID_, (_UNQ_, )))), 0))
 
 CHECK (SAC_ND_READ ((nt, (_SHP_, (_HID_, (_UNQ_, )))), 0))
 CHECK (SAC_ND_WRITE ((nt, (_SHP_, (_HID_, (_UNQ_, )))), 0))
+CHECK (SAC_ND_WRITE_READ ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), 0,
+                          (from_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1))
+CHECK (SAC_ND_WRITE_COPY ((nt, (_SHP_, (_HID_, (_UNQ_, )))), 0, expr, copyfun))
+CHECK (SAC_ND_WRITE_READ_COPY ((to_nt, (_SHP_, (_HID_, (_UNQ_, )))), 0,
+                               (from_nt, (_SHP_, (_HID_, (_UNQ_, )))), 1, expr, copyfun))
 
 CHECK (SAC_ND_TYPEDEF ((nt, (_SHP_, (_HID_, (_UNQ_, )))), int))
 
