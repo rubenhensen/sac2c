@@ -5,32 +5,35 @@
 #include "dbug.h"
 #include "DupTree.h"
 
+#if 0
 /******************************************************************************
  *
  * function:
  *   int ReadOneGenPart(infile, node * ngentree)
  *
  * description:
- *
+ *   
  *
  *
  ******************************************************************************/
 
-int
-ReadOneGenPart (FILE *infile, node *id_node)
+int ReadOneGenPart(FILE * infile, node * id_node)
 {
-    node *arr_node;
-    int error = 0;
+  node * arr_node;
+  int error = 0;
 
-    DBUG_ENTER ("ReadOneGenPart");
+  DBUG_ENTER("ReadOneGenPart");
 
-    TYPES_DIM (VARDEC_TYPE (ID_VARDEC (id_node)))
-    aelems = MakeExprs ();
-    arr_node = MakeArray (aelems);
-    ARRAY_TYPE (arr_node) =
+  aelems = MakeExprs();
+  for (i = 0; TYPES_DIM(VARDEC_TYPE(ID_VARDEC(id_node))) ; i++)
 
-      DBUG_RETURN (error);
+  arr_node = MakeArray(aelems);
+  ARRAY_TYPE(arr_node) = DuplicateTypes(VARDEC_TYPE(ID_VARDEC(id_node)) ,1);
+
+  DBUG_RETURN(error);
 }
+
+
 
 /******************************************************************************
  *
@@ -38,29 +41,29 @@ ReadOneGenPart (FILE *infile, node *id_node)
  *   int ReadOneGen(FILE * infile, node * nparttree)
  *
  * description:
- *
+ *   
  *
  *
  ******************************************************************************/
 
-int
-ReadOneGen (FILE *infile, node *ngen_node)
+int ReadOneGen(FILE * infile, node * ngen_node)
 {
-    int error = 0;
+  int error = 0;
 
-    DBUG_ENTER ("ReadOneGen");
+  DBUG_ENTER("ReadOneGen");
 
-    if (!error)
-        error = ReadOneGenPart (infile, NGEN_BOUND1 (ngen_node));
-    if (!error)
-        error = ReadOneGenPart (infile, NGEN_BOUND2 (ngen_node));
-    if (!error)
-        error = ReadOneGenPart (infile, NGEN_STEP (ngen_node));
-    if (!error)
-        error = ReadOneGenPart (infile, NGEN_WIDTH (ngen_node));
+  if (! error)
+    error = ReadOneGenPart(infile, NGEN_BOUND1(ngen_node));
+  if (! error)
+    error = ReadOneGenPart(infile, NGEN_BOUND2(ngen_node));
+  if (! error)
+    error = ReadOneGenPart(infile, NGEN_STEP(ngen_node));
+  if (! error)
+    error = ReadOneGenPart(infile, NGEN_WIDTH(ngen_node));
 
-    DBUG_RETURN (error);
+  DBUG_RETURN(error);
 }
+#endif
 
 /******************************************************************************
  *
