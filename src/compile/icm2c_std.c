@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/05/12 16:38:22  cg
+ * include main.h removed
+ *
  * Revision 2.3  1999/05/05 09:12:55  jhs
  * ICMCompileND_KD_ROT_CxSxA_A changed, it can handle empty arrays now.
  *
@@ -66,7 +69,6 @@
 
 #include "dbug.h"
 #include "my_debug.h"
-#include "main.h"
 #include "convert.h"
 #include "globals.h"
 #include "print.h"

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/05/12 16:38:22  cg
+ * include main.h removed
+ *
  * Revision 2.2  1999/04/12 09:37:48  cg
  * All accesses to C arrays are now performed through the new ICMs
  * ND_WRITE_ARRAY and ND_READ_ARRAY. This allows for an integration
@@ -101,7 +104,6 @@
 
 #include "dbug.h"
 #include "my_debug.h"
-#include "main.h"
 #include "convert.h"
 #include "globals.h"
 #include "print.h"
