@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2002/09/06 09:52:40  dkr
+ * fixed a bug in ND_IDXS2OFFSET
+ *
  * Revision 3.50  2002/09/06 09:37:04  dkr
  * ND_IDXS2OFFSET added
  *
@@ -502,7 +505,7 @@ ICM_DEF( ND_IDXS2OFFSET, TRACE_PRF)
   ICM_VARNT( idxs_size, idxs_nt)
   ICM_INT( shp_size)
   ICM_VARANY( shp_size, shpa_any)
-ICM_END( ND_VECT2OFFSET, (off_nt, idxs_size, idxs_nt, shp_size, shpa_any))
+ICM_END( ND_IDXS2OFFSET, (off_nt, idxs_size, idxs_nt, shp_size, shpa_any))
 #endif
 
 
@@ -715,7 +718,7 @@ ICM_DEF( ND_IDXS2OFFSET, TRACE_PRF)
   ICM_VARID( idxs_size, idxs)
   ICM_INT( shp_size)
   ICM_VARANY( shp_size, shpa_any)
-ICM_END( ND_VECT2OFFSET, (off, idxs_size, idxs, shp_size, shpa_any))
+ICM_END( ND_IDXS2OFFSET, (off, idxs_size, idxs, shp_size, shpa_any))
 #endif
 
 
