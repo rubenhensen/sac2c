@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.23  1999/05/21 14:13:55  jhs
+ * Added Macros to SPMDO-info-node, used in spmd_opt.c.
+ *
  * Revision 2.22  1999/05/18 16:59:48  dkr
  * ID_VECTYPE changed to int_data to prevent CC-errors
  *
@@ -2164,6 +2167,12 @@ extern node *MakePragma ();
  ***    int        BELOWAP
  ***    access_t*  TMPACCESS
  ***
+ ***  when used in spmd_opt.c :
+ ***
+ ***    node*      LASTASSIGN
+ ***    node*      THISASSIGN
+ ***    node*      NEXTASSIGN
+ ***
  *** remarks:
  ***    N_info is used in many other phases without access macros :((
  ***/
@@ -2341,6 +2350,10 @@ extern node *MakeInfo ();
 #define INFO_TSI_TMPACCESS(n) ((access_t *)(n->node[2]))
 #define INFO_TSI_WLARRAY(n) (n->node[3])
 #endif
+
+#define INFO_SPMDO_LASTASSIGN(n) (n->node[0])
+#define INFO_SPMDO_THISASSIGN(n) (n->node[1])
+#define INFO_SPMDO_NEXTASSIGN(n) (n->node[2])
 /*--------------------------------------------------------------------------*/
 
 /***
