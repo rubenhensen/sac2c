@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.45  1997/03/11 16:33:57  cg
+ * Revision 1.46  1997/04/25 09:35:40  sbs
+ * () inserted in OBJDEF_LINKNAME & friends
+ *
+ * Revision 1.45  1997/03/11  16:33:57  cg
  * macro CMP_OBJ_OBJDEF rewritten. . Now, it should be possible to specify
  * >> a module name even for external modules when using a global object.
  * >> .
@@ -748,13 +751,13 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
 #define OBJDEF_TDEF(n) (TYPES_TDEF (OBJDEF_TYPE (n)))
 
 #define OBJDEF_LINKNAME(n)                                                               \
-    OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_LINKNAME (OBJDEF_PRAGMA (n))
+    (OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_LINKNAME (OBJDEF_PRAGMA (n)))
 
 #define OBJDEF_INITFUN(n)                                                                \
-    OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_INITFUN (OBJDEF_PRAGMA (n))
+    (OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_INITFUN (OBJDEF_PRAGMA (n)))
 
 #define OBJDEF_EFFECT(n)                                                                 \
-    OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_EFFECT (OBJDEF_PRAGMA (n))
+    (OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_EFFECT (OBJDEF_PRAGMA (n)))
 
 /*
  *
