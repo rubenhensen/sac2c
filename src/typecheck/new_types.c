@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2002/10/30 16:10:31  dkr
+ * TYStaticDispatchWrapper() added
+ *
  * Revision 3.36  2002/10/30 13:23:59  sbs
  * handling of dot args introduced.
  *
@@ -4349,8 +4352,57 @@ ntype *
 TYSplitWrapperType (ntype *type, bool *finished)
 {
     DBUG_ENTER ("TYSplitWrapperType");
+
     *finished = TRUE;
-    DBUG_RETURN (SplitWrapperType (type, finished));
+    type = SplitWrapperType (type, finished);
+
+    DBUG_RETURN (type);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *TYStaticDispatchWrapper( node *fundef)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+TYStaticDispatchWrapper (node *fundef)
+{
+    node *disp_fundef;
+    ntype *type = FUNDEF_TYPE (fundef);
+
+    DBUG_ENTER ("TYStaticDispatchWrapper");
+
+    DBUG_ASSERT ((type != NULL), "FUNDEF_TYPE not found!");
+    if (TYGetConstr (type) == TC_prod) {
+        /*
+         * pure TC_prod type (function with no arguments)!!
+         *   -> fundef can be found in FUNDEF_IMPL (dirty hack!)
+         */
+        DBUG_ASSERT ((FUNDEF_IMPL (fundef) != NULL), "FUNDEF_IMPL not found!");
+        disp_fundef = FUNDEF_IMPL (fundef);
+    } else {
+        ntype *ires;
+
+        DBUG_ASSERT ((NTYPE_ARITY (type) == 1), "multiple FUN_IBASE found!");
+        ires = IBASE_GEN (FUN_IBASE (type, 0));
+        DBUG_ASSERT ((ires != NULL), "IBASE_GEN not found!");
+        DBUG_ASSERT ((IRES_NUMFUNS (ires) > 0), "no fundefs found in IBASE_GEN!");
+
+        if (IRES_NUMFUNS (ires) == 1) {
+            /* only one fundef -> static dispatch */
+            disp_fundef = IRES_FUNDEF (ires, 0);
+        } else {
+            /* static dispatch impossible */
+            disp_fundef = NULL;
+        }
+    }
+
+    DBUG_RETURN (disp_fundef);
 }
 
 /******************************************************************************
@@ -4459,7 +4511,8 @@ TYCreateWrapperVardecs (node *fundef)
 /******************************************************************************
  *
  * Function:
- *   node *TYCreateWrapperCode( node *fundef, node *vardecs, node **new_vardecs)
+ *   node *TYCreateWrapperCode( node *fundef, node *vardecs,
+ *                              node **new_vardecs)
  *
  * Description:
  *
@@ -5026,20 +5079,18 @@ TYCreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
 
     if (type == NULL) {
         assigns = NULL;
+    } else if (TYGetConstr (type) == TC_prod) {
+        /*
+         * pure TC_prod type (function with no arguments)!!
+         *   -> fundef can be found in FUNDEF_IMPL (dirty hack!)
+         */
+        DBUG_ASSERT ((FUNDEF_IMPL (fundef) != NULL), "FUNDEF_IMPL not found!");
+        assigns = BuildApAssign (FUNDEF_IMPL (fundef), FUNDEF_ARGS (fundef), vardecs,
+                                 new_vardecs);
     } else {
-        if (TYGetConstr (type) == TC_prod) {
-            /*
-             * pure TC_prod type (function with no arguments)!!
-             *   -> fundef can be found in FUNDEF_IMPL (dirty hack!)
-             */
-            DBUG_ASSERT ((FUNDEF_IMPL (fundef) != NULL), "FUNDEF_IMPL not found!");
-            assigns = BuildApAssign (FUNDEF_IMPL (fundef), FUNDEF_ARGS (fundef), vardecs,
-                                     new_vardecs);
-        } else {
-            assigns = CreateWrapperCode (type, NULL, 0, FUNDEF_NAME (fundef),
-                                         FUNDEF_ARGS (fundef), FUNDEF_ARGS (fundef),
-                                         vardecs, new_vardecs);
-        }
+        assigns
+          = CreateWrapperCode (type, NULL, 0, FUNDEF_NAME (fundef), FUNDEF_ARGS (fundef),
+                               FUNDEF_ARGS (fundef), vardecs, new_vardecs);
     }
 
     DBUG_RETURN (assigns);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/10/30 16:10:35  dkr
+ * TYStaticDispatchWrapper() added
+ *
  * Revision 3.12  2002/10/30 12:11:34  sbs
  * TYEliminateUser added.
  *
@@ -363,6 +366,7 @@ extern ntype *TYOldTypes2ProdType (types *old);
  * Functions for converting types into SAC code for wrapper functions
  */
 extern ntype *TYSplitWrapperType (ntype *type, bool *finished);
+extern node *TYStaticDispatchWrapper (node *fundef);
 extern ntype *TYGetWrapperRetType (ntype *type);
 extern node *TYCorrectWrapperArgTypes (node *args, ntype *type);
 extern node *TYCreateWrapperVardecs (node *fundef);
