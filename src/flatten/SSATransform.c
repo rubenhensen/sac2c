@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.22  2004/11/27 00:41:46  mwe
+ * function renaming
+ *
  * Revision 1.21  2004/11/26 12:50:08  mwe
  * changes according to changes in tree_compound.h
  *
@@ -1766,7 +1769,7 @@ SSATdoTransform (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSATdoTransformAllowGos(node *syntax_tree)
+ * @fn node *SSATdoTransformAllowGOs(node *syntax_tree)
  *
  *   @brief In principle, this is only a wrapper for SSATransform. The only
  *          difference is that it does not require all variables to be defined
@@ -1776,11 +1779,11 @@ SSATdoTransform (node *syntax_tree)
  *
  ******************************************************************************/
 node *
-SSATdoTransformAllowGos (node *syntax_tree)
+SSATdoTransformAllowGOs (node *syntax_tree)
 {
     info *arg_info;
 
-    DBUG_ENTER ("SSATdoTransformAllowGos");
+    DBUG_ENTER ("SSATdoTransformAllowGOs");
 
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  "SSATdoTransformAllowGos is used for module nodes only");
