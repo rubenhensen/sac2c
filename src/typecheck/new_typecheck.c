@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2004/09/23 18:18:56  sbs
+ * non termination detection inserted.
+ * This leads to more comprehensible error messages if lower bounds
+ * are missing after ntc itself.
+ *
  * Revision 3.44  2004/08/12 16:13:11  sbs
  * made a warning from 3.37 available again.
  *
@@ -401,6 +406,42 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
             ABORT (NODE_LINE (fundef),
                    ("component #%d of inferred return type (%s) is not within %s", i,
                     TYType2String (itype, FALSE, 0), TYType2String (stype, FALSE, 0)));
+        }
+        /**
+         * Now, we check whether we could infer at least one approximation for each
+         * return value of a function. However, we have to make shure that this is a
+         * top-level tc-run, since runs that are triggered during tc of other functions
+         * may lack approximations due to mutual recursion.
+         *
+         * Example:
+         *
+         * bool foo( bool a)
+         * {
+         *   if(  a) {
+         *     res = foo( goo( a));
+         *   } else {
+         *     res = false;
+         *   }
+         *   return( res);
+         * }
+         *
+         * bool goo( bool a)
+         * {
+         *   res = foo( _not_(a));
+         *   return( res);
+         * }
+         *
+         * When TC goo during TC foo, we will not get an approximation yet, as the
+         * else branch in foo has not yet been seen.
+         *
+         * we are in fact in the top-level function iff (act_info_chn == NULL) holds!
+         */
+        if ((act_info_chn == NULL) && TYIsAlpha (stype)
+            && (SSIGetMin (TYGetAlpha (stype)) == NULL)) {
+            ABORT (NODE_LINE (fundef),
+                   ("component #%d of inferred return type (%s) has no lower bound;"
+                    " an application of \"%s\" will not terminate",
+                    i, TYType2String (stype, FALSE, 0), FUNDEF_NAME (fundef)));
         }
     }
     TYFreeType (inf_type);
