@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/03/23 13:33:29  ben
+ *  SAC_MT_SCHEDULER_Reset_Tasks modified
+ *
  * Revision 3.13  2001/03/22 17:40:37  ben
  *  SAC_MT_DEFINE_TASKLOCKS, SAC_MT_TASKLOCK, SAC_MT_DEFINE_TASK, SAC_MT_TASK,
  * SAC_MT_SCHEDULER_Reset_Tasks added
@@ -328,11 +331,12 @@ typedef union {
 #define SAC_MT_DEFINE_SPMD_FRAME()                                                       \
     static volatile union SAC_SET_SPMD_FRAME SAC_MT_spmd_frame;
 
-#define SAC_MT_DEFINE_TASKLOCKS() pthread_mutex_t SAC_MT_Tasklock[SAC_SET_THREADS_MAX];
+#define SAC_MT_DEFINE_TASKLOCKS()                                                        \
+    pthread_mutex_t SAC_MT_Tasklock[SAC_SET_THREADS_MAX + 1];
 
 #define SAC_MT_TASKLOCK(num) SAC_MT_Tasklock[num]
 
-#define SAC_MT_DEFINE_TASK() volatile int SAC_MT_Task[SAC_SET_THREADS_MAX];
+#define SAC_MT_DEFINE_TASK() volatile int SAC_MT_Task[SAC_SET_THREADS_MAX + 1];
 
 #define SAC_MT_TASK(num) SAC_MT_Task[num]
 
@@ -680,6 +684,27 @@ typedef union {
     }                                                                                    \
     }                                                                                    \
     }
+/*
+ * Definition of macros implementing a general locking mechanism
+ */
+
+#define SAC_MT_DEFINE_LOCK(name) pthread_mutex_t name = PTHREAD_MUTEX_INITIALIZER;
+
+#define SAC_MT_DECLARE_LOCK(name) extern pthread_mutex_t name;
+
+#define SAC_MT_ACQUIRE_LOCK(name) pthread_mutex_lock (&name);
+
+#define SAC_MT_RELEASE_LOCK(name) pthread_mutex_unlock (&name);
+/*
+ * Warning:
+ *
+ * At least on Solaris 2.5 - 2.7 the static initialization of mutex locks causes
+ * warnings upon compilation. The reason is that in the corresponding file
+ * pthread.h, the definition of PTHREAD_MUTEX_INITIALIZER does NOT fit the
+ * type definition of pthread_mutex_t.
+ *
+ * However, so far it works  :-)))
+ */
 
 /*
  *  Definitions of macro-implemented ICMs for scheduling
@@ -787,9 +812,16 @@ typedef union {
 #define SAC_MT_SCHEDULER_Reset_Tasks()                                                   \
     {                                                                                    \
         int i;                                                                           \
-        for (i = 0; i < SAC_MT_threads; i++)                                             \
-            SAC_MT_TASK (i) = 0;                                                         \
-        SAC_TR_MT_PRINT (("SAC_MT_TASK reseted"));                                       \
+        int ThreadsDone;                                                                 \
+        SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (SAC_MT_THREADS ()));                       \
+        SAC_MT_TASK (SAC_MT_THREADS ())++;                                               \
+        ThreadsDone = SAC_MT_TASK (SAC_MT_THREADS ());                                   \
+        SAC_MT_RELEASE_LOCK (SAC_MT_TASKLOCK (SAC_MT_THREADS ()));                       \
+        if (ThreadsDone == SAC_MT_THREADS ()) {                                          \
+            for (i = 0; i < SAC_MT_THREADS () + 1; i++)                                  \
+                SAC_MT_TASK (i) = 0;                                                     \
+            SAC_TR_MT_PRINT (("SAC_MT_TASK reseted"));                                   \
+        }                                                                                \
     }
 
 #if 0
@@ -805,28 +837,6 @@ typedef union {
 
 #endif
 #endif /* 0 */
-
-/*
- * Definition of macros implementing a general locking mechanism
- */
-
-#define SAC_MT_DEFINE_LOCK(name) pthread_mutex_t name = PTHREAD_MUTEX_INITIALIZER;
-
-#define SAC_MT_DECLARE_LOCK(name) extern pthread_mutex_t name;
-
-#define SAC_MT_ACQUIRE_LOCK(name) pthread_mutex_lock (&name);
-
-#define SAC_MT_RELEASE_LOCK(name) pthread_mutex_unlock (&name);
-/*
- * Warning:
- *
- * At least on Solaris 2.5 - 2.7 the static initialization of mutex locks causes
- * warnings upon compilation. The reason is that in the corresponding file
- * pthread.h, the definition of PTHREAD_MUTEX_INITIALIZER does NOT fit the
- * type definition of pthread_mutex_t.
- *
- * However, so far it works  :-)))
- */
 
 /*
  *  Declarations of global variables and functions defined in libsac/mt.c
