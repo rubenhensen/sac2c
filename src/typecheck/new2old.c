@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2004/11/24 17:42:48  sbs
+ * not yet
+ *
  * Revision 1.24  2004/11/22 13:54:09  sbs
  * changed NT2OTwithop into NT2OTfold
  *
@@ -92,15 +95,22 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "dbug.h"
+#include "new2old.h"
 
+#include "dbug.h"
 #include "Error.h"
+#include "internal_lib.h"
+#include "free.h"
+#include "shape.h"
 
 #include "traverse.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+
 #include "gen_pseudo_fun.h"
 #include "new_typecheck.h"
 #include "new_types.h"
-#include "new2old.h"
+#include "type_utils.h"
 
 /*
  * OPEN PROBLEMS:
@@ -152,7 +162,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_NT2OT_FOLDFUNS (result) = NULL;
     INFO_NT2OT_LAST_LET (result) = NULL;
@@ -166,7 +176,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -184,19 +194,17 @@ FreeInfo (info *info)
 node *
 NT2OTTransform (node *arg_node)
 {
-    funtab *tmp_tab;
     info *info_node;
 
     DBUG_ENTER ("NT2OTTransform");
 
-    tmp_tab = act_tab;
-    act_tab = nt2ot_tab;
+    TRAVpush (TR_nt2ot);
 
     info_node = MakeInfo ();
-    arg_node = Trav (arg_node, info_node);
+    arg_node = TRAVdo (arg_node, info_node);
     info_node = FreeInfo (info_node);
 
-    act_tab = tmp_tab;
+    TRAVpop ();
 
     DBUG_RETURN (arg_node);
 }
@@ -204,7 +212,7 @@ NT2OTTransform (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node *NT2OTmodul( node *arg_node, info *arg_info)
+ *   node *NT2OTmodule( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -212,42 +220,42 @@ NT2OTTransform (node *arg_node)
  ******************************************************************************/
 
 node *
-NT2OTmodul (node *arg_node, info *arg_info)
+NT2OTmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("NT2OTmodul");
+    DBUG_ENTER ("NT2OTmodule");
 
     INFO_NT2OT_FOLDFUNS (arg_info) = NULL;
 
-    if (MODUL_IMPORTS (arg_node) != NULL) {
-        MODUL_IMPORTS (arg_node) = Trav (MODUL_IMPORTS (arg_node), arg_info);
+    if (MODULE_IMPORTS (arg_node) != NULL) {
+        MODULE_IMPORTS (arg_node) = TRAVdo (MODULE_IMPORTS (arg_node), arg_info);
     }
 
-    if (MODUL_TYPES (arg_node) != NULL) {
-        MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
+    if (MODULE_TYPES (arg_node) != NULL) {
+        MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
     }
 
-    if (MODUL_OBJS (arg_node) != NULL) {
-        MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
+    if (MODULE_OBJS (arg_node) != NULL) {
+        MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
     }
 
-    if (MODUL_FUNDECS (arg_node) != NULL) {
-        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
+    if (MODULE_FUNDECS (arg_node) != NULL) {
+        MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
     }
 
     if (INFO_NT2OT_FOLDFUNS (arg_info) != NULL) {
-        MODUL_FUNDECS (arg_node)
-          = AppendFundef (INFO_NT2OT_FOLDFUNS (arg_info), MODUL_FUNDECS (arg_node));
+        MODULE_FUNDECS (arg_node)
+          = TCappendFundef (INFO_NT2OT_FOLDFUNS (arg_info), MODULE_FUNDECS (arg_node));
     }
 
     INFO_NT2OT_FOLDFUNS (arg_info) = NULL;
 
-    if (MODUL_FUNS (arg_node) != NULL) {
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
     if (INFO_NT2OT_FOLDFUNS (arg_info) != NULL) {
-        MODUL_FUNS (arg_node)
-          = AppendFundef (INFO_NT2OT_FOLDFUNS (arg_info), MODUL_FUNS (arg_node));
+        MODULE_FUNS (arg_node)
+          = TCappendFundef (INFO_NT2OT_FOLDFUNS (arg_info), MODULE_FUNS (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -271,41 +279,35 @@ NT2OTfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NT2OTfundef");
 
-    type = FUNDEF_RET_TYPE (arg_node);
+    type = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
     DBUG_ASSERT ((type != NULL), "FUNDEF_RET_TYPE not found!");
-    type = TYFixAndEliminateAlpha (type);
-    FUNDEF_RET_TYPE (arg_node) = TYFreeType (FUNDEF_RET_TYPE (arg_node));
-    FUNDEF_RET_TYPE (arg_node) = type;
+    type = TYfixAndEliminateAlpha (type);
+    FUNDEF_RETS (arg_node) = TUreplaceRetTypes (FUNDEF_RETS (arg_node), type);
 
     /* process the real function type as well */
-    if (FUNDEF_TYPE (arg_node) != NULL) {
-        ntype *funtype = TYFixAndEliminateAlpha (FUNDEF_TYPE (arg_node));
-        FUNDEF_TYPE (arg_node) = TYFreeType (FUNDEF_TYPE (arg_node));
-        FUNDEF_TYPE (arg_node) = funtype;
+    if (FUNDEF_WRAPPERTYPE (arg_node) != NULL) {
+        ntype *funtype = TYfixAndEliminateAlpha (FUNDEF_WRAPPERTYPE (arg_node));
+        FUNDEF_WRAPPERTYPE (arg_node) = TYfreeType (FUNDEF_WRAPPERTYPE (arg_node));
+        FUNDEF_WRAPPERTYPE (arg_node) = funtype;
     }
 
-    if (TYIsProdOfArray (type)) {
+    if (TYisProdOfArray (type)) {
         old_type = FUNDEF_TYPES (arg_node);
+        FUNDEF_TYPES (arg_node) = TYtype2OldType (type);
+        old_type = FREEfreeAllTypes (old_type);
 
-        if (HasDotTypes (old_type)) {
-            FUNDEF_TYPES (arg_node)
-              = AppendTypes (TYType2OldType (type), MakeTypes1 (T_dots));
-        } else {
-            FUNDEF_TYPES (arg_node) = TYType2OldType (type);
-        }
-        old_type = FreeAllTypes (old_type);
     } else {
-        ABORT (linenum, ("could not infer proper type for fun %s; type found: %s",
-                         FUNDEF_NAME (arg_node), TYType2String (type, FALSE, 0)));
+        ABORT (global.linenum, ("could not infer proper type for fun %s; type found: %s",
+                                FUNDEF_NAME (arg_node), TYtype2String (type, FALSE, 0)));
     }
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
     INFO_NT2OT_VARDECS (arg_info) = NULL;
     if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
     if (INFO_NT2OT_VARDECS (arg_info) != NULL) {
@@ -316,15 +318,15 @@ NT2OTfundef (node *arg_node, info *arg_info)
          * AFAIK, the only place where vardecs are in fact built is the
          * extension of withloop ids in NT2OTwithid.
          */
-        INFO_NT2OT_VARDECS (arg_info) = Trav (INFO_NT2OT_VARDECS (arg_info), arg_info);
+        INFO_NT2OT_VARDECS (arg_info) = TRAVdo (INFO_NT2OT_VARDECS (arg_info), arg_info);
 
         FUNDEF_VARDEC (arg_node)
-          = AppendVardec (INFO_NT2OT_VARDECS (arg_info), FUNDEF_VARDEC (arg_node));
+          = TCappendVardec (INFO_NT2OT_VARDECS (arg_info), FUNDEF_VARDEC (arg_node));
         INFO_NT2OT_VARDECS (arg_info) = NULL;
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -353,34 +355,35 @@ NT2OTarg (node *arg_node, info *arg_info)
     type = AVIS_TYPE (ARG_AVIS (arg_node));
 
     if (type != NULL) {
-        DBUG_EXECUTE ("FIXNT", tmp_str = TYType2String (type, FALSE, 0););
+        DBUG_EXECUTE ("FIXNT", tmp_str = TYtype2String (type, FALSE, 0););
         DBUG_PRINT ("FIXNT", ("replacing argument %s\'s type %s by ...",
                               ARG_NAME (arg_node), tmp_str));
-        type = TYFixAndEliminateAlpha (type);
-        DBUG_EXECUTE ("FIXNT", tmp_str2 = TYType2String (type, FALSE, 0););
+        type = TYfixAndEliminateAlpha (type);
+        DBUG_EXECUTE ("FIXNT", tmp_str2 = TYtype2String (type, FALSE, 0););
 #if CWC_WOULD_BE_PROPER
-        AVIS_TYPE (ARG_AVIS (arg_node)) = TYFreeType (AVIS_TYPE (ARG_AVIS (arg_node)));
+        AVIS_TYPE (ARG_AVIS (arg_node)) = TYfreeType (AVIS_TYPE (ARG_AVIS (arg_node)));
 #endif
         AVIS_TYPE (ARG_AVIS (arg_node)) = type;
         DBUG_PRINT ("FIXNT", ("... %s", tmp_str2));
-        DBUG_EXECUTE ("FIXNT", tmp_str = Free (tmp_str); tmp_str2 = Free (tmp_str2););
+        DBUG_EXECUTE ("FIXNT", tmp_str = ILIBfree (tmp_str);
+                      tmp_str2 = ILIBfree (tmp_str2););
 
-        if (TYIsArray (type)) {
-            ARG_TYPE (arg_node) = FreeAllTypes (ARG_TYPE (arg_node));
-            ARG_TYPE (arg_node) = TYType2OldType (type);
+        if (TYisArray (type)) {
+            ARG_TYPE (arg_node) = FREEfreeAllTypes (ARG_TYPE (arg_node));
+            ARG_TYPE (arg_node) = TYtype2OldType (type);
         } else {
-            ABORT (linenum,
+            ABORT (global.linenum,
                    ("could not infer proper type for arg %s", ARG_NAME (arg_node)));
         }
 
         if (ARG_NEXT (arg_node) != NULL) {
-            ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+            ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
         }
 
     } else {
         if ((ARG_TYPE (arg_node) != NULL)
             && (TYPES_BASETYPE (ARG_TYPE (arg_node)) != T_dots)) {
-            ABORT (linenum,
+            ABORT (global.linenum,
                    ("could not infer proper type for arg %s", ARG_NAME (arg_node)));
         }
     }
@@ -407,11 +410,11 @@ NT2OTblock (node *arg_node, info *arg_info)
      * the VARDECs must be traversed first!!
      */
     if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     }
 
     if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -440,33 +443,34 @@ NT2OTvardec (node *arg_node, info *arg_info)
     type = AVIS_TYPE (VARDEC_AVIS (arg_node));
 
     if (type != NULL) {
-        DBUG_EXECUTE ("FIXNT", tmp_str = TYType2String (type, FALSE, 0););
+        DBUG_EXECUTE ("FIXNT", tmp_str = TYtype2String (type, FALSE, 0););
         DBUG_PRINT ("FIXNT", ("replacing vardec %s\'s type %s by ...",
                               VARDEC_NAME (arg_node), tmp_str));
-        type = TYFixAndEliminateAlpha (type);
-        DBUG_EXECUTE ("FIXNT", tmp_str2 = TYType2String (type, FALSE, 0););
+        type = TYfixAndEliminateAlpha (type);
+        DBUG_EXECUTE ("FIXNT", tmp_str2 = TYtype2String (type, FALSE, 0););
 #if CWC_WOULD_BE_PROPER
         AVIS_TYPE (VARDEC_AVIS (arg_node))
-          = TYFreeType (AVIS_TYPE (VARDEC_AVIS (arg_node)));
+          = TYfreeType (AVIS_TYPE (VARDEC_AVIS (arg_node)));
 #endif
         AVIS_TYPE (VARDEC_AVIS (arg_node)) = type;
         DBUG_PRINT ("FIXNT", ("... %s", tmp_str2));
-        DBUG_EXECUTE ("FIXNT", tmp_str = Free (tmp_str); tmp_str2 = Free (tmp_str2););
+        DBUG_EXECUTE ("FIXNT", tmp_str = ILIBfree (tmp_str);
+                      tmp_str2 = ILIBfree (tmp_str2););
     } else {
-        ABORT (linenum,
+        ABORT (global.linenum,
                ("could not infer proper type for var %s", VARDEC_NAME (arg_node)));
     }
 
-    if (TYIsArray (type)) {
-        VARDEC_TYPE (arg_node) = FreeAllTypes (VARDEC_TYPE (arg_node));
-        VARDEC_TYPE (arg_node) = TYType2OldType (type);
+    if (TYisArray (type)) {
+        VARDEC_TYPE (arg_node) = FREEfreeAllTypes (VARDEC_TYPE (arg_node));
+        VARDEC_TYPE (arg_node) = TYtype2OldType (type);
     } else {
-        ABORT (linenum,
+        ABORT (global.linenum,
                ("could not infer proper type for var %s", VARDEC_NAME (arg_node)));
     }
 
     if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -490,9 +494,9 @@ NT2OTarray (node *arg_node, info *arg_info)
     DBUG_ENTER ("NT2OTarray");
 
     if (ARRAY_TYPE (arg_node) == NULL) {
-        type = NewTypeCheck_Expr (arg_node);
-        ARRAY_TYPE (arg_node) = TYType2OldType (type);
-        type = TYFreeType (type);
+        type = NTCnewTypeCheck_Expr (arg_node);
+        ARRAY_TYPE (arg_node) = TYtype2OldType (type);
+        type = TYfreeType (type);
     }
 
     DBUG_RETURN (arg_node);
@@ -515,9 +519,9 @@ NT2OTcast (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("NT2OTcast");
 
-    res = Trav (CAST_EXPR (arg_node), arg_info);
+    res = TRAVdo (CAST_EXPR (arg_node), arg_info);
     CAST_EXPR (arg_node) = NULL;
-    arg_node = FreeNode (arg_node);
+    arg_node = FREEdoFreeNode (arg_node);
 
     DBUG_RETURN (res);
 }
@@ -542,7 +546,7 @@ NT2OTlet (node *arg_node, info *arg_info)
     old_last_let = INFO_NT2OT_LAST_LET (arg_info);
     INFO_NT2OT_LAST_LET (arg_info) = arg_node;
 
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     INFO_NT2OT_LAST_LET (arg_info) = old_last_let;
 
@@ -562,39 +566,35 @@ NT2OTlet (node *arg_node, info *arg_info)
 node *
 NT2OTwithid (node *arg_node, info *arg_info)
 {
-    ids *new_ids, *tmp_ids;
+    node *new_ids, *tmp_ids, *tmp_avis;
     node *new_vardecs;
     int i, num_vars;
     ntype *vec_type;
 
     DBUG_ENTER ("NT2OTwithid");
 
-    vec_type = AVIS_TYPE (IDS_AVIS (NWITHID_VEC (arg_node)));
-    vec_type = TYFixAndEliminateAlpha (vec_type);
+    vec_type = AVIS_TYPE (IDS_AVIS (WITHID_VEC (arg_node)));
+    vec_type = TYfixAndEliminateAlpha (vec_type);
 
-    if (NWITHID_IDS (arg_node) == NULL) {
-        if (TYIsAKS (vec_type)) {
+    if (WITHID_IDS (arg_node) == NULL) {
+        if (TYisAKS (vec_type)) {
             DBUG_PRINT ("NT2OT",
-                        ("NWITHID_IDS for %s built", IDS_NAME (NWITHID_VEC (arg_node))));
-            num_vars = SHGetExtent (TYGetShape (vec_type), 0);
+                        ("WITHID_IDS for %s built", IDS_NAME (WITHID_VEC (arg_node))));
+            num_vars = SHgetExtent (TYgetShape (vec_type), 0);
             new_ids = NULL;
             new_vardecs = INFO_NT2OT_VARDECS (arg_info);
             for (i = 0; i < num_vars; i++) {
-                tmp_ids = MakeIds (TmpVar (), NULL, ST_regular);
-                new_vardecs = MakeVardec (StringCopy (IDS_NAME (tmp_ids)),
-                                          MakeTypes1 (T_unknown), new_vardecs);
-                AVIS_TYPE (VARDEC_AVIS (new_vardecs))
-                  = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (0));
-                IDS_VARDEC (tmp_ids) = new_vardecs;
-                IDS_AVIS (tmp_ids) = VARDEC_AVIS (new_vardecs);
-                IDS_NEXT (tmp_ids) = new_ids;
+                tmp_avis = TBmakeAvis (ILIBtmpVar (), NULL);
+                L_VARDEC_OR_ARG_TYPE (AVIS_DECL (tmp_avis), TBmakeTypes1 (T_unknown));
+                tmp_ids = TBmakeIds (tmp_avis, new_ids);
+                new_vardecs = TBmakeVardec (tmp_avis, new_vardecs);
                 new_ids = tmp_ids;
             }
-            NWITHID_IDS (arg_node) = new_ids;
+            WITHID_IDS (arg_node) = new_ids;
             INFO_NT2OT_VARDECS (arg_info) = new_vardecs;
         } else {
-            DBUG_PRINT ("NT2OT", ("no NWITHID_IDS for %s built",
-                                  IDS_NAME (NWITHID_VEC (arg_node))));
+            DBUG_PRINT ("NT2OT",
+                        ("no WITHID_IDS for %s built", IDS_NAME (WITHID_VEC (arg_node))));
         }
     }
 
@@ -618,17 +618,16 @@ NT2OTfold (node *arg_node, info *arg_info)
     node *cexpr, *neutr;
     node *nwith;
     ntype *fold_type;
-    types *old_type;
 
     DBUG_ENTER ("NT2OTfold");
 
     nwith = LET_EXPR (INFO_NT2OT_LAST_LET (arg_info));
-    cexpr = NWITH_CEXPR (nwith);
-    neutr = NWITH_NEUTRAL (nwith);
-    DBUG_ASSERT ((neutr != NULL), "NWITH_NEUTRAL does not exist");
-    DBUG_ASSERT ((NODE_TYPE (neutr) == N_id), "NWITH_NEUTRAL is not a N_id");
-    DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "NWITH_CEXPR is not a N_id");
-    fold_type = TYLubOfTypes (AVIS_TYPE (ID_AVIS (cexpr)), AVIS_TYPE (ID_AVIS (neutr)));
+    cexpr = WITH_CEXPR (nwith);
+    neutr = FOLD_NEUTRAL (arg_node);
+    DBUG_ASSERT ((neutr != NULL), "WITH_NEUTRAL does not exist");
+    DBUG_ASSERT ((NODE_TYPE (neutr) == N_id), "WITH_NEUTRAL is not a N_id");
+    DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "WITH_CEXPR is not a N_id");
+    fold_type = TYlubOfTypes (AVIS_TYPE (ID_AVIS (cexpr)), AVIS_TYPE (ID_AVIS (neutr)));
 
     foldfun = GPFcreateFoldFun (fold_type, FOLD_FUNDEF (arg_node), FOLD_PRF (arg_node),
                                 IDS_NAME (LET_IDS (INFO_NT2OT_LAST_LET (arg_info))),

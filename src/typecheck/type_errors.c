@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.16  2004/11/24 17:42:48  sbs
+ * not yet
+ *
  * Revision 1.15  2004/11/23 20:53:52  sbs
  * SacDevCamp 04 done
  *
@@ -57,19 +60,20 @@
 #include "Error.h"
 #include "internal_lib.h"
 #include "shape.h"
+#include "constants.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "new_types.h"
 #include "new_typecheck.h"
 
 struct TE_INFO {
-    int line;            /* line where the application is situated */
-    char *kind_str;      /* kind of function we are dealing with */
-    char *mod_str;       /* optional module name */
-    char *name_str;      /* name of the function */
-    node *wrapper;       /* for udfs, this pointer points to the wrapper function */
-    node *assign;        /* for udfs, this pointer points to the assign node of the ap */
-    void *cffun;         /* for prfs, this pointer points to the CF function of the prf */
+    int line;             /* line where the application is situated */
+    char *kind_str;       /* kind of function we are dealing with */
+    char *mod_str;        /* optional module name */
+    const char *name_str; /* name of the function */
+    node *wrapper;        /* for udfs, this pointer points to the wrapper function */
+    node *assign;         /* for udfs, this pointer points to the assign node of the ap */
+    const void *cffun;   /* for prfs, this pointer points to the CF function of the prf */
     struct TE_INFO *chn; /* for udfs, this pointer points to the info of the caller */
 };
 
@@ -186,8 +190,8 @@ MatchNumA (ntype *type)
  ******************************************************************************/
 
 te_info *
-TEmakeInfo (int linenum, char *kind_str, char *mod_str, char *name_str, node *wrapper,
-            node *assign, void *cffun, te_info *parent)
+TEmakeInfo (int linenum, char *kind_str, char *mod_str, const char *name_str,
+            node *wrapper, node *assign, const void *cffun, te_info *parent)
 {
     te_info *res;
 
@@ -227,7 +231,7 @@ TEgetModStr (te_info *info)
     DBUG_RETURN (TI_MOD (info));
 }
 
-char *
+const char *
 TEgetNameStr (te_info *info)
 {
     DBUG_ENTER ("TEgetNameStr");
@@ -248,7 +252,7 @@ TEgetAssign (te_info *info)
     DBUG_RETURN (TI_ASSIGN (info));
 }
 
-void *
+const void *
 TEgetCFFun (te_info *info)
 {
     DBUG_ENTER ("TEgetCFFun");

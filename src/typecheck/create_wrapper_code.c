@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2004/11/24 17:42:48  sbs
+ * not yet
+ *
  * Revision 1.25  2004/11/19 10:15:50  sah
  * for objinit funs no wrapper is built
  *
@@ -370,7 +373,7 @@ InsertWrapperCode (node *fundef)
         /*
          * generate wrapper code together with the needed vardecs
          */
-        vardecs1 = TYCreateWrapperVardecs (fundef);
+        vardecs1 = TUcreateTmpVardecsFromRets (FUNDEF_RETS (fundef));
         vardecs2 = NULL;
         assigns = TYCreateWrapperCode (fundef, vardecs1, &vardecs2);
 
