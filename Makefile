@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.30  2000/03/02 13:09:55  jhs
+# Added src/multithread/(mtfuns_init|blkco_cons).(c|h).
+#
 # Revision 2.29  2000/02/21 17:59:42  jhs
 # Added multithread_lib.o and blocks_expand.o.
 #
@@ -220,7 +223,8 @@ CONCURRENT= src/concurrent/concurrent.o \
             src/concurrent/concurrent_lib.o
 MULTITHREAD= src/multithread/multithread.o src/multithread/schedule_init.o \
              src/multithread/repfuns_init.o src/multithread/blocks_init.o \
-             src/multithread/blocks_expand.o src/multithread/multithread_lib.o
+             src/multithread/blocks_expand.o src/multithread/multithread_lib.o \
+             src/multithread/mtfuns_init.o src/multithread/blocks_cons.o
 COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/precompile.o \
           src/compile/compile.o src/compile/gen_startup_code.o \
