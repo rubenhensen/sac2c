@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2002/10/18 14:07:49  dkr
+ * InlineArg() modified: inlining of reference args corrected
+ *
  * Revision 3.28  2002/09/11 23:19:03  dkr
  * CreateInlineName(): bug fixed
  *
@@ -223,80 +226,86 @@ ResetInlineNo (node *module)
     DBUG_VOID_RETURN;
 }
 
-#define TUTU 0
-#if TUTU
+#if 0
 /******************************************************************************
  *
  * Function:
  *   node *AdjustIntAssign( node *int_assign, node *ext_let)
  *
  * Description:
- *
+ *   
  *
  ******************************************************************************/
 
-static node *
-AdjustIntAssign (node *int_assign, node *ext_let)
+static
+node *AdjustIntAssign( node *int_assign, node *ext_let)
 {
-    node *int_let;
-    node *int_args, *ext_args;
-    node *int_arg, *ext_arg;
-    ids *int_ids, *ext_ids;
-    node *prolog = NULL;
-    node *epilog = NULL;
+  node *int_let;
+  node *int_args, *ext_args;
+  node *int_arg, *ext_arg;
+  ids *int_ids, *ext_ids;
+  node *prolog = NULL;
+  node *epilog = NULL;
 
-    DBUG_ENTER ("AdjustIntAssign");
+  DBUG_ENTER( "AdjustIntAssign");
 
-    DBUG_ASSERT (((int_assign != NULL) && (NODE_TYPE (int_assign) == N_assign)
-                  && (NODE_TYPE (ASSIGN_INSTR (int_assign)) == N_let)
-                  && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (int_assign))) == N_ap)),
-                 "dummy fold-fun: FUNDEF_INT_ASSIGN corrupted!");
+  DBUG_ASSERT( ((int_assign != NULL) &&
+                (NODE_TYPE( int_assign) == N_assign) &&
+                (NODE_TYPE( ASSIGN_INSTR( int_assign)) == N_let) &&
+                (NODE_TYPE( LET_EXPR( ASSIGN_INSTR( int_assign))) == N_ap)),
+               "dummy fold-fun: FUNDEF_INT_ASSIGN corrupted!");
 
-    DBUG_ASSERT (((ext_let != NULL) && (NODE_TYPE (ext_let) == N_let)),
-                 "no N_let node found!");
+  DBUG_ASSERT( ((ext_let != NULL) && (NODE_TYPE( ext_let) == N_let)),
+               "no N_let node found!");
 
-    int_let = ASSIGN_INSTR (int_assign);
+  int_let = ASSIGN_INSTR( int_assign);
 
-    int_ids = LET_IDS (int_let);
-    ext_ids = LET_IDS (ext_let);
-    while (int_ids != NULL) {
-        if (strcmp (IDS_NAME (int_ids), IDS_NAME (ext_ids))) {
-            epilog
-              = MakeAssign (MakeLet (DupIds_Id (ext_ids), DupOneIds (int_ids)), epilog);
-        }
-        int_ids = IDS_NEXT (int_ids);
-        ext_ids = IDS_NEXT (ext_ids);
+  int_ids = LET_IDS( int_let);
+  ext_ids = LET_IDS( ext_let);
+  while (int_ids != NULL) {
+    if (strcmp( IDS_NAME( int_ids), IDS_NAME( ext_ids))) {
+      epilog = MakeAssign( MakeLet( DupIds_Id( ext_ids),
+                                    DupOneIds( int_ids)),
+                           epilog);
     }
+    int_ids = IDS_NEXT( int_ids);
+    ext_ids = IDS_NEXT( ext_ids);
+  }
 
-    int_args = AP_ARGS (LET_EXPR (int_let));
-    ext_args = AP_ARGS (LET_EXPR (ext_let));
-    while (int_args != NULL) {
-        int_arg = EXPRS_EXPR (int_args);
-        ext_arg = EXPRS_EXPR (ext_args);
-        DBUG_ASSERT ((NODE_TYPE (ext_arg) == N_id), "illegal argument found!");
-        if ((NODE_TYPE (int_arg) != N_id)
-            || (strcmp (ID_NAME (int_arg), ID_NAME (ext_arg)))) {
-            prolog
-              = MakeAssign (MakeLet (DupNode (int_arg), DupId_Ids (ext_arg)), prolog);
-        }
-        int_args = EXPRS_NEXT (int_args);
-        ext_args = EXPRS_NEXT (ext_args);
+  int_args = AP_ARGS( LET_EXPR( int_let));
+  ext_args = AP_ARGS( LET_EXPR( ext_let));
+  while (int_args != NULL) {
+    int_arg = EXPRS_EXPR( int_args);
+    ext_arg = EXPRS_EXPR( ext_args);
+    DBUG_ASSERT( (NODE_TYPE( ext_arg) == N_id), "illegal argument found!");
+    if ((NODE_TYPE( int_arg) != N_id) ||
+        (strcmp( ID_NAME( int_arg), ID_NAME( ext_arg)))) {
+      prolog = MakeAssign( MakeLet( DupNode( int_arg),
+                                    DupId_Ids( ext_arg)),
+                           prolog);
     }
+    int_args = EXPRS_NEXT( int_args);
+    ext_args = EXPRS_NEXT( ext_args);
+  }
 
-    if (prolog != NULL) {
-        ASSIGN_INSTR (int_assign) = ASSIGN_INSTR (prolog);
-        ASSIGN_INSTR (prolog) = NULL;
-        prolog = FreeNode (prolog);
-        prolog = AppendAssign (prolog, DupNode (ext_let));
-    } else {
-        ASSIGN_INSTR (int_assign) = DupNode (ext_let);
-    }
-    int_let = FreeTree (int_let);
+  if (prolog != NULL) {
+    ASSIGN_INSTR( int_assign) = ASSIGN_INSTR( prolog);
+    ASSIGN_INSTR( prolog) = NULL;
+    prolog = FreeNode( prolog);
+    prolog = AppendAssign( prolog, DupNode( ext_let));
+  }
+  else {
+    ASSIGN_INSTR( int_assign) = DupNode( ext_let);
+  }
+  int_let = FreeTree( int_let);
 
-    ASSIGN_NEXT (int_assign)
-      = AppendAssign (prolog, AppendAssign (epilog, ASSIGN_NEXT (int_assign)));
+  ASSIGN_NEXT( int_assign) = AppendAssign(
+                                   prolog,
+                                   AppendAssign(
+                                         epilog,
+                                         ASSIGN_NEXT( int_assign)));
 
-    DBUG_RETURN (int_assign);
+  DBUG_RETURN( int_assign);
 }
 #endif
 
@@ -318,6 +327,7 @@ InlineArg (node *arg_node, node *arg_info)
     node *new_vardec;
     char *new_name;
     node *new_avis;
+    ids *tmp_ids1, *tmp_ids2;
 
     DBUG_ENTER ("InlineArg");
 
@@ -355,14 +365,33 @@ InlineArg (node *arg_node, node *arg_info)
      *   VARDEC_NAME( new_vardec) = arg;
      * into INFO_INL_PROLOG
      */
-    new_ass = MakeAssignLet (StringCopy (new_name), new_vardec, DupNode (arg));
-
+    tmp_ids1 = MakeIds_Copy (new_name);
+    IDS_VARDEC (tmp_ids1) = new_vardec;
+    IDS_AVIS (tmp_ids1) = VARDEC_OR_ARG_AVIS (new_vardec);
+    new_ass = MakeAssign (MakeLet (DupNode (arg), tmp_ids1), NULL);
     /* store definition assignment of this new vardec (only in ssaform) */
     if (valid_ssaform && (VARDEC_AVIS (new_vardec) != NULL)) {
         AVIS_SSAASSIGN (VARDEC_AVIS (new_vardec)) = new_ass;
     }
     ASSIGN_NEXT (new_ass) = INFO_INL_PROLOG (arg_info);
     INFO_INL_PROLOG (arg_info) = new_ass;
+
+    /*
+     * for reference parameters only!!!!!
+     * insert assignment
+     *   arg = VARDEC_NAME( new_vardec);
+     * into INFO_INL_EPILOG
+     */
+    if (ARG_ATTRIB (arg_node) == ST_reference) {
+        DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "reference argument must be a N_id node");
+        tmp_ids2 = MakeIds_Copy (ID_NAME (arg));
+        IDS_VARDEC (tmp_ids2) = ID_VARDEC (arg);
+        IDS_AVIS (tmp_ids2) = ID_AVIS (arg);
+        new_ass = MakeAssign (MakeLet (DupIds_Id (tmp_ids1), tmp_ids2), NULL);
+        valid_ssaform = FALSE; /* no SSA form anymore ... */
+        ASSIGN_NEXT (new_ass) = INFO_INL_EPILOG (arg_info);
+        INFO_INL_EPILOG (arg_info) = new_ass;
+    }
 
     /*
      * insert pointers ['arg_node', 'new_vardec'] into INFO_INL_LUT
@@ -460,12 +489,11 @@ InlineVardec (node *arg_node, node *arg_info)
 static node *
 InlineRetExprs (node *arg_node, node *arg_info)
 {
-    node *new_expr;
+    node *new_expr, *avis;
 
     DBUG_ENTER ("InlineRetExprs");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_exprs), "no N_exprs node found!");
-
     DBUG_ASSERT ((INFO_INL_IDS (arg_info) != NULL), "INFO_INL_IDS not found!");
 
     new_expr
@@ -483,12 +511,11 @@ InlineRetExprs (node *arg_node, node *arg_info)
                         INFO_INL_EPILOG (arg_info));
 
         /* set the correct AVIS_SSAASSIGN() attribute for this new assignment */
-        if (IDS_AVIS (INFO_INL_IDS (arg_info)) != NULL) {
+        avis = IDS_AVIS (INFO_INL_IDS (arg_info));
+        if (avis != NULL) {
             DBUG_PRINT ("INL", ("set correct SSAASSIGN attribute for %s",
-                                VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (
-                                  IDS_AVIS (INFO_INL_IDS (arg_info))))));
-            AVIS_SSAASSIGN (IDS_AVIS (INFO_INL_IDS (arg_info)))
-              = INFO_INL_EPILOG (arg_info);
+                                VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (avis))));
+            AVIS_SSAASSIGN (avis) = INFO_INL_EPILOG (arg_info);
         }
     }
 
@@ -575,16 +602,16 @@ DoInline (node *let_node, node *arg_info)
     inl_nodes = AppendAssign (INFO_INL_PROLOG (arg_info), inl_nodes);
     inl_nodes = AppendAssign (inl_nodes, INFO_INL_EPILOG (arg_info));
 
-#if TUTU
-    if ((FUNDEF_STATUS (inl_fundef) == ST_dofun)
-        || (FUNDEF_STATUS (inl_fundef) == ST_whilefun)) {
-        node *int_assign
-          = SearchInLUT_PP (INFO_INL_LUT (arg_info), FUNDEF_INT_ASSIGN (inl_fundef));
+#if 0
+  if ((FUNDEF_STATUS( inl_fundef) == ST_dofun) ||
+      (FUNDEF_STATUS( inl_fundef) == ST_whilefun)) {
+    node *int_assign = SearchInLUT_PP( INFO_INL_LUT( arg_info),
+                                       FUNDEF_INT_ASSIGN( inl_fundef));
 
-        DBUG_ASSERT ((int_assign != FUNDEF_INT_ASSIGN (inl_fundef)),
-                     "duplicated FUNDEF_INT_ASSIGN not found in LUT!");
-        int_assign = AdjustIntAssign (int_assign, let_node);
-    }
+    DBUG_ASSERT( (int_assign != FUNDEF_INT_ASSIGN( inl_fundef)),
+                 "duplicated FUNDEF_INT_ASSIGN not found in LUT!");
+    int_assign = AdjustIntAssign( int_assign, let_node);
+  }
 #endif
 
     inline_nr++;
@@ -637,31 +664,31 @@ INLfundef (node *arg_node, node *arg_info)
      * Example:
      * ========
      *
-     * before lac2fun           after lac2fun            after inlining
-     * --------------           -------------            --------------
+     *   before lac2fun           after lac2fun            after inlining
+     *   --------------           -------------            --------------
      *
-     *                          inline
-     *                          int rec( x)
-     *                          {
-     *                            x = cond( x);
-     *                            return( x);
-     *                          }
-     * inline
-     * int rec( x)              int cond( int x)         int cond( int x)
-     * {                        {                        {
-     *   if (x > 0) {             if (x > 0) {             if (x > 0) {
-     *     x = rec( x-1);           x = rec( x-1);           x = cond( x-1);
-     *   } else {                 } else {                 } else {
-     *     x = 1;                   x = 1;                   x = 1;
+     *                            inline
+     *                            int rec( x)
+     *                            {
+     *                              x = cond( x);
+     *                              return( x);
+     *                            }
+     *   inline
+     *   int rec( x)              int cond( int x)         int cond( int x)
+     *   {                        {                        {
+     *     if (x > 0) {             if (x > 0) {             if (x > 0) {
+     *       x = rec( x-1);           x = rec( x-1);           x = cond( x-1);
+     *     } else {                 } else {                 } else {
+     *       x = 1;                   x = 1;                   x = 1;
+     *     }                        }                        }
+     *     return( x);              return( x);              return( x);
      *   }                        }                        }
-     *   return( x);              return( x);              return( x);
-     * }                        }                        }
      *
-     * int main()               int main()               int main()
-     * {                        {                        {
-     *   x = rec( 10);            x = rec( 10);            x = cond( 10);
-     *   return( x);              return( x);              return( x);
-     * }                        }                        }
+     *   int main()               int main()               int main()
+     *   {                        {                        {
+     *     x = rec( 10);            x = rec( 10);            x = cond( 10);
+     *     return( x);              return( x);              return( x);
+     *   }                        }                        }
      *
      * Now, the LaC function 'cond' is recursive and is used in more than a
      * single application :-((
@@ -669,51 +696,51 @@ INLfundef (node *arg_node, node *arg_info)
      * Instead, inlining must detect the recursive nature of the function
      * 'rec' and generate 'maxinl' new conditionals in 'main':
      *
-     * (maxinl == 1)            (maxinl == 2)
-     * -------------            -------------
+     *   (maxinl == 1)            (maxinl == 2)
+     *   -------------            -------------
      *
-     * inline                   inline
-     * int rec( x)              int rec( x)
-     * {                        {
-     *   x = cond( x);            x = cond( x);
-     *   return( x);              return( x);
-     * }                        }
-     *
-     * int cond( int x)         int cond( int x)
-     * {                        {
-     *   if (x > 0) {             if (x > 0) {
-     *     x = rec( x-1);           x = rec( x-1);
-     *   } else {                 } else {
-     *     x = 1;                   x = 1;
+     *   inline                   inline
+     *   int rec( x)              int rec( x)
+     *   {                        {
+     *     x = cond( x);            x = cond( x);
+     *     return( x);              return( x);
      *   }                        }
-     *   return( x);              return( x);
-     * }                        }
      *
-     *                          int cond3( int x)
-     *                          {
-     *                            if (x > 0) {
-     *                              x = rec( x-1);
-     *                            } else {
-     *                              x = 1;
+     *   int cond( int x)         int cond( int x)
+     *   {                        {
+     *     if (x > 0) {             if (x > 0) {
+     *       x = rec( x-1);           x = rec( x-1);
+     *     } else {                 } else {
+     *       x = 1;                   x = 1;
+     *     }                        }
+     *     return( x);              return( x);
+     *   }                        }
+     *
+     *                            int cond3( int x)
+     *                            {
+     *                              if (x > 0) {
+     *                                x = rec( x-1);
+     *                              } else {
+     *                                x = 1;
+     *                              }
+     *                              return( x);
      *                            }
-     *                            return( x);
-     *                          }
      *
-     * int cond2( int x)        int cond2( int x)
-     * {                        {
-     *   if (x > 0) {             if (x > 0) {
-     *     x = rec( x-1);           x = cond3( x-1);
-     *   } else {                 } else {
-     *     x = 1;                   x = 1;
+     *   int cond2( int x)        int cond2( int x)
+     *   {                        {
+     *     if (x > 0) {             if (x > 0) {
+     *       x = rec( x-1);           x = cond3( x-1);
+     *     } else {                 } else {
+     *       x = 1;                   x = 1;
+     *     }                        }
+     *     return( x);              return( x);
      *   }                        }
-     *   return( x);              return( x);
-     * }                        }
      *
-     * int main()               int main()
-     * {                        {
-     *   x = cond2( 10);          x = cond2( 10);
-     *   return( x);              return( x);
-     * }                        }
+     *   int main()               int main()
+     *   {                        {
+     *     x = cond2( 10);          x = cond2( 10);
+     *     return( x);              return( x);
+     *   }                        }
      */
 
     DBUG_ASSERT ((!FUNDEF_IS_LACFUN (arg_node)),
