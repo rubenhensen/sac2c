@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2000/12/06 18:26:04  cg
+ * Added some new macros for typecheck constant propagation.
+ *
  * Revision 3.3  2000/12/06 09:04:50  cg
  * Added INFO_TC_TCCP
  *
@@ -1043,16 +1046,17 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***/
 
 /*
- *  STATUS: ST_regular      function defined in this module
- *          ST_imported     imported function (maybe declaration only)
- *          ST_exported     function is exported by module/class or program ('main')
- *          ST_Cfun         function implemented in C
- *          ST_objinitfun   generic function for object initialization
- *          ST_classfun     class conversion function
- *          ST_foldfun      dummy function containing fold code for with-loop
- *          ST_condfun      function representing an if-else-clause
- *          ST_dofun        function representing a do-loop
- *          ST_whilefun     function representing a while-loop
+ *  STATUS: ST_regular         function defined in this module
+ *          ST_imported_mod    function imported from module
+ *          ST_imported_class  function imported from class
+ *          ST_exported        function is exported by module/class or program ('main')
+ *          ST_Cfun            function implemented in C
+ *          ST_objinitfun      generic function for object initialization
+ *          ST_classfun        class conversion function
+ *          ST_foldfun         dummy function containing fold code for with-loop
+ *          ST_condfun         function representing an if-else-clause
+ *          ST_dofun           function representing a do-loop
+ *          ST_whilefun        function representing a while-loop
  *
  *  before multithreading:
  *  ATTRIB: ST_regular      shape-dependent or non-array function
@@ -2130,6 +2134,8 @@ extern node *MakePragma ();
  ***    node *     LASSIGN       (O)  (N_assign)
  ***    ids*       LHSVARS       (O)
  ***    nodelist * TCCP          (O)
+ ***    bool       TCCPSUCCESS   (O)
+ ***    bool       ISGWLSHAPE    (O)
  ***
  ***  when used in writesib.c :
  ***
@@ -2451,6 +2457,8 @@ extern node *MakeInfo ();
 #define INFO_TC_CURRENTASSIGN(n) (n->node[4])
 #define INFO_TC_LHSVARS(n) (n->info.ids)
 #define INFO_TC_TCCP(n) (n->info2)
+#define INFO_TC_ISGWLSHAPE(n) (n->varno)
+#define INFO_TC_TCCPSUCCESS(n) (n->counter)
 
 /* writesib */
 #define INFO_WSIB_EXPORTTYPES(n) ((nodelist *)(n->node[0]))
