@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.226  1998/05/15 15:43:08  cg
+ * some bugs removed concerning spmd-functions
+ *
  * Revision 1.225  1998/05/15 12:37:10  dkr
  * removed a bug with 'arg_info' in PrintNwith2
  *
@@ -1340,23 +1343,34 @@ PrintFundef (node *arg_node, node *arg_info)
          * print function declaration
          */
 
-        if ((FUNDEF_BODY (arg_node) == NULL)
-            || ((NULL != FUNDEF_RETURN (arg_node))
-                && (N_icm == NODE_TYPE (FUNDEF_RETURN (arg_node)))
-                && (strcmp (FUNDEF_NAME (arg_node), "main") != 0))) {
-            fprintf (outfile, "extern ");
+        if (FUNDEF_STATUS (arg_node) == ST_spmdfun) {
+            fprintf (outfile, "#if SAC_DO_MULTITHREAD\n");
+            fprintf (outfile,
+                     "SAC_MT_SPMD_FUN_REAL_RETTYPE()"
+                     " %s( SAC_MT_SPMD_FUN_REAL_PARAM_LIST());\n",
+                     FUNDEF_NAME (arg_node));
+            fprintf (outfile, "#endif  /* SAC_DO_MULTITHREAD */\n");
+        } else {
+            if ((FUNDEF_BODY (arg_node) == NULL)
+                || ((NULL != FUNDEF_RETURN (arg_node))
+                    && (N_icm == NODE_TYPE (FUNDEF_RETURN (arg_node)))
+                    && (0 != strcmp (FUNDEF_NAME (arg_node), "main")))) {
 
-            if ((NULL != FUNDEF_ICM (arg_node))
-                && (N_icm == NODE_TYPE (FUNDEF_ICM (arg_node)))) {
-                Trav (FUNDEF_ICM (arg_node), new_info); /* print N_icm ND_FUN_DEC */
-            } else {
-                PrintFunctionHeader (arg_node, new_info);
-            }
+                fprintf (outfile, "extern ");
 
-            fprintf (outfile, ";\n");
+                if ((NULL != FUNDEF_ICM (arg_node))
+                    && (N_icm == NODE_TYPE (FUNDEF_ICM (arg_node)))
+                    && (FUNDEF_STATUS (arg_node) != ST_spmdfun)) {
+                    Trav (FUNDEF_ICM (arg_node), new_info); /* print N_icm ND_FUN_DEC */
+                } else {
+                    PrintFunctionHeader (arg_node, new_info);
+                }
 
-            if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                Trav (FUNDEF_PRAGMA (arg_node), NULL);
+                fprintf (outfile, ";\n");
+
+                if (FUNDEF_PRAGMA (arg_node) != NULL) {
+                    Trav (FUNDEF_PRAGMA (arg_node), NULL);
+                }
             }
         }
     }
