@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.126  2004/12/08 18:15:24  ktr
+ * usage of SHmakeShape corrected.
+ *
  * Revision 3.125  2004/12/08 18:02:40  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -3328,7 +3331,7 @@ TCcreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr, node *
     DBUG_ASSERT ((dim >= 0), "TCcreateScalarWith() used with unknown shape!");
 
     new_avis = TBmakeAvis (ILIBtmpVar (),
-                           TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (dim)));
+                           TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, dim)));
     vardecs = TBmakeVardec (new_avis, vardecs);
     VARDEC_TYPE (vardecs) = TYtype2OldType (AVIS_TYPE (new_avis));
     vec_ids = TBmakeIds (new_avis, NULL);
