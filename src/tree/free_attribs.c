@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/10/28 17:25:13  sah
+ * added FreeStringSetAttrib
+ *
  * Revision 1.10  2004/10/13 15:19:44  sah
  * added NODE_ISALIVE check when processing Link attributes
  *
@@ -8,7 +11,7 @@
  * fixed problem with NCODE_DEC_USED
  *
  * Revision 1.8  2004/10/11 14:57:53  sah
- * made INC/DEC NCODE_USED explicit 
+ * made INC/DEC NCODE_USED explicit
  *
  * Revision 1.7  2004/10/05 16:16:05  sah
  * recursive self calls of loopfuns are handled
@@ -38,6 +41,7 @@
 #include "free_attribs.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "stringset.h"
 
 /** <!--******************************************************************-->
  *
@@ -843,6 +847,27 @@ FreeRCCounterAttrib (rc_counter *attr)
     DBUG_ENTER ("FreeRCCounterAttrib");
 
     DBUG_ASSERT ((attr == NULL), "Found an RCCounter outside of emm!!!");
+
+    DBUG_RETURN (attr);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn FreeStringSetAttrib
+ *
+ * @brief Frees RCCounter attribute
+ *
+ * @param attr StringSet attrib to process
+ *
+ * @return result of Free call, usually NULL
+ *
+ ***************************************************************************/
+stringset_t *
+FreeStringSetAttrib (stringset_t *attr)
+{
+    DBUG_ENTER ("FreeRCCounterAttrib");
+
+    attr = SSFree (attr);
 
     DBUG_RETURN (attr);
 }
