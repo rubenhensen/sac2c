@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/10/16 14:00:35  dkr
+ * dito
+ *
  * Revision 1.4  2000/10/16 13:55:36  dkr
  * order of array-prfs changed
  *
@@ -134,10 +137,11 @@ PRF_IF (F_toi, "F_foi", "toi", "toi"), PRF_IF (F_tof, "F_fof", "tof", "tof"),
   PRF_IF (F_reshape, "F_reshape", "reshape", "reshape"),
   PRF_IF (F_idx_psi, "F_idx_psi", "idx_psi", "idx_psi"),
   PRF_IF (F_idx_modarray, "F_idx_modarray", "idx_modarray", "idx_modarray"),
+  PRF_IF (F_psi, "F_psi", "psi", "psi"),
   PRF_IF (F_modarray, "F_modarray", "modarray", "modarray"),
 
-  PRF_IF (F_take, "F_take", "take", "take"), PRF_IF (F_psi, "F_psi", "psi", "psi"),
-  PRF_IF (F_drop, "F_drop", "drop", "drop"), PRF_IF (F_cat, "F_cat", "cat", "cat"),
+  PRF_IF (F_take, "F_take", "take", "take"), PRF_IF (F_drop, "F_drop", "drop", "drop"),
+  PRF_IF (F_cat, "F_cat", "cat", "cat"),
   PRF_IF (F_rotate, "F_rotate", "rotate", "rotate"),
   PRF_IF (F_toi_A, "F_toi_A", "toi", "toi"), PRF_IF (F_tof_A, "F_tof_A", "tof", "tof"),
   PRF_IF (F_tod_A, "F_tod_A", "tod", "tod"), PRF_IF (F_add_SxA, "F_add_SxA", "+", "_add"),
