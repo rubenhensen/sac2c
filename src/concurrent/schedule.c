@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/07/10 09:30:49  ben
+ * SCHRemoveTasksel inserted
+ *
  * Revision 3.5  2001/03/29 14:46:06  dkr
  * NWITH2_SCHEDULING removed
  *
@@ -186,6 +189,10 @@ SCHEDwlseg (node *arg_node, node *arg_info)
             WLSEG_SCHEDULING (arg_node)
               = SCHRemoveScheduling (WLSEG_SCHEDULING (arg_node));
         }
+        if (WLSEGX_TASKSEL (arg_node) != NULL) {
+            WLSEGX_TASKSEL (arg_node) = SCHRemoveTasksel (WLSEGX_TASKSEL (arg_node));
+        }
+
     } else {
         /*
          * Here, we are within an spmd-function, so if no scheduling is already present,
@@ -235,6 +242,10 @@ SCHEDwlsegVar (node *arg_node, node *arg_info)
             WLSEGVAR_SCHEDULING (arg_node)
               = SCHRemoveScheduling (WLSEGVAR_SCHEDULING (arg_node));
         }
+        if (WLSEGX_TASKSEL (arg_node) != NULL) {
+            WLSEGX_TASKSEL (arg_node) = SCHRemoveTasksel (WLSEGX_TASKSEL (arg_node));
+        }
+
     } else {
         /*
          * Here, we are within an spmd-function, so if no scheduling is already present,
