@@ -1,6 +1,15 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1998/08/27 13:56:56  sbs
+ * Changed the search for system libraries:
+ * 1) prefix "lib" is no longer mandatory (but still possible)
+ * 2) 2 different suffix-options:
+ *   a) the user explicitly states the suffix, e.g. X11.so
+ *   b) the user does not specify the suffix, e.g. X11
+ *      in this case, first X11.so is searched and if
+ *      that search fails, X11.so is searched for.
+ *
  * Revision 1.20  1998/05/27 11:19:44  cg
  * global variable 'filename' which contains the current file name in order
  * to provide better error messages is now handled correctly.
@@ -229,6 +238,7 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
 {
     deps *tmp;
     static char buffer[MAX_PATH_LEN];
+    int n;
     char *pathname, *abspathname, *libtype;
     int success;
     strings *tmp_done;
@@ -248,19 +258,32 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
         if (tmp_done != NULL) {
             DEPS_LIBNAME (tmp) = StringCopy (STRINGS_STRING (STRINGS_NEXT (tmp_done)));
         } else {
-            strcpy (buffer, DEPS_NAME (tmp));
-
             switch (DEPS_STATUS (tmp)) {
             case ST_sac:
+                strcpy (buffer, DEPS_NAME (tmp));
                 strcat (buffer, ".lib");
                 libtype = "SAC";
                 break;
             case ST_external:
+                strcpy (buffer, DEPS_NAME (tmp));
                 strcat (buffer, ".a");
                 libtype = "external";
                 break;
             case ST_system:
-                strcat (buffer, ".a");
+                if (strncmp ("lib", DEPS_NAME (tmp), 3) == 0) {
+                    strcpy (buffer, DEPS_NAME (tmp));
+                } else {
+                    strcpy (buffer, "lib");
+                    strcat (buffer, DEPS_NAME (tmp));
+                }
+                /*
+                 * In this case, we do not specify any suffix explicitly.
+                 * The reason is that there are 2 different options:
+                 * 1) the user explicitly states the suffix, e.g. X11.so
+                 * 2) the user does not specify the suffix, e.g. X11
+                 *    in this case, first X11.so is searched and if
+                 *    that search fails, X11.so is searched for.
+                 */
                 libtype = "system";
                 break;
             default:
@@ -274,7 +297,20 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
             }
 
             if (DEPS_STATUS (tmp) == ST_system) {
-                pathname = FindFile (SYSTEMLIB_PATH, buffer);
+                n = strlen (buffer);
+                if ((strcmp (buffer + n - 2, ".a") == 0)
+                    || (strcmp (buffer + n - 3, ".so") == 0)) {
+                    pathname = FindFile (SYSTEMLIB_PATH, buffer);
+                } else {
+                    strcat (buffer, ".so");
+                    pathname = FindFile (SYSTEMLIB_PATH, buffer);
+                    if (pathname == NULL) {
+                        buffer[n] = 0;
+                        strcat (buffer, ".a");
+                        pathname = FindFile (SYSTEMLIB_PATH, buffer);
+                    }
+                }
+
             } else {
                 pathname = FindFile (MODIMP_PATH, buffer);
             }
