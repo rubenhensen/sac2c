@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.64  2000/07/04 14:55:57  jhs
+ * Added mtn-stuff.
+ * ./
+ *
  * Revision 2.63  2000/06/30 15:22:51  jhs
  * BuildParamsByDFM debugged.
  * COMPmt uses BuildParamsByDFM now.
@@ -5364,26 +5368,31 @@ BuildParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
 
     vardec = DFMGetMaskEntryDeclSet (mask);
     while (vardec != NULL) {
-        if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
-            this_tag = rc_tag;
-        } else {
-            this_tag = tag;
-        }
-        icm_args
-          = MakeExprs (MakeId1 (this_tag),
-                       MakeExprs (MakeId1 (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec))),
-                                  MakeExprs (MakeId1 (VARDEC_OR_ARG_NAME (vardec)),
-                                             icm_args)));
-        if (num_args != NULL) {
-            *num_args = *num_args + 1;
-        }
 
-        if (num_args != NULL) {
-            DBUG_PRINT ("SPMD", ("bpbdfm num_args:%i %s", *num_args,
-                                 VARDEC_OR_ARG_NAME (vardec)));
-        } else {
-            DBUG_PRINT ("SPMD", ("bpbdfm num_args:- %s", VARDEC_OR_ARG_NAME (vardec)));
-        }
+        DBUG_PRINT ("JHS", ("%s", NODE_TEXT (vardec)));
+        DBUG_PRINT ("JHS", ("%s", VARDEC_OR_ARG_NAME (vardec)));
+        /*
+            if (VARDEC_OR_ARG_REFCNT( vardec) >= 0) {
+              this_tag = rc_tag;
+            } else {
+              this_tag = tag;
+            }
+            icm_args = MakeExprs( MakeId1( this_tag),
+                       MakeExprs( MakeId1( MakeTypeString(VARDEC_OR_ARG_TYPE( vardec))),
+                       MakeExprs( MakeId1( VARDEC_OR_ARG_NAME( vardec)),
+                                  icm_args)));
+            if (num_args != NULL) {
+              *num_args = *num_args + 1;
+            }
+
+            if (num_args != NULL) {
+              DBUG_PRINT("SPMD", ("bpbdfm num_args:%i %s",
+                                  *num_args, VARDEC_OR_ARG_NAME( vardec )));
+            } else {
+              DBUG_PRINT("SPMD", ("bpbdfm num_args:- %s",
+                                  VARDEC_OR_ARG_NAME( vardec )));
+            }
+        */
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
@@ -7438,6 +7447,28 @@ MakeAssigns5 (node *part1, node *part2, node *part3, node *part4, node *part5)
     return (MakeAssign (part1, MakeAssigns4 (part2, part3, part4, part5)));
 }
 
+node *
+MakeAssigns6 (node *part1, node *part2, node *part3, node *part4, node *part5,
+              node *part6)
+{
+    return (MakeAssign (part1, MakeAssigns5 (part2, part3, part4, part5, part6)));
+}
+
+node *
+MakeAssigns7 (node *part1, node *part2, node *part3, node *part4, node *part5,
+              node *part6, node *part7)
+{
+    return (MakeAssign (part1, MakeAssigns6 (part2, part3, part4, part5, part6, part7)));
+}
+
+node *
+MakeAssigns8 (node *part1, node *part2, node *part3, node *part4, node *part5,
+              node *part6, node *part7, node *part8)
+{
+    return (
+      MakeAssign (part1, MakeAssigns7 (part2, part3, part4, part5, part6, part7, part8)));
+}
+
 /*
  *  jhs ####
  */
@@ -7526,6 +7557,8 @@ node *
 COMPSt (node *arg_node, node *arg_info)
 {
     node *result;
+    node *fundef;
+    node *barrier, *code, *allocate, *broadcast, *activate, *suspend, *receive;
 
     DBUG_ENTER ("COMPSt");
 
@@ -7533,10 +7566,27 @@ COMPSt (node *arg_node, node *arg_info)
     DBUG_ASSERT (0, ("COMPSt not implemented yet, cannot compile this"));
 #endif
 
-    if (1) {
-        result = MakeAssigns1 (MakeIcm0 ("CANNOT_COMPILE_N_ST (master)"));
+    fundef = INFO_COMP_FUNDEF (arg_info);
+    DBUG_PRINT ("COMPjhs", ("compiling %s attrib: %s status: %s", FUNDEF_NAME (fundef),
+                            mdb_statustype[FUNDEF_ATTRIB (fundef)],
+                            mdb_statustype[FUNDEF_STATUS (fundef)]));
+
+    if (FUNDEF_ATTRIB (fundef) == ST_call_mt_master) {
+        barrier = MakeIcm0 ("MTN_MASTER_BARRIER");
+        code = MakeIcm0 ("CODE");
+        allocate = MakeIcm0 ("ALLOCATE");
+        broadcast = MakeIcm0 ("MTN_MASTER_BROADCAST");
+        activate = MakeIcm0 ("MTN_ACTIVATE");
+
+        result = MakeAssigns5 (barrier, code, allocate, broadcast, activate);
+    } else if (FUNDEF_ATTRIB (fundef) == ST_call_mt_worker) {
+        barrier = MakeIcm0 ("MTN_WORKER_BARRIER");
+        suspend = MakeIcm0 ("MTN_SUSPEND");
+        receive = MakeIcm0 ("MTN_MASTER_RECEIVE");
+
+        result = MakeAssigns3 (barrier, suspend, receive);
     } else {
-        result = MakeAssigns1 (MakeIcm0 ("CANNOT_COMPILE_N_ST (worker)"));
+        DBUG_ASSERT (0, "can not handle such a function");
     }
 
     arg_node = FreeTree (arg_node);
@@ -7544,6 +7594,15 @@ COMPSt (node *arg_node, node *arg_info)
     DBUG_RETURN (result);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *COMPMTsignal( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   ####
+ *
+ ******************************************************************************/
 node *
 COMPMTsignal (node *arg_node, node *arg_info)
 {
@@ -7555,22 +7614,39 @@ COMPMTsignal (node *arg_node, node *arg_info)
     DBUG_ASSERT (0, ("COMPMTsignal not implemented yet, cannot compile this"));
 #endif
 
-    assigns = MakeAssign (MakeIcm0 ("MT2_SIGNAL" /*  secondarg#### */), NULL);
+    assigns
+      = MakeAssigns1 (MakeIcm1 ("MT2_SIGNAL", BuildParamsByDFM (MTSIGNAL_IDSET (arg_node),
+                                                                "ids", NULL, NULL)));
 
     arg_node = FreeTree (arg_node);
 
     DBUG_RETURN (assigns);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *COMPMTalloc( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   ####
+ *
+ ******************************************************************************/
 node *
 COMPMTalloc (node *arg_node, node *arg_info)
 {
+    node *fundef;
     node *assigns;
-    node *if_icm;
-    node *if_block;
-    node *else_icm;
-    node *else_block;
-    node *end_icm;
+    node *if_;
+    node *alloc;
+    node *broadcast;
+    node *activate;
+    node *else_;
+    node *suspend;
+    node *receive;
+    node *end_;
+    char *broadcast_icm;
+    char *receive_icm;
 
     DBUG_ENTER ("COMPMTalloc");
 
@@ -7578,13 +7654,40 @@ COMPMTalloc (node *arg_node, node *arg_info)
     DBUG_ASSERT (0, ("COMPMTalloc not implemented yet, cannot compile this"));
 #endif
 
-    if_icm = MakeIcm0 ("MT2_IF_I_AM_FIRST");
-    if_block = MakeIcm0 ("EMPTY"); /* #### */
-    else_icm = MakeIcm0 ("MT2_ELSE_IF_I_AM_NOT_FIRST");
-    else_block = MakeIcm0 ("EMPTY"); /* #### */
-    end_icm = MakeIcm0 ("MT2_END_I_AM_FIRST");
+    fundef = INFO_COMP_FUNDEF (arg_info);
+    if ((FUNDEF_ATTRIB (fundef) == ST_call_mt_master)
+        || (FUNDEF_ATTRIB (fundef) == ST_call_st)) {
+        broadcast_icm = "MT2_MASTER_BROADCAST";
+        receive_icm = "MT2_MASTER_RECEIVE";
+    } else if ((FUNDEF_ATTRIB (fundef) == ST_call_mt_worker)
+               || (FUNDEF_ATTRIB (fundef) == ST_call_mtlift)) {
+        broadcast_icm = "MT2_WORKER_BROADCAST";
+        receive_icm = "MT2_WORKER_RECEIVE";
+    } else {
+        DBUG_PRINT ("JHS", ("%s", mdb_statustype[FUNDEF_ATTRIB (fundef)]));
+        DBUG_ASSERT (0, "can not handle such a function");
+    }
 
-    assigns = MakeAssigns5 (if_icm, if_block, else_icm, else_block, end_icm);
+    if_ = MakeIcm0 ("MT2_IF_I_AM_FIRST");
+    alloc = MakeIcm0 ("ALLOC");
+
+    /*
+      DFMPrintMaskDetailed (stdout, MTALLOC_IDSET( arg_node));
+    */
+    printf ("\n");
+
+    broadcast
+      = MakeIcm2 (broadcast_icm, MakeId1 ("ALLOC"),
+                  BuildParamsByDFM (MTALLOC_IDSET (arg_node), "alloc", NULL, NULL));
+    activate = MakeIcm2 ("MT2_ACTIVATE", MakeId1 ("ALLOC"), MakeId1 ("NULL"));
+    else_ = MakeIcm0 ("MT2_ELSE_IF_I_AM_NOT_FIRST");
+    suspend = MakeIcm1 ("MT2_SUSPEND", MakeId1 ("ALLOC"));
+    receive = MakeIcm2 (receive_icm, MakeId1 ("ALLOC"),
+                        BuildParamsByDFM (MTALLOC_IDSET (arg_node), "alloc", NULL, NULL));
+    end_ = MakeIcm0 ("MT2_END_I_AM_FIRST");
+
+    assigns
+      = MakeAssigns8 (if_, alloc, broadcast, activate, else_, suspend, receive, end_);
 
     arg_node = FreeTree (arg_node);
 
