@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/02/25 09:22:16  cg
+ * adjusted to new set of global variable in globals.[ch]
+ *
  * Revision 1.2  1996/02/13 10:15:11  sbs
  * counting of eliminations inserted.
  *
@@ -15,8 +18,6 @@
 
 #define _sac_psi_opt_h
 
-extern int psi_optimize; /* imported from main.c */
-extern int psi_opt_ive;  /* imported from main.c */
 extern int ive_expr;
 extern int ive_op;
 

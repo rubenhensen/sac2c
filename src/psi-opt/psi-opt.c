@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/02/25 09:22:16  cg
+ * adjusted to new set of global variable in globals.[ch]
+ *
  * Revision 1.5  1996/02/13 10:15:11  sbs
  * counting of eliminations inserted.
  *
@@ -50,18 +53,19 @@ node *
 PsiOpt (node *arg_node)
 {
     DBUG_ENTER ("PsiOpt");
-    if (psi_optimize && optimize) {
-        NOTE (("Optimizing arrays: ...\n"));
-        if (psi_opt_ive) {
-            ive_expr = 0;
-            ive_op = 0;
 
-            act_tab = idx_tab;
-            arg_node = Trav (arg_node, NULL);
+    NOTE (("Optimizing arrays: ...\n"));
 
-            NOTE (("  %d index-vector(s) eliminated", ive_expr));
-            NOTE (("  %d index-vector-operation(s) eliminated", ive_op));
-        }
+    if (opt_ive) {
+        ive_expr = 0;
+        ive_op = 0;
+
+        act_tab = idx_tab;
+        arg_node = Trav (arg_node, NULL);
+
+        NOTE (("  %d index-vector(s) eliminated", ive_expr));
+        NOTE (("  %d index-vector-operation(s) eliminated", ive_op));
     }
+
     DBUG_RETURN (arg_node);
 }
