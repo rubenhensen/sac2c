@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2001/03/20 16:00:29  ben
+ * DoPrintAST: WLSEGX_SCHEDULER is printed now
+ *
  * Revision 3.31  2001/03/19 16:43:58  dkr
  * WLSEG_HOMSV removed (WLSEG_SV used instead)
  *
@@ -4488,6 +4491,10 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, ", ");
             fprintf (outfile, "maxhomdim: %i", WLSEG_MAXHOMDIM (arg_node));
 
+            fprintf (outfile, ", ");
+            fprintf (outfile, "scheduler: ");
+            SCHPrintScheduling (outfile, WLSEG_SCHEDULING (arg_node));
+
             fprintf (outfile, ")");
 
             skip = WLSEG_NEXT (arg_node);
@@ -4497,11 +4504,17 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, "(");
 
             fprintf (outfile, "idx_min: ");
-            PRINT_VECT (outfile, WLSEG_IDX_MIN (arg_node), WLSEG_DIMS (arg_node), "%i");
+            PRINT_VECT (outfile, WLSEGVAR_IDX_MIN (arg_node), WLSEGVAR_DIMS (arg_node),
+                        "%i");
 
             fprintf (outfile, ", ");
             fprintf (outfile, "idx_max: ");
-            PRINT_VECT (outfile, WLSEG_IDX_MAX (arg_node), WLSEG_DIMS (arg_node), "%i");
+            PRINT_VECT (outfile, WLSEGVAR_IDX_MAX (arg_node), WLSEGVAR_DIMS (arg_node),
+                        "%i");
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "scheduler: ");
+            SCHPrintScheduling (outfile, WLSEGVAR_SCHEDULING (arg_node));
 
             fprintf (outfile, ")");
 
