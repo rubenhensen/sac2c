@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/06/30 13:48:44  mab
+ * added Array2Shpseg and DiffShpseg
+ *
  * Revision 1.7  2000/06/23 14:04:54  dkr
  * nodetype N_with removed
  *
@@ -1739,6 +1742,68 @@ Array2DblVec (node *aelems, int *length)
     }
 
     DBUG_RETURN (dblvec);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   shpseg *Array2Shpseg(node* array)
+ *
+ * description:
+ *   convert array into shpseg (requires int-array!!!)
+ *
+ *****************************************************************************/
+
+shpseg *
+Array2Shpseg (node *array)
+{
+
+    node *tmp;
+    shpseg *shape;
+    int i = 0;
+
+    DBUG_ENTER ("Array2Shpseg");
+
+    shape = (shpseg *)MALLOC (sizeof (shpseg));
+
+    tmp = ARRAY_AELEMS (array);
+    while (tmp != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (tmp)) == N_num), "integer array expected!");
+        SHPSEG_SHAPE (shape, i) = NUM_VAL (EXPRS_EXPR (tmp));
+        i++;
+        tmp = EXPRS_NEXT (tmp);
+    }
+
+    DBUG_RETURN (shape);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   shpseg *DiffShpseg(int dim, shpseg* shape1, shpseg* shape2)
+ *
+ * description:
+ *   calculate shape1-shape2
+ *
+ *****************************************************************************/
+
+shpseg *
+DiffShpseg (int dim, shpseg *shape1, shpseg *shape2)
+{
+
+    shpseg *shape_diff;
+    int i;
+
+    DBUG_ENTER ("DiffShpseg");
+
+    shape_diff = MakeShpseg (NULL);
+
+    for (i = 0; i < dim; i++) {
+        SHPSEG_SHAPE (shape_diff, i)
+          = SHPSEG_SHAPE (shape1, i) - SHPSEG_SHAPE (shape2, i);
+    }
+
+    DBUG_RETURN (shape_diff);
 }
 
 /*--------------------------------------------------------------------------*/

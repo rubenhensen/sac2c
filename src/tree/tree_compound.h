@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.23  2000/06/30 13:48:44  mab
+ * added Array2Shpseg and DiffShpseg
+ *
  * Revision 1.22  2000/06/29 16:07:05  mab
  * added Array2Shpseg
  *
@@ -1389,6 +1392,7 @@ extern double *Array2DblVec (node *aelems, int *length);
  */
 
 extern shpseg *Array2Shpseg (node *array);
+extern shpseg *DiffShpseg (int dim, shpseg *shape1, shpseg *shape2);
 
 /*--------------------------------------------------------------------------*/
 
