@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.34  2004/10/04 17:18:29  sah
+# a different subset of files is compiled, depending
+# on the compiler version to create
+#
 # Revision 3.33  2004/09/27 13:19:01  sah
 # added serialization files
 #
@@ -86,7 +90,9 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 ifeq ($(shell test -f $(PROJECT_ROOT)/_NEW_AST && echo yes),yes)
-  NEWASTTARGETS := node_basic.o
+  NEWASTTARGETS := node_basic.o free_node.o free_attribs.o \
+                   serialize_node.o serialize_attribs.o \
+                   deserialize.o
 else
   NEWASTTARGETS :=
 endif

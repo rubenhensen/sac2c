@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.32  2004/10/04 17:18:29  sah
+# a different subset of files is compiled, depending
+# on the compiler version to create
+#
 # Revision 3.31  2004/09/30 20:01:26  sah
 # added a switch to compile a subset of
 # the compiler only
@@ -96,14 +100,10 @@ BETEST_OBJS = icm2c_std.BEtest.o icm2c_prf.BEtest.o icm2c_wl.BEtest.o \
               icm2c_basic.o icm2c_utils.o \
               ../global/NameTuples.o ../global/globals.o ../../lib/dbug.o
 
-SAC2C_OBJS := wlpragma_funs.o precompile.o compile.o \
+SAC2C_OBJS := wlpragma_funs.o precompile.o compile.o wltransform.o \
               ReuseWithArrays.o gen_startup_code.o PatchWith.o icm2c.o \
               icm2c_std.o icm2c_prf.o icm2c_wl.o icm2c_mt.o icm2c_sched.o \
               icm2c_error.o icm2c_basic.o icm2c_utils.o markmemvals.o
-
-ifeq ($(NEWAST),no)
-  SAC2C_OBJS := wltransform.o $(SAC2C_OBJS)
-endif
 
 
 all: $(SAC2C_OBJS) BEtest

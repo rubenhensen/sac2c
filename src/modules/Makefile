@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.16  2004/10/04 17:18:29  sah
+# a different subset of files is compiled, depending
+# on the compiler version to create
+#
 # Revision 3.15  2004/09/30 20:01:26  sah
 # added a switch to compile a subset of
 # the compiler only
@@ -73,11 +77,13 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 INCS = -I../global -I../tree -I../../inc -I../scanparse -I../print  \
        -I../typecheck -I../compile -I../constants -I.
-OBJS := filemgr.o symboltable.o cccall.o
+OBJS := filemgr.o symboltable.o cccall.o implicittypes.o
 
 ifeq ($(NEWAST),no)
-  OBJS := import.o readsib.o writesib.o implicittypes.o analysis.o \
+  OBJS := import.o readsib.o writesib.o analysis.o \
           checkdec.o $(OBJS)
+else
+  OBJS := libmanager.o modulemanager.o libstat.o $(OBJS)
 endif
 
 all: $(OBJS)

@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.14  2004/10/04 17:18:29  sah
+# a different subset of files is compiled, depending
+# on the compiler version to create
+#
 # Revision 3.13  2003/09/09 13:03:43  sbs
 # -I../typecheck added
 #
@@ -71,10 +75,14 @@ include $(PROJECT_ROOT)/Makefile.Config
 INCS = -I../global -I../tree -I../../inc -I../compile -I../modules \
        -I../constants -I../print -I../scanparse -I../typecheck
 
+OBJS :=
 
-all: print_interface.o map_cwrapper.o import_specialization.o \
-     print_interface_header.o print_interface_wrapper.o
+ifeq ($(NEWAST),no)
+OBJS := print_interface.o map_cwrapper.o import_specialization.o \
+        print_interface_header.o print_interface_wrapper.o
+endif
 
+all: $(OBJS)
 
 #
 # the *.[ch] objects are to fool makedepend which does not

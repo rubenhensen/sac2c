@@ -1,6 +1,10 @@
-#
+
 #
 # $Log$
+# Revision 3.109  2004/10/04 17:18:29  sah
+# a different subset of files is compiled, depending
+# on the compiler version to create
+#
 # Revision 3.108  2004/09/30 20:01:26  sah
 # added a switch to compile a subset of
 # the compiler only
@@ -245,6 +249,17 @@ SOURCE_FILES := $(foreach dir,$(SOURCE_DIRS),$(addprefix $(dir)/,$(filter-out RC
 # Collection of object files
 #
 
+NEWASTONLY =
+NEWASTFLAGS =
+ifeq ($(NEWAST),yes)
+  NEWASTONLY = src/tree/node_basic.o src/tree/free_node.o \
+               src/tree/free_attribs.o src/tree/serialize_node.o \
+               src/tree/serialize_attribs.o src/modules/libstat.o \
+               src/modules/modulemanager.o src/modules/libmanager.o \
+               src/tree/deserialize.o
+  NEWASTFLAGS = -ldl -export-dynamic
+endif
+
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
         src/global/my_debug.o src/global/internal_lib.o src/global/globals.o \
         src/global/resource.o src/global/build.o src/global/interrupt.o \
@@ -258,7 +273,7 @@ TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/InferDFMs.o src/tree/cleanup_decls.o src/tree/adjust_ids.o \
       src/tree/change_signature.o src/tree/compare_tree.o \
       src/tree/scheduling.o src/tree/wl_bounds.o \
-      src/tree/serialize.o src/tree/serialize_stack.o
+      src/tree/serialize.o src/tree/serialize_stack.o 
 TREE_OLD=
 
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
@@ -322,9 +337,10 @@ PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
 	src/psi-opt/tagdependencies.o
 PSIOPT_OLD=
 
-MODULES= src/modules/symboltable.o
-MODULES_OLD= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o \
-             src/modules/implicittypes.o src/modules/analysis.o \
+MODULES= src/modules/symboltable.o src/modules/filemgr.o \
+         src/modules/implicittypes.o 
+MODULES_OLD= src/modules/import.o src/modules/writesib.o \
+             src/modules/analysis.o \
              src/modules/checkdec.o src/modules/readsib.o src/modules/cccall.o
 
 OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
@@ -354,25 +370,26 @@ MULTITHREAD_OLD= src/multithread/multithread.o \
                  src/multithread/replicate_functions.o \
                  src/multithread/consolidate_cells.o
 
-COMPILE= src/compile/wlpragma_funs.o \
-         src/compile/precompile.o src/compile/gen_startup_code.o src/compile/compile.o \
-         src/compile/icm2c.o src/compile/icm2c_basic.o \
-         src/compile/icm2c_utils.o src/compile/icm2c_std.o src/compile/icm2c_prf.o \
+COMPILE= src/compile/wlpragma_funs.o src/compile/wltransform.o \
+         src/compile/precompile.o src/compile/gen_startup_code.o \
+         src/compile/compile.o src/compile/icm2c.o src/compile/icm2c_basic.o \
+         src/compile/icm2c_utils.o src/compile/icm2c_std.o \
+         src/compile/icm2c_prf.o src/compile/markmemvals.o \
          src/compile/icm2c_mt.o src/compile/icm2c_sched.o \
          src/compile/icm2c_wl.o src/compile/icm2c_error.o \
-         src/compile/ReuseWithArrays.o src/compile/PatchWith.o \
-         src/compile/markmemvals.o
-COMPILE_OLD=src/compile/wltransform.o
+         src/compile/ReuseWithArrays.o src/compile/PatchWith.o
+COMPILE_OLD=
 
-CINTERFACE= src/c-interface/map_cwrapper.o src/c-interface/print_interface.o \
-            src/c-interface/import_specialization.o \
-            src/c-interface/print_interface_header.o \
-            src/c-interface/print_interface_wrapper.o
-CINTERFACE_OLD=
+CINTERFACE=
+CINTERFACE_OLD= src/c-interface/map_cwrapper.o \
+                src/c-interface/print_interface.o \
+                src/c-interface/import_specialization.o \
+                src/c-interface/print_interface_header.o \
+                src/c-interface/print_interface_wrapper.o
 
 OBJ:= $(GLOBAL) $(TREE) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
      $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT) \
-     $(MULTITHREAD) $(CINTERFACE) $(CONSTANTS) $(PROFILE)
+     $(MULTITHREAD) $(CINTERFACE) $(CONSTANTS) $(PROFILE) $(NEWASTONLY)
 ifeq ($(NEWAST),no)
   OBJ:= $(GLOBAL_OLD) $(TREE_OLD) $(SCANP_OLD) $(PRINT_OLD) $(FLATTEN_OLD) \
        $(TYPECHECK_OLD) $(OPTIMIZE_OLD) $(MODULES_OLD) $(OBJECTS_OLD) \
@@ -473,7 +490,7 @@ endif
 	(cd src/c-interface; $(MAKE_PROD) )
 
 sac2c: $(OBJ) $(LIB)
-	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS) $(NEWASTFLAGS)
 
 sac2c.efence: $(OBJ) $(LIB)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c.efence $(OBJ) $(LIB) $(LIBS) $(EFLIBS)
