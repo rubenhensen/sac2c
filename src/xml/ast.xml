@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.56  2004/11/24 19:58:00  sbs
+  CRTWRP added.
+
   Revision 1.55  2004/11/24 19:38:09  sah
   fixed it
 
@@ -318,6 +321,18 @@
       </traversal>
     </phase>
     <phase id="typecheck" name="Running type inference system">
+      <traversal id="CRTWRP" name="Create Wrappers" default="sons" include="create_wrappers.h">
+        <user>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Let" />
+          <node name="Ap" />
+          <node name="Id" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+          <node name="Fold" />
+        </user>  
+      </traversal>
       <traversal id="NTC" name="New Type Inference" default="sons" include="new_typecheck.h" >
         <travuser> 
           <node name="typedef" />
