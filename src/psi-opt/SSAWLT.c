@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2002/09/13 20:16:41  dkr
+ * genarray-wls with empty index sets allow again... #@%&
+ *
  * Revision 1.10  2002/09/13 19:05:11  dkr
  * genarray-wls with empty index sets are no longer allowed
  *
@@ -88,6 +91,8 @@
 #include "optimize.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLT.h"
+
+#define FORBID_EMPTY_GENARRAY_WLS 0
 
 /******************************************************************************
  *
@@ -883,11 +888,11 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
     int i, check_bounds, empty, warning;
     int lbnum, ubnum, tnum, dim;
     ids *let_ids;
-#if 0
-  node *assignn, *blockn, *idn;
-  ids *_ids;
-  char *varname;
-  types *type;
+#if !FORBID_EMPTY_GENARRAY_WLS
+    node *assignn, *blockn, *idn;
+    ids *_ids;
+    char *varname;
+    types *type;
 #endif
 
     DBUG_ENTER ("SSAWLTNgenerator");
@@ -1035,7 +1040,7 @@ SSAWLTNgenerator (node *arg_node, node *arg_info)
             /* the one and only N_Npart is empty. Transform WL. */
             if (empty) {
                 if (WO_genarray == NWITH_TYPE (INFO_WLI_WL (arg_info))) {
-#if 1
+#if FORBID_EMPTY_GENARRAY_WLS
                     /*
                      * genarray wls with empty index set are not allowed!!!
                      *
