@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.66  1995/12/01 17:22:16  cg
+ * Revision 1.67  1995/12/04 16:08:19  hw
+ * added compilation of type-converting-functions F_toi ...
+ * added function CompConvert
+ *
+ * Revision 1.66  1995/12/01  17:22:16  cg
  * moved renaming of functions to precompiler
  * moved generation of additional extern declarations for mutual
  * recursive functions to print.c
@@ -1016,6 +1020,128 @@ CompPrfModarray (node *arg_node, node *arg_info)
 
 /*
  *
+ *  functionname  : CompConvert
+ *  arguments     : 1) N_prf nodei (F_toi, F_tod, F_tof, F_toi_A, F_tof_A,
+ *                                  F_tod_A)
+ *                  2) NULL
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...,
+ *  remarks       : arg_info->info.ids contains name of assigned variable
+ */
+node *
+CompConvert (node *arg_node, node *arg_info)
+{
+    int convert = 0;
+
+    DBUG_ENTER ("CompConvert");
+
+    switch (PRF_PRF (arg_node)) {
+    case F_toi:
+    case F_tod:
+    case F_tof: {
+        node *dummy = arg_node;
+
+        /* return argument of ftoi */
+        arg_node = PRF_ARG1 (arg_node);
+        FREE (dummy->node[0]); /* free N_exprs node */
+        FREE (dummy);          /* free N_prf node */
+        break;
+    }
+    case F_tof_A:
+        convert = 1;
+        /* here is NO break missing !! */
+    case F_tod_A:
+        convert = 2;
+        /* here is NO break missing !! */
+    case F_toi_A: {
+        int length;
+        node *res_rc, *n_length, *first_assign, *next_assign, *type_id_node,
+          *old_arg_node, *last_assign, *res, *icm_arg, *arg1, *n_node;
+        simpletype res_stype;
+
+        arg1 = PRF_ARG1 (arg_node);
+        MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+        /* compute basic type */
+        GET_BASIC_SIMPLETYPE (res_stype, arg_info->IDS_NODE->TYPES);
+        MAKENODE_ID (type_id_node, type_string[res_stype]);
+        MAKENODE_NUM (res_rc, arg_info->IDS_REFCNT);
+        BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
+        MAKE_NEXT_ICM_ARG (icm_arg, res_rc);
+        SET_VARS_FOR_MORE_ICMS;
+
+        if (N_id == arg1->nodetype) {
+            switch (convert) {
+            case 0:
+                CREATE_2_ARY_ICM (next_assign, "ND_2I_A", arg1, res);
+                break;
+            case 1:
+                CREATE_2_ARY_ICM (next_assign, "ND_2F_A", arg1, res);
+                break;
+            case 2:
+                CREATE_2_ARY_ICM (next_assign, "ND_2D_A", arg1, res);
+                break;
+                DBUG_ASSERT (0, "wrong tag (convert)");
+                break;
+            }
+            APPEND_ASSIGNS (first_assign, next_assign);
+
+            MAKENODE_NUM (n_node, 1);
+            DEC_OR_FREE_RC_ND (arg1, n_node);
+            INSERT_ASSIGN;
+        } else {
+            DBUG_ASSERT (N_array == arg1->nodetype, "wrong node != N_array");
+            DBUG_ASSERT (NULL != arg1->TYPES, " info.types is NULL");
+            COUNT_ELEMS (length, arg1->node[0]);
+            MAKENODE_NUM (n_node, length);
+            if (1 < arg1->DIM) {
+                node *dummy;
+                /* it is an array of arrays, so we have to use
+                 * ND_CREATE_CONST_ARRAY_A
+                 */
+                DBUG_ASSERT (N_id == arg1->node[0]->node[0]->nodetype,
+                             "wrong node != N_id");
+                GET_LENGTH (length, arg1->node[0]->node[0]->IDS_NODE->TYPES);
+                MAKENODE_NUM (n_length, length);
+
+                CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_A", res, n_length,
+                                  n_node);
+                icm_arg->node[1] = arg1->node[0];
+                icm_arg->nnode = 2;
+                APPEND_ASSIGNS (first_assign, next_assign);
+
+                /* now decrement refcount of the arrays */
+                dummy = arg1->node[0];
+                MAKENODE_NUM (n_node, 1);
+                while (NULL != dummy) {
+                    DBUG_ASSERT (N_id == dummy->node[0]->nodetype,
+                                 "wrong nodetype != N_id");
+                    DEC_OR_FREE_RC_ND (dummy->node[0], n_node);
+                    dummy = dummy->node[1];
+                }
+            } else {
+                /* it is an array out of scalar values */
+                CREATE_2_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_S", res, n_node);
+                icm_arg->node[1] = arg1->node[0];
+                icm_arg->nnode = 2;
+                APPEND_ASSIGNS (first_assign, next_assign);
+            }
+            INSERT_ASSIGN;
+        }
+        break;
+    }
+    default:
+        /*   DBUG_ASSERT(0,"wrong prf"); */
+        break;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
  *  functionname  : CompPrf
  *  arguments     : 1) N_prf node
  *                  2) NULL
@@ -1946,6 +2072,12 @@ CompPrf (node *arg_node, node *arg_info)
             }
             break;
         }
+        case F_toi_A:
+        case F_tod_A:
+        case F_tof_A: {
+            arg_node = CompConvert (arg_node, arg_info);
+            break;
+        }
         default:
             /*   DBUG_ASSERT(0,"wrong prf"); */
             break;
@@ -1959,7 +2091,9 @@ CompPrf (node *arg_node, node *arg_info)
         arg_node = arg_node->node[0]->node[0];
         FREE (dummy->node[0]); /* free N_exprs node */
         FREE (dummy);          /* free N_prf node */
-    }
+    } else if ((PRF_PRF (arg_node) == F_toi) || (PRF_PRF (arg_node) == F_tod)
+               || (PRF_PRF (arg_node) == F_tod))
+        arg_node = CompConvert (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
