@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2002/02/22 09:02:00  dkr
+ * macro FREEMASKS modified
+ *
  * Revision 3.28  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -160,11 +163,13 @@
 /*  Basic Free-Macros    (internal use only)                                */
 /*--------------------------------------------------------------------------*/
 
-#define FREEMASK(mac)                                                                    \
+#define FREEMASKS(mac)                                                                   \
     {                                                                                    \
         int _i;                                                                          \
                                                                                          \
-        for (_i = 0; _i < MAX_MASK; _i++) {                                              \
+        /* Only the first three masks are freed!!!                        */             \
+        /* The other masks are virtually mapped to other AST attributes!! */             \
+        for (_i = 0; _i < 3; _i++) {                                                     \
             Free (mac (arg_node, _i));                                                   \
         }                                                                                \
     }
@@ -991,7 +996,7 @@ FreeFundef (node *arg_node, node *arg_info)
             FREETRAV (FUNDEF_PRAGMA (arg_node));
         }
 
-        FREEMASK (FUNDEF_MASK);
+        FREEMASKS (FUNDEF_MASK);
 
         if (FUNDEF_DFM_BASE (arg_node) != NULL) {
             FUNDEF_DFM_BASE (arg_node) = DFMRemoveMaskBase (FUNDEF_DFM_BASE (arg_node));
@@ -1078,7 +1083,7 @@ FreeBlock (node *arg_node, node *arg_info)
     FREETRAV (BLOCK_VARDEC (arg_node));
     BLOCK_NEEDFUNS (arg_node) = FreeNodelist (BLOCK_NEEDFUNS (arg_node));
     BLOCK_NEEDTYPES (arg_node) = FreeNodelist (BLOCK_NEEDTYPES (arg_node));
-    FREEMASK (BLOCK_MASK);
+    FREEMASKS (BLOCK_MASK);
     Free (BLOCK_CACHESIM (arg_node));
     FREETRAV (BLOCK_SSACOUNTER (arg_node));
 
@@ -1132,7 +1137,7 @@ FreeAssign (node *arg_node, node *arg_info)
     FREETRAV (ASSIGN_INSTR (arg_node));
     INFO_FREE_ASSIGN (arg_info) = NULL;
 
-    FREEMASK (ASSIGN_MASK);
+    FREEMASKS (ASSIGN_MASK);
     index = (index_info *)ASSIGN_INDEX (arg_node);
     if (index != NULL) {
         FreeIndexInfo (index);
@@ -1249,7 +1254,7 @@ FreeDo (node *arg_node, node *arg_info)
     DO_USEVARS (arg_node) = FreeAllIds (DO_USEVARS (arg_node));
     DO_DEFVARS (arg_node) = FreeAllIds (DO_DEFVARS (arg_node));
 
-    FREEMASK (DO_MASK);
+    FREEMASKS (DO_MASK);
 
     DBUG_PRINT ("FREE", ("Removing N_do node ..."));
 
@@ -1275,7 +1280,7 @@ FreeWhile (node *arg_node, node *arg_info)
     WHILE_USEVARS (arg_node) = FreeAllIds (WHILE_USEVARS (arg_node));
     WHILE_DEFVARS (arg_node) = FreeAllIds (WHILE_DEFVARS (arg_node));
 
-    FREEMASK (WHILE_MASK);
+    FREEMASKS (WHILE_MASK);
 
     DBUG_PRINT ("FREE", ("Removing N_while node ..."));
 
