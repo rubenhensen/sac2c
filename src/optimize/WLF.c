@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.26  1999/02/16 14:50:35  srs
+ * fixed bug in RemoveDoubleIndexVectors()
+ *
  * Revision 1.25  1999/02/15 11:14:17  srs
  * replaced N_empty with prg genarray in WLFassign()
  *
@@ -1054,12 +1057,12 @@ RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
 
     DBUG_ENTER ("RemoveDoubleIndexVectors");
 
-    i = sizeof (int) * transformations->vector;
+    i = sizeof (int) * SHP_SEG_SIZE; /* max number of dimensions */
     found = Malloc (i);
     found = memset (found, 0, i);
 
     for (act_dim = 0; act_dim < transformations->vector; act_dim++)
-        if (transformations->permutation[act_dim] != 0) {
+        if (transformations->permutation[act_dim] != 0) { /* ==0: constant */
             dim = transformations->permutation[act_dim] - 1;
             if (found[dim] != 0) {
                 /* dimensions found[dim] and act_dim of subst_ig both are based on
