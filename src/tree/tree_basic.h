@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.113  2002/03/05 13:58:52  dkr
+ * definition of ID_UNQCONV modified
+ *
  * Revision 3.112  2002/03/01 02:34:51  dkr
  * - type ARGTAB added
  * - INFO_PREC3_... macros added
@@ -318,7 +321,7 @@ extern types *MakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name,
  *   ST_regular       : local variable or function parameter
  *   ST_global        : reference to global object
  *
- * CLSCONV is a flag which is set in those N_id nodes which were
+ * UNQCONV is a flag which is set in those N_id nodes which were
  * arguments to a class conversion (to_class, from_class) function.
  */
 
@@ -1617,7 +1620,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***                                            ( -> analysis -> )
  ***    int         REFCNT                      (refcount -> compile -> )
  ***    int         NAIVE_REFCNT                (refcount -> concurrent -> )
- ***    clsconv_t   CLSCONV                     (precompile -> compile -> )
+ ***    unqconv_t   UNQCONV                     (precompile -> compile -> )
  ***    node*       DEF                         (Unroll !!, Unswitch !!)
  ***    node*       WL                          (wli -> wlf !!)
  ***
@@ -1681,7 +1684,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  *                      additional argument in a return-statement which belongs
  *                      to a eliminated reference parameter
  *
- * CLSCONV is a flag which is set in those N_id nodes which were
+ * UNQCONV is a flag which is set in those N_id nodes which were
  * arguments to a class conversion (to_class, from_class) function.
  */
 
@@ -1704,7 +1707,7 @@ extern node *MakeId_Num (int val);
 #define ID_DEF(n) (IDS_DEF (ID_IDS (n)))
 #define ID_REFCNT(n) (IDS_REFCNT (ID_IDS (n)))
 #define ID_NAIVE_REFCNT(n) (IDS_NAIVE_REFCNT (ID_IDS (n)))
-#define ID_UNQCONV(n) ((unqconv_t) (n->flag))
+#define ID_UNQCONV(n) (*((unqconv_t *)(&(n->node[4])))) /* needed for cc */
 #define ID_WL(n) (n->node[0])
 #define ID_NT_TAG(n) (n->node[5])
 
