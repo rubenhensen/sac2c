@@ -3,7 +3,12 @@
 /*
  *
  * $Log$
- * Revision 1.56  1995/04/26 16:06:15  hw
+ * Revision 1.57  1995/05/22 14:25:45  hw
+ * - bug fixed in creation of "psi" (A[7] will be transformed to psi([7],A),
+ *    NOTE: A[b] will be transformed to psi(b,A) !!!!!! )
+ * - set arg_node->flag to 1 if function should be inlined
+ *
+ * Revision 1.56  1995/04/26  16:06:15  hw
  * bug fixed in MakeLet ( identifier will be copied now)
  *
  * Revision 1.55  1995/04/06  13:56:09  hw
@@ -538,6 +543,9 @@ fundef: types ID BRACKET_L fundef2
              $$=$6;
              $$->info.types=$1;          /* result type(s) */
              $$->info.types->id=$4;      /*  function name */
+             $$->flag=1;                 /* flag to sign, that this function
+                                          * should be inlined
+                                          */             
             }
 
 fundef2: args BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
@@ -1120,7 +1128,7 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
            exprs2=MakeNode(N_exprs);
            exprs2->node[0]=$1;      /* array */
            exprs2->nnode=1;
-           if(1 == $3->nnode)
+           if((1 == $3->nnode) && (N_id == $3->node[0]->nodetype))
               exprs1=$3;         /*  expression (shape)  */
            else
            {
