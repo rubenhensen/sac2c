@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.119  2004/11/23 20:06:58  sbs
+ * ARG_NTYPE added.
+ *
  * Revision 3.118  2004/11/23 19:32:48  khf
  * ID_TYPE modified
  *
@@ -722,6 +725,7 @@ extern node *TCadjustAvisData (node *new_vardec, node *fundef);
  *  compound access macros
  */
 
+#define ARG_NTYPE(n) (AVIS_TYPE (ARG_AVIS (n)))
 #define ARG_BASETYPE(n) (TYPES_BASETYPE (ARG_TYPE (n)))
 #define ARG_DIM(n) (TYPES_DIM (ARG_TYPE (n)))
 #define ARG_SHAPE(n, x) (TYPES_SHAPE (ARG_TYPE (n), x))
