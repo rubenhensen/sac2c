@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2001/02/12 21:23:19  dkr
+ * some macros for lac2fun() and InferDFMs() added
+ *
  * Revision 3.24  2001/02/12 17:05:11  nmw
  * N_avis node added, MakeVardec/MakeArg alloc N_avis node
  *
@@ -920,7 +923,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_INLINE(n) (n->flag)
 #define FUNDEF_INLREC(n) (n->refcnt)
 #define FUNDEF_EXPORT(n) (n->int_data)
-#define FUNDEF_DFM_BASE(n) (n->dfmask[0])
+#define FUNDEF_DFM_BASE(n) ((DFMmask_base_t) (n->dfmask[0]))
 #define FUNDEF_IDENTIFIER(n) (n->int_data)
 #define FUNDEF_MT2USE(n) (n->dfmask[1])
 #define FUNDEF_MT2DEF(n) (n->dfmask[2])
@@ -2564,8 +2567,8 @@ extern node *MakeInfo ();
 
 /* converting loops and conditionals to functions (lac2fun.c) */
 #define INFO_L2F_FUNDEF(n) (n->node[0])
-#define INFO_L2F_ISTRANS(n) (n->flag)
 #define INFO_L2F_FUNS(n) (n->node[1])
+#define INFO_L2F_ASSIGN(n) (n->node[2])
 
 /* inference of DF masks (infer_dfms.c) */
 #define INFO_INFDFMS_FUNDEF(n) (n->node[0])
@@ -2573,7 +2576,8 @@ extern node *MakeInfo ();
 #define INFO_INFDFMS_OUT(n) (n->dfmask[1])
 #define INFO_INFDFMS_LOCAL(n) (n->dfmask[2])
 #define INFO_INFDFMS_NEEDED(n) (n->dfmask[3])
-#define INFO_INFDFMS_ISFIX(n) (n->counter)
+#define INFO_INFDFMS_ISFIX(n) ((bool)(n->counter))
+#define INFO_INFDFMS_FIRST(n) ((bool)(n->flag))
 #define INFO_INFDFMS_HIDELOC(n) (n->varno) /* hide locals */
 
 /* cleaning up declarations (cleanup_decls.c) */
