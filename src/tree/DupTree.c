@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2002/02/20 15:02:11  dkr
+ * fundef DupTypes() renamed into DupAllTypes()
+ * fundef DupTypesOnly() renamed into DupAllTypesOnly()
+ * fundefs DupOneTypes() and DupOneTypesOnly() added
+ *
  * Revision 3.53  2001/12/12 11:14:39  dkr
  * functions DupIds_Id_NT, DupId_NT added
  *
@@ -339,7 +344,7 @@ DupDFMask_ (DFMmask_t mask, node *arg_info)
  *
  * Remark:
  *   'arg_info' might be NULL, because this function is not only used by
- *   the traversal mechanism but also by DupAllIds()!
+ *   the traversal mechanism but also by Dup...Ids()!
  *
  ******************************************************************************/
 
@@ -422,7 +427,7 @@ DupShpseg_ (shpseg *arg_shpseg, node *arg_info)
  *
  * Remark:
  *   'arg_info' might be NULL, because this function is not only used by
- *   the traversal mechanism but also by DupTypes()!
+ *   the traversal mechanism but also by Dup...Types()!
  *
  ******************************************************************************/
 
@@ -2424,24 +2429,58 @@ DupShpseg (shpseg *arg_shpseg)
 /******************************************************************************
  *
  * Function:
- *   types *DupTypes( types* type)
+ *   types *DupOneTypes( types *type)
+ *
+ * Description:
+ *   Duplicates the first TYPES structure of the given TYPES chain.
+ *
+ *   This function duplicates the (real) types-structure. Unfortunately, it
+ *   is *not* identical to the (virtual) TYPES-structure  8-((
+ *
+ *   For duplicating the (virtual) TYPES-structure only, use DupOneTypesOnly()
+ *   !!!
+ *
+ ******************************************************************************/
+
+types *
+DupOneTypes (types *arg_types)
+{
+    types *new_types, *tmp;
+
+    DBUG_ENTER ("DupOneTypes");
+
+    DBUG_ASSERT ((arg_types != NULL), "DupOneTypes: argument is NULL!");
+
+    tmp = TYPES_NEXT (arg_types);
+    TYPES_NEXT (arg_types) = NULL;
+    new_types = DupAllTypes (arg_types);
+    TYPES_NEXT (arg_types) = tmp;
+
+    DBUG_RETURN (new_types);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   types *DupAllTypes( types* type)
  *
  * Description:
  *   This function duplicates the (real) types-structure. Unfortunately, it
  *   is *not* identical to the (virtual) TYPES-structure  8-((
  *
- *   For duplicating the (virtual) TYPES-structure only, use DupTypesOnly() !!!
+ *   For duplicating the (virtual) TYPES-structure only, use DupAllTypesOnly()
+ *   !!!
  *
  ******************************************************************************/
 
 types *
-DupTypes (types *arg_types)
+DupAllTypes (types *arg_types)
 {
     types *new_types;
 
-    DBUG_ENTER ("DupTypes");
+    DBUG_ENTER ("DupAllTypes");
 
-    DBUG_ASSERT ((arg_types != NULL), "DupTypes: argument is NULL!");
+    DBUG_ASSERT ((arg_types != NULL), "DupAllTypes: argument is NULL!");
 
     new_types = DupTypes_ (arg_types, NULL);
 
@@ -2461,42 +2500,56 @@ DupTypes (types *arg_types)
 /******************************************************************************
  *
  * Function:
- *   void DupTypesOnly( types** target, types* source)
+ *   types *DupOneTypesOnly( types* arg_types)
  *
  * Description:
- *   Duplicates the (virtual) TYPES-structure. Unfortunately, the (real)
- *   types-structure contains *more* items than TYPES. Therefore, the target
- *   must be given as a reference parameter und some items must be restored
- *   after generating the new types-structure.
+ *   Duplicates the (virtual) TYPES-structure only.
  *
- *   See also DupTypes()
+ *   See also DupOneTypes()
  *
  ******************************************************************************/
 
-void
-DupTypesOnly (types **target, types *source)
+types *
+DupOneTypesOnly (types *arg_types)
 {
-    types *old_types;
+    types *new_types, *tmp;
 
-    DBUG_ENTER ("DupTypesOnly");
+    DBUG_ENTER ("DupOneTypesOnly");
 
-    DBUG_ASSERT ((target != NULL), "no target given!");
+    DBUG_ASSERT ((arg_types != NULL), "DupOneTypesOnly: argument is NULL!");
 
-    old_types = (*target);
+    tmp = TYPES_NEXT (arg_types);
+    TYPES_NEXT (arg_types) = NULL;
+    new_types = DupTypes_ (arg_types, NULL);
+    TYPES_NEXT (arg_types) = tmp;
 
-    (*target) = DupTypes (source);
+    DBUG_RETURN (new_types);
+}
 
-    Free ((*target)->id);
-    Free ((*target)->id_mod);
-    Free ((*target)->id_cmod);
+/******************************************************************************
+ *
+ * Function:
+ *   types *DupAllTypesOnly( types* arg_types)
+ *
+ * Description:
+ *   Duplicates the (virtual) TYPES-structure only.
+ *
+ *   See also DupAllTypes()
+ *
+ ******************************************************************************/
 
-    (*target)->id = old_types->id;
-    (*target)->id_mod = old_types->id_mod;
-    (*target)->id_cmod = old_types->id_cmod;
+types *
+DupAllTypesOnly (types *arg_types)
+{
+    types *new_types;
 
-    old_types = FreeOneTypes (old_types);
+    DBUG_ENTER ("DupAllTypesOnly");
 
-    DBUG_VOID_RETURN;
+    DBUG_ASSERT ((arg_types != NULL), "DupAllTypesOnly: argument is NULL!");
+
+    new_types = DupTypes_ (arg_types, NULL);
+
+    DBUG_RETURN (new_types);
 }
 
 /******************************************************************************
