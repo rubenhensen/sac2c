@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 2.3  1999/02/28 21:46:33  srs
+ * added DBUG information and renamed FREE_INDEX to FREE_INDEX_INFO
+ *
  * Revision 2.2  1999/02/26 14:48:45  dkr
  * file moved from folder /optimize
  *
@@ -1222,9 +1225,10 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
 
     /* check if array access is in range. Don't use the original *transformations
        because RemoveDoubleIndexVectors() modifies it.  */
+    DBUG_PRINT ("WLF", ("  ...starting transformations..."));
     transf2 = DuplicateIndexInfo (transformations);
     error = TransformationRangeCheck (transf2, substwln, target_ig);
-    FREE_INDEX (transf2);
+    FREE_INDEX_INFO (transf2);
     if (error)
         ABORT (NODE_LINE (idn),
                ("array access to %s out of range in dimension %i", ID_NAME (idn), error));
@@ -1244,7 +1248,9 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
 
     /* intersect target_ig and subst_ig
        and create new code blocks */
+    DBUG_PRINT ("WLF", ("  ...done. Intersecting generators now..."));
     intersect_ig = IntersectInternGen (target_ig, subst_ig);
+    DBUG_PRINT ("WLF", ("  ...done..."));
 
     /* results are in intersect_ig. At the moment, just append to new_ig. */
     DBUG_ASSERT (intersect_ig, ("No new intersections"));
@@ -1788,9 +1794,10 @@ WLFlet (node *arg_node, node *arg_info)
                ASSIGN_INDEX provides the correct index_info.*/
             transformation = INDEX (INFO_WLI_ASSIGN (arg_info));
 
-            DBUG_PRINT ("WLF", ("folding array %s in line %d now", ID_NAME (idn),
+            DBUG_PRINT ("WLF", ("folding array %s in line %d now...", ID_NAME (idn),
                                 NODE_LINE (arg_node)));
             Fold (idn, transformation, targetwln, substwln);
+            DBUG_PRINT ("WLF", ("                               ...successful"));
             wlf_expr++;
             /* the WL substwln is now referenced one times less. */
             (NWITH_REFERENCES_FOLDED (substwln))++;
@@ -1891,8 +1898,8 @@ WLFNwith (node *arg_node, node *arg_info)
             intersect_grids_os
               = Malloc (sizeof (int) * IDS_SHAPE (NWITH_VEC (arg_node), 0));
 
-            DBUG_PRINT ("WLF",
-                        ("something to fold in WL in line %d", NODE_LINE (arg_node)));
+            DBUG_PRINT ("WLF", ("=> found something to fold in WL in line %d",
+                                NODE_LINE (arg_node)));
             NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
             FREE (intersect_grids_ot);
@@ -1915,9 +1922,8 @@ WLFNwith (node *arg_node, node *arg_info)
                 arg_node = InternGen2Tree (arg_node, all_new_ig);
                 all_new_ig = FreeInternGenChain (all_new_ig);
                 arg_node = CheckForSuperfluousCodes (arg_node);
-                DBUG_PRINT ("WLF", ("new generators created"));
+                DBUG_PRINT ("WLF", ("<= new generators created"));
             }
-            DBUG_PRINT ("WLF", ("folding of last WL complete"));
 
             /* this WL is finisched. Search other WLs on same level. */
             wlf_mode = wlfm_search_WL;
