@@ -105,8 +105,6 @@ p_tabs (int indent, bool use_tabs)
     for (k = 0; (k < i); k++) {
         fprintf (stdout, " ");
     }
-
-    return;
 }
 
 /* get character from stream or return the saved one */
@@ -120,7 +118,7 @@ getchr (FILE *infile)
     if (last_char == (-1)) {
         last_char = 0x1a;
     }
-    peek = -1;
+    peek = (-1);
 
     return ((last_char == '\r') ? getchr (infile) : last_char);
 }
@@ -155,8 +153,6 @@ indent_puts (int indent, bool use_tabs)
             a_flg = FALSE;
         }
     }
-
-    return;
 }
 
 /* search table for character string and return index number */
@@ -222,8 +218,6 @@ gotelse (void)
     p_flg[level] = save_p_flg[c_level][if_lev];
     ind[level] = save_ind[c_level][if_lev];
     if_flg = TRUE;
-
-    return;
 }
 
 /* special edition of put string for comment processing */
@@ -266,8 +260,6 @@ putcoms (int indent, bool use_tabs)
         }
         pos = 0;
     }
-
-    return;
 }
 
 /* print cpp comment */
@@ -284,8 +276,6 @@ cpp_putcoms (int indent, bool use_tabs)
         pos = 0;
         string[pos] = '\0';
     }
-
-    return;
 }
 
 /* comment processing */
@@ -317,8 +307,6 @@ gotstar:
     s_flg = TRUE;
     putcoms (indent, use_tabs);
     s_flg = save_s_flg;
-
-    return;
 }
 
 /* cpp comment processing */
@@ -330,8 +318,6 @@ cpp_comment (FILE *infile, int indent, bool use_tabs)
     }
     cpp_putcoms (indent, use_tabs);
     s_flg = TRUE;
-
-    return;
 }
 
 /* read to new_line */
@@ -342,21 +328,23 @@ getnl (FILE *infile, int indent, bool use_tabs)
 
     save_tabs = tabs;
     while (((peek = getchr (infile)) == '\t') || (peek == ' ')) {
-        peek = -1;
+        peek = (-1);
     }
-    fprintf (stdout, " ");
+#if 0
+  fprintf( stdout, " ");
+#endif
     if ((peek = getchr (infile)) == '/') {
-        peek = -1;
+        peek = (-1);
         if ((peek = getchr (infile)) == '*') {
             string[pos++] = '/';
             string[pos++] = '*';
-            peek = -1;
+            peek = (-1);
             comment (infile, indent, use_tabs);
         } else if (peek == '/') {
             /* inline C++ comment */
             string[pos++] = '/';
             string[pos++] = '/';
-            peek = -1;
+            peek = (-1);
             cpp_comment (infile, indent, use_tabs);
 
             return (TRUE);
@@ -365,7 +353,7 @@ getnl (FILE *infile, int indent, bool use_tabs)
         }
     }
     if ((peek = getchr (infile)) == '\n') {
-        peek = -1;
+        peek = (-1);
 
         tabs = save_tabs;
         return (TRUE);
@@ -386,6 +374,7 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
     bool save_if_flg[10];
     bool e_flg = FALSE;
     bool q_flg = FALSE;
+    int nl_flag = 0;
     char l_char;
 
     char *w_if_[] = {"if", NULL};
@@ -395,6 +384,15 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
     char *w_cpp_comment[] = {"//", NULL};
 
     while ((c = getchr (infile)) != 032) {
+        if ((c != ' ') && (c != '\t') && (c != '\n')) {
+            if (nl_flag == 1) {
+                fprintf (stdout, " ");
+            } else if (nl_flag == 2) {
+                fprintf (stdout, "\n");
+            }
+            nl_flag = 0;
+        }
+
         switch (c) {
         default:
             string[pos++] = c;
@@ -433,7 +431,11 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             }
 
             indent_puts (indent, use_tabs);
-            if (!remove_newlines) {
+            if (remove_newlines) {
+                if (nl_flag == 0) {
+                    nl_flag = 1;
+                }
+            } else {
                 fprintf (stdout, "\n");
             }
             s_flg = TRUE;
@@ -463,7 +465,7 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             indent_puts (indent, use_tabs);
             getnl (infile, indent, use_tabs);
             indent_puts (indent, use_tabs);
-            fprintf (stdout, "\n");
+            nl_flag = 2;
             tabs++;
             s_flg = TRUE;
             if (p_flg[level] > 0) {
@@ -483,13 +485,13 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             p_tabs (indent, use_tabs);
             if ((peek = getchr (infile)) == ';') {
                 fprintf (stdout, "%c;", c);
-                peek = -1;
+                peek = (-1);
             } else {
                 fprintf (stdout, "%c", c);
             }
             getnl (infile, indent, use_tabs);
             indent_puts (indent, use_tabs);
-            fprintf (stdout, "\n");
+            nl_flag = 2;
             s_flg = TRUE;
             if (c_level < s_level[level]) {
                 if (level > 0) {
@@ -500,11 +502,6 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
                 tabs -= p_flg[level];
                 p_flg[level] = 0;
                 ind[level] = FALSE;
-            }
-            if (remove_newlines) {
-                if (tabs == 0) {
-                    fprintf (stdout, "\n\n");
-                }
             }
             break;
         case '"':
@@ -538,7 +535,7 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             }
             getnl (infile, indent, use_tabs);
             indent_puts (indent, use_tabs);
-            fprintf (stdout, "\n");
+            nl_flag = 2;
             s_flg = TRUE;
             if (if_lev > 0) {
                 if (if_flg) {
@@ -567,7 +564,7 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             if (peek == ':') {
                 indent_puts (indent, use_tabs);
                 fprintf (stdout, ":");
-                peek = -1;
+                peek = (-1);
                 break;
             }
 
@@ -575,6 +572,7 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
                 q_flg = FALSE;
                 break;
             }
+
             if (lookup (w_ds)) {
                 tabs--;
                 indent_puts (indent, use_tabs);
@@ -585,36 +583,39 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             }
             if ((peek = getchr (infile)) == ';') {
                 fprintf (stdout, ";");
-                peek = -1;
+                peek = (-1);
             }
             getnl (infile, indent, use_tabs);
             indent_puts (indent, use_tabs);
-            fprintf (stdout, "\n");
+            nl_flag = 2;
             s_flg = TRUE;
             break;
         case '/':
             string[pos++] = c;
             if ((peek = getchr (infile)) == '/') {
                 string[pos++] = peek;
-                peek = -1;
+                peek = (-1);
                 cpp_comment (infile, indent, use_tabs);
-                fprintf (stdout, "\n");
-                break;
-            }
-            if ((peek = getchr (infile)) != '*') {
-                break;
-            } else {
+                nl_flag = 2;
+            } else if ((peek = getchr (infile)) == '*') {
+#if 1
+                if (remove_newlines) {
+                    fprintf (stdout, "\n");
+                }
+#endif
                 string[pos--] = '\0';
                 indent_puts (indent, use_tabs);
                 string[pos++] = '/';
                 string[pos++] = '*';
-                peek = -1;
+                peek = (-1);
                 comment (infile, indent, use_tabs);
+#if 1
                 if (remove_newlines) {
-                    fprintf (stdout, "\n");
+                    nl_flag = 2;
                 }
-                break;
+#endif
             }
+            break;
         case ')':
             paren--;
             string[pos++] = c;
@@ -644,19 +645,19 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             string[pos++] = c;
             paren++;
             if (lookup (w_for)) {
-                int ct;
+                int cnt;
 
                 while ((c = get_string (infile, indent, use_tabs)) != ';')
                     ;
-                ct = 0;
+                cnt = 0;
             cont:
                 while ((c = get_string (infile, indent, use_tabs)) != ')') {
                     if (c == '(') {
-                        ct++;
+                        cnt++;
                     }
                 }
-                if (ct != 0) {
-                    ct--;
+                if (cnt != 0) {
+                    cnt--;
                     goto cont;
                 }
                 paren--;
@@ -679,6 +680,7 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             }
         }
     }
+    fprintf (stdout, "\n");
 
     return (0);
 }
