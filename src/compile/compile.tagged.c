@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.59  2003/03/13 19:12:01  dkr
+ * GetShapeDim() used instead of GetShapeClassFromTypes()
+ *
  * Revision 1.58  2003/03/08 20:56:36  dkr
  * COMPPrf... functions for arithmetical operations revisited
  *
@@ -700,7 +703,7 @@ DupExpr_NT_AddReadIcms (node *expr)
         new_expr = MakePrf (PRF_PRF (expr), DupExprs_NT_AddReadIcms (PRF_ARGS (expr)));
     } else if (NODE_TYPE (expr) == N_id) {
         new_expr = DupId_NT (expr);
-        if (GetShapeClassFromTypes (ID_TYPE (expr)) == C_scl) {
+        if (GetShapeDim (ID_TYPE (expr)) == SCALAR) {
             new_expr = MakeIcm2 ("ND_READ", new_expr, MakeNum (0));
         }
     } else {
@@ -2807,9 +2810,9 @@ COMPApIds (node *ap, node *arg_info)
                     if ((sc == C_akd) || (sc == C_aud)) {
 #if 0
             DBUG_ASSERT( (0),
-                         "return value with unknown shape/dimension found!");
+                   "Array representation with unknown shape/dimension found!");
             WARN( NODE_LINE( ap),
-                  ("Return value with unknown shape/dimension found"));
+                  ("Array representation with unknown shape/dimension found"));
 #endif
                     }
                 }
@@ -3928,7 +3931,7 @@ COMPPrfUniScalar (char *icm_name, node *arg_node, node *arg_info, node **check_r
                  "illegal number of args found!");
 
     DBUG_ASSERT (((NODE_TYPE (PRF_ARGS (arg_node)) != N_id)
-                  || (GetShapeClassFromTypes (ID_TYPE (PRF_ARGS (arg_node))) == C_scl)),
+                  || (GetShapeDim (ID_TYPE (PRF_ARGS (arg_node))) == SCALAR)),
                  "non-scalar argument found!");
 
     (*check_reuse1) = PRF_ARG1 (arg_node);
@@ -3986,10 +3989,10 @@ COMPPrfBin (char *icm_name, node *arg_node, node *arg_info, node **check_reuse1,
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    arg1_is_scalar = ((NODE_TYPE (arg1) != N_id)
-                      || (GetShapeClassFromTypes (ID_TYPE (arg1)) == C_scl));
-    arg2_is_scalar = ((NODE_TYPE (arg2) != N_id)
-                      || (GetShapeClassFromTypes (ID_TYPE (arg2)) == C_scl));
+    arg1_is_scalar
+      = ((NODE_TYPE (arg1) != N_id) || (GetShapeDim (ID_TYPE (arg1)) == SCALAR));
+    arg2_is_scalar
+      = ((NODE_TYPE (arg2) != N_id) || (GetShapeDim (ID_TYPE (arg2)) == SCALAR));
 
     if ((arg1_is_scalar) && (arg2_is_scalar)) {
         /* both arguments are scalars */
@@ -5160,8 +5163,8 @@ COMP2With2 (node *arg_node, node *arg_info)
             node *shp = NWITH2_SHAPE (arg_node);
             node *cexpr = NWITH2_CEXPR (arg_node);
 #ifndef DBUG_OFF
-            shape_class_t cexpr_sc = GetShapeClassFromTypes (ID_TYPE (cexpr));
-            shape_class_t wlids_sc = GetShapeClassFromTypes (IDS_TYPE (wlids));
+            int cexpr_dim = GetShapeDim (ID_TYPE (cexpr));
+            int wlids_dim = GetShapeDim (IDS_TYPE (wlids));
 #endif
 
             DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "NWITH2_CEXPR is not a N_id");
@@ -5170,8 +5173,7 @@ COMP2With2 (node *arg_node, node *arg_info)
              * for the time being, either the WL expression or the LHS of the WL
              * must be AKS or SCL ... 8-(
              */
-            DBUG_ASSERT (((cexpr_sc == C_scl) || (cexpr_sc == C_aks)
-                          || (wlids_sc == C_scl) || (wlids_sc == C_aks)),
+            DBUG_ASSERT ((KNOWN_SHAPE (cexpr_dim) || KNOWN_SHAPE (wlids_dim)),
                          "genarray-WL found with expression and result both of"
                          " unknown shape!");
 

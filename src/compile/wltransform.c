@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2003/03/13 19:11:54  dkr
+ * GetShapeDim() used instead of GetShapeClassFromTypes()
+ *
  * Revision 3.73  2003/03/13 14:42:18  dkr
  * global variable 'line' removed -- 'linenum' used instead
  *
@@ -242,7 +245,6 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "print.h"
-#include "NameTuplesUtils.h"
 #include "constants.h"
 #include "wl_bounds.h"
 #include "wlpragma_funs.h"
@@ -7008,7 +7010,7 @@ node *
 WLTRAwith (node *arg_node, node *arg_info)
 {
     types *idx_type;
-    shape_class_t idx_sc;
+    int idx_dim;
     node *new_node = NULL;
 
     DBUG_ENTER ("WLTRAwith");
@@ -7018,9 +7020,9 @@ WLTRAwith (node *arg_node, node *arg_info)
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
     idx_type = IDS_TYPE (NWITH_VEC (arg_node));
-    idx_sc = GetShapeClassFromTypes (idx_type);
-    if (idx_sc != C_aks) {
-        DBUG_ASSERT ((idx_sc != C_scl), "scalar index vector found!");
+    idx_dim = GetShapeDim (idx_type);
+    if (!KNOWN_SHAPE (idx_dim)) {
+        DBUG_ASSERT ((idx_dim != SCALAR), "scalar index vector found!");
 
         /*
          * index vector is AKD or AUD
