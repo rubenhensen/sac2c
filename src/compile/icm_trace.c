@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/11/24 18:02:39  jhb
+ * compile! only outfile changed to global
+ *
  * Revision 3.5  2002/10/10 23:51:08  dkr
  * ICM_STR added
  *
@@ -53,19 +56,19 @@
 #define SEP                                                                              \
     if (sep) {                                                                           \
         INDENT;                                                                          \
-        fprintf (outfile, "SAC_Print( \", \");\n");                                      \
+        fprintf (global.outfile, "SAC_Print( \", \");\n");                               \
     }
 
 #define ICM_DEF(prf, trf)                                                                \
     if (trf & traceflag) {                                                               \
         int sep = 0;                                                                     \
         INDENT;                                                                          \
-        fprintf (outfile, "SAC_Print( \"%s( \");\n", #prf);
+        fprintf (global.outfile, "SAC_Print( \"%s( \");\n", #prf);
 
 #define ICM_ANY(name)                                                                    \
     SEP;                                                                                 \
     INDENT;                                                                              \
-    fprintf (outfile, "SAC_Print( \"%s \");\n", name);                                   \
+    fprintf (global.outfile, "SAC_Print( \"%s \");\n", name);                            \
     sep = 1;
 
 #define ICM_ICM(name) ICM_ANY (name)
@@ -77,13 +80,13 @@
 #define ICM_STR(name)                                                                    \
     SEP;                                                                                 \
     INDENT;                                                                              \
-    fprintf (outfile, "SAC_Print( \"\\\"%s \"\\\");\n", name);                           \
+    fprintf (global.outfile, "SAC_Print( \"\\\"%s \"\\\");\n", name);                    \
     sep = 1;
 
 #define ICM_INT(name)                                                                    \
     SEP;                                                                                 \
     INDENT;                                                                              \
-    fprintf (outfile, "SAC_Print( \"%d \");\n", name);                                   \
+    fprintf (global.outfile, "SAC_Print( \"%d \");\n", name);                            \
     sep = 1;
 
 #define ICM_VARANY(dim, name)                                                            \
@@ -120,7 +123,7 @@
 
 #define ICM_END(prf, args)                                                               \
     INDENT;                                                                              \
-    fprintf (outfile, "SAC_Print( \")\\n\");\n");                                        \
+    fprintf (global.outfile, "SAC_Print( \")\\n\");\n");                                 \
     }
 
 #include "icm.data"
