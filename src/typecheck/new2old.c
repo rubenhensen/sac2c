@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2002/08/31 04:56:27  dkr
+ * NT2OTarray added: ARRAY_TYPE is set now
+ *
  * Revision 1.2  2002/08/13 12:19:04  dkr
  * NT2OTarg added
  * NT2OTfundef modified: wrapper funs are handled like normal functions
@@ -172,6 +175,31 @@ NT2OTvardec (node *arg_node, node *arg_info)
     }
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NT2OTarray( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+NT2OTarray (node *arg_node, node *arg_info)
+{
+    ntype *type;
+
+    DBUG_ENTER ("NT2OTarray");
+
+    if (ARRAY_TYPE (arg_node) == NULL) {
+        type = NewTypeCheck_Expr (arg_node);
+        ARRAY_TYPE (arg_node) = TYType2OldType (type);
+        type = TYFreeType (type);
     }
 
     DBUG_RETURN (arg_node);
