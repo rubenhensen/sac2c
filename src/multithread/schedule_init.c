@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/06/13 12:27:13  cg
+ * Bug fixed after last modification by dkr:
+ * The flag ISSCHEDULED is set again for with-loops to
+ * distinguish between those executed in parallel and those
+ * executed sequentially for whatever reason.
+ *
  * Revision 3.3  2001/03/29 14:46:14  dkr
  * NWITH2_SCHEDULING removed
  *
@@ -420,10 +426,11 @@ SCHINnwith2 (node *arg_node, node *arg_info)
       WARN(linenum, ("pragma-scheduling of *mt not allowed* inner-wl ignored"));
     }
   }
-  if (INFO_SCHIN_ALLOWED( arg_info)) {
-    NWITH2_ISSCHEDULED( arg_node) = TRUE;
-  }
 #endif
+
+    if (INFO_SCHIN_ALLOWED (arg_info)) {
+        NWITH2_ISSCHEDULED (arg_node) = TRUE;
+    }
 
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
 
