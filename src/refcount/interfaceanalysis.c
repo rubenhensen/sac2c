@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/12/08 21:23:50  ktr
+ * Using TUisUniqueUserType now.
+ *
  * Revision 1.8  2004/12/08 10:39:28  ktr
  * bugfix.
  *
@@ -54,9 +57,9 @@
 #include "print.h"
 #include "new_types.h"
 #include "DataFlowMask.h"
-#include "user_types.h"
 #include "free.h"
 #include "internal_lib.h"
+#include "type_utils.h"
 
 /**
  * CONTEXT enumeration: ia_context_t
@@ -235,25 +238,6 @@ SetRetAlias (node *fundef, int num, bool newval)
     DBUG_RETURN (fundef);
 }
 
-static bool
-IsUniqueNT (ntype *ty)
-{
-    bool res = FALSE;
-
-    DBUG_ENTER ("IsUniqueNT");
-
-    if (TYisUser (ty)) {
-        node *tdef = UTgetTdef (TYgetUserType (ty));
-        DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
-
-        if (TYPEDEF_ISUNIQUE (tdef)) {
-            res = TRUE;
-        }
-    }
-
-    DBUG_RETURN (res);
-}
-
 /******************************************************************************
  *
  * Interface alias analysis traversal (emia_tab)
@@ -331,7 +315,7 @@ EMIAarg (node *arg_node, info *arg_info)
 
     case IA_unqargs:
         if (AVIS_TYPE (ARG_AVIS (arg_node)) != NULL) {
-            if (IsUniqueNT (TYgetScalar (AVIS_TYPE (ARG_AVIS (arg_node))))) {
+            if (TUisUniqueUserType (TYgetScalar (AVIS_TYPE (ARG_AVIS (arg_node))))) {
                 arg_node = SetArgAlias (arg_node, FALSE);
             }
         }
@@ -642,7 +626,7 @@ EMIAret (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMIAret");
 
-    if (IsUniqueNT (TYgetScalar (RET_TYPE (arg_node)))) {
+    if (TUisUniqueUserType (TYgetScalar (RET_TYPE (arg_node)))) {
         if (RET_ISALIASING (arg_node)) {
             RET_ISALIASING (arg_node) = FALSE;
             unaliased += 1;
