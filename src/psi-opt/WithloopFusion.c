@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/08/29 11:00:40  khf
+ * proceeding implementation
+ *
  * Revision 1.7  2004/08/26 15:06:52  khf
  * detection and tag of dependencies are sourced out into
  * detectdependencies.c and tagdependencies.c
@@ -61,9 +64,11 @@ struct INFO {
     int wlaction;
     bool genareequal;
     int wotype;
+    bool wo_contains_fold;
     bool wldependent;
     node *fusionable_wl;
     nodelist *references_fusionable;
+    bool fwo_contains_fold;
     node *assigns2shift;
 };
 
@@ -75,12 +80,14 @@ struct INFO {
 #define INFO_WLFS_WLACTION(n) (n->wlaction)
 #define INFO_WLFS_GENAREEQUAL(n) (n->genareequal)
 #define INFO_WLFS_WOTYPE(n) (n->wotype)
+#define INFO_WLFS_WO_CONTAINS_FOLD(n) (n->wo_contains_fold)
 #define INFO_WLFS_WLDEPENDENT(n) (n->wldependent)
 #define INFO_WLFS_FUSIONABLE_WL(n) (n->fusionable_wl)
 #define INFO_WLFS_REFERENCES_FUSIONABLE(n) (n->references_fusionable)
+#define INFO_WLFS_FWO_CONTAINS_FOLD(n) (n->fwo_contains_fold)
 #define INFO_WLFS_ASSIGNS2SHIFT(n) (n->assigns2shift)
 
-typedef enum { WO_gen, WO_mod, WO_fold, WL_unknown } wo_type_t;
+typedef enum { WO_gen_mod, WO_fold, WO_gen_mod_fold, WO_uknown } wo_type_t;
 
 typedef enum { WL_fused, WL_2fuse, WL_travback, WL_nothing } wl_action_t;
 
@@ -102,10 +109,12 @@ MakeInfo ()
     INFO_WLFS_LET (result) = NULL;
     INFO_WLFS_WLACTION (result) = WL_nothing;
     INFO_WLFS_GENAREEQUAL (result) = FALSE;
-    INFO_WLFS_WOTYPE (result) = WL_unknown;
+    INFO_WLFS_WOTYPE (result) = WO_uknown;
+    INFO_WLFS_WO_CONTAINS_FOLD (result) = FALSE;
     INFO_WLFS_WLDEPENDENT (result) = FALSE;
     INFO_WLFS_FUSIONABLE_WL (result) = NULL;
     INFO_WLFS_REFERENCES_FUSIONABLE (result) = NULL;
+    INFO_WLFS_FWO_CONTAINS_FOLD (result) = FALSE;
     INFO_WLFS_ASSIGNS2SHIFT (result) = NULL;
 
     DBUG_RETURN (result);
@@ -123,42 +132,6 @@ FreeInfo (info *info)
     info = Free (info);
 
     DBUG_RETURN (info);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn ids *NewIds( ids *ids, node *fundef)
- *
- *   @brief creates new IDS.
- *
- *   @param  ids *id       :  IDS the new name and type will be
- *                            infered from
- *           node *fundef  :  N_fundef
- *   @return ids *         :  new Ids
- ******************************************************************************/
-static ids *
-NewIds (ids *_ids, node *fundef)
-{
-    node *vardec;
-    ids *nids;
-    char *nvarname;
-
-    DBUG_ENTER ("NewIds");
-
-    DBUG_ASSERT ((_ids != NULL), "IDS is empty");
-
-    nvarname = TmpVarName (IDS_NAME (_ids));
-    nids = MakeIds (nvarname, NULL, ST_regular);
-    vardec = MakeVardec (StringCopy (nvarname), DupOneTypes (IDS_TYPE (_ids)), NULL);
-
-    AVIS_TYPE (VARDEC_AVIS (vardec)) = TYCopyType (AVIS_TYPE (IDS_AVIS (_ids)));
-
-    IDS_VARDEC (nids) = vardec;
-    IDS_AVIS (nids) = VARDEC_AVIS (vardec);
-
-    fundef = AddVardecs (fundef, vardec);
-
-    DBUG_RETURN (nids);
 }
 
 /** <!--********************************************************************-->
@@ -218,7 +191,7 @@ CheckIterationSpace (node *current_wl, node *fusionable_wl)
     shape2 = Type2Shpseg (IDS_TYPE (NWITH_VEC (fusionable_wl)), &dim2);
 
     if (dim1 == dim2) {
-        if (dim1 > 0) {
+        if (dim1 > 0) { /* AKS */
             is_equal = EqualShpseg (dim1, shape2, shape1);
         } else
             is_equal = TRUE;
@@ -292,6 +265,82 @@ CompGenSon (node *gen_son1, node *gen_son2)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *FuseAccu(node *assigns1, node *assigns2)
+ *
+ *   @brief If both assign chains contain an accu function fuse them in first
+ *          assign chain together and remove accu assign form second.
+ *
+ *   @param  node *assigns1 :  N_assign chain
+ *           node *assigns2 :  N_assign chain
+ *   @return node *         :  modified assigns2
+ ******************************************************************************/
+static node *
+FuseAccu (node *assigns1, node *assigns2)
+{
+    node *first_accu = NULL, *second_accu = NULL, *tmp, *predecessor;
+    ids *tmp_ids;
+
+    DBUG_ENTER ("FuseAccu");
+
+    DBUG_ASSERT ((assigns1 != NULL && assigns2 != NULL),
+                 "FuseAccu called with empty assigns");
+    DBUG_ASSERT (((NODE_TYPE (assigns1) == N_assign)
+                  && (NODE_TYPE (assigns2) == N_assign)),
+                 "FuseAccu not called with N_assigns");
+
+    tmp = assigns1;
+    while (tmp != NULL) {
+        if ((NODE_TYPE (ASSIGN_RHS (tmp)) == N_prf)
+            && (PRF_PRF (ASSIGN_RHS (tmp)) == F_accu)) {
+            DBUG_ASSERT ((first_accu == NULL),
+                         "more than one F_accu in first assign chain!");
+            first_accu = tmp;
+        }
+        tmp = ASSIGN_NEXT (tmp);
+    }
+
+    tmp = assigns2;
+    predecessor = NULL;
+    while (tmp != NULL) {
+        if ((NODE_TYPE (ASSIGN_RHS (tmp)) == N_prf)
+            && (PRF_PRF (ASSIGN_RHS (tmp)) == F_accu)) {
+
+            DBUG_ASSERT ((second_accu == NULL),
+                         "more than one F_accu in second assign chain!");
+            second_accu = tmp;
+        }
+        if (second_accu == NULL)
+            predecessor = tmp;
+        tmp = ASSIGN_NEXT (tmp);
+    }
+
+    if (first_accu != NULL && second_accu != NULL) {
+        /*
+         *  extend LHS of first F_accu by LHS of second
+         *
+         * Important: the order of identifiers is critical, because
+         * they correspond with the fold operators of the withloop.
+         *
+         */
+        tmp_ids = DupAllIds (ASSIGN_LHS (second_accu));
+        ASSIGN_LHS (first_accu) = AppendIds (ASSIGN_LHS (first_accu), tmp_ids);
+        while (tmp_ids != NULL) {
+            /* set correct backref to defining assignment */
+            AVIS_SSAASSIGN (IDS_AVIS (tmp_ids)) = first_accu;
+            tmp_ids = IDS_NEXT (tmp_ids);
+        }
+
+        if (predecessor == NULL)
+            assigns2 = FreeNode (second_accu);
+        else
+            ASSIGN_NEXT (predecessor) = FreeNode (second_accu);
+    }
+
+    DBUG_RETURN (assigns2);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *FindFittingPart(node *pattern, node *parts)
  *
  *   @brief finds the N_Npart out of 'parts' which N_Ngenerator is equal
@@ -328,69 +377,74 @@ FindFittingPart (node *pattern, node *parts)
 
 /** <!--********************************************************************-->
  *
- * @fn node *FuseNCodes( node *extend_part, node *fit_part,
- *                       bool unique_ref, node *fusionable_wl, node *fundef)
+ * @fn node *FuseNCodes( node *extendable_part, node *fitting_part,
+ *                       node *fusionable_wl, bool both_contain_fold,
+ *                       node *fundef)
  *
- *   @brief inserts the whole assignment block of 'fit_part' in
- *          assignment block of 'extend_part'.
+ *   @brief inserts the whole assignment block of 'fitting_part' in
+ *          assignment block of 'extendable_part'.
  *
- *   @param  node *extend_part   : N_Npart
- *           node *fit_part      : N_Npart
- *           node *fusionable_wl : N_Nwith current WL will be fused with
- *           node *fundef        : N_fundef
- *   @return node                : modified extend_part
+ *   @param  node *extendable_part : N_Npart
+ *           node *fitting_part    : N_Npart
+ *           node *fusionable_wl   : N_Nwith current WL will be fused with
+ *           node *fundef          : N_fundef
+ *   @return node                  : modified extendable_part
  ******************************************************************************/
 static node *
-FuseNCodes (node *extend_part, node *fit_part, node *fusionable_wl, node *fundef)
+FuseNCodes (node *extendable_part, node *fitting_part, node *fusionable_wl,
+            bool both_contain_fold, node *fundef)
 {
-    node *fusionable_ncode, *fit_nncode, *extend_nblock, *fit_assigns, *fit_exprs;
+    node *fusionable_ncode, *fitting_nncode, *fitting_assigns, *extendable_assigns,
+      *fitting_exprs;
     LUT_t lut;
     ids *oldvec, *newvec, *oldids, *newids;
 
     DBUG_ENTER ("FuseNCodes");
 
     /*
-     * If the N_Ncode of 'extend_part' is referenced several
+     * If the N_Ncode of 'extendable_part' is referenced several
      * it has to be deepcopied before extend.
      */
-    if (NCODE_USED (NPART_CODE (extend_part)) != 1) {
+    if (NCODE_USED (NPART_CODE (extendable_part)) != 1) {
         fusionable_ncode = NWITH_CODE (fusionable_wl);
 
-        if (fusionable_ncode == NPART_CODE (extend_part)) {
+        if (fusionable_ncode == NPART_CODE (extendable_part)) {
             NCODE_USED (fusionable_ncode)--;
-            NPART_CODE (extend_part) = DupNodeSSA (NPART_CODE (extend_part), fundef);
-            NCODE_USED (NPART_CODE (extend_part)) = 1;
-            NWITH_CODE (fusionable_wl) = NPART_CODE (extend_part);
-            NCODE_NEXT (NPART_CODE (extend_part)) = fusionable_ncode;
+            NPART_CODE (extendable_part)
+              = DupNodeSSA (NPART_CODE (extendable_part), fundef);
+            NCODE_USED (NPART_CODE (extendable_part)) = 1;
+            NWITH_CODE (fusionable_wl) = NPART_CODE (extendable_part);
+            NCODE_NEXT (NPART_CODE (extendable_part)) = fusionable_ncode;
         } else {
-            while (NCODE_NEXT (fusionable_ncode) != NPART_CODE (extend_part)) {
+            while (NCODE_NEXT (fusionable_ncode) != NPART_CODE (extendable_part)) {
                 fusionable_ncode = NCODE_NEXT (fusionable_ncode);
             }
             NCODE_USED (NCODE_NEXT (fusionable_ncode))--;
-            NPART_CODE (extend_part) = DupNodeSSA (NPART_CODE (extend_part), fundef);
-            NCODE_USED (NPART_CODE (extend_part)) = 1;
-            NCODE_NEXT (NPART_CODE (extend_part)) = NCODE_NEXT (fusionable_ncode);
-            NCODE_NEXT (fusionable_ncode) = NPART_CODE (extend_part);
+            NPART_CODE (extendable_part)
+              = DupNodeSSA (NPART_CODE (extendable_part), fundef);
+            NCODE_USED (NPART_CODE (extendable_part)) = 1;
+            NCODE_NEXT (NPART_CODE (extendable_part)) = NCODE_NEXT (fusionable_ncode);
+            NCODE_NEXT (fusionable_ncode) = NPART_CODE (extendable_part);
         }
     }
 
     /*
-     * Rename occurrences of NWITHID_VEC and NWITHID_IDS in N_NCODE of fit_part
+     * Rename occurrences of NWITHID_VEC and NWITHID_IDS in N_NCODE of fitting_part
      * by NWITHID_VEC and NWITHID_IDS of fusionable WL
      */
 
     /* Create a new LUT */
     lut = GenerateLUT ();
 
-    oldvec = NWITHID_VEC (NPART_WITHID (fit_part));
-    newvec = NWITHID_VEC (NPART_WITHID (extend_part));
+    oldvec = NWITHID_VEC (NPART_WITHID (fitting_part));
+    newvec = NWITHID_VEC (NPART_WITHID (extendable_part));
 
     InsertIntoLUT_S (lut, IDS_NAME (oldvec), IDS_NAME (newvec));
     InsertIntoLUT_P (lut, IDS_VARDEC (oldvec), IDS_VARDEC (newvec));
     InsertIntoLUT_P (lut, IDS_AVIS (oldvec), IDS_AVIS (newvec));
 
-    oldids = NWITHID_IDS (NPART_WITHID (fit_part));
-    newids = NWITHID_IDS (NPART_WITHID (extend_part));
+    oldids = NWITHID_IDS (NPART_WITHID (fitting_part));
+    newids = NWITHID_IDS (NPART_WITHID (extendable_part));
 
     while (oldids != NULL) {
         InsertIntoLUT_S (lut, IDS_NAME (oldids), IDS_NAME (newids));
@@ -401,10 +455,10 @@ FuseNCodes (node *extend_part, node *fit_part, node *fusionable_wl, node *fundef
         newids = IDS_NEXT (newids);
     }
 
-    fit_nncode = DupNodeLUTSSA (NPART_CODE (fit_part), lut, fundef);
+    fitting_nncode = DupNodeLUTSSA (NPART_CODE (fitting_part), lut, fundef);
 
-    fit_assigns = BLOCK_INSTR (NCODE_CBLOCK (fit_nncode));
-    BLOCK_INSTR (NCODE_CBLOCK (fit_nncode)) = MakeEmpty ();
+    fitting_assigns = BLOCK_INSTR (NCODE_CBLOCK (fitting_nncode));
+    BLOCK_INSTR (NCODE_CBLOCK (fitting_nncode)) = MakeEmpty ();
 
     /*
      * vardec of N_blocks which are not the first N_block of
@@ -412,52 +466,59 @@ FuseNCodes (node *extend_part, node *fit_part, node *fusionable_wl, node *fundef
      * This holds especially for N_blocks of Withloops.
      */
 
-    fit_exprs = NCODE_CEXPRS (fit_nncode);
-    NCODE_CEXPRS (fit_nncode) = MakeExprs (NULL, NULL);
+    fitting_exprs = NCODE_CEXPRS (fitting_nncode);
+    NCODE_CEXPRS (fitting_nncode) = MakeExprs (NULL, NULL);
 
-    fit_nncode = FreeNode (fit_nncode);
+    fitting_nncode = FreeNode (fitting_nncode);
 
     RemoveLUT (lut);
 
     /*
-     * extent N_block of extent_part's N_Ncode by instructions
-     * of N_block of fit_part
+     * extent N_block of extentable_part's N_Ncode by instructions
+     * of N_block of fitting_part
      */
-    extend_nblock = NCODE_CBLOCK (NPART_CODE (extend_part));
+    extendable_assigns = BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (extendable_part)));
 
-    if (NODE_TYPE (fit_assigns) != N_empty) {
-        BLOCK_INSTR (extend_nblock)
-          = AppendAssign (BLOCK_INSTR (extend_nblock), fit_assigns);
+    if (NODE_TYPE (fitting_assigns) != N_empty) {
+
+        if ((NODE_TYPE (extendable_assigns) != N_empty) && both_contain_fold) {
+            /*
+             *   If both withloops contain fold operators fuse both
+             *   accu functions if containing together
+             */
+            fitting_assigns = FuseAccu (extendable_assigns, fitting_assigns);
+        }
+
+        extendable_assigns = AppendAssign (extendable_assigns, fitting_assigns);
     }
 
     /*
-     * extent N_exprs of extend_part's N_Ncode by N_exprs of fit_part
+     * extent N_exprs of extendable_part's N_Ncode by N_exprs of fitting_part
      */
-    NCODE_CEXPRS (NPART_CODE (extend_part))
-      = AppendExprs (NCODE_CEXPRS (NPART_CODE (extend_part)), fit_exprs);
+    NCODE_CEXPRS (NPART_CODE (extendable_part))
+      = AppendExprs (NCODE_CEXPRS (NPART_CODE (extendable_part)), fitting_exprs);
 
-    DBUG_RETURN (extend_part);
+    DBUG_RETURN (extendable_part);
 }
 
 /** <!--********************************************************************-->
  *
  * @fn node *FuseWithloops( node *wl, info *arg_info, node *fusionable_assign)
  *
- *   @brief Fuses the two withloops together. Important for dependencies
- *          in code the current withloop has to fuse with the other in such
- *          way the current WL can be removed later.
+ *   @brief Fuses the two withloops together.
  *
  *   @param  node *wl                :  current N_Nwith node
  *           info *arg_info          :  N_INFO
  *           node *fusionable_assign :  N_assign node of the second withloop where the
  *                                      current withloop will be fused to
- *   @return node *                  :  modified current N_Nwith node for DCR
+ *   @return node *                  :  current N_Nwith node
  ******************************************************************************/
 static node *
 FuseWithloops (node *wl, info *arg_info, node *fusionable_assign)
 {
     node *fusionable_wl, *tmp_withop, *parts, *fitting_part;
-    ids *tmp_ids, *new_ids, *_ids;
+    ids *tmp_ids;
+    bool both_contain_fold;
 
     DBUG_ENTER ("FuseWithloops");
 
@@ -467,12 +528,8 @@ FuseWithloops (node *wl, info *arg_info, node *fusionable_assign)
     /*
      * 1. extend LHS of fusionable_assign by LHS of WL assignment
      */
-    tmp_ids = ASSIGN_LHS (fusionable_assign);
-    while (IDS_NEXT (tmp_ids) != NULL) {
-        tmp_ids = IDS_NEXT (tmp_ids);
-    }
-    IDS_NEXT (tmp_ids) = DupAllIds (ASSIGN_LHS (INFO_WLFS_ASSIGN (arg_info)));
-    tmp_ids = IDS_NEXT (tmp_ids);
+    tmp_ids = DupAllIds (ASSIGN_LHS (INFO_WLFS_ASSIGN (arg_info)));
+    ASSIGN_LHS (fusionable_assign) = AppendIds (ASSIGN_LHS (fusionable_assign), tmp_ids);
     while (tmp_ids != NULL) {
         /* set correct backref to defining assignment */
         AVIS_SSAASSIGN (IDS_AVIS (tmp_ids)) = fusionable_assign;
@@ -482,15 +539,20 @@ FuseWithloops (node *wl, info *arg_info, node *fusionable_assign)
     /*
      * 2. extend each N_Npart's N_Ncode of the withloop belonging to
      *    'fusionable_assign' by whole assignment block of N_Npart's N_Ncode
-     *    of 'wl' if both N_Ngenerators
-     *    are equal.
+     *    of 'wl' if both N_Ngenerators are equal.
      */
+
+    if (INFO_WLFS_FWO_CONTAINS_FOLD (arg_info) && INFO_WLFS_WO_CONTAINS_FOLD (arg_info))
+        both_contain_fold = TRUE;
+    else
+        both_contain_fold = FALSE;
+
     parts = NWITH_PART (fusionable_wl);
     while (parts != NULL) {
         fitting_part = FindFittingPart (NPART_GEN (parts), NWITH_PART (wl));
         DBUG_ASSERT ((fitting_part != NULL), "no fittig N_Npart is available!");
-        parts
-          = FuseNCodes (parts, fitting_part, fusionable_wl, INFO_WLFS_FUNDEF (arg_info));
+        parts = FuseNCodes (parts, fitting_part, fusionable_wl, both_contain_fold,
+                            INFO_WLFS_FUNDEF (arg_info));
         parts = NPART_NEXT (parts);
     }
 
@@ -502,23 +564,6 @@ FuseWithloops (node *wl, info *arg_info, node *fusionable_assign)
         tmp_withop = NWITHOP_NEXT (tmp_withop);
     }
     NWITHOP_NEXT (tmp_withop) = DupTree (NWITH_WITHOP (wl));
-
-    /*
-     * 4. create new identifier for current withloop so that
-     *    it will be removed later by DCR.
-     */
-    new_ids = NULL;
-    tmp_ids = ASSIGN_LHS (INFO_WLFS_ASSIGN (arg_info));
-    while (tmp_ids != NULL) {
-        _ids = NewIds (tmp_ids, INFO_WLFS_FUNDEF (arg_info));
-        /* set correct backref to defining assignment */
-        AVIS_SSAASSIGN (IDS_AVIS (_ids)) = INFO_WLFS_ASSIGN (arg_info);
-        new_ids = AppendIds (new_ids, _ids);
-        tmp_ids = IDS_NEXT (tmp_ids);
-    }
-    ASSIGN_LHS (INFO_WLFS_ASSIGN (arg_info))
-      = FreeAllIds (ASSIGN_LHS (INFO_WLFS_ASSIGN (arg_info)));
-    ASSIGN_LHS (INFO_WLFS_ASSIGN (arg_info)) = new_ids;
 
     DBUG_RETURN (wl);
 }
@@ -562,10 +607,11 @@ WLFSfundef (node *arg_node, info *arg_info)
 node *
 WLFSassign (node *arg_node, info *arg_info)
 {
-    node *iterator, *assignn;
+    node *current_node, *assignn;
     node *fusionable_wl_tmp = NULL;
     nodelist *references_fusionable_tmp = NULL;
     bool is_stacked = FALSE;
+    bool fwo_contains_fold;
 
     DBUG_ENTER ("WLFSassign");
 
@@ -588,7 +634,12 @@ WLFSassign (node *arg_node, info *arg_info)
                  * another withloop, so the current one is obsolete and has to
                  * be freed.
                  */
-                /* arg_node = FreeNode(arg_node); */
+                arg_node = FreeNode (arg_node);
+
+                INFO_WLFS_FWO_CONTAINS_FOLD (arg_info)
+                  = (INFO_WLFS_FWO_CONTAINS_FOLD (arg_info)
+                     || INFO_WLFS_WO_CONTAINS_FOLD (arg_info));
+
                 /*
                  * Now we have to traverse back to the other withloop
                  * to finish the tranformation
@@ -596,6 +647,11 @@ WLFSassign (node *arg_node, info *arg_info)
                 INFO_WLFS_WLACTION (arg_info) = WL_travback;
                 DBUG_RETURN (arg_node);
             } else if (INFO_WLFS_WLACTION (arg_info) == WL_2fuse) {
+
+                INFO_WLFS_FWO_CONTAINS_FOLD (arg_info)
+                  = (INFO_WLFS_FWO_CONTAINS_FOLD (arg_info)
+                     || INFO_WLFS_WO_CONTAINS_FOLD (arg_info));
+
                 /*
                  * The current WL is not fusionable with the one
                  * stored in INFO_WLFS_FUSIONABLE_WL( arg_info).
@@ -605,9 +661,12 @@ WLFSassign (node *arg_node, info *arg_info)
                  */
                 fusionable_wl_tmp = INFO_WLFS_FUSIONABLE_WL (arg_info);
                 references_fusionable_tmp = INFO_WLFS_REFERENCES_FUSIONABLE (arg_info);
+                fwo_contains_fold = INFO_WLFS_FWO_CONTAINS_FOLD (arg_info);
                 INFO_WLFS_FUSIONABLE_WL (arg_info) = arg_node;
                 INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
                   = NodeListAppend (NULL, arg_node, NULL);
+                INFO_WLFS_FWO_CONTAINS_FOLD (arg_info)
+                  = INFO_WLFS_WO_CONTAINS_FOLD (arg_info);
                 is_stacked = TRUE;
                 INFO_WLFS_WLACTION (arg_info) = WL_nothing;
             }
@@ -619,14 +678,13 @@ WLFSassign (node *arg_node, info *arg_info)
     }
 
     do {
-
         if (INFO_WLFS_WLACTION (arg_info) == WL_travback) {
             /*
              * Traverse back mode
              * We traverse back to the fusionable wl, pick and append
              * all assignments to INFO_WLFS_ASSIGNS2SHIFT( arg_info) which
              * are tagged with this WL and hang them out of the sytax tree.
-             * To avoid a later visit on already visited assigns, we mark all other
+             * To avoid a later visit on already visited assigns, we mark this
              * assigns as visited with the current fusionable WL.
              *
              * When we reach the fusionable wl, the list of assignments had to
@@ -649,9 +707,6 @@ WLFSassign (node *arg_node, info *arg_info)
                 /* to obtain the same order as in syntax tree */
                 ASSIGN_NEXT (assignn) = INFO_WLFS_ASSIGNS2SHIFT (arg_info);
                 INFO_WLFS_ASSIGNS2SHIFT (arg_info) = assignn;
-            } else {
-                ASSIGN_VISITED_WITH (ASSIGN_NEXT (arg_node))
-                  = INFO_WLFS_FUSIONABLE_WL (arg_info);
             }
 
             if (INFO_WLFS_FUSIONABLE_WL (arg_info) == arg_node) {
@@ -661,30 +716,25 @@ WLFSassign (node *arg_node, info *arg_info)
                 wlfs_expr++;
 
                 if (INFO_WLFS_ASSIGNS2SHIFT (arg_info) != NULL) {
+                    current_node = arg_node;
 
-                    iterator = INFO_WLFS_ASSIGNS2SHIFT (arg_info);
-                    while (ASSIGN_NEXT (iterator)) {
-                        iterator = ASSIGN_NEXT (iterator);
-                    }
-                    ASSIGN_NEXT (iterator) = arg_node;
-                    /* to traverse not in circle */
-                    iterator = ASSIGN_NEXT (iterator);
-
-                    arg_node = INFO_WLFS_ASSIGNS2SHIFT (arg_info);
+                    arg_node
+                      = AppendAssign (INFO_WLFS_ASSIGNS2SHIFT (arg_info), arg_node);
                     INFO_WLFS_ASSIGNS2SHIFT (arg_info) = NULL;
 
-                    if (ASSIGN_NEXT (iterator) != NULL) {
-                        ASSIGN_NEXT (iterator) = Trav (ASSIGN_NEXT (iterator), arg_info);
+                    if (ASSIGN_NEXT (current_node) != NULL) {
+                        ASSIGN_NEXT (current_node)
+                          = Trav (ASSIGN_NEXT (current_node), arg_info);
                     }
-
                 } else if (ASSIGN_NEXT (arg_node) != NULL) {
                     ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
                 }
 
-            } else
+            } else {
+                ASSIGN_VISITED_WITH (arg_node) = INFO_WLFS_FUSIONABLE_WL (arg_info);
                 DBUG_RETURN (arg_node);
-
-        } else if ((INFO_WLFS_WLACTION (arg_info) == WL_nothing) && is_stacked) {
+            }
+        } else if (is_stacked) {
             /*
              * Backtraversal mode
              * If we reach a withloop, where we stack a fusionable withloop
@@ -698,13 +748,18 @@ WLFSassign (node *arg_node, info *arg_info)
                   = NodeListFree (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info), TRUE);
             }
             INFO_WLFS_REFERENCES_FUSIONABLE (arg_info) = references_fusionable_tmp;
+            INFO_WLFS_FWO_CONTAINS_FOLD (arg_info) = fwo_contains_fold;
             is_stacked = FALSE;
 
             if (ASSIGN_NEXT (arg_node) != NULL) {
                 ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
             }
-        } else
-            DBUG_RETURN (arg_node);
+        } else {
+            /* cleaning up */
+            ASSIGN_VISITED_WITH (arg_node) = NULL;
+            ASSIGN_TAG (arg_node) = NULL;
+            break;
+        }
 
     } while (TRUE);
 
@@ -859,104 +914,108 @@ WLFSNwith (node *arg_node, info *arg_info)
         INFO_WLFS_WLDEPENDENT (arg_info) = NWITH_DEPENDENT (arg_node);
         NWITH_DEPENDENT (arg_node) = FALSE;
         NWITH_REFERENCES_FUSIONABLE (arg_node) = NULL;
-    }
+    } else
+        INFO_WLFS_WLDEPENDENT (arg_info) = FALSE;
 
     /*
      * If the generators of the current withloop build a full partition
      * the PARTS attribute carries a positive value. Only those withloops
      * are considered further.
-     * Futhermore we consider only WLs with non-empty iteration space
+     * Futhermore we consider only WLs with at least known dimension and
+     * non-empty iteration space
+     *  >= 0 : dimension == DIM and known shape
+     *  < -2 : dimension == -2 - DIM and  unknown shape
      */
-
     if (NWITH_PARTS (arg_node) >= 1
-        && GetShapeDim (IDS_TYPE (NWITH_VEC (arg_node))) > 0) {
+        && ((GetShapeDim (IDS_TYPE (NWITH_VEC (arg_node))) > 0)
+            || (GetShapeDim (IDS_TYPE (NWITH_VEC (arg_node))) <= -3))) {
 
-        /*
-         * initialize WL traversal
-         */
         INFO_WLFS_WL (arg_info) = arg_node; /* store the current node for later */
 
         /*
-         * Now, we traverse the WITHOP sons for checking the type and possible
-         * dependencies.
+         * Now, we traverse the WITHOP sons for checking the type
          */
         NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
-        if (INFO_WLFS_WOTYPE (arg_info) == WO_gen) {
+        if (INFO_WLFS_FUSIONABLE_WL (arg_info) != NULL) {
 
-            if (INFO_WLFS_FUSIONABLE_WL (arg_info) != NULL) {
+            wl_action = WL_2fuse;
 
-                wl_action = WL_2fuse;
+            /* depends the current WL on the fusionable WL? */
+            if (!INFO_WLFS_WLDEPENDENT (arg_info)) {
 
-                /* depends the current WL on the fusionable WL */
-                if (!INFO_WLFS_WLDEPENDENT (arg_info)) {
+                wln = INFO_WLFS_FUSIONABLE_WL (arg_info);
+                /* is the number of parts equal? */
 
-                    wln = INFO_WLFS_FUSIONABLE_WL (arg_info);
-                    /* is the number of parts equal? */
+                is_equal = (NWITH_PARTS (arg_node) == NWITH_PARTS (ASSIGN_RHS (wln)));
 
-                    is_equal = (NWITH_PARTS (arg_node) == NWITH_PARTS (ASSIGN_RHS (wln)));
+                /* is the size of both wl iteration space equal? */
+                is_equal = (is_equal && CheckIterationSpace (arg_node, ASSIGN_RHS (wln)));
 
-                    /* is the size of both wl iteration space equal? */
-                    is_equal
-                      = (is_equal && CheckIterationSpace (arg_node, ASSIGN_RHS (wln)));
-
-                    if (is_equal) {
-                        /*
-                         * traverse the N_PARTs.
-                         * one value is computed during this traversal:
-                         *
-                         *  INFO_WLFS_GENAREEQUAL(arg_info) !!
-                         */
-                        INFO_WLFS_GENAREEQUAL (arg_info) = TRUE;
-
-                        DBUG_ASSERT ((NWITH_PART (arg_node) != NULL),
-                                     "NWITH_PARTS is >= 1 although no PART is "
-                                     "available!");
-                        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
-
-                        if (INFO_WLFS_GENAREEQUAL (arg_info)) {
-                            /*
-                             * Tag all assignments the current withloop depends on.
-                             * Later the tagged assignments !between! the two fused
-                             * withloops had to be shifted in front of the result
-                             * withloop.
-                             */
-                            NWITH_FUSIONABLE_WL (arg_node)
-                              = INFO_WLFS_FUSIONABLE_WL (arg_info);
-
-                            arg_node = TagDependencies (arg_node);
-
-                            NWITH_FUSIONABLE_WL (arg_node) = NULL;
-
-                            /* fuse both withloops together */
-                            arg_node = FuseWithloops (arg_node, arg_info, wln);
-                            wl_action = WL_fused;
-                        }
-                    }
-                } else {
+                if (is_equal) {
                     /*
-                     * The current genarray-withloop depends on the fusionable. Append it
-                     * to INFO_WLFS_REFERENCES_FUSIONABLE( arg_info)
+                     * traverse the N_PARTs.
+                     * one value is computed during this traversal:
+                     *
+                     *  INFO_WLFS_GENAREEQUAL(arg_info) !!
                      */
-                    INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
-                      = NodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
-                                        INFO_WLFS_ASSIGN (arg_info), NULL);
-                }
+                    INFO_WLFS_GENAREEQUAL (arg_info) = TRUE;
 
+                    DBUG_ASSERT ((NWITH_PART (arg_node) != NULL),
+                                 "NWITH_PARTS is >= 1 although no PART is available!");
+                    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+
+                    if (INFO_WLFS_GENAREEQUAL (arg_info)) {
+                        /*
+                         * Tag all assignments the current withloop depends on.
+                         * Later the tagged assignments !between! the two fused withloops
+                         * had to be shifted in front of the result withloop.
+                         */
+                        NWITH_FUSIONABLE_WL (arg_node)
+                          = INFO_WLFS_FUSIONABLE_WL (arg_info);
+
+                        arg_node = TagDependencies (arg_node);
+
+                        NWITH_FUSIONABLE_WL (arg_node) = NULL;
+
+                        /* fuse both withloops together */
+                        arg_node = FuseWithloops (arg_node, arg_info, wln);
+                        wl_action = WL_fused;
+                    }
+                }
             } else {
                 /*
-                 * this WL is the first WL to fuse
+                 * The current genarray-withloop depends on the fusionable. Append it to
+                 * INFO_WLFS_REFERENCES_FUSIONABLE( arg_info)
                  */
-                INFO_WLFS_FUSIONABLE_WL (arg_info) = INFO_WLFS_ASSIGN (arg_info);
                 INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
                   = NodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
                                     INFO_WLFS_ASSIGN (arg_info), NULL);
             }
+        } else {
+            /*
+             * this WL is the first fusionable WL
+             */
+            INFO_WLFS_FUSIONABLE_WL (arg_info) = INFO_WLFS_ASSIGN (arg_info);
+            INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
+              = NodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
+                                INFO_WLFS_ASSIGN (arg_info), NULL);
+        }
+    } else { /* #Parts <= 0 || -2 <= dim <= 0 */
+        if ((INFO_WLFS_FUSIONABLE_WL (arg_info) != NULL)
+            && (INFO_WLFS_WLDEPENDENT (arg_info))) {
+            /*
+             * The current withloop depends on the fusionable. Append it to
+             * INFO_WLFS_REFERENCES_FUSIONABLE( arg_info)
+             */
+            INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
+              = NodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
+                                INFO_WLFS_ASSIGN (arg_info), NULL);
         }
     }
 
-    INFO_WLFS_WLDEPENDENT (arg_info) = FALSE;
     INFO_WLFS_WLACTION (arg_info) = wl_action;
+    INFO_WLFS_WOTYPE (arg_info) = WO_uknown;
 
     DBUG_RETURN (arg_node);
 }
@@ -965,8 +1024,7 @@ WLFSNwith (node *arg_node, info *arg_info)
  *
  * @fn node *WLFSNwithop( node *arg_node, info *arg_info)
  *
- *   @brief checks the type of withloop and checks dependencies,
- *          if the type is modarray or fold.
+ *   @brief checks the type of withloop operator.
  *
  *   @param  node *arg_node:  N_Nwithop
  *           info *arg_info:  N_info
@@ -976,35 +1034,32 @@ WLFSNwith (node *arg_node, info *arg_info)
 node *
 WLFSNwithop (node *arg_node, info *arg_info)
 {
-    wo_type_t current_type = WL_unknown;
+    wo_type_t current_type = WO_uknown;
 
     DBUG_ENTER ("WLFSNwithop");
 
     switch (NWITHOP_TYPE (arg_node)) {
     case WO_genarray:
-        current_type = WO_gen;
-        break;
-
+        /* here is no break missing */
     case WO_modarray:
-        current_type = WO_mod;
-        if (INFO_WLFS_WLDEPENDENT (arg_info)
-            || CheckDependency (NWITHOP_ARRAY (arg_node),
-                                INFO_WLFS_REFERENCES_FUSIONABLE (arg_info))) {
-            INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
-              = NodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
-                                INFO_WLFS_ASSIGN (arg_info), NULL);
-        }
+        if (INFO_WLFS_WOTYPE (arg_info) == WO_uknown)
+            current_type = WO_gen_mod;
+        else if (INFO_WLFS_WOTYPE (arg_info) == WO_fold)
+            current_type = WO_gen_mod_fold;
+        else
+            current_type = INFO_WLFS_WOTYPE (arg_info);
         break;
 
     case WO_foldfun:
         /* here is no break missing */
     case WO_foldprf:
-        current_type = WO_fold;
-        if (INFO_WLFS_WLDEPENDENT (arg_info)) {
-            INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
-              = NodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
-                                INFO_WLFS_ASSIGN (arg_info), NULL);
-        }
+        if (INFO_WLFS_WOTYPE (arg_info) == WO_uknown) {
+            current_type = WO_fold;
+            INFO_WLFS_WO_CONTAINS_FOLD (arg_info) = TRUE;
+        } else if (INFO_WLFS_WOTYPE (arg_info) == WO_gen_mod)
+            current_type = WO_gen_mod_fold;
+        else
+            current_type = INFO_WLFS_WOTYPE (arg_info);
         break;
 
     default:
@@ -1014,10 +1069,9 @@ WLFSNwithop (node *arg_node, info *arg_info)
 
     INFO_WLFS_WOTYPE (arg_info) = current_type;
 
-    /*
-     * If there are more than one withop, this are only genarray withops
-     * for the time beeing, therefore no futher traversal is needed so far
-     */
+    if (NWITHOP_NEXT (arg_node) != NULL) {
+        NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
