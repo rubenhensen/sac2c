@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1998/03/27 18:38:09  dkr
+ * WLproj renamed in WLstride:
+ *   WLPROJ... -> WLSTRIDE...
+ *   FreeWLproj -> FreeWLstride
+ *
  * Revision 1.17  1998/03/16 00:07:33  dkr
  * added FreeWLseg, FreeWLblock, FreeWLublock, FreeWLproj, FreeWLgrid, FreeNwith2
  *
@@ -174,7 +179,7 @@ extern node *FreeNwith2 (node *arg_node, node *arg_info);
 extern node *FreeWLseg (node *arg_node, node *arg_info);
 extern node *FreeWLblock (node *arg_node, node *arg_info);
 extern node *FreeWLublock (node *arg_node, node *arg_info);
-extern node *FreeWLproj (node *arg_node, node *arg_info);
+extern node *FreeWLstride (node *arg_node, node *arg_info);
 extern node *FreeWLgrid (node *arg_node, node *arg_info);
 
 /* special functions */
