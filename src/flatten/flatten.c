@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.26  1995/05/29 10:31:04  hw
+ * Revision 1.27  1995/05/29 12:53:05  hw
+ * bug fixed in FltnExprs (leading casts will be ignored )
+ *
+ * Revision 1.26  1995/05/29  10:31:04  hw
  * - bug fixed in FltnWith
  * - changed renameing of variables in FltnLet
  *
@@ -450,42 +453,41 @@ FltnAssign (node *arg_node, node *arg_info)
 node *
 FltnExprs (node *arg_node, node *arg_info)
 {
-    node *tmp_node1, *id_node, *let_node, *assign_node;
+    node *tmp_node1, *id_node, *let_node, *assign_node, *tmp_arg = arg_node->node[0];
     int abstract, old_tag;
 
     DBUG_ENTER ("FltnExprs");
+
+    /* ignore leading casts */
+    while (N_cast == tmp_arg->nodetype)
+        tmp_arg = tmp_arg->node[0];
 
     /* compute whether to abstract an expression or not , depending on the
      * context of the expression ,given by arg_info->info.cint
      */
     switch (arg_info->info.cint) {
     case LOOP:
-        abstract = (arg_node->node[0]->nodetype == N_ap);
+        abstract = (tmp_arg->nodetype == N_ap);
         break;
     case RET:
-        abstract = ((arg_node->node[0]->nodetype == N_num)
-                    || (arg_node->node[0]->nodetype == N_float)
-                    || (arg_node->node[0]->nodetype == N_bool)
-                    || (arg_node->node[0]->nodetype == N_str)
-                    || (arg_node->node[0]->nodetype == N_array)
-                    || (arg_node->node[0]->nodetype == N_ap)
-                    || (arg_node->node[0]->nodetype == N_prf));
+        abstract = ((tmp_arg->nodetype == N_num) || (tmp_arg->nodetype == N_float)
+                    || (tmp_arg->nodetype == N_bool) || (tmp_arg->nodetype == N_str)
+                    || (tmp_arg->nodetype == N_array) || (tmp_arg->nodetype == N_ap)
+                    || (tmp_arg->nodetype == N_prf));
         break;
     case AP:
-        abstract = ((arg_node->node[0]->nodetype == N_array)
-                    || (arg_node->node[0]->nodetype == N_prf)
-                    || (arg_node->node[0]->nodetype == N_ap));
+        abstract = ((tmp_arg->nodetype == N_array) || (tmp_arg->nodetype == N_prf)
+                    || (tmp_arg->nodetype == N_ap));
         break;
     case NORMAL:
-        abstract = ((arg_node->node[0]->nodetype == N_ap)
-                    || (arg_node->node[0]->nodetype == N_prf));
+        abstract = ((tmp_arg->nodetype == N_ap) || (tmp_arg->nodetype == N_prf));
         break;
     default:
         DBUG_ASSERT (0, "wrong tag ");
     }
 
     DBUG_PRINT ("FLATTEN", ("tag: %d, abstract: %d, node[0]: %s", arg_info->info.cint,
-                            abstract, mdb_nodetype[arg_node->node[0]->nodetype]));
+                            abstract, mdb_nodetype[tmp_arg->node[0]->nodetype]));
 
     if (1 == abstract) {
         tmp_node1 = arg_node->node[0];
@@ -519,9 +521,8 @@ FltnExprs (node *arg_node, node *arg_info)
             arg_info->info.cint = old_tag;
         }
 
-    } else if ((arg_node->node[0]->nodetype == N_array)
-               || (arg_node->node[0]->nodetype == N_prf)
-               || (arg_node->node[0]->nodetype == N_ap)) {
+    } else if ((tmp_arg->nodetype == N_array) || (tmp_arg->nodetype == N_prf)
+               || (tmp_arg->nodetype == N_ap)) {
         /* components of an array and arguments of a function have
          * to be flattend anyway.
          */
@@ -529,7 +530,7 @@ FltnExprs (node *arg_node, node *arg_info)
         arg_info->info.cint = NORMAL;
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
         arg_info->info.cint = old_tag;
-    } else if (N_id == arg_node->node[0]->nodetype)
+    } else if (N_id == tmp_arg->nodetype)
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
 
     /* Last, but not least remaining exprs have to be done */
