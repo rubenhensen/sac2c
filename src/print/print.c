@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.104  2002/07/12 18:29:23  dkr
+ * indentation of ICMs corrected
+ *
  * Revision 3.103  2002/07/10 19:25:07  dkr
  * several ICM_... types added and renamed
  *
@@ -134,6 +137,12 @@
 #include "print.h"
 
 #define WARN_INDENT
+
+/*
+ * This global variable is used to detect inside of PrintIcm() whether
+ * the ICM is in assignment position or not.
+ */
+static node *last_assignment_icm = NULL;
 
 /*
  * PrintNode(): INFO_PRINT_CONT(arg_info) contains the root of syntaxtree.
@@ -1880,10 +1889,6 @@ PrintAssign (node *arg_node, node *arg_info)
         DbugIndexInfo (ASSIGN_INDEX (arg_node));
     });
 
-    if (NODE_TYPE (instr) == N_icm) {
-        indent += ICM_INDENT_BEFORE (instr);
-    }
-
     PRINT_LINE_PRAGMA_IN_SIB (outfile, arg_node);
 
     DBUG_EXECUTE ("LINE", fprintf (outfile, "/*%03d*/", arg_node->lineno););
@@ -1897,13 +1902,13 @@ PrintAssign (node *arg_node, node *arg_info)
     }
 
     if (trav_instr) {
-        INDENT;
+        if (NODE_TYPE (instr) != N_icm) {
+            INDENT;
+        } else {
+            last_assignment_icm = instr;
+        }
         Trav (instr, arg_info);
         fprintf (outfile, "\n");
-    }
-
-    if (NODE_TYPE (instr) == N_icm) {
-        indent += ICM_INDENT_AFTER (instr);
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -2589,16 +2594,13 @@ PrintIcm (node *arg_node, node *arg_info)
     DBUG_PRINT ("PRINT", ("icm-node %s\n", ICM_NAME (arg_node)));
 
     if (compiler_phase == PH_genccode) {
-        /*
-         * For expanded C-ICMs we have to undo the indentation via ICM_INDENT_...
-         * in order to prevent superfluous indentation!
-         */
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
     if (strcmp (ICM_NAME (arg_node), #prf) == 0) {                                       \
-        indent -= ICM_INDENT_BEFORE (arg_node);                                          \
+        if (last_assignment_icm == arg_node) {                                           \
+            INDENT;                                                                      \
+        }                                                                                \
         Print##prf (ICM_ARGS (arg_node), arg_info);                                      \
-        indent -= ICM_INDENT_AFTER (arg_node);                                           \
         compiled_icm = TRUE;                                                             \
     } else
 #define ICM_ANY(name)
@@ -2628,11 +2630,18 @@ PrintIcm (node *arg_node, node *arg_info)
     }
 
     if (!compiled_icm) {
+        if (last_assignment_icm == arg_node) {
+            indent += ICM_INDENT_BEFORE (arg_node);
+            INDENT;
+        }
         fprintf (outfile, "SAC_%s( ", ICM_NAME (arg_node));
         if (ICM_ARGS (arg_node) != NULL) {
             Trav (ICM_ARGS (arg_node), arg_info);
         }
         fprintf (outfile, ")");
+        if (last_assignment_icm == arg_node) {
+            indent += ICM_INDENT_AFTER (arg_node);
+        }
     }
 
     DBUG_RETURN (arg_node);
