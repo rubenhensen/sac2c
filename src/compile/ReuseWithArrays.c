@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/08/13 14:15:03  ktr
+ * Fixed a bug in treatment of F_fill which resulted in never traversing
+ * the first argument of F_fill.
+ *
  * Revision 3.9  2004/07/17 17:07:16  sah
  * switch to new INFO structure
  * PHASE I
@@ -508,6 +512,8 @@ ReuseLet (node *arg_node, info *arg_info)
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf) {
         switch (PRF_PRF (LET_EXPR (arg_node))) {
         case F_fill:
+            PRF_EXPRS2 (LET_EXPR (arg_node))
+              = Trav (PRF_EXPRS2 (LET_EXPR (arg_node)), arg_info);
             tmpnode = PRF_ARGS (LET_EXPR (arg_node));
             if (NODE_TYPE (EXPRS_EXPR (tmpnode)) == N_prf) {
                 switch (PRF_PRF (EXPRS_EXPR (tmpnode))) {
@@ -522,22 +528,11 @@ ReuseLet (node *arg_node, info *arg_info)
                     arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (EXPRS_EXPR (tmpnode))));
                     traverse = ReuseIdxSel (arg1, arg2, arg_info);
                     break;
-
                 default:
-                    break;
                 }
             }
-            tmpnode = EXPRS_NEXT (tmpnode);
-            while (tmpnode != NULL) {
-                DFMSetMaskEntryClear (INFO_REUSE_MASK (arg_info),
-                                      IDS_NAME (ID_IDS (EXPRS_EXPR (tmpnode))), NULL);
-                DFMSetMaskEntrySet (INFO_REUSE_NEGMASK (arg_info),
-                                    IDS_NAME (ID_IDS (EXPRS_EXPR (tmpnode))), NULL);
-
-                tmpnode = EXPRS_NEXT (tmpnode);
-            }
-            traverse = FALSE;
             break;
+        case F_alloc:
         case F_alloc_or_reuse:
             /* Probably the first two arguments should be traversed */
             traverse = FALSE;
@@ -555,7 +550,6 @@ ReuseLet (node *arg_node, info *arg_info)
             break;
 
         default:
-            break;
         }
     }
 
