@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.200  2004/12/13 18:43:22  ktr
+ * PRTid corrected once more
+ *
  * Revision 3.199  2004/12/09 21:04:57  ktr
  * Argtab2Let corrected.
  *
@@ -2362,9 +2365,12 @@ PRTid (node *arg_node, info *arg_info)
             text = ID_NT_TAG (arg_node);
         } else if (ID_ICMTEXT (arg_node) != NULL) {
             text = ID_ICMTEXT (arg_node);
+        } else if (ID_AVIS (arg_node) != NULL) {
+            text = ID_NAME (arg_node);
         } else {
             text = "";
-            DBUG_ASSERT (FALSE, "Found an Id node with neither NTtag nor ICMText");
+            DBUG_ASSERT (FALSE,
+                         "Found an Id node with neither NTtag nor ICMText nor Name");
         }
     } else {
         if (ID_AVIS (arg_node) != NULL) {
