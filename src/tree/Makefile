@@ -1,6 +1,13 @@
 #
 #
 # $Log$
+# Revision 3.29  2004/01/29 12:00:41  skt
+# some adaptions (removed CheckAvis.o, SSATransform.o
+# and UndoSSATransform.o) because of moving of
+# CheckAvis.[ch], SSATransform.[ch] and
+# UndoSSATransform.[ch] from src/tree
+# to src/flatten
+#
 # Revision 3.28  2002/09/09 19:17:52  dkr
 # tree_basic.c does no longer include prf_node_info.mac
 #
@@ -70,10 +77,9 @@ INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck
      -I../c-interface -I../constants -I../profile
 
 all: tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
-     DataFlowMask.o DataFlowMaskUtils.o InferDFMs.o CheckAvis.o \
+     DataFlowMask.o DataFlowMaskUtils.o InferDFMs.o \
      LookUpTable.o adjust_ids.o cleanup_decls.o scheduling.o \
-     SSATransform.o UndoSSATransform.o change_signature.o \
-     compare_tree.o wl_bounds.o
+     change_signature.o compare_tree.o wl_bounds.o
 
 
 #
