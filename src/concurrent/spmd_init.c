@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/11/24 19:29:17  skt
+ * Compiler Switch during SACDevCampDK 2k4
+ *
  * Revision 3.12  2004/11/21 17:32:02  skt
  * make it runable with the new info structure
  *
@@ -99,18 +102,13 @@
  *
  *****************************************************************************/
 
-#define NEW_INFO
-
 #include "dbug.h"
-#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "globals.h"
-#include "internal_lib.h"
-#include "my_debug.h"
 #include "spmd_trav.h"
 #include "concurrent_info.h"
 
@@ -130,19 +128,20 @@
  *   concurrently (by WithLoopIsAllowedConcurrentExecution, see below).
  *
  ******************************************************************************/
-
-static int
-WithLoopIsWorthConcurrentExecution (node *withloop, ids *let_var)
+/* TODO - make it runnable with AUD and AKD */
+static bool
+WithLoopIsWorthConcurrentExecution (node *withloop, node *let_var)
 {
     node *withop;
-    int res, i, size, target_dim;
+    bool res;
+    int i, size, target_dim;
 
     DBUG_ENTER ("WithLoopIsWorthConcurrentExecution");
 
     res = FALSE;
-    withop = NWITH2_WITHOP (withloop);
+    withop = WITH2_WITHOP (withloop);
     while (let_var != NULL) {
-        if (NWITHOP_IS_FOLD (withop)) {
+        if (NODE_TYPE (withop) == N_fold) {
             res = TRUE;
         } else {
             target_dim = VARDEC_DIM (IDS_VARDEC (let_var));
@@ -151,7 +150,7 @@ WithLoopIsWorthConcurrentExecution (node *withloop, ids *let_var)
                 for (i = 0; i < target_dim; i++) {
                     size *= VARDEC_SHAPE (IDS_VARDEC (let_var), i);
                 }
-                if (size < min_parallel_size) {
+                if (size < global.min_parallel_size) {
                     res = FALSE;
                 } else {
                     res = TRUE;
@@ -163,7 +162,7 @@ WithLoopIsWorthConcurrentExecution (node *withloop, ids *let_var)
             }
         }
         let_var = IDS_NEXT (let_var);
-        withop = NWITHOP_NEXT (withop);
+        withop = WITHOP_NEXT (withop);
     }
 
     DBUG_RETURN (res);
@@ -185,23 +184,23 @@ WithLoopIsWorthConcurrentExecution (node *withloop, ids *let_var)
  *
  ******************************************************************************/
 
-static int
+static bool
 WithLoopIsAllowedConcurrentExecution (node *withloop)
 {
     node *withop;
-    int res = TRUE;
+    bool res = TRUE;
 
     DBUG_ENTER ("WithLoopIsAllowedConcurrentExecution");
 
-    withop = NWITH2_WITHOP (withloop);
+    withop = WITH2_WITHOP (withloop);
     while (withop != NULL) {
-        if (NWITHOP_IS_FOLD (withop)) {
-            if (max_sync_fold == 0) {
+        if (NODE_TYPE (withop) == N_fold) {
+            if (global.max_sync_fold == 0) {
                 res = FALSE;
                 break;
             }
         }
-        withop = NWITHOP_NEXT (withop);
+        withop = WITHOP_NEXT (withop);
     }
 
     DBUG_RETURN (res);
@@ -225,7 +224,7 @@ InsertSPMD (node *assign, node *fundef)
     node *spmd;
     node *with;
     node *newassign;
-    ids *with_ids;
+    node *with_ids;
     int varno;
 
     DBUG_ENTER ("InsertSPMD");
@@ -239,16 +238,16 @@ InsertSPMD (node *assign, node *fundef)
      *  - insert spmd between assign and instruction
      *  - delete nested N_spmds
      */
-    newassign = MakeAssign (instr, NULL);
-    spmd = MakeSpmd (MakeBlock (newassign, NULL));
+    newassign = TBmakeAssign (instr, NULL);
+    spmd = TBmakeSpmd (TBmakeBlock (newassign, NULL));
     DBUG_PRINT ("SPMDI", ("before delete nested"));
-    spmd = DeleteNested (spmd);
+    spmd = SPMDDNdoDeleteNested (spmd);
     DBUG_PRINT ("SPMDI", ("after delete nested"));
     ASSIGN_INSTR (assign) = spmd;
     varno = FUNDEF_VARNO (fundef);
 
     if (NODE_TYPE (instr) == N_let) {
-        if (NODE_TYPE (LET_EXPR (instr)) == N_Nwith2) {
+        if (NODE_TYPE (LET_EXPR (instr)) == N_with2) {
             /*
              * current assignment contains a with-loop
              *  -> create a SPMD-region containing the current assignment only
@@ -256,46 +255,46 @@ InsertSPMD (node *assign, node *fundef)
              */
 
             /*
-             * get masks from the N_Nwith2 node.
+             * get masks from the N_with2 node.
              */
             with = LET_EXPR (instr);
-            SPMD_IN (spmd) = DFMGenMaskCopy (NWITH2_IN_MASK (with));
-            SPMD_OUT (spmd) = DFMGenMaskCopy (NWITH2_OUT_MASK (with));
-            SPMD_INOUT (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
-            SPMD_LOCAL (spmd) = DFMGenMaskCopy (NWITH2_LOCAL_MASK (with));
-            SPMD_SHARED (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
+            SPMD_IN (spmd) = DFMgenMaskCopy (WITH2_IN_MASK (with));
+            SPMD_OUT (spmd) = DFMgenMaskCopy (WITH2_OUT_MASK (with));
+            SPMD_INOUT (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
+            SPMD_LOCAL (spmd) = DFMgenMaskCopy (WITH2_LOCAL_MASK (with));
+            SPMD_SHARED (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
 
             /*
              * add vars from LHS of with-loop assignment
              */
             with_ids = LET_IDS (instr);
             while (with_ids != NULL) {
-                DFMSetMaskEntrySet (SPMD_OUT (spmd), NULL, IDS_VARDEC (with_ids));
+                DFMsetMaskEntrySet (SPMD_OUT (spmd), NULL, IDS_AVIS (with_ids));
                 with_ids = IDS_NEXT (with_ids);
             }
 
         } else {
             /* #### ins outs missing ... */
-            SPMD_IN (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
-            SPMD_OUT (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
-            SPMD_INOUT (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
-            SPMD_LOCAL (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
-            SPMD_SHARED (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
+            SPMD_IN (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
+            SPMD_OUT (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
+            SPMD_INOUT (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
+            SPMD_LOCAL (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
+            SPMD_SHARED (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
 
             DBUG_PRINT ("SPMDI", ("call pm let not with"));
-            ProduceMasks (spmd, spmd, fundef);
+            SPMDPMdoProduceMasks (spmd, spmd, fundef);
             DBUG_PRINT ("SPMDI", ("leave pm let not with"));
         }
     } else {
         /* #### ins outs missing ... */
-        SPMD_IN (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
-        SPMD_OUT (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
-        SPMD_INOUT (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
-        SPMD_LOCAL (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
-        SPMD_SHARED (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
+        SPMD_IN (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
+        SPMD_OUT (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
+        SPMD_INOUT (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
+        SPMD_LOCAL (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
+        SPMD_SHARED (spmd) = DFMgenMaskClear (FUNDEF_DFM_BASE (fundef));
 
         DBUG_PRINT ("SPMDI", ("call pm not let"));
-        ProduceMasks (spmd, spmd, fundef);
+        SPMDPMdoProduceMasks (spmd, spmd, fundef);
         DBUG_PRINT ("SPMDI", ("leave pm not let"));
     }
 
@@ -329,7 +328,7 @@ SPMDIassign (node *arg_node, info *arg_info)
      *  Contains the current assignment a with-loop that should be executed
      *  concurrently??
      */
-    if ((NODE_TYPE (spmd_let) == N_let) && (NODE_TYPE (LET_EXPR (spmd_let)) == N_Nwith2)
+    if ((NODE_TYPE (spmd_let) == N_let) && (NODE_TYPE (LET_EXPR (spmd_let)) == N_with2)
         && WithLoopIsAllowedConcurrentExecution (LET_EXPR (spmd_let))
         && WithLoopIsWorthConcurrentExecution (LET_EXPR (spmd_let), LET_IDS (spmd_let))) {
 
@@ -344,14 +343,14 @@ SPMDIassign (node *arg_node, info *arg_info)
         DBUG_PRINT ("SPMDI", ("traverse into instruction %s",
                               NODE_TEXT (ASSIGN_INSTR (arg_node))));
 
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
         DBUG_PRINT ("SPMDI", ("traverse from instruction %s",
                               NODE_TEXT (ASSIGN_INSTR (arg_node))));
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     } else {
         DBUG_PRINT ("SPMDI", ("turnaround"));
     }

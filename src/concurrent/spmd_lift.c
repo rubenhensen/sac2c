@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/11/24 19:29:17  skt
+ * Compiler Switch during SACDevCampDK 2k4
+ *
  * Revision 3.10  2004/11/21 17:59:37  skt
  * moved 2 defines from concurrent_lib.h into here
  *
@@ -95,10 +98,6 @@
  *
  *****************************************************************************/
 
-#define NEW_INFO
-
-#include "dbug.h"
-#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -109,34 +108,38 @@
 #include "InferDFMs.h"
 #include "concurrent_info.h"
 
-/*
- *  returns 0 for refcounting-objects and -1 otherwise
- */
-#define GET_ZERO_REFCNT(prefix, node)                                                    \
-    (RC_IS_ACTIVE (prefix##_REFCNT (node)) ? 0 : RC_INACTIVE)
-
-/*
- *  returns 1 for refcounting-objects and -1 otherwise
- */
-#define GET_STD_REFCNT(prefix, node)                                                     \
-    (RC_IS_ACTIVE (prefix##_REFCNT (node)) ? 1 : RC_INACTIVE)
-
 /******************************************************************************
  *
  * function:
- *   ids *SPMDLids( ids *arg_node, info *arg_info)
+ *   node *SPMDLids( node *arg_node, info *arg_info)
  *
  * description:
  *
  *
  ******************************************************************************/
 
-ids *
-SPMDLids (ids *arg_node, info *arg_info)
+node *
+SPMDLids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPMDLids");
 
     DBUG_RETURN (arg_node);
+}
+
+static node *
+MakeRetsFromTypes (types *rettypes)
+{
+    node *result;
+
+    DBUG_ENTER ("MakeRetsFromTypes");
+
+    result = NULL;
+    while (rettypes != NULL) {
+        result = TBmakeRet (NULL, result);
+        rettypes = TYPES_NEXT (rettypes);
+    }
+
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************
@@ -161,7 +164,7 @@ SPMDLspmd (node *arg_node, info *arg_info)
     node *retexprs, *new_retexpr;
     node *tmp;
     types *rettypes, *new_rettype;
-    LUT_t lut;
+    lut_t *lut;
 
     DBUG_ENTER (" SPMDLspmd");
 
@@ -174,98 +177,110 @@ SPMDLspmd (node *arg_node, info *arg_info)
     /*
      * generate LUT (needed to get correct decl pointers during DupTree)
      */
-    lut = GenerateLUT ();
+    lut = LUTgenerateLut ();
 
     /*
      * build vardecs of SPMD_OUT/LOCAL-vars for SPMD function and fill LUT
      */
     fvardecs = NULL;
-    vardec = DFMGetMaskEntryDeclSet (SPMD_OUT (arg_node));
+    vardec = DFMgetMaskEntryDeclSet (SPMD_OUT (arg_node));
     while (vardec != NULL) {
         /* reduce outs by ins */
-        if (!(DFMTestMaskEntry (SPMD_IN (arg_node), NULL, vardec))) {
+        if (!(DFMtestMaskEntry (SPMD_IN (arg_node), NULL, vardec))) {
             if (NODE_TYPE (vardec) == N_vardec) {
-                new_fvardec = DupNode (vardec);
+                new_fvardec = DUPdoDupNode (vardec);
                 VARDEC_NEXT (new_fvardec) = fvardecs;
 
                 DBUG_PRINT ("SPMDL", ("inserted vardec out %s", VARDEC_NAME (vardec)));
             } else {
-                new_fvardec = MakeVardec (StringCopy (ARG_NAME (vardec)),
-                                          DupAllTypes (ARG_TYPE (vardec)), fvardecs);
-                VARDEC_REFCNT (new_fvardec) = ARG_REFCNT (vardec);
+                /* old */
+                /*
+                 * new_fvardec = TBmakeVardec( StringCopy(ARG_NAME( vardec)),
+                 *                             DupAllTypes( ARG_TYPE( vardec)),
+                 *                             fvardecs);
+                 */
+
+                /* new */
+                new_fvardec
+                  = TBmakeVardec (TBmakeAvis (ILIBstringCopy (ARG_NAME (vardec)), NULL),
+                                  fvardecs);
+                VARDEC_TYPE (new_fvardec) = DUPdupAllTypes (ARG_TYPE (vardec));
 
                 DBUG_PRINT ("SPMDL", ("inserted arg out %s", ARG_NAME (vardec)));
             }
-            lut = InsertIntoLUT_P (lut, vardec, new_fvardec);
+            lut = LUTinsertIntoLutP (lut, vardec, new_fvardec);
 
             fvardecs = new_fvardec;
         }
-        vardec = DFMGetMaskEntryDeclSet (NULL);
+        vardec = DFMgetMaskEntryDeclSet (NULL);
     }
 
-    vardec = DFMGetMaskEntryDeclSet (SPMD_LOCAL (arg_node));
+    vardec = DFMgetMaskEntryDeclSet (SPMD_LOCAL (arg_node));
     while (vardec != NULL) {
         if (NODE_TYPE (vardec) == N_vardec) {
-            new_fvardec = DupNode (vardec);
+            new_fvardec = DUPdoDupNode (vardec);
             VARDEC_NEXT (new_fvardec) = fvardecs;
         } else {
-            new_fvardec = MakeVardec (StringCopy (ARG_NAME (vardec)),
-                                      DupAllTypes (ARG_TYPE (vardec)), fvardecs);
-            VARDEC_REFCNT (new_fvardec) = ARG_REFCNT (vardec);
+            new_fvardec
+              = TBmakeVardec (TBmakeAvis (ILIBstringCopy (ARG_NAME (vardec)), NULL),
+                              fvardecs);
+            VARDEC_TYPE (new_fvardec) = DUPdupAllTypes (ARG_TYPE (vardec));
         }
-        lut = InsertIntoLUT_P (lut, vardec, new_fvardec);
+        lut = LUTinsertIntoLutP (lut, vardec, new_fvardec);
 
         fvardecs = new_fvardec;
-        vardec = DFMGetMaskEntryDeclSet (NULL);
+        vardec = DFMgetMaskEntryDeclSet (NULL);
     }
 
-    vardec = DFMGetMaskEntryDeclSet (SPMD_SHARED (arg_node));
+    vardec = DFMgetMaskEntryDeclSet (SPMD_SHARED (arg_node));
     while (vardec != NULL) {
         /* reduce shareds by ins and outs */
-        if ((!(DFMTestMaskEntry (SPMD_IN (arg_node), NULL, vardec)))
-            && (!(DFMTestMaskEntry (SPMD_OUT (arg_node), NULL, vardec)))) {
+        if ((!(DFMtestMaskEntry (SPMD_IN (arg_node), NULL, vardec)))
+            && (!(DFMtestMaskEntry (SPMD_OUT (arg_node), NULL, vardec)))) {
             if (NODE_TYPE (vardec) == N_vardec) {
-                new_fvardec = DupNode (vardec);
+                new_fvardec = DUPdoDupNode (vardec);
                 VARDEC_NEXT (new_fvardec) = fvardecs;
 
                 DBUG_PRINT ("SPMDL", ("inserted vardec shared %s", VARDEC_NAME (vardec)));
             } else {
-                new_fvardec = MakeVardec (StringCopy (ARG_NAME (vardec)),
-                                          DupAllTypes (ARG_TYPE (vardec)), fvardecs);
-                VARDEC_REFCNT (new_fvardec) = ARG_REFCNT (vardec);
+                new_fvardec
+                  = TBmakeVardec (TBmakeAvis (ILIBstringCopy (ARG_NAME (vardec)), NULL),
+                                  fvardecs);
+                VARDEC_TYPE (new_fvardec) = DUPdupAllTypes (ARG_TYPE (vardec));
 
                 DBUG_PRINT ("SPMDL", ("inserted arg shared %s", ARG_NAME (vardec)));
             }
-            lut = InsertIntoLUT_P (lut, vardec, new_fvardec);
+            lut = LUTinsertIntoLutP (lut, vardec, new_fvardec);
 
             fvardecs = new_fvardec;
         }
-        vardec = DFMGetMaskEntryDeclSet (NULL);
+        vardec = DFMgetMaskEntryDeclSet (NULL);
     }
 
     /*
      * build formal parameters (SPMD_IN/INOUT) of SPMD function and fill LUT
      */
     fargs = NULL;
-    vardec = DFMGetMaskEntryDeclSet (SPMD_IN (arg_node));
+    vardec = DFMgetMaskEntryDeclSet (SPMD_IN (arg_node));
     while (vardec != NULL) {
         if (NODE_TYPE (vardec) == N_arg) {
-            new_farg = DupNode (vardec);
+            new_farg = DUPdoDupNode (vardec);
             ARG_NEXT (new_farg) = fargs;
         } else {
-            new_farg = MakeArg (StringCopy (ARG_NAME (vardec)),
-                                DupAllTypes (VARDEC_TYPE (vardec)), ST_regular,
-                                ST_regular, fargs);
-            /* refcnt and varno also need corrections */
-            ARG_REFCNT (new_farg) = GET_STD_REFCNT (VARDEC, vardec);
+            new_farg
+              = TBmakeArg (TBmakeAvis (ILIBstringCopy (ARG_NAME (vardec)), NULL), fargs);
+
+            VARDEC_TYPE (new_farg) = DUPdupAllTypes (ARG_TYPE (vardec));
+
+            /* varno also need corrections */
             ARG_VARNO (new_farg) = VARDEC_VARNO (vardec);
 
             DBUG_PRINT ("SPMDL", ("inserted arg %s", ARG_NAME (vardec)));
         }
-        lut = InsertIntoLUT_P (lut, vardec, new_farg);
+        lut = LUTinsertIntoLutP (lut, vardec, new_farg);
 
         fargs = new_farg;
-        vardec = DFMGetMaskEntryDeclSet (NULL);
+        vardec = DFMgetMaskEntryDeclSet (NULL);
     }
 
     /*
@@ -273,38 +288,38 @@ SPMDLspmd (node *arg_node, info *arg_info)
      */
     rettypes = NULL;
     retexprs = NULL;
-    vardec = DFMGetMaskEntryDeclSet (SPMD_OUT (arg_node));
+    vardec = DFMgetMaskEntryDeclSet (SPMD_OUT (arg_node));
     while (vardec != NULL) {
         if (NODE_TYPE (vardec) == N_arg) {
-            new_rettype = DupAllTypes (ARG_TYPE (vardec));
+            new_rettype = DUPdupAllTypes (ARG_TYPE (vardec));
 
             new_retexpr
-              = MakeExprs (MakeId (StringCopy (ARG_NAME (vardec)), NULL, ST_regular),
-                           retexprs);
-            SET_FLAG (ID, EXPRS_EXPR (new_retexpr), IS_GLOBAL, FALSE);
-            SET_FLAG (ID, EXPRS_EXPR (new_retexpr), IS_REFERENCE, FALSE);
-            ID_REFCNT (EXPRS_EXPR (new_retexpr)) = GET_ZERO_REFCNT (ARG, vardec);
+              = TBmakeExprs (TBmakeId (
+                               TBmakeAvis (ILIBstringCopy (ARG_NAME (vardec)), NULL)),
+                             retexprs);
         } else {
-            new_rettype = DupAllTypes (VARDEC_TYPE (vardec));
+            new_rettype = DUPdupAllTypes (VARDEC_TYPE (vardec));
 
             new_retexpr
-              = MakeExprs (MakeId (StringCopy (VARDEC_NAME (vardec)), NULL, ST_regular),
-                           retexprs);
-            SET_FLAG (ID, EXPRS_EXPR (new_retexpr), IS_GLOBAL, FALSE);
-            SET_FLAG (ID, EXPRS_EXPR (new_retexpr), IS_REFERENCE, FALSE);
-            ID_REFCNT (EXPRS_EXPR (new_retexpr)) = GET_ZERO_REFCNT (VARDEC, vardec);
+              = TBmakeExprs (TBmakeId (
+                               TBmakeAvis (ILIBstringCopy (VARDEC_NAME (vardec)), NULL)),
+                             retexprs);
         }
 
-        tmp = SearchInLUT_PP (lut, vardec);
+        ID_ISGLOBAL (EXPRS_EXPR (new_retexpr)) = FALSE;
+        ID_ISREFERENCE (EXPRS_EXPR (new_retexpr)) = FALSE;
+
+        tmp = LUTsearchInLutPp (lut, vardec);
         DBUG_ASSERT ((tmp != NULL), "no decl for return value found in LUT!");
-        ID_VARDEC (EXPRS_EXPR (new_retexpr)) = tmp;
+
+        ID_DECL (EXPRS_EXPR (new_retexpr)) = tmp;
 
         TYPES_NEXT (new_rettype) = rettypes;
 
         rettypes = new_rettype;
         retexprs = new_retexpr;
 
-        vardec = DFMGetMaskEntryDeclSet (NULL);
+        vardec = DFMgetMaskEntryDeclSet (NULL);
     }
 
     /*
@@ -312,19 +327,21 @@ SPMDLspmd (node *arg_node, info *arg_info)
      *          That's why we must build a void-type, when ('rettypes' == NULL).
      */
     if (rettypes == NULL) {
-        rettypes = MakeTypes1 (T_void);
+        rettypes = TBmakeTypes1 (T_void);
     }
 
     /*
      * generate body of SPMD function
      */
-    body = DupTreeLUT (SPMD_REGION (arg_node), lut);
+    body = DUPdoDupTreeLut (SPMD_REGION (arg_node), lut);
     BLOCK_VARDEC (body) = fvardecs;
 
-    new_fundef = MakeFundef (TmpVarName (FUNDEF_NAME (fundef)), "_SPMD", rettypes, fargs,
-                             body, NULL);
+    new_fundef = TBmakeFundef (ILIBtmpVarName (FUNDEF_NAME (fundef)), "_SPMD",
+                               MakeRetsFromTypes (rettypes), fargs, body, NULL);
 
-    FUNDEF_STATUS (new_fundef) = ST_spmdfun;
+    FUNDEF_TYPES (new_fundef) = rettypes;
+
+    FUNDEF_ISSPMDFUN (new_fundef) = TRUE;
     FUNDEF_LIFTEDFROM (new_fundef) = fundef;
     FUNDEF_VARNO (new_fundef) = FUNDEF_VARNO (fundef);
 
@@ -333,13 +350,13 @@ SPMDLspmd (node *arg_node, info *arg_info)
     /*
      * append return expressions to body of SPMD-function
      */
-    FUNDEF_RETURN (new_fundef) = MakeReturn (retexprs);
-    AppendAssign (BLOCK_INSTR (body), MakeAssign (FUNDEF_RETURN (new_fundef), NULL));
+    FUNDEF_RETURN (new_fundef) = TBmakeReturn (retexprs);
+    TCappendAssign (BLOCK_INSTR (body), TBmakeAssign (FUNDEF_RETURN (new_fundef), NULL));
 
     /*
      * update DFMs for the new fundef
      */
-    new_fundef = InferDFMs (new_fundef, HIDE_LOCALS_NEVER);
+    new_fundef = INFDFMSdoInferDFMs (new_fundef, HIDE_LOCALS_NEVER);
 
     /*
      * insert SPMD-function into fundef-chain of modul
@@ -359,7 +376,7 @@ SPMDLspmd (node *arg_node, info *arg_info)
     /*
      * remove LUT
      */
-    lut = RemoveLUT (lut);
+    lut = LUTremoveLut (lut);
 
     /*
      * build fundef for this spmd region
@@ -403,7 +420,7 @@ SPMDLlet (node *arg_node, info *arg_info)
     DBUG_ENTER ("SPMDLlet");
 
     LET_IDS (arg_node) = SPMDLids (LET_IDS (arg_node), arg_info);
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -411,7 +428,7 @@ SPMDLlet (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPMDLnwithid( node *arg_node, info *arg_info)
+ *   node *SPMDLwithid( node *arg_node, info *arg_info)
  *
  * description:
  *   Corrects the vardec-pointers of the with-ids in SPMD-funs.
@@ -419,12 +436,12 @@ SPMDLlet (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-SPMDLnwithid (node *arg_node, info *arg_info)
+SPMDLwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SPMDLnwithid");
 
-    NWITHID_IDS (arg_node) = SPMDLids (NWITHID_IDS (arg_node), arg_info);
-    NWITHID_VEC (arg_node) = SPMDLids (NWITHID_VEC (arg_node), arg_info);
+    WITHID_IDS (arg_node) = SPMDLids (WITHID_IDS (arg_node), arg_info);
+    WITHID_VEC (arg_node) = SPMDLids (WITHID_VEC (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -432,10 +449,10 @@ SPMDLnwithid (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SPMDLnwith2( node *arg_node, info *arg_info)
+ *   node *SPMDLwith2( node *arg_node, info *arg_info)
  *
  * description:
- *   Generates new DFMasks in NWITH2_IN/INOUT/OUT/LOCAL.
+ *   Generates new DFMasks in WITH2_IN/INOUT/OUT/LOCAL.
  *
  * remark:
  *   During this phase each with-loop is marked as being multi-threaded
@@ -446,62 +463,77 @@ SPMDLnwithid (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-SPMDLnwith2 (node *arg_node, info *arg_info)
+SPMDLwith2 (node *arg_node, info *arg_info)
 {
-    node *vardec;
-    DFMmask_t in, out, local;
+    node *vardec, *args;
+    dfmask_t *in, *out, *local;
 
-    DBUG_ENTER ("SPMDLnwith2");
+    DBUG_ENTER ("SPMDLwith2");
 
     /*
      * mark with-loop as being multi-threaded or not depending on arg_info
      */
 
-    NWITH2_MT (arg_node) = INFO_SPMDL_MT (arg_info);
+    WITH2_MT (arg_node) = INFO_SPMDL_MT (arg_info);
 
     /*
      * traverse sons
      */
-    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
-    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+    WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+    WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
     INFO_SPMDL_MT (arg_info) = 0;
 
-    if (NWITH2_CODE (arg_node) != NULL) {
-        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    if (WITH2_CODE (arg_node) != NULL) {
+        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
     }
 
-    INFO_SPMDL_MT (arg_info) = NWITH2_MT (arg_node);
-    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+    INFO_SPMDL_MT (arg_info) = WITH2_MT (arg_node);
+    WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
     /*
      * generate new DFMasks
      */
 
-    in = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));
-    out = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));
-    local = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));
+    in = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));
+    out = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));
+    local = DFMgenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));
 
-    FOREACH_VARDEC_AND_ARG (INFO_CONC_FUNDEF (arg_info), vardec, {
-        if (DFMTestMaskEntry (NWITH2_IN_MASK (arg_node), VARDEC_OR_ARG_NAME (vardec),
-                              NULL)) {
-            DFMSetMaskEntrySet (in, VARDEC_OR_ARG_NAME (vardec), NULL);
+    /*
+     * traverse all args and vardecs
+     */
+    args = FUNDEF_ARGS (INFO_CONC_FUNDEF (arg_info));
+    while (args != NULL) {
+        if (DFMtestMaskEntry (WITH2_IN_MASK (arg_node), NULL, ARG_AVIS (args))) {
+            DFMsetMaskEntrySet (in, NULL, ARG_AVIS (args));
         }
-        if (DFMTestMaskEntry (NWITH2_OUT_MASK (arg_node), VARDEC_OR_ARG_NAME (vardec),
-                              NULL)) {
-            DFMSetMaskEntrySet (out, VARDEC_OR_ARG_NAME (vardec), NULL);
+        if (DFMtestMaskEntry (WITH2_IN_MASK (arg_node), NULL, ARG_AVIS (args))) {
+            DFMsetMaskEntrySet (out, NULL, ARG_AVIS (args));
         }
-        if (DFMTestMaskEntry (NWITH2_LOCAL_MASK (arg_node), VARDEC_OR_ARG_NAME (vardec),
-                              NULL)) {
-            DFMSetMaskEntrySet (local, VARDEC_OR_ARG_NAME (vardec), NULL);
+        if (DFMtestMaskEntry (WITH2_IN_MASK (arg_node), NULL, ARG_AVIS (args))) {
+            DFMsetMaskEntrySet (local, NULL, ARG_AVIS (args));
         }
-    }) /* FOREACH_VARDEC_OR_ARG */
+        args = ARG_NEXT (args);
+    }
+    vardec = FUNDEF_VARDEC (INFO_CONC_FUNDEF (arg_info));
+    while (vardec != NULL) {
+        if (DFMtestMaskEntry (WITH2_IN_MASK (arg_node), NULL, VARDEC_AVIS (vardec))) {
+            DFMsetMaskEntrySet (in, NULL, VARDEC_AVIS (vardec));
+        }
+        if (DFMtestMaskEntry (WITH2_IN_MASK (arg_node), NULL, VARDEC_AVIS (vardec))) {
+            DFMsetMaskEntrySet (out, NULL, VARDEC_AVIS (vardec));
+        }
+        if (DFMtestMaskEntry (WITH2_IN_MASK (arg_node), NULL, VARDEC_AVIS (vardec))) {
+            DFMsetMaskEntrySet (local, NULL, VARDEC_AVIS (vardec));
+        }
+        vardec = VARDEC_NEXT (vardec);
+    }
 
-    NWITH2_IN_MASK (arg_node) = DFMRemoveMask (NWITH2_IN_MASK (arg_node));
-    NWITH2_IN_MASK (arg_node) = in;
-    NWITH2_OUT_MASK (arg_node) = DFMRemoveMask (NWITH2_OUT_MASK (arg_node));
-    NWITH2_OUT_MASK (arg_node) = out;
-    NWITH2_LOCAL_MASK (arg_node) = DFMRemoveMask (NWITH2_LOCAL_MASK (arg_node));
-    NWITH2_LOCAL_MASK (arg_node) = local;
+    WITH2_IN_MASK (arg_node) = DFMremoveMask (WITH2_IN_MASK (arg_node));
+    WITH2_IN_MASK (arg_node) = in;
+    WITH2_OUT_MASK (arg_node) = DFMremoveMask (WITH2_OUT_MASK (arg_node));
+    WITH2_OUT_MASK (arg_node) = out;
+    WITH2_LOCAL_MASK (arg_node) = DFMremoveMask (WITH2_LOCAL_MASK (arg_node));
+    WITH2_LOCAL_MASK (arg_node) = local;
 
     DBUG_RETURN (arg_node);
 }

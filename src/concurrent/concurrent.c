@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/11/24 19:29:17  skt
+ * Compiler Switch during SACDevCampDK 2k4
+ *
  * Revision 3.12  2004/11/23 23:09:06  skt
  * codebrushing during SACDevCampDK 2k4
  *
@@ -118,18 +121,12 @@
  *
  *****************************************************************************/
 
-#define NEW_INFO
-
 #include "dbug.h"
-#include "types.h"
 #include "tree_basic.h"
 #include "traverse.h"
-#include "globals.h"
-#include "free.h"
 #include "Error.h"
 #include "InferDFMs.h"
 #include "spmd_emm.h"
-#include "ssa.h"
 #include "concurrent_info.h"
 #include "internal_lib.h"
 #include <string.h>

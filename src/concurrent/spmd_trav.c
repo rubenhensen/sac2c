@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/11/24 19:29:17  skt
+ * Compiler Switch during SACDevCampDK 2k4
+ *
  * Revision 3.10  2004/11/21 17:32:02  skt
  * make it runable with the new info structure
  *
@@ -72,10 +75,7 @@
  *
  *****************************************************************************/
 
-#define NEW_INFO
-
 #include <stdio.h>
-#include "dbug.h"
 #include "DataFlowMask.h"
 #include "traverse.h"
 #include "internal_lib.h"
@@ -89,11 +89,11 @@
  */
 
 struct INFO {
-    DFMmask_t in;
-    DFMmask_t inout;
-    DFMmask_t out;
-    DFMmask_t local;
-    DFMmask_t shared;
+    dfmask_t *in;
+    dfmask_t *inout;
+    dfmask_t *out;
+    dfmask_t *local;
+    dfmask_t *shared;
     bool nested;
     node *fundef;
 };
@@ -118,7 +118,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_SPMDPM_IN (result) = NULL;
     INFO_SPMDPM_INOUT (result) = NULL;
@@ -136,7 +136,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -153,7 +153,7 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *   node *DeleteNested (node *arg_node)
+ *   node *SPMDDNdoDeleteNested (node *arg_node)
  *
  * description:
  *   Deletes all spmd-blocks nested in the first spmd-blocks found while
@@ -170,31 +170,30 @@ FreeInfo (info *info)
  *        |                   |
  *   e:  spmd               f: spmd
  *
- * in call "DeleteNested(a)" a, b, c will survive, e and f not!
+ * in call "SPMDDNdoDeleteNested(a)" a, b, c will survive, e and f not!
  *
  ******************************************************************************/
 node *
-DeleteNested (node *arg_node)
+SPMDDNdoDeleteNested (node *arg_node)
 {
     info *arg_info;
-    funtab *old_tab;
+    trav_t traversaltable;
 
-    DBUG_ENTER ("DeleteNested");
+    DBUG_ENTER ("SPMDDNdoDeleteNested");
 
-    old_tab = act_tab;
-    act_tab = spmddn_tab;
+    TRAVpush (TR_spmddn);
 
     arg_info = MakeInfo ();
     INFO_SPMDDN_NESTED (arg_info) = FALSE;
 
     DBUG_PRINT ("SPMDDN", ("trav into"));
-    arg_node = Trav (arg_node, arg_info);
+    arg_node = TRAVdo (arg_node, arg_info);
     DBUG_PRINT ("SPMDDN", ("trav from"));
 
     arg_info = FreeInfo (arg_info);
-    DBUG_PRINT ("SPMDI", ("free arg_info"));
 
-    act_tab = old_tab;
+    traversaltable = TRAVpop ();
+    DBUG_ASSERT ((traversaltable == TR_spmddn), "Popped incorrect traversal table");
 
     DBUG_RETURN (arg_node);
 }
@@ -223,16 +222,16 @@ SPMDDNspmd (node *arg_node, info *arg_info)
         spmd = arg_node;
         arg_node = ASSIGN_INSTR (BLOCK_INSTR (SPMD_REGION (spmd)));
         ASSIGN_INSTR (BLOCK_INSTR (SPMD_REGION (spmd))) = NULL;
-        spmd = FreeTree (spmd);
+        spmd = FREEdoFreeTree (spmd);
 
-        arg_node = Trav (arg_node, arg_info);
+        arg_node = TRAVdo (arg_node, arg_info);
     } else {
         DBUG_PRINT ("SPMDI", ("first spmd, leaving as is"));
 
         INFO_SPMDDN_NESTED (arg_info) = TRUE;
 
         DBUG_PRINT ("SPMDI", ("first spmd, into trav"));
-        SPMD_REGION (arg_node) = Trav (SPMD_REGION (arg_node), arg_info);
+        SPMD_REGION (arg_node) = TRAVdo (SPMD_REGION (arg_node), arg_info);
         DBUG_PRINT ("SPMDI", ("first spmd, from trav"));
 
         /*
@@ -257,7 +256,7 @@ SPMDDNspmd (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   void ProduceMasks (node *arg_node, node *spmd, node* fundef);
+ *   void SPMDPMdoProduceMasks (node *arg_node, node *spmd, node* fundef);
  *
  * description:
  *   inferres the masks needed for the overhanded spmd-block and
@@ -269,15 +268,14 @@ SPMDDNspmd (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 void
-ProduceMasks (node *arg_node, node *spmd, node *fundef)
+SPMDPMdoProduceMasks (node *arg_node, node *spmd, node *fundef)
 {
     info *arg_info;
-    funtab *old_tab;
+    trav_t traversaltable;
 
-    DBUG_ENTER ("ProduceMasks");
+    DBUG_ENTER ("SPMDPMdoProduceMasks");
 
-    old_tab = act_tab;
-    act_tab = spmdpm_tab;
+    TRAVpush (TR_spmdpm);
 
     arg_info = MakeInfo ();
     INFO_SPMDPM_FUNDEF (arg_info) = fundef;
@@ -287,7 +285,7 @@ ProduceMasks (node *arg_node, node *spmd, node *fundef)
     INFO_SPMDPM_LOCAL (arg_info) = SPMD_LOCAL (spmd);
     INFO_SPMDPM_SHARED (arg_info) = SPMD_SHARED (spmd);
 
-    arg_node = Trav (arg_node, arg_info);
+    arg_node = TRAVdo (arg_node, arg_info);
 
     INFO_SPMDPM_IN (arg_info) = NULL;
     INFO_SPMDPM_INOUT (arg_info) = NULL;
@@ -296,7 +294,8 @@ ProduceMasks (node *arg_node, node *spmd, node *fundef)
     INFO_SPMDPM_SHARED (arg_info) = NULL;
     arg_info = FreeInfo (arg_info);
 
-    act_tab = old_tab;
+    traversaltable = TRAVpop ();
+    DBUG_ASSERT ((traversaltable == TR_spmdpm), "Popped incorrect traversal table");
 
     DBUG_VOID_RETURN;
 }
@@ -315,13 +314,13 @@ SPMDPMassign (node *arg_node, info *arg_info)
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign), ("N_assign expected"));
 
     if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
-        && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith2)) {
+        && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_with2)) {
         DBUG_PRINT ("SPMDPM", ("with pm"));
         with = LET_EXPR (ASSIGN_INSTR (arg_node));
 
-        DFMSetMaskOr (INFO_SPMDPM_IN (arg_info), NWITH2_IN_MASK (with));
-        DFMSetMaskOr (INFO_SPMDPM_OUT (arg_info), NWITH2_OUT_MASK (with));
-        DFMSetMaskOr (INFO_SPMDPM_LOCAL (arg_info), NWITH2_LOCAL_MASK (with));
+        DFMsetMaskOr (INFO_SPMDPM_IN (arg_info), WITH2_IN_MASK (with));
+        DFMsetMaskOr (INFO_SPMDPM_OUT (arg_info), WITH2_OUT_MASK (with));
+        DFMsetMaskOr (INFO_SPMDPM_LOCAL (arg_info), WITH2_LOCAL_MASK (with));
 
         DBUG_ASSERT ((IDS_NEXT (LET_IDS (ASSIGN_INSTR (arg_node))) == NULL),
                      "more than one ids on LHS of with-loop found");
@@ -329,18 +328,19 @@ SPMDPMassign (node *arg_node, info *arg_info)
         /*
          * takings vars from LHS of with-loop assignment into account
          */
-        DFMSetMaskEntryClear (INFO_SPMDPM_OUT (arg_info), NULL,
-                              LET_VARDEC (ASSIGN_INSTR (arg_node)));
-        if ((NWITH2_TYPE (with) == WO_genarray) || (NWITH2_TYPE (with) == WO_modarray)) {
-            DFMSetMaskEntryClear (INFO_SPMDPM_INOUT (arg_info), NULL,
-                                  LET_VARDEC (ASSIGN_INSTR (arg_node)));
+        DFMsetMaskEntryClear (INFO_SPMDPM_OUT (arg_info), NULL,
+                              IDS_AVIS (LET_IDS (ASSIGN_INSTR (arg_node))));
+        if ((NODE_TYPE (WITH2_WITHOP (with)) == N_genarray)
+            || (NODE_TYPE (WITH2_WITHOP (with)) == N_modarray)) {
+            DFMsetMaskEntryClear (INFO_SPMDPM_INOUT (arg_info), NULL,
+                                  IDS_AVIS (LET_IDS (ASSIGN_INSTR (arg_node))));
         }
     } else if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_while) {
         DBUG_PRINT ("SPMDPM", ("while pm"));
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     } else if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_do) {
         DBUG_PRINT ("SPMDPM", ("while pm"));
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     } else {
         DBUG_PRINT ("SPMDPM",
                     ("for pm -> %i", FUNDEF_VARNO (INFO_SPMDPM_FUNDEF (arg_info))));
@@ -348,7 +348,7 @@ SPMDPMassign (node *arg_node, info *arg_info)
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("SPMDPM", ("next pm"));
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

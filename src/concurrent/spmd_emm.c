@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/24 19:29:17  skt
+ * Compiler Switch during SACDevCampDK 2k4
+ *
  * Revision 1.2  2004/09/23 16:33:35  ktr
  * Repaired invalid free traversal.
  *
@@ -21,19 +24,13 @@
  *   into spmd-blocks
  *
  */
-#define NEW_INFO
 
-#include "dbug.h"
-
-#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
 #include "DataFlowMask.h"
-#include "globals.h"
 #include "internal_lib.h"
-#include "my_debug.h"
-#include "print.h"
+#include "free.h"
 
 /**
  *
@@ -47,7 +44,7 @@ typedef enum { tm_up, tm_down } spmdemm_travmode;
  */
 struct INFO {
     spmdemm_travmode travmode;
-    ids *lhs;
+    node *lhs;
     node *spmds;
     node *move_begin;
     node *move_end;
@@ -72,7 +69,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_SPMDEMM_TRAVMODE (result) = tm_down;
     INFO_SPMDEMM_LHS (result) = NULL;
@@ -93,10 +90,10 @@ FreeInfo (info *info)
     temp = INFO_SPMDEMM_SPMDS (info);
     while (temp != NULL) {
         EXPRS_EXPR (temp) = NULL;
-        temp = FreeNode (temp);
+        temp = FREEdoFreeNode (temp);
     }
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -116,6 +113,7 @@ node *
 SpmdEmm (node *arg_node)
 {
     info *info;
+    trav_t traversaltable;
 
     DBUG_ENTER ("SPMDEMMfundef");
 
@@ -123,9 +121,12 @@ SpmdEmm (node *arg_node)
 
     info = MakeInfo ();
 
-    act_tab = spmdemm_tab;
+    TRAVpush (TR_spmdemm);
 
-    FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), info);
+    FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
+
+    traversaltable = TRAVpop ();
+    DBUG_ASSERT ((traversaltable == TR_spmdemm), "Popped incorrect traversal table");
 
     info = FreeInfo (info);
 
@@ -156,20 +157,20 @@ SPMDEMMassign (node *arg_node, info *arg_info)
      * Traverse RHS in order to find SMPD blocks
      */
     INFO_SPMDEMM_TRAVMODE (arg_info) = tm_down;
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     /*
      * Traverse next
      */
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     /*
      * Traverse RHS in order to find moveable
      */
     INFO_SPMDEMM_TRAVMODE (arg_info) = tm_up;
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     res_node = arg_node;
     /*
@@ -179,7 +180,7 @@ SPMDEMMassign (node *arg_node, info *arg_info)
         res_node = ASSIGN_NEXT (arg_node);
         block = SPMD_REGION (INFO_SPMDEMM_MOVE_END (arg_info));
         ASSIGN_NEXT (arg_node) = NULL;
-        BLOCK_INSTR (block) = AppendAssign (BLOCK_INSTR (block), arg_node);
+        BLOCK_INSTR (block) = TCappendAssign (BLOCK_INSTR (block), arg_node);
 
         INFO_SPMDEMM_MOVE_END (arg_info) = NULL;
     }
@@ -219,7 +220,7 @@ SPMDEMMlet (node *arg_node, info *arg_info)
     INFO_SPMDEMM_LHS (arg_info) = LET_IDS (arg_node);
 
     if (LET_EXPR (arg_node) != NULL) {
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -245,7 +246,7 @@ FindSpmd (char *name, node *exprs)
     DBUG_ENTER ("FindSpmd");
 
     if (exprs != NULL) {
-        if (DFMTestMaskEntry (SPMD_LOCAL (EXPRS_EXPR (exprs)), name, NULL)) {
+        if (DFMtestMaskEntry (SPMD_LOCAL (EXPRS_EXPR (exprs)), name, NULL)) {
             res = EXPRS_EXPR (exprs);
         } else {
             res = FindSpmd (name, EXPRS_NEXT (exprs));
@@ -317,7 +318,7 @@ SPMDEMMspmd (node *arg_node, info *arg_info)
          * in arg_info
          */
         INFO_SPMDEMM_SPMDS (arg_info)
-          = MakeExprs (arg_node, INFO_SPMDEMM_SPMDS (arg_info));
+          = TBmakeExprs (arg_node, INFO_SPMDEMM_SPMDS (arg_info));
     }
 
     DBUG_RETURN (arg_node);

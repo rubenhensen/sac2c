@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/11/24 19:29:17  skt
+ * Compiler Switch during SACDevCampDK 2k4
+ *
  * Revision 3.7  2004/08/08 16:05:08  sah
  * fixed some includes.
  *
@@ -74,7 +77,6 @@
  *****************************************************************************/
 
 #include "dbug.h"
-
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -95,26 +97,26 @@
  *
  ******************************************************************************/
 
-static SCHsched_t
+static sched_t *
 MakeDefaultSchedulingConstSegment ()
 {
-    SCHsched_t sched;
+    sched_t *sched;
 
     DBUG_ENTER ("MakeDefaultSchedulingConstSegment");
 
-    sched = SCHMakeScheduling ("Block");
+    sched = SCHmakeScheduling ("Block");
 
     DBUG_RETURN (sched);
 }
 
-static SCHsched_t
+static sched_t *
 MakeDefaultSchedulingVarSegment ()
 {
-    SCHsched_t sched;
+    sched_t *sched;
 
     DBUG_ENTER ("MakeDefaultSchedulingVarSegment");
 
-    sched = SCHMakeScheduling ("BlockVar");
+    sched = SCHmakeScheduling ("BlockVar");
 
     DBUG_RETURN (sched);
 }
@@ -122,7 +124,7 @@ MakeDefaultSchedulingVarSegment ()
 /******************************************************************************
  *
  * function:
- *   SCHsched_t InferSchedulingConstSegment(node *wlseg, node *arg_info)
+ *   sched_t *InferSchedulingConstSegment(node *wlseg, info *arg_info)
  *
  * description:
  *   This function defines the inference strategy for the scheduling of
@@ -130,10 +132,10 @@ MakeDefaultSchedulingVarSegment ()
  *
  ******************************************************************************/
 
-static SCHsched_t
-InferSchedulingConstSegment (node *wlseg, node *arg_info)
+static sched_t *
+InferSchedulingConstSegment (node *wlseg, info *arg_info)
 {
-    SCHsched_t sched;
+    sched_t *sched;
 
     DBUG_ENTER ("InferSchedulingConstSegment");
 
@@ -145,7 +147,7 @@ InferSchedulingConstSegment (node *wlseg, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   SCHsched_t InferSchedulingVarSegment(node *wlsegvar, node *arg_info)
+ *   sched_t *InferSchedulingVarSegment(node *wlsegvar, info *arg_info)
  *
  * description:
  *   This function defines the inference strategy for the scheduling of
@@ -153,10 +155,10 @@ InferSchedulingConstSegment (node *wlseg, node *arg_info)
  *
  ******************************************************************************/
 
-static SCHsched_t
-InferSchedulingVarSegment (node *wlsegvar, node *arg_info)
+static sched_t *
+InferSchedulingVarSegment (node *wlsegvar, info *arg_info)
 {
-    SCHsched_t sched;
+    sched_t *sched;
 
     DBUG_ENTER ("InferSchedulingVarSegment");
 
@@ -168,7 +170,7 @@ InferSchedulingVarSegment (node *wlsegvar, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SCHEDwlseg(node *arg_node, node *arg_info)
+ *   node *SCHEDwlseg(node *arg_node, info *arg_info)
  *
  * description:
  *   sched_tab traversal function for N_WLseg nodes.
@@ -180,7 +182,7 @@ InferSchedulingVarSegment (node *wlsegvar, node *arg_info)
  ******************************************************************************/
 
 node *
-SCHEDwlseg (node *arg_node, node *arg_info)
+SCHEDwlseg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SCHEDwlseg");
 
@@ -191,10 +193,10 @@ SCHEDwlseg (node *arg_node, node *arg_info)
          */
         if (WLSEG_SCHEDULING (arg_node) != NULL) {
             WLSEG_SCHEDULING (arg_node)
-              = SCHRemoveScheduling (WLSEG_SCHEDULING (arg_node));
+              = SCHremoveScheduling (WLSEG_SCHEDULING (arg_node));
         }
         if (WLSEGX_TASKSEL (arg_node) != NULL) {
-            WLSEGX_TASKSEL (arg_node) = SCHRemoveTasksel (WLSEGX_TASKSEL (arg_node));
+            WLSEGX_TASKSEL (arg_node) = SCHremoveTasksel (WLSEGX_TASKSEL (arg_node));
         }
 
     } else {
@@ -207,12 +209,12 @@ SCHEDwlseg (node *arg_node, node *arg_info)
             WLSEG_SCHEDULING (arg_node)
               = InferSchedulingConstSegment (arg_node, arg_info);
         } else {
-            SCHCheckSuitabilityConstSeg (WLSEG_SCHEDULING (arg_node));
+            SCHcheckSuitabilityConstSeg (WLSEG_SCHEDULING (arg_node));
         }
     }
 
     if (WLSEG_NEXT (arg_node) != NULL) {
-        WLSEG_NEXT (arg_node) = Trav (WLSEG_NEXT (arg_node), arg_info);
+        WLSEG_NEXT (arg_node) = TRAVdo (WLSEG_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -221,7 +223,7 @@ SCHEDwlseg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SCHEDwlsegVar(node *arg_node, node *arg_info)
+ *   node *SCHEDwlsegVar(node *arg_node, info *arg_info)
  *
  * description:
  *   sched_tab traversal function for N_WLsegVar nodes.
@@ -233,7 +235,7 @@ SCHEDwlseg (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SCHEDwlsegVar (node *arg_node, node *arg_info)
+SCHEDwlsegVar (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SCHEDwlsegVar");
 
@@ -244,28 +246,28 @@ SCHEDwlsegVar (node *arg_node, node *arg_info)
          */
         if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
             WLSEGVAR_SCHEDULING (arg_node)
-              = SCHRemoveScheduling (WLSEGVAR_SCHEDULING (arg_node));
+              = SCHremoveScheduling (WLSEGVAR_SCHEDULING (arg_node));
         }
         if (WLSEGX_TASKSEL (arg_node) != NULL) {
-            WLSEGX_TASKSEL (arg_node) = SCHRemoveTasksel (WLSEGX_TASKSEL (arg_node));
+            WLSEGX_TASKSEL (arg_node) = SCHremoveTasksel (WLSEGX_TASKSEL (arg_node));
         }
 
     } else {
         /*
-         * Here, we are within an spmd-function, so if no scheduling is already present,
-         * the inference strategy is used. Otherwise a scheduling derived froma wlcomp
-         * pragma is checked for suitability for constant segments.
+         * Here, we are within an spmd-function, so if no scheduling is already
+         * present, the inference strategy is used. Otherwise a scheduling derived
+         * from wlcomp pragma is checked for suitability for constant segments.
          */
         if (WLSEGVAR_SCHEDULING (arg_node) == NULL) {
             WLSEGVAR_SCHEDULING (arg_node)
               = InferSchedulingVarSegment (arg_node, arg_info);
         } else {
-            SCHCheckSuitabilityVarSeg (WLSEGVAR_SCHEDULING (arg_node));
+            SCHcheckSuitabilityVarSeg (WLSEGVAR_SCHEDULING (arg_node));
         }
     }
 
     if (WLSEGVAR_NEXT (arg_node) != NULL) {
-        WLSEGVAR_NEXT (arg_node) = Trav (WLSEGVAR_NEXT (arg_node), arg_info);
+        WLSEGVAR_NEXT (arg_node) = TRAVdo (WLSEGVAR_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -274,7 +276,7 @@ SCHEDwlsegVar (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SCHEDsync(node *arg_node, node *arg_info)
+ *   node *SCHEDsync(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -282,11 +284,11 @@ SCHEDwlsegVar (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SCHEDsync (node *arg_node, node *arg_info)
+SCHEDsync (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SCHEDsync");
 
-    SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
+    SYNC_REGION (arg_node) = TRAVdo (SYNC_REGION (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -294,7 +296,7 @@ SCHEDsync (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SCHEDnwith2(node *arg_node, node *arg_info)
+ *   node *SCHEDwith2(node *arg_node, info *arg_info)
  *
  * description:
  *   This function is used to remove all scheduling specifications tied to
@@ -304,14 +306,14 @@ SCHEDsync (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SCHEDnwith2 (node *arg_node, node *arg_info)
+SCHEDwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCHEDnwith2");
+    DBUG_ENTER ("SCHEDwith2");
 
-    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+    WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
 
-    if (NWITH2_CODE (arg_node) != NULL) {
-        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), NULL);
+    if (WITH2_CODE (arg_node) != NULL) {
+        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), NULL);
     }
     /*
      * Here, arg_info is not propagated because all scheduling specifications must

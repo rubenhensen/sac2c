@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/11/24 19:29:17  skt
+ * Compiler Switch during SACDevCampDK 2k4
+ *
  * Revision 3.8  2004/11/21 17:32:02  skt
  * make it runable with the new info structure
  *
@@ -76,14 +79,9 @@
  *
  *****************************************************************************/
 
-#define NEW_INFO
-
-#include "dbug.h"
-#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "DupTree.h"
 #include "DataFlowMask.h"
 #include "globals.h"
 #include "internal_lib.h"
@@ -108,9 +106,8 @@
 node *
 SYNCIassign (node *arg_node, info *arg_info)
 {
-    node *with, *sync_let, *sync, *withop;
-    ids *with_ids;
-    DFMmask_base_t maskbase;
+    node *with, *sync_let, *sync, *withop, *with_ids;
+    dfmask_base_t *maskbase;
     int foldcount;
 
     DBUG_ENTER ("SYNCIassign");
@@ -128,8 +125,7 @@ SYNCIassign (node *arg_node, info *arg_info)
     /*
      *  contains the current assignment a with-loop??
      */
-    if ((NODE_TYPE (sync_let) == N_let)
-        && (NODE_TYPE (LET_EXPR (sync_let)) == N_Nwith2)) {
+    if ((NODE_TYPE (sync_let) == N_let) && (NODE_TYPE (LET_EXPR (sync_let)) == N_with2)) {
         DBUG_PRINT ("SYNCI", ("build sync-block around with-loop"));
 
         with = LET_EXPR (sync_let);
@@ -139,47 +135,48 @@ SYNCIassign (node *arg_node, info *arg_info)
          *  -> create a SYNC-region containing the current assignment only
          *     and insert it into the syntaxtree.
          */
-        sync = MakeSync (MakeBlock (MakeAssign (sync_let, NULL), NULL));
+        sync = TBmakeSync (TBmakeBlock (TBmakeAssign (sync_let, NULL), NULL));
         SYNC_FIRST (sync) = INFO_SYNCI_FIRST (arg_info);
         ASSIGN_INSTR (arg_node) = sync;
 
-        withop = NWITH2_WITHOP (with);
+        withop = WITH2_WITHOP (with);
         foldcount = 0;
         while (withop != NULL) {
-            if (NWITHOP_TYPE (withop) == WO_foldfun) {
+            if (NODE_TYPE (withop) == N_fold) {
                 foldcount++;
             }
-            withop = NWITHOP_NEXT (withop);
+            withop = WITHOP_NEXT (withop);
         }
 
         SYNC_FOLDCOUNT (sync) = foldcount;
-        needed_sync_fold = MAX (needed_sync_fold, foldcount);
+        global.needed_sync_fold = MAX (global.needed_sync_fold, foldcount);
 
         /*
          * get IN/INOUT/OUT/LOCAL from the N_Nwith2 node.
          */
-        SYNC_IN (sync) = DFMGenMaskCopy (NWITH2_IN_MASK (with));
-        SYNC_INOUT (sync) = DFMGenMaskClear (maskbase);
-        SYNC_OUT (sync) = DFMGenMaskCopy (NWITH2_OUT_MASK (with));
-        SYNC_LOCAL (sync) = DFMGenMaskCopy (NWITH2_LOCAL_MASK (with));
-        SYNC_OUTREP (sync) = DFMGenMaskClear (maskbase);
+        SYNC_IN (sync) = DFMgenMaskCopy (WITH2_IN_MASK (with));
+        SYNC_INOUT (sync) = DFMgenMaskClear (maskbase);
+        SYNC_OUT (sync) = DFMgenMaskCopy (WITH2_OUT_MASK (with));
+        SYNC_LOCAL (sync) = DFMgenMaskCopy (WITH2_LOCAL_MASK (with));
+        SYNC_OUTREP (sync) = DFMgenMaskClear (maskbase);
 
-        withop = NWITH2_WITHOP (with);
+        withop = WITH2_WITHOP (with);
         with_ids = LET_IDS (sync_let);
         while (withop != NULL) {
             /*
              * add vars from LHS of with-loop assignment
              */
-            if ((NWITHOP_TYPE (withop) == WO_genarray)
-                || (NWITHOP_TYPE (withop) == WO_modarray)) {
-                DFMSetMaskEntrySet (SYNC_INOUT (sync), NULL,
-                                    ID_VARDEC (NWITHOP_MEM (withop)));
-                DFMSetMaskEntryClear (SYNC_IN (sync), NULL,
-                                      ID_VARDEC (NWITHOP_MEM (withop)));
+            if ((NODE_TYPE (withop) == N_genarray)
+                || (NODE_TYPE (withop) == N_modarray)) {
+
+                DFMsetMaskEntrySet (SYNC_INOUT (sync), NULL,
+                                    ID_AVIS (WITHOP_MEM (withop)));
+                DFMsetMaskEntryClear (SYNC_IN (sync), NULL,
+                                      ID_AVIS (WITHOP_MEM (withop)));
             } else {
-                DFMSetMaskEntrySet (SYNC_OUT (sync), NULL, IDS_VARDEC (with_ids));
+                DFMsetMaskEntrySet (SYNC_OUT (sync), NULL, IDS_AVIS (with_ids));
             }
-            withop = NWITHOP_NEXT (withop);
+            withop = WITHOP_NEXT (withop);
             with_ids = IDS_NEXT (with_ids);
         }
 
@@ -189,7 +186,7 @@ SYNCIassign (node *arg_node, info *arg_info)
         INFO_SYNCI_FIRST (arg_info) = 0;
     } else if ((NODE_TYPE (sync_let) == N_while) || (NODE_TYPE (sync_let) == N_do)) {
         DBUG_PRINT ("SYNCI", ("trav into loop"));
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
         DBUG_PRINT ("SYNCI", ("trav from loop"));
         sync = NULL;
     } else if (NODE_TYPE (sync_let) == N_return) {
@@ -197,16 +194,16 @@ SYNCIassign (node *arg_node, info *arg_info)
         sync = NULL;
     } else {
         DBUG_PRINT ("SYNCI", ("build sync-block around non with-loop"));
-        sync = MakeSync (MakeBlock (MakeAssign (sync_let, NULL), NULL));
+        sync = TBmakeSync (TBmakeBlock (TBmakeAssign (sync_let, NULL), NULL));
         SYNC_FIRST (sync) = INFO_SYNCI_FIRST (arg_info);
         ASSIGN_INSTR (arg_node) = sync;
         INFO_SYNCI_FIRST (arg_info) = 0;
 
-        SYNC_IN (sync) = DFMGenMaskClear (maskbase);
-        SYNC_INOUT (sync) = DFMGenMaskClear (maskbase);
-        SYNC_OUT (sync) = DFMGenMaskClear (maskbase);
-        SYNC_OUTREP (sync) = DFMGenMaskClear (maskbase);
-        SYNC_LOCAL (sync) = DFMGenMaskClear (maskbase);
+        SYNC_IN (sync) = DFMgenMaskClear (maskbase);
+        SYNC_INOUT (sync) = DFMgenMaskClear (maskbase);
+        SYNC_OUT (sync) = DFMgenMaskClear (maskbase);
+        SYNC_OUTREP (sync) = DFMgenMaskClear (maskbase);
+        SYNC_LOCAL (sync) = DFMgenMaskClear (maskbase);
 
         /*
          * unset flag: next N_sync node is not the first one in SPMD-region
@@ -217,7 +214,7 @@ SYNCIassign (node *arg_node, info *arg_info)
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("SYNCI", ("into assign next"));
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
         DBUG_PRINT ("SYNCI", ("from assign next"));
 
         if (sync != NULL) {
@@ -249,7 +246,7 @@ SYNCIwhile (node *arg_node, info *arg_info)
     DBUG_ENTER ("SYNCIwhile");
 
     DBUG_PRINT ("SYNCI", ("trav into while"));
-    WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
+    WHILE_BODY (arg_node) = TRAVdo (WHILE_BODY (arg_node), arg_info);
     DBUG_PRINT ("SYNCI", ("trav from while"));
 
     DBUG_RETURN (arg_node);
@@ -270,7 +267,7 @@ SYNCIdo (node *arg_node, info *arg_info)
     DBUG_ENTER ("SYNCIdo");
 
     DBUG_PRINT ("SYNCI", ("trav into do"));
-    DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
+    DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
     DBUG_PRINT ("SYNCI", ("trav from do"));
 
     DBUG_RETURN (arg_node);

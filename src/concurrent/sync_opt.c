@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/11/24 19:29:17  skt
+ * Compiler Switch during SACDevCampDK 2k4
+ *
  * Revision 3.5  2004/11/21 17:54:54  skt
  * moved functions from concurrent_lib into sync_opt to remove concurrent_lib
  *
@@ -72,20 +75,14 @@
  *
  *****************************************************************************/
 
-#define NEW_INFO
-
-#include "dbug.h"
-#include "types.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #include "free.h"
 #include "DupTree.h"
 #include "DataFlowMask.h"
-#include "spmd_trav.h"
-#include "globals.h"
 #include "Error.h"
-/*#include "concurrent_lib.h"*/
 #include "sync_opt.h"
+#include "internal_lib.h"
 
 /*
  * INFO structure
@@ -110,7 +107,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_SYNCO_THISASSIGN (result) = NULL;
     INFO_SYNCO_NEXTASSIGN (result) = NULL;
@@ -123,7 +120,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -131,27 +128,27 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *   int Disjoint (DFMmask_t mask1, DFMmask_t mask2)
+ *   bool Disjoint (dfmask_t mask1, dfmask_t mask2)
  *
  * description:
  *   Tests whether both masks are disjoint (return TRUE) or not (return FALSE).
  *
  ******************************************************************************/
-int
-Disjoint (DFMmask_t mask1, DFMmask_t mask2)
+static bool
+Disjoint (dfmask_t *mask1, dfmask_t *mask2)
 {
-    int result;
-    DFMmask_t andmask;
+    bool result;
+    dfmask_t *andmask;
 
     DBUG_ENTER ("Disjoint");
 
-    andmask = DFMGenMaskAnd (mask1, mask2);
-    if (DFMTestMask (andmask) > 0) {
+    andmask = DFMgenMaskAnd (mask1, mask2);
+    if (DFMtestMask (andmask) > 0) {
         result = FALSE;
     } else {
         result = TRUE;
     }
-    DFMRemoveMask (andmask);
+    DFMremoveMask (andmask);
 
     DBUG_RETURN (result);
 }
@@ -159,7 +156,7 @@ Disjoint (DFMmask_t mask1, DFMmask_t mask2)
 /******************************************************************************
  *
  * function:
- *   int MeltableSYNCs (node *first_sync, node *second_sync)
+ *   bool MeltableSYNCs (node *first_sync, node *second_sync)
  *
  * description:
  *   Tests whether the two syncs specified can be melted together, i.e. whether
@@ -169,17 +166,17 @@ Disjoint (DFMmask_t mask1, DFMmask_t mask2)
  *   Returns TRUE if both blocks can be melted together, FALSE otherwise.
  *
  ******************************************************************************/
-int
+static bool
 MeltableSYNCs (node *first_sync, node *second_sync)
 {
-    int result;
+    bool result;
 
     DBUG_ENTER ("MeltableSYNCs");
 
     DBUG_ASSERT (NODE_TYPE (first_sync) == N_sync, ("first_sync not a N_sync"));
     DBUG_ASSERT (NODE_TYPE (second_sync) == N_sync, ("second_sync not a N_sync"));
 
-    result = 1;
+    result = TRUE;
     result = result & Disjoint (SYNC_IN (first_sync), SYNC_INOUT (second_sync));
     result = result & Disjoint (SYNC_IN (first_sync), SYNC_OUT (second_sync));
     result = result & Disjoint (SYNC_INOUT (first_sync), SYNC_IN (second_sync));
@@ -197,10 +194,11 @@ MeltableSYNCs (node *first_sync, node *second_sync)
     }
 
     if (result) {
-        if (max_sync_fold == -1) {
+        if (global.max_sync_fold == -1) {
             /* auto-inferation */
-            needed_sync_fold = MAX (needed_sync_fold, SYNC_FOLDCOUNT (first_sync)
-                                                        + SYNC_FOLDCOUNT (second_sync));
+            global.needed_sync_fold
+              = MAX (global.needed_sync_fold,
+                     SYNC_FOLDCOUNT (first_sync) + SYNC_FOLDCOUNT (second_sync));
             DBUG_PRINT ("SYNCO", ("folds ok (auto-inferation"));
         } else {
             DBUG_PRINT ("SYNCO",
@@ -209,18 +207,203 @@ MeltableSYNCs (node *first_sync, node *second_sync)
                          SYNC_FOLDCOUNT (first_sync) + SYNC_FOLDCOUNT (second_sync)));
             /* limited by max_sync_fold */
             if ((SYNC_FOLDCOUNT (first_sync) + SYNC_FOLDCOUNT (second_sync))
-                <= max_sync_fold) {
-                DBUG_PRINT ("SYNCO", ("folds ok (<= max_sync_fold %i)", max_sync_fold));
+                <= global.max_sync_fold) {
+                DBUG_PRINT ("SYNCO", ("folds ok (<= global.max_sync_fold %i)",
+                                      global.max_sync_fold));
             } else {
                 result = FALSE;
-                DBUG_PRINT ("SYNCO",
-                            ("too much folds (max_sync_fold %i reached)", max_sync_fold));
+                DBUG_PRINT ("SYNCO", ("too much folds (global.max_sync_fold %i reached)",
+                                      global.max_sync_fold));
                 WARN (NODE_LINE (second_sync),
                       ("Maximum number of fold-with-loops per sync-block (%i) reached",
-                       max_sync_fold));
+                       global.max_sync_fold));
             }
         }
     }
+    DBUG_RETURN (result);
+}
+
+/******************************** **********************************************
+ *
+ * function:
+ *   void AssertSimpleBlock (node *block)
+ *
+ * description:
+ *   Asserts whether the block is an N_block and has only the attribute
+ *   BLOCK_INSTR set. This check is needed at various places to check wether
+ *   the block was newly introduced, and has no extra information that cannot
+ *   be handled by the calling routines.
+ *
+ ******************************************************************************/
+void
+AssertSimpleBlock (node *block)
+{
+    DBUG_ENTER ("AssertSimpleBlock");
+
+    DBUG_ASSERT (NODE_TYPE (block) == N_block, "Wrong NODE_TYPE, not a N_block");
+
+    DBUG_ASSERT (BLOCK_VARDEC (block) == NULL, "BLOCK_VARDEC not NULL");
+    DBUG_ASSERT (BLOCK_SPMD_PROLOG_ICMS (block) == NULL, "BLOCK_SPMD_... not NULL");
+    DBUG_ASSERT (BLOCK_CACHESIM (block) == NULL, "BLOCK_CACHESIM not NULL");
+    DBUG_ASSERT (BLOCK_VARNO (block) == 0, "BLOCK_VARNO not 0");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *BlocksLastInstruction(node *block)
+ *
+ * description:
+ *   Find last instruction of a block
+ *
+ * attention:
+ *   One can only step over N_assign until now, N_empty is not handled yet.
+ *
+ ******************************************************************************/
+node *
+BlocksLastInstruction (node *block)
+{
+    node *result;
+
+    DBUG_ENTER ("BlocksLastInstruction");
+
+    DBUG_ASSERT (NODE_TYPE (block) == N_block, "Wrong NODE_TYPE of argument");
+
+    result = BLOCK_INSTR (block);
+    DBUG_ASSERT (NODE_TYPE (result) == N_assign, "Wrong node for instruction");
+
+    while (ASSIGN_NEXT (result) != NULL) {
+        result = ASSIGN_NEXT (result);
+        DBUG_ASSERT (NODE_TYPE (result) == N_assign,
+                     "Wrong node for further instruction");
+    }
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * functions:
+ *   node *MeltBlocks (node *first_block, node *second_block)
+ *
+ * description:
+ *   Melts to N_blocks to one.
+ *
+ *   If the normal version is used the first entry is reused, and the second
+ *   one is given free. That means both arguments are modified!
+ *
+ ******************************************************************************/
+node *
+MeltBlocks (node *first_block, node *second_block)
+{
+    node *result;
+    node *lassign;
+
+    DBUG_ENTER ("MeltBlocks");
+
+    AssertSimpleBlock (first_block);
+    AssertSimpleBlock (second_block);
+
+    lassign = BlocksLastInstruction (first_block);
+    ASSIGN_NEXT (lassign) = BLOCK_INSTR (second_block);
+    /* cut old connection */
+    BLOCK_INSTR (second_block) = NULL;
+
+    FREEdoFreeTree (second_block);
+    result = first_block;
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MeltSYNCs (node *first_sync, node *second_sync)
+ *
+ * description:
+ *   Melts sync-blocks with sideeffects. Builds one new sync-block from the
+ *   two sync-blocks handed over. Both arguments are overwritten or destroyed.
+ *
+ * attention:
+ *   - Both SYNCs have to be meltable, or this function will fail!!!
+ *     Test if meltable before calling this function!
+ *   - There are some sideeffects!
+ *     first_sync will be used to build the result, while second_sync will be
+ *     freed. Use MeltSYNCsOnCopies (see below) to avoid this. That function
+ *     first copies both arguments, so no sideeffects occur to the outside.
+ *
+ * remark:
+ *   A version without sideeffects is also available
+ *   (see MeltSYNCsOnCopies below).
+ *
+ ******************************************************************************/
+node *
+MeltSYNCs (node *first_sync, node *second_sync)
+{
+    node *result; /* result value of this function */
+
+    DBUG_ENTER ("MeltSYNCs");
+
+    DBUG_ASSERT ((NODE_TYPE (first_sync) == N_sync), "First argument not a N_sync!");
+    DBUG_ASSERT ((NODE_TYPE (second_sync) == N_sync), "Second argument not a N_sync!");
+
+    DBUG_ASSERT (MeltableSYNCs (first_sync, second_sync),
+                 "sync-blocks overhanded are not meltable");
+
+    /*
+     *  Combine the mask to new ones.
+     */
+    SYNC_REGION (first_sync)
+      = MeltBlocks (SYNC_REGION (first_sync), SYNC_REGION (second_sync));
+    SYNC_REGION (second_sync) = NULL;
+
+    /*
+     *  Melt masks of used variables
+     */
+
+    DBUG_PRINT ("SYNCO", ("melting masks now ... "));
+
+    DFMsetMaskOr (SYNC_IN (first_sync), SYNC_IN (second_sync));
+    DFMsetMaskOr (SYNC_INOUT (first_sync), SYNC_INOUT (second_sync));
+    DFMsetMaskOr (SYNC_OUT (first_sync), SYNC_OUT (second_sync));
+    DFMsetMaskOr (SYNC_LOCAL (first_sync), SYNC_LOCAL (second_sync));
+
+    SYNC_FOLDCOUNT (first_sync)
+      = SYNC_FOLDCOUNT (first_sync) + SYNC_FOLDCOUNT (second_sync);
+
+    FREEdoFreeTree (second_sync);
+
+    result = first_sync;
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MeltSYNCsOnCopies (node *first_sync, node *second_sync)
+ *
+ * description:
+ *   Same functinality as MeltSYNCs, but the arguments are not touched, because
+ *   they are copied before actual melting starts.
+ *
+ * remarks:
+ *   A simple version without any copying is also available
+ *   (see MeltSYNCs above).
+ *
+ ******************************************************************************/
+node *
+MeltSYNCsOnCopies (node *first_sync, node *second_sync)
+{
+    node *result;
+
+    DBUG_ENTER ("MeltSYNCsOnCopies");
+
+    first_sync = DUPdoDupTree (first_sync);
+    second_sync = DUPdoDupTree (second_sync);
+
+    result = MeltSYNCs (first_sync, second_sync);
 
     DBUG_RETURN (result);
 }
@@ -275,7 +458,7 @@ SYNCOsync (node *arg_node, info *arg_info)
         ASSIGN_NEXT (INFO_SYNCO_NEXTASSIGN (arg_info)) = NULL;
         ASSIGN_INSTR (INFO_SYNCO_NEXTASSIGN (arg_info)) = NULL;
 
-        FreeTree (INFO_SYNCO_NEXTASSIGN (arg_info));
+        FREEdoFreeTree (INFO_SYNCO_NEXTASSIGN (arg_info));
 
         INFO_SYNCO_NEXTASSIGN (arg_info) = ASSIGN_NEXT (INFO_SYNCO_THISASSIGN (arg_info));
     } /* while */
@@ -301,7 +484,7 @@ SYNCOsync (node *arg_node, info *arg_info)
 node *
 SYNCOassign (node *arg_node, info *arg_info)
 {
-    int own_arg_info;
+    bool own_arg_info;
     node *old_thisassign = NULL;
     node *old_nextassign = NULL;
 
@@ -325,12 +508,12 @@ SYNCOassign (node *arg_node, info *arg_info)
     INFO_SYNCO_THISASSIGN (arg_info) = arg_node;
     INFO_SYNCO_NEXTASSIGN (arg_info) = ASSIGN_NEXT (arg_node);
 
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     /*
      *  NEXT might have changed during traversal of instruction!
      */
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     if (own_arg_info) {
@@ -341,191 +524,4 @@ SYNCOassign (node *arg_node, info *arg_info)
     }
 
     DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   void SYNCOAssertSimpleBlock (node *block)
- *
- * description:
- *   Asserts whether the block is an N_block and has only the attribute
- *   BLOCK_INSTR set. This check is needed at various places to check wether
- *   the block was newly introduced, and has no extra information that cannot
- *   be handled by the calling routines.
- *
- ******************************************************************************/
-void
-SYNCOAssertSimpleBlock (node *block)
-{
-    DBUG_ENTER ("SYNCHOAssertSimpleBlock");
-
-    DBUG_ASSERT (NODE_TYPE (block) == N_block, "Wrong NODE_TYPE, not a N_block");
-
-    DBUG_ASSERT (BLOCK_VARDEC (block) == NULL, "BLOCK_VARDEC not NULL");
-    DBUG_ASSERT (BLOCK_NEEDFUNS (block) == NULL, "BLOCK_NEEDFUNS not NULL");
-    DBUG_ASSERT (BLOCK_NEEDTYPES (block) == NULL, "BLOCK_NEEDTYPES not NULL");
-    DBUG_ASSERT (BLOCK_SPMD_PROLOG_ICMS (block) == NULL, "BLOCK_SPMD_... not NULL");
-    DBUG_ASSERT (BLOCK_CACHESIM (block) == NULL, "BLOCK_CACHESIM not NULL");
-    DBUG_ASSERT (BLOCK_VARNO (block) == 0, "BLOCK_VARNO not 0");
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SYNCOBlocksLastInstruction(node *block)
- *
- * description:
- *   Find last instruction of a block
- *
- * attention:
- *   One can only step over N_assign until now, N_empty is not handled yet.
- *
- ******************************************************************************/
-node *
-SYNCOBlocksLastInstruction (node *block)
-{
-    node *result;
-
-    DBUG_ENTER ("SYNCOBlocksLastInstruction");
-
-    DBUG_ASSERT (NODE_TYPE (block) == N_block, "Wrong NODE_TYPE of argument");
-
-    result = BLOCK_INSTR (block);
-    DBUG_ASSERT (NODE_TYPE (result) == N_assign, "Wrong node for instruction");
-
-    while (ASSIGN_NEXT (result) != NULL) {
-        result = ASSIGN_NEXT (result);
-        DBUG_ASSERT (NODE_TYPE (result) == N_assign,
-                     "Wrong node for further instruction");
-    }
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * functions:
- *   node *SYNCOMeltBlocks (node *first_block, node *second_block)
- *
- * description:
- *   Melts to N_blocks to one.
- *
- *   If the normal version is used the first entry is reused, and the second
- *   one is given free. That means both arguments are modified!
- *
- ******************************************************************************/
-node *
-SYNCOMeltBlocks (node *first_block, node *second_block)
-{
-    node *result;
-    node *lassign;
-
-    DBUG_ENTER ("SYNCOMeltBlocks");
-
-    SYNCOAssertSimpleBlock (first_block);
-    SYNCOAssertSimpleBlock (second_block);
-
-    lassign = SYNCOBlocksLastInstruction (first_block);
-    ASSIGN_NEXT (lassign) = BLOCK_INSTR (second_block);
-    /* cut old connection */
-    BLOCK_INSTR (second_block) = NULL;
-
-    FreeTree (second_block);
-    result = first_block;
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *MeltSYNCs (node *first_sync, node *second_sync)
- *
- * description:
- *   Melts sync-blocks with sideeffects. Builds one new sync-block from the
- *   two sync-blocks handed over. Both arguments are overwritten or destroyed.
- *
- * attention:
- *   - Both SYNCs have to be meltable, or this function will fail!!!
- *     Test if meltable before calling this function!
- *   - There are some sideeffects!
- *     first_sync will be used to build the result, while second_sync will be
- *     freed. Use MeltSYNCsOnCopies (see below) to avoid this. That function
- *     first copies both arguments, so no sideeffects occur to the outside.
- *
- * remark:
- *   A version without sideeffects is also available
- *   (see MeltSYNCsOnCopies below).
- *
- ******************************************************************************/
-node *
-MeltSYNCs (node *first_sync, node *second_sync)
-{
-    node *result; /* result value of this function */
-
-    DBUG_ENTER ("MeltSYNCs");
-
-    DBUG_ASSERT ((NODE_TYPE (first_sync) == N_sync), "First argument not a N_sync!");
-    DBUG_ASSERT ((NODE_TYPE (second_sync) == N_sync), "Second argument not a N_sync!");
-
-    DBUG_ASSERT (MeltableSYNCs (first_sync, second_sync),
-                 "sync-blocks overhanded are not meltable");
-
-    /*
-     *  Combine the mask to new ones.
-     */
-    SYNC_REGION (first_sync)
-      = SYNCOMeltBlocks (SYNC_REGION (first_sync), SYNC_REGION (second_sync));
-    SYNC_REGION (second_sync) = NULL;
-
-    /*
-     *  Melt masks of used variables
-     */
-
-    DBUG_PRINT ("SYNCO", ("melting masks now ... "));
-
-    DFMSetMaskOr (SYNC_IN (first_sync), SYNC_IN (second_sync));
-    DFMSetMaskOr (SYNC_INOUT (first_sync), SYNC_INOUT (second_sync));
-    DFMSetMaskOr (SYNC_OUT (first_sync), SYNC_OUT (second_sync));
-    DFMSetMaskOr (SYNC_LOCAL (first_sync), SYNC_LOCAL (second_sync));
-
-    SYNC_FOLDCOUNT (first_sync)
-      = SYNC_FOLDCOUNT (first_sync) + SYNC_FOLDCOUNT (second_sync);
-
-    FreeTree (second_sync);
-
-    result = first_sync;
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *MeltSYNCsOnCopies (node *first_sync, node *second_sync)
- *
- * description:
- *   Same functinality as MeltSYNCs, but the arguments are not touched, because
- *   they are copied before actual melting starts.
- *
- * remarks:
- *   A simple version without any copying is also available
- *   (see MeltSYNCs above).
- *
- ******************************************************************************/
-node *
-MeltSYNCsOnCopies (node *first_sync, node *second_sync)
-{
-    node *result;
-
-    DBUG_ENTER ("MeltSYNCsOnCopies");
-
-    first_sync = DupTree (first_sync);
-    second_sync = DupTree (second_sync);
-
-    result = MeltSYNCs (first_sync, second_sync);
-
-    DBUG_RETURN (result);
 }
