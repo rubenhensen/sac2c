@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.85  1996/08/04 14:40:12  sbs
+ * Revision 1.86  1996/08/29 17:45:27  sbs
+ * res_stype in CmpPrf was not initialised at all!!
+ *
+ * Revision 1.85  1996/08/04  14:40:12  sbs
  * modarray_AxVxA with and without reuse check inserted.
  *
  * Revision 1.84  1996/08/01  09:53:18  cg
@@ -3136,7 +3139,7 @@ CompPrf (node *arg_node, node *arg_info)
       *type_id_node, *arg1, *arg2, *arg3, *n_node1, *n_elems_node, *first_assign,
       *next_assign, *last_assign, *old_arg_node, *length_node, *tmp_array1, *tmp_array2,
       *dim_node, *tmp_rc, *exprs;
-    simpletype res_stype;
+    simpletype res_stype = LET_BASETYPE (arg_info->node[1]);
     int dim, is_SxA = 0, n_elems = 0, is_drop = 0, array_is_const = 0, convert = 0;
     simpletype s_type;
 
