@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2002/07/10 20:07:03  dkr
+ * GetNextVarId() added
+ *
  * Revision 3.10  2002/07/10 19:44:47  dkr
  * bugs in GetNextNt() and GetNextAny() fixed
  *
@@ -436,29 +439,25 @@ GetNextVarNt (char ***ret, int cnt, node *exprs)
     DBUG_RETURN (exprs);
 }
 
-#if 0
-/* not used yet */
-static
-node *GetNextVarId( char ***ret, int cnt, node *exprs)
+static node *
+GetNextVarId (char ***ret, int cnt, node *exprs)
 {
-  node *expr;
-  int i;
+    node *expr;
+    int i;
 
-  DBUG_ENTER( "GetNextVarId");
+    DBUG_ENTER ("GetNextVarId");
 
-  (*ret) = (char **) Malloc( cnt * sizeof( char*));
+    (*ret) = (char **)Malloc (cnt * sizeof (char *));
 
-  DBUG_ASSERT( (NODE_TYPE( exprs) == N_exprs),
-               "wrong icm-arg: N_exprs expected");
-  expr = EXPRS_EXPR( exprs);
+    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    expr = EXPRS_EXPR (exprs);
 
-  for (i = 0; i < cnt; i++) {
-    exprs = GetNextId( &((*ret)[i]), exprs);
-  }
+    for (i = 0; i < cnt; i++) {
+        exprs = GetNextId (&((*ret)[i]), exprs);
+    }
 
-  DBUG_RETURN( exprs);
+    DBUG_RETURN (exprs);
 }
-#endif
 
 static node *
 GetNextVarInt (int **ret, int cnt, node *exprs)
