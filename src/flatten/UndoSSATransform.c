@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/05/11 13:27:30  khf
+ * Replaced NCODE_CEXPR in USSANcode() by NCODE_CEXPRS for genarray or modarray WLs
+ *
  * Revision 1.5  2004/03/06 20:06:40  mwe
  * changed arguments of MakeCond in USSAfundef
  *
@@ -585,6 +588,11 @@ USSANcode (node *arg_node, node *arg_info)
     }
 
     if (INFO_USSA_FOLDTARGET (arg_info) != NULL) {
+        /*
+         * For the time beeing there are no fused multioperator WLs containing
+         * fold WLs, therefore the macro NCODE_CEXPR can be applied further
+         */
+
         /* create source id node */
         src_id = MakeId_Copy (
           VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (ID_AVIS (NCODE_CEXPR (arg_node)))));
@@ -622,8 +630,8 @@ USSANcode (node *arg_node, node *arg_info)
 #endif
     } else {
         /* do standard traversal */
-        if (NCODE_CEXPR (arg_node) != NULL) {
-            NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+        if (NCODE_CEXPRS (arg_node) != NULL) {
+            NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
         }
     }
 
@@ -663,6 +671,11 @@ USSANwith (node *arg_node, node *arg_info)
      */
     if ((NWITH_IS_FOLD (arg_node)) && (NWITH_CODE (arg_node) != NULL)
         && (NCODE_NEXT (NWITH_CODE (arg_node)) != NULL)) {
+        /*
+         * For the time beeing there are no fused multioperator WLs containing
+         * fold WLs, therefore the macro NCODE_CEXPR can be applied further
+         */
+
         DBUG_ASSERT ((NCODE_CEXPR (NWITH_CODE (arg_node)) != NULL),
                      "fold-withloop without target expression");
         DBUG_ASSERT ((NODE_TYPE (NCODE_CEXPR (NWITH_CODE (arg_node))) == N_id),
