@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/01/16 12:55:02  skt
+ * added some DBUG-Output
+ *
  * Revision 3.5  2000/12/15 18:24:44  dkr
  * infer_dfms.h renamed into InferDFMs.h
  *
@@ -856,7 +859,6 @@ DFAid (node *arg_node, node *arg_info)
     DBUG_ENTER ("DFAid");
 
     DBUG_PRINT ("DFA", ("reached N_id"));
-
     DFMSetMaskEntrySet (INFO_DFA_INFER_LET_USEMASK (arg_info), ID_NAME (arg_node), NULL);
 
     DBUG_RETURN (arg_node);
