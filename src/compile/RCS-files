@@ -9,8 +9,6 @@ blir.c
 blir.h
 compile.c
 compile.h
-compile.tagged.c
-compile.tagged.h
 gen_startup_code.c
 gen_startup_code.h
 icm.data
