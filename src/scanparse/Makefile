@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.13  2002/07/09 12:45:37  sbs
+# handle_dots.o added
+#
 # Revision 3.12  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -67,7 +70,7 @@ LIBS      := -ly -ll
 INCS = -I../global -I../tree -I../../inc -I../modules -I../typecheck
 
 
-all: y.tab.o lex.yy.o scnprs.o
+all: y.tab.o lex.yy.o scnprs.o handle_dots.o
 
 
 y.tab.o: y.tab.c
