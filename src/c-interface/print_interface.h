@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2000/07/24 15:01:48  nmw
+ * PIWobjdef added
+ *
  * Revision 1.2  2000/07/12 10:07:45  nmw
  * RCS-header added
  *
@@ -22,6 +25,7 @@ extern node *PIWmodul (node *arg_node, node *arg_info);
 extern node *PIWcwrapper (node *arg_node, node *arg_info);
 extern node *PIWfundef (node *arg_node, node *arg_info);
 extern node *PIWarg (node *arg_node, node *arg_info);
+extern node *PIWobjdef (node *arg_node, node *arg_info);
 
 extern node *PrintInterface (node *syntax_tree);
 #endif /* _sac_print_interface_h */
