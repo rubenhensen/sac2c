@@ -4,6 +4,10 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/03/23 17:57:32  dkr
+ * CheckWlcompConf modified: warning '... might be used uninitialized'
+ * eliminated
+ *
  * Revision 3.13  2001/03/22 20:11:28  dkr
  * no changes done
  *
@@ -2723,7 +2727,6 @@ types *GenComplexType( types *types, nums *numsp)
 static
 node *CheckWlcompConf( node *conf)
 {
-  node *arg, *next_conf;
   node *exprs = NULL;
 
   DBUG_ENTER( "CheckWlcompConf");
@@ -2737,6 +2740,8 @@ node *CheckWlcompConf( node *conf)
     }
   }
   else if (NODE_TYPE( conf) == N_ap) {
+    node *arg;
+
     arg = AP_ARGS( conf);
 
     /*
@@ -2747,6 +2752,8 @@ node *CheckWlcompConf( node *conf)
       yyerror( "wlcomp-function with missing configuration found");
     }
     else {
+      node *next_conf;
+
       if (EXPRS_NEXT( arg) == NULL) {
         next_conf = EXPRS_EXPR( arg);
         AP_ARGS( conf) = NULL;
@@ -2758,14 +2765,14 @@ node *CheckWlcompConf( node *conf)
         next_conf = EXPRS_EXPR( EXPRS_NEXT( arg));
         EXPRS_NEXT( arg) = NULL;
       }
-    }
 
-    if ((NODE_TYPE( next_conf) != N_id) && (NODE_TYPE( next_conf) != N_ap)) {
-      strcpy( yytext, AP_NAME( conf));
-      yyerror( "wlcomp-function with illegal configuration found");
-    }
-    else {
-      exprs = MakeExprs( conf, CheckWlcompConf( next_conf));
+      if ((NODE_TYPE( next_conf) != N_id) && (NODE_TYPE( next_conf) != N_ap)) {
+        strcpy( yytext, AP_NAME( conf));
+        yyerror( "wlcomp-function with illegal configuration found");
+      }
+      else {
+        exprs = MakeExprs( conf, CheckWlcompConf( next_conf));
+      }
     }
   }
   else {
