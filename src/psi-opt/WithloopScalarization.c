@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2003/01/25 22:06:23  ktr
+ * Fixed a lot of memory management and related issues.
+ *
  * Revision 1.24  2002/11/04 21:16:10  ktr
  * New feature: Index Vector acceleration!!!
  *
@@ -79,13 +82,9 @@
  *
  */
 
-/****************************************************************************
+/**
  *
- * file:    WithloopScalarization.c
- *
- * prefix:  WLS
- *
- * description:
+ * @file WithloopScalarization.c
  *
  *   This implements the WithloopScalarization in ssa-form.
  *
@@ -139,9 +138,9 @@
  *     parts contain a WL holding exactly ONE part each.
  *
  *
- *   - Phase 4: Scalarization
+ *   - Phase 5: Scalarization
  *
- *     After the structure has been simplified in phase 2, we can now
+ *     After the structure has been simplified in phase 4, we can now
  *     start the main process of scalarization:
  *     For each part of the outer WL, the outer and the inner parts are
  *     joined into one part of the outer WL:
@@ -173,7 +172,8 @@
  *  - varno  : DIMS      : used in PROBE to count the inner wls' indexscalars
  *  - node[2]: BLOCK     : reference to the surrounding block of a wl
  *
- ****************************************************************************/
+ *
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -189,6 +189,7 @@
 #include "SSATransform.h"
 #include "LookUpTable.h"
 #include "SSAWLT.h"
+#include "print.h"
 
 #include "WithloopScalarization.h"
 
@@ -198,10 +199,11 @@
  *
  ****************************************************************************/
 
-/* Several traverse functions of this file are traversed for different
-   purposes. This enum determines ths function, see description at the
-   beginning of this file for details */
-
+/**
+ * Several traverse functions of this file are traversed for different
+ * purposes. This enum determines ths function, see description at the
+ * beginning of this file for details
+ */
 typedef enum {
     wls_probe,
     wls_withloopification,
@@ -210,6 +212,9 @@ typedef enum {
     wls_scalarize,
 } wls_phase_type;
 
+/**
+ * returns the current phase of WLS
+ */
 #define WLS_PHASE(n) ((wls_phase_type)INFO_WLS_PHASE (n))
 
 /****************************************************************************
@@ -218,11 +223,15 @@ typedef enum {
  *
  ****************************************************************************/
 
-/* NPART_SSAASSIGN returns the assignment of the parts' CEXPR */
+/**
+ * returns the assignment of the parts' CEXPR
+ */
 #define NPART_SSAASSIGN(n) (ID_SSAASSIGN (NPART_CEXPR (n)))
 
-/* NPART_LETEXPR returns the defining node of the part's CEXPR
-   Here it is mainly used to find the inner WL. */
+/**
+ * returns the defining node of the part's CEXPR.
+ * It is mainly used to find the inner WL.
+ */
 #define NPART_LETEXPR(n) (LET_EXPR (ASSIGN_INSTR (NPART_SSAASSIGN (n))))
 
 /****************************************************************************
@@ -231,16 +240,15 @@ typedef enum {
  *
  ****************************************************************************/
 
-/******************************************************************************
+/**
+ * Creates an one-dimensional Array (aka Vector) of length nr whose
+ * elements are all Nums with value 1.
  *
- * function:
- *   node *CreateOneVector(int nr)
+ * @param nr the nec vector's length
  *
- * description:
- *   Creates an one-dimensional Array (aka Vector) of length nr whose
- *   elements are all Nums with value 1.
- *
- ******************************************************************************/
+ * @return A one-dimensional N_array (vector) of length nr whose elements
+ * are Nums with value 1.
+ */
 node *
 CreateOneVector (int nr)
 {
@@ -248,6 +256,8 @@ CreateOneVector (int nr)
     node *temp;
 
     DBUG_ENTER ("MakeOnes");
+
+    DBUG_ASSERT (nr > 0, "CreateOneVector called with nr <= 0!");
 
     res = CreateZeroVector (nr, T_int);
 
@@ -261,15 +271,13 @@ CreateOneVector (int nr)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/**
+ * converts a chain of ids into an exprs-node.
  *
- * function:
- *   node *MakeExprsIdChain(ids *idschain)
+ * @param idschain a chain of ids
  *
- * description:
- *   Converts a chain of ids into an exprs-node
- *
- ******************************************************************************/
+ * @return An exprs-node containing all the ids in idschain
+ */
 node *
 MakeExprsIdChain (ids *idschain)
 {
@@ -292,21 +300,23 @@ MakeExprsIdChain (ids *idschain)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/**
+ * concatenates two vectors.
  *
- * function:
- *   node *ConcatVecs(node *vec1, node *vec2)
+ * @param vec1 A N_array node containing the first vector
+ * @param vec2 A N_array node containing the second vector
  *
- * description:
- *   returns a vector which is the concatenation of vec1++vec2
- *
- ******************************************************************************/
+ * @return The concatenation vec1++vec2 as an N_array node
+ */
 node *
 ConcatVecs (node *vec1, node *vec2)
 {
     node *res;
 
     DBUG_ENTER ("CONCAT_VECS");
+
+    DBUG_ASSERT (((NODE_TYPE (vec1) == N_array) && (NODE_TYPE (vec2) == N_array)),
+                 "ConcatVecs called with not N_array nodes");
 
     res = CreateZeroVector (ARRAY_SHAPE (vec1, 0) + ARRAY_SHAPE (vec2, 0), T_int);
 
@@ -318,33 +328,66 @@ ConcatVecs (node *vec1, node *vec2)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/**
+ * corrects the part/code pointer structure of a withloop in three steps.
  *
- * function:
- *   node *correctWL(node *arg_node)
+ * - add all parts' codes to the NWITH_CODE list
+ * - determine which of the codes in NWITH_CODE list are actually used
+ * - remove all unused codes
  *
- * description:
- *   corrects the pointer structures of a withloop's parts and codes which
- *   be corrupted in several ways.
+ * @param arg_node The N_with node whose structure is to be fixed
  *
- ******************************************************************************/
+ * @return A correct N_with node
+ */
 node *
 correctWL (node *arg_node)
 {
-    node *temp;
+    node *temp, *tempcode;
+    node **codepp;
 
     DBUG_ENTER ("correctWL");
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_Nwith,
                  "correctWL called for non N_Nwith node");
 
+    /* add new codes */
     temp = NWITH_PART (arg_node);
-    while ((temp != NULL) && (NPART_NEXT (temp) != NULL)) {
-        NCODE_NEXT (NPART_CODE (temp)) = NPART_CODE (NPART_NEXT (temp));
+
+    while (temp != NULL) {
+        tempcode = NWITH_CODE (arg_node);
+
+        while ((tempcode != NULL) && (tempcode != NPART_CODE (temp)))
+            tempcode = NCODE_NEXT (tempcode);
+
+        if (tempcode == NULL) {
+            NCODE_NEXT (NPART_CODE (temp)) = NWITH_CODE (arg_node);
+            NWITH_CODE (arg_node) = NPART_CODE (temp);
+        }
         temp = NPART_NEXT (temp);
     }
-    NCODE_NEXT (NPART_CODE (temp)) = NULL;
-    NWITH_CODE (arg_node) = NPART_CODE (NWITH_PART (arg_node));
+
+    /* determine unused codes */
+    temp = NWITH_CODE (arg_node);
+    while (temp != NULL) {
+        NCODE_USED (temp) = 0;
+        temp = NCODE_NEXT (temp);
+    }
+
+    temp = NWITH_PART (arg_node);
+    while (temp != NULL) {
+        NCODE_USED (NPART_CODE (temp))++;
+        temp = NPART_NEXT (temp);
+    }
+
+    /* free unused codes */
+    codepp = &(NWITH_CODE (arg_node));
+
+    while (*codepp != NULL) {
+        while ((*codepp != NULL) && (NCODE_USED (*codepp) == 0))
+            *codepp = FreeNode (*codepp);
+        if (*codepp != NULL)
+            codepp = &(NCODE_NEXT (*codepp));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -355,19 +398,16 @@ correctWL (node *arg_node)
  *
  ****************************************************************************/
 
-/******************************************************************************
+/**
+ * checks if an assignment occurs part of a list of instructions.
  *
- * function:
- *   int isAssignInsideBlock(node *assign, node *instr)
+ * unfortunately this is a tail-end recursive implementation
  *
- * description:
- *   checks if an assignment is part of a list of instructions
+ * @param assign the assignment to look for inside of
+ * @param instr the list of instructions
  *
- * parameters:
- *   node *assign:   the assignment to look for inside of
- *   node *instr:    the list of instructions
- *
- ******************************************************************************/
+ * @return TRUE if and only if assign occurs in instr.
+ */
 int
 isAssignInsideBlock (node *assign, node *instr)
 {
@@ -387,6 +427,14 @@ isAssignInsideBlock (node *assign, node *instr)
     DBUG_RETURN (res);
 }
 
+/**
+ * checks whether a variable is defined inside a given N_Npart.
+ *
+ * @param outerpart The N_Npart node to be searched for the definition of id
+ * @param id The identifiert whose definition is to be found
+ *
+ * @return FALSE if and only if id is defined in outerpart
+ */
 int
 checkIdDefinition (node *outerpart, ids *id)
 {
@@ -395,6 +443,9 @@ checkIdDefinition (node *outerpart, ids *id)
     node *assigntemp;
 
     DBUG_ENTER ("checkIdDefinition");
+
+    DBUG_ASSERT (NODE_TYPE (outerpart) == N_Nwith,
+                 "checkIdDefinition: first Argument must be called with a N_Npart node");
 
     /* check withvec */
     res
@@ -428,23 +479,19 @@ checkIdDefinition (node *outerpart, ids *id)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/**
+ * checks if one of the Expressions in expr is computed inside
+ * the withloop-part outerpart.
+ * In this case a WLS would be impossible and FALSE is returned.
  *
- * function:
- *   int checkExprsDependencies(node *outerpart, node *expr)
+ * This function is NOT COMPLETED YET since a search for an N_id always
+ * returns FALSE
  *
- * description:
- *   checks if one of the Expressions in expr is computed inside
- *   the withloop-part outerpart.
- *   In this case a WLS would be impossible and FALSE is returned.
+ * @param outerpart An N_Npart in which expr is to be looked for.
+ * @param expr An N_array or N_id node containing the EXPRS_EXPR to be checked
  *
- *   This function is NOT COMPLETED YET
- *
- * parameters:
- *   node *outerpart:   N_NPART
- *   node *expr:        "N_expr"
- *
- ******************************************************************************/
+ * @return
+ **/
 int
 checkExprsDependencies (node *outerpart, node *expr)
 {
@@ -452,6 +499,10 @@ checkExprsDependencies (node *outerpart, node *expr)
     node *exprs;
 
     DBUG_ENTER ("checkExprsDependencies");
+
+    DBUG_ASSERT (((NODE_TYPE (outerpart) == N_Npart)
+                  && ((NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_id))),
+                 "checkExprsDepencies: wrong arguments!");
 
     if (expr == NULL)
         res = TRUE;
@@ -473,21 +524,17 @@ checkExprsDependencies (node *outerpart, node *expr)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/**
+ * checks if one of the generators of the inner withloop depends on
+ * calculations in the withloop-part outerpart.
+ * In this case a WLS would be impossible and FALSE is returned.
  *
- * function:
- *   int checkGeneratorDependencies(node *outerpart, node *innerpart)
+ * @param outerpart  N_NPART
+ * @param innerpart  N_NPART
  *
- * description:
- *   checks if one of the generators of the inner withloop depends on
- *   calculations in the withloop-part outerpart.
- *   In this case a WLS would be impossible and FALSE is returned.
- *
- * parameters:
- *   node *outerpart:   N_NPART
- *   node *innerpart:   N_NPART
- *
- ******************************************************************************/
+ * @return TRUE If and only if the generator of innerpart does not
+ * depend on outerpart
+ */
 int
 checkGeneratorDependencies (node *outerpart, node *innerpart)
 {
@@ -523,21 +570,16 @@ checkGeneratorDependencies (node *outerpart, node *innerpart)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/**
+ * checks if the two nested withloops have compatible types
  *
- * function:
- *   int compatWLTypes(node *outerWithOP, node *innerWithOP)
+ * Compatibility means both Withloops are not FOLD-WLs
  *
- * description:
- *   checks if the two nested withloops have compatible types
+ * @param outerWithOP   N_NWITHOP
+ * @param innerWithOP   N_NWITHOP
  *
- *   Compatibility means both Withloops are not FOLD-WLs
- *
- * parameters:
- *   node *outerWithOP:   N_NWITHOP
- *   node *innerWithOP:   N_NWITHOP
- *
- ******************************************************************************/
+ * @return A boolean stating whether both WithOps are not WO_fold.
+ */
 int
 compatWLTypes (node *outerWithOP, node *innerWithOP)
 {
@@ -547,18 +589,15 @@ compatWLTypes (node *outerWithOP, node *innerWithOP)
                 || (NWITHOP_TYPE (innerWithOP) == WO_modarray)));
 }
 
-/******************************************************************************
+/**
+ * checks whether a part satisfies all the conditions needed in order to be
+ * scalarized.
  *
- * function:
- *   node *probePart(node *arg_node, node *arg_info)
+ * @param arg_node N_NPART
+ * @param arg_info N_INFO
  *
- * description:
- *
- * parameters:
- *   node *arg_node:   N_NPART
- *   node *arg_info:   N_INFO
- *
- ******************************************************************************/
+ * @return TRUE if and only if the part is able to be scalarized
+ */
 node *
 probePart (node *arg_node, node *arg_info)
 {
@@ -633,20 +672,29 @@ probePart (node *arg_node, node *arg_info)
  *
  ****************************************************************************/
 
+/**
+ *
+ */
 node *
-CreateCopyWithloop (node *arg_node, node *fundef)
+CreateCopyWithloop (node *arg_node, node *arg_info)
 {
     node *newwith;
     node *selid;
+
+    node *fundef;
 
     DBUG_ENTER ("CreateCopyWithloop");
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_id,
                  "CreateCopyWithloop called for non N_id node");
 
-    newwith = CreateScalarWith (GetDim (ID_TYPE (arg_node)),
-                                Type2Shpseg (ID_TYPE (arg_node), NULL),
-                                GetBasetype (ID_TYPE (arg_node)), NULL, fundef);
+    fundef = INFO_WLS_FUNDEF (arg_info);
+
+    newwith
+      = CreateScalarWith (INFO_WLS_DIMS (arg_info) >= 0 ? INFO_WLS_DIMS (arg_info)
+                                                        : GetDim (ID_TYPE (arg_node)),
+                          Type2Shpseg (ID_TYPE (arg_node), NULL),
+                          GetBasetype (ID_TYPE (arg_node)), NULL, fundef);
 
     selid = MakeId (StringCopy (IDS_NAME (NWITH_VEC (newwith))), NULL, ST_regular);
     ID_VARDEC (selid) = IDS_VARDEC (NWITH_VEC (newwith));
@@ -677,12 +725,11 @@ InsertCopyWithloop (node *arg_node, node *arg_info)
     AddVardecs (INFO_WLS_FUNDEF (arg_info), vardec);
 
     assign = MakeAssignLet (StringCopy (ID_NAME (assid)), vardec,
-                            CreateCopyWithloop (NPART_CEXPR (arg_node),
-                                                INFO_WLS_FUNDEF (arg_info)));
+                            CreateCopyWithloop (NPART_CEXPR (arg_node), arg_info));
 
     ID_SSAASSIGN (assid) = assign;
 
-    NPART_CEXPR (arg_node) = DupNode (assid);
+    NPART_CEXPR (arg_node) = assid;
     BLOCK_INSTR (NPART_CBLOCK (arg_node))
       = AppendAssign (BLOCK_INSTR (NPART_CBLOCK (arg_node)), assign);
 
@@ -757,7 +804,7 @@ CreateExprsPart (node *exprs, int *partcount, node *withid, shpseg *shppos,
         expr = DupNode (EXPRS_EXPR (exprs));
 
         if (NODE_TYPE (expr) == N_id) {
-            res = MakeNPart (withid,
+            res = MakeNPart (DupNode (withid),
                              MakeNGenerator (Shpseg2Array (shppos, dim),
                                              Shpseg2Array (UpperBound (shppos, dim), dim),
                                              F_le, F_lt, NULL, NULL),
@@ -773,7 +820,7 @@ CreateExprsPart (node *exprs, int *partcount, node *withid, shpseg *shppos,
 
             AddVardecs (fundef, vardec);
 
-            res = MakeNPart (withid,
+            res = MakeNPart (DupNode (withid),
                              MakeNGenerator (Shpseg2Array (shppos, dim),
                                              Shpseg2Array (UpperBound (shppos, dim), dim),
                                              F_le, F_lt, NULL, NULL),
@@ -956,7 +1003,7 @@ insertIndexDefinition (node *arg_node, node *arg_info)
 
     node *array;
 
-    DBUG_ENTER ("Array2Withloop");
+    DBUG_ENTER ("insertIndexVectorDefinition");
 
     assid = MakeId (TmpVar (), NULL, ST_regular);
     vardec = MakeVardec (StringCopy (ID_NAME (assid)),
@@ -1197,9 +1244,9 @@ distributePart (node *arg_node, node *arg_info)
     DBUG_ASSERT (NWITH_PARTS (innerwith) >= 1, "NWITH_PARTS(innerwith) < 1");
 
     /* are there more two or more inner parts to distribute? */
-    if (NWITH_PARTS (innerwith) <= 1)
+    if (NWITH_PARTS (innerwith) == 1) {
         res = arg_node;
-    else {
+    } else {
         /* duplicate this part and make the copy the next part in the chain. */
 
         /* Therefore we have to rename all assignments, we use a LUT */
@@ -1240,7 +1287,7 @@ distributePart (node *arg_node, node *arg_info)
 
         /* Duplicate the part */
         tmpnode = DupTreeLUT (arg_node, lut);
-        NPART_CODE (tmpnode) = DupTreeLUT (NPART_CODE (arg_node), lut);
+        NPART_CODE (tmpnode) = DupNodeLUT (NPART_CODE (arg_node), lut);
         NCODE_USED (NPART_CODE (tmpnode))++;
 
         RemoveLUT (lut);
@@ -1262,26 +1309,27 @@ distributePart (node *arg_node, node *arg_info)
         }
 
         /* Insert the part into the chain of parts */
-        NCODE_NEXT (NPART_CODE (arg_node)) = NPART_CODE (tmpnode);
         NPART_NEXT (arg_node) = tmpnode;
 
         /* Drop all parts except of the first */
-        NWITH_PARTS (innerwith) = -1;
-        NPART_NEXT (NWITH_PART (innerwith)) = NULL;
-        NCODE_NEXT (NWITH_CODE (innerwith)) = NULL;
+        NWITH_PARTS (innerwith) = 1;
+        NPART_NEXT (NWITH_PART (innerwith))
+          = FreeTree (NPART_NEXT (NWITH_PART (innerwith)));
 
+        DBUG_ASSERT (NPART_NEXT (NWITH_PART (innerwith)) == NULL,
+                     "NPART_NEXT(NWITH_PART(innerwith)) != NULL");
         DBUG_ASSERT (innerwith != NPART_LETEXPR (tmpnode), "innerwith == NPART_LETEXPR");
 
         /* Drop the first part from the inner withloop of the next part */
         innerwith = correctWL (NPART_LETEXPR (tmpnode));
         NWITH_PARTS (innerwith) -= 1;
-        NWITH_PART (innerwith) = NPART_NEXT (NWITH_PART (innerwith));
-        NWITH_CODE (innerwith) = NPART_CODE (NWITH_PART (innerwith));
+        NWITH_PART (innerwith) = FreeNode (NWITH_PART (innerwith));
 
         /* increase the outer withloop's partcounter */
         INFO_WLS_PARTS (arg_info) += 1;
         res = arg_node;
     }
+
     DBUG_RETURN (res);
 }
 
@@ -1412,9 +1460,10 @@ joinWithids (node *outerwithid, node *innerwithid, node *arg_info)
                              DupAllIds (NWITHID_IDS (innerwithid)));
 
         INFO_WLS_WITHID (arg_info) = MakeNWithid (vec, scalars);
-    }
 
-    newwithid = DupTree (INFO_WLS_WITHID (arg_info));
+        newwithid = INFO_WLS_WITHID (arg_info);
+    } else
+        newwithid = DupTree (INFO_WLS_WITHID (arg_info));
 
     DBUG_RETURN (newwithid);
 }
@@ -1450,6 +1499,7 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
 
     LUT_t lut;
     ids *oldids, *newids;
+    ids *newwithid_vec;
 
     DBUG_ENTER ("joinCodes");
 
@@ -1462,8 +1512,8 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
                    MakeShpseg (MakeNums (CountExprs (ARRAY_AELEMS (array)), NULL)), NULL,
                    NULL);
 
-    newcode = MakeAssignLet (IDS_NAME (NWITHID_VEC (outerwithid)),
-                             IDS_VARDEC (NWITHID_VEC (outerwithid)), array);
+    newwithid_vec = DupAllIds (NWITHID_VEC (outerwithid));
+    newcode = MakeAssignLet (IDS_NAME (newwithid_vec), IDS_VARDEC (newwithid_vec), array);
 
     newids = NWITHID_IDS (newwithid);
     oldids = NWITHID_IDS (outerwithid);
@@ -1479,8 +1529,9 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
                    MakeShpseg (MakeNums (CountExprs (ARRAY_AELEMS (array)), NULL)), NULL,
                    NULL);
 
-    ASSIGN_NEXT (newcode) = MakeAssignLet (IDS_NAME (NWITHID_VEC (innerwithid)),
-                                           IDS_VARDEC (NWITHID_VEC (innerwithid)), array);
+    newwithid_vec = DupAllIds (NWITHID_VEC (innerwithid));
+    ASSIGN_NEXT (newcode)
+      = MakeAssignLet (IDS_NAME (newwithid_vec), IDS_VARDEC (newwithid_vec), array);
 
     tmp_node = ASSIGN_NEXT (newcode);
 
@@ -1491,8 +1542,8 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
     tmp_node2 = newcode;
     while (ASSIGN_NEXT (ASSIGN_NEXT (tmp_node2)) != NULL)
         tmp_node2 = ASSIGN_NEXT (tmp_node2);
-    FreeTree (ASSIGN_NEXT (tmp_node2));
-    ASSIGN_NEXT (tmp_node2) = NULL;
+
+    ASSIGN_NEXT (tmp_node2) = FreeTree (ASSIGN_NEXT (tmp_node2));
 
     tmp_node = ASSIGN_NEXT (tmp_node);
 
@@ -1529,9 +1580,6 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
           = AppendAssign (tmp_node, BLOCK_INSTR (NCODE_CBLOCK (newcode)));
 
     RemoveLUT (lut);
-
-    /* Return the new Codeblock */
-    NCODE_NEXT (newcode) = NCODE_NEXT (outercode);
 
     DBUG_RETURN (newcode);
 }
@@ -1583,6 +1631,9 @@ scalarizePart (node *outerpart, node *arg_info)
 
     /* Rebuild the chain */
     NPART_NEXT (newpart) = NPART_NEXT (outerpart);
+
+    /* free outer part */
+    FreeNode (outerpart);
 
     /* Present the Results */
     wls_expr++;
@@ -1807,7 +1858,7 @@ WLSNwith (node *arg_node, node *arg_info)
         arg_node = correctWL (arg_node);
     }
 
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeNode (arg_info);
     arg_info = tmpnode;
 
     DBUG_RETURN (arg_node);
@@ -1920,6 +1971,7 @@ WithloopScalarization (node *fundef, node *modul)
         act_tab = wls_tab;
 
         fundef = Trav (fundef, arg_info);
+        fundef = SSATransformOneFunction (fundef);
 
         act_tab = old_tab;
 
