@@ -1,5 +1,7 @@
 Makefile
 cmp_type.mac
+create_wrappers.c
+create_wrappers.h
 gen_pseudo_fun.c
 gen_pseudo_fun.h
 new_typecheck.c
