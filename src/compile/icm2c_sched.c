@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/07/04 10:34:47  ben
+ * code beautiefied
+ *
  * Revision 3.16  2001/06/27 14:33:39  ben
  * modified for cooperation with tasksel-pragma
  *
@@ -87,12 +90,6 @@
 #include "free.h"
 #endif /* BEtest */
 
-/*
- * task selection strategies
- */
-#define TS_EVEN 1
-#define TS_FACTORING 2
-
 /******************************************************************************
  *
  * function:
@@ -101,8 +98,7 @@
  * description:
  *   this funtion sets the boundaries of the withloop
  *   for all dimensions sparing sched_dim
- *
- *   sche_dim==-1 means there is no scheduling dimension
+ *   sched_dim[i]==1 : Taskselector sets value for this dimension
  *
  ******************************************************************************/
 
@@ -131,16 +127,17 @@ InitializeBoundaries (int dim, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void TaskSelectorInit(int dim, char **vararg,
- *                    int strategy, int tasks_on_dim,
- *                    int tasks_per_thread, char *taskid,int sched_id)
+ *    void TaskSelectorInit(int sched_id, char *ts_name, int ts_dims,
+ *              int ts_arg_num, char **ts_args,int dim, char **vararg)
  *
  * description:
  *
- *   implemented strategies:  (name / meaning of 'tasks_on_dim')
- *
- *     Even:    dimension on which the withloop will be divided into
- *               'num_tasks' tasks
+ *   till now factoring is the only Taskselector who needs this function
+ *   Arguments:
+ *   ts_name    : taskselctor name
+ *   ts_dims    : number of used dimensions by the taskselector
+ *   ts_arg_num : number of arguments of the taskselector
+ *   ts_args    : parameters of the taskselector
  *
  ******************************************************************************/
 static void
@@ -177,21 +174,22 @@ TaskSelectorInit (int sched_id, char *ts_name, int ts_dims, int ts_arg_num,
 /******************************************************************************
  *
  * function:
- *   void TaskSelector( int dim, char **vararg,
- *                    int strategy, int tasks_on_dim,
- *                    int tasks_per_thread, char *taskid,char *worktodo,int sched_id)
+ *   void TaskSelector( int sched_id, char *ts_name, int ts_dims,
+ *         int ts_arg_num, char **ts_args,int dim, char **vararg,
+ *         char *taskid, char *worktodo)
  *
  * description:
- *   this function divides the given withloop (dim,vararg) with the strategy
- *   (strategy,strategy_param) into tasks for multithreaded computation.
- *   The number of tasks is num_tasks and next_taskid is the number of the
+ *   this function divides the given withloop (dim,vararg) with thetaskselector
+ *   ts_name into tasks for multithreaded computation.
+ *   next_taskid is the number of the
  *   next task, which should be computated. Please call InitializeBoundaries()
  *   before using this function.
  *
- *   implemented strategies:  (name / meaning of 'tasks_on_dim')
- *
- *     Even:    dimension on which the withloop will be divided into
- *               'num_tasks' tasks
+ *   other arguments:
+ *   ts_name    : taskselctor name
+ *   ts_dims    : number of used dimensions by the taskselector
+ *   ts_arg_num : number of arguments of the taskselector
+ *   ts_args    : parameters of the taskselector
  *
  ******************************************************************************/
 
@@ -518,20 +516,31 @@ ICMCompileMT_SCHEDULER_BlockVar_INIT (int sched_id, int dim, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_Static_BEGIN( int sched_id, int tasks_per_thread,
- *                                             int dim, char **vararg)
- *   void ICMCompileMT_SCHEDULER_Static_END(int sched_id, int tasks_per_thread,
- *                                          int dim, char **vararg)
- *   void ICMCompileMT_SCHEDULER_Static_INIT(int sched_id, int tasks_per_thread,
- *                                           int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Static_BEGIN ( int sched_id,char *ts_name,
+ *                               int ts_dims,int ts_arg_num,char **ts_args,
+ *                               int dim, char **vararg)
+ *
+ *   void ICMCompileMT_SCHEDULER_Static_END ( int sched_id,char *ts_name,
+ *                               int ts_dims,int ts_arg_num,char **ts_args,
+ *                               int dim, char **vararg)
+ *
+ *   void ICMCompileMT_SCHEDULER_Static_INIT ( int sched_id,char *ts_name,
+ *                               int ts_dims,int ts_arg_num,char **ts_args,
+ *                               int dim, char **vararg)
+ *
  *
  * description:
- *   These two ICMs implement one scheduling for withloops
+ *   These three ICMs implement one scheduling for withloops
  *
  *   This scheduling is a very simple one that partitions the iteration
- *   space with the strategy specified for SelectTask (at the moment
- *   tasks_per_thread*Number of Threads Blocks on dimension 0.
- *   These Blcoks will be computated in cyclic order).
+ *   space with the strategy specified for the taskselector.
+ *   These tasks will be computed in cyclic order
+ *
+ *   Arguments:
+ *   ts_name    : taskselctor name
+ *   ts_dims    : number of used dimensions by the taskselector
+ *   ts_arg_num : number of arguments of the taskselector
+ *   ts_args    : parameters of the taskselector
  *
  ******************************************************************************/
 
@@ -612,21 +621,39 @@ ICMCompileMT_SCHEDULER_Static_INIT (int sched_id, char *ts_name, int ts_dims,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_Self_BEGIN(int sched_id, int tasks_per_thread,
- *                                          int dim, char **vararg)
- *   void ICMCompileMT_SCHEDULER_Self_END(int sched_id, int tasks_per_thread,
- *                                        int dim, char **vararg)
- *   void ICMCompileMT_SCHEDULER_Self_INIT(int sched_id, int tasks_per_thread,
- *                                         int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Self_BEGIN(int sched_id,char *first_task,
+ *                char *ts_name,int ts_dims,int ts_arg_num,char **ts_args,
+ *                int dim, char **vararg)
+ *
+ *   void ICMCompileMT_SCHEDULER_Self_END(int sched_id,char *first_task,
+ *                char *ts_name,int ts_dims,int ts_arg_num,char **ts_args,
+ *                int dim, char **vararg)
+ *
+ *   void ICMCompileMT_SCHEDULER_Self_INIT(int sched_id,char *first_task,
+ *                char *ts_name,int ts_dims,int ts_arg_num,char **ts_args,
+ *                int dim, char **vararg)
+ *
  *
  * description:
- *   These two ICMs implement one scheduling for withloops
+ *   These three ICMs implement one scheduling for withloops
  *
  *   This scheduling is a very simple one that partitions the iteration
- *   space with the strategy specified for SelectTask (at the moment
- *   tasks_per_thread* number of Threads Blocks on dimension 0) and gives each
- *   Thread after the computation of one Block one new to computate
+ *   space with the strategy specified for the taskselector and gives each
+ *   Thread after the computation of one task one new to computate
  *   (Selfscheduling).
+ *
+ *   Arguments:
+ *   ts_name    : taskselctor name
+ *   ts_dims    : number of used dimensions by the taskselector
+ *   ts_arg_num : number of arguments of the taskselector
+ *   ts_args    : parameters of the taskselector
+ *
+ *   first_task : FirstStatic    : first task will be choosen static
+ *                                 without using the taskqueue
+ *                FirstDynamic   : first task will be taken out of
+ *                                 taskqueue
+ *                FirstAutomatic : if sched_id==0 then FirstStatic
+ *                                 else FirstDynamic
  *
  ******************************************************************************/
 
@@ -753,20 +780,35 @@ ICMCompileMT_SCHEDULER_Self_INIT (int sched_id, char *first_task, char *ts_name,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_Affinity_BEGIN(int sched_id, int tasks_per_thread,
- *                                              int dim, char **vararg)
- *   void ICMCompileMT_SCHEDULER_Affinity_END(int sched_id, int tasks_per_thread,
- *                                            int dim, char **vararg)
- *   void ICMCompileMT_SCHEDULER_Affinity_INIT(int sched_id, int tasks_per_thread,
- *                                             int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Affinity_BEGIN(int sched_id,char *ts_name,
+ *                               int ts_dims,int ts_arg_num,char **ts_args,
+ *                               int dim, char **vararg)
+ *
+ *   void ICMCompileMT_SCHEDULER_Affinity_END(int sched_id,char *ts_name,
+ *                               int ts_dims,int ts_arg_num,char **ts_args,
+ *                               int dim, char **vararg)
+ *
+ *   void ICMCompileMT_SCHEDULER_Affinity_INIT(int sched_id,char *ts_name,
+ *                               int ts_dims,int ts_arg_num,char **ts_args,
+ *                               int dim, char **vararg)
+ *
  *
  * description:
- *   These two ICMs implement one scheduling for withloops
+ *   These three ICMs implement one scheduling for withloops
  *
  *   This scheduling is based on affinity scheduling, which
  *   realizes a form of loadbalancing by stealing tasks from the thread,
- *   which has computated the smallest number of tasks. Each Thread has
- *   param own tasks.
+ *   which has computated the smallest number of tasks.
+ *
+ * Caution:
+ *   this scheduling can only work together with the taskselector Even
+ *   till now
+ *
+ *   Arguments:
+ *   ts_name    : taskselctor name
+ *   ts_dims    : number of used dimensions by the taskselector
+ *   ts_arg_num : number of arguments of the taskselector
+ *   ts_args    : parameters of the taskselector
  *
  ******************************************************************************/
 
