@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1998/08/07 16:05:23  dkr
+ * WL_...FOLD_BEGIN, WL_...FOLD_END are now C-ICMs
+ *
  * Revision 1.17  1998/06/29 08:58:09  cg
  * added new arguments for new with-loop begin/end ICMs
  *
@@ -96,18 +99,6 @@
 #define SAC_WL_MIN(x, y) SAC_ND_MIN (x, y)
 
 #define SAC_WL_MAX(x, y) SAC_ND_MAX (x, y)
-
-/*****************************************************************************/
-
-/***
- *** WL-begin
- ***/
-
-#define SAC_WL_NONFOLD_BEGIN(target, idx_vec, dims)                                      \
-    {                                                                                    \
-        int target##__destptr = 0;
-
-#define SAC_WL_FOLD_BEGIN(target, idx_vec, dims) {
 
 /*****************************************************************************/
 
@@ -427,16 +418,6 @@
 
 #define SAC_WL_GRID_SET_IDX(dim, idx_vec, idx_scalar, bound1, bound2)                    \
     SAC_ND_A_FIELD (idx_vec)[dim] = idx_scalar;
-
-/*****************************************************************************/
-
-/***
- *** WL-end
- ***/
-
-#define SAC_WL_NONFOLD_END(target, idx_vec, dims) }
-
-#define SAC_WL_FOLD_END(target, idx_vec, dims) }
 
 /*****************************************************************************/
 
