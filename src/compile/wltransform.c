@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  1998/08/07 16:06:58  dkr
+ * some minor bugs fixed
+ *
  * Revision 1.28  1998/08/06 17:29:34  dkr
  * fixed a bug in CheckParams
  *
@@ -1392,7 +1395,7 @@ static int line;
  *   possibly present next nodes in 'node1' or 'node2' are ignored.
  *
  *   if (outline > 0) ALL GRID DATA IS IGNORED!!!
- *   (this feature is used by 'ComputeCubes', to determine weather two strides
+ *   (this feature is used by 'ComputeCubes', to determine whether two strides
  *    lie in the same cube or not)
  *
  *   this function definies the sort order for InsertWLnodes.
@@ -2194,7 +2197,7 @@ SetSegs (node *pragma, node *cubes, int dims)
  *   void CheckParams( node *seg)
  *
  * description:
- *   checks weather the parameter of the segment 'seg' are legal.
+ *   checks whether the parameter of the segment 'seg' are legal.
  *
  ******************************************************************************/
 
@@ -2205,7 +2208,7 @@ CheckParams (node *seg)
 
     DBUG_ENTER (" CheckParams");
 
-    /* test, weather (bv0 >= bv1 >= bv2 >= ... >= 1), (ubv >= 1) */
+    /* test, whether (bv0 >= bv1 >= bv2 >= ... >= 1), (ubv >= 1) */
     for (d = 0; d < WLSEG_DIMS (seg); d++) {
         j = WLSEG_BLOCKS (seg) - 1;
         if ((WLSEG_BV (seg, j))[d] < 1) {
@@ -4194,7 +4197,7 @@ GenerateCompleteDomainVar (node *stride_var, int dims, shpseg *shape)
  * remark:
  *   The new generators contain no pointer to a code-block. We inspect the
  *   type of the with-loop (WO_genarray, WO_modarray, WO_fold...) to decide
- *   weather we must ...
+ *   whether we must ...
  *     ... initialize the array-part with 0 (WO_genarray -> 'init'),
  *     ... copy the source-array (WO_modarray -> 'copy'),
  *     ... do nothing (WO_fold -> 'noop').
