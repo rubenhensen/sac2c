@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2001/02/23 18:04:22  sbs
+ * added print facility
+ *
  * Revision 3.1  2000/11/20 18:00:15  sacbase
  * new release made
  *
@@ -49,6 +52,7 @@ typedef void shape;
 extern shape *SHMakeShape (int dim);
 extern shape *SHCreateShape (int dim, ...);
 extern shape *SHCopyShape (shape *shp);
+extern void SHPrintShape (FILE *file, shape *shp);
 extern shape *SHFreeShape (shape *shp);
 
 extern int SHGetDim (shape *shp);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/02/23 18:04:22  sbs
+ * added print facility
+ *
  * Revision 3.1  2000/11/20 18:00:14  sacbase
  * new release made
  *
@@ -169,6 +172,36 @@ SHCopyShape (shape *shp)
     }
 
     DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void SHPrintShape( FILE *file, shape *shp)
+ *
+ * description:
+ *    prints the contents of shp to file.
+ *
+ ******************************************************************************/
+
+void
+SHPrintShape (FILE *file, shape *shp)
+{
+    int i;
+
+    DBUG_ENTER ("SHPrintShape");
+    DBUG_ASSERT ((shp != NULL), ("SHPrintShape called with NULL shape!"));
+
+    fprintf (file, "[ ");
+    if (SHAPE_DIM (shp) > 0) {
+        fprintf (file, " %d", SHAPE_EXT (shp, 0));
+    }
+    for (i = 1; i < SHAPE_DIM (shp); i++) {
+        fprintf (file, ", %d", SHAPE_EXT (shp, i));
+    }
+    fprintf (file, "]");
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
