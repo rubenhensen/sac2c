@@ -11,5 +11,6 @@ traverse.c
 traverse.h
 tree.c
 tree.h
+type_info.mac
 usage.c
 usage.h
