@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.50  2000/06/23 16:39:52  nmw
+ * pih and piw changed to mapcw and printi
+ *
  * Revision 1.49  2000/06/23 14:00:55  dkr
  * nodes for old with-loop removed
  *
@@ -483,11 +486,11 @@
 #define NIFapt(it_apt)
 #endif
 
-#ifndef NIFpih
-#define NIFpih(it_pih)
+#ifndef NIFmapcw
+#define NIFmapcw(it_mapcw)
 #endif
-#ifndef NIFpiw
-#define NIFpiw(it_piw)
+#ifndef NIFprinti
+#define NIFprinti(it_printi)
 #endif
 
 #ifndef NIFnnode
@@ -518,7 +521,7 @@
   it_l2f_lift, it_blkco, it_dfa, it_blkpp, it_cudecls, it_barin, it_blkli, it_adjca1,    \
   it_adjca2, it_precomp1, it_apc, it_apt,                                                \
                                                                                          \
-  it_pih, it_piw, it_unused3, it_unused4, nnode)                                         \
+  it_mapcw, it_printi, it_unused3, it_unused4, nnode)                                    \
                                                                                          \
     NIFNode_name (Node_name) NIFmdb_nodetype (mdb_nodetype)                              \
                                                                                          \
@@ -537,33 +540,30 @@
                         it_spmdopt) NIFspmdlift (it_spmdlift) NIFsyncinit (it_syncinit)  \
                                                                                          \
                         NIFsyncopt (it_syncopt) NIFwltrans (it_wltrans) NIFgsc (it_gsc)  \
-                          NIFreuse (it_reuse) NIFpatchwith (it_patchwith)                \
-                            NIFsched (it_sched) NIFconc (it_conc) NIFopt (it_opt)        \
-                              NIFwlaa (it_wlaa) NIFfreemask (it_freemask)                \
-                                NIFspmdrm (it_spmdrm) NIFspmdro (it_spmdro)              \
-                                  NIFspmdcons (it_spmdcons) NIFtsi (it_tsi)              \
-                                    NIFspmdlc (it_spmdlc) NIFspmddn (it_spmddn)          \
-                                      NIFspmdpm (it_spmdpm) NIFspmdco (it_spmdco)        \
-                                        NIFntc (it_ntc) NIFl2f_infer (it_l2f_infer)      \
+                          NIFreuse (it_reuse) NIFpatchwith (it_patchwith) NIFsched (     \
+                            it_sched) NIFconc (it_conc) NIFopt (it_opt)                  \
+                            NIFwlaa (it_wlaa) NIFfreemask (it_freemask) NIFspmdrm (      \
+                              it_spmdrm) NIFspmdro (it_spmdro) NIFspmdcons (it_spmdcons) \
+                              NIFtsi (it_tsi) NIFspmdlc (it_spmdlc) NIFspmddn (          \
+                                it_spmddn) NIFspmdpm (it_spmdpm) NIFspmdco (it_spmdco)   \
+                                NIFntc (it_ntc) NIFl2f_infer (it_l2f_infer)              \
                                                                                          \
-                                          NIFmuth (it_muth) NIFschin (it_schin)          \
-                                            NIFblkin (it_blkin) NIFrfin (it_rfin)        \
-                                              NIFfun2lac (it_fun2lac) NIFai (it_ai)      \
-                                                NIFblkex (it_blkex) NIFmtfin (it_mtfin)  \
-                                                  NIFl2f_lift (it_l2f_lift)              \
-                                                    NIFblkco (it_blkco) NIFdfa (it_dfa)  \
-                                                      NIFblkpp (it_blkpp) NIFcudecls (   \
-                                                        it_cudecls) NIFbarin (it_barin)  \
-                                                        NIFblkli (it_blkli)              \
-                                                          NIFadjca1 (it_adjca1)          \
-                                                            NIFadjca2 (it_adjca2)        \
-                                                              NIFprecomp1 (it_precomp1)  \
-                                                                NIFapc (it_apc)          \
-                                                                  NIFapt (it_apt)        \
+                                  NIFmuth (it_muth) NIFschin (it_schin)                  \
+                                    NIFblkin (it_blkin) NIFrfin (it_rfin)                \
+                                      NIFfun2lac (it_fun2lac) NIFai (it_ai)              \
+                                        NIFblkex (it_blkex) NIFmtfin (it_mtfin)          \
+                                          NIFl2f_lift (it_l2f_lift) NIFblkco (it_blkco)  \
+                                            NIFdfa (it_dfa) NIFblkpp (it_blkpp)          \
+                                              NIFcudecls (it_cudecls)                    \
+                                                NIFbarin (it_barin) NIFblkli (it_blkli)  \
+                                                  NIFadjca1 (it_adjca1)                  \
+                                                    NIFadjca2 (it_adjca2)                \
+                                                      NIFprecomp1 (it_precomp1)          \
+                                                        NIFapc (it_apc) NIFapt (it_apt)  \
                                                                                          \
-                                                                    NIFpih (it_pih)      \
-                                                                      NIFpiw (it_piw)    \
-                                                                        NIFnnode (nnode)
+                                                          NIFmapcw (it_mapcw)            \
+                                                            NIFprinti (it_printi)        \
+                                                              NIFnnode (nnode)
 
 /******************************************************************************
  *
@@ -587,7 +587,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
      TravSons, TravSons, DFAnum, TravSons, TravSons, TravSons, TravSons, TravSons,
      TravSons, TravSons, TravSons, TravSons,
 
-     PrintNum, PrintNum, TravSons, TravSons, 0),
+     TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_char, "N_char", TravSons, TravSons, PrintChar, TravSons, TravSons, TravSons,
        TravSons, FreeChar, TravSons, TravSons, TravSons, TravSons, DupChar, TravSons,
@@ -605,7 +605,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       PrintChar, PrintChar, TravSons, TravSons, 0),
+       TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_bool, "N_bool", TravSons, TravSons, PrintBool, TravSons, TravSons, TravSons,
        TravSons, FreeBool, TravSons, TravSons, TravSons, TravSons, DupBool, TravSons,
@@ -623,7 +623,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       PrintBool, PrintBool, TravSons, TravSons, 0),
+       TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_str, "N_str", TravSons, TravSons, PrintStr, TravSons, TravSons, TravSons,
        TravSons, FreeStr, TravSons, TravSons, TravSons, TravSons, DupStr, TravSons,
@@ -641,7 +641,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       PrintStr, PrintStr, TravSons, TravSons, 0),
+       TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_id, "N_id", TravSons, FltnId, PrintId, TravSons, GNMid, TravSons, WLFid, FreeId,
        CFid, RCid, COMPId, TravSons, DupId, TravSons, UNRid, TravSons, IdxId, UNSid,
@@ -659,7 +659,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, DFAid, TravSons, CUDid, TravSons, TravSons, TravSons, TravSons,
        TravSons, APCid, APTid,
 
-       PrintId, PrintId, TravSons, TravSons, 0),
+       TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_float, "N_float", TravSons, TravSons, PrintFloat, TravSons, TravSons, TravSons,
        TravSons, FreeFloat, TravSons, TravSons, TravSons, TravSons, DupFloat, TravSons,
@@ -677,7 +677,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       PrintFloat, PrintFloat, TravSons, TravSons, 0),
+       TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_double, "N_double", TravSons, TravSons, PrintDouble, TravSons, TravSons,
        TravSons, TravSons, FreeDouble, TravSons, TravSons, TravSons, TravSons, DupDouble,
@@ -695,7 +695,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       PrintDouble, PrintDouble, TravSons, TravSons, 0),
+       TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_typedef, "N_typedef", IMtypedef, TravSons, PrintTypedef, TravSons, TravSons,
        TravSons, TravSons, FreeTypedef, TravSons, TravSons, COMPTypedef, TravSons,
@@ -713,7 +713,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       PrintTypedef, PrintTypedef, TravSons, TravSons, 1),
+       TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_objdef, "N_objdef", IMobjdef, TravSons, PrintObjdef, TCobjdef, TravSons,
        TravSons, TravSons, FreeObjdef, TravSons, TravSons, COMPObjdef, TravSons,
@@ -731,7 +731,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       PrintObjdef, PrintObjdef, TravSons, TravSons, 2),
+       TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, TravSons, GNMmodul, GNMmodul,
        GNMmodul, FreeModul, GNMmodul, TravSons, COMPModul, GNMmodul, TravSons, INLmodul,
@@ -749,7 +749,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, 4),
+       MCWmodul, TravSons, TravSons, TravSons, 5),
 
   NIF (N_moddec, "N_moddec", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, FreeModdec, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -841,7 +841,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        BARINfundef, BLKLIfundef, ADJCA1fundef, ADJCA2fundef, TravSons, APCfundef,
        APTfundef,
 
-       PIHfundef, PIWfundef, TravSons, TravSons, 3),
+       MCWfundef, TravSons, TravSons, TravSons, 3),
 
   NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TCvardec, GNMvardec,
        DCRvardec, TravSons, FreeVardec, TravSons, RCvardec, COMPVardec, TravSons,
@@ -859,7 +859,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, CUDvardec, TravSons, TravSons, TravSons,
        TravSons, TravSons, APCvardec, APTvardec,
 
-       PrintVardec, PrintVardec, TravSons, TravSons, 1),
+       TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_block, "N_block", TravSons, FltnBlock, PrintBlock, TCblock, GNMblock, TravSons,
        TravSons, FreeBlock, TravSons, RCblock, COMPBlock, TravSons, DupBlock, TravSons,
@@ -895,7 +895,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, APCarg, APTarg,
 
-       PIHarg, PIWarg, TravSons, TravSons, 1),
+       MCWarg, TravSons, TravSons, TravSons, 1),
 
   NIF (N_mt, "N_mt", TravSons, TravSons, PrintMT, TravSons, TravSons, TravSons, TravSons,
        FreeMT, TravSons, TravSons, COMPMt, TravSons, DupMt, TravSons, TravSons, TravSons,
@@ -1730,6 +1730,24 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, 4),
 
+  NIF (N_cwrapper, "N_cwrapper", TravSons, TravSons, PrintCWrapper, TravSons, TravSons,
+       TravSons, TravSons, FreeCWrapper, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons,
+
+       TravSons, TravSons, TravSons, TravSons, 0),
+
   /* ATTENTION !!!! N_ok has to be the last node declared here;
    *                otherwise a DBUG_ASSERT in traverse.c: Trav will
    *                cause nice :-> errors!
@@ -1866,8 +1884,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFapc
 #undef NIFapt
 
-#undef NIFpih
-#undef NIFpiw
+#undef NIFmapcw
+#undef NIFprinti
 
 #undef NIFnnode
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2000/06/23 16:40:17  nmw
+ * pih and piw changed to mapcw and printi
+ *
  * Revision 1.19  2000/06/13 13:40:43  dkr
  * O2NWith_tab renamed into patchwith_tab
  *
@@ -179,8 +182,8 @@ extern funtab *adjca1_tab;
 extern funtab *adjca2_tab;
 extern funtab *apc_tab;
 extern funtab *apt_tab;
-extern funtab *pih_tab;
-extern funtab *piw_tab;
+extern funtab *mapcw_tab;
+extern funtab *printi_tab;
 
 extern int nnode[];
 
