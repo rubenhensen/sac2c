@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2002/02/06 20:15:20  dkr
+ * code for compilation of PRFs brushed
+ *
  * Revision 3.70  2001/12/21 13:28:55  dkr
  * code brushed.
  * ALLOC_ARRAY, CHECK_REUSE ICMs seperated (they no longer occur in other
@@ -2097,7 +2100,7 @@ ReorganizeReturnIcm (node *ret_icm)
 /******************************************************************************
  *
  * Function:
- *   bool CheckAp( ids *let_ids, node *ap, node *arg_info)
+ *   bool CheckApPrf( ids *let_ids, node *ap_prf, node *arg_info)
  *
  * Description:
  *   Checks whether no one of the refcounted arguments occurs on LHS of the
@@ -2106,25 +2109,32 @@ ReorganizeReturnIcm (node *ret_icm)
  ******************************************************************************/
 
 static bool
-CheckAp (ids *let_ids, node *ap, node *arg_info)
+CheckApPrf (ids *let_ids, node *ap_prf, node *arg_info)
 {
     node *args, *arg_id;
     int arg_idx;
     bool ok = TRUE;
 
-    DBUG_ENTER ("CheckAp");
+    DBUG_ENTER ("CheckApPrf");
 
-    DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), "no N_ap node found!");
+    DBUG_ASSERT (((NODE_TYPE (ap_prf) == N_ap) || (NODE_TYPE (ap_prf) == N_prf)),
+                 "neither N_ap nor N_prf node found!");
 
     while (let_ids != NULL) {
-        args = AP_ARGS (ap);
+        args = AP_OR_PRF_ARGS (ap_prf);
         arg_idx = INFO_COMP_CNTPARAM (arg_info);
         while (args != NULL) {
             arg_id = EXPRS_EXPR (args);
-            if ((NODE_TYPE (arg_id) == N_id) && (RC_IS_ACTIVE (ID_REFCNT (arg_id)))
-                && (!FUNDEF_DOES_REFCOUNT (AP_FUNDEF (ap), arg_idx))) {
-                if (!strcmp (IDS_NAME (let_ids), ID_NAME (arg_id))) {
-                    ok = FALSE;
+            if (NODE_TYPE (arg_id) == N_id) {
+                DBUG_ASSERT ((!RC_IS_ZERO (ID_REFCNT (arg_id))),
+                             "Reference with (rc == 0) found!");
+
+                if ((RC_IS_ACTIVE (ID_REFCNT (arg_id)))
+                    && ((NODE_TYPE (ap_prf) == N_prf)
+                        || (!FUNDEF_DOES_REFCOUNT (AP_FUNDEF (ap_prf), arg_idx)))) {
+                    if (!strcmp (IDS_NAME (let_ids), ID_NAME (arg_id))) {
+                        ok = FALSE;
+                    }
                 }
             }
             args = EXPRS_NEXT (args);
@@ -3746,7 +3756,7 @@ COMPAp (node *arg_node, node *arg_info)
      */
     assigns1 = COMPApIds (INFO_COMP_LASTIDS (arg_info), fundef, arg_info);
 
-    DBUG_ASSERT ((CheckAp (INFO_COMP_LASTIDS (arg_info), arg_node, arg_info)),
+    DBUG_ASSERT ((CheckApPrf (INFO_COMP_LASTIDS (arg_info), arg_node, arg_info)),
                  "application of a user-defined function without own refcounting:"
                  " refcounted argument occurs also on LHS!");
 
@@ -3851,19 +3861,9 @@ COMPPrfShape (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "N_id as arg of F_shape expected!");
 
-    DBUG_ASSERT ((strcmp (IDS_NAME (let_ids), ID_NAME (arg))),
-                 "a = shape( a) not allowed!");
-
-    ret_node
-      = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, NULL,
-                           MakeAssignIcm3 ("ND_CREATE_CONST_ARRAY_S", DupIds_Id (let_ids),
-                                           MakeNum (GetDim (ID_TYPE (arg))),
-                                           Type2Exprs (ID_TYPE (arg)),
-                                           MakeAdjustRcIcm (IDS_NAME (let_ids),
-                                                            IDS_TYPE (let_ids),
-                                                            IDS_REFCNT (let_ids),
-                                                            IDS_REFCNT (let_ids) - 1,
-                                                            NULL)));
+    ret_node = MakeAssignIcm3 ("ND_CREATE_CONST_ARRAY_S", DupIds_Id (let_ids),
+                               MakeNum (GetDim (ID_TYPE (arg))),
+                               Type2Exprs (ID_TYPE (arg)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -3904,12 +3904,12 @@ COMPPrfReshape (node *arg_node, node *arg_info)
 
     /*
      * compile assignment
-     * (v = reshape( shp, w)    =>   v = w)
+     * (v = reshape( shp, w)   =>   v = w)
      */
     ret_node = Trav (arg2, arg_info);
 
-    ret_node
-      = MakeDecRcIcm (ID_NAME (arg1), ID_TYPE (arg1), ID_REFCNT (arg1), 1, ret_node);
+    ret_node = AppendAssign (ret_node, MakeDecRcIcm (ID_NAME (arg1), ID_TYPE (arg1),
+                                                     ID_REFCNT (arg1), 1, NULL));
 
     DBUG_RETURN (ret_node);
 }
@@ -3948,21 +3948,8 @@ COMPPrfArith_SxA (node *arg_node, node *arg_info)
                  "N_id as 2nd arg of F_add/sub/mult/div_SxA expected!");
 
     ret_node
-      = MakeAllocArrayIcm_CheckReuse (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, NULL,
-                                      arg2, NULL,
-                                      MakeAssignIcm4 ("ND_BINOP_SxA_A",
-                                                      MakeId_Copy (
-                                                        prf_string[PRF_PRF (arg_node)]),
-                                                      DupNode (arg1), DupNode (arg2),
-                                                      DupIds_Id (let_ids),
-                                                      MakeAdjustRcIcm (IDS_NAME (let_ids),
-                                                                       IDS_TYPE (let_ids),
-                                                                       IDS_REFCNT (
-                                                                         let_ids),
-                                                                       IDS_REFCNT (
-                                                                         let_ids)
-                                                                         - 1,
-                                                                       NULL)));
+      = MakeAssignIcm4 ("ND_BINOP_SxA_A", MakeId_Copy (prf_string[PRF_PRF (arg_node)]),
+                        DupNode (arg1), DupNode (arg2), DupIds_Id (let_ids), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4001,21 +3988,8 @@ COMPPrfArith_AxS (node *arg_node, node *arg_info)
                  "No N_array as 2nd arg of F_add/sub/mult/div_AxS expected!");
 
     ret_node
-      = MakeAllocArrayIcm_CheckReuse (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, NULL,
-                                      arg1, NULL,
-                                      MakeAssignIcm4 ("ND_BINOP_AxS_A",
-                                                      MakeId_Copy (
-                                                        prf_string[PRF_PRF (arg_node)]),
-                                                      DupNode (arg1), DupNode (arg2),
-                                                      DupIds_Id (let_ids),
-                                                      MakeAdjustRcIcm (IDS_NAME (let_ids),
-                                                                       IDS_TYPE (let_ids),
-                                                                       IDS_REFCNT (
-                                                                         let_ids),
-                                                                       IDS_REFCNT (
-                                                                         let_ids)
-                                                                         - 1,
-                                                                       NULL)));
+      = MakeAssignIcm4 ("ND_BINOP_AxS_A", MakeId_Copy (prf_string[PRF_PRF (arg_node)]),
+                        DupNode (arg1), DupNode (arg2), DupIds_Id (let_ids), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4054,21 +4028,8 @@ COMPPrfArith_AxA (node *arg_node, node *arg_info)
                  "N_id as 2st arg of F_add/sub/mult/div_AxA expected.");
 
     ret_node
-      = MakeAllocArrayIcm_CheckReuse (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, NULL,
-                                      arg1, arg2,
-                                      MakeAssignIcm4 ("ND_BINOP_AxA_A",
-                                                      MakeId_Copy (
-                                                        prf_string[PRF_PRF (arg_node)]),
-                                                      DupNode (arg1), DupNode (arg2),
-                                                      DupIds_Id (let_ids),
-                                                      MakeAdjustRcIcm (IDS_NAME (let_ids),
-                                                                       IDS_TYPE (let_ids),
-                                                                       IDS_REFCNT (
-                                                                         let_ids),
-                                                                       IDS_REFCNT (
-                                                                         let_ids)
-                                                                         - 1,
-                                                                       NULL)));
+      = MakeAssignIcm4 ("ND_BINOP_AxA_A", MakeId_Copy (prf_string[PRF_PRF (arg_node)]),
+                        DupNode (arg1), DupNode (arg2), DupIds_Id (let_ids), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4111,27 +4072,17 @@ COMPPrfIdxSel (node *arg_node, node *arg_info)
     }
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "N_id as 2nd arg of F_idx_sel expected!");
 
-    if (IsArray (IDS_TYPE (let_ids))) {
-        /*
-         * This is possible only in case of an instrinsic array-sel:
-         *   sel( iv, A): int[*] -> type[*] -> type[*]
-         * Normally an array-sel is transformed into a with-loop containing
-         * scalar-sel's only.
-         */
-
-        ret_node
-          = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, NULL,
-                               MakeAssignIcm3 ("ND_IDX_SEL_A", DupNode (arg1),
-                                               DupNode (arg2), DupIds_Id (let_ids),
-                                               MakeAdjustRcIcm (IDS_NAME (let_ids),
-                                                                IDS_TYPE (let_ids),
-                                                                IDS_REFCNT (let_ids),
-                                                                IDS_REFCNT (let_ids) - 1,
-                                                                NULL)));
-    } else {
-        ret_node = MakeAssignIcm3 ("ND_IDX_SEL_S", DupNode (arg1), DupNode (arg2),
-                                   DupIds_Id (let_ids), NULL);
-    }
+    ret_node
+      = MakeAssignIcm3 (IsArray (IDS_TYPE (let_ids))
+                          /*
+                           * This is possible only in case of an instrinsic array-sel:
+                           *   sel( iv, A): int[*] -> type[*] -> type[*]
+                           * Normally an array-sel is transformed into a with-loop
+                           * containing scalar-sel's only.
+                           */
+                          ? "ND_IDX_SEL_A"
+                          : "ND_IDX_SEL_S",
+                        DupNode (arg1), DupNode (arg2), DupIds_Id (let_ids), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4156,7 +4107,6 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info)
 {
     node *ret_node;
     node *arg1, *arg2, *arg3;
-    char *icm_name;
     ids *let_ids;
 
     DBUG_ENTER ("COMPPrfIdxModarray");
@@ -4178,36 +4128,11 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NODE_TYPE (arg3) != N_array),
                  "No N_array as 3rd arg of F_idx_modarray expected!");
 
-    DBUG_ASSERT ((strcmp (IDS_NAME (let_ids), ID_NAME (arg1))),
-                 "a = idx_modarray( a, ., .) not allowed!");
-    DBUG_ASSERT (((NODE_TYPE (arg3) != N_id)
-                  || strcmp (IDS_NAME (let_ids), ID_NAME (arg3))),
-                 "a = idx_modarray( ., ., a) not allowed!");
-
-    DBUG_ASSERT ((!RC_IS_ZERO (ID_REFCNT (arg1))), "Reference with (rc == 0) found!");
-
-    if ((NODE_TYPE (arg3) == N_id) && IsArray (ID_TYPE (arg3))) {
-        icm_name = "ND_IDX_MODARRAY_AxVxA";
-    } else {
-        icm_name = "ND_IDX_MODARRAY_AxVxS";
-    }
-
-    ret_node
-      = MakeAllocArrayIcm_CheckReuse (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, NULL,
-                                      arg1, NULL,
-                                      MakeAssignIcm5 (icm_name,
-                                                      MakeBasetypeNode (
-                                                        IDS_TYPE (let_ids)),
-                                                      DupIds_Id (let_ids), DupNode (arg1),
-                                                      DupNode (arg2), DupNode (arg3),
-                                                      MakeAdjustRcIcm (IDS_NAME (let_ids),
-                                                                       IDS_TYPE (let_ids),
-                                                                       IDS_REFCNT (
-                                                                         let_ids),
-                                                                       IDS_REFCNT (
-                                                                         let_ids)
-                                                                         - 1,
-                                                                       NULL)));
+    ret_node = MakeAssignIcm5 (((NODE_TYPE (arg3) == N_id) && IsArray (ID_TYPE (arg3)))
+                                 ? "ND_IDX_MODARRAY_AxVxA"
+                                 : "ND_IDX_MODARRAY_AxVxS",
+                               MakeBasetypeNode (IDS_TYPE (let_ids)), DupIds_Id (let_ids),
+                               DupNode (arg1), DupNode (arg2), DupNode (arg3), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4244,12 +4169,6 @@ COMPPrfSel (node *arg_node, node *arg_info)
                  "N_id or N_array as 1st arg of F_sel expected!");
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "N_id as 2nd arg of F_sel expected!");
 
-    DBUG_ASSERT (((NODE_TYPE (arg1) != N_id)
-                  || strcmp (IDS_NAME (let_ids), ID_NAME (arg1))),
-                 "a = sel( a, .) not allowed!");
-    DBUG_ASSERT ((strcmp (IDS_NAME (let_ids), ID_NAME (arg2))),
-                 "a = sel( ., a) not allowed!");
-
     if (!IsArray (IDS_TYPE (let_ids))) {
         /* 'let_ids' is a scalar */
 
@@ -4268,26 +4187,20 @@ COMPPrfSel (node *arg_node, node *arg_info)
     } else {
         /* 'let_ids' is an array */
 
-        ret_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                    IDS_REFCNT (let_ids), IDS_REFCNT (let_ids) - 1, NULL);
-
         if (NODE_TYPE (arg1) == N_id) {
             ret_node
               = MakeAssignIcm5 ("ND_KD_SEL_VxA_A", MakeNum (GetDim (ID_TYPE (arg2))),
                                 DupNode (arg2), DupIds_Id (let_ids),
                                 MakeNum (GetTypesLength (ID_TYPE (arg1))), DupNode (arg1),
-                                ret_node);
+                                NULL);
         } else {
             /* 'arg1' is a N_array node */
             ret_node
               = MakeAssignIcm5 ("ND_KD_SEL_CxA_A", MakeNum (GetDim (ID_TYPE (arg2))),
                                 DupNode (arg2), DupIds_Id (let_ids),
                                 MakeNum (CountExprs (ARRAY_AELEMS (arg1))),
-                                DupTree (ARRAY_AELEMS (arg1)), ret_node);
+                                DupTree (ARRAY_AELEMS (arg1)), NULL);
         }
-
-        ret_node
-          = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, NULL, ret_node);
     }
 
     DBUG_RETURN (ret_node);
@@ -4315,7 +4228,6 @@ COMPPrfModarray (node *arg_node, node *arg_info)
     node *arg1, *arg2, *arg3;
     ids *let_ids;
     node *res_dim, *res_type;
-    char *icm_name;
 
     DBUG_ENTER ("COMPPrfModarray");
 
@@ -4330,60 +4242,35 @@ COMPPrfModarray (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NODE_TYPE (arg3) != N_array),
                  "No N_array as 3rd arg of F_modarray expected!");
 
-    DBUG_ASSERT ((strcmp (IDS_NAME (let_ids), ID_NAME (arg1))),
-                 "a = modarray( a, ., .) not allowed!");
-    DBUG_ASSERT (((NODE_TYPE (arg2) != N_id)
-                  || strcmp (IDS_NAME (let_ids), ID_NAME (arg2))),
-                 "a = modarray( ., a, .) not allowed!");
-    DBUG_ASSERT (((NODE_TYPE (arg3) != N_id)
-                  || strcmp (IDS_NAME (let_ids), ID_NAME (arg3))),
-                 "a = modarray( ., ., a) not allowed!");
-
-    DBUG_ASSERT ((!RC_IS_ZERO (ID_REFCNT (arg1))), "Reference with (rc == 0) found!");
-
     /* basic type of result */
     res_type = MakeBasetypeNode (IDS_TYPE (let_ids));
     /* dimension of result */
     res_dim = MakeNum (GetDim (IDS_TYPE (let_ids)));
 
-    ret_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                IDS_REFCNT (let_ids), IDS_REFCNT (let_ids) - 1, NULL);
-
     if (NODE_TYPE (arg2) == N_array) {
         /* index is constant! */
 
-        if ((N_id == NODE_TYPE (arg3)) && IsArray (ID_TYPE (arg3))) {
-            icm_name = "ND_PRF_MODARRAY_AxCxA";
-        } else {
-            /* 'arg3' is a scalar */
-            icm_name = "ND_PRF_MODARRAY_AxCxS";
-        }
-
-        ret_node = MakeAssignIcm7 (icm_name, res_type, res_dim, DupIds_Id (let_ids),
-                                   DupNode (arg1), DupNode (arg3),
-                                   MakeNum (CountExprs (ARRAY_AELEMS (arg2))),
-                                   DupTree (ARRAY_AELEMS (arg2)), ret_node);
+        ret_node
+          = MakeAssignIcm7 (((N_id == NODE_TYPE (arg3)) && IsArray (ID_TYPE (arg3)))
+                              ? "ND_PRF_MODARRAY_AxCxA"
+                              : "ND_PRF_MODARRAY_AxCxS",
+                            res_type, res_dim, DupIds_Id (let_ids), DupNode (arg1),
+                            DupNode (arg3), MakeNum (CountExprs (ARRAY_AELEMS (arg2))),
+                            DupTree (ARRAY_AELEMS (arg2)), NULL);
     } else {
         /* 'arg2' is a N_id node */
         DBUG_ASSERT (((GetShapeDim (ID_TYPE (arg2)) == 1)
                       && (GetBasetype (ID_TYPE (arg2)) == T_int)),
                      "2nd arg of F_modarray is a illegal indexing var!");
 
-        if ((N_id == NODE_TYPE (arg3)) && IsArray (ID_TYPE (arg3))) {
-            icm_name = "ND_PRF_MODARRAY_AxVxA";
-        } else {
-            /* 'arg3' is a scalar */
-            icm_name = "ND_PRF_MODARRAY_AxVxS";
-        }
-
-        ret_node = MakeAssignIcm7 (icm_name, res_type, res_dim, DupIds_Id (let_ids),
-                                   DupNode (arg1), DupNode (arg3),
-                                   MakeNum (TYPES_SHAPE (ID_TYPE (arg2), 0)),
-                                   DupNode (arg2), ret_node);
+        ret_node
+          = MakeAssignIcm7 (((N_id == NODE_TYPE (arg3)) && IsArray (ID_TYPE (arg3)))
+                              ? "ND_PRF_MODARRAY_AxVxA"
+                              : "ND_PRF_MODARRAY_AxVxS",
+                            res_type, res_dim, DupIds_Id (let_ids), DupNode (arg1),
+                            DupNode (arg3), MakeNum (TYPES_SHAPE (ID_TYPE (arg2), 0)),
+                            DupNode (arg2), NULL);
     }
-
-    ret_node = MakeAllocArrayIcm_CheckReuse (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1,
-                                             NULL, arg1, NULL, ret_node);
 
     DBUG_RETURN (ret_node);
 }
@@ -4510,14 +4397,7 @@ COMPPrfConvertArr (node *arg_node, node *arg_info)
         break;
     }
 
-    ret_node
-      = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, NULL,
-                           MakeAssignIcm2 (icm_name, DupNode (arg), DupIds_Id (let_ids),
-                                           MakeAdjustRcIcm (IDS_NAME (let_ids),
-                                                            IDS_TYPE (let_ids),
-                                                            IDS_REFCNT (let_ids),
-                                                            IDS_REFCNT (let_ids) - 1,
-                                                            NULL)));
+    ret_node = MakeAssignIcm2 (icm_name, DupNode (arg), DupIds_Id (let_ids), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4558,9 +4438,6 @@ COMPPrfTakeDrop (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id),
                  "N_id as 2st arg of F_take/F_drop expected.");
 
-    DBUG_ASSERT ((strcmp (IDS_NAME (let_ids), ID_NAME (arg2))),
-                 "a = take/drop( ., a) not allowed!");
-
     switch (PRF_PRF (arg_node)) {
     case F_take:
         icm_name = "ND_KD_TAKE_CxA_A";
@@ -4576,17 +4453,9 @@ COMPPrfTakeDrop (node *arg_node, node *arg_info)
 
     n_elems = ID_VECLEN (arg1);
 
-    ret_node
-      = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, NULL,
-                           MakeAssignIcm5 (icm_name, MakeNum (GetDim (ID_TYPE (arg2))),
-                                           DupNode (arg2), DupIds_Id (let_ids),
-                                           MakeNum (n_elems),
-                                           IntVec2Array (n_elems, ID_CONSTVEC (arg1)),
-                                           MakeAdjustRcIcm (IDS_NAME (let_ids),
-                                                            IDS_TYPE (let_ids),
-                                                            IDS_REFCNT (let_ids),
-                                                            IDS_REFCNT (let_ids) - 1,
-                                                            NULL)));
+    ret_node = MakeAssignIcm5 (icm_name, MakeNum (GetDim (ID_TYPE (arg2))),
+                               DupNode (arg2), DupIds_Id (let_ids), MakeNum (n_elems),
+                               IntVec2Array (n_elems, ID_CONSTVEC (arg1)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4625,22 +4494,9 @@ COMPPrfCat (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "N_id as 2st arg of F_cat expected.");
     DBUG_ASSERT ((NODE_TYPE (arg3) == N_id), "N_id as 3st arg of F_cat expected.");
 
-    DBUG_ASSERT ((strcmp (IDS_NAME (let_ids), ID_NAME (arg2))),
-                 "a = cat( ., a, .) not allowed!");
-    DBUG_ASSERT ((strcmp (IDS_NAME (let_ids), ID_NAME (arg3))),
-                 "a = cat( ., ., a) not allowed!");
-
-    ret_node
-      = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, NULL,
-                           MakeAssignIcm5 ("ND_KD_CAT_SxAxA_A",
-                                           MakeNum (GetDim (ID_TYPE (arg2))),
-                                           DupNode (arg2), DupNode (arg3),
-                                           DupIds_Id (let_ids), DupNode (arg1),
-                                           MakeAdjustRcIcm (IDS_NAME (let_ids),
-                                                            IDS_TYPE (let_ids),
-                                                            IDS_REFCNT (let_ids),
-                                                            IDS_REFCNT (let_ids) - 1,
-                                                            NULL)));
+    ret_node = MakeAssignIcm5 ("ND_KD_CAT_SxAxA_A", MakeNum (GetDim (ID_TYPE (arg2))),
+                               DupNode (arg2), DupNode (arg3), DupIds_Id (let_ids),
+                               DupNode (arg1), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4680,20 +4536,9 @@ COMPPrfRotate (node *arg_node, node *arg_info)
                  "N_num or N_id as 2st arg of F_rotate expected.");
     DBUG_ASSERT ((NODE_TYPE (arg3) == N_id), "N_id as 3st arg of F_rotate expected.");
 
-    DBUG_ASSERT ((strcmp (IDS_NAME (let_ids), ID_NAME (arg3))),
-                 "a = rotate( ., ., a) not allowed!");
-
-    ret_node
-      = MakeAllocArrayIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, NULL,
-                           MakeAssignIcm5 ("ND_KD_ROT_CxSxA_A", DupNode (arg1),
-                                           DupNode (arg2),
-                                           MakeNum (GetDim (ID_TYPE (arg3))),
-                                           DupNode (arg3), DupIds_Id (let_ids),
-                                           MakeAdjustRcIcm (IDS_NAME (let_ids),
-                                                            IDS_TYPE (let_ids),
-                                                            IDS_REFCNT (let_ids),
-                                                            IDS_REFCNT (let_ids) - 1,
-                                                            NULL)));
+    ret_node = MakeAssignIcm5 ("ND_KD_ROT_CxSxA_A", DupNode (arg1), DupNode (arg2),
+                               MakeNum (GetDim (ID_TYPE (arg3))), DupNode (arg3),
+                               DupIds_Id (let_ids), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -4714,18 +4559,178 @@ COMPPrfRotate (node *arg_node, node *arg_info)
 node *
 COMPPrf (node *arg_node, node *arg_info)
 {
-    node *ret_node = NULL;
+    ids *let_ids;
+    node *ret_node1 = NULL;
+    node *ret_node2 = NULL;
+    node *ret_node3 = NULL;
+    node *check_reuse1 = NULL;
+    node *check_reuse2 = NULL;
 
     DBUG_ENTER ("COMPPrf");
 
     DBUG_PRINT ("COMP",
                 ("%s line: %d", mdb_prf[PRF_PRF (arg_node)], NODE_LINE (arg_node)));
 
+    let_ids = INFO_COMP_LASTIDS (arg_info);
+
     if (PRF_PRF (arg_node) != F_reshape) {
         /*
-         * CAUTION: no DEC_RC on the args of F_reshape!!
+         * CAUTION: F_reshape is compiled differently!!!
+         */
+
+        DBUG_ASSERT ((CheckApPrf (let_ids, arg_node, arg_info)),
+                     "application of a primitive function:"
+                     " refcounted argument occurs also on LHS!");
+    }
+
+    switch (PRF_PRF (arg_node)) {
+        /*
+         *  SCALAR_ARGS( PRF_PRF( arg_node))
+         */
+
+    case F_toi:
+    case F_tof:
+    case F_tod:
+        ret_node2 = COMPPrfConvertScalar (arg_node, arg_info);
+        break;
+
+    case F_abs:
+        ret_node2 = COMPPrfIcm1 ("ND_ABS", arg_node, arg_info);
+        break;
+
+    case F_min:
+        ret_node2 = COMPPrfIcm2 ("ND_MIN", arg_node, arg_info);
+        break;
+
+    case F_max:
+        ret_node2 = COMPPrfIcm2 ("ND_MAX", arg_node, arg_info);
+        break;
+
+    case F_not:
+    case F_add:
+    case F_sub:
+    case F_mul:
+    case F_div:
+    case F_mod:
+    case F_and:
+    case F_or:
+    case F_le:
+    case F_lt:
+    case F_eq:
+    case F_neq:
+    case F_ge:
+    case F_gt:
+        ret_node2 = arg_node;
+        break;
+
+        /*
+         *  ARRAY_ARGS_INTRINSIC( PRF_PRF( arg_node))
+         */
+
+    case F_genarray:
+        DBUG_ASSERT ((0), "F_genarray not yet implemented!");
+        break;
+
+    case F_dim:
+        ret_node2 = COMPPrfDim (arg_node, arg_info);
+        break;
+
+    case F_shape:
+        ret_node2 = COMPPrfShape (arg_node, arg_info);
+        break;
+
+    case F_reshape:
+        ret_node2 = COMPPrfReshape (arg_node, arg_info);
+        break;
+
+    case F_add_SxA:
+    case F_sub_SxA:
+    case F_mul_SxA:
+    case F_div_SxA:
+        check_reuse1 = PRF_ARG2 (arg_node);
+        ret_node2 = COMPPrfArith_SxA (arg_node, arg_info);
+        break;
+
+    case F_add_AxS:
+    case F_sub_AxS:
+    case F_mul_AxS:
+    case F_div_AxS:
+        check_reuse1 = PRF_ARG1 (arg_node);
+        ret_node2 = COMPPrfArith_AxS (arg_node, arg_info);
+        break;
+
+    case F_add_AxA:
+    case F_sub_AxA:
+    case F_mul_AxA:
+    case F_div_AxA:
+        check_reuse1 = PRF_ARG1 (arg_node);
+        check_reuse2 = PRF_ARG2 (arg_node);
+        ret_node2 = COMPPrfArith_AxA (arg_node, arg_info);
+        break;
+
+    case F_idx_sel:
+        ret_node2 = COMPPrfIdxSel (arg_node, arg_info);
+        break;
+
+    case F_idx_modarray:
+        check_reuse1 = PRF_ARG1 (arg_node);
+        ret_node2 = COMPPrfIdxModarray (arg_node, arg_info);
+        break;
+
+    case F_sel:
+        ret_node2 = COMPPrfSel (arg_node, arg_info);
+        break;
+
+    case F_modarray:
+        check_reuse1 = PRF_ARG1 (arg_node);
+        ret_node2 = COMPPrfModarray (arg_node, arg_info);
+        break;
+
+        /*
+         *  ARRAY_ARGS_NON_INTRINSIC( PRF_PRF( arg_node))
+         */
+
+    case F_toi_A:
+    case F_tof_A:
+    case F_tod_A:
+        ret_node2 = COMPPrfConvertArr (arg_node, arg_info);
+        break;
+
+    case F_drop:
+    case F_take:
+        ret_node2 = COMPPrfTakeDrop (arg_node, arg_info);
+        break;
+
+    case F_cat:
+        ret_node2 = COMPPrfCat (arg_node, arg_info);
+        break;
+
+    case F_rotate:
+        ret_node2 = COMPPrfRotate (arg_node, arg_info);
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "illegal prf found!");
+        break;
+    }
+
+    DBUG_ASSERT ((ret_node2 != NULL), "no return value found!");
+
+    if (PRF_PRF (arg_node) != F_reshape) {
+        /*
+         * CAUTION: F_reshape is compiled differently!!!
          */
         node *args, *arg;
+
+        if (RC_IS_ACTIVE (IDS_REFCNT (let_ids))) {
+            ret_node1
+              = MakeAllocArrayIcm_CheckReuse (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1,
+                                              NULL, check_reuse1, check_reuse2, NULL);
+        }
+
+        ret_node3
+          = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), IDS_REFCNT (let_ids),
+                             IDS_REFCNT (let_ids) - 1, NULL);
 
         /*
          * append a DEC_RC for each arg
@@ -4734,151 +4739,23 @@ COMPPrf (node *arg_node, node *arg_info)
         while (args != NULL) {
             arg = EXPRS_EXPR (args);
             if (NODE_TYPE (arg) == N_id) {
-                ret_node = MakeDecRcIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg), 1,
-                                         ret_node);
+                ret_node3 = MakeDecRcIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg),
+                                          1, ret_node3);
             }
             args = EXPRS_NEXT (args);
         }
     }
 
-    if (SCALAR_ARGS (PRF_PRF (arg_node))) {
-        switch (PRF_PRF (arg_node)) {
-        case F_toi:
-        case F_tof:
-        case F_tod:
-            arg_node = COMPPrfConvertScalar (arg_node, arg_info);
-            break;
-
-        case F_abs:
-            arg_node = COMPPrfIcm1 ("ND_ABS", arg_node, arg_info);
-            break;
-
-        case F_min:
-            arg_node = COMPPrfIcm2 ("ND_MIN", arg_node, arg_info);
-            break;
-
-        case F_max:
-            arg_node = COMPPrfIcm2 ("ND_MAX", arg_node, arg_info);
-            break;
-
-        case F_not:
-        case F_add:
-        case F_sub:
-        case F_mul:
-        case F_div:
-        case F_mod:
-        case F_and:
-        case F_or:
-        case F_le:
-        case F_lt:
-        case F_eq:
-        case F_neq:
-        case F_ge:
-        case F_gt:
-            break;
-
-        default:
-            DBUG_ASSERT ((0), "illegal prf found!");
-            break;
-        }
-    } else if (ARRAY_ARGS_INTRINSIC (PRF_PRF (arg_node))) {
-        switch (PRF_PRF (arg_node)) {
-        case F_genarray:
-            DBUG_ASSERT ((0), "F_genarray not yet implemented!");
-            break;
-
-        case F_dim:
-            arg_node = COMPPrfDim (arg_node, arg_info);
-            break;
-
-        case F_shape:
-            arg_node = COMPPrfShape (arg_node, arg_info);
-            break;
-
-        case F_reshape:
-            arg_node = COMPPrfReshape (arg_node, arg_info);
-            break;
-
-        case F_add_SxA:
-        case F_sub_SxA:
-        case F_mul_SxA:
-        case F_div_SxA:
-            arg_node = COMPPrfArith_SxA (arg_node, arg_info);
-            break;
-
-        case F_add_AxS:
-        case F_sub_AxS:
-        case F_mul_AxS:
-        case F_div_AxS:
-            arg_node = COMPPrfArith_AxS (arg_node, arg_info);
-            break;
-
-        case F_add_AxA:
-        case F_sub_AxA:
-        case F_mul_AxA:
-        case F_div_AxA:
-            arg_node = COMPPrfArith_AxA (arg_node, arg_info);
-            break;
-
-        case F_idx_sel:
-            arg_node = COMPPrfIdxSel (arg_node, arg_info);
-            break;
-
-        case F_idx_modarray:
-            arg_node = COMPPrfIdxModarray (arg_node, arg_info);
-            break;
-
-        case F_sel:
-            arg_node = COMPPrfSel (arg_node, arg_info);
-            break;
-
-        case F_modarray:
-            arg_node = COMPPrfModarray (arg_node, arg_info);
-            break;
-
-        default:
-            DBUG_ASSERT ((0), "illegal prf found!");
-            break;
-        }
-    } else { /* Here, we have ARRAY_ARGS_NON_INTRINSIC( PRF_PRF( arg_node)) */
-        switch (PRF_PRF (arg_node)) {
-        case F_toi_A:
-        case F_tof_A:
-        case F_tod_A:
-            arg_node = COMPPrfConvertArr (arg_node, arg_info);
-            break;
-
-        case F_drop:
-        case F_take:
-            arg_node = COMPPrfTakeDrop (arg_node, arg_info);
-            break;
-
-        case F_cat:
-            arg_node = COMPPrfCat (arg_node, arg_info);
-            break;
-
-        case F_rotate:
-            arg_node = COMPPrfRotate (arg_node, arg_info);
-            break;
-
-        default:
-            DBUG_ASSERT ((0), "illegal prf found!");
-            break;
-        }
+    /*
+     * merge 'ret_node1', 'ret_node2' and 'ret_node3'
+     */
+    if ((ret_node1 != NULL) || (ret_node3 != NULL)) {
+        DBUG_ASSERT ((NODE_TYPE (ret_node2) == N_assign), "no assignment chain found!");
+        ret_node2 = AppendAssign (ret_node2, ret_node3);
+        ret_node2 = AppendAssign (ret_node1, ret_node2);
     }
 
-    DBUG_ASSERT ((arg_node != NULL), "no return value found!");
-
-    if (ret_node != NULL) {
-        DBUG_ASSERT (((NODE_TYPE (arg_node) == N_assign)
-                      && (NODE_TYPE (ret_node) == N_assign)),
-                     "no assignment chain found!");
-        ret_node = AppendAssign (arg_node, ret_node);
-    } else {
-        ret_node = arg_node;
-    }
-
-    DBUG_RETURN (ret_node);
+    DBUG_RETURN (ret_node2);
 }
 
 /******************************************************************************
