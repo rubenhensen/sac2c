@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.23  1995/04/28 17:29:30  hw
+ * Revision 1.24  1995/05/02 09:32:58  hw
+ * bug fixed in CompReturn
+ *
+ * Revision 1.23  1995/04/28  17:29:30  hw
  * - changed compilation of with_loop:
  *   - N_icm for allocation of index_vector added
  *   - refcounts of  used before defined variables (only arrays) of a
@@ -1613,7 +1616,6 @@ CompReturn (node *arg_node, node *arg_info)
 
         if ('M' == arg_info->node[2]->info.id[9]) {
             /* add name of modified array */
-            with_icm_arg = with_icm_arg->node[1];
             MAKE_NEXT_ICM_ARG (icm_arg, with_icm_arg->node[0]);
 
             /* add name of return value */
