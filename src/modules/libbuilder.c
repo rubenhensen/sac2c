@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/24 18:10:32  sah
+ * COMPILES
+ *
  * Revision 1.3  2004/11/07 18:05:01  sah
  * improved dependency handling
  * for external function added
@@ -20,31 +23,32 @@
 #include "dbug.h"
 #include "Error.h"
 #include "internal_lib.h"
+#include "stringset.h"
 #include "resource.h"
 
 static void *
-BuildDepLibsStringMod (const char *lib, SStype_t kind, void *rest)
+BuildDepLibsStringMod (const char *lib, strstype_t kind, void *rest)
 {
     char *result;
 
     DBUG_ENTER ("BuildDepLibsStringMod");
 
     switch (kind) {
-    case SS_objfile:
-        result = StringCopy (lib);
+    case STRS_objfile:
+        result = ILIBstringCopy (lib);
     default:
-        result = StringCopy ("");
+        result = ILIBstringCopy ("");
         break;
     }
 
     if (rest != NULL) {
         char *temp
-          = Malloc (sizeof (char) * (strlen ((char *)rest) + strlen (result) + 2));
+          = ILIBmalloc (sizeof (char) * (strlen ((char *)rest) + strlen (result) + 2));
 
         sprintf (temp, "%s %s", (char *)rest, result);
 
-        result = Free (result);
-        rest = Free (rest);
+        result = ILIBfree (result);
+        rest = ILIBfree (rest);
         result = temp;
     }
 
@@ -52,30 +56,31 @@ BuildDepLibsStringMod (const char *lib, SStype_t kind, void *rest)
 }
 
 void
-CreateLibrary (stringset_t *deps)
+LIBBcreateLibrary (stringset_t *deps)
 {
     char *deplibs;
 
-    DBUG_ENTER ("CreateLibrary");
+    DBUG_ENTER ("LIBBcreateLibrary");
 
-    NOTE (("Creating static SAC library `lib%s.a'", modulename));
+    NOTE (("Creating static SAC library `lib%s.a'", global.modulename));
 
-    deplibs = SSFold (&BuildDepLibsStringMod, deps, StringCopy (""));
+    deplibs = STRSfold (&BuildDepLibsStringMod, deps, ILIBstringCopy (""));
 
-    SystemCall ("%s lib%s.a %s/fun*.o %s", config.ar_create, modulename, tmp_dirname,
-                deplibs);
+    ILIBsystemCall ("%s lib%s.a %s/fun*.o %s", global.config.ar_create, global.modulename,
+                    global.tmp_dirname, deplibs);
 
-    if (config.ranlib[0] != '\0') {
-        SystemCall ("%s lib%s.a", config.ranlib, modulename);
+    if (global.config.ranlib[0] != '\0') {
+        ILIBsystemCall ("%s lib%s.a", global.config.ranlib, global.modulename);
     }
 
-    deplibs = Free (deplibs);
+    deplibs = ILIBfree (deplibs);
 
-    NOTE (("Creating shared SAC library `lib%s.so'", modulename));
+    NOTE (("Creating shared SAC library `lib%s.so'", global.modulename));
 
-    SystemCall ("%s -o lib%s.so %s/serialize.o %s/symboltable.o"
-                " %s/dependencytable.o",
-                config.ld_dynamic, modulename, tmp_dirname, tmp_dirname, tmp_dirname);
+    ILIBsystemCall ("%s -o lib%s.so %s/serialize.o %s/symboltable.o"
+                    " %s/dependencytable.o",
+                    global.config.ld_dynamic, global.modulename, global.tmp_dirname,
+                    global.tmp_dirname, global.tmp_dirname);
 
     DBUG_VOID_RETURN;
 }
