@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2000/06/23 16:40:35  nmw
+ * pih and pih changed to mapcw and printi
+ *
  * Revision 1.24  2000/06/13 13:40:38  dkr
  * O2NWith_tab renamed into patchwith_tab
  *
@@ -254,6 +257,7 @@
 #include "pad_collect.h"
 #include "pad_transform.h"
 #include "print_interface.h"
+#include "map_cwrapper.h"
 
 #include "traverse.h"
 
@@ -1144,26 +1148,26 @@ static funtab apt_tab_rec = {{
 funtab *apt_tab = &apt_tab_rec;
 
 /*
- *  (81) pih_tab
+ *  (81) mapcw_tab
  */
-static funtab pih_tab_rec = {{
-#define NIFpih(it_pih) it_pih
+static funtab mapcw_tab_rec = {{
+#define NIFmapcw(it_macpw) it_macpw
 #include "node_info.mac"
-                             },
-                             NULL,
-                             NULL};
-funtab *pih_tab = &pih_tab_rec;
+                               },
+                               NULL,
+                               NULL};
+funtab *mapcw_tab = &mapcw_tab_rec;
 
 /*
- *  (82) piw_tab
+ *  (82) printi_tab
  */
-static funtab piw_tab_rec = {{
-#define NIFpiw(it_piw) it_piw
+static funtab printi_tab_rec = {{
+#define NIFprinti(it_printi) it_printi
 #include "node_info.mac"
-                             },
-                             NULL,
-                             NULL};
-funtab *piw_tab = &piw_tab_rec;
+                                },
+                                NULL,
+                                NULL};
+funtab *printi_tab = &printi_tab_rec;
 
 /*
  *  nnode
