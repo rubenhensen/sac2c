@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.90  2004/07/14 23:58:41  sah
+# removed old non-ssa optimizations
+#
 # Revision 3.89  2004/07/14 15:32:49  ktr
 # refcount/alloc.o added.
 #
@@ -222,12 +225,10 @@ TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/ct_with.o src/typecheck/type_errors.o \
            src/typecheck/specialize.o src/typecheck/new2old.o \
            src/typecheck/create_wrapper_code.o src/typecheck/type_statistics.o
-OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
-          src/optimize/generatemasks.o src/optimize/DeadCodeRemoval.o \
-          src/optimize/DeadFunctionRemoval.o src/optimize/freemasks.o \
-	  src/optimize/LoopInvariantRemoval.o src/optimize/Inline.o \
-          src/optimize/Unroll.o src/optimize/WLUnroll.o \
-          src/optimize/Unswitch.o src/optimize/CSE.o \
+OPTIMIZE= src/optimize/optimize.o \
+          src/optimize/generatemasks.o \
+          src/optimize/DeadFunctionRemoval.o \
+	  src/optimize/Inline.o \
           src/optimize/AssociativeLaw.o \
           src/optimize/SSADeadCodeRemoval.o src/optimize/SSACSE.o \
           src/optimize/SSAConstantFolding.o src/optimize/SSALIR.o \
@@ -240,8 +241,7 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
 PROFILE= src/profile/annotate_fun_calls.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
         src/psi-opt/wl_access_analyze.o src/psi-opt/tile_size_inference.o \
-        src/psi-opt/WithloopFolding.o src/psi-opt/WLT.o src/psi-opt/WLI.o \
-        src/psi-opt/WLF.o src/psi-opt/WithloopScalarization.o \
+        src/psi-opt/WithloopScalarization.o \
         src/psi-opt/SSAWithloopFolding.o src/psi-opt/SSAWLT.o \
         src/psi-opt/SSAWLI.o src/psi-opt/SSAWLF.o \
         src/psi-opt/pad.o src/psi-opt/pad_collect.o src/psi-opt/pad_infer.o \
