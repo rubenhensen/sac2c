@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/06/02 21:42:42  dkr
+ * symbols renamed
+ *
  * Revision 3.3  2002/05/31 17:17:22  dkr
  * functions now in NameTuplesUtils.c
  *
@@ -28,7 +31,7 @@
  * array class and array uniqueness properties.
  */
 
-char *nt_class_string[] = {
+char *nt_data_string[] = {
 #define ATTRIB 1
 #define NTIFstr(it_str) it_str
 #include "nt_info.mac"

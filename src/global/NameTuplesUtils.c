@@ -1,12 +1,16 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2002/06/02 21:42:42  dkr
+ * symbols renamed
+ *
  * Revision 1.1  2002/05/31 17:14:56  dkr
  * Initial revision
  *
  */
 
 #include "dbug.h"
+#include "internal_lib.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -15,7 +19,34 @@
 /******************************************************************************
  *
  * function:
- *   data_class_t GetClassFromTypes( types *type)
+ *   char *CreateNtTag( char *name, types *type)
+ *
+ * description:
+ *   Creates the tag of an object (usually an array) from its type.
+ *
+ ******************************************************************************/
+
+char *
+CreateNtTag (char *name, types *type)
+{
+    char *res;
+
+    DBUG_ENTER ("CreateNtTag");
+
+    DBUG_ASSERT ((type != NULL), "No type found!");
+
+    res = (char *)Malloc ((strlen (name) + 20) * sizeof (char));
+
+    sprintf (res, "(%s, (%s, (%s,)))", name, nt_data_string[GetDataClassFromTypes (type)],
+             nt_unq_string[GetUnqClassFromTypes (type)]);
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   data_class_t GetDataClassFromTypes( types *type)
  *
  * description:
  *   Returns the Data Class of an object (usually an array) from its type.
@@ -23,11 +54,11 @@
  ******************************************************************************/
 
 data_class_t
-GetClassFromTypes (types *type)
+GetDataClassFromTypes (types *type)
 {
     data_class_t z;
 
-    DBUG_ENTER ("GetClassFromTypes");
+    DBUG_ENTER ("GetDataClassFromTypes");
 
     DBUG_ASSERT ((type != NULL), "No type found!");
 
@@ -64,7 +95,7 @@ GetClassFromTypes (types *type)
 /******************************************************************************
  *
  * function:
- *   unq_class_t GetUnqFromTypes( types *type)
+ *   unq_class_t GetUnqClassFromTypes( types *type)
  *
  * description:
  *   Returns the Uniqueness Class of an object (usually an array) from
@@ -73,11 +104,11 @@ GetClassFromTypes (types *type)
  ******************************************************************************/
 
 unq_class_t
-GetUnqFromTypes (types *type)
+GetUnqClassFromTypes (types *type)
 {
     unq_class_t z;
 
-    DBUG_ENTER ("GetUniFromTypes");
+    DBUG_ENTER ("GetUnqClassFromTypes");
 
     DBUG_ASSERT ((type != NULL), "No type found!");
 

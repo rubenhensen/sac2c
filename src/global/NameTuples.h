@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/06/02 21:42:42  dkr
+ * symbols renamed
+ *
  * Revision 3.2  2002/05/31 17:17:38  dkr
  * functions now in NameTuplesUtils.h
  *
@@ -21,10 +24,10 @@
 /*
  * The following defines indicate the position of tags
  * within name tuples. They should be kept in synch with the
- * NAME_NAME, NAME_CLASS and NAME_UNI macros in sac_std.h
+ * NT_NAME, NT_DATA and NT_UNQ macros in sac_std.h
  */
 #define NT_NAME_INDEX 0
-#define NT_CLASS_INDEX 1
+#define NT_DATA_INDEX 1
 #define NT_UNQ_INDEX 2
 
 /*
@@ -45,9 +48,9 @@ typedef enum {
 
 /*
  * These character arrays are the macro-name-parts used to select
- * array class and array uniqueness properties.
+ * data class and uniqueness class properties.
  */
-extern char *nt_class_string[];
+extern char *nt_data_string[];
 extern char *nt_unq_string[];
 
 #endif /* _NameTuples_h_ */
