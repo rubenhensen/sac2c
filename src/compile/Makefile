@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.31  1997/11/20 19:19:17  dkr
+# make clean now removes Old2NewWith.o
+#
 # Revision 1.30  1997/11/20 15:02:09  dkr
 # make deps done
 #
@@ -135,7 +138,7 @@ deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) profile.o compile.o icm2c.o precompile.o libsac.a libsac.o  \
+	$(RM) profile.o compile.o icm2c.o precompile.o libsac.a libsac.o Old2NewWith.o \
               *.bak BEtest *.sib *.sac
 
 
