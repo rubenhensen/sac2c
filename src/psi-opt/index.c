@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2004/11/27 00:49:54  jhb
+ * included LiftArg from tree_compound.c
+ *
  * Revision 3.64  2004/11/26 18:15:20  skt
  * renamed prefix IDX into IVE
  *
@@ -809,6 +812,72 @@ static int ive_op;
  * -->
  * @{
  */
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *LiftArg( node *arg, node *fundef, types *new_type, bool do_rc,
+ *                  node **new_assigns)
+ *
+ * Description:
+ *   Lifts the given argument of a function application:
+ *    - Generates a new and fresh varname.
+ *    - Generates a new vardec and inserts it into the vardec chain of 'fundef'.
+ *      If 'new_type' is not NULL, 'new_type' is used as VARDEC_TYPE instead
+ *      of ID_TYPE(arg).
+ *    - Builds a new assignment and inserts it into the assignment chain
+ *      'new_assigns'.
+ *    - Returns the new argument.
+ *
+ ******************************************************************************/
+
+node *
+LiftArg (node *arg, node *fundef, types *new_type, node **new_assigns)
+{
+    char *new_name;
+    node *new_vardec;
+    node *new_arg;
+    node *new_ids;
+    node *avis;
+
+    DBUG_ENTER ("LiftArg");
+
+    if (NODE_TYPE (arg) == N_id) {
+        new_name = ILIBtmpVarName (ID_NAME (arg));
+        /* Insert vardec for new var */
+        if (new_type == NULL) {
+            new_type = ID_TYPE (arg);
+        }
+    } else {
+        new_name = ILIBtmpVar ();
+        DBUG_ASSERT ((new_type != NULL), "no type found!");
+    }
+
+    avis = TBmakeAvis (new_name, NULL);
+
+    new_vardec = TBmakeVardec (avis, NULL);
+
+    VARDEC_TYPE (new_vardec) = DUPdupAllTypes (new_type);
+
+    fundef = TCaddVardecs (fundef, new_vardec);
+
+    /*
+     * Abstract the given argument out:
+     *   ... = fun( A, ...);
+     * is transformed into
+     *   __A = A;
+     *   ... = fun( __A, ...);
+     */
+    new_ids = TBmakeIds (avis, NULL);
+
+    IDS_DECL (new_ids) = new_vardec;
+
+    (*new_assigns) = TBmakeAssign (TBmakeLet (new_ids, arg), (*new_assigns));
+
+    new_arg = TBmakeId (avis);
+
+    DBUG_RETURN (new_arg);
+}
 
 /** <!--********************************************************************-->
  *
@@ -2116,14 +2185,14 @@ IVEprf (node *arg_node, info *arg_info)
             if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_prf) {
 #ifdef MWE_NTYPE_READY
                 PRF_ARG1 (arg_node)
-                  = TCliftArg (PRF_ARG1 (arg_node), INFO_IVE_FUNDEF (arg_info), NULL,
-                               TYmakeSimpleType (T_int), FALSE,
-                               &(INFO_IVE_PRE_ASSIGNS (arg_info)));
+                  = LiftArg (PRF_ARG1 (arg_node), INFO_IVE_FUNDEF (arg_info), NULL,
+                             TYmakeSimpleType (T_int), FALSE,
+                             &(INFO_IVE_PRE_ASSIGNS (arg_info)));
 #else
                 PRF_ARG1 (arg_node)
-                  = TCliftArg (PRF_ARG1 (arg_node), INFO_IVE_FUNDEF (arg_info),
-                               TBmakeTypes1 (T_int), FALSE,
-                               &(INFO_IVE_PRE_ASSIGNS (arg_info)));
+                  = LiftArg (PRF_ARG1 (arg_node), INFO_IVE_FUNDEF (arg_info),
+                             TBmakeTypes1 (T_int), FALSE,
+                             &(INFO_IVE_PRE_ASSIGNS (arg_info)));
 #endif
             }
         } else {
@@ -2170,14 +2239,14 @@ IVEprf (node *arg_node, info *arg_info)
             if (NODE_TYPE (PRF_ARG2 (arg_node)) == N_prf) {
 #ifdef MWE_NTYPE_READY
                 PRF_ARG2 (arg_node)
-                  = TCliftArg (PRF_ARG2 (arg_node), INFO_IVE_FUNDEF (arg_info), NULL,
-                               TBmakeSimpleType (T_int), FALSE,
-                               &(INFO_IVE_PRE_ASSIGNS (arg_info)));
+                  = LiftArg (PRF_ARG2 (arg_node), INFO_IVE_FUNDEF (arg_info), NULL,
+                             TBmakeSimpleType (T_int), FALSE,
+                             &(INFO_IVE_PRE_ASSIGNS (arg_info)));
 #else
                 PRF_ARG2 (arg_node)
-                  = TCliftArg (PRF_ARG2 (arg_node), INFO_IVE_FUNDEF (arg_info),
-                               TBmakeTypes1 (T_int), FALSE,
-                               &(INFO_IVE_PRE_ASSIGNS (arg_info)));
+                  = LiftArg (PRF_ARG2 (arg_node), INFO_IVE_FUNDEF (arg_info),
+                             TBmakeTypes1 (T_int), FALSE,
+                             &(INFO_IVE_PRE_ASSIGNS (arg_info)));
 #endif
             }
         } else {
