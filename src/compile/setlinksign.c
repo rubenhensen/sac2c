@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/12/07 17:45:59  sah
+ * fixed bug
+ *
  * Revision 1.1  2004/11/29 14:40:57  sah
  * Initial revision
  *
@@ -101,6 +104,10 @@ SLSfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
