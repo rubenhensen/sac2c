@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2003/03/25 14:52:51  sbs
+ * EqTypes doxigenized.
+ *
  * Revision 3.35  2003/03/25 14:32:51  sbs
  * FindVect made doxygen conform.
  *
@@ -162,7 +165,8 @@
  *    which will trigger the elimination of them.
  */
 
-/*
+/**
+ *
  * @file index.c
  *
  * This file contains the implementation of IVE (index vector elimination).
@@ -641,19 +645,19 @@ FindVect (node *chain)
     DBUG_RETURN (chain);
 }
 
-/*
+/**
  *
- *  functionname  : EqTypes
- *  arguments     : 1) types * type1
- *                  2) types * type2
- *  description   : compares two types with respect to the shape and
- *                  returnes 1 iff the types are equal, 0 otherwise.
- *                  in case of UDFs the implementation-type is compared!!
- *                  (This is implemented by using Type2Shpseg!)
+ * @fn  bool EqTypes( types *type1, types *type2)
  *
- *  remarks       : this is a helper function needed from FindIdx only!
+ * description:
+ *   @brief  compares two types with respect to the shape.
+ *           In case of UDFs the implementation-type is compared.
+ *           This is a helper function needed from FindIdx only!
+ *   @param  type1
+ *   @param  type2
+ *   @return 1 iff the types are equal, 0 otherwise
  *
- */
+ ******************************************************************************/
 
 bool
 EqTypes (types *type1, types *type2)
