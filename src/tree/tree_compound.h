@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2000/03/31 14:09:47  dkr
+ * NWITH_OR_NWITH2_... macros added
+ *
  * Revision 1.12  2000/03/23 21:39:26  dkr
  * macros VARDEC_OR_ARG_ATTRIB and VARDEC_OR_ARG_STATUS added
  *
@@ -897,7 +900,7 @@ extern node *FindVardec_Varno (int varno, node *fundef);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_vardec / N_arg :
+ ***  N_vardec : / N_arg :
  ***/
 
 /*
@@ -1385,6 +1388,25 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
 
 #define NWITH2_TYPE(n) (NWITHOP_TYPE (NWITH2_WITHOP (n)))
 #define NWITH2_VEC(n) (NWITHID_VEC (NWITH2_WITHID (n)))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Nwith : / N_Nwith2 :
+ ***/
+
+#define NWITH_OR_NWITH2_TYPE(n)                                                          \
+    ((NODE_TYPE (n) == N_Nwith) ? NWITH_TYPE (n) : NWITH2_TYPE (n))
+#define NWITH_OR_NWITH2_VEC(n)                                                           \
+    ((NODE_TYPE (n) == N_Nwith) ? NWITH_VEC (n) : NWITH2_VEC (n))
+
+#define NWITH_OR_NWITH2_IN(n) ((NODE_TYPE (n) == N_Nwith) ? NWITH_IN (n) : NWITH2_IN (n))
+#define NWITH_OR_NWITH2_INOUT(n)                                                         \
+    ((NODE_TYPE (n) == N_Nwith) ? NWITH_INOUT (n) : NWITH2_INOUT (n))
+#define NWITH_OR_NWITH2_OUT(n)                                                           \
+    ((NODE_TYPE (n) == N_Nwith) ? NWITH_OUT (n) : NWITH2_OUT (n))
+#define NWITH_OR_NWITH2_LOCAL(n)                                                         \
+    ((NODE_TYPE (n) == N_Nwith) ? NWITH_LOCAL (n) : NWITH2_LOCAL (n))
 
 /*--------------------------------------------------------------------------*/
 
