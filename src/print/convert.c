@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  1998/11/09 18:44:41  sbs
+ * ...size changed to 266 humble humble....
+ *
  * Revision 1.22  1998/11/09 17:44:14  sbs
  * Float2String and Double2String patched:
  * Now 260 byte are allocated rather than 256;
@@ -133,7 +136,10 @@ Float2String (float val)
 
     DBUG_ENTER ("Float2String");
 
-    tmp_string = (char *)Malloc (sizeof (char) * 260);
+    tmp_string = (char *)Malloc (sizeof (char) * 267);
+    /*
+     * 256 chars + "." + "e+1000" + ".0f" + "\0" = 267
+     */
     if (val == floor (val))
         sprintf (tmp_string, "%.256g.0f", val);
     else
@@ -163,7 +169,10 @@ Double2String (double val)
 
     DBUG_ENTER ("Double2String");
 
-    tmp_string = (char *)Malloc (sizeof (char) * 260);
+    tmp_string = (char *)Malloc (sizeof (char) * 266);
+    /*
+     * 256 chars + "." + "e+1000" + ".0" + "\0" = 266
+     */
     if (val == floor (val))
         sprintf (tmp_string, "%.256g.0", val);
     else
