@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 2.12  1999/07/08 15:41:12  cg
+# Sequence of src directories modifified in order to enable
+# compilation after gmake clean.
+#
 # Revision 2.11  1999/07/08 12:45:46  cg
 # Added making of new source directories src/tools and src/libsac.
 #
@@ -299,8 +303,8 @@ dummy:
 	(cd src/compile; $(MAKE_NORM) )
 	(cd src/psi-opt; $(MAKE_NORM) )
 	(cd src/libsac; $(MAKE_PROD) )
-	(cd src/tools; $(MAKE_PROD) )
 	(cd src/runtime; $(MAKE_NORM) )
+	(cd src/tools; $(MAKE_PROD) )
 #
 # $(MAKE_PROD) is used in the above lines by purpose in order to compile
 # the SAC runtime library and the additional tool with full optimizations
@@ -324,8 +328,8 @@ prod:
 	(cd src/compile; $(MAKE_PROD) )
 	(cd src/psi-opt; $(MAKE_PROD) )
 	(cd src/libsac; $(MAKE_PROD) )
-	(cd src/tools; $(MAKE_PROD) )
 	(cd src/runtime; $(MAKE_PROD) )
+	(cd src/tools; $(MAKE_PROD) )
 
 sac2c: $(OBJ) $(LIB)
 	$(CC) $(CCFLAGS) $(CFLAGS) -o sac2c $(OBJ) $(LIB) $(LIBS)
@@ -350,9 +354,9 @@ deps:
 	(cd src/concurrent; $(MAKE) deps)
 	(cd src/compile; $(MAKE) deps)
 	(cd src/psi-opt; $(MAKE) deps)
-	(cd src/runtime; $(MAKE) deps)
 	(cd src/libsac; $(MAKE) deps)
 	(cd src/tools; $(MAKE) deps)
+	(cd src/runtime; $(MAKE) deps)
 
 clean:
 	(cd lib/src; $(MAKE) clean)
@@ -368,9 +372,9 @@ clean:
 	(cd src/concurrent; $(MAKE) clean)
 	(cd src/compile; $(MAKE) clean )
 	(cd src/psi-opt; $(MAKE) clean)
-	(cd src/runtime; $(MAKE) clean)
 	(cd src/libsac; $(MAKE) clean)
 	(cd src/tools; $(MAKE) clean)
+	(cd src/runtime; $(MAKE) clean)
 	$(RM) sac2c
 	$(RM) sac2c.efence
 	$(RM) -r .sb
