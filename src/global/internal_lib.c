@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2004/11/07 16:10:51  ktr
+ * added -o parameter to CPP syscall.
+ *
  * Revision 3.61  2004/11/07 14:31:34  ktr
  * CreateCppCallString now needs a third parameter for the temporary file
  * created in /tmp that is used for CPP's output.
@@ -1084,7 +1087,7 @@ CreateCppCallString (char *file, char *cccallstr, char *cppfile)
         strcat (cccallstr, file);
     }
 
-    strcat (cccallstr, " ");
+    strcat (cccallstr, " -o ");
     strcat (cccallstr, cppfile);
 
     DBUG_VOID_RETURN;
