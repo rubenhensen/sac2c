@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/03/24 13:49:23  cg
+ * New prefix for libsac symbols:
+ * _SAC_ instead of __SAC__Runtime_
+ *
  * Revision 1.4  1996/01/21 18:06:51  cg
  * Now, string arguments of icms are printed correctly when traced
  *
@@ -21,29 +25,29 @@
 #define SEP                                                                              \
     if (sep) {                                                                           \
         INDENT;                                                                          \
-        fprintf (outfile, "__SAC__Runtime_Print( \", \");\n");                           \
+        fprintf (outfile, "_SAC_Print( \", \");\n");                                     \
     }
 
 #define ICM_DEF(prf, trf)                                                                \
     if (trf & traceflag) {                                                               \
         int sep = 0;                                                                     \
         INDENT;                                                                          \
-        fprintf (outfile, "__SAC__Runtime_Print( \"%s( \");\n", #prf);
+        fprintf (outfile, "_SAC_Print( \"%s( \");\n", #prf);
 
 #define ICM_STR(name)                                                                    \
     SEP;                                                                                 \
     INDENT;                                                                              \
     if (name[0] == '"') {                                                                \
-        fprintf (outfile, "__SAC__Runtime_Print( %s );\n", name);                        \
+        fprintf (outfile, "_SAC_Print( %s );\n", name);                                  \
     } else {                                                                             \
-        fprintf (outfile, "__SAC__Runtime_Print( \"%s \");\n", name);                    \
+        fprintf (outfile, "_SAC_Print( \"%s \");\n", name);                              \
     }                                                                                    \
     sep = 1;
 
 #define ICM_INT(name)                                                                    \
     SEP;                                                                                 \
     INDENT;                                                                              \
-    fprintf (outfile, "__SAC__Runtime_Print( \"%d \");\n", name);                        \
+    fprintf (outfile, "_SAC_Print( \"%d \");\n", name);                                  \
     sep = 1;
 
 #define ICM_VAR(dim, name)                                                               \
@@ -53,9 +57,9 @@
             SEP;                                                                         \
             INDENT;                                                                      \
             if (name[i][0] == '"') {                                                     \
-                fprintf (outfile, "__SAC__Runtime_Print( \"\\%s\"\\\"\" );\n", name[i]); \
+                fprintf (outfile, "_SAC_Print( \"\\%s\"\\\"\" );\n", name[i]);           \
             } else {                                                                     \
-                fprintf (outfile, "__SAC__Runtime_Print( \"%s \");\n", name[i]);         \
+                fprintf (outfile, "_SAC_Print( \"%s \");\n", name[i]);                   \
             }                                                                            \
             sep = 1;                                                                     \
         }                                                                                \
@@ -63,7 +67,7 @@
 
 #define ICM_END(prf)                                                                     \
     INDENT;                                                                              \
-    fprintf (outfile, "__SAC__Runtime_Print( \")\\n\");\n");                             \
+    fprintf (outfile, "_SAC_Print( \")\\n\");\n");                                       \
     }                                                                                    \
     ;
 
