@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2000/06/13 14:18:11  dkr
+ * macros L_NWITH_OR_NWITH2_... added
+ *
  * Revision 1.17  2000/05/30 14:31:44  dkr
  * redundant macro APPEND_VARDECS removed
  *
@@ -1681,6 +1684,34 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
     ((NODE_TYPE (n) == N_Nwith) ? NWITH_OUT (n) : NWITH2_OUT (n))
 #define NWITH_OR_NWITH2_LOCAL(n)                                                         \
     ((NODE_TYPE (n) == N_Nwith) ? NWITH_LOCAL (n) : NWITH2_LOCAL (n))
+
+#define L_NWITH_OR_NWITH2_IN(n, rhs)                                                     \
+    if (NODE_TYPE (n) == N_Nwith) {                                                      \
+        NWITH_IN (n) = (rhs);                                                            \
+    } else {                                                                             \
+        NWITH2_IN (n) = (rhs);                                                           \
+    }
+
+#define L_NWITH_OR_NWITH2_INOUT(n, rhs)                                                  \
+    if (NODE_TYPE (n) == N_Nwith) {                                                      \
+        NWITH_INOUT (n) = (rhs);                                                         \
+    } else {                                                                             \
+        NWITH2_INOUT (n) = (rhs);                                                        \
+    }
+
+#define L_NWITH_OR_NWITH2_OUT(n, rhs)                                                    \
+    if (NODE_TYPE (n) == N_Nwith) {                                                      \
+        NWITH_OUT (n) = (rhs);                                                           \
+    } else {                                                                             \
+        NWITH2_OUT (n) = (rhs);                                                          \
+    }
+
+#define L_NWITH_OR_NWITH2_LOCAL(n, rhs)                                                  \
+    if (NODE_TYPE (n) == N_Nwith) {                                                      \
+        NWITH_LOCAL (n) = (rhs);                                                         \
+    } else {                                                                             \
+        NWITH2_LOCAL (n) = (rhs);                                                        \
+    }
 
 /*--------------------------------------------------------------------------*/
 
