@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.24  2000/07/05 12:23:56  dkr
+ * comment corrected
+ *
  * Revision 1.23  2000/06/30 13:48:44  mab
  * added Array2Shpseg and DiffShpseg
  *
@@ -1612,7 +1615,7 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  N_Npart:
+ ***  N_Npart :
  ***/
 
 #define NPART_IDS(n) (NWITHID_IDS (NPART_WITHID (n)))
