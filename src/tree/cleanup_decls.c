@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/28 17:44:14  ktr
+ * DBUG_ASSERT corrected.
+ *
  * Revision 1.7  2004/11/25 12:19:31  skt
  * big compiler switch during SACDevCampDK 2k4
  *
@@ -127,7 +130,7 @@ CUDids (node *arg_node, info *arg_info)
     DBUG_ENTER ("CUDids");
 
     if (INFO_CUD_REF (arg_info) != NULL) {
-        DBUG_ASSERT ((IDS_AVIS (arg_node) == NULL),
+        DBUG_ASSERT ((AVIS_DECL (IDS_AVIS (arg_node)) != NULL),
                      "Variable declaration missing! "
                      "CleanupDecls() can be used after type checking only!");
         DFMsetMaskEntryClear (INFO_CUD_REF (arg_info), NULL, IDS_AVIS (arg_node));
