@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.30  2000/11/15 20:05:28  sbs
+ * FindIdInSeg could not handlw seg_sz=0 && seg==NULL properly;
+ * Now, it can!
+ *
  * Revision 2.29  2000/10/31 23:30:43  dkr
  * nothing changed
  *
@@ -408,12 +412,16 @@ FindIdInSeg (char *name, int seg_sz, local_stack *seg)
 
     DBUG_ENTER ("FindIdInSeg");
 
-    tmp = &seg[seg_sz - 1];
-    while ((tmp >= seg) && (strcmp (tmp->id_old, name) != 0)) {
-        tmp--;
+    if (seg_sz == 0) {
+        tmp = NULL;
+    } else {
+        tmp = &seg[seg_sz - 1];
+        while ((tmp >= seg) && (strcmp (tmp->id_old, name) != 0)) {
+            tmp--;
+        }
     }
 
-    if (tmp < seg) {
+    if ((tmp < seg) || (seg_sz == 0)) {
         tmp = NULL;
         DBUG_PRINT ("RENAME", ("var %s not found!", name));
     } else {
