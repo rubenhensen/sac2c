@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.5  2000/12/12 11:43:45  dkr
+ * NWITH2_IN renamed into NWITH2_IN_MASK
+ * NWITH2_INOUT removed
+ *
  * Revision 3.4  2000/11/29 13:06:56  dkr
  * no warnigns '... might be used uninitialized' anymore
  *
@@ -6231,10 +6235,9 @@ WLTRAwith (node *arg_node, node *arg_info)
                                NWITH_WITHOP (arg_node), wl_dims);
 
         NWITH2_DEC_RC_IDS (new_node) = NWITH_DEC_RC_IDS (arg_node);
-        NWITH2_IN (new_node) = NWITH_IN (arg_node);
-        NWITH2_INOUT (new_node) = NWITH_INOUT (arg_node);
-        NWITH2_OUT (new_node) = NWITH_OUT (arg_node);
-        NWITH2_LOCAL (new_node) = NWITH_LOCAL (arg_node);
+        NWITH2_IN_MASK (new_node) = NWITH_IN_MASK (arg_node);
+        NWITH2_OUT_MASK (new_node) = NWITH_OUT_MASK (arg_node);
+        NWITH2_LOCAL_MASK (new_node) = NWITH_LOCAL_MASK (arg_node);
 
         /*
          * withid, code, withop and IN/INOUT/OUT/LOCAL are overtaken to the Nwith2-tree
@@ -6248,10 +6251,8 @@ WLTRAwith (node *arg_node, node *arg_info)
         NWITH_WITHOP (arg_node) = NULL;
 
         NWITH_DEC_RC_IDS (arg_node) = NULL;
-        NWITH_IN (arg_node) = NULL;
-        NWITH_INOUT (arg_node) = NULL;
-        NWITH_OUT (arg_node) = NULL;
-        NWITH_LOCAL (arg_node) = NULL;
+        NWITH_IN_MASK (arg_node) = NULL;
+        NWITH_LOCAL_MASK (arg_node) = NULL;
 
         if (WL_break_after >= WL_PH_cubes) {
             /*
