@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.126  2004/08/07 09:32:57  ktr
+ * fixed emm bug in COMPIdFromUnique
+ *
  * Revision 3.125  2004/08/06 13:12:58  ktr
  * COMPIdToUnq works entirely different in EMM
  *
@@ -3696,7 +3699,7 @@ COMPIdFromUnique (node *arg_node, info *arg_info)
                                                         FALSE, NULL)),
                             MakeId_Copy (GenericFun (0, ID_TYPE (arg_node))),
                             MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                             IDS_REFCNT (let_ids), NULL));
+                                             (emm ? 1 : IDS_REFCNT (let_ids)), NULL));
     }
 
     DBUG_RETURN (ret_node);
