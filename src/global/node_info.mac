@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.140  1997/11/25 11:02:10  srs
+ * All my future changes (with no RCS-comments) will modify the new
+ * WL-nodes
+ *
  * Revision 1.139  1997/11/25 10:35:25  dkr
  * CompNWith inserted
  *
@@ -763,39 +767,41 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    * here comes the node information for the NEW withloops. All identifyers
    * use an additional N (for NEW) at the beginning to destinguish them from the
    * old withloops.
-   * E.g. N_Nwith for the main node or NRCwith for a RC-function.
+   * E.g. N_Nwith for the main node or RCNwith for a RC-function.
    *
    * exceptions are listed here:
    *
    */
 
-  NIF (N_Nwith, "N_Nwith", NoTrav, NoTrav, PrintNWith, NoTrav, NoTrav, NoTrav, NoTrav,
+  NIF (N_Nwith, "N_Nwith", NoTrav, FltnNwith, PrintNWith, NoTrav, NoTrav, NoTrav, NoTrav,
        FreeNWith, NoTrav, NoTrav, CompNWith, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
        NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
        NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, 3),
 
-  NIF (N_Npart, "N_Npart", NoTrav, NoTrav, PrintNPart, NoTrav, NoTrav, NoTrav, NoTrav,
+  NIF (N_Npart, "N_Npart", NoTrav, FltnNpart, PrintNPart, NoTrav, NoTrav, NoTrav, NoTrav,
        FreeNPart, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
        NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
        NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, 3),
 
-  NIF (N_Nwithid, "N_Nwithid", NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       FreeNWithID, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
+  NIF (N_Nwithid, "N_Nwithid", NoTrav, FltnNwithid, NoTrav, NoTrav, NoTrav, NoTrav,
+       NoTrav, FreeNWithID, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
        NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, 0),
+       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
+       NoTrav, 0),
 
-  NIF (N_Ngenerator, "N_Ngenerator", NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, FreeNGenerator, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
+  NIF (N_Ngenerator, "N_Ngenerator", NoTrav, FltnNgenerator, NoTrav, NoTrav, NoTrav,
+       NoTrav, NoTrav, FreeNGenerator, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
        NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
        NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, 6),
+       NoTrav, NoTrav, 6),
 
-  NIF (N_Nwithop, "N_Nwithop", NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       FreeNWithOp, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
+  NIF (N_Nwithop, "N_Nwithop", NoTrav, FltnNwithop, NoTrav, NoTrav, NoTrav, NoTrav,
+       NoTrav, FreeNWithOp, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
        NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
-       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, 1),
+       NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
+       NoTrav, 1),
 
-  NIF (N_Ncode, "N_Ncode", NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
+  NIF (N_Ncode, "N_Ncode", NoTrav, FltnNcode, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
        FreeNCode, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
        NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
        NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, 3),
