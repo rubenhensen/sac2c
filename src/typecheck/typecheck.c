@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2004/10/05 13:50:25  sah
+ * added some defines for NEW_AST mode
+ *
  * Revision 3.60  2004/07/31 13:44:44  sah
  * removed function MakeNCodeExprs. Instead, MakeNCode now expects
  * an exprs node as its second argument!
@@ -379,6 +382,8 @@ typedef struct FUN_TAB_ELEM {
     struct FUN_TAB_ELEM *next; /* next fun_tab_elem node */
 } fun_tab_elem;
 
+#ifndef NEW_AST
+
 static node *pseudo_fold_fundefs;
 
 /*
@@ -401,10 +406,13 @@ static types *TI_Nfoldfun (node *arg_node, types *body_type, types *neutral,
 static fun_tab_elem *DoConstantPropagation (fun_tab_elem *fun_p, nodelist *propas);
 static fun_tab_elem *TryConstantPropagation (fun_tab_elem *fun_p, node *args);
 
+#endif /* NEW_AST */
+
 /* some local variables */
 static type_tab_elem *type_table = NULL; /* table for typedefs */
 static int type_tab_size = 0;            /* size of type table */
 
+#ifndef NEW_AST
 static stack_elem *stack = NULL, /* bottom of stack */
   *tos = NULL,                   /* top of stack */
     *act_frame = NULL,           /* bottom of variables
@@ -415,6 +423,8 @@ static fun_tab_elem *fun_table; /* (bottom of) table of known functions  */
 
 static node *object_table; /* entry point to global object definitions  */
                            /* is set in function typecheck              */
+
+#endif /* NEW_AST */
 
 static int imported_fun; /* is used to check whether to look behind a "hidden"
                           * type or not (look macros IMPORTED, etc.)
@@ -492,6 +502,8 @@ Types2Array (types *type, types *res_type)
 
     DBUG_RETURN (shape_array);
 }
+
+#ifndef NEW_AST
 
 /******************************************************************************
  *
@@ -1245,6 +1257,8 @@ LookupObject (char *name, char *mod, int line)
     DBUG_RETURN (found);
 }
 
+#endif /* NEW_AST */
+
 /******************************************************************************
  *
  * Function:
@@ -1259,15 +1273,19 @@ LookupObject (char *name, char *mod, int line)
 node *
 LookupType (char *type_name, char *mod_name, int line)
 {
-    int i, defined;
-    node *ret_node = NULL;
+#ifndef NEW_AST
+    int defined;
     mods *mods[2];
+#endif /* NEW_AST */
+    int i;
+    node *ret_node = NULL;
 
     DBUG_ENTER ("LookupType");
 
     DBUG_ASSERT ((type_name != NULL), "No type name found to look up!");
 
     if (NULL != mod_name) {
+#ifndef NEW_AST
         if (0 != strcmp (mod_name, (NULL != module_name ? module_name : ""))) {
             /* now look for the module where the type is defined */
 
@@ -1322,6 +1340,7 @@ LookupType (char *type_name, char *mod_name, int line)
                 break;
             }
         }
+#endif /* NEW_AST */
     } else {
         for (i = 0; i < type_tab_size; i++) {
             if (!strcmp (type_name, TYPEDEF_NAME ((type_table + i)->node))) {
@@ -1337,6 +1356,8 @@ LookupType (char *type_name, char *mod_name, int line)
 
     DBUG_RETURN (ret_node);
 }
+
+#ifndef NEW_AST
 
 /*
  *
@@ -3111,6 +3132,8 @@ Typecheck (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
+#endif /* NEW_AST */
+
 /*
  *
  *  functionname  : CmpTypes
@@ -3282,6 +3305,8 @@ CmpTypes (types *type_one, types *type_two)
 
     DBUG_RETURN (return_value);
 }
+
+#ifndef NEW_AST
 
 /*
  *
@@ -7835,3 +7860,5 @@ TCCPid (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#endif /* NEW_AST */

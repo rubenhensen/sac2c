@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/10/05 13:49:35  sah
+ * added some defines for NEW_AST mode
+ *
  * Revision 3.12  2004/07/21 12:46:12  khf
  * set flag FUNDEF_INLINE true
  *
@@ -95,6 +98,8 @@
  **
  **/
 
+#ifndef NEW_AST
+
 /******************************************************************************
  *
  * function:
@@ -183,6 +188,8 @@ CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_v
 
     DBUG_RETURN (new_fundef);
 }
+
+#endif /* NEW_AST */
 
 /**
  **

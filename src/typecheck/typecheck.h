@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/10/05 13:50:25  sah
+ * added some defines for NEW_AST mode
+ *
  * Revision 3.6  2002/02/20 14:33:34  dkr
  * function DupTypes() renamed into DupAllTypes()
  *
@@ -84,6 +87,8 @@ typedef enum {
 
 #undef CMP_T
 
+#ifndef NEW_AST
+
 extern node *Typecheck (node *arg_node);
 extern node *TCfundef (node *arg_node, node *arg_info);
 extern node *TClet (node *arg_node, node *arg_info);
@@ -100,16 +105,18 @@ extern node *TCNcode (node *arg_node, node *arg_info);
 extern types *TI_array (node *arg_node, node *arg_info);
 extern types *TypeInference (node *arg_node, node *arg_info);
 
-extern node *Types2Array (types *type, types *res_type);
-extern node *LookupType (char *type_name, char *mod_name, int line);
-extern cmp_types CmpTypes (types *type_one, types *type_two);
-
 extern node *TCCPfundef (node *arg_node, node *arg_info);
 extern node *TCCPblock (node *arg_node, node *arg_info);
 extern node *TCCPassign (node *arg_node, node *arg_info);
 extern node *TCCPlet (node *arg_node, node *arg_info);
 extern node *TCCPnwithop (node *arg_node, node *arg_info);
 extern node *TCCPid (node *arg_node, node *arg_info);
+
+#endif /* NEW_AST */
+
+extern node *Types2Array (types *type, types *res_type);
+extern node *LookupType (char *type_name, char *mod_name, int line);
+extern cmp_types CmpTypes (types *type_one, types *type_two);
 
 /* some global variables */
 extern file_type kind_of_file; /* to distinguish between compilation of a

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2004/10/05 13:50:05  sah
+ * added some defines for NEW_AST mode
+ *
  * Revision 3.46  2004/09/27 16:28:54  sah
  * fixed the errorneous use of accidently copied types during specialization
  *
@@ -237,6 +240,7 @@ NewTypeCheck (node *arg_node)
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
                  "NewTypeCheck() not called with N_modul node!");
 
+#ifndef NEW_AST
     /*
      * if compiling for a c library, search for specializations
      * of functions and integrate them.
@@ -248,6 +252,7 @@ NewTypeCheck (node *arg_node)
     if (generatelibrary & GENERATELIBRARY_C) {
         arg_node = ImportSpecialization (arg_node);
     }
+#endif
 
     tmp_tab = act_tab;
     act_tab = ntc_tab;
