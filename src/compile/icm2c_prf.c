@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2003/09/30 00:03:25  dkr
+ * unused variables removed
+ *
  * Revision 1.8  2003/09/30 00:02:13  dkr
  * definition of ND_PRF_RESHAPE__SHAPE_id simplified: uses
  * ND_SET__SHAPE_id now
@@ -259,10 +262,6 @@ ICMCompileND_PRF_SHAPE__DATA (char *to_NT, int to_sdim, char *from_NT, int from_
 void
 ICMCompileND_PRF_RESHAPE__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT)
 {
-    int i;
-    shape_class_t to_sc = ICUGetShapeClass (to_NT);
-    int to_dim = DIM_NO_OFFSET (to_sdim);
-
     DBUG_ENTER ("ICMCompileND_PRF_RESHAPE__SHAPE_id");
 
 #define ND_PRF_RESHAPE__SHAPE_id
