@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2003/09/16 18:19:11  ktr
+ * Added support for AVIS_WITHID
+ *
  * Revision 3.72  2003/09/11 15:26:17  sbs
  * FUNDEF_SPECS added.
  *
@@ -1856,6 +1859,15 @@ MakeNWithid (ids *vec, ids *scalars)
 
     NWITHID_VEC (tmp) = vec;
     NWITHID_IDS (tmp) = scalars;
+
+    if (IDS_AVIS (vec) != NULL)
+        AVIS_WITHID (IDS_AVIS (vec)) = tmp;
+
+    while (scalars != NULL) {
+        if (IDS_AVIS (scalars) != NULL)
+            AVIS_WITHID (IDS_AVIS (scalars)) = tmp;
+        scalars = IDS_NEXT (scalars);
+    }
 
     DBUG_RETURN (tmp);
 }

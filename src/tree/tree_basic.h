@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.169  2003/09/16 18:19:11  ktr
+ * Added support for AVIS_WITHID
+ *
  * Revision 3.168  2003/09/11 15:26:06  sbs
  * FUNDEF_SPECS added.
  *
@@ -2443,6 +2446,7 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_SSALPINV(n) ((bool)(n->refcnt))
 #define AVIS_SSASTACK(n) (n->node[4])
 #define AVIS_SSAUNDOFLAG(n) ((bool)(n->counter))
+#define AVIS_WITHID(n) (n->node[5])
 /* used only in ssatransform */
 #define AVIS_SSADEFINED(n) ((bool)(n->int_data))
 #define AVIS_SSATHEN(n) ((node *)(n->dfmask[1]))
@@ -3231,6 +3235,7 @@ extern node *MakeInfo ();
 #define INFO_SSA_CONDSTATUS(n) (n->int_data)
 #define INFO_SSA_ASSIGN(n) (n->node[5])
 #define INFO_SSA_SINGLEFUNDEF(n) ((bool)(n->counter))
+#define INFO_SSA_WITHID(n) ((node *)(n->dfmask[0]))
 
 /* when used in UndoSSATransform.c */
 #define INFO_USSA_ARGS(n) (n->node[0])

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2003/09/16 18:19:11  ktr
+ * Added support for AVIS_WITHID
+ *
  * Revision 3.80  2003/06/11 22:03:09  ktr
  * The shape structure in N_array is now copied.
  *
@@ -2378,6 +2381,8 @@ DupAvis (node *arg_node, node *arg_info)
       = SearchInLUT_PP (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN (arg_node));
     AVIS_SSAASSIGN2 (new_node)
       = SearchInLUT_PP (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN2 (arg_node));
+    AVIS_WITHID (new_node)
+      = SearchInLUT_PP (INFO_DUP_LUT (arg_info), AVIS_WITHID (arg_node));
 
     if (AVIS_SSACONST (arg_node) != NULL) {
         AVIS_SSACONST (new_node) = COCopyConstant (AVIS_SSACONST (arg_node));

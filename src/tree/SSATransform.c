@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2003/09/16 18:19:11  ktr
+ * Added support for AVIS_WITHID
+ *
  * Revision 1.29  2003/06/17 20:27:47  sbs
  * during or prior to TC SSATransform should not generate any types for vardecs
  * => modified SSAMakeVardec accordingly.
@@ -1073,7 +1076,7 @@ SSANcode (node *arg_node, node *arg_info)
  * description:
  *  traverses in vector and ids strutures. because the withids do not have a
  *  defining assignment. we set the current assignment to NULL when processing
- *  these ids.
+ *  these ids. NEW: instead we annotate the current withid
  *
  ******************************************************************************/
 node *
@@ -1086,6 +1089,7 @@ SSANwithid (node *arg_node, node *arg_info)
     /* set current assign to NULL for these special ids */
     assign = INFO_SSA_ASSIGN (arg_info);
     INFO_SSA_ASSIGN (arg_info) = NULL;
+    INFO_SSA_WITHID (arg_info) = arg_node;
 
     if (NWITHID_VEC (arg_node) != NULL) {
         NWITHID_VEC (arg_node) = TravLeftIDS (NWITHID_VEC (arg_node), arg_info);
@@ -1097,6 +1101,7 @@ SSANwithid (node *arg_node, node *arg_info)
 
     /* restore currect assign for further processing */
     INFO_SSA_ASSIGN (arg_info) = assign;
+    INFO_SSA_WITHID (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -1239,6 +1244,7 @@ SSAleftids (ids *arg_ids, node *arg_info)
                             IDS_AVIS (arg_ids)));
 
         AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
+        AVIS_WITHID (IDS_AVIS (arg_ids)) = INFO_SSA_WITHID (arg_info);
 
     } else {
         /* redefinition - create new unique variable/vardec */
@@ -1276,6 +1282,7 @@ SSAleftids (ids *arg_ids, node *arg_info)
             AVIS_SSAUNDOFLAG (IDS_AVIS (arg_ids)) = TRUE;
         }
         AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
+        AVIS_WITHID (IDS_AVIS (arg_ids)) = INFO_SSA_WITHID (arg_info);
     }
 
     /* traverese next ids */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  2003/09/16 18:17:04  ktr
+ * Added support for AVIS_WITHID
+ *
  * Revision 1.34  2003/08/16 08:45:08  ktr
  * Minor bugfixes.
  *
@@ -1493,6 +1496,11 @@ joinCodes (node *outercode, node *innercode, node *outerwithid, node *innerwithi
       = MakeAssignLet (IDS_NAME (newwithid_vec), IDS_VARDEC (newwithid_vec), array);
 
     tmp_node = ASSIGN_NEXT (newcode);
+
+    AVIS_WITHID (IDS_AVIS (ASSIGN_LHS (newcode))) = NULL;
+    AVIS_WITHID (IDS_AVIS (ASSIGN_LHS (tmp_node))) = NULL;
+    AVIS_SSAASSIGN (IDS_AVIS (ASSIGN_LHS (newcode))) = newcode;
+    AVIS_SSAASSIGN (IDS_AVIS (ASSIGN_LHS (tmp_node))) = tmp_node;
 
     /* the old OUTER part's code (if any) */
     ASSIGN_NEXT (tmp_node) = DupTree (BLOCK_INSTR (NCODE_CBLOCK (outercode)));
