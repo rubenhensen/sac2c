@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/01/09 16:15:18  dkr
+ * prototype for function AllStridesAreConstant() added
+ *
  * Revision 3.2  2001/01/09 14:51:35  dkr
  * no changes done
  *
@@ -42,7 +45,8 @@ extern node *WLTRAwith (node *arg_node, node *arg_info);
 extern node *WLTRAcode (node *arg_node, node *arg_info);
 extern node *WLTRAlet (node *arg_node, node *arg_info);
 
-extern int GridOffset (int new_bound1, int bound1, int step, int grid_b2);
+extern bool AllStridesAreConstant (node *wlnode);
 extern node *InsertWLnodes (node *nodes, node *insert_nodes);
+extern int GridOffset (int new_bound1, int bound1, int step, int grid_b2);
 
 #endif /* _sac_wltransform_h */
