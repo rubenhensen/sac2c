@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/08/16 11:58:50  ktr
+ * Inserted some break after default labels.
+ *
  * Revision 3.10  2004/08/13 14:15:03  ktr
  * Fixed a bug in treatment of F_fill which resulted in never traversing
  * the first argument of F_fill.
@@ -528,7 +531,9 @@ ReuseLet (node *arg_node, info *arg_info)
                     arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (EXPRS_EXPR (tmpnode))));
                     traverse = ReuseIdxSel (arg1, arg2, arg_info);
                     break;
+
                 default:
+                    break;
                 }
             }
             break;
@@ -550,6 +555,7 @@ ReuseLet (node *arg_node, info *arg_info)
             break;
 
         default:
+            break;
         }
     }
 
