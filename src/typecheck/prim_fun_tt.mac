@@ -1,8 +1,12 @@
 
 /* $Log$
- * Revision 1.11  1995/12/06 17:04:34  hw
- * added typecheck of primitive function 'genarray'
+ * Revision 1.12  1996/01/25 16:33:11  hw
+ * -changed calls of typechecking-functions, to use them while
+ *  checking primitive functions in modules
  *
+;; Revision 1.11  1995/12/06  17:04:34  hw
+;; added typecheck of primitive function 'genarray'
+;;
 ;; Revision 1.10  1995/09/05  11:06:41  hw
 ;; added macros-calls for typechecking of function 'modarray'
 ;;  with 'double[]' args
@@ -138,20 +142,32 @@ TT2 (166, SxA_F, DOUBLE, INT_A, ConvertType (arg_type[1], T_double))
 TT2 (167, SxA_F, DOUBLE, FLOAT_A, ConvertType (arg_type[1], T_double))
 TT2 (168, SxA_F, DOUBLE, DOUBLE_A, DuplicateTypes (arg_type[1], 0))
 
-TT2 (180, VxA_Ar, INT_A, INT_A, Reshp (arg_node->node[0]->node[0], arg_type[1]))
-TT2 (181, VxA_Ar, INT_A, FLOAT_A, Reshp (arg_node->node[0]->node[0], arg_type[1]))
-TT2 (182, VxA_Ar, INT_A, DOUBLE_A, Reshp (arg_node->node[0]->node[0], arg_type[1]))
-TT2 (183, VxA_Ar, INT_A, BOOL_A, Reshp (arg_node->node[0]->node[0], arg_type[1]))
+TT2 (180, VxA_Ar, INT_A, INT_A,
+     Reshp (arg_node->node[0]->node[0], arg_type[1], arg_type[0]))
+TT2 (181, VxA_Ar, INT_A, FLOAT_A,
+     Reshp (arg_node->node[0]->node[0], arg_type[1], arg_type[0]))
+TT2 (182, VxA_Ar, INT_A, DOUBLE_A,
+     Reshp (arg_node->node[0]->node[0], arg_type[1], arg_type[0]))
+TT2 (183, VxA_Ar, INT_A, BOOL_A,
+     Reshp (arg_node->node[0]->node[0], arg_type[1], arg_type[0]))
 
-TT2 (190, VxA_At, INT_A, INT_A, TakeV (arg_node->node[0]->node[0], arg_type[1]))
-TT2 (191, VxA_At, INT_A, FLOAT_A, TakeV (arg_node->node[0]->node[0], arg_type[1]))
-TT2 (192, VxA_At, INT_A, BOOL_A, TakeV (arg_node->node[0]->node[0], arg_type[1]))
-TT2 (193, VxA_At, INT_A, DOUBLE_A, TakeV (arg_node->node[0]->node[0], arg_type[1]))
+TT2 (190, VxA_At, INT_A, INT_A,
+     TakeV (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
+TT2 (191, VxA_At, INT_A, FLOAT_A,
+     TakeV (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
+TT2 (192, VxA_At, INT_A, BOOL_A,
+     TakeV (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
+TT2 (193, VxA_At, INT_A, DOUBLE_A,
+     TakeV (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
 
-TT2 (200, VxA_Ad, INT_A, INT_A, DropV (arg_node->node[0]->node[0], arg_type[1]))
-TT2 (201, VxA_Ad, INT_A, FLOAT_A, DropV (arg_node->node[0]->node[0], arg_type[1]))
-TT2 (202, VxA_Ad, INT_A, BOOL_A, DropV (arg_node->node[0]->node[0], arg_type[1]))
-TT2 (203, VxA_Ad, INT_A, DOUBLE_A, DropV (arg_node->node[0]->node[0], arg_type[1]))
+TT2 (200, VxA_Ad, INT_A, INT_A,
+     DropV (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
+TT2 (201, VxA_Ad, INT_A, FLOAT_A,
+     DropV (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
+TT2 (202, VxA_Ad, INT_A, BOOL_A,
+     DropV (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
+TT2 (203, VxA_Ad, INT_A, DOUBLE_A,
+     DropV (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
 
 TT2 (210, VxA_Ap, INT_A, INT_A, Psi (arg_type[0], arg_type[1]))
 TT2 (211, VxA_Ap, INT_A, FLOAT_A, Psi (arg_type[0], arg_type[1]))
@@ -168,15 +184,23 @@ TT2 (231, SxA_Ad, INT, FLOAT_A, TakeDropS (arg_node->node[0]->node[0], arg_type[
 TT2 (232, SxA_Ad, INT, BOOL_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 1))
 TT2 (233, SxA_Ad, INT, DOUBLE_A, TakeDropS (arg_node->node[0]->node[0], arg_type[1], 1))
 
-TT2 (240, VxA_Ag, INT_A, INT_A, Genarray_A (arg_node->node[0]->node[0], arg_type[1]))
-TT2 (241, VxA_Ag, INT_A, FLOAT_A, Genarray_A (arg_node->node[0]->node[0], arg_type[1]))
-TT2 (242, VxA_Ag, INT_A, BOOL_A, Genarray_A (arg_node->node[0]->node[0], arg_type[1]))
-TT2 (243, VxA_Ag, INT_A, DOUBLE_A, Genarray_A (arg_node->node[0]->node[0], arg_type[1]))
+TT2 (240, VxA_Ag, INT_A, INT_A,
+     Genarray_A (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
+TT2 (241, VxA_Ag, INT_A, FLOAT_A,
+     Genarray_A (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
+TT2 (242, VxA_Ag, INT_A, BOOL_A,
+     Genarray_A (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
+TT2 (243, VxA_Ag, INT_A, DOUBLE_A,
+     Genarray_A (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
 
-TT2 (250, VxS_Ag, INT_A, INT, Genarray_S (arg_node->node[0]->node[0], arg_type[1]))
-TT2 (251, VxS_Ag, INT_A, FLOAT, Genarray_S (arg_node->node[0]->node[0], arg_type[1]))
-TT2 (252, VxS_Ag, INT_A, BOOL, Genarray_S (arg_node->node[0]->node[0], arg_type[1]))
-TT2 (253, VxS_Ag, INT_A, DOUBLE, Genarray_S (arg_node->node[0]->node[0], arg_type[1]))
+TT2 (250, VxS_Ag, INT_A, INT,
+     Genarray_S (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
+TT2 (251, VxS_Ag, INT_A, FLOAT,
+     Genarray_S (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
+TT2 (252, VxS_Ag, INT_A, BOOL,
+     Genarray_S (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
+TT2 (253, VxS_Ag, INT_A, DOUBLE,
+     Genarray_S (arg_node->node[0]->node[0], arg_type[0], arg_type[1]))
 
 TT3 (300, SxAxA_A, INT, INT_A, INT_A,
      Cat (arg_node->node[0]->node[0], arg_type[1], arg_type[2]))
