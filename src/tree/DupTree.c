@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2001/03/27 20:49:38  dkr
+ * minor changes in DupFundef() done
+ *
  * Revision 3.28  2001/03/27 10:52:13  dkr
  * minor changes done
  *
@@ -857,13 +860,10 @@ DupFundef (node *arg_node, node *arg_info)
     FUNDEF_VARNO (new_node) = FUNDEF_VARNO (arg_node);
     FUNDEF_INLREC (new_node) = FUNDEF_INLREC (arg_node);
 
-    if ((FUNDEF_STATUS (new_node) == ST_condfun) || (FUNDEF_STATUS (new_node) == ST_dofun)
-        || (FUNDEF_STATUS (new_node) == ST_whilefun)) {
-        FUNDEF_EXT_ASSIGN (new_node)
-          = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_EXT_ASSIGN (arg_node));
-        FUNDEF_INT_ASSIGN (new_node)
-          = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_INT_ASSIGN (arg_node));
-    }
+    FUNDEF_EXT_ASSIGN (new_node)
+      = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_EXT_ASSIGN (arg_node));
+    FUNDEF_INT_ASSIGN (new_node)
+      = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_INT_ASSIGN (arg_node));
 
 #if 0
   FUNDEF_SIB( new_node) = ???;
@@ -1101,7 +1101,6 @@ DupEmpty (node *arg_node, node *arg_info)
 node *
 DupAssign (node *arg_node, node *arg_info)
 {
-    node *fundef;
     node *new_node = NULL;
 
     DBUG_ENTER ("DupAssign");
@@ -1111,14 +1110,8 @@ DupAssign (node *arg_node, node *arg_info)
         new_node = MakeAssign (DUPTRAV (ASSIGN_INSTR (arg_node)),
                                DUPCONT (ASSIGN_NEXT (arg_node)));
 
-        fundef = INFO_DUP_FUNDEF (arg_info);
-        if ((fundef != NULL)
-            && ((FUNDEF_STATUS (fundef) == ST_condfun)
-                || (FUNDEF_STATUS (fundef) == ST_dofun)
-                || (FUNDEF_STATUS (fundef) == ST_whilefun))) {
-            INFO_DUP_LUT (arg_info)
-              = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
-        }
+        INFO_DUP_LUT (arg_info)
+          = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
 
         ASSIGN_STATUS (new_node) = ASSIGN_STATUS (arg_node);
         ASSIGN_LEVEL (new_node) = ASSIGN_LEVEL (arg_node);
