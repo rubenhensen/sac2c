@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/07/21 12:48:33  khf
+ * switch to new INFO structure
+ * take changes of sbs in SSAWLT.c over
+ *
  * Revision 1.6  2004/06/30 12:20:07  khf
  * WLPGfundef(): application of Constant Folding added
  * (PH_wlpartgen)
@@ -24,34 +28,7 @@
  *
  */
 
-/*
- * compiler phase: Withloop Partition Generation (WLPG)
- *
- *
- */
-/*******************************************************************************
- *  Usage of arg_info:
- *  - node[0] : WL      : reference to base node of current WL (N_Nwith)
- *  - node[1] : FUNDEF  : pointer to last fundef node. needed to access vardecs.
- *  - node[2] : LET     : pointer to N_let node of current WL.
- *                        LET_EXPR(ID) == INFO_WLPG_WL.
- *  - node[3] : NASSIGNS: pointer to a list of new assigns, which where needed
- *                        to build structural constants and had to be inserted
- *                        in front of the considered with-loop.
- *  - counter : GENPROB : pointer to the status of the considered generator
- *                        concerning coverage of the entire range
- *  - int_data: GENSHP  : pointer to the status of the bounds, step and width
- *                        of the considered generator concerning shape
- *
- ******************************************************************************/
-
-#define INFO_WLPG_WL(n) (n->node[0])
-#define INFO_WLPG_FUNDEF(n) (n->node[1])
-#define INFO_WLPG_LET(n) (n->node[2])
-#define INFO_WLPG_NASSIGNS(n) (n->node[3])
-#define INFO_WLPG_MODUL(n) (n->node[4])
-#define INFO_WLPG_GENPROP(n) (n->counter)
-#define INFO_WLPG_GENSHP(n) (n->int_data)
+#define NEW_INFO
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -71,6 +48,81 @@
 #include "ssa.h"
 #include "WLPartitionGeneration.h"
 
+/*
+ * compiler phase: Withloop Partition Generation (WLPG)
+ *
+ *
+ */
+
+/**
+ * INFO structure
+ */
+struct INFO {
+    node *wl;
+    node *fundef;
+    node *let;
+    node *nassign;
+    node *modul;
+    int genprob;
+    int genshp;
+};
+
+/*******************************************************************************
+ *  Usage of arg_info:
+ *  - node : WL      : reference to base node of current WL (N_Nwith)
+ *  - node : FUNDEF  : pointer to last fundef node. needed to access vardecs.
+ *  - node : LET     : pointer to N_let node of current WL.
+ *                     LET_EXPR(ID) == INFO_WLPG_WL.
+ *  - node : NASSIGNS: pointer to a list of new assigns, which where needed
+ *                     to build structural constants and had to be inserted
+ *                     in front of the considered with-loop.
+ *  - int  : GENPROB : pointer to the status of the considered generator
+ *                     concerning coverage of the entire range
+ *  - int  : GENSHP  : pointer to the status of the bounds, step and width
+ *                     of the considered generator concerning shape
+ *
+ ******************************************************************************/
+#define INFO_WLPG_WL(n) (n->wl)
+#define INFO_WLPG_FUNDEF(n) (n->fundef)
+#define INFO_WLPG_LET(n) (n->let)
+#define INFO_WLPG_NASSIGNS(n) (n->nassign)
+#define INFO_WLPG_MODUL(n) (n->modul)
+#define INFO_WLPG_GENPROP(n) (n->genprob)
+#define INFO_WLPG_GENSHP(n) (n->genshp)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_WLPG_WL (result) = NULL;
+    INFO_WLPG_FUNDEF (result) = NULL;
+    INFO_WLPG_LET (result) = NULL;
+    INFO_WLPG_NASSIGNS (result) = NULL;
+    INFO_WLPG_MODUL (result) = NULL;
+    INFO_WLPG_GENPROP (result) = 0;
+    INFO_WLPG_GENSHP (result) = 0;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
+
 typedef enum { GPT_empty, GPT_full, GPT_partial, GPT_unknown } gen_prop_t;
 
 typedef enum {
@@ -79,6 +131,10 @@ typedef enum {
     GV_known_shape,
     GV_unknown_shape
 } gen_shape_t;
+
+#ifndef DBUG_OFF
+static char *gen_prop_str[] = {"GPT_empty", "GPT_full", "GPT_partial", "GPT_unknown"};
+#endif
 
 /** <!--********************************************************************-->
  *
@@ -517,7 +573,7 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
 /** <!--********************************************************************-->
  *
  * @fn node *CompleteGrid( node *ls, node *us, node *step, node *width,
- *                         int dim, node *wln, node *coden, node *arg_info)
+ *                         int dim, node *wln, node *coden, info *arg_info)
  *
  *   @brief  adds new parts to N_Nwith which specify the elements
  *           left out by a grid.
@@ -529,12 +585,12 @@ CutSlices (node *ls, node *us, node *l, node *u, int dim, node *wln, node *coden
  *                                If ig != NULL, the same pointer is returned.
  *           node *coden        : Pointer of N_Ncode node where the new
  *                                generators shall point to.
- *           node *arg_info     : N_INFO is needed to create new vars
+ *           info *arg_info     : N_INFO is needed to create new vars
  *   @return intern_gen *       : chain of intern_gen struct
  ******************************************************************************/
 static node *
 CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
-              node *coden, node *arg_info)
+              node *coden, info *arg_info)
 {
     node *nw, *stpe, *wthe, *nwe, *partn, *withidn, *lbn, *wthn, *tmp1, *tmp2, *vardec,
       *nassign, *idn;
@@ -716,7 +772,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
 
 /** <!--********************************************************************-->
  *
- * @fn  node *CreateFullPartition( node *wln, node *arg_info)
+ * @fn  node *CreateFullPartition( node *wln, info *arg_info)
  *
  *   @brief  generates full partition if possible:
  *           - if withop is genarray and index vector has as much elements as
@@ -725,12 +781,12 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
  *           Returns wln.
  *
  *   @param  node *wl       :  N_with node of the WL to transform
- *           node *arg_info :  is needed to access the vardecs of the current
+ *           info *arg_info :  is needed to access the vardecs of the current
  *                             function
  *   @return node *         :  modified N_with
  ******************************************************************************/
 static node *
-CreateFullPartition (node *wln, node *arg_info)
+CreateFullPartition (node *wln, info *arg_info)
 {
     node *coden, *idn, *nassign, *tmp1, *tmp2, *array_shape = NULL, *array_null, *vardec,
                                                *nassigns;
@@ -903,7 +959,7 @@ CreateFullPartition (node *wln, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CreateEmptyGenWLReplacement( node *wl, node *arg_info)
+ * @fn node *CreateEmptyGenWLReplacement( node *wl, info *arg_info)
  *
  *   @brief  computes the replacement for the given WL under the assumption that
  *           the generator is empty, i.e.,
@@ -920,11 +976,11 @@ CreateFullPartition (node *wln, node *arg_info)
  *           NOTE HERE, that wl is either MODIFIED in place or FREED entirely!!
  *
  *   @param  node *wl       :  N_with
- *           node *arg_info :  N_INFO
+ *           info *arg_info :  N_INFO
  *   @return node *         :  modified N_with
  ******************************************************************************/
 static node *
-CreateEmptyGenWLReplacement (node *wl, node *arg_info)
+CreateEmptyGenWLReplacement (node *wl, info *arg_info)
 {
     ids *let_ids;
     int dim, i;
@@ -1090,7 +1146,7 @@ CreateNewAssigns (node *expr, node *f_def)
         /* index position for selection */
         tmp1 = MakeNum (i);
         /* the array for selection */
-        tmp2 = MakeExprs (DupTree (expr), NULL);
+        tmp2 = MakeExprs (DupNode (expr), NULL);
 
         tmp3 = MakePrf (F_idx_sel, MakeExprs (tmp1, tmp2));
 
@@ -1171,6 +1227,167 @@ PropagateArrayConstants (node **expr)
     DBUG_RETURN (gshape);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node * CropBounds( node *wl, shape *max_shp)
+ *
+ * description:
+ *   expects the bound expression for lb and ub to be constants!
+ *   expects also the WL either to by WO_modarray or WO_genarray!
+ *
+ *   Checks, whether lb and ub fit into the shape given by max_shp.
+ *   If they exceed max_shp, they are "fitted"!
+ *   The potentially modified WL is returned.
+ *
+ ******************************************************************************/
+
+static node *
+CropBounds (node *wl, shape *max_shp)
+{
+    node *lbe, *ube;
+    int dim;
+    int lbnum, ubnum, tnum;
+
+    DBUG_ENTER ("CropBounds");
+
+    DBUG_ASSERT (((NWITH_TYPE (wl) == WO_modarray) || (NWITH_TYPE (wl) == WO_genarray)),
+                 "CropBounds applied to wrong WL type!");
+    lbe = ARRAY_AELEMS (NWITH_BOUND1 (wl));
+    ube = ARRAY_AELEMS (NWITH_BOUND2 (wl));
+
+    dim = 0;
+    while (lbe) {
+        DBUG_ASSERT ((ube != NULL), "dimensionality differs in lower and upper bound!");
+        DBUG_ASSERT (((NODE_TYPE (EXPRS_EXPR (lbe)) == N_num)
+                      && (NODE_TYPE (EXPRS_EXPR (ube)) == N_num)),
+                     "generator bounds must be constant!");
+        lbnum = NUM_VAL (EXPRS_EXPR (lbe));
+        ubnum = NUM_VAL (EXPRS_EXPR (ube));
+
+        DBUG_ASSERT ((dim < SHGetDim (max_shp)),
+                     "dimensionality of lb greater than that of the result!");
+        tnum = SHGetExtent (max_shp, dim);
+        if (lbnum < 0) {
+            NUM_VAL (EXPRS_EXPR (lbe)) = 0;
+            WARN (NODE_LINE (wl),
+                  ("lower bound of WL-generator in dim %d below zero: set to 0", dim));
+        }
+        if (ubnum > tnum) {
+            NUM_VAL (EXPRS_EXPR (ube)) = tnum;
+            WARN (NODE_LINE (wl),
+                  ("upper bound of WL-generator in dim %d greater than shape:"
+                   " set to %d",
+                   dim, tnum));
+        }
+
+        dim++;
+        lbe = EXPRS_NEXT (lbe);
+        ube = EXPRS_NEXT (ube);
+    }
+    DBUG_RETURN (wl);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   gen_prop_t ComputeGeneratorProperties( node *wl, shape *max_shp)
+ *
+ * description:
+ *   Computes the properties of the given WLs generator.
+ *
+ ******************************************************************************/
+
+static gen_prop_t
+ComputeGeneratorProperties (node *wl, shape *max_shp)
+{
+    node *lbe, *ube, *steps, *width;
+    gen_prop_t res = GPT_unknown;
+    bool const_bounds;
+    constant *lbc, *ubc, *shpc, *tmpc, *tmp;
+    shape *sh;
+
+    DBUG_ENTER ("ComputeGeneratorProperties");
+
+    lbe = NWITH_BOUND1 (wl);
+    ube = NWITH_BOUND2 (wl);
+    steps = NWITH_STEP (wl);
+    width = NWITH_WIDTH (wl);
+
+    lbc = COAST2Constant (lbe);
+    ubc = COAST2Constant (ube);
+    if (max_shp != NULL) {
+        shpc = COMakeConstantFromShape (max_shp);
+    } else {
+        shpc = NULL;
+    }
+    const_bounds = ((lbc != NULL) && (ubc != NULL));
+
+    /**
+     * First, we check for emptyness:
+     * (this is done prior to checking on GPT_full, as we may have both properties
+     *  GPT_empty and GPT_full, in which case we prefer to obtain GPT_empty as
+     *  result....)
+     */
+    if (const_bounds) {
+        tmpc = COGe (lbc, ubc);
+        if (COIsTrue (tmpc, TRUE)) {
+            res = GPT_empty;
+        }
+        tmpc = COFreeConstant (tmpc);
+    }
+
+    if (res == GPT_unknown) {
+        if ((NWITH_TYPE (wl) == WO_foldprf) || (NWITH_TYPE (wl) == WO_foldfun)) {
+            res = GPT_full;
+        } else {
+            /**
+             * We are dealing with a modarray or a genarray WL here!
+             * Only if the bounds are constant and the shape is known,
+             * we can do any better than GPT_unknown!
+             */
+            if (const_bounds && (shpc != NULL)) {
+                /**
+                 * In order to obtain be a full partition,
+                 * ubc must be a prefix of shpc,
+                 * all elements of lbc must be zero
+                 * and there must be not step vector
+                 */
+                sh = COGetShape (ubc);
+                tmp = COMakeConstantFromShape (sh);
+                tmpc = COTake (tmp, shpc);
+
+                tmp = COFreeConstant (tmp);
+                shpc = COFreeConstant (shpc);
+
+                shpc = tmpc;
+
+                tmpc = COEq (ubc, shpc);
+                if (COIsZero (lbc, TRUE) && COIsTrue (tmpc, TRUE)) {
+                    if (steps == NULL) {
+                        res = GPT_full;
+                    } else {
+                        res = GPT_partial;
+                    }
+                } else {
+                    res = GPT_partial;
+                }
+                tmpc = COFreeConstant (tmpc);
+            }
+        }
+    }
+
+    /* Clean up constants */
+    shpc = (shpc != NULL ? COFreeConstant (shpc) : NULL);
+    ubc = (ubc != NULL ? COFreeConstant (ubc) : NULL);
+    lbc = (lbc != NULL ? COFreeConstant (lbc) : NULL);
+
+    DBUG_PRINT ("WLPG", ("generator property of with loop in line %d : %s", linenum,
+                         gen_prop_str[res]));
+
+    DBUG_RETURN (res);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn gen_prop_t CheckGeneratorBounds( node *wl, shape *max_shp)
@@ -1248,17 +1465,17 @@ CheckGeneratorBounds (node *wl, shape *max_shp)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLPGmodul(node *arg_node, node *arg_info)
+ * @fn node *WLPGmodul(node *arg_node, info *arg_info)
  *
  *   @brief traverses function definitions only!
  *
  *   @param  node *arg_node:  N_modul
- *           node *arg_info:  N_info
+ *           info *arg_info:  N_info
  *   @return node *        :  N_modul
  ******************************************************************************/
 
 node *
-WLPGmodul (node *arg_node, node *arg_info)
+WLPGmodul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLPGmodul");
 
@@ -1273,26 +1490,26 @@ WLPGmodul (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLPGfundef(node *arg_node, node *arg_info)
+ * @fn node *WLPGfundef(node *arg_node, info *arg_info)
  *
  *   @brief resets INFO components WL and FUNDEF, apply Constant Folding if
  *          we are in phase PH_wlpartgen and starts the traversal of the given
  *          fundef
  *
  *   @param  node *arg_node:  N_fundef
- *           node *arg_info:  N_info
+ *           info *arg_info:  N_info
  *   @return node *        :  N_fundef
  ******************************************************************************/
 
 node *
-WLPGfundef (node *arg_node, node *arg_info)
+WLPGfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLPGfundef");
 
     INFO_WLPG_WL (arg_info) = NULL;
     INFO_WLPG_FUNDEF (arg_info) = arg_node;
 
-    if (compiler_phase == PH_wlpartgen) {
+    if (compiler_phase == PH_wlenhance) {
         /*
          * to compute primitive function for constant expressions, especially
          * for bounds, steps and widths of WL's generator.
@@ -1302,7 +1519,7 @@ WLPGfundef (node *arg_node, node *arg_info)
               = SSAConstantFolding (arg_node, INFO_WLPG_MODUL (arg_info)); /* ssacf_tab */
         }
 
-        if ((break_after == PH_wlpartgen) && (0 == strcmp (break_specifier, "cf"))) {
+        if ((break_after == PH_wlenhance) && (0 == strcmp (break_specifier, "cf"))) {
             if (FUNDEF_NEXT (arg_node) != NULL) {
                 FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
             }
@@ -1331,18 +1548,18 @@ WLPGfundef (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLPGassign(node *arg_node, node *arg_info)
+ * @fn node *WLPGassign(node *arg_node, info *arg_info)
  *
  *   @brief traverse instruction. If this creates new assignments in
  *          INFO_WLPG_NASSIGNS these are inserted in front of the actual one.
  *
  *   @param  node *arg_node:  N_assign
- *           node *arg_info:  N_info
+ *           info *arg_info:  N_info
  *   @return node *        :  N_assign
  ******************************************************************************/
 
 node *
-WLPGassign (node *arg_node, node *arg_info)
+WLPGassign (node *arg_node, info *arg_info)
 {
     node *iterator;
 
@@ -1378,17 +1595,17 @@ WLPGassign (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLPGlet(node *arg_node, node *arg_info)
+ * @fn node *WLPGlet(node *arg_node, info *arg_info)
  *
  *   @brief traverses in expression and checks assigned ids for constant
  *          value and sets corresponding AVIS_SSACONST attribute
  *
  *   @param  node *arg_node:  N_let
- *           node *arg_info:  N_info
+ *           info *arg_info:  N_info
  *   @return node *        :  N_let
  ******************************************************************************/
 node *
-WLPGlet (node *arg_node, node *arg_info)
+WLPGlet (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ("WLPGlet");
@@ -1416,7 +1633,7 @@ WLPGlet (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLPGNwith(node *arg_node, node *arg_info)
+ * @fn node *WLPGNwith(node *arg_node, info *arg_info)
  *
  *   @brief  start traversal of this WL and store information in new arg_info
  *           node. The only N_Npart node (inclusive body) is traversed.
@@ -1425,12 +1642,12 @@ WLPGlet (node *arg_node, node *arg_info)
  *           partition.
  *
  *   @param  node *arg_node:  N_Nwith
- *           node *arg_info:  N_info
+ *           info *arg_info:  N_info
  *   @return node *        :  N_Nwith
  ******************************************************************************/
 
 node *
-WLPGNwith (node *arg_node, node *arg_info)
+WLPGNwith (node *arg_node, info *arg_info)
 {
     node *let_tmp;
     bool replace_wl = FALSE;
@@ -1518,17 +1735,17 @@ WLPGNwith (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLPGNwithop( node *arg_node, node *arg_info)
+ * @fn node *WLPGNwithop( node *arg_node, info *arg_info)
  *
  *   @brief Substitutes NWITHOP_SHAPE into the N_Nwithop node.
  *
  *   @param  node *arg_node:  N_Nwithop
- *           node *arg_info:  N_info
+ *           info *arg_info:  N_info
  *   @return node *        :  N_Nwithop
  ******************************************************************************/
 
 node *
-WLPGNwithop (node *arg_node, node *arg_info)
+WLPGNwithop (node *arg_node, info *arg_info)
 {
     node *nassigns, *f_def;
     gen_shape_t current_shape;
@@ -1581,17 +1798,17 @@ WLPGNwithop (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLPGNpart(node *arg_node, node *arg_info)
+ * @fn node *WLPGNpart(node *arg_node, info *arg_info)
  *
  *   @brief traverse only generator to propagate arrays
  *
  *   @param  node *arg_node:  N_Npart
- *           node *arg_info:  N_info
+ *           info *arg_info:  N_info
  *   @return node *        :  N_Npart
  ******************************************************************************/
 
 node *
-WLPGNpart (node *arg_node, node *arg_info)
+WLPGNpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WLPGNpart");
 
@@ -1602,7 +1819,7 @@ WLPGNpart (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLPGNgenerator(node *arg_node, node *arg_info)
+ * @fn node *WLPGNgenerator(node *arg_node, info *arg_info)
  *
  *   @brief  bounds, step and width vectors are substituted into the generator.
  *           Generators that surmount the array bounds (like [-5,3] or
@@ -1626,12 +1843,12 @@ WLPGNpart (node *arg_node, node *arg_info)
  *           GV_unknown_shape   : we don't know anything !
  *
  *   @param  node *arg_node:  N_Ngenerator
- *           node *arg_info:  N_info
+ *           info *arg_info:  N_info
  *   @return node *        :  N_Ngenerator
  ******************************************************************************/
 
 node *
-WLPGNgenerator (node *arg_node, node *arg_info)
+WLPGNgenerator (node *arg_node, info *arg_info)
 {
     node *wln, *f_def, *nassigns, *step, *width;
     ids *let_ids;
@@ -1703,18 +1920,37 @@ WLPGNgenerator (node *arg_node, node *arg_info)
     /*
      * check bound ranges
      */
-    let_ids = LET_IDS (INFO_WLPG_LET (arg_info));
-    if (check_bounds && (GetShapeDim (IDS_TYPE (let_ids)) >= 0)) {
-        shp = SHOldTypes2Shape (IDS_TYPE (let_ids));
-        gprop = CheckGeneratorBounds (wln, shp);
-        shp = SHFreeShape (shp);
-        if ((gprop == GPT_full) && (NGEN_STEP (arg_node) != NULL)) {
-            gprop = GPT_partial;
-        }
-    } else if (gshape == GV_struct_constant) {
+    /*
+    let_ids = LET_IDS( INFO_WLPG_LET( arg_info));
+    if (check_bounds && (GetShapeDim( IDS_TYPE( let_ids)) >= 0)) {
+      shp = SHOldTypes2Shape( IDS_TYPE( let_ids));
+      gprop = CheckGeneratorBounds( wln, shp);
+      shp = SHFreeShape( shp);
+      if( (gprop == GPT_full) && ( NGEN_STEP( arg_node) != NULL)) {
         gprop = GPT_partial;
+      }
+    } else if (gshape == GV_struct_constant){
+      gprop = GPT_partial;
+    } else{
+      gprop = GPT_unknown;
+    }
+    */
+
+    /**
+     * find out the generator properties:
+     */
+    let_ids = LET_IDS (INFO_WLPG_LET (arg_info));
+
+    if (GetShapeDim (IDS_TYPE (let_ids)) >= 0) {
+        shp = SHOldTypes2Shape (IDS_TYPE (let_ids));
+        if (check_bounds
+            && ((NWITH_TYPE (wln) == WO_modarray) || (NWITH_TYPE (wln) == WO_genarray))) {
+            wln = CropBounds (wln, shp);
+        }
+        gprop = ComputeGeneratorProperties (wln, shp);
+        shp = SHFreeShape (shp);
     } else {
-        gprop = GPT_unknown;
+        gprop = ComputeGeneratorProperties (wln, NULL);
     }
 
     if (check_stepwidth) {
@@ -1729,9 +1965,6 @@ WLPGNgenerator (node *arg_node, node *arg_info)
         }
     }
 
-    step = NGEN_STEP (arg_node);
-    width = NGEN_WIDTH (arg_node);
-
     INFO_WLPG_GENPROP (arg_info) = gprop;
     INFO_WLPG_GENSHP (arg_info) = gshape;
 
@@ -1743,9 +1976,7 @@ WLPGNgenerator (node *arg_node, node *arg_info)
  * @fn node *WLPartitionGeneration( node *arg_node)
  *
  *   @brief  Starting point for the partition generation if it was called
- *           from main. First transform code in SSA form.
- *           Then start the traverse of the AST and after that convert back
- *           to standard form.
+ *           from main.
  *
  *   @param  node *arg_node:  the whole syntax tree
  *   @return node *        :  the transformed syntax tree
@@ -1755,7 +1986,7 @@ node *
 WLPartitionGeneration (node *arg_node)
 {
     funtab *tmp_tab;
-    node *arg_info;
+    info *arg_info;
 
     DBUG_ENTER ("WLPartitionGeneration");
 
@@ -1764,17 +1995,6 @@ WLPartitionGeneration (node *arg_node)
 
     DBUG_PRINT ("WLPG", ("starting WLPartitionGeneration"));
 
-    /* transformation in ssa-form */
-    arg_node = DoSSA (arg_node);
-    /* necessary to guarantee, that the compilation can be stopped
-       during the call of DoSSA */
-    if ((break_after == PH_wlpartgen)
-        && ((0 == strcmp (break_specifier, "l2f"))
-            || (0 == strcmp (break_specifier, "cha"))
-            || (0 == strcmp (break_specifier, "ssa")))) {
-        goto DONE;
-    }
-
     arg_info = MakeInfo ();
 
     tmp_tab = act_tab;
@@ -1782,20 +2002,9 @@ WLPartitionGeneration (node *arg_node)
 
     arg_node = Trav (arg_node, arg_info);
 
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeInfo (arg_info);
     act_tab = tmp_tab;
 
-    /* undo tranformation in ssa-form */
-    arg_node = UndoSSA (arg_node);
-    /* necessary to guarantee, that the compilation can be stopped
-       during the call of UndoSSA */
-    if ((break_after == PH_wlpartgen)
-        && ((0 == strcmp (break_specifier, "ussa"))
-            || (0 == strcmp (break_specifier, "f2l")))) {
-        goto DONE;
-    }
-
-DONE:
     DBUG_RETURN (arg_node);
 }
 
@@ -1806,15 +2015,15 @@ DONE:
  *   @brief  Starting point for the partition generation if it was called
  *           from optimize.
  *
- *   @param  node *arg_node:  the whole syntax tree
- *   @return node *        :  the transformed syntax tree
+ *   @param  node *arg_node:  N_fundef
+ *   @return node *        :  transformed N_fundef
  ******************************************************************************/
 
 node *
 WLPartitionGenerationOPT (node *arg_node)
 {
     funtab *tmp_tab;
-    node *arg_info;
+    info *arg_info;
 
     DBUG_ENTER ("WLPartitionGenerationOPT");
 
@@ -1830,7 +2039,7 @@ WLPartitionGenerationOPT (node *arg_node)
 
     arg_node = Trav (arg_node, arg_info);
 
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeInfo (arg_info);
     act_tab = tmp_tab;
 
     DBUG_RETURN (arg_node);

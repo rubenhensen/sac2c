@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/07/21 12:48:33  khf
+ * switch to new INFO structure
+ * take changes of sbs in SSAWLT.c over
+ *
  * Revision 1.4  2004/04/08 08:13:25  khf
  * some corrections and new startfunction WLPartitionGenerationOPT
  * added
@@ -23,14 +27,14 @@
 extern node *WLPartitionGeneration (node *arg_node);
 extern node *WLPartitionGenerationOPT (node *arg_node);
 
-extern node *WLPGmodul (node *, node *);
-extern node *WLPGfundef (node *, node *);
-extern node *WLPGassign (node *, node *);
-extern node *WLPGlet (node *, node *);
+extern node *WLPGmodul (node *arg_node, info *arg_info);
+extern node *WLPGfundef (node *arg_node, info *arg_info);
+extern node *WLPGassign (node *arg_node, info *arg_info);
+extern node *WLPGlet (node *arg_node, info *arg_info);
 
-extern node *WLPGNwith (node *, node *);
-extern node *WLPGNwithop (node *, node *);
-extern node *WLPGNpart (node *, node *);
-extern node *WLPGNgenerator (node *, node *);
+extern node *WLPGNwith (node *arg_node, info *arg_info);
+extern node *WLPGNwithop (node *arg_node, info *arg_info);
+extern node *WLPGNpart (node *arg_node, info *arg_info);
+extern node *WLPGNgenerator (node *arg_node, info *arg_info);
 
 #endif
