@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.7  1998/04/29 15:17:43  srs
+ * WLF and linear transformations (without grids) working now
+ *
  * Revision 1.6  1998/04/24 18:57:48  srs
  * added creation of types for N_array node
  *
@@ -639,6 +642,7 @@ CreateCode (node *target, node *subst)
     INFO_WLI_NCA (new_arg_info) = INFO_WLI_NCA (ref_mode_arg_info);
     INFO_WLI_SUBST (new_arg_info) = subst;
     INFO_WLI_NEW_ID (new_arg_info) = NULL;
+    new_arg_info->varno = ref_mode_arg_info->varno;
 
     coden = DupTree (NCODE_CBLOCK (target), NULL);
     coden = Trav (coden, new_arg_info);
@@ -1059,6 +1063,11 @@ WLFfundef (node *arg_node, node *arg_info)
 
     INFO_WLI_WL (arg_info) = NULL;
     INFO_WLI_FUNDEF (arg_info) = arg_node;
+
+    /* copy number of vardec explicitely in this phase because the OPTTrav()
+       mechanism is not used. */
+    INFO_VARNO = FUNDEF_VARNO (arg_node);
+
     wlf_mode = wlfm_search_WL;
 
     arg_node = TravSons (arg_node, arg_info);
@@ -1102,7 +1111,7 @@ WLFassign (node *arg_node, node *arg_info)
             ASSIGN_NEXT (arg_node) = ASSIGN_NEXT (substn);
 
             ASSIGN_INSTR (substn) = NULL;
-            FreeNode (substn);
+            FreeNode (substn); /* Free only this one node. */
 
             tmpn = arg_node;
             while (ASSIGN_NEXT (tmpn))
@@ -1160,7 +1169,8 @@ WLFassign (node *arg_node, node *arg_info)
 node *
 WLFid (node *arg_node, node *arg_info)
 {
-    node *substn, *vectorn, *argsn, *letn, *partn, *old_arg_info_assign, *arrayn;
+    node *substn, *coden, *vectorn, *argsn, *letn, *subst_wl_partn;
+    node *old_arg_info_assign, *arrayn;
     ids *subst_wl_ids, *_ids;
     int count, varno;
     char *new_name;
@@ -1190,10 +1200,10 @@ WLFid (node *arg_node, node *arg_info)
     case wlfm_replace:
         if (ID_WL (arg_node) == INFO_WLI_ID (arg_info)) {
             /* this is the Id which has to be replaced. Create substitution code. */
-            substn = INFO_WLI_SUBST (arg_info);
+            coden = INFO_WLI_SUBST (arg_info);
             INFO_WLI_NEW_ID (arg_info)
-              = DupTree (NCODE_CEXPR (substn), NULL); /* usage: see WLFassign */
-            substn = DupTree (BLOCK_INSTR (NCODE_CBLOCK (substn)), NULL);
+              = DupTree (NCODE_CEXPR (coden), NULL); /* usage: see WLFassign */
+            substn = DupTree (BLOCK_INSTR (NCODE_CBLOCK (coden)), NULL);
 
             /* trav subst code with wlfm_rename to solve name clashes. */
             wlf_mode = wlfm_rename;
@@ -1216,27 +1226,46 @@ WLFid (node *arg_node, node *arg_info)
                in flatten. No name clashes can happen. */
             vectorn = PRF_ARG1 (LET_EXPR (ASSIGN_INSTR (INFO_WLI_ASSIGN (arg_info))));
             /* We have to remember that new assignments have been inserted. */
-            partn = NWITH_PART (LET_EXPR (ASSIGN_INSTR (ID_WL (INFO_WLI_ID (arg_info)))));
-            subst_wl_ids = NPART_IDS (partn);
             count = 0;
+            subst_wl_partn
+              = NWITH_PART (LET_EXPR (ASSIGN_INSTR (ID_WL (INFO_WLI_ID (arg_info)))));
+            subst_wl_ids = NPART_IDS (subst_wl_partn);
             while (subst_wl_ids) {
-                arrayn = MakeArray (MakeExprs (MakeNum (count++), NULL));
-                shpseg = MakeShpseg (
-                  MakeNums (1, NULL)); /* nums struct is freed inside MakeShpseg. */
-                ARRAY_TYPE (arrayn) = MakeType (T_int, 1, shpseg, NULL, NULL);
-                argsn = MakeExprs (arrayn, MakeExprs (DupTree (vectorn, NULL), NULL));
-                _ids = MakeIds (IDS_NAME (subst_wl_ids), NULL, ST_regular);
-                IDS_VARDEC (_ids) = IDS_VARDEC (subst_wl_ids);
-                letn = MakeLet (MakePrf (F_psi, argsn), _ids);
-                substn = MakeAssign (letn, substn);
+                /* Here we use masks which have been generated before WLI. These masks
+                   are never modified in WLI and WLF (although new VARDECs are inserted),
+                   so we can use them for variables which already existed BEFORE WLI.
+                   Now let's see if we can use masks for index variables:
+                   - yes, if this is no newly created code block (WLF)
+                   - no otherwise. We could duplicate masks for new code blocks,
+                     but I guess that would cost more time than speculatively inserting
+                     (and DCR-removing) some new variables. */
+                if (!NCODE_MASK (coden, 1 /* USE mask */) /* mask does not exist */
+                    || NCODE_MASK (coden, 1)[IDS_VARNO (subst_wl_ids)]) {
+                    arrayn = MakeArray (MakeExprs (MakeNum (count), NULL));
+                    shpseg = MakeShpseg (
+                      MakeNums (1, NULL)); /* nums struct is freed inside MakeShpseg. */
+                    ARRAY_TYPE (arrayn) = MakeType (T_int, 1, shpseg, NULL, NULL);
+                    argsn = MakeExprs (arrayn, MakeExprs (DupTree (vectorn, NULL), NULL));
+                    _ids
+                      = MakeIds (StringCopy (IDS_NAME (subst_wl_ids)), NULL, ST_regular);
+                    IDS_VARDEC (_ids) = IDS_VARDEC (subst_wl_ids);
+                    letn = MakeLet (MakePrf (F_psi, argsn), _ids);
+                    substn = MakeAssign (letn, substn);
+                }
 
+                count++;
                 subst_wl_ids = IDS_NEXT (subst_wl_ids);
             }
-            /* add iv = sel (see example above) */
-            _ids = MakeIds (IDS_NAME (NPART_VEC (partn)), NULL, ST_regular);
-            IDS_VARDEC (_ids) = IDS_VARDEC (NPART_VEC (partn));
-            letn = MakeLet (DupTree (vectorn, NULL), _ids);
-            substn = MakeAssign (letn, substn);
+
+            /* now add "iv = sel" (see example above) */
+            subst_wl_ids = NPART_VEC (subst_wl_partn);
+            if (!NCODE_MASK (coden, 1 /* USE mask */) /* mask does not exist */
+                || NCODE_MASK (coden, 1)[IDS_VARNO (subst_wl_ids)]) {
+                _ids = MakeIds (StringCopy (IDS_NAME (subst_wl_ids)), NULL, ST_regular);
+                IDS_VARDEC (_ids) = IDS_VARDEC (NPART_VEC (subst_wl_partn));
+                letn = MakeLet (DupTree (vectorn, NULL), _ids);
+                substn = MakeAssign (letn, substn);
+            }
 
             /* we dont' need the old _SUBST info anymore so we return the
                new subst assign chain here. WLFassign uses this information to
