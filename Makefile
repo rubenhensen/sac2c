@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.46  2000/07/11 09:28:07  dkr
+# TAGGED_ARRAYS added (as a comment)
+#
 # Revision 2.45  2000/07/05 11:41:16  nmw
 # moved cinterface files from print to c-interface
 #
@@ -193,11 +196,13 @@ OSF_ALPHA_LIBS     := -ll
 CCFLAGS      := $($(CC)_FLAGS) $($(OS)_FLAGS)
 CCPROD_FLAGS := $($(CCPROD)_PROD_FLAGS) $($(OS)_FLAGS) 
 
-CFLAGS       := -DSHOW_MALLOC -DSAC_FOR_$(OS) 
+CFLAGS       := -DSHOW_MALLOC -DSAC_FOR_$(OS)
+#CFLAGS       := -DSHOW_MALLOC -DTAGGED_ARRAYS -DSAC_FOR_$(OS)
 CPROD_FLAGS  := -DDBUG_OFF -DPRODUCTION -DSAC_FOR_$(OS)
+#CPROD_FLAGS  := -DTAGGED_ARRAYS -DDBUG_OFF -DPRODUCTION -DSAC_FOR_$(OS)
 
-MAKE_NORM    :=$(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)" OS="$(OS)"
-MAKE_PROD    :=$(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)" OS="$(OS)"
+MAKE_NORM    := $(MAKE) CC="$(CC)" CCFLAGS="$(CCFLAGS)" CFLAGS="$(CFLAGS)" OS="$(OS)"
+MAKE_PROD    := $(MAKE) CC="$(CCPROD)" CCFLAGS="$(CCPROD_FLAGS)" CFLAGS="$(CPROD_FLAGS)" OS="$(OS)"
 MAKEFLAGS    += --no-print-directory
 
 TAR          :=tar
