@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/07/22 10:03:41  cg
+ * Added const annotations for external declarations of global arrays.
+ *
  * Revision 2.11  1999/07/16 09:34:53  cg
  * Added const annotations for shape-, dim- and size-variables
  * in array declarations.
@@ -940,14 +943,15 @@ ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *type, char *name, int dim, char **s)
         INDENT;
         fprintf (outfile, "extern int SAC_ND_A_RC(%s);\n", name);
         INDENT;
-        fprintf (outfile, "extern int SAC_ND_A_SIZE(%s);\n", name);
+        fprintf (outfile, "extern int const SAC_ND_A_SIZE(%s);\n", name);
         {
             int i;
             INDENT;
-            fprintf (outfile, "extern int SAC_ND_A_DIM(%s);\n", name);
+            fprintf (outfile, "extern int const SAC_ND_A_DIM(%s);\n", name);
             for (i = 0; i < dim; i++) {
                 INDENT;
-                fprintf (outfile, "extern int SAC_ND_KD_A_SHAPE(%s, %d);\n", name, i);
+                fprintf (outfile, "extern int const SAC_ND_KD_A_SHAPE(%s, %d);\n", name,
+                         i);
             }
         }
         fprintf (outfile, "\n");
