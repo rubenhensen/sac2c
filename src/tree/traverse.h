@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/05/14 15:59:55  nmw
+ * ssawlt_tab added
+ *
  * Revision 3.15  2001/04/26 17:08:53  dkr
  * rmvoid_tab removed
  *
@@ -249,6 +252,7 @@ extern funtab *ssalir_tab;
 extern funtab *lirmov_tab;
 extern funtab *w2d_tab;
 extern funtab *ssalur_tab;
+extern funtab *ssawlt_tab;
 
 extern int nnode[];
 

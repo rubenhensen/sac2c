@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/05/14 15:59:55  nmw
+ * ssawlt_tab added
+ *
  * Revision 3.21  2001/04/26 17:08:46  dkr
  * rmvoid_tab removed
  *
@@ -174,6 +177,7 @@
 #include "SSALIR.h"
 #include "while2do.h"
 #include "SSALUR.h"
+#include "SSAWLT.h"
 
 #include "traverse.h"
 
@@ -1249,6 +1253,17 @@ static funtab ssalur_tab_rec = {{
                                 NULL,
                                 NULL};
 funtab *ssalur_tab = &ssalur_tab_rec;
+
+/*
+ *  (98) ssawlt_tab
+ */
+static funtab ssawlt_tab_rec = {{
+#define NIFssawlt(it_ssawlt) it_ssawlt
+#include "node_info.mac"
+                                },
+                                NULL,
+                                NULL};
+funtab *ssawlt_tab = &ssawlt_tab_rec;
 
 /*
  *  nnode
