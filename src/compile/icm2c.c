@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/04/18 14:45:55  sbs
+ * Revision 1.17  1995/04/27 12:57:05  sbs
+ * WITH-LOOP ICM s inserted.
+ *
+ * Revision 1.16  1995/04/18  14:45:55  sbs
  * ND_CREATE_CONST_ARRAY modified; initial basic_type parameter eliminated.
  *
  * Revision 1.15  1995/04/18  11:20:34  sbs
@@ -58,6 +61,104 @@
 #include "dbug.h"
 #include "my_debug.h"
 #include "main.h"
+
+#define RetWithScal(res, val)                                                            \
+    INDENT;                                                                              \
+    fprintf (outfile, "ND_A_FIELD(%s)[__destptr++]=%s;\n", res, val[0]);
+
+#define RetWithArray(res, a)                                                             \
+    INDENT;                                                                              \
+    fprintf (outfile, "{ int __i;\n\n");                                                 \
+    indent++;                                                                            \
+    INDENT;                                                                              \
+    fprintf (outfile, "for{__i=0; __i<ND_A_SIZE(%s); __i++)\n", a);                      \
+    indent++;                                                                            \
+    INDENT;                                                                              \
+    fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr++]=ND_A_FIELD(%s)[__i];\n", res, res,  \
+             a);                                                                         \
+    indent -= 2;                                                                         \
+    INDENT;                                                                              \
+    fprintf (outfile, "}\n")
+
+#define BeginWith(res, dimres, from, to, idx, idxlen, fillstr)                           \
+    INDENT;                                                                              \
+    fprintf (outfile, "{ int %s__destptr=0;\n", res);                                    \
+    indent++;                                                                            \
+    INDENT;                                                                              \
+    fprintf (outfile, "int __start=...;\n");                                             \
+    {                                                                                    \
+        int i;                                                                           \
+        for (i = 1; i < idxlen; i++) {                                                   \
+            INDENT;                                                                      \
+            fprintf (outfile, "int %s__offset%d=...;\n", res, i);                        \
+        }                                                                                \
+        fprintf (outfile, "\n");                                                         \
+        INDENT;                                                                          \
+        fprintf (outfile, "while( %s__destptr < __start) {\n", res);                     \
+        indent++;                                                                        \
+        INDENT;                                                                          \
+        fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]=", res, res);                     \
+        fillstr;                                                                         \
+        fprintf (outfile, ";\n");                                                        \
+        INDENT;                                                                          \
+        fprintf (outfile, "%s__destptr++;\n", res);                                      \
+        indent--;                                                                        \
+        INDENT;                                                                          \
+        fprintf (outfile, "}\n");                                                        \
+        {                                                                                \
+            int i;                                                                       \
+            for (i = 0; i < idxlen; i++) {                                               \
+                INDENT;                                                                  \
+                fprintf (outfile,                                                        \
+                         "for( ND_A_FIELD(%s)[%d]=ND_A_FIELD(%s)[%d]; "                  \
+                         "ND_A_FIELD(%s)[%d]<=ND_A_FIELD(%s)[%d]; "                      \
+                         "ND_A_FIELD(%s)[%d]++) {\n",                                    \
+                         idx, i, from, i, idx, i, to, i, idx, i);                        \
+                indent++;                                                                \
+            }                                                                            \
+        }                                                                                \
+        fprintf (outfile, "\n");                                                         \
+    }
+
+#define EndWith(res, dimres, idxlen, fillstr)                                            \
+    indent--;                                                                            \
+    INDENT;                                                                              \
+    fprintf (outfile, "}\n");                                                            \
+    {                                                                                    \
+        int i;                                                                           \
+        for (i = idxlen - 1; i > 0; i--) {                                               \
+            INDENT;                                                                      \
+            fprintf (outfile, "for(__i=0; __i<%s__offset%d; __i++) {\n", res, i);        \
+            indent++;                                                                    \
+            INDENT;                                                                      \
+            fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]=", res, res);                 \
+            fillstr;                                                                     \
+            fprintf (outfile, ";\n");                                                    \
+            INDENT;                                                                      \
+            fprintf (outfile, "%s__destptr++;\n", res);                                  \
+            indent--;                                                                    \
+            INDENT;                                                                      \
+            fprintf (outfile, "}\n");                                                    \
+            indent--;                                                                    \
+            INDENT;                                                                      \
+            fprintf (outfile, "}\n");                                                    \
+        }                                                                                \
+    }                                                                                    \
+    INDENT;                                                                              \
+    fprintf (outfile, "while( %s__destptr< ND_A_SIZE(%s)) {\n", res, res);               \
+    indent++;                                                                            \
+    INDENT;                                                                              \
+    fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]=", res, res);                         \
+    fillstr;                                                                             \
+    fprintf (outfile, ";\n");                                                            \
+    INDENT;                                                                              \
+    fprintf (outfile, "%s__destptr++;\n", res);                                          \
+    indent--;                                                                            \
+    INDENT;                                                                              \
+    fprintf (outfile, "}\n");                                                            \
+    indent--;                                                                            \
+    INDENT;                                                                              \
+    fprintf (outfile, "}\n\n")
 
 #define FirstOut(arg, n, body, default, step)                                            \
     {                                                                                    \
@@ -246,7 +347,7 @@ MAIN
     FILE *outfile = stdout;
     char type[] = "double";
     char name[] = "array_name";
-    int dim = 3, dima = 4, dimv = 3;
+    int dim = 3, dima = 4, dimv = 3, dimres = 4;
     char *s[] = {"40", "50", "60"};
     char *vi[] = {"10", "20", "30"};
     char *ar[] = {"firstarray", "secondarray"};
@@ -255,11 +356,17 @@ MAIN
                      "o1", "out", "int", "o2",   "out_a", "int", "oa"};
     char *rotdimstr[] = {"rotindim"};
     char *numstr[] = {"rotnum"};
+    char *valstr[] = {"ret-val"};
     char v[] = "vector";
     char a[] = "arg";
+    char reta[] = "ret-array";
     char a1[] = "arg1";
+    char from[] = "fromvar";
+    char to[] = "tovar";
+    char idx[] = "idxvar";
     char a2[] = "arg2";
     char res[] = "result";
+    int idxlen = 3;
     int i;
     int narg = 5;
     int indent = 1;
@@ -765,6 +872,167 @@ NewBlock (
 fprintf (outfile, "\n\n");
 
 #undef ND_KD_ROT_CxSxA_A
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_BEGIN_GENARRAY( res, dimres, from, to, idx, idxlen)
+ */
+
+#define ND_BEGIN_GENARRAY
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+
+BeginWith (res, dimres, from, to, idx, idxlen, fprintf (outfile, "0"));
+
+#ifdef TEST_BACKEND
+indent -= idxlen + 1;
+#endif /* TEST_BACKEND */
+
+#undef ND_BEGIN_GENARRAY
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_BEGIN_MODARRAY( res, dimres, a, from, to, idx, idxlen)
+ */
+
+#define ND_BEGIN_MODARRAY
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+
+BeginWith (res, dimres, from, to, idx, idxlen,
+           fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]", a, res));
+
+#ifdef TEST_BACKEND
+indent -= idxlen + 1;
+#endif /* TEST_BACKEND */
+
+#undef ND_BEGIN_MODARRAY
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_END_GENARRAY_S( res, dimres, valstr):
+ */
+
+#define ND_END_GENARRAY_S
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+
+#ifdef TEST_BACKEND
+indent += dimres + 1;
+#endif /* TEST_BACKEND */
+
+RetWithScal (res, valstr);
+EndWith (res, dimres, dimres, fprintf (outfile, "0"));
+
+#undef ND_END_GENARRAY_S
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_END_GENARRAY_A( res, dimres, reta, idxlen):
+ */
+
+#define ND_END_GENARRAY_A
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+
+#ifdef TEST_BACKEND
+indent += idxlen + 1;
+#endif /* TEST_BACKEND */
+
+RetWithArray (res, reta);
+EndWith (res, dimres, idxlen, fprintf (outfile, "0"));
+
+#undef ND_END_GENARRAY_A
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_END_MODARRAY_S( res, dimres, a, valstr):
+ */
+
+#define ND_END_MODARRAY_S
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+
+#ifdef TEST_BACKEND
+indent += dimres + 1;
+#endif /* TEST_BACKEND */
+
+RetWithScal (res, valstr);
+EndWith (res, dimres, dimres, fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]", a, res));
+
+#undef ND_END_MODARRAY_S
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_END_MODARRAY_A( res, dimres, a, reta, idxlen):
+ */
+
+#define ND_END_MODARRAY_A
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+
+#ifdef TEST_BACKEND
+indent += idxlen + 1;
+#endif /* TEST_BACKEND */
+
+RetWithArray (res, reta);
+EndWith (res, dimres, idxlen, fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]", a, res));
+
+#undef ND_END_MODARRAY_A
 
 #ifdef TEST_BACKEND
 return (0);

@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/04/18 14:49:08  sbs
- * ND_CREATE_CONST_ARRAY modified; initial basic_type parameter eliminated
+ * Revision 1.12  1995/04/27 12:57:05  sbs
+ * WITH-LOOP ICM s inserted.
  *
+# Revision 1.11  1995/04/18  14:49:08  sbs
+# ND_CREATE_CONST_ARRAY modified; initial basic_type parameter eliminated
+#
 # Revision 1.10  1995/04/18  11:02:40  sbs
 # ND_KD_ROT_SxSxA_A eliminated
 #
@@ -160,5 +163,64 @@ ICM_DEF( ND_KD_ROT_CxSxA_A)
   ICM_STR(a)
   ICM_STR(res)
 ICM_END( ND_KD_ROT_CxSxA_A )
+#endif
+
+#if defined(ND_BEGIN_GENARRAY) || defined(ICM_ALL)
+ICM_DEF( ND_BEGIN_GENARRAY)
+  ICM_STR( res)
+  ICM_INT(dimres)
+  ICM_STR( from)
+  ICM_STR( to)
+  ICM_STR( idx)
+  ICM_INT( idxlen)
+ICM_END( ND_BEGIN_GENARRAY )
+#endif
+
+#if defined(ND_END_GENARRAY_S) || defined(ICM_ALL)
+ICM_DEF( ND_END_GENARRAY_S)
+  ICM_STR( res)
+  ICM_INT(dimres)
+  ICM_VAR( 1, valstr)
+ICM_END( ND_END_GENARRAY_S )
+#endif
+
+#if defined(ND_END_GENARRAY_A) || defined(ICM_ALL)
+ICM_DEF( ND_END_GENARRAY_A)
+  ICM_STR( res)
+  ICM_INT(dimres)
+  ICM_STR( reta)
+  ICM_INT(idxlen)
+ICM_END( ND_END_GENARRAY_S )
+#endif
+
+#if defined(ND_BEGIN_MODARRAY) || defined(ICM_ALL)
+ICM_DEF( ND_BEGIN_MODARRAY)
+  ICM_STR( res)
+  ICM_INT(dimres)
+  ICM_STR( a)
+  ICM_STR( from)
+  ICM_STR( to)
+  ICM_STR( idx)
+  ICM_INT( idxlen)
+ICM_END( ND_BEGIN_MODARRAY )
+#endif
+
+#if defined(ND_END_MODARRAY_S) || defined(ICM_ALL)
+ICM_DEF( ND_END_MODARRAY_S)
+  ICM_STR( res)
+  ICM_INT(dimres)
+  ICM_STR( a)
+  ICM_VAR( 1, valstr)
+ICM_END( ND_END_MODARRAY_S )
+#endif
+
+#if defined(ND_END_MODARRAY_A) || defined(ICM_ALL)
+ICM_DEF( ND_END_MODARRAY_A)
+  ICM_STR( res)
+  ICM_INT(dimres)
+  ICM_STR( a)
+  ICM_STR( reta)
+  ICM_INT(idxlen)
+ICM_END( ND_END_MODARRAY_S )
 #endif
 
