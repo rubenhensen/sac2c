@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/03/22 13:32:47  dkr
+ * CreateInlineName removed
+ *
  * Revision 3.2  2001/03/21 17:49:56  dkr
  * INLvardec, INLarg removed
  *
@@ -45,7 +48,6 @@
 
 extern node *Inline (node *arg_node, node *arg_info);
 extern node *InlineSingleApplication (node *let_node, node *fundef_node);
-extern char *CreateInlineName (char *old_name);
 
 extern node *INLmodul (node *arg_node, node *arg_info);
 extern node *INLfundef (node *arg_node, node *arg_info);
