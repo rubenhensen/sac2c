@@ -1,5 +1,10 @@
 dnl
 dnl $Log$
+dnl Revision 1.30  2004/08/09 10:22:03  sah
+dnl added check for __STDC__ flag on solaris
+dnl its seems to be set already on some
+dnl systenms
+dnl
 dnl Revision 1.29  2004/08/07 13:55:22  sah
 dnl if available, gnu indent is used instead of cb
 dnl which improves readability of generated code
@@ -444,10 +449,29 @@ RCMAC=$srcdir/src/runtime/sac2crc.MAC
 dnl generate specific flags for known os
 OSFLAGS=""
 case "$target_os" in
-  solaris*)     OSFLAGS=["-D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY"];;
-  *linux*)      OSFLAGS=["-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"];;
-  *osf*)	OSFLAGS=["-D_OSF_SOURCE"];;
-  *darwin*)      OSFLAGS=["-traditional-cpp -Wno-long-double"];;
+  solaris*)     
+     dnl check whether __STDC__ is already defined
+     AC_MSG_CHECKING(whether __STDC__ is already defined)
+     AC_TRY_COMPILE(,
+     [#ifndef __STDC__
+       choke me
+     #endif],
+     AC_MSG_RESULT(yes)
+     STDCDEF=,
+     AC_MSG_RESULT(no)
+     STDCDEF=-D__STDC__=0
+     )
+     OSFLAGS=["-D__EXTENSIONS__ $STDCDEF -DMUST_INIT_YY"]
+    ;;
+  *linux*)      
+    OSFLAGS=["-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
+    ;;
+  *osf*)	
+    OSFLAGS=["-D_OSF_SOURCE"]
+    ;;
+  *darwin*)      
+    OSFLAGS=["-traditional-cpp -Wno-long-double"]
+    ;;
 esac
 AC_SUBST(OSFLAGS)
 
