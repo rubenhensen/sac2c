@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.8  2000/01/17 16:25:58  cg
+ * Removed static and dynamic versions of the ICMs
+ * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END].
+ * General version now is identical with the former dynamic
+ * version.
+ *
  * Revision 2.7  1999/07/20 16:54:11  jhs
  * Added barrier_id to signature of MT_SYNC_FOLD.
  *
@@ -702,40 +708,22 @@ ICM_DEF( MT_CONTINUE, TRACE_NONE)
 ICM_END( MT_CONTINUE, (nfoldargs, vararg, nsyncargs, syncargs))
 #endif
 
-#if defined(MT_SPMD_STATIC_MODE_BEGIN) || defined(ICM_ALL)
-ICM_DEF( MT_SPMD_STATIC_MODE_BEGIN, TRACE_NONE)
+#if defined(MT_SPMD_BEGIN) || defined(ICM_ALL)
+ICM_DEF( MT_SPMD_BEGIN, TRACE_NONE)
   ICM_STR(name)
-ICM_END( MT_SPMD_STATIC_MODE_BEGIN, (name))
+ICM_END( MT_SPMD_BEGIN, (name))
 #endif
 
-#if defined(MT_SPMD_STATIC_MODE_ALTSEQ) || defined(ICM_ALL)
-ICM_DEF( MT_SPMD_STATIC_MODE_ALTSEQ, TRACE_NONE)
+#if defined(MT_SPMD_ALTSEQ) || defined(ICM_ALL)
+ICM_DEF( MT_SPMD_ALTSEQ, TRACE_NONE)
   ICM_STR(name)
-ICM_END( MT_SPMD_STATIC_MODE_ALTSEQ, (name))
+ICM_END( MT_SPMD_ALTSEQ, (name))
 #endif
 
 #if defined(MT_SPMD_STATIC_MODE_END) || defined(ICM_ALL)
-ICM_DEF( MT_SPMD_STATIC_MODE_END, TRACE_NONE)
+ICM_DEF( MT_SPMD_END, TRACE_NONE)
   ICM_STR(name)
-ICM_END( MT_SPMD_STATIC_MODE_END, (name))
-#endif
-
-#if defined(MT_SPMD_DYNAMIC_MODE_BEGIN) || defined(ICM_ALL)
-ICM_DEF( MT_SPMD_DYNAMIC_MODE_BEGIN, TRACE_NONE)
-  ICM_STR(name)
-ICM_END( MT_SPMD_DYNAMIC_MODE_BEGIN, (name))
-#endif
-
-#if defined(MT_SPMD_DYNAMIC_MODE_ALTSEQ) || defined(ICM_ALL)
-ICM_DEF( MT_SPMD_DYNAMIC_MODE_ALTSEQ, TRACE_NONE)
-  ICM_STR(name)
-ICM_END( MT_SPMD_DYNAMIC_MODE_ALTSEQ, (name))
-#endif
-
-#if defined(MT_SPMD_DYNAMIC_MODE_END) || defined(ICM_ALL)
-ICM_DEF( MT_SPMD_DYNAMIC_MODE_END, TRACE_NONE)
-  ICM_STR(name)
-ICM_END( MT_SPMD_DYNAMIC_MODE_END, (name))
+ICM_END( MT_SPMD_END, (name))
 #endif
 
 

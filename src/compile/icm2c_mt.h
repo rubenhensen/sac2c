@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/01/17 16:25:58  cg
+ * Removed static and dynamic versions of the ICMs
+ * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END].
+ * General version now is identical with the former dynamic
+ * version.
+ *
  * Revision 2.4  1999/07/20 16:55:06  jhs
  * Added comments.
  * Changed behaviour of MT_SPMD_SETUP, so shared[_rc] variables are no longer setuped.
@@ -87,12 +93,9 @@ extern void ICMCompileMT_CONTINUE (int nfoldargs, char **vararg, int nsyncargs,
 extern void ICMCompileMT_SPMD_SETUP (char *name, int narg, char **vararg);
 extern void ICMCompileMT_SPMD_PRESET (char *name, int narg, char **vararg);
 
-extern void ICMCompileMT_SPMD_STATIC_MODE_BEGIN (char *name);
-extern void ICMCompileMT_SPMD_STATIC_MODE_ALTSEQ (char *name);
-extern void ICMCompileMT_SPMD_STATIC_MODE_END (char *name);
-extern void ICMCompileMT_SPMD_DYNAMIC_MODE_BEGIN (char *name);
-extern void ICMCompileMT_SPMD_DYNAMIC_MODE_ALTSEQ (char *name);
-extern void ICMCompileMT_SPMD_DYNAMIC_MODE_END (char *name);
+extern void ICMCompileMT_SPMD_BEGIN (char *name);
+extern void ICMCompileMT_SPMD_ALTSEQ (char *name);
+extern void ICMCompileMT_SPMD_END (char *name);
 
 extern void ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower,
                                            int upper, int unrolling, char *array);

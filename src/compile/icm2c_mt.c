@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/01/17 16:25:58  cg
+ * Removed static and dynamic versions of the ICMs
+ * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END].
+ * General version now is identical with the former dynamic
+ * version.
+ *
  * Revision 2.9  1999/11/18 12:07:12  jhs
  * Added multi-thread-tracing in MULTIFOLD icm's.
  *
@@ -213,6 +219,9 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg)
     INDENT;
     fprintf (outfile, "int SAC_dummy_refcount=10;\n");
 
+    INDENT;
+    fprintf (outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_single_threaded)\n");
+
     for (i = 0; i < 3 * narg; i += 3) {
         INDENT;
         fprintf (outfile, "SAC_MT_SPMD_PARAM_%s( %s, %s)\n", vararg[i], vararg[i + 1],
@@ -326,6 +335,9 @@ ICMCompileMT_START_SYNCBLOCK (int barrier_id, int narg, char **vararg)
     fprintf (outfile, "{\n");
     indent++;
 
+    INDENT;
+    fprintf (outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_multi_threaded)\n");
+
     for (i = 0; i < 3 * narg; i += 3) {
         if (0 == strcmp (vararg[i], "in_rc")) {
             INDENT;
@@ -380,7 +392,7 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
     /*
      *  fetch code-elements for all fold-operations
      */
-    foldcodes = (node **)malloc (narg * sizeof (node *));
+    foldcodes = (node **)Malloc (narg * sizeof (node *));
     for (i = 0; i < narg; i++) {
         foldop = vararg[(i * 4) + 3];
         DBUG_PRINT ("COMPi", ("%i %s", i, foldop));
@@ -539,7 +551,7 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int narg, char **vararg)
     INDENT;
     fprintf (outfile, "}\n");
 
-    free (foldcodes);
+    FREE (foldcodes);
     DBUG_VOID_RETURN;
 }
 
@@ -1128,12 +1140,9 @@ ICMCompileMT_SPMD_SETUP (char *name, int narg, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SPMD_STATIC_MODE_BEGIN(char *name)
- *   void ICMCompileMT_SPMD_STATIC_MODE_ALTSEQ(char *name)
- *   void ICMCompileMT_SPMD_STATIC_MODE_END(char *name)
- *   void ICMCompileMT_SPMD_DYNAMIC_MODE_BEGIN(char *name)
- *   void ICMCompileMT_SPMD_DYNAMIC_MODE_ALTSEQ(char *name)
- *   void ICMCompileMT_SPMD_DYNAMIC_MODE_END(char *name)
+ *   void ICMCompileMT_SPMD_BEGIN(char *name)
+ *   void ICMCompileMT_SPMD_ALTSEQ(char *name)
+ *   void ICMCompileMT_SPMD_END(char *name)
  *
  * description:
  *
@@ -1144,95 +1153,70 @@ ICMCompileMT_SPMD_SETUP (char *name, int narg, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_SPMD_STATIC_MODE_BEGIN (char *name)
+ICMCompileMT_SPMD_BEGIN (char *name)
 {
-    DBUG_ENTER ("ICMCompileMT_SPMD_STATIC_MODE_BEGIN");
+    DBUG_ENTER ("ICMCompileMT_SPMD_BEGIN");
 
-#define MT_SPMD_STATIC_MODE_BEGIN
+#define MT_SPMD_BEGIN
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef MT_SPMD_STATIC_MODE_BEGIN
-
-    fprintf (outfile, "\n#if SAC_DO_MULTITHREAD\n");
-
-    DBUG_VOID_RETURN;
-}
-
-void
-ICMCompileMT_SPMD_STATIC_MODE_ALTSEQ (char *name)
-{
-    DBUG_ENTER ("ICMCompileMT_SPMD_STATIC_MODE_ALTSEQ");
-
-#define MT_SPMD_STATIC_MODE_ALTSEQ
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef MT_SPMD_STATIC_MODE_ALTSEQ
-
-    fprintf (outfile, "\n#else  /* SAC_DO_MULTITHREAD */\n\n");
-
-    DBUG_VOID_RETURN;
-}
-
-void
-ICMCompileMT_SPMD_STATIC_MODE_END (char *name)
-{
-    DBUG_ENTER ("");
-
-#define MT_SPMD_STATIC_MODE_END
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef MT_SPMD_STATIC_MODE_END
-
-    fprintf (outfile, "\n#endif  /* SAC_DO_MULTITHREAD */\n\n");
-
-    DBUG_VOID_RETURN;
-}
-
-void
-ICMCompileMT_SPMD_DYNAMIC_MODE_BEGIN (char *name)
-{
-    DBUG_ENTER ("ICMCompileMT_SPMD_DYNAMIC_MODE_BEGIN");
-
-#define MT_SPMD_DYNAMIC_MODE_BEGIN
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef MT_SPMD_DYNAMIC_MODE_BEGIN
+#undef MT_SPMD_BEGIN
 
     fprintf (outfile, "\n#if SAC_DO_MULTITHREAD\n");
     INDENT;
     fprintf (outfile, "if (SAC_MT_not_yet_parallel)\n");
+    INDENT;
+    fprintf (outfile, "{\n");
+    indent++;
+    INDENT;
+    fprintf (outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_single_threaded)\n");
 
     DBUG_VOID_RETURN;
 }
 
 void
-ICMCompileMT_SPMD_DYNAMIC_MODE_ALTSEQ (char *name)
+ICMCompileMT_SPMD_ALTSEQ (char *name)
 {
-    DBUG_ENTER ("ICMCompileMT_SPMD_DYNAMIC_MODE_ALTSEQ");
+    DBUG_ENTER ("ICMCompileMT_SPMD_ALTSEQ");
 
-#define MT_SPMD_DYNAMIC_MODE_ALTSEQ
+#define MT_SPMD_ALTSEQ
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef MT_SPMD_DYNAMIC_MODE_ALTSEQ
+#undef MT_SPMD_ALTSEQ
 
     INDENT;
+    fprintf (outfile, "}\n");
+    indent--;
+    INDENT;
     fprintf (outfile, "else\n");
+    INDENT;
+    fprintf (outfile, "{\n");
+    indent++;
+    INDENT;
+    fprintf (outfile, "SAC_MT_DETERMINE_THREAD_ID()\n");
+    INDENT;
+    fprintf (outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_multi_threaded)\n");
     fprintf (outfile, "#endif  /* SAC_DO_MULTITHREAD */\n\n");
 
     DBUG_VOID_RETURN;
 }
 
 void
-ICMCompileMT_SPMD_DYNAMIC_MODE_END (char *name)
+ICMCompileMT_SPMD_END (char *name)
 {
-    DBUG_ENTER ("ICMCompileMT_SPMD_DYNAMIC_MODE_END");
+    DBUG_ENTER ("ICMCompileMT_SPMD_END");
 
-#define MT_SPMD_DYNAMIC_MODE_END
+#define MT_SPMD_END
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef MT_SPMD_DYNAMIC_MODE_END
+#undef MT_SPMD_END
 
-    fprintf (outfile, "\n");
+    fprintf (outfile, "\n#if SAC_DO_MULTITHREAD\n");
+    indent--;
+    INDENT;
+    fprintf (outfile, "}\n");
+
+    fprintf (outfile, "#endif  /* SAC_DO_MULTITHREAD */\n\n");
 
     DBUG_VOID_RETURN;
 }

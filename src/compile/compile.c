@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.39  2000/01/17 16:25:58  cg
+ * Removed static and dynamic versions of the ICMs
+ * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END].
+ * General version now is identical with the former dynamic
+ * version.
+ *
  * Revision 2.38  1999/11/16 15:26:23  dkr
  * some minor changes in COMPWlgrid:
  *   initializing of 'insert_icm' added
@@ -5754,27 +5760,12 @@ COMPSpmd (node *arg_node, node *arg_info)
      * build ICM for SPMD-region
      */
 
-    if (SPMD_STATIC (arg_node)) {
-        SPMD_ICM_BEGIN (arg_node)
-          = MakeIcm1 ("MT_SPMD_STATIC_MODE_BEGIN",
-                      MakeId1 (FUNDEF_NAME (SPMD_FUNDEF (arg_node))));
-        SPMD_ICM_ALTSEQ (arg_node)
-          = MakeIcm1 ("MT_SPMD_STATIC_MODE_ALTSEQ",
-                      MakeId1 (FUNDEF_NAME (SPMD_FUNDEF (arg_node))));
-        SPMD_ICM_END (arg_node)
-          = MakeIcm1 ("MT_SPMD_STATIC_MODE_END",
-                      MakeId1 (FUNDEF_NAME (SPMD_FUNDEF (arg_node))));
-    } else {
-        SPMD_ICM_BEGIN (arg_node)
-          = MakeIcm1 ("MT_SPMD_DYNAMIC_MODE_BEGIN",
-                      MakeId1 (FUNDEF_NAME (SPMD_FUNDEF (arg_node))));
-        SPMD_ICM_ALTSEQ (arg_node)
-          = MakeIcm1 ("MT_SPMD_DYNAMIC_MODE_ALTSEQ",
-                      MakeId1 (FUNDEF_NAME (SPMD_FUNDEF (arg_node))));
-        SPMD_ICM_END (arg_node)
-          = MakeIcm1 ("MT_SPMD_DYNAMIC_MODE_END",
-                      MakeId1 (FUNDEF_NAME (SPMD_FUNDEF (arg_node))));
-    }
+    SPMD_ICM_BEGIN (arg_node)
+      = MakeIcm1 ("MT_SPMD_BEGIN", MakeId1 (FUNDEF_NAME (SPMD_FUNDEF (arg_node))));
+    SPMD_ICM_ALTSEQ (arg_node)
+      = MakeIcm1 ("MT_SPMD_ALTSEQ", MakeId1 (FUNDEF_NAME (SPMD_FUNDEF (arg_node))));
+    SPMD_ICM_END (arg_node)
+      = MakeIcm1 ("MT_SPMD_END", MakeId1 (FUNDEF_NAME (SPMD_FUNDEF (arg_node))));
 
     /*
      * Now, build up the ICMs of the parallel block.
