@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.16  1995/05/30 12:03:42  cg
- * Storage of constants and global objects in the syntax tree described.
+ * Revision 1.17  1995/05/31 15:50:33  hw
+ * changed information for node N_foldfun (node[1])
  *
+# Revision 1.16  1995/05/30  12:03:42  cg
+# Storage of constants and global objects in the syntax tree described.
+#
 # Revision 1.15  1995/05/30  10:10:04  hw
 # informations updated
 #
@@ -376,7 +379,7 @@ N_foldfun:
 info.fun_name.id     : name of user defined fold-function
 info.fun_name.id_mod : name of modul where fold_function is defined
 node[0]              : body
-node[1]              : expression to compute neutral element of fold_function (N_exprs)
+node[1]              : expression to compute neutral element of fold_function
 node[2]              : pointer to declaration of fold-function ( it is set while
                         typechecking.
                         !!! nnode will not be increased (it is still 2) !!! )
