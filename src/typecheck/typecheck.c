@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2002/10/18 14:27:51  sbs
+ * ID_ATTRIB accesses replaced with FLAG inspections.
+ *
  * Revision 3.47  2002/10/09 22:18:17  dkr
  * macro moved from tree_compound.h to typecheck.c
  *
@@ -4421,7 +4424,7 @@ CheckIfGOonlyCBR (node *arg, node *exprs)
         expr = EXPRS_EXPR (exprs);
 
         if (NODE_TYPE (expr) == N_id) {
-            if (ID_ATTRIB (expr) == ST_global) {
+            if (GET_FLAG (ID, expr, IS_GLOBAL)) {
                 if ((ARG_ATTRIB (arg) != ST_reference)
                     && (ARG_ATTRIB (arg) != ST_readonly_reference)) {
                     ERROR (NODE_LINE (expr),
@@ -4495,7 +4498,7 @@ TypeInference (node *arg_node, node *arg_info)
 
         stack_p = NULL;
 
-        if (ID_ATTRIB (arg_node) == ST_global) {
+        if (GET_FLAG (ID, arg_node, IS_GLOBAL)) {
             /*
              *  The identifier was given a module name by the programmer,
              *  so it must be a global object.
@@ -4538,7 +4541,7 @@ TypeInference (node *arg_node, node *arg_info)
 
                 if (odef != NULL) {
                     arg_node->info.ids->mod = OBJDEF_MOD (odef);
-                    ID_ATTRIB (arg_node) = ST_global;
+                    SET_FLAG (ID, arg_node, IS_GLOBAL, TRUE);
                     ID_OBJDEF (arg_node) = odef;
 
                     return_type = DupAllTypes (OBJDEF_TYPE (odef));
