@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.58  1998/05/28 23:52:30  dkr
+ * fixed a bug in RCNwith:
+ *   NWITH_DEC_RC_IDS is now set correctly for fold
+ *
  * Revision 1.57  1998/05/21 15:00:06  dkr
  * changed RCNwith
  *
@@ -1603,7 +1607,7 @@ RCgen (node *arg_node, node *arg_info)
 node *
 RCNwith (node *arg_node, node *arg_info)
 {
-    node *vardec, *tmp_with;
+    node *vardec, *neutral_vardec, *tmp_with;
     ids *new_ids, *last_ids;
     int *ref_dump, *tmp_rcdump;
 
@@ -1623,27 +1627,6 @@ RCNwith (node *arg_node, node *arg_info)
     /*
      * now we set up 'INFO_RC_RCDUMP( arg_info)' (needed in RCNcode)
      */
-#if 00
-    FOREACH_VARDEC_AND_ARG (fundef_node, vardec,
-                            if (DFMTestMaskEntry (NWITH_IN (arg_node),
-                                                  VARDEC_OR_ARG_NAME (vardec))
-                                || (strcmp (IDS_NAME (NWITH_VEC (arg_node)),
-                                            VARDEC_OR_ARG_NAME (vardec))
-                                    == 0)) {
-                                /*
-                                 * remark: We only need to inspect the withid of the first
-                                 * part, because the withid is in *all* parts the same!!
-                                 */
-
-                                if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
-                                    if (NODE_TYPE (vardec) == N_arg) {
-                                        ARG_REFCNT (vardec) = 1;
-                                    } else {
-                                        VARDEC_REFCNT (vardec) = 1;
-                                    }
-                                }
-                            }) /* FOREACH_VARDEC_AND_ARG */
-#else
     vardec = DFMGetMaskEntryDeclSet (NWITH_IN (arg_node));
     while (vardec != NULL) {
         if (MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) {
@@ -1664,7 +1647,6 @@ RCNwith (node *arg_node, node *arg_info)
             VARDEC_REFCNT (vardec) = 1;
         }
     }
-#endif /* 0 */
 
     tmp_rcdump = INFO_RC_RCDUMP (arg_info);
     INFO_RC_RCDUMP (arg_info) = StoreRC ();
@@ -1700,6 +1682,10 @@ RCNwith (node *arg_node, node *arg_info)
      * We collect all these ids in 'NWITH_DEC_RC_IDS( arg_node)'.
      * 'compile' generates for each var found in 'NWITH_DEC_RC_IDS' a
      *  'ND_DEC_RC'-ICM in the epilog-code of the with-loop!
+     * CAUTION: An exeption is the neutral-element of an fold-with-loop.
+     *          This id must not inserted in 'NWITH_DEC_RC_IDS', because
+     *          this argument is *not* consumed by the with-loop!
+     *          There is an 'ASSIGN_ARRAY( neutral, wl_ids)' instead!!!
      *
      * RCO: with-loops are handled like prfs:
      *      when RCO is active, we only count the last occur of IN-vars.
@@ -1712,36 +1698,19 @@ RCNwith (node *arg_node, node *arg_info)
         NWITH_DEC_RC_IDS (arg_node) = FreeAllIds (NWITH_DEC_RC_IDS (arg_node));
     }
 
-#if 00
-    FOREACH_VARDEC_AND_ARG (fundef_node, vardec,
-                            if (DFMTestMaskEntry (NWITH_IN (arg_node),
-                                                  VARDEC_OR_ARG_NAME (vardec))) {
-                                if ((MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec)))
-                                    && ((VARDEC_OR_ARG_REFCNT (vardec) == 0)
-                                        || (!opt_rco))) {
-                                    if (NODE_TYPE (vardec) == N_arg) {
-                                        ARG_REFCNT (vardec)++;
-                                    } else {
-                                        VARDEC_REFCNT (vardec)++;
-                                    }
+    /*
+     * if the current with-loop is a fold-op,
+     *  store the vardec of the neutral element.
+     */
+    neutral_vardec = NULL;
+    if (((NWITH_TYPE (arg_node) == WO_foldfun) || (NWITH_TYPE (arg_node) == WO_foldprf))
+        && (NODE_TYPE (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node))) == N_id)) {
+        neutral_vardec = ID_VARDEC (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node)));
+    }
 
-                                    new_ids
-                                      = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
-                                                 NULL, ST_regular);
-                                    IDS_VARDEC (new_ids) = vardec;
-                                    IDS_REFCNT (new_ids) = VARDEC_REFCNT (vardec);
-                                    if (NWITH_DEC_RC_IDS (arg_node) == NULL) {
-                                        NWITH_DEC_RC_IDS (arg_node) = new_ids;
-                                    } else {
-                                        IDS_NEXT (last_ids) = new_ids;
-                                    }
-                                    last_ids = new_ids;
-                                }
-                            }) /* FOREACH_VARDEC_AND_ARG */
-#else
     vardec = DFMGetMaskEntryDeclSet (NWITH_IN (arg_node));
     while (vardec != NULL) {
-        if ((MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec)))
+        if ((MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec))) && (vardec != neutral_vardec)
             && ((VARDEC_OR_ARG_REFCNT (vardec) == 0) || (!opt_rco))) {
             if (NODE_TYPE (vardec) == N_arg) {
                 ARG_REFCNT (vardec)++;
@@ -1762,7 +1731,6 @@ RCNwith (node *arg_node, node *arg_info)
         }
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
-#endif /* 0 */
 
     /*
      * we leave the with-loop -> reset 'INFO_RC_...( arg_info)'.
