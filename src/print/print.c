@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.84  1995/09/04 11:48:33  asi
+ * Revision 1.85  1995/10/12 09:01:30  cg
+ * "mod:id" now printed in expressions
+ *
+ * Revision 1.84  1995/09/04  11:48:33  asi
  * PrintFloat and PrintDouble changed ( %.256g used in printf )
  *
  * Revision 1.83  1995/08/11  17:35:36  hw
@@ -664,7 +667,12 @@ PrintId (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((N_id == arg_node->nodetype) || (N_str == arg_node->nodetype),
                  "wrong arg_node->nodetype ");
+
     if (N_id == arg_node->nodetype) {
+        if ((ID_ATTRIB (arg_node) = ST_global) && (ID_MOD (arg_node) != NULL)) {
+            fprintf (outfile, "%s:", ID_MOD (arg_node));
+        }
+
         if ((0 == show_refcnt) || (-1 == arg_node->refcnt))
             fprintf (outfile, "%s", arg_node->info.ids->id);
         else
