@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2002/07/24 13:17:30  dkr
+ * MUST_REFCOUNT renamed into TYPE_MUST_REFCOUNT
+ *
  * Revision 3.52  2002/07/15 19:16:23  dkr
  * PREC3let: modification for TAGGED_ARRAYS done:
  * F_reshape is also lifted now
@@ -446,7 +449,7 @@ InsertObjInit (node *block, node *objdef)
     new_ids = MakeIds (StringCopy (OBJDEF_NAME (objdef)), NULL, ST_regular);
     IDS_VARDEC (new_ids) = objdef;
     IDS_ATTRIB (new_ids) = ST_global;
-    if (MUST_REFCOUNT (OBJDEF_TYPE (objdef))) {
+    if (TYPE_MUST_REFCOUNT (OBJDEF_TYPE (objdef))) {
         IDS_REFCNT (new_ids) = 1;
     } else {
         IDS_REFCNT (new_ids) = RC_INACTIVE;
@@ -1209,7 +1212,7 @@ InsertOut (argtab_t *argtab, node *fundef, int param_id, types *rettype, bool *d
 
     idx = FUNDEF_GET_LINKSIGN (fundef, param_id, *dots);
     if (TYPES_BASETYPE (rettype) != T_dots) {
-        if (MUST_REFCOUNT (rettype)) {
+        if (TYPE_MUST_REFCOUNT (rettype)) {
             if (FUNDEF_DOES_REFCOUNT (fundef, param_id)) {
                 argtag = ATG_out_rc;
 
