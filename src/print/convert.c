@@ -1,7 +1,7 @@
 /*
  *
  * $Log$
- * Revision 3.17  2004/11/25 16:55:50  jhb
+ * Revision 3.18  2004/11/25 18:10:15  jhb
  * compile
  *
  * Revision 3.16  2002/10/29 17:34:09  dkr
@@ -122,7 +122,6 @@ static char *rename_type[] = {
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "free.h"
-#include "types.h"
 #include "constants_internal.h"
 #include "globals.h"
 #include "internal_lib.h"
