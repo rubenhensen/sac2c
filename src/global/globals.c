@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.24  1998/10/26 12:34:14  cg
+ * new compiler option:
+ * use intrinsic array operations instead of with-loop based implementations
+ * in the stdlib. The corresponding information is stored by the new
+ * global variable intrinsics.
+ *
  * Revision 1.23  1998/10/23 14:29:46  cg
  * added the new command line option -inparsize <no> which allows to
  * specify a minimum generator size for with-loops to be executed in
@@ -298,13 +304,15 @@ int show_icm = 0;
  * Runtime options
  *
  * These options insert special code sections into the target C code
- * in order to do additional checks, profiling, etc.
+ * in order to do additional checks, profiling, etc., or to use intrinsic
+ * implementations of some array operations.
  */
 
 int traceflag = 0;
 int profileflag = 0;
 int check_malloc = 0;
 int check_boundary = 0;
+int intrinsics = 0;
 
 /*
  * Profiling information storage facilities

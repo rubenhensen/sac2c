@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.142  1998/10/26 12:34:14  cg
+ * new compiler option:
+ * use intrinsic array operations instead of with-loop based implementations
+ * in the stdlib. The corresponding information is stored by the new
+ * global variable intrinsics.
+ *
  * Revision 1.141  1998/10/23 14:29:46  cg
  * added the new command line option -inparsize <no> which allows to
  * specify a minimum generator size for with-loops to be executed in
@@ -636,9 +642,55 @@ MAIN
     }
     ARG 'i':
     {
-        copyright ();
-        exit (0);
+        if (0 == strcmp (*argv, "intrinsic")) {
+            if (--argc >= 1) {
+                argv++;
+                while (**argv) {
+                    switch (**argv) {
+                    case 'a':
+                        intrinsics = INTRINSIC_ALL;
+                        break;
+                    case '+':
+                        intrinsics |= INTRINSIC_ADD;
+                        break;
+                    case '-':
+                        intrinsics |= INTRINSIC_SUB;
+                        break;
+                    case '*':
+                        intrinsics |= INTRINSIC_MUL;
+                        break;
+                    case '/':
+                        intrinsics |= INTRINSIC_DIV;
+                        break;
+                    case 'p':
+                        intrinsics |= INTRINSIC_PSI;
+                        break;
+                    case 't':
+                        intrinsics |= INTRINSIC_TAKE;
+                        break;
+                    case 'd':
+                        intrinsics |= INTRINSIC_DROP;
+                        break;
+                    case 'c':
+                        intrinsics |= INTRINSIC_CAT;
+                        break;
+                    case 'r':
+                        intrinsics |= INTRINSIC_ROT;
+                        break;
+                    default:
+                        SYSWARN (("Unknown intrinsic flag '%c`", **argv));
+                    }
+                    ++*argv;
+                }
+            } else {
+                SYSERROR (("Missing intrinsic operation specification"));
+            }
+        } else {
+            copyright ();
+            exit (0);
+        }
     }
+    NEXTOPT
     ARG 'b' : PARM
     {
         switch (**argv) {
@@ -801,65 +853,75 @@ MAIN
             else
                 SYSERROR (("Missing target parameter"));
         } else {
-
-            while (**argv) {
-                switch (**argv) {
-                case 'a':
-                    traceflag = TRACE_ALL;
-                    break;
-                case 'm':
-                    traceflag |= TRACE_MEM;
-                    break;
-                case 'r':
-                    traceflag |= TRACE_REF;
-                    break;
-                case 'f':
-                    traceflag |= TRACE_FUN;
-                    break;
-                case 'p':
-                    traceflag |= TRACE_PRF;
-                    break;
-                case 'o':
-                    traceflag |= TRACE_OWL;
-                    break;
-                case 'w':
-                    traceflag |= TRACE_WL;
-                    break;
-                case 't':
-                    traceflag |= TRACE_MT;
-                    break;
-                default:
-                    SYSWARN (("Unknown trace flag '%c`", **argv));
-                }
-                ++*argv;
+            if (0 == strcmp (*argv, "race")) {
+                if (--argc >= 1) {
+                    argv++;
+                    while (**argv) {
+                        switch (**argv) {
+                        case 'a':
+                            traceflag = TRACE_ALL;
+                            break;
+                        case 'm':
+                            traceflag |= TRACE_MEM;
+                            break;
+                        case 'r':
+                            traceflag |= TRACE_REF;
+                            break;
+                        case 'f':
+                            traceflag |= TRACE_FUN;
+                            break;
+                        case 'p':
+                            traceflag |= TRACE_PRF;
+                            break;
+                        case 'o':
+                            traceflag |= TRACE_OWL;
+                            break;
+                        case 'w':
+                            traceflag |= TRACE_WL;
+                            break;
+                        case 't':
+                            traceflag |= TRACE_MT;
+                            break;
+                        default:
+                            SYSWARN (("Unknown trace flag '%c`", **argv));
+                        }
+                        ++*argv;
+                    }
+                } else
+                    SYSERROR (("Missing trace specification"));
             }
         }
     }
-
     NEXTOPT
     ARG 'p' : PARM
     {
-        while (**argv) {
-            switch (**argv) {
-            case 'a':
-                profileflag = PROFILE_ALL;
-                break;
-            case 'f':
-                profileflag = profileflag | PROFILE_FUN;
-                break;
-            case 'i':
-                profileflag = profileflag | PROFILE_INL;
-                break;
-            case 'l':
-                profileflag = profileflag | PROFILE_LIB;
-                break;
-            case 'w':
-                profileflag = profileflag | PROFILE_WITH;
-                break;
-            default:
-                SYSWARN (("Unknown profile flag '%c`", **argv));
-            }
-            ++*argv;
+        if (0 == strcmp (*argv, "rofile")) {
+            if (--argc >= 1) {
+                argv++;
+                while (**argv) {
+                    switch (**argv) {
+                    case 'a':
+                        profileflag = PROFILE_ALL;
+                        break;
+                    case 'f':
+                        profileflag |= PROFILE_FUN;
+                        break;
+                    case 'i':
+                        profileflag |= PROFILE_INL;
+                        break;
+                    case 'l':
+                        profileflag |= PROFILE_LIB;
+                        break;
+                    case 'w':
+                        profileflag |= PROFILE_WITH;
+                        break;
+                    default:
+                        SYSWARN (("Unknown profile flag '%c`", **argv));
+                    }
+                    ++*argv;
+                }
+            } else
+                SYSERROR (("Missing profile specification"));
         }
     }
     NEXTOPT

@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.36  1998/10/26 12:34:14  cg
+ * new compiler option:
+ * use intrinsic array operations instead of with-loop based implementations
+ * in the stdlib. The corresponding information is stored by the new
+ * global variable intrinsics.
+ *
  * Revision 1.35  1998/10/23 14:29:46  cg
  * added the new command line option -inparsize <no> which allows to
  * specify a minimum generator size for with-loops to be executed in
@@ -235,6 +241,23 @@ extern int profileflag;
 #define PROFILE_ALL 0xffff
 /*
  * Allowed values of profileflag
+ */
+
+extern int intrinsics;
+
+#define INTRINSIC_NONE 0x0000
+#define INTRINSIC_ADD 0x0001
+#define INTRINSIC_SUB 0x0002
+#define INTRINSIC_MUL 0x0004
+#define INTRINSIC_DIV 0x0008
+#define INTRINSIC_PSI 0x0010
+#define INTRINSIC_TAKE 0x0020
+#define INTRINSIC_DROP 0x0040
+#define INTRINSIC_ROT 0x0080
+#define INTRINSIC_CAT 0x0100
+#define INTRINSIC_ALL 0xffff
+/*
+ * Allowed values of intrinsics
  */
 
 extern int PFfuncntr;
