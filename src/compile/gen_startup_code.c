@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/07/03 15:34:38  dkr
+ * some spaces added :)
+ *
  * Revision 3.15  2002/07/03 15:28:01  dkr
  * RUNTIMECHECK_TYPE added (for TAGGED_ARRAYS)
  *
@@ -44,75 +47,6 @@
  *
  * Revision 3.2  2000/12/08 10:11:42  nmw
  * no more warnings on alpha
- *
- * Revision 3.1  2000/11/20 18:01:11  sacbase
- * new release made
- *
- * Revision 2.29  2000/10/31 18:12:18  cg
- * Added support for new function tag ST_exported.
- *
- * Revision 2.27  2000/08/07 19:47:29  nmw
- * missing initializing at begin of main() added
- * should fix the PHM crashes in relax_fix
- *
- * Revision 2.26  2000/08/01 13:27:51  nmw
- * header generation for c library internal PHM init function added
- *
- * Revision 2.25  2000/07/31 14:43:43  cg
- * Bug fixed in invocation of cache simulation tool.
- *
- * Revision 2.24  2000/07/25 10:04:54  nmw
- * calling SAC_ObjectInit fucntion with arg, argv from main
- *
- * Revision 2.23  2000/07/19 16:40:16  nmw
- * flag SAC_GENERATE_CLIBRARY added
- *
- * Revision 2.22  2000/07/14 15:07:19  nmw
- * missing include added - no more warnings
- *
- * Revision 2.21  2000/07/14 14:44:38  nmw
- * during startup the initfunction for global objects is called
- *
- * Revision 2.20  2000/06/30 13:04:34  nmw
- * conditional define for NULL added
- *
- * Revision 2.19  2000/02/23 20:16:34  cg
- * Node status ST_imported replaced by ST_imported_mod and
- * ST_imported_class in order to allow distinction between enteties
- * that are imported from a module and those that are imported from a
- * class.
- *
- * Revision 2.18  2000/02/04 16:50:20  cg
- * Changed setting of cache sizes from a KB representation to bytes.
- * Added MSCA (memory size cache adjustment)
- *
- * Revision 2.17  2000/01/26 17:30:02  dkr
- * type of traverse-function-table changed.
- *
- * Revision 2.16  2000/01/21 13:22:05  jhs
- * Adapted to new mt ...
- *
- * Revision 2.15  2000/01/17 17:58:45  cg
- * Added new heap manager optimization options
- * APS (arena preselection) and
- * RCAO (reference counter allocation optimization).
- *
- * Revision 2.14  2000/01/17 16:25:58  cg
- * Added new options to control initial heap sizes separately
- * for master's arena of arenas, workers' arena of arenas and the
- * top arena.
- *
- * Revision 2.13  1999/07/21 16:29:37  jhs
- * needed_sync_fold introduced, max_sync_fold_adjusted.
- *
- * Revision 2.12  1999/07/20 16:52:32  jhs
- * Added one or two comments.
- *
- * Revision 2.11  1999/07/16 09:34:12  cg
- * Added facilities for heap management diagnostics.
- *
- * Revision 2.10  1999/07/09 12:45:32  cg
- * Basic prerequisites for diagnostic heap management introduced.
  *
  *   [...]
  *
@@ -241,7 +175,7 @@ PrintGlobalSwitches ()
 
     fprintf (outfile, "#define SAC_DO_CHECK           %d\n", runtimecheck ? 1 : 0);
 #ifdef TAGGED_ARRAYS
-    fprintf (outfile, "#define SAC_DO_CHECK_TYPE  %d\n",
+    fprintf (outfile, "#define SAC_DO_CHECK_TYPE      %d\n",
              (runtimecheck & RUNTIMECHECK_TYPE) ? 1 : 0);
 #endif
     fprintf (outfile, "#define SAC_DO_CHECK_BOUNDARY  %d\n",
