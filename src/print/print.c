@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.177  2004/11/22 15:49:41  sbs
+ * print_info.h inlined.
+ *
  * Revision 3.176  2004/11/19 10:13:45  sah
  * classtype is a ntype now
  *
@@ -375,7 +378,41 @@
  * the INFO structure is shared between all phases that do use functions
  * from print, see print_info.h for details.
  */
-#include "print_info.h"
+
+/* INFO structure */
+struct INFO {
+    /* print */
+    node *cont;
+    node *fundef;
+    node *npart;
+    node *nwith2;
+    int sib;
+    int ofp;
+    int varno;
+    int prototype;
+    int separate;
+    int dim;
+    shpseg *shape;
+    shpseg *shapecnt;
+    /* writesib */
+    nodelist *etypes;
+    nodelist *efuns;
+    nodelist *eobjs;
+};
+
+/* access macros print */
+#define INFO_PRINT_CONT(n) (n->cont)
+#define INFO_PRINT_FUNDEF(n) (n->fundef)
+#define INFO_PRINT_NPART(n) (n->npart)
+#define INFO_PRINT_NWITH2(n) (n->nwith2)
+#define INFO_PRINT_SIB(n) (n->sib)
+#define INFO_PRINT_OMIT_FORMAL_PARAMS(n) (n->ofp)
+#define INFO_PRINT_VARNO(n) (n->varno)
+#define INFO_PRINT_PROTOTYPE(n) (n->prototype)
+#define INFO_PRINT_SEPARATE(n) (n->separate)
+#define INFO_PRINT_DIM(n) (n->dim)
+#define INFO_PRINT_SHAPE(n) (n->shape)
+#define INFO_PRINT_SHAPE_COUNTER(n) (n->shapecnt)
 
 /*
  * This global variable is used to detect inside of PrintIcm() whether
