@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/04 12:31:48  dkr
+ * PREC2array added
+ *
  * Revision 3.1  2000/11/20 18:01:27  sacbase
  * new release made
  *
@@ -104,26 +107,27 @@ extern node *PREC1assign (node *arg_node, node *arg_info);
 extern node *PREC1let (node *arg_node, node *arg_info);
 
 extern node *PREC2modul (node *arg_node, node *arg_info);
+extern node *PREC2typedef (node *arg_node, node *arg_info);
 extern node *PREC2objdef (node *arg_node, node *arg_info);
 extern node *PREC2fundef (node *arg_node, node *arg_info);
 extern node *PREC2arg (node *arg_node, node *arg_info);
-extern node *PREC2let (node *arg_node, node *arg_info);
-extern node *PREC2ap (node *arg_node, node *arg_info);
-extern node *PREC2assign (node *arg_node, node *arg_info);
-extern node *PREC2return (node *arg_node, node *arg_info);
-extern node *PREC2id (node *arg_node, node *arg_info);
 extern node *PREC2vardec (node *arg_node, node *arg_info);
-extern node *PREC2typedef (node *arg_node, node *arg_info);
-extern node *PREC2generator (node *arg_node, node *arg_info);
-extern node *PREC2Nwithid (node *arg_node, node *arg_info);
+extern node *PREC2assign (node *arg_node, node *arg_info);
 extern node *PREC2do (node *arg_node, node *arg_info);
 extern node *PREC2while (node *arg_node, node *arg_info);
 extern node *PREC2cond (node *arg_node, node *arg_info);
+extern node *PREC2let (node *arg_node, node *arg_info);
+extern node *PREC2ap (node *arg_node, node *arg_info);
+extern node *PREC2return (node *arg_node, node *arg_info);
+extern node *PREC2id (node *arg_node, node *arg_info);
+extern node *PREC2array (node *arg_node, node *arg_info);
+extern node *PREC2generator (node *arg_node, node *arg_info);
+extern node *PREC2Nwithid (node *arg_node, node *arg_info);
 extern node *PREC2Nwith2 (node *arg_node, node *arg_info);
 extern node *PREC2Ncode (node *arg_node, node *arg_info);
-extern node *PREC2sync (node *arg_node, node *arg_info);
 extern node *PREC2WLseg (node *arg_node, node *arg_info);
 extern node *PREC2WLsegVar (node *arg_node, node *arg_info);
+extern node *PREC2sync (node *arg_node, node *arg_info);
 
 extern char *ObjInitFunctionName ();
 
