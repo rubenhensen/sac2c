@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/10/26 09:34:51  sah
+ * added INFO_SER_AST
+ *
  * Revision 1.4  2004/10/25 11:58:47  sah
  * major code cleanup
  *
@@ -32,13 +35,15 @@ struct INFO {
     FILE *file;
     serstack_t *stack;
     STtable_t *table;
+    node *ast;
 };
 
 /*
  * INFO macros
  */
-#define INFO_SER_FILE(n) n->file
-#define INFO_SER_STACK(n) n->stack
-#define INFO_SER_TABLE(n) n->table
+#define INFO_SER_FILE(n) (n->file)
+#define INFO_SER_STACK(n) (n->stack)
+#define INFO_SER_TABLE(n) (n->table)
+#define INFO_SER_AST(n) (n->ast)
 
 #endif /* _SERIALIZE_INFO_H */
