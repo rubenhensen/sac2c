@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/04/26 17:10:42  dkr
+ * RemoveVoidFuns removed
+ *
  * Revision 3.8  2001/04/24 17:12:44  dkr
  * output of 'current_allocated_mem' added
  *
@@ -150,7 +153,7 @@
 #include "checkdec.h"
 #include "objects.h"
 #include "uniquecheck.h"
-#include "rmvoidfun.h"
+#include "rmcasts.h"
 #include "wltransform.h"
 #include "concurrent.h"
 #include "precompile.h"
@@ -415,15 +418,6 @@ main (int argc, char *argv[])
     PHASE_EPILOG;
 
     if (break_after == PH_uniquecheck)
-        goto BREAK;
-    compiler_phase++;
-
-    PHASE_PROLOG;
-    NOTE_COMPILER_PHASE;
-    syntax_tree = RemoveVoidFunctions (syntax_tree); /* rmvoid_tab */
-    PHASE_EPILOG;
-
-    if (break_after == PH_rmvoidfun)
         goto BREAK;
     compiler_phase++;
 
