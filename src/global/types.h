@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1997/10/07 16:04:41  srs
+ * removed some unused typedefs
+ *
  * Revision 1.17  1997/05/14 08:16:43  sbs
  * node->counter inserted.
  *
@@ -83,15 +86,32 @@ typedef enum {
 
 #undef TYP_IF
 
-typedef enum { A_let, A_sel, A_for, A_ret } assigntype;
+#if 0 /* 10.02.97 unused types */
+typedef enum { 
+               A_let, A_sel, A_for, A_ret
+             } 
+             assigntype;
 
-typedef enum { E_int, E_float, E_bool, E_prf, E_id, E_ap, E_with, E_sel } exprtype;
+typedef enum {
+               E_int, E_float, E_bool, E_prf,
+               E_id, E_ap, E_with, E_sel
+             }
+             exprtype;
 
-typedef enum { L_for, L_do, L_while } looptype;
+typedef enum {
+               L_for, L_do, L_while
+             }
+             looptype;
+#endif
 
 typedef enum { ARG_int, ARG_float, ARG_id } argtype;
 
-typedef enum { C_gen, C_mod } contype;
+#if 0 /* 10.02.97 unused type */
+typedef enum {
+               C_gen, C_mod
+             }
+             contype;
+#endif
 
 typedef enum {
     ST_regular,            /* normal types */
@@ -198,7 +218,7 @@ typedef struct TYPES {
     statustype status;  /* regular or artificial */
 } types;
 
-/* an now some macros for the use with 'types->dim'
+/* and now some macros for the use with 'types->dim'
  * They are used to classify :
  * -shape of type is known:             dim > SCALAR
  * -dimension is only known:            dim < KNOWN_DIM_OFFSET
@@ -222,7 +242,7 @@ typedef struct FUN_NAME {
 } fun_name;
 
 /*
- * Neue Knoten fu"r yacc und den Syntaxbaum
+ * new nodes for yacc and the syntax tree
  *
  */
 
@@ -232,7 +252,7 @@ typedef struct FUN_NAME {
 
 typedef enum {
 #include "node_info.mac"
-} nodetype; /* Typ fu"r die node Knoten des Syntaxbaums */
+} nodetype; /* Typ of nodes of syntax tree */
 
 #undef NIF
 
