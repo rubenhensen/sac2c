@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2004/08/11 11:41:46  khf
+ * break specifier for phase wlenhance and optimization wlpg inserted
+ *
  * Revision 3.60  2004/08/10 16:13:42  ktr
  * reuse inference in EMM can now be activated using -reuse.
  *
@@ -349,6 +352,20 @@ Usage ()
 
     printf ("\n");
 
+    PRINT_BREAK_SPEC (PH_wlenhance, "l2f",
+                      "Stop after converting loops and conditionals into");
+    CONT_BREAK_SPEC ("functions.");
+    PRINT_BREAK_SPEC (PH_wlenhance, "cha", "Stop after checking avis consistency.");
+    PRINT_BREAK_SPEC (PH_wlenhance, "ssa", "Stop after converting into SSA form.");
+    PRINT_BREAK_SPEC (PH_wlenhance, "ea",
+                      "Stop after inserting explicit accumulation (if emm).");
+    PRINT_BREAK_SPEC (PH_wlenhance, "cf", "Stop after constant folding.");
+    PRINT_BREAK_SPEC (PH_wlenhance, "wlpg", "Stop after with-loop partition generation.");
+    PRINT_BREAK_SPEC (PH_wlenhance, "ussa", "Stop after undo SSA transformation.");
+    PRINT_BREAK_SPEC (PH_wlenhance, "f2l", "Stop after transf. into LaC representation.");
+
+    printf ("\n");
+
     PRINT_BREAK_SPEC (PH_sacopt, "inl", "Stop after function inlining.");
     PRINT_BREAK_SPEC (PH_sacopt, "dfr", "Stop after initial dead function removal.");
     PRINT_BREAK_SPEC (PH_sacopt, "l2f",
@@ -367,6 +384,8 @@ Usage ()
                       "Stop in cycle <n> after constant folding.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:sp",
                       "Stop in cycle <n> after selection propagation.");
+    PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wlpg",
+                      "Stop in cycle <n> after with-loop partition generation.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wlt",
                       "Stop in cycle <n> after with-loop transformation.");
     PRINT_BREAK_SPEC (PH_sacopt, "cyc<n>:wli",
