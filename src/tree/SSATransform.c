@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2003/06/17 20:27:47  sbs
+ * during or prior to TC SSATransform should not generate any types for vardecs
+ * => modified SSAMakeVardec accordingly.
+ *
  * Revision 1.28  2003/03/12 21:18:30  dkr
  * SSAicm() added
  *
@@ -330,6 +334,15 @@ SSANewVardec (node *old_vardec_or_arg)
 
     if (NODE_TYPE (old_vardec_or_arg) == N_arg) {
         new_vardec = MakeVardecFromArg (old_vardec_or_arg);
+        if (compiler_phase <= PH_typecheck) {
+            /**
+             * we are running SSATransform prior or during TC! Therefore,
+             * the type has to be virginized, i.e., set to _unknown_ !
+             */
+            VARDEC_TYPE (new_vardec) = FreeAllTypes (VARDEC_TYPE (new_vardec));
+            VARDEC_TYPE (new_vardec) = MakeTypes1 (T_unknown);
+            DBUG_PRINT ("SBS", ("POOP"));
+        }
     } else {
         new_vardec = DupNode (old_vardec_or_arg);
     }
