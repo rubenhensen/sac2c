@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.89  2004/11/24 14:01:18  sah
+ * added TRAVcont
+ *
  * Revision 3.88  2004/11/23 22:22:03  sah
  * rewrite
  *
@@ -16,6 +19,7 @@
 #include "types.h"
 
 extern node *TRAVdo (node *arg_node, info *arg_info);
+extern node *TRAVcont (node *arg_node, info *arg_info);
 extern void TRAVpush (trav_t traversal);
 extern trav_t TRAVpop ();
 
