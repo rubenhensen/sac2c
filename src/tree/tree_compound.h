@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.157  2004/11/25 21:44:56  skt
+ * some debugging
+ *
  * Revision 3.156  2004/11/25 21:14:58  skt
  * killed TCmakeIdFromIds
  *
@@ -677,7 +680,7 @@ extern node *TCfindVardec_Varno (int varno, node *fundef);
 extern int TCcountFunctionParams (node *fundef);
 
 /*
- *  functionname  : SearchFundef
+ *  functionname  : TCsearchFundef
  *  arguments     : 1) fundef node of function to search for
  *                  2) ptr to head of fundef chain
  *  description   : returns a ptr to the respective fundef node
@@ -860,8 +863,7 @@ extern node *TCreturnTypes2Ret (types *type);
  *          (this is *no* ANSI C style!)
  *          Use the L_VARDEC_OR_... macros instead!!
  */
-#define VARDEC_OR_ARG_NAME(n)                                                            \
-  (AVIS_NAME(DECL_AVIS(n))
+#define VARDEC_OR_ARG_NAME(n) (AVIS_NAME (DECL_AVIS (n)))
 #define VARDEC_OR_ARG_TYPE(n)                                                            \
     ((NODE_TYPE (n) == N_arg)                                                            \
        ? ARG_TYPE (n)                                                                    \
@@ -958,7 +960,7 @@ extern node *TCreturnTypes2Ret (types *type);
         VARDEC_TYPE (n) = (rhs);                                                         \
     }
 
-extern node *TCsearchDecl (char *name, node *decl_node);
+extern node *TCsearchDecl (const char *name, node *decl_node);
 
 /*--------------------------------------------------------------------------*/
 
