@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.23  2000/10/27 11:39:09  cg
+ * Slightly modified layout of status messages during optimization.
+ *
  * Revision 2.22  2000/10/17 17:08:14  dkr
  * -noWLT now skips the WLT in the second cycle, too
  *
@@ -615,7 +618,8 @@ OPTfundef (node *arg_node, node *arg_info)
         }
         strcat (argtype_buffer, ")");
 
-        NOTE (("optimizing function %s %s: ...", FUNDEF_NAME (arg_node), argtype_buffer));
+        NOTE (("optimizing function"));
+        NOTE ((" %s %s: ...", FUNDEF_NAME (arg_node), argtype_buffer));
 
         if (optimize & OPT_AE) {
             /*
