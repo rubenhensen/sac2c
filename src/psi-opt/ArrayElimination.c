@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/05/12 19:55:53  srs
+ * fixed bug in GenPsi()
+ *
  * Revision 1.10  1998/05/12 16:11:43  dkr
  * fixed a typo in GenPsi: MakeExpr -> MakeExprs
  *
@@ -202,22 +205,23 @@ GenIds (node *arg[2])
 node *
 GenPsi (ids *ids_node, node *arg_info)
 {
-    node *new_nodes = NULL, *expr, *new_let, *new_assign, *new_vardec;
+    node *new_nodes = NULL, *new_let, *new_assign, *new_vardec;
     node *exprn;
     int length, i;
     types *type;
     node *arg[2];
 
     DBUG_ENTER ("GenPsi");
-    type = ids_node->node->info.types;
+    type = IDS_TYPE (ids_node);
+    ;
     GET_LENGTH (length, type);
     for (i = 0; i < length; i++) {
         exprn = MakeExprs (MakeNum (i), NULL);
         arg[0] = MakeArray (exprn);
 
-        /*     arg[1] = MakeNode(N_id); */
-        /*     arg[1]->info.ids = DupIds(ids_node , arg_info); */
-        arg[1] = MakeId (IDS_NAME (ids_node), IDS_MOD (ids_node), ST_regular);
+        arg[1] = MakeNode (N_id);
+        arg[1]->info.ids = DupIds (ids_node, arg_info);
+        /*     arg[1] = MakeId(IDS_NAME(ids_node), IDS_MOD(ids_node), ST_regular); */
 
         new_let = MakeNode (N_let);
         new_let->info.ids = GenIds (arg);
@@ -277,12 +281,12 @@ AEprf (node *arg_node, node *arg_info)
     if (F_psi == PRF_PRF (arg_node)) {
         tmpn = NodeBehindCast (PRF_ARG1 (arg_node));
         if (N_id == NODE_TYPE (tmpn))
-            MRD_GETDATA (tmpn, INFO_VARNO, ID_VARNO (tmpn));
+            MRD_GETDATA (tmpn, ID_VARNO (tmpn), INFO_VARNO);
 
         arg[0] = tmpn;
         arg[1] = NodeBehindCast (PRF_ARG2 (arg_node));
 
-        if (N_id == NODE_TYPE (arg[1]) && N_array == NODE_TYPE (arg[0]))
+        if (N_id == NODE_TYPE (arg[1]) && tmpn && N_array == NODE_TYPE (tmpn))
             if (CorrectArraySize (ID_IDS (arg[1]))) {
                 DBUG_PRINT ("AE", ("psi function with array %s to eliminated found",
                                    arg[1]->info.ids->id));
