@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/09/01 07:51:33  cg
+ * Revision 1.3  1995/10/05 16:05:39  cg
+ * implicit type resolution completely renewed.
+ * and afterwards extracted to new file implicittype.c
+ *
+ * Revision 1.2  1995/09/01  07:51:33  cg
  * first working revision.
  * writes implementation of implicit types to SIB-file end checks
  * implementation of explicit types against their declaration
@@ -14,10 +18,11 @@
 
 #include <malloc.h>
 #include <string.h>
-#include <limits.h>
 
-#include "dbug.h"
-#include "tree.h"
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+
 #include "free.h"
 #include "Error.h"
 #include "dbug.h"
@@ -25,13 +30,6 @@
 
 #include "scnprs.h"
 #include "traverse.h"
-
-#undef TYPES /* These macros are defined in scnprs.h as well as   */
-#undef ID    /* in access_macros.h. The latter definition is used */
-#undef DIM   /* in this file.                                     */
-
-#include "access_macros.h"
-#include "compare_macros.h"
 
 #include "filemgr.h"
 #include "import.h"
@@ -88,7 +86,7 @@ WriteSib (node *arg_node)
  */
 
 node *
-LoadDeclaration (char *name, node *modtype)
+LoadDeclaration (char *name, file_type modtype)
 {
     char buffer[MAX_FILE_NAME];
     node *decl;
@@ -103,30 +101,30 @@ LoadDeclaration (char *name, node *modtype)
         ERROR2 (1, ("ERROR: Unable to open file \"%s\"", buffer));
     }
 
-    NOTE (("\n  Loading %s ...", buffer));
+    NOTE (("\n  Loading %s ...\n", buffer));
 
     linenum = 1;
     start_token = PARSE_DEC;
     yyparse ();
     decl = decl_tree;
 
-    if (strcmp (decl->info.fun_name.id, name) != 0) {
+    if (strcmp (MODDEC_NAME (decl), name) != 0) {
         ERROR2 (
           1, ("%s :ERROR: File does not provide module/class %s, but module/class %s!\n",
-              buffer, name, decl->info.fun_name.id));
+              buffer, name, MODDEC_NAME (decl)));
     }
 
-    if ((decl->nodetype == N_classdec) && (modtype == NULL)) {
+    if ((NODE_TYPE (decl) == N_classdec) && (modtype == F_modimp)) {
         ERROR2 (1, ("%s :ERROR: implementation of module but declaration of class",
                     filename, name));
     }
 
-    if ((decl->nodetype == N_moddec) && (modtype != NULL)) {
+    if ((NODE_TYPE (decl) == N_moddec) && (modtype == F_classimp)) {
         ERROR2 (1, ("%s :ERROR: implementation of class but declaration of module",
                     filename, name));
     }
 
-    if (decl->nodetype == N_classdec) {
+    if (NODE_TYPE (decl) == N_classdec) {
         InsertClassType (decl);
     }
 
@@ -168,78 +166,6 @@ OpenSibFile (char *name)
 
 /*
  *
- *  functionname  : RetrieveImplTypeInfo
- *  arguments     : 1) N_modul node of program or module/class implementation
- *  description   : From previous SIB-Files information is stored about
- *                  the implementation of implicit types in "second"
- *                  types-structure of typedef-nodes. This information is
- *                  now retrieved.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : FREE
- *
- *  remarks       :
- *
- */
-
-node *
-RetrieveImplTypeInfo (node *modul)
-{
-    node *tmp;
-    types *tobefreed;
-
-    DBUG_ENTER ("RetrieveImplTypeInfo");
-
-    tmp = modul->node[1];
-    while (tmp != NULL) {
-        if (tmp->info.types->next != NULL) {
-            tobefreed = tmp->info.types;
-            tmp->info.types = tmp->info.types->next;
-            /* FREE(tobefreed); */
-
-            DBUG_PRINT ("WRITESIB",
-                        ("use SIB-info for implicit type %s:%s", tmp->ID_MOD, tmp->ID));
-        }
-
-        tmp = tmp->node[0];
-    }
-
-    DBUG_RETURN (modul);
-}
-
-/*
- *
- *  functionname  : SearchType
- *  arguments     : 1) typedef to be searched
- *                  2) list of type implementations
- *  description   : looks for a certain typedef in list of typedefs
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        : CMP_TYPEDEF
- *
- *  remarks       :
- *
- */
-
-node *
-SearchType (node *type, node *implementations)
-{
-    node *tmp;
-
-    DBUG_ENTER ("SearchType");
-
-    tmp = implementations;
-    while ((tmp != NULL) && (CMP_TYPEDEF (type, tmp) == 0)) {
-        tmp = tmp->node[0];
-    }
-
-    DBUG_RETURN (tmp);
-}
-
-/*
- *
  *  functionname  : CheckExplicitType
  *  arguments     : 1) declaration of explicit type (N_typedef)
  *                  2) implementation of explicit type (N_typedef)
@@ -248,7 +174,7 @@ SearchType (node *type, node *implementations)
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : ---
- *  macros        : access_macros, CMP_TYPE_USER
+ *  macros        : CMP_TYPE_USER
  *
  *  remarks       : result==1 -> compare positive
  *                  result==0 -> compare negative
@@ -262,15 +188,15 @@ CheckExplicitType (node *decl, node *impl)
 
     DBUG_ENTER ("CheckExplicitType");
 
-    if (decl->SIMPLETYPE == impl->SIMPLETYPE) {
-        if (decl->SIMPLETYPE == T_user) {
-            if (!CMP_TYPE_USER (decl->TYPES, impl->TYPES)) {
+    if (TYPEDEF_BASETYPE (decl) == TYPEDEF_BASETYPE (impl)) {
+        if (TYPEDEF_BASETYPE (decl) == T_user) {
+            if (!CMP_TYPE_USER (TYPEDEF_TYPE (decl), TYPEDEF_TYPE (impl))) {
                 result = 0;
             }
         }
-        if ((result == 1) && (decl->DIM == impl->DIM)) {
-            for (i = 0; i < decl->DIM; i++) {
-                if (decl->SHP[i] != impl->SHP[i]) {
+        if ((result == 1) && (TYPEDEF_DIM (decl) == TYPEDEF_DIM (impl))) {
+            for (i = 0; i < TYPEDEF_DIM (decl); i++) {
+                if (TYPEDEF_SHAPE (decl, i) != TYPEDEF_SHAPE (impl, i)) {
                     result = 0;
                     break;
                 }
@@ -282,20 +208,6 @@ CheckExplicitType (node *decl, node *impl)
 
     DBUG_RETURN (result);
 }
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
 
 /*
  *
@@ -386,29 +298,22 @@ CheckExplicitType (node *decl, node *impl)
 void
 HandleImplicitTypes (node *declarations, node *implementations)
 {
-    node *tmp, *def;
+    node *tmp, *tdef;
 
     DBUG_ENTER ("HandleImplicitTypes");
 
     tmp = declarations;
     while (tmp != NULL) {
-        def = SearchType (tmp, implementations);
-        if (def == NULL) {
+        tdef = SearchTypedef (TYPEDEF_NAME (tmp), TYPEDEF_MOD (tmp), implementations);
+        if (tdef == NULL) {
             ERROR2 (1, ("%s :ERROR: Implementation of implicit type %s missing", filename,
-                        tmp->ID));
+                        TYPEDEF_NAME (tmp)));
         }
 
-        fprintf (sibfile, "typedef %s ", Type2String (def->TYPES, 0));
-        fprintf (sibfile, "%s;\n", def->ID);
+        fprintf (sibfile, "typedef %s ", Type2String (TYPEDEF_TYPE (tdef), 0));
+        fprintf (sibfile, "%s;\n", TYPEDEF_NAME (tdef));
 
-        tmp = tmp->node[0];
-
-        /*
-         * preliminary version
-         * Now, the defining type may be user-defined as well and therefore
-         * unknown in the importing program. A final version must derive the
-         * type completely from primitive types.
-         */
+        tmp = TYPEDEF_NEXT (tmp);
     }
 
     DBUG_VOID_RETURN;
@@ -440,19 +345,19 @@ HandleExplicitTypes (node *declarations, node *implementations)
 
     tmp = declarations;
     while (tmp != NULL) {
-        def = SearchType (tmp, implementations);
+        def = SearchTypedef (TYPEDEF_NAME (tmp), TYPEDEF_MOD (tmp), implementations);
         if (def == NULL) {
             WARN1 (("%s :WARNING: implementation of explicit type %s missing", filename,
-                    tmp->ID));
+                    TYPEDEF_NAME (tmp)));
         } else {
             if (CheckExplicitType (tmp, def) == 0) {
                 ERROR2 (1, ("%s :ERROR: implementation of explicit type %s different "
                             "from declaration",
-                            filename, tmp->ID));
+                            filename, TYPEDEF_NAME (tmp)));
             }
         }
 
-        tmp = tmp->node[0];
+        tmp = TYPEDEF_NEXT (tmp);
     }
 
     DBUG_VOID_RETURN;
@@ -461,7 +366,8 @@ HandleExplicitTypes (node *declarations, node *implementations)
 /*
  *
  *  functionname  : HandleFunctions
- *  arguments     :
+ *  arguments     : 1) list of function declarations
+ *                  2) list of function definitions
  *  description   :
  *  global vars   :
  *  internal funs :
@@ -471,6 +377,33 @@ HandleExplicitTypes (node *declarations, node *implementations)
  *  remarks       :
  *
  */
+
+/*
+void HandleFunctions(node* declarations, node* implementations)
+{
+  node *tmp, *fundef;
+
+  DBUG_ENTER("HandleFunctions");
+
+  tmp=declarations;
+  while (tmp!=NULL)
+  {
+    fundef=SearchFundef(tmp, implementations);
+
+    if (fundef==NULL)
+    {
+      ERROR2(1,("%s :ERROR: Implementation of function %s missing or wrong in arguments",
+                filename,
+                FUNDEF_NAME(tmp)));
+    }
+
+
+
+
+
+
+
+*/
 
 /*
  *
@@ -493,20 +426,19 @@ SIBmodul (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("SIBmodul");
 
-    arg_node = RetrieveImplTypeInfo (arg_node);
-
-    if (arg_node->info.id != NULL) /* it's a module/class implementation */
+    if (MODUL_FILETYPE (arg_node) != F_prog)
+    /* it's a module/class implementation */
     {
-        decl = LoadDeclaration (arg_node->info.id, arg_node->node[4]);
+        decl = LoadDeclaration (MODUL_NAME (arg_node), MODUL_FILETYPE (arg_node));
 
-        sibfile = OpenSibFile (arg_node->info.id);
+        sibfile = OpenSibFile (MODUL_NAME (arg_node));
 
-        fprintf (sibfile, "<%s>\n\n", arg_node->info.id);
+        fprintf (sibfile, "<%s>\n\n", MODUL_NAME (arg_node));
 
-        HandleImplicitTypes (decl->node[0]->node[0], arg_node->node[1]);
-        HandleExplicitTypes (decl->node[0]->node[1], arg_node->node[1]);
+        HandleImplicitTypes (MODDEC_ITYPES (decl), MODUL_TYPES (arg_node));
+        HandleExplicitTypes (MODDEC_ETYPES (decl), MODUL_TYPES (arg_node));
         /*
-            HandleFunctions(decl->node[0]->node[2], arg_node->node[2]);
+            HandleFunctions(MODDEC_FUNS(decl), MODUL_FUNS(arg_node));
         */
 
         fprintf (sibfile, "\n");
