@@ -3,3 +3,4 @@ Makefile.Deps
 Makefile.Config
 RCS-directories
 sac2cdoxy
+configure.ac
