@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.22  1995/06/02 09:25:48  sbs
+# Revision 1.23  1995/06/02 09:27:06  sbs
+# psi-opt instead of psi_opt !!!
+#
+# Revision 1.22  1995/06/02  09:25:48  sbs
 # psi_opt inserted in LIBS
 #
 # Revision 1.21  1995/05/26  14:28:03  asi
@@ -77,7 +80,7 @@ CC=gcc -ansi -g
 
 INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules -I../global -I../refcount -I../compile \
-     -I../psi_opt \
+     -I../psi-opt \
      -I/usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include
 
 all: main.o Error.o traverse.o usage.o my_debug.o tree.o free.o internal_lib.o
