@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/05/06 09:57:04  cg
+ * added include of globals.h
+ *
  * Revision 1.1  1998/05/05 15:53:54  cg
  * Initial revision
  *
@@ -37,6 +40,7 @@
 #ifndef DFMtest
 #include "internal_lib.h"
 #include "free.h"
+#include "globals.h"
 #endif /* DFMtest */
 
 /*
