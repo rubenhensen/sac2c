@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  2000/07/05 12:51:41  nmw
+ * sac_arg.h added
+ *
  * Revision 2.6  2000/01/17 16:25:58  cg
  * Exchanged sequence of #include "sac_heapmgr.h" and nclude "sac_mt.h"
  *
@@ -76,5 +79,6 @@
 #include "sac_trace.h"
 #include "sac_profile.h"
 #include "sac_cachesim.h"
+#include "sac_arg.h"
 
 #endif /* SAC_H */
