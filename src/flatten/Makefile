@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.16  1998/05/20 20:16:07  sbs
+# since flatten.c uses DupNode ../optimize had to be added
+# to the include-paths!
+#
 # Revision 1.15  1998/03/04 00:09:44  dkr
 # 'clean' now deletes the subdir .sb, too
 #
@@ -48,7 +52,7 @@ CCFLAGS   := -ansi -Wall -g
 CFLAGS    := -D__EXTENSIONS__
 
 
-INCS=-I../global -I../../inc
+INCS=-I../global -I../../inc -I../optimize
 
 all: flatten.o
 
