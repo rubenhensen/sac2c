@@ -1,5 +1,10 @@
 /*
+ *
  * $Log$
+ * Revision 1.8  2000/08/17 10:21:12  dkr
+ * some comments modified
+ * macro ICM_UNDEF added
+ *
  * Revision 1.7  2000/07/06 08:37:33  dkr
  * [y]ycat() und [n]ncat() moved from sac_std.tagged.h to sac_icm.h
  *
@@ -20,6 +25,7 @@
  *
  * Revision 1.1  1999/06/10 14:46:45  rob
  * Initial revision
+ *
  */
 
 /*****************************************************************************
@@ -65,15 +71,29 @@
  *  Using a new parameter requires that all parameters up to the new one
  *  be supplied (or that commas be supplied), because access is positional.
  *
- *  Parameters are specified as (parm0,(parm1,(parm2,(parm3...)))).
+ *  Parameters are specified as (parm0, (parm1, (parm2, (parm3 ...)))).
  *
- *  The xcat macro is used to glue items together. Thus, the result of:
+ *  The cat? macros are used to glue items together. Thus, the result of:
  *    #define foo( tuple) \
- *      xcat( xcat( Item4 tuple, Item3 tuple), Item2 tuple)
+ *      cat0( cat0( Item4 tuple, Item3 tuple), Item2 tuple)
  *    foo( (I, (see, (rats, (and, (mice,))))))
  *  is:
  *    miceandrats
  *  NB. Note the trailing comma in the invocation's innermost nest
+ *
+ *  If nested macro expansion is used on each expansion level different
+ *  cat? macros have to be used!!! The result of:
+ *    #define TEST1 cat0( TEST, 2)
+ *    #define TEST2 cat1( TEST, 3)
+ *    TEST1
+ *  is:
+ *    TEST3
+ *  But the result of:
+ *    #define TEST1 cat0( TEST, 2)
+ *    #define TEST2 cat0( TEST, 3)
+ *    TEST1
+ *  is:
+ *    cat0( TEST, 3)
  */
 
 #define Item0(a, b) a
@@ -84,10 +104,10 @@
 #define Item5(a, b) Item4 b
 
 /*
- * The odd-looking ?cat macros is required to provide a degree of indirection
+ * The odd-looking cat? macros is required to provide a degree of indirection
  * for mixed catenates and macro expansions.
  * Replacing it with ## will NOT work.
- * Replacing [y]ycat() or [n]ncat() with [x]cat() will NOT work either.
+ * Replacing [x]cat?() with [x]cat1() will NOT work either.
  * This is documented in K&R, Section A.12.3.
  *
  * For the same reason, we define AddParens to wrap parentheses around a
@@ -96,14 +116,23 @@
  * If you need a 3-parameter argument list, write BuildArgs3, etc.
  */
 
-#define cat(x, y) xcat (x, y)
-#define xcat(x, y) x##y
+#define cat0(x, y) xcat0 (x, y)
+#define xcat0(x, y) x##y
 
-#define ycat(x, y) yycat (x, y)
-#define yycat(x, y) x##y
+#define cat1(x, y) xcat1 (x, y)
+#define xcat1(x, y) x##y
 
-#define ncat(x, y) nncat (x, y)
-#define nncat(x, y) x##y
+#define cat2(x, y) xcat2 (x, y)
+#define xcat2(x, y) x##y
+
+#define cat3(x, y) xcat3 (x, y)
+#define xcat3(x, y) x##y
+
+#define cat4(x, y) xcat4 (x, y)
+#define xcat4(x, y) x##y
+
+#define cat5(x, y) xcat5 (x, y)
+#define xcat5(x, y) x##y
 
 #define AddParens(a) xAddParens (a)
 #define xAddParens(a) (##a##)
@@ -123,6 +152,13 @@
 
 #define BuildArgs4(a, b, c, d) xBuildArgs4 (a, b, c, d)
 #define xBuildArgs4(a, b, c, d) (##a##, ##b##, ##c##, ##d##)
+
+/*
+ * Handling of undefined ICMs
+ */
+
+#define ICM_UNDEF                                                                        \
+    ICM_IS_UNDEFINED /* CC will report a undefined symbol ICM_IS_UNDEFINED */
 
 /*
  * VIEW is a handy viewer for testing macros
