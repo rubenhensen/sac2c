@@ -102,6 +102,7 @@
           <node name="Linklist" />
           <node name="Nums" />
           <node name="CWrapper" />
+          <node name="Chk" />
         </travsons>
       </traversal>
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h" />
@@ -5455,6 +5456,16 @@
           </target>
         </son>
       </sons>
+      <attributes></attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_chk :
+
+-->
+    <node name="Chk">
+      <sons></sons>
       <attributes></attributes>
       <flags></flags>
     </node>
