@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.78  1999/02/06 12:53:32  srs
+ * added FreeNodelistNode
+ *
  * Revision 1.77  1999/01/15 15:13:19  cg
  * added functions FreeOneAccess() and FreeAllAccess().
  *
@@ -384,6 +387,23 @@ FreeNodelist (nodelist *list)
     }
 
     tmp = NULL;
+
+    DBUG_RETURN (tmp);
+}
+
+/*
+ *  FreeNodelistNode free a nodelist item and return the next item
+ */
+
+nodelist *
+FreeNodelistNode (nodelist *nl)
+{
+    nodelist *tmp;
+
+    DBUG_ENTER ("FreeNodelistNode");
+
+    tmp = NODELIST_NEXT (nl);
+    FREE (nl);
 
     DBUG_RETURN (tmp);
 }
