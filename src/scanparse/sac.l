@@ -1,15 +1,16 @@
+%{
+
 /*
  *
- * $RCSfile$
- * $Revision$
  * $Log$
- * Revision 1.3  1994/11/10 14:53:24  sbs
+ * Revision 1.4  1994/11/10 15:10:01  sbs
+ * RCS-header adjusted
+ *
+ * Revision 1.3  1994/11/10  14:53:24  sbs
  * RCS-header inserted
  *
  *
  */
-
-%{
 
 #include <stdlib.h>
 #include "tree.h"
