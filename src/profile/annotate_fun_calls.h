@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/25 01:01:07  skt
+ * code brushing during SACDevCampDK 2k4
+ *
  * Revision 1.3  2004/11/22 16:13:54  sbs
  * SACDecCamp04
  *
@@ -16,10 +19,9 @@
 #ifndef _SAC_ANNOTATE_FUN_CALLS_H_
 #define _SAC_ANNOTATE_FUN_CALLS_H_
 
-include "types.h"
+#include "types.h"
 
-  extern node *
-  PFdoProfileFunCalls (node *fundef);
+extern node *PFdoProfileFunCalls (node *fundef);
 
 extern node *PFfundef (node *arg_node, info *arg_info);
 extern node *PFassign (node *arg_node, info *arg_info);

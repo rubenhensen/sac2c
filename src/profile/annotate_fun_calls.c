@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/11/25 01:01:07  skt
+ * code brushing during SACDevCampDK 2k4
+ *
  * Revision 1.10  2004/07/17 14:52:03  sah
  * switch to INFO structure
  * PHASE I
@@ -71,17 +74,15 @@
  ***
  ***/
 
-#define NEW_INFO
-
-#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
-#include "dbug.h"
 #include "traverse.h"
 #include "free.h"
 #include "globals.h"
 #include "convert.h"
+#include <string.h>
+#include "Error.h"
 
 /*
  * INFO structure
@@ -105,7 +106,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_PF_FUNDEF (result) = NULL;
 
@@ -117,7 +118,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -143,8 +144,7 @@ FreeInfo (info *info)
  *    NULL is returned.
  *
  ********************************************************************************/
-
-node *
+static node *
 SearchMain (node *fundef)
 {
     DBUG_ENTER ("SearchMain");
@@ -165,8 +165,7 @@ SearchMain (node *fundef)
  *    readable profiling output.
  *
  ********************************************************************************/
-
-char *
+static char *
 Fundef2ProfileString (node *fundef)
 {
     char *str_buff, *tmp_str;
@@ -174,7 +173,7 @@ Fundef2ProfileString (node *fundef)
     node *arg;
 
     DBUG_ENTER ("Fundef2ProfileString");
-    str_buff = (char *)Malloc (sizeof (char) * PF_MAXFUNNAMELEN);
+    str_buff = (char *)ILIBmalloc (sizeof (char) * PF_MAXFUNNAMELEN);
     str_buff[0] = '\0';
     str_buff = strncpy (str_buff, FUNDEF_NAME (fundef), str_spc);
     str_spc -= strlen (FUNDEF_NAME (fundef));
@@ -184,10 +183,10 @@ Fundef2ProfileString (node *fundef)
     str_spc = MAX (str_spc, 0);
     arg = FUNDEF_ARGS (fundef);
     while (arg != NULL) {
-        tmp_str = Type2String (ARG_TYPE (arg), 0, TRUE);
-        if (ARG_ATTRIB (arg) == ST_reference) {
+        tmp_str = CVtype2String (ARG_TYPE (arg), 0, TRUE);
+        if (ARG_ISREFERENCE (arg) && !ARG_ISREADONLY (arg)) {
             tmp_str = strcat (tmp_str, " &");
-        } else if (ARG_ATTRIB (arg) == ST_readonly_reference) {
+        } else if (ARG_ISREFERENCE (arg) && ARG_ISREADONLY (arg)) {
             tmp_str = strcat (tmp_str, " (&)");
         } else {
             tmp_str = strcat (tmp_str, " ");
@@ -198,7 +197,7 @@ Fundef2ProfileString (node *fundef)
         str_buff = strncat (str_buff, tmp_str, str_spc);
         str_spc -= strlen (tmp_str);
         str_spc = MAX (str_spc, 0);
-        tmp_str = Free (tmp_str);
+        tmp_str = ILIBfree (tmp_str);
         arg = ARG_NEXT (arg);
         if (arg != NULL) {
             str_buff = strncat (str_buff, ", ", str_spc);
@@ -226,24 +225,23 @@ Fundef2ProfileString (node *fundef)
  *      -  being specialized function.
  *
  ********************************************************************************/
-
-int
+static int
 Fundef2FunTypeMask (node *fundef)
 {
     int funtypemask = 0;
 
     DBUG_ENTER ("Fundef2FunTypeMask");
 
-    if (FUNDEF_INLINE (fundef)) {
+    if (FUNDEF_ISINLINE (fundef)) {
         funtypemask = funtypemask | INL_FUN;
     }
-    if ((FUNDEF_STATUS (fundef) == ST_imported_mod)
-        || (FUNDEF_STATUS (fundef) == ST_imported_class)) {
-        funtypemask = funtypemask | LIB_FUN;
-    }
-    if (FUNDEF_ATTRIB (fundef) == ST_generic) {
-        funtypemask = funtypemask | OVRLD_FUN;
-    }
+    /*  if ((FUNDEF_STATUS( fundef) == ST_imported_mod) ||
+        (FUNDEF_STATUS( fundef) == ST_imported_class)) {
+      funtypemask = funtypemask | LIB_FUN;
+      }*//*HERE*/
+    /*if (FUNDEF_ATTRIB( fundef) == ST_generic) {
+      funtypemask = funtypemask | OVRLD_FUN;
+      }*/
 
     DBUG_RETURN (funtypemask);
 }
@@ -279,18 +277,18 @@ PFfundef (node *arg_node, info *arg_info)
     if (FUNDEF_FUNNO (arg_node) == 0) { /* this function is not yet counted! */
         str_buff = Fundef2ProfileString (arg_node);
         DBUG_PRINT ("PFFUN", ("annotating \"%s\"", str_buff));
-        if (PFfuncntr == PF_MAXFUN) {
+        if (global.profile_funcntr == PF_MAXFUN) {
             SYSWARN (("\"PF_MAXFUN\" too low"));
             CONT_WARN (("function \"%s\" will not be profiled separately!", str_buff));
             CONT_WARN (("Instead, it's time will be accounted to \"main\""));
             FUNDEF_FUNNO (arg_node) = 1;
-            str_buff = Free (str_buff);
+            str_buff = ILIBfree (str_buff);
         } else {
-            PFfunnme[PFfuncntr] = str_buff;
-            FUNDEF_FUNNO (arg_node) = ++PFfuncntr;
+            global.profile_funnme[global.profile_funcntr] = str_buff;
+            FUNDEF_FUNNO (arg_node) = ++global.profile_funcntr;
         }
         if (FUNDEF_BODY (arg_node) != NULL) { /* library funs do have no body! */
-            FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         }
     }
 
@@ -332,7 +330,7 @@ PFassign (node *arg_node, info *arg_info)
      * be signaled by INFO_PF_FUNDEF( arg_info) != NULL which points
      * to the fundef of the function being called.
      */
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_PF_FUNDEF (arg_info) != NULL) {
         /*
@@ -345,33 +343,35 @@ PFassign (node *arg_node, info *arg_info)
          * incrementing the application counter for the function
          * defined by INFO_PF_FUNDEF( arg_info)....
          */
-        if (PFfunapcntr[funno] == PF_MAXFUNAP) {
+        if (global.profile_funapcntr[funno] == PF_MAXFUNAP) {
             str_buff = Fundef2ProfileString (INFO_PF_FUNDEF (arg_info));
             SYSWARN (("\"PF_MAXFUNAP\" too low"));
             CONT_WARN (("application of function \"%s\" in line %d will not "
                         "be profiled separately but be accounted to the application "
                         "in line %d !",
-                        str_buff, NODE_LINE (arg_node), PFfunapline[funno][0]));
-            str_buff = Free (str_buff);
+                        str_buff, NODE_LINE (arg_node),
+                        global.profile_funapline[funno][0]));
+            str_buff = ILIBfree (str_buff);
             funap_cnt = 0;
         } else {
-            funap_cnt = PFfunapcntr[funno]++;
-            if (PFfunapcntr[funno] > PFfunapmax) {
-                PFfunapmax = PFfunapcntr[funno];
+            funap_cnt = global.profile_funapcntr[funno]++;
+            if (global.profile_funapcntr[funno] > global.profile_funapmax) {
+                global.profile_funapmax = global.profile_funapcntr[funno];
             }
-            PFfunapline[funno][funap_cnt] = NODE_LINE (arg_node);
+            global.profile_funapline[funno][funap_cnt] = NODE_LINE (arg_node);
         }
 
         /*
          * inserting the N_assign / N_annotate nodes....
          */
         funtypemask = Fundef2FunTypeMask (INFO_PF_FUNDEF (arg_info));
-        res = MakeAssign (MakeAnnotate (funtypemask | CALL_FUN, funno, funap_cnt),
-                          arg_node);
+        res = TBmakeAssign (TBmakeAnnotate (funtypemask | CALL_FUN, funno, funap_cnt),
+                            arg_node);
         old_next_assign = ASSIGN_NEXT (arg_node);
         ASSIGN_NEXT (arg_node)
-          = MakeAssign (MakeAnnotate (funtypemask | RETURN_FROM_FUN, funno, funap_cnt),
-                        old_next_assign);
+          = TBmakeAssign (TBmakeAnnotate (funtypemask | RETURN_FROM_FUN, funno,
+                                          funap_cnt),
+                          old_next_assign);
 
         INFO_PF_FUNDEF (arg_info) = NULL;  /* reset INFO_PF_FUNDEF ! */
         arg_node = ASSIGN_NEXT (arg_node); /* we may skip the N_annotate just inserted */
@@ -380,7 +380,7 @@ PFassign (node *arg_node, info *arg_info)
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (res);
@@ -411,7 +411,7 @@ PFap (node *arg_node, info *arg_info)
      * First, we traverse the function being called here!
      */
     fundef = AP_FUNDEF (arg_node);
-    fundef = Trav (fundef, arg_info);
+    fundef = TRAVdo (fundef, arg_info);
 
     /*
      * Then we insert the pointer to the function being called into
@@ -445,26 +445,25 @@ PFap (node *arg_node, info *arg_info)
  ********************************************************************************/
 
 node *
-ProfileFunCalls (node *arg_node)
+PFdoProfileFunCalls (node *arg_node)
 {
-    funtab *tmp_tab;
+    trav_t traversaltable;
     info *info;
     node *main_fun;
     int i;
 
     DBUG_ENTER ("ProfileFunCalls");
 
-    tmp_tab = act_tab;
-    act_tab = profile_tab;
+    TRAVpush (TR_pf);
 
     info = MakeInfo ();
 
     /*
      * First, we initialize the application counter:
      */
-    PFfunapcntr[0] = 1; /* main-function is called from outside world! */
+    global.profile_funapcntr[0] = 1; /* main-function is called from outside world! */
     for (i = 1; i < PF_MAXFUN; i++) {
-        PFfunapcntr[i] = 0;
+        global.profile_funapcntr[i] = 0;
     }
 
     /*
@@ -472,16 +471,18 @@ ProfileFunCalls (node *arg_node)
      * if it exists; otherwise, we 're done.
      */
     DBUG_PRINT ("PFFUN", ("starting function annotation"));
-    if (MODUL_FUNS (arg_node) != NULL) {
-        main_fun = SearchMain (MODUL_FUNS (arg_node));
+    if (MODULE_FUNS (arg_node) != NULL) {
+        main_fun = SearchMain (MODULE_FUNS (arg_node));
         if (main_fun != NULL) {
-            main_fun = Trav (main_fun, info);
+            main_fun = TRAVdo (main_fun, info);
         }
     }
     DBUG_PRINT ("PFFUN", ("function annotation done"));
 
     info = FreeInfo (info);
-    act_tab = tmp_tab;
+
+    traversaltable = TRAVpop ();
+    DBUG_ASSERT ((traversaltable == TR_pf), "Popped incorrect traversal table");
 
     DBUG_RETURN (arg_node);
 }
