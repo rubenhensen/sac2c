@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/05/17 11:34:07  sbs
+ * return value of Free now used ...
+ *
  * Revision 3.4  2001/05/17 09:20:42  sbs
  * MALLOC FREE aliminated
  *
@@ -237,7 +240,7 @@ CheckUdtAndSetBaseType (usertype udt, int *visited)
                  * program will terminate soon anyways!
                  */
                 if (visited != NULL)
-                    Free (visited);
+                    visited = Free (visited);
             }
         }
         UTSetBaseType (udt, base);
@@ -282,7 +285,7 @@ NTCtypedef (node *arg_node, node *arg_info)
         TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
 
     base = CheckUdtAndSetBaseType (udt, NULL);
-    Free (TYPEDEF_TYPE (arg_node));
+    TYPEDEF_TYPE (arg_node) = Free (TYPEDEF_TYPE (arg_node));
     TYPEDEF_TYPE (arg_node) = TYType2OldType (base);
 
     DBUG_RETURN (arg_node);
@@ -415,7 +418,7 @@ node *NTCVardec(node *arg_node, node *arg_info)
        */
       next = VARDEC_NEXT( arg_node);
       VARDEC_NEXT( arg_node) = NULL;
-      FreeTree( arg_node);
+      arg_node = FreeTree( arg_node);
       if( next != NULL)
         arg_node = Trav( next, arg_info);
       else
@@ -867,7 +870,7 @@ node *NTCId( node *arg_node, node *arg_info)
         VARDEC_COLCHN( vardec) = SetIdx( VARDEC_COLCHN( vardec), type);
         if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
           newid = IdxChangeId( ID_NAME(arg_node), type);
-          Free( ID_NAME(arg_node));
+          ID_NAME(arg_node) = Free( ID_NAME(arg_node));
           ID_NAME(arg_node) = newid;
           /* Now, we have to insert the respective declaration */
           /* If the declaration does not yet exist, it has to be created! */
@@ -891,7 +894,7 @@ node *NTCId( node *arg_node, node *arg_info)
         ARG_COLCHN( vardec) = SetIdx( ARG_COLCHN( vardec), type);
         if( INFO_IVE_MODE( arg_info) == M_uses_and_transform) {
           newid = IdxChangeId( ID_NAME(arg_node), type);
-          Free( ID_NAME(arg_node));
+          ID_NAME(arg_node) = Free( ID_NAME(arg_node));
           ID_NAME(arg_node) = newid;
           /* Now, we have to insert the respective declaration */
           /* If the declaration does not yet exist, it has to be created! */
@@ -1057,7 +1060,7 @@ node *IdxNpart( node *arg_node, node *arg_info)
        * The index vector variable is used as IDX(...) only!
        * => we can eliminate the vector completely!
        */
-      Free( NPART_VEC(arg_node));
+      NPART_VEC(arg_node) = Free( NPART_VEC(arg_node));
     }
   }
 #else

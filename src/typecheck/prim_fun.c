@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/05/17 11:34:07  sbs
+ * return value of Free now used ...
+ *
  * Revision 3.9  2001/05/17 09:20:42  sbs
  * MALLOC FREE aliminated
  *
@@ -450,7 +453,7 @@ InitPrimFunDeclarations ()
 #undef TT3
     tmp_node = prim_fun_dec;
     prim_fun_dec = prim_fun_dec->node[1];
-    Free (tmp_node);
+    tmp_node = Free (tmp_node);
 
     DBUG_VOID_RETURN;
 }
@@ -490,7 +493,7 @@ InitPrimFunTab ()
 
     prim_fun_p = prim_fun_tab;
     prim_fun_tab = prim_fun_tab->next;
-    Free (prim_fun_p);
+    prim_fun_p = Free (prim_fun_p);
 
     DBUG_VOID_RETURN;
 }
@@ -1994,8 +1997,8 @@ Modarray (types *array, types *vec, types *value, int line)
                     filename, line, Type2String (array, 0, TRUE),
                     Type2String (vec, 0, TRUE), Type2String (value, 0, TRUE)));
     } else {
-        Free (b_vec);
-        Free (b_value);
+        b_vec = Free (b_vec);
+        b_value = Free (b_value);
         ret_type = b_array;
     }
 

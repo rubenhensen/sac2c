@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/05/17 11:34:07  sbs
+ * return value of Free now used ...
+ *
  * Revision 3.4  2001/05/17 09:20:42  sbs
  * MALLOC FREE aliminated
  *
@@ -654,8 +657,8 @@ TYFreeTypeConstructor (ntype *type)
 
     switch (NTYPE_CON (type)) {
     case TC_symbol:
-        Free (SYMBOL_MOD (type));
-        Free (SYMBOL_NAME (type));
+        SYMBOL_MOD (type) = Free (SYMBOL_MOD (type));
+        SYMBOL_NAME (type) = Free (SYMBOL_NAME (type));
         break;
     case TC_aks:
         SHFreeShape (AKS_SHP (type));
@@ -673,7 +676,7 @@ TYFreeTypeConstructor (ntype *type)
     default:
         DBUG_ASSERT ((0 == 1), "illegal type constructor!");
     }
-    Free (type);
+    type = Free (type);
 
     DBUG_VOID_RETURN;
 }
@@ -797,12 +800,12 @@ TYType2DebugString (ntype *type)
     case TC_aks:
         tmp_str = SHShape2String (0, AKS_SHP (type));
         tmp += sprintf (tmp, "%s,", tmp_str);
-        Free (tmp_str);
+        tmp_str = Free (tmp_str);
         break;
     case TC_akd:
         tmp_str = SHShape2String (AKD_DOTS (type), AKD_SHP (type));
         tmp += sprintf (tmp, "%s,", tmp_str);
-        Free (tmp_str);
+        tmp_str = Free (tmp_str);
         break;
     case TC_aud:
         break;
@@ -831,7 +834,7 @@ TYType2DebugString (ntype *type)
         } else {
             tmp += sprintf (tmp, ", %s", tmp_str);
         }
-        Free (tmp_str);
+        tmp_str = Free (tmp_str);
     }
     tmp += sprintf (tmp, "}");
 

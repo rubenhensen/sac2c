@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/05/17 11:34:07  sbs
+ * return value of Free now used ...
+ *
  * Revision 3.3  2001/05/17 09:20:42  sbs
  * MALLOC FREE aliminated
  *
@@ -120,7 +123,7 @@ CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_v
     strcat (buffer, "__");
     strcat (buffer, pseudo_fold_fun);
     pseudo_fold_fun = TmpVarName (buffer);
-    Free (buffer);
+    buffer = Free (buffer);
     tmp_res_var = TmpVarName (res_var);
 
     new_fundef = MakeFundef (

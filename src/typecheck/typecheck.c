@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2001/05/17 11:34:07  sbs
+ * return value of Free now used ...
+ *
  * Revision 3.25  2001/05/17 09:20:42  sbs
  * MALLOC FREE aliminated
  *
@@ -1108,7 +1111,7 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
             tmp_var = MakeLet (new_array, MakeIds (new_drop_vec, NULL, ST_regular));
             ID_NAME (drop_vec) = StringCopy (new_drop_vec);
             ID_VECLEN (drop_vec) = dim_array;
-            Free (ID_CONSTVEC (drop_vec));
+            ID_CONSTVEC (drop_vec) = Free (ID_CONSTVEC (drop_vec));
             ((int *)ID_CONSTVEC (drop_vec))
               = Array2IntVec (ARRAY_AELEMS (new_array), NULL);
             ID_VECTYPE (drop_vec) = T_int;
@@ -1624,7 +1627,7 @@ LookupVar (char *id)
 #ifndef DBUG_OFF
         db_str = Type2String (tmp->node->info.types, 0, TRUE);
         DBUG_PRINT ("TYPE", ("found: %s %s", db_str, id));
-        Free (db_str);
+        db_str = Free (db_str);
 #endif
     } else {
         DBUG_PRINT ("TYPE", ("not found"));
@@ -2033,7 +2036,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
 #ifndef DO_NOT_SET_FUN_MOD_NAME
                 if (NULL != arg_node->FUN_MOD_NAME) {
                     if (0 != strcmp (arg_node->FUN_MOD_NAME, fun_p->node->ID_MOD)) {
-                        Free (arg_node->FUN_MOD_NAME);
+                        arg_node->FUN_MOD_NAME = Free (arg_node->FUN_MOD_NAME);
                         arg_node->FUN_MOD_NAME = StringCopy (fun_p->node->ID_MOD);
                     }
                 } else
@@ -2044,7 +2047,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
 #ifndef DBUG_OFF
                 db_str = Type2String (return_type, 0, TRUE);
                 DBUG_PRINT ("TYPE", ("return_type %s" F_PTR, db_str, return_type));
-                Free (db_str);
+                db_str = Free (db_str);
 #endif
             }
         }
@@ -2092,7 +2095,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
 #ifndef DBUG_OFF
                 db_str = Type2String (return_type, 0, TRUE);
                 DBUG_PRINT ("TYPE", ("return_type %s" F_PTR, db_str, return_type));
-                Free (db_str);
+                db_str = Free (db_str);
 #endif
             } else
                 ABORT (NODE_LINE (arg_node),
@@ -3196,7 +3199,7 @@ InitFunTable (node *arg_node)
     ABORT_ON_ERROR;
 
     fun_table = NEXT_FUN_TAB_ELEM (fun_table);
-    Free (dummy);
+    dummy = Free (dummy);
 
 #if 0   
    /* allocate memory for table */
@@ -3430,7 +3433,7 @@ Typecheck (node *arg_node)
             MODUL_FUNS (arg_node) = CheckRest (MODUL_FUNS (arg_node), SAC_MOD);
         }
 
-        Free (stack);
+        stack = Free (stack);
     } else {
         if (MODUL_FILETYPE (arg_node) == F_prog) {
             SYSABORT (("SAC program has no function 'main`"));
@@ -3493,8 +3496,8 @@ CmpTypes (types *type_one, types *type_two)
     db_str1 = Type2String (type_one, 0, TRUE);
     db_str2 = Type2String (type_two, 0, TRUE);
     DBUG_PRINT ("TYPE", ("compare '%s' with '%s'", db_str1, db_str2));
-    Free (db_str1);
-    Free (db_str2);
+    db_str1 = Free (db_str1);
+    db_str2 = Free (db_str2);
 #endif
 
     if (TYPES_BASETYPE (type_one) == TYPES_BASETYPE (type_two)) {
@@ -3655,8 +3658,8 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
 
     DBUG_PRINT ("TYPE", ("compare %s with %s (convert_prim_type: %d", db_str1, db_str2,
                          convert_prim_type));
-    Free (db_str1);
-    Free (db_str2);
+    db_str1 = Free (db_str1);
+    db_str2 = Free (db_str2);
 #endif
 
     if (T_user == TYPES_BASETYPE (type_one)) {
@@ -3924,8 +3927,8 @@ UpdateType (types *type_one, types *type_two, int line)
     db_str1 = Type2String (t_unknown, 0, TRUE);
     db_str2 = Type2String (t_known, 0, TRUE);
     DBUG_PRINT ("TYPE", ("old types :%s , %s ", db_str1, db_str2));
-    Free (db_str1);
-    Free (db_str2);
+    db_str1 = Free (db_str1);
+    db_str2 = Free (db_str2);
 #endif
 
     if ((T_user != TYPES_BASETYPE (t_unknown)) && (T_user == TYPES_BASETYPE (t_known))) {
@@ -4009,8 +4012,8 @@ UpdateType (types *type_one, types *type_two, int line)
 
     DBUG_PRINT ("TYPE", ("new types :%s , %s ", db_str1, db_str2));
 
-    Free (db_str1);
-    Free (db_str2);
+    db_str1 = Free (db_str1);
+    db_str2 = Free (db_str2);
 #endif
 
     DBUG_VOID_RETURN;
@@ -4581,7 +4584,7 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
                                      "(%s) of variable '%s` have unknown shape",
                                      Type2String (vardec_p->info.types, 0, TRUE), str,
                                      ids->id));
-                        Free (str);
+                        str = Free (str);
                     } else {
                         /* update int[] => int[.,...,.] ! */
                         UpdateType (vardec_p->info.types, type, line);
@@ -4862,7 +4865,7 @@ TI (node *arg_node, node *arg_info)
         return_type = TI_ap (arg_node, arg_info);
 
         if (return_type->id != NULL) {
-            Free (return_type->id);
+            return_type->id = Free (return_type->id);
         }
         if (return_type->id_mod != NULL) {
             return_type->id_mod = NULL;
@@ -5376,7 +5379,7 @@ TClet (node *arg_node, node *arg_info)
 #ifndef DBUG_OFF
         db_str = Type2String (type, 0, TRUE); /* only used while debuging */
         DBUG_PRINT ("TYPE", ("infered type : %s", db_str));
-        Free (db_str);
+        db_str = Free (db_str);
 #endif
 
         tmp = type;
@@ -5428,8 +5431,8 @@ TClet (node *arg_node, node *arg_info)
                               ("Types in declaration (%s) and usage "
                                "(%s) of variable '%s' have unknown shape",
                                str1, str2, ids->id));
-                        Free (str1);
-                        Free (str2);
+                        str1 = Free (str1);
+                        str2 = Free (str2);
                     }
                     break;
                 default:
@@ -5607,7 +5610,7 @@ TI_prf (node *arg_node, node *arg_info)
     /* now free the infered typeinformation */
     for (i = 0; i < count_args; i++)
         FREE_TYPES (arg_type[i]);
-    Free (arg_type);
+    arg_type = Free (arg_type);
 
 #ifndef DBUG_OFF
     db_str = Type2String (ret_type, 0, TRUE);
@@ -5740,7 +5743,7 @@ TCreturn (node *arg_node, node *arg_info)
                        filename, NODE_LINE (arg_node), fun_name, str1));
 #endif /*SHAPE_NOTE */
 
-                Free (str1);
+                str1 = Free (str1);
                 break;
             }
             case CMP_both_unknown_shape: /* neu 8.12 */
@@ -5758,7 +5761,7 @@ TCreturn (node *arg_node, node *arg_info)
                                " defined shape (%s)",
                                filename, NODE_LINE (arg_node), fun_name, str1));
 #endif /*SHAPE_NOTE */
-                        Free (str1);
+                        str1 = Free (str1);
 
                     } else {
                         str1 = Type2String (fun_tmp, 0, TRUE);
@@ -5767,8 +5770,8 @@ TCreturn (node *arg_node, node *arg_info)
                               ("Types with unknown shape in declaration (%s) and return "
                                "value (%s) of function '%s`",
                                str1, str2, ModName (fun_mod, fun_name)));
-                        Free (str1);
-                        Free (str2);
+                        str1 = Free (str1);
+                        str2 = Free (str2);
                     }
                 }
                 break;
@@ -5945,7 +5948,7 @@ TI_ap (node *arg_node, node *arg_info)
                 str_buff = strncat (str_buff, tmp_str, str_spc);
                 str_spc -= strlen (tmp_str);
                 str_spc = MAX (str_spc, 0);
-                Free (tmp_str);
+                tmp_str = Free (tmp_str);
                 arg = ARG_NEXT (arg);
                 if (arg != NULL) {
                     str_buff = strncat (str_buff, ", ", str_spc);
@@ -5965,7 +5968,7 @@ TI_ap (node *arg_node, node *arg_info)
                 if (PFfuncntr == PF_MAXFUN) {
                     SYSWARN (("\"PF_MAXFUN\" too low"));
                     CONT_WARN (("function \"%s\" will not be profiled !", str_buff));
-                    Free (str_buff);
+                    str_buff = Free (str_buff);
                 } else {
                     PFfunnme[PFfuncntr] = str_buff;
                     FUNDEF_FUNNO (fun_p->node) = PFfuncntr++;
@@ -6063,7 +6066,7 @@ TI_ap (node *arg_node, node *arg_info)
     }
 
     if (0 < count_args) {
-        Free (arg_type);
+        arg_type = Free (arg_type);
     }
 
     DBUG_RETURN (return_type);
@@ -6131,8 +6134,8 @@ TI_array (node *arg_node, node *arg_info)
                 str2 = Type2String (return_type, 0, TRUE);
                 ERROR (NODE_LINE (elem),
                        ("Array of type '%s` has element of type '%s`", str2, str1));
-                Free (str1);
-                Free (str2);
+                str1 = Free (str1);
+                str2 = Free (str2);
                 FREE_TYPES (tmp_type);
             } else if ((T_int == TYPES_BASETYPE (return_type)
                         && T_float == TYPES_BASETYPE (tmp_type))
@@ -6186,7 +6189,7 @@ TI_array (node *arg_node, node *arg_info)
 #ifndef DBUG_OFF
         db_str = Type2String (return_type, 0, TRUE);
         DBUG_PRINT ("TYPE", ("type of array: %s", db_str));
-        Free (db_str);
+        db_str = Free (db_str);
 #endif
         /* store type of array in arg_node->info.types */
         arg_node->info.types = DupTypes (return_type);
@@ -7193,8 +7196,7 @@ TI_Nwith (node *arg_node, node *arg_info)
                     BLOCK_INSTR (NCODE_CBLOCK (NPART_CODE (NWITH_PART (arg_node))))
                       = NULL;
                     NCODE_CEXPR (NPART_CODE (NWITH_PART (arg_node))) = NULL;
-                    FreeTree (arg_node);
-                    arg_node = NULL;
+                    arg_node = FreeTree (arg_node);
                 } else {
                     /*  replace
                      *    "with ([] cmp1 iv cmp2 []) modarray (a, iv, b)"
@@ -7466,9 +7468,9 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
 
     gen_type = (concrete_type) ? DupTypes (*concrete_type) : NULL;
     if (gen_type && TYPES_NAME (gen_type))
-        Free (TYPES_NAME (gen_type));
+        TYPES_NAME (gen_type) = Free (TYPES_NAME (gen_type));
     if (gen_type && TYPES_MOD (gen_type))
-        Free (TYPES_MOD (gen_type));
+        TYPES_MOD (gen_type) = Free (TYPES_MOD (gen_type));
 
     /* The index variable has to be either an identifier or an array of
      * identifiers. If the  SAC-user only specifies one of it, the other
@@ -7645,7 +7647,7 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
                      * To get this done, we force an exit of the loop (tmpn = NULL)
                      * and set dim to UNKNOWN_SHAPE!
                      */
-                    Free (TYPES_SHPSEG (ret_type));
+                    TYPES_SHPSEG (ret_type) = Free (TYPES_SHPSEG (ret_type));
                     dim = UNKNOWN_SHAPE;
                     tmpn = NULL;
                 }
@@ -7821,7 +7823,7 @@ TI_Nfoldprf (node *arg_node, types *body_type, types *neutral_type, node *arg_in
     } else
         NWITHOP_NEUTRAL (arg_node) = ComputeNeutralElem (old_prf, body_type);
 
-    Free (arg_type);
+    arg_type = Free (arg_type);
     DBUG_RETURN (ret_type);
 }
 
@@ -8052,7 +8054,7 @@ DoConstantPropagation (fun_tab_elem *fun_p, nodelist *propas)
         DBUG_PRINT ("TCCP", ("TCCP rejected"));
     }
 
-    Free (arg_info);
+    arg_info = Free (arg_info);
 
     act_tab = old_tab;
 
