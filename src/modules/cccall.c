@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.8  2000/01/17 17:23:05  cg
+ * Wrapper functions for option -noPHM are now integrated into libsac.
+ * So, there is no longer s special version of the heap manager library
+ * to link with.
+ *
  * Revision 2.7  2000/01/17 16:25:58  cg
  * Added new handling of various version of the heap manager
  * library.
@@ -628,7 +633,7 @@ InvokeCC ()
                          (optimize & OPT_PHM
                             ? (runtimecheck & RUNTIMECHECK_HEAP ? "-lsac_heapmgr_mt_diag"
                                                                 : "-lsac_heapmgr_mt")
-                            : "-lsac_heapmgr_nophm"),
+                            : ""),
                          config.ccmtlink, (use_efence ? lib_efence : ""));
                 fclose (shellscript);
                 SystemCall ("chmod a+x .sac2c");
@@ -640,7 +645,7 @@ InvokeCC ()
                         (optimize & OPT_PHM
                            ? (runtimecheck & RUNTIMECHECK_HEAP ? "-lsac_heapmgr_mt_diag"
                                                                : "-lsac_heapmgr_mt")
-                           : "-lsac_heapmgr_nophm"),
+                           : ""),
                         config.ccmtlink, (use_efence ? lib_efence : ""));
         } else {
             if (gen_cccall) {
@@ -652,7 +657,7 @@ InvokeCC ()
                          (optimize & OPT_PHM
                             ? (runtimecheck & RUNTIMECHECK_HEAP ? "-lsac_heapmgr_diag"
                                                                 : "-lsac_heapmgr")
-                            : "-lsac_heapmgr_nophm"),
+                            : ""),
                          config.cclink, (use_efence ? lib_efence : ""));
                 fclose (shellscript);
                 SystemCall ("chmod a+x .sac2c");
@@ -664,7 +669,7 @@ InvokeCC ()
                         (optimize & OPT_PHM
                            ? (runtimecheck & RUNTIMECHECK_HEAP ? "-lsac_heapmgr_diag"
                                                                : "-lsac_heapmgr")
-                           : "-lsac_heapmgr_nophm"),
+                           : ""),
                         config.cclink, (use_efence ? lib_efence : ""));
         }
 
