@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/03/12 10:29:39  nmw
+ * TmpVar for undossa_tab added
+ *
  * Revision 3.2  2000/12/06 18:26:04  cg
  * Added new traversal tccp for typecheck constant propagation.
  *
@@ -671,6 +674,8 @@ TmpVar ()
         s = "apt";
     } else if (act_tab == blkli_tab) {
         s = "blkli";
+    } else if (act_tab == undossa_tab) {
+        s = "ussa";
     } else {
         s = "unknown";
     }
