@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2005/02/08 11:13:27  sbs
+ * some naming convention errors fixed.
+ *
  * Revision 1.10  2004/12/19 18:09:33  sah
  * post dk fixes
  *
@@ -47,8 +50,8 @@ extern void *ILIBstringCopy (void *s1);
 extern void *ILIBmemCopy (int size, void *mem);
 extern void *SERbuildSerStack (void *node);
 extern void *DSlookupFunction (const char *s, const char *t);
-extern void *STInit ();
-extern void STAdd (char *s1, int l, char *s2, int i, void *table);
-extern void *STRSAdd (char *s1, int i, void *p);
+extern void *STinit ();
+extern void STadd (char *s1, int l, char *s2, int i, void *table);
+extern void *STRSadd (char *s1, int i, void *p);
 
 #endif /* _SAC_SERIALIZE_H_ */
