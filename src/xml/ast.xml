@@ -1570,6 +1570,9 @@
           <node name="Double" />
 
           <node name="With" />
+          <node name="Withid" />
+          <node name="Part" />
+          <node name="Generator" />
           <node name="With2" />
           <node name="WLseg" />
           <node name="WLsegVar" />

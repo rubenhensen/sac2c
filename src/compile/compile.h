@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2004/12/18 15:31:09  sbs
+ * COMPpart, COMPwithid, COMPgenerator added.
+ *
  * Revision 3.18  2004/11/29 10:27:41  sah
  * renamed some functions
  *
@@ -83,6 +86,9 @@ extern node *COMPfloat (node *arg_node, info *arg_info);
 extern node *COMPdouble (node *arg_node, info *arg_info);
 
 extern node *COMPwith (node *arg_node, info *arg_info);
+extern node *COMPpart (node *arg_node, info *arg_info);
+extern node *COMPwithid (node *arg_node, info *arg_info);
+extern node *COMPgenerator (node *arg_node, info *arg_info);
 extern node *COMPwith2 (node *arg_node, info *arg_info);
 extern node *COMPwlseg (node *arg_node, info *arg_info);
 extern node *COMPwlsegvar (node *arg_node, info *arg_info);
