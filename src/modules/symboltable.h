@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/10/22 13:23:14  sah
+ * added some functions
+ * this entire things needs a
+ * rewrite (memo to myself ;)
+ *
  * Revision 1.3  2004/10/21 17:20:13  sah
  * Added SymbolTableRemove
  *
@@ -17,7 +22,15 @@
 #ifndef _SYMBOLTABLE_H
 #define _SYMBOLTABLE_H
 
-typedef enum { STE_funbody, STE_funhead, STE_typedef, STE_objdef } symbolentrytype_t;
+#include "types.h"
+
+typedef enum {
+    STE_funbody,
+    STE_funhead,
+    STE_typedef,
+    STE_objdef,
+    STE_namespace
+} symbolentrytype_t;
 
 typedef struct SYMBOLENTRY_T symbolentry_t;
 typedef struct SYMBOLCHAIN_T symbolchain_t;
@@ -29,6 +42,7 @@ extern symboltable_t *SymbolTableDestroy (symboltable_t *table);
 extern void SymbolTableAdd (const char *symbol, const char *name, symbolentrytype_t type,
                             symboltable_t *table);
 extern void SymbolTableRemove (const char *symbol, symboltable_t *table);
+extern bool SymbolTableContains (const char *symbol, symboltable_t *table);
 
 extern symbolchain_t *SymbolTableSymbolChainGet (symboltable_t *table);
 extern symbolchain_t *SymbolTableSymbolChainRelease (symbolchain_t *chain);

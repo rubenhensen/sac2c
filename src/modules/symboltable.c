@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/10/22 13:23:14  sah
+ * added some functions
+ * this entire things needs a
+ * rewrite (memo to myself ;)
+ *
  * Revision 1.3  2004/10/21 17:20:13  sah
  * Added SymbolTableRemove
  *
@@ -17,6 +22,7 @@
 #include "symboltable.h"
 #include "dbug.h"
 #include "internal_lib.h"
+#include "types.h"
 #include <string.h>
 
 typedef struct SYMBOLTABLESYMBOL_T symboltablesymbol_t;
@@ -141,13 +147,41 @@ SymbolTableSymbolLookup (const char *symbol, symboltable_t *table)
     DBUG_RETURN (result);
 }
 
+static bool
+SymbolTableSymbolEntryEqual (symbolentry_t *one, symbolentry_t *two)
+{
+    bool result = TRUE;
+
+    DBUG_ENTER ("SymbolTableSymbolEntryEqual");
+
+    result = result && (!strcmp (one->name, two->name));
+    result = result && (one->type == two->type);
+
+    DBUG_RETURN (result);
+}
+
 static void
 SymbolTableSymbolEntryAdd (symbolentry_t *entry, symboltablesymbol_t *symbol)
 {
+    symbolentry_t *pos;
+    bool found = FALSE;
+
     DBUG_ENTER ("SymbolTableSymbolEntryAdd");
 
-    entry->next = symbol->head;
-    symbol->head = entry;
+    /* check whether entry already exists */
+    pos = symbol->head;
+
+    while ((pos != NULL) && (!found)) {
+        found = SymbolTableSymbolEntryEqual (pos, entry);
+        pos = pos->next;
+    }
+
+    if (found) {
+        entry = SymbolTableEntryDestroy (entry);
+    } else {
+        entry->next = symbol->head;
+        symbol->head = entry;
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -239,6 +273,18 @@ SymbolTableRemove (const char *symbol, symboltable_t *table)
     }
 
     DBUG_VOID_RETURN;
+}
+
+bool
+SymbolTableContains (const char *symbol, symboltable_t *table)
+{
+    bool result;
+
+    DBUG_ENTER ("SymbolTableContains");
+
+    result = (SymbolTableSymbolLookup (symbol, table) != NULL);
+
+    DBUG_RETURN (result);
 }
 
 symbolchain_t *
