@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/03/15 14:04:57  bs
+ * Access macros renamed (take a look at tree_basic.h).
+ * DupArray modified.
+ *
  * Revision 2.3  1999/03/03 09:46:49  bs
  * I did some code-cosmetics in DupArray for a better understanding.
  *
@@ -656,8 +660,7 @@ DupId (node *arg_node, node *arg_info)
             new_node->node[i] = Trav (arg_node->node[i], arg_info);
         }
     }
-    ID_CONSTARRAY (new_node)
-      = CopyIntArray (ID_ARRAYLENGTH (arg_node), ID_CONSTARRAY (arg_node));
+    ID_INTVEC (new_node) = CopyIntVector (ID_VECLEN (arg_node), ID_INTVEC (arg_node));
 
     if (N_id == NODE_TYPE (arg_node) && DUP_WLF == DUPTYPE) {
         DBUG_PRINT ("DUP", ("duplicating N_id ..."));
@@ -697,8 +700,21 @@ DupArray (node *arg_node, node *arg_info)
         }
     }
     ARRAY_STRING (new_node) = StringCopy (ARRAY_STRING (arg_node));
-    ARRAY_INTARRAY (new_node)
-      = CopyIntArray (ARRAY_LENGTH (arg_node), ARRAY_INTARRAY (arg_node));
+    switch (ARRAY_VECTYPE (arg_node)) {
+    case T_int:
+        ARRAY_INTVEC (new_node)
+          = CopyIntVector (ARRAY_VECLEN (arg_node), ARRAY_INTVEC (arg_node));
+        break;
+    case T_float:
+        ARRAY_FLOATVEC (new_node)
+          = CopyFloatVector (ARRAY_VECLEN (arg_node), ARRAY_FLOATVEC (arg_node));
+        break;
+    case T_double:
+        ARRAY_DOUBLEVEC (new_node)
+          = CopyDoubleVector (ARRAY_VECLEN (arg_node), ARRAY_DOUBLEVEC (arg_node));
+    default:
+        /* Nothing to do ! */
+    }
     DBUG_RETURN (new_node);
 }
 
