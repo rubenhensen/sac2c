@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/24 12:47:20  khf
+ * replaced WITH_CEXPR
+ *
  * Revision 1.5  2004/11/23 21:50:47  khf
  * SacDefCamp04: Compiles
  *
@@ -228,7 +231,7 @@ InsertAccuPrf (node *ncode, info *arg_info)
 
     /*   <res> = <fun>( <acc>, <cexpr>); */
     ffassign = MakeFoldFunAssign (INFO_EA_FUNDEF (arg_info), WITH_WITHOP (wl),
-                                  ASSIGN_LHS (accuassign), WITH_CEXPR (wl));
+                                  ASSIGN_LHS (accuassign), EXPRS_EXPR (WITH_CEXPRS (wl)));
 
     nassign = TCappendAssign (BLOCK_INSTR (nblock), ffassign);
 
@@ -239,8 +242,8 @@ InsertAccuPrf (node *ncode, info *arg_info)
     /* replace CEXPR */
     nid = DUPdupIdsId (ASSIGN_LHS (ffassign));
 
-    WITH_CEXPR (wl) = FREEdoFreeNode (WITH_CEXPR (wl));
-    WITH_CEXPR (wl) = nid;
+    EXPRS_EXPR (WITH_CEXPRS (wl)) = FREEdoFreeNode (EXPRS_EXPR (WITH_CEXPRS (wl)));
+    EXPRS_EXPR (WITH_CEXPRS (wl)) = nid;
 
     DBUG_RETURN (ncode);
 }
