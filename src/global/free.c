@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/07/07 15:03:05  sbs
+ * FreeVinfo now does not free VINFO_TYPE anymore since that is used in sharing!
+ *
  * Revision 2.7  1999/07/02 09:45:06  jhs
  * Inserted DFMRemoveMask for SPMD_SHARED mask into FreeSpmd.
  *
@@ -1278,8 +1281,6 @@ FreeVinfo (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing contents of N_vinfo node ..."));
 
     tmp = FREECONT (VINFO_NEXT (arg_node));
-
-    FREE (VINFO_TYPE (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_vinfo node ..."));
 
