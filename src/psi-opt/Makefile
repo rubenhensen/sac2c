@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 2.15  2000/05/26 14:23:59  sbs
+# lines for pad*.o added
+# pad.o added as target
+#
 # Revision 2.14  2000/03/31 09:33:45  jhs
 # make deps done
 #
@@ -104,7 +108,7 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../global -I../../inc -I../tree -I../compile -I../typecheck -I../modules \
      -I../print -I../optimize
 
-all: index.o psi-opt.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o WithloopFolding.o WLT.o WLI.o WLF.o
+all: index.o psi-opt.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o WithloopFolding.o WLT.o WLI.o WLF.o pad.o
 
 index.o: index.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o index.o -c index.c $(INCS)
@@ -132,6 +136,9 @@ WLI.o: WLI.c WLI.h
 
 WLF.o: WLF.c WLF.h
 	$(CC) $(CCFLAGS) $(CFLAGS) -o WLF.o -c WLF.c $(INCS)
+
+pad.o: pad.c pad.h
+	$(CC) $(CCFLAGS) $(CFLAGS) -o pad.o -c pad.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
