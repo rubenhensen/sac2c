@@ -176,6 +176,17 @@ CACHE2_LINE    :=  64
 CACHE2_ASSOC   :=  1
 
 
+target ultra3:
+
+CACHE1_SIZE    :=  64
+CACHE1_LINE    :=  32
+CACHE1_ASSOC   :=  4
+
+CACHE2_SIZE    :=  8192
+CACHE2_LINE    :=  256
+CACHE2_ASSOC   :=  1
+
+
 target ultra_entr3000:
 
 CACHE1_SIZE    :=  16
