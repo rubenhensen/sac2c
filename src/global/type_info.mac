@@ -1,9 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.9  1996/01/16 16:55:40  cg
- * added new entry for macro TYP_IF giving the size of the type
+ * Revision 1.10  1996/02/21 15:03:40  cg
+ * changed print string for N_str from 'char*' to 'string'
+ * with respect to usage within SIBs
  *
+;; Revision 1.9  1996/01/16  16:55:40  cg
+;; added new entry for macro TYP_IF giving the size of the type
+;;
 ;; Revision 1.8  1995/12/20  08:17:15  cg
 ;; added new primitive type char.
 ;;
@@ -53,7 +57,7 @@ TYP_IF (T_int, "int", "int", "int", sizeof (int)),
   TYP_IF (T_double, "double", "double", "double", sizeof (double)),
   TYP_IF (T_longdbl, "long double", "long double", "ldouble", sizeof (long double)),
   TYP_IF (T_bool, "bool", "bool", "bool", sizeof (int)),
-  TYP_IF (T_str, "string", "char *", "string", sizeof (char *)),
+  TYP_IF (T_str, "string", "string", "string", sizeof (char *)),
   TYP_IF (T_char, "char", "char", "char", sizeof (char)),
   TYP_IF (T_hidden, "hidden", "void *", "void", sizeof (void *)),
   TYP_IF (T_void, "void", "void", "void", 0), TYP_IF (T_dots, "...", "...", "___", 0),
