@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2002/07/08 17:47:24  dkr
+ * MakeIcm(): IS_LASTREF__BLOCK_ELSE added
+ *
  * Revision 3.56  2002/07/03 16:55:20  dkr
  * ID_UNQCONV removed for TAGGED_ARRAYS
  *
@@ -1328,22 +1331,25 @@ MakeIcm (char *name, node *args)
 
     DBUG_ASSERT ((name != NULL), "MakeIcm called with empty ICM name.");
 
-    if (strcmp (name, "MT_START_SYNCBLOCK") == 0) {
+    if (!strcmp (name, "IS_LASTREF__BLOCK_ELSE")) {
+        ICM_INDENT_BEFORE (tmp) = -1;
+        ICM_INDENT_AFTER (tmp) = 1;
+    } else if (!strcmp (name, "MT_START_SYNCBLOCK")) {
         ICM_INDENT_BEFORE (tmp) = 0;
         ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strncmp (name, "MT_SYNC_", 8) == 0) {
+    } else if (!strncmp (name, "MT_SYNC_", 8)) {
         ICM_INDENT_BEFORE (tmp) = -1;
         ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strcmp (name, "MT2_IF_I_AM_FIRST") == 0) {
+    } else if (!strcmp (name, "MT2_IF_I_AM_FIRST")) {
         ICM_INDENT_BEFORE (tmp) = 0;
         ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "MT2_ELSE_IF_I_AM_NOT_FIRST") == 0) {
+    } else if (!strcmp (name, "MT2_ELSE_IF_I_AM_NOT_FIRST")) {
         ICM_INDENT_BEFORE (tmp) = -1;
         ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "MT2_END_I_AM_FIRST") == 0) {
+    } else if (!strcmp (name, "MT2_END_I_AM_FIRST")) {
         ICM_INDENT_BEFORE (tmp) = -1;
         ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strcmp (name, "MT_SPMD_BEGIN") == 0) {
+    } else if (!strcmp (name, "MT_SPMD_BEGIN")) {
         /*
          * This ICM must be handled specifically since it would otherwise
          * be treated according to the more generic rules for BEGIN/END
@@ -1351,7 +1357,7 @@ MakeIcm (char *name, node *args)
          */
         ICM_INDENT_BEFORE (tmp) = 0;
         ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strcmp (name, "MT_SPMD_END") == 0) {
+    } else if (!strcmp (name, "MT_SPMD_END")) {
         /*
          * This ICM must be handled specifically since it would otherwise
          * be treated according to the more generic rules for BEGIN/END
