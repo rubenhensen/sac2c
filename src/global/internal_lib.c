@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/03/15 17:28:05  dkr
+ * DBUG_ASSERT for lcm() added
+ *
  * Revision 2.14  2000/02/18 14:38:22  cg
  * Added TmpVar names for ai_tab and fun2lac_tab.
  *
@@ -345,7 +348,7 @@ itoa (long number)
 /******************************************************************************
  *
  * function:
- *   int lcm(int x, int y)
+ *   int lcm( int x, int y)
  *
  * description:
  *   returns the lowest-common-multiple of x, y.
@@ -358,6 +361,8 @@ lcm (int x, int y)
     int u, v;
 
     DBUG_ENTER ("lcm");
+
+    DBUG_ASSERT (((x > 0) && (y > 0)), "arguments of lcm() must be >0");
 
     u = x;
     v = y;
