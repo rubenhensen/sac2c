@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.140  2003/09/25 10:54:39  dkr
+ * to_unq() and from_unq() are prfs now
+ *
  * Revision 3.139  2003/06/11 21:41:40  ktr
  * added support for multidimensional arrays
  *
@@ -2624,19 +2627,6 @@ PrintId (node *arg_node, node *arg_info)
     PrintStatus (ID_STATUS (arg_node), FALSE);
 
     PrintRC (ID_REFCNT (arg_node), ID_NAIVE_REFCNT (arg_node), show_refcnt);
-
-    if (compiler_phase == PH_precompile) {
-        switch (ID_UNQCONV (arg_node)) {
-        case NO_UNQCONV:
-            break;
-        case TO_UNQ:
-            fprintf (outfile, " /* to_unq() */ ");
-            break;
-        case FROM_UNQ:
-            fprintf (outfile, " /* from_unq() */ ");
-            break;
-        }
-    }
 
     if (compiler_phase != PH_genccode) {
         DBUG_EXECUTE ("PRINT_CAR", DbugPrintArray (arg_node););

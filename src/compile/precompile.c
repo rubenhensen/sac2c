@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2003/09/25 10:54:33  dkr
+ * to_unq() and from_unq() are prfs now
+ *
  * Revision 3.71  2003/06/17 16:56:23  dkr
  * PREC3with() and PREC4with() added.
  * Bug in PREC3withop() fixed.
@@ -996,29 +999,31 @@ PREC1exprs_return (node *ret_exprs, node *ret_node)
 node *
 PREC1ap (node *arg_node, node *arg_info)
 {
-    node *ap;
+    node *arg;
+    node *ret_node;
 
     DBUG_ENTER ("PREC1ap");
 
     if (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_classfun) {
-        ap = arg_node;
-        arg_node = EXPRS_EXPR (AP_ARGS (arg_node));
+        arg = EXPRS_EXPR (AP_ARGS (arg_node));
 
-        if (NODE_TYPE (arg_node) == N_id) {
-            if (!strncmp (AP_NAME (ap), "to_", 3)) {
-                DBUG_ASSERT ((!IsUnique (ID_TYPE (arg_node))),
+        if (NODE_TYPE (arg) == N_id) {
+            if (!strncmp (AP_NAME (arg_node), "to_", 3)) {
+                DBUG_ASSERT ((!IsUnique (ID_TYPE (arg))),
                              "Argument of to_class function is unique already!");
 
-                ID_UNQCONV (arg_node) = TO_UNQ;
+                ret_node = MakePrf (F_to_unq, AP_ARGS (arg_node));
+                AP_ARGS (arg_node) = NULL;
             } else {
                 /*
                  * This must be a "from" function. So, the argument is of a class
                  * type which implies that it is an identifier.
                  */
-                DBUG_ASSERT ((IsUnique (ID_TYPE (arg_node))),
+                DBUG_ASSERT ((IsUnique (ID_TYPE (arg))),
                              "Argument of from_class function not unique!");
 
-                ID_UNQCONV (arg_node) = FROM_UNQ;
+                ret_node = MakePrf (F_from_unq, AP_ARGS (arg_node));
+                AP_ARGS (arg_node) = NULL;
             }
         } else {
             /* argument of class conversion function is no N_id node */
@@ -1027,10 +1032,12 @@ PREC1ap (node *arg_node, node *arg_info)
              * -> argument is a scalar value
              * -> simply remove the conversion function
              */
+            ret_node = arg;
+            EXPRS_EXPR (AP_ARGS (arg_node)) = NULL;
         }
 
-        AP_NAME (ap) = Free (AP_NAME (ap));
-        ap = Free (ap);
+        arg_node = Free (arg_node);
+        arg_node = ret_node;
     } else {
         if (AP_ARGS (arg_node) != NULL) {
             AP_ARGS (arg_node)
@@ -1086,8 +1093,6 @@ PREC1id (node *arg_node, node *arg_info)
         if (VARDEC_OR_ARG_STATUS (ID_VARDEC (arg_node)) == ST_artificial) {
             ID_VARDEC (arg_node) = VARDEC_OR_ARG_OBJDEF (ID_VARDEC (arg_node));
         }
-
-        ID_UNQCONV (arg_node) = NO_UNQCONV;
     }
 
     DBUG_RETURN (arg_node);
@@ -1759,8 +1764,7 @@ MakeMergeAssigns (argtab_t *argtab, node *arg_info)
                     IDS_REFCNT (out_ids) = 1 /* RC_INACTIVE */;
 
                     /* to_unq( b:3) */
-                    expr = DupTree (expr);
-                    ID_UNQCONV (expr) = TO_UNQ;
+                    expr = MakePrf (F_to_unq, MakeExprs (DupTree (expr), NULL));
 
                     /* a:-1 = to_unq( b:3); */
                     /*
@@ -1776,7 +1780,7 @@ MakeMergeAssigns (argtab_t *argtab, node *arg_info)
                     /* from_unq( a:-1) */
                     expr = DupIds_Id (argtab->ptr_out[i]);
                     ID_REFCNT (expr) = RC_INACTIVE;
-                    ID_UNQCONV (expr) = FROM_UNQ;
+                    expr = MakePrf (F_from_unq, MakeExprs (expr, NULL));
 
                     /*
                      * append at head of 'post_assigns'!!!

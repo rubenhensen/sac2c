@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2003/09/25 10:54:42  dkr
+ * to_unq() and from_unq() are prfs now
+ *
  * Revision 3.17  2003/09/10 09:43:24  sbs
  * NTCPRF_take_SxV added.
  *
@@ -142,5 +145,8 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCPRF_toiS, COToi),
   PRF_IF (F_drop_SxV, "F_drop_SxV", "_drop_SxV_", "drop", FALSE, 2, NTCPRF_drop_SxV,
           CODrop),
 
+  PRF_IF (F_to_unq, "F_to_unq", "_to_unq_", "to_unq", FALSE, 1, NTCPRF_dummy, NULL),
+  PRF_IF (F_from_unq, "F_from_unq", "_from_unq_", "from_unq", FALSE, 1, NTCPRF_dummy,
+          NULL),
   PRF_IF (F_type_error, "F_type_error", "_type_error_", "type_error", FALSE, 1,
           NTCPRF_dummy, NULL)

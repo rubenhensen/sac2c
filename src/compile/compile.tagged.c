@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.80  2003/09/25 10:54:17  dkr
+ * to_unq() and from_unq() are prfs now
+ *
  * Revision 1.79  2003/09/20 14:23:57  dkr
  * signature of some prf ICMs modified
  *
@@ -260,7 +263,6 @@
 #include "scheduling.h"
 #include "wl_bounds.h"
 #include "refcount.h"
-#include "compile.h"
 #include "compile.tagged.h"
 
 /*
@@ -2759,7 +2761,7 @@ COMPApIds (node *ap, node *arg_info)
             }
 
             ret_node
-              = MakeAssignIcm1 ("ND_REFRESH_MIRROR",
+              = MakeAssignIcm1 ("ND_REFRESH__MIRROR",
                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                               FALSE, TRUE, FALSE, NULL),
                                 ret_node);
@@ -2902,7 +2904,7 @@ COMP2Ap (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPIdLet( node *arg_node, node *arg_info)
+ * @fn  node *COMPId( node *arg_node, node *arg_info)
  *
  * @brief  Compiles let expression with id on RHS.
  *   The return value is a N_assign chain of ICMs.
@@ -2910,13 +2912,13 @@ COMP2Ap (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
-static node *
-COMPIdLet (node *arg_node, node *arg_info)
+node *
+COMP2Id (node *arg_node, node *arg_info)
 {
     ids *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPIdLet");
+    DBUG_ENTER ("COMPId");
 
     let_ids = INFO_COMP2_LASTIDS (arg_info);
 
@@ -2984,26 +2986,12 @@ COMPIdFromUnique (node *arg_node, node *arg_info)
     DBUG_ASSERT ((!IsUnique (lhs_type)), "from_unq() with unique LHS found!");
     rhs_type = ID_TYPE (arg_node);
 
-#if 0
-  if (! IsUnique( rhs_type)) {
-    /*
-     * non-unique type -> patch it in order to fool the backend :-)
-     */
-    rhs_type = MakeTypes( T_user, 0, NULL,
-                          NULL, NULL);
-    TYPES_TDEF( rhs_type) = MakeTypedef( NULL, NULL,
-                                         DupOneTypes( ID_TYPE( arg_node)),
-                                         ST_unique,
-                                         NULL);
-  }
-#endif
-
     if (!IsUnique (rhs_type)) {
         /*
          * non-unique type
          *   -> ignore from_unq() in order to get a simpler ICM code
          */
-        ret_node = COMPIdLet (arg_node, arg_info);
+        ret_node = COMP2Id (arg_node, arg_info);
     } else {
         ret_node
           = MakeAssignIcm2 ("ND_ASSIGN",
@@ -3016,16 +3004,6 @@ COMPIdFromUnique (node *arg_node, node *arg_info)
                             MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                              IDS_REFCNT (let_ids), NULL));
     }
-
-#if 0
-  if (rhs_type != ID_TYPE( arg_node)) {
-    /*
-     * free patched type
-     */
-    TYPES_TDEF( rhs_type) = FreeTree( TYPES_TDEF( rhs_type));
-    rhs_type = FreeAllTypes( rhs_type);
-  }
-#endif
 
     DBUG_RETURN (ret_node);
 }
@@ -3068,20 +3046,6 @@ COMPIdToUnique (node *arg_node, node *arg_info)
     rhs_type = ID_TYPE (arg_node);
     DBUG_ASSERT ((!IsUnique (rhs_type)), "to_unq() with unique RHS found!");
 
-#if 0
-  /*
-   * non-unique type -> patch it in order to fool the backend :-)
-   */
-  if (! IsUnique( lhs_type)) {
-    lhs_type = MakeTypes( T_user, 0, NULL,
-                          NULL, NULL);
-    TYPES_TDEF( lhs_type) = MakeTypedef( NULL, NULL,
-                                         DupOneTypes( IDS_TYPE( let_ids)),
-                                         ST_unique,
-                                         NULL);
-  }
-#endif
-
     if (RC_IS_ACTIVE (ID_REFCNT (arg_node))) {
         DBUG_ASSERT ((ID_REFCNT (arg_node) > 0), "reference with (rc == 0) found!");
 
@@ -3107,69 +3071,10 @@ COMPIdToUnique (node *arg_node, node *arg_info)
          * object not refcounted
          *   -> ignore to_unq() in order to get a simpler ICM code
          */
-        ret_node = COMPIdLet (arg_node, arg_info);
+        ret_node = COMP2Id (arg_node, arg_info);
     }
-
-#if 0
-  if (lhs_type != IDS_TYPE( let_ids)) {
-    /*
-     * free patched type
-     */
-    TYPES_TDEF( lhs_type) = FreeTree( TYPES_TDEF( lhs_type));
-    lhs_type = FreeAllTypes( lhs_type);
-  }
-#endif
 
     DBUG_RETURN (ret_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn  node *COMPId( node *arg_node, node *arg_info)
- *
- * Remarks:
- *   Compiles let expression with a N_id node (which possibly represents an
- *   application of a class conversion function!) on RHS.
- *   The return value is a N_assign chain of ICMs (the old 'arg_node' is
- *   removed by COMPLet) or the unchanged N_id node.
- *
- ******************************************************************************/
-
-node *
-COMP2Id (node *arg_node, node *arg_info)
-{
-    node *ret_node;
-
-    DBUG_ENTER ("COMPId");
-
-    switch (ID_UNQCONV (arg_node)) {
-    case NO_UNQCONV:
-        ret_node = COMPIdLet (arg_node, arg_info);
-        break;
-
-    case FROM_UNQ:
-        ret_node = COMPIdFromUnique (arg_node, arg_info);
-        break;
-
-    case TO_UNQ:
-        ret_node = COMPIdToUnique (arg_node, arg_info);
-        break;
-
-    default:
-        ret_node = NULL;
-        DBUG_ASSERT (0, "unknown kind of class conversion function found");
-        break;
-    }
-
-    /*
-     * If (ret_node == NULL) is hold, the expression remains unchanged.
-     * Otherwise return the ICM chain stored in 'ret_node'.
-     */
-    if (ret_node != NULL) {
-        arg_node = ret_node;
-    }
-
-    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -4229,6 +4134,10 @@ COMP2Prf (node *arg_node, node *arg_info)
     if (PRF_PRF (arg_node) == F_type_error) {
         /* F_type_error has multiple return values! */
         ret_node = COMPPrfTypeError (arg_node, arg_info);
+    } else if (PRF_PRF (arg_node) == F_to_unq) {
+        ret_node = COMPIdToUnique (AP_ARG1 (arg_node), arg_info);
+    } else if (PRF_PRF (arg_node) == F_from_unq) {
+        ret_node = COMPIdFromUnique (AP_ARG1 (arg_node), arg_info);
     } else {
         DBUG_ASSERT ((IDS_NEXT (let_ids) == NULL), "multiple return values found!");
 

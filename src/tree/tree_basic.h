@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.170  2003/09/25 10:54:54  dkr
+ * to_unq() and from_unq() are prfs now
+ *
  * Revision 3.169  2003/09/16 18:19:11  ktr
  * Added support for AVIS_WITHID
  *
@@ -1887,7 +1890,6 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***                                            ( -> analysis -> )
  ***    int         REFCNT                      (refcount -> compile -> )
  ***    int         NAIVE_REFCNT                (refcount -> concurrent -> )
- ***    unqconv_t   UNQCONV                     (precompile -> compile -> )
  ***    node*       DEF                         (Unroll !!, Unswitch !!)
  ***    node*       WL                          (wli -> wlf !!)
  ***
@@ -1957,11 +1959,6 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  *                        in a function application or return-statement
  *   ST_artificial    : additional argument added by object-handler
  *                        in a function application or return-statement
- *
- *
- * UNQCONV is a flag which is set in those N_id nodes which were
- * arguments to a class conversion (to_class, from_class) function.
- *
  */
 
 extern node *MakeId (char *name, char *mod, statustype status);
@@ -1984,7 +1981,6 @@ extern node *MakeId_Num (int val);
 #define ID_DEF(n) (IDS_DEF (ID_IDS (n)))
 #define ID_REFCNT(n) (IDS_REFCNT (ID_IDS (n)))
 #define ID_NAIVE_REFCNT(n) (IDS_NAIVE_REFCNT (ID_IDS (n)))
-#define ID_UNQCONV(n) (*((unqconv_t *)(&(n->node[4])))) /* needed for cc */
 #define ID_WL(n) (n->node[0])
 #define ID_NT_TAG(n) ((char *)(n->node[5]))
 
