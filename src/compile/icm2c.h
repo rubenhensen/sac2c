@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.21  1995/06/26 12:02:30  hw
+ * Revision 1.22  1995/06/26 16:55:57  sbs
+ * ND_KS_USE_GENVAR_OFFSET inserted
+ *
+ * Revision 1.21  1995/06/26  12:02:30  hw
  * macro N_IDX_PSI inserted
  *
  * Revision 1.20  1995/06/09  15:35:48  hw
@@ -337,10 +340,11 @@
     };
 
 /*
- * Macro for primitive function idx_psi:
- * ====================================
+ * Macros used for primitive function idx_psi:
+ * ===========================================
  */
 #define ND_IDX_PSI(s, a, res) res = ND_A_FIELD (a)[s];
+#define ND_KS_USE_GENVAR_OFFSET(offsetvar, res) offsetvar = res##__destptr;
 
 /*
  * Macros used for compilation of do-loop:
