@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.86  2004/08/09 12:26:32  khf
+ * PREC1prf: break in default case inserted
+ *
  * Revision 3.85  2004/08/08 15:48:59  ktr
  * PREC1prf added in order to remove inc_rc/dec_rc instructions for global
  * objects.
@@ -1207,6 +1210,7 @@ PREC1prf (node *arg_node, info *arg_info)
         break;
 
     default:
+        break;
     }
 
     DBUG_RETURN (arg_node);
