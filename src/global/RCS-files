@@ -4,6 +4,7 @@ Makefile
 access_macros.h
 free.c
 free.h
+globals.h
 internal_lib.c
 internal_lib.h
 main.c
