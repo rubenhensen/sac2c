@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2003/06/17 16:07:31  dkr
+ * PREC3with() and PREC4with() added
+ *
  * Revision 3.15  2003/04/20 20:28:46  dkr
  * PREC2ap renamed into PREC2apORprf
  *
@@ -102,6 +105,7 @@ extern node *PREC3fundef (node *arg_node, node *arg_info);
 extern node *PREC3block (node *arg_node, node *arg_info);
 extern node *PREC3assign (node *arg_node, node *arg_info);
 extern node *PREC3let (node *arg_node, node *arg_info);
+extern node *PREC3with (node *arg_node, node *arg_info);
 extern node *PREC3with2 (node *arg_node, node *arg_info);
 extern node *PREC3withop (node *arg_node, node *arg_info);
 extern node *PREC3code (node *arg_node, node *arg_info);
@@ -121,6 +125,7 @@ extern node *PREC4id (node *arg_node, node *arg_info);
 extern node *PREC4do (node *arg_node, node *arg_info);
 extern node *PREC4while (node *arg_node, node *arg_info);
 extern node *PREC4cond (node *arg_node, node *arg_info);
+extern node *PREC4with (node *arg_node, node *arg_info);
 extern node *PREC4with2 (node *arg_node, node *arg_info);
 extern node *PREC4withid (node *arg_node, node *arg_info);
 extern node *PREC4code (node *arg_node, node *arg_info);

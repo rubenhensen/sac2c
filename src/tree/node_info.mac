@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.120  2003/06/17 16:08:01  dkr
+ * PREC3with() and PREC4with() added
+ *
  * Revision 3.119  2003/04/26 20:47:13  mwe
  * support for ElimSubDiv and UndoElimSubDiv added
  *
@@ -1935,13 +1938,13 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIwith, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, APCwith, APTwith,
+       TravSons, PREC3with, APCwith, APTwith,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, SSANwith, TravSons, USSANwith,
        SSADCRNwith, SSACSENwith, CMPTTravSons, TravSons, TravSons, SSALIRNwith, TravSons,
        TravSons, SSALURNwith, SSAWLTNwith, SSAWLINwith, SSAWLFNwith,
 
-       TravSons, COMP2With, TravSons, TravSons, TravSons, WLSNwith, TravSons, TravSons,
+       TravSons, COMP2With, TravSons, TravSons, TravSons, WLSNwith, PREC4with, TravSons,
        HDwith, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
