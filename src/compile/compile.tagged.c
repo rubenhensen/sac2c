@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.51  2002/10/08 16:50:30  dkr
+ * MakeIcmArgs_WL_OP2(): DBUG_ASSERT modified
+ *
  * Revision 1.50  2002/10/08 16:37:41  dkr
  * COMP2Objdef() modified
  *
@@ -4736,7 +4739,7 @@ MakeIcmArgs_WL_OP2 (node *arg_node)
         num_args--;
         withid_ids = IDS_NEXT (withid_ids);
     }
-    DBUG_ASSERT ((num_args == 0), "wrong number of ICM args found!");
+    DBUG_ASSERT ((num_args == 0), "wrong number of ids in NWITHID_IDS found!");
 
     DBUG_RETURN (args);
 }
