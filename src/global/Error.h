@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.17  1996/01/02 15:44:25  cg
+ * Revision 1.18  1996/01/05 12:24:20  cg
+ * Now, CleanUp is called by macro EXIT instead of removing the
+ * sibfile only
+ *
+ * Revision 1.17  1996/01/02  15:44:25  cg
  * modified external declaration of global variable filename
  *
  * Revision 1.16  1995/12/01  16:13:21  cg
@@ -217,8 +221,7 @@
 
 #define EXIT(n)                                                                          \
     {                                                                                    \
-        if (sibfilename[0] != 0)                                                         \
-            remove (sibfilename);                                                        \
+        CleanUp ();                                                                      \
         exit (n);                                                                        \
     }
 
@@ -535,10 +538,10 @@ extern int max_compiler_phase;
 extern char *filename;
 extern char *compiler_phase_name[];
 extern char error_message_buffer[];
-extern char sibfilename[];
 
 extern void ProcessErrorMessage (char *format, ...);
 extern int NumberOfDigits (int);
+extern void CleanUp ();
 
 /*
  *************************************************************************
