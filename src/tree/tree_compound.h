@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.118  2004/11/23 19:32:48  khf
+ * ID_TYPE modified
+ *
  * Revision 3.117  2004/11/23 17:25:53  ktr
  * changed some GENs into GENERATORs
  *
@@ -1397,7 +1400,7 @@ extern node *TCmakeVinfoDollar (node *next);
  */
 
 #define ID_VARNO(n) VARDEC_OR_ARG_VARNO (ID_VARDEC (n))
-#define ID_TYPE(n) VARDEC_OR_ARG_TYPE (ID_VARDEC (n))
+#define ID_NAME(n) AVIS_NAME (ID_AVIS (n))
 #define ID_NTYPE(n) AVIS_TYPE (ID_AVIS (n))
 #define ID_DIM(n) VARDEC_OR_ARG_DIM (ID_VARDEC (n))
 #define ID_SHPSEG(n) TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (ID_VARDEC (n)))
@@ -1405,6 +1408,13 @@ extern node *TCmakeVinfoDollar (node *next);
 #define ID_VARDEC_NAME(n) VARDEC_OR_ARG_NAME (ID_VARDEC (n))
 #define ID_VARDEC_NEXT(n) VARDEC_OR_ARG_NEXT (ID_VARDEC (n))
 #define ID_PADDED(n) VARDEC_OR_ARG_PADDED (ID_VARDEC (n))
+
+#define ID_TYPE(n)                                                                       \
+    ((NODE_TYPE (AVIS_DECL (ID_AVIS (n))) == N_vardec)                                   \
+       ? VARDEC_TYPE (AVIS_DECL (ID_AVIS (n)))                                           \
+       : ((NODE_TYPE (AVIS_DECL (ID_AVIS (n))) == N_arg)                                 \
+            ? ARG_TYPE (AVIS_DECL (ID_AVIS (n)))                                         \
+            : NULL))
 
 #define ID_SSAASSIGN(n) (AVIS_SSAASSIGN (ID_AVIS (n)))
 
