@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.21  2005/03/04 21:21:42  cg
+ * Fixed a serious bug in PHITARGET handling.
+ *
  * Revision 1.20  2005/02/01 17:50:32  mwe
  * removed elimination of fungroups
  *
@@ -402,6 +405,11 @@ USSATarg (node *arg_node, info *arg_info)
      */
     AVIS_SSACOUNT (ARG_AVIS (arg_node)) = NULL;
 
+    /*
+     * Clear phi target for subsequent applications of UndoSSATransform.
+     */
+    AVIS_SSAPHITARGET (ARG_AVIS (arg_node)) = PHIT_NONE;
+
     DBUG_RETURN (arg_node);
 }
 
@@ -563,6 +571,11 @@ USSATvardec (node *arg_node, info *arg_info)
      * be removed in USSAblock()
      */
     AVIS_SSACOUNT (VARDEC_AVIS (arg_node)) = NULL;
+
+    /*
+     * Clear phi target for subsequent applications of UndoSSATransform.
+     */
+    AVIS_SSAPHITARGET (VARDEC_AVIS (arg_node)) = PHIT_NONE;
 
     DBUG_RETURN (arg_node);
 }
