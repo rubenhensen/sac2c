@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2003/03/28 15:04:23  dkr
+ * DBUG_OFF flag used
+ *
  * Revision 1.14  2002/10/29 19:09:40  dkr
  * Vect2Offset2() rewritten
  *
@@ -70,7 +73,9 @@ WriteScalar (char *scl)
 
     if (scl[0] == '(') {
         /* 'scl' is a tagged id */
+#ifndef DBUG_OFF
         shape_class_t dc = ICUGetShapeClass (scl);
+#endif
 
         DBUG_ASSERT (((dc == C_scl) || (dc == C_aud)), "tagged id is no scalar!");
         fprintf (outfile, "SAC_ND_WRITE( %s, 0)", scl);
@@ -126,7 +131,9 @@ ReadScalar (void *scl, char *idx_str, int idx)
 
     if (((char *)scl)[0] == '(') {
         /* 'scl' is a tagged id */
+#ifndef DBUG_OFF
         shape_class_t sc = ICUGetShapeClass (scl);
+#endif
 
         DBUG_ASSERT (((sc == C_scl) || (sc == C_aud)), "tagged id is no scalar!");
         ReadId (scl, idx_str, idx);
