@@ -1,3 +1,32 @@
+/* *
+ * $Log$
+ * Revision 1.6  2004/07/07 15:57:05  mwe
+ * former log-messages added
+ *
+ *
+ *
+ *----------------------------
+ *revision 1.5    locked by: mwe;
+ *date: 2004/07/07 15:43:36;  author: mwe;  state: Exp;  lines: +6 -16
+ *last changes undone (all changes connected to new type representation with ntype*)
+ *----------------------------
+ *revision 1.4
+ *date: 2004/06/10 15:08:46;  author: mwe;  state: Exp;  lines: +1 -4
+ *unused variables removed
+ *----------------------------
+ *revision 1.3
+ *date: 2004/06/10 14:43:06;  author: mwe;  state: Exp;  lines: +15 -2
+ *usage of ntype* instead of type added
+ *----------------------------
+ *revision 1.2
+ *date: 2004/02/06 14:19:33;  author: mwe;  state: Exp;  lines: +0 -1
+ *remove ASSIGN2
+ *----------------------------
+ *revision 1.1
+ *date: 2003/04/26 20:54:17;  author: mwe;  state: Exp;
+ *Initial revision
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 
