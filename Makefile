@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.80  1998/05/05 15:56:26  cg
+# added linking of file src/optimize/DataFlowMask.c
+#
 # Revision 1.79  1998/05/05 12:17:52  dkr
 # added cc-flag -erroff=E_CAST_DOESNT_YIELD_LVALUE
 #
@@ -293,7 +296,7 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
 	  src/optimize/Inline.o src/optimize/Unroll.o \
           src/optimize/Unswitch.o src/optimize/CSE.o \
 	  src/optimize/WithloopFolding.o src/optimize/WLT.o \
-	  src/optimize/WLI.o src/optimize/WLF.o
+	  src/optimize/WLI.o src/optimize/WLF.o src/optimize/DataFlowMask.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o src/psi-opt/ArrayElimination.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
          src/modules/implicittypes.o src/modules/analysis.o \
