@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  2000/03/23 16:04:49  dkr
+ * DBUG_ASSERT in RenameId() added
+ *
  * Revision 2.7  2000/03/02 13:07:44  jhs
  * Commented out usage of FUNDEF_ATTRIB (search it to find the place)
  * because these flag is cleared and reused bei multithreaded.
@@ -119,7 +122,6 @@ PRECRenameLocalIdentifier (char *id, data_class_t nt_class, uniqueness_class_t n
 {
     char *name_prefix_table[] = {"SAC1_", "SACp"};
     char *name_prefix;
-
 #else  /* TAGGED_ARRAYS */
 char *
 PRECRenameLocalIdentifier (char *id)
@@ -150,9 +152,7 @@ PRECRenameLocalIdentifier (char *id)
         sprintf (new_name, "(%s%s,(%s,(%s,NIL)))", name_prefix, id,
                  nt_class_str[nt_class], nt_uni_str[nt_uni]);
     };
-
 #else /* TAGGED_ARRAYS */
-
     if (id[0] == '_') {
         /*
          * This local identifier was inserted by sac2c.
@@ -170,7 +170,6 @@ PRECRenameLocalIdentifier (char *id)
         new_name = (char *)Malloc (sizeof (char) * (strlen (id) + 6));
         sprintf (new_name, "SACl_%s", id);
     }
-
 #endif
 
     FREE (id);
@@ -203,6 +202,7 @@ RenameId (node *idnode)
     DBUG_ENTER ("RenameId");
 
     DBUG_ASSERT ((NODE_TYPE (idnode) == N_id), "Wrong argument to function RenameId()");
+    DBUG_ASSERT ((ID_VARDEC (idnode) != NULL), "Vardec not found in function RenameId()");
 
     if (NODE_TYPE (ID_VARDEC (idnode)) == N_objdef) {
         FREE (ID_NAME (idnode));
@@ -211,16 +211,13 @@ RenameId (node *idnode)
          * The global object's definition has already been renamed.
          */
     } else {
-
 #ifdef TAGGED_ARRAYS
         dclass = GetClassFromTypes (ID_TYPE (idnode));
         uclass = GetUniFromTypes (ID_TYPE (idnode));
 
         ID_NAME (idnode) = PRECRenameLocalIdentifier (ID_NAME (idnode), dclass, uclass);
-#else /* TAGGED ARRAYS */
-
+#else  /* TAGGED ARRAYS */
         ID_NAME (idnode) = PRECRenameLocalIdentifier (ID_NAME (idnode));
-
 #endif /* TAGGED_ARRAYS */
     }
 
@@ -264,17 +261,12 @@ PrecompileIds (ids *id)
              * The global object's definition has already been renamed.
              */
         } else {
-
 #ifdef TAGGED_ARRAYS
-
             dclass = GetClassFromTypes (IDS_TYPE (id));
             uclass = GetUniFromTypes (IDS_TYPE (id));
             IDS_NAME (id) = PRECRenameLocalIdentifier (IDS_NAME (id), dclass, uclass);
-
-#else /* TAGGED_ARRAYS */
-
+#else  /* TAGGED_ARRAYS */
             IDS_NAME (id) = PRECRenameLocalIdentifier (IDS_NAME (id));
-
 #endif /* TAGGED_ARRAYS */
         }
 
@@ -836,10 +828,8 @@ PRECarg (node *arg_node, node *arg_info)
               = PRECRenameLocalIdentifier (ARG_NAME (arg_node),
                                            GetClassFromTypes (ARG_TYPE (arg_node)),
                                            GetUniFromTypes (ARG_TYPE (arg_node)));
-
-#else /* TAGGED_ARRAYS */
+#else  /* TAGGED_ARRAYS */
             ARG_NAME (arg_node) = PRECRenameLocalIdentifier (ARG_NAME (arg_node));
-
 #endif /* TAGGED_ARRAYS */
         }
 
