@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/08/15 12:44:25  sbs
+ * minor error in flattening wls eliminated
+ *
  * Revision 3.20  2002/08/13 13:35:33  sbs
  * handle_mops.h included
  *
@@ -1768,6 +1771,7 @@ node *
 FltnNwithop (node *arg_node, node *arg_info)
 {
     node *expr, *expr2;
+
     DBUG_ENTER ("FltnNwithop");
 
     switch (NWITHOP_TYPE (arg_node)) {
@@ -1796,9 +1800,16 @@ FltnNwithop (node *arg_node, node *arg_info)
     case WO_genarray:
         if (sbs == 1) {
             expr = NWITHOP_SHAPE (arg_node);
-            NWITHOP_SHAPE (arg_node) = Abstract (expr, arg_info);
-            expr2 = Trav (expr, arg_info);
-            INFO_FLTN_DOTSHAPE (arg_info) = DupTree (expr2);
+
+            if (NODE_TYPE (expr) != N_id) {
+                NWITHOP_SHAPE (arg_node) = Abstract (expr, arg_info);
+                expr2 = Trav (expr, arg_info);
+                DBUG_ASSERT ((expr == expr2), "return-node differs from arg_node while "
+                                              "flattening an expr!");
+            }
+
+            INFO_FLTN_DOTSHAPE (arg_info) = DupTree (NWITHOP_SHAPE (arg_node));
+
         } else {
             expr = NULL;
             INFO_FLTN_DOTSHAPE (arg_info) = NULL;
