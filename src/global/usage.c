@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.32  2000/06/07 12:10:47  nmw
+ * description for genlib switch added
+ *
  * Revision 2.31  2000/05/26 14:22:11  sbs
  * AP, TSI, WLAA added
  *
@@ -591,9 +594,13 @@ usage ()
             "\t\t\t\t\t  p: use intrinsic psi.\n"
             "\t\t\t\t\t  o: use intrinsic type conversion.\n");
 
-    printf ("\n\nLINK OPTIONS:\n\n"
+    printf ("\n\nLIBRARY OPTIONS:\n\n"
+            "\t -genlib <lang>\tlanguage interface to generate from module.\n"
+            "\t\t\tsac: generate SAC library.\n"
+            "\t\t\t  c: generate C library and headerfile.\n"
+            "\t\t\tdefault: -genlib sac\n"
 
-            "\t -l <n>\t\tlink level for generating SAC library.\n"
+            "\n\t -l <n>\t\tlink level for generating SAC library.\n"
             "\t\t\t  1: compile to one large object file.\n"
             "\t\t\t  2: compile to archive of object files.\n"
             "\t\t\tdefault: -l %d\n",
