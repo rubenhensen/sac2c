@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.42  2004/07/31 13:44:44  sah
+ * removed function MakeNCodeExprs. Instead, MakeNCode now expects
+ * an exprs node as its second argument!
+ *
  * Revision 1.41  2004/07/22 15:04:47  ktr
  * WithloopScalarization now visits special functions, too.
  *
@@ -992,7 +996,8 @@ CreateExprsPart (node *exprs, int *partcount, node *withid, shpseg *shppos,
                              MakeNGenerator (Shpseg2Array (shppos, dim),
                                              Shpseg2Array (UpperBound (shppos, dim), dim),
                                              F_le, F_lt, NULL, NULL),
-                             MakeNCode (MakeBlock (MakeEmpty (), NULL), expr));
+                             MakeNCode (MakeBlock (MakeEmpty (), NULL),
+                                        MakeExprs (expr, NULL)));
         } else {
             assid = MakeId (TmpVar (), NULL, ST_regular);
 
@@ -1012,7 +1017,7 @@ CreateExprsPart (node *exprs, int *partcount, node *withid, shpseg *shppos,
                                                                     ID_NAME (assid)),
                                                                   vardec, expr),
                                                    NULL),
-                                        DupNode (assid)));
+                                        MakeExprs (DupNode (assid), NULL)));
         }
 
         shppos = IncreaseShpseg (shppos, shpmax, dim);

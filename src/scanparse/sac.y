@@ -4,6 +4,10 @@
 /*
  *
  * $Log$
+ * Revision 3.96  2004/07/31 13:44:44  sah
+ * removed function MakeNCodeExprs. Instead, MakeNCode now expects
+ * an exprs node as its second argument!
+ *
  * Revision 3.95  2004/07/29 18:02:44  sah
  * the module system uses some macros now
  *
@@ -1379,7 +1383,8 @@ with: BRACKET_L generator BRACKET_R wlassignblock withop
          * from the non-terminal withop would lead to a shift/reduce
          * conflict in that rule!
          */
-        $$ = MakeNWith( $2, MakeNCode( $4, NWITHOP_EXPR( $5)), $5);
+        $$ = MakeNWith( $2, MakeNCode( $4, MakeExprs( NWITHOP_EXPR( $5),
+                                                      NULL)), $5);
         NWITHOP_EXPR( $5) = NULL;
         NCODE_USED( NWITH_CODE( $$))++;
         /*
@@ -1473,7 +1478,7 @@ parts: part
      ;
 
 part: BRACKET_L generator BRACKET_R wlassignblock COLON expr SEMIC
-      { $$ = MakeNWith( $2, MakeNCode( $4, $6), NULL);
+      { $$ = MakeNWith( $2, MakeNCode( $4, MakeExprs( $6, NULL)), NULL);
         NCODE_USED( NWITH_CODE( $$))++;
         NPART_CODE( $2) = NWITH_CODE( $$);
       }

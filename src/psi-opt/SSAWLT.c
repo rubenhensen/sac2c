@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2004/07/31 13:44:44  sah
+ * removed function MakeNCodeExprs. Instead, MakeNCode now expects
+ * an exprs node as its second argument!
+ *
  * Revision 1.31  2004/07/19 14:19:38  sah
  * switch to new INFO structure
  * PHASE I
@@ -586,8 +590,8 @@ CreateFullPartition (node *wln, info *arg_info)
         ID_VARDEC (idn) = IDS_VARDEC (_ids);
 
         /* create new N_Ncode node  */
-        coden
-          = MakeNCode (MakeBlock (MakeAssign (MakeLet (coden, _ids), NULL), NULL), idn);
+        coden = MakeNCode (MakeBlock (MakeAssign (MakeLet (coden, _ids), NULL), NULL),
+                           MakeExprs (idn, NULL));
 
         /* now, copy the only part to ig */
         ig = SSATree2InternGen (wln, NULL);

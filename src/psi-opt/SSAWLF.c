@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/07/31 13:44:44  sah
+ * removed function MakeNCodeExprs. Instead, MakeNCode now expects
+ * an exprs node as its second argument!
+ *
  * Revision 1.17  2004/07/19 14:19:38  sah
  * switch to new INFO structure
  * PHASE I
@@ -790,7 +794,7 @@ CreateCode (node *target, node *subst)
      */
     coden = DupTree_Type (NCODE_CBLOCK (target), DUP_WLF);
     coden = Trav (coden, new_arg_info);
-    coden = MakeNCode (coden, DupTree_Type (NCODE_CEXPR (target), DUP_WLF));
+    coden = MakeNCode (coden, DupTree_Type (NCODE_CEXPRS (target), DUP_WLF));
 
     new_arg_info = FreeInfo (new_arg_info);
 

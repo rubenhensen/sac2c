@@ -2,6 +2,10 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2004/07/31 13:44:44  sah
+ * removed function MakeNCodeExprs. Instead, MakeNCode now expects
+ * an exprs node as its second argument!
+ *
  * Revision 3.59  2004/07/30 17:25:06  sbs
  * switch between old and new tc lifted into main
  *
@@ -688,7 +692,9 @@ BuildSelWithLoop (types *restype, node *idx, node *array)
                                                 NULL, NULL),
                                 NULL),
                      MakeNCode (MakeBlock (assign, NULL),
-                                MakeId (StringCopy (tmp_vars[0]), NULL, ST_regular)),
+                                MakeExprs (MakeId (StringCopy (tmp_vars[0]), NULL,
+                                                   ST_regular),
+                                           NULL)),
                      MakeNWithOp (WO_genarray, Type2Vec (restype)));
 
     NCODE_USED (NWITH_CODE (res))++;
@@ -722,12 +728,12 @@ BuildGenarrayWithLoop (node *shp, node *val)
     DBUG_ASSERT ((NODE_TYPE (val) != N_exprs),
                  "BuildGenarrayWithLoop called with N_exprs");
 
-    res
-      = MakeNWith (MakeNPart (MakeNWithid (MakeIds (TmpVar (), NULL, ST_regular), NULL),
-                              MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le, NULL,
-                                              NULL),
-                              NULL),
-                   MakeNCode (MAKE_EMPTY_BLOCK (), val), MakeNWithOp (WO_genarray, NULL));
+    res = MakeNWith (MakeNPart (MakeNWithid (MakeIds (TmpVar (), NULL, ST_regular), NULL),
+                                MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
+                                                NULL, NULL),
+                                NULL),
+                     MakeNCode (MAKE_EMPTY_BLOCK (), MakeExprs (val, NULL)),
+                     MakeNWithOp (WO_genarray, NULL));
     if (NODE_TYPE (shp) == N_array) {
         NWITHOP_SHAPE (NWITH_WITHOP (res)) = shp;
     } else {
@@ -810,7 +816,9 @@ BuildTakeWithLoop (node *take_shp, node *array)
                                                 NULL, NULL),
                                 NULL),
                      MakeNCode (MakeBlock (body, NULL),
-                                MakeId (StringCopy (wl_body_var), NULL, ST_regular)),
+                                MakeExprs (MakeId (StringCopy (wl_body_var), NULL,
+                                                   ST_regular),
+                                           NULL)),
                      MakeNWithOp (WO_genarray, NULL));
 
     if (NODE_TYPE (take_shp) == N_array) {
@@ -967,7 +975,9 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
                                                 NULL, NULL),
                                 NULL),
                      MakeNCode (MakeBlock (body, NULL),
-                                MakeId (StringCopy (wl_body_var_elem), NULL, ST_regular)),
+                                MakeExprs (MakeId (StringCopy (wl_body_var_elem), NULL,
+                                                   ST_regular),
+                                           NULL)),
                      MakeNWithOp (WO_genarray, Type2Vec (new_shape)));
 
     NCODE_USED (NWITH_CODE (res))++;
@@ -1017,7 +1027,9 @@ BuildCatWithLoop1 (types *new_shape, node *array1)
                                                 F_le, F_lt, NULL, NULL),
                                 NULL),
                      MakeNCode (MakeBlock (body, NULL),
-                                MakeId (StringCopy (wl_body_var), NULL, ST_regular)),
+                                MakeExprs (MakeId (StringCopy (wl_body_var), NULL,
+                                                   ST_regular),
+                                           NULL)),
                      MakeNWithOp (WO_genarray, Type2Vec (new_shape)));
 
     NCODE_USED (NWITH_CODE (res))++;
@@ -1118,7 +1130,9 @@ BuildCatWithLoop2 (ids *lhs, node *arg1, node *arg2, node *arg3)
                                                 NULL, NULL),
                                 NULL),
                      MakeNCode (MakeBlock (body, NULL),
-                                MakeId (StringCopy (wl_body_var_elem), NULL, ST_regular)),
+                                MakeExprs (MakeId (StringCopy (wl_body_var_elem), NULL,
+                                                   ST_regular),
+                                           NULL)),
                      MakeNWithOp (WO_modarray, MakeId (StringCopy (IDS_NAME (lhs)), NULL,
                                                        ST_regular)));
 

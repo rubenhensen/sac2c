@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/07/31 13:44:44  sah
+ * removed function MakeNCodeExprs. Instead, MakeNCode now expects
+ * an exprs node as its second argument!
+ *
  * Revision 3.7  2004/07/17 17:07:16  sah
  * switch to new INFO structure
  * PHASE I
@@ -314,7 +318,8 @@ PWwith (node *arg_node, info *arg_info)
 
     /* generate a new code table */
     for (i = 0; i < CODETAB_MAX; i++) {
-        codetab[i] = MakeNCode (MakeBlock (MakeEmpty (), NULL), MakeNum (i));
+        codetab[i]
+          = MakeNCode (MakeBlock (MakeEmpty (), NULL), MakeExprs (MakeNum (i), NULL));
         if (i == 0) {
             NWITH_CODE (arg_node) = codetab[i];
         } else {

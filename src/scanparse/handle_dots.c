@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.37  2004/07/31 13:44:44  sah
+ * removed function MakeNCodeExprs. Instead, MakeNCode now expects
+ * an exprs node as its second argument!
+ *
  * Revision 1.36  2004/07/16 18:37:33  sah
  * rearranged Malloc in MakeInfo function
  *
@@ -639,7 +643,8 @@ BuildDrop (node *left, node *right, node *vector)
                                               F_le, F_lt, NULL, NULL),
                               NULL),
                    MakeNCode (MAKE_EMPTY_BLOCK (),
-                              MAKE_BIN_PRF (F_sel, iv, DupTree (vector))),
+                              MakeExprs (MAKE_BIN_PRF (F_sel, iv, DupTree (vector)),
+                                         NULL)),
                    MakeNWithOp (WO_genarray,
                                 MAKE_BIN_PRF (F_sub_AxA,
                                               MakePrf (F_shape,
@@ -745,7 +750,7 @@ BuildConcat (node *a, node *b)
                                            NULL)),
                               NULL),
                             NULL),
-                 tmpid),
+                 MakeExprs (tmpid, NULL)),
       MakeNWithOp (WO_genarray,
                    MakeFlatArray (
                      MakeExprs (MAKE_BIN_PRF (F_add_SxS,
@@ -1172,7 +1177,9 @@ BuildDefaultWithloop (node *array, node *shape)
                                               NULL),
                               NULL),
                    MakeNCode (MAKE_EMPTY_BLOCK (),
-                              MakeAp1 (StringCopy ("zero"), NULL, DupTree (array))),
+                              MakeExprs (MakeAp1 (StringCopy ("zero"), NULL,
+                                                  DupTree (array)),
+                                         NULL)),
                    MakeNWithOp (WO_genarray, shape));
 
     NCODE_USED (NWITH_CODE (result))++;
@@ -1255,8 +1262,9 @@ BuildWithLoop (node *shape, node *iv, node *array, node *index, node *block,
                                    MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
                                                    NULL, NULL),
                                    NULL),
-                        MakeNCode (block, MakeAp2 (StringCopy ("sel"), NULL, index,
-                                                   DupTree (array))),
+                        MakeNCode (block, MakeExprs (MakeAp2 (StringCopy ("sel"), NULL,
+                                                              index, DupTree (array)),
+                                                     NULL)),
                         MakeNWithOp (WO_genarray, shape));
 
     NCODE_USED (NWITH_CODE (result))++;
@@ -1547,7 +1555,7 @@ BuildShapeVectorMin (shpchain *vectors)
                                    MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
                                                    NULL, NULL),
                                    NULL),
-                        MakeNCode (MAKE_EMPTY_BLOCK (), expr),
+                        MakeNCode (MAKE_EMPTY_BLOCK (), MakeExprs (expr, NULL)),
                         MakeNWithOp (WO_genarray, shape));
 
     NCODE_USED (NWITH_CODE (result))++;
@@ -2333,23 +2341,23 @@ HDsetwl (node *arg_node, info *arg_info)
     shape = BuildWLShape (INFO_HD_IDTABLE (arg_info), oldtable);
 
     if (INFO_HD_IDTABLE (arg_info)->type == ID_scalar) {
-        result
-          = MakeNWith (MakeNPart (MakeNWithid (NULL, Exprs2Ids (ids)),
-                                  MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
-                                                  NULL, NULL),
-                                  NULL),
-                       MakeNCode (MAKE_EMPTY_BLOCK (), DupTree (SETWL_EXPR (arg_node))),
-                       MakeNWithOp (WO_genarray, shape));
+        result = MakeNWith (MakeNPart (MakeNWithid (NULL, Exprs2Ids (ids)),
+                                       MakeNGenerator (MakeDot (1), MakeDot (1), F_le,
+                                                       F_le, NULL, NULL),
+                                       NULL),
+                            MakeNCode (MAKE_EMPTY_BLOCK (),
+                                       MakeExprs (DupTree (SETWL_EXPR (arg_node)), NULL)),
+                            MakeNWithOp (WO_genarray, shape));
     }
 #ifdef HD_SETWL_VECTOR
     else {
-        result
-          = MakeNWith (MakeNPart (MakeNWithid (DupId_Ids (ids), NULL),
-                                  MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
-                                                  NULL, NULL),
-                                  NULL),
-                       MakeNCode (MAKE_EMPTY_BLOCK (), DupTree (SETWL_EXPR (arg_node))),
-                       MakeNWithOp (WO_genarray, shape));
+        result = MakeNWith (MakeNPart (MakeNWithid (DupId_Ids (ids), NULL),
+                                       MakeNGenerator (MakeDot (1), MakeDot (1), F_le,
+                                                       F_le, NULL, NULL),
+                                       NULL),
+                            MakeNCode (MAKE_EMPTY_BLOCK (),
+                                       MakeExprs (DupTree (SETWL_EXPR (arg_node)), NULL)),
+                            MakeNWithOp (WO_genarray, shape));
     }
 #endif
 
@@ -2388,7 +2396,8 @@ HDsetwl (node *arg_node, info *arg_info)
                                                        F_le, NULL, NULL),
                                        NULL),
                             MakeNCode (MAKE_EMPTY_BLOCK (),
-                                       MAKE_BIN_PRF (F_sel, selvector, setid)),
+                                       MakeExprs (MAKE_BIN_PRF (F_sel, selvector, setid),
+                                                  NULL)),
                             MakeNWithOp (WO_genarray, shapevector));
 
         /* build the default value */
