@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.67  2000/10/31 18:17:18  cg
+ * Added function DFRwithop for dfr_tab.
+ *
  * Revision 1.66  2000/10/31 13:23:06  dkr
  * no changes done
  *
@@ -1577,7 +1580,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        DupNwithop, TravSons, TravSons, TravSons, TravSons, TravSons, WLINwithop, TravSons,
 
        PrintNwithop, TravSons, TravSons, TravSons, ANAnwithop, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, DFRwithop,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, ReuseNwithop, TravSons, TravSons, TravSons, TravSons,
