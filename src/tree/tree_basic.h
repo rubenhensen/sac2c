@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.43  2000/05/25 22:52:01  dkr
+ * some comments changed for N_fundef
+ *
  * Revision 1.42  2000/05/24 18:57:15  dkr
  * macros for old with-loop separated
  *
@@ -894,9 +897,15 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *)
  ***
  ***
- ***    node*           FUNDEC_DEF (O) (N_fundef) (checkdec -> writesib !!)
- ***    node*           LIFTEDFROM (O) (N_fundef) (liftspmd -> compile -> )
+ ***    node*           FUNDEC_DEF  (N_fundef)    (checkdec -> writesib !!)
  ***
+ ***  temporary attributes for ST_foldfun fundefs only:
+ ***
+ ***    ---
+ ***
+ ***  temporary attributes for ST_spmdfun fundefs only:
+ ***
+ ***    node*           LIFTEDFROM  (N_fundef)    (liftspmd -> compile -> )
  ***    node*           COMPANION (N_fundef)         (rfin and mtfin)
  ***                                      FLAG WILL BE CLEANED before these phases!!!
  ***/
