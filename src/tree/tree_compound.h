@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/03/05 16:43:13  dkr
+ * new macros NWITH???_IS_FOLD added
+ *
  * Revision 3.21  2001/02/16 08:42:14  nmw
  * macro AVIS_SSASTACK_INUSE added
  *
@@ -1599,6 +1602,9 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 #define NWITH_ARRAY(n) (NWITHOP_ARRAY (NWITH_WITHOP (n)))
 #define NWITH_NEUTRAL(n) (NWITHOP_NEUTRAL (NWITH_WITHOP (n)))
 
+#define NWITH_IS_FOLD(n)                                                                 \
+    ((NWITH_TYPE (n) == WO_foldprf) || (NWITH_TYPE (n) == WO_foldfun))
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1634,12 +1640,15 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
  ***/
 
 #define NWITHOP_OPARG(n)                                                                 \
-    (WO_modarray == NWITHOP_TYPE (n)                                                     \
+    ((WO_modarray == NWITHOP_TYPE (n))                                                   \
        ? NWITHOP_ARRAY (n)                                                               \
-       : WO_genarray == NWITHOP_TYPE (n) ? NWITHOP_SHAPE (n) : NWITHOP_NEUTRAL (n))
+       : (WO_genarray == NWITHOP_TYPE (n)) ? NWITHOP_SHAPE (n) : NWITHOP_NEUTRAL (n))
 
 #define NWITHOP_DEFMASK(n) (NWITHOP_MASK (n, 0))
 #define NWITHOP_USEMASK(n) (NWITHOP_MASK (n, 1))
+
+#define NWITHOP_IS_FOLD(n)                                                               \
+    ((NWITHOP_TYPE (n) == WO_foldprf) || (NWITHOP_TYPE (n) == WO_foldfun))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1666,6 +1675,9 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
  */
 #define NWITH2_CBLOCK(n) (NCODE_CBLOCK (NWITH2_CODE (n)))
 #define NWITH2_CEXPR(n) (NCODE_CEXPR (NWITH2_CODE (n)))
+
+#define NWITH2_IS_FOLD(n)                                                                \
+    ((NWITH2_TYPE (n) == WO_foldprf) || (NWITH2_TYPE (n) == WO_foldfun))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1707,6 +1719,9 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
     } else {                                                                             \
         NWITH2_LOCAL_MASK (n) = (rhs);                                                   \
     }
+
+#define NWITH_OR_NWITH2_IS_FOLD(n)                                                       \
+    ((NWITH_OR_NWITH2_TYPE (n) == WO_foldprf) || (NWITH_OR_NWITH2_TYPE (n) == WO_foldfun))
 
 /*--------------------------------------------------------------------------*/
 
