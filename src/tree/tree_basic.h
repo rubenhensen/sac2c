@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2001/03/05 15:10:49  dkr
+ * some minor corrections done
+ *
  * Revision 3.38  2001/03/05 15:01:18  dkr
  * some comments added
  * NCODE_NO renamed into NCODE_ID
@@ -32,7 +35,6 @@
  *
  * Revision 3.29  2001/02/15 16:59:03  nmw
  * node N_ssastack added
- * ,
  *
  * Revision 3.28  2001/02/14 17:51:49  dkr
  * redundant VARDEC_TYPEDEF removed
@@ -332,7 +334,7 @@ extern types *MakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name,
  ***    node*       DEF                             (psi-optimize -> )
  ***    node*       USE                             (psi-optimize -> )
  ***    statustype  STATUS                          (obj-handling -> compile !!)
- ***    node*       AVIS         (N_avis)           (ssaform ->)
+ ***    node*       AVIS         (N_avis)           (ssaform -> )
  ***/
 
 /*
@@ -982,7 +984,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  ***
  ***  sons:
  ***
- ***    node*       NEXT    (O)  (N_arg)
+ ***    node*       NEXT       (O)  (N_arg)
  ***
  ***  permanent attributes:
  ***
@@ -990,7 +992,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  ***    types*      TYPE
  ***    statustype  STATUS
  ***    statustype  ATTRIB
- ***    node*       AVIS          (N_avis)     (should be set by MakeArg)
+ ***    node*       AVIS            (N_avis)
  ***
  ***  temporary attributes:
  ***
@@ -1019,7 +1021,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  *             of functions.
  *
  * ATTENTION:
- *   N_vardec and Narg node have to have the same structure. See remark
+ *   N_vardec and N_arg node have to have the same structure. See remark
  *   at N_id node.
  */
 
@@ -1103,9 +1105,9 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***  permanent attributes:
  ***
  ***    char*       NAME          (NAME is an element of ...
- ***    types*      TYPE           ... this struct)
- ***    statustype  STATUS        (element of TYPE, too)
- ***    node*       AVIS          (N_avis)     (should be set by MakeVardec)
+ ***    types*      TYPE           ... this struct!!)
+ ***    statustype  STATUS        (element of TYPE, too!!)
+ ***    node*       AVIS          (N_avis)
  ***
  ***  temporary attributes:
  ***
@@ -1118,8 +1120,8 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***    statustype  ATTRIB                     (typecheck -> uniquecheck -> )
  ***    int         FLAG                       (ael -> dcr2 !!)
  ***    bool        PADDED                     (ap -> )
- ***    node*       ICM       (O) (N_icm)      (compile -> )
- ***    node*       UNDOAVISA (O) (N_avis)     (undossa!!)
+ ***    node*       ICM      (O)  (N_icm)      (compile -> )
+ ***    node*       UNDOAVIS (O)  (N_avis)     (undossa !!)
  ***/
 
 /*
@@ -1951,7 +1953,7 @@ extern node *MakeSSAcnt (node *next, int count, char *baseid);
  ***
  ***  permanent attributes:
  ***
- ***    node*    AVIS           (N_avis)  rename-to Avis node in stack-list
+ ***    node*    AVIS           (N_avis)  rename-to AVIS node in stack-list
  ***    bool     INUSE                    mark if stack is in use or to be
  ***/
 
