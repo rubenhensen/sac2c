@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.62  1998/03/25 18:10:40  srs
+ * renamed IDS_VARDEV_TYPE to IDS_TYPE
+ *
  * Revision 1.61  1998/03/23 18:59:20  srs
  * added macro NWITH_TYPE()
  *
@@ -372,7 +375,7 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
  ***/
 
 #define IDS_VARNO(n) VARDEC_VARNO (IDS_VARDEC (n))
-#define IDS_VARDEC_TYPE(n) VARDEC_TYPE (IDS_VARDEC (n))
+#define IDS_TYPE(n) VARDEC_TYPE (IDS_VARDEC (n))
 #define IDS_SHAPE(n, x) SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (IDS_VARDEC (n))), x)
 
 /*
