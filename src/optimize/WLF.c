@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.22  1999/02/02 19:30:02  srs
+ * reverted changes from version 1.20
+ *
  * Revision 1.21  1999/01/26 15:22:02  srs
  * modified last change of removing unreferenced WLs.
  *
@@ -1437,23 +1440,15 @@ WLFassign (node *arg_node, node *arg_info)
            We apply a speed-optimization here by removing WLs which - after WLF -
            are not referenced anymore. DCR could remove the WLs later, but we
            hope that the mem requirement in GenerateMasks will go down dramatically.
-           It's not easy to remove the assignment here - so we insert a dummy
-           assignment x = x; */
+           */
         if (opt_dcr) {
             tmpn = ASSIGN_INSTR (arg_node);
             if (N_let == NODE_TYPE (tmpn)) {
                 if (N_Nwith == NODE_TYPE (LET_EXPR (tmpn))
                     && NWITH_REFERENCED (LET_EXPR (tmpn))
                          == NWITH_REFERENCES_FOLDED (LET_EXPR (tmpn))) {
-                    /* Now, how to remove the assign-node? It's not possible
-                       to return it's successor because (as u can read above) we ignore
-                       the returned node.
-                       The alternative - search the predecessor - is too complex, too.
-                       So we just replace A = WL...; with A=A;*/
-                    FreeTree (LET_EXPR (tmpn));
-                    LET_EXPR (tmpn)
-                      = MakeId (IDS_NAME (LET_IDS (tmpn)), NULL, ST_regular);
-                    ID_VARDEC (LET_EXPR (tmpn)) = IDS_VARDEC (LET_IDS (tmpn));
+                    /*           FreeTree(tmpn); */
+                    /*           ASSIGN_INSTR(arg_node) = MakeEmpty(); */
                 }
             }
         }
