@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.7  2001/01/17 10:13:05  dkr
+# make deps done
+#
 # Revision 3.6  2000/12/15 18:18:01  dkr
 # make deps done
 #
@@ -93,7 +96,5 @@ refcount.o: /usr/include/string.h ../global/globals.h
 refcount.o: ../global/internal_lib.h ../global/my_debug.h ../../inc/dbug.h
 refcount.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/DataFlowMask.h
 refcount.o: ../tree/traverse.h ../optimize/optimize.h ../tree/free.h
-refcount.o: /usr/include/malloc.h /usr/include/sys/types.h
-refcount.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 refcount.o: ../optimize/generatemasks.h ../tree/InferDFMs.h
 refcount.o: ../compile/compile.h refcount.h

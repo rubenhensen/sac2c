@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.7  2001/01/17 10:13:00  dkr
+# make deps done
+#
 # Revision 3.6  2000/12/15 18:17:54  dkr
 # make deps done
 #
@@ -105,8 +108,6 @@ flatten.o: ../global/globals.h ../global/types.h ../global/Error.h
 flatten.o: /usr/include/string.h /usr/include/stdlib.h ../../inc/dbug.h
 flatten.o: ../global/my_debug.h ../global/internal_lib.h ../tree/tree_basic.h
 flatten.o: ../tree/tree_compound.h ../tree/traverse.h ../tree/free.h
-flatten.o: /usr/include/malloc.h /usr/include/sys/types.h
-flatten.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 flatten.o: ../tree/DupTree.h ../tree/LookUpTable.h flatten.h
 fun2lac.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
 fun2lac.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
@@ -115,9 +116,7 @@ fun2lac.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 fun2lac.o: /usr/include/stdio_impl.h /usr/include/string.h
 fun2lac.o: /usr/include/stdlib.h ../global/globals.h ../global/internal_lib.h
 fun2lac.o: ../tree/traverse.h ../tree/free.h ../../inc/dbug.h
-fun2lac.o: ../global/my_debug.h /usr/include/malloc.h
-fun2lac.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-fun2lac.o: /usr/include/sys/int_types.h ../tree/adjust_ids.h
+fun2lac.o: ../global/my_debug.h ../tree/adjust_ids.h
 lac2fun.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
 lac2fun.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
 lac2fun.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -125,9 +124,6 @@ lac2fun.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 lac2fun.o: /usr/include/stdio_impl.h /usr/include/string.h
 lac2fun.o: /usr/include/stdlib.h ../global/globals.h ../global/internal_lib.h
 lac2fun.o: ../tree/traverse.h ../tree/free.h ../../inc/dbug.h
-lac2fun.o: ../global/my_debug.h /usr/include/malloc.h
-lac2fun.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-lac2fun.o: /usr/include/sys/int_types.h ../tree/DupTree.h
-lac2fun.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h
-lac2fun.o: ../tree/DataFlowMaskUtils.h ../tree/InferDFMs.h
-lac2fun.o: ../tree/cleanup_decls.h lac2fun.h
+lac2fun.o: ../global/my_debug.h ../tree/DupTree.h ../tree/LookUpTable.h
+lac2fun.o: ../tree/DataFlowMask.h ../tree/DataFlowMaskUtils.h
+lac2fun.o: ../tree/InferDFMs.h ../tree/cleanup_decls.h lac2fun.h

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.3  2001/01/17 10:13:01  dkr
+# make deps done
+#
 # Revision 3.2  2000/12/06 20:09:00  dkr
 # make deps done
 #
@@ -125,10 +128,9 @@ print.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 print.o: ../global/Error.h ../global/globals.h ../global/internal_lib.h
 print.o: print.h ../c-interface/print_interface.h ../global/my_debug.h
 print.o: ../../inc/dbug.h ../tree/traverse.h convert.h ../tree/DataFlowMask.h
-print.o: ../optimize/optimize.h ../tree/free.h /usr/include/malloc.h
-print.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-print.o: /usr/include/sys/int_types.h ../optimize/generatemasks.h
+print.o: ../optimize/optimize.h ../tree/free.h ../optimize/generatemasks.h
 print.o: ../modules/filemgr.h ../compile/gen_startup_code.h
 print.o: ../psi-opt/WithloopFolding.h ../tree/scheduling.h
 print.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
-print.o: ../global/NameTuples.h ../compile/icm.data ../tree/prf_node_info.mac
+print.o: ../global/NameTuples.h ../compile/wltransform.h ../compile/icm.data
+print.o: ../tree/prf_node_info.mac

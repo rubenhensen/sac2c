@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.5  2001/01/17 10:13:04  dkr
+# make deps done
+#
 # Revision 3.4  2000/12/15 18:18:00  dkr
 # make deps done
 #
@@ -140,21 +143,16 @@ PatchWith.o: /usr/include/stdio_impl.h /usr/include/string.h
 PatchWith.o: /usr/include/stdlib.h ../global/globals.h
 PatchWith.o: ../global/internal_lib.h ../tree/traverse.h
 PatchWith.o: ../typecheck/typecheck.h ../tree/free.h ../../inc/dbug.h
-PatchWith.o: ../global/my_debug.h /usr/include/malloc.h
-PatchWith.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-PatchWith.o: /usr/include/sys/int_types.h ../tree/DupTree.h
-PatchWith.o: ../tree/LookUpTable.h
+PatchWith.o: ../global/my_debug.h ../tree/DupTree.h ../tree/LookUpTable.h
 ReuseWithArrays.o: ../../inc/dbug.h /usr/include/stdio.h
 ReuseWithArrays.o: /usr/include/sys/feature_tests.h
 ReuseWithArrays.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 ReuseWithArrays.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-ReuseWithArrays.o: ../global/types.h ../tree/free.h ../global/my_debug.h
-ReuseWithArrays.o: /usr/include/malloc.h /usr/include/sys/types.h
-ReuseWithArrays.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-ReuseWithArrays.o: ../global/globals.h ../global/internal_lib.h
-ReuseWithArrays.o: ../tree/tree_basic.h ../tree/tree_compound.h
-ReuseWithArrays.o: ../global/Error.h /usr/include/string.h
-ReuseWithArrays.o: /usr/include/stdlib.h ../tree/traverse.h
+ReuseWithArrays.o: ../global/types.h ../tree/free.h /usr/include/stdlib.h
+ReuseWithArrays.o: ../global/my_debug.h ../global/globals.h
+ReuseWithArrays.o: ../global/internal_lib.h ../tree/tree_basic.h
+ReuseWithArrays.o: ../tree/tree_compound.h ../global/Error.h
+ReuseWithArrays.o: /usr/include/string.h ../tree/traverse.h
 ReuseWithArrays.o: ../tree/DataFlowMask.h ../psi-opt/index.h
 compile.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 compile.o: /usr/include/sys/isa_defs.h /usr/include/string.h ../tree/tree.h
@@ -165,10 +163,8 @@ compile.o: ../global/globals.h ../global/internal_lib.h ../tree/prf.h
 compile.o: ../print/print.h ../../inc/dbug.h ../global/my_debug.h
 compile.o: ../tree/traverse.h ../tree/DataFlowMask.h compile.h
 compile.o: ../print/convert.h ../tree/DupTree.h ../tree/LookUpTable.h
-compile.o: ReuseWithArrays.h ../tree/free.h /usr/include/malloc.h
-compile.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-compile.o: /usr/include/sys/int_types.h ../tree/scheduling.h
-compile.o: ../refcount/refcount.h precompile.h ../typecheck/typecheck.h
+compile.o: ReuseWithArrays.h ../tree/free.h ../typecheck/typecheck.h
+compile.o: ../refcount/refcount.h ../tree/scheduling.h precompile.h
 gen_startup_code.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 gen_startup_code.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 gen_startup_code.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -176,8 +172,6 @@ gen_startup_code.o: /usr/include/string.h /usr/include/stdlib.h
 gen_startup_code.o: ../../inc/dbug.h ../global/globals.h ../global/types.h
 gen_startup_code.o: ../global/resource.h ../tree/tree_basic.h
 gen_startup_code.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
-gen_startup_code.o: /usr/include/malloc.h /usr/include/sys/types.h
-gen_startup_code.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 gen_startup_code.o: ../global/internal_lib.h precompile.h
 icm2c.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
 icm2c.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
@@ -242,8 +236,6 @@ precompile.o: ../global/types.h ../tree/tree.h ../tree/tree_basic.h
 precompile.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdlib.h
 precompile.o: ../global/globals.h ../global/internal_lib.h ../tree/DupTree.h
 precompile.o: ../tree/LookUpTable.h ../tree/free.h ../global/my_debug.h
-precompile.o: /usr/include/malloc.h /usr/include/sys/types.h
-precompile.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 precompile.o: ../tree/prf.h ../tree/traverse.h ../print/convert.h
 precompile.o: ../tree/DataFlowMask.h ../typecheck/typecheck.h
 precompile.o: ../tree/scheduling.h ../tree/adjust_ids.h precompile.h
@@ -256,10 +248,8 @@ wlpragma_funs.o: ../tree/tree_basic.h ../tree/tree_compound.h
 wlpragma_funs.o: ../global/Error.h /usr/include/string.h
 wlpragma_funs.o: /usr/include/stdlib.h ../global/globals.h
 wlpragma_funs.o: ../global/internal_lib.h ../tree/free.h ../global/my_debug.h
-wlpragma_funs.o: /usr/include/malloc.h /usr/include/sys/types.h
-wlpragma_funs.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-wlpragma_funs.o: ../tree/DupTree.h ../tree/LookUpTable.h wltransform.h
-wlpragma_funs.o: wlpragma_funs.h
+wlpragma_funs.o: ../tree/DupTree.h ../tree/LookUpTable.h ../global/resource.h
+wlpragma_funs.o: wltransform.h wlpragma_funs.h wlpragma_funs.mac
 wltransform.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
 wltransform.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdio.h
 wltransform.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -267,8 +257,7 @@ wltransform.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 wltransform.o: /usr/include/stdio_impl.h /usr/include/string.h
 wltransform.o: /usr/include/stdlib.h ../global/globals.h
 wltransform.o: ../global/internal_lib.h ../tree/traverse.h ../tree/free.h
-wltransform.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
-wltransform.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-wltransform.o: /usr/include/sys/int_types.h ../tree/DupTree.h
-wltransform.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h ../print/print.h
-wltransform.o: ../global/resource.h wlpragma_funs.h /usr/include/limits.h
+wltransform.o: ../../inc/dbug.h ../global/my_debug.h ../tree/DupTree.h
+wltransform.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h wltransform.h
+wltransform.o: wlpragma_funs.h wlpragma_funs.mac ../print/print.h
+wltransform.o: /usr/include/limits.h

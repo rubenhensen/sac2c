@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.3  2001/01/17 10:13:13  dkr
+# make deps done
+#
 # Revision 3.2  2000/12/06 20:09:13  dkr
 # make deps done
 #
@@ -73,12 +76,9 @@ import_specialization.o: ../global/globals.h ../global/internal_lib.h
 import_specialization.o: ../global/my_debug.h ../../inc/dbug.h
 import_specialization.o: ../tree/traverse.h ../print/convert.h
 import_specialization.o: ../modules/filemgr.h ../tree/free.h
-import_specialization.o: /usr/include/malloc.h /usr/include/sys/types.h
-import_specialization.o: /usr/include/sys/machtypes.h
-import_specialization.o: /usr/include/sys/int_types.h ../tree/DupTree.h
-import_specialization.o: ../tree/LookUpTable.h ../global/resource.h
-import_specialization.o: ../scanparse/scnprs.h ../scanparse/y.tab.h
-import_specialization.o: import_specialization.h
+import_specialization.o: ../tree/DupTree.h ../tree/LookUpTable.h
+import_specialization.o: ../global/resource.h ../scanparse/scnprs.h
+import_specialization.o: ../scanparse/y.tab.h import_specialization.h
 map_cwrapper.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 map_cwrapper.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 map_cwrapper.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -87,9 +87,7 @@ map_cwrapper.o: ../global/types.h ../tree/tree_basic.h
 map_cwrapper.o: ../tree/tree_compound.h ../global/Error.h ../global/globals.h
 map_cwrapper.o: ../global/internal_lib.h map_cwrapper.h ../global/my_debug.h
 map_cwrapper.o: ../../inc/dbug.h ../tree/traverse.h ../print/convert.h
-map_cwrapper.o: ../modules/filemgr.h ../tree/free.h /usr/include/malloc.h
-map_cwrapper.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-map_cwrapper.o: /usr/include/sys/int_types.h ../global/resource.h
+map_cwrapper.o: ../modules/filemgr.h ../tree/free.h ../global/resource.h
 map_cwrapper.o: ../typecheck/shape.h
 print_interface.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 print_interface.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
@@ -100,9 +98,7 @@ print_interface.o: ../tree/tree_compound.h ../global/Error.h
 print_interface.o: ../global/globals.h ../global/internal_lib.h
 print_interface.o: print_interface.h ../print/print.h ../global/my_debug.h
 print_interface.o: ../../inc/dbug.h ../tree/traverse.h ../print/convert.h
-print_interface.o: ../modules/filemgr.h ../tree/free.h /usr/include/malloc.h
-print_interface.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-print_interface.o: /usr/include/sys/int_types.h ../global/resource.h
+print_interface.o: ../modules/filemgr.h ../tree/free.h ../global/resource.h
 print_interface.o: ../compile/gen_startup_code.h
 print_interface_header.o: /usr/include/stdio.h
 print_interface_header.o: /usr/include/sys/feature_tests.h
@@ -117,10 +113,7 @@ print_interface_header.o: print_interface_header.h ../print/print.h
 print_interface_header.o: ../global/my_debug.h ../../inc/dbug.h
 print_interface_header.o: ../tree/traverse.h ../print/convert.h
 print_interface_header.o: ../modules/filemgr.h ../tree/free.h
-print_interface_header.o: /usr/include/malloc.h /usr/include/sys/types.h
-print_interface_header.o: /usr/include/sys/machtypes.h
-print_interface_header.o: /usr/include/sys/int_types.h ../global/resource.h
-print_interface_header.o: ../compile/gen_startup_code.h
+print_interface_header.o: ../global/resource.h ../compile/gen_startup_code.h
 print_interface_wrapper.o: /usr/include/stdio.h
 print_interface_wrapper.o: /usr/include/sys/feature_tests.h
 print_interface_wrapper.o: /usr/include/sys/isa_defs.h
@@ -135,8 +128,5 @@ print_interface_wrapper.o: print_interface_wrapper.h ../print/print.h
 print_interface_wrapper.o: ../global/my_debug.h ../../inc/dbug.h
 print_interface_wrapper.o: ../tree/traverse.h ../print/convert.h
 print_interface_wrapper.o: ../modules/filemgr.h ../tree/free.h
-print_interface_wrapper.o: /usr/include/malloc.h /usr/include/sys/types.h
-print_interface_wrapper.o: /usr/include/sys/machtypes.h
-print_interface_wrapper.o: /usr/include/sys/int_types.h ../global/resource.h
-print_interface_wrapper.o: ../compile/gen_startup_code.h
+print_interface_wrapper.o: ../global/resource.h ../compile/gen_startup_code.h
 print_interface_wrapper.o: ../tree/type_info.mac
