@@ -1,8 +1,7 @@
 /*
- *
  * $Log$
- * Revision 2.12  2000/05/25 18:30:07  dkr
- * *** empty log message ***
+ * Revision 2.13  2000/05/26 11:35:07  dkr
+ * GetFoldCode() renamed into GetUnadjustedFoldCode()
  *
  * Revision 2.10  2000/01/17 16:25:58  cg
  * Removed static and dynamic versions of the ICMs
@@ -99,8 +98,6 @@
  *
  * Revision 1.1  1998/05/13 07:22:57  cg
  * Initial revision
- *
- *
  */
 
 /*****************************************************************************
@@ -133,9 +130,9 @@
 #ifndef BEtest
 #include "scnprs.h"   /* for big magic access to syntax tree             */
 #include "traverse.h" /* for traversal of fold operation function        */
-#include "compile.h"  /* for GetFoldCode()                               */
-#include "free.h"     /* for freeing fold-code produced by GetFoldCode() */
-#endif                /* BEtest */
+#include "compile.h"  /* for GetUnadjustedFoldCode()                     */
+#include "free.h"
+#endif /* BEtest */
 
 /******************************************************************************
  *
@@ -144,8 +141,9 @@
  *
  * description:
  *   This function traverses the fundef chain of the syntax tree in order to
- *   find the implementation of the given fold operation. The function GetFoldCode
- *   is used afterwards to extract the relevant part of the function definition.
+ *   find the implementation of the given fold operation. The function
+ *   GetUnadjustedFoldCode() is used afterwards to extract the relevant part
+ *   of the function definition.
  *
  ******************************************************************************/
 
@@ -166,7 +164,7 @@ SearchFoldImplementation (char *foldop)
     DBUG_ASSERT ((fundef != NULL),
                  "Unknown fold operation specified in synchronisation ICM");
 
-    DBUG_RETURN (GetFoldCode (fundef));
+    DBUG_RETURN (GetUnadjustedFoldCode (fundef));
 }
 #endif /* BEtest */
 
