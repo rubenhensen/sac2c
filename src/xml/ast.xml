@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.24  2004/11/23 20:24:40  mwe
+  UndoElimSubDiv added
+
   Revision 1.23  2004/11/23 19:56:28  ktr
   Added ARG_ISARTIFICIAL
 
@@ -168,6 +171,20 @@
       <traversal id="CF" name="Constant Folding" default="sons" include="SSAConstantFolding.h" >
         <travuser>
           <node name="Id" />
+        </travuser>
+        <travsons>
+        </travsons>
+        <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="UESD" name="UndoElimSubDiv" defaults="sons" include="UndoElimSubDiv.h" >
+        <travuser>
+	  <node name="Block" />
+          <node name="Let" />
+	  <node name="Assign" />
+	  <node name="Prf" />
         </travuser>
         <travsons>
         </travsons>
