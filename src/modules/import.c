@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.28  1995/10/31 14:47:21  sbs
+ * Revision 1.29  1995/10/31 15:37:46  sbs
+ * error in mod init: sib not set to NULL for external imports!
+ *
+ * Revision 1.28  1995/10/31  14:47:21  sbs
  * GenLinkerList modifyed : ERROR->WARNING
  *
  * Revision 1.27  1995/10/31  09:41:02  cg
@@ -303,6 +306,7 @@ GenMod (char *name, int checkdec)
 
     tmp = (mod *)Malloc (sizeof (mod));
     tmp->name = name;
+    tmp->sib = NULL;
     tmp->flag = 0;
     tmp->allflag = 0;
 
@@ -346,7 +350,6 @@ GenMod (char *name, int checkdec)
             yyin = fopen (FindFile (MODDEC_PATH, buffer), "r");
 
             if (yyin == NULL) {
-                tmp->sib = NULL;
                 DBUG_PRINT ("IMPORT", ("Module %s has no SIB-file", name));
                 SYSWARN (("SAC-module/class '%s` has no SIB-file", name));
                 /* SYSWARN only preliminary, later it must be a SYSERROR */
