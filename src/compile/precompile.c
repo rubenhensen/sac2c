@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2002/07/03 17:11:16  dkr
+ * - PREC1ap(): assert added
+ * - ID_UNQCONV added again #$%-(
+ *
  * Revision 3.46  2002/07/03 16:55:29  dkr
  * ID_UNQCONV removed for TAGGED_ARRAYS
  *
@@ -1053,9 +1057,7 @@ PREC1ap (node *arg_node, node *arg_info)
                 DBUG_ASSERT ((!IsUnique (ID_TYPE (arg_node))),
                              "Argument of to_class function is unique already!");
 
-#ifndef TAGGED_ARRAYS
                 ID_UNQCONV (arg_node) = TO_UNQ;
-#endif
             } else {
                 /*
                  * This must be a "from" function. So, the argument is of a class
@@ -1064,9 +1066,7 @@ PREC1ap (node *arg_node, node *arg_info)
                 DBUG_ASSERT ((IsUnique (ID_TYPE (arg_node))),
                              "Argument of from_class function not unique!");
 
-#ifndef TAGGED_ARRAYS
                 ID_UNQCONV (arg_node) = FROM_UNQ;
-#endif
             }
         } else {
             /* argument of class conversion function is no N_id node */
