@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2001/04/25 13:36:50  nmw
+ * *** empty log message ***
+ *
  * Revision 1.4  2001/03/23 12:49:02  nmw
  * CODim/COShape implemented
  *
@@ -101,8 +104,11 @@ extern constant *COTake (constant *idx, constant *a);
 extern constant *CODrop (constant *idx, constant *a);
 extern constant *CODim (constant *a);
 extern constant *COShape (constant *a);
-
-/* missing: modarray, cat, rotate */
+/* missing: not yet implemented
+extern constant *  COModarray( constant *a, constant *idx, constant *elem);
+extern constant *  COCat     ( constant *dim, constant *a, constant *b);
+extern constant *  CORotate  ( constant *dim, constant *num, constant *a);
+*/
 
 /***
  ***
