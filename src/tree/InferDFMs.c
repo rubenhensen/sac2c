@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2001/04/23 15:10:15  dkr
+ * InferDFMs: DBUG_ASSERT added
+ *
  * Revision 1.13  2001/04/23 13:38:39  dkr
  * minor changes in DbugPrintSignature() done
  *
@@ -1317,6 +1320,10 @@ InferDFMs (node *syntax_tree, int hide_locals)
     funtab *old_funtab;
 
     DBUG_ENTER ("InferDFMs");
+
+    DBUG_ASSERT (((NODE_TYPE (syntax_tree) == N_modul)
+                  || (NODE_TYPE (syntax_tree) == N_fundef)),
+                 "argument of InferDFMs() must be a N_modul or a N_fundef node!");
 
     info_node = MakeInfo ();
     INFO_INFDFMS_HIDELOC (info_node) = hide_locals;
