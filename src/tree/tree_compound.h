@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2001/04/26 12:18:42  dkr
+ * GetExprsLength() renamed into CountExprs()
+ *
  * Revision 3.39  2001/04/24 20:08:08  dkr
  * macros ASSIGN_LHS, ASSIGN_RHS added
  *
@@ -1154,14 +1157,14 @@ extern node *MakeExprsNum (int num);
 /******************************************************************************
  *
  * function:
- *   node *GetExprsLength( node *exprs)
+ *   int CountExprs( node *exprs)
  *
  * description:
  *   Computes the length of the given N_exprs chain.
  *
  ******************************************************************************/
 
-extern int GetExprsLength (node *exprs);
+extern int CountExprs (node *exprs);
 
 #define EXPRS_EXPRS1(n) (n)
 #define EXPRS_EXPRS2(n) EXPRS_NEXT (n)

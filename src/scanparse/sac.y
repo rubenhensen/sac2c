@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2001/04/26 12:21:16  dkr
+ * GetExprsLength() renamed into CountExprs()
+ *
  * Revision 3.20  2001/04/24 14:13:51  dkr
  * MakeNode( N_fundef) replaced by MakeFundef()
  *
@@ -1604,7 +1607,7 @@ expr_ap: id BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
           }
        | monop BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
          { 
-           if (GetExprsLength( $4) == 1) {
+           if (CountExprs( $4) == 1) {
              $$ = MakePrf( $1, $4);
            }
            else {
@@ -1619,7 +1622,7 @@ expr_ap: id BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
          }
        | binop BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
          { 
-           if (GetExprsLength( $4) == 2) {
+           if (CountExprs( $4) == 2) {
              $$ = MakePrf( $1, $4);
            }
            else {
@@ -1634,7 +1637,7 @@ expr_ap: id BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
          }
        | triop BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
          { 
-           if (GetExprsLength( $4) == 3) {
+           if (CountExprs( $4) == 3) {
              $$ = MakePrf( $1, $4);
            }
            else {
