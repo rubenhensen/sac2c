@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2004/08/26 14:17:00  skt
+ * added crwiw_tab into PrefixForTmpVar
+ *
  * Revision 3.48  2004/08/13 18:02:34  skt
  * removed blkli_tab
  *
@@ -1150,6 +1153,8 @@ PrefixForTmpVar (void)
         s = "emal";
     } else if (act_tab == ea_tab) {
         s = "ea";
+    } else if (act_tab == crwiw_tab) {
+        s = "crwiw";
     } else
 #else
     if (act_tab == flat_tab) {
