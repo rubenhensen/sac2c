@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.102  1997/11/10 16:09:47  dkr
+ * removed a bug with DBUG_ASSERT in GOTO_LAST_BUT_LEAST_N_EXPRS (with defined NEWTREE)
+ *
  * Revision 1.101  1997/11/07 14:48:25  dkr
  * removed a bug with nnode-elimiation
  *
@@ -746,7 +749,7 @@ int basetype_size[] = {
         node *tmp;                                                                       \
         lbl_exprs = exprs;                                                               \
         DBUG_ASSERT (N_exprs == lbl_exprs->nodetype, " nodetype  != N_expr");            \
-        DBUG_ASSERT (lbl_exprs->node[1] == NULL,                                         \
+        DBUG_ASSERT (EXPRS_NEXT (lbl_exprs) != NULL,                                     \
                      "there is NO N_exprs-chain contains only"                           \
                      " one element");                                                    \
         tmp = lbl_exprs->node[1];                                                        \
