@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.10  2004/01/29 13:06:05  skt
+# some adaptions because of moving ssa-files
+# from src/tree to src/flatten
+#
 # Revision 3.9  2003/06/11 21:52:51  ktr
 # included ../constants
 #
@@ -53,7 +57,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 INCS = -I../global -I../tree -I../../inc -I../typecheck -I../modules -I../print \
-       -I../constants
+       -I../constants -I../flatten
 
 
 all: objinit.o objects.o uniquecheck.o

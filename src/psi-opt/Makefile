@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.19  2004/01/29 13:06:05  skt
+# some adaptions because of moving ssa-files
+# from src/tree to src/flatten
+#
 # Revision 3.18  2002/09/09 19:18:47  dkr
 # dependencies for prf_node_info.mac removed
 #
@@ -60,7 +64,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 
 INCS = -I../global -I../../inc -I../tree -I../compile -I../typecheck -I../modules \
-       -I../print -I../optimize -I../constants
+       -I../print -I../optimize -I../constants -I../flatten
 
 
 all: index.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
