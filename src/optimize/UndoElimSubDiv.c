@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.9  2005/02/15 18:43:40  mwe
+ * completely new implementation
+ *
  * Revision 1.8  2004/11/24 12:05:40  mwe
  * changed signature of TBmakeLet
  *
@@ -53,185 +56,157 @@
 
 #include "UndoElimSubDiv.h"
 
-/*****************************************************************************
- *
- * function:
- *   int ReachedArgument(node *arg_node)
- *
- * description:
- *   returns '1' if the arg_node is an argument defined outside current
- *   block node
- *
- ****************************************************************************/
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *fundef;
+    node *postassign;
+    node *let;
+    bool topdown;
+};
 
-static bool
-ReachedArgument (node *arg_node)
+/*
+ * INFO macros
+ */
+#define INFO_UESD_FUNDEF(n) (n->fundef)
+#define INFO_UESD_POSTASSIGN(n) (n->postassign)
+#define INFO_UESD_LET(n) (n->let)
+#define INFO_UESD_TOPDOWN(n) (n->topdown)
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
 {
+    info *result;
 
-    bool result;
-    DBUG_ENTER ("ReachedArgument");
+    DBUG_ENTER ("MakeInfo");
 
-    if (NODE_TYPE (arg_node) == N_id) {
-        if (AVIS_SSAASSIGN (ID_AVIS (arg_node)) == NULL)
-            result = TRUE;
-        else
-            result = FALSE;
-    } else
-        result = FALSE;
+    result = ILIBmalloc (sizeof (info));
+
+    INFO_UESD_FUNDEF (result) = NULL;
+    INFO_UESD_POSTASSIGN (result) = NULL;
+    INFO_UESD_LET (result) = NULL;
+    INFO_UESD_TOPDOWN (result) = TRUE;
 
     DBUG_RETURN (result);
 }
 
-/*****************************************************************************
- *
- * function:
- *   int ReachedDefinition(node *arg_node)
- *
- * description:
- *   returns '1' if the definition of the arg_node contain no prf-node
- *
- ****************************************************************************/
-
-static bool
-ReachedDefinition (node *arg_node)
+static info *
+FreeInfo (info *info)
 {
+    DBUG_ENTER ("FreeInfo");
 
-    bool result;
-    DBUG_ENTER ("ReachedDefinition");
+    info = ILIBfree (info);
 
-    if (NODE_TYPE (arg_node) == N_id) {
-        if (AVIS_SSAASSIGN (ID_AVIS (arg_node)) == NULL) {
-            result = FALSE;
-        } else {
-            if (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node)))))
-                != N_prf) {
-                result = TRUE;
-            } else {
-                result = FALSE;
-            }
+    DBUG_RETURN (info);
+}
+
+static node *
+CheckId (node *id, prf op)
+{
+    node *result = NULL;
+
+    DBUG_ENTER ("CheckId");
+
+    if (AVIS_SSAASSIGN (ID_AVIS (id)) != NULL) {
+
+        node *assign = AVIS_SSAASSIGN (ID_AVIS (id));
+        prf prfop;
+        bool correctop = FALSE;
+
+        switch (op) {
+        case F_add_SxS:
+        case F_add_AxS:
+        case F_add_SxA:
+        case F_add_AxA:
+            prfop = F_esd_neg;
+            correctop = TRUE;
+            break;
+        case F_mul_SxS:
+        case F_mul_AxS:
+        case F_mul_SxA:
+        case F_mul_AxA:
+            prfop = F_esd_rec;
+            correctop = TRUE;
+            break;
+        default:
+            correctop = FALSE;
+            break;
         }
-    } else {
-        result = FALSE;
-    }
 
-    DBUG_RETURN (result);
-}
+        if ((correctop) && (N_let == NODE_TYPE (ASSIGN_INSTR (assign)))
+            && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assign))))) {
 
-/*****************************************************************************
- *
- * function:
- *   int IsConstant(node *arg_node)
- *
- * description:
- *   returns '1' if the arg_node is a constant value
- *
- ****************************************************************************/
-
-static bool
-IsConstant (node *arg_node)
-{
-
-    bool result;
-    DBUG_ENTER ("IsConstant");
-
-    switch (NODE_TYPE (arg_node)) {
-    case N_num:
-    case N_double:
-    case N_float:
-    case N_bool:
-    case N_char:
-        result = TRUE;
-        break;
-    default:
-        result = FALSE;
-    }
-
-    DBUG_RETURN (result);
-}
-
-static bool
-IsTraverseable (node *arg)
-{
-
-    bool result;
-
-    DBUG_ENTER ("IsTraverseable");
-
-    result = TRUE;
-
-    if (IsConstant (arg) || ReachedDefinition (arg) || ReachedArgument (arg)) {
-        result = FALSE;
-    }
-
-    DBUG_RETURN (result);
-}
-
-static bool
-IsUndoCase (prf primf, node *tmp, node *tmp2)
-{
-
-    bool result;
-
-    DBUG_ENTER ("IsUndoCase");
-
-    result = FALSE;
-
-    if ((PRF_PRF (tmp) == F_mul_SxS) && (primf == F_add_SxS)) {
-
-        if ((NODE_TYPE (tmp2) != N_id)) {
-
-            if (((NODE_TYPE (tmp2) == N_num) && (NUM_VAL (tmp2) == -1))
-                || ((NODE_TYPE (tmp2) == N_float) && (FLOAT_VAL (tmp2) == -1.0))
-                || ((NODE_TYPE (tmp2) == N_double) && (DOUBLE_VAL (tmp2) == -1.0))) {
-                result = TRUE;
+            if (PRF_PRF (LET_EXPR (ASSIGN_INSTR (assign))) == prfop) {
+                result = PRF_ARGS (LET_EXPR (ASSIGN_INSTR (assign)));
             }
         }
     }
 
-    if ((PRF_PRF (tmp) == F_div_SxS) && (primf == F_mul_SxS)) {
+    DBUG_RETURN (result);
+}
 
-        if ((NODE_TYPE (tmp2) != N_id)) {
+static prf
+TogglePrf (prf op)
+{
+    prf result;
+    DBUG_ENTER ("TogglePrf");
 
-            if (((NODE_TYPE (tmp2) == N_num) && (NUM_VAL (tmp2) == 1))
-                || ((NODE_TYPE (tmp2) == N_float) && (FLOAT_VAL (tmp2) == 1.0))
-                || ((NODE_TYPE (tmp2) == N_double) && (DOUBLE_VAL (tmp2) == 1.0))) {
-                result = TRUE;
-            }
-        }
+    if (F_add_SxS == op) {
+        result = F_sub_SxS;
+    }
+    if (F_add_SxA == op) {
+        result = F_sub_SxA;
+    }
+    if (F_add_AxS == op) {
+        result = F_sub_AxS;
+    }
+    if (F_add_AxA == op) {
+        result = F_sub_AxA;
+    }
+
+    if (F_mul_SxS == op) {
+        result = F_div_SxS;
+    }
+    if (F_mul_SxA == op) {
+        result = F_div_SxA;
+    }
+    if (F_mul_AxS == op) {
+        result = F_div_AxS;
+    }
+    if (F_mul_AxA == op) {
+        result = F_div_AxA;
     }
 
     DBUG_RETURN (result);
 }
 
 node *
-UESDdoUndoElimSubDiv (node *arg_node)
+UESDdoUndoElimSubDiv (node *fundef)
 {
+    info *info;
 
-    DBUG_ENTER ("UndoEleminateSD");
+    DBUG_ENTER ("UESDdoUndoElimSubDiv");
 
-    if (arg_node != NULL) {
-        DBUG_PRINT ("OPT", ("starting undo elim sub div on function %s",
-                            FUNDEF_NAME (arg_node)));
+    if (fundef != NULL) {
+        DBUG_PRINT ("OPT",
+                    ("starting undo elim sub div in function %s", FUNDEF_NAME (fundef)));
+
+        info = MakeInfo ();
+
+        INFO_UESD_FUNDEF (info) = fundef;
 
         TRAVpush (TR_uesd);
-        arg_node = TRAVdo (arg_node, NULL);
+        FUNDEF_BODY (fundef) = TRAVdo (FUNDEF_BODY (fundef), info);
         TRAVpop ();
+
+        info = FreeInfo (info);
     }
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (fundef);
 }
-
-/*****************************************************************************
- *
- * function:
- *   UESDblock(node *arg_node, info *arg_info)
- *
- * description:
- *   store block-node for access to vardec-nodes
- *   store types-node as shape for new types-nodes
- *   reset nodelists
- *   traverse through block-nodes
- ****************************************************************************/
 
 node *
 UESDblock (node *arg_node, info *arg_info)
@@ -239,289 +214,213 @@ UESDblock (node *arg_node, info *arg_info)
     DBUG_ENTER ("UESDblock");
 
     if (BLOCK_INSTR (arg_node) != NULL) {
-        /*
-         * store pointer on actual N_block-node for append of new N_vardec nodes
-         */
-
         BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
 }
 
-/*****************************************************************************
- *
- * function:
- *   ALassign(node *arg_node, info *arg_info)
- *
- * description:
- *   Set flag ASSIGN_STATUS to mark unused nodes in optimization-process
- *   Traverse through assign-nodes
- *   If previous assign-node was optimized, increase optimization counter
- *   and include new nodes
- *   Free all used nodelists
- *   If current assign node was unused during this optimization-cycle
- *   traverse in let node
- *
- ****************************************************************************/
-
 node *
 UESDassign (node *arg_node, info *arg_info)
 {
+    node *postassign = NULL;
+
     DBUG_ENTER ("UESDassign");
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
+    INFO_UESD_TOPDOWN (arg_info) = TRUE;
+    INFO_UESD_POSTASSIGN (arg_info) = NULL;
 
-        ASSIGN_ISUNUSED (arg_node) = TRUE;
-
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-
-        /*
-         * traverse in N_let-node
-         */
-
-        if ((ASSIGN_INSTR (arg_node) != NULL) && (ASSIGN_ISUNUSED (arg_node))) {
-
-            ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-        }
+    if (ASSIGN_INSTR (arg_node) != NULL) {
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
+
+    postassign = INFO_UESD_POSTASSIGN (arg_info);
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    INFO_UESD_TOPDOWN (arg_info) = FALSE;
+
+    if (ASSIGN_INSTR (arg_node) != NULL) {
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    }
+
+    if (postassign != NULL) {
+        ASSIGN_NEXT (postassign) = arg_node;
+        arg_node = postassign;
+    }
+
     DBUG_RETURN (arg_node);
 }
-
-/*****************************************************************************
- *
- * function:
- *   ALlet(node *arg_node, info *arg_info)
- *
- * description:
- *   store current let-node to include last created new primitive-node
- *   traverse N_let-nodes
- *
- ****************************************************************************/
 
 node *
 UESDlet (node *arg_node, info *arg_info)
 {
-    ntype *tmp;
-
     DBUG_ENTER ("UESDlet");
 
+    INFO_UESD_LET (arg_info) = arg_node;
+
     if (LET_EXPR (arg_node) != NULL) {
-
-        if ((LET_IDS (arg_node) != NULL) && (IDS_AVIS (LET_IDS (arg_node)) != NULL)) {
-
-            tmp = AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)));
-
-            if (TYisArray (tmp)) {
-                tmp = TYgetScalar (tmp);
-            }
-
-            if (TYisSimple (tmp)
-                && ((!global.enforce_ieee)
-                    || ((TYgetSimpleType (tmp) != T_double)
-                        && (TYgetSimpleType (tmp) != T_float)))) {
-                LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-            }
-        }
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
 }
 
-/*****************************************************************************
- *
- * function:
- *   ALprf(node *arg_node, info *arg_info)
- *
- * description:
- *   If primitive is associative and commutative start optimization-routines:
- *     Reset all needed variables and lists
- *     Traverse recursively through arguments of the primitive node
- *     and collect all constant nodes and indissoluble argument nodes
- *     If there are enough collected nodes, create new optimized structure
- *     The optimized structure is stored in arg_info and will be included
- *     in the previous incarnation of ALassign()
- *     Free nodelists
- *
- ****************************************************************************/
-
 node *
 UESDprf (node *arg_node, info *arg_info)
 {
-
-    node *newnode, *tmp;
+    prf op, newop;
+    node *id1, *id2;
+    bool add = FALSE;
+    ntype *type;
 
     DBUG_ENTER ("UESDprf");
 
-    if (NODE_TYPE (PRF_ARGS (arg_node)) == N_exprs) {
+    op = PRF_PRF (arg_node);
 
-        if ((PRF_PRF (arg_node) == F_add_SxS) || (PRF_PRF (arg_node) == F_add_AxS)
-            || (PRF_PRF (arg_node) == F_add_SxA) || (PRF_PRF (arg_node) == F_add_AxA)) {
+    if (INFO_UESD_TOPDOWN (arg_info)) {
+        switch (op) {
 
-            if (IsTraverseable (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))))) {
+        case F_add_SxS:
+        case F_add_AxS:
+        case F_add_SxA:
+        case F_add_AxA:
+            add = TRUE;
 
-                tmp = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
-                tmp = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (tmp))));
-                if (IsUndoCase (F_add_SxS, tmp, EXPRS_EXPR (PRF_ARGS (tmp)))) {
+        case F_mul_SxS:
+        case F_mul_AxS:
+        case F_mul_SxA:
+        case F_mul_AxA:
+            /*
+             * handel add and div seperatly
+             */
+            id1 = CheckId (EXPRS_EXPR (PRF_ARGS (arg_node)), op);
+            id2 = CheckId (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))), op);
 
-                    if (PRF_PRF (arg_node) == F_add_SxS) {
-                        PRF_PRF (arg_node) = F_sub_SxS;
-                    }
-                    if (PRF_PRF (arg_node) == F_add_AxS) {
-                        PRF_PRF (arg_node) = F_sub_AxS;
-                    }
-                    if (PRF_PRF (arg_node) == F_add_SxA) {
-                        PRF_PRF (arg_node) = F_sub_SxA;
-                    }
-                    if (PRF_PRF (arg_node) == F_add_AxA) {
-                        PRF_PRF (arg_node) = F_sub_AxA;
-                    }
+            if ((id1 == NULL) && (id2 == NULL)) {
+                /*
+                 * nothing to do
+                 */
+            } else if ((id1 == NULL) && (id2 != NULL)) {
+                EXPRS_NEXT (PRF_ARGS (arg_node))
+                  = FREEdoFreeNode (EXPRS_NEXT (PRF_ARGS (arg_node)));
+                EXPRS_NEXT (PRF_ARGS (arg_node)) = DUPdoDupTree (id2);
+                PRF_PRF (arg_node) = TogglePrf (op);
 
-                    newnode = DUPdoDupTree (EXPRS_EXPR (
-                      EXPRS_NEXT (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (
-                        ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)))))))))));
+            } else if ((id1 != NULL) && (id2 == NULL)) {
+                node *tmp = EXPRS_NEXT (PRF_ARGS (arg_node));
+                EXPRS_NEXT (PRF_ARGS (arg_node)) = NULL;
+                PRF_ARGS (arg_node) = FREEdoFreeNode (PRF_ARGS (arg_node));
+                PRF_ARGS (arg_node) = tmp;
+                EXPRS_NEXT (PRF_ARGS (arg_node)) = DUPdoDupTree (id1);
+                PRF_PRF (arg_node) = TogglePrf (op);
+            } else if ((id1 != NULL) && (id2 != NULL)) {
+                node *avis;
+                node *tmp = DUPdoDupTree (id1);
+                EXPRS_NEXT (tmp) = DUPdoDupTree (id2);
+                tmp = TBmakePrf (op, tmp);
+                avis = TBmakeAvis (ILIBtmpVar (),
+                                   TYcopyType (AVIS_TYPE (
+                                     IDS_AVIS (LET_IDS (INFO_UESD_LET (arg_info))))));
+                BLOCK_VARDEC (FUNDEF_BODY (INFO_UESD_FUNDEF (arg_info)))
+                  = TBmakeVardec (avis, BLOCK_VARDEC (
+                                          FUNDEF_BODY (INFO_UESD_FUNDEF (arg_info))));
 
-                    EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))) = newnode;
+                AVIS_DECL (avis)
+                  = BLOCK_VARDEC (FUNDEF_BODY (INFO_UESD_FUNDEF (arg_info)));
 
-                } else if ((NULL != EXPRS_NEXT (PRF_ARGS (tmp)))
-                           && (IsUndoCase (F_add_SxS, tmp,
-                                           EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (tmp)))))) {
+                tmp = TCmakeAssignLet (avis, tmp);
 
-                    if (PRF_PRF (arg_node) == F_add_SxS) {
-                        PRF_PRF (arg_node) = F_sub_SxS;
-                    }
-                    if (PRF_PRF (arg_node) == F_add_AxS) {
-                        PRF_PRF (arg_node) = F_sub_AxS;
-                    }
-                    if (PRF_PRF (arg_node) == F_add_SxA) {
-                        PRF_PRF (arg_node) = F_sub_SxA;
-                    }
-                    if (PRF_PRF (arg_node) == F_add_AxA) {
-                        PRF_PRF (arg_node) = F_sub_AxA;
-                    }
+                /*
+                 * change current prf
+                 */
+                PRF_ARGS (arg_node) = FREEdoFreeTree (PRF_ARGS (arg_node));
+                PRF_ARGS (arg_node)
+                  = TBmakeExprs (DUPdupIdsId (LET_IDS (ASSIGN_INSTR (tmp))), NULL);
 
-                    newnode = DUPdoDupTree (
-                      EXPRS_EXPR (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (
-                        ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))))))))));
-
-                    EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))) = newnode;
+                if (add) {
+                    PRF_PRF (arg_node) = F_esd_neg;
+                } else {
+                    PRF_PRF (arg_node) = F_esd_rec;
                 }
 
-            } else if (IsTraverseable (EXPRS_EXPR (PRF_ARGS (arg_node)))) {
+                INFO_UESD_POSTASSIGN (arg_info) = tmp;
+            }
 
-                tmp = EXPRS_EXPR (PRF_ARGS (arg_node));
-                tmp = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (tmp))));
-                if (IsUndoCase (F_add_SxS, tmp, EXPRS_EXPR (PRF_ARGS (tmp)))) {
+            break;
 
-                    if (PRF_PRF (arg_node) == F_add_SxS) {
-                        PRF_PRF (arg_node) = F_sub_SxS;
-                    }
-                    if (PRF_PRF (arg_node) == F_add_AxS) {
-                        PRF_PRF (arg_node) = F_sub_SxA;
-                    }
-                    if (PRF_PRF (arg_node) == F_add_SxA) {
-                        PRF_PRF (arg_node) = F_sub_AxS;
-                    }
-                    if (PRF_PRF (arg_node) == F_add_AxA) {
-                        PRF_PRF (arg_node) = F_sub_AxA;
-                    }
+        default:
+            break;
+        }
+    } else {
 
-                    newnode = DUPdoDupTree (
-                      EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
-                        AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (PRF_ARGS (arg_node))))))))));
+        /*
+         * bottom-up traversal
+         */
 
-                    EXPRS_EXPR (PRF_ARGS (arg_node))
-                      = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
+        type = TYcopyType (AVIS_TYPE (IDS_AVIS (LET_IDS (INFO_UESD_LET (arg_info)))));
 
-                    EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))) = newnode;
+        if (PRF_PRF (arg_node) == F_esd_neg) {
 
-                } else if ((NULL != EXPRS_NEXT (PRF_ARGS (tmp)))
-                           && (IsUndoCase (F_add_SxS, tmp,
-                                           EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (tmp)))))) {
+            if (TYisAUD (type)) {
 
-                    if (PRF_PRF (arg_node) == F_add_SxS) {
-                        PRF_PRF (arg_node) = F_sub_SxS;
-                    }
-                    if (PRF_PRF (arg_node) == F_add_AxS) {
-                        PRF_PRF (arg_node) = F_sub_SxA;
-                    }
-                    if (PRF_PRF (arg_node) == F_add_SxA) {
-                        PRF_PRF (arg_node) = F_sub_AxS;
-                    }
-                    if (PRF_PRF (arg_node) == F_add_AxA) {
-                        PRF_PRF (arg_node) = F_sub_AxA;
-                    }
-
-                    newnode = DUPdoDupTree (EXPRS_EXPR (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
-                      AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (PRF_ARGS (arg_node)))))))));
-
-                    EXPRS_EXPR (PRF_ARGS (arg_node))
-                      = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
-
-                    EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))) = newnode;
-                }
+                newop = F_sub_SxA;
+            } else if ((TYisAUDGZ (type)) || (TYgetDim (type) > 0)) {
+                newop = F_sub_SxA;
+            } else {
+                newop = F_sub_SxS;
+            }
+            PRF_PRF (arg_node) = newop;
+            if (((TYisArray (type)) && (T_int == TYgetSimpleType (TYgetScalar (type))))
+                || ((!TYisArray (type)) && (T_int == TYgetSimpleType (type)))) {
+                PRF_ARGS (arg_node) = TBmakeExprs (TBmakeNum (0), PRF_ARGS (arg_node));
+            } else if (((TYisArray (type))
+                        && (T_float == TYgetSimpleType (TYgetScalar (type))))
+                       || ((!TYisArray (type)) && (T_float == TYgetSimpleType (type)))) {
+                PRF_ARGS (arg_node)
+                  = TBmakeExprs (TBmakeFloat (0.0), PRF_ARGS (arg_node));
+            } else if (((TYisArray (type))
+                        && (T_double == TYgetSimpleType (TYgetScalar (type))))
+                       || ((!TYisArray (type)) && (T_double == TYgetSimpleType (type)))) {
+                PRF_ARGS (arg_node)
+                  = TBmakeExprs (TBmakeDouble (0.0), PRF_ARGS (arg_node));
+            } else {
+                DBUG_ASSERT ((FALSE), "unexpected simpletype");
             }
         }
 
-        if ((PRF_PRF (arg_node) == F_mul_SxS) || (PRF_PRF (arg_node) == F_mul_AxS)
-            || (PRF_PRF (arg_node) == F_mul_SxA) || (PRF_PRF (arg_node) == F_mul_AxA)) {
+        if (PRF_PRF (arg_node) == F_esd_rec) {
 
-            if (IsTraverseable (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))))) {
+            if (TYisAUD (type)) {
 
-                tmp = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
-                tmp = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (tmp))));
-                if (IsUndoCase (F_mul_SxS, tmp, EXPRS_EXPR (PRF_ARGS (tmp)))) {
+                newop = F_div_SxA;
+            } else if ((TYisAUDGZ (type)) || (TYgetDim (type) > 0)) {
+                newop = F_div_SxA;
+            } else {
+                newop = F_div_SxS;
+            }
 
-                    if (PRF_PRF (arg_node) == F_mul_SxS) {
-                        PRF_PRF (arg_node) = F_div_SxS;
-                    }
-                    if (PRF_PRF (arg_node) == F_mul_AxS) {
-                        PRF_PRF (arg_node) = F_div_AxS;
-                    }
-                    if (PRF_PRF (arg_node) == F_mul_SxA) {
-                        PRF_PRF (arg_node) = F_div_SxA;
-                    }
-                    if (PRF_PRF (arg_node) == F_mul_AxA) {
-                        PRF_PRF (arg_node) = F_div_AxA;
-                    }
-
-                    newnode = DUPdoDupTree (EXPRS_EXPR (
-                      EXPRS_NEXT (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (
-                        ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)))))))))));
-
-                    EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))) = newnode;
-                }
-
-            } else if (IsTraverseable (EXPRS_EXPR (PRF_ARGS (arg_node)))) {
-
-                tmp = EXPRS_EXPR (PRF_ARGS (arg_node));
-                tmp = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (tmp))));
-                if (IsUndoCase (F_mul_SxS, tmp, EXPRS_EXPR (PRF_ARGS (tmp)))) {
-
-                    if (PRF_PRF (arg_node) == F_mul_SxS) {
-                        PRF_PRF (arg_node) = F_div_SxS;
-                    }
-                    if (PRF_PRF (arg_node) == F_mul_AxS) {
-                        PRF_PRF (arg_node) = F_div_AxS;
-                    }
-                    if (PRF_PRF (arg_node) == F_mul_SxA) {
-                        PRF_PRF (arg_node) = F_div_SxA;
-                    }
-                    if (PRF_PRF (arg_node) == F_mul_AxA) {
-                        PRF_PRF (arg_node) = F_div_AxA;
-                    }
-
-                    newnode = DUPdoDupTree (
-                      EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (LET_EXPR (ASSIGN_INSTR (
-                        AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (PRF_ARGS (arg_node))))))))));
-
-                    EXPRS_EXPR (PRF_ARGS (arg_node))
-                      = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
-
-                    EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))) = newnode;
-                }
+            PRF_PRF (arg_node) = newop;
+            if (((TYisArray (type)) && (T_int == TYgetSimpleType (TYgetScalar (type))))
+                || ((!TYisArray (type)) && (T_int == TYgetSimpleType (type)))) {
+                PRF_ARGS (arg_node) = TBmakeExprs (TBmakeNum (1), PRF_ARGS (arg_node));
+            } else if (((TYisArray (type))
+                        && (T_float == TYgetSimpleType (TYgetScalar (type))))
+                       || ((!TYisArray (type)) && (T_float == TYgetSimpleType (type)))) {
+                PRF_ARGS (arg_node)
+                  = TBmakeExprs (TBmakeFloat (1.0), PRF_ARGS (arg_node));
+            } else if (((TYisArray (type))
+                        && (T_double == TYgetSimpleType (TYgetScalar (type))))
+                       || ((!TYisArray (type)) && (T_double == TYgetSimpleType (type)))) {
+                PRF_ARGS (arg_node)
+                  = TBmakeExprs (TBmakeDouble (1.0), PRF_ARGS (arg_node));
+            } else {
+                DBUG_ASSERT ((FALSE), "unexpected simpletype");
             }
         }
     }
+
     DBUG_RETURN (arg_node);
 }
