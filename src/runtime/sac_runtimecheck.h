@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2002/07/08 20:38:14  dkr
+ * fixed a bug in definition of SAC_ASSURE_TYPE
+ *
  * Revision 1.2  2002/07/03 14:01:10  dkr
  * header modified
  *
@@ -72,7 +75,7 @@
 
 #else /* SAC_DO_CHECK_TYPE */
 
-#define SAC_ASSURE_TYPE(cond)
+#define SAC_ASSURE_TYPE(cond, message)
 
 #endif /* SAC_DO_CHECK_TYPE */
 
