@@ -1,5 +1,11 @@
 /*
  * $Log$
+ * Revision 2.18  1999/07/22 09:53:06  cg
+ * Added new routine to compute the number of digits required to
+ * represent the final counter values. Before, this was done
+ * using the Math library functions log10() and ceil() which
+ * required to link with libm.
+ *
  * Revision 2.17  1999/07/20 08:36:09  bs
  * Result presentation beautified.
  *
@@ -1185,6 +1191,18 @@ PrintCounters (char *cachelevel_str, int digits, ULINT hit, ULINT miss, ULINT co
     fprintf (stderr, "%s", SAC_CS_separator);
 } /* PrintCounters */
 
+static int
+ComputeNumberOfDigits (unsigned long int number)
+{
+    int digits = 1;
+
+    while (number /= 10) {
+        digits++;
+    }
+
+    return (digits);
+}
+
 void
 SAC_CS_ShowResults (void)
 {
@@ -1203,7 +1221,7 @@ SAC_CS_ShowResults (void)
 
     fprintf (stderr, "%s", SAC_CS_separator);
 
-    digits = (int)ceil (log10 ((double)SAC_CS_rhit[1] + SAC_CS_rmiss[1]));
+    digits = ComputeNumberOfDigits (SAC_CS_rhit[1] + SAC_CS_rmiss[1]);
 
     for (i = 1; i <= MAX_CACHELEVEL; i++) {
         if (SAC_CS_cachelevel[i] != NULL) {
@@ -1213,7 +1231,7 @@ SAC_CS_ShowResults (void)
             sprintf (str, "L%d WRITE", i);
             PrintCounters (str, digits, SAC_CS_whit[i], SAC_CS_wmiss[i], SAC_CS_wcold[i],
                            SAC_CS_wcross[i], SAC_CS_wself[i], SAC_CS_winvalid[i]);
-            sprintf (str, "L%d R & W", i);
+            sprintf (str, "L%d TOTAL", i);
             PrintCounters (str, digits, SAC_CS_rhit[i] + SAC_CS_whit[i],
                            SAC_CS_rmiss[i] + SAC_CS_wmiss[i],
                            SAC_CS_rcold[i] + SAC_CS_wcold[i],
