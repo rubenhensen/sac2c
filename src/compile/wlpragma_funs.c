@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/11/14 13:28:54  dkr
+ * some '... might be used uninitialized' warnings removed
+ *
  * Revision 2.5  2000/06/23 15:11:57  dkr
  * signature of DupTree changed
  *
@@ -152,7 +155,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
 
                     grid1_b1 = WLGRID_BOUND1 (grids) - offset;
                     grid1_b2 = WLGRID_BOUND2 (grids) - offset;
-                    grid2_b1 = width; /* dummy value */
+                    grid2_b1 = grid2_b2 = width; /* dummy value */
                 } else {
                     /* the grid is split into two parts :( */
 
