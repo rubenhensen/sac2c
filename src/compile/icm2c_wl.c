@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2002/10/28 09:25:04  dkr
+ * bugs in WLGenarray_Shape() fixed
+ *
  * Revision 3.23  2002/10/24 20:54:18  dkr
  * some ICMs modified in order to support dynamic shapes
  *
@@ -190,70 +193,50 @@ WLGenarray_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
     int i;
     shape_class_t to_sc = ICUGetShapeClass (to_nt);
     int to_dim = DIM_NO_OFFSET (to_sdim);
+    int val_dim = DIM_NO_OFFSET (val_sdim);
 
     DBUG_ENTER ("WLGenarray_Shape");
+
+    /*
+     * ND_A_DESC_DIM, ND_A_MIRROR_DIM have already been set by ND_ALLOC__DESC!
+     */
+    INDENT;
+    fprintf (outfile, "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == ", to_nt);
+    GetAttr (shp, shp_size, shp_size_fun);
+    fprintf (outfile,
+             " + SAC_ND_A_DIM( %s)),"
+             " (\"Assignment with incompatible types found!\"));\n",
+             val_nt);
 
     /*
      * set descriptor and non-constant part of mirror
      */
     switch (to_sc) {
     case C_aud:
-        /*
-         * ND_A_DESC_DIM, ND_A_MIRROR_DIM have already been set by ND_ALLOC__DESC!
-         */
         INDENT;
-        fprintf (outfile, "SAC_ASSURE_TYPE( (SAC_ND_A_DIM( %s) == ", to_nt);
-        GetAttr (shp, shp_size, shp_size_fun);
-        fprintf (outfile,
-                 " + SAC_ND_A_DIM( %s)),"
-                 " (\"Assignment with incompatible types found!\"));\n",
-                 val_nt);
-        INDENT;
-        fprintf (outfile, "{ int SAC_i, SAC_j, SAC_size = 1;\n");
+        fprintf (outfile, "{ int SAC_i, SAC_size = 1;\n");
         indent++;
-        INDENT;
-        fprintf (outfile, "for (SAC_i = 0; SAC_i < ");
-        shp_size_fun (shp);
-        fprintf (outfile, "; SAC_i++) {\n");
-        indent++;
-        INDENT;
-        fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, SAC_i) = ", to_nt);
-        shp_read_fun (shp, "SAC_i", -1);
-        fprintf (outfile, ";\n");
-        indent--;
-        INDENT;
-        fprintf (outfile, "}\n");
-        INDENT;
-        fprintf (outfile,
-                 "for (SAC_j = 0; SAC_j < SAC_ND_A_DIM( %s);"
-                 " SAC_i++, SAC_j++) {\n",
-                 val_nt);
-        indent++;
-        INDENT;
-        fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, SAC_i)\n", to_nt);
-        INDENT;
-        fprintf (outfile, "          = SAC_ND_A_SHAPE( %s, SAC_j);\n", val_nt);
-        indent--;
-        INDENT;
-        fprintf (outfile, "}\n");
-        INDENT;
-        fprintf (outfile,
-                 "SAC_ND_A_DESC_SIZE( %s)"
-                 " = SAC_ND_A_MIRROR_SIZE( %s) = SAC_size;\n",
-                 to_nt, to_nt);
-        indent--;
-        INDENT;
-        fprintf (outfile, "}\n");
-        break;
+        if (val_dim < 0) {
+            INDENT;
+            fprintf (outfile, "int SAC_j;\n");
+        }
 
-    case C_akd:
-        INDENT;
-        if (shp_size < 0) {
-            fprintf (outfile, "{ int SAC_i, SAC_size = 1;\n");
-            indent++;
+        if (shp_size >= 0) {
+            for (i = 0; i < shp_size; i++) {
+                INDENT;
+                fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d)\n", to_nt, i);
+                INDENT;
+                fprintf (outfile, "          = ");
+                shp_read_fun (shp, NULL, i);
+                fprintf (outfile, ";\n");
+            }
+            INDENT;
+            /* to ease the code generation for the next loop */
+            fprintf (outfile, "SAC_i = %d;", shp_size);
+        } else {
             INDENT;
             fprintf (outfile, "for (SAC_i = 0; SAC_i < ");
-            GetAttr (shp, shp_size, shp_size_fun);
+            shp_size_fun (shp);
             fprintf (outfile, "; SAC_i++) {\n");
             indent++;
             INDENT;
@@ -265,6 +248,98 @@ WLGenarray_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
             indent--;
             INDENT;
             fprintf (outfile, "}\n");
+        }
+
+        if (val_dim >= 0) {
+            for (i = 0; i < val_dim; i++) {
+
+                INDENT;
+                fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, SAC_i +%d)\n",
+                         to_nt, i);
+                INDENT;
+                fprintf (outfile, "          = SAC_ND_A_SHAPE( %s, %d);\n", val_nt, i);
+            }
+        } else {
+            INDENT;
+            fprintf (outfile,
+                     "for (SAC_j = 0; SAC_j < SAC_ND_A_DIM( %s);"
+                     " SAC_i++, SAC_j++) {\n",
+                     val_nt);
+            indent++;
+            INDENT;
+            fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, SAC_i)\n", to_nt);
+            INDENT;
+            fprintf (outfile, "          = SAC_ND_A_SHAPE( %s, SAC_j);\n", val_nt);
+            indent--;
+            INDENT;
+            fprintf (outfile, "}\n");
+        }
+
+        INDENT;
+        fprintf (outfile,
+                 "SAC_ND_A_DESC_SIZE( %s)"
+                 " = SAC_ND_A_MIRROR_SIZE( %s) = SAC_size;\n",
+                 to_nt, to_nt);
+        indent--;
+        INDENT;
+        fprintf (outfile, "}\n");
+        break;
+
+    case C_akd:
+        DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+        if ((val_dim >= 0) || (shp_size >= 0)) {
+            if (val_dim >= 0) {
+                if (shp_size >= 0) {
+                    DBUG_ASSERT ((shp_size == to_dim - val_dim),
+                                 "inconsistant dimension found!");
+                } else {
+                    shp_size = to_dim - val_dim;
+                }
+            }
+            INDENT;
+            fprintf (outfile, "{ int SAC_size = 1;\n");
+            indent++;
+            for (i = 0; i < shp_size; i++) {
+                INDENT;
+                fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d)\n", to_nt, i);
+                INDENT;
+                fprintf (outfile, "          = SAC_ND_A_MIRROR_SHAPE( %s, %d)\n", to_nt,
+                         i);
+                INDENT;
+                fprintf (outfile, "          = ");
+                shp_read_fun (shp, NULL, i);
+                fprintf (outfile, ";\n");
+            }
+            for (; i < to_dim; i++) {
+                INDENT;
+                fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d)\n", to_nt, i);
+                INDENT;
+                fprintf (outfile, "          = SAC_ND_A_MIRROR_SHAPE( %s, %d)\n", to_nt,
+                         i);
+                INDENT;
+                fprintf (outfile, "          = SAC_ND_A_SHAPE( %s, %d);\n", val_nt,
+                         i - shp_size);
+            }
+        } else {
+            INDENT;
+            fprintf (outfile, "{ int SAC_i, SAC_size = 1;\n");
+            indent++;
+
+            INDENT;
+            fprintf (outfile, "for (SAC_i = 0; SAC_i < ");
+            shp_size_fun (shp);
+            fprintf (outfile, "; SAC_i++) {\n");
+            indent++;
+            INDENT;
+            fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, SAC_i)\n", to_nt);
+            INDENT;
+            fprintf (outfile, "          = ");
+            shp_read_fun (shp, "SAC_i", -1);
+            fprintf (outfile, ";\n");
+            indent--;
+            INDENT;
+            fprintf (outfile, "}\n");
+
             INDENT;
             fprintf (outfile, "for ( ; SAC_i < %d; SAC_i++) {\n", to_dim);
             indent++;
@@ -272,7 +347,7 @@ WLGenarray_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
             fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, SAC_i)\n", to_nt);
             INDENT;
             fprintf (outfile, "          = SAC_ND_A_SHAPE( %s, SAC_i - ", val_nt);
-            GetAttr (shp, shp_size, shp_size_fun);
+            shp_size_fun (shp);
             fprintf (outfile, ");\n");
             indent--;
             INDENT;
@@ -285,31 +360,8 @@ WLGenarray_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
                          " = SAC_ND_A_DESC_SHAPE( %s, %d);\n",
                          to_nt, i, to_nt, i);
             }
-        } else {
-            fprintf (outfile, "{ int SAC_size = 1;\n");
-            indent++;
-            DBUG_ASSERT ((shp_size >= 0), "illegal dimension found!");
-            for (i = 0; i < shp_size; i++) {
-                INDENT;
-                fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d)\n", to_nt, i);
-                INDENT;
-                fprintf (outfile, "          = SAC_ND_A_MIRROR_SHAPE( %s, %d) = ", to_nt,
-                         i);
-                shp_read_fun (shp, NULL, i);
-                fprintf (outfile, ";\n");
-            }
-            DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
-            for (; i < to_dim; i++) {
-                INDENT;
-                fprintf (outfile, "SAC_size *= SAC_ND_A_DESC_SHAPE( %s, %d)\n", to_nt, i);
-                INDENT;
-                fprintf (outfile, "          = SAC_ND_A_MIRROR_SHAPE( %s, %d)\n", to_nt,
-                         i);
-                INDENT;
-                fprintf (outfile, "          = SAC_ND_A_SHAPE( %s, %d);\n", val_nt,
-                         i - shp_size);
-            }
         }
+
         INDENT;
         fprintf (outfile,
                  "SAC_ND_A_DESC_SIZE( %s)"
@@ -391,7 +443,7 @@ WLGenarray_Shape (char *to_nt, int to_sdim, void *shp, int shp_size,
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_WL_GENARRAY__SHAPE_id( to_nt, to_sdim, shp_nt, val_nt)
+ *   ND_WL_GENARRAY__SHAPE_id( to_nt, to_sdim, shp_nt, val_nt, val_sdim)
  *
  ******************************************************************************/
 
@@ -409,8 +461,8 @@ ICMCompileND_WL_GENARRAY__SHAPE_id (char *to_nt, int to_sdim, char *shp_nt, char
     INDENT;
     fprintf (outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_WL_GENARRAY__SHAPE( %s, %d, ...)\"))\n",
-             to_nt, to_sdim);
+             " (\"ND_WL_GENARRAY__SHAPE( %s, %d, ..., %s, %d)\"))\n",
+             to_nt, to_sdim, val_nt, val_sdim);
 
     INDENT;
     fprintf (outfile,
@@ -460,8 +512,8 @@ ICMCompileND_WL_GENARRAY__SHAPE_arr (char *to_nt, int to_sdim, int shp_size,
     INDENT;
     fprintf (outfile,
              "SAC_TR_PRF_PRINT("
-             " (\"ND_WL_GENARRAY__SHAPE( %s, %d, ...)\"))\n",
-             to_nt, to_sdim);
+             " (\"ND_WL_GENARRAY__SHAPE( %s, %d, ..., %s, %d)\"))\n",
+             to_nt, to_sdim, val_nt, val_sdim);
 
     for (i = 0; i < shp_size; i++) {
         if (shpa_any[i][0] == '(') {
@@ -510,7 +562,7 @@ ICMCompileWL_BEGIN__OFFSET (char *to_nt, int to_sdim, char *idx_vec_nt, int dims
     fprintf (outfile, "{ int SAC_WL_OFFSET( %s);\n", to_nt);
     indent++;
     for (i = 0; i < dims; i++) {
-        DefineShapeFactor (to_nt, DIM_NO_OFFSET (to_sdim), i);
+        DefineShapeFactor (to_nt, to_sdim, i);
     }
 
     for (i = 0; i < dims; i++) {
@@ -642,6 +694,7 @@ void
 ICMCompileWL_ASSIGN (char *val_nt, int val_sdim, char *to_nt, int to_sdim,
                      char *idx_vec_nt, int dims, char **idxa_scl)
 {
+    int to_dim = DIM_NO_OFFSET (to_sdim);
     int val_dim = DIM_NO_OFFSET (val_sdim);
 
     DBUG_ENTER ("ICMCompileWL_ASSIGN");
@@ -653,7 +706,26 @@ ICMCompileWL_ASSIGN (char *val_nt, int val_sdim, char *to_nt, int to_sdim,
 
     PrintTraceICM (to_nt, idx_vec_nt, dims, idxa_scl, "assign", TRUE);
 
-    if (val_dim == 0) {
+    INDENT;
+    fprintf (outfile,
+             "SAC_ASSURE_TYPE("
+             " (SAC_ND_A_DIM( %s) == (SAC_ND_A_DIM( %s) - %d)),"
+             " (\"WL expression with illegal dimension found!\"));\n",
+             val_nt, to_nt, dims);
+
+    INDENT;
+    fprintf (outfile,
+             "SAC_ASSURE_TYPE("
+#ifdef TAGGED_ARRAYS
+             " (SAC_ND_A_SIZE( %s) =="
+             " SAC_WL_SHAPE_FACTOR( NT_NAME( %s), %d)),"
+#else
+             " (SAC_ND_A_SIZE( %s) == SAC_WL_SHAPE_FACTOR( %s, %d)),"
+#endif
+             " (\"WL expression with illegal size found!\"));\n",
+             val_nt, to_nt, dims - 1);
+
+    if ((val_dim == 0) || (to_dim == dims)) {
         INDENT;
 #ifdef TAGGED_ARRAYS
         fprintf (outfile,
@@ -715,7 +787,7 @@ ICMCompileWL_ASSIGN (char *val_nt, int val_sdim, char *to_nt, int to_sdim,
  * description:
  *   Implements the compilation of the following ICM:
  *
- *   WL_ASSIGN__INIT( to_nt, idx_vec_nt, dims, [ idxa_scl ]* )
+ *   WL_ASSIGN__INIT( to_nt, to_sdim, idx_vec_nt, dims, [ idxa_scl ]* )
  *
  ******************************************************************************/
 
