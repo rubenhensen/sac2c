@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/11/29 13:34:36  sah
+ * dfr is now switchable
+ *
  * Revision 1.10  2004/11/26 23:41:58  jhb
  * cchanged type from void to node of EXPdoExport
  *
@@ -232,7 +235,7 @@ EXPfundef (node *arg_node, info *arg_info)
          * program! Main is always provided.
          */
         if (INFO_EXP_FILETYPE (arg_info) == F_prog) {
-            if (!strcmp (FUNDEF_NAME (arg_node), "main")) {
+            if (ILIBstringCompare (FUNDEF_NAME (arg_node), "main")) {
                 FUNDEF_ISEXPORTED (arg_node) = FALSE;
                 FUNDEF_ISPROVIDED (arg_node) = TRUE;
             }
@@ -388,9 +391,14 @@ EXPdoExport (node *syntax_tree)
 
     syntax_tree = StartExpTraversal (syntax_tree);
 
-    syntax_tree = DFRdoDeadFunctionRemoval (syntax_tree);
-
     if (MODULE_FILETYPE (syntax_tree) != F_prog) {
+        if (global.optimize.dodfr) {
+            syntax_tree = DFRdoDeadFunctionRemoval (syntax_tree);
+        } else {
+            SYSWARN (("Dead Function Removal is disabled. This will lead to "
+                      "bigger modules."));
+        }
+
         SERdoSerialize (syntax_tree);
     }
 
