@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2002/02/22 12:30:46  sbs
+ * insvd_tab moved into traverse.c
+ *
  * Revision 1.2  2002/02/22 09:26:19  sbs
  * INSVDwithid added .
  *
@@ -42,14 +45,6 @@
 
 #define INFO_INSVD_VARDECS(n) (n->node[0])
 #define INFO_INSVD_ARGS(n) (n->node[1])
-
-static funtab insvd_tab_rec = {{
-#define NIFinsvd(it_insvd) it_insvd
-#include "node_info.mac"
-                               },
-                               NULL,
-                               NULL};
-funtab *insvd_tab = &insvd_tab_rec;
 
 /******************************************************************************
  *
