@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2004/12/19 13:32:56  sbs
+ * now, new2old is called on the lifted fold funs as well
+ *
  * Revision 1.29  2004/12/13 18:43:47  ktr
  * NT2OTwithid will only perform syntax tree modification as long as
  * withid is given by N_ids nodes ( before explicit allocation)
@@ -235,6 +238,8 @@ NT2OTdoTransform (node *arg_node)
 node *
 NT2OTmodule (node *arg_node, info *arg_info)
 {
+    node *tmp;
+
     DBUG_ENTER ("NT2OTmodule");
 
     INFO_NT2OT_FOLDFUNS (arg_info) = NULL;
@@ -266,9 +271,11 @@ NT2OTmodule (node *arg_node, info *arg_info)
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
-    if (INFO_NT2OT_FOLDFUNS (arg_info) != NULL) {
-        MODULE_FUNS (arg_node)
-          = TCappendFundef (INFO_NT2OT_FOLDFUNS (arg_info), MODULE_FUNS (arg_node));
+    while (INFO_NT2OT_FOLDFUNS (arg_info) != NULL) {
+        tmp = INFO_NT2OT_FOLDFUNS (arg_info);
+        INFO_NT2OT_FOLDFUNS (arg_info) = NULL;
+        tmp = TRAVdo (tmp, arg_info);
+        MODULE_FUNS (arg_node) = TCappendFundef (tmp, MODULE_FUNS (arg_node));
     }
 
     DBUG_RETURN (arg_node);
