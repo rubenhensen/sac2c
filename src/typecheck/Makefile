@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.22  1998/02/16 21:43:58  dkr
+# make deps done
+#
 # Revision 1.21  1997/11/20 15:02:06  dkr
 # make deps done
 #
@@ -105,8 +108,8 @@ typecheck.o: /usr/include/stddef.h /usr/include/string.h ../global/tree.h
 typecheck.o: ../global/types.h ../global/tree_basic.h
 typecheck.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
 typecheck.o: /usr/include/sys/va_list.h ../global/globals.h
-typecheck.o: ../global/internal_lib.h ../global/my_debug.h ../../inc/dbug.h
-typecheck.o: ../global/traverse.h typecheck.h ../print/convert.h
-typecheck.o: ../modules/import.h prim_fun.h ../global/free.h
-typecheck.o: /usr/include/malloc.h ../global/access_macros.h
+typecheck.o: ../global/internal_lib.h ../print/print.h ../global/my_debug.h
+typecheck.o: ../../inc/dbug.h ../global/traverse.h typecheck.h
+typecheck.o: ../print/convert.h ../modules/import.h prim_fun.h
+typecheck.o: ../global/free.h /usr/include/malloc.h ../global/access_macros.h
 typecheck.o: ../optimize/DupTree.h ../compile/profile.h prim_fun_tt.mac

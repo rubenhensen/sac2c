@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.33  1998/02/16 21:44:01  dkr
+# make deps done
+#
 # Revision 1.32  1998/02/12 16:58:29  dkr
 # added ../optimize in INCS
 #
@@ -153,16 +156,19 @@ Old2NewWith.o: ../global/tree_compound.h ../global/Error.h
 Old2NewWith.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 Old2NewWith.o: /usr/include/sys/va_list.h /usr/include/string.h
 Old2NewWith.o: /usr/include/stdlib.h ../global/globals.h
-Old2NewWith.o: ../global/internal_lib.h ../global/traverse.h ../global/free.h
-Old2NewWith.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
+Old2NewWith.o: ../global/internal_lib.h ../global/traverse.h
+Old2NewWith.o: ../typecheck/typecheck.h ../global/free.h ../../inc/dbug.h
+Old2NewWith.o: ../global/my_debug.h /usr/include/malloc.h
+Old2NewWith.o: ../optimize/DupTree.h
 compile.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 compile.o: /usr/include/string.h ../global/types.h ../global/tree_basic.h
 compile.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
 compile.o: /usr/include/sys/va_list.h ../global/globals.h ../print/print.h
 compile.o: ../global/tree.h ../global/internal_lib.h ../../inc/dbug.h
 compile.o: ../global/my_debug.h ../global/traverse.h compile.h
-compile.o: ../print/convert.h ../refcount/refcount.h ../typecheck/typecheck.h
-compile.o: ../global/free.h /usr/include/malloc.h ../global/type_info.mac
+compile.o: ../print/convert.h ../optimize/DupTree.h ../refcount/refcount.h
+compile.o: ../typecheck/typecheck.h ../global/free.h /usr/include/malloc.h
+compile.o: ../global/type_info.mac
 icm2c.o: /usr/include/malloc.h /usr/include/stdio.h
 icm2c.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
 icm2c.o: ../print/print.h ../global/tree.h ../global/types.h

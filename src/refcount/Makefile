@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.12  1998/02/16 21:44:02  dkr
+# make deps done
+#
 # Revision 1.11  1998/02/09 17:40:31  dkr
 # added INCS: -I../optimize (function GenerateMasks)
 #
@@ -64,4 +67,5 @@ refcount.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
 refcount.o: /usr/include/sys/va_list.h /usr/include/string.h
 refcount.o: ../global/globals.h ../global/internal_lib.h ../global/my_debug.h
 refcount.o: ../../inc/dbug.h ../typecheck/typecheck.h ../global/traverse.h
-refcount.o: ../global/free.h /usr/include/malloc.h refcount.h
+refcount.o: ../optimize/optimize.h ../global/free.h /usr/include/malloc.h
+refcount.o: refcount.h
