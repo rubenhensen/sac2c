@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/10/28 17:19:32  sah
+ * now when annotating namespaces, the used namespaces
+ * are added to the list of dependencies
+ *
  * Revision 1.5  2004/10/25 11:58:47  sah
  * major code cleanup
  *
@@ -28,6 +32,7 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "symboltable.h"
+#include "stringset.h"
 #include "free.h"
 #include "Error.h"
 
@@ -279,6 +284,9 @@ ANSAp (node *arg_node, info *arg_info)
         STentry_t *entry
           = STGetFirstEntry (AP_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info));
         AP_MOD (arg_node) = StringCopy (STEntryName (entry));
+
+        MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
+          = SSAdd (AP_MOD (arg_node), MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
     } else {
         AP_MOD (arg_node) = StringCopy (MODUL_NAME (INFO_ANS_MODULE (arg_info)));
     }
