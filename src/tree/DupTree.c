@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2000/03/23 17:34:39  dkr
+ * ARG_OBJDEF and VARDEC_OBJDEF are duplicated now
+ *
  * Revision 1.17  2000/03/21 13:14:04  jhs
  * Fixed bug.
  *
@@ -968,9 +971,9 @@ DupVardec (node *arg_node, node *arg_info)
     VARDEC_REFCNT (new_node) = VARDEC_REFCNT (arg_node);
     VARDEC_NAIVE_REFCNT (new_node) = VARDEC_NAIVE_REFCNT (arg_node);
     VARDEC_FLAG (new_node) = VARDEC_FLAG (arg_node);
+    VARDEC_OBJDEF (new_node) = VARDEC_OBJDEF (arg_node);
 #if 0
   VARDEC_TYPEDEF( new_node) = ???;
-  VARDEC_OBJDEF( new_node) = ???;
   VARDEC_ACTCHN( new_node) = ???;
   VARDEC_COLCHN( new_node) = ???;
 #endif
@@ -999,9 +1002,9 @@ DupArg (node *arg_node, node *arg_info)
     ARG_VARNO (new_node) = ARG_VARNO (arg_node);
     ARG_REFCNT (new_node) = ARG_REFCNT (arg_node);
     ARG_NAIVE_REFCNT (new_node) = ARG_NAIVE_REFCNT (arg_node);
+    ARG_OBJDEF (new_node) = ARG_OBJDEF (arg_node);
 #if 0
   ARG_TYPESTRING( new_node) = ???;
-  ARG_OBJDEF( new_node) = ???;
   ARG_ACTCHN( new_node) = ???;
   ARG_COLCHN( new_node) = ???;
   ARG_FUNDEF( new_node) = ???;
