@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2005/02/18 10:37:23  sah
+ * module system fixes
+ *
  * Revision 1.8  2005/02/16 22:29:13  sah
  * changed link handling
  *
@@ -345,7 +348,7 @@ SERgenerateSerFunName (stentrytype_t type, node *node)
     case SET_funbody:
     case SET_wrapperbody:
         snprintf (result, MAX_FUN_NAME_LEN, "SBDY_%s_%s_%d_", FUNDEF_MOD (node),
-                  FUNDEF_NAME (node), type);
+                  FUNDEF_NAME (node), FUNDEF_ISWRAPPERFUN (node));
 
         AppendSerFunTypeSignature (result, node);
 
@@ -353,7 +356,7 @@ SERgenerateSerFunName (stentrytype_t type, node *node)
     case SET_funhead:
     case SET_wrapperhead:
         snprintf (result, MAX_FUN_NAME_LEN, "SHD_%s_%s_%d_", FUNDEF_MOD (node),
-                  FUNDEF_NAME (node), type);
+                  FUNDEF_NAME (node), FUNDEF_ISWRAPPERFUN (node));
 
         AppendSerFunTypeSignature (result, node);
 
@@ -386,7 +389,7 @@ SERgenerateSerFunName (stentrytype_t type, node *node)
 static void
 GenerateSerFunHead (node *elem, stentrytype_t type, info *info)
 {
-    DBUG_ENTER ("GenerateSerFunBodyHead");
+    DBUG_ENTER ("GenerateSerFunHead");
 
     fprintf (INFO_SER_FILE (info), "void *%s()", SERgenerateSerFunName (type, elem));
     fprintf (INFO_SER_FILE (info), "{\n");
@@ -410,7 +413,7 @@ GenerateSerFunMiddle (node *elem, stentrytype_t type, info *info)
 static void
 GenerateSerFunTail (node *elem, stentrytype_t type, info *info)
 {
-    DBUG_ENTER ("GenerateSerFunBodyTail");
+    DBUG_ENTER ("GenerateSerFunTail");
 
     fprintf (INFO_SER_FILE (info), "return( result);\n}\n");
 

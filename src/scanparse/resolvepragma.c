@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/02/18 10:37:23  sah
+ * module system fixes
+ *
  * Revision 1.9  2005/02/16 22:29:13  sah
  * fixed handling of pragmas
  *
@@ -434,6 +437,14 @@ RSPfundef (node *arg_node, info *arg_info)
             CTIwarnLine (NODE_LINE (arg_node),
                          "Pragma 'effect` has no effect on function");
             PRAGMA_EFFECT (pragma) = ILIBfree (PRAGMA_EFFECT (pragma));
+        }
+
+        /*
+         * annotate linkname pragma to fundef
+         */
+        if (PRAGMA_LINKNAME (pragma) != NULL) {
+            FUNDEF_LINKNAME (arg_node) = PRAGMA_LINKNAME (pragma);
+            PRAGMA_LINKNAME (pragma) = NULL;
         }
 
         if ((PRAGMA_LINKNAME (pragma) == NULL) && (PRAGMA_LINKOBJ (pragma) == NULL)

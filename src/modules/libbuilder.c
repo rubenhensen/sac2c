@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2005/02/18 10:37:23  sah
+ * module system fixes
+ *
  * Revision 1.5  2005/01/11 12:32:52  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -39,6 +42,7 @@ BuildDepLibsStringMod (const char *lib, strstype_t kind, void *rest)
     switch (kind) {
     case STRS_objfile:
         result = ILIBstringCopy (lib);
+        break;
     default:
         result = ILIBstringCopy ("");
         break;
