@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/02/23 17:49:22  cg
+ * Type property functions IsUnique(<type>), IsBoxed(<type>)
+ * moved from refcount.c to tree_compound.c.
+ *
  * Revision 1.3  2000/02/22 11:59:06  jhs
  * Adapted NODE_TEXT.
  *
@@ -218,6 +222,129 @@ LookupIds (char *name, ids *ids_chain)
     }
 
     DBUG_RETURN (ids_chain);
+}
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  Types :
+ ***/
+
+/******************************************************************************
+ *
+ * function:
+ *   int IsBoxed(types *type)
+ *   int IsUnique(types *type)
+ *   int IsArray(types *type)
+ *   int IsNonUniqueHidden(types *type)
+ *
+ * description:
+ *
+ *   These functions may be used to check for particular properties
+ *   of a given data type.
+ *
+ *
+ ******************************************************************************/
+
+int
+IsBoxed (types *type)
+{
+    int ret = 0;
+    node *tdef;
+
+    DBUG_ENTER ("IsBoxed");
+
+    if (TYPES_DIM (type) != 0) {
+        ret = 1;
+    } else {
+        if (TYPES_BASETYPE (type) == T_user) {
+            tdef = TYPES_TDEF (type);
+            DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
+
+            if ((TYPEDEF_DIM (tdef) != 0) || (TYPEDEF_BASETYPE (tdef) == T_hidden)) {
+                ret = 1;
+            }
+        }
+    }
+
+    DBUG_RETURN (ret);
+}
+
+int
+IsUnique (types *type)
+{
+    int ret = 0;
+    node *tdef;
+
+    DBUG_ENTER ("IsUnique");
+
+    if (TYPES_BASETYPE (type) == T_user) {
+        tdef = TYPES_TDEF (type);
+        DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
+
+        if (TYPEDEF_ATTRIB (tdef) == ST_unique) {
+            ret = 1;
+        }
+    }
+
+    DBUG_RETURN (ret);
+}
+
+int
+IsArray (types *type)
+{
+    node *tdef;
+    int ret = 0;
+
+    DBUG_ENTER ("IsArray");
+
+    if ((SCALAR != TYPES_DIM (type)) && (ARRAY_OR_SCALAR != TYPES_DIM (type))) {
+        ret = 1;
+    } else {
+        if (T_user == TYPES_BASETYPE (type)) {
+            tdef = TYPES_TDEF (type);
+            DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
+
+            if ((SCALAR != TYPEDEF_DIM (tdef))
+                && (ARRAY_OR_SCALAR != TYPEDEF_DIM (tdef))) {
+                ret = 1;
+            }
+        }
+    }
+
+    DBUG_RETURN (ret);
+}
+
+int
+IsNonUniqueHidden (types *type)
+{
+    int ret = 0;
+    node *tdef;
+
+    DBUG_ENTER ("IsNonUniqueHidden");
+
+    if (TYPES_BASETYPE (type) == T_user) {
+        tdef = TYPES_TDEF (type);
+        DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
+
+        if ((TYPEDEF_BASETYPE (tdef) == T_hidden)
+            || (TYPEDEF_BASETYPE (tdef) == T_user)) {
+            if (TYPEDEF_TNAME (tdef) == NULL) {
+                if (TYPEDEF_ATTRIB (tdef) == ST_regular) {
+                    ret = 1;
+                }
+            } else {
+                tdef = TYPES_TDEF (TYPEDEF_TYPE (tdef));
+                DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
+
+                if (TYPEDEF_ATTRIB (tdef) == ST_regular) {
+                    ret = 1;
+                }
+            }
+        }
+    }
+
+    DBUG_RETURN (ret);
 }
 
 /*--------------------------------------------------------------------------*/

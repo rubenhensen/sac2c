@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/02/23 17:49:22  cg
+ * Type property functions IsUnique(<type>), IsBoxed(<type>)
+ * moved from refcount.c to tree_compound.c.
+ *
  * Revision 2.2  2000/01/25 13:38:33  dkr
  * function FindVardec renamed to FindVardec_Varno and moved to
  * tree_compound.h
@@ -101,10 +105,5 @@ extern node *RCNcode (node *arg_node, node *arg_info);
 extern node *RCNgen (node *arg_node, node *arg_info);
 extern node *RCNwithid (node *arg_node, node *arg_info);
 extern node *RCNwithop (node *arg_node, node *arg_info);
-
-extern int IsArray (types *type);
-extern int IsNonUniqueHidden (types *type);
-extern int IsBoxed (types *type);
-extern int IsUnique (types *type);
 
 #endif /* _refcount_h */

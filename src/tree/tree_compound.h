@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/02/23 17:49:22  cg
+ * Type property functions IsUnique(<type>), IsBoxed(<type>)
+ * moved from refcount.c to tree_compound.c.
+ *
  * Revision 1.6  2000/02/21 17:58:41  jhs
  * Fixed Bug in MT_OTR_ST_REGION
  *
@@ -315,6 +319,27 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
 #define CMP_TYPE_USER(a, b)                                                              \
     ((!strcmp (TYPES_NAME (a), TYPES_NAME (b)))                                          \
      && (!strcmp (CHECK_NULL (TYPES_MOD (a)), CHECK_NULL (TYPES_MOD (b)))))
+
+/******************************************************************************
+ *
+ * function:
+ *   int IsBoxed(types *type)
+ *   int IsUnique(types *type)
+ *   int IsArray(types *type)
+ *   int IsNonUniqueHidden(types *type)
+ *
+ * description:
+ *
+ *   These functions may be used to check for particular properties
+ *   of a given data type.
+ *
+ *
+ ******************************************************************************/
+
+extern int IsArray (types *type);
+extern int IsNonUniqueHidden (types *type);
+extern int IsBoxed (types *type);
+extern int IsUnique (types *type);
 
 /*--------------------------------------------------------------------------*/
 
