@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/07/11 10:23:15  dkr
+ * GEN_NODE moved from tree.h to tree.c
+ *
  * Revision 1.3  2000/07/10 14:22:57  cg
  * Added new field type_status in types struct as a dedicated status field
  * for the type itself.
@@ -120,7 +123,6 @@
  * Revision 1.1  1994/12/20  15:42:10  sbs
  * Initial revision
  *
- *
  */
 
 #include <stdlib.h>
@@ -130,6 +132,8 @@
 #include "my_debug.h"
 #include "scnprs.h"
 #include "optimize.h"
+
+#define GEN_NODE(type) (type *)Malloc (sizeof (type))
 
 /*--------------------------------------------------------------------------*/
 /* The following functions are supported for compatibility reasons only     */
