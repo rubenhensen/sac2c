@@ -1,3 +1,12 @@
+/*
+ *
+ * $Log$
+ * Revision 1.3  1998/04/13 18:10:59  dkr
+ * rcs-header added
+ *
+ *
+ *
+ */
 
 #include "types.h"
 #include "tree_basic.h"

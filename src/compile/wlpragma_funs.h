@@ -1,3 +1,12 @@
+/*
+ *
+ * $Log$
+ * Revision 1.2  1998/04/13 18:11:13  dkr
+ * rcs-header added
+ *
+ *
+ *
+ */
 
 #ifndef _sac_wlpragma_funs_h
 
