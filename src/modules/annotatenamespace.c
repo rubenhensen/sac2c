@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/12/07 17:01:24  sah
+ * fixed withloop handling
+ *
  * Revision 1.18  2004/12/06 11:53:34  sah
  * fixed handling of fundefs
  *
@@ -520,6 +523,28 @@ ANSwith (node *arg_node, info *arg_info)
     if (WITH_CODE (arg_node) != NULL) {
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     }
+
+    if (WITH_WITHOP (arg_node) != NULL) {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ANSfold (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ANSfold");
+
+    if ((FOLD_MOD (arg_node) == NULL) && (FOLD_FUN (arg_node) != NULL)) {
+        /*
+         * look up the correct namespace
+         */
+
+        FOLD_MOD (arg_node) = LookupNamespaceForSymbol (FOLD_FUN (arg_node), arg_info);
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/12/07 17:01:24  sah
+ * fixed withloop handling
+ *
  * Revision 1.6  2004/12/05 21:05:20  sah
  * added namespace detection for ids aka global objects
  *
@@ -51,6 +54,7 @@ extern node *ANSspids (node *arg_node, info *arg_info);
 extern node *ANSspid (node *arg_node, info *arg_info);
 extern node *ANSlet (node *arg_node, info *arg_info);
 extern node *ANSwith (node *arg_node, info *arg_info);
+extern node *ANSfold (node *arg_node, info *arg_info);
 extern node *ANSvardec (node *arg_node, info *arg_info);
 extern node *ANSmodule (node *arg_node, info *arg_info);
 
