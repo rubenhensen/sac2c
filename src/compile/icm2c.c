@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.40  1996/09/11 06:28:20  cg
+ * Revision 1.41  1996/09/11 16:00:43  cg
+ * bug fixed in FUN_DEC
+ *
+ * Revision 1.40  1996/09/11  06:28:20  cg
  * Modified ICMs FUNDEC and FUNAP in order to support analysis
  * of command line parameters via standard class CommandLine.
  *
@@ -666,9 +669,25 @@ extern int check_boundary; /* defined in main.c */
         fprintf (outfile, "%s( ", name);
         ScanArglist (
           tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]);
-          sep = 1, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
-          sep = 1, fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
-          sep = 1, fprintf (outfile, " %s *%s", tyarg[i++], tyarg[i++]);
+          sep = 1,
+
+          if (NULL != (tyarg[i + 1])[0]) {
+              fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
+              sep = 1;
+          } else {
+              fprintf (outfile, " %s *%s", tyarg[i++], tyarg[i++]);
+              sep = 1;
+          },
+
+          if (NULL != (tyarg[i + 1])[0]) {
+              fprintf (outfile, " %s *%s__p", tyarg[i++], tyarg[i++]);
+              sep = 1;
+          } else {
+              fprintf (outfile, " %s *%s", tyarg[i++], tyarg[i++]);
+              sep = 1;
+          },
+
+          fprintf (outfile, " %s *%s", tyarg[i++], tyarg[i++]);
           sep = 1, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]);
           sep = 1,
 
