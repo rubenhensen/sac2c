@@ -4,6 +4,11 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2002/08/14 14:10:01  sbs
+ * enabling of debug output during parsing restricted
+ * to SOLARIS as only on that architecture parser debugging
+ * is activated (bison parameters)
+ *
  * Revision 3.57  2002/08/14 13:34:36  sbs
  * bug in modarray shorthand (better 8-) fixed...
  *
@@ -2539,7 +2544,10 @@ int My_yyparse()
   tmp = (char *) Malloc( (strlen(filename)+1) * sizeof( char));
   strcpy( tmp, filename);
   filename = tmp;
+
+#ifdef SAC_FOR_SOLARIS_SPARC
   DBUG_EXECUTE( "PARSE", yydebug=1;);
+#endif
 
   DBUG_RETURN( yyparse());
 }
