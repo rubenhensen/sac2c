@@ -1,5 +1,6 @@
 #!/bin/sh
 
+
 pwd=`pwd`
 SACBASE=${SACBASE:-$pwd}
 #
@@ -148,7 +149,6 @@ then
   export SACBASE
 fi
 
-insert_component f libsac.a $base/runtime
 insert_component d runtime.tar $base/runtime
 if [ -f $SACBASE/runtime/runtime.tar ] ; then
   (cd $SACBASE/runtime; tar xvf runtime.tar; rm runtime.tar)
@@ -156,6 +156,7 @@ if [ -f $SACBASE/runtime/runtime.tar ] ; then
 else
   warn "runtime.tar NOT UNPACKED !!"
 fi
+insert_component f libsac.a $base/runtime/libsac.a
 
 
 insert_component d stdlib.tar $base/stdlib
