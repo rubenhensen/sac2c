@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.85  1998/03/17 09:57:50  cg
+ * added permanent optional attribute ARRAY_STRING
+ *
  * Revision 1.84  1998/03/15 13:10:55  srs
  * added node decription
  *
@@ -1580,15 +1583,26 @@ extern node *MakeExprs (node *expr, node *next);
  ***
  ***    node*  AELEMS   (N_exprs)
  ***
+ ***  permanent attributes:
+ ***
+ ***    char*  STRING  (O)
+ ***
  ***  temporary attributes:
  ***
  ***    types* TYPE               (typecheck -> )
  ***/
 
+/*
+ * In the case of constant character arrays defined as strings, the
+ * optional permanent attribute STRING holds the original definition.
+ * This may be retrieved for C code generation.
+ */
+
 extern node *MakeArray (node *aelems);
 
 #define ARRAY_AELEMS(n) (n->node[0])
 #define ARRAY_TYPE(n) (n->info.types)
+#define ARRAY_STRING(n) ((char *)n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
