@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/12/08 11:58:32  dkr
+ * INFDFMSicm added
+ *
  * Revision 1.4  2000/12/06 20:05:53  dkr
  * ups, syntax error eliminated
  *
@@ -28,6 +31,7 @@ extern node *INFDFMSwith2 (node *arg_node, node *arg_info);
 extern node *INFDFMScond (node *arg_node, node *arg_info);
 extern node *INFDFMSwhile (node *arg_node, node *arg_info);
 extern node *INFDFMSdo (node *arg_node, node *arg_info);
+extern node *INFDFMSicm (node *arg_node, node *arg_info);
 
 extern node *InferDFMs (node *syntax_tree);
 
