@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2005/02/11 12:10:42  mwe
+ * now only arguments marked by deadcoderemoval are deleted
+ *
  * Revision 1.4  2005/02/08 22:29:21  mwe
  * doxygen comments added
  *
@@ -40,7 +43,7 @@ struct INFO {
     bool remex;
     bool retex;
     bool isapnode;
-    node *postassign;
+    node *rets;
     node *apfunrets;
     bool remassign;
 };
@@ -49,7 +52,7 @@ struct INFO {
 #define INFO_SISI_RETURNEXPRS(n) (n->retex)
 #define INFO_SISI_REMOVEEXPRS(n) (n->remex)
 #define INFO_SISI_ISAPNODE(n) (n->isapnode)
-#define INFO_SISI_POSTASSIGN(n) (n->postassign)
+#define INFO_SISI_RETS(n) (n->rets)
 #define INFO_SISI_APFUNRETS(n) (n->apfunrets)
 #define INFO_SISI_REMOVEASSIGN(n) (n->remassign)
 
@@ -65,7 +68,7 @@ MakeInfo ()
     INFO_SISI_RETURNEXPRS (result) = FALSE;
     INFO_SISI_REMOVEEXPRS (result) = FALSE;
     INFO_SISI_ISAPNODE (result) = FALSE;
-    INFO_SISI_POSTASSIGN (result) = NULL;
+    INFO_SISI_RETS (result) = NULL;
     INFO_SISI_APFUNRETS (result) = NULL;
     INFO_SISI_REMOVEASSIGN (result) = FALSE;
 
@@ -208,49 +211,25 @@ SISIarg (node *arg_node, info *arg_info)
      * now bottom-up traversal
      */
 
-    if (TYisAKV (AVIS_TYPE (ARG_AVIS (arg_node)))) {
+    if (AVIS_NEEDCOUNT (ARG_AVIS (arg_node)) == 0) {
 
-        if (TYgetDim (AVIS_TYPE (ARG_AVIS (arg_node))) == 0) {
-            node *tmp, *assign_let;
+        node *tmp;
 
-            /*
-             * we are dealing with an known scalar value
-             */
+        /*
+         * we are dealing with an unused argument
+         */
 
-            /*
-             * create new assignment and new vardec
-             */
-            assign_let = TCmakeAssignLet (ARG_AVIS (arg_node),
-                                          COconstant2AST (TYgetValue (
-                                            AVIS_TYPE (ARG_AVIS (arg_node)))));
-            BLOCK_VARDEC (FUNDEF_BODY (INFO_SISI_FUNDEF (arg_info)))
-              = TBmakeVardec (ARG_AVIS (arg_node),
-                              BLOCK_VARDEC (FUNDEF_BODY (INFO_SISI_FUNDEF (arg_info))));
+        /*
+         * delete argument from chain
+         */
+        tmp = ARG_NEXT (arg_node);
+        ARG_NEXT (arg_node) = NULL;
+        arg_node = FREEdoFreeNode (arg_node);
+        arg_node = tmp;
 
-            ASSIGN_NEXT (assign_let)
-              = BLOCK_INSTR (FUNDEF_BODY (INFO_SISI_FUNDEF (arg_info)));
-            BLOCK_INSTR (FUNDEF_BODY (INFO_SISI_FUNDEF (arg_info))) = assign_let;
-
-            /*
-             * delete argument from chain
-             */
-            tmp = ARG_NEXT (arg_node);
-            ARG_NEXT (arg_node) = NULL;
-            ARG_AVIS (arg_node) = NULL;
-            arg_node = FREEdoFreeNode (arg_node);
-            arg_node = tmp;
-        } else {
-            /*
-             * we are dealing with an known array value
-             */
-            ntype *old;
-            old = AVIS_TYPE (ARG_AVIS (arg_node));
-            AVIS_TYPE (ARG_AVIS (arg_node)) = TYmakeAKS (TYcopyType (TYgetScalar (old)),
-                                                         SHcopyShape (TYgetShape (old)));
-            old = TYfreeType (old);
-        }
         sisi_expr++;
     }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -300,20 +279,10 @@ SISIassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    INFO_SISI_POSTASSIGN (arg_info) = NULL;
     INFO_SISI_REMOVEASSIGN (arg_info) = FALSE;
 
     if (ASSIGN_INSTR (arg_node) != NULL) {
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    }
-
-    if (INFO_SISI_POSTASSIGN (arg_info) != NULL) {
-
-        /*
-         * insert removed constants into assign chain
-         */
-        ASSIGN_NEXT (arg_node)
-          = TCappendAssign (INFO_SISI_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));
     }
 
     if (INFO_SISI_REMOVEASSIGN (arg_info)) {
@@ -391,8 +360,7 @@ SISIap (node *arg_node, info *arg_info)
 
         while (fun_args != NULL) {
 
-            if ((!TYisAKV (AVIS_TYPE (ARG_AVIS (fun_args))))
-                || (0 < TYgetDim (AVIS_TYPE (ARG_AVIS (fun_args))))) {
+            if (AVIS_NEEDCOUNT (ARG_AVIS (fun_args)) != 0) {
                 if (NULL == new_args) {
                     new_args = curr_args;
                     AP_ARGS (arg_node) = new_args;
@@ -404,7 +372,7 @@ SISIap (node *arg_node, info *arg_info)
             } else {
 
                 /*
-                 * argument is of type akv and scalar
+                 * argument is marked as not needed
                  */
                 tmp = curr_args;
                 curr_args = EXPRS_NEXT (curr_args);
@@ -438,8 +406,7 @@ SISIap (node *arg_node, info *arg_info)
 node *
 SISIids (node *arg_node, info *arg_info)
 {
-    node *assign_let, *succ, *ret;
-    constant *new_co = NULL;
+    node *succ, *ret;
 
     DBUG_ENTER ("SISIids");
 
@@ -457,41 +424,20 @@ SISIids (node *arg_node, info *arg_info)
      * remove bottom-up ids
      */
 
-    if ((TYisAKV (RET_TYPE (ret))) && (0 == TYgetDim (RET_TYPE (ret)))) {
-        new_co = TYgetValue (RET_TYPE (ret));
-    } else if ((TYisAKV (AVIS_TYPE (IDS_AVIS (arg_node))))
-               && (0 == TYgetDim (AVIS_TYPE (IDS_AVIS (arg_node))))) {
-        new_co = TYgetValue (AVIS_TYPE (IDS_AVIS (arg_node)));
+    if (AVIS_NEEDCOUNT (IDS_AVIS (arg_node)) == 0) {
+
+        succ = IDS_NEXT (arg_node);
+        IDS_NEXT (arg_node) = NULL;
+        arg_node = FREEdoFreeNode (arg_node);
+        arg_node = succ;
+
+        sisi_expr++;
     } else {
         /*
          * non akv-node found, expression has to remain in AST
          */
 
         INFO_SISI_REMOVEASSIGN (arg_info) = FALSE;
-    }
-
-    if ((TYisAKV (RET_TYPE (ret))) && (TYisAKV (AVIS_TYPE (IDS_AVIS (arg_node))))) {
-        DBUG_ASSERT ((TYeqTypes (RET_TYPE (ret), AVIS_TYPE (IDS_AVIS (arg_node)))),
-                     "Types are not equal!");
-    }
-
-    if (new_co != NULL) {
-        assign_let = TCmakeAssignLet (IDS_AVIS (arg_node), COconstant2AST (new_co));
-        /* append new copy assignment to assignment chain later */
-        INFO_SISI_POSTASSIGN (arg_info)
-          = TCappendAssign (INFO_SISI_POSTASSIGN (arg_info), assign_let);
-        AVIS_SSAASSIGN (IDS_AVIS (arg_node)) = assign_let;
-
-        /*
-         * remove current ids from chain
-         */
-        succ = IDS_NEXT (arg_node);
-        IDS_NEXT (arg_node) = NULL;
-        IDS_AVIS (arg_node) = NULL;
-        arg_node = FREEdoFreeNode (arg_node);
-        arg_node = succ;
-
-        sisi_expr++;
     }
 
     DBUG_RETURN (arg_node);
@@ -555,7 +501,7 @@ SISIret (node *arg_node, info *arg_info)
      * remove bottom-up rets
      */
 
-    if ((TYisAKV (RET_TYPE (arg_node))) && (0 == TYgetDim (RET_TYPE (arg_node)))) {
+    if (RET_WASREMOVED (arg_node)) {
         node *tmp;
         tmp = RET_NEXT (arg_node);
         RET_NEXT (arg_node) = NULL;
@@ -583,7 +529,7 @@ node *
 SISIexprs (node *arg_node, info *arg_info)
 {
     bool old_removeexpr;
-
+    node *ret;
     DBUG_ENTER ("SISIexprs");
 
     if (INFO_SISI_RETURNEXPRS (arg_info) == TRUE) {
@@ -591,7 +537,10 @@ SISIexprs (node *arg_node, info *arg_info)
         old_removeexpr = INFO_SISI_REMOVEEXPRS (arg_info);
         INFO_SISI_REMOVEEXPRS (arg_info) = FALSE;
 
+        ret = INFO_SISI_RETS (arg_info);
+
         if (EXPRS_NEXT (arg_node) != NULL) {
+            INFO_SISI_RETS (arg_info) = RET_NEXT (INFO_SISI_RETS (arg_info));
             EXPRS_NEXT (arg_node) = TRAVdo (EXPRS_NEXT (arg_node), arg_info);
         }
         /*
@@ -604,7 +553,10 @@ SISIexprs (node *arg_node, info *arg_info)
             EXPRS_EXPR (arg_node) = NULL;
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = tmp;
+
+            RET_WASREMOVED (ret) = TRUE;
         }
+
         INFO_SISI_REMOVEEXPRS (arg_info) = old_removeexpr;
     }
     DBUG_RETURN (arg_node);
@@ -627,8 +579,8 @@ SISIid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SISIid");
 
-    if ((TYisAKV (AVIS_TYPE (ID_AVIS (arg_node))))
-        && (0 == TYgetDim (AVIS_TYPE (ID_AVIS (arg_node))))) {
+    if (AVIS_NEEDCOUNT (ID_AVIS (arg_node)) == 0) {
+
         INFO_SISI_REMOVEEXPRS (arg_info) = TRUE;
     }
 
