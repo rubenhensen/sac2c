@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2004/07/14 14:22:41  sah
+ * moved NodeBehindCast to tree_compund, thus
+ * dependency to LoopInvariantRemoval.h removed
+ *
  * Revision 3.18  2004/02/25 08:17:44  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -70,7 +74,6 @@
 
 #include "optimize.h"
 #include "generatemasks.h"
-#include "LoopInvariantRemoval.h"
 #include "ArrayElimination.h"
 
 #define AE_PREFIX "__ae_"
