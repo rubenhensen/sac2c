@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/04/20 15:40:48  asi
+ * Revision 1.17  1995/05/02 08:48:34  asi
+ * DupConst and DupArray moved to DupTree.c
+ *
+ * Revision 1.16  1995/04/20  15:40:48  asi
  * mask handling in psi, dim and shape function added
  * bug fixed in psi: result isn't array, if vector and array dimension are equal
  *
@@ -73,6 +76,7 @@
 #include "typecheck.h"
 
 #include "optimize.h"
+#include "DupTree.h"
 #include "ConstantFolding.h"
 
 extern char filename[]; /* is set temporary; will be set later on in main.c */
@@ -282,88 +286,6 @@ CFfundef (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  : DupConst
- *  arguments     : 1) num-, bool- or float-node
- *		    R) duplicted num-, bool- or float-node
- *  description   : duplicates a node representing a integer, boolean or float constant
- *  global vars   : syntax_tree
- *  internal funs :  --
- *  external funs : MakeNode
- *  macros        : DBUG...
- *
- *  remarks       : --
- *
- */
-node *
-DupConst (node *arg_node)
-{
-    node *new_node;
-
-    DBUG_ENTER ("DupConst");
-    new_node = MakeNode (arg_node->nodetype);
-    switch (arg_node->nodetype) {
-    case N_num:
-    case N_bool:
-        new_node->info.cint = arg_node->info.cint;
-        break;
-    case N_float:
-        new_node->info.cfloat = arg_node->info.cfloat;
-        break;
-    case N_id:
-        new_node->info.ids = MakeIds (arg_node->info.ids->id);
-        new_node->info.ids->node = arg_node->info.ids->node;
-        break;
-    default:
-        DBUG_ASSERT ((FALSE), "Unknown constant type for primitive function");
-        break;
-    }
-    DBUG_RETURN (new_node);
-}
-
-/*
- *
- *  functionname  : DupArray
- *  arguments     : 1) array-node
- *                  R) duplicated array-node
- *  description   : duplicates an array
- *  global vars   : syntax_tree
- *  internal funs : DupConst
- *  external funs : MakeNode
- *  macros        : DBUG...
- *
- *  remarks       : --
- *
- */
-node *
-DupArray (node *arg_node)
-{
-    node *new_node;
-    node *expr;
-    node *new_expr;
-
-    DBUG_ENTER ("DupArray");
-    new_node = MakeNode (N_array);
-    new_node->nnode = 1;
-    new_node->node[0] = MakeNode (N_exprs);
-    expr = arg_node->node[0];
-    new_expr = new_node->node[0];
-    while (1) {
-        new_expr->node[0] = DupConst (expr->node[0]);
-        if (NULL != expr->node[1]) {
-            new_expr->node[1] = MakeNode (N_exprs);
-            new_expr->nnode = 2;
-            new_expr = new_expr->node[1];
-            expr = expr->node[1];
-        } else {
-            new_expr->nnode = 1;
-            break;
-        }
-    }
-    DBUG_RETURN (new_node);
-}
-
-/*
- *
  *  functionname  : CFid
  *  arguments     : 1) id-node
  *		    2) info-node
@@ -372,8 +294,8 @@ DupArray (node *arg_node)
  *  description   : the id-node will be replaced with a new node reppresenting the
  *                  constant value of the identifikator in this context
  *  global vars   : syntax_tree, info_node, cf_stack
- *  internal funs : DupConst, DupArray
- *  external funs : --
+ *  internal funs :
+ *  external funs : DupTree
  *  macros        : DBUG..., TOS
  *
  *  remarks       : --
@@ -392,11 +314,11 @@ CFid (node *arg_node, node *arg_info)
         case N_num:
         case N_float:
         case N_bool:
-            return_node = DupConst (value);
+            return_node = DupTree (value, arg_info);
             DEC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
             break;
         case N_array:
-            return_node = DupArray (value);
+            return_node = DupTree (value, arg_info);
             DEC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
             break;
         default:
@@ -1022,8 +944,8 @@ ArraySize (node *array)
  *                  R) ptr to fetchted element
  *  description   :
  *  global vars   :
- *  internal funs : DupConst
- *  external funs :
+ *  internal funs :
+ *  external funs : DupTree
  *  macros        : DBUG...
  *
  *  remarks       :
@@ -1042,7 +964,7 @@ FetchNum (int start, node *array)
     for (i = 0; i < start; i++)
         array = array->node[1];
 
-    returnexpr = DupConst (array->node[0]);
+    returnexpr = DupTree (array->node[0], NULL);
 
     DBUG_RETURN (returnexpr);
 }
@@ -1070,7 +992,7 @@ GenArray (int start, int length, node *array)
             expr->node[1] = MakeNode (N_exprs);
             expr = expr->node[1];
         }
-        expr->node[0] = DupConst (array->node[0]);
+        expr->node[0] = DupTree (array->node[0], NULL);
         expr->nnode = 1;
         array = array->node[1];
     }
