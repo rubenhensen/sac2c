@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.28  2004/10/26 11:17:40  ktr
+# added interfaceanalysis.o
+#
 # Revision 3.27  2004/10/22 14:14:01  ktr
 # added reuseelimination.o
 #
@@ -111,7 +114,8 @@ INCS = -I../global -I../tree -I../../inc -I../flatten -I../typecheck \
 
 
 all: allocation.o alloc.o refcounting.o reuse.o rcopt.o rcphase.o \
-     filterrc.o aliasanalysis.o staticreuse.o reuseelimination.o
+     filterrc.o aliasanalysis.o staticreuse.o reuseelimination.o \
+     interfaceanalysis.o
 
 
 %.o: %.c

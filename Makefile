@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.128  2004/10/26 11:16:01  ktr
+# added interfaceanalysis.o
+#
 # Revision 3.127  2004/10/25 11:59:14  sah
 # added SEL traversal
 #
@@ -409,7 +412,8 @@ REFCOUNT= src/refcount/allocation.o src/refcount/rcopt.o \
           src/refcount/rcphase.o src/refcount/filterrc.o \
           src/refcount/alloc.o src/refcount/refcounting.o \
           src/refcount/reuse.o src/refcount/aliasanalysis.o \
-          src/refcount/staticreuse.o src/refcount/reuseelimination.o
+          src/refcount/staticreuse.o src/refcount/reuseelimination.o \
+          src/refcount/interfaceanalysis.o
 REFCOUNT_OLD=
 
 CONCURRENT=
