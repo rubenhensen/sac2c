@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2005/02/16 14:11:09  mwe
+ * some renaming done, corrected break specifier
+ *
  * Revision 3.80  2005/02/15 14:53:00  mwe
  * changes for esd and uesd
  *
@@ -720,7 +723,7 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     }
 
     diff = tup_fdp_expr - off_tup_fdp_expr;
-    if ((global.optimize.dofdp) && ((ALL == flag) || (diff > 0))) {
+    if ((global.optimize.dosfd) && ((ALL == flag) || (diff > 0))) {
         CTInote ("%d user function(s) dispatched", diff);
     }
 
@@ -908,24 +911,38 @@ OPTmodule (node *arg_node, info *arg_info)
          */
 
         INFO_OPT_OPTSTAGE (arg_info) = OS_initial;
-        CTIstate (" ");
+        CTInote (" ");
         CTIstate ("  Starting initial intrafunctional optimizations");
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
+
+        /*
+         * OPTfundef() sets the global variable 'do_break' to report a break!
+         */
+        if (do_break) {
+            goto DONE;
+        }
 
         /*---------------------------------------------------------------------*/
 
         INFO_OPT_OPTSTAGE (arg_info) = OS_cycle1;
-        CTIstate (" ");
+        CTInote (" ");
         CTIstate ("  Starting first intrafunctional optimization cycle");
         do {
             loop1++;
 
-            CTIstate (" ");
+            CTInote (" ");
             CTIstate ("  Cycle pass: %i", loop1);
 
             INFO_OPT_CONTINUE (arg_info) = FALSE;
             INFO_OPT_PASSESLOOP1 (arg_info) = loop1;
             MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
+
+            /*
+             * OPTfundef() sets the global variable 'do_break' to report a break!
+             */
+            if (do_break) {
+                goto DONE;
+            }
 
             /*
              * apply DFR (dead function removal)
@@ -950,19 +967,25 @@ OPTmodule (node *arg_node, info *arg_info)
                     goto DONE;
                 }
             }
-
         } while ((INFO_OPT_CONTINUE (arg_info)) && (loop1 < global.max_optcycles));
 
         /*-------------------------------------------------------------------*/
 
         INFO_OPT_OPTSTAGE (arg_info) = OS_precycle2;
-        CTIstate (" ");
+        CTInote (" ");
         CTIstate ("  Starting intrafunctional optimization before second cycle");
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
 
+        /*
+         * OPTfundef() sets the global variable 'do_break' to report a break!
+         */
+        if (do_break) {
+            goto DONE;
+        }
+
         /*-------------------------------------------------------------------*/
 
-        CTIstate (" ");
+        CTInote (" ");
         CTIstate ("  Starting second intrafunctional optimization cycle");
         INFO_OPT_OPTSTAGE (arg_info) = OS_cycle2;
         /*
@@ -977,12 +1000,19 @@ OPTmodule (node *arg_node, info *arg_info)
             INFO_OPT_CONTINUE (arg_info) = FALSE;
             INFO_OPT_PASSESLOOP2 (arg_info) = loop2;
             MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
+
+            /*
+             * OPTfundef() sets the global variable 'do_break' to report a break!
+             */
+            if (do_break) {
+                goto DONE;
+            }
         }
 
         /*-------------------------------------------------------------------*/
 
         INFO_OPT_OPTSTAGE (arg_info) = OS_final;
-        CTIstate (" ");
+        CTInote (" ");
         CTIstate ("  Starting final intrafunctional optimizations");
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
 
@@ -993,6 +1023,7 @@ OPTmodule (node *arg_node, info *arg_info)
             goto DONE;
         }
     }
+    /*----------------------------------------------------------------------*/
 
     /* allows to stop after fundef optimizations */
     if ((global.break_after == PH_sacopt) && (global.break_cycle_specifier == 0)
@@ -1000,7 +1031,7 @@ OPTmodule (node *arg_node, info *arg_info)
         goto DONE;
     }
 
-    CTIstate (" ");
+    CTInote (" ");
     CTIstate ("  Starting final interfunctional optimizations");
 
     /*
@@ -1359,7 +1390,7 @@ OPTfundef (node *arg_node, info *arg_info)
                  *       FDP  (function dispatch)
                  */
                 if ((global.optimize.dotup) || (global.optimize.dortup)
-                    || (global.optimize.dofsp) || (global.optimize.dofdp)) {
+                    || (global.optimize.dofsp) || (global.optimize.dosfd)) {
 
                     arg_node = TUPdoTypeUpgrade (arg_node);
                 }
@@ -1608,7 +1639,7 @@ OPTfundef (node *arg_node, info *arg_info)
                  *       FDP  (function dispatch)
                  */
                 if ((global.optimize.dotup) || (global.optimize.dortup)
-                    || (global.optimize.dofsp) || (global.optimize.dofdp)) {
+                    || (global.optimize.dofsp) || (global.optimize.dosfd)) {
                     arg_node = TUPdoTypeUpgrade (arg_node);
                 }
 
@@ -1693,6 +1724,13 @@ OPTfundef (node *arg_node, info *arg_info)
              */
             if (global.optimize.doesd) {
                 arg_node = UESDdoUndoElimSubDiv (arg_node);
+            }
+            if (global.optimize.dodcr) {
+                arg_node = DCRdoDeadCodeRemoval (arg_node, INFO_OPT_MODULE (arg_info));
+            }
+            if ((global.break_after == PH_sacopt)
+                && (0 == strcmp (global.break_specifier, "uesd"))) {
+                goto INFO;
             }
 
             /*
