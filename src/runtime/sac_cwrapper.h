@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.2  2000/12/05 14:31:28  nmw
+ * refcounter handling for T_hidden added to SAC_IW_CHECKDEC_RC
+ * and SAC_IW_INC_RC.
+ *
  * Revision 3.1  2000/11/20 18:02:13  sacbase
  * new release made
  *
@@ -38,17 +42,25 @@
 #ifndef _sac_interface_makrodefs_h
 #define _sac_interface_makrodefs_h
 
+/* this is a workaround to avoid errors after renaming the internal type */
+#define _hidden_ void *
+
 /* check for refcount >=1 , decrement refcounter */
-#define SAC_IW_CHECKDEC_RC(a)                                                            \
+#define SAC_IW_CHECKDEC_RC(a, CONST_T_HIDDEN)                                            \
     if (SAC_ARG_LRC (a) <= 0) {                                                          \
         SAC_RuntimeError ("Referencecounter reaches 0, no data available!\n");           \
     }                                                                                    \
-    if (SAC_ARG_DIM (a) > 0) { /* decrement only if refcounted arg */                    \
+    if ((SAC_ARG_DIM (a) > 0) || (SAC_ARG_TYPE (a) == CONST_T_HIDDEN)) {                 \
+        /* decrement only if refcounted arg */                                           \
         SAC_ARG_LRC (a) = SAC_ARG_LRC (a) - 1;                                           \
     }
 
 /* restore old refcounter */
-#define SAC_IW_INC_RC(a) SAC_ARG_LRC (a) = SAC_ARG_LRC (a) + 1;
+#define SAC_IW_INC_RC(a, CONST_T_HIDDEN)                                                 \
+    if ((SAC_ARG_DIM (a) > 0) || (SAC_ARG_TYPE (a) == CONST_T_HIDDEN)) {                 \
+        /* increment only if refcounted arg */                                           \
+        SAC_ARG_LRC (a) = SAC_ARG_LRC (a) + 1;                                           \
+    }
 
 /* argument is simple type */
 #define SAC_ARGCALL_SIMPLE(var, type) (*((type *)(SAC_ARG_ELEMS (var))))
