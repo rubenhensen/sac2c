@@ -1267,7 +1267,6 @@
         <travuser>
           <node name="Assign" />
           <node name="Block" />
-          <node name="Cond" />
           <node name="Id" />
           <node name="Withid" />
         </travuser>
