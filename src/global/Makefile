@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.43  1997/10/29 14:40:44  srs
+# make deps done
+#
 # Revision 1.42  1997/10/28 18:28:00  srs
 # removed unused dir from INCS
 #
@@ -245,11 +248,11 @@ tree.o: /usr/include/sys/va_list.h /usr/include/string.h globals.h
 tree.o: internal_lib.h ../../inc/dbug.h my_debug.h ../scanparse/scnprs.h
 tree.o: ../scanparse/y.tab.h ../optimize/optimize.h free.h
 tree.o: /usr/include/malloc.h
-tree_basic.o: /usr/include/malloc.h types.h tree_basic.h Error.h
-tree_basic.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-tree_basic.o: /usr/include/sys/va_list.h /usr/include/string.h
-tree_basic.o: /usr/include/stdlib.h globals.h ../../inc/dbug.h my_debug.h
-tree_basic.o: ../scanparse/scnprs.h ../scanparse/y.tab.h free.h
+tree_basic.o: types.h tree_basic.h Error.h /usr/include/stdio.h
+tree_basic.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+tree_basic.o: /usr/include/string.h /usr/include/stdlib.h globals.h
+tree_basic.o: ../../inc/dbug.h my_debug.h ../scanparse/scnprs.h
+tree_basic.o: ../scanparse/y.tab.h free.h /usr/include/malloc.h
 tree_basic.o: internal_lib.h prf_node_info.mac
 tree_compound.o: types.h tree_basic.h tree_compound.h Error.h
 tree_compound.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
