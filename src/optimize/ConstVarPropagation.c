@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/10/22 15:40:08  ktr
+ * CVP now propagates variables into branches of funcond.
+ *
  * Revision 1.9  2004/10/15 11:40:08  ktr
  * Constant scalars and constant arrays are now propagated over special function
  * boundaries.
@@ -307,12 +310,6 @@ AskPropagationOracle (node *let, info *arg_info)
     DBUG_ENTER ("AskPropagationOracle");
 
     switch (INFO_CVP_CONTEXT (arg_info)) {
-    case CON_funcond:
-        /*
-         * Nothing must be propagates into the branches of FUNCOND
-         */
-        answer = FALSE;
-        break;
 
     case CON_array:
     case CON_primfun:
@@ -330,6 +327,7 @@ AskPropagationOracle (node *let, info *arg_info)
     case CON_specialfun:
     case CON_neutral:
     case CON_ap:
+    case CON_funcond:
         /* TRUE iff behind let node is an id node */
         answer = IsVariable (LET_EXPR (let));
         break;
