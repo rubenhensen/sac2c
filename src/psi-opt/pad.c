@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2000/06/14 10:41:31  mab
+ * comments added
+ *
  * Revision 1.4  2000/06/08 11:14:49  mab
  * pad_info added
  *
@@ -14,6 +17,20 @@
  *
  *
  */
+
+/*****************************************************************************
+ *
+ * file:   pad.c
+ *
+ * prefix: AP
+ *
+ * description:
+ *
+ *   This compiler module infers new array shapes and applies array padding
+ *   to improve cache performance.
+ *
+ *
+ *****************************************************************************/
 
 #include "dbug.h"
 
@@ -30,38 +47,62 @@
 #include "pad_infer.h"
 #include "pad_transform.h"
 
+/*****************************************************************************
+ *
+ * function:
+ *   node *ArrayPadding( node * arg_node)
+ *
+ * description:
+ *   main function for array padding,
+ *   calls APcollect, APinfer and APtransform
+ *
+ *****************************************************************************/
+
 node *
 ArrayPadding (node *arg_node)
 {
-    nums *tmp_old_shape;
-    nums *tmp_new_shape;
+    shpseg *tmp_old_shape;
+    shpseg *tmp_new_shape;
 
     DBUG_ENTER ("ArrayPadding");
 
+    PIinit ();
+
     DBUG_PRINT ("AP", ("Entering Array Padding"));
 
-    tmp_old_shape = MakeNums (2, NULL);
-    NUMS_NEXT (tmp_old_shape) = MakeNums (8, NULL);
+    /* collect information for inference phase */
 
-    tmp_new_shape = MakeNums (3, NULL);
-    NUMS_NEXT (tmp_new_shape) = MakeNums (9, NULL);
+    /* APcollect(arg_node); */
 
-    /* constante fuer typ (arg2) einfuegen */
-    PIadd (2, 0, tmp_old_shape, tmp_new_shape);
+    /* infer new array shapes */
 
-    tmp_old_shape = MakeNums (16, NULL);
-    NUMS_NEXT (tmp_old_shape) = MakeNums (12, NULL);
+    /* dumies only !!! */
 
-    tmp_new_shape = MakeNums (19, NULL);
-    NUMS_NEXT (tmp_new_shape) = MakeNums (13, NULL);
+    tmp_old_shape = (shpseg *)malloc (sizeof (shpseg));
+    SHPSEG_SHAPE (tmp_old_shape, 0) = 2;
+    SHPSEG_SHAPE (tmp_old_shape, 1) = 3;
 
-    /* constante fuer typ (arg2) einfuegen */
-    PIadd (2, 0, tmp_old_shape, tmp_new_shape);
+    tmp_new_shape = (shpseg *)malloc (sizeof (shpseg));
+    SHPSEG_SHAPE (tmp_new_shape, 0) = 5;
+    SHPSEG_SHAPE (tmp_new_shape, 1) = 7;
 
-    /*  APcollect(arg_node); */
-    APtransform (arg_node);
+    PIadd (MakeType (T_int, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
 
-    /* free pad_info */
+    tmp_old_shape = (shpseg *)malloc (sizeof (shpseg));
+    SHPSEG_SHAPE (tmp_old_shape, 0) = 8;
+    SHPSEG_SHAPE (tmp_old_shape, 1) = 9;
+
+    tmp_new_shape = (shpseg *)malloc (sizeof (shpseg));
+    SHPSEG_SHAPE (tmp_new_shape, 0) = 10;
+    SHPSEG_SHAPE (tmp_new_shape, 1) = 11;
+
+    PIadd (MakeType (T_int, 2, tmp_old_shape, NULL, NULL), tmp_new_shape);
+
+    /* apply array padding */
+    /* APtransform(arg_node); */
+
+    /* free pad_info structure */
+    PIfree ();
 
     DBUG_RETURN (arg_node);
 }
