@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.84  1998/03/15 13:10:55  srs
+ * added node decription
+ *
  * Revision 1.83  1998/03/13 16:21:42  dkr
  * new nodes added:
  *   N_WLblock, N_WLublock
@@ -350,6 +353,8 @@ The following compilation steps are used:
  - optimize
    - inl  = function inlining
    - ael  = array elimination
+   - wli  = withloop information
+   - wlf  = withloop folding
    - dcr1 = search for redundant code
    - dcr2 = dead code removal
  - psi-optimize
@@ -1155,8 +1160,13 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***    long*  MASK[x]                    (optimize -> )
  ***    int    STATUS                     (dcr1 -> dcr2 !!)
  ***    node*  CSE                        (CSE (GenerateMasks()) -> ??? )
- ***    index_info* INDEX                 (WLI -> WLF !!)
+ ***    void*  INDEX    (O)               (wli -> wlf ->)
  ***
+ ***  remarks:
+ ***   there is no easy way to remove the INDEX information after wfl (another
+ ***   tree traversal would be necessary), so it stays afterwards.
+ ***   Nevertheless only wlf will use it. The type of INDEX is index_info*,
+ ***   defined in WithloopFolding.c (not in types.h).
  ***/
 
 extern node *MakeAssign (node *instr, node *next);
@@ -2049,11 +2059,11 @@ extern node *MakeInfo ();
  ***
  ***  temporary attributes:
  ***    long*  MASK                    (optimize -> )
+ ***    int    REFERENCED              (wli -> )
+ ***    int    REFERENCED_FOLD         (wli -> )
+ ***    int    COMPLEX                 (wli -> )
+ ***    int    FOLDABLE                (wli -> )
  ***
- ***  remarks:
- ***    flatten: it's important that the Npart nodes are flattened before
- ***    Ncode. So assure that with the current traversal mechanism the
- ***    ->node index of Npart is lower than the index of Ncode.
  ***/
 
 extern node *MakeNWith (node *part, node *code, node *withop);
