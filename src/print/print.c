@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.129  2002/10/29 19:51:31  dkr
+ * comment added
+ *
  * Revision 3.128  2002/10/29 19:50:09  dkr
  * PrintAp() prints name of AP_FUNDEF if present!
  *
@@ -2343,6 +2346,10 @@ PrintAp (node *arg_node, node *arg_info)
 
     fundef = AP_FUNDEF (arg_node);
     if (compiler_phase >= PH_precompile) {
+        /*
+         * Precompile() renames N_fundef names only
+         *  -> we *must* find an AP_FUNDEF in order to print the correct name!
+         */
         DBUG_ASSERT ((fundef != NULL), "no AP_FUNDEF found!");
     }
     if (fundef != NULL) {
