@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.52  1998/03/26 14:00:07  dkr
+ * changed usage of MakeWLgrid
+ *
  * Revision 1.51  1998/03/24 21:09:17  dkr
  * changed MakeWLproj
  *
@@ -1498,8 +1501,8 @@ MakeWLproj (int level, int dim, int bound1, int bound2, int step, int unrolling,
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLgrid (int dim, int bound1, int bound2, int unrolling, node *nextdim, node *code,
-            node *next)
+MakeWLgrid (int dim, int bound1, int bound2, int unrolling, node *nextdim, node *next,
+            node *code)
 {
     node *new_node;
 
@@ -1513,8 +1516,9 @@ MakeWLgrid (int dim, int bound1, int bound2, int unrolling, node *nextdim, node 
     WLGRID_BOUND2 (new_node) = bound2;
     WLGRID_UNROLLING (new_node) = unrolling;
     WLGRID_NEXTDIM (new_node) = nextdim;
-    WLGRID_CODE (new_node) = code;
     WLGRID_NEXT (new_node) = next;
+
+    WLGRID_CODE (new_node) = code;
 
     DBUG_RETURN (new_node);
 }

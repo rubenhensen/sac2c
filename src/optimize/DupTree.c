@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.46  1998/03/26 14:04:39  dkr
+ * changed usage of MakeWLgrid
+ *
  * Revision 1.45  1998/03/26 12:04:09  dkr
  * removed a spelling mistake in DupWLproj
  *
@@ -831,7 +834,7 @@ DupWLgrid (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupWLgrid");
     new_node = MakeWLgrid (WLGRID_DIM (arg_node), WLGRID_BOUND1 (arg_node),
                            WLGRID_BOUND2 (arg_node), WLGRID_UNROLLING (arg_node), NULL,
-                           WLGRID_CODE (arg_node), NULL);
+                           NULL, WLGRID_CODE (arg_node));
 
     if (WLGRID_CODE (new_node) != NULL) {
         NCODE_USED (WLGRID_CODE (new_node))++;
