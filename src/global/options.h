@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2005/03/10 09:41:09  cg
+ * Separated analysis of special options which do not lead to a
+ * compilation process like -h or -V into new function.
+ *
  * Revision 3.2  2004/11/22 15:42:55  ktr
  * SACDevCamp 04 Ismop
  *
@@ -16,9 +20,6 @@
  *
  */
 
-#ifndef _SAC_OPTIONS_H_
-#define _SAC_OPTIONS_H_
-
 /******************************************************************************
  *
  * Options
@@ -30,7 +31,11 @@
  * This file provides external declarations for symbols defined in options.c.
  *
  *****************************************************************************/
-extern void OPTanalyseCommandline (int argc, char *argv[]);
-extern void OPTcheckOptionConsistency ();
+
+#ifndef _SAC_OPTIONS_H_
+#define _SAC_OPTIONS_H_
+
+extern node *OPTanalyseCommandline (node *);
+extern void OPTcheckSpecialOptions ();
 
 #endif /* _SAC_OPTIONS_H_ */
