@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/09/11 23:10:11  dkr
+ * prf_node_info.mac modified.
+ *
  * Revision 3.17  2002/09/03 15:26:55  sbs
  * _mod_SxS_ added
  *
@@ -117,28 +120,29 @@ int charpos = 0;
 #endif
 
 /* the next few lines allow for smuggling in a start_token! */
-     if (start_token) {
-       int mem=start_token;
+   if (start_token) {
+     int mem = start_token;
 #ifdef OLD_VERSION_OF_LEX  /* (previously needed on ALPHA) */
-       yy_init = 1;  /* force new initialization of lex! */
+     yy_init = 1;  /* force new initialization of lex! */
 #endif
-       start_token = 0;
-       return( mem);
-     }
+     start_token = 0;
+     return( mem);
+   }
 %}
 
 
-"{"                        { FILTER( BRACE_L ); }
-"}"                        { FILTER( BRACE_R ); }
-"("                        { FILTER( BRACKET_L ); }
-")"                        { FILTER( BRACKET_R ); }
-"["                        { FILTER( SQBR_L ); }
-"]"                        { FILTER( SQBR_R ); }
-":"                        { FILTER( COLON ); }
-";"                        { FILTER( SEMIC ); }
-","                        { FILTER( COMMA ); }
-"="                        { FILTER( LET ); }
+"{"                        { FILTER( BRACE_L); }
+"}"                        { FILTER( BRACE_R); }
+"("                        { FILTER( BRACKET_L); }
+")"                        { FILTER( BRACKET_R); }
+"["                        { FILTER( SQBR_L); }
+"]"                        { FILTER( SQBR_R); }
+":"                        { FILTER( COLON); }
+";"                        { FILTER( SEMIC); }
+","                        { FILTER( COMMA); }
+"="                        { FILTER( LET); }
 "."                        { FILTER( DOT); }
+"->"                       { FILTER( ARROW); }
 
 "&"                        { FILTER( AMPERS);} /* needed for refernce params */
 "!"                        { FILTER( EXCL); }  /* needed for monop supp      */
@@ -146,125 +150,134 @@ int charpos = 0;
 "-"                        { FILTER( MINUS); } /* needed for monop supp      */
 "+"                        { FILTER( PLUS); }  /* needed for AUDGZ types     */
 "*"                        { FILTER( STAR); }  /* needed for AUD types       */
-"++"                       { FILTER( INC ); }  /* needed for increment       */
-"--"                       { FILTER( DEC ); }  /* needed for decrement       */
+"++"                       { FILTER( INC); }   /* needed for increment       */
+"--"                       { FILTER( DEC); }   /* needed for decrement       */
 "<="                       { FILTER( LE);   }  /* needed for WL generators   */
 "<"                        { FILTER( LT);   }  /* needed for WL generators   */
 ">"                        { FILTER( GT);   }  /* needed for SIBs            */
 
-"+="                       { FILTER( ADDON ); }
-"-="                       { FILTER( SUBON ); }
-"*="                       { FILTER( MULON ); }
-"/="                       { FILTER( DIVON ); }
-"%="                       { FILTER( MODON ); }
-"->"                       { FILTER( ARROW ); }
-
-"_reshape_"                { FILTER( RESHAPE ); }
-"_dim_"                    { FILTER( DIM); }
-"_shape_"                  { FILTER( SHAPE); }
-"_sel_S_"                  { FILTER( SEL); }
-
-"_add_SxS_"                { FILTER( ADD_SxS); }
-"_add_SxA_"                { FILTER( ADD_SxA); }
-"_add_AxS_"                { FILTER( ADD_AxS); }
-"_add_AxA_"                { FILTER( ADD_AxA); }
-
-"_sub_SxS_"                { FILTER( SUB_SxS); }
-"_sub_SxA_"                { FILTER( SUB_SxA); }
-"_sub_AxS_"                { FILTER( SUB_AxS); }
-"_sub_AxA_"                { FILTER( SUB_AxA); }
-
-"_mul_SxS_"                { FILTER( MUL_SxS); }
-"_mul_SxA_"                { FILTER( MUL_SxA); }
-"_mul_AxS_"                { FILTER( MUL_AxS); }
-"_mul_AxA_"                { FILTER( MUL_AxA); }
-
-"_div_SxS_"                { FILTER( DIV_SxS); }
-"_div_SxA_"                { FILTER( DIV_SxA); }
-"_div_AxS_"                { FILTER( DIV_AxS); }
-"_div_AxA_"                { FILTER( DIV_AxA); }
-
-"_eq_SxS_"                 { FILTER( EQ_SxS); }
-"_neq_SxS_"                { FILTER( NEQ_SxS); }
-"_le_SxS_"                 { FILTER( LE_SxS); }
-"_lt_SxS_"                 { FILTER( LT_SxS); }
-"_ge_SxS_"                 { FILTER( GE_SxS); }
-"_gt_SxS_"                 { FILTER( GT_SxS); }
-
-"_mod_SxS_"                { FILTER( MODULO_SxS); }
-
-"_toi_"                    { FILTER( TOI ); }
-"_tof_"                    { FILTER( TOF ); }
-"_tod_"                    { FILTER( TOD ); }
-"_min_"                    { FILTER( PRF_MIN ); }
-"_max_"                    { FILTER( PRF_MAX ); }
-"_abs_"                    { FILTER( ABS ); }
+"+="                       { FILTER( ADDON); }
+"-="                       { FILTER( SUBON); }
+"*="                       { FILTER( MULON); }
+"/="                       { FILTER( DIVON); }
+"%="                       { FILTER( MODON); }
 
 
-"typedef"                  { FILTER( TYPEDEF ); }
-"classtype"                { FILTER( CLASSTYPE ); }
-"objdef"                   { FILTER( OBJDEF ); }
-"main"                     { FILTER( K_MAIN ); }
-"return"                   { FILTER( RETURN ); }
-"if"                       { FILTER( IF ); }
-"else"                     { FILTER( ELSE ); }
-"do"                       { FILTER( DO ); }
-"while"                    { FILTER( WHILE ); }
-"for"                      { FILTER( FOR ); }
-"with"                     { FILTER( NWITH ); }
-"step"                     { FILTER( STEP ); }
-"width"                    { FILTER( WIDTH ); }
-"genarray"                 { FILTER( GENARRAY ); }
-"modarray"                 { FILTER( MODARRAY ); }
-"fold"                     { FILTER( FOLD ); }
-"inline"                   { FILTER( INLINE ); }
+"_dim_"                    { FILTER( PRF_DIM); }
+"_shape_"                  { FILTER( PRF_SHAPE); }
+"_reshape_"                { FILTER( PRF_RESHAPE); }
+"_sel_"                    { FILTER( PRF_SEL); }
+"_genarray_"               { FILTER( PRF_GENARRAY); }
+"_modarray_"               { FILTER( PRF_MODARRAY); }
 
-"ModuleDec"                { FILTER( MODDEC ); }
-"ModuleSpec"               { FILTER( MODSPEC ); }
-"Module"                   { FILTER( MODIMP ); }
-"ClassDec"                 { FILTER( CLASSDEC ); }
-"Class"                    { FILTER( CLASSIMP ); }
+"_add_SxS_"                { FILTER( PRF_ADD_SxS); }
+"_add_SxA_"                { FILTER( PRF_ADD_SxA); }
+"_add_AxS_"                { FILTER( PRF_ADD_AxS); }
+"_add_AxA_"                { FILTER( PRF_ADD_AxA); }
 
-"import"                   { FILTER( IMPORT ); }
-"all"                      { FILTER( ALL ); }
-"implicit"                 { FILTER( IMPLICIT ); }
-"explicit"                 { FILTER( EXPLICIT ); }
-"types"                    { FILTER( TYPES ); }
-"funs"                     { FILTER( FUNS ); }
-"functions"                { FILTER( FUNS ); }
-"own"                      { FILTER( OWN ); }
-"external"                 { FILTER( EXTERN ); }
-"global"                   { FILTER( GLOBAL ); }
-"objects"                  { FILTER( OBJECTS ); }
+"_sub_SxS_"                { FILTER( PRF_SUB_SxS); }
+"_sub_SxA_"                { FILTER( PRF_SUB_SxA); }
+"_sub_AxS_"                { FILTER( PRF_SUB_AxS); }
+"_sub_AxA_"                { FILTER( PRF_SUB_AxA); }
 
-"#pragma"                  { FILTER( PRAGMA ); }
-"linkname"                 { FILTER( LINKNAME ); }
-"linksign"                 { FILTER( LINKSIGN ); }
-"effect"                   { FILTER( EFFECT ); }
-"touch"                    { FILTER( TOUCH ); }
-"refcounting"              { FILTER( REFCOUNTING ); }
-"readonly"                 { FILTER( READONLY ); }
-"copyfun"                  { FILTER( COPYFUN ); }
-"freefun"                  { FILTER( FREEFUN ); }
-"initfun"                  { FILTER( INITFUN ); }
-"linkwith"                 { FILTER( LINKWITH ); }
-"wlcomp"                   { FILTER( WLCOMP ); }
-"cachesim"                 { FILTER( CACHESIM ); }
-"specialize"               { FILTER( SPECIALIZE ); }
+"_mul_SxS_"                { FILTER( PRF_MUL_SxS); }
+"_mul_SxA_"                { FILTER( PRF_MUL_SxA); }
+"_mul_AxS_"                { FILTER( PRF_MUL_AxS); }
+"_mul_AxA_"                { FILTER( PRF_MUL_AxA); }
 
-"int"                      { FILTER( TYPE_INT ); }
-"float"                    { FILTER( TYPE_FLOAT ); }
-"bool"                     { FILTER( TYPE_BOOL ); }
-"unsigned"                 { FILTER( TYPE_UNS ); }
-"short"                    { FILTER( TYPE_SHORT ); }
-"long"                     { FILTER( TYPE_LONG ); }
-"char"                     { FILTER( TYPE_CHAR ); }
-"double"                   { FILTER( TYPE_DBL ); }
+"_div_SxS_"                { FILTER( PRF_DIV_SxS); }
+"_div_SxA_"                { FILTER( PRF_DIV_SxA); }
+"_div_AxS_"                { FILTER( PRF_DIV_AxS); }
+"_div_AxA_"                { FILTER( PRF_DIV_AxA); }
 
-"void"                     { FILTER( TYPE_VOID ); }
+"_mod_"                    { FILTER( PRF_MOD); }
+"_min_"                    { FILTER( PRF_MIN); }
+"_max_"                    { FILTER( PRF_MAX); }
+"_abs_"                    { FILTER( PRF_ABS); }
 
-"true"                     { FILTER( TRUETOKEN ); }
-"false"                    { FILTER( FALSETOKEN ); }
+"_eq_"                     { FILTER( PRF_EQ);  }
+"_neq_"                    { FILTER( PRF_NEQ); }
+"_le_"                     { FILTER( PRF_LE); }
+"_lt_"                     { FILTER( PRF_LT); }
+"_ge_"                     { FILTER( PRF_GE); }
+"_gt_"                     { FILTER( PRF_GT); }
+
+"_and_"                    { FILTER( PRF_AND); }
+"_or_"                     { FILTER( PRF_OR);  }
+"_not_"                    { FILTER( PRF_NOT); }
+
+"_toi_S_"                  { FILTER( PRF_TOI_S); }
+"_toi_A_"                  { FILTER( PRF_TOI_A); }
+"_tof_S_"                  { FILTER( PRF_TOF_S); }
+"_tof_A_"                  { FILTER( PRF_TOF_A); }
+"_tod_S_"                  { FILTER( PRF_TOD_S); }
+"_tod_A_"                  { FILTER( PRF_TOD_A); }
+
+
+"typedef"                  { FILTER( TYPEDEF); }
+"classtype"                { FILTER( CLASSTYPE); }
+"objdef"                   { FILTER( OBJDEF); }
+"main"                     { FILTER( K_MAIN); }
+"return"                   { FILTER( RETURN); }
+"if"                       { FILTER( IF); }
+"else"                     { FILTER( ELSE); }
+"do"                       { FILTER( DO); }
+"while"                    { FILTER( WHILE); }
+"for"                      { FILTER( FOR); }
+"with"                     { FILTER( NWITH); }
+"step"                     { FILTER( STEP); }
+"width"                    { FILTER( WIDTH); }
+"genarray"                 { FILTER( GENARRAY); }
+"modarray"                 { FILTER( MODARRAY); }
+"fold"                     { FILTER( FOLD); }
+"inline"                   { FILTER( INLINE); }
+
+"ModuleDec"                { FILTER( MODDEC); }
+"ModuleSpec"               { FILTER( MODSPEC); }
+"Module"                   { FILTER( MODIMP); }
+"ClassDec"                 { FILTER( CLASSDEC); }
+"Class"                    { FILTER( CLASSIMP); }
+
+"import"                   { FILTER( IMPORT); }
+"all"                      { FILTER( ALL); }
+"implicit"                 { FILTER( IMPLICIT); }
+"explicit"                 { FILTER( EXPLICIT); }
+"types"                    { FILTER( TYPES); }
+"funs"                     { FILTER( FUNS); }
+"functions"                { FILTER( FUNS); }
+"own"                      { FILTER( OWN); }
+"external"                 { FILTER( EXTERN); }
+"global"                   { FILTER( GLOBAL); }
+"objects"                  { FILTER( OBJECTS); }
+
+"#pragma"                  { FILTER( PRAGMA); }
+"linkname"                 { FILTER( LINKNAME); }
+"linksign"                 { FILTER( LINKSIGN); }
+"effect"                   { FILTER( EFFECT); }
+"touch"                    { FILTER( TOUCH); }
+"refcounting"              { FILTER( REFCOUNTING); }
+"readonly"                 { FILTER( READONLY); }
+"copyfun"                  { FILTER( COPYFUN); }
+"freefun"                  { FILTER( FREEFUN); }
+"initfun"                  { FILTER( INITFUN); }
+"linkwith"                 { FILTER( LINKWITH); }
+"wlcomp"                   { FILTER( WLCOMP); }
+"cachesim"                 { FILTER( CACHESIM); }
+"specialize"               { FILTER( SPECIALIZE); }
+
+"int"                      { FILTER( TYPE_INT); }
+"float"                    { FILTER( TYPE_FLOAT); }
+"bool"                     { FILTER( TYPE_BOOL); }
+"unsigned"                 { FILTER( TYPE_UNS); }
+"short"                    { FILTER( TYPE_SHORT); }
+"long"                     { FILTER( TYPE_LONG); }
+"char"                     { FILTER( TYPE_CHAR); }
+"double"                   { FILTER( TYPE_DBL); }
+
+"void"                     { FILTER( TYPE_VOID); }
+
+"true"                     { FILTER( TRUETOKEN); }
+"false"                    { FILTER( FALSETOKEN); }
 
 "const"                    { FILTER( C_KEYWORD); }
 "auto"                     { FILTER( C_KEYWORD); }
@@ -280,74 +293,74 @@ int charpos = 0;
 "break"                    { FILTER( C_KEYWORD); }
 
 "target"                   { if( compiler_phase==PH_setup) {
-                               FILTER( TARGET );
+                               FILTER( TARGET);
                              } else {
-                               yylval.id=StringCopy(yytext);
-                               FILTER( ID );
+                               yylval.id = StringCopy(yytext);
+                               FILTER( ID);
                              }
                            }
 "default"                  { if( compiler_phase==PH_setup) {
-                               yylval.id=StringCopy(yytext);
-                               FILTER( ID );
+                               yylval.id = StringCopy(yytext);
+                               FILTER( ID);
                              } else {
-                               FILTER( C_KEYWORD );
+                               FILTER( C_KEYWORD);
                              }
                            }
 
-[-/][_A-Za-z0-9]*          { if( compiler_phase==PH_setup) {
-                               yylval.id=StringCopy(yytext);
-                               FILTER( OPTION );
+[-/][_A-Za-z0-9]*          { if( compiler_phase == PH_setup) {
+                               yylval.id = StringCopy( yytext);
+                               FILTER( OPTION);
                              } else {
                                switch (yytext[0]) {
                                  case '-':
-                                   yyless(1);
-                                   FILTER(MINUS);
+                                   yyless( 1);
+                                   FILTER( MINUS);
                                    break;
                                  case '/':
-                                   yyless(1);
-                                   yylval.id=StringCopy(yytext);
+                                   yyless( 1);
+                                   yylval.id = StringCopy( yytext);
                                    FILTER( ID);
                                    break;
                                  case '_':
-                                   yylval.id=StringCopy(yytext);
+                                   yylval.id = StringCopy( yytext);
                                    FILTER( PRIVATEID);
                                    break;
                                  default:
-                                   yylval.id=StringCopy(yytext);
+                                   yylval.id = StringCopy( yytext);
                                    FILTER( ID);
                                }
                              }
                            }
 
 
-\"([^"\n]|(\\\"))*\"       { yylval.id=StringCopy(yytext+sizeof(char));
-                             yylval.id[strlen(yylval.id)-1]='\0';
-                             FILTER( STR );
+\"([^"\n]|(\\\"))*\"       { yylval.id = StringCopy( yytext + sizeof( char));
+                             yylval.id[ strlen( yylval.id) - 1] = '\0';
+                             FILTER( STR);
                            }
 
 [A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*_? {
-                             yylval.id=StringCopy(yytext);
-                             FILTER( ID );
+                             yylval.id = StringCopy( yytext);
+                             FILTER( ID);
                            }
-[|&>!%=-]+           { yylval.id=StringCopy(yytext);
-                             FILTER( ID );
+[|&>!%=-]+                 { yylval.id = StringCopy(yytext);
+                             FILTER( ID);
                            }
 
-[_A-Za-z][_A-Za-z0-9]*     { yylval.id=StringCopy(yytext);
-                             FILTER( PRIVATEID );
+[_A-Za-z][_A-Za-z0-9]*     { yylval.id = StringCopy(yytext);
+                             FILTER( PRIVATEID);
                            }
 
 '.'                        { yylval.cchar=yytext[1];
-                             FILTER( CHAR );
+                             FILTER( CHAR);
                            }
 '\\[0-9]+'                 { yylval.cchar=(char)atoi(yytext+2);
-                             FILTER( CHAR );
+                             FILTER( CHAR);
                            }
 '\\n'                      { yylval.cchar='\n';
-                             FILTER( CHAR );
+                             FILTER( CHAR);
                            }
 '\\t'                      { yylval.cchar='\t';
-                             FILTER( CHAR );
+                             FILTER( CHAR);
                            }
 
 [0-9]+                     { yylval.cint=atoi(yytext);
@@ -421,11 +434,12 @@ int charpos = 0;
                                filename[len] = '\0';
                                DBUG_PRINT( "PARSE", ("# %i %s" , linenum, filename));
                              }
-                             yyless(yyleng-1);
+                             yyless( yyleng - 1);
                            }
 
 .                          { charpos += yyleng;
-                             FILTER( SC );
+                             FILTER( SC);
                            }
+
 
 %%

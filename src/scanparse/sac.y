@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2002/09/11 23:10:03  dkr
+ * prf_node_info.mac modified.
+ *
  * Revision 3.64  2002/09/06 16:17:35  sbs
  * new notation for polymorphic fundefs added
  *
@@ -182,7 +185,7 @@
 #include "internal_lib.h"
 #include "dbug.h"
 #include "typecheck.h"
-#include "DupTree.h"        /* for use of DupTree */
+#include "DupTree.h"        /* for use of DupTree() */
 #include "my_debug.h"
 #include "Error.h"
 #include "free.h"
@@ -236,8 +239,7 @@ static node *CheckWlcompConf( node *ap, node *exprs);
 
 %}
 
-%union {
-         nodetype        nodetype;
+%union { nodetype        nodetype;
          char            *id;
          ids             *ids;
          types           *types;
@@ -260,26 +262,27 @@ static node *CheckWlcompConf( node *ap, node *exprs);
 %token BRACE_L, BRACE_R, BRACKET_L, BRACKET_R, SQBR_L, SQBR_R, COLON, SEMIC,
        COMMA, AMPERS, DOT, QUESTION, ARROW,
        INLINE, LET, TYPEDEF, OBJDEF, CLASSTYPE,
-       INC, DEC, ADDON, SUBON, MULON, DIVON, MODON
+       INC, DEC, ADDON, SUBON, MULON, DIVON, MODON,
        K_MAIN, RETURN, IF, ELSE, DO, WHILE, FOR, NWITH, FOLD,
        MODDEC, MODSPEC, MODIMP, CLASSDEC, IMPORT, IMPLICIT, EXPLICIT, TYPES,
-       FUNS, OWN, GLOBAL, OBJECTS, CLASSIMP,
+       FUNS, OWN, GLOBAL, OBJECTS, CLASSIMP, ALL,
        SC, TRUETOKEN, FALSETOKEN, EXTERN, C_KEYWORD,
        PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
        TOUCH, COPYFUN, FREEFUN, INITFUN, LINKWITH,
-       WLCOMP, CACHESIM, SPECIALIZE, 
-       STEP, WIDTH, TARGET,
-       AND, OR, NOT, DIV, PRF_MOD,
-       STAR, PLUS, MINUS, TILDE, EXCL, LE, LT, GT,
-       TOI, TOF, TOD, ABS, PRF_MIN, PRF_MAX, ALL,
-       TAKE, DROP, ROTATE, CAT, GENARRAY,
-       RESHAPE, SHAPE, DIM, SEL, MODARRAY,
-       ADD_SxS, ADD_SxA, ADD_AxS, ADD_AxA,
-       SUB_SxS, SUB_SxA, SUB_AxS, SUB_AxA,
-       MUL_SxS, MUL_SxA, MUL_AxS, MUL_AxA,
-       DIV_SxS, DIV_SxA, DIV_AxS, DIV_AxA,
-       EQ_SxS, NEQ_SxS, LE_SxS, LT_SxS, GE_SxS, GT_SxS,
-       MODULO_SxS
+       WLCOMP, CACHESIM, SPECIALIZE,
+       TARGET, STEP, WIDTH, GENARRAY, MODARRAY,
+       LE, LT, GT,
+       STAR, PLUS, MINUS, TILDE, EXCL,
+
+       PRF_DIM, PRF_SHAPE, PRF_RESHAPE, PRF_SEL, PRF_GENARRAY, PRF_MODARRAY,
+       PRF_ADD_SxS, PRF_ADD_SxA, PRF_ADD_AxS, PRF_ADD_AxA,
+       PRF_SUB_SxS, PRF_SUB_SxA, PRF_SUB_AxS, PRF_SUB_AxA,
+       PRF_MUL_SxS, PRF_MUL_SxA, PRF_MUL_AxS, PRF_MUL_AxA,
+       PRF_DIV_SxS, PRF_DIV_SxA, PRF_DIV_AxS, PRF_DIV_AxA,
+       PRF_MOD, PRF_MIN, PRF_MAX, PRF_ABS,
+       PRF_EQ, PRF_NEQ, PRF_LE, PRF_LT, PRF_GE, PRF_GT,
+       PRF_AND, PRF_OR, PRF_NOT,
+       PRF_TOI_S, PRF_TOI_A, PRF_TOF_S, PRF_TOF_A, PRF_TOD_S, PRF_TOD_A
 
 %token <id> ID, STR, PRIVATEID, OPTION
 
@@ -377,8 +380,6 @@ static node *CheckWlcompConf( node *ap, node *exprs);
 
 
 
-
-
 %right INC,DEC,STAR,PLUS,MINUS,TILDE,EXCL,LE,LT,GT,ID,PRIVATEID,
        GENARRAY,MODARRAY,ALL,AMPERS
 %right BM_OP
@@ -401,17 +402,16 @@ static node *CheckWlcompConf( node *ap, node *exprs);
 all: file eof { CleanUpParser(); }
    ;
 
-file: PARSE_PRG  prg     { syntax_tree = $2; }
-    | PARSE_PRG  modimp  { syntax_tree = $2; }
-    | PARSE_DEC  moddec  { decl_tree = $2; }
-    | PARSE_SIB  sib     { sib_tree = $2; }
-    | PARSE_RC   targets { target_list = RSCAddTargetList( $2, target_list); }
-    | PARSE_SPEC modspec { spec_tree = $2; }
+file: PARSE_PRG  prg       { syntax_tree = $2; }
+    | PARSE_PRG  modimp    { syntax_tree = $2; }
+    | PARSE_DEC  moddec    { decl_tree = $2; }
+    | PARSE_SIB  sib       { sib_tree = $2; }
+    | PARSE_RC   targets   { target_list = RSCAddTargetList( $2, target_list); }
+    | PARSE_SPEC modspec   { spec_tree = $2; }
     ;
 
-eof: {
-       if (commlevel) {
-        ABORT( linenum, ("Unterminated comment found"));
+eof: { if (commlevel) {
+         ABORT( linenum, ("Unterminated comment found"));
 
 #ifdef SAC_FOR_OSF_ALPHA
         /*
@@ -422,7 +422,7 @@ eof: {
          * be carried out, prevents the gcc from complaining about the two
          * aforementioned labels not to be used!!
          */
-        YYBACKUP( NUM, yylval);
+         YYBACKUP( NUM, yylval);
 #endif
        }
      }
@@ -450,9 +450,9 @@ defs: imports def2
       { $$ = $2;
         $$->node[0] = $1;
       }
-   | def2
-     { $$ = $1; }
-   ;
+    | def2
+      { $$ = $1; }
+    ;
 
 def2: typedefs def3
       { $$ = $2;
@@ -471,23 +471,21 @@ def3: objdefs def4
     ;
 
 def4: fundefs
-      {
-        $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, $1);
+      { $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, $1);
 
-        DBUG_PRINT("PARSE",
-	           ("%s:"F_PTR"  %s"F_PTR,
-	            mdb_nodetype[ NODE_TYPE( $$)],
-	            $$,
-	            mdb_nodetype[ NODE_TYPE(  $$->node[2])],
-	            $$->node[2]));
+        DBUG_PRINT( "PARSE",
+                    ("%s:"F_PTR" %s"F_PTR,
+                     mdb_nodetype[ NODE_TYPE( $$)],
+                     $$,
+                     mdb_nodetype[ NODE_TYPE(  $$->node[2])],
+                     $$->node[2]));
       }
-    | {
-        $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, NULL);
+    | { $$ = MakeModul( NULL, F_prog, NULL, NULL, NULL, NULL);
 
-        DBUG_PRINT("PARSE",
-	           ("%s:"F_PTR,
-	            mdb_nodetype[ NODE_TYPE( $$)],
-	            $$));
+        DBUG_PRINT( "PARSE",
+                    ("%s:"F_PTR,
+                     mdb_nodetype[ NODE_TYPE( $$)],
+                     $$));
       }
     ;
 
@@ -500,77 +498,91 @@ def4: fundefs
 *********************************************************************
 */
 
-imports: import imports { $$ = $1; $$->node[0] = $2; }
-       | import { $$ = $1; }
+imports: import imports
+         { $$ = $1;
+           $$->node[0] = $2;
+         }
+       | import
+         { $$ = $1;
+         }
        ;
 
-import: IMPORT id COLON impdesc { $$ = $4; $$->info.id = $2; }
+import: IMPORT id COLON impdesc
+        { $$ = $4;
+          $$->info.id = $2;
+        }
       ;
 
 impdesc: ALL SEMIC
          { $$ = MakeImplist( NULL, NULL, NULL, NULL, NULL, NULL);
 
-           DBUG_PRINT("PARSE",
-		      ("%s:"F_PTR,
-		       mdb_nodetype[ NODE_TYPE( $$)],
-		       $$));
+           DBUG_PRINT( "PARSE",
+                       ("%s:"F_PTR,
+                        mdb_nodetype[ NODE_TYPE( $$)],
+                        $$));
          }
-      | BRACE_L IMPLICIT TYPES COLON ids SEMIC impdesc2
+       | BRACE_L IMPLICIT TYPES COLON ids SEMIC impdesc2
          { $$ = $7;
            $$->node[1] = (node *) $5;  /* dirty trick for keeping ids! */
          }
-      | BRACE_L IMPLICIT TYPES COLON SEMIC impdesc2
+       | BRACE_L IMPLICIT TYPES COLON SEMIC impdesc2
          { $$ = $6;
          }
-      | BRACE_L impdesc2 { $$ = $2; }
-      ;
+       | BRACE_L impdesc2
+         { $$ = $2;
+         }
+       ;
 
 impdesc2: EXPLICIT TYPES COLON ids SEMIC impdesc3
           { $$ = $6;
             $$->node[2] = (node *) $4;  /* dirty trick for keeping ids! */
           }
-      | EXPLICIT TYPES COLON SEMIC impdesc3
+        | EXPLICIT TYPES COLON SEMIC impdesc3
           { $$ = $5;
           }
-      | impdesc3 { $$ = $1; }
-      ;
+        | impdesc3
+          { $$ = $1;
+          }
+        ;
 
 impdesc3: GLOBAL OBJECTS COLON ids SEMIC impdesc4
           { $$ = $6;
             $$->node[4] = (node *) $4;  /* dirty trick for keeping ids! */
           }
-      | GLOBAL OBJECTS COLON SEMIC impdesc4
+        | GLOBAL OBJECTS COLON SEMIC impdesc4
           { $$ = $5;
           }
-      | impdesc4 { $$ = $1; }
-      ;
+        | impdesc4
+          { $$ = $1;
+          }
+        ;
 
 impdesc4: FUNS COLON fun_ids SEMIC BRACE_R
           { $3 = HMAdjustFunNames( $3);
             $$ = MakeImplist( NULL, NULL, NULL, NULL, $3, NULL);
 
-            DBUG_PRINT("PARSE",
-		       ("%s:"F_PTR,
-		        mdb_nodetype[ NODE_TYPE( $$)],
-		        $$));
+            DBUG_PRINT( "PARSE",
+                        ("%s:"F_PTR,
+                         mdb_nodetype[ NODE_TYPE( $$)],
+                         $$));
           }
-      | FUNS COLON SEMIC BRACE_R
+        | FUNS COLON SEMIC BRACE_R
           { $$ = MakeImplist( NULL, NULL, NULL, NULL, NULL, NULL);
 
-            DBUG_PRINT("PARSE",
-		       ("%s:"F_PTR,
-		        mdb_nodetype[ NODE_TYPE( $$)],
-		        $$));
+            DBUG_PRINT( "PARSE",
+                        ("%s:"F_PTR,
+                         mdb_nodetype[ NODE_TYPE( $$)],
+                         $$));
           }
-      | BRACE_R
+        | BRACE_R
           { $$ = MakeImplist( NULL, NULL, NULL, NULL, NULL, NULL);
 
-            DBUG_PRINT("PARSE",
-		       ("%s:"F_PTR,
-		        mdb_nodetype[ NODE_TYPE( $$)],
-		        $$));
+            DBUG_PRINT( "PARSE",
+                        ("%s:"F_PTR,
+                         mdb_nodetype[ NODE_TYPE( $$)],
+                         $$));
           }
-      ;
+        ;
 
 
 
@@ -587,21 +599,22 @@ typedefs: typedef typedefs
           { $$ = $1;
             $1->node[0] = $2;
           }
-       | typedef
-          { $$ = $1; }
-       ;
+        | typedef
+          { $$ = $1;
+          }
+        ;
 
 typedef: TYPEDEF type id SEMIC 
          { $$ = MakeTypedef( $3, mod_name, $2, ST_regular, NULL);
 
-           DBUG_PRINT("PARSE",
-		      ("%s:"F_PTR","F_PTR", Id: %s",
-		       mdb_nodetype[ NODE_TYPE( $$)],
-		       $$, 
-		       TYPEDEF_TYPE( $$),
-		       TYPEDEF_NAME( $$)));
+           DBUG_PRINT( "PARSE",
+                       ("%s:"F_PTR","F_PTR", Id: %s",
+                        mdb_nodetype[ NODE_TYPE( $$)],
+                        $$, 
+                        TYPEDEF_TYPE( $$),
+                        TYPEDEF_NAME( $$)));
          }
-      ;
+       ;
 
 
 /*
@@ -616,19 +629,20 @@ objdefs: objdef objdefs
          { $$ = $1;
            $$->node[0] = $2;
          }
-      | objdef
-         { $$ = $1; }
-      ;
+       | objdef
+         { $$ = $1;
+         }
+       ;
 
 objdef: OBJDEF type id LET expr SEMIC 
         { $$ = MakeObjdef( $3, mod_name, $2, $5, NULL);
 
-          DBUG_PRINT("PARSE",
-	             ("%s:"F_PTR","F_PTR", Id: %s",
-		      mdb_nodetype[ NODE_TYPE( $$)],
-		      $$, 
-		      OBJDEF_TYPE( $$),
-		      OBJDEF_NAME( $$)));
+          DBUG_PRINT( "PARSE",
+                      ("%s:"F_PTR","F_PTR", Id: %s",
+                       mdb_nodetype[ NODE_TYPE( $$)],
+                       $$, 
+                       OBJDEF_TYPE( $$),
+                       OBJDEF_NAME( $$)));
         }
       ;
 
@@ -646,16 +660,22 @@ fundefs: wlcomp_pragma_global fundef fundefs
          { $$ = $2;
            FUNDEF_NEXT( $$) = $3;
          }
-      | wlcomp_pragma_global main
+       | wlcomp_pragma_global main
          { $$ = $2;
          }
-      | wlcomp_pragma_global fundef
+       | wlcomp_pragma_global fundef
          { $$ = $2;
          }
-      ;
+       ;
 
-fundef: INLINE fundef1 { $$ = $2; FUNDEF_INLINE( $$) = TRUE;}
-      | fundef1        { $$ = $1; FUNDEF_INLINE( $$) = FALSE;}
+fundef: INLINE fundef1
+        { $$ = $2;
+          FUNDEF_INLINE( $$) = TRUE;
+        }
+      | fundef1
+        { $$ = $1;
+          FUNDEF_INLINE( $$) = FALSE;
+        }
       ;
 
 fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
@@ -669,12 +689,12 @@ fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
            FUNDEF_STATUS( $$) = ST_regular;
            FUNDEF_INFIX( $$) = TRUE;
               
-           DBUG_PRINT("PARSE",
-		       ("%s: %s:%s "F_PTR,
-		       mdb_nodetype[ NODE_TYPE( $$)],
-		       FUNDEF_MOD( $$),
-		       FUNDEF_NAME( $$),
-		       FUNDEF_NAME( $$)));
+           DBUG_PRINT( "PARSE",
+                        ("%s: %s:%s "F_PTR,
+                        mdb_nodetype[ NODE_TYPE( $$)],
+                        FUNDEF_MOD( $$),
+                        FUNDEF_NAME( $$),
+                        FUNDEF_NAME( $$)));
 
          }
        | returntypes fun_id BRACKET_L fundef2
@@ -688,94 +708,97 @@ fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
            FUNDEF_STATUS( $$) = ST_regular;
            FUNDEF_INFIX( $$) = FALSE;
 
-           DBUG_PRINT("PARSE",
-		       ("%s: %s:%s "F_PTR,
-		       mdb_nodetype[ NODE_TYPE( $$)],
-		       FUNDEF_MOD( $$),
-		       FUNDEF_NAME( $$),
-		       FUNDEF_NAME( $$)));
+           DBUG_PRINT( "PARSE",
+                        ("%s: %s:%s "F_PTR,
+                        mdb_nodetype[ NODE_TYPE( $$)],
+                        FUNDEF_MOD( $$),
+                        FUNDEF_NAME( $$),
+                        FUNDEF_NAME( $$)));
 
          }
        ;
 
-fundef2: args BRACKET_R { $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
+fundef2: args BRACKET_R
+         { $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
          exprblock
          { 
            $$ = $<node>3;
            FUNDEF_BODY( $$) = $4;             /* Funktionsrumpf  */
            FUNDEF_ARGS( $$) = $1;             /* Funktionsargumente */
       
-           DBUG_PRINT("PARSE",
-		      ("%s:"F_PTR", Id: %s"F_PTR" %s," F_PTR,
-		       mdb_nodetype[ NODE_TYPE( $$)],
-		       $$, 
-		       mdb_nodetype[ NODE_TYPE( FUNDEF_BODY( $$))],
-		       FUNDEF_BODY( $$),
-		       mdb_nodetype[ NODE_TYPE( FUNDEF_ARGS( $$))],
-		       FUNDEF_ARGS( $$)));
+           DBUG_PRINT( "PARSE",
+                       ("%s:"F_PTR", Id: %s"F_PTR" %s," F_PTR,
+                        mdb_nodetype[ NODE_TYPE( $$)],
+                        $$, 
+                        mdb_nodetype[ NODE_TYPE( FUNDEF_BODY( $$))],
+                        FUNDEF_BODY( $$),
+                        mdb_nodetype[ NODE_TYPE( FUNDEF_ARGS( $$))],
+                        FUNDEF_ARGS( $$)));
          }
-
-      | BRACKET_R { $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
-       exprblock
-         { 
-           $$ = $<node>2;
+       | BRACKET_R { $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
+         exprblock
+         { $$ = $<node>2;
            FUNDEF_BODY( $$) = $3;             /* Funktionsrumpf  */
 
-           DBUG_PRINT("PARSE",
-		      ("%s:"F_PTR" %s"F_PTR,
-		       mdb_nodetype[ NODE_TYPE( $$)],
-		       $$, 
-		       mdb_nodetype[ NODE_TYPE( FUNDEF_BODY( $$))],
-		       FUNDEF_BODY( $$)));
+           DBUG_PRINT( "PARSE",
+                       ("%s:"F_PTR" %s"F_PTR,
+                        mdb_nodetype[ NODE_TYPE( $$)],
+                        $$, 
+                        mdb_nodetype[ NODE_TYPE( FUNDEF_BODY( $$))],
+                        FUNDEF_BODY( $$)));
          }
-      ;
+       ;
 
 
-args: arg COMMA args { $1->node[0] = $3; $$ = $1; }
-    | arg { $$ = $1; }
+args: arg COMMA args
+      { $1->node[0] = $3;
+        $$ = $1;
+      }
+    | arg
+      { $$ = $1;
+      }
     ;
 
 arg: type id
      { $$ = MakeArg( $2, $1, ST_regular, ST_regular, NULL); 
 
-       DBUG_PRINT("PARSE",
-                  ("%s: "F_PTR", Id: %s, Attrib: %d  ",
-                   mdb_nodetype[ NODE_TYPE( $$)],
-                   $$, 
-                   ARG_NAME( $$),
-                   ARG_ATTRIB( $$)));
+       DBUG_PRINT( "PARSE",
+                   ("%s: "F_PTR", Id: %s, Attrib: %d  ",
+                    mdb_nodetype[ NODE_TYPE( $$)],
+                    $$, 
+                    ARG_NAME( $$),
+                    ARG_ATTRIB( $$)));
      }
    | type AMPERS id
      { $$ = MakeArg( $3, $1, ST_regular, ST_reference, NULL); 
 
-       DBUG_PRINT("PARSE",
-                  ("%s: "F_PTR", Id: %s, Attrib: %d ",
-                   mdb_nodetype[ NODE_TYPE( $$)],
-                   $$, 
-                   ARG_NAME( $$),
-                   ARG_ATTRIB( $$)));
+       DBUG_PRINT( "PARSE",
+                   ("%s: "F_PTR", Id: %s, Attrib: %d ",
+                    mdb_nodetype[ NODE_TYPE( $$)],
+                    $$, 
+                    ARG_NAME( $$),
+                    ARG_ATTRIB( $$)));
      }
    ;
 
 
 main: TYPE_INT K_MAIN BRACKET_L BRACKET_R { $<cint>$ = linenum; } exprblock
-      {
-        $$ = MakeFundef( NULL, NULL,
-		         MakeTypes1( T_int),
-		         NULL, $6, NULL);
+      { $$ = MakeFundef( NULL, NULL,
+                         MakeTypes1( T_int),
+                         NULL, $6, NULL);
         NODE_LINE( $$) = $<cint>5;
 
         FUNDEF_NAME( $$) = StringCopy( "main");
-        FUNDEF_MOD( $$) = mod_name;           /* SAC modul name */
+        FUNDEF_MOD( $$) = mod_name;               /* SAC modul name */
         FUNDEF_STATUS( $$) = ST_exported;
 
-        DBUG_PRINT("PARSE",("%s:"F_PTR", main "F_PTR
-			      "  %s (" F_PTR ") ",
-			      mdb_nodetype[ NODE_TYPE( $$)],
-			      $$, 
-			      FUNDEF_NAME( $$),
-			      mdb_nodetype[ NODE_TYPE( $$->node[0])], 
-			      $$->node[0]));
+        DBUG_PRINT( "PARSE",
+                    ("%s:"F_PTR", main "F_PTR " %s (" F_PTR ") ",
+                     mdb_nodetype[ NODE_TYPE( $$)],
+                     $$, 
+                     FUNDEF_NAME( $$),
+                     mdb_nodetype[ NODE_TYPE( $$->node[0])], 
+                     $$->node[0]));
       }
     ;
 
@@ -790,52 +813,49 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R { $<cint>$ = linenum; } exprblock
 */
 
 wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_conf
-                        {
-                          if (global_wlcomp_aps != NULL) {
-                            /* remove old global pragma */
-                            global_wlcomp_aps = FreeTree( global_wlcomp_aps);
-                          }
-                          $3 = CheckWlcompConf( $3, NULL);
-                          if ($3 != NULL) {
-                            global_wlcomp_aps = $3;
-                          }
+                      { if (global_wlcomp_aps != NULL) {
+                          /* remove old global pragma */
+                          global_wlcomp_aps = FreeTree( global_wlcomp_aps);
                         }
+                        $3 = CheckWlcompConf( $3, NULL);
+                        if ($3 != NULL) {
+                          global_wlcomp_aps = $3;
+                        }
+                      }
                     | /* empty */
-                        {
-                        }
+                      {
+                      }
                     ;
 
 wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_conf
-                       {
-                         $3 = CheckWlcompConf( $3, NULL);
-                         if ($3 != NULL) {
-                           $$ = MakePragma();
-                           PRAGMA_WLCOMP_APS( $$) = $3;
-                         }
-                         else {
-                           $$ = NULL;
-                         }
+                     { $3 = CheckWlcompConf( $3, NULL);
+                       if ($3 != NULL) {
+                         $$ = MakePragma();
+                         PRAGMA_WLCOMP_APS( $$) = $3;
+                       } else {
+                         $$ = NULL;
                        }
+                     }
                    | /* empty */
-                       { if (global_wlcomp_aps != NULL) {
-                           $$ = MakePragma();
-                           PRAGMA_WLCOMP_APS( $$) = DupTree( global_wlcomp_aps);
-                         }
-                         else {
-                           $$ = NULL;
-                         }
+                     { if (global_wlcomp_aps != NULL) {
+                         $$ = MakePragma();
+                         PRAGMA_WLCOMP_APS( $$) = DupTree( global_wlcomp_aps);
+                       } else {
+                         $$ = NULL;
                        }
+                     }
                    ;
 
-wlcomp_conf: id      { $$ = MakeId( $1, NULL, ST_regular); }
-           | expr_ap { $$ = $1; }
+wlcomp_conf: id        { $$ = MakeId( $1, NULL, ST_regular); }
+           | expr_ap   { $$ = $1;                            }
            ;
 
 
-pragmacachesim: PRAGMA CACHESIM string { $$ = $3; }
-              | PRAGMA CACHESIM        { $$ = StringCopy( ""); }
-              |                        { $$ = NULL; }
+pragmacachesim: PRAGMA CACHESIM string   { $$ = $3;              }
+              | PRAGMA CACHESIM          { $$ = StringCopy( ""); }
+              | /* empty */              { $$ = NULL;            }
               ;
+
 
 /*
  * pragmas as needed for:
@@ -847,7 +867,9 @@ pragmas: pragmalist
          { $$ = store_pragma;
            store_pragma = NULL;
          }
-       | /* empty */ { $$ = NULL; }
+       | /* empty */
+         { $$ = NULL;
+         }
        ;
 
 pragmalist: pragmalist pragma
@@ -855,61 +877,88 @@ pragmalist: pragmalist pragma
           ;
 
 pragma: PRAGMA LINKNAME string
-          { if (store_pragma==NULL) store_pragma=MakePragma();
-            if (PRAGMA_LINKNAME(store_pragma)!=NULL)
-              WARN(linenum, ("Conflicting definitions of pragma 'linkname`"))
-            PRAGMA_LINKNAME(store_pragma) = $3;
+        { if (store_pragma == NULL) {
+            store_pragma = MakePragma();
           }
+          if (PRAGMA_LINKNAME( store_pragma) != NULL) {
+            WARN( linenum, ("Conflicting definitions of pragma 'linkname`"));
+          }
+          PRAGMA_LINKNAME( store_pragma) = $3;
+        }
       | PRAGMA LINKSIGN SQBR_L nums SQBR_R
-          { if (store_pragma==NULL) store_pragma=MakePragma();
-            if (PRAGMA_LINKSIGNNUMS(store_pragma)!=NULL)
-              WARN(linenum, ("Conflicting definitions of pragma 'linksign`"))
-            PRAGMA_LINKSIGNNUMS(store_pragma) = $4;
+        { if (store_pragma == NULL) {
+            store_pragma = MakePragma();
           }
+          if (PRAGMA_LINKSIGNNUMS( store_pragma) != NULL) {
+            WARN(linenum, ("Conflicting definitions of pragma 'linksign`"));
+          }
+          PRAGMA_LINKSIGNNUMS( store_pragma) = $4;
+        }
       | PRAGMA REFCOUNTING SQBR_L nums SQBR_R
-          { if (store_pragma==NULL) store_pragma=MakePragma();
-            if (PRAGMA_REFCOUNTINGNUMS(store_pragma)!=NULL)
-              WARN(linenum, ("Conflicting definitions of pragma 'refcounting`"))
-            PRAGMA_REFCOUNTINGNUMS(store_pragma) = $4;
+        { if (store_pragma == NULL) {
+            store_pragma = MakePragma();
           }
+          if (PRAGMA_REFCOUNTINGNUMS( store_pragma) != NULL) {
+            WARN(linenum, ("Conflicting definitions of pragma 'refcounting`"));
+          }
+          PRAGMA_REFCOUNTINGNUMS( store_pragma) = $4;
+        }
       | PRAGMA READONLY SQBR_L nums SQBR_R
-          { if (store_pragma==NULL) store_pragma=MakePragma();
-            if (PRAGMA_READONLYNUMS(store_pragma)!=NULL)
-              WARN(linenum, ("Conflicting definitions of pragma 'readonly`"))
-            PRAGMA_READONLYNUMS(store_pragma) = $4;
+        { if (store_pragma == NULL) {
+            store_pragma = MakePragma();
           }
+          if (PRAGMA_READONLYNUMS( store_pragma) != NULL) {
+            WARN(linenum, ("Conflicting definitions of pragma 'readonly`"));
+          }
+          PRAGMA_READONLYNUMS( store_pragma) = $4;
+        }
       | PRAGMA EFFECT fun_ids
-          { if (store_pragma==NULL) store_pragma=MakePragma();
-            if (PRAGMA_EFFECT(store_pragma)!=NULL)
-              WARN(linenum, ("Conflicting definitions of pragma 'effect`"))
-            $3 = HMAdjustFunNames( $3);
-            PRAGMA_EFFECT(store_pragma) = $3;
+        { if (store_pragma == NULL) {
+            store_pragma = MakePragma();
           }
+          if (PRAGMA_EFFECT( store_pragma) != NULL) {
+            WARN(linenum, ("Conflicting definitions of pragma 'effect`"));
+          }
+          $3 = HMAdjustFunNames( $3);
+          PRAGMA_EFFECT( store_pragma) = $3;
+        }
       | PRAGMA TOUCH fun_ids
-          { if (store_pragma==NULL) store_pragma=MakePragma();
-            if (PRAGMA_TOUCH(store_pragma)!=NULL)
-              WARN(linenum, ("Conflicting definitions of pragma 'touch`"))
-            $3 = HMAdjustFunNames( $3);
-            PRAGMA_TOUCH(store_pragma) = $3;
+        { if (store_pragma == NULL) {
+            store_pragma = MakePragma();
           }
+          if (PRAGMA_TOUCH( store_pragma) != NULL) {
+            WARN(linenum, ("Conflicting definitions of pragma 'touch`"));
+          }
+          $3 = HMAdjustFunNames( $3);
+          PRAGMA_TOUCH( store_pragma) = $3;
+        }
       | PRAGMA COPYFUN string
-          { if (store_pragma==NULL) store_pragma=MakePragma();
-            if (PRAGMA_COPYFUN(store_pragma)!=NULL)
-              WARN(linenum, ("Conflicting definitions of pragma 'copyfun`"))
-            PRAGMA_COPYFUN(store_pragma) = $3;
+        { if (store_pragma == NULL) {
+            store_pragma = MakePragma();
           }
+          if (PRAGMA_COPYFUN( store_pragma) != NULL) {
+            WARN(linenum, ("Conflicting definitions of pragma 'copyfun`"));
+          }
+          PRAGMA_COPYFUN( store_pragma) = $3;
+        }
       | PRAGMA FREEFUN string
-          { if (store_pragma==NULL) store_pragma=MakePragma();
-            if (PRAGMA_FREEFUN(store_pragma)!=NULL)
-              WARN(linenum, ("Conflicting definitions of pragma 'freefun`"))
-            PRAGMA_FREEFUN(store_pragma) = $3;
+        { if (store_pragma == NULL) {
+            store_pragma = MakePragma();
           }
+          if (PRAGMA_FREEFUN( store_pragma) != NULL) {
+            WARN(linenum, ("Conflicting definitions of pragma 'freefun`"));
+          }
+          PRAGMA_FREEFUN( store_pragma) = $3;
+        }
       | PRAGMA INITFUN string
-          { if (store_pragma==NULL) store_pragma=MakePragma();
-            if (PRAGMA_INITFUN(store_pragma)!=NULL)
-              WARN(linenum, ("Conflicting definitions of pragma 'initfun`"))
-            PRAGMA_INITFUN(store_pragma) = $3;
+        { if (store_pragma == NULL) {
+            store_pragma = MakePragma();
           }
+          if (PRAGMA_INITFUN( store_pragma) != NULL) {
+            WARN(linenum, ("Conflicting definitions of pragma 'initfun`"));
+          }
+          PRAGMA_INITFUN( store_pragma) = $3;
+        }
       ;
 
 
@@ -923,8 +972,7 @@ pragma: PRAGMA LINKNAME string
  */
 
 exprblock: BRACE_L { $<cint>$ = linenum; } pragmacachesim exprblock2
-           {
-             $$ = $4;
+           { $$ = $4;
              BLOCK_CACHESIM( $$) = $3;
              NODE_LINE( $$) = $<cint>2;
            }
@@ -966,7 +1014,7 @@ exprblock2: type ids SEMIC exprblock2
                  * the ptr to the "next $2" and manually free the current $2.
                  */
                 ids_ptr = IDS_NEXT( $2);
-                Free( $2);
+                $2 = Free( $2);
                 $2 = ids_ptr;
               }
               /*
@@ -978,12 +1026,10 @@ exprblock2: type ids SEMIC exprblock2
               BLOCK_VARDEC( $$) = MakeVardec( IDS_NAME( $2),
                                               $1,
                                               vardec_ptr);
-              Free( $2); /* Finally, we free the last IDS-node! */
-
+              $2 = Free( $2);   /* Finally, we free the last IDS-node! */
             }
           | assignsOPTret BRACE_R
-            {
-              $$ = MakeBlock( $1, NULL);
+            { $$ = MakeBlock( $1, NULL);
             }
           ;
 
@@ -1067,81 +1113,83 @@ assigns: /* empty */
          }
        ;
 
-assign: letassign SEMIC { $$ = $1; }
-      | selassign       { $$ = $1; }
-      | forassign       { $$ = $1; }
+assign: letassign SEMIC   { $$ = $1; }
+      | selassign         { $$ = $1; }
+      | forassign         { $$ = $1; }
       ;
 
 letassign: ids LET { $<cint>$ = linenum; } expr
-             { $$ = MakeLet( $4, $1);
-               NODE_LINE( $$) = $<cint>3;
-             }
+           { $$ = MakeLet( $4, $1);
+             NODE_LINE( $$) = $<cint>3;
+           }
          | id SQBR_L exprs SQBR_R LET { $<cint>$ = linenum; } expr
-             { if( CountExprs( $3) > 1) {
-                 $3 = MakeArray( $3);
-               } else {
-                 node * tmp;
+           { if( CountExprs( $3) > 1) {
+               $3 = MakeArray( $3);
+             } else {
+               node * tmp;
 
-                 tmp = $3;
-                 $3 = EXPRS_EXPR( $3);
-                 EXPRS_EXPR( tmp) = NULL;
-                 tmp = FreeNode( tmp);
-               }
-               $$ = MakeLet( MakePrf( F_modarray,
-                               MakeExprs( MakeId( $1, NULL, ST_regular) ,
-                                 MakeExprs( $3,
-                                   MakeExprs( $7,
-                                     NULL)))),
-                             MakeIds( StringCopy( $1), NULL, ST_regular));
-               NODE_LINE( $$) = $<cint>5;
+               tmp = $3;
+               $3 = EXPRS_EXPR( $3);
+               EXPRS_EXPR( tmp) = NULL;
+               tmp = FreeNode( tmp);
              }
+             $$ = MakeLet( MakeAp( StringCopy( "modarray"),
+                                   NULL,
+                                   MakeExprs( MakeId( $1, NULL, ST_regular),
+                                     MakeExprs( $3,
+                                       MakeExprs( $7,
+                                         NULL)))),
+                           MakeIds( StringCopy( $1), NULL, ST_regular));
+             NODE_LINE( $$) = $<cint>5;
+           }
          | expr_ap { $$ = MakeLet( $1, NULL); }
-         | id INC { $$ = MAKE_INCDEC_LET( $1, F_add); }
-         | INC id { $$ = MAKE_INCDEC_LET( $2, F_add); }
-         | id DEC { $$ = MAKE_INCDEC_LET( $1, F_sub); }
-         | DEC id { $$ = MAKE_INCDEC_LET( $2, F_sub); }
-         | id ADDON expr { $$ = MAKE_OPON_LET( $1, $3, F_add); }
-         | id SUBON expr { $$ = MAKE_OPON_LET( $1, $3, F_sub); }
-         | id MULON expr { $$ = MAKE_OPON_LET( $1, $3, F_mul); }
-         | id DIVON expr { $$ = MAKE_OPON_LET( $1, $3, F_div); }
+         | id INC { $$ = MAKE_INCDEC_LET( $1, F_add_AxA); }
+         | INC id { $$ = MAKE_INCDEC_LET( $2, F_add_AxA); }
+         | id DEC { $$ = MAKE_INCDEC_LET( $1, F_sub_AxA); }
+         | DEC id { $$ = MAKE_INCDEC_LET( $2, F_sub_AxA); }
+         | id ADDON expr { $$ = MAKE_OPON_LET( $1, $3, F_add_AxA); }
+         | id SUBON expr { $$ = MAKE_OPON_LET( $1, $3, F_sub_AxA); }
+         | id MULON expr { $$ = MAKE_OPON_LET( $1, $3, F_mul_AxA); }
+         | id DIVON expr { $$ = MAKE_OPON_LET( $1, $3, F_div_AxA); }
          | id MODON expr { $$ = MAKE_OPON_LET( $1, $3, F_mod); }
          ;
 
-selassign: IF { $<cint>$ = linenum; } BRACKET_L expr BRACKET_R assignblock optelse
-             { $$ = MakeCond( $4, $6, $7);
-               NODE_LINE( $$) = $<cint>2;
-             }
+selassign: IF { $<cint>$ = linenum; }
+           BRACKET_L expr BRACKET_R assignblock optelse
+           { $$ = MakeCond( $4, $6, $7);
+             NODE_LINE( $$) = $<cint>2;
+           }
          ;
 
-optelse: ELSE assignblock        { $$ = $2;                 }
-       | /* empty */  %prec ELSE { $$ = MAKE_EMPTY_BLOCK(); }
+optelse: ELSE assignblock           { $$ = $2;                 }
+       | /* empty */   %prec ELSE   { $$ = MAKE_EMPTY_BLOCK(); }
        ;
 
 forassign: DO { $<cint>$ = linenum; } assignblock
            WHILE BRACKET_L expr BRACKET_R SEMIC
-             { $$ = MakeDo( $6, $3);
-               NODE_LINE( $$) = $<cint>2;
-             }
+           { $$ = MakeDo( $6, $3);
+             NODE_LINE( $$) = $<cint>2;
+           }
          | WHILE { $<cint>$ = linenum; } BRACKET_L expr BRACKET_R
            assignblock
-             { $$ = MakeWhile( $4, $6);
-               NODE_LINE( $$) = $<cint>2;
-             }
+           { $$ = MakeWhile( $4, $6);
+             NODE_LINE( $$) = $<cint>2;
+           }
          | FOR { $<cint>$ = linenum; }
            BRACKET_L assign expr SEMIC letassign BRACKET_R assignblock
-             { /*
-                * for( x=e1; e2; y=e3) AssBlock
-                * is transformed into
-                * x=e1;
-                * while( e2) { AssBlock; y=e3; }
-                */
-               BLOCK_INSTR( $9) = AppendAssign( BLOCK_INSTR( $9),
-                                                MakeAssign( $7, NULL));
-               $$ = MakeAssign( $4,
-                                MakeAssign( MakeWhile( $5, $9),
-                                            NULL));
-               NODE_LINE( ASSIGN_INSTR( ASSIGN_NEXT( $$))) = $<cint>2;
-             }
+           { /*
+              * for( x=e1; e2; y=e3) AssBlock
+              * is transformed into
+              * x=e1;
+              * while( e2) { AssBlock; y=e3; }
+              */
+             BLOCK_INSTR( $9) = AppendAssign( BLOCK_INSTR( $9),
+                                              MakeAssign( $7, NULL));
+             $$ = MakeAssign( $4,
+                              MakeAssign( MakeWhile( $5, $9),
+                                          NULL));
+             NODE_LINE( ASSIGN_INSTR( ASSIGN_NEXT( $$))) = $<cint>2;
+           }
          ;
 
 
@@ -1173,20 +1221,20 @@ assignblock: SEMIC
  *********************************************************************
  */
 
-exprs: expr COMMA exprs { $$ = MakeExprs( $1, $3);   }
-     | expr             { $$ = MakeExprs( $1, NULL); }
+exprs: expr COMMA exprs          { $$ = MakeExprs( $1, $3);   }
+     | expr                      { $$ = MakeExprs( $1, NULL); }
      ;
 
-expr: fun_id                      { $$ = MakeIdFromIds( $1); }
-    | DOT                         { $$ = MakeDot( 1); }
-    | DOT DOT DOT                 { $$ = MakeDot( 3); }
-    | NUM                         { $$ = MakeNum( $1); }
-    | FLOAT                       { $$ = MakeFloat( $1); }
-    | DOUBLE                      { $$ = MakeDouble( $1); }
-    | CHAR                        { $$ = MakeChar( $1); }
-    | TRUETOKEN                   { $$ = MakeBool( 1); }
-    | FALSETOKEN                  { $$ = MakeBool( 0); }
-    | string                      { $$ = String2Array( $1); }
+expr: fun_id                     { $$ = MakeIdFromIds( $1); }
+    | DOT                        { $$ = MakeDot( 1);        }
+    | DOT DOT DOT                { $$ = MakeDot( 3);        }
+    | NUM                        { $$ = MakeNum( $1);       }
+    | FLOAT                      { $$ = MakeFloat( $1);     }
+    | DOUBLE                     { $$ = MakeDouble( $1);    }
+    | CHAR                       { $$ = MakeChar( $1);      }
+    | TRUETOKEN                  { $$ = MakeBool( 1);       }
+    | FALSETOKEN                 { $$ = MakeBool( 0);       }
+    | string                     { $$ = String2Array( $1);  }
     | BRACKET_L expr BRACKET_R
       { $$ = $2;
         if( NODE_TYPE( $2) == N_mop) {
@@ -1196,50 +1244,67 @@ expr: fun_id                      { $$ = MakeIdFromIds( $1); }
     | expr fun_id expr
       {
         $$ = ConstructMop( $1, $2, $3);
-      } %prec BM_OP
+      }   %prec BM_OP
     | PLUS expr
       {
-        $$ = MakeAp1( StringCopy( "+"), NULL, $2);
-      }    %prec MM_OP
+        $$ = MakeAp1( StringCopy( "+"),
+                      NULL,
+                      $2);
+      }   %prec MM_OP
     | MINUS expr
       {
-        $$ = MakeAp1( StringCopy( "-"), NULL, $2);
-      }    %prec MM_OP
+        $$ = MakeAp1( StringCopy( "-"),
+                      NULL,
+                      $2);
+      }   %prec MM_OP
     | TILDE expr
       {
-        $$ = MakeAp1( StringCopy( "~"), NULL, $2);
-      }    %prec MM_OP
+        $$ = MakeAp1( StringCopy( "~"),
+                      NULL,
+                      $2);
+      }   %prec MM_OP
     | EXCL expr
       {
-        $$ = MakeAp1( StringCopy( "!"), NULL, $2);
-      }    %prec MM_OP
+        $$ = MakeAp1( StringCopy( "!"),
+                      NULL,
+                      $2);
+      }   %prec MM_OP
     | PLUS BRACKET_L expr COMMA exprs BRACKET_R
       {
-        $$ = MakeAp( StringCopy( "+"), NULL, MakeExprs( $3, $5));
+        $$ = MakeAp( StringCopy( "+"),
+                     NULL,
+                     MakeExprs( $3, $5));
       }
     | MINUS BRACKET_L expr COMMA exprs BRACKET_R
       {
-        $$ = MakeAp( StringCopy( "-"), NULL, MakeExprs( $3, $5));
+        $$ = MakeAp( StringCopy( "-"),
+                     NULL,
+                     MakeExprs( $3, $5));
       }
     | TILDE BRACKET_L expr COMMA exprs BRACKET_R
       {
-        $$ = MakeAp( StringCopy( "~"), NULL, MakeExprs( $3, $5));
+        $$ = MakeAp( StringCopy( "~"),
+                     NULL,
+                     MakeExprs( $3, $5));
       }
     | EXCL BRACKET_L expr COMMA exprs BRACKET_R
       {
-        $$ = MakeAp( StringCopy( "!"), NULL, MakeExprs( $3, $5));
+        $$ = MakeAp( StringCopy( "!"),
+                     NULL,
+                     MakeExprs( $3, $5));
       }
-    | expr_sel                    { $$ = $1;}  /* bracket notation      */
-    | expr_ap                     { $$ = $1;}  /* prefix function calls */
-    | expr_ar                     { $$ = $1;}  /* constant arrays       */
-    | BRACKET_L COLON type BRACKET_R expr %prec CAST
+    | expr_sel                    { $$ = $1; }   /* bracket notation      */
+    | expr_ap                     { $$ = $1; }   /* prefix function calls */
+    | expr_ar                     { $$ = $1; }   /* constant arrays       */
+    | BRACKET_L COLON type BRACKET_R expr   %prec CAST
       { $$ = MakeCast( $5, $3);
       }
     | BRACE_L id ARROW expr BRACE_R
-      { $$ = MakeSetWL(MakeId($2, NULL, ST_regular), $4);
+      { $$ = MakeSetWL( MakeId( $2, NULL, ST_regular),
+                        $4);
       }
     | BRACE_L BRACKET_L exprs BRACKET_R ARROW expr BRACE_R
-      { $$ = MakeSetWL($3, $6);
+      { $$ = MakeSetWL( $3, $6);
       }
     | wlcomp_pragma_local
       NWITH { $<cint>$ = linenum; } BRACKET_L generator BRACKET_R
@@ -1269,20 +1334,32 @@ expr: fun_id                      { $$ = MakeIdFromIds( $1); }
 
 expr_sel: expr SQBR_L exprs SQBR_R
           { if( CountExprs($3) == 1) {
-              $$ = MakeAp2( StringCopy( "sel"), NULL, EXPRS_EXPR( $3), $1 ); 
+              $$ = MakeAp2( StringCopy( "sel"),
+                            NULL,
+                            EXPRS_EXPR( $3),
+                            $1);
               EXPRS_EXPR( $3) = NULL;
               $3 = FreeNode( $3);
             } else {
-              $$ = MakeAp2( StringCopy( "sel"), NULL, MakeArray( $3), $1); 
+              $$ = MakeAp2( StringCopy( "sel"),
+                            NULL,
+                            MakeArray( $3),
+                            $1);
             }
-        }
+          }
         | expr SQBR_L SQBR_R
-          { $$ = MakeAp2( StringCopy( "sel"), NULL, MakeArray( NULL), $1); }
+          { $$ = MakeAp2( StringCopy( "sel"),
+                          NULL,
+                          MakeArray( NULL),
+                          $1);
+          }
         ;
 
 expr_ap: fun_id BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
          {
-           $$ = MakeAp( StringCopy( IDS_NAME( $1)), StringCopy( IDS_MOD( $1)), $4);
+           $$ = MakeAp( StringCopy( IDS_NAME( $1)),
+                        StringCopy( IDS_MOD( $1)),
+                        $4);
            NODE_LINE( $$) = $<cint>3;
            $1 = FreeAllIds( $1);
          }
@@ -1292,8 +1369,8 @@ expr_ap: fun_id BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
          }
        ;
 
-opt_arguments: exprs { $$ = $1; }
-             |       { $$ = NULL; }
+opt_arguments: exprs         { $$ = $1;   }
+             | /* empty */   { $$ = NULL; }
              ;
 
 expr_ar: SQBR_L { $<cint>$ = linenum; } exprs SQBR_R
@@ -1309,44 +1386,49 @@ expr_ar: SQBR_L { $<cint>$ = linenum; } exprs SQBR_R
 generator: expr LE genidx genop expr steps width
            {
              if( ($7 != NULL) && ($6 == NULL)) {
-               WARN( linenum, ("width vector ignored due to missing step vector"));
+               WARN( linenum,
+                     ("width vector ignored due to missing step vector"));
                $7 = FreeTree( $7);
              }
              $$ = MakeNPart( $3,
-                             MakeNGenerator( $1, $5, F_le,  $4, $6, $7),
+                             MakeNGenerator( $1, $5, F_le, $4, $6, $7),
                              NULL);
            }
          | expr LT genidx genop expr steps width
            {
              if( ($7 != NULL) && ($6 == NULL)) {
-               WARN( linenum, ("width vector ignored due to missing step vector"));
+               WARN( linenum,
+                     ("width vector ignored due to missing step vector"));
                $7 = FreeTree( $7);
              }
              $$ = MakeNPart( $3,
-                             MakeNGenerator( $1, $5, F_lt,  $4, $6, $7),
+                             MakeNGenerator( $1, $5, F_lt, $4, $6, $7),
                              NULL);
            }
          ;
 
-steps: /* empty */ { $$ = NULL; }
-     | STEP expr   { $$ = $2; }
+steps: /* empty */   { $$ = NULL; }
+     | STEP expr     { $$ = $2;   }
      ;
 
-width: /* empty */ { $$ = NULL; }
-     | WIDTH expr  { $$ = $2; }
+width: /* empty */   { $$ = NULL; }
+     | WIDTH expr    { $$ = $2;   }
      ;
 
 genidx: id LET SQBR_L ids SQBR_R
-        {
-          $$ = MakeNWithid( MakeIds( $1, NULL, ST_regular), $4);
+        { $$ = MakeNWithid( MakeIds( $1, NULL, ST_regular), $4);
         }
-      | id { $$ = MakeNWithid( MakeIds( $1, NULL, ST_regular), NULL); }
-      | SQBR_L ids SQBR_R { $$ = MakeNWithid( NULL, $2); }
+      | id
+        { $$ = MakeNWithid( MakeIds( $1, NULL, ST_regular), NULL);
+        }
+      | SQBR_L ids SQBR_R
+        { $$ = MakeNWithid( NULL, $2);
+        }
       ;
 
 
-genop: LT { $$ = F_lt; }
-     | LE { $$ = F_le; }
+genop: LT   { $$ = F_lt; }
+     | LE   { $$ = F_le; }
      ;
 
 
@@ -1360,8 +1442,7 @@ wlassignblock: BRACE_L { $<cint>$ = linenum; } assigns BRACE_R
                  NODE_LINE( $$) = $<cint>2;
                }
              | /* empty */
-               {
-                 $$ = MAKE_EMPTY_BLOCK();
+               { $$ = MAKE_EMPTY_BLOCK();
                }
              ;
 
@@ -1387,41 +1468,48 @@ withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
         }
       ;
 
-foldop: ADD_SxS  { $$ = F_add_SxS;  }
-      | ADD_AxA  { $$ = F_add_AxA;  }
-      | MUL_SxS  { $$ = F_mul_SxS;  }
-      | MUL_AxA  { $$ = F_mul_AxA;  }
-      | PRF_MIN  { $$ = F_min; }
-      | PRF_MAX  { $$ = F_max; }
-      | AND      { $$ = F_and; }
-      | OR       { $$ = F_or; }
+foldop: PRF_ADD_SxS   { $$ = F_add_SxS; }
+      | PRF_ADD_AxA   { $$ = F_add_AxA; }
+      | PRF_MUL_SxS   { $$ = F_mul_SxS; }
+      | PRF_MUL_AxA   { $$ = F_mul_AxA; }
+      | PRF_MIN       { $$ = F_min;     }
+      | PRF_MAX       { $$ = F_max;     }
+      | PRF_EQ        { $$ = F_eq;      }
+      | PRF_AND       { $$ = F_and;     }
+      | PRF_OR        { $$ = F_or;      }
       ;
 
-prf: foldop     { $$ = $1;         }
-   | DIM        { $$ = F_dim;      }
-   | SHAPE      { $$ = F_shape;    }
-   | SEL        { $$ = F_sel;      }
-   | RESHAPE    { $$ = F_reshape;  }
-   | PRF_MOD    { $$ = F_mod;      }
-   | ADD_SxA    { $$ = F_add_SxA;  }
-   | ADD_AxS    { $$ = F_add_AxS;  }
-   | SUB_SxS    { $$ = F_sub_SxS;  }
-   | SUB_SxA    { $$ = F_sub_SxA;  }
-   | SUB_AxS    { $$ = F_sub_AxS;  }
-   | SUB_AxA    { $$ = F_sub_AxA;  }
-   | MUL_SxA    { $$ = F_mul_SxA;  }
-   | MUL_AxS    { $$ = F_mul_AxS;  }
-   | DIV_SxS    { $$ = F_div_SxS;  }
-   | DIV_SxA    { $$ = F_div_SxA;  }
-   | DIV_AxS    { $$ = F_div_AxS;  }
-   | DIV_AxA    { $$ = F_div_AxA;  }
-   | EQ_SxS     { $$ = F_eq;       }
-   | NEQ_SxS    { $$ = F_neq;      }
-   | LT_SxS     { $$ = F_lt;       }
-   | LE_SxS     { $$ = F_le;       }
-   | GT_SxS     { $$ = F_gt;       }
-   | GE_SxS     { $$ = F_ge;       }
-   | MODULO_SxS { $$ = F_mod;    }
+prf: foldop        { $$ = $1;        }
+   | PRF_DIM       { $$ = F_dim;     }
+   | PRF_SHAPE     { $$ = F_shape;   }
+   | PRF_RESHAPE   { $$ = F_reshape; }
+   | PRF_SEL       { $$ = F_sel;     }
+   | PRF_ADD_SxA   { $$ = F_add_SxA; }
+   | PRF_ADD_AxS   { $$ = F_add_AxS; }
+   | PRF_SUB_SxS   { $$ = F_sub_SxS; }
+   | PRF_SUB_SxA   { $$ = F_sub_SxA; }
+   | PRF_SUB_AxS   { $$ = F_sub_AxS; }
+   | PRF_SUB_AxA   { $$ = F_sub_AxA; }
+   | PRF_MUL_SxA   { $$ = F_mul_SxA; }
+   | PRF_MUL_AxS   { $$ = F_mul_AxS; }
+   | PRF_DIV_SxS   { $$ = F_div_SxS; }
+   | PRF_DIV_SxA   { $$ = F_div_SxA; }
+   | PRF_DIV_AxS   { $$ = F_div_AxS; }
+   | PRF_DIV_AxA   { $$ = F_div_AxA; }
+   | PRF_MOD       { $$ = F_mod;     }
+   | PRF_ABS       { $$ = F_abs;     }
+   | PRF_NEQ       { $$ = F_neq;     }
+   | PRF_LT        { $$ = F_lt;      }
+   | PRF_LE        { $$ = F_le;      }
+   | PRF_GT        { $$ = F_gt;      }
+   | PRF_GE        { $$ = F_ge;      }
+   | PRF_NOT       { $$ = F_not;     }
+   | PRF_TOI_S     { $$ = F_toi_S;   }
+   | PRF_TOI_A     { $$ = F_toi_A;   }
+   | PRF_TOF_S     { $$ = F_tof_S;   }
+   | PRF_TOF_A     { $$ = F_tof_A;   }
+   | PRF_TOD_S     { $$ = F_tod_S;   }
+   | PRF_TOD_A     { $$ = F_tod_A;   }
    ;
 
 fun_ids: fun_id COMMA fun_ids 
@@ -1431,24 +1519,43 @@ fun_ids: fun_id COMMA fun_ids
        | fun_id {$$ = $1; }
        ;
 
-fun_id: local_fun_id { $$ = $1; }
-      | id COLON local_fun_id  { $$ = $3; IDS_MOD( $$) = $1; }
+fun_id: local_fun_id
+        { $$ = $1;
+        }
+      | id COLON local_fun_id
+        { $$ = $3;
+          IDS_MOD( $$) = $1;
+        }
       ; 
 
-local_fun_id: id          { $$ = MakeIds( $1, NULL, ST_regular); }
-            | GENARRAY    { $$ = MakeIds( StringCopy( "genarray"), NULL, ST_regular); }
-            | MODARRAY    { $$ = MakeIds( StringCopy( "modarray"), NULL, ST_regular); }
-            | ALL         { $$ = MakeIds( StringCopy( "all"), NULL, ST_regular); }
-            | AMPERS      { $$ = MakeIds( StringCopy( "&"), NULL, ST_regular); }
-            | EXCL        { $$ = MakeIds( StringCopy( "!"), NULL, ST_regular); }
-            | INC         { $$ = MakeIds( StringCopy( "++"), NULL, ST_regular); }
-            | DEC         { $$ = MakeIds( StringCopy( "--"), NULL, ST_regular); }
-            | PLUS        { $$ = MakeIds( StringCopy( "+"), NULL, ST_regular); }
-            | MINUS       { $$ = MakeIds( StringCopy( "-"), NULL, ST_regular); }
-            | STAR        { $$ = MakeIds( StringCopy( "*"), NULL, ST_regular); }
-            | LE          { $$ = MakeIds( StringCopy( "<="), NULL, ST_regular); }
-            | LT          { $$ = MakeIds( StringCopy( "<"), NULL, ST_regular); }
-            | GT          { $$ = MakeIds( StringCopy( ">"), NULL, ST_regular); }
+local_fun_id: id         { $$ = MakeIds( $1,
+                                         NULL, ST_regular); }
+            | GENARRAY   { $$ = MakeIds( StringCopy( "genarray"),
+                                         NULL, ST_regular); }
+            | MODARRAY   { $$ = MakeIds( StringCopy( "modarray"),
+                                         NULL, ST_regular); }
+            | ALL        { $$ = MakeIds( StringCopy( "all"),
+                                         NULL, ST_regular); }
+            | AMPERS     { $$ = MakeIds( StringCopy( "&"),
+                                         NULL, ST_regular); }
+            | EXCL       { $$ = MakeIds( StringCopy( "!"),
+                                         NULL, ST_regular); }
+            | INC        { $$ = MakeIds( StringCopy( "++"),
+                                         NULL, ST_regular); }
+            | DEC        { $$ = MakeIds( StringCopy( "--"),
+                                         NULL, ST_regular); }
+            | PLUS       { $$ = MakeIds( StringCopy( "+"),
+                                         NULL, ST_regular); }
+            | MINUS      { $$ = MakeIds( StringCopy( "-"),
+                                         NULL, ST_regular); }
+            | STAR       { $$ = MakeIds( StringCopy( "*"),
+                                         NULL, ST_regular); }
+            | LE         { $$ = MakeIds( StringCopy( "<="),
+                                         NULL, ST_regular); }
+            | LT         { $$ = MakeIds( StringCopy( "<"),
+                                         NULL, ST_regular); }
+            | GT         { $$ = MakeIds( StringCopy( ">"),
+                                         NULL, ST_regular); }
             ; 
 
 ids: id COMMA ids
@@ -1460,21 +1567,30 @@ ids: id COMMA ids
      }
    ;
 
-id: ID        { $$ = $1; }
-  | PRIVATEID { if (file_kind != F_sib) {
-                  ABORT( linenum, ("Identifier name '%s` illegal", $1));
-                } else {
-                  $$ = $1;
-                }
-              }
+id: ID
+    { $$ = $1;
+    }
+  | PRIVATEID
+    { if (file_kind != F_sib) {
+        ABORT( linenum, ("Identifier name '%s` illegal", $1));
+      } else {
+        $$ = $1;
+      }
+    }
   ;
 
-string: STR { $$ = $1; }
-      | STR string { $$ = StringConcat( $1, $2); Free( $1); Free( $2); }
+string: STR       
+        { $$ = $1;
+        }
+      | STR string
+        { $$ = StringConcat( $1, $2);
+          $1 = Free( $1);
+          $2 = Free( $2);
+        }
       ;
 
-nums: NUM COMMA nums { $$ = MakeNums( $1, $3);   }
-    | NUM            { $$ = MakeNums( $1, NULL); }
+nums: NUM COMMA nums   { $$ = MakeNums( $1, $3);   }
+    | NUM              { $$ = MakeNums( $1, NULL); }
     ;
 
 
@@ -1487,8 +1603,8 @@ nums: NUM COMMA nums { $$ = MakeNums( $1, $3);   }
  *********************************************************************
  */
 
-returntypes: TYPE_VOID { $$ = MakeTypes1( T_void); }
-           | types     { $$ = $1;                  }
+returntypes: TYPE_VOID   { $$ = MakeTypes1( T_void); }
+           | types       { $$ = $1;                  }
            ;
 
 types: type COMMA types
@@ -1498,7 +1614,9 @@ types: type COMMA types
      | type { $$ = $1; }
      ;
 
-type: localtype { $$ = $1; }
+type: localtype
+      { $$ = $1;
+      }
     | id COLON localtype
       { $$ = $3;
         TYPES_MOD( $$) = $1;
@@ -1555,11 +1673,11 @@ localtype: simpletype
            }
          ;
 
-simpletype: TYPE_INT   { $$ = MakeTypes1( T_int);    }
-          | TYPE_FLOAT { $$ = MakeTypes1( T_float);  }
-          | TYPE_BOOL  { $$ = MakeTypes1( T_bool);   }
-          | TYPE_CHAR  { $$ = MakeTypes1( T_char);   }
-          | TYPE_DBL   { $$ = MakeTypes1( T_double); }
+simpletype: TYPE_INT     { $$ = MakeTypes1( T_int);    }
+          | TYPE_FLOAT   { $$ = MakeTypes1( T_float);  }
+          | TYPE_BOOL    { $$ = MakeTypes1( T_bool);   }
+          | TYPE_CHAR    { $$ = MakeTypes1( T_char);   }
+          | TYPE_DBL     { $$ = MakeTypes1( T_double); }
           ;
 
 
@@ -1569,15 +1687,17 @@ simpletype: TYPE_INT   { $$ = MakeTypes1( T_int);    }
  *   module decls
  */
 
-varreturntypes: TYPE_VOID { $$ = MakeTypes1( T_void); }
-              | vartypes  { $$ = $1;                  }
+varreturntypes: TYPE_VOID   { $$ = MakeTypes1( T_void); }
+              | vartypes    { $$ = $1;                  }
               ;
 
 vartypes: type COMMA vartypes
           { $$ = $1;
             TYPES_NEXT( $$) = $3;
           }
-        | type { $$ = $1; }
+        | type
+          { $$ = $1;
+          }
         | DOT DOT DOT
           { if ((F_extmoddec != file_kind) &&
                 (F_extclassdec != file_kind) &&
@@ -1593,8 +1713,8 @@ vartypes: type COMMA vartypes
 
 
 
-/*******************************************************************************
- *******************************************************************************
+/******************************************************************************
+ ******************************************************************************
  *
  *  rules for module implementations
  *
@@ -1604,34 +1724,33 @@ vartypes: type COMMA vartypes
  *    - id
  *    - type
  *
- *******************************************************************************
- *******************************************************************************/
+ ******************************************************************************
+ ******************************************************************************/
 
-modimp: module { $$ = $1; }
-      | class  { $$ = $1; }
+modimp: module   { $$ = $1; }
+      | class    { $$ = $1; }
       ;
 
 module: MODIMP { file_kind = F_modimp; } id { mod_name = $3; } COLON defs
-          {
-            $$ = $6;
-            MODUL_NAME( $$) = mod_name;
-            MODUL_FILETYPE( $$) = file_kind;
-          }
+        { $$ = $6;
+          MODUL_NAME( $$) = mod_name;
+          MODUL_FILETYPE( $$) = file_kind;
+        }
         ;
 
 class: CLASSIMP { file_kind = F_classimp; } id { mod_name = $3; } COLON
        CLASSTYPE type SEMIC defs
-         {
-           $$ = $9;
-           MODUL_NAME( $$) = mod_name;
-           MODUL_FILETYPE( $$) = file_kind;
-           MODUL_CLASSTYPE( $$) = $7;
-         }
+       { $$ = $9;
+         MODUL_NAME( $$) = mod_name;
+         MODUL_FILETYPE( $$) = file_kind;
+         MODUL_CLASSTYPE( $$) = $7;
+       }
      ;
 
+
 
-/*******************************************************************************
- *******************************************************************************
+/******************************************************************************
+ ******************************************************************************
  *
  *  rules for module declaraions
  *
@@ -1644,86 +1763,82 @@ class: CLASSIMP { file_kind = F_classimp; } id { mod_name = $3; } COLON
  *    - varreturntypes
  *    - arg
  *
- *******************************************************************************
- *******************************************************************************/
+ ******************************************************************************
+ ******************************************************************************/
 
 moddec: modheader evimport OWN COLON expdesc
-        {
-          $$ = $1;
+        { $$ = $1;
           $$->node[0] = $5;
           $$->node[1] = $2;
           if ($$->node[1] != NULL) {
-             DBUG_PRINT("PARSE",
-                       ("%s:"F_PTR" Id: %s , %s"F_PTR" %s," F_PTR,
-                        mdb_nodetype[ NODE_TYPE( $$)],
-                        $$,
-                        $$->info.fun_name.id,
-                        mdb_nodetype[ NODE_TYPE( $$->node[0])],
-                        $$->node[0],
-                        mdb_nodetype[ NODE_TYPE( $$->node[1])],
-                        $$->node[1]));
+             DBUG_PRINT( "PARSE",
+                         ("%s:"F_PTR" Id: %s , %s"F_PTR" %s," F_PTR,
+                          mdb_nodetype[ NODE_TYPE( $$)],
+                          $$,
+                          $$->info.fun_name.id,
+                          mdb_nodetype[ NODE_TYPE( $$->node[0])],
+                          $$->node[0],
+                          mdb_nodetype[ NODE_TYPE( $$->node[1])],
+                          $$->node[1]));
           }
           else {
-             DBUG_PRINT("PARSE",
-                       ("%s:"F_PTR" Id: %s , %s"F_PTR,
-                        mdb_nodetype[ NODE_TYPE( $$)],
-                        $$,
-                        $$->info.fun_name.id,
-                        mdb_nodetype[ NODE_TYPE( $$->node[0])],
-                        $$->node[0]));
+             DBUG_PRINT( "PARSE",
+                         ("%s:"F_PTR" Id: %s , %s"F_PTR,
+                          mdb_nodetype[ NODE_TYPE( $$)],
+                          $$,
+                          $$->info.fun_name.id,
+                          mdb_nodetype[ NODE_TYPE( $$->node[0])],
+                          $$->node[0]));
           }
         }
       | modheader evimport
-        {
-          $$ = $1;
+        { $$ = $1;
           $$->node[0] = MakeExplist( NULL, NULL, NULL, NULL);
           $$->node[1] = $2;
           if ($$->node[1] != NULL) {
-             DBUG_PRINT("PARSE",
-                       ("%s:"F_PTR" Id: %s , %s"F_PTR" %s," F_PTR,
-                        mdb_nodetype[ NODE_TYPE( $$)],
-                        $$,
-                        $$->info.fun_name.id,
-                        mdb_nodetype[ NODE_TYPE( $$->node[0])],
-                        $$->node[0],
-                        mdb_nodetype[ NODE_TYPE( $$->node[1])],
-                        $$->node[1]));
+             DBUG_PRINT( "PARSE",
+                         ("%s:"F_PTR" Id: %s , %s"F_PTR" %s," F_PTR,
+                          mdb_nodetype[ NODE_TYPE( $$)],
+                          $$,
+                          $$->info.fun_name.id,
+                          mdb_nodetype[ NODE_TYPE( $$->node[0])],
+                          $$->node[0],
+                          mdb_nodetype[ NODE_TYPE( $$->node[1])],
+                          $$->node[1]));
           }
           else {
-             DBUG_PRINT("PARSE",
-                       ("%s:"F_PTR" Id: %s , %s"F_PTR,
-                        mdb_nodetype[ NODE_TYPE( $$)],
-                        $$,
-                        $$->info.fun_name.id,
-                        mdb_nodetype[ NODE_TYPE( $$->node[0])],
-                        $$->node[0]));
+             DBUG_PRINT( "PARSE",
+                         ("%s:"F_PTR" Id: %s , %s"F_PTR,
+                          mdb_nodetype[ NODE_TYPE( $$)],
+                          $$,
+                          $$->info.fun_name.id,
+                          mdb_nodetype[ NODE_TYPE( $$->node[0])],
+                          $$->node[0]));
           }
         }
       ;
 
 modheader: modclass evextern id COLON linkwith
-           {
-             switch ($1) {
-             case N_moddec:
-               $$ = MakeModdec( $3, $5, $2, NULL, NULL);
-               break;
-             case N_classdec:
-               $$ = MakeClassdec( $3, $5, $2, NULL, NULL);
-               break;
-             case N_modspec:
-               $$ = MakeModspec( $3, NULL);
-               break;
-             default:
-               DBUG_ASSERT((0), ("Illegal declaration type"));
-               $$ = NULL;
+           { switch ($1) {
+               case N_moddec:
+                 $$ = MakeModdec( $3, $5, $2, NULL, NULL);
+                 break;
+               case N_classdec:
+                 $$ = MakeClassdec( $3, $5, $2, NULL, NULL);
+                 break;
+               case N_modspec:
+                 $$ = MakeModspec( $3, NULL);
+                 break;
+               default:
+                 DBUG_ASSERT( (0), ("Illegal declaration type"));
+                 $$ = NULL;
              }
 
              link_mod_name = $3;
 
              if ($2) {
                mod_name = NULL;
-             }
-             else {
+             } else {
                mod_name = link_mod_name;
              }
            }
@@ -1735,320 +1850,322 @@ modclass: MODDEC   { $$ = N_moddec;   file_kind = F_moddec;   }
         ;
 
 evextern: EXTERN
-          {
-            file_kind++;
+          { file_kind++;
             $$ = 1;
           }
-        |
-          {
-            $$ = 0;
+        | /* empty */
+          { $$ = 0;
           }
         ;
 
-linkwith: PRAGMA LINKWITH linklist
-            { $$ = $3; }
-        |   { $$ = NULL; }
+linkwith: PRAGMA LINKWITH linklist   { $$ = $3;   }
+        | /* empty */                { $$ = NULL; }
         ;
 
 linklist: string COMMA linklist
-           {
-             $$ = MakeDeps( $1, NULL, NULL, ST_system, LOC_stdlib, NULL, $3);
-           }
+          { $$ = MakeDeps( $1, NULL, NULL, ST_system, LOC_stdlib, NULL, $3);
+          }
         | string
-           {
-             $$ = MakeDeps( $1, NULL, NULL, ST_system, LOC_stdlib, NULL, NULL);
-           }
+          { $$ = MakeDeps( $1, NULL, NULL, ST_system, LOC_stdlib, NULL, NULL);
+          }
         ;
 
-evimport: imports { $$ = $1; }
-          | { $$ = NULL; }
+evimport: imports         { $$ = $1;   }
+          | /* empty */   { $$ = NULL; }
           ;
 
 expdesc: BRACE_L IMPLICIT TYPES COLON imptypes expdesc2
-           { $$ = $6;
-             $$->node[0] = $5;
-           }
+         { $$ = $6;
+           $$->node[0] = $5;
+         }
        | BRACE_L expdesc2
-           { $$ = $2; }
+         { $$ = $2;
+         }
        | BRACE_L IMPLICIT TYPES COLON expdesc2
-           { $$ = $5; }
+         { $$ = $5;
+         }
        ;
 
 expdesc2: EXPLICIT TYPES COLON exptypes expdesc3
-            { $$ = $5;
-              $$->node[1] = $4;
-            }
+          { $$ = $5;
+            $$->node[1] = $4;
+          }
         | EXPLICIT TYPES COLON expdesc3
-            { $$ = $4;
-            }
-        | expdesc3 { $$ = $1; }
+          { $$ = $4;
+          }
+        | expdesc3
+          { $$ = $1;
+          }
         ;
 
 expdesc3: GLOBAL OBJECTS COLON objdecs expdesc4
-            { $$ = $5;
-              $$->node[3] = $4;
-            }
+          { $$ = $5;
+            $$->node[3] = $4;
+          }
         | GLOBAL OBJECTS COLON expdesc4
-            { $$ = $4;
-            }
-        | expdesc4 { $$ = $1; }
+          { $$ = $4;
+          }
+        | expdesc4
+          { $$ = $1;
+          }
         ;
+
 expdesc4: FUNS COLON fundecs BRACE_R
-            { $$ = MakeExplist( NULL, NULL, NULL, $3);
+          { $$ = MakeExplist( NULL, NULL, NULL, $3);
 
-              DBUG_PRINT("PARSE",
-                         ("%s:"F_PTR,
-                          mdb_nodetype[ NODE_TYPE( $$)],
-                          $$));
-            }
+            DBUG_PRINT( "PARSE",
+                        ("%s:"F_PTR,
+                         mdb_nodetype[ NODE_TYPE( $$)],
+                         $$));
+          }
         | FUNS COLON BRACE_R
-            { $$ = MakeExplist( NULL, NULL, NULL, NULL);
+          { $$ = MakeExplist( NULL, NULL, NULL, NULL);
 
-              DBUG_PRINT("PARSE",
-                         ("%s:"F_PTR,
-                          mdb_nodetype[ NODE_TYPE( $$)],
-                          $$));
-            }
+            DBUG_PRINT( "PARSE",
+                        ("%s:"F_PTR,
+                         mdb_nodetype[ NODE_TYPE( $$)],
+                         $$));
+          }
         | BRACE_R
-            { $$ = MakeExplist( NULL, NULL, NULL, NULL);
+          { $$ = MakeExplist( NULL, NULL, NULL, NULL);
 
-              DBUG_PRINT("PARSE",
-                         ("%s:"F_PTR,
-                          mdb_nodetype[ NODE_TYPE( $$)],
-                          $$));
-            }
+            DBUG_PRINT( "PARSE",
+                        ("%s:"F_PTR,
+                         mdb_nodetype[ NODE_TYPE( $$)],
+                         $$));
+          }
         ;
 
 imptypes: imptype imptypes
-            { $$ = $1;
-              $1->node[0] = $2;
-            }
-        | imptype { $$ = $1; }
+          { $$ = $1;
+            $1->node[0] = $2;
+          }
+        | imptype
+          { $$ = $1;
+          }
         ;
 
 imptype: id SEMIC pragmas
-           {
-             $$ = MakeTypedef( $1, mod_name,
-                               MakeTypes1( T_hidden),
-                               ST_regular, NULL);
+         { $$ = MakeTypedef( $1, mod_name,
+                             MakeTypes1( T_hidden),
+                             ST_regular, NULL);
 
-             DBUG_PRINT("PARSE",("type:"F_PTR" %s",
-                                   TYPEDEF_TYPE( $$),
-                                   mdb_type[TYPEDEF_BASETYPE( $$)]));
+           DBUG_PRINT( "PARSE",
+                       ("type:"F_PTR" %s",
+                        TYPEDEF_TYPE( $$),
+                        mdb_type[TYPEDEF_BASETYPE( $$)]));
 
-             TYPEDEF_LINKMOD( $$) = link_mod_name;
-             TYPEDEF_STATUS( $$) = (file_kind == F_moddec)
-                                     ? ST_imported_mod : ST_imported_class;
-             TYPEDEF_PRAGMA( $$) = $3;
-
-             DBUG_PRINT("PARSE",
-                      ("%s:"F_PTR","F_PTR", Id: %s",
-                       mdb_nodetype[ NODE_TYPE( $$)],
-                       $$,
-                       TYPEDEF_TYPE( $$),
-                       TYPEDEF_NAME( $$)));
-           }
-       ;
-
-exptypes: exptype exptypes
-            { $$ = $1;
-              $1->node[0] = $2;
-            }
-        | exptype { $$ = $1; }
-        ;
-
-exptype: id LET type SEMIC pragmas
-           { $$ = MakeTypedef( $1, mod_name, $3, ST_regular, NULL);
-             TYPEDEF_LINKMOD( $$) = link_mod_name;
-             TYPEDEF_STATUS( $$) = (file_kind == F_moddec)
-                                     ? ST_imported_mod : ST_imported_class;
-             TYPEDEF_PRAGMA( $$) = $5;
-
-             DBUG_PRINT("PARSE",
-                        ("%s:"F_PTR","F_PTR", Id: %s",
-                         mdb_nodetype[ NODE_TYPE( $$)],
-                         $$,
-                         TYPEDEF_TYPE( $$),
-                         TYPEDEF_NAME( $$)));
-           }
-       ;
-
-objdecs: objdec objdecs
-           { $$ = $1;
-             $$->node[0] = $2;
-           }
-        | objdec { $$ = $1; }
-        ;
-
-objdec: type id SEMIC pragmas
-          { $$ = MakeObjdef( $2, mod_name, $1, NULL, NULL);
-            OBJDEF_LINKMOD( $$) = link_mod_name; /* external module name */
-            OBJDEF_STATUS( $$) = (file_kind == F_moddec)
+           TYPEDEF_LINKMOD( $$) = link_mod_name;
+           TYPEDEF_STATUS( $$) = (file_kind == F_moddec)
                                    ? ST_imported_mod : ST_imported_class;
-            OBJDEF_PRAGMA( $$) = $4;
+           TYPEDEF_PRAGMA( $$) = $3;
 
-            DBUG_PRINT("PARSE",
+           DBUG_PRINT( "PARSE",
                        ("%s:"F_PTR","F_PTR", Id: %s",
                         mdb_nodetype[ NODE_TYPE( $$)],
                         $$,
-                        OBJDEF_TYPE( $$),
-                        OBJDEF_NAME( $$)));
+                        TYPEDEF_TYPE( $$),
+                        TYPEDEF_NAME( $$)));
+         }
+       ;
+
+exptypes: exptype exptypes
+          { $$ = $1;
+            $1->node[0] = $2;
           }
+        | exptype {
+            $$ = $1;
+          }
+        ;
+
+exptype: id LET type SEMIC pragmas
+         { $$ = MakeTypedef( $1, mod_name, $3, ST_regular, NULL);
+           TYPEDEF_LINKMOD( $$) = link_mod_name;
+           TYPEDEF_STATUS( $$) = (file_kind == F_moddec)
+                                   ? ST_imported_mod : ST_imported_class;
+           TYPEDEF_PRAGMA( $$) = $5;
+
+           DBUG_PRINT( "PARSE",
+                       ("%s:"F_PTR","F_PTR", Id: %s",
+                        mdb_nodetype[ NODE_TYPE( $$)],
+                        $$,
+                        TYPEDEF_TYPE( $$),
+                        TYPEDEF_NAME( $$)));
+         }
+       ;
+
+objdecs: objdec objdecs
+         { $$ = $1;
+           $$->node[0] = $2;
+         }
+       | objdec
+         { $$ = $1;
+         }
+       ;
+
+objdec: type id SEMIC pragmas
+        { $$ = MakeObjdef( $2, mod_name, $1, NULL, NULL);
+          OBJDEF_LINKMOD( $$) = link_mod_name; /* external module name */
+          OBJDEF_STATUS( $$) = (file_kind == F_moddec)
+                                 ? ST_imported_mod : ST_imported_class;
+          OBJDEF_PRAGMA( $$) = $4;
+
+          DBUG_PRINT( "PARSE",
+                      ("%s:"F_PTR","F_PTR", Id: %s",
+                       mdb_nodetype[ NODE_TYPE( $$)],
+                       $$,
+                       OBJDEF_TYPE( $$),
+                       OBJDEF_NAME( $$)));
+        }
       ;
 
 fundecs: fundec fundecs
-           {
-             $$ = $1;
-             FUNDEF_NEXT( $$) = $2;
-           }
-       | fundec { $$ = $1; }
+         { $$ = $1;
+           FUNDEF_NEXT( $$) = $2;
+         }
+       | fundec
+         { $$ = $1;
+         }
        ;
 
 fundec: varreturntypes fun_id BRACKET_L fundec2
-          {
-            $$ = $4;
-            $2 = HMAdjustFunNames( $2);
-            FUNDEF_TYPES( $$) = $1;
-            FUNDEF_NAME( $$) = StringCopy( IDS_NAME( $2));  /* function name */
-            FreeOneIds( $2);
-            FUNDEF_MOD( $$) = mod_name;           /* SAC modul name */
-            FUNDEF_LINKMOD( $$) = link_mod_name;  /* external modul name */
-            FUNDEF_ATTRIB( $$) = ST_regular;
-            FUNDEF_STATUS( $$) = (file_kind == F_moddec)
-                                   ? ST_imported_mod : ST_imported_class;
+        { $$ = $4;
+          $2 = HMAdjustFunNames( $2);
+          FUNDEF_TYPES( $$) = $1;
+          FUNDEF_NAME( $$) = StringCopy( IDS_NAME( $2));  /* function name */
+          $2 = FreeOneIds( $2);
+          FUNDEF_MOD( $$) = mod_name;           /* SAC modul name */
+          FUNDEF_LINKMOD( $$) = link_mod_name;  /* external modul name */
+          FUNDEF_ATTRIB( $$) = ST_regular;
+          FUNDEF_STATUS( $$) = (file_kind == F_moddec)
+                                 ? ST_imported_mod : ST_imported_class;
 
-            DBUG_PRINT("PARSE",
-                       ("%s:"F_PTR" Id: %s , NULL body,  %s" F_PTR,
-                        mdb_nodetype[ NODE_TYPE( $$)],
-                        $$,
-                        FUNDEF_NAME( $$),
-                        mdb_nodetype[ ($$->node[2]==NULL)
-                                        ? T_void
-                                        : (NODE_TYPE( $$->node[2]))],
-                        $$->node[2]));
-          }
+          DBUG_PRINT( "PARSE",
+                      ("%s:"F_PTR" Id: %s, NULL body, %s" F_PTR,
+                       mdb_nodetype[ NODE_TYPE( $$)],
+                       $$,
+                       FUNDEF_NAME( $$),
+                       mdb_nodetype[ ($$->node[2] == NULL)
+                                       ? T_void
+                                       : (NODE_TYPE( $$->node[2]))],
+                       $$->node[2]));
+        }
       ;
 
 fundec2: varargtypes BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
-           {
-             $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
-             NODE_LINE( $$) = $<cint>3;
-             FUNDEF_PRAGMA( $$) = $5;
-           }
+         { $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
+           NODE_LINE( $$) = $<cint>3;
+           FUNDEF_PRAGMA( $$) = $5;
+         }
        | varargs BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
-           {
-             $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
-             NODE_LINE( $$) = $<cint>3;
-             FUNDEF_PRAGMA( $$) = $5;
-           }
+         { $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
+           NODE_LINE( $$) = $<cint>3;
+           FUNDEF_PRAGMA( $$) = $5;
+         }
        | DOT DOT DOT BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
-           {
-             if ((F_extmoddec != file_kind) && (F_extclassdec != file_kind)) {
-               strcpy( yytext, "...");
-               yyerror( "syntax error");
-             }
-             else {
-               $$ = MakeFundef( NULL, NULL, NULL,
-                                MakeArg( NULL,
-                                         MakeTypes1( T_dots),
-                                         ST_regular, ST_regular,
-                                         NULL),
-                                NULL, NULL);
-               NODE_LINE( $$) = $<cint>5;
-               FUNDEF_PRAGMA( $$) = $7;
-             }
+         { if ((F_extmoddec != file_kind) && (F_extclassdec != file_kind)) {
+             strcpy( yytext, "...");
+             yyerror( "syntax error");
            }
+           else {
+             $$ = MakeFundef( NULL, NULL, NULL,
+                              MakeArg( NULL,
+                                       MakeTypes1( T_dots),
+                                       ST_regular, ST_regular,
+                                       NULL),
+                              NULL, NULL);
+             NODE_LINE( $$) = $<cint>5;
+             FUNDEF_PRAGMA( $$) = $7;
+           }
+         }
        | BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
-           {
-             $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL);
-             NODE_LINE( $$) = $<cint>2;
-             FUNDEF_PRAGMA( $$) = $4;
-           }
+         { $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL);
+           NODE_LINE( $$) = $<cint>2;
+           FUNDEF_PRAGMA( $$) = $4;
+         }
        ;
 
 varargs: arg COMMA varargs
-           {
-             ARG_NEXT( $1) = $3;
-             $$ = $1;
-           }
+         { ARG_NEXT( $1) = $3;
+           $$ = $1;
+         }
        | arg COMMA DOT DOT DOT
-           {
-             if ((F_extmoddec != file_kind) && (F_extclassdec != file_kind)) {
-               strcpy( yytext, "...");
-               yyerror( "syntax error");
-             }
-             else {
-               $$ = $1;
-               ARG_NEXT( $$) = MakeArg( NULL,
-                                        MakeTypes1( T_dots),
-                                        ST_regular, ST_regular,
-                                        NULL);
-
-               DBUG_PRINT("PARSE",
-                          ("%s: "F_PTR", Id: ..., Attrib: %d  ",
-                           mdb_nodetype[ NODE_TYPE( $$)],
-                           $$,
-                           ARG_ATTRIB( $$)));
-             }
+         { if ((F_extmoddec != file_kind) && (F_extclassdec != file_kind)) {
+             strcpy( yytext, "...");
+             yyerror( "syntax error");
            }
-       | arg { $$ = $1; }
+           else {
+             $$ = $1;
+             ARG_NEXT( $$) = MakeArg( NULL,
+                                      MakeTypes1( T_dots),
+                                      ST_regular, ST_regular,
+                                      NULL);
+
+             DBUG_PRINT( "PARSE",
+                         ("%s: "F_PTR", Id: ..., Attrib: %d  ",
+                          mdb_nodetype[ NODE_TYPE( $$)],
+                          $$,
+                          ARG_ATTRIB( $$)));
+           }
+         }
+       | arg
+         { $$ = $1;
+         }
        ;
 
 argtype: type
-           { $$ = MakeArg( NULL, $1, ST_regular, ST_regular, NULL);
+         { $$ = MakeArg( NULL, $1, ST_regular, ST_regular, NULL);
 
-             DBUG_PRINT("PARSE",
-                        ("%s: "F_PTR", Attrib: %d  ",
-                         mdb_nodetype[ NODE_TYPE( $$)],
-                         $$,
-                         ARG_ATTRIB( $$)));
-           }
+           DBUG_PRINT( "PARSE",
+                       ("%s: "F_PTR", Attrib: %d  ",
+                        mdb_nodetype[ NODE_TYPE( $$)],
+                        $$,
+                        ARG_ATTRIB( $$)));
+         }
        | type AMPERS
-           { $$ = MakeArg( NULL, $1, ST_regular, ST_reference, NULL);
+         { $$ = MakeArg( NULL, $1, ST_regular, ST_reference, NULL);
 
-             DBUG_PRINT("PARSE",
-                        ("%s: "F_PTR", Attrib: %d ",
-                         mdb_nodetype[ NODE_TYPE( $$)],
-                         $$,
-                         ARG_ATTRIB( $$)));
-           }
+           DBUG_PRINT( "PARSE",
+                       ("%s: "F_PTR", Attrib: %d ",
+                        mdb_nodetype[ NODE_TYPE( $$)],
+                        $$,
+                        ARG_ATTRIB( $$)));
+         }
        ;
 
 varargtypes: argtype COMMA varargtypes
-               {
-                 ARG_NEXT( $1) = $3;
-                 $$ = $1;
-               }
+             { ARG_NEXT( $1) = $3;
+               $$ = $1;
+             }
            | argtype COMMA DOT DOT DOT
-               {
-                 if ((F_extmoddec != file_kind) && (F_extclassdec != file_kind))
-                 {
-                   strcpy( yytext, "...");
-                   yyerror( "syntax error");
-                 }
-                 else
-                 {
-                   $$ = $1;
-                   ARG_NEXT( $$) = MakeArg( NULL,
-                                            MakeTypes1( T_dots),
-                                            ST_regular, ST_regular,
-                                            NULL);
-
-                   DBUG_PRINT("PARSE",
-                              ("%s: "F_PTR", Attrib: %d  ",
-                               mdb_nodetype[ NODE_TYPE( $$)],
-                               $$,
-                               ARG_ATTRIB( $$)));
-
-                 }
+             { if( (F_extmoddec != file_kind)
+                    && (F_extclassdec != file_kind)) {
+                 strcpy( yytext, "...");
+                 yyerror( "syntax error");
                }
+               else {
+                 $$ = $1;
+                 ARG_NEXT( $$) = MakeArg( NULL,
+                                          MakeTypes1( T_dots),
+                                          ST_regular, ST_regular,
+                                          NULL);
+
+                 DBUG_PRINT( "PARSE",
+                             ("%s: "F_PTR", Attrib: %d  ",
+                              mdb_nodetype[ NODE_TYPE( $$)],
+                              $$,
+                              ARG_ATTRIB( $$)));
+               }
+             }
            | argtype
-               { $$ = $1; }
+             { $$ = $1;
+             }
            ;
 
+
 
-/*******************************************************************************
- *******************************************************************************
+/******************************************************************************
+ ******************************************************************************
  *
  *  rules for module specializations( C interface only)
  *
@@ -2056,27 +2173,27 @@ varargtypes: argtype COMMA varargtypes
  *   - modheader
  *   - expdesc
  *
- *******************************************************************************
- *******************************************************************************/
+ ******************************************************************************
+ ******************************************************************************/
 
-modspec:  modheader OWN COLON expdesc
-          {
-          $$ = $1;
-          $$->node[0] = $4;
-          $$->node[1] = NULL;
-          DBUG_PRINT("PARSE",
-                     ("%s:"F_PTR" Id: %s , %s"F_PTR,
-                      mdb_nodetype[ NODE_TYPE( $$)],
-                      $$,
-                      $$->info.fun_name.id,
-                      mdb_nodetype[ NODE_TYPE( $$->node[0])],
-                      $$->node[0]));
-          };
+modspec: modheader OWN COLON expdesc
+         { $$ = $1;
+           $$->node[0] = $4;
+           $$->node[1] = NULL;
+           DBUG_PRINT( "PARSE",
+                       ("%s:"F_PTR" Id: %s , %s"F_PTR,
+                        mdb_nodetype[ NODE_TYPE( $$)],
+                        $$,
+                        $$->info.fun_name.id,
+                        mdb_nodetype[ NODE_TYPE( $$->node[0])],
+                        $$->node[0]));
+         }
+       ;
 
 
 
-/*******************************************************************************
- *******************************************************************************
+/******************************************************************************
+ ******************************************************************************
  *
  *  rules for SAC Information Blocks (SIB)
  *
@@ -2090,321 +2207,279 @@ modspec:  modheader OWN COLON expdesc
  *    - exprblock
  *    - pragma
  *
- *******************************************************************************
- *******************************************************************************/
+ ******************************************************************************
+ ******************************************************************************/
 
 sib: sibheader siblinkwith sibtypes
-       {
-         $$ = $3;
-         SIB_LINKSTYLE( $$) = $1;
-         SIB_LINKWITH( $$) = $2;
+     { $$ = $3;
+       SIB_LINKSTYLE( $$) = $1;
+       SIB_LINKWITH( $$) = $2;
 
-         DBUG_PRINT( "PARSE_SIB", ("%s"F_PTR,
-                               mdb_nodetype[ NODE_TYPE( $$)],
-                               $$));
-       }
+       DBUG_PRINT( "PARSE_SIB",
+                   ("%s"F_PTR,
+                    mdb_nodetype[ NODE_TYPE( $$)],
+                    $$));
+     }
    ;
 
 sibheader: LT MODIMP id GT
-             {
-               mod_name = $3;
-               file_kind = F_sib;
-               sib_imported_status = ST_imported_mod;
+           { mod_name = $3;
+             file_kind = F_sib;
+             sib_imported_status = ST_imported_mod;
 
-               $$ = 0;
-             }
+             $$ = 0;
+           }
          | LT MODIMP id COLON ALL GT
-             {
-               mod_name = $3;
-               file_kind = F_sib;
-               sib_imported_status = ST_imported_mod;
+           { mod_name = $3;
+             file_kind = F_sib;
+             sib_imported_status = ST_imported_mod;
 
-               $$ = 1;
-             }
+             $$ = 1;
+           }
          | LT CLASSIMP id GT
-             {
-               mod_name = $3;
-               file_kind = F_sib;
-               sib_imported_status = ST_imported_class;
+           { mod_name = $3;
+             file_kind = F_sib;
+             sib_imported_status = ST_imported_class;
 
-               $$ = 0;
-             }
+             $$ = 0;
+           }
          | LT CLASSIMP id COLON ALL GT
-             {
-               mod_name = $3;
-               file_kind = F_sib;
-               sib_imported_status = ST_imported_class;
+           { mod_name = $3;
+             file_kind = F_sib;
+             sib_imported_status = ST_imported_class;
 
-               $$ = 1;
-             }
+             $$ = 1;
+           }
          ;
 
-siblinkwith: LINKWITH siblinklist { $$ = $2; }
-             | { $$ = NULL; }
-             ;
+siblinkwith: LINKWITH siblinklist   { $$ = $2;   }
+           | /* empty */            { $$ = NULL; }
+           ;
 
 siblinklist: siblinkliststatus string sibsublinklist COMMA siblinklist
-             {
-               $$ = MakeDeps( $2, NULL, NULL, $1, LOC_stdlib, $3, $5);
+             { $$ = MakeDeps( $2, NULL, NULL, $1, LOC_stdlib, $3, $5);
              }
            | siblinkliststatus string sibsublinklist
-             {
-               $$ = MakeDeps( $2, NULL, NULL, $1, LOC_stdlib, $3, NULL);
+             { $$ = MakeDeps( $2, NULL, NULL, $1, LOC_stdlib, $3, NULL);
              }
            ;
 
-siblinkliststatus: EXTERN
-                   {
-                     $$ = ST_external;
-                   }
-                 | LINKWITH
-                   {
-                     $$ = ST_system;
-                   }
-                 |
-                   {
-                     $$ = ST_sac;
-                   }
+siblinkliststatus: EXTERN        { $$ = ST_external; }
+                 | LINKWITH      { $$ = ST_system;   }
+                 | /* empty */   { $$ = ST_sac;      }
                  ;
 
-sibsublinklist: BRACE_L siblinklist BRACE_R
-                {
-                  $$ = $2;
-                }
-              |
-                {
-                  $$ = NULL;
-                }
+sibsublinklist: BRACE_L siblinklist BRACE_R   { $$ = $2;   }
+              | /* empty */                   { $$ = NULL; }
               ;
 
 
 sibtypes: sibtype sibtypes
-            {
-              $$ = $2;
-              TYPEDEF_NEXT( $1) = SIB_TYPES( $2);
-              SIB_TYPES( $$) = $1;
-            }
+          { $$ = $2;
+            TYPEDEF_NEXT( $1) = SIB_TYPES( $2);
+            SIB_TYPES( $$) = $1;
+          }
         | sibobjs
-            {
-              $$ = $1;
-            }
+          { $$ = $1;
+          }
         ;
 
 sibtype: sibevclass TYPEDEF type id SEMIC sibpragmas
-           {
-             $$ = MakeTypedef( $4, NULL, $3, $1, NULL);
-             TYPEDEF_STATUS( $$) = sib_imported_status;
-             TYPEDEF_PRAGMA( $$) = $6;
+         { $$ = MakeTypedef( $4, NULL, $3, $1, NULL);
+           TYPEDEF_STATUS( $$) = sib_imported_status;
+           TYPEDEF_PRAGMA( $$) = $6;
 
-            DBUG_PRINT("PARSE_SIB",
-                       ("%s:"F_PTR","F_PTR", Id: %s",
-                        mdb_nodetype[ NODE_TYPE( $$)],
-                        $$, TYPEDEF_TYPE( $$), ItemName( $$)));
-           }
+          DBUG_PRINT( "PARSE_SIB",
+                      ("%s:"F_PTR","F_PTR", Id: %s",
+                       mdb_nodetype[ NODE_TYPE( $$)],
+                       $$,
+                       TYPEDEF_TYPE( $$),
+                       ItemName( $$)));
+         }
        | sibevclass TYPEDEF type id COLON id SEMIC sibpragmas
-           {
-             $$  = MakeTypedef( $6, $4, $3, $1, NULL);
-             TYPEDEF_STATUS( $$) = sib_imported_status;
-             TYPEDEF_PRAGMA( $$) = $8;
+         { $$  = MakeTypedef( $6, $4, $3, $1, NULL);
+           TYPEDEF_STATUS( $$) = sib_imported_status;
+           TYPEDEF_PRAGMA( $$) = $8;
 
-            DBUG_PRINT("PARSE_SIB",
-                       ("%s:"F_PTR","F_PTR", Id: class %s",
-                        mdb_nodetype[ NODE_TYPE( $$)],
-                        $$, TYPEDEF_TYPE( $$), ItemName( $$)));
-           }
+          DBUG_PRINT( "PARSE_SIB",
+                      ("%s:"F_PTR","F_PTR", Id: class %s",
+                       mdb_nodetype[ NODE_TYPE( $$)],
+                       $$,
+                       TYPEDEF_TYPE( $$),
+                       ItemName( $$)));
+         }
        | sibevclass TYPEDEF IMPLICIT id SEMIC sibpragmas
-           {
-             $$ = MakeTypedef( $4, NULL,
-                               MakeTypes1( T_hidden),
-                               $1, NULL);
-             TYPEDEF_STATUS( $$) = sib_imported_status;
-             TYPEDEF_PRAGMA( $$) = $6;
+         { $$ = MakeTypedef( $4, NULL,
+                             MakeTypes1( T_hidden),
+                             $1, NULL);
+           TYPEDEF_STATUS( $$) = sib_imported_status;
+           TYPEDEF_PRAGMA( $$) = $6;
 
-            DBUG_PRINT("PARSE_SIB",
+           DBUG_PRINT( "PARSE_SIB",
                        ("%s:"F_PTR","F_PTR", Id: %s",
                         mdb_nodetype[ NODE_TYPE( $$)],
-                        $$, TYPEDEF_TYPE( $$), ItemName( $$)));
-           }
+                        $$,
+                        TYPEDEF_TYPE( $$),
+                        ItemName( $$)));
+         }
        | sibevclass TYPEDEF IMPLICIT id COLON id SEMIC sibpragmas
-           {
-             $$ = MakeTypedef( $6, $4,
-                               MakeTypes1( T_hidden),
-                               $1, NULL);
-             TYPEDEF_STATUS( $$) = sib_imported_status;
-             TYPEDEF_PRAGMA( $$) = $8;
+         { $$ = MakeTypedef( $6, $4,
+                             MakeTypes1( T_hidden),
+                             $1, NULL);
+           TYPEDEF_STATUS( $$) = sib_imported_status;
+           TYPEDEF_PRAGMA( $$) = $8;
 
-            DBUG_PRINT("PARSE_SIB",
-                       ("%s:"F_PTR","F_PTR", Id: class %s",
-                        mdb_nodetype[ NODE_TYPE( $$)],
-                        $$, TYPEDEF_TYPE( $$), ItemName( $$)));
-           }
-        ;
+          DBUG_PRINT( "PARSE_SIB",
+                      ("%s:"F_PTR","F_PTR", Id: class %s",
+                       mdb_nodetype[ NODE_TYPE( $$)],
+                       $$,
+                       TYPEDEF_TYPE( $$),
+                       ItemName( $$)));
+         }
+       ;
 
-sibevclass: CLASSTYPE
-              { $$ = ST_unique; }
-          |   { $$ = ST_regular; }
+sibevclass: CLASSTYPE     { $$ = ST_unique;  }
+          | /* empty */   { $$ = ST_regular; }
           ;
 
 sibobjs: sibobj sibobjs
-         {
-           $$ = $2;
+         { $$ = $2;
            OBJDEF_NEXT( $1) = SIB_OBJS( $2);
            SIB_OBJS( $2) = $1;
          }
        | sibfuns
-         {
-           $$ = $1;
+         { $$ = $1;
          }
        ;
 
 sibobj: OBJDEF type id SEMIC sibpragmas
-          {
-            $$ = MakeObjdef( $3, NULL, $2, NULL, NULL);
-            OBJDEF_PRAGMA( $$) = $5;
-            OBJDEF_STATUS( $$) = sib_imported_status;
+        { $$ = MakeObjdef( $3, NULL, $2, NULL, NULL);
+          OBJDEF_PRAGMA( $$) = $5;
+          OBJDEF_STATUS( $$) = sib_imported_status;
 
-            DBUG_PRINT("PARSE_SIB",
-                       ("%s:"F_PTR","F_PTR", Id: class %s",
-                        mdb_nodetype[ NODE_TYPE( $$)],
-                        $$, OBJDEF_TYPE( $$), ItemName( $$)));
-          }
+          DBUG_PRINT( "PARSE_SIB",
+                      ("%s:"F_PTR","F_PTR", Id: class %s",
+                       mdb_nodetype[ NODE_TYPE( $$)],
+                       $$,
+                       OBJDEF_TYPE( $$),
+                       ItemName( $$)));
+        }
       | OBJDEF type id COLON id SEMIC sibpragmas
-          {
-            $$ = MakeObjdef( $5, $3, $2, NULL, NULL);
-            OBJDEF_PRAGMA( $$) = $7;
-            OBJDEF_STATUS( $$) = sib_imported_status;
+        { $$ = MakeObjdef( $5, $3, $2, NULL, NULL);
+          OBJDEF_PRAGMA( $$) = $7;
+          OBJDEF_STATUS( $$) = sib_imported_status;
 
-            DBUG_PRINT("PARSE_SIB",
-                       ("%s:"F_PTR","F_PTR", Id: class %s",
-                        mdb_nodetype[ NODE_TYPE( $$)],
-                        $$, OBJDEF_TYPE( $$), ItemName( $$)));
-          }
+          DBUG_PRINT( "PARSE_SIB",
+                      ("%s:"F_PTR","F_PTR", Id: class %s",
+                       mdb_nodetype[ NODE_TYPE( $$)],
+                       $$,
+                       OBJDEF_TYPE( $$),
+                       ItemName( $$)));
+        }
       ;
 
 sibfuns: sibfun sibfuns
-         {
-           $$ = $2;
+         { $$ = $2;
            FUNDEF_NEXT( $1) = SIB_FUNS( $2);
            SIB_FUNS( $$) = $1;
          }
-       |
-         {
-           $$ = MakeSib( mod_name, 0, NULL, NULL, NULL, NULL);
+       | /* empty */
+         { $$ = MakeSib( mod_name, 0, NULL, NULL, NULL, NULL);
          }
        ;
 
 sibfun: sibevmarker varreturntypes fun_id BRACKET_L sibarglist
         BRACKET_R { $<cint>$ = linenum; } sibfunbody sibpragmas
-          {
-            $3 = HMAdjustFunNames( $3);
-            $$ = MakeFundef( StringCopy( IDS_NAME( $3)),
-                               IDS_MOD( $3), $2, $5, $8, NULL);
-            $3 = FreeOneIds( $3);
-            NODE_LINE( $$) = $<cint>7;
-            switch ($1) {
-              case 0:
-                FUNDEF_STATUS( $$) = sib_imported_status;
-                FUNDEF_INLINE( $$) = FALSE;
-                break;
-              case 1:
-                FUNDEF_STATUS( $$) = sib_imported_status;
-                FUNDEF_INLINE( $$) = TRUE;
-                break;
-              case 2:
-                FUNDEF_STATUS( $$) = ST_classfun;
-                FUNDEF_INLINE( $$) = FALSE;
-                break;
-            }
-            FUNDEF_PRAGMA( $$) = $9;
-
-           DBUG_PRINT("PARSE_SIB",("%s"F_PTR"SibFun %s",
-                               mdb_nodetype[ NODE_TYPE( $$)],
-                               $$, ItemName( $$)));
+        { $3 = HMAdjustFunNames( $3);
+          $$ = MakeFundef( StringCopy( IDS_NAME( $3)),
+                           IDS_MOD( $3), $2, $5, $8, NULL);
+          $3 = FreeOneIds( $3);
+          NODE_LINE( $$) = $<cint>7;
+          switch ($1) {
+            case 0:
+              FUNDEF_STATUS( $$) = sib_imported_status;
+              FUNDEF_INLINE( $$) = FALSE;
+              break;
+            case 1:
+              FUNDEF_STATUS( $$) = sib_imported_status;
+              FUNDEF_INLINE( $$) = TRUE;
+              break;
+            case 2:
+              FUNDEF_STATUS( $$) = ST_classfun;
+              FUNDEF_INLINE( $$) = FALSE;
+              break;
           }
-        ;
+          FUNDEF_PRAGMA( $$) = $9;
 
-sibevmarker: INLINE
-             { $$ = 1; }
-           | CLASSTYPE { $$ = 2; }
-           | { $$ = 0; }
+         DBUG_PRINT( "PARSE_SIB",
+                     ("%s"F_PTR"SibFun %s",
+                      mdb_nodetype[ NODE_TYPE( $$)],
+                      $$,
+                      ItemName( $$)));
+        }
+      ;
+
+sibevmarker: INLINE        { $$ = 1; }
+           | CLASSTYPE     { $$ = 2; }
+           | /* empty */   { $$ = 0; }
            ;
 
-sibarglist: sibargs
-            { $$ = $1; }
-          | { $$ = NULL; }
+sibarglist: sibargs       { $$ = $1;   }
+          | /* empty */   { $$ = NULL; }
           ;
 
 sibargs: sibarg COMMA sibargs
-         {
-           $$ = $1;
+         { $$ = $1;
            ARG_NEXT( $$) = $3;
          }
        | sibarg
-         {
-           $$ = $1;
+         { $$ = $1;
          }
        ;
 
 sibarg: type sibreference sibparam
-        {
-          $$ = MakeArg( $3, $1, ST_regular, $2, NULL);
+        { $$ = MakeArg( $3, $1, ST_regular, $2, NULL);
 
-          DBUG_PRINT("PARSE_SIB",
-                     ("%s: "F_PTR", Id: %s, Attrib: %d, Status: %d  ",
-                      mdb_nodetype[ NODE_TYPE( $$)],
-                      $$,
-                      STR_OR_EMPTY( ARG_NAME( $$)),
-                                    ARG_ATTRIB( $$), ARG_STATUS( $$)));
+          DBUG_PRINT( "PARSE_SIB",
+                      ("%s: "F_PTR", Id: %s, Attrib: %d, Status: %d  ",
+                       mdb_nodetype[ NODE_TYPE( $$)],
+                       $$,
+                       STR_OR_EMPTY( ARG_NAME( $$)),
+                       ARG_ATTRIB( $$),
+                       ARG_STATUS( $$)));
         }
       | DOT DOT DOT
-        {
-          $$ = MakeArg( NULL, MakeTypes1( T_dots),
+        { $$ = MakeArg( NULL, MakeTypes1( T_dots),
                         ST_regular, ST_regular, NULL);
 
           DBUG_PRINT( "PARSE_SIB",
                       ("%s: "F_PTR", ... , Attrib: %d, Status: %d  ",
                        mdb_nodetype[ NODE_TYPE( $$)],
-                       $$, ARG_ATTRIB( $$), ARG_STATUS( $$)));
+                       $$,
+                       ARG_ATTRIB( $$),
+                       ARG_STATUS( $$)));
         }
       ;
 
-sibparam: id { $$ = $1; }
-        |    { $$ = NULL; }
+sibparam: id            { $$ = $1;   }
+        | /* empty */   { $$ = NULL; }
         ;
 
-sibreference: BRACKET_L AMPERS BRACKET_R
-              {
-                $$ = ST_readonly_reference;
-              }
-            | AMPERS
-              {
-                $$ = ST_reference;
-              }
-            |
-              {
-                $$ = ST_regular;
-              }
+sibreference: BRACKET_L AMPERS BRACKET_R   { $$ = ST_readonly_reference; }
+            | AMPERS                       { $$ = ST_reference; }
+            | /* empty */                  { $$ = ST_regular; }
             ;
 
-sibfunbody: exprblock
-            {
-              $$ = $1;
-            }
-          | SEMIC
-            {
-              $$ = NULL;
-            }
+sibfunbody: exprblock   { $$ = $1;   }
+          | SEMIC       { $$ = NULL; }
           ;
 
-
 sibpragmas: sibpragmalist
-            {
-              $$ = store_pragma;
+            { $$ = store_pragma;
               store_pragma = NULL;
             }
-          |
-            {
-              $$ = NULL;
+          | /* empty */
+            { $$ = NULL;
             }
           ;
 
@@ -2414,22 +2489,19 @@ sibpragmalist: sibpragmalist sibpragma
 
 sibpragma: pragma
          | PRAGMA TYPES fun_ids
-           {
-             if (store_pragma == NULL) {
+           { if (store_pragma == NULL) {
                store_pragma = MakePragma();
              }
              PRAGMA_NEEDTYPES( store_pragma) = $3;
            }
          | PRAGMA FUNS sibfunlist
-           {
-             if (store_pragma == NULL) {
+           { if (store_pragma == NULL) {
                store_pragma = MakePragma();
              }
              PRAGMA_NEEDFUNS( store_pragma) = $3;
            }
          | PRAGMA EXTERN id
-           {
-             if (store_pragma == NULL) {
+           { if (store_pragma == NULL) {
                store_pragma = MakePragma();
              }
              PRAGMA_LINKMOD( store_pragma) = $3;
@@ -2438,19 +2510,16 @@ sibpragma: pragma
 
 
 sibfunlist: sibfunlistentry COMMA sibfunlist
-            {
-              $$ = $1;
+            { $$ = $1;
               FUNDEF_NEXT( $$) = $3;
             }
           | sibfunlistentry
-            {
-              $$ = $1;
+            { $$ = $1;
             }
           ;
 
 sibfunlistentry: fun_id BRACKET_L sibarglist BRACKET_R
-                 {
-                   $1 = HMAdjustFunNames( $1);
+                 { $1 = HMAdjustFunNames( $1);
                    $$ = MakeFundef( StringCopy( IDS_NAME( $1)),
                                       IDS_MOD( $1),
                                       MakeTypes1( T_unknown),
@@ -2480,69 +2549,54 @@ sibfunlistentry: fun_id BRACKET_L sibarglist BRACKET_R
 
 
 targets: TARGET ID COLON inherits resources targets
-         {
-           $$ = RSCMakeTargetListEntry( $2, $4, $5, $6);
+         { $$ = RSCMakeTargetListEntry( $2, $4, $5, $6);
          }
        | /* empty */
-         {
-           $$ = NULL;
+         { $$ = NULL;
          }
        ;
 
 inherits: COLON ID COLON inherits
-          {
-            $$ = MakeIds( $2, NULL, ST_regular);
+          { $$ = MakeIds( $2, NULL, ST_regular);
             IDS_NEXT( $$) = $4;
           }
         | /* empty */
-          {
-            $$ = NULL;
+          { $$ = NULL;
           } 
         ;
 
 resources: ID COLON LET string resources
-           {
-             $$ = RSCMakeResourceListEntry( $1, $4, 0, 0, $5);
+           { $$ = RSCMakeResourceListEntry( $1, $4, 0, 0, $5);
            }
          | ID ADDON string resources
-           {
-             $$ = RSCMakeResourceListEntry( $1, $3, 0, 1, $4);
+           { $$ = RSCMakeResourceListEntry( $1, $3, 0, 1, $4);
            }
          | ID COLON LET OPTION resources
-           {
-             $$ = RSCMakeResourceListEntry( $1, $4, 0, 0, $5);
+           { $$ = RSCMakeResourceListEntry( $1, $4, 0, 0, $5);
            }
          | ID ADDON OPTION resources
-           {
-             $$ = RSCMakeResourceListEntry( $1, $3, 0, 1, $4);
+           { $$ = RSCMakeResourceListEntry( $1, $3, 0, 1, $4);
            }
          | ID COLON LET ID resources
-           {
-             $$ = RSCMakeResourceListEntry( $1, $4, 0, 0, $5);
+           { $$ = RSCMakeResourceListEntry( $1, $4, 0, 0, $5);
            }
          | ID ADDON ID resources
-           {
-             $$ = RSCMakeResourceListEntry( $1, $3, 0, 1, $4);
+           { $$ = RSCMakeResourceListEntry( $1, $3, 0, 1, $4);
            }
          | ID COLON LET PRIVATEID resources
-           {
-             $$ = RSCMakeResourceListEntry( $1, $4, 0, 0, $5);
+           { $$ = RSCMakeResourceListEntry( $1, $4, 0, 0, $5);
            }
          | ID ADDON PRIVATEID resources
-           {
-             $$ = RSCMakeResourceListEntry( $1, $3, 0, 1, $4);
+           { $$ = RSCMakeResourceListEntry( $1, $3, 0, 1, $4);
            }
          | ID COLON LET NUM resources
-           {
-             $$ = RSCMakeResourceListEntry( $1, NULL, $4, 0, $5);
+           { $$ = RSCMakeResourceListEntry( $1, NULL, $4, 0, $5);
            }
          | ID ADDON NUM resources
-           {
-             $$ = RSCMakeResourceListEntry( $1, NULL, $3, 1, $4);
+           { $$ = RSCMakeResourceListEntry( $1, NULL, $3, 1, $4);
            }
          | /* empty */
-           {
-             $$ = NULL;
+           { $$ = NULL;
            }
          ;
 
@@ -2689,44 +2743,44 @@ node *String2Array(char *str)
     if ((i>0) && (str[i-1]=='\\')) {
       switch (str[i]) {
       case 'n':
-        new_exprs=MakeExprs(MakeChar('\n'), new_exprs);
+        new_exprs = MakeExprs(MakeChar('\n'), new_exprs);
         i-=1;
         break;
       case 't':
-        new_exprs=MakeExprs(MakeChar('\t'), new_exprs);
+        new_exprs = MakeExprs(MakeChar('\t'), new_exprs);
         i-=1;
         break;
       case 'v':
-        new_exprs=MakeExprs(MakeChar('\v'), new_exprs);
+        new_exprs = MakeExprs(MakeChar('\v'), new_exprs);
         i-=1;
         break;
       case 'b':
-        new_exprs=MakeExprs(MakeChar('\b'), new_exprs);
+        new_exprs = MakeExprs(MakeChar('\b'), new_exprs);
         i-=1;
         break;
       case 'r':
-        new_exprs=MakeExprs(MakeChar('\r'), new_exprs);
+        new_exprs = MakeExprs(MakeChar('\r'), new_exprs);
         i-=1;
         break;
       case 'f':
-        new_exprs=MakeExprs(MakeChar('\f'), new_exprs);
+        new_exprs = MakeExprs(MakeChar('\f'), new_exprs);
         i-=1;
         break;
       case 'a':
-        new_exprs=MakeExprs(MakeChar('\a'), new_exprs);
+        new_exprs = MakeExprs(MakeChar('\a'), new_exprs);
         i-=1;
         break;
       case '"':
-        new_exprs=MakeExprs(MakeChar('"'), new_exprs);
+        new_exprs = MakeExprs(MakeChar('"'), new_exprs);
         i-=1;
         break;
       default:
-        new_exprs=MakeExprs(MakeChar(str[i]), new_exprs);
+        new_exprs = MakeExprs(MakeChar(str[i]), new_exprs);
         break;
       }
     }
     else {
-      new_exprs=MakeExprs(MakeChar(str[i]), new_exprs);
+      new_exprs = MakeExprs(MakeChar(str[i]), new_exprs);
     }
     
     cnt+=1;
@@ -2745,6 +2799,7 @@ node *String2Array(char *str)
 
   DBUG_RETURN( res); 
 }
+
 
 
 /******************************************************************************
@@ -2815,6 +2870,8 @@ types *Exprs2ShpInfo( types *types, node *exprs)
   DBUG_RETURN( types);
 }
 
+
+
 /******************************************************************************
  *
  * Function:
@@ -2839,6 +2896,7 @@ node *Expr2Mop( node *expr)
 
   DBUG_RETURN( res);
 }
+
 
 
 /******************************************************************************
@@ -2871,6 +2929,8 @@ node *ConstructMop( node *expr1, ids *fun_ids, node *expr2)
 
   DBUG_RETURN( res);
 }
+
+
 
 /******************************************************************************
  *
