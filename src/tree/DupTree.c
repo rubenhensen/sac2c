@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.124  2004/11/26 12:53:54  mwe
- * changes according to tree_compound.h
+ * Revision 3.125  2004/11/26 18:22:05  mwe
+ * DUPglobobj added
  *
  * Revision 3.123  2004/11/26 12:22:23  mwe
  * moved some macros from .c to .h file (needed by external functions)
@@ -1913,6 +1913,20 @@ DUPsymbol (node *arg_node, info *arg_info)
     DBUG_ENTER ("DUPsymbol");
 
     DBUG_ASSERT ((FALSE), "DUPsymbol until now not implemented!! :-(");
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPglobobj (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPglobobj");
+
+    DBUG_ASSERT ((FALSE), "DUPglobobj until now not implemented!! :-(");
 
     DBUG_RETURN (new_node);
 }

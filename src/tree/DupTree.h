@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2004/11/26 18:22:05  mwe
+ * DUPglobobj added
+ *
  * Revision 3.38  2004/11/26 12:22:23  mwe
  * moved some macros from .c to .h file (needed by external functions)
  *
@@ -237,6 +240,7 @@ extern node *DUPprovide (node *arg_node, info *arg_info);
 extern node *DUPlinklist (node *arg_node, info *arg_info);
 extern node *DUPnums (node *arg_node, info *arg_info);
 extern node *DUPsymbol (node *arg_node, info *arg_info);
+extern node *DUPglobobj (node *arg_node, info *arg_info);
 
 /* frontend with-loop */
 extern node *DUPwith (node *arg_node, info *arg_info);
