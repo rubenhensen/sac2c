@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/06/23 12:47:21  cg
+ * Now, the correct spmd-function name is used for the specification
+ * of the spmd frame.
+ *
  * Revision 1.7  1998/05/15 09:21:35  cg
  * tag inout renamed to inout_rc since these arguments are alway
  * refcounted.
@@ -422,7 +426,8 @@ GSCspmd (node *arg_node, node *arg_info)
 
     spmd_block_counter++;
 
-    fprintf (outfile, "      SAC_MT_BLOCK_FRAME( %s,  {  \\\n", SPMD_FUNNAME (arg_node));
+    fprintf (outfile, "      SAC_MT_BLOCK_FRAME( %s,  {  \\\n",
+             FUNDEF_NAME (SPMD_FUNDEF (arg_node)));
 
     if (SPMD_ICM (arg_node) != NULL) {
         Trav (SPMD_ICM (arg_node), arg_info);
