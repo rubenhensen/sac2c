@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2002/10/09 13:09:18  dkr
+ * TAGGED_ARRAYS: warning about RCAO added
+ *
  * Revision 3.26  2002/09/26 13:14:38  sbs
  * mt compilation enabled for OSF_ALPHA now!!
  *
@@ -903,9 +906,9 @@ CheckOptionConsistency ()
 
     if (runtimecheck & RUNTIMECHECK_BOUNDARY && (optimize & OPT_AP)) {
         optimize &= ~OPT_AP;
-        SYSWARN (("Boundary check and array padding may not be used"
+        SYSWARN (("Boundary check (-checkb) and array padding (AP) may not be used"
                   " simultaneously.\n"
-                  "Array padding turned off"));
+                  "Array padding disabled"));
     }
 
 #ifdef TAGGED_ARRAYS
@@ -916,12 +919,17 @@ CheckOptionConsistency ()
                   " yet available for TAGGED_ARRAYS.\n"
                   "Code for sequential execution generated instead"));
     }
+    if (optimize & OPT_RCAO) {
+        SYSWARN (("Refcount allocation optimization (RCAO) of private heap"
+                  " management is not yet available for TAGGED_ARRAYS.\n"
+                  "RCAO disabled"));
+        optimize &= ~OPT_RCAO;
+    }
 #endif
 
 #ifdef SAC_FOR_OSX_MAC
     if (optimize & OPT_PHM) {
-        SYSWARN (("Private heap management is not (yet) available for"
-                  " Mac OSX.\n"
+        SYSWARN (("Private heap management is not yet available for Mac OSX.\n"
                   "Conventional heap management is used instead"));
         optimize &= ~OPT_PHM;
     }
@@ -937,27 +945,20 @@ CheckOptionConsistency ()
             SYSERROR (("Profiling is not available for multi-threaded "
                        "program execution"));
         }
-
-#if 0
-    if (optimize & OPT_PHM) {
-      SYSWARN( ("Private heap management is not (yet) available for "
-                "multi-threaded program execution.\n"
-                "Conventional heap management is used instead"));
-      optimize &= ~OPT_PHM;
-    }
-#endif
     }
 
     if (use_ssaform && (optimize & OPT_CSE) && (!(optimize & OPT_DCR))) {
-        SYSWARN (("Common Subexpressions elimination in ssaform "
-                  "requires DeadCodeRemoval enabled! - "
+        SYSWARN (("Common subexpressions elimination (CSE) in ssaform requires "
+                  "dead code removal (DCR) enabled.\n"
                   "CSE disabled"));
         optimize &= ~OPT_CSE;
     }
 
     if ((!(optimize & OPT_PHM)) && (runtimecheck & RUNTIMECHECK_HEAP)) {
         SYSWARN (("Diagnostic heap management is only available in "
-                  "conjunction with private heap management"));
+                  "conjunction with private heap management.\n"
+                  "Diagnostic disabled"));
+        runtimecheck &= ~RUNTIMECHECK_HEAP;
     }
 
     /* commandline switch for library generation not used, set it to default
@@ -967,8 +968,8 @@ CheckOptionConsistency ()
     }
     if ((generatelibrary & GENERATELIBRARY_C)
         && ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW))) {
-        SYSWARN (("Multithreading is not (yet) available when compiling for "
-                  "a c-library."));
+        SYSWARN (("Multithreading is not yet available when compiling for "
+                  "a c-library"));
     }
 
     /*
@@ -994,8 +995,8 @@ CheckOptionConsistency ()
         }
     }
     if (write_dummyfuns_into_sib) {
-        SYSWARN (("The tag of lac2fun-functions is lost when these functions"
-                  " are written into the SIB"));
+        SYSWARN (("The tag of lac2fun-functions is lost when these functions "
+                  "are written into the SIB"));
     }
 
     /*
