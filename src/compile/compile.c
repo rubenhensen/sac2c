@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 2.68  2000/07/11 11:29:16  dkr
+ * minor changes done
+ *
  * Revision 2.67  2000/07/10 14:23:26  cg
  * The return type of a function that will become the actual return
  * type of the corresponding compiled C function is tagged as ST_crettype.
@@ -12,7 +16,6 @@
  *
  * Revision 2.64  2000/07/04 14:55:57  jhs
  * Added mtn-stuff.
- * ./
  *
  * Revision 2.63  2000/06/30 15:22:51  jhs
  * BuildParamsByDFM debugged.
@@ -124,7 +127,8 @@
  *
  * Revision 2.37  1999/11/09 21:21:12  dkr
  * support for FREE_HIDDEN, DEC_RC_FREE_HIDDEN added.
- * hidden objects are no longer handled by FREE_ARRAY, DEC_RC_FREE_ARRAY ICMs 8-))
+ * hidden objects are no longer handled by FREE_ARRAY, DEC_RC_FREE_ARRAY ICMs
+ * 8-))
  *
  * Revision 2.36  1999/10/29 21:38:39  sbs
  * changed ND_DEC_RC into ND_DEC_RC_FREE_ARRAY after loops!
@@ -146,7 +150,8 @@
  *
  * Revision 2.31  1999/09/10 14:29:46  jhs
  * Removed those ugly MAKENODE_xxx macros.
- * Extremly brushed COMPLoop (now I unterstand at least half of it, before I had not
+ * Extremly brushed COMPLoop
+ * (now I unterstand at least half of it, before I had not
  * even an idea what could happen there).
  * Commented COMPLoop and COMPCond a "little" bit.
  *
@@ -166,6 +171,7 @@
  *
  * Revision 1.1  1995/03/29  12:38:10  hw
  * Initial revision
+ *
  */
 
 #include <stdlib.h>
@@ -314,11 +320,13 @@ int basetype_size[] = {
     CREATE_2_ARY_ICM (next_assign, "ND_DEC_RC_FREE_ARRAY", array, num_node);             \
     APPEND_ASSIGNS (first_assign, next_assign)
 
-#define INC_RC_ND(array, num_node) /* create ND_INC_RC */                                \
+/* create ND_INC_RC */
+#define INC_RC_ND(array, num_node)                                                       \
     CREATE_2_ARY_ICM (next_assign, "ND_INC_RC", array, num_node);                        \
     APPEND_ASSIGNS (first_assign, next_assign)
 
-#define SET_RC_ND(array, num_node) /* create ND_SET_RC */                                \
+/* create ND_SET_RC */
+#define SET_RC_ND(array, num_node)                                                       \
     CREATE_2_ARY_ICM (next_assign, "ND_SET_RC", array, num_node);                        \
     APPEND_ASSIGNS (first_assign, next_assign)
 
@@ -331,12 +339,14 @@ int basetype_size[] = {
         }                                                                                \
     }
 
-#define DEC_RC_ND_IDS(ids, num_node) /* create ND_DEC_RC */                              \
+/* create ND_DEC_RC */
+#define DEC_RC_ND_IDS(ids, num_node)                                                     \
     CREATE_2_ARY_ICM (next_assign, "ND_DEC_RC", MakeId2 (DupOneIds (ids, NULL)),         \
                       num_node);                                                         \
     APPEND_ASSIGNS (first_assign, next_assign)
 
-#define DEC_RC_FREE_ND_IDS(ids, num_node) /* create ND_DEC_RC_FREE_ARRAY */              \
+/* create ND_DEC_RC_FREE_ARRAY */
+#define DEC_RC_FREE_ND_IDS(ids, num_node)                                                \
     CREATE_2_ARY_ICM (next_assign, "ND_DEC_RC_FREE_ARRAY",                               \
                       MakeId2 (DupOneIds (ids, NULL)), num_node);                        \
     APPEND_ASSIGNS (first_assign, next_assign)
@@ -346,7 +356,8 @@ int basetype_size[] = {
     old_arg_node = arg_node;                                                             \
     COUNT_ELEMS (n_elems, ARRAY_AELEMS (array))                                          \
     tmp_array1 = MakeId1 ("__TMP");                                                      \
-    NODE_TYPE (INFO_COMP_LASTLET (arg_info)) = N_block; /* reuse previous N_let*/        \
+    /* reuse previous N_let*/                                                            \
+    NODE_TYPE (INFO_COMP_LASTLET (arg_info)) = N_block;                                  \
     CREATE_4_ARY_ICM (first_assign, "ND_KS_DECL_ARRAY", type_id_node, tmp_array1,        \
                       MakeNum (1), MakeNum (n_elems));                                   \
     arg_node = first_assign;                                                             \
@@ -1254,7 +1265,6 @@ MergeIcmsFundef (node *out_icm, node *in_icm, types *out_type, types *in_type, i
  *   node *ReorganizeReturnIcm(node *icm_arg)
  *
  * description:
- *
  *   The ND_FUN_DEC / ND_FUN_RET ICMs handle the first out-parameter of a
  *   function different from all others since this one is compiled to the
  *   original single return value of a C function. The decision actually
@@ -1678,7 +1688,6 @@ InsertDefArgParam (node **icm_tab, node *icm_arg, types **type_tab, types *type_
  *                                   int *linksign, int cnt_param, int line)
  *
  * description:
- *
  *   This function creates an entry in the icm_tab for a return type of a
  *   function definition. The location of the given return type is identified
  *   either by inspection of the linksign pragma or by maintaining the original
@@ -1783,8 +1792,8 @@ RenameVar (char *string, int i)
  *                  - puts new assignments after CURR_ASSIGN(arg_info).
  *                    node[0] of CURR_ASSIGN(arg_info) will be set in
  *                    last COMPAssign (return value of COMPReturn)) again
- *
  */
+
 static node *
 RenameReturn (node *return_node, node *arg_info)
 {
@@ -1845,6 +1854,7 @@ RenameReturn (node *return_node, node *arg_info)
  *  remarks       : 1) <= 99
  *
  */
+
 static char *
 GenName (int i, char *name)
 {
@@ -1867,6 +1877,7 @@ GenName (int i, char *name)
  *  remarks       : ----
  *
  */
+
 static node *
 ShapeToArray (node *vardec_node)
 {
@@ -1957,8 +1968,7 @@ Compile (node *arg_node)
  *   node *COMPModul( node *arg_node, node *arg_info)
  *
  * description:
- *   compiles an N_modul node:
- *     - traverses sons.
+ *   compiles an N_modul node: traverses sons.
  *
  ******************************************************************************/
 
@@ -2028,13 +2038,15 @@ COMPFundef (node *arg_node, node *arg_info)
      * During compilation of a N_sync, the prioir N_sync (if exists) is needed.
      * INFO_COMP_LAST_SYNC provides these information, it is initialized here with
      * NULL and will be updated by each compilation of a N_sync (one needs to
-     * compile them ordered!), this includes the destruction of such an N_sync-tree.
+     * compile them ordered!), this includes the destruction of such a
+     * N_sync-tree.
      * After compilation of the function the last known sync is destroyed then.
      */
     INFO_COMP_LAST_SYNC (arg_info) = NULL;
 
     /*
-     * INFO_COMP_VARDECS points to the vardecs of the current fundef (*not* block!!)
+     * INFO_COMP_VARDECS points to the vardecs of the current fundef
+     * (*not* block!!)
      * Nevertheless the VARDECs are a son of the N_block-node therefore
      * INFO_COMP_VARDECS is set and evaluated in COMPBlock().
      * Here, this pointer is just initialized with NULL.
@@ -2067,7 +2079,8 @@ COMPFundef (node *arg_node, node *arg_info)
     if ((NULL != FUNDEF_RETURN (arg_node)) && (TYPES_BASETYPE (rettypes) != T_void)) {
         /*
          * FUNDEF_RETURN(arg_node) points to a N_icm (ND_FUN_RET, MT_SPMD_FUN_RET).
-         * 'return_node' will point to the first N_exprs belonging to a return_value.
+         * 'return_node' will point to the first N_exprs belonging to a
+         * return_value.
          * This exists only for functions with at least one return value.
          */
 
@@ -2287,7 +2300,8 @@ COMPBlock (node *arg_node, node *arg_info)
         FREE (BLOCK_CACHESIM (arg_node));
 
         DBUG_ASSERT ((BLOCK_INSTR (arg_node) != NULL),
-                     "first instruction of block is NULL (should be a N_empty node)");
+                     "first instruction of block is NULL"
+                     " (should be a N_empty node)");
         assign = BLOCK_INSTR (arg_node);
 
         BLOCK_INSTR (arg_node)
@@ -2672,20 +2686,24 @@ COMPVardec (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : COMPPrfModarray
- *  arguments     : 1) N_prf node
- *                  2)
- *  description   : transforms N_prf node F_modarray to N_icm nodes
- *  remarks       : INFO_COMP_LASTIDS(arg_info) contains name of assigned variable
- *                  INFO_COMP_LASTASSIGN(arg_info) contains pointer to node before
- *                   last assign_node (to get last or next assign node use
- *                                     macros LAST_ASSIGN or NEXT_ASSIGN)
- *                  INFO_COMP_LASTASSIGN(arg_info) is used to insert new assign_nodes
- *                   in front of or after last assign node
- *                  INFO_COMP_LASTLET(arg_info) contains pointer to last N_let
- */
+ * Function:
+ *   node *COMPPrfModarray( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   transforms N_prf node F_modarray to N_icm nodes.
+ *
+ * Remarks:
+ *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
+ *   INFO_COMP_LASTASSIGN(arg_info) contains pointer to node before last
+ *     assign_node.
+ *     (To get last or next assign node use macros LAST_ASSIGN or NEXT_ASSIGN)
+ *   INFO_COMP_LASTASSIGN(arg_info) is used to insert new assign_nodes
+ *      in front of or after last assign node.
+ *   INFO_COMP_LASTLET(arg_info) contains pointer to last N_let.
+ *
+ ******************************************************************************/
 
 node *
 COMPPrfModarray (node *arg_node, node *arg_info)
@@ -2823,31 +2841,34 @@ COMPPrfModarray (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : COMPIdxModarray
- *  arguments     : 1) N_prf node
- *                  2)
- *  description   : transforms N_prf node F_idx_modarray to N_icm nodes
- *  remarks       : INFO_COMP_LASTIDS(arg_info) contains name of assigned variable
- *                  INFO_COMP_LASTASSIGN(arg_info) contains pointer to node before
- *                   last assign_node (to get last or next assign node use
- *                                     macros LAST_ASSIGN or NEXT_ASSIGN )
- *                  INFO_COMP_LASTASSIGN(arg_info) is used to insert new assign_nodes
- *                   in front of or after last assign node
- *                  INFO_COMP_LASTLET(arg_info) contains pointer to last N_let
- */
+ * Function:
+ *   node *COMPIdxModarray(node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   transforms N_prf node F_idx_modarray to N_icm nodes
+ *
+ * Remarks:
+ *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
+ *   INFO_COMP_LASTASSIGN(arg_info) contains pointer to node before last
+ *     assign_node.
+ *     (To get last or next assign node use macros LAST_ASSIGN or NEXT_ASSIGN)
+ *   INFO_COMP_LASTASSIGN(arg_info) is used to insert new assign_nodes
+ *     in front of or after last assign node.
+ *   INFO_COMP_LASTLET(arg_info) contains pointer to last N_let.
+ *
+ ******************************************************************************/
 
 node *
 COMPIdxModarray (node *arg_node, node *arg_info)
 {
     node *res, *res_ref, *type_id_node, *line, *first_assign, *next_assign, *icm_arg,
       *old_arg_node, *last_assign;
+    simpletype s_type;
     node *arg1 = PRF_ARG1 (arg_node);
     node *arg2 = PRF_ARG2 (arg_node);
     node *arg3 = PRF_ARG3 (arg_node);
-
-    simpletype s_type;
 
     DBUG_ENTER ("COMPIdxModarray");
 
@@ -2907,15 +2928,19 @@ COMPIdxModarray (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : COMPConvert
- *  arguments     : 1) N_prf nodei (F_toi, F_tod, F_tof, F_toi_A, F_tof_A,
- *                                  F_tod_A)
- *                  2) NULL
- *  description   :
- *  remarks       : INFO_COMP_LASTIDS(arg_info) contains name of assigned variable
- */
+ * Function:
+ *   node *COMPConvert( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Compilation of N_prf nodei
+ *   (F_toi, F_tod, F_tof, F_toi_A, F_tof_A, F_tod_A)
+ *
+ * Remark:
+ *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
+ *
+ ******************************************************************************/
 
 node *
 COMPConvert (node *arg_node, node *arg_info)
@@ -4068,19 +4093,18 @@ COMPArray (node *arg_node, node *arg_info)
 }
 #endif /* TAGGED_ARRAYS */
 
-/*
+/******************************************************************************
  *
- *  functionname  : COMPId
- *  arguments     : 1) N_id node
- *                  2) N_info with VARDECS of fun, LASTASSIGN, LASTLET
- *                     and LASTIDS!
- *  description   :
- *  remarks       : INFO_COMP_LASTIDS(arg_info) contains name of assigned variable
- *                  INFO_COMP_LASTASSIGN(arg_info) contains pointer to to node before
- *                   last assign_node
- *                  INFO_COMP_LASTLET(arg_info) contains pointer to previous N_let
+ * Function:
+ *   node *COMPId( node *arg_node, node *arg_info)
  *
- */
+ * Remarks:
+ *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
+ *   INFO_COMP_LASTASSIGN(arg_info) contains pointer to to node before
+ *     last assign_node.
+ *   INFO_COMP_LASTLET(arg_info) contains pointer to previous N_let.
+ *
+ ******************************************************************************/
 
 node *
 COMPId (node *arg_node, node *arg_info)
@@ -4708,6 +4732,7 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
  *   generates N_icms for N_return of a function (ND or MT).
  *
  ******************************************************************************/
+
 node *
 COMPReturn (node *arg_node, node *arg_info)
 {
@@ -4920,6 +4945,7 @@ COMPArg (node *arg_node, node *arg_info)
  *   INFO_COMP_LASTASSIGN(arg_info) contains pointer to last assign_node.
  *
  ******************************************************************************/
+
 node *
 COMPLoop (node *arg_node, node *arg_info)
 {
@@ -7473,6 +7499,7 @@ MakeAssigns8 (node *part1, node *part2, node *part3, node *part4, node *part5,
  *   compiles an N_mt-node
  *
  ******************************************************************************/
+
 node *
 COMPMt (node *arg_node, node *arg_info)
 {
@@ -7543,6 +7570,7 @@ COMPMt (node *arg_node, node *arg_info)
  *   compiles an N_mt-node
  *
  ******************************************************************************/
+
 node *
 COMPSt (node *arg_node, node *arg_info)
 {
@@ -7593,6 +7621,7 @@ COMPSt (node *arg_node, node *arg_info)
  *   ####
  *
  ******************************************************************************/
+
 node *
 COMPMTsignal (node *arg_node, node *arg_info)
 {
@@ -7622,6 +7651,7 @@ COMPMTsignal (node *arg_node, node *arg_info)
  *   ####
  *
  ******************************************************************************/
+
 node *
 COMPMTalloc (node *arg_node, node *arg_info)
 {
