@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/23 15:07:30  cg
+ * Macro renamed.
+ *
  * Revision 1.4  2004/11/23 13:39:59  ktr
  * adjusted structure identifiers according to the CODING GUIDELINES
  *
@@ -953,11 +956,11 @@ typedef struct OPTIMIZE_T {
 
 typedef struct GLOBAL_T {
 #define GLOBALtype(it_type) it_type
-#define GLOBALid(it_id) it_id
+#define GLOBALname(it_name) it_name
 #define GLOBALdelim ;
 #include "globals.mac"
 #undef GLOBALdelim
-#undef GLOBALid
+#undef GLOBALname
 #undef GLOBALtype
 } global_t;
 
