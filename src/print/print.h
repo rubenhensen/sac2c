@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2004/11/27 01:59:16  mwe
+ * new funs added
+ *
  * Revision 3.35  2004/11/27 00:52:54  sbs
  * *** empty log message ***
  *
@@ -121,8 +124,10 @@ extern node *PRTwith2 (node *arg_node, info *arg_info);
 extern node *PRTwlseg (node *arg_node, info *arg_info);
 extern node *PRTwlsegvar (node *arg_node, info *arg_info);
 extern node *PRTwlxblock (node *arg_node, info *arg_info);
-extern node *PRTwlstridex (node *arg_node, info *arg_info);
-extern node *PRTwlgridx (node *arg_node, info *arg_info);
+extern node *PRTwlstride (node *arg_node, info *arg_info);
+extern node *PRTwlstridevar (node *arg_node, info *arg_info);
+extern node *PRTwlgrid (node *arg_node, info *arg_info);
+extern node *PRTwlgridvar (node *arg_node, info *arg_info);
 
 /* pre- and post-processing during traversal */
 extern node *PRTtravPre (node *arg_node, info *arg_info);
