@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.70  2004/09/26 13:00:20  ktr
+ * bugfix
+ *
  * Revision 1.69  2004/09/26 12:08:43  ktr
  * Constant index scalars are now known inside the with-loop body as well.
  *
@@ -3011,8 +3014,12 @@ SSACFNgen (node *arg_node, info *arg_info)
                 }
                 diffshp = SHFreeShape (diffshp);
             }
-            lower = COFreeConstant (lower);
-            upper = COFreeConstant (upper);
+            if (lower != NULL) {
+                lower = COFreeConstant (lower);
+            }
+            if (upper != NULL) {
+                upper = COFreeConstant (upper);
+            }
         }
         INFO_SSACF_WITHID (arg_info) = NULL;
     }
