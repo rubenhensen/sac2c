@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.37  1998/11/08 14:32:55  dkr
+ * WLTRANcode:
+ *   NCODE_CBLOCK and NCODE_CEXPR should be never NULL!
+ *   (if so, we will get an assert now :-)
+ *
  * Revision 1.36  1998/10/24 18:32:57  dkr
  * Fixed a bug in InferInnerStep
  *
@@ -4927,14 +4932,8 @@ WLTRANcode (node *arg_node, node *arg_info)
     code = arg_node;
     while (code != NULL) {
         NCODE_NO (code) = no;
-
-        if (NCODE_CBLOCK (code) != NULL) {
-            NCODE_CBLOCK (code) = Trav (NCODE_CBLOCK (code), arg_info);
-        }
-        if (NCODE_CEXPR (code) != NULL) {
-            NCODE_CEXPR (code) = Trav (NCODE_CEXPR (code), arg_info);
-        }
-
+        NCODE_CBLOCK (code) = Trav (NCODE_CBLOCK (code), arg_info);
+        NCODE_CEXPR (code) = Trav (NCODE_CEXPR (code), arg_info);
         no++;
         code = NCODE_NEXT (code);
     }
