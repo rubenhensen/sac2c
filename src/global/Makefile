@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.65  1998/05/12 14:22:18  dkr
+# make deps done
+#
 # Revision 1.64  1998/05/03 14:04:20  dkr
 # make deps done
 #
@@ -274,9 +277,9 @@ Error.o: /usr/include/stdlib.h types.h globals.h tree_basic.h
 Error.o: ../../inc/dbug.h internal_lib.h ../modules/filemgr.h resource.h
 free.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 free.o: /usr/include/stdio.h /usr/include/sys/va_list.h ../../inc/dbug.h
-free.o: my_debug.h types.h tree_basic.h tree_compound.h Error.h
-free.o: /usr/include/string.h globals.h traverse.h free.h
-free.o: /usr/include/malloc.h internal_lib.h
+free.o: my_debug.h types.h tree.h tree_basic.h tree_compound.h Error.h
+free.o: /usr/include/string.h globals.h internal_lib.h traverse.h
+free.o: ../optimize/DataFlowMask.h free.h /usr/include/malloc.h
 globals.o: ../modules/filemgr.h /usr/include/stdio.h
 globals.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
 globals.o: types.h globals.h ../scanparse/scnprs.h resource.h
@@ -333,7 +336,8 @@ traverse.o: ../refcount/refcount.h ../concurrent/spmdregions.h
 traverse.o: ../compile/wltransform.h ../compile/precompile.h
 traverse.o: ../compile/compile.h ../modules/cccall.h ../compile/Old2NewWith.h
 traverse.o: ../optimize/WithloopFolding.h ../optimize/WLT.h ../optimize/WLI.h
-traverse.o: ../optimize/WLF.h traverse.h node_info.mac
+traverse.o: ../optimize/WLF.h ../compile/gen_startup_code.h traverse.h
+traverse.o: node_info.mac
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h tree.h types.h
 tree.o: tree_basic.h tree_compound.h Error.h /usr/include/stdio.h
 tree.o: /usr/include/sys/va_list.h /usr/include/string.h globals.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.48  1998/05/12 14:22:21  dkr
+# make deps done
+#
 # Revision 1.47  1998/05/05 15:51:42  cg
 # added compilation of DataFlowMask.c
 # flag NEWTREE is now set locally as well.
@@ -227,6 +230,12 @@ ConstantFolding.o: ../print/print.h ../global/traverse.h
 ConstantFolding.o: ../typecheck/typecheck.h ../global/access_macros.h
 ConstantFolding.o: optimize.h DupTree.h LoopInvariantRemoval.h
 ConstantFolding.o: ConstantFolding.h
+DataFlowMask.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+DataFlowMask.o: /usr/include/sys/va_list.h /usr/include/string.h
+DataFlowMask.o: ../../inc/dbug.h ../global/types.h ../global/tree_basic.h
+DataFlowMask.o: ../global/internal_lib.h ../global/free.h
+DataFlowMask.o: ../global/my_debug.h /usr/include/malloc.h
+DataFlowMask.o: ../global/globals.h
 DeadCodeRemoval.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 DeadCodeRemoval.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 DeadCodeRemoval.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
@@ -242,7 +251,7 @@ DupTree.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 DupTree.o: ../global/globals.h ../global/internal_lib.h ../global/traverse.h
 DupTree.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 DupTree.o: /usr/include/malloc.h ../typecheck/typecheck.h DupTree.h
-DupTree.o: optimize.h Inline.h
+DupTree.o: DataFlowMask.h optimize.h Inline.h
 Inline.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 Inline.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 Inline.o: ../global/globals.h ../global/types.h ../global/tree.h
@@ -283,7 +292,8 @@ WLF.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WLF.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
 WLF.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
 WLF.o: ../global/Error.h /usr/include/string.h ../global/globals.h
-WLF.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
+WLF.o: ../global/internal_lib.h /usr/include/limits.h
+WLF.o: /usr/include/sys/isa_defs.h ../global/free.h ../../inc/dbug.h
 WLF.o: ../global/my_debug.h /usr/include/malloc.h ../print/print.h DupTree.h
 WLF.o: ../global/traverse.h optimize.h ConstantFolding.h WithloopFolding.h
 WLF.o: WLF.h
@@ -292,7 +302,7 @@ WLI.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
 WLI.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
 WLI.o: ../global/Error.h /usr/include/string.h ../global/globals.h
 WLI.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
-WLI.o: ../global/my_debug.h /usr/include/malloc.h ../print/print.h DupTree.h
+WLI.o: ../global/my_debug.h /usr/include/malloc.h ../print/print.h
 WLI.o: ../global/traverse.h optimize.h ConstantFolding.h WithloopFolding.h
 WLI.o: WLI.h
 WLT.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.14  1998/05/12 14:22:24  dkr
+# make deps done
+#
 # Revision 1.13  1998/03/04 00:10:18  dkr
 # 'clean' now deletes the subdir .sb, too
 #
@@ -70,6 +73,7 @@ refcount.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
 refcount.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
 refcount.o: /usr/include/sys/va_list.h /usr/include/string.h
 refcount.o: ../global/globals.h ../global/internal_lib.h ../global/my_debug.h
-refcount.o: ../../inc/dbug.h ../typecheck/typecheck.h ../global/traverse.h
+refcount.o: ../../inc/dbug.h ../optimize/DupTree.h ../typecheck/typecheck.h
+refcount.o: ../optimize/DataFlowMask.h ../global/traverse.h
 refcount.o: ../optimize/optimize.h ../global/free.h /usr/include/malloc.h
 refcount.o: refcount.h

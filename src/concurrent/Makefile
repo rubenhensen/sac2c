@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.12  1998/05/12 14:22:28  dkr
+# make deps done
+#
 # Revision 1.11  1998/05/03 14:04:43  dkr
 # make deps done
 #
@@ -66,6 +69,6 @@ spmdregions.o: /usr/include/sys/va_list.h /usr/include/string.h
 spmdregions.o: /usr/include/stdlib.h ../global/globals.h
 spmdregions.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 spmdregions.o: ../global/my_debug.h /usr/include/malloc.h
-spmdregions.o: ../global/traverse.h ../print/convert.h ../optimize/optimize.h
-spmdregions.o: ../optimize/DupTree.h ../refcount/refcount.h
-spmdregions.o: ../typecheck/typecheck.h spmdregions.h
+spmdregions.o: ../global/traverse.h ../print/convert.h ../optimize/DupTree.h
+spmdregions.o: ../optimize/DataFlowMask.h ../optimize/optimize.h
+spmdregions.o: ../refcount/refcount.h ../typecheck/typecheck.h spmdregions.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.6  1998/05/12 14:22:27  dkr
+# make deps done
+#
 # Revision 1.5  1998/03/24 15:39:00  dkr
 # make deps done
 #
@@ -53,6 +56,11 @@ libsac_malloc.o: sac_message.h
 libsac_message.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 libsac_message.o: /usr/include/sys/va_list.h /usr/include/stdarg.h
 libsac_message.o: /usr/include/varargs.h /usr/include/stdlib.h
+libsac_mt.o: /usr/include/pthread.h /usr/include/sys/types.h
+libsac_mt.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+libsac_mt.o: /usr/include/sys/machtypes.h /usr/include/sys/signal.h
+libsac_mt.o: /usr/include/sys/unistd.h /usr/include/sys/time.h
+libsac_mt.o: /usr/include/sched.h
 libsac_profile.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 libsac_profile.o: /usr/include/sys/va_list.h /usr/include/sys/time.h
 libsac_profile.o: /usr/include/sys/types.h /usr/include/sys/isa_defs.h
