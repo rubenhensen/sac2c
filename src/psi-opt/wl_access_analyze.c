@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/08/30 18:31:15  bs
+ * Bugs fixed.
+ *
  * Revision 2.8  1999/08/30 13:29:49  bs
  * WLAAncode modified: access macros added, access macros renamed.
  *
@@ -594,7 +597,7 @@ WLAAncode (node *arg_node, node *arg_info)
     NCODE_WLAA_FEATURE (arg_node) = INFO_WLAA_FEATURE (arg_info);
     NCODE_WLAA_ACCESSCNT (arg_node) = INFO_WLAA_COUNT (arg_info);
     NCODE_WLAA_WLARRAY (arg_node) = INFO_WLAA_WLARRAY (arg_info);
-    NCODE_WLAA_ARRAYDIM (arg_node) = VARDEC_DIM (INFO_WLAA_WLARRAY (arg_info));
+    NCODE_WLAA_INDEXVAR (arg_node) = INFO_WLAA_INDEXVAR (arg_info);
     NCODE_WLAA_ARRAYSHP (arg_node) = VARDEC_SHPSEG (INFO_WLAA_WLARRAY (arg_info));
     FreeInfo (arg_info, NULL);
     arg_info = old_arg_info;
@@ -910,6 +913,15 @@ WLAAprf (node *arg_node, node *arg_info)
             case F_psi:
                 DBUG_PRINT ("WLAA_INFO", ("primitive function F_psi"));
 
+                if (INFO_WLAA_INDEXDIM (arg_info) != INFO_WLAA_ARRAYDIM (arg_info)) {
+                    /*
+                     *  Result of psi cannot be a skalar !
+                     */
+                    DBUG_PRINT ("WLAA_INFO",
+                                ("primitive function psi with array return value"));
+                    INFO_WLAA_FEATURE (arg_info)
+                      = INFO_WLAA_FEATURE (arg_info) | FEATURE_APSI;
+                }
                 if (IDS_DIM (INFO_WLAA_LASTLETIDS (arg_info)) == SCALAR) {
 
                     DBUG_ASSERT ((NODE_TYPE (arg_node_arg1) == N_id),
@@ -954,6 +966,8 @@ WLAAprf (node *arg_node, node *arg_info)
                          */
                     }
                 } else {
+                    DBUG_PRINT ("WLAA_INFO",
+                                ("primitive function psi with array return value"));
                     INFO_WLAA_FEATURE (arg_info)
                       = INFO_WLAA_FEATURE (arg_info) | FEATURE_APSI;
                 }
@@ -1029,6 +1043,9 @@ WLAAprf (node *arg_node, node *arg_info)
                     }
                 } else { /* access == NULL */
                     if (!IsIndexVect (IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
+                        DBUG_PRINT ("WLAA_INFO",
+                                    ("primitive arithmetic operation on arrays "
+                                     "(not index vector access)"));
                         INFO_WLAA_FEATURE (arg_info)
                           = INFO_WLAA_FEATURE (arg_info) | FEATURE_AARI;
                     }
@@ -1077,6 +1094,9 @@ WLAAprf (node *arg_node, node *arg_info)
                     }
                 } else { /* access == NULL */
                     if (!IsIndexVect (IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
+                        DBUG_PRINT ("WLAA_INFO",
+                                    ("primitive arithmetic operation on arrays "
+                                     "(not index vector access)"));
                         INFO_WLAA_FEATURE (arg_info)
                           = INFO_WLAA_FEATURE (arg_info) | FEATURE_AARI;
                     }
@@ -1140,6 +1160,9 @@ WLAAprf (node *arg_node, node *arg_info)
                         }
                     } else { /* access == NULL */
                         if (!IsIndexVect (IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
+                            DBUG_PRINT ("WLAA_INFO",
+                                        ("primitive arithmetic operation on arrays "
+                                         "(not index vector access)"));
                             INFO_WLAA_FEATURE (arg_info)
                               = INFO_WLAA_FEATURE (arg_info) | FEATURE_AARI;
                         }
@@ -1172,11 +1195,17 @@ WLAAprf (node *arg_node, node *arg_info)
                         }
                     } else if (!IsIndexVect (
                                  IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
+                        DBUG_PRINT ("WLAA_INFO",
+                                    ("primitive arithmetic operation on arrays "
+                                     "(not index vector access)"));
                         INFO_WLAA_FEATURE (arg_info)
                           = INFO_WLAA_FEATURE (arg_info) | FEATURE_AARI;
                     }
                 } else { /* access == NULL */
                     if (!IsIndexVect (IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
+                        DBUG_PRINT ("WLAA_INFO",
+                                    ("primitive arithmetic operation on arrays "
+                                     "(not index vector access)"));
                         INFO_WLAA_FEATURE (arg_info)
                           = INFO_WLAA_FEATURE (arg_info) | FEATURE_AARI;
                     }

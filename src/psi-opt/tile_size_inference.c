@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/08/30 18:31:15  bs
+ * Bugs fixed.
+ *
  * Revision 2.9  1999/08/30 14:06:24  bs
  * TSInwith and TSIncode modified:
  * Now a #pragma wlcomp will be created in TSIncode. In TSInwith this #pragma will
@@ -77,8 +80,6 @@
 static int dtype_size[] = {
 #include "type_info.mac"
 };
-
-#define INFO_TSI_WLCOMP(n) (n->node[5])
 
 #undef TYP_IF
 
@@ -324,8 +325,15 @@ CalcTilesizeInnerDim (access_t *accesses, node *arg_info)
     dim = INFO_TSI_ARRAYDIM (arg_info);
     shape = INFO_TSI_ARRAYSHP (arg_info);
     tilesize = SHPSEG_SHAPE (INFO_TSI_ARRAYSHP (arg_info), (dim - 1));
-    if (accesses == NULL) {
-        /* No tiling required !*/
+    if (dim < 2) {
+        tilesize = 0;
+        /* No tiling required !  No #pragma wlcomp allowed ! */
+    } else if (accesses == NULL) {
+        tilesize = 0;
+        /* No tiling required !  No #pragma wlcomp allowed ! */
+    } else if (INFO_TSI_INDEXDIM (arg_info) != INFO_TSI_ARRAYDIM (arg_info)) {
+        tilesize = 0;
+        /* No tiling required !  No #pragma wlcomp allowed ! */
     } else {
         acc_list = CreateEnhAccesslist (accesses, arg_info);
         DBUG_ASSERT ((acc_list != NULL),
@@ -528,7 +536,7 @@ TSIncode (node *arg_node, node *arg_info)
     cacheparam[DTYPE_INDEX]
       = dtype_size[TYPES_BASETYPE (VARDEC_TYPE (NCODE_WLAA_WLARRAY (arg_node)))];
     INFO_TSI_WLARRAY (arg_info) = NCODE_WLAA_WLARRAY (arg_node);
-
+    INFO_TSI_INDEXVAR (arg_info) = NCODE_WLAA_INDEXVAR (arg_node);
     INFO_TSI_ARRAYDIM (arg_info) = VARDEC_DIM (NCODE_WLAA_WLARRAY (arg_node));
     INFO_TSI_ACCESS (arg_info) = NCODE_WLAA_ACCESS (arg_node);
     INFO_TSI_ACCESSCNT (arg_info) = NCODE_WLAA_ACCESSCNT (arg_node);
@@ -540,16 +548,24 @@ TSIncode (node *arg_node, node *arg_info)
 
     tilesize = CalcTilesizeInnerDim (NCODE_WLAA_ACCESS (arg_node), arg_info);
 
-    aelems = NULL;
-    for (i = INFO_TSI_ARRAYDIM (arg_info) - 1; i >= 0; i--) {
-        aelems = MakeExprs (MakeNum (tilesize), aelems);
+    if (tilesize > 0) {
+        aelems = NULL;
+        for (i = INFO_TSI_ARRAYDIM (arg_info) - 1; i >= 0; i--) {
+            aelems = MakeExprs (MakeNum (tilesize), aelems);
+        }
+        pragma = MakePragma ();
+        ap_name = Malloc (6 * sizeof (char));
+        ap_name = strcpy (ap_name, "BvL0");
+        PRAGMA_WLCOMP_APS (pragma)
+          = MakeExprs (MakeAp (ap_name, NULL, MakeExprs (MakeArray (aelems), NULL)),
+                       NULL);
+    } else {
+        /*
+         *  No #pragma wlcomp required or allowed.
+         */
+        pragma = NULL;
     }
 
-    pragma = MakePragma ();
-    ap_name = Malloc (6 * sizeof (char));
-    ap_name = strcpy (ap_name, "BvL0");
-    PRAGMA_WLCOMP_APS (pragma)
-      = MakeExprs (MakeAp (ap_name, NULL, MakeExprs (MakeArray (aelems), NULL)), NULL);
     INFO_TSI_WLCOMP (arg_info) = pragma;
 
     if (NCODE_NEXT (arg_node) != NULL) {
