@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2004/07/23 15:54:53  ktr
+ * exchanged ktr by emm
+ *
  * Revision 3.81  2004/07/22 14:19:48  ktr
  * LiftArgs now introduces an alloc() assignment when needed
  *
@@ -3963,7 +3966,7 @@ LiftArg (node *arg, node *fundef, types *new_type, bool do_rc, node **new_assign
     new_arg = DupIds_Id (new_ids);
 
     if (do_rc) {
-        if (ktr) {
+        if (emm) {
             switch (NODE_TYPE (arg)) {
             case N_num:
             case N_float:
