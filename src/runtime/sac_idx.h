@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/07/11 09:24:27  dkr
+ * all macros deactivated for TAGGED_ARRAYS
+ *
  * Revision 3.5  2002/04/30 08:45:57  dkr
  * no changes done
  *
@@ -70,6 +73,8 @@
 #ifndef _SAC_IDX_H
 #define _SAC_IDX_H
 
+#ifndef TAGGED_ARRAYS
+
 /*
  * Macros used for primitive function idx_sel:
  * ===========================================
@@ -131,5 +136,7 @@
     SAC_ND_WRITE_ARRAY (res, s) = val;
 
 #define SAC_ND_KS_USE_GENVAR_OFFSET(offsetvar, res) offsetvar = SAC_WL_OFFSET (res);
+
+#endif
 
 #endif /* _SAC_IDX_H */
