@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/05/17 10:04:16  nmw
+ * missing include of convert.h added
+ *
  * Revision 3.9  2001/05/17 08:36:25  sbs
  * DbugMemoryLeakCheck added.
  *
@@ -107,6 +110,7 @@
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "convert.h"
 
 #define MAX_SYSCALL 1000
 
