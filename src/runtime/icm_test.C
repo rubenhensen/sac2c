@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2003/06/17 18:54:15  dkr
+ * comment in header modified
+ *
  * Revision 1.2  2003/06/17 18:49:01  dkr
  * RCS header added
  *
@@ -10,7 +13,9 @@
  **  This file can be used to test the expansion of H-ICMs
  **
  **  Apply the CC preprocessor to this file and verify the generated output:
- **    gcc -I$SACHOME/runtime -E icm_test.C
+ **    gcc -I$SACHOME/runtime -E icm_test.C > tutu
+ **    grep CAT tutu
+ **    grep NT tutu
  **
  **  It exists a Makefile target for this purpose (icm_test) !!!
  **/
