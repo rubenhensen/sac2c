@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2005/02/02 18:09:50  mwe
+ * new counter added
+ * signature simplification added
+ *
  * Revision 3.14  2005/01/27 18:20:30  mwe
  * new counter for type_upgrade added
  *
@@ -89,6 +93,7 @@ extern int wlfs_expr;
 extern int tup_tu_expr;
 extern int tup_wdp_expr;
 extern int tup_fdp_expr;
+extern int tup_rtu_expr;
 
 extern node *OPTdoOptimize (node *arg_node);
 extern node *OPTmodule (node *arg_node, info *arg_info);
