@@ -2,6 +2,9 @@
 
 <!--
   $Log$
+  Revision 1.2  2005/01/11 13:32:08  jhb
+  changed some little things
+
   Revision 1.1  2004/11/23 11:29:56  sah
   Initial revision
 
@@ -40,6 +43,7 @@ version="1.0">
 #include "dbug.h"
 #include "print.h"
 #include "check_lib.h"
+#include "check.h"
 
 
 struct INFO
@@ -49,15 +53,20 @@ struct INFO
 static info *MakeInfo()
 {
   info *result;
+
   DBUG_ENTER("MakeInfo");
-  result = Malloc(sizeof(info));
+
+  result = ILIDmalloc(sizeof(info));
+
   DBUG_RETURN(result);
 } 
 
 static info *FreeInfo(info *info)
 {
   DBUG_ENTER("FreeInfo");
-  info = Free(info);
+
+  info = ILIBfree(info);
+
   DBUG_RETURN(info);
 }
  </xsl:text> 
@@ -118,7 +127,7 @@ static info *FreeInfo(info *info)
    <xsl:value-of select="'  // this son is mandatory = '"/>
    <xsl:value-of select="@mandatory"/>
    <xsl:value-of select="$newline"/>
-   <xsl:value-of select="'  CHKExistChild( '"/>
+   <xsl:value-of select="'  CHKexistChild( '"/>
    <xsl:apply-templates select="../../@name" mode="uppercase"/>
    <xsl:value-of select="'_'"/>
    <xsl:apply-templates select="@name" mode="uppercase"/>
@@ -191,7 +200,7 @@ static info *FreeInfo(info *info)
    <xsl:value-of select="'  // this attribute is mandatory = '"/>
    <xsl:value-of select="@mandatory"/>
    <xsl:value-of select="$newline"/>
-   <xsl:value-of select="'  CHKExistAttribute( '"/>
+   <xsl:value-of select="'  CHKexistAttribute( '"/>
    <xsl:apply-templates select="../../@name" mode="uppercase"/>
    <xsl:value-of select="'_'"/>
    <xsl:apply-templates select="@name" mode="uppercase"/>
@@ -215,7 +224,7 @@ static info *FreeInfo(info *info)
  </xsl:if> 
 
   <xsl:value-of select="$newline"/>
-  <xsl:value-of select="'  CHKRightType( '"/>
+  <xsl:value-of select="'  CHKrightType( '"/>
   <xsl:apply-templates select="../../@name" mode="uppercase"/>
   <xsl:value-of select="'_'"/>
   <xsl:apply-templates select="@name" mode="uppercase"/>
