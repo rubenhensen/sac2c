@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/12/09 21:09:26  ktr
+ * bugfix roundup
+ *
  * Revision 1.10  2004/11/27 03:11:25  ktr
  * added EMRCOgenarray
  *
@@ -418,9 +421,34 @@ EMRCOgenarray (node *arg_node, info *arg_info)
                                                      IDS_AVIS (INFO_RCO_LHS (arg_info)),
                                                      ID_AVIS (GENARRAY_MEM (arg_node)));
 
-    if (MODARRAY_NEXT (arg_node) != NULL) {
+    if (GENARRAY_NEXT (arg_node) != NULL) {
         INFO_RCO_LHS (arg_info) = IDS_NEXT (INFO_RCO_LHS (arg_info));
         GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMRCOfold(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+node *
+EMRCOfold (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMRCOfold");
+
+    if (FOLD_NEXT (arg_node) != NULL) {
+        INFO_RCO_LHS (arg_info) = IDS_NEXT (INFO_RCO_LHS (arg_info));
+        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

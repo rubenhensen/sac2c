@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/12/09 21:09:58  ktr
+ * bugfix roundup
+ *
  * Revision 1.4  2004/12/08 11:19:45  sah
  * fixed a not-enough-sleep-in-dk bug
  *
@@ -179,8 +182,6 @@ LiftArg (node *arg, node *fundef, ntype *new_type, node **new_assigns)
      *   ... = fun( A', ...);
      */
     new_ids = TBmakeIds (new_avis, NULL);
-
-    IDS_DECL (new_ids) = new_vardec;
 
     (*new_assigns)
       = TBmakeAssign (TBmakeLet (new_ids, TBmakeId (ID_AVIS (arg))), (*new_assigns));
@@ -405,7 +406,7 @@ TCPap (node *arg_node, info *arg_info)
                                     ID_NAME (id), global.nt_shape_string[actual_cls],
                                     global.nt_shape_string[formal_cls]));
                 LiftArg (id, INFO_TCP_FUNDEF (arg_info), ARG_NTYPE (arg),
-                         &(INFO_TCP_POSTASSIGNS (arg_info)));
+                         &(INFO_TCP_PREASSIGNS (arg_info)));
             }
         }
         idx++;

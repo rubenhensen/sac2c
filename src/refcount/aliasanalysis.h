@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/12/09 21:09:26  ktr
+ * bugfix roundup
+ *
  * Revision 1.6  2004/11/21 20:43:42  ktr
  * Ismop 2004
  *
@@ -43,9 +46,11 @@ extern node *EMAAcond (node *arg_node, info *arg_info);
 extern node *EMAAfold (node *arg_node, info *arg_info);
 extern node *EMAAfuncond (node *arg_node, info *arg_info);
 extern node *EMAAfundef (node *arg_node, info *arg_info);
+extern node *EMAAgenarray (node *arg_node, info *arg_info);
 extern node *EMAAicm (node *arg_node, info *arg_info);
 extern node *EMAAid (node *arg_node, info *arg_info);
 extern node *EMAAlet (node *arg_node, info *arg_info);
+extern node *EMAAmodarray (node *arg_node, info *arg_info);
 extern node *EMAAprf (node *arg_node, info *arg_info);
 extern node *EMAAwith (node *arg_node, info *arg_info);
 extern node *EMAAwith2 (node *arg_node, info *arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/12/09 21:09:26  ktr
+ * bugfix roundup
+ *
  * Revision 1.9  2004/12/08 21:22:24  ktr
  * Aliasing information is now printed correctly
  *
@@ -34,6 +37,7 @@
 
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "traverse.h"
 #include "globals.h"
 #include "dbug.h"
 #include "ssa.h"

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/12/09 21:09:26  ktr
+ * bugfix roundup
+ *
  * Revision 1.9  2004/11/23 15:04:02  ktr
  * COMPILES!!!
  *
@@ -447,7 +450,58 @@ EMAAfold (node *arg_node, info *arg_info)
     DFMsetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, ID_AVIS (FOLD_NEUTRAL (arg_node)));
 
     if (FOLD_NEXT (arg_node) != NULL) {
+        INFO_AA_LHS (arg_info) = IDS_NEXT (INFO_AA_LHS (arg_info));
         FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @node EMAAgenarray( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+EMAAgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMAAgenarray");
+
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        INFO_AA_LHS (arg_info) = IDS_NEXT (INFO_AA_LHS (arg_info));
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @node EMAAmodarray( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+EMAAmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMAAmodarray");
+
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        INFO_AA_LHS (arg_info) = IDS_NEXT (INFO_AA_LHS (arg_info));
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

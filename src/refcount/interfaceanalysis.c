@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/12/09 21:09:26  ktr
+ * bugfix roundup
+ *
  * Revision 1.9  2004/12/08 21:23:50  ktr
  * Using TUisUniqueUserType now.
  *
@@ -501,7 +504,7 @@ EMIAfundef (node *arg_node, info *arg_info)
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
-    INFO_IA_RETALIAS (arg_info) = FALSE;
+    INFO_IA_RETALIAS (arg_info) = FUNDEF_HASDOTRETS (arg_node);
     if (FUNDEF_RETS (arg_node) != NULL) {
         FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
     }
@@ -557,7 +560,8 @@ EMIAid (node *arg_node, info *arg_info)
         /*
          * Function application
          */
-        if (ARG_ISALIASING (INFO_IA_APFUNARGS (arg_info))) {
+        if ((INFO_IA_APFUNARGS (arg_info) == NULL)
+            || (ARG_ISALIASING (INFO_IA_APFUNARGS (arg_info)))) {
             int retcount = 0;
             node *lhs = INFO_IA_LHS (arg_info);
             while (lhs != NULL) {
@@ -571,7 +575,7 @@ EMIAid (node *arg_node, info *arg_info)
             }
         }
 
-        if (TYPES_BASETYPE (ARG_TYPE (INFO_IA_APFUNARGS (arg_info))) != T_dots) {
+        if (INFO_IA_APFUNARGS (arg_info) != NULL) {
             INFO_IA_APFUNARGS (arg_info) = ARG_NEXT (INFO_IA_APFUNARGS (arg_info));
         }
         break;
@@ -844,6 +848,58 @@ EMIAfold (node *arg_node, info *arg_info)
 
     if (FOLD_NEXT (arg_node) != NULL) {
         FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @node EMIAgenarray( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+EMIAgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMIAgenarray");
+
+    INFO_IA_LHS (arg_info) = IDS_NEXT (INFO_IA_LHS (arg_info));
+
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @node EMIAmodarray( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+EMIAmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMIAmodarray");
+
+    INFO_IA_LHS (arg_info) = IDS_NEXT (INFO_IA_LHS (arg_info));
+
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/12/09 21:09:26  ktr
+ * bugfix roundup
+ *
  * Revision 1.5  2004/11/24 15:05:23  ktr
  * added EMIAret.
  *
@@ -39,8 +42,10 @@ extern node *EMIAcond (node *arg_node, info *arg_info);
 extern node *EMIAfold (node *arg_node, info *arg_info);
 extern node *EMIAfuncond (node *arg_node, info *arg_info);
 extern node *EMIAfundef (node *arg_node, info *arg_info);
+extern node *EMIAgenarray (node *arg_node, info *arg_info);
 extern node *EMIAid (node *arg_node, info *arg_info);
 extern node *EMIAlet (node *arg_node, info *arg_info);
+extern node *EMIAmodarray (node *arg_node, info *arg_info);
 extern node *EMIAret (node *arg_node, info *arg_info);
 extern node *EMIAreturn (node *arg_node, info *arg_info);
 extern node *EMIAvardec (node *arg_node, info *arg_info);

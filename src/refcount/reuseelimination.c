@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/12/09 21:09:26  ktr
+ * bugfix roundup
+ *
  * Revision 1.11  2004/12/01 16:35:23  ktr
  * Rule for Block added.
  *
@@ -52,8 +55,6 @@
  *
  *
  */
-#define NEW_INFO
-
 #include "reuseelimination.h"
 
 #include "globals.h"
