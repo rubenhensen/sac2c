@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.189  2004/06/08 09:49:12  skt
+ * ASSIGN_EXECMODE added
+ *
  * Revision 3.188  2004/05/14 13:32:26  mwe
  * ARRAY_NTYPE added
  *
@@ -359,6 +362,7 @@ The following compilation steps are used:
    - dcr2 = dead code removal
  - psi-optimize
  - refcount
+ - mtmode[123]
  - precompile
  - compile
 
@@ -1509,7 +1513,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***    node*  CF                         (CF !!)
  ***    void*  INDEX    (O)               (wli -> wlf -> )
  ***    int    LEVEL                      (wli !!)
- ***    int    INDENT                     (wls -> )
+ ***    int    EXECMODE                   (mtmode3 ->)
  ***
  ***  remarks:
  ***
@@ -1533,6 +1537,7 @@ extern node *MakeAssign (node *instr, node *next);
 #define ASSIGN_STATUS(n) (n->flag)
 #define ASSIGN_INDEX(n) (n->info2)
 #define ASSIGN_LEVEL(n) (n->info.cint)
+#define ASSIGN_EXECMODE(n) (n->info.cint)
 
 /*--------------------------------------------------------------------------*/
 
