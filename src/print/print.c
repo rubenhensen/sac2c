@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.30  1995/01/16 17:26:38  asi
+ * Revision 1.31  1995/02/02 14:56:39  hw
+ * changed PrintPrf, because N_prf has been changed
+ *
+ * Revision 1.30  1995/01/16  17:26:38  asi
  * Added PrintMask to PrintDo and PrintWhile
  *
  * Revision 1.29  1995/01/16  11:00:29  asi
@@ -333,9 +336,9 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_gt:
     case F_neq: {
         fprintf (outfile, "(");
-        Trav (arg_node->node[0], arg_info);
+        Trav (arg_node->node[0]->node[0], arg_info);
         fprintf (outfile, " %s ", prf_string[arg_node->info.prf]);
-        Trav (arg_node->node[1], arg_info);
+        Trav (arg_node->node[0]->node[1]->node[0], arg_info);
         fprintf (outfile, ")");
         break;
     }
@@ -351,12 +354,15 @@ PrintPrf (node *arg_node, node *arg_info)
         int i = 0;
 
         fprintf (outfile, "%s( ", prf_string[arg_node->info.prf]);
-        for (i = 0; i < arg_node->nnode; i++) {
-            Trav (arg_node->node[i], arg_info);
-            if ((arg_node->nnode - 1) != i)
-                fprintf (outfile, ", ");
-        }
-
+        Trav (arg_node->node[0], arg_info);
+#if 0      
+      for(i=0; i<arg_node->nnode; i++)
+      {
+         Trav(arg_node->node[i], arg_info);
+         if ( (arg_node->nnode-1) != i)
+            fprintf(outfile,", ");
+       }
+#endif
         fprintf (outfile, " )");
         break;
     }
