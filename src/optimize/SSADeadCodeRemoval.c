@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2001/03/16 11:58:19  nmw
+ * add missing static for local functions
+ *
  * Revision 1.6  2001/03/12 09:16:05  nmw
  * Debug Messages added, no DCR for recursive function call
  *
@@ -56,8 +59,8 @@ static ids *TravRightIDS (ids *arg_ids, node *arg_info);
 static ids *SSADCRrightids (ids *arg_ids, node *arg_info);
 
 /* helper functions for local use */
-void SSADCRInitAvisFlags (node *fundef);
-bool SSADCRCondIsEmpty (node *cond);
+static void SSADCRInitAvisFlags (node *fundef);
+static bool SSADCRCondIsEmpty (node *cond);
 
 /******************************************************************************
  *
@@ -68,7 +71,7 @@ bool SSADCRCondIsEmpty (node *cond);
  *   inits flags needed for this module in all vardec and args.
  *
  ******************************************************************************/
-void
+static void
 SSADCRInitAvisFlags (node *fundef)
 {
     node *tmp;
@@ -104,7 +107,7 @@ SSADCRInitAvisFlags (node *fundef)
  *   contain no assignments or are missing.
  *
  ******************************************************************************/
-bool
+static bool
 SSADCRCondIsEmpty (node *cond)
 {
     bool result;
