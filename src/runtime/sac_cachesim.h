@@ -1,4 +1,4 @@
-// gehören die typedefs hier rein?
+/* gehören die typedefs hier rein? */
 #define ULINT unsigned long int
 
 typedef enum eWritePolicy { unknown } tWritePolicy;
