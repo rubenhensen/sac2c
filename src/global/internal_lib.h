@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  2000/03/16 14:30:53  dkr
+ * macros PHASE_PROLOG and PHASE_EPILOG added
+ *
  * Revision 2.10  2000/02/11 16:26:43  dkr
  * function StringConcat added
  *
@@ -138,6 +141,20 @@ extern void ComputeMallocAlignStep (void);
 #define FALSE 0
 
 #define MALLOC(size) Malloc (size)
+
+#define PHASE_PROLOG                                                                     \
+    CHECK_DBUG_START;                                                                    \
+    if (do_lac2fun[compiler_phase]) {                                                    \
+        syntax_tree = Lac2Fun (syntax_tree);                                             \
+        ABORT_ON_ERROR;                                                                  \
+    }
+
+#define PHASE_EPILOG                                                                     \
+    if (do_lac2fun[compiler_phase + 1]) {                                                \
+        syntax_tree = Fun2Lac (syntax_tree);                                             \
+        ABORT_ON_ERROR;                                                                  \
+    }                                                                                    \
+    CHECK_DBUG_STOP
 
 #ifndef DBUG_OFF
 #define CHECK_DBUG_START                                                                 \
