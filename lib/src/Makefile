@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.7  1999/07/05 14:24:34  sbs
+# CCFLAGS changed into CFLAGS
+#
 # Revision 2.6  1999/07/05 13:50:04  sbs
 # made -ansi compileable...
 #
@@ -37,7 +40,7 @@
 #
 
 CC        := gcc
-CCFLAGS  := -ansi -Wall
+CFLAGS  := -ansi -Wall
 MYFLAGS   := -g
 # MYFLAGS   := 
 
@@ -47,10 +50,10 @@ INCS= -I../../inc
 all: ../dbug.o ../main_args.o 
 
 ../dbug.o: dbug.c
-	$(CC) $(CCFLAGS) $(MYFLAGS) -o ../dbug.o -c dbug.c $(INCS)
+	$(CC) $(CFLAGS) $(MYFLAGS) -o ../dbug.o -c dbug.c $(INCS)
 
 ../main_args.o: main_args.c
-	$(CC) $(CCFLAGS) $(MYFLAGS) -o ../main_args.o -c main_args.c $(INCS)
+	$(CC) $(CFLAGS) $(MYFLAGS) -o ../main_args.o -c main_args.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
