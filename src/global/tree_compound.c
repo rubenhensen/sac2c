@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/10/22 17:29:59  cg
+ * Revision 1.10  1995/10/24 13:13:53  cg
+ * function CmpDomain now considers argument attributes
+ *
+ * Revision 1.9  1995/10/22  17:29:59  cg
  * new function SearchObjdef
  * new compound access macros for fundec and typedec
  * macro CMP_TYPE_USER now tests if argument actually is T_user.
@@ -63,6 +66,9 @@ CmpDomain (node *arg1, node *arg2)
         if (ARG_BASETYPE (arg1) == ARG_BASETYPE (arg2)) {
             if (ARG_BASETYPE (arg1) == T_user) {
                 if (!CMP_TYPE_USER (ARG_TYPE (arg1), ARG_TYPE (arg2))) {
+                    break;
+                }
+                if (ARG_ATTRIB (arg1) != ARG_ATTRIB (arg2)) {
                     break;
                 }
             }
