@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2004/09/22 17:48:32  sbs
+ * now, the setup phase is properly surrounded by PHASE_xxx macros....
+ * this allows tracing to be done before scanning-parsing, e.g., for -libstat
+ *
  * Revision 3.56  2004/09/22 15:22:03  sah
  * added support for new PrintStat
  *
@@ -276,8 +280,6 @@ main (int argc, char *argv[])
     SetupInterruptHandlers ();
     InitDupTree ();
 
-    compiler_phase = PH_setup;
-
     /*
      *  The command line is written to a single string.
      */
@@ -296,11 +298,14 @@ main (int argc, char *argv[])
 
     ABORT_ON_ERROR;
 
+    compiler_phase = PH_setup;
+
+    PHASE_PROLOG;
+    NOTE_COMPILER_PHASE;
+
     /*
      * Now, we read in the sac2c configuration files.
      */
-
-    NOTE_COMPILER_PHASE;
 
     RSCEvaluateConfiguration (target_name);
 
@@ -357,6 +362,15 @@ main (int argc, char *argv[])
     SystemCall ("%s %s", config.mkdir, tmp_dirname);
 #endif
 
+    ABORT_ON_ERROR;
+
+    PHASE_DONE_EPILOG;
+    PHASE_EPILOG;
+
+    if (break_after == PH_setup)
+        goto BREAK;
+    compiler_phase++;
+
     /*
      * If sac2c was started with the option -libstat,
      * then the library status is printed to stdout and the
@@ -373,12 +387,6 @@ main (int argc, char *argv[])
 
         exit (0);
     }
-
-    ABORT_ON_ERROR;
-
-    if (break_after == PH_setup)
-        goto BREAK;
-    compiler_phase++;
 
     /*
      *  Finally the compilation process is started.
