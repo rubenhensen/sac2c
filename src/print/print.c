@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2001/03/21 17:12:08  dkr
+ * PrintAST: address of ID_VARDEC, IDS_VARDEC printed
+ *
  * Revision 3.32  2001/03/20 16:00:29  ben
  * DoPrintAST: WLSEGX_SCHEDULER is printed now
  *
@@ -4087,6 +4090,13 @@ DoPrintIdsAST (ids *vars, bool print_status)
 
     fprintf (outfile, "{ ");
     while (vars != NULL) {
+        if (IDS_VARDEC (vars) != NULL) {
+            DoPrintTypesAST (IDS_TYPE (vars), TRUE);
+            fprintf (outfile, "<" F_PTR ">", IDS_VARDEC (vars));
+
+            fprintf (outfile, " ");
+        }
+
         fprintf (outfile, "%s<" F_PTR ">", IDS_NAME (vars), IDS_NAME (vars));
 
         if (print_status) {
@@ -4098,6 +4108,9 @@ DoPrintIdsAST (ids *vars, bool print_status)
 
         fprintf (outfile, " ");
         vars = IDS_NEXT (vars);
+        if (vars != NULL) {
+            fprintf (outfile, ", ");
+        }
     }
     fprintf (outfile, "}");
 
@@ -4351,6 +4364,8 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
             if (ID_VARDEC (arg_node) != NULL) {
                 DoPrintTypesAST (ID_TYPE (arg_node), TRUE);
+                fprintf (outfile, "<" F_PTR ">", ID_VARDEC (arg_node));
+
                 fprintf (outfile, " ");
             }
 
