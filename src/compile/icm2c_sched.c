@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2004/11/24 15:49:38  jhb
+ * removed include my_dbug.c
+ *
  * Revision 3.24  2004/10/05 17:36:41  khf
  * MT_ADJUST_SCHEDULER__OFFSET removed
  *
@@ -99,7 +102,7 @@
 #include "icm2c_basic.h"
 
 #include "dbug.h"
-#include "my_debug.h"
+/* #include "my_debug.h" */
 #include "convert.h"
 #include "globals.h"
 #include "print.h"

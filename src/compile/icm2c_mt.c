@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2004/11/24 15:53:39  jhb
+ * removed include my_dbug.c
+ *
  * Revision 3.45  2004/10/07 15:32:09  khf
  * MT_CREATE_LOCAL_DESC modified
  * set local reference counter to 1+SAC_SET_MAX_SYNC_FOLD
@@ -288,7 +291,7 @@
 #include "icm2c_mt.h"
 
 #include "dbug.h"
-#include "my_debug.h"
+/* #include "my_debug.h" */
 #include "convert.h"
 #include "globals.h"
 #include "print.h"
