@@ -13,6 +13,8 @@ LoopInvariantRemoval.h
 Makefile
 SSACSE.c
 SSACSE.h
+SSAConstantFolding.c
+SSAConstantFolding.h
 SSADeadCodeRemoval.c
 SSADeadCodeRemoval.h
 Unroll.c
