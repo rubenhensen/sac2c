@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/10/10 09:55:45  ktr
+ * Reference counting now works transparently over CONDFUN boundaries,
+ * using the scheme presented in IFL04 paper.
+ *
  * Revision 1.5  2004/07/19 12:39:37  ktr
  * Traversals for Nwithid, funcond and array reintroduced.
  *
@@ -59,4 +63,7 @@ extern node *EMRCNwithop (node *arg_node, info *arg_info);
 extern node *EMRCprf (node *arg_node, info *arg_info);
 extern node *EMRCreturn (node *arg_node, info *arg_info);
 extern node *EMRCvardec (node *arg_node, info *arg_info);
+
+extern node *EMACFfundef (node *arg_node, info *arg_info);
+
 #endif /* _sac_refcounting_h */

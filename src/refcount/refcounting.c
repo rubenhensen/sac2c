@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/10/10 09:55:45  ktr
+ * Reference counting now works transparently over CONDFUN boundaries,
+ * using the scheme presented in IFL04 paper.
+ *
  * Revision 1.16  2004/09/30 19:53:49  sah
  * made rc_counter visible
  *
@@ -130,20 +134,21 @@
 #include "ssa.h"
 #include "refcounting.h"
 #include "ReuseWithArrays.h"
+#include "rcopt.h"
 
 /** <!--******************************************************************-->
  *
  *  Enumeration of the different modes of EMRefcounting.
  *
  ***************************************************************************/
-typedef enum { rc_default, rc_else, rc_annotate_cfuns, rc_cutreuse } rc_mode;
+typedef enum { rc_default, rc_else, rc_cutreuse } rc_mode;
 
 /** <!--******************************************************************-->
  *
  *  Enumeration of hthe different counting modes for N_id nodes.
  *
  ***************************************************************************/
-typedef enum { rc_unknown, rc_apuse, rc_prfuse } rc_countmode;
+typedef enum { rc_unknown, rc_apuse, rc_prfuse, rc_conduse } rc_countmode;
 
 /** <!--******************************************************************-->
  *
@@ -190,6 +195,7 @@ struct INFO {
     bool mustcount;
     node *fundef;
     ids *lhs;
+    node *condargs;
 };
 
 /**
@@ -204,12 +210,13 @@ struct INFO {
 #define INFO_EMRC_MUSTCOUNT(n) (n->mustcount)
 #define INFO_EMRC_FUNDEF(n) (n->fundef)
 #define INFO_EMRC_LHS(n) (n->lhs)
+#define INFO_EMRC_CONDARGS(n) (n->condargs)
 
 /**
  * INFO functions
  */
 static info *
-MakeInfo ()
+MakeInfo (node *fundef)
 {
     info *result;
 
@@ -223,8 +230,9 @@ MakeInfo ()
     INFO_EMRC_COND (result) = FALSE;
     INFO_EMRC_USELIST (result) = NULL;
     INFO_EMRC_DEFLIST (result) = NULL;
-    INFO_EMRC_FUNDEF (result) = NULL;
+    INFO_EMRC_FUNDEF (result) = fundef;
     INFO_EMRC_LHS (result) = NULL;
+    INFO_EMRC_CONDARGS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -239,7 +247,45 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/**
+/** <!--******************************************************************-->
+ *
+ * @fn EMRefCount
+ *
+ *  @brief Starting function of EM based reference counting inference.
+ *
+ *  @param syntax_tree
+ *
+ *  @return modified syntax tree containing explicit memory management
+ *          instructions
+ *
+ ***************************************************************************/
+node *
+EMRefCount (node *syntax_tree)
+{
+    DBUG_ENTER ("EMRefCount");
+
+    DBUG_PRINT ("EMRC", ("Starting reference counting inference"));
+
+    act_tab = emacf_tab;
+    syntax_tree = Trav (syntax_tree, NULL);
+
+    act_tab = emrefcnt_tab;
+    syntax_tree = Trav (syntax_tree, NULL);
+
+    DBUG_PRINT ("EMRC", ("Reference counting inference complete"));
+
+    syntax_tree = EMRCORefCountOpt (syntax_tree);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/*****************************************************************************
+ *
+ * HELPER FUNCTION
+ *
+ ****************************************************************************/
+
+/** <!--*******************************************************************-->
  *
  * @name RC LISTSTRUCT FUNCTIONS
  *
@@ -280,7 +326,7 @@ MakeRCList (node *avis, int counter, rc_list_struct *next)
 
 /*@}*/
 
-/**
+/** <!--******************************************************************-->
  *
  * @name USELIST FUNCTIONS
  *
@@ -443,7 +489,7 @@ UseListCutReuseList (rc_list_struct *uselist, node *reuselist, int depth)
 
 /*@}*/
 
-/**
+/** <!--*******************************************************************-->
  *
  *  @name ENVIRONMENT FUNCTIONS
  *
@@ -718,7 +764,7 @@ AddEnvironment (node *avis, int codelevel, int n)
 
 /*@}*/
 
-/**
+/** <!--*******************************************************************-->
  *
  * @name DEFLIST FUNCTIONS
  *
@@ -817,7 +863,7 @@ DefListPopNext (rc_list_struct *deflist)
 }
 /*@}*/
 
-/**
+/** <!--******************************************************************-->
  *
  * @name ADJUST_RC HELPER FUNCTIONS
  *
@@ -866,7 +912,6 @@ MakeAdjustRC (node *avis, int count, node *next_node)
     } else {
         ids1 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (avis))), NULL,
                         ST_regular);
-        DBUG_PRINT ("EMRC", ("%s", IDS_NAME (ids1)));
         IDS_AVIS (ids1) = avis;
         IDS_VARDEC (ids1) = AVIS_VARDECORARG (avis);
 
@@ -880,8 +925,7 @@ MakeAdjustRC (node *avis, int count, node *next_node)
             /*
              * Make DEC_RC
              */
-            DBUG_ASSERT (count == -1, "DEC_RC must decrement RC by 1!!!");
-            prf = MakePrf1 (F_dec_rc, MakeIdFromIds (ids1));
+            prf = MakePrf2 (F_dec_rc, MakeIdFromIds (ids1), MakeNum (-count));
         }
 
         n = MakeAssign (MakeLet (prf, NULL),
@@ -918,7 +962,7 @@ MakeAdjustRCFromRLS (rc_list_struct *rls, node *next_node)
 }
 /*@}*/
 
-/**
+/** <!--*******************************************************************-->
  *
  * @name *List -> Assigment conversion
  *
@@ -986,7 +1030,7 @@ MakeDefAssignments (info *arg_info, node *next_node)
 }
 /*@}*/
 
-/**
+/** <!--*******************************************************************-->
  *
  *  IDS TRAVERSAL FUNCTIONS
  *
@@ -1023,10 +1067,24 @@ TravRightIds (ids *arg_ids, info *arg_info)
         avis = SetDefLevel (avis, INFO_EMRC_DEPTH (arg_info));
     }
 
+    /*
+     * Add one to the environment at the arguments DEFLEVEL
+     * iff it is zero
+     */
+    if ((GetDefLevel (avis) != INFO_EMRC_DEPTH (arg_info))
+        && (GetEnvironment (avis, GetDefLevel (avis)) == 0)) {
+        INFO_EMRC_USELIST (arg_info)
+          = UseListInsert (INFO_EMRC_USELIST (arg_info), avis, GetDefLevel (avis));
+        avis = AddEnvironment (avis, GetDefLevel (avis), 1);
+    }
+
     switch (INFO_EMRC_COUNTMODE (arg_info)) {
     case rc_unknown:
         /*
          * Copy assignment a = b;
+         */
+
+        /*
          * Env(b) += Env(a)
          */
         avis = AddEnvironment (avis, INFO_EMRC_DEPTH (arg_info),
@@ -1042,22 +1100,21 @@ TravRightIds (ids *arg_ids, info *arg_info)
 
     case rc_apuse:
         /*
-         * Add one to the environment at the arguments DEFLEVEL
-         * iff it is zero
-         */
-        if ((GetDefLevel (avis) != INFO_EMRC_DEPTH (arg_info))
-            && (GetEnvironment (avis, GetDefLevel (avis)) == 0)) {
-            INFO_EMRC_USELIST (arg_info)
-              = UseListInsert (INFO_EMRC_USELIST (arg_info), avis, GetDefLevel (avis));
-            avis = AddEnvironment (avis, GetDefLevel (avis), 1);
-        }
-
-        /*
          * If this function is not an external function whose argument
          * must be refcounted like a prf argument we increase the environment
          * at the current codelevel by one
          */
         avis = AddEnvironment (avis, INFO_EMRC_DEPTH (arg_info), 1);
+        break;
+
+    case rc_conduse:
+        /*
+         * The environment at the current codelevel must be increased by
+         * the number of uses in CONDFUN
+         */
+        avis = AddEnvironment (avis, INFO_EMRC_DEPTH (arg_info),
+                               NUM_VAL (EXPRS_EXPR (INFO_EMRC_CONDARGS (arg_info))));
+        INFO_EMRC_CONDARGS (arg_info) = FreeNode (INFO_EMRC_CONDARGS (arg_info));
         break;
 
     case rc_prfuse:
@@ -1083,9 +1140,12 @@ TravRightIds (ids *arg_ids, info *arg_info)
  * @}
  */
 
-/**
+/** <!--*******************************************************************-->
  *
  *  TRAVERSAL FUNCTIONS
+ *
+ *  emrc_tab
+ *  Prefix: EMRC
  *
  * @{
  ****************************************************************************/
@@ -1118,6 +1178,13 @@ EMRCap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("EMRCap");
 
+    /*
+     * CONDFUNs are traversed in order of appearance
+     */
+    if (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node))) {
+        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
+    }
+
     args = AP_ARGS (arg_node);
     argc = 0;
     let_ids = INFO_EMRC_LHS (arg_info);
@@ -1142,7 +1209,11 @@ EMRCap (node *arg_node, info *arg_info)
             && (FUNDEF_EXT_NOT_REFCOUNTED (AP_FUNDEF (arg_node), argc))) {
             INFO_EMRC_COUNTMODE (arg_info) = rc_prfuse;
         } else {
-            INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
+            if (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node))) {
+                INFO_EMRC_COUNTMODE (arg_info) = rc_conduse;
+            } else {
+                INFO_EMRC_COUNTMODE (arg_info) = rc_apuse;
+            }
         }
 
         if (EXPRS_EXPR (args) != NULL) {
@@ -1382,8 +1453,12 @@ AnnotateBranches (node *avis, node *cond, info *arg_info)
     avis = RestoreEnvironment (avis);
 
     if (e + t > 0) {
-        m = e < t ? e : t;
-        m = m > 1 ? m : 1;
+        if (e * t == 0) {
+            m = e > t ? e : t;
+        } else {
+            m = e < t ? e : t;
+        }
+
         avis = AddEnvironment (avis, INFO_EMRC_DEPTH (arg_info), m);
 
         INFO_EMRC_DEFLIST (arg_info)
@@ -1511,7 +1586,6 @@ EMRCfuncond (node *arg_node, info *arg_info)
                             INFO_EMRC_DEPTH (arg_info));
         break;
 
-    case rc_annotate_cfuns:
     case rc_cutreuse:
         DBUG_ASSERT (FALSE, "Cannot happen");
     }
@@ -1536,65 +1610,80 @@ EMRCfuncond (node *arg_node, info *arg_info)
 node *
 EMRCfundef (node *fundef, info *arg_info)
 {
-    node *arg;
-    node *avis;
-
     DBUG_ENTER ("EMRCfundef");
 
-    if (INFO_EMRC_MODE (arg_info) == rc_annotate_cfuns) {
-        /*
-         * special module name -> must be an external C-fun
-         */
-        if (((sbs == 1) && (strcmp (FUNDEF_MOD (fundef), EXTERN_MOD_NAME) == 0))
-            || ((sbs == 0) && (FUNDEF_MOD (fundef) == NULL))) {
-            FUNDEF_STATUS (fundef) = ST_Cfun;
-        }
-        if (FUNDEF_NEXT (fundef) != NULL) {
-            FUNDEF_NEXT (fundef) = Trav (FUNDEF_NEXT (fundef), arg_info);
-        }
-
-        DBUG_RETURN (fundef);
-    }
-
-    INFO_EMRC_FUNDEF (arg_info) = fundef;
-    INFO_EMRC_DEPTH (arg_info) = 0;
-    INFO_EMRC_MODE (arg_info) = rc_default;
-
-    DBUG_PRINT ("EMRC", ("Refcounting %s.", FUNDEF_NAME (fundef)));
+    DBUG_ASSERT ((arg_info == NULL) || (FUNDEF_IS_CONDFUN (fundef)), "Illegal arguments");
 
     /*
-     * Traverse args in order to initialize refcounting environment
+     * The body must be traversed if fundef is a regular function
+     * or this is a nested traversal of a CONDFUN
      */
-    if (FUNDEF_ARGS (fundef) != NULL)
-        FUNDEF_ARGS (fundef) = Trav (FUNDEF_ARGS (fundef), arg_info);
+    if ((!FUNDEF_IS_CONDFUN (fundef)) || (arg_info != NULL)) {
+        node *arg;
+        node *avis;
 
-    /*
-     * Traverse block
-     */
-    if (FUNDEF_BODY (fundef) != NULL) {
-        FUNDEF_BODY (fundef) = Trav (FUNDEF_BODY (fundef), arg_info);
+        info *info = MakeInfo (fundef);
+
+        DBUG_PRINT ("EMRC", (" %s.", FUNDEF_NAME (fundef)));
 
         /*
-         * Annotate missing ADJUST_RCs
+         * Traverse args in order to initialize refcounting environment
          */
-        arg = FUNDEF_ARGS (fundef);
-        while (arg != NULL) {
-            avis = ARG_AVIS (arg);
-            INFO_EMRC_DEFLIST (arg_info)
-              = DefListInsert (INFO_EMRC_DEFLIST (arg_info), avis,
-                               GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info)) - 1);
-            avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
-
-            arg = ARG_NEXT (arg);
+        if (FUNDEF_ARGS (fundef) != NULL) {
+            FUNDEF_ARGS (fundef) = Trav (FUNDEF_ARGS (fundef), info);
         }
-        BLOCK_INSTR (FUNDEF_BODY (fundef))
-          = MakeDefAssignments (arg_info, BLOCK_INSTR (FUNDEF_BODY (fundef)));
+
+        /*
+         * Traverse block
+         */
+        if (FUNDEF_BODY (fundef) != NULL) {
+            FUNDEF_BODY (fundef) = Trav (FUNDEF_BODY (fundef), info);
+
+            /*
+             * Annotate missing ADJUST_RCs
+             */
+            arg = FUNDEF_ARGS (fundef);
+            while (arg != NULL) {
+                avis = ARG_AVIS (arg);
+
+                if (FUNDEF_IS_CONDFUN (fundef)) {
+                    /*
+                     * CONDFUN:
+                     * Counter states of function arguments are returned via CONDARGS
+                     */
+                    INFO_EMRC_CONDARGS (arg_info)
+                      = AppendExprs (INFO_EMRC_CONDARGS (arg_info),
+                                     MakeExprsNum (
+                                       GetEnvironment (avis, INFO_EMRC_DEPTH (info))));
+
+                    DBUG_ASSERT (NUM_VAL (EXPRS_EXPR (INFO_EMRC_CONDARGS (arg_info))) > 0,
+                                 "Unused argument of CONDFUN encountered!!!");
+                } else {
+                    /*
+                     * REGULAR FUNCTION:
+                     * Put counters into DEFLIST in order to create INC_RC statements
+                     * at the beginning of the function
+                     */
+                    INFO_EMRC_DEFLIST (info)
+                      = DefListInsert (INFO_EMRC_DEFLIST (info), avis,
+                                       GetEnvironment (avis, INFO_EMRC_DEPTH (info)) - 1);
+
+                    avis = PopEnvironment (avis, INFO_EMRC_DEPTH (info));
+                }
+                arg = ARG_NEXT (arg);
+            }
+
+            BLOCK_INSTR (FUNDEF_BODY (fundef))
+              = MakeDefAssignments (info, BLOCK_INSTR (FUNDEF_BODY (fundef)));
+        }
+
+        info = FreeInfo (info);
     }
 
     /*
-     * Traverse other fundefs
+     * Traverse other fundefs if this is a regular fundef traversal
      */
-    if (FUNDEF_NEXT (fundef) != NULL) {
+    if ((arg_info == NULL) && (FUNDEF_NEXT (fundef) != NULL)) {
         FUNDEF_NEXT (fundef) = Trav (FUNDEF_NEXT (fundef), arg_info);
     }
 
@@ -2188,40 +2277,52 @@ EMRCvardec (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/*@}*/
+
+/** <!--*******************************************************************-->
+ *
+ *  TRAVERSAL FUNCTIONS: ANNOTATE C FUNS
+ *
+ *  This traversal marks all external C Functions with flag ST_Cfun.
+ *
+ *  Tab:    emacf_tab
+ *  Prefix: EMACF
+ *
+ * @{
+ ****************************************************************************/
+
 /** <!--******************************************************************-->
  *
- * @fn EMRefCount
+ * @fn EMACFfundef
  *
- *  @brief Starting function of EM based reference counting inference
+ *  @brief
  *
- *  @param syntax_tree
+ *  @param fundef
+ *  @param arg_info
  *
- *  @return modified synatx tree containing explicit memory management
- *          instructions
+ *  @return
  *
  ***************************************************************************/
 node *
-EMRefCount (node *syntax_tree)
+EMACFfundef (node *fundef, info *arg_info)
 {
-    info *info;
+    DBUG_ENTER ("EMACFfundef");
 
-    DBUG_ENTER ("EMRefCount");
+    /*
+     * special module name -> must be an external C-fun
+     */
+    if (((sbs == 1) && (strcmp (FUNDEF_MOD (fundef), EXTERN_MOD_NAME) == 0))
+        || ((sbs == 0) && (FUNDEF_MOD (fundef) == NULL))) {
+        DBUG_PRINT ("EMRC", ("%s marked as C_fun", FUNDEF_NAME (fundef)));
+        FUNDEF_STATUS (fundef) = ST_Cfun;
+    }
 
-    info = MakeInfo ();
+    if (FUNDEF_NEXT (fundef) != NULL) {
+        FUNDEF_NEXT (fundef) = Trav (FUNDEF_NEXT (fundef), arg_info);
+    }
 
-    INFO_EMRC_DEFLIST (info) = NULL;
-    INFO_EMRC_USELIST (info) = NULL;
-
-    act_tab = emrefcnt_tab;
-    INFO_EMRC_MODE (info) = rc_annotate_cfuns;
-    syntax_tree = Trav (syntax_tree, info);
-
-    INFO_EMRC_MODE (info) = rc_default;
-    syntax_tree = Trav (syntax_tree, info);
-
-    info = FreeInfo (info);
-
-    DBUG_RETURN (syntax_tree);
+    DBUG_RETURN (fundef);
 }
 /*@}*/
+
 /*@}*/ /* defgroup ssarc */
