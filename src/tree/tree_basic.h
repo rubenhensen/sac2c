@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.104  2001/12/11 12:59:50  dkr
+ * ID_NT_TAG added
+ *
  * Revision 3.103  2001/07/19 16:19:57  cg
  * Added new status entries ST_imported_extmod and ST_imported_extclass.
  *
@@ -1774,25 +1777,25 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***    int         NAIVE_REFCNT                (refcount -> concurrent -> )
  ***    clsconv_t   CLSCONV                     (precompile -> compile -> )
  ***    node*       DEF                         (Unroll !!, Unswitch !!)
- ***    node*       WL          (O)             (wli -> wlf !!)
+ ***    node*       WL                          (wli -> wlf !!)
  ***
- ***    void*       CONSTVEC    (O)             (flatten -> )
- ***    int         VECLEN      (O)             (flatten -> )
- ***    simpletype  VECTYPE     (O)             (flatten -> )
- ***    int         ISCONST     (O)             (flatten -> )
- ***    int         NUM         (O)
+ ***    void*       CONSTVEC                    (flatten -> )
+ ***    int         VECLEN                      (flatten -> )
+ ***    simpletype  VECTYPE                     (flatten -> )
+ ***    int         ISCONST                     (flatten -> )
+ ***    int         NUM
+ ***
+ ***    node*       NT_TAG    (N_vardec/N_arg)  (compile -> )
+ ***
  ***
  ***  remarks:
  ***
- ***    ID_WL is only used in wli, wlf. But every call of DupTree() initializes
- ***    the copy's WL_ID with a pointer to it's original N_id node. The function
- ***    SearchWL() can define ID_WL in another way (pointer to N_assign node
- ***    of WL which is referenced by this Id).
+ ***    WL is only used in wli, wlf. But every call of DupTree() initializes
+ ***    the copy's WL_ID with a pointer to it's original N_id node.
+ ***    The function SearchWL() can define WL in another way (pointer to
+ ***    N_assign node of WL which is referenced by this Id).
  ***
- ***    Unroll uses ->flag without a macro :(
- ***    Even worse: Unroll uses ->flag of *every* LET_EXPR node :(((
- ***
- ***    ID_VARDEC points to an N_vardec or an N_arg node. This is not
+ ***    VARDEC points to an N_vardec or an N_arg node. This is not
  ***    distinguished in many places of the code. So for example
  ***    VARDEC_NAME and ARG_NAME should both be substitutions for
  ***    node->info.types->id
@@ -1803,6 +1806,14 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***    normally slows down the code due to memory allocation/de-allocation
  ***    costs. However for some other optimizations, namely tile size inference,
  ***    a constant value is an advantage.
+ ***
+ ***    NT_TAG contains a pointer to the vardec iff this id should be printed
+ ***    as name tuple (relevant for ICM arguments only).
+ ***
+ ***  caution:
+ ***
+ ***    Unroll uses ->flag without a macro :(
+ ***    Even worse: Unroll uses ->flag of *every* LET_EXPR node :(((
  ***/
 
 /*
@@ -1851,6 +1862,7 @@ extern node *MakeId_Num (int val);
 #define ID_NAIVE_REFCNT(n) (IDS_NAIVE_REFCNT (ID_IDS (n)))
 #define ID_CLSCONV(n) ((clsconv_t) (n->flag))
 #define ID_WL(n) (n->node[0])
+#define ID_NT_TAG(n) (n->node[5])
 
 #define ID_VECLEN(n) (n->counter)
 #define ID_VECTYPE(n) ((simpletype) (n->int_data))
