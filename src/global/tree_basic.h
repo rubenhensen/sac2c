@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.188  1998/06/08 13:48:06  dkr
+ * added INFO_REUSE_DEC_RC_IDS
+ *
  * Revision 1.187  1998/06/07 18:38:12  dkr
  * added INFO_REUSE_... macros
  *
@@ -2487,6 +2490,7 @@ extern node *MakeInfo ();
 #define INFO_REUSE_FUNDEF(n) (n->node[0])
 #define INFO_REUSE_WL_IDS(n) (n->info.ids)
 #define INFO_REUSE_IDX(n) ((ids *)(n->node[1]))
+#define INFO_REUSE_DEC_RC_IDS(n) ((ids *)(n->node[2]))
 #define INFO_REUSE_MASK(n) ((DFMmask_t)n->dfmask[0])
 
 /* optimize */
