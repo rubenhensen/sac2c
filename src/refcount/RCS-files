@@ -21,3 +21,4 @@ reuseelimination.c
 reuseelimination.h
 interfaceanalysis.c
 interfaceanalysis.h
+loopreuseopt.c
