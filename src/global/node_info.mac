@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.59  1995/04/21 12:34:31  hw
- * added FltnId, FltnLet & FltnArgs to flat_tab
+ * Revision 1.60  1995/04/24 14:21:16  hw
+ *  CompWhile & CompCond inserted
  *
+;; Revision 1.59  1995/04/21  12:34:31  hw
+;; added FltnId, FltnLet & FltnArgs to flat_tab
+;;
 ;; Revision 1.58  1995/04/11  15:57:47  asi
 ;; NIF macro enlarged
 ;;
@@ -249,10 +252,10 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        FreeNoInfo, CFdo, RCloop, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun),
   NIF (N_while, "N_while", DummyFun, FltnWhile, PrintWhile, TCwhile, OPTloop, DEADloop,
-       DummyFun, FreeNoInfo, CFwhile, RCloop, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, FreeNoInfo, CFwhile, RCloop, CompWhile, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
   NIF (N_cond, "N_cond", DummyFun, FltnCond, PrintCond, TCcond, OPTcond, DEADcond,
-       DummyFun, FreeNoInfo, CFcond, RCcond, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, FreeNoInfo, CFcond, RCcond, CompCond, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun),
   NIF (N_let, "N_let", DummyFun, FltnLet, PrintLet, TClet, OPTlet, DummyFun, DummyFun,
        FreeInfoIds, CFlet, RClet, CompLet, DummyFun, DummyFun, DummyFun, DummyFun,
