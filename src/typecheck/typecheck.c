@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2004/03/10 00:18:01  dkrHH
+ * comment about float.h corrected
+ *
  * Revision 3.54  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -87,7 +90,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <limits.h> /* for INT_MIN, INT_MAX */
-#include <float.h>  /* for FLT_MIN, DBL_MIN, FLT_MAX, DBL_MAX */
+#include <float.h>  /* for FLT_MAX, DBL_MAX */
 
 #include "types.h"
 #include "tree_basic.h"
