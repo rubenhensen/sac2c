@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2004/07/30 17:27:38  sbs
+ * switch to new INFO structure
+ * PHASE I
+ * and UGLY trick for smuggling through info * node instead of node * node:
+ * casted. Compare UGLY counterpart in NTCCond (ct_basic.c).
+ *
  * Revision 3.42  2004/03/22 18:31:15  sbs
  * the number of return expressions now has to match the number of return types!
  * Otherwise, a proper error message is generated!.
@@ -61,6 +67,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include <stdio.h>
 #include <string.h>
 #include "dbug.h"
@@ -80,6 +88,7 @@
 #include "create_wrappers.h"
 #include "create_wrapper_code.h"
 #include "new2old.h"
+#include "import_specialization.h"
 
 #include "user_types.h"
 #include "new_types.h"
@@ -124,20 +133,68 @@
  *   ... to be continued
  */
 
-/*
+/*******************************************************************************
  * Thus, we finally find the following usages of the arg_info node:
  *
  *    INFO_NTC_TYPE             the inferred type of the expression traversed
  *    INFO_NTC_NUM_EXPRS_SOFAR  is used to count the number of exprs while
  *                              traversing them
+ * ...
  */
 
-#define INFO_NTC_TYPE(n) ((ntype *)(n->dfmask[0]))
-#define INFO_NTC_GEN_TYPE(n) ((ntype *)(n->dfmask[1]))
-#define INFO_NTC_NUM_EXPRS_SOFAR(n) (n->flag)
-#define INFO_NTC_LAST_ASSIGN(n) (n->node[0])
-#define INFO_NTC_RETURN(n) (n->node[1])
-#define INFO_NTC_OBJDEFS(n) (n->node[2])
+/**
+ * INFO structure
+ */
+struct INFO {
+    ntype *type;
+    ntype *gen_type;
+    int num_exprs_sofar;
+    node *last_assign;
+    node *ptr_return;
+    node *ptr_objdefs;
+};
+
+/**
+ * INFO macros
+ */
+#define INFO_NTC_TYPE(n) (n->type)
+#define INFO_NTC_GEN_TYPE(n) (n->gen_type)
+#define INFO_NTC_NUM_EXPRS_SOFAR(n) (n->num_exprs_sofar)
+#define INFO_NTC_LAST_ASSIGN(n) (n->last_assign)
+#define INFO_NTC_RETURN(n) (n->ptr_return)
+#define INFO_NTC_OBJDEFS(n) (n->ptr_objdefs)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_NTC_TYPE (result) = NULL;
+    INFO_NTC_GEN_TYPE (result) = NULL;
+    INFO_NTC_NUM_EXPRS_SOFAR (result) = 0;
+    INFO_NTC_LAST_ASSIGN (result) = NULL;
+    INFO_NTC_RETURN (result) = NULL;
+    INFO_NTC_OBJDEFS (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 typedef enum { NTC_not_checked, NTC_checking, NTC_checked } NTC_stat;
 
@@ -162,16 +219,31 @@ node *
 NewTypeCheck (node *arg_node)
 {
     funtab *tmp_tab;
-    node *arg_info;
+    info *arg_info;
 
     DBUG_ENTER ("NewTypeCheck");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
+                 "NewTypeCheck() not called with N_modul node!");
+
+    /*
+     * if compiling for a c library, search for specializations
+     * of functions and integrate them.
+     *
+     * NB: this is copied from the old TC; may not work properly
+     * at all, i.e., needs attention 8-)
+     *
+     */
+    if (generatelibrary & GENERATELIBRARY_C) {
+        arg_node = ImportSpecialization (arg_node);
+    }
 
     tmp_tab = act_tab;
     act_tab = ntc_tab;
 
     arg_info = MakeInfo ();
     arg_node = Trav (arg_node, arg_info);
-    arg_info = FreeNode (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     act_tab = tmp_tab;
 
@@ -193,7 +265,7 @@ ntype *
 NewTypeCheck_Expr (node *arg_node)
 {
     funtab *tmp_tab;
-    node *arg_info;
+    info *arg_info;
     ntype *type;
 
     DBUG_ENTER ("NewTypeCheck_Expr");
@@ -205,7 +277,7 @@ NewTypeCheck_Expr (node *arg_node)
     arg_node = Trav (arg_node, arg_info);
     type = INFO_NTC_TYPE (arg_info);
     type = TYFixAndEliminateAlpha (type);
-    arg_info = FreeNode (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     act_tab = tmp_tab;
 
@@ -224,7 +296,7 @@ NewTypeCheck_Expr (node *arg_node)
 /******************************************************************************
  *
  * function:
- *    node *TypeCheckFunctionBody( node *fundef, node *arg_info)
+ *    node *TypeCheckFunctionBody( node *fundef, info *arg_info)
  *
  * description:
  *    main function for type checking a given fundef node.
@@ -232,7 +304,7 @@ NewTypeCheck_Expr (node *arg_node)
  ******************************************************************************/
 
 static node *
-TypeCheckFunctionBody (node *fundef, node *arg_info)
+TypeCheckFunctionBody (node *fundef, info *arg_info)
 {
     ntype *spec_type, *inf_type;
     ntype *stype, *itype;
@@ -351,14 +423,14 @@ TypeCheckFunctionBody (node *fundef, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCmodul(node *arg_node, node *arg_info)
+ *    node *NTCmodul(node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-NTCmodul (node *arg_node, node *arg_info)
+NTCmodul (node *arg_node, info *arg_info)
 {
     bool ok;
     node *fundef, *ignore;
@@ -641,7 +713,7 @@ CheckUdtAndSetBaseType (usertype udt, int *visited)
 /******************************************************************************
  *
  * function:
- *    node *NTCtypedef(node *arg_node, node *arg_info)
+ *    node *NTCtypedef(node *arg_node, info *arg_info)
  *
  * description:
  *   On the traversal down, we insert all user defined types. While doing so
@@ -653,7 +725,7 @@ CheckUdtAndSetBaseType (usertype udt, int *visited)
  ******************************************************************************/
 
 node *
-NTCtypedef (node *arg_node, node *arg_info)
+NTCtypedef (node *arg_node, info *arg_info)
 {
     char *name, *mod;
     ntype *nt, *base;
@@ -708,7 +780,7 @@ NTCtypedef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCobjdef(node *arg_node, node *arg_info)
+ *    node *NTCobjdef(node *arg_node, info *arg_info)
  *
  * description:
  *   Basically, this is a double conversion old type => new type => old type.
@@ -720,7 +792,7 @@ NTCtypedef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NTCobjdef (node *arg_node, node *arg_info)
+NTCobjdef (node *arg_node, info *arg_info)
 {
     ntype *tmp;
 
@@ -739,14 +811,14 @@ NTCobjdef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCfundef(node *arg_node, node *arg_info)
+ *    node *NTCfundef(node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-NTCfundef (node *arg_node, node *arg_info)
+NTCfundef (node *arg_node, info *arg_info)
 {
     node *specialized_fundefs;
 
@@ -778,14 +850,14 @@ NTCfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCarg(node *arg_node, node *arg_info)
+ *    node *NTCarg(node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-NTCarg (node *arg_node, node *arg_info)
+NTCarg (node *arg_node, info *arg_info)
 {
     ntype *new_type, *scalar;
 #ifndef DBUG_OFF
@@ -827,14 +899,14 @@ NTCarg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node * NTCblock( node *arg_node, node *arg_info )
+ *  node * NTCblock( node *arg_node, info *arg_info )
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-NTCblock (node *arg_node, node *arg_info)
+NTCblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("NTCblock");
 
@@ -852,14 +924,14 @@ NTCblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node * NTCvardec( node *arg_node, node *arg_info )
+ *  node * NTCvardec( node *arg_node, info *arg_info )
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-NTCvardec (node *arg_node, node *arg_info)
+NTCvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("NTCvardec");
 
@@ -878,7 +950,7 @@ NTCvardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCassign(node *arg_node, node *arg_info)
+ *    node *NTCassign(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -887,7 +959,7 @@ NTCvardec (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NTCassign (node *arg_node, node *arg_info)
+NTCassign (node *arg_node, info *arg_info)
 {
     node *tmp;
 
@@ -909,7 +981,7 @@ NTCassign (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCcond(node *arg_node, node *arg_info)
+ *    node *NTCcond(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -918,11 +990,11 @@ NTCassign (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NTCcond (node *arg_node, node *arg_info)
+NTCcond (node *arg_node, info *arg_info)
 {
     ntype *args;
     ntype *res;
-    node *context_info;
+    info *context_info;
     te_info *info;
 
     DBUG_ENTER ("NTCcond");
@@ -933,7 +1005,7 @@ NTCcond (node *arg_node, node *arg_info)
     context_info = MakeInfo ();
     INFO_NTC_LAST_ASSIGN (context_info) = INFO_NTC_LAST_ASSIGN (arg_info);
 
-    info = TEMakeInfo (linenum, "cond", "", arg_node, context_info, NULL, NULL);
+    info = TEMakeInfo (linenum, "cond", "", arg_node, (node *)context_info, NULL, NULL);
 
     res = NTCCTComputeType (NTCCond, info, args);
 
@@ -945,7 +1017,7 @@ NTCcond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCfuncond(node *arg_node, node *arg_info)
+ *    node *NTCfuncond(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -954,7 +1026,7 @@ NTCcond (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NTCfuncond (node *arg_node, node *arg_info)
+NTCfuncond (node *arg_node, info *arg_info)
 {
     node *rhs1, *rhs2;
     ntype *rhs1_type, *rhs2_type, *res;
@@ -1034,7 +1106,7 @@ NTCfuncond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTClet(node *arg_node, node *arg_info)
+ *    node *NTClet(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -1043,7 +1115,7 @@ NTCfuncond (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NTClet (node *arg_node, node *arg_info)
+NTClet (node *arg_node, info *arg_info)
 {
     ntype *rhs_type, *existing_type, *inferred_type, *max;
     ids *lhs;
@@ -1164,14 +1236,14 @@ NTClet (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *NTCreturn(node *arg_node, node *arg_info)
+ *  node *NTCreturn(node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-NTCreturn (node *arg_node, node *arg_info)
+NTCreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("NTCreturn");
 
@@ -1205,14 +1277,14 @@ NTCreturn (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCap(node *arg_node, node *arg_info)
+ *    node *NTCap(node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-NTCap (node *arg_node, node *arg_info)
+NTCap (node *arg_node, info *arg_info)
 {
     ntype *args, *res;
     node *wrapper;
@@ -1258,14 +1330,14 @@ NTCap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCprf(node *arg_node, node *arg_info)
+ *    node *NTCprf(node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-NTCprf (node *arg_node, node *arg_info)
+NTCprf (node *arg_node, info *arg_info)
 {
     ntype *args, *res;
     prf prf;
@@ -1307,14 +1379,14 @@ NTCprf (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCexprs(node *arg_node, node *arg_info)
+ *    node *NTCexprs(node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-NTCexprs (node *arg_node, node *arg_info)
+NTCexprs (node *arg_node, info *arg_info)
 {
     ntype *type = NULL;
 
@@ -1344,14 +1416,14 @@ NTCexprs (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCarray(node *arg_node, node *arg_info)
+ *    node *NTCarray(node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-NTCarray (node *arg_node, node *arg_info)
+NTCarray (node *arg_node, info *arg_info)
 {
     int num_elems;
     ntype *type, *elems;
@@ -1411,7 +1483,7 @@ NTCarray (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCid( node *arg_node, node *arg_info)
+ *    node *NTCid( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -1420,7 +1492,7 @@ NTCarray (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NTCid (node *arg_node, node *arg_info)
+NTCid (node *arg_node, info *arg_info)
 {
     ntype *type;
     node *objdef;
@@ -1454,7 +1526,7 @@ NTCid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *NTCnum( node *arg_node, node *arg_info)
+ *   node *NTCnum( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -1462,7 +1534,7 @@ NTCid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 #define NTCBASIC(name, base)                                                             \
-    node *NTC##name (node *arg_node, node *arg_info)                                     \
+    node *NTC##name (node *arg_node, info *arg_info)                                     \
     {                                                                                    \
         constant *cv;                                                                    \
         DBUG_ENTER ("NTC" #name);                                                        \
@@ -1486,7 +1558,7 @@ NTCBASIC (bool, T_bool)
 /******************************************************************************
  *
  * function:
- *   node *NTCcast( node *arg_node, node *arg_info)
+ *   node *NTCcast( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -1494,7 +1566,7 @@ NTCBASIC (bool, T_bool)
  ******************************************************************************/
 
 node *
-NTCcast (node *arg_node, node *arg_info)
+NTCcast (node *arg_node, info *arg_info)
 {
     te_info *info;
     ntype *type, *cast_t, *expr_t;
@@ -1529,7 +1601,7 @@ NTCcast (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCNwith( node *arg_node, node *arg_info)
+ *    node *NTCNwith( node *arg_node, info *arg_info)
  *
  * description:
  *   steers the type inference of with loops and dbug prints the individual
@@ -1539,7 +1611,7 @@ NTCcast (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NTCNwith (node *arg_node, node *arg_info)
+NTCNwith (node *arg_node, info *arg_info)
 {
     ntype *gen, *body, *res;
 #ifndef DBUG_OFF
@@ -1594,7 +1666,7 @@ NTCNwith (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCNpart( node *arg_node, node *arg_info)
+ *    node *NTCNpart( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -1602,7 +1674,7 @@ NTCNwith (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NTCNpart (node *arg_node, node *arg_info)
+NTCNpart (node *arg_node, info *arg_info)
 {
     ids *idxs;
     ntype *idx;
@@ -1650,7 +1722,7 @@ NTCNpart (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCNgenerator( node *arg_node, node *arg_info)
+ *    node *NTCNgenerator( node *arg_node, info *arg_info)
  *
  * description:
  *   checks compatability of the generator entries, i.e.,
@@ -1661,7 +1733,7 @@ NTCNpart (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NTCNgenerator (node *arg_node, node *arg_info)
+NTCNgenerator (node *arg_node, info *arg_info)
 {
     ntype *lb, *idx, *ub, *s, *w, *gen, *res;
     te_info *info;
@@ -1709,7 +1781,7 @@ NTCNgenerator (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCNwithid( node *arg_node, node *arg_info)
+ *    node *NTCNwithid( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -1717,7 +1789,7 @@ NTCNgenerator (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NTCNwithid (node *arg_node, node *arg_info)
+NTCNwithid (node *arg_node, info *arg_info)
 {
     ids *idxs, *vec;
 
@@ -1748,7 +1820,7 @@ NTCNwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCNcode( node *arg_node, node *arg_info)
+ *    node *NTCNcode( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -1756,7 +1828,7 @@ NTCNwithid (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NTCNcode (node *arg_node, node *arg_info)
+NTCNcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("NTCNcode");
 
@@ -1772,7 +1844,7 @@ NTCNcode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCNwithop( node *arg_node, node *arg_info)
+ *    node *NTCNwithop( node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -1780,7 +1852,7 @@ NTCNcode (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-NTCNwithop (node *arg_node, node *arg_info)
+NTCNwithop (node *arg_node, info *arg_info)
 {
     ntype *gen, *body, *res, *elems, *acc;
     ntype *shp, *dexpr, *args;
@@ -1915,14 +1987,14 @@ NTCNwithop (node *arg_node, node *arg_info)
 node *
 NTCTriggerTypeCheck (node *fundef)
 {
-    node *arg_info;
+    info *arg_info;
 
     DBUG_ENTER ("NTCTriggerTypeCheck");
 
     if (FUNDEF_TCSTAT (fundef) == NTC_not_checked) {
         arg_info = MakeInfo ();
         fundef = TypeCheckFunctionBody (fundef, arg_info);
-        arg_info = FreeNode (arg_info);
+        arg_info = FreeInfo (arg_info);
     }
 
     DBUG_RETURN (fundef);
