@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/02/20 15:52:53  nmw
+ * AppendAssign in now able to handle empty blocks
+ *
  * Revision 3.10  2001/02/15 16:59:43  nmw
  * access macro for SSAstack added
  *
@@ -1782,6 +1785,14 @@ AppendAssign (node *assign_chain, node *assign)
 
     DBUG_ENTER ("AppendAssign");
 
+    if (assign_chain != NULL) {
+        if (NODE_TYPE (assign_chain) == N_empty) {
+            /* empty block */
+            FreeNode (assign_chain);
+            assign_chain = NULL;
+        }
+    }
+
     APPEND (ret, node *, ASSIGN, assign_chain, assign);
 
     DBUG_RETURN (ret);
@@ -1807,6 +1818,7 @@ MakeAssignLet (char *var_name, node *vardec_node, node *let_expr)
 
     tmp_ids = MakeIds (var_name, NULL, ST_regular);
     IDS_VARDEC (tmp_ids) = vardec_node;
+    IDS_AVIS (tmp_ids) = VARDEC_OR_ARG_AVIS (vardec_node);
     tmp_node = MakeLet (let_expr, tmp_ids);
     tmp_node = MakeAssign (tmp_node, NULL);
     DBUG_RETURN (tmp_node);
