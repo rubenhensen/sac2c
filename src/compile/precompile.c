@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.99  2004/11/12 10:13:03  ktr
+ * PREC2apORprf does not traverse into args of alloc_or_reuse any longer.
+ *
  * Revision 3.98  2004/11/08 16:58:38  sah
  * ':' is treated as special caracter now and replaced by _CL
  * in ReplaceSpecialChar
@@ -2023,7 +2026,8 @@ PREC2apORprf (node *arg_node, info *arg_info)
      * prf F_alloc is only pseudo syntax which will be eliminated in compile.c.
      * It's args must not be traversed.
      */
-    if ((PRF_PRF (arg_node) != F_alloc) && (AP_OR_PRF_ARGS (arg_node) != NULL)) {
+    if ((PRF_PRF (arg_node) != F_alloc) && (PRF_PRF (arg_node) != F_alloc_or_reuse)
+        && (AP_OR_PRF_ARGS (arg_node) != NULL)) {
         L_AP_OR_PRF_ARGS (arg_node, Trav (AP_OR_PRF_ARGS (arg_node), arg_info));
     }
 
