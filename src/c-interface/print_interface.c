@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2000/11/29 16:24:02  nmw
+ * trace output added
+ *
  * Revision 3.1  2000/11/20 18:03:42  sacbase
  * new release made
  *
@@ -208,6 +211,7 @@ PrintSACRuntimeInitExit (node *arg_node)
                       " * of the SAC runtime system and calls the CInterface\n"
                       " * init function\n"
                       " */\n\n"
+                      "#include <stdio.h>\n"
                       "extern void SAC_InitCInterface();\n"
                       "extern void SAC_ExitCInterface();\n\n");
 
@@ -223,12 +227,24 @@ PrintSACRuntimeInitExit (node *arg_node)
                       "  SAC_HM_SETUP();\n"
                       "  SAC_MT_SETUP();\n"
                       "  SAC_CS_SETUP();\n"
-                      "  SAC_InitCInterface();\n"
-                      "}\n\n");
+                      "  SAC_InitCInterface();\n");
+
+    if (traceflag & TRACE_CENV) {
+        /* print runtime trace comment */
+        fprintf (outfile, "printf(\"SAC-Runtime-System ready...\\n\");\n");
+    }
+
+    fprintf (outfile, "}\n\n");
     fprintf (outfile, "void SAC_FreeRuntimeSystem()\n"
                       "{\n"
                       "SAC_ExitCInterface();\n");
     GSCPrintMainEnd ();
+
+    if (traceflag & TRACE_CENV) {
+        /* print runtime trace comment */
+        fprintf (outfile, "printf(\"SAC-Runtime-System cleaned up...\\n\");\n");
+    }
+
     fprintf (outfile, "\n}\n\n");
 
     fprintf (outfile, "/* generated codefile, please do not modify */\n");
