@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/06/05 07:49:45  cg
+ * converted to new renaming conventions of local identifiers.
+ *
  * Revision 1.1  1998/05/07 08:38:05  cg
  * Initial revision
  *
@@ -38,26 +41,26 @@
 #define SAC_ND_BINOP_AxA_A(op, a1, a2, res)                                              \
     SAC_TR_PRINT_PRF (("ND_BINOP_AxA_A( %s, %s, %s, %s)\n", #op, #a1, #a2, #res));       \
     {                                                                                    \
-        int __i;                                                                         \
-        for (__i = 0; __i < SAC_ND_A_SIZE (res); __i++)                                  \
+        int SAC_i;                                                                       \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (res); SAC_i++)                            \
             SAC_ND_A_FIELD (res)                                                         \
-            [__i] = SAC_ND_A_FIELD (a1)[__i] op SAC_ND_A_FIELD (a2)[__i];                \
+            [SAC_i] = SAC_ND_A_FIELD (a1)[SAC_i] op SAC_ND_A_FIELD (a2)[SAC_i];          \
     };
 
 #define SAC_ND_BINOP_AxS_A(op, a2, s, res)                                               \
     SAC_TR_PRINT_PRF (("ND_BINOP_AxS_A( %s, %s, %s, %s)\n", #op, #a2, #s, #res));        \
     {                                                                                    \
-        int __i;                                                                         \
-        for (__i = 0; __i < SAC_ND_A_SIZE (res); __i++)                                  \
-            SAC_ND_A_FIELD (res)[__i] = SAC_ND_A_FIELD (a2)[__i] op s;                   \
+        int SAC_i;                                                                       \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (res); SAC_i++)                            \
+            SAC_ND_A_FIELD (res)[SAC_i] = SAC_ND_A_FIELD (a2)[SAC_i] op s;               \
     };
 
 #define SAC_ND_BINOP_SxA_A(op, s, a2, res)                                               \
     SAC_TR_PRINT_PRF (("ND_BINOP_SxA_A( %s, %s, %s, %s)\n", #op, #s, #a2, #res));        \
     {                                                                                    \
-        int __i;                                                                         \
-        for (__i = 0; __i < SAC_ND_A_SIZE (res); __i++)                                  \
-            SAC_ND_A_FIELD (res)[__i] = s op SAC_ND_A_FIELD (a2)[__i];                   \
+        int SAC_i;                                                                       \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (res); SAC_i++)                            \
+            SAC_ND_A_FIELD (res)[SAC_i] = s op SAC_ND_A_FIELD (a2)[SAC_i];               \
     };
 
 /*
@@ -66,9 +69,9 @@
 
 #define SAC_ND_CONV_A(a1, res)                                                           \
     {                                                                                    \
-        int __i;                                                                         \
-        for (__i = 0; __i < SAC_ND_A_SIZE (res); __i++)                                  \
-            SAC_ND_A_FIELD (res)[__i] = SAC_ND_A_FIELD (a1)[__i];                        \
+        int SAC_i;                                                                       \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (res); SAC_i++)                            \
+            SAC_ND_A_FIELD (res)[SAC_i] = SAC_ND_A_FIELD (a1)[SAC_i];                    \
     }
 
 #define SAC_ND_I2F_A(a1, res) SAC_ND_CONV_A (a1, res)
