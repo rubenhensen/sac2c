@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.34  1996/01/21 13:56:08  cg
+ * Revision 1.35  1996/01/22 17:27:50  cg
+ * modified OBJDEF_LINKNAME(n), OBJDEF_INITFUN(n), OBJDEF_EFFECT(n)
+ *
+ * Revision 1.34  1996/01/21  13:56:08  cg
  * added compound access macros for N_icm node
  *
  * Revision 1.33  1996/01/12  15:53:28  asi
@@ -689,6 +692,15 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
 #define OBJDEF_TNAME(n) (TYPES_NAME (OBJDEF_TYPE (n)))
 #define OBJDEF_TMOD(n) (TYPES_MOD (OBJDEF_TYPE (n)))
 #define OBJDEF_TDEF(n) (TYPES_TDEF (OBJDEF_TYPE (n)))
+
+#define OBJDEF_LINKNAME(n)                                                               \
+    OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_LINKNAME (OBJDEF_PRAGMA (n))
+
+#define OBJDEF_INITFUN(n)                                                                \
+    OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_INITFUN (OBJDEF_PRAGMA (n))
+
+#define OBJDEF_EFFECT(n)                                                                 \
+    OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_EFFECT (OBJDEF_PRAGMA (n))
 
 /*
  *
