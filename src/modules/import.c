@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.39  1996/01/23 09:01:39  cg
+ * Revision 1.40  1996/01/23 09:58:05  cg
+ * Now, the name length of imported modules is checked
+ *
+ * Revision 1.39  1996/01/23  09:01:39  cg
  * bug fixed in function ImportOwnDeclaration
  *
  * Revision 1.38  1996/01/22  18:34:18  cg
@@ -1118,6 +1121,10 @@ GenMod (char *name, int checkdec)
                        buffer, name, decl_tree->info.fun_name.id));
         }
 
+        if (strlen (name) > 13) {
+            SYSERROR (("Module/class name '%s` too long (maximum: 13 characters)", name));
+        }
+
         tmp->prefix = decl_tree->info.fun_name.id_mod;
         tmp->name = decl_tree->info.fun_name.id;
         tmp->next = NULL;
@@ -1814,6 +1821,8 @@ IMmodul (node *arg_node, node *arg_info)
             GenSyms (modptr);
             modptr = modptr->next;
         }
+
+        ABORT_ON_ERROR;
 
         DoImport (arg_node, arg_node->node[0], arg_node->info.id);
 
