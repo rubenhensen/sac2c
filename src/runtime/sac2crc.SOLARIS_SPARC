@@ -202,13 +202,15 @@ CACHE2_MSCA    :=  3
 
 target ultra2_entr450:
 
-CACHE1_SIZE    :=  16
-CACHE1_LINE    :=  32
-CACHE1_ASSOC   :=  1
+CACHE1_SIZE     :=  16
+CACHE1_LINE     :=  32
+CACHE1_ASSOC    :=  1
+CACHE1_WRITEPOL :=  "write_around"
 
-CACHE2_SIZE    :=  4096
-CACHE2_LINE    :=  64
-CACHE2_ASSOC   :=  1
+CACHE2_SIZE     :=  4096
+CACHE2_LINE     :=  64
+CACHE2_ASSOC    :=  1
+CACHE2_WRITEPOL :=  "write_around"
 
 
 
