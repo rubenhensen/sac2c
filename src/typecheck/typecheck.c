@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.18  1999/05/17 11:22:58  jhs
+ * with-loops with empty bounds will be rebuild to direct let's.
+ *
  * Revision 2.17  1999/05/14 09:25:13  jhs
  * Dbugged constvec annotations and their housekeeping in various compilation stages.
  *
@@ -751,6 +754,8 @@ BuildGenarrayWithLoop (node *shp, node *val)
         for (i = ID_VECLEN (shp) - 1; i >= 0; i--)
             tmp_node = MakeExprs (MakeNum (((int *)ID_CONSTVEC (shp))[i]), tmp_node);
         tmp_node = MakeArray (tmp_node);
+        ARRAY_VECTYPE (tmp_node) = ID_VECTYPE (shp);
+        ARRAY_ISCONST (tmp_node) = ID_ISCONST (shp);
         ARRAY_VECLEN (tmp_node) = ID_VECLEN (shp);
         ARRAY_CONSTVEC (tmp_node)
           = CopyConstVec (ID_VECTYPE (shp), ID_VECLEN (shp), ID_CONSTVEC (shp));
@@ -7029,21 +7034,37 @@ TCobjdef (node *arg_node, node *arg_info)
  *  description:
  *    checks whether a bound (specified by bound_node) of a withloop is an
  *    empty array, constants TRUE or FALSE are returned.
- *    arg_node is needed only for aborts.
+ *    arg_node is needed only for the line number in abort.
  *
  ******************************************************************************/
 
 int
 isBoundEmpty (node *arg_node, node *bound_node)
 {
+    int i, elements;
+    types *ltypes;
+
     if (NODE_TYPE (bound_node) == N_id) {
-        /* N_id node => elements are annotated */
+        /* N_id node => elements are eventually annotated */
         if (ID_ISCONST (bound_node) && (ID_VECLEN (bound_node) == 0)) {
             return (TRUE);
         } else {
-            return (FALSE);
+            /* They are not annotated but perhaps the shape is empty?
+             * Therefore count elements. */
+            ltypes = VARDEC_TYPE (ID_VARDEC (bound_node));
+            elements = 1;
+            for (i = 0; i < TYPES_DIM (ltypes); i++) {
+                elements = elements * SHPSEG_SHAPE (TYPES_SHPSEG (ltypes), i);
+            }
+            /* Shape empty? */
+            if (elements == 0) {
+                return (TRUE);
+            } else {
+                return (FALSE);
+            }
         }
     } else if (NODE_TYPE (bound_node) == N_array) {
+        /* iff there are no elements in array, it must be empty */
         if (ARRAY_AELEMS (bound_node) == NULL) {
             return (TRUE);
         } else {
@@ -7081,7 +7102,7 @@ TI_Nwith (node *arg_node, node *arg_info)
 {
     stack_elem *old_tos;
     types *generator_type, *base_array_type, *body_type, *neutral_type;
-    node *tmpn, *withop, *new_fundef;
+    node *tmpn, *withop, *new_fundef, *new_expr;
     ids *mem_lhs;
     int i;
 
@@ -7323,7 +7344,7 @@ TI_Nwith (node *arg_node, node *arg_info)
 
         generator = NPART_GEN (NWITH_PART (arg_node));
         lowerbound = NGEN_BOUND1 (generator);
-        upperbound = NGEN_BOUND1 (generator);
+        upperbound = NGEN_BOUND2 (generator);
 
         lowerbound_empty = isBoundEmpty (arg_node, lowerbound);
         upperbound_empty = isBoundEmpty (arg_node, upperbound);
@@ -7381,31 +7402,54 @@ TI_Nwith (node *arg_node, node *arg_info)
                      *             as many elements as described by the shape.
                      *           in case of scalars: 0 */
 
-                    /*  body can be ignored,
-                     *  because only default values are returned here */
+                    /*  body can be ignored, because only default values are returned
+                     * here.
+                     */
+
+                    /*  evaluate new_expr, to be hanged into let.
+                     */
                     if (TYPES_DIM (base_array_type) > SCALAR) {
-                        LET_EXPR (ASSIGN_INSTR (INFO_TC_CURRENTASSIGN (arg_info)))
-                          = ArrayOfZeros ((TypeToCount (base_array_type)));
+                        if (NWITHOP_TYPE (withop) == WO_genarray) {
+                            new_expr = ArrayOfZeros ((TypeToCount (base_array_type)));
+                        } else if (NWITHOP_TYPE (withop) == WO_modarray) {
+                            new_expr = NWITHOP_ARRAY (withop);
+                        } else if (NWITHOP_TYPE (withop) == WO_foldfun) {
+                            new_expr = NWITHOP_NEUTRAL (withop);
+                        } else {
+                            ABORT (NODE_LINE (arg_node),
+                                   ("Wrong type of withloop applied to empty "
+                                    "indexvectors"));
+                        }
                     } else if (TYPES_DIM (base_array_type) == SCALAR) {
-                        LET_EXPR (ASSIGN_INSTR (INFO_TC_CURRENTASSIGN (arg_info)))
-                          = MakeNum (0);
+                        if (NWITHOP_TYPE (withop) == WO_genarray) {
+                            new_expr = MakeNum (0);
+                        } else if (NWITHOP_TYPE (withop) == WO_modarray) {
+                            new_expr = NWITHOP_ARRAY (withop);
+                        } else if (NWITHOP_TYPE (withop) == WO_foldfun) {
+                            new_expr = NWITHOP_NEUTRAL (withop);
+
+/*              ABORT(NODE_LINE(arg_node), ("Withloop on scalars applied to empty indexvectors"));
+ */           } else {
+    ABORT (NODE_LINE (arg_node),
+           ("Wrong type of withloop applied to empty indexvectors"));
+}
                     } else {
                         ABORT (NODE_LINE (arg_node), ("Wrong dimension of type!"));
                     } /* if */
+                    LET_EXPR (ASSIGN_INSTR (INFO_TC_CURRENTASSIGN (arg_info))) = new_expr;
 
                     /* Cleanup the arg_node, no parts are reused here!
                      * So we can cleanup the whole arg_node. */
-                    FreeTree (arg_node);
-                    arg_node = NULL;
+                    /*      FreeTree (arg_node);  */
+                    /*  arg_node = NULL; */
                 } /* if (NGEN_OP1_ORIG(...) ...) else ... */
 
                 /* foldprf & foldfun missing here */
 
             } else {
-                ABORT (NODE_LINE (arg_node),
-                       ("Wrong type of withloop applied to empty indexvectors"));
-            } /* if (NWITHOP_TYPE(...) ...) else ... */
-        }     /* if (lowerbound_empty && upperbound_empty) ... */
+  /*      ABORT(NODE_LINE(arg_node), ("Wrong type of withloop applied to empty indexvectors"));   
+   */   } /* if (NWITHOP_TYPE(...) ...) else ... */
+        } /* if (lowerbound_empty && upperbound_empty) ... */
     }
     DBUG_RETURN (base_array_type);
 }
