@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/04/14 16:23:48  jhs
+ * EMPTY_ARRAY removed for second try on empty arrays.
+ * /.
+ *
  * Revision 2.4  1999/04/09 13:53:13  jhs
  * Macros for known shape and known dimension added.
  *
@@ -441,21 +445,16 @@ typedef struct {
  * knwon    dimension is not known   array or scalar
  * - type of an scalar:                    dim == SCALAR                 shape is known
  * dimension is known       scalar
- * - empty array, so shape is known as []: dim == EMPTY_ARRAY            shape is known
- * dimension is known       array
  *
  * The known-macros test for knowledge of properties of TYPES_DIM. (jhs)
  */
 #define SCALAR 0
 #define UNKNOWN_SHAPE -1
 #define ARRAY_OR_SCALAR -2
-#define EMPTY_ARRAY -3
-#define KNOWN_DIM_OFFSET -3
+#define KNOWN_DIM_OFFSET -2
 
-#define KNOWN_SHAPE(x) (((x) == EMPTY_ARRAY) || ((x) == SCALAR) || ((x) > SCALAR))
-#define KNOWN_DIMENSION(x)                                                               \
-    (((x) == EMPTY_ARRAY) || ((x) == SCALAR) || ((x) > SCALAR)                           \
-     || ((x) < KNOWN_DIM_OFFSET))
+#define KNOWN_SHAPE(x) (((x) == SCALAR) || ((x) > SCALAR))
+#define KNOWN_DIMENSION(x) (((x) == SCALAR) || ((x) > SCALAR) || ((x) < KNOWN_DIM_OFFSET))
 
 typedef types shapes; /* this definition is primarily needed for
                        * the vinfo nodes; there we need the shape
