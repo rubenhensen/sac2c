@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.79  1999/02/11 13:37:23  cg
+ * Improved debugging opportunities by hiding calls to free() behind
+ * wrapper function Free().
+ *
  * Revision 1.78  1999/02/06 12:53:32  srs
  * added FreeNodelistNode
  *
@@ -145,6 +149,20 @@
 
 #define FREECONT(node)                                                                   \
     ((arg_info != NULL) && (node != NULL)) ? Trav (node, arg_info) : node
+
+/*--------------------------------------------------------------------------*/
+/*  Free-function wrapper for debugging purposes                            */
+/*--------------------------------------------------------------------------*/
+
+void
+Free (void *addr)
+{
+    DBUG_ENTER ("Free");
+
+    free (addr);
+
+    DBUG_VOID_RETURN;
+}
 
 /*--------------------------------------------------------------------------*/
 /*  Free-functions for non-node structures                                  */

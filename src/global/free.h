@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.27  1999/02/11 13:37:23  cg
+ * Improved debugging opportunities by hiding calls to free() behind
+ * wrapper function Free().
+ *
  * Revision 1.26  1999/02/06 12:53:23  srs
  * added FreeNodelistNode()
  *
@@ -102,6 +106,19 @@
 #include "malloc.h"
 #include "internal_lib.h"
 
+#ifdef DBUG_OFF
+#define DOFREE(a) free (a)
+#else
+#define DOFREE(a) Free (a)
+#endif
+
+/*
+ * For debugging purposes, free() is not called directly but through the wrapper
+ * function Free(). This allows us to set a break point on Free(). Together with
+ * conditions on breakpoints, this feature allows to detect when a certain address
+ * is freed.
+ */
+
 #ifndef NOFREE
 
 #ifdef SHOW_MALLOC
@@ -111,14 +128,14 @@
         address = (void *)((char *)address - malloc_align_step);                         \
         current_allocated_mem -= *(int *)(address);                                      \
                                                                                          \
-        free (address);                                                                  \
+        DOFREE (address);                                                                \
         address = NULL;                                                                  \
     }
 #else /* not SHOW_MALLOC */
 #define FREE(address)                                                                    \
     if ((address) != NULL) {                                                             \
         DBUG_PRINT ("FREEMEM", ("Free memory at adress: " P_FORMAT, (address)));         \
-        free ((address));                                                                \
+        DOFREE ((address));                                                              \
         address = NULL;                                                                  \
     }
 #endif
@@ -128,6 +145,8 @@
 #define FREE(address)
 
 #endif /* NOFREE */
+
+extern void Free (void *addr);
 
 extern node *FreeNode (node *);
 extern node *FreeTree (node *);
