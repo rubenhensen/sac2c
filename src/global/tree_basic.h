@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.78  1998/03/03 17:40:49  dkr
+ * changed MakeWLgrid(), MakeWLindex()
+ *
  * Revision 1.77  1998/03/03 16:13:26  dkr
  * changed something in WLindex, WLgrid
  *
@@ -2264,7 +2267,7 @@ extern node *MakeWLseg (node *index, node *next);
  *
  */
 
-extern node *MakeWLindex (node *bound1, node *bound2, node *step, node *grid, node *next);
+extern node *MakeWLindex (int bound1, int bound2, int step, node *grid, node *next);
 
 #define WLINDEX_BOUND1(n) (n->refcnt)
 #define WLINDEX_BOUND2(n) (n->flag)
@@ -2295,7 +2298,7 @@ extern node *MakeWLindex (node *bound1, node *bound2, node *step, node *grid, no
  ***
  ***/
 
-extern node *MakeWLgrid (node *offset, node *width, node *next);
+extern node *MakeWLgrid (int offset, int width, node *nextdim, node *code, node *next);
 
 #define WLGRID_OFFSET(n) (n->refcnt)
 #define WLGRID_WIDTH(n) (n->flag)
