@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/08/04 17:19:40  dkr
+ * NEWTREE removed
+ *
  * Revision 2.3  2000/07/12 15:15:39  dkr
  * function DuplicateTypes renamed into DupTypes
  *
@@ -53,8 +56,6 @@
  *
  * Revision 1.1  1995/10/16  12:22:44  cg
  * Initial revision
- *
- *
  *
  */
 
@@ -140,21 +141,6 @@ OImodul (node *arg_node, node *arg_info)
         FUNDEF_STATUS (MODUL_FUNS (arg_node)) = ST_classfun;
 
         MODUL_CLASSTYPE (arg_node) = NULL;
-
-        /*************************************************************/
-#ifndef NEWTREE
-        if (TYPEDEF_NEXT (MODUL_TYPES (arg_node)) == NULL) {
-            MODUL_TYPES (arg_node)->nnode -= 1;
-        }
-
-        if (FUNDEF_NEXT (FUNDEF_NEXT (MODUL_FUNS (arg_node))) == NULL) {
-            FUNDEF_NEXT (MODUL_FUNS (arg_node))->nnode = 0;
-        }
-
-        FUNDEF_ARGS (MODUL_FUNS (arg_node))->nnode -= 1;
-        FUNDEF_ARGS (FUNDEF_NEXT (MODUL_FUNS (arg_node)))->nnode -= 1;
-#endif
-        /*************************************************************/
     }
 
     DBUG_RETURN (arg_node);
@@ -174,14 +160,9 @@ OImodul (node *arg_node, node *arg_info)
  *
  *                  This mechanism allows for arbitrary expression to
  *                  initialize global objects.
- *  global vars   : ---
- *  internal funs : ---
  *  external funs : Malloc, strlen, strcpy, strcat,
  *                  MakeType, MakeExprs, MakeReturn, MakeAssign, MakeBlock,
  *                  MakeFundef, MakeAp, Trav
- *  macros        :
- *
- *  remarks       :
  *
  */
 
@@ -208,34 +189,18 @@ OIobjdef (node *arg_node, node *arg_info)
         new_node = MakeExprs (OBJDEF_EXPR (arg_node), NULL);
         NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
-#ifndef NEWTREE
-        new_node->nnode = 1;
-#endif
-
         new_node = MakeReturn (new_node);
         NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
         new_node = MakeAssign (new_node, NULL);
         NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
-#ifndef NEWTREE
-        new_node->nnode = 1;
-#endif
-
         new_node = MakeBlock (new_node, NULL);
         NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
-
-#ifndef NEWTREE
-        new_node->nnode = 1;
-#endif
 
         new_node = MakeFundef (new_fun_name, OBJDEF_MOD (arg_node), new_fun_type, NULL,
                                new_node, MODUL_FUNS (arg_info));
         NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
-
-#ifndef NEWTREE
-        new_node->nnode = (MODUL_FUNS (arg_info) == NULL) ? 1 : 2;
-#endif
 
         FUNDEF_STATUS (new_node) = ST_objinitfun;
 
@@ -276,10 +241,6 @@ OIobjdef (node *arg_node, node *arg_info)
 
         new_node = MakeFundef (new_fun_name, OBJDEF_MOD (arg_node), new_fun_type, NULL,
                                NULL, MODUL_FUNS (arg_info));
-
-#ifndef NEWTREE
-        new_node->nnode = (MODUL_FUNS (arg_info) == NULL) ? 1 : 2;
-#endif
 
         FUNDEF_STATUS (new_node) = ST_objinitfun;
 

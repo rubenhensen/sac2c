@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 2.7  2000/08/04 17:19:24  dkr
+ * NEWTREE removed
+ *
  * Revision 2.6  2000/07/12 15:10:27  dkr
  * function DuplicateTypes renamed into DupTypes
  *
@@ -27,21 +31,12 @@
  *
  * Revision 1.30  1998/02/11 16:35:08  dkr
  * typedef cmp_types moved to typecheck.h (compile.c needs to import this type)
- *
  * function CmpTypes() declared external
- *
- * Revision 1.29  1998/02/09 15:55:17  srs
- * removed all NEWTREEs
- * added typechecking for new WLs
- *
- * Revision 1.28  1997/11/04 11:29:15  srs
- * NEWTREE: nnode is ignored
  *
  *   [...]
  *
  * Revision 1.3  1994/12/06  09:58:19  hw
  * changed log-header
- *
  *
  */
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/08/04 17:19:32  dkr
+ * NEWTREE removed
+ *
  * Revision 2.3  2000/02/23 20:16:34  cg
  * Node status ST_imported replaced by ST_imported_mod and
  * ST_imported_class in order to allow distinction between enteties
@@ -220,7 +223,6 @@
  *
  * Revision 1.1  1994/12/16  14:39:17  sbs
  * Initial revision
- *
  *
  */
 
@@ -467,14 +469,10 @@ InsertClassType (node *classdec)
 
     explist = classdec->node[0];
 
-    if (explist->node[0] == NULL) /* There are no other implicit types */
-    {
+    if (explist->node[0] == NULL) { /* There are no other implicit types */
         explist->node[0] = tmp;
     } else {
         tmp->node[0] = explist->node[0];
-#ifndef NEWTREE
-        tmp->nnode++;
-#endif
         explist->node[0] = tmp;
     }
 

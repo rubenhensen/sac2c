@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/08/04 17:21:59  dkr
+ * NEWTREE removed
+ *
  * Revision 2.1  1999/02/23 12:42:07  sacbase
  * new release made
  *
@@ -15,7 +18,6 @@
  *
  * Revision 1.1  1995/10/05  16:12:45  cg
  * Initial revision
- *
  *
  */
 
@@ -267,7 +269,6 @@ IMPLmodul (node *arg_node, node *arg_info)
                                       TYPEDEF_MOD (tmp), TYPEDEF_NAME (tmp)));
 
             if (TYPEDEF_BASETYPE (tmp) == T_user) {
-
                 /*
                  *  implementtaion is still hidden (based on external implicit type)
                  */
@@ -276,7 +277,6 @@ IMPLmodul (node *arg_node, node *arg_info)
                 new_typedef = SearchTypedef (TYPEDEF_TNAME (tmp), TYPEDEF_TMOD (tmp),
                                              MODUL_TYPES (arg_node));
                 if (new_typedef == NULL) {
-
                     /*
                      *  The external implicit type is yet unknwon, so the respective
                      *  typedef node is generated and added at the beginning of the
@@ -311,23 +311,7 @@ IMPLmodul (node *arg_node, node *arg_info)
 
                         TYPEDEF_NEXT (last) = TYPEDEF_NEXT (act);
 
-/********************************************************************/
-#ifndef NEWTREE
-                        if (TYPEDEF_NEXT (act) == NULL) {
-                            last->nnode = 0;
-                        }
-#endif
-                        /********************************************************************/
-
                         TYPEDEF_NEXT (new_typedef) = MODUL_TYPES (arg_node);
-
-/********************************************************************/
-#ifndef NEWTREE
-                        if (MODUL_TYPES (arg_node) != NULL) {
-                            new_typedef->nnode = 1;
-                        }
-#endif
-                        /********************************************************************/
 
                         MODUL_TYPES (arg_node) = new_typedef;
 

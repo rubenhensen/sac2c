@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 2.16  2000/08/04 17:21:15  dkr
+ * NEWTREE removed
+ *
  * Revision 2.15  2000/07/12 15:13:26  dkr
  * function DuplicateTypes renamed into DupTypes
  *
@@ -63,7 +67,6 @@
  *
  * Revision 1.1  1995/02/03  07:45:32  hw
  * Initial revision
- *
  *
  */
 
@@ -181,23 +184,6 @@ enum type_class {
     type->dim = KNOWN_DIM_OFFSET - 1;                                                    \
     DBUG_PRINT ("PRIM_FUN", ("param: int[.]" P_FORMAT, type))
 
-#ifndef NEWTREE
-#define TT2(n, a, t1, t2, res)                                                           \
-    tmp_node->node[1] = MakeNode (N_fundef);                                             \
-    DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " P_FORMAT, tmp_node->node[1]));             \
-    arg1 = MakeNode (N_arg);                                                             \
-    t1;                                                                                  \
-    arg1->info.types = type;                                                             \
-    arg2 = MakeNode (N_arg);                                                             \
-    t2;                                                                                  \
-    arg2->info.types = type;                                                             \
-    arg1->node[0] = arg2;                                                                \
-    arg1->nnode = 1;                                                                     \
-    tmp_node->node[1]->node[2] = arg1;                                                   \
-    tmp_node->node[1]->info.prf_dec.tc = a;                                              \
-    tmp_node->node[1]->info.prf_dec.tag = n;                                             \
-    tmp_node = tmp_node->node[1];
-#else /* NEWTREE */
 #define TT2(n, a, t1, t2, res)                                                           \
     tmp_node->node[1] = MakeNode (N_fundef);                                             \
     DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " P_FORMAT, tmp_node->node[1]));             \
@@ -212,30 +198,7 @@ enum type_class {
     tmp_node->node[1]->info.prf_dec.tc = a;                                              \
     tmp_node->node[1]->info.prf_dec.tag = n;                                             \
     tmp_node = tmp_node->node[1];
-#endif
 
-#ifndef NEWTREE
-#define TT3(n, a, t1, t2, t3, res)                                                       \
-    tmp_node->node[1] = MakeNode (N_fundef);                                             \
-    DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " P_FORMAT, tmp_node->node[1]));             \
-    arg1 = MakeNode (N_arg);                                                             \
-    t1;                                                                                  \
-    arg1->info.types = type;                                                             \
-    arg2 = MakeNode (N_arg);                                                             \
-    t2;                                                                                  \
-    arg2->info.types = type;                                                             \
-    arg3 = MakeNode (N_arg);                                                             \
-    t3;                                                                                  \
-    arg3->info.types = type;                                                             \
-    arg2->node[0] = arg3;                                                                \
-    arg2->nnode = 1;                                                                     \
-    arg1->node[0] = arg2;                                                                \
-    arg1->nnode = 1;                                                                     \
-    tmp_node->node[1]->node[2] = arg1;                                                   \
-    tmp_node->node[1]->info.prf_dec.tc = a;                                              \
-    tmp_node->node[1]->info.prf_dec.tag = n;                                             \
-    tmp_node = tmp_node->node[1];
-#else /* NEWTREE */
 #define TT3(n, a, t1, t2, t3, res)                                                       \
     tmp_node->node[1] = MakeNode (N_fundef);                                             \
     DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " P_FORMAT, tmp_node->node[1]));             \
@@ -254,7 +217,6 @@ enum type_class {
     tmp_node->node[1]->info.prf_dec.tc = a;                                              \
     tmp_node->node[1]->info.prf_dec.tag = n;                                             \
     tmp_node = tmp_node->node[1];
-#endif
 
 #define TT1(n, a, t1, res)                                                               \
     tmp_node->node[1] = MakeNode (N_fundef);                                             \

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/08/04 17:19:47  dkr
+ * NEWTREE removed
+ *
  * Revision 2.1  1999/02/23 12:43:25  sacbase
  * new release made
  *
@@ -19,8 +22,6 @@
  *
  * Revision 1.1  1995/11/16  19:47:38  cg
  * Initial revision
- *
- *
  *
  */
 
@@ -150,15 +151,6 @@ RMVassign (node *arg_node, node *arg_info)
         if (ASSIGN_NEXT (arg_node) != NULL) {
             /* if another assignment follows, travers this one */
             ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-
-            /*-------------------------------------------------------------------*/
-#ifndef NEWTREE
-            if (ASSIGN_NEXT (arg_node) == NULL) {
-                /* if the following assignment had been removed, fix the node-counter */
-                arg_node->nnode -= 1;
-            }
-#endif
-            /*-------------------------------------------------------------------*/
         }
     }
 
@@ -168,14 +160,6 @@ RMVassign (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : RMVfundef
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
  *
  */
 
@@ -197,14 +181,6 @@ RMVfundef (node *arg_node, node *arg_info)
 
         if (FUNDEF_NEXT (arg_node) != NULL) {
             FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-
-            /*-------------------------------------------------------------------*/
-#ifndef NEWTREE
-            if (FUNDEF_NEXT (arg_node) == NULL) {
-                arg_node->nnode -= 1;
-            }
-#endif
-            /*-------------------------------------------------------------------*/
         }
     }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/08/04 17:21:23  dkr
+ * NEWTREE removed
+ *
  * Revision 2.4  2000/02/23 20:16:34  cg
  * Node status ST_imported replaced by ST_imported_mod and
  * ST_imported_class in order to allow distinction between enteties
@@ -186,11 +189,7 @@ static deps *AddOwnDecToDependencies (node *arg_node, deps *depends);
  *  description   : retrieves information about types, functions, and objects
  *                  from SAC Information Blocks
  *  global vars   : act_tab, readsib_tab
- *  internal funs : ---
  *  external funs : Trav
- *  macros        : ---
- *
- *  remarks       :
  *
  */
 
@@ -225,13 +224,8 @@ ReadSib (node *syntax_tree)
  *  description   : When compiling a module or class implementation, the
  *                  module's or class's own declaration is searched for
  *                  and added to the list of dependencies
- *  global vars   : ---
- *  internal funs : ---
  *  external funs : MakeDeps, AbsolutePathname, FindFile, strcpy, strcat,
  *                  StringCopy
- *  macros        :
- *
- *  remarks       :
  *
  */
 
@@ -278,13 +272,8 @@ AddOwnDecToDependencies (node *arg_node, deps *depends)
  *                  list of dependencies as a sub tree.
  *                  Each required library is only searched for once.
  *                  Sub trees are traversed by recursion.
- *  global vars   : ---
- *  internal funs : ---
  *  external funs : strcmp, strcpy, strcat, FindFile, AbsolutePathname,
  *                  MakeStrings, StringCopy, SystemCall2, fopen, yyparse
- *  macros        :
- *
- *  remarks       :
  *
  */
 
@@ -414,7 +403,6 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
                                 SYSERROR (
                                   ("Corrupted library file format: \"%s\"", abspathname));
                             } else {
-
                                 linenum = 1;
                                 filename = puresibname;
                                 start_token = PARSE_SIB;
@@ -473,11 +461,7 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
  *  description   : looks for the SIB of the given module/class in the
  *                  SIB table
  *  global vars   : sib_tab
- *  internal funs : ---
  *  external funs : strcmp
- *  macros        :
- *
- *  remarks       :
  *
  */
 
@@ -509,12 +493,7 @@ FindSib (char *name)
  *  description   : finds the respective node in the
  *                  sib-tree that provides additional information about
  *                  the given node.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
  *  macros        : CMP_FUNDEF, CMP_TYPEDEF, CMP_OBJDEF
- *
- *  remarks       :
  *
  */
 
@@ -566,11 +545,7 @@ FindSibEntry (node *item, node *sib)
  *                  3) N_modul where to insert extracted N_typedef node
  *  description   : 1) is removed from the chain of typedefs in 2) and
  *                  added to the beginning of the chain of typedefs in 3)
- *  global vars   : ---
- *  internal funs : ---
  *  external funs : InitGenericFuns
- *  macros        :
- *
  *  remarks       : compare ExtractObjFromSib
  *                  Different functions are used for types and objects
  *                  with respect to different access macros in the new
@@ -600,22 +575,9 @@ ExtractTypeFromSib (node *type, node *sib, node *modul)
     if (MODUL_TYPES (modul) == NULL) {
         MODUL_TYPES (modul) = type;
         TYPEDEF_NEXT (type) = NULL;
-
-        /******************************************************/
-#ifndef NEWTREE
-        type->nnode = 0;
-#endif
-        /******************************************************/
-
     } else {
         TYPEDEF_NEXT (type) = MODUL_TYPES (modul);
         MODUL_TYPES (modul) = type;
-
-        /******************************************************/
-#ifndef NEWTREE
-        type->nnode = 1;
-#endif
-        /******************************************************/
     }
 
     DBUG_VOID_RETURN;
@@ -629,11 +591,6 @@ ExtractTypeFromSib (node *type, node *sib, node *modul)
  *                  3) N_modul where to insert extracted N_objdef node
  *  description   : 1) is removed from the chain of objdefs in 2) and
  *                  added to the beginning of the chain of objdefs in 3)
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        :
- *
  *  remarks       : compare ExtractTypeFromSib
  *                  Different functions are used for types and objects
  *                  with respect to different access macros in the new
@@ -676,12 +633,6 @@ ExtractObjFromSib (node *obj, node *sib, node *modul)
 
     OBJDEF_NEXT (obj) = NULL;
 
-    /******************************************************/
-#ifndef NEWTREE
-    obj->nnode = 1;
-#endif
-    /******************************************************/
-
     DBUG_VOID_RETURN;
 }
 
@@ -693,11 +644,6 @@ ExtractObjFromSib (node *obj, node *sib, node *modul)
  *  description   : N_fundef node from funlist in pragma functions
  *                  (used in SIBs) is added at the end of the chain of
  *                  functions in 2)
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : ---
- *  macros        :
- *
  *  remarks       : 1) need not to be extracted from the funlist because
  *                  this is traversed exactly once.
  *
@@ -719,13 +665,6 @@ AddFunToModul (node *fun, node *modul)
     FUNDEF_NEXT (tmp) = fun;
     FUNDEF_NEXT (fun) = NULL;
 
-    /******************************************************/
-#ifndef NEWTREE
-    fun->nnode = 1;
-    tmp->nnode = 2;
-#endif
-    /******************************************************/
-
     DBUG_VOID_RETURN;
 }
 
@@ -743,12 +682,9 @@ AddFunToModul (node *fun, node *modul)
  *                  the SIB and inserted into the syntax tree.
  *                  A node list of needed objects for this particular
  *                  function is returned.
- *  global vars   : ---
  *  internal funs : ExtractObjFromSib
  *  external funs : MakeNodelist, SearchObjdef, AddSymbol
  *  macros        : DBUG, TREE
- *
- *  remarks       :
  *
  */
 
@@ -818,8 +754,6 @@ EnsureExistObjects (ids *object, node *modul, node *sib, statustype attrib)
  *  internal funs : ExtractTypeFromSib
  *  external funs : MakeNodelist, AddSymbol, SearchTypedef, FreeOneIds
  *  macros        : DBUG, TREE
- *
- *  remarks       :
  *
  */
 
@@ -908,8 +842,7 @@ EnsureExistFuns (node *fundef, node *modul, node *sib)
 
     DBUG_ENTER ("EnsureExistFuns");
 
-    while (fundef != NULL) /* search function */
-    {
+    while (fundef != NULL) { /* search function */
         find = SearchFundef (fundef, MODUL_FUNS (modul));
 
         if (find == NULL) {
@@ -994,8 +927,7 @@ RSIBfundef (node *arg_node, node *arg_info)
     if (sib != NULL) {
         sib_entry = FindSibEntry (arg_node, sib);
 
-        if (sib_entry != NULL) /* SIB information available */
-        {
+        if (sib_entry != NULL) { /* SIB information available */
             DBUG_PRINT ("READSIB", ("Copying body, args, return types, and inline flag"
                                     "from SIB to function %s",
                                     ItemName (arg_node)));
