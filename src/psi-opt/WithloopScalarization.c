@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.43  2004/09/27 10:06:17  ktr
+ * Fixed bug #42 and brushed some code.
+ *
  * Revision 1.42  2004/07/31 13:44:44  sah
  * removed function MakeNCodeExprs. Instead, MakeNCode now expects
  * an exprs node as its second argument!
@@ -420,29 +423,20 @@ CreateOneVector (int nr)
 /**
  * converts a chain of ids into an exprs-node.
  *
- * @param idschain a chain of ids
+ * @param _ids a chain of ids
  *
  * @return An exprs-node containing all the ids in idschain
  */
 node *
-MakeExprsIdChain (ids *idschain)
+MakeExprsIdChain (ids *_ids)
 {
-    node *res;
+    node *res = NULL;
 
     DBUG_ENTER ("MakeExprsIdChain");
 
-    if (idschain != NULL) {
-        node *id;
-
-        id = MakeId (StringCopy (IDS_NAME (idschain)), StringCopy (IDS_MOD (idschain)),
-                     ST_regular);
-
-        ID_VARDEC (id) = IDS_VARDEC (idschain);
-        ID_AVIS (id) = IDS_AVIS (idschain);
-
-        res = MakeExprs (id, MakeExprsIdChain (IDS_NEXT (idschain)));
-    } else
-        res = NULL;
+    if (_ids != NULL) {
+        res = MakeExprs (DupIds_Id (_ids), MakeExprsIdChain (IDS_NEXT (_ids)));
+    }
 
     DBUG_RETURN (res);
 }
@@ -1143,38 +1137,45 @@ node *
 Array2Withloop (node *arg_node, info *arg_info)
 {
     node *assign;
-    node *assid;
     node *vardec = NULL;
 
     DBUG_ENTER ("Array2Withloop");
 
-    /* Transformation can only be performed if there actually
-       are elements in the array */
-
+    /*
+     * Transformation can only be performed if there actually
+     * are elements in the array
+     */
     DBUG_ASSERT ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_array)
                    && (ARRAY_AELEMS (NPART_LETEXPR (arg_node)) != NULL),
                  "array has no elements!");
 
-    assid = MakeId (TmpVar (), NULL, ST_regular);
-    vardec = MakeVardec (StringCopy (ID_NAME (assid)),
-                         DupOneTypes (ID_TYPE (NPART_CEXPR (arg_node))), vardec);
+    /*
+     * Create vardec for assignment
+     */
+    vardec = MakeVardec (TmpVar (), DupOneTypes (ID_TYPE (NPART_CEXPR (arg_node))),
+                         FUNDEF_VARDEC (INFO_WLS_FUNDEF (arg_info)));
+    FUNDEF_VARDEC (INFO_WLS_FUNDEF (arg_info)) = vardec;
 
-    ID_VARDEC (assid) = vardec;
-    ID_AVIS (assid) = VARDEC_AVIS (vardec);
-
-    AddVardecs (INFO_WLS_FUNDEF (arg_info), vardec);
-
-    assign = MakeAssignLet (StringCopy (ID_NAME (assid)), vardec,
+    /*
+     * Create assignment
+     */
+    assign = MakeAssignLet (StringCopy (VARDEC_NAME (vardec)), vardec,
                             CreateArrayWithloop (NPART_LETEXPR (arg_node),
                                                  INFO_WLS_FUNDEF (arg_info)));
 
-    ID_SSAASSIGN (assid) = assign;
+    AVIS_SSAASSIGN (IDS_AVIS (ASSIGN_LHS (assign))) = assign;
 
-    NPART_CEXPR (arg_node) = FreeTree (NPART_CEXPR (arg_node));
-    NPART_CEXPR (arg_node) = DupNode (assid);
-
+    /*
+     * Put assigment into assignment chain
+     */
     BLOCK_INSTR (NPART_CBLOCK (arg_node))
       = AppendAssign (BLOCK_INSTR (NPART_CBLOCK (arg_node)), assign);
+
+    /*
+     * Replace CEXPR
+     */
+    NPART_CEXPR (arg_node) = FreeTree (NPART_CEXPR (arg_node));
+    NPART_CEXPR (arg_node) = DupIds_Id (ASSIGN_LHS (assign));
 
     DBUG_RETURN (arg_node);
 }
@@ -1197,40 +1198,38 @@ Array2Withloop (node *arg_node, info *arg_info)
 node *
 insertIndexDefinition (node *arg_node, info *arg_info)
 {
+    node *vardec;
     node *assign;
-    node *assid;
-    node *vardec = NULL;
-
-    node *array;
 
     DBUG_ENTER ("insertIndexVectorDefinition");
 
-    assid = MakeId (TmpVar (), NULL, ST_regular);
-    vardec = MakeVardec (StringCopy (ID_NAME (assid)),
-                         DupOneTypes (ID_TYPE (NPART_CEXPR (arg_node))), vardec);
+    /*
+     * Create vardec for assignment
+     */
+    vardec = MakeVardec (TmpVar (), DupOneTypes (ID_TYPE (NPART_CEXPR (arg_node))),
+                         FUNDEF_VARDEC (INFO_WLS_FUNDEF (arg_info)));
+    FUNDEF_VARDEC (INFO_WLS_FUNDEF (arg_info)) = vardec;
 
-    ID_VARDEC (assid) = vardec;
-    ID_AVIS (assid) = VARDEC_AVIS (vardec);
+    /*
+     * Create assignment
+     * wls_tmp = [ i, j, k]
+     */
+    assign = MakeAssignLet (StringCopy (VARDEC_NAME (vardec)), vardec,
+                            Ids2Array (NWITHID_IDS (INFO_WLS_WITHID (arg_info))));
 
-    AddVardecs (INFO_WLS_FUNDEF (arg_info), vardec);
+    AVIS_SSAASSIGN (IDS_AVIS (ASSIGN_LHS (assign))) = assign;
 
-    array = MakeFlatArray (
-      MakeExprsIdChain (DupAllIds (NWITHID_IDS (INFO_WLS_WITHID (arg_info)))));
+    /*
+     * Put assigment into assignment chain
+     */
+    ASSIGN_NEXT (assign) = BLOCK_INSTR (NPART_CBLOCK (arg_node));
+    BLOCK_INSTR (NPART_CBLOCK (arg_node)) = assign;
 
-    ARRAY_TYPE (array)
-      = MakeTypes (T_int, 1,
-                   MakeShpseg (MakeNums (CountExprs (ARRAY_AELEMS (array)), NULL)), NULL,
-                   NULL);
-
-    assign = MakeAssignLet (StringCopy (ID_NAME (assid)), vardec, array);
-
-    ID_SSAASSIGN (assid) = assign;
-
+    /*
+     * Replace CEXPR
+     */
     NPART_CEXPR (arg_node) = FreeTree (NPART_CEXPR (arg_node));
-    NPART_CEXPR (arg_node) = DupNode (assid);
-
-    BLOCK_INSTR (NPART_CBLOCK (arg_node))
-      = AppendAssign (BLOCK_INSTR (NPART_CBLOCK (arg_node)), assign);
+    NPART_CEXPR (arg_node) = DupIds_Id (ASSIGN_LHS (assign));
 
     DBUG_RETURN (arg_node);
 }
@@ -1255,13 +1254,20 @@ withloopifyPart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("withloopifyPart");
 
-    /* if the part's expr is the index vector we need to insert
-       a definition of it into the codeblock */
-    if (NPART_SSAASSIGN (arg_node) == NULL)
+    /*
+     * if the part's expr is the index vector we need to insert
+     * a definition of it into the codeblock
+     */
+    if ((AVIS_SSAASSIGN (ID_AVIS (NPART_CEXPR (arg_node))) == NULL)
+        && (AVIS_WITHID (ID_AVIS (NPART_CEXPR (arg_node))) != NULL)) {
+        INFO_WLS_WITHID (arg_info) = NPART_WITHID (arg_node);
         insertIndexDefinition (arg_node, arg_info);
+    }
 
-    /* if the part's LETEXPR is a withloop itself, we don't need to
-       perform the withloopification */
+    /*
+     * if the part's LETEXPR is a withloop itself, we don't need to
+     * perform the withloopification
+     */
     if (!((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_Nwith)
           && (NWITH_PARTS (NPART_LETEXPR (arg_node)) > 0)
           && (isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
@@ -1270,21 +1276,25 @@ withloopifyPart (node *arg_node, info *arg_info)
                                           NWITH_PART (NPART_LETEXPR (arg_node))))
           && (compatWLTypes (INFO_WLS_WITHOP (arg_info),
                              NWITH_WITHOP (NPART_LETEXPR (arg_node)))))) {
-        /* if it is an array or a reshape command for an array,
-           the array is converted to a withloop.
-           Otherwise a copy withloop is inserted. */
+
+        /*
+         * if it is an array or a reshape command for an array,
+         * the array is converted to a withloop.
+         * Otherwise a copy withloop is inserted.
+         */
         if ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_array)
             || ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_prf)
                 && (PRF_PRF (NPART_LETEXPR (arg_node)) == F_reshape)
-                && (NODE_TYPE (
-                     EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (NPART_LETEXPR (arg_node))))))
-                     == N_array))
+                && (NODE_TYPE (PRF_ARG2 (NPART_LETEXPR (arg_node))) == N_array))) {
             arg_node = Array2Withloop (arg_node, arg_info);
-        else
+        } else {
             arg_node = InsertCopyWithloop (arg_node, arg_info);
+        }
 
-        /* Now we need to apply the WLS to the newly created withloops */
-        /* traverse all CODES */
+        /*
+         * Now we need to apply the WLS to the newly created withloops
+         * traverse all CODES
+         */
         if (NPART_CODE (arg_node) != NULL) {
             NPART_CODE (arg_node) = Trav (NPART_CODE (arg_node), arg_info);
         }
