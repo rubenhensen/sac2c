@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/08/08 09:52:45  cg
+ * Revision 1.11  1995/08/15 09:28:15  cg
+ * include of typecheck.h deleted.
+ *
+ * Revision 1.10  1995/08/08  09:52:45  cg
  * include of typecheck.h for CmpFunParams added.
  *
  * Revision 1.9  1995/07/31  07:11:02  cg
@@ -78,6 +81,7 @@ extern mods *FindSymbolInModul (char *modname, char *name, int symbkind, mods *f
 
 extern node *IMmodul (node *, node *);
 extern node *IMtypedef (node *, node *);
+extern node *IMfundef (node *, node *);
 extern node *Import (node *);
 extern char *GenLinkerList ();
 
