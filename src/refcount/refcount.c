@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.44  1998/05/02 17:45:30  dkr
+ * changed RCNwithid:
+ *   RCs of NWITHID_IDS are now set correctly
+ *
  * Revision 1.43  1998/04/28 13:22:35  dkr
  * added RCblock, RCvardec
  * VARDEC_REFCNT is now (-1) for non-RC-objects :-))
@@ -1386,7 +1390,7 @@ RCgen (node *arg_node, node *arg_info)
  *   node *RCNwith( node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   performs the refcounting for a N_Nwith node.
  *
  ******************************************************************************/
 
@@ -1406,7 +1410,7 @@ RCNwith (node *arg_node, node *arg_info)
  *   node *RCNpart( node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   performs the refcounting for a N_Npart node.
  *
  ******************************************************************************/
 
@@ -1532,11 +1536,26 @@ RCNgen (node *arg_node, node *arg_info)
 node *
 RCNwithid (node *arg_node, node *arg_info)
 {
+    ids *my_ids;
+
     DBUG_ENTER ("RCNwithid");
 
     /* set refcount of index vector */
     IDS_REFCNT (NWITHID_VEC (arg_node))
       = VARDEC_REFCNT (IDS_VARDEC (NWITHID_VEC (arg_node)));
+    VARDEC_REFCNT (IDS_VARDEC (NWITHID_VEC (arg_node))) = 0;
+
+    /* set refcount of index-vector-components */
+    my_ids = NWITHID_IDS (arg_node);
+    while (my_ids != NULL) {
+        if (MUST_REFCOUNT (IDS_TYPE (my_ids))) {
+            IDS_REFCNT (my_ids) = VARDEC_REFCNT (IDS_VARDEC (my_ids));
+            VARDEC_REFCNT (IDS_VARDEC (my_ids)) = 0;
+        } else {
+            IDS_REFCNT (my_ids) = -1;
+        }
+        my_ids = IDS_NEXT (my_ids);
+    }
 
     DBUG_RETURN (arg_node);
 }
