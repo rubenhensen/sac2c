@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/12/18 16:14:08  cg
+ * Revision 1.7  1995/12/20 08:14:25  cg
+ * new function FreeChar for new N_char node
+ *
+ * Revision 1.6  1995/12/18  16:14:08  cg
  * macro FREE modified: now you can compile with -DNOFREE to disable
  * all memory deallocation caused by this macro.
  *
@@ -97,6 +100,7 @@ extern node *FreeArray (node *arg_node, node *arg_info);
 extern node *FreeVinfo (node *arg_node, node *arg_info);
 extern node *FreeId (node *arg_node, node *arg_info);
 extern node *FreeNum (node *arg_node, node *arg_info);
+extern node *FreeChar (node *arg_node, node *arg_info);
 extern node *FreeFloat (node *arg_node, node *arg_info);
 extern node *FreeDouble (node *arg_node, node *arg_info);
 extern node *FreeBool (node *arg_node, node *arg_info);
