@@ -128,7 +128,7 @@ typedef int BOOLEAN;
  *     be accessed via the macro package facilities.
  */
 
-#ifndef C370
+#ifdef STDERR_IS_CONSTANT
 
 EXPORT FILE *_db_fp_ = stderr; /* Output stream, default stderr */
 /* this impossible with C370, because the expression "stderr"
@@ -213,10 +213,10 @@ LOCAL char *DbugMalloc (); /* Allocate memory for runtime support */
 LOCAL char *BaseName ();   /* Remove leading pathname components */
 
 /* Supplied in Sys V runtime environ */
-#ifndef STRTOK_EXISTS
+#ifndef HAVE_STRTOK
 LOCAL char *strtok (); /* Break string into tokens */
 #endif
-#ifndef STRRCHR_EXISTS
+#ifndef HAVE_STRRCHR
 LOCAL char *strrchr (); /* Find last occurance of char */
 #endif
 
@@ -944,7 +944,7 @@ PushState ()
     } else {
         new->level = 0;
     }
-#ifdef C370
+#ifndef STDERR_IS_CONSTANT
     if (_db_fp_ == NULL)
         _db_fp_ = stderr; /* can't do it as initializer */
 #endif
@@ -1331,7 +1331,7 @@ LOCAL char *DbugMalloc (size) int size;
  *     in the runtime environment (missing from BSD4.1).
  */
 
-#ifndef STRTOK_EXISTS
+#ifndef HAVE_STRTOK
 LOCAL char *strtok (s1, s2) char *s1, *s2;
 {
     static char *end = NULL;
@@ -1449,7 +1449,7 @@ LOCAL BOOLEAN Writable (pathname) char *pathname;
  *     Alternately, you can use rindex() on BSD systems.
  */
 
-#ifndef STRRCHR_EXISTS
+#ifndef HAVE_STRRCHR
 LOCAL char *strrchr (s, c) char *s;
 char c;
 {
