@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2001/03/07 14:06:22  nmw
+ * AVIS_SSASTACK changed
+ *
  * Revision 3.42  2001/03/06 13:18:19  nmw
  * INFO_CMPT_ marcros added
  *
@@ -1994,10 +1997,10 @@ extern node *MakeSSAstack (node *next, node *avis);
  ***    constant*   SSACONST (O)                     (cf -> optimize !!)
  ***    bool        SSAPHITARGET (O)                 (ssaform -> optimize !!)
  ***    bool        SSALPINV (O)                     (lir -> optimize !!)
+ ***    node*       SSASTACK (O)    (N_ssastack)     (ssaform -> optimize !!)
  ***
  ***    the following attributes are only used within ssaform traversal:
  ***    bool        SSADEFINED (O)                   (ssaform!!)
- ***    node*       SSASTACK (O)    (N_ssastack)     (ssaform!!)
  ***    node*       SSATHEN (O)     (N_avis)         (ssaform!!)
  ***    node*       SSAELSE (O)     (N_avis)         (ssaform!!)
  ***
@@ -2021,9 +2024,9 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_SSACONST(n) ((constant *)(n->info2))
 #define AVIS_SSAPHITARGET(n) ((bool)(n->flag))
 #define AVIS_SSALPINV(n) ((bool)(n->refcnt))
+#define AVIS_SSASTACK(n) (n->node[3])
 /* used only in ssatranform */
 #define AVIS_SSADEFINED(n) ((bool)(n->int_data))
-#define AVIS_SSASTACK(n) ((node *)(n->dfmask[0]))
 #define AVIS_SSATHEN(n) ((node *)(n->dfmask[1]))
 #define AVIS_SSAELSE(n) ((node *)(n->dfmask[2]))
 /* used only in ssadcr */
