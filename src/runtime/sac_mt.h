@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/06/23 12:54:42  cg
+ * various bug fixes but state of development is still preliminary.
+ *
  * Revision 1.5  1998/06/03 14:56:04  cg
  * some bugs removed
  *
@@ -49,6 +52,7 @@
  ***   Definitions and declarations for the multi-threaded runtime system
  ***/
 
+#define _POSIX_C_SOURCE 199506L
 #include <pthread.h>
 
 /*
@@ -373,6 +377,43 @@ typedef union {
     }
 
 /*
+ *  Definitions of macro-implemented ICMs for scheduling
+ */
+
+#define SAC_MT_SCHEDULER_Static_BEGIN()
+
+#define SAC_MT_SCHEDULER_Static_END()
+
+#define SAC_MT_SCHEDULER_Block_DIM0(lower, upper)                                        \
+    {                                                                                    \
+        const int iterations = upper - lower;                                            \
+        const int iterations_per_thread = iterations / SAC_MT_THREADS ();                \
+        const int iterations_rest = iterations % SAC_MT_THREADS ();                      \
+                                                                                         \
+        if (iterations_rest && (SAC_MT_MYTHREAD () < iterations_rest)) {                 \
+            SAC_WL_SCHEDULE_START (idx, 0)                                               \
+              = lower + SAC_MT_MYTHREAD () * (iterations_per_thread + 1);                \
+            SAC_WL_SCHEDULE_STOP (idx, 0)                                                \
+              = SAC_WL_SCHEDULE_START (idx, 0) + (iterations_per_thread + 1);            \
+        } else {                                                                         \
+            SAC_WL_SCHEDULE_START (idx, 0)                                               \
+              = (lower + iterations_rest) + SAC_MT_MYTHREAD () * iterations_per_thread;  \
+            SAC_WL_SCHEDULE_STOP (idx, 0)                                                \
+              = SAC_WL_SCHEDULE_START (idx, 0) + iterations_per_thread;                  \
+        }                                                                                \
+    }
+
+#if SAC_DO_THREADS_STATIC
+
+#define SAC_MT_SCHEDULER_Block_DIM0_PREDICATE(iterations_rest) iterations_rest
+
+#else
+
+#define SAC_MT_SCHEDULER_Block_DIM0_PREDICATE(iterations_rest) 1
+
+#endif
+
+/*
  *  Declarations of global variables and functions defined in libsac_mt.c
  */
 
@@ -393,13 +434,15 @@ extern volatile unsigned int(SAC_MT_spmd_function) (unsigned int, unsigned int,
 
 extern void SAC_MT_ThreadControl (void *arg);
 
+extern int atoi (const char *str);
+
 /*****************************************************************************/
 
 #if SAC_DO_THREADS_STATIC
 
 /***
  ***   Definitions and declarations specific to the case where the exact number
- ***   of threads is knwon statically.
+ ***   of threads is known statically.
  ***/
 
 #define SAC_MT_THREADS() SAC_SET_THREADS
@@ -440,19 +483,24 @@ extern void SAC_MT_ThreadControl (void *arg);
 
 #define SAC_MT_SETUP_NUMTHREADS()                                                        \
     {                                                                                    \
-        unsigned int i;                                                                  \
+        unsigned int i, j;                                                               \
+        char option[] = "-threads=";                                                     \
                                                                                          \
         for (i = 1; i < __argc; i++) {                                                   \
-            if (0 == strncmp (__argv[i], "-threads=", 9)) {                              \
-                SAC_MT_threads = atoi (__argv[i] + 9);                                   \
-                if ((SAC_MT_threads > 0)                                                 \
-                    && (SAC_MT_threads < (SAC_SET_THREADS_MAX + 1))) {                   \
-                    break;                                                               \
+            for (j = 0; j < 9; j++) {                                                    \
+                if (option[j] != __argv[j]) {                                            \
+                    goto next_opt;                                                       \
                 }                                                                        \
-                                                                                         \
-                SAC_RuntimeError ("Number of threads exceeds legal range (1 to %d)",     \
-                                  SAC_SET_THREADS_MAX);                                  \
             }                                                                            \
+                                                                                         \
+            SAC_MT_threads = atoi (__argv[i] + 9);                                       \
+            if ((SAC_MT_threads > 0) && (SAC_MT_threads <= SAC_SET_THREADS_MAX)) {       \
+                break;                                                                   \
+            }                                                                            \
+                                                                                         \
+            SAC_RuntimeError ("Number of threads exceeds legal range (1 to %d)",         \
+                              SAC_SET_THREADS_MAX);                                      \
+        next_opt:                                                                        \
         }                                                                                \
     }
 
