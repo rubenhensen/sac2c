@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.106  1998/03/30 23:42:32  dkr
+ * added attribute LEVEL for N_WLgrid
+ *
  * Revision 1.105  1998/03/29 23:27:45  dkr
  * added temp. attribute WLGRID_MODIFIED
  *
@@ -2373,6 +2376,7 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  * here are some macros for N_WL... nodes:
  */
 
+#define WLNODE_LEVEL(n) (n->lineno)
 #define WLNODE_DIM(n) (n->refcnt)
 #define WLNODE_BOUND1(n) (n->flag)
 #define WLNODE_BOUND2(n) (n->counter)
@@ -2412,7 +2416,7 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int step,
                           node *nextdim, node *contents, node *next);
 
-#define WLBLOCK_LEVEL(n) (n->lineno)
+#define WLBLOCK_LEVEL(n) (WLNODE_LEVEL (n))
 #define WLBLOCK_DIM(n) (WLNODE_DIM (n))
 #define WLBLOCK_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLBLOCK_BOUND2(n) (WLNODE_BOUND2 (n))
@@ -2491,7 +2495,7 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
 extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
                            int unrolling, node *contents, node *next);
 
-#define WLSTRIDE_LEVEL(n) (n->lineno)
+#define WLSTRIDE_LEVEL(n) (WLNODE_LEVEL (n))
 #define WLSTRIDE_DIM(n) (WLNODE_DIM (n))
 #define WLSTRIDE_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLSTRIDE_BOUND2(n) (WLNODE_BOUND2 (n))
@@ -2516,6 +2520,7 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***  permanent attributes:
  ***
  ***    node*    CODE      (0)    (N_Ncode)
+ ***    int      LEVEL     (0)
  ***    int      DIM       (0)
  ***    int      BOUND1    (0)
  ***    int      BOUND2    (0)
@@ -2531,9 +2536,10 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***
  ***/
 
-extern node *MakeWLgrid (int dim, int bound1, int bound2, int unrolling, node *nextdim,
-                         node *next, node *code);
+extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolling,
+                         node *nextdim, node *next, node *code);
 
+#define WLGRID_LEVEL(n) (WLNODE_LEVEL (n))
 #define WLGRID_DIM(n) (WLNODE_DIM (n))
 #define WLGRID_BOUND1(n) (WLNODE_BOUND1 (n))
 #define WLGRID_BOUND2(n) (WLNODE_BOUND2 (n))

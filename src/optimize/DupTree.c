@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.49  1998/03/30 23:42:43  dkr
+ * added attribute LEVEL for N_WLgrid
+ *
  * Revision 1.48  1998/03/29 23:28:24  dkr
  * added temp. attribute WLGRID_MODIFIED
  *
@@ -840,9 +843,10 @@ DupWLgrid (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupWLgrid");
-    new_node = MakeWLgrid (WLGRID_DIM (arg_node), WLGRID_BOUND1 (arg_node),
-                           WLGRID_BOUND2 (arg_node), WLGRID_UNROLLING (arg_node), NULL,
-                           NULL, WLGRID_CODE (arg_node));
+    new_node
+      = MakeWLgrid (WLGRID_LEVEL (arg_node), WLGRID_DIM (arg_node),
+                    WLGRID_BOUND1 (arg_node), WLGRID_BOUND2 (arg_node),
+                    WLGRID_UNROLLING (arg_node), NULL, NULL, WLGRID_CODE (arg_node));
 
     WLGRID_NEXTDIM (new_node) = DUPTRAV (WLGRID_NEXTDIM (arg_node));
     WLGRID_NEXT (new_node) = DUPCONT (WLGRID_NEXT (arg_node));

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.55  1998/03/30 23:42:15  dkr
+ * added attribute LEVEL for N_WLgrid
+ *
  * Revision 1.54  1998/03/29 23:27:21  dkr
  * added temp. attribute WLGRID_MODIFIED
  *
@@ -1507,8 +1510,8 @@ MakeWLstride (int level, int dim, int bound1, int bound2, int step, int unrollin
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLgrid (int dim, int bound1, int bound2, int unrolling, node *nextdim, node *next,
-            node *code)
+MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolling, node *nextdim,
+            node *next, node *code)
 {
     node *new_node;
 
@@ -1517,6 +1520,7 @@ MakeWLgrid (int dim, int bound1, int bound2, int unrolling, node *nextdim, node 
 
     NODE_TYPE (new_node) = N_WLgrid;
 
+    WLGRID_LEVEL (new_node) = level;
     WLGRID_DIM (new_node) = dim;
     WLGRID_BOUND1 (new_node) = bound1;
     WLGRID_BOUND2 (new_node) = bound2;
