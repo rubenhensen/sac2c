@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.35  2000/07/11 16:13:58  dkr
+ * psi-opt phase removed
+ *
  * Revision 2.34  2000/06/14 10:56:57  jhs
  * Added information about "out-of-order" phase 17 while doing -mtn
  *
@@ -228,17 +231,17 @@ usage ()
             "\t\t-noPAB\tdeactivates print\n"
             "\t\t-doPAB\tactivates print\n\n");
 
-    for (ph = 1; ph <= 21; ph++) {
+    for (ph = 1; ph <= PH_compile; ph++) {
         printf ("\t -b%i\tstop after: %s\n", ph, compiler_phase_name[ph]);
     }
 
     printf ("\n\tATTENTION while using new multithread (-mtn)!\n"
-            "\t  When using -mtn the phase 17 will be done after phase 19!\n"
+            "\t  When using -mtn the phase 16 will be done after phase 18!\n"
             "\t  Therefore with -mtn the sequence of phases will be:\n"
-            "\t\t ... 16 18 19 17 20 ...\n"
+            "\t\t ... 15 17 18 16 19 ...\n"
             "\t  The phases are still identified by the same numbers.\n"
-            "\t  -b17 will stop after phases 18, 19 and 17 are done.\n"
-            "\t  -b18 (-b19) stops after phase 18 (and 19) without phase 17 done.\n");
+            "\t  -b16 will stop after phases 17, 18 and 16 are done.\n"
+            "\t  -b17 (-b18) stops after phase 17 (and 18) without phase 16 done.\n");
 
     printf ("\n\nBREAK SPECIFIERS:\n\n"
 
@@ -265,42 +268,43 @@ usage ()
             "\t -b15:wlaa         stop after with loop array access inference\n"
             "\t -b15:ap           stop after array padding\n"
             "\t -b15:tsi          stop after tile size inference\n"
+            "\t -b15:ive          stop after index vector elimination\n"
             "\n"
-            "\t -b18:conv         stop after converting\n"
-            "\t -b18:cubes        stop after cube-building\n"
-            "\t -b18:segs         stop after choice of segments\n"
-            "\t -b18:split        stop after splitting\n"
-            "\t -b18:block        stop after hierarchical blocking\n"
-            "\t -b18:ublock       stop after unrolling-blocking\n"
-            "\t -b18:merge        stop after merging\n"
-            "\t -b18:opt          stop after optimization\n"
-            "\t -b18:fit          stop after fitting\n"
-            "\t -b18:norm         stop after normalization\n"
+            "\t -b17:conv         stop after converting\n"
+            "\t -b17:cubes        stop after cube-building\n"
+            "\t -b17:segs         stop after choice of segments\n"
+            "\t -b17:split        stop after splitting\n"
+            "\t -b17:block        stop after hierarchical blocking\n"
+            "\t -b17:ublock       stop after unrolling-blocking\n"
+            "\t -b17:merge        stop after merging\n"
+            "\t -b17:opt          stop after optimization\n"
+            "\t -b17:fit          stop after fitting\n"
+            "\t -b17:norm         stop after normalization\n"
             "\n"
             "\twith -mt\n"
-            "\t -b19:spmdinit     stop after building SPMD blocks\n"
-            "\t -b19:spmdopt      stop after optimizing SPMD blocks\n"
-            "\t -b19:spmdlift     stop after lifting SPMD blocks\n"
-            "\t -b19:syncinit     stop after building SYNC blocks\n"
-            "\t -b19:syncopt      stop after optimizing SYNC blocks\n"
-            "\t -b19:scheduling   stop after scheduling SYNC blocks and with-loop\n"
+            "\t -b18:spmdinit     stop after building SPMD blocks\n"
+            "\t -b18:spmdopt      stop after optimizing SPMD blocks\n"
+            "\t -b18:spmdlift     stop after lifting SPMD blocks\n"
+            "\t -b18:syncinit     stop after building SYNC blocks\n"
+            "\t -b18:syncopt      stop after optimizing SYNC blocks\n"
+            "\t -b18:scheduling   stop after scheduling SYNC blocks and with-loop\n"
             "\t                     segments\n"
-            "\t -b19:spmdcons     stop after constrainig SPMD blocks\n"
-            "\t                     (same as [-mt] -b19 only)\n"
+            "\t -b18:spmdcons     stop after constrainig SPMD blocks\n"
+            "\t                     (same as [-mt] -b18 only)\n"
             "\n"
             "\twith -mtn (UNDER CONSTRUCTION!!!)\n"
-            "\t -b19:init         stop after internal initialization\n"
-            "\t -b19:schin        stop after schedulings initialized\n"
-            "\t -b19:rfin         stop after replicated functions builded\n"
-            "\t -b19:blkin        stop after ST- and MT-blocks builded\n"
-            "\t -b19:blkpp        stop after blocks propagated\n"
-            "\t -b19:blkex        stop after blocks expanded\n"
-            "\t -b19:mtfin        stop after multithread functions builded\n"
-            "\t -b19:blkco        stop after blocks consolidated\n"
-            "\t -b19:dfa          stop after dataflow-analysis\n"
-            "\t -b19:barin        stop after barriers initialized\n"
-            "\t -b19:blkli        stop after blocks lifted\n"
-            "\t -b19:adjca        stop after adjusted calls\n"
+            "\t -b18:init         stop after internal initialization\n"
+            "\t -b18:schin        stop after schedulings initialized\n"
+            "\t -b18:rfin         stop after replicated functions builded\n"
+            "\t -b18:blkin        stop after ST- and MT-blocks builded\n"
+            "\t -b18:blkpp        stop after blocks propagated\n"
+            "\t -b18:blkex        stop after blocks expanded\n"
+            "\t -b18:mtfin        stop after multithread functions builded\n"
+            "\t -b18:blkco        stop after blocks consolidated\n"
+            "\t -b18:dfa          stop after dataflow-analysis\n"
+            "\t -b18:barin        stop after barriers initialized\n"
+            "\t -b18:blkli        stop after blocks lifted\n"
+            "\t -b18:adjca        stop after adjusted calls\n"
             "\t ... to be continued ...");
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
