@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.110  2002/02/22 13:57:03  dkr
+ * some more casts modified (cc demands for it)
+ *
  * Revision 3.109  2002/02/22 13:24:04  dkr
  * some casts modified (cc demands for it)
  *
@@ -818,7 +821,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 #define OBJDEF_LINKMOD(n) (*((char **)(&(n->mask[6]))))     /* needed for cc */
 #define OBJDEF_STATUS(n) (*((statustype *)(&(n->info2))))   /* needed for cc */
 #define OBJDEF_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* needed for cc */
-#define OBJDEF_VARNAME(n) ((char *)(n->int_data))
+#define OBJDEF_VARNAME(n) (*((char **)(&(n->int_data))))    /* needed for cc */
 #define OBJDEF_NEXT(n) (n->node[0])
 #define OBJDEF_EXPR(n) (n->node[1])
 #define OBJDEC_DEF(n) (n->node[2])
