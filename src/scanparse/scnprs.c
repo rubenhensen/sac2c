@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/04/16 18:41:47  dkr
+ * bug in SetFileNames() fixed:
+ * F_prog -> 'modulename' is set correctly now
+ *
  * Revision 3.4  2001/11/14 19:16:07  sbs
  * *** empty log message ***
  *
@@ -109,21 +113,17 @@
 
 #include "scnprs.h"
 
-/*
+/******************************************************************************
  *
- *  functionname  : SetFileNames
- *  arguments     : 1) module/class name
- *  description   : sets the global
- *                  variables outfilename, cfilename, and targetdir according
- *                  to the kind of file and the -o command line option.
- *  global vars   : outfilename, cfilename, targetdir, filetype
- *  internal funs : ---
- *  external funs : strcmp, strcpy, strcat
- *  macros        :
+ * Function:
+ *   void SetFileNames( node *modul)
  *
- *  remarks       :
+ * Description:
+ *   Sets the global variables
+ *     modulename, outfilename, cfilename, targetdir
+ *   according to the kind of file and the -o command line option.
  *
- */
+ ******************************************************************************/
 
 void
 SetFileNames (node *modul)
@@ -137,6 +137,10 @@ SetFileNames (node *modul)
     if (MODUL_FILETYPE (modul) == F_prog) {
         linkstyle = 0; /* Programs are always linked in style 0, i.e. a single
                           C-file is generated and compiled as a whole. */
+
+        targetdir[0] = '\0';
+
+        strcpy (modulename, MODUL_NAME (modul));
 
         if (outfilename[0] == '\0') {
             strcpy (outfilename, "a.out");
@@ -155,7 +159,7 @@ SetFileNames (node *modul)
             strcpy (buffer, MODUL_NAME (modul));
             strcat (buffer, ".sac");
 
-            if (0 != strcmp (buffer, puresacfilename)) {
+            if (strcmp (buffer, puresacfilename) != 0) {
                 SYSWARN (("Module/class '%s` should be in a file named \"%s\" "
                           "instead of \"%s\"",
                           MODUL_NAME (modul), buffer, sacfilename));
