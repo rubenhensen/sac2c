@@ -16,6 +16,8 @@ icm2c_mt.c
 icm2c_mt.h
 icm2c_std.c
 icm2c_std.h
+icm2c_utils.c
+icm2c_utils.h
 icm2c_wl.c
 icm2c_wl.h
 icm_betest.c
