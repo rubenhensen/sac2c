@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.11  1998/02/09 17:40:31  dkr
+# added INCS: -I../optimize (function GenerateMasks)
+#
 # Revision 1.10  1997/11/20 15:02:10  dkr
 # make deps done
 #
@@ -40,7 +43,7 @@ CCFLAGS   := -ansi -Wall -g
 CFLAGS    := -D__EXTENSIONS__
 
 
-INCS=-I../global -I../../inc -I../typecheck 
+INCS=-I../global -I../../inc -I../typecheck -I../optimize
 
 all: refcount.o
 
