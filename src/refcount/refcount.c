@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1996/01/21 14:18:12  cg
+ * Revision 1.21  1996/01/22 17:34:14  cg
+ * IsBoxed and IsUnique moved to refcount.c
+ *
+ * Revision 1.20  1996/01/21  14:18:12  cg
  * new macro MUST_REFCOUNT to distinguish between refcounted
  * and not refcounted variables.
  *
@@ -119,6 +122,78 @@ static int varno;         /* used to store the number of known variables in a
                            */
 static int args_no;       /* number of arguments of current function */
 static node *fundef_node; /* pointer to current function declaration */
+
+/*
+ *
+ *  functionname  : IsBoxed
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+int
+IsBoxed (types *type)
+{
+    int ret = 0;
+    node *tdef;
+
+    DBUG_ENTER ("IsBoxed");
+
+    if (TYPES_DIM (type) != 0) {
+        ret = 1;
+    } else {
+        if (TYPES_BASETYPE (type) == T_user) {
+            tdef = LookupType (TYPES_NAME (type), TYPES_MOD (type), 042);
+            DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
+
+            if ((TYPEDEF_DIM (tdef) != 0) || (TYPEDEF_BASETYPE (tdef) == T_hidden)) {
+                ret = 1;
+            }
+        }
+    }
+
+    DBUG_RETURN (ret);
+}
+
+/*
+ *
+ *  functionname  :
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+int
+IsUnique (types *type)
+{
+    int ret = 0;
+    node *tdef;
+
+    DBUG_ENTER ("IsUnique");
+
+    if (TYPES_BASETYPE (type) == T_user) {
+        tdef = LookupType (TYPES_NAME (type), TYPES_MOD (type), 042);
+        DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
+
+        if (TYPEDEF_ATTRIB (tdef) == ST_unique) {
+            ret = 1;
+        }
+    }
+
+    DBUG_RETURN (ret);
+}
 
 /*
  *

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.72  1996/01/21 14:01:03  cg
+ * Revision 1.73  1996/01/22 17:33:22  cg
+ * IsBoxed and IsUnique moved to refcount.c
+ *
+ * Revision 1.72  1996/01/21  14:01:03  cg
  * implemented refcounting of external implicit types, functions
  * which do not do the refcounting on their own, pragmas refcounting
  * and linksign.
@@ -321,7 +324,7 @@
 #include "traverse.h"
 #include "compile.h"
 #include "convert.h"
-#include "refcount.h"  /* to use IsArray and IsNonUniqueHidden */
+#include "refcount.h"
 #include "typecheck.h" /* to use LookupType */
 #include "free.h"
 
@@ -784,20 +787,6 @@ AdjustAddedAssigns (node *before, node *after)
 
 /*
  *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-/*
- *
  *  functionname  : BasetypeSize
  *  arguments     :
  *  description   :
@@ -825,78 +814,6 @@ BasetypeSize (types *type)
         ret = basetype_size[TYPEDEF_BASETYPE (tdef)];
     } else {
         ret = basetype_size[TYPES_BASETYPE (type)];
-    }
-
-    DBUG_RETURN (ret);
-}
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-int
-IsUnique (types *type)
-{
-    int ret = 0;
-    node *tdef;
-
-    DBUG_ENTER ("IsUnique");
-
-    if (TYPES_BASETYPE (type) == T_user) {
-        tdef = LookupType (TYPES_NAME (type), TYPES_MOD (type), 042);
-        DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
-
-        if (TYPEDEF_ATTRIB (tdef) == ST_unique) {
-            ret = 1;
-        }
-    }
-
-    DBUG_RETURN (ret);
-}
-
-/*
- *
- *  functionname  : IsBoxed
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-int
-IsBoxed (types *type)
-{
-    int ret = 0;
-    node *tdef;
-
-    DBUG_ENTER ("IsBoxed");
-
-    if (TYPES_DIM (type) != 0) {
-        ret = 1;
-    } else {
-        if (TYPES_BASETYPE (type) == T_user) {
-            tdef = LookupType (TYPES_NAME (type), TYPES_MOD (type), 042);
-            DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
-
-            if ((TYPEDEF_DIM (tdef) != 0) || (TYPEDEF_BASETYPE (tdef) == T_hidden)) {
-                ret = 1;
-            }
-        }
     }
 
     DBUG_RETURN (ret);

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1996/01/21 14:17:36  cg
+ * Revision 1.10  1996/01/22 17:34:14  cg
+ * IsBoxed and IsUnique moved to refcount.c
+ *
+ * Revision 1.9  1996/01/21  14:17:36  cg
  * added function RCarg
  *
  * Revision 1.8  1995/12/07  17:59:56  cg
@@ -51,5 +54,7 @@ extern node *RCgen (node *arg_node, node *arg_info);
 
 extern int IsArray (types *type);
 extern int IsNonUniqueHidden (types *type);
+extern int IsBoxed (types *type);
+extern int IsUnique (types *type);
 
 #endif /* _refcount_h */
