@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/07/12 12:24:34  dkr
+ * DBUG_ASSERT in InsertIntoLUT added
+ *
  * Revision 1.4  2000/03/17 18:31:54  dkr
  * traverse.h no longer included
  *
@@ -161,6 +164,8 @@ InsertIntoLUT (lut_t *lut, void *old_entry, void *new_entry)
     DBUG_ENTER ("InsertIntoLUT");
 
     if (lut != NULL) {
+        DBUG_ASSERT ((old_entry != NULL), "Key of LUT entry must be != NULL!");
+
         k = GetHashKey (old_entry);
         *(lut[k]->act++) = old_entry;
         *(lut[k]->act++) = new_entry;
