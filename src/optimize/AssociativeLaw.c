@@ -1,5 +1,9 @@
 /* *
  * $Log$
+ * Revision 1.11  2002/10/23 15:34:25  mwe
+ * remove bug - store pointer to block node in function AssociativeLaw() and not in
+ *ALblock()
+ *
  * Revision 1.10  2002/10/16 11:47:43  mwe
  * reduce optimization expenditure
  * prevent useless optimization of unused nodes
@@ -87,6 +91,14 @@ AssociativeLaw (node *arg_node, node *a)
         old_tab = act_tab;
         act_tab = al_tab;
 
+        /* store pointer on actual N_block-node for append of new N_vardec nodes */
+        if (ASSIGN_INSTR (arg_node) != NULL) {
+            INFO_AL_BLOCKNODE (arg_info) = ASSIGN_INSTR (arg_node);
+            if (BLOCK_VARDEC (ASSIGN_INSTR (arg_node)) != NULL) {
+                (INFO_AL_TYPE (arg_info))
+                  = VARDEC_TYPE (BLOCK_VARDEC (ASSIGN_INSTR (arg_node)));
+            }
+        }
         arg_node = Trav (arg_node, arg_info);
 
         act_tab = old_tab;
@@ -114,16 +126,10 @@ ALblock (node *arg_node, node *arg_info)
 
     if (BLOCK_INSTR (arg_node) != NULL) {
 
-        /* store pointer on actual N_block-node for append of new N_vardec nodes */
-        INFO_AL_BLOCKNODE (arg_info) = arg_node;
-        if (BLOCK_VARDEC (arg_node) != NULL) {
-            (INFO_AL_TYPE (arg_info)) = VARDEC_TYPE (BLOCK_VARDEC (arg_node));
+        INFO_AL_OPTCONSTANTLIST (arg_info) = NULL;
+        INFO_AL_OPTVARIABLELIST (arg_info) = NULL;
 
-            INFO_AL_OPTCONSTANTLIST (arg_info) = NULL;
-            INFO_AL_OPTVARIABLELIST (arg_info) = NULL;
-
-            BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
-        }
+        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
