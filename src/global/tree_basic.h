@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.168  1998/05/14 15:21:00  srs
+ * added INFO_UNR_LET
+ *
  * Revision 1.167  1998/05/14 15:08:06  dkr
  * added INFO_PRINT_NWITH2
  *
@@ -2389,6 +2392,9 @@ extern node *MakeInfo ();
 /* CF */
 #define INFO_CF_ASSIGN(n) (n->node[0])
 #define INFO_CF_TYPE(n) (n->info.types)
+
+/* Unrolling */
+#define INFO_UNR_LET(n) (n->node[0])
 
 /* Icm2c, ... */
 #define INFO_FUNDEF(n) (n->node[0])
