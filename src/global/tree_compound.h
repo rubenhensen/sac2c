@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/10/19 10:07:51  cg
+ * Revision 1.7  1995/10/20 13:46:47  cg
+ * added additional parameter in functions InsertNode, InsertNodes,
+ * and InsertUnresolvedNodes.
+ * Now the status of the nodelist entry can be given as well.
+ *
+ * Revision 1.6  1995/10/19  10:07:51  cg
  * functions InsertNode, InsertNodes and InsertUnresolvedNodes
  * modified in signature.
  *
@@ -223,6 +228,7 @@ extern int CountNums (nums *numsp);
  *  functionname  : InsertNode
  *  arguments     : 1) node which has to be inserted
  *                  2) fundef node where 1) has to be inserted
+ *                  3) status of the new nodelist entry
  *  description   : inserts the given node at the end of the correct
  *                  nodelist (funlist, objlist, or typelist) of the
  *                  given fundef node and
@@ -234,17 +240,18 @@ extern int CountNums (nums *numsp);
  *  external funs : ---
  *  macros        : ---
  *
- *  remarks       :
+ *  remarks       : status may be ST_regular | ST_artificial
  *
  */
 
-extern nodelist *InsertNode (node *insert, node *fundef);
+extern nodelist *InsertNode (node *insert, node *fundef, statustype status);
 
 /*
  *
  *  functionname  : InsertNodes
  *  arguments     : 1) list of nodes
  *                  2) fundef node where inserts are to be done
+ *                  3) status of the new nodelist entry
  *  description   : inserts each node of the nodelist into the correct
  *                  nodelist of the fundef node
  *  global vars   : ---
@@ -252,17 +259,18 @@ extern nodelist *InsertNode (node *insert, node *fundef);
  *  external funs : ---
  *  macros        :
  *
- *  remarks       :
+ *  remarks       : status may be ST_regular | ST_artificial
  *
  */
 
-extern nodelist *InsertNodes (nodelist *inserts, node *fundef);
+extern nodelist *InsertNodes (nodelist *inserts, node *fundef, statustype status);
 
 /*
  *
  *  functionname  : InsertUnresolvedNodes
  *  arguments     : 1) list of nodes
  *                  2) fundef node where inserts are to be done
+ *                  3) status of the new nodelist entry
  *  description   : inserts all those nodes of the nodelist into the correct
  *                  nodelist of the fundef node
  *                  which have attribute 'unresolved'.
@@ -271,11 +279,12 @@ extern nodelist *InsertNodes (nodelist *inserts, node *fundef);
  *  external funs : ---
  *  macros        :
  *
- *  remarks       :
+ *  remarks       : status may be ST_regular | ST_artificial
  *
  */
 
-extern nodelist *InsertUnresolvedNodes (nodelist *inserts, node *fundef);
+extern nodelist *InsertUnresolvedNodes (nodelist *inserts, node *fundef,
+                                        statustype status);
 
 /*--------------------------------------------------------------------------*/
 

@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/10/20 09:27:31  cg
+ * Revision 1.7  1995/10/20 13:46:47  cg
+ * added additional parameter in functions InsertNode, InsertNodes,
+ * and InsertUnresolvedNodes.
+ * Now the status of the nodelist entry can be given as well.
+ *
+ * Revision 1.6  1995/10/20  09:27:31  cg
  * bug fixes in 'InsertNode`
  *
  * Revision 1.5  1995/10/19  10:07:51  cg
@@ -253,7 +258,7 @@ MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2)
  ***/
 
 nodelist *
-InsertNode (node *insert, node *fundef)
+InsertNode (node *insert, node *fundef, statustype status)
 {
     nodelist *act, *last, *list;
 
@@ -261,9 +266,6 @@ InsertNode (node *insert, node *fundef)
 
     DBUG_PRINT ("ANA", ("Function '%s` needs '%s` (%s)", ItemName (fundef),
                         ItemName (insert), mdb_nodetype[NODE_TYPE (insert)]));
-
-    NOTE (("Function '%s` needs '%s` (%s)", ItemName (fundef), ItemName (insert),
-           mdb_nodetype[NODE_TYPE (insert)]));
 
     switch (NODE_TYPE (insert)) {
     case N_fundef:
@@ -283,7 +285,7 @@ InsertNode (node *insert, node *fundef)
     }
 
     if (list == NULL) {
-        list = MakeNodelist (insert, ST_artificial, NULL);
+        list = MakeNodelist (insert, status, NULL);
     } else {
         act = list;
         last = list;
@@ -294,7 +296,7 @@ InsertNode (node *insert, node *fundef)
         }
 
         if (act == NULL) {
-            NODELIST_NEXT (last) = MakeNodelist (insert, ST_artificial, NULL);
+            NODELIST_NEXT (last) = MakeNodelist (insert, status, NULL);
         }
     }
 
@@ -306,14 +308,14 @@ InsertNode (node *insert, node *fundef)
  ***/
 
 nodelist *
-InsertNodes (nodelist *inserts, node *fundef)
+InsertNodes (nodelist *inserts, node *fundef, statustype status)
 {
     nodelist *list;
 
     DBUG_ENTER ("InsertNodes");
 
     while (inserts != NULL) {
-        list = InsertNode (NODELIST_NODE (inserts), fundef);
+        list = InsertNode (NODELIST_NODE (inserts), fundef, status);
         inserts = NODELIST_NEXT (inserts);
     }
 
@@ -325,7 +327,7 @@ InsertNodes (nodelist *inserts, node *fundef)
  ***/
 
 nodelist *
-InsertUnresolvedNodes (nodelist *inserts, node *fundef)
+InsertUnresolvedNodes (nodelist *inserts, node *fundef, statustype status)
 {
     nodelist *list;
 
@@ -333,7 +335,7 @@ InsertUnresolvedNodes (nodelist *inserts, node *fundef)
 
     while (inserts != NULL) {
         if (NODELIST_ATTRIB (inserts) == ST_unresolved) {
-            list = InsertNode (NODELIST_NODE (inserts), fundef);
+            list = InsertNode (NODELIST_NODE (inserts), fundef, status);
         }
         inserts = NODELIST_NEXT (inserts);
     }
