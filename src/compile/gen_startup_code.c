@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1998/12/07 09:59:00  cg
+ * added switch for target platform for multi-platform sac2c
+ *
  * Revision 1.13  1998/10/29 16:55:03  cg
  * Bug fixed in PrintSpmdData():
  * works now also if no functions are present at all,
@@ -110,6 +113,40 @@ GSCCalcMasterclass (int num_threads)
     res >>= 1;
 
     DBUG_RETURN ((int)res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *
+ *
+ * description:
+ *
+ *
+ *
+ *
+ *
+ ******************************************************************************/
+
+static void
+PrintTargetPlatform ()
+{
+    DBUG_ENTER ("PrintTargetPlatform");
+
+    fprintf (outfile, "/*\n *  Target Platform\n */\n\n");
+
+#if defined(SOLARIS_SPARC)
+    fprintf (outfile, "#define SAC_FOR_SOLARIS_SPARC\n");
+#elif defined(LINUX_X86)
+    fprintf (outfile, "#define SAC_FOR_LINUX_X86\n");
+#else
+    /*
+     * This case should never happen since the Makefile guarantees that any one
+     * of the supported platforms is selected.
+     */
+#endif
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
@@ -542,6 +579,7 @@ GSCPrintFileHeader (node *syntax_tree)
 {
     DBUG_ENTER ("GSCPrintFileHeader");
 
+    PrintTargetPlatform ();
     PrintGlobalSwitches ();
     PrintGlobalSettings (syntax_tree);
     PrintIncludes ();
