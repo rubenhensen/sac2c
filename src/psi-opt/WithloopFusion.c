@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/10/07 15:50:07  khf
+ * added NCODE_INC_USED macro
+ *
  * Revision 1.13  2004/10/03 16:10:54  khf
  * debugging of intersection
  *
@@ -1032,6 +1035,7 @@ IntersectGrids (gridinfo *arg_gridinfo)
                         NPART_NEXT (GRIDINFO_NPART_1 (arg_gridinfo))
                           = MakeNPart (DupNode (GRIDINFO_WITHID_1 (arg_gridinfo)), genn,
                                        GRIDINFO_NCODE_1 (arg_gridinfo));
+                        NCODE_INC_USED (GRIDINFO_NCODE_1 (arg_gridinfo));
 
                         GRIDINFO_NPART_1 (arg_gridinfo)
                           = NPART_NEXT (GRIDINFO_NPART_1 (arg_gridinfo));
@@ -1039,6 +1043,7 @@ IntersectGrids (gridinfo *arg_gridinfo)
                         NPART_NEXT (GRIDINFO_NPART_2 (arg_gridinfo))
                           = MakeNPart (DupNode (GRIDINFO_WITHID_2 (arg_gridinfo)),
                                        DupNode (genn), GRIDINFO_NCODE_2 (arg_gridinfo));
+                        NCODE_INC_USED (GRIDINFO_NCODE_2 (arg_gridinfo));
 
                         GRIDINFO_NPART_2 (arg_gridinfo)
                           = NPART_NEXT (GRIDINFO_NPART_2 (arg_gridinfo));
@@ -1046,10 +1051,12 @@ IntersectGrids (gridinfo *arg_gridinfo)
                         GRIDINFO_NPART_1 (arg_gridinfo)
                           = MakeNPart (DupNode (GRIDINFO_WITHID_1 (arg_gridinfo)), genn,
                                        GRIDINFO_NCODE_1 (arg_gridinfo));
+                        NCODE_INC_USED (GRIDINFO_NCODE_1 (arg_gridinfo));
 
                         GRIDINFO_NPART_2 (arg_gridinfo)
                           = MakeNPart (DupNode (GRIDINFO_WITHID_2 (arg_gridinfo)),
                                        DupNode (genn), GRIDINFO_NCODE_2 (arg_gridinfo));
+                        NCODE_INC_USED (GRIDINFO_NCODE_2 (arg_gridinfo));
 
                         GRIDINFO_NPARTS_1 (arg_gridinfo)
                           = GRIDINFO_NPART_1 (arg_gridinfo);
@@ -1309,18 +1316,23 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
                         NPART_NEXT (npart_1)
                           = MakeNPart (DupNode (NPART_WITHID (parts_1)), genn,
                                        NPART_CODE (parts_1));
+                        NCODE_INC_USED (NPART_CODE (parts_1));
                         npart_1 = NPART_NEXT (npart_1);
+
                         NPART_NEXT (npart_2)
                           = MakeNPart (DupNode (NPART_WITHID (parts_2)), DupNode (genn),
                                        NPART_CODE (parts_2));
+                        NCODE_INC_USED (NPART_CODE (parts_2));
                         npart_2 = NPART_NEXT (npart_2);
                     } else {
                         npart_1 = MakeNPart (DupNode (NPART_WITHID (parts_1)), genn,
                                              NPART_CODE (parts_1));
+                        NCODE_INC_USED (NPART_CODE (parts_1));
                         nparts_1 = npart_1;
 
                         npart_2 = MakeNPart (DupNode (NPART_WITHID (parts_2)),
                                              DupNode (genn), NPART_CODE (parts_2));
+                        NCODE_INC_USED (NPART_CODE (parts_2));
                         nparts_2 = npart_2;
                     }
                     gen_counter++;
