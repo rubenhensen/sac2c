@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.19  2003/06/11 21:40:58  ktr
+# included ../constants
+#
 # Revision 3.18  2003/03/25 16:25:09  sah
 # added portable way to get the
 # current hostname to build.c
@@ -61,7 +64,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 INCS = -I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck \
        -I../optimize -I../modules -I../global -I../refcount -I../compile \
-       -I../psi-opt -I../objects -I../concurrent -I../multithread -I../profile
+       -I../psi-opt -I../objects -I../concurrent -I../multithread -I../profile \
+       -I../constants
 
 
 all: types.h \

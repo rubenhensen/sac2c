@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.15  2003/06/11 21:42:54  ktr
+# included ../constants
+#
 # Revision 3.14  2002/08/13 17:11:28  sbs
 # flatten for includes added.
 #
@@ -70,7 +73,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 
 LIBS      := -ly -ll
 
-INCS = -I../global -I../tree -I../../inc -I../modules -I../typecheck -I../flatten
+INCS=-I../global -I../tree -I../../inc -I../modules -I../typecheck -I../flatten \
+     -I../constants
 
 
 all: y.tab.o lex.yy.o scnprs.o handle_dots.o
