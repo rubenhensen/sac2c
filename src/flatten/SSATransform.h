@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/09/18 15:57:51  ktr
+ * added header for SSATransformExplicitAllocs
+ *
  * Revision 1.6  2004/08/07 16:01:29  sbs
  * SSAwith2 added for N_Nwith2 support
  *
@@ -82,6 +85,7 @@ extern node *SSAap (node *arg_node, info *arg_info);
 
 extern node *SSATransform (node *ast);
 extern node *SSATransformAllowGOs (node *ast);
+extern node *SSATransformExplicitAllocs (node *ast);
 extern node *SSATransformOneFunction (node *fundef);
 extern node *SSATransformOneFundef (node *fundef);
 
