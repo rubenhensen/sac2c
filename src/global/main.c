@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.23  2000/07/12 10:09:18  dkr
+ * phase numbers in comments corrected
+ *
  * Revision 2.22  2000/07/11 15:49:34  dkr
  * IVE is part of Optimize() now
  * PsiOpt() removed
@@ -512,7 +515,7 @@ main (int argc, char *argv[])
          *  jump rc here!!!
          */
 
-        NOTE2 ((" \n** >>> Swaping refcount beyond phase 19 ... <<<\n"));
+        NOTE2 ((" \n** >>> Swaping refcount beyond phase 18 ... <<<\n"));
 
         compiler_phase++;
     }
@@ -551,9 +554,9 @@ main (int argc, char *argv[])
         goto BREAK;
 
     if (gen_mt_code == GEN_MT_NEW) {
-        NOTE2 ((" \n** >>> Doing refcount (phase 17) now ... <<<\n"));
+        NOTE2 ((" \n** >>> Doing refcount (phase 16) now ... <<<\n"));
 
-        /* we are at 19 and go to 17 == 19-2 */
+        /* we are at 18 and go to 16 == 18-2 */
         compiler_phase = compiler_phase - 2;
 
         PHASE_PROLOG;
@@ -564,10 +567,10 @@ main (int argc, char *argv[])
         if (break_after == PH_refcnt)
             goto BREAK;
 
-        /* we are at 17 and want to go to 19+1 == 20 == 17+3 */
+        /* we are at 16 and want to go to 18+1 == 19 == 16+3 */
         compiler_phase = compiler_phase + 3;
     } else {
-        /* we are at 19 and want to go to 19+1 == 20 */
+        /* we are at 18 and want to go to 18+1 == 19 */
         compiler_phase++;
     }
 
