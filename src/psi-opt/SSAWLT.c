@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.41  2004/11/27 01:48:09  khf
+ * crossed fingers
+ *
  * Revision 1.40  2004/11/27 01:35:14  khf
  * *** empty log message ***
  *
@@ -138,9 +141,8 @@
  * WLPG covers a big part of functionality of this traversal
  *  and the rest has to be taken out later
  */
-#if 0
 
-/* 
+/*
  * this implements the ssa form aware version of the original
  * WithloopTransformation implementation. it do not need any masks
  * instead it uses the advantages of the ssa form.
@@ -148,24 +150,23 @@
  * comments, too.
  */
 
-
 /*******************************************************************************
 
- At the moment we cannot transform generators of WLs to other shapes (this 
+ At the moment we cannot transform generators of WLs to other shapes (this
  could leed to more folding actions but the right transformations steps
  are not easily calculated).
 
  Transformations we do:
  - propagate arrays into the generator.
  - create new generators to receive a full partition of the array.
-   - genarray: Only if the generator has as much elements as the array 
+   - genarray: Only if the generator has as much elements as the array
                described by the WL.
    - modarray: always
  - replace index vectors. This transformation is not needed for WLF but
    prepares a better result for compile.
    - let iv=[i,j,k], then e.g. iv[[2]] is replaced by j,
    - let iv=[i,j,k], then [i,j,k] is replaced by iv.
-   
+
  *******************************************************************************
 
  Usage of arg_info:
@@ -174,18 +175,15 @@
  - ASSIGN : always the last N_assign node
  - FUNDEF : pointer to last fundef node. needed to access vardecs.
  - LET    : pointer to N_let node of current WL.
-            LET_EXPR(ID) == INFO_SSAWLT_WL.     
+            LET_EXPR(ID) == INFO_SSAWLT_WL.
  - REPLACE: if != NULL, replace WL with this node.
  - GENPROP: ???
 
  ******************************************************************************/
 
-#define NEW_INFO
-
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
@@ -200,6 +198,7 @@
 #include "SSAWithloopFolding.h"
 #include "SSAWLT.h"
 
+#if 0
 /*
  * INFO structure
  */
@@ -233,7 +232,7 @@ static info *MakeInfo()
 
   DBUG_ENTER("MakeInfo");
 
-  result = Malloc(sizeof(info));
+  result = ILIBmalloc(sizeof(info));
 
   INFO_SSAWLT_GENPROP(result) = 0;
   INFO_SSAWLT_NEXT(result) = NULL;
@@ -250,7 +249,7 @@ static info *FreeInfo( info *info)
 {
   DBUG_ENTER("FreeInfo");
 
-  info = Free( info);
+  info = ILIBfree( info);
 
   DBUG_RETURN(info);
 }
@@ -1662,84 +1661,84 @@ node *SSAWLTNcode( node *arg_node, info *arg_info)
 #endif
 
 node *
-WLTfundef (node *arg_info, info *arg_info)
+WLTfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLTfundef");
     DBUG_RETURN (arg_node);
 }
 
 node *
-WLTassign (node *arg_info, info *arg_info)
+WLTassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLTfundef");
     DBUG_RETURN (arg_node);
 }
 
 node *
-WLTcond (node *arg_info, info *arg_info)
+WLTcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLTfundef");
     DBUG_RETURN (arg_node);
 }
 
 node *
-WLTlet (node *arg_info, info *arg_info)
+WLTlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLTfundef");
     DBUG_RETURN (arg_node);
 }
 
 node *
-WLTap (node *arg_info, info *arg_info)
+WLTap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLTfundef");
     DBUG_RETURN (arg_node);
 }
 
 node *
-WLTwith (node *arg_info, info *arg_info)
+WLTwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLTfundef");
     DBUG_RETURN (arg_node);
 }
 
 node *
-WLTgenarray (node *arg_info, info *arg_info)
+WLTgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLTfundef");
     DBUG_RETURN (arg_node);
 }
 
 node *
-WLTmodarray (node *arg_info, info *arg_info)
+WLTmodarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLTfundef");
     DBUG_RETURN (arg_node);
 }
 
 node *
-WLTfold (node *arg_info, info *arg_info)
+WLTfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLTfundef");
     DBUG_RETURN (arg_node);
 }
 
 node *
-WLTpart (node *arg_info, info *arg_info)
+WLTpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLTfundef");
     DBUG_RETURN (arg_node);
 }
 
 node *
-WLTgenerator (node *arg_info, info *arg_info)
+WLTgenerator (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLTfundef");
     DBUG_RETURN (arg_node);
 }
 
 node *
-WLTcode (node *arg_info, info *arg_info)
+WLTcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("SSAWLTfundef");
     DBUG_RETURN (arg_node);
