@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.22  2000/10/19 13:56:46  cg
+ * Presentation of simulation results now includes statistical data
+ * for all cache levels combined.
+ *
  * Revision 2.21  2000/07/31 14:43:43  cg
  * Bug fixed in invocation of cache simulation tool.
  *
@@ -108,6 +112,9 @@
  */
 char SAC_CS_separator[]
   = "#=============================================================================\n";
+
+char SAC_CS_separator_2[]
+  = "#-----------------------------------------------------------------------------\n";
 
 tCacheLevel *SAC_CS_cachelevel[MAX_CACHELEVEL + 1];
 /* SAC_CS_cachelevel[0] is unused */
@@ -1164,10 +1171,9 @@ SAC_CS_Access_MM (void *baseaddress, void *elemaddress)
 } /* SAC_CS_Access_MM */
 
 static void
-PrintCounters (char *cachelevel_str, int digits, ULINT hit, ULINT miss, ULINT cold,
-               ULINT cross, ULINT self, ULINT invalid)
+PrintSimpleCounters (char *cachelevel_str, int digits, ULINT hit, ULINT miss)
 {
-    ULINT accesses, both;
+    ULINT accesses;
     float hit_ratio;
 
     accesses = hit + miss;
@@ -1175,51 +1181,76 @@ PrintCounters (char *cachelevel_str, int digits, ULINT hit, ULINT miss, ULINT co
 
     fprintf (stderr,
              "# %s:  accesses:  %*lu\n"
-             "#            hits:      %*lu  ( %5.1f %%)\n"
-             "#            misses:    %*lu  ( %5.1f %%)\n",
+             "#             hits:      %*lu  ( %5.1f %%)\n"
+             "#             misses:    %*lu  ( %5.1f %%)\n",
              cachelevel_str, digits, accesses, digits, hit, hit_ratio, digits, miss,
              100.0 - hit_ratio);
+}
 
-    if ((profiling_level == SAC_CS_advanced)) {
+static void
+PrintAdvancedCounters (int digits, ULINT hit, ULINT miss, ULINT cold, ULINT cross,
+                       ULINT self, ULINT invalid)
+{
+    ULINT both, accesses;
 
-        /*
-         * A self- and cross interference (for one access) will be counted
-         * in SAC_CS_self and also in SAC_CS_cross! The following computations
-         * correct this!
-         */
-        both = self + cross
-               + cold
-               /* + invalid */
-               - miss;
-        self -= both;
-        cross -= both;
+    fprintf (stderr,
+             "original:\n"
+             "hit:   %lu\n"
+             "miss:  %lu\n"
+             "cold:  %lu\n"
+             "self:  %lu\n"
+             "cross: %lu\n",
+             hit, miss, cold, self, cross);
 
-        fprintf (stderr,
-                 "#              cold start:                 %*lu  ( %5.1f %%)  ( %5.1f "
-                 "%%)\n"
-                 "#              cross interference:         %*lu  ( %5.1f %%)  ( %5.1f "
-                 "%%)\n"
-                 "#              self interference:          %*lu  ( %5.1f %%)  ( %5.1f "
-                 "%%)\n"
-                 "#              self & cross interference:  %*lu  ( %5.1f %%)  ( %5.1f "
-                 "%%)\n"
-                 "#              invalidation:               %*lu  ( %5.1f %%)  ( %5.1f "
-                 "%%)\n",
-                 digits, cold, (miss == 0) ? (0) : (((float)cold / (float)miss) * 100.0),
-                 (accesses == 0) ? (0) : (((float)cold / (float)accesses) * 100.0),
-                 digits, cross,
-                 (miss == 0) ? (0) : (((float)cross / (float)miss) * 100.0),
-                 (accesses == 0) ? (0) : (((float)cross / (float)accesses) * 100.0),
-                 digits, self, (miss == 0) ? (0) : (((float)self / (float)miss) * 100.0),
-                 (accesses == 0) ? (0) : (((float)self / (float)accesses) * 100.0),
-                 digits, both, (miss == 0) ? (0) : (((float)both / (float)miss) * 100.0),
-                 (accesses == 0) ? (0) : (((float)both / (float)accesses) * 100.0),
-                 digits, invalid,
-                 (miss == 0) ? (0) : (((float)invalid / (float)miss) * 100.0),
-                 (accesses == 0) ? (0) : (((float)invalid / (float)accesses) * 100.0));
-    } /* if */
-    fprintf (stderr, "%s", SAC_CS_separator);
-} /* PrintCounters */
+    accesses = hit + miss;
+
+    /*
+     * A self- and cross interference (for one access) will be counted
+     * in SAC_CS_self and also in SAC_CS_cross! The following computations
+     * correct this!
+     */
+    both = self + cross + cold - miss; /* + invalid */
+    self -= both;
+    cross -= both;
+
+    fprintf (stderr,
+             "#               cold start:                 %*lu  ( %5.1f %%)  ( %5.1f "
+             "%%)\n"
+             "#               cross interference:         %*lu  ( %5.1f %%)  ( %5.1f "
+             "%%)\n"
+             "#               self interference:          %*lu  ( %5.1f %%)  ( %5.1f "
+             "%%)\n"
+             "#               self & cross interference:  %*lu  ( %5.1f %%)  ( %5.1f "
+             "%%)\n"
+             "#               invalidation:               %*lu  ( %5.1f %%)  ( %5.1f "
+             "%%)\n",
+             digits, cold, (miss == 0) ? (0) : (((float)cold / (float)miss) * 100.0),
+             (accesses == 0) ? (0) : (((float)cold / (float)accesses) * 100.0), digits,
+             cross, (miss == 0) ? (0) : (((float)cross / (float)miss) * 100.0),
+             (accesses == 0) ? (0) : (((float)cross / (float)accesses) * 100.0), digits,
+             self, (miss == 0) ? (0) : (((float)self / (float)miss) * 100.0),
+             (accesses == 0) ? (0) : (((float)self / (float)accesses) * 100.0), digits,
+             both, (miss == 0) ? (0) : (((float)both / (float)miss) * 100.0),
+             (accesses == 0) ? (0) : (((float)both / (float)accesses) * 100.0), digits,
+             invalid, (miss == 0) ? (0) : (((float)invalid / (float)miss) * 100.0),
+             (accesses == 0) ? (0) : (((float)invalid / (float)accesses) * 100.0));
+
+    /*
+     * Detection of invalidation misses is not yet implemented, so we don't want
+     * to waste screen space in the meantime.
+     */
+}
+
+static void
+PrintCounters (char *cachelevel_str, int digits, ULINT hit, ULINT miss, ULINT cold,
+               ULINT cross, ULINT self, ULINT invalid)
+{
+    PrintSimpleCounters (cachelevel_str, digits, hit, miss);
+
+    if (profiling_level == SAC_CS_advanced) {
+        PrintAdvancedCounters (digits, hit, miss, cold, cross, self, invalid);
+    }
+}
 
 static int
 ComputeNumberOfDigits (unsigned long int number)
@@ -1238,6 +1269,7 @@ SAC_CS_ShowResults (void)
 {
     int i, digits;
     char str[20];
+    ULINT rhit_all, whit_all;
 
     fprintf (stderr,
              "\n"
@@ -1251,26 +1283,50 @@ SAC_CS_ShowResults (void)
 
     fprintf (stderr, "%s", SAC_CS_separator);
 
-    digits = ComputeNumberOfDigits (SAC_CS_rhit[1] + SAC_CS_rmiss[1]);
+    digits = ComputeNumberOfDigits (SAC_CS_rhit[1] + SAC_CS_rmiss[1] + SAC_CS_whit[1]
+                                    + SAC_CS_wmiss[1]);
+
+    rhit_all = 0;
+    whit_all = 0;
 
     for (i = 1; i <= MAX_CACHELEVEL; i++) {
         if (SAC_CS_cachelevel[i] != NULL) {
-            sprintf (str, "L%d READ ", i);
+            sprintf (str, " L%d READ ", i);
             PrintCounters (str, digits, SAC_CS_rhit[i], SAC_CS_rmiss[i], SAC_CS_rcold[i],
                            SAC_CS_rcross[i], SAC_CS_rself[i], SAC_CS_rinvalid[i]);
-            sprintf (str, "L%d WRITE", i);
+
+            fprintf (stderr, "%s", SAC_CS_separator_2);
+            sprintf (str, " L%d WRITE", i);
             PrintCounters (str, digits, SAC_CS_whit[i], SAC_CS_wmiss[i], SAC_CS_wcold[i],
                            SAC_CS_wcross[i], SAC_CS_wself[i], SAC_CS_winvalid[i]);
-            sprintf (str, "L%d TOTAL", i);
+            fprintf (stderr, "%s", SAC_CS_separator_2);
+            sprintf (str, " L%d TOTAL", i);
             PrintCounters (str, digits, SAC_CS_rhit[i] + SAC_CS_whit[i],
                            SAC_CS_rmiss[i] + SAC_CS_wmiss[i],
                            SAC_CS_rcold[i] + SAC_CS_wcold[i],
                            SAC_CS_rcross[i] + SAC_CS_wcross[i],
                            SAC_CS_rself[i] + SAC_CS_wself[i],
                            SAC_CS_winvalid[i] + SAC_CS_winvalid[i]);
+            fprintf (stderr, "%s", SAC_CS_separator);
+
+            rhit_all += SAC_CS_rhit[i];
+            whit_all += SAC_CS_whit[i];
         } /* if */
     }     /* for i */
-} /* SAC_CS_ShowResults */
+
+    PrintSimpleCounters ("ALL READ ", digits, rhit_all,
+                         SAC_CS_rhit[1] + SAC_CS_rmiss[1] - rhit_all);
+    fprintf (stderr, "%s", SAC_CS_separator_2);
+
+    PrintSimpleCounters ("ALL WRITE", digits, whit_all,
+                         SAC_CS_whit[1] + SAC_CS_wmiss[1] - whit_all);
+    fprintf (stderr, "%s", SAC_CS_separator_2);
+
+    PrintSimpleCounters ("ALL TOTAL", digits, rhit_all + whit_all,
+                         SAC_CS_rhit[1] + SAC_CS_rmiss[1] + SAC_CS_whit[1]
+                           + SAC_CS_wmiss[1] - (rhit_all + whit_all));
+    fprintf (stderr, "%s", SAC_CS_separator);
+}
 
 static void
 Start (char *tag)
