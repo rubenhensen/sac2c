@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.98  2002/07/03 12:04:31  sbs
+ * when breaking after typecheck, the ntype attached to AVIS nodes
+ * is printed as acomment to every vardec.
+ *
  * Revision 3.97  2002/07/02 13:04:18  dkr
  * no changes done
  *
@@ -1694,6 +1698,12 @@ PrintVardec (node *arg_node, node *arg_info)
         }
 
         fprintf (outfile, "; ");
+
+        if (compiler_phase == PH_typecheck) {
+            type_str = TYType2String (AVIS_TYPE (VARDEC_AVIS (arg_node)), FALSE, 0);
+            fprintf (outfile, "/* %s */", type_str);
+            type_str = Free (type_str);
+        }
 
         Trav (VARDEC_AVIS (arg_node), arg_info);
 
