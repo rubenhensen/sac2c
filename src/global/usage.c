@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2003/07/28 15:35:06  cg
+ * Added short version identification option (-V).
+ * Full version information is now available with -VV
+ * (verbose version).
+ *
  * Revision 3.46  2003/06/16 15:11:40  sbs
  * corrected the sequence of break specifyers on b14 grgrgrgrgr!
  *
@@ -154,7 +159,7 @@
     }
 
 void
-usage ()
+Usage ()
 {
     int ph;
     char *env;
@@ -200,6 +205,7 @@ usage ()
       "    -help           Display this helptext.\n"
       "    -copyright      Display copyright/disclaimer.\n"
       "    -V              Display version identification.\n"
+      "    -VV             Display verbose version identification.\n"
       "\n"
       "    -libstat        Print status information of the given SAC library file.\n"
       "                    This option requires the environment variables PWD,\n"
@@ -975,9 +981,22 @@ usage ()
 }
 
 void
-version ()
+Version ()
 {
-    DBUG_ENTER ("version");
+    DBUG_ENTER ("Version");
+
+    printf ("sac2c %s %s  (%s %s)\n", (version_id[0] == '\0') ? "???" : version_id,
+            (target_platform[0] == '\0') ? "???" : target_platform,
+            (build_date[0] == '\0') ? "???" : build_date,
+            (build_user[0] == '\0') ? "???" : build_user);
+
+    DBUG_VOID_RETURN;
+}
+
+void
+VersionVerbose ()
+{
+    DBUG_ENTER ("VerboseVersion");
 
     printf ("\n          SAC - Single Assignment C\n"
             "    ---------------------------------------------\n\n"
@@ -1020,7 +1039,7 @@ version ()
 }
 
 void
-copyright ()
+Copyright ()
 {
     DBUG_ENTER ("copyright");
 

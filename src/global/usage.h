@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2003/07/28 15:35:06  cg
+ * Added short version identification option (-V).
+ * Full version information is now available with -VV
+ * (verbose version).
+ *
  * Revision 3.1  2000/11/20 17:59:41  sacbase
  * new release made
  *
@@ -25,8 +30,9 @@
 #ifndef _usage_h
 #define _usage_h
 
-extern void usage ();
-extern void copyright ();
-extern void version ();
+extern void Usage ();
+extern void Copyright ();
+extern void Version ();
+extern void VersionVerbose ();
 
 #endif /* _usage_h */

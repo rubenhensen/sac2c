@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2003/07/28 15:35:06  cg
+ * Added short version identification option (-V).
+ * Full version information is now available with -VV
+ * (verbose version).
+ *
  * Revision 3.42  2003/05/21 16:38:02  ktr
  * added option -ktr
  *
@@ -438,7 +443,7 @@ AnalyseCommandline (int argc, char *argv[])
     });
 #endif
 
-    ARGS_FLAG ("copyright", copyright (); exit (0));
+    ARGS_FLAG ("copyright", Copyright (); exit (0));
 
     ARGS_OPTION ("cppI", cppincs[num_cpp_incs++] = ARG);
 
@@ -593,8 +598,8 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_FLAG ("g", cc_debug = TRUE);
 
-    ARGS_FLAG ("h", usage (); exit (0));
-    ARGS_FLAG ("help", usage (); exit (0));
+    ARGS_FLAG ("h", Usage (); exit (0));
+    ARGS_FLAG ("help", Usage (); exit (0));
 
     ARGS_OPTION ("initmheap", ARG_NUM (initial_master_heapsize));
     ARGS_OPTION ("initwheap", ARG_NUM (initial_worker_heapsize));
@@ -897,7 +902,9 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_OPTION ("v", ARG_RANGE (verbose_level, 0, 3));
 
-    ARGS_FLAG ("V", version (); exit (0));
+    ARGS_FLAG ("V", Version (); exit (0));
+
+    ARGS_FLAG ("VV", VersionVerbose (); exit (0));
 
     ARGS_FLAG ("wls_aggressive", wls_aggressive = TRUE);
 
