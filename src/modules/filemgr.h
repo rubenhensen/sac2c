@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/09/21 16:32:42  sah
+ * Added TempFileName
+ *
  * Revision 3.2  2003/03/25 14:40:41  sah
  * added CheckSystemLibrary
  *
@@ -78,5 +81,6 @@ extern FILE *WriteOpen (char *format, ...);
 extern int CheckExistFile (char *dir, char *name);
 extern locationtype FindLocationOfFile (char *file);
 extern int CheckSystemLibrary (char *name);
+extern char *TempFileName (char *dir, char *pfx, char *sfx);
 
 #endif /* _filemgr_h */

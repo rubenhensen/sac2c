@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/09/21 16:32:42  sah
+ * Added TempFileName
+ *
  * Revision 3.4  2003/03/25 17:18:20  sah
  * CheckSystemLibrary now uses config.cc to
  * get the current c compiler.
@@ -577,4 +580,23 @@ FindLocationOfFile (char *file)
     }
 
     return (loc);
+}
+
+char *
+TempFileName (char *dir, char *pfx, char *sfx)
+{
+    char *tmp;
+    char *result;
+
+    DBUG_ENTER ("TempFileName");
+
+    tmp = tempnam (dir, pfx);
+
+    result = Malloc (sizeof (char) * (strlen (tmp) + strlen (sfx) + 1));
+    strcpy (result, tmp);
+    strcat (result, sfx);
+
+    free (tmp);
+
+    DBUG_RETURN (result);
 }
