@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/06/09 15:35:48  hw
+ * Revision 1.21  1995/06/26 12:02:30  hw
+ * macro N_IDX_PSI inserted
+ *
+ * Revision 1.20  1995/06/09  15:35:48  hw
  * macro OUT_OF_BOUND inserted
  * #include <stdio.h> inserted
  *
@@ -333,10 +336,24 @@
             ND_A_FIELD (res)[__i] = s op ND_A_FIELD (a2)[__i];                           \
     };
 
+/*
+ * Macro for primitive function idx_psi:
+ * ====================================
+ */
+#define ND_IDX_PSI(s, a, res) res = ND_A_FIELD (a)[s];
+
+/*
+ * Macros used for compilation of do-loop:
+ * =======================================
+ */
 #define ND_GOTO(label) goto label;
 #define ND_LABEL(label)                                                                  \
     label:
 
+/*
+ * Macro for typedefs of arrays:
+ * =============================
+ */
 #define ND_TYPEDEF_ARRAY(type1, type2) typedef type1 *type2;
 
 /* and now some macros that don't belong to N_icm
