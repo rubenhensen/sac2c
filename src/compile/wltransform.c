@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  1998/08/06 17:29:34  dkr
+ * fixed a bug in CheckParams
+ *
  * Revision 1.27  1998/08/06 01:16:12  dkr
  * fixed some minor bugs
  *
@@ -2188,14 +2191,14 @@ SetSegs (node *pragma, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
- *   node *CheckParams( node *seg)
+ *   void CheckParams( node *seg)
  *
  * description:
- *
+ *   checks weather the parameter of the segment 'seg' are legal.
  *
  ******************************************************************************/
 
-node *
+void
 CheckParams (node *seg)
 {
     int last, first_block, d, j;
