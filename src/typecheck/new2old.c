@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2005/01/14 12:31:57  cg
+ * Converted error handling to ctinfo.c
+ *
  * Revision 1.30  2004/12/19 13:32:56  sbs
  * now, new2old is called on the lifted fold funs as well
  *
@@ -114,7 +117,7 @@
 #include "new2old.h"
 
 #include "dbug.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "internal_lib.h"
 #include "free.h"
 #include "shape.h"
@@ -317,8 +320,8 @@ NT2OTfundef (node *arg_node, info *arg_info)
         old_type = FREEfreeAllTypes (old_type);
 
     } else {
-        ABORT (global.linenum, ("could not infer proper type for fun %s; type found: %s",
-                                FUNDEF_NAME (arg_node), TYtype2String (type, FALSE, 0)));
+        CTIabort ("Could not infer proper type for fun %s; type found: %s",
+                  FUNDEF_NAME (arg_node), TYtype2String (type, FALSE, 0));
     }
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
@@ -392,8 +395,7 @@ NT2OTarg (node *arg_node, info *arg_info)
             ARG_TYPE (arg_node) = FREEfreeAllTypes (ARG_TYPE (arg_node));
             ARG_TYPE (arg_node) = TYtype2OldType (type);
         } else {
-            ABORT (global.linenum,
-                   ("could not infer proper type for arg %s", ARG_NAME (arg_node)));
+            CTIabort ("Could not infer proper type for arg %s", ARG_NAME (arg_node));
         }
 
         if (ARG_NEXT (arg_node) != NULL) {
@@ -403,8 +405,7 @@ NT2OTarg (node *arg_node, info *arg_info)
     } else {
         if ((ARG_TYPE (arg_node) != NULL)
             && (TYPES_BASETYPE (ARG_TYPE (arg_node)) != T_dots)) {
-            ABORT (global.linenum,
-                   ("could not infer proper type for arg %s", ARG_NAME (arg_node)));
+            CTIabort ("Could not infer proper type for arg %s", ARG_NAME (arg_node));
         }
     }
 
@@ -477,16 +478,14 @@ NT2OTvardec (node *arg_node, info *arg_info)
         DBUG_EXECUTE ("FIXNT", tmp_str = ILIBfree (tmp_str);
                       tmp_str2 = ILIBfree (tmp_str2););
     } else {
-        ABORT (global.linenum,
-               ("could not infer proper type for var %s", VARDEC_NAME (arg_node)));
+        CTIabort ("Could not infer proper type for var %s", VARDEC_NAME (arg_node));
     }
 
     if (TYisArray (type)) {
         VARDEC_TYPE (arg_node) = FREEfreeAllTypes (VARDEC_TYPE (arg_node));
         VARDEC_TYPE (arg_node) = TYtype2OldType (type);
     } else {
-        ABORT (global.linenum,
-               ("could not infer proper type for var %s", VARDEC_NAME (arg_node)));
+        CTIabort ("Could not infer proper type for var %s", VARDEC_NAME (arg_node));
     }
 
     if (VARDEC_NEXT (arg_node) != NULL) {
