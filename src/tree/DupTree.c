@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2003/09/25 13:54:54  dkr
+ * ID_UNQCONV removed
+ *
  * Revision 3.82  2003/09/19 11:54:05  dkr
  * definition of DupNode_NT() simplified
  *
@@ -806,9 +809,6 @@ DupId (node *arg_node, node *arg_info)
 
     ID_REFCNT (new_node) = ID_REFCNT (arg_node);
     ID_NAIVE_REFCNT (new_node) = ID_NAIVE_REFCNT (arg_node);
-#ifndef TAGGED_ARRAYS
-    ID_UNQCONV (new_node) = ID_UNQCONV (arg_node);
-#endif
 
     ID_AVIS (new_node) = SearchInLUT_PP (INFO_DUP_LUT (arg_info), ID_AVIS (arg_node));
 

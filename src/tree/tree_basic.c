@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2003/09/25 13:53:03  dkr
+ * ID_UNQCONV removed
+ *
  * Revision 3.74  2003/09/16 18:54:55  ktr
  * MakeNWithid: vec is now tested for NULL before writing to its AVIS-node.
  *
@@ -1172,10 +1175,6 @@ MakeId (char *name, char *mod, statustype status)
         SET_FLAG (ID, tmp, IS_READ_ONLY, FALSE);
     }
 
-#ifndef TAGGED_ARRAYS
-    ID_UNQCONV (tmp) = NO_UNQCONV;
-#endif
-
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
@@ -1199,10 +1198,6 @@ MakeIdFromIds (ids *idss)
         SET_FLAG (ID, tmp, IS_REFERENCE, FALSE);
         SET_FLAG (ID, tmp, IS_READ_ONLY, FALSE);
     }
-
-#ifndef TAGGED_ARRAYS
-    ID_UNQCONV (tmp) = NO_UNQCONV;
-#endif
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
