@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.21  1995/07/14 13:21:12  asi
+ * Revision 1.22  1995/09/07 09:49:48  sbs
+ * first set of Make<N_...> functions/ access macros
+ * inserted.
+ *
+ * Revision 1.21  1995/07/14  13:21:12  asi
  * DBUG_PRINT("APP",... added to AppendNodeChain
  *
  * Revision 1.20  1995/07/10  07:31:59  asi
@@ -271,4 +275,164 @@ MakeIds (char *id)
     tmp->def = NULL;
 
     DBUG_RETURN (tmp);
+}
+
+/*
+ *
+ *  functionname  : MakeNum
+ *  arguments     : 1) int val
+ *  description   : generates and initialises an N_num node
+ *  global vars   :
+ *  internal funs : MakeNode
+ *  external funs :
+ *  macros        : DBUG..., NUM_VAL
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+MakeNum (int val)
+{
+    node *num;
+
+    DBUG_ENTER ("MakeNum");
+
+    num = MakeNode (N_num);
+    NUM_VAL (num) = val;
+
+    DBUG_RETURN (num);
+}
+
+/*
+ *
+ *  functionname  : MakeExprs
+ *  arguments     : 1) node *expr
+ *                  2) node *next
+ *  description   : generates and initialises an N_exprs node
+ *  global vars   :
+ *  internal funs : MakeNode
+ *  external funs :
+ *  macros        : DBUG..., EXPRS_EXPR, EXPRS_NEXT
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+MakeExprs (node *expr, node *next)
+{
+    node *exprs;
+
+    DBUG_ENTER ("MakeExprs");
+
+    exprs = MakeNode (N_exprs);
+    EXPRS_EXPR (exprs) = expr;
+    EXPRS_NEXT (exprs) = NULL;
+    exprs->nnode = 1;
+
+    DBUG_RETURN (exprs);
+}
+
+/*
+ *
+ *  functionname  : MakeArray
+ *  arguments     : 1) node *aelems
+ *  description   : generates and initialises an N_array node
+ *  global vars   :
+ *  internal funs : MakeNode
+ *  external funs :
+ *  macros        : DBUG..., EXPRS_EXPR, EXPRS_NEXT
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+MakeArray (node *aelems)
+{
+    node *array;
+
+    DBUG_ENTER ("MakeArray");
+
+    array = MakeNode (N_array);
+    ARRAY_AELEMS (array) = aelems;
+    array->nnode = 1;
+
+    DBUG_RETURN (array);
+}
+
+/*
+ *
+ *  functionname  : MakeVinfo
+ *  arguments     : 1) node *aelems
+ *  description   : generates and initialises an N_array node
+ *  global vars   :
+ *  internal funs : MakeNode
+ *  external funs :
+ *  macros        : DBUG..., EXPRS_EXPR, EXPRS_NEXT
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+MakeVinfo (useflag flag, shapes *shp, node *next)
+{
+    node *vinfo;
+
+    DBUG_ENTER ("MakeVinfo");
+
+    vinfo = MakeNode (N_vinfo);
+    VINFO_FLAG (vinfo) = flag;
+    VINFO_SHP (vinfo) = shp;
+    VINFO_NEXT (vinfo) = next;
+    if (next == NULL)
+        vinfo->nnode = 0;
+    else
+        vinfo->nnode = 1;
+
+    DBUG_RETURN (vinfo);
+}
+
+/*
+ * Some conversion functions:
+ *
+ * node *Shape2Array( shapes *shp) : creates an array-node of type int[n] with
+ *                                   all sub-structures needed that represents
+ *                                   the shape vector.
+ */
+
+/*
+ *
+ *  functionname  : Shape2Array
+ *  arguments     : 1) shapes *shp
+ *  description   : creates an array-node of type int[n] with all sub-structures
+ *                  needed that represents the shape vector shp.
+ *  global vars   :
+ *  internal funs : MakeExprs, MakeNum
+ *  external funs :
+ *  macros        : DBUG..., SHAPES_SELEMS, SHAPES_DIM
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+Shape2Array (shapes *shp)
+
+{
+    int i;
+    node *next;
+
+    DBUG_ENTER ("Shape2Array");
+
+    i = SHAPES_DIM (shp) - 1;
+    next = MakeExprs (MakeNum (SHAPES_SELEMS (shp)[i]), NULL);
+    i--;
+    for (; i >= 0; i--) {
+        next = MakeExprs (MakeNum (SHAPES_SELEMS (shp)[i]), next);
+        next->nnode = 2;
+    }
+    DBUG_RETURN (MakeArray (next));
 }

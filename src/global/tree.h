@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.57  1995/09/05 09:51:40  hw
+ * Revision 1.58  1995/09/07 09:49:48  sbs
+ * first set of Make<N_...> functions/ access macros
+ * inserted.
+ *
+ * Revision 1.57  1995/09/05  09:51:40  hw
  * added macro MAKENODE_DOUBLE
  *
  * Revision 1.56  1995/08/21  13:09:30  cg
@@ -281,6 +285,11 @@ typedef struct TYPES {
     statustype status;  /* regular or artificial */
 } types;
 
+typedef types shapes; /* this definition is primarily needed for
+                       * the vinfo nodes; there we need the shape
+                       * only( including the dim)...
+                       */
+
 typedef struct FUN_NAME {
     char *id;     /* name of function */
     char *id_mod; /* name of modul belonging to 'id' */
@@ -388,5 +397,99 @@ extern node *MakeNode (nodetype nodetype);
 extern node *AppendNodeChain (int pos, node *first, node *second);
 extern ids *MakeIds (char *id);
 extern ids *AppendIdsChain (ids *first, ids *second);
+
+/* HERE WE START OUT THE NEW PART ..... */
+
+/*
+ * Non-node-structures
+ * -------------------
+ */
+
+/*
+ *  Shapes : int                DIM
+ *           int[SHP_SEG_SIZE]  SELEMS
+ *
+ */
+
+#define SHAPES_DIM(s) (s->dim)
+#define SHAPES_SELEMS(s) (s->shpseg->shp)
+
+/*
+ * Node-structures
+ * ---------------
+ */
+
+/*----------------------------------------------------------------------------*/
+/*
+ *  N_num : int VAL
+ */
+
+extern node *MakeNum (int val);
+
+#define NUM_VAL(n) (n->info.cint)
+
+/*----------------------------------------------------------------------------*/
+/*
+ *  N_Exprs : node * EXPR
+ *            node * NEXT
+ */
+
+extern node *MakeExprs (node *expr, node *next);
+
+#define EXPRS_EXPR(n) (n->node[0])
+#define EXPRS_NEXT(n) (n->node[1])
+
+/*----------------------------------------------------------------------------*/
+/*
+ * N_array : node * AELEMS
+ */
+
+extern node *MakeArray (node *aelems);
+
+#define ARRAY_AELEMS(n) n->node[0]
+
+/*
+ * infos added during compilation:
+ *
+ * TYPE		| INSERTED IN:			| USED IN:
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ * TYPES        | typecheck.c                   | ???
+ */
+
+#define ARRAY_TYPES(n) (n->info.types)
+
+/*
+ * Compound Access Macros:
+ */
+
+/*----------------------------------------------------------------------------*/
+/*
+ *  N_vinfo : useflag  FLAG
+ *            shapes * SHP
+ *            node   * NEXT
+ *
+ */
+
+extern node *MakeVinfo (useflag flag, shapes *shp, node *next);
+
+#define VINFO_FLAG(n) (n->info.use)
+#define VINFO_SHP(n) ((shapes *)n->node[1])
+#define VINFO_NEXT(n) (n->node[0])
+
+/*
+ * Compound Access Macros:
+ */
+
+#define VINFO_DIM(n) SHAPES_DIM (VINFO_SHP (n))
+#define VINFO_SELEMS(n) SHAPES_DIM (VINFO_SELEMS (n))
+
+/*----------------------------------------------------------------------------*/
+
+/*
+ * Some conversion functions
+ *
+ */
+
+extern node *Shape2Array (shapes *shp);
 
 #endif /* _sac_tree_h */
