@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/04/07 09:36:35  sbs
+ * Revision 1.5  1995/04/10 11:08:02  sbs
+ * some DBUG_PRINTs inserted
+ * FindFile only looks for the explicit name if preceeded by "/"
+ * i.e. an absolute path is given
+ *
+ * Revision 1.4  1995/04/07  09:36:35  sbs
  * bug resulting from change FILE * => char * eliminated
  *
  * Revision 1.3  1995/04/05  17:24:16  sbs
@@ -51,18 +56,21 @@ FindFile (pathkind p, char *name)
 
     DBUG_ENTER ("FindFile");
 
-    strcpy (buffer2, path_bufs[p]);
-    strcpy (buffer, name);
-    path = strtok (buffer2, ":");
-    file = fopen (buffer, "r");
-    while ((file == NULL) && (path != NULL)) {
-        strcpy (buffer, path);
-        strcat (buffer, "/");
-        strcat (buffer, name);
-        DBUG_PRINT ("FILE", ("trying file %s\n", buffer));
+    if (name[0] == '/') { /* absolut path specified! */
+        strcpy (buffer, name);
         file = fopen (buffer, "r");
-        if (file == NULL) {
-            path = strtok (NULL, ":");
+    } else {
+        strcpy (buffer2, path_bufs[p]);
+        path = strtok (buffer2, ":");
+        while ((file == NULL) && (path != NULL)) {
+            strcpy (buffer, path);
+            strcat (buffer, "/");
+            strcat (buffer, name);
+            DBUG_PRINT ("FILE", ("trying file %s\n", buffer));
+            file = fopen (buffer, "r");
+            if (file == NULL) {
+                path = strtok (NULL, ":");
+            }
         }
     }
     if (file) {
@@ -126,6 +134,7 @@ AppendPath (pathkind p, char *path)
     else {
         strcat (path_bufs[p], ":");
         strcat (path_bufs[p], path);
+        DBUG_PRINT ("FILE", ("appending \":%s\" to path %d", path, p));
         bufsize[p] += len;
         v = 1;
     }
@@ -162,6 +171,7 @@ AppendEnvVar (pathkind p, char *var)
         else {
             strcat (path_bufs[p], ":");
             strcat (path_bufs[p], buffer);
+            DBUG_PRINT ("FILE", ("appending \":%s\" to path %d", buffer, p));
             bufsize[p] += len;
         }
     }
