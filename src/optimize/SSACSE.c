@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2001/06/01 10:01:30  nmw
+ * insert N_empty node in empty blocks
+ *
  * Revision 1.21  2001/05/31 14:53:28  nmw
  * CmpTypes() replaced by CompareTypesImplementation() to allow assignments
  * to types with same internal representation (e.g. double[2] and Complex)
@@ -849,6 +852,11 @@ SSACSEblock (node *arg_node, node *arg_info)
     if (BLOCK_INSTR (arg_node) != NULL) {
         /* traverse assignments of block */
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    }
+
+    if (BLOCK_INSTR (arg_node) == NULL) {
+        /* insert at least the N_empty node in an empty block */
+        BLOCK_INSTR (arg_node) = MakeEmpty ();
     }
 
     /* remove top cse frame */

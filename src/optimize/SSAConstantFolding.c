@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2001/06/01 10:00:34  nmw
+ * insert N_empty node in empty blocks
+ *
  * Revision 1.18  2001/05/23 15:48:11  nmw
  * comments added, code beautified
  *
@@ -1227,6 +1230,11 @@ SSACFblock (node *arg_node, node *arg_info)
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    }
+
+    if (BLOCK_INSTR (arg_node) == NULL) {
+        /* insert at least the N_empty node in an empty block */
+        BLOCK_INSTR (arg_node) = MakeEmpty ();
     }
 
     DBUG_RETURN (arg_node);
