@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2003/03/17 19:45:03  dkr
+ * CreateWrapperCode() modified: [+] is handled correctly now
+ *
  * Revision 3.42  2003/03/12 14:50:03  dkr
  * bug in BuildApAssign() fixed:
  * functions with multiple return values are handled correctly now
@@ -4913,7 +4916,7 @@ BuildShapeAssign (node *arg, node **new_vardecs)
 }
 
 static node *
-BuildCondAssign (node *prf_ass, node *expr, node *then_ass, node *else_ass,
+BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *else_ass,
                  node **new_vardecs)
 {
     ids *prf_ids;
@@ -4945,7 +4948,7 @@ BuildCondAssign (node *prf_ass, node *expr, node *then_ass, node *else_ass,
             SET_FLAG (ID, id, IS_GLOBAL, FALSE);
             SET_FLAG (ID, id, IS_REFERENCE, FALSE);
 
-            prf2 = MakePrf (F_eq, MakeExprs (id, MakeExprs (expr, NULL)));
+            prf2 = MakePrf (rel_prf, MakeExprs (id, MakeExprs (expr, NULL)));
             prf_ids2
               = BuildTmpIds (TYMakeAKS (TYMakeSimpleType (T_bool), SHCreateShape (0)),
                              new_vardecs);
@@ -4982,8 +4985,9 @@ BuildCondAssign (node *prf_ass, node *expr, node *then_ass, node *else_ass,
                   = BuildTmpId (TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (0)),
                                 new_vardecs);
 
-                prf3 = MakePrf (F_eq, MakeExprs (flt_prf2,
-                                                 MakeExprs (EXPRS_EXPR (aexprs), NULL)));
+                prf3
+                  = MakePrf (rel_prf,
+                             MakeExprs (flt_prf2, MakeExprs (EXPRS_EXPR (aexprs), NULL)));
                 flt_prf3
                   = BuildTmpId (TYMakeAKS (TYMakeSimpleType (T_bool), SHCreateShape (0)),
                                 new_vardecs);
@@ -5083,6 +5087,47 @@ BuildErrorAssign (char *funname, node *args, node *vardecs)
     DBUG_RETURN (assigns);
 }
 
+static bool
+IsRelevant (ntype *type)
+{
+    bool ret;
+    ntype *ires;
+    int i;
+
+    DBUG_ENTER ("IsRelevant");
+
+    DBUG_ASSERT ((type != NULL), "no type found!");
+
+    switch (TYGetConstr (type)) {
+    case TC_iarr:
+        ires = IARR_GEN (type);
+        break;
+
+    case TC_idim:
+        ires = IDIM_GEN (type);
+        break;
+
+    case TC_ishape:
+        ires = ISHAPE_GEN (type);
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "illegal ntype constructor found!");
+        ires = NULL;
+        break;
+    }
+    DBUG_ASSERT ((ires != NULL), "I..._GEN not found!");
+
+    ret = FALSE;
+    for (i = 0; i < IRES_NUMFUNS (ires); i++) {
+        if (IRES_POS (ires, i) == 0) {
+            ret = TRUE;
+        }
+    }
+
+    DBUG_RETURN (ret);
+}
+
 static node *
 CreateWrapperCode (ntype *type, DFT_state *state, int lower, char *funname, node *arg,
                    node *args, node *vardecs, node **new_vardecs)
@@ -5113,18 +5158,30 @@ CreateWrapperCode (ntype *type, DFT_state *state, int lower, char *funname, node
                                          vardecs, new_vardecs);
         } else {
 
+            DBUG_ASSERT ((IBASE_GEN (type) != NULL), "IBASE_GEN not found!");
             if (IBASE_IARR (type) != NULL) {
                 assigns = CreateWrapperCode (IBASE_IARR (type), state, lower, funname,
                                              arg, args, vardecs, new_vardecs);
+                if (IsRelevant (IBASE_IARR (type))) {
+                    /*
+                     * this conditional is needed only iff an instance with type [+]
+                     * exists
+                     */
+                    tmp_ass = BuildDimAssign (arg, new_vardecs);
+                    assigns = BuildCondAssign (tmp_ass, F_gt, MakeNum (0), assigns,
+                                               CreateWrapperCode (IBASE_GEN (type), state,
+                                                                  3, funname, arg, args,
+                                                                  vardecs, new_vardecs),
+                                               new_vardecs);
+                    assigns = AppendAssign (tmp_ass, assigns);
+                }
             } else {
-                DBUG_ASSERT ((IBASE_GEN (type) != NULL),
-                             "neither IBASE_IARR nor IBASE_GEN found!");
                 assigns = CreateWrapperCode (IBASE_GEN (type), state, 3, funname, arg,
                                              args, vardecs, new_vardecs);
             }
             if (IBASE_SCAL (type) != NULL) {
                 tmp_ass = BuildDimAssign (arg, new_vardecs);
-                assigns = BuildCondAssign (tmp_ass, MakeNum (0),
+                assigns = BuildCondAssign (tmp_ass, F_eq, MakeNum (0),
                                            CreateWrapperCode (IBASE_SCAL (type), state, 0,
                                                               funname, arg, args, vardecs,
                                                               new_vardecs),
@@ -5144,7 +5201,7 @@ CreateWrapperCode (ntype *type, DFT_state *state, int lower, char *funname, node
             for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
                 if (IARR_IDIM (type, i) != NULL) {
                     assigns
-                      = BuildCondAssign (tmp_ass,
+                      = BuildCondAssign (tmp_ass, F_eq,
                                          MakeNum (IDIM_DIM (IARR_IDIM (type, i))),
                                          CreateWrapperCode (IARR_IDIM (type, i), state,
                                                             lower, funname, arg, args,
@@ -5166,7 +5223,7 @@ CreateWrapperCode (ntype *type, DFT_state *state, int lower, char *funname, node
             for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
                 if (IDIM_ISHAPE (type, i) != NULL) {
                     assigns
-                      = BuildCondAssign (tmp_ass,
+                      = BuildCondAssign (tmp_ass, F_eq,
                                          SHShape2Array (
                                            ISHAPE_SHAPE (IDIM_ISHAPE (type, i))),
                                          CreateWrapperCode (IDIM_ISHAPE (type, i), state,
