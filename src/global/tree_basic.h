@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.132  1998/04/19 18:27:32  dkr
+ * changed INFO_COMP_... macros
+ *
  * Revision 1.131  1998/04/17 18:55:34  dkr
  * added INFO_PREC_FUNDEF
  *
@@ -2206,19 +2209,18 @@ extern node *MakeInfo ();
 #define INFO_PREC_CNT_ARTIFICIAL(n) (n->lineno)
 
 /* compile */
-#define INFO_COMP_LASTIDS(n) (n->info.ids)
-#define INFO_COMP_LASTLET(n) (n->node[1])
 #define INFO_COMP_LASTASSIGN(n) (n->node[0])
+#define INFO_COMP_LASTLET(n) (n->node[1])
+#define INFO_COMP_LASTIDS(n) (n->info.ids)
+#define INFO_COMP_FUNDEF(n) (n->node[2])
 #define INFO_COMP_VARDECS(n) (n->node[3])
-#define INFO_COMP_WITHBEGIN(n) (n->node[2])
+#define INFO_COMP_WITHBEGIN(n) (n->node[4])
+#define INFO_COMP_SPMDFUNS(n) (n->node[5])
 
 #define INFO_COMP_FIRSTASSIGN(n) (n->node[0])
-#define INFO_COMP_FUNDEF(n) (n->node[1])
 #define INFO_COMP_CNTPARAM(n) (n->lineno)
-#define INFO_COMP_ICMTAB(n) ((node **)(n->node[2]))
+#define INFO_COMP_ICMTAB(n) ((node **)(n->node[1]))
 #define INFO_COMP_TYPETAB(n) ((types **)(n->info.types))
-
-#define INFO_COMP_SPMDFUNS(n) (n->node[4])
 
 /* optimize */
 #define INFO_MASK(n, x) (n->mask[x])
