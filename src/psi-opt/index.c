@@ -1,6 +1,15 @@
 
 /*
  * $Log$
+ * Revision 1.17  1998/05/04 17:46:21  sbs
+ * LET_VARDEC(act_let)= VardecIdx( LET_VARDEC(act_let),
+ *                                         VINFO_TYPE( vinfo),
+ *                                         LET_NAME(act_let));
+ *
+ * inserted in IdxLet
+ * this should guarantee that the backref from LHS vars to their
+ * declaration is established!
+ *
  * Revision 1.16  1997/11/23 18:00:23  dkr
  * in ChgId(): strdup -> StringCopy (strdup do not use malloc !!)
  *
@@ -772,6 +781,8 @@ IdxLet (node *arg_node, node *arg_info)
             }
             LET_EXPR (act_let) = Trav (LET_EXPR (act_let), vinfo);
             LET_NAME (act_let) = ChgId (LET_NAME (act_let), VINFO_TYPE (vinfo));
+            LET_VARDEC (act_let)
+              = VardecIdx (LET_VARDEC (act_let), VINFO_TYPE (vinfo), LET_NAME (act_let));
             vinfo = VINFO_NEXT (vinfo);
             if (vinfo != NULL) {
                 arg_info = newassign;
