@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2004/04/26 17:18:17  sah
+ * added a hack so that new ssarefcnt phase
+ * is passed always. solves the problem that
+ * print does not behave as wanted during
+ * PH_gencode.
+ *
  * Revision 3.36  2004/04/21 16:38:56  ktr
  * Added SSA-based refcounting
  *
@@ -538,6 +544,15 @@ main (int argc, char *argv[])
         goto BREAK;
         compiler_phase -= 1;
     }
+
+    /* whatever kai wants to do with compiler_phase-=1,
+     * as he added a phase, it has to be passed always
+     * because otherwise the - may I say - dirty
+     * hack of Print working different in phase
+     * PH_gencode does not work. Maybe kai fixes it
+     * somewhen. The following line is a hack...
+     */
+    compiler_phase++;
 
     if ((ktr) && (use_ssaform) && (optimize & OPT_BLIR)) {
         /* Perform Backend Withloop Invariant Removal */
