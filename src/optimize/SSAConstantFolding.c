@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2001/05/15 07:59:07  nmw
+ * warning eliminated
+ *
  * Revision 1.14  2001/05/09 15:51:07  nmw
  * psi-modarray-chain optimization implemented
  *
@@ -557,14 +560,13 @@ SSACFArray2StructConstant (node *expr)
         SCO_MOD (struc_co) = TYPES_MOD (atype);
         SCO_HIDDENCO (struc_co) = COMakeConstant (T_hidden, ashape, node_vec);
 
+        /* remove invalid structural arrays */
+        if (!valid_const) {
+            struc_co = SCOFreeStructConstant (struc_co);
+        }
     } else {
         /* no array with known elements */
         struc_co = NULL;
-    }
-
-    /* remove invalid structural arrays */
-    if (!valid_const) {
-        struc_co = SCOFreeStructConstant (struc_co);
     }
 
     DBUG_RETURN (struc_co);
