@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2001/03/14 15:38:08  ben
+ * actual parameters for MT_ADJUST_SCHEDULER icm corrected
+ *
  * Revision 3.23  2001/03/05 16:42:11  dkr
  * no macros NWITH???_IS_FOLD used
  *
@@ -5084,24 +5087,31 @@ InsertIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
 
     DBUG_ENTER ("InsertIcm_MT_ADJUST_SCHEDULER");
 
+    DBUG_ASSERT (((NODE_TYPE (arg_node) == N_WLblock)
+                    || (NODE_TYPE (arg_node) == N_WLublock)
+                    || (NODE_TYPE (arg_node) == N_WLstride) ||,
+                  (NODE_TYPE (arg_node) == N_WLstrideVar)),
+                 "illegal WL-node found!");
+
     dim = WLNODE_DIM (arg_node);
 
     if ((!WLNODE_NOOP (arg_node)) && (WLNODE_LEVEL (arg_node) == 0) && NWITH2_MT (wl_node)
         && (SCHAdjustmentRequired (dim, wl_seg))) {
-        DBUG_ASSERT ((NODE_TYPE (wl_seg) == N_WLseg),
-                     "Var. segment with blocking information found!");
-
         assigns
           = MakeAssign (MakeIcm7 ("MT_ADJUST_SCHEDULER", MakeNum (dim),
                                   MakeNum (WLSEGX_DIMS (wl_seg)),
                                   NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
-                                                       WLNODE_GET_ADDR (arg_node, BOUND1),
+                                                       WLBLOCKSTR_GET_ADDR (arg_node,
+                                                                            BOUND1),
                                                        dim, IDS_NAME (wl_ids), FALSE),
                                   NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
-                                                       WLNODE_GET_ADDR (arg_node, BOUND2),
+                                                       WLBLOCKSTR_GET_ADDR (arg_node,
+                                                                            BOUND2),
                                                        dim, IDS_NAME (wl_ids), FALSE),
-                                  MakeNum (MAX (WLSEG_SV (wl_seg)[dim],
-                                                WLSEG_UBV (wl_seg)[dim])),
+                                  NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
+                                                       WLBLOCKSTR_GET_ADDR (arg_node,
+                                                                            STEP),
+                                                       dim, IDS_NAME (wl_ids), FALSE),
                                   DupIds_Id (wl_ids),
                                   MakeNum (NWITH2_OFFSET_NEEDED (wl_node))),
                         assigns);
