@@ -1,0 +1,176 @@
+/*
+ * $Log$
+ * Revision 1.1  1994/11/21 13:32:56  hw
+ * Initial revision
+ *
+ *
+ *
+ */
+
+This file contains information about the sac2c-syntaxtree-nodes.
+
+
+The nodes have the following structure:
+
+typedef struct NODE
+{
+   nodetype  nodetype;
+   union
+   {
+      ids  *ids;       /* liste of identificators  */
+      id   *id;        /* identifikator              */
+      types *types;    /* typinformation             */
+      int   cint;      /* integer-value              */
+      float cfloat;    /* float-value                */
+      prf   prf;       /* tag for primitive functions */
+
+   }            info;     /* used for special informationen */
+   int          nnode;    /* number of used children nodes */
+   int          lineno;   /* commands linenumber */
+   struct NODE *node[4];  /* children nodes */
+} node;                   
+
+
+N_fundef:
+=========
+node[0]	   : functionbody (N_block)
+node[1]	   : next function (N_fundef), if there is one
+node[2]	   : arguments of function (N_arg), if there are some
+info.types : first types structure contains the functions name and 
+             the first part of the functions type. If a function has 
+	     more than one return value, the types of these return 
+	     values are strored in following types structures.
+	     types looks like:
+		typedef struct TYPES{
+                  simpletype   simpletype;   
+                  int          dim;       /* if (dim == 0) => simpletype */
+                  shpseg       *shpseg;
+                  struct TYPES *next;     
+                  id           *id;    /* identifiere  */  
+                 } types;
+
+N_arg:
+=====
+node[0]    : next argument (N_arg), if any
+info.types : contains name and type of the argument. For infomation
+	     about the structure of `types` look at description of
+	     N_fundef.
+
+N_block:
+========
+node[0]    : first node of the block (N_assign or N_empty)
+
+N_vardec:
+=========
+node[0]    : next declaration (N_vardec), if any
+info.types : contains name and type of the declaration. For infomation
+	     about the structure of `types` look at description of
+	     N_fundef.
+
+N_assign:
+=========
+node[0]    : instruction (N_let, N_cond, N_while, N_do, N_return, ...)
+node[1]    : next assign node(N_assign), if any
+
+N_let, N_addon, N_mulon, N_subon, N_divon:
+==========================================
+node[0]    : expression 
+info.ids   : names of variables to assign to.
+	     The structure of ids is:
+              typedef struct IDS{
+                       id          *id;
+                       struct IDS  *next;
+                       } ids;
+
+N_return:
+=========
+node[0]    : returnvalues (N_exprs)
+/* N_return is used in two differnt ways. First it is the returnvalue
+   of function and secondly it defines how an array is modified in a
+   with-expression. */
+
+N_cond:
+=======
+node[0]    : condition (N_expr)
+node[1]    : then part
+node[2]    : else part
+
+N_do, N_while:
+==============
+node[0]    : termination conditon of the loop
+node[1]    : body of the loop
+/* for-loops are transformed into while-loops while parsing */
+
+N_ap:
+=====
+node[0]    : arguments of function application (N_exprs)
+info_node  : name of function to apply
+/* the application node is only used for userdefined functions */
+
+N_with:
+=======
+node[0]    : generator (N_generator)
+node[1]    : body of with-statement
+
+N_id:
+=====
+info.id    : name of identificator
+
+N_float:
+========
+info.cfloat : float value
+
+N_Num:
+======
+info.cint   : interger value
+
+N_prf:
+======
+node[0] - node[3] : arguments for primitive function
+info.prf          : tag for kind of primitive function (F_add, F_sub,
+	            F_mul, F_div, F_take, F_drop, F_psi, F_shape,
+		    F_reshape, F_cat, F_dim, F_rotate, F_and, F_or, 
+		    F_not, F_le, F_lt, F_eq, F_ge, F_gt, F_neq)
+
+N_generator:
+============
+node[0]     : expression for left border of arraymanipulation
+node[1]     : expression for right border of arrymanipulation
+info.id     : name of bound variable for arraymanipulation
+
+N_genarray, N_modarray:
+=======================
+node[0]     : array that will be manupulated
+node[1]     : body
+
+N_exprs:
+========
+node[0]     : expression
+node[1]     : next expression (N_exprs), if any
+
+N_array:
+========
+node[0]     : elements of the array (N_exprs)
+
+N_empty:
+========
+/* this node  indicates that a block is empty */
+
+N_post:
+======
+node[0]     : indicates whether it is a postincrement or postdecrement
+info.id     : name of the identificator to be modified
+
+N_pre:
+======
+node[0]     : indicates wheter it is a preincrement or predecrement
+info.id     : name of modified identifikator
+
+N_inc:
+======
+/* this node indicates that the unary operator is an incrementation */
+
+N_dec :
+=======
+/* this node indicates that the unary operator is a decrementation */
+
