@@ -1,9 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2000/02/23 13:18:21  jhs
+ * Added INFO_BLKEX_BLOCKABOVE.
+ *
  * Revision 1.17  2000/02/22 11:58:36  jhs
  * Added and adapted NODE_TEXT.
- * /
  *
  * Revision 1.16  2000/02/17 16:22:03  cg
  * Added several new access macros for usage of N_info node
@@ -2351,8 +2353,10 @@ extern node *MakePragma ();
  ***  when used in multithread ...
  ***    (na) multithread.[ch]
  ***    (nb) schedule_init.[ch]
- ***    (nc)  ...
+ ***    (nc) repfuns_init.[ch]
  ***    (nd) blocks_init.[ch]
+ ***    (ne)  ...
+ ***    (nf) blocks_expand.[ch]
  ***
  ***  in all:
  ***    node*      INFO_MUTH_FUNDEF   (N_fundef)
@@ -2370,6 +2374,12 @@ extern node *MakePragma ();
  ***
  ***  in (na), (nd):
  ***    [nothing]
+ ***
+ ***  in (na), (ne):
+ ***    [nothing]
+ ***
+ ***  in (na), (nf):
+ ***    int(bool)  INFO_BLKEX_BLOCKABOVE
  ***
  ***  when used in tile_size_inference.c :
  ***
@@ -2552,6 +2562,7 @@ extern node *MakeInfo ();
 #define INFO_SPMDPM_SHARED(n) ((DFMmask_t) (n->dfmask[4]))
 
 /* multithread - all mini-phases */
+/* DO NOT OVERRIDE ANY INFO_YYYY_xxx HERE, were YYYY is any other miniphase!!! */
 #define INFO_MUTH_FUNDEF(n) (n->node[0])
 
 /* multithread - schedule_init */
@@ -2566,6 +2577,10 @@ extern node *MakeInfo ();
 #define INFO_RFIN_FIRSTFUNDEF(n) (n->node[1])
 #define INFO_RFIN_LASTFUNDEF(n) (n->node[2])
 #define INFO_RFIN_SEARCH(n) (n->flag)
+
+/* multithread - blocks_expand */
+/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
+#define INFO_BLKEX_BLOCKABOVE(n) (n->int_data)
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
