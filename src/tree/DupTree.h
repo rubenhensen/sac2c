@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/02/15 16:56:58  nmw
+ * DupSSAstack added, DupID and DupIds are now aware of the AVIS
+ * attribte.
+ *
  * Revision 3.7  2001/02/12 17:03:03  nmw
  * N_avis node added
  *
@@ -149,6 +153,7 @@ extern node *DupMTsignal (node *arg_node, node *arg_info);
 extern node *DupMTsync (node *arg_node, node *arg_info);
 extern node *DupMTalloc (node *arg_node, node *arg_info);
 extern node *DupAvis (node *arg_node, node *arg_info);
+extern node *DupSSAstack (node *arg_node, node *arg_info);
 
 /* frontend with-loop: */
 extern node *DupNwith (node *arg_node, node *arg_info);

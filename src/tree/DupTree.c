@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/02/15 16:56:58  nmw
+ * DupSSAstack added, DupID and DupIds are now aware of the AVIS
+ * attribte.
+ *
  * Revision 3.12  2001/02/14 14:59:05  dkr
  * parts of the (physical) types-structure which are not part of the
  * (virtual) TPYES-structure are initialized in DupTypes() now, but
@@ -515,6 +519,13 @@ DupIds_ (ids *old_ids, node *arg_info)
     IDS_REFCNT (new_ids) = IDS_REFCNT (old_ids);
     IDS_NAIVE_REFCNT (new_ids) = IDS_NAIVE_REFCNT (old_ids);
 
+    /* set corresponding AVIS node backreference */
+    if (IDS_VARDEC (old_ids) != NULL) {
+        IDS_AVIS (new_ids) = VARDEC_OR_ARG_AVIS (IDS_VARDEC (old_ids));
+    } else {
+        IDS_AVIS (new_ids) = NULL;
+    }
+
     if (IDS_NEXT (old_ids) != NULL) {
         IDS_NEXT (new_ids) = DupIds_ (IDS_NEXT (old_ids), arg_info);
     }
@@ -776,6 +787,8 @@ DupId (node *arg_node, node *arg_info)
     ID_REFCNT (new_node) = ID_REFCNT (arg_node);
     ID_NAIVE_REFCNT (new_node) = ID_NAIVE_REFCNT (arg_node);
     ID_CLSCONV (new_node) = ID_CLSCONV (arg_node);
+
+    ID_AVIS (new_node) = SearchInLUT (INFO_DUP_LUT (arg_info), ID_AVIS (arg_node));
 
     if (DUP_WLF == INFO_DUP_TYPE (arg_info)) {
         /* Withloop folding (wlf) needs this. */
@@ -2148,17 +2161,43 @@ DupAvis (node *arg_node, node *arg_info)
 
     new_node = MakeAvis (NULL);
 
+    INFO_DUP_LUT (arg_info) = InsertIntoLUT (INFO_DUP_LUT (arg_info), arg_node, new_node);
+
     AVIS_SSACOUNT (new_node) = AVIS_SSACOUNT (arg_node);
     AVIS_SSAASSIGN (new_node) = AVIS_SSAASSIGN (arg_node);
-    AVIS_SSACONST (new_node) = AVIS_SSACONST (arg_node);
+    if (AVIS_SSACONST (arg_node) != NULL) {
+        AVIS_SSACONST (new_node) = COCopyConstant (AVIS_SSACONST (arg_node));
+    }
     AVIS_SSAPHITARGET (new_node) = AVIS_SSAPHITARGET (arg_node);
     AVIS_SSALPINV (new_node) = AVIS_SSALPINV (arg_node);
-    AVIS_SSASUBST (new_node) = AVIS_SSASUBST (arg_node);
-    AVIS_SSACOND (new_node) = AVIS_SSACOND (arg_node);
+    AVIS_SSASTACK (new_node) = DupTree (AVIS_SSASTACK (arg_node));
     AVIS_SSATHEN (new_node) = AVIS_SSATHEN (arg_node);
     AVIS_SSAELSE (new_node) = AVIS_SSAELSE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DupSSAstack( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Duplicates a N_ssastack node.
+ *
+ ******************************************************************************/
+
+node *
+DupSSAstack (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupSSAstack");
+
+    new_node
+      = MakeSSAstack (DUPCONT (SSASTACK_NEXT (arg_node)), SSASTACK_AVIS (arg_node));
 
     DBUG_RETURN (new_node);
 }
