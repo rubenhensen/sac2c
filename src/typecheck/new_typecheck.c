@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/03/12 15:15:24  sbs
+ * wrapepr creation inserted.
+ *
  * Revision 3.6  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -43,6 +46,11 @@
 #include "internal_lib.h"
 #include "traverse.h"
 #include "globals.h"
+#include "lac2fun.h"
+#include "CheckAvis.h"
+#include "SSATransform.h"
+#include "insert_vardec.h"
+#include "create_wrappers.h"
 
 #include "user_types.h"
 #include "new_types.h"
@@ -87,7 +95,7 @@ NewTypeCheck (node *arg_node)
     tmp_tab = act_tab;
     act_tab = ntc_tab;
 
-    Trav (arg_node, NULL);
+    arg_node = Trav (arg_node, NULL);
 
     act_tab = tmp_tab;
 
@@ -114,22 +122,78 @@ node *
 NTCmodul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("NTCmodul");
-    /*
-     * First, we gather all typedefs and setup the global table
-     * which is kept in "new_types".
-     */
-    if (NULL != MODUL_TYPES (arg_node))
-        MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
-    DBUG_EXECUTE ("UDT", UTPrintRepository (stderr););
-    ABORT_ON_ERROR;
+#if 0
+  /*
+   * First, we gather all typedefs and setup the global table
+   * which is kept in "new_types".
+   */
+  if ( NULL != MODUL_TYPES(arg_node))
+    MODUL_TYPES(arg_node)=Trav(MODUL_TYPES(arg_node), arg_info);
+  DBUG_EXECUTE( "UDT", UTPrintRepository( stderr););
+  ABORT_ON_ERROR;
+#endif
 
     /*
-     * Now, we do the actual typechecking....
+     * Gefore doing the actual type inference, we want to switch to the FUN-
+     * representation. This requires seeral preparational steps:
+     *
+     * I) Inserting Vardecs
+     * =====================
+     *
+     * First, we insert a vardec node for each identifier used.
+     * This has to be done prior to Lac2Fun as Lac2Fun uses datafolowmasks
+     * which in turn rely on the existance of Vardecs. Note here, that the
+     * vardecs do not contain any type info yet!
+     */
+    arg_node = InsertVardec (arg_node);
+    if ((break_after == PH_typecheck) && (0 == strcmp (break_specifier, "ivd"))) {
+        goto DONE;
+    }
+
+    /*
+     * II) Creating Wrappers
+     * ======================
+     *
+     * Since Lac2Fun needs to know about reference parameters, it requires each
+     * application of a user defined function to contain a backref to the function
+     * that is actually applied. Since this -in general- cannot be statically decided,
+     * the backref points to a wrapper function which contains the (intersection type
+     * based) function type of the overloaded function as well as pointers to all
+     * potential implementations. These structures are created by "CreateWrappers".
+     */
+    arg_node = CreateWrappers (arg_node);
+    if ((break_after == PH_typecheck) && (0 == strcmp (break_specifier, "cwr"))) {
+        goto DONE;
+    }
+
+    /*
+     * Now that all ids have backrefs to vardecs and all funaps have backrefs
+     * to wrapper-fundefs, Lac2Fun can finally be run.
+     */
+    arg_node = Lac2Fun (arg_node);
+    if ((break_after == PH_typecheck) && (0 == strcmp (break_specifier, "l2f"))) {
+        goto DONE;
+    }
+
+    arg_node = CheckAvis (arg_node);
+    if ((break_after == PH_typecheck) && (0 == strcmp (break_specifier, "cha"))) {
+        goto DONE;
+    }
+
+    arg_node = SSATransform (arg_node);
+    if ((break_after == PH_typecheck) && (0 == strcmp (break_specifier, "ssa"))) {
+        goto DONE;
+    }
+
+    /*
+     * Now, we do the actual type inference ....
      */
 #if 0
     if ( NULL != MODUL_FUNS(arg_node))
       MODUL_FUNS(arg_node)=Trav(MODUL_FUNS(arg_node), arg_info);
 #endif
+
+DONE:
     DBUG_RETURN (arg_node);
 }
 
