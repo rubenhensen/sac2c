@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.24  1995/05/02 09:32:58  hw
+ * Revision 1.25  1995/05/02 10:11:52  hw
+ *  bug fixed in CompReturn ( ND_END_MODARRAY and  ND_END_GENARRAY have correct
+ *   parameters now)
+ *
+ * Revision 1.24  1995/05/02  09:32:58  hw
  * bug fixed in CompReturn
  *
  * Revision 1.23  1995/04/28  17:29:30  hw
@@ -1593,7 +1597,7 @@ CompReturn (node *arg_node, node *arg_info)
         arg_node->node[0] = exprs;
         arg_node->node[1] = NULL;
     } else {
-        node *tmp_node, *with_icm_arg, *icm_arg;
+        node *tmp_node, *with_icm_arg, *icm_arg, *index_length;
         int is_array = IsArray (exprs->node[0]->IDS_NODE->TYPES);
 
         arg_node->nodetype = N_icm;
@@ -1608,14 +1612,16 @@ CompReturn (node *arg_node, node *arg_info)
          *  of N_icm ND_BEGIN_MODARRAY) and for name of index_vector
          *  (store it in 'index_node'
          */
-        while (2 == with_icm_arg->nnode) {
-            if (1 == with_icm_arg->node[1]->nnode)
-                index_node = with_icm_arg->node[0];
-            with_icm_arg = with_icm_arg->node[1];
+        index_length = with_icm_arg;
+        while (2 == index_length->nnode) {
+            if (1 == index_length->node[1]->nnode)
+                index_node = index_length->node[0];
+            index_length = index_length->node[1];
         }
 
         if ('M' == arg_info->node[2]->info.id[9]) {
             /* add name of modified array */
+            with_icm_arg = with_icm_arg->node[1];
             MAKE_NEXT_ICM_ARG (icm_arg, with_icm_arg->node[0]);
 
             /* add name of return value */
@@ -1629,7 +1635,7 @@ CompReturn (node *arg_node, node *arg_info)
                 MAKE_ICM_NAME (arg_node, "ND_END_MODARRAY_A");
 
                 /* add length of index_vector */
-                MAKE_NEXT_ICM_ARG (icm_arg, with_icm_arg->node[0]);
+                MAKE_NEXT_ICM_ARG (icm_arg, index_length->node[0]);
             }
         } else if ('G' == arg_info->node[2]->info.id[9]) {
             /* add name of return value */
@@ -1640,7 +1646,7 @@ CompReturn (node *arg_node, node *arg_info)
                 MAKE_ICM_NAME (arg_node, "ND_END_GENARRAY_S");
             } else {
                 MAKE_ICM_NAME (arg_node, "ND_END_GENARRAY_A");
-                MAKE_NEXT_ICM_ARG (icm_arg, with_icm_arg->node[0]);
+                MAKE_NEXT_ICM_ARG (icm_arg, index_length->node[0]);
             }
         }
         /* now create N_icm to decrement refcount of index_vector */
