@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.122  1996/01/22 17:29:05  cg
- * added WSIBobjdef for writesib_tab
+ * Revision 1.123  1996/02/06 18:57:36  cg
+ * added functions WSIBfloat and WSIBdouble for writesib_tab
  *
+;; Revision 1.122  1996/01/22  17:29:05  cg
+;; added WSIBobjdef for writesib_tab
+;;
 ;; Revision 1.121  1996/01/22  14:34:29  asi
 ;; added some functions for CSE
 ;;
@@ -436,13 +439,13 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   NIF (N_float, "N_float", TravSons, TravSons, PrintFloat, TravSons, TravSons, TravSons,
        TravSons, FreeFloat, TravSons, TravSons, TravSons, TravSons, DupFloat, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrintFloat, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, WSIBfloat, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons),
 
   NIF (N_double, "N_double", TravSons, TravSons, PrintDouble, TravSons, TravSons,
        TravSons, TravSons, FreeDouble, TravSons, TravSons, TravSons, TravSons, DupDouble,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrintDouble,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, WSIBdouble,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons),
 
