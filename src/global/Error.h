@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1997/04/24 09:54:04  cg
+ * Revision 1.20  1997/04/30 11:48:07  cg
+ * MAX_ERROR_MESSAGE_LENGTH set to 2000
+ *
+ * Revision 1.19  1997/04/24  09:54:04  cg
  * added Output macro NOTEDOT
  *
  * Revision 1.18  1996/01/05  12:24:20  cg
@@ -162,7 +165,7 @@
  *
  */
 
-#define MAX_ERROR_MESSAGE_LENGTH 400
+#define MAX_ERROR_MESSAGE_LENGTH 2000
 
 #define MAX_LINE_LENGTH 77
 
