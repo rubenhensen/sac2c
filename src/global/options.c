@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.37  2000/05/26 14:22:29  sbs
+ * noAP doAP added
+ *
  * Revision 2.36  2000/03/24 15:20:39  dkr
  * CheckOptionConsistency() extended
  *
@@ -329,6 +332,9 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("tsi", optimize |= OPT_TSI);
         ARG_CHOICE ("TSI", optimize |= OPT_TSI);
 
+        ARG_CHOICE ("ap", optimize |= OPT_AP);
+        ARG_CHOICE ("AP", optimize |= OPT_AP);
+
         ARG_CHOICE ("tsp", optimize |= OPT_TSP);
         ARG_CHOICE ("TSP", optimize |= OPT_TSP);
 
@@ -556,6 +562,9 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE ("tsi", optimize &= ~OPT_TSI);
         ARG_CHOICE ("TSI", optimize &= ~OPT_TSI);
+
+        ARG_CHOICE ("ap", optimize &= ~OPT_AP);
+        ARG_CHOICE ("AP", optimize &= ~OPT_AP);
 
         ARG_CHOICE ("tsp", optimize &= ~OPT_TSP);
         ARG_CHOICE ("TSP", optimize &= ~OPT_TSP);
