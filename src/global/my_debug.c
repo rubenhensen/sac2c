@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/07/23 17:17:46  jhs
+ * Restructured node_info.mac and simplified it's usage.
+ *
  * Revision 2.1  1999/02/23 12:39:30  sacbase
  * new release made
  *
@@ -84,19 +87,13 @@
  */
 
 /*
-** global array used for DBUG purposes only
-*/
+ *  global array used for DBUG purposes only
+ */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    s
-
+#define NIFmdb_nodetype(mdb_nodetype) mdb_nodetype
 char *mdb_nodetype[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 #define PRF_IF(n, s, x, y) s
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/07/23 17:17:46  jhs
+ * Restructured node_info.mac and simplified it's usage.
+ *
  * Revision 2.6  1999/06/25 14:58:34  jhs
  * Splitted spmdtrav_tab into spmdrmtrav_tab and spmdrotrav_tab.
  *
@@ -139,373 +142,222 @@ funptr *act_tab;
  *
  * 1) imp_tab
  */
-
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t1
-
+#define NIFimp(it_imp) it_imp
 funptr imp_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 2) flat_tab
  */
-
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t2
-
+#define NIFflat(it_flat) it_flat
 funptr flat_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 3) print_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t3
-
+#define NIFprint(it_print) it_print
 funptr print_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 4) type_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t4
-
+#define NIFtype(it_type) it_type
 funptr type_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 5) genmask_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t5
-
+#define NIFgenmask(it_genmask) it_genmask
 funptr genmask_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 6) dead_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t6
-
+#define NIFdcr(it_dcr) it_dcr
 funptr dcr_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 7) wlf_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t7
-
+#define NIFwlf(it_wlf) it_wlf
 funptr wlf_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 8) free_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t8
-
+#define NIFfree(it_free) it_free
 funptr free_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 9) cf_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t9
-
+#define NIFcf(it_cf) it_cf
 funptr cf_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 10) refcnt_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t10
-
+#define NIFrefcnt(it_refcnt) it_refcnt
 funptr refcnt_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 11) comp_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t11
-
+#define NIFcomp(it_comp) it_comp
 funptr comp_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 12) lir_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t12
-
+#define NIFlir(it_lir) it_lir
 funptr lir_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 13) dup_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t13
-
+#define NIFdup(it_dup) it_dup
 funptr dup_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 14) inline_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t14
-
+#define NIFinline(it_inline) it_inline
 funptr inline_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 15) unroll_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t15
-
+#define NIFunroll(it_unroll) it_unroll
 funptr unroll_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 16) lir_mov_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t16
-
+#define NIFlir_mov(it_lir_mov) it_lir_mov
 funptr lir_mov_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 17) idx_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t17
-
+#define NIFidx(it_idx) it_idx
 funptr idx_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 18) unswitch_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t18
-
+#define NIFunswitch(it_unswitch) it_unswitch
 funptr unswitch_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 19) wli_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t19
-
+#define NIFwli(it_wli) it_wli
 funptr wli_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 20) ae_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t20
-
+#define NIFae(it_ae) it_ae
 funptr ae_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 21) writesib_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t21
-
+#define NIFwritesib(it_writesib) it_writesib
 funptr writesib_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 22) obj_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t22
-
+#define NIFobj(it_obj) it_obj
 funptr obj_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 23) impltype_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t23
-
+#define NIFimpltype(it_impltype) it_impltype
 funptr impltype_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 24) objinit_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t24
-
+#define NIFobjinit(it_objinit) it_objinit
 funptr objinit_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 25) analy_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t25
-
+#define NIFanaly(it_analy) it_analy
 funptr analy_tab[] = {
 #include "node_info.mac"
 };
@@ -515,421 +367,253 @@ funptr analy_tab[] = {
  * 26) checkdec_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t26
-
+#define NIFcheckdec(it_checkdec) it_checkdec
 funptr checkdec_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 27) writedec_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t27
-
+#define NIFwritedec(it_writedec) it_writedec
 funptr writedec_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 28) unique_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t28
-
+#define NIFunique(it_unique) it_unique
 funptr unique_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 29) rmvoid_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t29
-
+#define NIFrmvoid(it_rmvoid) it_rmvoid
 funptr rmvoid_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 30) precomp_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t30
-
+#define NIFprecomp(it_precomp) it_precomp
 funptr precomp_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 31) active_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t31
-
+#define NIFactive(it_active) it_active
 funptr active_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 32) readsib_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t32
-
+#define NIFreadsib(it_readsib) it_readsib
 funptr readsib_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 33) wlt_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t33
-
+#define NIFwlt(it_wlt) it_wlt
 funptr wlt_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 34) cse_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t34
-
+#define NIFcse(it_cse) it_cse
 funptr cse_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 35) dfr_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t35
-
+#define NIFdfr(it_dfr) it_dfr
 funptr dfr_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 36) tcwl_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t36
-
+#define NIFtcwl(it_cwl) it_cwl
 funptr tcwl_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 37) spmdinit_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t37
-
+#define NIFspmdinit(it_spmdinit) it_spmdinit
 funptr spmdinit_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 38) spmdopt_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t38
-
+#define NIFspmdopt(it_spmdopt) it_spmdopt
 funptr spmdopt_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 39) spmdlift_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t39
-
+#define NIFspmdlift(it_spmdlift) it_spmdlift
 funptr spmdlift_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 40) syncinit_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t40
-
+#define NIFsyncinit(it_syncinit) it_syncinit
 funptr syncinit_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 41) syncopt_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t41
-
+#define NIFsyncopt(it_syncopt) it_syncopt
 funptr syncopt_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 42) wltrans_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t42
-
+#define NIFwltrans(it_wltrans) it_wltrans
 funptr wltrans_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 43) gsc_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t43
-
+#define NIFgsc(it_gsc) it_gsc
 funptr gsc_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 44) reuse_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t44
-
+#define NIFreuse(it_reuse) it_reuse
 funptr reuse_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 45) o2nWith_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t45
-
+#define NIFo2nWith(it_o2nWith) it_o2nWith
 funptr o2nWith_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 46) sched_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t46
-
+#define NIFsched(it_sched) it_sched
 funptr sched_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 47) conc_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t47
-
+#define NIFconc(it_conc) it_conc
 funptr conc_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 48) opt_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t48
-
+#define NIFopt(it_opt) it_opt
 funptr opt_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  * 49) wlaa_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t49
-
+#define NIFwlaa(it_wlaa) it_wlaa
 funptr wlaa_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  *  50) freemask_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t50
-
+#define NIFfreemask(it_freemask) it_freemask
 funptr freemask_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  *  51) spmdrmtrav_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t51
-
+#define NIFspmdrm(it_spmdrm) it_spmdrm
 funptr spmdrmtrav_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  *  52) spmdrotrav_tab
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    t52
-
+#define NIFspmdro(it_spmdro) it_spmdro
 funptr spmdrotrav_tab[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
  *  nnode
  */
 
-#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
-            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46,   \
-            t47, t48, t49, t50, t51, t52, nn)                                            \
-    nn
-
+#define NIFnnode(nnode) nnode
 int nnode[] = {
 #include "node_info.mac"
 };
-#undef NIF
 
 /*
 **
