@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/11/23 13:23:28  sbs
+ * SACDevCamp04
+ *
  * Revision 3.7  2004/11/23 11:36:42  cg
  * Switched mac-file based declaration of global variables.
  *
@@ -377,7 +380,7 @@
                              + strlen (global.filename) + NumberOfDigits (line) + 1;     \
         PRINT_MESSAGE (message, ":ERROR: ", global.last_indent, global.message_indent,   \
                        0, 1);                                                            \
-        errors_cnt++;                                                                    \
+        global.errors_cnt++;                                                             \
     }
 
 #define SYSERROR(message)                                                                \
@@ -386,7 +389,7 @@
         fprintf (stderr, "SYSTEM:");                                                     \
         global.last_indent = ((global.verbose_level > 1) ? 2 : 0) + 7;                   \
         PRINT_MESSAGE (message, ":ERROR: ", global.last_indent, message_indent, 0, 1);   \
-        errors_cnt++;                                                                    \
+        global.errors_cnt++;                                                             \
     }
 
 #define ABORT(line, message)                                                             \
@@ -408,7 +411,7 @@
 
 #define ABORT_ON_ERROR                                                                   \
     {                                                                                    \
-        if (errors_cnt > 0) {                                                            \
+        if (global.errors_cnt > 0) {                                                     \
             ABORT_MESSAGE;                                                               \
             EXIT ((int)global.compiler_phase);                                           \
         }                                                                                \
