@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2001/02/22 10:47:18  sbs
+ * compiler warning in GenerateCompleteDomain eliminated by
+ * initializing act_compl_grid to NULL.
+ *
  * Revision 3.31  2001/02/12 17:54:35  dkr
  * fixed a bug in GenerateCompleteDomain()
  *
@@ -4478,7 +4482,8 @@ GenerateCompleteDomain (node *stride, int dims, shpseg *shape)
     node *next_dim;
     node *compl_stride;
     node *act_stride, *act_grid;
-    node *act_compl_stride, *act_compl_grid, *last_compl_grid;
+    node *act_compl_stride, *last_compl_grid;
+    node *act_compl_grid = NULL;
     node *dup_strides = NULL;
     node *last_dup_grid = NULL;
 
