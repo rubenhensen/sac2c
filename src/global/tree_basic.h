@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.55  1997/11/13 16:16:00  srs
+ * created access macros for new WL-syntaxtree
+ *
  * Revision 1.54  1997/05/28 12:36:51  sbs
  * Profiling integrated
  *
@@ -1293,6 +1296,10 @@ extern node *MakeAp (char *name, char *mod, node *args);
  ***  temporary attributes:
  ***
  ***    long*  MASK[x]                 (optimize -> )
+ ***
+ ***
+ ***  remarks (srs): the 'body' of MakeWith() can be reached by WITH_OPERATOR.
+ ***    In MakeWith() a 3rd (!!!) son is initialized.
  ***/
 
 extern node *MakeWith (node *gen, node *body);
@@ -1666,7 +1673,7 @@ extern node *MakeEmpty ();
  ***
  ***  permanent attributes:
  ***
- ***    int    INCDEC
+ ***    node*  INCDEC
  ***    char*  ID
  ***
  ***  temporary attributes:
@@ -1677,7 +1684,6 @@ extern node *MakeEmpty ();
 extern node *MakePost (int incdec, char *id);
 
 #define POST_INCDEC(n) ((n->node[0]->nodetype == N_dec) ? 0 : 1)
-/* #define POST_INCDEC(n) (n->varno) */
 #define POST_ID(n) (n->info.id)
 #define POST_DECL(n) (n->node[1])
 
@@ -1691,11 +1697,36 @@ extern node *MakePost (int incdec, char *id);
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***  N_ok :
+ ***
+ ***  dummynode, last declared in node_info.mac
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_inc :
+ ***  N_dec :
+ ***
+ ***  no description yet
+ ***/
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_stop :
+ ***
+ ***  no description yet
+ ***  barely used in typecheck.c
+ ***/
+/*--------------------------------------------------------------------------*/
+
+/***
  ***  N_pre :
  ***
  ***  permanent attributes:
  ***
- ***    int    INCDEC
+ ***    node*  INCDEC
  ***    char*  ID
  ***
  ***  temporary attributes:
@@ -1706,7 +1737,6 @@ extern node *MakePost (int incdec, char *id);
 extern node *MakePre (nodetype incdec, char *id);
 
 #define PRE_INCDEC(n) ((n->node[0]->nodetype == N_dec) ? 0 : 1)
-/* #define PRE_INCDEC(n) (n->varno) */
 #define PRE_ID(n) (n->info.id)
 #define PRE_DECL(n) (n->node[1])
 
@@ -1809,7 +1839,7 @@ extern node *MakePragma ();
 /***
  ***  N_info :
  ***
- ***  The N_info node is used store additional compile time information
+ ***  The N_info node is used to store additional compile time information
  ***  outside the syntax tree. So, its concrete look depends on the
  ***  specific task.
  ***
@@ -1844,6 +1874,9 @@ extern node *MakePragma ();
  *  have to be printed to the SIB.
  */
 
+/* srs: the number of sons being traversed is set to MAX_SONS, so
+   don't use (temporary) attributes in the node-slots  */
+
 extern node *MakeInfo ();
 
 #define INFO_NEXTASSIGN(n) (n->node[1])
@@ -1864,6 +1897,153 @@ extern node *MakeInfo ();
 #define INFO_CNTPARAM(n) (n->lineno)
 #define INFO_ICMTAB(n) ((node **)n->node[2])
 #define INFO_TYPETAB(n) ((types **)n->info.types)
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Nwith :
+ ***
+ ***  sons:
+ ***
+ ***    node*  PART      (N_Npart)
+ ***    node*  CODE      (N_Ncode)
+ ***    node*  WITHOP    (N_Nwithop)
+ ***
+ ***  temporary attributes:
+ ***
+ ***    ?
+ ***/
+
+extern node *MakeNWith ();
+
+#define NWITH_PART(n) (n->node[0])
+#define NWITH_CODE(n) (n->node[1])
+#define NWITH_WITHOP(n) (n->node[2])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Npart :
+ ***
+ ***  sons:
+ ***
+ ***    node*  IDX           (N_Nwithid)
+ ***    node*  GEN           (N_Ngenerator)
+ ***    node*  NEXT      (O) (N_Npart)
+ ***
+ ***  permanent attributes:
+ ***
+ ***    node*  CODE          (N_Ncode)
+ ***/
+
+extern node *MakeNPart (node *withid, node *generator);
+
+#define NPART_IDX(n) (n->node[0])
+#define NPART_GEN(n) (n->node[1])
+#define NPART_NEXT(n) (n->node[2])
+#define NPART_CODE(n) (n->node[3])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Nwithid :
+ ***
+ ***  permanent attributes:
+ ***
+ ***    int    TYPE     (0: list of scalars, 1: vector idf)
+ ***    ids*   IDS
+ ***/
+
+extern node *MakeNWithid (int type, ids *_ids);
+
+#define NWITHID_TYPE(n) (n->info.cint)
+#define NWITHID_IDS(n) ((ids *)n->info2)
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Ngenerator :
+ ***
+ ***  sons:
+ ***
+ ***    node*  BOUND1    ("N_expr")
+ ***    node*  BOUND2    ("N_expr")
+ ***    node*  OP1       (N_prf)
+ ***    node*  OP2       (N_prf)
+ ***    node*  STEP      ("N_expr")
+ ***    node*  WIDTH     ("N_expr")
+ ***
+ ***  permanent attributes:
+ ***
+ ***    ?
+ ***
+ ***/
+
+extern node *MakeNGenerator (node *bound1, node *bound2, node *op1, node *op2, node *step,
+                             node *width);
+
+#define NGEN_BOUND1(n) (n->node[0])
+#define NGEN_BOUND2(n) (n->node[1])
+#define NGEN_OP1(n) (n->node[2])
+#define NGEN_OP2(n) (n->node[3])
+#define NGEN_STEP(n) (n->node[4])
+#define NGEN_WIDTH(n) (n->node[5])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_Nwithop :
+ ***
+ ***  sons:
+ ***  exactly one of this sons exists (depends on WithOpType):
+ ***    genarray : node*  SHAPE      ("N_expr": N_array, N_id)
+ ***    modarray : node*  ARRAY      ("N_expr": N_array, N_id)
+ ***    foldfun  : node*  NEUTRAL    ("N_expr")
+ ***    foldprf  : node*  NEUTRAL    ("N_expr")
+ ***
+ ***  permanent attributes:
+ ***
+ ***              WithOpType TYPE
+ ***    foldfun : fun_name   FUN
+ ***    foldprf : prf        PRF
+ ***
+ ***  temporary attributes:
+ ***
+ ***     ?
+ ***/
+
+extern node *MakeNWithOp (WithOpType WithOp);
+
+#define NWITHOP_TYPE(n) (*(WithOpType *)n->info2)
+#define NWITHOP_SHAPE(n) (n->node[0])
+#define NWITHOP_ARRAY(n) (n->node[0])
+#define NWITHOP_NEUTRAL(n) (n->node[0])
+#define NWITHOP_FUN(n) (n->info.fun_name)
+#define NWITHOP_PRF(n) (n->info.prf)
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_NCode :
+ ***
+ ***  sons:
+ ***
+ ***    node*  CBLOCK    (O) (N_block)
+ ***    node*  CEXPR         ("N_expr")
+ ***    node*  NEXT      (O) (N_exprs)
+ ***
+ ***  permanent attributes:
+ ***
+ ***    int    USED       (number of times this code is used)
+ ***
+ ***/
+
+extern node *MakeNCode (node *block, node *expr);
+
+#define NCODE_USED(n) (n->info.cint)
+#define NCODE_CBLOCK(n) (n->node[0])
+#define NCODE_CEXPR(n) (n->node[1])
+#define NCODE_NEXT(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 
