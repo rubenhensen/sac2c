@@ -1,6 +1,10 @@
 /*
  * $Log$
- * Revision 1.15  1995/07/04 09:07:30  hw
+ * Revision 1.16  1995/07/07 16:22:48  hw
+ * - changed functions AxA, TakeV, DropV, Psi( now they work with
+ *   userdefined types, i hope ;-)
+ *
+ * Revision 1.15  1995/07/04  09:07:30  hw
  * - Axs_F, F2I & I2F removed
  * - ConvertType inserted
  * - enum type_class extended
@@ -112,6 +116,18 @@ enum type_class {
     d_f
 };
 
+#define FREE(a)                                                                          \
+    DBUG_PRINT ("FREE", ("free" P_FORMAT, a));                                           \
+    free (a)
+
+#define FREE_TYPES(a)                                                                    \
+    if (NULL != a->shpseg) {                                                             \
+        FREE (a->shpseg);                                                                \
+        FREE (a);                                                                        \
+    } else {                                                                             \
+        FREE (a);                                                                        \
+    }
+
 #define GEN_TYPE_NODE(node, type)                                                        \
     if (NULL != (node = GEN_NODE (types))) {                                             \
         node->dim = 0;                                                                   \
@@ -122,6 +138,8 @@ enum type_class {
         node->id_mod = NULL;                                                             \
         node->name = NULL;                                                               \
         node->name_mod = NULL;                                                           \
+        node->attrib = 0;                                                                \
+        node->status = 0;                                                                \
         DBUG_PRINT ("PRIM_FUN", ("param: %s" P_FORMAT, type_string[type], node));        \
     } else                                                                               \
         Error ("out of memory", 1)
@@ -346,15 +364,27 @@ InitPrimFunTab ()
 types *
 AxA (types *array1, types *array2, simpletype s_type)
 {
-    types *ret_type = NULL;
+    types *ret_type = NULL, *tmp_array1 = NULL, *tmp_array2 = NULL;
+    int new_type = 0;
 
     DBUG_ENTER ("AxA");
+    if (T_user == array1->simpletype) {
+        GET_BASIC_TYPE (tmp_array1, array1, -64);
+        new_type = 1;
+    } else
+        tmp_array1 = array1;
 
-    if (array1->dim == array2->dim) {
+    if (T_user == array2->simpletype) {
+        GET_BASIC_TYPE (tmp_array2, array2, -64);
+        new_type += 2;
+    } else
+        tmp_array2 = array2;
+
+    if (tmp_array1->dim == tmp_array2->dim) {
         int *shp1, *shp2, i;
 
-        shp1 = array1->shpseg->shp;
-        shp2 = array2->shpseg->shp;
+        shp1 = tmp_array1->shpseg->shp;
+        shp2 = tmp_array2->shpseg->shp;
 
         for (i = 0; i < array1->dim; i++)
             if (shp1[i] != shp2[i]) {
@@ -362,10 +392,29 @@ AxA (types *array1, types *array2, simpletype s_type)
                 break;
             }
 
-        if (NULL == ret_type) {
-            ret_type = DuplicateTypes (array1, 0);
-            ret_type->simpletype = s_type;
-        }
+        if (NULL == ret_type)
+            switch (new_type) {
+            case 0:
+                ret_type = DuplicateTypes (array1, 0);
+                ret_type->simpletype = s_type;
+                break;
+            case 1:
+                ret_type = tmp_array1;
+                ret_type->simpletype = s_type;
+                break;
+            case 2:
+                ret_type = tmp_array2;
+                ret_type->simpletype = s_type;
+                break;
+            case 3:
+                ret_type = tmp_array1;
+                ret_type->simpletype = s_type;
+                FREE_TYPES (tmp_array2);
+                break;
+            default:
+                DBUG_ASSERT (0, "wrong value of 'new_type'");
+                break;
+            }
     } else {
         GEN_TYPE_NODE (ret_type, T_unknown);
     }
@@ -424,7 +473,7 @@ Shp (types *array)
 types *
 Reshp (node *vec, types *array)
 {
-    int count1, count2, dim2 = 0, i;
+    int count1, count2, i, dim2 = 0;
     node *tmp;
     types *ret_type;
 
@@ -479,7 +528,7 @@ Reshp (node *vec, types *array)
 types *
 TakeV (node *vec, types *array)
 {
-    types *ret_type;
+    types *ret_type, *array_btype;
     int ok = 1, i, dim2 = 0;
     node *tmp;
 
@@ -491,10 +540,12 @@ TakeV (node *vec, types *array)
                     filename, vec->lineno));
     DBUG_ASSERT ((N_array == vec->nodetype), "not a N_array node");
 
-    /* check weather entries in 1) are ok */
     tmp = vec->node[0];
-    while ((NULL != tmp) && (1 == ok) && (dim2 < array->dim))
-        if ((tmp->node[0]->info.cint > array->shpseg->shp[dim2])
+    GET_BASIC_TYPE (array_btype, array, vec->lineno);
+
+    /* check weather entries in 1) are ok */
+    while ((NULL != tmp) && (1 == ok) && (dim2 < array_btype->dim))
+        if ((tmp->node[0]->info.cint > array_btype->shpseg->shp[dim2])
             || (0 > tmp->node[0]->info.cint))
             ok = 0;
         else {
@@ -502,21 +553,21 @@ TakeV (node *vec, types *array)
             dim2++;
         }
 
-    if ((0 == ok) || ((NULL != tmp) && (dim2 > array->dim)))
+    if ((0 == ok) || ((NULL != tmp) && (dim2 > array_btype->dim))) {
         GEN_TYPE_NODE (ret_type, T_unknown);
-    else {
-        GEN_TYPE_NODE (ret_type, array->simpletype);
-        ret_type->dim = array->dim;
+        FREE_TYPES (array_btype);
+    } else {
+        ret_type = array_btype;
+        FREE (ret_type->shpseg);
         ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
         tmp = vec->node[0];
         /* compute resulting shape */
-        for (i = 0; i < array->dim; i++) {
+        for (i = 0; i < array_btype->dim; i++)
             if (i < dim2) {
                 ret_type->shpseg->shp[i] = tmp->node[0]->info.cint;
                 tmp = tmp->node[1];
             } else
-                ret_type->shpseg->shp[i] = array->shpseg->shp[i];
-        }
+                ret_type->shpseg->shp[i] = array_btype->shpseg->shp[i];
     }
 
     DBUG_RETURN (ret_type);
@@ -533,7 +584,8 @@ TakeV (node *vec, types *array)
  *  global vars   :
  *  internal funs :
  *  external funs :
- *  macros        : DBUG...,  ERROR2, GEN_TYPE_NODE
+ *  macros        : DBUG...,  ERROR2, GEN_TYPE_NODE, FREE, FREE_TYPES,
+ *                   GET_BASIC_TYPE
  *
  *  remarks       : is part of macro TT2 and is used in typecheck.c
  *
@@ -541,7 +593,7 @@ TakeV (node *vec, types *array)
 types *
 DropV (node *vec, types *array)
 {
-    types *ret_type;
+    types *ret_type, *array_btype;
     node *tmp;
     int i, dim2 = 0, ok = 1;
 
@@ -553,30 +605,33 @@ DropV (node *vec, types *array)
                     filename, vec->lineno));
     DBUG_ASSERT ((N_array == vec->nodetype), "not a N_array node");
 
-    /* check weather the entries in 1) are ok */
     tmp = vec->node[0];
-    while ((NULL != tmp) && (1 == ok) && (dim2 < array->dim))
-        if ((tmp->node[0]->info.cint < array->shpseg->shp[dim2])
+    GET_BASIC_TYPE (array_btype, array, vec->lineno);
+
+    /* check weather the entries in 1) are ok */
+    while ((NULL != tmp) && (1 == ok) && (dim2 < array_btype->dim))
+        if ((tmp->node[0]->info.cint < array_btype->shpseg->shp[dim2])
             && (0 <= tmp->node[0]->info.cint)) {
             dim2++;
             tmp = tmp->node[1];
         } else
             ok = 0;
 
-    if ((0 == ok) || ((NULL != tmp) && (dim2 == array->dim)))
+    if ((0 == ok) || ((NULL != tmp) && (dim2 == array_btype->dim))) {
         GEN_TYPE_NODE (ret_type, T_unknown);
-    else {
-        GEN_TYPE_NODE (ret_type, array->simpletype);
+        FREE_TYPES (array_btype);
+    } else {
+        ret_type = array_btype;
+        FREE (ret_type->shpseg);
         ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
-        ret_type->dim = array->dim;
         tmp = vec->node[0];
-        for (i = 0; i < array->dim; i++)
+        for (i = 0; i < array_btype->dim; i++)
             if (i < dim2) {
                 ret_type->shpseg->shp[i]
-                  = array->shpseg->shp[i] - tmp->node[0]->info.cint;
+                  = array_btype->shpseg->shp[i] - tmp->node[0]->info.cint;
                 tmp = tmp->node[1];
             } else
-                ret_type->shpseg->shp[i] = array->shpseg->shp[i];
+                ret_type->shpseg->shp[i] = array_btype->shpseg->shp[i];
     }
 
     DBUG_RETURN (ret_type);
@@ -600,25 +655,35 @@ types *
 Psi (types *vec, types *array)
 {
     int dim, i, to_drop;
-    types *ret_type;
+    types *ret_type, *array_btype;
 
     DBUG_ENTER ("Psi");
 
+    GET_BASIC_TYPE (array_btype, array, -64); /* -64 is a dummy argument */
+
     if (1 == vec->dim)
-        if (vec->shpseg->shp[0] <= array->dim) {
-            GEN_TYPE_NODE (ret_type, array->simpletype);
+        if (vec->shpseg->shp[0] <= array_btype->dim) {
+            ret_type = array_btype;
             to_drop = vec->shpseg->shp[0];
-            dim = array->dim - to_drop;
+            dim = array_btype->dim - to_drop;
             ret_type->dim = dim;
             if (dim > 0) {
                 ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
                 for (i = 0; i < dim; i++)
-                    ret_type->shpseg->shp[i] = array->shpseg->shp[to_drop + i];
+                    ret_type->shpseg->shp[i] = array_btype->shpseg->shp[to_drop + i];
+            } else
+                ret_type->shpseg = NULL;
+            if (NULL != array_btype->shpseg) {
+                FREE (array_btype->shpseg);
             }
-        } else
+        } else {
             GEN_TYPE_NODE (ret_type, T_unknown);
-    else
+            FREE_TYPES (array_btype);
+        }
+    else {
         GEN_TYPE_NODE (ret_type, T_unknown);
+        FREE_TYPES (array_btype);
+    }
     DBUG_RETURN (ret_type);
 }
 
