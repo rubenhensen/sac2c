@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2004/02/26 13:06:03  khf
+ * wlpg_tab added
+ *
  * Revision 3.46  2004/02/25 08:22:32  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -269,6 +272,7 @@
 #include "blir.h"
 #include "SelectionPropagation.h"
 #include "type_statistics.h"
+#include "WLPartitionGeneration.h"
 
 #include "traverse.h"
 
@@ -1324,13 +1328,15 @@ static funtab lirmov_tab_rec = {{
 funtab *lirmov_tab = &lirmov_tab_rec;
 
 /*
- *  (96) w2d_tab
+ *  (96) wlpg_tab
  */
-
-/* w2d_tab removed
- *
- * slot could be reused
- */
+static funtab wlpg_tab_rec = {{
+#define NIFwlpg(it_wlpg) it_wlpg
+#include "node_info.mac"
+                              },
+                              NULL,
+                              NULL};
+funtab *wlpg_tab = &wlpg_tab_rec;
 
 /*
  *  (97) ssalur_tab

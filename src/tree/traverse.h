@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2004/02/26 13:06:03  khf
+ * wlpg_tab added
+ *
  * Revision 3.36  2004/02/25 08:22:32  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -315,7 +318,6 @@ extern funtab *profile_tab;
 extern funtab *ssacf_tab;
 extern funtab *ssalir_tab;
 extern funtab *lirmov_tab;
-extern funtab *w2d_tab;
 extern funtab *ssalur_tab;
 extern funtab *ssawlt_tab;
 extern funtab *ssawli_tab;
@@ -337,6 +339,7 @@ extern funtab *esd_tab;
 extern funtab *uesd_tab;
 extern funtab *sp_tab;
 extern funtab *ts_tab;
+extern funtab *wlpg_tab;
 
 extern int nnode[];
 
