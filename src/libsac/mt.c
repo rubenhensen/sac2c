@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/03/22 17:37:47  ben
+ * Initialisation of the Scheduler Mutexlocks SAC_MT_TASKLOCKS in SAC_MT_Setup
+ *
  * Revision 3.2  2001/01/25 12:21:27  cg
  * Used unsigned long int instead of unsigned int for converting
  * pointers into numerical data.
@@ -110,6 +113,10 @@
  */
 
 extern SAC_MT_barrier_t SAC_MT_barrier_space[];
+
+extern pthread_mutex_t SAC_MT_Tasklock[];
+
+extern int SAC_MT_Task[];
 
 /*
  *  Definition of global variables.
@@ -352,6 +359,7 @@ SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
  *   program execution. The basic steps performed are
  *   - aligning the synchronization barrier data structure so that no two
  *     threads write to the same cache line,
+ *   - Initialisation of the Scheduler Mutexlocks SAC_MT_TASKLOCKS
  *   - determining the thread class of the master thread,
  *   - creation and initialization of POSIX thread attributes,
  *   - creation of the initial worker thread.
@@ -366,6 +374,9 @@ void
 SAC_MT_Setup (int cache_line_max, int barrier_offset)
 #endif
 {
+
+    int i;
+
     SAC_TR_PRINT (("Aligning synchronization barrier data structure "
                    "to data cache specification."));
 
@@ -378,6 +389,13 @@ SAC_MT_Setup (int cache_line_max, int barrier_offset)
     }
 
     SAC_TR_PRINT (("Barrier base address is %p", SAC_MT_barrier));
+
+    SAC_TR_PRINT (("Initialzing Tasklocks."));
+
+    for (i = 0; i < SAC_MT_threads; i++) {
+        pthread_mutex_init (&SAC_MT_TASKLOCK (i), NULL);
+        SAC_MT_TASK (i) = 0;
+    }
 
     SAC_TR_PRINT (("Computing thread class of master thread."));
 
