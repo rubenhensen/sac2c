@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2003/03/21 18:02:56  sbs
+ * preprocessor flags SAC_FOR_xxx eliminatred again!
+ *
  * Revision 3.16  2002/10/31 16:04:01  sbs
  * closing comment added
  *
@@ -351,11 +354,6 @@ GenMod (char *name, int checkdec)
     }
 
     strcpy (cccallstr, config.cpp_file);
-
-    strcat (cccallstr, " ");
-    strcat (cccallstr, config.opt_D);
-    strcat (cccallstr, "SAC_FOR_");
-    strcat (cccallstr, target_platform);
 
     for (i = 0; i < num_cpp_vars; i++) {
         strcat (cccallstr, " ");
@@ -1815,11 +1813,6 @@ ImportOwnDeclaration (char *name, file_type modtype)
         mod_tab = Free (mod_tab);
     } else {
         strcpy (cccallstr, config.cpp_file);
-
-        strcat (cccallstr, " ");
-        strcat (cccallstr, config.opt_D);
-        strcat (cccallstr, "SAC_FOR_");
-        strcat (cccallstr, target_platform);
 
         for (i = 0; i < num_cpp_vars; i++) {
             strcat (cccallstr, " ");
