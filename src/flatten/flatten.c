@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.35  1995/07/13 15:16:33  hw
+ * Revision 1.36  1995/07/13 15:21:56  hw
+ * changed comments in FltnCon
+ *
+ * Revision 1.35  1995/07/13  15:16:33  hw
  * changed FltnCon( if neutral element is an array it will not be
  *                  extracted anymore)
  *
@@ -1277,7 +1280,7 @@ FltnArgs (node *arg_node, node *arg_info)
  *  global vars   :
  *  internal funs :
  *  external funs : Trav
- *  macros        : DBUG, NULL, AP, MODARRAY
+ *  macros        : DBUG, NULL, NORMAL, MODARRAY
  *
  *  remarks       : if the argument of modarray is a N_prf, N_ap or N_array
  *                  node a temporary N_exprs node will be created and
@@ -1316,9 +1319,9 @@ FltnCon (node *arg_node, node *arg_info)
         node *exprs = MakeNode (N_exprs);
 
         /* set new tag for FltnExprs
-         * Flatten arg_node->node[0] (neutral element) like an application.
+         * Flatten arg_node->node[0] (neutral element) normaly.
          * (generate new variable if arg_node->node[0]->node[0]->nodetype
-         *  is N_ap, N_prf , N_with or N_array)
+         *  is N_ap, N_prf or N_with )
          */
         arg_info->info.cint = NORMAL;
         exprs->node[0] = arg_node->node[1]; /* exprs is only used temporary to
