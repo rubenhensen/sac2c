@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/05/18 16:55:33  dkr
+ * added int_data in NODE
+ *
  * Revision 2.10  1999/05/12 07:43:58  sbs
  * *** empty log message ***
  *
@@ -545,6 +548,7 @@ typedef struct NODE {
                                  /* (loop invariant/not loop invariant,...) */
     int counter;                 /* needed for the enumeration of fundefs!  */
     int varno;                   /* number of variables */
+    int int_data;                /* additional int-entry */
     long *mask[MAX_MASK];        /* special information about variables */
                                  /* mainly used for optimizations       */
     void *dfmask[MAX_MASK];      /* dataflow masks */
