@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.14  1995/03/14 10:51:52  asi
- * added node informations created while optimization
+ * Revision 1.15  1995/05/30 10:10:04  hw
+ * informations updated
  *
+# Revision 1.14  1995/03/14  10:51:52  asi
+# added node informations created while optimization
+#
 # Revision 1.13  1995/03/02  09:10:10  hw
 # changed information about N_generator
 #
@@ -54,14 +57,26 @@ typedef struct NODE
    nodetype  nodetype;
    union
    {
-      ids  *ids;       /* liste of identificators  */
-      id   *id;        /* identifikator              */
-      types *types;    /* typinformation             */
-      int   cint;      /* integer-value              */
-      float cfloat;    /* float-value                */
-      prf   prf;       /* tag for primitive functions */
+      ids        *ids;      /* liste of identificators   */
+      id         *id;       /* identifikator              */
+      types      *types;    /* typinformation             */
+      int        cint;      /* integer-value              */
+      float      cfloat;    /* float-value                */
+      fun_name   fun_name;  /* used in N_ap nodes         */
+      struct
+      {
+         int tag;           /* tag for return type */
+         int tc;            /* type class */
+      }          prf_dec;   /* used for declaration of primitive functions 
+                             * this declarations are used to look for argument 
+                             * and result type of primitive functions
+                             */
+   }            info;      /* used for special informationen */
+   int          refcnt;    /* is used as referenze count information */
+   int          bblock;    /* number of basic block assign node belongs to */
+   int          flag;      /* the flag is used for node-status */
+                           /* (loop invariant/not loop invariant , ...) */
 
-   }            info;     /* used for special informationen */
    int          varno;    /* number of variables in function */
    long         *mask[MAX_MASK]; /* informations about variables belonging to this node */
                           /* mask[0] contains defined variables                         */
@@ -112,10 +127,10 @@ N_fundef:
 node[0]	   : functionbody (N_block)
 node[1]    : next function (N_fundef), if there is one
 node[2]    : arguments of function (N_arg), if there are some
-info.types : first types structure contains the functions name and 
-             the first part of the functions type. If a function has 
-	     more than one return value, the types of these return 
-	     values are strored in following types structures.
+info.types : first types structure contains the functions name (info.types->id,
+             info.types->id_mod) and the first part of the functions type. 
+             If a function has more than one return value, the types of these return 
+	     values are stored in following types structure.
 	     types looks like:
              typedef struct TYPES{
                 simpletype   simpletype;
@@ -172,7 +187,10 @@ info.ids   : names of variables to assign to.
 	     The structure of ids is:
               typedef struct IDS{
                        id          *id;
-		       int         refcnt;
+		       int         refcnt;     /* refcount information
+                                                * it is set while refcounting
+                                                * and is used while compilation
+                                                * /
 		       struct NODE   *node;    /* ptr. to decleration after typechecking */
 		       struct NCHAIN *nchain;  /* ptr. to definition(s) resp. usage(s) */
                        struct IDS  *next;
@@ -195,6 +213,14 @@ N_cond:
 node[0]    : condition (N_expr)
 node[1]    : then part
 node[2]    : else part
+node[3]    : (N_info) list of N_id nodes with refcount information (only
+             arrays are considered) will be set while refcounting and is
+             used while compilation.
+             The child nodes of N_info:
+               node[0]: variables of then-part whose refcount has to be decremented
+               node[1]: variables of else-part whose refcount has to be decremented
+                        (number of decremantation is stored in info.refcnt of N_id)
+             !! nnode is still 3 !!
 -Created before optimizing:
 mask[1]    : contains number of usages for all variables in conditon 
 node[1]->mask[0] : contains number of definitions for all variables in then part
@@ -207,6 +233,15 @@ N_do, N_while:
 ==============
 node[0]    : termination conditon of the loop
 node[1]    : body of the loop
+node[2]    : (N_info) list of N_id nodes with refcount information (only 
+             arrays are considered) will be set while refcounting and is
+             used while compilation. 
+             The child nodes of N_info: 
+              node[0]: variables that are used before they will be defined
+                       in the body of the loop
+              node[1]: variables that are defined in the body of the loop
+                       and are used in the rest of the program
+             !!! nnode will be still 2 !!!
 -Created before optimizing:
 mask[1]    : contains number of usages for all variables in termination conditon 
 node[1]->mask[0] : contains number of definitions for all variables in loop body
@@ -221,12 +256,20 @@ node[1]    : pointer to the belonging functiondeclaration
              !!! nnode will not be increased !!!
 info_node  : name of function to apply ( info.fun_name.id, 
                                          info.fun_name.id_mod)
+typedef struct FUN_NAME{
+                char    *id;  /* name of function */
+                char    *id_mod; /* name of modul belonging to 'id' */
+                }fun_name;
+
 /* the application node is only used for userdefined functions */
 
 N_with:
 =======
 node[0]    : generator (N_generator)
 node[1]    : body of with-statement
+node[2]    : (N_info node[0]) contains list of N_id nodes (node[0]: next N_id) with 
+             refcount information (this list is build while refcounting and is used while
+             compilation) 
 -Created before optimizing:
 node[0]->mask[0] : contains number of definitions for all variables in generator
 node[0]->mask[1] : contains number of usages for all variables in generator
@@ -236,11 +279,12 @@ mask[1] : contains number of usages for all variables in with body
 
 N_id:
 =====
-info.ids   : name of identificator
-node[0]    : pointer to the belonging variable declaration.
-             it will be set while typechecking. 
-             nnode is still 0 !!!! 
-             
+info.ids->id     : name of identificator
+info.ids->node   : pointer to the belonging variable declaration.
+                   it will be set while typechecking. 
+info.ids->refcnt : set while refcounting and is used while compilation
+                   -1    => does not belong to an array
+                    n >0 => there are still more than n referenzes to belonging array
 
 N_float:
 ========
@@ -250,13 +294,18 @@ N_Num:
 ======
 info.cint   : interger value
 
+N_bool:
+=======
+info.cint   : 0 => false
+              1 => true
+
 N_prf:
 ======
-node[0] - node[3] : arguments for primitive function
+node[0]           : arguments of primitive function (N_exprs)
 info.prf          : tag for kind of primitive function (F_add, F_sub,
 	            F_mul, F_div, F_take, F_drop, F_psi, F_shape,
 		    F_reshape, F_cat, F_dim, F_rotate, F_and, F_or, 
-		    F_not, F_le, F_lt, F_eq, F_ge, F_gt, F_neq)
+		    F_not, F_le, F_lt, F_eq, F_ge, F_gt, F_neq, ...)
 
 N_generator:
 ============
@@ -271,13 +320,18 @@ node[1]     : body
 
 N_foldprf:
 ==========
-info.prf    : fold-function( F_add, F_sub, F_mul, F_div, F_and, F_or, F_eq, F_neq)
+info.prf    : fold-function( F_add, F_sub, F_mul, F_div, F_and, F_or, F_eq, F_neq, ...)
 node[0]     : body
 
 N_foldfun:
 ==========
-info.id     : user defined fold-function
-node[0]     : body
+info.fun_name.id     : name of user defined fold-function
+info.fun_name.id_mod : name of modul where fold_function is defined
+node[0]              : body
+node[1]              : expression to compute neutral element of fold_function (N_exprs)
+node[2]              : pointer to declaration of fold-function ( it is set while
+                        typechecking.
+                        !!! nnode will not be increased (it is still 2) !!! )
 
 N_exprs:
 ========
