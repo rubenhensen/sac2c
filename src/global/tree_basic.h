@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.119  1998/04/09 13:58:43  dkr
+ * new INFO_CONC_..., CONC_... macros added
+ *
  * Revision 1.118  1998/04/07 16:50:56  srs
  * new macro INFO_WLI_FLAG
  *
@@ -2138,11 +2141,14 @@ extern node *MakeInfo ();
 #define INFO_EXPORTOBJS(n) ((nodelist *)(n->node[1]))
 #define INFO_EXPORTFUNS(n) ((nodelist *)(n->node[2]))
 
+/* concregions */
+#define INFO_CONC_FUNDEF(n) (n->node[1])
+#define INFO_CONC_LOCALUSED(n) (n->mask[1])
+#define INFO_CONC_LOCALDEF(n) (n->mask[0])
+
 /* precompile */
-#define INFO_MODUL(n) (n->node[0])
-#define INFO_CNT_ARTIFICIAL(n) (n->lineno)
-#define INFO_NAME(n) (n->info.id)
-#define INFO_CONCFUNS(n) (n->node[1])
+#define INFO_PREC_MODUL(n) (n->node[0])
+#define INFO_PREC_CNT_ARTIFICIAL(n) (n->lineno)
 
 /* compile */
 #define INFO_LASTIDS(n) (n->info.ids)
@@ -2178,7 +2184,7 @@ extern node *MakeInfo ();
  ***
  ***  sons:
  ***
- ***    node*      REGION      (0)  (N_assign)
+ ***    node*      REGION      (0)  (N_block)
  ***
  ***  permanent attributes:
  ***
@@ -2186,8 +2192,10 @@ extern node *MakeInfo ();
  ***
  ***  temporary attributes:
  ***
- ***    node*      AP_LET      (0)  (N_let)       (precompile -> compile ! )
- ***    long*      MASK[x]                        (precompile -> )
+ ***    node*      FUNDEC      (0)  (N_fundef)    (concregions -> compile ! )
+ ***    node*      VARDEC      (0)  (N_vardec)    (concregions -> compile ! )
+ ***    node*      AP_LET      (0)  (N_let)       (concregions -> compile ! )
+ ***    long*      MASK[x]                        (concregions -> )
  ***
  ***/
 
@@ -2195,8 +2203,11 @@ extern node *MakeConc (node *region);
 
 #define CONC_REGION(n) (n->node[0])
 
-#define CONC_AP_LET(n) (n->node[1])
-#define CONC_MASK(n, x) (n->mask[x])
+#define CONC_FUNDEC(n) (n->node[1])
+#define CONC_VARDEC(n) (n->node[2])
+#define CONC_AP_LET(n) (n->node[3])
+#define CONC_USEDVARS(n) (n->mask[1])
+#define CONC_DEFVARS(n) (n->mask[0])
 
 /*--------------------------------------------------------------------------*/
 
