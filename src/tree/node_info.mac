@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.101  2002/09/05 13:39:10  dkr
+ * CWCwithop added
+ *
  * Revision 3.100  2002/09/05 13:25:24  sah
  * added HDassign to N_assign node
  *
@@ -1982,7 +1985,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, SSAWLINwithop, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, CRTWRPNwithop, TravSons, TravSons,
-       TravSons, HDwithop, TravSons, TravSons, HMNwithop, TravSons, TravSons, TravSons,
+       TravSons, HDwithop, TravSons, CWCwithop, HMNwithop, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_Ncode, "N_Ncode", TravSons, FltnNcode, PrintNcode, TCNcode, TravSons, TravSons,
