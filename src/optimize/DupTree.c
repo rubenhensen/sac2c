@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  1998/03/19 20:17:57  dkr
+ * removed a bug in DupWLgrid
+ *
  * Revision 1.34  1998/03/19 19:29:52  dkr
  * in DupWLgrid and DupNPart NCODE_USED is now correctly set
  *
@@ -803,7 +806,9 @@ DupWLgrid (node *arg_node, node *arg_info)
                            WLGRID_WIDTH (arg_node), WLGRID_UNROLLING (arg_node), NULL,
                            WLGRID_CODE (arg_node), NULL);
 
-    NCODE_USED (WLGRID_CODE (new_node))++;
+    if (WLGRID_CODE (new_node) != NULL) {
+        NCODE_USED (WLGRID_CODE (new_node))++;
+    }
 
     if (WLGRID_NEXTDIM (arg_node) != NULL) {
         WLGRID_NEXTDIM (new_node) = Trav (WLGRID_NEXTDIM (arg_node), arg_info);
