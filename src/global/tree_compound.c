@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/04/16 18:48:10  bs
+ * Bug fixed in IntVec2Array.
+ *
  * Revision 2.4  1999/03/31 10:51:31  bs
  * Function Array2CharVec added.
  *
@@ -1041,7 +1044,7 @@ IntVec2Array (int length, int *intvec)
 
     DBUG_ENTER ("IntVec2Array");
 
-    for (i = length - 1; i >= 0; i++)
+    for (i = length - 1; i >= 0; i--)
         aelems = MakeExprs (MakeNum (intvec[i]), aelems);
 
     DBUG_RETURN (aelems);
