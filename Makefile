@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.21  2000/01/21 13:19:00  jhs
+# Added net mt ... Added new path ...
+#
 # Revision 2.20  2000/01/21 12:01:55  dkr
 # directory tree added
 # lac2fun.o added
@@ -189,6 +192,7 @@ CONCURRENT= src/concurrent/concurrent.o src/concurrent/scheduling.o  \
             src/concurrent/sync_opt.o src/concurrent/schedule.o      \
             src/concurrent/spmd_trav.o src/concurrent/spmd_cons.o    \
             src/concurrent/concurrent_lib.o
+MULTITHREAD= src/multithread/multithread.o
 COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/precompile.o \
           src/compile/compile.o src/compile/gen_startup_code.o \
@@ -197,9 +201,8 @@ COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/Old2NewWith.o
 
 OBJ=$(GLOBAL) $(TREE) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
-    $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT)
-
-
+    $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT) \
+    $(MULTITHREAD)
 
 
 #
@@ -241,6 +244,7 @@ dummy:
 	(cd src/objects; $(MAKE_NORM) )
 	(cd src/refcount; $(MAKE_NORM) )       
 	(cd src/concurrent; $(MAKE_NORM) )
+	(cd src/multithread; $(MAKE_NORM) )
 	(cd src/compile; $(MAKE_NORM) )
 	(cd src/psi-opt; $(MAKE_NORM) )
 	(cd src/libsac; $(MAKE_PROD) )
@@ -269,6 +273,7 @@ prod:
 	(cd src/objects; $(MAKE_PROD) )
 	(cd src/refcount; $(MAKE_PROD) )       
 	(cd src/concurrent; $(MAKE_PROD) )
+	(cd src/multithread; $(MAKE_PROD) )
 	(cd src/compile; $(MAKE_PROD) )
 	(cd src/psi-opt; $(MAKE_PROD) )
 	(cd src/libsac; $(MAKE_PROD) )
@@ -298,6 +303,7 @@ deps:
 	(cd src/objects; $(MAKE) deps)
 	(cd src/refcount; $(MAKE) deps)
 	(cd src/concurrent; $(MAKE) deps)
+	(cd src/multithread; $(MAKE) deps)
 	(cd src/compile; $(MAKE) deps)
 	(cd src/psi-opt; $(MAKE) deps)
 	(cd src/libsac; $(MAKE) deps)
@@ -318,6 +324,7 @@ clean:
 	(cd src/objects; $(MAKE) clean)
 	(cd src/refcount; $(MAKE) clean)
 	(cd src/concurrent; $(MAKE) clean)
+	(cd src/multithread; $(MAKE) clean)
 	(cd src/compile; $(MAKE) clean )
 	(cd src/psi-opt; $(MAKE) clean)
 	(cd src/libsac; $(MAKE) clean)
