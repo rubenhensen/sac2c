@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.4  1994/11/22 13:48:29  sbs
+ * Revision 1.5  1994/12/01 17:36:18  hw
+ * added function Typecheck
+ * new parameter -f for printing after flatten
+ *
+ * Revision 1.4  1994/11/22  13:48:29  sbs
  * scnprs.h included in main.c
  *
  * Revision 1.3  1994/11/15  13:26:31  sbs
@@ -26,8 +30,9 @@
 #include "usage.h"
 #include "flatten.h"
 #include "print.h"
-#include "scnprs.h"
+#include "typecheck.h"
 
+#include "scnprs.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -37,7 +42,7 @@ FILE *outfile;
 
 MAIN
 {
-    int prettyprint = 0, set_outfile = 0;
+    int prettyprint = 0, set_outfile = 0, flatten = 0;
     char filename[256];
     char outfilename[128] = "out.txt";
     char *paths, *path;
@@ -50,6 +55,10 @@ MAIN
     ARG 'p':
     {
         prettyprint = 1;
+    }
+    ARG 'f':
+    {
+        flatten = 1;
     }
     ARG 'o' : PARM
     {
@@ -93,9 +102,15 @@ MAIN
         outfile = stdout;
 
     yyparse ();
-    /*  syntax_tree=Flatten(syntax_tree); */
+
     if (!prettyprint)
-        syntax_tree = Flatten (syntax_tree);
+        if (!flatten) {
+            syntax_tree = Flatten (syntax_tree);
+            Typecheck (syntax_tree);
+            fprintf (stdout, " types are ok");
+        } else
+            syntax_tree = Flatten (syntax_tree);
+
     Print (syntax_tree);
 
     /*  GenCCode(); */
