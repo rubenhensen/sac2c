@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.21  1997/04/23 12:52:36  cg
+ * Revision 1.22  1997/04/25 09:20:34  sbs
+ * DBUG_ASSERT in DupIds adjusted (no varargs)
+ *
+ * Revision 1.21  1997/04/23  12:52:36  cg
  * decleration changed to declaration
  *
  * Revision 1.20  1996/09/06  16:19:37  cg
@@ -184,8 +187,7 @@ DupIds (ids *old_ids, node *arg_info)
     case INLINE:
         new_ids = MakeIds (RenameInlinedVar (old_ids->id), NULL, ST_regular);
         new_ids->node = SearchDecl (new_ids->id, INL_TYPES);
-        DBUG_ASSERT ((NULL != new_ids->node),
-                     ("No declaration found for %s", new_ids->id));
+        DBUG_ASSERT ((NULL != new_ids->node), "No declaration found for ids-node");
         break;
     default:
         new_ids = MakeIds (StringCopy (old_ids->id), NULL, ST_regular);
