@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2001/07/17 16:17:13  cg
+ * Bug fixed: whenever functions like MakeFundef are called with
+ * NULL types specification, subsequent write operations to fields
+ * belonging N_fundef but which are actually resident in types
+ * structure will fail. To prevent this, types structures are
+ * created whenever it is not provided as an argument.
+ *
  * Revision 3.42  2001/07/17 08:38:24  nmw
  * MakeArg() can now handle NULL types (used temporaly by typechecker)
  *
@@ -650,7 +657,12 @@ MakeTypedef (char *name, char *mod, types *type, statustype attrib, node *next)
     tmp = CreateCleanNode (N_typedef);
 
     TYPEDEF_TYPE (tmp) = type;
+
 #if NAMES_IN_TYPES
+    if (type == NULL) {
+        type = MakeTypes1 (T_unknown);
+    }
+
     if (TYPEDEF_NAME (tmp) != NULL) {
         Free (TYPEDEF_NAME (tmp));
     }
@@ -689,7 +701,12 @@ MakeObjdef (char *name, char *mod, types *type, node *expr, node *next)
     tmp = CreateCleanNode (N_objdef);
 
     OBJDEF_TYPE (tmp) = type;
+
 #if NAMES_IN_TYPES
+    if (type == NULL) {
+        type = MakeTypes1 (T_unknown);
+    }
+
     if (OBJDEF_NAME (tmp) != NULL) {
         Free (OBJDEF_NAME (tmp));
     }
@@ -730,6 +747,10 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
     FUNDEF_NEXT (tmp) = next;
 
 #if NAMES_IN_TYPES
+    if (types == NULL) {
+        types = MakeTypes1 (T_unknown);
+    }
+
     if (FUNDEF_TYPES (tmp) != NULL) {
         FUNDEF_NAME (tmp) = Free (FUNDEF_NAME (tmp));
         FUNDEF_MOD (tmp) = Free (FUNDEF_MOD (tmp));
@@ -738,20 +759,11 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
 
     FUNDEF_TYPES (tmp) = types;
 
-#if NAMES_IN_TYPES
-    if (FUNDEF_TYPES (tmp) != NULL) {
-#endif
-        FUNDEF_NAME (tmp) = name;
-        FUNDEF_MOD (tmp) = mod;
-        FUNDEF_LINKMOD (tmp) = NULL;
-        FUNDEF_STATUS (tmp) = ST_regular;
-        FUNDEF_ATTRIB (tmp) = ST_regular;
-#if NAMES_IN_TYPES
-    } else {
-        DBUG_ASSERT (((name == NULL) && (mod == NULL)),
-                     "FUNDEF_TYPES is needed for storing FUNDEF_NAME, FUNDEF_MOD");
-    }
-#endif
+    FUNDEF_NAME (tmp) = name;
+    FUNDEF_MOD (tmp) = mod;
+    FUNDEF_LINKMOD (tmp) = NULL;
+    FUNDEF_STATUS (tmp) = ST_regular;
+    FUNDEF_ATTRIB (tmp) = ST_regular;
 
     FUNDEF_FUNNO (tmp) = 0;
     FUNDEF_INLINE (tmp) = FALSE;
@@ -775,22 +787,25 @@ MakeArg (char *name, types *type, statustype status, statustype attrib, node *ne
 
     tmp = CreateCleanNode (N_arg);
 
+#if NAMES_IN_TYPES
+    if (type == NULL) {
+        type = MakeTypes1 (T_unknown);
+    }
+#endif
+
     ARG_NEXT (tmp) = next;
     ARG_TYPE (tmp) = type;
-    if (type != NULL) {
-        /*
-         * these attributes are part of the types structure
-         * so we cannot access them without given type
-         */
+
 #if NAMES_IN_TYPES
-        if (ARG_NAME (tmp) != NULL) {
-            Free (ARG_NAME (tmp));
-        }
-#endif
-        ARG_NAME (tmp) = name;
-        ARG_STATUS (tmp) = status;
-        ARG_ATTRIB (tmp) = attrib;
+    if (ARG_NAME (tmp) != NULL) {
+        Free (ARG_NAME (tmp));
     }
+#endif
+
+    ARG_NAME (tmp) = name;
+    ARG_STATUS (tmp) = status;
+    ARG_ATTRIB (tmp) = attrib;
+
     ARG_AVIS (tmp) = MakeAvis (tmp);
 
     ARG_ACTCHN (tmp) = NULL;
@@ -834,13 +849,21 @@ MakeVardec (char *name, types *type, node *next)
 
     tmp = CreateCleanNode (N_vardec);
 
+#if NAMES_IN_TYPES
+    if (type == NULL) {
+        type = MakeTypes1 (T_unknown);
+    }
+#endif
+
     VARDEC_NEXT (tmp) = next;
     VARDEC_TYPE (tmp) = type;
+
 #if NAMES_IN_TYPES
     if (VARDEC_NAME (tmp) != NULL) {
         Free (VARDEC_NAME (tmp));
     }
 #endif
+
     VARDEC_NAME (tmp) = name;
     VARDEC_STATUS (tmp) = ST_regular;
     VARDEC_ATTRIB (tmp) = ST_regular;
