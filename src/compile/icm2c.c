@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/04/18 11:20:34  sbs
+ * Revision 1.16  1995/04/18 14:45:55  sbs
+ * ND_CREATE_CONST_ARRAY modified; initial basic_type parameter eliminated.
+ *
+ * Revision 1.15  1995/04/18  11:20:34  sbs
  * ND_KD_ROT_SxSxA_A eliminated & ND_KD_ROT_CxSxA_A modified
  *
  * Revision 1.14  1995/04/13  09:12:59  sbs
@@ -56,7 +59,7 @@
 #include "my_debug.h"
 #include "main.h"
 
-#define FirstOut(arg, n, body, step)                                                     \
+#define FirstOut(arg, n, body, default, step)                                            \
     {                                                                                    \
         int i = 0;                                                                       \
         int out = 1;                                                                     \
@@ -67,6 +70,8 @@
             }                                                                            \
             i += step;                                                                   \
         }                                                                                \
+        if (out)                                                                         \
+        default;                                                                         \
     }
 #define ScanArglist(arg, n, bin, bfout, bout, binout, bina, bouta, binouta, sepstr)      \
     {                                                                                    \
@@ -290,7 +295,8 @@ extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
 #include "icm_comment.c"
 
     INDENT;
-    FirstOut (tyarg, 3 * narg, fprintf (outfile, "%s ", tyarg[i]), 2);
+    FirstOut (tyarg, 3 * narg, fprintf (outfile, "%s ", tyarg[i]),
+              fprintf (outfile, "void "), 2);
     fprintf (outfile, "%s( ", name);
     ScanArglist (tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]);
                  sep = 1, i += 2;
@@ -330,7 +336,7 @@ extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
 #include "icm_comment.c"
 
 INDENT;
-FirstOut (arg, 2 * narg, fprintf (outfile, "%s =", arg[i]), 1);
+FirstOut (arg, 2 * narg, fprintf (outfile, "%s =", arg[i]), {}, 1);
 fprintf (outfile, "%s( ", name);
 ScanArglist (arg, 2 * narg, fprintf (outfile, " %s", arg[i++]); sep = 1, i++; sep = 0;
              , fprintf (outfile, " &%s", arg[i++]);
@@ -373,7 +379,7 @@ ScanArglist (arg, 2 * narg, i++; sep = 0, i++;
              sep = 0, fprintf (outfile, "ND_KS_RET_OUT_ARRAY(%s);\n", arg[i++]); INDENT;
              sep = 1, fprintf (outfile, "ND_KS_RET_OUT_ARRAY(%s);\n", arg[i++]); INDENT;
              sep = 1, "");
-FirstOut (arg, 2 * narg, fprintf (outfile, "return(%s);\n", arg[i]), 1);
+FirstOut (arg, 2 * narg, fprintf (outfile, "return(%s);\n", arg[i]), {}, 1);
 
 #undef ND_FUN_RET
 
@@ -383,10 +389,9 @@ DBUG_VOID_RETURN;
 #endif /* no TEST_BACKEND */
 
 /*
- * ND_CREATE_CONST_ARRAY( basic_type, name, dim, s0,..., sn)   : generates a constant
- * array
+ * ND_CREATE_CONST_ARRAY( name, dim, s0,..., sn)   : generates a constant array
  *
- * char *type, *name;
+ * char *name;
  * int dim;
  * char **s;
  */
@@ -400,16 +405,13 @@ DBUG_VOID_RETURN;
 
 #include "icm_comment.c"
 
-INDENT;
-NewBlock (fprintf (outfile, "static %s __dummy[]={", type), {
+{
     int i;
-    for (i = 0; i < dim - 1; i++)
-        fprintf (outfile, "%s,", s[i]);
-    fprintf (outfile, "%s};\n", s[i]);
-    INDENT;
-    fprintf (outfile, "%s=__dummy;\n", name);
-});
-fprintf (outfile, "\n");
+    for (i = 0; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "%s[%d]=%s;\n", name, i, s[i]);
+    }
+}
 
 #undef ND_CREATE_CONST_ARRAY
 
