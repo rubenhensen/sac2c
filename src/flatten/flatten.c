@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/03/13 17:03:44  hw
+ * Revision 1.16  1995/04/07 13:37:42  hw
+ * FltnAp, FltnReturn inserted
+ * modified FtnExprs to flatten N_exprs depending on the context
+ *
+ * Revision 1.15  1995/03/13  17:03:44  hw
  * changover from 'info.id' to 'info.ids' of node N_id,
  * N_post, N_pre done
  *
@@ -67,6 +71,12 @@
 #define VAR "__tmp"       /* name of new variable */
 #define VAR_LENGTH 10     /* dimension for array of char */
 #define P_FORMAT "(%06x)" /* formatstring for pointer address */
+
+/* macros are used as tag in  arg_info->info.cint for flatten of N_exprs
+ */
+#define NORMAL 0
+#define AP 1
+#define RET 2
 
 extern node *MakeNode (nodetype); /* defined in sac.y or y.tab.c respectively */
 extern char *mdb_nodetype[];      /* defined in my_debug.h */
@@ -164,6 +174,7 @@ Flatten (node *arg_node)
     var_counter = 0;
     act_tab = flat_tab;
     info_node = MakeNode (N_info);
+    info_node->info.cint = NORMAL;
     info_node->nnode = 1;
     info_node->node[0] = NULL;
     arg_node = Trav (arg_node, info_node);
@@ -285,7 +296,14 @@ FltnExprs (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("FltnExprs");
 
-    if ((arg_node->node[0]->nodetype == N_ap) || (arg_node->node[0]->nodetype == N_prf)) {
+    if ((arg_node->node[0]->nodetype == N_ap) || (arg_node->node[0]->nodetype == N_prf)
+        || (((arg_node->node[0]->nodetype == N_num)
+             || (arg_node->node[0]->nodetype == N_float)
+             || (arg_node->node[0]->nodetype == N_bool)
+             || (arg_node->node[0]->nodetype == N_str)
+             || (arg_node->node[0]->nodetype == N_array))
+            && (RET == arg_info->info.cint))
+        || ((arg_node->node[0]->nodetype == N_array) && (AP == arg_info->info.cint))) {
 
         /* This argument is a function application and thus has to be abstracted
         ** out. Therefore a new N_assign, a new N_let, and a new temporary
@@ -309,11 +327,21 @@ FltnExprs (node *arg_node, node *arg_info)
             assign_node->nnode = 2;
 
         arg_info->node[0] = assign_node;
+        if (NULL != tmp_node1) {
+            int old_tag = 0;
 
-        /* Now, we have to flatten the child "tmp_node1" recursively! */
+            /* Now, we have to flatten the child "tmp_node1" recursively! */
+            old_tag = arg_info->info.cint;
 
-        let_node->nnode = 1;
-        let_node->node[0] = Trav (tmp_node1, arg_info);
+            if (tmp_node1->nodetype == N_ap)
+                arg_info->info.cint = AP; /* set new tag */
+            else if (tmp_node1->nodetype == N_array)
+                arg_info->info.cint = NORMAL; /*set new tag */
+            let_node->nnode = 1;
+            let_node->node[0] = Trav (tmp_node1, arg_info);
+            arg_info->info.cint = old_tag;
+        }
+
     } else if (arg_node->node[0]->nodetype == N_array)
         /* an array has also to be flattend */
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
@@ -657,6 +685,71 @@ FltnGen (node *arg_node, node *arg_info)
             let_node->node[0] = Trav (tmp_node1, arg_info);
         } else
             arg_node->node[i] = Trav (arg_node->node[i], arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : FltnAp
+ *  arguments     : 1) argument node
+ *                  2) last assignment in arg_info->node[0]
+ *  description   : set tag arg_info->info.cint for flatten of arguments
+ *                  call Trav to flatten arguments
+ *                  if function body is not empty
+ *  global vars   :
+ *  internal funs :
+ *  external funs : Trav
+ *  macros        : DBUG, AP, NULL
+ *
+ *  remarks       :
+ *
+ */
+node *
+FltnAp (node *arg_node, node *arg_info)
+{
+    int old_tag;
+
+    DBUG_ENTER ("FltnAp");
+
+    if (NULL != arg_node->node[0]) {
+        old_tag = arg_info->info.cint;
+        arg_info->info.cint = AP;
+        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+        arg_info->info.cint = old_tag;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : FltnReturn
+ *  arguments     : 1) argument node
+ *                  2) last assignment in arg_info->node[0]
+ *  description   : set tag arg_info->info.cint for flatten of arguments
+ *                  call Trav to flatten arguments
+ *  global vars   :
+ *  internal funs :
+ *  external funs : Trav
+ *  macros        : DBUG, RET, NULL
+ *
+ *  remarks       :
+ *
+ */
+node *
+FltnReturn (node *arg_node, node *arg_info)
+{
+    int old_tag;
+
+    DBUG_ENTER ("FltnReturn");
+
+    if (NULL != arg_node->node[0]) {
+        old_tag = arg_info->info.cint;
+        arg_info->info.cint = RET;
+        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+        arg_info->info.cint = old_tag;
+    }
 
     DBUG_RETURN (arg_node);
 }
