@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/27 01:58:46  ktr
+ * EMRCOdoRefCountOpt
+ *
  * Revision 1.8  2004/11/23 17:40:16  ktr
  * COMPILES!!!
  *
@@ -43,8 +46,6 @@
  *
  *
  */
-#define NEW_INFO
-
 #include "rcopt.h"
 
 #include "globals.h"
@@ -117,7 +118,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMRCORefCountOpt( node *syntax_tree)
+ * @fn node *EMRCOdoRefCountOpt( node *syntax_tree)
  *
  * @brief starting point of Reference counting optimizations.
  *
@@ -127,11 +128,11 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-EMRCORefCountOpt (node *syntax_tree)
+EMRCOdoRefCountOpt (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("EMRCORefCountOpt");
+    DBUG_ENTER ("EMRCOdoRefCountOpt");
 
     DBUG_PRINT ("EMRCO", ("Starting Reference counting optimizations"));
 
