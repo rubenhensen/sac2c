@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.5  1996/09/11 06:22:51  cg
+ * Revision 1.6  1997/03/19 13:54:30  cg
+ * Converted  to single tmp directory tmp_dirname instaed of build_dirnameand
+ * store_dirname
+ *
+ * Revision 1.5  1996/09/11  06:22:51  cg
  * Modified construction of paths.
  * Now: 1. paths added by command line option, 2. cwd, 3.shell variable
  *
@@ -33,8 +37,7 @@
 
 typedef enum { PATH, MODDEC_PATH, MODIMP_PATH } pathkind;
 
-extern char store_dirname[];
-extern char build_dirname[];
+extern char *tmp_dirname;
 
 extern char *FindFile (pathkind p, char *name);
 extern void InitPaths ();
