@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.115  2004/11/26 11:56:41  sah
+ * *** empty log message ***
+ *
  * Revision 3.114  2004/11/23 22:22:03  sah
  * rewrite
  *
@@ -14,6 +17,7 @@
 
 #include "traverse.h"
 #include "traverse_tables.h"
+#include "traverse_helper.h"
 #include "globals.h"
 #include "internal_lib.h"
 #include "dbug.h"
@@ -34,7 +38,6 @@ TRAVdo (node *arg_node, info *arg_info)
 {
     int old_linenum = global.linenum;
     char *old_filename = global.filename;
-    node *result;
 
     DBUG_ENTER ("TRAVdo");
 
@@ -51,12 +54,30 @@ TRAVdo (node *arg_node, info *arg_info)
     global.linenum = NODE_LINE (arg_node);
     global.filename = NODE_FILE (arg_node);
 
-    result = (travstack->funs[NODE_TYPE (arg_node)]) (arg_node, arg_info);
+    if (pretable[NODE_TYPE (arg_node)] != NULL) {
+        arg_node = pretable[NODE_TYPE (arg_node)](arg_node, arg_info);
+    }
+
+    arg_node = (travstack->funs[NODE_TYPE (arg_node)]) (arg_node, arg_info);
+
+    if (posttable[NODE_TYPE (arg_node)] != NULL) {
+        arg_node = posttable[NODE_TYPE (arg_node)](arg_node, arg_info);
+    }
 
     global.linenum = old_linenum;
     global.filename = old_filename;
 
-    DBUG_RETURN (result);
+    DBUG_RETURN (arg_node);
+}
+
+node *
+TRAVcont (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("TRAVcont");
+
+    arg_node = TRAVsons (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
 }
 
 void

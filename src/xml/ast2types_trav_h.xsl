@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/11/26 12:00:48  sah
+  *** empty log message ***
+
   Revision 1.2  2004/11/23 19:51:59  sah
   adapted to new structure
 
@@ -44,8 +47,8 @@
   </xsl:template>
 
   <xsl:template match="phases" >
-    <xsl:value-of select="'typedef enum { TR_undefined'" />
-    <xsl:apply-templates />
+    <xsl:value-of select="'typedef enum { TR_undefined = 0'" />
+    <xsl:apply-templates select=".//traversal" />
     <xsl:value-of select="'} trav_t; '" />
   </xsl:template>
 
@@ -56,6 +59,8 @@
         <xsl:value-of select="@id" />
       </xsl:with-param>
     </xsl:call-template>
+    <xsl:value-of select="' = '" />
+    <xsl:value-of select="position()" />
   </xsl:template>
 
 </xsl:stylesheet>
