@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.22  1999/07/21 12:12:41  jhs
+ * Only Barriers FOLD, ONEFOLD, NONFOLD are used here
+ * (but the code has to be brushed up).
+ *
  * Revision 2.21  1999/07/21 12:05:59  sbs
  * Now, not needed index vectors (REFCNT == 0) will neither be
  * allocated nor updated nor de-allocated!
@@ -6843,10 +6847,14 @@ COMPSync (node *arg_node, node *arg_info)
     if (DFMTestMask (SYNC_INOUT (arg_node)) > 0) {
         if (DFMTestMask (SYNC_OUT (arg_node)) > 0) {
             if (DFMTestMask (SYNC_OUT (arg_node)) > 1) {
-                icm_name = "MT_SYNC_FOLD_NONFOLD";
+                /* icm_name = "MT_SYNC_FOLD_NONFOLD"; */
+                icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
+                icm_name = "MT_SYNC_FOLD";
             } else {
-                /* DFMTestMask( SYNC_OUT( arg_node)) == 1 */
-                icm_name = "MT_SYNC_ONEFOLD_NONFOLD";
+                /* DFMTestMask( SYNC_OUT( arg_node)) == 1  */
+                /* icm_name = "MT_SYNC_ONEFOLD_NONFOLD"; */
+                icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
+                icm_name = "MT_SYNC_FOLD";
             }
         } else {
             icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
