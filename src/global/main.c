@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.45  1995/06/02 09:53:31  sbs
+ * Revision 1.46  1995/06/02 16:42:22  sbs
+ * show_idx and sac_optimise inserted
+ *
+ * Revision 1.45  1995/06/02  09:53:31  sbs
  * -bs, -nopsiopt, -noIDE and PsiOpt call inserted
  *
  * Revision 1.44  1995/05/29  10:04:18  asi
@@ -173,6 +176,7 @@ FILE *outfile;
 char filename[MAX_FILE_NAME];
 
 int optimize = 1;
+int sac_optimize = 1;
 int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1, opt_inl = 1, opt_unr = 1;
 int optvar = 50;
 
@@ -180,6 +184,7 @@ int psi_optimize = 1;
 int psi_opt_ive = 1;
 
 int show_refcnt = 0;
+int show_idx = 0;
 int show_icm = 0;
 int traceflag = 0;
 
@@ -252,6 +257,7 @@ MAIN
             break;
         case 's':
             breakpsiopt = 1;
+            show_idx = 1;
             break;
         case 'r':
             breakref = 1;
@@ -320,6 +326,10 @@ MAIN
             opt_wr = 0;
         if (!strncmp (*argv, "opartial_dead_code_removal", 26))
             opt_wr = 0;
+        if (!strncmp (*argv, "oSACOPT", 7))
+            sac_optimize = 0;
+        if (!strncmp (*argv, "osacopt", 7))
+            sac_optimize = 0;
         if (!strncmp (*argv, "oOPT", 4))
             optimize = 0;
         if (!strncmp (*argv, "oopt", 4))
