@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.44  1999/08/04 14:30:39  bs
+ * Access macros NCODE_WLAA_xxx added.
+ *
  * Revision 2.43  1999/07/30 13:50:30  jhs
  * Deleted INFO_SPMDT_FIRSTOUT.
  *
@@ -1735,14 +1738,14 @@ extern node *MakeArray (node *aelems);
  ***
  ***  sons:
  ***
- ***    node*    NEXT  (O)  (N_vinfo)
+ ***    node*    NEXT     (O)  (N_vinfo)
  ***
  ***  permanent attributes:
  ***
  ***    useflag  FLAG
- ***    types*   TYPE   (O)
+ ***    types*   TYPE     (O)
  ***    node*    DOLLAR   (O)  (N_vinfo)
- ***    node*    VARDEC (O)  (N_vardec)
+ ***    node*    VARDEC   (O)  (N_vardec)
  ***
  ***/
 
@@ -2504,23 +2507,25 @@ extern node *MakeInfo ();
 #define INFO_WLAA_WLARRAY(n) (n->node[3])
 
 /* Tile Size Inference */
-#if 0
-/*  no longer used */
-#define INFO_TSI_LASTLETIDS(n) (n->info.ids)
+
 #define INFO_TSI_ACCESS(n) ((access_t *)(n->info2))
-#define INFO_TSI_FEATURE(n) ((feature_t) (n->lineno))
-#define INFO_TSI_WOTYPE(n) ((WithOpType) (n->varno))
-#define INFO_TSI_BELOWAP(n) (n->flag)
-#define INFO_TSI_WLLEVEL(n) (n->counter)
-#define INFO_TSI_INDEXVAR(n) (n->node[0])
-#define INFO_TSI_ACCESSVEC(n) ((shpseg *)(n->node[1]))
-#define INFO_TSI_TMPACCESS(n) ((access_t *)(n->node[2]))
+#define INFO_TSI_ACCESSCNT(n) (n->counter)
+#define INFO_TSI_ARRAYDIM(n) (n->int_data)
+#define INFO_TSI_MINLINE(n) (n->flag)
+#define INFO_TSI_MAXLINE(n) (n->refcnt)
+#define INFO_TSI_FEATURE(n) (n->varno)
+#define INFO_TSI_ARRAYSHP(n) ((shpseg *)(n->node[0]))
+#define INFO_TSI_BLOCKSHP(n) ((shpseg *)(n->node[1]))
 #define INFO_TSI_WLARRAY(n) (n->node[3])
-#endif
+#define INFO_TSI_CACHEPARAM(n) ((int *)(n->node[4]))
+#define INFO_TSI_CACHESIZE(n) ((int *)(n->node[4]))[0]
+#define INFO_TSI_LINESIZE(n) ((int *)(n->node[4]))[1]
+#define INFO_TSI_DATATYPE(n) ((int *)(n->node[4]))[2]
 
 #define INFO_SPMDO_LASTASSIGN(n) (n->node[0])
 #define INFO_SPMDO_THISASSIGN(n) (n->node[1])
 #define INFO_SPMDO_NEXTASSIGN(n) (n->node[2])
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -2818,25 +2823,31 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***
  ***  sons:
  ***
- ***    node*     CBLOCK    (O) (N_block)
- ***    node*     CEXPR         ("N_expr")
- ***    node*     NEXT      (O) (N_exprs)
+ ***    node*      CBLOCK    (O) (N_block)
+ ***    node*      CEXPR         ("N_expr")
+ ***    node*      NEXT      (O) (N_exprs)
  ***
  ***  permanent attributes:
  ***
- ***    int       USED       (number of times this code is used)
+ ***    int        USED       (number of times this code is used)
  ***
  ***  temporary attributes:
  ***
- ***    int       NO         (unambiguous number for PrintNwith2())
+ ***    int        NO         (unambiguous number for PrintNwith2())
  ***                                      (precompile -> )
- ***    long*     MASK                    (optimize -> )
- ***    node *    USE         (N_vinfo)   (IVE -> )
- ***    int       FLAG                    (WLI -> WLF)
- ***    node*     COPY                    ( -> DupTree )
- ***    ids*      INC_RC_IDS              (refcount -> compile )
- ***    feature_t FEATURE                 (tsi -> )
- ***    access_t* ACCESS                  (tsi -> )
+ ***    long*      MASK                    (optimize -> )
+ ***    node *     USE         (N_vinfo)   (IVE -> )
+ ***    int        FLAG                    (WLI -> WLF)
+ ***    node*      COPY                    ( -> DupTree )
+ ***    ids*       INC_RC_IDS              (refcount -> compile )
+ ***
+ ***    node*      WLAA_INFO(n)            (wlaa -> )
+ ***    access_t*  WLAA_ACCESS             (wlaa -> )
+ ***    int        WLAA_ACCESSCNT(n)       (wlaa -> )
+ ***    int        WLAA_ARRAYDIM(n)        (wlaa -> )
+ ***    feature_t* WLAA_FEATURE            (wlaa -> )
+ ***    shpseg*    WLAA_ARRAYSHP(n)        (wlaa -> )
+ ***    node*      WLAA_WLARRAY(n)         (wlaa -> )
  ***
  ***  remarks:
  ***
@@ -2857,7 +2868,7 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    ACCESS is a list of array accesses.
  ***    Both FEATURE and ACCESS are used for the tile size inference scheme.
  ***
- ***    ACCESSNO is the number of array accesses stored in ACCESS.
+ ***    ACCESCNT is the number of array accesses stored in ACCESS.
  ***/
 
 extern node *MakeNCode (node *block, node *expr);
@@ -2872,9 +2883,14 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_MASK(n, x) (n->mask[x])
 #define NCODE_NO(n) (n->refcnt)
 #define NCODE_FLAG(n) (n->flag)
-#define NCODE_FEATURE(n) ((feature_t) (n->varno))
-#define NCODE_ACCESS(n) ((access_t *)(n->info2))
-#define NCODE_ACCESSNO(n) (n->counter)
+
+#define NCODE_WLAA_INFO(n) ((node *)n->info2)
+#define NCODE_WLAA_ACCESS(n) ((access_t *)(((node *)n->info2)->info2))
+#define NCODE_WLAA_ACCESSCNT(n) (((node *)n->info2)->counter)
+#define NCODE_WLAA_ARRAYDIM(n) (((node *)n->info2)->int_data)
+#define NCODE_WLAA_FEATURE(n) (((node *)n->info2)->varno)
+#define NCODE_WLAA_ARRAYSHP(n) ((shpseg *)(((node *)n->info2)->node[0]))
+#define NCODE_WLAA_WLARRAY(n) (((node *)n->info2)->node[3])
 
 /*--------------------------------------------------------------------------*/
 
