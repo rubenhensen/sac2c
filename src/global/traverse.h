@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/10 10:55:25  bs
+ *  tsi_tab renamed to wlaa_tab
+ *
  * Revision 2.1  1999/02/23 12:39:47  sacbase
  * new release made
  *
@@ -228,7 +231,7 @@ extern funptr o2nWith_tab[];
 extern funptr sched_tab[];
 extern funptr conc_tab[];
 extern funptr opt_tab[];
-extern funptr tsi_tab[];
+extern funptr wlaa_tab[];
 
 extern int nnode[];
 
