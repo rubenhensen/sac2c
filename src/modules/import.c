@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/08/24 14:17:09  cg
+ * Revision 1.18  1995/08/28 16:15:00  cg
+ * Bugs in GenLinkerList fixed.
+ *
+ * Revision 1.17  1995/08/24  14:17:09  cg
  * GenLinkerlist modified.
  * GenExtmodlist added.
  *
@@ -1624,10 +1627,11 @@ GenLinkerList ()
                 tmp = tmp->next;
             }
         }
+        modp = modp->next;
     }
 
     while (linklist != NULL) {
-        strcpy (buffer, modp->name);
+        strcpy (buffer, linklist->name);
         strcat (buffer, ".o");
         file = FindFile (MODIMP_PATH, buffer);
 
