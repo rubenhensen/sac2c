@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.18  1999/07/20 08:00:44  cg
+ * Bug in consistency check fixed: Combination of -mt and -cs
+ * now checked correctly.
+ *
  * Revision 2.17  1999/07/20 07:53:42  cg
  * Added global variable malloc_align_step.
  *
