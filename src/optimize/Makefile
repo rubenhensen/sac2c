@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.40  2005/02/14 11:20:52  cg
+# Added compilation of inlining.c
+#
 # Revision 3.39  2005/02/02 18:08:14  mwe
 # signature_simplification added
 #
@@ -40,7 +43,7 @@ OBJS := optimize.o Inline.o DeadFunctionRemoval.o \
         SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o \
         UndoElimSubDiv.o ElimSubDiv.o \
         ConstVarPropagation.o DistributiveLaw.o type_upgrade.o \
-        signature_simplification.o
+        signature_simplification.o inlining.o
 
 all: $(OBJS)
 
