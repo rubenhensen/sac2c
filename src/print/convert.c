@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/11/06 18:44:45  cg
+ * Revision 1.14  1996/01/16 16:57:00  cg
+ * extended macro TYP_IF to 5 entries
+ *
+ * Revision 1.13  1995/11/06  18:44:45  cg
  * bug fixed in writing reference parameters.
  *
  * Revision 1.12  1995/10/31  08:56:18  cg
@@ -60,7 +63,7 @@
 #define INT_STRING_LENGTH 16 /* dimension of array of char */
 
 /* strings for primitve types */
-#define TYP_IF(n, d, p, f) p
+#define TYP_IF(n, d, p, f, sz) p
 
 char *type_string[] = {
 #include "type_info.mac"
@@ -68,7 +71,7 @@ char *type_string[] = {
 #undef TYP_IF
 
 /* strings for primitve types used for renaming of functions*/
-#define TYP_IF(n, d, p, f) f
+#define TYP_IF(n, d, p, f, sz) f
 
 char *rename_type[] = {
 #include "type_info.mac"

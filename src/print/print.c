@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.107  1996/01/10 15:13:48  cg
+ * Revision 1.108  1996/01/16 16:57:00  cg
+ * extended macro TYP_IF to 5 entries
+ *
+ * Revision 1.107  1996/01/10  15:13:48  cg
  * now at least one newline is printed after vardecs
  *
  * Revision 1.106  1996/01/09  08:54:58  cg
@@ -625,6 +628,11 @@ PrintTypedef (node *arg_node, node *arg_info)
         fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
     fprintf (outfile, "%s;\n", arg_node->info.types->id);
 
+    if (TYPEDEF_COPYFUN (arg_node) != NULL) {
+        fprintf (outfile, "\nextern void *%s(void *);\n", TYPEDEF_COPYFUN (arg_node));
+        fprintf (outfile, "extern void %s(void *);\n\n", TYPEDEF_FREEFUN (arg_node));
+    }
+
     if (1 == arg_node->nnode)
         Trav (arg_node->node[0], arg_info); /* traverse next typedef/fundef */
 
@@ -989,8 +997,13 @@ PrintArg (node *arg_node, node *arg_info)
     fprintf (outfile, "%s",
              Type2String (arg_node->info.types, (arg_info == NULL) ? 0 : 1));
 
-    if (arg_node->node[2] && show_idx)
+    if ((0 != show_refcnt) || (-1 != ARG_REFCNT (arg_node))) {
+        fprintf (outfile, ":%d", ARG_REFCNT (arg_node));
+    }
+
+    if (arg_node->node[2] && show_idx) {
         Trav (arg_node->node[2], arg_info);
+    }
 
     if (1 == arg_node->nnode) {
         fprintf (outfile, ", ");
@@ -1566,45 +1579,40 @@ Print (node *arg_node)
         NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
     }
 
-    if (show_icm == 0) {
-        if (traceflag != 0) {
-            fprintf (outfile, "#include <stdio.h>\n");
-            fprintf (outfile, "\nchar __trace_buffer[128];\n\n");
-            if (traceflag & TRACE_MEM) {
-                fprintf (outfile, "#define TRACE_MEM\n");
-                fprintf (outfile, "\nint __trace_mem_cnt=0;\n\n");
-            }
-            if (traceflag & TRACE_REF)
-                fprintf (outfile, "#define TRACE_REF\n");
-        }
-        fprintf (outfile, "#include \"icm2c.h\"\n");
-    }
-
     /*
-      if(show_icm == 0)
-      {
-        if(traceflag != 0 )
-        {
-          if(traceflag & TRACE_MEM)
-          {
+      if(show_icm == 0) {
+        if(traceflag != 0 ) {
+          fprintf(outfile,"#include <stdio.h>\n");
+          fprintf(outfile,"\nchar __trace_buffer[128];\n\n");
+          if(traceflag & TRACE_MEM) {
             fprintf(outfile,"#define TRACE_MEM\n");
             fprintf(outfile,"\nint __trace_mem_cnt=0;\n\n");
           }
           if(traceflag & TRACE_REF)
-          {
             fprintf(outfile,"#define TRACE_REF\n");
-          }
         }
-
-        if (check_malloc)
-        {
-          fprintf(outfile, "#define CHECK_MALLOC\n");
-        }
-
-        fprintf(outfile,"#include \"libsac.h\"\n");
         fprintf(outfile,"#include \"icm2c.h\"\n");
       }
     */
+
+    if (show_icm == 0) {
+        if (traceflag != 0) {
+            if (traceflag & TRACE_MEM) {
+                fprintf (outfile, "#define TRACE_MEM\n");
+            }
+
+            if (traceflag & TRACE_REF) {
+                fprintf (outfile, "#define TRACE_REF\n");
+            }
+        }
+
+        if (check_malloc) {
+            fprintf (outfile, "#define CHECK_MALLOC\n");
+        }
+
+        fprintf (outfile, "#include \"libsac.h\"\n");
+        fprintf (outfile, "#include \"icm2c.h\"\n");
+    }
 
     arg_node = Trav (arg_node, NULL);
 
