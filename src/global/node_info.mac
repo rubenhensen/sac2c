@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.156  1998/03/03 21:22:37  dkr
+ * added print-routines for N_Nwith2, ...
+ *
  * Revision 1.155  1998/03/03 19:39:02  dkr
  * renamed N_WLindex to N_WLproj
  *
@@ -859,29 +862,29 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        ACTNcode, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
-  NIF (N_Nwith2, "N_Nwith2", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, CompNwith2, TravSons, TravSons, TravSons,
+  NIF (N_Nwith2, "N_Nwith2", TravSons, TravSons, PrintNwith2, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, CompNwith2, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 4),
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 4),
 
-  NIF (N_WLseg, "N_WLseg", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+  NIF (N_WLseg, "N_WLseg", TravSons, TravSons, PrintWLseg, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
-  NIF (N_WLproj, "N_WLproj", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+  NIF (N_WLproj, "N_WLproj", TravSons, TravSons, PrintWLproj, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 5),
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 5),
 
-  NIF (N_WLgrid, "N_WLgrid", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+  NIF (N_WLgrid, "N_WLgrid", TravSons, TravSons, PrintWLgrid, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 4),
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 4),
 
   /* ATTENTION !!!! N_ok has to be the last node declared here;
    *                otherwise a DBUG_ASSERT in traverse.c: Trav will
