@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/05/05 14:05:15  sbs
+ * Now, the error-message "points" to the beginning of the offending
+ * token rather than it's last char!
+ *
  * Revision 2.7  1999/05/05 13:51:35  sbs
  * declared charpos and linebuf_ptr external and changed yyerror so that MUCH better
  * error reports are made
@@ -2722,7 +2726,8 @@ int yyerror(char *errname)
   int offset=0;
   int size_of_output;
   
-  ERROR( linenum, ("%s at pos %d '%s`", errname, charpos, yytext));
+  charpos -= (strlen(yytext)-1);
+  ERROR( linenum, ("%s at pos %d: '%s`", errname, charpos, yytext));
   size_of_output = MAX_LINE_LENGTH -
                    (((verbose_level>1)?2:0) + strlen(filename)
                     + NumberOfDigits(linenum) + 9 );
