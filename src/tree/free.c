@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2002/08/09 16:36:21  sbs
+ * basic support for N_mop written.
+ *
  * Revision 3.37  2002/07/04 11:26:25  dkr
  * FreeOneTypes: comment modified
  *
@@ -1377,6 +1380,28 @@ FreeAp (node *arg_node, node *arg_info)
             }
         }
     }
+
+    DBUG_PRINT ("FREE", ("Removing N_ap node ..."));
+
+    arg_node = Free (arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeMop (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("FreeMop");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_mop node %s ...", AP_NAME (arg_node)));
+
+    AP_ARGS (arg_node) = FREETRAV (AP_ARGS (arg_node));
+    AP_NAME (arg_node) = Free (AP_NAME (arg_node));
+#if FREE_MODNAMES
+    AP_MOD (arg_node) = Free (AP_MOD (arg_node));
+#endif
 
     DBUG_PRINT ("FREE", ("Removing N_ap node ..."));
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2002/08/09 16:36:21  sbs
+ * basic support for N_mop written.
+ *
  * Revision 3.23  2002/07/02 09:27:43  dkr
  * DupExprs_NT() added
  *
@@ -156,6 +159,7 @@ extern node *DupAssign (node *arg_node, node *arg_info);
 extern node *DupEmpty (node *arg_node, node *arg_info);
 extern node *DupPrf (node *arg_node, node *arg_info);
 extern node *DupAp (node *arg_node, node *arg_info);
+extern node *DupMop (node *arg_node, node *arg_info);
 extern node *DupEmpty (node *arg_node, node *arg_info);
 extern node *DupModul (node *arg_node, node *arg_info);
 extern node *DupFundef (node *arg_node, node *arg_info);

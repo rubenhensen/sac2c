@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2002/08/09 16:36:21  sbs
+ * basic support for N_mop written.
+ *
  * Revision 3.61  2002/08/09 12:21:05  sbs
  * MakeIdFromIds added .
  *
@@ -1014,6 +1017,29 @@ MakeAp (char *name, char *mod, node *args)
 
     AP_ATFLAG (tmp) = 0;
     AP_ARGTAB (tmp) = NULL;
+
+    DBUG_PRINT ("MAKE",
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeMop (char *name, char *mod, node *arg1, node *arg2)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeMop");
+
+    tmp = CreateCleanNode (N_mop);
+
+    MOP_NAME (tmp) = name;
+    MOP_MOD (tmp) = mod;
+    MOP_FIX (tmp) = FALSE;
+    MOP_ARG1 (tmp) = arg1;
+    MOP_ARG2 (tmp) = arg2;
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));

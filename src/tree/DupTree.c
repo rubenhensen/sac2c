@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2002/08/09 16:36:21  sbs
+ * basic support for N_mop written.
+ *
  * Revision 3.66  2002/07/03 16:55:16  dkr
  * ID_UNQCONV removed for TAGGED_ARRAYS
  *
@@ -1474,6 +1477,26 @@ DupAp (node *arg_node, node *arg_info)
             }
         }
     }
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupMop (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupMop");
+
+    DBUG_PRINT ("DUP", ("duplicating multi operation %s ...", MOP_NAME (arg_node)));
+
+    new_node = MakeMop (StringCopy (MOP_NAME (arg_node)), StringCopy (MOP_MOD (arg_node)),
+                        DUPTRAV (MOP_ARG1 (arg_node)), DUPTRAV (MOP_ARG2 (arg_node)));
+    MOP_FIX (new_node) = MOP_FIX (arg_node);
+
+    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }

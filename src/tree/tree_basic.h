@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.141  2002/08/09 16:36:21  sbs
+ * basic support for N_mop written.
+ *
  * Revision 3.140  2002/08/09 12:46:47  dkr
  * INFO_RC_... macros moved to refcount.c
  * INFO_COMP_... macros moved to compile.c
@@ -1617,6 +1620,34 @@ extern node *MakeAp (char *name, char *mod, node *args);
 #define AP_ARGS(n) (n->node[0])
 #define AP_FUNDEF(n) (n->node[1])
 #define AP_ARGTAB(n) ((argtab_t *)(n->dfmask[4]))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_mop :
+ ***
+ ***  sons:
+ ***
+ ***    node*      ARG1    (O)  ("N_expr")
+ ***    node*      ARG2    (O)  ("N_expr")
+ ***
+ ***  permanent attributes:
+ ***
+ ***    char*      NAME
+ ***    char*      MOD     (O)
+ ***    bool       FIX
+ ***
+ ***  temporary attributes:
+ ***
+ ***/
+
+extern node *MakeMop (char *name, char *mod, node *arg1, node *arg2);
+
+#define MOP_NAME(n) (n->info.fun_name.id)
+#define MOP_MOD(n) (n->info.fun_name.id_mod)
+#define MOP_FIX(n) ((bool)(n->flag))
+#define MOP_ARG1(n) (n->node[0])
+#define MOP_ARG2(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 

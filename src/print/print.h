@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/08/09 16:36:21  sbs
+ * basic support for N_mop written.
+ *
  * Revision 3.17  2002/08/09 14:11:31  dkr
  * signature of PrintFunctionHeader modified
  *
@@ -108,6 +111,7 @@ extern node *PrintCast (node *arg_node, node *arg_info);
 extern node *PrintLet (node *arg_node, node *arg_info);
 extern node *PrintPrf (node *arg_node, node *arg_info);
 extern node *PrintAp (node *arg_node, node *arg_info);
+extern node *PrintMop (node *arg_node, node *arg_info);
 extern node *PrintEmpty (node *arg_node, node *arg_info);
 extern node *PrintArray (node *arg_node, node *arg_info);
 extern node *PrintExprs (node *arg_node, node *arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.110  2002/08/09 16:36:21  sbs
+ * basic support for N_mop written.
+ *
  * Revision 3.109  2002/08/09 14:11:03  dkr
  * printing of wrapper functions with non-empty body added
  *
@@ -2257,6 +2260,42 @@ PrintAp (node *arg_node, node *arg_info)
     }
 
     fprintf (outfile, ")");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PrintMop( node  *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PrintMop (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintMop");
+
+    if (MOP_FIX (arg_node)) {
+        fprintf (outfile, "(");
+    }
+
+    Trav (MOP_ARG1 (arg_node), arg_info);
+
+    if (MOP_MOD (arg_node) != NULL) {
+        fprintf (outfile, " %s:%s ", MOP_MOD (arg_node), MOP_NAME (arg_node));
+    } else {
+        fprintf (outfile, " %s ", MOP_NAME (arg_node));
+    }
+
+    Trav (MOP_ARG2 (arg_node), arg_info);
+
+    if (MOP_FIX (arg_node)) {
+        fprintf (outfile, ")");
+    }
 
     DBUG_RETURN (arg_node);
 }

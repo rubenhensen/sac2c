@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/08/09 16:36:21  sbs
+ * basic support for N_mop written.
+ *
  * Revision 3.16  2002/06/25 13:55:51  sbs
  * FreeDot added.
  *
@@ -120,6 +123,7 @@ extern node *FreeCond (node *arg_node, node *arg_info);
 extern node *FreeDo (node *arg_node, node *arg_info);
 extern node *FreeWhile (node *arg_node, node *arg_info);
 extern node *FreeAp (node *arg_node, node *arg_info);
+extern node *FreeMop (node *arg_node, node *arg_info);
 extern node *FreeExprs (node *arg_node, node *arg_info);
 extern node *FreeArray (node *arg_node, node *arg_info);
 extern node *FreeVinfo (node *arg_node, node *arg_info);
