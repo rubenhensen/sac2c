@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2002/08/07 09:50:31  sbs
+ * now, there is a life behind the new type checker....8-)
+ *
  * Revision 3.42  2002/08/03 01:16:36  dkr
  * *very* dirty hack for TAGGED_ARRAYS
  *
@@ -3239,137 +3242,136 @@ Typecheck (node *arg_node)
 #endif
 
     if (sbs == 1) {
-        NewTypeCheck (arg_node);
-        Print (arg_node);
-        exit (0);
-    }
+        arg_node = NewTypeCheck (arg_node);
+    } else {
 
-    /*
-     * generate a table of primitive functions to look up their
-     * types later on
-     */
-    InitPrimFunTab ();
+        /*
+         * generate a table of primitive functions to look up their
+         * types later on
+         */
+        InitPrimFunTab ();
 
-    act_tab = type_tab;
+        act_tab = type_tab;
 
-    stack = (stack_elem *)Malloc (sizeof (stack_elem) * LOCAL_STACK_SIZE);
-    stack_limit = LOCAL_STACK_SIZE + stack;
-    DBUG_PRINT ("TYPE", ("local stack from " F_PTR "to " F_PTR, stack, stack_limit));
-    tos = stack;
+        stack = (stack_elem *)Malloc (sizeof (stack_elem) * LOCAL_STACK_SIZE);
+        stack_limit = LOCAL_STACK_SIZE + stack;
+        DBUG_PRINT ("TYPE", ("local stack from " F_PTR "to " F_PTR, stack, stack_limit));
+        tos = stack;
 
-    pseudo_fold_fundefs = NULL;
-    module_name = MODUL_NAME (arg_node);
-    object_table = MODUL_OBJS (arg_node);
+        pseudo_fold_fundefs = NULL;
+        module_name = MODUL_NAME (arg_node);
+        object_table = MODUL_OBJS (arg_node);
 
-    if (MODUL_TYPES (arg_node) != NULL) {
-        type_table = InitTypeTab (arg_node);
-    }
+        if (MODUL_TYPES (arg_node) != NULL) {
+            type_table = InitTypeTab (arg_node);
+        }
 
-    /*
-     *  The following lines start the traversal mechanism for object
-     *  definitions. The given types will be looked for in the
-     *  type table and name clashes with user-defined types, functions or
-     *  other global objects will be detected.
-     *
-     *  prerequisite:  stack != NULL
-     */
-    if (MODUL_OBJS (arg_node) != NULL) {
-        MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), NULL);
-    }
+        /*
+         *  The following lines start the traversal mechanism for object
+         *  definitions. The given types will be looked for in the
+         *  type table and name clashes with user-defined types, functions or
+         *  other global objects will be detected.
+         *
+         *  prerequisite:  stack != NULL
+         */
+        if (MODUL_OBJS (arg_node) != NULL) {
+            MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), NULL);
+        }
 
-    ABORT_ON_ERROR;
+        ABORT_ON_ERROR;
 
-    if (MODUL_FUNS (arg_node) != NULL) {
-        InitFunTable (MODUL_FUNS (arg_node));
+        if (MODUL_FUNS (arg_node) != NULL) {
+            InitFunTable (MODUL_FUNS (arg_node));
 
-        /*  ABORT_ON_ERROR;  */
+            /*  ABORT_ON_ERROR;  */
 
-        /* traverse main function */
-        tmp_node = LookupFun ("main", NULL, NULL);
+            /* traverse main function */
+            tmp_node = LookupFun ("main", NULL, NULL);
 
-        if (MODUL_FILETYPE (arg_node) == F_prog) {
-            if (NULL == tmp_node) {
-                SYSABORT (("SAC program has no function 'main`"));
-            }
+            if (MODUL_FILETYPE (arg_node) == F_prog) {
+                if (NULL == tmp_node) {
+                    SYSABORT (("SAC program has no function 'main`"));
+                }
 
-            kind_of_file = SAC_PRG;
-            tmp_node->tag = CHECKING; /* set tag, because function will be checked */
-            Trav (tmp_node->node, NULL);
+                kind_of_file = SAC_PRG;
+                tmp_node->tag = CHECKING; /* set tag, because function will be checked */
+                Trav (tmp_node->node, NULL);
 
-            /* now check the type of "fastchecked" functions */
-            MODUL_FUNS (arg_node) = CheckRest (MODUL_FUNS (arg_node), SAC_PRG);
-        } else {
-            fun_tab_elem *fun_p;
-            kind_of_file = SAC_MOD;
+                /* now check the type of "fastchecked" functions */
+                MODUL_FUNS (arg_node) = CheckRest (MODUL_FUNS (arg_node), SAC_PRG);
+            } else {
+                fun_tab_elem *fun_p;
+                kind_of_file = SAC_MOD;
 
-            if (tmp_node != NULL) {
-                ABORT (NODE_LINE (tmp_node->node),
-                       ("Function 'main' not allowed in module/class implementations"));
-            }
+                if (tmp_node != NULL) {
+                    ABORT (NODE_LINE (tmp_node->node), ("Function 'main' not allowed in "
+                                                        "module/class implementations"));
+                }
 
-            for (fun_p = fun_table; !END_OF_FUN_TAB (fun_p);
-                 fun_p = NEXT_FUN_TAB_ELEM (fun_p)) {
-                DBUG_ASSERT ((N_fundef == NODE_TYPE (fun_p->node)),
-                             "wrong node in fun_table");
-                if ((FUNDEF_BODY (fun_p->node) != NULL)
-                    && (FUNDEF_STATUS (fun_p->node) != ST_imported_mod)
-                    && (FUNDEF_STATUS (fun_p->node) != ST_imported_class)
-                    && (FUNDEF_STATUS (fun_p->node) != ST_foldfun)) {
+                for (fun_p = fun_table; !END_OF_FUN_TAB (fun_p);
+                     fun_p = NEXT_FUN_TAB_ELEM (fun_p)) {
+                    DBUG_ASSERT ((N_fundef == NODE_TYPE (fun_p->node)),
+                                 "wrong node in fun_table");
+                    if ((FUNDEF_BODY (fun_p->node) != NULL)
+                        && (FUNDEF_STATUS (fun_p->node) != ST_imported_mod)
+                        && (FUNDEF_STATUS (fun_p->node) != ST_imported_class)
+                        && (FUNDEF_STATUS (fun_p->node) != ST_foldfun)) {
 
-                    if (!(((generatelibrary & GENERATELIBRARY_C)
-                           && ((FUNDEF_ATTRIB (fun_p->node) == ST_shp_indep)
-                               || (FUNDEF_ATTRIB (fun_p->node) == ST_dim_indep)
-                               || (FUNDEF_ATTRIB (fun_p->node) == ST_generic))))) {
-                        /*
-                         * When typechecking a module/class implementation, we cannot
-                         * simply start with the main function. Aleternatively, each
-                         * function that is actually implemented in this module and not
-                         * imported from another one, is tagged PLEASE_CHECK and thereby
-                         * acts as starting point for typechecking.
-                         */
-                        fun_p->tag = PLEASE_CHECK;
+                        if (!(((generatelibrary & GENERATELIBRARY_C)
+                               && ((FUNDEF_ATTRIB (fun_p->node) == ST_shp_indep)
+                                   || (FUNDEF_ATTRIB (fun_p->node) == ST_dim_indep)
+                                   || (FUNDEF_ATTRIB (fun_p->node) == ST_generic))))) {
+                            /*
+                             * When typechecking a module/class implementation, we cannot
+                             * simply start with the main function. Aleternatively, each
+                             * function that is actually implemented in this module and
+                             * not imported from another one, is tagged PLEASE_CHECK and
+                             * thereby acts as starting point for typechecking.
+                             */
+                            fun_p->tag = PLEASE_CHECK;
 
-                        DBUG_PRINT ("CHECK", ("function %s has tag :%s", fun_p->id,
-                                              CHECK_NAME (fun_p->tag)));
-                    } else {
-                        fun_p->tag = IS_CHECKED;
-                        FUNDEF_STATUS (fun_p->node) = ST_ignore;
-                        /*
-                         * generic functions in modules compiled for a c-library must not
-                         * be checked. There may be a conflict between specialized and
-                         * generic versions the typchechecker cannot resolve. So these
-                         * fundefs are tagged as CHECKED and marked to be ignored in the
-                         * further compiling steps
-                         */
+                            DBUG_PRINT ("CHECK", ("function %s has tag :%s", fun_p->id,
+                                                  CHECK_NAME (fun_p->tag)));
+                        } else {
+                            fun_p->tag = IS_CHECKED;
+                            FUNDEF_STATUS (fun_p->node) = ST_ignore;
+                            /*
+                             * generic functions in modules compiled for a c-library must
+                             * not be checked. There may be a conflict between specialized
+                             * and generic versions the typchechecker cannot resolve. So
+                             * these fundefs are tagged as CHECKED and marked to be
+                             * ignored in the further compiling steps
+                             */
+                        }
                     }
                 }
+
+                MODUL_FUNS (arg_node) = CheckRest (MODUL_FUNS (arg_node), SAC_MOD);
             }
 
-            MODUL_FUNS (arg_node) = CheckRest (MODUL_FUNS (arg_node), SAC_MOD);
+            stack = Free (stack);
+        } else {
+            if (MODUL_FILETYPE (arg_node) == F_prog) {
+                SYSABORT (("SAC program has no function 'main`"));
+            }
         }
 
-        stack = Free (stack);
-    } else {
-        if (MODUL_FILETYPE (arg_node) == F_prog) {
-            SYSABORT (("SAC program has no function 'main`"));
+        /*
+         * Prepand pseudo-fold-fundefs to the olf fundefs.
+         * This makes sure that these dummy-funs will be compiled before any other
+         * function!
+         */
+        if (pseudo_fold_fundefs != NULL) {
+            tmp = pseudo_fold_fundefs;
+            while (FUNDEF_NEXT (tmp) != NULL) {
+                tmp = FUNDEF_NEXT (tmp);
+            }
+            FUNDEF_NEXT (tmp) = MODUL_FUNS (arg_node);
+            MODUL_FUNS (arg_node) = pseudo_fold_fundefs;
         }
+
+        MODUL_FUNS (arg_node) = TypecheckFunctionDeclarations (MODUL_FUNS (arg_node));
     }
-
-    /*
-     * Prepand pseudo-fold-fundefs to the olf fundefs.
-     * This makes sure that these dummy-funs will be compiled before any other
-     * function!
-     */
-    if (pseudo_fold_fundefs != NULL) {
-        tmp = pseudo_fold_fundefs;
-        while (FUNDEF_NEXT (tmp) != NULL) {
-            tmp = FUNDEF_NEXT (tmp);
-        }
-        FUNDEF_NEXT (tmp) = MODUL_FUNS (arg_node);
-        MODUL_FUNS (arg_node) = pseudo_fold_fundefs;
-    }
-
-    MODUL_FUNS (arg_node) = TypecheckFunctionDeclarations (MODUL_FUNS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
