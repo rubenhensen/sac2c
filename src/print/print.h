@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/12 12:16:54  dkr
+ * nodes N_pre, N_post, N_inc, N_dec removed
+ *
  * Revision 3.2  2000/12/06 11:43:11  dkr
  * PrintTravPre, PrintTravPost added
  *
@@ -193,10 +196,6 @@ extern node *PrintFor (node *arg_node, node *arg_info);
 extern node *PrintEmpty (node *arg_node, node *arg_info);
 extern node *PrintCond (node *arg_node, node *arg_info);
 extern node *PrintArray (node *arg_node, node *arg_info);
-extern node *PrintInc (node *arg_node, node *arg_info);
-extern node *PrintDec (node *arg_node, node *arg_info);
-extern node *PrintPost (node *arg_node, node *arg_info);
-extern node *PrintPre (node *arg_node, node *arg_info);
 extern node *PrintIcm (node *arg_node, node *arg_info);
 extern node *PrintVectInfo (node *arg_node, node *arg_info);
 extern node *PrintPragma (node *arg_node, node *arg_info);
