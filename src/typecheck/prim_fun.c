@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/02/23 18:04:22  sbs
+ * extended for negative take's and drop's in genarray
+ *
  * Revision 3.3  2001/02/02 10:29:53  dkr
  * superfluous include of access_macros.h removed
  *
@@ -995,8 +998,8 @@ TakeV (node *vec, types *vec_type, types *array)
 
             /* check weather entries in 1) are ok */
             while ((NULL != tmp) && (1 == ok) && (dim2 < TYPES_DIM (array_btype))) {
-                if ((NUM_VAL (EXPRS_EXPR (tmp)) > TYPES_SHAPE (array_btype, dim2))
-                    || (0 >= NUM_VAL (EXPRS_EXPR (tmp)))) {
+                if ((abs (NUM_VAL (EXPRS_EXPR (tmp)))
+                     > TYPES_SHAPE (array_btype, dim2)) /* SBS hack for ng take */) {
                     ok = 0;
                 } else {
                     tmp = EXPRS_NEXT (tmp);
@@ -1014,7 +1017,7 @@ TakeV (node *vec, types *vec_type, types *array)
                 /*  compute resulting shape */
                 for (i = 0; i < TYPES_DIM (array_btype); i++) {
                     if (i < dim2) {
-                        TYPES_SHAPE (ret_type, i) = NUM_VAL (EXPRS_EXPR (tmp));
+                        TYPES_SHAPE (ret_type, i) = abs (NUM_VAL (EXPRS_EXPR (tmp)));
                         tmp = EXPRS_NEXT (tmp);
                     } else {
                         TYPES_SHAPE (ret_type, i) = TYPES_SHAPE (array_btype, i);
@@ -1074,7 +1077,9 @@ TakeV (node *vec, types *vec_type, types *array)
 
                 /* check weather the entries in 1) are ok */
                 for (i = 0; i < dim2; i++) {
-                    if ((tmp2[i] >= 0) && (tmp2[i] <= TYPES_SHAPE (array_btype, i))) {
+                    if (((tmp2[i] >= 0)
+                         || (tmp2[i] < 0)) /* dirty hack of SBS to allow for neg take's */
+                        && (abs (tmp2[i]) <= TYPES_SHAPE (array_btype, i))) {
                         ok = 1;
                     } else {
                         ok = 0;
@@ -1090,7 +1095,7 @@ TakeV (node *vec, types *vec_type, types *array)
                     /* compute resulting shape */
                     for (i = 0; i < TYPES_DIM (array_btype); i++) {
                         if (i < dim2)
-                            TYPES_SHAPE (ret_type, i) = tmp2[i];
+                            TYPES_SHAPE (ret_type, i) = abs (tmp2[i]);
                         else
                             TYPES_SHAPE (ret_type, i) = TYPES_SHAPE (array_btype, i);
                     }
@@ -1191,8 +1196,10 @@ DropV (node *vec, types *vec_type, types *array)
 
             /* check weather the entries in 1) are ok */
             while ((tmp != NULL) && (ok == 1) && (dim2 < TYPES_DIM (array_btype))) {
-                if ((NUM_VAL (EXPRS_EXPR (tmp)) < TYPES_SHAPE (array_btype, dim2))
-                    && (NUM_VAL (EXPRS_EXPR (tmp)) >= 0)) {
+                if ((abs (NUM_VAL (EXPRS_EXPR (tmp))) <= TYPES_SHAPE (array_btype, dim2))
+                    && ((NUM_VAL (EXPRS_EXPR (tmp)) >= 0)
+                        || (NUM_VAL (EXPRS_EXPR (tmp))
+                            < 0))) { /* dirty hack of SBS: allow for neg drops! */
                     dim2++;
                     tmp = EXPRS_NEXT (tmp);
                 } else {
@@ -1210,7 +1217,8 @@ DropV (node *vec, types *vec_type, types *array)
                 for (i = 0; i < TYPES_DIM (array_btype); i++) {
                     if (i < dim2) {
                         SHAPES_SELEMS (ret_type)
-                        [i] = SHAPES_SELEMS (array_btype)[i] - NUM_VAL (EXPRS_EXPR (tmp));
+                        [i] = SHAPES_SELEMS (array_btype)[i]
+                              - abs (NUM_VAL (EXPRS_EXPR (tmp)));
                         tmp = EXPRS_NEXT (tmp);
                     } else {
                         SHAPES_SELEMS (ret_type)[i] = SHAPES_SELEMS (array_btype)[i];

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.6  2001/02/23 18:04:22  sbs
+# extended for negative take's and drop's in genarray
+#
 # Revision 3.5  2001/02/02 10:39:01  dkr
 # make deps done
 #
@@ -77,7 +80,7 @@ INCS=-I../global -I../tree -I../../inc -I../print -I../modules -I../optimize \
 
 all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o \
      new_typecheck.o new_types.o shape.o user_types.o \
-     constants.o cv2scalar.o cv2cv.o
+     constants.o cv2scalar.o cv2cv.o cv2str.o
 
 
 #
@@ -97,6 +100,9 @@ cv2cv.c: ../tree/type_info.mac
 	touch cv2cv.c
 
 cv2scalar.c: ../tree/type_info.mac
+	touch cv2scalar.c
+
+cv2str.c: ../tree/type_info.mac
 	touch cv2scalar.c
 
 new_types.c: type_constructor_info.mac

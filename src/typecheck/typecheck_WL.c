@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 3.2  2001/02/23 18:04:22  sbs
+ * extended for negative take's and drop's in genarray
+ *
  * Revision 3.1  2000/11/20 18:00:22  sacbase
  * new release made
  *
@@ -142,6 +145,7 @@ node *
 TCWLprf (node *arg_node, node *arg_info)
 {
     constant *arg1, *arg2, *res;
+    types *expr_type;
 
     DBUG_ENTER ("TCWLprf");
 
@@ -164,7 +168,11 @@ TCWLprf (node *arg_node, node *arg_info)
             }
         }
     } else {
+        expr_type = TI (PRF_ARG1 (arg_node), arg_info);
+        INFO_CF_TYPE (arg_info) = expr_type;
         PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+        expr_type = TI (PRF_ARG2 (arg_node), arg_info);
+        INFO_CF_TYPE (arg_info) = expr_type;
         PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
 
         /* both arguments have to be a constant or an array. */
