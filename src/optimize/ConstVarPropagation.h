@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/02/14 15:51:48  mwe
+ * CVPids added
+ *
  * Revision 1.7  2005/02/14 10:46:43  mwe
  * CVParg added
  *
@@ -59,5 +62,6 @@ extern node *CVPreturn (node *arg_node, info *arg_info);
 extern node *CVParray (node *arg_node, info *arg_info);
 extern node *CVPfuncond (node *arg_node, info *arg_info);
 extern node *CVParg (node *arg_node, info *arg_info);
+extern node *CVPids (node *arg_node, info *arg_info);
 
 #endif /* _SAC_CONSTVARPROPAGATION_H_ */
