@@ -88,7 +88,7 @@ SkipFileHeader (FILE *file, char *prefix)
 
     p = fgets (line, BUFLEN, file);
     while (p != NULL) {
-        cnt = sscanf (line, "# %d %s %d", &line1, &filename, &line2);
+        cnt = sscanf (line, "# %d %s %d", &line1, filename, &line2);
         if ((cnt == 3) && (filename[0] == '\"')
             && (strncmp (&(filename[1]), prefix, strlen (prefix)) == 0) && (line1 > 1)) {
             break;
