@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/06/13 13:09:53  ben
+ *  WLCOMP_Tasksel added
+ *
  * Revision 3.5  2001/04/03 09:53:28  dkr
  * Bv() removed
  *
@@ -41,3 +44,4 @@ WLP (WLCOMP_BvL1, "BvL1")
 WLP (WLCOMP_BvL2, "BvL2")
 WLP (WLCOMP_Ubv, "Ubv")
 WLP (WLCOMP_Scheduling, "Scheduling")
+WLP (WLCOMP_Tasksel, "Tasksel")
