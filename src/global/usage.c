@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.35  1995/12/21 16:08:56  cg
+ * Revision 1.36  1996/01/04 16:58:04  asi
+ * includes now globals.h instead of optimize.h
+ *
+ * Revision 1.35  1995/12/21  16:08:56  cg
  * added option -flink_module
  *
  * Revision 1.34  1995/12/01  20:26:49  cg
@@ -111,6 +114,7 @@
 
 #include "usage.h"
 #include <stdio.h>
+#include "globals.h"
 #include "dbug.h"
 #include "tree.h"
 #include "optimize.h"
