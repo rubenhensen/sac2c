@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.190  2004/06/08 14:27:15  ktr
+ * INFO_REUSE_* moved to ReuseWithArrays.c
+ *
  * Revision 3.189  2004/06/08 09:49:12  skt
  * ASSIGN_EXECMODE added
  *
@@ -3123,14 +3126,6 @@ extern node *MakeInfo ();
 /* ArrayElemination */
 #define INFO_AE_TYPES(n) (n->node[1])
 #define INFO_AE_FUNDEF(n) (n->node[2])
-
-/* reuse */
-#define INFO_REUSE_WL_IDS(n) (n->info.ids)
-#define INFO_REUSE_FUNDEF(n) (n->node[0])
-#define INFO_REUSE_IDX(n) ((ids *)(n->node[1]))
-#define INFO_REUSE_DEC_RC_IDS(n) ((ids *)(n->node[2]))
-#define INFO_REUSE_MASK(n) (n->dfmask[0])
-#define INFO_REUSE_NEGMASK(n) (n->dfmask[1])
 
 /* optimize */
 #define INFO_MASK(n, x) (n->mask[x])
