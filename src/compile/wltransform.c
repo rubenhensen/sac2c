@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.22  2000/10/31 23:40:24  dkr
+ * GenerateShapeStrides: wrong DBUG_ASSERT removed
+ *
  * Revision 2.21  2000/10/31 23:31:13  dkr
  * empty arrays can be handled now
  *
@@ -4267,9 +4270,6 @@ GenerateShapeStrides (int dim, int dims, shpseg *shape)
     if (dim < dims) {
         new_grid = MakeWLgrid (0, dim, 0, 1, 0,
                                GenerateShapeStrides (dim + 1, dims, shape), NULL, NULL);
-
-        DBUG_ASSERT ((SHPSEG_SHAPE (shape, dim) > 0),
-                     "Result array of with-loop is empty!");
 
         strides
           = MakeWLstride (0, dim, 0, SHPSEG_SHAPE (shape, dim), 1, 0, new_grid, NULL);
