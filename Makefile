@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.46  1997/04/25 09:38:38  sbs
+# Revision 1.47  1997/04/25 12:25:01  sbs
+# *** empty log message ***
+#
+# Revision 1.46  1997/04/25  09:38:38  sbs
 # *** empty log message ***
 #
 # Revision 1.45  1997/04/24  16:09:53  sbs
@@ -168,9 +171,8 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/DeadCodeRemoval.o src/optimize/WorkReduction.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/DupTree.o \
 	  src/optimize/Inline.o src/optimize/Unroll.o \
-          src/optimize/Unswitch.o src/psi-opt/ArrayElimination.o \
-	  src/optimize/CSE.o
-PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o
+          src/optimize/Unswitch.o src/optimize/CSE.o
+PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o src/psi-opt/ArrayElimination.o
 MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
          src/modules/implicittypes.o src/modules/analysis.o \
          src/modules/checkdec.o src/modules/readsib.o \
