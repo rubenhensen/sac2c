@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.23  1999/11/30 20:33:12  dkr
+ * flag -wlconv added for activation of Old2NewWith()
+ *
  * Revision 2.22  1999/11/23 12:17:57  dkr
  * PRINT_RC, PRINT_NRC can be used not only with -b17 but with -b17 ... -b20
  *
@@ -497,6 +500,8 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('t', traceflag |= TRACE_MT);
         ARG_FLAGMASK_END ();
     });
+
+    ARGS_FLAG ("wlconv", Make_Old2NewWith = 1);
 
     ARGS_OPTION ("v", ARG_RANGE (verbose_level, 0, 3));
 
