@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.89  1999/02/19 17:06:13  dkr
+ * flag -efence added
+ *
  * Revision 1.88  1999/02/15 13:34:09  sbs
  * added -noDLAW opt_dlaw;
  *
@@ -370,13 +373,16 @@ usage ()
             "\t -dcheck_malloc\t\tcheck success of memory allocations\n"
             "\t -dcccall\t\tgenerate shell script '.sac2c' that contains C\n"
             "\t\t\t\tcompiler call. This implies option -dnocleanup.\n"
-            "\t -# <str>\t\toptions (string) for DBUG information\n"
+            "\n\t -# <str>\t\toptions (string) for DBUG information\n"
             "\t\t\t\t(\"-#<str>\" is equivalent to \"-_DBUG//<str>\")\n"
             "\t -_DBUG<from>/<to>/<str>\n"
             "\t\t\t\tDBUG information only in compiler phases\n"
             "\t\t\t\t<from>..<to>\n"
             "\t\t\t\t  Default: <from> = 1,\n"
             "\t\t\t\t           <to> = last compiler phase\n"
+            "\n\t -efence\t\tfor compilation of programs:\n"
+            "\t\t\t\t  link executable with ElectricFence\n"
+            "\t\t\t\t  (Malloc Debugger)\n"
 
             "\n\nTRACE OPTIONS:\n\n"
 
