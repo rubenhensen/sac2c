@@ -1,24 +1,19 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/07/11 18:15:55  sah
+  updated xhtml output to please sbs ;)
+
   Revision 1.1  2004/07/03 15:14:41  sah
   Initial revision
 
 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 xmlns="http://www.w3.org/1999/xhtml" version="1.0">
-  <!-- This small sample xslt file has been written for two reasons:
-
-     (1) it is an example of how to parse the SaC ast xml definition and
-         tranform it into a different representation. As this transformation
-         is rather simple, it will be easy to understand. 
-     (2) it generates a human readable version of the SaC ast xml and thus
-         helps finding bugs
-
-     to transform the SaC ast xml, using the Sabloton XSLT engine execute
-     > sabcmd ast2html.xslt ast.xml ast.html
-     or just open ast.xml with an xslt compatible browser like Mozilla.
--->
+  <!-- this xslt script generates a nice html view given the ast xml
+       definition file. It is no good example to get an overview, as 
+       it is pretty ugly. Refer to the c code generating scripts
+       instead -->
   <xsl:output method="xml" version="1.0" indent="yes" 
               doctype-system="http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd" 
               doctype-public="-//W3C//DTD XHTML 1.0 Transitional//EN" />
@@ -30,21 +25,34 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
     <html>
       <head>
         <title>SaC Syntax Tree</title>
-        <style type="text/css">body { font-family: sans-serif
-        } table { border-width: 1pt; border-style: solid;
-        border-color: #000000; background-color: #cccccc; padding:
-        0pt; margin: 20pt; width: 80% } tr { padding: 10pt; margin:
-        0pt; border-style: none} td { vertical-align: top; padding:
-        4pt; margin: 0pt; border-style: none } td.title {
-        background-color: #000000; color: #ffffff; font-weight:
-        bold } td.heading { background-color: #999999; font-weight:
-        bold } td.heading div.description { font-size: smaller }
-        td.subheading { background-color: #999999; padding: 2pt;
-        margin: 0pt } td.toclink { text-align: right; font-size:
-        smaller } td.hidden { padding: 0pt } table.hidden {
-        border-style: none; margin: 0pt; width: 100%; padding: 2pt
-        } div.nonmandatory { color: #666666 } div.alert { display:
-        inline; color: #ff0000 }</style>
+        <style type="text/css">
+          body { font-family: sans-serif } 
+          table { border-width: 1pt; border-style: solid;
+                  border-color: #000000; background-color: #cccccc; 
+                  padding: 0pt; margin: 20pt; width: 80% } 
+          tr { padding: 10pt; margin: 0pt; border-style: none} 
+          td { vertical-align: top; padding: 4pt; margin: 0pt; 
+               border-style: none } 
+          td.title { background-color: #000000; color: #ffffff; 
+                     font-weight: bold } 
+          td.heading { background-color: #999999; font-weight:
+                       bold } 
+          td.heading div.description { font-size: smaller }
+          td.subheading { background-color: #999999; padding: 2pt;
+                          margin: 0pt } 
+          td.toclink { text-align: right; font-size: smaller } 
+          td.hidden { padding: 0pt } 
+          table.hidden { border-style: none; margin: 0pt; width: 100%; 
+                         padding: 2pt } 
+          tr.nonmandatory { color: #666666; font-style: italic } 
+          div.alert { display: inline; color: #ff0000 }
+          a:link { text-decoration: underline }
+          a:visited { text-decoration: underline }
+          a.footnote { vertical-align: top; text-decoration: none }
+          tr.footnote-heading { background-color: #999999; font-weight:
+                       bold; font-size: small }
+          tr.footnote { font-size: small }
+        </style>
       </head>
       <body>
         <a name="toc" />
@@ -101,28 +109,56 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       </xsl:element>
     </li>
   </xsl:template>
+
   <!-- from here on we define table mode -->
   <!-- attributetypes is tranformed to an html table -->
   <xsl:template match="attributetypes" mode="table">
     <a name="attributetypes" />
     <table>
       <tr>
-        <td colspan="3" class="title">Attribute
+        <td colspan="4" class="title">Attribute
         Types</td>
       </tr>
       <tr>
         <td class="heading">Name</td>
         <td class="heading">Name of C Type</td>
-        <td class="heading">Copy</td>
+        <td class="heading">Initial Value</td>
+        <td class="heading">Class of Type</td>
       </tr>
       <xsl:apply-templates select="type" mode="table" />
+      <tr class="footnote-heading">
+        <td colspan="4">
+          <a name="xpln_cp" />
+          Possible Classes of Type
+        </td>
+      </tr>
+      <tr class="footnote">
+        <td>literal</td>
+        <td colspan="3">
+          types of class literal can be processed like basic c types (e.g. int)
+        </td>
+      </tr>
+      <tr class="footnote">
+        <td>function</td>
+        <td colspan="3">
+          types of class function need a special function to be processed
+        </td>
+      </tr>
+      <tr class="footnote">
+        <td>hash</td>
+        <td colspan="3">
+          types of class hash are references to nodes in the tree and thus
+          have to be processed using a hash table
+        </td>
+      </tr>
       <tr>
-        <td colspan="3" class="toclink">
+        <td colspan="4" class="toclink">
           <a href="#toc" class="toclink">top</a>
         </td>
       </tr>
     </table>
   </xsl:template>
+
   <!-- each type is tranformed into a row -->
   <xsl:template match="attributetypes/type" mode="table">
     <tr>
@@ -139,10 +175,14 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         </xsl:if>
       </td>
       <td>
-        <xsl:value-of select="@copy" />
+        <xsl:value-of select="@init" />
+      </td>
+      <td>
+        <xsl:value-of select="@copy" /><a class="footnote" href="#xpln_cp">*</a>
       </td>
     </tr>
   </xsl:template>
+
   <!-- each nodeset is transformed into a table -->
   <xsl:template match="nodeset" mode="table">
     <xsl:element name="a">
@@ -170,6 +210,14 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       </tr>
     </table>
   </xsl:template>
+ 
+  <!-- sort all nodes -->
+  <xsl:template match="syntaxtree" mode="table">
+    <xsl:apply-templates select="node" mode="table">
+      <xsl:sort select="@name"/>
+    </xsl:apply-templates>
+  </xsl:template>
+
   <!-- each node is transformed to a table -->
   <xsl:template match="node" mode="table">
     <xsl:element name="a">
@@ -203,7 +251,6 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         </tr>
       </xsl:if>
       <xsl:if test="attributes/attribute[phases/all]">
-
         <tr>
           <td class="heading">Permanent Attributes</td>
         </tr>
@@ -222,7 +269,6 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         </tr>
       </xsl:if>
       <xsl:if test="attributes/attribute[not(phases/all)]">
-
         <tr>
           <td class="heading">Temporary Attributes</td>
         </tr>
@@ -248,23 +294,22 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       </tr>
     </table>
   </xsl:template>
+
   <!-- sons are transformed into rows of a table -->
   <xsl:template match="son" mode="table">
-    <tr>
+    <xsl:element name="tr">
+      <xsl:if test="@mandatory = 'yes'">
+        <xsl:attribute name="class">
+          <xsl:value-of select="'mandatory'" />
+        </xsl:attribute>
+      </xsl:if>
+      <xsl:if test="@mandatory = 'no'">
+        <xsl:attribute name="class">
+          <xsl:value-of select="'nonmandatory'" />
+        </xsl:attribute>
+      </xsl:if>
       <td>
-        <xsl:element name="div">
-          <xsl:if test="@mandatory = 'yes'">
-            <xsl:attribute name="class">
-              <xsl:value-of select="'mandatory'" />
-            </xsl:attribute>
-          </xsl:if>
-          <xsl:if test="@mandatory != 'yes'">
-            <xsl:attribute name="class">
-              <xsl:value-of select="'nonmandatory'" />
-            </xsl:attribute>
-          </xsl:if>
-          <xsl:value-of select="@name" />
-        </xsl:element>
+        <xsl:value-of select="@name" />
       </td>
       <td>
         <xsl:apply-templates select="target" mode="table" />
@@ -273,8 +318,9 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         <xsl:apply-templates select="description"
         mode="table" />
       </td>
-    </tr>
+    </xsl:element>
   </xsl:template>
+
   <!-- a target node is transformed into a reference to that node -->
   <xsl:template match="target/node" mode="table">
     <xsl:value-of select="' '" />
@@ -287,6 +333,7 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       <xsl:value-of select="@name" />
     </xsl:element>
   </xsl:template>
+
   <!-- a target set is transformed into a reference to that node -->
   <xsl:template match="target/set" mode="table">
     <xsl:element name="a">
@@ -299,23 +346,22 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       <xsl:value-of select="'}'" />
     </xsl:element>
   </xsl:template>
+
   <!-- attributes are transformed similar to sons -->
   <xsl:template match="attribute" mode="table">
-    <tr>
+    <xsl:element name="tr">
+      <xsl:if test="@mandatory = 'yes'">
+        <xsl:attribute name="class">
+          <xsl:value-of select="'mandatory'" />
+        </xsl:attribute>
+      </xsl:if>
+      <xsl:if test="@mandatory = 'no'">
+        <xsl:attribute name="class">
+          <xsl:value-of select="'nonmandatory'" />
+        </xsl:attribute>
+      </xsl:if>
       <td>
-        <xsl:element name="div">
-          <xsl:if test="@mandatory = 'yes'">
-            <xsl:attribute name="class">
-              <xsl:value-of select="'mandatory'" />
-            </xsl:attribute>
-          </xsl:if>
-          <xsl:if test="@mandatory != 'yes'">
-            <xsl:attribute name="class">
-              <xsl:value-of select="'nonmandatory'" />
-            </xsl:attribute>
-          </xsl:if>
-          <xsl:value-of select="@name" />
-        </xsl:element>
+        <xsl:value-of select="@name" />
       </td>
       <td>
         <xsl:apply-templates select="type" mode="table" />
@@ -329,8 +375,9 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
         <xsl:apply-templates select="description"
         mode="table" />
       </td>
-    </tr>
+    </xsl:element>
   </xsl:template>
+
   <!-- attribute types a transformed into references to type table -->
   <xsl:template match="type" mode="table">
     <div class="type">
@@ -345,12 +392,14 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
       mode="attrib-table" />
     </div>
   </xsl:template>
+
   <!-- target is transformed into a small list -->
   <xsl:template match="target" mode="attrib-table">
     <xsl:value-of select="' ( '" />
     <xsl:apply-templates mode="table" />
     <xsl:value-of select="' ) '" />
   </xsl:template>
+
   <!-- attribute phase information is just printed -->
   <xsl:template match="phases/unknown" mode="table">
     <xsl:value-of select="'[ '" />
@@ -367,12 +416,14 @@ xmlns="http://www.w3.org/1999/xhtml" version="1.0">
     <xsl:value-of select="concat( @from, ' - ')" />
     <xsl:value-of select="concat( @to, ' ]')" />
   </xsl:template>
+
   <!-- general template for descriptions -->
   <xsl:template match="description" mode="table">
     <div class="description">
       <xsl:value-of select="text()" />
     </div>
   </xsl:template>
+
   <!-- general template for unknown tags -->
   <xsl:template match="unknown" mode="table">
     <div class="alert">unknown</div>
