@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/07/01 13:01:41  jhs
+ * Added handling of INFO_SPMD_LAST.
+ *
  * Revision 2.1  1999/02/23 12:44:19  sacbase
  * new release made
  *
@@ -102,6 +105,9 @@ SYNCIassign (node *arg_node, node *arg_info)
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+
+        SYNC_LAST (sync) = INFO_SPMD_LAST (arg_info);
+        INFO_SPMD_LAST (arg_info) = 0;
     }
 
     DBUG_RETURN (arg_node);
