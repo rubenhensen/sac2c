@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.59  1998/04/16 16:08:03  srs
+ * renamed INL_TYPES to INFO_INL_TYPES
+ *
  * Revision 1.58  1998/04/16 11:47:08  dkr
  * fixed a bug with DupNode:
  *   arg_info now contains an ordinary N_info node
@@ -382,7 +385,7 @@ DupIds (ids *old_ids, node *arg_info)
     switch (DUPTYPE) {
     case DUP_INLINE:
         new_ids = MakeIds (RenameInlinedVar (old_ids->id), NULL, ST_regular);
-        new_ids->node = SearchDecl (new_ids->id, INL_TYPES);
+        new_ids->node = SearchDecl (new_ids->id, INFO_INL_TYPES (arg_info));
         DBUG_ASSERT ((NULL != new_ids->node), "No declaration found for ids-node");
         break;
     default:
