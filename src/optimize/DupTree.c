@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.75  1998/04/26 21:52:45  dkr
+ * DupSPMD renamed to DupSpmd
+ *
  * Revision 1.74  1998/04/25 13:19:44  dkr
  * added DupIcm
  *
@@ -848,18 +851,26 @@ DupIcm (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupSPMD (node *arg_node, node *arg_info)
+DupSpmd (node *arg_node, node *arg_info)
 {
     node *new_node;
 
-    DBUG_ENTER ("DupSPMD");
+    DBUG_ENTER ("DupSpmd");
 
     new_node = MakeSPMD (DUPTRAV (SPMD_REGION (arg_node)));
 
-    SPMD_IN (new_node) = DupIds (SPMD_IN (arg_node), arg_info);
-    SPMD_OUT (new_node) = DupIds (SPMD_OUT (arg_node), arg_info);
-    SPMD_INOUT (new_node) = DupIds (SPMD_INOUT (arg_node), arg_info);
-    SPMD_LOCAL (new_node) = DupIds (SPMD_LOCAL (arg_node), arg_info);
+    if (SPMD_IN (arg_node) != NULL) {
+        SPMD_IN (new_node) = DupIds (SPMD_IN (arg_node), arg_info);
+    }
+    if (SPMD_OUT (arg_node) != NULL) {
+        SPMD_OUT (new_node) = DupIds (SPMD_OUT (arg_node), arg_info);
+    }
+    if (SPMD_INOUT (arg_node) != NULL) {
+        SPMD_INOUT (new_node) = DupIds (SPMD_INOUT (arg_node), arg_info);
+    }
+    if (SPMD_LOCAL (arg_node) != NULL) {
+        SPMD_LOCAL (new_node) = DupIds (SPMD_LOCAL (arg_node), arg_info);
+    }
 
     DBUG_RETURN (new_node);
 }
@@ -873,9 +884,14 @@ DupSync (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupSync");
 
-    new_node = MakeSync (DUPTRAV (SYNC_REGION (arg_node)));
+    new_node = MakeSync (DUPTRAV (SYNC_REGION (arg_node)), SYNC_FIRST (arg_node));
 
-    SYNC_INOUT (new_node) = DupIds (SYNC_INOUT (arg_node), arg_info);
+    if (SYNC_OUT (arg_node) != NULL) {
+        SYNC_OUT (new_node) = DupIds (SYNC_OUT (arg_node), arg_info);
+    }
+    if (SYNC_INOUT (arg_node) != NULL) {
+        SYNC_INOUT (new_node) = DupIds (SYNC_INOUT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (new_node);
 }

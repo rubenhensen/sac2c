@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  1998/04/26 21:52:53  dkr
+ * DupSPMD renamed to DupSpmd
+ *
  * Revision 1.30  1998/04/25 13:19:50  dkr
  * added DupIcm
  *
@@ -149,7 +152,7 @@ extern node *DupDec (node *arg_node, node *arg_info);
 extern node *DupInfo (node *arg_node, node *arg_info);
 extern node *DupPragma (node *arg_node, node *arg_info);
 extern node *DupIcm (node *arg_node, node *arg_info);
-extern node *DupSPMD (node *arg_node, node *arg_info);
+extern node *DupSpmd (node *arg_node, node *arg_info);
 extern node *DupSync (node *arg_node, node *arg_info);
 
 /* new with-loop */
