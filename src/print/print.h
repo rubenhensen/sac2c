@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/02/14 12:22:37  sbs
+ * Revision 1.7  1995/03/08 14:03:00  sbs
+ * INDENT & indent exported!
+ *
+ * Revision 1.6  1995/02/14  12:22:37  sbs
  * PrintFold inserted
  *
  * Revision 1.5  1994/12/15  17:14:03  sbs
@@ -22,6 +25,15 @@
 #ifndef _sac_print_h
 
 #define _sac_print_h
+
+extern int indent;
+
+#define INDENT                                                                           \
+    {                                                                                    \
+        int j;                                                                           \
+        for (j = 0; j < indent; j++)                                                     \
+            fprintf (outfile, "  ");                                                     \
+    }
 
 extern node *PrintAssign (node *, node *);
 extern node *PrintBlock (node *, node *);

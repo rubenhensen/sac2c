@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.38  1995/03/08 14:02:20  hw
+ * Revision 1.39  1995/03/08 14:04:01  sbs
+ * INDENT & indent exported!
+ *
+ * Revision 1.38  1995/03/08  14:02:20  hw
  * changed PrintPrf
  *
  * Revision 1.37  1995/03/03  17:22:29  asi
@@ -123,16 +126,9 @@
 #include "convert.h"
 #include "optimize.h"
 
-#define INDENT                                                                           \
-    {                                                                                    \
-        int j;                                                                           \
-        for (j = 0; j < indent; j++)                                                     \
-            fprintf (outfile, "  ");                                                     \
-    }
-
 extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
 
-static int indent = 0;
+int indent = 0;
 
 #define PRF_IF(n, s, x) x
 
