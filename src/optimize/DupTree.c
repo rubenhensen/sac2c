@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.87  1998/05/12 22:41:21  dkr
+ * added NWITH2_DIM, NWITH2_IDX_MIN, NWITH2_IDX_MAX
+ *
  * Revision 1.86  1998/05/12 18:46:06  dkr
  * removed ???_VARINFO
  *
@@ -1158,6 +1161,7 @@ node *
 DupNwith2 (node *arg_node, node *arg_info)
 {
     node *new_node, *id, *seg, *code, *withop;
+    int d;
 
     DBUG_ENTER ("DupNwith2");
 
@@ -1170,7 +1174,14 @@ DupNwith2 (node *arg_node, node *arg_info)
     seg = DUPTRAV (NWITH2_SEGS (arg_node));
     withop = DUPTRAV (NWITH2_WITHOP (arg_node));
 
-    new_node = MakeNWith2 (id, seg, code, withop);
+    new_node = MakeNWith2 (id, seg, code, withop, NWITH2_DIMS (arg_node));
+
+    NWITH2_IDX_MIN (new_node) = (int *)MALLOC (NWITH2_DIMS (new_node) * sizeof (int));
+    NWITH2_IDX_MAX (new_node) = (int *)MALLOC (NWITH2_DIMS (new_node) * sizeof (int));
+    for (d = 0; d < NWITH2_DIMS (new_node); d++) {
+        (NWITH2_IDX_MIN (new_node))[d] = (NWITH2_IDX_MIN (arg_node))[d];
+        (NWITH2_IDX_MAX (new_node))[d] = (NWITH2_IDX_MAX (arg_node))[d];
+    }
 
     if (NWITH2_IN (arg_node) != NULL) {
         NWITH2_IN (new_node) = DFMGenMaskCopy (NWITH2_IN (arg_node));
