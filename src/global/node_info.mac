@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.115  1996/01/02 15:48:55  cg
- * added link_tab
+ * Revision 1.116  1996/01/05 12:29:05  cg
+ * new function RSIBobjdef in readsib_tab
  *
+;; Revision 1.115  1996/01/02  15:48:55  cg
+;; added link_tab
+;;
 ;; Revision 1.114  1995/12/29  10:25:44  cg
 ;; added readsib_tab, replaced PrintFold by PrintFoldprf and
 ;; PrintFoldfun, replaced PrintCon by PrintGenarray and
@@ -436,7 +439,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, FreeObjdef, TravSons, TravSons, CompObjdef, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        OBJobjdef, TravSons, OIobjdef, TravSons, CDECobjdef, WDECobjdef, TravSons,
-       TravSons, PRECobjdef, TravSons, TravSons, LINKobjdef, TravSons, TravSons,
+       TravSons, PRECobjdef, TravSons, RSIBobjdef, LINKobjdef, TravSons, TravSons,
        TravSons),
 
   NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, TravSons, OPTmodul, OPTmodul,
