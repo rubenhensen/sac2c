@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.156  2004/11/25 21:14:58  skt
+ * killed TCmakeIdFromIds
+ *
  * Revision 3.155  2004/11/25 21:03:34  skt
  * some parameter change
  *
@@ -1499,8 +1502,6 @@ extern node *TCmakeVinfoDollar (node *next);
 
 extern node *TCmakeIdCopyString (const char *str);
 extern node *TCmakeIdCopyStringNt (const char *str, types *type);
-
-extern node *TCmakeIdFromIds (node *idss);
 
 /***************************************************************************
  *
