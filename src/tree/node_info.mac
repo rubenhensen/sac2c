@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.52  2000/06/28 15:11:05  nmw
+ * functions for PIH, PIW and MCW funtab added
+ *
  * Revision 1.51  2000/06/25 01:54:03  dkr
  * WLTRAfundef removed
  *
@@ -492,8 +495,11 @@
 #ifndef NIFmapcw
 #define NIFmapcw(it_mapcw)
 #endif
-#ifndef NIFprinti
-#define NIFprinti(it_printi)
+#ifndef NIFpih
+#define NIFpih(it_pih)
+#endif
+#ifndef NIFpiw
+#define NIFpiw(it_piw)
 #endif
 
 #ifndef NIFnnode
@@ -524,7 +530,7 @@
   it_l2f_lift, it_blkco, it_dfa, it_blkpp, it_cudecls, it_barin, it_blkli, it_adjca1,    \
   it_adjca2, it_precomp1, it_apc, it_apt,                                                \
                                                                                          \
-  it_mapcw, it_printi, it_unused3, it_unused4, nnode)                                    \
+  it_mapcw, it_pih, it_piw, it_unused4, nnode)                                           \
                                                                                          \
     NIFNode_name (Node_name) NIFmdb_nodetype (mdb_nodetype)                              \
                                                                                          \
@@ -565,8 +571,9 @@
                                                         NIFapc (it_apc) NIFapt (it_apt)  \
                                                                                          \
                                                           NIFmapcw (it_mapcw)            \
-                                                            NIFprinti (it_printi)        \
-                                                              NIFnnode (nnode)
+                                                            NIFpih (it_pih)              \
+                                                              NIFpiw (it_piw)            \
+                                                                NIFnnode (nnode)
 
 /******************************************************************************
  *
@@ -752,7 +759,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
-       MCWmodul, TravSons, TravSons, TravSons, 5),
+       MCWmodul, PIHmodul, PIWmodul, TravSons, 5),
 
   NIF (N_moddec, "N_moddec", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, FreeModdec, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -844,7 +851,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        BARINfundef, BLKLIfundef, ADJCA1fundef, ADJCA2fundef, TravSons, APCfundef,
        APTfundef,
 
-       MCWfundef, TravSons, TravSons, TravSons, 3),
+       MCWfundef, PIHfundef, PIWfundef, TravSons, 3),
 
   NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TCvardec, GNMvardec,
        DCRvardec, TravSons, FreeVardec, TravSons, RCvardec, COMPVardec, TravSons,
@@ -898,7 +905,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, APCarg, APTarg,
 
-       MCWarg, TravSons, TravSons, TravSons, 1),
+       MCWarg, PIHarg, PIWarg, TravSons, 1),
 
   NIF (N_mt, "N_mt", TravSons, TravSons, PrintMT, TravSons, TravSons, TravSons, TravSons,
        FreeMT, TravSons, TravSons, COMPMt, TravSons, DupMt, TravSons, TravSons, TravSons,
@@ -1749,7 +1756,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, 0),
+       MCWcwrapper, PIHcwrapper, PIWcwrapper, TravSons, 0),
 
   /* ATTENTION !!!! N_ok has to be the last node declared here;
    *                otherwise a DBUG_ASSERT in traverse.c: Trav will
@@ -1888,7 +1895,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFapt
 
 #undef NIFmapcw
-#undef NIFprinti
+#undef NIFpih
+#undef NIFpiw
 
 #undef NIFnnode
 
