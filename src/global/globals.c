@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2004/11/25 14:44:25  cg
+ * Reintroduced spec_mode_str.
+ *
  * Revision 3.79  2004/11/24 16:00:09  cg
  * some renamings.
  *
@@ -608,6 +611,12 @@ static genlib_flags_t genlib_init = {
 #define GENLIBdefault(default) default,
 #include "flags.mac"
 };
+
+/*
+ * Initialize specialization mode string representations
+ */
+
+static char *spec_mode_str_init[] = {"aks", "akd", "aud"};
 
 /*
  * Initialization helper functions

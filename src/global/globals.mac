@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/11/25 14:44:25  cg
+ * Reintroduced spec_mode_str.
+ *
  * Revision 1.13  2004/11/24 22:52:37  cg
  * *** empty log message ***
  *
@@ -136,11 +139,6 @@ GLOBAL (char *, targetdir, NULL)
  * name of C source code file
  */
 
-GLOBAL (char *, commandline, (char *)ILIBmalloc (MAX_PATH_LEN))
-/*
- * command line, used for diagnostic output (status report)
- */
-
 GLOBAL (file_type, filetype, F_prog)
 /*
  * kind of file: F_PROG, F_MODIMP or F_CLASSIMP
@@ -150,6 +148,13 @@ GLOBAL (char *, tmp_dirname, NULL)
 /*
  * directory for storing temporary files
  */
+
+/*
+ * Command line arguments
+ */
+
+GLOBAL (int, argc, 0)
+GLOBAL (char **, argv, NULL)
 
 /*
  * Target architecture description
@@ -318,8 +323,13 @@ GLOBAL (bool, enforce_ieee, FALSE)
  * IEEE-754 standard
  */
 
-GLOBAL (int, max_overload, 20)
+GLOBAL (int, maxspec, 20)
+/*
+ * Maximum number of specializations per function
+ */
+
 GLOBAL (spec_mode_t, spec_mode, SS_aks)
+GLOBAL (char **, spec_mode_str, spec_mode_str_init)
 /*
  * Command line options for specifying particular side conditions
  * for the (new) type inference.
