@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/07/05 14:28:00  sbs
+ * warnings concerning uninitialized usages of res in AnnotateIdWithConstVec and
+ * CopyConstVec eliminated .
+ *
  * Revision 2.8  1999/06/03 14:29:21  sbs
  * missing code for T_bool const-vecs added in ModConstVec.
  *
@@ -272,6 +276,7 @@ CopyConstVec (simpletype vectype, int veclen, void *const_vec)
             break;
         default:
             DBUG_ASSERT ((0), "CopyConstVec called with non-const-type!");
+            res = NULL;
         }
     } else {
         res = NULL;
@@ -312,6 +317,7 @@ AllocConstVec (simpletype vectype, int veclen)
             break;
         default:
             DBUG_ASSERT ((0), "AllocConstVec called with non-const-type!");
+            res = NULL;
         }
     } else {
         res = NULL;
