@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/05/07 10:13:53  dkr
+ * some routines are moved to icm2c_basic.h
+ *
  * Revision 1.2  1998/05/07 08:10:02  cg
  * C implemented ICMs converted to new naming conventions.
  *
@@ -13,6 +16,8 @@
 #include <malloc.h>
 #include <stdio.h>
 #include <ctype.h>
+
+#include "icm2c_basic.h"
 
 #include "dbug.h"
 #include "my_debug.h"
@@ -268,37 +273,6 @@
             }                                                                            \
         }                                                                                \
     }
-
-#define AccessVect(v, i) fprintf (outfile, "SAC_ND_A_FIELD(%s)[%i]", v, i)
-
-#define AccessConst(v, i) fprintf (outfile, "%s", v[i])
-
-#define AccessShape(v, i) fprintf (outfile, "SAC_ND_KD_A_SHAPE(%s, %d)", v, i)
-
-#define VectToOffset2(dim, v_i_str, dima, a_i_str)                                       \
-    {                                                                                    \
-        int i;                                                                           \
-        for (i = dim - 1; i > 0; i--) {                                                  \
-            fprintf (outfile, "( ");                                                     \
-            a_i_str;                                                                     \
-            fprintf (outfile, "* ");                                                     \
-        }                                                                                \
-        v_i_str;                                                                         \
-        for (i = 1; i < dim; i++) {                                                      \
-            fprintf (outfile, "+");                                                      \
-            v_i_str;                                                                     \
-            fprintf (outfile, ") ");                                                     \
-        }                                                                                \
-        while (i < dima) {                                                               \
-            fprintf (outfile, "*");                                                      \
-            a_i_str;                                                                     \
-            fprintf (outfile, " ");                                                      \
-            i++;                                                                         \
-        }                                                                                \
-    }
-
-#define VectToOffset(dim, v_i_str, dima, a)                                              \
-    VectToOffset2 (dim, v_i_str, dima, AccessShape (a, i))
 
 #define NewBlock(init, body)                                                             \
     fprintf (outfile, "{\n");                                                            \
