@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/06/02 21:35:54  dkr
+ * ICMs for TAGGED_ARRAYS added
+ *
  * Revision 3.7  2002/05/31 17:25:31  dkr
  * some ICMs for TAGGED_ARRAYS added
  *
@@ -65,11 +68,27 @@ extern void ICMCompileND_FUN_RET (char *retname, int narg, char **arg);
 
 #ifdef TAGGED_ARRAYS
 
-extern void ICMCompileND_OBJDEF (char *nt, char *basetype, int dim, char **s);
+extern void ICMCompileND_OBJDEF (char *nt, char *basetype, int sdim, int *shp);
 
-extern void ICMCompileND_OBJDEF_EXTERN (char *nt, char *basetype, int dim);
+extern void ICMCompileND_OBJDEF_EXTERN (char *nt, char *basetype, int sdim);
 
-extern void ICMCompileND_DECL (char *nt, char *basetype, int dim, char **s);
+extern void ICMCompileND_DECL (char *nt, char *basetype, int sdim, int *shp);
+
+extern void ICMCompileND_DECL_ARG (char *nt, int sdim, int *shp);
+
+extern void ICMCompileND_ALLOC (int rc, char *nt, char *basetype, int sdim, int *shp);
+
+extern void ICMCompileND_ASSIGN (char *dest_nt, char *src_nt);
+
+extern void ICMCompileND_COPY (char *dest_nt, char *src_nt);
+
+extern void ICMCompileND_MAKE_UNIQUE (char *dest_nt, char *src_nt, char *basetype);
+
+extern void ICMCompileND_ASSIGN_CONST_VECT (char *name, int len, char **s);
+
+extern void ICMCompileND_ASSIGN_CONST_H (char *name, char *copyfun, int len, char **A);
+
+extern void ICMCompileND_ASSIGN_CONST_A (char *name, int len2, int len, char **A);
 
 #else /* TAGGED_ARRAYS */
 
