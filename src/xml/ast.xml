@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.58  2004/11/24 20:29:50  sbs
+  CRTWRPmodarray
+  eliminated.
+
   Revision 1.57  2004/11/24 20:29:25  sah
   *** empty log message ***
 
@@ -333,7 +337,6 @@
           <node name="Ap" />
           <node name="Id" />
           <node name="Genarray" />
-          <node name="Modarray" />
           <node name="Fold" />
         </user>  
       </traversal>
