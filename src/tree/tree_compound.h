@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.31  2000/08/05 13:02:15  dkr
+ * some macros for N_Nwith added
+ *
  * Revision 1.30  2000/07/21 14:17:53  mab
  * added EqualShpseg
  *
@@ -1522,15 +1525,19 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 #define NWITH_VEC(n) (NPART_VEC (NWITH_PART (n)))
 
 /*
- * BOUND2 of the *first* N_Npart-node
- * (useful before with-loop-folding only)
+ * BOUND1, BOUND2, STEP, WIDTH of the *first* N_Npart-node
+ * (useful *before* with-loop-folding only!!!)
  */
+#define NWITH_BOUND1(n) (NPART_BOUND1 (NWITH_PART (n)))
 #define NWITH_BOUND2(n) (NPART_BOUND2 (NWITH_PART (n)))
+#define NWITH_STEP(n) (NPART_STEP (NWITH_PART (n)))
+#define NWITH_WIDTH(n) (NPART_WIDTH (NWITH_PART (n)))
 
 /*
- * CEXPR of the *first* N_Ncode-node
- * (useful before with-loop-folding only)
+ * CBLOCK, CEXPR of the *first* N_Ncode-node
+ * (useful *before* with-loop-folding only!!!)
  */
+#define NWITH_CBLOCK(n) (NCODE_CBLOCK (NWITH_CODE (n)))
 #define NWITH_CEXPR(n) (NCODE_CEXPR (NWITH_CODE (n)))
 
 #define NWITH_FUN(n) (NWITHOP_FUN (NWITH_WITHOP (n)))
@@ -1548,7 +1555,11 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 
 #define NPART_IDS(n) (NWITHID_IDS (NPART_WITHID (n)))
 #define NPART_VEC(n) (NWITHID_VEC (NPART_WITHID (n)))
+
+#define NPART_BOUND1(n) (NGEN_BOUND1 (NPART_GEN (n)))
 #define NPART_BOUND2(n) (NGEN_BOUND2 (NPART_GEN (n)))
+#define NPART_STEP(n) (NGEN_STEP (NPART_GEN (n)))
+#define NPART_WIDTH(n) (NGEN_WIDTH (NPART_GEN (n)))
 
 #define NPART_DEFMASK(n) (NPART_MASK (n, 0))
 #define NPART_USEMASK(n) (NPART_MASK (n, 1))
