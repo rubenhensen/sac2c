@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.172  1998/05/15 11:20:35  srs
+ * changed comment of N_Nwith
+ *
  * Revision 1.171  1998/05/15 09:24:59  sbs
  * INFO_FLTN_LASTWLBLOCK and INFO_FLTN_FINALASSIGN inserted
  *
@@ -2524,11 +2527,11 @@ extern node *MakeSync (node *region, int first);
  ***  temporary attributes:
  ***
  ***    node*      PRAGMA     (N_pragma)  (scanparse -> precompile ! )
- ***    int        REFERENCED             (wli -> wlf !!
- ***    int        REFERENCED_FOLD        (wli -> wlf !!)
- ***    int        COMPLEX                (wli -> wlf !!)
- ***    int        FOLDABLE               (wli -> wlf !!)
- ***    int        NO_CHANCE              (wli -> wlf !!)
+ ***    int        REFERENCED             (wlt -> wlf !!
+ ***    int        REFERENCED_FOLD        (wlt -> wlf !!)
+ ***    int        COMPLEX                (wlt -> wlf !!)
+ ***    int        FOLDABLE               (wlt -> wlf !!)
+ ***    int        NO_CHANCE              (wlt -> wlf !!)
  ***    ids*       DEC_RC_IDS             (refcount -> wltransform )
  ***
  ***    DFMmask_t  IN                     (refcount -> wltransform )
