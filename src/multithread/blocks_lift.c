@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2000/07/21 11:29:59  jhs
+ * FUNDEF_MT2USE, FUNDEF_MT2DEF, FUNDEF_IDENTIFIER are set while
+ * lifting mt-blocks.
+ *
  * Revision 1.9  2000/07/12 15:15:00  dkr
  * function DuplicateTypes renamed into DupTypes
  *
@@ -55,6 +59,7 @@
 #include "globals.h"
 #include "my_debug.h"
 #include "DataFlowMask.h"
+#include "DataFlowMaskUtils.h"
 #include "multithread_lib.h"
 #include "LookUpTable.h"
 
@@ -330,6 +335,9 @@ BLKLImt (node *arg_node, node *arg_info)
 
     FUNDEF_STATUS (new_fundef) = ST_spmdfun;
     FUNDEF_ATTRIB (new_fundef) = ST_call_mtlift;
+    FUNDEF_MT2USE (new_fundef) = DFMDuplicateMask (MT_USEMASK (arg_node), new_base);
+    FUNDEF_MT2DEF (new_fundef) = DFMDuplicateMask (MT_DEFMASK (arg_node), new_base);
+    FUNDEF_IDENTIFIER (new_fundef) = MT_IDENTIFIER (arg_node);
     FUNDEF_LIFTEDFROM (new_fundef) = fundef;
     FUNDEF_VARNO (new_fundef) = FUNDEF_VARNO (fundef); /* ####???? */
 
