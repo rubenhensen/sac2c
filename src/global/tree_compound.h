@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.59  1998/03/10 11:10:47  srs
+ * changed parameters of IsConstantArray
+ *
  * Revision 1.58  1998/03/07 17:00:55  srs
  * added IsConstantArray() and ID_SHAPE
  *
@@ -1362,9 +1365,14 @@ extern node *GetCompoundNode (node *arg_node);
 extern node *Shape2Array (shapes *shp);
 
 /* description:
- *   returns number of constant elements if all elements are either
- *   N_num, N_char, N_float, N_double or N-bool or otherwise returns 0. */
-extern int IsConstantArray (node *array);
+ *   returns number of constant elements if argument is an N_array and all
+ *   its elements are N_num, N_char, N_float, N_double, N_bool or otherwise
+ *   returns 0.
+ *
+ *   The parameter type specified the necessary type all elements have to
+ *   be of (nodetype, e.g. N_num). If N_ok is given, the type is ignored.*/
+
+extern int IsConstantArray (node *array, nodetype type);
 
 /*--------------------------------------------------------------------------*/
 
