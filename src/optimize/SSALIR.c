@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2001/05/15 08:01:21  nmw
+ * unnecessary update of AVIS_SSAASSIGN attributes removed
+ *
  * Revision 1.17  2001/05/11 07:30:26  nmw
  * comment removed
  *
@@ -241,7 +244,7 @@ CreateNewResult (node *avis, node *arg_info)
                       new_pct_vardec);
 
     /* 5. modify functions signature (AddResult) */
-    /* recusrive call */
+    /* recursive call */
     letlist
       = NodeListAppend (NULL,
                         ASSIGN_INSTR (FUNDEF_INT_ASSIGN (INFO_SSALIR_FUNDEF (arg_info))),
@@ -1440,8 +1443,6 @@ SSALIRexprs (node *arg_node, node *arg_info)
  *   set current withloop depth as ids definition depth
  *   set current movement flag as ids LIRMOV flag
  *
- *   also updates the AVIS_SSAASSIGN(2) attributes
- *
  *****************************************************************************/
 static ids *
 SSALIRleftids (ids *arg_ids, node *arg_info)
@@ -1476,15 +1477,22 @@ SSALIRleftids (ids *arg_ids, node *arg_info)
         DBUG_ASSERT ((FALSE), "unable to handle case");
     }
 
-    /* update AVIS_SSAASSIGN(2) attributes */
-    if ((INFO_SSALIR_CONDSTATUS (arg_info) == CONDSTATUS_ELSEPART)
-        && (AVIS_SSAPHITARGET (IDS_AVIS (arg_ids)) != PHIT_NONE)) {
-        /* set AVIS_ASSIGN2 attribute for second definition of phitargets */
-        AVIS_SSAASSIGN2 (IDS_AVIS (arg_ids)) = INFO_SSALIR_ASSIGN (arg_info);
-    } else {
-        /* set AVIS_ASSIGN attribute */
-        AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSALIR_ASSIGN (arg_info);
-    }
+#if 0  
+  /*
+   * this update is not needed anymore, because all optimizations should
+   * preserve the correct ssaform
+   */
+
+  /* update AVIS_SSAASSIGN(2) attributes */
+  if ((INFO_SSALIR_CONDSTATUS(arg_info) == CONDSTATUS_ELSEPART)
+      && (AVIS_SSAPHITARGET(IDS_AVIS(arg_ids)) != PHIT_NONE)) {
+    /* set AVIS_ASSIGN2 attribute for second definition of phitargets */
+    AVIS_SSAASSIGN2(IDS_AVIS(arg_ids)) = INFO_SSALIR_ASSIGN(arg_info);    
+  } else {
+    /* set AVIS_ASSIGN attribute */
+    AVIS_SSAASSIGN(IDS_AVIS(arg_ids)) = INFO_SSALIR_ASSIGN(arg_info);
+  }
+#endif
 
     /* traverse to next expression */
     if (IDS_NEXT (arg_ids) != NULL) {
