@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/25 14:12:29  khf
+ * SacDevCamp04
+ *
  * Revision 1.6  2004/11/24 20:42:26  khf
  * SacDevCamp04: COMPILES!
  *
@@ -62,9 +65,9 @@ WLEdoWlEnhancement (node *arg_node)
 
     DBUG_PRINT ("WLE", ("call SSAdoSSA"));
     /* transformation in ssa-form */
-    arg_node = SSAdoSSA (arg_node);
+    arg_node = SSAdoSsa (arg_node);
     /* necessary to guarantee, that the compilation can be stopped
-       during the call of DoSSA */
+       during the call of SSAdoSsa */
     if ((global.break_after == PH_wlenhance)
         && ((0 == strcmp (global.break_specifier, "l2f"))
             || (0 == strcmp (global.break_specifier, "cha"))
@@ -91,9 +94,9 @@ WLEdoWlEnhancement (node *arg_node)
 
     DBUG_PRINT ("WLE", ("call SSAundoSSA"));
     /* undo tranformation in ssa-form */
-    arg_node = SSAundoSSA (arg_node);
+    arg_node = SSAundoSsa (arg_node);
     /* necessary to guarantee, that the compilation can be stopped
-       during the call of UndoSSA */
+       during the call of SSAundoSsa */
     if ((global.break_after == PH_wlenhance)
         && ((0 == strcmp (global.break_specifier, "ussa"))
             || (0 == strcmp (global.break_specifier, "f2l")))) {
