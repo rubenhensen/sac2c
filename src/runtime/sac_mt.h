@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2001/06/15 12:42:24  ben
+ * one minor bug in Factoring_INIT fixed
+ *
  * Revision 3.27  2001/06/15 12:33:52  ben
  * Factoring debbuged and optimized
  *
@@ -925,6 +928,8 @@ typedef union {
         SAC_MT_REST_ITERATIONS (sched_id) = (upper - lower);                             \
         SAC_MT_LAST_TASKEND (sched_id) = 0;                                              \
         SAC_MT_TASKCOUNT (sched_id) = 0;                                                 \
+        SAC_MT_ACT_TASKSIZE (sched_id)                                                   \
+          = ((SAC_MT_REST_ITERATIONS (sched_id)) / (2 * SAC_MT_threads)) + 1;            \
     }
 
 #define SAC_MT_SCHEDULER_TS_Factoring(sched_id, tasks_on_dim, lower, upper, num_tasks,   \
