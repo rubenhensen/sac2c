@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  1997/11/18 18:05:23  srs
+ * changed new WL-functions
+ *
  * Revision 1.24  1997/11/18 17:33:19  dkr
  * modified MakeNWith()
  *
@@ -1382,7 +1385,7 @@ MakeNPart (node *withid, node *generator)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeNWithid (int type, ids *_ids)
+MakeNWithid (WithIdType type, ids *_ids)
 {
     node *tmp;
     DBUG_ENTER ("MakeNWithid");
@@ -1398,7 +1401,7 @@ MakeNWithid (int type, ids *_ids)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeNGenerator (node *bound1, node *bound2, node *op1, node *op2, node *step, node *width)
+MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node *step, node *width)
 {
     node *tmp;
     DBUG_ENTER ("MakeNGenerator");

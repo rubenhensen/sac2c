@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  1997/11/18 18:03:59  srs
+ * changed new WL-functions
+ *
  * Revision 1.26  1997/11/13 16:12:11  srs
  * free functions for the new WL-syntaxtree
  * removed unused functions
@@ -1488,8 +1491,6 @@ FreeNGenerator (node *arg_node, node *arg_info)
 
     FREETRAV (NGEN_BOUND1 (arg_node));
     FREETRAV (NGEN_BOUND2 (arg_node));
-    FREETRAV (NGEN_OP1 (arg_node));
-    FREETRAV (NGEN_OP2 (arg_node));
     FREETRAV (NGEN_STEP (arg_node));
     FREETRAV (NGEN_WIDTH (arg_node));
     FREE (arg_node);
