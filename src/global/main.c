@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.139  1998/08/07 18:11:29  sbs
+ * inserted gen_mt_code; it prevents spmd regions from being created per default
+ * only if one of the following options is set:
+ * -mtstatic <no> / -mtdynamic <no> / -mtall <no>
+ * spmd regions will be introduced!
+ *
  * Revision 1.138  1998/07/23 10:08:06  cg
  * sac2c option -mt-static -mt-dynamic -mt-all renamed to
  * -mtstatic, -mtdynamic, -mtall resepctively
@@ -966,17 +972,20 @@ MAIN
             --argc;
             num_threads = atoi (*argv);
             max_threads = num_threads;
+            gen_mt_code = 1;
         } else if (0 == strncmp (*argv, "tdynamic", 8)) {
             ++argv;
             --argc;
             max_threads = atoi (*argv);
             num_threads = 0;
+            gen_mt_code = 1;
         } else if (0 == strncmp (*argv, "tall", 4)) {
             ++argv;
             --argc;
             max_threads = atoi (*argv);
             num_threads = max_threads;
             all_threads = max_threads;
+            gen_mt_code = 1;
         } else if (0 == strncmp (*argv, "axsyncfold", 10)) {
             ++argv;
             --argc;
@@ -1352,11 +1361,13 @@ MAIN
         goto BREAK;
     compiler_phase++;
 
-    NOTE_COMPILER_PHASE;
-    CHECK_DBUG_START;
-    syntax_tree = BuildSpmdRegions (syntax_tree); /* spmd..._tab, sync..._tab */
-    CHECK_DBUG_STOP;
-    ABORT_ON_ERROR;
+    if (gen_mt_code == 1) {
+        NOTE_COMPILER_PHASE;
+        CHECK_DBUG_START;
+        syntax_tree = BuildSpmdRegions (syntax_tree); /* spmd..._tab, sync..._tab */
+        CHECK_DBUG_STOP;
+        ABORT_ON_ERROR;
+    }
 
     if (break_after == PH_spmdregions)
         goto BREAK;

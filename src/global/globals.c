@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1998/08/07 18:11:29  sbs
+ * inserted gen_mt_code; it prevents spmd regions from being created per default
+ * only if one of the following options is set:
+ * -mtstatic <no> / -mtdynamic <no> / -mtall <no>
+ * spmd regions will be introduced!
+ *
  * Revision 1.21  1998/07/07 13:40:08  cg
  * added global variable all_threads implementing the command line option -mt-all
  *
@@ -144,6 +150,12 @@ char target_name[MAX_FILE_NAME] = "default";
  * Multi-thread options
  */
 
+int gen_mt_code = 0;
+/*
+ * will be set to 1 iff one of the following options is set:
+ * -mtstatic <no> / -mtdynamic <no> / -mtall <no>
+ */
+
 int num_threads = 1;
 /*
  * number of threads to be generated.
@@ -166,7 +178,7 @@ int max_threads = 32;
 
 int all_threads = 0;
 /*
- * maximum number of threads if -mt-all command line option is used.
+ * maximum number of threads if -mtall command line option is used.
  */
 
 /*
