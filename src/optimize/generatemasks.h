@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/10/28 17:08:05  dkr
+ * signature of functions Print...Mask() changed
+ *
  * Revision 2.3  1999/04/13 14:03:28  cg
  * Bug fixed in MrdGet(): function looks behind applications
  * of F_reshape only in modes 2 and 3.
@@ -84,8 +87,10 @@ extern void PopMRDL2 ();
 #define INFO_DEF arg_info->mask[0] /* added or removed variable declarations    */
 #define INFO_USE arg_info->mask[1] /* added or removed variable useages         */
 
-extern char *PrintMask (long *mask, int varno);
-extern void PrintMasks (node *arg_node, node *arg_info);
+extern void PrintDefUseMask (FILE *handle, long *mask, int varno);
+extern void PrintDefUseMasks (FILE *handle, long *defmask, long *usemask, int varno);
+extern void PrintMrdMask (FILE *handle, long *mrdmask, int varno);
+
 extern void SetMask (long *mask, long value, int varno);
 extern long *GenMask (int varno);
 extern long *ReGenMask (long *mask, int varno);
