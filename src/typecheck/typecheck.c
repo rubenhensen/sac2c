@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.14  1999/05/10 08:26:52  jhs
+ * Repaired bug in isBoundEmpty, ID_VECLEN and ID_CONSTARRAY will
+ * be checked for empty arrays now.
+ *
  * Revision 2.13  1999/05/07 15:19:36  jhs
  * Fixed Bugs in BuildDropWithLoop and is_empty_array.
  *
@@ -6995,7 +6999,7 @@ TCobjdef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  *  function:
- *    int is_bound_empty (node *arg_node, node *bound_node)
+ *    int isBoundEmpty (node *arg_node, node *bound_node)
  *
  *  description:
  *    checks whether a bound (specified by bound_node) of a withloop is an
@@ -7005,11 +7009,11 @@ TCobjdef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 int
-is_bound_empty (node *arg_node, node *bound_node)
+isBoundEmpty (node *arg_node, node *bound_node)
 {
     if (NODE_TYPE (bound_node) == N_id) {
         /* N_id node => elements are annotated */
-        if (ID_CONSTARRAY (bound_node)) {
+        if (ID_CONSTARRAY (bound_node) && (ID_VECLEN (bound_node) == 0)) {
             return (TRUE);
         } else {
             return (FALSE);
@@ -7021,7 +7025,9 @@ is_bound_empty (node *arg_node, node *bound_node)
             return (FALSE);
         }
     } else if (NODE_TYPE (bound_node) == N_cast) {
-        return (is_bound_empty (arg_node, CAST_EXPR (bound_node)));
+        /* behind the cast must be an array somewhere,
+         * so we call this by recursiov */
+        return (isBoundEmpty (arg_node, CAST_EXPR (bound_node)));
     } else {
         ABORT (NODE_LINE (arg_node), ("Wrong type of bound node!"));
     }
@@ -7293,8 +7299,8 @@ TI_Nwith (node *arg_node, node *arg_info)
         lowerbound = NGEN_BOUND1 (generator);
         upperbound = NGEN_BOUND1 (generator);
 
-        lowerbound_empty = is_bound_empty (arg_node, lowerbound);
-        upperbound_empty = is_bound_empty (arg_node, upperbound);
+        lowerbound_empty = isBoundEmpty (arg_node, lowerbound);
+        upperbound_empty = isBoundEmpty (arg_node, upperbound);
 
         if (lowerbound_empty && upperbound_empty) {
 
