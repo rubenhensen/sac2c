@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.34  2000/03/24 00:50:24  dkr
+ * INFO_DUP_LUT added
+ *
  * Revision 1.33  2000/03/23 14:03:33  jhs
  * Added macros for DFMmfoldmask_t (DFMFM) ann MakeDFMfoldmask.
  *
@@ -2357,6 +2360,7 @@ extern node *MakeInfo ();
 #define INFO_DUP_FUNDEF(n) (n->node[4])
 #define INFO_DUP_TYPE(n) (n->flag)
 #define INFO_DUP_ALL(n) (n->int_data)
+#define INFO_DUP_LUT(n) ((LUT_t) (n->dfmask[6]))
 
 /* flatten */
 #define INFO_FLTN_CONTEXT(n) (n->flag)
