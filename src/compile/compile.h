@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/04/03 16:34:48  hw
+ * Revision 1.4  1995/04/24 14:18:20  hw
+ * CompWhile & CompCond inserted
+ *
+ * Revision 1.3  1995/04/03  16:34:48  hw
  * CompFundef inserted
  *
  * Revision 1.2  1995/03/31  15:47:37  hw
@@ -29,5 +32,6 @@ extern node *CompReturn (node *arg_node, node *arg_info);
 extern node *CompWith (node *arg_node, node *arg_info);
 extern node *CompArg (node *arg_node, node *arg_info);
 extern node *CompFundef (node *arg_node, node *arg_info);
-
+extern node *CompWhile (node *arg_node, node *arg_info);
+extern node *CompCond (node *arg_node, node *arg_info);
 #endif /* _compile_h */
