@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2003/06/10 12:13:44  sah
+ * added basic unfolding of
+ * set notations
+ *
  * Revision 1.22  2003/04/14 13:48:59  sbs
  * exit replaced by break;
  *
@@ -174,6 +178,7 @@ typedef enum IDTYPE { ID_vector, ID_scalar } idtype;
 
 typedef struct SHPCHAIN {
     node *shape;
+    node *code;
     struct SHPCHAIN *next;
 } shpchain;
 
@@ -196,11 +201,15 @@ typedef struct IDTABLE {
  * (info2)
  * ASSIGNS:     stores any assigns that have to be inserted prior to
  * (node[1])    the current one. Used to build shape for WLs.
+ * SETASSIGNS:  stores any assigns that haveo to be inserted prior to
+ *              the current set notation assign. Used to pre-flatten
+ *              selections in setnotation.
  */
 #define INFO_HD_DOTSHAPE(n) n->node[0]
 #define INFO_HD_TRAVSTATE(n) ((travstate)n->flag)
 #define INFO_HD_IDTABLE(n) ((idtable *)n->info2)
 #define INFO_HD_ASSIGNS(n) n->node[1]
+#define INFO_HD_SETASSIGNS(n) ((node *)n->info3)
 
 /**
  * builds an assign-let construct.
@@ -1166,14 +1175,17 @@ FreeIdTable (idtable *table, idtable *until)
  *
  * @param vector selection vector to scan
  * @param array array the selection operates on
- * @param ids idtable containing ids to scan
+ * @param arg_info info node containing ids to scan
  */
 void
-ScanVector (node *vector, node *array, idtable *ids)
+ScanVector (node *vector, node **array, node *arg_info)
 {
     int poscnt = 0;
     int tripledotflag = 0;
     int exprslen = CountExprs (vector);
+    idtable *ids = INFO_HD_IDTABLE (arg_info);
+    node *id = NULL;
+    node *code = NULL;
 
     DBUG_ENTER ("ScanVector");
 
@@ -1188,25 +1200,36 @@ ScanVector (node *vector, node *array, idtable *ids)
                     node *shape = NULL;
                     shpchain *chain = NULL;
 
+                    /* create id for array if not already done */
+                    if (id == NULL)
+                        id = MakeTmpId ("letassign");
+
                     if (tripledotflag) {
                         position
                           = MAKE_BIN_PRF (F_sub_SxS,
-                                          MakePrf (F_dim,
-                                                   MakeExprs (DupTree (array), NULL)),
+                                          MakePrf (F_dim, MakeExprs (DupTree (id), NULL)),
                                           MakeNum (exprslen - poscnt));
                     } else {
                         position = MakeNum (poscnt);
                     }
 
-                    shape = MAKE_BIN_PRF (F_sel, MakeArray (MakeExprs (position, NULL)),
-                                          MakePrf (F_shape,
-                                                   MakeExprs (DupTree (array), NULL)));
+                    shape
+                      = MAKE_BIN_PRF (F_sel, MakeArray (MakeExprs (position, NULL)),
+                                      MakePrf (F_shape, MakeExprs (DupTree (id), NULL)));
                     chain = Malloc (sizeof (shpchain));
 
                     chain->shape = shape;
                     chain->next = handle->shapes;
                     handle->shapes = chain;
 
+                    /* insert assign into chain */
+                    /* if not already done */
+                    if (code == NULL) {
+                        code = MakeAssignLetNV (StringCopy (ID_NAME (id)), *array);
+                        INFO_HD_SETASSIGNS (arg_info)
+                          = AppendAssign (INFO_HD_SETASSIGNS (arg_info), code);
+                        *array = id;
+                    }
                     break;
                 }
 
@@ -1237,18 +1260,25 @@ ScanVector (node *vector, node *array, idtable *ids)
  * @param ids idtable structure
  */
 void
-ScanId (node *id, node *array, idtable *ids)
+ScanId (node *id, node **array, node *arg_info)
 {
+    idtable *ids = INFO_HD_IDTABLE (arg_info);
     DBUG_ENTER ("ScanId");
 
     while (ids != NULL) {
         if ((ids->type == ID_vector) && (strcmp (ids->id, ID_NAME (id)) == 0)) {
-            node *shape = MakePrf (F_shape, MakeExprs (DupTree (array), NULL));
+            node *id = MakeTmpId ("setassign");
+            node *code = MakeAssignLetNV (ID_NAME (id), *array);
+            node *shape = MakePrf (F_shape, MakeExprs (DupTree (id), NULL));
             shpchain *chain = Malloc (sizeof (shpchain));
 
             chain->shape = shape;
             chain->next = ids->shapes;
             ids->shapes = chain;
+
+            INFO_HD_SETASSIGNS (arg_info)
+              = AppendAssign (INFO_HD_SETASSIGNS (arg_info), code);
+            *array = id;
 
             break;
         }
@@ -1680,10 +1710,9 @@ HDap (node *arg_node, node *arg_info)
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_scan)
         && (strcmp (AP_NAME (arg_node), "sel") == 0)) {
         if (NODE_TYPE (AP_ARG1 (arg_node)) == N_array) {
-            ScanVector (ARRAY_AELEMS (AP_ARG1 (arg_node)), AP_ARG2 (arg_node),
-                        INFO_HD_IDTABLE (arg_info));
+            ScanVector (ARRAY_AELEMS (AP_ARG1 (arg_node)), &AP_ARG2 (arg_node), arg_info);
         } else if (NODE_TYPE (AP_ARG1 (arg_node)) == N_id) {
-            ScanId (AP_ARG1 (arg_node), AP_ARG2 (arg_node), INFO_HD_IDTABLE (arg_info));
+            ScanId (AP_ARG1 (arg_node), &AP_ARG2 (arg_node), arg_info);
         }
     }
 
@@ -1717,10 +1746,10 @@ HDprf (node *arg_node, node *arg_info)
 
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_scan) && (PRF_PRF (arg_node) == F_sel)) {
         if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_array) {
-            ScanVector (ARRAY_AELEMS (PRF_ARG1 (arg_node)), PRF_ARG2 (arg_node),
-                        INFO_HD_IDTABLE (arg_info));
+            ScanVector (ARRAY_AELEMS (PRF_ARG1 (arg_node)), &PRF_ARG2 (arg_node),
+                        arg_info);
         } else if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id) {
-            ScanId (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), INFO_HD_IDTABLE (arg_info));
+            ScanId (PRF_ARG1 (arg_node), &PRF_ARG2 (arg_node), arg_info);
         }
     }
 
@@ -1743,12 +1772,13 @@ HDassign (node *arg_node, node *arg_info)
 {
     node *result = arg_node;
     node *oldassigns = INFO_HD_ASSIGNS (arg_info);
-
+    node *oldsetassigns = INFO_HD_SETASSIGNS (arg_info);
     DBUG_ENTER ("HDassign");
 
     /* first traverse sons with a fresh assigns-chain */
 
     INFO_HD_ASSIGNS (arg_info) = NULL;
+    INFO_HD_SETASSIGNS (arg_info) = MakeEmpty ();
     result = TravSons (arg_node, arg_info);
 
     /* check for assigns that are to be inserted */
@@ -1757,18 +1787,51 @@ HDassign (node *arg_node, node *arg_info)
         if (NODE_TYPE (INFO_HD_ASSIGNS (arg_info)) == N_empty) {
             /* there is nothing to insert here */
             FreeTree (INFO_HD_ASSIGNS (arg_info));
+            INFO_HD_ASSIGNS (arg_info) = NULL;
         } else {
             /* we need to traverse them once more in order */
             /* to do dot elemination in wl generators      */
             /* and simplification of boundaries            */
-            result = Trav (INFO_HD_ASSIGNS (arg_info), arg_info);
-            AppendAssign (result, arg_node);
+            node *assigns = Trav (INFO_HD_ASSIGNS (arg_info), arg_info);
+            result = AppendAssign (assigns, result);
+        }
+    }
+
+    /* and again for set assigns */
+
+    if (INFO_HD_SETASSIGNS (arg_info) != NULL) {
+        if (NODE_TYPE (INFO_HD_SETASSIGNS (arg_info)) == N_empty) {
+            /* there is nothing to insert here */
+            FreeTree (INFO_HD_SETASSIGNS (arg_info));
+            INFO_HD_SETASSIGNS (arg_info) = NULL;
+        } else {
+            node *assigns = NULL;
+
+            /* traverse until no new assigns to process */
+            while ((INFO_HD_SETASSIGNS (arg_info) != NULL)
+                   && (NODE_TYPE (INFO_HD_SETASSIGNS (arg_info)) != N_empty)) {
+                node *temp = INFO_HD_SETASSIGNS (arg_info);
+                INFO_HD_SETASSIGNS (arg_info) = MakeEmpty ();
+                ;
+                temp = Trav (temp, arg_info);
+                if (assigns == NULL)
+                    assigns = temp;
+                else
+                    assigns = AppendAssign (temp, assigns);
+            }
+
+            /* append everything */
+            result = AppendAssign (assigns, result);
+
+            /* free last N_empty node */
+            FreeTree (INFO_HD_SETASSIGNS (arg_info));
         }
     }
 
     /* reinstall old assigns-chain */
 
     INFO_HD_ASSIGNS (arg_info) = oldassigns;
+    INFO_HD_SETASSIGNS (arg_info) = oldsetassigns;
 
     DBUG_RETURN (result);
 }
