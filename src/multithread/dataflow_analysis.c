@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/07/04 14:39:57  jhs
+ * Fixed bug, while generating MT_ALLOC.
+ *
  * Revision 1.7  2000/06/21 13:32:23  jhs
  * Added creation af MT_ALLOCmask.
  *
@@ -322,6 +325,7 @@ node *
 DFAreturn_up (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("DFAreturn_up");
+    DBUG_PRINT ("DFA", ("begin"));
 
     DFMSetMaskOr (INFO_DFA_NEEDCHAIN (arg_info), RETURN_USEMASK (arg_node));
     DFMSetMaskClear (INFO_DFA_NEEDBLOCK (arg_info));
@@ -329,6 +333,7 @@ DFAreturn_up (node *arg_node, node *arg_info)
       DFMPrintMask( stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN( arg_info));
       DFMPrintMask( stderr, "block: %s\n", INFO_DFA_NEEDBLOCK( arg_info));
     */
+    DBUG_PRINT ("DFA", ("end"));
     DBUG_RETURN (arg_node);
 }
 
@@ -337,9 +342,11 @@ node *
 DFAreturn (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("DFAreturn");
+    DBUG_PRINT ("DFA", ("begin"));
 
     arg_node = DFAtrav (arg_node, arg_info, DFAreturn_dn, DFAreturn_up);
 
+    DBUG_PRINT ("DFA", ("end"));
     DBUG_RETURN (arg_node);
 }
 
@@ -588,6 +595,7 @@ DFAxt_dn (node *arg_node, node *arg_info)
     DFMmask_t tmp_needblock;
 
     DBUG_ENTER ("DFAxt_dn");
+    DBUG_PRINT ("DFA", ("begin"));
 
     /* USEMASK = {} and DEFMASK = {} */
     L_MT_OR_ST_USEMASK (arg_node,
@@ -620,6 +628,7 @@ DFAxt_dn (node *arg_node, node *arg_info)
     tmp_needchain = DFMRemoveMask (tmp_needchain);
     tmp_needblock = DFMRemoveMask (tmp_needblock);
 
+    DBUG_PRINT ("DFA", ("end"));
     DBUG_RETURN (arg_node);
 }
 
@@ -639,7 +648,8 @@ DFAxt_up (node *arg_node, node *arg_info)
     if (NODE_TYPE (arg_node) == N_mt) {
         MT_NEEDLATER (arg_node)
           = DFMGenMaskOr (INFO_DFA_NEEDCHAIN (arg_info), INFO_DFA_NEEDBLOCK (arg_info));
-        MT_ALLOC (arg_node) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_info));
+        MT_ALLOC (arg_node)
+          = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)));
     } else if (NODE_TYPE (arg_node) == N_st) {
         ST_NEEDLATER_ST (arg_node) = DFMGenMaskMinus (INFO_DFA_NEEDCHAIN (arg_info),
                                                       INFO_DFA_NEEDBLOCK (arg_info));
