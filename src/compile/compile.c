@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.127  2004/08/08 15:50:00  ktr
+ * Descriptors of external functions not yielding a descriptor are now
+ * initialized with rc==1 in EMM.
+ *
  * Revision 3.126  2004/08/07 09:32:57  ktr
  * fixed emm bug in COMPIdFromUnique
  *
@@ -3438,20 +3442,18 @@ COMPApIds (node *ap, info *arg_info)
             DBUG_ASSERT (((ATG_is_out[tag]) || (ATG_is_inout[tag])),
                          "illegal tag found!");
 
-            if (!emm) {
-                if (ATG_is_out[tag]) { /* it is an out- (but no inout-) parameter */
-                    if (ATG_has_rc[tag]) {
-                        /* function does refcounting */
-                        if (!emm) {
-                            ret_node
-                              = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                 IDS_REFCNT (let_ids), ret_node);
-                        }
-                    } else {
-                        /* function does no refcounting */
-                        ret_node = MakeSetRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                 IDS_REFCNT (let_ids), ret_node);
+            if (ATG_is_out[tag]) { /* it is an out- (but no inout-) parameter */
+                if (ATG_has_rc[tag]) {
+                    /* function does refcounting */
+                    if (!emm) {
+                        ret_node
+                          = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                             IDS_REFCNT (let_ids), ret_node);
                     }
+                } else {
+                    /* function does no refcounting */
+                    ret_node = MakeSetRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                             emm ? 1 : IDS_REFCNT (let_ids), ret_node);
                 }
             }
 
