@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.19  2004/11/24 19:31:11  skt
+# deleted concurrent_lib.o
+#
 # Revision 3.18  2004/11/21 11:22:03  sah
 # removed some old ast infos
 #
@@ -81,12 +84,11 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 
-INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../refcount \
-       -I../flatten -I../print -I../compile -I../constants
+#INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../refcount \
+ #      -I../flatten -I../print -I../compile -I../constants
 
 OBJS := concurrent.o spmd_init.o spmd_lift.o sync_init.o \
-        sync_opt.o schedule.o spmd_trav.o concurrent_lib.o \
-        spmd_emm.o
+        sync_opt.o schedule.o spmd_trav.o spmd_emm.o
 
 all: $(OBJS)
 
