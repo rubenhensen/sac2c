@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.17  2004/11/23 16:47:25  skt
+  corrected the traversal id of explicit copy
+
   Revision 1.16  2004/11/23 16:43:12  jhb
   fixed bug
 
@@ -217,7 +220,7 @@
       <traverror>
       </traverror>
   </traversal>
-    <traversal id="EMAA" name="Explicit Copy" default="sons" include="explicitcopy.h" >
+    <traversal id="EMEC" name="Explicit Copy" default="sons" include="explicitcopy.h" >
       <travuser>
         <node name="Assign" />
         <node name="Fundef" />
