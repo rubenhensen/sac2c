@@ -5500,27 +5500,31 @@
       <sons></sons>
       <attributes>
         <attribute name="Funlist" mandatory="yes">
-          <type name="Node" />
+          <type name="Link">
+            <target>
+              <node name="Linklist" />
+            </target>
+          </type>
           <phases>
-            <range from="optimize" to="final" />
+            <range from="typecheck" to="final" />
           </phases>
         </attribute>
         <attribute name="Speccounter" default="0" mandatory="yes">
           <type name="Integer" />
           <phases>
-            <range from="optimize" to="final" />
+            <range from="typecheck" to="final" />
           </phases>
         </attribute>
         <attribute name="Refcounter" default="0" mandatory="yes">
           <type name="Integer" />
           <phases>
-            <range from="optimize" to="final" />
+            <range from="typecheck" to="final" />
           </phases>
         </attribute>
         <attribute name="Inlcounter" default="0" mandatory="yes" >
           <type name="Integer" />
           <phases>
-            <range from="optimize" to="final" />
+            <range from="typecheck" to="final" />
           </phases>
         </attribute>
       </attributes>
