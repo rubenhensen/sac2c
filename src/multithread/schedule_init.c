@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2000/01/26 15:07:00  jhs
+ * Traversal of inner wl's now correct.
+ *
  * Revision 1.3  2000/01/24 18:26:41  jhs
  * Comment added ...
  *
@@ -58,10 +61,15 @@ ScheduleInit (node *arg_node, node *arg_info)
     old_tab = act_tab;
     act_tab = schin_tab;
 
+    /* push info */
+    INFO_SCHIN_SCHEDULING (arg_info) = NULL;
+    INFO_SCHIN_INNERWLS (arg_info) = NULL;
+
     NOTE (("before"));
     FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
     NOTE (("after"));
     act_tab = old_tab;
+    /* pop info */
 
     DBUG_RETURN (arg_node);
 }
@@ -292,22 +300,38 @@ SCHINassign (node *arg_node, node *arg_info)
 node *
 SCHINnwith2 (node *arg_node, node *arg_info)
 {
+    int old_innerwls;
+
     DBUG_ENTER ("SCHINnwith2");
 
-    /*push info */
-    if (NWITH2_SCHEDULING (arg_node) != NULL) {
-        /* propagate scheduling to segments */
-        INFO_SCHIN_SCHEDULING (arg_node) = NWITH2_SCHEDULING (arg_node);
+    /*
+     *  if a scheduling is annotated to a with-loop this scheduling will be
+     *  propagated to the segments.
+     *  Schedulings of inner with-loops will be ignoreddd
+     */
+    if (INFO_SCHIN_INNERWLS (arg_info) == FALSE) {
+        if (NWITH2_SCHEDULING (arg_node) != NULL) {
+            INFO_SCHIN_SCHEDULING (arg_info) = NWITH2_SCHEDULING (arg_info);
+        } else {
+            INFO_SCHIN_SCHEDULING (arg_info) = NULL;
+        }
     } else {
-        INFO_SCHIN_SCHEDULING (arg_node) = NULL;
+        if (NWITH2_SCHEDULING (arg_node) != NULL) {
+            WARN (linenum, ("pragma Scheduling of inner with-loop will be ignored"));
+        }
+        INFO_SCHIN_SCHEDULING (arg_info) = NULL;
     }
 
-    /* traverse segements -> node_info.mac updaten !!!*/
+    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
 
-    /* traverse code, innerwls schedulings off!!! */
+    old_innerwls = INFO_SCHIN_INNERWLS (arg_info);
+    INFO_SCHIN_INNERWLS (arg_info) = TRUE;
+
+    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+
+    INFO_SCHIN_INNERWLS (arg_info) = old_innerwls;
 
     NOTE (("SCHINnwith2 reached, nothing done"));
-    /* pop info */
     /* remove wl scheduling if exists */
 
     DBUG_RETURN (arg_node);
@@ -319,12 +343,9 @@ SCHINnwith2 (node *arg_node, node *arg_info)
  *   node *SCHINwlseg(node *arg_node, node *arg_info)
  *
  * description:
- *
- *   sched_tab traversal function for N_WLseg nodes.
- *
- *   This function assures that each segment within an spmd-function has
- *   a scheduling specification while all segments outside of spmd-functions
- *   do not have scheduling specifications.
+ *   scinh_tab traversal function for N_WLseg nodes.
+ *   Assures each segement of a top-level with-loop has scheduling
+ *   specifications.
  *
  ******************************************************************************/
 node *
@@ -332,20 +353,14 @@ SCHINwlseg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SCHINwlseg");
 
-    if (arg_info == NULL) {
+    /*
+     *  Only segments of top-level with-loops are supposed to have schedulings.
+     */
+    if (INFO_SCHIN_INNERWLS (arg_info) == FALSE) {
         /*
-         * Here, we are not within an spmd-function, so schedulings derived from wlcomp
-         * pragmas must be removed.
-         */
-        if (WLSEG_SCHEDULING (arg_node) != NULL) {
-            WLSEG_SCHEDULING (arg_node)
-              = SCHRemoveScheduling (WLSEG_SCHEDULING (arg_node));
-        }
-    } else {
-        /*
-         * Here, we are within an spmd-function, so if no scheduling is already present,
-         * the inference strategy is used. Otherwise a scheduling derived froma wlcomp
-         * pragma is checked for suitability for constant segments.
+         *  If no scheduling is already present, the inference strategy is used.
+         *  Otherwise a scheduling derived from wlcomp pragma is checked for
+         *  suitability for constant segments.
          */
         if (WLSEG_SCHEDULING (arg_node) == NULL) {
             WLSEG_SCHEDULING (arg_node)
@@ -368,12 +383,9 @@ SCHINwlseg (node *arg_node, node *arg_info)
  *   node *SCHINwlsegVar(node *arg_node, node *arg_info)
  *
  * description:
- *
- *   sched_tab traversal function for N_WLsegVar nodes.
- *
- *   This function assures that each segment within an spmd-function has
- *   a scheduling specification while all segments outside of spmd-functions
- *   do not have scheduling specifications.
+ *   schin_tab traversal function for N_WLsegVar nodes.
+ *   Assures each segement of a top-level with-loop has scheduling
+ *   specifications.
  *
  ******************************************************************************/
 node *
@@ -381,20 +393,14 @@ SCHINwlsegVar (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SCHINwlsegVar");
 
-    if (arg_info == NULL) {
+    /*
+     *  Only segments of top-level with-loops are supposed to have schedulings.
+     */
+    if (INFO_SCHIN_INNERWLS (arg_info) == FALSE) {
         /*
-         * Here, we are not within an spmd-function, so schedulings derived from wlcomp
-         * pragmas must be removed.
-         */
-        if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
-            WLSEGVAR_SCHEDULING (arg_node)
-              = SCHRemoveScheduling (WLSEGVAR_SCHEDULING (arg_node));
-        }
-    } else {
-        /*
-         * Here, we are within an spmd-function, so if no scheduling is already present,
-         * the inference strategy is used. Otherwise a scheduling derived froma wlcomp
-         * pragma is checked for suitability for constant segments.
+         *  If no scheduling is already present, the inference strategy is used.
+         *  Otherwise a scheduling derived from wlcomp pragma is checked for
+         *  suitability for constant segments.
          */
         if (WLSEGVAR_SCHEDULING (arg_node) == NULL) {
             WLSEGVAR_SCHEDULING (arg_node)
