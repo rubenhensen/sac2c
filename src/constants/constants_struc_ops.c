@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2003/04/07 14:27:36  sbs
+ * COCat added.
+ * drop and take extended for accepting scalar arguments also 8-)
+ *
  * Revision 1.7  2002/06/21 12:28:18  dkr
  * no changes done
  *
@@ -291,6 +295,8 @@ COReshape (constant *new_shp, constant *a)
      */
     res = MakeConstant (CONSTANT_TYPE (a), res_shp, elems, res_vlen);
 
+    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COReshape", new_shp, a, res););
+
     DBUG_RETURN (res);
 }
 
@@ -366,8 +372,14 @@ COTake (constant *idx, constant *a)
     int i, curr_val_idx;
     int idx_i, shp_i;
     constant *offset, *res;
+    constant *new_idx = NULL;
 
     DBUG_ENTER ("COTake");
+
+    if (CONSTANT_DIM (idx) == 0) {
+        new_idx = COCopyScalar2OneElementVector (idx);
+        idx = new_idx;
+    }
     DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to COTake not vector!");
     DBUG_ASSERT ((CONSTANT_DIM (a)) >= CONSTANT_VLEN (idx),
                  "idx-vector exceeds dim of array in COTake!");
@@ -422,6 +434,10 @@ COTake (constant *idx, constant *a)
     }
     DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COTake", idx, a, res););
 
+    if (new_idx != NULL) {
+        new_idx = COFreeConstant (new_idx);
+    }
+
     DBUG_RETURN (res);
 }
 
@@ -448,9 +464,14 @@ CODrop (constant *idx, constant *a)
     int idx_i;
     constant *offset;
     constant *res;
+    constant *new_idx = NULL;
 
     DBUG_ENTER ("CODrop");
 
+    if (CONSTANT_DIM (idx) == 0) {
+        new_idx = COCopyScalar2OneElementVector (idx);
+        idx = new_idx;
+    }
     DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to CODrop not vector!");
     DBUG_ASSERT ((CONSTANT_DIM (a)) >= CONSTANT_VLEN (idx),
                  "idx-vector exceeds dim of array in CODrop!");
@@ -502,6 +523,96 @@ CODrop (constant *idx, constant *a)
     }
 
     DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("CODrop", idx, a, res););
+
+    if (new_idx != NULL) {
+        new_idx = COFreeConstant (new_idx);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn constant *COCat( constant *a, constant *b)
+ *
+ *   @brief  concatenates a and b wrt the leftmost axis.
+ *           Scalars are converted in one element vectors first!
+ *
+ *   @param a   first array to be concatenated
+ *   @param b   second array to be concatenated
+ *   @return    the concatenation of a and b
+ *
+ ******************************************************************************/
+
+constant *
+COCat (constant *a, constant *b)
+{
+    int dim, vlen;
+    int i;
+    simpletype type;
+    shape *shp;
+    constant *res, *new_a = NULL, *new_b = NULL;
+    void *cv;
+
+    DBUG_ENTER ("COCat");
+
+    if (CONSTANT_DIM (a) == 0) {
+        new_a = COCopyScalar2OneElementVector (a);
+        a = new_a;
+    }
+    if (CONSTANT_DIM (b) == 0) {
+        new_b = COCopyScalar2OneElementVector (b);
+        b = new_b;
+    }
+
+    DBUG_ASSERT (CONSTANT_TYPE (a) == CONSTANT_TYPE (b),
+                 "COCat applied to arrays of different element type!");
+    DBUG_ASSERT (CONSTANT_DIM (a) == CONSTANT_DIM (b),
+                 "COCat applied to arrays of different dimensionality!");
+
+    dim = CONSTANT_DIM (a);
+    type = CONSTANT_TYPE (a);
+
+    /**
+     * First, we compute the resulting shape. Instead of using SHCopyShape,
+     * we copy the shape manually in order to allow for consistency checking
+     * in the DBUG version.
+     */
+    shp = SHMakeShape (dim);
+    SHSetExtent (shp, 0,
+                 SHGetExtent (CONSTANT_SHAPE (a), 0)
+                   + SHGetExtent (CONSTANT_SHAPE (b), 0));
+    for (i = 1; i < dim; i++) {
+        DBUG_ASSERT ((SHGetExtent (CONSTANT_SHAPE (a), i)
+                      == SHGetExtent (CONSTANT_SHAPE (b), i)),
+                     "COCat applied to arrays with non identical extents in the trailing "
+                     "axes!");
+        SHSetExtent (shp, i, SHGetExtent (CONSTANT_SHAPE (a), i));
+    }
+
+    /**
+     * Then, we concatenate the data vectors:
+     */
+    vlen = CONSTANT_VLEN (a) + CONSTANT_VLEN (b);
+    cv = AllocCV (type, vlen);
+
+    CopyElemsFromCVToCV (type, CONSTANT_ELEMS (a), 0, CONSTANT_VLEN (a), cv, 0);
+    CopyElemsFromCVToCV (type, CONSTANT_ELEMS (b), 0, CONSTANT_VLEN (b), cv,
+                         CONSTANT_VLEN (a));
+
+    /**
+     * Finally, we create the result:
+     */
+    res = MakeConstant (type, shp, cv, vlen);
+
+    DBUG_EXECUTE ("COOPS", DbugPrintBinOp ("COCat", a, b, res););
+
+    if (new_a != NULL) {
+        new_a = COFreeConstant (new_a);
+    }
+    if (new_b != NULL) {
+        new_b = COFreeConstant (new_b);
+    }
 
     DBUG_RETURN (res);
 }
