@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/08/31 04:57:09  dkr
+ * NewTypeCheck_Expr() added
+ *
  * Revision 3.13  2002/08/15 20:59:24  dkr
  * Lac2Fun(), CheckAvis() added for wrapper code
  *
@@ -114,7 +117,7 @@ typedef enum { NTC_not_checked, NTC_checking, NTC_checked } NTC_stat;
 /******************************************************************************
  *
  * function:
- *    node *NewTypeCheck(node *arg_node)
+ *    node *NewTypeCheck( node *arg_node)
  *
  * description:
  *    starts the new type checking traversal!
@@ -125,22 +128,52 @@ node *
 NewTypeCheck (node *arg_node)
 {
     funtab *tmp_tab;
-    node *info_node;
+    node *arg_info;
 
     DBUG_ENTER ("NewTypeCheck");
 
     tmp_tab = act_tab;
     act_tab = ntc_tab;
 
-    info_node = MakeInfo ();
-
-    arg_node = Trav (arg_node, info_node);
-
-    info_node = FreeNode (info_node);
+    arg_info = MakeInfo ();
+    arg_node = Trav (arg_node, arg_info);
+    arg_info = FreeNode (arg_info);
 
     act_tab = tmp_tab;
 
     DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NewTypeCheck_Expr( node *arg_node)
+ *
+ * description:
+ *    infers the type of an expression.
+ *
+ ******************************************************************************/
+
+ntype *
+NewTypeCheck_Expr (node *arg_node)
+{
+    funtab *tmp_tab;
+    node *arg_info;
+    ntype *type;
+
+    DBUG_ENTER ("NewTypeCheck_Expr");
+
+    tmp_tab = act_tab;
+    act_tab = ntc_tab;
+
+    arg_info = MakeInfo ();
+    arg_node = Trav (arg_node, arg_info);
+    type = INFO_NTC_TYPE (arg_info);
+    arg_info = FreeNode (arg_info);
+
+    act_tab = tmp_tab;
+
+    DBUG_RETURN (type);
 }
 
 /******************************************************************************
@@ -259,8 +292,9 @@ NTCmodul (node *arg_node, node *arg_info)
      * First, we gather all typedefs and setup the global table
      * which is kept in "new_types".
      */
-    if (NULL != MODUL_TYPES (arg_node))
+    if (NULL != MODUL_TYPES (arg_node)) {
         MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
+    }
     DBUG_EXECUTE ("UDT", UTPrintRepository (stderr););
     ABORT_ON_ERROR;
 
@@ -286,12 +320,12 @@ NTCmodul (node *arg_node, node *arg_info)
      * ======================
      *
      * Since Lac2Fun needs to know about reference parameters, it requires each
-     * application of a user defined function to contain a backref to the function
-     * that is actually applied. Since this -in general- cannot be statically
-     * decided, the backref points to a wrapper function which contains the
-     * (intersection type based) function type of the overloaded function as well
-     * as pointers to all potential implementations. These structures are created
-     * by "CreateWrappers".
+     * application of a user defined function to contain a backref to the
+     * function that is actually applied. Since this -in general- cannot be
+     * statically decided, the backref points to a wrapper function which
+     * contains the (intersection type based) function type of the overloaded
+     * function as well as pointers to all potential implementations. These
+     * structures are created by "CreateWrappers".
      */
     arg_node = CreateWrappers (arg_node);
     if ((break_after == PH_typecheck) && (0 == strcmp (break_specifier, "cwr"))) {
@@ -386,8 +420,9 @@ DONE:
  *  - if the defining type contains a Symb{} type, this type and all further
  *    decendents must be defined without any recursion in type definitions!
  *
- *  The second parameter ("visited") is needed for detecting recusive definitions
- *  only. Therefore, the initial call should be made with (visited == NULL)!
+ *  The second parameter ("visited") is needed for detecting recusive
+ *  definitions only. Therefore, the initial call should be made with
+ *  (visited == NULL)!
  *
  *  We ASSUME, that the existence of a basetype indicates that the udt has
  *  been checked already!!!
@@ -411,10 +446,9 @@ CheckUdtAndSetBaseType (usertype udt, int *visited)
     if (base == NULL) {
         base = UTGetTypedef (udt);
         if (!(TYIsScalar (base) || TYIsAKS (base))) {
-            ERROR (linenum,
-                   ("typedef of %s:%s is illegal; should be either scalar type or"
-                    "array type of fixed shape",
-                    UTGetMod (udt), UTGetName (udt)));
+            ERROR (linenum, ("typedef of %s:%s is illegal; should be either"
+                             " scalar type or array type of fixed shape",
+                             UTGetMod (udt), UTGetName (udt)));
         } else {
             /*
              * Here, we know that we are either dealing with
@@ -517,7 +551,8 @@ NTCtypedef (node *arg_node, node *arg_info)
 
     udt = UTFindUserType (name, mod);
     if (udt != UT_NOT_DEFINED) {
-        ERROR (linenum, ("type %s:%s multiply defined; previous definition in line %d",
+        ERROR (linenum, ("type %s:%s multiply defined;"
+                         " previous definition in line %d",
                          mod, name, UTGetLine (udt)));
     }
     udt = UTAddUserType (name, mod, nt, NULL, linenum);
@@ -581,8 +616,9 @@ NTCarg (node *arg_node, node *arg_info)
 
     AVIS_TYPE (ARG_AVIS (arg_node)) = TYOldType2Type (ARG_TYPE (arg_node));
 
-    if (NULL != ARG_NEXT (arg_node))
+    if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -980,7 +1016,7 @@ NTCarray (node *arg_node, node *arg_info)
             type = TYMakeAUDGZ (TYGetScalar (scalar));
             break;
         default:
-            DBUG_ASSERT (FALSE, "array elements of non array types not yet supported");
+            DBUG_ASSERT ((FALSE), "array elements of non array types not yet supported");
         }
 
         TYFreeTypeConstructor (scalar);
@@ -1031,10 +1067,9 @@ NTCid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *NTCnum( node *arg_node, node *arg_info)
+ *   node *NTCnum( node *arg_node, node *arg_info)
  *
  * description:
- *
  *
  *
  ******************************************************************************/
@@ -1042,7 +1077,6 @@ NTCid (node *arg_node, node *arg_info)
 #define NTCBASIC(name, base)                                                             \
     node *NTC##name (node *arg_node, node *arg_info)                                     \
     {                                                                                    \
-                                                                                         \
         DBUG_ENTER ("NTC" #name);                                                        \
                                                                                          \
         INFO_NTC_TYPE (arg_info)                                                         \
@@ -1386,10 +1420,10 @@ NTCNwithop (node *arg_node, node *arg_info)
         if (!ok) {
             ABORT (linenum, ("illegal fold function in fold with loop; "));
         }
-
         break;
 
     case WO_foldprf:
+        /* here is no break missing */
     default:
         DBUG_ASSERT (FALSE, "fold WL with prf not yet implemented");
         res = NULL; /* just to please gcc 8-) */
