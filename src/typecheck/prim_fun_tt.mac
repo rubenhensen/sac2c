@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/02/06 17:01:05  dkr
+ * tabs removed
+ *
  * Revision 3.1  2000/11/20 18:00:14  sacbase
  * new release made
  *
@@ -79,10 +82,9 @@
 
 /*
  * type_class_tag
- *      type_class
- *		type		type		function to compute
- *						result type and to do
- *						some checks
+ *        type_class
+ *                 type      type      function to compute result type
+ *                                     and to do some checks
  */
 
 TT2 (0, SxS_S, INT, INT, MakeTypes1 (T_int))
@@ -180,38 +182,23 @@ TT2 (166, SxA_F, DOUBLE, INT_A, ConvertType (arg_type[1], T_double))
 TT2 (167, SxA_F, DOUBLE, FLOAT_A, ConvertType (arg_type[1], T_double))
 TT2 (168, SxA_F, DOUBLE, DOUBLE_A, DupTypes (arg_type[1]))
 
-TT2 (180, VxA_Ar, INT_A, INT_A,
-     Reshp (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], arg_type[0]))
-TT2 (181, VxA_Ar, INT_A, FLOAT_A,
-     Reshp (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], arg_type[0]))
-TT2 (182, VxA_Ar, INT_A, DOUBLE_A,
-     Reshp (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], arg_type[0]))
-TT2 (183, VxA_Ar, INT_A, BOOL_A,
-     Reshp (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], arg_type[0]))
-TT2 (184, VxA_Ar, INT_A, CHAR_A,
-     Reshp (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], arg_type[0]))
+TT2 (180, VxA_Ar, INT_A, INT_A, Reshp (PRF_ARG1 (arg_node), arg_type[1], arg_type[0]))
+TT2 (181, VxA_Ar, INT_A, FLOAT_A, Reshp (PRF_ARG1 (arg_node), arg_type[1], arg_type[0]))
+TT2 (182, VxA_Ar, INT_A, DOUBLE_A, Reshp (PRF_ARG1 (arg_node), arg_type[1], arg_type[0]))
+TT2 (183, VxA_Ar, INT_A, BOOL_A, Reshp (PRF_ARG1 (arg_node), arg_type[1], arg_type[0]))
+TT2 (184, VxA_Ar, INT_A, CHAR_A, Reshp (PRF_ARG1 (arg_node), arg_type[1], arg_type[0]))
 
-TT2 (190, VxA_At, INT_A, INT_A,
-     TakeV (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
-TT2 (191, VxA_At, INT_A, FLOAT_A,
-     TakeV (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
-TT2 (192, VxA_At, INT_A, BOOL_A,
-     TakeV (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
-TT2 (193, VxA_At, INT_A, DOUBLE_A,
-     TakeV (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
-TT2 (194, VxA_At, INT_A, CHAR_A,
-     TakeV (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
+TT2 (190, VxA_At, INT_A, INT_A, TakeV (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
+TT2 (191, VxA_At, INT_A, FLOAT_A, TakeV (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
+TT2 (192, VxA_At, INT_A, BOOL_A, TakeV (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
+TT2 (193, VxA_At, INT_A, DOUBLE_A, TakeV (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
+TT2 (194, VxA_At, INT_A, CHAR_A, TakeV (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
 
-TT2 (200, VxA_Ad, INT_A, INT_A,
-     DropV (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
-TT2 (201, VxA_Ad, INT_A, FLOAT_A,
-     DropV (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
-TT2 (202, VxA_Ad, INT_A, BOOL_A,
-     DropV (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
-TT2 (203, VxA_Ad, INT_A, DOUBLE_A,
-     DropV (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
-TT2 (204, VxA_Ad, INT_A, CHAR_A,
-     DropV (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
+TT2 (200, VxA_Ad, INT_A, INT_A, DropV (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
+TT2 (201, VxA_Ad, INT_A, FLOAT_A, DropV (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
+TT2 (202, VxA_Ad, INT_A, BOOL_A, DropV (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
+TT2 (203, VxA_Ad, INT_A, DOUBLE_A, DropV (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
+TT2 (204, VxA_Ad, INT_A, CHAR_A, DropV (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
 
 TT2 (210, VxA_Ap, INT_A, INT_A, Psi (arg_type[0], arg_type[1]))
 TT2 (211, VxA_Ap, INT_A, FLOAT_A, Psi (arg_type[0], arg_type[1]))
@@ -219,69 +206,54 @@ TT2 (212, VxA_Ap, INT_A, BOOL_A, Psi (arg_type[0], arg_type[1]))
 TT2 (213, VxA_Ap, INT_A, DOUBLE_A, Psi (arg_type[0], arg_type[1]))
 TT2 (214, VxA_Ap, INT_A, CHAR_A, Psi (arg_type[0], arg_type[1]))
 
-TT2 (220, SxA_At, INT, INT_A,
-     TakeDropS (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], 0))
-TT2 (221, SxA_At, INT, FLOAT_A,
-     TakeDropS (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], 0))
-TT2 (222, SxA_At, INT, BOOL_A,
-     TakeDropS (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], 0))
-TT2 (223, SxA_At, INT, DOUBLE_A,
-     TakeDropS (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], 0))
-TT2 (224, SxA_At, INT, CHAR_A,
-     TakeDropS (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], 0))
+TT2 (220, SxA_At, INT, INT_A, TakeDropS (PRF_ARG1 (arg_node), arg_type[1], 0))
+TT2 (221, SxA_At, INT, FLOAT_A, TakeDropS (PRF_ARG1 (arg_node), arg_type[1], 0))
+TT2 (222, SxA_At, INT, BOOL_A, TakeDropS (PRF_ARG1 (arg_node), arg_type[1], 0))
+TT2 (223, SxA_At, INT, DOUBLE_A, TakeDropS (PRF_ARG1 (arg_node), arg_type[1], 0))
+TT2 (224, SxA_At, INT, CHAR_A, TakeDropS (PRF_ARG1 (arg_node), arg_type[1], 0))
 
-TT2 (230, SxA_Ad, INT, INT_A,
-     TakeDropS (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], 1))
-TT2 (231, SxA_Ad, INT, FLOAT_A,
-     TakeDropS (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], 1))
-TT2 (232, SxA_Ad, INT, BOOL_A,
-     TakeDropS (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], 1))
-TT2 (233, SxA_Ad, INT, DOUBLE_A,
-     TakeDropS (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], 1))
-TT2 (234, SxA_Ad, INT, CHAR_A,
-     TakeDropS (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], 1))
+TT2 (230, SxA_Ad, INT, INT_A, TakeDropS (PRF_ARG1 (arg_node), arg_type[1], 1))
+TT2 (231, SxA_Ad, INT, FLOAT_A, TakeDropS (PRF_ARG1 (arg_node), arg_type[1], 1))
+TT2 (232, SxA_Ad, INT, BOOL_A, TakeDropS (PRF_ARG1 (arg_node), arg_type[1], 1))
+TT2 (233, SxA_Ad, INT, DOUBLE_A, TakeDropS (PRF_ARG1 (arg_node), arg_type[1], 1))
+TT2 (234, SxA_Ad, INT, CHAR_A, TakeDropS (PRF_ARG1 (arg_node), arg_type[1], 1))
 
 TT2 (240, VxA_Ag, INT_A, INT_A,
-     Genarray_A (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
+     Genarray_A (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
 TT2 (241, VxA_Ag, INT_A, FLOAT_A,
-     Genarray_A (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
+     Genarray_A (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
 TT2 (242, VxA_Ag, INT_A, BOOL_A,
-     Genarray_A (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
+     Genarray_A (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
 TT2 (243, VxA_Ag, INT_A, DOUBLE_A,
-     Genarray_A (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
+     Genarray_A (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
 TT2 (244, VxA_Ag, INT_A, CHAR_A,
-     Genarray_A (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
+     Genarray_A (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
 
-TT2 (250, VxS_Ag, INT_A, INT,
-     Genarray_S (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
+TT2 (250, VxS_Ag, INT_A, INT, Genarray_S (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
 TT2 (251, VxS_Ag, INT_A, FLOAT,
-     Genarray_S (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
-TT2 (252, VxS_Ag, INT_A, BOOL,
-     Genarray_S (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
+     Genarray_S (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
+TT2 (252, VxS_Ag, INT_A, BOOL, Genarray_S (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
 TT2 (253, VxS_Ag, INT_A, DOUBLE,
-     Genarray_S (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
-TT2 (254, VxS_Ag, INT_A, CHAR,
-     Genarray_S (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
+     Genarray_S (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
+TT2 (254, VxS_Ag, INT_A, CHAR, Genarray_S (PRF_ARG1 (arg_node), arg_type[0], arg_type[1]))
 
 TT2 (260, CxC_B, CHAR, CHAR, MakeTypes1 (T_bool))
 
-TT3 (300, SxAxA_A, INT, INT_A, INT_A,
-     Cat (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], arg_type[2]))
+TT3 (300, SxAxA_A, INT, INT_A, INT_A, Cat (PRF_ARG1 (arg_node), arg_type[1], arg_type[2]))
 TT3 (301, SxAxA_A, INT, FLOAT_A, FLOAT_A,
-     Cat (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], arg_type[2]))
+     Cat (PRF_ARG1 (arg_node), arg_type[1], arg_type[2]))
 TT3 (302, SxAxA_A, INT, BOOL_A, BOOL_A,
-     Cat (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], arg_type[2]))
+     Cat (PRF_ARG1 (arg_node), arg_type[1], arg_type[2]))
 TT3 (303, SxAxA_A, INT, DOUBLE_A, DOUBLE_A,
-     Cat (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], arg_type[2]))
+     Cat (PRF_ARG1 (arg_node), arg_type[1], arg_type[2]))
 TT3 (304, SxAxA_A, INT, CHAR_A, CHAR_A,
-     Cat (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], arg_type[2]))
+     Cat (PRF_ARG1 (arg_node), arg_type[1], arg_type[2]))
 
-TT3 (310, SxSxA_A, INT, INT, INT_A, Rot (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[2]))
-TT3 (311, SxSxA_A, INT, INT, FLOAT_A, Rot (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[2]))
-TT3 (312, SxSxA_A, INT, INT, BOOL_A, Rot (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[2]))
-TT3 (313, SxSxA_A, INT, INT, DOUBLE_A,
-     Rot (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[2]))
-TT3 (314, SxSxA_A, INT, INT, CHAR_A, Rot (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[2]))
+TT3 (310, SxSxA_A, INT, INT, INT_A, Rot (PRF_ARG1 (arg_node), arg_type[2]))
+TT3 (311, SxSxA_A, INT, INT, FLOAT_A, Rot (PRF_ARG1 (arg_node), arg_type[2]))
+TT3 (312, SxSxA_A, INT, INT, BOOL_A, Rot (PRF_ARG1 (arg_node), arg_type[2]))
+TT3 (313, SxSxA_A, INT, INT, DOUBLE_A, Rot (PRF_ARG1 (arg_node), arg_type[2]))
+TT3 (314, SxSxA_A, INT, INT, CHAR_A, Rot (PRF_ARG1 (arg_node), arg_type[2]))
 
 TT3 (320, AxAxS_A, INT_A, INT_A, INT,
      Modarray (arg_type[0], arg_type[1], arg_type[2], NODE_LINE (arg_node)))
