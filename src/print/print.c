@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.88  2002/06/07 14:39:04  dkr
+ * mdb_argtag renamed into ATG_string
+ *
  * Revision 3.87  2002/06/06 18:21:47  dkr
  * Now, ID_NT_TAG is printed in phase PH_genccode only
  *
@@ -66,30 +69,24 @@
 
 #include "types.h"
 #include "new_types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
-#include "internal_lib.h"
 #include "DupTree.h"
-#include "print.h"
-#include "print_interface.h"
 #include "my_debug.h"
 #include "dbug.h"
 #include "traverse.h"
 #include "Error.h"
 #include "convert.h"
 #include "DataFlowMask.h"
-#include "optimize.h"
 #include "generatemasks.h"
 #include "filemgr.h"
 #include "globals.h"
 #include "gen_startup_code.h"
 #include "WithloopFolding.h"
 #include "scheduling.h"
-#include "wl_access_analyze.h"
-#include "tile_size_inference.h"
-#include "wltransform.h"
-#include "wl_bounds.h"
 #include "refcount.h"
+#include "wl_bounds.h"
+#include "wltransform.h"
+#include "print_interface.h"
+#include "print.h"
 
 #define WARN_INDENT
 
@@ -586,7 +583,7 @@ PrintArgtab (argtab_t *argtab, bool is_def)
         fprintf (outfile, "[");
         for (i = 0; i < argtab->size; i++) {
             if (argtab->tag[i] != ATG_notag) {
-                fprintf (outfile, " %s:", mdb_argtag[argtab->tag[i]]);
+                fprintf (outfile, " %s:", ATG_string[argtab->tag[i]]);
 
                 if (argtab->ptr_in[i] != NULL) {
                     PRINT_POINTER_BRACKETS (outfile, argtab->ptr_in[i]);
@@ -756,7 +753,7 @@ PrintArgtags (argtab_t *argtab)
     /* return value */
     if (argtab->tag[0] != ATG_notag) {
         DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent");
-        fprintf (outfile, " %s", mdb_argtag[argtab->tag[0]]);
+        fprintf (outfile, " %s", ATG_string[argtab->tag[0]]);
     }
 
     fprintf (outfile, " <-");
@@ -764,7 +761,7 @@ PrintArgtags (argtab_t *argtab)
     /* arguments */
     for (i = 1; i < argtab->size; i++) {
         DBUG_ASSERT ((argtab->tag[i] != ATG_notag), "argtab is uncompressed");
-        fprintf (outfile, " %s", mdb_argtag[argtab->tag[i]]);
+        fprintf (outfile, " %s", ATG_string[argtab->tag[i]]);
     }
 
     fprintf (outfile, " */ ");
