@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/25 11:35:11  sah
+ * COMPILES
+ *
  * Revision 1.8  2004/11/17 19:48:50  sah
  * interface changes
  *
@@ -40,6 +43,7 @@
 #include "modulemanager.h"
 #include "deserialize.h"
 #include "new_types.h"
+#include "symboltable.h"
 #include "Error.h"
 
 /*
@@ -64,7 +68,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_USS_MODULE (result) = NULL;
 
@@ -76,7 +80,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -89,36 +93,36 @@ static void
 CheckSymbolVisibility (const char *mod, const char *symb)
 {
     module_t *module;
-    STtable_t *table;
-    STsymbol_t *symbol;
+    sttable_t *table;
+    stsymbol_t *symbol;
 
     DBUG_ENTER ("CheckSymbolVisibility");
 
-    module = LoadModule (mod);
-    table = GetSymbolTable (module);
-    symbol = STGet (symb, table);
+    module = MODMloadModule (mod);
+    table = MODMgetSymbolTable (module);
+    symbol = STget (symb, table);
 
     if ((symbol == NULL)
-        || ((!(STSymbolVisibility (symbol) == SVT_exported))
-            && (!(STSymbolVisibility (symbol) == SVT_provided)))) {
-        ERROR (linenum, ("Symbol `%s:%s' not defined", mod, symb));
+        || ((!(STsymbolVisibility (symbol) == SVT_exported))
+            && (!(STsymbolVisibility (symbol) == SVT_provided)))) {
+        ERROR (global.linenum, ("Symbol `%s:%s' not defined", mod, symb));
     }
 
-    table = STDestroy (table);
-    module = UnLoadModule (module);
+    table = STdestroy (table);
+    module = MODMunLoadModule (module);
 
     DBUG_VOID_RETURN;
 }
 
 static void
-MakeSymbolAvailable (const char *mod, const char *symb, STentrytype_t type, info *info)
+MakeSymbolAvailable (const char *mod, const char *symb, stentrytype_t type, info *info)
 {
     DBUG_ENTER ("MakeSymbolAvailable");
 
-    if (strcmp (mod, MODUL_NAME (INFO_USS_MODULE (info)))) {
+    if (!ILIBstringCompare (mod, MODULE_NAME (INFO_USS_MODULE (info)))) {
         CheckSymbolVisibility (mod, symb);
 
-        AddSymbolByName (symb, type, mod);
+        DSaddSymbolByName (symb, type, mod);
     }
 
     DBUG_VOID_RETURN;
@@ -129,24 +133,24 @@ MakeSymbolAvailable (const char *mod, const char *symb, STentrytype_t type, info
  */
 
 ntype *
-USSNType (ntype *arg_ntype, info *arg_info)
+USSNtype (ntype *arg_ntype, info *arg_info)
 {
     ntype *scalar;
 
-    DBUG_ENTER ("USSNType");
+    DBUG_ENTER ("USSNtype");
 
     /* get scalar base type of type */
-    if (TYIsArray (arg_ntype)) {
-        scalar = TYGetScalar (arg_ntype);
-    } else if (TYIsScalar (arg_ntype)) {
+    if (TYisArray (arg_ntype)) {
+        scalar = TYgetScalar (arg_ntype);
+    } else if (TYisScalar (arg_ntype)) {
         scalar = arg_ntype;
     } else {
         DBUG_ASSERT (0, "don't know what to do here");
     }
 
     /* if it is external, get the typedef */
-    if (TYIsSymb (scalar)) {
-        MakeSymbolAvailable (TYGetMod (scalar), TYGetName (scalar), SET_typedef,
+    if (TYisSymb (scalar)) {
+        MakeSymbolAvailable (TYgetMod (scalar), TYgetName (scalar), SET_typedef,
                              arg_info);
     }
 
@@ -154,98 +158,96 @@ USSNType (ntype *arg_ntype, info *arg_info)
 }
 
 node *
-USSTypedef (node *arg_node, info *arg_info)
+USStypedef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSTypedef");
+    DBUG_ENTER ("USStypedef");
 
     if (TYPEDEF_NTYPE (arg_node) != NULL) {
-        TYPEDEF_NTYPE (arg_node) = USSNType (TYPEDEF_NTYPE (arg_node), arg_info);
+        TYPEDEF_NTYPE (arg_node) = USSNtype (TYPEDEF_NTYPE (arg_node), arg_info);
     }
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
-        TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
+        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-USSArg (node *arg_node, info *arg_info)
+USSarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSArg");
+    DBUG_ENTER ("USSarg");
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-USSVardec (node *arg_node, info *arg_info)
+USSvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSVardec");
+    DBUG_ENTER ("USSvardec");
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-USSNWithOp (node *arg_node, info *arg_info)
+USSfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSNWithOp");
+    DBUG_ENTER ("USSfold");
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-USSAp (node *arg_node, info *arg_info)
+USSap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSAp");
+    DBUG_ENTER ("USSap");
 
-    MakeSymbolAvailable (AP_MOD (arg_node), AP_NAME (arg_node), SET_wrapperhead,
+    MakeSymbolAvailable (AP_SPMOD (arg_node), AP_SPNAME (arg_node), SET_wrapperhead,
                          arg_info);
 
-    arg_node = TravSons (arg_node, arg_info);
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
 node *
-USSModul (node *arg_node, info *arg_info)
+USSmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSModul");
+    DBUG_ENTER ("USSmodule");
 
     INFO_USS_MODULE (arg_info) = arg_node;
 
-    InitDeserialize (arg_node);
+    DSinitDeserialize (arg_node);
 
-    if (MODUL_TYPES (arg_node) != NULL) {
-        MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
+    if (MODULE_TYPES (arg_node) != NULL) {
+        MODULE_TYPES (arg_node) = TRAVdo (MODULE_TYPES (arg_node), arg_info);
     }
 
-    if (MODUL_FUNS (arg_node) != NULL) {
-        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    if (MODULE_FUNS (arg_node) != NULL) {
+        MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
-    FinishDeserialize (arg_node);
+    DSfinishDeserialize (arg_node);
 
     DBUG_RETURN (arg_node);
 }
 
-void
-DoUseSymbols (node *modul)
+node *
+USSdoUseSymbols (node *modul)
 {
-    funtab *store_tab;
     info *info;
 
-    DBUG_ENTER ("DoUseSymbols");
+    DBUG_ENTER ("USSdoUseSymbols");
 
     info = MakeInfo ();
 
-    store_tab = act_tab;
-    act_tab = uss_tab;
+    TRAVpush (TR_uss);
 
-    modul = Trav (modul, info);
+    modul = TRAVdo (modul, info);
 
-    act_tab = store_tab;
+    TRAVpop ();
 
     info = FreeInfo (info);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (modul);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/25 11:35:11  sah
+ * COMPILES
+ *
  * Revision 1.4  2004/11/22 16:57:41  ktr
  * SACDevCamp 04 Ismop
  *
@@ -32,7 +35,7 @@
 extern node *USSdoUseSymbols (node *modul);
 
 extern node *USStypedef (node *arg_node, info *arg_info);
-extern node *USSwithop (node *arg_node, info *arg_info); /* TODO split */
+extern node *USSfold (node *arg_node, info *arg_info);
 extern node *USSarg (node *arg_node, info *arg_info);
 extern node *USSvardec (node *arg_node, info *arg_info);
 extern node *USSap (node *arg_node, info *arg_info);
