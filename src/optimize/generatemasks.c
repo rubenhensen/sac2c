@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/04/30 12:12:36  nmw
+ * integrate traversal of special fundefs in generatemasks traversal
+ *
  * Revision 3.8  2001/04/19 08:01:38  dkr
  * macro F_PTR used as format string for pointers
  *
@@ -1136,13 +1139,14 @@ MaxMask (long *mask1, long *mask2, int varno)
  *   arg_node  : node OPTTrav() was started from (only for reference)
  *
  ******************************************************************************/
-
 node *
 OPTTrav (node *trav_node, node *arg_info, node *arg_node)
 {
     long *old_mask[2];
     int i, do_pop;
     ids *_ids;
+    int old_assign_level;
+    stack *old_mrdl_stack;
 
     DBUG_ENTER ("OPTTrav");
 
@@ -1154,6 +1158,15 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
         case N_fundef:
             switch (NODE_TYPE (trav_node)) {
             case N_assign: /* function body */
+                /*
+                 * when entering a new fundef we have to store the old data so that we
+                 * are able to restore them after traversing this fundef.
+                 * this is needed when traversing special fundef in their order of
+                 * calling.
+                 */
+                old_assign_level = assign_level;
+                old_mrdl_stack = mrdl_stack;
+
                 assign_level = 0;
                 INFO_VARNO (arg_info) = FUNDEF_VARNO (arg_node);
                 INFO_DEF = GenMask (INFO_VARNO (arg_info));
@@ -1176,6 +1189,10 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                 INFO_VARNO (arg_info) = 0;
                 DBUG_PRINT ("TRAV",
                             ("Travers function %s - body END", FUNDEF_NAME (arg_node)));
+
+                /* restore saved data */
+                mrdl_stack = old_mrdl_stack;
+                assign_level = old_assign_level;
                 break;
             case N_vardec: /* vardecs of function */
                 trav_node = Trav (trav_node, arg_info);
@@ -2056,6 +2073,8 @@ GNMfundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("GET", ("GetInfo function: %s", arg_node->info.types->id));
     INFO_VARNO (arg_info) = 0;
 
+    INFO_GNM_FUNDEF (arg_info) = arg_node;
+
     arg_node = OptTrav (arg_node, arg_info, 2); /* enumberate arguments */
 
     if (FUNDEF_BODY (arg_node)) {
@@ -2175,6 +2194,51 @@ GNMlet (node *arg_node, node *arg_info)
         ids_node = IDS_NEXT (ids_node);
     }
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info); /* Trav expression */
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : GNMap
+ *  arguments     : 1) ptr to let-node
+ *                  2) ptr to info_node
+ *                  R) not modified 1)
+ *  description   : if application of special fundef, start traversal in it
+ *
+ *  global vars   : syntax_tree, info_node
+ *  internal funs : ---
+ *  external funs : Trav
+ *  macros        : DBUG..., INC_VAR
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+GNMap (node *arg_node, node *arg_info)
+{
+    node *new_arg_info;
+
+    DBUG_ENTER ("GNMap");
+
+    if (AP_ARGS (arg_node) != NULL) {
+        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+    }
+
+    /* non-recursive call of special fundef */
+    if ((AP_FUNDEF (arg_node) != NULL) && (compiler_phase == PH_sacopt)
+        && (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
+        && (INFO_GNM_FUNDEF (arg_info) != AP_FUNDEF (arg_node))) {
+
+        /* stack arg_info frame for new fundef */
+        new_arg_info = MakeInfo ();
+
+        /* start traversal of special fundef */
+        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+
+        FREE (new_arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -2518,7 +2582,6 @@ GNMicm (node *arg_node, node *arg_info)
 }
 
 /******************************************************************************/
-
 node *
 GenerateMasks (node *arg_node, node *arg_info)
 {
@@ -2528,17 +2591,22 @@ GenerateMasks (node *arg_node, node *arg_info)
     DBUG_PRINT ("OPT", ("GENERATEMASKS"));
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
 
-    tmp_tab = act_tab;
-    act_tab = genmask_tab;
-    if (NULL == arg_info) {
-        arg_info = MakeInfo ();
-        arg_node = Trav (arg_node, arg_info);
-        FREE (arg_info);
+    if ((NODE_TYPE (arg_node) == N_fundef) && (FUNDEF_IS_LACFUN (arg_node))) {
+        /* do not start traversal in special fundef */
     } else {
-        /* arg_info is modified here so I guess it's better to avoid this branch. */
-        arg_node = Trav (arg_node, arg_info);
+        tmp_tab = act_tab;
+        act_tab = genmask_tab;
+        if (NULL == arg_info) {
+            arg_info = MakeInfo ();
+            arg_node = Trav (arg_node, arg_info);
+            FREE (arg_info);
+        } else {
+            /* arg_info is modified here so I guess it's better to avoid this branch. */
+            arg_node = Trav (arg_node, arg_info);
+        }
+
+        act_tab = tmp_tab;
     }
 
-    act_tab = tmp_tab;
     DBUG_RETURN (arg_node);
 }
