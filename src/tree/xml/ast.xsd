@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   $Log$
+  Revision 1.10  2004/11/22 14:10:14  sah
+  added flag description
+
   Revision 1.9  2004/11/14 16:08:21  sah
   and another bug...
 
@@ -269,6 +272,8 @@
           </xsd:restriction>
         </xsd:simpleType>
       </xsd:attribute>  
+       <xsd:element ref="description" minOccurs="0"
+        maxOccurs="1" />
     </xsd:complexType>
   </xsd:element>
 </xsd:schema>
