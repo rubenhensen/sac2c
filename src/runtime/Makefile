@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.13  2003/03/25 12:06:41  sbs
+# config.h added
+#
 # Revision 3.12  2003/03/21 16:30:25  sbs
 # rule for sac2crc changed
 #
@@ -72,7 +75,7 @@ LIBS :=
 
 all:  libsac.a libsac_mt.a libsac_heapmgr.a  \
       libsac_heapmgr_diag.a libsac_heapmgr_mt.a libsac_heapmgr_mt_diag.a  \
-      CacheSimAnalyser sac2crc
+      CacheSimAnalyser sac2crc config.h
 
 
 tar: runtime.tar
@@ -91,6 +94,14 @@ lib%.a :
                  echo ln -s ../libsac/$@;  \
 	  fi
 	$(CLOCK_SKEW_ELIMINATION) $@
+
+config.h:
+	@ if [ ! -f $@ ]; \
+	    then ln -s ../global/$@;  \
+                 echo ln -s ../global/$@;  \
+	  fi
+	$(CLOCK_SKEW_ELIMINATION) $@
+	
 
 
 sac2crc: sac2crc.in
