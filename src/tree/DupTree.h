@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/03/21 18:16:47  dkr
+ * functions Dup..._Type added
+ * function DupTreeInfo removed
+ *
  * Revision 3.8  2001/02/15 16:56:58  nmw
  * DupSSAstack added, DupID and DupIds are now aware of the AVIS
  * attribte.
@@ -60,9 +64,6 @@
  *
  * [ ... ]
  *
- * Revision 1.1  1995/05/01  15:32:32  asi
- * Initial revision
- *
  */
 
 #ifndef _sac_DupTree_h
@@ -90,11 +91,14 @@
 /*
  * Functions for duplicating (parts of) the AST
  */
-extern node *DupTreeLUT (node *arg_node, LUT_t lut);
 extern node *DupTree (node *arg_node);
-extern node *DupTreeInfo (node *arg_node, node *arg_info);
-extern node *DupNodeLUT (node *arg_node, LUT_t lut);
+extern node *DupTree_Type (node *arg_node, int type);
+extern node *DupTreeLUT (node *arg_node, LUT_t lut);
+extern node *DupTreeLUT_Type (node *arg_node, LUT_t lut, int type);
 extern node *DupNode (node *arg_node);
+extern node *DupNode_Type (node *arg_node, int type);
+extern node *DupNodeLUT (node *arg_node, LUT_t lut);
+extern node *DupNodeLUT_Type (node *arg_node, LUT_t lut, int type);
 
 /*
  * Functions for duplicating non-node parts of the AST

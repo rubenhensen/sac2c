@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/03/21 18:17:00  dkr
+ * functions Dup..._Type added
+ * function DupTreeInfo removed
+ *
  * Revision 3.21  2001/03/19 16:45:05  dkr
  * WLSEG_HOMSV removed (WLSEG_SV used instead)
  *
@@ -125,11 +129,10 @@
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
 #include "LookUpTable.h"
-#include "Inline.h"
-#include "typecheck.h"
 #include "scheduling.h"
 #include "generatemasks.h"
 #include "constants.h"
+#include "Inline.h"
 
 /*
  *  always traverses son 'node'
@@ -140,9 +143,9 @@
 #define DUPTRAV(node) (node != NULL) ? Trav (node, arg_info) : NULL
 
 /*
- *  If INFO_DUP_CONT(arg_info) contains the root of syntaxtree.
+ *  If INFO_DUP_CONT contains the root of syntaxtree.
  *    -> traverses son 'node' if and only if its parent is not the root.
- *  If INFO_DUP_CONT(arg_info) is NULL.
+ *  If INFO_DUP_CONT is NULL.
  *    -> traverses son 'node'.
  *
  *  The macro is to be used within traversal functions where arg_node and
@@ -153,10 +156,8 @@
 /******************************************************************************
  *
  * function:
- *   static node *DupTreeOrNodeLUT( int NodeOnly,
- *                                  node *arg_node,
- *                                  node *arg_info,
- *                                  LUT_t lut)
+ *   static node *DupTreeOrNodeLUT_Type( int NodeOnly,
+ *                                       node *arg_node, LUT_t lut, int type)
  *
  * description:
  *   This routine starts a duplication-traversal, it duplicates a whole sub
@@ -170,54 +171,29 @@
  *       TRUE  : duplicate node only
  *   - arg_node:
  *       starting point of duplication
- *   - arg_info:
- *       == NULL : An internal Arg_info is created for the traversal.
- *       != NULL : The given arg_info is used for the traversal,
- *                 flags and data can be stored in arg_info by caller.
- *                 Most of such usages is undocumented!!!
- *                 So the usage of arg_info is not very nice.
- *                 Some (not all) of what is done is the following:
- *                 - If the given arg_info is NULL, everything is copied in
- *                   DUP_NORMAL mode, else the mode is taken from INFO_DUP_TYPE.
- *                 - If the given arg_info is NULL, INFO_DUP_ALL is set to
- *                   FALSE, else the value from a handed over arg_info is
- *                   reused.
- *                   If INFO_DUP_ALL is TRUE some masks of N_assign are copied,
- *                   which is not done otherwise.
- *                 The duplication needs to store some values at the arg_info
- *                 itself, so their could be problems with colliding accesses!
  *   - lut:
- *       If you want to use yout own LUT you can hand over it here.
+ *       If you want to use your own LUT you can hand over it here.
+ *   - type:
+ *       value for INFO_DUP_TYPE.
  *
  ******************************************************************************/
 
 static node *
-DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
+DupTreeOrNodeLUT_Type (int NodeOnly, node *arg_node, LUT_t lut, int type)
 {
     funtab *old_tab;
-    node *new_node, *old_fundef;
-    bool own_arg_info;
+    node *arg_info;
+    node *new_node = NULL;
 
-    DBUG_ENTER ("DupTreeOrNodeLUT");
+    DBUG_ENTER ("DupTreeOrNodeLUT_Type");
 
     if (arg_node != NULL) {
         old_tab = act_tab;
         act_tab = dup_tab;
+        arg_info = MakeInfo ();
 
-        /*
-         *  If there is no arg_info given, we create a new one, that will
-         *  be deleted after traversal. Some standard values are set.
-         */
-        if (arg_info == NULL) {
-            arg_info = MakeInfo ();
-            INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
-            INFO_DUP_ALL (arg_info) = FALSE;
-            own_arg_info = TRUE;
-            old_fundef = NULL;
-        } else {
-            own_arg_info = FALSE;
-            old_fundef = INFO_DUP_FUNDEF (arg_info);
-        }
+        INFO_DUP_TYPE (arg_info) = type;
+        INFO_DUP_ALL (arg_info) = FALSE;
 
         /*
          *  Via this (ugly) macro DUPCONT the decision to copy the whole tree
@@ -251,16 +227,8 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
             INFO_DUP_LUT (arg_info) = RemoveLUT (INFO_DUP_LUT (arg_info));
         }
 
-        if (own_arg_info) {
-            arg_info = FreeNode (arg_info);
-        } else {
-            /* pop information */
-            INFO_DUP_FUNDEF (arg_info) = old_fundef;
-        }
-
+        arg_info = FreeNode (arg_info);
         act_tab = old_tab;
-    } else {
-        new_node = NULL;
     }
 
     DBUG_RETURN (new_node);
@@ -359,7 +327,7 @@ DupDFMmask (DFMmask_t mask, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   ids *DupIds_( ids *old_ids, node *arg_info)
+ *   ids *DupIds_( ids *arg_ids, node *arg_info)
  *
  * Remark:
  *   'arg_info' might be NULL, because this function is not only used by
@@ -368,54 +336,40 @@ DupDFMmask (DFMmask_t mask, node *arg_info)
  ******************************************************************************/
 
 static ids *
-DupIds_ (ids *old_ids, node *arg_info)
+DupIds_ (ids *arg_ids, node *arg_info)
 {
     ids *new_ids;
+    char *new_name;
 
     DBUG_ENTER ("DupIds_");
 
-    DBUG_ASSERT ((old_ids != NULL), "DupIds_: cannot duplicate a NULL pointer");
+    DBUG_ASSERT ((arg_ids != NULL), "DupIds_: cannot duplicate a NULL pointer");
 
     if ((arg_info != NULL) && (INFO_DUP_TYPE (arg_info) == DUP_INLINE)) {
-        new_ids = MakeIds (RenameInlinedVar (IDS_NAME (old_ids)),
-                           StringCopy (IDS_MOD (old_ids)), IDS_STATUS (old_ids));
-
-        IDS_VARDEC (new_ids) = SearchDecl (IDS_NAME (new_ids), INFO_INL_TYPES (arg_info));
-
-        /*
-         * If (IDS_VARDEC == NULL) we better not abort, because this should be
-         * a IDS-node of a wlcomp-pragma !!
-         * We only print a warning here, 'wltransform' will check the rest !!
-         */
-        if (NULL == IDS_VARDEC (new_ids)) {
-            /*
-             * Sorry, we do not have any line numbers at IDS-nodes :(
-             * This is no good, I guess !!
-             */
-            WARN (0, ("No declaration found for ids-node"));
-        }
+        new_name = CreateInlineName (IDS_NAME (arg_ids));
     } else {
-        new_ids = MakeIds (StringCopy (IDS_NAME (old_ids)),
-                           StringCopy (IDS_MOD (old_ids)), IDS_STATUS (old_ids));
-        IDS_VARDEC (new_ids)
-          = SearchInLUT ((arg_info != NULL) ? INFO_DUP_LUT (arg_info) : NULL,
-                         IDS_VARDEC (old_ids));
-        IDS_USE (new_ids) = IDS_USE (old_ids);
+        new_name = StringCopy (IDS_NAME (arg_ids));
     }
+    new_ids = MakeIds (new_name, StringCopy (IDS_MOD (arg_ids)), IDS_STATUS (arg_ids));
 
-    IDS_ATTRIB (new_ids) = IDS_ATTRIB (old_ids);
-    IDS_REFCNT (new_ids) = IDS_REFCNT (old_ids);
-    IDS_NAIVE_REFCNT (new_ids) = IDS_NAIVE_REFCNT (old_ids);
+    IDS_VARDEC (new_ids)
+      = SearchInLUT ((arg_info != NULL) ? INFO_DUP_LUT (arg_info) : NULL,
+                     IDS_VARDEC (arg_ids));
+    IDS_USE (new_ids) = IDS_USE (arg_ids);
+
+    IDS_ATTRIB (new_ids) = IDS_ATTRIB (arg_ids);
+    IDS_REFCNT (new_ids) = IDS_REFCNT (arg_ids);
+    IDS_NAIVE_REFCNT (new_ids) = IDS_NAIVE_REFCNT (arg_ids);
 
     /* set corresponding AVIS node backreference */
-    if (IDS_VARDEC (old_ids) != NULL) {
-        IDS_AVIS (new_ids) = VARDEC_OR_ARG_AVIS (IDS_VARDEC (old_ids));
+    if (IDS_VARDEC (arg_ids) != NULL) {
+        IDS_AVIS (new_ids) = VARDEC_OR_ARG_AVIS (IDS_VARDEC (arg_ids));
     } else {
         IDS_AVIS (new_ids) = NULL;
     }
 
-    if (IDS_NEXT (old_ids) != NULL) {
-        IDS_NEXT (new_ids) = DupIds_ (IDS_NEXT (old_ids), arg_info);
+    if (IDS_NEXT (arg_ids) != NULL) {
+        IDS_NEXT (new_ids) = DupIds_ (IDS_NEXT (arg_ids), arg_info);
     }
 
     DBUG_RETURN (new_ids);
@@ -654,21 +608,20 @@ node *
 DupId (node *arg_node, node *arg_info)
 {
     node *new_node;
+    char *new_name;
 
     DBUG_ENTER ("DupId");
 
     if (INFO_DUP_TYPE (arg_info) == DUP_INLINE) {
-        new_node = MakeId (RenameInlinedVar (ID_NAME (arg_node)),
-                           StringCopy (ID_MOD (arg_node)), ID_STATUS (arg_node));
-        /* ID_OBJDEF and ID_VARDEC are mapped to the same data object */
-        ID_VARDEC (new_node) = SearchDecl (ID_NAME (new_node), INFO_INL_TYPES (arg_info));
+        new_name = CreateInlineName (ID_NAME (arg_node));
     } else {
-        new_node = MakeId (StringCopy (ID_NAME (arg_node)),
-                           StringCopy (ID_MOD (arg_node)), ID_STATUS (arg_node));
-        /* ID_OBJDEF and ID_VARDEC are mapped to the same data object */
-        ID_VARDEC (new_node)
-          = SearchInLUT (INFO_DUP_LUT (arg_info), ID_VARDEC (arg_node));
+        new_name = StringCopy (ID_NAME (arg_node));
     }
+    new_node = MakeId (new_name, StringCopy (ID_MOD (arg_node)), ID_STATUS (arg_node));
+
+    /* ID_OBJDEF and ID_VARDEC are mapped to the same data object */
+    ID_VARDEC (new_node) = SearchInLUT (INFO_DUP_LUT (arg_info), ID_VARDEC (arg_node));
+
     ID_DEF (new_node) = SearchInLUT (INFO_DUP_LUT (arg_info), ID_DEF (arg_node));
 
     ID_ATTRIB (new_node) = ID_ATTRIB (arg_node);
@@ -678,9 +631,9 @@ DupId (node *arg_node, node *arg_info)
 
     ID_AVIS (new_node) = SearchInLUT (INFO_DUP_LUT (arg_info), ID_AVIS (arg_node));
 
-    if (DUP_WLF == INFO_DUP_TYPE (arg_info)) {
+    if (INFO_DUP_TYPE (arg_info) == DUP_WLF) {
         /* Withloop folding (wlf) needs this. */
-        if (ID_WL (arg_node) && (N_id == NODE_TYPE (ID_WL (arg_node)))) {
+        if (ID_WL (arg_node) && (NODE_TYPE (ID_WL (arg_node)) == N_id)) {
             /* new code in new_codes, see 'usage of ID_WL' in WLF.c for more infos */
             ID_WL (new_node) = ID_WL (arg_node);
         } else {
@@ -1124,11 +1077,8 @@ DupAssign (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupAssign");
 
-    switch (INFO_DUP_TYPE (arg_info)) {
-    case DUP_INLINE:
-        if (N_return == NODE_TYPE (ASSIGN_INSTR (arg_node)))
-            break;
-    default:
+    if ((INFO_DUP_TYPE (arg_info) != DUP_INLINE)
+        || (NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return)) {
         new_node = MakeAssign (DUPTRAV (ASSIGN_INSTR (arg_node)),
                                DUPCONT (ASSIGN_NEXT (arg_node)));
 
@@ -1164,7 +1114,6 @@ DupAssign (node *arg_node, node *arg_info)
         }
 
         CopyCommonNodeData (new_node, arg_node);
-        break;
     }
 
     DBUG_RETURN (new_node);
@@ -2125,44 +2074,32 @@ DupSSAstack (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * functions:
- *   node *DupTreeLUT( node *arg_node, LUT_t lut)
  *   node *DupTree( node *arg_node)
- *   node *DupTreeInfo( node *arg_node, node *arg_info)
- *   node *DupNodeLUT( node *arg_node, LUT_t lut)
+ *   node *DupTree_Type( node *arg_node, LUT_t lut, int type);
+ *   node *DupTreeLUT( node *arg_node, LUT_t lut)
+ *   node *DupTreeLUT_Type( node *arg_node, LUT_t lut, int type);
  *   node *DupNode( node *arg_node)
+ *   node *DupNode_Type( node *arg_node, LUT_t lut, int type);
+ *   node *DupNodeLUT( node *arg_node, LUT_t lut)
+ *   node *DupNodeLUT_Type( node *arg_node, LUT_t lut, int type);
  *
  * description:
  *   Copying of trees and nodes ...
  *   The node to be copied is arg_node.
  *
  *   Which function do I use???
- *   - If you want to copy a whole tree use DupTree or DupTreeLUT.
+ *   - If you want to copy a whole tree use one of the DupTreeXxx() functions.
  *     If you want to copy a node only (that means the node and all it's
- *     attributes but not the xxx_NEXT) use DupNode or DupNodeLUT.
+ *     attributes but not the xxx_NEXT) use one of the DupNodeXxx() functions.
  *   - If you want to use a special LookUpTable (LUT) use the specific
- *     DupXxxLUT version otherwise you use DupXxx only
- *     (If you dont't know what a LUT is good for use DupXxx).
- *
- * attention:
- *   DupTreeInfo can be used to bring information into the duplication-traversal
- *   (via the argument 'arg_info').
- *   The use of this function is NOT RECOMMENDED!!
+ *     DupXxxLUT() version, otherwise use DupXxx().
+ *     (If you dont't know what a LUT is good for use DupXxx() :-/ )
+ *   - If you need some special behaviour triggered by INFO_DUP_TYPE use the
+ *     specific DupXxx_Type() version.
+ *     'type' is one of DUP_INLINE, DUP_INVARIANT, DUP_WLF, ...
  *
  ******************************************************************************/
 
-node *
-DupTreeLUT (node *arg_node, LUT_t lut)
-{
-    node *new_node;
-
-    DBUG_ENTER ("DupTreeLUT");
-
-    new_node = DupTreeOrNodeLUT (FALSE, arg_node, NULL, lut);
-
-    DBUG_RETURN (new_node);
-}
-
-/* see comment above */
 node *
 DupTree (node *arg_node)
 {
@@ -2170,33 +2107,46 @@ DupTree (node *arg_node)
 
     DBUG_ENTER ("DupTree");
 
-    new_node = DupTreeOrNodeLUT (FALSE, arg_node, NULL, NULL);
+    new_node = DupTreeOrNodeLUT_Type (FALSE, arg_node, NULL, DUP_NORMAL);
 
     DBUG_RETURN (new_node);
 }
 
 /* see comment above */
 node *
-DupTreeInfo (node *arg_node, node *arg_info)
+DupTree_Type (node *arg_node, int type)
 {
     node *new_node;
 
-    DBUG_ENTER ("DupTreeInfo");
+    DBUG_ENTER ("DupTree_Type");
 
-    new_node = DupTreeOrNodeLUT (FALSE, arg_node, arg_info, NULL);
+    new_node = DupTreeOrNodeLUT_Type (FALSE, arg_node, NULL, type);
 
     DBUG_RETURN (new_node);
 }
 
 /* see comment above */
 node *
-DupNodeLUT (node *arg_node, LUT_t lut)
+DupTreeLUT (node *arg_node, LUT_t lut)
 {
     node *new_node;
 
-    DBUG_ENTER ("DupNodeLUT");
+    DBUG_ENTER ("DupTreeLUT");
 
-    new_node = DupTreeOrNodeLUT (TRUE, arg_node, NULL, lut);
+    new_node = DupTreeOrNodeLUT_Type (FALSE, arg_node, lut, DUP_NORMAL);
+
+    DBUG_RETURN (new_node);
+}
+
+/* see comment above */
+node *
+DupTreeLUT_Type (node *arg_node, LUT_t lut, int type)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupTreeLUT_Type");
+
+    new_node = DupTreeOrNodeLUT_Type (FALSE, arg_node, lut, type);
 
     DBUG_RETURN (new_node);
 }
@@ -2209,7 +2159,46 @@ DupNode (node *arg_node)
 
     DBUG_ENTER ("DupTree");
 
-    new_node = DupTreeOrNodeLUT (TRUE, arg_node, NULL, NULL);
+    new_node = DupTreeOrNodeLUT_Type (TRUE, arg_node, NULL, DUP_NORMAL);
+
+    DBUG_RETURN (new_node);
+}
+
+/* see comment above */
+node *
+DupNode_Type (node *arg_node, int type)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupNode_Type");
+
+    new_node = DupTreeOrNodeLUT_Type (TRUE, arg_node, NULL, type);
+
+    DBUG_RETURN (new_node);
+}
+
+/* see comment above */
+node *
+DupNodeLUT (node *arg_node, LUT_t lut)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupNodeLUT");
+
+    new_node = DupTreeOrNodeLUT_Type (TRUE, arg_node, lut, DUP_NORMAL);
+
+    DBUG_RETURN (new_node);
+}
+
+/* see comment above */
+node *
+DupNodeLUT_Type (node *arg_node, LUT_t lut, int type)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupNodeLUT_Type");
+
+    new_node = DupTreeOrNodeLUT_Type (TRUE, arg_node, lut, type);
 
     DBUG_RETURN (new_node);
 }
@@ -2217,7 +2206,7 @@ DupNode (node *arg_node)
 /******************************************************************************
  *
  * Function:
- *   ids *DupOneIds( ids *old_ids)
+ *   ids *DupOneIds( ids *arg_ids)
  *
  * Description:
  *   Duplicates the first IDS of the given IDS chain.
@@ -2225,16 +2214,16 @@ DupNode (node *arg_node)
  ******************************************************************************/
 
 ids *
-DupOneIds (ids *old_ids)
+DupOneIds (ids *arg_ids)
 {
     ids *new_ids, *tmp;
 
     DBUG_ENTER ("DupOneIds");
 
-    tmp = IDS_NEXT (old_ids);
-    IDS_NEXT (old_ids) = NULL;
-    new_ids = DupAllIds (old_ids);
-    IDS_NEXT (old_ids) = tmp;
+    tmp = IDS_NEXT (arg_ids);
+    IDS_NEXT (arg_ids) = NULL;
+    new_ids = DupIds_ (arg_ids, NULL);
+    IDS_NEXT (arg_ids) = tmp;
 
     DBUG_RETURN (new_ids);
 }
@@ -2242,7 +2231,7 @@ DupOneIds (ids *old_ids)
 /******************************************************************************
  *
  * Function:
- *   ids *DupAllIds( ids *old_ids)
+ *   ids *DupAllIds( ids *arg_ids)
  *
  * Description:
  *   Duplicates an IDS chain.
@@ -2250,13 +2239,13 @@ DupOneIds (ids *old_ids)
  ******************************************************************************/
 
 ids *
-DupAllIds (ids *old_ids)
+DupAllIds (ids *arg_ids)
 {
     ids *new_ids;
 
     DBUG_ENTER ("DupAllIds");
 
-    new_ids = DupIds_ (old_ids, NULL);
+    new_ids = DupIds_ (arg_ids, NULL);
 
     DBUG_RETURN (new_ids);
 }
@@ -2342,7 +2331,7 @@ DupNodelist (nodelist *nl)
 /******************************************************************************
  *
  * Function:
- *   node *DupIds_Id( ids *old_ids)
+ *   node *DupIds_Id( ids *arg_ids)
  *
  * Description:
  *   Duplicates an IDS and returns a *N_id* node.
@@ -2350,14 +2339,14 @@ DupNodelist (nodelist *nl)
  ******************************************************************************/
 
 node *
-DupIds_Id (ids *old_ids)
+DupIds_Id (ids *arg_ids)
 {
     node *new_id;
 
     DBUG_ENTER ("DupIds_Id");
 
     new_id = MakeId (NULL, NULL, ST_regular);
-    ID_IDS (new_id) = DupOneIds (old_ids);
+    ID_IDS (new_id) = DupOneIds (arg_ids);
 
     DBUG_RETURN (new_id);
 }
