@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/02/20 14:40:06  dkr
+ * function DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.4  2001/04/04 17:09:02  dkr
  * include of typecheck.h removed
  *
@@ -126,7 +129,7 @@ ReadOneGenPart (FILE *infile, types *type)
         arr_node = NULL;
     } else {
         arr_node = MakeArray (aelems);
-        ARRAY_TYPE (arr_node) = DupTypes (type);
+        ARRAY_TYPE (arr_node) = DupAllTypes (type);
     }
 
     DBUG_RETURN (arr_node);
@@ -320,7 +323,7 @@ PWwith (node *arg_node, node *arg_info)
         /* shape is the maximum of all bound2-values */
         shape = DupTree (NGEN_BOUND2 (NPART_GEN (NWITH_PART (arg_node))));
         ARRAY_TYPE (shape)
-          = DupTypes (ARRAY_TYPE (NGEN_BOUND2 (NPART_GEN (NWITH_PART (arg_node)))));
+          = DupAllTypes (ARRAY_TYPE (NGEN_BOUND2 (NPART_GEN (NWITH_PART (arg_node)))));
         tmp_node = NPART_NEXT (NWITH_PART (arg_node));
         while (tmp_node != NULL) {
             bound2_el = ARRAY_AELEMS (NGEN_BOUND2 (NPART_GEN (tmp_node)));

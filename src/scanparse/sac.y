@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2002/02/20 14:34:02  dkr
+ * function DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.34  2001/07/18 12:57:45  cg
  * Applications of old tree construction function
  * AppendNodeChain eliminated.
@@ -1406,7 +1409,7 @@ exprblock2: typeNOudt_arr ids SEMIC exprblock2
                */
               while (IDS_NEXT( $2) != NULL) {  /* at least 2 vardecs! */
                 vardec_ptr = MakeVardec( IDS_NAME( $2),
-                                         DupTypes( $1),
+                                         DupAllTypes( $1),
                                          vardec_ptr);
                 /* 
                  * Now, we want to "push" $2 one IDS further

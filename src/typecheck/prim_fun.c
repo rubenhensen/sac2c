@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/02/20 14:33:26  dkr
+ * function DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.15  2001/12/11 15:17:39  dkr
  * GetDim() replaced by GetShapeDim()
  *
@@ -601,16 +604,16 @@ AxA (types *array1, types *array2, simpletype s_type)
         switch (new_type) {
         case 0:
             if (1 == ret)
-                ret_type = DupTypes (array1);
+                ret_type = DupAllTypes (array1);
             else
-                ret_type = DupTypes (array2);
+                ret_type = DupAllTypes (array2);
             ret_type->simpletype = s_type;
             break;
         case 1:
             if (1 == ret)
                 ret_type = tmp_array1;
             else {
-                ret_type = DupTypes (array2);
+                ret_type = DupAllTypes (array2);
                 FreeOneTypes (tmp_array1);
             }
             ret_type->simpletype = s_type;
@@ -619,7 +622,7 @@ AxA (types *array1, types *array2, simpletype s_type)
             if (2 == ret)
                 ret_type = tmp_array2;
             else {
-                ret_type = DupTypes (array1);
+                ret_type = DupAllTypes (array1);
                 FreeOneTypes (tmp_array2);
             }
             ret_type->simpletype = s_type;
@@ -1654,7 +1657,7 @@ Rot (node *s_node, types *array)
     if (SAC_PRG == kind_of_file) {
         if (N_num == s_node->nodetype) {
             if ((0 <= s_node->info.cint) && (s_node->info.cint < array->dim)) {
-                ret_type = DupTypes (array);
+                ret_type = DupAllTypes (array);
             } else {
                 ERROR (s_node->lineno, ("1.argument of function 'rotate` is constant %d "
                                         "but rotated array has dimension %d",
@@ -1662,27 +1665,27 @@ Rot (node *s_node, types *array)
                 GEN_TYPE_NODE (ret_type, T_unknown);
             }
         } else {
-            ret_type = DupTypes (array);
+            ret_type = DupAllTypes (array);
         }
     } else {
         /* for modules only */
         if (N_num == NODE_TYPE (s_node)) {
             if (SCALAR < TYPES_DIM (array)) {
                 if ((0 <= NUM_VAL (s_node)) && (NUM_VAL (s_node) < array->dim))
-                    ret_type = DupTypes (array);
+                    ret_type = DupAllTypes (array);
                 else
                     GEN_TYPE_NODE (ret_type, T_unknown);
             } else if (KNOWN_DIM_OFFSET > TYPES_DIM (array)) {
                 if ((0 <= NUM_VAL (s_node))
                     && (NUM_VAL (s_node) < POS_DIM (TYPES_DIM (array))))
-                    ret_type = DupTypes (array);
+                    ret_type = DupAllTypes (array);
                 else
                     GEN_TYPE_NODE (ret_type, T_unknown);
             } else
-                ret_type = DupTypes (array);
+                ret_type = DupAllTypes (array);
         } else
             /* the type of 'array' remains as it is */
-            ret_type = DupTypes (array);
+            ret_type = DupAllTypes (array);
     }
 
     DBUG_RETURN (ret_type);

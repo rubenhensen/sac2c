@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2002/02/20 14:37:04  dkr
+ * function DupTypes() renamed into DupAllTypes()
+ *
  * Revision 1.17  2002/02/12 15:44:45  dkr
  * no changes done
  *
@@ -615,7 +618,7 @@ USSANwith (node *arg_node, node *arg_info)
         /* make new unique vardec as fold target and append it to vardec chain */
         BLOCK_VARDEC (INFO_USSA_TOPBLOCK (new_arg_info))
           = MakeVardec (TmpVar (),
-                        DupTypes (VARDEC_OR_ARG_TYPE (
+                        DupAllTypes (VARDEC_OR_ARG_TYPE (
                           ID_VARDEC (NCODE_CEXPR (NWITH_CODE (arg_node))))),
                         BLOCK_VARDEC (INFO_USSA_TOPBLOCK (arg_info)));
 

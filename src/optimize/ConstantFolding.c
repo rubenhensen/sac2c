@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/02/20 14:39:24  dkr
+ * function DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.16  2002/02/20 14:35:49  dkr
  * function DupTypesOnly() renamed into DupAllTypesOnly()
  *
@@ -2191,8 +2194,8 @@ ArrayPrf (node *arg_node, node *arg_info)
                                                        /*
                                                         * Gives Array the correct type
                                                         */
-            ARRAY_TYPE (arg[0]) = FreeOneTypes (ARRAY_TYPE (arg[0]));
-            ARRAY_TYPE (arg[0]) = DupTypes (INFO_CF_TYPE (arg_info));
+            ARRAY_TYPE (arg[0]) = FreeAllTypes (ARRAY_TYPE (arg[0]));
+            ARRAY_TYPE (arg[0]) = DupAllTypes (INFO_CF_TYPE (arg_info));
             ARRAY_VECLEN (arg[0]) = 1;
             ((int *)ARRAY_CONSTVEC (arg[0])) = Array2IntVec (ARRAY_AELEMS (arg[0]), NULL);
             ARRAY_VECTYPE (arg[0]) = T_int;
@@ -2515,7 +2518,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                                               LET_IDS (ASSIGN_INSTR (assign)));
                                             new_vardec
                                               = MakeVardec (StringCopy (fresh_var),
-                                                            DupTypes (ID_TYPE (val)),
+                                                            DupAllTypes (ID_TYPE (val)),
                                                             VARDEC_NEXT (vardecs));
                                             VARDEC_NEXT (vardecs) = new_vardec;
                                             VARDEC_VARNO (new_vardec)

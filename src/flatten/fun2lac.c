@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/02/20 14:42:12  dkr
+ * function DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.12  2001/05/15 12:22:03  dkr
  * BuildRenamingAssigns: DBUG_ASSERT corrected
  *
@@ -308,7 +311,7 @@ BuildRenamingAssigns (node **vardecs, node **ass1, node **ass2, node **ass3,
                  */
                 new_name = TmpVarName (ARG_NAME (ext_args));
                 (*vardecs)
-                  = MakeVardec (new_name, DupTypes (ARG_TYPE (ext_args)), *vardecs);
+                  = MakeVardec (new_name, DupAllTypes (ARG_TYPE (ext_args)), *vardecs);
 
                 /*
                  * tmp_a_i = a_i;

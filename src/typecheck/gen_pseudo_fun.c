@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/02/20 14:44:34  dkr
+ * function DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.4  2001/05/17 11:34:07  sbs
  * return value of Free now used ...
  *
@@ -127,9 +130,9 @@ CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_v
     tmp_res_var = TmpVarName (res_var);
 
     new_fundef = MakeFundef (
-      pseudo_fold_fun, PSEUDO_MOD_FOLD, DupTypes (elem_type),
-      MakeArg (StringCopy (res_var), DupTypes (elem_type), ST_regular, ST_regular,
-               MakeArg (StringCopy (body_expr), DupTypes (elem_type), ST_regular,
+      pseudo_fold_fun, PSEUDO_MOD_FOLD, DupAllTypes (elem_type),
+      MakeArg (StringCopy (res_var), DupAllTypes (elem_type), ST_regular, ST_regular,
+               MakeArg (StringCopy (body_expr), DupAllTypes (elem_type), ST_regular,
                         ST_regular, NULL)),
       MakeBlock (MakeAssign (MakeLet (application,
                                       MakeIds (tmp_res_var, NULL, ST_regular)),

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2002/02/20 14:38:09  dkr
+ * function DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.51  2002/02/08 10:02:31  dkr
  * function IsArray() modified: returns TRUE for type[*] objects as well.
  * function IsBoxed() modified: equals (IsArray || IsHidden) now.
@@ -1967,7 +1970,7 @@ MakeVardecFromArg (node *arg_node)
     DBUG_ENTER ("MakeVardecFromArg");
 
     new_vardec = MakeVardec (StringCopy (ARG_NAME (arg_node)),
-                             DupTypes (ARG_TYPE (arg_node)), NULL);
+                             DupAllTypes (ARG_TYPE (arg_node)), NULL);
 
     VARDEC_STATUS (new_vardec) = ARG_STATUS (arg_node);
 
@@ -2023,8 +2026,8 @@ MakeArgFromVardec (node *vardec_node)
     DBUG_ENTER ("MakeArgFromVardec");
 
     new_arg = MakeArg (StringCopy (VARDEC_NAME (vardec_node)),
-                       DupTypes (VARDEC_TYPE (vardec_node)), VARDEC_STATUS (vardec_node),
-                       ST_undef, NULL);
+                       DupAllTypes (VARDEC_TYPE (vardec_node)),
+                       VARDEC_STATUS (vardec_node), ST_undef, NULL);
 
     ARG_TDEF (new_arg) = VARDEC_TDEF (vardec_node);
     ARG_OBJDEF (new_arg) = VARDEC_OBJDEF (vardec_node);

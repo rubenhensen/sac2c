@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/02/20 14:37:23  dkr
+ * function DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.5  2001/05/17 11:39:08  dkr
  * MALLOC FREE aliminated
  *
@@ -294,7 +297,7 @@ DFM2ReturnTypes (DFMmask_t mask)
     decl = DFMGetMaskEntryDeclSet (mask);
     while (decl != NULL) {
         tmp = rettypes;
-        rettypes = DupTypes (VARDEC_OR_ARG_TYPE (decl));
+        rettypes = DupAllTypes (VARDEC_OR_ARG_TYPE (decl));
 
         /*
          * VARDEC_OR_ARG_ATTRIB == 'ST_was_reference'
@@ -354,7 +357,7 @@ DFM2Vardecs (DFMmask_t mask, LUT_t lut)
             DBUG_ASSERT ((NODE_TYPE (decl) == N_arg),
                          "mask entry is neither an arg nor a vardec.");
             vardecs = MakeVardec (StringCopy (ARG_NAME (decl)),
-                                  DupTypes (ARG_TYPE (decl)), vardecs);
+                                  DupAllTypes (ARG_TYPE (decl)), vardecs);
             VARDEC_ATTRIB (vardecs) = ARG_ATTRIB (decl);
             VARDEC_OBJDEF (vardecs) = ARG_OBJDEF (decl);
         }
@@ -398,9 +401,9 @@ DFM2Args (DFMmask_t mask, LUT_t lut)
         } else {
             DBUG_ASSERT ((NODE_TYPE (decl) == N_vardec),
                          "mask entry is neither an arg nor a vardec.");
-            args
-              = MakeArg (StringCopy (VARDEC_NAME (decl)), DupTypes (VARDEC_TYPE (decl)),
-                         VARDEC_STATUS (decl), VARDEC_ATTRIB (decl), args);
+            args = MakeArg (StringCopy (VARDEC_NAME (decl)),
+                            DupAllTypes (VARDEC_TYPE (decl)), VARDEC_STATUS (decl),
+                            VARDEC_ATTRIB (decl), args);
             ARG_OBJDEF (args) = VARDEC_OBJDEF (decl);
         }
 

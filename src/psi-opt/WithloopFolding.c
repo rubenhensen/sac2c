@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/02/20 14:41:02  dkr
+ * function DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.8  2001/05/17 14:09:32  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -810,7 +813,7 @@ CreateArrayFromInternGen (int *source, int number, types *type)
     ARRAY_VECTYPE (arrayn) = T_int;
     ((int *)ARRAY_CONSTVEC (arrayn)) = Array2IntVec (tmpn, NULL);
     ARRAY_VECLEN (arrayn) = number;
-    ARRAY_TYPE (arrayn) = DupTypes (type);
+    ARRAY_TYPE (arrayn) = DupAllTypes (type);
 
     DBUG_RETURN (arrayn);
 }
@@ -966,7 +969,7 @@ CreateVardec (char *name, types *type, node **vardecs)
             DBUG_ASSERT (0, (c));
         }
 
-        type = DupTypes (type);
+        type = DupAllTypes (type);
         vardecn = MakeVardec (StringCopy (name), type, *vardecs);
         VARDEC_VARNO (vardecn) = -1;
 

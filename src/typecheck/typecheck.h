@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/02/20 14:33:34  dkr
+ * function DupTypes() renamed into DupAllTypes()
+ *
  * Revision 3.5  2001/11/19 20:34:35  dkr
  * TI() renamed into TypeInference() in order to avoid linker warning
  *
@@ -119,7 +122,7 @@ extern char *module_name; /* name of module to typecheck;
 
 /* a new types-stucture will be created */
 #define GET_BASIC_TYPE(res_type, arg_type, line)                                         \
-    res_type = DupTypes (GetTypes_Line (arg_type, line))
+    res_type = DupAllTypes (GetTypes_Line (arg_type, line))
 
 #define SAC_PRG F_prog
 #define SAC_MOD F_modimp

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2002/02/20 14:36:55  dkr
+ * function DupTypes() renamed into DupAllTypes()
+ *
  * Revision 1.7  2001/04/17 15:48:35  nmw
  * AddResult implemented
  *
@@ -440,7 +443,7 @@ CSAddResult (node *fundef, node *vardec, nodelist *letlist)
 
         /* create new type */
         FUNDEF_TYPES (fundef)
-          = AppendTypes (DupTypes (VARDEC_TYPE (vardec)), FUNDEF_TYPES (fundef));
+          = AppendTypes (DupAllTypes (VARDEC_TYPE (vardec)), FUNDEF_TYPES (fundef));
 
         /* restore fundef information */
         FUNDEF_NAME (fundef) = keep_name;
