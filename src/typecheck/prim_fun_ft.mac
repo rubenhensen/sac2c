@@ -1,8 +1,14 @@
 /*
  *  $Log$
- *  Revision 1.5  1995/02/20 08:54:20  hw
- *  added FT for primitive function F_and , F_or
+ *  Revision 1.6  1995/03/08 14:14:13  hw
+ *  - changed some AxS-... to SxA_... to distinguish the argumenttypes
+ *  - added new prf-enumerators to distinguish weather one argument
+ *    is a scalar or array (these prf-enumerators are inserted while
+ *    typechecking)
  *
+;; Revision 1.5  1995/02/20  08:54:20  hw
+;; added FT for primitive function F_and , F_or
+;;
 ;; Revision 1.4  1995/02/13  17:54:50  hw
 ;; added FT for primitive function NOT
 ;;
@@ -18,17 +24,21 @@
  */
 
 FT (F_add, SxS_S, F_add)
-FT (F_add, AxA_A, F_add)
-FT (F_add, AxS_A, F_add)
+FT (F_add, AxA_A, F_add_AxA)
+FT (F_add, AxS_A, F_add_AxS)
+FT (F_add, SxA_A, F_add_SxA)
 FT (F_sub, SxS_S, F_sub)
-FT (F_sub, AxA_A, F_sub)
-FT (F_sub, AxS_A, F_sub)
+FT (F_sub, AxA_A, F_sub_AxA)
+FT (F_sub, AxS_A, F_sub_AxS)
+FT (F_sub, SxA_A, F_sub_SxA)
 FT (F_mul, SxS_S, F_mul)
-FT (F_mul, AxA_A, F_mul)
-FT (F_mul, AxS_A, F_mul)
+FT (F_mul, AxA_A, F_mul_AxA)
+FT (F_mul, AxS_A, F_mul_AxS)
+FT (F_mul, SxA_A, F_mul_SxA)
 FT (F_div, SxS_F, F_div)
-FT (F_div, AxA_F, F_div)
-FT (F_div, AxS_F, F_div)
+FT (F_div, AxA_F, F_div_AxA)
+FT (F_div, AxS_F, F_div_AxS)
+FT (F_div, SxA_F, F_div_SxA)
 FT (F_eq, BxB_B, F_eq)
 FT (F_eq, SxS_B, F_eq)
 FT (F_neq, BxB_B, F_neq)
