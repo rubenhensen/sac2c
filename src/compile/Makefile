@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.17  2000/03/17 15:50:59  dkr
+# *.o targets simplified
+#
 # Revision 2.16  2000/03/16 14:22:54  dkr
 # target wltransform.c added
 #
@@ -87,52 +90,16 @@ all: wltransform.o wlpragma_funs.o precompile.o compile.o ReuseWithArrays.o \
 wltransform.c: wlpragma_funs.mac
 	touch wltransform.c
 
-wltransform.o: wltransform.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o wltransform.o -c wltransform.c $(INCS)
-
-wlpragma_funs.o: wlpragma_funs.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o wlpragma_funs.o -c wlpragma_funs.c $(INCS)
-
-precompile.o: precompile.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o precompile.o -c precompile.c $(INCS)
-
-compile.o: compile.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o compile.o -c compile.c $(INCS)
-
-ReuseWithArrays.o: ReuseWithArrays.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o ReuseWithArrays.o -c ReuseWithArrays.c $(INCS)
-
-icm2c.o: icm2c.c icm.data icm_vars.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o icm2c.o -c icm2c.c $(INCS)
-
-icm2c_std.o: icm2c_std.c $(MACS)
-	$(CC) $(CCFLAGS) $(CFLAGS) -o icm2c_std.o -c icm2c_std.c $(INCS)
-
-icm2c_utils.o: icm2c_utils.c 
-	$(CC) $(CCFLAGS) $(CFLAGS) -o icm2c_utils.o -c icm2c_utils.c $(INCS)
-
-icm2c_wl.o: icm2c_wl.c $(MACS)
-	$(CC) $(CCFLAGS) $(CFLAGS) -o icm2c_wl.o -c icm2c_wl.c $(INCS)
-
-icm2c_mt.o: icm2c_mt.c $(MACS)
-	$(CC) $(CCFLAGS) $(CFLAGS) -o icm2c_mt.o -c icm2c_mt.c $(INCS)
-
-profile.o: profile.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o profile.o -c profile.c $(INCS)
-
-gen_startup_code.o: gen_startup_code.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o gen_startup_code.o -c gen_startup_code.c $(INCS)
-
-Old2NewWith.o: Old2NewWith.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o Old2NewWith.o -c Old2NewWith.c $(INCS)
+%.o: %.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 
 
-
-BEtest: BEtest.c icm_vars.c icm_betest.c icm.data icm2c_std.BEtest.o \
-        icm2c_wl.BEtest.o icm2c_mt.BEtest.o ../global/globals.o icm2c_utils.BEtest.o
+BEtest: BEtest.c icm_vars.c icm_betest.c icm.data \
+          icm2c_std.BEtest.o icm2c_wl.BEtest.o icm2c_utils.BEtest.o icm2c_mt.BEtest.o \
+          ../global/globals.o ../../lib/dbug.o
 	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest BEtest.c $(INCS) \
-        ../../lib/dbug.o icm2c_std.BEtest.o icm2c_wl.BEtest.o \
-        icm2c_utils.BEtest.o icm2c_mt.BEtest.o ../global/globals.o 
+          ../../lib/dbug.o icm2c_std.BEtest.o icm2c_wl.BEtest.o \
+          icm2c_utils.BEtest.o icm2c_mt.BEtest.o ../global/globals.o 
 
 icm2c_std.BEtest.o: icm2c_std.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_std.BEtest.o -c icm2c_std.c $(INCS)
