@@ -1,6 +1,15 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/10/25 15:38:08  sbs
+ * changed SAC_BC_WRITE and SAC_BC_READ:
+ * ( check_bound ? 0 : SAC_RuntimeError(...))    is not correct,
+ * since 0 is int and SAC_RuntimeError(...) is void!!!
+ * This causes problems on the alpha!!!
+ * The new solution is:
+ * ( check_bound ? 0 : (SAC_RuntimeError(...), 0))    which is ugly
+ * but ANSI compliant and as efficient as the former solution!
+ *
  * Revision 2.3  1999/07/06 11:00:57  sbs
  * SAC_DO_BOUNDCHECK changed in SAC_DO_CHECK_BOUNDARY !
  *
@@ -59,12 +68,12 @@ extern char SAC_BC_format_read[];
 #define SAC_BC_WRITE(name, pos)                                                          \
     (((pos >= 0) && (pos < SAC_ND_A_SIZE (name)))                                        \
        ? 0                                                                               \
-       : SAC_RuntimeError (SAC_BC_format_write, #name, SAC_ND_A_SIZE (name), pos)),
+       : (SAC_RuntimeError (SAC_BC_format_write, #name, SAC_ND_A_SIZE (name), pos), 0)),
 
 #define SAC_BC_READ(name, pos)                                                           \
     (((pos >= 0) && (pos < SAC_ND_A_SIZE (name)))                                        \
        ? 0                                                                               \
-       : SAC_RuntimeError (SAC_BC_format_read, #name, SAC_ND_A_SIZE (name), pos)),
+       : (SAC_RuntimeError (SAC_BC_format_read, #name, SAC_ND_A_SIZE (name), pos), 0)),
 
 #else /* SAC_DO_CHECK_BOUNDARY */
 
