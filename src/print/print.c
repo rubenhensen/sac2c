@@ -194,9 +194,13 @@ PrintPrf (node *arg_node, node *arg_info)
     case F_not: {
         int i = 0;
 
-        fprintf (outfile, " %s(", prf_string[arg_node->info.prf]);
-        for (i = 0; i < arg_node->nnode; i++)
+        fprintf (outfile, " %s( ", prf_string[arg_node->info.prf]);
+        for (i = 0; i < arg_node->nnode; i++) {
             Trav (arg_node->node[i], arg_info);
+            if ((arg_node->nnode - 1) != i)
+                fprintf (outfile, ", ");
+        }
+
         fprintf (outfile, " ) ");
         break;
     }
@@ -399,10 +403,61 @@ PrintCond (node *arg_node, node *arg_info)
 
     fprintf (outfile, " if ");
     Trav (arg_node->node[0], arg_info);
-    fprintf (outfile, "/n/t");
+    fprintf (outfile, "\n\t");
     Trav (arg_node->node[1], arg_info);
-    fprintf (outfile, "else ");
+    fprintf (outfile, ";\n else\n\t ");
     Trav (arg_node->node[2], arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintWith (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintWith");
+
+    fprintf (outfile, "with (");
+    Trav (arg_node->node[0], arg_info);
+    fprintf (outfile, ")\n");
+    Trav (arg_node->node[1], arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintGenator (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintGenator");
+
+    Trav (arg_node->node[0], arg_info);
+    fprintf (outfile, " <= %s <= ", arg_node->info.id);
+    Trav (arg_node->node[1], arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintConexpr (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintConexpr");
+
+    if (N_genarray == arg_node->nodetype)
+        fprintf (outfile, "genarray( %s )", arg_node->info.id);
+    else
+        fprintf (outfile, "modaray( %s )", arg_node->info.id);
+    Trav (arg_node->node[0], arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PrintArray (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintArray");
+
+    fprintf (outfile, "[ ");
+    Trav (arg_node->node[0], arg_info);
+    fprintf (outfile, " ]");
 
     DBUG_RETURN (arg_node);
 }
