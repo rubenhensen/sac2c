@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2005/03/04 21:21:42  cg
+ * Some minor bugs fixed.
+ *
  * Revision 1.1  2005/02/14 11:15:17  cg
  * Initial revision
  *
@@ -112,6 +115,7 @@ PINLarg (node *arg_node, info *arg_info)
         DBUG_ASSERT ((EXPRS_NEXT (INFO_APARGS (arg_info)) != NULL),
                      "Number of arguments doesn't match number of parameters.");
         INFO_APARGS (arg_info) = EXPRS_NEXT (INFO_APARGS (arg_info));
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -211,9 +215,9 @@ PINLid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("PINLid");
 
-    DBUG_ASSERT ((INFO_LETIDS (arg_info) != NULL), "Number of return expressions doesn't "
-                                                   "match number of let-bound "
-                                                   "variables.");
+    DBUG_ASSERT ((INFO_LETIDS (arg_info) != NULL),
+                 "Number of return expressions doesn't match "
+                 "number of let-bound variables.");
 
     /*
      * Here, we are definitely inside a return-statement.
@@ -226,19 +230,25 @@ PINLid (node *arg_node, info *arg_info)
          * new_avis points to copy of original avis.
          */
 
-        if (new_avis == LUTsearchInLutPp (inline_lut, new_avis)) {
+        if (AVIS_NAME (ID_AVIS (arg_node))
+            == LUTsearchInLutPp (inline_lut, AVIS_NAME (ID_AVIS (arg_node)))) {
             /*
-             * If new_avis is not in the LUT, it has not previously occured
+             * If AVIS_NAME is not in the LUT, it has not previously occured
              * in the return-statement. Therefore, we simply "replace" the ID with that
-             * used in the calling context. We insert new_avis into the LUT to keep
+             * used in the calling context. We insert AVIS_NAME into the LUT to keep
              * track of multiple occurrences of the same identifier in the
-             * return-statement.
+             * return-statement. This is the only purpose for storing the name
+             * string in the LUT.
              */
 
             inline_lut = LUTupdateLutP (inline_lut, ID_AVIS (arg_node),
                                         IDS_AVIS (INFO_LETIDS (arg_info)), NULL);
-            inline_lut = LUTinsertIntoLutP (inline_lut, new_avis,
-                                            IDS_AVIS (INFO_LETIDS (arg_info)));
+            inline_lut
+              = LUTinsertIntoLutP (inline_lut, AVIS_NAME (ID_AVIS (arg_node)),
+                                   AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info))));
+
+            AVIS_SSAASSIGN (IDS_AVIS (INFO_LETIDS (arg_info)))
+              = AVIS_SSAASSIGN (ID_AVIS (arg_node));
         } else {
             /*
              * This identifier has previously occurred in the return-statement.
@@ -252,6 +262,11 @@ PINLid (node *arg_node, info *arg_info)
                                                     NULL),
                                          TBmakeId (new_avis)),
                               INFO_INSERT (arg_info));
+
+            AVIS_SSAASSIGN (IDS_AVIS (INFO_LETIDS (arg_info))) = INFO_INSERT (arg_info);
+
+            DBUG_PRINT ("PINL", ("Created new assignment to var %s",
+                                 AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info)))));
         }
     } else {
         /*
@@ -266,6 +281,11 @@ PINLid (node *arg_node, info *arg_info)
                                      TBmakeId (LUTsearchInLutPp (inline_lut,
                                                                  ID_AVIS (arg_node)))),
                           INFO_INSERT (arg_info));
+
+        AVIS_SSAASSIGN (IDS_AVIS (INFO_LETIDS (arg_info))) = INFO_INSERT (arg_info);
+
+        DBUG_PRINT ("PINL", ("Created new assignment to var %s",
+                             AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info)))));
     }
 
     INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
@@ -286,6 +306,8 @@ PINLdoPrepareInlining (node **vardecs, node *fundef, node *letids, node *apargs)
     if (inline_lut == NULL) {
         inline_lut = LUTgenerateLut ();
     }
+
+    DBUG_PRINT ("PINL", ("Inline preparing function %s", FUNDEF_NAME (fundef)));
 
     TRAVpush (TR_pinl);
     fundef = TRAVdo (fundef, arg_info);
