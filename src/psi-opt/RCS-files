@@ -36,3 +36,4 @@ tagdependencies.h
 wls.c
 wls.h
 wlsbuild.c
+wlscheck.c
