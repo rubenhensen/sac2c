@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/01/25 11:45:58  cg
+ * Used long int instead of int for converting pointers into numerical
+ * data. This guarantees portability to Alpha.
+ *
  * Revision 3.3  2000/12/29 14:24:41  cg
  * When compiling for multithreaded execution, any function gets one additional
  * parameter to hold the thread ID, which is needed for heap management.
@@ -87,8 +91,8 @@
  * Basic type definitions.
  */
 
-typedef unsigned int SAC_HM_size_byte_t;
-typedef int SAC_HM_size_unit_t;
+typedef unsigned long int SAC_HM_size_byte_t;
+typedef long int SAC_HM_size_unit_t;
 
 #ifndef SAC_COMPILE_SACLIB
 
