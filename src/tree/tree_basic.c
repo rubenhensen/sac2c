@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.111  2004/11/23 10:30:03  sah
+ * SaC DevCamp DK
+ *
  * Revision 3.110  2004/11/23 10:05:24  sah
  * SaC DevCamp 04
  *
@@ -32,7 +35,7 @@
  * attention: the given parameter chain of nums structs is set free here!!!
  */
 static shpseg *
-TBmakeShpseg (nums *numsp)
+TBmakeShpseg (node *numsp)
 {
     shpseg *tmp;
     int i;
@@ -62,6 +65,8 @@ TBmakeShpseg (nums *numsp)
         if (i >= SHP_SEG_SIZE) {
             SYSABORT (("Maximum number of dimensions exceeded"));
         }
+
+        DBUG_ASSERT ((NODE_TYPE (numsp) == N_nums), "found a non numsp node as argument");
 
         SHPSEG_SHAPE (tmp, i) = NUMS_NUM (numsp);
 
@@ -266,43 +271,4 @@ TBmakeArgtab (int size)
     }
 
     DBUG_RETURN (argtab);
-}
-
-/*--------------------------------------------------------------------------*/
-
-dffoldmask_t *
-TBmakeDfFoldMask (node *vardec, node *foldop, dffoldmask_t *next)
-{
-    dffoldmask_t *tmp;
-
-    DBUG_ENTER ("TBmakeDfFoldMask");
-
-    tmp = ALLOCATE (dffoldmask_t);
-
-    DFFM_VARDEC (tmp) = vardec;
-    DFFM_FOLDOP (tmp) = foldop;
-    DFFM_NEXT (tmp) = next;
-
-    DBUG_RETURN (tmp);
-}
-
-/* TODO: move to DupTree.c */
-dffoldmask_t *
-TBcopyDfFoldMask (dffoldmask_t *mask)
-{
-    dffoldmask_t *tmp;
-
-    DBUG_ENTER ("TBcopyDfFoldMask");
-
-    if (mask != NULL) {
-        tmp = ALLOCATE (dffoldmask_t);
-
-        DFFM_VARDEC (tmp) = DFFM_VARDEC (mask);
-        DFFM_FOLDOP (tmp) = DFFM_FOLDOP (mask);
-        DFFM_NEXT (tmp) = TBcopyDfFoldMask (DFFM_NEXT (mask));
-    } else {
-        tmp = NULL;
-    }
-
-    DBUG_RETURN (tmp);
 }

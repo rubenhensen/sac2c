@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.237  2004/11/23 10:30:03  sah
+ * SaC DevCamp DK
+ *
  * Revision 3.236  2004/11/23 10:05:24  sah
  * SaC DevCamp 04
  *
@@ -24,7 +27,6 @@
 #define _SAC_TREE_BASIC_H_
 
 #include "types.h"
-#include "attribs.h"
 
 /*
  *   Global Access-Macros
@@ -71,7 +73,7 @@
  ***
  ***/
 
-extern shpseg *TBmakeShpseg (static nums *num);
+extern shpseg *TBmakeShpseg (static node *num);
 
 #define SHPSEG_ELEMS(s) (s->shp)
 #define SHPSEG_SHAPE(s, x) (SHPSEG_ELEMS (s)[x])
@@ -123,28 +125,6 @@ extern types *TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name
 #define TYPES_STATUS(t) (t->type_status)
 #define TYPES_TDEF(t) (t->tdef)
 #define TYPES_NEXT(t) (t->next)
-
-/*--------------------------------------------------------------------------*/
-
-#if 1 /* TODO: SBS remove this as soon as parser is fixed */
-
-/***
- ***  NUMS :
- ***
- ***  permanent attributes:
- ***
- ***    int    NUM
- ***    nums*  NEXT  (O)
- ***/
-
-extern nums *TBmakeNums (int num, nums *next);
-extern nums *TBcreateNums (int size, ...);
-extern int *TBcreateIntegerArray (int size, ...);
-
-#define NUMS_NUM(n) (n->num)
-#define NUMS_NEXT(n) (n->next)
-
-#endif
 
 /*--------------------------------------------------------------------------*/
 
@@ -238,25 +218,12 @@ extern access_t *TBmakeAccess (node *array, node *iv, accessclass_t class, shpse
 #define ACCESS_DIR(a) (a->direction)
 #define ACCESS_NEXT(a) (a->next)
 
-/*--------------------------------------------------------------------------*/
-
-/***
- *** dffoldmask_t :
- ***
- ***/
-
-extern dffoldmask_t *TBmakeDfFoldMask (node *vardec, node *foldop, dffoldmask_t *next);
-
-/* TODO: move to DupTree.c */
-extern dffoldmask_t *TBcopyDfFoldMask (dffoldmask_t *mask);
-
-#define DFFM_VARDEC(n) (n->vardec)
-#define DFFM_FOLDOP(n) (n->foldop)
-#define DFFM_NEXT(n) (n->next)
-
 /*
  * this defines the new node type
  */
+
+#include "attribs.h"
+
 struct NODE {
     nodetype nodetype;           /* type of node */
     int lineno;                  /* line number in source code */
