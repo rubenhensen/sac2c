@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.39  1996/02/27 15:23:13  hw
+ * Revision 1.40  1996/03/12 17:02:44  hw
+ * added macro APPEND_VARDECS
+ *
+ * Revision 1.39  1996/02/27  15:23:13  hw
  * added macro IDS_VARDEC_TYPE
  *
  * Revision 1.38  1996/02/21  15:03:13  cg
@@ -1019,6 +1022,13 @@ extern void ObjList2ArgList (node *objdef);
 #define VARDEC_TNAME(n) (TYPES_NAME (VARDEC_TYPE (n)))
 #define VARDEC_TMOD(n) (TYPES_MOD (VARDEC_TYPE (n)))
 #define VARDEC_TDEF(n) (TYPES_TDEF (VARDEC_TYPE (n)))
+
+#define APPEND_VARDECS(old, new)                                                         \
+    if (NULL != old) {                                                                   \
+        VARDEC_NEXT (old) = new;                                                         \
+        old->nnode = 1;                                                                  \
+    } else                                                                               \
+        old = new
 
 /*--------------------------------------------------------------------------*/
 
