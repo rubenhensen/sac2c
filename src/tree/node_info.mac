@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.8  2001/01/09 17:05:37  dkr
+ * N_WLstriVar renamed into N_WLstrideVar
+ *
  * Revision 3.7  2000/12/12 11:47:47  dkr
  * nodes N_pre, N_post, N_inc, N_dec removed
  *
@@ -1784,9 +1787,10 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
-  NIF (N_WLstriVar, "N_WLstriVar", TravSons, TravSons, PrintWLstriVar, TravSons, TravSons,
-       TravSons, TravSons, FreeWLstriVar, TravSons, TravSons, COMPWLstriVar, TravSons,
-       DupWLstriVar, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+  NIF (N_WLstrideVar, "N_WLstrideVar", TravSons, TravSons, PrintWLstriVar, TravSons,
+       TravSons, TravSons, TravSons, FreeWLstriVar, TravSons, TravSons, COMPWLstriVar,
+       TravSons, DupWLstriVar, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
