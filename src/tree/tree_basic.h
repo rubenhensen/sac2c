@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.172  2003/11/11 14:07:04  sbs
+ * NWITHOP_DEFAULT added. other NWITHOP attributes shifted.
+ *
  * Revision 3.171  2003/10/15 12:24:44  dkrHH
  * comment for N_fundef corrected
  *
@@ -3721,6 +3724,7 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***
  ***  sons:
  ***    node*  SHAPE     ("N_expr": N_array, N_id)  (iff TYPE == WO_genarray)
+ ***    node*  DEFAULT   ("N_expr": N_array, N_id)  (iff TYPE == WO_genarray)
  ***    node*  ARRAY     ("N_expr": N_array, N_id)  (iff TYPE == WO_modarray)
  ***    node*  NEUTRAL   ("N_expr")                 (otherwise)
  ***
@@ -3750,10 +3754,11 @@ extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
 #define NWITHOP_MOD(n) ((n)->info.fun_name.id_mod)
 #define NWITHOP_PRF(n) ((n)->info.prf)
 #define NWITHOP_SHAPE(n) ((n)->node[0])
+#define NWITHOP_DEFAULT(n) ((n)->node[1])
 #define NWITHOP_ARRAY(n) ((n)->node[0])
 #define NWITHOP_NEUTRAL(n) ((n)->node[0])
-#define NWITHOP_EXPR(n) ((n)->node[1])
-#define NWITHOP_FUNDEF(n) ((n)->node[2])
+#define NWITHOP_EXPR(n) ((n)->node[2])
+#define NWITHOP_FUNDEF(n) ((n)->node[3])
 #define NWITHOP_MASK(n, x) ((n)->mask[x])
 
 /*--------------------------------------------------------------------------*/
