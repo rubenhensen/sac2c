@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/11/26 16:33:16  cg
+ * identifiers brushed.
+ *
  * Revision 3.9  2002/10/11 16:04:40  sbs
  * T_classtype added.
  *
@@ -125,64 +128,64 @@
  *      zipcv               basecv              unused1            unused2
  */
 
-TYP_IF (T_unknown, "unknown", "_unknown_", "", COCv2ScalarDummy, COCv2CvDummy,
-        COCv2StrDummy, 0, COZipCvDummy, COBaseCvDummy, unused, unused),
+TYP_IF (T_unknown, "unknown", "_unknown_", "", COcv2ScalarDummy, COcv2CvDummy,
+        COcv2StrDummy, 0, COzipCvDummy, CObaseCvDummy, unused, unused),
 
-  TYP_IF (T_int, "int", "int", "i", COCv2Num, COCv2CvInt, COCv2StrInt, sizeof (int),
-          COZipCvInt, COBaseCvInt, unused, unused),
+  TYP_IF (T_int, "int", "int", "i", COcv2Num, COcv2CvInt, COcv2StrInt, sizeof (int),
+          COzipCvInt, CObaseCvInt, unused, unused),
 
-  TYP_IF (T_short, "short", "short", "s", COCv2ScalarDummy, COCv2CvShort, COCv2StrShort,
-          sizeof (short int), COZipCvShort, COBaseCvShort, unused, unused),
+  TYP_IF (T_short, "short", "short", "s", COcv2ScalarDummy, COcv2CvShort, COcv2StrShort,
+          sizeof (short int), COzipCvShort, CObaseCvShort, unused, unused),
 
-  TYP_IF (T_long, "long", "long", "l", COCv2ScalarDummy, COCv2CvLong, COCv2StrLong,
-          sizeof (long int), COZipCvLong, COBaseCvLong, unused, unused),
+  TYP_IF (T_long, "long", "long", "l", COcv2ScalarDummy, COcv2CvLong, COcv2StrLong,
+          sizeof (long int), COzipCvLong, CObaseCvLong, unused, unused),
 
-  TYP_IF (T_uint, "unsigned int", "unsigned int", "ui", COCv2ScalarDummy, COCv2CvUInt,
-          COCv2StrUInt, sizeof (int), COZipCvUInt, COBaseCvUInt, unused, unused),
+  TYP_IF (T_uint, "unsigned int", "unsigned int", "ui", COcv2ScalarDummy, COcv2CvUInt,
+          COcv2StrUInt, sizeof (int), COzipCvUInt, CObaseCvUInt, unused, unused),
 
-  TYP_IF (T_ushort, "unsigned short", "unsigned short", "us", COCv2ScalarDummy,
-          COCv2CvUShort, COCv2StrUShort, sizeof (short int), COZipCvUShort,
-          COBaseCvUShort, unused, unused),
+  TYP_IF (T_ushort, "unsigned short", "unsigned short", "us", COcv2ScalarDummy,
+          COcv2CvUShort, COcv2StrUShort, sizeof (short int), COzipCvUShort,
+          CObaseCvUShort, unused, unused),
 
-  TYP_IF (T_ulong, "unsigned long", "unsigned long", "ul", COCv2ScalarDummy, COCv2CvULong,
-          COCv2StrULong, sizeof (long int), COZipCvULong, COBaseCvULong, unused, unused),
+  TYP_IF (T_ulong, "unsigned long", "unsigned long", "ul", COcv2ScalarDummy, COcv2CvULong,
+          COcv2StrULong, sizeof (long int), COzipCvULong, CObaseCvULong, unused, unused),
 
-  TYP_IF (T_float, "float", "float", "f", COCv2Float, COCv2CvFloat, COCv2StrFloat,
-          sizeof (float), COZipCvFloat, COBaseCvFloat, unused, unused),
+  TYP_IF (T_float, "float", "float", "f", COcv2Float, COcv2CvFloat, COcv2StrFloat,
+          sizeof (float), COzipCvFloat, CObaseCvFloat, unused, unused),
 
-  TYP_IF (T_double, "double", "double", "d", COCv2Double, COCv2CvDouble, COCv2StrDouble,
-          sizeof (double), COZipCvDouble, COBaseCvDouble, unused, unused),
+  TYP_IF (T_double, "double", "double", "d", COcv2Double, COcv2CvDouble, COcv2StrDouble,
+          sizeof (double), COzipCvDouble, CObaseCvDouble, unused, unused),
 
-  TYP_IF (T_longdbl, "long double", "long double", "ld", COCv2ScalarDummy,
-          COCv2CvLongDouble, COCv2StrLongDouble, sizeof (long double), COZipCvLongDouble,
-          COBaseCvLongDouble, unused, unused),
+  TYP_IF (T_longdbl, "long double", "long double", "ld", COcv2ScalarDummy,
+          COcv2CvLongDouble, COcv2StrLongDouble, sizeof (long double), COzipCvLongDouble,
+          CObaseCvLongDouble, unused, unused),
 
-  TYP_IF (T_bool, "bool", "bool", "b", COCv2Bool, COCv2CvInt, COCv2StrInt, sizeof (int),
-          COZipCvBool, COBaseCvBool, unused, unused),
+  TYP_IF (T_bool, "bool", "bool", "b", COcv2Bool, COcv2CvInt, COcv2StrInt, sizeof (int),
+          COzipCvBool, CObaseCvBool, unused, unused),
 
-  TYP_IF (T_str, "string", "string", "st", COCv2ScalarDummy, COCv2CvDummy, COCv2StrDummy,
-          sizeof (char *), COZipCvDummy, COBaseCvDummy, unused, unused),
+  TYP_IF (T_str, "string", "string", "st", COcv2ScalarDummy, COcv2CvDummy, COcv2StrDummy,
+          sizeof (char *), COzipCvDummy, CObaseCvDummy, unused, unused),
 
-  TYP_IF (T_char, "char", "char", "c", COCv2Char, COCv2CvChar, COCv2StrChar,
-          sizeof (char), COZipCvDummy, COBaseCvDummy, unused, unused),
+  TYP_IF (T_char, "char", "char", "c", COcv2Char, COcv2CvChar, COcv2StrChar,
+          sizeof (char), COzipCvDummy, CObaseCvDummy, unused, unused),
 
-  TYP_IF (T_hidden, "hidden", "SAC_hidden", "h", COCv2ScalarDummy, COCv2CvHidden,
-          COCv2StrDummy, sizeof (void *), COZipCvDummy, COBaseCvDummy, unused, unused),
+  TYP_IF (T_hidden, "hidden", "SAC_hidden", "h", COcv2ScalarDummy, COcv2CvHidden,
+          COcv2StrDummy, sizeof (void *), COzipCvDummy, CObaseCvDummy, unused, unused),
 
-  TYP_IF (T_classtype, "classtype", "SAC_classtype", "u", COCv2ScalarDummy, COCv2CvHidden,
-          COCv2StrDummy, sizeof (void *), COZipCvDummy, COBaseCvDummy, unused, unused),
+  TYP_IF (T_classtype, "classtype", "SAC_classtype", "u", COcv2ScalarDummy, COcv2CvHidden,
+          COcv2StrDummy, sizeof (void *), COzipCvDummy, CObaseCvDummy, unused, unused),
 
-  TYP_IF (T_void, "void", "void", "v", COCv2ScalarDummy, COCv2CvDummy, COCv2StrDummy, 0,
-          COZipCvDummy, COBaseCvDummy, unused, unused),
+  TYP_IF (T_void, "void", "void", "v", COcv2ScalarDummy, COcv2CvDummy, COcv2StrDummy, 0,
+          COzipCvDummy, CObaseCvDummy, unused, unused),
 
-  TYP_IF (T_dots, "...", "...", "d", COCv2ScalarDummy, COCv2CvDummy, COCv2StrDummy, 0,
-          COZipCvDummy, COBaseCvDummy, unused, unused),
+  TYP_IF (T_dots, "...", "...", "d", COcv2ScalarDummy, COcv2CvDummy, COcv2StrDummy, 0,
+          COzipCvDummy, CObaseCvDummy, unused, unused),
 
-  TYP_IF (T_user, "user", "SAC_user", "", COCv2ScalarDummy, COCv2CvDummy, COCv2StrDummy,
-          0, COZipCvDummy, COBaseCvDummy, unused, unused),
+  TYP_IF (T_user, "user", "SAC_user", "", COcv2ScalarDummy, COcv2CvDummy, COcv2StrDummy,
+          0, COzipCvDummy, CObaseCvDummy, unused, unused),
 
-  TYP_IF (T_nothing, "nothing", "nothing", "n", COCv2ScalarDummy, COCv2CvDummy,
-          COCv2StrDummy, 0, COZipCvDummy, COBaseCvDummy, unused, unused)
+  TYP_IF (T_nothing, "nothing", "nothing", "n", COcv2ScalarDummy, COcv2CvDummy,
+          COcv2StrDummy, 0, COzipCvDummy, CObaseCvDummy, unused, unused)
 
 #undef TYP_IFname
 #undef TYP_IFdb_str
