@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.23  2004/11/23 00:46:20  ktr
+ * Ismop SacDEVCamp
+ *
  * Revision 1.22  2004/11/22 11:27:04  ktr
  * Ismop SacDevCamp 04
  *
@@ -121,23 +124,30 @@
 /*
  * Functions for creating constants:
  */
-extern constant *COMakeConstant (simpletype type, shape *shp, void *elems);
-extern constant *COMakeConstantFromShape (shape *shp);
-extern constant *COMakeConstantFromInt (int val);
-extern constant *COMakeConstantFromArray (node *a);
+/******************************************************************************
+ *
+ * Constants
+ *
+ * Prefix: CO
+ *
+ *****************************************************************************/
+extern constant *COmakeConstant (simpletype type, shape *shp, void *elems);
+extern constant *COmakeConstantFromShape (shape *shp);
+extern constant *COmakeConstantFromInt (int val);
+extern constant *COmakeConstantFromArray (node *a);
 
-extern constant *COMakeZero (simpletype type, shape *shp);
-extern constant *COMakeOne (simpletype type, shape *shp);
-extern constant *COMakeTrue (shape *shp);
-extern constant *COMakeFalse (shape *shp);
+extern constant *COmakeZero (simpletype type, shape *shp);
+extern constant *COmakeOne (simpletype type, shape *shp);
+extern constant *COmakeTrue (shape *shp);
+extern constant *COmakeFalse (shape *shp);
 
 /*
  * Functions for serializing/deserializing constants
  * see constants_serialize.c
  */
 
-extern void COSerializeConstant (FILE *file, constant *cnst);
-extern constant *CODeserializeConstant (simpletype type, shape *shp, int vlen, char *vec);
+extern void COserializeConstant (FILE *file, constant *cnst);
+extern constant *COdeserializeConstant (simpletype type, shape *shp, int vlen, char *vec);
 
 /*
  * Functions for extracting info from constants:
@@ -146,33 +156,33 @@ extern constant *CODeserializeConstant (simpletype type, shape *shp, int vlen, c
  *                        *** TREAT THEM CAREFULLY ***
  *                        ***** DO NOT FREE THEM *****
  */
-extern simpletype COGetType (constant *a);
-extern int COGetDim (constant *a);
-extern shape *COGetShape (constant *a);
-extern void *COGetDataVec (constant *a);
+extern simpletype COgetType (constant *a);
+extern int COgetDim (constant *a);
+extern shape *COgetShape (constant *a);
+extern void *COgetDataVec (constant *a);
 
 /*
  * Functions for handling / converting constants:
  */
-extern constant *COCopyConstant (constant *a);
-extern constant *COCopyScalar2OneElementVector (constant *a);
-extern char *COConstantData2String (int max_char, constant *a);
-extern char *COConstant2String (constant *a);
-extern shape *COConstant2Shape (constant *a);
-extern void COPrintConstant (FILE *file, constant *a);
-extern constant *COFreeConstant (constant *a);
-extern node *COConstant2AST (constant *a);
-extern constant *COAST2Constant (node *a);
-extern bool COIsConstant (node *a);
-extern bool COCompareConstants (constant *c1, constant *c2);
+extern constant *COcopyConstant (constant *a);
+extern constant *COcopyScalar2OneElementVector (constant *a);
+extern char *COconstantData2String (int max_char, constant *a);
+extern char *COconstant2String (constant *a);
+extern shape *COconstant2Shape (constant *a);
+extern void COprintConstant (FILE *file, constant *a);
+extern constant *COfreeConstant (constant *a);
+extern node *COconstant2AST (constant *a);
+extern constant *COaST2Constant (node *a);
+extern bool COisConstant (node *a);
+extern bool COcompareConstants (constant *c1, constant *c2);
 
 /* basic value compares, if all==true the condition must hold for all elements */
-extern bool COIsZero (constant *a, bool all);
-extern bool COIsOne (constant *a, bool all);
-extern bool COIsTrue (constant *a, bool all);
-extern bool COIsFalse (constant *a, bool all);
+extern bool COisZero (constant *a, bool all);
+extern bool COisOne (constant *a, bool all);
+extern bool COisTrue (constant *a, bool all);
+extern bool COisFalse (constant *a, bool all);
 
-extern bool COIsEmptyVect (constant *a);
+extern bool COisEmptyVect (constant *a);
 
 /***
  ***
@@ -180,15 +190,15 @@ extern bool COIsEmptyVect (constant *a);
  ***
  ***/
 
-extern constant *COReshape (constant *idx, constant *a);
-extern constant *COSel (constant *idx, constant *a);
-extern constant *COIdxSel (constant *idx, constant *a);
-extern constant *COTake (constant *idx, constant *a);
-extern constant *CODrop (constant *idx, constant *a);
-extern constant *CODim (constant *a);
-extern constant *COShape (constant *a);
-extern constant *COModarray (constant *a, constant *idx, constant *elem);
-extern constant *COCat (constant *a, constant *b);
+extern constant *COreshape (constant *idx, constant *a);
+extern constant *COsel (constant *idx, constant *a);
+extern constant *COidxSel (constant *idx, constant *a);
+extern constant *COtake (constant *idx, constant *a);
+extern constant *COdrop (constant *idx, constant *a);
+extern constant *COdim (constant *a);
+extern constant *COshape (constant *a);
+extern constant *COmodarray (constant *a, constant *idx, constant *elem);
+extern constant *COcat (constant *a, constant *b);
 /* missing: not yet implemented
 extern constant *  CORotate  ( constant *dim, constant *num, constant *a);
 */
@@ -199,33 +209,33 @@ extern constant *  CORotate  ( constant *dim, constant *num, constant *a);
  ***
  ***/
 /* numerical ops */
-extern constant *COAdd (constant *a, constant *b);
-extern constant *COSub (constant *a, constant *b);
-extern constant *COMul (constant *a, constant *b);
-extern constant *CODiv (constant *a, constant *b);
-extern constant *COMod (constant *a, constant *b);
-extern constant *COMin (constant *a, constant *b);
-extern constant *COMax (constant *a, constant *b);
+extern constant *COadd (constant *a, constant *b);
+extern constant *COsub (constant *a, constant *b);
+extern constant *COmul (constant *a, constant *b);
+extern constant *COdiv (constant *a, constant *b);
+extern constant *COmod (constant *a, constant *b);
+extern constant *COmin (constant *a, constant *b);
+extern constant *COmax (constant *a, constant *b);
 
 /* bool ops */
-extern constant *COAnd (constant *a, constant *b);
-extern constant *COOr (constant *a, constant *b);
+extern constant *COand (constant *a, constant *b);
+extern constant *COor (constant *a, constant *b);
 
 /* compare ops */
-extern constant *COEq (constant *a, constant *b);
-extern constant *CONeq (constant *a, constant *b);
+extern constant *COeq (constant *a, constant *b);
+extern constant *COneq (constant *a, constant *b);
 
-extern constant *COLe (constant *a, constant *b);
-extern constant *COLt (constant *a, constant *b);
-extern constant *COGe (constant *a, constant *b);
-extern constant *COGt (constant *a, constant *b);
+extern constant *COle (constant *a, constant *b);
+extern constant *COlt (constant *a, constant *b);
+extern constant *COge (constant *a, constant *b);
+extern constant *COgt (constant *a, constant *b);
 
 /* unary ops */
-extern constant *CONot (constant *a);
-extern constant *COToi (constant *a);
-extern constant *COTof (constant *a);
-extern constant *COTod (constant *a);
-extern constant *COAbs (constant *a);
-extern constant *CONeg (constant *a);
+extern constant *COnot (constant *a);
+extern constant *COtoi (constant *a);
+extern constant *COtof (constant *a);
+extern constant *COtod (constant *a);
+extern constant *COabs (constant *a);
+extern constant *COneg (constant *a);
 
 #endif /* _SAC_CONSTANTS_H_ */
