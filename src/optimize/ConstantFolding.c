@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.25  1995/06/21 13:23:58  asi
+ * Revision 1.26  1995/06/26 11:49:48  asi
+ * logical prim-functions will generate boolean results now
+ *
+ * Revision 1.25  1995/06/21  13:23:58  asi
  * bug fix - same bug fixed for psi
  *
  * Revision 1.24  1995/06/21  13:10:02  asi
@@ -189,7 +192,7 @@ PushVL (long NumVar)
  *
  *  functionname  : PushDupVL
  *  arguments     : --
- *  description   : Duplicates a the top entry of the cf_stack
+ *  description   : Duplicates the top entry of the cf_stack
  *  global vars   : cf_stack
  *  internal funs : --
  *  external funs : MAlloc
@@ -644,24 +647,27 @@ CFwhile (node *arg_node, node *arg_info)
                 arg_node->nodetype = N_do;
             }
         }
-    default:
-        if (opt_unr) {
-            arg_node = Unroll (arg_node, arg_info);
-        }
+    default: {
+        long *used_while;
+
+        used_while = arg_node->node[1]->mask[0];
         PushDupVL ();
         for (i = 0; i < TOS.vl_len; i++) {
-            if (ReadMask (arg_node->node[1]->mask[0], i) != 0) {
+            if (ReadMask (used_while, i) != 0) {
                 VAR (i) = NULL;
             }
         }
         arg_node = OptTrav (arg_node, arg_info, 1); /* Trav while-body */
+        if (opt_unr) {
+            arg_node = Unroll (arg_node, arg_info);
+        }
         PopVL ();
         for (i = 0; i < TOS.vl_len; i++) {
-            if (ReadMask (arg_node->node[1]->mask[0], i) != 0) {
+            if (ReadMask (used_while, i) != 0) {
                 VAR (i) = NULL;
             }
         }
-        break;
+    } break;
     }
 
     DBUG_RETURN (arg_node);
@@ -1150,21 +1156,27 @@ SkalarPrf (node **arg, prf prf_type, types *res_type, int swap)
         break;
     case F_gt:
         ARI (>, arg[0], arg[1]);
+        arg[0]->nodetype = N_bool;
         break;
     case F_lt:
         ARI (<, arg[0], arg[1]);
+        arg[0]->nodetype = N_bool;
         break;
     case F_ge:
         ARI (>=, arg[0], arg[1]);
+        arg[0]->nodetype = N_bool;
         break;
     case F_le:
         ARI (<=, arg[0], arg[1]);
+        arg[0]->nodetype = N_bool;
         break;
     case F_eq:
         ARI (==, arg[0], arg[1]);
+        arg[0]->nodetype = N_bool;
         break;
     case F_neq:
         ARI (!=, arg[0], arg[1]);
+        arg[0]->nodetype = N_bool;
         break;
     case F_and:
         ARI (&&, arg[0], arg[1]);
