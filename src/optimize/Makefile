@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.49  1998/05/13 14:07:29  srs
+# added WLUnroll
+#
 # Revision 1.48  1998/05/12 14:22:21  dkr
 # make deps done
 #
@@ -155,7 +158,7 @@ INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules
 
 all: optimize.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o DupTree.o Inline.o Unroll.o Unswitch.o CSE.o \
-     WithloopFolding.o WLT.o WLI.o WLF.o DataFlowMask.o
+     WithloopFolding.o WLT.o WLI.o WLF.o DataFlowMask.o WLUnroll.o
 
 optimize.o: optimize.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o optimize.o -c optimize.c $(INCS)
@@ -180,6 +183,9 @@ Inline.o: Inline.c
 
 Unroll.o: Unroll.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o Unroll.o -c Unroll.c $(INCS)
+
+WLUnroll.o: WLUnroll.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o WLUnroll.o -c WLUnroll.c $(INCS)
 
 Unswitch.o: Unswitch.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o Unswitch.o -c Unswitch.c $(INCS)
@@ -278,7 +284,7 @@ Unroll.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
 Unroll.o: /usr/include/string.h ../global/internal_lib.h ../global/free.h
 Unroll.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 Unroll.o: ../global/traverse.h ../global/access_macros.h optimize.h
-Unroll.o: ConstantFolding.h DupTree.h Unroll.h
+Unroll.o: ConstantFolding.h DupTree.h Unroll.h WLUnroll.h
 Unswitch.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 Unswitch.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 Unswitch.o: ../global/globals.h ../global/types.h ../global/tree.h
@@ -312,6 +318,13 @@ WLT.o: ../global/Error.h /usr/include/string.h ../global/globals.h
 WLT.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 WLT.o: ../global/my_debug.h /usr/include/malloc.h ../print/print.h DupTree.h
 WLT.o: ../global/traverse.h optimize.h WithloopFolding.h WLT.h
+WLUnroll.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+WLUnroll.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+WLUnroll.o: ../global/globals.h ../global/types.h ../global/tree.h
+WLUnroll.o: ../global/tree_basic.h ../global/tree_compound.h
+WLUnroll.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
+WLUnroll.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
+WLUnroll.o: /usr/include/malloc.h ../global/traverse.h optimize.h DupTree.h
 WithloopFolding.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WithloopFolding.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 WithloopFolding.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
