@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.37  2004/02/26 13:37:54  cg
+ * Call to SSATransformOneFunction replaced by RestoreSSAOneFunction.
+ *
  * Revision 1.36  2003/11/28 22:02:28  ktr
  * Inner arrays are now checked for emptiness before WLS.
  * -
@@ -228,7 +231,7 @@
 #include "dbug.h"
 #include "optimize.h"
 #include "DupTree.h"
-#include "SSATransform.h"
+#include "ssa.h"
 #include "LookUpTable.h"
 #include "SSAWLT.h"
 #include "print.h"
@@ -1988,7 +1991,7 @@ WithloopScalarization (node *fundef, node *modul)
         act_tab = wls_tab;
 
         fundef = Trav (fundef, arg_info);
-        fundef = SSATransformOneFunction (fundef);
+        fundef = RestoreSSAOneFunction (fundef);
 
         act_tab = old_tab;
 
