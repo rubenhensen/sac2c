@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.138  2004/11/24 17:28:01  sbs
+ * WITH_CEXPR added
+ *
  * Revision 3.137  2004/11/24 17:24:46  ktr
  * Added TCcountParts
  *
@@ -1704,6 +1707,7 @@ extern node *TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *a
  */
 #define WITH_CBLOCK(n) (CODE_CBLOCK (WITH_CODE (n)))
 #define WITH_CEXPRS(n) (CODE_CEXPRS (WITH_CODE (n)))
+#define WITH_CEXPR(n) (EXPRS_EXPR (WITH_CEXPRS (n)))
 
 extern node *TCcreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr,
                                  node *fundef);
