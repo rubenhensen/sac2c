@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.97  2002/07/02 13:04:18  dkr
+ * no changes done
+ *
  * Revision 3.96  2002/07/01 19:56:41  sah
  * PrintNgenerator now prints ". (NULL)" instead of "."
  * on NULL entries for generator boundaries in withloops.
@@ -183,7 +186,7 @@
  */
 
 #define ICM_ALL
-#define ICM_DEF(prf, trf) extern void Print##prf (node *ex, node *arg_info);
+#define ICM_DEF(prf, trf) extern void Print##prf (node *exprs, node *arg_info);
 #define ICM_ICM(name)
 #define ICM_STR(name)
 #define ICM_INT(name)
