@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.38  1995/05/30 12:14:39  cg
+ * Revision 1.39  1995/06/01 10:09:55  cg
+ * statustype added and status in struct types inserted.
+ *
+ * Revision 1.38  1995/05/30  12:14:39  cg
  * number of sons in node structure set to 6 by macro MAX_SONS.
  *
  * Revision 1.37  1995/04/24  15:17:18  asi
@@ -151,6 +154,7 @@ typedef enum { E_int, E_float, E_bool, E_prf, E_id, E_ap, E_with, E_sel } exprty
 typedef enum { L_for, L_do, L_while } looptype;
 typedef enum { ARG_int, ARG_float, ARG_id } argtype;
 typedef enum { C_gen, C_mod } contype;
+typedef enum { ST_regular, ST_hidden, ST_unique, ST_artificial } statustype;
 
 typedef char id;
 
@@ -184,9 +188,9 @@ typedef struct TYPES {
     struct TYPES *next; /* only needed for fun-results */
     id *id;             /* Bezeichner  */
     char *id_mod;       /* name of modul belonging to 'id' */
-                        /*
-                              int          status;
-                        */
+    statustype status;  /* status of this type, used to identify */
+                        /* hidden, unique or artificially        */
+                        /* inserted types                        */
 } types;
 
 typedef struct FUN_NAME {
