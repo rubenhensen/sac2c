@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.5  2004/11/26 18:44:43  skt
+ * removew APTwithop by APTgenarray, APTmodarray, APTfold
+ *
  * Revision 3.4  2004/11/26 18:22:51  jhb
  * compile
  *
@@ -66,15 +69,15 @@
 
 extern void APTdoTransform ();
 
-#ifndef PADT_DEACTIVATED
-
 extern node *APTarg (node *arg_node, info *arg_info);
 extern node *APTvardec (node *arg_node, info *arg_info);
 extern node *APTassign (node *arg_node, info *arg_info);
 extern node *APTarray (node *arg_node, info *arg_info);
 extern node *APTwith (node *arg_node, info *arg_info);
 extern node *APTcode (node *arg_node, info *arg_info);
-extern node *APTwithop (node *arg_node, info *arg_info);
+extern node *APTgenarray (node *arg_node, info *arg_info);
+extern node *APTmodarray (node *arg_node, info *arg_info);
+extern node *APTfold (node *arg_node, info *arg_info);
 extern node *APTap (node *arg_node, info *arg_info);
 extern node *APTid (node *arg_node, info *arg_info);
 extern node *APTprf (node *arg_node, info *arg_info);
@@ -82,5 +85,4 @@ extern node *APTfundef (node *arg_node, info *arg_info);
 extern node *APTblock (node *arg_node, info *arg_info);
 extern node *APTlet (node *arg_node, info *arg_info);
 
-#endif /*  PADT_DEACTIVATED */
 #endif /* _SAC_PAD_TRANSFORM_H_ */
