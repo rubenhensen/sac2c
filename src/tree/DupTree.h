@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2004/11/21 19:48:32  khf
+ * the big 2004 codebrushing event
+ *
  * Revision 3.30  2004/07/31 13:51:14  sah
  * switch to new INFO structure
  * PHASE I
@@ -91,139 +94,132 @@
  *
  */
 
-#ifndef _sac_DupTree_h_
-#define _sac_DupTree_h_
+#ifndef _SAC_DUPTREE_H_
+#define _SAC_DUPTREE_H_
 
-#include "LookUpTable.h"
 #include "types.h"
 
-#define DUP_NORMAL 0
-#define DUP_INLINE 1
-#define DUP_WLF 2
-#define DUP_SSA 3
-
 /* initializing */
-extern void InitDupTree ();
+extern void DUPinitDupTree ();
 
 /*
  * Functions for duplicating (parts of) the AST
  */
-extern node *DupTree (node *arg_node);
-extern node *DupTreeSSA (node *arg_node, node *fundef);
-extern node *DupTree_Type (node *arg_node, int type);
-extern node *DupTreeLUT (node *arg_node, LUT_t lut);
-extern node *DupTreeLUTSSA (node *arg_node, LUT_t lut, node *fundef);
-extern node *DupTreeLUT_Type (node *arg_node, LUT_t lut, int type);
-extern node *DupNode (node *arg_node);
-extern node *DupNodeSSA (node *arg_node, node *fundef);
-extern node *DupNode_Type (node *arg_node, int type);
-extern node *DupNodeLUT (node *arg_node, LUT_t lut);
-extern node *DupNodeLUTSSA (node *arg_node, LUT_t lut, node *fundef);
-extern node *DupNodeLUT_Type (node *arg_node, LUT_t lut, int type);
+extern node *DUPdoDupTree (node *arg_node);
+extern node *DUPdoDupTreeSsa (node *arg_node, node *fundef);
+extern node *DUPdoDupTreeType (node *arg_node, int type);
+extern node *DUPdoDupTreeLut (node *arg_node, lut_t *lut);
+extern node *DUPdoDupTreeLutSsa (node *arg_node, lut_t *lut, node *fundef);
+extern node *DUPdoDupTreeLutType (node *arg_node, lut_t *lut, int type);
+extern node *DUPdoDupNode (node *arg_node);
+extern node *DUPdoDupNodeSsa (node *arg_node, node *fundef);
+extern node *DUPdoDupNodeType (node *arg_node, int type);
+extern node *DUPdoDupNodeLut (node *arg_node, lut_t *lut);
+extern node *DUPdoDupNodeLutSsa (node *arg_node, lut_t *lut, node *fundef);
+extern node *DUPdoDupNodeLutType (node *arg_node, lut_t *lut, int type);
 
 /*
  * Functions for duplicating non-node parts of the AST
  */
-extern ids *DupOneIds (ids *arg_ids);
-extern ids *DupAllIds (ids *arg_ids);
+extern shpseg *DUPdupShpseg (shpseg *arg_shpseg);
 
-extern shpseg *DupShpseg (shpseg *arg_shpseg);
+extern types *DUPdupOneTypes (types *arg_types);
+extern types *DUPdupAllTypes (types *arg_types);
 
-extern types *DupOneTypes (types *arg_types);
-extern types *DupAllTypes (types *arg_types);
-
-extern nodelist *DupNodelist (nodelist *arg_nl);
+extern nodelist *DUPdupNodelist (nodelist *arg_nl);
 
 /*
  * Functions for duplicating N_id/ids and converting into ids/N_id
  */
-extern node *DupIds_Id (ids *arg_ids);
-extern ids *DupId_Ids (node *arg_id);
+extern node *DUPdupIdsId (ids *arg_ids);
+extern ids *DUPdupIdIds (node *arg_id);
 
 /*
  * Functions for duplicating N_id/ids and enabling NT_TAG
  */
-extern node *DupIds_Id_NT (ids *arg_ids);
-extern node *DupId_NT (node *arg_id);
-extern node *DupNode_NT (node *arg_node);
-extern node *DupExprs_NT (node *exprs);
+extern node *DUPdupIdsIdNt (ids *arg_ids);
+extern node *DUPdupIdNt (node *arg_id);
+extern node *DUPdupNodeNt (node *arg_node);
+extern node *DUPdupExprsNt (node *exprs);
 
 /*
  * Other functions for external use
  */
 /* handling of multiple used special functions */
-extern node *CheckAndDupSpecialFundef (node *module, node *fundef, node *assign);
+extern node *DUPcheckAndDupSpecialFundef (node *module, node *fundef, node *assign);
 
 /*
  * Functions for internal use during AST traversal only!
  */
-extern node *DupVinfo (node *arg_node, info *arg_info);
-extern node *DupNum (node *arg_node, info *arg_info);
-extern node *DupBool (node *arg_node, info *arg_info);
-extern node *DupFloat (node *arg_node, info *arg_info);
-extern node *DupDouble (node *arg_node, info *arg_info);
-extern node *DupChar (node *arg_node, info *arg_info);
-extern node *DupStr (node *arg_node, info *arg_info);
-extern node *DupDot (node *arg_node, info *arg_info);
-extern node *DupSetWL (node *arg_node, info *arg_info);
-extern node *DupId (node *arg_node, info *arg_info);
-extern node *DupCast (node *arg_node, info *arg_info);
-extern node *DupReturn (node *arg_node, info *arg_info);
-extern node *DupBlock (node *arg_node, info *arg_info);
-extern node *DupTypedef (node *arg_node, info *arg_info);
-extern node *DupObjdef (node *arg_node, info *arg_info);
-extern node *DupImplist (node *arg_node, info *arg_info);
-extern node *DupVardec (node *arg_node, info *arg_info);
-extern node *DupArg (node *arg_node, info *arg_info);
-extern node *DupLet (node *arg_node, info *arg_info);
-extern node *DupArray (node *arg_node, info *arg_info);
-extern node *DupCond (node *arg_node, info *arg_info);
-extern node *DupDo (node *arg_node, info *arg_info);
-extern node *DupWhile (node *arg_node, info *arg_info);
-extern node *DupExprs (node *arg_node, info *arg_info);
-extern node *DupAssign (node *arg_node, info *arg_info);
-extern node *DupEmpty (node *arg_node, info *arg_info);
-extern node *DupPrf (node *arg_node, info *arg_info);
-extern node *DupAp (node *arg_node, info *arg_info);
-extern node *DupMop (node *arg_node, info *arg_info);
-extern node *DupEmpty (node *arg_node, info *arg_info);
-extern node *DupModul (node *arg_node, info *arg_info);
-extern node *DupFundef (node *arg_node, info *arg_info);
-extern node *DupPragma (node *arg_node, info *arg_info);
-extern node *DupIcm (node *arg_node, info *arg_info);
-extern node *DupSpmd (node *arg_node, info *arg_info);
-extern node *DupSync (node *arg_node, info *arg_info);
-extern node *DupMt (node *arg_node, info *arg_info);
-extern node *DupSt (node *arg_node, info *arg_info);
-extern node *DupMTsignal (node *arg_node, info *arg_info);
-extern node *DupMTsync (node *arg_node, info *arg_info);
-extern node *DupMTalloc (node *arg_node, info *arg_info);
-extern node *DupAvis (node *arg_node, info *arg_info);
-extern node *DupSSAstack (node *arg_node, info *arg_info);
-extern node *DupSSAcnt (node *arg_node, info *arg_info);
-extern node *DupFuncond (node *arg_node, info *arg_info);
+extern node *DUPdupVinfo (node *arg_node, info *arg_info);
+extern node *DUPdupNum (node *arg_node, info *arg_info);
+extern node *DUPdupBool (node *arg_node, info *arg_info);
+extern node *DUPdupFloat (node *arg_node, info *arg_info);
+extern node *DUPdupDouble (node *arg_node, info *arg_info);
+extern node *DUPdupChar (node *arg_node, info *arg_info);
+extern node *DUPdupStr (node *arg_node, info *arg_info);
+extern node *DUPdupDot (node *arg_node, info *arg_info);
+extern node *DUPdupSetWl (node *arg_node, info *arg_info);
+extern node *DUPdupId (node *arg_node, info *arg_info);
+extern node *DUPdupCast (node *arg_node, info *arg_info);
+extern node *DUPdupReturn (node *arg_node, info *arg_info);
+extern node *DUPdupBlock (node *arg_node, info *arg_info);
+extern node *DUPdupTypedef (node *arg_node, info *arg_info);
+extern node *DUPdupObjdef (node *arg_node, info *arg_info);
+extern node *DUPdupImplist (node *arg_node, info *arg_info);
+extern node *DUPdupVardec (node *arg_node, info *arg_info);
+extern node *DUPdupArg (node *arg_node, info *arg_info);
+extern node *DUPdupLet (node *arg_node, info *arg_info);
+extern node *DUPdupArray (node *arg_node, info *arg_info);
+extern node *DUPdupCond (node *arg_node, info *arg_info);
+extern node *DUPdupDo (node *arg_node, info *arg_info);
+extern node *DUPdupWhile (node *arg_node, info *arg_info);
+extern node *DUPdupExprs (node *arg_node, info *arg_info);
+extern node *DUPdupAssign (node *arg_node, info *arg_info);
+extern node *DUPdupEmpty (node *arg_node, info *arg_info);
+extern node *DUPdupPrf (node *arg_node, info *arg_info);
+extern node *DUPdupAp (node *arg_node, info *arg_info);
+extern node *DUPdupMop (node *arg_node, info *arg_info);
+extern node *DUPdupEmpty (node *arg_node, info *arg_info);
+extern node *DUPdupModule (node *arg_node, info *arg_info);
+extern node *DUPdupFundef (node *arg_node, info *arg_info);
+extern node *DUPdupPragma (node *arg_node, info *arg_info);
+extern node *DUPdupIcm (node *arg_node, info *arg_info);
+extern node *DUPdupSpmd (node *arg_node, info *arg_info);
+extern node *DUPdupSync (node *arg_node, info *arg_info);
+extern node *DUPdupMt (node *arg_node, info *arg_info);
+extern node *DUPdupSt (node *arg_node, info *arg_info);
+extern node *DUPdupMtsignal (node *arg_node, info *arg_info);
+extern node *DUPdupMtsync (node *arg_node, info *arg_info);
+extern node *DUPdupMtalloc (node *arg_node, info *arg_info);
+extern node *DUPdupAvis (node *arg_node, info *arg_info);
+extern node *DUPdupSsastack (node *arg_node, info *arg_info);
+extern node *DUPdupSsacnt (node *arg_node, info *arg_info);
+extern node *DUPdupFuncond (node *arg_node, info *arg_info);
 
 /* frontend with-loop */
-extern node *DupNwith (node *arg_node, info *arg_info);
-extern node *DupNwithop (node *arg_node, info *arg_info);
-extern node *DupNpart (node *arg_node, info *arg_info);
-extern node *DupNcode (node *arg_node, info *arg_info);
-extern node *DupNwithid (node *arg_node, info *arg_info);
-extern node *DupNgen (node *arg_node, info *arg_info);
+extern node *DUPdupWith (node *arg_node, info *arg_info);
+extern node *DUPdupGenarray (node *arg_node, info *arg_info);
+extern node *DUPdupModarray (node *arg_node, info *arg_info);
+extern node *DUPdupFold (node *arg_node, info *arg_info);
+extern node *DUPdupPart (node *arg_node, info *arg_info);
+extern node *DUPdupCode (node *arg_node, info *arg_info);
+extern node *DUPdupWithid (node *arg_node, info *arg_info);
+extern node *DUPdupGenerator (node *arg_node, info *arg_info);
 
 /* backend with-loop */
-extern node *DupNwith2 (node *arg_node, info *arg_info);
-extern node *DupWLseg (node *arg_node, info *arg_info);
-extern node *DupWLsegVar (node *arg_node, info *arg_info);
-extern node *DupWLblock (node *arg_node, info *arg_info);
-extern node *DupWLublock (node *arg_node, info *arg_info);
-extern node *DupWLstride (node *arg_node, info *arg_info);
-extern node *DupWLstrideVar (node *arg_node, info *arg_info);
-extern node *DupWLgrid (node *arg_node, info *arg_info);
-extern node *DupWLgridVar (node *arg_node, info *arg_info);
+extern node *DUPdupWith2 (node *arg_node, info *arg_info);
+extern node *DUPdupWlseg (node *arg_node, info *arg_info);
+extern node *DUPdupWlsegVar (node *arg_node, info *arg_info);
+extern node *DUPdupWlblock (node *arg_node, info *arg_info);
+extern node *DUPdupWlublock (node *arg_node, info *arg_info);
+extern node *DUPdupWlstride (node *arg_node, info *arg_info);
+extern node *DUPdupWlstrideVar (node *arg_node, info *arg_info);
+extern node *DUPdupWlgrid (node *arg_node, info *arg_info);
+extern node *DUPdupWlgridVar (node *arg_node, info *arg_info);
 
 /* pre- and post-processing during traversal */
-extern node *DupTreeTravPre (node *arg_node, info *arg_info);
-extern node *DupTreeTravPost (node *arg_node, info *arg_info);
+extern node *DUPdupTreeTravPre (node *arg_node, info *arg_info);
+extern node *DUPdupTreeTravPost (node *arg_node, info *arg_info);
 
-#endif /* _sac_DupTree_h_ */
+#endif /* _SAC_DUPTREE_H_ */
