@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2004/11/27 05:02:55  ktr
+ * Some Bugfixes.
+ *
  * Revision 3.84  2004/11/26 23:30:41  sbs
  * PrintAST call eliminated
  *
@@ -500,53 +503,6 @@ main (int argc, char *argv[])
         goto BREAK;
     global.compiler_phase++;
 
-#ifndef NEW_AST
-
-    if (makedeps) {
-        /*
-         * This is not a real compiler run,
-         * only dependencies are to be detected.
-         */
-
-        global.compiler_phase = PH_writedeps;
-        PHASE_PROLOG;
-        NOTE_COMPILER_PHASE;
-        PrintDependencies (dependencies, makedeps);
-        PHASE_DONE_EPILOG;
-        PHASE_EPILOG;
-
-        syntax_tree = FreeTree (syntax_tree);
-        CleanUp ();
-
-        /*
-         *  After all, a success message is displayed.
-         */
-
-        NEWLINE (2);
-        NOTE2 (("*** Dependency Detection successful ***"));
-        NOTE2 (("*** Exit code 0"));
-        NOTE2 (("*** 0 error(s), %d warning(s)", warnings_cnt));
-        NEWLINE (2);
-
-        return (0);
-    }
-
-    PHASE_PROLOG;
-    if (MODUL_STORE_IMPORTS (syntax_tree) != NULL) {
-        NOTE_COMPILER_PHASE;
-        syntax_tree = ReadSib (syntax_tree); /* readsib_tab */
-        PHASE_DONE_EPILOG;
-    }
-    PHASE_EPILOG;
-
-    if (global.break_after == PH_readsib)
-        goto BREAK;
-    global.compiler_phase++;
-
-#else
-    global.compiler_phase += 1;
-#endif /* NEW_AST */
-
 #if 0
   PHASE_PROLOG;
   NOTE_COMPILER_PHASE;
@@ -555,8 +511,8 @@ main (int argc, char *argv[])
   PHASE_EPILOG;
 
   if (global.break_after == PH_objinit) goto BREAK;
-  global.compiler_phase++;
 #endif
+    global.compiler_phase++;
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;

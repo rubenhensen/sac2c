@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/11/27 05:02:55  ktr
+ * Some Bugfixes.
+ *
  * Revision 1.18  2004/11/27 03:12:25  sbs
  * changed the very important version decsriptor
  *
@@ -98,7 +101,6 @@ GLOBAL (node *, syntax_tree, NULL)
  */
 
 GLOBAL (int, start_token, 0);
-GLOBAL (FILE *, yyin, NULL);
 
 /*
  *  Version control

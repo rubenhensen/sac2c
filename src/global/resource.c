@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/11/27 05:02:55  ktr
+ * Some Bugfixes.
+ *
  * Revision 3.12  2004/11/25 17:53:48  cg
  * SacDevCamp 04
  *
@@ -472,9 +475,9 @@ RSCparseResourceFile (char *buffer)
 
     DBUG_ENTER ("RSCparseResourceFile");
 
-    global.yyin = fopen (buffer, "r");
+    yyin = fopen (buffer, "r");
 
-    if (global.yyin == NULL) {
+    if (yyin == NULL) {
         ok = FALSE;
     } else {
 
@@ -486,7 +489,7 @@ RSCparseResourceFile (char *buffer)
 
         SPmyYyparse ();
 
-        fclose (global.yyin);
+        fclose (yyin);
     }
 
     DBUG_RETURN (ok);

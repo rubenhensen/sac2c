@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2004/11/27 05:02:55  ktr
+ * Some Bugfixes.
+ *
  * Revision 3.55  2004/11/23 21:51:49  cg
  * Added genlib flags.
  *
@@ -118,7 +121,9 @@
 #define _SAC_GLOBALS_H_
 
 #include "types.h"
+#include <stdio.h>
 
+extern FILE *yyin;
 extern global_t global;
 
 extern void GLOBinitializeGlobal ();
