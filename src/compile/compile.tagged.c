@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.84  2003/09/29 22:51:06  dkr
+ * icm SET__SHAPE renamed into SET__SHAPE_arr.
+ * icm CREATE__ARRAY__DIM replaced.
+ *
  * Revision 1.83  2003/09/29 19:10:03  dkr
  * COMPPrfReshape(): can handle scalars on 2nd arg position as well now
  *
@@ -3105,7 +3109,7 @@ COMP2Scalar (node *arg_node, node *arg_info)
       = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                       RC_INIT (IDS_REFCNT (let_ids)),
                       MakeDimArg (arg_node, FALSE), /* 0 */
-                      MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids),
+                      MakeIcm2 ("ND_SET__SHAPE_arr", DupIds_Id_NT (let_ids),
                                 MakeDimArg (arg_node, FALSE)),
                       NULL,
                       MakeAssignIcm2 ("ND_CREATE__SCALAR__DATA", DupIds_Id_NT (let_ids),
@@ -3159,7 +3163,7 @@ COMP2Array (node *arg_node, node *arg_info)
         ret_node
           = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                           RC_INIT (IDS_REFCNT (let_ids)), MakeDimArg (arg_node, FALSE),
-                          MakeIcm3 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids),
+                          MakeIcm3 ("ND_SET__SHAPE_arr", DupIds_Id_NT (let_ids),
                                     MakeDimArg (arg_node, FALSE),
                                     MakeSizeArg (arg_node, FALSE)),
                           NULL,
@@ -3171,6 +3175,7 @@ COMP2Array (node *arg_node, node *arg_info)
         shape *shp;
         int dim;
         node *icm_args, *icm_args2;
+        node *get_dim, *set_shape;
         int val0_sdim;
         char *copyfun;
         int i;
@@ -3186,13 +3191,25 @@ COMP2Array (node *arg_node, node *arg_info)
             if (NODE_TYPE (val0) == N_id) {
                 val0_sdim = GetShapeDim (ID_TYPE (val0));
                 copyfun = GenericFun (0, ID_TYPE (val0));
+                get_dim = MakeIcm3 ("ND_BINOP", MakeId_Copy (prf_symbol[F_add_SxS]),
+                                    MakeNum (dim), MakeDimArg (val0, FALSE));
             } else {
                 val0_sdim = 0; /* scalar */
                 copyfun = NULL;
+                get_dim = MakeNum (dim);
             }
         } else {
+            /*
+             * A = [];
+             *
+             * The dimension of the right-hand-side is unknown
+             *   -> A has to be a AKD array!
+             */
             val0_sdim = -815; /* array is empty */
             copyfun = NULL;
+            DBUG_ASSERT ((GetShapeDim (IDS_TYPE (let_ids)) >= 0),
+                         "assignment  A = [];  found, where A has unknown shape!");
+            get_dim = MakeNum (GetShapeDim (IDS_TYPE (let_ids)));
         }
 
         icm_args2 = NULL;
@@ -3201,15 +3218,14 @@ COMP2Array (node *arg_node, node *arg_info)
         }
         icm_args2 = MakeExprs (MakeNum (dim), icm_args2);
 
+        set_shape = MakeIcm3 ("ND_CREATE__ARRAY__SHAPE",
+                              MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
+                                            TRUE, FALSE, icm_args2),
+                              DupTree (icm_args), MakeNum (val0_sdim));
+
         ret_node
           = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                          RC_INIT (IDS_REFCNT (let_ids)),
-                          MakeIcm2 ("ND_CREATE__ARRAY__DIM", MakeNum (dim), icm_args),
-                          MakeIcm3 ("ND_CREATE__ARRAY__SHAPE",
-                                    MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                  FALSE, TRUE, FALSE, icm_args2),
-                                    DupTree (icm_args), MakeNum (val0_sdim)),
-                          NULL,
+                          RC_INIT (IDS_REFCNT (let_ids)), get_dim, set_shape, NULL,
                           MakeAssignIcm2 ("ND_CREATE__ARRAY__DATA",
                                           MakeTypeArgs (IDS_NAME (let_ids),
                                                         IDS_TYPE (let_ids), FALSE, TRUE,
@@ -3253,7 +3269,8 @@ COMPPrfDim (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
     (*check_reuse1) = (*check_reuse2) = NULL;
     (*get_dim) = MakeNum (0);
 
-    (*set_shape_icm) = MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (0));
+    (*set_shape_icm)
+      = MakeIcm2 ("ND_SET__SHAPE_arr", DupIds_Id_NT (let_ids), MakeNum (0));
 
     ret_node = MakeAssignIcm1 ("ND_PRF_DIM__DATA",
                                MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
@@ -3298,7 +3315,7 @@ COMPPrfShape (node *arg_node, node *arg_info, node **check_reuse1, node **check_
     (*check_reuse1) = (*check_reuse2) = NULL;
     (*get_dim) = MakeNum (1);
 
-    (*set_shape_icm) = MakeIcm3 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (1),
+    (*set_shape_icm) = MakeIcm3 ("ND_SET__SHAPE_arr", DupIds_Id_NT (let_ids), MakeNum (1),
                                  MakeDimArg (arg, FALSE));
 
     ret_node = MakeAssignIcm1 ("ND_PRF_SHAPE__DATA",
@@ -3964,7 +3981,8 @@ COMPPrfConvertScalar (node *arg_node, node *arg_info, node **check_reuse1,
     (*check_reuse1) = (*check_reuse2) = NULL;
     (*get_dim) = MakeNum (0);
 
-    (*set_shape_icm) = MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (0));
+    (*set_shape_icm)
+      = MakeIcm2 ("ND_SET__SHAPE_arr", DupIds_Id_NT (let_ids), MakeNum (0));
 
     if (NODE_TYPE (arg) == N_id) {
         ret_node = MakeAssignIcm3 ("ND_COPY__DATA", DupIds_Id_NT (let_ids),
@@ -4061,7 +4079,8 @@ COMPPrfUniScalar (char *icm_name, node *arg_node, node *arg_info, node **check_r
     (*get_dim) = MakeNum (0);
     icm_name2 = "ND_PRF_S__DATA";
 
-    (*set_shape_icm) = MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (0));
+    (*set_shape_icm)
+      = MakeIcm2 ("ND_SET__SHAPE_arr", DupIds_Id_NT (let_ids), MakeNum (0));
 
     ret_node = MakeAssignIcm4 (icm_name2, DupIds_Id_NT (let_ids), MakeId_Copy (icm_name),
                                MakeId_Copy (prf_symbol[PRF_PRF (arg_node)]),
@@ -4122,7 +4141,7 @@ COMPPrfBin (char *icm_name, node *arg_node, node *arg_info, node **check_reuse1,
         icm_name2 = "ND_PRF_SxS__DATA";
 
         (*set_shape_icm)
-          = MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (0));
+          = MakeIcm2 ("ND_SET__SHAPE_arr", DupIds_Id_NT (let_ids), MakeNum (0));
     } else {
         /* arrays are involved */
 
@@ -4737,8 +4756,8 @@ COMP2Icm (node *arg_node, node *arg_info)
 
         arg_node
           = MakeAllocIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg), MakeNum (0),
-                          MakeIcm2 ("ND_SET__SHAPE", DupId_NT (arg), MakeNum (0)), NULL,
-                          MakeAssign (arg_node, NULL));
+                          MakeIcm2 ("ND_SET__SHAPE_arr", DupId_NT (arg), MakeNum (0)),
+                          NULL, MakeAssign (arg_node, NULL));
     } else if (strstr (name, "VECT2OFFSET") != NULL) {
         /*
          * VECT2OFFSET( off_NT, ., from_NT, ...)
@@ -4767,8 +4786,8 @@ COMP2Icm (node *arg_node, node *arg_info)
 
         arg_node
           = MakeAllocIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg), MakeNum (0),
-                          MakeIcm2 ("ND_SET__SHAPE", DupId_NT (arg), MakeNum (0)), NULL,
-                          MakeAssign (arg_node, new_assigns));
+                          MakeIcm2 ("ND_SET__SHAPE_arr", DupId_NT (arg), MakeNum (0)),
+                          NULL, MakeAssign (arg_node, new_assigns));
     } else if (strstr (name, "IDXS2OFFSET") != NULL) {
         /*
          * IDXS2OFFSET( off_NT, ., idxs_NT, ...)
@@ -4797,8 +4816,8 @@ COMP2Icm (node *arg_node, node *arg_info)
 
         arg_node
           = MakeAllocIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg), MakeNum (0),
-                          MakeIcm2 ("ND_SET__SHAPE", DupId_NT (arg), MakeNum (0)), NULL,
-                          MakeAssign (arg_node, new_assigns));
+                          MakeIcm2 ("ND_SET__SHAPE_arr", DupId_NT (arg), MakeNum (0)),
+                          NULL, MakeAssign (arg_node, new_assigns));
     } else {
         DBUG_PRINT ("COMP", ("ICM not traversed: %s", ICM_NAME (arg_node)));
     }
@@ -5303,6 +5322,20 @@ COMP2With2 (node *arg_node, node *arg_info)
                                     MakeSizeArg (shp, FALSE), MakeDimArg (cexpr, FALSE));
             }
 
+            /*
+             *   B = with (...) genarray( sv, val);
+             *
+             ************************************************************************
+             *
+             * For efficiency reasons, constant arrays are excepted as 1st argument
+             * of genarray-WLs as well:
+             *
+             *   B = with (...) genarray( [3,4], ...);
+             *
+             * Here, the backend can avoid the creation of the array containing the
+             * shape [3,4].
+             */
+
             if (NODE_TYPE (shp) == N_id) {
                 set_shape_icm
                   = MakeIcm1 ("ND_WL_GENARRAY__SHAPE_id",
@@ -5353,17 +5386,17 @@ COMP2With2 (node *arg_node, node *arg_info)
      */
     vec_ids = NWITH2_IDS (arg_node); /* scalar components of index vector */
     while (vec_ids != NULL) {
-        alloc_icms
-          = MakeAllocIcm (IDS_NAME (vec_ids), IDS_TYPE (vec_ids), IDS_REFCNT (vec_ids),
-                          MakeNum (0),
-                          MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (vec_ids), MakeNum (0)),
-                          NULL, alloc_icms);
+        alloc_icms = MakeAllocIcm (IDS_NAME (vec_ids), IDS_TYPE (vec_ids),
+                                   IDS_REFCNT (vec_ids), MakeNum (0),
+                                   MakeIcm2 ("ND_SET__SHAPE_arr", DupIds_Id_NT (vec_ids),
+                                             MakeNum (0)),
+                                   NULL, alloc_icms);
         vec_ids = IDS_NEXT (vec_ids);
     }
     vec_ids = NWITH2_VEC (arg_node); /* index vector */
     alloc_icms = MakeAllocIcm (IDS_NAME (vec_ids), IDS_TYPE (vec_ids),
                                IDS_REFCNT (vec_ids), MakeNum (1),
-                               MakeIcm3 ("ND_SET__SHAPE", /* AKD only!! */
+                               MakeIcm3 ("ND_SET__SHAPE_arr", /* AKD only!! */
                                          DupIds_Id_NT (vec_ids), MakeNum (1),
                                          MakeNum (NWITH2_DIMS (arg_node))),
                                NULL, alloc_icms);
