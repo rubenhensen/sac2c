@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.27  2004/11/23 22:07:26  ktr
+  added EMLR, EMLRO
+
   Revision 1.26  2004/11/23 21:47:59  skt
   traversals for concurrent added
 
@@ -262,6 +265,32 @@
         <travsons>
         </travsons>
         <travnone>
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="EMLR" name="Loop reuse" default="sons" include="loopreuseopt.h">
+        <travuser>
+          <node name="Ap" />
+          <node name="Assign" />
+          <node name="Fundef" />
+        </travuser>
+        <travnone>
+          <node name="Objdef" />
+        </travnone>
+        <traverror>
+        </traverror>
+      </traversal>
+      <traversal id="EMLRO" name="Loop reuse optimization" default="sons">
+        <travuser>
+          <node name="Ap" />
+          <node name="Arg" />
+          <node name="Fundef" />
+          <node name="Id" />
+          <node name="Prf" />
+        </travuser>
+        <travnone>
+          <node name="Objdef" />
         </travnone>
         <traverror>
         </traverror>
