@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1996/01/05 12:25:18  cg
+ * Revision 1.4  1996/01/16 16:42:22  cg
+ * added global variable int check_malloc
+ *
+ * Revision 1.3  1996/01/05  12:25:18  cg
  * added cleanup and targetdir[]
  *
  * Revision 1.2  1996/01/02  15:45:44  cg
@@ -66,5 +69,6 @@ extern int breakae;
 
 extern int check_boundary;
 extern int cleanup;
+extern int check_malloc;
 
 #endif /* _sac_globals_h */
