@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.96  2002/08/25 14:19:50  mwe
+ * ALprf, ALlet, ALassign added
+ *
  * Revision 3.95  2002/08/13 17:06:51  sbs
  * HMfundef eliminated again
  *
@@ -1216,7 +1219,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSADCRblock, SSACSEblock, CMPTTravSons, TravSons, SSACFblock, SSALIRblock,
        LIRMOVblock, TravSons, TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, COMP2Block, TravSons, TravSons, TravSons, WLSblock, TravSons, TravSons,
+       TravSons, COMP2Block, TravSons, TravSons, TravSons, WLSblock, TravSons, ALblock,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
@@ -1411,7 +1414,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSAWLFassign,
 
        TravSons, COMP2Assign, PREC2assign, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       ALassign, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_annotate, "N_annotate", TravSons, TravSons, PrintAnnotate, TravSons, TravSons,
@@ -1554,7 +1557,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSADCRlet, SSACSElet, CMPTlet, TravSons, SSACFlet, SSALIRlet, LIRMOVlet, TravSons,
        TravSons, SSAWLTlet, SSAWLIlet, SSAWLFlet,
 
-       TravSons, COMP2Let, PREC2let, INSVDlet, CRTWRPlet, TravSons, PREC4let, TravSons,
+       TravSons, COMP2Let, PREC2let, INSVDlet, CRTWRPlet, TravSons, PREC4let, ALlet,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
@@ -1578,9 +1581,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, CMPTprf, TravSons, SSACFprf, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, COMP2Prf, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       HDprf, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 1),
+       TravSons, COMP2Prf, TravSons, TravSons, TravSons, TravSons, TravSons, ALprf, HDprf,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, 1),
 
   NIF (N_ap, "N_ap", TravSons, FltnAp, PrintAp, TravSons, GNMap, TravSons, TravSons,
        FreeAp, CFap, TravSons, COMPAp, TravSons, DupAp, TravSons, UNRap, TravSons,
