@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.8  1998/04/20 08:58:56  srs
+ * fixed bug in CheckOptimizePsi()
+ *
  * Revision 1.7  1998/04/08 20:23:36  srs
  * adjusted parameters of Tree2InternGen,
  * intern_gen chain is now set free in CreateFullPartition.
@@ -46,10 +49,10 @@
  *******************************************************************************
 
  Usage of arg_info:
- - node[0]: store old information in nested WLs
- - node[1]: reference to base node of current WL (N_Nwith)
- - node[2]: always the last N_assign node
- - node[3]: pointer to last fundef node. needed to access vardecs.
+ - node[0]: NEXT  : store old information in nested WLs
+ - node[1]: WL    : reference to base node of current WL (N_Nwith)
+ - node[2]: ASSIGN: always the last N_assign node
+ - node[3]: FUNDEF: pointer to last fundef node. needed to access vardecs.
  - varno  : number of variables in this function, see optimize.c
  - mask[0]: DEF mask, see optimize.c
  - mask[1]: USE mask, see optimize.c
@@ -71,11 +74,8 @@
 #include "my_debug.h"
 #include "traverse.h"
 #include "optimize.h"
-#include "ConstantFolding.h"
 #include "WithloopFolding.h"
 #include "WLT.h"
-
-static int ig_parts;
 
 /******************************************************************************
  *
@@ -125,7 +125,6 @@ CutSlices (int *ls, int *us, int *l, int *u, int dim, intern_gen *ig, node *code
                 ig->u[i] = usc[i];
             }
             ig->u[d] = l[d];
-            ig_parts++;
 
             if (!root_ig)
                 root_ig = ig;
@@ -138,7 +137,6 @@ CutSlices (int *ls, int *us, int *l, int *u, int dim, intern_gen *ig, node *code
                 ig->u[i] = usc[i];
             }
             ig->l[d] = u[d];
-            ig_parts++;
 
             if (!root_ig)
                 root_ig = ig;
@@ -180,7 +178,6 @@ CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
     for (d = 0; d < dim; d++) {
         if (step[d] > width[d]) { /* create new gris */
             ig = AppendInternGen (ig, dim, coden, 1);
-            ig_parts++;
             for (i = 0; i < dim; i++) {
                 ig->l[i] = ls[i];
                 ig->u[i] = us[i];
@@ -298,18 +295,20 @@ CreateFullPartition (node *wln, node *arg_info)
         coden
           = MakeNCode (MakeBlock (MakeAssign (MakeLet (coden, _ids), NULL), NULL), idn);
 
-        /* add to code list */
-        NCODE_NEXT (coden) = NWITH_CODE (wln);
-        NWITH_CODE (wln) = coden;
-
-        /* now, create the new parts */
+        /* now, copy the only part to*/
         ig = Tree2InternGen (wln, NULL);
-        ig_parts = 1;
+        DBUG_ASSERT (!ig->next, ("more than one part exist"));
         /* create surrounding cuboids */
         ig = CutSlices (array_null, array_shape, ig->l, ig->u, ig->shape, ig, coden);
-        /* the original part can still be found at *ig. New create grids. */
+        /* the original part can still be found at *ig. Now create grids. */
         if (ig->step)
             ig = CompleteGrid (ig->l, ig->u, ig->step, ig->width, ig->shape, ig, coden);
+
+        /* if new codes have been created, add them to code list */
+        if (ig->next) {
+            NCODE_NEXT (coden) = NWITH_CODE (wln);
+            NWITH_CODE (wln) = coden;
+        }
 
         wln = InternGen2Tree (wln, ig);
 
@@ -351,9 +350,10 @@ CheckOptimizePsi (node **psi, node *arg_info)
     ivn = PRF_ARG2 ((*psi));
     indexn = PRF_ARG1 ((*psi));
 
-    datan = NULL;
-    if (N_id == NODE_TYPE (indexn))
+    if (N_id == NODE_TYPE (indexn)) {
         MRD_GETDATA (datan, ID_VARNO (indexn), INFO_VARNO);
+    } else
+        datan = indexn;
 
     if (datan && N_array == NODE_TYPE (datan)
         && N_num == NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (datan)))
