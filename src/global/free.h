@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  1999/02/06 12:53:23  srs
+ * added FreeNodelistNode()
+ *
  * Revision 1.25  1999/01/15 15:13:19  cg
  * added functions FreeOneAccess() and FreeAllAccess().
  *
@@ -141,6 +144,7 @@ extern deps *FreeAllDeps (deps *fr);
 extern strings *FreeOneStrings (strings *fr);
 extern strings *FreeAllStrings (strings *fr);
 extern nodelist *FreeNodelist (nodelist *fr);
+extern nodelist *FreeNodelistNode (nodelist *nl);
 extern access_t *FreeOneAccess (access_t *fr);
 extern access_t *FreeAllAccess (access_t *fr);
 
