@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.149  1998/04/29 20:15:50  dkr
+ * added macro INFO_SPMD_FIRST
+ *
  * Revision 1.148  1998/04/29 19:52:51  dkr
  * changed macros for N_spmd, N_sync
  *
@@ -2266,6 +2269,7 @@ extern node *MakeInfo ();
 
 /* spmdregions */
 #define INFO_SPMD_FUNDEF(n) (n->node[0])
+#define INFO_SPMD_FIRST(n) (n->flag)
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])
