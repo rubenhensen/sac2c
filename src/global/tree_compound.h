@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.21  1995/12/15 13:22:12  asi
+ * Revision 1.22  1995/12/15 14:13:56  asi
+ * added GetCompoundNode
+ *
+ * Revision 1.21  1995/12/15  13:22:12  asi
  * added COND_THENINSTR and COND_ELSEINSTR
  *
  * Revision 1.20  1995/12/13  17:32:37  asi
@@ -891,6 +894,22 @@ extern void ObjList2ArgList (node *objdef);
  *
  */
 extern node *MakeAssignLet (char *var_name, node *vardec_node, node *let_expr);
+
+/*
+ *
+ *  functionname  : GetCompoundNode
+ *  arguments     : 1) assign-node
+ *                  R) compund_node attached to the assign-node
+ *  description   : returns the compund_node that is attached to the assign-node
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : ASSIGN_INSTR, LET_EXPR, NODE_TYPE, CAST_EXPR
+ *
+ *  remarks       : ---
+ *
+ */
+extern node *GetCompoundNode (node *arg_node);
 
 /*--------------------------------------------------------------------------*/
 

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/12/07 16:25:14  asi
+ * Revision 1.18  1995/12/15 14:13:56  asi
+ * added GetCompoundNode
+ *
+ * Revision 1.17  1995/12/07  16:25:14  asi
  * added function MakeAssignLet
  *
  * Revision 1.16  1995/11/16  19:42:36  cg
@@ -522,4 +525,34 @@ MakeAssignLet (char *var_name, node *vardec_node, node *let_expr)
     tmp_node = MakeLet (let_expr, tmp_ids);
     tmp_node = MakeAssign (tmp_node, NULL);
     DBUG_RETURN (tmp_node);
+}
+
+/***
+ ***  GetCompoundNode
+ ***/
+node *
+GetCompoundNode (node *arg_node)
+{
+    node *compound_node;
+
+    DBUG_ENTER ("GetCompoundNode");
+    arg_node = ASSIGN_INSTR (arg_node);
+    switch (NODE_TYPE (arg_node)) {
+    case N_cond:
+    case N_do:
+    case N_while:
+        compound_node = arg_node;
+        break;
+    case N_let:
+        arg_node = LET_EXPR (arg_node);
+        while (N_cast == NODE_TYPE (arg_node))
+            arg_node = CAST_EXPR (arg_node);
+        if (N_with == NODE_TYPE (arg_node))
+            compound_node = arg_node;
+        else
+            compound_node = NULL;
+    default:
+        compound_node = NULL;
+    }
+    DBUG_RETURN (compound_node);
 }
