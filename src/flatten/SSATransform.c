@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.12  2004/08/04 17:13:12  khf
+ * quick fix for bug #42
+ * new variable name created by TmpVarName()
+ *
  * Revision 1.11  2004/07/16 17:36:23  sah
  * switch to new INFO structure
  * PHASE I
@@ -440,15 +444,14 @@ SaveTopSSAstack (node *ssastack, node *avis, int flag)
  *   node *SSANewVardec(node *old_vardec_or_arg)
  *
  * description:
- *   creates a new (renamed) vardec of the given original vardec. the global
- *   ssa rename counter of the baseid is incremented. the ssacnt node is shared
- *   between all renamed instances of the original vardec.
+ *   creates a new (renamed) vardec of the given original vardec.
+ *   the ssacnt node is shared between all renamed instances of the
+ *   original vardec.
  *
  ******************************************************************************/
 node *
 SSANewVardec (node *old_vardec_or_arg)
 {
-    char tmpstring[TMP_STRING_LEN];
     node *ssacnt;
     node *new_vardec;
 
@@ -471,14 +474,10 @@ SSANewVardec (node *old_vardec_or_arg)
         new_vardec = DupNode (old_vardec_or_arg);
     }
 
-    /* increment ssa renaming counter */
-    SSACNT_COUNT (ssacnt) = SSACNT_COUNT (ssacnt) + 1;
-
     /* create new unique name */
-    sprintf (tmpstring, "__SSA_%d", SSACNT_COUNT (ssacnt));
-
     Free (VARDEC_NAME (new_vardec));
-    VARDEC_NAME (new_vardec) = StringConcat (SSACNT_BASEID (ssacnt), tmpstring);
+    VARDEC_NAME (new_vardec) = TmpVarName (SSACNT_BASEID (ssacnt));
+    ;
 
     DBUG_RETURN (new_vardec);
 }
