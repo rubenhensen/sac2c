@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.7  2000/07/06 17:23:07  dkr
+ * SAC_WL_MIN replaced by SAC_ND_MIN
+ * SAC_WL_MAX replaced by SAC_ND_MAX
+ *
  * Revision 2.6  2000/07/06 17:00:15  dkr
  * some minor corrections done
  *
@@ -130,16 +134,6 @@
 /*****************************************************************************/
 
 /***
- *** minimum, maximum of two values
- ***/
-
-#define SAC_WL_MIN(x, y) SAC_ND_MIN (x, y)
-
-#define SAC_WL_MAX(x, y) SAC_ND_MAX (x, y)
-
-/*****************************************************************************/
-
-/***
  *** blocking-loop
  ***/
 
@@ -164,12 +158,12 @@
 #define SAC_WL_MT_BLOCK_LOOP0_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)             \
     {                                                                                    \
         int SAC_WL_VAR (block_stop, idx_sca)                                             \
-          = SAC_WL_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));                            \
-        for (idx_sca = SAC_WL_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                \
+          = SAC_ND_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));                            \
+        for (idx_sca = SAC_ND_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                \
              idx_sca < SAC_WL_VAR (block_stop, idx_sca);) {                              \
             int SAC_WL_VAR (start, idx_sca) = idx_sca;                                   \
             int SAC_WL_VAR (stop, idx_sca)                                               \
-              = SAC_WL_MIN (SAC_WL_VAR (start, idx_sca) + step,                          \
+              = SAC_ND_MIN (SAC_WL_VAR (start, idx_sca) + step,                          \
                             SAC_WL_VAR (block_stop, idx_sca));
 
 #define SAC_WL_BLOCK_LOOP0_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)                \
@@ -177,7 +171,7 @@
         for (idx_sca = bnd1; idx_sca < bnd2;) {                                          \
             int SAC_WL_VAR (start, idx_sca) = idx_sca;                                   \
             int SAC_WL_VAR (stop, idx_sca)                                               \
-              = SAC_WL_MIN (SAC_WL_VAR (start, idx_sca) + step, bnd2);
+              = SAC_ND_MIN (SAC_WL_VAR (start, idx_sca) + step, bnd2);
 
 /*
  * BEGIN: if (BLOCK_LEVEL > 0)
@@ -198,7 +192,7 @@
              idx_sca < SAC_WL_VAR (block_stop, idx_sca);) {                              \
             int SAC_WL_VAR (start, idx_sca) = idx_sca;                                   \
             int SAC_WL_VAR (stop, idx_sca)                                               \
-              = SAC_WL_MIN (SAC_WL_VAR (start, idx_sca) + step,                          \
+              = SAC_ND_MIN (SAC_WL_VAR (start, idx_sca) + step,                          \
                             SAC_WL_VAR (block_stop, idx_sca));
 
 /*
@@ -238,8 +232,8 @@
 #define SAC_WL_MT_UBLOCK_LOOP0_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)            \
     {                                                                                    \
         int SAC_WL_VAR (block_stop, idx_sca)                                             \
-          = SAC_WL_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));                            \
-        for (idx_sca = SAC_WL_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                \
+          = SAC_ND_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));                            \
+        for (idx_sca = SAC_ND_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                \
              idx_sca < SAC_WL_VAR (block_stop, idx_sca);) {                              \
             int SAC_WL_VAR (start, idx_sca) = idx_sca;
 
@@ -290,8 +284,8 @@
 #define SAC_WL_MT_STRIDE_LOOP0_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)            \
     {                                                                                    \
         int SAC_WL_VAR (stop, idx_sca)                                                   \
-          = SAC_WL_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));                            \
-        for (idx_sca = SAC_WL_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                \
+          = SAC_ND_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));                            \
+        for (idx_sca = SAC_ND_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                \
              idx_sca < SAC_WL_VAR (stop, idx_sca);) {
 
 #define SAC_WL_STRIDE_LOOP0_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2, step)               \
@@ -451,7 +445,7 @@
 #define SAC_WL_GRIDVAR_LOOP_BEGIN(dim, idx_vec, idx_sca, bnd1, bnd2)                     \
     {                                                                                    \
         int SAC_WL_VAR (grid_stop, idx_sca)                                              \
-          = SAC_WL_MIN (idx_sca + bnd2 - bnd1, SAC_WL_VAR (stop, idx_sca));              \
+          = SAC_ND_MIN (idx_sca + bnd2 - bnd1, SAC_WL_VAR (stop, idx_sca));              \
         for (; idx_sca < SAC_WL_VAR (grid_stop, idx_sca); idx_sca++) {
 
 /*
