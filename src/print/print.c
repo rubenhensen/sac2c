@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.97  1995/12/18 18:27:48  cg
+ * Revision 1.98  1995/12/20 08:18:14  cg
+ * added PrintChar, modified PrintPragma
+ *
+ * Revision 1.97  1995/12/18  18:27:48  cg
  * Bugs fixed in PrintIcm and PrintObjdef. Now the icms for global arrays
  * will be printed correctly.
  *
@@ -840,6 +843,17 @@ PrintNum (node *arg_node, node *arg_info)
 }
 
 node *
+PrintChar (node *arg_node, node *arg_info)
+{
+
+    DBUG_ENTER ("PrintChar");
+
+    fprintf (outfile, "%c", arg_node->info.cchar);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 PrintFloat (node *arg_node, node *arg_info)
 {
 
@@ -1304,6 +1318,8 @@ PrintIcm (node *arg_node, node *arg_info)
 node *
 PrintPragma (node *arg_node, node *arg_info)
 {
+    int i, first;
+
     DBUG_ENTER ("PrintPragma");
 
     fprintf (outfile, "\n/*\n");
@@ -1313,20 +1329,48 @@ PrintPragma (node *arg_node, node *arg_info)
     }
 
     if (PRAGMA_LINKSIGN (arg_node) != NULL) {
-        fprintf (outfile, "*  #pragma linksign [");
-        PrintNums (PRAGMA_LINKSIGN (arg_node));
+        fprintf (outfile, "*  #pragma linksign [%d", PRAGMA_LS (arg_node, 0));
+
+        for (i = 1; i < PRAGMA_NUMPARAMS (arg_node); i++) {
+            fprintf (outfile, ", %d", PRAGMA_LS (arg_node, i));
+        }
+
         fprintf (outfile, "]\n");
     }
 
     if (PRAGMA_REFCOUNTING (arg_node) != NULL) {
         fprintf (outfile, "*  #pragma refcounting [");
-        PrintNums (PRAGMA_REFCOUNTING (arg_node));
+        first = 1;
+
+        for (i = 0; i < PRAGMA_NUMPARAMS (arg_node); i++) {
+            if (PRAGMA_RC (arg_node, i)) {
+                if (first) {
+                    fprintf (outfile, "%d", i);
+                    first = 0;
+                } else {
+                    fprintf (outfile, ", %d", i);
+                }
+            }
+        }
+
         fprintf (outfile, "]\n");
     }
 
     if (PRAGMA_READONLY (arg_node) != NULL) {
         fprintf (outfile, "*  #pragma readonly [");
-        PrintNums (PRAGMA_READONLY (arg_node));
+        first = 1;
+
+        for (i = 0; i < PRAGMA_NUMPARAMS (arg_node); i++) {
+            if (PRAGMA_RO (arg_node, i)) {
+                if (first) {
+                    fprintf (outfile, "%d", i);
+                    first = 0;
+                } else {
+                    fprintf (outfile, ", %d", i);
+                }
+            }
+        }
+
         fprintf (outfile, "]\n");
     }
 
