@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/04/13 09:12:59  sbs
+ * Revision 1.15  1995/04/18 11:20:34  sbs
+ * ND_KD_ROT_SxSxA_A eliminated & ND_KD_ROT_CxSxA_A modified
+ *
+ * Revision 1.14  1995/04/13  09:12:59  sbs
  * ND_KD_ROT_SxSxA_A inserted
  *
  * Revision 1.13  1995/04/12  15:14:00  sbs
@@ -729,74 +732,37 @@ DBUG_VOID_RETURN;
 
 INDENT;
 NewBlock (
-  InitVecs (0, 1, "__bl",
+  InitVecs (0, 1, "__shift",
             {
                 int j;
                 for (j = rotdim + 1; j < dima; j++)
                     fprintf (outfile, "ND_KD_A_SHAPE(%s, %d)*", a, j);
                 fprintf (outfile, "(%s<0 ? ", numstr[0]);
                 fprintf (outfile,
-                         "ND_KD_A_SHAPE(%s, %d)+ (%s %% ND_KD_SHAPE(%s, %d)) : ", a,
+                         "ND_KD_A_SHAPE(%s, %d)+ (%s %% ND_KD_A_SHAPE(%s, %d)) : ", a,
                          rotdim, numstr[0], a, rotdim);
-                fprintf (outfile, "%s %% ND_KD_SHAPE(%s, %d))", numstr[0], a, rotdim);
+                fprintf (outfile, "%s %% ND_KD_A_SHAPE(%s, %d))", numstr[0], a, rotdim);
             });
-  InitPtr (fprintf (outfile, "ND_KD_SIZE(%s)-__bl0", a),
-           fprintf (outfile, "ND_KD_SIZE(%s)", res)),
-  INDENT;
-  fprintf (outfile, "do {\n"); indent++; INDENT;
-  fprintf (outfile, "ND_A_FIELD(%s)[__idest--] = ND_A_FIELD(%s)[__isrc--];\n", res, a);
-  indent--; INDENT; fprintf (outfile, "} while( __idest >= __bl0);\n"); INDENT;
-  fprintf (outfile, "__isrc = ND_KD_SIZE(%s) - __bl0;\n", a); INDENT;
-  fprintf (outfile, "do {\n"); indent++; INDENT;
-  fprintf (outfile, "ND_A_FIELD(%s)[__idest--] = ND_A_FIELD(%s)[__isrc--];\n", res, a);
-  indent--; INDENT; fprintf (outfile, "} while( __idest >= 0);\n"););
+  InitVecs (0, 1, "__bl",
+            {
+                int j;
+                for (j = rotdim + 1; j < dima; j++)
+                    fprintf (outfile, "ND_KD_A_SHAPE(%s, %d)*", a, j);
+                fprintf (outfile, "ND_KD_A_SHAPE(%s, %d)", a, rotdim);
+            });
+  InitVecs (0, 1, "__i", fprintf (outfile, "0"));
+  InitPtr (fprintf (outfile, "-__shift0"), fprintf (outfile, "0")),
+  FillRes (
+    res, INDENT; fprintf (outfile, "__isrc+=__bl0;\n"); INDENT;
+    fprintf (outfile, "for(__i0=0; __i0<__shift0; __i0++)\n"); indent++; INDENT;
+    fprintf (outfile, "ND_A_FIELD(%s)[__idest++] = ND_A_FIELD(%s)[__isrc++];\n", res, a);
+    indent--; INDENT; fprintf (outfile, "__isrc-=__bl0;\n"); INDENT;
+    fprintf (outfile, "for(; __i0<__bl0; __i0++)\n"); indent++; INDENT;
+    fprintf (outfile, "ND_A_FIELD(%s)[__idest++] = ND_A_FIELD(%s)[__isrc++];\n", res, a);
+    indent--));
 fprintf (outfile, "\n\n");
 
 #undef ND_KD_ROT_CxSxA_A
-
-#ifndef TEST_BACKEND
-DBUG_VOID_RETURN;
-}
-#endif /* no TEST_BACKEND */
-
-/*
- * ND_KD_ROT_SxSxA_A( rotdimstr, numstr, dima, a, res):
- */
-
-#define ND_KD_ROT_SxSxA_A
-
-#ifndef TEST_BACKEND
-#include "icm_decl.c"
-#include "icm_args.c"
-#endif /* no TEST_BACKEND */
-
-#include "icm_comment.c"
-
-INDENT;
-NewBlock (
-  INDENT; fprintf (outfile, "int __i;\n"); INDENT; fprintf (outfile, "int __bl0=");
-  fprintf (outfile, "(%s<0 ? ", numstr[0]);
-  fprintf (outfile, "ND_KD_A_SHAPE(%s, %s)+ (%s %% ND_KD_SHAPE(%s, %s)) : ", a,
-           rotdimstr[0], numstr[0], a, rotdimstr[0]);
-  fprintf (outfile, "%s %% ND_KD_SHAPE(%s, %s));\n\n", numstr[0], a, rotdimstr[0]);
-  INDENT; fprintf (outfile, "for(__i=%s+1; __i<%d; __i++)\n", rotdimstr[0], dima);
-  indent++; INDENT; fprintf (outfile, "__bl0 *= ND_KD_A_SHAPE(%s, __i);", a);
-  fprintf (outfile, "\n"); indent--;
-  INDENT,
-  NewBlock (
-    InitPtr (fprintf (outfile, "ND_KD_SIZE(%s)-__bl0", a),
-             fprintf (outfile, "ND_KD_SIZE(%s)", res)),
-    INDENT;
-    fprintf (outfile, "do {\n"); indent++; INDENT;
-    fprintf (outfile, "ND_A_FIELD(%s)[__idest--] = ND_A_FIELD(%s)[__isrc--];\n", res, a);
-    indent--; INDENT; fprintf (outfile, "} while( __idest >= __bl0);\n"); INDENT;
-    fprintf (outfile, "__isrc = ND_KD_SIZE(%s) - __bl0;\n", a); INDENT;
-    fprintf (outfile, "do {\n"); indent++; INDENT;
-    fprintf (outfile, "ND_A_FIELD(%s)[__idest--] = ND_A_FIELD(%s)[__isrc--];\n", res, a);
-    indent--; INDENT; fprintf (outfile, "} while( __idest >= 0);\n");));
-fprintf (outfile, "\n\n");
-
-#undef ND_KD_ROT_SxSxA_A
 
 #ifdef TEST_BACKEND
 return (0);
