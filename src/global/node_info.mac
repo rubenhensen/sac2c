@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.44  1995/02/22 18:13:16  asi
- * Added CFfundef, CFassign, CFdo, CFwhile, CFcond, CFprf
+ * Revision 1.45  1995/02/28 18:24:01  asi
+ * CFwith added
  *
+;; Revision 1.44  1995/02/22  18:13:16  asi
+;; Added CFfundef, CFassign, CFdo, CFwhile, CFcond, CFprf
+;;
 ;; Revision 1.43  1995/02/14  12:23:08  sbs
 ;; PrintFold inserted
 ;;
@@ -198,7 +201,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_divon, "N_divon", DummyFun, DummyFun, PrintLeton, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeInfoIds, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_with, "N_with", DummyFun, FltnWith, PrintWith, DummyFun, DummyFun, DummyFun,
-       DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
+       DummyFun, FreeNoInfo, CFwith, DummyFun, DummyFun, DummyFun),
   NIF (N_generator, "N_generator", DummyFun, DummyFun, PrintGenator, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeInfoId, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_genarray, "N_genarray", DummyFun, DummyFun, PrintConexpr, DummyFun, DummyFun,
