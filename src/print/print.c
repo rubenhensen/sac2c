@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2001/03/15 20:35:16  dkr
+ * PrintAssign: DBUG-string PRINT_PROFILE is handled correctly now
+ *
  * Revision 3.29  2001/03/15 16:49:46  dkr
  * PrintArg: the '&' for reference objects is no longer printed by
  * Type2String().
@@ -1521,6 +1524,7 @@ node *
 PrintAssign (node *arg_node, node *arg_info)
 {
     node *instr;
+    bool trav_instr;
 
     DBUG_ENTER ("PrintAssign");
 
@@ -1559,12 +1563,19 @@ PrintAssign (node *arg_node, node *arg_info)
         if (((NODE_TYPE (instr) != N_return) && (NODE_TYPE (instr) != N_annotate))
             || ((NODE_TYPE (instr) == N_return) && (RETURN_EXPRS (instr) != NULL))
             || ((NODE_TYPE (instr) == N_annotate) && (compiler_phase >= PH_compile))) {
+            trav_instr = TRUE;
+        } else {
+            trav_instr = FALSE;
+        }
+
+        if (NODE_TYPE (instr) == N_annotate) {
+            DBUG_EXECUTE ("PRINT_PROFILE", trav_instr = TRUE;);
+        }
+
+        if (trav_instr) {
             INDENT;
             Trav (instr, arg_info);
             fprintf (outfile, "\n");
-        } else {
-            DBUG_EXECUTE ("PRINT_PROFILE", INDENT; Trav (instr, arg_info);
-                          fprintf (outfile, "\n"););
         }
 
         if (ASSIGN_NEXT (arg_node) != NULL) {
