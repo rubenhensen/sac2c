@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/04/27 08:47:22  nmw
+ * PIWarg can handle unique args now
+ *
  * Revision 3.6  2001/04/26 17:07:18  dkr
  * bug in PIWarg() detected but unfortunately not fixed yet :-(
  *
@@ -334,6 +337,7 @@ PIWarg (node *arg_node, node *arg_info)
 
         switch (ARG_ATTRIB (arg_node)) {
         case ST_regular:
+        case ST_unique:
             if ((TYPES_DIM (argtype) == 0) && (TYPES_BASETYPE (argtype) != T_hidden)) {
                 /* macro for simple type without refcounting */
                 fprintf (outfile, "SAC_ARGCALL_SIMPLE");
@@ -352,13 +356,6 @@ PIWarg (node *arg_node, node *arg_info)
                 /* macro for arraytype with refcounting */
                 fprintf (outfile, "SAC_ARGCALL_INOUT_REFCNT");
             }
-            break;
-
-        case ST_unique:
-            /*
-             * dkr: this case is missing ?!?
-             */
-            DBUG_ASSERT ((0), "PIWarg: unable to handle types attribute!");
             break;
 
         default:
