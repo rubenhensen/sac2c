@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.36  2002/08/03 03:16:01  dkr
+ * ND_PRF_SEL__DIM icms replaced by ND_PRF_BINOP
+ *
  * Revision 1.35  2002/08/02 20:49:44  dkr
  * - ..__DIM.. icms added
  * - support for descriptors with dynamic dimension added
@@ -3374,41 +3377,46 @@ COMPPrfSel (node *arg_node, node *arg_info, node **check_reuse1, node **check_re
     (*check_reuse1) = (*check_reuse2) = NULL;
 
     if (NODE_TYPE (arg1) == N_id) {
-        icm_args = MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE, FALSE,
-                                 MakeExprs (MakeNum (GetTypesLength (ID_TYPE (arg1))),
-                                            MakeExprs (DupNode_NT (arg1), NULL)));
+        (*get_dim) = MakeIcm3 ("ND_BINOP", MakeId_Copy (prf_string[F_sub]),
+                               MakeIcm1 ("ND_A_DIM", DupId_NT (arg2)),
+                               MakeIcm1 ("ND_A_SIZE", DupId_NT (arg1)));
 
-        (*get_dim) = MakeIcm1 ("ND_PRF_SEL__DIM_id", icm_args);
+        icm_args
+          = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
+                          MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
+                                        FALSE,
+                                        MakeExprs (MakeNum (
+                                                     GetTypesLength (ID_TYPE (arg1))),
+                                                   MakeExprs (DupId_NT (arg1), NULL))));
 
-        (*set_shape_icm)
-          = MakeIcm1 ("ND_PRF_SEL__SHAPE_id",
-                      MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
-                                    FALSE, DupTree (icm_args)));
+        (*set_shape_icm) = MakeIcm1 ("ND_PRF_SEL__SHAPE_id", icm_args);
 
-        ret_node = MakeAssignIcm2 ("ND_PRF_SEL__DATA_id",
-                                   MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                 FALSE, TRUE, FALSE, DupTree (icm_args)),
+        ret_node = MakeAssignIcm2 ("ND_PRF_SEL__DATA_id", DupTree (icm_args),
                                    MakeId_Copy (GenericFun (0, ID_TYPE (arg2))), NULL);
     } else {
+        int cnt_aelems;
+
         DBUG_ASSERT ((NODE_TYPE (arg1) == N_array),
                      "1st arg of F_sel is neither N_id nor N_array!");
 
+        cnt_aelems = CountExprs (ARRAY_AELEMS (arg1));
+
+        (*get_dim)
+          = MakeIcm3 ("ND_BINOP", MakeId_Copy (prf_string[F_sub]),
+                      MakeIcm1 ("ND_A_DIM", DupId_NT (arg2)), MakeNum (cnt_aelems));
+
         icm_args
-          = MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE, FALSE,
-                          MakeExprs (MakeNum (CountExprs (ARRAY_AELEMS (arg1))),
-                                     AppendExprs (DupExprs_NT (ARRAY_AELEMS (arg1)),
-                                                  NULL)));
+          = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
+                          MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
+                                        FALSE,
+                                        MakeExprs (MakeNum (cnt_aelems),
+                                                   AppendExprs (DupExprs_NT (
+                                                                  ARRAY_AELEMS (arg1)),
+                                                                NULL))));
 
-        (*get_dim) = MakeIcm1 ("ND_PRF_SEL__DIM_arr", icm_args);
+        (*set_shape_icm) = MakeIcm1 ("ND_PRF_SEL__SHAPE_arr", icm_args);
 
-        (*set_shape_icm)
-          = MakeIcm1 ("ND_PRF_SEL__SHAPE_arr",
-                      MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
-                                    FALSE, DupTree (icm_args)));
-
-        ret_node = MakeAssignIcm2 ("ND_PRF_SEL__DATA_arr",
-                                   MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                 FALSE, TRUE, FALSE, DupTree (icm_args)),
+        ret_node = MakeAssignIcm2 ("ND_PRF_SEL__DATA_arr", DupTree (icm_args),
                                    MakeId_Copy (GenericFun (0, ID_TYPE (arg2))), NULL);
     }
 
@@ -4866,6 +4874,11 @@ COMP2With2 (node *arg_node, node *arg_info)
     old_wlnode = wlnode; /* stack 'wlnode' */
     wlnode = arg_node;
 
+#if 1
+    DBUG_ASSERT ((GetDim (IDS_TYPE (wlids)) >= 0),
+                 "with-loops with unknown dimension are not implemented yet!");
+#endif
+
     /*
      * fold with-loop:
      *
@@ -4898,16 +4911,19 @@ COMP2With2 (node *arg_node, node *arg_info)
      * allocate memory for index-vector
      */
     vec_ids = NWITH2_VEC (arg_node);
-    alloc_icms
-      = MakeAllocIcm (IDS_NAME (vec_ids), IDS_TYPE (vec_ids), IDS_REFCNT (vec_ids),
+    alloc_icms = MakeAllocIcm (IDS_NAME (vec_ids), IDS_TYPE (vec_ids),
+                               IDS_REFCNT (vec_ids), MakeNum (1),
 #if 1
-                      /* is correct for AKS only :-( */
-                      MakeNum (GetDim (IDS_TYPE (wlids))), MakeIcm0 ("NOOP"),
+                               /* is correct for AKS only :-( */
+                               MakeIcm0 ("NOOP"),
 #endif
-                      NULL, alloc_icms);
+                               NULL, alloc_icms);
 
     if ((NWITH2_TYPE (arg_node) == WO_genarray)
         || (NWITH2_TYPE (arg_node) == WO_modarray)) {
+        node *get_dim;
+        node *set_shape_icm;
+
         /*
          * genarray/modarray with-loop:
          *
@@ -4926,14 +4942,26 @@ COMP2With2 (node *arg_node, node *arg_info)
                          "illegal value for NWITH2_REUSE found!");
         }
 
+        if (NWITH2_TYPE (arg_node) == WO_genarray) {
+            /* is correct for AKD only :-( */
+            get_dim = MakeNum (GetDim (IDS_TYPE (wlids)));
+            /* is correct for AKS only :-( */
+            set_shape_icm = MakeIcm0 ("NOOP");
+        } else {
+            node *arr = NWITH2_ARRAY (arg_node);
+            DBUG_ASSERT ((NODE_TYPE (arr) == N_id), "no N_id node found!");
+
+            get_dim = MakeIcm1 ("ND_A_DIM", DupId_NT (arr));
+            set_shape_icm
+              = MakeIcm1 ("ND_COPY__SHAPE",
+                          MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids), FALSE, TRUE,
+                                        FALSE,
+                                        MakeTypeArgs (ID_NAME (arr), ID_TYPE (arr), FALSE,
+                                                      TRUE, FALSE, NULL)));
+        }
         alloc_icms = DFM2AllocIcm_CheckReuse (IDS_NAME (wlids), IDS_TYPE (wlids),
-                                              RC_INIT (IDS_REFCNT (wlids)),
-#if 1
-                                              MakeNum (GetDim (IDS_TYPE (wlids))),
-                                              /* is correct for AKS only :-( */
-                                              MakeIcm0 ("NOOP"),
-#endif
-                                              NWITH2_PRAGMA (arg_node),
+                                              RC_INIT (IDS_REFCNT (wlids)), get_dim,
+                                              set_shape_icm, NWITH2_PRAGMA (arg_node),
                                               NWITH2_REUSE (arg_node), alloc_icms);
 
         if (NWITH2_REUSE (arg_node) != NULL) {
