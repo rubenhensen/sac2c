@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2004/11/26 23:42:53  khf
+ * corrected function names
+ *
  * Revision 1.14  2004/11/26 16:23:52  jhb
  * compile
  *
@@ -281,14 +284,14 @@ TileFromArray (constant *idx, shape *res_shp, constant *a)
  ******************************************************************************/
 
 constant *
-COReshape (constant *new_shp, constant *a)
+COreshape (constant *new_shp, constant *a)
 {
     void *elems;
     int res_vlen, curr_ext_res, i;
     shape *res_shp;
     constant *res;
 
-    DBUG_ENTER ("COReshape");
+    DBUG_ENTER ("COreshape");
     DBUG_ASSERT ((CONSTANT_TYPE (new_shp) == T_int), "new_shp for COReshape not int!");
     DBUG_ASSERT ((CONSTANT_DIM (new_shp) == 1), "new_shp for COReshape not vector!");
 
@@ -325,7 +328,7 @@ COReshape (constant *new_shp, constant *a)
 /******************************************************************************
  *
  * function:
- *    constant *COSel( constant *idx, constant *a)
+ *    constant *COsel( constant *idx, constant *a)
  *
  * description:
  *    selects single elements or entire sub-arrays from a.
@@ -333,14 +336,14 @@ COReshape (constant *new_shp, constant *a)
  ******************************************************************************/
 
 constant *
-COSel (constant *idx, constant *a)
+COsel (constant *idx, constant *a)
 {
     void *elems;
     int res_dim, res_vlen, curr_ext_a, i;
     shape *res_shp;
     constant *res;
 
-    DBUG_ENTER ("COSel");
+    DBUG_ENTER ("COsel");
     DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COSel not int!");
     DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to COSel not vector!");
     DBUG_ASSERT ((CONSTANT_DIM (a)) >= CONSTANT_VLEN (idx),
@@ -375,7 +378,7 @@ COSel (constant *idx, constant *a)
 /******************************************************************************
  *
  * function:
- *    constant *COIdxSel( constant *idx, constant *a)
+ *    constant *COidxSel( constant *idx, constant *a)
  *
  * description:
  *    selects single elements from a.
@@ -383,7 +386,7 @@ COSel (constant *idx, constant *a)
  ******************************************************************************/
 
 constant *
-COIdxSel (constant *idx, constant *a)
+COidxSel (constant *idx, constant *a)
 {
     void *elem;
     int index;
@@ -414,7 +417,7 @@ COIdxSel (constant *idx, constant *a)
 /******************************************************************************
  *
  * function:
- *    constant *COTake( constant *idx, constant *a)
+ *    constant *COtake( constant *idx, constant *a)
  *
  * description:
  *    picks elements from a! The shape of the result equals
@@ -427,7 +430,7 @@ COIdxSel (constant *idx, constant *a)
  ******************************************************************************/
 
 constant *
-COTake (constant *idx, constant *a)
+COtake (constant *idx, constant *a)
 {
     shape *res_shp;
     int i, curr_val_idx;
@@ -435,7 +438,7 @@ COTake (constant *idx, constant *a)
     constant *offset, *res;
     constant *new_idx = NULL;
 
-    DBUG_ENTER ("COTake");
+    DBUG_ENTER ("COtake");
 
     if (CONSTANT_DIM (idx) == 0) {
         new_idx = COcopyScalar2OneElementVector (idx);
@@ -505,7 +508,7 @@ COTake (constant *idx, constant *a)
 /******************************************************************************
  *
  * function:
- *    constant *CODrop( constant *idx, constant *a)
+ *    constant *COdrop( constant *idx, constant *a)
  *
  * description:
  *    picks elements from a! The shape of the result equals
@@ -518,7 +521,7 @@ COTake (constant *idx, constant *a)
  ******************************************************************************/
 
 constant *
-CODrop (constant *idx, constant *a)
+COdrop (constant *idx, constant *a)
 {
     shape *res_shp;
     int i, curr_val_idx;
@@ -527,20 +530,20 @@ CODrop (constant *idx, constant *a)
     constant *res;
     constant *new_idx = NULL;
 
-    DBUG_ENTER ("CODrop");
+    DBUG_ENTER ("COdrop");
 
     if (CONSTANT_DIM (idx) == 0) {
         new_idx = COcopyScalar2OneElementVector (idx);
         idx = new_idx;
     }
-    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to CODrop not vector!");
+    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to COdrop not vector!");
     DBUG_ASSERT ((CONSTANT_DIM (a)) >= CONSTANT_VLEN (idx),
-                 "idx-vector exceeds dim of array in CODrop!");
+                 "idx-vector exceeds dim of array in COdrop!");
 
     if (CONSTANT_VLEN (idx) > 0) {
         /* 'idx' is a non-empty array */
 
-        DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to CODrop not int!");
+        DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COdrop not int!");
 
         /*
          * First, we create the result shape:
@@ -594,7 +597,7 @@ CODrop (constant *idx, constant *a)
 
 /** <!--********************************************************************-->
  *
- * @fn constant *COCat( constant *a, constant *b)
+ * @fn constant *COcat( constant *a, constant *b)
  *
  *   @brief  concatenates a and b wrt the leftmost axis.
  *           Scalars are converted in one element vectors first!
@@ -606,7 +609,7 @@ CODrop (constant *idx, constant *a)
  ******************************************************************************/
 
 constant *
-COCat (constant *a, constant *b)
+COcat (constant *a, constant *b)
 {
     int dim, vlen;
     int i;
@@ -615,7 +618,7 @@ COCat (constant *a, constant *b)
     constant *res, *new_a = NULL, *new_b = NULL;
     void *cv;
 
-    DBUG_ENTER ("COCat");
+    DBUG_ENTER ("COcat");
 
     if (CONSTANT_DIM (a) == 0) {
         new_a = COcopyScalar2OneElementVector (a);
@@ -681,18 +684,18 @@ COCat (constant *a, constant *b)
 /******************************************************************************
  *
  * function:
- *    constant *CODim( constant *a)
+ *    constant *COdim( constant *a)
  *
  * description:
  *    returns the dimension of a (or 0 if a is a scalar)
  *
  ******************************************************************************/
 constant *
-CODim (constant *a)
+COdim (constant *a)
 {
     constant *res;
 
-    DBUG_ENTER ("CODim");
+    DBUG_ENTER ("COdim");
 
     res = COmakeConstantFromInt (CONSTANT_DIM (a));
 
@@ -702,7 +705,7 @@ CODim (constant *a)
 /******************************************************************************
  *
  * function:
- *    constant *COShape( constant *a)
+ *    constant *COshape( constant *a)
  *
  * description:
  *    returns the shape of a (int vector with dim elements).
@@ -710,13 +713,13 @@ CODim (constant *a)
  *
  ******************************************************************************/
 constant *
-COShape (constant *a)
+COshape (constant *a)
 {
     int *shape_vec;
     constant *res;
     int i;
 
-    DBUG_ENTER ("COShape");
+    DBUG_ENTER ("COshape");
 
     if (CONSTANT_DIM (a) > 0) {
         shape_vec = (int *)ILIBmalloc (CONSTANT_DIM (a) * sizeof (int));
@@ -733,18 +736,18 @@ COShape (constant *a)
 /******************************************************************************
  *
  * function:
- *    constant *COModarray( constant *a, constant *idx, constant *elem)
+ *    constant *COmodarray( constant *a, constant *idx, constant *elem)
  *
  * description:
  *    returns modified a with value elem at index idx
  *
  ******************************************************************************/
 constant *
-COModarray (constant *a, constant *idx, constant *elem)
+COmodarray (constant *a, constant *idx, constant *elem)
 {
     constant *res;
 
-    DBUG_ENTER ("COModarray");
+    DBUG_ENTER ("COmodarray");
     DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COSel not int!");
     DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to COSel not vector!");
     DBUG_ASSERT ((CONSTANT_TYPE (a) == CONSTANT_TYPE (elem)),
