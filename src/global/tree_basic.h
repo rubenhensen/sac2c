@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.214  1999/02/11 13:35:22  cg
+ * OBJDEC_DEF() and OBJDEF_VARNAME() no longer use the same entry in the
+ * underlying node structure. This caused severe memory management problems
+ * when freeing the own declaration of a module/class implementation after
+ * writing the SIB.
+ *
  * Revision 1.213  1999/02/11 08:31:22  bs
  * INFO_FLTN_INTARRAY and INFO_FLTN_ARRAYLENGTH inserted
  *
@@ -790,7 +796,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 #define OBJDEF_NEXT(n) (n->node[0])
 #define OBJDEF_STATUS(n) (n->info.types->status)
 #define OBJDEF_ATTRIB(n) (n->info.types->attrib)
-#define OBJDEF_VARNAME(n) ((char *)(n->node[2]))
+#define OBJDEF_VARNAME(n) ((char *)(n->info2))
 #define OBJDEF_ARG(n) (n->node[3])
 #define OBJDEF_PRAGMA(n) (n->node[4])
 #define OBJDEF_ICM(n) (n->node[3])
