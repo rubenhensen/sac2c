@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1996/01/25 16:35:06  hw
+ * Revision 1.15  1996/01/26 15:29:22  cg
+ * added statustype entry ST_classfun
+ *
+ * Revision 1.14  1996/01/25  16:35:06  hw
  * added macros to use with types->dim to examine whether
  * it is a scalar, an array with known dimension and unknown shape,
  * an array with known shape or an array with unknown shape
@@ -106,8 +109,9 @@ typedef enum {
                            /* from other module                      */
     ST_Cfun,               /* function implemented in C              */
     ST_used,               /* var declaration is used in body        */
-    ST_objinitfun          /* function is automatically generated    */
+    ST_objinitfun,         /* function is automatically generated    */
                            /* to contain global object init expr     */
+    ST_classfun            /* generic function for class conversion  */
 
 } statustype;
 
