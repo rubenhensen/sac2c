@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/02/02 09:42:14  dkr
+ * COMPWLgrid, COMPWLgridVar, COMPWLstride, COMPWLstrideVar, COMPWLseg,
+ * COMPWLsegVar removed.
+ *
  * Revision 3.17  2001/01/30 16:41:25  dkr
  * rcs header compressed
  *
@@ -5338,7 +5342,7 @@ COMPNcode (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
-static node *
+node *
 COMPWLsegx (node *arg_node, node *arg_info)
 {
     node *assigns, *old_wl_seg;
@@ -5402,46 +5406,6 @@ COMPWLsegx (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *COMPWLseg( node *arg_node, node *arg_info)
- *
- * Description:
- *   Compilation of a N_WLseg-node.
- *
- ******************************************************************************/
-
-node *
-COMPWLseg (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("COMPWLseg");
-
-    arg_node = COMPWLsegx (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *COMPWLsegVar( node *arg_node, node *arg_info)
- *
- * Description:
- *   Compilation of a N_WLsegVar-node.
- *
- ******************************************************************************/
-
-node *
-COMPWLsegVar (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("COMPWLsegVar");
-
-    arg_node = COMPWLsegx (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *COMPWLxblock( node *arg_node, node *arg_info)
  *
  * Description:
@@ -5457,7 +5421,7 @@ COMPWLsegVar (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
-static node *
+node *
 COMPWLxblock (node *arg_node, node *arg_info)
 {
     node *icm_args;
@@ -5565,46 +5529,6 @@ COMPWLxblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *COMPWLblock( node *arg_node, node *arg_info)
- *
- * Description:
- *   compilation of a N_WLblock-node.
- *
- ******************************************************************************/
-
-node *
-COMPWLblock (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("COMPWLblock");
-
-    arg_node = COMPWLxblock (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *COMPWLublock( node *arg_node, node *arg_info)
- *
- * Description:
- *   compilation of a N_WLublock-node.
- *
- ******************************************************************************/
-
-node *
-COMPWLublock (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("COMPWLublock");
-
-    arg_node = COMPWLxblock (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *COMPWLstridex( node *arg_node, node *arg_info)
  *
  * Description:
@@ -5622,7 +5546,7 @@ COMPWLublock (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
-static node *
+node *
 COMPWLstridex (node *arg_node, node *arg_info)
 {
     node *old_wl_stride;
@@ -5768,46 +5692,6 @@ COMPWLstridex (node *arg_node, node *arg_info)
     wl_stride = old_wl_stride;
 
     DBUG_RETURN (assigns);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *COMPWLstride( node *arg_node, node *arg_info)
- *
- * Description:
- *   compilation of a N_WLstride-node.
- *
- ******************************************************************************/
-
-node *
-COMPWLstride (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("COMPWLstride");
-
-    arg_node = COMPWLstridex (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *COMPWLstrideVar( node *arg_node, node *arg_info)
- *
- * Description:
- *   compilation of a N_WLstrideVar-node.
- *
- ******************************************************************************/
-
-node *
-COMPWLstrideVar (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("COMPWLstrideVar");
-
-    arg_node = COMPWLstridex (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -6136,46 +6020,6 @@ COMPWLgridx (node *arg_node, node *arg_info)
     }
 
     DBUG_RETURN (assigns);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *COMPWLgrid( node *arg_node, node *arg_info)
- *
- * Description:
- *   compilation of a N_WLgrid-node.
- *
- ******************************************************************************/
-
-node *
-COMPWLgrid (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("COMPWLgrid");
-
-    arg_node = COMPWLgridx (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *COMPWLgridVar( node *arg_node, node *arg_info)
- *
- * Description:
- *   compilation of a N_WLgridVar-node.
- *
- ******************************************************************************/
-
-node *
-COMPWLgridVar (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("COMPWLgridVar");
-
-    arg_node = COMPWLgridx (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
 }
 
 /**************************
