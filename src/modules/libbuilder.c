@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/28 17:21:24  sah
+ * the dependencytable is compiled and linked
+ * now as well
+ *
  * Revision 1.1  2004/10/17 17:47:33  sah
  * Initial revision
  *
@@ -29,8 +33,9 @@ CreateLibrary ()
 
     NOTE (("Creating shared SAC library `lib%s.so'", modulename));
 
-    SystemCall ("%s -o lib%s.so %s/serialize.o %s/symboltable.o", config.ld_dynamic,
-                modulename, tmp_dirname, tmp_dirname);
+    SystemCall ("%s -o lib%s.so %s/serialize.o %s/symboltable.o"
+                " %s/dependencytable.o",
+                config.ld_dynamic, modulename, tmp_dirname, tmp_dirname, tmp_dirname);
 
     DBUG_VOID_RETURN;
 }
