@@ -3,7 +3,13 @@
 /*
  *
  * $Log$
- * Revision 1.21  1995/08/07 10:30:00  cg
+ * Revision 1.22  1995/12/01 17:15:44  cg
+ * added key words for new pragmas
+ * added: Command not found.
+ * added PRIVATEID to allow identifiers without SAC restrictions
+ * which are needed for parsing SIBs
+ *
+ * Revision 1.21  1995/08/07  10:30:00  cg
  * assignement operator := deleted.
  *
  * Revision 1.20  1995/07/07  16:20:56  hw
@@ -70,9 +76,14 @@
  *
  */
 
+
+
 #include <stdlib.h>
 #include "tree.h"
 #include "y.tab.h"
+#include "Error.h"
+
+
 
 #define FILTER(token) if (0==commlevel)  return(token)
 #define FILTER2(token) if (0==commlevel)  {                             \
@@ -108,7 +119,8 @@ int start_token;
 
 %}
 
-%p 4000 /* set positions to 4000 */
+%p 5000 /* set positions to 5000 */
+%e 1100 /* set nodes to 1100 */
 
 %%
 %{
@@ -208,6 +220,16 @@ int start_token;
 "global"                        {FILTER( GLOBAL );}
 "objects"                       {FILTER( OBJECTS );}
 
+"#pragma"                       {FILTER( PRAGMA );}
+"linkname"                      {FILTER( LINKNAME );}
+"linksign"                      {FILTER( LINKSIGN );}
+"effect"                        {FILTER( EFFECT );}
+"touch"                         {FILTER( TOUCH );}
+"refcounting"                   {FILTER( REFCOUNTING );}
+"readonly"                      {FILTER( READONLY );}
+"copyfun"                       {FILTER( COPYFUN );}
+"freefun"                       {FILTER( FREEFUN );}
+
 "int"				{FILTER( TYPE_INT );}
 "float"				{FILTER( TYPE_FLOAT );}
 "bool"				{FILTER( TYPE_BOOL );}
@@ -240,10 +262,17 @@ int start_token;
 
 
 \"[^"\n]*\"			{FILTER2( STR );}
-[A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*		{FILTER2( ID );}
-(0?|([1-9][0-9]*))	{FILTER3 ( NUM);}
+
+[A-Za-z]([A-Za-z0-9]|[_A-Za-z0-9][A-Za-z0-9])*  \
+                                {FILTER2( ID );}
+
+[_A-Za-z][_A-Za-z0-9]*          {FILTER2( PRIVATEID );}
+
+(0?|([1-9][0-9]*))              {FILTER3 ( NUM);}
+
 (0?|([1-9][0-9]*))[.][0-9]+(e([+]?|[-]?)[1-9][0-9]*)? \
 				{FILTER4 ( FLOAT);}
+
 (0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[1-9][0-9]*)?)?[fF] \
                                 {FILTER6 ( FLOAT);}
 
@@ -252,7 +281,7 @@ int start_token;
 
 
 "/*"	{ if (commlevel++ == 1)
-            fprintf(stderr,"Warning: recursive comment eleminated! \n"); }
+            WARN(linenum, ("Nested comment eleminated")); }
 "*/"	{ if (commlevel) commlevel--; else return(SC); }
 "\n"	{linenum++;}
 [ \t]	{}
