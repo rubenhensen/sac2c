@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2001/07/19 11:48:18  cg
+ * AppendAssign now accepts N_empty nodes as
+ * assign chain.
+ *
  * Revision 3.42  2001/07/18 12:57:45  cg
  * Function ExprsConcat renamed to AppendExprs.
  *
@@ -2153,17 +2157,14 @@ AppendAssign (node *assign_chain, node *assign)
 
     DBUG_ENTER ("AppendAssign");
 
-    DBUG_ASSERT (((assign_chain == NULL) || (NODE_TYPE (assign_chain) == N_assign)),
+    DBUG_ASSERT (((assign_chain == NULL) || (NODE_TYPE (assign_chain) == N_assign)
+                  || (NODE_TYPE (assign_chain) == N_empty)),
                  ("First argument of AppendAssign() has wrong node type."));
     DBUG_ASSERT (((assign == NULL) || (NODE_TYPE (assign) == N_assign)),
                  ("Second argument of AppendAssign() has wrong node type."));
 
-    if ((assign != NULL) && (assign_chain != NULL)) {
-        if (NODE_TYPE (assign_chain) == N_empty) {
-            /* empty block */
-            FreeNode (assign_chain);
-            assign_chain = NULL;
-        }
+    if ((assign_chain != NULL) && (NODE_TYPE (assign_chain) == N_empty)) {
+        assign_chain = FreeNode (assign_chain);
     }
 
     APPEND (ret, node *, ASSIGN, assign_chain, assign);
