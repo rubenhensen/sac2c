@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/10/25 17:10:48  dkr
+ * some comments added
+ *
  * Revision 2.5  1999/05/03 09:39:19  jhs
  * commented out DBUG_ASSERT in GNMNwith to allow empty generator sets
  * for index-vars ( iv = []).
@@ -343,6 +346,9 @@ MrdGet (int i, int varno, int what)
     node *new, *old, *let_expr;
 
     DBUG_ENTER ("MrdGet");
+
+    DBUG_ASSERT (((i >= 0) || (i < varno)),
+                 "illegal var index found (must be within 0..varno-1)");
 
     old = NULL;
     new = MRD (i);
@@ -1009,9 +1015,20 @@ MaxMask (long *mask1, long *mask2, int varno)
     DBUG_VOID_RETURN;
 }
 
-/* srs: already created DEF and USE masks are needed to do an OPTTrav()
-   traversal. OPTTrav() create the MRD-list and modifies DEF and USE
-   masks. */
+/******************************************************************************
+ *
+ * function:
+ *   node *OPTTrav(node *trav_node, node *arg_info, node *arg_node)
+ *
+ * description:
+ *
+ *   Already created DEF and USE masks are needed to do an OPTTrav() traversal.
+ *   OPTTrav() create the MRD-list and modifies DEF and USE masks.
+ *
+ *   trav_node : node currently traversed (Trav() will be resumed with this node)
+ *   arg_node  : node OPTTrav() was started from (only for reference)
+ *
+ ******************************************************************************/
 
 node *
 OPTTrav (node *trav_node, node *arg_info, node *arg_node)
@@ -1041,8 +1058,9 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                     trav_node = Trav (trav_node, arg_info);
                     PopMRDL ();
                     FREE_MRDL_STACK;
-                } else
+                } else {
                     trav_node = Trav (trav_node, arg_info);
+                }
 
                 PlusMask (FUNDEF_DEFMASK (arg_node), INFO_DEF, INFO_CF_VARNO (arg_info));
                 PlusMask (FUNDEF_USEMASK (arg_node), INFO_USE, INFO_CF_VARNO (arg_info));
@@ -2033,10 +2051,9 @@ node *
 GNMid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("GNMid");
-    DBUG_ASSERT ((arg_node->info.ids->node != NULL),
-                 "N_id without pointer to declaration.");
-    DBUG_PRINT ("VAR", ("Usage of Variable %d", arg_node->info.ids->node->varno));
-    INC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
+    DBUG_ASSERT ((ID_VARDEC (arg_node) != NULL), "N_id without pointer to declaration.");
+    DBUG_PRINT ("VAR", ("Usage of Variable %d", ID_VARNO (arg_node)));
+    INC_VAR (arg_info->mask[1], ID_VARNO (arg_node));
     DBUG_RETURN (arg_node);
 }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.21  1999/10/25 17:09:45  dkr
+ * some comments added
+ *
  * Revision 2.20  1999/10/17 18:12:07  sacbase
  * few minor changes
  *
@@ -2210,7 +2213,7 @@ ArrayPrf (node *arg_node, node *arg_info)
         /***********************/
     case F_psi: {
         int dim, ok;
-        node *shape, *array, *res_array, *first_elem;
+        node *shape, *array, *res_array, *first_elem, *new_assign;
         node *tmpn, *modindex, *assign;
         types *array_type;
         node **mrdmask;
@@ -2291,17 +2294,17 @@ ArrayPrf (node *arg_node, node *arg_info)
             do {
                 assign = mrdmask[ID_VARNO (tmpn)];
                 ok = 1;
-                if (assign && N_assign == NODE_TYPE (assign)
-                    && N_let == NODE_TYPE (ASSIGN_INSTR (assign))) {
+                if (assign && (N_assign == NODE_TYPE (assign))
+                    && (N_let == NODE_TYPE (ASSIGN_INSTR (assign)))) {
                     mrdmask = (node **)ASSIGN_MRDMASK (assign);
                     array = LET_EXPR (ASSIGN_INSTR (assign));
                 } else
                     array = NULL;
 
-                if (array && N_array == NODE_TYPE (array))
+                if (array && (N_array == NODE_TYPE (array)))
                     ; /* leave do-loop */
-                else if (array && N_prf == NODE_TYPE (array)
-                         && F_modarray == PRF_PRF (array)) {
+                else if (array && (N_prf == NODE_TYPE (array))
+                         && (F_modarray == PRF_PRF (array))) {
                     /* check index of prf modarray */
                     modindex = PRF_ARG2 (array);
                     if (N_id == NODE_TYPE (modindex))
@@ -2366,15 +2369,33 @@ ArrayPrf (node *arg_node, node *arg_info)
                                                         DuplicateTypes (ID_TYPE (val), 0),
                                                         VARDEC_NEXT (vardecs));
                                         VARDEC_NEXT (vardecs) = new_vardec;
-
-                                        VARDEC_VARNO (new_vardec) = -1;
-
+                                        VARDEC_VARNO (new_vardec)
+                                          = (INFO_CF_VARNO (arg_info))++;
                                         IDS_VARDEC (new_ids) = new_vardec;
 
-                                        ASSIGN_CF (assign)
+                                        new_assign
                                           = MakeAssign (MakeLet (DupTree (val, NULL),
                                                                  new_ids),
                                                         NULL);
+                                        ASSIGN_MRDMASK (new_assign)
+                                          = DupMask (ASSIGN_MRDMASK (assign),
+                                                     INFO_CF_VARNO (arg_info));
+                                        ASSIGN_DEFMASK (new_assign)
+                                          = ReGenMask (ASSIGN_DEFMASK (new_assign),
+                                                       INFO_CF_VARNO (arg_info));
+                                        INC_VAR (ASSIGN_DEFMASK (new_assign),
+                                                 IDS_VARNO (new_ids));
+                                        ASSIGN_USEMASK (new_assign)
+                                          = ReGenMask (ASSIGN_USEMASK (new_assign),
+                                                       INFO_CF_VARNO (arg_info));
+                                        INC_VAR (ASSIGN_USEMASK (new_assign),
+                                                 ID_VARNO (val));
+
+                                        ASSIGN_CF (assign) = new_assign;
+                                        MRD (IDS_VARNO (new_ids)) = new_assign;
+                                        (ASSIGN_MRDMASK (
+                                          INFO_CF_ASSIGN (arg_info)))[IDS_VARNO (new_ids)]
+                                          = (long)new_assign;
 
                                         res_array = MakeId (StringCopy (fresh_var), NULL,
                                                             ST_regular);
