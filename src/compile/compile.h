@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  1998/08/07 14:39:22  dkr
+ * COMPWLsegVar added
+ *
  * Revision 1.32  1998/06/10 14:24:22  sbs
  * GetFoldCode and GetFoldVardecs declared extern!
  *
@@ -127,6 +130,7 @@ extern node *COMPWLblock (node *arg_node, node *arg_info);
 extern node *COMPWLublock (node *arg_node, node *arg_info);
 extern node *COMPWLstride (node *arg_node, node *arg_info);
 extern node *COMPWLgrid (node *arg_node, node *arg_info);
+extern node *COMPWLsegVar (node *arg_node, node *arg_info);
 extern node *COMPWLstriVar (node *arg_node, node *arg_info);
 extern node *COMPWLgridVar (node *arg_node, node *arg_info);
 
