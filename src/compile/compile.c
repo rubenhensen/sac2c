@@ -1,7 +1,19 @@
 /*
  *
  * $Log$
- * Revision 1.31  1995/05/11 08:25:16  hw
+ * Revision 1.32  1995/05/19 13:33:30  hw
+ * - bug fixed in CompPrf ( added ND_DEC_... while compilation of F_psi (case:
+ *     ND_KD_PSI_VxA_S))
+ * - bug fixed in CompAp (refcounts of arrays which are returned from a function
+ *     will be set and inserted correctly)
+ * - changed CompReturn ( if return contains to a with_loop, following refcounts
+ *    will be decremented: -index_vector, left and right border,
+ *                           array of modarray-part, all used arrays
+ * - bug fixed in CompLoop ( - create only ND_DEC_RC_FREE macros
+ *                           - put ND_LABEL(..) at the right place (after DEC's
+ *                              but before INC's )
+ *
+ * Revision 1.31  1995/05/11  08:25:16  hw
  * changed setting of refcount at beginning of userdefined functions
  *
  * Revision 1.30  1995/05/10  13:54:38  hw
@@ -762,6 +774,7 @@ CompPrf (node *arg_node, node *arg_info)
                         new_assign->node[1] = LAST_ASSIGN (arg_info);
                         new_assign->nnode = 2;
                         INSERT_BEFORE (arg_info, new_assign);
+
                         /* set info_node to right node (update info_node )*/
                         arg_info->node[0] = new_assign;
 
@@ -1159,6 +1172,10 @@ CompPrf (node *arg_node, node *arg_info)
                     arg_node = arg_info->node[1]->node[0];
                     MAKENODE_NUM (n_node, 1);
                     DEC_RC_FREE_ND (arg2, n_node);
+                    if (N_id == arg1->nodetype) {
+                        DEC_OR_FREE_RC_ND (arg1, n_node);
+                    }
+
                     INSERT_ASSIGN;
 
                     FREE (old_arg_node);
@@ -1635,7 +1652,7 @@ CompAp (node *arg_node, node *arg_info)
 {
     int n = 0;
     node *tmp, *last, *next, *exprs, *icm_arg, *id_node, *tag_node, *outs, *fun_args,
-      *next_assign, *first_assign, *refs_node, *n_node;
+      *next_assign, *first_assign, *refs_node, *n_node, *ap_icm_arg;
     ids *ids;
 
     DBUG_ENTER ("CompAp");
@@ -1646,55 +1663,55 @@ CompAp (node *arg_node, node *arg_info)
                                       * of refcounts
                                       */
     first_assign = refs_node;
-
     /* first take Let ids (variables assigned to) */
     ids = arg_info->node[1]->IDS;
     MAKENODE_ID_REUSE_IDS (id_node, ids);
     id_node->IDS_NEXT = NULL;
     if (1 == IsArray (id_node->IDS_NODE->TYPES)) {
-        MAKENODE_NUM (n_node, ids->refcnt);
-        INC_RC_ND (id_node, n_node); /* create N_icm to increment refcount of
-                                      * function result. It will be stored in
-                                      * refs_node->node[1]->.. and will be
-                                      * inserted later.
-                                      */
         MAKENODE_ID (tag_node, "out_a");
+        if (1 < ids->refcnt) {
+            MAKENODE_NUM (n_node, (ids->refcnt - 1));
+            INC_RC_ND (id_node, n_node); /* create N_icm to increment refcount of
+                                          * function result. It will be stored in
+                                          * refs_node->node[1]->.. and will be
+                                          * inserted later.
+                                          */
+        }
     } else {
         MAKENODE_ID (tag_node, "out");
     }
-    MAKE_ICM_ARG (icm_arg, tag_node);
-    outs = icm_arg;
-    MAKE_NEXT_ICM_ARG (icm_arg, id_node);
+    MAKE_ICM_ARG (ap_icm_arg, tag_node);
+    outs = ap_icm_arg;
+    MAKE_NEXT_ICM_ARG (ap_icm_arg, id_node);
     n += 1;
     ids = ids->next;
     while (NULL != ids) {
         MAKENODE_ID_REUSE_IDS (id_node, ids);
         id_node->IDS_NEXT = NULL;
         if (1 == IsArray (id_node->IDS_NODE->TYPES)) {
-            node *icm_arg; /* icm_arg is used in INC_RC_ND, but should not be the
-                            * same as icm_arg in outer scope (name clash)
-                            */
-
-            /* create N_icm to increment refcount of function result.
-             * It will be stored in refs_node->node[1]->.. and will be
-             * inserted later.
-             */
-            MAKENODE_NUM (n_node, ids->refcnt);
-            INC_RC_ND (id_node, n_node);
+            if (1 < ids->refcnt) {
+                /* create N_icm to increment refcount of function result.
+                 * It will be stored in refs_node->node[1]->.. and will be
+                 * inserted later.
+                 */
+                MAKENODE_NUM (n_node, ids->refcnt);
+                INC_RC_ND (id_node, n_node);
+            }
 
             MAKENODE_ID (tag_node, "out_a");
+
         } else {
             MAKENODE_ID (tag_node, "out");
         }
-        MAKE_NEXT_ICM_ARG (icm_arg, tag_node);
-        MAKE_NEXT_ICM_ARG (icm_arg, id_node);
+        MAKE_NEXT_ICM_ARG (ap_icm_arg, tag_node);
+        MAKE_NEXT_ICM_ARG (ap_icm_arg, id_node);
         n += 1;
         ids = ids->next;
     }
 
     /* now do the arguments of the function */
     exprs = arg_node->node[0];
-    last = icm_arg;
+    last = ap_icm_arg;
     MAKENODE_NUM (n_node, 1);
     while (NULL != exprs) {
         next = exprs->node[1];
@@ -1730,14 +1747,18 @@ CompAp (node *arg_node, node *arg_info)
     /* make last N_let node to N_icm node */
     arg_info->node[1]->nodetype = N_icm;
     MAKE_ICM_NAME (arg_info->node[1], "ND_FUN_AP");
-
     /* now insert N_icms for incrementation of refcounts of function results
      * if any
      */
     if (NULL != refs_node->node[1]) {
-        first_assign->node[1] = arg_info->node[0]->node[1];
-        first_assign->nnode = 2;
-        arg_info->node[0]->node[1] = refs_node->node[1];
+        node *last_assign;
+
+        last_assign = LAST_ASSIGN (arg_info);
+        first_assign->node[1] = NEXT_ASSIGN (arg_info);
+        if (NULL != first_assign->node[1])
+            first_assign->nnode = 2;
+        last_assign->node[1] = refs_node->node[1];
+        last_assign->nnode = 2;
     }
     FREE (refs_node); /* refs_node will not be used anymore */
 
@@ -1766,7 +1787,8 @@ node *
 CompReturn (node *arg_node, node *arg_info)
 {
     int n = 0;
-    node *tmp, *next, *exprs, *last, *n_node, *next_assign, *index_node;
+    node *tmp, *next, *exprs, *last, *n_node, *next_assign, *index_node, *first_assign,
+      *from, *to;
 
     DBUG_ENTER ("CompReturn");
 
@@ -1808,27 +1830,49 @@ CompReturn (node *arg_node, node *arg_info)
          * The name of the N_icm is used to detect whether N_return node is part
          * of a 'genarray' or 'modarray' with-loop.
          */
-        node *ret_val, *with_icm_arg, *icm_arg, *index_length;
+        node *ret_val, *with_icm_arg, *icm_arg, *index_length, *tmp_with_icm_arg, *dec_rc,
+          *mod_array = NULL;
         int is_array = IsArray (exprs->node[0]->IDS_NODE->TYPES);
 
         arg_node->nodetype = N_icm;  /* N_return will be converted to N_icm node */
         ret_val = arg_node->node[0]; /* store return_value node */
         with_icm_arg = arg_info->node[2]->node[0];
+        /* 'dec_rc' points to a list of variables whose refcount has to be
+         * decremented
+         */
+        dec_rc = arg_info->node[2]->node[3]->node[0];
+        /* add name of resulting array */
         MAKE_ICM_ARG (arg_node->node[0], with_icm_arg->node[0]);
         icm_arg = arg_node->node[0];
         with_icm_arg = with_icm_arg->node[1];
+        /* add dimension of resulting array */
         MAKE_NEXT_ICM_ARG (icm_arg, with_icm_arg->node[0]);
 
-        /* look for length of index_vector (it is last argument
-         *  of N_icm ND_BEGIN_MODARRAY) and for name of index_vector
-         *  (store it in 'index_node'
+        /* now we store some information:
+         * from        : N_id ( the left border of a mod/genarray)
+         * to          : N_id ( the right  border of a mod/genarray)
+         * index_node  : N_id ( name of index-vector of mod/genarray)
+         * index_length: N_num ( length of index-vector )
+         *
+         * all informations are shared with belonging mod/genarray N_icm
          */
-        index_length = with_icm_arg;
-        while (2 == index_length->nnode) {
-            if (1 == index_length->node[1]->nnode)
-                index_node = index_length->node[0];
-            index_length = index_length->node[1];
+        tmp_with_icm_arg = with_icm_arg->node[1];
+        if ('M' == arg_info->node[2]->info.id[9]) {
+            mod_array = tmp_with_icm_arg->node[0];
+            tmp_with_icm_arg = tmp_with_icm_arg->node[1];
         }
+
+        from = tmp_with_icm_arg->node[0];
+        DBUG_ASSERT (N_id == from->nodetype, " wrong nodetype for 'form'");
+        tmp_with_icm_arg = tmp_with_icm_arg->node[1];
+        to = tmp_with_icm_arg->node[0];
+        DBUG_ASSERT (N_id == to->nodetype, " wrong nodetype for 'to'");
+        tmp_with_icm_arg = tmp_with_icm_arg->node[1];
+        index_node = tmp_with_icm_arg->node[0];
+        DBUG_ASSERT (N_id == index_node->nodetype, " wrong nodetype for 'index_node'");
+        index_length = tmp_with_icm_arg->node[1]->node[0];
+        DBUG_ASSERT (N_num == index_length->nodetype,
+                     " wrong nodetype for 'index_length'");
 
         if ('M' == arg_info->node[2]->info.id[9]) {
             /* N_return belongs to a 'modarray' with-loop */
@@ -1847,7 +1891,7 @@ CompReturn (node *arg_node, node *arg_info)
                 MAKE_ICM_NAME (arg_node, "ND_END_MODARRAY_A");
 
                 /* add length of index_vector */
-                MAKE_NEXT_ICM_ARG (icm_arg, index_length->node[0]);
+                MAKE_NEXT_ICM_ARG (icm_arg, index_length);
             }
         } else if ('G' == arg_info->node[2]->info.id[9]) {
             /* N_return belongs to a 'genarray' with-loop */
@@ -1859,15 +1903,32 @@ CompReturn (node *arg_node, node *arg_info)
                 MAKE_ICM_NAME (arg_node, "ND_END_GENARRAY_S");
             } else {
                 MAKE_ICM_NAME (arg_node, "ND_END_GENARRAY_A");
-                MAKE_NEXT_ICM_ARG (icm_arg, index_length->node[0]);
+                MAKE_NEXT_ICM_ARG (icm_arg, index_length);
             }
         }
-        /* now create N_icm to decrement refcount of index_vector */
+        /* now create N_icm to decrement refcount of index_vector ,
+         * left(from) and right(to) border of mod/genarray
+         */
         MAKENODE_NUM (n_node, 1);
         CREATE_2_ARY_ICM (next_assign, "ND_DEC_RC_FREE", index_node, n_node);
+        first_assign = next_assign;
         /* now insert next_assign */
         arg_info->node[0]->node[1]->node[1] = next_assign;
         arg_info->node[0]->node[1]->nnode = 2;
+        DEC_OR_FREE_RC_ND (from, n_node);
+        DEC_OR_FREE_RC_ND (to, n_node);
+        if (NULL != mod_array) {
+            DEC_RC_FREE_ND (mod_array, n_node);
+        }
+        while (NULL != dec_rc) {
+            if ((0 != strcmp (index_node->IDS_ID, dec_rc->IDS_ID))
+                && ((NULL == mod_array)
+                      ? 1
+                      : (0 != strcmp (mod_array->IDS_ID, dec_rc->IDS_ID)))) {
+                DEC_RC_FREE_ND (dec_rc, n_node);
+            }
+            dec_rc = dec_rc->node[0];
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1894,7 +1955,7 @@ CompReturn (node *arg_node, node *arg_info)
 node *
 CompWith (node *arg_node, node *arg_info)
 {
-    node *old_info2, *first_assign, *next_assign, *tmp, *n_node, *inc_rc, *icm_arg, *form,
+    node *old_info2, *first_assign, *next_assign, *tmp, *n_node, *inc_rc, *icm_arg, *from,
       *to, *type_id_node, *arg, *res, *res_ref, *dim_node, *index, *indexlen,
       *old_arg_node, *last_assign;
     int dim;
@@ -1925,8 +1986,8 @@ CompWith (node *arg_node, node *arg_info)
     /* store length of index-vector */
     MAKENODE_NUM (indexlen, arg_node->node[0]->IDS_NODE->SHP[0]);
 
-    /* set 'form' to left range of index-vector */
-    form = arg_node->node[0]->node[0];
+    /* set 'from' to left range of index-vector */
+    from = arg_node->node[0]->node[0];
 
     /* set 'to' to left range of index-vector */
     to = arg_node->node[0]->node[1];
@@ -1942,16 +2003,30 @@ CompWith (node *arg_node, node *arg_info)
 
     if (N_modarray == old_arg_node->node[1]->nodetype) {
         arg = old_arg_node->node[1]->node[0];
-        CREATE_7_ARY_ICM (next_assign, "ND_BEGIN_MODARRAY", res, dim_node, arg, form, to,
+        CREATE_7_ARY_ICM (next_assign, "ND_BEGIN_MODARRAY", res, dim_node, arg, from, to,
                           index, indexlen);
+        /* store pointer to N_icm ND_BEGIN.. in arg_info->node[2] */
         arg_info->node[2] = next_assign->node[0];
+        /* store pointer to variables that have to be increased in
+         * in arg_info->node[2]->node[3] ( it will be used in CompReturn )
+         */
+        arg_info->node[2]->node[3] = old_arg_node->node[2];
+
         APPEND_ASSIGNS (first_assign, next_assign);
     } else if (N_genarray == old_arg_node->node[1]->nodetype) {
-        CREATE_6_ARY_ICM (next_assign, "ND_BEGIN_GENARRAY", res, dim_node, form, to,
+        CREATE_6_ARY_ICM (next_assign, "ND_BEGIN_GENARRAY", res, dim_node, from, to,
                           index, indexlen);
+        /* store pointer to N_icm ND_BEGIN.. in arg_info->node[2] */
         arg_info->node[2] = next_assign->node[0];
+        /* store pointer to variables that have to be increased in
+         * in arg_info->node[2]->node[3] ( it will be used in CompReturn )
+         */
+        arg_info->node[2]->node[3] = old_arg_node->node[2];
         APPEND_ASSIGNS (first_assign, next_assign);
+    } else {
+        DBUG_ASSERT (0, "fold not implemented yet");
     }
+
     /* now add some INC_RC's */
     inc_rc = old_arg_node->node[2]->node[0];
     while (NULL != inc_rc) {
@@ -2174,23 +2249,14 @@ CompLoop (node *arg_node, node *arg_info)
     arg_node->node[0] = Trav (arg_node->node[0], arg_info);
     arg_node->node[1] = Trav (arg_node->node[1], arg_info);
 
-    /* now add some INC_RC and DEC_RC at begining of and after the loop */
+    /* now add some  DEC_RC at begining of and after the loop */
     dummy_assign = MakeNode (N_assign);
     first_assign = dummy_assign;
     V1 = arg_node->node[2]->node[0];
     V2 = arg_node->node[2]->node[1];
     v1 = V1;
     v2 = V2;
-    if (NULL != v1) {
-        while (NULL != v1) {
-            if (1 <= (v1->refcnt - 1)) {
-                MAKENODE_NUM (n_node, v1->refcnt - 1);
-                INC_RC_ND (v1, n_node);
-            }
-            v1 = v1->node[0];
-        }
-    } else if ((NULL != v2) && (NULL == v1)) {
-        first_assign = dummy_assign;
+    if ((NULL != v2) && (NULL == v1)) {
         MAKENODE_NUM (n_node, 1);
         while (NULL != v2) {
             DEC_RC_FREE_ND (v2, n_node); /* we don`t know the refcount of v2
@@ -2199,10 +2265,7 @@ CompLoop (node *arg_node, node *arg_info)
                                           */
             v2 = v2->node[0];
         }
-    }
-
-    v1 = V1;
-    if ((NULL != v2) && (NULL != v1)) {
+    } else if ((NULL != v2) && (NULL != v1)) {
         node *v1_tmp;
         MAKENODE_NUM (n_node, 1);
         while (NULL != v2) {
@@ -2215,20 +2278,30 @@ CompLoop (node *arg_node, node *arg_info)
                 else
                     v1_tmp = v1_tmp->node[0];
 
-            if (0 == found)
-                if (1 < v2->refcnt) {
-                    DEC_RC_ND (v2, n_node);
-                } else {
-                    DEC_RC_FREE_ND (v2, n_node);
-                }
+            if (0 == found) {
+                DEC_RC_FREE_ND (v2, n_node);
+            }
+
             v2 = v2->node[0];
         }
     }
+
     if (N_do == arg_node->nodetype) {
         label_nr++;
         MAKENODE_ID (label, GenName (label_nr, LABEL_NAME));
         CREATE_1_ARY_ICM (next_assign, "ND_LABEL", label);
         APPEND_ASSIGNS (first_assign, next_assign);
+    }
+    v1 = V1;
+    if (NULL != v1) {
+        /* now add some  INC_RC at begining of and after the loop */
+        while (NULL != v1) {
+            if (1 <= (v1->refcnt - 1)) {
+                MAKENODE_NUM (n_node, v1->refcnt - 1);
+                INC_RC_ND (v1, n_node);
+            }
+            v1 = v1->node[0];
+        }
     }
 
     /* now insert INC's and DEC's at beginning of the loop */
@@ -2236,6 +2309,7 @@ CompLoop (node *arg_node, node *arg_info)
         first_assign->node[1] = arg_node->node[1]->node[0];
         first_assign->nnode = 2;
         arg_node->node[1]->node[0] = dummy_assign->node[1];
+        dummy_assign->node[1] = NULL;
     }
 
     /* now create DEC_RC`s that have to be done after termination
@@ -2243,9 +2317,8 @@ CompLoop (node *arg_node, node *arg_info)
      */
     v1 = V1;
     v2 = V2;
+    first_assign = dummy_assign; /* will be used in some macros */
     if (NULL != v1) {
-        first_assign = dummy_assign; /* will be used in some macros */
-        MAKENODE_NUM (n_node, 1);
         if (NULL != v2) {
             node *v2_tmp;
             while (NULL != v1) {
@@ -2259,7 +2332,7 @@ CompLoop (node *arg_node, node *arg_info)
                         v2_tmp = v2_tmp->node[0];
 
                 if (0 == found) {
-                    DEC_OR_FREE_RC_ND (v1, n_node);
+                    DEC_RC_FREE_ND (v1, n_node);
                 }
                 v1 = v1->node[0];
             }
@@ -2269,7 +2342,7 @@ CompLoop (node *arg_node, node *arg_info)
                 v1 = v1->node[0];
             }
     }
-    /* now increase RC of arrays that are defined in the while loop and are
+    /* now increase RC of arrays that are defined in the  loop and are
      * used after it.
      */
     v2 = V2;
