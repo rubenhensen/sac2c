@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.38  2002/10/09 12:44:04  dkr
+ * structural constants exported now
+ * (someone should move this stuff to constants.[ch] ...)
+ *
  * Revision 1.37  2002/09/17 15:07:05  dkr
  * SSACFlet(): support for prfs with multiple return values added
  *
@@ -28,9 +32,6 @@
  *
  * Revision 1.28  2002/07/12 19:37:24  dkr
  * TAGGED_ARRAYS: constants propagation for N_ap deactivated
- *
- * Revision 1.27  2002/06/21 14:02:05  dkr
- * no changes done
  *
  * Revision 1.26  2002/04/08 19:58:14  dkr
  * debug code removed
@@ -119,12 +120,12 @@
 #include "traverse.h"
 #include "free.h"
 #include "DupTree.h"
-#include "SSAConstantFolding.h"
 #include "constants.h"
 #include "optimize.h"
 #include "SSATransform.h"
 #include "Inline.h"
 #include "compare_tree.h"
+#include "SSAConstantFolding.h"
 
 /*
  * constant identifiers should be substituted by its constant value
@@ -163,27 +164,20 @@
 #define SECOND_CONST_ARG_OF_THREE(arg, arg_expr)                                         \
     ((arg_expr[0] != NULL) && (arg[1] != NULL) && (arg_expr[2] != NULL))
 
-/* structural constant StructCO should be integrated in constants in future */
+/* structural constant (SCO) should be integrated in constants.[ch] in future */
 /* special constant version used for structural constants */
-typedef struct {
+struct STRUCT_CONSTANT {
     simpletype simpletype; /* basetype of struct constant */
     char *name;            /* only used for T_user !! */
     char *name_mod;        /* name of modul belonging to 'name' */
     constant *hidden_co;   /* pointer to constant of pointers */
-} struc_constant;
+};
 
 /* access macros for structural constant type */
 #define SCO_BASETYPE(n) (n->simpletype)
 #define SCO_NAME(n) (n->name)
 #define SCO_MOD(n) (n->name_mod)
 #define SCO_HIDDENCO(n) (n->hidden_co)
-
-/* functions to handle StructCO constants */
-static struc_constant *SSACFExpr2StructConstant (node *expr);
-static struc_constant *SSACFArray2StructConstant (node *expr);
-static struc_constant *SSACFScalar2StructConstant (node *expr);
-static node *SSACFDupStructConstant2Expr (struc_constant *struc_co);
-static struc_constant *SCOFreeStructConstant (struc_constant *struc_co);
 
 /* local used helper functions */
 static ids *TravIDS (ids *arg_ids, node *arg_info);
@@ -222,6 +216,274 @@ static node *SSACFEq (node *expr1, node *expr2);
 static node *SSACFSub (node *expr1, node *expr2);
 static node *SSACFModarray (node *a, constant *idx, node *elem);
 static node *SSACFSel (node *idx_expr, node *array_expr);
+
+/*
+ * functions to handle SCOs
+ */
+
+/******************************************************************************
+ *
+ * function:
+ *   struct_constant *SCOExpr2StructConstant(node *expr)
+ *
+ * description:
+ *   builds an constant of type T_hidden from an array or scalar in the AST.
+ *   this allows to operate on structural constants like full constants.
+ *
+ *   this should later be integrated in a more powerful constants module.
+ *
+ *   be careful:
+ *     the created structural constant contain pointers to elements of the
+ *     array, so you MUST NEVER FREE the original expression before you
+ *     have dupped the structural constant into a array!
+ *
+ *****************************************************************************/
+
+struct_constant *
+SCOExpr2StructConstant (node *expr)
+{
+    struct_constant *struc_co;
+    int dim;
+
+    DBUG_ENTER ("SCOExpr2StructConstant");
+
+    struc_co = NULL;
+
+    if (NODE_TYPE (expr) == N_array) {
+        /* expression is an array */
+        struc_co = SCOArray2StructConstant (expr);
+    } else if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)) {
+        /* expression is an identifier */
+        dim = GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
+        if (dim == SCALAR) {
+            /* id is a defined scalar */
+            struc_co = SCOScalar2StructConstant (expr);
+        } else if (dim > SCALAR) {
+            /* id is a defined array */
+            struc_co = SCOArray2StructConstant (expr);
+        }
+    }
+
+    DBUG_RETURN (struc_co);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   struct_constant *SCOArray2StructConstant(node *expr)
+ *
+ * description:
+ *   converts an N_array node (or a N_id of a defined array) from AST to
+ *   a structural constant. To convert an array to a structural constant
+ *   all array elements must be scalars!
+ *
+ *****************************************************************************/
+
+struct_constant *
+SCOArray2StructConstant (node *expr)
+{
+    struct_constant *struc_co;
+    node *array;
+    types *atype;
+    shape *ashape;
+    node **node_vec;
+    node *tmp;
+    bool valid_const;
+    int elem_count;
+    int i;
+
+    DBUG_ENTER ("SCOArray2StructConstant");
+
+    DBUG_ASSERT (((NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_id)),
+                 "SCOArray2StructConstant supports only N_array and N_id nodes");
+
+    atype = NULL;
+
+    if (NODE_TYPE (expr) == N_array) {
+        /* explicit array as N_array node */
+        array = expr;
+        /* shape of the given array */
+        DBUG_ASSERT ((ARRAY_TYPE (array) != NULL), "unknown array type");
+        atype = ARRAY_TYPE (array);
+
+    } else if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)
+               && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr)))))
+                   == N_array)) {
+        /* indirect array via defined vardec */
+
+        array = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr))));
+
+        /* shape of the given array */
+        atype = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)));
+    } else {
+        /* unsupported node type */
+        array = NULL;
+    }
+
+    /* build an abstract structural constant of type (void*) T_hidden */
+    if (array != NULL) {
+        /* alloc hidden vector */
+        ashape = SHOldTypes2Shape (atype);
+        elem_count = SHGetUnrLen (ashape);
+        node_vec = (node **)Malloc (elem_count * sizeof (node *));
+
+        /* copy element pointers from array to vector */
+        valid_const = TRUE;
+        tmp = ARRAY_AELEMS (array);
+        for (i = 0; i < elem_count; i++) {
+            if (tmp == NULL) {
+                /* array contains too few elements - there must be non scalar elements */
+                valid_const = FALSE;
+            } else {
+                node_vec[i] = EXPRS_EXPR (tmp);
+                tmp = EXPRS_NEXT (tmp);
+            }
+        }
+        DBUG_ASSERT ((tmp == NULL), "array contains too much elements");
+
+        /* create struct_constant */
+        struc_co = (struct_constant *)Malloc (sizeof (struct_constant));
+        SCO_BASETYPE (struc_co) = GetBasetype (atype);
+        SCO_NAME (struc_co) = TYPES_NAME (atype);
+        SCO_MOD (struc_co) = TYPES_MOD (atype);
+        SCO_HIDDENCO (struc_co) = COMakeConstant (T_hidden, ashape, node_vec);
+
+        /* remove invalid structural arrays */
+        if (!valid_const) {
+            struc_co = SCOFreeStructConstant (struc_co);
+        }
+    } else {
+        /* no array with known elements */
+        struc_co = NULL;
+    }
+
+    DBUG_RETURN (struc_co);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   struct_constant *SCOScalar2StructConstant(node *expr)
+ *
+ * description:
+ *   converts an scalar node to a structual constant (e.g. N_num, ... or N_id)
+ *
+ ******************************************************************************/
+
+struct_constant *
+SCOScalar2StructConstant (node *expr)
+{
+    struct_constant *struc_co;
+    shape *cshape;
+    types *ctype;
+    node **elem;
+    nodetype nt;
+
+    DBUG_ENTER ("SCOScalar2StructConstant");
+
+    nt = NODE_TYPE (expr);
+
+    if ((nt == N_num) || (nt == N_float) || (nt == N_double) || (nt == N_bool)
+        || ((nt == N_id)
+            && (GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))))
+                == SCALAR))) {
+        /* create structural constant of scalar */
+        ctype = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)));
+
+        /* alloc hidden vector */
+        cshape = SHMakeShape (0);
+        elem = (node **)Malloc (sizeof (node *));
+
+        /* copy element pointers from array to vector */
+        *elem = expr;
+
+        /* create struct_constant */
+        struc_co = (struct_constant *)Malloc (sizeof (struct_constant));
+        SCO_BASETYPE (struc_co) = TYPES_BASETYPE (ctype);
+        SCO_NAME (struc_co) = TYPES_NAME (ctype);
+        SCO_MOD (struc_co) = TYPES_MOD (ctype);
+        SCO_HIDDENCO (struc_co) = COMakeConstant (T_hidden, cshape, elem);
+
+    } else {
+        struc_co = NULL;
+    }
+
+    DBUG_RETURN (struc_co);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SCODupStructConstant2Expr(struct_constant *struc_co)
+ *
+ * description:
+ *   builds an array of the given strucural constant and duplicate
+ *   elements in it. therfore the original array must not be freed before
+ *   the target array is build up from the elements of the original array.
+ *
+ *****************************************************************************/
+
+node *
+SCODupStructConstant2Expr (struct_constant *struc_co)
+{
+    node *expr;
+    node *aelems;
+    int i;
+    int elems_count;
+    node **node_vec;
+
+    DBUG_ENTER ("SCODupStructConstant2Expr");
+
+    /* build up elements chain */
+    node_vec = (node **)COGetDataVec (SCO_HIDDENCO (struc_co));
+
+    if (COGetDim (SCO_HIDDENCO (struc_co)) == 0) {
+        /* result is a scalar */
+        expr = DupNode (node_vec[0]);
+    } else {
+        /* result is a new array */
+        elems_count = SHGetUnrLen (COGetShape (SCO_HIDDENCO (struc_co)));
+
+        aelems = NULL;
+        for (i = elems_count - 1; i >= 0; i--) {
+            aelems = MakeExprs (DupNode (node_vec[i]), aelems);
+        }
+
+        /* build array node */
+        expr = MakeArray (aelems);
+        ARRAY_TYPE (expr)
+          = MakeTypes (SCO_BASETYPE (struc_co), COGetDim (SCO_HIDDENCO (struc_co)),
+                       SHShape2OldShpseg (COGetShape (SCO_HIDDENCO (struc_co))),
+                       StringCopy (SCO_NAME (struc_co)), SCO_MOD (struc_co));
+    }
+    DBUG_RETURN (expr);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   struct_constant *SCOFreeStructConstant(struct_constant *struc_co)
+ *
+ * description:
+ *   frees the struct_constant data structure and the internal constant element.
+ *
+ *****************************************************************************/
+
+struct_constant *
+SCOFreeStructConstant (struct_constant *struc_co)
+{
+    DBUG_ENTER ("SCOFreeStructConstant");
+
+    DBUG_ASSERT ((struc_co != NULL), "SCOFreeStructConstant: NULL pointer");
+
+    /* free substructure */
+    SCO_HIDDENCO (struc_co) = COFreeConstant (SCO_HIDDENCO (struc_co));
+
+    /* free structure */
+    struc_co = Free (struc_co);
+
+    DBUG_RETURN ((struct_constant *)NULL);
+}
 
 /*
  * functions for internal use only
@@ -457,16 +719,16 @@ SSACFShape (node *expr)
 static node *
 SSACFStructOpWrapper (prf op, constant *idx, node *expr)
 {
-    struc_constant *struc_co;
+    struct_constant *struc_co;
     node *result;
     constant *old_hidden_co;
 
     DBUG_ENTER ("SSACFStructOpWrapper");
 
     /* tries to convert expr(especially arrays) into a structual constant */
-    struc_co = SSACFExpr2StructConstant (expr);
+    struc_co = SCOExpr2StructConstant (expr);
 
-    /* given expressession could be converted to struc_constant */
+    /* given expressession could be converted to struct_constant */
     if (struc_co != NULL) {
         /* save internal hidden input constant */
         old_hidden_co = SCO_HIDDENCO (struc_co);
@@ -494,7 +756,7 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
         }
 
         /* return modified array */
-        result = SSACFDupStructConstant2Expr (struc_co);
+        result = SCODupStructConstant2Expr (struc_co);
 
         DBUG_PRINT ("SSACF", ("op %s computed on structural constant", mdb_prf[op]));
 
@@ -508,270 +770,6 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
     }
 
     DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
- *   struc_constant *SSACFExpr2StructConstant(node *expr)
- *
- * description:
- *   builds an constant of type T_hidden from an array or scalar in the AST.
- *   this allows to operate on structural constants like full constants.
- *
- *   this should later be integrated in a more powerful constants module.
- *
- *   be careful:
- *     the created structural constant contain pointers to elements of the
- *     array, so you MUST NEVER FREE the original expression before you
- *     have dupped the structural constant into a array!
- *
- *****************************************************************************/
-
-static struc_constant *
-SSACFExpr2StructConstant (node *expr)
-{
-    struc_constant *struc_co;
-    int dim;
-
-    DBUG_ENTER ("SSACFExpr2StructConstant");
-
-    struc_co = NULL;
-
-    if (NODE_TYPE (expr) == N_array) {
-        /* expression is an array */
-        struc_co = SSACFArray2StructConstant (expr);
-    } else if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)) {
-        /* expression is an identifier */
-        dim = GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
-        if (dim == SCALAR) {
-            /* id is a defined scalar */
-            struc_co = SSACFScalar2StructConstant (expr);
-        } else if (dim > SCALAR) {
-            /* id is a defined array */
-            struc_co = SSACFArray2StructConstant (expr);
-        }
-    }
-
-    DBUG_RETURN (struc_co);
-}
-
-/******************************************************************************
- *
- * function:
- *   struc_constant *SSACFArray2StructConstant(node *expr)
- *
- * description:
- *   converts an N_array node (or a N_id of a defined array) from AST to
- *   a structural constant. To convert an array to a structural constant
- *   all array elements must be scalars!
- *
- *****************************************************************************/
-
-static struc_constant *
-SSACFArray2StructConstant (node *expr)
-{
-    struc_constant *struc_co;
-    node *array;
-    types *atype;
-    shape *ashape;
-    node **node_vec;
-    node *tmp;
-    bool valid_const;
-    int elem_count;
-    int i;
-
-    DBUG_ENTER ("SSACFArray2StructConstant");
-
-    DBUG_ASSERT (((NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_id)),
-                 "SSACFArray2StructConstant supports only N_array and N_id nodes");
-
-    atype = NULL;
-
-    if (NODE_TYPE (expr) == N_array) {
-        /* explicit array as N_array node */
-        array = expr;
-        /* shape of the given array */
-        DBUG_ASSERT ((ARRAY_TYPE (array) != NULL), "unknown array type");
-        atype = ARRAY_TYPE (array);
-
-    } else if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)
-               && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr)))))
-                   == N_array)) {
-        /* indirect array via defined vardec */
-
-        array = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr))));
-
-        /* shape of the given array */
-        atype = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)));
-    } else {
-        /* unsupported node type */
-        array = NULL;
-    }
-
-    /* build an abstract structural constant of type (void*) T_hidden */
-    if (array != NULL) {
-        /* alloc hidden vector */
-        ashape = SHOldTypes2Shape (atype);
-        elem_count = SHGetUnrLen (ashape);
-        node_vec = (node **)Malloc (elem_count * sizeof (node *));
-
-        /* copy element pointers from array to vector */
-        valid_const = TRUE;
-        tmp = ARRAY_AELEMS (array);
-        for (i = 0; i < elem_count; i++) {
-            if (tmp == NULL) {
-                /* array contains too few elements - there must be non scalar elements */
-                valid_const = FALSE;
-            } else {
-                node_vec[i] = EXPRS_EXPR (tmp);
-                tmp = EXPRS_NEXT (tmp);
-            }
-        }
-        DBUG_ASSERT ((tmp == NULL), "array contains too much elements");
-
-        /* create struc_constant */
-        struc_co = (struc_constant *)Malloc (sizeof (struc_constant));
-        SCO_BASETYPE (struc_co) = GetBasetype (atype);
-        SCO_NAME (struc_co) = TYPES_NAME (atype);
-        SCO_MOD (struc_co) = TYPES_MOD (atype);
-        SCO_HIDDENCO (struc_co) = COMakeConstant (T_hidden, ashape, node_vec);
-
-        /* remove invalid structural arrays */
-        if (!valid_const) {
-            struc_co = SCOFreeStructConstant (struc_co);
-        }
-    } else {
-        /* no array with known elements */
-        struc_co = NULL;
-    }
-
-    DBUG_RETURN (struc_co);
-}
-
-/******************************************************************************
- *
- * function:
- *   struc_constant *SSACFScalar2StructConstant(node *expr)
- *
- * description:
- *   converts an scalar node to a structual constant (e.g. N_num, ... or N_id)
- *
- ******************************************************************************/
-
-static struc_constant *
-SSACFScalar2StructConstant (node *expr)
-{
-    struc_constant *struc_co;
-    shape *cshape;
-    types *ctype;
-    node **elem;
-    nodetype nt;
-
-    DBUG_ENTER ("SSACFScalar2StructConstant");
-
-    nt = NODE_TYPE (expr);
-
-    if ((nt == N_num) || (nt == N_float) || (nt == N_double) || (nt == N_bool)
-        || ((nt == N_id)
-            && (GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))))
-                == SCALAR))) {
-        /* create structural constant of scalar */
-        ctype = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)));
-
-        /* alloc hidden vector */
-        cshape = SHMakeShape (0);
-        elem = (node **)Malloc (sizeof (node *));
-
-        /* copy element pointers from array to vector */
-        *elem = expr;
-
-        /* create struc_constant */
-        struc_co = (struc_constant *)Malloc (sizeof (struc_constant));
-        SCO_BASETYPE (struc_co) = TYPES_BASETYPE (ctype);
-        SCO_NAME (struc_co) = TYPES_NAME (ctype);
-        SCO_MOD (struc_co) = TYPES_MOD (ctype);
-        SCO_HIDDENCO (struc_co) = COMakeConstant (T_hidden, cshape, elem);
-
-    } else {
-        struc_co = NULL;
-    }
-
-    DBUG_RETURN (struc_co);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SSACFDupStructConstant2Expr(struc_constant *struc_co)
- *
- * description:
- *   builds an array of the given strucural constant and duplicate
- *   elements in it. therfore the original array must not be freed before
- *   the target array is build up from the elements of the original array.
- *
- *****************************************************************************/
-
-static node *
-SSACFDupStructConstant2Expr (struc_constant *struc_co)
-{
-    node *expr;
-    node *aelems;
-    int i;
-    int elems_count;
-    node **node_vec;
-
-    DBUG_ENTER ("SSACFDupStructConstant2Expr");
-
-    /* build up elements chain */
-    node_vec = (node **)COGetDataVec (SCO_HIDDENCO (struc_co));
-
-    if (COGetDim (SCO_HIDDENCO (struc_co)) == 0) {
-        /* result is a scalar */
-        expr = DupNode (node_vec[0]);
-    } else {
-        /* result is a new array */
-        elems_count = SHGetUnrLen (COGetShape (SCO_HIDDENCO (struc_co)));
-
-        aelems = NULL;
-        for (i = elems_count - 1; i >= 0; i--) {
-            aelems = MakeExprs (DupNode (node_vec[i]), aelems);
-        }
-
-        /* build array node */
-        expr = MakeArray (aelems);
-        ARRAY_TYPE (expr)
-          = MakeTypes (SCO_BASETYPE (struc_co), COGetDim (SCO_HIDDENCO (struc_co)),
-                       SHShape2OldShpseg (COGetShape (SCO_HIDDENCO (struc_co))),
-                       StringCopy (SCO_NAME (struc_co)), SCO_MOD (struc_co));
-    }
-    DBUG_RETURN (expr);
-}
-
-/******************************************************************************
- *
- * function:
- *   struc_constant *SCOFreeStructConstant(struc_constant *struc_co)
- *
- * description:
- *   frees the struc_constant data structure and the internal constant element.
- *
- *****************************************************************************/
-
-static struc_constant *
-SCOFreeStructConstant (struc_constant *struc_co)
-{
-    DBUG_ENTER ("SCOFreeStructConstant");
-
-    DBUG_ASSERT ((struc_co != NULL), "SCOFreeStructConstant: NULL pointer");
-
-    /* free substructure */
-    SCO_HIDDENCO (struc_co) = COFreeConstant (SCO_HIDDENCO (struc_co));
-
-    /* free structure */
-    struc_co = Free (struc_co);
-
-    DBUG_RETURN ((struc_constant *)NULL);
 }
 
 /******************************************************************************
@@ -1047,16 +1045,16 @@ static node *
 SSACFModarray (node *a, constant *idx, node *elem)
 {
     node *result;
-    struc_constant *struc_a;
-    struc_constant *struc_elem;
+    struct_constant *struc_a;
+    struct_constant *struc_elem;
     constant *old_hidden_co;
 
     DBUG_ENTER ("SSACFModarray");
 
-    struc_a = SSACFExpr2StructConstant (a);
-    struc_elem = SSACFExpr2StructConstant (elem);
+    struc_a = SCOExpr2StructConstant (a);
+    struc_elem = SCOExpr2StructConstant (elem);
 
-    /* given expressession could be converted to struc_constant */
+    /* given expressession could be converted to struct_constant */
     if ((struc_a != NULL) && (struc_elem != NULL)) {
         /* save internal hidden constant */
         old_hidden_co = SCO_HIDDENCO (struc_a);
@@ -1066,7 +1064,7 @@ SSACFModarray (node *a, constant *idx, node *elem)
           = COModarray (SCO_HIDDENCO (struc_a), idx, SCO_HIDDENCO (struc_elem));
 
         /* return modified array */
-        result = SSACFDupStructConstant2Expr (struc_a);
+        result = SCODupStructConstant2Expr (struc_a);
 
         DBUG_PRINT ("SSACF", ("op computed on structural constant"));
 
