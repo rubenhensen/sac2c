@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/04/30 09:02:06  dkr
+ * no changes done
+ *
  * Revision 3.17  2001/12/10 15:32:44  dkr
  * call of Compile_Tagged() added
  *
@@ -474,7 +477,7 @@ main (int argc, char *argv[])
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-#if TAGGED_ARRAYS
+#ifdef TAGGED_ARRAYS
     syntax_tree = Compile_Tagged (syntax_tree); /* comp2_tab */
 #else
     syntax_tree = Compile (syntax_tree); /* comp_tab */
