@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2004/11/25 14:09:55  khf
+ * changed AP_NAME to AP_SPNAME
+ *
  * Revision 3.32  2004/11/25 10:58:04  khf
  * SacDevCamp04: COMPILES!
  *
@@ -1267,7 +1270,7 @@ FLATap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("FLATap");
 
-    DBUG_PRINT ("FLATTEN", ("flattening application of %s:", AP_NAME (arg_node)));
+    DBUG_PRINT ("FLATTEN", ("flattening application of %s:", AP_SPNAME (arg_node)));
 
     if (AP_ARGS (arg_node) != NULL) {
         old_ctxt = INFO_FLAT_CONTEXT (arg_info);
