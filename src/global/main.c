@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.40  1995/05/04 11:40:51  sbs
+ * Revision 1.41  1995/05/15 08:33:03  asi
+ * added option -v no ; this options allows the user to fix the maximum
+ * number of new variables generated while optimizing.
+ *
+ * Revision 1.40  1995/05/04  11:40:51  sbs
  * trace option added
  *
  * Revision 1.39  1995/04/10  11:19:36  sbs
@@ -156,6 +160,7 @@ FILE *outfile;
 char filename[MAX_FILE_NAME];
 int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1;
 int optimize = 1;
+int optvar = 50;
 int show_refcnt = 0;
 int show_icm = 0;
 int traceflag = 0;
@@ -289,6 +294,11 @@ MAIN
             optimize = 0;
         if (!strncmp (*argv, "oLIR", 4))
             opt_lir = 0;
+    }
+    NEXTOPT
+    ARG 'v' : PARM
+    {
+        optvar = atoi (*argv);
     }
     NEXTOPT
     ARG 'o' : PARM
