@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.68  1995/12/18 16:21:18  cg
+ * Revision 1.69  1995/12/18 18:28:55  cg
+ * compilation of objdef nodes modified, now ICMs for global arrays
+ * will be printed correctly.
+ *
+ * Revision 1.68  1995/12/18  16:21:18  cg
  * major modifications in CompFundef, CompAp and CompReturn.
  * new function ReorganizeParameters to rearrange icm args in function
  * definitions, applications, and return-statements.
@@ -3794,19 +3798,6 @@ CompTypedef (node *arg_node, node *arg_info)
         char *typename, *new_typename;
         node *type1, *type2, *icm_arg;
 
-#if 0
-      if(NULL != arg_node->NAME_MOD)
-      {
-         typename=(char*)Malloc(sizeof(char)*(strlen(arg_node->NAME)+
-                                              strlen(MOD_NAME_CON)+
-                                              strlen(arg_node->NAME_MOD)));
-         sprintf(typename,"%s%s%s", arg_node->NAME_MOD, MOD_NAME_CON,
-                 arg_node->NAME);
-      }
-      else
-         typename=type_string[arg_node->SIMPLETYPE];
-#endif
-
         typename = type_string[arg_node->SIMPLETYPE];
 
         new_typename = StringCopy (arg_node->ID);
@@ -3825,8 +3816,11 @@ CompTypedef (node *arg_node, node *arg_info)
             arg_node->node[1] = Trav (arg_node->node[1], arg_info);
             arg_node->nnode = 2;
         }
-    } else if (arg_node->node[0] != NULL)
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+    } else {
+        if (arg_node->node[0] != NULL) {
+            arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -3879,15 +3873,13 @@ CompObjdef (node *arg_node, node *arg_info)
             }
         }
 
-        if (OBJDEF_NEXT (arg_node) != NULL) {
-            ICM_NEXT (icm) = Trav (OBJDEF_NEXT (arg_node), arg_info);
-        }
-
-        arg_node = icm;
+        OBJDEF_ICM (arg_node) = icm;
     } else {
-        if (OBJDEF_NEXT (arg_node) != NULL) {
-            OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
-        }
+        OBJDEF_ICM (arg_node) = NULL;
+    }
+
+    if (OBJDEF_NEXT (arg_node) != NULL) {
+        OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
