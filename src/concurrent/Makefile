@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.4  1998/04/09 12:04:04  dkr
+# make deps done
+#
 # Revision 1.3  1998/04/08 22:11:16  dkr
 # expanded INCS
 #
@@ -35,11 +38,12 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-concregions.o: concregions.h ../global/types.h ../global/tree_basic.h
+concregions.o: ../global/types.h ../global/tree_basic.h
 concregions.o: ../global/tree_compound.h ../global/Error.h
 concregions.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 concregions.o: /usr/include/sys/va_list.h /usr/include/string.h
 concregions.o: /usr/include/stdlib.h ../global/globals.h ../global/free.h
 concregions.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 concregions.o: ../global/internal_lib.h ../global/traverse.h
-concregions.o: ../optimize/DupTree.h
+concregions.o: ../typecheck/typecheck.h ../optimize/optimize.h
+concregions.o: ../optimize/DupTree.h concregions.h
