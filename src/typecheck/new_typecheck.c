@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2004/03/05 16:19:36  sbs
+ * changed behavior on ... return types
+ * traversing fundecs as well now to get fixed types for back conversion
+ *
  * Revision 3.37  2004/03/05 12:10:14  sbs
  * changed the phi handling; changed the conditionals
  * (now, SDs may be created here as well....)
@@ -449,6 +453,10 @@ NTCmodul (node *arg_node, node *arg_info)
             FUNDEF_TCSTAT (fundef) = NTC_checked;
         }
         fundef = FUNDEF_NEXT (fundef);
+    }
+
+    if (NULL != MODUL_FUNDECS (arg_node)) {
+        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
     }
 
     if (NULL != MODUL_FUNS (arg_node)) {
@@ -1037,7 +1045,7 @@ NTCfcond (node *arg_node, node *arg_info)
 node *
 NTClet (node *arg_node, node *arg_info)
 {
-    ntype *rhs_type, *existing_type, *inferred_type;
+    ntype *rhs_type, *existing_type, *inferred_type, *max;
     ids *lhs;
     int i;
     bool ok;
@@ -1089,9 +1097,9 @@ NTClet (node *arg_node, node *arg_info)
             }
             i = 0;
             while (lhs) {
+                existing_type = AVIS_TYPE (IDS_AVIS (lhs));
                 if (i < TYGetProductSize (rhs_type)) {
 
-                    existing_type = AVIS_TYPE (IDS_AVIS (lhs));
                     inferred_type = TYGetProductMember (rhs_type, i);
 
                     if (existing_type == NULL) {
@@ -1116,10 +1124,19 @@ NTClet (node *arg_node, node *arg_info)
                                 ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
                     DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
                 } else {
-                    WARN (linenum,
+                    if (existing_type == NULL) {
+                        ABORT (
+                          linenum,
                           ("cannot infer type of \"%s\" as it corresponds to \"...\" "
-                           "return type -- relying on type declaration",
+                           "return type -- missing type declaration",
                            IDS_NAME (lhs)));
+                    } else {
+                        DBUG_ASSERT (TYIsAlpha (existing_type),
+                                     "non-alpha type for LHS found!");
+                        max = SSIGetMax (TYGetAlpha (existing_type));
+                        DBUG_ASSERT (max != NULL, "null max for LHS type found!");
+                        ok = SSINewMin (TYGetAlpha (existing_type), TYCopyType (max));
+                    }
                 }
 
                 i++;
