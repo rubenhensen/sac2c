@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/08/09 11:32:20  jhs
+ * Cleaned up info-macros for concurrent-phase.
+ *
  * Revision 2.5  1999/08/05 13:36:25  jhs
  * Added optimization of sequential assignments between spmd-blocks, main work
  * happens in spmdinit and ist steered by OPT_MTI (default now: off), some
@@ -161,6 +164,7 @@ InsertSPMD (node *assign, node *fundef)
     node *instr;
     node *spmd;
     node *with;
+    node *newassign;
 
     DBUG_ENTER ("InsertSPMD");
 
@@ -173,9 +177,16 @@ InsertSPMD (node *assign, node *fundef)
      *  - insert spmd between assign and instruction
      *  - delete nested N_spmds
      */
-    spmd = MakeSpmd (MakeBlock (MakeAssign (instr, NULL), NULL));
+    newassign = MakeAssign (instr, NULL);
+    spmd = MakeSpmd (MakeBlock (newassign, NULL));
     spmd = DeleteNested (spmd);
     ASSIGN_INSTR (assign) = spmd;
+    ASSIGN_DEFMASK (newassign) = ASSIGN_DEFMASK (assign);
+    ASSIGN_USEMASK (newassign) = ASSIGN_USEMASK (assign);
+    ASSIGN_MRDMASK (newassign) = ASSIGN_MRDMASK (assign);
+    ASSIGN_DEFMASK (assign) = NULL;
+    ASSIGN_USEMASK (assign) = NULL;
+    ASSIGN_MRDMASK (assign) = NULL;
 
     if (NODE_TYPE (instr) == N_let) {
         if (NODE_TYPE (LET_EXPR (instr)) == N_Nwith2) {
@@ -202,7 +213,7 @@ InsertSPMD (node *assign, node *fundef)
             SPMD_LOCAL (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
             SPMD_SHARED (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
 
-            ProduceMasks (spmd, spmd);
+            ProduceMasks (spmd, spmd, fundef);
         }
     } else {
         /* #### ins outs missing ... */
@@ -211,6 +222,8 @@ InsertSPMD (node *assign, node *fundef)
         SPMD_INOUT (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
         SPMD_LOCAL (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
         SPMD_SHARED (spmd) = DFMGenMaskClear (FUNDEF_DFM_BASE (fundef));
+
+        ProduceMasks (spmd, spmd, fundef);
     }
 
     DBUG_PRINT ("SPMDI", ("inserted new spmd-block"));
@@ -254,7 +267,7 @@ SPMDIassign (node *arg_node, node *arg_info)
         && WithLoopIsAllowedConcurrentExecution (LET_EXPR (spmd_let))
         && WithLoopIsWorthConcurrentExecution (LET_EXPR (spmd_let), LET_IDS (spmd_let))) {
 
-        arg_node = InsertSPMD (arg_node, INFO_SPMD_FUNDEF (arg_info));
+        arg_node = InsertSPMD (arg_node, INFO_CONC_FUNDEF (arg_info));
         DBUG_PRINT ("SPMDI", ("inserted spmd"));
 
     } else if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
@@ -312,7 +325,7 @@ SPMDIassign (node *arg_node, node *arg_info)
                     && ((INFO_SPMDI_LASTSPMD (arg_info) != -1)
                         || (INFO_SPMDI_NEXTSPMD (arg_info) != -1))) {
                     DBUG_PRINT ("SPMDI", ("EXPAND OVER WHILE!!!"));
-                    arg_node = InsertSPMD (arg_node, INFO_SPMD_FUNDEF (arg_info));
+                    arg_node = InsertSPMD (arg_node, INFO_CONC_FUNDEF (arg_info));
                 }
             }
 
@@ -373,7 +386,7 @@ SPMDIassign (node *arg_node, node *arg_info)
                      <= 12)) {
                     if (INFO_SPMDI_EXPANDSTEP (arg_info)) {
                         DBUG_PRINT ("SPMDI", ("  would expand to spmd here (normal)"));
-                        arg_node = InsertSPMD (arg_node, INFO_SPMD_FUNDEF (arg_info));
+                        arg_node = InsertSPMD (arg_node, INFO_CONC_FUNDEF (arg_info));
                         old_lastspmd = INFO_SPMDI_LASTSPMD (arg_info);
                         old_expandstep = INFO_SPMDI_EXPANDSTEP (arg_info);
 
@@ -386,7 +399,7 @@ SPMDIassign (node *arg_node, node *arg_info)
             if ((INFO_SPMDI_LASTSPMD (arg_info) > 0)
                 || (INFO_SPMDI_NEXTSPMD (arg_info) > 0)) {
                 if (INFO_SPMDI_EXPANDSTEP (arg_info)) {
-                    arg_node = InsertSPMD (arg_node, INFO_SPMD_FUNDEF (arg_info));
+                    arg_node = InsertSPMD (arg_node, INFO_CONC_FUNDEF (arg_info));
                     old_lastspmd = INFO_SPMDI_LASTSPMD (arg_info);
                     old_expandstep = INFO_SPMDI_EXPANDSTEP (arg_info);
                     DBUG_PRINT ("SPMDI", ("  would expand to spmd here (while-step)"));

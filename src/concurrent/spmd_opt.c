@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/08/09 11:32:20  jhs
+ * Cleaned up info-macros for concurrent-phase.
+ *
  * Revision 2.9  1999/08/02 09:48:35  jhs
  * Moved MeltBlocks[OnCopies] from spmd_opt.[ch] to concurrent_lib.[ch].
  *
@@ -270,7 +273,7 @@ SPMDOspmd (node *arg_node, node *arg_info)
          *  The actual optimization of SPMD-blocks takes place here.
          */
         result = MeltSPMDs (arg_node, ASSIGN_INSTR (INFO_SPMDO_NEXTASSIGN (arg_info)),
-                            INFO_SPMDT_ACTUAL_FUNDEF (arg_info));
+                            INFO_CONC_FUNDEF (arg_info));
 
         /*
          *  Rearrange the pointers between the two assigments around the assignment
@@ -381,7 +384,7 @@ SPMDOfundef (node *arg_node, node *arg_info)
         arg_info = MakeInfo ();
     } else {
         own_arg_info = FALSE;
-        old_fundef = INFO_SPMDT_ACTUAL_FUNDEF (arg_info);
+        old_fundef = INFO_CONC_FUNDEF (arg_info);
     }
 
     FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
@@ -389,7 +392,7 @@ SPMDOfundef (node *arg_node, node *arg_info)
     if (own_arg_info) {
         FreeTree (arg_info);
     } else {
-        INFO_SPMDT_ACTUAL_FUNDEF (arg_info) = old_fundef;
+        INFO_CONC_FUNDEF (arg_info) = old_fundef;
     }
 
     DBUG_RETURN (arg_node);

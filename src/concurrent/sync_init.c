@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/08/09 11:32:20  jhs
+ * Cleaned up info-macros for concurrent-phase.
+ *
  * Revision 2.6  1999/07/21 16:30:27  jhs
  * needed_sync_fold introduced, max_sync_fold_adjusted.
  *
@@ -14,7 +17,7 @@
  * Removed SYNC_WITH_PTRS.
  *
  * Revision 2.2  1999/07/01 13:01:41  jhs
- * Added handling of INFO_SPMD_LAST.
+ * Added handling of INFO_SYNCI_LAST.
  *
  * Revision 2.1  1999/02/23 12:44:19  sacbase
  * new release made
@@ -60,8 +63,8 @@
  *   sync-region are stored.
  *
  * remarks:
- *   INFO_SPMD_FIRST( arg_info) shows, weather the next sync-region would be
- *   the first one of the SPMD_region or not.
+ *   INFO_SYNCI_(FIRST|LAST)( arg_info) show, whether the next sync-region
+ *   would be the (first|last) one of the spmd-region or not.
  *
  ******************************************************************************/
 
@@ -91,7 +94,7 @@ SYNCIassign (node *arg_node, node *arg_info)
          *     and insert it into the syntaxtree.
          */
         sync = MakeSync (MakeBlock (MakeAssign (sync_let, NULL), NULL));
-        SYNC_FIRST (sync) = INFO_SPMD_FIRST (arg_info);
+        SYNC_FIRST (sync) = INFO_SYNCI_FIRST (arg_info);
         ASSIGN_INSTR (arg_node) = sync;
 
         withop = NWITH2_WITHOP (with);
@@ -113,7 +116,7 @@ SYNCIassign (node *arg_node, node *arg_info)
         /*
          * unset flag: next N_sync node is not the first one in SPMD-region
          */
-        INFO_SPMD_FIRST (arg_info) = 0;
+        INFO_SYNCI_FIRST (arg_info) = 0;
 
         /*
          * we only traverse the following assignments to prevent nested
@@ -126,8 +129,8 @@ SYNCIassign (node *arg_node, node *arg_info)
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
 
-        SYNC_LAST (sync) = INFO_SPMD_LAST (arg_info);
-        INFO_SPMD_LAST (arg_info) = 0;
+        SYNC_LAST (sync) = INFO_SYNCI_LAST (arg_info);
+        INFO_SYNCI_LAST (arg_info) = 0;
     }
 
     DBUG_RETURN (arg_node);

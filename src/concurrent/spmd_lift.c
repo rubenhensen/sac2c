@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/08/09 11:32:20  jhs
+ * Cleaned up info-macros for concurrent-phase.
+ *
  * Revision 2.3  1999/07/30 13:47:41  jhs
  * Clean sweep, deleted unused parts.
  *
@@ -89,7 +92,7 @@ GetVardec (char *name, node *fundef)
  *   Corrects the vardec-pointers of ids.
  *
  * remarks:
- *   INFO_SPMD_FUNDEF( arg_info) points to the current fundef-node.
+ *   INFO_CONC_FUNDEF( arg_info) points to the current fundef-node.
  *
  ******************************************************************************/
 
@@ -100,7 +103,7 @@ SPMDLids (ids *arg_node, node *arg_info)
 
     DBUG_ENTER ("SPMDLids");
 
-    fundef = INFO_SPMD_FUNDEF (arg_info);
+    fundef = INFO_CONC_FUNDEF (arg_info);
 
     if (FUNDEF_STATUS (fundef) == ST_spmdfun) {
 
@@ -129,9 +132,7 @@ SPMDLids (ids *arg_node, node *arg_info)
  *   lifts a SPMD-region into a function.
  *
  * remarks:
- *   - 'INFO_SPMD_FUNDEF( arg_info)' points to the current fundef-node.
- *   - 'INFO_SPMD_FIRST( arg_info)' shows, weather the next sync-region would
- *     be the first one of the SPMD_region or not.
+ *   - 'INFO_CONC_FUNDEF( arg_info)' points to the current fundef-node.
  *
  ******************************************************************************/
 
@@ -146,7 +147,7 @@ SPMDLspmd (node *arg_node, node *arg_info)
 
     DBUG_ENTER (" SPMDLspmd");
 
-    fundef = INFO_SPMD_FUNDEF (arg_info);
+    fundef = INFO_CONC_FUNDEF (arg_info);
 
     /****************************************************************************
      * build fundef for this spmd region
@@ -342,7 +343,7 @@ SPMDLspmd (node *arg_node, node *arg_info)
  *   Corrects the vardec-pointer of N_id nodes in SPMD-funs.
  *
  * remarks:
- *   INFO_SPMD_FUNDEF( arg_info) points to the current fundef-node.
+ *   INFO_CONC_FUNDEF( arg_info) points to the current fundef-node.
  *
  ******************************************************************************/
 
@@ -353,7 +354,7 @@ SPMDLid (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("SPMDLid");
 
-    fundef = INFO_SPMD_FUNDEF (arg_info);
+    fundef = INFO_CONC_FUNDEF (arg_info);
 
     if (FUNDEF_STATUS (fundef) == ST_spmdfun) {
 
@@ -440,28 +441,28 @@ SPMDLnwith2 (node *arg_node, node *arg_info)
      * mark with-loop as being multi-threaded or not depending on arg_info
      */
 
-    NWITH2_MT (arg_node) = INFO_SPMD_MT (arg_info);
+    NWITH2_MT (arg_node) = INFO_SPMDL_MT (arg_info);
 
     /*
      * traverse sons
      */
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
-    INFO_SPMD_MT (arg_info) = 0;
+    INFO_SPMDL_MT (arg_info) = 0;
     NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
-    INFO_SPMD_MT (arg_info) = NWITH2_MT (arg_node);
+    INFO_SPMDL_MT (arg_info) = NWITH2_MT (arg_node);
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
 
     /*
      * gnerate new DFMasks
      */
 
-    in = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_SPMD_FUNDEF (arg_info)));
-    inout = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_SPMD_FUNDEF (arg_info)));
-    out = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_SPMD_FUNDEF (arg_info)));
-    local = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_SPMD_FUNDEF (arg_info)));
+    in = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));
+    inout = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));
+    out = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));
+    local = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_CONC_FUNDEF (arg_info)));
 
-    FOREACH_VARDEC_AND_ARG (INFO_SPMD_FUNDEF (arg_info), vardec, {
+    FOREACH_VARDEC_AND_ARG (INFO_CONC_FUNDEF (arg_info), vardec, {
         if (DFMTestMaskEntry (NWITH2_IN (arg_node), VARDEC_OR_ARG_NAME (vardec), NULL)) {
             DFMSetMaskEntrySet (in, VARDEC_OR_ARG_NAME (vardec), NULL);
         }

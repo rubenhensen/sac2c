@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/08/09 11:32:20  jhs
+ * Cleaned up info-macros for concurrent-phase.
+ *
  * Revision 2.4  1999/08/05 13:38:54  jhs
  * Added optimization of sequential assignments between spmd-blocks, main work
  * happens in spmdinit and ist steered by OPT_MTI (default now: off), some
@@ -29,10 +32,13 @@ extern int *CountOccurences (node *block, DFMmask_t which, node *fundef);
 
 extern int LetWithFunction (node *let);
 extern node *SPMDTLCap (node *arg_node, node *arg_info);
+
 extern node *DeleteNested (node *arg_node);
 extern node *SPMDDNspmd (node *arg_node, node *arg_info);
-extern void ProduceMasks (node *arg_node, node *arg_info);
+
+extern void ProduceMasks (node *arg_node, node *spmd, node *fundef);
 extern node *SPMDPMlet (node *arg_node, node *arg_info);
+extern node *SPMDPMassign (node *arg_node, node *arg_info);
 
 /******************************************************************************
  ******************************************************************************

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/08/09 11:32:20  jhs
+ * Cleaned up info-macros for concurrent-phase.
+ *
  * Revision 2.7  1999/08/05 13:36:25  jhs
  * Added optimization of sequential assignments between spmd-blocks, main work
  * happens in spmdinit and ist steered by OPT_MTI (default now: off), some
@@ -16,7 +19,7 @@
  * needed_sync_fold introduced, max_sync_fold_adjusted.
  *
  * Revision 2.3  1999/07/01 13:01:02  jhs
- * Inserted handling of INFO_SPMD_LAST.
+ * Inserted handling of INFO_SYNCI_LAST.
  *
  * Revision 2.2  1999/05/26 14:32:23  jhs
  * Added options MTO and SBE for multi-thread optimsation and
@@ -168,13 +171,11 @@ CONCfundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CONCfundef");
 
-    INFO_SPMD_FUNDEF (arg_info) = arg_node;
+    INFO_CONC_FUNDEF (arg_info) = arg_node;
 
     if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)) {
 
         if (FUNDEF_STATUS (arg_node) != ST_spmdfun) {
-
-            INFO_SPMD_MT (arg_info) = 0;
 
             /*
              * First, spmd-blocks are built around with-loops.
@@ -215,6 +216,7 @@ CONCfundef (node *arg_node, node *arg_info)
              * called spmd-function.
              */
             act_tab = spmdlift_tab;
+            INFO_SPMDL_MT (arg_info) = 0;
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 
             if ((break_after == PH_spmdregions)
@@ -239,9 +241,9 @@ CONCfundef (node *arg_node, node *arg_info)
              * Third, local back references within spmd-functions are adjusted, e.g.
              * references to identifer declarations or data flow masks.
              */
-            INFO_SPMD_MT (arg_info) = 1;
 
             act_tab = spmdlift_tab;
+            INFO_SPMDL_MT (arg_info) = 1;
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 
             if ((break_after == PH_spmdregions)
@@ -254,8 +256,8 @@ CONCfundef (node *arg_node, node *arg_info)
              * the body of an spmd-function.
              */
             act_tab = syncinit_tab;
-            INFO_SPMD_FIRST (arg_info) = 1;
-            INFO_SPMD_LAST (arg_info) = 1;
+            INFO_SYNCI_FIRST (arg_info) = 1;
+            INFO_SYNCI_LAST (arg_info) = 1;
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 
             if ((break_after == PH_spmdregions)
