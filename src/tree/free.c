@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2002/02/22 12:04:36  dkr
+ * NAMES_IN_TYPES hack is no longer needed :-)
+ *
  * Revision 3.29  2002/02/22 09:02:00  dkr
  * macro FREEMASKS modified
  *
@@ -126,8 +129,6 @@
  *  -> no free!
  */
 #define FREE_MODNAMES 0
-
-#define NAMES_IN_TYPES 1
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -646,19 +647,13 @@ FreeZombie (node *fundef)
         /*
          * remove all the zombie data
          */
-#if NAMES_IN_TYPES
-        if (FUNDEF_TYPES (fundef) != NULL) {
-#endif
-            FUNDEF_NAME (fundef) = Free (FUNDEF_NAME (fundef));
+        FUNDEF_NAME (fundef) = Free (FUNDEF_NAME (fundef));
 #if FREE_MODNAMES
-            FUNDEF_MOD (fundef) = Free (FUNDEF_MOD (fundef));
-            FUNDEF_LINKMOD (fundef) = Free (FUNDEF_LINKMOD (fundef));
+        FUNDEF_MOD (fundef) = Free (FUNDEF_MOD (fundef));
+        FUNDEF_LINKMOD (fundef) = Free (FUNDEF_LINKMOD (fundef));
 #endif
 
-            FUNDEF_TYPES (fundef) = FreeOneTypes (FUNDEF_TYPES (fundef));
-#if NAMES_IN_TYPES
-        }
-#endif
+        FUNDEF_TYPES (fundef) = FreeOneTypes (FUNDEF_TYPES (fundef));
 
         tmp = fundef;
         fundef = FUNDEF_NEXT (fundef);
@@ -965,13 +960,6 @@ FreeFundef (node *arg_node, node *arg_info)
                 ("Removing contents of N_fundef node %s ...", ItemName (arg_node)));
 
     FUNDEF_NEXT (arg_node) = FREECONT (FUNDEF_NEXT (arg_node));
-
-#if NAMES_IN_TYPES
-    /*
-     * CAUTION: FUNDEF_STATUS is part of FUNDEF_TYPES  8-((
-     */
-    DBUG_ASSERT ((FUNDEF_TYPES (arg_node) != NULL), "FUNDEF_TYPES not found!");
-#endif
 
     if (FUNDEF_STATUS (arg_node) == ST_zombiefun) {
         DBUG_PRINT ("FREE", ("N_fundef node is already a zombie"

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2002/02/22 12:04:10  dkr
+ * NAMES_IN_TYPES hack is no longer needed :-)
+ *
  * Revision 3.44  2001/12/12 12:44:44  dkr
  * function MakeId_Copy_NT added
  *
@@ -65,8 +68,6 @@
 #include "free.h"
 #include "internal_lib.h"
 #include "refcount.h"
-
-#define NAMES_IN_TYPES 1
 
 /*--------------------------------------------------------------------------*/
 
@@ -205,18 +206,6 @@ MakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name, char *mod)
 
     TYPES_TDEF (tmp) = NULL;
     TYPES_NEXT (tmp) = NULL;
-
-#if 1
-    /*
-     * these entries are *not* part of the TYPES structure
-     *  but part of the TYPEDEF/OBDEF/FUNDEF/ARG/VARDEC node!!
-     */
-    tmp->id = NULL;
-    tmp->id_mod = NULL;
-    tmp->id_cmod = NULL;
-    tmp->status = ST_regular;
-    tmp->attrib = ST_regular;
-#endif
 
     DBUG_RETURN (tmp);
 }
@@ -571,22 +560,9 @@ MakeTypedef (char *name, char *mod, types *type, statustype attrib, node *next)
 
     TYPEDEF_TYPE (tmp) = type;
 
-#if NAMES_IN_TYPES
-    if (type == NULL) {
-        type = MakeTypes1 (T_unknown);
-    }
-
-    if (TYPEDEF_NAME (tmp) != NULL) {
-        Free (TYPEDEF_NAME (tmp));
-    }
-#endif
     TYPEDEF_NAME (tmp) = name;
-#if NAMES_IN_TYPES
-    if (TYPEDEF_MOD (tmp) != NULL) {
-        Free (TYPEDEF_MOD (tmp));
-    }
-#endif
     TYPEDEF_MOD (tmp) = mod;
+    TYPEDEF_LINKMOD (tmp) = NULL;
     TYPEDEF_ATTRIB (tmp) = attrib;
     TYPEDEF_NEXT (tmp) = next;
 
@@ -615,22 +591,9 @@ MakeObjdef (char *name, char *mod, types *type, node *expr, node *next)
 
     OBJDEF_TYPE (tmp) = type;
 
-#if NAMES_IN_TYPES
-    if (type == NULL) {
-        type = MakeTypes1 (T_unknown);
-    }
-
-    if (OBJDEF_NAME (tmp) != NULL) {
-        Free (OBJDEF_NAME (tmp));
-    }
-#endif
     OBJDEF_NAME (tmp) = name;
-#if NAMES_IN_TYPES
-    if (OBJDEF_MOD (tmp) != NULL) {
-        Free (OBJDEF_MOD (tmp));
-    }
-#endif
     OBJDEF_MOD (tmp) = mod;
+    OBJDEF_LINKMOD (tmp) = NULL;
     OBJDEF_EXPR (tmp) = expr;
     OBJDEF_NEXT (tmp) = next;
 
@@ -658,17 +621,6 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
     FUNDEF_BODY (tmp) = body;
     FUNDEF_ARGS (tmp) = args;
     FUNDEF_NEXT (tmp) = next;
-
-#if NAMES_IN_TYPES
-    if (types == NULL) {
-        types = MakeTypes1 (T_unknown);
-    }
-
-    if (FUNDEF_TYPES (tmp) != NULL) {
-        FUNDEF_NAME (tmp) = Free (FUNDEF_NAME (tmp));
-        FUNDEF_MOD (tmp) = Free (FUNDEF_MOD (tmp));
-    }
-#endif
 
     FUNDEF_TYPES (tmp) = types;
 
@@ -700,20 +652,8 @@ MakeArg (char *name, types *type, statustype status, statustype attrib, node *ne
 
     tmp = CreateCleanNode (N_arg);
 
-#if NAMES_IN_TYPES
-    if (type == NULL) {
-        type = MakeTypes1 (T_unknown);
-    }
-#endif
-
     ARG_NEXT (tmp) = next;
     ARG_TYPE (tmp) = type;
-
-#if NAMES_IN_TYPES
-    if (ARG_NAME (tmp) != NULL) {
-        Free (ARG_NAME (tmp));
-    }
-#endif
 
     ARG_NAME (tmp) = name;
     ARG_STATUS (tmp) = status;
@@ -762,20 +702,8 @@ MakeVardec (char *name, types *type, node *next)
 
     tmp = CreateCleanNode (N_vardec);
 
-#if NAMES_IN_TYPES
-    if (type == NULL) {
-        type = MakeTypes1 (T_unknown);
-    }
-#endif
-
     VARDEC_NEXT (tmp) = next;
     VARDEC_TYPE (tmp) = type;
-
-#if NAMES_IN_TYPES
-    if (VARDEC_NAME (tmp) != NULL) {
-        Free (VARDEC_NAME (tmp));
-    }
-#endif
 
     VARDEC_NAME (tmp) = name;
     VARDEC_STATUS (tmp) = ST_regular;
