@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1994/11/10 15:10:01  sbs
+ * Revision 1.5  1994/11/23 09:44:03  hw
+ * inserted true & false
+ *
+ * Revision 1.4  1994/11/10  15:10:01  sbs
  * RCS-header adjusted
  *
  * Revision 1.3  1994/11/10  14:53:24  sbs
@@ -97,6 +100,8 @@ int commlevel=0;
 "float"				{FILTER( TYPE_FLOAT );}
 "bool"				{FILTER( TYPE_BOOL );}
 
+"true"                          {FILTER( TRUE );}
+"false"                         {FILTER( FALSE );}
 
 [_A-Za-z][_A-Za-z0-9]*		{FILTER2( ID );}
 (0?|([1-9][0-9]*))	{FILTER3 ( NUM);}
