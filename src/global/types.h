@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/12/20 08:17:37  cg
+ * Revision 1.11  1995/12/29 10:28:16  cg
+ * added entries tdef and id_cmod in struct types
+ *
+ * Revision 1.10  1995/12/20  08:17:37  cg
  * added new entry cchar in info union to store char values.
  *
  * Revision 1.9  1995/12/11  14:01:09  cg
@@ -149,14 +152,16 @@ typedef struct SHPSEG {
 
 typedef struct TYPES {
     simpletype simpletype;
-    char *name;     /* only used for T_user !! */
-    char *name_mod; /* name of modul belonging to 'name' */
-    int dim;        /* if (dim == 0) => simpletype */
+    char *name;        /* only used for T_user !! */
+    char *name_mod;    /* name of modul belonging to 'name' */
+    struct NODE *tdef; /* typedef of user-defined type */
+    int dim;           /* if (dim == 0) => simpletype */
     shpseg *shpseg;
     struct TYPES *next; /* only needed for fun-results  */
                         /* and implementation of implicit types */
     char *id;           /* identifier of function, object, ...  */
-    char *id_mod;       /* module where id is defined */
+    char *id_mod;       /* SAC module where id is defined */
+    char *id_cmod;      /* C module where id is defined */
     statustype attrib;  /* uniqueness attribute */
     statustype status;  /* regular or artificial */
 } types;
