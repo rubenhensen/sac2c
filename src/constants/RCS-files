@@ -12,3 +12,5 @@ cv2str.c
 cv2str.h
 shape.c
 shape.h
+zipcv.c
+zipcv.h
