@@ -1,7 +1,7 @@
 /* $Id$
  * $Log$
- * Revision 1.1  1999/02/26 14:11:26  dkr
- * Initial revision
+ * Revision 2.2  1999/02/26 14:48:52  dkr
+ * file moved from folder /optimize
  *
  * Revision 2.1  1999/02/23 12:41:33  sacbase
  * new release made
