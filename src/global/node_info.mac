@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.119  1996/01/07 16:53:39  cg
- * added functions IMfundef, IMtypedef, and IMobjdef in import_tab
+ * Revision 1.120  1996/01/21 13:55:33  cg
+ * added function RCarg for refcount_tab
  *
+;; Revision 1.119  1996/01/07  16:53:39  cg
+;; added functions IMfundef, IMtypedef, and IMobjdef in import_tab
+;;
 ;; Revision 1.118  1996/01/05  14:43:51  cg
 ;; use DupId instead of DupChain to copy modarray
 ;;
@@ -501,7 +504,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons),
 
   NIF (N_arg, "N_arg", TravSons, FltnArgs, PrintArg, TravSons, OPTarg, TravSons, TravSons,
-       FreeArg, TravSons, TravSons, CompArg, TravSons, DupDec, INLvar, TravSons, TravSons,
+       FreeArg, TravSons, RCarg, CompArg, TravSons, DupDec, INLvar, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, PrintArg, OBJarg, TravSons, TravSons,
        TravSons, TravSons, WDECarg, UNQarg, TravSons, PRECarg, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons),
