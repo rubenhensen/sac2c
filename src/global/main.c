@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.71  2004/11/03 17:23:19  sah
+ * the tree is freed again now.
+ *
  * Revision 3.70  2004/10/28 17:16:17  sah
  * included some more parts of the new modulesystem
  *
@@ -458,6 +461,7 @@ main (int argc, char *argv[])
         NOTE_COMPILER_PHASE;
         syntax_tree = Import (syntax_tree); /* imp_tab */
 #else
+    NOTE_COMPILER_PHASE;
     NOTE (("Processing use and import statements..."));
     ResolveAll (syntax_tree);
     DoAnnotateNamespace (syntax_tree);
@@ -825,9 +829,7 @@ main (int argc, char *argv[])
      *  After the C file has been written, the syntax tree may be released.
      */
 
-#ifndef NEW_AST
     syntax_tree = FreeTree (syntax_tree);
-#endif
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
