@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2001/03/28 14:56:11  dkr
+ * WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX modified
+ *
  * Revision 3.63  2001/03/27 20:51:49  dkr
  * macros INFO_F2L_... added
  *
@@ -322,8 +325,6 @@ extern char *prf_name_str[];
 
 #define SHAPES_DIM(s) (s->dim)
 #define SHAPES_SHPSEG(s) (s->shpseg)
-#define SHAPES_SELEMS(s) (s->shpseg->shp)
-#define SHAPES_SNEXT(s) (s->shpseg->next)
 
 /*--------------------------------------------------------------------------*/
 
@@ -339,7 +340,8 @@ extern char *prf_name_str[];
 
 extern shpseg *MakeShpseg (nums *num);
 
-#define SHPSEG_SHAPE(s, x) (s->shp[x])
+#define SHPSEG_ELEMS(s) (s->shp)
+#define SHPSEG_SHAPE(s, x) (SHPSEG_ELEMS (s)[x])
 #define SHPSEG_NEXT(s) (s->next)
 
 /*--------------------------------------------------------------------------*/
@@ -3468,8 +3470,6 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLSEGX_DIMS(n) ((n)->refcnt)
 #define WLSEGX_CONTENTS(n) ((n)->node[0])
 #define WLSEGX_NEXT(n) (WLNODE_NEXT (n))
-#define WLSEGX_IDX_MIN(n) (*((int **)(&((n)->node[2]))))
-#define WLSEGX_IDX_MAX(n) (*((int **)(&((n)->node[3]))))
 #define WLSEGX_SCHEDULING(n) ((SCHsched_t *)((n)->info2))
 
 /*
@@ -3513,32 +3513,33 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***
  ***  sons:
  ***
- ***    node*      CONTENTS       (N_WLblock, N_WLublock, N_WLstride)
- ***    node*      NEXT           (N_WLseg, N_WLsegVar)
+ ***    node*      CONTENTS      (N_WLblock, N_WLublock, N_WLstride)
+ ***    node*      NEXT          (N_WLseg, N_WLsegVar)
  ***
  ***  permanent attributes:
  ***
- ***    int        DIMS        [number of dims]
+ ***    int        DIMS       [number of dims]
+ ***
+ ***    int*       UBV        [unrolling-bl. vector]
+ ***
+ ***    int        BLOCKS     [number of blocking levels (0..3)
+ ***                            --- without unrolling-blocking]
+ ***    int*       BV[]       [blocking vectors]
  ***
  ***  temporary attributes:
  ***
- ***    int*       IDX_MIN                              (wltransform -> compile )
- ***    int*       IDX_MAX                              (wltransform -> compile )
+ ***    int*       SV         [step vector]            (wltransform -> )
  ***
- ***    int*       SV          [step vector]            (wltransform -> )
- ***    int*       UBV         [unrolling-bl. vector]   (wltransform -> compile )
+ ***    int*       IDX_MIN                             (wltransform -> compile )
+ ***    int*       IDX_MAX                             (wltransform -> compile )
  ***
- ***    int        BLOCKS      [number of blocking levels (0..3)
- ***                             --- without unrolling-blocking]
- ***    int*       BV[]        [blocking vectors]       (wltransform -> compile )
- ***
- ***    int        MAXHOMDIM   [last homog. dimension]  (wltransform -> compile )
- ***    SCHsched_t SCHEDULING                           (wltransform -> compile )
+ ***    int        MAXHOMDIM  [last homog. dimension]  (wltransform -> compile )
+ ***    SCHsched_t SCHEDULING                          (wltransform -> compile )
  ***
  ***  remarks:
  ***
- ***    - IDX_MIN, IDX_MAX, SV, BV[0], BV[1], ..., UBV are vectors of size DIMS.
  ***    - BV[ 0 .. (BLOCKS-1) ]
+ ***    - UBV, BV[.], SV, IDX_MIN, IDX_MAX are vectors of size DIMS.
  ***    - MAXHOMDIM is element of the set {-1, 0, 1, ..., DIMS-1}.
  ***      -1 is the default value (= no homogeneous dimensions).
  ***/
@@ -3549,14 +3550,13 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 #define WLSEG_CONTENTS(n) (WLSEGX_CONTENTS (n))
 #define WLSEG_NEXT(n) (WLSEGX_NEXT (n))
 
-#define WLSEG_IDX_MIN(n) (WLSEGX_IDX_MIN (n))
-#define WLSEG_IDX_MAX(n) (WLSEGX_IDX_MAX (n))
-
-#define WLSEG_SV(n) ((int *)((n)->mask[0]))
 #define WLSEG_UBV(n) ((int *)((n)->mask[1]))
-
 #define WLSEG_BLOCKS(n) ((n)->flag)
 #define WLSEG_BV(n, level) ((int *)((n)->mask[level + 2]))
+
+#define WLSEG_SV(n) ((int *)((n)->mask[0]))
+#define WLSEG_IDX_MIN(n) (*((int **)(&((n)->node[2]))))
+#define WLSEG_IDX_MAX(n) (*((int **)(&((n)->node[3]))))
 
 #define WLSEG_MAXHOMDIM(n) ((n)->varno)
 #define WLSEG_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
@@ -3568,17 +3568,17 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***
  ***  sons:
  ***
- ***    node*      CONTENTS       (N_WLstride, N_WLstrideVar)
- ***    node*      NEXT           (N_WLseg, N_WLsegVar)
+ ***    node*      CONTENTS      (N_WLstride, N_WLstrideVar)
+ ***    node*      NEXT          (N_WLseg, N_WLsegVar)
  ***
  ***  permanent attributes:
  ***
- ***    int        DIMS        [number of dims]
+ ***    int        DIMS       [number of dims]
  ***
  ***  temporary attributes:
  ***
- ***    int*       IDX_MIN                             (wltransform -> compile )
- ***    int*       IDX_MAX                             (wltransform -> compile )
+ ***    node**     IDX_MIN       (N_num, N_id)         (wltransform -> compile )
+ ***    node**     IDX_MAX       (N_num, N_id)         (wltransform -> compile )
  ***
  ***    SCHsched_t SCHEDULING                          (wltransform -> compile )
  ***
@@ -3593,8 +3593,8 @@ extern node *MakeWLsegVar (int dims, node *contents, node *next);
 #define WLSEGVAR_CONTENTS(n) (WLSEGX_CONTENTS (n))
 #define WLSEGVAR_NEXT(n) (WLSEGX_NEXT (n))
 
-#define WLSEGVAR_IDX_MIN(n) (WLSEGX_IDX_MIN (n))
-#define WLSEGVAR_IDX_MAX(n) (WLSEGX_IDX_MAX (n))
+#define WLSEGVAR_IDX_MIN(n) ((node **)((n)->node[2]))
+#define WLSEGVAR_IDX_MAX(n) ((node **)((n)->node[3]))
 
 #define WLSEGVAR_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
 
