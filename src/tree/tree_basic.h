@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.143  2002/08/15 11:47:55  dkr
+ * MODUL_WRAPPERFUNS added
+ *
  * Revision 3.142  2002/08/12 14:58:52  sbs
  * N_mop representation changed
  *
@@ -625,6 +628,8 @@ extern DFMfoldmask_t *CopyDFMfoldmask (DFMfoldmask_t *mask);
  ***
  ***    node*  DECL          (N_moddec, N_classdec)  (check-dec -> write-SIB !!)
  ***    node*  STORE_IMPORTS (N_implist)             (import -> checkdec !!)
+ ***    LUT_t  WRAPPERFUNS   (name -> N_fundef)      (create_wrappers ->
+ ***                                                  create_wrapper_code !!)
  ***    node*  FOLDFUNS      (N_fundef)              (compile -> )
  ***/
 
@@ -641,15 +646,16 @@ extern node *MakeModul (char *name, file_type filetype, node *imports, node *typ
 
 #define MODUL_NAME(n) (n->info.id)
 #define MODUL_FILETYPE(n) ((file_type) (n->varno))
+#define MODUL_CLASSTYPE(n) ((types *)(n->info2))
 #define MODUL_IMPORTS(n) (n->node[0])
 #define MODUL_TYPES(n) (n->node[1])
 #define MODUL_OBJS(n) (n->node[3])
 #define MODUL_FUNS(n) (n->node[2])
 #define MODUL_DECL(n) (n->node[4])
 #define MODUL_STORE_IMPORTS(n) (n->node[4])
+#define MODUL_WRAPPERFUNS(n) ((LUT_t) (n->dfmask[0]))
 #define MODUL_FOLDFUNS(n) (n->node[4])
 #define MODUL_CWRAPPER(n) (n->node[5])
-#define MODUL_CLASSTYPE(n) ((types *)(n->info2))
 
 /*--------------------------------------------------------------------------*/
 
