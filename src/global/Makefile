@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.20  1995/05/15 13:38:42  asi
+# Revision 1.21  1995/05/26 14:28:03  asi
+# make deps done
+#
+# Revision 1.20  1995/05/15  13:38:42  asi
 # make deps done
 #
 # Revision 1.19  1995/04/05  15:54:51  asi
@@ -144,7 +147,8 @@ traverse.o: ../typecheck/typecheck.h ../optimize/optimize.h free.h
 traverse.o: ../optimize/ConstantFolding.h ../optimize/DeadCodeRemoval.h
 traverse.o: ../optimize/WorkReduction.h ../optimize/LoopInvariantRemoval.h
 traverse.o: ../modules/import.h ../refcount/refcount.h ../compile/compile.h
-traverse.o: ../optimize/DupTree.h traverse.h
+traverse.o: ../optimize/DupTree.h ../optimize/Inline.h ../optimize/Unroll.h
+traverse.o: traverse.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 tree.o: tree.h type_info.mac node_info.mac prf_node_info.mac ../../inc/dbug.h
