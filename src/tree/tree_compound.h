@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2001/04/02 11:44:53  dkr
+ * functions NodeOrInt...(), NameOrVal...() moved to wl_bounds.[ch]
+ *
  * Revision 3.29  2001/03/29 09:18:49  nmw
  * tabs2spaces done
  *
@@ -1955,41 +1958,6 @@ extern node *MakeWLsegX (int dims, node *contents, node *next);
                            ? WLGRID_NOOP (n)                                             \
                            : ((NODE_TYPE (n) == N_WLgridVar) ? WLGRIDVAR_NOOP (n)        \
                                                              : FALSE))))))
-
-/*
- * functions for NodeOrInt
- */
-
-extern bool NameOrVal_CheckConsistency (char *name, int val);
-
-extern bool NameOrVal_IsInt (char *name, int val);
-extern bool NodeOrInt_IsInt (nodetype nt, void *node_or_int);
-
-extern void NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt,
-                                    void *node_or_int);
-
-extern void NameOrVal_SetNodeOrInt (nodetype ret_nt, void *ret_node_or_int, char *name,
-                                    int val);
-extern void NodeOrInt_SetNodeOrInt (nodetype ret_nt, void *ret_node_or_int, nodetype nt,
-                                    void *node_or_int);
-
-extern node *NameOrVal_MakeNode (char *name, int val);
-extern node *NodeOrInt_MakeNode (nodetype nt, void *node_or_int);
-
-extern node *NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name,
-                                  bool no_num, bool no_icm);
-extern node *NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, char *wl_name,
-                                  bool no_num, bool no_icm);
-
-extern bool NameOrVal_Eq (char *name1, int val1, char *name2, int val2, int shape);
-extern bool NodeOrInt_Eq (nodetype nt1, void *node_or_int1, nodetype nt2,
-                          void *node_or_int2, int shape);
-extern bool NodeOrInt_IntEq (nodetype nt1, void *node_or_int1, int val2, int shape);
-extern bool NodeOrInt_StrEq (nodetype nt1, void *node_or_int1, char *name2, int shape);
-
-extern bool NameOrVal_Le (char *name1, int val1, char *name2, int val2, int shape);
-extern bool NodeOrInt_Le (nodetype nt1, void *node_or_int1, nodetype nt2,
-                          void *node_or_int2, int shape);
 
 /*--------------------------------------------------------------------------*/
 
