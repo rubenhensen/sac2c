@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/06/29 08:48:59  cg
+ * sequence of including header files modified
+ *
  * Revision 1.5  1998/05/07 08:26:08  cg
  * sac_rc.h renamed to sac_std.h
  *
@@ -34,8 +37,6 @@
 #define SAC_H
 
 #include "sac_boundcheck.h"
-#include "sac_trace.h"
-#include "sac_profile.h"
 #include "sac_malloc.h"
 #include "sac_misc.h"
 #include "sac_message.h"
@@ -45,5 +46,7 @@
 #include "sac_prf.h"
 #include "sac_mt.h"
 #include "sac_wl.h"
+#include "sac_trace.h"
+#include "sac_profile.h"
 
 #endif /* SAC_H */
