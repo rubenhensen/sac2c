@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  1998/02/06 18:49:14  dkr
+ * new function RCNwithid()
+ *
  * Revision 1.28  1998/02/05 15:33:15  dkr
  * adjusted refcnt in N_pre and N_post
  *
@@ -554,101 +557,6 @@ Refcount (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
- *
- * function:
- *   node * RCNwith(node * arg_node, node * arg_info)
- *
- * description:
- *
- *
- *
- ******************************************************************************/
-
-node *
-RCNwith (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("RCNwith");
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node * RCNpart(node * arg_node, node * arg_info)
- *
- * description:
- *
- *
- *
- ******************************************************************************/
-
-node *
-RCNpart (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("RCNpart");
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node * RCNgen(node * arg_node, node * arg_info)
- *
- * description:
- *
- *
- *
- ******************************************************************************/
-
-node *
-RCNgen (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("RCNgen");
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node * RCNcode(node * arg_node, node * arg_info)
- *
- * description:
- *
- *
- *
- ******************************************************************************/
-
-node *
-RCNcode (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("RCNcode");
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *RCprepost(node *arg_node, node *arg_info)
- *
- * description:
- *
- *
- *
- ******************************************************************************/
-
-node *
-RCprepost (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("RCprepost");
-    PRE_REFCNT (arg_node) = -1; /* is not a refcount-object !! */
-    DBUG_RETURN (arg_node);
-}
-
 /*
  *
  *  functionname  : RCarg
@@ -1010,7 +918,7 @@ RCid (node *arg_node, node *arg_info)
              * the N_id node.
              */
             DBUG_PRINT ("RC", ("RC for %s increased:", ID_NAME (arg_node)));
-            VARDEC_REFCNT (ID_VARDEC (arg_node)) += 1;
+            VARDEC_REFCNT (ID_VARDEC (arg_node))++;
             ID_REFCNT (arg_node) = VARDEC_REFCNT (ID_VARDEC (arg_node));
         } else {
             /* This N_id node is argument to the N_prf node (*arg_info)
@@ -1173,6 +1081,25 @@ RCcond (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *RCprepost(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   sets the rc of a N_pre/N_post-identificator to -1 (=> no refcounting)
+ *
+ *
+ ******************************************************************************/
+
+node *
+RCprepost (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCprepost");
+    PRE_REFCNT (arg_node) = -1; /* is not a refcount-object !! */
+    DBUG_RETURN (arg_node);
+}
+
 /*
  *
  *  functionname  : RCwith
@@ -1199,13 +1126,13 @@ RCwith (node *arg_node, node *arg_info)
     /* store refcounts */
     ref_dump = StoreAndInit (0);
 
-    arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-    index_vec_varno = arg_node->node[0]->VAR_DEC->varno;
-    if (N_modarray == arg_node->node[1]->nodetype) {
-        DBUG_ASSERT (N_id == arg_node->node[1]->node[0]->nodetype,
+    WITH_OPERATOR (arg_node) = Trav (WITH_OPERATOR (arg_node), arg_info);
+    WITH_GEN (arg_node) = Trav (WITH_GEN (arg_node), arg_info);
+    index_vec_varno = WITH_GEN (arg_node)->VAR_DEC->varno;
+    if (N_modarray == WITH_OPERATOR (arg_node)->nodetype) {
+        DBUG_ASSERT (N_id == MODARRAY_ARRAY (WITH_OPERATOR (arg_node))->nodetype,
                      "wrong nodetype != N_id");
-        mod_array_varno = arg_node->node[1]->node[0]->VAR_DEC->varno;
+        mod_array_varno = MODARRAY_ARRAY (WITH_OPERATOR (arg_node))->VAR_DEC->varno;
     } else
         mod_array_varno = -1;
 
@@ -1242,18 +1169,18 @@ RCwith (node *arg_node, node *arg_info)
             var_dec = FindVarDec (i);
             DBUG_ASSERT ((NULL != var_dec), "var not found");
             if (0 < var_dec->refcnt) {
-                ref_dump[i] += 1;
+                ref_dump[i]++;
                 DBUG_PRINT ("RC", ("set refcount of %s to %d:", var_dec->info.types->id,
                                    ref_dump[i]));
             }
         }
     }
-    if (-1 != mod_array_varno) {
 
+    if (-1 != mod_array_varno) {
         /* now increase refcount of modified array */
         var_dec = FindVarDec (mod_array_varno);
         DBUG_ASSERT ((NULL != var_dec), "var not found");
-        ref_dump[mod_array_varno] += 1;
+        ref_dump[mod_array_varno]++;
         DBUG_PRINT ("RC", ("set refcount of %s to %d:", var_dec->info.types->id,
                            ref_dump[mod_array_varno]));
     }
@@ -1281,11 +1208,10 @@ node *
 RCcon (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("RCcon");
-    arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+    GENARRAY_BODY (arg_node) = Trav (GENARRAY_BODY (arg_node), arg_info);
 #if 0
-   arg_node->node[0]=Trav(arg_node->node[0], arg_info);
+   GENARRAY_ARRAY(arg_node)=Trav(GENARRAY_ARRAY(arg_node), arg_info);
 #endif
-
     DBUG_RETURN (arg_node);
 }
 
@@ -1307,10 +1233,128 @@ node *
 RCgen (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("RCgen");
-    arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+    GEN_RIGHT (arg_node) = Trav (GEN_RIGHT (arg_node), arg_info);
+    GEN_LEFT (arg_node) = Trav (GEN_LEFT (arg_node), arg_info);
     /* set refcount of index_vector */
-    arg_node->info.ids->refcnt = arg_node->VAR_DEC->refcnt;
+    IDS_REFCNT (GEN_IDS (arg_node)) = VARDEC_REFCNT (IDS_VARDEC (GEN_IDS (arg_node)));
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node * RCNwith(node * arg_node, node * arg_info)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+RCNwith (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCNwith");
+
+    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node * RCNpart(node * arg_node, node * arg_info)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+RCNpart (node *arg_node, node *arg_info)
+{
+    int *ref_dump;
+
+    DBUG_ENTER ("RCNpart");
+
+    ref_dump = StoreAndInit (0); /* store refcounts */
+
+    NPART_CODE (arg_node) = Trav (NPART_CODE (arg_node), arg_info);
+    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
+    NPART_IDX (arg_node) = Trav (NPART_IDX (arg_node), arg_info);
+
+    Restore (ref_dump); /* restore refcounts */
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node * RCNcode(node * arg_node, node * arg_info)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+RCNcode (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCNcode");
+
+    NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node * RCNgen(node * arg_node, node * arg_info)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+RCNgen (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCNgen");
+
+    NGEN_BOUND1 (arg_node) = Trav (NGEN_BOUND1 (arg_node), arg_info);
+    NGEN_BOUND2 (arg_node) = Trav (NGEN_BOUND2 (arg_node), arg_info);
+    NGEN_STEP (arg_node) = Trav (NGEN_STEP (arg_node), arg_info);
+    NGEN_WIDTH (arg_node) = Trav (NGEN_WIDTH (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* RCNwithid(node* arg_node, node* arg_info)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+RCNwithid (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCNwithid");
+
+    IDS_REFCNT (NWITHID_VEC (arg_node))
+      = VARDEC_REFCNT (IDS_VARDEC (NWITHID_VEC (arg_node)));
 
     DBUG_RETURN (arg_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1998/02/06 18:48:56  dkr
+ * new function RCNwithid()
+ *
  * Revision 1.13  1998/02/05 15:34:04  dkr
  * adjusted refcnt in N_pre and N_post
  *
@@ -69,8 +72,9 @@ extern node *RCwith (node *arg_node, node *arg_info);
 /* new with-loop */
 extern node *RCNwith (node *arg_node, node *arg_info);
 extern node *RCNpart (node *arg_node, node *arg_info);
-extern node *RCNgen (node *arg_node, node *arg_info);
 extern node *RCNcode (node *arg_node, node *arg_info);
+extern node *RCNgen (node *arg_node, node *arg_info);
+extern node *RCNwithid (node *arg_node, node *arg_info);
 
 extern int IsArray (types *type);
 extern int IsNonUniqueHidden (types *type);
