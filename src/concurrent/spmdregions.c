@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  1998/05/15 23:05:29  dkr
+ * lifting of SPMD-fun deactivated ...
+ *
  * Revision 1.23  1998/05/15 15:44:38  cg
  * minor bugs removed in the construction of the spmd-function
  *
@@ -420,6 +423,7 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
     body = Trav (body, arg_info);
     INFO_SPMD_FUNDEF (arg_info) = fundef;
 
+#if 00
     /*
      * insert SPMD-function into fundef-chain of modul
      */
@@ -429,6 +433,7 @@ SPMDLiftSpmd (node *arg_node, node *arg_info)
     } else {
         FUNDEF_NEXT (fundef) = new_fundef;
     }
+#endif
 
     /*
      * build fundef for this spmd region
