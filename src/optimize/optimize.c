@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2003/07/31 17:56:59  mwe
+ * separate SSA-F
+ * f
+ *
+ * separate SSA-form-based opimizations from Non-SSA-form-based optimizations
+ *
  * Revision 3.52  2003/06/17 11:45:33  ktr
  * Quick fix of SSALoopInvariantRemoval by inserting SSATransformOneFunction afterwards.
  *
@@ -908,44 +914,71 @@ OPTfundef (node *arg_node, node *arg_info)
         NOTE (("optimizing function"));
         NOTE ((" %s( %s): ...", FUNDEF_NAME (arg_node), argtype_buffer));
 
-        if (optimize & OPT_AE) {
-            if (use_ssaform) {
+        /*
+         * !! Important !!
+         * SSA-form based optimizations are now separated from Non-SSA-optimizations
+         * by a single if-clause
+         */
+
+        if (use_ssaform) {
+
+            /*
+             * optimization for SSA-form
+             */
+
+            if (optimize & OPT_AE) {
                 arg_node = ArrayElimination (arg_node, arg_node); /* ae_tab */
                 arg_node = CheckAvisOneFunction (arg_node);
                 arg_node = SSATransformOneFunction (arg_node);
-            } else {
+            }
+
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
+                && (0 == strcmp (break_specifier, "ae"))) {
+                goto INFO;
+            }
+
+            if (optimize & OPT_DCR) {
+                arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
+            }
+
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
+                && (0 == strcmp (break_specifier, "dcr"))) {
+                goto INFO;
+            }
+
+        } else {
+
+            /*
+             * optimization for Non-SSA-form
+             */
+
+            if (optimize & OPT_AE) {
                 /*
                  * AE needs mask for MRD generation now.
                  */
                 arg_node = GenerateMasks (arg_node, NULL);
                 arg_node = ArrayElimination (arg_node, arg_node); /* ae_tab */
             }
-        }
 
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-            && (0 == strcmp (break_specifier, "ae"))) {
-            goto INFO;
-        }
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
+                && (0 == strcmp (break_specifier, "ae"))) {
+                goto INFO;
+            }
 
-        /*
-         * necessary after AE (which does not care about masks while introducing
-         * new variables:
-         */
-        if (!use_ssaform) {
+            /*
+             * necessary after AE (which does not care about masks while introducing
+             * new variables:
+             */
             arg_node = GenerateMasks (arg_node, NULL);
-        }
 
-        if (optimize & OPT_DCR) {
-            if (use_ssaform) {
-                arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
-            } else {
+            if (optimize & OPT_DCR) {
                 arg_node = DeadCodeRemoval (arg_node, arg_info);
             }
-        }
 
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-            && (0 == strcmp (break_specifier, "dcr"))) {
-            goto INFO;
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
+                && (0 == strcmp (break_specifier, "dcr"))) {
+                goto INFO;
+            }
         }
 
         /*
@@ -972,31 +1005,203 @@ OPTfundef (node *arg_node, node *arg_info)
             old_al_expr = al_expr;
             old_dl_expr = dl_expr;
 
-            if (optimize & OPT_CSE) {
-                if (use_ssaform) {
-                    arg_node = SSACSE (arg_node, INFO_OPT_MODUL (arg_info));
-                } else {
-                    arg_node = CSE (arg_node, arg_info);
-                    arg_node = GenerateMasks (arg_node, NULL);
-                }
-            }
+            /*
+             * !! Important !!
+             * SSA-form based optimizations are now separated from Non-SSA-optimizations
+             * by a single if-clause
+             */
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "cse"))) {
-                goto INFO;
-            }
-
-            /* infere loop invariant arguments */
             if (use_ssaform) {
-                arg_node = SSAInferLoopInvariants (arg_node);
-            }
 
-            if (optimize & OPT_CF) {
-                if (use_ssaform) {
+                /*
+                 * optimization for SSA-form
+                 */
+
+                if (optimize & OPT_CSE) {
+                    arg_node = SSACSE (arg_node, INFO_OPT_MODUL (arg_info));
+                }
+
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "cse"))) {
+                    goto INFO;
+                }
+
+                /* infere loop invariant arguments */
+                arg_node = SSAInferLoopInvariants (arg_node);
+
+                if (optimize & OPT_CF) {
                     arg_node
                       = SSAConstantFolding (arg_node,
                                             INFO_OPT_MODUL (arg_info)); /* ssacf_tab */
-                } else {
+
+                    /* srs: CF does not handle the USE mask correctly. For example
+                       a = f(3);
+                       b = a;
+                       c = b;
+                       will be transformed to
+                       a = f(3);
+                       b = a;
+                       c = a;
+                       after CF. But the USE mask of b is not reduced.
+                       This leads to a DCR problem (b = a is removed but variable
+                       declaration for b not. */
+                    /* quick fix: always rebuild masks after CF */
+                }
+
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "cf"))) {
+                    goto INFO;
+                }
+
+                if (optimize & OPT_WLT) {
+                    arg_node = SSAWithloopFoldingWLT (arg_node);
+                }
+
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "wlt"))) {
+                    goto INFO;
+                }
+
+                if (optimize & OPT_WLF) {
+                    arg_node = SSAWithloopFolding (arg_node, loop1);
+                }
+
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && ((0 == strcmp (break_specifier, "wli"))
+                        || (0 == strcmp (break_specifier, "wlf")))) {
+                    goto INFO;
+                }
+
+                if (wlf_expr != old_wlf_expr) {
+                    /*
+                     * this may speed up the optimization phase a lot if a lot of code
+                     * has been inserted by WLF.
+                     */
+                    if (optimize & OPT_CF) {
+                        arg_node
+                          = SSAConstantFolding (arg_node, INFO_OPT_MODUL (arg_info));
+                    }
+                }
+
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "cf2"))) {
+                    goto INFO;
+                }
+
+                if (optimize & OPT_DCR) {
+                    arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
+                }
+
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "dcr"))) {
+                    goto INFO;
+                }
+
+                if (optimize & OPT_WLS) {
+                    arg_node
+                      = WithloopScalarization (arg_node, INFO_OPT_MODUL (arg_info));
+                }
+
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "wls"))) {
+                    goto INFO;
+                }
+
+                if ((optimize & OPT_LUR) || (optimize & OPT_WLUR)) {
+                    arg_node = SSALoopUnrolling (arg_node, INFO_OPT_MODUL (arg_info));
+                    /*
+                     * important:
+                     *   SSALoopUnrolling uses internally WLUnroll to get the
+                     *   WithLoopUnrolling.
+                     */
+                }
+
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "lur"))) {
+                    goto INFO;
+                }
+
+                if ((wlunr_expr != old_wlunr_expr) || (lunr_expr != old_lunr_expr)) {
+                    /*
+                     * this may speed up the optimization phase a lot if a lot of code
+                     * has been inserted by Unrolling..
+                     */
+                    if (optimize & OPT_CF) {
+                        arg_node
+                          = SSAConstantFolding (arg_node, INFO_OPT_MODUL (arg_info));
+                    }
+                }
+
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "cf3"))) {
+                    goto INFO;
+                }
+
+                /*
+                 * !! LUS not implemented in SSA-form !!
+                 */
+                /*if ((optimize & OPT_LUS) && (!use_ssaform)) {
+                 *arg_node=Unswitch(arg_node, arg_info);
+                 *}
+                 */
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "lus"))) {
+                    goto INFO;
+                }
+
+                if (optimize & OPT_LIR) {
+                    arg_node
+                      = SSALoopInvariantRemoval (arg_node, INFO_OPT_MODUL (arg_info));
+                    /* ktr: This is a very dirty solution for bug #16.
+                       The problem of AVIS_SSAASSIGN being wrongly assigned in SSALIR.c
+                       is still unresolved. */
+                    arg_node = SSATransformOneFunction (arg_node);
+                }
+
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "lir"))) {
+                    goto INFO;
+                }
+
+                if ((optimize & OPT_AL) || (optimize & OPT_DL)) {
+                    arg_node = ElimSubDiv (arg_node, arg_info);
+                }
+
+                if (optimize & OPT_AL) {
+                    arg_node = AssociativeLaw (arg_node, arg_info);
+                }
+
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "al"))) {
+                    goto INFO;
+                }
+
+                if (optimize & OPT_DL) {
+                    arg_node = DistributiveLaw (arg_node, arg_info);
+                }
+
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "dl"))) {
+                    goto INFO;
+                }
+
+            } else {
+
+                /*
+                 * optimization for non-SSA-form
+                 */
+
+                if (optimize & OPT_CSE) {
+                    arg_node = CSE (arg_node, arg_info);
+                    arg_node = GenerateMasks (arg_node, NULL);
+                }
+
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "cse"))) {
+                    goto INFO;
+                }
+
+                if (optimize & OPT_CF) {
                     arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
                     arg_node = GenerateMasks (arg_node, NULL);
                 }
@@ -1012,31 +1217,23 @@ OPTfundef (node *arg_node, node *arg_info)
                    This leads to a DCR problem (b = a is removed but variable declaration
                    for b not. */
                 /* quick fix: always rebuild masks after CF */
-            }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "cf"))) {
-                goto INFO;
-            }
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "cf"))) {
+                    goto INFO;
+                }
 
-            if (optimize & OPT_WLT) {
-                if (use_ssaform) {
-                    arg_node = SSAWithloopFoldingWLT (arg_node);
-                } else {
+                if (optimize & OPT_WLT) {
                     arg_node = GenerateMasks (arg_node, NULL);
                     arg_node = WithloopFoldingWLT (arg_node); /* wlt */
                 }
-            }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "wlt"))) {
-                goto INFO;
-            }
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "wlt"))) {
+                    goto INFO;
+                }
 
-            if (optimize & OPT_WLF) {
-                if (use_ssaform) {
-                    arg_node = SSAWithloopFolding (arg_node, loop1);
-                } else {
+                if (optimize & OPT_WLF) {
                     arg_node = GenerateMasks (arg_node, NULL);
                     arg_node = WithloopFolding (arg_node, loop1); /* wli, wlf */
                     /*
@@ -1045,146 +1242,83 @@ OPTfundef (node *arg_node, node *arg_info)
                      */
                     arg_node = GenerateMasks (arg_node, NULL);
                 }
-            }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && ((0 == strcmp (break_specifier, "wli"))
-                    || (0 == strcmp (break_specifier, "wlf")))) {
-                goto INFO;
-            }
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && ((0 == strcmp (break_specifier, "wli"))
+                        || (0 == strcmp (break_specifier, "wlf")))) {
+                    goto INFO;
+                }
 
-            if (wlf_expr != old_wlf_expr) {
-                /*
-                 * this may speed up the optimization phase a lot if a lot of code
-                 * has been inserted by WLF.
-                 */
-                if (optimize & OPT_CF) {
-                    if (use_ssaform) {
-                        arg_node
-                          = SSAConstantFolding (arg_node, INFO_OPT_MODUL (arg_info));
-                    } else {
+                if (wlf_expr != old_wlf_expr) {
+                    /*
+                     * this may speed up the optimization phase a lot if a lot of code
+                     * has been inserted by WLF.
+                     */
+                    if (optimize & OPT_CF) {
                         arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
                         arg_node = GenerateMasks (arg_node, NULL);
                     }
                 }
-            }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "cf2"))) {
-                goto INFO;
-            }
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "cf2"))) {
+                    goto INFO;
+                }
 
-            if (optimize & OPT_DCR) {
-                if (use_ssaform) {
-                    arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
-                } else {
+                if (optimize & OPT_DCR) {
                     arg_node = DeadCodeRemoval (arg_node, arg_info);
                     arg_node = GenerateMasks (arg_node, NULL);
                 }
-            }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "dcr"))) {
-                goto INFO;
-            }
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "dcr"))) {
+                    goto INFO;
+                }
 
-            if ((optimize & OPT_WLS) && (use_ssaform)) {
-                arg_node = WithloopScalarization (arg_node, INFO_OPT_MODUL (arg_info));
-            }
-
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "wls"))) {
-                goto INFO;
-            }
-
-            if ((optimize & OPT_LUR) || (optimize & OPT_WLUR)) {
-                if (use_ssaform) {
-                    arg_node = SSALoopUnrolling (arg_node, INFO_OPT_MODUL (arg_info));
-                    /*
-                     * important:
-                     *   SSALoopUnrolling uses internally WLUnroll to get the
-                     *   WithLoopUnrolling.
-                     */
-                } else {
+                if ((optimize & OPT_LUR) || (optimize & OPT_WLUR)) {
                     arg_node = Unroll (arg_node, arg_info); /* unroll_tab */
                 }
-            }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "lur"))) {
-                goto INFO;
-            }
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "lur"))) {
+                    goto INFO;
+                }
 
-            if ((wlunr_expr != old_wlunr_expr) || (lunr_expr != old_lunr_expr)) {
-                /*
-                 * this may speed up the optimization phase a lot if a lot of code
-                 * has been inserted by Unrolling..
-                 */
-                if (optimize & OPT_CF) {
-                    if (use_ssaform) {
-                        arg_node
-                          = SSAConstantFolding (arg_node, INFO_OPT_MODUL (arg_info));
-                    } else {
+                if ((wlunr_expr != old_wlunr_expr) || (lunr_expr != old_lunr_expr)) {
+                    /*
+                     * this may speed up the optimization phase a lot if a lot of code
+                     * has been inserted by Unrolling..
+                     */
+                    if (optimize & OPT_CF) {
                         arg_node = GenerateMasks (arg_node, NULL);
                         arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
                         arg_node = GenerateMasks (arg_node, NULL);
                     }
                 }
-            }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "cf3"))) {
-                goto INFO;
-            }
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "cf3"))) {
+                    goto INFO;
+                }
 
-            if ((optimize & OPT_LUS) && (!use_ssaform)) {
-                arg_node = Unswitch (arg_node, arg_info); /* unswitch_tab */
-            }
+                if (optimize & OPT_LUS) {
+                    arg_node = Unswitch (arg_node, arg_info); /* unswitch_tab */
+                }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "lus"))) {
-                goto INFO;
-            }
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "lus"))) {
+                    goto INFO;
+                }
 
-            if (optimize & OPT_LIR) {
-                if (use_ssaform) {
-                    arg_node
-                      = SSALoopInvariantRemoval (arg_node, INFO_OPT_MODUL (arg_info));
-                    /* ktr: This is a very dirty solution for bug #16.
-                       The problem of AVIS_SSAASSIGN being wrongly assigned in SSALIR.c
-                       is still unresolved. */
-                    arg_node = SSATransformOneFunction (arg_node);
-                } else {
+                if (optimize & OPT_LIR) {
                     arg_node = LoopInvariantRemoval (arg_node, arg_info);
                     /* lir_tab and lir_mov_tab */
                 }
-            }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "lir"))) {
-                goto INFO;
-            }
-
-            if (((optimize & OPT_AL) || (optimize & OPT_DL)) && (use_ssaform)) {
-                arg_node = ElimSubDiv (arg_node, arg_info);
-            }
-
-            if ((optimize & OPT_AL) && (use_ssaform)) {
-                arg_node = AssociativeLaw (arg_node, arg_info);
-            }
-
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "al"))) {
-                goto INFO;
-            }
-
-            if ((optimize & OPT_DL) && (use_ssaform)) {
-                arg_node = DistributiveLaw (arg_node, arg_info);
-            }
-
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "dl"))) {
-                goto INFO;
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "lir"))) {
+                    goto INFO;
+                }
             }
 
         } while (((cse_expr != old_cse_expr) || (cf_expr != old_cf_expr)
@@ -1219,48 +1353,87 @@ OPTfundef (node *arg_node, node *arg_info)
                         ("---------------------------------------- loop TWO, pass %d",
                          loop2));
 
-            if (optimize & OPT_CF) {
-                if (use_ssaform) {
+            /*
+             * !! Important !!
+             * SSA-form based optimizations are now separated from Non-SSA-optimizations
+             * by a single if-clause
+             */
+
+            if (use_ssaform) {
+
+                /*
+                 * optimization for SSA-form
+                 */
+
+                if (optimize & OPT_CF) {
                     arg_node
                       = SSAConstantFolding (arg_node,
                                             INFO_OPT_MODUL (arg_info)); /* ssacf_tab */
-                } else {
+                }
+
+                if ((break_after == PH_sacopt)
+                    && (break_cycle_specifier == (loop1 + loop2))
+                    && (0 == strcmp (break_specifier, "cf"))) {
+                    goto INFO;
+                }
+
+                /*
+                 * This is needed to transform more index vectors in scalars or vice
+                 * versa.
+                 */
+                if (optimize & OPT_WLT) {
+                    arg_node = SSAWithloopFoldingWLT (arg_node);
+                }
+
+                if ((break_after == PH_sacopt)
+                    && (break_cycle_specifier == (loop1 + loop2))
+                    && (0 == strcmp (break_specifier, "wlt"))) {
+                    goto INFO;
+                }
+            } else {
+
+                /*
+                 * optimization for Non-SSA-form
+                 */
+
+                if (optimize & OPT_CF) {
                     arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
                     /* srs: CF does not handle the USE mask correctly. */
                     /* quick fix: always rebuild masks after CF */
                     arg_node = GenerateMasks (arg_node, NULL);
                 }
-            }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == (loop1 + loop2))
-                && (0 == strcmp (break_specifier, "cf"))) {
-                goto INFO;
-            }
+                if ((break_after == PH_sacopt)
+                    && (break_cycle_specifier == (loop1 + loop2))
+                    && (0 == strcmp (break_specifier, "cf"))) {
+                    goto INFO;
+                }
 
-            /*
-             * This is needed to transform more index vectors in scalars or vice versa.
-             */
-            if (optimize & OPT_WLT) {
-                if (use_ssaform) {
-                    arg_node = SSAWithloopFoldingWLT (arg_node);
-                } else {
+                /*
+                 * This is needed to transform more index vectors in scalars or vice
+                 * versa.
+                 */
+                if (optimize & OPT_WLT) {
                     arg_node = WithloopFoldingWLT (arg_node); /* wlt */
                 }
-            }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == (loop1 + loop2))
-                && (0 == strcmp (break_specifier, "wlt"))) {
-                goto INFO;
+                if ((break_after == PH_sacopt)
+                    && (break_cycle_specifier == (loop1 + loop2))
+                    && (0 == strcmp (break_specifier, "wlt"))) {
+                    goto INFO;
+                }
             }
         }
 
         /*
          * Finally, we apply DCR once again:
          */
-        if (optimize & OPT_DCR) {
-            if (use_ssaform) {
+        if (use_ssaform) {
+            if (optimize & OPT_DCR) {
                 arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
-            } else {
+            }
+        } else {
+            if (optimize & OPT_DCR) {
                 arg_node = DeadCodeRemoval (arg_node, arg_info);
             }
         }
