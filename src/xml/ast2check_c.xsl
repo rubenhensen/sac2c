@@ -2,6 +2,9 @@
 
 <!--
   $Log$
+  Revision 1.9  2005/02/11 14:48:26  jhb
+  added enum attr_list all attributes
+
   Revision 1.8  2005/02/10 12:57:33  jhb
   added to the compiler, changed some bugfixes
 
@@ -50,12 +53,6 @@ version="1.0">
     <xsl:text>
     </xsl:text>
   </xsl:variable>
-
-<!--  
-  <xsl:param name="nodeup"/>
-  <xsl:param name="nodelo"/>
-  <xsl:param name="sonatt"/>
--->
 
   <xsl:template match="/">
     <!-- generate file header and doxygen group -->
@@ -131,6 +128,16 @@ static info *FreeInfo(info *info)
 <xsl:apply-templates select="//syntaxtree/node" mode="function">
   <xsl:sort select="@name"/>
 </xsl:apply-templates>
+<xsl:value-of select="$newline"/>
+
+<xsl:value-of select="$newline"/>
+<xsl:value-of select="'typedef enum {'"/>
+<xsl:value-of select="$newline"/>
+
+<xsl:apply-templates select="//syntaxtree/node" mode="enum">
+  <xsl:sort select="@name"/>
+</xsl:apply-templates>
+<xsl:value-of select="' } attr_list;'"/>
 <xsl:value-of select="$newline"/>
 </xsl:template>
 
@@ -381,5 +388,29 @@ static info *FreeInfo(info *info)
       </xsl:if>
     </xsl:otherwise>
   </xsl:choose>
- </xsl:template> 
+ </xsl:template>
+
+
+ <xsl:template match="node" mode="enum">
+   <xsl:if test="string-length(attributes/attribute/@name) &gt; 0">
+     <xsl:value-of select="'  '"/>
+     <xsl:value-of select="'CHK_'"/>
+      <xsl:call-template name="lowercase">
+        <xsl:with-param name="string" >
+          <xsl:value-of select="@name"/>
+        </xsl:with-param>
+      </xsl:call-template>
+     <xsl:value-of select="'_'"/>
+      <xsl:call-template name="lowercase">
+        <xsl:with-param name="string" >
+          <xsl:value-of select="attributes/attribute/@name"/>
+        </xsl:with-param>
+      </xsl:call-template>
+     <xsl:if test="not(position() =last())">
+       <xsl:value-of select="','"/>     
+     </xsl:if>
+
+   <xsl:value-of select="$newline"/>    
+ </xsl:if>
+</xsl:template>
 </xsl:stylesheet>
