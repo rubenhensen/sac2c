@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.64  1998/04/28 15:34:51  dkr
+ * added compound macros for N_Nwith2
+ *
  * Revision 1.63  1998/04/24 17:19:56  dkr
  * added compound macros for N_spmd
  *
@@ -1317,6 +1320,14 @@ extern node *GetCompoundNode (node *arg_node);
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***
+ ***/
+
+#define NWITH2_TYPE(n) (NWITHOP_TYPE (NWITH2_WITHOP (n)))
+
+/*--------------------------------------------------------------------------*/
+
+/***
  ***  N_genarray :
  ***/
 
@@ -1473,34 +1484,5 @@ extern int IsConstantArray (node *array, nodetype type);
 #define ICM_ARG4(n) EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n)))))
 
 /*--------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------*/
-/*--------------------------------------------------------------------------*/
-
-/*
- *
- *  macro name    :
- *  arg types     :
- *  result type   :
- *  description   :
- *  global vars   :
- *  funs          :
- *
- *  remarks       :
- *
- */
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
 
 #endif /* _sac_tree_compound_h */
