@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/26 18:50:16  sbs
+ * arg and ret added
+ *
  * Revision 1.2  2004/11/21 22:45:20  sbs
  * SacDevCamp04
  *
@@ -17,7 +20,8 @@
 #include "types.h"
 
 extern node *RSPfundef (node *arg_node, info *info);
-extern node *RSPmodule (node *arg_node, info *info);
+extern node *RSParg (node *arg_node, info *info);
+extern node *RSPret (node *arg_node, info *info);
 
 extern void RSPdoResolvePragmas (node *syntax_tree);
 
