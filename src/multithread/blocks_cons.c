@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/03/30 15:10:19  jhs
+ * changed ST_call_mt to ST_call_mt_master
+ *
  * Revision 1.4  2000/03/21 13:06:14  jhs
  * Brushing, Comments.
  *
@@ -26,11 +29,12 @@
  *
  * description:
  *   (BlocksConsolidation)
- *   Each function by now must be classified as call_rep, call_mt or call_st.
- *   I.e. FUNDEFF_ATTRIB in {ST_call_rep, ST_call_mt, ST_call_st}.
+ *   Each function by now must be classified as call_rep, call_mt_master or
+ *   call_st.
+ *   I.e. FUNDEFF_ATTRIB in {ST_call_rep, ST_call_mt_master, ST_call_st}.
  *   This traversal ignores call_rep-funs.
  *   By this traversal are
- *   - N_mt-blocks deleted in call_mt-functions
+ *   - N_mt-blocks deleted in call_mt_master-functions
  *   - N_st-blocks deleted in call_st-functions
  *   - N_mt's nested in another N_mt deleted.
  *   - N_st's nested in another N_st deleted.
@@ -113,12 +117,12 @@ BlocksCons (node *arg_node, node *arg_info)
  *   This is the traversal function for N_st and N_mt!!!
  *   One does not need explicit versions BLKCOst or BLKCOmt here.
  *
- *   - If we find a N_mt while traversing ST_call_mt the N_mt is deleted.
+ *   - If we find a N_mt while traversing ST_call_mt_master the N_mt is deleted.
  *   - If we find a N_st while traversing ST_call_st the N_st is deleted.
  *   - If we find a N_mt while traversing ST_call_st we swap the current
  *     attribute and traverse the region, deleting all nested blocks of
  *     same type, restoring current afterwards.
- *   - If we find a N_st while traversing ST_call_mt we swap the current
+ *   - If we find a N_st while traversing ST_call_mt_master we swap the current
  *     attribute and traverse the region, deleting all nested blocks of
  *     same type, restoring current afterwards.
  *
@@ -137,7 +141,7 @@ BLKCOxt (node *arg_node, node *arg_info)
     DBUG_ASSERT (((NODE_TYPE (arg_node) == N_st) || (NODE_TYPE (arg_node) == N_mt)),
                  ("wrong type of arg_node"));
 
-    if (((INFO_BLKCO_CURRENTATTRIB (arg_info) == ST_call_mt)
+    if (((INFO_BLKCO_CURRENTATTRIB (arg_info) == ST_call_mt_master)
          && (NODE_TYPE (arg_node) == N_mt))
         || ((INFO_BLKCO_CURRENTATTRIB (arg_info) == ST_call_st)
             && (NODE_TYPE (arg_node) == N_st))) {
@@ -168,7 +172,7 @@ BLKCOxt (node *arg_node, node *arg_info)
         if (NODE_TYPE (arg_node) == N_st) {
             INFO_BLKCO_CURRENTATTRIB (arg_info) = ST_call_st;
         } else if (NODE_TYPE (arg_node) == N_mt) {
-            INFO_BLKCO_CURRENTATTRIB (arg_info) = ST_call_mt;
+            INFO_BLKCO_CURRENTATTRIB (arg_info) = ST_call_mt_master;
         } else {
             DBUG_ASSERT (0, ("this cannot be ..."));
         }
@@ -203,7 +207,7 @@ BLKCOfundef (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef), ("wrong type of arg_node"));
 
-    if ((FUNDEF_ATTRIB (arg_node) == ST_call_mt)
+    if ((FUNDEF_ATTRIB (arg_node) == ST_call_mt_master)
         || (FUNDEF_ATTRIB (arg_node) == ST_call_st)) {
         /* push current attribute, fetch actual attribute from fundtion */
         old_attrib = INFO_BLKCO_CURRENTATTRIB (arg_info);
