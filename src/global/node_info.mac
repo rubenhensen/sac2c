@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.145  1998/02/05 17:12:42  srs
+ * Changed refcnt_tab at N_post and N_pre.
+ * introduced wlf_tab (was fusion_tab).
+ * replaced wr_tab with unused2.
+ * changed several new WL tabs.
+ *
  * Revision 1.144  1998/01/28 19:39:25  dkr
  * nnode[N_Ngenerator] is now 4 instead of 6
  *
@@ -472,11 +478,11 @@
 */
 
 /*   Node_name   dbug-string   imp_tab       flat_tab      print_tab     type_tab
- *                             opt_tab       dcr_tab       wr_tab        free_tab
+ *                             opt_tab       dcr_tab       unused2       free_tab
  *                             cf_tab        refcnt_tab    comp_tab      lir_tab
  *                             dup_tab       inline_tab    unroll_tab    lir_mov_tab
- *                             idx_tab       unswitch_tab  fusion_tab    ae_tab
- *                             writesib_tab  obj_tab       impltyp_tab   objinit_tab
+ *                             idx_tab       unswitch_tab  wlf_tab       ae_tab
+ *                             writesib_tab  obj_tab       impltype_tab  objinit_tab
  *                             analy_tab     checkdec_tab  writedec_tab  unique_tab
  *                             rmvoid_tab    precomp_tab   active_tab    readsib_tab
  *                             unused        cse_tab       dfr_tab       o2nWith_tab nnode
@@ -691,13 +697,13 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_post, "N_post", TravSons, TravSons, PrintPost, TCunaryOp, OPTpp, TravSons,
-       TravSons, FreePost, TravSons, TravSons, TravSons, TravSons, DupIIds, TravSons,
+       TravSons, FreePost, TravSons, RCprepost, TravSons, TravSons, DupIIds, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_pre, "N_pre", TravSons, TravSons, PrintPre, TCunaryOp, OPTpp, TravSons, TravSons,
-       FreePre, TravSons, TravSons, TravSons, TravSons, DupIIds, TravSons, TravSons,
+       FreePre, TravSons, RCprepost, TravSons, TravSons, DupIIds, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, 1),
@@ -789,37 +795,37 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   NIF (N_Nwith, "N_Nwith", TravSons, FltnNwith, PrintNWith, TravSons, TravSons, TravSons,
        TravSons, FreeNWith, TravSons, RCNwith, CompNWith, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrintNWith, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, UNQNwith, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_Npart, "N_Npart", TravSons, FltnNpart, PrintNPart, TravSons, TravSons, TravSons,
        TravSons, FreeNPart, TravSons, RCNpart, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrintNPart, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
-  NIF (N_Nwithid, "N_Nwithid", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+  NIF (N_Nwithid, "N_Nwithid", TravSons, NoTrav, NoTrav, TravSons, TravSons, TravSons,
        TravSons, FreeNWithID, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, NoTrav, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 0),
 
-  NIF (N_Ngenerator, "N_Ngenerator", TravSons, FltnNgenerator, TravSons, TravSons,
-       TravSons, TravSons, TravSons, FreeNGenerator, TravSons, RCNgen, TravSons, TravSons,
+  NIF (N_Ngenerator, "N_Ngenerator", TravSons, FltnNgenerator, NoTrav, TravSons, TravSons,
+       TravSons, TravSons, FreeNGenerator, TravSons, RCNgen, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, NoTrav,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 4),
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 4),
 
-  NIF (N_Nwithop, "N_Nwithop", TravSons, FltnNwithop, TravSons, TravSons, TravSons,
+  NIF (N_Nwithop, "N_Nwithop", TravSons, FltnNwithop, NoTrav, TravSons, TravSons,
        TravSons, TravSons, FreeNWithOp, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, NoTrav,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 1),
 
-  NIF (N_Ncode, "N_Ncode", TravSons, FltnNcode, TravSons, TravSons, TravSons, TravSons,
+  NIF (N_Ncode, "N_Ncode", TravSons, FltnNcode, NoTrav, TravSons, TravSons, TravSons,
        TravSons, FreeNCode, TravSons, RCNcode, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, NoTrav, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
