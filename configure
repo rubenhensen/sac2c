@@ -3331,7 +3331,7 @@ echo $ECHO_N "checking for sbrk argument type... $ECHO_C" >&6
 include_file_list=`ls -1 /usr/include/*.h`
 sbrk_types=`for name in $include_file_list; do grep sbrk $name 2>/dev/null; done`
 sbrk_types=`echo "$sbrk_types" | sed -e 's/[A-Za-z0-9 _*]*([ ]*//g' | sed -e 's/)[A-Za-z0-9_* ;]*//g' | sed -e 's/ [A-Za-z0-9_* ]*//g'`
- for name in "$sbrk_types"; do
+ for name in $sbrk_types; do
  cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"

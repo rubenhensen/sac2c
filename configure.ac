@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.10  2003/03/21 16:41:37  sah
+dnl updated sbrk detection
+dnl
 dnl Revision 1.9  2003/03/21 15:53:04  sah
 dnl added handling of platform
 dnl specific compiler flags
@@ -147,7 +150,7 @@ AC_MSG_CHECKING(for sbrk argument type)
 include_file_list=`ls -1 /usr/include/*.h`
 sbrk_types=`for name in $include_file_list; do grep sbrk $name 2>/dev/null; done`
 [sbrk_types=`echo "$sbrk_types" | sed -e 's/[A-Za-z0-9 _*]*([ ]*//g' | sed -e 's/)[A-Za-z0-9_* ;]*//g' | sed -e 's/ [A-Za-z0-9_* ]*//g'` ]
-[ for name in "$sbrk_types"; do ]
+[ for name in $sbrk_types; do ]
  AC_TRY_COMPILE([#include <unistd.h>],[sbrk(($name) 0)],break,name=none)
 [ done ]
 
