@@ -1,8 +1,11 @@
 Makefile
+cleanup_decls.h
 flatten.c
 flatten.h
 fun2lac.c
 fun2lac.h
+insert_vardec.c
+insert_vardec.h
 lac2fun.c
 lac2fun.h
 while2do.c
