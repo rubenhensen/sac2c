@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/21 13:59:26  cg
+ * Bug fixed in tracing fold with-loops in multithreaded execution.
+ *
  * Revision 3.1  2000/11/20 18:02:22  sacbase
  * new release made
  *
@@ -136,26 +139,37 @@ extern void SAC_TR_DecHiddenMemcnt (int size);
 
 #if SAC_DO_TRACE_MT
 
-typedef enum { FOLD_int, FOLD_float, FOLD_double, FOLD_array, FOLD_hidden } foldres_t;
+typedef enum {
+    SAC_TR_foldres_int,
+    SAC_TR_foldres_float,
+    SAC_TR_foldres_double,
+    SAC_TR_foldres_array,
+    SAC_TR_foldres_array_rc,
+    SAC_TR_foldres_hidden
+} SAC_TR_foldres_t;
 
 #define SAC_TR_MT_PRINT(msg) SAC_TR_PRINT (msg)
 
 #define SAC_TR_MT_PRINT_FOLD_RESULT(type, accu_var, msg)                                 \
     {                                                                                    \
-        switch (FOLD_##type) {                                                           \
-        case FOLD_int:                                                                   \
+        const SAC_TR_foldres_t SAC_TR_foldres = SAC_TR_foldres_##type;                   \
+        switch (SAC_TR_foldres) {                                                        \
+        case SAC_TR_foldres_int:                                                         \
             SAC_TR_MT_PRINT ((msg " (int) %d", accu_var));                               \
             break;                                                                       \
-        case FOLD_float:                                                                 \
+        case SAC_TR_foldres_float:                                                       \
             SAC_TR_MT_PRINT ((msg " (float) %.15g", accu_var));                          \
             break;                                                                       \
-        case FOLD_double:                                                                \
+        case SAC_TR_foldres_double:                                                      \
             SAC_TR_MT_PRINT ((msg " (double) %.15g", accu_var));                         \
             break;                                                                       \
-        case FOLD_array:                                                                 \
+        case SAC_TR_foldres_array:                                                       \
             SAC_TR_MT_PRINT ((msg " (array) %p", accu_var));                             \
             break;                                                                       \
-        case FOLD_hidden:                                                                \
+        case SAC_TR_foldres_array_rc:                                                    \
+            SAC_TR_MT_PRINT ((msg " (array) %p", accu_var));                             \
+            break;                                                                       \
+        case SAC_TR_foldres_hidden:                                                      \
             SAC_TR_MT_PRINT ((msg " (hidden)"));                                         \
             break;                                                                       \
         }                                                                                \
