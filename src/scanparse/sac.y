@@ -3,6 +3,12 @@
 /*
  *
  * $Log$
+ * Revision 1.167  1999/01/07 10:47:46  cg
+ * User-defined overloadings of primitive functions may now
+ * have a different number of arguments than the primitive ones.
+ * Key word 'all' may now be used as function name in function
+ * applications. This is required for standard module Array.
+ *
  * Revision 1.166  1998/12/02 16:25:33  cg
  * Real function names for overloaded primitive operations are now
  * generated in the yacc-file rather than in the lex file.
@@ -340,7 +346,7 @@ static file_type file_kind = F_prog;
              typedefs, typedef, defs, def2, def3, def4, fundef2,
              objdefs, objdef, exprblock, exprblock2,
              assign, assigns, assignblock, letassign, 
-             selassign, forassign, assignsOPTret, optassignblock, optelse,
+             selassign, forassign, assignsOPTret, wlassignblock, optelse,
              exprsNOar, exprNOdot, exprORdot, exprNOar, exprNOnum,
              expr, expr_main, expr_ap, expr_ar, expr_num, exprs,
              Ngenerator, Nsteps, Nwidth, Nwithop, Ngenidx,
@@ -348,7 +354,7 @@ static file_type file_kind = F_prog;
              moddec, expdesc, expdesc2, expdesc3, expdesc4, fundecs, fundec,
              exptypes, exptype, objdecs, objdec, evimport, modheader,
              imptypes, imptype,import, imports, impdesc, impdesc2, impdesc3,
-             impdesc4, foldfun,
+             impdesc4, foldfun, opt_arguments,
              sib, sibtypes, sibtype, sibfuns, sibfun, sibfunbody,
              sibobjs, sibobj, sibpragmas, sibarglist,
              sibargs, sibarg, sibfunlist, sibfunlistentry,
@@ -1273,7 +1279,7 @@ prf_name : AND        { $$=StringCopy(prf_name_str[F_and]); }
          | PRF_MIN    { $$=StringCopy(prf_name_str[F_min]); }
          | PRF_MAX    { $$=StringCopy(prf_name_str[F_max]); }
          | ALL        { $$=StringCopy("all");
-                        /* necessary because all function from array library conflicts
+                        /* necessary because function 'all()' from array library conflicts
                            with key word. */}
         ;
 
@@ -1430,15 +1436,20 @@ exprblock2: typeNOudt_arr ids SEMIC exprblock2
           ;
 
 
-optassignblock: assignblock
-                {
-                  $$ = $1;
-                }
-              |
-                {
-                  $$ = MAKE_EMPTY_BLOCK();
-                }
-              ;
+wlassignblock: BRACE_L {$<cint>$=linenum;} assigns BRACE_R 
+               { if($3==NULL) {
+                   $$=MAKE_EMPTY_BLOCK();
+                 }
+                 else {
+                   $$=MakeBlock( $3, NULL);
+                 }
+                 NODE_LINE($$)=$<cint>2;
+               } 
+             |
+               {
+                 $$ = MAKE_EMPTY_BLOCK();
+               }
+             ;
 
 assignblock: SEMIC     
              { $$=MAKE_EMPTY_BLOCK( );
@@ -1657,22 +1668,74 @@ expr_ar: SQBR_L {$<cint>$=linenum;} exprsNOar SQBR_R
          }
        ;
 
-expr_ap: id BRACKET_L {$<cint>$=linenum;} exprs BRACKET_R
+expr_ap: id BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
          { $$=MakeAp( $1, NULL, $4);
            NODE_LINE($$)=$<cint>3;
          }
-       | id BRACKET_L BRACKET_R
-         { $$=MakeAp($1, NULL, NULL);
-         }
-       | id COLON id  BRACKET_L {$<cint>$=linenum;} exprs BRACKET_R
+       | id COLON id  BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
           { $$=MakeAp( $3, $1, $6);
             NODE_LINE($$)=$<cint>5;
           }
-       | id COLON id BRACKET_L BRACKET_R
-         { $$=MakeAp($3, $1, NULL);
+       | monop BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
+         { 
+           if (CountArguments($4)==1) {
+             $$=MakePrf($1, $4);
+           }
+           else {
+             $$=MakeAp(StringCopy(prf_name_str[$1]), NULL, $4);
+           }
+           NODE_LINE($$)=$<cint>3;
+         }
+       | id COLON monop  BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
+         { 
+           $$=MakeAp(StringCopy(prf_name_str[$3]), $1, $6);
+           NODE_LINE($$)=$<cint>5;
+         }
+       | binop BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
+         { 
+           if (CountArguments($4)==2) {
+             $$=MakePrf($1, $4);
+           }
+           else {
+             $$=MakeAp(StringCopy(prf_name_str[$1]), NULL, $4);
+           }
+           NODE_LINE($$)=$<cint>3;
+         }
+       | id COLON binop  BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
+         { 
+           $$=MakeAp(StringCopy(prf_name_str[$3]), $1, $6);
+           NODE_LINE($$)=$<cint>5;
+         }
+       | triop BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
+         { 
+           if (CountArguments($4)==3) {
+             $$=MakePrf($1, $4);
+           }
+           else {
+             $$=MakeAp(StringCopy(prf_name_str[$1]), NULL, $4);
+           }
+           NODE_LINE($$)=$<cint>3;
+         }
+       | id COLON triop  BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
+         { 
+           $$=MakeAp(StringCopy(prf_name_str[$3]), $1, $6);
+           NODE_LINE($$)=$<cint>5;
+         }
+       | ALL BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
+         { 
+           $$=MakeAp(StringCopy("all"), NULL, $4);
+           NODE_LINE($$)=$<cint>3;
+         }
+       | id COLON ALL  BRACKET_L {$<cint>$=linenum;} opt_arguments BRACKET_R
+         { 
+           $$=MakeAp(StringCopy("all"), $1, $6);
+           NODE_LINE($$)=$<cint>5;
          }
        ;
 
+opt_arguments: exprs   { $$=$1; }
+            |          { $$=NULL; }
+            ;
 
 expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
          | id COLON id  { $$=MakeId( $3, $1, ST_regular); }
@@ -1711,21 +1774,6 @@ expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
                         NULL)) );
              NODE_LINE($$) = NODE_LINE( $1);
            }
-         | monop BRACKET_L expr BRACKET_R 
-           { $$=MakePrf( $1,
-                  MakeExprs( $3,
-                    NULL));
-           }
-         | binop BRACKET_L expr COMMA expr BRACKET_R 
-           { $$=MAKE_BIN_PRF( $1, $3, $5);
-           }
-         | triop BRACKET_L expr COMMA expr COMMA expr BRACKET_R 
-           { $$=MakePrf( $1, 
-                  MakeExprs( $3,
-                    MakeExprs( $5,
-                      MakeExprs( $7,
-                        NULL))));
-           }
          | expr AND expr     { $$=MAKE_BIN_PRF( F_and,$1,$3); }
          | expr OR expr      { $$=MAKE_BIN_PRF( F_or ,$1,$3); }
          | expr EQ expr      { $$=MAKE_BIN_PRF( F_eq ,$1,$3); }
@@ -1753,7 +1801,7 @@ expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
          | string                    { $$=string2array($1);        }
          | wlcomp_pragma_local
            NWITH {$<cint>$=linenum;} BRACKET_L Ngenerator BRACKET_R
-           optassignblock Nwithop
+           wlassignblock Nwithop
            { /*
               * the tricky part about this rule is that $8 (an N_Nwithop node)
               * carries the goal-expression of the With-Loop, i.e., the "N-expr"
@@ -1859,7 +1907,7 @@ generator: exprNOdot  LE id LE exprNOdot
             }
         ;
 
-conexpr: assignblock GENARRAY BRACKET_L expr COMMA {$$=MakeGenarray($4, NULL);}
+conexpr: wlassignblock GENARRAY BRACKET_L expr COMMA {$$=MakeGenarray($4, NULL);}
          expr BRACKET_R
            { node *ret;
 
@@ -1870,22 +1918,7 @@ conexpr: assignblock GENARRAY BRACKET_L expr COMMA {$$=MakeGenarray($4, NULL);}
              GENARRAY_BODY($$)=Append( $1, ret);
              
            }
-         | GENARRAY BRACKET_L expr COMMA {$$=MakeGenarray($3, NULL);}
-           expr BRACKET_R
-           { node *ret;
-
-             ret=MakeReturn( MakeExprs($6, NULL) );
-             RETURN_INWITH(ret)=1;
-             
-             $$=$<node>5;
-             GENARRAY_BODY($$)=MakeBlock(
-                                 MakeAssign( ret, NULL),
-                                 NULL );
-
-           }
-
-
-         | assignblock MODARRAY BRACKET_L expr COMMA id COMMA
+         | wlassignblock MODARRAY BRACKET_L expr COMMA id COMMA
            {$$=MakeModarray($4, NULL);} expr BRACKET_R
            { node *ret;
 
@@ -1897,21 +1930,7 @@ conexpr: assignblock GENARRAY BRACKET_L expr COMMA {$$=MakeGenarray($4, NULL);}
              MODARRAY_ID($$)=$6;
              
            }
-         | MODARRAY BRACKET_L expr COMMA id COMMA {$$=MakeModarray($3, NULL);}
-           expr BRACKET_R
-           { node *ret;
-
-             $$=$<node>7;
-             ret=MakeReturn( MakeExprs($8, NULL) );
-             RETURN_INWITH(ret)=1;
-             
-             MODARRAY_BODY($$)=MakeBlock(
-                                 MakeAssign( ret, NULL),
-                                 NULL );
-             MODARRAY_ID($$)=$5;
-           }
-
-         | assignblock FOLD BRACKET_L foldop COMMA expr BRACKET_R
+         | wlassignblock FOLD BRACKET_L foldop COMMA expr BRACKET_R
            { node *ret;
 
              $$=MakeFoldprf($4, NULL, NULL);
@@ -1920,20 +1939,7 @@ conexpr: assignblock GENARRAY BRACKET_L expr COMMA {$$=MakeGenarray($4, NULL);}
              FOLDPRF_BODY($$)=Append( $1, ret);
 
            }
-         | FOLD BRACKET_L foldop COMMA expr BRACKET_R
-           { node *ret;
-
-             ret=MakeReturn( MakeExprs($5, NULL) );
-             RETURN_INWITH(ret)=1;
-             
-             $$=MakeFoldprf($3,
-                            MakeBlock( MakeAssign( ret, NULL),
-                                       NULL ),
-                            NULL);
-
-           }
-
-         | assignblock FOLD BRACKET_L foldop COMMA expr COMMA expr
+         | wlassignblock FOLD BRACKET_L foldop COMMA expr COMMA expr
            BRACKET_R
            { node *ret;
 
@@ -1942,20 +1948,7 @@ conexpr: assignblock GENARRAY BRACKET_L expr COMMA {$$=MakeGenarray($4, NULL);}
              RETURN_INWITH(ret)=1;
              FOLDPRF_BODY($$)=Append($1, ret);
            }
-         | FOLD BRACKET_L foldop COMMA expr COMMA expr BRACKET_R
-           { node *ret;
-
-             ret=MakeReturn( MakeExprs($7, NULL) );
-             RETURN_INWITH(ret)=1;
-             
-             $$=MakeFoldprf($3,
-                            MakeBlock( MakeAssign( ret, NULL),
-                                       NULL ),
-                            $5);
-
-           }
-
-         | assignblock FOLD BRACKET_L foldfun expr COMMA expr 
+         | wlassignblock FOLD BRACKET_L foldfun expr COMMA expr 
            BRACKET_R
            { node *ret;
 
@@ -1966,19 +1959,6 @@ conexpr: assignblock GENARRAY BRACKET_L expr COMMA {$$=MakeGenarray($4, NULL);}
               FOLDFUN_NEUTRAL($$)= $5;
 
            }
-         | FOLD BRACKET_L foldfun expr COMMA expr BRACKET_R
-           { node *ret;
-
-             $$=$<node>3;
-             ret=MakeReturn( MakeExprs($6, NULL) );
-             RETURN_INWITH(ret)=1;
-             
-             FOLDFUN_BODY($$)= MakeBlock( MakeAssign( ret, NULL),
-                                       NULL );
-             FOLDFUN_NEUTRAL($$)= $4;
-
-           }
-
          ;
 
 
@@ -2670,6 +2650,19 @@ resources: ID EQUALS string resources
 int yyerror(char *errname)
 {
   ABORT(linenum,("%s at '%s`", errname, yytext));
+}
+
+
+int CountArguments(node *args)
+{
+  int res=0;
+  
+  while (args!=NULL){
+    res++;
+    args=EXPRS_NEXT(args);
+  }
+  
+  return(res);
 }
 
 
