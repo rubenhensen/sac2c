@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.27  1995/05/29 12:53:05  hw
+ * Revision 1.28  1995/05/29 13:50:57  hw
+ * calls of functions in condition of if-then-else and in
+ *  termination condition of loops will be put out of them
+ *
+ * Revision 1.27  1995/05/29  12:53:05  hw
  * bug fixed in FltnExprs (leading casts will be ignored )
  *
  * Revision 1.26  1995/05/29  10:31:04  hw
@@ -132,6 +136,7 @@
 #define AP 1
 #define RET 2
 #define LOOP 3
+#define COND 4
 
 #define STACK_SIZE 1000
 #define PUSH(old, new, n)                                                                \
@@ -467,7 +472,8 @@ FltnExprs (node *arg_node, node *arg_info)
      */
     switch (arg_info->info.cint) {
     case LOOP:
-        abstract = (tmp_arg->nodetype == N_ap);
+    case COND:
+        abstract = ((tmp_arg->nodetype == N_ap) || (tmp_arg->nodetype == N_prf));
         break;
     case RET:
         abstract = ((tmp_arg->nodetype == N_num) || (tmp_arg->nodetype == N_float)
@@ -559,15 +565,28 @@ FltnExprs (node *arg_node, node *arg_info)
 node *
 FltnCond (node *arg_node, node *arg_info)
 {
-    int i;
-    node *info_node;
+    int i, old_tag;
+    node *info_node, *tmp_exprs;
 
     DBUG_ENTER ("FltnCond");
 
     info_node = MakeNode (N_info);
     info_node->nnode = 1;
+    old_tag = arg_info->info.cint; /* store tag (used in FltnExprs) */
+    arg_info->info.cint = COND;
 
-    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+    /* create a temporary N_exprs node to flatten the condition with FltnExprs
+     */
+    tmp_exprs = MakeNode (N_exprs);
+    tmp_exprs->node[0] = arg_node->node[0];
+    tmp_exprs->nnode = 1;
+
+    tmp_exprs = Trav (tmp_exprs, arg_info);
+    arg_node->node[0] = tmp_exprs->node[0]; /* set node of termination condition
+                                             * correctly
+                                             */
+    arg_info->info.cint = old_tag;          /* restore tag */
+
     for (i = 1; i < arg_node->nnode; i++) {
         info_node->node[0] = NULL;
         info_node->node[1] = arg_info->node[1]; /* list of assigns that have to be
