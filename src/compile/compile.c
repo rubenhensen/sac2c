@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/04/11 15:11:55  hw
+ * Revision 1.11  1995/04/13 10:04:09  hw
+ * compilation of primitive function 'cat' inserted, but not completly
+ *
+ * Revision 1.10  1995/04/11  15:11:55  hw
  * compilation of N_fundef, N_ap, N_return done
  *
  * Revision 1.9  1995/04/07  11:30:18  hw
@@ -554,7 +557,7 @@ node *
 CompPrf (node *arg_node, node *arg_info)
 {
     node *array, *scalar, *tmp, *res, *res_ref, *n_node, *icm_arg, *exprs, *prf_id_node,
-      *type_id_node, *arg1, *arg2, *n_node1, *n_node2, *first_assign, *next_assign,
+      *type_id_node, *arg1, *arg2, *arg3, *n_node1, *n_node2, *first_assign, *next_assign,
       *last_assign, *old_arg_node, *length_node, *tmp_array1, *tmp_array2, *dim_node;
     simpletype s_type;
     int is_SxA = 0, n_elems = 0, is_drop = 0, array_is_const = 0, dim;
@@ -1056,7 +1059,64 @@ CompPrf (node *arg_node, node *arg_info)
             FREE_TREE (old_arg_node);
             break;
         }
+        case F_cat: {
+            arg1 = arg_node->node[0]->node[0];
+            arg2 = arg_node->node[0]->node[1]->node[0];
+            arg3 = arg_node->node[0]->node[1]->node[1]->node[0];
+            MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+            /* compute basic_type of result */
+            GET_BASIC_TYPE (s_type, arg_info->IDS_NODE->TYPES);
+            MAKENODE_ID (type_id_node, type_string[s_type]);
+            /* store refcount of res as N_num */
+            MAKENODE_NUM (res_ref, arg_info->IDS_REFCNT);
 
+            if ((N_id == arg2->nodetype) && (N_id == arg3->nodetype)) {
+                GET_DIM (dim, arg2->IDS_NODE);
+                MAKENODE_NUM (dim_node, dim);
+                BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node, res);
+                SET_VARS_FOR_MORE_ICMS;
+                CREATE_5_ARY_ICM (next_assign, "ND_KD_CAT_SxAxA_A", dim_node, arg2, arg3,
+                                  res, arg1);
+                APPEND_ASSIGNS (first_assign, next_assign);
+                MAKENODE_NUM (n_node, 1);
+                if (1 >= arg2->IDS_REFCNT) {
+                    DEC_RC_FREE_ND (arg2, n_node);
+                } else {
+                    DEC_RC_ND (arg2, n_node);
+                }
+                if (1 >= arg3->IDS_REFCNT) {
+                    DEC_RC_FREE_ND (arg3, n_node);
+                } else {
+                    DEC_RC_ND (arg3, n_node);
+                }
+                INC_RC_ND (res, res_ref);
+                INSERT_ASSIGN;
+
+            } else {
+                if ((N_array == arg2->nodetype) && (N_array == arg3->nodetype)) {
+                    GET_DIM (dim, res->IDS_NODE);
+                    if (1 == dim) {
+                        n_elems = res->IDS_NODE->SHP[0];
+                        MAKENODE_NUM (n_node, n_elems);
+                        BIN_ICM_REUSE (arg_info->node[1], "ND_ALLOC_ARRAY", type_id_node,
+                                       res);
+                        SET_VARS_FOR_MORE_ICMS;
+                        CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY",
+                                          type_id_node, res, n_node);
+                        icm_arg->node[1] = arg2->node[0];
+                        icm_arg->nnode = 2;
+                        do {
+                            icm_arg = icm_arg->node[1];
+                        } while (2 == icm_arg->nnode);
+                        icm_arg->node[1] = arg3->node[0];
+                        icm_arg->nnode = 2;
+                        APPEND_ASSIGNS (first_assign, next_assign);
+                        INSERT_ASSIGN;
+                    }
+                }
+            }
+            break;
+        }
         default:
             /*   DBUG_ASSERT(0,"wrong prf"); */
             break;
