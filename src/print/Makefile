@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.30  1998/06/23 11:42:08  cg
+# make deps done
+#
 # Revision 1.29  1998/06/18 13:28:22  cg
 # added ../concurrent as include directory
 #
@@ -107,11 +110,10 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 convert.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-convert.o: /usr/include/stdlib.h /usr/include/math.h ../global/tree.h
-convert.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
-convert.o: ../global/Error.h /usr/include/stdio.h /usr/include/sys/va_list.h
-convert.o: ../global/globals.h ../global/internal_lib.h ../../inc/dbug.h
-convert.o: convert.h ../global/type_info.mac
+convert.o: /usr/include/stdlib.h /usr/include/math.h ../global/internal_lib.h
+convert.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/sys/va_list.h
+convert.o: ../global/tree_basic.h ../global/types.h ../global/tree_compound.h
+convert.o: ../global/Error.h ../global/globals.h ../global/type_info.mac
 print.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 print.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 print.o: /usr/include/string.h ../global/tree.h ../global/types.h
@@ -121,4 +123,5 @@ print.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h convert.h
 print.o: ../optimize/DataFlowMask.h ../optimize/optimize.h ../global/free.h
 print.o: /usr/include/malloc.h ../modules/filemgr.h
 print.o: ../compile/gen_startup_code.h ../optimize/WithloopFolding.h
-print.o: ../compile/icm.data ../global/prf_node_info.mac
+print.o: ../concurrent/scheduling.h ../compile/icm.data
+print.o: ../global/prf_node_info.mac

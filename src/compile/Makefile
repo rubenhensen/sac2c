@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.64  1998/06/23 11:42:12  cg
+# make deps done
+#
 # Revision 1.63  1998/06/18 13:45:21  cg
 # added ../concurrent as include directory
 #
@@ -288,6 +291,16 @@ Old2NewWith.o: ../global/internal_lib.h ../global/traverse.h
 Old2NewWith.o: ../typecheck/typecheck.h ../global/free.h ../../inc/dbug.h
 Old2NewWith.o: ../global/my_debug.h /usr/include/malloc.h
 Old2NewWith.o: ../optimize/DupTree.h
+ReuseWithArrays.o: ../../inc/dbug.h /usr/include/stdio.h
+ReuseWithArrays.o: /usr/include/sys/feature_tests.h
+ReuseWithArrays.o: /usr/include/sys/va_list.h ../global/types.h
+ReuseWithArrays.o: ../global/free.h ../global/my_debug.h
+ReuseWithArrays.o: /usr/include/malloc.h ../global/internal_lib.h
+ReuseWithArrays.o: ../global/tree_basic.h ../global/tree_compound.h
+ReuseWithArrays.o: ../global/Error.h /usr/include/string.h
+ReuseWithArrays.o: /usr/include/stdlib.h ../global/globals.h
+ReuseWithArrays.o: ../global/traverse.h ../optimize/DataFlowMask.h
+ReuseWithArrays.o: ../psi-opt/index.h
 compile.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 compile.o: /usr/include/string.h /usr/include/limits.h
 compile.o: /usr/include/sys/isa_defs.h ../global/tree.h ../global/types.h
@@ -297,7 +310,8 @@ compile.o: ../global/globals.h ../global/internal_lib.h ../print/print.h
 compile.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
 compile.o: ../optimize/DataFlowMask.h compile.h ../print/convert.h
 compile.o: ../optimize/DupTree.h ../refcount/refcount.h
-compile.o: ../typecheck/typecheck.h ../global/free.h /usr/include/malloc.h
+compile.o: ../typecheck/typecheck.h ReuseWithArrays.h ../global/free.h
+compile.o: /usr/include/malloc.h ../concurrent/scheduling.h
 gen_startup_code.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 gen_startup_code.o: /usr/include/sys/va_list.h /usr/include/string.h
 gen_startup_code.o: ../../inc/dbug.h ../global/globals.h ../global/types.h
@@ -313,30 +327,32 @@ icm2c.o: icm.data icm_icm2c.c
 icm2c_mt.o: /usr/include/malloc.h /usr/include/stdio.h
 icm2c_mt.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
 icm2c_mt.o: /usr/include/string.h icm2c_basic.h ../../inc/dbug.h
-icm2c_mt.o: ../global/my_debug.h ../print/convert.h ../global/tree.h
-icm2c_mt.o: ../global/types.h ../global/tree_basic.h
-icm2c_mt.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdlib.h
-icm2c_mt.o: ../global/globals.h ../global/internal_lib.h ../print/print.h
+icm2c_mt.o: ../global/my_debug.h ../print/convert.h ../global/types.h
+icm2c_mt.o: ../global/globals.h ../print/print.h ../global/tree.h
+icm2c_mt.o: ../global/tree_basic.h ../global/tree_compound.h
+icm2c_mt.o: ../global/Error.h /usr/include/stdlib.h ../global/internal_lib.h
 icm2c_mt.o: ../scanparse/scnprs.h ../global/resource.h ../scanparse/y.tab.h
-icm2c_mt.o: ../global/traverse.h icm_comment.c icm.data icm_trace.c
+icm2c_mt.o: ../global/traverse.h compile.h ../global/free.h icm_comment.c
+icm2c_mt.o: icm.data icm_trace.c
 icm2c_std.o: /usr/include/malloc.h /usr/include/stdio.h
 icm2c_std.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
 icm2c_std.o: /usr/include/ctype.h icm2c_basic.h ../../inc/dbug.h
 icm2c_std.o: ../global/my_debug.h ../../inc/main.h ../print/convert.h
-icm2c_std.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
+icm2c_std.o: ../global/types.h ../global/globals.h ../print/print.h
+icm2c_std.o: ../global/tree.h ../global/tree_basic.h
 icm2c_std.o: ../global/tree_compound.h ../global/Error.h
-icm2c_std.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
-icm2c_std.o: ../global/internal_lib.h ../print/print.h gen_startup_code.h
-icm2c_std.o: icm_comment.c icm.data icm_trace.c
+icm2c_std.o: /usr/include/string.h /usr/include/stdlib.h
+icm2c_std.o: ../global/internal_lib.h gen_startup_code.h icm_comment.c
+icm2c_std.o: icm.data icm_trace.c
 icm2c_wl.o: /usr/include/malloc.h /usr/include/stdio.h
 icm2c_wl.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
 icm2c_wl.o: icm2c_basic.h ../../inc/dbug.h ../global/my_debug.h
-icm2c_wl.o: ../../inc/main.h ../print/convert.h ../global/tree.h
-icm2c_wl.o: ../global/types.h ../global/tree_basic.h
-icm2c_wl.o: ../global/tree_compound.h ../global/Error.h /usr/include/string.h
-icm2c_wl.o: /usr/include/stdlib.h ../global/globals.h
-icm2c_wl.o: ../global/internal_lib.h ../print/print.h gen_startup_code.h
-icm2c_wl.o: icm_comment.c icm.data icm_trace.c
+icm2c_wl.o: ../../inc/main.h ../print/convert.h ../global/types.h
+icm2c_wl.o: ../global/globals.h ../print/print.h ../global/tree.h
+icm2c_wl.o: ../global/tree_basic.h ../global/tree_compound.h
+icm2c_wl.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
+icm2c_wl.o: ../global/internal_lib.h gen_startup_code.h icm_comment.c
+icm2c_wl.o: icm.data icm_trace.c
 icm_betest.o: icm.data
 icm_comment.o: icm.data
 icm_icm2c.o: icm.data
@@ -350,15 +366,17 @@ precompile.o: /usr/include/stdlib.h ../global/globals.h
 precompile.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 precompile.o: ../global/my_debug.h /usr/include/malloc.h ../print/convert.h
 precompile.o: ../global/traverse.h ../refcount/refcount.h
+precompile.o: ../optimize/DataFlowMask.h ../concurrent/scheduling.h
 precompile.o: ../optimize/DupTree.h ../typecheck/typecheck.h
+wlpragma_funs.o: ../../inc/dbug.h /usr/include/stdio.h
+wlpragma_funs.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
 wlpragma_funs.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
 wlpragma_funs.o: ../global/tree_compound.h ../global/Error.h
-wlpragma_funs.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-wlpragma_funs.o: /usr/include/sys/va_list.h /usr/include/string.h
-wlpragma_funs.o: /usr/include/stdlib.h ../global/globals.h
-wlpragma_funs.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
-wlpragma_funs.o: ../global/my_debug.h /usr/include/malloc.h
+wlpragma_funs.o: /usr/include/string.h /usr/include/stdlib.h
+wlpragma_funs.o: ../global/globals.h ../global/internal_lib.h
+wlpragma_funs.o: ../global/free.h ../global/my_debug.h /usr/include/malloc.h
 wlpragma_funs.o: ../optimize/DupTree.h wltransform.h wlpragma_funs.h
+wlpragma_funs.o: /usr/include/limits.h /usr/include/sys/isa_defs.h
 wltransform.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
 wltransform.o: ../global/tree_compound.h ../global/Error.h
 wltransform.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h

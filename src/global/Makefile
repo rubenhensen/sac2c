@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.66  1998/06/23 11:42:07  cg
+# make deps done
+#
 # Revision 1.65  1998/05/12 14:22:18  dkr
 # make deps done
 #
@@ -279,7 +282,8 @@ free.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 free.o: /usr/include/stdio.h /usr/include/sys/va_list.h ../../inc/dbug.h
 free.o: my_debug.h types.h tree.h tree_basic.h tree_compound.h Error.h
 free.o: /usr/include/string.h globals.h internal_lib.h traverse.h
-free.o: ../optimize/DataFlowMask.h free.h /usr/include/malloc.h
+free.o: ../optimize/DataFlowMask.h ../concurrent/scheduling.h free.h
+free.o: /usr/include/malloc.h
 globals.o: ../modules/filemgr.h /usr/include/stdio.h
 globals.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
 globals.o: types.h globals.h ../scanparse/scnprs.h resource.h
@@ -291,7 +295,7 @@ internal_lib.o: /usr/include/stdarg.h /usr/include/varargs.h
 internal_lib.o: /usr/include/sys/va_list.h /usr/include/ctype.h Error.h
 internal_lib.o: /usr/include/stdio.h types.h globals.h free.h
 internal_lib.o: ../../inc/dbug.h my_debug.h /usr/include/malloc.h
-internal_lib.o: internal_lib.h traverse.h
+internal_lib.o: internal_lib.h traverse.h tree_compound.h tree_basic.h
 main.o: ../../inc/main.h ../../inc/dbug.h /usr/include/stdio.h
 main.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h tree.h
 main.o: types.h tree_basic.h tree_compound.h Error.h /usr/include/string.h
@@ -303,13 +307,9 @@ main.o: resource.h ../scanparse/y.tab.h ../psi-opt/psi-opt.h
 main.o: ../modules/writesib.h ../modules/readsib.h ../modules/implicittypes.h
 main.o: ../objects/objinit.h ../modules/analysis.h ../modules/checkdec.h
 main.o: ../objects/objects.h ../objects/uniquecheck.h ../objects/rmvoidfun.h
-main.o: ../compile/wltransform.h ../concurrent/spmdregions.h
+main.o: ../compile/wltransform.h ../concurrent/concurrent.h
 main.o: ../compile/precompile.h ../compile/compile.h ../modules/cccall.h
 main.o: ../compile/Old2NewWith.h
-my_debug.o: tree.h types.h tree_basic.h tree_compound.h Error.h
-my_debug.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-my_debug.o: /usr/include/sys/va_list.h /usr/include/string.h
-my_debug.o: /usr/include/stdlib.h globals.h internal_lib.h ../print/convert.h
 my_debug.o: node_info.mac prf_node_info.mac type_info.mac
 resource.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 resource.o: /usr/include/stdio.h /usr/include/sys/va_list.h
@@ -332,12 +332,16 @@ traverse.o: ../modules/writesib.h ../modules/readsib.h
 traverse.o: ../modules/implicittypes.h ../objects/objinit.h
 traverse.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
 traverse.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
-traverse.o: ../refcount/refcount.h ../concurrent/spmdregions.h
-traverse.o: ../compile/wltransform.h ../compile/precompile.h
-traverse.o: ../compile/compile.h ../modules/cccall.h ../compile/Old2NewWith.h
-traverse.o: ../optimize/WithloopFolding.h ../optimize/WLT.h ../optimize/WLI.h
-traverse.o: ../optimize/WLF.h ../compile/gen_startup_code.h traverse.h
-traverse.o: node_info.mac
+traverse.o: ../refcount/refcount.h ../compile/wltransform.h
+traverse.o: ../compile/precompile.h ../compile/compile.h
+traverse.o: ../compile/ReuseWithArrays.h ../modules/cccall.h
+traverse.o: ../compile/Old2NewWith.h ../optimize/WithloopFolding.h
+traverse.o: ../optimize/WLT.h ../optimize/WLI.h ../optimize/WLF.h
+traverse.o: ../compile/gen_startup_code.h ../concurrent/scheduling.h
+traverse.o: ../concurrent/concurrent.h ../concurrent/spmd_init.h
+traverse.o: ../concurrent/spmd_opt.h ../concurrent/spmd_lift.h
+traverse.o: ../concurrent/sync_init.h ../concurrent/sync_opt.h
+traverse.o: ../concurrent/schedule.h traverse.h node_info.mac
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h tree.h types.h
 tree.o: tree_basic.h tree_compound.h Error.h /usr/include/stdio.h
 tree.o: /usr/include/sys/va_list.h /usr/include/string.h globals.h

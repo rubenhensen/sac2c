@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.15  1998/06/23 11:42:17  cg
+# make deps done
+#
 # Revision 1.14  1998/06/18 13:26:26  cg
 # added compilation of spmd_init.c spmd_opt.c spmd_lift.c sync_init.c
 # sync_opt.c sched.c scheduling.c
@@ -69,20 +72,41 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-scheduling.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-scheduling.o: /usr/include/varargs.h /usr/include/sys/va_list.h
-scheduling.o: ../global/types.h ../global/tree_basic.h
+concurrent.o: ../../inc/dbug.h /usr/include/stdio.h
+concurrent.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+concurrent.o: ../global/types.h ../global/tree_basic.h ../global/traverse.h
+concurrent.o: ../global/globals.h ../global/free.h ../global/my_debug.h
+concurrent.o: /usr/include/malloc.h ../global/internal_lib.h
+schedule.o: ../../inc/dbug.h /usr/include/stdio.h
+schedule.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+schedule.o: ../global/types.h ../global/tree_basic.h ../global/traverse.h
+schedule.o: scheduling.h
+scheduling.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+scheduling.o: /usr/include/sys/va_list.h /usr/include/string.h
+scheduling.o: /usr/include/varargs.h ../global/types.h ../global/tree_basic.h
 scheduling.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
-scheduling.o: /usr/include/stdio.h ../global/my_debug.h /usr/include/malloc.h
-scheduling.o: ../global/traverse.h ../global/Error.h /usr/include/stdlib.h
-scheduling.o: ../global/globals.h ../compile/precompile.h
-spmdregions.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
-spmdregions.o: ../global/tree_compound.h ../global/Error.h
-spmdregions.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-spmdregions.o: /usr/include/sys/va_list.h /usr/include/string.h
-spmdregions.o: /usr/include/stdlib.h ../global/globals.h
-spmdregions.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
-spmdregions.o: ../global/my_debug.h /usr/include/malloc.h
-spmdregions.o: ../global/traverse.h ../print/convert.h ../optimize/DupTree.h
-spmdregions.o: ../optimize/DataFlowMask.h ../optimize/optimize.h
-spmdregions.o: ../refcount/refcount.h ../typecheck/typecheck.h spmdregions.h
+scheduling.o: ../global/my_debug.h /usr/include/malloc.h ../global/traverse.h
+scheduling.o: ../global/Error.h /usr/include/stdlib.h ../global/globals.h
+scheduling.o: ../compile/precompile.h
+spmd_init.o: ../../inc/dbug.h /usr/include/stdio.h
+spmd_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+spmd_init.o: ../global/types.h ../global/tree_basic.h ../global/traverse.h
+spmd_init.o: ../optimize/DupTree.h ../optimize/DataFlowMask.h
+spmd_lift.o: ../../inc/dbug.h /usr/include/stdio.h
+spmd_lift.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+spmd_lift.o: ../global/types.h ../global/tree_basic.h
+spmd_lift.o: ../global/tree_compound.h ../global/Error.h
+spmd_lift.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
+spmd_lift.o: ../global/traverse.h ../optimize/DupTree.h
+spmd_lift.o: ../optimize/DataFlowMask.h ../typecheck/typecheck.h
+spmd_lift.o: ../refcount/refcount.h ../global/internal_lib.h
+spmd_opt.o: ../../inc/dbug.h /usr/include/stdio.h
+spmd_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+spmd_opt.o: ../global/types.h ../global/tree_basic.h ../global/traverse.h
+sync_init.o: ../../inc/dbug.h /usr/include/stdio.h
+sync_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+sync_init.o: ../global/types.h ../global/tree_basic.h ../global/traverse.h
+sync_init.o: ../optimize/DupTree.h ../optimize/DataFlowMask.h
+sync_opt.o: ../../inc/dbug.h /usr/include/stdio.h
+sync_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
+sync_opt.o: ../global/types.h ../global/tree_basic.h ../global/traverse.h

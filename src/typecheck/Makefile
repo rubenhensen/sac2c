@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.29  1998/06/23 11:42:09  cg
+# make deps done
+#
 # Revision 1.28  1998/06/04 17:21:59  dkr
 # changed target 'clean'
 #
@@ -122,6 +125,13 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
+gen_pseudo_fun.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
+gen_pseudo_fun.o: ../../inc/dbug.h /usr/include/stdio.h
+gen_pseudo_fun.o: /usr/include/sys/va_list.h ../global/types.h
+gen_pseudo_fun.o: ../global/tree_basic.h ../global/tree.h
+gen_pseudo_fun.o: ../global/tree_compound.h ../global/Error.h
+gen_pseudo_fun.o: /usr/include/string.h ../global/globals.h
+gen_pseudo_fun.o: ../global/internal_lib.h typecheck.h gen_pseudo_fun.h
 prim_fun.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 prim_fun.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
 prim_fun.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
@@ -139,7 +149,8 @@ typecheck.o: ../global/internal_lib.h ../print/print.h ../global/my_debug.h
 typecheck.o: ../../inc/dbug.h ../global/traverse.h typecheck.h
 typecheck.o: ../print/convert.h ../modules/import.h prim_fun.h
 typecheck.o: ../global/free.h /usr/include/malloc.h ../global/access_macros.h
-typecheck.o: ../optimize/DupTree.h typecheck_WL.h prim_fun_tt.mac
+typecheck.o: ../optimize/DupTree.h typecheck_WL.h gen_pseudo_fun.h
+typecheck.o: prim_fun_tt.mac
 typecheck_WL.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 typecheck_WL.o: /usr/include/stddef.h /usr/include/string.h ../global/tree.h
 typecheck_WL.o: ../global/types.h ../global/tree_basic.h

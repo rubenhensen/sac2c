@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.52  1998/06/23 11:42:10  cg
+# make deps done
+#
 # Revision 1.51  1998/06/17 14:47:39  sbs
 # further includes added 8-)
 #
@@ -243,12 +246,15 @@ ConstantFolding.o: ../print/print.h ../global/traverse.h
 ConstantFolding.o: ../typecheck/typecheck.h ../global/access_macros.h
 ConstantFolding.o: optimize.h DupTree.h LoopInvariantRemoval.h
 ConstantFolding.o: ConstantFolding.h
+DFMtest.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+DFMtest.o: /usr/include/sys/va_list.h DataFlowMask.h ../global/types.h
 DataFlowMask.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 DataFlowMask.o: /usr/include/sys/va_list.h /usr/include/string.h
 DataFlowMask.o: ../../inc/dbug.h ../global/types.h ../global/tree_basic.h
+DataFlowMask.o: ../global/tree_compound.h ../global/Error.h
+DataFlowMask.o: /usr/include/stdlib.h ../global/globals.h
 DataFlowMask.o: ../global/internal_lib.h ../global/free.h
 DataFlowMask.o: ../global/my_debug.h /usr/include/malloc.h
-DataFlowMask.o: ../global/globals.h
 DeadCodeRemoval.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 DeadCodeRemoval.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 DeadCodeRemoval.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
@@ -264,7 +270,7 @@ DupTree.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 DupTree.o: ../global/globals.h ../global/internal_lib.h ../global/traverse.h
 DupTree.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 DupTree.o: /usr/include/malloc.h ../typecheck/typecheck.h DupTree.h
-DupTree.o: DataFlowMask.h optimize.h Inline.h
+DupTree.o: DataFlowMask.h optimize.h Inline.h ../concurrent/scheduling.h
 Inline.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 Inline.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 Inline.o: ../global/globals.h ../global/types.h ../global/tree.h
