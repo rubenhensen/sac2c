@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/06/08 14:31:55  ktr
+ * - ReuseCandidates for With-loops are inferred.
+ * - ReuseCandidates of not matching type are discarded.
+ *
  * Revision 1.16  2004/06/07 12:39:33  ktr
  * Invalid assumptions about C evaluation order had been made which led
  * to nasty lockups on x86-Systems.
@@ -46,6 +50,9 @@
 #include "print.h"
 #include "ssa.h"
 #include "SSARefCount.h"
+#include "ReuseWithArrays.h"
+#include "DataFlowMask.h"
+#include "DataFlowMaskUtils.h"
 
 #define SSARC_DEVELOP
 
@@ -99,7 +106,7 @@ typedef struct RC_COUNTER {
 #define INFO_SSARC_INCLIST(n) ((rc_list_struct *)(n->node[1]))
 #define INFO_SSARC_ALLOCLIST(n) ((ar_list_struct *)(n->node[2]))
 #define INFO_SSARC_FUNDEF(n) (n->node[3])
-#define INFO_SSARC_WITHID(n) (n->node[4])
+/* #define INFO_SSARC_WITHID(n)     (n->node[4]) */
 #define INFO_SSARC_LHS_COUNT(n) (n->refcnt)
 #define INFO_SSARC_FUNAP(n) (n->node[5])
 #define INFO_SSARC_REUSELIST(n) ((node *)(n->dfmask[0]))
@@ -296,28 +303,27 @@ IncreaseEnv (node *arg_info, node *avis, int depth)
     AddEnv (arg_info, avis, depth, 1);
 }
 
-bool
-IsIndexVariable (node *avis, node *arg_info)
-{
-    node *wid;
-    ids *i;
+/* bool IsIndexVariable(node *avis, node *arg_info) { */
+/*   node *wid; */
+/*   ids *i; */
 
-    wid = INFO_SSARC_WITHID (arg_info);
-    if (wid == NULL)
-        return FALSE;
+/*   wid = INFO_SSARC_WITHID(arg_info); */
+/*   if (wid == NULL) */
+/*     return FALSE; */
 
-    if ((NWITHID_VEC (wid) != NULL) && (IDS_AVIS (NWITHID_VEC (wid)) == avis))
-        return TRUE;
+/*   if ((NWITHID_VEC(wid) != NULL) && */
+/*       (IDS_AVIS(NWITHID_VEC(wid)) == avis)) */
+/*     return TRUE; */
 
-    i = NWITHID_IDS (wid);
-    while (i != NULL) {
-        if (IDS_AVIS (i) == avis)
-            return TRUE;
-        i = IDS_NEXT (i);
-    }
+/*   i = NWITHID_IDS(wid); */
+/*   while(i != NULL) { */
+/*     if (IDS_AVIS(i) == avis) */
+/*       return TRUE; */
+/*     i = IDS_NEXT(i); */
+/*   } */
 
-    return FALSE;
-}
+/*   return FALSE; */
+/* } */
 
 int
 PopEnv (node *avis, int depth)
@@ -431,6 +437,78 @@ MakeAdjustRCFromRLS (rc_list_struct *rls, node *next_node)
     node *res = MakeAdjustRC (rls->avis, rls->count, next_node);
     Free (rls);
     return (res);
+}
+
+/**
+ *
+ * REUSE HELPER FUNCTIONS
+ *
+ ****************************************************************************/
+bool
+equalTypes (types *t1, types *t2)
+{
+    bool compare;
+    shpseg *shpseg1, *shpseg2;
+    int dim1, dim2;
+    int d;
+
+    DBUG_ENTER ("TypesAreEqual");
+
+    shpseg1 = Type2Shpseg (t1, &dim1);
+    shpseg2 = Type2Shpseg (t2, &dim2);
+
+    compare = ((dim1 >= 0) && (dim1 == dim2) && (GetBasetype (t1) == GetBasetype (t2)));
+
+    if (compare) {
+        for (d = 0; d < dim1; d++) {
+            if (SHPSEG_SHAPE (shpseg1, d) != SHPSEG_SHAPE (shpseg2, d)) {
+                compare = FALSE;
+            }
+        }
+    }
+
+    DBUG_RETURN (compare);
+}
+
+bool
+ReuseList_ContainsAvis (node *arg_node, node *avis)
+{
+    if (arg_node == NULL) {
+        return FALSE;
+    } else {
+        if (ID_AVIS (EXPRS_EXPR (arg_node)) == avis) {
+            return TRUE;
+        } else {
+            return ReuseList_ContainsAvis (EXPRS_NEXT (arg_node), avis);
+        }
+    }
+}
+
+node *
+filterReuseList (node *arg_node, node *arg_info, ids *ids)
+{
+    node *tmp;
+
+    if (arg_node == NULL) {
+        return (arg_node);
+    } else {
+        if (EXPRS_NEXT (arg_node) != NULL) {
+            EXPRS_NEXT (arg_node)
+              = filterReuseList (EXPRS_NEXT (arg_node), arg_info, ids);
+        }
+        if ((!DecList_Contains (arg_info, ID_AVIS (EXPRS_EXPR (arg_node)),
+                                AVIS_SSARC_DEFLEVEL (ID_AVIS (EXPRS_EXPR (arg_node)))))
+            || (!equalTypes (IDS_TYPE (ids), ID_TYPE (EXPRS_EXPR (arg_node))))
+            || (ReuseList_ContainsAvis (EXPRS_NEXT (arg_node),
+                                        ID_AVIS (EXPRS_EXPR (arg_node))))) {
+            tmp = EXPRS_NEXT (arg_node);
+            EXPRS_NEXT (arg_node) = NULL;
+            Free (arg_node);
+            return (tmp);
+        } else {
+            return (arg_node);
+        }
+    }
 }
 
 /**
@@ -569,7 +647,7 @@ SSARCfundef (node *fundef, node *arg_info)
     INFO_SSARC_FUNDEF (arg_info) = fundef;
     INFO_SSARC_DEPTH (arg_info) = 0;
     INFO_SSARC_MODE (arg_info) = rc_default;
-    INFO_SSARC_WITHID (arg_info) = NULL;
+    /*   INFO_SSARC_WITHID(arg_info ) = NULL; */
 
     /* Traverse args in order to initialize refcounting environment */
     if (FUNDEF_ARGS (fundef) != NULL)
@@ -822,10 +900,26 @@ SSARClet (node *arg_node, node *arg_info)
             ids = IDS_NEXT (ids);
         }
         break;
+
+    case rc_with:
+        if (NODE_TYPE (LET_EXPR (arg_node)) == N_Nwith2) {
+            /* Get Reuse Candidates */
+            ids = LET_IDS (arg_node);
+
+            while (ids != NULL) {
+                INFO_SSARC_REUSELIST (arg_info)
+                  = AppendExprs (INFO_SSARC_REUSELIST (arg_info),
+                                 GetReuseCandidates (LET_EXPR (arg_node),
+                                                     INFO_SSARC_FUNDEF (arg_info), ids));
+
+                ids = IDS_NEXT (ids);
+            }
+        }
+
+        /* Here is no break missing */
     case rc_prfap:
     case rc_const:
     case rc_array:
-    case rc_with:
         /* Add all lhs ids to inclist */
         ids = LET_IDS (arg_node);
 
@@ -837,13 +931,15 @@ SSARClet (node *arg_node, node *arg_info)
         while (ids != NULL) {
             AllocList_Insert (arg_info, IDS_AVIS (ids), CreateZeroVector (0, T_int),
                               CreateZeroVector (0, T_int),
-                              DupTree (INFO_SSARC_REUSELIST (arg_info)));
+                              filterReuseList (DupTree (INFO_SSARC_REUSELIST (arg_info)),
+                                               arg_info, ids));
 
             /* Subtraction needed because ALLOC initializes RC with 1 */
             IncList_Insert (arg_info, IDS_AVIS (ids),
                             PopEnv (IDS_AVIS (ids), INFO_SSARC_DEPTH (arg_info)) - 1);
             ids = IDS_NEXT (ids);
         }
+
         if (INFO_SSARC_REUSELIST (arg_info) != NULL)
             INFO_SSARC_REUSELIST (arg_info) = FreeTree (INFO_SSARC_REUSELIST (arg_info));
         break;
@@ -1036,41 +1132,40 @@ AllocateWithID (node *withid, node *arg_info)
 node *
 SSARCNwith (node *arg_node, node *arg_info)
 {
-    node *oldwithid;
+    /*   node *oldwithid; */
 
     DBUG_ENTER ("SSARCNwith");
 
-    oldwithid = INFO_SSARC_WITHID (arg_info);
+    /*   oldwithid = INFO_SSARC_WITHID( arg_info); */
 
     if (NODE_TYPE (arg_node) == N_Nwith) {
 
         INFO_SSARC_DEPTH (arg_info) += 1;
-        INFO_SSARC_WITHID (arg_info) = NWITH_WITHID (arg_node);
+        /*     INFO_SSARC_WITHID( arg_info) = NWITH_WITHID(arg_node); */
         NWITH_WITHID (arg_node) = Trav (NWITH_WITHID (arg_node), arg_info);
         if (NWITH_CODE (arg_node) != NULL)
             NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
         AllocateWithID (NWITH_WITHID (arg_node), arg_info);
         INFO_SSARC_DEPTH (arg_info) -= 1;
 
-        INFO_SSARC_RHS (arg_info) = rc_with;
         NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
         NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
     } else {
 
         INFO_SSARC_DEPTH (arg_info) += 1;
-        INFO_SSARC_WITHID (arg_info) = NWITH2_WITHID (arg_node);
+        /*     INFO_SSARC_WITHID( arg_info) = NWITH2_WITHID(arg_node); */
         NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
         if (NWITH2_CODE (arg_node) != NULL)
             NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
         AllocateWithID (NWITH2_WITHID (arg_node), arg_info);
         INFO_SSARC_DEPTH (arg_info) -= 1;
 
-        INFO_SSARC_RHS (arg_info) = rc_with;
         NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
         NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
     }
 
-    INFO_SSARC_WITHID (arg_info) = oldwithid;
+    /*   INFO_SSARC_WITHID( arg_info) = oldwithid; */
+    INFO_SSARC_RHS (arg_info) = rc_with;
 
     DBUG_RETURN (arg_node);
 }
