@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2002/07/19 13:27:49  sah
+ * added HDdot traversal function
+ *
  * Revision 3.81  2002/07/15 08:53:13  dkr
  * PREC2ap added
  *
@@ -2367,7 +2370,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       HDdot, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   /* ATTENTION !!!! N_ok has to be the last node declared here;
