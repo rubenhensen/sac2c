@@ -1,5 +1,9 @@
 /* *
  * $Log$
+ * Revision 1.28  2005/03/04 21:21:42  cg
+ * FUNDEF_USED counter etc removed.
+ * Handling of FUNDEF_EXT_ASSIGNS drastically simplified.
+ *
  * Revision 1.27  2005/02/20 19:43:42  mwe
  * trytospecialize changed
  *
@@ -974,27 +978,13 @@ TryToSpecializeFunction (node *fundef, node *ap_node, info *arg_info)
          */
 
         if (FUNDEF_ISLACFUN (fundef)) {
-            node *fun;
-
-            if (FUNDEF_USED (fundef) > 1) {
-                node *module;
-
-                module = TBmakeModule ("dummy", F_prog, NULL, NULL, NULL, NULL, NULL);
-                module = DUPcheckAndDupSpecialFundef (module, fundef,
-                                                      INFO_TUP_ASSIGN (arg_info));
-                fun = MODULE_FUNS (module);
-                MODULE_FUNS (module) = NULL;
-                module = FREEdoFreeNode (module);
-            } else {
-                fun = fundef;
-            }
 
             if (FUNDEF_ISDOFUN (fundef)) {
                 node *new_fun;
                 /*
                  * function is a loop function
                  */
-                new_fun = DUPdoDupTree (fun);
+                new_fun = DUPdoDupTree (fundef);
 
                 FUNDEF_ARGS (new_fun)
                   = AdjustSignatureToArgs (FUNDEF_ARGS (new_fun), args);
@@ -1010,23 +1000,22 @@ TryToSpecializeFunction (node *fundef, node *ap_node, info *arg_info)
 
                 if (new_fun != NULL) {
                     /*
-                     * it is possible to specialiaze loop function
+                     * it is possible to specialize loop function
                      */
 
                     DBUG_PRINT ("TUP", ("SUCCESS"));
 
-                    if (fundef != fun) {
-                        AppendFundef (fundef, fun);
-                        FUNDEF_NEXT (fun) = NULL;
-                        fundef = fun;
-                    } else {
-                    }
-
                     FUNDEF_ARGS (fundef)
-                      = AdjustSignatureToArgs (FUNDEF_ARGS (fun), args);
-                    fun = TryToDoTypeUpgrade (fun);
+                      = AdjustSignatureToArgs (FUNDEF_ARGS (fundef), args);
+                    fundef = TryToDoTypeUpgrade (fundef);
                     DBUG_PRINT ("TUP",
-                                ("loop-function %s specialized:", FUNDEF_NAME (fun)));
+                                ("loop-function %s specialized:", FUNDEF_NAME (fundef)));
+
+                    /*
+                     * cg remark:
+                     * Why not taking new_fun here?
+                     * Who de-allocates new_fun as it is no longer used?
+                     */
 
                     tup_fsp_expr++;
 
@@ -1037,20 +1026,15 @@ TryToSpecializeFunction (node *fundef, node *ap_node, info *arg_info)
                     DBUG_PRINT ("TUP", ("NO SUCCESS"));
                 }
             }
+
             if (FUNDEF_ISCONDFUN (fundef)) {
 
-                if (fundef != fun) {
-                    FUNDEF_ARGS (fun) = AdjustSignatureToArgs (FUNDEF_ARGS (fun), args);
-                    AppendFundef (fundef, fun);
-                    fundef = fun;
-                    FUNDEF_NEXT (fun) = NULL;
-                } else {
-                    FUNDEF_ARGS (fundef)
-                      = AdjustSignatureToArgs (FUNDEF_ARGS (fundef), args);
-                }
+                FUNDEF_ARGS (fundef) = AdjustSignatureToArgs (FUNDEF_ARGS (fundef), args);
+
                 tup_fsp_expr++;
 
-                DBUG_PRINT ("TUP", ("cond-function %s specialized:", FUNDEF_NAME (fun)));
+                DBUG_PRINT ("TUP",
+                            ("cond-function %s specialized:", FUNDEF_NAME (fundef)));
             }
         } else {
 

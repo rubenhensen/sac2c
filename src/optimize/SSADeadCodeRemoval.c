@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2005/03/04 21:21:42  cg
+ * FUNDEF_USED counter etc removed.
+ * Handling of FUNDEF_EXT_ASSIGNS drastically simplified.
+ *
  * Revision 1.27  2005/01/11 12:58:15  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -317,18 +321,10 @@ DCRarg (node *arg_node, info *arg_info)
         DBUG_PRINT ("DCR", ("remove arg %sa", ARG_NAME (arg_node)));
         /* remove this argument from all applications */
         letlist = NULL;
-        if (FUNDEF_EXT_ASSIGNS (INFO_DCR_FUNDEF (arg_info)) != NULL) {
-            /*
-             * there must be only ONE external reference to modify the
-             * functions signature
-             */
-            DBUG_ASSERT ((NODELIST_NEXT (FUNDEF_EXT_ASSIGNS (INFO_DCR_FUNDEF (arg_info)))
-                          == NULL),
-                         "there must be only ONE external reference to a special function"
-                         "to modify its signature");
+        if (FUNDEF_EXT_ASSIGN (INFO_DCR_FUNDEF (arg_info)) != NULL) {
             letlist = TCnodeListAppend (letlist,
-                                        ASSIGN_INSTR (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (
-                                          INFO_DCR_FUNDEF (arg_info)))),
+                                        ASSIGN_INSTR (
+                                          FUNDEF_EXT_ASSIGN (INFO_DCR_FUNDEF (arg_info))),
                                         NULL);
         }
         if (FUNDEF_INT_ASSIGN (INFO_DCR_FUNDEF (arg_info)) != NULL) {
@@ -499,16 +495,13 @@ DCRlet (node *arg_node, info *arg_info)
 
             /*
              * here we can modify the return values, because
-             * there is only on call to this special function
+             * there is only one call to this special function
              */
             INFO_DCR_REMRESULTS (arg_info) = TRUE;
             INFO_DCR_APFUNDEF (arg_info) = AP_FUNDEF (LET_EXPR (arg_node));
 
-            DBUG_PRINT ("DCR", ("FUNDEF_USED(%s) = %d",
-                                FUNDEF_NAME (AP_FUNDEF (LET_EXPR (arg_node))),
-                                FUNDEF_USED (AP_FUNDEF (LET_EXPR (arg_node)))));
-            DBUG_ASSERT ((FUNDEF_EXT_ASSIGNS (AP_FUNDEF (LET_EXPR (arg_node))) != NULL),
-                         "missing external application list");
+            DBUG_ASSERT ((FUNDEF_EXT_ASSIGN (AP_FUNDEF (LET_EXPR (arg_node))) != NULL),
+                         "missing external application of special function");
         }
     }
 
@@ -652,17 +645,6 @@ DCRap (node *arg_node, info *arg_info)
         && (AP_FUNDEF (arg_node) != INFO_DCR_FUNDEF (arg_info))) {
         DBUG_PRINT ("DCR", ("traverse in special fundef %s",
                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
-
-        /*
-         * duplicate the applicated funtion to avoid multiple uses of
-         * one special function
-         */
-        INFO_DCR_MODULE (arg_info)
-          = DUPcheckAndDupSpecialFundef (INFO_DCR_MODULE (arg_info), AP_FUNDEF (arg_node),
-                                         INFO_DCR_ASSIGN (arg_info));
-
-        DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (arg_node)) == 1),
-                     "more than one instance of special function used.");
 
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
@@ -874,27 +856,12 @@ DCRids (node *arg_ids, info *arg_info)
 
                 /* remove result from all function applications - except this one */
                 letlist = NULL;
-                if (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (INFO_DCR_APFUNDEF (arg_info)))
-                    != NULL) {
-                    if (ASSIGN_INSTR (NODELIST_NODE (
-                          FUNDEF_EXT_ASSIGNS (INFO_DCR_APFUNDEF (arg_info))))
+                if (FUNDEF_EXT_ASSIGN (INFO_DCR_APFUNDEF (arg_info)) != NULL) {
+                    if (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (INFO_DCR_APFUNDEF (arg_info)))
                         != INFO_DCR_LET (arg_info)) {
-
-                        /*
-                         * there must be only ONE external reference to modify the
-                         * functions signature
-                         */
-                        DBUG_ASSERT ((NODELIST_NEXT (
-                                        FUNDEF_EXT_ASSIGNS (INFO_DCR_FUNDEF (arg_info)))
-                                      == NULL),
-                                     "there must be only one external reference to a "
-                                     "special function"
-                                     "to modify its signature");
-
                         letlist = TCnodeListAppend (letlist,
-                                                    ASSIGN_INSTR (
-                                                      NODELIST_NODE (FUNDEF_EXT_ASSIGNS (
-                                                        INFO_DCR_FUNDEF (arg_info)))),
+                                                    ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (
+                                                      INFO_DCR_FUNDEF (arg_info))),
                                                     NULL);
                     }
                 }

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2005/03/04 21:21:42  cg
+ * FUNDEF_USED counter etc removed.
+ * Handling of FUNDEF_EXT_ASSIGNS drastically simplified.
+ *
  * Revision 1.18  2005/01/11 12:58:15  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -753,10 +757,8 @@ SSALURGetConstantArg (node *id, node *fundef, loopc_t *init_counter)
     DBUG_ASSERT ((arg_chain != NULL), "arg not found in fundef arg chain");
 
     /* get matching parameter expr-node */
-    param_chain
-      = AP_ARGS (LET_EXPR (ASSIGN_INSTR (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (fundef)))));
-    DBUG_ASSERT ((NODELIST_NEXT (FUNDEF_EXT_ASSIGNS (fundef)) == NULL),
-                 "more than one external function backref");
+    param_chain = AP_ARGS (LET_EXPR (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (fundef))));
+
     for (i = 1; i < pos; i++) {
         param_chain = EXPRS_NEXT (param_chain);
     }
@@ -1218,14 +1220,6 @@ LURap (node *arg_node, info *arg_info)
         && (AP_FUNDEF (arg_node) != INFO_SSALUR_FUNDEF (arg_info))) {
         DBUG_PRINT ("SSALUR", ("traverse in special fundef %s",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
-
-        INFO_SSALUR_MODUL (arg_info)
-          = DUPcheckAndDupSpecialFundef (INFO_SSALUR_MODUL (arg_info),
-                                         AP_FUNDEF (arg_node),
-                                         INFO_SSALUR_ASSIGN (arg_info));
-
-        DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (arg_node)) == 1),
-                     "more than one instance of special function used.");
 
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();

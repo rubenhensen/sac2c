@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.37  2005/03/04 21:21:42  cg
+ * FUNDEF_USED counter etc removed.
+ * Handling of FUNDEF_EXT_ASSIGNS drastically simplified.
+ *
  * Revision 1.36  2004/12/12 07:55:42  ktr
  * Corrected node usage.
  *
@@ -562,8 +566,8 @@ CreateNewResult (node *avis, info *arg_info)
 
     /*external call */
     letlist = TCnodeListAppend (letlist,
-                                ASSIGN_INSTR (NODELIST_NODE (
-                                  FUNDEF_EXT_ASSIGNS (INFO_SSALIR_FUNDEF (arg_info)))),
+                                ASSIGN_INSTR (
+                                  FUNDEF_EXT_ASSIGN (INFO_SSALIR_FUNDEF (arg_info))),
                                 new_ext_vardec);
 
     INFO_SSALIR_FUNDEF (arg_info)
@@ -574,7 +578,7 @@ CreateNewResult (node *avis, info *arg_info)
       = FUNDEF_INT_ASSIGN (INFO_SSALIR_FUNDEF (arg_info));
 
     AVIS_SSAASSIGN (VARDEC_AVIS (new_ext_vardec))
-      = NODELIST_NODE (FUNDEF_EXT_ASSIGNS (INFO_SSALIR_FUNDEF (arg_info)));
+      = FUNDEF_EXT_ASSIGN (INFO_SSALIR_FUNDEF (arg_info));
 
     /* 6. insert phi-copy-assignments in then and else part of conditional */
     /* search for conditional */
@@ -916,27 +920,19 @@ LIRfundef (node *arg_node, info *arg_info)
     /* traverse args of special (loop) functions to infere loop invariant args */
     if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_ISDOFUN (arg_node))) {
 
-        DBUG_ASSERT ((FUNDEF_EXT_ASSIGNS (arg_node) != NULL),
-                     "missing external function application nodelist");
+        DBUG_ASSERT ((FUNDEF_EXT_ASSIGN (arg_node) != NULL),
+                     "missing external function application");
 
-        DBUG_ASSERT ((NODELIST_NEXT (FUNDEF_EXT_ASSIGNS (arg_node)) == NULL),
-                     "more than one external function application to special function");
-
-        DBUG_ASSERT ((NODELIST_NODE (FUNDEF_EXT_ASSIGNS (arg_node)) != NULL),
-                     "missing external assignment");
-
-        DBUG_ASSERT ((ASSIGN_INSTR (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (arg_node)))
-                      != NULL),
+        DBUG_ASSERT ((ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (arg_node)) != NULL),
                      "missing external assigment instruction");
 
-        DBUG_ASSERT ((NODE_TYPE (LET_EXPR (
-                        ASSIGN_INSTR (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (arg_node)))))
+        DBUG_ASSERT ((NODE_TYPE (LET_EXPR (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (arg_node))))
                       == N_ap),
                      "missing recursive call in do/while special function");
 
         /* save pointer to archain of external function application */
         INFO_SSALIR_APARGCHAIN (arg_info)
-          = AP_ARGS (ASSIGN_RHS (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (arg_node))));
+          = AP_ARGS (ASSIGN_RHS (FUNDEF_EXT_ASSIGN (arg_node)));
 
     } else {
         /* non loop function */
@@ -1524,14 +1520,6 @@ LIRap (node *arg_node, info *arg_info)
         DBUG_PRINT ("SSALIR", ("traverse in special fundef %s",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
-        INFO_SSALIR_MODUL (arg_info)
-          = DUPcheckAndDupSpecialFundef (INFO_SSALIR_MODUL (arg_info),
-                                         AP_FUNDEF (arg_node),
-                                         INFO_SSALIR_ASSIGN (arg_info));
-
-        DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (arg_node)) == 1),
-                     "more than one instance of special function used.");
-
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
         INFO_SSALIR_MODUL (new_arg_info) = INFO_SSALIR_MODUL (arg_info);
@@ -1617,14 +1605,11 @@ LIRreturn (node *arg_node, info *arg_info)
 
     if (FUNDEF_ISDOFUN (INFO_SSALIR_FUNDEF (arg_info))) {
         /* init INFO_SSALIR_APRESCHAIN with external result chain */
-        DBUG_ASSERT ((FUNDEF_EXT_ASSIGNS (INFO_SSALIR_FUNDEF (arg_info)) != NULL),
+        DBUG_ASSERT ((FUNDEF_EXT_ASSIGN (INFO_SSALIR_FUNDEF (arg_info)) != NULL),
                      "missing link to external calling fundef");
-        DBUG_ASSERT ((NODELIST_NODE (FUNDEF_EXT_ASSIGNS (INFO_SSALIR_FUNDEF (arg_info)))
-                      != NULL),
-                     "missing link to external fundef calling assignment");
 
-        INFO_SSALIR_APRESCHAIN (arg_info) = LET_IDS (ASSIGN_INSTR (
-          NODELIST_NODE (FUNDEF_EXT_ASSIGNS (INFO_SSALIR_FUNDEF (arg_info)))));
+        INFO_SSALIR_APRESCHAIN (arg_info)
+          = LET_IDS (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (INFO_SSALIR_FUNDEF (arg_info))));
 
         INFO_SSALIR_FLAG (arg_info) = SSALIR_INRETURN;
     } else {
@@ -1946,8 +1931,7 @@ LIRMOVassign (node *arg_node, info *arg_info)
             /* adjust external result ids (resolve duplicate definitions) */
             INFO_SSALIR_EXTFUNDEF (arg_info)
               = AdjustExternalResult (moved_assignments,
-                                      NODELIST_NODE (FUNDEF_EXT_ASSIGNS (
-                                        INFO_SSALIR_FUNDEF (arg_info))),
+                                      FUNDEF_EXT_ASSIGN (INFO_SSALIR_FUNDEF (arg_info)),
                                       INFO_SSALIR_EXTFUNDEF (arg_info));
 
             /* move down to external postassign chain */
@@ -2215,12 +2199,8 @@ LIRMOVids (node *arg_ids, info *arg_info)
             /* change functions signature, internal and external application */
             DBUG_ASSERT ((FUNDEF_INT_ASSIGN (INFO_SSALIR_FUNDEF (arg_info)) != NULL),
                          "missing recursive call");
-            DBUG_ASSERT ((FUNDEF_EXT_ASSIGNS (INFO_SSALIR_FUNDEF (arg_info)) != NULL),
+            DBUG_ASSERT ((FUNDEF_EXT_ASSIGN (INFO_SSALIR_FUNDEF (arg_info)) != NULL),
                          "missing external call");
-            DBUG_ASSERT ((NODELIST_NEXT (
-                            FUNDEF_EXT_ASSIGNS (INFO_SSALIR_FUNDEF (arg_info)))
-                          == NULL),
-                         "more than one external call");
 
             /* recursive call */
             letlist = TCnodeListAppend (NULL,
@@ -2228,8 +2208,8 @@ LIRMOVids (node *arg_ids, info *arg_info)
                                           INFO_SSALIR_FUNDEF (arg_info))),
                                         new_arg_id);
             letlist = TCnodeListAppend (letlist,
-                                        ASSIGN_INSTR (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (
-                                          INFO_SSALIR_FUNDEF (arg_info)))),
+                                        ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (
+                                          INFO_SSALIR_FUNDEF (arg_info))),
                                         new_vardec_id);
 
             INFO_SSALIR_FUNDEF (arg_info)
