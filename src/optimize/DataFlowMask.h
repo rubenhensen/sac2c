@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/05/05 15:54:00  cg
+ * first running revision
+ *
  * Revision 1.1  1998/05/04 15:53:12  cg
  * Initial revision
  *
@@ -54,9 +57,10 @@
  *   The function DFMRemoveMask() de-allocates storage for a single data flow
  *   mask. It always returns the NULL pointer.
  *
- *   The function DFMPrintMask() prints a comma separated list of all those
+ *   The function DFMPrintMask() prints a list of all those
  *   identifiers whose bit in the data flow mask is set. An open output
- *   stream must be provided as first argument.
+ *   stream must be provided as first argument. The second argument must be
+ *   custom format string which contains exactly one conversion specifier '%s'.
  *
  *   The functions DFMSetMaskEntry() and DFMClearMaskEntry() respectively set or
  *   clear the data flow mask bit assigned to a particular identifier whereas
@@ -87,8 +91,8 @@ extern DFMmask_base_t DFMExtendMaskBase (DFMmask_base_t mask_base, node *argumen
                                          node *vardecs);
 extern DFMmask_base_t DFMRemoveMaskBase (DFMmask_base_t mask_base);
 
-extern DFMmask_t DFMGenMaskClear (DFMmask_base_t mask_base, DFMmask_t mask);
-extern DFMmask_t DFMGenMaskSet (DFMmask_base_t mask_base, DFMmask_t mask);
+extern DFMmask_t DFMGenMaskClear (DFMmask_base_t mask_base);
+extern DFMmask_t DFMGenMaskSet (DFMmask_base_t mask_base);
 extern DFMmask_t DFMGenMaskCopy (DFMmask_t mask);
 extern DFMmask_t DFMGenMaskAnd (DFMmask_t mask1, DFMmask_t mask2);
 extern DFMmask_t DFMGenMaskOr (DFMmask_t mask1, DFMmask_t mask2);
@@ -96,9 +100,9 @@ extern DFMmask_t DFMGenMaskInv (DFMmask_t mask);
 
 extern void DFMSetMaskClear (DFMmask_t mask);
 extern void DFMSetMaskSet (DFMmask_t mask);
-extern void DFMSetMaskCopy (DFMmask_t mask1, DFMmask_t mask2);
-extern void DFMSetMaskAnd (DFMmask_t mask1, DFMmask_t mask2);
-extern void DFMSetMaskOr (DFMmask_t mask1, DFMmask_t mask2);
+extern void DFMSetMaskCopy (DFMmask_t mask);
+extern void DFMSetMaskAnd (DFMmask_t mask, DFMmask_t mask2);
+extern void DFMSetMaskOr (DFMmask_t mask, DFMmask_t mask2);
 extern void DFMSetMaskInv (DFMmask_t mask);
 
 extern int DFMTestMask (DFMmask_t mask);
@@ -107,7 +111,7 @@ extern int DFMTest3Masks (DFMmask_t mask1, DFMmask_t mask2, DFMmask_t mask3);
 
 extern DFMmask_t DFMRemoveMask (DFMmask_t mask);
 
-extern void DFMPrintMask (FILE *handle, DFMmask_t mask);
+extern void DFMPrintMask (FILE *handle, const char *format, DFMmask_t mask);
 
 extern void DFMSetMaskEntryClear (DFMmask_t mask, char *id);
 extern void DFMSetMaskEntrySet (DFMmask_t mask, char *id);
