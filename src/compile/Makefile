@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.12  2001/05/11 14:36:56  cg
+# Added compilation of new source file icm2c_sched.c
+#
 # Revision 3.11  2001/05/08 13:29:35  dkr
 # make deps done
 #
@@ -100,8 +103,8 @@ INCS=-I../global -I../tree -I../../inc -I../print -I../typecheck -I../refcount \
 MACS=icm.data icm_comment.c icm_trace.c
 
 all: wltransform.o wlpragma_funs.o precompile.o compile.o ReuseWithArrays.o \
-     icm2c.o icm2c_std.o icm2c_wl.o icm2c_mt.o icm2c_utils.o gen_startup_code.o \
-     PatchWith.o
+     icm2c.o icm2c_std.o icm2c_wl.o icm2c_mt.o icm2c_sched.o icm2c_utils.o \
+     gen_startup_code.o PatchWith.o
 
 
 #
@@ -112,17 +115,17 @@ wltransform.c: wlpragma_funs.mac
 	touch $@
 
 %.o: %.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
+	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 
 
 BEtest: BEtest.c icm_vars.c icm_betest.c icm.data \
           ../global/globals.o ../../lib/dbug.o \
           icm2c_std.BEtest.o icm2c_wl.BEtest.o icm2c_utils.BEtest.o \
-          icm2c_mt.BEtest.o
-	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest BEtest.c $(INCS) \
+          icm2c_mt.BEtest.o icm2c_sched.BEtest.o
+	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest $(INCS) BEtest.c \
           ../global/globals.o  ../../lib/dbug.o \
           icm2c_std.BEtest.o icm2c_wl.BEtest.o icm2c_utils.BEtest.o \
-          icm2c_mt.BEtest.o
+          icm2c_mt.BEtest.o icm2c_sched.BEtest.o
 
 icm2c_std.BEtest.o: icm2c_std.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_std.BEtest.o -c icm2c_std.c $(INCS)
@@ -133,6 +136,9 @@ icm2c_wl.BEtest.o: icm2c_wl.c $(MACS)
 icm2c_mt.BEtest.o: icm2c_mt.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_mt.BEtest.o -c icm2c_mt.c $(INCS)
 
+icm2c_sched.BEtest.o: icm2c_sched.c $(MACS)
+	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_sched.BEtest.o -c icm2c_sched.c $(INCS)
+
 icm2c_utils.BEtest.o: icm2c_utils.c $(MACS)
 	$(CC) $(CCFLAGS) $(CFLAGS) -DBEtest -o icm2c_utils.BEtest.o -c icm2c_utils.c $(INCS)
 
@@ -141,7 +147,7 @@ deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) *.o *.bak BEtest *.sib *.sac
+	$(RM) *.o *.bak *~ BEtest *.sib *.sac
 	$(RM) -r .sb SunWS_cache
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
