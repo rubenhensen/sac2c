@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.69  1998/05/15 23:04:22  dkr
+ * changed MakeNwith2: NWITH2_IDX_MIN, NWITH2_IDX_MAX are no longer
+ * preallocated
+ *
  * Revision 1.68  1998/05/12 22:43:55  dkr
  * changed MakeNwith2:
  *   added NWITH2_DIM, NWITH2_IDX_MIN, NWITH2_IDX_MAX
@@ -1600,9 +1604,6 @@ MakeNWith2 (node *withid, node *seg, node *code, node *withop, int dims)
     NWITH2_CODE (tmp) = code;
     NWITH2_WITHOP (tmp) = withop;
     NWITH2_DIMS (tmp) = dims;
-
-    NWITH2_IDX_MIN (tmp) = (int *)MALLOC (dims * sizeof (int));
-    NWITH2_IDX_MAX (tmp) = (int *)MALLOC (dims * sizeof (int));
 
     DBUG_RETURN (tmp);
 }
