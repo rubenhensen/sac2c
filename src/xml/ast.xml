@@ -1601,6 +1601,8 @@
 	<node name="Cast" />
 	<node name="SPMop" />
 	<node name="SetWL" />
+	<node name="Dot" />
+	<node name="Str" />
       </target>
     </nodeset>
     <nodeset name="Instr">
