@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.8  1998/05/16 16:25:57  srs
+ * added debug information
+ *
  * Revision 1.7  1998/05/15 15:46:45  srs
  * enhanced transformation power of CreateIndexInfoA()
  *
@@ -899,11 +902,14 @@ WLINwith (node *arg_node, node *arg_info)
        It is not possible that WLINpart calls the NPART_NEXT node because
        the superior OPTTrav mechanism has to finish before calling the
        next part. Else modified USE and DEF masks will case errors. */
+    DBUG_PRINT ("WLI", ("searching code of  WL in line %d", NODE_LINE (arg_node)));
     tmpn = NWITH_PART (arg_node);
     while (tmpn) {
+        DBUG_PRINT ("WLI", ("code : %p", tmpn));
         tmpn = OPTTrav (tmpn, arg_info, arg_node);
         tmpn = NPART_NEXT (tmpn);
     }
+    DBUG_PRINT ("WLI", ("searching done"));
 
     /* restore arg_info */
     tmpn = arg_info;
