@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.71  2004/11/25 15:13:33  ktr
+  FUN 2004!!!
+
   Revision 1.70  2004/11/25 13:53:03  mwe
   SSATransform added
 
@@ -1711,6 +1714,7 @@
       <flags>
         <flag name="IsReadonly" />
         <flag name="IsReference" />
+        <flag name="WasReference" />
         <flag name="IsArtificial" />
         <flag name="IsPadded" />
         <flag name="IsAliasing" default="TRUE" />
@@ -2534,9 +2538,6 @@
         </attribute>
       </attributes>
       <flags>
-	<flag name="IsGlobal" />
-	<flag name="IsReference" />
-	<flag name="IsReadOnly" />
 	<flag name="IsConst" />
       </flags>
     </node>
@@ -3629,11 +3630,6 @@
         <son name="Next" default="NULL" mandatory="no">
           <target>
             <node name="Code" />
-          </target>
-        </son>
-        <son name="Epilogue" default="NULL" mandatory="no">
-          <target>
-            <node name="Block" />
           </target>
         </son>
       </sons>
@@ -4759,6 +4755,16 @@
 	    <all />
 	  </phases>
 	</attribute>
+        <attribute name="CorrespondingArg" mandatory="no">
+	  <type name="Link" >
+            <target>
+              <node name="Arg" />
+            </target>
+          </type>
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
       </attributes>
       <flags>
         <flag name="IsAliasing" default="TRUE" />
@@ -4821,6 +4827,29 @@
       <attributes>
         <attribute name="Val" mandatory="yes">
 	  <type name="Integer" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+      </attributes>
+      <flags>
+      </flags>
+    </node>
+<!--
+
+  N_globobj :
+
+-->
+    <node name="Globobj">
+      <sons>
+      </sons>
+      <attributes>
+        <attribute name="Objdef" mandatory="yes">
+	  <type name="ExtLink" >
+            <target>
+              <node name="Objdef" />
+            </target>
+          </type>
 	  <phases>
 	    <all />
 	  </phases>
