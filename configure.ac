@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.27  2003/09/18 14:06:35  dkr
+dnl test for -pthread flag of gcc: linker file removed as well now
+dnl
 dnl Revision 1.26  2003/07/31 16:55:41  mwe
 dnl changed PDCCFLAGS from -g3 to -g for Mac's
 dnl
@@ -328,14 +331,14 @@ dnl check for pthread flag on gcc
 if test "$GCC" = yes; then
   AC_MSG_CHECKING([existence of pthread flag])
   echo "int main(){return 0;}" > .sac_configure_temp.c
-  if test "`gcc -pthread .sac_configure_temp.c 2>&1 | grep "unrecognized option"`" = ""; then
+  if test "`gcc -o .sac_configure_temp -pthread .sac_configure_temp.c 2>&1 | grep "unrecognized option"`" = ""; then
     AC_MSG_RESULT([supported])
     GCC_PTHREADS="-pthread"
   else
     AC_MSG_RESULT([unsupported])
     GCC_PTHREADS="-lpthread"
   fi
-  rm -f .sac_configure_temp.c
+  rm -f .sac_configure_temp.c .sac_configure_temp
 fi
 dnl test for compiler flags
 dnl for sac2crc
