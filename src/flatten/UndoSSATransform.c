@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/03/06 20:06:40  mwe
+ * changed arguments of MakeCond in USSAfundef
+ *
  * Revision 1.4  2004/03/05 19:14:27  mwe
  * representation of conditional changed
  * using N_funcond node instead of phi
@@ -733,7 +736,8 @@ USSAfundef (node *arg_node, node *arg_info)
                 /* condition function without N_cond node found */
                 cond = MakeCond (DupTree (EXPRS_EXPR (
                                    FUNCOND_IF (LET_EXPR (ASSIGN_INSTR (assign))))),
-                                 NULL, NULL);
+                                 MakeBlock (MakeEmpty (), NULL),
+                                 MakeBlock (MakeEmpty (), NULL));
                 assign = MakeAssign (cond, assign);
                 BLOCK_INSTR (block) = assign;
             }
