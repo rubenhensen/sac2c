@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/10/16 12:22:44  cg
+ * Revision 1.2  1995/10/17 08:28:15  cg
+ * all automatically generated functions now have status ST_objinitfun.
+ * This tag is used by the typechecker.
+ *
+ * Revision 1.1  1995/10/16  12:22:44  cg
  * Initial revision
  *
  *
@@ -117,6 +121,16 @@ OIobjdef (node *arg_node, node *arg_info)
     /*------------------------------------------------------------------*/
     new_node->nnode = (MODUL_FUNS (arg_info) == NULL) ? 1 : 2;
     /*------------------------------------------------------------------*/
+
+    FUNDEF_STATUS (new_node) = ST_objinitfun;
+
+    /*
+     * The new functions have status ST_objinitfun.
+     * This tag is needed by the typechecker to ensure that these functions
+     * are actually typechecked even if they are exclusively applied in
+     * a global object initialization of a SAC-program.
+     * In the typechecker, their status is changed to ST_regular.
+     */
 
     MODUL_FUNS (arg_info) = new_node;
 
