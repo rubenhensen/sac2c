@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2003/04/09 15:36:34  sbs
+ * ntc parameters completed !
+ *
  * Revision 3.15  2003/04/04 17:14:46  sbs
  * table extended for cf!
  *
@@ -71,15 +74,16 @@
  *      prf_is_infix[]   prf_arity           NTCPRF_funtab[]   NTCPRF_cffuntab[]
  */
 
-PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCPRF_dummy, COToi),
-  PRF_IF (F_toi_A, "F_toi_A", "_toi_A_", "toi", FALSE, 1, NTCPRF_dummy, COToi),
-  PRF_IF (F_tof_S, "F_tof_S", "_tof_S_", "tof", FALSE, 1, NTCPRF_dummy, COTof),
-  PRF_IF (F_tof_A, "F_tof_A", "_tof_A_", "tof", FALSE, 1, NTCPRF_dummy, COTof),
-  PRF_IF (F_tod_S, "F_tod_S", "_tod_S_", "tod", FALSE, 1, NTCPRF_dummy, COTod),
-  PRF_IF (F_tod_A, "F_tod_A", "_tod_A_", "tod", FALSE, 1, NTCPRF_dummy, COTod),
+PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCPRF_toiS, COToi),
+  PRF_IF (F_toi_A, "F_toi_A", "_toi_A_", "toi", FALSE, 1, NTCPRF_toiA, COToi),
+  PRF_IF (F_tof_S, "F_tof_S", "_tof_S_", "tof", FALSE, 1, NTCPRF_tofS, COTof),
+  PRF_IF (F_tof_A, "F_tof_A", "_tof_A_", "tof", FALSE, 1, NTCPRF_tofA, COTof),
+  PRF_IF (F_tod_S, "F_tod_S", "_tod_S_", "tod", FALSE, 1, NTCPRF_todS, COTod),
+  PRF_IF (F_tod_A, "F_tod_A", "_tod_A_", "tod", FALSE, 1, NTCPRF_todA, COTod),
 
-  PRF_IF (F_abs, "F_abs", "_abs_", "abs", FALSE, 1, NTCPRF_dummy, COAbs),
-  PRF_IF (F_not, "F_not", "_not_", "!", TRUE, 1, NTCPRF_dummy, CONot),
+  PRF_IF (F_neg, "F_neg", "_neg_", "neg", FALSE, 1, NTCPRF_ari_op_A, CONeg),
+  PRF_IF (F_abs, "F_abs", "_abs_", "abs", FALSE, 1, NTCPRF_ari_op_A, COAbs),
+  PRF_IF (F_not, "F_not", "_not_", "!", TRUE, 1, NTCPRF_log_op_A, CONot),
 
   PRF_IF (F_and, "F_and", "_and_", "&&", TRUE, 2, NTCPRF_log_op_AxA, COAnd),
   PRF_IF (F_or, "F_or", "_or_", "||", TRUE, 2, NTCPRF_log_op_AxA, COOr),
@@ -115,26 +119,25 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCPRF_dummy, COToi),
   PRF_IF (F_shape, "F_shape", "_shape_", "shape", FALSE, 1, NTCPRF_shape, COShape),
   PRF_IF (F_reshape, "F_reshape", "_reshape_", "reshape", FALSE, 2, NTCPRF_reshape,
           COReshape),
-  PRF_IF (F_idx_sel, "F_idx_sel", "_idx_sel_", "idx_sel", FALSE, 2, NTCPRF_dummy, COSel),
+  PRF_IF (F_idx_sel, "F_idx_sel", "_idx_sel_", "idx_sel", FALSE, 2, NTCPRF_dummy, NULL),
   PRF_IF (F_idx_modarray, "F_idx_modarray", "_idx_modarray_", "idx_modarray", FALSE, 3,
-          NTCPRF_dummy, COModarray),
+          NTCPRF_dummy, NULL),
   PRF_IF (F_sel, "F_sel", "_sel_", "sel", FALSE, 2, NTCPRF_selS, COSel),
   PRF_IF (F_modarray, "F_modarray", "_modarray_", "modarray", FALSE, 3, NTCPRF_modarrayS,
           COModarray),
   PRF_IF (F_genarray, "F_genarray", "_genarray_", "genarray", FALSE, 2, NTCPRF_dummy,
-          COReshape),
+          NULL),
 
-  PRF_IF (F_take, "F_take", "_take_", "take", FALSE, 2, NTCPRF_dummy, COTake),
-  PRF_IF (F_drop, "F_drop", "_drop_", "drop", FALSE, 2, NTCPRF_dummy, CODrop),
-  PRF_IF (F_cat, "F_cat", "_cat_", "cat", FALSE, 3, NTCPRF_dummy, COReshape),
-  PRF_IF (F_rotate, "F_rotate", "_rotate_", "rotate", FALSE, 3, NTCPRF_dummy, COReshape),
+  PRF_IF (F_take, "F_take", "_take_", "take", FALSE, 2, NTCPRF_dummy, NULL),
+  PRF_IF (F_drop, "F_drop", "_drop_", "drop", FALSE, 2, NTCPRF_dummy, NULL),
+  PRF_IF (F_cat, "F_cat", "_cat_", "cat", FALSE, 3, NTCPRF_dummy, NULL),
+  PRF_IF (F_rotate, "F_rotate", "_rotate_", "rotate", FALSE, 3, NTCPRF_dummy, NULL),
 
-  PRF_IF (F_cat_VxV, "F_cat_VxV", "_cat_VxV_", "cat", FALSE, 2, NTCPRF_cat_VxV,
-          COReshape),
+  PRF_IF (F_cat_VxV, "F_cat_VxV", "_cat_VxV_", "cat", FALSE, 2, NTCPRF_cat_VxV, COCat),
   PRF_IF (F_take_SxV, "F_take_SxV", "_take_SxV_", "take", FALSE, 2, NTCPRF_drop_SxV,
           COTake),
   PRF_IF (F_drop_SxV, "F_drop_SxV", "_drop_SxV_", "drop", FALSE, 2, NTCPRF_drop_SxV,
           CODrop),
 
   PRF_IF (F_type_error, "F_type_error", "_type_error_", "type_error", FALSE, 1,
-          NTCPRF_dummy, COReshape)
+          NTCPRF_dummy, NULL)
