@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/04/14 08:42:53  jhs
+ * Second Version of empty arrays integrated.
+ *
  * Revision 2.3  1999/04/13 14:00:40  cg
  * added #pragma cachesim.
  *
@@ -1703,7 +1706,7 @@ expr_ar: SQBR_L {$<cint>$=linenum;} exprsNOar SQBR_R
            NODE_LINE($$)=$<cint>2;
          }
        | SQBR_L {$<cint>$=linenum;} SQBR_R
-         { $$=MakeArray( NULL);
+         { $$=MakeArray (NULL);
            NODE_LINE($$) = $<cint>2;
          }
        ;       
@@ -2160,10 +2163,6 @@ localtype_main: simpletype {$$ = $1; }
                 { $$ = $1;
                   TYPES_DIM($$) = $3;
                 }
-              | simpletype_main SQBR_L MUL SQBR_R
-                { $$ = $1;
-                  TYPES_DIM($$) = EMPTY_ARRAY;
-                }
               | id SQBR_L SQBR_R
                 { $$=MakeTypes(T_user);
                   TYPES_NAME($$) = $1;
@@ -2179,12 +2178,7 @@ localtype_main: simpletype {$$ = $1; }
                   TYPES_NAME($$) = $1;
                   TYPES_DIM($$)  = $3;
                 }
-              | id SQBR_L MUL SQBR_R
-                { $$=MakeTypes(T_user);
-                  TYPES_NAME($$) = $1;
-                  TYPES_DIM($$)  = EMPTY_ARRAY;
-                }
-             ;
+              ;
 
 local_type_udt_arr: id SQBR_L nums SQBR_R
                     { $$=MakeTypes(T_user);
