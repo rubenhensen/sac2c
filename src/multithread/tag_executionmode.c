@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/07/23 10:05:08  skt
+ * TEMfundef added
+ *
  * Revision 1.6  2004/07/06 18:06:41  skt
  * Parameter of IsGeneratorBigEnough changed from node* to ids*
  *
@@ -99,57 +102,93 @@ TagExecutionmode (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *TEMfundef(node *arg_node, node *arg_info)
+ *
+ *   @brief
+ *
+ *   @param arg_node a N_fundef
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
+node *
+TEMfundef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("TEMfundef");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
+                 "TEMfundef expects a N_fundef as arg_node");
+
+    /* initialize the executionmode*/
+    FUNDEF_EXECMODE (arg_node) = MUTH_ANY;
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        DBUG_PRINT ("TEM", ("trav into function-body"));
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        DBUG_PRINT ("TEM", ("trav from function-body"));
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        DBUG_PRINT ("TEM", ("trav into function-next"));
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        DBUG_PRINT ("TEM", ("trav from function-next"));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *TEMassign(node *arg_node, node *arg_info)
  *
  *   @brief tags the N_assign with its executionmode
+ *<pre>
+ *          calculation of the executionmode occurs in an if/else-chain:
+ *          if the assignment must be executed in exclusive-mode
+ *             => MUTH_EXCLUSIVE
+ *          else if the assignment could be executed in multithread-mode
+ *             => MUTH_MULTI
+ *          else if the assignment must be executed in singlethread-mode
+ *             => MUTH_SINGLE
+ *          else MUTH_ANY
+ *</pre>
  *
  *   @param arg_node a N_assign
  *   @param arg_info
- *   @return N_assign with tagged
+ *   @return N_assign with tagged executionmode
  *
  *****************************************************************************/
 node *
 TEMassign (node *arg_node, node *arg_info)
 {
-    node *tmp;
     DBUG_ENTER ("TEMassign");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign),
                  "TEMassign expects a N_assign as arg_node");
+
+    /* initialize the executionmode */
+    ASSIGN_EXECMODE (arg_node) = MUTH_ANY;
 
     /* we are on top-level, so let's work out the executionmode for this
        assignment */
     if (INFO_TEM_WITHDEEP (arg_info) == 0) {
         if (MustExecuteExclusive (arg_node, arg_info)) {
-            ASSIGN_EXECMODE (arg_info) = MUTH_EXCLUSIVE;
+            ASSIGN_EXECMODE (arg_node) = MUTH_EXCLUSIVE;
         } else if (CouldExecuteMulti (arg_node, arg_info)) {
-            ASSIGN_EXECMODE (arg_info) = MUTH_MULTI;
+            ASSIGN_EXECMODE (arg_node) = MUTH_MULTI;
             /* this assignment will be done MT -> let's mark the allocations as
                single-threaded */
             DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let),
                          "TEMassign expects a N_let here");
-            tmp = LET_EXPR (ASSIGN_INSTR (arg_node));
-            DBUG_ASSERT ((NODE_TYPE (tmp) == N_prf), "TEMassign expects a N_prf here");
-            DBUG_ASSERT ((EXPRS_EXPR (PRF_ARGS (tmp)) != NULL),
-                         "TEMassign does not expect a NULL-Pointer here (1)");
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (PRF_ARGS (tmp))) == N_Nwith2),
+            DBUG_ASSERT ((NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_Nwith2),
                          "TEMassign expects a N_Nwith2 here");
-            DBUG_ASSERT ((EXPRS_NEXT (PRF_ARGS (tmp)) != NULL),
-                         "TEMassign does not expect a NULL-Pointer here (2)");
-            /* tmp holds the return-ids of the with-loop now (as exprs-chain) */
-            tmp = EXPRS_NEXT (PRF_ARGS (tmp));
-            DBUG_ASSERT ((NODE_TYPE (tmp) == N_exprs),
-                         "TEMassign expects a N_exprs here");
-            tmp = TagAllocs (tmp);
+            TagAllocs (NWITH2_WITHOP (LET_EXPR (ASSIGN_INSTR (arg_node))) /*,arg_node*/);
         } else if (MustExecuteSingle (arg_node, arg_info)) {
-            ASSIGN_EXECMODE (arg_info) = MUTH_SINGLE;
-        } else {
-            ASSIGN_EXECMODE (arg_info) = MUTH_ANY;
+            ASSIGN_EXECMODE (arg_node) = MUTH_SINGLE;
         }
 #if TEM_DEBUG
-        if (INFO_TEM_EXECMODE (arg_info) != MUTH_ANY) {
+        if (ASSIGN_EXECMODE (arg_node) != MUTH_ANY) {
             PrintNode (arg_node);
             fprintf (stdout, "The upper assignment is %s.\n",
-                     DecodeExecmode (INFO_TEM_EXECMODE (arg_info)));
+                     DecodeExecmode (ASSIGN_EXECMODE (arg_node)));
         }
 #endif
     } else {
@@ -160,7 +199,6 @@ TEMassign (node *arg_node, node *arg_info)
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("TEM", ("trav into next"));
-        /*PrintNode(ASSIGN_NEXT(arg_node));*/
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
         DBUG_PRINT ("TEM", ("trav from next"));
     }
@@ -197,27 +235,34 @@ TEMwith2 (node *arg_node, node *arg_info)
         DBUG_ASSERT ((INFO_TEM_LETLHS (arg_info) != NULL),
                      "INFO_TEM_LETLHS(arg_info) must not be NULL");
 
-        if (IsMTAllowed (arg_node) && IsMTClever (INFO_TEM_LETLHS (arg_info))) {
+        /* check for permission to execute this with-loop in MT
+           (an withdeep > 0 implicits the permission, because the current
+           with-loop is nested in an top-level with-loop, which MT-execution
+           is permitted */
+        if ((IsMTAllowed (arg_node)) || (INFO_TEM_WITHDEEP (arg_info) > 0)) {
+            if (IsMTClever (INFO_TEM_LETLHS (arg_info))) {
 
-            /* store information about the executionmode in arg_info */
-            INFO_TEM_EXECMODE (arg_info) = MUTH_MULTI;
-        }
-        /* this with-loop is not big enough to be parallellized - but perhaps
-           someone a level deeper...*/
-        else {
-            /* the generator of this with-loop must be big enough to be partitioned
-               into max_threads */
-            if (IsGeneratorBigEnough (INFO_TEM_LETLHS (arg_info))) {
-                /* the deepness rises... */
-                INFO_TEM_WITHDEEP (arg_info)++;
-
-                DBUG_PRINT ("TEM", ("trav into with-loop code"));
-                NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
-                DBUG_PRINT ("TEM", ("trav from with-loop code"));
-
-                /* the deepness falls... */
-                INFO_TEM_WITHDEEP (arg_info)--;
+                /* store information about the executionmode in arg_info */
+                INFO_TEM_EXECMODE (arg_info) = MUTH_MULTI;
             }
+            /* this with-loop is not big enough to be parallellized - but perhaps
+               someone a level deeper...*/
+            else {
+                /* the generator of this with-loop must be big enough to be partitioned
+                   into max_threads */
+                if (IsGeneratorBigEnough (INFO_TEM_LETLHS (arg_info))) {
+                    /* the deepness rises... */
+                    INFO_TEM_WITHDEEP (arg_info)++;
+
+                    DBUG_PRINT ("TEM", ("trav into with-loop code"));
+                    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+                    DBUG_PRINT ("TEM", ("trav from with-loop code"));
+
+                    /* the deepness falls... */
+                    INFO_TEM_WITHDEEP (arg_info)--;
+                }
+            }
+        } else { /*no MTallowed -> doomed */
         }
     } else if (INFO_TEM_TRAVMODE (arg_info) == TEM_TRAVMODE_MUSTEX) {
         /* not in COULDMT-traversalmode
@@ -329,9 +374,11 @@ TEMap (node *arg_node, node *arg_info)
                && IsSTClever (INFO_TEM_LETLHS (arg_info))) {
         INFO_TEM_EXECMODE (arg_info) = MUTH_SINGLE;
     } else { /* do nothing special -> continue traversal */
-        DBUG_PRINT ("TEM", ("trav into arguments"));
-        ASSIGN_INSTR (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
-        DBUG_PRINT ("TEM", ("trav from arguments"));
+        if (AP_ARGS (arg_node) != NULL) {
+            DBUG_PRINT ("TEM", ("trav into arguments"));
+            ASSIGN_INSTR (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+            DBUG_PRINT ("TEM", ("trav from arguments"));
+        }
     }
     DBUG_RETURN (arg_node);
 }
@@ -366,10 +413,37 @@ TEMarray (node *arg_node, node *arg_info)
         DBUG_PRINT ("TEM", ("trav from array-elements"));
     }
 
-#if TEM_DEBUG
-    fprintf (stdout, "TEMarray: act. execmode = %s\n",
-             DecodeExecmode (INFO_TEM_EXECMODE (arg_info)));
-#endif
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *TEMcond(node *arg_node, node *arg_info)
+ *
+ *   @brief
+ *
+ *   @param arg_node a N_cond
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
+node *
+TEMcond (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("TEMcond");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_cond),
+                 "TEMcond expects a N_cond as argument");
+
+    if (INFO_TEM_TRAVMODE (arg_info) == TEM_TRAVMODE_MUSTST
+        && INFO_TEM_WITHDEEP (arg_info) == 0 && IsSTClever (INFO_TEM_LETLHS (arg_info))) {
+        INFO_TEM_EXECMODE (arg_info) = MUTH_SINGLE;
+    }
+    /* otherwise continue traversal */
+    else if (ARRAY_AELEMS (arg_node) != NULL) {
+        DBUG_PRINT ("TEM", ("trav into array-elements"));
+        ASSIGN_INSTR (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+        DBUG_PRINT ("TEM", ("trav from array-elements"));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -558,57 +632,60 @@ IsSTClever (ids *test_variables)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TagAllocs(node *exprs)
+ * @fn void TagAllocs(node *wlops)
  *
  *   @brief This function tags the executionmode of the allocation-assignments
- *          for the variables in the exprs-chain into MUTH_SINGLE, if their
+ *          for the into MUTH_SINGLE, if their
  *          executionmode was not strict enough
  *
- *   @param exprs chain of expressions, consists of Variables, which are the
- *                left-hand-side of a multi-threaded with-loop
- *   @return the chain of expressions, which alloc-assignments are tagged
+ *   @param wlops the operators of a parallel calculated with-loop
+ *   @return nothing at all
  *
  *****************************************************************************/
-node *
-TagAllocs (node *exprs)
+void
+TagAllocs (node *wlops /*, node arg_node*/)
 {
-    node *tmp;
-    node *expr;
     node *assign;
     DBUG_ENTER ("TagAllocs");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs),
-                 "TagAllocs expects a N_exprs as argument");
+    DBUG_ASSERT ((NODE_TYPE (wlops) == N_Nwithop),
+                 "TagAllocs expects a N_Nwithop as argument");
 
-    tmp = exprs;
 #if TEM_DEBUG
     fprintf (stdout, "********** TagAllocs start **********\n");
 #endif
-    while (tmp != NULL) {
-        expr = EXPRS_EXPR (exprs);
+    while (wlops != NULL) {
+        if ((NWITHOP_TYPE (wlops) == WO_genarray)
+            || (NWITHOP_TYPE (wlops) == WO_modarray)) {
+            assign = AVIS_SSAASSIGN (ID_AVIS (NWITHOP_MEM (wlops)));
 
-        DBUG_ASSERT ((NODE_TYPE (expr) == N_id), "TagAllocs expects a N_id here");
-        assign = AVIS_SSAASSIGN (ID_AVIS (expr));
-
-        DBUG_ASSERT ((ASSIGN_EXECMODE (assign) = MUTH_MULTI),
-                     "The executionmode of this assignment must'n be MUTH_MULTI");
-        /* change executionmode of the assignment, if it's not as strict as
-           MUTH_SINGLE */
-        ASSIGN_EXECMODE (assign)
-          = StrongestRestriction (MUTH_SINGLE, ASSIGN_EXECMODE (assign));
+            /*DBUG_ASSERT((assign != arg_node),
+              "assign and arg_node mustn't be the same!");*/
+            DBUG_ASSERT ((ASSIGN_EXECMODE (assign) != MUTH_MULTI),
+                         "The executionmode of this assignment must'n be MUTH_MULTI");
+            /* change executionmode of the assignment, if it's not as strict as
+               MUTH_SINGLE */
 
 #if TEM_DEBUG
-        PrintNode (assign);
-        fprintf (stdout, "Executionmode changed into %s\n",
-                 DecodeExecmode (ASSIGN_EXECMODE (assign)));
+            PrintNode (assign);
+            fprintf (stdout, "Executionmode changed from %s ",
+                     DecodeExecmode (ASSIGN_EXECMODE (assign)));
 #endif
 
-        tmp = EXPRS_NEXT (tmp);
+            ASSIGN_EXECMODE (assign)
+              = StrongestRestriction (MUTH_SINGLE, ASSIGN_EXECMODE (assign));
+
+#if TEM_DEBUG
+            PrintNode (assign);
+            fprintf (stdout, "into %s\n", DecodeExecmode (ASSIGN_EXECMODE (assign)));
+#endif
+        }
+        wlops = NWITHOP_NEXT (wlops);
     }
 #if TEM_DEBUG
     fprintf (stdout, "********** TagAllocs end **********\n");
 #endif
 
-    DBUG_RETURN (exprs);
+    DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/07/23 10:05:08  skt
+ * TEMfundef added
+ *
  * Revision 1.6  2004/07/07 13:17:47  skt
  * parameter of IsGeneratorBigEnough changed from node* to ids*
  *
@@ -42,7 +45,6 @@
  *   int        WITHDEEP  (the current with-loop-deepness)
  *   int        TRAVMODE  (the current traversalmode MUSTEX, MUSTST or COULDMT)
  */
-/*#define INFO_TEM_ORIGLHS(n)       (n->node[0])*/
 #define INFO_TEM_LETLHS(n) (n->info2)
 #define INFO_TEM_EXECMODE(n) (n->refcnt)
 #define INFO_TEM_WITHDEEP(n) (n->flag)
@@ -54,6 +56,8 @@
 #define TEM_TRAVMODE_COULDMT 3
 
 extern node *TagExecutionmode (node *arg_node, node *arg_info);
+
+extern node *TEMfundef (node *arg_node, node *arg_info);
 
 extern node *TEMassign (node *arg_node, node *arg_info);
 
@@ -77,7 +81,7 @@ int IsSTClever (ids *test_variables);
 
 int StrongestRestriction (int execmode1, int execmode2);
 
-node *TagAllocs (node *exprs);
+void TagAllocs (node *wlops /*, node *arg_info*/);
 
 int MustExecuteExclusive (node *assign, node *arg_info);
 
@@ -90,5 +94,4 @@ int AnyUniqueTypeInThere (ids *letids);
 #if TEM_DEBUG
 char *DecodeExecmode (int execmode);
 #endif
-
 #endif /* TAG_EXECUTIONMODE_H */
