@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/08/09 08:31:47  ktr
+ * Fold functions are no longer removed in EMM as they are used by MT.
+ *
  * Revision 3.10  2004/08/04 17:06:28  ktr
  * In EMM, Functions can be dead although they are referenced by a fold-withop
  *
@@ -338,10 +341,8 @@ DFRwithop (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DFRwithop");
 
-    if (!emm) {
-        if (NWITHOP_TYPE (arg_node) == WO_foldfun) {
-            NWITHOP_FUNDEF (arg_node) = Trav (NWITHOP_FUNDEF (arg_node), arg_info);
-        }
+    if (NWITHOP_TYPE (arg_node) == WO_foldfun) {
+        NWITHOP_FUNDEF (arg_node) = Trav (NWITHOP_FUNDEF (arg_node), arg_info);
     }
 
     if (NWITHOP_NEXT (arg_node) != NULL) {
