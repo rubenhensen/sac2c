@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.4  1995/04/04 11:03:54  sbs
+# Revision 1.5  1995/04/05 15:55:01  asi
+# make deps done
+#
+# Revision 1.4  1995/04/04  11:03:54  sbs
 # make deps done
 #
 # Revision 1.3  1995/04/03  13:59:44  sbs
@@ -55,4 +58,3 @@ icm2c.o: icm_decl.c icm.data icm_args.c icm_comment.c
 icm_args.o: icm.data
 icm_comment.o: icm.data
 icm_decl.o: icm.data
-tutu.o: icm2c.h

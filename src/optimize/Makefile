@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.7  1995/04/05 15:52:38  asi
+# Revision 1.8  1995/04/05 15:54:58  asi
+# make deps done
+#
+# Revision 1.7  1995/04/05  15:52:38  asi
 # loop invariant removal added
 #
 # Revision 1.6  1995/04/04  11:03:51  sbs
@@ -86,3 +89,4 @@ optimize.o: ../global/type_info.mac ../global/node_info.mac
 optimize.o: ../global/prf_node_info.mac ../global/free.h ../global/Error.h
 optimize.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
 optimize.o: optimize.h ConstantFolding.h DeadCodeRemoval.h WorkReduction.h
+optimize.o: LoopInvariantRemoval.h
