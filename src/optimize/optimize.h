@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/06/07 17:16:08  mwe
+ * al_expr added
+ *
  * Revision 3.3  2002/03/13 16:03:20  ktr
  * wls_expr declared
  *
@@ -143,6 +146,7 @@ extern int cse_expr;
 extern int wlf_expr;
 extern int wlt_expr;
 extern int wls_expr;
+extern int al_expr;
 extern int old_wlf_expr, old_wlt_expr;
 extern int ap_padded;
 extern int ap_unsupported;
