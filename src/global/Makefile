@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.32  1995/10/22 17:28:57  cg
+# Revision 1.33  1995/11/01 08:01:27  cg
+# make deps done
+#
+# Revision 1.32  1995/10/22  17:28:57  cg
 # make deps done
 #
 # Revision 1.31  1995/10/20  09:22:29  cg
@@ -201,7 +204,7 @@ traverse.o: ../optimize/DupTree.h ../optimize/Inline.h ../optimize/Unroll.h
 traverse.o: ../optimize/Unswitch.h ../psi-opt/ArrayElimination.h
 traverse.o: ../psi-opt/index.h ../modules/sib.h ../modules/implicittypes.h
 traverse.o: ../objects/objinit.h ../modules/analysis.h ../modules/checkdec.h
-traverse.o: traverse.h node_info.mac
+traverse.o: ../objects/objects.h traverse.h node_info.mac
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 tree.o: tree.h types.h tree_basic.h tree_compound.h Error.h
@@ -219,6 +222,7 @@ tree_compound.o: types.h tree_basic.h tree_compound.h Error.h
 tree_compound.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 tree_compound.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
 tree_compound.o: ../../inc/dbug.h my_debug.h
+tree_compound.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/malloc.h
 usage.o: usage.h
 usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 usage.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
