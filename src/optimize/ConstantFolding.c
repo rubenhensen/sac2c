@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.57  1998/02/23 13:08:32  srs
+ * changed CFid to support new WLs,
+ * added comments
+ *
  * Revision 1.56  1998/02/15 21:31:42  srs
  * added CF for new WL
  *
@@ -569,6 +573,7 @@ CFid (node *arg_node, node *arg_info)
         case N_array:
         case N_ap:
         case N_with:
+        case N_Nwith:
             break;
         default:
             DBUG_ASSERT ((FALSE), "Substitution not implemented for constant folding");
@@ -659,17 +664,20 @@ CFwhile (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CFwhile");
 
+    /* traverse condition. */
     WHILE_COND (arg_node) = OPTTrav (WHILE_COND (arg_node), arg_info, arg_node);
 
+    /* is the condition FALSE? */
     if (N_bool == NODE_TYPE (WHILE_COND (arg_node)))
         if (!BOOL_VAL (WHILE_COND (arg_node)))
             trav_body = FALSE;
         else
             arg_node = While2Do (arg_node);
 
+    /* is the condition a variable, which can be infered to false? */
     if (N_id == NODE_TYPE (WHILE_COND (arg_node))) {
         MRD_GETLAST (last_value, ID_VARNO (WHILE_COND (arg_node)), INFO_VARNO);
-        if ((NULL != last_value) && (N_bool == NODE_TYPE (last_value))) {
+        if (last_value && (N_bool == NODE_TYPE (last_value))) {
             if (!BOOL_VAL (last_value))
                 trav_body = FALSE;
             else
@@ -677,9 +685,10 @@ CFwhile (node *arg_node, node *arg_info)
         }
     }
 
-    if (trav_body) {
+    if (trav_body)
         WHILE_INSTR (arg_node) = OPTTrav (WHILE_INSTR (arg_node), arg_info, arg_node);
-    } else {
+    else {
+        /* the body will never be entered - delete while loop. */
         DBUG_PRINT ("CF", ("while-loop eliminated in line %d", NODE_LINE (arg_node)));
         MinusMask (INFO_DEF, WHILE_DEFMASK (arg_node), INFO_VARNO);
         MinusMask (INFO_USE, WHILE_USEMASK (arg_node), INFO_VARNO);
@@ -817,10 +826,13 @@ CFwith (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CFwith");
     oldtype = INFO_TYPE (arg_info);
+
+    /* srs: this is the analogy to the storage of the return type of a prf in CFlet.
+       But I wonder if this is necessary. A bound can only be an identifyer. And
+       as far as I know the type information is only needed if we try to fold a
+       prf (in CFprf). */
     INFO_TYPE (arg_info) = VARDEC_TYPE (GEN_VARDEC (WITH_GEN (arg_node)));
-
     WITH_GEN (arg_node) = OPTTrav (WITH_GEN (arg_node), arg_info, arg_node);
-
     INFO_TYPE (arg_info) = oldtype;
 
     switch (NODE_TYPE (WITH_OPERATOR (arg_node))) {
