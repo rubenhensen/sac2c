@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2002/10/18 16:53:35  dkr
+ * support for (..._MOD == EXTERN_MOD_NAME) finished 8-)
+ *
  * Revision 3.64  2002/10/18 16:08:04  dkr
  * some DBUG_ASSERTs added
  *
@@ -2755,31 +2758,33 @@ RenameFun (node *fun)
     if (FUNDEF_STATUS (fun) == ST_Cfun) {
         if ((FUNDEF_PRAGMA (fun) != NULL) && (FUNDEF_LINKNAME (fun) != NULL)) {
             /*
-             * These are C-functions with additional pragma 'linkname'.
+             * C functions with additional pragma 'linkname'
              */
 
-            DBUG_PRINT ("PREC", ("renaming function %s to %s", FUNDEF_NAME (fun),
+            DBUG_PRINT ("PREC", ("renaming C function %s to %s", FUNDEF_NAME (fun),
                                  FUNDEF_LINKNAME (fun)));
 
             FUNDEF_NAME (fun) = Free (FUNDEF_NAME (fun));
             FUNDEF_NAME (fun) = StringCopy (FUNDEF_LINKNAME (fun));
+        } else {
+            DBUG_PRINT ("PREC",
+                        ("C function %s has not been renamed", FUNDEF_NAME (fun)));
         }
     } else {
         /*
-         * These are SAC-functions which may be overloaded.
+         * SAC functions which may be overloaded
          */
-        if (FUNDEF_MOD (fun) != NULL) {
-            new_name = RenameFunName (FUNDEF_MOD (fun), FUNDEF_NAME (fun),
-                                      FUNDEF_STATUS (fun), FUNDEF_ARGS (fun));
 
-            DBUG_PRINT ("PREC", ("renaming function %s:%s to %s", FUNDEF_MOD (fun),
-                                 FUNDEF_NAME (fun), new_name));
+        new_name = RenameFunName (FUNDEF_MOD (fun), FUNDEF_NAME (fun),
+                                  FUNDEF_STATUS (fun), FUNDEF_ARGS (fun));
 
-            FUNDEF_NAME (fun) = Free (FUNDEF_NAME (fun));
-            FUNDEF_NAME (fun) = new_name;
-            /* don't free FUNDEF_MOD because it is shared !! */
-            FUNDEF_MOD (fun) = NULL;
-        }
+        DBUG_PRINT ("PREC", ("renaming SAC function %s:%s to %s", FUNDEF_MOD (fun),
+                             FUNDEF_NAME (fun), new_name));
+
+        FUNDEF_NAME (fun) = Free (FUNDEF_NAME (fun));
+        FUNDEF_NAME (fun) = new_name;
+        /* don't free FUNDEF_MOD because it is shared !! */
+        FUNDEF_MOD (fun) = NULL;
     }
 
     DBUG_RETURN (fun);
@@ -2873,6 +2878,7 @@ PREC4typedef (node *arg_node, node *arg_info)
         /*
          * SAC typedef
          */
+
         if (!strcmp (TYPEDEF_MOD (arg_node), MAIN_MOD_NAME)) {
             tmp = (char *)Malloc (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
             sprintf (tmp, "SACt_%s", TYPEDEF_NAME (arg_node));
@@ -2892,6 +2898,7 @@ PREC4typedef (node *arg_node, node *arg_info)
         /*
          * imported C typedef
          */
+
         tmp = (char *)Malloc (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
         sprintf (tmp, "SACe_%s", TYPEDEF_NAME (arg_node));
 
@@ -2941,6 +2948,7 @@ PREC4objdef (node *arg_node, node *arg_info)
         /*
          * SAC objdef
          */
+
         OBJDEF_VARNAME (arg_node) = Free (OBJDEF_VARNAME (arg_node));
         /*
          * OBJDEF_VARNAME is no longer used for the generation of the final C code
@@ -2968,6 +2976,7 @@ PREC4objdef (node *arg_node, node *arg_info)
         /*
          * imported C objdef
          */
+
         if (OBJDEF_LINKNAME (arg_node) != NULL) {
             OBJDEF_NAME (arg_node) = Free (OBJDEF_NAME (arg_node));
             OBJDEF_NAME (arg_node) = OBJDEF_LINKNAME (arg_node);
