@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.9  2000/01/25 13:42:25  dkr
+ * function FindVardec moved to tree_compound.h and renamed to
+ * FindVardec_Varno
+ *
  * Revision 2.8  1999/08/27 12:46:43  jhs
  * Added Traversal for CountOccurences.
  * Commented and rearranged functions.
@@ -55,7 +59,6 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "free.h"
-#include "refcount.h" /* FindVardec */
 
 #include "spmd_trav.h"
 
@@ -378,7 +381,7 @@ SPMDPMassign (node *arg_node, node *arg_info)
                  && (ASSIGN_USEMASK (arg_node)[i] > 0))
                 || ((ASSIGN_DEFMASK (arg_node) != NULL)
                     && (ASSIGN_DEFMASK (arg_node)[i] > 0))) {
-                vardec = FindVardec (i, INFO_CONC_FUNDEF (arg_info));
+                vardec = FindVardec_Varno (i, INFO_CONC_FUNDEF (arg_info));
                 if ((ASSIGN_USEMASK (arg_node) != NULL)
                     && (ASSIGN_USEMASK (arg_node)[i] > 0)) {
                     DBUG_PRINT ("SPMDPM", ("use hit %i", i));

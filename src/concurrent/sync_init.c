@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.9  2000/01/25 13:42:38  dkr
+ * function FindVardec moved to tree_compound.h and renamed to
+ * FindVardec_Varno
+ *
  * Revision 2.8  1999/08/27 12:48:03  jhs
  * Added comments.
  * Added possibility to inserted SYNC blokcs around non with-loop code.
@@ -56,7 +60,6 @@
 #include "DataFlowMask.h"
 #include "globals.h"
 #include "internal_lib.h"
-#include "refcount.h"
 
 /******************************************************************************
  *
@@ -163,13 +166,13 @@ SYNCIassign (node *arg_node, node *arg_info)
                 && (ASSIGN_DEFMASK (arg_node)[i] > 0)) {
                 DBUG_PRINT ("SYNCI", ("def[i=%i]=%i", i, ASSIGN_DEFMASK (arg_node)[i]));
                 DFMSetMaskEntrySet (SYNC_OUTREP (sync), NULL,
-                                    FindVardec (i, INFO_CONC_FUNDEF (arg_info)));
+                                    FindVardec_Varno (i, INFO_CONC_FUNDEF (arg_info)));
             }
             if ((ASSIGN_USEMASK (arg_node) != NULL)
                 && (ASSIGN_USEMASK (arg_node)[i] > 0)) {
                 DBUG_PRINT ("SYNCI", ("use i %i", i));
                 DFMSetMaskEntrySet (SYNC_IN (sync), NULL,
-                                    FindVardec (i, INFO_CONC_FUNDEF (arg_info)));
+                                    FindVardec_Varno (i, INFO_CONC_FUNDEF (arg_info)));
             }
             DBUG_PRINT ("SYNCI", ("end step i %i", i));
         }
