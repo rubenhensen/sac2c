@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.172  1998/03/25 15:01:34  dkr
+ * PrintNodeTree:
+ *    shows now NCODE_USED
+ *
  * Revision 1.171  1998/03/24 15:30:29  cg
  * #include "profile.h" removed since file no longer exists.
  *
@@ -2533,6 +2537,8 @@ PrintNodeTree (node *node)
         case N_fundef:
             fprintf (outfile, "(%s)\n", FUNDEF_NAME (node));
             break;
+        case N_Ncode:
+            fprintf (outfile, "(used: %d)", NCODE_USED (node));
         default:
             fprintf (outfile, "\n");
         }
