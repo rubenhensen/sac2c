@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.161  2002/10/24 13:11:32  ktr
+ * removed ASSIGN_INDENT
+ *
  * Revision 3.160  2002/10/22 13:03:00  sbs
  * usage of DBUG_ASSERT in expression position replaed by DBUG_ASSERT_EXPR
  *
@@ -1431,10 +1434,6 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***    CF is used to temporarily store an N_assign node behind another one.
  ***    This additional N_assign node will later be inserted before the original
  ***    one into the assignment chain.
- ***
- ***    INDENT is used by WLS zu indicate how many layers a N_assign node has
- ***    been moved inside a withloop. This happens if two withloops that are about
- ***    to be merged are not nested perfectly.
  ***/
 
 extern node *MakeAssign (node *instr, node *next);
@@ -1447,7 +1446,6 @@ extern node *MakeAssign (node *instr, node *next);
 #define ASSIGN_STATUS(n) (n->flag)
 #define ASSIGN_INDEX(n) (n->info2)
 #define ASSIGN_LEVEL(n) (n->info.cint)
-#define ASSIGN_INDENT(n) (n->varno)
 
 /*--------------------------------------------------------------------------*/
 
