@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2003/11/14 15:40:47  sbs
+ * mechanism for flattening MG WLs corrected.
+ *
  * Revision 3.25  2003/11/12 14:36:41  sbs
  * handling for mgWLs added.
  *
@@ -241,16 +244,12 @@
  * (node[2])    Every FltnAssign replaces node[2] with arg_node if
  *              ASSIGN_NEXT(arg_node) equals NULL.
  *
- * DOTSHAPE:    this field is used in order to transport the generic shape
- * (node[3])    from Nwithid (via Nwith) to Ngenerator, where it may be used
- *              in order to replace . generator boundaries.
  */
 
 #define INFO_FLTN_CONTEXT(n) (n->flag)
 #define INFO_FLTN_LASTASSIGN(n) (n->node[0])
 #define INFO_FLTN_LASTWLBLOCK(n) (n->node[1])
 #define INFO_FLTN_FINALASSIGN(n) (n->node[2])
-#define INFO_FLTN_DOTSHAPE(n) (n->node[3])
 
 #define INFO_FLTN_CONSTVEC(n) (n->info2)
 #define INFO_FLTN_VECLEN(n) (n->counter)
@@ -610,54 +609,65 @@ Abstract (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *ExtractFirstGen( node *wloop)
+ * @fn  node *FltnMGNwith( node *wloop)
  *
- *   @brief  splits the given multi generator WL into a single WL
- *           and a mgWL with one generator less.
+ *   @brief  splits the given multi generator WL into a nesting of WLs.
  *
- *           While the split-off WL is perfectly fine, the reminiscents
- *           of the mgWL lack the withop part!!!
  *   @param  wloop
- *   @return the splitt-off WL
+ *   @return the single generator WL
  *
  ******************************************************************************/
 
 static node *
-ExtractFirstGen (node *wloop)
+FltnMGNwith (node *wloop)
 {
-    node *part, *code, *withop, *res;
+    node *part, *code, *withop, *first_wl;
 
     DBUG_ENTER ("ExtractFirstGen");
 
     DBUG_ASSERT ((NODE_TYPE (wloop) == N_Nwith),
                  "ExtractFirstGen applied to non With-Loop!");
-    DBUG_ASSERT ((NPART_NEXT (NWITH_PART (wloop)) != NULL),
-                 "ExtractFirstGen applied to With-Loop with one Part only!");
-    DBUG_ASSERT ((NCODE_NEXT (NWITH_CODE (wloop)) != NULL),
-                 "ExtractFirstGen applied to With-Loop with one Code only!");
-    /**
-     * pull out the first part!
-     */
-    part = NWITH_PART (wloop);
-    NWITH_PART (wloop) = NPART_NEXT (part);
-    NPART_NEXT (part) = NULL;
 
-    /**
-     * pull out the first code!
-     */
-    code = NWITH_CODE (wloop);
-    NWITH_CODE (wloop) = NCODE_NEXT (code);
-    NCODE_NEXT (code) = NULL;
+    while ((NPART_NEXT (NWITH_PART (wloop)) != NULL)
+           && (NCODE_NEXT (NWITH_CODE (wloop)) != NULL)) {
+        /**
+         * pull out the first part!
+         */
+        part = NWITH_PART (wloop);
+        NWITH_PART (wloop) = NPART_NEXT (part);
+        NPART_NEXT (part) = NULL;
 
-    /**
-     * steal the withop!
-     */
-    withop = NWITH_WITHOP (wloop);
-    NWITH_WITHOP (wloop) = NULL;
+        /**
+         * pull out the first code!
+         */
+        code = NWITH_CODE (wloop);
+        NWITH_CODE (wloop) = NCODE_NEXT (code);
+        NCODE_NEXT (code) = NULL;
 
-    res = MakeNWith (part, code, withop);
+        /**
+         * steal the withop!
+         */
+        withop = NWITH_WITHOP (wloop);
+        first_wl = MakeNWith (part, code, withop);
 
-    DBUG_RETURN (res);
+        /**
+         * Finally, we construct the resulting WL:
+         */
+        if (NWITHOP_TYPE (withop) == WO_foldfun) {
+            NWITH_WITHOP (wloop) = MakeNWithOp (WO_foldfun, first_wl);
+            NWITHOP_MOD (NWITH_WITHOP (wloop)) = StringCopy (NWITHOP_MOD (withop));
+            NWITHOP_FUN (NWITH_WITHOP (wloop)) = StringCopy (NWITHOP_FUN (withop));
+
+        } else if (NWITHOP_TYPE (withop) == WO_foldprf) {
+            NWITH_WITHOP (wloop) = MakeNWithOp (WO_foldprf, first_wl);
+            NWITHOP_PRF (NWITH_WITHOP (wloop)) = NWITHOP_PRF (withop);
+
+        } else {
+            NWITH_WITHOP (wloop) = MakeNWithOp (WO_modarray, first_wl);
+        }
+    }
+
+    DBUG_RETURN (wloop);
 }
 
 /******************************************************************************
@@ -1792,34 +1802,10 @@ node *
 FltnNwith (node *arg_node, node *arg_info)
 {
     local_stack *tmp_tos;
-    node *nwl, *nwl2, *tmp_id;
 
     DBUG_ENTER ("FltnNWith");
 
-    while ((NPART_NEXT (NWITH_PART (arg_node)) != NULL)
-           && (NCODE_NEXT (NWITH_CODE (arg_node)) != NULL)) {
-        /**
-         * Splitt-off the first generator:
-         */
-        nwl = ExtractFirstGen (arg_node);
-        /**
-         * Abstract it out:
-         */
-        tmp_id = Abstract (nwl, arg_info);
-        /**
-         * and flatten it:
-         */
-        nwl2 = Trav (nwl, arg_info);
-
-        /* Finally, we correct the remaining WL: */
-        if ((NWITHOP_TYPE (NWITH_WITHOP (nwl)) == WO_foldfun)
-            || (NWITHOP_TYPE (NWITH_WITHOP (nwl)) == WO_foldfun)) {
-            NWITH_WITHOP (arg_node)
-              = MakeNWithOp (NWITHOP_TYPE (NWITH_WITHOP (nwl)), tmp_id);
-        } else {
-            NWITH_WITHOP (arg_node) = MakeNWithOp (WO_modarray, tmp_id);
-        }
-    }
+    arg_node = FltnMGNwith (arg_node);
 
     with_level++;
     tmp_tos = tos; /* store tos */
@@ -1880,12 +1866,6 @@ FltnNwithop (node *arg_node, node *arg_info)
         DBUG_ASSERT ((expr == expr2),
                      "return-node differs from arg_node while flattening an expr!");
 
-        if (sbs == 1) {
-            INFO_FLTN_DOTSHAPE (arg_info)
-              = MakeAp1 (StringCopy ("shape"), NULL, DupTree (NWITHOP_ARRAY (arg_node)));
-        } else {
-            INFO_FLTN_DOTSHAPE (arg_info) = NULL;
-        }
         break;
 
     case WO_genarray:
@@ -1908,11 +1888,8 @@ FltnNwithop (node *arg_node, node *arg_info)
                                               "flattening an expr!");
             }
 
-            INFO_FLTN_DOTSHAPE (arg_info) = DupTree (NWITHOP_SHAPE (arg_node));
-
         } else {
             expr = NULL;
-            INFO_FLTN_DOTSHAPE (arg_info) = NULL;
         }
 
         break;
@@ -1932,7 +1909,6 @@ FltnNwithop (node *arg_node, node *arg_info)
             DBUG_ASSERT ((expr == expr2),
                          "return-node differs from arg_node while flattening an expr!");
         }
-        INFO_FLTN_DOTSHAPE (arg_info) = NULL;
 
         break;
 
@@ -2050,58 +2026,7 @@ FltnNgenerator (node *arg_node, node *arg_info)
     int i;
     DBUG_ENTER ("FltnNgenerator");
 
-    if (sbs == 1) {
-        /*
-         * Dots are replaced by the "shape" expressions, that are imported via
-         * INFO_FLTN_DOTSHAPE( arg_info)    (cf. FltnNwithid),
-         * and the bounds are adjusted so that the operator can be
-         * "normalized" to:   bound1 <= iv = [...] < bound2     .
-         */
-
-        if ((INFO_FLTN_DOTSHAPE (arg_info) == NULL)
-            && (DOT_ISSINGLE (NGEN_BOUND1 (arg_node))
-                || DOT_ISSINGLE (NGEN_BOUND2 (arg_node)))) {
-            ABORT (linenum, ("dot notation is not allowed in fold with loops"));
-        }
-
-        if (DOT_ISSINGLE (NGEN_BOUND1 (arg_node))) {
-            /* replace "." by "0 * shp" */
-            NGEN_BOUND1 (arg_node) = FreeTree (NGEN_BOUND1 (arg_node));
-            NGEN_BOUND1 (arg_node) = MakePrf2 (F_mul_SxA, MakeNum (0),
-                                               DupTree (INFO_FLTN_DOTSHAPE (arg_info)));
-        }
-
-        if (NGEN_OP1 (arg_node) == F_lt) {
-            /* make <= from < and add 1 to bound */
-            NGEN_OP1 (arg_node) = F_le;
-            NGEN_BOUND1 (arg_node)
-              = MakePrf2 (F_add_AxS, NGEN_BOUND1 (arg_node), MakeNum (1));
-        }
-        if (DOT_ISSINGLE (NGEN_BOUND2 (arg_node))) {
-            if (NGEN_OP2 (arg_node) == F_le) {
-                /* make < from <= and replace "." by "shp"  */
-                NGEN_OP2 (arg_node) = F_lt;
-                NGEN_BOUND2 (arg_node) = FreeTree (NGEN_BOUND2 (arg_node));
-                NGEN_BOUND2 (arg_node) = INFO_FLTN_DOTSHAPE (arg_info);
-            } else {
-                /* replace "." by "shp - 1"  */
-                NGEN_BOUND2 (arg_node) = FreeTree (NGEN_BOUND2 (arg_node));
-                NGEN_BOUND2 (arg_node)
-                  = MakePrf2 (F_sub_AxS, INFO_FLTN_DOTSHAPE (arg_info), MakeNum (1));
-            }
-            INFO_FLTN_DOTSHAPE (arg_info) = NULL; /* has been consumed ! */
-        } else {
-            if (NGEN_OP2 (arg_node) == F_le) {
-                /* make < from <= and add 1 to bound */
-                NGEN_OP2 (arg_node) = F_lt;
-                NGEN_BOUND2 (arg_node)
-                  = MakePrf2 (F_add_AxS, NGEN_BOUND2 (arg_node), MakeNum (1));
-            }
-            if (INFO_FLTN_DOTSHAPE (arg_info) != NULL) {
-                INFO_FLTN_DOTSHAPE (arg_info) = FreeTree (INFO_FLTN_DOTSHAPE (arg_info));
-            }
-        }
-    } else { /* OLD TYPECHECKER !!! */
+    if (sbs != 1) { /* OLD TYPECHECKER !!! In the new TC, handle dots takes care! */
         /*
          * First, the bounds are adjusted so that the operator can be
          * "normalized" to:   bound1 <= iv = [...] < bound2
