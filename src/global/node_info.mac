@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.88  1995/07/25 10:20:37  cg
- * new status ST_readonly_reference.
+ * Revision 1.89  1995/07/28 12:51:24  asi
+ * added DupInfo
  *
+;; Revision 1.88  1995/07/25  10:20:37  cg
+;; new status ST_readonly_reference.
+;;
 ;; Revision 1.87  1995/07/24  11:45:53  asi
 ;; added OPTmodul, AEfundef, AEassign and AEprf for ae_tab (array elimination)
 ;;
@@ -407,7 +410,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, CompArray, DummyFun, DupChain, DummyFun,
        DummyFun, DummyFun, IdxArray, DummyFun, DummyFun, DummyFun),
   NIF (N_info, "N_info", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
-       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DupInfo, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_empty, "N_empty", DummyFun, DummyFun, PrintEmpty, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun, DupChain, DummyFun,
