@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/15 15:29:28  dkr
+ * signature of Type2String modified
+ *
  * Revision 3.3  2000/11/24 14:49:40  nmw
  * CDECfundef does not export fundef marked to be ignored
  *
@@ -97,8 +100,6 @@
  *
  * Revision 1.1  1995/10/22  14:23:26  cg
  * Initial revision
- *
- *
  *
  */
 
@@ -239,7 +240,7 @@ PrintDecTypes (types *type, char *modname)
         next_type = TYPES_NEXT (type);
         TYPES_NEXT (type) = NULL;
 
-        type_string = Type2String (type, mode_for_type2string);
+        type_string = Type2String (type, mode_for_type2string, NULL);
         fprintf (outfile, "%s", type_string);
         FREE (type_string);
 
@@ -893,17 +894,3 @@ WDECarg (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
