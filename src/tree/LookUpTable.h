@@ -1,9 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/31 20:18:48  dkr
+ * support for hashing added
+ *
  * Revision 1.1  2000/01/28 12:33:16  dkr
  * Initial revision
- *
  *
  */
 
