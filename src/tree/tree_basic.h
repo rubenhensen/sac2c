@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2000/02/09 14:14:22  dkr
+ * WLSEGVAR_MAXHOMDIM removed
+ * INFO_LAC2FUN_FUNDEF added
+ *
  * Revision 1.10  2000/02/09 09:59:31  dkr
  * FUNDEF_LAC_LET added
  *
@@ -2664,6 +2668,7 @@ extern node *MakeInfo ();
 #define INFO_LAC2FUN_LOCAL(n) ((DFMmask_t) (n->dfmask[3]))
 #define INFO_LAC2FUN_NEEDED(n) ((DFMmask_t) (n->dfmask[4]))
 #define INFO_LAC2FUN_ISTRANS(n) (n->flag)
+#define INFO_LAC2FUN_FUNDEF(n) (n->node[0])
 #define INFO_LAC2FUN_FUNS(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
@@ -3411,7 +3416,6 @@ extern node *MakeWLgrid (int level, int dim, int bound1, int bound2, int unrolli
  ***    long*      UBV       (unrolling-b. vector)   (wltransform -> compile )
  ***
  ***    SCHsched_t SCHEDULING  (O)                   (wltransform -> compile )
- ***    int        MAXHOMDIM (last homog. dimension) (wltransform -> compile )
  ***
  ***  remarks:
  ***
@@ -3434,7 +3438,6 @@ extern node *MakeWLsegVar (int dims, node *contents, node *next);
 #define WLSEGVAR_UBV(n) (WLSEGX_UBV (n))
 
 #define WLSEGVAR_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
-#define WLSEGVAR_MAXHOMDIM(n) (WLSEGX_MAXHOMDIM (n))
 
 /*--------------------------------------------------------------------------*/
 
