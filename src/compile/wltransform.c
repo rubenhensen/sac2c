@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.85  2004/03/26 13:45:26  khf
+ * added support of multigenerator withloops with variable
+ * strides or grids, but they get compiled natively
+ *
  * Revision 3.84  2003/12/11 21:38:39  dkrHH
  * bug in EmptyParts2StridesOrExpr() fixed: 'iter_shp' my be NULL!
  *
@@ -1745,10 +1749,9 @@ CompareWLnode (node *node1, node *node2, int outline)
             result = (node2 == NULL) ? 2 : (-2);
         }
     } else {
-        DBUG_ASSERT ((NODE_TYPE (node1) == NODE_TYPE (node2)),
-                     "can not compare objects of different type");
-
-        if ((NODE_TYPE (node1) == N_WLstrideVar) || (NODE_TYPE (node1) == N_WLgridVar)) {
+        if ((NODE_TYPE (node1) == N_WLstrideVar) || (NODE_TYPE (node1) == N_WLgridVar)
+            || (NODE_TYPE (node2) == N_WLstrideVar)
+            || (NODE_TYPE (node2) == N_WLgridVar)) {
             /*
              * we can not compare var. strides or grids
              */
