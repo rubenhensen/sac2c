@@ -622,6 +622,7 @@
 	  <node name="Return" />
 	  <node name="Array" />
 	  <node name="Funcond" />
+	  <node name="Arg" />
 	</travuser>
       </traversal>
     <traversal id="DCR" name="Dead Code Removal" default="sons" include="SSADeadCodeRemoval.h" >
