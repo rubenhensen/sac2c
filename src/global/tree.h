@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1994/12/30 13:22:09  hw
+ * Revision 1.16  1994/12/30 13:49:08  hw
+ * *** empty log message ***
+ *
+ * Revision 1.15  1994/12/30  13:22:09  hw
  * changed struct types (added id_mod & name_mod)
  * new struct fun_name
  * added fun_name to node.info
@@ -134,22 +137,22 @@ typedef enum {
 typedef struct NODE {
     nodetype nodetype;
     union {
-        ids *ids;         /* Liste von Identifikatoren          */
-        id *id;           /* Identifikator                      */
-        types *types;     /* Typinformation                     */
-        int cint;         /* Integer-Wert                       */
-        float cfloat;     /* Float-Wert                         */
-        prf prf;          /* tag for primitive functions        */
-        char *mask[2];    /* Variablen, die in einem Grundblock */
-                          /* 1) "uberschrieben werden           */
-                          /* 2) benutzt werden                  */
-        fun_name fun_name /* used in N_ap nodes */
-    } info;               /* fu"r spezielle Informationen */
-    int nnode;            /* Anzahl der benutzten Knoten */
-    int lineno;           /* Zeilennummer in der ein Befehl steht */
-                          /* bzw. Nummer der Varible nach dem Optimieren */
-    struct NODE *node[4]; /* Diese Eintra"ge sind knotenspezifisch */
-} node;                   /* Knoten des Syntaxbaums  */
+        ids *ids;          /* Liste von Identifikatoren          */
+        id *id;            /* Identifikator                      */
+        types *types;      /* Typinformation                     */
+        int cint;          /* Integer-Wert                       */
+        float cfloat;      /* Float-Wert                         */
+        prf prf;           /* tag for primitive functions        */
+        char *mask[2];     /* Variablen, die in einem Grundblock */
+                           /* 1) "uberschrieben werden           */
+                           /* 2) benutzt werden                  */
+        fun_name fun_name; /* used in N_ap nodes                 */
+    } info;                /* fu"r spezielle Informationen */
+    int nnode;             /* Anzahl der benutzten Knoten */
+    int lineno;            /* Zeilennummer in der ein Befehl steht */
+                           /* bzw. Nummer der Varible nach dem Optimieren */
+    struct NODE *node[4];  /* Diese Eintra"ge sind knotenspezifisch */
+} node;                    /* Knoten des Syntaxbaums  */
 
 /*
  *  macro for the generation of nodes
