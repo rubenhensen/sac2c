@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/23 19:43:26  cg
+ * Added flags for triggering tracing, cache simulation and runtime checks.
+ *
  * Revision 1.7  2004/11/23 16:23:05  cg
  * First working revision of new representation of global variables.
  *
@@ -250,9 +253,19 @@ GLOBAL (int, cc_optimize, 0)
  * Command line options for triggering optimizations
  */
 
-GLOBAL (optimize_t, optimize, optimize_init)
+GLOBAL (optimize_flags_t, optimize_developer, optimize_developer_init)
+GLOBAL (optimize_flags_t, optimize_production, optimize_production_init)
+GLOBAL (optimize_flags_t, optimize_all, optimize_all_init)
+GLOBAL (optimize_flags_t, optimize_none, optimize_none_init)
+
+#ifdef PRODUCTION
+GLOBAL (optimize_flags_t, optimize, optimize_developer_init)
+#else  /* PRODUCTION */
+GLOBAL (optimize_flags_t, optimize, optimize_production_init)
+#endif /* PRODUCTION */
+
 /*
- * Set of flags maintaining the activation states of individual optimizations
+ * Command line options for triggering optimization parameters
  */
 
 GLOBAL (bool, valid_ssaform, FALSE)
@@ -341,20 +354,27 @@ GLOBAL (bool, show_idx, FALSE)
  * Runtime options
  */
 
-GLOBAL (int, print_after_break, TRUE)
-GLOBAL (unsigned int, traceflag, TRACE_NONE)
-GLOBAL (unsigned int, profileflag, PROFILE_NONE)
-GLOBAL (unsigned int, runtimecheck, RUNTIMECHECK_NONE)
-GLOBAL (unsigned int, intrinsics, INTRINSIC_NONE)
-GLOBAL (unsigned int, cachesim, CACHESIM_NO | CACHESIM_PIPE)
+GLOBAL (bool, print_after_break, TRUE)
+
+GLOBAL (trace_flags_t, trace, trace_init)
+GLOBAL (trace_flags_t, trace_all, trace_all_init)
+GLOBAL (trace_flags_t, trace_none, trace_none_init)
+
+#if 0
+GLOBAL( unsigned int,  profileflag ,  PROFILE_NONE)
+#endif
+
+GLOBAL (runtimecheck_flags_t, runtimecheck, runtimecheck_init)
+GLOBAL (runtimecheck_flags_t, runtimecheck_all, runtimecheck_all_init)
+GLOBAL (runtimecheck_flags_t, runtimecheck_none, runtimecheck_none_init)
+
+GLOBAL (cachesim_flags_t, cachesim, cachesim_init)
+GLOBAL (cachesim_flags_t, cachesim_all, cachesim_all_init)
+GLOBAL (cachesim_flags_t, cachesim_none, cachesim_none_init)
+
 GLOBAL (char *, cachesim_host, (char *)ILIBmalloc (MAX_FILE_NAME))
 GLOBAL (char *, cachesim_file, (char *)ILIBmalloc (MAX_FILE_NAME))
 GLOBAL (char *, cachesim_dir, (char *)ILIBmalloc (MAX_FILE_NAME))
-/*
- * These options insert special code sections into the target C code
- * in order to do additional checks, profiling, etc., or to use intrinsic
- * implementations of some array operations.
- */
 
 /*
  * Profiling information storage facilities
@@ -534,12 +554,12 @@ GLOBAL (unsigned int, max_allocated_mem, 0)
  * lac2fun, fun2lac conversion
  */
 
-GLOBAL (int *, do_lac2fun, do_lac2fun_init)
+GLOBAL (bool *, do_lac2fun, do_lac2fun_init)
 /*
  * do_lac2fun[i] > 0: do lac2fun conversion before phase i
  */
 
-GLOBAL (int *, do_fun2lac, do_fun2lac_init)
+GLOBAL (bool *, do_fun2lac, do_fun2lac_init)
 /*
  * do_fun2lac[i] > 0: do fun2lac conversion after phase i
  */

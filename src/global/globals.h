@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2004/11/23 19:43:26  cg
+ * Added flags for triggering tracing, cache simulation and runtime checks.
+ *
  * Revision 3.53  2004/11/23 16:23:05  cg
  * First working revision of new representation of global variables.
  *
@@ -108,23 +111,12 @@
 
 #include "types.h"
 
+#if 0
+
 /*
  * The following macro definitions should be replaced by flags.
  */
 
-#define TRACE_NONE 0x0000 /* don't trace at all */
-#define TRACE_ALL 0xffff  /* enable all implemented trace options */
-
-#define TRACE_FUN 0x0001  /* trace user-defined fun apps */
-#define TRACE_PRF 0x0002  /* trace prim fun apps */
-#define TRACE_REF 0x0004  /* trace reference counting operations */
-#define TRACE_MEM 0x0008  /* trace malloc/free operations */
-#define TRACE_WL 0x0010   /* trace with-loop execution */
-#define TRACE_AA 0x0020   /* trace array accesses */
-#define TRACE_MT 0x0040   /* trace multi-threading specific operations */
-#define TRACE_CENV 0x0080 /* trace c runtime enviroment init/exit */
-
-#if 0
 #define PROFILE_NONE 0x0000
 #define PROFILE_ALL 0xffff
 
@@ -132,44 +124,20 @@
 #define PROFILE_INL 0x0002
 #define PROFILE_LIB 0x0004
 #define PROFILE_WITH 0x0008
+
 #endif
 
-#define CACHESIM_NO 0x0000
+/*
+ * Library generation flags
+ */
 
-#define CACHESIM_YES 0x0001
-#define CACHESIM_ADVANCED 0x0002
-#define CACHESIM_FILE 0x0004
-#define CACHESIM_PIPE 0x0008
-#define CACHESIM_IMMEDIATE 0x0010
-#define CACHESIM_BLOCK 0x0020
+#define GENERATELIBRARY_NOTHING 0x0000
+#define GENERATELIBRARY_SAC 0x0001
+#define GENERATELIBRARY_C 0x0002
 
-#define RUNTIMECHECK_NONE 0x0000
-#define RUNTIMECHECK_ALL 0xffff
-
-#define RUNTIMECHECK_BOUNDARY 0x0001
-#define RUNTIMECHECK_TYPE 0x0002
-#define RUNTIMECHECK_MALLOC 0x0004
-#define RUNTIMECHECK_ERRNO 0x0008
-#define RUNTIMECHECK_HEAP 0x0010
-
-#define INTRINSIC_NONE 0x0000
-#define INTRINSIC_ALL 0xffff
-
-#define INTRINSIC_ADD 0x0001
-#define INTRINSIC_SUB 0x0002
-#define INTRINSIC_MUL 0x0004
-#define INTRINSIC_DIV 0x0008
-#define INTRINSIC_TO 0x0010
-#define INTRINSIC_TAKE 0x0020
-#define INTRINSIC_DROP 0x0040
-#define INTRINSIC_ROT 0x0080
-#define INTRINSIC_CAT 0x0100
-#define INTRINSIC_SEL 0x0200
-#define INTRINSIC_MODA 0x0400
-
-#define GENERATELIBRARY_NOTHING 0x0000 /* generate no library - dummy value for init */
-#define GENERATELIBRARY_SAC 0x0001     /* generate SAC library from module */
-#define GENERATELIBRARY_C 0x0002       /* generate C library and headerfile from module */
+/*
+ * Array representation flags
+ */
 
 #define MIN_ARRAY_REP_SCL_AKS 0x0001
 #define MIN_ARRAY_REP_SCL_AKD 0x0002
@@ -178,6 +146,6 @@
 
 extern global_t global;
 
-extern void GLOBinitializeGlobal (global_t *global);
+extern void GLOBinitializeGlobal ();
 
 #endif /* _SAC_GLOBALS_H_ */

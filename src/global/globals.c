@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2004/11/23 19:43:26  cg
+ * Added flags for triggering tracing, cache simulation and runtime checks.
+ *
  * Revision 3.75  2004/11/23 16:23:05  cg
  * First working revision of new representation of global variables.
  *
@@ -202,13 +205,13 @@ static const char *compiler_phase_name_init[PH_final + 1] = {
 #undef PH_SELtext
 };
 
-static int do_lac2fun_init[PH_final + 1] = {
+static bool do_lac2fun_init[PH_final + 1] = {
 #define PH_SELlac2fun(it_lac2fun) it_lac2fun
 #include "phase_info.mac"
 #undef PH_SELlac2fun
 };
 
-static int do_fun2lac_init[PH_final + 1] = {
+static bool do_fun2lac_init[PH_final + 1] = {
 #define PH_SELfun2lac(it_fun2lac) it_fun2lac
 #include "phase_info.mac"
 #undef PH_SELfun2lac
@@ -487,34 +490,90 @@ static const char *mdb_statustype_init[] = {
 static configuration_t config_init;
 /*
  * This is only a dirty trick to fake an a-priori initialization
- * of config.
+ * of config, Which is not possible otherwise without a major code
+ * rewrite.
  */
 
 /*
  * Initialize optimization defaults from optimize.mac
  */
 
-#ifdef PRODUCTION
-
-static optimize_t optimize_init = {
-#define OPTdevl(devl) devl
-#define OPTdelim ,
+static optimize_flags_t optimize_developer_init = {
+#define OPTdevl(devl) devl,
 #include "optimize.mac"
-#undef OPTdelim
-#undef OPTdevl
 };
 
-#else /* PRODUCTION */
-
-static optimize_t optimize_init = {
-#define OPTprod(prod) prod
-#define OPTdelim ,
+static optimize_flags_t optimize_production_init = {
+#define OPTprod(prod) prod,
 #include "optimize.mac"
-#undef OPTdelim
-#undef OPTprod
 };
 
-#endif /* PRODUCTION */
+static optimize_flags_t optimize_all_init = {
+#define OPTprod(prod) TRUE,
+#include "optimize.mac"
+};
+
+static optimize_flags_t optimize_none_init = {
+#define OPTprod(prod) FALSE,
+#include "optimize.mac"
+};
+
+/*
+ * Initialize trace flags from flags.mac
+ */
+
+static trace_flags_t trace_init = {
+#define TRACEdefault(default) default,
+#include "flags.mac"
+};
+
+static trace_flags_t trace_all_init = {
+#define TRACEdefault(default) TRUE,
+#include "flags.mac"
+};
+
+static trace_flags_t trace_none_init = {
+#define TRACEdefault(default) FALSE,
+#include "flags.mac"
+};
+
+/*
+ * Initialize cache simulation flags from flags.mac
+ */
+
+static cachesim_flags_t cachesim_init = {
+#define CSdefault(default) default,
+#include "flags.mac"
+};
+
+static cachesim_flags_t cachesim_all_init = {
+#define CSdefault(default) TRUE,
+#include "flags.mac"
+};
+
+static cachesim_flags_t cachesim_none_init = {
+#define CSdefault(default) FALSE,
+#include "flags.mac"
+};
+
+/*
+ * Initialize runtime check flags from flags.mac
+ */
+
+static runtimecheck_flags_t runtimecheck_init = {
+#define RTCdefault(default) default,
+#include "flags.mac"
+};
+
+static runtimecheck_flags_t runtimecheck_all_init = {
+#define RTCdefault(default) TRUE,
+#include "flags.mac"
+};
+
+static runtimecheck_flags_t runtimecheck_none_init = {
+#define RTCdefault(default) FALSE,
+#include "flags.mac"
+};
 
 /*
  * Initialize global variables from globals.mac
@@ -523,15 +582,13 @@ static optimize_t optimize_init = {
 global_t global;
 
 void
-GLOBinitializeGlobal (global_t *global)
+GLOBinitializeGlobal ()
 {
     DBUG_ENTER ("GLOBinitializeGlobal");
 
-#define GLOBALname(name) global->name =
+#define GLOBALname(name) global.name =
 #define GLOBALinit(init) init;
 #include "globals.mac"
-#undef GLOBALinit
-#undef GLOBALname
 
     DBUG_VOID_RETURN;
 }
