@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.19  1999/01/18 15:01:34  srs
+ * fixed typo
+ *
  * Revision 1.18  1999/01/07 13:56:58  sbs
  * optimization process restructured for a function-wise optimization!
  *
@@ -164,7 +167,7 @@ typedef enum {
        traverses the target code and, if a foldable reference is found, initiates
        folding.  wlfm_replace traverses the copied target code block and tries to
        find the same point (Id which should be folded) here. Then the subst code
-       is inserted at this point.  wlf_rename traverses the subst code and renames
+       is inserted at this point.  wlfm_rename traverses the subst code and renames
        variables which would lead to name clashes. */
 } wlf_mode_type;
 
