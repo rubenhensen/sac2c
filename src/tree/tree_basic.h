@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2001/03/05 16:19:04  nmw
+ * INFO_SSACSE macros added
+ *
  * Revision 3.39  2001/03/05 15:10:49  dkr
  * some minor corrections done
  *
@@ -2315,9 +2318,16 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      LET               (actual let node)
  ***    node*      ASSIGN            (actual assign node)
  ***
+ ***  when used in SSACSE.c
+ ***    int        DEPTH             (recursion depth of special functions)
+ ***    bool       REMASSIGN         (falg, if assignment can be removed)
+ ***    node*      CSE               (cseinfo chain of available expressions)
+ ***
+ ***
  ***  remarks:
  ***
- ***    N_info is used in many other phases without access macros :((
+ ***    N_info is used in many other phases without a
+ccess macros :((
  ***/
 
 /*
@@ -2729,6 +2739,11 @@ extern node *MakeInfo ();
 #define INFO_SSADCR_RESNEEDED(n) (n->refcnt)
 #define INFO_SSADCR_LET(n) (n->node[2])
 #define INFO_SSADCR_ASSIGN(n) (n->node[3])
+
+/* when used in SSACSE.c */
+#define INFO_SSACSE_DEPTH(n) (n->int_data)
+#define INFO_SSACSE_REMASSIGN(n) ((bool)(n->flag))
+#define INFO_SSACSE_CSE(n) (n->node[0])
 
 /*--------------------------------------------------------------------------*/
 
