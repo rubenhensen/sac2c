@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  1999/08/05 13:33:11  jhs
+ * Added traversals spmdlc, spmddn and spmdpm.
+ *
  * Revision 2.15  1999/08/04 14:33:26  bs
  * TSI traverse functions added.
  *
@@ -152,8 +155,8 @@
  *   syncopt_tab     wltrans_tab     gsc_tab         reuse_tab
  *   o2nWith_tab     sched_tab       conc_tab        opt_tab
  *   wlaa_tab        freemask_tab    smpdrmtrav_tab  spmdrotrav_tav
- *   spmdcons_tab    tsi_tab         unused1_tab     unused2_tab
- *   unused3_tab     unused4_tab     unused5_tab     unused6_tab
+ *   spmdcons_tab    tsi_tab         spmdlc_tab      spmddn_tab
+ *   spmdpm_tab      unused1_tab     unused2_tab     unused3_tab
  *   nnode
  *
  * usage (in this file):
@@ -372,24 +375,24 @@
 #ifndef NIFtsi
 #define NIFtsi(it_tsi)
 #endif
+#ifndef NIFspmdlc
+#define NIFspmdlc(it_spmdlc)
+#endif
+#ifndef NIFspmddn
+#define NIFspmddn(it_spmddn)
+#endif
+
+#ifndef NIFspmdpm
+#define NIFspmdpm(it_spmdpm)
+#endif
 #ifndef NIFunused1
 #define NIFunused1(it_unused1)
 #endif
 #ifndef NIFunused2
 #define NIFunused2(it_unused2)
 #endif
-
 #ifndef NIFunused3
 #define NIFunused3(it_unused3)
-#endif
-#ifndef NIFunused4
-#define NIFunused4(it_unused4)
-#endif
-#ifndef NIFunused5
-#define NIFunused5(it_unused5)
-#endif
-#ifndef NIFunused6
-#define NIFunused6(it_unused6)
 #endif
 
 #ifndef NIFnnode
@@ -409,8 +412,8 @@
   it_tcwl, it_spmdinit, it_spmdopt, it_spmdlift, it_syncinit,                            \
                                                                                          \
   it_syncopt, it_wltrans, it_gsc, it_reuse, it_o2nWith, it_sched, it_conc, it_opt,       \
-  it_wlaa, it_freemask, it_spmdrm, it_spmdro, it_spmdcons, it_tsi, it_unused1,           \
-  it_unused2, it_unused3, it_unused4, it_unused5, it_unused6,                            \
+  it_wlaa, it_freemask, it_spmdrm, it_spmdro, it_spmdcons, it_tsi, it_spmdlc, it_spmddn, \
+  it_spmdpm, it_unused1, it_unused2, it_unused3,                                         \
                                                                                          \
   nnode)                                                                                 \
                                                                                          \
@@ -437,14 +440,13 @@
                                     NIFconc (it_conc) NIFopt (it_opt) NIFwlaa (it_wlaa)  \
                                       NIFfreemask (it_freemask) NIFspmdrm (it_spmdrm)    \
                                         NIFspmdro (it_spmdro) NIFspmdcons (it_spmdcons)  \
-                                          NIFtsi (it_tsi) NIFunused1 (it_unused1)        \
-                                            NIFunused2 (it_unused2)                      \
-                                              NIFunused3 (it_unused3)                    \
-                                                NIFunused4 (it_unused4)                  \
-                                                  NIFunused5 (it_unused5)                \
-                                                    NIFunused6 (it_unused6)              \
+                                          NIFtsi (it_tsi) NIFspmdlc (it_spmdlc)          \
+                                            NIFspmddn (it_spmddn) NIFspmdpm (it_spmdpm)  \
+                                              NIFunused1 (it_unused1)                    \
+                                                NIFunused2 (it_unused2)                  \
+                                                  NIFunused3 (it_unused3)                \
                                                                                          \
-                                                      NIFnnode (nnode)
+                                                    NIFnnode (nnode)
 
 /******************************************************************************
  *
@@ -752,7 +754,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, WLTRALet, TravSons, ReuseLet, TravSons, TravSons, TravSons, TravSons,
        WLAAlet, TravSons, SPMDTRMlet, SPMDTROlet, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 1),
+       SPMDPMlet, TravSons, TravSons, TravSons, 1),
 
   NIF (N_prf, "N_prf", TravSons, FltnPrf, PrintPrf, TravSons, TravSons, TravSons,
        TravSons, FreePrf, CFprf, RCprf, COMPPrf, TravSons, DupPrf, TravSons, TravSons,
@@ -775,7 +777,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       WLAAap, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       WLAAap, TravSons, TravSons, TravSons, TravSons, TravSons, SPMDTLCap, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_cast, "N_cast", TravSons, TravSons, PrintCast, TravSons, TravSons, TravSons,
@@ -955,7 +957,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, SPMDOspmd, SPMDLspmd, TravSons,
 
        TravSons, TravSons, GSCspmd, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, SPMDCspmd, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, SPMDCspmd, TravSons, TravSons, SPMDDNspmd,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_sync, "N_sync", TravSons, TravSons, PrintSync, TravSons, TravSons, TravSons,
@@ -1340,13 +1342,13 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
 #undef NIFspmdcons
 #undef NIFtsi
+#undef NIFspmdlc
+#undef NIFspmddn
+
+#undef NIFspmdpm
 #undef NIFunused1
 #undef NIFunused2
-
 #undef NIFunused3
-#undef NIFunused4
-#undef NIFunused5
-#undef NIFunused6
 
 #undef NIFnnode
 
