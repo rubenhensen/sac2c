@@ -1,6 +1,10 @@
 
 /*
  * $Log$
+ * Revision 2.7  1999/09/01 19:38:45  sbs
+ * some errors concerning the handling of WL generators and the elimination
+ * of superfluous vardecs solved!
+ *
  * Revision 2.6  1999/09/01 14:53:03  sbs
  * Modified Version of IVE: superfluous int[.] vardecs are eliminated now.
  * Basically, this required 2 extensions:
@@ -2142,16 +2146,18 @@ IdxNwith (node *arg_node, node *arg_info)
  *   node *IdxNpart( node *arg_node, node *arg_info)
  *
  * description:
- *
+ *    Here we make sure that all parts of the generator will be traversed
+ *    correctly. Furthermore, we eliminate superfluous generator vars
+ *    (provided REFCOUNT_PROBLEM_SOLVED holds).
  *
  ******************************************************************************/
 
 node *
 IdxNpart (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("IdxNpart");
+    node *vardec, *mem_transform;
 
-    NPART_WITHID (arg_node) = Trav (NPART_WITHID (arg_node), arg_info);
+    DBUG_ENTER ("IdxNpart");
 
 #ifdef REFCOUNT_PROBLEM_SOLVED
     if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
@@ -2163,8 +2169,36 @@ IdxNpart (node *arg_node, node *arg_info)
             FREE (NPART_VEC (arg_node));
         }
     }
+#else
+    if (INFO_IVE_MODE (arg_info) == M_uses_and_transform) {
+        /*
+         * This makes sure, that the declaration of the index vector variable
+         * will survive the second traversal of the vardecs, even if there is
+         * no further reference to it but the one in the generator!
+         * IF REFCOUNT_PROBLEM_SOLVED this can be spared since the one in the
+         * generator would be deleted anyways ( see above)!!
+         */
+        vardec = IDS_VARDEC (NPART_VEC (arg_node));
+        SET_VARDEC_OR_ARG_COLCHN (vardec, SetVect (VARDEC_COLCHN (vardec)));
+    }
 #endif
 
+    /*
+     * Now, we want to traverse the bounds and filters in order
+     * to obtain all potential VECT uses.
+     * For preventing any transformations of these, we have to make
+     * sure, that (INFO_IVE_TRANSFORM_VINFO( arg_info) == NULL) during
+     * that traversal!
+     */
+    mem_transform = INFO_IVE_TRANSFORM_VINFO (arg_info);
+    INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
+    if (NPART_GEN (arg_node) != NULL)
+        NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
+    INFO_IVE_TRANSFORM_VINFO (arg_info) = mem_transform;
+
+    /*
+     * Finally, we take care of any subsequent generators!
+     */
     if (NPART_NEXT (arg_node) != NULL)
         NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
 
