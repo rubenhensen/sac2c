@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.5  2000/12/13 11:11:57  sbs
+# -D_SVID_SOURCE added when compiling on linux; this makes several
+# system functions available such as popen, tempnam, or sbrk.
+#
 # Revision 3.4  2000/12/08 10:43:01  cg
 # Option "-w" removed again.
 #
@@ -15,57 +19,6 @@
 # Revision 3.1  2000/11/20 17:59:10  sacbase
 # new release made
 #
-# Revision 2.53  2000/11/16 10:32:15  dkr
-# target src.tar.gz modified: RCS* files are excluded now
-#
-# Revision 2.52  2000/11/15 13:48:05  dkr
-# -g flag for production version added
-#
-# Revision 2.51  2000/08/17 10:10:23  dkr
-# NameTupels.o added
-#
-# Revision 2.50  2000/08/02 14:28:54  nmw
-# print_interface_*.o added
-#
-# Revision 2.49  2000/07/21 09:58:25  jhs
-# Added os lines for easy changes of os.
-#
-# Revision 2.48  2000/07/21 08:23:23  nmw
-# import_specialization.o added
-#
-# Revision 2.47  2000/07/11 15:54:33  dkr
-# psi-opt.o removed
-#
-# Revision 2.46  2000/07/11 09:28:07  dkr
-# TAGGED_ARRAYS added (as a comment)
-#
-# Revision 2.45  2000/07/05 11:41:16  nmw
-# moved cinterface files from print to c-interface
-#
-# Revision 2.44  2000/06/23 16:38:02  nmw
-# map_cwrapper.o inserted
-#
-# Revision 2.43  2000/06/13 13:50:11  dkr
-# Old2NewWith.o renamed into PatchWith.o
-#
-# Revision 2.42  2000/06/08 12:46:27  nmw
-# print_interface.o added
-#
-# Revision 2.41  2000/06/08 11:06:13  mab
-# added pad_info.o
-#
-# Revision 2.40  2000/05/31 14:01:28  mab
-# pad*.o added
-#
-# Revision 2.39  2000/05/26 14:20:40  sbs
-# pad.o added
-#
-# Revision 2.38  2000/05/02 15:58:33  dkr
-# definition of gcc_FLAGS and cc_FLAGS changed
-# (-g moved from the definition of the compiler call to these flags definitions)
-#
-# Revision 2.37  2000/04/12 17:26:38  jhs
-# OS will now be pushed into all sub-makes.
 #
 # ... [eliminated] 
 #
@@ -135,7 +88,7 @@ SOLARIS_SPARC_LIBS  := -ll
 #
 # LINUX_X86 specific flags and libraries:
 #
-LINUX_X86_FLAGS     := -D_POSIX_SOURCE
+LINUX_X86_FLAGS     := -D_POSIX_SOURCE -D_SVID_SOURCE
 LINUX_X86_LIBS      := -lfl
 
 #
