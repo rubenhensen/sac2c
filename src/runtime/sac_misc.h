@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2003/09/22 11:59:36  dkr
+ * SAC_ABS added
+ *
  * Revision 3.7  2003/09/15 13:02:40  dkr
  * SAC_MIN, SAC_MAX added
  *
@@ -71,6 +74,7 @@ extern void SAC_String2Array (char *array, const char *string);
  *
  * MIN( a, b)    : minimum of 'a' and 'b'
  * MAX( a, b)    : maximum of 'a' and 'b'
+ * ABS( a)       : (a<0) ? -a : a
  *
  *****************************************************************************/
 
@@ -86,6 +90,7 @@ extern void SAC_String2Array (char *array, const char *string);
 
 #define SAC_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define SAC_MAX(a, b) ((a) > (b) ? (a) : (b))
+#define SAC_ABS(a) (((a) < 0) ? (-(a)) : (a))
 
 /*****************************************************************************
  *
