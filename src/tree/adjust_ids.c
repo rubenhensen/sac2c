@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/26 15:45:56  skt
+ * some final brushing to make the compiler runnable during SACDevCampDK 2k4
+ *
  * Revision 1.8  2004/11/26 15:30:44  cg
  * brushed by removing all code.
  *
@@ -154,41 +157,45 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+#if 0 /* outcommented during SACDevCamp 2k4 - TODO */
+
+
 /******************************************************************************
  *
  * function:
  *   node *AIfundef(node *arg_node, info *arg_info)
  *
  * description:
- *
+ *   
  *
  ******************************************************************************/
 
-node *
-AIfundef (node *arg_node, info *arg_info)
+node *AIfundef(node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AIfundef");
+  DBUG_ENTER("AIfundef");
 
-    INFO_AI_FUNDEF (arg_info) = arg_node;
+  INFO_AI_FUNDEF(arg_info) = arg_node;
 
-    INFO_AI_ARGS (arg_info) = INFO_AI_ARGS_CHAIN (arg_info);
+  INFO_AI_ARGS(arg_info) = INFO_AI_ARGS_CHAIN(arg_info);
 
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
-    }
+  if (FUNDEF_ARGS(arg_node) != NULL) {
+    FUNDEF_ARGS(arg_node) = Trav(FUNDEF_ARGS(arg_node), arg_info);
+  }
 
-    INFO_AI_ARGS (arg_info) = NULL;
+  INFO_AI_ARGS(arg_info) = NULL;
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    }
+  if (FUNDEF_BODY(arg_node) != NULL) {
+    FUNDEF_BODY(arg_node) = Trav(FUNDEF_BODY(arg_node), arg_info);
+  }
 
-    INFO_AI_FUNDEF (arg_info) = NULL;
+  INFO_AI_FUNDEF(arg_info) = NULL;
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN(arg_node);
 }
 
-#if 0
+
+
+
 
 /******************************************************************************
  *
@@ -925,19 +932,17 @@ AdjustIdentifiers (node *fundef, node *let)
     DBUG_ASSERT ((NODE_TYPE (LET_EXPR (let)) == N_ap),
                  "Illegal node in 2nd argument to AdjustIdentifiers().");
 
-    old_tab = act_tab;
-    act_tab = ai_tab;
-
     info = MakeInfo ();
 
     INFO_AI_IDS_CHAIN (info) = LET_IDS (let);
     INFO_AI_ARGS_CHAIN (info) = AP_ARGS (LET_EXPR (let));
 
-    TRAVpush (TR_ai);
-    fundef = TRAVdo (fundef, info);
-    TRAVpop ();
-
-    DBUG_EXECUTE ("PRINT_AI", PrintNode (fundef););
+#if 0  /* outcommented during SACDevCamp 2k4 - TODO */ 
+  TRAVpush( TR_ai);
+  fundef = TRAVdo(fundef, info);
+  TRAVpop();
+#endif /* 0 */
+    DBUG_EXECUTE ("PRINT_AI", PRTdoPrintNode (fundef););
 
     info = FreeInfo (info);
 
