@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/11/06 14:16:51  cg
+ * Revision 1.16  1995/11/16 19:42:36  cg
+ * Function FreeNodelist moved to free.c
+ *
+ * Revision 1.15  1995/11/06  14:16:51  cg
  * added new internal function 'CompatibleAttributes.
  * used by function CmpDomain
  *
@@ -442,28 +445,6 @@ StoreUnresolvedNodes (nodelist *inserts, node *fundef, statustype status)
     }
 
     DBUG_VOID_RETURN;
-}
-
-/***
- ***  FreeNodelist
- ***/
-
-nodelist *
-FreeNodelist (nodelist *list)
-{
-    nodelist *tmp;
-
-    DBUG_ENTER ("FreeNodelist");
-
-    while (list != NULL) {
-        tmp = list;
-        list = NODELIST_NEXT (list);
-        free (tmp);
-    }
-
-    tmp = NULL;
-
-    DBUG_RETURN (tmp);
 }
 
 /***
