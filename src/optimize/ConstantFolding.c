@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.23  1995/06/20 15:50:30  asi
+ * Revision 1.24  1995/06/21 13:10:02  asi
+ * bug fix - ArrayPrf will check if it is a constant correctly
+ *
+ * Revision 1.23  1995/06/20  15:50:30  asi
  * Array fission modified
  *
  * Revision 1.22  1995/06/09  13:29:15  asi
@@ -1358,7 +1361,7 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
     case F_mul_AxA:
     case F_mul_AxS:
     case F_mul_SxA: {
-        node *old_arg[2];
+        node *old_arg[2], *value;
 
         DBUG_PRINT ("CF", ("Begin folding of %s", prf_string[arg_node->info.prf]));
 
@@ -1366,39 +1369,52 @@ ArrayPrf (node *arg_node, types *res_type, node *arg_info)
         old_arg[1] = arg[1];
 
         if (N_id == arg[0]->nodetype) {
-            DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
-            arg[0] = DupTree (VAR (arg[0]->info.ids->node->varno), NULL);
-            used_sofar = arg_info->mask[1];
-            arg_info->mask[1] = GenMask (VARNO);
-            arg[0] = Trav (arg[0], arg_info);
-            FREE (arg_info->mask[1]);
-            arg_info->mask[1] = used_sofar;
+            value = VAR (arg[0]->info.ids->node->varno);
+            if (1 == IsConst (value)) {
+                DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
+                arg[0] = DupTree (value, NULL);
+                used_sofar = arg_info->mask[1];
+                arg_info->mask[1] = GenMask (VARNO);
+                arg[0] = Trav (arg[0], arg_info);
+                FREE (arg_info->mask[1]);
+                arg_info->mask[1] = used_sofar;
+            } else {
+                break;
+            }
         } else {
-            arg[0] = Trav (arg[0], arg_info);
+            if (1 == IsConst (arg[0]))
+                arg[0] = Trav (arg[0], arg_info);
+            else
+                break;
         }
 
         if (N_id == arg[1]->nodetype) {
-            DEC_VAR (arg_info->mask[1], arg[1]->info.ids->node->varno);
-            arg[1] = DupTree (VAR (arg[1]->info.ids->node->varno), NULL);
-            used_sofar = arg_info->mask[1];
-            arg_info->mask[1] = GenMask (VARNO);
-            arg[1] = Trav (arg[1], arg_info);
-            FREE (arg_info->mask[1]);
-            arg_info->mask[1] = used_sofar;
+            value = VAR (arg[1]->info.ids->node->varno);
+            if (1 == IsConst (value)) {
+                DEC_VAR (arg_info->mask[1], arg[1]->info.ids->node->varno);
+                arg[1] = DupTree (value, NULL);
+                used_sofar = arg_info->mask[1];
+                arg_info->mask[1] = GenMask (VARNO);
+                arg[1] = Trav (arg[1], arg_info);
+                FREE (arg_info->mask[1]);
+                arg_info->mask[1] = used_sofar;
+            } else {
+                if (N_id == old_arg[0]->nodetype) {
+                    INC_VAR (arg_info->mask[1], old_arg[0]->info.ids->node->varno);
+                    FreeTree (arg[0]);
+                }
+                break;
+            }
         } else {
-            arg[1] = Trav (arg[1], arg_info);
-        }
-
-        if ((1 != IsConst (arg[0])) || (1 != IsConst (arg[1]))) {
-            if (N_id == old_arg[0]->nodetype) {
-                INC_VAR (arg_info->mask[1], old_arg[0]->info.ids->node->varno);
-                FreeTree (arg[0]);
+            if (1 == IsConst (arg[1]))
+                arg[1] = Trav (arg[1], arg_info);
+            else {
+                if (N_id == old_arg[0]->nodetype) {
+                    INC_VAR (arg_info->mask[1], old_arg[0]->info.ids->node->varno);
+                    FreeTree (arg[0]);
+                }
+                break;
             }
-            if (N_id == old_arg[1]->nodetype) {
-                INC_VAR (arg_info->mask[1], old_arg[1]->info.ids->node->varno);
-                FreeTree (arg[1]);
-            }
-            break;
         }
 
         if (((F_div == arg_node->info.prf) || (F_div_SxA == arg_node->info.prf)
