@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.12  1995/06/23 12:36:57  hw
+ * Revision 1.13  1995/06/28 09:25:52  hw
+ * bug fixed in Shp( userdefined types will be treated correctly)
+ *
+ * Revision 1.12  1995/06/23  12:36:57  hw
  * added argument to call of 'DuplicateTypes'
  *
  * Revision 1.11  1995/06/06  16:09:36  hw
@@ -56,9 +59,10 @@
 #include "Error.h"
 #include "my_debug.h"
 #include "internal_lib.h"
+#include "typecheck.h"
+#include "access_macros.h"
 
-extern types *DuplicateTypes (types *source, int share); /* imported form typecheck.c */
-extern char filename[];                                  /* is set in main.c */
+extern char filename[]; /* is set in main.c */
 
 enum type_class {
     SxS_S,
@@ -366,7 +370,7 @@ Axs_F (types *array1)
  *  arguments     : 1) type of an array
  *                  2) N_prf node
  *  description   : returns the type of an array with shape of 1) and
- *                  simpletype T_float
+ *                  simpletype T_int
  *  global vars   :
  *  internal funs :
  *  external funs : Malloc,
@@ -379,13 +383,15 @@ types *
 Shp (types *array)
 {
     types *ret_type;
+    int dim;
 
     DBUG_ENTER ("Shp");
 
     GEN_TYPE_NODE (ret_type, T_int);
     ret_type->dim = 1;
     ret_type->shpseg = (shpseg *)Malloc (sizeof (shpseg));
-    ret_type->shpseg->shp[0] = array->dim;
+    GET_DIM (dim, array);
+    ret_type->shpseg->shp[0] = dim;
 
     DBUG_RETURN (ret_type);
 }
