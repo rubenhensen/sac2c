@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2001/04/19 11:46:23  nmw
+ * bugs in move down expressions fixed
+ *
  * Revision 1.9  2001/04/18 12:55:42  nmw
  * debug output for OPT traversal added
  *
@@ -82,7 +85,7 @@ static ids *LIRMOVleftids (ids *arg_ids, node *arg_info);
 static node *CheckMoveDownFlag (node *instr, node *arg_info);
 static node *CreateNewResult (node *avis, node *arg_info);
 static LUT_t InsertMappingsIntoLUT (LUT_t move_table, nodelist *mappings);
-static node *AdjustExternalResult (ids *new_ids, node *ext_assign, node *ext_fundef);
+static node *AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef);
 
 /******************************************************************************
  *
@@ -313,7 +316,7 @@ InsertMappingsIntoLUT (LUT_t move_table, nodelist *mappings)
 /******************************************************************************
  *
  * function:
- *   node *AdjustExternalResult(ids *new_ids,
+ *   node *AdjustExternalResult(node *new_assigns,
  *                              node *ext_assign,
  *                              node *ext_fundef)
  *
@@ -325,49 +328,65 @@ InsertMappingsIntoLUT (LUT_t move_table, nodelist *mappings)
  *
  *****************************************************************************/
 static node *
-AdjustExternalResult (ids *new_ids, node *ext_assign, node *ext_fundef)
+AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef)
 {
     ids *result_chain;
     node *new_vardec;
+    ids *new_ids;
 
     DBUG_ENTER ("AdjustExternalResult");
 
     DBUG_ASSERT ((NODE_TYPE (ext_assign) == N_assign), "no external assignment node");
 
     /* search for corresponding result ids in external function call */
-    while (new_ids != NULL) {
-        result_chain = LET_IDS (ASSIGN_INSTR (ext_assign));
+    do {
+        /* get ids result chain of moved assignment */
+        DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (new_assigns)) == N_let),
+                     "moved assignments must be let nodes");
 
-        while (result_chain != NULL) {
-            if (IDS_AVIS (new_ids) == IDS_AVIS (result_chain)) {
-                /* corresponding ids found - create new vardec and rename result_ids */
-                new_vardec = SSANewVardec (AVIS_VARDECORARG (IDS_AVIS (result_chain)));
-                BLOCK_VARDEC (FUNDEF_BODY (ext_fundef))
-                  = AppendVardec (BLOCK_VARDEC (FUNDEF_BODY (ext_fundef)), new_vardec);
+        new_ids = LET_IDS (ASSIGN_INSTR (new_assigns));
 
-                /* rename ids */
-                IDS_VARDEC (result_chain) = new_vardec;
-                IDS_AVIS (result_chain) = VARDEC_AVIS (new_vardec);
+        while (new_ids != NULL) {
+            result_chain = LET_IDS (ASSIGN_INSTR (ext_assign));
+
+            while (result_chain != NULL) {
+                if (IDS_AVIS (new_ids) == IDS_AVIS (result_chain)) {
+                    /* corresponding ids found - create new vardec and rename result_ids
+                     */
+                    new_vardec
+                      = SSANewVardec (AVIS_VARDECORARG (IDS_AVIS (result_chain)));
+                    BLOCK_VARDEC (FUNDEF_BODY (ext_fundef))
+                      = AppendVardec (BLOCK_VARDEC (FUNDEF_BODY (ext_fundef)),
+                                      new_vardec);
+
+                    /* rename ids */
+                    IDS_VARDEC (result_chain) = new_vardec;
+                    IDS_AVIS (result_chain) = VARDEC_AVIS (new_vardec);
 
 #ifndef NO_ID_NAME
-                /* for compatiblity only
-                 * there is no real need for name string in ids structure because
-                 * you can get it from vardec without redundancy.
-                 */
-                FREE (IDS_NAME (result_chain));
-                IDS_NAME (result_chain) = StringCopy (VARDEC_NAME (new_vardec));
+                    /* for compatiblity only
+                     * there is no real need for name string in ids structure because
+                     * you can get it from vardec without redundancy.
+                     */
+                    FREE (IDS_NAME (result_chain));
+                    IDS_NAME (result_chain) = StringCopy (VARDEC_NAME (new_vardec));
 #endif
-                /* stop seerching */
-                result_chain = NULL;
+                    /* stop seerching */
+                    result_chain = NULL;
 
-            } else {
-                /* contiune search */
-                result_chain = IDS_NEXT (result_chain);
+                } else {
+                    /* contiune search */
+                    result_chain = IDS_NEXT (result_chain);
+                }
             }
+
+            /* traverse to next ids in chain */
+            new_ids = IDS_NEXT (new_ids);
         }
 
-        new_ids = IDS_NEXT (new_ids);
-    }
+        /* traverse to next move-down assignment */
+        new_assigns = ASSIGN_NEXT (new_assigns);
+    } while (new_assigns != NULL);
 
     DBUG_RETURN (ext_fundef);
 }
@@ -700,7 +719,7 @@ SSALIRassign (node *arg_node, node *arg_info)
 
     /*
      * insert pre-assign code
-     * remark: the pre-assign code has already been traversed in SSALIRap!
+     * remark: the pre-assigned code will not be traversed during this cycle
      */
     if (pre_assign != NULL) {
         arg_node = AppendAssign (pre_assign, arg_node);
@@ -942,20 +961,6 @@ SSALIRap (node *arg_node, node *arg_info)
         INFO_SSALIR_POSTASSIGN (arg_info) = INFO_SSALIR_EXTPOSTASSIGN (new_arg_info);
 
         FREE (new_arg_info);
-
-        /*
-         * if there are new preassigns to this function application
-         * traverse them first, to infere loop invariant expressions
-         * in this function to move this function application out of this
-         * function ##nmw## leads to recursice problem - ignore!
-         */
-        /* if (tmp_pre_assigns != NULL) {
-          INFO_SSALIR_PREASSIGN(arg_info)  = NULL;
-          INFO_SSALIR_POSTASSIGN(arg_info) = NULL;
-          tmp_pre_assigns = Trav(tmp_pre_assigns, arg_info);
-        }
-        INFO_SSALIR_PREASSIGN(arg_info)  = tmp_pre_assigns;
-        INFO_SSALIR_POSTASSIGN(arg_info) = tmp_post_assigns; */
     } else {
         /* no traversal into a normal fundef */
         DBUG_PRINT ("SSALIR", ("do not traverse in normal fundef %s",
@@ -1146,7 +1151,7 @@ SSALIRexprs (node *arg_node, node *arg_info)
  * description:
  *   set current withloop depth as definition depth
  *
- ******************************************************************************/
+ *****************************************************************************/
 static ids *
 SSALIRleftids (ids *arg_ids, node *arg_info)
 {
@@ -1253,6 +1258,7 @@ LIRMOVassign (node *arg_node, node *arg_info)
     bool remove_assignment;
     node *tmp;
     LUT_t move_table;
+    node *moved_assignments;
 
     DBUG_ENTER ("LIRMOVassign");
 
@@ -1283,49 +1289,73 @@ LIRMOVassign (node *arg_node, node *arg_info)
     /* traverse expression */
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (((INFO_SSALIR_FLAG (arg_info) == SSALIR_MOVEUP)
-         || (INFO_SSALIR_FLAG (arg_info) == SSALIR_MOVEDOWN))
-        && (INFO_SSALIR_TOPBLOCK (arg_info))) {
+    if (INFO_SSALIR_TOPBLOCK (arg_info)) {
         /*
-         * do the code movement via DupTree and LookUpTable
+         * to do the code movement via DupTree and LookUpTable
          * the look-up table contains all pairs of internal/external
          * vardecs, avis and strings of id's.
          * because duptree adds several nodes to the look-up table we have
          * to duplicate our move_table before we use it, to have
-         * no wrong pointers to freed data in it.
+         * no wrong pointers to freed data in it in next DupTree operation.
          */
+        switch (INFO_SSALIR_FLAG (arg_info)) {
+        case SSALIR_MOVEUP:
+            move_table = DuplicateLUT (INFO_SSALIR_MOVELUT (arg_info));
 
-        move_table = DuplicateLUT (INFO_SSALIR_MOVELUT (arg_info));
-
-        if (INFO_SSALIR_FLAG (arg_info) == SSALIR_MOVEUP) {
             /* move up to external preassign chain */
             INFO_SSALIR_EXTPREASSIGN (arg_info)
               = AppendAssign (INFO_SSALIR_EXTPREASSIGN (arg_info),
                               DupNodeLUT (arg_node, move_table));
-        } else {
+
+            /* free temp. LUT */
+            move_table = RemoveLUT (move_table);
+
+            /* one loop invarinat expression removed */
+            lir_expr++;
+
+            /* move up expression can be removed - there are no further references */
+            remove_assignment = TRUE;
+            break;
+
+        case SSALIR_MOVEDOWN:
+            move_table = DuplicateLUT (INFO_SSALIR_MOVELUT (arg_info));
+
             /* init LUT result mappings */
             move_table
               = InsertMappingsIntoLUT (move_table, INFO_SSALIR_RESULTMAP (arg_info));
 
-            /* move down to external postassign chain */
-            INFO_SSALIR_EXTPOSTASSIGN (arg_info)
-              = AppendAssign (INFO_SSALIR_EXTPOSTASSIGN (arg_info),
-                              DupNodeLUT (arg_node, move_table));
+            /* duplicate move-down expressions with LUT */
+            moved_assignments = DupNodeLUT (arg_node, move_table);
 
             /* adjust external result ids (resolve duplicate definitions) */
             INFO_SSALIR_EXTFUNDEF (arg_info)
-              = AdjustExternalResult (LET_IDS (ASSIGN_INSTR (
-                                        INFO_SSALIR_EXTPOSTASSIGN (arg_info))),
+              = AdjustExternalResult (moved_assignments,
                                       NODELIST_NODE (FUNDEF_EXT_ASSIGNS (
                                         INFO_SSALIR_FUNDEF (arg_info))),
                                       INFO_SSALIR_EXTFUNDEF (arg_info));
+
+            /* move down to external postassign chain */
+            INFO_SSALIR_EXTPOSTASSIGN (arg_info)
+              = AppendAssign (INFO_SSALIR_EXTPOSTASSIGN (arg_info), moved_assignments);
+
+            /* free temp. LUT */
+            move_table = RemoveLUT (move_table);
+
+            /* one loop invarinat expression moved */
+            lir_expr++;
+
+            /*
+             * move down expressions cannot be removed - due to further references
+             * all these expressions will be removed by the next SSADeadCodeRemoval
+             * traversal
+             */
+            remove_assignment = FALSE;
+            break;
+
+        default:
+            /* by default do not remove anything */
+            remove_assignment = FALSE;
         }
-        move_table = RemoveLUT (move_table);
-
-        /* one loop invarinat expression removed */
-        lir_expr++;
-
-        remove_assignment = TRUE;
     } else {
         remove_assignment = FALSE;
     }
@@ -1459,8 +1489,9 @@ LIRMOVNwithid (node *arg_node, node *arg_info)
             old_flag = INFO_SSALIR_FLAG (arg_info);
 
             INFO_SSALIR_FLAG (arg_info) = SSALIR_MOVELOCAL;
-            NWITHID_VEC (arg_node) = SSALIRleftids (NWITHID_VEC (arg_node), arg_info);
-            NWITHID_IDS (arg_node) = SSALIRleftids (NWITHID_IDS (arg_node), arg_info);
+            /* ##nmw## */
+            NWITHID_VEC (arg_node) = LIRMOVleftids (NWITHID_VEC (arg_node), arg_info);
+            NWITHID_IDS (arg_node) = LIRMOVleftids (NWITHID_IDS (arg_node), arg_info);
 
             /* switch back to previous mode */
             INFO_SSALIR_FLAG (arg_info) = old_flag;
