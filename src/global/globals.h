@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1996/09/11 06:29:43  cg
+ * Revision 1.9  1997/03/19 13:35:34  cg
+ * added new global variables deps *dependencies and file_type filetype
+ *
+ * Revision 1.8  1996/09/11  06:29:43  cg
  * Added some new global variables for new command line options.
  *
  * Revision 1.7  1996/08/09  16:44:12  asi
@@ -39,6 +42,8 @@
  *  variables which are defined and initialized in main.c
  */
 
+#include "types.h"
+
 extern FILE *outfile;
 
 extern char sacfilename[];
@@ -49,6 +54,7 @@ extern char cfilename[];
 extern char ccflagsstr[];
 extern char targetdir[];
 extern char commandline[];
+extern file_type filetype;
 
 extern int Ccodeonly;
 extern int break_compilation;
@@ -94,5 +100,7 @@ extern int linkstyle;
 
 extern int print_objdef_for_header_file;
 extern int function_counter;
+
+extern deps *dependencies;
 
 #endif /* _sac_globals_h */
