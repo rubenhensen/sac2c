@@ -33,3 +33,4 @@ ast2traverse_tables_h.xsl
 ast2sons_h.xsl
 ast2traverse_helper_c.xsl
 check-integrity.xsl
+ast2check_h.xsl
