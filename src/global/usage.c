@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.53  1997/08/07 15:59:36  dkr
+ * eleminated spelling mistake
+ *
  * Revision 1.52  1997/08/07 15:28:33  dkr
  * eliminated typerror
  *
@@ -195,7 +198,7 @@ usage (char *prg_name)
     printf ("\t\t\t\t\tdependencies from imported modules/classes.\n");
 
     printf ("\t -# <string>\t\t\toptions (string) for DBUG information\n"
-            "\t\t\t\t\t  (\"-#<string>\" is equivalent to \"-_DBUG //<string>\")\n");
+            "\t\t\t\t\t  (\"-#<string>\" is equivalent to \"-_DBUG//<string>\")\n");
     printf ("\t -_DBUG<from>/<to>/<string>\tDBUG information only in compiler phases "
             "<from>..<to>\n"
             "\t\t\t\t\t  Default: <from> = 1, <to> = last compiler phase\n");
