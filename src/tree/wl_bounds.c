@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2002/08/08 13:03:07  dkr
+ * bug in NodeOrInt_Print() fixed
+ *
  * Revision 1.7  2002/08/07 09:46:13  dkr
  * ifdef added to please cc (no warnings anymore)
  *
@@ -616,9 +619,9 @@ NodeOrInt_Print (FILE *handle, nodetype nt, void *node_or_int, int dim)
 
     if (NameOrVal_IsInt (name, val)) {
         if (val == IDX_OTHER) {
-            fprintf (outfile, "?");
+            fprintf (handle, "?");
         } else if (val == IDX_SHAPE) {
-            fprintf (outfile, ".");
+            fprintf (handle, ".");
         } else {
             fprintf (handle, "%i", val);
         }
