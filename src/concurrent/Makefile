@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.5  1998/04/17 17:24:45  dkr
+# concregions.[ch] renamed to spmdregions.[ch]
+#
 # Revision 1.4  1998/04/09 12:04:04  dkr
 # make deps done
 #
@@ -24,10 +27,10 @@ CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../../inc -I../optimize -I../typecheck
 
-all: concregions.o
+all: spmdregions.o
 
-concregions.o: concregions.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o concregions.o -c concregions.c $(INCS)
+spmdregions.o: spmdregions.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o spmdregions.o -c spmdregions.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
@@ -38,12 +41,12 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-concregions.o: ../global/types.h ../global/tree_basic.h
-concregions.o: ../global/tree_compound.h ../global/Error.h
-concregions.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-concregions.o: /usr/include/sys/va_list.h /usr/include/string.h
-concregions.o: /usr/include/stdlib.h ../global/globals.h ../global/free.h
-concregions.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
-concregions.o: ../global/internal_lib.h ../global/traverse.h
-concregions.o: ../typecheck/typecheck.h ../optimize/optimize.h
-concregions.o: ../optimize/DupTree.h concregions.h
+spmdregions.o: ../global/types.h ../global/tree_basic.h
+spmdregions.o: ../global/tree_compound.h ../global/Error.h
+spmdregions.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+spmdregions.o: /usr/include/sys/va_list.h /usr/include/string.h
+spmdregions.o: /usr/include/stdlib.h ../global/globals.h ../global/free.h
+spmdregions.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
+spmdregions.o: ../global/internal_lib.h ../global/traverse.h
+spmdregions.o: ../typecheck/typecheck.h ../optimize/optimize.h
+spmdregions.o: ../optimize/DupTree.h spmdregions.h

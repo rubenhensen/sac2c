@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.74  1998/04/17 17:24:14  dkr
+# concregions.[ch] renamed to spmdregions.[ch]
+#
 # Revision 1.73  1998/04/09 23:43:44  dkr
 # in 'compile':
 #   added wlpragma_funs.o
@@ -283,7 +286,7 @@ MODULES= src/modules/filemgr.o src/modules/import.o src/modules/writesib.o  \
 OBJECTS= src/objects/objinit.o src/objects/objects.o \
          src/objects/uniquecheck.o src/objects/rmvoidfun.o
 REFCOUNT= src/refcount/refcount.o
-CONCURRENT= src/concurrent/concregions.o
+CONCURRENT= src/concurrent/spmdregions.o
 COMPILE= src/compile/compile.o src/compile/icm2c.o src/compile/precompile.o \
          src/compile/gen_startup_code.o src/compile/wlpragma_funs.o \
          src/compile/Old2NewWith.o

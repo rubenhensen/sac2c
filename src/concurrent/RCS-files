@@ -1,3 +1,3 @@
 Makefile
-concregions.c
-concregions.h
+spmdregions.c
+spmdregions.h
