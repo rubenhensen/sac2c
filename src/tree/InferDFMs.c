@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2001/04/23 13:38:39  dkr
+ * minor changes in DbugPrintSignature() done
+ *
  * Revision 1.12  2001/04/20 12:57:52  dkr
  * AdjustNeededWith() added:
  * All non-unique objects are removed from the needed-mask.
@@ -141,13 +144,13 @@ DbugPrintSignature (char *node_str, DFMmask_t in, DFMmask_t out, DFMmask_t local
     DBUG_ENTER ("DbugPrintSignature");
 
     DBUG_PRINT ("INFDFMS", ("signature of %s: ", node_str));
-    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "    in-vars: ");
+    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "    in-vars<" F_PTR ">: ", in);
                   if (in != NULL) { DFMPrintMask (stderr, "%s ", in); } else {
                       fprintf (stderr, "NULL");
-                  } fprintf (stderr, "\n    out-vars: ");
+                  } fprintf (stderr, "\n    out-vars<" F_PTR ">: ", out);
                   if (out != NULL) { DFMPrintMask (stderr, "%s ", out); } else {
                       fprintf (stderr, "NULL");
-                  } fprintf (stderr, "\n    local-vars: ");
+                  } fprintf (stderr, "\n    local-vars<" F_PTR ">: ", local);
                   if (local != NULL) { DFMPrintMask (stderr, "%s ", local); } else {
                       fprintf (stderr, "NULL");
                   } fprintf (stderr, "\n"););
