@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.13  1997/04/25 12:26:28  sbs
+ * Revision 1.14  1997/04/30 11:50:55  cg
+ * links to global object definitions now stored in artificial variable
+ * declarations when functions using global objects are inlined.
+ *
+ * Revision 1.13  1997/04/25  12:26:28  sbs
  * changed MAlloc to Malloc
  *
  * Revision 1.12  1996/01/17  14:40:57  asi
@@ -254,7 +258,7 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
     while ((NULL != var_node) && (NULL != expr_node)) {
         new_name = RenameInlinedVar (ARG_NAME (var_node));
         vardec_node = SearchDecl (new_name, INL_TYPES);
-        new_expr = DupTree (ASSIGN_INSTR (expr_node), arg_info);
+        new_expr = DupTree (EXPRS_EXPR (expr_node), arg_info);
         inl_nodes = MakeAssignLet (new_name, vardec_node, new_expr);
 /*-----------------------------------------------------------------------------------*/
 #ifndef NEWTREE
@@ -460,7 +464,20 @@ INLvar (node *arg_node, node *arg_info)
         new_name = RenameInlinedVar (VARDEC_NAME (arg_node));
         if (NULL == SearchDecl (new_name, INL_TYPES)) {
             new_type = DuplicateTypes (VARDEC_TYPE (arg_node), 2);
+            /*
+             * DuplicateTypes also copies attrib and status information.
+             */
+
             INL_TYPES = MakeVardec (new_name, new_type, INL_TYPES);
+
+            VARDEC_OBJDEF (INL_TYPES) = VARDEC_OBJDEF (arg_node);
+            /*
+             * Here, a possible link to the original global object definition
+             * stored within
+             * an artificial function argument is copied to the respective
+             * artificial variable declaration.
+             */
+
 /*-----------------------------------------------------------------------------------*/
 #ifndef NEWTREE
             if (NULL == VARDEC_NEXT (INL_TYPES))
@@ -477,7 +494,20 @@ INLvar (node *arg_node, node *arg_info)
         new_name = RenameInlinedVar (ARG_NAME (arg_node));
         if (NULL == SearchDecl (new_name, INL_TYPES)) {
             new_type = DuplicateTypes (ARG_TYPE (arg_node), 2);
+            /*
+             * DuplicateTypes also copies attrib and status information.
+             */
+
             INL_TYPES = MakeVardec (new_name, new_type, INL_TYPES);
+
+            VARDEC_OBJDEF (INL_TYPES) = ARG_OBJDEF (arg_node);
+            /*
+             * Here, a possible link to the original global object definition
+             * stored within
+             * an artificial function argument is copied to the respective
+             * artificial variable declaration.
+             */
+
 /*-----------------------------------------------------------------------------------*/
 #ifndef NEWTREE
             if (NULL == ARG_NEXT (INL_TYPES))
