@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2002/09/04 13:06:41  dkr
+ * INLfundef: comment about LaC limitation updated
+ *
  * Revision 3.23  2002/08/31 04:58:27  dkr
  * FUNDEF_INLREC correctly initialized now :)
  *
@@ -628,34 +631,31 @@ INLfundef (node *arg_node, node *arg_info)
      * before lac2fun           after lac2fun            after inlining
      * --------------           -------------            --------------
      *
-     * inline int fun()         inline int fun()
-     * {                        {
-     *   return( 1);              return( 1);
-     * }                        }
-     *
-     * inline int rec( x)       int cond( int x)         int cond( int x)
+     *                          inline
+     *                          int rec( x)
+     *                          {
+     *                            x = cond( x);
+     *                            return( x);
+     *                          }
+     * inline
+     * int rec( x)              int cond( int x)         int cond( int x)
      * {                        {                        {
      *   if (x > 0) {             if (x > 0) {             if (x > 0) {
      *     x = rec( x-1);           x = rec( x-1);           x = cond( x-1);
      *   } else {                 } else {                 } else {
-     *     x = fun();               x = fun();               x = 1;
+     *     x = 1;                   x = 1;                   x = 1;
      *   }                        }                        }
      *   return( x);              return( x);              return( x);
      * }                        }                        }
      *
-     * int main()               inline int rec( x)       int main()
+     * int main()               int main()               int main()
      * {                        {                        {
-     *   x = rec( 10);            x = cond( x);            x = cond( 10);
+     *   x = rec( 10);            x = rec( 10);            x = cond( 10);
      *   return( x);              return( x);              return( x);
      * }                        }                        }
      *
-     *                          int main()
-     *                          {
-     *                            x = rec( 10);
-     *                            return( x);
-     *                          }
-     *
-     * Now, the LaC function 'cond' is recursive :-((
+     * Now, the LaC function 'cond' is recursive and is used in more than a
+     * single application :-((
      *
      * Instead, inlining must detect the recursive nature of the function
      * 'rec' and generate (maxinl - 1) new conditionals in 'main':
@@ -663,37 +663,38 @@ INLfundef (node *arg_node, node *arg_info)
      * (maxinl == 1)            (maxinl == 2)
      * -------------            -------------
      *
+     * inline                   inline
+     * int rec( x)              int rec( x)
+     * {                        {
+     *   x = cond( x);            x = cond2( x);
+     *   return( x);              return( x);
+     * }                        }
+     *
+     *                          int cond2( int x)
+     *                          {
+     *                            if (x > 0) {
+     *                              x = rec( x-1);
+     *                            } else {
+     *                              x = 1;
+     *                            }
+     *                            return( x);
+     *                          }
+     *
      * int cond( int x)         int cond( int x)
      * {                        {
      *   if (x > 0) {             if (x > 0) {
-     *     x = rec( x-1);           x = cond( x-1);
+     *     x = rec( x-1);           x = cond2( x-1);
      *   } else {                 } else {
      *     x = 1;                   x = 1;
      *   }                        }
      *   return( x);              return( x);
      * }                        }
      *
-     * inline int rec( x)       inline int rec( x)
+     * int main()               int main()
      * {                        {
-     *   x = cond( x);            x = cond( x);
+     *   x = cond( 10);           x = cond( 10);
      *   return( x);              return( x);
      * }                        }
-     *
-     * int main()               int cond2( int x)
-     * {                        {
-     *   x = cond( 10);           if (x > 0) {
-     *   return( x);                x = cond( x-1);
-     * }                          } else {
-     *                              x = 1;
-     *                            }
-     *                            return( x);
-     *                          }
-     *
-     *                          int main()
-     *                          {
-     *                            x = cond2( 10);
-     *                            return( x);
-     *                          }
      */
 
     DBUG_ASSERT ((!FUNDEF_IS_LACFUN (arg_node)),
