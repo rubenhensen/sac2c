@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/03/15 14:06:10  bs
+ * Access macros renamed (take a look at tree_basic.h).
+ *
  * Revision 2.2  1999/02/28 21:06:21  srs
  * removed DBUG output for WLF
  *
@@ -116,6 +119,7 @@
 #include "ArrayElimination.h"
 #include "CSE.h"
 #include "WithloopFolding.h"
+#include "tile_size_inference.h"
 
 /*
  * global variables to keep track of optimization's success
@@ -710,6 +714,8 @@ INFO:
                      mem_cf_expr, mem_lunr_expr, mem_wlunr_expr, mem_uns_expr,
                      mem_elim_arrays, mem_wlf_expr, mem_wlt_expr, mem_cse_expr,
                      NON_ZERO_ONLY);
+
+    arg_node = TileSizeInference (arg_node);
 
     DBUG_DO_NOT_EXECUTE ("MASK", arg_node = FreeMasks (arg_node););
     if (FUNDEF_NEXT (arg_node))

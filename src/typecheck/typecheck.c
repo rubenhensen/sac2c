@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/03/15 14:03:19  bs
+ * Access macros renamed (take a look at tree_basic.h).
+ *
  * Revision 2.3  1999/02/26 10:49:59  bs
  * BuildGenarrayWithLoop(), BuildTakeWithLoop() and BuildDropWithLoop() prepared
  * for the work with compact int. vectors.
@@ -840,12 +843,11 @@ BuildGenarrayWithLoop (node *shp, node *val)
          * unflatten the array
          */
         tmp_node = NULL;
-        for (i = ID_ARRAYLENGTH (shp) - 1; i >= 0; i--)
-            tmp_node = MakeExprs (MakeNum (ID_CONSTARRAY (shp)[i]), tmp_node);
+        for (i = ID_VECLEN (shp) - 1; i >= 0; i--)
+            tmp_node = MakeExprs (MakeNum (ID_INTVEC (shp)[i]), tmp_node);
         tmp_node = MakeArray (tmp_node);
-        ARRAY_LENGTH (tmp_node) = ID_ARRAYLENGTH (shp);
-        ARRAY_INTARRAY (tmp_node)
-          = CopyIntArray (ID_ARRAYLENGTH (shp), ID_CONSTARRAY (shp));
+        ARRAY_VECLEN (tmp_node) = ID_VECLEN (shp);
+        ARRAY_INTVEC (tmp_node) = CopyIntVector (ID_VECLEN (shp), ID_INTVEC (shp));
         ARRAY_TYPE (tmp_node) = VARDEC_TYPE (ID_VARDEC (shp));
         NWITHOP_SHAPE (NWITH_WITHOP (res)) = tmp_node;
     }
@@ -927,12 +929,12 @@ BuildTakeWithLoop (node *take_shp, node *array)
          */
         int i;
         node *tmp_node = NULL;
-        for (i = ID_ARRAYLENGTH (take_shp) - 1; i >= 0; i--)
-            tmp_node = MakeExprs (MakeNum (ID_CONSTARRAY (take_shp)[i]), tmp_node);
+        for (i = ID_VECLEN (take_shp) - 1; i >= 0; i--)
+            tmp_node = MakeExprs (MakeNum (ID_INTVEC (take_shp)[i]), tmp_node);
         tmp_node = MakeArray (tmp_node);
-        ARRAY_LENGTH (tmp_node) = ID_ARRAYLENGTH (take_shp);
-        ARRAY_INTARRAY (tmp_node)
-          = CopyIntArray (ID_ARRAYLENGTH (take_shp), ID_CONSTARRAY (take_shp));
+        ARRAY_VECLEN (tmp_node) = ID_VECLEN (take_shp);
+        ARRAY_INTVEC (tmp_node)
+          = CopyIntVector (ID_VECLEN (take_shp), ID_INTVEC (take_shp));
         ARRAY_TYPE (tmp_node) = VARDEC_TYPE (ID_VARDEC (take_shp));
         NWITHOP_SHAPE (NWITH_WITHOP (res)) = tmp_node;
     }
@@ -972,8 +974,7 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
     DBUG_ENTER ("BuildDropWithLoop");
 
     DBUG_ASSERT (((NODE_TYPE (drop_vec) == N_array)
-                  || ((NODE_TYPE (drop_vec) == N_id)
-                      && (ID_ARRAYLENGTH (drop_vec) > SCALAR))),
+                  || ((NODE_TYPE (drop_vec) == N_id) && (ID_VECLEN (drop_vec) > SCALAR))),
                  "First arg of drop should be a constant array!");
 
     wl_body_var_vec = TmpVar ();
@@ -7419,7 +7420,7 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
                ("type of shape in genarray with loop cannot be infered!"));
     }
     if (((NODE_TYPE (arg_node) != N_id) && (NODE_TYPE (arg_node) != N_array))
-        || ((NODE_TYPE (arg_node) == N_id) && (ID_ARRAYLENGTH (arg_node) == SCALAR))) {
+        || ((NODE_TYPE (arg_node) == N_id) && (ID_VECLEN (arg_node) == SCALAR))) {
         /* weak TC */
         /* 1 dimension wanted */
         if (((TYPES_DIM (expr_type) < SCALAR)
@@ -7479,15 +7480,15 @@ TI_Ngenarray (node *arg_node, node *arg_info, node **replace)
          * don't free exprs_next because it is assignd to arg_node.
          */
     } else {
-        if ((NODE_TYPE (arg_node) == N_id) && (ID_ARRAYLENGTH (arg_node) > SCALAR)) {
+        if ((NODE_TYPE (arg_node) == N_id) && (ID_VECLEN (arg_node) > SCALAR)) {
 
             /*
              * compute return_type
              */
             ret_type = MakeType (T_int, 0, MakeShpseg (NULL), NULL, NULL);
 
-            tmpi = ID_CONSTARRAY (arg_node);
-            dim = ID_ARRAYLENGTH (arg_node);
+            tmpi = ID_INTVEC (arg_node);
+            dim = ID_VECLEN (arg_node);
             if (dim < SHP_SEG_SIZE)
                 for (i = 0; i < dim; i++)
                     TYPES_SHAPE (ret_type, dim) = tmpi[i];

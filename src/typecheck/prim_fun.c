@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.3  1999/03/15 14:02:28  bs
+ * Access macros renamed (take a look at tree_basic.h).
+ *
  * Revision 2.2  1999/02/25 11:02:28  bs
  * Genarray_S, Reshp, DropV and TakeV modified. Now these functions
  * are able to work with the compact propagation of constant
@@ -872,13 +875,13 @@ Reshp (node *vec, types *array, types *shp_vec)
         /*
          * if flattened :
          */
-        if ((N_id == NODE_TYPE (vec)) && (ID_ARRAYLENGTH (vec) > SCALAR)) {
+        if ((N_id == NODE_TYPE (vec)) && (ID_VECLEN (vec) > SCALAR)) {
             /*
              * count number of elements of the new array
              */
             count1 = 1;
-            tmp1 = ID_CONSTARRAY (vec);
-            dim1 = ID_ARRAYLENGTH (vec);
+            tmp1 = ID_INTVEC (vec);
+            dim1 = ID_VECLEN (vec);
             for (i = 0; i < dim1; i++)
                 count1 = count1 * tmp1[i];
 
@@ -1153,7 +1156,7 @@ TakeV (node *vec, types *vec_type, types *array)
                  "neither an N_id nor an N_array node");
     if (SAC_PRG == kind_of_file) {
         if (((NODE_TYPE (vec) != N_id) && (NODE_TYPE (vec) != N_array))
-            || ((NODE_TYPE (vec) == N_id) && (ID_ARRAYLENGTH (vec) < 1)))
+            || ((NODE_TYPE (vec) == N_id) && (ID_VECLEN (vec) < 1)))
             ERROR2 (3, ("%s, %d: 1.argument of function `take` "
                         " should be a constant vector",
                         filename, NODE_LINE (vec)));
@@ -1242,9 +1245,9 @@ TakeV (node *vec, types *vec_type, types *array)
     }
 
     else {
-        if ((NODE_TYPE (vec) == N_id) && (ID_ARRAYLENGTH (vec) >= 1)) {
-            dim2 = ID_ARRAYLENGTH (vec);
-            tmp2 = ID_CONSTARRAY (vec);
+        if ((NODE_TYPE (vec) == N_id) && (ID_VECLEN (vec) >= 1)) {
+            dim2 = ID_VECLEN (vec);
+            tmp2 = ID_INTVEC (vec);
 
             if (SCALAR < TYPES_DIM (array_btype)) {
                 /* array has got a known shape */
@@ -1359,7 +1362,7 @@ DropV (node *vec, types *vec_type, types *array)
 
     if (kind_of_file == SAC_PRG) {
         if (((NODE_TYPE (vec) != N_id) && (NODE_TYPE (vec) != N_array))
-            || ((NODE_TYPE (vec) == N_id) && (ID_ARRAYLENGTH (vec) < 1)))
+            || ((NODE_TYPE (vec) == N_id) && (ID_VECLEN (vec) < 1)))
             ERROR2 (3, ("%s, %d: 1.argument of function `drop` "
                         " should be a constant vector",
                         filename, NODE_LINE (vec)));
@@ -1445,15 +1448,15 @@ DropV (node *vec, types *vec_type, types *array)
     }
 
     else {
-        if ((NODE_TYPE (vec) == N_id) && (ID_ARRAYLENGTH (vec) >= 1)) {
-            dim2 = ID_ARRAYLENGTH (vec);
-            tmp2 = ID_CONSTARRAY (vec);
+        if ((NODE_TYPE (vec) == N_id) && (ID_VECLEN (vec) >= 1)) {
+            dim2 = ID_VECLEN (vec);
+            tmp2 = ID_INTVEC (vec);
 
             if (SCALAR < TYPES_DIM (array_btype)) {
                 /* array has got a known shape */
 
                 /* check weather the entries in 1) are ok */
-                dim2 = ID_ARRAYLENGTH (vec);
+                dim2 = ID_VECLEN (vec);
                 for (i = 0; i < dim2; i++) {
                     if ((tmp2[i] >= 0) && (tmp2[i] < TYPES_SHAPE (array_btype, i)))
                         ok = 1;
@@ -2214,13 +2217,13 @@ Genarray_S (node *v_node, types *vec, types *scalar)
             else
                 ret_type = MakeType (T_unknown, 0, NULL, NULL, NULL);
 
-        } else if ((NODE_TYPE (v_node) == N_id) && (ID_ARRAYLENGTH (v_node) > SCALAR)) {
+        } else if ((NODE_TYPE (v_node) == N_id) && (ID_VECLEN (v_node) > SCALAR)) {
             /*
              * create shpseg of resulting type
              */
             shpseg_p = MakeShpseg (NULL);
-            tmp2 = ID_CONSTARRAY (v_node);
-            dim = ID_ARRAYLENGTH (v_node);
+            tmp2 = ID_INTVEC (v_node);
+            dim = ID_VECLEN (v_node);
             for (i = 0; i < dim; i++)
                 SHPSEG_SHAPE (shpseg_p, i) = tmp2[i];
 
@@ -2257,13 +2260,13 @@ Genarray_S (node *v_node, types *vec, types *scalar)
             ret_type = MakeType (TYPES_BASETYPE (scalar), dim, shpseg_p,
                                  StringCopy (TYPES_NAME (scalar)), TYPES_MOD (scalar));
         } else {
-            if ((NODE_TYPE (v_node) == N_id) && (ID_ARRAYLENGTH (v_node) > SCALAR)) {
+            if ((NODE_TYPE (v_node) == N_id) && (ID_VECLEN (v_node) > SCALAR)) {
                 /*
                  * create shpseg of resulting type
                  */
                 shpseg_p = MakeShpseg (NULL);
-                tmp2 = ID_CONSTARRAY (v_node);
-                dim = ID_ARRAYLENGTH (v_node);
+                tmp2 = ID_INTVEC (v_node);
+                dim = ID_VECLEN (v_node);
                 for (i = 0; i < dim; i++)
                     SHPSEG_SHAPE (shpseg_p, i) = tmp2[i];
 
@@ -2315,7 +2318,7 @@ Genarray_A (node *v_node, types *vec, types *array)
     DBUG_ENTER ("Genarray_A");
     if (kind_of_file == SAC_PRG) {
         if ((NODE_TYPE (v_node) == N_array)
-            || ((NODE_TYPE (v_node) == N_id) && (ID_ARRAYLENGTH (v_node) > SCALAR))) {
+            || ((NODE_TYPE (v_node) == N_id) && (ID_VECLEN (v_node) > SCALAR))) {
             ret_type = Genarray_S (v_node, vec, array);
             dim = TYPES_DIM (ret_type);
             for (i = 0; i < TYPES_DIM (array); i++) {
@@ -2331,7 +2334,7 @@ Genarray_A (node *v_node, types *vec, types *array)
          * we are checking a funktion in a module
          */
         if ((NODE_TYPE (v_node) == N_array)
-            || ((NODE_TYPE (v_node) == N_id) && (ID_ARRAYLENGTH (v_node) > SCALAR))) {
+            || ((NODE_TYPE (v_node) == N_id) && (ID_VECLEN (v_node) > SCALAR))) {
             if (TYPES_DIM (array) == UNKNOWN_SHAPE) {
                 ret_type
                   = MakeType (TYPES_BASETYPE (array), UNKNOWN_SHAPE, NULL, NULL, NULL);

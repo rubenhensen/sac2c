@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/03/15 14:06:42  bs
+ * Access macros renamed (take a look at tree_basic.h).
+ *
  * Revision 2.2  1999/02/26 10:47:14  bs
  * COMPPrf() modified: prepared for copact int. vectors.
  *
@@ -3662,7 +3665,7 @@ COMPPrf (node *arg_node, node *arg_info)
             arg1 = EXPRS_EXPR (PRF_ARGS (arg_node));
             arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
             DBUG_ASSERT (((NODE_TYPE (arg1) == N_array) || (NODE_TYPE (arg1) == N_num)
-                          || ((NODE_TYPE (arg1) == N_id) && (ID_ARRAYLENGTH (arg1) > 0))),
+                          || ((NODE_TYPE (arg1) == N_id) && (ID_VECLEN (arg1) > 0))),
                          "first argument of take/drop isn't an array or scalar");
 
             MAKENODE_ID_REUSE_IDS (res, INFO_COMP_LASTIDS (arg_info));
@@ -3701,10 +3704,10 @@ COMPPrf (node *arg_node, node *arg_info)
             }
 
             if (NODE_TYPE (arg1) == N_array)
-                n_elems = ARRAY_LENGTH (arg1);
+                n_elems = ARRAY_VECLEN (arg1);
             else {
                 if (NODE_TYPE (arg1) == N_id)
-                    n_elems = ID_ARRAYLENGTH (arg1);
+                    n_elems = ID_VECLEN (arg1);
                 else /* if (NODE_TYPE(arg1) == N_num) */
                     n_elems = 1;
             }
@@ -3724,7 +3727,7 @@ COMPPrf (node *arg_node, node *arg_info)
                 } else /* if (NODE_TYPE(arg1) == N_id) */ {
                     int i;
                     for (i = 0; i < n_elems; i++) {
-                        num = MakeNum (ID_CONSTARRAY (arg1)[i]);
+                        num = MakeNum (ID_INTVEC (arg1)[i]);
                         MAKE_NEXT_ICM_ARG (icm_arg, num);
                     }
                 }
