@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2001/04/25 01:19:20  dkr
+ * PREC2fundef: FUNDEF_DFM_BASE created if NULL
+ *
  * Revision 3.20  2001/04/06 18:50:35  dkr
  * fixed a bug in PREC1let
  *
@@ -350,23 +353,6 @@ PREC1fundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("PREC1fundef");
 
     INFO_PREC1_FUNDEF (arg_info) = arg_node;
-
-    /*
-     * The following is done during reference counting now
-     */
-#if 0
-  /*
-   * no module name -> must be an external C-fun
-   */
-#ifdef MAIN_HAS_MODNAME
-  if (FUNDEF_MOD( arg_node) == NULL) {
-#else
-  if ((FUNDEF_MOD( arg_node) == NULL) &&
-      strcmp( FUNDEF_NAME( arg_node), "main")) {
-#endif
-    FUNDEF_STATUS( arg_node) = ST_Cfun;
-  }
-#endif
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
@@ -1353,6 +1339,11 @@ PREC2fundef (node *arg_node, node *arg_info)
      * values and parameters of function applications.
      */
     if (FUNDEF_BODY (arg_node) != NULL) {
+        if (FUNDEF_DFM_BASE (arg_node) == NULL) {
+            FUNDEF_DFM_BASE (arg_node)
+              = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+        }
+
         DBUG_ASSERT (((FUNDEF_RETURN (arg_node) != NULL)
                       && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_return)),
                      "N_fundef node has no reference to N_return node");
