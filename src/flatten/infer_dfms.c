@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/12/12 11:37:39  dkr
+ * INFDFMSicm added
+ *
  * Revision 1.2  2000/12/08 10:28:00  dkr
  * function InferDFMs added
  *
@@ -174,6 +177,30 @@ DefinedIds (ids *_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   void DefinedId( node *id, node *arg_info)
+ *
+ * description:
+ *   Calls 'DefinedVar()' for the given id-node.
+ *
+ ******************************************************************************/
+
+static void
+DefinedId (node *id, node *arg_info)
+{
+    DBUG_ENTER ("DefinedId");
+
+    DBUG_ASSERT ((NODE_TYPE (id) == N_id), "no N_id node found!");
+
+    DefinedVar (ID_VARDEC (id), INFO_INFDFMS_NEEDED (arg_info),
+                INFO_INFDFMS_IN (arg_info), INFO_INFDFMS_OUT (arg_info),
+                INFO_INFDFMS_LOCAL (arg_info));
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void DefinedMask( DFMmask_t mask, node *arg_info)
  *
  * description:
@@ -228,6 +255,28 @@ UsedVar (node *decl, DFMmask_t in, DFMmask_t local)
         DFMSetMaskEntrySet (in, NULL, decl);
         DFMSetMaskEntryClear (local, NULL, decl);
     }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void UsedId( node *id, node *arg_info)
+ *
+ * description:
+ *   Calls 'UsedVar()' for the given id-node.
+ *
+ ******************************************************************************/
+
+static void
+UsedId (node *id, node *arg_info)
+{
+    DBUG_ENTER ("UsedId");
+
+    DBUG_ASSERT ((NODE_TYPE (id) == N_id), "no N_id node found!");
+
+    UsedVar (ID_VARDEC (id), INFO_INFDFMS_IN (arg_info), INFO_INFDFMS_LOCAL (arg_info));
 
     DBUG_VOID_RETURN;
 }
@@ -622,8 +671,8 @@ INFDFMSfundef (node *arg_node, node *arg_info)
         INFO_INFDFMS_LOCAL (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
         INFO_INFDFMS_NEEDED (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
 
-        DBUG_PRINT ("INFDFMS", ("Infering signatures of conditionals/loops in %s():\n",
-                                FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("INFDFMS",
+                    ("Infering data flow masks in %s():\n", FUNDEF_NAME (arg_node)));
 
         /*
          * search in formal args for reference parameters
@@ -849,21 +898,23 @@ INFDFMSid (node *arg_node, node *arg_info)
 node *
 INFDFMSwith (node *arg_node, node *arg_info)
 {
-    DFMmask_t out = NULL;
+    DFMmask_t out;
 
     DBUG_ENTER ("INFDFMSwith");
 
-    arg_node
-      = InferMasks (&(NWITH_IN_MASK (arg_node)), &out, &(NWITH_LOCAL_MASK (arg_node)),
-                    arg_node, arg_info, InferMasksWith, FALSE);
+    arg_node = InferMasks (&(NWITH_IN_MASK (arg_node)), &(NWITH_OUT_MASK (arg_node)),
+                           &(NWITH_LOCAL_MASK (arg_node)), arg_node, arg_info,
+                           InferMasksWith, FALSE);
 
     /*
-     * a with-loop cannot have any out-vars!
+     * A with-loop really *can* have out-vars:
+     * Some global objects might be modified within the with-loop. This is legal
+     * in SAC although it can cause non-deterministic results!
+     * Therfore, we print a warning message here.
      */
-    if (out != NULL) {
-        DBUG_ASSERT ((DFMGetMaskEntryDeclSet (out) == NULL),
-                     "with-loop with out-vars detected!");
-        out = DFMRemoveMask (out);
+    out = NWITH2_OUT_MASK (arg_node);
+    if ((out != NULL) && (DFMGetMaskEntryDeclSet (out) != NULL)) {
+        WARN (NODE_LINE (arg_node), ("with-loop with out-vars detected"));
     }
 
     DBUG_RETURN (arg_node);
@@ -883,21 +934,23 @@ INFDFMSwith (node *arg_node, node *arg_info)
 node *
 INFDFMSwith2 (node *arg_node, node *arg_info)
 {
-    DFMmask_t out = NULL;
+    DFMmask_t out;
 
     DBUG_ENTER ("INFDFMSwith2");
 
-    arg_node
-      = InferMasks (&(NWITH2_IN_MASK (arg_node)), &out, &(NWITH2_LOCAL_MASK (arg_node)),
-                    arg_node, arg_info, InferMasksWith2, FALSE);
+    arg_node = InferMasks (&(NWITH2_IN_MASK (arg_node)), &(NWITH2_OUT_MASK (arg_node)),
+                           &(NWITH2_LOCAL_MASK (arg_node)), arg_node, arg_info,
+                           InferMasksWith2, FALSE);
 
     /*
-     * a with-loop cannot have any out-vars!
+     * A with-loop really *can* have out-vars:
+     * Some global objects might be modified within the with-loop. This is legal
+     * in SAC although it can cause non-deterministic results!
+     * Therfore, we print a warning message here.
      */
-    if (out != NULL) {
-        DBUG_ASSERT ((DFMGetMaskEntryDeclSet (out) == NULL),
-                     "with-loop with out-vars detected!");
-        out = DFMRemoveMask (out);
+    out = NWITH2_OUT_MASK (arg_node);
+    if ((out != NULL) && (DFMGetMaskEntryDeclSet (out) != NULL)) {
+        WARN (NODE_LINE (arg_node), ("with-loop with out-vars detected"));
     }
 
     DBUG_RETURN (arg_node);
@@ -1012,6 +1065,53 @@ INFDFMSdo (node *arg_node, node *arg_info)
     arg_node
       = InferMasks (&(DO_IN_MASK (arg_node)), &(DO_OUT_MASK (arg_node)),
                     &(DO_LOCAL_MASK (arg_node)), arg_node, arg_info, InferMasksDo, TRUE);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *INFDFMSicm( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   ICMs must be handled indiviually in order to prevent the introduction of
+ *   wrong data dependencies.
+ *
+ ******************************************************************************/
+
+node *
+INFDFMSicm (node *arg_node, node *arg_info)
+{
+    char *name;
+
+    DBUG_ENTER ("INFDFMSicm");
+
+    DBUG_PRINT ("INFDFMS", ("icm %s found", ICM_NAME (arg_node)));
+
+    name = ICM_NAME (arg_node);
+    if (!strcmp (name, "ND_KS_USE_GENVAR_OFFSET")) {
+        /*
+         * ND_KS_USE_GENVAR_OFFSET( offsetvar, res):
+         *   offsetvar = res__destptr;
+         *
+         * def: 1st arg
+         * use: ---
+         */
+        DefinedId (ICM_ARG1 (arg_node), arg_info);
+    } else if (!strcmp (name, "ND_KS_VECT2OFFSET")) {
+        /*
+         * ND_KS_VECT2OFFSET( off_name, arr_name, ...):
+         *   off_name = ... arr_name ...;
+         *
+         * def: 1st arg
+         * use: 2nd arg
+         */
+        DefinedId (ICM_ARG1 (arg_node), arg_info);
+        UsedId (ICM_ARG2 (arg_node), arg_info);
+    } else {
+        DBUG_ASSERT ((0), "unknown ICM found!");
+    }
 
     DBUG_RETURN (arg_node);
 }
