@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.16  2002/06/07 14:41:32  dkr
+# include of argtag_info.mac modified
+#
 # Revision 3.15  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -74,7 +77,8 @@ INCS = -I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typeche
        -I../psi-opt -I../objects -I../concurrent -I../multithread -I../profile
 
 
-all: main.o Error.o usage.o my_debug.o internal_lib.o globals.o resource.o types.h \
+all: types.h \
+     main.o Error.o usage.o my_debug.o internal_lib.o globals.o resource.o \
      build.o interrupt.o options.o NameTuples.o NameTuplesUtils.o
 
 
@@ -82,8 +86,8 @@ all: main.o Error.o usage.o my_debug.o internal_lib.o globals.o resource.o types
 # the *.[ch] objects are to fool makedepend which does not
 # recognize the dependency between *.[ch] and the .mac files!
 #
-types.h: ../tree/type_info.mac phase_info.mac status_info.mac argtag_info.mac \
-         ../tree/node_info.mac ../tree/prf_node_info.mac
+types.h: ../tree/type_info.mac phase_info.mac status_info.mac \
+         ../tree/node_info.mac ../tree/prf_node_info.mac argtag_info.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
@@ -95,12 +99,12 @@ NameTuples.c: nt_info.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-globals.c: ../tree/type_info.mac phase_info.mac
+globals.c: ../tree/type_info.mac phase_info.mac argtag_info.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-my_debug.c:  ../tree/node_info.mac ../tree/prf_node_info.mac ../tree/type_info.mac \
-             status_info.mac argtag_info.mac
+my_debug.c:  ../tree/node_info.mac ../tree/prf_node_info.mac \
+             ../tree/type_info.mac status_info.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
