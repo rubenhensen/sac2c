@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.42  1997/04/25 09:29:32  sbs
+ * Revision 1.43  1997/04/28 08:09:06  cg
+ * Global world object Parameters renamed to TheCommandLine.
+ * Special treatment in function definition and application of
+ * create function adjusted.
+ *
+ * Revision 1.42  1997/04/25  09:29:32  sbs
  * NULL -> 0 in compaison with tyarg[0]
  *
  * Revision 1.41  1996/09/11  16:00:43  cg
@@ -666,7 +671,7 @@ extern int check_boundary; /* defined in main.c */
     fprintf (outfile, "%s ", rettype);
     if (strcmp (name, "main") == 0) {
         fprintf (outfile, "%s( int __argc, char *__argv[])", name);
-    } else if (strcmp (name, "create_Parameters") == 0) {
+    } else if (strcmp (name, "create_TheCommandLine") == 0) {
         fprintf (outfile, "%s( int __argc, char **__argv)", name);
     } else {
         fprintf (outfile, "%s( ", name);
@@ -752,7 +757,7 @@ extern int check_boundary; /* defined in main.c */
 INDENT;
 if (0 != strcmp (retname, ""))
     fprintf (outfile, "%s =", retname);
-if (strcmp (name, "create_Parameters") == 0) {
+if (strcmp (name, "create_TheCommandLine") == 0) {
     fprintf (outfile, "%s( __argc, __argv);", name);
 } else {
     fprintf (outfile, "%s( ", name);
