@@ -30,3 +30,4 @@ ccmanager.h
 libbuilder.c
 libbuilder.h
 resolveall.c
+resolveall.h
