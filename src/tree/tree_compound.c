@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2001/05/09 12:32:24  nmw
+ * AdjustAvisData created ssacnt nodes only when used in ssaform
+ *
  * Revision 3.36  2001/04/26 13:26:39  dkr
  * CountIds() added
  *
@@ -1857,21 +1860,27 @@ AdjustAvisData (node *new_vardec, node *fundef)
     DBUG_ASSERT ((FUNDEF_BODY (fundef) != NULL), "missing body in fundef");
 
     avis_node = VARDEC_AVIS (new_vardec);
-    /* if there is an existing base_id - use it, else take the vardec name */
-    if (AVIS_SSACOUNT (VARDEC_AVIS (new_vardec)) != NULL) {
-        base_id = SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (new_vardec)));
-        DBUG_PRINT ("AAD", ("reuse base_id %s for vardec %s", base_id,
-                            VARDEC_NAME (new_vardec)));
+
+    /* SSACOUNTER operations are only necessary when operating on ssa form */
+    if (valid_ssaform) {
+        /* if there is an existing base_id - use it, else take the vardec name */
+        if (AVIS_SSACOUNT (VARDEC_AVIS (new_vardec)) != NULL) {
+            base_id = SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (new_vardec)));
+            DBUG_PRINT ("AAD", ("reuse base_id %s for vardec %s", base_id,
+                                VARDEC_NAME (new_vardec)));
+        } else {
+            base_id = VARDEC_NAME (new_vardec);
+            DBUG_PRINT ("AAD", ("create new base_id %s for vardec %s", base_id,
+                                VARDEC_NAME (new_vardec)));
+        }
+
+        BLOCK_SSACOUNTER (FUNDEF_BODY (fundef))
+          = MakeSSAcnt (BLOCK_SSACOUNTER (FUNDEF_BODY (fundef)), 0, StringCopy (base_id));
+
+        AVIS_SSACOUNT (avis_node) = BLOCK_SSACOUNTER (FUNDEF_BODY (fundef));
     } else {
-        base_id = VARDEC_NAME (new_vardec);
-        DBUG_PRINT ("AAD", ("create new base_id %s for vardec %s", base_id,
-                            VARDEC_NAME (new_vardec)));
+        AVIS_SSACOUNT (avis_node) = NULL;
     }
-
-    BLOCK_SSACOUNTER (FUNDEF_BODY (fundef))
-      = MakeSSAcnt (BLOCK_SSACOUNTER (FUNDEF_BODY (fundef)), 0, StringCopy (base_id));
-
-    AVIS_SSACOUNT (avis_node) = BLOCK_SSACOUNTER (FUNDEF_BODY (fundef));
     AVIS_SSALPINV (avis_node) = FALSE;
     AVIS_SSAPHITARGET (avis_node) = FALSE;
     AVIS_SSADEFINED (avis_node) = FALSE;
