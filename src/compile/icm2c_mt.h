@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/08/07 07:09:17  cg
+ * added declaration of ICMCompileMT_ADJUST_SCHEDULER()
+ *
  * Revision 1.5  1998/07/03 10:18:15  cg
  * Super ICM MT_SPMD_BLOCK replaced by combinations of new ICMs
  * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END]
@@ -61,6 +64,9 @@ extern void ICMCompileMT_SPMD_STATIC_MODE_END (char *name);
 extern void ICMCompileMT_SPMD_DYNAMIC_MODE_BEGIN (char *name);
 extern void ICMCompileMT_SPMD_DYNAMIC_MODE_ALTSEQ (char *name);
 extern void ICMCompileMT_SPMD_DYNAMIC_MODE_END (char *name);
+
+extern void ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower,
+                                           int unrolling, char *array);
 
 extern void ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, int *vararg);
 extern void ICMCompileMT_SCHEDULER_Block_END (int dim, int *vararg);
