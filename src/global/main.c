@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1994/12/13 11:23:54  hw
+ * Revision 1.11  1994/12/15 16:37:49  asi
+ * *** empty log message ***
+ *
+ * Revision 1.10  1994/12/13  11:23:54  hw
  * changed call of NOTE
  * changed call of Error to ERROR2
  *
@@ -135,7 +138,7 @@ MAIN
             Typecheck (syntax_tree);
             NOTE (("%d Warnings, %d Errors \n", warnings, errors));
             if (!breaktype) {
-                NOTE (("Optimizing: ..."));
+                NOTE (("Optimizing: ...\n"));
                 syntax_tree = Optimize (syntax_tree);
                 /*  GenCCode(); */
             }
