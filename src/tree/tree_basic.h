@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.58  2001/03/23 18:04:11  dkr
+ * INFO_INL_NAIVE added
+ * INFO_DUP_ALL removed
+ *
  * Revision 3.57  2001/03/22 13:28:07  dkr
  * minor changes done
  *
@@ -2452,11 +2456,10 @@ extern node *MakeAvis (node *vardecOrArg);
 extern node *MakeInfo ();
 
 /* DupTree */
-#define INFO_DUP_CONT(n) (n->node[1])
-#define INFO_DUP_FUNDEF(n) (n->node[3])
 #define INFO_DUP_TYPE(n) (n->flag)
-#define INFO_DUP_ALL(n) (n->int_data)
-#define INFO_DUP_LUT(n) ((LUT_t) (n->dfmask[6]))
+#define INFO_DUP_CONT(n) (n->node[0])
+#define INFO_DUP_FUNDEF(n) (n->node[1])
+#define INFO_DUP_LUT(n) ((LUT_t) (n->dfmask[0]))
 
 /* flatten */
 #define INFO_FLTN_CONTEXT(n) (n->flag)
@@ -2661,6 +2664,7 @@ extern node *MakeInfo ();
 #define INFO_VARNO(n) (n->varno)
 
 /* inline */
+#define INFO_INL_NAIVE(n) ((bool)(n->flag))
 #define INFO_INL_MODUL(n) (n->node[0])
 #define INFO_INL_VARDECS(n) (n->node[1])
 #define INFO_INL_LUT(n) ((LUT_t) (n->node[2]))
