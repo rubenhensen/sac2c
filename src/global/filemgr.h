@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2005/03/10 09:41:09  cg
+ * Handling of paths and creation of temporary directory brushed.
+ *
  * Revision 1.9  2005/01/12 15:51:54  cg
  * Added FMGRcreateTmpDir()
  *
@@ -107,16 +110,15 @@
 #include "types.h"
 
 extern char *FMGRfindFile (pathkind_t p, char *name);
-extern void FMGRinitPaths ();
 extern void FMGRappendPath (pathkind_t p, char *path);
-extern void FMGRrearrangePaths ();
+extern void FMGRsetupPaths ();
 extern char *FMGRabsolutePathname (char *path);
 extern FILE *FMGRwriteOpen (char *format, ...);
 extern bool FMGRcheckExistFile (char *dir, char *name);
 extern locationtype FMGRfindLocationOfFile (char *file);
 extern bool FMGRcheckSystemLibrary (char *name);
 extern void FMGRsetFileNames (node *module);
-extern void FMGRcleanUp ();
+extern void FMGRdeleteTmpDir ();
 extern void FMGRcreateTmpDir ();
 
 #endif /* _SAC_FILEMGR_H_ */
