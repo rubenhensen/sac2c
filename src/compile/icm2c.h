@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/04/05 15:35:39  sbs
+ * Revision 1.7  1995/04/06 14:23:25  sbs
+ * some bugs fixed
+ *
+ * Revision 1.6  1995/04/05  15:35:39  sbs
  * malloc.h included
  *
  * Revision 1.5  1995/04/03  13:58:57  sbs
@@ -84,12 +87,17 @@
  */
 
 #define ND_ALLOC_ARRAY(type, name)                                                       \
-    ND_A_FIELD (name) = (type *)malloc (sizeof (type) * ND_A_SIZE (name));               \
-    ND_A_RCP (name) = (int *)malloc (sizeof (int));
+    {                                                                                    \
+        ND_A_FIELD (name) = (type *)malloc (sizeof (type) * ND_A_SIZE (name));           \
+        ND_A_RCP (name) = (int *)malloc (sizeof (int));                                  \
+        ND_A_RC (name) = 0;                                                              \
+    }
 
 #define ND_REUSE(old, new)                                                               \
-    new = old;                                                                           \
-    __##new##_rc = __##old##_rc;
+    {                                                                                    \
+        new = old;                                                                       \
+        __##new##_rc = __##old##_rc;                                                     \
+    }
 #define ND_CHECK_REUSE(old, new)                                                         \
     if (ND_A_RC (old) == 1)                                                              \
     ND_REUSE (old, new) else

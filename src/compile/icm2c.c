@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/04/03 13:58:57  sbs
+ * Revision 1.7  1995/04/06 14:23:25  sbs
+ * some bugs fixed
+ *
+ * Revision 1.6  1995/04/03  13:58:57  sbs
  * first "complete" version
  *
  * Revision 1.5  1995/03/31  13:57:34  sbs
@@ -88,11 +91,18 @@
     INDENT;                                                                              \
     fprintf (outfile, "}\n");                                                            \
     INDENT;                                                                              \
-    fprintf (outfile, "while( __idest<ND_A_SIZE(%s))\n", res)
+    fprintf (outfile, "while( __idest<ND_A_SIZE(%s));\n", res)
 
 #define AccessSeg(dim, body)                                                             \
     {                                                                                    \
         int i;                                                                           \
+        INDENT;                                                                          \
+        fprintf (outfile, "{\n");                                                        \
+        indent++;                                                                        \
+        for (i = 1; i < dim; i++) {                                                      \
+            INDENT;                                                                      \
+            fprintf (outfile, "int __i%d;\n", i);                                        \
+        }                                                                                \
         for (i = 1; i < dim; i++) {                                                      \
             INDENT;                                                                      \
             fprintf (outfile, "for( __i%d=0; __i%d<__imax%d; __i%d++) {\n", i, i, i, i); \
@@ -106,6 +116,9 @@
             INDENT;                                                                      \
             fprintf (outfile, "__isrc += __srcoff%d;\n", i);                             \
         }                                                                                \
+        indent--;                                                                        \
+        INDENT;                                                                          \
+        fprintf (outfile, "}\n");                                                        \
     }
 
 #define CopyBlock(a, offset, res)                                                        \
@@ -117,7 +130,12 @@
 
 #define TakeSeg(a, dim, offset, off_i_str, sz_i_str, res)                                \
     NewBlock (InitPtr (offset, fprintf (outfile, "0")); InitIMaxs (dim, sz_i_str);       \
-              InitSrcOffs (dim, off_i_str),                                              \
+              InitSrcOffs (                                                              \
+                dim, off_i_str; {                                                        \
+                    int j;                                                               \
+                    for (j = i + 1; j < dim; j++)                                        \
+                        fprintf (outfile, "*ND_KD_A_SHAPE(%s, %d)", a, j);               \
+                }),                                                                      \
               FillRes (res,                                                              \
                        AccessSeg (dim, INDENT; fprintf (outfile,                         \
                                                         "ND_A_FIELD(%s)[__idest++]=ND_"  \
@@ -397,10 +415,10 @@ DBUG_VOID_RETURN;
 
 INDENT;
 TakeSeg (a, dim, fprintf (outfile, "0"), /* offset */
-         fprintf (outfile, "ND_KD_A_SHAPE(%s, %d) - ", a, i);
-         AccessConst (vi, i), /* offsets */
-         AccessConst (vi, i), /* sizes */
-         res);
+         fprintf (outfile, "(ND_KD_A_SHAPE(%s, %d) - ", a, i);
+         AccessConst (vi, i); fprintf (outfile, ")"), /* offsets */
+                              AccessConst (vi, i),    /* sizes */
+                              res);
 
 fprintf (outfile, "\n\n");
 
