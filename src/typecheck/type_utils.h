@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/12/05 19:19:55  sbs
+ * return type of LaC funs changed into alphas.
+ *
  * Revision 1.5  2004/11/26 22:58:51  sbs
  * some new utils added
  * \.
@@ -28,6 +31,7 @@
 extern node *TUcreateTmpVardecsFromRets (node *rets);
 extern ntype *TUmakeProductTypeFromRets (node *rets);
 extern node *TUreplaceRetTypes (node *rets, ntype *prodt);
+extern node *TUrettypes2alpha (node *rets);
 extern node *TUrettypes2unknownAUD (node *rets);
 extern node *TUargtypes2unknownAUD (node *rets);
 extern node *TUrettypes2AUD (node *rets);

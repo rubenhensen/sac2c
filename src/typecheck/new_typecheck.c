@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2004/12/05 19:19:55  sbs
+ * return type of LaC funs changed into alphas.
+ *
  * Revision 3.65  2004/12/03 18:10:29  sbs
  * funcond rep eliminated EXPRS
  *
@@ -395,6 +398,18 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
 
     DBUG_PRINT ("NTC", ("type checking function \"%s:%s\" with", FUNDEF_MOD (fundef),
                         FUNDEF_NAME (fundef)));
+
+    /**
+     * First, we have to ensure that ALL return types are in fact type vars.
+     * Normal functions have been adjusted by create_wrappers.
+     * LaC funs have been introduced by lac2fun with return types unknown[*].
+     * These have to be replaced by PURE type vars, i.e., without any upper
+     * limit!
+     */
+    if (FUNDEF_ISLACFUN (fundef)) {
+        FUNDEF_RETS (fundef) = TUrettypes2alpha (FUNDEF_RETS (fundef));
+    }
+
     DBUG_EXECUTE (
       "NTC", arg = FUNDEF_ARGS (fundef);
 
@@ -407,15 +422,6 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
       = TYtype2String (TUmakeProductTypeFromRets (FUNDEF_RETS (fundef)), FALSE, 0);
       DBUG_PRINT ("NTC", ("  -> return type %s", tmp_str));
       tmp_str = ILIBfree (tmp_str););
-
-    /**
-     * One might think, that we first have to
-     * convert the old argument types into ntype nodes and attach
-     * these to the AVIS_TYPE fields of the N_arg nodes.
-     * However, this has been done prior to type checking individual
-     * function bodies, as the function dispatch requires these nodes
-     * in some situations to be present (cf. comment in NTCmodule)
-     */
 
     /*
      * Then, we infer the type of the body:

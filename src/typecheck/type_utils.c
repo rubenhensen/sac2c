@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/12/05 19:19:55  sbs
+ * return type of LaC funs changed into alphas.
+ *
  * Revision 1.4  2004/11/26 22:58:51  sbs
  * some new utils added
  * \.
@@ -109,6 +112,32 @@ TUreplaceRetTypes (node *rets, ntype *prodt)
         i++;
     }
     TYfreeTypeConstructor (prodt);
+
+    DBUG_RETURN (rets);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node  *TUrettypes2alpha( node *rets);
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+TUrettypes2alpha (node *rets)
+{
+    node *tmp = rets;
+
+    DBUG_ENTER ("TUrettypes2alpha");
+
+    while (tmp != NULL) {
+        RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
+        RET_TYPE (tmp) = TYmakeAlphaType (NULL);
+        tmp = RET_NEXT (tmp);
+    }
 
     DBUG_RETURN (rets);
 }
