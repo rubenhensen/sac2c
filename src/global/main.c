@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.43  1995/05/26 14:23:42  asi
+ * Revision 1.44  1995/05/29 10:04:18  asi
+ * shortcuts -noCF -noDCR -noPDCR -noLIR -noINL -nnUNR added
+ *
+ * Revision 1.43  1995/05/26  14:23:42  asi
  * function inlineing and loop unrolling added
  *
  * Revision 1.42  1995/05/22  12:06:24  sbs
@@ -293,20 +296,32 @@ MAIN
     }
     ARG 'n' : PARM
     {
+        if (!strncmp (*argv, "oDCR", 4))
+            opt_dcr = 0;
         if (!strncmp (*argv, "odead_code_removal", 18))
             opt_dcr = 0;
+        if (!strncmp (*argv, "oCF", 3))
+            opt_cf = 0;
         if (!strncmp (*argv, "oconstant_folding", 17))
             opt_cf = 0;
+        if (!strncmp (*argv, "oPDCR", 5))
+            opt_wr = 0;
         if (!strncmp (*argv, "opartial_dead_code_removal", 26))
             opt_wr = 0;
         if (!strncmp (*argv, "oOPT", 4))
             optimize = 0;
         if (!strncmp (*argv, "oopt", 4))
             optimize = 0;
+        if (!strncmp (*argv, "oLIR", 4))
+            opt_lir = 0;
         if (!strncmp (*argv, "oloop_invariant_removal", 23))
             opt_lir = 0;
+        if (!strncmp (*argv, "oINL", 4))
+            opt_inl = 0;
         if (!strncmp (*argv, "oinline_functions", 17))
             opt_inl = 0;
+        if (!strncmp (*argv, "oUNR", 4))
+            opt_unr = 0;
         if (!strncmp (*argv, "ounroll_loops", 13))
             opt_unr = 0;
     }
