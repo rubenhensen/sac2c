@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  1999/10/04 09:24:07  sbs
+ * linenum moved to globals.[ch]
+ *
  * Revision 2.13  1999/07/20 07:53:42  cg
  * Multiple definition of global variable indent removed.
  *
@@ -308,13 +311,13 @@
 #include "internal_lib.h"   /* for use of StringCopy */
 #include "Error.h"
 #include "free.h"
+#include "globals.h"
 
 #include "readsib.h"
 #include "resource.h"
 
 
 extern int charpos;
-extern int linenum;
 extern char *linebuf_ptr;
 extern char yytext[];
 

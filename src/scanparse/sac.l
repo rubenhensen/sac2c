@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/10/04 09:24:07  sbs
+ * linenum moved to globals.[ch]
+ *
  * Revision 2.6  1999/05/07 10:00:41  sbs
  * rules with overlength changed; they now contain { instead of being
  * terminated by \.
@@ -101,6 +104,7 @@
 #include "y.tab.h"
 #include "Error.h"
 #include "internal_lib.h"
+#include "globals.h"
 
 
 #define FILTER(token) 	charpos += yyleng; \
@@ -114,7 +118,6 @@ extern int i;
 char linebuf[LINEBUF_SIZE];
 char *linebuf_ptr;
 char *tmp_buf=NULL;
-int linenum=1;
 int charpos=0;
 int commlevel=0;
 int start_token;

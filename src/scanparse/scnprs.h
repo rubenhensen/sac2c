@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/10/04 09:24:07  sbs
+ * linenum moved to globals.[ch]
+ *
  * Revision 2.2  1999/05/12 14:37:48  cg
  * MAX_CPP_VARS moved to globals.h
  * added external declaration of  My_yyparse()
@@ -47,9 +50,9 @@
 
 #include "resource.h"
 #include "types.h"
+#include "globals.h"
 #include "y.tab.h"
 
-extern int linenum;
 extern int yyparse ();
 extern FILE *yyin;
 extern int start_token;
