@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2004/10/26 11:07:32  sah
+ * rewrote TYFixAndEliminateAlpha
+ *
  * Revision 3.62  2004/10/25 20:24:15  sah
  * missing , added
  *
@@ -522,6 +525,40 @@ DeleteSon (ntype *father, int son)
     NTYPE_SONS (father) = new_sons;
 
     DBUG_RETURN (father);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   ntype *IncreaseArity( ntype *type, int amount)
+ *
+ * description:
+ *   Internal function for increasing an ntype's arity by amount new sons.
+ *   Like all Makexxx functions it consumes its argument!!
+ *
+ ******************************************************************************/
+
+ntype *
+IncreaseArity (ntype *type, int amount)
+{
+    ntype **new_sons;
+    int i, arity;
+
+    DBUG_ENTER ("IncreaseArity");
+
+    arity = NTYPE_ARITY (type);
+    NTYPE_ARITY (type) = arity + amount;
+    new_sons = (ntype **)Malloc (sizeof (ntype *) * NTYPE_ARITY (type));
+    for (i = 0; i < arity; i++) {
+        new_sons[i] = NTYPE_SON (type, i);
+    }
+    for (i = arity; i < NTYPE_ARITY (type); i++) {
+        new_sons[i] = NULL;
+    }
+    NTYPE_SONS (type) = Free (NTYPE_SONS (type));
+    NTYPE_SONS (type) = new_sons;
+
+    DBUG_RETURN (type);
 }
 
 /******************************************************************************
@@ -3362,16 +3399,23 @@ TYFixAndEliminateAlpha (ntype *t1)
 
     DBUG_ENTER ("TYFixAndEliminateAlpha");
 
-    if (TYIsProd (t1)) {
-        res = MakeNtype (TC_prod, NTYPE_ARITY (t1));
-        for (i = 0; i < NTYPE_ARITY (t1); i++) {
-            PROD_MEMBER (res, i) = TYFixAndEliminateAlpha (PROD_MEMBER (t1, i));
-        }
-    } else {
-        if (TYIsAlpha (t1) && (SSIGetMin (TYGetAlpha (t1)) != NULL)) {
+    if (t1 == NULL) {
+        res = t1;
+    } else if (TYIsAlpha (t1)) {
+        if (SSIGetMin (TYGetAlpha (t1)) != NULL) {
             res = TYCopyType (SSIGetMin (ALPHA_SSI (t1)));
         } else {
             res = TYCopyType (t1);
+        }
+    } else {
+        int cnt;
+
+        res = TYCopyTypeConstructor (t1);
+
+        res = IncreaseArity (res, NTYPE_ARITY (t1));
+
+        for (cnt = 0; cnt < NTYPE_ARITY (t1); cnt++) {
+            NTYPE_SON (res, cnt) = TYFixAndEliminateAlpha (NTYPE_SON (t1, cnt));
         }
     }
 
