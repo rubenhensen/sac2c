@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.23  2002/07/02 12:52:14  dkr
+# no changes done
+#
 # Revision 3.22  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -60,15 +63,14 @@ include $(PROJECT_ROOT)/Makefile.Config
 #
 
 
-INCS = -I../global -I../tree -I../../inc -I../print -I../typecheck -I../refcount \
-       -I../optimize -I../psi-opt -I../scanparse -I../concurrent -I../flatten \
-       -I../c-interface
+INCS = -I../global -I../tree -I../../inc -I../print -I../typecheck \
+       -I../refcount -I../optimize -I../psi-opt -I../scanparse -I../concurrent \
+       -I../flatten -I../c-interface
 
 MACS = icm.data icm_comment.c icm_trace.c
 
-BETEST_OBJS = icm2c_std.BEtest.o icm2c_wl.BEtest.o \
-              icm2c_mt.BEtest.o icm2c_sched.BEtest.o \
-              icm2c_utils.o ../global/NameTuples.o \
+BETEST_OBJS = icm2c_std.BEtest.o icm2c_wl.BEtest.o icm2c_mt.BEtest.o \
+              icm2c_sched.BEtest.o icm2c_utils.o ../global/NameTuples.o \
               ../global/globals.o ../../lib/dbug.o
 
 SAC2C_OBJS = wltransform.o wlpragma_funs.o precompile.o compile.o compile.tagged.o \

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.53  2002/07/02 12:52:42  dkr
+# no changes done
+#
 # Revision 3.52  2002/06/07 17:20:09  mwe
 # Added AssociativeLaw.o for linking
 #
@@ -172,11 +175,12 @@ MULTITHREAD= src/multithread/multithread.o src/multithread/schedule_init.o \
              src/multithread/barriers_init.o src/multithread/blocks_lift.o \
              src/multithread/adjust_calls.o
 COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
-         src/compile/precompile.o \
-         src/compile/compile.o src/compile/compile.tagged.o src/compile/gen_startup_code.o \
+         src/compile/precompile.o src/compile/gen_startup_code.o \
+         src/compile/compile.o src/compile/compile.tagged.o \
          src/compile/icm2c.o src/compile/icm2c_utils.o src/compile/icm2c_std.o \
-         src/compile/icm2c_mt.o src/compile/icm2c_sched.o src/compile/icm2c_wl.o  \
-         src/compile/ReuseWithArrays.o src/compile/PatchWith.o
+         src/compile/icm2c_mt.o src/compile/icm2c_sched.o \
+         src/compile/icm2c_wl.o src/compile/ReuseWithArrays.o \
+         src/compile/PatchWith.o
 
 CINTERFACE= src/c-interface/map_cwrapper.o src/c-interface/print_interface.o \
             src/c-interface/import_specialization.o \
