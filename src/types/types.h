@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/11/23 21:12:44  cg
+ * Removed genlib_t
+ *
  * Revision 1.9  2004/11/23 20:44:44  cg
  * Added genlib_t and  min_array_rep_t.
  *
@@ -319,11 +322,6 @@ typedef enum {
 #include "prf_node_info.mac"
 #undef PRF_IF
 } prf;
-
-/*
- * target library format
- */
-typedef enum { GL_none, GL_sac, GL_c } genlib_t;
 
 /*
  * minimum array representation class
@@ -869,8 +867,8 @@ typedef bool (*tvar_ass_handle_fun) (sig_dep *handle);
  * moved from stringset.h
  */
 
-typedef enum { SS_saclib, SS_extlib, SS_objfile } SStype_t;
-typedef void *(*SSfoldfun_p) (const char *elem, SStype_t kind, void *rest);
+typedef enum { SS_saclib, SS_extlib, SS_objfile } sstype_t;
+typedef void *(*SSfoldfun_p) (const char *elem, sstype_t kind, void *rest);
 
 /*
  * moved from filemgr.h
