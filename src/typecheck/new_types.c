@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2004/11/27 01:19:14  sbs
+ * *** empty log message ***
+ *
  * Revision 3.74  2004/11/27 00:52:38  cg
  * Renamed TYeliminate functions.
  *
@@ -4955,7 +4958,7 @@ Type2OldType (ntype *new)
 }
 
 types *
-TYType2OldType (ntype *new)
+TYtype2OldType (ntype *new)
 {
     types *res;
 #ifndef DBUG_OFF
