@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.130  2004/12/02 19:29:22  sbs
+ * DUP_CONT usage in DUPops fixed *-)
+ *
  * Revision 3.129  2004/12/02 15:12:29  sah
  * added support for ops node
  *
@@ -2587,7 +2590,7 @@ DUPops (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPops");
 
-    next_node = DUPCONT (OPS_NEXT (arg_node), arg_info);
+    next_node = DUPCONT (OPS_NEXT (arg_node));
 
     new_node = TBmakeOps (OPS_MOD (arg_node), OPS_NAME (arg_node), next_node);
 
