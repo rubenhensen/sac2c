@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.104  2004/10/28 17:27:06  sah
+ * added prepareinline traversal
+ *
  * Revision 3.103  2004/10/26 11:17:07  ktr
  * added emia_tab
  *
@@ -451,6 +454,7 @@
 #include "annotatenamespace.h"
 #include "usesymbols.h"
 #include "serialize_link.h"
+#include "prepareinline.h"
 #include "filterrc.h"
 #include "aliasanalysis.h"
 #include "interfaceanalysis.h"
@@ -916,18 +920,23 @@ static funtab spmdinit_tab_rec = {{
                                   NULL,
                                   NULL};
 funtab *spmdinit_tab = &spmdinit_tab_rec;
-
+#endif /* NEW_AST */
 /*
- *  (38) unused_tab42
+ *  (38) ppi_tab
  */
-static funtab unused_tab42_rec = {{
-#define NIFunused_42(it_unused_42) it_unused_42
+static funtab ppi_tab_rec = {{
+#ifdef NEW_AST
+#define NIFppi(it_ppi) it_ppi
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab42 = &unused_tab42_rec;
-
+#else
+#define NIFunused_39(it_unused_39) it_unused_39
+#include "node_info.mac"
+#endif
+                             },
+                             NULL,
+                             NULL};
+funtab *ppi_tab = &ppi_tab_rec;
+#ifndef NEW_AST
 /*
  *  (39) spmdlift_tab
  */

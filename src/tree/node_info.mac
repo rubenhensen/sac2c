@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.229  2004/10/28 17:27:06  sah
+ * added prepareinline traversal
+ *
  * Revision 3.228  2004/10/26 12:13:38  ktr
  * Added TravNone for objdef in interface analysis.
  *
@@ -479,7 +482,7 @@
  *   analy_tab       checkdec_tab    writedec_tab    unique_tab
  *   rmcasts_tab     precomp1_tab    rsa_tab         readsib_tab
  *   unused_tab39    ea_tab          dfr_tab         tcwl_tab
- *   spmdinit_tab    unused_tab42    spmdlift_tab    syncinit_tab
+ *   spmdinit_tab    ppi_tab         spmdlift_tab    syncinit_tab
  *
  *   syncopt_tab     wltrans_tab     gsc_tab         reuse_tab
  *   patchwith_tab   sched_tab       conc_tab        opt_tab
@@ -679,8 +682,8 @@
 #ifndef NIFspmdinit
 #define NIFspmdinit(it_spmdinit)
 #endif
-#ifndef NIFunused_42
-#define NIFunused_42(it_unused_42)
+#ifndef NIFppi
+#define NIFppi(it_ppi)
 #endif
 #ifndef NIFspmdlift
 #define NIFspmdlift(it_spmdlift)
@@ -1036,7 +1039,7 @@
                                                                                                        \
   it_writesib, it_obj, it_impltype, it_objinit, it_analy, it_checkdec, it_writedec,                    \
   it_unique, it_rmcasts, it_precomp1, it_rsa, it_readsib, it_unused_39, it_ea, it_dfr,                 \
-  it_tcwl, it_spmdinit, it_unused_42, it_spmdlift, it_syncinit,                                        \
+  it_tcwl, it_spmdinit, it_ppi, it_spmdlift, it_syncinit,                                              \
                                                                                                        \
   it_syncopt, it_wltrans, it_gsc, it_reuse, it_patchwith, it_sched, it_conc, it_opt,                   \
   it_wlaa, it_mmv, it_sel, it_unused_44, it_unused_45, it_tsi, it_unused_46, it_spmddn,                \
@@ -1075,7 +1078,7 @@
                 it_unique) NIFrmcasts (it_rmcasts) NIFprecomp1 (it_precomp1)                           \
                 NIFrsa (it_rsa) NIFreadsib (it_readsib) NIFunused_39 (                                 \
                   it_unused_39) NIFea (it_ea) NIFdfr (it_dfr) NIFtcwl (it_tcwl)                        \
-                  NIFspmdinit (it_spmdinit) NIFunused_42 (it_unused_42) NIFspmdlift (                  \
+                  NIFspmdinit (it_spmdinit) NIFppi (it_ppi) NIFspmdlift (                              \
                     it_spmdlift) NIFsyncinit (it_syncinit)                                             \
                                                                                                        \
                     NIFsyncopt (it_syncopt) NIFwltrans (it_wltrans) NIFgsc (                           \
@@ -1416,7 +1419,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
        WSIBmodul, OBJmodul, IMPLmodul, OImodul, ANAmodul, TravSons, WDECmodul, UNQmodul,
        TravSons, PREC1modul, RSAModul, RSIBmodul, TravSons, EAmodul, DFRmodul, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, PPIModul, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, CONCmodul, OPTmodul,
        TravSons, TravSons, SELModul, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1557,7 +1560,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
        WSIBfundef, OBJfundef, TravSons, TravSons, ANAfundef, CDECfundef, WDECfundef,
        UNQfundef, TravSons, PREC1fundef, TravSons, RSIBfundef, TravSons, EAfundef,
-       DFRfundef, TravSons, TravSons, TravSons, TravSons, TravSons,
+       DFRfundef, TravSons, TravSons, PPIFundef, TravSons, TravSons,
 
        TravSons, TravSons, GSCfundef, ReuseFundef, TravSons, TravSons, CONCfundef,
        OPTfundef, WLAAfundef, MMVfundef, SELFundef, TravSons, TravSons, TSIfundef,
@@ -3464,7 +3467,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 #undef NIFtcwl
 
 #undef NIFspmdinit
-#undef NIFunused_42
+#undef NIFppi
 #undef NIFspmdlift
 #undef NIFsyncinit
 

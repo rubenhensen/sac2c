@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2004/10/28 17:27:06  sah
+ * added prepareinline traversal
+ *
  * Revision 3.78  2004/10/26 11:17:07  ktr
  * added emia_tab
  *
@@ -389,7 +392,7 @@ extern funtab *dfr_tab;
 extern funtab *tcwl_tab;
 extern funtab *wltrans_tab;
 extern funtab *spmdinit_tab;
-extern funtab *unused_tab42;
+extern funtab *ppi_tab;
 extern funtab *spmdlift_tab;
 extern funtab *syncinit_tab;
 extern funtab *syncopt_tab;
