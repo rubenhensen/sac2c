@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/12/15 13:40:59  cg
+ * Revision 1.8  1995/12/28 10:31:55  cg
+ * malloc_verify is used in Malloc with Fred Fish Tag MEMVERIFY
+ *
+ * Revision 1.7  1995/12/15  13:40:59  cg
  * DBUG_PRINT in Malloc reactivated, ( Malloc no longer used by ItemName
  * and ModName)
  *
@@ -59,6 +62,8 @@ Malloc (int size)
     tmp = malloc (size);
     if (NULL == tmp)
         SYSABORT (("Out of memory"));
+
+    DBUG_EXECUTE ("MEMVERIFY", malloc_verify (););
 
     DBUG_PRINT ("MEM", ("new memory: " P_FORMAT, tmp));
 
