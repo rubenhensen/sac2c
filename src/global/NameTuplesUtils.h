@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/26 11:56:11  skt
+ * added const for first arg of NTUgetShapeClassFromTypes
+ *
  * Revision 1.5  2004/11/22 15:42:55  ktr
  * SACDevCamp 04 Ismop
  *
@@ -30,7 +33,7 @@
  * Prefix: NTU
  *
  *****************************************************************************/
-extern char *NTUcreateNtTag (char *name, types *type);
+extern char *NTUcreateNtTag (const char *name, types *type);
 extern node *NTUaddNtTag (node *id);
 
 extern shape_class_t NTUgetShapeClassFromTypes (types *type);
