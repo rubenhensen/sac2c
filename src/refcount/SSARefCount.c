@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2004/06/23 15:25:38  ktr
+ * LHS identifiers of F_adjust_rc and F_fill prfs are now marked marked
+ * with ST_artifical causing UndoSSATransform to rename them to their
+ * original name.
+ *
  * Revision 1.19  2004/06/23 09:33:44  ktr
  * Major code brush done.
  *
@@ -763,8 +768,19 @@ MakeAdjustRC (node *avis, int count, node *next_node)
         IDS_AVIS (ids1) = avis;
         IDS_VARDEC (ids1) = AVIS_VARDECORARG (avis);
 
+        /*
+         * By setting IDS_STATUS of the LHS identifier to ST_artificial,
+         * SSATransform will mark this with SSAUNDOFLAG causing
+         * UndoSSATransform to rename it to its original name:
+         *
+         * Before UndoSSATransform:
+         * a' = adjust_rc( a, -1);
+         *
+         * After UndoSSATransform:
+         * a  = adjust_rc( a, -1);
+         */
         ids2 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (avis))), NULL,
-                        ST_regular);
+                        ST_artificial);
 
         IDS_AVIS (ids2) = avis;
         IDS_VARDEC (ids2) = AVIS_VARDECORARG (avis);
@@ -1835,9 +1851,26 @@ SSARClet (node *arg_node, node *arg_info)
         /*
          * Wrap these instructions into a F_fill prf
          */
+        ids = LET_IDS (arg_node);
+
         LET_EXPR (arg_node)
-          = MakePrf (F_fill,
-                     MakeExprs (LET_EXPR (arg_node), Ids2Exprs (LET_IDS (arg_node))));
+          = MakePrf (F_fill, MakeExprs (LET_EXPR (arg_node), Ids2Exprs (ids)));
+
+        /*
+         * By setting IDS_STATUS of LHS identifiers to ST_artificial,
+         * SSATransform will mark these with SSAUNDOFLAG causing
+         * UndoSSATransform to rename these into their original identifiers:
+         *
+         * Before UndoSSATransform:
+         * a' = fill( ..., a);
+         *
+         * After UndoSSATransform:
+         * a  = fill( ..., a);
+         */
+        while (ids != NULL) {
+            IDS_STATUS (ids) = ST_artificial;
+            ids = IDS_NEXT (ids);
+        }
 
         /*
          * here is no break missing
