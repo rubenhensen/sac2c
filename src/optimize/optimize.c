@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/02/20 15:54:24  nmw
+ * ssa-transformation for debugging included
+ *
  * Revision 3.3  2001/02/15 17:09:14  nmw
  * ssa transformation switch and break specifier implemented
  *
@@ -478,11 +481,20 @@ OPTmodul (node *arg_node, node *arg_info)
      */
 
     if (use_ssaform) {
-        NOTE (("using ssa-form based optimizations:"));
+        NOTE (("using ssa-form based optimizations."));
         arg_node = Lac2Fun (arg_node);
-        arg_node = CheckAvis (arg_node);
-        arg_node = SSATransform (arg_node);
+        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
+            && (0 == strcmp (break_specifier, "l2f"))) {
+            goto DONE;
+        }
 
+        arg_node = CheckAvis (arg_node);
+        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
+            && (0 == strcmp (break_specifier, "cha"))) {
+            goto DONE;
+        }
+
+        arg_node = SSATransform (arg_node);
         if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
             && (0 == strcmp (break_specifier, "ssa"))) {
             goto DONE;
@@ -834,6 +846,17 @@ OPTfundef (node *arg_node, node *arg_info)
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
                 && (0 == strcmp (break_specifier, "lir"))) {
                 goto INFO;
+            }
+
+            /* restore ssa-from for usage in next cycle */
+            if (use_ssaform) {
+                DBUG_PRINT ("SSA", ("restoring SSA form:"));
+                arg_node = CheckAvis (arg_node);
+                arg_node = SSATransform (arg_node);
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "ssa"))) {
+                    goto INFO;
+                }
             }
 
         } while (((cse_expr != old_cse_expr) || (cf_expr != old_cf_expr)
