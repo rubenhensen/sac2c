@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/11/22 11:27:04  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 1.10  2004/10/14 11:47:49  sbs
  * SHShape2Exprs added
  *
@@ -34,8 +37,8 @@
  *
  */
 
-#ifndef _shape_h
-#define _shape_h
+#ifndef _SAC_SHAPE_H_
+#define _SAC_SHAPE_H_
 
 /*
  * The module "shape" implements an abstract datatype for keeping
@@ -50,8 +53,6 @@
  * - If the result is a shape structure, it has been freshly allocated!
  *
  */
-
-typedef struct SHAPE shape;
 
 #include <stdio.h>
 #include "types.h"
@@ -87,4 +88,4 @@ extern shpseg *SHShape2OldShpseg (shape *shp);
 extern bool SHCompareWithCArray (shape *shp, int *shpdata, int dim);
 extern bool SHCompareWithArguments (shape *shp, int dim, ...);
 
-#endif /* _shape_h */
+#endif /* _SAC_SHAPE_H_ */

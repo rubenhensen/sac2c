@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/22 11:27:04  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 1.3  2003/04/09 15:37:16  sbs
  * zipcv_neg added.
  *
@@ -12,10 +15,10 @@
  *
  */
 
-#ifndef _zipcv_h
-#define _zipcv_h
+#ifndef _SAC_ZIPCV_H_
+#define _SAC_ZIPCV_H_
 
-typedef void (*zipcvfunptr) (void *, int, void *, int, void *, int);
+#include "types.h"
 
 extern zipcvfunptr zipcv_plus[];
 extern zipcvfunptr zipcv_minus[];
@@ -88,4 +91,4 @@ EXT_DECLS (Tod)
 EXT_DECLS (Abs)
 EXT_DECLS (Neg)
 
-#endif /* _zipcv_h */
+#endif /* _SAC_ZIPCV_H_ */

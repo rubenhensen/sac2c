@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/22 11:27:04  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 1.3  2003/04/07 14:25:44  sbs
  * max_char parameter added for abbreviation.
  *
@@ -15,10 +18,8 @@
  *
  */
 
-#ifndef _cv2str_h
-#define _cv2str_h
-
-typedef char *(*cv2strfunptr) (void *, int, int, int);
+#ifndef _SAC_CV2STR_H_
+#define _SAC_CV2STR_H_
 
 extern cv2strfunptr cv2str[];
 
@@ -37,4 +38,4 @@ extern char *COCv2StrChar (void *src, int off, int len, int max_char);
 
 extern char *COCv2StrDummy (void *src, int off, int len, int max_char);
 
-#endif /* _cv2str_h */
+#endif /* _SAC_CV2STR_H_ */

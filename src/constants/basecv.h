@@ -1,18 +1,18 @@
 /*
  * $Log$
+ * Revision 1.2  2004/11/22 11:27:04  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 1.1  2001/05/02 08:00:21  nmw
  * Initial revision
  *
  *
  */
 
-#ifndef _basecv_h
-#define _basecv_h
+#ifndef _SAC_BASECV_H_
+#define _SAC_BASECV_H_
 
-#include "constants.h"
-#include "shape.h"
-
-typedef constant *(*basecvfunptr) (shape *shp);
+#include "types.h"
 
 extern basecvfunptr basecv_zero[];
 extern basecvfunptr basecv_one[];
@@ -36,4 +36,4 @@ extern basecvfunptr basecv_one[];
 EXT_DECLS (Zero)
 EXT_DECLS (One)
 
-#endif /* _basecv_h */
+#endif /* _SAC_BASECV_H_ */

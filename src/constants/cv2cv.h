@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/22 11:27:04  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 1.3  2001/04/30 12:30:20  nmw
  * COCv2CvHidden() added
  *
@@ -22,10 +25,8 @@
  *
  */
 
-#ifndef _cv2cv_h
-#define _cv2cv_h
-
-typedef void (*cv2cvfunptr) (void *, int, int, void *, int);
+#ifndef _SAC_CV2CV_H_
+#define _SAC_CV2CV_H_
 
 extern cv2cvfunptr cv2cv[];
 
@@ -46,4 +47,4 @@ extern void COCv2CvHidden (void *src, int off, int len, void *res, int res_off);
 
 extern void COCv2CvDummy (void *src, int off, int len, void *res, int res_off);
 
-#endif /* _cv2cv_h */
+#endif /* _SAC_CV2CV_H_ */

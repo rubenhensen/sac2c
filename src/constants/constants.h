@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.22  2004/11/22 11:27:04  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 1.21  2004/09/27 13:15:20  sah
  * added serialization support
  *
@@ -84,8 +87,8 @@
  *
  */
 
-#ifndef _constants_h
-#define _constants_h
+#ifndef _SAC_CONSTANTS_H_
+#define _SAC_CONSTANTS_H_
 
 /*
  * The module "constants" implements an abstract datatype for keeping "machine"
@@ -107,13 +110,7 @@
  */
 
 #include <stdio.h>
-#include "shape.h"
 #include "types.h"
-
-typedef struct CONSTANT constant;
-typedef constant *(*monCF) (constant *);
-typedef constant *(*binCF) (constant *, constant *);
-typedef constant *(*triCF) (constant *, constant *, constant *);
 
 /***
  ***
@@ -231,4 +228,4 @@ extern constant *COTod (constant *a);
 extern constant *COAbs (constant *a);
 extern constant *CONeg (constant *a);
 
-#endif /* _constants_h */
+#endif /* _SAC_CONSTANTS_H_ */

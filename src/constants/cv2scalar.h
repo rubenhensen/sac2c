@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/11/22 11:27:04  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 1.2  2001/03/22 14:27:31  nmw
  * functions to convert float, bool, char added
  *
@@ -16,12 +19,10 @@
  *
  */
 
-#ifndef _cv2scalar_h
-#define _cv2scalar_h
+#ifndef _SAC_CV2SCALAR_H_
+#define _SAC_CV2SCALAR_H_
 
 #include "types.h"
-
-typedef node *(*cv2scalarfunptr) (void *, int);
 
 extern cv2scalarfunptr cv2scalar[];
 
@@ -32,4 +33,4 @@ extern node *COCv2Float (void *elems, int offset);
 extern node *COCv2Char (void *elems, int offset);
 extern node *COCv2ScalarDummy (void *elems, int offset);
 
-#endif /* _cv2scalar_h */
+#endif /* _SAC_CV2SCALAR_H_ */

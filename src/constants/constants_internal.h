@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/11/22 11:27:04  ktr
+ * Ismop SacDevCamp 04
+ *
  * Revision 1.3  2003/06/11 22:05:36  ktr
  * Added support for multidimensional arrays
  *
@@ -12,8 +15,8 @@
  *
  */
 
-#ifndef _constants_internal_h
-#define _constants_internal_h
+#ifndef _SAC_CONSTANTS_INTERNAL_H_
+#define _SAC_CONSTANTS_INTERNAL_H_
 
 /*
  * This header file is ment for internal usage only! I.e., only those
@@ -21,6 +24,7 @@
  *
  */
 
+#include "types.h"
 #include "shape.h"
 
 struct CONSTANT {
@@ -56,4 +60,4 @@ extern void CopyElemsFromCVToCV (simpletype type, void *from, int off, int len, 
 extern void DbugPrintBinOp (char *fun, constant *arg1, constant *arg2, constant *res);
 extern void DbugPrintUnaryOp (char *fun, constant *arg1, constant *res);
 
-#endif /* _constants_internal_h */
+#endif /* _SAC_CONSTANTS_INTERNAL_H_ */
