@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.20  1998/12/03 14:22:03  sbs
+ * ftoi and friends eliminated
+ * some comments inserted.
+ *
  * Revision 1.19  1998/06/02 12:07:56  sbs
  * added CFprf in comment...
  *
@@ -62,29 +66,32 @@
 */
 
 /*
- * NOTE: At the t the time being, there are 3 categories of prf's:
+ * NOTE: At the time being, there are 3 categories of prf's:
+ *       - the first legal prf is "F_toi" !!
+ *           USED IN : gen_pseudo_fun.c
+ *
  *       - funs with exactly 1 scalar arg. The last fun of this
  *         category HAS TO BE  "F_not"  !!
- *           USED IN : ... ?
+ *           USED IN : CFprf, ... ?
  *
  *       - funs which require more than one argument. All of the fun's
  *         arguments should be scalars (not arrays). The last fun of
  *         this category HAS TO BE  "F_neq"  !!
- *           USED IN : CFprf, ... ?
+ *           USED IN : CFprf, compile.c, ... ?
  *
  *       - funs that require at least one non-scalar (array) argument.
  *         The first fun of this category HAS TO BE  "F_take"  !!
  *           USED IN : ... ?
+ *
+ *       - the last legal prf is "F_genarray" !!
+ *           USED IN : gen_pseudo_fun.c
  *
  */
 
 /*   Node_name         dbug-string[]  prf_string[]        prf_name_str[]*/
 
 PRF_IF (F_toi, "F_foi", "toi", "_toi"), PRF_IF (F_tof, "F_fof", "tof", "_tof"),
-  PRF_IF (F_tod, "F_fod", "tod", "_tod"), PRF_IF (F_ftoi, "F_ftoi", "ftoi", "_ftoi"),
-  PRF_IF (F_ftod, "F_ftod", "ftod", "_ftod"), PRF_IF (F_itof, "F_itof", "itof", "_itof"),
-  PRF_IF (F_itod, "F_itod", "itod", "_itod"), PRF_IF (F_dtoi, "F_dtoi", "dtoi", "_dtoi"),
-  PRF_IF (F_dtof, "F_dtof", "dtof", "_dtof"), PRF_IF (F_abs, "F_abs", "abs", "_abs"),
+  PRF_IF (F_tod, "F_fod", "tod", "_tod"), PRF_IF (F_abs, "F_abs", "abs", "_abs"),
   PRF_IF (F_not, "F_not", "!", "_not"),
 
   PRF_IF (F_min, "F_min", "min", "_min"), PRF_IF (F_max, "F_max", "max", "_max"),
@@ -105,12 +112,6 @@ PRF_IF (F_toi, "F_foi", "toi", "_toi"), PRF_IF (F_tof, "F_fof", "tof", "_tof"),
   PRF_IF (F_rotate, "F_rotate", "rotate", "_rotate"),
   PRF_IF (F_toi_A, "F_toi_A", "toi", "_toi"), PRF_IF (F_tof_A, "F_tof_A", "tof", "_tof"),
   PRF_IF (F_tod_A, "F_tod_A", "tod", "_tod"),
-  PRF_IF (F_ftoi_A, "F_ftoi_A", "ftoi", "_ftoi"),
-  PRF_IF (F_ftod_A, "F_ftod_A", "ftod", "_ftod"),
-  PRF_IF (F_itof_A, "F_itof_A", "itof", "_itof"),
-  PRF_IF (F_itod_A, "F_itod_A", "itod", "_itod"),
-  PRF_IF (F_dtoi_A, "F_dtoi_A", "dtoi", "_dtoi"),
-  PRF_IF (F_dtof_A, "F_dtof_A", "dtof", "_dtof"),
   PRF_IF (F_add_SxA, "F_add_SxA", "+", "_add"),
   PRF_IF (F_add_AxS, "F_add_AxS", "+", "_add"),
   PRF_IF (F_add_AxA, "F_add_AxA", "+", "_add"),
