@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.32  1998/02/05 17:03:44  srs
+# removed file WorkReduction (from all:) and rebuild dependencies
+#
 # Revision 1.31  1997/11/20 15:02:07  dkr
 # make deps done
 #
@@ -101,7 +104,7 @@ CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../../inc -I../typecheck -I../print -I../psi-opt -I../modules
 
-all: optimize.o ConstantFolding.o DeadCodeRemoval.o WorkReduction.o \
+all: optimize.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o DupTree.o Inline.o Unroll.o Unswitch.o CSE.o
 
 optimize.o: optimize.c
@@ -228,6 +231,5 @@ optimize.o: ../global/tree_compound.h ../global/Error.h /usr/include/string.h
 optimize.o: ../global/globals.h ../global/internal_lib.h ../global/free.h
 optimize.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 optimize.o: ../global/traverse.h ../print/print.h optimize.h
-optimize.o: ConstantFolding.h DeadCodeRemoval.h WorkReduction.h
-optimize.o: LoopInvariantRemoval.h Inline.h Unroll.h Unswitch.h
-optimize.o: ../psi-opt/ArrayElimination.h CSE.h
+optimize.o: ConstantFolding.h DeadCodeRemoval.h LoopInvariantRemoval.h
+optimize.o: Inline.h Unroll.h Unswitch.h ../psi-opt/ArrayElimination.h CSE.h
