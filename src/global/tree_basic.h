@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.182  1998/05/28 16:32:02  dkr
+ * added ICM_INDENT: indent-mechanismus for H-ICMs
+ *
  * Revision 1.181  1998/05/28 07:49:45  cg
  * added temporary attribute FUNDEF_LIFTEDFROM for spmd functions
  *
@@ -2204,10 +2207,15 @@ extern node *MakePre (nodetype incdec, char *id);
  ***  permanent attributes:
  ***
  ***    char*  NAME
+ ***    int    INDENT
  ***
  *** remarks:
  ***    NEXT at least (!) is used for the compilation of N_typedef's
  ***    whenever the defining type is an array type!!
+ ***
+ ***    INDENT is used for indenting ICMs in output. This value is set
+ ***    by 'MakeIcm' and used by 'PrintIcm'.
+ ***
  ***/
 
 extern node *MakeIcm (char *name, node *args, node *next);
@@ -2215,6 +2223,7 @@ extern node *MakeIcm (char *name, node *args, node *next);
 #define ICM_NAME(n) (n->info.fun_name.id)
 #define ICM_ARGS(n) (n->node[0])
 #define ICM_NEXT(n) (n->node[1])
+#define ICM_INDENT(n) (n->flag)
 
 /*--------------------------------------------------------------------------*/
 
