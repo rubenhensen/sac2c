@@ -5484,7 +5484,14 @@
 -->
     <node name="Error">
       <sons></sons>
-      <attributes></attributes>
+      <attributes>
+       <attribute name="message" mandatory="no">
+         <type name="String" />
+         <phases>
+	       <all />
+	     </phases>
+        </attribute>
+      </attributes>
       <flags></flags>
     </node>
 
