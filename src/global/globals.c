@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/05/31 12:11:09  sbs
+ * max_optcycles increased to 10.
+ *
  * Revision 3.11  2001/05/11 15:13:43  cg
  * Added new variable max_schedulers to keep track of the maximum
  * number of schedulers within a single SPMD function.
@@ -386,7 +389,7 @@ int unrnum = 2;
 int wlunrnum = 9;
 int minarray = 4;
 int max_overload = 20;
-int max_optcycles = 4;
+int max_optcycles = 10;
 
 int initial_master_heapsize = 1024;
 int initial_worker_heapsize = 64;
