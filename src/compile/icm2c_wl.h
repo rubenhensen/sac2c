@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.18  2003/09/25 13:43:40  dkr
  * new argument 'copyfun' added to some ICMs
  *
@@ -32,7 +35,7 @@
  * bug in WL_ASSIGN__COPY fixed
  *
  * Revision 3.8  2002/07/12 18:53:39  dkr
- * some modifications for TAGGED_ARRAYS done
+ * some modifications done
  *
  * Revision 3.6  2001/02/06 01:44:13  dkr
  * WL_NOOP_... replaced by WL_ADJUST_OFFSET

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.55  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 1.54  2004/03/05 19:14:27  mwe
  * representation of conditional changed
  * using N_funcond node instead of phi
@@ -79,14 +82,14 @@
  * SSACFGetShapeOfExpr(): DBUG_ASSERTs about unknown shapes removed
  *
  * Revision 1.31  2002/09/03 18:47:43  dkr
- * - TAGGED_ARRAYS: constants propagation for N_ap activated again
+ * - new backend: constants propagation for N_ap activated again
  * - SSACFid(): support for dynamic types added
  *
  * Revision 1.29  2002/07/29 12:12:53  sbs
  * PRF_IF macro extended by z.
  *
  * Revision 1.28  2002/07/12 19:37:24  dkr
- * TAGGED_ARRAYS: constants propagation for N_ap deactivated
+ * new backend: constants propagation for N_ap deactivated
  *
  * Revision 1.26  2002/04/08 19:58:14  dkr
  * debug code removed

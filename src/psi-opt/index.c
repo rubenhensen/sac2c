@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.53  2004/02/25 08:17:44  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -103,22 +106,22 @@
  * V2Opatch added
  *
  * Revision 3.22  2002/07/24 15:07:09  dkr
- * TAGGED_ARRAYS: VECT2OFFSET and USE_GENVAR_OFFSET icms modified
+ * new backend: VECT2OFFSET and USE_GENVAR_OFFSET icms modified
  *
  * Revision 3.21  2002/07/15 17:24:00  dkr
  * N_prf arguments of F_idx_... are lifted now :-)
  *
  * Revision 3.20  2002/07/12 22:53:23  dkr
- * ND_USE_GENVAR_OFFSET-ICM modified for TAGGED_ARRAYS
+ * ND_USE_GENVAR_OFFSET-ICM modified for new backend
  *
  * Revision 3.19  2002/07/11 17:28:35  dkr
- * code for TAGGED_ARRAYS corrected ...
+ * code for new backend corrected ...
  *
  * Revision 3.18  2002/07/11 14:00:15  dkr
  * NameTuplesUtils.h included
  *
  * Revision 3.17  2002/07/11 13:58:44  dkr
- * modification for TAGGED_ARRAYS added
+ * modification for new backend added
  *
  * Revision 3.16  2002/06/27 15:27:03  dkr
  * bug in IdxNcode() fixed:
@@ -1265,9 +1268,7 @@ node *
 CreateIdxs2OffsetIcm (node *vardec, ids *idxs, types *type)
 {
     node *shp_exprs, *ids_exprs, *icm, *iv_off_id;
-#ifdef TAGGED_ARRAYS
     node *exprs;
-#endif
     char *iv_name;
 
     DBUG_ENTER ("CreateIdxs2OffsetIcm");
@@ -1294,14 +1295,12 @@ CreateIdxs2OffsetIcm (node *vardec, ids *idxs, types *type)
     /*
      * Now, we create the desired icm:
      */
-#ifdef TAGGED_ARRAYS
     iv_off_id = AddNtTag (iv_off_id);
     exprs = ids_exprs;
     while (exprs != NULL) {
         EXPRS_EXPR (exprs) = AddNtTag (EXPRS_EXPR (exprs));
         exprs = EXPRS_NEXT (exprs);
     }
-#endif
 
     icm = MakeIcm5 ("ND_IDXS2OFFSET", iv_off_id, MakeNum (CountIds (idxs)), ids_exprs,
                     MakeNum (GetShapeDim (type)), shp_exprs);
@@ -1356,18 +1355,12 @@ CreateVect2OffsetIcm (node *vardec, types *type)
     /*
      * Now, we create the desired icm:
      */
-#ifdef TAGGED_ARRAYS
     iv_vect_id = AddNtTag (iv_vect_id);
     iv_off_id = AddNtTag (iv_off_id);
 
     icm = MakeIcm5 ("ND_VECT2OFFSET", iv_off_id,
                     MakeNum (GetTypesLength (ID_TYPE (iv_vect_id))), iv_vect_id,
                     MakeNum (GetShapeDim (type)), exprs);
-#else
-    icm = MakeIcm5 ("ND_KS_VECT2OFFSET", iv_off_id, iv_vect_id,
-                    MakeNum (VARDEC_OR_ARG_SHAPE (vardec, 0)),
-                    MakeNum (GetShapeDim (type)), exprs);
-#endif
 
     /*
      * Finally, we mark vardec as VECT!
@@ -2530,18 +2523,12 @@ IdxNcode (node *arg_node, node *arg_info)
                      */
                     ID_VARDEC (array_id) = LET_VARDEC (let_node);
 
-#ifdef TAGGED_ARRAYS
                     new_id = AddNtTag (new_id);
                     array_id = AddNtTag (array_id);
 
                     new_assign
                       = MakeAssign (MakeIcm2 ("ND_USE_GENVAR_OFFSET", new_id, array_id),
                                     NULL);
-#else
-                    new_assign = MakeAssign (MakeIcm2 ("ND_KS_USE_GENVAR_OFFSET", new_id,
-                                                       array_id),
-                                             NULL);
-#endif
                 } else {
                     /*
                      * we have to instanciate the idx-variable by an ICM of the form:

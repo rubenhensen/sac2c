@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.18  2003/11/06 08:29:02  sbs
- * GetNextVarId commented out for TAGGED arrays.
+ * GetNextVarId commented out for new backend
  *
  * Revision 3.17  2002/10/10 23:51:08  dkr
  * ICM_STR added
@@ -47,7 +50,7 @@
  * GetNextIcm(): some spaces added in output
  *
  * Revision 3.3  2002/06/02 21:38:14  dkr
- * support for TAGGED_ARRAYS added
+ * support for new backend added
  *
  * Revision 3.2  2002/03/07 20:13:34  dkr
  * - Support for ICMs arguments of type N_icm (H-ICMs with str-, int-, var- or
@@ -83,11 +86,7 @@
 
 #define ICM_ICM(name) exprs = GetNextIcm (&name, exprs);
 
-#ifdef TAGGED_ARRAYS
 #define ICM_NT(name) exprs = GetNextNt (&name, exprs);
-#else
-#define ICM_NT(name) ICM_ID (name)
-#endif
 
 #define ICM_ID(name) exprs = GetNextId (&name, exprs);
 
@@ -100,14 +99,10 @@
         exprs = GetNextVarAny (&name, NULL, cnt, exprs);                                 \
     }
 
-#ifdef TAGGED_ARRAYS
 #define ICM_VARNT(cnt, name)                                                             \
     if (cnt > 0) {                                                                       \
         exprs = GetNextVarNt (&name, cnt, exprs);                                        \
     }
-#else
-#define ICM_VARNT(cnt, name) ICM_VARID (cnt, name)
-#endif
 
 #define ICM_VARID(cnt, name)                                                             \
     if (cnt > 0) {                                                                       \
@@ -512,7 +507,6 @@ GetNextVarAny (char ***ret, int *ret_len, int cnt, node *exprs)
     DBUG_RETURN (exprs);
 }
 
-#ifdef TAGGED_ARRAYS
 static node *
 GetNextVarNt (char ***ret, int cnt, node *exprs)
 {
@@ -533,32 +527,31 @@ GetNextVarNt (char ***ret, int cnt, node *exprs)
 
     DBUG_RETURN (exprs);
 }
-#endif /* TAGGED_ARRAYS */
 
-#ifndef TAGGED_ARRAYS
-static node *
-GetNextVarId (char ***ret, int cnt, node *exprs)
+#if 0
+static
+node *GetNextVarId( char ***ret, int cnt, node *exprs)
 {
-    node *expr;
-    int i;
+  node *expr;
+  int i;
 
-    DBUG_ENTER ("GetNextVarId");
+  DBUG_ENTER( "GetNextVarId");
 
-    (*ret) = (char **)Malloc (cnt * sizeof (char *));
+  (*ret) = (char **) Malloc( cnt * sizeof( char*));
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
-    expr = EXPRS_EXPR (exprs);
+  DBUG_ASSERT( (exprs != NULL), "wrong icm-arg: NULL found!");
+  DBUG_ASSERT( (NODE_TYPE( exprs) == N_exprs),
+               "wrong icm-arg: N_exprs expected");
+  expr = EXPRS_EXPR( exprs);
 
-    for (i = 0; i < cnt; i++) {
-        exprs = GetNextId (&((*ret)[i]), exprs);
-    }
+  for (i = 0; i < cnt; i++) {
+    exprs = GetNextId( &((*ret)[i]), exprs);
+  }
 
-    DBUG_RETURN (exprs);
+  DBUG_RETURN( exprs);
 }
-#endif /* !TAGGED_ARRAYS */
+#endif
 
-#ifdef TAGGED_ARRAYS
 static node *
 GetNextVarInt (int **ret, int cnt, node *exprs)
 {
@@ -579,7 +572,6 @@ GetNextVarInt (int **ret, int cnt, node *exprs)
 
     DBUG_RETURN (exprs);
 }
-#endif /* TAGGED_ARRAYS */
 
 #include "icm.data"
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.43  2003/10/20 15:38:45  dkr
  * MT_CREATE_LOCAL_DESC modified
  *
@@ -21,10 +24,10 @@
  * MT_SYNCBLOCK_END added.
  *
  * Revision 3.37  2003/10/15 01:08:01  dkrHH
- * MT_START_SYNCBLOCK modified for TAGGED_ARRAYS
+ * MT_START_SYNCBLOCK modified for new backend
  *
  * Revision 3.36  2003/10/14 08:51:32  cg
- * some code for TAGGED_ARRAYS removed
+ * some code for new backend removed
  *
  * Revision 3.34  2003/09/17 17:19:37  dkr
  * some minor changes done.
@@ -43,7 +46,7 @@
  * typo in ICMCompileMT_SYNC_FOLD corrected
  *
  * Revision 3.29  2003/09/15 16:45:53  dkr
- * Several modifications for TAGGED_ARRAYS done.
+ * Several modifications for new backend done.
  * This revision is incomplete yet.
  *
  * Revision 3.28  2003/08/04 16:57:08  dkr
@@ -375,11 +378,6 @@ ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int vararg_cnt, char **vararg
 
     indent++;
 
-#ifndef TAGGED_ARRAYS
-    INDENT;
-    fprintf (outfile, "int SAC_dummy_refcount = 2;\n");
-#endif /* TAGGED_ARRAYS */
-
     INDENT;
     fprintf (outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_single_threaded)\n");
 
@@ -496,7 +494,6 @@ ICMCompileMT_SYNCBLOCK_BEGIN (int barrier_id, int vararg_cnt, char **vararg)
     fprintf (outfile, "{\n");
     indent++;
 
-#ifdef TAGGED_ARRAYS
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
         if (!strcmp (vararg[i], "in")) {
             INDENT;
@@ -505,13 +502,11 @@ ICMCompileMT_SYNCBLOCK_BEGIN (int barrier_id, int vararg_cnt, char **vararg)
         }
     }
     fprintf (outfile, "\n");
-#endif /* TAGGED_ARRAYS */
 
     INDENT;
     fprintf (outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_multi_threaded)\n");
 
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
-#ifdef TAGGED_ARRAYS
         if (!strcmp (vararg[i], "in")) {
             int dim;
             int cnt = sscanf (vararg[i + 2], "%d", &dim);
@@ -521,13 +516,6 @@ ICMCompileMT_SYNCBLOCK_BEGIN (int barrier_id, int vararg_cnt, char **vararg)
             }
             ICMCompileMT_CREATE_LOCAL_DESC (vararg[i + 1], dim);
         }
-#else  /* TAGGED_ARRAYS */
-        if (!strcmp (vararg[i], "in_rc")) {
-            INDENT;
-            fprintf (outfile, "int SAC_ND_A_RC( %s) = &SAC_dummy_refcount;\n",
-                     vararg[i + 2]);
-        }
-#endif /* TAGGED_ARRAYS */
     }
 
     INDENT;
@@ -563,9 +551,7 @@ ICMCompileMT_SYNCBLOCK_BEGIN (int barrier_id, int vararg_cnt, char **vararg)
 void
 ICMCompileMT_SYNCBLOCK_CLEANUP (int barrier_id, int vararg_cnt, char **vararg)
 {
-#ifdef TAGGED_ARRAYS
     int i;
-#endif
 
     DBUG_ENTER ("ICMCompileMT_SYNCBLOCK_CLEANUP");
 
@@ -574,7 +560,6 @@ ICMCompileMT_SYNCBLOCK_CLEANUP (int barrier_id, int vararg_cnt, char **vararg)
 #include "icm_trace.c"
 #undef MT_SYNCBLOCK_CLEANUP
 
-#ifdef TAGGED_ARRAYS
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
         if (!strcmp (vararg[i], "in")) {
             INDENT;
@@ -582,7 +567,6 @@ ICMCompileMT_SYNCBLOCK_CLEANUP (int barrier_id, int vararg_cnt, char **vararg)
                      vararg[i + 2]);
         }
     }
-#endif /* TAGGED_ARRAYS */
 
     DBUG_VOID_RETURN;
 }
@@ -693,24 +677,10 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int vararg_cnt, char **vararg)
 
     for (i = 0; i < vararg_cnt; i++) {
         INDENT;
-#ifdef TAGGED_ARRAYS
         fprintf (outfile,
                  "SAC_MT_SET_BARRIER_RESULT("
                  " SAC_MT_MYTHREAD(), %i, %s, %s)\n",
                  i + 1, vararg[4 * i], vararg[4 * i + 1]);
-#else  /* TAGGED_ARRAYS */
-        if (strcmp ("array_rc", vararg[4 * i])) {
-            fprintf (outfile,
-                     "SAC_MT_SET_BARRIER_RESULT("
-                     " SAC_MT_MYTHREAD(), %i, %s, %s);\n",
-                     i + 1, vararg[4 * i], vararg[4 * i + 1]);
-        } else {
-            fprintf (outfile,
-                     "SAC_MT_SET_BARRIER_RC_RESULT("
-                     " SAC_MT_MYTHREAD(), %i, %s, %s);\n",
-                     i + 1, vararg[4 * i], vararg[4 * i + 1]);
-        }
-#endif /* TAGGED_ARRAYS */
     }
 
     INDENT;
@@ -729,27 +699,8 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int vararg_cnt, char **vararg)
 
     for (i = 0; i < vararg_cnt; i++) {
         INDENT;
-#ifdef TAGGED_ARRAYS
         fprintf (outfile, "SAC_MT_GET_BARRIER_RESULT( SAC_MT_son_id, %i, %s, %s)\n",
                  i + 1, vararg[4 * i], vararg[4 * i + 2]);
-#else  /* TAGGED_ARRAYS */
-        if (strcmp ("array_rc", vararg[4 * i])) {
-            fprintf (outfile,
-                     "%s = SAC_MT_GET_BARRIER_RESULT("
-                     " SAC_MT_son_id, %i, %s);\n",
-                     vararg[4 * i + 2], i + 1, vararg[4 * i]);
-        } else {
-            fprintf (outfile,
-                     "%s = SAC_MT_GET_BARRIER_RC_RESULT_PTR("
-                     " SAC_MT_son_id, %i, %s);\n",
-                     vararg[4 * i + 2], i + 1, vararg[4 * i]);
-            INDENT;
-            fprintf (outfile,
-                     "%s__rc = SAC_MT_GET_BARRIER_RC_RESULT_RC("
-                     " SAC_MT_son_id, %i, %s);\n",
-                     vararg[4 * i + 2], i + 1, vararg[4 * i]);
-        }
-#endif /* TAGGED_ARRAYS */
 #ifndef BEtest
         INDENT;
         fprintf (outfile, "{\n");
@@ -769,24 +720,10 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int vararg_cnt, char **vararg)
 
     for (i = 0; i < vararg_cnt; i++) {
         INDENT;
-#ifdef TAGGED_ARRAYS
         fprintf (outfile,
                  "SAC_MT_SET_BARRIER_RESULT("
                  " SAC_MT_MYTHREAD(), %i, %s, %s)\n",
                  i + 1, vararg[4 * i], vararg[4 * i + 1]);
-#else  /* TAGGED_ARRAYS */
-        if (strcmp ("array_rc", vararg[4 * i])) {
-            fprintf (outfile,
-                     "SAC_MT_SET_BARRIER_RESULT("
-                     " SAC_MT_MYTHREAD(), %i, %s, %s);\n",
-                     i + 1, vararg[4 * i], vararg[4 * i + 1]);
-        } else {
-            fprintf (outfile,
-                     "SAC_MT_SET_BARRIER_RC_RESULT("
-                     " SAC_MT_MYTHREAD(), %i, %s, %s);\n",
-                     i + 1, vararg[4 * i], vararg[4 * i + 1]);
-        }
-#endif /* TAGGED_ARRAYS */
     }
 
     INDENT;
@@ -805,29 +742,10 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int vararg_cnt, char **vararg)
 
     for (i = 0; i < vararg_cnt; i++) {
         INDENT;
-#ifdef TAGGED_ARRAYS
         fprintf (outfile,
                  "SAC_MT_GET_BARRIER_RESULT("
                  " SAC_MT_son_id, %i, %s, %s)\n",
                  i + 1, vararg[4 * i], vararg[4 * i + 2]);
-#else  /* TAGGED_ARRAYS */
-        if (strcmp ("array_rc", vararg[4 * i])) {
-            fprintf (outfile,
-                     "%s = SAC_MT_GET_BARRIER_RESULT("
-                     " SAC_MT_son_id, %i, %s);\n",
-                     vararg[4 * i + 2], i + 1, vararg[4 * i]);
-        } else {
-            fprintf (outfile,
-                     "%s = SAC_MT_GET_BARRIER_RC_RESULT_PTR("
-                     " SAC_MT_son_id, %i, %s);\n",
-                     vararg[4 * i + 2], i + 1, vararg[4 * i]);
-            INDENT;
-            fprintf (outfile,
-                     "%s__rc = SAC_MT_GET_BARRIER_RC_RESULT_RC("
-                     " SAC_MT_son_id, %i, %s);\n",
-                     vararg[4 * i + 2], i + 1, vararg[4 * i]);
-        }
-#endif /* TAGGED_ARRAYS */
 
 #ifndef BEtest
         INDENT;
@@ -848,24 +766,10 @@ ICMCompileMT_SYNC_FOLD (int barrier_id, int vararg_cnt, char **vararg)
 
     for (i = 0; i < vararg_cnt; i++) {
         INDENT;
-#ifdef TAGGED_ARRAYS
         fprintf (outfile,
                  "SAC_MT_SET_BARRIER_RESULT("
                  " SAC_MT_MYTHREAD(), %i, %s, %s)\n",
                  i + 1, vararg[4 * i], vararg[4 * i + 1]);
-#else  /* TAGGED_ARRAYS */
-        if (strcmp ("array_rc", vararg[4 * i])) {
-            fprintf (outfile,
-                     "SAC_MT_SET_BARRIER_RESULT("
-                     " SAC_MT_MYTHREAD(), %i, %s, %s);\n",
-                     i + 1, vararg[4 * i], vararg[4 * i + 1]);
-        } else {
-            fprintf (outfile,
-                     "SAC_MT_SET_BARRIER_RC_RESULT("
-                     " SAC_MT_MYTHREAD(), %i, %s, %s);\n",
-                     i + 1, vararg[4 * i], vararg[4 * i + 1]);
-        }
-#endif /* TAGGED_ARRAYS */
     }
 
     INDENT;
@@ -1153,13 +1057,8 @@ ICMCompileMT_MASTER_RECEIVE_FOLDRESULTS (int foldargs_cnt, char **foldargs)
 
     for (i = 0, j = 1; i < 2 * foldargs_cnt; i += 2, j++) {
         INDENT;
-#ifdef TAGGED_ARRAYS
         fprintf (outfile, "SAC_MT_GET_BARRIER_RESULT( 0, %d, %s, %s)\n", j, foldargs[i],
                  foldargs[i + 1]);
-#else  /* TAGGED_ARRAYS */
-        fprintf (outfile, "%s = SAC_MT_GET_BARRIER_RESULT( 0, %d, %s);\n",
-                 foldargs[i + 1], j, foldargs[i]);
-#endif /* TAGGED_ARRAYS */
     }
 
     DBUG_VOID_RETURN;
@@ -1195,11 +1094,7 @@ ICMCompileMT_MASTER_SEND_SYNCARGS (int syncargs_cnt, char **syncargs)
 
     for (i = 0; i < syncargs_cnt; i++) {
         INDENT;
-#ifdef TAGGED_ARRAYS
         fprintf (outfile, "SAC_MT_SPMD_RET_shared( %s);\n", syncargs[i]);
-#else  /* TAGGED_ARRAYS */
-        fprintf (outfile, "SAC_MT_SPMD_RET_shared_rc( %s);\n", syncargs[i]);
-#endif /* TAGGED_ARRAYS */
     }
 
     DBUG_VOID_RETURN;
@@ -1235,11 +1130,7 @@ ICMCompileMT_MASTER_RECEIVE_SYNCARGS (int syncargs_cnt, char **syncargs)
 
     for (i = 0; i < syncargs_cnt; i++) {
         INDENT;
-#ifdef TAGGED_ARRAYS
         fprintf (outfile, "SAC_MT_SPMD_GET_shared( %s);\n", syncargs[i]);
-#else  /* TAGGED_ARRAYS */
-        fprintf (outfile, "SAC_MT_SPMD_GET_shared_rc( %s);\n", syncargs[i]);
-#endif /* TAGGED_ARRAYS */
     }
 
     DBUG_VOID_RETURN;
@@ -1280,20 +1171,11 @@ ICMCompileMT_SPMD_SETUP (char *name, int vararg_cnt, char **vararg)
 #undef MT_SPMD_SETUP
 
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
-#ifdef TAGGED_ARRAYS
         if ((!strcmp (vararg[i], "in")) || (!strcmp (vararg[i], "out"))) {
             INDENT;
             fprintf (outfile, "SAC_MT_SPMD_SETARG_%s( %s, %s);\n", vararg[i], name,
                      vararg[i + 2]);
         }
-#else  /* TAGGED_ARRAYS */
-        if ((!strcmp (vararg[i], "in")) || (!strcmp (vararg[i], "in_rc"))
-            || (!strcmp (vararg[i], "out")) || (!strcmp (vararg[i], "out_rc"))) {
-            INDENT;
-            fprintf (outfile, "SAC_MT_SPMD_SETARG_%s( %s, %s);\n", vararg[i], name,
-                     vararg[i + 2]);
-        }
-#endif /* TAGGED_ARRAYS */
     }
 
     DBUG_VOID_RETURN;

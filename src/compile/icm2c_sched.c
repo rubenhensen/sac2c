@@ -1,11 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.22  2003/09/19 15:32:05  dkr
  * postfix _nt of varnames renamed into _NT
  *
  * Revision 3.21  2002/07/16 11:56:44  dkr
- * MT_ADJUST_SCHEDULER__OFFSET(): modification for TAGGED_ARRAYS done
+ * MT_ADJUST_SCHEDULER__OFFSET(): modification for new backend done
  *
  * Revision 3.20  2001/11/21 11:04:21  dkr
  * support for BEtest added

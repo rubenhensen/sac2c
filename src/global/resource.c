@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.8  2003/03/24 16:37:04  sbs
  * opt_I added.
  *
@@ -8,10 +11,10 @@
  * RSCParseResourceFile added
  *
  * Revision 3.6  2003/03/08 22:26:53  dkr
- * CCFLAGS of custom targets patched for TAGGED_ARRAYS as well
+ * CCFLAGS of custom targets patched for new backend as well
  *
  * Revision 3.5  2003/02/11 16:42:47  dkr
- * CCFLAGS patched for TAGGED_ARRAYS
+ * CCFLAGS patched for new backend
  *
  * Revision 3.4  2001/11/29 13:24:05  sbs
  * LDFLAGS added
@@ -583,16 +586,6 @@ EvaluateDefaultTarget (target_list_t *target)
                     SYSABORT (("Default target specification of resource '%s` illegal",
                                resource_table[i].name));
                 }
-#ifdef TAGGED_ARRAYS
-                if (!strcmp (resource_table[i].name, "CCFLAGS")) {
-                    char *tmp
-                      = Malloc ((strlen (resource->value_str) + 20) * sizeof (char));
-                    tmp = strcpy (tmp, resource->value_str);
-                    tmp = strcat (tmp, " -DTAGGED_ARRAYS");
-                    resource->value_str = Free (resource->value_str);
-                    resource->value_str = tmp;
-                }
-#endif
                 *((char **)(resource_table[i].store)) = resource->value_str;
                 resource->value_str = NULL;
                 break;
@@ -689,16 +682,6 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
                         *((char **)(resource_table[i].store)) = new;
                     } else {
                         Free (*((char **)(resource_table[i].store)));
-#ifdef TAGGED_ARRAYS
-                        if (!strcmp (resource_table[i].name, "CCFLAGS")) {
-                            char *tmp = Malloc ((strlen (resource->value_str) + 20)
-                                                * sizeof (char));
-                            tmp = strcpy (tmp, resource->value_str);
-                            tmp = strcat (tmp, " -DTAGGED_ARRAYS");
-                            resource->value_str = Free (resource->value_str);
-                            resource->value_str = tmp;
-                        }
-#endif
                         *((char **)(resource_table[i].store))
                           = StringCopy (resource->value_str);
                     }

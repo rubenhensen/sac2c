@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.19  2003/12/11 19:05:09  dkrHH
  * bug in SET_SIZE fixed
  *
@@ -9,9 +12,6 @@
  *
  * Revision 3.17  2003/09/30 19:29:41  dkr
  * Set_Shape() added
- *
- * Revision 3.16  2003/09/25 10:58:18  dkr
- * no changes done
  *
  * Revision 3.15  2003/09/19 15:39:21  dkr
  * postfix _nt of varnames renamed into _NT
@@ -44,7 +44,7 @@
  * bug in VectToOffset() fixed
  *
  * Revision 3.5  2002/07/10 19:28:26  dkr
- * TAGGED_ARRAYS: access macros are functions now
+ * access macros are functions now
  *
  * Revision 3.3  2002/07/02 13:05:00  dkr
  * global var 'print_comment' added
@@ -186,8 +186,6 @@ extern int print_comment; /* bool */
         prolog_ass SET_SHAPE_AKD (to_NT, idx_var, set_expr);                             \
     }
 
-#ifdef TAGGED_ARRAYS
-
 extern void Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,
                           void (*shp1_size_fun) (void *),
                           void (*shp1_read_fun) (void *, char *, int), void *shp2,
@@ -228,44 +226,5 @@ extern void Vect2Offset2 (char *off_ANY, void *v_ANY, int v_dim,
 extern void Vect2Offset (char *off_ANY, void *v_ANY, int v_dim,
                          void (*v_size_fun) (void *),
                          void (*v_read_fun) (void *, char *, int), void *a_NT, int a_dim);
-
-#else
-
-#define AccessVect(v, i) fprintf (outfile, "SAC_ND_READ_ARRAY( %s, %i)", v, i)
-
-#define AccessConst(v, i) fprintf (outfile, "%s", v[i])
-
-#define AccessShape(v, i) fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d)", v, i)
-
-#define Vect2Offset2(dim, v_i_str, dima, a_i_str)                                        \
-    {                                                                                    \
-        int i;                                                                           \
-        if (dim > 0) {                                                                   \
-            for (i = dim - 1; i > 0; i--) {                                              \
-                fprintf (outfile, "( ");                                                 \
-                a_i_str;                                                                 \
-                fprintf (outfile, "* ");                                                 \
-            }                                                                            \
-            v_i_str;                                                                     \
-            for (i = 1; i < dim; i++) {                                                  \
-                fprintf (outfile, "+");                                                  \
-                v_i_str;                                                                 \
-                fprintf (outfile, ") ");                                                 \
-            }                                                                            \
-            while (i < dima) {                                                           \
-                fprintf (outfile, "*");                                                  \
-                a_i_str;                                                                 \
-                fprintf (outfile, " ");                                                  \
-                i++;                                                                     \
-            }                                                                            \
-        } else {                                                                         \
-            fprintf (outfile, "0");                                                      \
-        }                                                                                \
-    }
-
-#define Vect2Offset(dimv, v_i_str, dima, a)                                              \
-    Vect2Offset2 (dimv, v_i_str, dima, AccessShape (a, i))
-
-#endif
 
 #endif /* _icm2c_basic_h_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.38  2004/03/02 16:48:25  mwe
  * OPT_CVP added
  *
@@ -23,7 +26,7 @@
  * prf_string moved from print.[ch] to globals.[ch] (for BEtest)
  *
  * Revision 3.32  2003/09/17 18:12:34  dkr
- * RCAO renamed into DAO for TAGGED_ARRAYS
+ * RCAO renamed into DAO for new backend
  *
  * Revision 3.31  2003/09/16 16:09:35  sbs
  * spec_mode and spec_mode_str added.
@@ -284,16 +287,12 @@ extern unsigned int optimize;
  * Because of missing space in this bitmap OPT_SBE is overloaded with OPT_CVP
  * To prevent errors (executing sbe-phase) the call of the procedure
  * triggered by OPT_SBE is now deactivated (in concurrent.c)                 */
-#define OPT_SBE 0x00080000 /* synchronisation barrier elimination         */
-#define OPT_CVP 0x00080000 /* Constant and Value Propagation              */
-#define OPT_MTI 0x00100000 /* ??                                          */
-#define OPT_PHM 0x00200000 /* private heap management                     */
-#define OPT_APS 0x00400000 /* arena preselection (for PHM)                */
-#ifdef TAGGED_ARRAYS
+#define OPT_SBE 0x00080000  /* synchronisation barrier elimination         */
+#define OPT_CVP 0x00080000  /* Constant and Value Propagation              */
+#define OPT_MTI 0x00100000  /* ??                                          */
+#define OPT_PHM 0x00200000  /* private heap management                     */
+#define OPT_APS 0x00400000  /* arena preselection (for PHM)                */
 #define OPT_DAO 0x00800000  /* descriptor allocation opt. (for PHM)        */
-#else                       /* TAGGED_ARRAYS */
-#define OPT_RCAO 0x00800000 /* reference counter allocation opt. (for PHM) */
-#endif                      /* TAGGED_ARRAYS */
 #define OPT_MSCA 0x01000000 /* memory size cache adjustment (for PHM)      */
 #define OPT_AP 0x02000000   /* array padding                               */
 #define OPT_APL 0x04000000  /* array placement                             */
@@ -386,9 +385,7 @@ extern unsigned int runtimecheck;
 #define RUNTIMECHECK_ALL 0xffff
 
 #define RUNTIMECHECK_BOUNDARY 0x0001
-#ifdef TAGGED_ARRAYS
 #define RUNTIMECHECK_TYPE 0x0002
-#endif
 #define RUNTIMECHECK_MALLOC 0x0004
 #define RUNTIMECHECK_ERRNO 0x0008
 #define RUNTIMECHECK_HEAP 0x0010

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.18  2004/02/20 08:18:59  mwe
  * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
  * changed tree traversal according to that
@@ -12,7 +15,7 @@
  * GNMicm() simplified
  *
  * Revision 3.15  2002/07/12 17:16:23  dkr
- * GNMicm(): modifications for TAGGED_ARRAYS done
+ * GNMicm(): modifications for new backend done
  *
  * Revision 3.14  2002/02/21 13:41:23  dkr
  * access macros used

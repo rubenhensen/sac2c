@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.23  2004/02/05 10:37:14  cg
  * Re-factorized handling of different modes in multithreaded code
  * generation:
@@ -32,7 +35,7 @@
  * unqconv_t added again ...
  *
  * Revision 3.14  2002/07/03 16:55:51  dkr
- * unqconv_t removed for TAGGED_ARRAYS
+ * unqconv_t removed for new backend
  *
  * Revision 3.13  2002/04/12 13:57:47  sbs
  * info3 added as N_fundef was too crowded for a pointer to n-type to be added.

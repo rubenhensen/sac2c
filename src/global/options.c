@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.58  2004/03/02 16:49:15  mwe
  * support for cvp added
  *
@@ -20,16 +23,16 @@
  * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
  *
  * Revision 3.53  2003/10/14 12:21:51  cg
- * -mt for TAGGED_ARRAYS activated (for testing only!!)
+ * -mt for new backend activated (for testing only!!)
  *
  * Revision 3.52  2003/10/09 16:52:12  dkrHH
- * DAO for TAGGED_ARRAYS activated
+ * DAO for new backend activated
  *
  * Revision 3.51  2003/09/30 21:56:49  dkrHH
  * no changes done
  *
  * Revision 3.50  2003/09/17 18:54:32  dkr
- * RCAO renamed into DAO for TAGGED_ARRAYS
+ * RCAO renamed into DAO for new backend
  *
  * Revision 3.48  2003/09/16 16:10:49  sbs
  * specmode option added.
@@ -45,7 +48,7 @@
  * Support for maxwls added.
  *
  * Revision 3.44  2003/08/04 18:07:31  dkr
- * -mt reactivated for TAGGED_ARRAYS
+ * -mt reactivated for new backend
  *
  * Revision 3.43  2003/07/28 15:35:06  cg
  * Added short version identification option (-V).
@@ -59,7 +62,7 @@
  * -DTAGGED_ARRAYS created only once
  *
  * Revision 3.40  2003/04/15 14:16:05  dkr
- * -DTAGGED_ARRAYS added for TAGGED_ARRAYS
+ * -DTAGGED_ARRAYS added for new backend
  *
  * Revision 3.39  2003/03/24 16:36:52  sbs
  * cppI added
@@ -68,7 +71,7 @@
  * config.h included; DISABLE_MT and DISABLE_PHM used.
  *
  * Revision 3.37  2003/03/13 17:18:26  dkr
- * -minarrayrep activated for TAGGED_ARRAYS only
+ * -minarrayrep activated for new backend only
  *
  * Revision 3.36  2003/03/13 17:02:21  dkr
  * flags ordered correctly now
@@ -100,19 +103,19 @@
  * added option -wlsx for aggressive WLS
  *
  * Revision 3.27  2002/10/09 13:09:18  dkr
- * TAGGED_ARRAYS: warning about RCAO added
+ * new backend: warning about RCAO added
  *
  * Revision 3.26  2002/09/26 13:14:38  sbs
  * mt compilation enabled for OSF_ALPHA now!!
  *
  * Revision 3.25  2002/07/24 15:50:06  dkr
- * -mt disabled for TAGGED_ARRAYS
+ * -mt disabled for new backend
  *
  * Revision 3.24  2002/07/15 19:05:03  dkr
- * -intrinsic flag modified for TAGGED_ARRAYS
+ * -intrinsic flag modified for new backend
  *
  * Revision 3.23  2002/07/03 15:27:39  dkr
- * RUNTIMECHECK_TYPE added (for TAGGED_ARRAYS)
+ * RUNTIMECHECK_TYPE added (for new backend)
  *
  * Revision 3.21  2002/06/07 17:11:23  mwe
  * OPT_AL added for AssociativeLaw
@@ -465,7 +468,6 @@ AnalyseCommandline (int argc, char *argv[])
         break_arg = Free (break_arg);
     });
 
-#ifdef TAGGED_ARRAYS
     ARGS_OPTION ("check", {
         ARG_FLAGMASK_BEGIN ();
         ARG_FLAGMASK ('a', runtimecheck = RUNTIMECHECK_ALL);
@@ -476,17 +478,6 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('h', runtimecheck |= RUNTIMECHECK_HEAP);
         ARG_FLAGMASK_END ();
     });
-#else  /* TAGGED_ARRAYS */
-    ARGS_OPTION ("check", {
-        ARG_FLAGMASK_BEGIN ();
-        ARG_FLAGMASK ('a', runtimecheck = RUNTIMECHECK_ALL);
-        ARG_FLAGMASK ('b', runtimecheck |= RUNTIMECHECK_BOUNDARY);
-        ARG_FLAGMASK ('m', runtimecheck |= RUNTIMECHECK_MALLOC);
-        ARG_FLAGMASK ('e', runtimecheck |= RUNTIMECHECK_ERRNO);
-        ARG_FLAGMASK ('h', runtimecheck |= RUNTIMECHECK_HEAP);
-        ARG_FLAGMASK_END ();
-    });
-#endif /* TAGGED_ARRAYS */
 
     ARGS_FLAG ("copyright", Copyright (); exit (0));
 
@@ -519,7 +510,6 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_FLAG ("ds", dynamic_shapes = TRUE);
 
-#ifdef TAGGED_ARRAYS
     ARGS_OPTION ("do", {
         ARG_CHOICE_BEGIN ();
 
@@ -630,118 +620,6 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE_END ();
     });
-#else  /* TAGGED_ARRAYS */
-    ARGS_OPTION ("do", {
-        ARG_CHOICE_BEGIN ();
-
-        ARG_CHOICE ("opt", optimize = OPT_ALL);
-        ARG_CHOICE ("OPT", optimize = OPT_ALL);
-
-        ARG_CHOICE ("dcr", optimize |= OPT_DCR);
-        ARG_CHOICE ("DCR", optimize |= OPT_DCR);
-
-        ARG_CHOICE ("cf", optimize |= OPT_CF);
-        ARG_CHOICE ("CF", optimize |= OPT_CF);
-
-        ARG_CHOICE ("lir", optimize |= OPT_LIR);
-        ARG_CHOICE ("LIR", optimize |= OPT_LIR);
-
-        ARG_CHOICE ("inl", optimize |= OPT_INL);
-        ARG_CHOICE ("INL", optimize |= OPT_INL);
-
-        ARG_CHOICE ("lur", optimize |= OPT_LUR);
-        ARG_CHOICE ("LUR", optimize |= OPT_LUR);
-
-        ARG_CHOICE ("wlur", optimize |= OPT_WLUR);
-        ARG_CHOICE ("WLUR", optimize |= OPT_WLUR);
-
-        ARG_CHOICE ("lus", optimize |= OPT_LUS);
-        ARG_CHOICE ("LUS", optimize |= OPT_LUS);
-
-        ARG_CHOICE ("cse", optimize |= OPT_CSE);
-        ARG_CHOICE ("CSE", optimize |= OPT_CSE);
-
-        ARG_CHOICE ("dfr", optimize |= OPT_DFR);
-        ARG_CHOICE ("DFR", optimize |= OPT_DFR);
-
-        ARG_CHOICE ("wlt", optimize |= OPT_WLT);
-        ARG_CHOICE ("WLT", optimize |= OPT_WLT);
-
-        ARG_CHOICE ("wlf", optimize |= OPT_WLF);
-        ARG_CHOICE ("WLF", optimize |= OPT_WLF);
-
-        ARG_CHOICE ("wls", optimize |= OPT_WLS);
-        ARG_CHOICE ("WLS", optimize |= OPT_WLS);
-
-        ARG_CHOICE ("wlfs", optimize |= OPT_WLFS);
-        ARG_CHOICE ("WLFS", optimize |= OPT_WLFS);
-
-        ARG_CHOICE ("al", optimize |= OPT_AL);
-        ARG_CHOICE ("AL", optimize |= OPT_AL);
-
-        ARG_CHOICE ("ive", optimize |= OPT_IVE);
-        ARG_CHOICE ("IVE", optimize |= OPT_IVE);
-
-        ARG_CHOICE ("ae", optimize |= OPT_AE);
-        ARG_CHOICE ("AE", optimize |= OPT_AE);
-
-        ARG_CHOICE ("dl", optimize |= OPT_DL);
-        ARG_CHOICE ("DL", optimize |= OPT_DL);
-
-        ARG_CHOICE ("rco", optimize |= OPT_RCO);
-        ARG_CHOICE ("RCO", optimize |= OPT_RCO);
-
-        ARG_CHOICE ("uip", optimize |= OPT_UIP);
-        ARG_CHOICE ("UIP", optimize |= OPT_UIP);
-
-        ARG_CHOICE ("tsi", optimize |= OPT_TSI);
-        ARG_CHOICE ("TSI", optimize |= OPT_TSI);
-
-        ARG_CHOICE ("ap", optimize |= OPT_AP);
-        ARG_CHOICE ("AP", optimize |= OPT_AP);
-
-        ARG_CHOICE ("apl", optimize |= OPT_APL);
-        ARG_CHOICE ("APL", optimize |= OPT_APL);
-
-        ARG_CHOICE ("tsp", optimize |= OPT_TSP);
-        ARG_CHOICE ("TSP", optimize |= OPT_TSP);
-
-        ARG_CHOICE ("mto", optimize |= OPT_MTO);
-        ARG_CHOICE ("MTO", optimize |= OPT_MTO);
-
-        ARG_CHOICE ("mti", optimize |= OPT_MTI);
-        ARG_CHOICE ("MTI", optimize |= OPT_MTI);
-
-        ARG_CHOICE ("sbe", optimize |= OPT_SBE);
-        ARG_CHOICE ("SBE", optimize |= OPT_SBE);
-
-        ARG_CHOICE ("phm", optimize |= OPT_PHM);
-        ARG_CHOICE ("PHM", optimize |= OPT_PHM);
-
-        ARG_CHOICE ("aps", optimize |= OPT_APS);
-        ARG_CHOICE ("APS", optimize |= OPT_APS);
-
-        ARG_CHOICE ("rcao", optimize |= OPT_RCAO);
-        ARG_CHOICE ("RCAO", optimize |= OPT_RCAO);
-
-        ARG_CHOICE ("msca", optimize |= OPT_MSCA);
-        ARG_CHOICE ("MSCA", optimize |= OPT_MSCA);
-
-        ARG_CHOICE ("blir", optimize |= OPT_BLIR);
-        ARG_CHOICE ("BLIR", optimize |= OPT_BLIR);
-
-        ARG_CHOICE ("sp", optimize |= OPT_SP);
-        ARG_CHOICE ("SP", optimize |= OPT_SP);
-
-        ARG_CHOICE ("cvp", optimize |= OPT_CVP);
-        ARG_CHOICE ("CVP", optimize |= OPT_CVP);
-
-        ARG_CHOICE ("pab", print_after_break = TRUE);
-        ARG_CHOICE ("PAB", print_after_break = TRUE);
-
-        ARG_CHOICE_END ();
-    });
-#endif /* TAGGED_ARRAYS */
 
     ARGS_OPTION ("d", {
         ARG_CHOICE_BEGIN ();
@@ -772,7 +650,6 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_OPTION ("initwheap", ARG_NUM (initial_worker_heapsize));
     ARGS_OPTION ("inituheap", ARG_NUM (initial_unified_heapsize));
 
-#ifdef TAGGED_ARRAYS
     ARGS_OPTION ("intrinsic", {
         ARG_FLAGMASK_BEGIN ();
         ARG_FLAGMASK ('a', intrinsics = INTRINSIC_ALL);
@@ -784,29 +661,6 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('o', intrinsics |= INTRINSIC_TO);
         ARG_FLAGMASK_END ();
     });
-#else  /* TAGGED_ARRAYS */
-    ARGS_OPTION ("intrinsic", {
-        ARG_FLAGMASK_BEGIN ();
-        ARG_FLAGMASK ('a', intrinsics = INTRINSIC_ALL);
-        ARG_FLAGMASK ('+', intrinsics |= INTRINSIC_ADD);
-        ARG_FLAGMASK ('-', intrinsics |= INTRINSIC_SUB);
-        ARG_FLAGMASK ('x', intrinsics |= INTRINSIC_MUL);
-        ARG_FLAGMASK ('/', intrinsics |= INTRINSIC_DIV);
-        ARG_FLAGMASK ('t', intrinsics |= INTRINSIC_TAKE);
-        ARG_FLAGMASK ('d', intrinsics |= INTRINSIC_DROP);
-        ARG_FLAGMASK ('c', intrinsics |= INTRINSIC_CAT);
-        ARG_FLAGMASK ('r', intrinsics |= INTRINSIC_ROT);
-        ARG_FLAGMASK ('s', intrinsics |= INTRINSIC_SEL);
-        ARG_FLAGMASK ('o', intrinsics |= INTRINSIC_TO);
-        ARG_FLAGMASK_END ();
-    });
-#endif /* TAGGED_ARRAYS */
-
-#ifdef TAGGED_ARRAYS
-    ARGS_FLAG ("has_tagged_backend", printf ("yes\n"); exit (0));
-#else  /* TAGGED_ARRAYS */
-    ARGS_FLAG ("has_tagged_backend", printf ("no\n"); exit (0));
-#endif /* TAGGED_ARRAYS */
 
     ARGS_OPTION ("I", AppendPath (MODDEC_PATH, AbsolutePathname (ARG)));
 
@@ -908,7 +762,6 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_OPTION ("maxrepsize", ARG_NUM (max_replication_size));
 
-#ifdef TAGGED_ARRAYS
     ARGS_OPTION ("minarrayrep", {
         ARG_CHOICE_BEGIN ();
         ARG_CHOICE ("s", min_array_rep = MIN_ARRAY_REP_SCL_AKS);
@@ -917,7 +770,6 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_CHOICE ("*", min_array_rep = MIN_ARRAY_REP_AUD);
         ARG_CHOICE_END ();
     });
-#endif /* TAGGED_ARRAYS */
 
     ARGS_FLAG ("MMlib", makedeps = 4);
     ARGS_FLAG ("MM", makedeps = 3);
@@ -931,7 +783,6 @@ AnalyseCommandline (int argc, char *argv[])
         }
     });
 
-#ifdef TAGGED_ARRAYS
     ARGS_OPTION ("no", {
         ARG_CHOICE_BEGIN ();
 
@@ -1042,118 +893,6 @@ AnalyseCommandline (int argc, char *argv[])
 
         ARG_CHOICE_END ();
     });
-#else  /* TAGGED_ARRAYS */
-    ARGS_OPTION ("no", {
-        ARG_CHOICE_BEGIN ();
-
-        ARG_CHOICE ("opt", optimize = OPT_NONE);
-        ARG_CHOICE ("OPT", optimize = OPT_NONE);
-
-        ARG_CHOICE ("dcr", optimize &= ~OPT_DCR);
-        ARG_CHOICE ("DCR", optimize &= ~OPT_DCR);
-
-        ARG_CHOICE ("cf", optimize &= ~OPT_CF);
-        ARG_CHOICE ("CF", optimize &= ~OPT_CF);
-
-        ARG_CHOICE ("lir", optimize &= ~OPT_LIR);
-        ARG_CHOICE ("LIR", optimize &= ~OPT_LIR);
-
-        ARG_CHOICE ("inl", optimize &= ~OPT_INL);
-        ARG_CHOICE ("INL", optimize &= ~OPT_INL);
-
-        ARG_CHOICE ("lur", optimize &= ~OPT_LUR);
-        ARG_CHOICE ("LUR", optimize &= ~OPT_LUR);
-
-        ARG_CHOICE ("wlur", optimize &= ~OPT_WLUR);
-        ARG_CHOICE ("WLUR", optimize &= ~OPT_WLUR);
-
-        ARG_CHOICE ("lus", optimize &= ~OPT_LUS);
-        ARG_CHOICE ("LUS", optimize &= ~OPT_LUS);
-
-        ARG_CHOICE ("cse", optimize &= ~OPT_CSE);
-        ARG_CHOICE ("CSE", optimize &= ~OPT_CSE);
-
-        ARG_CHOICE ("dfr", optimize &= ~OPT_DFR);
-        ARG_CHOICE ("DFR", optimize &= ~OPT_DFR);
-
-        ARG_CHOICE ("wlt", optimize &= ~OPT_WLT);
-        ARG_CHOICE ("WLT", optimize &= ~OPT_WLT);
-
-        ARG_CHOICE ("wlf", optimize &= ~OPT_WLF);
-        ARG_CHOICE ("WLF", optimize &= ~OPT_WLF);
-
-        ARG_CHOICE ("wls", optimize &= ~OPT_WLS);
-        ARG_CHOICE ("WLS", optimize &= ~OPT_WLS);
-
-        ARG_CHOICE ("wlfs", optimize &= ~OPT_WLFS);
-        ARG_CHOICE ("WLFS", optimize &= ~OPT_WLFS);
-
-        ARG_CHOICE ("al", optimize &= ~OPT_AL);
-        ARG_CHOICE ("AL", optimize &= ~OPT_AL);
-
-        ARG_CHOICE ("ive", optimize &= ~OPT_IVE);
-        ARG_CHOICE ("IVE", optimize &= ~OPT_IVE);
-
-        ARG_CHOICE ("ae", optimize &= ~OPT_AE);
-        ARG_CHOICE ("AE", optimize &= ~OPT_AE);
-
-        ARG_CHOICE ("dl", optimize &= ~OPT_DL);
-        ARG_CHOICE ("DL", optimize &= ~OPT_DL);
-
-        ARG_CHOICE ("rco", optimize &= ~OPT_RCO);
-        ARG_CHOICE ("RCO", optimize &= ~OPT_RCO);
-
-        ARG_CHOICE ("uip", optimize &= ~OPT_UIP);
-        ARG_CHOICE ("UIP", optimize &= ~OPT_UIP);
-
-        ARG_CHOICE ("tsi", optimize &= ~OPT_TSI);
-        ARG_CHOICE ("TSI", optimize &= ~OPT_TSI);
-
-        ARG_CHOICE ("ap", optimize &= ~OPT_AP);
-        ARG_CHOICE ("AP", optimize &= ~OPT_AP);
-
-        ARG_CHOICE ("apl", optimize &= ~OPT_APL);
-        ARG_CHOICE ("APL", optimize &= ~OPT_APL);
-
-        ARG_CHOICE ("tsp", optimize &= ~OPT_TSP);
-        ARG_CHOICE ("TSP", optimize &= ~OPT_TSP);
-
-        ARG_CHOICE ("mto", optimize &= ~OPT_MTO);
-        ARG_CHOICE ("MTO", optimize &= ~OPT_MTO);
-
-        ARG_CHOICE ("mti", optimize &= ~OPT_MTI);
-        ARG_CHOICE ("MTI", optimize &= ~OPT_MTI);
-
-        ARG_CHOICE ("sbe", optimize &= ~OPT_SBE);
-        ARG_CHOICE ("SBE", optimize &= ~OPT_SBE);
-
-        ARG_CHOICE ("phm", optimize &= ~OPT_PHM);
-        ARG_CHOICE ("PHM", optimize &= ~OPT_PHM);
-
-        ARG_CHOICE ("aps", optimize &= ~OPT_APS);
-        ARG_CHOICE ("APS", optimize &= ~OPT_APS);
-
-        ARG_CHOICE ("rcao", optimize &= ~OPT_RCAO);
-        ARG_CHOICE ("RCAO", optimize &= ~OPT_RCAO);
-
-        ARG_CHOICE ("msca", optimize &= ~OPT_MSCA);
-        ARG_CHOICE ("MSCA", optimize &= ~OPT_MSCA);
-
-        ARG_CHOICE ("blir", optimize &= ~OPT_BLIR);
-        ARG_CHOICE ("BLIR", optimize &= ~OPT_BLIR);
-
-        ARG_CHOICE ("sp", optimize &= ~OPT_SP);
-        ARG_CHOICE ("SP", optimize &= ~OPT_SP);
-
-        ARG_CHOICE ("cvp", optimize &= ~OPT_CVP);
-        ARG_CHOICE ("CVP", optimize &= ~OPT_CVP);
-
-        ARG_CHOICE ("pab", print_after_break = FALSE);
-        ARG_CHOICE ("PAB", print_after_break = FALSE);
-
-        ARG_CHOICE_END ();
-    });
-#endif /* TAGGED_ARRAYS */
 
     ARGS_OPTION ("o", {
         strcpy (outfilename, ARG);
@@ -1271,10 +1010,6 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_UNKNOWN (ARGS_ERROR ("Invalid command line entry"));
 
     ARGS_END ();
-
-#ifdef TAGGED_ARRAYS
-    cppvars[num_cpp_vars++] = "TAGGED_ARRAYS";
-#endif /* TAGGED_ARRAYS */
 
     DBUG_VOID_RETURN;
 }

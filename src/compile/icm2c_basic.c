@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 1.23  2003/11/11 19:10:44  dkr
  * bug in Check_Mirror() fixed:
  * check of SAC_ND_A_DIM was too weak...
@@ -63,7 +66,7 @@
  * functions renamed
  *
  * Revision 1.2  2002/07/10 19:27:26  dkr
- * TAGGED_ARRAYS: access macros are functions now
+ * new backend: access macros are functions now
  *
  * Revision 1.1  2002/07/02 13:03:19  dkr
  * Initial revision
@@ -78,8 +81,6 @@
 #include "icm2c_basic.h"
 
 int print_comment = 1; /* bool */
-
-#ifdef TAGGED_ARRAYS
 
 /******************************************************************************
  *
@@ -892,5 +893,3 @@ Vect2Offset (char *off_ANY, void *v_ANY, int v_size, void (*v_size_fun) (void *)
 
     DBUG_VOID_RETURN;
 }
-
-#endif

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 1.2  2003/09/25 13:44:05  dkr
  * new argument 'copyfun' added to some ICMs
  *
@@ -13,8 +16,6 @@
 #define _icm2c_prf_h_
 
 #include "types.h"
-
-#ifdef TAGGED_ARRAYS
 
 extern void ICMCompileND_PRF_SHAPE__DATA (char *to_NT, int to_sdim, char *from_NT,
                                           int from_sdim);
@@ -72,41 +73,5 @@ extern void ICMCompileND_PRF_DROP__DATA (char *to_NT, int to_sdim, char *from_NT
 
 extern void ICMCompileND_PRF_CAT__SHAPE (char *to_NT, int to_sdim, char *from1_NT,
                                          int from1_sdim, char *from2_NT, int from2_sdim);
-
-#else /* TAGGED_ARRAYS */
-
-extern void ICMCompileND_KD_SEL_CxA_S (char *a, char *res, int dim, char **vi);
-
-extern void ICMCompileND_KD_SEL_CxA_A (int dima, char *a, char *res, int dimv, char **vi);
-
-extern void ICMCompileND_KD_SEL_VxA_S (char *a, char *res, int dim, char *v);
-
-extern void ICMCompileND_KD_SEL_VxA_A (int dima, char *a, char *res, int dimv, char *v);
-
-extern void ICMCompileND_KD_TAKE_CxA_A (int dima, char *a, char *res, int dimv,
-                                        char **vi);
-
-extern void ICMCompileND_KD_DROP_CxA_A (int dima, char *a, char *res, int dimv,
-                                        char **vi);
-
-extern void ICMCompileND_KD_CAT_SxAxA_A (int dima, char **ar, char *res, int catdim);
-
-extern void ICMCompileND_KD_ROT_CxSxA_A (int rotdim, char **numstr, int dima, char *a,
-                                         char *res);
-
-extern void ICMCompileND_PRF_MODARRAY_AxCxS (char *res_btype, int dimres, char *res,
-                                             char *old, char **value, int dimv,
-                                             char **vi);
-
-extern void ICMCompileND_PRF_MODARRAY_AxVxS (char *res_btype, int dimres, char *res,
-                                             char *old, char **value, int dim, char *v);
-
-extern void ICMCompileND_PRF_MODARRAY_AxCxA (char *res_btype, int dimres, char *res,
-                                             char *old, char *val, int dimv, char **vi);
-
-extern void ICMCompileND_PRF_MODARRAY_AxVxA (char *res_btype, int dimres, char *res,
-                                             char *old, char *val, int dim, char *v);
-
-#endif /* TAGGED_ARRAYS */
 
 #endif /* _icm2c_prf_h_ */

@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.53  2004/02/20 08:14:00  mwe
  * now functions with and without body are separated
  * changed tree traversal (added traverse of MODUL_FUNDECS)
@@ -37,7 +40,7 @@
  * now, there is a life behind the new type checker....8-)
  *
  * Revision 3.42  2002/08/03 01:16:36  dkr
- * *very* dirty hack for TAGGED_ARRAYS
+ * *very* dirty hack for new backend
  *
  * Revision 3.41  2002/07/03 13:02:47  sah
  * changed assert due to incorrect module compiling.
@@ -1552,7 +1555,7 @@ ComputeNeutralElem (prf prf_fun, types *neutral_type, node *arg_info)
     }
 
     if (length > 0) {
-#ifdef TAGGED_ARRAYS
+        /* dkr: dirty hack for new backend */
         shpseg *shape;
         int dim;
 
@@ -1580,20 +1583,6 @@ ComputeNeutralElem (prf prf_fun, types *neutral_type, node *arg_info)
                 }
             }
         }
-#else
-        node *tmp;
-        int i;
-
-        tmp = MakeExprs (neutral_base, NULL);
-
-        for (i = 1; i < length; i++) {
-            tmp = MakeExprs (DupNode (neutral_base), tmp);
-        }
-
-        neutral_elem = MakeFlatArray (tmp);
-
-        GET_BASIC_TYPE (ARRAY_TYPE (neutral_elem), neutral_type, -64);
-#endif
     } else {
         neutral_elem = neutral_base;
     }

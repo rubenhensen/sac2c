@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.31  2003/09/30 19:30:28  dkr
  * ND_CHECK__MIRROR removed
  *
@@ -29,7 +32,7 @@
  * signature of some ICMs modified
  *
  * Revision 3.22  2002/09/06 09:57:54  dkr
- * ifdef-instruction for TAGGED_ARRAYS corrected
+ * ifdef-instruction corrected
  *
  * Revision 3.21  2002/09/06 09:37:19  dkr
  * ND_IDXS2OFFSET added
@@ -50,7 +53,7 @@
  * ND_VECT2OFFSET modified
  *
  * Revision 3.15  2002/07/12 18:55:09  dkr
- * first (almost) complete TAGGED_ARRAYS revision.
+ * first (almost) complete revision for new backend.
  * some shape computations are missing yet (but SCL, AKS should be
  * complete)
  *
@@ -61,10 +64,10 @@
  * some bugs modified
  *
  * Revision 3.12  2002/07/10 19:26:32  dkr
- * F_modarray for TAGGED_ARRAYS added
+ * F_modarray for new backend added
  *
  * Revision 3.7  2002/05/31 17:25:31  dkr
- * ICMs for TAGGED_ARRAYS added
+ * ICMs for new backend added
  *
  * Revision 3.6  2002/05/03 14:01:18  dkr
  * some ICM args renamed
@@ -94,7 +97,7 @@
  * Introduce definitions and utility infrastructure for tagged array support.
  *
  * Revision 2.2  1999/06/16 17:11:23  rob
- * Add code for C macros for TAGGED ARRAY support.
+ * Add code for C macros for new backend support.
  * These are intended to eventually supplant the extant
  * ARRAY macros.
  *
@@ -126,8 +129,6 @@ extern void ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt,
                                  char **vararg);
 
 extern void ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg);
-
-#ifdef TAGGED_ARRAYS
 
 extern void ICMCompileND_OBJDEF (char *var_NT, char *basetype, int sdim, int *shp);
 
@@ -187,31 +188,5 @@ extern void ICMCompileND_VECT2OFFSET (char *off_NT, int from_size, char *from_NT
 
 extern void ICMCompileND_IDXS2OFFSET (char *off_NT, int idxs_size, char **idxs_NT,
                                       int shp_size, char **shpa_ANY);
-
-#else /* TAGGED_ARRAYS */
-
-extern void ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *basetype, char *name, int dim,
-                                               char **s);
-
-extern void ICMCompileND_KD_DECL_EXTERN_ARRAY (char *basetype, char *name, int dim);
-
-extern void ICMCompileND_KS_DECL_ARRAY (char *basetype, char *name, int dim, char **s);
-
-extern void ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s);
-
-extern void ICMCompileND_CREATE_CONST_ARRAY_S (char *name, int len, char **s);
-
-extern void ICMCompileND_CREATE_CONST_ARRAY_H (char *name, char *copyfun, int len,
-                                               char **A);
-
-extern void ICMCompileND_CREATE_CONST_ARRAY_A (char *name, int len2, int len1, char **s);
-
-extern void ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim,
-                                         int dims, char **shp);
-
-extern void ICMCompileND_IDXS2OFFSET (char *off, int idxs_size, char **idxs, int shp_size,
-                                      char **shp);
-
-#endif /* TAGGED_ARRAYS */
 
 #endif /* _icm2c_std_h_ */

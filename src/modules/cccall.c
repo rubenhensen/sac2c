@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.12  2004/02/05 10:37:14  cg
  * Re-factorized handling of different modes in multithreaded code
  * generation:
@@ -18,11 +21,10 @@
  * config.h included; MUST_KILL_AR_MAGIC_FILE used.
  *
  * Revision 3.8  2003/02/11 16:36:38  dkr
- * TAGGED_ARRAYS: CCFLAGS is patched in resource.c instead of cccall.c
- * now
+ * new backend: CCFLAGS is patched in resource.c instead of cccall.c now
  *
  * Revision 3.7  2003/02/11 14:28:51  dkr
- * CC call patched for TAGGED_ARRAYS
+ * CC call patched for new backend
  *
  * Revision 3.6  2001/11/30 12:18:37  sbs
  * if RANLIB is set, <file>.a files created by -genlib c are converted

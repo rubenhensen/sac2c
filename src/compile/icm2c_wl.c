@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.35  2003/09/30 19:29:21  dkr
  * code brushed: Set_Shape() used
  *
@@ -8,7 +11,7 @@
  * WLGenarray_Shape() modified
  *
  * Revision 3.33  2003/09/25 19:19:54  dkr
- * bug in WL_ASSIGN for non-TAGGED_ARRAYS fixed
+ * bug in WL_ASSIGN for old backend fixed
  *
  * Revision 3.32  2003/09/25 13:43:30  dkr
  * new argument 'copyfun' added to some ICMs.
@@ -21,7 +24,7 @@
  * postfixes _nt, _any renamed into _NT, _ANY
  *
  * Revision 3.29  2003/03/14 18:27:33  dkr
- * some fixes for non-TAGGED_ARRAYS-backend done
+ * some fixes for old backend done
  *
  * Revision 3.28  2003/03/14 13:22:42  dkr
  * all arguments of WL-ICMs are tagged now
@@ -43,7 +46,7 @@
  * some ICMs modified in order to support dynamic shapes
  *
  * Revision 3.22  2002/10/07 23:35:45  dkr
- * some bugs with TAGGED_ARRAYS fixed
+ * some bugs with new backend fixed
  *
  * Revision 3.21  2002/08/06 12:18:58  dkr
  * ups, ... error in WL_BEGIN__OFFSET corrected
@@ -52,7 +55,7 @@
  * some cosmetical changes done
  *
  * Revision 3.19  2002/08/06 08:58:30  dkr
- * works also without TAGGED_ARRAYS, now
+ * works also with old backend, now
  *
  * Revision 3.18  2002/08/05 20:42:10  dkr
  * ND_WL_GENARRAY__SHAPE... added
@@ -67,7 +70,7 @@
  * bug in WL_ASSIGN__INIT fixed
  *
  * Revision 3.14  2002/07/12 18:52:46  dkr
- * some modifications for TAGGED_ARRAYS done
+ * some modifications for new backend done
  *
  * Revision 3.12  2001/05/18 09:58:03  cg
  * #include <malloc.h> removed.
@@ -128,7 +131,6 @@ PrintTraceICM (char *to_NT, char *idx_vec_NT, int dims, char **idxs_scl_NT,
         fprintf (outfile, " (== offset %%d) -- offset %%d");
     }
     fprintf (outfile, " -- %s", operation);
-#ifdef TAGGED_ARRAYS
     fprintf (outfile, "\", SAC_ND_READ( %s, 0)", idxs_scl_NT[0]);
     for (i = 1; i < dims; i++) {
         fprintf (outfile, ", SAC_ND_READ( %s, 0)", idxs_scl_NT[i]);
@@ -144,23 +146,6 @@ PrintTraceICM (char *to_NT, char *idx_vec_NT, int dims, char **idxs_scl_NT,
         }
         fprintf (outfile, ", SAC_WL_OFFSET( %s)", to_NT);
     }
-#else  /* TAGGED_ARRAYS */
-    fprintf (outfile, "\", %s", idxs_scl_NT[0]);
-    for (i = 1; i < dims; i++) {
-        fprintf (outfile, ", %s", idxs_scl_NT[i]);
-    }
-    if (print_offset) {
-        fprintf (outfile, ", ");
-        for (i = dims - 1; i > 0; i--) {
-            fprintf (outfile, "( SAC_ND_A_SHAPE( %s, %d) * ", to_NT, i);
-        }
-        fprintf (outfile, "%s ", idxs_scl_NT[0]);
-        for (i = 1; i < dims; i++) {
-            fprintf (outfile, "+ %s )", idxs_scl_NT[i]);
-        }
-        fprintf (outfile, ", SAC_WL_OFFSET( %s)", to_NT);
-    }
-#endif /* TAGGED_ARRAYS */
     fprintf (outfile, "));\n");
 
     DBUG_VOID_RETURN;
@@ -204,8 +189,6 @@ DefineShapeFactor (char *to_NT, int to_sdim, int current_dim)
 
     DBUG_VOID_RETURN;
 }
-
-#ifdef TAGGED_ARRAYS
 
 /******************************************************************************
  *
@@ -303,8 +286,6 @@ ICMCompileND_WL_GENARRAY__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
 
     DBUG_VOID_RETURN;
 }
-
-#endif /* TAGGED_ARRAYS */
 
 /******************************************************************************
  *
@@ -494,17 +475,10 @@ ICMCompileWL_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
 
     if ((val_dim == 0) || (to_dim == dims)) {
         INDENT;
-#ifdef TAGGED_ARRAYS
         fprintf (outfile,
                  "SAC_ND_WRITE_READ_COPY( %s, SAC_WL_OFFSET( %s),"
                  " %s, 0, %s);\n",
                  to_NT, to_NT, val_NT, copyfun);
-#else  /* TAGGED_ARRAYS */
-        fprintf (outfile,
-                 "SAC_ND_WRITE_COPY( %s, SAC_WL_OFFSET( %s),"
-                 " %s, %s);\n",
-                 to_NT, to_NT, val_NT, copyfun);
-#endif /* TAGGED_ARRAYS */
         INDENT;
         fprintf (outfile, "SAC_WL_OFFSET( %s)++;\n", to_NT);
     } else {
@@ -862,20 +836,12 @@ ICMCompileWL_SET_OFFSET (int dim, int first_block_dim, char *to_NT, int to_sdim,
     for (i = dims - 1; i > 0; i--) {
         fprintf (outfile, "( SAC_ND_A_SHAPE( %s, %d) * ", to_NT, i);
     }
-#ifdef TAGGED_ARRAYS
     fprintf (outfile, "SAC_ND_READ( %s, 0)\n", idxs_scl_NT[0]);
-#else  /* TAGGED_ARRAYS */
-    fprintf (outfile, "%s\n", idxs_scl_NT[0]);
-#endif /* TAGGED_ARRAYS */
 
     INDENT;
     for (i = 1; i < dims; i++) {
         if (i <= dim) {
-#ifdef TAGGED_ARRAYS
             fprintf (outfile, "+ SAC_ND_READ( %s, 0) )", idxs_scl_NT[i]);
-#else  /* TAGGED_ARRAYS */
-            fprintf (outfile, "+ %s )", idxs_scl_NT[i]);
-#endif /* TAGGED_ARRAYS */
         } else {
             if (i <= first_block_dim) {
                 /*

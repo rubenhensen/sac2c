@@ -1,11 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.9  2002/07/24 13:19:26  dkr
  * macros MUST_... renamed
  *
  * Revision 3.8  2002/06/03 08:16:37  dkr
- * TAGGED_ARRAYS: objects of *all* types are refcounted.
+ * new backend: objects of *all* types are refcounted.
  * (The *backend* decides whether code for RC is generated or not)
  *
  * Revision 3.7  2002/03/01 15:18:07  dkr
@@ -76,21 +79,12 @@
 /*
  *  Steering which variables to be refcounted.
  */
-#ifdef TAGGED_ARRAYS
 #define DECL_MUST_REFCOUNT(vardec_or_arg)                                                \
     (VARDEC_OR_ARG_STATUS (vardec_or_arg) != ST_artificial)
-#else /* TAGGED_ARRAYS */
-#define DECL_MUST_REFCOUNT(vardec_or_arg)                                                \
-    TYPE_MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec_or_arg))
-#endif /* TAGGED_ARRAYS */
 #define DECL_MUST_NAIVEREFCOUNT(vardec_or_arg)                                           \
     (VARDEC_OR_ARG_STATUS (vardec_or_arg) != ST_artificial)
 
-#ifdef TAGGED_ARRAYS
 #define TYPE_MUST_REFCOUNT(type) (TRUE)
-#else /* TAGGED_ARRAYS */
-#define TYPE_MUST_REFCOUNT(type) (IsArray (type) || IsNonUniqueHidden (type))
-#endif /* TAGGED_ARRAYS */
 
 extern node *Refcount (node *arg_node);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.6  2003/09/19 15:32:11  dkr
  * postfix _nt of varnames renamed into _NT
  *
@@ -27,9 +30,6 @@
  *
  * Revision 1.4  2000/08/17 10:19:10  dkr
  * all the NT stuff is now in a separate modul (NameTuples.[ch])
- *
- * Revision 1.3  1999/06/25 15:22:32  rob
- * Don't gen if not TAGGED_ARRAYS
  *
  * Revision 1.2  1999/06/25 14:52:25  rob
  * Introduce definitions and utility infrastructure for tagged array support.

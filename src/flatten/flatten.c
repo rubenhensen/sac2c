@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.27  2004/02/25 08:22:32  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -16,7 +19,7 @@
  * With-loop default expression flattened out in case of -sbs
  *
  * Revision 3.23  2003/02/10 17:51:49  dkr
- * flattening of nested arrays even for undefined TAGGED_ARRAYS now
+ * flattening of nested arrays even for old backend now
  *
  * Revision 3.22  2002/09/11 23:18:45  dkr
  * prf_node_info.mac modified
@@ -34,7 +37,7 @@
  * FltnNwithid() added, NWITHID_VEC is created if missing
  *
  * Revision 3.17  2002/08/07 12:14:46  dkr
- * FltnPrf: dirty hack for TAGGED_ARRAYS no longer needed
+ * FltnPrf: dirty hack for new backend no longer needed
  *
  * Revision 3.16  2002/08/06 15:53:47  sbs
  * in case sbs == 1 , i.e., the new TS, shape exprs of genarray WLS are
@@ -48,7 +51,7 @@
  * and the new type checker
  *
  * Revision 3.13  2002/07/24 18:53:33  dkr
- * TAGGED_ARRAYS: scalar arguments are flattened in precompile now
+ * new backend: scalar arguments are flattened in precompile now
  *
  * Revision 3.12  2002/07/12 18:48:20  dkr
  * CT_prf removed (okay, that idea was bullshit... @1)
@@ -58,16 +61,16 @@
  *
  * Revision 3.10  2002/07/08 11:05:32  dkr
  * FltnPrf(): N_array arguments of F_reshape are not flattened (for
- * TAGGED_ARRAYS only)
+ * new backend only)
  *
  * Revision 3.9  2002/07/02 15:26:30  sah
  * added support for N_dot nodes in WL generators
  *
  * Revision 3.8  2002/06/03 13:42:57  dkr
- * behaviour for TAGGED_ARRAYS modified
+ * behaviour for new backend modified
  *
  * Revision 3.7  2002/06/02 22:02:11  dkr
- * support for TAGGED_ARRAYS added
+ * support for new backend added
  *
  * Revision 3.6  2001/11/22 08:46:31  sbs
  * DbugPrintStack compiled when DBUG package is active only!
@@ -1380,13 +1383,9 @@ FltnExprs (node *arg_node, node *arg_info)
      */
     switch (INFO_FLTN_CONTEXT (arg_info)) {
     case CT_ap:
-        abstract = (
-#ifdef TAGGED_ARRAYS
-          (NODE_TYPE (expr) == N_str) ||
-#endif
-          (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_ap)
-          || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_Nwith)
-          || (NODE_TYPE (expr) == N_cast));
+        abstract = ((NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array)
+                    || (NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
+                    || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_cast));
         break;
     case CT_return:
         abstract = ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
@@ -1401,13 +1400,9 @@ FltnExprs (node *arg_node, node *arg_info)
                     || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_cast));
         break;
     case CT_array:
-        abstract = (
-#ifdef TAGGED_ARRAYS
-          (NODE_TYPE (expr) == N_str) ||
-#endif
-          (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_ap)
-          || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_Nwith)
-          || (NODE_TYPE (expr) == N_cast));
+        abstract = ((NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array)
+                    || (NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
+                    || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_cast));
         INFO_FLTN_VECTYPE (arg_info)
           = FltnPreTypecheck (NODE_TYPE (expr), INFO_FLTN_VECTYPE (arg_info));
         INFO_FLTN_VECLEN (arg_info) = info_fltn_array_index + 1;

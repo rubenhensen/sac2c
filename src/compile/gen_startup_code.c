@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.36  2004/02/05 10:39:30  cg
  * Implementation for MT mode 1 (thread create/join) added.
  *
@@ -14,10 +17,10 @@
  * postfix _nt of varnames renamed into _NT
  *
  * Revision 3.32  2003/09/17 19:04:30  dkr
- * RCAO renamed into DAO for TAGGED_ARRAYS
+ * RCAO renamed into DAO for new backend
  *
  * Revision 3.30  2003/09/13 13:43:56  dkr
- * GSCicm(): NT-tags added for TAGGED_ARRAYS
+ * GSCicm(): NT-tags added for new backend
  *
  * Revision 3.29  2003/08/05 16:16:18  dkr
  * fixed a bug in  GSCPrintMain()
@@ -65,10 +68,10 @@
  * some spaces added :)
  *
  * Revision 3.15  2002/07/03 15:28:01  dkr
- * RUNTIMECHECK_TYPE added (for TAGGED_ARRAYS)
+ * RUNTIMECHECK_TYPE added (for new backend)
  *
  * Revision 3.14  2002/06/02 21:39:47  dkr
- * support for TAGGED_ARRAYS added
+ * support for new backend added
  *
  * Revision 3.13  2002/04/16 21:12:48  dkr
  * GSCPrintMain() added
@@ -213,10 +216,8 @@ PrintGlobalSwitches ()
                       " *  Global Switches\n */\n\n");
 
     fprintf (outfile, "#define SAC_DO_CHECK           %d\n", runtimecheck ? 1 : 0);
-#ifdef TAGGED_ARRAYS
     fprintf (outfile, "#define SAC_DO_CHECK_TYPE      %d\n",
              (runtimecheck & RUNTIMECHECK_TYPE) ? 1 : 0);
-#endif
     fprintf (outfile, "#define SAC_DO_CHECK_BOUNDARY  %d\n",
              (runtimecheck & RUNTIMECHECK_BOUNDARY) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_CHECK_MALLOC    %d\n",
@@ -231,13 +232,8 @@ PrintGlobalSwitches ()
              (optimize & OPT_PHM) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_APS             %d\n",
              (optimize & OPT_APS) ? 1 : 0);
-#ifdef TAGGED_ARRAYS
     fprintf (outfile, "#define SAC_DO_DAO             %d\n",
              (optimize & OPT_DAO) ? 1 : 0);
-#else  /* TAGGED_ARRAYS */
-    fprintf (outfile, "#define SAC_DO_RCAO            %d\n",
-             (optimize & OPT_RCAO) ? 1 : 0);
-#endif /* TAGGED_ARRAYS */
     fprintf (outfile, "#define SAC_DO_MSCA            %d\n",
              (optimize & OPT_MSCA) ? 1 : 0);
     fprintf (outfile, "\n");
@@ -631,14 +627,10 @@ GSCicm (node *arg_node, node *arg_info)
                          "ICM MT_SPMD_SETUP has wrong format (parameter missing)");
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR3 (icm_arg)) == N_id),
                          "ICM MT_SPMD_SETUP has wrong format (parameter no N_id)");
-#ifdef TAGGED_ARRAYS
             DBUG_ASSERT ((ID_NT_TAG (EXPRS_EXPR3 (icm_arg)) != NULL),
                          "ICM MT_SPMD_SETUP has wrong format (parameter has no NT-tag)");
 
             name = ID_NT_TAG (EXPRS_EXPR3 (icm_arg));
-#else
-            name = ID_NAME (EXPRS_EXPR3 (icm_arg));
-#endif
 
             fprintf (outfile, "        SAC_MT_SPMD_ARG_%s( %s, %s)    \\\n", tag, type,
                      name);
@@ -889,10 +881,8 @@ GSCPrintMainEnd ()
 void
 GSCPrintMain ()
 {
-#ifdef TAGGED_ARRAYS
     char *res_NT, *mythread_NT;
     types *tmp_type;
-#endif
     bool print_thread_id
       = (((mtmode == MT_createjoin) || (mtmode == MT_startstop)) && (optimize & OPT_PHM));
 
@@ -907,41 +897,25 @@ GSCPrintMain ()
         INDENT;
         fprintf (outfile, "SAC_MT_DECL_MYTHREAD()\n");
     }
-#ifdef TAGGED_ARRAYS
     tmp_type = MakeTypes1 (T_int);
     res_NT = CreateNtTag ("SAC_res", tmp_type);
     mythread_NT = CreateNtTag ("SAC_MT_mythread", tmp_type);
     tmp_type = FreeAllTypes (tmp_type);
     ICMCompileND_DECL (res_NT, "int", 0, NULL); /* create ND_DECL icm */
-#else
-    INDENT;
-    fprintf (outfile, "int SAC_res;\n\n");
-#endif
     GSCPrintMainBegin ();
 
     INDENT;
-#ifdef TAGGED_ARRAYS
     fprintf (outfile, "SACf_main( ");
     if (print_thread_id) {
         fprintf (outfile, "SAC_ND_ARG_in( %s), ", mythread_NT);
     }
     fprintf (outfile, "SAC_ND_ARG_out( %s)", res_NT);
-#else
-    fprintf (outfile, "SAC_res = SACf_main(");
-    if (print_thread_id) {
-        fprintf (outfile, " SAC_ND_ARG_in( SAC_MT_mythread)");
-    }
-#endif
     fprintf (outfile, ");\n\n");
     GSCPrintMainEnd ();
     INDENT;
-#ifdef TAGGED_ARRAYS
     fprintf (outfile, "return( SAC_ND_READ( %s, 0));\n", res_NT);
     res_NT = Free (res_NT);
     mythread_NT = Free (mythread_NT);
-#else
-    fprintf (outfile, "return( SAC_res);\n");
-#endif
     indent--;
     INDENT;
     fprintf (outfile, "}\n");

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.55  2004/02/25 08:22:32  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -16,10 +19,10 @@
  * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
  *
  * Revision 3.52  2003/10/19 22:02:31  dkrHH
- * description of -intrinsic for TAGGED_ARRAYS corrected
+ * description of -intrinsic for new backend corrected
  *
  * Revision 3.51  2003/09/17 18:12:29  dkr
- * RCAO renamed into DAO for TAGGED_ARRAYS
+ * RCAO renamed into DAO for new backend
  *
  * Revision 3.50  2003/09/16 16:10:11  sbs
  * type inference options separated
@@ -50,7 +53,7 @@
  * cppI added
  *
  * Revision 3.42  2003/03/13 17:18:30  dkr
- * -minarrayrep activated for TAGGED_ARRAYS only
+ * -minarrayrep activated for new backend only
  *
  * Revision 3.41  2003/03/13 15:49:19  dkr
  * -minarrayrep added
@@ -109,16 +112,16 @@
  * added.
  *
  * Revision 3.24  2002/07/15 19:05:07  dkr
- * -intrinsic flag modified for TAGGED_ARRAYS
+ * -intrinsic flag modified for new backend
  *
  * Revision 3.23  2002/07/10 16:33:38  dkr
  * -b2:yacc added
  *
  * Revision 3.22  2002/07/03 15:28:18  dkr
- * -checkt added (for TAGGED_ARRAYS)
+ * -checkt added (for new backend)
  *
  * Revision 3.21  2002/06/24 14:35:34  dkr
- * -intrinsic flag removed for TAGGED_ARRAYS
+ * -intrinsic flag removed for new backend
  *
  * Revision 3.20  2002/06/07 17:04:03  mwe
  * help information for AssociativeLaw added.
@@ -500,11 +503,7 @@ Usage ()
       "        SBE     syncronisation barrier elimination\n"
       "        PHM     private heap management\n"
       "        APS     arena preselection           (in conjunction with PHM)\n"
-#ifdef TAGGED_ARRAYS
       "        DAO     descriptor allocation opt.   (in conjunction with PHM)\n"
-#else  /* TAGGED_ARRAYS */
-      "        RCAO    refcount allocation opt.     (in conjunction with PHM)\n"
-#endif /* TAGGED_ARRAYS */
       "        MSCA    memory size cache adjustment (in conjunction with PHM)\n"
       "\n"
       "        OPT     enables/disables all optimizations at once.\n"
@@ -659,7 +658,6 @@ Usage ()
             (int)MT_startstop, max_threads, max_sync_fold, min_parallel_size,
             max_replication_size);
 
-#ifdef TAGGED_ARRAYS
     printf ("\n\nBACKEND OPTIONS:\n\n"
 
             "    -minarrayrep <class>\n"
@@ -669,7 +667,6 @@ Usage ()
             "                      +: use SCL, AUD representations only,\n"
             "                      *: use AUD representation only.\n"
             "                    (default: s)\n");
-#endif
 
     printf (
       "\n\nGENERAL DEBUG OPTIONS:\n\n"
@@ -716,17 +713,11 @@ Usage ()
 
     printf ("\n\nRUNTIME CHECK OPTIONS:\n\n"
 
-#ifdef TAGGED_ARRAYS
             "    -check [atbmeh]+\n"
-#else
-            "    -check [abmeh]+\n"
-#endif
             "                    Incorporate runtime checks into executable program.\n"
             "                    The following flags are supported:\n"
             "                      a: Incorporate all available runtime checks.\n"
-#ifdef TAGGED_ARRAYS
             "                      t: Check assignments for type violations.\n"
-#endif
             "                      b: Check array accesses for boundary violations.\n"
             "                      m: Check success of memory allocations.\n"
             "                      e: Check errno variable upon applications of\n"
@@ -893,28 +884,14 @@ Usage ()
             "    library. These intrinsic implementations can be activated by the\n"
             "    following compiler option.\n"
             "\n"
-#ifndef TAGGED_ARRAYS
-            "    -intrinsic [a+-x/tdcrso]+\n"
-#else
             "    -intrinsic [a+-x/so]+\n"
-#endif
             "                    Use intrinsic implementations for array operations.\n"
             "                      a: Use all intrinsic operations  available\n"
-#ifndef TAGGED_ARRAYS
-            "                         (same as +-x/tdcrso).\n"
-#else
             "                         (same as +-x/so).\n"
-#endif
             "                      +: Use intrinsic add.\n"
             "                      -: Use intrinsic sub.\n"
             "                      x: Use intrinsic mul.\n"
             "                      /: Use intrinsic div.\n"
-#ifndef TAGGED_ARRAYS
-            "                      t: Use intrinsic take.\n"
-            "                      d: Use intrinsic drop.\n"
-            "                      c: Use intrinsic cat.\n"
-            "                      r: Use intrinsic rotate.\n"
-#endif
             "                      s: Use intrinsic sel.\n"
             "                      o: Use intrinsic type conversion.\n");
 
@@ -1074,20 +1051,13 @@ VersionVerbose ()
             "FOR OS:        %s\n"
             "\n"
 
-            "TAGGED ARRAYS: %s\n"
-            "\n\n",
+            "\n",
             (version_id[0] == '\0') ? "???" : version_id,
             (target_platform[0] == '\0') ? "???" : target_platform,
             (build_date[0] == '\0') ? "???" : build_date,
             (build_user[0] == '\0') ? "???" : build_user,
             (build_host[0] == '\0') ? "???" : build_host,
-            (build_os[0] == '\0') ? "???" : build_os,
-#ifdef TAGGED_ARRAYS
-            "yes"
-#else
-            "no"
-#endif
-    );
+            (build_os[0] == '\0') ? "???" : build_os);
 
     printf ("(c) Copyright 1994 - 2002 by\n\n"
 

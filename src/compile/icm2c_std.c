@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.59  2003/12/01 18:29:41  dkrHH
  * DBUG_ASSERT for ND_DECL__MIRROR_PARAM added:
  * checks whether array size >=0
@@ -134,30 +137,20 @@ ICMCompileND_FUN_DEC (char *name, char *rettype_NT, int vararg_cnt, char **varar
 #undef ND_FUN_DEC
 
     INDENT;
-#ifdef TAGGED_ARRAYS
     if (rettype_NT[0] != '\0') {
         fprintf (outfile, "SAC_ND_TYPE_NT( %s) ", rettype_NT);
     } else {
         fprintf (outfile, "void ");
     }
-#else
-    fprintf (outfile, "%s ", rettype_NT);
-#endif
     if (strcmp (name, "create_TheCommandLine") == 0) {
         fprintf (outfile, "%s( int __argc, char *__argv[])", name);
     } else if (strcmp (name, "SACf_GlobalObjInit") == 0) {
         fprintf (outfile, "%s( int __argc, char *__argv[])", name);
     } else {
         fprintf (outfile, "%s(", name);
-#ifdef TAGGED_ARRAYS
         ScanArglist (vararg_cnt, 3, ",", ,
                      fprintf (outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
                               vararg[i + 2], vararg[i + 1]));
-#else
-        ScanArglist (vararg_cnt, 3, ",", ,
-                     fprintf (outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
-                              vararg[i + 1], vararg[i + 2]));
-#endif
         fprintf (outfile, ")");
     }
 
@@ -247,8 +240,6 @@ ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg)
 
     DBUG_VOID_RETURN;
 }
-
-#ifdef TAGGED_ARRAYS
 
 /******************************************************************************
  *
@@ -1589,364 +1580,3 @@ ICMCompileND_IDXS2OFFSET (char *off_NT, int idxs_size, char **idxs_NT, int shp_s
 
     DBUG_VOID_RETURN;
 }
-
-#else /* TAGGED_ARRAYS */
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_KS_DECL_GLOBAL_ARRAY( char *basetype, char *name,
- *                                           int dim, char **s)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_KS_DECL_GLOBAL_ARRAY( basetype, name, dim, [ s ]* )
- *
- ******************************************************************************/
-
-void
-ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *basetype, char *name, int dim, char **s)
-{
-    int i;
-
-    DBUG_ENTER ("ICMCompileND_KS_DECL_GLOBAL_ARRAY");
-
-#define ND_KS_DECL_GLOBAL_ARRAY
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_KS_DECL_GLOBAL_ARRAY
-
-    if (print_objdef_for_header_file) {
-        INDENT;
-        fprintf (outfile, "extern %s *%s;\n", basetype, name);
-        INDENT;
-        fprintf (outfile, "extern int SAC_ND_A_RC( %s);\n", name);
-        INDENT;
-        fprintf (outfile, "extern int const SAC_ND_A_SIZE( %s);\n", name);
-        INDENT;
-        fprintf (outfile, "extern int const SAC_ND_A_DIM( %s);\n", name);
-        for (i = 0; i < dim; i++) {
-            INDENT;
-            fprintf (outfile, "extern int const SAC_ND_A_SHAPE( %s, %d);\n", name, i);
-        }
-    } else {
-        INDENT;
-        fprintf (outfile, "%s *%s;\n", basetype, name);
-        INDENT;
-        fprintf (outfile, "int SAC_ND_A_RC( %s);\n", name);
-        INDENT;
-        fprintf (outfile, "const int SAC_ND_A_SIZE( %s) = ", name);
-        fprintf (outfile, "%s", s[0]);
-        for (i = 1; i < dim; i++) {
-            fprintf (outfile, "*%s", s[i]);
-        }
-        fprintf (outfile, ";\n");
-        INDENT;
-        fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", name, dim);
-        for (i = 0; i < dim; i++) {
-            INDENT;
-            fprintf (outfile, "const int SAC_ND_A_SHAPE( %s, %d) = %s;\n", name, i, s[i]);
-        }
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_KD_DECL_EXTERN_ARRAY( char *basetype, char *name,
- *                                           int dim)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_KD_DECL_EXTERN_ARRAY( basetype, name, dim)
- *   declares an array which is an imported global object
- *
- ******************************************************************************/
-
-void
-ICMCompileND_KD_DECL_EXTERN_ARRAY (char *basetype, char *name, int dim)
-{
-    int i;
-
-    DBUG_ENTER ("ICMCompileND_KD_DECL_EXTERN_ARRAY");
-
-#define ND_KD_DECL_EXTERN_ARRAY
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_KD_DECL_EXTERN_ARRAY
-
-    INDENT;
-    fprintf (outfile, "extern %s *%s;\n", basetype, name);
-    INDENT;
-    fprintf (outfile, "extern int SAC_ND_A_RC( %s);\n", name);
-    INDENT;
-    fprintf (outfile, "extern int SAC_ND_A_SIZE( %s);\n", name);
-    INDENT;
-    fprintf (outfile, "extern int SAC_ND_A_DIM( %s);\n", name);
-    for (i = 0; i < dim; i++) {
-        INDENT;
-        fprintf (outfile, "extern int SAC_ND_A_SHAPE( %s, %d);\n", name, i);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_KS_DECL_ARRAY( char *basetype, char *name,
- *                                    int dim, char **s)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_KS_DECL_ARRAY( basetype, name, dim, [ s ]* )
- *
- ******************************************************************************/
-
-void
-ICMCompileND_KS_DECL_ARRAY (char *basetype, char *name, int dim, char **s)
-{
-    int i;
-
-    DBUG_ENTER ("ICMCompileND_KS_DECL_ARRAY");
-
-#define ND_KS_DECL_ARRAY
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_KS_DECL_ARRAY
-
-    INDENT;
-    fprintf (outfile, "%s *%s;\n", basetype, name);
-    INDENT;
-    fprintf (outfile, "int SAC_ND_A_RC( %s);\n", name);
-    INDENT;
-    fprintf (outfile, "const int SAC_ND_A_SIZE( %s) = ", name);
-    fprintf (outfile, "%s", s[0]);
-    for (i = 1; i < dim; i++) {
-        fprintf (outfile, "*%s", s[i]);
-    }
-    fprintf (outfile, ";\n");
-    INDENT;
-    fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", name, dim);
-    for (i = 0; i < dim; i++) {
-        INDENT;
-        fprintf (outfile, "const int SAC_ND_A_SHAPE( %s, %d) = %s;\n", name, i, s[i]);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_KS_DECL_ARRAY_ARG( char *name, int dim, char **s)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_KS_DECL_ARRAY_ARG( name, dim, [ s ]* )
- *   declares an array given as arg
- *
- ******************************************************************************/
-
-void
-ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s)
-{
-    int i;
-
-    DBUG_ENTER ("ICMCompileND_KS_DECL_ARRAY_ARG");
-
-#define ND_KS_DECL_ARRAY_ARG
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_KS_DECL_ARRAY_ARG
-
-    INDENT;
-    fprintf (outfile, "const int SAC_ND_A_SIZE( %s) = ", name);
-    fprintf (outfile, "%s", s[0]);
-    for (i = 1; i < dim; i++) {
-        fprintf (outfile, "*%s", s[i]);
-    }
-    fprintf (outfile, ";\n");
-    INDENT;
-    fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", name, dim);
-    for (i = 0; i < dim; i++) {
-        INDENT;
-        fprintf (outfile, "const int SAC_ND_A_SHAPE( %s, %d) = %s;\n", name, i, s[i]);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_CREATE_CONST_ARRAY_S( char *name, int len, char **s)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_CREATE_CONST_ARRAY_S( name, len, [ s ]* )
- *
- ******************************************************************************/
-
-void
-ICMCompileND_CREATE_CONST_ARRAY_S (char *name, int len, char **s)
-{
-    int i;
-
-    DBUG_ENTER ("ICMCompileND_CREATE_CONST_ARRAY_S");
-
-#define ND_CREATE_CONST_ARRAY_S
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_CREATE_CONST_ARRAY_S
-
-    for (i = 0; i < len; i++) {
-        INDENT;
-        fprintf (outfile, "SAC_ND_WRITE_ARRAY( %s, %d) = %s;\n", name, i, s[i]);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_CREATE_CONST_ARRAY_H( char *name, char * copyfun,
- *                                           int len, char **A)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_CREATE_CONST_ARRAY_H( name, copyfun, len, [ A ]* )
- *   generates a constant array of refcounted hidden values
- *
- ******************************************************************************/
-
-void
-ICMCompileND_CREATE_CONST_ARRAY_H (char *name, char *copyfun, int len, char **A)
-{
-    int i;
-
-    DBUG_ENTER ("ICMCompileND_CREATE_CONST_ARRAY_H");
-
-#define ND_CREATE_CONST_ARRAY_H
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_CREATE_CONST_ARRAY_H
-
-    for (i = 0; i < len; i++) {
-        INDENT;
-        fprintf (outfile, "SAC_ND_NO_RC_MAKE_UNIQUE_HIDDEN( %s, %s[%d], %s);\n", A[i],
-                 name, i, copyfun);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_CREATE_CONST_ARRAY_A( char *name, int len2, int len1,
- *                                           char **A)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_CREATE_CONST_ARRAY_A( name, len2, len1, [ A ]* )
- *   generates a constant array out of arrays
- *   where len2 is the number of elements of the argument array A
- *
- ******************************************************************************/
-
-void
-ICMCompileND_CREATE_CONST_ARRAY_A (char *name, int len2, int len1, char **A)
-{
-    int i;
-
-    DBUG_ENTER ("ICMCompileND_CREATE_CONST_ARRAY_A");
-
-#define ND_CREATE_CONST_ARRAY_A
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_CREATE_CONST_ARRAY_A
-
-    for (i = 0; i < len1 * len2; i++) {
-        INDENT;
-        fprintf (outfile, "SAC_ND_WRITE_ARRAY( %s, %d) = SAC_ND_READ_ARRAY( %s, %d);\n",
-                 name, i, A[i / len2], i % len2);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_KS_VECT2OFFSET( char *off_name, char *arr_name,
- *                                     int dim, int dims, char **shp)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_KS_VECT2OFFSET( off_name, arr_name, dim, dims, shp )
- *
- ******************************************************************************/
-
-void
-ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim, int dims,
-                             char **shp)
-{
-    DBUG_ENTER ("ICMCompileND_KS_VECT2OFFSET");
-
-#define ND_KS_VECT2OFFSET
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_KS_VECT2OFFSET
-
-    INDENT;
-    fprintf (outfile, "%s = ", off_name);
-    Vect2Offset2 (dim, AccessVect (arr_name, i), dims, AccessConst (shp, i));
-    fprintf (outfile, ";\n");
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_IDXS2OFFSET( char *off, int idxs_size, char **idxs,
- *                                  int shp_size, char **shp)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_IDXS2OFFSET( off, idxs_size, idxs, shp_size, shp )
- *
- ******************************************************************************/
-
-void
-ICMCompileND_IDXS2OFFSET (char *off, int idxs_size, char **idxs, int shp_size, char **shp)
-{
-    DBUG_ENTER ("ICMCompileND_IDXS2OFFSET");
-
-#define ND_IDXS2OFFSET
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_IDXS2OFFSET
-
-    INDENT;
-    fprintf (outfile, "%s = ", off);
-    Vect2Offset2 (idxs_size, AccessConst (idxs, i), shp_size, AccessConst (shp, i));
-    fprintf (outfile, ";\n");
-
-    DBUG_VOID_RETURN;
-}
-
-#endif /* TAGGED_ARRAYS */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.33  2004/02/26 13:07:46  khf
  * PH_wlpartgen added
  *
@@ -159,7 +162,6 @@
 #include "concurrent.h"
 #include "precompile.h"
 #include "compile.h"
-#include "compile.tagged.h"
 #include "annotate_fun_calls.h"
 #include "cccall.h"
 #include "PatchWith.h"
@@ -588,11 +590,7 @@ main (int argc, char *argv[])
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
-#ifdef TAGGED_ARRAYS
-    syntax_tree = Compile_Tagged (syntax_tree); /* comp2_tab */
-#else
     syntax_tree = Compile (syntax_tree); /* comp_tab */
-#endif
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 

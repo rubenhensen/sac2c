@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2004/03/10 00:10:17  dkrHH
+ * old backend removed
+ *
  * Revision 3.41  2004/02/26 13:07:46  khf
  * TmpVar(): wlpg_tab added
  *
@@ -71,7 +74,7 @@
  * hd_tab added to TmpVar known tables.
  *
  * Revision 3.19  2002/07/12 16:57:27  dkr
- * TmpVar(): modification for TAGGED_ARRAYS done
+ * TmpVar(): modification for new backend done
  *
  * Revision 3.18  2002/04/09 08:22:17  dkr
  * TmpVar(): some trav-tables added, DBUG_ASSERT added.
@@ -1035,17 +1038,9 @@ PrefixForTmpVar (void)
         s = "free";
     } else if (act_tab == refcnt_tab) {
         s = "rc";
-    } else
-#ifdef TAGGED_ARRAYS
-      if (act_tab == comp2_tab) {
+    } else if (act_tab == comp_tab) {
         s = "comp";
-    } else
-#else  /* TAGGED_ARRAYS */
-      if (act_tab == comp_tab) {
-        s = "comp";
-    } else
-#endif /* TAGGED_ARRAYS */
-      if (act_tab == lir_tab) {
+    } else if (act_tab == lir_tab) {
         s = "lir";
     } else if (act_tab == lir_mov_tab) {
         s = "lirm";
