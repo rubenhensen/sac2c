@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/07/28 13:16:17  bs
+ * No more DupNode's.
+ * WLAAcond modified.
+ * Bug fixed in WLAAprf.
+ *
  * Revision 2.5  1999/07/21 14:49:12  bs
  * Some DupNode()'s inserted.
  * WLAAcond modified.
@@ -46,7 +51,7 @@
  *   The following access macros are defined for the info-node:
  *
  *   INFO_WLAA_ACCESS(n)      ((access_t*)(n->info2))
- *   define INFO_WLAA_COUNT(n)            (n->counter)
+ *   INFO_WLAA_COUNT(n)                   (n->counter)
  *   INFO_WLAA_FEATURE(n)     ((feature_t)(n->lineno))
  *   INFO_WLAA_WOTYPE(n)     ((WithOpType)(n->varno))
  *   INFO_WLAA_LASTLETIDS(n)              (n->info.ids)
@@ -69,7 +74,6 @@
 #include "globals.h"
 #include "print.h" /* WLAAprintAccesses */
 #include "Error.h"
-#include "DupTree.h"
 #include "wl_access_analyze.h"
 
 #define ACLT(arg)                                                                        \
@@ -81,11 +85,6 @@
                                   : ((arg == ACL_const) ? ("ACL_const") : (""))))
 
 #define IV(a) ((a) == 0) ? ("") : ("iv + ")
-
-#define CURRENT_A 0
-#define TEMP_A 1
-#define _EXIT 0
-#define _ENTER 1
 
 /******************************************************************************
  *
@@ -271,6 +270,110 @@ IsIndexVect (types *type)
 /******************************************************************************
  *
  * function:
+ *   int AccessInAccesslist(access_t* access, access_t* access_list)
+ *
+ * description:
+ *
+ *   AccessInAccesslist( a, al ) = 1  if al contains a,
+ *                                 0  otherwise.
+ *
+ ******************************************************************************/
+
+static int
+AccessInAccesslist (access_t *access, access_t *access_list)
+{
+    int isin = FALSE;
+    int i;
+
+    while ((access_list != NULL) && (isin == FALSE)) {
+
+        DBUG_ASSERT ((access != NULL), ("No access to compare with !"));
+
+        if ((ACCESS_CLASS (access) == ACCESS_CLASS (access_list))
+            && (ACCESS_IV (access) == ACCESS_IV (access_list))
+            && (ACCESS_ARRAY (access) == ACCESS_ARRAY (access_list))
+            && (ACCESS_DIR (access) == ACCESS_DIR (access_list))) {
+            i = 0;
+            isin = TRUE;
+            while ((i < SHP_SEG_SIZE) && isin) {
+                if (SHPSEG_SHAPE (ACCESS_OFFSET (access), i)
+                    != SHPSEG_SHAPE (ACCESS_OFFSET (access_list), i)) {
+                    isin = FALSE;
+                }
+                i++;
+            }
+        }
+        access_list = ACCESS_NEXT (access_list);
+    }
+
+    return (isin);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   access_t* KillDoubleAccesses(access_t* access_list)
+ *
+ * description:
+ *
+ *   This function results the access_list containing not the same entrie twice.
+ *
+ *
+ ******************************************************************************/
+#if 0
+/*
+ *   not needed at this time
+ */
+static access_t* KillDoubleAccesses(access_t* access_list) 
+{
+  access_t* result;
+  
+  if (AccessInAccesslist(access_list, ACCESS_NEXT( access_list))) {
+    result = KillDoubleAccesses(ACCESS_NEXT( access_list));
+    FreeOneAccess( access_list);
+  }
+  else {
+    result = access_list;
+    ACCESS_NEXT( result) = KillDoubleAccesses( ACCESS_NEXT( access_list));
+  }
+  return(result);
+}
+#endif
+
+/******************************************************************************
+ *
+ * function:
+ *   access_t* CatAccesslists(access_t* a_list_1, access_t* a_list_2)
+ *
+ * description:
+ *
+ *   This function results the concatenation of a_list_1 and a_list_2.
+ *
+ *
+ ******************************************************************************/
+
+static access_t *
+CatAccesslists (access_t *a_list_1, access_t *a_list_2)
+{
+    access_t *a_list_res;
+
+    if (a_list_1 == NULL) {
+        a_list_1 = a_list_2;
+        a_list_res = a_list_2;
+    } else {
+        a_list_res = a_list_1;
+        while (ACCESS_NEXT (a_list_1) != NULL) {
+            a_list_1 = ACCESS_NEXT (a_list_1);
+        }
+        ACCESS_NEXT (a_list_1) = a_list_2;
+    }
+
+    return (a_list_res);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   access_t *SearchAccess(node *arg_info)
  *
  * description:
@@ -414,8 +517,7 @@ WLAAnwith (node *arg_node, node *arg_info)
     DBUG_ENTER ("WLAAnwith");
 
     DBUG_ASSERT ((arg_info != NULL), "WLAAnwith called with empty info node!");
-
-    INFO_WLAA_INDEXVAR (arg_info) = DupNode (IDS_VARDEC (NWITH_VEC (arg_node)));
+    INFO_WLAA_INDEXVAR (arg_info) = IDS_VARDEC (NWITH_VEC (arg_node));
     INFO_WLAA_WOTYPE (arg_info) = NWITH_TYPE (arg_node);
     INFO_WLAA_WLLEVEL (arg_info) = INFO_WLAA_WLLEVEL (arg_info) + 1;
 
@@ -471,9 +573,8 @@ WLAAncode (node *arg_node, node *arg_info)
         if ((INFO_WLAA_WOTYPE (arg_info) == WO_genarray)
             || (INFO_WLAA_WOTYPE (arg_info) == WO_modarray)) {
             INFO_WLAA_ACCESS (arg_info)
-              = MakeAccess (INFO_WLAA_WLARRAY (arg_info),
-                            ID_VARDEC (INFO_WLAA_INDEXVAR (arg_info)), ACL_offset, NULL,
-                            ADIR_write, INFO_WLAA_ACCESS (arg_info));
+              = MakeAccess (INFO_WLAA_WLARRAY (arg_info), INFO_WLAA_INDEXVAR (arg_info),
+                            ACL_offset, NULL, ADIR_write, INFO_WLAA_ACCESS (arg_info));
             INFO_WLAA_COUNT (arg_info)++;
             ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
               = IntVec2Shpseg (1, 0, NULL, ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info)));
@@ -617,55 +718,80 @@ WLAAcond (node *arg_node, node *arg_info)
 {
     node *then_arg_info, *else_arg_info;
     int equal_flag = TRUE;
+    access_t *access;
 
     DBUG_ENTER ("WLAAcond");
-#if 0
-  /* implementation not ready */
-  if (INFO_WLAA_WLLEVEL(arg_info) > 0) {
-    then_arg_info = MakeInfo();
-    INFO_WLAA_INDEXVAR(then_arg_info)   = INFO_WLAA_INDEXVAR(arg_info);
-    INFO_WLAA_WOTYPE(then_arg_info)     = INFO_WLAA_WOTYPE(arg_info);
-    INFO_WLAA_WLLEVEL(then_arg_info)    = INFO_WLAA_WLLEVEL(arg_info);
-    INFO_WLAA_WLARRAY(then_arg_info)    = INFO_WLAA_WLARRAY(arg_info);
-    INFO_WLAA_LASTLETIDS(then_arg_info) = INFO_WLAA_LASTLETIDS(arg_info);
-    INFO_WLAA_BELOWAP(then_arg_info)    = INFO_WLAA_(arg_info);
-    INFO_WLAA_ACCESS(then_arg_info)     = NULL;
-    INFO_WLAA_COUNT(then_arg_info)      = 0;
-    INFO_WLAA_FEATURES(then_arg_info)   = FEATURE_NONE;
-    
-    COND_THEN(arg_node) = Trav(COND_THEN(arg_node), then_arg_info);
 
-    else_arg_info = MakeInfo();
-    INFO_WLAA_INDEXVAR(else_arg_info)   = INFO_WLAA_INDEXVAR(arg_info);
-    INFO_WLAA_WOTYPE(else_arg_info)     = INFO_WLAA_WOTYPE(arg_info);
-    INFO_WLAA_WLLEVEL(else_arg_info)    = INFO_WLAA_WLLEVEL(arg_info);
-    INFO_WLAA_WLARRAY(else_arg_info)    = INFO_WLAA_WLARRAY(arg_info);
-    INFO_WLAA_LASTLETIDS(else_arg_info) = INFO_WLAA_LASTLETIDS(arg_info);
-    INFO_WLAA_BELOWAP(else_arg_info)    = INFO_WLAA_(arg_info);
-    INFO_WLAA_ACCESS(else_arg_info)     = NULL;
-    INFO_WLAA_COUNT(else_arg_info)      = 0;
-    INFO_WLAA_FEATURES(else_arg_info)   = FEATURE_NONE;
-    
-    COND_ELSE(arg_node) = Trav(COND_ELSE(arg_node), else_arg_info);
+    if (INFO_WLAA_WLLEVEL (arg_info) > 0) {
+        then_arg_info = MakeInfo ();
+        INFO_WLAA_INDEXVAR (then_arg_info) = INFO_WLAA_INDEXVAR (arg_info);
+        INFO_WLAA_WOTYPE (then_arg_info) = INFO_WLAA_WOTYPE (arg_info);
+        INFO_WLAA_WLLEVEL (then_arg_info) = INFO_WLAA_WLLEVEL (arg_info);
+        INFO_WLAA_WLARRAY (then_arg_info) = INFO_WLAA_WLARRAY (arg_info);
+        INFO_WLAA_LASTLETIDS (then_arg_info) = INFO_WLAA_LASTLETIDS (arg_info);
+        INFO_WLAA_BELOWAP (then_arg_info) = INFO_WLAA_BELOWAP (arg_info);
+        INFO_WLAA_ACCESS (then_arg_info) = NULL;
+        INFO_WLAA_COUNT (then_arg_info) = 0;
+        INFO_WLAA_FEATURE (then_arg_info) = FEATURE_NONE;
 
-    if (INFO_WLAA_FEATURES(then_arg_info) != INFO_WLAA_FEATURES(else_arg_info))
-      equal_flag = FALSE;
-    else if (0)
-      equal_flag = FALSE;
-    else {
+        COND_THEN (arg_node) = Trav (COND_THEN (arg_node), then_arg_info);
+
+        else_arg_info = MakeInfo ();
+        INFO_WLAA_INDEXVAR (else_arg_info) = INFO_WLAA_INDEXVAR (arg_info);
+        INFO_WLAA_WOTYPE (else_arg_info) = INFO_WLAA_WOTYPE (arg_info);
+        INFO_WLAA_WLLEVEL (else_arg_info) = INFO_WLAA_WLLEVEL (arg_info);
+        INFO_WLAA_WLARRAY (else_arg_info) = INFO_WLAA_WLARRAY (arg_info);
+        INFO_WLAA_LASTLETIDS (else_arg_info) = INFO_WLAA_LASTLETIDS (arg_info);
+        INFO_WLAA_BELOWAP (else_arg_info) = INFO_WLAA_BELOWAP (arg_info);
+        INFO_WLAA_ACCESS (else_arg_info) = NULL;
+        INFO_WLAA_COUNT (else_arg_info) = 0;
+        INFO_WLAA_FEATURE (else_arg_info) = FEATURE_NONE;
+
+        COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), else_arg_info);
+
+        if (INFO_WLAA_FEATURE (then_arg_info) != INFO_WLAA_FEATURE (else_arg_info)) {
+            equal_flag = FALSE;
+        } else if (INFO_WLAA_COUNT (then_arg_info) != INFO_WLAA_COUNT (else_arg_info))
+            equal_flag = FALSE;
+        else {
+            access = INFO_WLAA_ACCESS (then_arg_info);
+            while ((access != NULL) && (equal_flag == TRUE)) {
+                equal_flag
+                  = AccessInAccesslist (access, INFO_WLAA_ACCESS (else_arg_info));
+                access = ACCESS_NEXT (access);
+            }
+        }
+
+        if (equal_flag) {
+            /*
+             *  In COND_THEN and COND_ELSE are the same accesses.
+             */
+            INFO_WLAA_ACCESS (arg_info)
+              = CatAccesslists (INFO_WLAA_ACCESS (then_arg_info),
+                                INFO_WLAA_ACCESS (arg_info));
+            INFO_WLAA_COUNT (arg_info) += INFO_WLAA_COUNT (then_arg_info);
+        } else {
+            INFO_WLAA_FEATURE (arg_info) |= FEATURE_COND;
+            FreeAllAccess (INFO_WLAA_ACCESS (then_arg_info));
+        }
+        FreeAllAccess (INFO_WLAA_ACCESS (else_arg_info));
+
+        INFO_WLAA_FEATURE (arg_info) = INFO_WLAA_FEATURE (arg_info)
+                                       | INFO_WLAA_FEATURE (then_arg_info)
+                                       | INFO_WLAA_FEATURE (else_arg_info);
+
+        FREE (else_arg_info); /* Attention !!! */
+        FREE (then_arg_info); /* Attention !!! */
     }
-    
-    INFO_WLAA_FEATURES(arg_info) = INFO_WLAA_FEATURES(arg_info) | \
-      INFO_WLAA_FEATURES(then_arg_info) | INFO_WLAA_FEATURES(else_arg_info);
-    
-    FreeNode(then_arg_info); /* Attention !!! */
-    FreeNode(then_arg_info); /* Attention !!! */
-  }
-  else {
-    COND_THEN(arg_node) = Trav(COND_THEN(arg_node), arg_info);
-    COND_ELSE(arg_node) = Trav(COND_ELSE(arg_node), arg_info);
-  }
-#endif
+
+    else {
+        /*
+         *  Here we aren't within a withloop:
+         */
+        COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+        COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -696,10 +822,9 @@ WLAAlet (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("WLAAlet");
 
-    INFO_WLAA_LASTLETIDS (arg_info) = DupIds (LET_IDS (arg_node), NULL);
-
+    INFO_WLAA_LASTLETIDS (arg_info) = LET_IDS (arg_node);
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_Nwith)
-        INFO_WLAA_WLARRAY (arg_info) = DupNode (IDS_VARDEC (LET_IDS (arg_node)));
+        INFO_WLAA_WLARRAY (arg_info) = IDS_VARDEC (LET_IDS (arg_node));
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
@@ -745,7 +870,9 @@ node *
 WLAAprf (node *arg_node, node *arg_info)
 {
     int i, argnum;
-    int access_flag = CURRENT_A;
+    /*
+    int      access_flag = CURRENT_A;
+    */
     int *offset;
     access_t *access;
     node *arg_node_arg1, *arg_node_arg2, *prf_arg;
@@ -875,6 +1002,8 @@ WLAAprf (node *arg_node, node *arg_info)
                                                ACCESS_OFFSET (
                                                  INFO_WLAA_ACCESS (arg_info)));
                             FREE (offset);
+                            ACCESS_IV (INFO_WLAA_ACCESS (arg_info))
+                              = INFO_WLAA_INDEXVAR (arg_info);
                         } else if (ID_CONSTVEC (arg_node_arg2) != NULL) {
                             ACCESS_CLASS (access) = ACL_const;
                             ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
@@ -920,6 +1049,8 @@ WLAAprf (node *arg_node, node *arg_info)
                                                offset,
                                                ACCESS_OFFSET (
                                                  INFO_WLAA_ACCESS (arg_info)));
+                            ACCESS_IV (INFO_WLAA_ACCESS (arg_info))
+                              = INFO_WLAA_INDEXVAR (arg_info);
                             FREE (offset);
                         } else if (ID_CONSTVEC (arg_node_arg1) != NULL) {
                             ACCESS_CLASS (access) = ACL_const;
@@ -965,6 +1096,8 @@ WLAAprf (node *arg_node, node *arg_info)
                                                    ((int *)ID_CONSTVEC (arg_node_arg2)),
                                                    ACCESS_OFFSET (
                                                      INFO_WLAA_ACCESS (arg_info)));
+                                ACCESS_IV (INFO_WLAA_ACCESS (arg_info))
+                                  = INFO_WLAA_INDEXVAR (arg_info);
                             } else { /* arg2 is not constant */
                                 ACCESS_CLASS (access) = ACL_irregular;
                             }
@@ -1022,6 +1155,8 @@ WLAAprf (node *arg_node, node *arg_info)
                                                ((int *)ID_CONSTVEC (arg_node_arg2)),
                                                ACCESS_OFFSET (
                                                  INFO_WLAA_ACCESS (arg_info)));
+                            ACCESS_IV (INFO_WLAA_ACCESS (arg_info))
+                              = INFO_WLAA_INDEXVAR (arg_info);
                         } else {
                             ACCESS_CLASS (access) = ACL_irregular;
                         }
@@ -1060,6 +1195,8 @@ WLAAprf (node *arg_node, node *arg_info)
                                                ((int *)ID_CONSTVEC (arg_node_arg2)),
                                                ACCESS_OFFSET (
                                                  INFO_WLAA_ACCESS (arg_info)));
+                            ACCESS_IV (INFO_WLAA_ACCESS (arg_info))
+                              = INFO_WLAA_INDEXVAR (arg_info);
                         } else { /* arg2 is not constant */
                             ACCESS_CLASS (access) = ACL_irregular;
                         }
