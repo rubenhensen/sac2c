@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2000/07/04 14:36:43  jhs
+ * Added DFMGetMaskBase and used it in DFMDuplicateMask
+ *
  * Revision 1.7  2000/03/24 00:51:29  dkr
  * some DBUG_PRINT statements added
  *
@@ -493,7 +496,7 @@ DFMDuplicateMask (DFMmask_t mask, DFMmask_base_t base)
     DBUG_ENTER ("DFMDuplicateMask");
 
     if (mask != NULL) {
-        if (base != NULL) {
+        if ((base != NULL) && (base != DFMGetMaskBase (mask))) {
             /* copy by hand */
             new_mask = DFMGenMaskClear (base);
 

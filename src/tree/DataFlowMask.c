@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2000/07/04 14:36:43  jhs
+ * Added DFMGetMaskBase and used it in DFMDuplicateMask
+ *
  * Revision 1.3  2000/05/31 13:21:02  dkr
  * Function DFMPrintMaskDetailed() added
  *
@@ -423,6 +426,14 @@ DFMRemoveMaskBase (mask_base_t *mask_base)
     FREE (mask_base);
 
     DBUG_RETURN ((mask_base_t *)NULL);
+}
+
+mask_base_t *
+DFMGetMaskBase (mask_t *mask)
+{
+    DBUG_ENTER ("DFMGetMaskBase");
+
+    DBUG_RETURN (mask->mask_base);
 }
 
 mask_base_t *

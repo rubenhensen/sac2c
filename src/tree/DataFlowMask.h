@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2000/07/04 14:36:43  jhs
+ * Added DFMGetMaskBase and used it in DFMDuplicateMask
+ *
  * Revision 1.3  2000/06/21 13:32:46  jhs
  * fixed comment
  *
@@ -161,6 +164,8 @@ extern DFMmask_base_t DFMUpdateMaskBaseAfterRenaming (DFMmask_base_t mask_base,
 extern DFMmask_base_t DFMUpdateMaskBaseAfterCompiling (DFMmask_base_t mask_base,
                                                        node *arguments, node *vardecs);
 extern DFMmask_base_t DFMRemoveMaskBase (DFMmask_base_t mask_base);
+
+extern DFMmask_base_t DFMGetMaskBase (DFMmask_t mask);
 
 extern DFMmask_t DFMGenMaskClear (DFMmask_base_t mask_base);
 extern DFMmask_t DFMGenMaskSet (DFMmask_base_t mask_base);
