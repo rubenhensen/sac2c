@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/01/24 23:35:22  dkr
+ * signature of MakeWLgridVar, MakeWLgrid, MakeWLseg, MakeWLsegVar
+ * modified
+ *
  * Revision 3.8  2001/01/10 14:27:50  dkr
  * function MakeWLsegX used
  *
@@ -391,7 +395,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
                         new_grids
                           = MakeWLgrid (WLGRID_LEVEL (grids), WLGRID_DIM (grids),
                                         grid1_b1, grid1_b2, WLGRID_UNROLLING (grids),
-                                        nextdim, new_grids, code);
+                                        FALSE, nextdim, new_grids, code);
                     }
                 }
                 if (grid2_b1 < width) {
@@ -402,7 +406,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
                         new_grids
                           = MakeWLgrid (WLGRID_LEVEL (grids), WLGRID_DIM (grids),
                                         grid2_b1, grid2_b2, WLGRID_UNROLLING (grids),
-                                        DupTree (nextdim), new_grids, code);
+                                        FALSE, DupTree (nextdim), new_grids, code);
                     }
                 }
 
@@ -499,7 +503,7 @@ All (node *segs, node *parms, node *cubes, int dims, int line)
         segs = FreeTree (segs);
     }
 
-    segs = MakeWLsegX (dims, TRUE, DupTree (cubes), NULL);
+    segs = MakeWLsegX (dims, DupTree (cubes), NULL);
     segs = NoBlocking (segs, parms, cubes, dims, line);
 
     DBUG_RETURN (segs);
@@ -520,7 +524,6 @@ node *
 Cubes (node *segs, node *parms, node *cubes, int dims, int line)
 {
     node *new_seg;
-    bool full_range;
     node *last_seg = NULL;
 
     DBUG_ENTER ("Cubes");
@@ -536,13 +539,11 @@ Cubes (node *segs, node *parms, node *cubes, int dims, int line)
 
     DBUG_ASSERT ((cubes != NULL), "no cubes found!");
 
-    full_range = (WLSTRIDEX_NEXT (cubes) == NULL);
-
     while (cubes != NULL) {
         /*
          * build new segment
          */
-        new_seg = MakeWLsegX (dims, full_range, DupNode (cubes), NULL);
+        new_seg = MakeWLsegX (dims, DupNode (cubes), NULL);
 
         /*
          * append 'new_seg' at 'segs'
@@ -578,7 +579,6 @@ node *
 ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
 {
     node *new_cubes, *new_seg;
-    bool full_range;
     node *last_seg = NULL;
 
     DBUG_ENTER ("ConstSegs");
@@ -592,9 +592,6 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
             ABORT (line, ("Illegal argument in wlcomp-pragma found; "
                           "ConstSegs(): No arguments found"));
         }
-
-        full_range
-          = ((EXPRS_NEXT (parms) == NULL) || (EXPRS_NEXT (EXPRS_NEXT (parms)) == NULL));
 
         do {
             if (EXPRS_NEXT (parms) == NULL) {
@@ -613,7 +610,7 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
                                        line);
 
             if (new_cubes != NULL) {
-                new_seg = MakeWLsegX (dims, full_range, new_cubes, NULL);
+                new_seg = MakeWLsegX (dims, new_cubes, NULL);
 
                 if (segs == NULL) {
                     segs = new_seg;

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/01/24 23:35:13  dkr
+ * signature of MakeWLgridVar, MakeWLgrid, MakeWLseg, MakeWLsegVar
+ * modified
+ *
  * Revision 3.5  2001/01/10 14:03:37  dkr
  * new atttribute FULL_RANGE for N_WLseg- and N_WLsegVar-nodes added
  *
@@ -1733,9 +1737,8 @@ DupWLseg (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupWLseg");
 
-    new_node
-      = MakeWLseg (WLSEG_DIMS (arg_node), WLSEG_FULL_RANGE (arg_node),
-                   DUPTRAV (WLSEG_CONTENTS (arg_node)), DUPCONT (WLSEG_NEXT (arg_node)));
+    new_node = MakeWLseg (WLSEG_DIMS (arg_node), DUPTRAV (WLSEG_CONTENTS (arg_node)),
+                          DUPCONT (WLSEG_NEXT (arg_node)));
 
     DUPVECT (WLSEG_IDX_MIN (new_node), WLSEG_IDX_MIN (arg_node), WLSEG_DIMS (new_node),
              int);
@@ -1771,9 +1774,9 @@ DupWLsegVar (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupWLsegVar");
 
-    new_node = MakeWLsegVar (WLSEGVAR_DIMS (arg_node), WLSEGVAR_FULL_RANGE (arg_node),
-                             DUPTRAV (WLSEGVAR_CONTENTS (arg_node)),
-                             DUPCONT (WLSEGVAR_NEXT (arg_node)));
+    new_node
+      = MakeWLsegVar (WLSEGVAR_DIMS (arg_node), DUPTRAV (WLSEGVAR_CONTENTS (arg_node)),
+                      DUPCONT (WLSEGVAR_NEXT (arg_node)));
 
     DUPVECT (WLSEGVAR_IDX_MIN (new_node), WLSEGVAR_IDX_MIN (arg_node),
              WLSEGVAR_DIMS (new_node), int);
@@ -1889,8 +1892,8 @@ DupWLgrid (node *arg_node, node *arg_info)
     new_node
       = MakeWLgrid (WLGRID_LEVEL (arg_node), WLGRID_DIM (arg_node),
                     WLGRID_BOUND1 (arg_node), WLGRID_BOUND2 (arg_node),
-                    WLGRID_UNROLLING (arg_node), DUPTRAV (WLGRID_NEXTDIM (arg_node)),
-                    DUPCONT (WLGRID_NEXT (arg_node)),
+                    WLGRID_UNROLLING (arg_node), WLGRID_FITTED (arg_node),
+                    DUPTRAV (WLGRID_NEXTDIM (arg_node)), DUPCONT (WLGRID_NEXT (arg_node)),
                     SearchInLUT (INFO_DUP_LUT (arg_info), WLGRID_CODE (arg_node)));
 
     /*
@@ -1913,7 +1916,7 @@ DupWLgridVar (node *arg_node, node *arg_info)
     new_node
       = MakeWLgridVar (WLGRIDVAR_LEVEL (arg_node), WLGRIDVAR_DIM (arg_node),
                        DUPTRAV (WLGRIDVAR_BOUND1 (arg_node)),
-                       DUPTRAV (WLGRIDVAR_BOUND2 (arg_node)),
+                       DUPTRAV (WLGRIDVAR_BOUND2 (arg_node)), WLGRIDVAR_FITTED (arg_node),
                        DUPTRAV (WLGRIDVAR_NEXTDIM (arg_node)),
                        DUPCONT (WLGRIDVAR_NEXT (arg_node)),
                        SearchInLUT (INFO_DUP_LUT (arg_info), WLGRIDVAR_CODE (arg_node)));
