@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.85  1995/10/12 09:01:30  cg
+ * Revision 1.86  1995/10/12 13:46:35  cg
+ * PrintFundef and PrintObjdef now rely on STATUS to distinguish between defined
+ * and imported items
+ *
+ * Revision 1.85  1995/10/12  09:01:30  cg
  * "mod:id" now printed in expressions
  *
  * Revision 1.84  1995/09/04  11:48:33  asi
@@ -531,7 +535,7 @@ PrintObjdef (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
-    if (arg_node->node[1] == NULL) {
+    if (arg_node->info.types->status == ST_imported) {
         fprintf (outfile, "extern %s ", Type2String (arg_node->info.types, 0));
         if (arg_node->info.types->id_mod != NULL)
             fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.types->id_mod);
@@ -573,7 +577,7 @@ PrintFundef (node *arg_node, node *arg_info)
         if (N_icm == arg_node->node[3]->nodetype)
             print_icm = 1;
 
-    if (arg_node->node[0] == NULL) /* pure fundec! */
+    if (arg_node->info.types->status == ST_imported) /* pure fundec! */
         fprintf (outfile, "extern ");
     if (0 == print_icm) {
         if (0 != arg_node->flag)
