@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/07/24 09:09:34  asi
+ * Revision 1.8  1995/10/06 16:35:40  cg
+ * calls to MakeIds adjusted to new signature (3 parameters)
+ *
+ * Revision 1.7  1995/07/24  09:09:34  asi
  * macro TYPES renamed to INL_TYPES
  *
  * Revision 1.6  1995/06/26  09:26:22  asi
@@ -265,7 +268,7 @@ INLMakeLet (char *var_name, node *expr)
     new_node = MakeNode (N_assign);
     new_node->nnode = 1;
     new_node->node[0] = MakeNode (N_let);
-    new_node->node[0]->info.ids = MakeIds (var_name);
+    new_node->node[0]->info.ids = MakeIds (var_name, NULL, ST_regular);
     new_node->node[0]->nnode = 1;
     new_node->node[0]->node[0] = expr;
     DBUG_RETURN (new_node);

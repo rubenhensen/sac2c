@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.38  1995/09/05 09:50:15  hw
+ * Revision 1.39  1995/10/06 16:34:22  cg
+ * calls to MakeIds adjusted to new signature (3 parameters)
+ *
+ * Revision 1.38  1995/09/05  09:50:15  hw
  * changed FltnExprs (constants of type N_double will be considered too)
  *
  * Revision 1.37  1995/08/15  12:36:55  hw
@@ -346,11 +349,11 @@ AppendIdentity (node *last_assign, char *old_name, char *new_name)
     let_node = MakeNode (N_let);
     name = (char *)Malloc (sizeof (char) * (strlen (new_name) + 1));
     name = strcpy (name, new_name);
-    let_node->IDS = MakeIds (name);
+    let_node->IDS = MakeIds (name, NULL, ST_regular);
     let_node->node[0] = MakeNode (N_id);
     name = (char *)Malloc (sizeof (char) * (strlen (old_name) + 1));
     name = strcpy (name, old_name);
-    let_node->node[0]->IDS = MakeIds (name);
+    let_node->node[0]->IDS = MakeIds (name, NULL, ST_regular);
     let_node->nnode = 1;
     assign_node->node[0] = let_node;
     if (NULL != last_assign) {
@@ -536,11 +539,11 @@ FltnExprs (node *arg_node, node *arg_info)
         tmp_node1 = arg_node->node[0];
 
         id_node = MakeNode (N_id);
-        id_node->info.ids = MakeIds (GenTmpVar (var_counter));
+        id_node->info.ids = MakeIds (GenTmpVar (var_counter), NULL, ST_regular);
         arg_node->node[0] = id_node;
 
         let_node = MakeNode (N_let);
-        let_node->info.ids = MakeIds (GenTmpVar (var_counter++));
+        let_node->info.ids = MakeIds (GenTmpVar (var_counter++), NULL, ST_regular);
 
         assign_node = MakeNode (N_assign);
         assign_node->node[0] = let_node;
@@ -1012,15 +1015,16 @@ FltnGen (node *arg_node, node *arg_info)
             tmp_node1 = arg_node->node[i];
 
             id_node = MakeNode (N_id);
-            id_node->info.ids = MakeIds (GenTmpVar (var_counter));
+            id_node->info.ids = MakeIds (GenTmpVar (var_counter), NULL, ST_regular);
             arg_node->node[i] = id_node;
 
             let_node = MakeNode (N_let);
-            let_node->info.ids = MakeIds (GenTmpVar (var_counter++));
+            let_node->info.ids = MakeIds (GenTmpVar (var_counter++), NULL, ST_regular);
 
             assign_node = MakeNode (N_assign);
             assign_node->node[0] = let_node;
-            assign_node->node[1] = arg_info->node[0]; /* a new node is put in front! */
+            assign_node->node[1] = arg_info->node[0];
+            /* a new node is put in front! */
             if (NULL == assign_node->node[1])
                 assign_node->nnode = 1;
             else

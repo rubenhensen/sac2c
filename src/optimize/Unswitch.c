@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/07/19 18:52:23  asi
+ * Revision 1.6  1995/10/06 16:35:40  cg
+ * calls to MakeIds adjusted to new signature (3 parameters)
+ *
+ * Revision 1.5  1995/07/19  18:52:23  asi
  * added loop dependent unswitching
  *
  * Revision 1.3  1995/07/12  15:24:43  asi
@@ -550,7 +553,8 @@ GenLetNode (linfo *loop_info, node *arg_info)
     assign_node->nnode = 1;
 
     assign_node->node[0] = MakeNode (N_let);
-    assign_node->node[0]->info.ids = MakeIds (loop_info->decl_node->info.types->id);
+    assign_node->node[0]->info.ids
+      = MakeIds (loop_info->decl_node->info.types->id, NULL, ST_regular);
     assign_node->node[0]->info.ids->node = loop_info->decl_node;
 
     assign_node->node[0]->nnode = 1;

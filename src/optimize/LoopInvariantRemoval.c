@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/07/28 12:58:43  asi
+ * Revision 1.16  1995/10/06 16:35:40  cg
+ * calls to MakeIds adjusted to new signature (3 parameters)
+ *
+ * Revision 1.15  1995/07/28  12:58:43  asi
  * added loop invarant unswitching
  *
  * Revision 1.14  1995/07/10  07:33:37  asi
@@ -520,7 +523,7 @@ LIRMassign (node *arg_node, node *arg_info)
                 LIR_TYPE = AppendNodeChain (0, LIR_TYPE, new_vardec);
 
                 /* make new ids-node for move-node */
-                new_ids = MakeIds (GenCseVar (lir_expr_no));
+                new_ids = MakeIds (GenCseVar (lir_expr_no), NULL, ST_regular);
                 new_ids->node = new_vardec;
                 new_ids->flag = NONE;
                 move_node->node[0]->info.ids
@@ -532,7 +535,8 @@ LIRMassign (node *arg_node, node *arg_info)
                 arg_node->node[0]->info.ids = new_node->node[0]->info.ids->next;
                 new_node->node[0]->info.ids->next = NULL;
                 new_node->node[0]->node[0] = MakeNode (N_id);
-                new_node->node[0]->node[0]->info.ids = MakeIds (GenCseVar (lir_expr_no));
+                new_node->node[0]->node[0]->info.ids
+                  = MakeIds (GenCseVar (lir_expr_no), NULL, ST_regular);
                 new_node->node[0]->node[0]->info.ids->node = new_vardec;
                 lir_expr_no++;
 
@@ -561,7 +565,7 @@ LIRMassign (node *arg_node, node *arg_info)
                 LIR_TYPE = AppendNodeChain (0, LIR_TYPE, new_vardec);
 
                 /* make new ids-node for move-node */
-                new_ids = MakeIds (GenCseVar (lir_expr_no));
+                new_ids = MakeIds (GenCseVar (lir_expr_no), NULL, ST_regular);
                 new_ids->flag = NONE;
                 new_ids->node = new_vardec;
                 move_node->node[0]->info.ids
@@ -573,7 +577,8 @@ LIRMassign (node *arg_node, node *arg_info)
                 arg_node->node[0]->info.ids = new_node->node[0]->info.ids->next;
                 new_node->node[0]->info.ids->next = NULL;
                 new_node->node[0]->node[0] = MakeNode (N_id);
-                new_node->node[0]->node[0]->info.ids = MakeIds (GenCseVar (lir_expr_no));
+                new_node->node[0]->node[0]->info.ids
+                  = MakeIds (GenCseVar (lir_expr_no), NULL, ST_regular);
                 new_node->node[0]->node[0]->info.ids->node = new_vardec;
                 lir_expr_no++;
 

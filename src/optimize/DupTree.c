@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/08/16 09:23:01  asi
+ * Revision 1.15  1995/10/06 16:35:40  cg
+ * calls to MakeIds adjusted to new signature (3 parameters)
+ *
+ * Revision 1.14  1995/08/16  09:23:01  asi
  * renamed DupCast to DupTypes
  *
  * Revision 1.13  1995/07/28  12:58:22  asi
@@ -148,13 +151,13 @@ DupIds (ids *old_ids, node *arg_info)
     DBUG_ENTER ("DupIds");
     switch (DUPTYPE) {
     case INLINE:
-        new_ids = MakeIds (RenameInlinedVar (old_ids->id));
+        new_ids = MakeIds (RenameInlinedVar (old_ids->id), NULL, ST_regular);
         new_ids->node = SearchDecl (new_ids->id, INL_TYPES);
         DBUG_ASSERT ((NULL != new_ids->node),
                      ("No decleration found for %s", new_ids->id));
         break;
     default:
-        new_ids = MakeIds (StringCopy (old_ids->id));
+        new_ids = MakeIds (StringCopy (old_ids->id), NULL, ST_regular);
         new_ids->node = old_ids->node;
         new_ids->use = old_ids->use;
         break;
