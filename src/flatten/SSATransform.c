@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.25  2004/11/30 21:58:09  ktr
+ * Should work with new vardec/arg/avis constellation and ntypes now.
+ *
  * Revision 1.24  2004/11/29 20:44:49  sah
  * post-DK bugfixing
  *
@@ -593,9 +596,8 @@ CreateFuncondAssign (node *cond, node *id, node *assign)
 
     DBUG_ENTER ("CreateFuncondAssign");
 
-    funcond = TBmakeFuncond (TBmakeExprs (DUPdoDupTree (COND_COND (cond)), NULL),
-                             TBmakeExprs (DUPdoDupTree (id), NULL),
-                             TBmakeExprs (DUPdoDupTree (id), NULL));
+    funcond = TBmakeFuncond (DUPdoDupTree (COND_COND (cond)), DUPdoDupTree (id),
+                             DUPdoDupTree (id));
 
     new_assign = TCmakeAssignLet (ID_AVIS (id), funcond);
 

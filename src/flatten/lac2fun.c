@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2004/11/30 21:58:09  ktr
+ * Should work with new vardec/arg/avis constellation and ntypes now.
+ *
  * Revision 3.32  2004/11/27 02:50:54  ktr
  * L2FgetLacFunName
  *
@@ -422,10 +425,12 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, dfm
 
     ret = TBmakeAssign (TBmakeReturn (DFMUdfm2ReturnExprs (out, lut)), NULL);
 
-    fundef = TBmakeFundef (ILIBstringCopy (funname), ILIBstringCopy (modname),
-                           TCreturnTypes2Ret (DFMUdfm2ReturnTypes (out)), args,
-                           NULL, /* the block is not complete yet */
-                           NULL);
+    fundef
+      = TBmakeFundef (ILIBstringCopy (funname), ILIBstringCopy (modname),
+                      DFMUdfm2Rets (out), args, NULL, /* the block is not complete yet */
+                      NULL);
+
+    FUNDEF_TYPES (fundef) = DFMUdfm2ReturnTypes (out);
     FUNDEF_RETURN (fundef) = ASSIGN_INSTR (ret);
     FUNDEF_INT_ASSIGN (fundef) = NULL;
     FUNDEF_EXT_ASSIGNS (fundef)
