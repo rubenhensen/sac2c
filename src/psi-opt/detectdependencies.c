@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/09/02 15:27:01  khf
+ * DDEPENDwithop removed, additional traverse in NWITHOP and NPART added
+ *
  * Revision 1.1  2004/08/26 15:06:26  khf
  * Initial revision
  *
@@ -208,42 +211,15 @@ DDEPENDwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DDEPENDwith");
 
+    DBUG_ASSERT ((NWITH_PART (arg_node) != NULL), "no Part is available!");
+    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+
     if (NWITH_CODE (arg_node) != NULL) {
         NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     }
 
+    DBUG_ASSERT ((NWITH_WITHOP (arg_node) != NULL), "N_NWITHOP is missing!");
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *DDEPENDwithop( node *arg_node, info *arg_info)
- *
- *   @brief
- *
- *   @param  node *arg_node:  N_Nwithop
- *           info *arg_info:  N_info
- *   @return node *        :  N_Nwithop
- ******************************************************************************/
-
-node *
-DDEPENDwithop (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("DDEPENDwithop");
-
-    /*
-     * To find dependent assignments we had to traverse in N_WITHOP_ARRAY
-     * if we are in a modarray withloop.
-     */
-    if (NWITHOP_TYPE (arg_node) == WO_modarray) {
-        NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
-    }
-
-    if (NWITHOP_NEXT (arg_node) != NULL) {
-        NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
-    }
 
     DBUG_RETURN (arg_node);
 }
@@ -268,7 +244,7 @@ DetectDependencies (node *arg_node)
     DBUG_ENTER ("DetectDependencies");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Nwith),
-                 "DetectDependencies not started with N_with node");
+                 "DetectDependencies not started with N_Nwith node");
 
     DBUG_ASSERT ((NWITH_REFERENCES_FUSIONABLE (arg_node) != NULL),
                  "no references on fusionable withloop found");
@@ -284,14 +260,23 @@ DetectDependencies (node *arg_node)
       = NWITH_REFERENCES_FUSIONABLE (arg_node);
 
     /*
-     * traverse into the N_CODEs to detect possible
+     * traverse into N_PARTs, N_CODEs and N_WITHOPs to detect possible
      * dependencies from current withloop on the fusionable.
      * The result is stored in NWITH_DEPENDENT( arg_node)
      */
     INFO_DDEPEND_WLDEPENDENT (arg_info) = FALSE;
+
+    DBUG_ASSERT ((NWITH_PART (arg_node) != NULL),
+                 "NWITH_PARTS is >= 1 although no PART is available!");
+    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+
     if (NWITH_CODE (arg_node) != NULL) {
         NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     }
+
+    DBUG_ASSERT ((NWITH_WITHOP (arg_node) != NULL), "N_NWITHOP is missing!");
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+
     NWITH_DEPENDENT (arg_node) = INFO_DDEPEND_WLDEPENDENT (arg_info);
 
     arg_info = FreeInfo (arg_info);
