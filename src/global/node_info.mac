@@ -1,11 +1,14 @@
 /*
  *
  * $Log$
- * Revision 1.39  1995/02/07 11:03:21  asi
- * renamed opt1_tab -> opt_tab, opt2_tab -> dead_tab, opt3_tab -> lir.tab
- * resp. the functions OPT1* -> OPT*, OPT2* -> DEAD*, OPT3* -> LIR*
- * added functionlist cf_tab for constant folding with first entry CFprf
+ * Revision 1.40  1995/02/13 17:24:25  asi
+ * added CFlet
  *
+;; Revision 1.39  1995/02/07  11:03:21  asi
+;; renamed opt1_tab -> opt_tab, opt2_tab -> dead_tab, opt3_tab -> lir.tab
+;; resp. the functions OPT1* -> OPT*, OPT2* -> DEAD*, OPT3* -> LIR*
+;; added functionlist cf_tab for constant folding with first entry CFprf
+;;
 ;; Revision 1.38  1995/02/02  14:53:19  hw
 ;; deleted FltnPrf
 ;;
@@ -173,7 +176,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_cond, "N_cond", DummyFun, FltnCond, PrintCond, TCcond, OPTcond, DEADcond,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_let, "N_let", DummyFun, DummyFun, PrintLet, TClet, OPTlet, DummyFun, DummyFun,
-       FreeInfoIds, DummyFun, DummyFun, DummyFun, DummyFun),
+       FreeInfoIds, CFlet, DummyFun, DummyFun, DummyFun),
   NIF (N_addon, "N_addon", DummyFun, DummyFun, PrintLeton, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeInfoIds, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_mulon, "N_mulon", DummyFun, DummyFun, PrintLeton, DummyFun, DummyFun, DummyFun,
