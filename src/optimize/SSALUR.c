@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2001/06/28 10:09:19  sbs
+ * colon inserted in empty default case of switch.
+ *
  * Revision 1.9  2001/05/25 08:42:18  nmw
  * comments added, code beautyfied
  *
@@ -510,8 +513,7 @@ SSALURGetPredicateData (node *expr, prf *pred, loopc_t *term)
             *pred = F_le;
             break;
 
-        default:
-            /* no change necessary */
+        default:; /* no change necessary */
         }
     }
 
