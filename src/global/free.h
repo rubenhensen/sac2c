@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  1998/04/26 21:51:28  dkr
+ * FreeSPMD renamed to FreeSpmd
+ *
  * Revision 1.22  1998/04/23 17:32:19  dkr
  * added FreeSync
  *
@@ -178,7 +181,7 @@ extern node *FreeDec (node *arg_node, node *arg_info);
 extern node *FreeInc (node *arg_node, node *arg_info);
 extern node *FreePragma (node *arg_node, node *arg_info);
 extern node *FreeInfo (node *arg_node, node *arg_info);
-extern node *FreeSPMD (node *arg_node, node *arg_info);
+extern node *FreeSpmd (node *arg_node, node *arg_info);
 extern node *FreeSync (node *arg_node, node *arg_info);
 
 /* new with-loops */

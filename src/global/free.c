@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.56  1998/04/26 21:51:15  dkr
+ * FreeSPMD renamed to FreeSpmd
+ *
  * Revision 1.55  1998/04/24 17:15:47  dkr
  * changed usage of SPMD_IN/OUT/INOUT, SYNC_INOUT
  *
@@ -1582,11 +1585,11 @@ FreePragma (node *arg_node, node *arg_info)
 /*--------------------------------------------------------------------------*/
 
 node *
-FreeSPMD (node *arg_node, node *arg_info)
+FreeSpmd (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
 
-    DBUG_ENTER ("FreeSPMD");
+    DBUG_ENTER ("FreeSpmd");
 
     DBUG_PRINT ("FREE", ("Removing contents of N_spmd node ..."));
 
@@ -1619,6 +1622,7 @@ FreeSync (node *arg_node, node *arg_info)
 
     FREETRAV (SYNC_REGION (arg_node));
 
+    FreeAllIds (SYNC_OUT (arg_node));
     FreeAllIds (SYNC_INOUT (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_sync node ..."));
