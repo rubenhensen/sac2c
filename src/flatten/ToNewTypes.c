@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.10  2004/12/19 19:32:48  sbs
+ * eliminated CheckAvis reminiscents
+ * Now, TNT does compute new types from old types only!
+ * .
+ *
  * Revision 1.9  2004/12/19 14:51:02  sbs
  * old types killed now
  *
@@ -50,56 +55,6 @@
  * Revision 1.1  2004/01/28 17:01:32  skt
  * Initial revision
  *
- *
- *
- *
- *
- ************ Attention! ************
- * File was moved from ../tree
- * following older Revisions can be found there
- *
- *
- * Revision 1.12  2003/09/25 18:35:37  dkr
- * ntype for N_arg and N_vardec are build from oldtypes now
- *
- * Revision 1.11  2002/10/16 14:33:20  sbs
- * CAVobjdef added.
- *
- * Revision 1.10  2002/08/05 09:52:04  sbs
- * eliminated the requirement for Nwithid nodes to always have both,
- * an IDS and a VEC attribute. This change is motivated by the requirement
- * to convert to SSA form prior to type checking. Furthermore, not being
- * restricted to the AKS case anymore, we cannot guarantee the existance
- * of the IDS attribute in all cases anymore !!!!
- *
- * Revision 1.9  2001/05/17 11:18:10  dkr
- * FREE(info) replaced by FreeTree(info)
- *
- * Revision 1.8  2001/04/24 16:08:12  nmw
- * CheckAvisSingleFundef renamed to CheckAvisOneFunction
- * CheckAvisOneFundef added
- *
- * Revision 1.7  2001/04/18 12:58:47  nmw
- * additional traversal setup function for single fundef traversal added
- *
- * Revision 1.6  2001/03/29 09:12:38  nmw
- * tabs2spaces done
- *
- * Revision 1.5  2001/03/22 20:03:49  dkr
- * include of tree.h eliminated
- *
- * Revision 1.4  2001/02/20 15:51:02  nmw
- * debug output added
- *
- * Revision 1.3  2001/02/15 16:56:36  nmw
- * some DBUG_ASSERTS added
- *
- * Revision 1.2  2001/02/13 15:16:34  nmw
- * CheckAvis traversal implemented
- *
- * Revision 1.1  2001/02/12 16:59:27  nmw
- * Initial revision
- *
  */
 
 /*****************************************************************************
@@ -110,14 +65,12 @@
  *
  * description:
  *
- *   This module restores the AVIS attribute in N_id, N_vardec/N_arg
- *   when old code did not updates all references correctly.
- *
+ *   replaces all old types by new types!
  *
  *****************************************************************************/
-#define NEW_INFO
 
 #include "dbug.h"
+#include "ToNewTypes.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -126,13 +79,13 @@
 #include "internal_lib.h"
 #include "traverse.h"
 #include "free.h"
-#include "ToNewTypes.h"
 
 /**
  * use of INFO structure in this file:
  *
- * node*      FUNDEF            (current working fundef)
- * bool       SINGLEFUNDEF      (traversal mode: all fundefs/single fundef)
+ * node*      FUNDEF        (current working fundef)
+ * bool       TRAVMODE      (traversal mode: all fundefs/single fundef)
+ * types      TYPES         (funtype during ret-traversal)
  */
 
 /**
@@ -140,14 +93,21 @@
  */
 struct INFO {
     node *fundef;
-    bool singlefundef;
+    int singlefundef;
+    types *old_types;
 };
 
 /**
  * INFO macros
  */
 #define INFO_TNT_FUNDEF(n) (n->fundef)
-#define INFO_TNT_SINGLEFUNDEF(n) (n->singlefundef)
+#define INFO_TNT_TRAVMODE(n) (n->singlefundef)
+#define INFO_TNT_TYPES(n) (n->old_types)
+
+/* TNT_TRAVMODE mode */
+#define TNTSF_TRAV_FUNDEFS 0
+#define TNTSF_TRAV_SPECIALS 1
+#define TNTSF_TRAV_NONE 2
 
 /**
  * INFO functions
@@ -162,7 +122,8 @@ MakeInfo ()
     result = ILIBmalloc (sizeof (info));
 
     INFO_TNT_FUNDEF (result) = NULL;
-    INFO_TNT_SINGLEFUNDEF (result) = FALSE;
+    INFO_TNT_TRAVMODE (result) = TNTSF_TRAV_FUNDEFS;
+    INFO_TNT_TYPES (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -177,11 +138,6 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/* TNT_SINGLEFUNDEF mode */
-#define TNTSF_TRAV_FUNDEFS 0
-#define TNTSF_TRAV_SPECIALS 1
-#define TNTSF_TRAV_NONE 2
-
 /******************************************************************************
  *
  * function:
@@ -195,38 +151,18 @@ FreeInfo (info *info)
 node *
 TNTarg (node *arg_node, info *arg_info)
 {
-#ifndef DBUG_OFF
-    char *tmp_str;
-#endif
+    types *old_type;
 
     DBUG_ENTER ("TNTarg");
 
-    DBUG_ASSERT ((ARG_AVIS (arg_node) != NULL), "Missing avis in arg found!");
+    old_type = ARG_TYPE (arg_node);
+    DBUG_ASSERT ((old_type != NULL), "old type in arg missing");
 
-    DBUG_ASSERT ((AVIS_DECL (ARG_AVIS (arg_node)) == arg_node),
-                 "wrong backreference from avis to arg node!");
-
-    /* create ntype if it is missing */
-    if (AVIS_TYPE (ARG_AVIS (arg_node)) == NULL) {
-        if (ARG_NAME (arg_node) != NULL) {
-            DBUG_PRINT ("TNT", ("missing ntype in arg %s added.", ARG_NAME (arg_node)));
-            DBUG_ASSERT ((ARG_TYPE (arg_node) != NULL), "old type in arg missing");
-            AVIS_TYPE (ARG_AVIS (arg_node)) = TYoldType2Type (ARG_TYPE (arg_node));
-        } else {
-            /* TYOldType2Type() can not handle T_dots yet... 8-(( */
-            DBUG_PRINT ("TNT", ("Found arg of type T_dots"));
-        }
-    } else {
-        DBUG_EXECUTE ("TNT", tmp_str = TYtype2String (AVIS_TYPE (ARG_AVIS (arg_node)),
-                                                      FALSE, 0););
-
-        DBUG_PRINT ("TNT", ("reusing ntype %s of arg %s", tmp_str, ARG_NAME (arg_node)));
-        DBUG_EXECUTE ("TNT", tmp_str = ILIBfree (tmp_str););
+    if (AVIS_TYPE (ARG_AVIS (arg_node)) != NULL) {
+        AVIS_TYPE (ARG_AVIS (arg_node)) = TYfreeType (AVIS_TYPE (ARG_AVIS (arg_node)));
     }
-
-    if (ARG_TYPE (arg_node) != NULL) {
-        ARG_TYPE (arg_node) = FREEfreeAllTypes (ARG_TYPE (arg_node));
-    }
+    AVIS_TYPE (ARG_AVIS (arg_node)) = TYoldType2Type (old_type);
+    ARG_TYPE (arg_node) = FREEfreeAllTypes (ARG_TYPE (arg_node));
 
     if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
@@ -241,192 +177,30 @@ TNTarg (node *arg_node, info *arg_info)
  *   node *TNTvardec( node *arg_node, info *arg_info)
  *
  * description:
- *   Checks vardec node for avis attribute. if missing create an initialize
- *   new avis node. Also checks for correct back reference.
  *
  ******************************************************************************/
 node *
 TNTvardec (node *arg_node, info *arg_info)
 {
-#ifndef DBUG_OFF
-    char *tmp_str;
-#endif
+    types *old_type;
 
     DBUG_ENTER ("TNTvardec");
 
-    DBUG_ASSERT ((VARDEC_AVIS (arg_node) != NULL), "Missing avis node in vardec found");
+    old_type = VARDEC_TYPE (arg_node);
+    DBUG_ASSERT ((VARDEC_TYPE (arg_node) != NULL), "old type in vardec missing");
 
-    DBUG_ASSERT ((AVIS_DECL (VARDEC_AVIS (arg_node)) == arg_node),
-                 "wrong backreference from avis to vardec node!");
-
-    /* create ntype if it is missing */
-    if (AVIS_TYPE (VARDEC_AVIS (arg_node)) == NULL) {
-        DBUG_PRINT ("TNT", ("missing ntype in vardec %s added.", VARDEC_NAME (arg_node)));
-        DBUG_ASSERT ((VARDEC_TYPE (arg_node) != NULL), "old type in vardec missing");
-        AVIS_TYPE (VARDEC_AVIS (arg_node)) = TYoldType2Type (VARDEC_TYPE (arg_node));
-    } else {
-        DBUG_EXECUTE ("TNT", tmp_str = TYtype2String (AVIS_TYPE (VARDEC_AVIS (arg_node)),
-                                                      FALSE, 0););
-
-        DBUG_PRINT ("TNT",
-                    ("reusing ntype %s of vardec %s", tmp_str, VARDEC_NAME (arg_node)));
-        DBUG_EXECUTE ("TNT", tmp_str = ILIBfree (tmp_str););
+    if (AVIS_TYPE (VARDEC_AVIS (arg_node)) != NULL) {
+        AVIS_TYPE (VARDEC_AVIS (arg_node))
+          = TYfreeType (AVIS_TYPE (VARDEC_AVIS (arg_node)));
     }
 
-    if (VARDEC_TYPE (arg_node) != NULL) {
-        VARDEC_TYPE (arg_node) = FREEfreeAllTypes (VARDEC_TYPE (arg_node));
-    }
+    AVIS_TYPE (VARDEC_AVIS (arg_node)) = TYoldType2Type (old_type);
+
+    VARDEC_TYPE (arg_node) = FREEfreeAllTypes (old_type);
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *TNTobjdef(node *arg_node, info *arg_info)
- *
- * description:
- *   Checks objdef node for avis attribute. if missing create an initialize
- *   new avis node. Also checks for correct back reference.
- *   Create ntype-structure in avis attribute if it is missing.
- *
- ******************************************************************************/
-node *
-TNTobjdef (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("TNTobjdef");
-
-    if (OBJDEF_NEXT (arg_node) != NULL) {
-        OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *TNTid(node *arg_node, info *arg_info)
- *
- * description:
- *   checks for consistent back reference from N_id node to N_arg or N_vardec
- *   node together with back reference to N_avis node. Here implemented in
- *   TNTids.
- *
- ******************************************************************************/
-node *
-TNTid (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("TNTid");
-
-    if (ID_AVIS (arg_node) != DECL_AVIS (AVIS_DECL (ID_AVIS (arg_node)))) {
-        /* wrong back reference */
-        DBUG_PRINT ("TNT", ("backreference from ids %s to N_avis (" F_PTR ") corrected.",
-                            AVIS_NAME (ID_AVIS (arg_node)), (ID_AVIS (arg_node))));
-        ID_AVIS (arg_node) = DECL_AVIS (AVIS_DECL (ID_AVIS (arg_node)));
-    } else {
-        DBUG_PRINT ("TNT", ("backreference from ids %s to N_avis ok.",
-                            AVIS_NAME (ID_AVIS (arg_node))));
-    }
-
-    DBUG_ASSERT ((ID_AVIS (arg_node) != NULL), "AVIS reference still unset.");
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *TNTlet(node *arg_node, info *arg_info)
- *
- * description:
- *   starts traversal in ids chain.
- *
- ******************************************************************************/
-node *
-TNTlet (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("TNTlet");
-
-    if (LET_IDS (arg_node) != NULL) {
-        /* there are some ids */
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
-
-    DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "N_let with empty EXPR attribute.");
-    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *TNTNwithid(node *arg_node, info *arg_info)
- *
- * description:
- *   starts traversal for ids chains in Nwithid nodes.
- *
- ******************************************************************************/
-node *
-TNTwithid (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("TNTNwithid");
-
-    if (WITHID_VEC (arg_node) != NULL) {
-        WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
-    }
-
-    if (WITHID_IDS (arg_node)) {
-        WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *TNTcast *arg_node, info *arg_info)
- *
- * description:
- *   sets ntype-structure if missing and remove types-structure
- *
- ******************************************************************************/
-node *
-TNTcast (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("TNTcast");
-
-    DBUG_ASSERT ((CAST_NTYPE (arg_node) != NULL), "N_cast without ntype found");
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *TNTtypedef *arg_node, info *arg_info)
- *
- * description:
- *   sets ntype-structure if missing and remove types-structure
- *
- ******************************************************************************/
-node *
-TNTtypedef (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("TNTtypedef");
-
-    DBUG_ASSERT ((TYPEDEF_NTYPE (arg_node) != NULL), "N_typedef without ntype found");
-
-    if (TYPEDEF_NEXT (arg_node) != NULL)
-        TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -458,21 +232,56 @@ TNTfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    if ((INFO_TNT_SINGLEFUNDEF (arg_info) == TNTSF_TRAV_FUNDEFS)
-        && (FUNDEF_NEXT (arg_node) != NULL)) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
     chain = FUNDEF_TYPES (arg_node);
 
     if (chain != NULL) {
         DBUG_ASSERT (FUNDEF_RETS (arg_node) != NULL,
                      "Rets missing despite non-NULL FUNDEF_TYPES");
-        FUNDEF_RETS (arg_node) = FREEdoFreeTree (FUNDEF_RETS (arg_node));
-        FUNDEF_RETS (arg_node) = TCreturnTypes2Ret (chain);
-        FUNDEF_TYPES (arg_node) = FREEfreeAllTypes (chain);
+        INFO_TNT_TYPES (arg_info) = chain;
+        FUNDEF_TYPES (arg_node) = NULL;
+
+        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
     } else {
         DBUG_ASSERT (FUNDEF_RETS (arg_node) == NULL, "missing FUNDEF_TYPES!");
+    }
+
+    if ((INFO_TNT_TRAVMODE (arg_info) == TNTSF_TRAV_FUNDEFS)
+        && (FUNDEF_NEXT (arg_node) != NULL)) {
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *TNTret( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+TNTret (node *arg_node, info *arg_info)
+{
+    types *old_type;
+
+    DBUG_ENTER ("TNTret");
+
+    old_type = INFO_TNT_TYPES (arg_info);
+    DBUG_ASSERT (old_type != NULL, "fewer old types than N_ret nodes!");
+    INFO_TNT_TYPES (arg_info) = TYPES_NEXT (old_type);
+
+    if (RET_TYPE (arg_node) != NULL) {
+        RET_TYPE (arg_node) = TYfreeType (RET_TYPE (arg_node));
+    }
+    RET_TYPE (arg_node) = TYoldType2Type (old_type);
+    old_type = FREEfreeOneTypes (old_type);
+
+    if (RET_NEXT (arg_node) != NULL) {
+        RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -530,7 +339,7 @@ TNTap (node *arg_node, info *arg_info)
 
     /* traverse special fundef without recursion (only in single fundef mode) */
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
-        && (INFO_TNT_SINGLEFUNDEF (arg_info) == TNTSF_TRAV_SPECIALS)
+        && (INFO_TNT_TRAVMODE (arg_info) == TNTSF_TRAV_SPECIALS)
         && (AP_FUNDEF (arg_node) != INFO_TNT_FUNDEF (arg_info))) {
         DBUG_PRINT ("TNT", ("traverse in special fundef %s",
                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -538,7 +347,7 @@ TNTap (node *arg_node, info *arg_info)
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
 
-        INFO_TNT_SINGLEFUNDEF (new_arg_info) = INFO_TNT_SINGLEFUNDEF (arg_info);
+        INFO_TNT_TRAVMODE (new_arg_info) = INFO_TNT_TRAVMODE (arg_info);
 
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
@@ -553,41 +362,6 @@ TNTap (node *arg_node, info *arg_info)
     }
 
     DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *TNTids(node *arg_ids, info *arg_info)
- *
- * description:
- *   checks for consistent back reference from ids node to N_arg or N_vardec
- *   node together with back reference to N_avis node. Traversal sheme like
- *   AST Trav.
- *
- ******************************************************************************/
-node *
-TNTids (node *arg_ids, info *arg_info)
-{
-    DBUG_ENTER ("TNTids");
-
-    if (IDS_AVIS (arg_ids) != DECL_AVIS (AVIS_DECL (IDS_AVIS (arg_ids)))) {
-        /* wrong back reference */
-        DBUG_PRINT ("TNT", ("backreference from ids %s to N_avis (" F_PTR ") corrected.",
-                            AVIS_NAME (IDS_AVIS (arg_ids)), IDS_AVIS (arg_ids)));
-        IDS_AVIS (arg_ids) = DECL_AVIS (AVIS_DECL (IDS_AVIS (arg_ids)));
-    } else {
-        DBUG_PRINT ("TNT", ("backreference from ids %s to N_avis ok.",
-                            AVIS_NAME (IDS_AVIS (arg_ids))));
-    }
-
-    DBUG_ASSERT ((IDS_AVIS (arg_ids) != NULL), "AVIS reference still unset.");
-
-    if (IDS_NEXT (arg_ids) != NULL) {
-        IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
-    }
-
-    DBUG_RETURN (arg_ids);
 }
 
 /******************************************************************************
@@ -614,7 +388,7 @@ TNTdoToNewTypes (node *syntax_tree)
 
     if (global.compiler_phase > PH_typecheck) {
         arg_info = MakeInfo ();
-        INFO_TNT_SINGLEFUNDEF (arg_info) = TNTSF_TRAV_FUNDEFS;
+        INFO_TNT_TRAVMODE (arg_info) = TNTSF_TRAV_FUNDEFS;
 
         TRAVpush (TR_tnt);
         syntax_tree = TRAVdo (syntax_tree, arg_info);
@@ -652,7 +426,7 @@ TNTdoToNewTypesOneFunction (node *fundef)
             DBUG_PRINT ("OPT", ("starting avis check for %s", FUNDEF_NAME (fundef)));
 
             arg_info = MakeInfo ();
-            INFO_TNT_SINGLEFUNDEF (arg_info) = TNTSF_TRAV_SPECIALS;
+            INFO_TNT_TRAVMODE (arg_info) = TNTSF_TRAV_SPECIALS;
 
             TRAVpush (TR_tnt);
             fundef = TRAVdo (fundef, arg_info);
@@ -671,8 +445,8 @@ TNTdoToNewTypesOneFunction (node *fundef)
  *   node *ToNewTypesOneFundef(node *fundef)
  *
  * description:
- *   same as ToNewTypes, but traverses only the given single fundef but not the
- *   called included special fundefs.
+ *   same as ToNewTypes, but traverses only the given single fundef. It does
+ *   NOT traverse any special fundefs which may be called within that fundef.
  *
  ******************************************************************************/
 node *
@@ -690,7 +464,7 @@ TNTdoToNewTypesOneFundef (node *fundef)
         DBUG_PRINT ("OPT", ("starting avis check for %s", FUNDEF_NAME (fundef)));
 
         arg_info = MakeInfo ();
-        INFO_TNT_SINGLEFUNDEF (arg_info) = TNTSF_TRAV_NONE;
+        INFO_TNT_TRAVMODE (arg_info) = TNTSF_TRAV_NONE;
 
         TRAVpush (TR_tnt);
         fundef = TRAVdo (fundef, arg_info);

@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.6  2004/12/19 19:32:48  sbs
+ * eliminated CheckAvis reminiscents
+ * Now, TNT does compute new types from old types only!
+ * .
+ *
  * Revision 1.5  2004/12/08 17:59:15  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -72,17 +77,11 @@ extern node *TNTdoToNewTypes (node *syntax_tree);
 extern node *TNTdoToNewTypesOneFunction (node *fundef);
 extern node *TNTdoToNewTypesOneFundef (node *fundef);
 
-extern node *TNTarg (node *arg_node, info *arg_info);
-extern node *TNTvardec (node *arg_node, info *arg_info);
-extern node *TNTobjdef (node *arg_node, info *arg_info);
-extern node *TNTid (node *arg_node, info *arg_info);
-extern node *TNTids (node *arg_node, info *arg_info);
-extern node *TNTlet (node *arg_node, info *arg_info);
 extern node *TNTfundef (node *arg_node, info *arg_info);
+extern node *TNTarg (node *arg_node, info *arg_info);
+extern node *TNTret (node *arg_node, info *arg_info);
+extern node *TNTvardec (node *arg_node, info *arg_info);
 extern node *TNTblock (node *arg_node, info *arg_info);
-extern node *TNTwithid (node *arg_node, info *arg_info);
 extern node *TNTap (node *arg_node, info *arg_info);
-extern node *TNTcast (node *arg_node, info *arg_info);
-extern node *TNTtypedef (node *arg_node, info *arg_info);
 
 #endif /* _SAC_TONEWTYPES_H_ */
