@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2004/11/26 23:16:36  sbs
+ * *** empty log message ***
+ *
  * Revision 3.68  2004/11/26 23:01:36  ktr
  * From denmark with love.
  *
@@ -1404,7 +1407,7 @@ ILIBreplaceSpecialCharacters (char *name)
  * -------------------------------------------------------------------------- */
 
 void
-ComputeMallocAlignStep (void)
+ILIBcomputeMallocAlignStep (void)
 {
     DBUG_ENTER ("ComputeMallocAlignStep");
 
