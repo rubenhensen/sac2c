@@ -1,6 +1,12 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.6  2005/03/04 21:21:42  cg
+  Setting of zombie flag is hidden behind function FREEzombify.
+  This allows us to recall the existence of zombie functions
+  in a static global varibale in free.c and to check for removal
+  of zombie functions only if some actually exist.
+
   Revision 1.5  2005/01/08 09:55:24  ktr
   Fixed some issues related to loops.
 
@@ -158,6 +164,7 @@ version="1.0">
     <xsl:with-param name="field">Name</xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="', arg_node));'"/>
+  <!--
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">arg_node</xsl:with-param>
     <xsl:with-param name="nodetype">
@@ -166,6 +173,8 @@ version="1.0">
     <xsl:with-param name="field">IsZombie</xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="' = TRUE;'"/>
+    --> 
+  <xsl:value-of select="'arg_node = FREEzombify( arg_node);'"/>
   <!-- first free everything downwards in the ast -->
   <xsl:apply-templates select="sons/son[@name = &quot;Next&quot;]"/>
   <!-- free all attributes, except NAME, MOD, LINKMOD. IMPL, INT_ASSIGN and TYPES
