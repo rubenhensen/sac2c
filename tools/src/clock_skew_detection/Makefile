@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.7  2001/11/20 10:34:13  sacbase
+# $(TOOLS)/bin added.
+#
 # Revision 1.6  2001/11/19 18:16:35  dkr
 # clean target added
 #
@@ -15,13 +18,18 @@ INCS   = -I../../../inc
 LIBDIR = ../../../lib
 LIBS   = $(LIBDIR)/main_args.o
 
-all: ../csd ../cse
+TOOLS = ../../
 
-../csd: csd.c
-	$(CC) $(CCFLAGS) -o ../csd csd.c
+all: $(TOOLS)/bin/csd $(TOOLS)/bin/cse
 
-../cse: cse.c $(LIBS)
-	$(CC) $(CCFLAGS) -o ../cse cse.c $(INCS) $(LIBS) 
+$(TOOLS)/bin/csd: $(TOOLS)/bin csd.c
+	$(CC) $(CCFLAGS) -o $@ csd.c
+
+$(TOOLS)/bin/cse: $(TOOLS)/bin cse.c $(LIBS) 
+	$(CC) $(CCFLAGS) -o $@ cse.c $(INCS) $(LIBS) 
+
+$(TOOLS)/bin:
+	mkdir -p $(TOOLS)/bin
 
 $(LIBS):
 	$(MAKE) -C $(LIBDIR)/src
