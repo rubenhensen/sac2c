@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1997/09/05 17:46:02  dkr
+ * added the declaration of the new function DupShpSeg
+ *
  * Revision 1.11  1996/02/21 15:07:02  cg
  * function DupFundef reimplemented. Internal information will now be copied as well.
  * added new function DupPragma
@@ -69,6 +72,7 @@ extern node *DupIIds (node *arg_node, node *arg_info);
 extern node *DupChain (node *arg_node, node *arg_info);
 extern node *DupAssign (node *arg_node, node *arg_info);
 extern node *DupTypes (node *arg_node, node *arg_info);
+extern shpseg *DupShpSeg (shpseg *shp_seg);
 extern node *DupPrf (node *arg_node, node *arg_info);
 extern node *DupFun (node *arg_node, node *arg_info);
 extern node *DupFundef (node *arg_node, node *arg_info);
