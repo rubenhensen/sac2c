@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.94  2004/08/06 12:11:03  skt
+ * expanded MakeDataflowgraph again
+ *
  * Revision 3.93  2004/08/06 11:45:16  skt
  * MakeDataflowgraph extended
  *
@@ -2295,12 +2298,20 @@ MakeDataflowgraph ()
     DBUG_ENTER ("MakeDataflowgraph");
 
     tmp = CreateCleanNode (N_dataflowgraph);
+
+    /* create the source of the graph */
     DATAFLOWGRAPH_SOURCE (tmp) = MakeDataflownode (NULL);
     DATAFLOWGRAPH_MEMBERS (tmp)
       = NodeListAppend (DATAFLOWGRAPH_MEMBERS (tmp), DATAFLOWGRAPH_SOURCE (tmp), NULL);
+    /* create the sink of the graph */
     DATAFLOWGRAPH_SINK (tmp) = MakeDataflownode (NULL);
     DATAFLOWGRAPH_MEMBERS (tmp)
       = NodeListAppend (DATAFLOWGRAPH_MEMBERS (tmp), DATAFLOWGRAPH_SINK (tmp), NULL);
+    /* make the sink depending on the source */
+    DATAFLOWNODE_DEPENDENT (DATAFLOWGRAPH_SOURCE (tmp))
+      = NodeListAppend (DATAFLOWNODE_DEPENDENT (DATAFLOWGRAPH_SOURCE (tmp)),
+                        DATAFLOWGRAPH_SINK (tmp), NULL);
+    DATAFLOWNODE_REFCOUNT (DATAFLOWGRAPH_SINK (tmp)) = 1;
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
