@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.116  2004/07/28 12:23:39  ktr
+ * accu compiles into NOOP now
+ *
  * Revision 3.115  2004/07/28 10:01:50  khf
  * turned off some parts for fold withloops if eacc is turned on
  *
@@ -5159,7 +5162,7 @@ COMPPrf (node *arg_node, info *arg_info)
             break;
 
         case F_accu:
-            DBUG_ASSERT ((0), "accu should have been eliminated during precompile!");
+            ret_node = MakeAssignIcm0 ("NOOP", NULL);
             break;
 
             /*
