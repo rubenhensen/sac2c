@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.81  1999/02/09 20:30:38  sbs
+ * once again sweet love does now invite....
+ * F_reshape left in ALL cases now!
+ * To enable CF via PSI still, used MRD_GET_DATA which
+ * reaches out behind reshape!
+ *
  * Revision 1.80  1999/01/19 13:18:59  sbs
  * several BUGs eliminated [GRGRGRGR]
  *
@@ -582,47 +588,45 @@ CFid (node *arg_node, node *arg_info)
             if (VARDEC_SHPSEG (ID_VARDEC (mrd)) == NULL
                 && VARDEC_SHPSEG (ID_VARDEC (arg_node)) != NULL) {
                 /* in the following fragment of a SAC-program
-
-                   int[] f()
-                   {
-                   ret = ... external C-implementation ...
-                   return (ret);
-                   }
-
-                   int main()
-                   {
-                   int[5] a;
-
-                   a = f();
-
-                   return ( ... a ... );
-                   }
-
-                   function-inlining leads to
-
-                   int main()
-                   {
-                   int[5] a;
-                   int[] inl_tmp;
-
-                   inl__tmp = ret;
-                   a = inl__tmp;
-
-                   return ( ... a ... );
-                   }.
-
-                   When constant-folding now eliminates "a", the array-shape "[5]" must be
-                   handed over to "inl__tmp" (a = inl__tmp):
-
-                   int main()
-                   {
-                   int[5] inl_tmp;
-
-                   inl__tmp = ret;
-
-                   return ( ... inl__tmp ... );
-                   }
-                   */
+                 *
+                 *   int[] f()
+                 *   {
+                 *     ret = ... external C-implementation ...
+                 *     return (ret);
+                 *   }
+                 *
+                 *   int main()
+                 *   {
+                 *     int[5] a;
+                 *
+                 *     a = f();
+                 *     return ( ... a ... );
+                 *   }
+                 *
+                 * function-inlining leads to
+                 *
+                 *   int main()
+                 *   {
+                 *     int[5] a;
+                 *     int[] inl_tmp;
+                 *
+                 *     inl__tmp = ret;
+                 *     a = inl__tmp;
+                 *     return ( ... a ... );
+                 *   }.
+                 *
+                 * When constant-folding now eliminates "a", the array-shape "[5]" must be
+                 * handed over to "inl__tmp" (a = inl__tmp):
+                 *
+                 *   int main()
+                 *   {
+                 *     int[5] inl_tmp;
+                 *
+                 *     inl__tmp = ret;
+                 *     return ( ... inl__tmp ... );
+                 *   }
+                 *
+                 */
                 /*
                   if the type of mrd has not a shape yet, but the type of arg_node has,
                   then copy the dimension and the shape-segments from arg_node to mrd
@@ -1896,7 +1900,6 @@ ArrayPrf (node *arg_node, node *arg_info)
     /* Fold reshape-function */
     /***********************/
     case F_reshape: {
-        node *value;
 
         /*
          * we want to eliminate reshape-calls here since they hinder CF
@@ -1917,29 +1920,40 @@ ArrayPrf (node *arg_node, node *arg_info)
          * for the array B.
          */
 
-#if 1
         /*
          * sbs: could this be a solution???
          *      iff the second arg is a constant, then we do throw the
          *      reshape away?!
          */
-        if (N_id == NODE_TYPE (arg[1])) {
-            MRD_GETDATA (value, arg[1]->info.ids->node->varno, INFO_CF_VARNO (arg_info));
-        } else {
-            value = arg[1];
-        }
-
-        if (IsConst (value)) {
-            if (N_id == NODE_TYPE (arg[0])) {
-                DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
-            }
-            arg_node = arg[1];
-            /*
-             * Now, we should (!!!) free the N_prf-node and its first arg...
-             * Unfortunately, we did not yet implement it 8-(
-             */
-        }
-#endif
+        /*
+         *      if (N_id == NODE_TYPE(arg[1])) {
+         *        MRD_GETDATA(value, arg[1]->info.ids->node->varno,
+         * INFO_CF_VARNO(arg_info));
+         *      }
+         *      else {
+         *        value = arg[1];
+         *      }
+         *
+         *      if (IsConst(value)) {
+         *        if (N_id == NODE_TYPE(arg[0])) {
+         *          DEC_VAR(arg_info->mask[1], arg[0]->info.ids->node->varno);
+         *        }
+         *        arg_node = arg[1];
+         *      }
+         */
+        /*
+         * Now, we should (!!!) free the N_prf-node and its first arg...
+         * Unfortunately, we did not yet implement it 8-(
+         */
+        /*
+         * sbs: NoNo, we should neither do that since we run into troubles
+         *      when actually folding then. "errors/fixed/constfold_0002.sac"
+         *      contains an example for that.
+         *
+         * A better solution for that problem is to use MRD_GET_DATA first,
+         * since MrdGet looks behind F_reshapes. Therefore, it does find
+         * the constant array, if any, anyway!
+         */
         break;
     }
 
@@ -2004,6 +2018,26 @@ ArrayPrf (node *arg_node, node *arg_info)
         } else
             shape = arg[0];
 
+        /*
+         * preserve the array_type!!
+         * this is essential, since the "array-substitution" will
+         * get const-arrays which are "behind" reshape operations!
+         * Therefore, this is the only chance to know about the shape
+         * of arg[1]!!
+         */
+        array_type = ID_TYPE (arg[1]);
+        /*
+         * Substitute array iff it refers to a constant!
+         *  sbs: added this in order to reach out behind reshape-ops!
+         *  Otherwise prgs like "errors/fixed/constfold_0002.sac"
+         *  cannot be folded !
+         */
+        if (N_id == NODE_TYPE (arg[1])) {
+            MRD_GETDATA (tmpn, ID_VARNO (arg[1]), INFO_CF_VARNO (arg_info));
+            if (IsConst (tmpn))
+                arg[1] = tmpn;
+        }
+
         if (!IsConst (shape))
             break;
         DBUG_ASSERT (N_array == NODE_TYPE (shape), "Shape-vector for psi not an array");
@@ -2034,7 +2068,6 @@ ArrayPrf (node *arg_node, node *arg_info)
         res_array = NULL;
 
         if (N_id == NODE_TYPE (arg[1])) {
-            array_type = ID_TYPE (arg[1]);
 
             /* let's have a closer look at the id. If it is a prf modarray
                and we index the element which is modified by this prf,
@@ -2080,7 +2113,6 @@ ArrayPrf (node *arg_node, node *arg_info)
         } else {
             /* 2nd argument is constant array ... easy */
             DBUG_ASSERT (N_array == NODE_TYPE (arg[1]), "N_array expected");
-            array_type = ARRAY_TYPE (arg[1]);
             array = arg[1];
         }
 
