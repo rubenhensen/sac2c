@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2003/04/15 09:01:54  sbs
+ * binsize[] eliminated entirely as it is used nowhere.
+ *
  * Revision 3.2  2003/04/14 14:47:56  sbs
  * t casted into unisgned int for comparison with num_threads.
  *
@@ -85,11 +88,6 @@ static const SAC_HM_size_unit_t min_chunk_size[]
   = {SAC_HM_ARENA_0_MINCS, SAC_HM_ARENA_1_MINCS, SAC_HM_ARENA_2_MINCS,
      SAC_HM_ARENA_3_MINCS, SAC_HM_ARENA_4_MINCS, SAC_HM_ARENA_5_MINCS,
      SAC_HM_ARENA_6_MINCS, SAC_HM_ARENA_7_MINCS, SAC_HM_ARENA_8_MINCS};
-
-static const SAC_HM_size_unit_t binsize[]
-  = {SAC_HM_ARENA_0_BINSIZE, SAC_HM_ARENA_1_BINSIZE, SAC_HM_ARENA_2_BINSIZE,
-     SAC_HM_ARENA_3_BINSIZE, SAC_HM_ARENA_4_BINSIZE, SAC_HM_ARENA_5_BINSIZE,
-     SAC_HM_ARENA_6_BINSIZE, SAC_HM_ARENA_7_BINSIZE, SAC_HM_ARENA_8_BINSIZE};
 
 /******************************************************************************
  *
