@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.2  1997/11/28 13:11:07  dkr
+# changed CCFLAGS
+#
 # Revision 1.1  1997/11/25 13:44:09  dkr
 # Initial revision
 #
@@ -7,7 +10,7 @@
 #
 
 CC        := gcc
-CCFLAGS   := -ansi -Wall -g
+CCFLAGS   := -g
 CFLAGS    := -D__EXTENSIONS__
 
 
