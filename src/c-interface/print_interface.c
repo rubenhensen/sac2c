@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.12  2000/07/19 16:44:21  nmw
+ * made a variable a bit more static...
+ *
  * Revision 1.11  2000/07/19 08:32:33  nmw
  * link order in comment adjusted
  *
@@ -102,7 +105,7 @@
 
 /* basic c-type-strings for sac types */
 #define TYP_IFpr_str(str) str
-char *ctype_string[] = {
+static char *ctype_string[] = {
 #include "type_info.mac"
 };
 
