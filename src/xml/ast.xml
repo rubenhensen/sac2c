@@ -5345,6 +5345,7 @@
         <flag name="IsRefcounted" default="TRUE" />
         <flag name="HasLinksignInfo" />
 	<flag name="IsCReturn" />
+	<flag name="WasRemoved" default="FALSE" />
       </flags>
     </node>
 <!--
