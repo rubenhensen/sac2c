@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/03/29 14:03:39  dkr
+ * no changes done
+ *
  * Revision 3.2  2001/03/21 18:04:29  dkr
  * INFO_DUP_... no longer used here
  *
@@ -9,9 +12,6 @@
  *
  * Revision 1.6  2000/06/23 15:12:32  dkr
  * signature of DupTree changed
- *
- * Revision 1.5  1999/09/01 17:14:23  jhs
- * Remove SYNC_SCHEDULING.
  *
  * Revision 1.4  1999/08/27 11:55:37  jhs
  * Adjusted comments.
@@ -24,7 +24,6 @@
  *
  * Revision 1.1  1999/07/30 12:34:50  jhs
  * Initial revision
- *
  *
  */
 

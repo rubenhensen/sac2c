@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/03/29 14:04:10  dkr
+ * no changes done
+ *
  * Revision 3.2  2000/12/06 19:22:16  cg
  * Removed compiler warnings in production mode.
  *
@@ -9,9 +12,6 @@
  *
  * Revision 2.12  2000/06/23 15:29:48  dkr
  * signature of DupTree changed
- *
- * Revision 2.11  1999/09/01 17:14:23  jhs
- * Remove SYNC_SCHEDULING.
  *
  * Revision 2.10  1999/08/03 11:46:49  jhs
  * Added missing end of comment.
@@ -46,7 +46,6 @@
  *
  * Revision 1.1  1998/06/18 14:35:53  cg
  * Initial revision
- *
  *
  */
 

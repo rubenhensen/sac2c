@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/03/29 14:04:37  dkr
+ * no changes done
+ *
  * Revision 3.13  2001/03/28 14:54:53  dkr
  * minor changes done
  *
@@ -81,9 +84,6 @@
  *
  * Revision 1.1  2000/01/21 15:38:21  dkr
  * Initial revision
- *
- * Revision 2.11  1999/09/01 17:07:27  jhs
- * SYNC_SCHEDULING removed.
  *
  * Revision 2.10  1999/08/25 16:08:15  bs
  * FreeNCodeWLAA modified.

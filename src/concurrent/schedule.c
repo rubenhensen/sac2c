@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/29 14:03:15  dkr
+ * no changes done
+ *
  * Revision 3.3  2001/03/14 15:58:54  ben
  * MakeDefaultSchedulingVarSegment() modified (assertion deleted)
  *
@@ -12,9 +15,6 @@
  *
  * Revision 2.6  2000/10/31 23:18:50  dkr
  * Trav: NWITH2_CODE might be NULL
- *
- * Revision 2.5  1999/09/01 17:14:23  jhs
- * Remove SYNC_SCHEDULING.
  *
  * Revision 2.4  1999/07/23 12:44:08  cg
  * Bug fixed in compilation of multi-threaded nested with-loops.
@@ -38,7 +38,6 @@
  *
  * Revision 1.1  1998/06/18 14:37:17  cg
  * Initial revision
- *
  *
  */
 
@@ -357,13 +356,6 @@ SCHEDsync (node *arg_node, node *arg_info)
 
         assign = ASSIGN_NEXT (assign);
     }
-    /*
-     if (SYNC_SCHEDULING( arg_node) == NULL) {
-       SYNC_SCHEDULING( arg_node) = InferSchedulingSyncblock( arg_node, arg_info);
-     } else {
-       SCHCheckSuitabilitySyncblock( SYNC_SCHEDULING( arg_node));
-     }
-   */
 
     SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
 
