@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.144  1998/01/28 19:39:25  dkr
+ * nnode[N_Ngenerator] is now 4 instead of 6
+ *
+ * added RC-functions for new with-loop
+ *
  * Revision 1.143  1998/01/26 09:47:15  dkr
  * in new with-loop-nodes: replaced NoTrav by TravSons
  *
@@ -783,13 +788,13 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    */
 
   NIF (N_Nwith, "N_Nwith", TravSons, FltnNwith, PrintNWith, TravSons, TravSons, TravSons,
-       TravSons, FreeNWith, TravSons, TravSons, CompNWith, TravSons, TravSons, TravSons,
+       TravSons, FreeNWith, TravSons, RCNwith, CompNWith, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_Npart, "N_Npart", TravSons, FltnNpart, PrintNPart, TravSons, TravSons, TravSons,
-       TravSons, FreeNPart, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, FreeNPart, TravSons, RCNpart, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
@@ -801,11 +806,10 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_Ngenerator, "N_Ngenerator", TravSons, FltnNgenerator, TravSons, TravSons,
-       TravSons, TravSons, TravSons, FreeNGenerator, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, FreeNGenerator, TravSons, RCNgen, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, 6),
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 4),
 
   NIF (N_Nwithop, "N_Nwithop", TravSons, FltnNwithop, TravSons, TravSons, TravSons,
        TravSons, TravSons, FreeNWithOp, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -814,7 +818,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_Ncode, "N_Ncode", TravSons, FltnNcode, TravSons, TravSons, TravSons, TravSons,
-       TravSons, FreeNCode, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, FreeNCode, TravSons, RCNcode, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
