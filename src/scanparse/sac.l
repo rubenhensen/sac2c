@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/08/06 15:52:11  sbs
+ * _add_SxS_ and friends (needed for the newTS ) added.
+ *
  * Revision 3.12  2002/07/02 15:23:12  sah
  * nothing changed.
  *
@@ -267,6 +270,30 @@ int charpos = 0;
 "*="                       { FILTER( MULON ); }
 "/="                       { FILTER( DIVON ); }
 "%="                       { FILTER( MODON ); }
+
+"_dim_"                    { FILTER( DIM); }
+"_shape_"                  { FILTER( SHAPE); }
+"_sel_S_"                  { FILTER( SEL); }
+
+"_add_SxS_"                { FILTER( ADD_SxS); }
+"_add_SxA_"                { FILTER( ADD_SxA); }
+"_add_AxS_"                { FILTER( ADD_AxS); }
+"_add_AxA_"                { FILTER( ADD_AxA); }
+
+"_sub_SxS_"                { FILTER( SUB_SxS); }
+"_sub_SxA_"                { FILTER( SUB_SxA); }
+"_sub_AxS_"                { FILTER( SUB_AxS); }
+"_sub_AxA_"                { FILTER( SUB_AxA); }
+
+"_mul_SxS_"                { FILTER( MUL_SxS); }
+"_mul_SxA_"                { FILTER( MUL_SxA); }
+"_mul_AxS_"                { FILTER( MUL_AxS); }
+"_mul_AxA_"                { FILTER( MUL_AxA); }
+
+"_div_SxS_"                { FILTER( DIV_SxS); }
+"_div_SxA_"                { FILTER( DIV_SxA); }
+"_div_AxS_"                { FILTER( DIV_AxS); }
+"_div_AxA_"                { FILTER( DIV_AxA); }
 
 "abs"                      { FILTER( ABS ); }
 "reshape"                  { FILTER( RESHAPE ); }

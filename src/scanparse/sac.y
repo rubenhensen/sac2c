@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2002/08/06 15:52:11  sbs
+ * _add_SxS_ and friends (needed for the newTS ) added.
+ *
  * Revision 3.42  2002/08/02 09:56:40  sah
  * added some missing ;
  *
@@ -198,7 +201,12 @@ static node *CheckWlcompConf( node *ap, node *exprs);
        STEP, WIDTH, TARGET,
        AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PRF_MOD, PLUS,
        TOI, TOF, TOD, ABS, PRF_MIN, PRF_MAX, ALL,
-       RESHAPE, SHAPE, TAKE, DROP, DIM, ROTATE, CAT, SEL, GENARRAY, MODARRAY
+       TAKE, DROP, ROTATE, CAT, GENARRAY,
+       RESHAPE, SHAPE, DIM, SEL, MODARRAY,
+       ADD_SxS, ADD_SxA, ADD_AxS, ADD_AxA,
+       SUB_SxS, SUB_SxA, SUB_AxS, SUB_AxA,
+       MUL_SxS, MUL_SxA, MUL_AxS, MUL_AxA,
+       DIV_SxS, DIV_SxA, DIV_AxS, DIV_AxA
 
 %token <id> ID, STR, MINUS, PRIVATEID, OPTION
 
@@ -252,8 +260,8 @@ static node *CheckWlcompConf( node *ap, node *exprs);
 %left AND
 %left EQ, NEQ
 %left LE, LT, GE, GT
-%left PLUS, MINUS
-%left MUL, DIV, PRF_MOD
+%left PLUS, MINUS, ADD_SxS, ADD_SxA, ADD_AxS, ADD_AxA, SUB_SxS, SUB_SxA, SUB_AxS, SUB_AxA
+%left MUL, DIV, PRF_MOD, MUL_SxS, MUL_SxA, MUL_AxS, MUL_AxA, DIV_SxS, DIV_SxA, DIV_AxS, DIV_AxA
 %left TAKE, DROP, RESHAPE
 %nonassoc SIGN
 %left SQBR_L
@@ -2005,17 +2013,26 @@ monop: ABS   { $$ = F_abs;   }
      ;
 
 binop: SEL      { $$ = F_sel;      }
-     | TAKE     { $$ = F_take;     }
-     | DROP     { $$ = F_drop;     }
      | RESHAPE  { $$ = F_reshape;  }
-     | GENARRAY { $$ = F_genarray; }
      | PRF_MIN  { $$ = F_min;      }
      | PRF_MAX  { $$ = F_max;      }
-     | PLUS     { $$ = F_add;      }
-     | MINUS    { $$ = F_sub;      }
-     | MUL      { $$ = F_mul;      }
-     | DIV      { $$ = F_div;      }
      | PRF_MOD  { $$ = F_mod;      }
+     | ADD_SxS  { $$ = F_add_SxS;  }
+     | ADD_SxA  { $$ = F_add_SxA;  }
+     | ADD_AxS  { $$ = F_add_AxS;  }
+     | ADD_AxA  { $$ = F_add_AxA;  }
+     | SUB_SxS  { $$ = F_sub_SxS;  }
+     | SUB_SxA  { $$ = F_sub_SxA;  }
+     | SUB_AxS  { $$ = F_sub_AxS;  }
+     | SUB_AxA  { $$ = F_sub_AxA;  }
+     | MUL_SxS  { $$ = F_mul_SxS;  }
+     | MUL_SxA  { $$ = F_mul_SxA;  }
+     | MUL_AxS  { $$ = F_mul_AxS;  }
+     | MUL_AxA  { $$ = F_mul_AxA;  }
+     | DIV_SxS  { $$ = F_div_SxS;  }
+     | DIV_SxA  { $$ = F_div_SxA;  }
+     | DIV_AxS  { $$ = F_div_AxS;  }
+     | DIV_AxA  { $$ = F_div_AxA;  }
      | EQ       { $$ = F_eq;       }
      | NEQ      { $$ = F_neq;      }
      | LT       { $$ = F_lt;       }
@@ -2024,6 +2041,13 @@ binop: SEL      { $$ = F_sel;      }
      | GE       { $$ = F_ge;       }
      | AND      { $$ = F_and;      }
      | OR       { $$ = F_or;       }
+     | TAKE     { $$ = F_take;     }
+     | DROP     { $$ = F_drop;     }
+     | GENARRAY { $$ = F_genarray; }
+     | PLUS     { $$ = F_add;      }
+     | MINUS    { $$ = F_sub;      }
+     | MUL      { $$ = F_mul;      }
+     | DIV      { $$ = F_div;      }
      ;
 
 triop: ROTATE   { $$ = F_rotate;   }
