@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 3.2  2001/02/09 17:11:42  cg
+ * Removed type comparison results CMP_different_shapes and
+ * CMP_different_dimension due to buggy implementation and general
+ * uselessness.
+ *
  * Revision 3.1  2000/11/20 18:00:01  sacbase
  * new release made
  *
@@ -26,5 +31,3 @@
 CMP_T (CMP_incompatible, "incompatible"), CMP_T (CMP_equal, "equal"),
   CMP_T (CMP_one_unknown_shape, "one_unknown_shape"),
   CMP_T (CMP_both_unknown_shape, "both_unknown_shapes"),
-  CMP_T (CMP_different_shapes, "different_shapes"),
-  CMP_T (CMP_different_dimensions, "different_dimensions")

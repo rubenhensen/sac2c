@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/02/09 17:11:42  cg
+ * Removed type comparison results CMP_different_shapes and
+ * CMP_different_dimension due to buggy implementation and general
+ * uselessness.
+ *
  * Revision 3.11  2001/02/02 10:37:27  dkr
  * access_macros.h inlined (this file is redundant now :-)
  *
@@ -3486,38 +3491,26 @@ CmpTypes (types *type_one, types *type_two)
             else if ((UNKNOWN_SHAPE == type_two->dim) && (SCALAR < type_one->dim))
                 return_value = CMP_one_unknown_shape;
             else if ((SCALAR < type_one->dim) && (SCALAR < type_two->dim)) {
-                /* both have known shape
+                /*
+                 * both have known shape
                  */
-                int a1_n = 1, /* number of elements of array1 */
-                  a2_n = 1;   /* number of elements of array2 */
-
-                /* now check whether the arrays have the same number of
-                 * elements
-                 */
-                for (i = 0; i < type_one->dim; i++)
-                    a1_n *= type_one->shpseg->shp[i];
-                for (i = 0; i < type_two->dim; i++)
-                    a2_n *= type_two->shpseg->shp[i];
-                if (a1_n == a2_n) {
-                    if (!(type_one->dim == type_two->dim))
-                        /* different dimension but equal
-                         * number of  elements
-                         */
-                        return_value = CMP_different_dimensions;
-                    else {
-                        for (i = 0; i < type_one->dim; i++)
-                            if (type_one->shpseg->shp[i] != type_two->shpseg->shp[i])
-                                return_value = CMP_different_shapes; /* 4*/
+                if (type_one->dim == type_two->dim) {
+                    for (i = 0; i < type_one->dim; i++) {
+                        if (type_one->shpseg->shp[i] != type_two->shpseg->shp[i]) {
+                            return_value = CMP_incompatible; /* 4*/
+                        }
                     }
-                } else
-                    /* wrong number of elements */
+                } else {
                     return_value = CMP_incompatible;
-            } else if (((SCALAR == TYPES_DIM (type_one))
-                        && (SCALAR != TYPES_DIM (type_two)))
-                       || ((SCALAR == TYPES_DIM (type_two))
-                           && (SCALAR != TYPES_DIM (type_one)))
-                       || (ARRAY_OR_SCALAR == TYPES_DIM (type_one))
-                       || (ARRAY_OR_SCALAR == TYPES_DIM (type_two)))
+                }
+            }
+
+            else if (((SCALAR == TYPES_DIM (type_one))
+                      && (SCALAR != TYPES_DIM (type_two)))
+                     || ((SCALAR == TYPES_DIM (type_two))
+                         && (SCALAR != TYPES_DIM (type_one)))
+                     || (ARRAY_OR_SCALAR == TYPES_DIM (type_one))
+                     || (ARRAY_OR_SCALAR == TYPES_DIM (type_two)))
                 return_value = CMP_incompatible;
             else if ((UNKNOWN_SHAPE == TYPES_DIM (type_one))
                      && (UNKNOWN_SHAPE == TYPES_DIM (type_two)))
@@ -3548,7 +3541,7 @@ CmpTypes (types *type_one, types *type_two)
                 if (TYPES_DIM (type_one) == TYPES_DIM (type_two)) {
                     return_value = CMP_equal;
                 } else {
-                    return_value = CMP_different_dimensions;
+                    return_value = CMP_incompatible;
                 }
             } else if ((SCALAR == TYPES_DIM (type_one))
                        && (SCALAR == TYPES_DIM (type_two)))
@@ -4540,15 +4533,6 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
                 UpdateType (vardec_p->info.types, type, line);
                 break;
             }
-            case CMP_different_shapes:
-            case CMP_different_dimensions: /* 3, 4 */ {
-                str = Type2String (type, 0);
-                WARN (line, ("Types in declaration (%s) and usage "
-                             "(%s) of variable '%s` are different",
-                             Type2String (vardec_p->info.types, 0), str, ids->id));
-                FREE (str);
-                break;
-            }
             case CMP_both_unknown_shape: {
                 if (kind_of_file != SAC_MOD) {
                     if (dynamic_shapes == 0) {
@@ -5406,15 +5390,6 @@ TClet (node *arg_node, node *arg_info)
                                                           " CMP_one_unknown_shape");
 #endif /* KNOWN_SHAPE_ONLY */
                     break;
-                case CMP_different_shapes:
-                case CMP_different_dimensions: /* 3, 4 */
-                    WARN (NODE_LINE (arg_node),
-                          ("Different types in declaration (%s) and usage (%s) "
-                           "of variable '%s`",
-                           Type2String (elem->node->info.types, 0), Type2String (type, 0),
-                           ids->id));
-
-                    /* no break missing !!!! */
                 case CMP_equal: /* 1 */
                     ids->node = elem->node;
                     DBUG_PRINT ("REF", ("added reference" P_FORMAT " from %s to %s",
@@ -5735,33 +5710,6 @@ TCreturn (node *arg_node, node *arg_info)
 #endif /*SHAPE_NOTE */
 
                 FREE (str1);
-                break;
-            }
-            case CMP_different_dimensions: /* 3 */
-            {
-                str1 = Type2String (fun_tmp, 0);
-                str2 = Type2String (return_type, 0);
-                ERROR (NODE_LINE (arg_node),
-                       ("Different types in declaration (%s) and return "
-                        "value (%s) of function '%s`",
-                        str1, str2, ModName (fun_mod, fun_name)));
-
-                FREE (str1);
-                FREE (str2);
-                break;
-            }
-            case CMP_different_shapes: /* 4 */
-            {
-                str1 = Type2String (fun_tmp, 0);
-                str2 = Type2String (return_type, 0);
-                ERROR (NODE_LINE (arg_node),
-                       ("Types in declaration (%s) and return value (%s) "
-                        "of function '%s` have same dimension and "
-                        "number of elements, but different shape",
-                        str1, str2, ModName (fun_mod, fun_name)));
-
-                FREE (str1);
-                FREE (str2);
                 break;
             }
             case CMP_both_unknown_shape: /* neu 8.12 */
