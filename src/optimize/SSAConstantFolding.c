@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.67  2004/09/24 17:05:46  ktr
+ * Bug #60: Deactivated propagation of constant PRF-Arguments as this was not
+ * always allowed.
+ *
  * Revision 1.66  2004/09/22 22:14:09  ktr
  * SSACFShapeSel is now called correctly.
  *
@@ -2695,12 +2699,19 @@ SSACFprf (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("SSACF", ("evaluating prf %s", mdb_prf[PRF_PRF (arg_node)]));
 
-    /* substitute constant identifiers in prf. arguments */
-    INFO_SSACF_INSCONST (arg_info) = SUBST_ID_WITH_CONSTANT_IN_AP_ARGS;
-    if (PRF_ARGS (arg_node) != NULL) {
-        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
-    }
-    INFO_SSACF_INSCONST (arg_info) = FALSE;
+#if 0
+  /* 
+   * ktr: There is no reason to do this as we have CVP now
+   *      SSACFFoldPrfExpr will look at the constant anyways
+   *
+   * substitute constant identifiers in prf. arguments 
+   */
+  INFO_SSACF_INSCONST(arg_info) = SUBST_ID_WITH_CONSTANT_IN_AP_ARGS;
+  if (PRF_ARGS(arg_node) != NULL) {
+    PRF_ARGS(arg_node) = Trav(PRF_ARGS(arg_node), arg_info);
+  }
+  INFO_SSACF_INSCONST(arg_info) = FALSE;
+#endif
 
     /* look up arguments */
     arg_expr = SSACFGetPrfArgs (arg_expr, PRF_ARGS (arg_node), PRF_MAX_ARGS);
