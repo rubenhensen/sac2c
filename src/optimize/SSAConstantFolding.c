@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.62  2004/09/21 16:07:21  ktr
+ * Replaced bloated StructOpWrapper with seperate functions for
+ * Sel, Reshape, idx_sel, Take, Drop
+ *
  * Revision 1.61  2004/08/25 20:22:03  sbs
  * bad bug in SSACFCatVxV fixed!
  * result structural constant was NEVER allocated.
@@ -355,8 +359,11 @@ static void RemovePhiCopyTargetAttributes (bool thenpart, info *arg_info);
 static constant *SSACFDim (node *expr);
 static constant *SSACFShape (node *expr);
 
-/* implements: sel, reshape, take, drop */
-static node *SSACFStructOpWrapper (prf op, constant *idx, node *expr);
+static node *SSACFStructOpSel (constant *idx, node *expr);
+static node *SSACFStructOpReshape (constant *idx, node *expr);
+static node *SSACFStructOpIdxSel (constant *idx, node *expr);
+static node *SSACFStructOpTake (constant *idx, node *expr);
+static node *SSACFStructOpDrop (constant *idx, node *expr);
 
 /* implements: arithmetical opt. for add, sub, mul, div, and, or */
 static node *SSACFArithmOpWrapper (prf op, constant **arg_co, node **arg_expr);
@@ -946,140 +953,403 @@ SSACFShape (node *expr)
 /******************************************************************************
  *
  * function:
- *   node *SSACFStructOpWrapper(prf op, constant *idx, node *arg_expr)
+ *   node *SSACFStructOpSel(constant *idx, node *arg_expr)
  *
  * description:
- *   computes structural ops on array expressions with constant index vector.
- *   the array elements are stored as pointer in a constant of type T_hidden.
- *   the structural operation is performed on this hidden constant and
- *   the resulting elements are copied in a new result array.
+ *   computes structural sel on array expressions with constant index vector.
+ *
+ *****************************************************************************/
+static node *
+SSACFStructOpSel (constant *idx, node *expr)
+{
+    struct_constant *struc_co;
+    constant *old_hidden_co;
+
+    node *result;
+
+    int idxlen;
+    int structdim;
+    shape *tmp_shape;
+
+    constant *take_vec;
+    constant *tmp_idx;
+
+    DBUG_ENTER ("SSACFStructOpSel");
+
+    result = NULL;
+
+    /*
+     * Try to convert expr(especially arrays) into a structual constant
+     */
+    struc_co = SCOExpr2StructConstant (expr);
+
+    if (struc_co != NULL) {
+        /* save internal hidden input constant */
+        old_hidden_co = SCO_HIDDENCO (struc_co);
+
+        tmp_shape = COGetShape (idx);
+        idxlen = SHGetUnrLen (tmp_shape);
+        tmp_shape = SHFreeShape (tmp_shape);
+
+        structdim = COGetDim (SCO_HIDDENCO (struc_co));
+
+        if (structdim < idxlen) {
+            /*
+             * Selection vector has more elements than there are array dimensions
+             *
+             * 1. Perform partial selection
+             */
+            take_vec = COMakeConstantFromInt (structdim);
+            tmp_idx = COTake (take_vec, idx);
+
+            SCO_HIDDENCO (struc_co) = COSel (tmp_idx, SCO_HIDDENCO (struc_co));
+            tmp_idx = COFreeConstant (tmp_idx);
+
+            /*
+             * 2. return selection on the remaining array element
+             */
+            tmp_idx = CODrop (take_vec, idx);
+            take_vec = COFreeConstant (take_vec);
+
+            result = MakePrf2 (F_sel, COConstant2AST (tmp_idx),
+                               SCODupStructConstant2Expr (struc_co));
+            tmp_idx = COFreeConstant (tmp_idx);
+        } else {
+            /*
+             * Perform selection
+             */
+            SCO_HIDDENCO (struc_co) = COSel (idx, SCO_HIDDENCO (struc_co));
+
+            if (structdim > idxlen) {
+                /*
+                 * Selection vector is too short, selection yields subarray
+                 */
+                tmp_shape = SCO_SHAPE (struc_co);
+                SCO_SHAPE (struc_co) = SHDropFromShape (idxlen, tmp_shape);
+                SHFreeShape (tmp_shape);
+            }
+            result = SCODupStructConstant2Expr (struc_co);
+        }
+
+        /*
+         * free tmp. struct constant
+         */
+        struc_co = SCOFreeStructConstant (struc_co);
+
+        /*
+         * free internal input constant
+         */
+        old_hidden_co = COFreeConstant (old_hidden_co);
+    }
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SSACFStructOpReshape(constant *idx, node *arg_expr)
+ *
+ * description:
+ *   computes structural reshape on array expressions with
+ *   constant index vector.
+ *
+ *****************************************************************************/
+static node *
+SSACFStructOpReshape (constant *idx, node *expr)
+{
+    struct_constant *struc_co;
+    constant *old_hidden_co;
+
+    node *result;
+
+    int structdim;
+
+    shape *idx_shape;
+    shape *idx_shape_postfix;
+    shape *elem_shape;
+
+    constant *drop_vec;
+    constant *tmp_idx;
+
+    DBUG_ENTER ("SSACFStructOpReshape");
+
+    result = NULL;
+
+    /*
+     * Try to convert expr(especially arrays) into a structual constant
+     */
+    struc_co = SCOExpr2StructConstant (expr);
+
+    if (struc_co != NULL) {
+
+        structdim = COGetDim (SCO_HIDDENCO (struc_co));
+
+        elem_shape = SHDropFromShape (structdim, SCO_SHAPE (struc_co));
+        idx_shape = COConstant2Shape (idx);
+        idx_shape_postfix = SHTakeFromShape (-1 * SHGetDim (elem_shape), idx_shape);
+        idx_shape = SHFreeShape (idx_shape);
+
+        /*
+         * If the idx_shape_postfix equals the element shape,
+         * the reshape operation can be performed
+         */
+        if (SHCompareShapes (elem_shape, idx_shape_postfix)) {
+            /*
+             * save internal hidden input constant
+             */
+            old_hidden_co = SCO_HIDDENCO (struc_co);
+
+            drop_vec = COMakeConstantFromInt (-1 * SHGetDim (elem_shape));
+            tmp_idx = CODrop (drop_vec, idx);
+            drop_vec = COFreeConstant (drop_vec);
+
+            idx_shape = COConstant2Shape (tmp_idx);
+            SCO_HIDDENCO (struc_co) = COReshape (tmp_idx, SCO_HIDDENCO (struc_co));
+            tmp_idx = COFreeConstant (tmp_idx);
+
+            SCO_SHAPE (struc_co) = SHFreeShape (SCO_SHAPE (struc_co));
+            SCO_SHAPE (struc_co) = SHAppendShapes (idx_shape, elem_shape);
+            idx_shape = SHFreeShape (idx_shape);
+
+            result = SCODupStructConstant2Expr (struc_co);
+
+            /*
+             * free internal hidden input constant
+             */
+            old_hidden_co = COFreeConstant (old_hidden_co);
+        }
+        elem_shape = SHFreeShape (elem_shape);
+        idx_shape_postfix = SHFreeShape (idx_shape_postfix);
+
+        /*
+         * free tmp. struct constant
+         */
+        struc_co = SCOFreeStructConstant (struc_co);
+    }
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SSACFStructOpIdxSel(constant *idx, node *arg_expr)
+ *
+ * description:
+ *   computes structural idxsel on array expressions with
+ *   constant index vector.
  *
  *****************************************************************************/
 
 static node *
-SSACFStructOpWrapper (prf op, constant *idx, node *expr)
+SSACFStructOpIdxSel (constant *idx, node *expr)
 {
     struct_constant *struc_co;
     node *result;
-    /* constant *old_hidden_co; */
-    int arraydim;
-    int idxdim;
-    constant *tmpidx, *tmp;
-    shape *tmpshp, *idxshp, *tmpshp2;
+    constant *old_hidden_co;
 
-    DBUG_ENTER ("SSACFStructOpWrapper");
+    DBUG_ENTER ("SSACFStructOpIdxSel");
 
-    /* initialize result */
-    result = NULL;
-
-    /* tries to convert expr(especially arrays) into a structual constant */
+    /*
+     * tries to convert expr(especially arrays) into a structual constant
+     */
     struc_co = SCOExpr2StructConstant (expr);
 
-    idxdim = SHGetUnrLen (COGetShape (idx));
-
-    /* given expressession could be converted to struct_constant */
+    /*
+     * given expression could be converted to struct_constant
+     */
     if (struc_co != NULL) {
-        /* save internal hidden input constant */
-        /*    old_hidden_co = SCO_HIDDENCO(struc_co); */
+        /*
+         * save internal hidden input constant
+         */
+        old_hidden_co = SCO_HIDDENCO (struc_co);
 
-        /* arraydim denotes the dimensionality captured
-           in the array itself:
-           arraydim(A) = dim(A) - dim(A[0,..,0]) */
-        arraydim = COGetDim (SCO_HIDDENCO (struc_co));
+        /*
+         * perform struc-op on hidden constant
+         */
+        SCO_HIDDENCO (struc_co) = COIdxSel (idx, SCO_HIDDENCO (struc_co));
 
-        /* perform struc-op on hidden constant */
-        switch (op) {
-        case F_sel:
-            if (arraydim < idxdim) {
-                tmp = COMakeConstantFromInt (arraydim);
-                tmpidx = COTake (tmp, idx);
-                SCO_HIDDENCO (struc_co) = COSel (tmpidx, SCO_HIDDENCO (struc_co));
-                tmpidx = COFreeConstant (tmpidx);
-                tmpidx = CODrop (tmp, idx);
-                tmp = COFreeConstant (tmp);
-                result
-                  = MakePrf (F_sel,
-                             MakeExprs (COConstant2AST (tmpidx),
-                                        MakeExprs (SCODupStructConstant2Expr (struc_co),
-                                                   NULL)));
-                tmpidx = COFreeConstant (tmpidx);
-            } else {
-                SCO_HIDDENCO (struc_co) = COSel (idx, SCO_HIDDENCO (struc_co));
-                if (arraydim > idxdim) {
-                    tmpshp = SCO_SHAPE (struc_co);
-                    SCO_SHAPE (struc_co) = SHDropFromShape (idxdim, tmpshp);
-                    SHFreeShape (tmpshp);
-                }
-                result = SCODupStructConstant2Expr (struc_co);
-            }
-            break;
+        /*
+         * return modified array
+         */
+        result = SCODupStructConstant2Expr (struc_co);
 
-        case F_idx_sel:
-            SCO_HIDDENCO (struc_co) = COIdxSel (idx, SCO_HIDDENCO (struc_co));
-            result = SCODupStructConstant2Expr (struc_co);
-            break;
-
-        case F_reshape:
-            tmpshp = SHDropFromShape (arraydim, SCO_SHAPE (struc_co));
-            idxshp = COConstant2Shape (idx);
-
-            tmpshp2 = SHTakeFromShape (-1 * SHGetDim (tmpshp), idxshp);
-
-            /* Perform folding iff idx defines the correct shape for
-               the elements in the array */
-            if (SHCompareShapes (tmpshp, tmpshp2)) {
-                tmp = COMakeConstantFromInt (-1 * SHGetDim (tmpshp));
-                idx = CODrop (tmp, idx);
-                tmp = COFreeConstant (tmp);
-                SCO_HIDDENCO (struc_co) = COReshape (idx, SCO_HIDDENCO (struc_co));
-
-                tmpshp2 = SHFreeShape (tmpshp2);
-                tmpshp2 = COConstant2Shape (idx);
-                SCO_SHAPE (struc_co) = SHAppendShapes (tmpshp2, tmpshp);
-
-                result = SCODupStructConstant2Expr (struc_co);
-            } else
-                result = NULL;
-            tmpshp = SHFreeShape (tmpshp);
-            idxshp = SHFreeShape (idxshp);
-            tmpshp2 = SHFreeShape (tmpshp2);
-            break;
-
-        case F_take:
-            if (idxdim <= arraydim) {
-                SCO_HIDDENCO (struc_co) = COTake (idx, SCO_HIDDENCO (struc_co));
-                SCO_SHAPE (struc_co)
-                  = SHAppendShapes (COGetShape (SCO_HIDDENCO (struc_co)),
-                                    SHDropFromShape (arraydim, SCO_SHAPE (struc_co)));
-                result = SCODupStructConstant2Expr (struc_co);
-            } else
-                result = NULL;
-            break;
-
-        case F_drop:
-            if (idxdim <= arraydim) {
-                SCO_HIDDENCO (struc_co) = CODrop (idx, SCO_HIDDENCO (struc_co));
-                SCO_SHAPE (struc_co)
-                  = SHAppendShapes (COGetShape (SCO_HIDDENCO (struc_co)),
-                                    SHDropFromShape (arraydim, SCO_SHAPE (struc_co)));
-                result = SCODupStructConstant2Expr (struc_co);
-            } else
-                result = NULL;
-            break;
-
-        default:
-            DBUG_ASSERT ((FALSE), "primitive function on arrays not implemented");
-        }
-
-        DBUG_PRINT ("SSACF", ("op %s computed on structural constant", mdb_prf[op]));
-
-        /* free tmp. struct constant */
+        /*
+         * free tmp. struct constant
+         */
         struc_co = SCOFreeStructConstant (struc_co);
 
-        /* free internal input constant */
-        /*old_hidden_co = COFreeConstant(old_hidden_co);*/
+        /*
+         * free internal input constant
+         */
+        old_hidden_co = COFreeConstant (old_hidden_co);
     } else {
         result = NULL;
+    }
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SSACFStructOpTake(constant *idx, node *arg_expr)
+ *
+ * description:
+ *   computes structural take on array expressions with constant index vector.
+ *
+ *****************************************************************************/
+
+static node *
+SSACFStructOpTake (constant *idx, node *expr)
+{
+    struct_constant *struc_co;
+    constant *old_hidden_co;
+
+    node *result;
+
+    int idxlen;
+    int structdim;
+
+    shape *tmp_shape;
+    shape *sco_shape;
+    shape *hidden_shape;
+    shape *dropped_shape;
+
+    DBUG_ENTER ("SSACFStructOpTake");
+
+    result = NULL;
+
+    /*
+     * Try to convert expr(especially arrays) into a structual constant
+     */
+    struc_co = SCOExpr2StructConstant (expr);
+
+    /*
+     * given expression could be converted to struct_constant
+     */
+    if (struc_co != NULL) {
+
+        tmp_shape = COGetShape (idx);
+        idxlen = SHGetUnrLen (tmp_shape);
+        tmp_shape = SHFreeShape (tmp_shape);
+
+        structdim = COGetDim (SCO_HIDDENCO (struc_co));
+
+        if (idxlen <= structdim) {
+            /*
+             * save internal hidden input constant
+             */
+            old_hidden_co = SCO_HIDDENCO (struc_co);
+
+            SCO_HIDDENCO (struc_co) = COTake (idx, SCO_HIDDENCO (struc_co));
+
+            sco_shape = SCO_SHAPE (struc_co);
+            hidden_shape = COGetShape (SCO_HIDDENCO (struc_co));
+            dropped_shape = SHDropFromShape (structdim, sco_shape);
+            sco_shape = SHFreeShape (sco_shape);
+            SCO_SHAPE (struc_co) = SHAppendShapes (hidden_shape, dropped_shape);
+            hidden_shape = SHFreeShape (hidden_shape);
+            dropped_shape = SHFreeShape (dropped_shape);
+
+            /*
+             * return modified array
+             */
+            result = SCODupStructConstant2Expr (struc_co);
+
+            /*
+             * free tmp. struct constant
+             */
+            struc_co = SCOFreeStructConstant (struc_co);
+
+            /*
+             * free internal input constant
+             */
+            old_hidden_co = COFreeConstant (old_hidden_co);
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SSACFStructOpDrop(constant *idx, node *arg_expr)
+ *
+ * description:
+ *   computes structural take on array expressions with constant index vector.
+ *
+ *****************************************************************************/
+
+static node *
+SSACFStructOpDrop (constant *idx, node *expr)
+{
+    struct_constant *struc_co;
+    constant *old_hidden_co;
+
+    node *result;
+
+    int idxlen;
+    int structdim;
+
+    shape *tmp_shape;
+    shape *sco_shape;
+    shape *hidden_shape;
+    shape *dropped_shape;
+
+    DBUG_ENTER ("SSACFStructOpDrop");
+
+    result = NULL;
+
+    /*
+     * Try to convert expr(especially arrays) into a structual constant
+     */
+    struc_co = SCOExpr2StructConstant (expr);
+
+    /*
+     * given expression could be converted to struct_constant
+     */
+    if (struc_co != NULL) {
+
+        tmp_shape = COGetShape (idx);
+        idxlen = SHGetUnrLen (tmp_shape);
+        tmp_shape = SHFreeShape (tmp_shape);
+
+        structdim = COGetDim (SCO_HIDDENCO (struc_co));
+
+        if (idxlen <= structdim) {
+            /*
+             * save internal hidden input constant
+             */
+            old_hidden_co = SCO_HIDDENCO (struc_co);
+
+            SCO_HIDDENCO (struc_co) = CODrop (idx, SCO_HIDDENCO (struc_co));
+
+            sco_shape = SCO_SHAPE (struc_co);
+            hidden_shape = COGetShape (SCO_HIDDENCO (struc_co));
+            dropped_shape = SHDropFromShape (structdim, sco_shape);
+            sco_shape = SHFreeShape (sco_shape);
+            SCO_SHAPE (struc_co) = SHAppendShapes (hidden_shape, dropped_shape);
+            hidden_shape = SHFreeShape (hidden_shape);
+            dropped_shape = SHFreeShape (dropped_shape);
+
+            /*
+             * return modified array
+             */
+            result = SCODupStructConstant2Expr (struc_co);
+
+            /*
+             * free tmp. struct constant
+             */
+            struc_co = SCOFreeStructConstant (struc_co);
+
+            /*
+             * free internal input constant
+             */
+            old_hidden_co = COFreeConstant (old_hidden_co);
+        }
     }
 
     DBUG_RETURN (result);
@@ -2811,7 +3081,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             }
         else if ((arg_co[0] != NULL) && (arg_expr[1] != NULL)) {
             /* for some non constant expression and constant index vector */
-            new_node = SSACFStructOpWrapper (F_reshape, arg_co[0], arg_expr[1]);
+            new_node = SSACFStructOpReshape (arg_co[0], arg_expr[1]);
             if ((new_node == NULL) && (NODE_TYPE (arg_expr[1]) == N_id)) {
                 /* reshape( shp, a)  ->  a    iff (shp == shape(a)) */
                 shape *shp = SHOldTypes2Shape (ID_TYPE (arg_expr[1]));
@@ -2837,7 +3107,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 /* for some non constant expression and constant index vector */
-                new_node = SSACFStructOpWrapper (F_sel, arg_co[0], arg_expr[1]);
+                new_node = SSACFStructOpSel (arg_co[0], arg_expr[1]);
             }
 
         if ((new_co == NULL) && (new_node == NULL) && (TWO_ARG (arg_expr))) {
@@ -2858,7 +3128,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 /* for some non constant expression and constant index skalar */
-                new_node = SSACFStructOpWrapper (F_idx_sel, arg_co[0], arg_expr[1]);
+                new_node = SSACFStructOpIdxSel (arg_co[0], arg_expr[1]);
             }
         break;
 
@@ -2874,7 +3144,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 /* for some non constant expression and constant index vector */
-                new_node = SSACFStructOpWrapper (F_take, arg_co[0], arg_expr[1]);
+                new_node = SSACFStructOpTake (arg_co[0], arg_expr[1]);
             }
         break;
 
@@ -2890,7 +3160,7 @@ SSACFFoldPrfExpr (prf op, node **arg_expr)
             FIRST_CONST_ARG_OF_TWO (arg_co, arg_expr)
             {
                 /* for some non constant expression and constant index vector */
-                new_node = SSACFStructOpWrapper (F_drop, arg_co[0], arg_expr[1]);
+                new_node = SSACFStructOpDrop (arg_co[0], arg_expr[1]);
             }
         break;
 
