@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.19  1999/05/17 11:35:42  jhs
+ * Changed Macro to access ID_VECTYPE to node[1].
+ *
  * Revision 2.18  1999/05/12 15:31:15  jhs
  * simpletype-cast in N_array corrected.
  *
@@ -1751,7 +1754,7 @@ extern node *MakeId2 (ids *ids_node);
 #define ID_WL(n) (n->node[0])
 
 #define ID_VECLEN(n) (n->counter)
-#define ID_VECTYPE(n) ((simpletype) (n->refcnt))
+#define ID_VECTYPE(n) ((simpletype) (n->node[1]))
 #define ID_CONSTVEC(n) (n->info2)
 #define ID_ISCONST(n) (n->varno)
 
