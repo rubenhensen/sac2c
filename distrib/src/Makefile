@@ -1,6 +1,11 @@
 #
 #
 # $Log$
+# Revision 3.2  2000/11/21 16:48:13  dkr
+# new rules Makefile.Config.for.%-2_5, Makefile.Config.for.%-2_7 added
+# new rule allclean added
+# rule allnew uses allclean instead of clean now
+#
 # Revision 3.1  2000/11/20 18:02:37  sacbase
 # new release made
 #
@@ -207,6 +212,9 @@ $(BINTARGETDIR)/SAC-$(VERSION)-%-$(DATE).tar.gz: \
 
 
 sac2c.for.SOLARIS_SPARC-% libsac.tar.for.SOLARIS_SPARC-%: 
+	@echo "**************************************************************"
+	@echo "*  Creating sac2c for SOLARIS_SPARC-$* on host $(SOLARIS_HOST-$*)"
+	@echo "**************************************************************"
 	rsh $(SOLARIS_HOST-$*)            \
 	    'setenv PATH $(PATH);'        \
             'cd $(SAC2CDIR)/distrib/src;' \
@@ -216,9 +224,6 @@ sac2c.for.SOLARIS_SPARC-% libsac.tar.for.SOLARIS_SPARC-%:
 
 
 sac2c.for.SOLARIS_SPARC libsac.tar.for.SOLARIS_SPARC: 
-	@echo "**************************************************************"
-	@echo "*  Creating sac2c for SOLARIS_SPARC"
-	@echo "**************************************************************"
 	( cd $(SAC2CDIR); $(MAKE) tar )
 	rm -rf $(SOLARIS_DIR)
 	mkdir -p $(SOLARIS_DIR)
@@ -348,6 +353,14 @@ stdlib.tar:
 	cp $(STDLIBDIR)/$@ .
 
 
+Makefile.Config.for.%-2_5:
+	$(MAKE) Makefile.Config.for.$*
+	mv Makefile.Config.for.$* $@
+
+Makefile.Config.for.%-2_7:
+	$(MAKE) Makefile.Config.for.$*
+	mv Makefile.Config.for.$* $@
+
 Makefile.Config.for.%: $(STDLIBDIR)/Makefiles/Makefile.Config
 	@echo "**************************************************************"
 	@echo "*  Creating Makefile.Config for $*"
@@ -375,6 +388,13 @@ clean:
 	    $(INST_PACKAGES)
 	rm -f *~ *.bak *.old
 
+allclean: clean
+	rm -f $(SAC2CDIR)/src.tar.gz
+	rm -f $(RUNTIMEDIR)/runtime.tar
+	rm -f $(STDLIBDIR)/stdlib.tar
+	rm -f $(DEMODIR)/demo.tar
+
+
 locker:
 	locker $(SAC2CDIR)
 	locker $(DEMOBASE)
@@ -388,10 +408,10 @@ update: clean
 	update $(STDLIBDIR)
 	rmobsfiles $(STDLIBDIR)
 
+
 new:
 	rm -f $(BINDISTRIBS) $(SRCDISTRIBS) $(addsuffix .for.*,$(SPECIFICS))
 	$(MAKE)
 
-allnew: clean
+allnew: allclean
 	$(MAKE)
-
