@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.5  2004/08/12 12:39:28  skt
+ * killed a bug in CDFGFirstIsWithinSecond
+ * moved PrintDataflowgraph and PrintDataflownode to print
+ *
  * Revision 1.4  2004/08/09 03:47:34  skt
  * some very painful bugfixing
  * added support for dataflowgraphs within with-loops
@@ -41,13 +45,9 @@ extern node *CDFGcond (node *arg_node, info *arg_info);
 
 extern node *CDFGid (node *arg_node, info *arg_info);
 
-/*extern node *CDFGwith2(node *arg_node, info *arg_info);*/
+node *CDFGwithid (node *arg_node, info *arg_info);
 
 /* Some functions to create, administrate and delete dataflowgraphs */
-
-void PrintDataflowgraph (node *dataflowgraph);
-
-void PrintDataflownode (node *datanode);
 
 node *CDFGUpdateDependencies (node *dfn_assign, node *current_graph, node *outer_graph,
                               node *current_node, node *outer_node);
