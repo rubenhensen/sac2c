@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.66  2000/07/06 17:34:04  dkr
+ * some obsolete TAGGED_ARRAY stuff removed
+ *
  * Revision 2.65  2000/07/05 12:24:12  dkr
  * unused variable hidden now
  *
@@ -334,21 +337,6 @@ int basetype_size[] = {
                       MakeId2 (DupOneIds (ids, NULL)), num_node);                        \
     APPEND_ASSIGNS (first_assign, next_assign)
 
-#ifdef TAGGED_ARRAYS
-#define CREATE_TMP_CONST_ARRAY(array, rc)                                                \
-    array_is_const = 1;                                                                  \
-    old_arg_node = arg_node;                                                             \
-    COUNT_ELEMS (n_elems, ARRAY_AELEMS (array))                                          \
-    tmp_array1 = MakeId1 ("__TMP");                                                      \
-    NODE_TYPE (INFO_COMP_LASTLET (arg_info)) = N_block; /* reuse previous N_let*/        \
-    CREATE_4_ARY_ICM (first_assign, "ND_DECL_AKS", type_id_node, tmp_array1,             \
-                      MakeNum (1), MakeNum (n_elems));                                   \
-    arg_node = first_assign;                                                             \
-    CREATE_CONST_ARRAY (array, tmp_array1, type_id_node, rc);                            \
-    array = tmp_array1 /* set array to __TMP */
-
-#else /* TAGGED_ARRAYS */
-
 #define CREATE_TMP_CONST_ARRAY(array, rc)                                                \
     array_is_const = 1;                                                                  \
     old_arg_node = arg_node;                                                             \
@@ -360,7 +348,6 @@ int basetype_size[] = {
     arg_node = first_assign;                                                             \
     CREATE_CONST_ARRAY (array, tmp_array1, type_id_node, rc);                            \
     array = tmp_array1 /* set array to __TMP */
-#endif                 /* TAGGED_ARRAYS */
 
 #define CREATE_CONST_ARRAY(array, name, type, rc)                                        \
     CREATE_3_ARY_ICM (next_assign, "ND_ALLOC_ARRAY", type, name, rc);                    \
@@ -370,21 +357,11 @@ int basetype_size[] = {
     EXPRS_NEXT (icm_arg) = ARRAY_AELEMS (array);                                         \
     APPEND_ASSIGNS (first_assign, next_assign)
 
-#ifdef TAGGED_ARRAYS
-#define DECL_ARRAY(assign, node, var_str, var_str_node)                                  \
-    COUNT_ELEMS (n_elems, node);                                                         \
-    var_str_node = MakeId1 (var_str);                                                    \
-    CREATE_4_ARY_ICM (assign, "ND_DECL_AKS", type_id_node, var_str_node, MakeNum (1),    \
-                      MakeNum (n_elems))
-
-#else /* TAGGED_ARRAYS */
-
 #define DECL_ARRAY(assign, node, var_str, var_str_node)                                  \
     COUNT_ELEMS (n_elems, node);                                                         \
     var_str_node = MakeId1 (var_str);                                                    \
     CREATE_4_ARY_ICM (assign, "ND_KS_DECL_ARRAY", type_id_node, var_str_node,            \
                       MakeNum (1), MakeNum (n_elems))
-#endif /* TAGGED_ARRAYS */
 
 #define INSERT_ID_NODE(no, last, str) EXPRS_NEXT (last) = MakeExprs (MakeId1 (str), no);
 
@@ -2452,21 +2429,11 @@ COMPLet (node *arg_node, node *arg_info)
 
     if ((NODE_TYPE (expr) == N_assign) && (NODE_TYPE (arg_node) == N_let)) {
 
-#ifdef TAGGED_ARRAYS
-        /*
-         * CAUTION: Some old routines recycles the let-node as a N_block node!!!
-         *          (e.g. COMPprf when inserting 'ND_DECL_AKS'-ICMs ...)
-         *          In these cases we must not free 'arg_node'!!!
-         */
-
-#else  /* TAGGED_ARRAYS */
-
         /*
          * CAUTION: Some old routines recycles the let-node as a N_block node!!!
          *          (e.g. COMPprf when inserting 'ND_KS_DECL_ARRAY'-ICMs ...)
          *          In these cases we must not free 'arg_node'!!!
          */
-#endif /* TAGGED_ARRAYS */
 
         LET_EXPR (arg_node) = NULL;
         arg_node = FreeTree (arg_node);
@@ -2507,9 +2474,6 @@ COMPVardec (node *arg_node, node *arg_info)
     node *shape_elems;
     char *macvalues[] = {"ND_DECL_AKS", "ND_DECL_SCL"};
     char *mymac;
-
-#else /* TAGGED_ARRAYS */
-
 #endif /* TAGGED_ARRAYS */
     int i;
 
@@ -3197,13 +3161,8 @@ COMPPrf (node *arg_node, node *arg_info)
 
                 /* reuse previous N_let */
                 NODE_TYPE (INFO_COMP_LASTLET (arg_info)) = N_block;
-#ifdef TAGGED_ARRAYS
-                CREATE_4_ARY_ICM (first_assign, "ND_DECL_AKS", type_id_node, tmp_array1,
-                                  MakeNum (1), MakeNum (n_elems));
-#else  /* TAGGED_ARRAYS */
                 CREATE_4_ARY_ICM (first_assign, "ND_KS_DECL_ARRAY", type_id_node,
                                   tmp_array1, MakeNum (1), MakeNum (n_elems));
-#endif /* TAGGED_ARRAYS */
                 arg_node = first_assign;
 
                 /* create const array */
@@ -3917,13 +3876,6 @@ COMPArray (node *arg_node, node *arg_info)
     int n_elems = 0;
     simpletype s_type;
 
-#ifndef TAGGED_ARRAYS
-
-    node *first_assign, *next_assign, *exprs, *res, *type_id_node, *old_arg_node,
-      *icm_arg, *res_ref, *last_assign;
-    int icm_created = 0;
-#endif
-
 #ifdef TAGGED_ARRAYS
 
     int elems_are_non_hidden_scalars;
@@ -3991,6 +3943,10 @@ COMPArray (node *arg_node, node *arg_info)
 }
 
 #else  /* TAGGED_ARRAYS */
+
+    node *first_assign, *next_assign, *exprs, *res, *type_id_node, *old_arg_node,
+      *icm_arg, *res_ref, *last_assign;
+    int icm_created = 0;
 
     DBUG_ENTER ("COMPArray");
 
