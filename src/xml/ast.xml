@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.75  2004/11/25 17:46:29  ktr
+  N_objdef modified.
+
   Revision 1.74  2004/11/25 17:10:16  sbs
   added CWC
 
@@ -1350,11 +1353,6 @@
             <set name="Expr" />
           </target>
         </son>
-	<son name="Avis" mandatory="yes">
-	  <target>
-	    <node name="Avis" />
-	  </target>
-	</son>
         <son name="Next" mandatory="no">
           <target>
             <node name="Objdef" />
@@ -1362,6 +1360,12 @@
         </son>
       </sons>
       <attributes>
+        <attribute name="Type" mandatory="yes">
+          <type name="NewType" />
+          <phases>
+            <all />
+          </phases>
+        </attribute>
         <attribute name="Mod" mandatory="yes">
           <type name="String" />
           <phases>
