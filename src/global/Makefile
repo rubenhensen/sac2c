@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.20  2003/10/19 21:41:07  dkrHH
+# dependency prf_node_info.mac -> globals.c added
+#
 # Revision 3.19  2003/06/11 21:40:58  ktr
 # included ../constants
 #
@@ -90,9 +93,10 @@ NameTuples.c: nt_info.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-globals.c: ../tree/type_info.mac phase_info.mac argtag_info.mac
+globals.c: ../tree/prf_node_info.mac ../tree/type_info.mac phase_info.mac argtag_info.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
+
 
 my_debug.c:  ../tree/node_info.mac ../tree/prf_node_info.mac \
              ../tree/type_info.mac status_info.mac
