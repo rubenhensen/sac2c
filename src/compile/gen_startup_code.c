@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.20  2000/06/30 13:04:34  nmw
+ * conditional define for NULL added
+ *
  * Revision 2.19  2000/02/23 20:16:34  cg
  * Node status ST_imported replaced by ST_imported_mod and
  * ST_imported_class in order to allow distinction between enteties
@@ -450,7 +453,9 @@ PrintGlobalSettings (node *syntax_tree)
 
     fprintf (outfile, "\n\n/*\n *  Global Settings\n */\n\n");
 
-    fprintf (outfile, "#define NULL                      (void*) 0\n\n");
+    fprintf (outfile, "#ifndef NULL\n"
+                      "#define NULL                      (void*) 0\n"
+                      "#endif\n\n");
 
     fprintf (outfile, "#define SAC_SET_INITIAL_MASTER_HEAPSIZE      %d\n",
              initial_master_heapsize * 1024);
