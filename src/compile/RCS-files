@@ -41,3 +41,4 @@ wltransform.c
 wltransform.h
 markmemvals.c
 markmemvals.h
+adjustaccumulation.c
