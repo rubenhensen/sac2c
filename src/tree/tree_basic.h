@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.135  2002/07/10 17:50:57  dkr
+ * MakeStr_Copy() added
+ *
  * Revision 3.134  2002/07/03 17:08:33  dkr
  * modifications for TAGGED_ARRAYS removed
  *
@@ -1879,6 +1882,7 @@ extern node *MakeBool (bool val);
  ***/
 
 extern node *MakeStr (char *str);
+extern node *MakeStr_Copy (char *str);
 
 #define STR_STRING(n) (n->info.id)
 
