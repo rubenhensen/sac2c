@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1996/01/05 12:26:54  cg
+ * Revision 1.11  1996/01/07 16:53:11  cg
+ * added DBUG_PRINT
+ *
+ * Revision 1.10  1996/01/05  12:26:54  cg
  * added functions SystemTest and SystemCall
  *
  * Revision 1.9  1995/12/28  14:24:12  cg
@@ -235,6 +238,8 @@ SystemTest (char *format, ...)
     } else {
         exit_code = 0;
     }
+
+    DBUG_PRINT ("SYSCALL", ("test returns %d", exit_code));
 
     DBUG_RETURN (exit_code);
 }
