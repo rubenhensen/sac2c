@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.79  1995/07/11 09:02:37  cg
+ * Revision 1.80  1995/07/11 10:02:07  cg
+ * Module/Class header now in comments.
+ *
+ * Revision 1.79  1995/07/11  09:02:37  cg
  * most sac grammar version 0.6 features will be printed.
  *
  * Revision 1.78  1995/07/10  07:33:37  asi
@@ -390,9 +393,9 @@ PrintModul (node *arg_node, node *arg_info)
 
     if (arg_node->info.id != NULL) {
         if (arg_node->node[4] == NULL)
-            fprintf (outfile, "Module %s :\n", arg_node->info.id);
+            fprintf (outfile, "\n\n/** Module %s : **/\n", arg_node->info.id);
         else
-            fprintf (outfile, "Class %s :\n", arg_node->info.id);
+            fprintf (outfile, "\n\n/** Class %s : **/\n", arg_node->info.id);
     }
     if (NULL != arg_node->node[0]) {
         fprintf (outfile, "\n");
