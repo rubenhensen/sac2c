@@ -1635,4 +1635,14 @@ void postmortem (s) char *s;
     exit (99);
 }
 
+#else /* DBUG_OFF */
+
+static int almost_useless_dummy_var;
+
+/*
+ * This dummy variable avoids the compilation of an entirely empty file in the
+ * case of generating a product version of sac2c. It turned out to be the easiest
+ * way to avoid nasty warnings on some systems.
+ */
+
 #endif /* DBUG_OFF */
