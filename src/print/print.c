@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.67  2000/03/22 17:35:18  jhs
+ * Added PrintMT(sync|alloc|signal).
+ *
  * Revision 2.66  2000/03/21 17:55:55  dkr
  * PRINT_CONT modified: arg_info might be NULL
  *
@@ -2181,6 +2184,57 @@ PrintST (node *arg_node, node *arg_info)
     fprintf (outfile, "\n");
     INDENT;
     fprintf (outfile, "/*** end of st region ***/\n");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************/
+
+node *
+PrintMTsignal (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintMTsignal");
+
+    /* PrintAssign already indents and prints \n*/
+    fprintf (outfile, "MTsignal (");
+
+    DFMPrintMask (outfile, " %s", MTSIGNAL_IDSET (arg_node));
+
+    fprintf (outfile, ");");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************/
+
+node *
+PrintMTsync (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintMTsync");
+
+    /* PrintAssign already indents and prints \n */
+    fprintf (outfile, "MTsync (");
+
+    DFMPrintMask (outfile, " %s", MTSYNC_WAIT (arg_node));
+
+    fprintf (outfile, ", ####, ####);");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************/
+
+node *
+PrintMTalloc (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintMTalloc");
+
+    /* PrintAssign already indents */
+    fprintf (outfile, "MTalloc (");
+
+    DFMPrintMask (outfile, " %s", MTALLOC_IDSET (arg_node));
+
+    fprintf (outfile, ");");
 
     DBUG_RETURN (arg_node);
 }

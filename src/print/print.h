@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  2000/03/22 17:35:42  jhs
+ * Added PrintMT(sync|alloc|signal).
+ *
  * Revision 2.7  2000/03/21 13:34:30  dkr
  * macro PRINT_VECT added
  *
@@ -192,6 +195,9 @@ extern node *PrintSpmd (node *arg_node, node *arg_info);
 extern node *PrintSync (node *arg_node, node *arg_info);
 extern node *PrintMT (node *arg_node, node *arg_info);
 extern node *PrintST (node *arg_node, node *arg_info);
+extern node *PrintMTsignal (node *arg_node, node *arg_info);
+extern node *PrintMTsync (node *arg_node, node *arg_info);
+extern node *PrintMTalloc (node *arg_node, node *arg_info);
 
 /* new with-loop */
 extern node *PrintNwith (node *arg_node, node *arg_info);
