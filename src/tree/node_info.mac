@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2002/06/25 15:02:19  sah
+ * PrintDot entered in print_tab
+ *
  * Revision 3.78  2002/06/25 14:08:01  sbs
  * N_dot added.
  *
@@ -2337,7 +2340,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
-  NIF (N_dot, "N_dot", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+  NIF (N_dot, "N_dot", TravSons, TravSons, PrintDot, TravSons, TravSons, TravSons,
        TravSons, FreeDot, TravSons, TravSons, TravSons, TravSons, DupDot, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
