@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1997/08/04 19:11:38  dkr
+ * no FREE, FREETRAV in FreeIcm
+ *
  * Revision 1.20  1997/03/19 13:34:57  cg
  * added functions FreeAllDeps() and FreeOneDeps()
  *
@@ -1319,8 +1322,12 @@ FreeIcm (node *arg_node, node *arg_info)
 
     tmp = FREECONT (ICM_NEXT (arg_node));
 
-    FREETRAV (ICM_ARGS (arg_node));
-    FREE (ICM_NAME (arg_node));
+    /* brute force try!
+      FREETRAV(ICM_ARGS(arg_node));
+    */
+    /* Since the name in most (all?) cases is static, please no freeing!
+      FREE(ICM_NAME(arg_node));
+     */
 
     DBUG_PRINT ("FREE", ("Removing N_icm node ..."));
 
