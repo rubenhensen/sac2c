@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/07/12 16:57:27  dkr
+ * TmpVar(): modification for TAGGED_ARRAYS done
+ *
  * Revision 3.18  2002/04/09 08:22:17  dkr
  * TmpVar(): some trav-tables added, DBUG_ASSERT added.
  *
@@ -37,81 +40,6 @@
  *
  * Revision 3.7  2001/04/26 15:51:44  dkr
  * rmvoidfun removed from TmpVar()
- *
- * Revision 3.6  2001/04/24 09:14:00  dkr
- * P_FORMAT replaced by F_PTR
- *
- * Revision 3.5  2001/04/09 15:58:27  nmw
- * VarName for ssalir/lirmov traversal completed
- *
- * Revision 3.4  2001/03/27 11:29:56  dkr
- * OptCmp() removed
- *
- * Revision 3.3  2001/03/12 10:29:39  nmw
- * TmpVar for undossa_tab added
- *
- * Revision 3.2  2000/12/06 18:26:04  cg
- * Added new traversal tccp for typecheck constant propagation.
- *
- * Revision 3.1  2000/11/20 17:59:30  sacbase
- * new release made
- *
- * Revision 2.24  2000/11/15 17:18:24  sbs
- * Malloc for size==0 and ndef SHOW_MALLOC now returns NULL rather than calling
- * SYSABORT (iff the built-in malloc returns NULL in that case).
- *
- * Revision 2.23  2000/11/15 14:02:38  sbs
- * args of tolower casted from char to int.
- *
- * Revision 2.22  2000/07/17 11:15:13  jhs
- * Added blkli at TmpVar().
- *
- * Revision 2.21  2000/07/14 15:36:08  nmw
- * oops, big crash ... MALLOC reverted to Malloc
- *
- * Revision 2.20  2000/07/14 14:42:31  nmw
- * malloc in StringConcat changed to MALLOC
- *
- * Revision 2.19  2000/06/13 13:40:24  dkr
- * O2NWith_tab renamed into patchwith_tab
- *
- * Revision 2.18  2000/05/31 14:39:33  mab
- * renamed tables for array padding
- *
- * Revision 2.17  2000/05/31 11:23:17  mab
- * added traversal tables for array padding
- *
- * Revision 2.16  2000/05/29 14:31:10  dkr
- * second traversal table for precompile added
- *
- * Revision 2.15  2000/03/15 17:28:05  dkr
- * DBUG_ASSERT for lcm() added
- *
- * Revision 2.14  2000/02/18 14:38:22  cg
- * Added TmpVar names for ai_tab and fun2lac_tab.
- *
- * Revision 2.13  2000/02/11 16:26:29  dkr
- * function StringConcat added
- *
- * Revision 2.12  2000/01/26 17:29:22  dkr
- * type of traverse-function-table changed.
- *
- * Revision 2.11  2000/01/25 13:39:03  dkr
- * all the Constvec stuff moved to tree_compound.c
- *
- * Revision 2.10  1999/07/20 11:48:29  cg
- * Definition (!) of global variable malloc_align_step removed;
- * malloc_align_step is now defined in globals.c.
- *
- * Revision 2.9  1999/07/05 14:28:00  sbs
- * warnings concerning uninitialized usages of res in AnnotateIdWithConstVec and
- * CopyConstVec eliminated .
- *
- * Revision 2.8  1999/06/03 14:29:21  sbs
- * missing code for T_bool const-vecs added in ModConstVec.
- *
- * Revision 2.7  1999/05/17 11:24:26  jhs
- * CopyConstVec will be called only if ID/ARRAY_ISCONST.
  *
  * [...]
  *
@@ -623,9 +551,17 @@ TmpVar ()
         s = "free";
     } else if (act_tab == refcnt_tab) {
         s = "rc";
-    } else if (act_tab == comp_tab) {
+    } else
+#ifdef TAGGED_ARRAYS
+      if (act_tab == comp2_tab) {
         s = "comp";
-    } else if (act_tab == lir_tab) {
+    } else
+#else
+      if (act_tab == comp_tab) {
+        s = "comp";
+    } else
+#endif
+      if (act_tab == lir_tab) {
         s = "lir";
     } else if (act_tab == lir_mov_tab) {
         s = "lirm";
