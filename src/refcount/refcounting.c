@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2004/10/22 15:39:19  ktr
+ * Added support for F_reuse.
+ *
  * Revision 1.19  2004/10/15 11:41:34  ktr
  * Removed cutreuse functionality. This is now done by filterrc.c.
  * Refcounting now works transparently over condfun boundaries.
@@ -2196,6 +2199,7 @@ EMRCprf (node *arg_node, info *arg_info)
 
     case F_alloc:
     case F_alloc_or_reuse:
+    case F_reuse:
         /*
          * alloc( dim, shp)
          *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.142  2004/10/22 15:41:06  ktr
+ * Added support for F_reuse.
+ *
  * Revision 3.141  2004/10/10 09:54:10  ktr
  * dec_rc has a second argument now
  *
@@ -5557,6 +5560,10 @@ COMPPrf (node *arg_node, info *arg_info)
 
         case F_alloc_or_reuse:
             ret_node = COMPPrfAllocOrReuse (arg_node, arg_info);
+            break;
+
+        case F_reuse:
+            DBUG_ASSERT ((0), "F_reuse must be eliminated before code generation");
             break;
 
         case F_suballoc:
