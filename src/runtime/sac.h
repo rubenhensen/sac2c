@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/10/29 19:07:57  dkr
+ * stdlib.h included
+ *
  * Revision 3.2  2002/07/03 13:59:16  dkr
  * sac_boundcheck.h renamed into sac_runtimecheck.h
  *
@@ -70,11 +73,12 @@
  *
  *   This header file is included by each compiled SAC code.
  *
- *
  *****************************************************************************/
 
-#ifndef SAC_H
-#define SAC_H
+#ifndef _SAC_H_
+#define _SAC_H_
+
+#include <stdlib.h>
 
 #include "sac_icm.h"
 
@@ -99,4 +103,4 @@
 #include "sac_cachesim.h"
 #include "sac_arg.h"
 
-#endif /* SAC_H */
+#endif /* _SAC_H_ */
