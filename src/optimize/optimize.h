@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/03/17 17:43:39  asi
+ * Revision 1.21  1995/03/24 15:51:55  asi
+ * added FREE
+ *
+ * Revision 1.20  1995/03/17  17:43:39  asi
  * added work reduction
  *
  * Revision 1.19  1995/03/14  11:12:40  asi
@@ -95,6 +98,10 @@ extern int wr_expr;
 #define VARNO arg_info->varno
 
 #define VAR_LENGTH 10
+
+#define FREE(address)                                                                    \
+    DBUG_PRINT ("MEM", ("Give memory free at adress: %08x", address));                   \
+    free (address)
 
 extern node *Optimize (node *arg_node);
 
