@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/04/02 11:16:15  nmw
+ * FreeAp decrements the used counter for special fundefs and
+ * removes the corresponding assignment from list
+ *
  * Revision 3.15  2001/03/29 14:24:19  dkr
  * NWITH2_SCHEDULING removed
  *
@@ -176,12 +180,12 @@
 #define FREETRAV(node)                                                                   \
     {                                                                                    \
         if ((node) != NULL) {                                                            \
-            (node) = Trav (node, node); /* dkr: remove whole subtree !!! */              \
+            (node) = Trav (node, arg_info); /* dkr: remove whole subtree !!! */          \
         }                                                                                \
     }
 
 #define FREECONT(node)                                                                   \
-    ((arg_info != NULL) && (node != NULL)) ? Trav (node, arg_info) : node
+    ((INFO_FREE_FLAG (arg_info) != NULL) && (node != NULL)) ? Trav (node, arg_info) : node
 
 /*--------------------------------------------------------------------------*/
 /*  Free-function wrapper for debugging purposes                            */
@@ -543,13 +547,21 @@ node *
 FreeNode (node *free_node)
 {
     funtab *store_tab;
+    node *arg_info;
 
     DBUG_ENTER ("FreeNode");
 
     store_tab = act_tab;
     act_tab = free_tab;
 
-    free_node = Trav (free_node, NULL);
+    arg_info = MakeInfo ();
+    INFO_FREE_ASSIGN (arg_info) = NULL;
+    INFO_FREE_FLAG (arg_info) = NULL;
+
+    free_node = Trav (free_node, arg_info);
+
+    /* no not use FreeNode to avoid recursion */
+    FREE (arg_info);
 
     act_tab = store_tab;
 
@@ -562,13 +574,21 @@ node *
 FreeTree (node *free_node)
 {
     funtab *store_tab;
+    node *arg_info;
 
     DBUG_ENTER ("FreeTree");
 
     store_tab = act_tab;
     act_tab = free_tab;
 
-    Trav (free_node, free_node);
+    arg_info = MakeInfo ();
+    INFO_FREE_ASSIGN (arg_info) = NULL;
+    INFO_FREE_FLAG (arg_info) = free_node;
+
+    Trav (free_node, arg_info);
+
+    /* no not use FreeNode to avoid recursion */
+    FREE (arg_info);
 
     act_tab = store_tab;
 
@@ -959,7 +979,10 @@ FreeAssign (node *arg_node, node *arg_info)
 
     tmp = FREECONT (ASSIGN_NEXT (arg_node));
 
+    INFO_FREE_ASSIGN (arg_info) = arg_node;
     FREETRAV (ASSIGN_INSTR (arg_node));
+    INFO_FREE_ASSIGN (arg_info) = NULL;
+
     FREEMASK (ASSIGN_MASK);
     index = (index_info *)ASSIGN_INDEX (arg_node);
     if (index) {
@@ -1128,6 +1151,24 @@ FreeAp (node *arg_node, node *arg_info)
 #ifdef FREE_MODNAMES
     FREE (AP_MOD (arg_node));
 #endif
+
+    /* decrement used counter */
+    if ((AP_FUNDEF (arg_node) != NULL)
+        && (FUNDEF_USED (AP_FUNDEF (arg_node)) != FUN_UNUSED)) {
+
+        FUNDEF_USED (AP_FUNDEF (arg_node)) = FUNDEF_USED (AP_FUNDEF (arg_node)) - 1;
+
+        /* remove assignment from external assignment list) */
+        DBUG_ASSERT ((INFO_FREE_ASSIGN (arg_info) != NULL),
+                     "missing assignment node when freeing ap node");
+
+        FUNDEF_EXT_ASSIGNS (AP_FUNDEF (arg_node))
+          = NodeListDelete (FUNDEF_EXT_ASSIGNS (AP_FUNDEF (arg_node)),
+                            INFO_FREE_ASSIGN (arg_info), 0);
+
+        DBUG_PRINT ("FREE", ("decrementing used counter to %d",
+                             FUNDEF_USED (AP_FUNDEF (arg_node))));
+    }
 
     DBUG_PRINT ("FREE", ("Removing N_ap node ..."));
 
