@@ -18,7 +18,6 @@
 /* only local used utility functions */
 static int CountFunResults (node *fundef);
 static int CountFunArgs (node *fundef);
-char *stringcopy (char *str);
 
 /******************************************************************************
  *
@@ -82,7 +81,7 @@ MCWfundef (node *arg_node, node *arg_info)
         if (result == NULL) {
             /* new wrapper needed - setup node with data for new wrapper */
             cwrapper = MakeCWrapper (MODUL_CWRAPPER (INFO_MCW_MODUL (arg_info)),
-                                     stringcopy (FUNDEF_NAME (arg_node)), modulename,
+                                     StringCopy (FUNDEF_NAME (arg_node)), modulename,
                                      CountFunArgs (arg_node), CountFunResults (arg_node));
             CWRAPPER_FUNS (cwrapper)
               = NodeListAppend (CWRAPPER_FUNS (cwrapper), arg_node, NULL);
@@ -264,14 +263,4 @@ CountFunResults (node *fundef)
         rettypes = TYPES_NEXT (rettypes);
     }
     DBUG_RETURN (count);
-}
-
-/* already existing ? */
-char *
-stringcopy (char *str)
-{
-    char *tmp;
-    tmp = (char *)MALLOC (sizeof (char) * (strlen (str) + 1));
-    strcpy (tmp, str);
-    return (tmp);
 }
