@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.47  1998/05/11 09:43:44  cg
+ * added syntax tree traversal for generating startup code.
+ *
  * Revision 1.46  1998/04/29 19:54:19  dkr
  * added funptr tabs
  *
@@ -201,6 +204,7 @@ extern funptr spmdlift_tab[];
 extern funptr syncinit_tab[];
 extern funptr syncopt_tab[];
 extern funptr o2nWith_tab[];
+extern funptr gsc_tab[];
 
 extern int nnode[];
 

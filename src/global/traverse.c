@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.65  1998/05/11 09:43:44  cg
+ * added syntax tree traversal for generating startup code.
+ *
  * Revision 1.64  1998/04/29 19:53:22  dkr
  * added funptr tabs
  *
@@ -249,6 +252,7 @@
 #include "WLT.h"
 #include "WLI.h"
 #include "WLF.h"
+#include "gen_startup_code.h"
 
 #include "traverse.h"
 
@@ -846,9 +850,8 @@ funptr wltrans_tab[] = {
 };
 #undef NIF
 
-#if 0
 /*
- * 43) *unused*
+ * 43) gsc_tab
  */
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
@@ -856,11 +859,10 @@ funptr wltrans_tab[] = {
             t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t43
 
-funptr ???[]={
+funptr gsc_tab[] = {
 #include "node_info.mac"
-                  };
+};
 #undef NIF
-#endif
 
 #if 0
 /*
