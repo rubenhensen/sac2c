@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.41  1995/02/14 09:59:56  asi
- * added CFid
+ * Revision 1.42  1995/02/14 12:00:11  sbs
+ * N_foldprf and N_foldfun inserted
  *
+;; Revision 1.41  1995/02/14  09:59:56  asi
+;; added CFid
+;;
 ;; Revision 1.40  1995/02/13  17:24:25  asi
 ;; added CFlet
 ;;
@@ -194,6 +197,10 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeInfoId, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_genarray, "N_genarray", DummyFun, DummyFun, PrintConexpr, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
+  NIF (N_foldprf, "N_foldprf", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
+  NIF (N_foldfun, "N_foldfun", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_modarray, "N_modarray", DummyFun, DummyFun, PrintConexpr, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_prf, "N_prf", DummyFun, DummyFun, PrintPrf, DummyFun, DummyFun, DummyFun,
