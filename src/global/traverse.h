@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.39  1998/03/06 13:21:08  srs
+ * added wli_ab
+ *
  * Revision 1.38  1998/02/05 17:08:52  srs
  * removed wr_tab and changed fusion_tab into wlf_tab
  *
@@ -123,86 +126,50 @@
  */
 
 #ifndef _sac_traverse_h
-
 #define _sac_traverse_h
 
 typedef node *(*funptr) (node *, node *);
 
 extern node *Trav (node *arg_node, node *arg_info);
-
 extern node *TravSons (node *arg_node, node *arg_info);
-
 extern node *NoTrav (node *arg_node, node *arg_info);
 
 extern funptr *act_tab;
 
 extern funptr imp_tab[];
-
 extern funptr flat_tab[];
-
 extern funptr print_tab[];
-
 extern funptr type_tab[];
-
 extern funptr opt_tab[];
-
 extern funptr active_tab[];
 extern funptr dcr_tab[];
-
 extern funptr cf_tab[];
-
-extern funptr unused2_tab[];
-
-extern funptr free_tab[];
-
-extern funptr refcnt_tab[];
-
-extern funptr comp_tab[];
-
-extern funptr lir_tab[];
-
-extern funptr lir_mov_tab[];
-
-extern funptr dup_tab[];
-
-extern funptr inline_tab[];
-
-extern funptr unroll_tab[];
-
-extern funptr unswitch_tab[];
-
-extern funptr idx_tab[];
-
 extern funptr wlf_tab[];
-
+extern funptr free_tab[];
+extern funptr refcnt_tab[];
+extern funptr comp_tab[];
+extern funptr lir_tab[];
+extern funptr lir_mov_tab[];
+extern funptr dup_tab[];
+extern funptr inline_tab[];
+extern funptr unroll_tab[];
+extern funptr unswitch_tab[];
+extern funptr idx_tab[];
+extern funptr wli_tab[];
 extern funptr ae_tab[];
-
 extern funptr writesib_tab[];
-
 extern funptr obj_tab[];
-
 extern funptr impltype_tab[];
-
 extern funptr objinit_tab[];
-
 extern funptr analy_tab[];
-
 extern funptr checkdec_tab[];
-
 extern funptr writedec_tab[];
-
 extern funptr unique_tab[];
-
 extern funptr rmvoid_tab[];
-
 extern funptr precomp_tab[];
-
 extern funptr readsib_tab[];
-
 extern funptr cse_tab[];
-
 extern funptr dfr_tab[];
-
 extern funptr o2nWith_tab[];
 
 extern int nnode[];
