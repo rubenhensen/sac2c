@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.149  1998/05/12 12:37:27  dkr
+ * removed macro MT_SPMD_BLOCK
+ *
  * Revision 1.148  1998/05/08 02:00:55  dkr
  * fixed a bug in COMPLet:
  *   recycling of N_let node is now tolerated
@@ -779,67 +782,6 @@ static int label_nr = 0;
 /******************************************************************************
  *
  * function:
- *   node *AppendAssign( node *assigns, node *assign)
- *
- * description:
- *   appends 'assign' to the N_assign-chain 'assings' and returns the new
- *    chain.
- *
- ******************************************************************************/
-
-node *
-AppendAssign (node *assigns, node *assign)
-{
-    node *tmp;
-
-    DBUG_ENTER ("AppendAssign");
-
-    if (assigns != NULL) {
-        tmp = assigns;
-        while (ASSIGN_NEXT (tmp) != NULL) {
-            tmp = ASSIGN_NEXT (tmp);
-        }
-        ASSIGN_NEXT (tmp) = assign;
-    } else {
-        assigns = assign;
-    }
-
-    DBUG_RETURN (assigns);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *AppendExpr( node *exprs, node *expr)
- *
- * description:
- *   appends 'expr' to the N_exprs-chain 'assings' and returns the new chain.
- *
- ******************************************************************************/
-
-node *
-AppendExpr (node *exprs, node *expr)
-{
-    node *tmp;
-
-    DBUG_ENTER ("AppendExpr");
-
-    if (exprs != NULL) {
-        tmp = exprs;
-        while (EXPRS_NEXT (tmp) != NULL) {
-            tmp = EXPRS_NEXT (tmp);
-        }
-        EXPRS_NEXT (tmp) = expr;
-    } else {
-        exprs = expr;
-    }
-
-    DBUG_RETURN (exprs);
-}
-
-/******************************************************************************
- *
- * function:
  *   ids *GetIndexIds(ids *index_ids, int dim)
  *
  * description:
@@ -890,7 +832,8 @@ MakeAllocArrayICMs (ids *mm_ids)
               = MakeAssign (MakeIcm ("ND_ALLOC_ARRAY",
                                      MakeExprs (MakeId (StringCopy (type_string[s_type]),
                                                         NULL, ST_regular),
-                                                MakeExprs (MakeId2 (mm_ids),
+                                                MakeExprs (MakeId2 (
+                                                             DupOneIds (mm_ids, NULL)),
                                                            MakeExprs (MakeNum (
                                                                         IDS_REFCNT (
                                                                           mm_ids)),
@@ -904,11 +847,8 @@ MakeAllocArrayICMs (ids *mm_ids)
                 ASSIGN_NEXT (last_assign) = assign;
             }
             last_assign = assign;
-
-            mm_ids = IDS_NEXT (mm_ids);
-        } else {
-            mm_ids = FreeOneIds (mm_ids);
         }
+        mm_ids = IDS_NEXT (mm_ids);
     }
 
     DBUG_RETURN (assigns);
@@ -938,7 +878,7 @@ MakeIncRcICMs (ids *mm_ids)
             GET_BASIC_SIMPLETYPE (s_type, IDS_TYPE (mm_ids));
             assign
               = MakeAssign (MakeIcm ("ND_INC_RC",
-                                     MakeExprs (MakeId2 (mm_ids),
+                                     MakeExprs (MakeId2 (DupOneIds (mm_ids, NULL)),
                                                 MakeExprs (MakeNum (IDS_REFCNT (mm_ids)),
                                                            NULL)),
                                      NULL),
@@ -950,11 +890,8 @@ MakeIncRcICMs (ids *mm_ids)
                 ASSIGN_NEXT (last_assign) = assign;
             }
             last_assign = assign;
-
-            mm_ids = IDS_NEXT (mm_ids);
-        } else {
-            mm_ids = FreeOneIds (mm_ids);
         }
+        mm_ids = IDS_NEXT (mm_ids);
     }
 
     DBUG_RETURN (assigns);
@@ -983,7 +920,7 @@ MakeDecRcFreeICMs (ids *mm_ids)
         if (IDS_REFCNT (mm_ids) >= 0) {
             GET_BASIC_SIMPLETYPE (s_type, IDS_TYPE (mm_ids));
             assign = MakeAssign (MakeIcm ("ND_DEC_RC_FREE_ARRAY",
-                                          MakeExprs (MakeId2 (mm_ids),
+                                          MakeExprs (MakeId2 (DupOneIds (mm_ids, NULL)),
                                                      MakeExprs (MakeNum (1), NULL)),
                                           NULL),
                                  NULL);
@@ -994,11 +931,8 @@ MakeDecRcFreeICMs (ids *mm_ids)
                 ASSIGN_NEXT (last_assign) = assign;
             }
             last_assign = assign;
-
-            mm_ids = IDS_NEXT (mm_ids);
-        } else {
-            mm_ids = FreeOneIds (mm_ids);
         }
+        mm_ids = IDS_NEXT (mm_ids);
     }
 
     DBUG_RETURN (assigns);
@@ -2405,14 +2339,19 @@ ShapeToArray (node *vardec_node)
     DBUG_RETURN (ret_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : Compile
- *  arguments     : 1) syntax tree
- *  description   : starts compilation  and initializes act_tab
- *  remarks       : ----
+ * function:
+ *   node *Compile( node *arg_node)
  *
- */
+ * description:
+ *   starts compilation.
+ *
+ * remarks:
+ *   - 'INFO_COMP_MT( arg_info)' indicates weather we currently traverse a
+ *     N_sync-region or not (needed for 'COMPNwith2')
+ *
+ ******************************************************************************/
 
 node *
 Compile (node *arg_node)
@@ -2421,9 +2360,10 @@ Compile (node *arg_node)
 
     DBUG_ENTER ("Compile");
 
-    act_tab = comp_tab; /* set new function-table for traverse */
+    act_tab = comp_tab;
     info = MakeInfo ();
 
+    INFO_COMP_MT (arg_node) = 0;
     arg_node = Trav (arg_node, info);
 
     FREE (info);
@@ -6038,9 +5978,10 @@ COMPWith (node *arg_node, node *arg_info)
 node *
 COMPSpmd (node *arg_node, node *arg_info)
 {
-    node *fundef, *vardec, *icm_arg, *last_icm_arg, *icm_args = NULL;
+    node *fundef, *vardec, *icm_args;
     char *tag;
     ids *my_ids;
+    simpletype s_type;
     int num_args;
 
     DBUG_ENTER ("COMPSpmd");
@@ -6052,37 +5993,34 @@ COMPSpmd (node *arg_node, node *arg_info)
      */
 
     fundef = INFO_COMP_FUNDEF (arg_info);
-    num_args = 0;
 
     /*
      * in-params
      */
 
-    FOREACH_VARDEC_AND_ARG (fundef, vardec,
-                            if (DFMTestMaskEntry (SPMD_IN (arg_node),
-                                                  VARDEC_OR_ARG_NAME (vardec))) {
-                                if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
-                                    tag = "in_rc";
-                                } else {
-                                    tag = "in";
-                                }
-                                icm_arg
-                                  = MakeExprs (MakeId (StringCopy (tag), NULL,
-                                                       ST_regular),
-                                               MakeExprs (MakeId (StringCopy (
-                                                                    VARDEC_OR_ARG_NAME (
-                                                                      vardec)),
-                                                                  NULL, ST_regular),
-                                                          NULL));
-
-                                if (icm_args == NULL) {
-                                    icm_args = icm_arg;
-                                } else {
-                                    EXPRS_NEXT (EXPRS_NEXT (last_icm_arg)) = icm_arg;
-                                }
-                                last_icm_arg = icm_arg;
-                                num_args++;
-                            }) /* FOREACH_VARDEC_AND_ARG */
+    icm_args = NULL;
+    num_args = 0;
+    FOREACH_VARDEC_AND_ARG (
+      fundef, vardec,
+      if (DFMTestMaskEntry (SPMD_IN (arg_node), VARDEC_OR_ARG_NAME (vardec))) {
+          if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
+              tag = "in_rc";
+          } else {
+              tag = "in";
+          }
+          icm_args
+            = AppendExpr (icm_args,
+                          MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
+                                     MakeExprs (MakeId (MakeTypeString (
+                                                          VARDEC_OR_ARG_TYPE (vardec)),
+                                                        NULL, ST_regular),
+                                                MakeExprs (MakeId (StringCopy (
+                                                                     VARDEC_OR_ARG_NAME (
+                                                                       vardec)),
+                                                                   NULL, ST_regular),
+                                                           NULL))));
+          num_args++;
+      }) /* FOREACH_VARDEC_AND_ARG */
 
     /*
      * inout-params
@@ -6093,17 +6031,17 @@ COMPSpmd (node *arg_node, node *arg_info)
         if (DFMTestMaskEntry (SPMD_INOUT (arg_node), IDS_NAME (my_ids))) {
             tag = (char *)Malloc (10 * sizeof (char));
             sprintf (tag, "inout%d", IDS_REFCNT (my_ids));
-            icm_arg = MakeExprs (MakeId (tag, NULL, ST_regular),
-                                 MakeExprs (MakeId (StringCopy (IDS_NAME (my_ids)), NULL,
-                                                    ST_regular),
-                                            NULL));
-
-            if (icm_args == NULL) {
-                icm_args = icm_arg;
-            } else {
-                EXPRS_NEXT (EXPRS_NEXT (last_icm_arg)) = icm_arg;
-            }
-            last_icm_arg = icm_arg;
+            GET_BASIC_SIMPLETYPE (s_type, IDS_TYPE (my_ids));
+            icm_args
+              = AppendExpr (icm_args,
+                            MakeExprs (MakeId (tag, NULL, ST_regular),
+                                       MakeExprs (MakeId (StringCopy (
+                                                            type_string[s_type]),
+                                                          NULL, ST_regular),
+                                                  MakeExprs (MakeId (StringCopy (
+                                                                       IDS_NAME (my_ids)),
+                                                                     NULL, ST_regular),
+                                                             NULL))));
             num_args++;
         }
         my_ids = IDS_NEXT (my_ids);
@@ -6113,31 +6051,27 @@ COMPSpmd (node *arg_node, node *arg_info)
      * out-params
      */
 
-    FOREACH_VARDEC_AND_ARG (fundef, vardec,
-                            if (DFMTestMaskEntry (SPMD_OUT (arg_node),
-                                                  VARDEC_OR_ARG_NAME (vardec))) {
-                                if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
-                                    tag = "out_rc";
-                                } else {
-                                    tag = "out";
-                                }
-                                icm_arg
-                                  = MakeExprs (MakeId (StringCopy (tag), NULL,
-                                                       ST_regular),
-                                               MakeExprs (MakeId (StringCopy (
-                                                                    VARDEC_OR_ARG_NAME (
-                                                                      vardec)),
-                                                                  NULL, ST_regular),
-                                                          NULL));
-
-                                if (icm_args == NULL) {
-                                    icm_args = icm_arg;
-                                } else {
-                                    EXPRS_NEXT (EXPRS_NEXT (last_icm_arg)) = icm_arg;
-                                }
-                                last_icm_arg = icm_arg;
-                                num_args++;
-                            }) /* FOREACH_VARDEC_AND_ARG */
+    FOREACH_VARDEC_AND_ARG (
+      fundef, vardec,
+      if (DFMTestMaskEntry (SPMD_OUT (arg_node), VARDEC_OR_ARG_NAME (vardec))) {
+          if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
+              tag = "out_rc";
+          } else {
+              tag = "out";
+          }
+          GET_BASIC_SIMPLETYPE (s_type, VARDEC_OR_ARG_TYPE (vardec));
+          icm_args
+            = AppendExpr (icm_args,
+                          MakeExprs (MakeId (StringCopy (tag), NULL, ST_regular),
+                                     MakeExprs (MakeId (StringCopy (type_string[s_type]),
+                                                        NULL, ST_regular),
+                                                MakeExprs (MakeId (StringCopy (
+                                                                     VARDEC_OR_ARG_NAME (
+                                                                       vardec)),
+                                                                   NULL, ST_regular),
+                                                           NULL))));
+          num_args++;
+      }) /* FOREACH_VARDEC_AND_ARG */
 
     icm_args = MakeExprs (MakeNum (num_args), icm_args);
     icm_args = MakeExprs (MakeId (StringCopy (SPMD_FUNNAME (arg_node)), NULL, ST_regular),
@@ -6163,141 +6097,141 @@ COMPSpmd (node *arg_node, node *arg_info)
  *   compiles a N_sync node.
  *
  * remarks:
- *   - INFO_COMP_MT decides weather the memory managment for with-loops is done
- *     in the N_sync- or the N_with2- code!!
+ *   - 'INFO_COMP_MT( arg_info)' indicates weather we currently traverse a
+ *     N_sync-region or not.
+ *     (needed to suppress memory managment in 'COMPNwith2' if necessary.)
  *
  ******************************************************************************/
 
 node *
 COMPSync (node *arg_node, node *arg_info)
 {
+    node *assigns, *icm_args, *icm_args1, *icm_args2, *vardec;
+    simpletype s_type;
+    char *icm_name;
+    int num_folds;
+
     DBUG_ENTER ("COMPSync");
 
-#if 0
-  /*
-   * compile contents of sync-region
-   */
-
-  INFO_COMP_MT( arg_info) = 0;
-  SYNC_REGION( arg_node) = Trav( SYNC_REGION( arg_node), arg_info);
-
-  /*
-   * build the arguments for the ICMs
-   */
-
-  icm_args1 = icm_args2 = NULL;
-  num_folds = 0;
-  sync_ids = SYNC_OUT( arg_node);
-  while (sync_ids != NULL) {
-    GET_BASIC_SIMPLETYPE( s_type, IDS_TYPE( sync_ids));
-    icm_args = MakeExprs( MakeId( StringCopy( type_string[ s_type]),
-                                  NULL,
-                                  ST_regular),
-                          MakeExprs( MakeId2( DupOneIds( sync_ids, NULL)),
-                                     NULL));
-
-    icm_args1 = AppendExpr( icm_args1, icm_args);
-    icm_args2 = AppendExpr( icm_args2,
-                            MakeExprs( DupTree( icm_args, NULL),
-                              MakeExprs( MakeId( StringCopy( "?tmp_var?"),
-                                                 NULL,
-                                                 ST_regular),
-                                 MakeExprs( MakeId( StringCopy( "?fold_op?"),
-                                                    NULL,
-                                                    ST_regular),
-                                            NULL))));
-
-    num_folds++;
-    sync_ids = IDS_NEXT( sync_ids);
-  }
-
-  /*
-   * is this sync-region *not* the first one of the current SPMD-region?
-   *  -> insert the memory-managment (malloc).
-   *  -> insert ICM (MT_CONTINUE),
-   */
-
-  if (SYNC_FIRST( arg_node) == 0) {
+    /*
+     * compile contents of sync-region
+     */
 
     /*
-     * insert a ND_ALLOC_ARRAY for every RC-object in 'SYNC_INOUT'
+     * insert ICMs for memory management (ND_ALLOC_ARRAY)
      */
-    assigns = AppendAssign( assigns,
-                            MakeAllocArrayICMs( DupIds( SYNC_INOUT( arg_node), NULL)));
+    assigns = MakeAllocArrayICMs (SYNC_INOUT_IDS (arg_node));
 
-    assigns = AppendAssign( assigns,
-                            MakeAssign( MakeIcm( "MT_CONTINUE",
-                                                 MakeExprs( MakeNum( num_folds),
-                                                            icm_args1),
-                                                 NULL),
-                                        NULL));
+    /*
+     * build the arguments for the ICMs
+     */
+    icm_args1 = icm_args2 = NULL;
+    num_folds = 0;
+    FOREACH_VARDEC_AND_ARG (
+      INFO_COMP_FUNDEF (arg_info), vardec,
+      if (DFMTestMaskEntry (SYNC_OUT (arg_node), VARDEC_OR_ARG_NAME (vardec))) {
+          GET_BASIC_SIMPLETYPE (s_type, VARDEC_OR_ARG_TYPE (vardec));
+          icm_args
+            = MakeExprs (MakeId (StringCopy (type_string[s_type]), NULL, ST_regular),
+                         MakeExprs (MakeId (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
+                                            NULL, ST_regular),
+                                    NULL));
 
-  }
-  else {
+          icm_args1 = AppendExpr (icm_args1, icm_args);
+          icm_args2
+            = AppendExpr (icm_args2,
+                          MakeExprs (DupTree (icm_args, NULL),
+                                     MakeExprs (MakeId (StringCopy ("?tmp_var?"), NULL,
+                                                        ST_regular),
+                                                MakeExprs (MakeId (StringCopy (
+                                                                     "?fold_op?"),
+                                                                   NULL, ST_regular),
+                                                           NULL))));
 
-    if (icm_args1 != NULL) {
-      icm_args1 = FreeTree( icm_args1);
-    }
+          num_folds++;
+      }) /* FOREACH_VARDEC_AND_ARG */
 
-  }
+    /*
+     * is this sync-region *not* the first one of the current SPMD-region?
+     *  -> insert the memory-managment (malloc).
+     *  -> insert ICM (MT_CONTINUE),
+     */
 
-  /*
-   * insert contents of sync-region-block
-   */
+    if (SYNC_FIRST (arg_node) == 0) {
 
-  assigns = AppendAssign( assigns,
-                          BLOCK_INSTR( SYNC_REGION( arg_node)));
-  BLOCK_INSTR( SYNC_REGION( arg_node)) = NULL;
+        /*
+         * insert a ND_ALLOC_ARRAY for every RC-object in 'SYNC_INOUT'
+         */
+        assigns = AppendAssign (assigns, MakeAllocArrayICMs (SYNC_INOUT (arg_node)));
 
-  /*
-   * insert ICM (MT_SYNC_...)
-   */
-
-  if (SYNC_INOUT( arg_node) == NULL) {
-    DBUG_ASSERT( (SYNC_OUT( arg_node) != NULL), "no target found");
-    if (IDS_NEXT( SYNC_OUT( arg_node)) == NULL) {
-      icm_name = "MT_SYNC_ONEFOLD";
-    }
-    else {
-      icm_name = "MT_SYNC_FOLD";
-    }
-  }
-  else {
-    if (SYNC_OUT( arg_node) == NULL) {
-      icm_name = "MT_SYNC_NONFOLD";
-    }
-    else {
-      if (IDS_NEXT( SYNC_OUT( arg_node)) == NULL) {
-        icm_name = "MT_SYNC_ONEFOLD_NONFOLD";
-      }
-      else {
-        icm_name = "MT_SYNC_FOLD_NONFOLD";
-      }
-    }
-  }
-
-  assigns = AppendAssign( assigns,
-                          MakeAssign( MakeIcm( icm_name,
-                                               MakeExprs( MakeNum( num_folds),
-                                                          icm_args2),
+        assigns
+          = AppendAssign (assigns,
+                          MakeAssign (MakeIcm ("MT_CONTINUE",
+                                               MakeExprs (MakeNum (num_folds), icm_args1),
                                                NULL),
                                       NULL));
+    } else {
+        if (icm_args1 != NULL) {
+            icm_args1 = FreeTree (icm_args1);
+        }
+    }
 
-  /*
-   * insert the memory-managment (free),
-   */
+    /*
+     * compile the sync-region
+     */
+    INFO_COMP_MT (arg_info) = 1;
+    SYNC_REGION (arg_node) = Trav (SYNC_REGION (arg_node), arg_info);
+    INFO_COMP_MT (arg_info) = 0;
 
+    /*
+     * insert contents of sync-region-block
+     */
+    assigns = AppendAssign (assigns, BLOCK_INSTR (SYNC_REGION (arg_node)));
+    BLOCK_INSTR (SYNC_REGION (arg_node)) = NULL;
 
-  /*
-   * remove remain of N_sync node
-   */
+    /*
+     * insert ICM (MT_SYNC_...)
+     */
 
-  arg_node = FreeTree( arg_node);
+    if (DFMTestMask (SYNC_INOUT (arg_node)) > 0) {
+        if (DFMTestMask (SYNC_OUT (arg_node)) > 0) {
+            if (DFMTestMask (SYNC_OUT (arg_node)) > 1) {
+                icm_name = "MT_SYNC_FOLD_NONFOLD";
+            } else {
+                /* DFMTestMask( SYNC_OUT( arg_node)) == 1 */
+                icm_name = "MT_SYNC_ONEFOLD_NONFOLD";
+            }
+        } else {
+            icm_name = "MT_SYNC_NONFOLD";
+        }
+    } else {
+        DBUG_ASSERT ((DFMTestMask (SYNC_OUT (arg_node)) > 0), "no target found");
+        if (DFMTestMask (SYNC_OUT (arg_node)) > 1) {
+            icm_name = "MT_SYNC_FOLD";
+        } else {
+            /* DFMTestMask( SYNC_OUT( arg_node)) == 1 */
+            icm_name = "MT_SYNC_ONEFOLD";
+        }
+    }
 
-  DBUG_RETURN( assigns);
-#else
-    DBUG_RETURN (arg_node);
-#endif
+    assigns
+      = AppendAssign (assigns,
+                      MakeAssign (MakeIcm (icm_name,
+                                           MakeExprs (MakeNum (num_folds), icm_args2),
+                                           NULL),
+                                  NULL));
+
+    /*
+     * insert ICMs for memory management (ND_DEC_RC_FREE).
+     */
+    assigns = AppendAssign (assigns, MakeDecRcFreeICMs (NWITH2_RC_IDS (arg_node)));
+
+    /*
+     * remove remain of N_sync node
+     */
+    arg_node = FreeTree (arg_node);
+
+    DBUG_RETURN (assigns);
 }
 
 node *wl_icm_args = NULL;
@@ -6315,15 +6249,15 @@ node *wl_withid = NULL;
  *   - 'wl_withid' points always to the N_withid-node.
  *   - 'wl_icm_args' points to the args-list of the ICMs WL_BEGIN, WL_END.
  *     This is needed to reuse this args for WL_ASSIGN.
- *   - INFO_COMP_MT decides weather the memory managment for with-loops is done
- *     in the N_sync- or the N_with2- code!!
+ *   - INFO_COMP_MT indicates weather the memory managment for with-loops is
+ *     done already in a parent N_sync-region or not.
  *
  ******************************************************************************/
 
 node *
 COMPNwith2 (node *arg_node, node *arg_info)
 {
-    node *icm_args, *icm_arg, *last_icm_arg;
+    node *icm_args;
     ids *wl_ids, *withid_ids;
     int num_args;
     node *assigns = NULL;
@@ -6334,7 +6268,6 @@ COMPNwith2 (node *arg_node, node *arg_info)
      * we must store the with-loop ids *before* compiling the codes
      *  because INFO_COMP_LASTIDS is possibly updated afterwards !!!
      */
-
     wl_ids = INFO_COMP_LASTIDS (arg_info);
     wl_withid = NWITH2_WITHID (arg_node);
 
@@ -6342,23 +6275,19 @@ COMPNwith2 (node *arg_node, node *arg_info)
      * if with-loop is compiled to sequential code,
      *  insert ICMs for memory management (ND_ALLOC_ARRAY)
      */
-
     if (INFO_COMP_MT (arg_info) == 0) {
-        assigns = MakeAllocArrayICMs (DupIds (wl_ids, NULL));
+        assigns = MakeAllocArrayICMs (wl_ids);
     }
 
     /*
      * insert ICMs to allocate memory for index-vector
      */
-
-    assigns
-      = AppendAssign (assigns, MakeAllocArrayICMs (
-                                 DupIds (NWITHID_VEC (NWITH2_WITHID (arg_node)), NULL)));
+    assigns = AppendAssign (assigns,
+                            MakeAllocArrayICMs (NWITHID_VEC (NWITH2_WITHID (arg_node))));
 
     /*
      * compile all code blocks
      */
-
     NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
 
     /*
@@ -6369,14 +6298,8 @@ COMPNwith2 (node *arg_node, node *arg_info)
     icm_args = NULL;
     withid_ids = NWITHID_IDS (wl_withid);
     while (withid_ids != NULL) {
-        icm_arg = MakeExprs (MakeId2 (DupOneIds (withid_ids, NULL)), NULL);
-
-        if (icm_args == NULL) {
-            icm_args = icm_arg;
-        } else {
-            EXPRS_NEXT (last_icm_arg) = icm_arg;
-        }
-        last_icm_arg = icm_arg;
+        icm_args = AppendExpr (icm_args,
+                               MakeExprs (MakeId2 (DupOneIds (withid_ids, NULL)), NULL));
         num_args++;
         withid_ids = IDS_NEXT (withid_ids);
     }
@@ -6398,13 +6321,11 @@ COMPNwith2 (node *arg_node, node *arg_info)
      * compile the with-segments
      *  -> we get an assignment-chain
      */
-
     assigns = AppendAssign (assigns, Trav (NWITH2_SEGS (arg_node), arg_info));
 
     /*
      * insert ICM 'WL_END'
      */
-
     assigns
       = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_END", icm_args, NULL), NULL));
 
@@ -6412,25 +6333,19 @@ COMPNwith2 (node *arg_node, node *arg_info)
      * if with-loop is compiled to sequential code,
      *  insert ICMs for memory management (ND_DEC_RC_FREE).
      */
-
-    if ((INFO_COMP_MT (arg_info) == 0) && (NWITH2_RC_IDS (arg_node) != NULL)) {
-        assigns
-          = AppendAssign (assigns,
-                          MakeDecRcFreeICMs (DupIds (NWITH2_RC_IDS (arg_node), NULL)));
+    if (INFO_COMP_MT (arg_info) == 0) {
+        assigns = AppendAssign (assigns, MakeDecRcFreeICMs (NWITH2_RC_IDS (arg_node)));
     }
 
     /*
      * insert ICM 'DEC_RC_FREE' for index-vector.
      */
-
-    assigns
-      = AppendAssign (assigns, MakeDecRcFreeICMs (
-                                 DupIds (NWITHID_VEC (NWITH2_WITHID (arg_node)), NULL)));
+    assigns = AppendAssign (assigns,
+                            MakeDecRcFreeICMs (NWITHID_VEC (NWITH2_WITHID (arg_node))));
 
     /*
      * old with-loop representation is useless now!
      */
-
     arg_node = FreeTree (arg_node);
 
     DBUG_RETURN (assigns);
@@ -6771,6 +6686,13 @@ COMPWLgrid (node *arg_node, node *arg_info)
                                                                             arg_node)),
                                                                         NULL)))))));
 
+    /* compile nextdim */
+    if (WLGRID_NEXTDIM (arg_node) != NULL) {
+        DBUG_ASSERT ((WLGRID_CODE (arg_node) == NULL),
+                     "code and nextdim used simultaneous");
+        assigns = Trav (WLGRID_NEXTDIM (arg_node), arg_info);
+    }
+
     /* compile code */
     if (WLGRID_CODE (arg_node) != NULL) {
         DBUG_ASSERT ((WLGRID_NEXTDIM (arg_node) == NULL),
@@ -6788,18 +6710,13 @@ COMPWLgrid (node *arg_node, node *arg_info)
         assigns
           = AppendAssign (assigns,
                           MakeAssign (MakeIcm ("WL_ASSIGN", icm_args2, NULL), NULL));
-    }
-
-    /* compile nextdim */
-    if (WLGRID_NEXTDIM (arg_node) != NULL) {
-        DBUG_ASSERT ((WLGRID_CODE (arg_node) == NULL),
-                     "code and nextdim used simultaneous");
-        assigns = Trav (WLGRID_NEXTDIM (arg_node), arg_info);
+    } else {
+        assigns = MakeAssign (MakeIcm ("WL_NOOP", NULL, NULL), NULL);
     }
 
     /* insert ICMs for current node */
     DBUG_ASSERT ((assigns != NULL), "code and nextdim are empty");
-    if (IDS_REFCNT (NWITHID_VEC (wl_withid)) > 0) {
+    if (IDS_REFCNT (NWITHID_VEC (wl_withid)) >= 0) {
         /*
          * if the index-vector is needed somewhere in the code-blocks,
          *  we must add the ICM 'WL_GRID_SET_IDX'.
