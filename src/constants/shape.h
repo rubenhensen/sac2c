@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2002/11/04 17:41:31  sbs
+ * split off SHOldShpseg2Shape from SHOldTypes2Shape in order
+ * to alow preventing flattening of user defined types much better now.
+ *
  * Revision 1.5  2002/11/04 13:22:08  sbs
  * SHDropFromShape added.
  *
@@ -60,6 +64,7 @@ extern int *SHShape2IntVec (shape *shp);
 extern node *SHShape2Array (shape *shp);
 
 extern shape *SHOldTypes2Shape (types *shpseg);
+extern shape *SHOldShpseg2Shape (int dim, shpseg *shpseg);
 extern shpseg *SHShape2OldShpseg (shape *shp);
 
 extern bool SHCompareWithCArray (shape *shp, int *shpdata, int dim);

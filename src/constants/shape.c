@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2002/11/04 17:41:31  sbs
+ * split off SHOldShpseg2Shape from SHOldTypes2Shape in order
+ * to alow preventing flattening of user defined types much better now.
+ *
  * Revision 1.9  2002/11/04 13:22:08  sbs
  * SHDropFromShape added.
  *
@@ -449,7 +453,7 @@ SHShape2String (int dots, shape *shp)
 shape *
 SHOldTypes2Shape (types *types)
 {
-    int dim, i, j;
+    int dim;
     shape *res;
     shpseg *shpseg;
 
@@ -459,13 +463,41 @@ SHOldTypes2Shape (types *types)
     /* this function handle user defined types, too */
     shpseg = Type2Shpseg (types, &dim);
 
+    res = SHOldShpseg2Shape (dim, shpseg);
+
+    if (shpseg != NULL) {
+        shpseg = FreeShpseg (shpseg);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    shape *SHOldShpseg2Shape( int dim, shpseg *shpseg)
+ *
+ * description:
+ *    iff dim > 0 a new shape structure is created which contains the same
+ *    shape info as the shpseg does. Otherwise, NULL is returned.
+ *
+ ******************************************************************************/
+shape *
+SHOldShpseg2Shape (int dim, shpseg *shpseg)
+{
+    int i, j;
+    shape *res;
+
+    DBUG_ENTER ("SHOldShpseg2Shape");
+
     if (dim >= 0) {
         res = SHMakeShape (dim);
 
         if (dim > 0) {
             i = 0;
             while (dim > SHP_SEG_SIZE) {
-                DBUG_ASSERT ((shpseg != NULL), "types structure corrupted!");
+                DBUG_ASSERT ((shpseg != NULL),
+                             "SHOldShpseg2Shape called with NULL shpseg but dim >0!");
                 for (j = 0; j < SHP_SEG_SIZE; j++, i++) {
                     SHAPE_EXT (res, i) = SHPSEG_SHAPE (shpseg, j);
                 }
@@ -475,9 +507,6 @@ SHOldTypes2Shape (types *types)
             for (j = 0; j < dim; j++, i++) {
                 SHAPE_EXT (res, i) = SHPSEG_SHAPE (shpseg, j);
             }
-
-            /* free tmp Shpseg */
-            shpseg = FreeShpseg (shpseg);
         }
     } else {
         res = NULL;
