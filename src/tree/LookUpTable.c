@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/04/11 09:43:38  dkr
+ * fixed a bug in DuplicateLUT(): StringCopy() used :-/
+ *
  * Revision 3.11  2001/04/10 09:59:34  dkr
  * DuplicateLUT added
  *
@@ -537,7 +540,8 @@ DuplicateLUT (lut_t *lut)
             DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
             tmp = lut[k].first;
             for (i = 0; i < lut[k].size; i++) {
-                new_lut = InsertIntoLUT (new_lut, (char *)(tmp[0]), (char *)(tmp[1]), k);
+                new_lut = InsertIntoLUT (new_lut, StringCopy ((char *)(tmp[0])),
+                                         StringCopy ((char *)(tmp[1])), k);
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     tmp = *tmp;
