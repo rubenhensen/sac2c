@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2004/11/27 00:17:33  jhb
+ * functionsname fixed with the header names
+ *
  * Revision 1.28  2004/11/26 23:52:43  mwe
  * *** empty log message ***
  *
@@ -106,7 +109,7 @@
 /******************************************************************************
  *
  * function:
- *    constant *MakeConstant( simpletype type, shape *shp, void *elems, int vlen)
+ *    constant *COINTmakeConstant( simpletype type, shape *shp, void *elems, int vlen)
  *
  * description:
  *    most generic function for creating constant structures. It simply assembles
@@ -118,11 +121,11 @@
  ******************************************************************************/
 
 constant *
-MakeConstant (simpletype type, shape *shp, void *elems, int vlen)
+COINTmakeConstant (simpletype type, shape *shp, void *elems, int vlen)
 {
     constant *res;
 
-    DBUG_ENTER ("MakeConstant");
+    DBUG_ENTER ("COINTmakeConstant");
 
     res = (constant *)ILIBmalloc (sizeof (constant));
     CONSTANT_TYPE (res) = type;
@@ -136,7 +139,7 @@ MakeConstant (simpletype type, shape *shp, void *elems, int vlen)
 /******************************************************************************
  *
  * function:
- *    void *AllocCV( simpletype type, int length)
+ *    void *COINTallocCV( simpletype type, int length)
  *
  * description:
  *    internal function for allocating a CV of length len.
@@ -144,11 +147,11 @@ MakeConstant (simpletype type, shape *shp, void *elems, int vlen)
  ******************************************************************************/
 
 void *
-AllocCV (simpletype type, int length)
+COINTallocCV (simpletype type, int length)
 {
     void *res;
 
-    DBUG_ENTER ("AllocCV");
+    DBUG_ENTER ("COINTallocCV");
 
     res = (void *)ILIBmalloc (global.basetype_size[type] * length);
 
@@ -158,7 +161,7 @@ AllocCV (simpletype type, int length)
 /******************************************************************************
  *
  * function:
- *    void *PickNElemsFromCV( simpletype type, void *elems, int offset, int length)
+ *    void *COINTickNElemsFromCV( simpletype type, void *elems, int offset, int length)
  *
  * description:
  *    internal function for picking a tile from a cv (constant vector). The
@@ -172,11 +175,11 @@ AllocCV (simpletype type, int length)
  ******************************************************************************/
 
 void *
-PickNElemsFromCV (simpletype type, void *elems, int offset, int length)
+COINTpickNElemsFromCV (simpletype type, void *elems, int offset, int length)
 {
     void *res;
 
-    DBUG_ENTER ("PickNElemsFromCV");
+    DBUG_ENTER ("COINTpickNElemsFromCV");
 
     res = AllocCV (type, length);
     global.cv2cv[type](elems, offset, length, res, 0);
@@ -187,7 +190,7 @@ PickNElemsFromCV (simpletype type, void *elems, int offset, int length)
 /******************************************************************************
  *
  * function:
- *    void CopyElemsFromCVToCV( simpletype type, void *from, int off, int len,
+ *    void COINTcopyElemsFromCVToCV( simpletype type, void *from, int off, int len,
  *                                               void *to, int to_off)
  *
  * description:
@@ -198,9 +201,10 @@ PickNElemsFromCV (simpletype type, void *elems, int offset, int length)
  ******************************************************************************/
 
 void
-CopyElemsFromCVToCV (simpletype type, void *from, int off, int len, void *to, int to_off)
+COINTcopyElemsFromCVToCV (simpletype type, void *from, int off, int len, void *to,
+                          int to_off)
 {
-    DBUG_ENTER ("CopyElemsFromCVToCV");
+    DBUG_ENTER ("COINTcopyElemsFromCVToCV");
 
     global.cv2cv[type](from, off, len, to, to_off);
 
@@ -210,7 +214,7 @@ CopyElemsFromCVToCV (simpletype type, void *from, int off, int len, void *to, in
 /******************************************************************************
  *
  * function:
- *   void DbugPrintBinOp( char *fun,
+ *   void COINTdbugPrintBinOp( char *fun,
  *                         constant *arg1,
  *                          constant *arg2,
  *                           constant *res)
@@ -223,9 +227,9 @@ CopyElemsFromCVToCV (simpletype type, void *from, int off, int len, void *to, in
 #ifndef DBUG_OFF
 
 void
-DbugPrintBinOp (char *fun, constant *arg1, constant *arg2, constant *res)
+COINTdbugPrintBinOp (char *fun, constant *arg1, constant *arg2, constant *res)
 {
-    DBUG_ENTER ("DbugPrintBinOp");
+    DBUG_ENTER ("COINTdbugPrintBinOp");
 
     fprintf (stderr, "%s applied to\n ", fun);
     COprintConstant (stderr, arg1);
@@ -242,7 +246,7 @@ DbugPrintBinOp (char *fun, constant *arg1, constant *arg2, constant *res)
 /******************************************************************************
  *
  * function:
- *   void DbugPrintUnaryOp( char *fun,
+ *   void COINTdbugPrintUnaryOp( char *fun,
  *                          constant *arg1,
  *                          constant *res)
  *
@@ -254,9 +258,9 @@ DbugPrintBinOp (char *fun, constant *arg1, constant *arg2, constant *res)
 #ifndef DBUG_OFF
 
 void
-DbugPrintUnaryOp (char *fun, constant *arg1, constant *res)
+COINTdbugPrintUnaryOp (char *fun, constant *arg1, constant *res)
 {
-    DBUG_ENTER ("DbugPrintUnaryOp");
+    DBUG_ENTER ("COINTdbugPrintUnaryOp");
 
     fprintf (stderr, "%s applied to\n ", fun);
     COprintConstant (stderr, arg1);
