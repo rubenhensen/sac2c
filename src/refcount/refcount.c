@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.51  1998/05/12 14:52:24  dkr
+ * renamed ???_RC_IDS to ???_DEC_RC_IDS
+ *
  * Revision 1.50  1998/05/11 15:15:58  dkr
  * added RCicm:
  *   no refcounting of ICM-args
@@ -1576,7 +1579,8 @@ RCgen (node *arg_node, node *arg_info)
  *
  * description:
  *   performs the refcounting for a N_Nwith node.
- *   collects in NWITH_RC_IDS all ids that are RC-arguments of the with-loop.
+ *   collects in NWITH_DEC_RC_IDS all ids that are RC-arguments of the
+ *    with-loop.
  *
  * remarks:
  *   - 'INFO_RC_WITH( arg_info)' points to the current with-loop node.
@@ -1665,19 +1669,19 @@ RCNwith (node *arg_node, node *arg_info)
     /*
      * Increase refcount of each RC-variable that is IN-var of the with-loop.
      *
-     * We collect all these ids in 'NWITH_RC_IDS( arg_node)'.
-     * 'compile' generates for each var found in 'NWITH_RC_IDS' a 'ND_DEC_RC'-ICM
-     *  in the epilog-code of the with-loop!
+     * We collect all these ids in 'NWITH_DEC_RC_IDS( arg_node)'.
+     * 'compile' generates for each var found in 'NWITH_DEC_RC_IDS' a
+     *  'ND_DEC_RC'-ICM in the epilog-code of the with-loop!
      *
      * RCO: with-loops are handled like prfs:
      *      when RCO is active, we only count the last occur of IN-vars.
      *
-     * CAUTION: we must initialize NCODE_RC_IDS because some subtrees (e.g.
-     *           bodies of while-loops) are traversed two times!!!
+     * CAUTION: we must initialize NCODE_DEC_RC_IDS because some subtrees
+     *          (e.g. bodies of while-loops) are traversed two times!!!
      */
 
-    if (NWITH_RC_IDS (arg_node) != NULL) {
-        NWITH_RC_IDS (arg_node) = FreeAllIds (NWITH_RC_IDS (arg_node));
+    if (NWITH_DEC_RC_IDS (arg_node) != NULL) {
+        NWITH_DEC_RC_IDS (arg_node) = FreeAllIds (NWITH_DEC_RC_IDS (arg_node));
     }
     FOREACH_VARDEC_AND_ARG (fundef_node, vardec,
                             if (DFMTestMaskEntry (NWITH_IN (arg_node),
@@ -1696,8 +1700,8 @@ RCNwith (node *arg_node, node *arg_info)
                                                  NULL, ST_regular);
                                     IDS_VARDEC (new_ids) = vardec;
                                     IDS_REFCNT (new_ids) = VARDEC_REFCNT (vardec);
-                                    if (NWITH_RC_IDS (arg_node) == NULL) {
-                                        NWITH_RC_IDS (arg_node) = new_ids;
+                                    if (NWITH_DEC_RC_IDS (arg_node) == NULL) {
+                                        NWITH_DEC_RC_IDS (arg_node) = new_ids;
                                     } else {
                                         IDS_NEXT (last_ids) = new_ids;
                                     }
@@ -1793,26 +1797,26 @@ RCNcode (node *arg_node, node *arg_info)
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
     /*
-     * We collect all ids, which RC is >1, in 'NCODE_RC_IDS( arg_node)'.
+     * We collect all ids, which RC is >1, in 'NCODE_DEC_RC_IDS( arg_node)'.
      * In 'IDS_REFCNT' we store (RC - 1) --- because we started the refcounting
      *  of these vars with (RC == 1)!!!
-     * 'compile' generates for each var in 'NCODE_RC_IDS' a 'ND_INC_RC'-ICM
+     * 'compile' generates for each var in 'NCODE_DEC_RC_IDS' a 'ND_INC_RC'-ICM
      *  as first statement of the code-block!
      *
-     * CAUTION: we must initialize NCODE_RC_IDS because some subtrees (e.g.
-     *           bodies of while-loops) are traversed two times!!!
+     * CAUTION: we must initialize NCODE_DEC_RC_IDS because some subtrees
+     *          (e.g. bodies of while-loops) are traversed two times!!!
      */
 
-    if (NCODE_RC_IDS (arg_node) != NULL) {
-        NCODE_RC_IDS (arg_node) = FreeAllIds (NCODE_RC_IDS (arg_node));
+    if (NCODE_DEC_RC_IDS (arg_node) != NULL) {
+        NCODE_DEC_RC_IDS (arg_node) = FreeAllIds (NCODE_DEC_RC_IDS (arg_node));
     }
     FOREACH_VARDEC_AND_ARG (fundef_node, vardec, if (VARDEC_OR_ARG_REFCNT (vardec) > 1) {
         new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL, ST_regular);
         IDS_VARDEC (new_ids) = vardec;
         IDS_REFCNT (new_ids) = VARDEC_REFCNT (vardec) - 1;
 
-        if (NCODE_RC_IDS (arg_node) == NULL) {
-            NCODE_RC_IDS (arg_node) = new_ids;
+        if (NCODE_DEC_RC_IDS (arg_node) == NULL) {
+            NCODE_DEC_RC_IDS (arg_node) = new_ids;
         } else {
             IDS_NEXT (last_ids) = new_ids;
         }
