@@ -1,12 +1,16 @@
 /*
  *
  * $Log$
+ * Revision 1.161  1998/05/24 00:44:53  dkr
+ * fixed some minor bugs
+ * added an ICM for blocking
+ *
  * Revision 1.160  1998/05/21 13:31:58  dkr
  * fixed some minor bugs
  *
  * Revision 1.159  1998/05/19 15:40:57  dkr
  * support for fold added
- * neutral element for fold-op could be any (!??) expr now
+ * neutral element for fold-op could be any (!?) expr now
  *
  * Revision 1.158  1998/05/19 08:54:21  cg
  * new functions for retrieving variables from masks provided by
@@ -6527,6 +6531,7 @@ COMPSync (node *arg_node, node *arg_info)
 
 ids *wl_ids = NULL;
 node *wl_node = NULL;
+node *wl_seg = NULL;
 
 /******************************************************************************
  *
@@ -6741,6 +6746,9 @@ COMPNcode (node *arg_node, node *arg_info)
  *     returns an N_assign-chain with ICMs and leaves 'arg_node' untouched!!
  *     (the whole with-loop-tree should be freed by 'COMPNwith2' only!!)
  *
+ * remark:
+ *   'wl_seg' points to the current with-loop segment.
+ *
  ******************************************************************************/
 
 node *
@@ -6749,6 +6757,8 @@ COMPWLseg (node *arg_node, node *arg_info)
     node *assigns;
 
     DBUG_ENTER ("COMPWLseg");
+
+    wl_seg = arg_node;
 
     /*
      * compile the contents of the segment
@@ -6809,11 +6819,8 @@ COMPWLblock (node *arg_node, node *arg_info)
     ids_vector = NWITHID_VEC (NWITH2_WITHID (wl_node));
     ids_scalar
       = GetIndexIds (NWITHID_IDS (NWITH2_WITHID (wl_node)), WLBLOCK_DIM (arg_node));
-    icm_args = MakeExprs (
-      MakeNum (WLBLOCK_LEVEL (arg_node)),
-      MakeExprs (
-        MakeNum (WLBLOCK_LEVEL (arg_node) + 1),
-        MakeExprs (MakeNum (WLBLOCK_DIM (arg_node)),
+    icm_args
+      = MakeExprs (MakeNum (WLBLOCK_DIM (arg_node)),
                    MakeExprs (MakeId2 (DupOneIds (ids_vector, NULL)),
                               MakeExprs (MakeId2 (DupOneIds (ids_scalar, NULL)),
                                          MakeExprs (MakeNum (WLBLOCK_BOUND1 (arg_node)),
@@ -6822,7 +6829,7 @@ COMPWLblock (node *arg_node, node *arg_info)
                                                                MakeExprs (MakeNum (
                                                                             WLBLOCK_STEP (
                                                                               arg_node)),
-                                                                          NULL))))))));
+                                                                          NULL))))));
 
     /*
      * insert ICMs for current node
@@ -6893,11 +6900,8 @@ COMPWLublock (node *arg_node, node *arg_info)
     ids_vector = NWITHID_VEC (NWITH2_WITHID (wl_node));
     ids_scalar
       = GetIndexIds (NWITHID_IDS (NWITH2_WITHID (wl_node)), WLUBLOCK_DIM (arg_node));
-    icm_args = MakeExprs (
-      MakeNum (WLUBLOCK_LEVEL (arg_node)),
-      MakeExprs (
-        MakeNum (WLUBLOCK_LEVEL (arg_node) + 1),
-        MakeExprs (MakeNum (WLUBLOCK_DIM (arg_node)),
+    icm_args
+      = MakeExprs (MakeNum (WLUBLOCK_DIM (arg_node)),
                    MakeExprs (MakeId2 (DupOneIds (ids_vector, NULL)),
                               MakeExprs (MakeId2 (DupOneIds (ids_scalar, NULL)),
                                          MakeExprs (MakeNum (WLUBLOCK_BOUND1 (arg_node)),
@@ -6906,7 +6910,7 @@ COMPWLublock (node *arg_node, node *arg_info)
                                                                MakeExprs (MakeNum (
                                                                             WLUBLOCK_STEP (
                                                                               arg_node)),
-                                                                          NULL))))))));
+                                                                          NULL))))));
 
     /*
      * insert ICMs for current node
@@ -6966,11 +6970,8 @@ COMPWLstride (node *arg_node, node *arg_info)
     ids_vector = NWITHID_VEC (NWITH2_WITHID (wl_node));
     ids_scalar
       = GetIndexIds (NWITHID_IDS (NWITH2_WITHID (wl_node)), WLSTRIDE_DIM (arg_node));
-    icm_args = MakeExprs (
-      MakeNum (WLSTRIDE_LEVEL (arg_node)),
-      MakeExprs (
-        MakeNum (WLSTRIDE_LEVEL (arg_node) + 1),
-        MakeExprs (MakeNum (WLSTRIDE_DIM (arg_node)),
+    icm_args
+      = MakeExprs (MakeNum (WLSTRIDE_DIM (arg_node)),
                    MakeExprs (MakeId2 (DupOneIds (ids_vector, NULL)),
                               MakeExprs (MakeId2 (DupOneIds (ids_scalar, NULL)),
                                          MakeExprs (MakeNum (WLSTRIDE_BOUND1 (arg_node)),
@@ -6979,7 +6980,7 @@ COMPWLstride (node *arg_node, node *arg_info)
                                                                MakeExprs (MakeNum (
                                                                             WLSTRIDE_STEP (
                                                                               arg_node)),
-                                                                          NULL))))))));
+                                                                          NULL))))));
 
     /*
      * insert ICMs for current node
@@ -7018,6 +7019,7 @@ COMPWLstride (node *arg_node, node *arg_info)
  * remarks:
  *   - 'wl_ids' points always to LET_IDS of the current with-loop.
  *   - 'wl_node' points always to the N_with-node.
+ *   - 'wl_seg' points to the current with-loop segment.
  *
  ******************************************************************************/
 
@@ -7027,11 +7029,56 @@ COMPWLgrid (node *arg_node, node *arg_info)
     node *icm_args, *icm_args2, *cexpr, *assigns = NULL;
     ids *ids_vector, *ids_scalar, *withid_ids;
     char *icm_name;
-    int num_args;
+    int num_args, last_blocking, d;
 
     DBUG_ENTER ("COMPWLgrid");
 
+    /*
+     * build argument list for 'WL_ASSIGN_...'/'WL_FOLD'/'WL_ADJUST_OFFSET'-ICM
+     */
+    icm_args2 = NULL;
+    num_args = 0;
+    withid_ids = NWITHID_IDS (NWITH2_WITHID (wl_node));
+    while (withid_ids != NULL) {
+        icm_args2 = AppendExpr (icm_args2,
+                                MakeExprs (MakeId2 (DupOneIds (withid_ids, NULL)), NULL));
+        num_args++;
+        withid_ids = IDS_NEXT (withid_ids);
+    }
+    icm_args2
+      = MakeExprs (MakeId2 (DupOneIds (NWITHID_VEC (NWITH2_WITHID (wl_node)), NULL)),
+                   MakeExprs (MakeNum (num_args), icm_args2));
+
     if (WLGRID_NEXTDIM (arg_node) != NULL) {
+
+        /*
+         * if not a fold with-loop:
+         *  insert ICM 'WL_ADJUST_OFFSET' if next dim is the last blocked dim.
+         */
+
+        if ((NWITH2_TYPE (wl_node) != WO_foldprf) && (NWITH2_TYPE (wl_node) != WO_foldfun)
+            && ((WLSEG_BV (wl_seg, 0))[WLGRID_DIM (arg_node) + 1] > 1)) {
+            last_blocking = 1;
+            for (d = WLGRID_DIM (arg_node) + 2; d < WLSEG_DIMS (wl_seg); d++) {
+                if ((WLSEG_BV (wl_seg, 0))[d] > 1) {
+                    last_blocking = 0;
+                }
+            }
+
+            if (last_blocking == 1) {
+                icm_args2
+                  = MakeExprs (MakeNum (WLGRID_DIM (arg_node)),
+                               MakeExprs (MakeNum (TYPES_DIM (IDS_TYPE (wl_ids))),
+                                          MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)),
+                                                     icm_args2)));
+                assigns
+                  = MakeAssign (MakeIcm ("WL_ADJUST_OFFSET", icm_args2, NULL), NULL);
+            } else {
+                icm_args2 = FreeTree (icm_args2);
+            }
+        } else {
+            icm_args2 = FreeTree (icm_args2);
+        }
 
         /*
          * compile nextdim
@@ -7039,53 +7086,21 @@ COMPWLgrid (node *arg_node, node *arg_info)
 
         DBUG_ASSERT ((WLGRID_CODE (arg_node) == NULL),
                      "code and nextdim used simultaneous");
-        assigns = Trav (WLGRID_NEXTDIM (arg_node), arg_info);
+        assigns = AppendAssign (assigns, Trav (WLGRID_NEXTDIM (arg_node), arg_info));
 
     } else {
 
-        /*
-         * compile code
-         */
+        icm_args2 = MakeExprs (MakeNum (TYPES_DIM (IDS_TYPE (wl_ids))),
+                               MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)), icm_args2));
 
-        /*
-         * build argument list for 'WL_ASSIGN_...'/'WL_FOLD'-ICM
-         */
-
-        icm_args2 = NULL;
-        num_args = 0;
-        withid_ids = NWITHID_IDS (NWITH2_WITHID (wl_node));
-        while (withid_ids != NULL) {
-            icm_args2
-              = AppendExpr (icm_args2,
-                            MakeExprs (MakeId2 (DupOneIds (withid_ids, NULL)), NULL));
-            num_args++;
-            withid_ids = IDS_NEXT (withid_ids);
-        }
-
-        icm_args2
-          = MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)),
-                       MakeExprs (MakeId2 (
-                                    DupOneIds (NWITHID_VEC (NWITH2_WITHID (wl_node)),
-                                               NULL)),
-                                  MakeExprs (MakeNum (num_args), icm_args2)));
-
-        DBUG_ASSERT ((WLGRID_CODE (arg_node) != NULL), "no code found");
-        cexpr = NCODE_CEXPR (WLGRID_CODE (arg_node));
-        DBUG_ASSERT ((cexpr != NULL), "no code expr found");
-
-        icm_args2
-          = AppendExpr (icm_args2, MakeExprs (MakeNum (TYPES_DIM (ID_TYPE (cexpr))),
-                                              MakeExprs (DupNode (cexpr), NULL)));
-
-        if (WLGRID_CODE_TEMPLATE (arg_node) == 0) {
-
-            /*
-             * proper code found (it is not just a template).
-             */
+        if (WLGRID_CODE (arg_node) != NULL) {
 
             /*
              * insert compiled code.
              */
+
+            cexpr = NCODE_CEXPR (WLGRID_CODE (arg_node));
+            DBUG_ASSERT ((cexpr != NULL), "no code expr found");
 
             if (NCODE_CBLOCK (WLGRID_CODE (arg_node)) != NULL) {
                 assigns
@@ -7100,6 +7115,8 @@ COMPWLgrid (node *arg_node, node *arg_info)
             case WO_genarray:
                 /* here is no break missing! */
             case WO_modarray:
+                icm_args2 = MakeExprs (MakeNum (TYPES_DIM (ID_TYPE (cexpr))),
+                                       MakeExprs (DupNode (cexpr), icm_args2));
                 icm_name = "WL_ASSIGN";
                 break;
 
@@ -7127,7 +7144,8 @@ COMPWLgrid (node *arg_node, node *arg_info)
         } else {
 
             /*
-             * code is just a template (otherwise: init/copy/noop).
+             * no code found.
+             *  -> init/copy/noop
              */
 
             assigns = NULL;
@@ -7144,18 +7162,12 @@ COMPWLgrid (node *arg_node, node *arg_info)
             case WO_modarray:
                 icm_args2 = MakeExprs (DupNode (NWITHOP_ARRAY (NWITH2_WITHOP (wl_node))),
                                        icm_args2);
-
                 icm_name = "WL_ASSIGN_COPY";
                 break;
 
             case WO_foldfun:
                 /* here is no break missing! */
             case WO_foldprf:
-                /*
-                 * first argument of 'icm_args2' is not needed
-                 */
-                icm_args2 = FreeNode (icm_args2);
-
                 icm_args2 = MakeExprs (MakeNum (WLGRID_DIM (arg_node)), icm_args2);
                 /*
                  * we must use the ICM_VAR mechanismus for 'bound1' and 'bound2',
@@ -7189,27 +7201,24 @@ COMPWLgrid (node *arg_node, node *arg_info)
     ids_vector = NWITHID_VEC (NWITH2_WITHID (wl_node));
     ids_scalar
       = GetIndexIds (NWITHID_IDS (NWITH2_WITHID (wl_node)), WLGRID_DIM (arg_node));
-    icm_args = MakeExprs (
-      MakeNum (WLGRID_LEVEL (arg_node)),
-      MakeExprs (MakeNum (WLGRID_LEVEL (arg_node) + 1),
-                 MakeExprs (MakeNum (WLGRID_DIM (arg_node)),
-                            MakeExprs (MakeId2 (DupOneIds (ids_vector, NULL)),
-                                       MakeExprs (MakeId2 (DupOneIds (ids_scalar, NULL)),
-                                                  MakeExprs (MakeNum (
-                                                               WLGRID_BOUND1 (arg_node)),
-                                                             MakeExprs (MakeNum (
-                                                                          WLGRID_BOUND2 (
-                                                                            arg_node)),
-                                                                        NULL)))))));
+    icm_args
+      = MakeExprs (MakeNum (WLGRID_DIM (arg_node)),
+                   MakeExprs (MakeId2 (DupOneIds (ids_vector, NULL)),
+                              MakeExprs (MakeId2 (DupOneIds (ids_scalar, NULL)),
+                                         MakeExprs (MakeNum (WLGRID_BOUND1 (arg_node)),
+                                                    MakeExprs (MakeNum (WLGRID_BOUND2 (
+                                                                 arg_node)),
+                                                               NULL)))));
 
     /*
      * insert ICMs for current node
      */
 
     if ((IDS_REFCNT (NWITHID_VEC (NWITH2_WITHID (wl_node))) >= 0)
-        && (WLGRID_CODE_TEMPLATE (arg_node) == 0)) {
+        && ((WLGRID_CODE (arg_node) != NULL) || (WLGRID_NEXTDIM (arg_node)))) {
         /*
          * if the index-vector is needed somewhere in the code-blocks,
+         *  and this is not a dummy grid (init, copy, noop),
          *  we must add the ICM 'WL_GRID_SET_IDX'.
          */
         assigns = MakeAssign (MakeIcm ("WL_GRID_SET_IDX", icm_args, NULL), assigns);
@@ -7259,23 +7268,19 @@ COMPWLstriVar (node *arg_node, node *arg_info)
     ids_scalar
       = GetIndexIds (NWITHID_IDS (NWITH2_WITHID (wl_node)), WLSTRIVAR_DIM (arg_node));
     icm_args = MakeExprs (
-      MakeNum (0),
+      MakeNum (WLSTRIVAR_DIM (arg_node)),
       MakeExprs (
-        MakeNum (1),
-        MakeExprs (
-          MakeNum (WLSTRIVAR_DIM (arg_node)),
-          MakeExprs (
-            MakeId2 (DupOneIds (ids_vector, NULL)),
-            MakeExprs (MakeId2 (DupOneIds (ids_scalar, NULL)),
-                       MakeExprs (IdOrNumToIndex (WLSTRIVAR_BOUND1 (arg_node),
-                                                  WLSTRIVAR_DIM (arg_node)),
-                                  MakeExprs (IdOrNumToIndex (WLSTRIVAR_BOUND2 (arg_node),
-                                                             WLSTRIVAR_DIM (arg_node)),
-                                             MakeExprs (IdOrNumToIndex (WLSTRIVAR_STEP (
-                                                                          arg_node),
-                                                                        WLSTRIVAR_DIM (
-                                                                          arg_node)),
-                                                        NULL))))))));
+        MakeId2 (DupOneIds (ids_vector, NULL)),
+        MakeExprs (MakeId2 (DupOneIds (ids_scalar, NULL)),
+                   MakeExprs (IdOrNumToIndex (WLSTRIVAR_BOUND1 (arg_node),
+                                              WLSTRIVAR_DIM (arg_node)),
+                              MakeExprs (IdOrNumToIndex (WLSTRIVAR_BOUND2 (arg_node),
+                                                         WLSTRIVAR_DIM (arg_node)),
+                                         MakeExprs (IdOrNumToIndex (WLSTRIVAR_STEP (
+                                                                      arg_node),
+                                                                    WLSTRIVAR_DIM (
+                                                                      arg_node)),
+                                                    NULL))))));
 
     /*
      * insert ICMs for current node
@@ -7332,13 +7337,8 @@ COMPWLgridVar (node *arg_node, node *arg_info)
     } else {
 
         /*
-         * compile code
-         */
-
-        /*
          * build argument list for 'WL_ASSIGN_...'/'WL_FOLD'-ICM
          */
-
         icm_args2 = NULL;
         num_args = 0;
         withid_ids = NWITHID_IDS (NWITH2_WITHID (wl_node));
@@ -7349,28 +7349,23 @@ COMPWLgridVar (node *arg_node, node *arg_info)
             num_args++;
             withid_ids = IDS_NEXT (withid_ids);
         }
-
         icm_args2
-          = MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)),
-                       MakeExprs (MakeId2 (
-                                    DupOneIds (NWITHID_VEC (NWITH2_WITHID (wl_node)),
-                                               NULL)),
-                                  MakeExprs (MakeNum (num_args), icm_args2)));
+          = MakeExprs (MakeNum (TYPES_DIM (IDS_TYPE (wl_ids))),
+                       MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)),
+                                  MakeExprs (MakeId2 (
+                                               DupOneIds (NWITHID_VEC (
+                                                            NWITH2_WITHID (wl_node)),
+                                                          NULL)),
+                                             MakeExprs (MakeNum (num_args), icm_args2))));
 
-        DBUG_ASSERT ((WLGRIDVAR_CODE (arg_node) != NULL), "no code found");
-        cexpr = NCODE_CEXPR (WLGRIDVAR_CODE (arg_node));
-        DBUG_ASSERT ((cexpr != NULL), "no code expr found");
-
-        icm_args2
-          = AppendExpr (icm_args2, MakeExprs (MakeNum (TYPES_DIM (ID_TYPE (cexpr))),
-                                              MakeExprs (DupNode (cexpr), NULL)));
-
-        if (WLGRIDVAR_CODE_TEMPLATE (arg_node) == 0) {
+        if (WLGRIDVAR_CODE (arg_node) != NULL) {
 
             /*
-             * proper code found (it is not just a template).
-             *  -> insert compiled code.
+             * insert compiled code.
              */
+
+            cexpr = NCODE_CEXPR (WLGRIDVAR_CODE (arg_node));
+            DBUG_ASSERT ((cexpr != NULL), "no code expr found");
 
             if (NCODE_CBLOCK (WLGRIDVAR_CODE (arg_node)) != NULL) {
                 assigns = DupTree (BLOCK_INSTR (NCODE_CBLOCK (WLGRIDVAR_CODE (arg_node))),
@@ -7385,6 +7380,8 @@ COMPWLgridVar (node *arg_node, node *arg_info)
             case WO_genarray:
                 /* here is no break missing! */
             case WO_modarray:
+                icm_args2 = MakeExprs (MakeNum (TYPES_DIM (ID_TYPE (cexpr))),
+                                       MakeExprs (DupNode (cexpr), icm_args2));
                 icm_name = "WL_ASSIGN";
                 break;
 
@@ -7412,7 +7409,8 @@ COMPWLgridVar (node *arg_node, node *arg_info)
         } else {
 
             /*
-             * code is just a template (otherwise: init/copy/noop).
+             * no code found.
+             *  -> init/copy/noop
              */
 
             assigns = NULL;
@@ -7429,18 +7427,12 @@ COMPWLgridVar (node *arg_node, node *arg_info)
             case WO_modarray:
                 icm_args2 = MakeExprs (DupNode (NWITHOP_ARRAY (NWITH2_WITHOP (wl_node))),
                                        icm_args2);
-
                 icm_name = "WL_ASSIGN_COPY";
                 break;
 
             case WO_foldfun:
                 /* here is no break missing! */
             case WO_foldprf:
-                /*
-                 * first argument of 'icm_args2' is not needed
-                 */
-                icm_args2 = FreeNode (icm_args2);
-
                 icm_args2 = MakeExprs (MakeNum (WLGRID_DIM (arg_node)), icm_args2);
                 /*
                  * we must use the ICM_VAR mechanismus for 'bound1' and 'bound2',
@@ -7477,29 +7469,26 @@ COMPWLgridVar (node *arg_node, node *arg_info)
     ids_scalar
       = GetIndexIds (NWITHID_IDS (NWITH2_WITHID (wl_node)), WLGRIDVAR_DIM (arg_node));
     icm_args = MakeExprs (
-      MakeNum (0),
-      MakeExprs (
-        MakeNum (1),
-        MakeExprs (
-          MakeNum (WLGRIDVAR_DIM (arg_node)),
-          MakeExprs (MakeId2 (DupOneIds (ids_vector, NULL)),
-                     MakeExprs (MakeId2 (DupOneIds (ids_scalar, NULL)),
-                                MakeExprs (IdOrNumToIndex (WLGRIDVAR_BOUND1 (arg_node),
-                                                           WLGRIDVAR_DIM (arg_node)),
-                                           MakeExprs (IdOrNumToIndex (WLGRIDVAR_BOUND2 (
-                                                                        arg_node),
-                                                                      WLGRIDVAR_DIM (
-                                                                        arg_node)),
-                                                      NULL)))))));
+      MakeNum (WLGRIDVAR_DIM (arg_node)),
+      MakeExprs (MakeId2 (DupOneIds (ids_vector, NULL)),
+                 MakeExprs (MakeId2 (DupOneIds (ids_scalar, NULL)),
+                            MakeExprs (IdOrNumToIndex (WLGRIDVAR_BOUND1 (arg_node),
+                                                       WLGRIDVAR_DIM (arg_node)),
+                                       MakeExprs (IdOrNumToIndex (WLGRIDVAR_BOUND2 (
+                                                                    arg_node),
+                                                                  WLGRIDVAR_DIM (
+                                                                    arg_node)),
+                                                  NULL)))));
 
     /*
      * insert ICMs for current node
      */
 
     if ((IDS_REFCNT (NWITHID_VEC (NWITH2_WITHID (wl_node))) >= 0)
-        && (WLGRIDVAR_CODE_TEMPLATE (arg_node) == 0)) {
+        && ((WLGRIDVAR_CODE (arg_node) != NULL) || (WLGRIDVAR_NEXTDIM (arg_node)))) {
         /*
          * if the index-vector is needed somewhere in the code-blocks,
+         *  and this is not a dummy grid (init, copy, noop),
          *  we must add the ICM 'WL_GRID_SET_IDX'.
          */
         assigns = MakeAssign (MakeIcm ("WL_GRID_SET_IDX", icm_args, NULL), assigns);
