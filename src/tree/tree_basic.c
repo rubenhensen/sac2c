@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2000/03/22 17:37:28  jhs
+ * Added N_MTsignal, N_MTalloc, N_MTsync macros.
+ *
  * Revision 1.11  2000/03/21 15:45:18  dkr
  * MakeIcm brushed
  *
@@ -1552,6 +1555,52 @@ MakeST (node *region)
 
     tmp = CreateCleanNode (N_st);
     ST_REGION (tmp) = region;
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeMTsignal ()
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeMTsignal");
+
+    tmp = CreateCleanNode (N_MTsignal);
+    MTSIGNAL_IDSET (tmp) = NULL;
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeMTsync ()
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeMTsync");
+
+    tmp = CreateCleanNode (N_MTsync);
+    MTSYNC_WAIT (tmp) = NULL;
+    MTSYNC_ALLOC (tmp) = NULL;
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeMTalloc ()
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeMTalloc");
+
+    tmp = CreateCleanNode (N_MTalloc);
+    MTALLOC_IDSET (tmp) = NULL;
 
     DBUG_RETURN (tmp);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  2000/03/22 17:37:28  jhs
+ * Added N_MTsignal, N_MTalloc, N_MTsync macros.
+ *
  * Revision 1.31  2000/03/21 15:52:31  jhs
  * Rearrange arg_info usage in INFO_DFA.
  *
@@ -2748,6 +2751,11 @@ extern node *MakeSync (node *region);
  ***
  ***  sons:
  ***    node*     REGION      (N_block)
+ ***
+ ***  temporary attributes:
+ ***    DFMmask_t  USEMASK       (multithread.dfa ->)
+ ***    DFMmask_t  DEFMASK       (multithread.dfa ->)
+ ***    DFMmask_t  NEEDLATER     (multithread.dfa ->)
  ***/
 
 extern node *MakeMT (node *region);
@@ -2764,6 +2772,12 @@ extern node *MakeMT (node *region);
  ***
  ***  sons:
  ***    node*     REGION      (N_block)
+ ***
+ ***  temporary attributes:
+ ***    DFMmask_t  USEMASK        (multithread.dfa ->)
+ ***    DFMmask_t  DEFMASK        (multithread.dfa ->)
+ ***    DFMmask_t  NEEDLATER_ST   (multithread.dfa ->)
+ ***    DFMmask_t  NEEDLATER_MT   (multithread.dfa ->)
  ***/
 
 extern node *MakeST (node *region);
@@ -2773,6 +2787,48 @@ extern node *MakeST (node *region);
 #define ST_DEFMASK(n) (n->dfmask[1])
 #define ST_NEEDLATER_ST(n) (n->dfmask[2])
 #define ST_NEEDLATER_MT(n) (n->dfmask[3])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_MTsignal :
+ ***
+ ***  permanent atrributes:
+ ***    DFMmask_t   IDSET
+ ***/
+
+extern node *MakeMTsignal ();
+
+#define MTSIGNAL_IDSET(n) (n->dfmask[0])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_MTsync :
+ ***
+ ***  permanent atrributes:
+ ***    DFMmask_t   WAIT
+ ***    ####        FOLD
+ ***    DFMmask_t   ALLOC
+ ***/
+
+extern node *MakeMTsync ();
+
+#define MTSYNC_WAIT(n) (n->dfmask[0])
+#define MTSYNC_ALLOC(n) (n->dfmask[1])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_MTalloc :
+ ***
+ ***  permanent atrributes:
+ ***    DFMmask_t   IDSET
+ ***/
+
+extern node *MakeMTalloc ();
+
+#define MTALLOC_IDSET(n) (n->dfmask[0])
 
 /*--------------------------------------------------------------------------*/
 
