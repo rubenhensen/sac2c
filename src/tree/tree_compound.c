@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2002/06/20 15:35:36  dkr
+ * - AddVardecs() added
+ * - MakeZero(), MakeZeroFromTypes() added
+ *
  * Revision 3.56  2002/04/29 15:59:34  sbs
  * function HasDotTypes added.
  *
@@ -230,6 +234,7 @@
 #include "free.h"
 
 #include "typecheck.h"
+#include "DataFlowMask.h"
 #include "wltransform.h"
 
 /*
@@ -282,8 +287,10 @@ GetShpsegLength (int dims, shpseg *shape)
         for (i = 0; i < dims; i++) {
             length *= SHPSEG_SHAPE (shape, i);
         }
-    } else {
+    } else if (dims == 0) {
         length = 0;
+    } else {
+        length = (-1);
     }
 
     DBUG_RETURN (length);
@@ -431,14 +438,18 @@ Shpseg2Array (shpseg *shape, int dim)
 
     DBUG_ENTER ("Shpseg2Array");
 
-    i = dim - 1;
-    next = MakeExprs (MakeNum (SHPSEG_SHAPE (shape, i)), NULL);
-    i--;
-    for (; i >= 0; i--) {
+    next = NULL;
+    for (i = dim - 1; i >= 0; i--) {
         next = MakeExprs (MakeNum (SHPSEG_SHAPE (shape, i)), next);
     }
 
     array_node = MakeArray (next);
+
+    ARRAY_ISCONST (array_node) = TRUE;
+    ARRAY_VECTYPE (array_node) = T_int;
+    ARRAY_VECLEN (array_node) = dim;
+    ((int *)ARRAY_CONSTVEC (array_node)) = Array2IntVec (next, NULL);
+
     array_shape = MakeShpseg (NULL);
     SHPSEG_SHAPE (array_shape, 0) = dim;
     ARRAY_TYPE (array_node) = MakeTypes (T_int, 1, array_shape, NULL, NULL);
@@ -910,6 +921,36 @@ Type2Exprs (types *type)
     ret_node = FreeNode (ret_node);
 
     DBUG_RETURN (ret_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *CreateZeroFromType( types *type, bool unroll, node *fundef)
+ *
+ * Description:
+ *   Creates an array of zeros.
+ *
+ ******************************************************************************/
+
+node *
+CreateZeroFromType (types *type, bool unroll, node *fundef)
+{
+    node *zero;
+    shpseg *shape;
+    simpletype btype;
+    int dim;
+
+    DBUG_ENTER ("CreateZeroFromType");
+
+    shape = Type2Shpseg (type, &dim);
+    btype = GetBasetype (type);
+    zero = CreateZero (dim, shape, btype, unroll, fundef);
+    if (shape != NULL) {
+        shape = FreeShpseg (shape);
+    }
+
+    DBUG_RETURN (zero);
 }
 
 /******************************************************************************
@@ -2023,6 +2064,42 @@ AppendFundef (node *fundef_chain, node *fundef)
 
 /******************************************************************************
  *
+ * Function:
+ *   node *AddVardecs( node *fundef, node *vardecs)
+ *
+ * Description:
+ *   Inserts new declarations into the AST, updates the DFMbase and returns
+ *   the modified N_fundef node.
+ *
+ ******************************************************************************/
+
+node *
+AddVardecs (node *fundef, node *vardecs)
+{
+    DBUG_ENTER ("AddVardecs");
+
+    DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
+                 "no N_fundef node found!");
+
+    /*
+     * insert new vardecs into AST
+     */
+    FUNDEF_VARDEC (fundef) = AppendVardec (vardecs, FUNDEF_VARDEC (fundef));
+
+    /*
+     * we must update FUNDEF_DFM_BASE!!
+     */
+    if (FUNDEF_DFM_BASE (fundef) != NULL) {
+        FUNDEF_DFM_BASE (fundef)
+          = DFMUpdateMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
+                               FUNDEF_VARDEC (fundef));
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
  * function:
  *   node *AppendVardec( node *vardec_chain, node *vardec)
  *
@@ -3009,6 +3086,89 @@ CountExprs (node *exprs)
 /***
  ***  N_array :
  ***/
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *CreateZero( int dim, shpseg *shape, simpletype btype, bool unroll,
+ *                     node *fundef)
+ *
+ * Description:
+ *   Creates an array of zeros.
+ *
+ ******************************************************************************/
+
+node *
+CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll, node *fundef)
+{
+    node *zero;
+    int length = GetShpsegLength (dim, shape);
+
+    DBUG_ENTER ("CreateZero");
+
+    DBUG_ASSERT ((dim >= 0), "CreateZero() used with unknown shape!");
+
+    if (dim == 0) {
+        zero = CreateZeroScalar (btype);
+    } else if (dim == 1) {
+        zero = CreateZeroVector (length, btype);
+    } else {
+        if (unroll) {
+            zero
+              = MakePrf (F_reshape,
+                         MakeExprs (Shpseg2Array (shape, dim),
+                                    MakeExprs (CreateZeroVector (length, btype), NULL)));
+        } else {
+            node *vardecs = NULL;
+            node *id;
+            ids *vec_ids;
+            ids *scl_ids = NULL;
+            ids *tmp_ids;
+            int i;
+
+            vec_ids = MakeIds (TmpVar (), NULL, ST_regular);
+            vardecs = MakeVardec (StringCopy (IDS_NAME (vec_ids)),
+                                  MakeTypes (T_int, 1, MakeShpseg (MakeNums (dim, NULL)),
+                                             NULL, NULL),
+                                  vardecs);
+            IDS_VARDEC (vec_ids) = vardecs;
+
+            for (i = 0; i < dim; i++) {
+                tmp_ids = MakeIds (TmpVar (), NULL, ST_regular);
+                vardecs = MakeVardec (StringCopy (IDS_NAME (tmp_ids)), MakeTypes1 (T_int),
+                                      vardecs);
+                IDS_NEXT (tmp_ids) = scl_ids;
+                scl_ids = tmp_ids;
+                IDS_VARDEC (scl_ids) = vardecs;
+            }
+
+            id = MakeId (TmpVar (), NULL, ST_regular);
+            vardecs = MakeVardec (StringCopy (ID_NAME (id)),
+                                  MakeTypes (btype, dim, DupShpseg (shape), NULL, NULL),
+                                  vardecs);
+            ID_VARDEC (id) = vardecs;
+
+            zero
+              = MakeNWith (MakeNPart (MakeNWithid (vec_ids, scl_ids),
+                                      MakeNGenerator (CreateZeroVector (dim, T_int),
+                                                      Shpseg2Array (shape, dim), F_le,
+                                                      F_lt, NULL, NULL),
+                                      NULL),
+                           MakeNCode (MakeBlock (MakeAssignLet (StringCopy (ID_NAME (id)),
+                                                                vardecs,
+                                                                CreateZeroScalar (btype)),
+                                                 NULL),
+                                      id),
+                           MakeNWithOp (WO_genarray, Shpseg2Array (shape, dim)));
+            NCODE_USED (NWITH_CODE (zero))++;
+            NPART_CODE (NWITH_PART (zero)) = NWITH_CODE (zero);
+
+            fundef = AddVardecs (fundef, vardecs);
+        }
+    }
+
+    DBUG_RETURN (zero);
+}
 
 /******************************************************************************
  *
