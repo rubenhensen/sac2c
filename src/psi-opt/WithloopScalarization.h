@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2002/06/26 20:31:22  ktr
+ * WLS now supports all tested MG-genarray WLs.
+ *
  * Revision 1.5  2002/06/18 10:23:15  ktr
  * Support for N_id nodes in generator's N_array nodes added.
  *
@@ -21,6 +24,7 @@
 
 #ifndef _WithloopScalarization_h
 #define _WithloopScalarization_h
+#define _WLS
 
 extern node *WithloopScalarization (node *fundef, node *modul);
 
