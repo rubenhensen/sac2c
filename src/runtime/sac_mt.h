@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2001/07/10 09:22:13  ben
+ * Affinity : SAC_MT_maxloadthread, SAC_MT_mintask are now local variables
+ *
  * Revision 3.38  2001/07/06 10:16:33  ben
  * one minor bug in SAC_SET_TASKS removed
  *
@@ -942,6 +945,8 @@ typedef union {
         const int iterations = (upper - lower) / unrolling;                              \
         const int iterations_per_thread = (iterations / number_of_tasks) * unrolling;    \
         const int iterations_rest = iterations % number_of_tasks;                        \
+        SAC_WL_MT_SCHEDULE_START (tasks_on_dim) = 0;                                     \
+        SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim) = 0;                                      \
                                                                                          \
         worktodo = (taskid < number_of_tasks);                                           \
         if (worktodo) {                                                                  \
@@ -961,9 +966,6 @@ typedef union {
             SAC_TR_MT_PRINT (("'TS_Even': dim %d: %d -> %d, Task: %d", tasks_on_dim,     \
                               SAC_WL_MT_SCHEDULE_START (tasks_on_dim),                   \
                               SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim), taskid));          \
-        } else {                                                                         \
-            SAC_WL_MT_SCHEDULE_START (tasks_on_dim) = 0;                                 \
-            SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim) = 0;                                  \
         }                                                                                \
     }
 
@@ -1016,7 +1018,8 @@ typedef union {
                                                                                          \
             SAC_TR_MT_PRINT (("'TS_Factoring': dim %d: %d -> %d, Task: %d, Size: %d",    \
                               tasks_on_dim, SAC_WL_MT_SCHEDULE_START (tasks_on_dim),     \
-                              SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim), taskid,            \
+                              SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim),                    \
+                              SAC_MT_TASKCOUNT (sched_id) - 1,                           \
                               SAC_MT_ACT_TASKSIZE (sched_id)));                          \
         }                                                                                \
         SAC_MT_RELEASE_LOCK (SAC_MT_TS_TASKLOCK (sched_id));                             \
@@ -1081,16 +1084,16 @@ typedef union {
     }
 
 #define SAC_MT_SCHEDULER_Affinity_FIRST_TASK(sched_id, tasks_per_thread, taskid,         \
-                                             worktodo, maxloadthread, mintask)           \
+                                             worktodo)                                   \
     {                                                                                    \
         SAC_MT_SCHEDULER_Affinity_NEXT_TASK (sched_id, tasks_per_thread, taskid,         \
-                                             worktodo, maxloadthread, mintask)           \
+                                             worktodo)                                   \
     }
 
 #define SAC_MT_SCHEDULER_Affinity_NEXT_TASK(sched_id, tasks_per_thread, taskid,          \
-                                            worktodo, maxloadthread, mintask)            \
+                                            worktodo)                                    \
     {                                                                                    \
-        int queueid;                                                                     \
+        int queueid, maxloadthread, mintask;                                             \
         worktodo = 0;                                                                    \
         taskid = 0;                                                                      \
                                                                                          \
