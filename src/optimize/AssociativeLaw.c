@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.17  2003/02/15 16:45:38  mwe
+ * changed assignment for INFO_AL_TYPES
+ *
  * Revision 1.16  2003/02/09 18:06:06  mwe
  * bug removed: now optimization don't start, if only constant
  * nodes are available
@@ -463,6 +466,10 @@ ALlet (node *arg_node, node *arg_info)
     DBUG_ENTER ("ALlet");
     if (LET_EXPR (arg_node) != NULL) {
         INFO_AL_LETNODE (arg_info) = arg_node;
+        if ((LET_IDS (arg_node) != NULL) && (IDS_AVIS (LET_IDS (arg_node)) != NULL))
+            INFO_AL_TYPE (arg_info)
+              = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (IDS_AVIS (LET_IDS (arg_node))));
+
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
     }
 
