@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/04/24 09:30:05  dkr
+ * macro STR_OR_NULL moved to internal_lib.h
+ *
  * Revision 3.1  2000/11/20 17:59:34  sacbase
  * new release made
  *
@@ -39,19 +42,12 @@
  *
  */
 
-#ifndef _my_debug_h
-#define _my_debug_h
+#ifndef _SAC_my_debug_h_
+#define _SAC_my_debug_h_
 
 extern char *mdb_nodetype[];
-
 extern char *mdb_prf[];
-
 extern char *mdb_type[];
-
 extern char *mdb_statustype[];
 
-#define P_FORMAT "(%06x)" /* formatstring for pointer address */
-
-#define STR_OR_NULL(str, null_str) (((str) != NULL) ? (str) : (null_str))
-
-#endif /* _my_debug_h */
+#endif /* _SAC_my_debug_h_ */
