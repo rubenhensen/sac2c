@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.62  1995/10/16 12:01:20  cg
+ * Revision 1.63  1995/10/18 13:29:40  cg
+ * converted main.c to new error macros
+ * appearnce of SAC-compiler slightly beautified.
+ *
+ * Revision 1.62  1995/10/16  12:01:20  cg
  * added new compilation phase 'objinit'.
  * added new break parameter '-bj'.
  *
@@ -231,7 +235,8 @@
 extern int malloc_debug (int level);
 
 FILE *outfile;
-char filename[MAX_FILE_NAME];
+char filename[MAX_FILE_NAME] = "sac2c";
+/* used for error messages and others */
 
 int optimize = 1;
 int sac_optimize = 1;
@@ -271,7 +276,6 @@ MAIN
 
     malloc_debug (0);
     strcpy (prgname, argv[0]);
-    strcpy (filename, "stdin"); /*default value */
 
     /* First, we scan the given options...
      */
@@ -299,7 +303,7 @@ MAIN
             strcat (ccflagsstr, "-O3 ");
             break;
         default:
-            ERROR1 (("unknown optimize parameter \"%s\"", *argv));
+            SYSWARN (("Unknown optimize parameter '%s`", *argv));
         }
     }
     NEXTOPT
@@ -352,7 +356,7 @@ MAIN
             breakimpltype = 1;
             break;
         default:
-            ERROR1 (("unknown break parameter \"%s\"", *argv));
+            SYSWARN (("Unknown break parameter '%s`", *argv));
         }
     }
     NEXTOPT
@@ -379,7 +383,7 @@ MAIN
                 traceflag = traceflag | TRACE_WST;
                 break;
             default:
-                ERROR1 (("unknown trace flag \"%c\"", **argv));
+                SYSWARN (("Unknown trace flag '%c`", **argv));
             }
             ++*argv;
         }
@@ -510,7 +514,7 @@ MAIN
     NEXTOPT
     OTHER
     {
-        fprintf (stderr, "unknown option \"%c\"\n", **argv);
+        SYSWARN (("Unknown command line option '%s`", *argv));
     }
     ENDOPT
 
@@ -519,11 +523,13 @@ MAIN
      */
 
     if (AppendEnvVar (MODDEC_PATH, "SAC_DEC_PATH") == 0)
-        ERROR2 (1, ("MAX_PATH_LEN too low!/n"));
+        SYSABORT (("MAX_PATH_LEN too low"));
     if (AppendEnvVar (MODIMP_PATH, "SAC_LIBRARY_PATH") == 0)
-        ERROR2 (1, ("MAX_PATH_LEN too low!/n"));
+        SYSABORT (("MAX_PATH_LEN too low"));
     if (AppendEnvVar (PATH, "SAC_PATH") == 0)
-        ERROR2 (1, ("MAX_PATH_LEN too low!/n"));
+        SYSABORT (("MAX_PATH_LEN too low"));
+
+    strcpy (filename, "stdin"); /*default value */
 
 #ifdef NO_CPP
 
@@ -531,7 +537,7 @@ MAIN
         yyin = fopen (FindFile (PATH, *argv), "r");
         strcpy (filename, *argv);
         if (yyin == NULL) {
-            ERROR2 (1, ("Couldn't open file \"%s\"!\n", *argv));
+            SYSABORT (("Unable to open file '%s`", *argv));
         }
     }
 
@@ -543,85 +549,98 @@ MAIN
     } else {
         sprintf (cccallstr, "cpp -P -C ");
     }
-    NOTE (("%s\n", cccallstr));
+    /*  NOTE(("C call string '%s`", cccallstr)); */
     yyin = popen (cccallstr, "r");
 
 #endif /* NO_CPP */
 
-    if (Ccodeonly)
-        if (set_outfile)
+    if (Ccodeonly) {
+        if (set_outfile) {
             outfile = fopen (outfilename, "w");
-        else
+            if (outfile == NULL) {
+                SYSABORT (("Unable to open outfile '%s`", outfilename));
+            }
+        } else
             outfile = stdout;
+    }
+
     else {
         if (!set_outfile) {
             strcpy (outfilename, "a.out");
             strcpy (cfilename, "a.out.c");
         }
         outfile = fopen (cfilename, "w");
+        if (outfile == NULL)
+            SYSABORT (("Unable to open outfile '%s`", cfilename));
     }
 
-    if (outfile == NULL)
-        ERROR2 (1, ("Couldn't open Outfile !\n"));
+    ABORT_ON_ERROR;
 
+    NOTE (("\nParsing file '%s`: ...\n", *argv));
+    compiler_phase++;
     start_token = PARSE_PRG;
-
-    NOTE (("Parsing %s: ...\n", *argv));
     yyparse ();
-    NOTE (("\n"));
+    ABORT_ON_ERROR;
 
     if (!breakparse) {
-        NOTE (("Resolving global object initializations: ...\n"));
+        NOTE (("\nResolving global object initializations: ...\n"));
+        compiler_phase++;
         syntax_tree = objinit (syntax_tree);
-        NOTE (("\n"));
+        ABORT_ON_ERROR;
 
         if (!breakobjinit) {
-            NOTE (("Resolving Imports: ...\n"));
+            NOTE (("\nResolving Imports: ...\n"));
+            compiler_phase++;
             syntax_tree = Import (syntax_tree);
-            NOTE (("\n"));
+            ABORT_ON_ERROR;
 
             if (!breakimport) {
-                NOTE (("Flattening: ...\n"));
+                NOTE (("\nFlattening: ...\n"));
+                compiler_phase++;
                 syntax_tree = Flatten (syntax_tree);
-                NOTE (("\n"));
+                ABORT_ON_ERROR;
 
-                if ((!breakflatten) && (0 == errors)) {
-                    NOTE (("Typechecking: ...\n\n"));
+                if (!breakflatten) {
+                    NOTE (("\nTypechecking: ...\n"));
+                    compiler_phase++;
                     syntax_tree = Typecheck (syntax_tree);
-                    NOTE (("\n%d Warnings, %d Errors \n", warnings, errors));
-                    NOTE (("\n"));
+                    ABORT_ON_ERROR;
 
-                    if ((!breaktype) && (errors == 0)) {
-                        NOTE (("Resolving implicit types: ...\n"));
+                    if (!breaktype) {
+                        NOTE (("\nResolving implicit types: ...\n"));
+                        compiler_phase++;
                         syntax_tree = RetrieveImplicitTypeInfo (syntax_tree);
-                        NOTE (("\n"));
+                        ABORT_ON_ERROR;
 
-                        if ((!breakimpltype) && (0 == errors)) {
-                            if (write_sib) {
-                                NOTE (("Writing SIB: ...\n"));
-                                syntax_tree = WriteSib (syntax_tree);
-                                NOTE (("\n"));
-                            }
+                        if (!breakimpltype) {
+                            NOTE (("\nWriting SIB: ...\n"));
+                            compiler_phase++;
+                            syntax_tree = WriteSib (syntax_tree);
+                            ABORT_ON_ERROR;
 
-                            if ((!breaksib) && (errors == 0)) {
-                                NOTE (("Optimizing: ...\n"));
+                            if (!breaksib) {
+                                NOTE (("\nOptimizing: ...\n"));
+                                compiler_phase++;
                                 syntax_tree = Optimize (syntax_tree);
-                                NOTE (("\n"));
+                                ABORT_ON_ERROR;
 
                                 if (!breakopt) {
-                                    NOTE (("Psi-Optimizing: ...\n"));
+                                    NOTE (("\nPsi-Optimizing: ...\n"));
+                                    compiler_phase++;
                                     syntax_tree = PsiOpt (syntax_tree);
-                                    NOTE (("\n"));
+                                    ABORT_ON_ERROR;
 
                                     if (!breakpsiopt) {
-                                        NOTE (("Refcounting: ...\n"));
+                                        NOTE (("\nRefcounting: ...\n"));
+                                        compiler_phase++;
                                         syntax_tree = Refcount (syntax_tree);
-                                        NOTE (("\n"));
+                                        ABORT_ON_ERROR;
 
                                         if (!breakref) {
-                                            NOTE (("Compiling: ...\n"));
+                                            NOTE (("\nCompiling: ...\n"));
+                                            compiler_phase++;
                                             syntax_tree = Compile (syntax_tree);
-                                            NOTE (("\n"));
+                                            ABORT_ON_ERROR;
                                         }
                                     }
                                 }
@@ -632,6 +651,11 @@ MAIN
             }
         }
     }
+
+    NOTE ((""));
+    NOTE (("*** Compilation successful *** Exit code 0"));
+    NOTE (("*** 0 error(s), %d warning(s)", warnings));
+    NOTE ((""));
 
     Print (syntax_tree);
 
@@ -654,7 +678,7 @@ MAIN
         else
             DBUG_ASSERT (0, "wrong value of kind_of_file ");
 
-        NOTE (("%s\n", cccallstr));
+        /*    NOTE(("\nC call string '%s`", cccallstr));  */
         system (cccallstr);
     }
 
