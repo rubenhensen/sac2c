@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1996/02/06 16:11:37  sbs
+ * Revision 1.12  1996/04/02 13:49:48  cg
+ * printing of chars in icms added
+ *
+ * Revision 1.11  1996/02/06  16:11:37  sbs
  * using Double2String and Float2String in icm_args.c
  *
  * Revision 1.10  1996/01/21  14:14:51  cg
@@ -67,6 +70,16 @@
         ex = ex->node[1];                                                                \
     }
 
+#define GetNextChar(res, ex)                                                             \
+    {                                                                                    \
+        DBUG_ASSERT ((ex->nodetype == N_exprs), "wrong icm-arg: N_exprs expected");      \
+        DBUG_ASSERT ((ex->node[0]->nodetype == N_char),                                  \
+                     "wrong icm-arg: N_char expected");                                  \
+        res = ex->node[0]->info.cchar;                                                   \
+        DBUG_PRINT ("PRINT", ("icm-arg found: %d", res));                                \
+        ex = ex->node[1];                                                                \
+    }
+
 #define GetNextBool(res, ex)                                                             \
     {                                                                                    \
         DBUG_ASSERT ((ex->nodetype == N_exprs), "wrong icm-arg: N_exprs expected");      \
@@ -102,7 +115,7 @@
         int i, num;                                                                      \
         float cfloat;                                                                    \
         double cdbl;                                                                     \
-        v = (char **)malloc (sizeof (char *) * dim);                                     \
+        v = (char **)Malloc (sizeof (char *) * dim);                                     \
         DBUG_ASSERT ((ex->nodetype == N_exprs), "wrong icm-arg: N_exprs expected");      \
         for (i = 0; i < dim; i++)                                                        \
             switch (ex->node[0]->nodetype) {                                             \
@@ -114,12 +127,17 @@
                 break;                                                                   \
             case N_num:                                                                  \
                 GetNextInt (num, ex);                                                    \
-                v[i] = (char *)malloc (sizeof (char) * 32);                              \
+                v[i] = (char *)Malloc (sizeof (char) * 32);                              \
+                sprintf (v[i], "%d", num);                                               \
+                break;                                                                   \
+            case N_char:                                                                 \
+                GetNextChar (num, ex);                                                   \
+                v[i] = (char *)Malloc (sizeof (char) * 5);                               \
                 sprintf (v[i], "%d", num);                                               \
                 break;                                                                   \
             case N_bool:                                                                 \
                 GetNextBool (num, ex);                                                   \
-                v[i] = (char *)malloc (sizeof (char) * 6);                               \
+                v[i] = (char *)Malloc (sizeof (char) * 6);                               \
                 if (num)                                                                 \
                     sprintf (v[i], "true");                                              \
                 else                                                                     \
