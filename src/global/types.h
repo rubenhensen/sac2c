@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  1998/02/25 09:13:12  cg
+ * added type compiler_phase_t
+ *
  * Revision 1.23  1997/11/18 18:05:04  srs
  * expanded infotype by GeneratorRel
  * new enum WithIdType
@@ -143,6 +146,45 @@ typedef enum {
     WI_scalars
 } WithIdType;
 
+/*
+ * type for representing compiler phases.
+ * NOTE, that the sequence in this type definition is important because
+ *  - the compiler phase is simply incremented in main.c
+ *  - the compiler phase is used as an index into an array of phase
+ *    descriptions defined in Error.c
+ *
+ * PH_initial and PH_final are required to be the first and last phase,
+ * respectively.
+ */
+
+typedef enum {
+    PH_initial = 0,
+    PH_setup,
+    PH_scanparse,
+    PH_import,
+    PH_readsib,
+    PH_objinit,
+    PH_flatten,
+    PH_typecheck,
+    PH_checkdec,
+    PH_impltype,
+    PH_analysis,
+    PH_writesib,
+    PH_objects,
+    PH_uniquecheck,
+    PH_rmvoidfun,
+    PH_sacopt,
+    PH_psiopt,
+    PH_refcnt,
+    PH_precompile,
+    PH_compile,
+    PH_genccode,
+    PH_invokecc,
+    PH_createlib,
+    PH_writedeps,
+    PH_final
+} compiler_phase_t;
+
 typedef enum {
     ST_regular,            /* normal types */
     ST_unique,             /* unique types */
@@ -197,7 +239,7 @@ typedef enum {
 
 typedef enum {
 #include "node_info.mac"
-} nodetype; /* Typ of nodes of syntax tree */
+} nodetype; /* Type of nodes of syntax tree */
 
 #undef NIF
 
