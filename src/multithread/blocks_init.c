@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/02/11 16:21:01  jhs
+ * Expanded traversals ...
+ *
  * Revision 1.5  2000/02/04 14:43:55  jhs
  * Improved MustExecuteSingleThreaded.
  *
@@ -198,9 +201,34 @@ MustExecuteSingleThreaded (node *arg_node, node *arg_info)
 static int
 WillExecuteMultiThreaded (node *arg_node, node *arg_info)
 {
+    int result;
+    node *instr;
+
     DBUG_ENTER ("WillExecuteMultiThreaded");
 
-    DBUG_RETURN (FALSE);
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign), "arg_node is not a N_assign");
+
+    instr = ASSIGN_INSTR (arg_node);
+
+    if (NODE_TYPE (instr) == N_let) {
+        if (NODE_TYPE (LET_EXPR (instr)) == N_Nwith2) {
+            if (NWITH2_ISSCHEDULED (LET_EXPR (instr))) {
+                NOTE (("hit wemt 1 t"));
+                result = TRUE;
+            } else {
+                NOTE (("hit wemt 4 f"));
+                result = FALSE;
+            }
+        } else {
+            NOTE (("hit wemt 2 f"));
+            result = FALSE;
+        }
+    } else {
+        NOTE (("hit wemt 3 f"));
+        result = FALSE;
+    }
+
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************

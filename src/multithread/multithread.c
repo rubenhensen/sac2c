@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/02/11 16:21:01  jhs
+ * Expanded traversals ...
+ *
  * Revision 1.8  2000/02/04 14:44:24  jhs
  * Added repfuns-traversel.
  *
@@ -170,17 +173,40 @@ MUTHfundef (node *arg_node, node *arg_info)
 
     NOTE (("%s", FUNDEF_NAME (arg_node)));
 
-    if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)) {
+    if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)
+        && (FUNDEF_STATUS (arg_node) != ST_repfun)) {
 
+        DBUG_PRINT ("MUTH", ("begin ScheduleInit"));
         arg_node = ScheduleInit (arg_node, arg_info);
+        DBUG_PRINT ("MUTH", ("end ScheduleInit"));
 
+        if ((break_after == PH_spmdregions) && (strcmp ("schin", break_specifier) == 0)) {
+            goto cont;
+        }
+
+        DBUG_PRINT ("MUTH", ("begin RepfunsInit"));
         arg_node = RepfunsInit (arg_node, arg_info);
+        DBUG_PRINT ("MUTH", ("end RepfunsInit"));
 
+        if ((break_after == PH_spmdregions) && (strcmp ("rfin", break_specifier) == 0)) {
+            goto cont;
+        }
+
+        DBUG_PRINT ("MUTH", ("begin BlocksInit"));
         arg_node = BlocksInit (arg_node, arg_info);
+        DBUG_PRINT ("MUTH", ("end BlocksInit"));
+
+        if ((break_after == PH_spmdregions) && (strcmp ("blkin", break_specifier) == 0)) {
+            goto cont;
+        }
+
+    cont:
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        DBUG_PRINT ("MUTH", ("trav into next"));
+        /* FUNDEF_NEXT( arg_node) = */ Trav (FUNDEF_NEXT (arg_node), arg_info);
+        DBUG_PRINT ("MUTH", ("trav from next"));
     }
 
     INFO_MUTH_FUNDEF (arg_info) = old_fundef;

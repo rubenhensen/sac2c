@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/02/11 16:21:01  jhs
+ * Expanded traversals ...
+ *
  * Revision 1.6  2000/01/28 13:51:02  jhs
  * Traversal is finished, pragma-schedulings can be used.
  *
@@ -370,6 +373,9 @@ SCHINnwith2 (node *arg_node, node *arg_info)
             WARN (linenum, ("pragma-scheduling of *mt not allowed* inner-wl ignored"));
         }
     }
+    if (INFO_SCHIN_ALLOWED (arg_info) != NULL) {
+        NWITH2_ISSCHEDULED (arg_node) = TRUE;
+    }
 
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
 
@@ -439,7 +445,7 @@ SCHINwlseg (node *arg_node, node *arg_info)
     } else {
         /*
          *  further analysis of allowed and innerwls skipped,
-         *  due to the impossibilty to annotate anything the segments
+         *  due to the impossibilty to annotate anything at the segments
          */
     }
 
