@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.28  1995/05/29 13:50:57  hw
+ * Revision 1.29  1995/05/30 06:45:57  hw
+ * - FltnMod deleted
+ * - FltnCon inserted (node[1] of N_foldfun will be flattened too)
+ *
+ * Revision 1.28  1995/05/29  13:50:57  hw
  * calls of functions in condition of if-then-else and in
  *  termination condition of loops will be put out of them
  *
@@ -751,43 +755,28 @@ FltnWith (node *arg_node, node *arg_info)
     DBUG_ENTER ("FltnWith");
 
     with_level += 1;
-
-    info_node = MakeNode (N_info);
-    info_node->nnode = 1;
     tmp_tos = tos; /* store tos */
     DBUG_PRINT ("RENAME", ("store tos " P_FORMAT, tos));
     arg_node->node[0] = Trav (arg_node->node[0], arg_info); /* traverse generator */
-    if (N_modarray == arg_node->node[1]->nodetype)
-        info_node->node[0] = arg_info->node[0];
 
-    arg_node->node[1] = Trav (arg_node->node[1], info_node); /* traverse  body */
+#if 0   
+   info_node=MakeNode(N_info);
+   info_node->nnode=1;
+   if(N_modarray == arg_node->node[1]->nodetype)
+      info_node->node[0]=arg_info->node[0];
+         
+   arg_node->node[1]=Trav(arg_node->node[1], info_node); /* traverse  body */
 
-    if (N_modarray == arg_node->node[1]->nodetype)
-        arg_info->node[0] = info_node->node[0];
+   if(N_modarray == arg_node->node[1]->nodetype)
+      arg_info->node[0]=info_node->node[0];
+#endif
+
+    arg_node->node[1] = Trav (arg_node->node[1], arg_info); /* traverse  body */
 
     with_level -= 1; /* now decrease it */
 
     tos = tmp_tos; /*restore tos */
     DBUG_PRINT ("RENAME", ("restore tos " P_FORMAT, tos));
-
-    /* insert assignments stored in arg_info->node[1] */
-    if (NULL != info_node->node[1]) {
-        tmp = info_node->node[1];
-        while (1 < tmp->nnode)
-            tmp = tmp->node[1];
-        if ((N_foldprf == arg_node->node[1]->nodetype)
-            || (N_foldfun == arg_node->node[1]->nodetype)) {
-            tmp->node[1] = arg_node->node[1]->node[0]->node[0];
-            tmp->nnode = 2;
-            arg_node->node[1]->node[0]->node[0] = info_node->node[1];
-        } else {
-            tmp->node[1] = arg_node->node[1]->node[1]->node[0];
-            tmp->nnode = 2;
-            arg_node->node[1]->node[1]->node[0] = info_node->node[1];
-        }
-    }
-
-    FREE (info_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -1269,10 +1258,10 @@ FltnArgs (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  : FltnMod
+ *  functionname  : FltnCon
  *  arguments     : 1) argument node
  *                  2) last assignment in arg_info->node[0]
- *  description   : flattens N_modarray
+ *  description   : flattens N_modarray and N_foldfun
  *  global vars   :
  *  internal funs :
  *  external funs : Trav
@@ -1284,27 +1273,63 @@ FltnArgs (node *arg_node, node *arg_info)
  *
  */
 node *
-FltnMod (node *arg_node, node *arg_info)
+FltnCon (node *arg_node, node *arg_info)
 {
-    node *tmp_info;
+    node *info_node;
 
-    DBUG_ENTER ("FltnMod");
+    DBUG_ENTER ("FltnCon");
+    info_node = MakeNode (N_info);
 
-    if ((N_prf == arg_node->node[0]->nodetype) || (N_ap == arg_node->node[0]->nodetype)) {
-        node *exprs = MakeNode (N_exprs);
-        exprs->node[0] = arg_node->node[0];
-        exprs->nnode = 1;
-        exprs = Trav (exprs, arg_info);
-        arg_node->node[0] = exprs->node[0];
-        FREE (exprs);
-    } else
-        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+    switch (arg_node->nodetype) {
+    case N_modarray: {
+        if ((N_prf == arg_node->node[0]->nodetype)
+            || (N_ap == arg_node->node[0]->nodetype)) {
+            node *exprs = MakeNode (N_exprs);
+            exprs->node[0] = arg_node->node[0];
+            exprs->nnode = 1;
+            exprs = Trav (exprs, arg_info);
+            arg_node->node[0] = exprs->node[0];
+            FREE (exprs);
+        } else
+            arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+        arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+        break;
+    }
+    case N_foldfun: {
+        arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+        arg_node->node[0] = Trav (arg_node->node[0], info_node);
+        break;
+    }
+    case N_foldprf: {
+        arg_node->node[0] = Trav (arg_node->node[0], info_node);
+        break;
+    }
+    case N_genarray: {
+        arg_node->node[1] = Trav (arg_node->node[1], info_node);
+        break;
+    }
+    default:
+        DBUG_ASSERT (0, "wrong nodetype");
+        break;
+    }
 
-    tmp_info = arg_info->node[0];
-    arg_info->node[0] = NULL;
-    /* now traverse body of with_loop */
-    arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-    arg_info->node[0] = tmp_info;
+    /* insert assignments stored in arg_info->node[1] */
+    if (NULL != info_node->node[1]) {
+        node *tmp = info_node->node[1];
 
+        while (1 < tmp->nnode)
+            tmp = tmp->node[1];
+        if ((N_foldprf == arg_node->nodetype) || (N_foldfun == arg_node->nodetype)) {
+            tmp->node[1] = arg_node->node[0]->node[0];
+            tmp->nnode = 2;
+            arg_node->node[0]->node[0] = info_node->node[1];
+        } else {
+            tmp->node[1] = arg_node->node[1]->node[0];
+            tmp->nnode = 2;
+            arg_node->node[1]->node[0] = info_node->node[1];
+        }
+    }
+
+    FREE (info_node);
     DBUG_RETURN (arg_node);
 }
