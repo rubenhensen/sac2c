@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.159  2005/02/11 15:02:37  jhb
+# added check.o check_lib.o
+#
 # Revision 3.158  2005/02/02 18:09:03  mwe
 # signature_simplification added
 #
@@ -106,7 +109,8 @@ TREE= src/tree/traverse.o src/tree/tree_basic.o src/tree/free.o \
       src/tree/change_signature.o src/tree/compare_tree.o \
       src/tree/scheduling.o src/tree/wl_bounds.o \
       src/tree/node_basic.o src/tree/free_node.o \
-      src/tree/free_attribs.o src/tree/traverse_tables.o src/tree/traverse_helper.o
+      src/tree/free_attribs.o src/tree/traverse_tables.o src/tree/traverse_helper.o \
+      src/tree/check.o src/tree/check_lib.o
 
 SERIALIZE= src/serialize/serialize_node.o \
            src/serialize/serialize_attribs.o src/serialize/deserialize.o \
