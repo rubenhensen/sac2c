@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/11/18 10:13:29  jhs
+ * Added a very special volatile ...
+ *
  * Revision 2.10  1999/09/01 17:13:38  jhs
  * Added rc's in barriers.
  *
@@ -141,7 +144,7 @@ typedef union {
         volatile double result_double;
         volatile char result_char;
         /* volatile */ void *result_array;
-        arrayrc_t result_array_rc;
+        volatile arrayrc_t result_array_rc;
         /* volatile */ void *result_hidden;
     } b[SAC_SET_MAX_SYNC_FOLD + 1];
 } SAC_MT_barrier_dummy_t;
@@ -165,9 +168,9 @@ typedef union {
         volatile float result_float;
         volatile double result_double;
         volatile char result_char;
-        /* volatile */ void *result_array;
-        arrayrc_t result_array_rc;
-        /* volatile */ void *result_hidden;
+        volatile void *result_array;
+        volatile arrayrc_t result_array_rc;
+        volatile void *result_hidden;
     } b[SAC_SET_MAX_SYNC_FOLD + 1];
 } SAC_MT_barrier_t;
 
@@ -232,16 +235,17 @@ typedef union {
 #if SAC_MT_CACHE_LINE_MAX()
 
 #define SAC_MT_DEFINE_BARRIER()                                                          \
-    static SAC_MT_barrier_t SAC_MT_barrier_space[SAC_SET_THREADS_MAX + 1];
+    static volatile SAC_MT_barrier_t SAC_MT_barrier_space[SAC_SET_THREADS_MAX + 1];
 
 #else /* SAC_MT_CACHE_LINE_MAX() */
 
 #define SAC_MT_DEFINE_BARRIER()                                                          \
-    static SAC_MT_barrier_t SAC_MT_barrier_space[SAC_SET_THREADS_MAX];
+    static volatile SAC_MT_barrier_t SAC_MT_barrier_space[SAC_SET_THREADS_MAX];
 
 #endif /* SAC_MT_CACHE_LINE_MAX() */
 
-#define SAC_MT_DEFINE_SPMD_FRAME() static union SAC_SET_SPMD_FRAME SAC_MT_spmd_frame;
+#define SAC_MT_DEFINE_SPMD_FRAME()                                                       \
+    static volatile union SAC_SET_SPMD_FRAME SAC_MT_spmd_frame;
 
 #define SAC_MT_FUN_FRAME(name, blocks) struct blocks name;
 
@@ -562,11 +566,14 @@ typedef union {
     }                                                                                    \
     }
 
-#define SAC_MT_SYNC_MULTIFOLD_1A(id)                                                     \
-    {                                                                                    \
-        if (!SAC_MT_MYWORKERCLASS ()) {
+#define SAC_MT_SYNC_MULTIFOLD_1A(id) {
 
-#define SAC_MT_SYNC_MULTIFOLD_1B(id)                                                     \
+#define SAC_MT_SYNC_MULTIFOLD_1B(id) if (!SAC_MT_MYWORKERCLASS ()) {
+
+#define SAC_MT_SYNC_MULTIFOLD_1C(id)                                                     \
+    SAC_TR_MT_PRINT (("Synchronisation block %d finished", id));
+
+#define SAC_MT_SYNC_MULTIFOLD_1D(id)                                                     \
     if (SAC_MT_MYTHREAD ()) {                                                            \
         goto label_worker_continue_##id;                                                 \
     }                                                                                    \
@@ -590,6 +597,9 @@ typedef union {
 #define SAC_MT_SYNC_MULTIFOLD_2A(id) if (!SAC_MT_ready_count) {
 
 #define SAC_MT_SYNC_MULTIFOLD_2B(id)                                                     \
+    SAC_TR_MT_PRINT (("Synchronisation block %d finished", id));
+
+#define SAC_MT_SYNC_MULTIFOLD_2C(id)                                                     \
     goto label_worker_continue_##id;                                                     \
     }                                                                                    \
     SAC_MT_ready_count >>= 1;                                                            \
@@ -614,6 +624,9 @@ typedef union {
 #define SAC_MT_SYNC_MULTIFOLD_3A(id) if (!SAC_MT_ready_count) {
 
 #define SAC_MT_SYNC_MULTIFOLD_3B(id)                                                     \
+    SAC_TR_MT_PRINT (("Synchronisation block %d finished", id));
+
+#define SAC_MT_SYNC_MULTIFOLD_3C(id)                                                     \
     goto label_master_continue_##id;                                                     \
     }                                                                                    \
     SAC_MT_ready_count >>= 1;                                                            \
