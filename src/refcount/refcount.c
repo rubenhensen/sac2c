@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/08/27 11:52:42  jhs
+ * Added comments.
+ *
  * Revision 2.6  1999/08/27 11:50:22  jhs
+ * Expanded naive-refcounting on *all* variables.
  * Corrected inferring of naive-refcounters in loops.
  *
  * Revision 2.5  1999/08/09 15:38:10  dkr
