@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/01/22 13:38:51  dkr
+ * tabs removed
+ *
  * Revision 3.1  2000/11/20 18:01:22  sacbase
  * new release made
  *
@@ -12,7 +15,6 @@
  *
  * Revision 1.1  1998/04/25 16:21:06  sbs
  * Initial revision
- *
  *
  */
 
@@ -32,6 +34,7 @@
 #define ICM_INT(name)                                                                    \
     scanf ("%i", &name);                                                                 \
     DBUG_PRINT ("BEtest", ("int-arg: %i\n", name));
+
 #define ICM_VAR(dim, name)                                                               \
     {                                                                                    \
         int i;                                                                           \
