@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  1998/03/07 17:01:19  srs
+ * added IsConstantArray()
+ *
  * Revision 1.34  1998/02/12 10:34:02  srs
  * changed GetCompoundNode() to work with new WLs
  *
@@ -735,4 +738,47 @@ CopyNodelist (nodelist *nl)
     }
 
     DBUG_RETURN (copy);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int IsConstantArray(node *array)
+ *
+ * description:
+ *   returns number of constant elements if argument is an N_array and all
+ *   its elements are N_num, N_char, N_float, N_double, N_bool or otherwise
+ *   returns 0.
+ *
+ ******************************************************************************/
+
+int
+IsConstantArray (node *array)
+{
+    int elems = 0;
+
+    DBUG_ENTER ("IsConstantArray");
+
+    if (N_array == NODE_TYPE (array))
+        array = ARRAY_AELEMS (array);
+    else
+        array = NULL;
+
+    while (array) {
+        switch (NODE_TYPE (EXPRS_EXPR (array))) {
+        case N_num:
+        case N_char:
+        case N_float:
+        case N_double:
+        case N_bool:
+            elems++;
+            array = EXPRS_NEXT (array);
+            break;
+        default:
+            elems = 0;
+            array = NULL;
+        }
+    }
+
+    DBUG_RETURN (elems);
 }
