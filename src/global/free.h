@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1997/12/06 17:14:55  srs
+ * changed FREE
+ *
  * Revision 1.14  1997/11/23 15:17:52  dkr
  * CC-flag: show_malloc -> SHOW_MALLOC
  *
@@ -62,6 +65,7 @@
 #include "dbug.h"
 #include "my_debug.h"
 #include "malloc.h"
+#include "internal_lib.h"
 
 #ifndef NOFREE
 
@@ -69,8 +73,9 @@
 #define FREE(address)                                                                    \
     if ((address) != NULL) {                                                             \
         DBUG_PRINT ("FREEMEM", ("Free memory at adress: " P_FORMAT, (address)));         \
-        address = (void *)((int *)(address)-1);                                          \
+        address = ((void *)address) - malloc_align_step;                                 \
         current_allocated_mem -= *(int *)(address);                                      \
+                                                                                         \
         free (address);                                                                  \
         address = NULL;                                                                  \
     }
