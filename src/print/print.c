@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  1999/05/10 13:24:36  bs
+ * WLAA infos will be printed if compilation breaks after phase 15 (sacopt).
+ *
  * Revision 2.14  1999/05/10 12:02:28  bs
  * WLAA printfunction(s) modified.
  *
@@ -2279,10 +2282,11 @@ PrintNcode (node *arg_node, node *arg_info)
         indent--;
         INDENT;
     }
-
-    DBUG_EXECUTE ("WLAA_INFO", if (NCODE_ACCESS (arg_node) != NULL) {
+    /*
+     *  NCODE_ACCESS(arg_node) is set to NULL by initializing the N_Ncode node.
+     */
+    if ((compiler_phase == PH_sacopt) && (NCODE_ACCESS (arg_node) != NULL))
         WLAAprintAccesses (arg_node, arg_info);
-    });
 
     fprintf (outfile, "}");
 
