@@ -13,13 +13,10 @@ SSALIR.c
 SSALIR.h
 SSALUR.c
 SSALUR.h
-SSAWLUnroll.c
 SSAWLUnroll.h
-Unroll.c
 Unroll.h
 Unswitch.c
 Unswitch.h
-WLUnroll.c
 WLUnroll.h
 WorkReduction.c
 WorkReduction.h
