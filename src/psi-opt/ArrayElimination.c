@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1997/11/23 17:18:06  dkr
+ * removed a bug in GenIds():
+ * - malloc-size for new string corrected
+ *
  * Revision 1.6  1997/11/04 13:25:20  dkr
  * with defined NEWTREE, node->nnode is not used anymore
  *
@@ -203,8 +207,8 @@ GenIds (node *arg[2])
     DBUG_ENTER ("GenIds");
     number = GetNumber (arg[0]);
     old_name = ID_NAME (arg[1]);
-    new_name = (char *)Malloc (sizeof (char) * (strlen (old_name) + strlen (number))
-                               + AE_PREFIX_LENGTH);
+    new_name = (char *)Malloc (
+      sizeof (char) * (strlen (old_name) + strlen (number) + AE_PREFIX_LENGTH + 1));
     sprintf (new_name, AE_PREFIX "%s%s", number, old_name);
     ids_node = MakeIds (new_name, NULL, ST_regular);
     DBUG_RETURN (ids_node);
