@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/12/15 13:38:52  cg
+ * Revision 1.15  1995/12/29 10:21:14  cg
+ * added new compiler phase readsib
+ *
+ * Revision 1.14  1995/12/15  13:38:52  cg
  * ItemName and ModName no longer use Malloc for memory allocation.
  * Now, they can be used in DBUG_PRINTs AND DBUG_PRINT can be used in Malloc !!
  *
@@ -81,6 +84,7 @@ char error_message_buffer[MAX_ERROR_MESSAGE_LENGTH];
 char *compiler_phase_name[] = {"",
                                "Loading SAC program",
                                "Resolving imports from modules and classes",
+                               "Evaluating SAC-Information-Blocks",
                                "Resolving global object initializations",
                                "Simplifying source code",
                                "Running type inference system",

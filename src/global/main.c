@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.78  1995/12/21 16:09:20  cg
+ * Revision 1.79  1995/12/29 10:21:43  cg
+ * added new compiler phase readsib
+ *
+ * Revision 1.78  1995/12/21  16:09:20  cg
  * added option -flink_module and global var link_module
  *
  * Revision 1.77  1995/12/01  20:23:56  cg
@@ -277,7 +280,8 @@
 #include "trace.h"
 #include "compile.h"
 #include "psi-opt.h"
-#include "sib.h"
+#include "writesib.h"
+#include "readsib.h"
 #include "implicittypes.h"
 #include "objinit.h"
 #include "analysis.h"
@@ -318,7 +322,7 @@ int show_icm = 0;
 int traceflag = 0;
 
 int check_boundary = 0;
-int link_module = 0;
+int linkstyle = 0;
 int breakae = 0;
 
 MAIN
@@ -326,9 +330,9 @@ MAIN
     int set_outfile = 0;
     int Ccodeonly = 0;
     int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, breakopt = 0,
-        breakpsiopt = 0, breakref = 0, breaksib = 0, breakimpltype = 0, breakobjinit = 0,
-        breakanalysis = 0, breakcheckdec = 0, breakobjects = 0, breakuniquecheck = 0,
-        breakrmvoidfun = 0, breakprecompile = 0;
+        breakpsiopt = 0, breakref = 0, breakreadsib = 0, breakwritesib = 0,
+        breakimpltype = 0, breakobjinit = 0, breakanalysis = 0, breakcheckdec = 0,
+        breakobjects = 0, breakuniquecheck = 0, breakrmvoidfun = 0, breakprecompile = 0;
 
     char prgname[MAX_FILE_NAME];
     char outfilename[MAX_FILE_NAME];
@@ -414,8 +418,11 @@ MAIN
         case 'c':
             show_icm = 1;
             break;
+        case 'w':
+            breakwritesib = 1;
+            break;
         case 'b':
-            breaksib = 1;
+            breakreadsib = 1;
             break;
         case 'd':
             breakcheckdec = 1;
@@ -497,6 +504,23 @@ MAIN
             break;
         default:
             SYSWARN (("Unknown verbose level '%s`", *argv));
+        }
+    }
+    NEXTOPT
+    ARG 'l' : PARM
+    {
+        switch (**argv) {
+        case '0':
+            linkstyle = 0;
+            break;
+        case '1':
+            linkstyle = 1;
+            break;
+        case '2':
+            linkstyle = 2;
+            break;
+        default:
+            SYSWARN (("Unknown link style '%s`", *argv));
         }
     }
     NEXTOPT
@@ -614,10 +638,6 @@ MAIN
             check_boundary = 1;
         if (!strncmp (*argv, "CB", 2))
             check_boundary = 1;
-        if (!strncmp (*argv, "link_module", 11))
-            link_module = 1;
-        if (!strncmp (*argv, "LM", 2))
-            link_module = 1;
     }
     NEXTOPT
     OTHER
@@ -666,6 +686,8 @@ MAIN
 
 #endif /* NO_CPP */
 
+    DBUG_EXECUTE ("MEMVERIFY", malloc_debug (2););
+
     if (Ccodeonly) {
         if (set_outfile) {
             outfile = fopen (outfilename, "w");
@@ -706,141 +728,129 @@ MAIN
         compiler_phase++;
 
         if (!breakimport) {
-            if (MODUL_OBJS (syntax_tree) != NULL) {
+            if (MODUL_STORE_IMPORTS (syntax_tree) != NULL) {
                 NOTE_COMPILER_PHASE;
-                syntax_tree = objinit (syntax_tree);
+                syntax_tree = ReadSib (syntax_tree);
                 ABORT_ON_ERROR;
             }
             compiler_phase++;
 
-            if (!breakobjinit) {
-                NOTE_COMPILER_PHASE;
-                syntax_tree = Flatten (syntax_tree);
-                ABORT_ON_ERROR;
+            if (!breakreadsib) {
+                if (MODUL_OBJS (syntax_tree) != NULL) {
+                    NOTE_COMPILER_PHASE;
+                    syntax_tree = objinit (syntax_tree);
+                    ABORT_ON_ERROR;
+                }
                 compiler_phase++;
 
-                if (!breakflatten) {
+                if (!breakobjinit) {
                     NOTE_COMPILER_PHASE;
-                    syntax_tree = Typecheck (syntax_tree);
+                    syntax_tree = Flatten (syntax_tree);
                     ABORT_ON_ERROR;
                     compiler_phase++;
 
-                    if (!breaktype) {
-                        if (MODUL_FILETYPE (syntax_tree) != F_prog) {
-                            NOTE_COMPILER_PHASE;
-                            syntax_tree = CheckDec (syntax_tree);
-                            ABORT_ON_ERROR;
-                        }
+                    if (!breakflatten) {
+                        NOTE_COMPILER_PHASE;
+                        syntax_tree = Typecheck (syntax_tree);
+                        ABORT_ON_ERROR;
                         compiler_phase++;
 
-                        if (!breakcheckdec) {
-                            NOTE_COMPILER_PHASE;
-                            syntax_tree = RetrieveImplicitTypeInfo (syntax_tree);
-                            ABORT_ON_ERROR;
+                        if (!breaktype) {
+                            if (MODUL_FILETYPE (syntax_tree) != F_prog) {
+                                NOTE_COMPILER_PHASE;
+                                syntax_tree = CheckDec (syntax_tree);
+                                ABORT_ON_ERROR;
+                            }
                             compiler_phase++;
 
-                            if (!breakimpltype) {
+                            if (!breakcheckdec) {
                                 NOTE_COMPILER_PHASE;
-                                syntax_tree = Analysis (syntax_tree);
+                                syntax_tree = RetrieveImplicitTypeInfo (syntax_tree);
                                 ABORT_ON_ERROR;
                                 compiler_phase++;
 
-                                if (!breakanalysis) {
-                                    if (MODUL_FILETYPE (syntax_tree) != F_prog) {
-                                        NOTE_COMPILER_PHASE;
-                                        syntax_tree = WriteSib (syntax_tree);
-                                        ABORT_ON_ERROR;
-                                    }
+                                if (!breakimpltype) {
+                                    NOTE_COMPILER_PHASE;
+                                    syntax_tree = Analysis (syntax_tree);
+                                    ABORT_ON_ERROR;
                                     compiler_phase++;
 
-                                    if (!breaksib) {
-                                        NOTE_COMPILER_PHASE;
-                                        syntax_tree = HandleObjects (syntax_tree);
-                                        ABORT_ON_ERROR;
+                                    if (!breakanalysis) {
+                                        if (MODUL_FILETYPE (syntax_tree) != F_prog) {
+                                            NOTE_COMPILER_PHASE;
+                                            syntax_tree = WriteSib (syntax_tree);
+                                            ABORT_ON_ERROR;
+                                        }
                                         compiler_phase++;
 
-                                        if (!breakobjects) {
+                                        if (!breakwritesib) {
                                             NOTE_COMPILER_PHASE;
-                                            syntax_tree = UniquenessCheck (syntax_tree);
+                                            syntax_tree = HandleObjects (syntax_tree);
                                             ABORT_ON_ERROR;
                                             compiler_phase++;
 
-                                            if (!breakuniquecheck) {
+                                            if (!breakobjects) {
                                                 NOTE_COMPILER_PHASE;
                                                 syntax_tree
-                                                  = RemoveVoidFunctions (syntax_tree);
+                                                  = UniquenessCheck (syntax_tree);
                                                 ABORT_ON_ERROR;
                                                 compiler_phase++;
 
-                                                if (!breakrmvoidfun) {
-                                                    if (sac_optimize) {
-                                                        NOTE_COMPILER_PHASE;
-                                                        syntax_tree
-                                                          = Optimize (syntax_tree);
-                                                        ABORT_ON_ERROR;
-                                                    }
+                                                if (!breakuniquecheck) {
+                                                    NOTE_COMPILER_PHASE;
+                                                    syntax_tree
+                                                      = RemoveVoidFunctions (syntax_tree);
+                                                    ABORT_ON_ERROR;
                                                     compiler_phase++;
 
-                                                    if (!breakopt) {
-                                                        if (psi_optimize) {
+                                                    if (!breakrmvoidfun) {
+                                                        if (sac_optimize) {
                                                             NOTE_COMPILER_PHASE;
                                                             syntax_tree
-                                                              = PsiOpt (syntax_tree);
+                                                              = Optimize (syntax_tree);
                                                             ABORT_ON_ERROR;
                                                         }
                                                         compiler_phase++;
 
-                                                        if (!breakpsiopt) {
-                                                            NOTE_COMPILER_PHASE;
-                                                            syntax_tree
-                                                              = Refcount (syntax_tree);
-                                                            ABORT_ON_ERROR;
+                                                        if (!breakopt) {
+                                                            if (psi_optimize) {
+                                                                NOTE_COMPILER_PHASE;
+                                                                syntax_tree
+                                                                  = PsiOpt (syntax_tree);
+                                                                ABORT_ON_ERROR;
+                                                            }
                                                             compiler_phase++;
 
-                                                            if (!breakref) {
+                                                            if (!breakpsiopt) {
                                                                 NOTE_COMPILER_PHASE;
-                                                                syntax_tree = precompile (
+                                                                syntax_tree = Refcount (
                                                                   syntax_tree);
                                                                 ABORT_ON_ERROR;
                                                                 compiler_phase++;
 
-                                                                if (!breakprecompile) {
+                                                                if (!breakref) {
                                                                     NOTE_COMPILER_PHASE;
                                                                     syntax_tree
-                                                                      = Compile (
+                                                                      = precompile (
                                                                         syntax_tree);
                                                                     ABORT_ON_ERROR;
                                                                     compiler_phase++;
 
-                                                                    if (!Ccodeonly) {
+                                                                    if (
+                                                                      !breakprecompile) {
                                                                         NOTE_COMPILER_PHASE;
-                                                                        if (
-                                                                          MODUL_FILETYPE (
-                                                                            syntax_tree)
-                                                                          == F_prog) {
-                                                                            sprintf (
-                                                                              cccallstr,
-                                                                              "gcc "
-                                                                              "%s-Wall "
-                                                                              "-Wno-"
-                                                                              "unused -I "
-                                                                              "$RCSROOT/"
-                                                                              "src/"
-                                                                              "compile/"
-                                                                              " -o %s %s "
-                                                                              "%s",
-                                                                              ccflagsstr,
-                                                                              outfilename,
-                                                                              cfilename,
-                                                                              GenLinkerList ());
-                                                                        } else {
+                                                                        syntax_tree
+                                                                          = Compile (
+                                                                            syntax_tree);
+                                                                        ABORT_ON_ERROR;
+                                                                        compiler_phase++;
+
+                                                                        if (!Ccodeonly) {
+                                                                            NOTE_COMPILER_PHASE;
                                                                             if (
-                                                                              (MODUL_FILETYPE (
-                                                                                 syntax_tree)
-                                                                               == F_modimp)
-                                                                              || (MODUL_FILETYPE (
-                                                                                    syntax_tree)
-                                                                                  == F_classimp)) {
+                                                                              MODUL_FILETYPE (
+                                                                                syntax_tree)
+                                                                              == F_prog) {
                                                                                 sprintf (
                                                                                   cccallstr,
                                                                                   "gcc "
@@ -855,29 +865,84 @@ MAIN
                                                                                   "compil"
                                                                                   "e/"
                                                                                   " -o "
-                                                                                  "%s.o "
-                                                                                  "-c %s",
+                                                                                  "%s %s "
+                                                                                  "%s",
                                                                                   ccflagsstr,
-                                                                                  (NULL
-                                                                                   != module_name)
-                                                                                    ? module_name
-                                                                                    : outfilename,
-                                                                                  cfilename);
+                                                                                  outfilename,
+                                                                                  cfilename,
+                                                                                  GenLinkerList ());
                                                                             } else {
-                                                                                DBUG_ASSERT (
-                                                                                  0,
-                                                                                  "wrong "
-                                                                                  "value "
-                                                                                  "of "
-                                                                                  "kind_"
-                                                                                  "of_"
-                                                                                  "file"
-                                                                                  " ");
+                                                                                if (
+                                                                                  (MODUL_FILETYPE (
+                                                                                     syntax_tree)
+                                                                                   == F_modimp)
+                                                                                  || (MODUL_FILETYPE (
+                                                                                        syntax_tree)
+                                                                                      == F_classimp)) {
+                                                                                    sprintf (
+                                                                                      cccallstr,
+                                                                                      "gc"
+                                                                                      "c "
+                                                                                      "%s"
+                                                                                      "-W"
+                                                                                      "al"
+                                                                                      "l "
+                                                                                      "-W"
+                                                                                      "no"
+                                                                                      "-u"
+                                                                                      "nu"
+                                                                                      "se"
+                                                                                      "d "
+                                                                                      "-I"
+                                                                                      " $"
+                                                                                      "RC"
+                                                                                      "SR"
+                                                                                      "OO"
+                                                                                      "T/"
+                                                                                      "sr"
+                                                                                      "c/"
+                                                                                      "co"
+                                                                                      "mp"
+                                                                                      "il"
+                                                                                      "e/"
+                                                                                      " -"
+                                                                                      "o "
+                                                                                      "%s"
+                                                                                      ".o"
+                                                                                      " -"
+                                                                                      "c "
+                                                                                      "%"
+                                                                                      "s",
+                                                                                      ccflagsstr,
+                                                                                      (NULL
+                                                                                       != module_name)
+                                                                                        ? module_name
+                                                                                        : outfilename,
+                                                                                      cfilename);
+                                                                                } else {
+                                                                                    DBUG_ASSERT (
+                                                                                      0,
+                                                                                      "wr"
+                                                                                      "on"
+                                                                                      "g "
+                                                                                      "va"
+                                                                                      "lu"
+                                                                                      "e "
+                                                                                      "of"
+                                                                                      " k"
+                                                                                      "in"
+                                                                                      "d_"
+                                                                                      "of"
+                                                                                      "_f"
+                                                                                      "il"
+                                                                                      "e"
+                                                                                      " ");
+                                                                                }
                                                                             }
+                                                                            ABORT_ON_ERROR;
+                                                                            compiler_phase
+                                                                              = 0;
                                                                         }
-                                                                        ABORT_ON_ERROR;
-                                                                        compiler_phase
-                                                                          = 0;
                                                                     }
                                                                 }
                                                             }
@@ -903,8 +968,6 @@ MAIN
     }
 
     FreeTree (syntax_tree);
-
-    /*  NOTE2(("")); */
 
     NEWLINE (2);
     NOTE2 (("*** Compilation successful ***"));
