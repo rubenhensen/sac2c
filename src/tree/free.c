@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2004/07/28 17:45:11  skt
+ * FreeEX added
+ *
  * Revision 3.58  2004/05/17 09:37:55  mwe
  * ARRAY_NTYPE adjusted
  *
@@ -1885,6 +1888,32 @@ FreeSync (node *arg_node, node *arg_info)
     }
 
     DBUG_PRINT ("FREE", ("Removing N_sync node ..."));
+
+    arg_node = Free (arg_node);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeEX (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("FreeEX");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_ex node ..."));
+
+    EX_REGION (arg_node) = FREETRAV (EX_REGION (arg_node));
+
+    if (EX_USEMASK (arg_node) != NULL) {
+        EX_USEMASK (arg_node) = DFMRemoveMask (EX_USEMASK (arg_node));
+    }
+    if (EX_DEFMASK (arg_node) != NULL) {
+        EX_DEFMASK (arg_node) = DFMRemoveMask (EX_DEFMASK (arg_node));
+    }
+    if (EX_NEEDLATER (arg_node) != NULL) {
+        EX_NEEDLATER (arg_node) = DFMRemoveMask (EX_NEEDLATER (arg_node));
+    }
 
     arg_node = Free (arg_node);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2004/07/28 17:45:11  skt
+ * FreeEX added
+ *
  * Revision 3.20  2004/07/16 14:41:34  sah
  * switch to new INFO structure
  * PHASE I
@@ -157,6 +160,7 @@ extern node *FreeSpmd (node *arg_node, node *arg_info);
 extern node *FreeSync (node *arg_node, node *arg_info);
 extern node *FreeMT (node *arg_node, node *arg_info);
 extern node *FreeST (node *arg_node, node *arg_info);
+extern node *FreeEX (node *arg_node, node *arg_info);
 
 /* with-loop */
 extern node *FreeNWith (node *arg_node, node *arg_info);
