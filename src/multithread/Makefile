@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 1.13  2000/03/30 15:09:32  jhs
+# added adjust_calls.o
+#
 # Revision 1.12  2000/03/29 16:08:30  jhs
 # Added blocks_lift.o
 #
@@ -58,7 +61,8 @@ all: multithread.o \
      blocks_cons.o \
      dataflow_analysis.o \
      barriers_init.o \
-     blocks_lift.o
+     blocks_lift.o \
+     adjust_calls.o
 
 
 %.o: %.c 
