@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2000/03/09 18:33:10  jhs
+ * Brushing ...
+ *
  * Revision 1.9  2000/03/02 12:57:53  jhs
  * Added DBUG_PRINTs.
  *
@@ -357,9 +360,10 @@ DupMask_ (long *oldmask, int varno)
  *
  * description:
  *   Inserts an MT or ST-Block into assign, block contains a MT- or ST-Block
- *   with REGION == NULL, fundet is the actual fundef node.
+ *   with REGION == NULL, fundef is the actual fundef node.
  *   assign gets the block as new instruction, while the region of the block
  *   will get the old instruction of the assignment.
+ *   So the instruction at the assign will be embedded into block.
  *
  ******************************************************************************/
 static node *
@@ -392,10 +396,10 @@ InsertBlock (node *assign, node *block, node *fundef)
  *   static node *InsertMT(node *assign, node *arg_info)
  *
  * description:
- *   inserts mt-block
+ *   inserts mt-block around the instruction of the assignment
  *
  ******************************************************************************/
-static node *
+node *
 InsertMT (node *assign, node *arg_info)
 {
     DBUG_ENTER ("InsertMT");
@@ -413,10 +417,10 @@ InsertMT (node *assign, node *arg_info)
  *   static node *InsertST(node *assign, node *arg_info)
  *
  * description:
- *   inserts st-block
+ *   inserts st-block around the instruction of the assignment
  *
  ******************************************************************************/
-static node *
+node *
 InsertST (node *assign, node *arg_info)
 {
     DBUG_ENTER ("InsertST");
