@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.21  2000/07/14 15:19:33  dkr
+ * FUNDEF_INLINE is bool!
+ *
  * Revision 2.20  2000/07/14 14:46:25  nmw
  * init code for global objects moved from beginning og main()
  * to a separate init function that is called during the startup
@@ -871,7 +874,7 @@ PREC2fundef (node *arg_node, node *arg_info)
     /*
      * unset inline flag
      */
-    FUNDEF_INLINE (arg_node) = 0;
+    FUNDEF_INLINE (arg_node) = FALSE;
 
     /*
      * The function body is traversed in order to remove artificial return
