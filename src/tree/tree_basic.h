@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.117  2002/03/07 20:27:11  dkr
+ * ICM_END_OF_STATEMENT removed
+ *
  * Revision 3.116  2002/03/07 17:51:13  sbs
  * ST_wrapperfun as possible fundef status added
  *
@@ -1896,7 +1899,6 @@ extern node *MakeIcm (char *name, node *args);
 #define ICM_INDENT_BEFORE(n) (n->flag)
 #define ICM_INDENT_AFTER(n) (n->int_data)
 #define ICM_ARGS(n) (n->node[0])
-#define ICM_END_OF_STATEMENT(n) ((bool)(n->counter))
 #define ICM_FUNDEF(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
@@ -2796,9 +2798,6 @@ extern node *MakeInfo ();
 #define INFO_UNR_ASSIGN(n) (n->node[0])
 #define INFO_UNR_FUNDEF(n) (n->node[1])
 
-/* Icm2c, ... */
-#define INFO_FUNDEF(n) (n->node[0])
-
 /* Print */
 #define INFO_PRINT_CONT(n) ((node *)(n->info2))
 #define INFO_PRINT_FUNDEF(n) (n->node[0])
@@ -2858,12 +2857,9 @@ extern node *MakeInfo ();
 #define INFO_L2F_ASSIGN(n) (n->node[2])
 
 /* reconverting functions to loops and conditionals (fun2lac.c) */
-#define INFO_F2L_FUNDEF(n) (n->node[0])       /* new */
-#define INFO_F2L_INLINED(n) (n->node[1])      /* new */
-#define INFO_F2L_LET(n) (n->node[2])          /* new */
-#define INFO_FUN2LAC_FUNDEF(n) (n->node[0])   /* old */
-#define INFO_FUN2LAC_FUNBLOCK(n) (n->node[1]) /* old */
-#define INFO_FUN2LAC_LET(n) (n->node[2])      /* old */
+#define INFO_F2L_FUNDEF(n) (n->node[0])
+#define INFO_F2L_INLINED(n) (n->node[1])
+#define INFO_F2L_LET(n) (n->node[2])
 
 /* adjusting identifiers (adjust_ids.c) */
 #define INFO_AI_IDS(i) (i->info.ids)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2002/03/07 20:29:21  dkr
+ * ICM_END_OF_STATEMENT removed
+ *
  * Revision 3.32  2002/03/07 02:22:50  dkr
  * traversals reordered
  *
@@ -311,7 +314,6 @@ InsertObjInit (node *block, node *objdef)
     }
 
     assign_end = MakeAssignIcm0 ("INITGLOBALOBJECT_END", BLOCK_INSTR (block));
-    ICM_END_OF_STATEMENT (ASSIGN_INSTR (assign_end)) = TRUE;
 
     assign_ap = MakeAssign (MakeLet (OBJDEF_EXPR (objdef), new_ids), assign_end);
 

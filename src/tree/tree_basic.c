@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2002/03/07 20:28:39  dkr
+ * ICM_END_OF_STATEMENT removed
+ *
  * Revision 3.48  2002/03/06 03:45:57  dkr
  * MakeArgtab() modified
  *
@@ -1292,13 +1295,6 @@ MakeIcm (char *name, node *args)
     } else {
         ICM_INDENT_BEFORE (tmp) = 0;
         ICM_INDENT_AFTER (tmp) = 0;
-    }
-
-    if ((strcmp (name, "ND_KS_DECL_ARRAY") == 0)
-        || (strcmp (name, "MT_DECL_MYTHREAD") == 0)) {
-        ICM_END_OF_STATEMENT (tmp) = TRUE;
-    } else {
-        ICM_END_OF_STATEMENT (tmp) = FALSE;
     }
 
     DBUG_PRINT ("MAKE",
