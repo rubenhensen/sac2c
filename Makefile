@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.66  1998/03/04 00:08:53  dkr
+# 'clean' now deletes the subdir .sb, too
+#
 # Revision 1.65  1998/02/27 09:03:55  cg
 # added linkage of global/resource.o
 #
@@ -340,6 +343,7 @@ clean:
 	(cd lib/src; $(MAKE) clean)
 	$(RM) sac2c
 	$(RM) sac2c.efence
+	$(RM) -r .sb
 
 tags: 
 	ctags src/*/*.[ch] >/dev/null

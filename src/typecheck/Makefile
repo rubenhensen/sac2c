@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.23  1998/03/04 00:10:01  dkr
+# 'clean' now deletes the subdir .sb, too
+#
 # Revision 1.22  1998/02/16 21:43:58  dkr
 # make deps done
 #
@@ -93,6 +96,8 @@ deps:
 
 clean:
 	$(RM) typecheck.o prim_fun.o *.bak
+	$(RM) -r .sb
+
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 prim_fun.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h

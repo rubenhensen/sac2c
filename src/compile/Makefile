@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.34  1998/03/04 00:09:36  dkr
+# 'clean' now deletes the subdir .sb, too
+#
 # Revision 1.33  1998/02/16 21:44:01  dkr
 # make deps done
 #
@@ -146,8 +149,7 @@ deps:
 clean:
 	$(RM) profile.o compile.o icm2c.o precompile.o libsac.a libsac.o Old2NewWith.o \
               *.bak BEtest *.sib *.sac
-
-
+	$(RM) -r .sb
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 

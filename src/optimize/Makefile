@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.39  1998/03/04 00:10:26  dkr
+# 'clean' now deletes the subdir .sb, too
+#
 # Revision 1.38  1998/03/03 22:08:58  dkr
 # make deps done
 #
@@ -164,6 +167,7 @@ deps:
 
 clean:
 	$(RM) *.o *.bak
+	$(RM) -r .sb
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 

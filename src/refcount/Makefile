@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.13  1998/03/04 00:10:18  dkr
+# 'clean' now deletes the subdir .sb, too
+#
 # Revision 1.12  1998/02/16 21:44:02  dkr
 # make deps done
 #
@@ -58,6 +61,7 @@ deps:
 
 clean:
 	$(RM) refcount.o *.bak
+	$(RM) -r .sb
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
