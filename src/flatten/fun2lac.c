@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2003/06/18 16:32:42  dkr
+ * major bug fixed: while loops are handled correctly now
+ *
  * Revision 3.18  2003/03/08 18:31:54  dkr
  * UndoSSATransform() called first if SSA form is active
  *
@@ -144,7 +147,7 @@ IsRecursiveCall (node *assign, node *fundef)
 /******************************************************************************
  *
  * Function:
- *   bool ArgIsShifted( node *ext_arg, node *int_args)
+ *   bool ArgIsInternalArg( node *ext_arg, node *int_args)
  *
  * Description:
  *
@@ -152,29 +155,29 @@ IsRecursiveCall (node *assign, node *fundef)
  ******************************************************************************/
 
 static bool
-ArgIsShifted (node *ext_arg, node *int_args)
+ArgIsInternalArg (node *ext_arg, node *int_args)
 {
     node *int_expr;
-    bool is_shifted = FALSE;
+    bool found = FALSE;
 
-    DBUG_ENTER ("ArgIsShifted");
+    DBUG_ENTER ("ArgIsInternalArg");
 
     DBUG_ASSERT ((NODE_TYPE (ext_arg) == N_arg), "illegal parameter found!");
 
     if (int_args == NULL) {
-        is_shifted = FALSE;
+        found = FALSE;
     } else {
         DBUG_ASSERT ((NODE_TYPE (int_args) == N_exprs), "illegal parameter found!");
         int_expr = EXPRS_EXPR (int_args);
 
         if ((NODE_TYPE (int_expr) == N_id) && (ID_VARDEC (int_expr) == ext_arg)) {
-            is_shifted = TRUE;
+            found = TRUE;
         } else {
-            is_shifted = ArgIsShifted (ext_arg, EXPRS_NEXT (int_args));
+            found = ArgIsInternalArg (ext_arg, EXPRS_NEXT (int_args));
         }
     }
 
-    DBUG_RETURN (is_shifted);
+    DBUG_RETURN (found);
 }
 
 /******************************************************************************
@@ -213,84 +216,81 @@ ArgIsReturnValue (node *ext_arg, node *ret_args)
 /******************************************************************************
  *
  * Function:
- *   void BuildRenamingAssigns( node **vardecs,
- *                              node **ass1, node **ass2, node **ass3,
- *                              node *ext_args, node *int_args,
- *                              node *ret_args)
+ *   void BuildRenamingAssignsForWhile( node **vardecs,
+ *                                      node **ass1, node **ass2,, node **ass3,
+ *                                      node *ext_args, node *int_args,
+ *                                      node *ret_args)
  *
  * Description:
- *   This function returns three N_assign node chains.
+ *   This function returns a N_vardec chain and three N_assign node chains.
  *
  *   If the names of the actual parameters found in the recursive call of a
  *   loop-function ('int_args') differ from the names of the formal parameters
  *   ('ext_args') appropriate renaming assignments are build:
  *
- *     ... Loop( a_1, ...)                        tmp_a_1 = a_1;      // [1]
- *     {                                          ...
- *       <ass_1>                                  loop{
- *       if (<cond>) {                              a_1 = tmp_a_1;    // [2]
- *         <ass_2>                         --->     ...
- *         r_1, ... = Loop( A_1, ...);              <ass_1> <ass_2>
- *       }                                          tmp_a_1 = A_1;    // [3]
- *       return( r_1, ...);                         ...
- *     }                                          }
+ *     ... While( a_1, ...)
+ *     {
+ *                                                 while (<cond>) {
+ *       if (<cond>) {                               <ass>
+ *         <ass>                                     tmp_a_1 = A_1;    // [1]
+ *         r_1, ... = While( A_1, ...);    --->      ...
+ *       }                                           a_1 = tmp_a_1;    // [2]
+ *                                                   ...
+ *       return( r_1, ...);                        }
+ *     }
  *
  *   In some situations it is possible to insert just *one* assignment instead
- *   of three for a parameter at position 'i':
- *   If, for a given 'i' with (A_i != a_i), no one of the following conditions
- *   is hold, it is possible to assign (a_i = A_i) directly (at position [3]):
- *      [a]   exists j: ((j > i) && (A_j == a_i))
- *      [b]   exists j: (r_j == a_i)
- *   ([a] means, that a argument is shifted to a position with greater index;
- *    [b] means, that a parameter is a return value.)
+ *   of two for a parameter at position 'i':
+ *   If, for a given 'i' with (A_i != a_i), the following conditions is not
+ *   hold, it is possible to assign (a_i = A_i) directly:
+ *      [a]   exists j: ((j < i) && (a_j == A_i))
+ *   ([a] means, that a argument is shifted to a position with greater index.)
  *
  *   Example:
  *
- *     ... Do( a, b, c, d, e, f)
+ *     ... While( a, b, c, d, e, f)
  *     {
- *       <ass>
  *       if (<cond>) {
- *         d, f = Do( b, a, C, D, e, f);
+ *         <ass>
+ *         d, f = While( b, B, C, a, e, f);
  *       }
  *       return( c, f);
  *     }
  *
  *   --->
- *                                           (implemented)
- *     wrong:             correct:           better:            even better:
- *     ------             --------           -------            ------------
+ *                                                     (implemented)
+ *     wrong:                  correct:                better:
+ *     ------                  --------                -------
  *
- *                        tmp_a = a;
- *                        tmp_b = b;         tmp_b = b;
- *                        tmp_c = c;         tmp_c = c;         tmp_c = c;
- *                        tmp_d = d;
- *     do {               do {               do {               do {
- *                          a = tmp_a;
- *                          b = tmp_b;         b = tmp_b;
- *                          c = tmp_c;         c = tmp_c;         c = tmp_c;
- *                          d = tmp_d;
- *       <ass>              <ass>              <ass>              <ass>
- *                                                                tmp_a = a;
- *       a = b; // [a]      tmp_a = b;         tmp_a = b;         a = b;
- *       b = a;             tmp_b = a;         b = a;             b = tmp_a;
- *       c = C; // [b]      tmp_c = C;         tmp_c = C;         tmp_c = C;
- *       d = D;             tmp_d = D;         d = D;             d = D;
- *     }                  }                  }                  }
- *     while (<cond>);    while (<cond>);    while (<cond>);    while (<cond>);
- *     ... c ...          ... c ...          ... c ...          ... c ...
+ *     while (<cond>) {        while (<cond>) {        while (<cond>) {
+ *       <ass>                   <ass>                   <ass>
+ *                               tmp_a = b;              tmp_a = b;       \
+ *                               tmp_b = B;                               | ass1
+ *                               tmp_c = C;                               |
+ *                               tmp_d = a;                               /
+ *       a = b; // [a]                                                    \
+ *       b = B;                                          b = B;           | ass2
+ *       c = C;                                          c = C;           |
+ *       d = a;                                          d = a;           /
+ *                               a = tmp_a;              a = tmp_a;       \
+ *                               b = tmp_b;                               | ass3
+ *                               c = tmp_c;                               |
+ *                               d = tmp_d;                               /
+ *     }                       }                       }
+ *     ... c ...               ... c ...               ... c ...
  *
  ******************************************************************************/
 
 static void
-BuildRenamingAssigns (node **vardecs, node **ass1, node **ass2, node **ass3,
-                      node *ext_args, node *int_args, node *ret_args)
+BuildRenamingAssignsForWhile (node **vardecs, node **ass1, node **ass2, node **ass3,
+                              node *ext_args, node *int_args, node *ret_args)
 {
     node *int_expr;
     node *assign;
     node *new_id;
     char *new_name;
 
-    DBUG_ENTER ("BuildRenamingAssigns");
+    DBUG_ENTER ("BuildRenamingAssignsForWhile");
 
     DBUG_ASSERT (((vardecs != NULL)
                   && (((*vardecs) == NULL) || (NODE_TYPE ((*vardecs)) == N_vardec))),
@@ -308,8 +308,169 @@ BuildRenamingAssigns (node **vardecs, node **ass1, node **ass2, node **ass3,
                  "illegal parameter found!");
 
     if (ext_args != NULL) {
-        BuildRenamingAssigns (vardecs, ass1, ass2, ass3, ARG_NEXT (ext_args),
-                              EXPRS_NEXT (int_args), ret_args);
+        BuildRenamingAssignsForWhile (vardecs, ass1, ass2, ass3, ARG_NEXT (ext_args),
+                                      EXPRS_NEXT (int_args), ret_args);
+
+        DBUG_ASSERT ((int_args != NULL), "inconsistent LAC-signature found");
+        DBUG_ASSERT ((NODE_TYPE (ext_args) == N_arg), "illegal parameter found!");
+        DBUG_ASSERT ((NODE_TYPE (int_args) == N_exprs), "illegal parameter found!");
+
+        int_expr = EXPRS_EXPR (int_args);
+
+        DBUG_ASSERT ((ID_VARDEC (int_expr) != NULL), "vardec not found!");
+
+        if ((NODE_TYPE (int_expr) != N_id) || (ext_args != ID_VARDEC (int_expr))) {
+            if (ArgIsInternalArg (ext_args, int_args)) {
+                /*
+                 * build a fresh vardec (tmp_a_i)
+                 */
+                new_name = TmpVarName (ARG_NAME (ext_args));
+                (*vardecs)
+                  = MakeVardec (new_name, DupAllTypes (ARG_TYPE (ext_args)), *vardecs);
+
+                /*
+                 * tmp_a_i = A_i;
+                 */
+                assign
+                  = MakeAssignLet (StringCopy (new_name), *vardecs, DupNode (int_expr));
+                ASSIGN_NEXT (assign) = (*ass1);
+                (*ass1) = assign;
+
+                /*
+                 * a_i = tmp_a_i;
+                 */
+                new_id = MakeId_Copy (new_name);
+                ID_VARDEC (new_id) = (*vardecs);
+                SET_FLAG (ID, new_id, IS_GLOBAL,
+                          (NODE_TYPE (ID_VARDEC (new_id)) == N_objdef));
+                SET_FLAG (ID, new_id, IS_REFERENCE, FALSE);
+                assign
+                  = MakeAssignLet (StringCopy (ARG_NAME (ext_args)), ext_args, new_id);
+                ASSIGN_NEXT (assign) = (*ass3);
+                (*ass3) = assign;
+            } else {
+                /*
+                 * a_i = A_i;
+                 */
+                assign = MakeAssignLet (StringCopy (ARG_NAME (ext_args)), ext_args,
+                                        DupNode (int_expr));
+                ASSIGN_NEXT (assign) = (*ass2);
+                (*ass2) = assign;
+            }
+        }
+    } else {
+        DBUG_ASSERT ((int_args == NULL), "inconsistent LAC-signature found");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void BuildRenamingAssignsForDo( node **vardecs,
+ *                                   node **ass1, node **ass2, node **ass3,
+ *                                   node *ext_args, node *int_args,
+ *                                   node *ret_args)
+ *
+ * Description:
+ *   This function returns a N_vardec chain and three N_assign node chains.
+ *
+ *   If the names of the actual parameters found in the recursive call of a
+ *   loop-function ('int_args') differ from the names of the formal parameters
+ *   ('ext_args') appropriate renaming assignments are build:
+ *
+ *     ... Do( a_1, ...)                          tmp_a_1 = a_1;      // [1]
+ *     {                                          ...
+ *                                                do {
+ *       <ass>                                      a_1 = tmp_a_1;    // [2]
+ *       if (<cond>) {                              ...
+ *         r_1, ... = Do( A_1, ...);     --->       <ass>
+ *       }                                          tmp_a_1 = A_1;    // [3]
+ *                                                  ...
+ *       return( r_1, ...);                       }
+ *     }                                          while (<cond>);
+ *
+ *   In some situations it is possible to insert just *one* assignment instead
+ *   of three for a parameter at position 'i':
+ *   If, for a given 'i' with (A_i != a_i), no one of the following conditions
+ *   is hold, it is possible to assign (a_i = A_i) directly (at position [3]):
+ *      [a]   exists j: ((j > i) && (A_j == a_i))
+ *      [b]   exists j: (r_j == a_i)
+ *   ([a] means, that a argument is shifted to a position with greater index;
+ *    [b] means, that a parameter is a return value.)
+ *
+ *   Example:
+ *
+ *     ... Do( a, b, c, d, e, f)
+ *     {
+ *       <ass>
+ *       if (<cond>) {
+ *         d, f = Do( b, B, C, a, e, f);
+ *       }
+ *       return( c, f);
+ *     }
+ *
+ *   --->
+ *                                           (implemented)
+ *     wrong:             correct:           better:            even better:
+ *     ------             --------           -------            ------------
+ *
+ *                        tmp_a = a;         tmp_a = a;
+ *                        tmp_b = b;
+ *                        tmp_c = c;         tmp_c = c;         tmp_c = c;
+ *                        tmp_d = d;
+ *     do {               do {               do {               do {
+ *                          a = tmp_a;         a = tmp_a;
+ *                          b = tmp_b;
+ *                          c = tmp_c;         c = tmp_c;         c = tmp_c;
+ *                          d = tmp_d;
+ *       <ass>              <ass>              <ass>              <ass>
+ *                                                                tmp_a = a;
+ *       a = b; // [a]      tmp_a = b;         tmp_a = b;         a = b;
+ *       b = B;             tmp_b = B;         b = B;             b = B;
+ *       c = C; // [b]      tmp_c = C;         tmp_c = C;         tmp_c = C;
+ *       d = a;             tmp_d = a;         d = a;             d = tmp_a;
+ *     }                  }                  }                  }
+ *     while (<cond>);    while (<cond>);    while (<cond>);    while (<cond>);
+ *     ... c ...          ... c ...          ... c ...          ... c ...
+ *
+ *  Even better solution would be (depicted in right-most row):
+ *    Replace [a] by [a']: Insert two assignments if an argument is shifted to a
+ *    position with greater index. Note that the first assignment (tmp_a = a) is
+ *    needed only once if 'a' is used at multiple argument positions.
+ *
+ ******************************************************************************/
+
+static void
+BuildRenamingAssignsForDo (node **vardecs, node **ass1, node **ass2, node **ass3,
+                           node *ext_args, node *int_args, node *ret_args)
+{
+    node *int_expr;
+    node *assign;
+    node *new_id;
+    char *new_name;
+
+    DBUG_ENTER ("BuildRenamingAssignsForDo");
+
+    DBUG_ASSERT (((vardecs != NULL)
+                  && (((*vardecs) == NULL) || (NODE_TYPE ((*vardecs)) == N_vardec))),
+                 "no vardecs found!");
+    DBUG_ASSERT (((ass1 != NULL)
+                  && (((*ass1) == NULL) || (NODE_TYPE ((*ass1)) == N_assign))),
+                 "illegal parameter found!");
+    DBUG_ASSERT (((ass2 != NULL)
+                  && (((*ass2) == NULL) || (NODE_TYPE ((*ass2)) == N_assign))),
+                 "illegal parameter found!");
+    DBUG_ASSERT (((ass3 != NULL)
+                  && (((*ass3) == NULL) || (NODE_TYPE ((*ass3)) == N_assign))),
+                 "illegal parameter found!");
+    DBUG_ASSERT (((ret_args == NULL) || (NODE_TYPE (ret_args) == N_exprs)),
+                 "illegal parameter found!");
+
+    if (ext_args != NULL) {
+        BuildRenamingAssignsForDo (vardecs, ass1, ass2, ass3, ARG_NEXT (ext_args),
+                                   EXPRS_NEXT (int_args), ret_args);
 
         DBUG_ASSERT ((int_args != NULL), "inconsistent LAC-signature found");
         DBUG_ASSERT ((NODE_TYPE (ext_args) == N_arg), "illegal parameter found!");
@@ -321,7 +482,7 @@ BuildRenamingAssigns (node **vardecs, node **ass1, node **ass2, node **ass3,
 
         if ((NODE_TYPE (int_expr) != N_id) || (ext_args != ID_VARDEC (int_expr))) {
             if (ArgIsReturnValue (ext_args, ret_args)
-                || ArgIsShifted (ext_args, int_args)) {
+                || ArgIsInternalArg (ext_args, int_args)) {
                 /*
                  * build a fresh vardec (tmp_a_i)
                  */
@@ -362,6 +523,9 @@ BuildRenamingAssigns (node **vardecs, node **ass1, node **ass2, node **ass3,
                 ASSIGN_NEXT (assign) = (*ass3);
                 (*ass3) = assign;
             } else {
+                /*
+                 * a_i = A_i;
+                 */
                 assign = MakeAssignLet (StringCopy (ARG_NAME (ext_args)), ext_args,
                                         DupNode (int_expr));
                 ASSIGN_NEXT (assign) = (*ass3);
@@ -451,15 +615,18 @@ ReturnVarsAreIdentical (node *ext_rets, ids *int_rets)
  *     {
  *       <vardecs>
  *
- *       tmp_a_i = a_i;
  *       while (<pred>) {
- *         a_i = tmp_a_i;
  *         <ass>
- *         tmp_a_i = A_i;
+ *         tmp_a_i = A_i;     \  *or*  /  a_i = A_i;
+ *         a_i = tmp_a_i;     /        \
  *       }
  *
  *       return( r_1, r_2, ...);
  *     }
+ *
+ *   In some situations it is possible to insert just *one* assignment instead
+ *   of two for a parameter at position 'i' (see comment in the header of
+ *   BuildRenamingAssignsForWhile())
  *
  ******************************************************************************/
 
@@ -542,11 +709,13 @@ TransformIntoWhileLoop (node *fundef)
              * int_call:    ... = WhileLoopFun(...);
              */
 
-            BuildRenamingAssigns (&(FUNDEF_VARDEC (fundef)), &ass1, &ass2, &ass3,
-                                  FUNDEF_ARGS (fundef), AP_ARGS (ASSIGN_RHS (int_call)),
-                                  RETURN_EXPRS (ret));
+            BuildRenamingAssignsForWhile (&(FUNDEF_VARDEC (fundef)), &ass1, &ass2, &ass3,
+                                          FUNDEF_ARGS (fundef),
+                                          AP_ARGS (ASSIGN_RHS (int_call)),
+                                          RETURN_EXPRS (ret));
 
-            loop_body = AppendAssign (ass2, AppendAssign (loop_body, ass3));
+            loop_body
+              = AppendAssign (loop_body, AppendAssign (ass1, AppendAssign (ass2, ass3)));
 
             if (loop_body == NULL) {
                 loop_body = MakeEmpty ();
@@ -558,7 +727,7 @@ TransformIntoWhileLoop (node *fundef)
              * cond:        if (false) { ... = WhileLoopFun(...); }
              * ret:         return(...);
              * loop_pred:   <pred>
-             * loop_body:   { a_i = tmp_a_i; <ass> tmp_a_i = A_i; }
+             * loop_body:   { <ass> tmp_a_i = A_i; a_j = A_j; a_i = tmp_a_i; }
              * int_call:    ... = WhileLoopFun(...);
              */
 
@@ -570,7 +739,7 @@ TransformIntoWhileLoop (node *fundef)
             ASSIGN_INSTR (cond_assign) = FreeTree (ASSIGN_INSTR (cond_assign));
             ASSIGN_INSTR (cond_assign) = MakeWhile (loop_pred, loop_body);
 
-            FUNDEF_INSTR (fundef) = AppendAssign (ass1, cond_assign);
+            FUNDEF_INSTR (fundef) = cond_assign;
         }
     }
 
@@ -618,6 +787,10 @@ TransformIntoWhileLoop (node *fundef)
  *
  *       return( r_1, r_2, ...);
  *     }
+ *
+ *   In some situations it is possible to insert just *one* assignment instead
+ *   of three for a parameter at position 'i' (see comment in the header of
+ *   BuildRenamingAssignsForDo())
  *
  ******************************************************************************/
 
@@ -708,9 +881,10 @@ TransformIntoDoLoop (node *fundef)
              * int_call:    ... = DoLoopFun(...);
              */
 
-            BuildRenamingAssigns (&(FUNDEF_VARDEC (fundef)), &ass1, &ass2, &ass3,
-                                  FUNDEF_ARGS (fundef), AP_ARGS (ASSIGN_RHS (int_call)),
-                                  RETURN_EXPRS (ret));
+            BuildRenamingAssignsForDo (&(FUNDEF_VARDEC (fundef)), &ass1, &ass2, &ass3,
+                                       FUNDEF_ARGS (fundef),
+                                       AP_ARGS (ASSIGN_RHS (int_call)),
+                                       RETURN_EXPRS (ret));
 
             loop_body = AppendAssign (ass2, AppendAssign (loop_body, ass3));
 
