@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.96  2004/10/07 15:39:09  khf
+ * removed non emm parts from third traversal
+ * creation of pseudo fold-funs supports multioperator WLs
+ *
  * Revision 3.95  2004/10/05 13:54:07  sah
  * added a NEW_AST define
  *
@@ -324,8 +328,9 @@ struct INFO {
     node *preassigns;
     node *postassigns;
     node *let;
+    ids *with_ids;
     node *lastassign;
-    node *cexpr;
+    node *cexprs;
 };
 
 /*
@@ -337,8 +342,9 @@ struct INFO {
 #define INFO_PREC2_PREASSIGNS(n) (n->preassigns)
 #define INFO_PREC2_POSTASSIGNS(n) (n->postassigns)
 #define INFO_PREC3_LET(n) (n->let)
+#define INFO_PREC3_WITH_IDS(n) (n->with_ids)
 #define INFO_PREC3_LASTASSIGN(n) (n->lastassign)
-#define INFO_PREC3_CEXPR(n) (n->cexpr)
+#define INFO_PREC3_CEXPRS(n) (n->cexprs)
 
 /*
  * INFO functions
@@ -358,8 +364,9 @@ MakeInfo ()
     INFO_PREC2_PREASSIGNS (result) = NULL;
     INFO_PREC2_POSTASSIGNS (result) = NULL;
     INFO_PREC3_LET (result) = NULL;
+    INFO_PREC3_WITH_IDS (result) = NULL;
     INFO_PREC3_LASTASSIGN (result) = NULL;
-    INFO_PREC3_CEXPR (result) = NULL;
+    INFO_PREC3_CEXPRS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -2355,26 +2362,18 @@ PREC3with (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC3with");
 
-    INFO_PREC3_CEXPR (arg_info) = NULL;
-
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
 
-    if (!emm) {
-        /*
-         * CODE must be traversed before WITHOP!!
-         */
+    /*
+     * It is sufficient to take the CEXPRS of the first code-node!
+     */
+    INFO_PREC3_CEXPRS (arg_info) = NCODE_CEXPRS (NWITH2_CODE (arg_node));
+    INFO_PREC3_WITH_IDS (arg_info) = LET_IDS (INFO_PREC3_LET (arg_info));
 
-        if (NWITH_CODE (arg_node) != NULL) {
-            NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-        }
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
-        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
-    } else {
-        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
-
-        if (NWITH_CODE (arg_node) != NULL) {
-            NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-        }
+    if (NWITH_CODE (arg_node) != NULL) {
+        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2395,28 +2394,19 @@ PREC3with2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PREC3with2");
 
-    INFO_PREC3_CEXPR (arg_info) = NULL;
-
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
 
-    if (!emm) {
-        /*
-         * CODE must be traversed before WITHOP!!
-         */
+    /*
+     * It is sufficient to take the CEXPRS of the first code-node!
+     */
+    INFO_PREC3_CEXPRS (arg_info) = NCODE_CEXPRS (NWITH2_CODE (arg_node));
+    INFO_PREC3_WITH_IDS (arg_info) = LET_IDS (INFO_PREC3_LET (arg_info));
 
-        if (NWITH2_CODE (arg_node) != NULL) {
-            NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
-        }
+    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
 
-        NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
-    } else {
-
-        NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
-
-        if (NWITH2_CODE (arg_node) != NULL) {
-            NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
-        }
+    if (NWITH2_CODE (arg_node) != NULL) {
+        NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2429,7 +2419,7 @@ PREC3with2 (node *arg_node, info *arg_info)
  *
  * description:
  *   New, unique and adjusted pseudo fold-funs are created,
- *   if Explicit Accumulate wasn't applied (flag emm activated)
+ *   if multithreading is activated
  *
  * caution:
  *   The N_Nwithop node may be part of a N_Nwith *or* a N_Nwith2 node!!
@@ -2439,21 +2429,19 @@ PREC3with2 (node *arg_node, info *arg_info)
 node *
 PREC3withop (node *arg_node, info *arg_info)
 {
-    ids *let_ids;
     node *let_expr;
     node *new_foldfun;
     char *old_name;
 
     DBUG_ENTER ("PREC3withop");
 
-    let_ids = LET_IDS (INFO_PREC3_LET (arg_info));
     let_expr = LET_EXPR (INFO_PREC3_LET (arg_info));
 
     DBUG_ASSERT (((NODE_TYPE (let_expr) == N_Nwith)
                   || (NODE_TYPE (let_expr) == N_Nwith2)),
                  "neither N_Nwith nor N_Nwith2 node found!");
 
-    if (((!emm) || (mtmode != MT_none)) && NWITH_OR_NWITH2_IS_FOLD (let_expr)) {
+    if ((mtmode != MT_none) && NWITHOP_IS_FOLD (arg_node)) {
         /*
          * We have to make the formal parameters of each pseudo fold-fun identical
          * to the corresponding application in order to allow for simple code
@@ -2470,30 +2458,22 @@ PREC3withop (node *arg_node, info *arg_info)
         old_name = FUNDEF_NAME (new_foldfun);
         FUNDEF_NAME (new_foldfun) = TmpVarName (FUNDEF_NAME (new_foldfun));
         old_name = Free (old_name);
-        DBUG_ASSERT ((NWITH_OR_NWITH2_CEXPR (let_expr) != NULL),
-                     "NWITH_OR_NWITH2_CEXPR not found!");
+        DBUG_ASSERT ((INFO_PREC3_CEXPRS (arg_info) != NULL), "CEXPRS not found!");
 
-        new_foldfun = AdjustFoldFundef (new_foldfun, let_ids,
-                                        /*
-                                         * It is sufficient to take the CEXPR of the first
-                                         * code-node, because in a fold with-loop all
-                                         * CEXPR-ids have the same name!
-                                         */
-                                        NWITH_OR_NWITH2_CEXPR (let_expr));
+        new_foldfun = AdjustFoldFundef (new_foldfun, INFO_PREC3_WITH_IDS (arg_info),
+                                        EXPRS_EXPR (INFO_PREC3_CEXPRS (arg_info)));
 
-        if (emm) {
-            /*
-             * Vardecs from foldfun must be put into current function
-             */
-            FUNDEF_VARDEC (INFO_PREC_FUNDEF (arg_info))
-              = AppendVardec (FUNDEF_VARDEC (INFO_PREC_FUNDEF (arg_info)),
-                              DupTree (FUNDEF_VARDEC (new_foldfun)));
+        /*
+         * Vardecs from foldfun must be put into current function
+         */
+        FUNDEF_VARDEC (INFO_PREC_FUNDEF (arg_info))
+          = AppendVardec (FUNDEF_VARDEC (INFO_PREC_FUNDEF (arg_info)),
+                          DupTree (FUNDEF_VARDEC (new_foldfun)));
 
-            FUNDEF_DFM_BASE (INFO_PREC_FUNDEF (arg_info))
-              = DFMUpdateMaskBase (FUNDEF_DFM_BASE (INFO_PREC_FUNDEF (arg_info)),
-                                   FUNDEF_ARGS (INFO_PREC_FUNDEF (arg_info)),
-                                   FUNDEF_VARDEC (INFO_PREC_FUNDEF (arg_info)));
-        }
+        FUNDEF_DFM_BASE (INFO_PREC_FUNDEF (arg_info))
+          = DFMUpdateMaskBase (FUNDEF_DFM_BASE (INFO_PREC_FUNDEF (arg_info)),
+                               FUNDEF_ARGS (INFO_PREC_FUNDEF (arg_info)),
+                               FUNDEF_VARDEC (INFO_PREC_FUNDEF (arg_info)));
 
         /*
          * insert new dummy function into fundef chain
@@ -2502,6 +2482,13 @@ PREC3withop (node *arg_node, info *arg_info)
         FUNDEF_NEXT (NWITHOP_FUNDEF (arg_node)) = new_foldfun;
 
         NWITHOP_FUNDEF (arg_node) = new_foldfun;
+    }
+
+    INFO_PREC3_WITH_IDS (arg_info) = IDS_NEXT (INFO_PREC3_WITH_IDS (arg_info));
+    INFO_PREC3_CEXPRS (arg_info) = EXPRS_NEXT (INFO_PREC3_CEXPRS (arg_info));
+
+    if (NWITHOP_NEXT (arg_node) != NULL) {
+        NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2513,9 +2500,7 @@ PREC3withop (node *arg_node, info *arg_info)
  *   node *PREC3code( node *arg_node, info *arg_info)
  *
  * description:
- *   Checks whether all NCODE_CEXPR nodes of fold-WLs have identical names.
- *   (Only necessary if ExplicitAccumulation wasn't applied
- *    (flag emm activated))
+ *
  *
  * caution:
  *   The N_Nwithop node may be part of a N_Nwith *or* a N_Nwith2 node!!
@@ -2537,30 +2522,6 @@ PREC3code (node *arg_node, info *arg_info)
                   || (NODE_TYPE (let_expr) == N_Nwith2)),
                  "neither N_Nwith nor N_Nwith2 node found!");
 
-    if ((!emm && NWITH_OR_NWITH2_IS_FOLD (let_expr))) {
-        /*
-         * fold with-loop:
-         * check whether all NCODE_CEXPR nodes have identical names
-         */
-        if (INFO_PREC3_CEXPR (arg_info) != NULL) {
-            DBUG_ASSERT (((NODE_TYPE (INFO_PREC3_CEXPR (arg_info)) == N_id)
-                          && (NODE_TYPE (NCODE_CEXPR (arg_node)) == N_id)),
-                         "NCODE_CEXPR must be a N_id node!");
-
-            DBUG_ASSERT ((!strcmp (ID_NAME (INFO_PREC3_CEXPR (arg_info)),
-                                   ID_NAME (NCODE_CEXPR (arg_node)))),
-                         "Not all NCODE_CEXPR nodes of the fold with-loop have"
-                         " identical names!\n"
-                         "This is probably due to an error during undo-SSA.");
-        } else {
-            INFO_PREC3_CEXPR (arg_info) = NCODE_CEXPR (arg_node);
-        }
-    }
-
-    /*
-     * NCODE_NEXT should be traversed first,
-     * otherwise INFO_PREC3_CEXPR must be stacked!!
-     */
     if (NCODE_NEXT (arg_node) != NULL) {
         NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
     }
@@ -2573,49 +2534,47 @@ PREC3code (node *arg_node, info *arg_info)
         NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
     }
 
-    if (emm) {
-        /*
-         * if explicit accumulation was applied, the accumulation results
-         * must assigned back to the accumulation variable
-         *
-         * A,B = with(iv)
-         *         gen:{ res1 = ...;
-         *               res2 = ...;
-         *               A    = res1   <---!!!
-         *             } : res1, res2
-         *       fold( op1, n1)
-         *       ...
-         *
-         */
+    /*
+     * if at least one WL-operator ist fold the accumulation results
+     * must assigned back to the accumulation variable
+     *
+     * A,B = with(iv)
+     *         gen:{ res1 = ...;
+     *               res2 = ...;
+     *               A    = res1   <---!!!
+     *             } : res1, res2
+     *       fold( op1, n1)
+     *       ...
+     *
+     */
 
-        _ids = LET_IDS (INFO_PREC3_LET (arg_info));
-        cexprs = NCODE_CEXPRS (arg_node);
-        withop = NWITH2_WITHOP (LET_EXPR (INFO_PREC3_LET (arg_info)));
-        nassign = NULL;
-        tmp = NULL;
+    _ids = LET_IDS (INFO_PREC3_LET (arg_info));
+    cexprs = NCODE_CEXPRS (arg_node);
+    withop = NWITH2_WITHOP (LET_EXPR (INFO_PREC3_LET (arg_info)));
+    nassign = NULL;
+    tmp = NULL;
 
-        while (withop != NULL) {
-            if (NWITHOP_IS_FOLD (withop)) {
-                DBUG_ASSERT ((_ids != NULL), "ids is missing");
-                cexpr = EXPRS_EXPR (cexprs);
-                DBUG_ASSERT ((cexpr != NULL), "CEXPR is missing");
-                DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "CEXPR is not a N_id");
+    while (withop != NULL) {
+        if (NWITHOP_IS_FOLD (withop)) {
+            DBUG_ASSERT ((_ids != NULL), "ids is missing");
+            cexpr = EXPRS_EXPR (cexprs);
+            DBUG_ASSERT ((cexpr != NULL), "CEXPR is missing");
+            DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "CEXPR is not a N_id");
 
-                if (IDS_VARDEC (_ids) != ID_VARDEC (cexpr)) {
-                    tmp = MakeAssign (MakeLet (DupNode (cexpr), DupOneIds (_ids)), NULL);
-                    nassign = AppendAssign (nassign, tmp);
-                }
+            if (IDS_VARDEC (_ids) != ID_VARDEC (cexpr)) {
+                tmp = MakeAssign (MakeLet (DupNode (cexpr), DupOneIds (_ids)), NULL);
+                nassign = AppendAssign (nassign, tmp);
             }
-
-            _ids = IDS_NEXT (_ids);
-            cexprs = EXPRS_NEXT (cexprs);
-            withop = NWITHOP_NEXT (withop);
         }
 
-        if (nassign != NULL) {
-            BLOCK_INSTR (NCODE_CBLOCK (arg_node))
-              = AppendAssign (BLOCK_INSTR (NCODE_CBLOCK (arg_node)), nassign);
-        }
+        _ids = IDS_NEXT (_ids);
+        cexprs = EXPRS_NEXT (cexprs);
+        withop = NWITHOP_NEXT (withop);
+    }
+
+    if (nassign != NULL) {
+        BLOCK_INSTR (NCODE_CBLOCK (arg_node))
+          = AppendAssign (BLOCK_INSTR (NCODE_CBLOCK (arg_node)), nassign);
     }
 
     DBUG_RETURN (arg_node);
