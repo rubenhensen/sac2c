@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/23 21:18:06  ktr
+ * fixed some type names.
+ *
  * Revision 1.6  2004/11/22 16:57:41  ktr
  * SACDevCamp 04 Ismop
  *
@@ -36,8 +39,8 @@
  *
  *****************************************************************************/
 extern bool STRScontains (const char *string, stringset_t *set);
-extern stringset_t *STRSadd (const char *string, SStype_t kind, stringset_t *set);
-extern void *STRSfold (SSfoldfun_p fun, stringset_t *set, void *init);
+extern stringset_t *STRSadd (const char *string, sstype_t kind, stringset_t *set);
+extern void *STRSfold (ssfoldfun_p fun, stringset_t *set, void *init);
 extern stringset_t *STRSjoin (stringset_t *one, stringset_t *two);
 extern stringset_t *STRSfree (stringset_t *set);
 extern void STRSprint (stringset_t *set);

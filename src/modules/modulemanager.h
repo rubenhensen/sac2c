@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/23 21:18:06  ktr
+ * fixed some type names.
+ *
  * Revision 1.7  2004/11/22 16:57:41  ktr
  * SACDevCamp 04 Ismop
  *
@@ -43,7 +46,7 @@ extern module_t *MODMunLoadModule (module_t *module);
 
 extern const char *MODMgetModuleName (module_t *module);
 
-extern STtable_t *MODMgetSymbolTable (module_t *module);
+extern sttable_t *MODMgetSymbolTable (module_t *module);
 extern stringset_t *MODMgetDependencyTable (module_t *module);
 
 extern serfun_p MODMgetDeSerializeFunction (const char *symbol, module_t *module);
