@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/03/09 18:35:50  jhs
+ * new copy routine
+ *
  * Revision 1.2  2000/02/03 17:29:56  dkr
  * LUTs added
  *
@@ -196,4 +199,54 @@ DFM2Ids (DFMmask_t mask, lut_t *lut)
     }
 
     DBUG_RETURN (ids);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   DFMmask_t DFMDuplicateMask( DFMmask_t mask, DFMmask_base_t base)
+ *
+ * description:
+ *   Creates a copy of the DFMmask mask, if mask == NULL, NULL is returned.
+ *   If base != NULL: The DFMbase of the new mask is set to base.
+ *   If base == NULL: The DFMbase of the new mask is set to the base of mask.
+ *   The bases of orginal and copy can differ. The copy-procedure itself
+ *   is based on identifiers, so different bases make no promblem, as long
+ *   as they do not contain differnt names. If a unknown name is to be copied
+ *   the routine fails.
+ *
+ *   This routine is used while duplicating functions, whereby the DFMbase
+ *   of copied masks must be changed. The new mask can have other internal
+ *   order of values, so we can't copy directly.
+ *
+ ******************************************************************************/
+DFMmask_t
+DFMDuplicateMask (DFMmask_t mask, DFMmask_base_t base)
+{
+    char *name;
+    DFMmask_t new_mask;
+
+    DBUG_ENTER ("DFMDuplicateMask");
+
+    if (mask != NULL) {
+        if (base != NULL) {
+            /* copy by hand */
+            new_mask = DFMGenMaskClear (base);
+
+            /* copy each name, DFMSetMaskEntrySet will fail if name not found */
+            name = DFMGetMaskEntryNameSet (mask);
+            while (name != NULL) {
+                NOTE (("%s", name));
+                DFMSetMaskEntrySet (new_mask, name, NULL);
+                name = DFMGetMaskEntryNameSet (NULL);
+            }
+        } else {
+            /* copy by native */
+            new_mask = DFMGenMaskCopy (mask);
+        }
+    } else {
+        new_mask = NULL;
+    }
+
+    DBUG_RETURN (new_mask);
 }
