@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.49  1998/06/18 13:42:11  cg
+ * added traversal function tables conc_tab and sched_tab
+ *
  * Revision 1.48  1998/06/07 18:36:55  dkr
  * added new fun_tab (reuse_tab)
  *
@@ -209,6 +212,8 @@ extern funptr syncopt_tab[];
 extern funptr gsc_tab[];
 extern funptr reuse_tab[];
 extern funptr o2nWith_tab[];
+extern funptr sched_tab[];
+extern funptr conc_tab[];
 
 extern int nnode[];
 
