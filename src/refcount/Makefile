@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.22  2004/10/10 09:55:45  ktr
+# Added rcopt.o
+#
 # Revision 3.21  2004/09/28 14:08:58  ktr
 # removed old refcount and generatemasks
 #
@@ -92,7 +95,7 @@ INCS = -I../global -I../tree -I../../inc -I../flatten -I../typecheck \
        -I../compile -I../constants -I../print -I../optimize
 
 
-all: allocation.o alloc.o refcounting.o reuse.o
+all: allocation.o alloc.o refcounting.o reuse.o rcopt.o
 
 
 %.o: %.c
