@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/10/26 16:03:27  cg
+ * Revision 1.12  1995/10/31 08:56:18  cg
+ * Parameters with attribute ST_reference will be printed with "&",
+ * parameters with attribute ST_readonly_reference will be
+ * printed with "(&)".
+ *
+ * Revision 1.11  1995/10/26  16:03:27  cg
  * Function Type2String now has additional flag to suppress printing
  * of module names.
  *
@@ -133,10 +138,18 @@ Type2String (types *type, int flag)
                         strcat (tmp_string, int_string);
                     }
             }
-        if ((NULL != type->id) && (1 == flag)) {
+
+        if ((type->attrib != ST_regular) || (1 == flag)) {
             strcat (tmp_string, " ");
-            if (type->attrib == ST_reference)
-                strcat (tmp_string, "&");
+        }
+
+        if (type->attrib == ST_reference) {
+            strcat (tmp_string, "&");
+        } else if (type->attrib == ST_readonly_reference) {
+            strcat (tmp_string, "(&)");
+        }
+
+        if ((NULL != type->id) && (1 == flag)) {
             strcat (tmp_string, type->id);
         }
 
