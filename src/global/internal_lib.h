@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1997/10/28 12:30:18  srs
+ * inserted macro MALLOC
+ *
  * Revision 1.9  1997/08/07 15:24:33  dkr
  * added DBUG_OFF at CHECK_DBUG_START, CHECK_DBUG_STOP
  *
@@ -54,6 +57,8 @@ extern char *TmpVar ();
 
 #define MAX(a, b) ((a < b) ? b : a)
 #define MIN(a, b) ((a < b) ? a : b)
+
+#define MALLOC(size) Malloc (size)
 
 #ifndef DBUG_OFF
 #define CHECK_DBUG_START                                                                 \
