@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1996/01/25 18:37:21  cg
+ * Revision 1.20  1996/09/11 06:11:28  cg
+ * New compilation phase "Updating Makefile with dependencies" added.
+ *
+ * Revision 1.19  1996/01/25  18:37:21  cg
  * renamed compiler phase objinit resoltutio
  *
  * Revision 1.18  1996/01/07  16:51:59  cg
@@ -124,6 +127,7 @@ char *compiler_phase_name[] = {"",
                                "Creating C file",
                                "Invoking C compiler",
                                "Creating SAC library",
+                               "Updating Makefile with dependencies",
                                "Unknown compiler phase"};
 
 /*
