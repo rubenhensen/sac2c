@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/01/24 23:32:08  dkr
+ * macro DIM_NO_OFFSET added
+ *
  * Revision 3.1  2000/11/20 17:59:39  sacbase
  * new release made
  *
@@ -378,6 +381,8 @@ typedef struct {
 
 #define KNOWN_SHAPE(x) (((x) == SCALAR) || ((x) > SCALAR))
 #define KNOWN_DIMENSION(x) (((x) == SCALAR) || ((x) > SCALAR) || ((x) < KNOWN_DIM_OFFSET))
+
+#define DIM_NO_OFFSET(dim) (((dim) < KNOWN_DIM_OFFSET) ? KNOWN_DIM_OFFSET - (dim) : (dim))
 
 typedef types shapes; /* this definition is primarily needed for
                        * the vinfo nodes; there we need the shape
