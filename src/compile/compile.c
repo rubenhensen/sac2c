@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.195  1999/02/09 20:23:27  dkr
+ * fixed a bug in COMPSync:
+ *   MM-ICMs are now correctly extracted --- even in case of nested WLs
+ *
  * Revision 1.194  1998/12/03 09:39:07  sbs
  * Prf F_ftoi and friends eliminated
  *
@@ -6109,7 +6113,7 @@ COMPSync (node *arg_node, node *arg_info)
     types *type;
     simpletype s_type;
     char *tag, *icm_name, *var_name, *fold_type;
-    int num_args, num_folds, prolog, epilog;
+    int num_args, num_folds, prolog, epilog, count_nesting;
 
     DBUG_ENTER ("COMPSync");
 
@@ -6230,8 +6234,13 @@ COMPSync (node *arg_node, node *arg_info)
     epilog_icms = NULL;
     assign = BLOCK_INSTR (SYNC_REGION (arg_node));
     last_assign = NULL;
+    /*
+     * prolog = 1: current assignment is in front of WL_..._BEGIN-ICM (part of prolog)
+     * epilog = 1: current assignment is behind WL_..._END-ICM (part of epilog)
+     */
     prolog = 1;
     epilog = 0;
+    count_nesting = 0; /* # of inner WLs */
     while (assign != NULL) {
 
         DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "no assign found");
@@ -6247,8 +6256,22 @@ COMPSync (node *arg_node, node *arg_info)
              */
             if ((strcmp (ICM_NAME (instr), "WL_FOLD_BEGIN") == 0)
                 || (strcmp (ICM_NAME (instr), "WL_NONFOLD_BEGIN") == 0)) {
-                DBUG_ASSERT (((prolog == 1) && (epilog == 0)), "wrong ICM order");
-                prolog = 0;
+
+                DBUG_ASSERT ((epilog == 0), "WL_..._BEGIN-ICM found in epilog");
+                if (prolog == 1) {
+                    /*
+                     * first WL_..._BEGIN-ICM found
+                     *   -> end of prolog found
+                     */
+                    prolog = 0;
+                } else {
+                    /*
+                     * another WL_BEGIN_ICM found
+                     *   -> stack it
+                     */
+                    count_nesting++;
+                }
+
             } else {
 
                 /*
@@ -6257,8 +6280,24 @@ COMPSync (node *arg_node, node *arg_info)
                  */
                 if ((strcmp (ICM_NAME (instr), "WL_FOLD_END") == 0)
                     || (strcmp (ICM_NAME (instr), "WL_NONFOLD_END") == 0)) {
-                    DBUG_ASSERT (((prolog == 0) && (epilog == 0)), "wrong ICM order");
-                    epilog = 1;
+
+                    DBUG_ASSERT ((prolog == 0), "WL_..._END-ICM found in prolog");
+                    DBUG_ASSERT ((epilog == 0), "WL_..._END-ICM found in epilog");
+                    if (count_nesting == 0) {
+                        /*
+                         * last WL_..._END-ICM found
+                         *   -> begin of epilog found
+                         */
+                        epilog = 1;
+                    } else {
+                        /*
+                         * end of an inner WL found
+                         */
+                        DBUG_ASSERT ((count_nesting > 0),
+                                     "WL_..._BEGIN/END-ICMs non-balanced");
+                        count_nesting--;
+                    }
+
                 } else {
 
                     /*
