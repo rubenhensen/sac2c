@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  1998/08/07 18:11:35  cg
+ * bug fixed in ICMCompileMT_ADJUST_SCHEDULER
+ *
  * Revision 1.16  1998/08/07 16:04:41  dkr
  * MT_SCHEDULER_BEGIN, MT_SCHEDULER_END added
  *
@@ -949,8 +952,8 @@ ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower, int un
 #undef MT_ADJUST_SCHEDULER
 
     INDENT;
-    fprintf (outfile, "MT_ADJUST_SCHEDULER(%s, %d, %d, %d, (", array, current_dim, lower,
-             unrolling);
+    fprintf (outfile, "SAC_MT_ADJUST_SCHEDULER(%s, %d, %d, %d, (", array, current_dim,
+             lower, unrolling);
 
     if (current_dim == array_dim - 1) {
         fprintf (outfile, "1");
