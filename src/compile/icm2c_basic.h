@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/07/11 08:42:59  dkr
+ * bug in VectToOffset() fixed
+ *
  * Revision 3.5  2002/07/10 19:28:26  dkr
  * TAGGED_ARRAYS: access macros are functions now
  *
@@ -91,7 +94,7 @@ extern void VectToOffset (char *offset, void *v, int dimv, void (*v_acc_dim) (vo
     }
 
 #define VectToOffset(dimv, v_i_str, dima, a)                                             \
-    VectToOffset2 (dimv, v_i_str, dima, a, AccessShape (a, i))
+    VectToOffset2 (dimv, v_i_str, dima, AccessShape (a, i))
 
 #endif
 
