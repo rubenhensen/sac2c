@@ -170,9 +170,7 @@ Old2NewWith (node *arg_node)
 
     act_tab = o2nWith_tab; /* set new function-table for traverse */
 
-    /*
-     = Trav(, NULL);
-     */
+    arg_node = Trav (arg_node, NULL);
 
     DBUG_RETURN (arg_node);
 }
