@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/07/22 17:28:37  khf
+ * added WLFSap
+ *
  * Revision 1.2  2004/07/21 12:47:35  khf
  * switch to new INFO structure
  *
@@ -18,6 +21,7 @@ extern node *WithloopFusion (node *arg_node);
 
 extern node *WLFSfundef (node *arg_node, info *arg_info);
 extern node *WLFSassign (node *arg_node, info *arg_info);
+extern node *WLFSap (node *arg_node, info *arg_info);
 extern node *WLFSid (node *arg_node, info *arg_info);
 
 extern node *WLFSNwith (node *arg_node, info *arg_info);
