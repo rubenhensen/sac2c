@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.22  2004/11/14 15:24:47  sah
+ * some cleanup
+ *
  * Revision 1.21  2004/11/07 18:09:55  sah
  * changes due to new signature of stringset.h
  *
@@ -435,8 +438,7 @@ GenerateSerFunHead (node *elem, STentrytype_t type, info *info)
 {
     DBUG_ENTER ("GenerateSerFunBodyHead");
 
-    fprintf (INFO_SER_FILE (info), "void *%s(void *info)",
-             GenerateSerFunName (type, elem));
+    fprintf (INFO_SER_FILE (info), "void *%s()", GenerateSerFunName (type, elem));
     fprintf (INFO_SER_FILE (info), "{\n");
     fprintf (INFO_SER_FILE (info), "void *result;\n");
     fprintf (INFO_SER_FILE (info), "void *stack;\n");
@@ -615,8 +617,8 @@ SerializeFundefLink (node *fundef, FILE *file)
     if (fundef == NULL) {
         fprintf (file, "NULL");
     } else {
-        fprintf (file, "DeserializeLookupFunction( \"%s\", \"%s\", info)",
-                 FUNDEF_MOD (fundef), GenerateSerFunName (SET_funhead, fundef));
+        fprintf (file, "DeserializeLookupFunction( \"%s\", \"%s\")", FUNDEF_MOD (fundef),
+                 GenerateSerFunName (SET_funhead, fundef));
     }
 
     DBUG_VOID_RETURN;
@@ -633,7 +635,7 @@ SERFundef (node *arg_node, info *arg_info)
      * only serialize functions that are not available
      * in another module
      */
-    if (FUNDEF_SYMBOLNAME (arg_node) == NULL) {
+    if (GET_FLAG (FUNDEF, arg_node, IS_LOCAL)) {
         SerializeFundefHead (arg_node, arg_info);
 
         /*
@@ -662,7 +664,7 @@ SERTypedef (node *arg_node, info *arg_info)
      * Only serialize typedefs that are not available in another
      * module
      */
-    if (TYPEDEF_SYMBOLNAME (arg_node) == NULL) {
+    if (GET_FLAG (TYPEDEF, arg_node, IS_LOCAL)) {
         SerializeTypedef (arg_node, arg_info);
     }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/14 15:23:45  sah
+ * some cleanup
+ *
  * Revision 1.6  2004/11/11 14:29:40  sah
  * added some traversal functions for USS traversal
  *
@@ -33,6 +36,7 @@
 #include "tree_basic.h"
 #include "modulemanager.h"
 #include "deserialize.h"
+#include "new_types.h"
 
 /*
  * INFO structure
@@ -74,13 +78,62 @@ FreeInfo (info *info)
 }
 
 /*
+ * helper functions
+ */
+static void
+MakeSymbolAvailable (const char *mod, const char *symb, STentrytype_t type, info *info)
+{
+    DBUG_ENTER ("MakeSymbolAvailable");
+
+    if (strcmp (mod, MODUL_NAME (INFO_USS_MODULE (info)))) {
+
+        AddSymbolByName (symb, type, mod);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
  * Traversal functions
  */
+
+ntype *
+USSNType (ntype *arg_ntype, info *arg_info)
+{
+    ntype *scalar;
+
+    DBUG_ENTER ("USSNType");
+
+    /* get scalar base type of type */
+    if (TYIsArray (arg_ntype)) {
+        scalar = TYGetScalar (arg_ntype);
+    } else if (TYIsScalar (arg_ntype)) {
+        scalar = arg_ntype;
+    } else {
+        DBUG_ASSERT (0, "don't know what to do here");
+    }
+
+    /* if it is external, get the typedef */
+    if (TYIsSymb (scalar)) {
+        MakeSymbolAvailable (TYGetMod (scalar), TYGetName (scalar), SET_typedef,
+                             arg_info);
+    }
+
+    DBUG_RETURN (arg_ntype);
+}
 
 node *
 USSTypedef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("USSTypedef");
+
+    if (TYPEDEF_NTYPE (arg_node) != NULL) {
+        TYPEDEF_NTYPE (arg_node) = USSNType (TYPEDEF_NTYPE (arg_node), arg_info);
+    }
+
+    if (TYPEDEF_NEXT (arg_node) != NULL) {
+        TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -112,15 +165,10 @@ USSNWithOp (node *arg_node, info *arg_info)
 node *
 USSAp (node *arg_node, info *arg_info)
 {
-    module_t *module;
-
     DBUG_ENTER ("USSAp");
 
-    if (strcmp (AP_MOD (arg_node), MODUL_NAME (INFO_USS_MODULE (arg_info)))) {
-        module = LoadModule (AP_MOD (arg_node));
-
-        AddSymbolToAst (AP_NAME (arg_node), module);
-    }
+    MakeSymbolAvailable (AP_MOD (arg_node), AP_NAME (arg_node), SET_wrapperhead,
+                         arg_info);
 
     arg_node = TravSons (arg_node, arg_info);
 
@@ -135,6 +183,10 @@ USSModul (node *arg_node, info *arg_info)
     INFO_USS_MODULE (arg_info) = arg_node;
 
     InitDeserialize (arg_node);
+
+    if (MODUL_TYPES (arg_node) != NULL) {
+        MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
+    }
 
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);

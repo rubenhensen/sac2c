@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/11/14 15:23:28  sah
+ * some cleanup
+ *
  * Revision 1.11  2004/11/08 14:20:38  sah
  * moved some code
  *
@@ -149,6 +152,48 @@ CheckLocalNameClash (const char *symbol, STtable_t *table, int lineno)
     DBUG_VOID_RETURN;
 }
 
+static char *
+LookupNamespaceForSymbol (const char *name, info *info)
+{
+    char *result;
+
+    DBUG_ENTER ("LookupNamespaceForSymbol");
+
+    if (STContains (name, INFO_ANS_SYMBOLS (info))) {
+        /*
+         * There is a namespace annotated to this symbolname, e.g. it was used
+         * -> use that namespace
+         */
+        STentry_t *entry = STGetFirstEntry (name, INFO_ANS_SYMBOLS (info));
+
+        result = StringCopy (STEntryName (entry));
+    } else {
+        /*
+         * this symbol is local
+         */
+        result = StringCopy (MODUL_NAME (INFO_ANS_MODULE (info)));
+    }
+
+    DBUG_RETURN (result);
+}
+
+static void
+AddNamespaceToDependencies (const char *ns, info *info)
+{
+    DBUG_ENTER ("AddNamespaceToDependencies");
+
+    if (strcmp (MODUL_NAME (INFO_ANS_MODULE (info)), ns)) {
+        /*
+         * this symbol comes from another namespace
+         *  -> add the namespace to the dependency list
+         */
+        MODUL_DEPENDENCIES (INFO_ANS_MODULE (info))
+          = SSAdd (ns, SS_saclib, MODUL_DEPENDENCIES (INFO_ANS_MODULE (info)));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 /*
  * Traversal functions
  */
@@ -165,39 +210,46 @@ ANSTypes (types *arg_types, info *arg_info)
          */
         if (TYPES_MOD (arg_types) == NULL) {
             /* look up correct type */
-            if (STContains (TYPES_NAME (arg_types), INFO_ANS_SYMBOLS (arg_info))) {
-                /*
-                 * There is a namespace annotated to this symbolname, e.g. it was used
-                 * -> use that namespace
-                 */
-                STentry_t *entry
-                  = STGetFirstEntry (TYPES_NAME (arg_types), INFO_ANS_SYMBOLS (arg_info));
-                TYPES_MOD (arg_types) = StringCopy (STEntryName (entry));
-
-                MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
-                  = SSAdd (TYPES_MOD (arg_types), SS_saclib,
-                           MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
-            } else {
-                /*
-                 * must be a local typedef
-                 * -> use local namespace
-                 */
-                TYPES_MOD (arg_types)
-                  = StringCopy (MODUL_NAME (INFO_ANS_MODULE (arg_info)));
-            }
-        } else if (strcmp (MODUL_NAME (INFO_ANS_MODULE (arg_info)),
-                           TYPES_MOD (arg_types))) {
-            /*
-             * this typedef comes from another namespace
-             *  -> add the namespace to the dependency list
-             */
-            MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
-              = SSAdd (TYPES_MOD (arg_types), SS_saclib,
-                       MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
+            TYPES_MOD (arg_types)
+              = LookupNamespaceForSymbol (TYPES_NAME (arg_types), arg_info);
         }
+
+        AddNamespaceToDependencies (TYPES_MOD (arg_types), arg_info);
     }
 
     DBUG_RETURN (arg_types);
+}
+
+ntype *
+ANSNType (ntype *arg_ntype, info *arg_info)
+{
+    ntype *scalar = NULL;
+
+    DBUG_ENTER ("ANSNType");
+
+    if (TYIsArray (arg_ntype)) {
+        scalar = TYGetScalar (arg_ntype);
+    } else if (TYIsScalar (arg_ntype)) {
+        scalar = arg_ntype;
+    } else {
+        DBUG_ASSERT (0, "dont know what to do here!");
+    }
+
+    if (TYIsSymb (scalar)) {
+        if (TYGetMod (scalar) == NULL) {
+            /* we have to add the correct namespace here */
+            scalar = TYSetMod (scalar,
+                               LookupNamespaceForSymbol (TYGetName (scalar), arg_info));
+
+            DBUG_PRINT ("ANS", ("Updated namespace for type %s to %s", TYGetName (scalar),
+                                TYGetMod (scalar)));
+        }
+
+        /* save the namespace as a dependency */
+        AddNamespaceToDependencies (TYGetMod (scalar), arg_info);
+    }
+
+    DBUG_RETURN (arg_ntype);
 }
 
 node *
@@ -318,6 +370,10 @@ ANSTypedef (node *arg_node, info *arg_info)
         TYPEDEF_MOD (arg_node) = StringCopy (MODUL_NAME (INFO_ANS_MODULE (arg_info)));
     }
 
+    if (TYPEDEF_NTYPE (arg_node) != NULL) {
+        TYPEDEF_NTYPE (arg_node) = ANSNType (TYPEDEF_NTYPE (arg_node), arg_info);
+    }
+
     if (TYPEDEF_NEXT (arg_node) != NULL) {
         TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
     }
@@ -351,34 +407,11 @@ ANSAp (node *arg_node, info *arg_info)
         /*
          * look up the correct namespace
          */
-        if (STContains (AP_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info))) {
-            /*
-             * There is a namespace annotated to this symbolname, e.g. it was used
-             * -> use that namespace
-             */
-            STentry_t *entry
-              = STGetFirstEntry (AP_NAME (arg_node), INFO_ANS_SYMBOLS (arg_info));
-            AP_MOD (arg_node) = StringCopy (STEntryName (entry));
 
-            MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
-              = SSAdd (AP_MOD (arg_node), SS_saclib,
-                       MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
-        } else {
-            /*
-             * must be a local function
-             * -> use local namespace
-             */
-            AP_MOD (arg_node) = StringCopy (MODUL_NAME (INFO_ANS_MODULE (arg_info)));
-        }
-    } else if (strcmp (MODUL_NAME (INFO_ANS_MODULE (arg_info)), AP_MOD (arg_node))) {
-        /*
-         * this function comes from another namespace
-         *  -> add the namespace to the dependency list
-         */
-        MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info))
-          = SSAdd (AP_MOD (arg_node), SS_saclib,
-                   MODUL_DEPENDENCIES (INFO_ANS_MODULE (arg_info)));
+        AP_MOD (arg_node) = LookupNamespaceForSymbol (AP_NAME (arg_node), arg_info);
     }
+
+    AddNamespaceToDependencies (AP_MOD (arg_node), arg_info);
 
     arg_node = TravSons (arg_node, arg_info);
 
