@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2003/05/30 16:25:55  dkr
+ * bug in OBJlet() fixed: read-only references are NOT propagated to the
+ * LHS
+ *
  * Revision 3.8  2002/10/22 13:26:25  sbs
  * bug in setting flags for reference_only functions solved.
  * Now, ListIO should compile correctly 8-)
@@ -59,7 +63,8 @@
  * new release made
  *
  * Revision 1.19  1998/06/05 15:27:49  cg
- * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
+ * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON
+ * removed
  * Now, module name and symbol name are combined correctly by ':'.
  * Only when it really comes to the generation of C code, the ':' is
  * replaced by '__'. This is done by the renaming of all identifiers
@@ -701,9 +706,9 @@ OBJlet (node *arg_node, node *arg_info)
                 /*
                  * The new type checker has been running. Therefore,
                  * the reference parameters of N_ap nodes or N_prf( F_type_error) nodes
-                 * can be detected by inspecting their IS_REFERENCE flag. If set to
-                 * ST_reference they are reference parameters, otherwise they are not.
-                 * This is ensureed by create_wrappers.c !!!
+                 * can be detected by inspecting their IS_REFERENCE flag. If set they
+                 * are reference parameters, otherwise they are not. This is ensureed
+                 * by create_wrappers.c !!!
                  */
                 if ((NODE_TYPE (let_expr) == N_ap)
                     || ((NODE_TYPE (let_expr) == N_prf)
@@ -720,7 +725,8 @@ OBJlet (node *arg_node, node *arg_info)
                         }
 #endif
                         if ((NODE_TYPE (arg_id) == N_id)
-                            && (GET_FLAG (ID, arg_id, IS_REFERENCE))) {
+                            && (GET_FLAG (ID, arg_id, IS_REFERENCE))
+                            && (!GET_FLAG (ID, arg_id, IS_READ_ONLY))) {
                             new_ids_name = StringCopy (ID_NAME (arg_id));
 
                             if (new_ids == NULL) {
@@ -750,9 +756,9 @@ OBJlet (node *arg_node, node *arg_info)
                 }
             } else {
                 /*
-                 * The old type checker has been run. Therefore, we have to find out about
-                 * reference parameters by inspecting the ARG nodes of the function
-                 * declaration.
+                 * The old type checker has been run. Therefore, we have to find out
+                 * about reference parameters by inspecting the ARG nodes of the
+                 * function declaration.
                  */
                 if (NODE_TYPE (let_expr) == N_ap) {
 
