@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.17  2001/03/02 14:55:55  sbs
+# integrated constants!
+#
 # Revision 3.16  2001/03/02 14:42:34  sbs
 # integrated constants?
 #
@@ -184,7 +187,7 @@ SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
 PRINT= src/print/print.o src/print/convert.o
 FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/fun2lac.o
 CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
-           src/constants/constants_struct_ops.o src/constants/constants_ari_ops.o \
+           src/constants/constants_struc_ops.o src/constants/constants_ari_ops.o \
            src/constants/cv2cv.o src/constants/cv2scalar.o src/constants/cv2str.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o \
