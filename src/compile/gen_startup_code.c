@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  1999/07/20 16:52:32  jhs
+ * Added one or two comments.
+ *
  * Revision 2.11  1999/07/16 09:34:12  cg
  * Added facilities for heap management diagnostics.
  *
@@ -534,13 +537,11 @@ PrintDefines ()
 /******************************************************************************
  *
  * function:
- *
+ *   node *GSCicm(node *arg_node, node *arg_info)
  *
  * description:
- *
- *
- *
- *
+ *   filters the variables needed for the spmd-frame of a specific function
+ *   from an MT_SPMD_SETUP-icm.
  *
  ******************************************************************************/
 
@@ -604,7 +605,7 @@ GSCicm (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *
+ *   node *GSCspmd(node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -667,6 +668,9 @@ GSCfundef (node *arg_node, node *arg_info)
 
         Trav (FUNDEF_BODY (arg_node), arg_info);
 
+        /*
+         *  if there is no dummy frame, one is inserted in front here
+         */
         if (spmd_block_counter == 0) {
             fprintf (outfile, "      SAC_MT_BLOCK_FRAME_DUMMY()    \\\n");
         }
