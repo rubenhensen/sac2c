@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/06/09 09:53:18  ktr
+ * F_fill now has the expression as the first argument
+ *
  * Revision 1.17  2004/06/08 14:31:55  ktr
  * - ReuseCandidates for With-loops are inferred.
  * - ReuseCandidates of not matching type are discarded.
@@ -51,8 +54,6 @@
 #include "ssa.h"
 #include "SSARefCount.h"
 #include "ReuseWithArrays.h"
-#include "DataFlowMask.h"
-#include "DataFlowMaskUtils.h"
 
 #define SSARC_DEVELOP
 
@@ -925,8 +926,10 @@ SSARClet (node *arg_node, node *arg_info)
 
         /* Insert fill-prf */
         LET_EXPR (arg_node)
-          = MakePrf (F_fill, AppendExprs (Ids2Exprs (ids),
-                                          MakeExprs (LET_EXPR (arg_node), NULL)));
+          = MakePrf (F_fill, MakeExprs (LET_EXPR (arg_node), Ids2Exprs (ids)));
+
+        /*           AppendExprs( Ids2Exprs(ids),
+                     MakeExprs( LET_EXPR(arg_node), NULL)));*/
 
         while (ids != NULL) {
             AllocList_Insert (arg_info, IDS_AVIS (ids), CreateZeroVector (0, T_int),
