@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2004/09/02 16:01:35  skt
+ * support for consolidate_cells added
+ *
  * Revision 3.18  2004/08/31 16:58:17  skt
  * new phase (ReplicateFunctions) added
  *
@@ -203,6 +206,8 @@
 #include "create_cells.h"
 #include "cell_growth.h"
 #include "replicate_functions.h"
+#include "DeadFunctionRemoval.h"
+#include "consolidate_cells.h"
 
 /*
  * INFO structure
@@ -496,41 +501,27 @@ MUTHmodul (node *arg_node, info *arg_info)
 
     arg_node = ReplicateFunctions (arg_node);
 
+    /* extra-call of DFR to remove superflous functions */
+    arg_node = DeadFunctionRemoval (arg_node);
+
     DBUG_PRINT ("MUTH", ("end ReplicateFunctions"));
-    if ((break_after == PH_multithread) && (strcmp ("repfu", break_specifier) == 0)) {
+    if ((break_after == PH_multithread) && (strcmp ("repfun", break_specifier) == 0)) {
         goto cont;
     }
+
+    /*
+     * --- ConsolidateCells (concel) ---
+     */
+    DBUG_PRINT ("MUTH", ("begin ConsolidateCells"));
+
+    arg_node = ConsolidateCells (arg_node);
+
+    DBUG_PRINT ("MUTH", ("end ConsolidateCells"));
+    if ((break_after == PH_multithread) && (strcmp ("concel", break_specifier) == 0)) {
+        goto cont;
+    }
+
     executionmodes_available = FALSE;
-
-    /*
-     *  --- MtfunsInit (mtfin) ---
-     *
-     *  FUNDEF_COMPANION only used within this traversal!!
-     *  It can be reused afterwards
-     */
-    /*DBUG_PRINT( "MUTH", ("begin MtfunsInit"));
-    MODUL_FUNS( arg_node) =
-      MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, ClearCOMPANION,
-    MUTHignore_none); MODUL_FUNS( arg_node) = MUTHdriver (MODUL_FUNS( arg_node), arg_info,
-    TRUE, MtfunsInit, MUTHignore); DBUG_PRINT( "MUTH", ("end MtfunsInit"));
-
-    if ((break_after == PH_multithread) &&
-        (strcmp("mtfin", break_specifier)==0)) {
-      goto cont;
-      }*/
-
-    /*
-     *  --- BlocksCons (blkco) ---
-     */
-    /*DBUG_PRINT( "MUTH", ("begin BlocksCons"));
-    MODUL_FUNS( arg_node) =
-      MUTHdriver_ (MODUL_FUNS( arg_node), arg_info, FALSE, FALSE, BlocksCons, MUTHignore);
-    DBUG_PRINT( "MUTH", ("end BlocksCons"));
-
-    if ((break_after == PH_multithread) &&
-        (strcmp("blkco", break_specifier)==0)) {
-      goto cont;
-      }*/
 
     /*
      *  --- DataflowAnalysis (dfa) ---

@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 3.24  2004/09/02 16:01:35  skt
+# support for consolidate_cells added
+#
 # Revision 3.23  2004/08/31 16:56:53  skt
 # replicate_functions.o added
 #
@@ -96,7 +99,7 @@ INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../flatt
 all: multithread.o multithread_lib.o assignments_rearrange.o \
     tag_executionmode.o propagate_executionmode.o create_cells.o \
     create_dataflowgraph.o cell_growth.o create_withinwith.o \
-    replicate_functions.o
+    replicate_functions.o consolidate_cells.o
 
  
 
