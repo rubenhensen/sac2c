@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/01 21:49:10  sah
+ * dependencises are printed now as well
+ *
  * Revision 1.6  2004/10/28 17:18:33  sah
  * now deserialisation has an internal state
  *
@@ -135,6 +138,10 @@ PrintLibStat (char *libname)
 #ifndef DBUG_OFF
     STPrint (table);
 #endif
+    DBUG_PRINT ("LIBSTAT", ("Printing dependencies"));
+
+    SSPrint (GetDependencyTable (module));
+
     DBUG_PRINT ("LIBSTAT", ("Printing code"));
 
     PrintLibStatCode (module, table);
