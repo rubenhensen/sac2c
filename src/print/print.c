@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.86  1995/10/12 13:46:35  cg
+ * Revision 1.87  1995/10/26 16:04:59  cg
+ * Files without any functions can be printed now.
+ * Converted from macro MOD_NAME_CON to global variable mod_name_con
+ *
+ * Revision 1.86  1995/10/12  13:46:35  cg
  * PrintFundef and PrintObjdef now rely on STATUS to distinguish between defined
  * and imported items
  *
@@ -430,7 +434,10 @@ PrintModul (node *arg_node, node *arg_info)
         Trav (arg_node->node[3], arg_info); /* print objdefs */
     }
 
-    Trav (arg_node->node[2], arg_info); /* print functions */
+    if (NULL != arg_node->node[2]) {
+        fprintf (outfile, "\n");
+        Trav (arg_node->node[2], arg_info); /* print functions */
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -487,7 +494,7 @@ PrintTypedef (node *arg_node, node *arg_info)
 
     fprintf (outfile, "typedef %s ", Type2String (arg_node->info.types, 0));
     if (arg_node->info.types->id_mod != NULL)
-        fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.types->id_mod);
+        fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
     fprintf (outfile, "%s;\n", arg_node->info.types->id);
 
     if (1 == arg_node->nnode)
@@ -508,14 +515,14 @@ node *PrintConstdef(node *arg_node, node *arg_info)
    {
      fprintf(outfile, "extern %s ", Type2String(arg_node->info.types,0));
      if(arg_node->info.types->id_mod != NULL)
-       fprintf(outfile, "%s"MOD_NAME_CON, arg_node->info.types->id_mod);
+       fprintf(outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
      fprintf(outfile, "%s;\n", arg_node->info.types->id);
    }
    else
    {
      fprintf(outfile, "%s ", Type2String(arg_node->info.types,0));
      if(arg_node->info.types->id_mod != NULL)
-       fprintf(outfile, "%s"MOD_NAME_CON, arg_node->info.types->id_mod);
+       fprintf(outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
      fprintf(outfile, "%s = ", arg_node->info.types->id);
      Trav(arg_node->node[0], arg_info);
      fprintf(outfile, ";\n");
@@ -538,12 +545,12 @@ PrintObjdef (node *arg_node, node *arg_info)
     if (arg_node->info.types->status == ST_imported) {
         fprintf (outfile, "extern %s ", Type2String (arg_node->info.types, 0));
         if (arg_node->info.types->id_mod != NULL)
-            fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.types->id_mod);
+            fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
         fprintf (outfile, "%s;\n", arg_node->info.types->id);
     } else {
         fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
         if (arg_node->info.types->id_mod != NULL)
-            fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.types->id_mod);
+            fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
         fprintf (outfile, "%s = ", arg_node->info.types->id);
         Trav (arg_node->node[1], arg_info);
         fprintf (outfile, ";\n");
@@ -584,7 +591,7 @@ PrintFundef (node *arg_node, node *arg_info)
             fprintf (outfile, "inline ");
         fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
         if (arg_node->info.types->id_mod != NULL)
-            fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.types->id_mod);
+            fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
         if (NULL != arg_node->node[5])
             fprintf (outfile, "%s {%s} (", arg_node->info.types->id,
                      (char *)(arg_node->node[5]));
@@ -754,7 +761,7 @@ PrintAp (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintAp");
 
     if (arg_node->info.fun_name.id_mod != NULL)
-        fprintf (outfile, "%s" MOD_NAME_CON, arg_node->info.fun_name.id_mod);
+        fprintf (outfile, "%s%s", arg_node->info.fun_name.id_mod, mod_name_con);
     fprintf (outfile, "%s(", arg_node->info.fun_name.id);
     if (arg_node->node[0])
         Trav (arg_node->node[0], arg_info);
@@ -1020,7 +1027,7 @@ PrintFold (node *arg_node, node *arg_info)
     else {
         if (NULL != arg_node->info.fun_name.id_mod)
             fprintf (outfile, "fold( %s%s%s, ", arg_node->info.fun_name.id_mod,
-                     MOD_NAME_CON, arg_node->info.fun_name.id);
+                     mod_name_con, arg_node->info.fun_name.id);
         else
             fprintf (outfile, "fold( %s, ", arg_node->info.fun_name.id);
         Trav (arg_node->node[1], arg_info);
@@ -1164,6 +1171,8 @@ Print (node *arg_node)
     DBUG_ENTER ("Print");
 
     act_tab = print_tab;
+    mod_name_con = mod_name_con_1;
+
     if (show_icm == 0) {
         if (traceflag != 0) {
             fprintf (outfile, "#include <stdio.h>\n");
