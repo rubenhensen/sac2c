@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.28  2000/07/13 07:14:13  jhs
+ * Added Comments for DupDFMmask, DupMt, DupSt, DupMTsignal, DupMTsync
+ * and DupMTalloc.
+ *
  * Revision 1.27  2000/07/12 15:22:07  dkr
  * code brushed:
  * DuplicateTypes removed (use DupTypes instead!)
@@ -593,10 +597,12 @@ DupTypes (types *source)
  *
  * Description:
  *   Duplicates the given DFMmask.
- *   If a new DFMbase is found in the LUT the new one is used!
+ *   The real duplication is done by DFMDuplicateMask:
+ *   If a new DFMbase is found in the LUT the new one is used,
+ *   otherwise the old one (this is done by the LUTmechanismi, called
+ *   within this function).
  *
  ******************************************************************************/
-
 DFMmask_t
 DupDFMmask (DFMmask_t mask, node *arg_info)
 {
@@ -1886,8 +1892,15 @@ DupWLgridVar (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
-/******************************************************************************/
-
+/******************************************************************************
+ *
+ * function:
+ *   node *DupMt( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Duplicates a N_mt, especially the DFMmasks are copied.
+ *
+ ******************************************************************************/
 node *
 DupMt (node *arg_node, node *arg_info)
 {
@@ -1905,8 +1918,15 @@ DupMt (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
-/******************************************************************************/
-
+/******************************************************************************
+ *
+ * function:
+ *   node *DupSt( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Duplicates a N_st, especially the DFMmasks are copied.
+ *
+ ******************************************************************************/
 node *
 DupSt (node *arg_node, node *arg_info)
 {
@@ -1925,6 +1945,15 @@ DupSt (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *DupMTsignal( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Duplicates a N_MTsignal, especially the DFMmasks are copied.
+ *
+ ******************************************************************************/
 node *
 DupMTsignal (node *arg_node, node *arg_info)
 {
@@ -1938,6 +1967,15 @@ DupMTsignal (node *arg_node, node *arg_info)
     DBUG_RETURN (new_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *DupMTsync( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Duplicates a N_MTsync, especially the DFMmasks are copied.
+ *
+ ******************************************************************************/
 node *
 DupMTsync (node *arg_node, node *arg_info)
 {
@@ -1947,20 +1985,22 @@ DupMTsync (node *arg_node, node *arg_info)
 
     new_node = MakeMTsync ();
 
-    DBUG_PRINT ("DUP", ("hit0"));
-
     MTSYNC_WAIT (new_node) = DupDFMmask (MTSYNC_WAIT (arg_node), arg_info);
-    DBUG_PRINT ("DUP", ("hit1"));
-
     MTSYNC_FOLD (new_node) = CopyDFMfoldmask (MTSYNC_FOLD (arg_node));
-    DBUG_PRINT ("DUP", ("hit2"));
-
     MTSYNC_ALLOC (new_node) = DupDFMmask (MTSYNC_WAIT (arg_node), arg_info);
-    DBUG_PRINT ("DUP", ("hit3"));
 
     DBUG_RETURN (new_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *DupMTalloc( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Duplicates a N_MTalloc, especially the DFMmasks are copied.
+ *
+ ******************************************************************************/
 node *
 DupMTalloc (node *arg_node, node *arg_info)
 {
