@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.3  1994/11/29 10:52:01  hw
+ * Revision 1.4  1994/12/01 17:43:43  hw
+ * inserted struct NODE *node; to typedef struct IDS
+ *  changed parameters of NIF
+ *
+ * Revision 1.3  1994/11/29  10:52:01  hw
  * added pointer to struct NODE to struct ids
  *
  * Revision 1.2  1994/11/10  15:44:34  sbs
@@ -61,7 +65,7 @@ typedef struct TYPES {
  *
  */
 
-#define NIF(n, s, x, y, z) n
+#define NIF(n, s, f, p, t, z) n
 
 typedef enum {
 #include "node_info.mac"
