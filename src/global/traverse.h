@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.26  1995/11/06 09:21:59  cg
+ * Revision 1.27  1995/11/16 19:38:34  cg
+ * added new tab: rmvoid_tab.
+ * NIF macro extended by 4 new parameters.
+ *
+ * Revision 1.26  1995/11/06  09:21:59  cg
  * added unique_tab
  *
  * Revision 1.25  1995/10/22  17:26:20  cg
@@ -155,5 +159,7 @@ extern funptr checkdec_tab[];
 extern funptr writedec_tab[];
 
 extern funptr unique_tab[];
+
+extern funptr rmvoid_tab[];
 
 #endif /* _sac_traverse_h */
