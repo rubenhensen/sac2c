@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.96  2005/03/10 09:41:09  cg
+ * Reorganized compiler setup phase.
+ * This is just the first step towards reorganizing the triggering
+ * of the entire compilation process.
+ *
  * Revision 3.95  2005/03/04 21:21:42  cg
  * Locale set to en_US to avoid strange effects on German or
  * other internationized installations.
@@ -37,6 +42,8 @@
  *  this file contains the main function of the SAC->C compiler!
  */
 
+#include "phase.h"
+
 #include "config.h"
 #include "convert.h"
 #include "types.h"
@@ -47,7 +54,6 @@
 #include "free.h"
 #include "DupTree.h"
 #include "globals.h"
-#include "Error.h"
 #include "usage.h"
 #include "lac2fun.h"
 #include "fun2lac.h"
@@ -92,7 +98,58 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <locale.h>
+
+/*
+ * THE FOLLOWING MACROS ARE DEPRECATED!!  DO NOT USE!!!
+ */
+
+#define NOTE(s) CTInote s;
+
+#define NOTE_COMPILER_PHASE                                                              \
+    {                                                                                    \
+        if (global.verbose_level > 1) {                                                  \
+            fprintf (stderr, "\n** %d: %s: ...\n", global.compiler_phase,                \
+                     PHphaseName (global.compiler_phase));                               \
+        }                                                                                \
+    }
+
+#define ABORT_ON_ERROR CTIabortOnError ()
+
+#define PHASE_PROLOG                                                                     \
+    CHECK_DBUG_START;                                                                    \
+    /* empty */
+
+#define PHASE_DONE_EPILOG                                                                \
+    CTIabortOnError ();                                                                  \
+    DBUG_EXECUTE ("MEM_LEAK", ILIBdbugMemoryLeakCheck (););                              \
+    if (global.treecheck) {                                                              \
+        global.syntax_tree = CHKdoTreeCheck (global.syntax_tree);                        \
+    }
+
+#define PHASE_EPILOG CHECK_DBUG_STOP;
+
+#ifndef DBUG_OFF
+#define CHECK_DBUG_START                                                                 \
+    {                                                                                    \
+        if ((global.my_dbug) && (!global.my_dbug_active)                                 \
+            && (global.compiler_phase >= global.my_dbug_from)                            \
+            && (global.compiler_phase <= global.my_dbug_to)) {                           \
+            DBUG_PUSH (global.my_dbug_str);                                              \
+            global.my_dbug_active = 1;                                                   \
+        }                                                                                \
+    }
+#define CHECK_DBUG_STOP                                                                  \
+    {                                                                                    \
+        if ((global.my_dbug) && (global.my_dbug_active)                                  \
+            && (global.compiler_phase >= global.my_dbug_to)) {                           \
+            DBUG_POP ();                                                                 \
+            global.my_dbug_active = 0;                                                   \
+        }                                                                                \
+    }
+#else /* DBUG_OFF */
+#define CHECK_DBUG_START
+#define CHECK_DBUG_STOP
+#endif /* DBUG_OFF */
 
 /*
  *  And now, the main function which triggers the whole compilation.
@@ -105,122 +162,24 @@ main (int argc, char *argv[])
     stringset_t *dependencies;
 
     /*
-     * Initializations
+     * Unfortunately, a few initializations must be done before running the setup
+     * compiler phase. Several options like -h or -V should be handled before
+     * before compile time output with respect to a regular compiler run is
+     * produced. In particularfor the -h option we need the global variables to
+     * be initialized. As long as we work with pre-allocated buffers of fixed
+     * length (which should be changed), this initialization requires allocation
+     * to work properly.
      */
 
-    global.argc = argc;
-    global.argv = argv;
+    SETUPdoSetupCompiler (argc, argv);
 
-    setlocale (LC_ALL, "en_US");
-
-#ifdef SHOW_MALLOC
-    ILIBcomputeMallocAlignStep ();
-#endif
-
-    GLOBinitializeGlobal ();
-    FMGRinitPaths ();
-    IRQsetupInterruptHandlers ();
-    DUPinitDupTree ();
-
-    OPTanalyseCommandline (argc, argv);
-    OPTcheckOptionConsistency ();
-
-    if (global.sacfilename == NULL) {
-        global.puresacfilename = "stdin";
-    }
-
-    ABORT_ON_ERROR;
-
-    global.compiler_phase = PH_setup;
-
-    PHASE_PROLOG;
-    NOTE_COMPILER_PHASE;
-
-    /*
-     * Now, we read in the sac2c configuration files.
-     */
-
-    RSCevaluateConfiguration (global.target_name);
-
-    /*
-     * Now, we set our search paths for the source program, module declarations,
-     * and module implementations...
-     *
-     * The original search path is ".".
-     * Then, additional paths specified by the respective compiler options are
-     * appended after having been transformed into absolute paths.
-     * If this has happened, the current directory is moved to the end of the
-     * path list because those paths specified on the command line are intended
-     * to have a higher priority.
-     * At last, the paths specified by environment variables are appended.
-     * These have a lower priority.
-     * At very last, the required paths for using the SAC standard library
-     * relative to the shell variable SAC_HOME are added. These have the
-     * lowest priority.
-     */
-
-    FMGRrearrangePaths ();
-
-    /*
-     * Now, we create tmp directories for files generated during the
-     * compilation process.
-     *
-     * Actually, only one temp directory is created whose name may be
-     * accessed trough the global variable global.tmp_dirname
-     * which is defined in globals.c.
-     */
-
-#ifdef HAVE_MKDTEMP
-    /* mkdtemp is safer than tempnam and recommended */
-    /* on linux/bsd platforms.                       */
-
-    /* malloc is used here as tempnam uses it */
-    /* internally as well.                    */
-
-    global.tmp_dirname = (char *)malloc (strlen (global.config.mkdir) + 12);
-    global.tmp_dirname = strcpy (global.tmp_dirname, global.config.tmpdir);
-    global.tmp_dirname = strcat (global.tmp_dirname, "/SAC_XXXXXX");
-
-    global.tmp_dirname = mkdtemp (global.tmp_dirname);
-
-    if (global.tmp_dirname == NULL) {
-        SYSABORT (("System failed to create temporary directory.\n"));
-    }
-#else
-    /* the old way for platforms not */
-    /* supporting mkdtemp            */
-
-    global.tmp_dirname = tempnam (global.config.tmpdir, "SAC_");
-
-    ILIBsystemCall ("%s %s", global.config.mkdir, global.tmp_dirname);
-#endif
-
-    ABORT_ON_ERROR;
-
-    PHASE_DONE_EPILOG;
-    PHASE_EPILOG;
-
-    if (global.break_after == PH_setup)
-        goto BREAK;
-    global.compiler_phase++;
-
-    /*
-     * If sac2c was started with the option -libstat,
-     * then the library status is printed to stdout and the
-     * compilation process is terminated immediately.
-     */
-
-    if (global.libstat) {
-        LIBSprintLibStat (global.sacfilename);
-
-        ERRcleanUp ();
-
-        exit (0);
-    }
+    syntax_tree = PHrunCompilerPhase (PH_setup, syntax_tree);
 
     /*
      *  Finally the compilation process is started.
      */
+
+    global.compiler_phase = PH_scanparse;
 
     /*
      * Scan/Parse
@@ -481,7 +440,7 @@ main (int argc, char *argv[])
         syntax_tree = CONCdoConcurrent (syntax_tree);
         break;
     case MT_mtstblock:
-        SYSABORT (("Mt/st-block version of multithreading de-activated !!"));
+        CTIabort ("Mt/st-block version of multithreading de-activated !!");
         /* following comment concerning for mt/st-block version:
          * The core problem is that new-mt reuses the FUNDEF ATTRIB attribute
          * and thereby destroys its old contents. Unfortunately, it has turned
@@ -592,46 +551,7 @@ main (int argc, char *argv[])
 
 BREAK:
 
-    if (global.compiler_phase < PH_final) {
-        if (global.compiler_phase < PH_scanparse) {
-            RSCshowResources ();
-        } else {
-            if (global.print_after_break && (global.compiler_phase <= PH_compile)) {
-                PRTdoPrint (syntax_tree);
-            }
-            syntax_tree = FREEdoFreeTree (syntax_tree);
-        }
-    }
-
-    /*
-     *  Finally, we do some clean up ...
-     */
-
-    /*
-     *  ... and display a success message.
-     */
-
-    NEWLINE (2);
-    NOTE2 (("*** Compilation successful ***"));
-
-    if (global.compiler_phase < PH_final) {
-        NOTE2 (
-          ("*** BREAK after: %s", global.compiler_phase_name[global.compiler_phase]));
-        if (global.break_specifier[0] != '\0') {
-            NOTE2 (("*** BREAK specifier: '%s`", global.break_specifier));
-        }
-    }
-
-#ifdef SHOW_MALLOC
-    NOTE2 (("*** Maximum allocated memory (bytes):   %s",
-            CVintBytes2String (global.max_allocated_mem)));
-    NOTE2 (("*** Currently allocated memory (bytes): %s",
-            CVintBytes2String (global.current_allocated_mem)));
-#endif
-
-    NOTE2 (("*** Exit code 0"));
-    NOTE2 (("*** 0 error(s), %d warning(s)", global.warnings_cnt));
-    NEWLINE (2);
+    CTIterminateCompilation (global.compiler_phase, global.break_specifier, syntax_tree);
 
     return (0);
 }
