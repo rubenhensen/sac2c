@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/01/24 18:26:41  jhs
+ * Comment added ...
+ *
  * Revision 1.2  2000/01/24 18:24:21  jhs
  * Added some infrastructure ...
  *
@@ -299,7 +302,7 @@ SCHINnwith2 (node *arg_node, node *arg_info)
         INFO_SCHIN_SCHEDULING (arg_node) = NULL;
     }
 
-    /* traverse segements */
+    /* traverse segements -> node_info.mac updaten !!!*/
 
     /* traverse code, innerwls schedulings off!!! */
 
