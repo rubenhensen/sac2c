@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.200  1998/05/06 21:38:53  dkr
- * added WLTRAAssign
+ * Revision 1.201  1998/05/06 21:42:10  dkr
+ * added WLTRALet
  *
  * Revision 1.199  1998/05/06 18:55:47  dkr
  * added DupExprs
@@ -763,7 +763,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        AEassign, PrintAssign, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, RMVassign, PRECAssign, ACTassign, TravSons, WLTassign, CSEassign,
        TravSons, TravSons, SPMDInitAssign, TravSons, TravSons, SYNCInitAssign, TravSons,
-       WLTRAAssign, TravSons, TravSons, TravSons, 2),
+       TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_return, "N_return", TravSons, FltnReturn, PrintReturn, TCreturn, TravSons,
        TravSons, TravSons, FreeReturn, TravSons, TravSons, COMPReturn, TravSons, DupChain,
@@ -805,7 +805,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        IdxLet, UNSlet, WLIlet, TravSons, PrintLet, OBJlet, TravSons, TravSons, TravSons,
        TravSons, TravSons, UNQlet, TravSons, PRECLet, TravSons, TravSons, WLTlet,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 1),
+       WLTRALet, TravSons, TravSons, TravSons, 1),
 
   NIF (N_prf, "N_prf", TravSons, FltnPrf, PrintPrf, TravSons, TravSons, TravSons,
        TravSons, FreePrf, CFprf, RCprf, COMPPrf, TravSons, DupPrf, TravSons, TravSons,
