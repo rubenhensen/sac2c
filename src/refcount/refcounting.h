@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/07/19 12:39:37  ktr
+ * Traversals for Nwithid, funcond and array reintroduced.
+ *
  * Revision 1.4  2004/07/18 08:50:42  ktr
  * all functions renamed into EMsomething
  *
@@ -37,23 +40,23 @@
 
 extern node *EMRefCount (node *syntax_tree);
 
-extern node *EMRCfundef (node *arg_node, info *arg_info);
+extern node *EMRCap (node *arg_node, info *arg_info);
+extern node *EMRCarg (node *arg_node, info *arg_info);
+extern node *EMRCarray (node *arg_node, info *arg_info);
 extern node *EMRCassign (node *arg_node, info *arg_info);
-extern node *EMRCreturn (node *arg_node, info *arg_info);
-extern node *EMRCprf (node *arg_node, info *arg_info);
+extern node *EMRCblock (node *arg_node, info *arg_info);
+extern node *EMRCcond (node *arg_node, info *arg_info);
+extern node *EMRCfuncond (node *arg_node, info *arg_info);
+extern node *EMRCfundef (node *arg_node, info *arg_info);
+extern node *EMRCicm (node *arg_node, info *arg_info);
 extern node *EMRCid (node *arg_node, info *arg_info);
 extern node *EMRClet (node *arg_node, info *arg_info);
-extern node *EMRCarg (node *arg_node, info *arg_info);
-extern node *EMRCblock (node *arg_node, info *arg_info);
-extern node *EMRCvardec (node *arg_node, info *arg_info);
-extern node *EMRCap (node *arg_node, info *arg_info);
-extern node *EMRCconst (node *arg_node, info *arg_info);
-extern node *EMRCarray (node *arg_node, info *arg_info);
-extern node *EMRCfuncond (node *arg_node, info *arg_info);
-extern node *EMRCcond (node *arg_node, info *arg_info);
+extern node *EMRCNcode (node *arg_node, info *arg_info);
 extern node *EMRCNwith (node *arg_node, info *arg_info);
 extern node *EMRCNwith2 (node *arg_node, info *arg_info);
-extern node *EMRCNcode (node *arg_node, info *arg_info);
 extern node *EMRCNwithid (node *arg_node, info *arg_info);
-extern node *EMRCicm (node *arg_node, info *arg_info);
+extern node *EMRCNwithop (node *arg_node, info *arg_info);
+extern node *EMRCprf (node *arg_node, info *arg_info);
+extern node *EMRCreturn (node *arg_node, info *arg_info);
+extern node *EMRCvardec (node *arg_node, info *arg_info);
 #endif /* _sac_refcounting_h */
