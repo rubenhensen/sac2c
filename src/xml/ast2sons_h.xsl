@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/12/12 08:02:09  ktr
+  removed sons.any, attribs.any because they were incompatible with CLEANMEM
+
   Revision 1.2  2004/12/11 17:40:00  ktr
   sons/attribs are structs iff CLEANMEM is set.
 
@@ -95,7 +98,7 @@
     <xsl:apply-templates select="node" mode="generate-sons-union">
       <xsl:sort select="@name"/>
     </xsl:apply-templates>
-    <xsl:value-of select="' void *any; } ; '"/>
+    <xsl:value-of select="'} ; '"/>
   </xsl:template>
  
   <!-- generate an entry for each node within the union -->
