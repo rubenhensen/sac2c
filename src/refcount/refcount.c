@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/10/06 17:08:34  cg
+ * Revision 1.19  1995/12/06 09:48:22  cg
+ * external implicit types (void*) are now refcounted too.
+ *
+ * Revision 1.18  1995/10/06  17:08:34  cg
  * adjusted calls to function MakeIds (now 3 parameters)
  *
  * Revision 1.17  1995/06/26  13:04:02  hw
@@ -139,6 +142,48 @@ IsArray (types *type)
             ret = 1;
     }
     DBUG_PRINT ("RC", ("%d", ret));
+
+    DBUG_RETURN (ret);
+}
+
+/*
+ *
+ *  functionname  : IsNonUniqueHidden
+ *  arguments     : 1) type of a N_vardec or N_arg node
+ *  description   : checks if the type is a non-unique void* one
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : LookupType
+ *  macros        : DBUG, TREE
+ *
+ *  remarks       : used to detect non-array variables which have to be
+ *                  refcounted.
+ *
+ */
+
+int
+IsNonUniqueHidden (types *type)
+{
+    int ret;
+    node *tdef;
+
+    DBUG_ENTER ("IsNonUniqueHidden");
+
+    if (type->simpletype == T_user) {
+        tdef = LookupType (type->name, type->name_mod, 042);
+        /* 042 is only a dummy argument */
+
+        if ((TYPEDEF_ATTRIB (tdef) == ST_regular)
+            && (TYPEDEF_BASETYPE (tdef) == T_hidden)) {
+            ret = 1;
+        }
+    } else {
+        if ((type->simpletype == T_hidden) && (type->attrib == ST_regular)) {
+            ret = 1;
+        } else {
+            ret = 0;
+        }
+    }
 
     DBUG_RETURN (ret);
 }
@@ -496,7 +541,8 @@ RCloop (node *arg_node, node *arg_info)
         if ((defined_mask[i] > 0) || (used_mask[i] > 0)) {
             var_dec = FindVarDec (i);
             DBUG_ASSERT ((NULL != var_dec), "variable not found");
-            if (1 == IsArray (var_dec->TYPES)) {
+            if ((1 == IsArray (var_dec->TYPES))
+                || (1 == IsNonUniqueHidden (var_dec->TYPES))) {
 
                 /* first store used and defined variables (v1), (v2) */
                 if ((defined_mask[i] > 0) && (ref_dump[i] > 0)) {
@@ -567,7 +613,8 @@ RCloop (node *arg_node, node *arg_info)
         if ((defined_mask[i] > 0) || (used_mask[i] > 0)) {
             var_dec = FindVarDec (i);
             DBUG_ASSERT ((NULL != var_dec), "variable not found");
-            if (1 == IsArray (var_dec->TYPES)) {
+            if ((1 == IsArray (var_dec->TYPES))
+                || (1 == IsNonUniqueHidden (var_dec->TYPES))) {
                 if ((used_mask[i] > 0) && (0 < var_dec->refcnt) && (1 == again)) {
                     /* update refcount of used variables  (v1)
                      */
@@ -641,11 +688,12 @@ RCid (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("RCid");
 
-    if (1 == IsArray (arg_node->VAR_DEC->TYPES)) {
+    if ((1 == IsArray (arg_node->VAR_DEC->TYPES))
+        || (1 == IsNonUniqueHidden (arg_node->VAR_DEC->TYPES))) {
         arg_node->VAR_DEC->refcnt += 1;
         arg_node->ID_REF = arg_node->VAR_DEC->refcnt;
     } else
-        arg_node->ID_REF = -1; /* variable isn`t an array */
+        arg_node->ID_REF = -1; /* variable needs no refcount */
 
     DBUG_PRINT ("RC", ("set refcnt of %s to %d:", arg_node->ID, arg_node->ID_REF));
 
@@ -676,7 +724,8 @@ RClet (node *arg_node, node *arg_info)
 
     ids = arg_node->info.ids;
     while (NULL != ids) {
-        if (1 == IsArray (ids->node->TYPES)) {
+        if ((1 == IsArray (ids->node->TYPES))
+            || (1 == IsNonUniqueHidden (ids->node->TYPES))) {
             ids->refcnt = ids->node->refcnt;
             ids->node->refcnt = 0;
         } else
@@ -837,7 +886,8 @@ RCwith (node *arg_node, node *arg_info)
         if (used_mask[i] > 0) {
             var_dec = FindVarDec (i);
             DBUG_ASSERT ((NULL != var_dec), "variable not found");
-            if (1 == IsArray (var_dec->TYPES))
+            if ((1 == IsArray (var_dec->TYPES))
+                || (1 == IsNonUniqueHidden (var_dec->TYPES)))
                 if (0 < var_dec->refcnt) {
                     /* store refcount of used variables in new_info->node[0]
                      */
