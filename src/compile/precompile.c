@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.51  1998/04/16 23:21:53  dkr
+ * DBUG_ASSERT added in BlockWL (bv[.] >= 1)
+ *
  * Revision 1.50  1998/04/16 11:55:56  dkr
  * removed unused vars
  *
@@ -2234,6 +2237,9 @@ BlockWL (node *stride, int dims, long *bv, int unroll)
             last_block = NULL;
             curr_stride = stride;
             while (curr_stride != NULL) {
+
+                DBUG_ASSERT ((bv[WLSTRIDE_DIM (curr_stride)] >= 1),
+                             "wrong bv value found");
 
                 if (bv[WLSTRIDE_DIM (curr_stride)] == 1) {
                     /*
