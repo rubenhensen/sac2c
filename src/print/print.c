@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.43  1995/03/13 16:54:00  asi
+ * Revision 1.44  1995/03/14 10:54:29  hw
+ * changed PrintId
+ *
+ * Revision 1.43  1995/03/13  16:54:00  asi
  * changed PrintPost and PrintPre
  *
  * Revision 1.42  1995/03/13  16:44:07  asi
@@ -393,11 +396,9 @@ PrintId (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintId");
 
     if ((0 == show_refcnt) || (-1 == arg_node->refcnt))
-        PrintIds (arg_node->info.ids);
-    else {
-        PrintIds (arg_node->info.ids);
-        fprintf (outfile, ":%d", arg_node->refcnt);
-    }
+        fprintf (outfile, "%s", arg_node->info.ids->id);
+    else
+        fprintf (outfile, "%s:%d", arg_node->info.ids->id, arg_node->refcnt);
 
     DBUG_RETURN (arg_node);
 }
