@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.4  2001/03/02 10:35:53  dkr
+# /home/dkr/sac/BASE/sac2c/src/c-interface/RCS/Makefile,v used in touch-rules
+#
 # Revision 3.3  2001/01/17 10:13:13  dkr
 # make deps done
 #
@@ -49,7 +52,7 @@ all: print_interface.o map_cwrapper.o import_specialization.o \
 # recognize the dependency between *.[ch] and the .mac files!
 #
 print_interface_wrapper.c: ../tree/type_info.mac
-	touch print_interface_wrapper.c
+	touch $@
 
 
 %.o: %.c
