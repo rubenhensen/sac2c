@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.78  2000/07/28 11:41:21  cg
+ * Added code to handle dummy parts of iteration spaces due to
+ * array padding efficiently, i.e. to perform no action at all.
+ *
  * Revision 2.77  2000/07/24 16:41:18  dkr
  * superfluous 'line' parameter of ICMs for array-prfs removed
  *
@@ -7213,7 +7217,8 @@ COMPWLgrid (node *arg_node, node *arg_info)
 
     } else {
 
-        if (WLGRID_CODE (arg_node) != NULL) {
+        if ((WLGRID_CODE (arg_node) != NULL)
+            && (!NCODE_APT_DUMMY_CODE (WLGRID_CODE (arg_node)))) {
 
             /*
              * insert compiled code.
@@ -7274,7 +7279,7 @@ COMPWLgrid (node *arg_node, node *arg_info)
 
         } else {
             /*
-             * no code found.
+             * no code found or array padding dummy code.
              *  => init/copy/noop
              */
 
@@ -7283,25 +7288,32 @@ COMPWLgrid (node *arg_node, node *arg_info)
             /*
              * choose right ICM
              */
-            switch (NWITH2_TYPE (wl_node)) {
-            case WO_genarray:
-                icm_name = "WL_ASSIGN_INIT";
-                break;
+            if (WLGRID_CODE (arg_node) == NULL) {
 
-            case WO_modarray:
-                icm_args2 = MakeExprs (DupNode (NWITHOP_ARRAY (NWITH2_WITHOP (wl_node))),
-                                       icm_args2);
-                icm_name = "WL_ASSIGN_COPY";
-                break;
+                switch (NWITH2_TYPE (wl_node)) {
+                case WO_genarray:
+                    icm_name = "WL_ASSIGN_INIT";
+                    break;
 
-            case WO_foldfun:
-                /* here is no break missing! */
-            case WO_foldprf:
-                icm_name = "WL_FOLD_NOOP";
-                break;
+                case WO_modarray:
+                    icm_args2
+                      = MakeExprs (DupNode (NWITHOP_ARRAY (NWITH2_WITHOP (wl_node))),
+                                   icm_args2);
+                    icm_name = "WL_ASSIGN_COPY";
+                    break;
 
-            default:
-                DBUG_ASSERT ((0), "wrong withop type found");
+                case WO_foldfun:
+                    /* here is no break missing! */
+                case WO_foldprf:
+                    icm_name = "WL_FOLD_NOOP";
+                    break;
+
+                default:
+                    DBUG_ASSERT ((0), "wrong withop type found");
+                }
+            } else {
+                /* dummy code inserted by array padding */
+                icm_name = "WL_ASSIGN_NOOP";
             }
         }
 
