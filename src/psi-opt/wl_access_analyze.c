@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/05/12 14:02:51  bs
+ * attribute names for handling constant vectors at N_id, N_array, and N_info
+ * nodes adjusted to each other...
+ *
  * Revision 1.4  1999/05/10 16:19:09  bs
  * Bug fixed in WLAAprf
  *
@@ -442,8 +446,10 @@ WLAAnwith (node *arg_node, node *arg_info)
 node *
 WLAAncode (node *arg_node, node *arg_info)
 {
-    access_t *old_access;
-    feature_t old_feature;
+#if 0
+  access_t* old_access;
+  feature_t old_feature;
+#endif
 
     DBUG_ENTER ("WLAAncode");
 
@@ -738,16 +744,15 @@ WLAAprf (node *arg_node, node *arg_info)
                         ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
                           = IntVec2Shpseg (1, 0, NULL,
                                            ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info)));
-                    } else if (ID_INTVEC (arg_node_arg1) != NULL) {
+                    } else if (ID_CONSTVEC (arg_node_arg1) != NULL) {
                         ACCESS_CLASS (INFO_WLAA_ACCESS (arg_info)) = ACL_const;
 
                         DBUG_ASSERT ((ID_VECLEN (arg_node_arg1) > SCALAR),
-                                     "propagated constant vector is not of node type "
-                                     "N_array");
+                                     "propagated constant vector is no array");
 
                         ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
                           = IntVec2Shpseg (1, ID_VECLEN (arg_node_arg1),
-                                           ID_INTVEC (arg_node_arg1),
+                                           ((int *)ID_CONSTVEC (arg_node_arg1)),
                                            ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info)));
                     } else {
                         /*
@@ -812,11 +817,12 @@ WLAAprf (node *arg_node, node *arg_info)
                                                offset,
                                                ACCESS_OFFSET (
                                                  INFO_WLAA_ACCESS (arg_info)));
-                        } else if (ID_INTVEC (arg_node_arg2) != NULL) {
+                            FREE (offset);
+                        } else if (ID_CONSTVEC (arg_node_arg2) != NULL) {
                             ACCESS_CLASS (access) = ACL_const;
                             ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
                               = IntVec2Shpseg (1, ID_VECLEN (arg_node_arg2),
-                                               ID_INTVEC (arg_node_arg2),
+                                               ((int *)ID_CONSTVEC (arg_node_arg2)),
                                                ACCESS_OFFSET (
                                                  INFO_WLAA_ACCESS (arg_info)));
                         } else { /* arg2 is neither the indexvar nor a constant */
@@ -856,11 +862,12 @@ WLAAprf (node *arg_node, node *arg_info)
                                                offset,
                                                ACCESS_OFFSET (
                                                  INFO_WLAA_ACCESS (arg_info)));
-                        } else if (ID_INTVEC (arg_node_arg1) != NULL) {
+                            FREE (offset);
+                        } else if (ID_CONSTVEC (arg_node_arg1) != NULL) {
                             ACCESS_CLASS (access) = ACL_const;
                             ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
                               = IntVec2Shpseg (1, ID_VECLEN (arg_node_arg1),
-                                               ID_INTVEC (arg_node_arg1),
+                                               ((int *)ID_CONSTVEC (arg_node_arg1)),
                                                ACCESS_OFFSET (
                                                  INFO_WLAA_ACCESS (arg_info)));
                         } else { /* arg1 is neither the indexvar nor a constant */
@@ -892,11 +899,11 @@ WLAAprf (node *arg_node, node *arg_info)
                 }
                 if (access != NULL) {
                     if (ID_VARDEC (arg_node_arg1) == INFO_WLAA_INDEXVAR (arg_info)) {
-                        if (ID_INTVEC (arg_node_arg2) != NULL) {
+                        if (ID_CONSTVEC (arg_node_arg2) != NULL) {
                             ACCESS_CLASS (access) = ACL_offset;
                             ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
                               = IntVec2Shpseg (1, ID_VECLEN (arg_node_arg2),
-                                               ID_INTVEC (arg_node_arg2),
+                                               ((int *)ID_CONSTVEC (arg_node_arg2)),
                                                ACCESS_OFFSET (
                                                  INFO_WLAA_ACCESS (arg_info)));
                         } else { /* arg2 is not constant */
@@ -904,11 +911,11 @@ WLAAprf (node *arg_node, node *arg_info)
                         }
                     } else {
                         if (ID_VARDEC (arg_node_arg2) == INFO_WLAA_INDEXVAR (arg_info)) {
-                            if (ID_INTVEC (arg_node_arg1) != NULL) {
+                            if (ID_CONSTVEC (arg_node_arg1) != NULL) {
                                 ACCESS_CLASS (access) = ACL_offset;
                                 ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
                                   = IntVec2Shpseg (1, ID_VECLEN (arg_node_arg1),
-                                                   ID_INTVEC (arg_node_arg1),
+                                                   ((int *)ID_CONSTVEC (arg_node_arg1)),
                                                    ACCESS_OFFSET (
                                                      INFO_WLAA_ACCESS (arg_info)));
                             } else { /* arg1 is not constant */
@@ -945,7 +952,7 @@ WLAAprf (node *arg_node, node *arg_info)
                             ACCESS_CLASS (access) = ACL_offset;
                             ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
                               = IntVec2Shpseg (-1, ID_VECLEN (arg_node_arg2),
-                                               ID_INTVEC (arg_node_arg2),
+                                               ((int *)ID_CONSTVEC (arg_node_arg2)),
                                                ACCESS_OFFSET (
                                                  INFO_WLAA_ACCESS (arg_info)));
                         } else {
@@ -978,11 +985,11 @@ WLAAprf (node *arg_node, node *arg_info)
                 if (access != NULL) {
                     if (ID_VARDEC (arg_node_arg1) == INFO_WLAA_INDEXVAR (arg_info)) {
                         DBUG_PRINT ("WLAA_INFO", ("primitive function F_sub_AxA"));
-                        if (ID_INTVEC (arg_node_arg2) != NULL) {
+                        if (ID_CONSTVEC (arg_node_arg2) != NULL) {
                             ACCESS_CLASS (access) = ACL_offset;
                             ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
                               = IntVec2Shpseg (-1, ID_VECLEN (arg_node_arg2),
-                                               ID_INTVEC (arg_node_arg2),
+                                               ((int *)ID_CONSTVEC (arg_node_arg2)),
                                                ACCESS_OFFSET (
                                                  INFO_WLAA_ACCESS (arg_info)));
                         } else { /* arg2 is not constant */
