@@ -1,5 +1,4 @@
 Makefile
-filemgr.h
 libmanager.c
 libmanager.h
 modulemanager.c
