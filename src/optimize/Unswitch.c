@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/02/13 17:28:36  dkr
+ * MakeNode() eliminated
+ *
  * Revision 3.4  2001/02/02 10:21:55  dkr
  * import of access_macros.h removed
  *
@@ -146,7 +149,7 @@ Unswitch (node *arg_node, node *arg_info)
 
     tmp_tab = act_tab;
     act_tab = unswitch_tab;
-    arg_info = MakeNode (N_info);
+    arg_info = MakeInfo ();
 
     arg_node = Trav (arg_node, arg_info);
 
