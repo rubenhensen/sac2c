@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/04/28 12:17:18  bs
+ * Typedefinition of access_t modified: direction (read | write) added.
+ *
  * Revision 2.5  1999/04/14 16:23:48  jhs
  * EMPTY_ARRAY removed for second try on empty arrays.
  * /.
@@ -329,6 +332,8 @@ typedef enum { CT_normal, CT_ap, CT_array, CT_return, CT_wl } contextflag;
 
 typedef enum { ACL_irregular, ACL_unknown, ACL_offset, ACL_const } accessclass_t;
 
+typedef enum { ADIR_read, ADIR_write } accessdir_t;
+
 /*
  * new nodes for yacc and the syntax tree
  */
@@ -390,11 +395,12 @@ typedef struct SHPSEG {
 } shpseg;
 
 typedef struct ACCESS_T {
-    struct NODE *array_vardec;
-    struct NODE *iv_vardec;
-    accessclass_t accessclass;
-    shpseg *offset;
-    struct ACCESS_T *next;
+    struct NODE *array_vardec; /* */
+    struct NODE *iv_vardec;    /* index vector */
+    accessclass_t accessclass; /* */
+    shpseg *offset;            /* */
+    accessdir_t direction;     /* 0 == ADIR_read,  1 == ADIR_write */
+    struct ACCESS_T *next;     /* */
 } access_t;
 
 typedef struct IDS {
