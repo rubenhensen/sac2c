@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.151  2004/06/23 10:20:00  skt
+ * TEMprf & TEMexprs added
+ *
  * Revision 3.150  2004/06/23 09:33:13  ktr
  * SSARCNwith2 added.
  *
@@ -1843,7 +1846,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        HDprf, TravSons, TravSons, TravSons, DLPrfOrAp, TravSons, ESDprf, UESDprf, SPprf,
        TravSons, CVPprf, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TEMprf, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
@@ -1927,7 +1930,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, CVPexprs, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TEMexprs, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 2),
 
