@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/04/13 14:00:40  cg
+ * added #pragma cachesim.
+ *
  * Revision 2.1  1999/02/23 12:40:30  sacbase
  * new release made
  *
@@ -313,6 +316,7 @@ int start_token;
 "initfun"                       {FILTER( INITFUN );}
 "linkwith"                      {FILTER( LINKWITH );}
 "wlcomp"                        {FILTER( WLCOMP );}
+"cachesim"                      {FILTER( CACHESIM );}
 "Default"                       {FILTER( DEFAULT );}
 
 "int"				{FILTER( TYPE_INT );}

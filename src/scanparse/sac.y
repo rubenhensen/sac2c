@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/04/13 14:00:40  cg
+ * added #pragma cachesim.
+ *
  * Revision 2.2  1999/04/08 17:15:55  jhs
  * Added empty arrays [] and cast on empty arrays (:type)[].
  *
@@ -328,7 +331,7 @@ static file_type file_kind = F_prog;
        ARRAY,SC, TRUE, FALSE, EXTERN, C_KEYWORD,
        PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
        TOUCH, COPYFUN, FREEFUN, INITFUN, LINKWITH,
-       WLCOMP, DEFAULT
+       WLCOMP, DEFAULT, CACHESIM,
        STEP, WIDTH, TARGET,
        AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PRF_MOD, PLUS,
        TOI, TOF, TOD, ABS, PRF_MIN, PRF_MAX, ALL,
@@ -348,7 +351,7 @@ static file_type file_kind = F_prog;
 %type <cint> evextern, sibheader, sibevmarker, dots
 %type <ids> ids, funids, modnames, modname, inherits
 %type <deps> linkwith, linklist, siblinkwith, siblinklist, sibsublinklist
-%type <id> fun_name, prf_name, sibparam, id, string
+%type <id> fun_name, prf_name, sibparam, id, string, pragmacachesim
 %type <nums> nums
 %type <statustype> sibreference, sibevclass, siblinkliststatus
 %type <types> simpletype, simpletype_main, 
@@ -1391,7 +1394,11 @@ wlcomp_args: expr_ar COMMA wlcomp_args
  */
 
 
-exprblock: BRACE_L exprblock2 { $$=$2; }
+exprblock: BRACE_L pragmacachesim exprblock2 
+           {
+             $$=$3;
+             BLOCK_CACHESIM($$) = $2;
+           }
          ;
 
 exprblock2: typeNOudt_arr ids SEMIC exprblock2 
@@ -1469,12 +1476,13 @@ wlassignblock: BRACE_L {$<cint>$=linenum;} assigns BRACE_R
 assignblock: SEMIC     
              { $$=MAKE_EMPTY_BLOCK( );
              }
-           | BRACE_L {$<cint>$=linenum;} assigns BRACE_R 
-             { if($3==NULL) {
+           | BRACE_L {$<cint>$=linenum;} pragmacachesim assigns BRACE_R 
+             { if($4==NULL) {
                  $$=MAKE_EMPTY_BLOCK();
                }
                else {
-                 $$=MakeBlock( $3, NULL);
+                 $$=MakeBlock( $4, NULL);
+                 BLOCK_CACHESIM($$) = $3;
                  NODE_LINE($$)=$<cint>2;
                }
              }
@@ -1482,6 +1490,16 @@ assignblock: SEMIC
              { $$=MakeBlock( MakeAssign( $1, NULL), NULL);
              } 
            ;
+
+pragmacachesim: PRAGMA CACHESIM string 
+                {
+                  $$ = $3;
+                }
+              |
+                {
+                  $$ = NULL;
+                }
+              ;
 
 
 assignsOPTret: /*
