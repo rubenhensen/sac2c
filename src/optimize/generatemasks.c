@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2000/12/06 20:27:45  dkr
+ * DBUG_ASSERT for GNMwith2 modified
+ *
  * Revision 3.2  2000/12/06 20:11:20  dkr
  * GNMwith2 added (dummy function)
  *
@@ -2473,7 +2476,8 @@ GNMwith2 (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("GNMNwith2");
 
-    DBUG_ASSERT ((0), "Not implemented! Use InferDFMs() instead!");
+    DBUG_ASSERT ((0), "GenerateMask() for N_Nwith2 not implemented!"
+                      " Use InferDFMs() instead!");
 
     DBUG_RETURN (arg_node);
 }
