@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.41  2000/10/20 15:31:11  dkr
+ * macro GET_DIM replaced by function GetDim
+ *
  * Revision 2.40  2000/10/12 15:45:29  dkr
  * macros in prf.h used
  *
@@ -2242,7 +2245,7 @@ ArrayPrf (node *arg_node, node *arg_info)
              * get result
              */
             NODE_TYPE (arg_node) = N_num;
-            GET_DIM (arg_node->info.cint, arg[0]->info.ids->node->info.types);
+            arg_node->info.cint = GetDim (arg[0]->info.ids->node->info.types);
 
             DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
             /*
@@ -2526,7 +2529,8 @@ ArrayPrf (node *arg_node, node *arg_info)
             /* Arrays like [a,...] with a = [...] cannot be folded til now */
             first_elem = EXPRS_EXPR (ARRAY_AELEMS (array));
             if (N_id == NODE_TYPE (first_elem)) {
-                GET_DIM (dim, VARDEC_TYPE (ID_VARDEC (first_elem)));
+
+                dim = GetDim (VARDEC_TYPE (ID_VARDEC (first_elem)));
                 if (0 != dim)
                     break;
                 /* make array flat here !!! */
