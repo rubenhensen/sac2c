@@ -32,3 +32,4 @@ reusebranching.h
 ReuseWithArrays.c
 ReuseWithArrays.h
 inplacecomp.c
+inplacecomp.h
