@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/05/10 11:54:36  dkr
+ * another bug in BuildRenamingAssigns() fixed:
+ * assignments are wrapped by conditional now if needed
+ *
  * Revision 3.9  2001/05/09 14:22:30  dkr
  * bug in BuildRenamingAssigns() fixed:
  * variables are swap correctly now if needed
@@ -90,10 +94,8 @@ IsRecursiveCall (node *assign, node *fundef)
 
     DBUG_ENTER ("IsRecursiveCall");
 
-    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
-                 "Wrong 1st argument to IsRecursiveCall().");
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "Wrong 2nd argument to IsRecursiveCall().");
+    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "illegal parameter found!");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "illegal parameter found!");
 
     instr = ASSIGN_INSTR (assign);
 
@@ -134,14 +136,28 @@ GetRenamingExpr (node **vardecs, node **assigns, node *ext_args, node *int_args)
 
     DBUG_ENTER ("GetRenamingId");
 
+    DBUG_ASSERT (((vardecs != NULL) && ((*vardecs) != NULL)
+                  && (NODE_TYPE ((*vardecs)) == N_vardec)),
+                 "no vardecs found!");
+    DBUG_ASSERT (((assigns != NULL)
+                  && (((*assigns) == NULL) || (NODE_TYPE ((*assigns)) == N_assign))),
+                 "illegal parameter found!");
+    DBUG_ASSERT (((ext_args == NULL) || (NODE_TYPE (ext_args) == N_arg)),
+                 "illegal parameter found!");
+    DBUG_ASSERT (((int_args == NULL) || (NODE_TYPE (int_args) == N_exprs)),
+                 "illegal parameter found!");
+
     int_expr = EXPRS_EXPR (int_args);
     tmp_ext_args = ext_args;
     tmp_int_args = int_args;
     while (tmp_ext_args != NULL) {
+        DBUG_ASSERT (((ID_VARDEC (int_expr) != NULL)
+                      && (ID_VARDEC (EXPRS_EXPR (tmp_int_args)) != NULL)),
+                     "vardec not found!");
+
         if (((NODE_TYPE (EXPRS_EXPR (tmp_int_args)) != N_id)
-             || (strcmp (ARG_NAME (tmp_ext_args), ID_NAME (EXPRS_EXPR (tmp_int_args)))))
-            && (NODE_TYPE (int_expr) == N_id)
-            && (!strcmp (ARG_NAME (tmp_ext_args), ID_NAME (int_expr)))) {
+             || (tmp_ext_args != ID_VARDEC (EXPRS_EXPR (tmp_int_args))))
+            && (NODE_TYPE (int_expr) == N_id) && (tmp_ext_args == ID_VARDEC (int_expr))) {
             tmp_name = TmpVarName (ID_NAME (int_expr));
             (*vardecs) = MakeVardec (tmp_name, DupTypes (ID_TYPE (int_expr)), *vardecs);
 
@@ -169,7 +185,46 @@ GetRenamingExpr (node **vardecs, node **assigns, node *ext_args, node *int_args)
 /******************************************************************************
  *
  * Function:
- *   node *BuildRenamingAssigns( node *vardecs, node *ext_args, node *int_args)
+ *   bool RenamingConflictsWithReturn( node *arg, node *ret_args)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+bool
+RenamingConflictsWithReturn (node *arg, node *ret_args)
+{
+    bool confl = FALSE;
+
+    DBUG_ENTER ("RenamingConflictsWithReturn");
+
+    DBUG_ASSERT ((NODE_TYPE (arg) == N_arg), "illegal parameter found!");
+    DBUG_ASSERT (((ret_args == NULL) || (NODE_TYPE (ret_args) == N_exprs)),
+                 "illegal parameter found!");
+
+    while (ret_args != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ret_args)) == N_id),
+                     "return value of special LaC function must be a N_id node!");
+        DBUG_ASSERT ((ID_VARDEC (EXPRS_EXPR (ret_args)) != NULL), "vardec not found!");
+
+        if (ID_VARDEC (EXPRS_EXPR (ret_args)) == arg) {
+            confl = TRUE;
+            break;
+        }
+
+        ret_args = EXPRS_NEXT (ret_args);
+    }
+
+    DBUG_RETURN (confl);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *BuildRenamingAssigns( node **vardecs,
+ *                               node *ext_args, node *int_args,
+ *                               node *pred, node *ret_args)
  *
  * Description:
  *   This function returns a N_assign node chain.
@@ -177,61 +232,115 @@ GetRenamingExpr (node **vardecs, node **assigns, node *ext_args, node *int_args)
  *   loop-function ('int_args') differ from the names of the formal parameters
  *   ('ext_args') appropriate renaming assignments are build:
  *
- *     ... LoopFun( a_1, a_2, ...)
- *     {
- *       ... = LoopFun( A_1, A_2, ...); ...
+ *     ... Loop( a_1, a_2, ...)                           loop {
+ *     {                                                    <ass_1>
+ *       <ass_1>                                            <ass_2>
+ *       if (<cond>) {
+ *         <ass_2>                                 --->     a_1 = A_1;
+ *         r_1, r_2, ... = Loop( A_1, A_2, ...);            a_2 = A_2;
+ *       }                                                  ...
+ *       return( r_1, r_2, ...);                          }
  *     }
  *
- *   --->  (the assignments are ordered with descending i)
- *
- *     a_i = A_i;   for each 'i', iff (A_i != a_i).
+ *   The assignments are ordered with descending 'i'.
+ *   An assignment is build iff (A_i != a_i) is hold.
  *
  *   *** CAUTION ***
- *   If a 'j' exists for which ((j > i) && (A_j != a_j) && (A_i == a_j)) is
- *   hold (note, that the a_j are pairwise distinct therefore such a 'j' is
- *   always unique!), we must not assign (a_i = A_i) directly:
+ *   If, for a given 'i' with (A_i != a_i), one of the following conditions
+ *   is hold, we must *not* assign (a_i = A_i) directly:
+ *      [1]  exists j: ((j > i) && (A_j != a_j) && (A_i == a_j))
+ *      [2]  exists j: (r_j == a_i)
  *
- *     ... LoopFun( a, b, c)
+ *   Example:
+ *
+ *     ... Do( a, b, c, d, e, f)
  *     {
- *       ... LoopFun( b, a, C); ...
+ *       <ass>
+ *       if (<cond>) {
+ *         d, f = Do( b, a, C, D, e, f);
+ *       }
+ *       return( d, f);
  *     }
  *
  *   --->
- *                                   tmp_b = b;
- *     c = C;                        c = C;
- *     b = a;                        b = a;
- *     a = b;  // oops!              a = tmp_b;
+ *
+ *     do {                               do {
+ *       <ass>                              <ass>
+ *
+ *                                          tmp_b = b;
+ *
+ *       d = D;  // case [2]                if (<cond>) {
+ *                                            d = D;
+ *                                          }
+ *       c = C;                             c = C;
+ *       b = a;                             b = a;
+ *       a = b;  // case [1]                a = tmp_b;
+ *     }                                  }
+ *     while (<cond>);                    while (<cond>);
+ *     ... d ...                          ... d ...
  *
  ******************************************************************************/
 
 static node *
-BuildRenamingAssigns (node *vardecs, node *ext_args, node *int_args)
+BuildRenamingAssigns (node **vardecs, node *ext_args, node *int_args, node *pred,
+                      node *ret_args)
 {
     node *assign;
+    node *cond_block;
     node *assigns = NULL;
     node *tmp_assigns = NULL;
 
     DBUG_ENTER ("BuildRenamingAssigns");
 
+    DBUG_ASSERT (((vardecs != NULL) && ((*vardecs) != NULL)
+                  && (NODE_TYPE ((*vardecs)) == N_vardec)),
+                 "no vardecs found!");
+    DBUG_ASSERT (((ext_args == NULL) || (NODE_TYPE (ext_args) == N_arg)),
+                 "illegal parameter found!");
+    DBUG_ASSERT (((int_args == NULL) || (NODE_TYPE (int_args) == N_exprs)),
+                 "illegal parameter found!");
+    DBUG_ASSERT ((pred != NULL), "illegal parameter found!");
+    DBUG_ASSERT (((ret_args == NULL) || (NODE_TYPE (ret_args) == N_exprs)),
+                 "illegal parameter found!");
+
     DBUG_ASSERT ((CountArgs (ext_args) == CountExprs (int_args)),
-                 "arguments of BuildRenamingAssigns() are inconsistent!");
+                 "inconsistent LAC-signature found");
 
     while (ext_args != NULL) {
-        DBUG_ASSERT ((int_args != NULL), "inconsistent LAC-signature found");
+        DBUG_ASSERT ((ID_VARDEC (EXPRS_EXPR (int_args)) != NULL), "vardec not found!");
+
         if ((NODE_TYPE (EXPRS_EXPR (int_args)) != N_id)
-            || (strcmp (ARG_NAME (ext_args), ID_NAME (EXPRS_EXPR (int_args))))) {
+            || (ext_args != ID_VARDEC (EXPRS_EXPR (int_args)))) {
             assign = MakeAssignLet (StringCopy (ARG_NAME (ext_args)), ext_args,
-                                    GetRenamingExpr (&vardecs, &tmp_assigns, ext_args,
+                                    /* here, case [1] is handled: */
+                                    GetRenamingExpr (vardecs, &tmp_assigns, ext_args,
                                                      int_args));
-            ASSIGN_NEXT (assign) = assigns;
-            assigns = assign;
+
+            /* here, case [2] is handled: */
+            if (RenamingConflictsWithReturn (ext_args, ret_args)) {
+                if ((assigns != NULL) && (NODE_TYPE (ASSIGN_INSTR (assigns)) == N_cond)) {
+                    /*
+                     * head of assignment chain is already a conditional
+                     *  -> insert new assingment at head of then-block
+                     */
+                    cond_block = COND_THEN (ASSIGN_INSTR (assigns));
+                    ASSIGN_NEXT (assign) = BLOCK_INSTR (cond_block);
+                    BLOCK_INSTR (cond_block) = assign;
+                } else {
+                    assigns
+                      = MakeAssign (MakeCond (DupTree (pred), MakeBlock (assign, NULL),
+                                              MakeBlock (MakeEmpty (), NULL)),
+                                    assigns);
+                }
+            } else {
+                ASSIGN_NEXT (assign) = assigns;
+                assigns = assign;
+            }
         }
 
         ext_args = ARG_NEXT (ext_args);
         int_args = EXPRS_NEXT (int_args);
     }
-
-    DBUG_ASSERT ((int_args == NULL), "inconsistent LAC-signature found");
 
     assigns = AppendAssign (tmp_assigns, assigns);
 
@@ -252,21 +361,26 @@ BuildRenamingAssigns (node *vardecs, node *ext_args, node *int_args)
 static bool
 ReturnVarsAreIdentical (node *ext_rets, ids *int_rets)
 {
-    node *ext_expr;
     bool ok = TRUE;
 
     DBUG_ENTER ("ReturnVarsAreIdentical");
 
+    DBUG_ASSERT (((ext_rets == NULL) || (NODE_TYPE (ext_rets) == N_exprs)),
+                 "illegal parameter found!");
+
     DBUG_ASSERT ((CountExprs (ext_rets) == CountIds (int_rets)),
-                 "arguments of ReturnVarsAreIdentical() are inconsistent!");
+                 "inconsistent LAC-signature found");
 
-    if (ext_rets != NULL) {
-        ext_expr = EXPRS_EXPR (ext_rets);
-        DBUG_ASSERT ((NODE_TYPE (ext_expr) == N_id),
-                     "return value of special Lac function must be a N_id node!");
+    while (ext_rets != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ext_rets)) == N_id),
+                     "return value of special LaC function must be a N_id node!");
+        DBUG_ASSERT (((ID_VARDEC (EXPRS_EXPR (ext_rets)) != NULL)
+                      && (IDS_VARDEC (int_rets) != NULL)),
+                     "vardec not found!");
 
-        if (strcmp (ID_NAME (ext_expr), IDS_NAME (int_rets))) {
+        if (ID_VARDEC (EXPRS_EXPR (ext_rets)) != IDS_VARDEC (int_rets)) {
             ok = FALSE;
+            break;
         }
 
         ext_rets = EXPRS_NEXT (ext_rets);
@@ -294,7 +408,7 @@ ReturnVarsAreIdentical (node *ext_rets, ids *int_rets)
  *       <vardecs>
  *
  *       if (<pred>) {
- *         <statements>
+ *         <ass>
  *         r_1, r_2, ... = WhileLoopFun( A_1, A_2, ...);
  *       }
  *       else {
@@ -310,7 +424,7 @@ ReturnVarsAreIdentical (node *ext_rets, ids *int_rets)
  *       <vardecs>
  *
  *       while (<pred>) {
- *         <statements>
+ *         <ass>
  *         a_i = A_i;
  *       }
  *
@@ -360,7 +474,7 @@ TransformIntoWhileLoop (node *fundef)
 
             /*
              * cond_assign: if (false) { ... }  return(...);
-             * cond:        if (false) { <statements>  ... = WhileLoopFun(...); }
+             * cond:        if (false) { <ass>  ... = WhileLoopFun(...); }
              * ret:         return(...);
              * loop_pred:   <pred>
              */
@@ -391,15 +505,16 @@ TransformIntoWhileLoop (node *fundef)
              * cond:        if (false) { ... = WhileLoopFun(...); }
              * ret:         return(...);
              * loop_pred:   <pred>
-             * loop_body:   <statements>
+             * loop_body:   <ass>
              * int_call:    ... = WhileLoopFun(...);
              */
 
             loop_body
               = AppendAssign (loop_body,
-                              BuildRenamingAssigns (FUNDEF_VARDEC (fundef),
+                              BuildRenamingAssigns (&(FUNDEF_VARDEC (fundef)),
                                                     FUNDEF_ARGS (fundef),
-                                                    AP_ARGS (ASSIGN_RHS (int_call))));
+                                                    AP_ARGS (ASSIGN_RHS (int_call)),
+                                                    loop_pred, RETURN_EXPRS (ret)));
 
             if (loop_body == NULL) {
                 loop_body = MakeEmpty ();
@@ -411,7 +526,7 @@ TransformIntoWhileLoop (node *fundef)
              * cond:        if (false) { ... = WhileLoopFun(...); }
              * ret:         return(...);
              * loop_pred:   <pred>
-             * loop_body:   { <statements> a_i = A_i; }
+             * loop_body:   { <ass> a_i = A_i; }
              * int_call:    ... = WhileLoopFun(...);
              */
 
@@ -424,7 +539,7 @@ TransformIntoWhileLoop (node *fundef)
              * cond:        if (false) { ... = WhileLoopFun(...); }
              * ret:         return(...);
              * loop_pred:   <pred>
-             * loop_body:   { <statements> a_i = A_i; }
+             * loop_body:   { <ass> a_i = A_i; }
              * int_call:    ... = WhileLoopFun(...);
              */
 
@@ -453,7 +568,7 @@ TransformIntoWhileLoop (node *fundef)
  *     {
  *       <vardecs>
  *
- *       <statements>
+ *       <ass>
  *       if (<pred>) {
  *         r_1, r_2, ... = DoLoopFun( A_1, A_2, ...);
  *       }
@@ -470,7 +585,7 @@ TransformIntoWhileLoop (node *fundef)
  *       <vardecs>
  *
  *       do {
- *         <statements>
+ *         <ass>
  *         a_i = A_i;
  *       } while (<pred>);
  *
@@ -518,7 +633,7 @@ TransformIntoDoLoop (node *fundef)
         /*
          * cond_assign: if (<pred>) { ... }  return(...);
          * cond:        if (<pred>) { ... }
-         * loop_body:   <statements>
+         * loop_body:   <ass>
          */
 
         if (NODE_TYPE (cond) != N_return) {
@@ -540,7 +655,7 @@ TransformIntoDoLoop (node *fundef)
              * cond:        if (false) { ... = DoLoopFun(...); }
              * ret:         return(...);
              * loop_pred:   <pred>
-             * loop_body:   <statements>
+             * loop_body:   <ass>
              */
 
             int_call = BLOCK_INSTR (COND_THEN (cond));
@@ -559,15 +674,16 @@ TransformIntoDoLoop (node *fundef)
              * cond:        if (false) { ... = DoLoopFun(...); }
              * ret:         return(...);
              * loop_pred:   <pred>
-             * loop_body:   <statements>
+             * loop_body:   <ass>
              * int_call:    ... = DoLoopFun(...);
              */
 
             loop_body
               = AppendAssign (loop_body,
-                              BuildRenamingAssigns (FUNDEF_VARDEC (fundef),
+                              BuildRenamingAssigns (&(FUNDEF_VARDEC (fundef)),
                                                     FUNDEF_ARGS (fundef),
-                                                    AP_ARGS (ASSIGN_RHS (int_call))));
+                                                    AP_ARGS (ASSIGN_RHS (int_call)),
+                                                    loop_pred, RETURN_EXPRS (ret)));
 
             if (loop_body == NULL) {
                 loop_body = MakeEmpty ();
@@ -579,7 +695,7 @@ TransformIntoDoLoop (node *fundef)
              * cond:        if (false) { ... = DoLoopFun(...); }
              * ret:         return(...);
              * loop_pred:   <pred>
-             * loop_body:   { <statements> a_i = A_i; }
+             * loop_body:   { <ass> a_i = A_i; }
              * int_call:    ... = DoLoopFun(...);
              */
 
