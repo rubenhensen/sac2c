@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.193  1998/04/28 13:23:18  dkr
+ * added RCblock, RCvardec
+ *
  * Revision 1.192  1998/04/26 21:50:47  dkr
  * ...SPMD renamed to ...Spmd
  *
@@ -709,14 +712,14 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, 3),
 
   NIF (N_vardec, "N_vardec", TravSons, TravSons, PrintVardec, TravSons, OPTvardec,
-       DCRvardec, TravSons, FreeVardec, TravSons, TravSons, COMPVardec, TravSons, DupDec,
+       DCRvardec, TravSons, FreeVardec, TravSons, RCvardec, COMPVardec, TravSons, DupDec,
        INLvardec, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PrintVardec,
        TravSons, TravSons, TravSons, ANAvardec, TravSons, TravSons, UNQvardec, TravSons,
        PRECVardec, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_block, "N_block", TravSons, TravSons, PrintBlock, TCblock, OPTblock, TravSons,
-       TravSons, FreeBlock, TravSons, TravSons, COMPBlock, TravSons, DupChain, TravSons,
+       TravSons, FreeBlock, TravSons, RCblock, COMPBlock, TravSons, DupChain, TravSons,
        TravSons, LIRMblock, TravSons, TravSons, TravSons, TravSons, PrintBlock, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, UNQblock, RMVblock, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,

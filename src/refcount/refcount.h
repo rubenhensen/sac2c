@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1998/04/28 13:22:24  dkr
+ * added RCblock, RCvardec
+ *
  * Revision 1.15  1998/04/19 21:19:40  dkr
  * FindVardec is now external
  *
@@ -56,6 +59,8 @@
 #define _refcount_h
 
 extern node *Refcount (node *arg_node);
+extern node *RCblock (node *arg_node, node *arg_info);
+extern node *RCvardec (node *arg_node, node *arg_info);
 extern node *RCassign (node *arg_node, node *arg_info);
 extern node *RCloop (node *arg_node, node *arg_info);
 extern node *RCprf (node *arg_node, node *arg_info);
