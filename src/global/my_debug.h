@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/06/07 13:47:44  dkr
+ * 'mdb_argtag' renamed into 'ATG_string' and move to argtag.[ch]
+ *
  * Revision 3.3  2002/03/01 02:35:49  dkr
  * mdb_argtag added
  *
@@ -52,6 +55,5 @@ extern char *mdb_nodetype[];
 extern char *mdb_prf[];
 extern char *mdb_type[];
 extern char *mdb_statustype[];
-extern char *mdb_argtag[];
 
 #endif /* _SAC_my_debug_h_ */

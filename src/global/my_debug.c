@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/06/07 13:47:36  dkr
+ * 'mdb_argtag' renamed into 'ATG_string' and move to argtag.[ch]
+ *
  * Revision 3.3  2002/03/01 02:36:21  dkr
  * mdb_argtag added
  *
@@ -68,9 +71,4 @@ char *mdb_type[] = {
 char *mdb_statustype[] = {
 #define SELECTtext(it_text) it_text
 #include "status_info.mac"
-};
-
-char *mdb_argtag[] = {
-#define SELECTtext(it_text) it_text
-#include "argtag_info.mac"
 };
