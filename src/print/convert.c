@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2002/03/05 17:49:22  sbs
+ * Type2String now handles NULL pointers as well 8-))
+ *
  * Revision 3.9  2001/06/28 09:26:06  cg
  * Syntax of array types changed:
  * int[] -> int[+]  and  int[?] -> int[*]
@@ -185,95 +188,103 @@ Type2String (types *type, int flag, bool all)
     tmp_string = (char *)Malloc (sizeof (char) * TYPE_LENGTH);
     tmp_string[0] = '\0';
 
-    do {
-        if (TYPES_BASETYPE (type) == T_user) {
-            if ((flag != 3) && (TYPES_MOD (type) != NULL)) {
-                strcat (tmp_string, TYPES_MOD (type));
-                if (compiler_phase >= PH_precompile) {
-                    strcat (tmp_string, "__");
+    if (type == NULL) {
+        strcat (tmp_string, "(null)");
+    } else {
+        do {
+            if (TYPES_BASETYPE (type) == T_user) {
+                if ((flag != 3) && (TYPES_MOD (type) != NULL)) {
+                    strcat (tmp_string, TYPES_MOD (type));
+                    if (compiler_phase >= PH_precompile) {
+                        strcat (tmp_string, "__");
+                    } else {
+                        strcat (tmp_string, ":");
+                    }
+                }
+                strcat (tmp_string, TYPES_NAME (type));
+            } else {
+                if (flag == 2) {
+                    strcat (tmp_string, rename_type[TYPES_BASETYPE (type)]);
                 } else {
-                    strcat (tmp_string, ":");
+                    strcat (tmp_string, type_string[TYPES_BASETYPE (type)]);
                 }
             }
-            strcat (tmp_string, TYPES_NAME (type));
-        } else {
-            if (flag == 2) {
-                strcat (tmp_string, rename_type[TYPES_BASETYPE (type)]);
-            } else {
-                strcat (tmp_string, type_string[TYPES_BASETYPE (type)]);
-            }
-        }
 
-        if (TYPES_DIM (type) != 0) {
-            if (TYPES_DIM (type) == UNKNOWN_SHAPE) {
-                strcat (tmp_string, "[+]");
-            } else {
-                if (ARRAY_OR_SCALAR == TYPES_DIM (type)) {
-                    strcat (tmp_string, "[*]");
+            if (TYPES_DIM (type) != 0) {
+                if (TYPES_DIM (type) == UNKNOWN_SHAPE) {
+                    strcat (tmp_string, "[+]");
                 } else {
-                    int i, dim;
-                    static char int_string[INT_STRING_LENGTH];
-                    int known_shape = 1;
-                    if (flag == 2) {
-                        strcat (tmp_string, "_");
+                    if (ARRAY_OR_SCALAR == TYPES_DIM (type)) {
+                        strcat (tmp_string, "[*]");
                     } else {
-                        strcat (tmp_string, "[");
-                    }
-                    if (KNOWN_DIM_OFFSET > TYPES_DIM (type)) {
-                        dim = KNOWN_DIM_OFFSET - TYPES_DIM (type);
-                        known_shape = 0;
-                    } else {
-                        dim = TYPES_DIM (type);
-                    }
-
-                    for (i = 0; i < dim; i++) {
-                        if (i != (dim - 1)) {
-                            if (flag == 2) {
-                                if (known_shape == 1) {
-                                    sprintf (int_string, "%d_", TYPES_SHAPE (type, i));
-                                } else {
-                                    sprintf (int_string, "._");
-                                }
-                            } else {
-                                if (known_shape == 1) {
-                                    sprintf (int_string, "%d, ", TYPES_SHAPE (type, i));
-                                } else {
-                                    sprintf (int_string, "., ");
-                                }
-                            }
-                            strcat (tmp_string, int_string);
+                        int i, dim;
+                        static char int_string[INT_STRING_LENGTH];
+                        int known_shape = 1;
+                        if (flag == 2) {
+                            strcat (tmp_string, "_");
                         } else {
-                            if (flag == 2) {
-                                if (known_shape == 1) {
-                                    sprintf (int_string, "%d_", TYPES_SHAPE (type, i));
-                                } else {
-                                    sprintf (int_string, "._");
-                                }
-                            } else {
-                                if (1 == known_shape) {
-                                    sprintf (int_string, "%d]", TYPES_SHAPE (type, i));
-                                } else {
-                                    sprintf (int_string, ".]");
-                                }
-                            }
+                            strcat (tmp_string, "[");
+                        }
+                        if (KNOWN_DIM_OFFSET > TYPES_DIM (type)) {
+                            dim = KNOWN_DIM_OFFSET - TYPES_DIM (type);
+                            known_shape = 0;
+                        } else {
+                            dim = TYPES_DIM (type);
+                        }
 
-                            strcat (tmp_string, int_string);
+                        for (i = 0; i < dim; i++) {
+                            if (i != (dim - 1)) {
+                                if (flag == 2) {
+                                    if (known_shape == 1) {
+                                        sprintf (int_string, "%d_",
+                                                 TYPES_SHAPE (type, i));
+                                    } else {
+                                        sprintf (int_string, "._");
+                                    }
+                                } else {
+                                    if (known_shape == 1) {
+                                        sprintf (int_string, "%d, ",
+                                                 TYPES_SHAPE (type, i));
+                                    } else {
+                                        sprintf (int_string, "., ");
+                                    }
+                                }
+                                strcat (tmp_string, int_string);
+                            } else {
+                                if (flag == 2) {
+                                    if (known_shape == 1) {
+                                        sprintf (int_string, "%d_",
+                                                 TYPES_SHAPE (type, i));
+                                    } else {
+                                        sprintf (int_string, "._");
+                                    }
+                                } else {
+                                    if (1 == known_shape) {
+                                        sprintf (int_string, "%d]",
+                                                 TYPES_SHAPE (type, i));
+                                    } else {
+                                        sprintf (int_string, ".]");
+                                    }
+                                }
+
+                                strcat (tmp_string, int_string);
+                            }
                         }
                     }
                 }
             }
-        }
 
-        type = TYPES_NEXT (type);
+            type = TYPES_NEXT (type);
 
-        if (!all) { /* break after first type in list */
-            type = NULL;
-        }
+            if (!all) { /* break after first type in list */
+                type = NULL;
+            }
 
-        if (type != NULL) {
-            strcat (tmp_string, ", ");
-        }
-    } while (type != NULL);
+            if (type != NULL) {
+                strcat (tmp_string, ", ");
+            }
+        } while (type != NULL);
+    }
 
     DBUG_RETURN (tmp_string);
 }
