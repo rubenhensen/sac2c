@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.35  2000/10/12 18:02:24  dkr
+ * return value type of Is...() functions is bool, now
+ *
  * Revision 1.34  2000/10/12 15:44:22  dkr
  * WLGRID_CBLOCK_INSTR and WLGRIDVAR_CBLOCK_INSTR added
  *
@@ -217,11 +220,11 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
  *
  ******************************************************************************/
 
-extern int IsBoxed (types *type);
-extern int IsArray (types *type);
-extern int IsUnique (types *type);
-extern int IsHidden (types *type);
-extern int IsNonUniqueHidden (types *type);
+extern bool IsBoxed (types *type);
+extern bool IsArray (types *type);
+extern bool IsUnique (types *type);
+extern bool IsHidden (types *type);
+extern bool IsNonUniqueHidden (types *type);
 
 /*--------------------------------------------------------------------------*/
 
