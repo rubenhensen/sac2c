@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.49  2004/10/26 15:37:35  sah
+ *  FUNDEF_TCSTAT is set to NTC_checked now
+ *
  * Revision 3.48  2004/10/26 10:47:56  sbs
  * module name printed out as well now.
  *
@@ -464,6 +467,9 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
                         FUNDEF_NAME (fundef), tmp_str));
     DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
 
+    /* now the functions is entirely typechecked, so we mark it as checked */
+    FUNDEF_TCSTAT (fundef) = NTC_checked;
+
     DBUG_RETURN (fundef);
 }
 
@@ -595,7 +601,9 @@ NTCmodul (node *arg_node, info *arg_info)
     fundef = MODUL_FUNS (arg_node);
     while (fundef != NULL) {
         if (FUNDEF_STATUS (fundef) != ST_wrapperfun) {
+#ifndef NEW_AST
             FUNDEF_TCSTAT (fundef) = NTC_not_checked;
+#endif
             if (!FUNDEF_IS_LACFUN (fundef) && (NULL != FUNDEF_ARGS (fundef))) {
                 FUNDEF_ARGS (fundef) = Trav (FUNDEF_ARGS (fundef), arg_info);
             }
