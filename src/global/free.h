@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/02/28 21:07:40  srs
+ * added macro FREE_INDEX_INFO
+ *
  * Revision 2.1  1999/02/23 12:39:19  sacbase
  * new release made
  *
@@ -148,6 +151,16 @@
 #define FREE(address)
 
 #endif /* NOFREE */
+
+/* struct INDEX_INFO (Withloop Folding) */
+#define FREE_INDEX_INFO(tmp)                                                             \
+    {                                                                                    \
+        FREE (tmp->permutation);                                                         \
+        FREE (tmp->last);                                                                \
+        FREE (tmp->const_arg);                                                           \
+        FREE (tmp);                                                                      \
+        tmp = NULL;                                                                      \
+    }
 
 extern void Free (void *addr);
 
