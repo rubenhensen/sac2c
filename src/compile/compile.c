@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/01/22 13:46:24  dkr
+ * signature of MT_ADJUST_SCHEDULER modified
+ *
  * Revision 3.11  2001/01/19 11:58:12  dkr
  * some with-loop ICMs renamed
  *
@@ -5610,13 +5613,14 @@ COMPWLxblock (node *arg_node, node *arg_info)
 
     if ((WLXBLOCK_LEVEL (arg_node) == 0) && (NWITH2_MT (wl_node))
         && (SCHAdjustmentRequired (dim, wl_seg))) {
-        assigns = MakeAssign (MakeIcm6 ("MT_ADJUST_SCHEDULER", MakeNum (dim),
+        assigns = MakeAssign (MakeIcm7 ("MT_ADJUST_SCHEDULER", MakeNum (dim),
                                         MakeNum (WLSEGX_DIMS (wl_seg)),
                                         MakeNum (WLXBLOCK_BOUND1 (arg_node)),
                                         MakeNum (WLXBLOCK_BOUND2 (arg_node)),
                                         MakeNum (MAX (WLSEGX_SV (wl_seg)[dim],
                                                       WLSEGX_UBV (wl_seg)[dim])),
-                                        DupIds_Id (wl_ids)),
+                                        DupIds_Id (wl_ids),
+                                        MakeNum (NWITH2_OFFSET_NEEDED (wl_node))),
                               assigns);
     }
 
@@ -5788,14 +5792,22 @@ COMPWLstridex (node *arg_node, node *arg_info)
             if (WLSTRIDEX_LEVEL (arg_node) == 0) {
                 icm_name_begin = "WL_MT_STRIDE_LOOP0_BEGIN";
             } else {
-                icm_name_begin = "WL_MT_STRIDE_LOOP_BEGIN";
+                if (WLSTRIDEX_NEXT (arg_node) != NULL) {
+                    icm_name_begin = "WL_MT_STRIDE_LOOP_BEGIN";
+                } else {
+                    icm_name_begin = "WL_MT_STRIDE_LAST_LOOP_BEGIN";
+                }
             }
             icm_name_end = "WL_MT_STRIDE_LOOP_END";
         } else {
             if (WLSTRIDEX_LEVEL (arg_node) == 0) {
                 icm_name_begin = "WL_STRIDE_LOOP0_BEGIN";
             } else {
-                icm_name_begin = "WL_STRIDE_LOOP_BEGIN";
+                if (WLSTRIDEX_NEXT (arg_node) != NULL) {
+                    icm_name_begin = "WL_STRIDE_LOOP_BEGIN";
+                } else {
+                    icm_name_begin = "WL_STRIDE_LAST_LOOP_BEGIN";
+                }
             }
             icm_name_end = "WL_STRIDE_LOOP_END";
         }
@@ -5806,7 +5818,7 @@ COMPWLstridex (node *arg_node, node *arg_info)
     if ((WLSTRIDEX_LEVEL (arg_node) == 0) && (NWITH2_MT (wl_node))
         && (SCHAdjustmentRequired (dim, wl_seg))) {
         assigns
-          = MakeAssign (MakeIcm6 ("MT_ADJUST_SCHEDULER", MakeNum (dim),
+          = MakeAssign (MakeIcm7 ("MT_ADJUST_SCHEDULER", MakeNum (dim),
                                   MakeNum (WLSEGX_DIMS (wl_seg)),
                                   NodeOrInt2Index (NODE_TYPE (arg_node),
                                                    WL_GET_ADDRESS (arg_node, N_WLstride,
@@ -5818,7 +5830,8 @@ COMPWLstridex (node *arg_node, node *arg_info)
                                                    dim),
                                   MakeNum (MAX (WLSEGX_SV (wl_seg)[dim],
                                                 WLSEGX_UBV (wl_seg)[dim])),
-                                  DupIds_Id (wl_ids)),
+                                  DupIds_Id (wl_ids),
+                                  MakeNum (NWITH2_OFFSET_NEEDED (wl_node))),
                         assigns);
     }
 
