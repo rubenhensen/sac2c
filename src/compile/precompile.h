@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.6  2000/07/11 09:02:39  dkr
+ * minor changes done
+ *
  * Revision 2.5  2000/05/29 14:30:53  dkr
  * functions PREC... renamed into PREC2...
  * PREC1let added
@@ -64,41 +67,13 @@
  * Revision 1.10  1998/04/17 02:14:24  dkr
  * exported GridOffset()
  *
- * Revision 1.9  1998/04/02 18:47:08  dkr
- * added PRECconc
- *
- * Revision 1.8  1998/03/03 22:57:38  dkr
- * added PRECncode()
- *
- * Revision 1.7  1998/03/02 22:26:52  dkr
- * added PRECnwith()
- *
- * Revision 1.6  1997/09/05 13:46:04  cg
- * All cast expressions are now removed by rmvoidfun.c. Therefore,
- * the respective attempts in precompile.c and ConstantFolding.c
- * are removed. Cast expressions are only used by the type checker.
- * Afterwards, they are useless, and they are not supported by
- * Constant Folding as well as code generation.
- *
- * Revision 1.5  1997/04/30 11:55:34  cg
- * new function PRECassign added
- *
- * Revision 1.4  1995/12/18  16:31:38  cg
- * declaration of PRECexprs removed
- *
- * Revision 1.3  1995/12/04  17:00:04  cg
- * added function PRECcast
- * All casts are now eliminated by the precompiler
- *
- * Revision 1.2  1995/12/01  20:29:00  cg
- * added declarations of PRECvardec and PRECtypedef
+ * [...]
  *
  * Revision 1.1  1995/11/28  12:23:34  cg
  * Initial revision
  */
 
 #ifndef _sac_precompile_h
-
 #define _sac_precompile_h
 
 extern node *Precompile (node *syntax_tree);
@@ -130,17 +105,13 @@ extern node *PREC2WLsegVar (node *arg_node, node *arg_info);
 extern node *AdjustFoldFundef (node *fundef, ids *acc, node *cexpr);
 
 #ifdef TAGGED_ARRAYS
-
-extern char *PRECRenameLocalIdentifier (char *id, data_class_t d_class,
-                                        uniqueness_class_t u_class);
-
 extern uniqueness_class_t GetUniFromTypes (types *typ);
 extern data_class_t GetClassFromTypes (types *typ);
 
-#else /* TAGGED_ARRAYS */
-
+extern char *PRECRenameLocalIdentifier (char *id, data_class_t d_class,
+                                        uniqueness_class_t u_class);
+#else  /* TAGGED_ARRAYS */
 extern char *PRECRenameLocalIdentifier (char *id);
-
 #endif /* TAGGED_ARRAYS */
 
 #endif /* _sac_precompile_h */
