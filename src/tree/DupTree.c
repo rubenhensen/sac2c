@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.119  2004/11/24 12:27:43  mwe
+ * TBmakeLet and N_pragma changed according to ast.xml
+ *
  * Revision 3.118  2004/11/23 19:07:39  khf
  * SacDevCampDk: compiles!
  *
@@ -293,7 +296,7 @@
 #include "shape.h"
 #include "free.h"
 #include "dbug.h"
-
+#include "new_types.h"
 #include "DupTree.h"
 #include "NameTuplesUtils.h"
 #include "DataFlowMask.h"
@@ -1505,7 +1508,7 @@ DUPlet (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPlet");
 
-    new_node = TBmakeLet (NULL, DUPTRAV (LET_IDS (arg_node)));
+    new_node = TBmakeLet (DUPTRAV (LET_IDS (arg_node)), NULL);
 
     /*
      * EXPR must be traversed after IDS (for AP_ARGTAB)
@@ -1723,23 +1726,16 @@ node *
 DUPpragma (node *arg_node, info *arg_info)
 {
     node *new_node;
-    int i;
 
     DBUG_ENTER ("DUPpragma");
 
     new_node = TBmakePragma (DUPTRAV (PRAGMA_READONLY (arg_node)),
                              DUPTRAV (PRAGMA_REFCOUNTING (arg_node)),
                              DUPTRAV (PRAGMA_EFFECT (arg_node)),
-                             DUPTRAV (PRAGMA_TOUCH (arg_node)));
+                             DUPTRAV (PRAGMA_TOUCH (arg_node)),
+                             DUPTRAV (PRAGMA_LINKSIGN (arg_node)));
 
     PRAGMA_LINKNAME (new_node) = ILIBstringCopy (PRAGMA_LINKNAME (arg_node));
-    if (PRAGMA_LINKSIGN (arg_node) != NULL) {
-        PRAGMA_LINKSIGN (new_node)
-          = (int *)ILIBmalloc (PRAGMA_NUMPARAMS (new_node) * sizeof (int));
-        for (i = 0; i < PRAGMA_NUMPARAMS (new_node); i++) {
-            PRAGMA_LINKSIGN (new_node)[i] = PRAGMA_LINKSIGN (arg_node)[i];
-        }
-    }
 
     PRAGMA_INITFUN (new_node) = ILIBstringCopy (PRAGMA_INITFUN (arg_node));
     PRAGMA_WLCOMP_APS (new_node) = DUPTRAV (PRAGMA_WLCOMP_APS (arg_node));
