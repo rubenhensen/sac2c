@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.36  1994/12/21 13:15:37  sbs
+ * Revision 1.37  1994/12/31 14:10:39  sbs
+ * modul selection inserted for types and function applications
+ *
+ * Revision 1.36  1994/12/21  13:15:37  sbs
  * for fundec nnode decremented (1/0)
  *
  * Revision 1.35  1994/12/21  11:45:16  hw
@@ -164,12 +167,12 @@ node *decl_tree;
 
 %type <ids> ids,
 %type <nums> nums;
-%type <types> type, types, simpletype, complextype;
+%type <types> localtype, type, types, simpletype, complextype;
 %type <node> arg, args, fundefs, fundef, main, prg, modimp,
              typedefs, typedef, defs, def2, def3, fundef2, exprblock, exprblock2,
              exprblock3, assign, assigns, assignblock, letassign, retassign,
              selassign, forassign, retassignblock, 
-             expr, exprs, monop, binop, triop, 
+             apl, expr, exprs, monop, binop, triop, 
              conexpr, generator, unaryop,
              moddec, expdesc, expdesc2, expdesc3, fundecs, fundec, exptypes, exptype,
              import, imports, impdesc, impdesc2, impdesc3;
@@ -431,48 +434,44 @@ fundefs: fundef fundefs { $1->node[1]=$2;
 	| main {$$=$1;}
 	;
 
-fundef: types fundef2 
+fundef: types ID BRACKET_L fundef2 
         { id *function_name;
 
-           $$=$2;
-           function_name=$2->info.id;
-           $$->info.types=$1;          /*  Typ der Funktion */
-           $$->info.types->id=function_name;
+           $$=$4;
+           $$->info.types=$1;          /*  result type(s) */
+           $$->info.types->id=$2;      /*  function name */
         }
-	| types INLINE {warn("inline not yet implemented!");} fundef2
+	| types INLINE {warn("inline not yet implemented!");} ID BRACKET_L fundef2
             {id *function_name;
 
-             $$=$4;
-             function_name=$4->info.id;
-             $$->info.types=$1;          /*  Typ der Funktion */
-             $$->info.types->id=function_name;
+             $$=$6;
+             $$->info.types=$1;          /* result type(s) */
+             $$->info.types->id=$4;      /*  function name */
             }
 
-fundef2: ID BRACKET_L args BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
+fundef2: args BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
           { 
-            $$=$<node>5;
-            $$->node[0]=$6;             /* Funktionsrumpf  */
-            $$->node[2]=$3;             /* Funktionsargumente */
-            $$->info.id=$1;      /* name of function */
+            $$=$<node>3;
+            $$->node[0]=$4;             /* Funktionsrumpf  */
+            $$->node[2]=$1;             /* Funktionsargumente */
             $$->nnode=2;
          
             DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT" %s," P_FORMAT,
-                        mdb_nodetype[ $$->nodetype ], $$, $$->info.id,
+                       ("%s:"P_FORMAT" %s"P_FORMAT" %s," P_FORMAT,
+                        mdb_nodetype[ $$->nodetype ], $$, 
                         mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0],
                         mdb_nodetype[ $$->node[2]->nodetype ], $$->node[2]));
           }
 
-       | ID BRACKET_L BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
+       | BRACKET_R  {$$=MakeNode(N_fundef);}   exprblock
           { 
-            $$=$<node>4;
-            $$->node[0]=$5;             /* Funktionsrumpf  */
-            $$->info.id=$1;      /* name of function */
+            $$=$<node>2;
+            $$->node[0]=$3;             /* Funktionsrumpf  */
             $$->nnode=1;
          
             DBUG_PRINT("GENTREE",
-                       ("%s:"P_FORMAT" Id: %s , %s"P_FORMAT,
-                        mdb_nodetype[ $$->nodetype ], $$, $$->info.id,
+                       ("%s:"P_FORMAT" %s"P_FORMAT,
+                        mdb_nodetype[ $$->nodetype ], $$, 
                         mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
          }
         ;
@@ -868,10 +867,10 @@ exprs: expr COMMA exprs
           }
        ;
 
-expr:   ID  BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R 
+apl: ID  BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
          { $$=$<node>3;
            $$->node[0]=$4;                /* arguments */
-           $$->info.id=$1;                /* name of function */
+           $$->info.fun_name.id=$1;                /* name of function */
            $$->nnode=1;
 
            DBUG_PRINT("GENTREE",
@@ -879,14 +878,20 @@ expr:   ID  BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
                        mdb_nodetype[ $$->nodetype ], $$, $$->info.id,
                        mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
          }
-      | ID BRACKET_L BRACKET_R 
+      | ID BRACKET_L BRACKET_R
         { $$=MakeNode(N_ap);
-          $$->info.id=$1;         /* name of function */
-          
+          $$->info.fun_name.id=$1;         /* name of function */
+
           DBUG_PRINT("GENTREE",
                      ("%s " P_FORMAT " Id: %s,",
                       mdb_nodetype[ $$->nodetype ], $$, $$->info.id));
         }
+        ;
+
+expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
+      | ID COLON apl {$$=$3;
+                      $$->info.fun_name.id_mod=$1;
+                     }
       | WITH {$$=MakeNode(N_with);} BRACKET_L generator  BRACKET_R conexpr 
         { $$=$<node>2;
           $$->node[0]=$4;   /* Generator und Filter */
@@ -1207,9 +1212,16 @@ types:   type COMMA types
        | type {$$=$1;}
        ;
 
-type:   complextype {$$=$1;}
-      | simpletype {$$=$1;}
-       ;
+type: localtype {$$=$1;}
+      | ID COLON localtype {
+			$$=$3;
+			$$->name_mod=$1;
+			}
+      ;
+
+localtype:  complextype {$$=$1;}
+          | simpletype {$$=$1;}
+          ;
 
 complextype:  simpletype SQBR_L nums SQBR_R  
                { $$=GenComplexType($1,$3);
@@ -1221,42 +1233,23 @@ complextype:  simpletype SQBR_L nums SQBR_R
              ;
 
 simpletype: TYPE_INT 
-             { $$=GEN_NODE(types);
-               $$->simpletype=T_int; 
-               $$->dim=0;
-               $$->id=NULL;     /* not used in this case */
-               $$->next=NULL;
-               $$->name=NULL;
+             { $$=MakeTypes(T_int);
                DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s",
                                      $$, mdb_type[$$->simpletype]));
             }
             | TYPE_FLOAT 
-               { $$=GEN_NODE(types); 
-                 $$->simpletype=T_float; 
-                 $$->dim=0;
-                 $$->next=NULL;
-                 $$->id=NULL;     /* not used in this case */
-                 $$->name=NULL;
+               { $$=MakeTypes(T_float); 
                  DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s",
                                      $$, mdb_type[$$->simpletype]));
                }
             | TYPE_BOOL 
-               { $$=GEN_NODE(types);
-                 $$->simpletype=T_bool; 
-                 $$->dim=0;
-                 $$->next=NULL;
-                 $$->id=NULL;     /* not used in this case */
-                 $$->name=NULL;
+               { $$=MakeTypes(T_bool);
                  DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s",
                                      $$, mdb_type[$$->simpletype]));
                }
             | ID
-               { $$=GEN_NODE(types);
-                 $$->simpletype=T_user;
-                 $$->dim=0;
-                 $$->id=NULL;   /* not used in this case */
+               { $$=MakeTypes(T_user);
                  $$->name=$1;
-                 $$->next=NULL;
                  DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s (%s)",
                                      $$, mdb_type[$$->simpletype], $$->name));
                }
