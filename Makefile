@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.95  2004/07/29 00:40:54  skt
+# added support for creation of dataflowgraph (mtmode 3)
+#
 # Revision 3.94  2004/07/26 16:14:03  skt
 # support for create_cells added
 #
@@ -281,7 +284,7 @@ MULTITHREAD= src/multithread/multithread.o src/multithread/schedule_init.o \
              src/multithread/barriers_init.o src/multithread/blocks_lift.o \
              src/multithread/adjust_calls.o src/multithread/assignments_rearrange.o \
              src/multithread/tag_executionmode.o src/multithread/propagate_executionmode.o \
-            src/multithread/create_cells.o
+            src/multithread/create_cells.o src/multithread/create_dataflowgraph.o
 COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
          src/compile/precompile.o src/compile/gen_startup_code.o src/compile/compile.o \
          src/compile/icm2c.o src/compile/icm2c_basic.o \

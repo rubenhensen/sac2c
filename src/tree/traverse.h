@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2004/07/29 00:40:54  skt
+ * added support for creation of dataflowgraph (mtmode 3)
+ *
  * Revision 3.50  2004/07/26 16:24:22  skt
  * added support for cell creation
  * (part of mt-mode 3)
@@ -272,7 +275,7 @@ extern funtab *genmask_tab;
 extern funtab *mmv_tab;
 extern funtab *unused_tab22;
 extern funtab *crece_tab;
-extern funtab *unused_tab27;
+extern funtab *cdfg_tab;
 extern funtab *free_tab;
 extern funtab *unused_tab2;
 extern funtab *refcnt_tab;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2004/07/29 00:40:54  skt
+ * added support for creation of dataflowgraph (mtmode 3)
+ *
  * Revision 3.62  2004/07/26 16:24:22  skt
  * added support for cell creation
  * (part of mt-mode 3)
@@ -280,6 +283,7 @@
 #include "tag_executionmode.h"
 #include "propagate_executionmode.h"
 #include "create_cells.h"
+#include "create_dataflowgraph.h"
 #include "assignments_rearrange.h"
 #include "blocks_lift.h"
 #include "adjust_calls.h"
@@ -394,15 +398,15 @@ static funtab crece_tab_rec = {{
 funtab *crece_tab = &crece_tab_rec;
 
 /*
- *  (7) unused_tab27
+ *  (7) cdfg_tab
  */
-static funtab unused_tab27_rec = {{
-#define NIFunused_27(it_unused_27) it_unused_27
+static funtab cdfg_tab_rec = {{
+#define NIFcdfg(it_cdfg) it_cdfg
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab27 = &unused_tab27_rec;
+                              },
+                              NULL,
+                              NULL};
+funtab *cdfg_tab = &cdfg_tab_rec;
 
 /*
  *  (8) free_tab

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/07/29 00:40:54  skt
+ * added support for creation of dataflowgraph (mtmode 3)
+ *
  * Revision 3.3  2004/06/23 15:44:03  skt
  * changed MUTH_SINGLE into MUTH_EXCLUSIVE
  * and MUTH_ONCE into MUTH_SINGLE
@@ -41,6 +44,30 @@
 #define MUTH_EXCLUSIVE 1
 #define MUTH_SINGLE 2
 #define MUTH_MULTI 3
+
+/* definitions for the handling of a dataflowgraph
+ *
+ *   char*     DFGNAME            (name of the dataflownode; NOT substantial
+ *                                 for the functionality, but helpful to print
+ *                                 and understand the dataflowgraph)
+ *   node*     DFGINNERASSIGNMENT (the corresponding assignment)
+ *   node*     DFGOUTERASSIGNMENT (the assignment in the list of assignments,
+ *                                 that has to be taken for rearranging the
+ *                                 list. Usually the same as INNERASSIGNMENT,
+ *                                 but neccessary to handle EX-/ST-/MT-cells
+ *                                 see CDFGassign for details)
+ *   int       DFGEXECUTIONMODE   (some info about the execution of the
+ *                                 corresponding assignment;
+ *                                 any-, exclusive-, single- or multithreaded)
+ *   nodelist* DFGDEPENDENT       (list of (dataflow-) nodes that depend on
+ *                                 this node)
+ */
+#define INFO_MUTH_DFGNAME(n) ((char *)(n->dfmask[1]))
+#define INFO_MUTH_DFGINNERASSIGN(n) (n->node[0])
+#define INFO_MUTH_DFGOUTERASSIGN(n) (n->node[1])
+#define INFO_MUTH_DFGEXECUTIONMODE(n) (n->flag)
+#define INFO_MUTH_DFGNODEREFCOUNT(n) (n->refcnt)
+#define INFO_MUTH_DFGDEPENDENT(n) ((nodelist *)(n->dfmask[0]))
 
 extern node *BuildMultiThread (node *syntax_tree);
 

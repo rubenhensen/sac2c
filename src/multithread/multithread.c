@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/07/29 00:40:54  skt
+ * added support for creation of dataflowgraph (mtmode 3)
+ *
  * Revision 3.7  2004/07/28 17:47:40  skt
  * superfluous FreeTree removed
  *
@@ -164,6 +167,7 @@
 #include "propagate_executionmode.h"
 #include "assignments_rearrange.h"
 #include "create_cells.h"
+#include "create_dataflowgraph.h"
 
 /** <!--*********************************************************************->
  *
@@ -613,6 +617,9 @@ MUTHmodul (node *arg_node, node *arg_info)
 
     arg_node = TagExecutionmode (arg_node, arg_info);
 
+    arg_info = FreeTree (arg_info);
+    arg_info = old_arg_info;
+
     DBUG_PRINT ("MUTH", ("end TagExecutionmode"));
 
     if ((break_after == PH_multithread) && (strcmp ("tem", break_specifier) == 0)) {
@@ -624,7 +631,13 @@ MUTHmodul (node *arg_node, node *arg_info)
      */
     DBUG_PRINT ("MUTH", ("begin PropagateExecutionmode"));
 
+    old_arg_info = arg_info;
+    arg_info = MakeInfo ();
+
     arg_node = PropagateExecutionmode (arg_node, arg_info);
+
+    arg_info = FreeTree (arg_info);
+    arg_info = old_arg_info;
 
     DBUG_PRINT ("MUTH", ("end PropagateExecutionmode"));
 
@@ -637,6 +650,9 @@ MUTHmodul (node *arg_node, node *arg_info)
      */
     DBUG_PRINT ("MUTH", ("begin CreateCells"));
 
+    old_arg_info = arg_info;
+    arg_info = MakeInfo ();
+
     arg_node = CreateCells (arg_node, arg_info);
 
     arg_info = FreeTree (arg_info);
@@ -645,6 +661,25 @@ MUTHmodul (node *arg_node, node *arg_info)
     DBUG_PRINT ("MUTH", ("end CreateCells"));
 
     if ((break_after == PH_multithread) && (strcmp ("crece", break_specifier) == 0)) {
+        goto cont;
+    }
+
+    /*
+     *  --- CreateDataflowgraph (cdfg) ---
+     */
+    DBUG_PRINT ("MUTH", ("begin CreateDataflowgraph"));
+
+    old_arg_info = arg_info;
+    arg_info = MakeInfo ();
+
+    arg_node = CreateDataflowgraph (arg_node, arg_info);
+
+    arg_info = FreeTree (arg_info);
+    arg_info = old_arg_info;
+
+    DBUG_PRINT ("MUTH", ("end CreateDataflowgraph"));
+
+    if ((break_after == PH_multithread) && (strcmp ("cdfg", break_specifier) == 0)) {
         goto cont;
     }
 
