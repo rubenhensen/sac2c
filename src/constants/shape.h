@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/11/23 09:46:24  ktr
+ * ISMOP SacDEVCamp 04
+ *
  * Revision 1.11  2004/11/22 11:27:04  ktr
  * Ismop SacDevCamp 04
  *
@@ -57,35 +60,35 @@
 #include <stdio.h>
 #include "types.h"
 
-extern shape *SHMakeShape (int dim);
-extern shape *SHCreateShape (int dim, ...);
-extern shape *SHCopyShape (shape *shp);
-extern void SHPrintShape (FILE *file, shape *shp);
-extern shape *SHFreeShape (shape *shp);
-extern void SHSerializeShape (FILE *file, shape *shp);
+extern shape *SHmakeShape (int dim);
+extern shape *SHcreateShape (int dim, ...);
+extern shape *SHcopyShape (shape *shp);
+extern void SHprintShape (FILE *file, shape *shp);
+extern shape *SHfreeShape (shape *shp);
+extern void SHserializeShape (FILE *file, shape *shp);
 
-extern int SHGetDim (shape *shp);
-extern int SHGetExtent (shape *shp, int dim);
-extern int SHGetUnrLen (shape *shp);
+extern int SHgetDim (shape *shp);
+extern int SHgetExtent (shape *shp, int dim);
+extern int SHgetUnrLen (shape *shp);
 
-extern int SHSubarrayDim (shape *shp, int n);
+extern int SHsubarrayDim (shape *shp, int n);
 
-extern shape *SHSetExtent (shape *shp, int dim, int val);
+extern shape *SHsetExtent (shape *shp, int dim, int val);
 
-extern bool SHCompareShapes (shape *a, shape *b);
-extern shape *SHAppendShapes (shape *a, shape *b);
-extern shape *SHDropFromShape (int n, shape *a);
-extern shape *SHTakeFromShape (int n, shape *a);
-extern char *SHShape2String (int dots, shape *shp);
-extern int *SHShape2IntVec (shape *shp);
-extern node *SHShape2Exprs (shape *shp);
-extern node *SHShape2Array (shape *shp);
+extern bool SHcompareShapes (shape *a, shape *b);
+extern shape *SHappendShapes (shape *a, shape *b);
+extern shape *SHdropFromShape (int n, shape *a);
+extern shape *SHtakeFromShape (int n, shape *a);
+extern char *SHshape2String (int dots, shape *shp);
+extern int *SHshape2IntVec (shape *shp);
+extern node *SHshape2Exprs (shape *shp);
+extern node *SHshape2Array (shape *shp);
 
-extern shape *SHOldTypes2Shape (types *shpseg);
-extern shape *SHOldShpseg2Shape (int dim, shpseg *shpseg);
-extern shpseg *SHShape2OldShpseg (shape *shp);
+extern shape *SHoldTypes2Shape (types *shpseg);
+extern shape *SHoldShpseg2Shape (int dim, shpseg *shpseg);
+extern shpseg *SHshape2OldShpseg (shape *shp);
 
-extern bool SHCompareWithCArray (shape *shp, int *shpdata, int dim);
-extern bool SHCompareWithArguments (shape *shp, int dim, ...);
+extern bool SHcompareWithCArray (shape *shp, int *shpdata, int dim);
+extern bool SHcompareWithArguments (shape *shp, int dim, ...);
 
 #endif /* _SAC_SHAPE_H_ */
