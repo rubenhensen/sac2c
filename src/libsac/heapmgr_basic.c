@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1999/12/17 14:05:47  cg
+ * Added substantial documentation about how the heap manager works.
+ * Fixed a bug in MallocLargeChunk(), the free list is now correctly
+ * coalasced.
+ *
  * Revision 1.5  1999/09/17 14:33:34  cg
  * New version of SAC heap manager:
  *  - no special API functions for top arena.
@@ -33,8 +38,150 @@
  *
  * description:
  *
+ *   This file contains the basic routines and data structures of a SAC
+ *   specific heap manager.
  *
  *
+ * arenas:
+ *
+ *   The heap is organized in so-called arenas. An arena is an organizational
+ *   entity for requested heap chunks of a certain size range. Each arena is
+ *   associated with a minimum and maximum chunk size, a bin size, an allocation
+ *   and de-allocation function, and a free list. A characteristic of this free
+ *   list is that it is never empty; it always has a first dummy entry with size 0.
+ *   This allows for a more efficient implementation of the free list handling.
+ *
+ *   There are 4 different variations of arenas:
+ *    - small chunk arenas,
+ *    - large chunk arenas,
+ *    - top arena,
+ *    - arena of arenas.
+ *
+ *   In a small chunk arena, each chunk of memory has the same size which is
+ *   characteristic for the arena. This allows fast allocation/de-allocation
+ *   strategies. However, it is only feasible for rather small memory requests
+ *   because it implies significant internal memory fragmentation.
+ *
+ *   In large chunk arenas, each allocated chunk of memory is associated with
+ *   its size, i.e. different chunk sizes within the range of the given
+ *   arena may occur.
+ *
+ *   The top arena basically is a large chunk arena. It satisfies the
+ *   class of largest memory requests. The top arena, however, is the only
+ *   arena which may arbitrarily be extended by requesting more memory from the
+ *   operating system.
+ *
+ *   Large and small chunk arenas are organized as subsequently allocated bins of
+ *   contiguous memory. These bins are allocated in the so-called arena of arenas.
+ *   The bins of the arena of arenas itself are allocated within the top arena.
+ *   Note that bins are never de-allocated. The reason is that it is too costly
+ *   to identify completely empty bins.
+ *
+ *
+ * bins:
+ *
+ *   Except for the top arena, arenas are organized in bins of contiguous
+ *   memory. The first time, a memory request for a certain arena occurs,
+ *   a bin is allocated within the arena of arenas. Each time a new request
+ *   cannot be satisfied within the already allocated bins of the arena,
+ *   a new bin is allocated.
+ *
+ *
+ * initialization:
+ *
+ *   When the heap manager is initialized upon program startup, a certain
+ *   configurable amount of memory is requested from the operating system
+ *   and the following memory layout is established:
+ *
+ *     |                  |
+ *     +------------------+
+ *     |                  |
+ *     |  arena of arenas |
+ *     |                  |
+ *     +------------------+
+ *     |                  |
+ *     |  top arena       |
+ *     |                  |
+ *     +------------------+
+ *     |                  |
+ *
+ *   The default sizes are 1MB each for the first bin of the arena of arenas
+ *   and the top arena.
+ *
+ *
+ * administration data layout:
+ *
+ *   Memory is always allocated in so-called units (currently sizeof(double)).
+ *   This assures proper alignment as required by malloc().
+ *
+ *   Each separately indentifiable chunk of memory (allocated or de-allocated)
+ *   is associated with some administrative information:
+ *
+ *   Small chunks:
+ *
+ *     |                  |
+ *     +==================+
+ *     | size/diag        |
+ *     +------------------+
+ *     | arena_ptr        |
+ *     +==================+
+ *     | nextfree_ptr     |     <-- returned pointer
+ *     +------------------+
+ *     |                  |
+ *     +==================+
+ *     |                  |
+ *
+ *   The size field conatains the size of the memory chunk in units. This
+ *   information does exclusively exist for those chunks that are not of the
+ *   fixed chunk size of the small chunk arena. For example, each time a new
+ *   bin is allocated it is kept as a whole. Subsequently small chunks of the
+ *   fixed chunk size are split from this. These small fixed size chunks are
+ *   never coalasced again and don't have size information themselves.
+ *   The variable sized initial chunk in a small chunk arena is called a
+ *   wilderness chunk.
+ *
+ *   The arena_ptr is a pointer back to the arena data structure which contains
+ *   all the characteristic information about the arena. This pointer allows
+ *   a quick determination of the free list and the de-allocation function
+ *   upon a de-allocation request for a specific memory chunk (free).
+ *
+ *   The nextfree_ptr points to the next entry of the free list. This is only
+ *   available when the chunk is currently un-allocated. Otherwise the memory
+ *   cell belongs to the memory returned by the allocator. This technique helps
+ *   to minimize the administrative overhead in terms of memory consumption.
+ *
+ *   Split chunks (of the fixed chunk size) use the size field for storage of a
+ *   diagnostic pattern iff diagnostic heap management is activated. This pattern
+ *   allows to detect certain forms of corruptions of the internal heap manager
+ *   data structures caused by programs that write over the allocated amount of
+ *   memory.
+ *
+ *   Large chunks:
+ *
+ *     |                  |
+ *     +==================+
+ *     | prevsize         |
+ *     +------------------+
+ *     | diag             |
+ *     +==================+
+ *     | size             |
+ *     +------------------+
+ *     | arena_ptr        |
+ *     +==================+
+ *     | nextfree_ptr     |     <-- returned pointer
+ *     +------------------+
+ *     |                  |
+ *     +==================+
+ *     |                  |
+ *
+ *   In contrast to the field entries of a small chunk administration block, a large
+ *   chunk administration block always contains the diagnostic pattern as well as
+ *   the chunk size in units.
+ *
+ *   Additionally the size of the preceding chunk (in units) is stored. A negative
+ *   number in this field means that the preceding chunk is currently allocated.
+ *   This information is needed for efficient coalascing of neighboring un-allocated
+ *   memory chunks.
  *
  *
  *
@@ -246,9 +393,9 @@ SAC_HM_Setup (size_byte_t initial_arena_of_arenas_size,
  *
  *   The diagnostic check pattern mechanism cannot be used in the arena of arenas
  *   because here we use small chunks, but definitely need the sizes of all chunks
- *   since these are NOT uniform.
- *
- *
+ *   since these are NOT uniform. Small chunk administration can, nevertheless,
+ *   be used since bins in the arena of arenas are never de-allocated.
+ *   Consequently, there is no chance of coalascing de-allocated chunks.
  *
  *
  ******************************************************************************/
@@ -332,9 +479,12 @@ AllocateNewBinInArenaOfArenas (size_unit_t units)
  *   This function allocates a chunk of memory with the size given in units.
  *   The memory is allocated from the given arena of small chunks .
  *
+ *   allocation strategy:
  *
- *
- *
+ *    1. Check free list for entry.
+ *    2. Split from top of wilderness chunk.
+ *    3. Take entire wilderness chunk.
+ *    4. Allocate new bin and split from new wilderness chunk.
  *
  ******************************************************************************/
 
@@ -572,103 +722,107 @@ SAC_HM_MallocSmallChunkPresplit (size_unit_t units, SAC_HM_arena_t *arena, int p
  *
  ******************************************************************************/
 
-void *
-SAC_HM_MallocLargeChunkNoCoalasce (size_unit_t units, SAC_HM_arena_t *arena)
+#if 0
+void *SAC_HM_MallocLargeChunkNoCoalasce( size_unit_t units, 
+                                         SAC_HM_arena_t *arena)
 {
-    SAC_HM_header_t *freep, *lastp, *bestp;
-    size_unit_t split_threshold;
+  SAC_HM_header_t *freep, *lastp, *bestp;
+  size_unit_t split_threshold;
 
-    DIAG_INC (arena->cnt_alloc);
+  DIAG_INC( arena->cnt_alloc);
+   
+  split_threshold = units + arena->min_chunk_size;
+  bestp = NULL;
 
-    split_threshold = units + arena->min_chunk_size;
-    bestp = NULL;
+  /*
+   * Search for sufficiently large chunk of memory in the free list.
+   */
 
-    /*
-     * Search for sufficiently large chunk of memory in the free list.
-     */
-
-    lastp = arena->freelist;
-    freep = LARGECHUNK_NEXTFREE (lastp);
-
-    while (freep != NULL) {
-        DIAG_CHECK_FREEPATTERN_LARGECHUNK (freep, arena->num);
-
-        if (LARGECHUNK_SIZE (freep) < units) {
-            /*
-             *  The current chunk of memory is too small, so continue with the next one.
-             */
-            lastp = freep;
-            freep = LARGECHUNK_NEXTFREE (freep);
-            continue;
-        }
-
-        if (LARGECHUNK_SIZE (freep) >= split_threshold) {
-            /*
-             * The current chunk of memory is larger than required, so remember it for
-             * potential later use and continue with the next one.
-             */
-            bestp = freep;
-            lastp = freep;
-            freep = LARGECHUNK_NEXTFREE (freep);
-            continue;
-        }
-
-        /*
-         * The current chunk of memory more or less fits exactly, so remove it
-         * from the free list, mark it as being allocated, and return it to the
-         * calling context.
-         */
-        LARGECHUNK_NEXTFREE (lastp) = LARGECHUNK_NEXTFREE (freep);
-
-        LARGECHUNK_PREVSIZE (freep + LARGECHUNK_SIZE (freep)) = -1;
-        DIAG_SET_ALLOCPATTERN_LARGECHUNK (freep);
-
-        return ((void *)(freep + 2));
+  lastp = arena->freelist;
+  freep = LARGECHUNK_NEXTFREE(lastp);
+  
+  while (freep != NULL) {
+    DIAG_CHECK_FREEPATTERN_LARGECHUNK(freep, arena->num);
+    
+    if (LARGECHUNK_SIZE(freep) < units) {
+      /*
+       *  The current chunk of memory is too small, so continue with the next one.
+       */
+      lastp = freep;
+      freep = LARGECHUNK_NEXTFREE(freep);
+      continue;
     }
-
-    /*
-     * No exactly fitting space found in freelist, so, we
-     * try to split from best fitting chunk found so far.
-     */
-
-    if (bestp == NULL) {
-        /*
-         * We haven't found any chunk of sufficient size, so we allocate a new
-         * bin from the arena of arenas.
-         */
-
-        bestp = AllocateNewBinInArenaOfArenas (arena->arena_size);
-
-        DIAG_INC (arena->bins);
-        DIAG_ADD (arena->size, arena->arena_size * UNIT_SIZE);
-        DIAG_SET_FREEPATTERN_LARGECHUNK (bestp);
-
-        LARGECHUNK_SIZE (bestp) = arena->arena_size - 2;
-        LARGECHUNK_PREVSIZE (bestp) = -1;
-        LARGECHUNK_ARENA (bestp) = arena;
-
-        LARGECHUNK_NEXTFREE (bestp) = LARGECHUNK_NEXTFREE (arena->freelist);
-        LARGECHUNK_NEXTFREE (arena->freelist) = bestp;
-
-        /* LARGECHUNK_SIZE(bestp + LARGECHUNK_SIZE(bestp)) = -1; */
+    
+    if (LARGECHUNK_SIZE(freep) >= split_threshold) {
+      /*
+       * The current chunk of memory is larger than required, so remember it for
+       * potential later use and continue with the next one.
+       */
+      bestp = freep;
+      lastp = freep;
+      freep = LARGECHUNK_NEXTFREE(freep);
+      continue;
     }
-
+    
     /*
-     * Now, we do have a sufficiently large amount of memory, so we simply split
-     * the required chunk size from the top of it.
+     * The current chunk of memory more or less fits exactly, so remove it
+     * from the free list, mark it as being allocated, and return it to the 
+     * calling context.
+     */
+    LARGECHUNK_NEXTFREE( lastp) = LARGECHUNK_NEXTFREE( freep);
+
+    LARGECHUNK_PREVSIZE(freep + LARGECHUNK_SIZE(freep)) = -1;
+    DIAG_SET_ALLOCPATTERN_LARGECHUNK(freep);
+
+    return((void *)(freep+2));
+  }
+
+
+  /*
+   * No exactly fitting space found in freelist, so, we 
+   * try to split from best fitting chunk found so far.
+   */
+
+  if (bestp == NULL) {
+    /*
+     * We haven't found any chunk of sufficient size, so we allocate a new
+     * bin from the arena of arenas.
      */
 
-    DIAG_INC (arena->cnt_split);
-    LARGECHUNK_SIZE (bestp) -= units;
-    freep = bestp + LARGECHUNK_SIZE (bestp);
-    LARGECHUNK_SIZE (freep) = units;
-    LARGECHUNK_ARENA (freep) = arena;
-    LARGECHUNK_PREVSIZE (freep) = LARGECHUNK_SIZE (bestp);
-    LARGECHUNK_PREVSIZE (freep + units) = -1;
-    DIAG_SET_ALLOCPATTERN_LARGECHUNK (freep);
+    bestp = AllocateNewBinInArenaOfArenas( arena->arena_size);
+  
+    DIAG_INC( arena->bins);
+    DIAG_ADD( arena->size, arena->arena_size * UNIT_SIZE);
+    DIAG_SET_FREEPATTERN_LARGECHUNK(bestp);
 
-    return ((void *)(freep + 2));
+    LARGECHUNK_SIZE(bestp) = arena->arena_size - 2;
+    LARGECHUNK_PREVSIZE(bestp) = -1;
+    LARGECHUNK_ARENA(bestp) = arena;
+  
+    LARGECHUNK_NEXTFREE(bestp) = LARGECHUNK_NEXTFREE(arena->freelist);
+    LARGECHUNK_NEXTFREE(arena->freelist) = bestp;
+
+    /* LARGECHUNK_SIZE(bestp + LARGECHUNK_SIZE(bestp)) = -1; */
+  }
+  
+
+  /*
+   * Now, we do have a sufficiently large amount of memory, so we simply split
+   * the required chunk size from the top of it.
+   */
+
+  DIAG_INC( arena->cnt_split);
+  LARGECHUNK_SIZE(bestp) -= units;
+  freep = bestp + LARGECHUNK_SIZE(bestp);
+  LARGECHUNK_SIZE(freep) = units;
+  LARGECHUNK_ARENA(freep) = arena;
+  LARGECHUNK_PREVSIZE(freep) = LARGECHUNK_SIZE(bestp);
+  LARGECHUNK_PREVSIZE(freep + units) = -1;
+  DIAG_SET_ALLOCPATTERN_LARGECHUNK(freep);
+
+  return((void *)(freep+2));
 }
+#endif
 
 /******************************************************************************
  *
@@ -832,6 +986,19 @@ ExtendTopArenaWilderness (size_unit_t units, SAC_HM_arena_t *arena)
  *   create larger free chunks and satisfy the request for memory without
  *   extending the arena.
  *
+ *   general allocation strategy:
+ *
+ *    1. Check free list for an entry that is large enough with respect to
+ *       the memory request, but does not exceed this by more than a certain
+ *       threshold.
+ *    2. Split the requested amount of memory from a large enough entry of
+ *       the free list.
+ *    3. Split the requested amount of memory from the wilderness chunk.
+ *    4. Coalasce adjacent chunks of memory in the free list.
+ *    5. Coalasce the wilderness chunk with an adjacent free chunk from the
+ *       free list.
+ *    6. Extend the wilderness chunk by either requesting more memory from the
+ *       operating system (top arena) or by allocating a new bin (other arenas).
  *
  ******************************************************************************/
 
@@ -919,7 +1086,10 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
 
     /*
      * We haven't found any chunk of sufficient size, so we now try to split
-     * from the wilderness chunk.
+     * from the wilderness chunk. The wilderness chunk only exists in the top
+     * arena, otherwise arena->wilderness points to the first (dummy) entry of
+     * the free list. The size of this entry is always 0. In large chunk arenas,
+     * this step of the allocation process is automatically skipped.
      */
 
     wilderness = arena->wilderness;
@@ -929,7 +1099,7 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
         /*
          * The wilderness chunk is sufficiently large, so split the requested
          * amount of memory from the bottom of the wilderness chunk.
-         * This technique is slight less efficient than splitting from the top.
+         * This technique is slightly less efficient than splitting from the top.
          * However, in the case of the top arena´s wilderness chunk this allows
          * to extend the wilderness subsequently without unnecessary fragmentation.
          */
@@ -1004,6 +1174,7 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
                 continue;
             }
         } else {
+            lastp = freep;
             freep = LARGECHUNK_NEXTFREE (freep);
         }
     }
@@ -1011,11 +1182,15 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
     /*
      * We haven't found sufficient space by coalascing chunks in the free list.
      * We now try to coalasce the wilderness with the adjacent free chunks.
+     * An actual wilderness chunk only exists in the top arena,
+     * otherwise wilderness points to the first (dummy) entry of
+     * the free list. The prevsize of this entry is always 0. In large chunk arenas,
+     * this step of the allocation process is automatically skipped.
      */
 
-    while (LARGECHUNK_PREVSIZE (wilderness) > 0) {
+    if (LARGECHUNK_PREVSIZE (wilderness) > 0) {
         /*
-         * The chunk adjacent to the wilderness chunk is actually free.
+         * The chunk adjacent to the wilderness chunk is currently free.
          */
         new_wilderness = wilderness - LARGECHUNK_PREVSIZE (wilderness);
         LARGECHUNK_SIZE (new_wilderness) += LARGECHUNK_SIZE (wilderness);
@@ -1057,8 +1232,14 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
 
         wilderness = ExtendTopArenaWilderness (units, arena);
         goto split_wilderness;
-
     } else {
+        /*
+         * The given arena is not the top arena but a usual large chunk arena.
+         * So, we allocate a new bin in the arena of arenas, initialize it as
+         * one relatively large chunk of memory and insert it on top of the free
+         * list.
+         */
+
         bestp = AllocateNewBinInArenaOfArenas (arena->arena_size);
 
         DIAG_INC (arena->bins);
@@ -1072,8 +1253,6 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
         LARGECHUNK_NEXTFREE (bestp) = LARGECHUNK_NEXTFREE (arena->freelist);
         LARGECHUNK_NEXTFREE (arena->freelist) = bestp;
 
-        /* LARGECHUNK_SIZE(bestp + LARGECHUNK_SIZE(bestp)) = -1; */
-
         goto split;
     }
 }
@@ -1086,7 +1265,7 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
  * description:
  *
  *   This function de-allocates memory chunks in arenas of small chunks.
- *   Free chunks are inserted into the free list. There is no coalascing of
+ *   Free chunks are simply inserted into the free list. There is no coalascing of
  *   adjacent free chunks because such arenas contain only chunks of equal
  *   size.
  *
@@ -1120,7 +1299,7 @@ SAC_HM_FreeSmallChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
  *   including the top arena. Coalascing of adjacent free chunks is deferred
  *   until new memory requests can no longer be satisfied without.
  *
- *
+ *   The memory chunk to be freed is simply added to the arena's free list.
  *
  *
  *
