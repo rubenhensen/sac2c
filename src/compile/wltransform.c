@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/01/10 11:44:18  dkr
+ * WLBLOCKX_... macros used
+ *
  * Revision 3.10  2001/01/09 20:00:10  dkr
  * code brushed
  * support for naive compilation added
@@ -1610,8 +1613,8 @@ CompareWLnode (node *node1, node *node2, int outline)
                 /* here is no break missing! */
             case N_WLublock:
                 /* compare next dim */
-                result = CompareWLnode (WLNODE_NEXTDIM (node1), WLNODE_NEXTDIM (node2),
-                                        outline);
+                result = CompareWLnode (WLXBLOCK_NEXTDIM (node1),
+                                        WLXBLOCK_NEXTDIM (node2), outline);
                 break;
 
             case N_WLstride:
@@ -1920,8 +1923,8 @@ GetLcmUnroll (node *nodes, int dim)
             case N_WLblock:
                 /* here is no break missing! */
             case N_WLublock:
-                unroll = lcm (unroll, GetLcmUnroll (WLBLOCK_NEXTDIM (nodes), dim));
-                unroll = lcm (unroll, GetLcmUnroll (WLBLOCK_CONTENTS (nodes), dim));
+                unroll = lcm (unroll, GetLcmUnroll (WLXBLOCK_NEXTDIM (nodes), dim));
+                unroll = lcm (unroll, GetLcmUnroll (WLXBLOCK_CONTENTS (nodes), dim));
                 break;
 
             case N_WLstride:
@@ -3295,17 +3298,21 @@ BlockWL (node *stride, int dims, int *bv, bool unroll)
                                       || (WLSTRIDE_NEXT (contents) == NULL)),
                                      "more than one stride found");
 
-                        block
-                          = MakeWLblock (level, WLSTRIDE_DIM (contents),
-                                         WLSTRIDE_BOUND1 (contents),
-                                         WLSTRIDE_BOUND2 (contents),
-                                         bv[WLSTRIDE_DIM (contents)], NULL, NULL, NULL);
-
                         /*
                          * unrolling-blocking wanted?
                          */
                         if (unroll > 0) {
-                            NODE_TYPE (block) = N_WLublock;
+                            block = MakeWLublock (level, WLSTRIDE_DIM (contents),
+                                                  WLSTRIDE_BOUND1 (contents),
+                                                  WLSTRIDE_BOUND2 (contents),
+                                                  bv[WLSTRIDE_DIM (contents)], NULL, NULL,
+                                                  NULL);
+                        } else {
+                            block = MakeWLblock (level, WLSTRIDE_DIM (contents),
+                                                 WLSTRIDE_BOUND1 (contents),
+                                                 WLSTRIDE_BOUND2 (contents),
+                                                 bv[WLSTRIDE_DIM (contents)], NULL, NULL,
+                                                 NULL);
                         }
 
                         if (lastdim != NULL) {
@@ -3748,27 +3755,22 @@ CompareWLtrees (node *tree1, node *tree2)
                 case N_WLblock:
                     /* here is no break missing! */
                 case N_WLublock:
-                    /*
-                     * CAUTION: to prevent nice ;-) bugs in this code fragment
-                     *          WLBLOCK_CONTENTS and WLUBLOCK_CONTENTS must be
-                     *          equivalent (as currently realized in tree_basic.h)
-                     */
                     if (WLNODE_NEXTDIM (tmp1) != NULL) {
                         /*
                          * compare NEXTDIM (CONTENTS is NULL)
                          */
-                        DBUG_ASSERT ((WLBLOCK_CONTENTS (tmp1) == NULL),
+                        DBUG_ASSERT ((WLXBLOCK_CONTENTS (tmp1) == NULL),
                                      "data in NEXTDIM *and* CONTENTS found");
-                        DBUG_ASSERT ((WLBLOCK_CONTENTS (tmp2) == NULL),
+                        DBUG_ASSERT ((WLXBLOCK_CONTENTS (tmp2) == NULL),
                                      "data in NEXTDIM *and* CONTENTS found");
-                        equal
-                          = CompareWLtrees (WLNODE_NEXTDIM (tmp1), WLNODE_NEXTDIM (tmp2));
+                        equal = CompareWLtrees (WLXBLOCK_NEXTDIM (tmp1),
+                                                WLXBLOCK_NEXTDIM (tmp2));
                     } else {
                         /*
                          * compare CONTENTS (NEXTDIM is NULL)
                          */
-                        equal = CompareWLtrees (WLBLOCK_CONTENTS (tmp1),
-                                                WLBLOCK_CONTENTS (tmp2));
+                        equal = CompareWLtrees (WLXBLOCK_CONTENTS (tmp1),
+                                                WLXBLOCK_CONTENTS (tmp2));
                     }
                     break;
 
@@ -3850,23 +3852,23 @@ OptWL (node *nodes)
             case N_WLblock:
                 /* here is no break missing! */
             case N_WLublock:
-                if (WLBLOCK_NEXTDIM (nodes) != NULL) {
+                if (WLXBLOCK_NEXTDIM (nodes) != NULL) {
                     /*
                      * compare NEXTDIM (CONTENTS is NULL)
                      */
-                    DBUG_ASSERT ((WLBLOCK_CONTENTS (nodes) == NULL),
+                    DBUG_ASSERT ((WLXBLOCK_CONTENTS (nodes) == NULL),
                                  "data in NEXTDIM *and* CONTENTS found");
-                    comp1 = WLBLOCK_NEXTDIM (nodes) = OptWL (WLBLOCK_NEXTDIM (nodes));
+                    comp1 = WLXBLOCK_NEXTDIM (nodes) = OptWL (WLXBLOCK_NEXTDIM (nodes));
                     if (next != NULL) {
-                        comp2 = WLBLOCK_NEXTDIM (next);
+                        comp2 = WLXBLOCK_NEXTDIM (next);
                     }
                 } else {
                     /*
                      * compare CONTENTS (NEXTDIM is NULL)
                      */
-                    comp1 = WLBLOCK_CONTENTS (nodes) = OptWL (WLBLOCK_CONTENTS (nodes));
+                    comp1 = WLXBLOCK_CONTENTS (nodes) = OptWL (WLXBLOCK_CONTENTS (nodes));
                     if (next != NULL) {
-                        comp2 = WLBLOCK_CONTENTS (next);
+                        comp2 = WLXBLOCK_CONTENTS (next);
                     }
                 }
                 break;
@@ -4316,9 +4318,10 @@ NormalizeWLnodes (node *nodes, int *width)
             case N_WLblock:
                 /* here is no break missing! */
             case N_WLublock:
-                WLBLOCK_NEXTDIM (node) = NormalizeWLnodes (WLBLOCK_NEXTDIM (node), width);
-                WLBLOCK_CONTENTS (node)
-                  = NormalizeWLnodes (WLBLOCK_CONTENTS (node), width);
+                WLXBLOCK_NEXTDIM (node)
+                  = NormalizeWLnodes (WLXBLOCK_NEXTDIM (node), width);
+                WLXBLOCK_CONTENTS (node)
+                  = NormalizeWLnodes (WLXBLOCK_CONTENTS (node), width);
                 break;
 
             case N_WLstride:
@@ -6089,8 +6092,8 @@ IsHomSV (node *nodes, int dim, int sv)
             case N_WLblock:
                 /* here is no break missing! */
             case N_WLublock:
-                ishom &= IsHomSV (WLBLOCK_NEXTDIM (nodes), dim, sv);
-                ishom &= IsHomSV (WLBLOCK_CONTENTS (nodes), dim, sv);
+                ishom &= IsHomSV (WLXBLOCK_NEXTDIM (nodes), dim, sv);
+                ishom &= IsHomSV (WLXBLOCK_CONTENTS (nodes), dim, sv);
                 break;
 
             case N_WLstride:
