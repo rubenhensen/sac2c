@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1996/01/07 16:58:23  cg
+ * Revision 1.8  1996/01/22 17:31:38  cg
+ * modified InitPaths
+ *
+ * Revision 1.7  1996/01/07  16:58:23  cg
  * handling of temporary directories modified.
  * cccall.c now only needs 2 of these
  *
@@ -107,7 +110,7 @@ FindFile (pathkind p, char *name)
  *  description   :
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : ---
+ *  external funs : strcpy
  *  macros        : ---
  *
  *  remarks       :
@@ -120,10 +123,12 @@ InitPaths ()
     int i;
 
     DBUG_ENTER ("InitPaths");
+
     for (i = 0; i < 3; i++) {
         bufsize[i] = 1;
-        strcat (path_bufs[i], ".");
+        strcpy (path_bufs[i], ".");
     }
+
     DBUG_VOID_RETURN;
 }
 
@@ -147,6 +152,7 @@ AppendPath (pathkind p, char *path)
     int v, len;
 
     DBUG_ENTER ("AppendPath");
+
     len = (strlen (path) + 1);
     if (len + bufsize[p] >= MAX_PATH_LEN)
         v = 0;
@@ -157,6 +163,7 @@ AppendPath (pathkind p, char *path)
         bufsize[p] += len;
         v = 1;
     }
+
     DBUG_RETURN (v);
 }
 
