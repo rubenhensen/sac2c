@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/02/18 14:38:22  cg
+ * Added TmpVar names for ai_tab and fun2lac_tab.
+ *
  * Revision 2.13  2000/02/11 16:26:29  dkr
  * function StringConcat added
  *
@@ -611,6 +614,10 @@ TmpVar ()
         s = "synci";
     } else if (act_tab == syncopt_tab) {
         s = "synco";
+    } else if (act_tab == fun2lac_tab) {
+        s = "fun2lac";
+    } else if (act_tab == ai_tab) {
+        s = "fun2lac";
     } else {
         s = "unknown";
     }
