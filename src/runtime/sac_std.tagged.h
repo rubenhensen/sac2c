@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2002/10/07 23:41:19  dkr
+ * SAC_ND_A_SHAPE__SCL modified
+ *
  * Revision 3.26  2002/08/05 18:57:20  dkr
  * SAC_ND_A_MIRROR_... added
  *
@@ -235,7 +238,16 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_A_SIZE__SCL(nt) SAC_ND_A_MIRROR_SIZE (nt)
 
-#define SAC_ND_A_SHAPE__SCL(nt, dim) SAC_ND_A_MIRROR_SHAPE (nt, dim)
+#define SAC_ND_A_SHAPE__SCL(nt, dim) (-1) /* SAC_ICM_UNDEF() */
+                                          /*
+                                           * For convenience reasons, SAC_ND_A_SHAPE__SCL is *not* undefined but
+                                           * a dummy value. Now, the following code fragment works even for scalars:
+                                           *   for (i = 0; i < SAC_ND_A_DIM( nt); i++) {
+                                           *     ... SAC_ND_A_SHAPE( nt, i) ...
+                                           *   }
+                                           * Unfortunately, however, things will go wrong if SAC_ND_A_SHAPE is used
+                                           * on scalars in non-dead code...
+                                           */
 
 /*
  * AKS
