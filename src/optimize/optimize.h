@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.27  1995/06/02 11:36:15  asi
+ * Revision 1.28  1995/06/07 14:30:06  asi
+ * added GenerateMasks
+ *
+ * Revision 1.27  1995/06/02  11:36:15  asi
  * Added function inlining
  *
  * Revision 1.26  1995/05/26  12:46:20  asi
@@ -103,6 +106,7 @@
  * Global variables defined in main.c
  */
 extern int optimize;
+extern int sac_optimize;
 extern int opt_dcr;
 extern int opt_cf;
 extern int opt_wr;
@@ -110,6 +114,7 @@ extern int opt_lir;
 extern int opt_inl;
 extern int opt_unr;
 extern int optvar;
+extern int inlnum;
 /* main.c end */
 
 extern int dead_expr;
@@ -165,6 +170,7 @@ extern long ReadMask (long *mask, long number);
 
 extern node *OptTrav (node *arg_node, node *arg_info, int node_no);
 
+extern node *GenerateMasks (node *arg_node);
 extern node *OPTfundef (node *arg_node, node *arg_info);
 extern node *OPTarg (node *arg_node, node *arg_info);
 extern node *OPTvardec (node *arg_node, node *arg_info);
