@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.23  2004/10/11 14:51:32  ktr
+# Added rcphase.o
+#
 # Revision 3.22  2004/10/10 09:55:45  ktr
 # Added rcopt.o
 #
@@ -95,7 +98,7 @@ INCS = -I../global -I../tree -I../../inc -I../flatten -I../typecheck \
        -I../compile -I../constants -I../print -I../optimize
 
 
-all: allocation.o alloc.o refcounting.o reuse.o rcopt.o
+all: allocation.o alloc.o refcounting.o reuse.o rcopt.o rcphase.o
 
 
 %.o: %.c
