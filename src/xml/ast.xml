@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.46  2004/11/24 14:33:23  sah
+  added TR_hd
+
   Revision 1.45  2004/11/24 14:28:53  sbs
   ntc added
 
@@ -234,6 +237,23 @@
       <traversal id="DS" name="DeSerialize Traversal" default="sons" include="serialize_link.h" />
     </general>
     <phase id="scanparse" name="Parsing input file">
+      <traversal id="HD" name="Handle Dots" default="sons" include="handledots.h">
+        <user>
+	  <node name="Id" />
+	  <node name="With" />
+	  <node name="Genarray" />
+	  <node name="Modarray" />
+	  <node name="Fold" />
+	  <node name="Part" />
+	  <node name="Generator" />
+	  <node name="Dot" />
+	  <node name="Ap" />
+	  <node name="Prf" />
+	  <node name="Assign" />
+	  <node name="SetWL" />
+	  <node name="Id" />
+	</user>
+      </traversal>
       <traversal id="RSP" name="Resolve pragmas" default="sons" include="resolve_pragma.h">
         <user>
 	  <node name="Fundef" />
