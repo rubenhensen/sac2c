@@ -1,0 +1,25 @@
+/*
+ *
+ * $Log$
+ * Revision 1.1  1999/06/25 15:13:01  rob
+ * Initial revision
+ *
+ *
+ *
+ */
+
+/*
+ * info:
+ *   Names are presumed to be 3 characters long. This affects NT_OVERHEAD in types.h
+ *   Note that C_lastc and C_lastu must be the last entries in the lists.
+ */
+
+#if (ATTRIB == 1)
+
+NTIF (C_aks, "AKS"), NTIF (C_akd, "AKD"), NTIF (C_hid, "HID"), NTIF (C_scl, "SCL"),
+  NTIF (C_lastc, "")
+
+#elif (ATTRIB == 2)
+NTIF (C_unq, "UNQ"), NTIF (C_nuq, "NUQ"), NTIF (C_lastu, "")
+
+#endif
