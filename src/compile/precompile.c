@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2003/04/14 14:57:11  sbs
+ * comparison partner for strlen result casted to size_t
+ *
  * Revision 3.67  2002/10/29 19:49:30  dkr
  * PREC1fundef() modified for TAGGED_ARRAYS
  *
@@ -2572,7 +2575,7 @@ ReplaceSpecialCharacters (char *name)
     new_name = Malloc ((3 * strlen (name)) * sizeof (char));
     new_name[0] = '\0';
 
-    for (i = 0, j = 0; i < strlen (name); i++, j++) {
+    for (i = 0, j = 0; (size_t)i < strlen (name); i++, j++) {
         switch (name[i]) {
         case '.':
             tmp = "_DO";
