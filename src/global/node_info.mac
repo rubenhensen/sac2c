@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.123  1996/02/06 18:57:36  cg
- * added functions WSIBfloat and WSIBdouble for writesib_tab
+ * Revision 1.124  1996/02/11 20:19:01  sbs
+ * IdxArgs inserted
  *
+;; Revision 1.123  1996/02/06  18:57:36  cg
+;; added functions WSIBfloat and WSIBdouble for writesib_tab
+;;
 ;; Revision 1.122  1996/01/22  17:29:05  cg
 ;; added WSIBobjdef for writesib_tab
 ;;
@@ -514,7 +517,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
   NIF (N_arg, "N_arg", TravSons, FltnArgs, PrintArg, TravSons, OPTarg, TravSons, TravSons,
        FreeArg, TravSons, RCarg, CompArg, TravSons, DupDec, INLvar, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, PrintArg, OBJarg, TravSons, TravSons,
+       IdxArg, TravSons, TravSons, TravSons, PrintArg, OBJarg, TravSons, TravSons,
        TravSons, TravSons, WDECarg, UNQarg, TravSons, PRECarg, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons),
 
