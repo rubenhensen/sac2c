@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.26  1996/07/16 15:30:32  asi
+ * Revision 1.27  1997/05/14 08:13:50  sbs
+ * N_annotate's inserted around function apps
+ *
+ * Revision 1.26  1996/07/16  15:30:32  asi
  * macro GET_BASIC_TYPE changed: commented the part, where th array substructure
  * of the type structure had been duplicated, this is already done in DuplicateTypes
  *
@@ -90,6 +93,7 @@ extern node *TCfundef (node *arg_node, node *arg_info);
 extern node *TClet (node *arg_node, node *arg_info);
 extern node *TCreturn (node *arg_node, node *arg_info);
 extern node *TCcond (node *arg_node, node *arg_info);
+extern node *TCblock (node *arg_node, node *arg_info);
 extern node *TCassign (node *arg_node, node *arg_info);
 extern node *TCdo (node *arg_node, node *arg_info);
 extern node *TCwhile (node *arg_node, node *arg_info);
