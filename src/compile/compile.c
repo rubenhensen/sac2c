@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.66  2001/12/11 16:04:55  dkr
+ * GetDim() renamed to GetShapeDim()
+ * GetDim() added
+ *
  * Revision 3.65  2001/12/10 14:51:28  dkr
  * some functions moved to tree_compound.c
  *
@@ -373,7 +377,7 @@ MakeTypeNode (types *type)
 
     str = GetBasetypeStr (type);
 
-    if (GetDim (type) != 0) {
+    if (GetDim (type) > 0) {
         ret = (char *)Malloc (sizeof (char) * (strlen (str) + 3));
         strcpy (ret, str);
         strcat (ret, " *");
@@ -2391,7 +2395,7 @@ COMPObjdef (node *arg_node, node *arg_info)
     if (IsArray (OBJDEF_TYPE (arg_node))) {
         res_type = MakeBasetypeNode (OBJDEF_TYPE (arg_node));
         id_node = MakeId_Copy (OBJDEF_NAME (arg_node));
-        dim_node = MakeNum (DIM_NO_OFFSET (GetDim (OBJDEF_TYPE (arg_node))));
+        dim_node = MakeNum (GetDim (OBJDEF_TYPE (arg_node)));
 
         if ((OBJDEF_STATUS (arg_node) == ST_imported_mod)
             || (OBJDEF_STATUS (arg_node) == ST_imported_class)) {
@@ -2852,16 +2856,16 @@ COMPVardec (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("COMPVardec");
 
-    dim = GetDim (VARDEC_TYPE (arg_node));
+    dim = GetShapeDim (VARDEC_TYPE (arg_node));
 
     if (dim > SCALAR) {
         /*
          * array with known shape.
          */
-        icm = MakeIcm4 ("ND_KS_DECL_ARRAY", MakeBasetypeNode (VARDEC_TYPE (arg_node)),
-                        MakeId_Copy (VARDEC_NAME (arg_node)),
-                        MakeNum (GetDim (VARDEC_TYPE (arg_node))),
-                        Type2Exprs (VARDEC_TYPE (arg_node)));
+        icm
+          = MakeIcm4 ("ND_KS_DECL_ARRAY", MakeBasetypeNode (VARDEC_TYPE (arg_node)),
+                      MakeId_Copy (VARDEC_NAME (arg_node)), MakeNum (DIM_NO_OFFSET (dim)),
+                      Type2Exprs (VARDEC_TYPE (arg_node)));
     } else if (dim == UNKNOWN_SHAPE) {
         /*
          * array with unknown shape and dimension.
@@ -2874,7 +2878,7 @@ COMPVardec (node *arg_node, node *arg_info)
          */
         icm = MakeIcm3 ("ND_KD_DECL_ARRAY", MakeBasetypeNode (VARDEC_TYPE (arg_node)),
                         MakeId_Copy (VARDEC_NAME (arg_node)),
-                        MakeNum (KNOWN_DIM_OFFSET - dim));
+                        MakeNum (DIM_NO_OFFSET (dim)));
     } else if (IsNonUniqueHidden (VARDEC_TYPE (arg_node))) {
         /*
          * non-unique abstract data type (implicit type)
@@ -3724,7 +3728,7 @@ COMPPrfDim (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "N_id as arg of F_dim expected!");
 
     ret_node = MakeAssign (/* let_ids = dim( arg) */
-                           MakeLet (MakeNum (DIM_NO_OFFSET (GetDim (ID_TYPE (arg)))),
+                           MakeLet (MakeNum (GetDim (ID_TYPE (arg))),
                                     DupOneIds (INFO_COMP_LASTIDS (arg_info))),
                            NULL);
 
@@ -4318,7 +4322,7 @@ COMPPrfModarray (node *arg_node, node *arg_info)
         last_node = ret_node;
     } else {
         /* 'arg2' is a N_id node */
-        DBUG_ASSERT (((GetDim (ID_TYPE (arg2)) == 1)
+        DBUG_ASSERT (((GetShapeDim (ID_TYPE (arg2)) == 1)
                       && (GetBasetype (ID_TYPE (arg2)) == T_int)),
                      "2nd arg of F_modarray is a illegal indexing var!");
 
@@ -5619,7 +5623,7 @@ BuildIcmArgs_WL_OP1 (node *arg_node)
 
     DBUG_ENTER ("BuildIcmArgs_WL_OP1");
 
-    args = MakeExprs (MakeNum (DIM_NO_OFFSET (GetDim (IDS_TYPE (wlids)))),
+    args = MakeExprs (MakeNum (GetDim (IDS_TYPE (wlids))),
                       MakeExprs (DupIds_Id (wlids),
                                  MakeExprs (DupIds_Id (NWITH2_VEC (wlnode)),
                                             MakeExprs (MakeNum (NWITH2_DIMS (wlnode)),
@@ -6645,10 +6649,9 @@ COMPWLgridx (node *arg_node, node *arg_info)
                     DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "code expr is not a id");
 
                     icm_name = "WL_ASSIGN";
-                    icm_args
-                      = MakeExprs (MakeNum (DIM_NO_OFFSET (GetDim (ID_TYPE (cexpr)))),
-                                   MakeExprs (DupNode (cexpr),
-                                              BuildIcmArgs_WL_OP2 (arg_node)));
+                    icm_args = MakeExprs (MakeNum (GetDim (ID_TYPE (cexpr))),
+                                          MakeExprs (DupNode (cexpr),
+                                                     BuildIcmArgs_WL_OP2 (arg_node)));
                     /*
                      * we must decrement the RC of 'cexpr' (consumed argument)
                      */
