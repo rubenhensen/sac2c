@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2000/10/31 18:19:13  cg
+ * Added support for new function tag ST_exported.
+ *
  * Revision 1.9  2000/08/02 12:00:28  nmw
  * phase comment removed
  *
@@ -96,7 +99,8 @@ MCWfundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("MCWfundef");
 
-    if ((FUNDEF_STATUS (arg_node) == ST_regular)
+    if (((FUNDEF_STATUS (arg_node) == ST_regular)
+         || (FUNDEF_STATUS (arg_node) == ST_exported))
         && (FUNDEF_ATTRIB (arg_node) == ST_regular)) {
         /* export only functions defined in this module */
         DBUG_ASSERT ((FUNDEF_BODY (arg_node) != NULL),
