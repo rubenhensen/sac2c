@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/07/21 12:28:56  jhs
+ * Checking of max_sync_fold adjusted.
+ *
  * Revision 2.3  1999/07/20 16:59:44  jhs
  * Added counting and checking of FOLDCOUNT.
  *
@@ -111,7 +114,7 @@ MeltableSYNCs (node *first_sync, node *second_sync /* , ... */)
 
     result
       = result
-        & ((SYNC_FOLDCOUNT (first_sync) + SYNC_FOLDCOUNT (second_sync)) < max_sync_fold);
+        & ((SYNC_FOLDCOUNT (first_sync) + SYNC_FOLDCOUNT (second_sync)) <= max_sync_fold);
 
     if (result) {
         DBUG_PRINT ("SYNCO", ("folds ok"));
