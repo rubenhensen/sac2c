@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.171  2004/10/15 11:38:20  ktr
+ * Added printing for AVIS_ALIAS and ARG_ALIAS
+ *
  * Revision 3.170  2004/10/14 13:39:11  sbs
  * adjusted printing of Vinfo to new shape structures instead of types
  *
@@ -1623,6 +1626,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 {
     types *ret_types;
     char *type_str;
+    node *retexprs = NULL;
     bool print_sac = TRUE;
     bool print_c = FALSE;
     bool print_argtab = FALSE;
@@ -1668,7 +1672,17 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
         }
 
         ret_types = FUNDEF_TYPES (arg_node);
+        if (compiler_phase == PH_alloc) {
+            if (FUNDEF_RETURN (arg_node) != NULL) {
+                retexprs = RETURN_EXPRS (FUNDEF_RETURN (arg_node));
+            }
+        }
         while (ret_types != NULL) {
+            if ((compiler_phase == PH_alloc) && (retexprs != NULL)
+                && (ID_AVIS (EXPRS_EXPR (retexprs)) != NULL)
+                && (AVIS_ALIAS (ID_AVIS (EXPRS_EXPR (retexprs))))) {
+                fprintf (outfile, "alias ");
+            }
             type_str = Type2String (ret_types, 0, FALSE);
             fprintf (outfile, "%s", type_str);
             type_str = Free (type_str);
@@ -1982,6 +1996,17 @@ PrintArg (node *arg_node, info *arg_info)
 
     DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, " **%d:", ARG_VARNO (arg_node)););
 
+    if (compiler_phase == PH_alloc) {
+        if (ARG_AVIS (arg_node) != NULL) {
+            if (ARG_ALIAS (arg_node)) {
+                fprintf (outfile, " ALIAS");
+            }
+            if (AVIS_ALIAS (ARG_AVIS (arg_node))) {
+                fprintf (outfile, " alias");
+            }
+        }
+    }
+
     type_str = Type2String (ARG_TYPE (arg_node), 0, TRUE);
     fprintf (outfile, " %s", type_str);
     type_str = Free (type_str);
@@ -2037,6 +2062,12 @@ PrintVardec (node *arg_node, info *arg_info)
     DBUG_EXECUTE ("PRINT_MASKS", fprintf (outfile, "**%d: ", VARDEC_VARNO (arg_node)););
 
     if ((VARDEC_ICM (arg_node) == NULL) || (NODE_TYPE (VARDEC_ICM (arg_node)) != N_icm)) {
+        if (compiler_phase == PH_alloc) {
+            if ((VARDEC_AVIS (arg_node) != NULL)
+                && (AVIS_ALIAS (VARDEC_AVIS (arg_node)))) {
+                fprintf (outfile, "alias ");
+            }
+        }
         type_str = Type2String (VARDEC_TYPE (arg_node), 0, TRUE);
         fprintf (outfile, "%s ", type_str);
         type_str = Free (type_str);
