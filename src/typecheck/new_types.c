@@ -1,7 +1,53 @@
 /*
  * $Log$
+ * Revision 1.2  1999/10/20 15:45:10  sbs
+ * some code brushing done.
+ *
  * Revision 1.1  1999/10/20 12:52:00  sbs
  * Initial revision
+ *
+ *
+ */
+
+/*
+ * This module implements a new abstract data type for representing
+ * types. This file describes the interface to that module.
+ * Unfortunately, it is not yet used in all parts of the compiler 8-(.
+ * In fact, the only part where it is used is the new typechecker.
+ * In all other parts of the compiler, the structure "types" which in the
+ * long term should be replaced by ntype, holds this information.
+ * One of the reasons for this intended change of data structures is
+ * that the types-structure often carries more than just type information
+ * AND it is not flexible enough for the intended extensions of the type
+ * system concerning union-types, type variables, constant types or higher-
+ * order functions.
+ * Therefore, this module also implements some conversion routines, e.g.
+ *   TYOldType2Type, and TYType2OldType.
+ *
+ *
+ * The central idea of the ntype is that all types are represented by recursively
+ * nested type-constructors with varying arity.
+ * All "scalar types", e.g., pre-defined types or user-defined types, are
+ * represented by typeconstructors of arity 0, e.g. TC_simple or TC_user.
+ * Further information concerning type constructors can be found in
+ *     type_constructor_info.mac    .
+ *
+ *
+ * For avoiding un-intended pointer sharing and for avoiding memory leaks
+ * we establish the following rules:
+ *
+ * - whenever an ntype is given as argument, it will be inspected only!
+ *   Neither the pointer to it nor any pointer to a sub structure will be
+ *   returned or used within a data structure that serves as a result!
+ *   There are EXACTLY TWO CLASSES OF FUNCTIONS that are an EXEPTION OF
+ *   THIS RULE: - the MAKExyz - functions for generating ntype structures
+ *              - the GETxyz - functions for extracting components of ntypes
+ *
+ * - The only functions for freeing an ntype constructor are
+ *     TYFreeTypeConstructor  for freeing the topmost constructor only, and
+ *     TYFreeType             for freeing the entire type.
+ *
+ * - If the result is an ntype structure, it has been freshly allocated!
  *
  *
  */
@@ -15,28 +61,51 @@
 
 #include "shape.h"
 
+/*
+ * enum type for type constructors:
+ */
+
 typedef enum {
 #define TCITypeConstr(a) a
 #include "type_constructor_info.mac"
 } typeconstr;
 
-typedef struct AKD {
+/*
+ * Since all type constructors may have different attributes,
+ * for each type constructor TC_xx that requires at least two attributes
+ * a new type attr_xx is defined:
+ */
+
+typedef struct ATTR_AKD {
     shape *shp;
     int dots;
-} akd;
+} attr_akd;
 
-typedef struct SYMBOL {
+typedef struct ATTR_SYMBOL {
     char *mod;
     char *name;
-} symbol;
+} attr_symbol;
+
+/*
+ * In order to have a uniform type for ALL type constructors, we define
+ * a union type over all potential attributes:
+ */
 
 typedef union {
     simpletype a_simple;
-    symbol a_symbol;
+    attr_symbol a_symbol;
     usertype a_user;
     shape *a_aks;
-    akd a_akd;
+    attr_akd a_akd;
 } typeattr;
+
+/*
+ * Finally, the new type structure "ntype" can be defined:
+ *  it consists of - a type constructor tag
+ *                 - the arity of the constructor
+ *                 - its respective attribute
+ *                 - a pointer to a list of (arity-many) son-constructors
+ */
 
 typedef struct NTYPE {
     typeconstr typeconstr;
@@ -45,15 +114,29 @@ typedef struct NTYPE {
     struct NTYPE **sons;
 } ntype;
 
+/*
+ * Now, we include the own interface! The reason fot this is twofold:
+ * First, it ensures consistency betweeen the interface and the
+ * implementation and second, it serves as a forward declaration for all
+ * functions.
+ * The only problem this technique has is that we either have to "export"
+ * the definition of the the type "ntype" (which we want to avoid for
+ * software engeneering reasons) or we have to include all but the
+ *   typedef void ntype;
+ * We achieve the later by using the compilation flag "SELF"
+ */
+
 #define SELF
 #include "new_types.h"
 
 #include "user_types.h" /* has to be included here since it includes new_types.h! */
 
-static char *dbug_str[] = {
-#define TCIDbugString(a) a
-#include "type_constructor_info.mac"
-};
+/*
+ * For internal usage within this module only, we define the following
+ * shape access macros:
+ *
+ * First, we define some basic ntype-access-macros:
+ */
 
 #define NTYPE_CON(n) (n->typeconstr)
 #define NTYPE_ARITY(n) (n->arity)
@@ -79,6 +162,20 @@ static char *dbug_str[] = {
 #define AUD_BASE(n) (n->sons[0])
 #define UNION_MEMBER(n, i) (n->sons[i])
 
+/*
+ * For dbug-output purposes we keep an array of strings for the individual
+ * type constructors:
+ */
+
+static char *dbug_str[] = {
+#define TCIDbugString(a) a
+#include "type_constructor_info.mac"
+};
+
+/***
+ *** local helper functions:
+ ***/
+
 /******************************************************************************
  *
  * function:
@@ -95,14 +192,25 @@ MakeNtype (typeconstr con, int arity)
 {
     ntype *res;
 
+    DBUG_ENTER ("MakeNtype");
+
     res = (ntype *)MALLOC (sizeof (ntype));
     NTYPE_CON (res) = con;
     NTYPE_ARITY (res) = arity;
     if (NTYPE_ARITY (res) > 0) {
         NTYPE_SONS (res) = (ntype **)MALLOC (sizeof (ntype *) * NTYPE_ARITY (res));
+    } else {
+        NTYPE_SONS (res) = NULL;
     }
-    return (res);
+
+    DBUG_RETURN (res);
 }
+
+/***
+ *** Functions for creating and inspecting ntypes (MakeXYZ, GetXYZ):
+ ***   these functions are the sole functions that use arg-pointers as
+ ***   part of their result!
+ ***/
 
 /******************************************************************************
  *
@@ -121,9 +229,12 @@ TYMakeSimpleType (simpletype base)
 {
     ntype *res;
 
+    DBUG_ENTER ("TYMakeSimpleType");
+
     res = MakeNtype (TC_simple, 0);
     SIMPLE_TYPE (res) = base;
-    return (res);
+
+    DBUG_RETURN (res);
 }
 
 ntype *
@@ -131,10 +242,13 @@ TYMakeSymbType (char *name, char *mod)
 {
     ntype *res;
 
+    DBUG_ENTER ("TYMakeSymbType");
+
     res = MakeNtype (TC_symbol, 0);
     SYMBOL_MOD (res) = mod;
     SYMBOL_NAME (res) = name;
-    return (res);
+
+    DBUG_RETURN (res);
 }
 
 ntype *
@@ -142,9 +256,12 @@ TYMakeUserType (usertype udt)
 {
     ntype *res;
 
+    DBUG_ENTER ("TYMakeUserType");
+
     res = MakeNtype (TC_user, 0);
     USER_TYPE (res) = udt;
-    return (res);
+
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -161,15 +278,17 @@ TYMakeUserType (usertype udt)
 char *
 TYGetName (ntype *symb)
 {
+    DBUG_ENTER ("TYGetName");
     DBUG_ASSERT ((NTYPE_CON (symb) == TC_symbol), "TYGetName applied to nonsymbol-type!");
-    return (SYMBOL_NAME (symb));
+    DBUG_RETURN (SYMBOL_NAME (symb));
 }
 
 char *
 TYGetMod (ntype *symb)
 {
+    DBUG_ENTER ("TYGetMod");
     DBUG_ASSERT ((NTYPE_CON (symb) == TC_symbol), "TYGetMod applied to nonsymbol-type!");
-    return (SYMBOL_MOD (symb));
+    DBUG_RETURN (SYMBOL_MOD (symb));
 }
 
 /******************************************************************************
@@ -189,10 +308,13 @@ TYMakeAKS (ntype *scalar, shape *shp)
 {
     ntype *res;
 
+    DBUG_ENTER ("TYMakeAKS");
+
     res = MakeNtype (TC_aks, 1);
     AKS_SHP (res) = shp;
     AKS_BASE (res) = scalar;
-    return (res);
+
+    DBUG_RETURN (res);
 }
 
 ntype *
@@ -200,11 +322,14 @@ TYMakeAKD (ntype *scalar, int dots, shape *shp)
 {
     ntype *res;
 
+    DBUG_ENTER ("TYMakeAKD");
+
     res = MakeNtype (TC_akd, 1);
     AKD_DOTS (res) = dots;
     AKD_SHP (res) = shp;
     AKD_BASE (res) = scalar;
-    return (res);
+
+    DBUG_RETURN (res);
 }
 
 ntype *
@@ -212,9 +337,12 @@ TYMakeAUD (ntype *scalar)
 {
     ntype *res;
 
+    DBUG_ENTER ("TYMakeAUD");
+
     res = MakeNtype (TC_aud, 1);
     AUD_BASE (res) = scalar;
-    return (res);
+
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -235,6 +363,7 @@ TYGetDim (ntype *array)
     shape *shp;
     int res;
 
+    DBUG_ENTER ("TYGetDim");
     DBUG_ASSERT ((NTYPE_CON (array) == TC_aks) || (NTYPE_CON (array) == TC_akd),
                  "TYGetDim applied to ther than AKS or AKD type!");
     if (NTYPE_CON (array) == TC_aks) {
@@ -247,7 +376,8 @@ TYGetDim (ntype *array)
             res = AKD_DOTS (array);
         }
     }
-    return (res);
+
+    DBUG_RETURN (res);
 }
 
 shape *
@@ -255,6 +385,7 @@ TYGetShape (ntype *array)
 {
     shape *res;
 
+    DBUG_ENTER ("TYGetShape");
     DBUG_ASSERT ((NTYPE_CON (array) == TC_aks) || (NTYPE_CON (array) == TC_akd),
                  "TYGetShape applied to ther than AKS or AKD type!");
     if (NTYPE_CON (array) == TC_aks) {
@@ -262,35 +393,42 @@ TYGetShape (ntype *array)
     } else {
         res = AKD_SHP (array);
     }
-    return (res);
+
+    DBUG_RETURN (res);
 }
 
 ntype *
 TYGetScalar (ntype *array)
 {
+    DBUG_ENTER ("TYGetScalar");
     DBUG_ASSERT ((NTYPE_CON (array) == TC_aks) || (NTYPE_CON (array) == TC_akd)
                    || (NTYPE_CON (array) == TC_aud),
                  "TYGetScalar applied to ther than array type!");
-
-    return (NTYPE_SON (array, 0));
+    DBUG_RETURN (NTYPE_SON (array, 0));
 }
 
 /******************************************************************************
  *
  * function:
- *    ntype * TYMakeUnion( ntype *t1, ntype *t2)
+ *    ntype * TYMakeUnionType( ntype *t1, ntype *t2)
  *
  * description:
- *  functions for creating union-types.
+ *  functions for creating union-types. Note here, that this function, like
+ *  all MakeXYZ and GetXYZ functions consumes its arguments!!
+ *  Since the representation of the union type constructor does not allow the
+ *  two argument constructors to be re-used iff the are already union-constructors,
+ *  those constructors are freed!!
  *
  ******************************************************************************/
 
 ntype *
-TYMakeUnion (ntype *t1, ntype *t2)
+TYMakeUnionType (ntype *t1, ntype *t2)
 {
     ntype *res;
     int arity = 2, pos = 0;
     int i;
+
+    DBUG_ENTER ("TYMakeUnionType");
 
     if (NTYPE_CON (t1) == TC_union) {
         arity += NTYPE_ARITY (t1) - 1;
@@ -317,7 +455,7 @@ TYMakeUnion (ntype *t1, ntype *t2)
         UNION_MEMBER (res, pos++) = t2;
     }
 
-    return (res);
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -337,6 +475,10 @@ ntype *  TYMakeFunType( ntype *arg, ntype *res)
 ntype *  TYMakeProdType( ntype *res)
 void     TYInsertIntoProdType( ntype *prod, ntype *res)
 #endif
+
+/***
+ *** Functions inspecting types / matching on specific types:
+ ***/
 
 /******************************************************************************
  *
@@ -360,61 +502,71 @@ void     TYInsertIntoProdType( ntype *prod, ntype *res)
 bool
 TYIsSimple (ntype *type)
 {
-    return (NTYPE_CON (type) == TC_simple);
+    DBUG_ENTER ("TYIsSimple");
+    DBUG_RETURN (NTYPE_CON (type) == TC_simple);
 }
 
 bool
 TYIsUser (ntype *type)
 {
-    return (NTYPE_CON (type) == TC_user);
+    DBUG_ENTER ("TYIsUser");
+    DBUG_RETURN (NTYPE_CON (type) == TC_user);
 }
 
 bool
 TYIsSymb (ntype *type)
 {
-    return (NTYPE_CON (type) == TC_symbol);
+    DBUG_ENTER ("TYIsSmb");
+    DBUG_RETURN (NTYPE_CON (type) == TC_symbol);
 }
 
 bool
 TYIsScalar (ntype *type)
 {
-    return (NTYPE_ARITY (type) == 0);
+    DBUG_ENTER ("TYIsScalar");
+    DBUG_RETURN (NTYPE_ARITY (type) == 0);
 }
 
 bool
 TYIsAKS (ntype *type)
 {
-    return (NTYPE_CON (type) == TC_aks);
+    DBUG_ENTER ("TYIsAKS");
+    DBUG_RETURN (NTYPE_CON (type) == TC_aks);
 }
 
 bool
 TYIsAKD (ntype *type)
 {
-    return (NTYPE_CON (type) == TC_akd);
+    DBUG_ENTER ("TYIsAKD");
+    DBUG_RETURN (NTYPE_CON (type) == TC_akd);
 }
 
 bool
 TYIsAUD (ntype *type)
 {
-    return (NTYPE_CON (type) == TC_aud);
+    DBUG_ENTER ("TYIsAUD");
+    DBUG_RETURN (NTYPE_CON (type) == TC_aud);
 }
 
 bool
 TYIsUnion (ntype *type)
 {
-    return (NTYPE_CON (type) == TC_union);
+    DBUG_ENTER ("TYIsUnion");
+    DBUG_RETURN (NTYPE_CON (type) == TC_union);
 }
 
 bool
 TYIsProd (ntype *type)
 {
-    return (NTYPE_CON (type) == TC_prod);
+    DBUG_ENTER ("TYIsProd");
+    DBUG_RETURN (NTYPE_CON (type) == TC_prod);
 }
 
 bool
 TYIsFun (ntype *type)
 {
-    return (NTYPE_CON (type) == TC_fun);
+    DBUG_ENTER ("TYIsFun");
+    DBUG_RETURN (NTYPE_CON (type) == TC_fun);
 }
 
 /******************************************************************************
@@ -431,8 +583,14 @@ TYIsFun (ntype *type)
 bool
 TYIsAKSSymb (ntype *type)
 {
-    return ((NTYPE_CON (type) == TC_aks) && (NTYPE_CON (AKS_BASE (type)) == TC_symbol));
+    DBUG_ENTER ("TYIsAKSSymb");
+    DBUG_RETURN ((NTYPE_CON (type) == TC_aks)
+                 && (NTYPE_CON (AKS_BASE (type)) == TC_symbol));
 }
+
+/***
+ *** functions that check for the relationship of types:
+ ***/
 
 /******************************************************************************
  *
@@ -447,8 +605,13 @@ TYIsAKSSymb (ntype *type)
 CT_res
 TYCmpTypes (ntype *t1, ntype *t2)
 {
-    return (TY_unrel);
+    DBUG_ENTER ("TYCmpTypes");
+    DBUG_RETURN (TY_unrel);
 }
+
+/***
+ *** functions for handling types in general:
+ ***/
 
 /******************************************************************************
  *
@@ -466,6 +629,8 @@ TYCmpTypes (ntype *t1, ntype *t2)
 void
 TYFreeTypeConstructor (ntype *type)
 {
+    DBUG_ENTER ("TYFreeTypeConstructor");
+
     switch (NTYPE_CON (type)) {
     case TC_symbol:
         FREE (SYMBOL_MOD (type));
@@ -488,6 +653,8 @@ TYFreeTypeConstructor (ntype *type)
         DBUG_ASSERT ((0 == 1), "illegal type constructor!");
     }
     FREE (type);
+
+    DBUG_VOID_RETURN;
 }
 
 void
@@ -495,10 +662,14 @@ TYFreeType (ntype *type)
 {
     int i;
 
+    DBUG_ENTER ("TYFreeType");
+
     for (i = 0; i < NTYPE_ARITY (type); i++) {
         TYFreeType (NTYPE_SON (type, i));
     }
     TYFreeTypeConstructor (type);
+
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
@@ -517,6 +688,8 @@ TYCopyType (ntype *type)
 {
     ntype *res;
     int i, n;
+
+    DBUG_ENTER ("TYCopyType");
 
     /*
      * First, we copy the type node itself!
@@ -556,7 +729,7 @@ TYCopyType (ntype *type)
         NTYPE_SON (res, i) = TYCopyType (NTYPE_SON (type, i));
     }
 
-    return (res);
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -565,13 +738,15 @@ TYCopyType (ntype *type)
  *    char * TYType2String( ntype *type)
  *
  * description:
+ *    NOT YET IMPLEMENTED!
  *
  ******************************************************************************/
 
 char *
 TYType2String (ntype *type)
 {
-    return ("not yet done");
+    DBUG_ENTER ("TYType2String");
+    DBUG_RETURN ("not yet done");
 }
 
 /******************************************************************************
@@ -580,6 +755,8 @@ TYType2String (ntype *type)
  *    char * TYType2DebugString( ntype *type)
  *
  * description:
+ *   constructs a string that represents the internal type constructor
+ *   structure of the type!
  *
  ******************************************************************************/
 
@@ -590,6 +767,8 @@ TYType2DebugString (ntype *type)
     char *tmp = &buf[0];
     char *tmp_str;
     int i, n;
+
+    DBUG_ENTER ("TYType2DebugString");
 
     tmp += sprintf (tmp, "%s{ ", dbug_str[NTYPE_CON (type)]);
 
@@ -635,7 +814,7 @@ TYType2DebugString (ntype *type)
     }
     tmp += sprintf (tmp, "}");
 
-    return (StringCopy (buf));
+    DBUG_RETURN (StringCopy (buf));
 }
 
 /******************************************************************************
@@ -644,7 +823,9 @@ TYType2DebugString (ntype *type)
  *    ntype * TYNestTypes( ntype *outer, ntype *inner)
  *
  * description:
- *    nests (array) types.
+ *    nests (array) types. Since this function is NOT considered a type
+ *    constructing (MakeXYZ) function, it does NOT re-use the argument types
+ *    but inspects them only!
  *
  ******************************************************************************/
 
@@ -652,6 +833,8 @@ ntype *
 TYNestTypes (ntype *outer, ntype *inner)
 {
     ntype *res;
+
+    DBUG_ENTER ("TYNestTypes");
 
     if (NTYPE_CON (outer) == TC_aks) {
         /*
@@ -718,7 +901,8 @@ TYNestTypes (ntype *outer, ntype *inner)
          */
         res = TYCopyType (inner);
     }
-    return (res);
+
+    DBUG_RETURN (res);
 }
 
 /******************************************************************************
@@ -781,7 +965,7 @@ TYOldType2Type (types *old, type_conversion_flag flag)
     } else if (TYPES_DIM (old) == UNKNOWN_SHAPE) {
         res = TYMakeAUD (res);
     } else if (TYPES_DIM (old) == ARRAY_OR_SCALAR) {
-        res = TYMakeUnion (TYMakeAUD (res), res);
+        res = TYMakeUnionType (TYMakeAUD (res), res);
     } else { /* TYPES_DIM( old) == SCALAR */
     }
 
@@ -797,6 +981,7 @@ TYOldType2Type (types *old, type_conversion_flag flag)
  *    types * TYType2OldType( ntype * new)
  *
  * description:
+ *   NOT YET IMPLEMENTED!
  *
  ******************************************************************************/
 
@@ -804,5 +989,6 @@ types *
 TYType2OldType (ntype *new)
 {
 
-    return (MakeType (T_int, 0, NULL, "no yet", "implemented"));
+    DBUG_ENTER ("TYType2OldType");
+    DBUG_RETURN (MakeType (T_int, 0, NULL, "no yet", "implemented"));
 }

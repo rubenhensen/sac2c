@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  1999/10/20 15:45:10  sbs
+ * some code brushing done.
+ *
  * Revision 1.1  1999/10/20 12:52:13  sbs
  * Initial revision
  *
@@ -20,20 +23,23 @@
  * Further information concerning type constructors can be found in
  *     type_constructor_info.mac    .
  *
+ *
  * For avoiding un-intended pointer sharing and for avoiding memory leaks
  * we establish the following rules:
- * - whenever a ntype is given as argument, neither the pointer to it nor
- *   any potential sub structure will be copied in any data structure
- *   that serves as a result!
- *   THE SOLE EXCEPTION OF THIS RULE are the "MakeXYZ" functions for type
- *   constructors XYZ, which take other ntype nodes as son nodes. These
- *   will use the argument pointers directly. Nevertheless, any other
- *   pointer arguments given to these functions, e.g. strings, will NOT
- *   be used directly, but the structures behind them will be copied instead!
+ *
+ * - whenever an ntype is given as argument, it will be inspected only!
+ *   Neither the pointer to it nor any pointer to a sub structure will be
+ *   returned or used within a data structure that serves as a result!
+ *   There are EXACTLY TWO CLASSES OF FUNCTIONS that are an EXEPTION OF
+ *   THIS RULE: - the MAKExyz - functions for generating ntype structures
+ *              - the GETxyz - functions for extracting components of ntypes
+ *
  * - The only functions for freeing an ntype constructor are
  *     TYFreeTypeConstructor  for freeing the topmost constructor only, and
  *     TYFreeType             for freeing the entire type.
- * - If the result is a ntype structure, it has been dynamically allocated!
+ *
+ * - If the result is an ntype structure, it has been freshly allocated!
+ *
  *
  */
 
@@ -72,19 +78,20 @@ extern ntype *TYGetScalar (ntype *array);
 /*
  * Union Types: Union
  */
-extern ntype *TYMakeUnion (ntype *t1, ntype *t2);
+extern ntype *TYMakeUnionType (ntype *t1, ntype *t2);
 
 #if 0
+/* NOT YET IMPLEMENTED! */
 /*
  * Types for handling functions: Fun / Prod
  */
 extern ntype *  TYMakeFunType( ntype *arg, ntype *res);
 extern ntype *  TYMakeProdType( ntype *res);
-extern void     TYInsertIntoProdType( ntype *prod, ntype *res);
+extern void     TYExtendProdType( ntype *prod, ntype *res);
 #endif
 
 /*
- * Some predicates for matching types:
+ * Some predicates for inspecting types:
  */
 extern bool TYIsSimple (ntype *);
 extern bool TYIsUser (ntype *);
