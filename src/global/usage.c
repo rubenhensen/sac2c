@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2004/11/25 14:49:37  skt
+ * solved last naming problems
+ *
  * Revision 3.66  2004/11/25 13:34:29  skt
  * big compiler brush during SACDevCampDK 2k4
  *
@@ -311,7 +314,7 @@ USGprintUsage ()
     printf ("    -maxspec <n>       Individual functions will be specialized at most <n> "
             "times.\n"
             "                         (default: %d)\n",
-            global.max_overload);
+            global.maxspec);
 
     printf (
       "\n\nOPTIMIZATION OPTIONS:\n\n"
