@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.12  1999/06/23 10:28:07  rob
+# Insert make target of sac2crc.
+#
 # Revision 2.11  1999/06/02 16:55:39  dkr
 # path to main_args.o is now correct
 #
@@ -71,7 +74,7 @@ OBJS := $(patsubst %.c,%.o,$(wildcard libsac_*.c)) libsac_trace_mt.o\
 .PHONY: all tar
 
 
-all:  libsac.a CacheSimAnalyser
+all:  libsac.a CacheSimAnalyser sac2crc
 
 tar: runtime.tar
 
@@ -93,6 +96,11 @@ runtime.tar: *.h sac2crc.README
 
 deps:
 	makedepend $(INCS) *.c
+
+sac2crc: 
+	if [ ! -f sac2crc ]; \
+	  then ln -s sac2crc.$(OS) sac2crc; \
+	fi
 
 clean:
 	$(RM) *.o libsac.a *.bak *.old *~
@@ -163,3 +171,6 @@ libsac_trace.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 libsac_trace.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 libsac_trace.o: /usr/include/stdarg.h /usr/include/varargs.h
 libsac_trace.o: /usr/include/string.h
+testmac.o: sac.h sac_boundcheck.h sac_malloc.h sac_misc.h sac_message.h
+testmac.o: sac_bool.h sac_icm.h sac_std.h sac_idx.h sac_prf.h sac_mt.h
+testmac.o: sac_wl.h sac_trace.h sac_profile.h sac_cachesim.h
