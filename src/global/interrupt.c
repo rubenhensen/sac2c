@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/10/22 11:09:13  dkr
+ * CompilerErrorBreak() finished by an explizit exit() now
+ *
  * Revision 2.2  1999/05/12 14:30:40  cg
  * converted to new build variables, included from build.h
  *
@@ -89,7 +92,7 @@ CompilerErrorBreak (int sig)
             fclose (error_file);
         }
     }
-    CleanUp ();
+    EXIT (0);
 }
 
 /******************************************************************************
