@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2003/06/19 09:06:08  sbs
+ * changed NTCBASIC. In case COAST2Constant cannot create a proper
+ * constant node (which whas not checked until now(!) ), an
+ * AKS is created instead of an AKV!
+ *
  * Revision 3.30  2003/06/17 10:53:14  dkr
  * ; removed from error message
  *
@@ -143,6 +148,7 @@
 #include "ct_with.h"
 #include "type_errors.h"
 #include "specialize.h"
+#include "constants.h"
 
 /*
  * OPEN PROBLEMS:
@@ -1353,10 +1359,16 @@ NTCid (node *arg_node, node *arg_info)
 #define NTCBASIC(name, base)                                                             \
     node *NTC##name (node *arg_node, node *arg_info)                                     \
     {                                                                                    \
+        constant *cv;                                                                    \
         DBUG_ENTER ("NTC" #name);                                                        \
                                                                                          \
-        INFO_NTC_TYPE (arg_info)                                                         \
-          = TYMakeAKV (TYMakeSimpleType (base), COAST2Constant (arg_node));              \
+        cv = COAST2Constant (arg_node);                                                  \
+        if (cv == NULL) {                                                                \
+            INFO_NTC_TYPE (arg_info)                                                     \
+              = TYMakeAKS (TYMakeSimpleType (base), SHCreateShape (0));                  \
+        } else {                                                                         \
+            INFO_NTC_TYPE (arg_info) = TYMakeAKV (TYMakeSimpleType (base), cv);          \
+        }                                                                                \
         DBUG_RETURN (arg_node);                                                          \
     }
 
