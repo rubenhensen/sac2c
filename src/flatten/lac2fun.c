@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/10/16 11:57:54  dkr
+ * cpp flag RESOLVE_REFERENCES added
+ *
  * Revision 3.20  2002/09/05 21:16:28  dkr
  * ooops... another bug in GetLacFunName() fixed...
  *
@@ -248,8 +251,13 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFM
     tmp_mask = DFMRemoveMask (tmp_mask);
 
     /*
-     * Convert parameters from call-by-reference into call-by-value
-     *  because they have already been resolved!
+     * Iff InferDFMs() marks reference parameters as IN-parameters only,
+     * the ST_reference attribute must be preserved here!
+     */
+#ifdef RESOLVE_REFERENCES
+    /*
+     * Convert parameters from call-by-reference into call-by-value because
+     * they have already been resolved by InferDFMs()!
      */
     tmp = args;
     while (tmp != NULL) {
@@ -263,6 +271,7 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFM
         }
         tmp = ARG_NEXT (tmp);
     }
+#endif
 
     /*
      * All args with attrib 'ST_was_reference' which are no out-vars must have
@@ -321,9 +330,9 @@ MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFM
     while (tmp != NULL) {
         if (ARG_ATTRIB (tmp) == ST_was_reference) {
             /*
-             * CAUTION: the arg-node is a new one not contained in the relevant
-             * DFM-base! Therefore we must search for ARG_NAME instead of the pointer
-             * itself!
+             * CAUTION:
+             * the arg-node is a new one not contained in the relevant DFM-base!
+             * Therefore we must search for ARG_NAME instead of the pointer itself!
              */
             if (!DFMTestMaskEntry (out, ARG_NAME (tmp), NULL)) {
                 ARG_ATTRIB (tmp) = ST_unique;

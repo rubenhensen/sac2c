@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2002/10/16 11:57:00  dkr
+ * cpp flag RESOLVE_REFERENCES added
+ *
  * Revision 1.25  2002/09/06 10:16:48  dkr
  * fixed a bug in handling of IDXS2OFFSET icm
  *
@@ -253,113 +256,6 @@ DbugPrintMasks (node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *DefinedVar( node *arg_info, node *decl)
- *
- * description:
- *   Updates the masks of 'arg_info' according to a defining occurence of a
- *   variable. The variable is specified as a pointer to the declaration.
- *
- ******************************************************************************/
-
-static node *
-DefinedVar (node *arg_info, node *decl)
-{
-    DBUG_ENTER ("DefinedVar");
-
-    DBUG_ASSERT ((decl != NULL),
-                 "Variable declaration missing! "
-                 "For the time being Lac2fun() can be used after type checking"
-                 " only!");
-
-    if ((NODE_TYPE (decl) != N_vardec) && (NODE_TYPE (decl) != N_arg)) {
-        DBUG_ASSERT ((NODE_TYPE (decl) == N_objdef),
-                     "Declaration is neither a N_arg/N_vardec node nor a N_objdef"
-                     " node");
-    } else {
-        DFMSetMaskEntryClear (INFO_INFDFMS_IN (arg_info), NULL, decl);
-        if (DFMTestMaskEntry (INFO_INFDFMS_NEEDED (arg_info), NULL, decl)) {
-            DFMSetMaskEntrySet (INFO_INFDFMS_OUT (arg_info), NULL, decl);
-        }
-        DFMSetMaskEntrySet (INFO_INFDFMS_LOCAL (arg_info), NULL, decl);
-    }
-
-    DBUG_RETURN (arg_info);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *DefinedIds( node *arg_info, ids *arg_ids)
- *
- * description:
- *   Calls 'DefinedVar()' for each ids of the given ids-chain.
- *
- ******************************************************************************/
-
-static node *
-DefinedIds (node *arg_info, ids *arg_ids)
-{
-    DBUG_ENTER ("DefinedIds");
-
-    while (arg_ids != NULL) {
-        arg_info = DefinedVar (arg_info, IDS_VARDEC (arg_ids));
-        arg_ids = IDS_NEXT (arg_ids);
-    }
-
-    DBUG_RETURN (arg_info);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *DefinedId( node *arg_info, node *arg_id)
- *
- * description:
- *   Calls 'DefinedVar()' for the given id-node.
- *
- ******************************************************************************/
-
-static node *
-DefinedId (node *arg_info, node *arg_id)
-{
-    DBUG_ENTER ("DefinedId");
-
-    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "no N_id node found!");
-
-    arg_info = DefinedVar (arg_info, ID_VARDEC (arg_id));
-
-    DBUG_RETURN (arg_info);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *DefinedMask( node *arg_info, DFMmask_t mask)
- *
- * description:
- *   Calls 'DefinedVar()' for each variable set in the given mask.
- *
- ******************************************************************************/
-
-static node *
-DefinedMask (node *arg_info, DFMmask_t mask)
-{
-    node *decl;
-
-    DBUG_ENTER ("DefinedMask");
-
-    decl = DFMGetMaskEntryDeclSet (mask);
-    while (decl != NULL) {
-        arg_info = DefinedVar (arg_info, decl);
-        decl = DFMGetMaskEntryDeclSet (NULL);
-    }
-
-    DBUG_RETURN (arg_info);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *UsedVar( node *arg_info, node *decl)
  *
  * description:
@@ -432,6 +328,128 @@ UsedMask (node *arg_info, DFMmask_t mask)
     decl = DFMGetMaskEntryDeclSet (mask);
     while (decl != NULL) {
         arg_info = UsedVar (arg_info, decl);
+        decl = DFMGetMaskEntryDeclSet (NULL);
+    }
+
+    DBUG_RETURN (arg_info);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DefinedVar( node *arg_info, node *decl)
+ *
+ * description:
+ *   Updates the masks of 'arg_info' according to a defining occurence of a
+ *   variable. The variable is specified as a pointer to the declaration.
+ *
+ ******************************************************************************/
+
+static node *
+DefinedVar (node *arg_info, node *decl)
+{
+    DBUG_ENTER ("DefinedVar");
+
+    DBUG_ASSERT ((decl != NULL),
+                 "Variable declaration missing! "
+                 "For the time being Lac2fun() can be used after type checking"
+                 " only!");
+
+    if ((NODE_TYPE (decl) != N_vardec) && (NODE_TYPE (decl) != N_arg)) {
+        DBUG_ASSERT ((NODE_TYPE (decl) == N_objdef),
+                     "Declaration is neither a N_arg/N_vardec node nor a N_objdef"
+                     " node");
+    } else {
+#ifndef RESOLVE_REFERENCES
+        if ((NODE_TYPE (decl) == N_arg)
+            && ((ARG_ATTRIB (decl) == ST_reference)
+                || (ARG_ATTRIB (decl) == ST_readonly_reference))) {
+            /*
+             * reference parameter found  ->  handle as occurance on RHS
+             * (reference parameters should *not* be marked as out-parameters,
+             * but as reference-in-parameters only!!)
+             */
+            arg_info = UsedVar (arg_info, decl);
+        } else {
+#endif
+            DFMSetMaskEntryClear (INFO_INFDFMS_IN (arg_info), NULL, decl);
+            if (DFMTestMaskEntry (INFO_INFDFMS_NEEDED (arg_info), NULL, decl)) {
+                DFMSetMaskEntrySet (INFO_INFDFMS_OUT (arg_info), NULL, decl);
+            }
+            DFMSetMaskEntrySet (INFO_INFDFMS_LOCAL (arg_info), NULL, decl);
+#ifndef RESOLVE_REFERENCES
+        }
+#endif
+    }
+
+    DBUG_RETURN (arg_info);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DefinedIds( node *arg_info, ids *arg_ids)
+ *
+ * description:
+ *   Calls 'DefinedVar()' for each ids of the given ids-chain.
+ *
+ ******************************************************************************/
+
+static node *
+DefinedIds (node *arg_info, ids *arg_ids)
+{
+    DBUG_ENTER ("DefinedIds");
+
+    while (arg_ids != NULL) {
+        arg_info = DefinedVar (arg_info, IDS_VARDEC (arg_ids));
+        arg_ids = IDS_NEXT (arg_ids);
+    }
+
+    DBUG_RETURN (arg_info);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DefinedId( node *arg_info, node *arg_id)
+ *
+ * description:
+ *   Calls 'DefinedVar()' for the given id-node.
+ *
+ ******************************************************************************/
+
+static node *
+DefinedId (node *arg_info, node *arg_id)
+{
+    DBUG_ENTER ("DefinedId");
+
+    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "no N_id node found!");
+
+    arg_info = DefinedVar (arg_info, ID_VARDEC (arg_id));
+
+    DBUG_RETURN (arg_info);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DefinedMask( node *arg_info, DFMmask_t mask)
+ *
+ * description:
+ *   Calls 'DefinedVar()' for each variable set in the given mask.
+ *
+ ******************************************************************************/
+
+static node *
+DefinedMask (node *arg_info, DFMmask_t mask)
+{
+    node *decl;
+
+    DBUG_ENTER ("DefinedMask");
+
+    decl = DFMGetMaskEntryDeclSet (mask);
+    while (decl != NULL) {
+        arg_info = DefinedVar (arg_info, decl);
         decl = DFMGetMaskEntryDeclSet (NULL);
     }
 
@@ -832,7 +850,7 @@ InferMasksWith (node *arg_node, node *arg_info)
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
 
-    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  %s finished",
+    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  %s finished\n",
                                       mdb_nodetype[NODE_TYPE (arg_node)]););
 
     /*
@@ -888,7 +906,7 @@ InferMasksWith2 (node *arg_node, node *arg_info)
 
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
 
-    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  %s finished",
+    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  %s finished\n",
                                       mdb_nodetype[NODE_TYPE (arg_node)]););
 
     /*
@@ -942,7 +960,7 @@ InferMasksCond (node *arg_node, node *arg_info)
 
     COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
 
-    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  then-block of %s finished",
+    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  then-block of %s finished\n",
                                       mdb_nodetype[NODE_TYPE (arg_node)]););
 
     in_then = INFO_INFDFMS_IN (arg_info);
@@ -969,7 +987,7 @@ InferMasksCond (node *arg_node, node *arg_info)
 
     COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
 
-    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  else-block of %s finished",
+    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  else-block of %s finished\n",
                                       mdb_nodetype[NODE_TYPE (arg_node)]););
 
     in_else = INFO_INFDFMS_IN (arg_info);
@@ -1028,7 +1046,7 @@ InferMasksWhile (node *arg_node, node *arg_info)
     WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
     WHILE_COND (arg_node) = Trav (WHILE_COND (arg_node), arg_info);
 
-    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  %s finished",
+    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  %s finished\n",
                                       mdb_nodetype[NODE_TYPE (arg_node)]););
 
     /*
@@ -1077,7 +1095,7 @@ InferMasksDo (node *arg_node, node *arg_info)
     DO_COND (arg_node) = Trav (DO_COND (arg_node), arg_info);
     DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
 
-    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  %s finished",
+    DBUG_EXECUTE ("INFDFMS", fprintf (stderr, "<<<  %s finished\n",
                                       mdb_nodetype[NODE_TYPE (arg_node)]););
 
     /*
@@ -1263,6 +1281,7 @@ INFDFMSfundef (node *arg_node, node *arg_info)
         INFO_INFDFMS_LOCAL (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
         INFO_INFDFMS_NEEDED (arg_info) = DFMGenMaskClear (FUNDEF_DFM_BASE (arg_node));
 
+#ifdef RESOLVE_REFERENCES
         /*
          * search in formal args for reference parameters
          *  -> adjust INFO_INFDFMS_IN accordingly (resolve the reference parameters)
@@ -1270,6 +1289,7 @@ INFDFMSfundef (node *arg_node, node *arg_info)
         if (FUNDEF_ARGS (arg_node) != NULL) {
             FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
         }
+#endif
 
         INFO_INFDFMS_FIRST (arg_info) = TRUE;
         do {
@@ -1319,8 +1339,29 @@ INFDFMSarg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INFDFMSarg");
 
+#ifdef RESOLVE_REFERENCES
     if ((ARG_ATTRIB (arg_node) == ST_reference)
         || (ARG_ATTRIB (arg_node) == ST_readonly_reference)) {
+        /*
+         * Example:
+         *
+         *   int fun( type &a, int b)
+         *   {
+         *     if (true) {
+         *       a = ...;
+         *       b = 1;
+         *       c = 2;
+         *     }
+         *     return( c);
+         *   }
+         *
+         * Here, we must detect that 'a' is *not* a local- but a out-variable of
+         * the conditional:
+         *
+         *   in:    ...
+         *   out:   a, c
+         *   local: b
+         */
 
         DBUG_PRINT ("INFDFMS",
                     ("Reference parameter: .. %s( .. %s .. ) { .. }",
@@ -1332,6 +1373,7 @@ INFDFMSarg (node *arg_node, node *arg_info)
     if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
     }
+#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -1417,7 +1459,7 @@ INFDFMSlet (node *arg_node, node *arg_info)
 node *
 INFDFMSap (node *arg_node, node *arg_info)
 {
-    node *fundef_args, *ap_args;
+    node *fundef_args, *ap_args, *decl;
 
     DBUG_ENTER ("INFDFMSap");
 
@@ -1425,11 +1467,9 @@ INFDFMSap (node *arg_node, node *arg_info)
      * search for reference parameters and mark them as 'defined vars'
      * (resolve them explicitly)
      */
-    DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL),
-                 "Application with missing pointer to fundef found!");
-    /*
-     * traverse the formal (fundef_args) and current (ap_args) parameters
-     */
+    DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "AP_FUNDEF not found!");
+
+    /* traverse the formal (fundef_args) and current (ap_args) parameters */
     fundef_args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
     ap_args = AP_ARGS (arg_node);
     while (ap_args != NULL) {
@@ -1438,12 +1478,39 @@ INFDFMSap (node *arg_node, node *arg_info)
             DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ap_args)) == N_id),
                          "Reference parameter must be a N_id node!");
 
-            DBUG_PRINT ("INFDFMS",
-                        ("Reference parameter (in %s()):  %s( .. %s .. )",
-                         FUNDEF_NAME (INFO_INFDFMS_FUNDEF (arg_info)),
-                         FUNDEF_NAME (AP_FUNDEF (arg_node)), EXPRS_EXPR (ap_args)));
-
-            arg_info = DefinedVar (arg_info, ID_VARDEC (EXPRS_EXPR (ap_args)));
+            decl = ID_VARDEC (EXPRS_EXPR (ap_args));
+#ifndef RESOLVE_REFERENCES
+            if ((NODE_TYPE (decl) == N_arg)
+                && ((ARG_ATTRIB (decl) == ST_reference)
+                    || (ARG_ATTRIB (decl) == ST_readonly_reference))) {
+                /*
+                 * argument is used as reference parameter of the application,
+                 * but its declaration is already a reference parameter, too
+                 *   -> do *not* mask as defined variable
+                 *      (it is no out-var but a reference-in-var!)
+                 */
+                DBUG_PRINT ("INFDFMS", ("N_ap in %s() with reference as ref. parameter:"
+                                        "  %s( .. %s .. )",
+                                        FUNDEF_NAME (INFO_INFDFMS_FUNDEF (arg_info)),
+                                        FUNDEF_NAME (AP_FUNDEF (arg_node)),
+                                        ID_NAME (EXPRS_EXPR (ap_args))));
+            } else {
+                /*
+                 * argument (which declaration is not a reference parameter) is
+                 * used as reference parameter of the application
+                 *   -> mark as defined variable (must be a out-var as well)
+                 */
+#endif
+                DBUG_PRINT ("INFDFMS",
+                            ("N_ap in %s() with non-reference as ref. parameter:"
+                             "  %s( .. %s .. )",
+                             FUNDEF_NAME (INFO_INFDFMS_FUNDEF (arg_info)),
+                             FUNDEF_NAME (AP_FUNDEF (arg_node)),
+                             ID_NAME (EXPRS_EXPR (ap_args))));
+                arg_info = DefinedVar (arg_info, decl);
+#ifndef RESOLVE_REFERENCES
+            }
+#endif
         }
 
         if (ARG_BASETYPE (fundef_args) != T_dots) {
