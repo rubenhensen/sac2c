@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/05/08 13:28:29  dkr
+ * new RC macros used
+ *
  * Revision 3.12  2001/03/22 19:42:16  dkr
  * include of tree.h eliminated
  *
@@ -335,7 +338,7 @@ FreeDump (int *dump)
  *   void InitRC( int n, node *arg_info)
  *
  * description:
- *   The refcounts in the vardecs are set to 'n' if refcount was >= 0.
+ *   The refcounts in the vardecs are set to 'n' if refcount was active.
  *   Both real and naive refcounts are changed here!
  *
  ******************************************************************************/
@@ -349,10 +352,10 @@ InitRC (int n, node *arg_info)
 
     FOREACH_VARDEC_AND_ARG (fundef_node, vardec,
                             if (!INFO_RC_ONLYNAIVE (arg_info)) {
-                                if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
+                                if (VARDEC_OR_ARG_REFCNT (vardec) != RC_INACTIVE) {
                                     L_VARDEC_OR_ARG_REFCNT (vardec, n);
                                 }
-                            } if (VARDEC_OR_ARG_NAIVE_REFCNT (vardec) >= 0) {
+                            } if (VARDEC_OR_ARG_NAIVE_REFCNT (vardec) != RC_INACTIVE) {
                                 L_VARDEC_OR_ARG_NAIVE_REFCNT (vardec, n);
                             }) /* FOREACH_VARDEC_AND_ARG */
 
@@ -451,12 +454,12 @@ StoreAndInitRC (int which, int varno, int n, node *arg_info)
     while (argvardec != NULL) {
         if (which == RC_REAL) {
             dump[ARG_VARNO (argvardec)] = ARG_REFCNT (argvardec);
-            if (ARG_REFCNT (argvardec) > 0) {
+            if (RC_IS_VITAL (ARG_REFCNT (argvardec))) {
                 ARG_REFCNT (argvardec) = n;
             }
         } else {
             dump[ARG_VARNO (argvardec)] = ARG_NAIVE_REFCNT (argvardec);
-            if (ARG_NAIVE_REFCNT (argvardec) > 0) {
+            if (RC_IS_VITAL (ARG_NAIVE_REFCNT (argvardec))) {
                 ARG_NAIVE_REFCNT (argvardec) = n;
             }
         }
@@ -472,13 +475,13 @@ StoreAndInitRC (int which, int varno, int n, node *arg_info)
             if (which == RC_REAL) {
                 dump[k] = VARDEC_REFCNT (argvardec);
                 if (!INFO_RC_ONLYNAIVE (arg_info)) {
-                    if (VARDEC_REFCNT (argvardec) > 0) {
+                    if (RC_IS_VITAL (VARDEC_REFCNT (argvardec))) {
                         VARDEC_REFCNT (argvardec) = n;
                     }
                 }
             } else {
                 dump[k] = VARDEC_NAIVE_REFCNT (argvardec);
-                if (VARDEC_NAIVE_REFCNT (argvardec) > 0) {
+                if (RC_IS_VITAL (VARDEC_NAIVE_REFCNT (argvardec))) {
                     VARDEC_NAIVE_REFCNT (argvardec) = n;
                 }
             }
@@ -915,8 +918,7 @@ RCloop (node *arg_node, node *arg_info)
                 if (do_on_normal) {
                     if ((defined_mask[i] > 0) && (ref_dump[i] > 0)) {
                         if (0 == use_old_) {
-                            new_ids_ = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
-                                                NULL, ST_regular);
+                            new_ids_ = MakeIds_Copy (VARDEC_OR_ARG_NAME (vardec));
                             IDS_REFCNT (new_ids_) = ref_dump[i];
                             IDS_NAIVE_REFCNT (new_ids_) = naive_ref_dump[i];
                             IDS_VARDEC (new_ids_) = vardec;
@@ -940,9 +942,7 @@ RCloop (node *arg_node, node *arg_info)
                 if (do_on_naive) {
                     if ((defined_mask[i] > 0) && (naive_ref_dump[i] > 0)) {
                         if (naive_use_old == 0) {
-                            naive_new_ids
-                              = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
-                                         ST_regular);
+                            naive_new_ids = MakeIds_Copy (VARDEC_OR_ARG_NAME (vardec));
                             IDS_REFCNT (naive_new_ids) = ref_dump[i];
                             IDS_NAIVE_REFCNT (naive_new_ids) = naive_ref_dump[i];
                             IDS_VARDEC (naive_new_ids) = vardec;
@@ -972,8 +972,7 @@ RCloop (node *arg_node, node *arg_info)
                      *  store refcount of used variables in usevars
                      */
                     if (0 == naive_use_old) {
-                        naive_new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
-                                                 NULL, ST_regular);
+                        naive_new_ids = MakeIds_Copy (VARDEC_OR_ARG_NAME (vardec));
                         IDS_REFCNT (naive_new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
                         IDS_NAIVE_REFCNT (naive_new_ids)
                           = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
@@ -999,8 +998,7 @@ RCloop (node *arg_node, node *arg_info)
                     }
                     if (use_old_ == 0) {
                         if (do_on_normal) {
-                            new_ids_ = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
-                                                NULL, ST_regular);
+                            new_ids_ = MakeIds_Copy (VARDEC_OR_ARG_NAME (vardec));
                             IDS_REFCNT (new_ids_) = VARDEC_OR_ARG_REFCNT (vardec);
                             IDS_NAIVE_REFCNT (new_ids_)
                               = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
@@ -1032,10 +1030,9 @@ RCloop (node *arg_node, node *arg_info)
     if (NULL != naive_usevars) {
         naive_new_ids = naive_usevars;
         while ((0 == naive_again) && (NULL != naive_new_ids)) {
-            if ((0 < VARDEC_OR_ARG_NAIVE_REFCNT (IDS_VARDEC (naive_new_ids)))
-                && (0
-                    == naive_ref_dump[VARDEC_OR_ARG_VARNO (
-                         IDS_VARDEC (naive_new_ids))])) {
+            if ((RC_IS_VITAL (VARDEC_OR_ARG_NAIVE_REFCNT (IDS_VARDEC (naive_new_ids))))
+                && (RC_IS_ZERO (
+                     naive_ref_dump[VARDEC_OR_ARG_VARNO (IDS_VARDEC (naive_new_ids))]))) {
                 naive_again = 1;
             } else {
                 naive_new_ids = IDS_NEXT (naive_new_ids);
@@ -1046,8 +1043,9 @@ RCloop (node *arg_node, node *arg_info)
         if (NULL != usevars_) {
             new_ids_ = usevars_;
             while ((0 == again_) && (NULL != new_ids_)) {
-                if ((0 < VARDEC_OR_ARG_REFCNT (IDS_VARDEC (new_ids_)))
-                    && (0 == ref_dump[VARDEC_OR_ARG_VARNO (IDS_VARDEC (new_ids_))])) {
+                if ((RC_IS_VITAL (VARDEC_OR_ARG_REFCNT (IDS_VARDEC (new_ids_))))
+                    && (RC_IS_ZERO (
+                         ref_dump[VARDEC_OR_ARG_VARNO (IDS_VARDEC (new_ids_))]))) {
                     again_ = 1;
                 } else {
                     new_ids_ = IDS_NEXT (new_ids_);
@@ -1347,7 +1345,7 @@ RCid (node *arg_node, node *arg_info)
     if (!INFO_RC_ONLYNAIVE (arg_info)) {
         if (MUST_REFCOUNT (ID_TYPE (arg_node))) {
             if ((INFO_RC_PRF (arg_info) == NULL)
-                || (VARDEC_OR_ARG_REFCNT (ID_VARDEC (arg_node)) == 0)
+                || (RC_IS_ZERO (VARDEC_OR_ARG_REFCNT (ID_VARDEC (arg_node))))
                 || (!(optimize & OPT_RCO))) {
                 /*
                  * This N_id node either is *not* an argument of a primitive
@@ -1580,8 +1578,7 @@ RCcond (node *arg_node, node *arg_info)
             if (then_compare < else_compare) {
                 if (!do_use_old) {
                     if (do_on_normal) {
-                        new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
-                                           ST_regular);
+                        new_ids = MakeIds_Copy (VARDEC_OR_ARG_NAME (vardec));
                         IDS_REFCNT (new_ids) = else_dump[i] - then_dump[i];
                         IDS_NAIVE_REFCNT (new_ids)
                           = naive_else_dump[i] - naive_then_dump[i];
@@ -1594,8 +1591,7 @@ RCcond (node *arg_node, node *arg_info)
                                      IDS_REFCNT (new_ids), IDS_NAIVE_REFCNT (new_ids)));
                     }
                     if (do_on_naive) {
-                        naive_new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
-                                                 NULL, ST_regular);
+                        naive_new_ids = MakeIds_Copy (VARDEC_OR_ARG_NAME (vardec));
                         IDS_REFCNT (naive_new_ids) = else_dump[i] - then_dump[i];
                         IDS_NAIVE_REFCNT (naive_new_ids)
                           = naive_else_dump[i] - naive_then_dump[i];
@@ -1638,8 +1634,7 @@ RCcond (node *arg_node, node *arg_info)
             } else if (else_compare < then_compare) {
                 if (0 == do_use_old) {
                     if (do_on_normal) {
-                        new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
-                                           ST_regular);
+                        new_ids = MakeIds_Copy (VARDEC_OR_ARG_NAME (vardec));
                         IDS_REFCNT (new_ids) = then_dump[i] - else_dump[i];
                         IDS_NAIVE_REFCNT (new_ids)
                           = naive_then_dump[i] - naive_else_dump[i];
@@ -1652,8 +1647,7 @@ RCcond (node *arg_node, node *arg_info)
                                      IDS_REFCNT (new_ids), IDS_NAIVE_REFCNT (new_ids)));
                     }
                     if (do_on_naive) {
-                        naive_new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
-                                                 NULL, ST_regular);
+                        naive_new_ids = MakeIds_Copy (VARDEC_OR_ARG_NAME (vardec));
                         IDS_REFCNT (naive_new_ids) = then_dump[i] - else_dump[i];
                         IDS_NAIVE_REFCNT (naive_new_ids)
                           = naive_then_dump[i] - naive_else_dump[i];
@@ -1900,15 +1894,15 @@ RCNwith (node *arg_node, node *arg_info)
         if (!INFO_RC_ONLYNAIVE (arg_info)) {
             if ((MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec)))
                 && (vardec != neutral_vardec)) {
-                if ((VARDEC_OR_ARG_REFCNT (vardec) == 0) || (!(optimize & OPT_RCO))) {
+                if ((RC_IS_ZERO (VARDEC_OR_ARG_REFCNT (vardec)))
+                    || (!(optimize & OPT_RCO))) {
                     /*
                      * increment RC of non-withop-params
                      */
                     L_VARDEC_OR_ARG_REFCNT (vardec, VARDEC_OR_ARG_REFCNT (vardec) + 1);
                     DBUG_PRINT ("RC", ("  %s", VARDEC_OR_ARG_NAME (vardec)));
 
-                    new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
-                                       ST_regular);
+                    new_ids = MakeIds_Copy (VARDEC_OR_ARG_NAME (vardec));
                     IDS_VARDEC (new_ids) = vardec;
                     IDS_REFCNT (new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
                     IDS_NAIVE_REFCNT (new_ids) = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);
@@ -2043,9 +2037,7 @@ RCNcode (node *arg_node, node *arg_info)
         }
         FOREACH_VARDEC_AND_ARG (fundef_node, vardec,
                                 if (VARDEC_OR_ARG_REFCNT (vardec) > 1) {
-                                    new_ids
-                                      = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)),
-                                                 NULL, ST_regular);
+                                    new_ids = MakeIds_Copy (VARDEC_OR_ARG_NAME (vardec));
                                     IDS_VARDEC (new_ids) = vardec;
                                     IDS_REFCNT (new_ids)
                                       = VARDEC_OR_ARG_REFCNT (vardec) - 1;
@@ -2383,15 +2375,15 @@ RCNwith2 (node *arg_node, node *arg_info)
         if (!INFO_RC_ONLYNAIVE (arg_info)) {
             if ((MUST_REFCOUNT (VARDEC_OR_ARG_TYPE (vardec)))
                 && (vardec != neutral_vardec)) {
-                if ((VARDEC_OR_ARG_REFCNT (vardec) == 0) || (!(optimize & OPT_RCO))) {
+                if ((RC_IS_ZERO (VARDEC_OR_ARG_REFCNT (vardec)))
+                    || (!(optimize & OPT_RCO))) {
                     /*
                      * increment RC of non-withop-params
                      */
                     L_VARDEC_OR_ARG_REFCNT (vardec, VARDEC_OR_ARG_REFCNT (vardec) + 1);
                     DBUG_PRINT ("RC", (" %s", VARDEC_OR_ARG_NAME (vardec)));
 
-                    new_ids = MakeIds (StringCopy (VARDEC_OR_ARG_NAME (vardec)), NULL,
-                                       ST_regular);
+                    new_ids = MakeIds_Copy (VARDEC_OR_ARG_NAME (vardec));
                     IDS_VARDEC (new_ids) = vardec;
                     IDS_REFCNT (new_ids) = VARDEC_OR_ARG_REFCNT (vardec);
                     IDS_NAIVE_REFCNT (new_ids) = VARDEC_OR_ARG_NAIVE_REFCNT (vardec);

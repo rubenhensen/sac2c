@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/05/08 13:28:16  dkr
+ * new RC macros used
+ *
  * Revision 3.21  2001/04/25 01:19:20  dkr
  * PREC2fundef: FUNDEF_DFM_BASE created if NULL
  *
@@ -162,6 +165,7 @@
 #include "convert.h"
 #include "DataFlowMask.h"
 #include "adjust_ids.h"
+#include "refcount.h"
 #include "map_cwrapper.h"
 #include "scheduling.h"
 #include "compile.h"
@@ -493,7 +497,7 @@ PREC1let (node *arg_node, node *arg_info)
             tmp_name = NULL;
             while (arg != NULL) {
                 arg_id = EXPRS_EXPR (arg);
-                if ((NODE_TYPE (arg_id) == N_id) && IS_REFCOUNTED (ID, arg_id)
+                if ((NODE_TYPE (arg_id) == N_id) && (RC_IS_ACTIVE (ID_REFCNT (arg_id)))
                     && (ID_ATTRIB (arg_id) == ST_regular) &&
                     /* 2nd argument of F_reshape need not to be flattened! */
                     (((NODE_TYPE (let_expr) == N_prf)
@@ -534,12 +538,14 @@ PREC1let (node *arg_node, node *arg_info)
                             EXPRS_EXPR (arg) = MakeId_Copy (tmp_name);
                             ID_VARDEC (EXPRS_EXPR (arg)) = tmp_vardec;
 
-                            if (IS_REFCOUNTED (IDS, let_ids)) {
+                            if (RC_IS_ACTIVE (IDS_REFCNT (let_ids))) {
                                 IDS_REFCNT (tmp_ids) = 1;
                                 ID_REFCNT (EXPRS_EXPR (arg)) = 1;
+                            } else if (RC_IS_INACTIVE (IDS_REFCNT (let_ids))) {
+                                IDS_REFCNT (tmp_ids) = RC_INACTIVE;
+                                ID_REFCNT (EXPRS_EXPR (arg)) = RC_INACTIVE;
                             } else {
-                                IDS_REFCNT (tmp_ids) = -1;
-                                ID_REFCNT (EXPRS_EXPR (arg)) = -1;
+                                DBUG_ASSERT ((0), "illegal RC value found!");
                             }
                         } else {
                             /*
@@ -550,10 +556,12 @@ PREC1let (node *arg_node, node *arg_info)
                             EXPRS_EXPR (arg) = MakeId_Copy (tmp_name);
                             ID_VARDEC (EXPRS_EXPR (arg)) = tmp_vardec;
 
-                            if (IS_REFCOUNTED (IDS, let_ids)) {
+                            if (RC_IS_ACTIVE (IDS_REFCNT (let_ids))) {
                                 ID_REFCNT (EXPRS_EXPR (arg)) = 1;
+                            } else if (RC_IS_INACTIVE (IDS_REFCNT (let_ids))) {
+                                ID_REFCNT (EXPRS_EXPR (arg)) = RC_INACTIVE;
                             } else {
-                                ID_REFCNT (EXPRS_EXPR (arg)) = -1;
+                                DBUG_ASSERT ((0), "illegal RC value found!");
                             }
                         }
                     }
@@ -800,10 +808,10 @@ InsertObjInit (node *block, node *objdef)
     new_ids = MakeIds (StringCopy (OBJDEF_NAME (objdef)), NULL, ST_regular);
     IDS_VARDEC (new_ids) = objdef;
     IDS_ATTRIB (new_ids) = ST_global;
-    if (IsArray (OBJDEF_TYPE (objdef))) {
+    if (MUST_REFCOUNT (OBJDEF_TYPE (objdef))) {
         IDS_REFCNT (new_ids) = 1;
     } else {
-        IDS_REFCNT (new_ids) = -1;
+        IDS_REFCNT (new_ids) = RC_INACTIVE;
     }
 
     assign_end = MakeAssignIcm0 ("INITGLOBALOBJECT_END");

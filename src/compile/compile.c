@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2001/05/08 13:28:04  dkr
+ * new RC macros used
+ *
  * Revision 3.50  2001/05/07 16:45:06  dkr
  * COMPIdLet: DBUG_ASSERT message modified
  *
@@ -536,6 +539,8 @@ MakeIncRcIcm (char *name, types *type, int rc, int num)
 
     DBUG_ENTER ("MakeIncRcIcm");
 
+    DBUG_ASSERT ((RC_IS_LEGAL (rc)), "illegal RC value found!");
+
     if (rc >= 0) { /* is it a refcounted data? */
         DBUG_ASSERT ((num >= 0), "increment for rc must be >= 0.");
 
@@ -567,6 +572,8 @@ MakeDecRcIcm (char *name, types *type, int rc, int num)
     node *icm = NULL;
 
     DBUG_ENTER ("MakeDecRcIcm");
+
+    DBUG_ASSERT ((RC_IS_LEGAL (rc)), "illegal RC value found!");
 
     if (rc >= 0) { /* is it a refcounted data? */
         DBUG_ASSERT ((num >= 0), "decrement for rc must be >= 0.");
@@ -610,6 +617,8 @@ MakeAdjustRcIcm (char *name, types *type, int rc, int num)
 
     DBUG_ENTER ("MakeAdjustRcIcm");
 
+    DBUG_ASSERT ((RC_IS_LEGAL (rc)), "illegal RC value found!");
+
     if (num > 0) {
         icm = MakeIncRcIcm (name, type, rc, num);
     } else if (num < 0) {
@@ -644,7 +653,9 @@ Ids2AllocArrayICMs (ids *ids_chain, node *next)
     DBUG_ENTER ("Ids2AllocArrayICMs");
 
     while (ids_chain != NULL) {
-        if (IDS_REFCNT (ids_chain) >= 0) {
+        DBUG_ASSERT ((RC_IS_LEGAL (IDS_REFCNT (ids_chain))), "illegal RC value found!");
+
+        if (RC_IS_ACTIVE (IDS_REFCNT (ids_chain))) {
             assign
               = MakeAssignIcm3 ("ND_ALLOC_ARRAY", MakeBasetypeNode (IDS_TYPE (ids_chain)),
                                 DupIds_Id (ids_chain), MakeNum (IDS_REFCNT (ids_chain)));
@@ -694,7 +705,9 @@ Ids2AllocArrayICMs_reuse (ids *ids_chain, node *next, node *pragma)
     DBUG_ENTER ("Ids2AllocArrayICMs_reuse");
 
     while (ids_chain != NULL) {
-        if (IDS_REFCNT (ids_chain) >= 0) {
+        DBUG_ASSERT ((RC_IS_LEGAL (IDS_REFCNT (ids_chain))), "illegal RC value found!");
+
+        if (RC_IS_ACTIVE (IDS_REFCNT (ids_chain))) {
             if (pragma == NULL) {
                 alloc_icm
                   = MakeIcm3 ("ND_ALLOC_ARRAY", MakeBasetypeNode (IDS_TYPE (ids_chain)),
@@ -1964,7 +1977,7 @@ CheckAp (ids *let_ids, node *ap, node *arg_info)
         arg_idx = INFO_COMP_CNTPARAM (arg_info);
         while (args != NULL) {
             arg_id = EXPRS_EXPR (args);
-            if ((NODE_TYPE (arg_id) == N_id) && IS_REFCOUNTED (ID, arg_id)
+            if ((NODE_TYPE (arg_id) == N_id) && (RC_IS_ACTIVE (ID_REFCNT (arg_id)))
                 && (!FUNDEF_DOES_REFCOUNT (AP_FUNDEF (ap), arg_idx))) {
                 if (!strcmp (IDS_NAME (let_ids), ID_NAME (arg_id))) {
                     ok = FALSE;
@@ -2016,7 +2029,7 @@ BuildParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
         DBUG_PRINT ("JHS", ("%s", NODE_TEXT (vardec)));
         DBUG_PRINT ("JHS", ("%s", VARDEC_OR_ARG_NAME (vardec)));
 
-        if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
+        if (RC_IS_ACTIVE (VARDEC_OR_ARG_REFCNT (vardec))) {
             this_tag = rc_tag;
         } else {
             this_tag = tag;
@@ -2082,7 +2095,7 @@ BuildParamsByDFMfold (DFMfoldmask_t *mask, char *tag, int *num_args, node *icm_a
         DBUG_PRINT ("JHS", ("%s", NODE_TEXT (vardec)));
         DBUG_PRINT ("JHS", ("%s", VARDEC_OR_ARG_NAME (vardec)));
 
-        if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
+        if (RC_IS_ACTIVE (VARDEC_OR_ARG_REFCNT (vardec))) {
             this_tag = rc_tag;
         } else {
             this_tag = tag;
@@ -2634,7 +2647,8 @@ COMPArg (node *arg_node, node *arg_info)
     /* store name of formal parameter */
     id_name = STR_OR_EMPTY ((ARG_NAME (arg_node)));
 
-    if ((IS_REFCOUNTED (ARG, arg_node)) && (FUNDEF_DOES_REFCOUNT (fundef, param_idx))) {
+    if ((RC_IS_ACTIVE (ARG_REFCNT (arg_node)))
+        && (FUNDEF_DOES_REFCOUNT (fundef, param_idx))) {
         if (ARG_ATTRIB (arg_node) == ST_reference) {
             tag = "inout_rc";
         } else {
@@ -2720,7 +2734,7 @@ COMPArg (node *arg_node, node *arg_info)
      * at beginning of function block
      */
     if (ARG_ATTRIB (arg_node) == ST_reference) {
-        if (IS_REFCOUNTED (ARG, arg_node)) {
+        if (RC_IS_ACTIVE (ARG_REFCNT (arg_node))) {
             icm_node = MakeAssignIcm2 ("ND_DECL_INOUT_PARAM_RC",
                                        MakeTypeNode (ARG_TYPE (arg_node)),
                                        MakeId_Copy (id_name));
@@ -2997,7 +3011,7 @@ COMPNormalFunReturn (node *arg_node, node *arg_info)
          * refcounting on their own and those that do not because we are definitely
          * inside a SAC function and these always do their own refcounting.
          */
-        if (IS_REFCOUNTED (ID, EXPRS_EXPR (ret_expr))) {
+        if (RC_IS_ACTIVE (ID_REFCNT (EXPRS_EXPR (ret_expr)))) {
             last_arg = EXPRS_NEXT (last_arg) = MakeExprs (MakeId_Copy ("out_rc"), NULL);
         } else {
             last_arg = EXPRS_NEXT (last_arg) = MakeExprs (MakeId_Copy ("out"), NULL);
@@ -3030,7 +3044,7 @@ COMPNormalFunReturn (node *arg_node, node *arg_info)
         /*
          * Append inout-tag to ICM args.
          */
-        if (IS_REFCOUNTED (ID, EXPRS_EXPR (ret_expr))) {
+        if (RC_IS_ACTIVE (ID_REFCNT (EXPRS_EXPR (ret_expr)))) {
             last_arg = EXPRS_NEXT (last_arg) = MakeExprs (MakeId_Copy ("inout_rc"), NULL);
         } else {
             last_arg = EXPRS_NEXT (last_arg) = MakeExprs (MakeId_Copy ("inout"), NULL);
@@ -3097,7 +3111,7 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
     while (exprs != NULL) {
         DBUG_ASSERT ((N_id == NODE_TYPE (EXPRS_EXPR (exprs))), "wrong node type found");
 
-        if (ID_REFCNT (EXPRS_EXPR (exprs)) >= 0) {
+        if (RC_IS_ACTIVE (ID_REFCNT (EXPRS_EXPR (exprs)))) {
             tag = MakeExprs (MakeId_Copy ("out_rc"), NULL);
         } else {
             tag = MakeExprs (MakeId_Copy ("out"), NULL);
@@ -3154,7 +3168,7 @@ COMPMT2FunReturn (node *arg_node, node *arg_info)
     while (exprs != NULL) {
         DBUG_ASSERT ((N_id == NODE_TYPE (EXPRS_EXPR (exprs))), "wrong node type found");
 
-        if (ID_REFCNT (EXPRS_EXPR (exprs)) >= 0) {
+        if (RC_IS_ACTIVE (EXPRS_EXPR (exprs))) {
             tag = MakeExprs (MakeId_Copy ("out_rc"), NULL);
         } else {
             tag = MakeExprs (MakeId_Copy ("out"), NULL);
@@ -3321,7 +3335,7 @@ COMPApIds (ids *let_ids, node *fundef, node *arg_info)
         DBUG_PRINT ("COMP", ("Handling return value bound to %s", IDS_NAME (let_ids)));
 
         /* choose the right tag for the argument and generate ICMs for RC */
-        if (IS_REFCOUNTED (IDS, let_ids)) {
+        if (RC_IS_ACTIVE (IDS_REFCNT (let_ids))) {
             if (FUNDEF_DOES_REFCOUNT (fundef, INFO_COMP_CNTPARAM (arg_info))) {
                 tag = "out_rc";
 
@@ -3335,7 +3349,7 @@ COMPApIds (ids *let_ids, node *fundef, node *arg_info)
                 /* function does no refcounting */
                 tag = "out";
 
-                if (IDS_REFCNT (let_ids) > 0) {
+                if (RC_IS_VITAL (IDS_REFCNT (let_ids))) {
                     icm_node = MakeAssignIcm1 ("ND_ALLOC_RC", DupIds_Id (let_ids));
                     last_node = ASSIGN_NEXT (last_node) = icm_node;
 
@@ -3437,7 +3451,7 @@ COMPApArgs (node *args, node *fundef, int line, node *arg_info)
 
         /* choose the right tag for the argument and generate ICMs for RC */
         if (NODE_TYPE (arg) == N_id) {
-            if (IS_REFCOUNTED (ID, arg)
+            if (RC_IS_ACTIVE (ID_REFCNT (arg))
                 && FUNDEF_DOES_REFCOUNT (fundef, INFO_COMP_CNTPARAM (arg_info))) {
                 if (ID_ATTRIB (arg) == ST_reference) {
                     tag = "inout_rc";
@@ -4029,7 +4043,7 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info)
                   || strcmp (IDS_NAME (let_ids), ID_NAME (arg3))),
                  "a = idx_modarray( ., ., a) not allowed!");
 
-    DBUG_ASSERT ((ID_REFCNT (arg1) != 0), "Reference with (rc == 0) found!");
+    DBUG_ASSERT ((!RC_IS_ZERO (ID_REFCNT (arg1))), "Reference with (rc == 0) found!");
 
     if ((NODE_TYPE (arg3) == N_id) && IsArray (ID_TYPE (arg3))) {
         if (ID_REFCNT (arg1) == 1) {
@@ -4189,7 +4203,7 @@ COMPPrfModarray (node *arg_node, node *arg_info)
                   || strcmp (IDS_NAME (let_ids), ID_NAME (arg3))),
                  "a = modarray( ., ., a) not allowed!");
 
-    DBUG_ASSERT ((ID_REFCNT (arg1) != 0), "Reference with (rc == 0) found!");
+    DBUG_ASSERT ((!RC_IS_ZERO (ID_REFCNT (arg1))), "Reference with (rc == 0) found!");
 
     /* basic type of result */
     res_type = MakeBasetypeNode (IDS_TYPE (let_ids));
@@ -4877,7 +4891,7 @@ COMPIdToClass (node *arg_node, node *arg_info)
     /*
      * 'arg_node' is non-unique and 'let_ids' is unique
      */
-    if (IS_REFCOUNTED (ID, arg_node)) {
+    if (RC_IS_ACTIVE (ID_REFCNT (arg_node))) {
         DBUG_ASSERT ((ID_REFCNT (arg_node) != 0), "Reference with (rc == 0) found!");
 
         if (ID_REFCNT (arg_node) == 1) {
@@ -5888,7 +5902,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
     /*
      * insert ICMs to allocate memory for index-vector
      */
-    if (IDS_REFCNT (NWITH2_VEC (arg_node)) > 0) {
+    if (RC_IS_VITAL (IDS_REFCNT (NWITH2_VEC (arg_node)))) {
         assigns
           = AppendAssign (assigns, Ids2AllocArrayICMs (NWITH2_VEC (arg_node), NULL));
     }
@@ -6014,7 +6028,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
     /*
      * insert 'DEC_RC_FREE'-ICM for index-vector
      */
-    if (IDS_REFCNT (NWITH2_VEC (arg_node)) > 0) {
+    if (RC_IS_VITAL (IDS_REFCNT (NWITH2_VEC (arg_node)))) {
         assigns = AppendAssign (assigns, Ids2DecRcICMs (NWITH2_VEC (arg_node), NULL));
     }
 
@@ -6569,7 +6583,7 @@ COMPWLgridx (node *arg_node, node *arg_info)
      * if the index-vector is needed somewhere in the code-blocks and this is
      * not a dummy grid (init, copy, noop), we must add the ICM 'WL_SET_IDXVEC'.
      */
-    if ((IDS_REFCNT (NWITH2_VEC (wlnode)) > 0) && (!WLGRIDX_NOOP (arg_node))
+    if ((RC_IS_VITAL (IDS_REFCNT (NWITH2_VEC (wlnode)))) && (!WLGRIDX_NOOP (arg_node))
         && ((WLGRIDX_CODE (arg_node) != NULL) || (WLGRIDX_NEXTDIM (arg_node) != NULL))) {
         assigns
           = MakeAssign (MakeIcm1 ("WL_SET_IDXVEC", BuildIcmArgs_WL_LOOP1 (arg_node)),
@@ -6826,7 +6840,7 @@ GetFoldTypeTag (ids *with_ids)
 
     type = IDS_TYPE (with_ids);
     if (TYPES_DIM (type) > 0) {
-        if (IS_REFCOUNTED (IDS, with_ids)) {
+        if (RC_IS_ACTIVE (IDS_REFCNT (with_ids))) {
             fold_type = "array_rc";
         } else {
             fold_type = "array";
@@ -6894,7 +6908,7 @@ COMPSync (node *arg_node, node *arg_info)
     num_args = 0;
     vardec = DFMGetMaskEntryDeclSet (SYNC_IN (arg_node));
     while (vardec != NULL) {
-        if (VARDEC_OR_ARG_REFCNT (vardec) >= 0) {
+        if (RC_IS_ACTIVE (VARDEC_OR_ARG_REFCNT (vardec))) {
             tag = "in_rc";
         } else {
             tag = "in";
