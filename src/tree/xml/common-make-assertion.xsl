@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/08/07 17:57:57  sah
+  some changes to increase reusability
+
   Revision 1.2  2004/08/07 16:19:05  sah
   most xsl files use key-tables for type lookups
   now which increases speed significantly.
@@ -23,18 +26,22 @@ version="1.0">
 
 <!-- templates for generating assertions for a correct node type -->
 <xsl:template match="son" mode="make-assertion">
-  <xsl:apply-templates select="." mode="make-assertion-nonnull" />
-  <xsl:apply-templates select="." mode="make-assertion-target" />
+  <xsl:param name="self"/>
+  <xsl:apply-templates select="." mode="make-assertion-nonnull">
+    <xsl:with-param name="self"><xsl:value-of select="$self"/></xsl:with-param>
+  </xsl:apply-templates>
+  <xsl:apply-templates select="." mode="make-assertion-target">
+    <xsl:with-param name="self"><xsl:value-of select="$self"/></xsl:with-param>
+  </xsl:apply-templates>
 </xsl:template>
 
 <!-- check for mandatory sons to be set to a value other than NULL -->
-<!-- this check is disabled because sac.y always creates ampty nodes
-     and sets the values afterwards.
 <xsl:template match="son[@mandatory = 'yes']" mode="make-assertion-nonnull">
+  <xsl:param name="self"/>
   <xsl:value-of select="'DBUG_ASSERT( '" />
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
-      <xsl:value-of select="'this'" />
+      <xsl:value-of select="$self" />
     </xsl:with-param>
     <xsl:with-param name="nodetype">
       <xsl:value-of select="../../@name" />
@@ -49,19 +56,21 @@ version="1.0">
   <xsl:value-of select="../../@name" />
   <xsl:value-of select="' is mandatory but has value NULL&quot;));'" />
 </xsl:template>
--->
 
 <!-- ignore all other sons -->
-<xsl:template match="son" mode="make-assertion-nonnull" />
+<xsl:template match="son" mode="make-assertion-nonnull">
+  <xsl:param name="self"/>
+</xsl:template>
 
 <!-- check whether the value is of the right target -->
 <xsl:template match="son" mode="make-assertion-target">
+  <xsl:param name="self"/>
   <xsl:call-template name="newline" />
   <xsl:value-of select="'if ( ( '"/>
   <!-- check non-zero -->
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
-      <xsl:value-of select="'this'" />
+      <xsl:value-of select="$self" />
     </xsl:with-param>
     <xsl:with-param name="nodetype">
       <xsl:value-of select="../../@name" />
@@ -72,7 +81,9 @@ version="1.0">
   </xsl:call-template>
   <xsl:value-of select="' != NULL) '"/>
   <!-- check for target types -->
-  <xsl:apply-templates select="target" mode="make-assertion-target" />
+  <xsl:apply-templates select="target" mode="make-assertion-target">
+    <xsl:with-param name="self"><xsl:value-of select="$self"/></xsl:with-param>
+  </xsl:apply-templates>
   <!-- a reasonable errormessage -->
   <xsl:value-of select="') SYSWARN(( &quot;Field '" />
   <xsl:value-of select="@name" />
@@ -82,7 +93,7 @@ version="1.0">
   <xsl:value-of select="'mdb_nodetype[ NODE_TYPE( '" />
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
-      <xsl:value-of select="'this'" />
+      <xsl:value-of select="$self" />
     </xsl:with-param>
     <xsl:with-param name="nodetype">
       <xsl:value-of select="../../@name" />
@@ -96,10 +107,11 @@ version="1.0">
 
 <!-- for each target node we generate one N_xxx for the conditional -->
 <xsl:template match="target/node" mode="make-assertion-target">
+  <xsl:param name="self"/>
   <xsl:value-of select="'&amp;&amp; ( NODE_TYPE( '" />
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
-      <xsl:value-of select="'this'" />
+      <xsl:value-of select="$self" />
     </xsl:with-param>
     <xsl:with-param name="nodetype">
       <xsl:value-of select="../../../../@name" />
@@ -118,6 +130,7 @@ version="1.0">
 </xsl:template>
 
 <xsl:template match="target/set" mode="make-assertion-target">
+  <xsl:param name="self"/>
   <!-- save information about current node for use in for-each loop -->
   <xsl:variable name="nodetype">
     <xsl:value-of select="../../../../@name" />
@@ -130,7 +143,7 @@ version="1.0">
     <xsl:value-of select="'&amp;&amp; ( NODE_TYPE( '" />
     <xsl:call-template name="node-access">
       <xsl:with-param name="node">
-        <xsl:value-of select="'this'" />
+        <xsl:value-of select="$self" />
       </xsl:with-param>
       <xsl:with-param name="nodetype">
         <xsl:value-of select="$nodetype" />

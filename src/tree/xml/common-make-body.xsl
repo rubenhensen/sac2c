@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.6  2004/08/07 17:57:57  sah
+  some changes to increase reusability
+
   Revision 1.5  2004/08/07 16:19:05  sah
   most xsl files use key-tables for type lookups
   now which increases speed significantly.
@@ -74,7 +77,10 @@ version="1.0">
   <xsl:call-template name="newline" />
   <xsl:value-of select="'#ifndef DBUG_OFF'" />
   <xsl:call-template name="newline" />
-  <xsl:apply-templates select="sons/son[not( @default)]" mode="make-assertion" />
+  <!-- generate warning messages -->
+  <xsl:apply-templates select="sons/son[not( @default)]" mode="make-assertion-target">
+    <xsl:with-param name="self"><xsl:value-of select="'this'"/></xsl:with-param>
+  </xsl:apply-templates>
   <xsl:call-template name="newline" />
   <xsl:value-of select="'#endif /* DBUG_OFF */'" />
   <xsl:call-template name="newline" />
