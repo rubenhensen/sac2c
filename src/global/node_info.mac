@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.13  1994/12/12 11:02:14  asi
- * added OPTdo
+ * Revision 1.14  1994/12/14 10:11:08  sbs
+ * *** empty log message ***
  *
+;; Revision 1.13  1994/12/12  11:02:14  asi
+;; added OPTdo
+;;
 ;; Revision 1.12  1994/12/09  10:13:19  sbs
 ;; optimize inserted
 ;;
@@ -51,6 +54,11 @@
 NIF (N_num, "N_num", DummyFun, PrintNum, DummyFun, DummyFun),
   NIF (N_id, "N_id", DummyFun, PrintId, DummyFun, DummyFun),
   NIF (N_float, "N_float", DummyFun, PrintFloat, DummyFun, DummyFun),
+  NIF (N_moddec, "N_moddec", DummyFun, DummyFun, DummyFun, DummyFun),
+  NIF (N_explist, "N_explist", DummyFun, DummyFun, DummyFun, DummyFun),
+  NIF (N_typedef, "N_typedef", DummyFun, PrintTypedef, DummyFun, DummyFun),
+  NIF (N_modul, "N_modul", DummyFun, PrintModul, DummyFun, DummyFun),
+  NIF (N_implist, "N_implist", DummyFun, PrintImplist, DummyFun, DummyFun),
   NIF (N_fundef, "N_fundef", DummyFun, PrintFundef, TCfundef, DummyFun),
   NIF (N_vardec, "N_vardec", DummyFun, PrintVardec, DummyFun, DummyFun),
   NIF (N_block, "N_block", DummyFun, PrintBlock, DummyFun, DummyFun),
