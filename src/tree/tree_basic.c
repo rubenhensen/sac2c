@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2001/05/03 17:25:56  dkr
+ * MAXHOMDIM replaced by HOMSV
+ *
  * Revision 3.34  2001/04/25 01:20:24  dkr
  * definition of flag NAMES_IN_TYPES modified
  *
@@ -1770,21 +1773,18 @@ MakeWLseg (int dims, node *contents, node *next)
     WLSEG_CONTENTS (new_node) = contents;
     WLSEG_NEXT (new_node) = next;
 
+    WLSEG_IDX_MIN (new_node) = NULL;
+    WLSEG_IDX_MAX (new_node) = NULL;
+
+    MALLOC_INIT_VECT (WLSEG_UBV (new_node), WLSEG_DIMS (new_node), int, 1);
+
     WLSEG_BLOCKS (new_node) = 0;
     for (b = 0; b < WLSEG_BLOCKS (new_node); b++) {
         MALLOC_INIT_VECT (WLSEG_BV (new_node, b), WLSEG_DIMS (new_node), int, 1);
     }
-    MALLOC_INIT_VECT (WLSEG_UBV (new_node), WLSEG_DIMS (new_node), int, 1);
 
     WLSEG_SV (new_node) = NULL;
-    WLSEG_IDX_MIN (new_node) = NULL;
-    WLSEG_IDX_MAX (new_node) = NULL;
-
-    /*
-     * By default, no dimension is homogenious. Since dimensions are counted
-     * starting by 0, we must set MAXHOMDIM to -1 here.
-     */
-    WLSEG_MAXHOMDIM (new_node) = -1;
+    WLSEG_HOMSV (new_node) = NULL;
 
     DBUG_RETURN (new_node);
 }

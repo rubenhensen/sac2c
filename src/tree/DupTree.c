@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.48  2001/05/03 17:26:20  dkr
+ * MAXHOMDIM replaced by HOMSV
+ *
  * Revision 3.47  2001/05/03 16:50:08  nmw
  * increment fundef used counter in DupIcm for ND_AP icm
  *
@@ -1915,6 +1918,8 @@ DupWLseg (node *arg_node, node *arg_info)
     DUP_VECT (WLSEG_IDX_MAX (new_node), WLSEG_IDX_MAX (arg_node), WLSEG_DIMS (new_node),
               int);
 
+    DUP_VECT (WLSEG_UBV (new_node), WLSEG_UBV (arg_node), WLSEG_DIMS (new_node), int);
+
     WLSEG_BLOCKS (new_node) = WLSEG_BLOCKS (arg_node);
 
     for (i = 0; i < WLSEG_BLOCKS (new_node); i++) {
@@ -1922,13 +1927,12 @@ DupWLseg (node *arg_node, node *arg_info)
                   int);
     }
 
-    DUP_VECT (WLSEG_UBV (new_node), WLSEG_UBV (arg_node), WLSEG_DIMS (new_node), int);
     DUP_VECT (WLSEG_SV (new_node), WLSEG_SV (arg_node), WLSEG_DIMS (new_node), int);
+    DUP_VECT (WLSEG_HOMSV (new_node), WLSEG_HOMSV (arg_node), WLSEG_DIMS (new_node), int);
 
     if (WLSEG_SCHEDULING (arg_node) != NULL) {
         WLSEG_SCHEDULING (new_node) = SCHCopyScheduling (WLSEG_SCHEDULING (arg_node));
     }
-    WLSEG_MAXHOMDIM (new_node) = WLSEG_MAXHOMDIM (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
