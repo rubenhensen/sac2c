@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/08/14 13:54:03  cg
+ * Revision 1.8  1995/09/27 15:58:57  cg
+ * some undefs for compatibility with new syntax tree structures added.
+ *
+ * Revision 1.7  1995/08/14  13:54:03  cg
  * added ATTRIB, STATUS, IDS_ATTR, IDS_STAT
  *
  * Revision 1.6  1995/07/10  16:20:23  asi
@@ -28,6 +31,11 @@
 #ifndef _access_macros_h
 
 #define _access_macros_h
+
+/* to avoid warnings in connection with new virtual syntax tree */
+#undef IDS_DEF
+#undef IDS_REFCNT
+#undef IDS_NEXT
 
 /* macros for access to elements of struct info.types */
 #define TYPES info.types
