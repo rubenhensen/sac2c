@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/10/07 13:39:17  sbs
+ * when run with -dsysccall, now a NOTE is issued for the preprocessor call
+ *
  * Revision 2.2  1999/05/06 15:38:46  sbs
  * call of yyparse changed to My_yyparse.
  *
@@ -262,6 +265,9 @@ ScanParse ()
         strcat (cccallstr, pathname);
         NOTE (("Parsing file \"%s\" ...", pathname));
     }
+
+    if (show_syscall)
+        NOTE (("yyin = popen( %s)", cccallstr));
 
     yyin = popen (cccallstr, "r");
 
