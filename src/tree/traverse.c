@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.91  2004/10/15 10:03:58  sah
+ * removed old module system nodes in
+ * new ast mode
+ *
  * Revision 3.90  2004/10/15 09:08:32  ktr
  * added emaa_tab
  *
@@ -502,6 +506,12 @@ funtab *cdfg_tab = &cdfg_tab_rec;
  */
 #ifdef NEW_AST
 #define FreeInfo TravError
+#define FreeModdec TravError
+#define FreeClassdec TravError
+#define FreeImplist TravError
+#define FreeModspec TravError
+#define FreeExplist TravError
+#define FreeSib TravError
 #endif /* NEW_AST */
 static funtab free_tab_rec = {{
 #define NIFfree(it_free) it_free
@@ -512,6 +522,12 @@ static funtab free_tab_rec = {{
 funtab *free_tab = &free_tab_rec;
 #ifdef NEW_AST
 #undef FreeInfo
+#undef FreeModdec
+#undef FreeClassdec
+#undef FreeImplist
+#undef FreeModspec
+#undef FreeExplist
+#undef FreeSib
 #endif /* NEW_AST */
 #ifndef NEW_AST
 /*

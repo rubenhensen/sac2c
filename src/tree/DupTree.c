@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.110  2004/10/15 10:03:58  sah
+ * removed old module system nodes in
+ * new ast mode
+ *
  * Revision 3.109  2004/10/15 09:09:14  ktr
  * added AVIS_ALIAS ARG_ALIAS
  *
@@ -1249,6 +1253,7 @@ DupFundef (node *arg_node, info *arg_info)
 node *
 DupImplist (node *arg_node, info *arg_info)
 {
+#ifndef NEW_AST
     node *new_node;
 
     DBUG_ENTER ("DupImplist");
@@ -1263,6 +1268,9 @@ DupImplist (node *arg_node, info *arg_info)
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
+#else
+    return ((node *)NULL);
+#endif /* NEW_AST */
 }
 
 /******************************************************************************/

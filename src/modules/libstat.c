@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/15 10:03:58  sah
+ * removed old module system nodes in
+ * new ast mode
+ *
  * Revision 1.1  2004/10/04 11:35:10  sah
  * Initial revision
  *
@@ -70,8 +74,7 @@ PrintLibStatCodeReadEntry (module_t *module, node *modnode, symbolentry_t *entry
 
         tmp = serfun ();
 
-        EXPLIST_FUNS (MODDEC_OWN (modnode))
-          = AppendFundef (EXPLIST_FUNS (MODDEC_OWN (modnode)), tmp);
+        MODUL_FUNS (modnode) = AppendFundef (MODUL_FUNS (modnode), tmp);
 
         break;
     case STE_typedef:
@@ -110,8 +113,8 @@ PrintLibStatCode (module_t *module, symboltable_t *table)
 
     DBUG_ENTER ("PrintLibStatPrintCode");
 
-    syntax_tree = MakeModdec (StringCopy (GetModuleName (module)), NULL, 0, NULL,
-                              MakeExplist (NULL, NULL, NULL, NULL));
+    syntax_tree = MakeModul (StringCopy (GetModuleName (module)), F_prog, NULL, NULL,
+                             NULL, NULL, NULL);
 
     chain = SymbolTableSymbolChainGet (table);
 
@@ -124,7 +127,7 @@ PrintLibStatCode (module_t *module, symboltable_t *table)
 
     syntax_tree = NT2OTTransform (syntax_tree);
 
-    PrintLibStatCodeAddBodies (module, EXPLIST_FUNS (MODDEC_OWN (syntax_tree)));
+    PrintLibStatCodeAddBodies (module, MODUL_FUNS (syntax_tree));
 
     Print (syntax_tree);
 
