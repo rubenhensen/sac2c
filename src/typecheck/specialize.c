@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2003/09/11 15:26:44  sbs
+ * function specialization now bound by max_overload!
+ *
  * Revision 1.7  2003/04/07 14:30:31  sbs
  * specialization oracle now does not at all specialize for AKVs!
  *
@@ -88,7 +91,7 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, DFT_res *dft)
     DBUG_ENTER ("SpecializationOracle");
     if ((dft->num_deriveable_partials > 1)
         || ((dft->num_deriveable_partials == 1) && (dft->deriveable != NULL))
-        || FUNDEF_IS_EXTERNAL (fundef)) {
+        || FUNDEF_IS_EXTERNAL (fundef) || (FUNDEF_SPECS (fundef) >= max_overload)) {
 
         arg = FUNDEF_ARGS (fundef);
         res = TYMakeEmptyProductType (CountArgs (arg));
@@ -219,6 +222,8 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     /* insert the new type signature into the wrapper */
     FUNDEF_TYPE (wrapper)
       = TYMakeOverloadedFunType (TYCopyType (FUNDEF_TYPE (res)), FUNDEF_TYPE (wrapper));
+
+    FUNDEF_SPECS (fundef)++;
 
     DBUG_RETURN (res);
 }
