@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.90  1998/05/17 00:10:11  dkr
+ * WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
+ * fixed a bug with CODE_TEMPLATE:
+ *   CODE_TEMPLATE is duplicated, too
+ *
  * Revision 1.89  1998/05/15 23:54:21  dkr
  * changed DupNwith2
  *
@@ -1166,7 +1171,7 @@ DupNgen (node *arg_node, node *arg_info)
 node *
 DupNwith2 (node *arg_node, node *arg_info)
 {
-    node *new_node, *id, *seg, *code, *withop;
+    node *new_node, *id, *segs, *code, *withop;
     int d;
 
     DBUG_ENTER ("DupNwith2");
@@ -1177,10 +1182,10 @@ DupNwith2 (node *arg_node, node *arg_info)
      */
     code = DUPTRAV (NWITH2_CODE (arg_node));
     id = DUPTRAV (NWITH2_WITHID (arg_node));
-    seg = DUPTRAV (NWITH2_SEGS (arg_node));
+    segs = DUPTRAV (NWITH2_SEGS (arg_node));
     withop = DUPTRAV (NWITH2_WITHOP (arg_node));
 
-    new_node = MakeNWith2 (id, seg, code, withop, NWITH2_DIMS (arg_node));
+    new_node = MakeNWith2 (id, segs, code, withop, NWITH2_DIMS (arg_node));
 
     if (NWITH2_IDX_MIN (arg_node) != NULL) {
         DBUG_ASSERT ((NWITH2_IDX_MAX (arg_node) != NULL), "IDX_MAX not found");
@@ -1297,16 +1302,19 @@ DupWLstride (node *arg_node, node *arg_info)
 node *
 DupWLgrid (node *arg_node, node *arg_info)
 {
-    node *new_node, *code = NULL;
+    node *new_node, *new_code = NULL;
 
     DBUG_ENTER ("DupWLgrid");
 
-    /* get pointer to duplicated code!!! */
+    /*
+     * set new code
+     */
     if (WLGRID_CODE (arg_node) != NULL) {
-        code = NCODE_COPY (WLGRID_CODE (arg_node));
-        if (code == NULL) {
+        /* get pointer to duplicated code!!! */
+        new_code = NCODE_COPY (WLGRID_CODE (arg_node));
+        if (new_code == NULL) {
             /* code has not been duplicated, so we take the original one!! */
-            code = WLGRID_CODE (arg_node);
+            new_code = WLGRID_CODE (arg_node);
         }
     }
 
@@ -1314,9 +1322,13 @@ DupWLgrid (node *arg_node, node *arg_info)
       = MakeWLgrid (WLGRID_LEVEL (arg_node), WLGRID_DIM (arg_node),
                     WLGRID_BOUND1 (arg_node), WLGRID_BOUND2 (arg_node),
                     WLGRID_UNROLLING (arg_node), DUPTRAV (WLGRID_NEXTDIM (arg_node)),
-                    DUPCONT (WLGRID_NEXT (arg_node)), code);
+                    DUPCONT (WLGRID_NEXT (arg_node)), new_code);
 
-    WLGRID_CEXPR_TEMPLATE (new_node) = DUPTRAV (WLGRID_CEXPR_TEMPLATE (arg_node));
+    WLGRID_CODE_TEMPLATE (new_node) = WLGRID_CODE_TEMPLATE (arg_node);
+
+    /*
+     * duplicated grids are not modified yet ;)
+     */
     WLGRID_MODIFIED (new_node) = 0;
 
     DBUG_RETURN (new_node);
@@ -1346,15 +1358,29 @@ DupWLstriVar (node *arg_node, node *arg_info)
 node *
 DupWLgridVar (node *arg_node, node *arg_info)
 {
-    node *new_node;
+    node *new_node, *new_code = NULL;
 
     DBUG_ENTER ("DupWLgridVar");
+
+    /*
+     * set new code
+     */
+    if (WLGRIDVAR_CODE (arg_node) != NULL) {
+        /* get pointer to duplicated code!!! */
+        new_code = NCODE_COPY (WLGRIDVAR_CODE (arg_node));
+        if (new_code == NULL) {
+            /* code has not been duplicated, so we take the original one!! */
+            new_code = WLGRIDVAR_CODE (arg_node);
+        }
+    }
 
     new_node
       = MakeWLgridVar (WLGRIDVAR_DIM (arg_node), DUPTRAV (WLGRIDVAR_BOUND1 (arg_node)),
                        DUPTRAV (WLGRIDVAR_BOUND2 (arg_node)),
                        DUPTRAV (WLGRIDVAR_NEXTDIM (arg_node)),
-                       DUPCONT (WLGRIDVAR_NEXT (arg_node)), WLGRIDVAR_CODE (arg_node));
+                       DUPCONT (WLGRIDVAR_NEXT (arg_node)), new_code);
+
+    WLGRIDVAR_CODE_TEMPLATE (new_node) = WLGRIDVAR_CODE_TEMPLATE (arg_node);
 
     DBUG_RETURN (new_node);
 }
