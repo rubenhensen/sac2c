@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2000/05/25 17:19:13  dkr
+ * header added
+ *
  * Revision 1.20  2000/03/24 15:21:25  dkr
  * fixed a bug in L2F_INFERap: varargs are handle correctly now
  *
@@ -70,6 +73,40 @@
  *
  */
 
+/*****************************************************************************
+ *
+ * file:   lac2fun.c
+ *
+ * prefix: L2F_INFER, L2F_LIFT
+ *
+ * description:
+ *
+ *   This compiler module implements the conversion of conditionals and
+ *   loops into their true functional representation.
+ *
+ * usage of arg_info (INFO_LAC2FUN_...):
+ *
+ *   during INFER-phase:
+ *
+ *     ...FUNDEF   pointer to the current fundef
+ *
+ *     ...NEEDED   DFmask: vars needed in outer blocks
+ *     ...IN       DFmask: vars used before eventually defined (in the current block)
+ *     ...OUT      DFmask: vars defined an needed in outer blocks
+ *     ...LOCAL    DFmask: vars defined before eventually used
+ *     (Note: Each var occuring in a block is either IN-var or (exclusive!) LOCAL-var)
+ *
+ *     ...ISFIX    flag: fixpoint reached?
+ *
+ *   during LIFT-phase:
+ *
+ *     ...FUNDEF   pointer to the current fundef
+ *
+ *     ...ISTRANS  flag: has the current assignment been modified?
+ *     ...FUNS     chain of newly generated dummy functions
+ *
+ *****************************************************************************/
+
 #include "tree.h"
 #include "traverse.h"
 #include "free.h"
@@ -80,30 +117,6 @@
 #include "cleanup_decls.h"
 
 #define MAIN_HAS_NO_MODNAME
-
-/*
- * usage of arg_info (INFO_LAC2FUN_...)
- * ------------------------------------
- *
- * during INFER-phase:
- *
- *   ...FUNDEF   pointer to the current fundef
- *
- *   ...NEEDED   DFmask: vars needed in outer blocks
- *   ...IN       DFmask: vars used before eventually defined (in the current block)
- *   ...OUT      DFmask: vars defined an needed in outer blocks
- *   ...LOCAL    DFmask: vars defined before eventually used
- *   (Note: Each var occuring in a block is either IN-var or (exclusive!) LOCAL-var)
- *
- *   ...ISFIX    flag: fixpoint reached?
- *
- * during LIFT-phase:
- *
- *   ...FUNDEF   pointer to the current fundef
- *
- *   ...ISTRANS  flag: has the current assignment been modified?
- *   ...FUNS     chain of newly generated dummy functions
- */
 
 /*
  *
