@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.105  1996/01/07 16:55:50  cg
+ * Revision 1.106  1996/01/09 08:54:58  cg
+ * added new version of function Print in comments
+ *
+ * Revision 1.105  1996/01/07  16:55:50  cg
  * pragmas of typedefs and objdefs are no longer printed
  *
  * Revision 1.104  1996/01/05  14:34:22  cg
@@ -1567,6 +1570,32 @@ Print (node *arg_node)
         }
         fprintf (outfile, "#include \"icm2c.h\"\n");
     }
+
+    /*
+      if(show_icm == 0)
+      {
+        if(traceflag != 0 )
+        {
+          if(traceflag & TRACE_MEM)
+          {
+            fprintf(outfile,"#define TRACE_MEM\n");
+            fprintf(outfile,"\nint __trace_mem_cnt=0;\n\n");
+          }
+          if(traceflag & TRACE_REF)
+          {
+            fprintf(outfile,"#define TRACE_REF\n");
+          }
+        }
+
+        if (check_malloc)
+        {
+          fprintf(outfile, "#define CHECK_MALLOC\n");
+        }
+
+        fprintf(outfile,"#include \"libsac.h\"\n");
+        fprintf(outfile,"#include \"icm2c.h\"\n");
+      }
+    */
 
     arg_node = Trav (arg_node, NULL);
 
