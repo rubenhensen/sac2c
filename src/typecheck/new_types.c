@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2004/10/25 20:24:15  sah
+ * missing , added
+ *
  * Revision 3.61  2004/10/25 11:58:47  sah
  * major code cleanup
  *
@@ -5978,6 +5981,7 @@ SerializeIResType (FILE *file, ntype *type)
     fprintf (file, "TYDeserializeType( %d, %d", NTYPE_CON (type), IRES_NUMFUNS (type));
 
     for (cnt = 0; cnt < IRES_NUMFUNS (type); cnt++) {
+        fprintf (file, ", ");
         SerializeFundefLink (IRES_FUNDEF (type, cnt), file);
     }
 
