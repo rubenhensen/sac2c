@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/04/03 12:06:43  dkr
+ * GSCPrintDefines added
+ *
  * Revision 3.5  2001/04/02 15:24:17  dkr
  * no changes done
  *
@@ -198,11 +201,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include "dbug.h"
 #include "globals.h"
 #include "resource.h"
 #include "types.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "traverse.h"
 #include "free.h"
 #include "precompile.h"
@@ -212,9 +217,9 @@
  * global variable: static int spmd_block_counter
  *
  * description:
- *   This variable is used to detect whether a given function definition contains
- *   any SPMD blocks. If not, a dummy entry has to be inserted at the respective
- *   position of the global SPMD frame.
+ *   This variable is used to detect whether a given function definition
+ *   contains any SPMD blocks. If not, a dummy entry has to be inserted at
+ *   the respective position of the global SPMD frame.
  *
  ******************************************************************************/
 
@@ -263,7 +268,8 @@ PrintTargetPlatform ()
 {
     DBUG_ENTER ("PrintTargetPlatform");
 
-    fprintf (outfile, "/*\n *  Target Platform\n */\n\n");
+    fprintf (outfile, "/*\n"
+                      " *  Target Platform\n */\n\n");
 
     fprintf (outfile, "#define SAC_FOR_%s\n", target_platform);
 
@@ -288,7 +294,9 @@ PrintGlobalSwitches ()
 {
     DBUG_ENTER ("PrintGlobalSwitches");
 
-    fprintf (outfile, "\n\n/*\n *  Global Switches\n */\n\n");
+    fprintf (outfile, "\n\n"
+                      "/*\n"
+                      " *  Global Switches\n */\n\n");
 
     fprintf (outfile, "#define SAC_DO_CHECK           %d\n", runtimecheck ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_CHECK_MALLOC    %d\n",
@@ -370,7 +378,7 @@ PrintGlobalSwitches ()
 /******************************************************************************
  *
  * function:
- *   void PrintSpmdData(node *syntax_tree)
+ *   void PrintSpmdData( node *syntax_tree)
  *
  * description:
  *   This function initializes an additional traversal of the syntax tree
@@ -429,9 +437,13 @@ PrintProfileData ()
     fprintf (outfile, "  {    \\\n");
     fprintf (outfile, "    \"%s\"", PFfunnme[0]);
     for (i = 1; i < PFfuncntr; i++) {
-        fprintf (outfile, ",   \\\n    \"%s\"", PFfunnme[i]);
+        fprintf (outfile,
+                 ",   \\\n"
+                 "    \"%s\"",
+                 PFfunnme[i]);
     };
-    fprintf (outfile, "   \\\n  }\n");
+    fprintf (outfile, "   \\\n"
+                      "  }\n");
 
     fprintf (outfile, "\n");
 
@@ -439,9 +451,13 @@ PrintProfileData ()
     fprintf (outfile, "  {    \\\n");
     fprintf (outfile, "    %d", PFfunapcntr[0]);
     for (i = 1; i < PFfuncntr; i++) {
-        fprintf (outfile, ",   \\\n    %d", PFfunapcntr[i]);
+        fprintf (outfile,
+                 ",   \\\n"
+                 "    %d",
+                 PFfunapcntr[i]);
     }
-    fprintf (outfile, "   \\\n  }\n");
+    fprintf (outfile, "   \\\n"
+                      "  }\n");
 
     fprintf (outfile, "\n");
 
@@ -452,16 +468,20 @@ PrintProfileData ()
     for (j = 1; j < PFfunapcntr[0]; j++) {
         fprintf (outfile, ", %d", PFfunapline[0][j]);
     }
-    fprintf (outfile, "   \\\n    }");
+    fprintf (outfile, "   \\\n"
+                      "    }");
     for (i = 1; i < PFfuncntr; i++) {
-        fprintf (outfile, ",   \\\n    {     \\\n");
+        fprintf (outfile, ",   \\\n"
+                          "    {     \\\n");
         fprintf (outfile, "      %d", PFfunapline[i][0]);
         for (j = 1; j < PFfunapcntr[i]; j++) {
             fprintf (outfile, ", %d", PFfunapline[i][j]);
         }
-        fprintf (outfile, "   \\\n    }");
+        fprintf (outfile, "   \\\n"
+                          "    }");
     }
-    fprintf (outfile, "   \\\n  }");
+    fprintf (outfile, "   \\\n"
+                      "  }");
 
     fprintf (outfile, "\n");
 
@@ -471,7 +491,7 @@ PrintProfileData ()
 /******************************************************************************
  *
  * function:
- *   void PrintGlobalSettings(node *syntax_tree)
+ *   void PrintGlobalSettings( node *syntax_tree)
  *
  * description:
  *
@@ -591,9 +611,12 @@ PrintIncludes ()
 {
     DBUG_ENTER ("PrintIncludes");
 
-    fprintf (outfile, "\n\n/*\n *  Includes\n */\n\n");
+    fprintf (outfile, "\n\n"
+                      "/*\n"
+                      " *  Includes\n */\n\n");
 
-    fprintf (outfile, "\n#include \"sac.h\"\n\n");
+    fprintf (outfile, "\n"
+                      "#include \"sac.h\"\n\n");
 
     DBUG_VOID_RETURN;
 }
@@ -613,7 +636,10 @@ PrintDefines ()
 {
     DBUG_ENTER ("PrintDefines");
 
-    fprintf (outfile, "\n\n/*\n *  Global Definitions\n */\n\n");
+    fprintf (outfile, "\n\n"
+                      "/*\n"
+                      " *  Global Definitions\n"
+                      " */\n\n");
 
     fprintf (outfile, "SAC_MT_DEFINE()\n");
     fprintf (outfile, "SAC_PF_DEFINE()\n");
@@ -625,7 +651,7 @@ PrintDefines ()
 /******************************************************************************
  *
  * function:
- *   node *GSCicm(node *arg_node, node *arg_info)
+ *   node *GSCicm( node *arg_node, node *arg_info)
  *
  * description:
  *   filters the variables needed for the spmd-frame of a specific function
@@ -641,49 +667,46 @@ GSCicm (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("GSCicm");
 
-    if (0 == strcmp (ICM_NAME (arg_node), "MT_SPMD_SETUP")) {
+    if (!strcmp (ICM_NAME (arg_node), "MT_SPMD_SETUP")) {
 
-        DBUG_ASSERT ((ICM_ARGS (arg_node) != NULL),
+        DBUG_ASSERT ((ICM_EXPRS1 (arg_node) != NULL),
                      "ICM MT_SPMD_BLOCK has wrong format (args missing)");
-        DBUG_ASSERT ((EXPRS_NEXT (ICM_ARGS (arg_node)) != NULL),
+        DBUG_ASSERT ((ICM_EXPRS2 (arg_node) != NULL),
                      "ICM MT_SPMD_BLOCK has wrong format (name missing)");
-        DBUG_ASSERT ((EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (arg_node))) != NULL),
+        DBUG_ASSERT ((ICM_EXPRS3 (arg_node) != NULL),
                      "ICM MT_SPMD_BLOCK has wrong format (numargs missing)");
 
-        icm_arg = EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (arg_node)));
-
+        icm_arg = ICM_EXPRS3 (arg_node);
         while (icm_arg != NULL) {
-
-            DBUG_ASSERT ((EXPRS_EXPR (icm_arg) != NULL),
+            DBUG_ASSERT ((EXPRS_EXPR1 (icm_arg) != NULL),
                          "ICM MT_SPMD_BLOCK has wrong format (tag missing)");
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (icm_arg)) == N_id),
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR1 (icm_arg)) == N_id),
                          "ICM MT_SPMD_BLOCK has wrong format (tag missing)");
 
-            tag = ID_NAME (EXPRS_EXPR (icm_arg));
+            tag = ID_NAME (EXPRS_EXPR1 (icm_arg));
 
-            DBUG_ASSERT ((EXPRS_NEXT (icm_arg) != NULL),
+            DBUG_ASSERT ((EXPRS_EXPRS2 (icm_arg) != NULL),
                          "ICM MT_SPMD_BLOCK has wrong format (type missing)");
-            DBUG_ASSERT ((EXPRS_EXPR (EXPRS_NEXT (icm_arg)) != NULL),
+            DBUG_ASSERT ((EXPRS_EXPR2 (icm_arg) != NULL),
                          "ICM MT_SPMD_BLOCK has wrong format (type missing)");
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (icm_arg))) == N_id),
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR2 (icm_arg)) == N_id),
                          "ICM MT_SPMD_BLOCK has wrong format (type missing)");
 
-            type = ID_NAME (EXPRS_EXPR (EXPRS_NEXT (icm_arg)));
+            type = ID_NAME (EXPRS_EXPR2 (icm_arg));
 
-            DBUG_ASSERT ((EXPRS_NEXT (EXPRS_NEXT (icm_arg)) != NULL),
+            DBUG_ASSERT ((EXPRS_EXPRS3 (icm_arg) != NULL),
                          "ICM MT_SPMD_BLOCK has wrong format (parameter missing)");
-            DBUG_ASSERT ((EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (icm_arg))) != NULL),
+            DBUG_ASSERT ((EXPRS_EXPR3 (icm_arg) != NULL),
                          "ICM MT_SPMD_BLOCK has wrong format (parameter missing)");
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (icm_arg))))
-                          == N_id),
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR3 (icm_arg)) == N_id),
                          "ICM MT_SPMD_BLOCK has wrong format (parameter missing)");
 
-            name = ID_NAME (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (icm_arg))));
+            name = ID_NAME (EXPRS_EXPR3 (icm_arg));
 
             fprintf (outfile, "        SAC_MT_SPMD_ARG_%s( %s, %s)    \\\n", tag, type,
                      name);
 
-            icm_arg = EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (icm_arg)));
+            icm_arg = EXPRS_EXPRS4 (icm_arg);
         }
     }
 
@@ -693,7 +716,7 @@ GSCicm (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *GSCspmd(node *arg_node, node *arg_info)
+ *   node *GSCspmd( node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -726,7 +749,7 @@ GSCspmd (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *
+ *   node *GSCfundef( node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -774,10 +797,10 @@ GSCfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   void GSCPrintFileHeader(node *syntax_tree)
+ *   void GSCPrintFileHeader( node *syntax_tree)
  *
  * description:
- *   generated header part of header.h
+ *
  *
  ******************************************************************************/
 
@@ -789,8 +812,8 @@ GSCPrintFileHeader (node *syntax_tree)
     PrintTargetPlatform ();
     PrintGlobalSwitches ();
     PrintGlobalSettings (syntax_tree);
+
     PrintIncludes ();
-    PrintDefines ();
 
     DBUG_VOID_RETURN;
 }
@@ -798,7 +821,7 @@ GSCPrintFileHeader (node *syntax_tree)
 /******************************************************************************
  *
  * function:
- *   void GSCPrintInternalInitFileHeader(node *syntax_tree)
+ *   void GSCPrintInternalInitFileHeader( node *syntax_tree)
  *
  * description:
  *   generates header part of internal_runtime_init.c
@@ -820,6 +843,28 @@ GSCPrintInternalInitFileHeader (node *syntax_tree)
     fprintf (outfile, "#define SAC_DO_COMPILE_MODULE 0\n");
 
     PrintIncludes ();
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void GSCPrintDefines()
+ *
+ * description:
+ *
+ *
+ * remark:
+ *   This function should be called *after* the typedefs have been printed!
+ *
+ ******************************************************************************/
+
+void
+GSCPrintDefines ()
+{
+    DBUG_ENTER ("GSCPrintDefines");
+
     PrintDefines ();
 
     DBUG_VOID_RETURN;
@@ -881,7 +926,8 @@ GSCPrintMainEnd ()
     /*
      * outfile is already indented by 2
      */
-    fprintf (outfile, "\n  SAC_PF_PRINT();\n");
+    fprintf (outfile, "\n"
+                      "  SAC_PF_PRINT();\n");
     fprintf (outfile, "  SAC_CS_FINALIZE();\n");
     fprintf (outfile, "  SAC_HM_PRINT();\n\n");
 

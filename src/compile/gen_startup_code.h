@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/04/03 12:06:53  dkr
+ * GSCPrintDefines added
+ *
  * Revision 3.1  2000/11/20 18:01:12  sacbase
  * new release made
  *
@@ -25,7 +28,6 @@
  * Revision 1.1  1998/03/24 14:33:35  cg
  * Initial revision
  *
- *
  */
 
 /*****************************************************************************
@@ -41,14 +43,14 @@
  *
  *****************************************************************************/
 
-#ifndef GEN_STARTUP_CODE_H
-
-#define GEN_STARTUP_CODE_H
+#ifndef _SAC_GEN_STARTUP_CODE_H_
+#define _SAC_GEN_STARTUP_CODE_H_
 
 #include "types.h"
 
-extern void GSCPrintFileHeader (node *);
+extern void GSCPrintFileHeader (node *syntax_tree);
 extern void GSCPrintInternalInitFileHeader (node *syntax_tree);
+extern void GSCPrintDefines ();
 extern void GSCPrintMainBegin ();
 extern void GSCPrintMainEnd ();
 
@@ -58,4 +60,4 @@ extern node *GSCfundef (node *arg_node, node *arg_info);
 extern node *GSCspmd (node *arg_node, node *arg_info);
 extern node *GSCicm (node *arg_node, node *arg_info);
 
-#endif /* GEN_STARTUP_CODE_H */
+#endif /* _SAC_GEN_STARTUP_CODE_H_ */
