@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/03/13 16:03:20  ktr
+ * Withloop-Scalarization deactivated in compilation by default
+ *
  * Revision 3.16  2001/12/10 15:00:57  dkr
  * flag dkr removed
  *
@@ -384,9 +387,11 @@ bool patch_with = FALSE;
 
 #ifdef PRODUCTION
 unsigned int optimize
-  = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL);
-#else  /* PRODUCTION */
-unsigned int optimize = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL);
+  = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_WLS);
+#else /* PRODUCTION */
+unsigned int optimize
+  = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_WLS);
+
 #endif /* PRODUCTION */
 
 /*
