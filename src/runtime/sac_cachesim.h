@@ -1,77 +1,178 @@
-/* gehören die typedefs hier rein? */
+/*
+ * $Log$
+ * Revision 1.3  1999/02/17 17:14:22  her
+ * new parameter for Initialize: profilelevel
+ * english comments
+ *
+ */
+
+/*****************************************************************************
+ *
+ * file:   sac_cachesim.h
+ *
+ * prefix: SAC_CS_
+ *
+ * description:
+ *
+ *   Deciding if a code-optimization has been successfull or not is often hard
+ *   because the hardware caches behave like a black box. There is no way to
+ *   get information about hit- and missrates after a run of a special program.
+ *
+ *   The SAC_CacheSimulation shall help here. It simulates up to three
+ *   cachelevels for a single CPU. Because the most used and bigest
+ *   datastructures in SAC are arrays the simulated accesses are limmeted to
+ *   arrayelements. The SAC_CacheSimulation analyses the accesses and tells the
+ *   user about the number of hits and misses. Furthermore the misses are
+ *   classified as coldstartmiss, self- or crossinterferencemiss.
+ *
+ *****************************************************************************/
+
+#ifndef SAC_CACHESIM_H
+#define SAC_CACHESIM_H
+
+#define _POSIX_C_SOURCE 199506L
+
 #define ULINT unsigned long int
+#define MAX_SHADOWARRAYS 100
+#define MAX_CACHELEVEL 3
 
-typedef enum eWritePolicy { unknown } tWritePolicy;
+typedef enum eWritePolicy {
+    Default,
+    fetch_on_write,
+    write_validate,
+    write_around
+} tWritePolicy;
 
-typedef struct sCacheLevel {
+typedef enum eProfilingLevel { simple, detailed } tProfilingLevel;
+
+typedef struct sCacheLevel { /* about simulated cache */
     int associativity;
     int cachelinesize;
     tWritePolicy writepolicy;
     ULINT cachesize;
-    ULINT setsize;
+    ULINT internsize; /* cachesize/assoc. */
+    int cls_bits;
     ULINT cls_mask;
-    int ss_bits;
-    ULINT ss_mask;
-    ULINT max_cachelineindex;
-                            /*tDynArray    data;*/ }
-tCacheLevel;
+    int is_bits;
+    ULINT is_mask;
+    ULINT nr_cachelines;
+    ULINT *data;
+    /* about shadowarrays */
+    char *shadowarrays[MAX_SHADOWARRAYS];
+    ULINT shadowbases[MAX_SHADOWARRAYS];
+    ULINT shadowalignedtop[MAX_SHADOWARRAYS];
+    int shadowmaxindices[MAX_SHADOWARRAYS];
+    int shadownrcols[MAX_SHADOWARRAYS];
+} tCacheLevel;
 
-                            extern void SAC_CPF_Initialize (
-                              int nr_of_cpu, ULINT cachesize1, int cachelinesize1,
-                              int associativity1, tWritePolicy writepolicy1,
-                              ULINT cachesize2, int cachelinesize2, int associativity2,
-                              tWritePolicy writepolicy2, ULINT cachesize3,
-                              int cachelinesize3, int associativity3,
-                              tWritePolicy writepolicy3);
-                            /* Initialisiert die Cache-Strukturen für die angegebenen
-                             * cachelevel aller CPUs
-                             *
-                             * Die Angabe der cachesize erfolgt in KB (1KByte=1024Byte).
-                             * Eine cachesize von 0 KB bedeutet, daß dieser cachelevel
-                             * nicht existiert. Die Angabe der cachelinesize erfolgt in
-                             * Byte Dabei muss gelten: cachesize mod cachelinesize = 0
-                             * fuer die associativity muss gelten:
-                             *  +  1 <= associativity <= cachesize/cachelinesize
-                             *  +  associativity=1                       -> direct mapped
-                             * cache
-                             *  +  associativity=cachesize/cachelinesize -> full
-                             * associative cache Die Angabe der writepolicy gibt die
-                             * Rückschreibestrategie an.
-                             */
+typedef void (*tFunRWAccess) (void * /*baseaddress*/, void * /*elemaddress*/);
+/* Pointer to a function which gets two void* as argument
+ * and returns a void */
 
-                            extern void SAC_CPF_Finalize (void);
-                            /* Gibt verwendeten Speicher der Cache-Strukturen aller
-                             * cachelevel aller CPU's wieder frei
-                             */
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_CS_Initialize(...)
+ *
+ * description:
+ *
+ *   Initiates all neccesary structures according to the specified cache-
+ *   parameters.
+ *   About specifying the cacheparameters:
+ *     profilinglevel decides between a simple or more detailed analysis
+ *     cachesize in kilobyte (1kbyte=1024byte)
+ *     cachesize==0 means that this cachelevel is not installed
+ *     cachelinesize in byte
+ *     associativity==1                       -> direct mapped cache
+ *     associativity==cachesize/cachelinesize -> full associative cache
+ *     writepolicy specifies on of the three writemisspolicies
+ *
+ *****************************************************************************/
+extern void SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel,
+                               ULINT cachesize1, int cachelinesize1, int associativity1,
+                               tWritePolicy writepolicy1, ULINT cachesize2,
+                               int cachelinesize2, int associativity2,
+                               tWritePolicy writepolicy2, ULINT cachesize3,
+                               int cachelinesize3, int associativity3,
+                               tWritePolicy writepolicy3);
 
-                            extern void SAC_CPF_RegisterArray (void *baseaddress,
-                                                               int size);
-                            /* Registriert ein Array, welches durch seine baseaddress
-                             * identifiziert wird, für das CPF
-                             *
-                             * Die Angabe der size erfolgt in Bytes und gibt die Groesse
-                             * eines eindimensionalen Arrays an
-                             */
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_CS_Finalize(void)
+ *
+ * description:
+ *   Frees all the memory which has been allocated during the run.
+ *
+ *****************************************************************************/
+extern void SAC_CS_Finalize (void);
 
-                            extern void SAC_CPF_UnregisterArray (void *baseaddress);
-                            /* Registrierung des Arrays, welches durch die baseaddress
-                             * identifiziert wird, für das CPF wird aufgehoben
-                             */
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_CS_RegisterArray(void* baseaddress, int size)
+ *
+ * description:
+ *   Prepares an 1-dimensional array for a detailed profilinglevel analysis.
+ *   The array will be identified by its baseaddress. Size has to be given in
+ *   byte.
+ *
+ *****************************************************************************/
+extern void SAC_CS_RegisterArray (void *baseaddress, int size);
 
-                            extern void SAC_CPF_ReadAccess (void *baseaddress,
-                                                            void *elemaddress);
-                            /* Lesender Zugriff auf ein Element (gegeben durch die
-                             * elemaddress) eines (auch unregistrierten) Arrays (gegeben
-                             * durch seine baseaddress)
-                             */
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_CS_UnregisterArray(void* baseaddress)
+ *
+ * description:
+ *   Opposite to SAC_CS_RegisterArray. Frees all memory which was used for the
+ *   detailed profilinglevel analysis.
+ *
+ *****************************************************************************/
+extern void SAC_CS_UnregisterArray (void *baseaddress);
 
-                            extern void SAC_CPF_WriteAccess (void *baseaddress,
-                                                             void *elemaddress);
-                            /* Schreibender Zugriff auf ein Element (gegeben durch die
-                             * elemaddress) eines (auch unregistrierten) Arrays (gegeben
-                             * durch seine baseaddress)
-                             */
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_CS_ReadAccess(void* baseaddress, void* elemaddress)
+ *
+ * description:
+ *   To simulate the cache every readaccess to an arrayelement has to execute
+ *   this function. To identify the array this function gets the baseaddress
+ *   of the affected array. The accessed element is given as a full address
+ *   (not only the offset to the baseaddress).
+ *
+ *****************************************************************************/
+extern void (*SAC_CS_ReadAccess) (void * /*baseaddress*/, void * /*elemaddress*/);
 
-                            extern void SAC_CPF_ShowResults (void);
-                            /* Gibt das Resultat des CPF auf der stdout aus
-                             */
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_CS_WriteAccess(void* baseaddress, void* elemaddress)
+ *
+ * description:
+ *   To simulate the cache every writeaccess to an arrayelement has to execute
+ *   this function. To identify the array this function gets the baseaddress
+ *   of the affected array. The accessed element is given as a full address
+ *   (not only the offset to the baseaddress).
+ *
+ *****************************************************************************/
+extern void (*SAC_CS_WriteAccess) (void * /*baseaddress*/, void * /*elemaddress*/);
+
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_CS_WriteAccess(void* baseaddress, void* elemaddress)
+ *
+ * description:
+ *   Prints the Results of the analysis.
+ *   simple & detailed profilinglevel:
+ *     hit- and missrate for each cachelevel
+ *   detailed profilinglevel only:
+ *     classification of misses as coldstart, self- or crossinterference
+ *
+ *****************************************************************************/
+extern void SAC_CS_ShowResults (void);
+
+#endif
