@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.15  1999/09/15 16:26:35  sbs
+# UNIX_ALPHA as new OS added.
+#
 # Revision 2.14  1999/07/30 13:49:50  jhs
 # Added concurrent_lib.o
 #
@@ -162,6 +165,7 @@ cc_PROD_FLAGS  := -erroff=E_CAST_DOESNT_YIELD_LVALUE -xO4
 # legal values for OS currently are:
 #    SOLARIS_SPARC
 #    LINUX_X86
+#    UNIX_ALPHA
 #
 OS        := SOLARIS_SPARC
 
@@ -182,6 +186,11 @@ SOLARIS_SPARC_LIBS  := -ll
 LINUX_X86_FLAGS     := -D_POSIX_SOURCE
 LINUX_X86_LIBS      := -lfl
 
+#
+# UNIX_ALPHA specific flags and libraries:
+#
+UNIX_ALPHA_FLAGS    := 
+UNIX_ALPHA_LIBS     := -ll
 
 ################################################################################
 #
@@ -288,10 +297,12 @@ distrib_product: prod sac2c.prod
 
 
 check_os:
-	@ if [ "$(OS)" != "SOLARIS_SPARC" -a "$(OS)" != "LINUX_X86" ]; \
+	@ if [ "$(OS)" != "SOLARIS_SPARC" -a "$(OS)" != "LINUX_X86" \
+               -a "$(OS)" != "UNIX_ALPHA" ]; \
 	  then $(ECHO) "*** Unknown OS! Please specify:"; \
                $(ECHO) "SOLARIS_SPARC (default)"; \
                $(ECHO) "LINUX_X86"; \
+               $(ECHO) "UNIX_ALPHA"; \
 	       exit 1; \
 	  fi
 
