@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.59  1995/09/27 15:16:54  cg
+ * Revision 1.60  1995/10/06 17:10:44  cg
+ * call to MakeIds adjusted to new signature (3 parameters)
+ *
+ * Revision 1.59  1995/09/27  15:16:54  cg
  * ATTENTION:
  * tree.c and tree.h are not part of the new virtual syntax tree.
  * They are kept for compatibility reasons with old code only !
@@ -218,7 +221,7 @@
 
 #define MAKENODE_ID(no, str)                                                             \
     no = MakeNode (N_id);                                                                \
-    no->IDS = MakeIds (str)
+    no->IDS = MakeIds (str, NULL, ST_regular)
 
 #define MAKENODE_BOOL(no, nr)                                                            \
     no = MakeNode (N_bool);                                                              \
