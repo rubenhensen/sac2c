@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/06/19 19:59:54  dkr
+ * fixed a bug:
+ *   now a negative mask (INFO_REUSE_NEGMASK) is used, too.
+ *
  * Revision 1.4  1998/06/19 17:26:46  dkr
  * fixed a bug in ReuseNwith2:
  *   traversal order is now correct
@@ -165,6 +169,10 @@ ReuseFundef (node *arg_node, node *arg_info)
  *   generates a new DFM for reuse-arrays and stores it in
  *   'NWITH2_REUSE( arg_node)'.
  *   'INFO_REUSE_MASK( arg_info)' contains a pointer to this mask.
+ *
+ *   generates a new DFM for no-reuse-arrays and stores it in
+ *   'INFO_REUSE_NEGMASK( arg_info)'.
+ *
  *   'INFO_REUSE_IDX( arg_info)' contains a pointer to the index vector of
  *    the with-loop.
  *   'INFO_REUSE_DEC_RC_IDS( arg_info)' contains a pointer to
@@ -187,17 +195,13 @@ ReuseNwith2 (node *arg_node, node *arg_info)
             NWITH2_REUSE (arg_node)
               = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_REUSE_FUNDEF (arg_info)));
             INFO_REUSE_MASK (arg_info) = NWITH2_REUSE (arg_node);
+            INFO_REUSE_NEGMASK (arg_info)
+              = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_REUSE_FUNDEF (arg_info)));
             INFO_REUSE_IDX (arg_info) = NWITH2_VEC (arg_node);
             INFO_REUSE_DEC_RC_IDS (arg_info) = NWITH2_DEC_RC_IDS (arg_node);
         }
     }
 
-    /*
-     * We must traverse 'withop' first!!!
-     * In ReuseNwithop() we insert the modarray-arg into the reuse-mask,
-     * and while traversal of the code we check whether this arg can really
-     * reused or not!!
-     */
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
@@ -232,7 +236,10 @@ ReuseNwithop (node *arg_node, node *arg_info)
          */
         if ((NODE_TYPE (NWITHOP_ARRAY (arg_node)) == N_id)
             && (IsFound (ID_NAME (NWITHOP_ARRAY (arg_node)),
-                         INFO_REUSE_DEC_RC_IDS (arg_info)))) {
+                         INFO_REUSE_DEC_RC_IDS (arg_info)))
+            && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info),
+                                  ID_NAME (NWITHOP_ARRAY (arg_node)), NULL)
+                == 0)) {
             DFMSetMaskEntrySet (INFO_REUSE_MASK (arg_info),
                                 ID_NAME (NWITHOP_ARRAY (arg_node)), NULL);
         }
@@ -275,7 +282,7 @@ ReuseLet (node *arg_node, node *arg_info)
     char *idx_psi_name;
     int traverse;
 #ifdef RECURSIVE
-    DFMmask_t old_mask;
+    DFMmask_t old_mask, old_negmask;
     ids *old_wl_ids;
     ids *old_idx;
     ids *old_dec_rc_ids;
@@ -296,6 +303,7 @@ ReuseLet (node *arg_node, node *arg_info)
         old_idx = INFO_REUSE_IDX (arg_info);
         old_dec_rc_ids = INFO_REUSE_DEC_RC_IDS (arg_info);
         old_mask = INFO_REUSE_MASK (arg_info);
+        old_negmask = INFO_REUSE_NEGMASK (arg_info);
 
         /*
          * generate reuse-mask for inner with-loop
@@ -304,6 +312,7 @@ ReuseLet (node *arg_node, node *arg_info)
         INFO_REUSE_IDX (arg_info) = NULL;
         INFO_REUSE_DEC_RC_IDS (arg_info) = NULL;
         INFO_REUSE_MASK (arg_info) = NULL;
+        INFO_REUSE_NEGMASK (arg_info) = NULL;
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
         /*
@@ -313,6 +322,7 @@ ReuseLet (node *arg_node, node *arg_info)
         INFO_REUSE_IDX (arg_info) = old_idx;
         INFO_REUSE_DEC_RC_IDS (arg_info) = old_dec_rc_ids;
         INFO_REUSE_MASK (arg_info) = old_mask;
+        INFO_REUSE_NEGMASK (arg_info) = old_negmask;
     }
 #endif
 
@@ -323,6 +333,7 @@ ReuseLet (node *arg_node, node *arg_info)
     tmp = LET_IDS (arg_node);
     while (tmp != NULL) {
         DFMSetMaskEntryClear (INFO_REUSE_MASK (arg_info), IDS_NAME (tmp), NULL);
+        DFMSetMaskEntrySet (INFO_REUSE_NEGMASK (arg_info), IDS_NAME (tmp), NULL);
 
         tmp = IDS_NEXT (tmp);
     }
@@ -339,7 +350,9 @@ ReuseLet (node *arg_node, node *arg_info)
                 && (NODE_TYPE (arg2) == N_id)
                 && (CompareTypes (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)))
                     == 0)
-                && (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info)))) {
+                && (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info)))
+                && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
+                    == 0)) {
                 /*
                  * 'arg2' is used in a normal WL-psi()
                  *  -> we can possibly reuse this array
@@ -360,7 +373,9 @@ ReuseLet (node *arg_node, node *arg_info)
                 && (NODE_TYPE (arg2) == N_id)
                 && (CompareTypes (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)))
                     == 0)
-                && (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info)))) {
+                && (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info)))
+                && (DFMTestMaskEntry (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg2), NULL)
+                    == 0)) {
                 /*
                  * 'arg2' is used in a (flattened) normal WL-psi()
                  *  -> we can possibly reuse this array
@@ -390,7 +405,8 @@ ReuseLet (node *arg_node, node *arg_info)
  *   node *ReuseId( node *arg_node, node *arg_info)
  *
  * description:
- *   removes 'arg_node' from the reuse-mask ('INFO_REUSE_MASK( arg_info)'),
+ *   Removes 'arg_node' from the reuse-mask ('INFO_REUSE_MASK( arg_info)')
+ *   and inserts it into the no-reuse-mask ('INFO_REUSE_NEGMASK( arg_info)'),
  *   because this is an illegal occur of this id.
  *
  ******************************************************************************/
@@ -401,6 +417,7 @@ ReuseId (node *arg_node, node *arg_info)
     DBUG_ENTER ("ReuseId");
 
     DFMSetMaskEntryClear (INFO_REUSE_MASK (arg_info), ID_NAME (arg_node), NULL);
+    DFMSetMaskEntrySet (INFO_REUSE_NEGMASK (arg_info), ID_NAME (arg_node), NULL);
 
     DBUG_RETURN (arg_node);
 }
