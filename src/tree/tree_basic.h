@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.87  2001/04/26 11:54:40  nmw
+ * ICM_FUNDEF attribute added
+ *
  * Revision 3.86  2001/04/25 13:55:06  dkr
  * ST_zombiefun added
  *
@@ -1935,6 +1938,11 @@ extern node *MakeEmpty ();
  ***    int    INDENT_AFTER
  ***    bool   END_OF_STATEMENT
  ***
+ ***  temporary attributes:
+ ***
+ ***    node*  FUNDEF            (compile -> free!! )
+ ***
+ ***
  ***  remarks:
  ***
  ***    INDENT_??? are used for indenting ICMs in output. This values are set
@@ -1942,6 +1950,10 @@ extern node *MakeEmpty ();
  ***
  ***    The END_OF_STATEMENT flag causes a semicolon to be printed behind
  ***    the ICM or not.
+ ***
+ ***    FUNDEF is needed for ICMs that reference a N_fundef node
+ ***    (e.g. ND_FUN_AP) in order to decrement the FUNDEF_USED counter
+ ***    during FreeIcm().
  ***/
 
 extern node *MakeIcm (char *name, node *args);
@@ -1951,6 +1963,7 @@ extern node *MakeIcm (char *name, node *args);
 #define ICM_INDENT_AFTER(n) (n->int_data)
 #define ICM_ARGS(n) (n->node[0])
 #define ICM_END_OF_STATEMENT(n) ((bool)(n->counter))
+#define ICM_FUNDEF(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
