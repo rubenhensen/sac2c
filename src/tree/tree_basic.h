@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.109  2002/02/22 13:24:04  dkr
+ * some casts modified (cc demands for it)
+ *
  * Revision 3.108  2002/02/22 11:48:33  dkr
  * FUNDEF, TYPEDEF, OBJDEF, VARDEC, ARG:
  * node attributes NAME, MOD, ... are no longer mapped into the TYPES
@@ -727,11 +730,11 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
                           node *next);
 
 #define TYPEDEF_TYPE(n) (n->info.types)
-#define TYPEDEF_NAME(n) ((char *)(n->mask[4]))
-#define TYPEDEF_MOD(n) ((char *)(n->mask[5]))
-#define TYPEDEF_LINKMOD(n) ((char *)(n->mask[6]))
-#define TYPEDEF_STATUS(n) ((statustype) (n->info2))
-#define TYPEDEF_ATTRIB(n) ((statustype) (n->mask[3]))
+#define TYPEDEF_NAME(n) (*((char **)(&(n->mask[4]))))        /* needed for cc */
+#define TYPEDEF_MOD(n) (*((char **)(&(n->mask[5]))))         /* needed for cc */
+#define TYPEDEF_LINKMOD(n) (*((char **)(&(n->mask[6]))))     /* needed for cc */
+#define TYPEDEF_STATUS(n) (*((statustype *)(&(n->info2))))   /* needed for cc */
+#define TYPEDEF_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* needed for cc */
 #define TYPEDEF_IMPL(n) ((types *)(n->dfmask[0]))
 #define TYPEDEF_NEXT(n) (n->node[0])
 #define TYPEDEC_DEF(n) (n->node[1])
@@ -810,11 +813,11 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
 extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *next);
 
 #define OBJDEF_TYPE(n) (n->info.types)
-#define OBJDEF_NAME(n) ((char *)(n->mask[4]))
-#define OBJDEF_MOD(n) ((char *)(n->mask[5]))
-#define OBJDEF_LINKMOD(n) ((char *)(n->mask[6]))
-#define OBJDEF_STATUS(n) ((statustype) (n->info2))
-#define OBJDEF_ATTRIB(n) ((statustype) (n->mask[3]))
+#define OBJDEF_NAME(n) (*((char **)(&(n->mask[4]))))        /* needed for cc */
+#define OBJDEF_MOD(n) (*((char **)(&(n->mask[5]))))         /* needed for cc */
+#define OBJDEF_LINKMOD(n) (*((char **)(&(n->mask[6]))))     /* needed for cc */
+#define OBJDEF_STATUS(n) (*((statustype *)(&(n->info2))))   /* needed for cc */
+#define OBJDEF_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* needed for cc */
 #define OBJDEF_VARNAME(n) ((char *)(n->int_data))
 #define OBJDEF_NEXT(n) (n->node[0])
 #define OBJDEF_EXPR(n) (n->node[1])
@@ -943,12 +946,12 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_BODY(n) (n->node[0])
 #define FUNDEF_ARGS(n) (n->node[2])
 #define FUNDEF_NEXT(n) (n->node[1])
-#define FUNDEF_NAME(n) ((char *)(n->mask[4]))
-#define FUNDEF_MOD(n) ((char *)(n->mask[5]))
-#define FUNDEF_LINKMOD(n) ((char *)(n->mask[6]))
+#define FUNDEF_NAME(n) (*((char **)(&(n->mask[4]))))    /* needed for cc */
+#define FUNDEF_MOD(n) (*((char **)(&(n->mask[5]))))     /* needed for cc */
+#define FUNDEF_LINKMOD(n) (*((char **)(&(n->mask[6])))) /* needed for cc */
 #define FUNDEF_TYPES(n) (n->info.types)
-#define FUNDEF_STATUS(n) ((statustype) (n->info2))
-#define FUNDEF_ATTRIB(n) ((statustype) (n->mask[3]))
+#define FUNDEF_STATUS(n) (*((statustype *)(&(n->info2))))   /* needed for cc */
+#define FUNDEF_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* needed for cc */
 #define FUNDEF_INLINE(n) (n->flag)
 #define FUNDEF_FUNNO(n) (n->counter)
 #define FUNDEF_PRAGMA(n) (n->node[4])
@@ -1034,9 +1037,9 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
                       node *next);
 
 #define ARG_TYPE(n) (n->info.types)
-#define ARG_NAME(n) ((char *)(n->mask[4]))
-#define ARG_STATUS(n) ((statustype) (n->info2))
-#define ARG_ATTRIB(n) ((statustype) (n->mask[3]))
+#define ARG_NAME(n) (*((char **)(&(n->mask[4]))))        /* needed for cc */
+#define ARG_STATUS(n) (*((statustype *)(&(n->info2))))   /* needed for cc */
+#define ARG_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* needed for cc */
 #define ARG_AVIS(n) ((node *)(n->node[1]))
 #define ARG_VARNO(n) (n->varno)
 #define ARG_REFCNT(n) (n->refcnt)
@@ -1151,9 +1154,9 @@ extern node *MakeBlock (node *instr, node *vardec);
 extern node *MakeVardec (char *name, types *type, node *next);
 
 #define VARDEC_TYPE(n) (n->info.types)
-#define VARDEC_NAME(n) ((char *)(n->mask[4]))
-#define VARDEC_STATUS(n) ((statustype) (n->info2))
-#define VARDEC_ATTRIB(n) ((statustype) (n->mask[3]))
+#define VARDEC_NAME(n) (*((char **)(&(n->mask[4]))))        /* needed for cc */
+#define VARDEC_STATUS(n) (*((statustype *)(&(n->info2))))   /* needed for cc */
+#define VARDEC_ATTRIB(n) (*((statustype *)(&(n->mask[3])))) /* needed for cc */
 #define VARDEC_AVIS(n) (n->node[1])
 #define VARDEC_VARNO(n) (n->varno)
 #define VARDEC_REFCNT(n) (n->refcnt)
@@ -3611,8 +3614,8 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 
 #define WLSEG_SV(n) ((int *)((n)->mask[0]))
 #define WLSEG_HOMSV(n) ((int *)((n)->mask[1]))
-#define WLSEG_IDX_MIN(n) (*((int **)(&((n)->node[2]))))
-#define WLSEG_IDX_MAX(n) (*((int **)(&((n)->node[3]))))
+#define WLSEG_IDX_MIN(n) (*((int **)(&((n)->node[2])))) /* needed for cc */
+#define WLSEG_IDX_MAX(n) (*((int **)(&((n)->node[3])))) /* needed for cc */
 
 #define WLSEG_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
 #define WLSEG_TASKSEL(n) (WLSEGX_TASKSEL (n))
