@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.31  1995/12/29 14:22:41  cg
+ * Revision 1.32  1996/01/02 14:44:35  cg
+ * macro MODUL_CCCALL removed again
+ *
+ * Revision 1.31  1995/12/29  14:22:41  cg
  * added macro MODUL_CCCALL
  *
  * Revision 1.30  1995/12/29  10:31:18  cg
@@ -417,15 +420,11 @@ extern nodelist *MakeNodelist (node *node, statustype status, nodelist *next);
  ***                                                      ( -> write-SIB !!)
  ***    node*      STORE_IMPORTS (O) (N_implist)          (import -> )
  ***                                                      ( -> checkdec !!)
- ***    node*      CCCALL         (N_exprs)               (gen-cccall -> )
  ***/
 
 /*
- *  CCCALL is a list of strings which have to be passed in this order
- *  to the operating system in order to generate archive files or
- *  executables.
  *
- *  The temporary attributes DECL, CCALL, and STORE_IMPORTS are mapped
+ *  The temporary attributes DECL and STORE_IMPORTS are mapped
  *  to the same real node because they are never used in the same
  *  phase of compilation.
  */
@@ -441,7 +440,6 @@ extern node *MakeModul (char *name, file_type filetype, node *imports, node *typ
 #define MODUL_FUNS(n) (n->node[2])
 #define MODUL_DECL(n) (n->node[4])
 #define MODUL_STORE_IMPORTS(n) (n->node[4])
-#define MODUL_CCCALL(n) (n->node[4])
 
 /*--------------------------------------------------------------------------*/
 
