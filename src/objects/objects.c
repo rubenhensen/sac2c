@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/02/12 16:28:32  dkr
+ * OBJarg(), OBJlet(): non-unique reference parameters cause an error now
+ *
  * Revision 3.4  2001/04/24 09:39:41  dkr
  * CHECK_NULL renamed into STR_OR_EMPTY
  *
@@ -482,8 +485,6 @@ OBJobjdef (node *arg_node, node *arg_info)
  *  external funs : MakeId, MakeExprs, DupTypes, Trav
  *  macros        : DBUG, TREE
  *
- *  remarks       :
- *
  */
 
 node *
@@ -499,6 +500,12 @@ OBJarg (node *arg_node, node *arg_info)
     }
 
     if (ARG_ATTRIB (arg_node) == ST_reference) {
+        if (!IsUnique (ARG_TYPE (arg_node))) {
+            ERROR (NODE_LINE (arg_node),
+                   ("Parameter '%s` is reference parameter but not unique",
+                    ARG_NAME (arg_node)));
+        }
+
         ret = FUNDEF_RETURN (arg_info);
 
         if (ret != NULL) {
@@ -645,9 +652,11 @@ OBJid (node *arg_node, node *arg_info)
 node *
 OBJlet (node *arg_node, node *arg_info)
 {
-    node *args, *params, *let_expr;
-    ids *new_ids = NULL, *last_ids = NULL, *old_ids;
+    node *args, *params, *let_expr, *arg_id;
+    ids *old_ids;
     char *new_ids_name;
+    ids *new_ids = NULL;
+    ids *last_ids = NULL;
 
     DBUG_ENTER ("OBJlet");
 
@@ -670,9 +679,13 @@ OBJlet (node *arg_node, node *arg_info)
             params = FUNDEF_ARGS (AP_FUNDEF (let_expr));
 
             while ((params != NULL) && (ARG_BASETYPE (params) != T_dots)) {
+                arg_id = EXPRS_EXPR (args);
+
                 if (ARG_ATTRIB (params) == ST_was_reference) {
-                    new_ids_name = StringCopy (ID_NAME (EXPRS_EXPR (args)));
-                    ID_ATTRIB (EXPRS_EXPR (args)) = ST_reference;
+                    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "no N_id node found!");
+
+                    new_ids_name = StringCopy (ID_NAME (arg_id));
+                    ID_ATTRIB (arg_id) = ST_reference;
 
                     if (new_ids == NULL) {
                         new_ids = MakeIds (new_ids_name, NULL, ST_artificial);
@@ -684,14 +697,23 @@ OBJlet (node *arg_node, node *arg_info)
 
                     old_ids = LET_IDS (arg_node);
 
-                    IDS_VARDEC (last_ids) = ID_VARDEC (EXPRS_EXPR (args));
+                    IDS_VARDEC (last_ids) = ID_VARDEC (arg_id);
 
                     DBUG_PRINT ("OBJ",
                                 ("New return value bound to %s", IDS_NAME (last_ids)));
+                } else if (ARG_ATTRIB (params) == ST_readonly_reference) {
+                    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "no N_id node found!");
 
+                    ID_ATTRIB (arg_id) = ST_readonly_reference;
                 } else {
-                    if (ARG_ATTRIB (params) == ST_readonly_reference) {
-                        ID_ATTRIB (EXPRS_EXPR (args)) = ST_readonly_reference;
+                    arg_id = NULL;
+                }
+
+                if (arg_id != NULL) {
+                    if (!IsUnique (ID_TYPE (arg_id))) {
+                        ERROR (NODE_LINE (arg_node),
+                               ("Argument '%s` is reference parameter but not unique",
+                                ID_NAME (arg_id)));
                     }
                 }
 
