@@ -1,6 +1,9 @@
 /*         $Id$
  *
  * $Log$
+ * Revision 2.3  1999/04/21 15:36:00  jhs
+ * DoUnrollGenarray now fit for emty arrays.
+ *
  * Revision 2.2  1999/03/19 09:47:16  bs
  * Every Call of MakeArray will also create a compact vector propagation.
  *
@@ -653,8 +656,11 @@ DoUnrollGenarray (node *wln, node *arg_info)
     /* drop reshape() */
     /*   args = MakeExprs(args, MakeExprs(MakeNullVec(elements, stype), NULL)); */
     /*   let_expr = MakePrf(F_reshape,args); */
-    let_expr = MakeNullVec (elements, stype);
-
+    if (elements != 0) {
+        let_expr = MakeNullVec (elements, stype);
+    } else {
+        let_expr = MakeArray (NULL);
+    }
     letn = MakeLet (let_expr, DupOneIds (arrayname, NULL));
     res = MakeAssign (letn, res);
 
