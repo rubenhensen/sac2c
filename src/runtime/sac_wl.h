@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/01/09 20:00:45  dkr
+ * ICMs for naive compilation added
+ *
  * Revision 3.3  2001/01/08 21:59:32  dkr
  * support for naive compilation of with-loops added (not finished yet)
  *
