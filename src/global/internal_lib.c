@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2005/02/16 22:29:13  sah
+ * extended set of special characters
+ *
  * Revision 3.78  2005/01/11 15:10:54  cg
  * Bug fixed in output conversion.
  *
@@ -1430,6 +1433,21 @@ ILIBreplaceSpecialCharacters (char *name)
             break;
         case ':':
             tmp = "_CL";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case ' ':
+            tmp = "_SP";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '{':
+            tmp = "_CO";
+            strcat (&(new_name[j]), tmp);
+            j += strlen (tmp) - 1;
+            break;
+        case '}':
+            tmp = "_CC";
             strcat (&(new_name[j]), tmp);
             j += strlen (tmp) - 1;
             break;
