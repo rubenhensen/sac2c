@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2002/10/28 09:10:07  dkr
+ * void arg added
+ *
  * Revision 3.72  2002/10/18 15:51:39  dkr
  * EXTERN_MOD_NAME used
  *
@@ -259,7 +262,7 @@ static int prf_arity[] = {
 %type <node> objdefs, objdef
 
 %type <node> fundefs, fundef, fundef1, fundef2, main
-%type <node> args, arg 
+%type <node> mainargs, fundefargs, args, arg 
 %type <node> exprblock, exprblock2, assignsOPTret, assigns, assign,
              letassign, selassign, optelse, forassign, assignblock
 %type <node> exprs, expr, expr_ap, opt_arguments, expr_ar, expr_sel,
@@ -272,7 +275,6 @@ static int prf_arity[] = {
 %type <types> returntypes, types, type, localtype, simpletype
 %type <types> varreturntypes, vartypes
 %type <node> varargtypes, argtype
-
 
 
 /* pragmas */
@@ -303,7 +305,7 @@ static int prf_arity[] = {
 %type <node> imptypes, imptype
 %type <node> exptypes, exptype
 %type <node> objdecs, objdec
-%type <node> fundecs, fundec, fundec2, varargs
+%type <node> fundecs, fundec, fundec2, fundecargs, varargs
 
 
 /*******************************************************************************
@@ -669,7 +671,7 @@ fundef1: returntypes BRACKET_L fun_id BRACKET_R BRACKET_L fundef2
          }
        ;
 
-fundef2: args BRACKET_R
+fundef2: fundefargs BRACKET_R
          { $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
          exprblock
          { 
@@ -700,6 +702,10 @@ fundef2: args BRACKET_R
          }
        ;
 
+
+fundefargs: args        { $$ = $1;   }
+          | TYPE_VOID   { $$ = NULL; }
+          ;
 
 args: arg COMMA args
       { $1->node[0] = $3;
@@ -733,11 +739,11 @@ arg: type id
    ;
 
 
-main: TYPE_INT K_MAIN BRACKET_L BRACKET_R { $<cint>$ = linenum; } exprblock
+main: TYPE_INT K_MAIN BRACKET_L mainargs BRACKET_R { $<cint>$ = linenum; } exprblock
       { $$ = MakeFundef( NULL, NULL,
                          MakeTypes1( T_int),
-                         NULL, $6, NULL);
-        NODE_LINE( $$) = $<cint>5;
+                         $4, $7, NULL);
+        NODE_LINE( $$) = $<cint>6;
 
         FUNDEF_NAME( $$) = StringCopy( "main");
         FUNDEF_MOD( $$) = mod_name;               /* SAC modul name */
@@ -753,6 +759,9 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R { $<cint>$ = linenum; } exprblock
       }
     ;
 
+mainargs: TYPE_VOID     { $$ = NULL; }
+        | /* empty */   { $$ = NULL; }
+        ;
 
 
 /*
@@ -2009,12 +2018,7 @@ fundec: varreturntypes fun_id BRACKET_L fundec2
         }
       ;
 
-fundec2: varargtypes BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
-         { $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
-           NODE_LINE( $$) = $<cint>3;
-           FUNDEF_PRAGMA( $$) = $5;
-         }
-       | varargs BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
+fundec2: fundecargs BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
          { $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
            NODE_LINE( $$) = $<cint>3;
            FUNDEF_PRAGMA( $$) = $5;
@@ -2041,6 +2045,12 @@ fundec2: varargtypes BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
            FUNDEF_PRAGMA( $$) = $4;
          }
        ;
+
+
+fundecargs: varargtypes   { $$ = $1;   }
+          | varargs       { $$ = $1;   }
+          | TYPE_VOID     { $$ = NULL; }
+          ;
 
 varargs: arg COMMA varargs
          { ARG_NEXT( $1) = $3;
