@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.44  2000/06/09 12:23:07  mab
+ * added APC and APT for vardec, arg, array again
+ * already added them in r1.40, but changes were gone!?
+ *
  * Revision 1.43  2000/06/09 12:18:59  nmw
  * Print functions in PIH tab added
  *
@@ -835,7 +839,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIvardec, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, CUDvardec, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, APCvardec, APTvardec,
 
        PrintVardec, PrintVardec, TravSons, TravSons, 1),
 
@@ -871,7 +875,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIarg, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, APCarg, APTarg,
 
        PrintArg, PrintArg, TravSons, TravSons, 1),
 
@@ -1178,7 +1182,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, DFAarray, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, APCarray, APTarray,
 
        TravSons, TravSons, TravSons, TravSons, 1),
 
