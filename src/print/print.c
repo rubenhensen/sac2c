@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.75  2000/05/29 17:23:27  dkr
+ * new function PrintRC()
+ * DBUG-string PRINT_RC no longer used
+ * the RCs are printed after RC-phase only
+ *
  * Revision 2.74  2000/05/29 11:56:28  dkr
  * error in DoPrintAST corrected
  *
@@ -566,6 +571,26 @@ TSIprintInfo (node *arg_node, node *arg_info)
 
 /******************************************************************************/
 
+static void
+PrintRC (int rc, int nrc, int show_rc)
+{
+    DBUG_ENTER ("PrintRC");
+
+    if ((rc != -1) && show_rc) {
+        fprintf (outfile, ":%d", rc);
+    }
+    DBUG_EXECUTE ("PRINT_NRC",
+                  if ((nrc != -1) && show_rc) {
+                      fprintf (outfile, "::%d", nrc);
+                  } if ((!(optimize & OPT_RCO)) && show_rc && (rc != -1) && (rc != nrc)) {
+                      fprintf (outfile, "**");
+                  });
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************/
+
 void
 PrintIds (ids *arg, node *arg_info)
 {
@@ -579,17 +604,8 @@ PrintIds (ids *arg, node *arg_info)
         }
         fprintf (outfile, "%s", IDS_NAME (arg));
 
-        DBUG_EXECUTE ("PRINT_RC", if ((IDS_REFCNT (arg) != -1) && show_refcnt) {
-            fprintf (outfile, ":%d", IDS_REFCNT (arg));
-        });
-        DBUG_EXECUTE ("PRINT_NRC", if ((IDS_NAIVE_REFCNT (arg) != -1) && show_refcnt) {
-            fprintf (outfile, "::%d", IDS_NAIVE_REFCNT (arg));
-        });
+        PrintRC (IDS_REFCNT (arg), IDS_NAIVE_REFCNT (arg), show_refcnt);
 
-        if ((!(optimize & OPT_RCO)) && show_refcnt && (IDS_REFCNT (arg) != -1)
-            && (IDS_REFCNT (arg) != IDS_NAIVE_REFCNT (arg))) {
-            fprintf (outfile, "**");
-        }
         if (show_idx && IDS_USE (arg)) {
             Trav (IDS_USE (arg), arg_info);
         }
@@ -1322,17 +1338,7 @@ PrintId (node *arg_node, node *arg_info)
 
     fprintf (outfile, "%s", ID_NAME (arg_node));
 
-    DBUG_EXECUTE ("PRINT_RC", if ((ID_REFCNT (arg_node) != -1) && show_refcnt) {
-        fprintf (outfile, ":%d", ID_REFCNT (arg_node));
-    });
-    DBUG_EXECUTE ("PRINT_NRC", if ((ID_NAIVE_REFCNT (arg_node) != -1) && show_refcnt) {
-        fprintf (outfile, "::%d", ID_NAIVE_REFCNT (arg_node));
-    });
-
-    if ((!(optimize & OPT_RCO)) && show_refcnt && (ID_REFCNT (arg_node) != -1)
-        && (ID_REFCNT (arg_node) != ID_NAIVE_REFCNT (arg_node))) {
-        fprintf (outfile, "**");
-    }
+    PrintRC (ID_REFCNT (arg_node), ID_NAIVE_REFCNT (arg_node), show_refcnt);
 
     if (compiler_phase != PH_genccode) {
         DBUG_EXECUTE ("PRINT_CAR", DbugPrintArray (arg_node););
@@ -1538,18 +1544,7 @@ PrintArg (node *arg_node, node *arg_info)
              Type2String (ARG_TYPE (arg_node),
                           INFO_PRINT_OMIT_FORMAL_PARAMS (arg_info) ? 0 : 1));
 
-    DBUG_EXECUTE ("PRINT_RC", if ((1 == show_refcnt) && (-1 != ARG_REFCNT (arg_node))) {
-        fprintf (outfile, ":%d", ARG_REFCNT (arg_node));
-    });
-    DBUG_EXECUTE ("PRINT_NRC",
-                  if ((1 == show_refcnt) && (-1 != ARG_NAIVE_REFCNT (arg_node))) {
-                      fprintf (outfile, "::%d", ARG_NAIVE_REFCNT (arg_node));
-                  });
-
-    if ((!(optimize & OPT_RCO)) && show_refcnt && (ARG_REFCNT (arg_node) != -1)
-        && (ARG_REFCNT (arg_node) != ARG_NAIVE_REFCNT (arg_node))) {
-        fprintf (outfile, "**");
-    }
+    PrintRC (ARG_REFCNT (arg_node), ARG_NAIVE_REFCNT (arg_node), show_refcnt);
 
     if (ARG_COLCHN (arg_node) && show_idx) {
         Trav (ARG_COLCHN (arg_node), arg_info);
@@ -3329,12 +3324,10 @@ DoPrintIdsAST (ids *vars)
 
     fprintf (outfile, "( ");
     while (vars != NULL) {
-        fprintf (outfile, "%s:%d::%d ", IDS_NAME (vars), IDS_REFCNT (vars),
-                 IDS_NAIVE_REFCNT (vars));
-        if ((!(optimize & OPT_RCO)) && show_refcnt && (IDS_REFCNT (vars) != -1)
-            && (IDS_REFCNT (vars) != IDS_NAIVE_REFCNT (vars))) {
-            fprintf (outfile, "**");
-        }
+        fprintf (outfile, "%s", IDS_NAME (vars));
+        PrintRC (IDS_REFCNT (vars), IDS_NAIVE_REFCNT (vars), 1);
+        fprintf (outfile, " ");
+
         vars = IDS_NEXT (vars);
     }
     fprintf (outfile, ")");
@@ -3412,12 +3405,9 @@ DoPrintAST (node *arg_node, int skip_next)
             break;
 
         case N_id:
-            fprintf (outfile, "(%s:%d::%d)\n", ID_NAME (arg_node), ID_REFCNT (arg_node),
-                     ID_NAIVE_REFCNT (arg_node));
-            if ((!(optimize & OPT_RCO)) && show_refcnt && (ID_REFCNT (arg_node) != -1)
-                && (ID_REFCNT (arg_node) != ID_NAIVE_REFCNT (arg_node))) {
-                fprintf (outfile, "**");
-            }
+            fprintf (outfile, "(%s", ID_NAME (arg_node));
+            PrintRC (ID_REFCNT (arg_node), ID_NAIVE_REFCNT (arg_node), 1);
+            fprintf (outfile, ")\n");
             break;
 
         case N_num:
@@ -3433,27 +3423,19 @@ DoPrintAST (node *arg_node, int skip_next)
             break;
 
         case N_arg:
-            fprintf (outfile, "(%s %s:%d::%d)\n",
-                     mdb_type[TYPES_BASETYPE (ARG_TYPE (arg_node))],
-                     (ARG_NAME (arg_node) != NULL) ? ARG_NAME (arg_node) : "?",
-                     ARG_REFCNT (arg_node), ARG_NAIVE_REFCNT (arg_node));
-            if ((!(optimize & OPT_RCO)) && show_refcnt && (ARG_REFCNT (arg_node) != -1)
-                && (ARG_REFCNT (arg_node) != ARG_NAIVE_REFCNT (arg_node))) {
-                fprintf (outfile, "**");
-            }
+            fprintf (outfile, "(%s %s", mdb_type[TYPES_BASETYPE (ARG_TYPE (arg_node))],
+                     (ARG_NAME (arg_node) != NULL) ? ARG_NAME (arg_node) : "?");
+            PrintRC (ARG_REFCNT (arg_node), ARG_NAIVE_REFCNT (arg_node), 1);
+            fprintf (outfile, ")\n");
 
             skip = ARG_NEXT (arg_node);
             break;
 
         case N_vardec:
-            fprintf (outfile, "(%s %s:%d::%d)\n",
-                     mdb_type[TYPES_BASETYPE (VARDEC_TYPE (arg_node))],
-                     VARDEC_NAME (arg_node), VARDEC_REFCNT (arg_node),
-                     VARDEC_NAIVE_REFCNT (arg_node));
-            if ((!(optimize & OPT_RCO)) && show_refcnt && (VARDEC_REFCNT (arg_node) != -1)
-                && (VARDEC_REFCNT (arg_node) != VARDEC_NAIVE_REFCNT (arg_node))) {
-                fprintf (outfile, "**");
-            }
+            fprintf (outfile, "(%s %s", mdb_type[TYPES_BASETYPE (VARDEC_TYPE (arg_node))],
+                     (VARDEC_NAME (arg_node) != NULL) ? VARDEC_NAME (arg_node) : "?");
+            PrintRC (VARDEC_REFCNT (arg_node), VARDEC_NAIVE_REFCNT (arg_node), 1);
+            fprintf (outfile, ")\n");
 
             skip = VARDEC_NEXT (arg_node);
             break;
@@ -3476,15 +3458,9 @@ DoPrintAST (node *arg_node, int skip_next)
         case N_Nwithid:
             fprintf (outfile, "( ");
             if (NWITHID_VEC (arg_node) != NULL) {
-                fprintf (outfile, "%s:%d::%d", IDS_NAME (NWITHID_VEC (arg_node)),
-                         IDS_REFCNT (NWITHID_VEC (arg_node)),
-                         IDS_NAIVE_REFCNT (NWITHID_VEC (arg_node)));
-                if ((!(optimize & OPT_RCO)) && show_refcnt
-                    && (IDS_REFCNT (NWITHID_VEC (arg_node)) != -1)
-                    && (IDS_REFCNT (NWITHID_VEC (arg_node))
-                        != IDS_NAIVE_REFCNT (NWITHID_VEC (arg_node)))) {
-                    fprintf (outfile, "**");
-                }
+                fprintf (outfile, "%s", IDS_NAME (NWITHID_VEC (arg_node)));
+                PrintRC (IDS_REFCNT (NWITHID_VEC (arg_node)),
+                         IDS_NAIVE_REFCNT (NWITHID_VEC (arg_node)), 1);
             } else {
                 fprintf (outfile, "?");
             }
