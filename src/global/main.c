@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.92  2004/12/19 13:35:07  sbs
+ * replaced NT2OT traversals by TOT traversals
+ *
  * Revision 3.91  2004/12/08 20:01:08  ktr
  * added some NT2OT traversals (before wltransform, compile)
  *
@@ -377,7 +380,7 @@ main (int argc, char *argv[])
      * - WLtransform must work with new types
      * - WLtransform must work in SSA-form
      */
-    syntax_tree = NT2OTdoTransform (syntax_tree);
+    syntax_tree = TOTdoToOldTypes (syntax_tree);
     syntax_tree = WLTRAdoWlTransform (syntax_tree); /* wltrans_tab */
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
@@ -504,7 +507,7 @@ main (int argc, char *argv[])
     /*
      * TODO: Compile should work with new types
      */
-    syntax_tree = NT2OTdoTransform (syntax_tree);
+    syntax_tree = TOTdoToOldTypes (syntax_tree);
     syntax_tree = COMPdoCompile (syntax_tree); /* comp_tab */
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
