@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/04/21 15:39:51  jhs
+ * Nothing intended to be changed since last version,
+ * except maybe whitespaces.
+ *
  * Revision 2.6  1999/04/14 16:24:42  jhs
  * Traversal into NULL with empty arrays removed.
  *
@@ -3708,8 +3712,9 @@ COMPPrf (node *arg_node, node *arg_info)
             arg1 = EXPRS_EXPR (PRF_ARGS (arg_node));
             arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
             DBUG_ASSERT (((NODE_TYPE (arg1) == N_array) || (NODE_TYPE (arg1) == N_num)
-                          || ((NODE_TYPE (arg1) == N_id) && (ID_VECLEN (arg1) > 0))),
-                         "first argument of take/drop isn't an array or scalar");
+                          || ((NODE_TYPE (arg1) == N_id) && (ID_CONSTARRAY (arg1))
+                              && (VARDEC_BASETYPE (ID_VARDEC (arg1)) == T_int))),
+                         "first argument of take/drop isn't an array or scalar jhs");
 
             MAKENODE_ID_REUSE_IDS (res, INFO_COMP_LASTIDS (arg_info));
 
