@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  2000/07/14 09:35:17  dkr
+ * DupIds called with (arg_info = NULL) now
+ *
  * Revision 2.10  2000/07/12 15:10:19  dkr
  * function DuplicateTypes renamed into DupTypes
  *
@@ -277,7 +280,7 @@ GenPsi (ids *ids_node, node *arg_info)
           = MakeType (T_int, 1, MakeShpseg (MakeNums (1, NULL)), NULL, NULL);
 
         arg[1] = MakeNode (N_id);
-        arg[1]->info.ids = DupIds (ids_node, arg_info);
+        arg[1]->info.ids = DupIds (ids_node, NULL);
 
         new_let = MakeNode (N_let);
         new_let->info.ids = GenIds (arg);
