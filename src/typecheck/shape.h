@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2000/05/03 16:48:55  dkr
+ * SHFreeShape returns NULL now
+ *
  * Revision 1.3  1999/10/22 14:13:32  sbs
  * corrected some typos; added SHGetUnrLen for computing the prod of the extents
  *
@@ -39,7 +42,7 @@ typedef void shape;
 
 extern shape *SHMakeShape (int dim);
 extern shape *SHCopyShape (shape *shp);
-extern void SHFreeShape (shape *shp);
+extern shape *SHFreeShape (shape *shp);
 
 extern int SHGetDim (shape *shp);
 extern int SHGetExtent (shape *shp, int dim);

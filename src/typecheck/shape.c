@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2000/05/03 16:49:05  dkr
+ * SHFreeShape returns NULL now
+ *
  * Revision 1.4  1999/10/22 14:13:32  sbs
  * corrected some typos; added SHGetUnrLen for computing the prod of the extents
  *
@@ -11,8 +14,6 @@
  *
  * Revision 1.1  1999/10/11 08:47:34  sbs
  * Initial revision
- *
- *
  */
 
 /*
@@ -128,14 +129,14 @@ SHCopyShape (shape *shp)
 /******************************************************************************
  *
  * function:
- *    void SHFreeShape( shape *shp)
+ *    shape *SHFreeShape( shape *shp)
  *
  * description:
  *    frees the given shape structure.
  *
  ******************************************************************************/
 
-void
+shape *
 SHFreeShape (shape *shp)
 {
     DBUG_ENTER ("SHFreeShape");
@@ -145,8 +146,9 @@ SHFreeShape (shape *shp)
         FREE (SHAPE_ELEMS (shp));
     }
     FREE (shp);
+    shp = NULL;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (shp);
 }
 
 /******************************************************************************
