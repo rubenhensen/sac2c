@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2002/02/22 14:27:53  dkr
+ * functions Dup...TypesOnly(), DupOneTypesOnly_Inplace() removed
+ *
  * Revision 3.55  2002/02/20 16:09:31  dkr
  * function DupOneTypesOnly_Inplace() added
  *
@@ -2456,7 +2459,7 @@ DupOneTypes (types *arg_types)
 
     tmp = TYPES_NEXT (arg_types);
     TYPES_NEXT (arg_types) = NULL;
-    new_types = DupAllTypes (arg_types);
+    new_types = DupTypes_ (arg_types, NULL);
     TYPES_NEXT (arg_types) = tmp;
 
     DBUG_RETURN (new_types);
@@ -2487,115 +2490,7 @@ DupAllTypes (types *arg_types)
 
     new_types = DupTypes_ (arg_types, NULL);
 
-    /*
-     * these entries are *not* part of the TYPES structure
-     *  but part of the TYPEDEF/OBDEF/FUNDEF/ARG/VARDEC node!!
-     */
-    new_types->id = StringCopy (arg_types->id);
-    new_types->id_mod = StringCopy (arg_types->id_mod);
-    new_types->id_cmod = StringCopy (arg_types->id_cmod);
-    new_types->attrib = arg_types->attrib;
-    new_types->status = arg_types->status;
-
     DBUG_RETURN (new_types);
-}
-
-/******************************************************************************
- *
- * Function:
- *   types *DupOneTypesOnly( types* arg_types)
- *
- * Description:
- *   Duplicates the (virtual) TYPES-structure only.
- *
- *   See also DupOneTypes()
- *
- ******************************************************************************/
-
-types *
-DupOneTypesOnly (types *arg_types)
-{
-    types *new_types, *tmp;
-
-    DBUG_ENTER ("DupOneTypesOnly");
-
-    DBUG_ASSERT ((arg_types != NULL), "DupOneTypesOnly: argument is NULL!");
-
-    tmp = TYPES_NEXT (arg_types);
-    TYPES_NEXT (arg_types) = NULL;
-    new_types = DupTypes_ (arg_types, NULL);
-    TYPES_NEXT (arg_types) = tmp;
-
-    DBUG_RETURN (new_types);
-}
-
-/******************************************************************************
- *
- * Function:
- *   types *DupAllTypesOnly( types* arg_types)
- *
- * Description:
- *   Duplicates the (virtual) TYPES-structure only.
- *
- *   See also DupAllTypes()
- *
- ******************************************************************************/
-
-types *
-DupAllTypesOnly (types *arg_types)
-{
-    types *new_types;
-
-    DBUG_ENTER ("DupAllTypesOnly");
-
-    DBUG_ASSERT ((arg_types != NULL), "DupAllTypesOnly: argument is NULL!");
-
-    new_types = DupTypes_ (arg_types, NULL);
-
-    DBUG_RETURN (new_types);
-}
-
-/******************************************************************************
- *
- * Function:
- *   void DupOneTypesOnly_Inplace( types** target, types* source)
- *
- * Description:
- *   Duplicates the (virtual) TYPES-structure. Unfortunately, the (real)
- *   types-structure contains *more* items than TYPES. Therefore, the target
- *   must be given as a reference parameter und some items must be restored
- *   after generating the new types-structure.
- *
- *   See also DupOneTypes(), DupOneTypesOnly().
- *
- ******************************************************************************/
-
-void
-DupOneTypesOnly_Inplace (types **target, types *source)
-{
-    types *old_types, *tmp;
-
-    DBUG_ENTER ("DupAllTypesOnly_Inplace");
-
-    DBUG_ASSERT ((source != NULL), "DupOneTypesOnly_Inplace: argument is NULL!");
-    DBUG_ASSERT ((target != NULL), "no target given!");
-
-    old_types = (*target);
-
-    tmp = TYPES_NEXT (source);
-    TYPES_NEXT (source) = NULL;
-    (*target) = DupTypes_ (source, NULL);
-    TYPES_NEXT (source) = tmp;
-
-    (*target)->id = old_types->id;
-    (*target)->id_mod = old_types->id_mod;
-    (*target)->id_cmod = old_types->id_cmod;
-    (*target)->attrib = old_types->attrib;
-    (*target)->status = old_types->status;
-
-    TYPES_NEXT ((*target)) = FreeOneTypes (old_types);
-
-    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
