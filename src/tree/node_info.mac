@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.148  2004/06/03 15:21:53  ktr
+ * Substituted some functions by SSARCconst
+ *
  * Revision 3.147  2004/05/06 17:52:10  ktr
  * Added SSARCicm
  *
@@ -909,7 +912,7 @@
  ******************************************************************************/
 
 NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons, TravSons,
-     FreeNum, TravSons, TravSons, SSARCnum, TravSons, DupNum, TravSons, TravSons,
+     FreeNum, TravSons, TravSons, SSARCconst, TravSons, DupNum, TravSons, TravSons,
      TravSons, IdxNum, TravSons, TravSons, TravSons,
 
      PrintNum, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -937,7 +940,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
      TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_char, "N_char", TravSons, TravSons, PrintChar, TravSons, TravSons, TravSons,
-       TravSons, FreeChar, TravSons, TravSons, SSARCchar, TravSons, DupChar, TravSons,
+       TravSons, FreeChar, TravSons, TravSons, SSARCconst, TravSons, DupChar, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        PrintChar, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -965,7 +968,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_bool, "N_bool", TravSons, TravSons, PrintBool, TravSons, TravSons, TravSons,
-       TravSons, FreeBool, TravSons, TravSons, SSARCbool, TravSons, DupBool, TravSons,
+       TravSons, FreeBool, TravSons, TravSons, SSARCconst, TravSons, DupBool, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        PrintBool, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -993,7 +996,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_str, "N_str", TravSons, TravSons, PrintStr, TravSons, TravSons, TravSons,
-       TravSons, FreeStr, TravSons, TravSons, SSARCstr, TravSons, DupStr, TravSons,
+       TravSons, FreeStr, TravSons, TravSons, SSARCconst, TravSons, DupStr, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        PrintStr, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1021,7 +1024,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_float, "N_float", TravSons, TravSons, PrintFloat, TravSons, TravSons, TravSons,
-       TravSons, FreeFloat, TravSons, TravSons, SSARCfloat, TravSons, DupFloat, TravSons,
+       TravSons, FreeFloat, TravSons, TravSons, SSARCconst, TravSons, DupFloat, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        WSIBfloat, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1049,7 +1052,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
   NIF (N_double, "N_double", TravSons, TravSons, PrintDouble, TravSons, TravSons,
-       TravSons, TravSons, FreeDouble, TravSons, TravSons, SSARCdouble, TravSons,
+       TravSons, TravSons, FreeDouble, TravSons, TravSons, SSARCconst, TravSons,
        DupDouble, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        WSIBdouble, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
