@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/05/22 10:08:01  hw
+ * Revision 1.8  1995/06/08 17:48:57  hw
+ * CompTypedef inserted
+ *
+ * Revision 1.7  1995/05/22  10:08:01  hw
  * added function "CompCast"
  *
  * Revision 1.6  1995/05/08  15:45:13  hw
@@ -45,5 +48,6 @@ extern node *CompLoop (node *arg_node, node *arg_info);
 extern node *CompCond (node *arg_node, node *arg_info);
 extern node *CompBlock (node *arg_node, node *arg_info);
 extern node *CompCast (node *arg_node, node *arg_info);
+extern node *CompTypedef (node *arg_node, node *arg_info);
 
 #endif /* _compile_h */

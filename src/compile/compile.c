@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.40  1995/06/07 13:33:32  hw
+ * Revision 1.41  1995/06/08 17:48:57  hw
+ * CompTypedef inserted
+ *
+ * Revision 1.40  1995/06/07  13:33:32  hw
  * exchanges N_icm ND_CREATE_CONST_ARRAY with ND_CREATE_CONST_ARRAY_S
  * N_icm ND_CREATE_CONST_ARRAY_A (array out of arrays) inserted
  *
@@ -660,12 +663,12 @@ Compile (node *arg_node)
     act_tab = comp_tab; /* set new function-table for traverse */
     info = MakeNode (N_info);
     if (N_modul == arg_node->nodetype) {
-        if (NULL != arg_node->node[1])
-            /* traverse typedefs */
-            arg_node->node[1] = Trav (arg_node->node[1], info);
         if (NULL != arg_node->node[2])
             /* traverse functions */
             arg_node->node[2] = Trav (arg_node->node[2], info);
+        if (NULL != arg_node->node[1])
+            /* traverse typedefs */
+            arg_node->node[1] = Trav (arg_node->node[1], info);
     } else {
         DBUG_ASSERT ((N_fundef == arg_node->nodetype), "wrong node");
         arg_node = Trav (arg_node, info);
@@ -2780,5 +2783,59 @@ CompCast (node *arg_node, node *arg_info)
     arg_node = Trav (arg_node->node[0], arg_info);
     FREE_TYPE (tmp->TYPES);
     FREE (tmp);
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : CompTypedef
+ *  arguments     : 1) arg node
+ *                  2) info node
+ *  description   : transforms N_typedef to N_icm if it is a definition of an
+ *                  array
+ *  global vars   :
+ *  internal funs :
+ *  external funs : Trav
+ *  macros        : DBUG...,, NULL
+ *  remarks       :
+ *
+ */
+node *
+CompTypedef (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("CompTypedef");
+
+    if (1 <= arg_node->DIM) {
+        char *typename, *new_typename;
+        node *type1, *type2, *icm_arg, *tmp /* used in ICM-macros */;
+
+        if (NULL != arg_node->NAME_MOD) {
+            typename = (char *)Malloc (sizeof (char)
+                                       * (strlen (arg_node->NAME) + strlen (MOD_NAME_CON)
+                                          + strlen (arg_node->NAME_MOD)));
+            sprintf (typename, "%s%s%s", arg_node->NAME_MOD, MOD_NAME_CON,
+                     arg_node->NAME);
+        } else
+            typename = type_string[arg_node->SIMPLETYPE];
+
+        new_typename = StringCopy (arg_node->ID);
+        FREE_TYPE (arg_node->TYPES);
+        arg_node->nodetype = N_icm;
+        MAKE_ICM_NAME (arg_node, "ND_TYPEDEF_ARRAY");
+        if (1 == arg_node->nnode)
+            arg_node->node[1] = arg_node->node[0];
+        MAKENODE_ID (type1, typename);
+        MAKE_ICM_ARG (arg_node->node[0], type1);
+        icm_arg = arg_node->node[0];
+        MAKENODE_ID (type2, new_typename);
+        MAKE_NEXT_ICM_ARG (icm_arg, type2);
+
+        if (1 == arg_node->nnode) {
+            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+            arg_node->nnode = 2;
+        }
+    } else if (1 == arg_node->nnode)
+        arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+
     DBUG_RETURN (arg_node);
 }
