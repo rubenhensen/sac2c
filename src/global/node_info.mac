@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.80  1995/06/23 12:22:46  hw
- * added DubFundef & DupDec  to dup_tab
+ * Revision 1.81  1995/06/26 10:00:12  sbs
+ * Idx-calls inserted
  *
+;; Revision 1.80  1995/06/23  12:22:46  hw
+;; added DubFundef & DupDec  to dup_tab
+;;
 ;; Revision 1.79  1995/06/13  08:50:00  asi
 ;; added UNRdo, UNRwhile and UNRassign
 ;;
@@ -268,7 +271,7 @@
 
 NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun, DummyFun,
      FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun, DupInt, DummyFun, DummyFun,
-     DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
+     DummyFun, IdxNum, DummyFun, DummyFun, DummyFun),
   NIF (N_bool, "N_bool", DummyFun, DummyFun, PrintBool, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun, DupInt, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
@@ -350,10 +353,10 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_with, "N_with", DummyFun, FltnWith, PrintWith, DummyFun, OPTwith, DEADwith,
        DummyFun, FreeNoInfo, CFwith, RCwith, CompWith, LIRloop, DupChain, DummyFun,
-       DummyFun, LIRMloop, DummyFun, DummyFun, DummyFun, DummyFun),
+       DummyFun, LIRMloop, IdxWith, DummyFun, DummyFun, DummyFun),
   NIF (N_generator, "N_generator", DummyFun, FltnGen, PrintGenator, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeInfoId, DummyFun, RCgen, DummyFun, DummyFun, DupIIds,
-       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
+       DummyFun, DummyFun, DummyFun, IdxGenerator, DummyFun, DummyFun, DummyFun),
   NIF (N_genarray, "N_genarray", DummyFun, FltnCon, PrintConexpr, DummyFun, DummyFun,
        DummyFun, DummyFun, FreeNoInfo, DummyFun, RCcon, DummyFun, DummyFun, DupChain,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
@@ -380,7 +383,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_array, "N_array", DummyFun, DummyFun, PrintArray, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, CompArray, DummyFun, DupChain, DummyFun,
-       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
+       DummyFun, DummyFun, IdxArray, DummyFun, DummyFun, DummyFun),
   NIF (N_info, "N_info", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
