@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/08/01 13:18:36  ktr
+ * added MMVwlsegx
+ *
  * Revision 1.6  2004/07/31 21:29:15  ktr
  * moved treatment of F_fill, F_accu und F_suballoc into seperate functions.
  *
@@ -97,6 +100,7 @@
 #include "print.h"
 #include "DupTree.h"
 #include "free.h"
+#include "scheduling.h"
 
 /**
  * INFO structure
@@ -577,6 +581,54 @@ MMVwith2 (node *arg_node, info *arg_info)
 
     INFO_MMV_WITHOP (arg_info) = withop;
     INFO_MMV_LHS_WL (arg_info) = lhs;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn MMVwlsegx
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ ***************************************************************************/
+node *
+MMVwlsegx (node *arg_node, info *arg_info)
+{
+    int d;
+
+    DBUG_ENTER ("MMVWLSegx");
+
+    if (WLSEGX_SCHEDULING (arg_node) != NULL) {
+        WLSEGX_SCHEDULING (arg_node)
+          = SCHMMVScheduling (WLSEGX_SCHEDULING (arg_node), INFO_MMV_LUT (arg_info));
+        WLSEGX_TASKSEL (arg_node)
+          = SCHMMVTasksel (WLSEGX_TASKSEL (arg_node), INFO_MMV_LUT (arg_info));
+    }
+
+    if (NODE_TYPE (arg_node) == N_WLsegVar) {
+        DBUG_ASSERT ((WLSEGVAR_IDX_MIN (arg_node) != NULL),
+                     "WLSEGVAR_IDX_MIN not found!");
+        DBUG_ASSERT ((WLSEGVAR_IDX_MAX (arg_node) != NULL),
+                     "WLSEGVAR_IDX_MAX not found!");
+        for (d = 0; d < WLSEGVAR_DIMS (arg_node); d++) {
+            (WLSEGVAR_IDX_MIN (arg_node))[d]
+              = Trav ((WLSEGVAR_IDX_MIN (arg_node))[d], arg_info);
+            (WLSEGVAR_IDX_MAX (arg_node))[d]
+              = Trav ((WLSEGVAR_IDX_MAX (arg_node))[d], arg_info);
+        }
+    }
+
+    WLSEGX_CONTENTS (arg_node) = Trav (WLSEGX_CONTENTS (arg_node), arg_info);
+
+    if (WLSEGX_NEXT (arg_node) != NULL) {
+        WLSEGX_NEXT (arg_node) = Trav (WLSEGX_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

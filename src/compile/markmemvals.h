@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/08/01 13:18:36  ktr
+ * added MMVwlsegx
+ *
  * Revision 1.4  2004/07/28 12:27:58  khf
  * MMVassign no longer needed
  *
@@ -30,6 +33,7 @@ extern node *MMVprf (node *arg_node, info *arg_info);
 extern node *MMVwith (node *arg_node, info *arg_info);
 extern node *MMVwith2 (node *arg_node, info *arg_info);
 extern node *MMVwithop (node *arg_node, info *arg_info);
+extern node *MMVwlsegx (node *arg_node, info *arg_info);
 extern node *MMVcode (node *arg_node, info *arg_info);
 
 #endif /* _sac_precompile_h */
