@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.20  1999/07/20 16:53:28  jhs
+ * Fixed bug with direct access to MT_SPMD_SETUP-icm.
+ *
  * Revision 2.19  1999/07/09 14:17:27  jhs
  * Added some DBUG_PRINTs.
  *
@@ -2026,7 +2029,8 @@ CreateIcmND_FUN_DEC (char *name, node **icm_tab, int tab_size)
 /******************************************************************************
  *
  * function:
- *   node *CreateIcmMT_SPMD_FUN_DEC(char *name, node **icm_tab, int tab_size)
+ *   node *CreateIcmMT_SPMD_FUN_DEC(char *name, char *from,
+ *                                  node **icm_tab, int tab_size)
  *
  * description:
  *   creates a MT_SPMD_FUN_DEC ICM.
@@ -2606,7 +2610,8 @@ COMPFundef (node *arg_node, node *arg_info)
             return_node = EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (return_icm))));
         } else {
             if (strcmp (ICM_NAME (return_icm), "MT_SPMD_FUN_RET") == 0) {
-                return_node = EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (return_icm)));
+                return_node
+                  = EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (return_icm))));
             } else {
                 DBUG_ASSERT ((0), "wrong ICM found");
             }
@@ -2722,7 +2727,7 @@ COMPFundef (node *arg_node, node *arg_info)
         && (FUNDEF_STATUS (arg_node) != ST_spmdfun)) {
         ReorganizeReturnIcm (ICM_ARGS (FUNDEF_RETURN (arg_node)));
     }
-
+    /* #### */
     if (FUNDEF_STATUS (arg_node) == ST_spmdfun) {
         FUNDEF_ICM (arg_node)
           = CreateIcmMT_SPMD_FUN_DEC (FUNDEF_NAME (arg_node),
@@ -6850,6 +6855,7 @@ COMPSync (node *arg_node, node *arg_info)
                     ("DFMTestMask( OUT ): %i", DFMTestMask (SYNC_OUT (arg_node))));
 
         if (DFMTestMask (SYNC_OUT (arg_node)) > 1) {
+            icm_args2 = MakeExprs (MakeNum (barrier_id), icm_args2);
             icm_name = "MT_SYNC_FOLD";
         } else {
             /* DFMTestMask( SYNC_OUT( arg_node)) == 1 */
