@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  2004/11/26 00:12:54  jhb
+ * added really importend TODO! CreateVardec!
+ *
  * Revision 1.34  2004/10/05 13:50:58  sah
  * lifted start of WLI/WLT traversal to the
  * defining source files to allow for local
@@ -592,7 +595,7 @@ CreateFullPartition (node *wln, info *arg_info)
         varname = TmpVar ();
         _ids = MakeIds (varname, NULL, ST_regular);
         IDS_VARDEC (_ids)
-          = SSACreateVardec (varname, type,
+          = SSACreateVardec (varname, type, /* TODO ! must be change to new type */
                              &(FUNDEF_VARDEC (INFO_SSAWLT_FUNDEF (arg_info))));
         /* varname is duplicated here (own mem) */
         idn = MakeId (StringCopy (varname), NULL, ST_regular);
