@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/07/15 14:47:50  dkr
+ * bug in GetNextIcm() fixed: prefix 'SAC_' for icm name added
+ *
  * Revision 3.12  2002/07/12 22:39:19  dkr
  * GetNextPrf() added but deactivated
  *
@@ -129,10 +132,11 @@ GetNextIcm (char **ret, node *exprs)
 
     GetNextVarAny (&v, &len, cnt, ICM_ARGS (expr));
     len += strlen (ICM_NAME (expr));
-    len += 5 + 2 * cnt;
+    len += 8 + 2 * cnt;
 
     (*ret) = (char *)Malloc (len * sizeof (char));
     (*ret)[0] = '\0';
+    strcat ((*ret), "SAC_");
     strcat ((*ret), ICM_NAME (expr));
     strcat ((*ret), "( ");
     if (cnt > 0) {
