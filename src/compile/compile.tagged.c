@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.74  2003/09/17 17:20:09  dkr
+ * more NT-tags for MT added
+ *
  * Revision 1.73  2003/09/15 16:46:25  dkr
  * several modifications for MT done
  *
@@ -6148,14 +6151,13 @@ COMP2Sync (node *arg_node, node *arg_info)
     vardec = DFMGetMaskEntryDeclSet (SYNC_IN (arg_node));
     while (vardec != NULL) {
         tag = ATG_in;
-        icm_args3
-          = AppendExprs (icm_args3,
-                         MakeExprs (MakeId_Copy (ATG_string[tag]),
-                                    MakeExprs (MakeBasetypeArg (
-                                                 VARDEC_OR_ARG_TYPE (vardec)),
-                                               MakeExprs (MakeId_Copy (
-                                                            VARDEC_OR_ARG_NAME (vardec)),
-                                                          NULL))));
+        icm_args3 = AppendExprs (
+          icm_args3,
+          MakeExprs (MakeId_Copy (ATG_string[tag]),
+                     MakeExprs (MakeBasetypeArg (VARDEC_OR_ARG_TYPE (vardec)),
+                                MakeExprs (MakeId_Copy_NT (VARDEC_OR_ARG_NAME (vardec),
+                                                           VARDEC_OR_ARG_TYPE (vardec)),
+                                           NULL))));
         num_args++;
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
@@ -6171,9 +6173,10 @@ COMP2Sync (node *arg_node, node *arg_info)
     num_sync_args = 0;
     vardec = DFMGetMaskEntryDeclSet (SYNC_INOUT (arg_node));
     while (vardec != NULL) {
-        sync_args
-          = AppendExprs (sync_args,
-                         MakeExprs (MakeId_Copy (VARDEC_OR_ARG_NAME (vardec)), NULL));
+        sync_args = AppendExprs (sync_args,
+                                 MakeExprs (MakeId_Copy_NT (VARDEC_OR_ARG_NAME (vardec),
+                                                            VARDEC_OR_ARG_TYPE (vardec)),
+                                            NULL));
 
         DBUG_PRINT ("COMP_MT", ("%s", VARDEC_OR_ARG_NAME (vardec)));
 
