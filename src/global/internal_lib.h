@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2004/11/24 22:19:44  cg
+ * SacDevCamp approved.
+ *
  * Revision 3.29  2004/11/22 21:16:44  ktr
  * globals.h
  *
@@ -182,8 +185,10 @@ extern bool ILIBstrBufIsEmpty (str_buf *s);
 extern void *ILIBstrBufFree (str_buf *s);
 
 extern char *ILIBstringCopy (const char *source);
-extern char *ILIBstringConcat (char *first, char *second);
+extern char *ILIBstringConcat (const char *first, const char *second);
+extern char *ILIBstringConcat3 (const char *first, const char *second, const char *third);
 extern char *ILIBstrTok (char *first, char *sep);
+extern bool ILIBstringCompare (const char *first, const char *second);
 
 extern void *ILIBmemCopy (int size, void *mem);
 
@@ -196,7 +201,6 @@ extern int ILIBSystemTest (char *format, ...);
 
 extern void ILIBcreateCppCallString (char *file, char *cccallstr, char *cppfile);
 
-extern char *ILIBprefixForTmpVar (void);
 extern char *ILIBtmpVar (void);
 extern char *ILIBtmpVarName (char *postfix);
 
@@ -224,86 +228,9 @@ extern void ILIBdbugMemoryLeakCheck (void);
 #define STR_OR_EMPTY(str) STR_OR_NULL ((str), "")
 #define STR_OR_UNKNOWN(str) STR_OR_NULL ((str), "?")
 
-/* swapping two pointers */
-#define SWAP(ptr1, ptr2)                                                                 \
-    {                                                                                    \
-        void *tmp;                                                                       \
-        tmp = (void *)(ptr1);                                                            \
-        (ptr1) = (void *)(ptr2);                                                         \
-        (ptr2) = (void *)(tmp);                                                          \
-    }
-
 /* min, max */
 #define MAX(a, b) ((a < b) ? b : a)
 #define MIN(a, b) ((a < b) ? a : b)
-
-/*
- * macros for handling bit fields
- */
-
-/* without assignment */
-#define SET_BIT(bf, bit) (bf | bit)
-#define UNSET_BIT(bf, bit) (bf & ~bit)
-
-/* with assignment (is a l-value) */
-#define L_SET_BIT(bf, bit) bf = SET_BIT (bf, bit)
-#define L_UNSET_BIT(bf, bit) bf = UNSET_BIT (bf, bit)
-
-#define TEST_BIT(bf, bit) ((bf & bit) != 0)
-
-/*
- * macros for handling vectors
- */
-
-#define FREE_VECT(vect)                                                                  \
-    if (vect != NULL) {                                                                  \
-        ILIBfree (vect);                                                                 \
-    }
-
-#define MALLOC_VECT(vect, dims, type)                                                    \
-    if (vect == NULL) {                                                                  \
-        (vect) = (type *)ILIBmalloc ((dims) * sizeof (type));                            \
-    }
-
-/* caution: 'val' should occur in the macro implementation only once! */
-#define MALLOC_INIT_VECT(vect, dims, type, val)                                          \
-    MALLOC_VECT (vect, dims, type);                                                      \
-    INIT_VECT (vect, dims, type, val)
-
-/* caution: 'val' should occur in the macro implementation only once! */
-#define INIT_VECT(vect, dims, type, val)                                                 \
-    {                                                                                    \
-        int d;                                                                           \
-        for (d = 0; d < (dims); d++) {                                                   \
-            (vect)[d] = val;                                                             \
-        }                                                                                \
-    }
-
-#define DUP_VECT(new_vect, old_vect, dims, type)                                         \
-    {                                                                                    \
-        int d;                                                                           \
-        if ((old_vect) != NULL) {                                                        \
-            MALLOC_VECT (new_vect, dims, type);                                          \
-            for (d = 0; d < (dims); d++) {                                               \
-                (new_vect)[d] = (old_vect)[d];                                           \
-            }                                                                            \
-        }                                                                                \
-    }
-
-#define PRINT_VECT(handle, vect, dims, format)                                           \
-    {                                                                                    \
-        int d;                                                                           \
-        if ((vect) != NULL) {                                                            \
-            fprintf (handle, "[ ");                                                      \
-            for (d = 0; d < (dims); d++) {                                               \
-                fprintf (handle, format, (vect)[d]);                                     \
-                fprintf (handle, " ");                                                   \
-            }                                                                            \
-            fprintf (handle, "]");                                                       \
-        } else {                                                                         \
-            fprintf (handle, "NULL");                                                    \
-        }                                                                                \
-    }
 
 /*
  * macros defining the prolog and epilog code for each phase
@@ -354,5 +281,58 @@ extern void ILIBdbugMemoryLeakCheck (void);
 #define CHECK_DBUG_START
 #define CHECK_DBUG_STOP
 #endif /* DBUG_OFF */
+
+/*
+ * THE FOLLOWING MACROS ARE DEPRECATED!!  DO NOT USE!!!
+ */
+
+/*
+ * macros for handling vectors
+ */
+
+#define MALLOC_VECT(vect, dims, type)                                                    \
+    if (vect == NULL) {                                                                  \
+        (vect) = (type *)ILIBmalloc ((dims) * sizeof (type));                            \
+    }
+
+/* caution: 'val' should occur in the macro implementation only once! */
+#define MALLOC_INIT_VECT(vect, dims, type, val)                                          \
+    MALLOC_VECT (vect, dims, type);                                                      \
+    INIT_VECT (vect, dims, type, val)
+
+/* caution: 'val' should occur in the macro implementation only once! */
+#define INIT_VECT(vect, dims, type, val)                                                 \
+    {                                                                                    \
+        int d;                                                                           \
+        for (d = 0; d < (dims); d++) {                                                   \
+            (vect)[d] = val;                                                             \
+        }                                                                                \
+    }
+
+#define DUP_VECT(new_vect, old_vect, dims, type)                                         \
+    {                                                                                    \
+        int d;                                                                           \
+        if ((old_vect) != NULL) {                                                        \
+            MALLOC_VECT (new_vect, dims, type);                                          \
+            for (d = 0; d < (dims); d++) {                                               \
+                (new_vect)[d] = (old_vect)[d];                                           \
+            }                                                                            \
+        }                                                                                \
+    }
+
+#define PRINT_VECT(handle, vect, dims, format)                                           \
+    {                                                                                    \
+        int d;                                                                           \
+        if ((vect) != NULL) {                                                            \
+            fprintf (handle, "[ ");                                                      \
+            for (d = 0; d < (dims); d++) {                                               \
+                fprintf (handle, format, (vect)[d]);                                     \
+                fprintf (handle, " ");                                                   \
+            }                                                                            \
+            fprintf (handle, "]");                                                       \
+        } else {                                                                         \
+            fprintf (handle, "NULL");                                                    \
+        }                                                                                \
+    }
 
 #endif /* _SAC_INTERNAL_LIB_H_ */

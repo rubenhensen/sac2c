@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2004/11/24 22:19:44  cg
+ * SacDevCamp approved.
+ *
  * Revision 3.64  2004/11/14 13:45:43  ktr
  * added support for reuse branching (emrb_tab)
  *
@@ -192,21 +195,21 @@
 #include <stdarg.h>
 #include <ctype.h>
 
+#include "dbug.h"
+
+#include "internal_lib.h"
+
 #include "Error.h"
 #include "DupTree.h"
 #include "free.h"
-#include "dbug.h"
-#include "scnprs.h"
-#include "my_debug.h"
-#include "internal_lib.h"
 #include "globals.h"
 #include "traverse.h"
-#include "types.h"
-#include "tree_basic.h"
-#include "tree_compound.h"
 #include "convert.h"
 
-/* experimental support for garbage collection */
+/*
+ * experimental support for garbage collection
+ */
+
 #ifdef GC
 #include <gc.h>
 #define malloc(n) GC_malloc (n)
@@ -231,11 +234,13 @@ typedef struct {
 
 #endif /* SHOW_MALLOC */
 
+static int malloc_align_step = 0;
+
 /******************************************************************************
  *
  * function:
- *   void *Malloc( int size)
- *   void *Free( void *address)
+ *   void *ILIBmalloc( int size)
+ *   void *ILIBfree( void *address)
  *
  * description:
  *   These functions for memory allocation and de-allocation are wrappers
@@ -249,13 +254,13 @@ typedef struct {
 #ifdef SHOW_MALLOC
 
 void *
-Malloc (int size)
+ILIBmalloc (int size)
 {
     void *tmp;
 
-    DBUG_ENTER ("Malloc");
+    DBUG_ENTER ("ILIBmalloc");
 
-    DBUG_ASSERT ((size >= 0), "Malloc called with negative size!");
+    DBUG_ASSERT ((size >= 0), "ILIBmalloc called with negative size!");
 
     if (size > 0) {
         tmp = malloc (size + malloc_align_step);
@@ -265,19 +270,19 @@ Malloc (int size)
          * we do complain for ((NULL == tmp) && (size > 0)) only!!
          */
         if (tmp == NULL) {
-            SYSABORT (
-              ("Out of memory: %u Bytes already allocated!", current_allocated_mem));
+            SYSABORT (("Out of memory: %u Bytes already allocated!",
+                       global.current_allocated_mem));
         }
 
         *(int *)tmp = size;
         tmp = (char *)tmp + malloc_align_step;
 
-        if (current_allocated_mem + size < current_allocated_mem) {
+        if (global.current_allocated_mem + size < global.current_allocated_mem) {
             DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
         }
-        current_allocated_mem += size;
-        if (max_allocated_mem < current_allocated_mem) {
-            max_allocated_mem = current_allocated_mem;
+        global.current_allocated_mem += size;
+        if (global.max_allocated_mem < global.current_allocated_mem) {
+            global.max_allocated_mem = global.current_allocated_mem;
         }
     } else {
         tmp = NULL;
@@ -285,7 +290,8 @@ Malloc (int size)
 
     DBUG_PRINT ("MEM_ALLOC", ("Alloc memory: %d Bytes at adress: " F_PTR, size, tmp));
 
-    DBUG_PRINT ("MEM_TOTAL", ("Currently allocated memory: %u", current_allocated_mem));
+    DBUG_PRINT ("MEM_TOTAL",
+                ("Currently allocated memory: %u", global.current_allocated_mem));
 
     DBUG_RETURN (tmp);
 }
@@ -293,9 +299,9 @@ Malloc (int size)
 #ifdef NOFREE
 
 void *
-Free (void *address)
+ILIBfree (void *address)
 {
-    DBUG_ENTER ("Free");
+    DBUG_ENTER ("ILIBfree");
 
     address = NULL;
 
@@ -305,12 +311,12 @@ Free (void *address)
 #else /* NOFREE */
 
 void *
-Free (void *address)
+ILIBfree (void *address)
 {
     void *orig_address;
     int size;
 
-    DBUG_ENTER ("Free");
+    DBUG_ENTER ("ILIBfree");
 
     if (address != NULL) {
         orig_address = (void *)((char *)address - malloc_align_step);
@@ -319,15 +325,15 @@ Free (void *address)
         DBUG_PRINT ("MEM_ALLOC",
                     ("Free memory: %d Bytes at adress: " F_PTR, size, address));
 
-        if (current_allocated_mem < current_allocated_mem - size) {
+        if (global.current_allocated_mem < global.current_allocated_mem - size) {
             DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
         }
-        current_allocated_mem -= size;
+        global.current_allocated_mem -= size;
 
         free (orig_address);
 
         DBUG_PRINT ("MEM_TOTAL",
-                    ("Currently allocated memory: %u", current_allocated_mem));
+                    ("Currently allocated memory: %u", global.current_allocated_mem));
 
         address = NULL;
     }
@@ -340,13 +346,13 @@ Free (void *address)
 #else /* SHOW_MALLOC */
 
 void *
-Malloc (int size)
+ILIBmalloc (int size)
 {
     void *tmp;
 
-    DBUG_ENTER ("Malloc");
+    DBUG_ENTER ("ILIBmalloc");
 
-    DBUG_ASSERT ((size >= 0), "Malloc called with negative size!");
+    DBUG_ASSERT ((size >= 0), "ILIBmalloc called with negative size!");
 
     if (size > 0) {
         tmp = malloc (size);
@@ -370,9 +376,9 @@ Malloc (int size)
 #ifdef NOFREE
 
 void *
-Free (void *address)
+ILIBfree (void *address)
 {
-    DBUG_ENTER ("Free");
+    DBUG_ENTER ("ILIBfree");
 
     address = NULL;
 
@@ -382,9 +388,9 @@ Free (void *address)
 #else /* NOFREE */
 
 void *
-Free (void *address)
+ILIBfree (void *address)
 {
-    DBUG_ENTER ("Free");
+    DBUG_ENTER ("ILIBfree");
 
     if (address != NULL) {
         free (address);
@@ -409,7 +415,7 @@ struct PTR_BUF {
 
 /** <!--********************************************************************-->
  *
- * @fn  ptr_buf *PtrBufCreate( int size)
+ * @fn  ptr_buf *ILIBptrBufCreate( int size)
  *
  *   @brief  creates an (unbound) pointer buffer
  *
@@ -421,14 +427,14 @@ struct PTR_BUF {
  ******************************************************************************/
 
 ptr_buf *
-PtrBufCreate (int size)
+ILIBptrBufCreate (int size)
 {
     ptr_buf *res;
 
-    DBUG_ENTER ("PtrBufCreate");
+    DBUG_ENTER ("ILIBptrBufCreate");
 
-    res = (ptr_buf *)Malloc (sizeof (ptr_buf));
-    res->buf = (void **)Malloc (size * sizeof (void *));
+    res = (ptr_buf *)ILIBmalloc (sizeof (ptr_buf));
+    res->buf = (void **)ILIBmalloc (size * sizeof (void *));
     res->pos = 0;
     res->size = size;
 
@@ -439,7 +445,7 @@ PtrBufCreate (int size)
 
 /** <!--********************************************************************-->
  *
- * @fn  ptr_buf *PtrBufAdd(  ptr_buf *s, void *ptr)
+ * @fn  ptr_buf *ILIBptrBufAdd(  ptr_buf *s, void *ptr)
  *
  *   @brief  adds ptr to buffer s (new last element)
  *
@@ -450,24 +456,24 @@ PtrBufCreate (int size)
  ******************************************************************************/
 
 ptr_buf *
-PtrBufAdd (ptr_buf *s, void *ptr)
+ILIBptrBufAdd (ptr_buf *s, void *ptr)
 {
     int new_size;
     void **new_buf;
     int i;
 
-    DBUG_ENTER ("PtrBufAdd");
+    DBUG_ENTER ("ILIBptrBufAdd");
 
     if (s->pos == s->size) {
         new_size = 2 * s->size;
         DBUG_PRINT ("PTRBUF", ("increasing buffer %p from size %d to size %d", s, s->size,
                                new_size));
 
-        new_buf = (void **)Malloc (new_size * sizeof (void *));
+        new_buf = (void **)ILIBmalloc (new_size * sizeof (void *));
         for (i = 0; i < s->pos; i++) {
             new_buf[i] = s->buf[i];
         }
-        s->buf = Free (s->buf);
+        s->buf = ILIBfree (s->buf);
         s->buf = new_buf;
         s->size = new_size;
     }
@@ -481,7 +487,7 @@ PtrBufAdd (ptr_buf *s, void *ptr)
 
 /** <!--********************************************************************-->
  *
- * @fn  int PtrBufGetSize(  ptr_buf *s)
+ * @fn  int ILIBptrBufGetSize(  ptr_buf *s)
  *
  *   @brief  retrieve size of given pointer buffer
  *
@@ -491,15 +497,15 @@ PtrBufAdd (ptr_buf *s, void *ptr)
  ******************************************************************************/
 
 int
-PtrBufGetSize (ptr_buf *s)
+ILIBptrBufGetSize (ptr_buf *s)
 {
-    DBUG_ENTER ("PtrBufGetSize");
+    DBUG_ENTER ("ILIBptrBufGetSize");
     DBUG_RETURN (s->size);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn  void *PtrBufGetPtr(  ptr_buf *s, int pos)
+ * @fn  void *ILIBptrBufGetPtr(  ptr_buf *s, int pos)
  *
  *   @brief  get pointer entry at specified position
  *
@@ -510,11 +516,11 @@ PtrBufGetSize (ptr_buf *s)
  ******************************************************************************/
 
 void *
-PtrBufGetPtr (ptr_buf *s, int pos)
+ILIBptrBufGetPtr (ptr_buf *s, int pos)
 {
     void *res;
 
-    DBUG_ENTER ("PtrBufGetPtr");
+    DBUG_ENTER ("ILIBptrBufGetPtr");
     if (pos < s->pos) {
         res = s->buf[pos];
     } else {
@@ -525,7 +531,7 @@ PtrBufGetPtr (ptr_buf *s, int pos)
 
 /** <!--********************************************************************-->
  *
- * @fn  void PtrBufFlush(  ptr_buf *s)
+ * @fn  void ILIBptrBufFlush(  ptr_buf *s)
  *
  *   @brief  flushes the given pointer buffer (no deallocation!)
  *
@@ -534,9 +540,9 @@ PtrBufGetPtr (ptr_buf *s, int pos)
  ******************************************************************************/
 
 void
-PtrBufFlush (ptr_buf *s)
+ILIBptrBufFlush (ptr_buf *s)
 {
-    DBUG_ENTER ("PtrBufFlush");
+    DBUG_ENTER ("ILIBptrBufFlush");
 
     s->pos = 0;
     DBUG_PRINT ("PTRBUF", ("pos of buffer %p reset to %d", s, s->pos));
@@ -546,7 +552,7 @@ PtrBufFlush (ptr_buf *s)
 
 /** <!--********************************************************************-->
  *
- * @fn  void *PtrBufFree(  ptr_buf *s)
+ * @fn  void *ILIBptrBufFree(  ptr_buf *s)
  *
  *   @brief  deallocates the given pointer buffer!
  *
@@ -555,13 +561,13 @@ PtrBufFlush (ptr_buf *s)
  ******************************************************************************/
 
 void *
-PtrBufFree (ptr_buf *s)
+ILIBptrBufFree (ptr_buf *s)
 {
-    DBUG_ENTER ("PtrBufFree");
+    DBUG_ENTER ("ILIBptrBufFree");
 
     DBUG_PRINT ("PTRBUF", ("freeing buffer %p", s));
-    s->buf = Free (s->buf);
-    s = Free (s);
+    s->buf = ILIBfree (s->buf);
+    s = ILIBfree (s);
 
     DBUG_RETURN (s);
 }
@@ -575,7 +581,7 @@ struct STR_BUF {
 /******************************************************************************
  *
  * Function:
- *   str_buf *StrBufCreate( int size);
+ *   str_buf *ILIBstrBufCreate( int size);
  *
  * Description:
  *
@@ -583,14 +589,14 @@ struct STR_BUF {
  ******************************************************************************/
 
 str_buf *
-StrBufCreate (int size)
+ILIBstrBufCreate (int size)
 {
     str_buf *res;
 
-    DBUG_ENTER ("StrBufCreate");
+    DBUG_ENTER ("ILIBstrBufCreate");
 
-    res = (str_buf *)Malloc (sizeof (str_buf));
-    res->buf = (char *)Malloc (size * sizeof (char));
+    res = (str_buf *)ILIBmalloc (sizeof (str_buf));
+    res->buf = (char *)ILIBmalloc (size * sizeof (char));
     res->buf[0] = '\0';
     res->pos = 0;
     res->size = size;
@@ -603,7 +609,7 @@ StrBufCreate (int size)
 /******************************************************************************
  *
  * Function:
- *   str_buf *StrBufprint(  str_buf *s, const char *string);
+ *   str_buf *ILIBstrBufprint(  str_buf *s, const char *string);
  *
  * Description:
  *
@@ -611,13 +617,13 @@ StrBufCreate (int size)
  ******************************************************************************/
 
 str_buf *
-StrBufprint (str_buf *s, const char *string)
+ILIBstrBufprint (str_buf *s, const char *string)
 {
     int len;
     int new_size;
     char *new_buf;
 
-    DBUG_ENTER ("StrBufprint");
+    DBUG_ENTER ("ILIBstrBufprint");
 
     len = strlen (string);
 
@@ -628,9 +634,9 @@ StrBufprint (str_buf *s, const char *string)
         DBUG_PRINT ("STRBUF", ("increasing buffer %p from size %d to size %d", s, s->size,
                                new_size));
 
-        new_buf = (char *)Malloc (new_size * sizeof (char));
+        new_buf = (char *)ILIBmalloc (new_size * sizeof (char));
         memcpy (new_buf, s->buf, s->pos + 1);
-        s->buf = Free (s->buf);
+        s->buf = ILIBfree (s->buf);
         s->buf = new_buf;
         s->size = new_size;
     }
@@ -644,7 +650,7 @@ StrBufprint (str_buf *s, const char *string)
 /******************************************************************************
  *
  * Function:
- *   str_buf *StrBufprintf(  str_buf *s, const char *format, ...);
+ *   str_buf *ILIBstrBufprintf(  str_buf *s, const char *format, ...);
  *
  * Description:
  *
@@ -652,20 +658,20 @@ StrBufprint (str_buf *s, const char *string)
  ******************************************************************************/
 
 str_buf *
-StrBufprintf (str_buf *s, const char *format, ...)
+ILIBstrBufprintf (str_buf *s, const char *format, ...)
 {
     va_list arg_p;
     static char string[512];
 
-    DBUG_ENTER ("StrBufprintf");
+    DBUG_ENTER ("ILIBstrBufprintf");
 
     va_start (arg_p, format);
     vsprintf (string, format, arg_p);
     va_end (arg_p);
 
-    DBUG_ASSERT (strlen (string) < 512, "string buffer in StrBufprintf too small!");
+    DBUG_ASSERT (strlen (string) < 512, "string buffer in ILIBstrBufprintf too small!");
 
-    s = StrBufprint (s, string);
+    s = ILIBstrBufprint (s, string);
 
     DBUG_RETURN (s);
 }
@@ -673,7 +679,7 @@ StrBufprintf (str_buf *s, const char *format, ...)
 /******************************************************************************
  *
  * Function:
- *   char *StrBuf2String(  str_buf *s);
+ *   char *ILIBstrBuf2String(  str_buf *s);
  *
  * Description:
  *
@@ -681,17 +687,17 @@ StrBufprintf (str_buf *s, const char *format, ...)
  ******************************************************************************/
 
 char *
-StrBuf2String (str_buf *s)
+ILIBstrBuf2String (str_buf *s)
 {
-    DBUG_ENTER ("StrBuf2String");
+    DBUG_ENTER ("ILIBstrBuf2String");
 
-    DBUG_RETURN (StringCopy (s->buf));
+    DBUG_RETURN (ILIBstringCopy (s->buf));
 }
 
 /******************************************************************************
  *
  * Function:
- *   void StrBufFlush(  str_buf *s)
+ *   void ILIBstrBufFlush(  str_buf *s)
  *
  * Description:
  *
@@ -699,9 +705,9 @@ StrBuf2String (str_buf *s)
  ******************************************************************************/
 
 void
-StrBufFlush (str_buf *s)
+ILIBstrBufFlush (str_buf *s)
 {
-    DBUG_ENTER ("StrBufFlush");
+    DBUG_ENTER ("ILIBstrBufFlush");
 
     s->pos = 0;
     DBUG_PRINT ("STRBUF", ("pos of buffer %p reset to %d", s, s->pos));
@@ -712,7 +718,7 @@ StrBufFlush (str_buf *s)
 /******************************************************************************
  *
  * Function:
- *   bool StrBufIsEmpty( str_buf *s)
+ *   bool ILIBstrBufIsEmpty( str_buf *s)
  *
  * Description:
  *
@@ -720,9 +726,9 @@ StrBufFlush (str_buf *s)
  ******************************************************************************/
 
 bool
-StrBufIsEmpty (str_buf *s)
+ILIBstrBufIsEmpty (str_buf *s)
 {
-    DBUG_ENTER ("StrBufIsEmpty");
+    DBUG_ENTER ("ILIBstrBufIsEmpty");
 
     DBUG_RETURN (s->pos == 0);
 }
@@ -730,19 +736,19 @@ StrBufIsEmpty (str_buf *s)
 /******************************************************************************
  *
  * Function:
- *   void *StrBufFree( str_buf *s);
+ *   void *ILIBstrBufFree( str_buf *s);
  *
  * Description:
  *
  ******************************************************************************/
 
 void *
-StrBufFree (str_buf *s)
+ILIBstrBufFree (str_buf *s)
 {
-    DBUG_ENTER ("StrBufFree");
+    DBUG_ENTER ("ILIBstrBufFree");
 
-    s->buf = Free (s->buf);
-    s = Free (s);
+    s->buf = ILIBfree (s->buf);
+    s = ILIBfree (s);
 
     DBUG_RETURN (s);
 }
@@ -750,7 +756,7 @@ StrBufFree (str_buf *s)
 /******************************************************************************
  *
  * Function:
- *   char *StringCopy( const char *source)
+ *   char *ILIBstringCopy( const char *source)
  *
  * Description:
  *   Allocates memory and returns a pointer to the copy of 'source'.
@@ -758,14 +764,14 @@ StrBufFree (str_buf *s)
  ******************************************************************************/
 
 char *
-StringCopy (const char *source)
+ILIBstringCopy (const char *source)
 {
     char *ret;
 
-    DBUG_ENTER ("StringCopy");
+    DBUG_ENTER ("ILIBstringCopy");
 
-    if (source) {
-        ret = (char *)Malloc (sizeof (char) * (strlen (source) + 1));
+    if (source != NULL) {
+        ret = (char *)ILIBmalloc (sizeof (char) * (strlen (source) + 1));
         strcpy (ret, source);
     } else {
         ret = NULL;
@@ -777,7 +783,7 @@ StringCopy (const char *source)
 /******************************************************************************
  *
  * function:
- *   char *StringConcat( char *first, char* second)
+ *   char *ILIBstringConcat( char *first, char* second)
  *
  * description
  *   Reserves new memory for the concatinated string first + second,
@@ -787,13 +793,13 @@ StringCopy (const char *source)
  ******************************************************************************/
 
 char *
-StringConcat (char *first, char *second)
+ILIBstringConcat (const char *first, const char *second)
 {
     char *result;
 
-    DBUG_ENTER ("StringConcat");
+    DBUG_ENTER ("ILIBstringConcat");
 
-    result = (char *)Malloc (strlen (first) + strlen (second) + 1);
+    result = (char *)ILIBmalloc (strlen (first) + strlen (second) + 1);
 
     strcpy (result, first);
     strcat (result, second);
@@ -804,7 +810,58 @@ StringConcat (char *first, char *second)
 /******************************************************************************
  *
  * function:
- *   char *StrTok( char *first, char *sep)
+ *   char *ILIBstringConcat3( const char *first, const char* second, const char *third)
+ *
+ * description
+ *   Reserves new memory for the concatinated string first + second + third,
+ *   and returns the concatination. Does not free any memory used by
+ *   first or second.
+ *
+ ******************************************************************************/
+
+char *
+ILIBstringConcat3 (const char *first, const char *second, const char *third)
+{
+    char *result;
+
+    DBUG_ENTER ("ILIBstringConcat");
+
+    result = (char *)ILIBmalloc (strlen (first) + strlen (second) + strlen (third) + 1);
+
+    strcpy (result, first);
+    strcat (result, second);
+    strcat (result, third);
+
+    DBUG_RETURN (result);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  bool ILIBstringCompare( const char *first, const char *second)
+ *
+ *   @brief  compares two strings for equality
+ *
+ *   @param  first
+ *   @param  second
+ *
+ ******************************************************************************/
+
+bool
+ILIBstringCompare (const char *first, const char *second)
+{
+    bool res;
+
+    DBUG_ENTER ("ILIBstringCompare");
+
+    res = (0 == strcmp (first, second));
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   char *ILIBstrTok( char *first, char *sep)
  *
  * description
  *    Implements a version of the c-strtok, which can operate on static
@@ -813,32 +870,32 @@ StringConcat (char *first, char *second)
  *    pointer will be returned.
  *    On first call the string first will be copied, and on last call the
  *    allocated memory of the copy will be freeed.
- *    To get more than one token from one string, call StrTok with NULL as
+ *    To get more than one token from one string, call ILIBstrTok with NULL as
  *    first parameter, just like c-strtok.
  *
  ******************************************************************************/
 
 char *
-StrTok (char *first, char *sep)
+ILIBstrTok (char *first, char *sep)
 {
     static char *act_string = NULL;
     char *new_string = NULL;
     char *ret;
 
-    DBUG_ENTER ("StrTok");
+    DBUG_ENTER ("ILIBstrTok");
 
     if (first != NULL) {
         if (act_string != NULL) {
-            act_string = Free (act_string);
+            act_string = ILIBfree (act_string);
         }
-        new_string = StringCopy (first);
+        new_string = ILIBstringCopy (first);
         act_string = new_string;
     }
 
     ret = strtok (new_string, sep);
 
     if (ret == NULL) {
-        act_string = Free (act_string);
+        act_string = ILIBfree (act_string);
     }
 
     DBUG_RETURN (ret);
@@ -847,7 +904,7 @@ StrTok (char *first, char *sep)
 /******************************************************************************
  *
  * Function:
- *   void *MemCopy( int size, void *mem)
+ *   void *ILIBmemCopy( int size, void *mem)
  *
  * Description:
  *   Allocates memory and returns a pointer to the copy of 'mem'.
@@ -855,13 +912,13 @@ StrTok (char *first, char *sep)
  ******************************************************************************/
 
 void *
-MemCopy (int size, void *mem)
+ILIBmemCopy (int size, void *mem)
 {
     void *result;
 
-    DBUG_ENTER ("MemCopy");
+    DBUG_ENTER ("ILIBmemCopy");
 
-    result = Malloc (sizeof (char) * size);
+    result = ILIBmalloc (sizeof (char) * size);
 
     result = memcpy (result, mem, size);
 
@@ -894,7 +951,7 @@ itoa (long number)
         length++;
     }
 
-    str = (char *)Malloc (sizeof (char) * length + 1);
+    str = (char *)ILIBmalloc (sizeof (char) * length + 1);
     str[length] = atoi ("\0");
 
     for (i = 0; i < length; i++) {
@@ -965,7 +1022,7 @@ SystemCall (char *format, ...)
     /* if -dnocleanup flag is set print all syscalls !
      * This allows for easy C-code patches.
      */
-    if (show_syscall) {
+    if (global.show_syscall) {
         NOTE (("%s", syscall));
     }
 
@@ -1007,7 +1064,7 @@ SystemCall2 (char *format, ...)
     /* if -dnocleanup flag is set print all syscalls !
      * This allows for easy C-code patches.
      */
-    if (show_syscall) {
+    if (global.show_syscall) {
         NOTE (("%s", syscall));
     }
 
@@ -1057,7 +1114,7 @@ SystemTest (char *format, ...)
 /******************************************************************************
  *
  * Function:
- *   void CreateCppCallString( char *file, char *cccallstr)
+ *   void ILIBcreateCppCallString( char *file, char *cccallstr)
  *
  * Description:
  *   Checks whether the given filename is empty, i.e., we are reading from
@@ -1067,26 +1124,26 @@ SystemTest (char *format, ...)
  ******************************************************************************/
 
 void
-CreateCppCallString (char *file, char *cccallstr, char *cppfile)
+ILIBcreateCppCallString (char *file, char *cccallstr, char *cppfile)
 {
     int i;
 
-    DBUG_ENTER ("CppCallString");
+    DBUG_ENTER ("ILIBcreateCppCallString");
 
     if (file[0] == '\0') { /*we are reading from stdin! */
-        strcpy (cccallstr, config.cpp_stdin);
+        strcpy (cccallstr, global.config.cpp_stdin);
     } else {
-        strcpy (cccallstr, config.cpp_file);
+        strcpy (cccallstr, global.config.cpp_file);
     }
-    for (i = 0; i < num_cpp_vars; i++) {
+    for (i = 0; i < global.num_cpp_vars; i++) {
         strcat (cccallstr, " ");
-        strcat (cccallstr, config.opt_D);
-        strcat (cccallstr, cppvars[i]);
+        strcat (cccallstr, global.config.opt_D);
+        strcat (cccallstr, global.cpp_vars[i]);
     }
-    for (i = 0; i < num_cpp_incs; i++) {
+    for (i = 0; i < global.num_cpp_incs; i++) {
         strcat (cccallstr, " ");
-        strcat (cccallstr, config.opt_I);
-        strcat (cccallstr, cppincs[i]);
+        strcat (cccallstr, global.config.opt_I);
+        strcat (cccallstr, global.cpp_incs[i]);
     }
     if (file[0] != '\0') {
         strcat (cccallstr, " ");
@@ -1102,276 +1159,27 @@ CreateCppCallString (char *file, char *cccallstr, char *cppfile)
 /******************************************************************************
  *
  * Function:
- *   char *PrefixForTmpVar( void)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-char *
-PrefixForTmpVar (void)
-{
-    char *s;
-
-    DBUG_ENTER ("PrefixForTmpVar");
-#ifndef NEW_AST
-    if (act_tab == imp_tab) {
-        s = "imp";
-    } else if (act_tab == flat_tab) {
-        s = "flat";
-    } else if (act_tab == print_tab) {
-        s = "prt";
-    } else if (act_tab == type_tab) {
-        s = "type";
-    } else if (act_tab == tccp_tab) {
-        s = "type";
-    } else if (act_tab == free_tab) {
-        s = "free";
-    } else if (act_tab == comp_tab) {
-        s = "comp";
-    } else if (act_tab == dup_tab) {
-        s = "dup";
-    } else if (act_tab == inline_tab) {
-        s = "inl";
-    } else if (act_tab == idx_tab) {
-        s = "idx";
-    } else if (act_tab == ae_tab) {
-        s = "ae";
-    } else if (act_tab == writesib_tab) {
-        s = "wsib";
-    } else if (act_tab == obj_tab) {
-        s = "obj";
-    } else if (act_tab == impltype_tab) {
-        s = "impl";
-    } else if (act_tab == objinit_tab) {
-        s = "obji";
-    } else if (act_tab == analy_tab) {
-        s = "analy";
-    } else if (act_tab == checkdec_tab) {
-        s = "cdec";
-    } else if (act_tab == writedec_tab) {
-        s = "wdec";
-    } else if (act_tab == unique_tab) {
-        s = "uniq";
-    } else if (act_tab == precomp1_tab) {
-        s = "pcomp1";
-    } else if (act_tab == precomp2_tab) {
-        s = "pcomp2";
-    } else if (act_tab == precomp3_tab) {
-        s = "pcomp3";
-    } else if (act_tab == readsib_tab) {
-        s = "rsib";
-    } else if (act_tab == dfr_tab) {
-        s = "dfr";
-    } else if (act_tab == patchwith_tab) {
-        s = "pw";
-    } else if (act_tab == spmdinit_tab) {
-        s = "spmdi";
-    } else if (act_tab == spmdlift_tab) {
-        s = "spmdl";
-    } else if (act_tab == syncinit_tab) {
-        s = "synci";
-    } else if (act_tab == syncopt_tab) {
-        s = "synco";
-    } else if (act_tab == fun2lac_tab) {
-        s = "f2l";
-    } else if (act_tab == ai_tab) {
-        s = "ai";
-    } else if (act_tab == apc_tab) {
-        s = "apc";
-    } else if (act_tab == apt_tab) {
-        s = "apt";
-    } else if (act_tab == ssafrm_tab) {
-        s = "ssa";
-    } else if (act_tab == undossa_tab) {
-        s = "ussa";
-    } else if (act_tab == ssacf_tab) {
-        s = "cf";
-    } else if (act_tab == ssalir_tab) {
-        s = "lir";
-    } else if (act_tab == lirmov_tab) {
-        s = "lir";
-    } else if (act_tab == ssawlt_tab) {
-        s = "wlt";
-    } else if (act_tab == ssawli_tab) {
-        s = "wli";
-    } else if (act_tab == ssawlf_tab) {
-        s = "wlf";
-    } else if (act_tab == wls_tab) {
-        s = "wls";
-    } else if (act_tab == wlsb_tab) {
-        s = "wls";
-    } else if (act_tab == wlsw_tab) {
-        s = "wls";
-    } else if (act_tab == hd_tab) {
-        s = "hd";
-    } else if (act_tab == cwc_tab) {
-        s = "cwc";
-    } else if (act_tab == ntc_tab) {
-        s = "ntc";
-    } else if (act_tab == al_tab) {
-        s = "al";
-    } else if (act_tab == nt2ot_tab) {
-        s = "nt2ot";
-    } else if (act_tab == esd_tab) {
-        s = "esd";
-    } else if (act_tab == dl_tab) {
-        s = "dl";
-    } else if (act_tab == sp_tab) {
-        s = "sp";
-    } else if (act_tab == wlpg_tab) {
-        s = "wlpg";
-    } else if (act_tab == wlfs_tab) {
-        s = "wlfs";
-    } else if (act_tab == emalloc_tab) {
-        s = "emal";
-    } else if (act_tab == ea_tab) {
-        s = "ea";
-    } else if (act_tab == crwiw_tab) {
-        s = "crwiw";
-    } else if (act_tab == repfun_tab) {
-        s = "repfun";
-    } else if (act_tab == set_tab) {
-        s = "set";
-    } else if (act_tab == emlr_tab) {
-        s = "emlr";
-    } else if (act_tab == emdr_tab) {
-        s = "emdr";
-    } else if (act_tab == emec_tab) {
-        s = "emec";
-    } else if (act_tab == emrb_tab) {
-        s = "emrb";
-    } else
-#else
-    if (act_tab == flat_tab) {
-        s = "flat";
-    } else if (act_tab == print_tab) {
-        s = "prt";
-    } else if (act_tab == free_tab) {
-        s = "free";
-    } else if (act_tab == comp_tab) {
-        s = "comp";
-    } else if (act_tab == dup_tab) {
-        s = "dup";
-    } else if (act_tab == inline_tab) {
-        s = "inl";
-    } else if (act_tab == idx_tab) {
-        s = "idx";
-    } else if (act_tab == ae_tab) {
-        s = "ae";
-    } else if (act_tab == obj_tab) {
-        s = "obj";
-    } else if (act_tab == objinit_tab) {
-        s = "obji";
-    } else if (act_tab == unique_tab) {
-        s = "uniq";
-    } else if (act_tab == precomp1_tab) {
-        s = "pcomp1";
-    } else if (act_tab == precomp2_tab) {
-        s = "pcomp2";
-    } else if (act_tab == precomp3_tab) {
-        s = "pcomp3";
-    } else if (act_tab == dfr_tab) {
-        s = "dfr";
-    } else if (act_tab == patchwith_tab) {
-        s = "pw";
-    } else if (act_tab == fun2lac_tab) {
-        s = "f2l";
-    } else if (act_tab == ai_tab) {
-        s = "ai";
-    } else if (act_tab == apc_tab) {
-        s = "apc";
-    } else if (act_tab == apt_tab) {
-        s = "apt";
-    } else if (act_tab == ssafrm_tab) {
-        s = "ssa";
-    } else if (act_tab == undossa_tab) {
-        s = "ussa";
-    } else if (act_tab == ssacf_tab) {
-        s = "cf";
-    } else if (act_tab == ssalir_tab) {
-        s = "lir";
-    } else if (act_tab == lirmov_tab) {
-        s = "lir";
-    } else if (act_tab == ssawlt_tab) {
-        s = "wlt";
-    } else if (act_tab == ssawli_tab) {
-        s = "wli";
-    } else if (act_tab == ssawlf_tab) {
-        s = "wlf";
-    } else if (act_tab == wls_tab) {
-        s = "wls";
-    } else if (act_tab == wlsb_tab) {
-        s = "wls";
-    } else if (act_tab == wlsw_tab) {
-        s = "wls";
-    } else if (act_tab == hd_tab) {
-        s = "hd";
-    } else if (act_tab == cwc_tab) {
-        s = "cwc";
-    } else if (act_tab == ntc_tab) {
-        s = "ntc";
-    } else if (act_tab == al_tab) {
-        s = "al";
-    } else if (act_tab == nt2ot_tab) {
-        s = "nt2ot";
-    } else if (act_tab == esd_tab) {
-        s = "esd";
-    } else if (act_tab == sp_tab) {
-        s = "sp";
-    } else if (act_tab == wlpg_tab) {
-        s = "wlpg";
-    } else if (act_tab == wlfs_tab) {
-        s = "wlfs";
-    } else if (act_tab == emalloc_tab) {
-        s = "emal";
-    } else if (act_tab == ea_tab) {
-        s = "ea";
-    } else if (act_tab == set_tab) {
-        s = "set";
-    } else if (act_tab == emlr_tab) {
-        s = "emlr";
-    } else if (act_tab == emdr_tab) {
-        s = "emdr";
-    } else if (act_tab == emec_tab) {
-        s = "emec";
-    } else if (act_tab == emrb_tab) {
-        s = "emrb";
-    } else
-#endif /* NEW_AST */
-    {
-        s = "unknown";
-        DBUG_ASSERT ((0), "PrefixForTmpVar(): unknown trav-tab found!");
-    }
-
-    DBUG_RETURN (s);
-}
-
-/******************************************************************************
- *
- * Function:
- *   char *TmpVar( void)
+ *   char *ILIBtmpVar( void)
  *
  * Description:
  *   Generates string to be used as artificial variable.
- *   The variable name is different in each call of TmpVar().
+ *   The variable name is different in each call of ILIBtmpVar().
  *   The string has the form "__tmp_" ++ compiler phase ++ consecutive number.
  *
  ******************************************************************************/
 
 char *
-TmpVar (void)
+ILIBtmpVar (void)
 {
     static int counter = 0;
-    char *prefix;
+    const char *prefix;
     char *result;
 
-    DBUG_ENTER ("TmpVar");
+    DBUG_ENTER ("ILIBtmpVar");
 
-    prefix = PrefixForTmpVar ();
-    result
-      = (char *)Malloc ((strlen (prefix) + NumberOfDigits (counter) + 3) * sizeof (char));
+    prefix = TRAVgetName ();
+    result = (char *)ILIBmalloc ((strlen (prefix) + NumberOfDigits (counter) + 3)
+                                 * sizeof (char));
     sprintf (result, "_%s_%d", prefix, counter);
     counter++;
 
@@ -1381,35 +1189,38 @@ TmpVar (void)
 /******************************************************************************
  *
  * function:
- *   char *TmpVarName( char* postfix)
+ *   char *ILIBtmpVarName( char* postfix)
  *
  * description:
- *   creates a unique variable like TmpVar() and additionally appends
+ *   creates a unique variable like ILIBtmpVar() and additionally appends
  *   an individual string.
  *
  ******************************************************************************/
 
 char *
-TmpVarName (char *postfix)
+ILIBtmpVarName (char *postfix)
 {
-    char *result, *tmp;
+    const char *tmp;
+    char *result, *prefix;
 
-    DBUG_ENTER ("TmpVarName");
+    DBUG_ENTER ("ILIBtmpVarName");
 
     /* avoid chains of same prefixes */
-    tmp = PrefixForTmpVar ();
+    tmp = TRAVgetName ();
 
-    if ((strlen (postfix) > (strlen (tmp) + 1)) && (*postfix == '_')
+    if ((strlen (postfix) > (strlen (tmp) + 1)) && (postfix[0] == '_')
         && (strncmp ((postfix + 1), tmp, strlen (tmp)) == 0)) {
         postfix = postfix + strlen (tmp) + 2;
-        while (*postfix++ != '_')
-            ;
+        while (postfix[0] != '_') {
+            postfix++;
+        }
     }
-    tmp = TmpVar ();
 
-    result = (char *)Malloc ((strlen (tmp) + strlen (postfix) + 2) * sizeof (char));
-    sprintf (result, "%s_%s", tmp, postfix);
-    tmp = Free (tmp);
+    prefix = ILIBtmpVar ();
+
+    result = ILIBstringConcat3 (prefix, "_", postfix);
+
+    ILIBfree (prefix);
 
     DBUG_RETURN (result);
 }
@@ -1417,7 +1228,7 @@ TmpVarName (char *postfix)
 #ifdef SHOW_MALLOC
 
 /* -------------------------------------------------------------------------- *
- * task: calculates the number of bytes for a safe alignment (used in Malloc)
+ * task: calculates the number of bytes for a safe alignment (used in ILIBmalloc)
  * initializes global variable malloc_align_step
  *
  * remarks: the c-compiler alignment of structs is exploited.
@@ -1442,7 +1253,7 @@ ComputeMallocAlignStep (void)
 /******************************************************************************
  *
  * function:
- *   void DbugMemoryLeakCheck( void)
+ *   void ILIBdbugMemoryLeakCheck( void)
  *
  * description:
  *   computes and prints memory usage w/o memory used for the actual
@@ -1451,24 +1262,24 @@ ComputeMallocAlignStep (void)
  ******************************************************************************/
 
 void
-DbugMemoryLeakCheck (void)
+ILIBdbugMemoryLeakCheck (void)
 {
     node *ast_dup;
     int mem_before;
 
-    DBUG_ENTER ("DbugMemoryLeakCheck");
+    DBUG_ENTER ("ILIBdbugMemoryLeakCheck");
 
-    mem_before = current_allocated_mem;
+    mem_before = global.current_allocated_mem;
     NOTE2 (("*** Currently allocated memory (Bytes):   %s",
-            IntBytes2String (current_allocated_mem)));
-    ast_dup = DupTree (syntax_tree);
+            CVintBytes2String (global.current_allocated_mem)));
+    ast_dup = DUPdoDupTree (global.syntax_tree);
     NOTE2 (("*** Size of the syntax tree (Bytes):      %s",
-            IntBytes2String (current_allocated_mem - mem_before)));
+            CVintBytes2String (global.current_allocated_mem - mem_before)));
     NOTE2 (("*** Other memory allocated/ Leak (Bytes): %s",
-            IntBytes2String (2 * mem_before - current_allocated_mem)));
-    FreeTree (ast_dup);
+            CVintBytes2String (2 * mem_before - global.current_allocated_mem)));
+    FREEdoFreeTree (ast_dup);
     NOTE2 (("*** FreeTree / DupTree leak (Bytes):      %s",
-            IntBytes2String (current_allocated_mem - mem_before)));
+            CVintBytes2String (global.current_allocated_mem - mem_before)));
 
     DBUG_VOID_RETURN;
 }
