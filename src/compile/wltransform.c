@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.82  2003/11/11 19:27:27  dkr
+ * error message for missing default expression modified
+ *
  * Revision 3.81  2003/11/11 18:19:33  dkr
  * some code brushing done.
  * CheckWith() added, NWITH_DEFAULT used.
@@ -7130,8 +7133,9 @@ CheckWith (node *arg_node, node *arg_info)
 
         if ((!KNOWN_SHAPE (wlids_sdim)) && (!KNOWN_SHAPE (cexpr_sdim))
             && (NWITH_DEFAULT (arg_node) == NULL)) {
-            ERROR (linenum, ("genarray with-loop with result/expression of"
-                             " unknown shape and missing default expression found!"));
+            ERROR (linenum, ("genarray with-loop with missing default expression found."
+                             " Unfortunately, a default expression is necessary here"
+                             " to compute the shape of the result"));
         }
         break;
 
