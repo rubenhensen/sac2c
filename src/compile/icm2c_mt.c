@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/03/28 09:19:53  ben
+ * InitializeBoundaries added
+ *
  * Revision 3.14  2001/03/27 11:52:03  ben
  * MT_SCHEDULER_Afs_... added
  *
@@ -1431,6 +1434,35 @@ ICMCompileMT_SCHEDULER_END (int dim, char **vararg)
 /******************************************************************************
  *
  * function:
+ *   void InitializeBoundaries(int dim, char **vararg)
+ *
+ * description:
+ *   this funtion sets the boundaries of the withloop
+ *
+ ******************************************************************************/
+void
+InitializeBoundaries (int dim, char **vararg)
+{
+    char **lower_bound = vararg;
+    char **upper_bound = vararg + dim;
+    /* char **unrolling   = vararg+3*dim;*/
+    int i;
+
+    DBUG_ENTER ("InitializeBoundaries");
+
+    for (i = 0; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i, lower_bound[i]);
+        INDENT;
+        fprintf (outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i, upper_bound[i]);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void SelectTask(int dim, char **vararg,int strategy, int strategy_param,
  *                                          char *num_tasks, char *next_taskid)
  *
@@ -1438,7 +1470,8 @@ ICMCompileMT_SCHEDULER_END (int dim, char **vararg)
  *   this function divides the given withloop (dim,vararg) with the strategy
  *   (strategy,strategy_param) into tasks for multithreaded computation.
  *   The number of tasks is num_tasks and next_taskid is the number of the
- *    next task, which should be computated.
+ *    next task, which should be computated. Please call before using this function
+ *    InitializeBoundaries.
  *
  *   implemented strategies: (name/value of strategy for functioncall/ meaning of
  *strategy_param)
@@ -1455,16 +1488,8 @@ SelectTask (int dim, char **vararg, int strategy, int strategy_param, char *num_
     char **lower_bound = vararg;
     char **upper_bound = vararg + dim;
     /* char **unrolling   = vararg+3*dim;*/
-    int i;
 
     DBUG_ENTER ("SelectTask");
-
-    for (i = 0; i < dim; i++) {
-        INDENT;
-        fprintf (outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i, lower_bound[i]);
-        INDENT;
-        fprintf (outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i, upper_bound[i]);
-    }
 
     switch (strategy) {
     case BLOCK_ST:
@@ -1630,6 +1655,7 @@ ICMCompileMT_SCHEDULER_Even_BEGIN (int dim, char **vararg)
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Even_BEGIN
 
+    InitializeBoundaries (dim, vararg);
     SelectTask (dim, vararg, 1, 0, "SAC_MT_THREADS()", "SAC_MT_MYTHREAD()");
 
     DBUG_VOID_RETURN;
@@ -1682,6 +1708,7 @@ ICMCompileMT_SCHEDULER_Cyclic_BEGIN (int dim, char **vararg)
     fprintf (outfile, "int taskid=SAC_MT_MYTHREAD();\n");
     INDENT;
     fprintf (outfile, " while (taskid<SAC_MT_THREADS()*4){\n");
+    InitializeBoundaries (dim, vararg);
     SelectTask (dim, vararg, 1, 0, "SAC_MT_THREADS()*4", "taskid");
 
     DBUG_VOID_RETURN;
@@ -1736,6 +1763,7 @@ ICMCompileMT_SCHEDULER_Self_BEGIN (int dim, char **vararg)
 
     INDENT;
     fprintf (outfile, "int taskid=SAC_MT_MYTHREAD();\n");
+    InitializeBoundaries (dim, vararg);
     INDENT;
     fprintf (outfile, " while (taskid<SAC_MT_THREADS()*3){\n");
     SelectTask (dim, vararg, 1, 0, "SAC_MT_THREADS()*3", "taskid");
@@ -1803,6 +1831,7 @@ ICMCompileMT_SCHEDULER_Afs_BEGIN (int dim, char **vararg)
 
     INDENT;
     fprintf (outfile, "int taskid, maxloadthread, mintask, task, worktodo;\n");
+    InitializeBoundaries (dim, vararg);
     INDENT;
     fprintf (outfile, "SAC_MT_SCHEDULER_Afs_next_task();");
     INDENT;
