@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.89  2001/04/27 17:35:28  nmw
+ * INFO_COMP_ASSIGN added
+ *
  * Revision 3.88  2001/04/26 13:30:00  nmw
  * INFO_SSACF_INLFUNDEF added
  *
@@ -2786,6 +2789,7 @@ extern node *MakeInfo ();
 #define INFO_COMP_TYPETAB(n) ((types **)(n->dfmask[0]))
 #define INFO_COMP_ICMTAB(n) ((node **)(n->dfmask[1]))
 #define INFO_COMP_TABSIZE(n) (n->flag)
+#define INFO_COMP_ASSIGN(n) (n->node[5])
 
 /* reuse */
 #define INFO_REUSE_WL_IDS(n) (n->info.ids)
