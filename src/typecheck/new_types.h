@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/08/13 13:46:11  dkr
+ * functions for creating wrapper function code added
+ *
  * Revision 3.6  2002/08/09 14:51:45  dkr
  * signature of TYType2WrapperCode modified
  *
@@ -239,7 +242,7 @@ typedef struct dft {
 extern DFT_res *TYDispatchFunType (ntype *fun, ntype *args);
 
 extern DFT_res *TYMakeDFT_res (ntype *type, int max_funs);
-extern void TYFreeDFT_res (DFT_res *res);
+extern DFT_res *TYFreeDFT_res (DFT_res *res);
 extern char *TYDFT_res2DebugString (DFT_res *dft);
 
 /*
@@ -304,8 +307,8 @@ extern ntype *TYFixAndEliminateAlpha (ntype *t1);
 /*
  * General Type handling functions
  */
-extern void TYFreeTypeConstructor (ntype *type);
-extern void TYFreeType (ntype *type);
+extern ntype *TYFreeTypeConstructor (ntype *type);
+extern ntype *TYFreeType (ntype *type);
 
 extern ntype *TYCopyType (ntype *type);
 extern ntype *TYCopyTypeConstructor (ntype *type);
@@ -324,8 +327,12 @@ extern ntype *TYOldType2Type (types *old);
 extern types *TYType2OldType (ntype *new);
 
 /*
- * Function for converting types into SAC code for wrapper functions
+ * Functions for converting types into SAC code for wrapper functions
  */
-extern node *TYType2WrapperCode (ntype *type, node **vardecs);
+extern ntype *TYSplitWrapperType (ntype *type, bool *finished);
+extern ntype *TYGetWrapperRetType (ntype *type);
+extern node *TYCorrectWrapperArgTypes (node *args, ntype *type);
+extern node *TYCreateWrapperVardecs (ntype *ret_type);
+extern node *TYCreateWrapperCode (ntype *type, node *arg, node *args, node *vardecs);
 
 #endif /* _new_types_h */
