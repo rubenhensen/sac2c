@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2003/03/08 18:31:54  dkr
+ * UndoSSATransform() called first if SSA form is active
+ *
  * Revision 3.17  2002/10/18 14:28:45  dkr
  * typo corrected
  *
@@ -97,6 +100,7 @@
 #include "free.h"
 #include "DupTree.h"
 #include "print.h"
+#include "UndoSSATransform.h"
 #include "Inline.h"
 
 /******************************************************************************
@@ -330,6 +334,9 @@ BuildRenamingAssigns (node **vardecs, node **ass1, node **ass2, node **ass3,
                  */
                 new_id = MakeId_Copy (ARG_NAME (ext_args));
                 ID_VARDEC (new_id) = ext_args;
+                SET_FLAG (ID, new_id, IS_GLOBAL,
+                          (NODE_TYPE (ID_VARDEC (new_id)) == N_objdef));
+                SET_FLAG (ID, new_id, IS_REFERENCE, FALSE);
                 assign = MakeAssignLet (StringCopy (new_name), *vardecs, new_id);
                 ASSIGN_NEXT (assign) = (*ass1);
                 (*ass1) = assign;
@@ -339,6 +346,9 @@ BuildRenamingAssigns (node **vardecs, node **ass1, node **ass2, node **ass3,
                  */
                 new_id = MakeId_Copy (new_name);
                 ID_VARDEC (new_id) = (*vardecs);
+                SET_FLAG (ID, new_id, IS_GLOBAL,
+                          (NODE_TYPE (ID_VARDEC (new_id)) == N_objdef));
+                SET_FLAG (ID, new_id, IS_REFERENCE, FALSE);
                 assign
                   = MakeAssignLet (StringCopy (ARG_NAME (ext_args)), ext_args, new_id);
                 ASSIGN_NEXT (assign) = (*ass2);
@@ -970,11 +980,17 @@ Fun2Lac (node *syntax_tree)
 
     DBUG_ENTER ("Fun2Lac");
 
+    /*
+     * Fun2Lac() does not work on SSA form!!
+     */
+    if (valid_ssaform) {
+        syntax_tree = UndoSSATransform (syntax_tree);
+    }
+
     act_tab = fun2lac_tab;
     info_node = MakeInfo ();
 
     syntax_tree = Trav (syntax_tree, info_node);
-    valid_ssaform = FALSE; /* ... no valid SSA form anymore!! */
 
     FreeNode (info_node);
 
