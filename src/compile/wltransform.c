@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/05/08 00:46:09  dkr
+ * added some attributes to N_Nwith/N_Nwith2
+ *
  * Revision 1.6  1998/05/07 10:14:36  dkr
  * inference of NWITH2_IN/INOUT/OUT/LOCAL moved to refcount
  *
@@ -2490,6 +2493,7 @@ WLTRANwith (node *arg_node, node *arg_info)
     new_node = MakeNWith2 (NPART_WITHID (NWITH_PART (arg_node)), NULL,
                            NWITH_CODE (arg_node), NWITH_WITHOP (arg_node));
 
+    NWITH2_RC_IDS (new_node) = NWITH_RC_IDS (arg_node);
     NWITH2_IN (new_node) = NWITH_IN (arg_node);
     NWITH2_INOUT (new_node) = NWITH_INOUT (arg_node);
     NWITH2_OUT (new_node) = NWITH_OUT (arg_node);
@@ -2506,6 +2510,7 @@ WLTRANwith (node *arg_node, node *arg_info)
     NWITH_CODE (arg_node) = NULL;
     NWITH_WITHOP (arg_node) = NULL;
 
+    NWITH_RC_IDS (arg_node) = NULL;
     NWITH_IN (arg_node) = NULL;
     NWITH_INOUT (arg_node) = NULL;
     NWITH_OUT (arg_node) = NULL;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.158  1998/05/08 00:47:44  dkr
+ * added some attributes to N_Nwith/N_Nwith2
+ *
  * Revision 1.157  1998/05/07 22:49:31  dkr
  * added NWITH_RC_IDS, NWITH2_RC_IDS
  *
@@ -2296,7 +2299,8 @@ extern node *MakeInfo ();
 
 /* refcount */
 #define INFO_RC_PRF(n) (n->node[0])
-#define INFO_RC_RCDUMP(n) ((int *)(n->node[1]))
+#define INFO_RC_WITH(n) (n->node[1])
+#define INFO_RC_RCDUMP(n) ((int *)(n->node[2]))
 
 /* spmdregions */
 #define INFO_SPMD_FUNDEF(n) (n->node[0])
