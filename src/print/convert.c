@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  2000/06/14 12:59:32  nmw
+ * Added flag=4 to print only first type in return list
+ *
  * Revision 2.7  1999/10/19 12:57:25  sacbase
  * inclusion of type_info.mac adjusted to new .mac mechanism
  *
@@ -225,6 +228,8 @@ Double2String (double val)
  *                  flag ==2: used for renaming of functions( lookup type-name
  *                            in rename_type[] instead of type_string[])
  *                  flag ==3: the module name is not included into string
+ *                  flag & 4: force Type2String only print 1st type in list
+ *
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : strcat, Malloc, sprintf
@@ -341,6 +346,10 @@ Type2String (types *type, int flag)
         }
 
         type = type->next;
+
+        if (flag & 4) /* break after first type in list*/
+            type = NULL;
+
         if (NULL != type) {
             strcat (tmp_string, ", ");
         }
