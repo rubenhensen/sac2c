@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.45  1997/05/14 08:09:33  sbs
+ * Revision 1.46  1997/05/16 11:47:59  cg
+ * Bug fixed in BeginWith/EndWith. New Offset-Loops always stay within array bounds.
+ * The code for offset loops is further improved.
+ *
+ * Revision 1.45  1997/05/14  08:09:33  sbs
  * ANALYSE_BEGIN/END_WITH... inserted.
  *
  * Revision 1.44  1997/05/06  15:41:52  sbs
@@ -189,22 +193,26 @@
 
 #define BeginWith(res, dimres, from, to, idx, idxlen, fillstr, withkind)                 \
     INDENT;                                                                              \
-    fprintf (outfile, "{ int __i;\n");                                                   \
+    fprintf (outfile, "{\n");                                                            \
     indent++;                                                                            \
     INDENT;                                                                              \
     fprintf (outfile, "int %s__destptr=0;\n", res);                                      \
-    INDENT;                                                                              \
-    fprintf (outfile, "int __start=");                                                   \
-    VectToOffset (idxlen, AccessVect (from, i), dimres, res);                            \
-    fprintf (outfile, ";\n");                                                            \
+                                                                                         \
     {                                                                                    \
         int i, j;                                                                        \
-        for (i = 1; i < idxlen; i++) {                                                   \
+        for (i = 0; i < idxlen; i++) {                                                   \
             INDENT;                                                                      \
-            fprintf (outfile, "int %s__offset%d=", res, i);                              \
-            fprintf (outfile, "(ND_KD_A_SHAPE(%s, %d)-ND_A_FIELD(%s)[%d]", res, i, to,   \
-                     i);                                                                 \
-            fprintf (outfile, "+ND_A_FIELD(%s)[%d]-1)", from, i);                        \
+            fprintf (outfile, "int lim_%d;\n", i);                                       \
+            INDENT;                                                                      \
+            fprintf (outfile, "int %s__offset%d_left=", res, i);                         \
+            fprintf (outfile, "ND_A_FIELD(%s)[%d]", from, i);                            \
+            for (j = (i + 1); j < dimres; j++)                                           \
+                fprintf (outfile, " *ND_KD_A_SHAPE(%s, %d)", res, j);                    \
+            fprintf (outfile, ";\n");                                                    \
+            INDENT;                                                                      \
+            fprintf (outfile, "int %s__offset%d_right=", res, i);                        \
+            fprintf (outfile, "(ND_KD_A_SHAPE(%s, %d)-ND_A_FIELD(%s)[%d]-1)", res, i,    \
+                     to, i);                                                             \
             for (j = (i + 1); j < dimres; j++)                                           \
                 fprintf (outfile, " *ND_KD_A_SHAPE(%s, %d)", res, j);                    \
             fprintf (outfile, ";\n");                                                    \
@@ -212,21 +220,24 @@
         fprintf (outfile, "\n");                                                         \
         INDENT;                                                                          \
         fprintf (outfile, "ANALYSE_BEGIN_WITH( " withkind " );\n");                      \
-        INDENT;                                                                          \
-        fprintf (outfile, "while( %s__destptr < __start) {\n", res);                     \
-        indent++;                                                                        \
-        INDENT;                                                                          \
-        fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]=", res, res);                     \
-        fillstr;                                                                         \
-        fprintf (outfile, ";\n");                                                        \
-        INDENT;                                                                          \
-        fprintf (outfile, "%s__destptr++;\n", res);                                      \
-        indent--;                                                                        \
-        INDENT;                                                                          \
-        fprintf (outfile, "}\n");                                                        \
         {                                                                                \
             int i;                                                                       \
             for (i = 0; i < idxlen; i++) {                                               \
+                INDENT;                                                                  \
+                fprintf (outfile, "lim_%d=%s__destptr+%s__offset%d_left;", i, res, res,  \
+                         i);                                                             \
+                INDENT;                                                                  \
+                fprintf (outfile, "for(; %s__destptr<lim_%d; %s__destptr++) {\n", res,   \
+                         i, res);                                                        \
+                indent++;                                                                \
+                INDENT;                                                                  \
+                fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]=", res, res);             \
+                fillstr;                                                                 \
+                fprintf (outfile, ";\n");                                                \
+                indent--;                                                                \
+                INDENT;                                                                  \
+                fprintf (outfile, "}\n");                                                \
+                                                                                         \
                 INDENT;                                                                  \
                 fprintf (outfile,                                                        \
                          "for( ND_A_FIELD(%s)[%d]=ND_A_FIELD(%s)[%d]; "                  \
@@ -312,41 +323,27 @@
 #endif
 
 #define EndWith(res, dimres, idxlen, fillstr, withkind)                                  \
-    indent--;                                                                            \
-    INDENT;                                                                              \
-    fprintf (outfile, "}\n");                                                            \
     {                                                                                    \
         int i;                                                                           \
-        for (i = idxlen - 1; i > 0; i--) {                                               \
+        for (i = idxlen - 1; i >= 0; i--) {                                              \
+            indent--;                                                                    \
             INDENT;                                                                      \
-            fprintf (outfile, "for(__i=0; __i<%s__offset%d; __i++) {\n", res, i);        \
+            fprintf (outfile, "}\n");                                                    \
+            INDENT;                                                                      \
+            fprintf (outfile, "lim_%d=%s__destptr+%s__offset%d_right;", i, res, res, i); \
+            INDENT;                                                                      \
+            fprintf (outfile, "for(; %s__destptr<lim_%d; %s__destptr++) {\n", res, i,    \
+                     res);                                                               \
             indent++;                                                                    \
             INDENT;                                                                      \
             fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]=", res, res);                 \
             fillstr;                                                                     \
             fprintf (outfile, ";\n");                                                    \
-            INDENT;                                                                      \
-            fprintf (outfile, "%s__destptr++;\n", res);                                  \
-            indent--;                                                                    \
-            INDENT;                                                                      \
-            fprintf (outfile, "}\n");                                                    \
             indent--;                                                                    \
             INDENT;                                                                      \
             fprintf (outfile, "}\n");                                                    \
         }                                                                                \
     }                                                                                    \
-    INDENT;                                                                              \
-    fprintf (outfile, "while( %s__destptr< ND_A_SIZE(%s)) {\n", res, res);               \
-    indent++;                                                                            \
-    INDENT;                                                                              \
-    fprintf (outfile, "ND_A_FIELD(%s)[%s__destptr]=", res, res);                         \
-    fillstr;                                                                             \
-    fprintf (outfile, ";\n");                                                            \
-    INDENT;                                                                              \
-    fprintf (outfile, "%s__destptr++;\n", res);                                          \
-    indent--;                                                                            \
-    INDENT;                                                                              \
-    fprintf (outfile, "}\n");                                                            \
     INDENT;                                                                              \
     fprintf (outfile, "ANALYSE_END_WITH( " withkind " );\n");                            \
     indent--;                                                                            \
