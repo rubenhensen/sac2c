@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2002/07/02 15:27:29  sah
+ * added support for N_dot nodes in WL generators
+ *
  * Revision 3.39  2002/06/20 15:23:41  dkr
  * signature of MakeNWithOp modified
  *
@@ -748,12 +751,13 @@ BuildSelWithLoop (types *restype, node *idx, node *array)
         last_iv_scalars = iv_scalars;
     }
 
-    res
-      = MakeNWith (MakeNPart (MakeNWithid (NULL, iv_scalars),
-                              MakeNGenerator (NULL, NULL, F_le, F_le, NULL, NULL), NULL),
-                   MakeNCode (MakeBlock (assign, NULL),
-                              MakeId (StringCopy (tmp_vars[0]), NULL, ST_regular)),
-                   MakeNWithOp (WO_genarray, Type2Vec (restype)));
+    res = MakeNWith (MakeNPart (MakeNWithid (NULL, iv_scalars),
+                                MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
+                                                NULL, NULL),
+                                NULL),
+                     MakeNCode (MakeBlock (assign, NULL),
+                                MakeId (StringCopy (tmp_vars[0]), NULL, ST_regular)),
+                     MakeNWithOp (WO_genarray, Type2Vec (restype)));
 
     NCODE_USED (NWITH_CODE (res))++;
 
@@ -786,7 +790,9 @@ BuildGenarrayWithLoop (node *shp, node *val)
 
     res
       = MakeNWith (MakeNPart (MakeNWithid (MakeIds (TmpVar (), NULL, ST_regular), NULL),
-                              MakeNGenerator (NULL, NULL, F_le, F_le, NULL, NULL), NULL),
+                              MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le, NULL,
+                                              NULL),
+                              NULL),
                    MakeNCode (MAKE_EMPTY_BLOCK (), val), MakeNWithOp (WO_genarray, NULL));
     if (NODE_TYPE (shp) == N_array) {
         NWITHOP_SHAPE (NWITH_WITHOP (res)) = shp;
@@ -865,12 +871,13 @@ BuildTakeWithLoop (node *take_shp, node *array)
                                 MakeIds (wl_body_var, NULL, ST_regular)),
                        NULL);
 
-    res
-      = MakeNWith (MakeNPart (MakeNWithid (MakeIds (iv, NULL, ST_regular), NULL),
-                              MakeNGenerator (NULL, NULL, F_le, F_le, NULL, NULL), NULL),
-                   MakeNCode (MakeBlock (body, NULL),
-                              MakeId (StringCopy (wl_body_var), NULL, ST_regular)),
-                   MakeNWithOp (WO_genarray, NULL));
+    res = MakeNWith (MakeNPart (MakeNWithid (MakeIds (iv, NULL, ST_regular), NULL),
+                                MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
+                                                NULL, NULL),
+                                NULL),
+                     MakeNCode (MakeBlock (body, NULL),
+                                MakeId (StringCopy (wl_body_var), NULL, ST_regular)),
+                     MakeNWithOp (WO_genarray, NULL));
 
     if (NODE_TYPE (take_shp) == N_array) {
         /*
@@ -1020,12 +1027,13 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
         body = MakeAssign (tmp_var, body);
     }
 
-    res
-      = MakeNWith (MakeNPart (MakeNWithid (MakeIds (iv, NULL, ST_regular), NULL),
-                              MakeNGenerator (NULL, NULL, F_le, F_le, NULL, NULL), NULL),
-                   MakeNCode (MakeBlock (body, NULL),
-                              MakeId (StringCopy (wl_body_var_elem), NULL, ST_regular)),
-                   MakeNWithOp (WO_genarray, Type2Vec (new_shape)));
+    res = MakeNWith (MakeNPart (MakeNWithid (MakeIds (iv, NULL, ST_regular), NULL),
+                                MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
+                                                NULL, NULL),
+                                NULL),
+                     MakeNCode (MakeBlock (body, NULL),
+                                MakeId (StringCopy (wl_body_var_elem), NULL, ST_regular)),
+                     MakeNWithOp (WO_genarray, Type2Vec (new_shape)));
 
     NCODE_USED (NWITH_CODE (res))++;
 
@@ -1067,7 +1075,7 @@ BuildCatWithLoop1 (types *new_shape, node *array1)
                        NULL);
 
     res = MakeNWith (MakeNPart (MakeNWithid (MakeIds (iv, NULL, ST_regular), NULL),
-                                MakeNGenerator (NULL,
+                                MakeNGenerator (MakeDot (1),
                                                 (ID_DIM (array1) > SCALAR)
                                                   ? Type2Vec (ID_TYPE (array1))
                                                   : MakePrf1 (F_shape, DupTree (array1)),
@@ -1171,8 +1179,8 @@ BuildCatWithLoop2 (ids *lhs, node *arg1, node *arg2, node *arg3)
                                             NULL)));
 
     res = MakeNWith (MakeNPart (MakeNWithid (MakeIds (iv, NULL, ST_regular), NULL),
-                                MakeNGenerator (start_vec_copy, NULL, F_le, F_le, NULL,
-                                                NULL),
+                                MakeNGenerator (start_vec_copy, MakeDot (1), F_le, F_le,
+                                                NULL, NULL),
                                 NULL),
                      MakeNCode (MakeBlock (body, NULL),
                                 MakeId (StringCopy (wl_body_var_elem), NULL, ST_regular)),
@@ -6813,7 +6821,7 @@ TI_Nwith (node *arg_node, node *arg_info)
          * has to be infered from the CEXPR later.
          */
         if (!KNOWN_SHAPE (TYPES_DIM (base_array_type))
-            && (NWITH_BOUND2 (arg_node) == NULL)) {
+            && (DOT_ISSINGLE (NWITH_BOUND2 (arg_node)))) {
             /* new_shp is needed for substituting "." as upper bound only!! */
             new_shp = DupTree (NWITHOP_SHAPE (NWITH_WITHOP (arg_node)));
         }
@@ -6824,7 +6832,7 @@ TI_Nwith (node *arg_node, node *arg_info)
             ABORT (NODE_LINE (NWITHOP_ARRAY (NWITH_WITHOP (arg_node))),
                    ("Array component of 'modarray` not inferable"));
         if (!KNOWN_SHAPE (TYPES_DIM (base_array_type))
-            && (NWITH_BOUND2 (arg_node) == NULL)) {
+            && (DOT_ISSINGLE (NWITH_BOUND2 (arg_node)))) {
             /* new_shp is needed for substituting "." as upper bound only!! */
             new_shp
               = MakePrf (F_shape,
@@ -6845,6 +6853,15 @@ TI_Nwith (node *arg_node, node *arg_info)
      *  is done now.
      */
     generator_type = TI_Npart (NWITH_PART (arg_node), base_array_type, new_shp, arg_info);
+
+    /*
+     *  Now there should be no . in any generator boundary. So check for that.
+     */
+
+    DBUG_ASSERT (!(DOT_ISSINGLE (NWITH_BOUND1 (arg_node))),
+                 "lower bound ist still a N_dot node!");
+    DBUG_ASSERT (!(DOT_ISSINGLE (NWITH_BOUND2 (arg_node))),
+                 "upper bound ist still a N_dot node!");
 
     /* In case of genarray() check whether generator and base array fit. */
     if (WO_genarray == NWITHOP_TYPE (NWITH_WITHOP (arg_node))
@@ -7042,6 +7059,7 @@ TI_Nwith (node *arg_node, node *arg_info)
         DBUG_ASSERT ((INFO_TC_LASSIGN (arg_info) != NULL), "last assign is NULL");
 
         generator = NPART_GEN (NWITH_PART (arg_node));
+
         lowerbound = NGEN_BOUND1 (generator);
         upperbound = NGEN_BOUND2 (generator);
 
@@ -7239,7 +7257,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
      *  default_bound_shape.
      */
 
-    if (!NGEN_BOUND1 (gen)) {
+    if (DOT_ISSINGLE (NGEN_BOUND1 (gen))) {
         /*
          *  transform lower bound .
          *  if the operator is < it is changed to <= and 1 is added to the lower bound
@@ -7275,7 +7293,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
             }
         }
     }
-    if (!NGEN_BOUND2 (gen)) {
+    if (DOT_ISSINGLE (NGEN_BOUND2 (gen))) {
         /*
          *  transform upper bound .
          *  if the operator is <= it is changed to < and 1 is added to the upper bound.
@@ -7329,7 +7347,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
     step_type = NULL;
     width_type = NULL;
 
-    if (NGEN_BOUND1 (gen)) {
+    if (!(DOT_ISSINGLE (NGEN_BOUND1 (gen)))) {
         left_type = TypeInference (NGEN_BOUND1 (gen), arg_info);
         if (!left_type)
             ERROR (NODE_LINE (arg_node), ("lower bound cannot be infered"));
@@ -7337,7 +7355,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
         left_type = MakeTypes (T_int, KNOWN_DIM_OFFSET - 1, NULL, NULL, NULL);
     }
 
-    if (NGEN_BOUND2 (gen)) {
+    if (!(DOT_ISSINGLE (NGEN_BOUND2 (gen)))) {
         right_type = TypeInference (NGEN_BOUND2 (gen), arg_info);
         if (!right_type)
             ERROR (NODE_LINE (arg_node), ("upper bound cannot be infered"));

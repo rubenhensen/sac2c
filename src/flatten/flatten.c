@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/07/02 15:26:30  sah
+ * added support for N_dot nodes in WL generators
+ *
  * Revision 3.8  2002/06/03 13:42:57  dkr
  * behaviour for TAGGED_ARRAYS modified
  *
@@ -1836,14 +1839,14 @@ FltnNgenerator (node *arg_node, node *arg_info)
      * not for the "." bounds. For those bounds, the "normalization"
      * takes place during typechecking!
      */
-    if (NGEN_BOUND1 (arg_node) && F_lt == NGEN_OP1 (arg_node)) {
+    if (!(DOT_ISSINGLE (NGEN_BOUND1 (arg_node))) && F_lt == NGEN_OP1 (arg_node)) {
         /* make <= from < and add 1 to bound */
         NGEN_OP1 (arg_node) = F_le;
         NGEN_BOUND1 (arg_node)
           = MakePrf (F_add,
                      MakeExprs (NGEN_BOUND1 (arg_node), MakeExprs (MakeNum (1), NULL)));
     }
-    if (NGEN_BOUND2 (arg_node) && F_le == NGEN_OP2 (arg_node)) {
+    if (!(DOT_ISSINGLE (NGEN_BOUND2 (arg_node))) && F_le == NGEN_OP2 (arg_node)) {
         /* make < from <= and add 1 to bound */
         NGEN_OP2 (arg_node) = F_lt;
         NGEN_BOUND2 (arg_node)
@@ -1879,7 +1882,7 @@ FltnNgenerator (node *arg_node, node *arg_info)
 
         act_son_expr = *act_son;
 
-        if (act_son_expr != NULL) {
+        if ((act_son_expr != NULL) && (!DOT_ISSINGLE (act_son_expr))) {
             if (N_id != NODE_TYPE (act_son_expr)) {
                 *act_son = Abstract (act_son_expr, arg_info);
                 act_son_expr2 = Trav (act_son_expr, arg_info);
