@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.13  2000/07/14 09:38:20  dkr
+ * CopyNodelist renamed into DupNodelist and moved from tree_compound.h
+ * to DupTree.h
+ *
  * Revision 1.12  2000/07/12 15:20:38  dkr
  * DuplicateTypes removed (use DupTypes instead!)
  *
@@ -98,6 +102,7 @@ extern node *DupNode (node *arg_node);
 extern shpseg *DupShpSeg (shpseg *shp_seg);
 extern ids *DupOneIds (ids *ids, node *arg_info);
 extern ids *DupIds (ids *ids, node *arg_info);
+extern nodelist *DupNodelist (nodelist *nl);
 extern types *DupTypes (types *source);
 
 extern node *DupVinfo (node *arg_node, node *arg_info);
