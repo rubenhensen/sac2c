@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2001/03/30 16:31:32  nmw
+ * *** empty log message ***
+ *
  * Revision 1.3  2001/03/26 08:22:07  sbs
  * new_co in COAST2Constant now also initialized in default case as well
  *
@@ -530,6 +533,10 @@ COConstant2AST (constant *a)
          * constvec infos. This is not done here, since it is not yet clear how
          * the representation of constant arrays should be in the long term....
          */
+        ARRAY_ISCONST (res) = TRUE;
+        ARRAY_VECTYPE (res) = CONSTANT_TYPE (a);
+        ARRAY_VECLEN (res) = CONSTANT_VLEN (a);
+        ARRAY_CONSTVEC (res) = Array2Vec (CONSTANT_TYPE (a), ARRAY_AELEMS (res), NULL);
     }
     DBUG_RETURN (res);
 }
@@ -588,8 +595,8 @@ COAST2Constant (node *n)
         case N_array:
             new_co = COMakeConstant (TYPES_BASETYPE (ARRAY_TYPE (n)),
                                      SHOldTypes2Shape (ARRAY_TYPE (n)),
-                                     Array2IntVec (ARRAY_AELEMS (n), NULL));
-
+                                     Array2Vec (TYPES_BASETYPE (ARRAY_TYPE (n)),
+                                                ARRAY_AELEMS (n), NULL));
             break;
 
         case N_id:
