@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/11/16 19:32:38  cg
+ * Revision 1.12  1995/12/01 16:09:58  cg
+ * added name of new compilation phase 'precompile'
+ *
+ * Revision 1.11  1995/11/16  19:32:38  cg
  * added new compilation phase name for 'RemoveVoidFunctions'
  *
  * Revision 1.10  1995/11/16  15:33:20  cg
@@ -41,12 +44,13 @@
  *
  *
  */
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "Error.h"
-
+#include "types.h"
 #include "tree_basic.h"
 
 #include "dbug.h"
@@ -64,8 +68,6 @@ int compiler_phase = 1; /* counter for compilation phases */
 int message_indent = 0;
 int last_indent = 0;
 int current_line_length;
-
-int silent = 0; /* only needed for asi-compatibility */
 
 char error_message_buffer[MAX_ERROR_MESSAGE_LENGTH];
 
@@ -85,6 +87,7 @@ char *compiler_phase_name[] = {"",
                                "Running SAC optimizations",
                                "Running PSI optimizations",
                                "Running reference count inference system",
+                               "Preparing C-code generation",
                                "Generating C-code",
                                "Generating C-compiler call",
                                "Unknown compiler phase"};
