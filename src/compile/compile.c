@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.171  1998/06/18 23:39:58  dkr
+ * removed unused vars in COMPNwith2
+ *
  * Revision 1.170  1998/06/18 13:45:44  cg
  * added compilation of schedulings
  *
@@ -6436,9 +6439,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
 {
     node *fundef, *vardec, *icm_args, *neutral, *info, *dummy_assign, *tmp, *new,
       *rc_icms_wl_ids = NULL, *assigns = NULL;
-    ids *withid_ids;
     char *icm_name;
-    int num_args, idx_min, idx_max;
 
     DBUG_ENTER ("COMPNwith2");
 
