@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2000/08/03 14:17:26  nmw
+ * handling macro for T_hidden added
+ *
  * Revision 1.1  2000/08/02 14:26:17  nmw
  * Initial revision
  *
@@ -290,7 +293,7 @@ PIWarg (node *arg_node, node *arg_info)
         DBUG_ASSERT ((TYPES_DIM (argtype) >= 0), "PIWarg: unknown shape dimension!\n");
 
         if (ARG_ATTRIB (arg_node) == ST_regular) {
-            if (TYPES_DIM (argtype) == 0) {
+            if ((TYPES_DIM (argtype) == 0) && (TYPES_BASETYPE (argtype) != T_hidden)) {
                 /* macro for simple type without refcounting */
                 fprintf (outfile, "SAC_ARGCALL_SIMPLE");
             } else {
@@ -403,12 +406,16 @@ PIWtypes (types *arg_type, node *arg_info)
         case PIW_CALL_RESULTS:
             /* create macros for reference result types */
             if (TYPES_STATUS (arg_type) != ST_crettype) {
-                if (TYPES_DIM (atype) == 0) {
-                    /* macro for simple type without refcounting */
-                    fprintf (outfile, "SAC_RESULT_SIMPLE");
+                if (TYPES_BASETYPE (atype) != T_hidden) {
+                    if ((TYPES_DIM (atype) == 0)) {
+                        /* macro for simple type without refcounting */
+                        fprintf (outfile, "SAC_RESULT_SIMPLE");
+                    } else {
+                        /* macro for arraytype with refcounting */
+                        fprintf (outfile, "SAC_RESULT_REFCNT");
+                    }
                 } else {
-                    /* macro for arraytype with refcounting */
-                    fprintf (outfile, "SAC_RESULT_REFCNT");
+                    fprintf (outfile, "SAC_RESULT_HIDDEN_RC");
                 }
                 fprintf (outfile, "( out%d , %s )", INFO_PIW_COUNTER (arg_info),
                          ctype_string[TYPES_BASETYPE (atype)]);
