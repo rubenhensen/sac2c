@@ -1,6 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.44  1999/02/06 12:49:59  srs
+ * inserted the following functions
+ * NodeListAppend()
+ * NodeListDelete()
+ * NodeListFree()
+ * NodeListFind()
+ *
  * Revision 1.43  1999/01/26 14:25:46  cg
  * Added functions MakePrf1(), MakePrf2(), and MakePrf3() to
  * create N_prf nodes with 1,2, or 3 arguments, repsectively.
@@ -863,6 +870,87 @@ CopyNodelist (nodelist *nl)
     }
 
     DBUG_RETURN (copy);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   -
+ *
+ * description:
+ *   the following functions realize basic functions on pure node lists.
+ *
+ *   Append: appends a node to the given list, returning a new list.
+ *           Since the node list has no special order, the new node is
+ *           not appended but put in front of the given list to speed
+ *           up execution.
+ *           Create a list: newlist = Append(NULL, newnode, attrib);
+ *   Delete: deletes all elements of the given node. If free_attrib is 0,
+ *           the attribut is not set free, else a FREE(attrib) is executed.
+ *   Free  : frees whole list. If free_attrib is 0, the attributes are
+ *           not set free, else a FREE(attrib) is executed.
+ *   Find  : returns the nodelist node of the first found item
+ *           with fitting node. If not found, returns NULL.
+ *
+ ******************************************************************************/
+
+nodelist *
+NodeListAppend (nodelist *nl, node *newnode, void *attrib)
+{
+    nl = MakeNodelistNode (newnode, nl);
+    NODELIST_ATTRIB2 (nl) = attrib;
+    return nl;
+}
+
+nodelist *
+NodeListDelete (nodelist *nl, node *node, int free_attrib)
+{
+    nodelist *tmpnl, *prevnl;
+
+    do {
+        if (NODELIST_NODE (nl) == node) {
+            if (free_attrib && NODELIST_ATTRIB2 (nl))
+                FREE (NODELIST_ATTRIB2 (nl));
+            nl = FreeNodelistNode (nl);
+        }
+    } while (nl && NODELIST_NODE (nl) == node);
+
+    tmpnl = nl;
+    prevnl = NULL;
+    while (tmpnl) {
+        if (NODELIST_NODE (tmpnl) == node) {
+            if (free_attrib && NODELIST_ATTRIB2 (tmpnl))
+                FREE (NODELIST_ATTRIB2 (tmpnl));
+            prevnl = FreeNodelistNode (tmpnl);
+        } else
+            prevnl = tmpnl;
+        tmpnl = NODELIST_NEXT (prevnl);
+    }
+
+    return nl;
+}
+
+nodelist *
+NodeListFree (nodelist *nl, int free_attrib)
+{
+    while (nl) {
+        if (free_attrib && NODELIST_ATTRIB2 (nl))
+            FREE (NODELIST_ATTRIB2 (nl));
+        nl = FreeNodelistNode (nl);
+    }
+
+    return nl;
+}
+
+nodelist *
+NodeListFind (nodelist *nl, node *node)
+{
+    nodelist *tmpnl;
+
+    while (nl && NODELIST_NODE (nl) != node)
+        nl = NODELIST_NEXT (nl);
+
+    return nl;
 }
 
 /******************************************************************************
