@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/02/25 15:20:20  srs
+ * added support for new WL
+ *
  * Revision 1.2  1996/01/22 14:33:48  asi
  * basic algorithm added
  *
@@ -23,5 +26,6 @@ extern node *CSEcond (node *arg_node, node *arg_info);
 extern node *CSEwith (node *arg_node, node *arg_info);
 extern node *CSEassign (node *arg_node, node *arg_info);
 extern node *CSEid (node *arg_node, node *arg_info);
+extern node *CSENwith (node *arg_node, node *arg_info);
 
 #endif /* _CSE_h */

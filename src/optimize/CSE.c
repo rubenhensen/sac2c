@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/02/25 15:20:31  srs
+ * added support for new WL
+ *
  * Revision 1.5  1996/09/09 19:00:09  cg
  * bug fixed when comparing function applications:
  * Somebody did not know that functions may have zero arguments.
@@ -224,6 +227,44 @@ CSEwith (node *arg_node, node *arg_info)
         break;
     }
     DBUG_PRINT ("CSE", ("CSE with-loop in line: %d END", NODE_LINE (arg_node)));
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CSENwith(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+CSENwith (node *arg_node, node *arg_info)
+{
+    node *tmpn;
+
+    DBUG_ENTER ("CSENwith");
+
+    /* traverse the N_Nwithop node */
+    NWITH_WITHOP (arg_node) = OPTTrav (NWITH_WITHOP (arg_node), arg_info, arg_node);
+
+    /* traverse all generators */
+    tmpn = NWITH_PART (arg_node);
+    while (tmpn) {
+        tmpn = OPTTrav (tmpn, arg_info, arg_node);
+        tmpn = NPART_NEXT (tmpn);
+    }
+
+    /* traverse bodies */
+    tmpn = NWITH_CODE (arg_node);
+    while (tmpn) {
+        tmpn = OPTTrav (tmpn, arg_info, arg_node);
+        tmpn = NCODE_NEXT (tmpn);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -510,20 +551,7 @@ CSEassign (node *arg_node, node *arg_info)
                 MinusMask (INFO_USE, ASSIGN_USEMASK (arg_node), INFO_VARNO);
                 new_node = GenerateMasks (new_node, arg_info);
                 AppendNodeChain (1, new_node, ASSIGN_NEXT (arg_node));
-/*-----------------------------------------------------------------------------------*/
-#ifndef NEWTREE
-                if (NULL == ASSIGN_NEXT (new_node))
-                    new_node->nnode = 1;
-                else
-                    new_node->nnode = 2;
-#endif
-                /*-----------------------------------------------------------------------------------*/
                 ASSIGN_NEXT (arg_node) = NULL;
-/*-----------------------------------------------------------------------------------*/
-#ifndef NEWTREE
-                arg_node->nnode = 1;
-#endif
-                /*-----------------------------------------------------------------------------------*/
                 FreeTree (arg_node);
                 arg_node = CSEassign (new_node, arg_info);
                 next = FALSE;
