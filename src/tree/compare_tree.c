@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2001/03/12 17:19:51  nmw
+ * weak compare for NULL terminated chains fixed
+ *
  * Revision 1.3  2001/03/07 15:56:45  nmw
  * compare tree implemented (for simple expressions used by SSACSE)
  *
@@ -500,6 +503,11 @@ CMPTTravSons (node *arg_node, node *arg_info)
                 /* start traversal of son */
                 INFO_CMPT_TREE (arg_info) = arg_node2->node[i];
                 arg_node->node[i] = Trav (arg_node->node[i], arg_info);
+            } else {
+                /* check, if second tree is also NULL */
+                if (arg_node2->node[i] != NULL) {
+                    INFO_CMPT_EQFLAG (arg_info) = CMPT_NEQ;
+                }
             }
         } else {
             /* stop further traversals */
