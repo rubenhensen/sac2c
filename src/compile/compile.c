@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.98  2000/11/03 14:36:26  dkr
+ * bug in COMPLoop fixed: ICM arg (label) no longer shared
+ *
  * Revision 2.97  2000/11/02 16:02:43  dkr
  * COMPPrf recoded
  * superfluous macros removed
@@ -5147,7 +5150,7 @@ COMPLoop (node *arg_node, node *arg_info)
      */
     if (NODE_TYPE (arg_node) == N_do) {
         /* put N_icm 'ND_GOTO', in front of N_do node */
-        first_assign = MakeAssignIcm1 ("ND_GOTO", label);
+        first_assign = MakeAssignIcm1 ("ND_GOTO", DupNode (label));
         if (NULL != ASSIGN_NEXT (loop_assign)) {
             /* next assign after do-loop */
             ASSIGN_NEXT (first_assign) = ASSIGN_NEXT (loop_assign);
