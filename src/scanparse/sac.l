@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/24 11:58:30  sbs
+ * YY_NO_UNPUT defined for avoiding warning message ....
+ *
  * Revision 3.1  2000/11/20 17:59:48  sacbase
  * new release made
  *
@@ -156,7 +159,7 @@
   if (commlevel == 0)  return( token)
 
 #define LINEBUF_SIZE 256
-
+#define YY_NO_UNPUT
 
 int start_token;
 char linebuf[ LINEBUF_SIZE];
