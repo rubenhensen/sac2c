@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.255  1999/02/04 17:23:37  srs
+ * added check if arg_info is not NULL.
+ *
  * Revision 1.254  1999/01/07 14:00:18  sbs
  * MRD list printing inserted.
  *
@@ -107,7 +110,7 @@
  * - node[0]: is used for storing the current fundef node.
  * - node[1]: profile macros  (?)
  * - node[2]: determines which syntax of the new WLs is printed. If it's
- *   NULL then the intermal syntax is uses which allows to state more than
+ *   NULL then the internal syntax is uses which allows to state more than
  *   one Npart. Else the last (and hopefully only) Npart returns the
  *   last expr in node[2].
  * - node[3]: is used while printing the old WLs to return the main
@@ -287,7 +290,10 @@ PrintBlock (node *arg_node, node *arg_info)
         fprintf (outfile, "\n");
     }
 
-    if (not_yet_done_print_main_begin && (NODE_TYPE (arg_info) == N_info)
+    if (arg_info && /* arg_info may be NULL if Print() is called */
+                    /* from within a debugger (PrintFundef did */
+                    /* not craete an info node). */
+        not_yet_done_print_main_begin && (NODE_TYPE (arg_info) == N_info)
         && (INFO_PRINT_FUNDEF (arg_info) != NULL)
         && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)
         && (compiler_phase == PH_genccode)) {
@@ -924,7 +930,8 @@ PrintReturn (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintReturn");
 
     if (RETURN_EXPRS (arg_node) && (!RETURN_INWITH (arg_node))) {
-        if ((NODE_TYPE (arg_info) = N_info) && (INFO_PRINT_FUNDEF (arg_info) != NULL)
+        if (arg_info && /* may be NULL if call from within debugger */
+            (NODE_TYPE (arg_info) = N_info) && (INFO_PRINT_FUNDEF (arg_info) != NULL)
             && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)
             && (compiler_phase == PH_genccode)) {
             GSCPrintMainEnd ();
