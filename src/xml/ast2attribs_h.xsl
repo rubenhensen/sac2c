@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/11/23 21:48:34  sah
+  fixed includes
+
   Revision 1.2  2004/11/23 14:30:10  sah
   added missing _
 
@@ -37,15 +40,11 @@
       </xsl:with-param>
     </xsl:call-template>
     <xsl:text>
-#ifndef _sac_attribs_h
-#define _sac_attribs_h
+#ifndef _SAC_ATTRIBS_H_
+#define _SAC_ATTRIBS_H_
 
 #include "types.h"
-#include "new_types.h"
-#include "LookUpTable.h"
-#include "DataFlowMask.h"
-#include "scheduling.h"
-#include "constants.h"
+
     </xsl:text>
     <!-- start phase that generates a struct of attributes for each node -->
     <xsl:apply-templates select="/definition/syntaxtree" mode="generate-attrib-structs"/>
