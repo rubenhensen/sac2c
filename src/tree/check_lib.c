@@ -1,10 +1,13 @@
+/*
+ * Revision 1.0  2004/11/22 13:50:34  jhb
+ * first functions inserted
+ *
+ *
+ */
 
 #define NEW_INFO
-#include "globals.h"
-#include "tree_basic.h"
-#include "traverse.h"
-#include "dbug.h"
 #include "print.h"
+#include "free.h"
 #include "internal_lib.h"
 
 struct INFO {
@@ -14,8 +17,11 @@ static info *
 MakeInfo ()
 {
     info *result;
+
     DBUG_ENTER ("MakeInfo");
-    result = Malloc (sizeof (info));
+
+    result = ILIBmalloc (sizeof (info));
+
     DBUG_RETURN (result);
 }
 
@@ -23,12 +29,14 @@ static info *
 FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
-    info = Free (info);
+
+    info = ILIBfree (info);
+
     DBUG_RETURN (info);
 }
 
 node *
-CHKExistChild (node *child, node *parent, char *string)
+CHKexistChild (node *child, node *parent, char *string)
 {
     DBUG_ENTER ("CHKExistChild");
 
@@ -41,7 +49,7 @@ CHKExistChild (node *child, node *parent, char *string)
 }
 
 node *
-CHKExistAttribute (node *attribute, node *parent, char *string)
+CHKexistAttribute (node *attribute, node *parent, char *string)
 {
     DBUG_ENTER ("CHKExistAttribute");
 
@@ -54,7 +62,7 @@ CHKExistAttribute (node *attribute, node *parent, char *string)
 }
 
 node *
-CHKRightType (node *attribute, node *parent, char *type, char *string)
+CHKrightType (node *attribute, node *parent, char *type, char *string)
 {
     DBUG_ENTER ("CHKRightType");
 
