@@ -1,6 +1,8 @@
-/* ##nmw## */
 /*
  * $Log$
+ * Revision 1.4  2001/02/20 15:53:29  nmw
+ * code transformation in ssa form implemented
+ *
  * Revision 1.3  2001/02/15 17:00:20  nmw
  * SSA form for flat assignments implemented
  *
@@ -33,13 +35,138 @@
 #include "SSATransform.h"
 
 #define TMP_STRING_LEN 16
-#define UNDEF_VARDEC -1
 
+/* SSACOUNT_COUNT */
+#define UNDEF_VARDEC 0 /* -1 */
+
+/* INFO_SSA_CONDSTATUS */
+#define CONDSTATUS_NOCOND 0
+#define CONDSTATUS_THENPART 1
+#define CONDSTATUS_ELSEPART 2
+
+/* flag SSAstack operations */
+#define STACKFLAG_DUMMY 0
+#define STACKFLAG_THEN 1
+#define STACKFLAG_ELSE 2
+
+/* helper functions for internal usage */
 static node *SSANewVardec (node *old_vardec_or_arg);
+static void SSAInsertCopyAssignments (node *condassign, node *avis, node *arg_info);
+static node *SSAGetSSAcount (char *baseid, int initvalue, node *block);
+
+/* internal functions for traversing ids like nodes */
 static ids *TravLeftIDS (ids *arg_ids, node *arg_info);
 static ids *SSAleftids (ids *arg_ids, node *arg_info);
 static ids *TravRightIDS (ids *arg_ids, node *arg_info);
 static ids *SSArightids (ids *arg_ids, node *arg_info);
+
+/* special push/pop operations for ONE ssastack */
+static node *PopSSAstack (node *ssastack, node *avis, int flag);
+static node *PushSSAstack (node *ssastack, node *avis, int flag);
+static node *SaveTopSSAstack (node *ssastack, node *avis, int flag);
+
+#define FOR_ALL_VARDEC_AND_ARGS(fun, flag, vardecchain, argchain)                        \
+    {                                                                                    \
+        node *vardec;                                                                    \
+        node *arg;                                                                       \
+                                                                                         \
+        vardec = vardecchain;                                                            \
+        while (vardec != NULL) {                                                         \
+            AVIS_SSASTACK (VARDEC_AVIS (vardec))                                         \
+              = fun (AVIS_SSASTACK (VARDEC_AVIS (vardec)), VARDEC_AVIS (vardec), flag);  \
+            vardec = VARDEC_NEXT (vardec);                                               \
+        }                                                                                \
+        arg = argchain;                                                                  \
+        while (arg != NULL) {                                                            \
+            AVIS_SSASTACK (ARG_AVIS (arg))                                               \
+              = fun (AVIS_SSASTACK (ARG_AVIS (arg)), ARG_AVIS (arg), flag);              \
+            arg = ARG_NEXT (arg);                                                        \
+        }                                                                                \
+    }
+
+/******************************************************************************
+ *
+ * function:
+ *  static node *PopSSAstack(node *ssastack, node *avis, int flag)
+ *
+ * description:
+ *  kills top of SSAstack
+ *  if stack is not in use to nothing
+ *
+ ******************************************************************************/
+static node *
+PopSSAstack (node *ssastack, node *avis, int flag)
+{
+    node *rest;
+
+    DBUG_ENTER ("PopSSAstack");
+
+    if (SSASTACK_INUSE (ssastack)) {
+        /* frees top of stack and returns rest */
+        rest = SSASTACK_NEXT (ssastack);
+        FreeNode (ssastack);
+    } else {
+        /* do nothing */
+        rest = ssastack;
+    }
+
+    DBUG_RETURN (rest);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  static  node *PushSSAstack(node *ssastack, node *avis, int flag)
+ *
+ * description:
+ *  Duplicates value on top of stack.
+ *
+ ******************************************************************************/
+static node *
+PushSSAstack (node *ssastack, node *avis, int flag)
+{
+    DBUG_ENTER ("PushSSAstack");
+
+    if (SSASTACK_INUSE (ssastack)) {
+        ssastack = MakeSSAstack (ssastack, SSASTACK_AVIS (ssastack));
+        SSASTACK_INUSE (ssastack) = TRUE;
+    }
+
+    DBUG_RETURN (ssastack);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  static  node *SaveTopSSAstack(node *ssastack, node *avis, int flag)
+ *
+ * description:
+ *  Saves Top-Value of stack to AVIS_SSATHEN  (flag=STACKFLAG_THEN)
+ *  or                          AVIS_SSAELSE  (flag=STACLFLAG_ELSE)
+ *
+ ******************************************************************************/
+static node *
+SaveTopSSAstack (node *ssastack, node *avis, int flag)
+{
+    DBUG_ENTER ("SaveTopSSAstack");
+
+    if (SSASTACK_INUSE (ssastack)) {
+        switch (flag) {
+        case STACKFLAG_THEN:
+            AVIS_SSATHEN (avis) = SSASTACK_AVIS (ssastack);
+            break;
+
+        case STACKFLAG_ELSE:
+            AVIS_SSAELSE (avis) = SSASTACK_AVIS (ssastack);
+            break;
+
+        default:
+            DBUG_ASSERT ((FALSE), "unknown flag in SaveTopSSAstack");
+        }
+    }
+
+    DBUG_RETURN (ssastack);
+}
 
 /******************************************************************************
  *
@@ -81,10 +208,128 @@ SSANewVardec (node *old_vardec_or_arg)
     /* set no SSA-counter for this new vardec:
      * For the current traversal the new renamed vardec cannot be reanamed
      * again, because there cannot be any redefinitions of it
-     */
-    AVIS_SSACOUNT (VARDEC_AVIS (new_vardec)) = NULL;
+     * big mistake, leads to double definitions!!! */
+    /* AVIS_SSACOUNT(VARDEC_AVIS(new_vardec)) = NULL; */
 
     DBUG_RETURN (new_vardec);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  static void SSAInsertCopyAssignments(node *condassign, node *avis)
+ *
+ * description:
+ *   creates a new renamed vardec as target for the ssa phi-function.
+ *   inserts the necessary copy assignments for ssa in the conditional.
+ *
+ * if(p) {
+ *   ...
+ *   newvar = x__SSA_1;
+ * } else {
+ *   ...
+ *   newvar = x__SSA_2;
+ * }
+ *
+ ******************************************************************************/
+static void
+SSAInsertCopyAssignments (node *condassign, node *avis, node *arg_info)
+{
+    node *assign_let;
+    node *right_id;
+    ids *left_ids;
+
+    DBUG_ENTER ("SSAInsertCopyAssignments");
+
+    /* THEN part */
+    /* create right side (id) of copy assignment for then part */
+    right_id
+      = MakeId (StringCopy (VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (AVIS_SSATHEN (avis)))),
+                NULL, VARDEC_OR_ARG_STATUS (AVIS_VARDECORARG (AVIS_SSATHEN (avis))));
+    ID_VARDEC (right_id) = AVIS_VARDECORARG (AVIS_SSATHEN (avis));
+    ID_AVIS (right_id) = AVIS_SSATHEN (avis);
+
+    /* create one let assign for then part */
+    assign_let = MakeAssignLet (StringCopy (VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (avis))),
+                                AVIS_VARDECORARG (avis), right_id);
+
+    /* redefinition requieres new target variable (standard ssa mechanism) */
+    LET_IDS (ASSIGN_INSTR (assign_let))
+      = TravLeftIDS (LET_IDS (ASSIGN_INSTR (assign_let)), arg_info);
+    left_ids = LET_IDS (ASSIGN_INSTR (assign_let));
+
+    /* mark vardec as special ssa phi target */
+    AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = TRUE;
+
+    /* append new copy assignment to then-part block */
+    BLOCK_INSTR (COND_THEN (condassign))
+      = AppendAssign (BLOCK_INSTR (COND_THEN (condassign)), assign_let);
+
+    /* ELSE part */
+    /* create right side (id) of copy assignment for else part */
+    right_id
+      = MakeId (StringCopy (VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (AVIS_SSAELSE (avis)))),
+                NULL, VARDEC_OR_ARG_STATUS (AVIS_VARDECORARG (AVIS_SSAELSE (avis))));
+    ID_VARDEC (right_id) = AVIS_VARDECORARG (AVIS_SSAELSE (avis));
+    ID_AVIS (right_id) = AVIS_SSAELSE (avis);
+
+    /* create let assign for else part with same left side as then part */
+    assign_let = MakeAssignLet (StringCopy (VARDEC_OR_ARG_NAME (
+                                  AVIS_VARDECORARG (IDS_AVIS (left_ids)))),
+                                AVIS_VARDECORARG (IDS_AVIS (left_ids)), right_id);
+
+    /* append new copy assignment to else-part block */
+    BLOCK_INSTR (COND_ELSE (condassign))
+      = AppendAssign (BLOCK_INSTR (COND_ELSE (condassign)), assign_let);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  static node* SSAGetSSAcount(char *baseid, int initvalue, node *block)
+ *
+ * description:
+ *   looks in list of available ssacounter (in block) for matching baseid
+ *   and returns the corresponding ssacnt node.
+ *   if search fails it will create a new ssacnt in list (counter will be
+ *   initialized with initvalue)
+ *
+ ******************************************************************************/
+static node *
+SSAGetSSAcount (char *baseid, int initvalue, node *block)
+{
+    node *ssacnt;
+    node *tmp;
+
+    DBUG_ENTER ("SSAGetSSAcount");
+
+    ssacnt = NULL;
+
+    if (BLOCK_SSACOUNTER (block) != NULL) {
+        /* look for existing ssacnt to this base_id */
+
+        tmp = BLOCK_SSACOUNTER (block);
+        do {
+            if (strcmp (SSACNT_BASEID (tmp), baseid) == 0) {
+                /* matching baseid */
+                ssacnt = tmp;
+            }
+
+            tmp = SSACNT_NEXT (tmp);
+        } while ((tmp != NULL) && (ssacnt == NULL));
+    }
+
+    if (ssacnt == NULL) {
+        /* insert NEW ssa-counter to this baseid */
+        ssacnt = MakeSSAcnt (BLOCK_SSACOUNTER (block), initvalue, StringCopy (baseid));
+
+        /* add to list of ssacnt nodes */
+        BLOCK_SSACOUNTER (block) = ssacnt;
+    }
+
+    DBUG_RETURN (ssacnt);
 }
 
 /******************************************************************************
@@ -101,18 +346,21 @@ SSAfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSAfundef");
 
-    /* stores access points for later insertions in this fundef */
-    INFO_SSA_FUNDEF (arg_info) = arg_node;
-    INFO_SSA_BLOCK (arg_info) = FUNDEF_BODY (arg_node);
-
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        /* there are some args */
-        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
-    }
-
+    /* process only fundefs with body */
     if (FUNDEF_BODY (arg_node) != NULL) {
-        /* there is a block */
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        /* stores access points for later insertions in this fundef */
+        INFO_SSA_FUNDEF (arg_info) = arg_node;
+        INFO_SSA_BLOCK (arg_info) = FUNDEF_BODY (arg_node);
+
+        if (FUNDEF_ARGS (arg_node) != NULL) {
+            /* there are some args */
+            FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+        }
+
+        if (FUNDEF_BODY (arg_node) != NULL) {
+            /* there is a block */
+            FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        }
     }
 
     /* traverse next fundef */
@@ -129,7 +377,8 @@ SSAfundef (node *arg_node, node *arg_info)
  *  node *SSAblock(node *arg_node, node *arg_info)
  *
  * description:
- *   traverses vardecs and instructions in this order
+ *   traverses vardecs and instructions in this order, subblocks do not have
+ *   any vardecs.
  *
  ******************************************************************************/
 node *
@@ -139,6 +388,8 @@ SSAblock (node *arg_node, node *arg_info)
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         /* there are some vardecs */
+        DBUG_ASSERT ((arg_node == INFO_SSA_BLOCK (arg_info)),
+                     "subblock contains vardecs");
         BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
     }
 
@@ -153,11 +404,11 @@ SSAblock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *CAVarg(node *arg_node, node *arg_info)
+ *  node *SSAexprs(node *arg_node, node *arg_info)
  *
  * description:
  *  traverses all exprs nodes.
- *  when used in N_return subtree, do the phi-copy-insertions.
+ *  when used in N_return subtree
  *
  ******************************************************************************/
 node *
@@ -219,7 +470,7 @@ SSAlet (node *arg_node, node *arg_info)
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     if (LET_IDS (arg_node) != NULL) {
-        /* there are some ids */
+        /* there are some ids not in a special ssa copy let */
         LET_IDS (arg_node) = TravLeftIDS (LET_IDS (arg_node), arg_info);
     }
 
@@ -242,14 +493,24 @@ SSAarg (node *arg_node, node *arg_info)
     DBUG_ENTER ("SSAarg");
 
     if (AVIS_SSACOUNT (ARG_AVIS (arg_node)) == NULL) {
-        /* insert new missing ssa-counter */
+        /* insert ssa-counter to this baseid */
         AVIS_SSACOUNT (ARG_AVIS (arg_node))
-          = MakeSSAcnt (BLOCK_SSACOUNTER (INFO_SSA_BLOCK (arg_info)), 0,
-                        StringCopy (ARG_NAME (arg_node)));
+          = SSAGetSSAcount (ARG_NAME (arg_node), 0, INFO_SSA_BLOCK (arg_info));
     }
 
     /* actual rename-to target on stack*/
     AVIS_SSASTACK_TOP (ARG_AVIS (arg_node)) = ARG_AVIS (arg_node);
+    AVIS_SSADEFINED (ARG_AVIS (arg_node)) = TRUE;
+
+    /*
+     * mark stack as activ
+     * (later added vardecs and stacks are ignored when stacking)
+     */
+    AVIS_SSASTACK_INUSE (ARG_AVIS (arg_node)) = TRUE;
+
+    /* clear all traversal infos in avis node */
+    AVIS_SSATHEN (ARG_AVIS (arg_node)) = NULL;
+    AVIS_SSAELSE (ARG_AVIS (arg_node)) = NULL;
 
     /* no direct assignment available (yet) */
     AVIS_SSAASSIGN (ARG_AVIS (arg_node)) = NULL;
@@ -268,7 +529,7 @@ SSAarg (node *arg_node, node *arg_info)
  *  node *SSAvardec(node *arg_node, node *arg_info)
  *
  * description:
- *   check for missing SSACOUT attribute in AVIS node. installs and inits
+ *   check for missing SSACOUNT attribute in AVIS node. installs and inits
  *   new ssa-counter if necessary (init with undef)
  *
  ******************************************************************************/
@@ -278,14 +539,25 @@ SSAvardec (node *arg_node, node *arg_info)
     DBUG_ENTER ("SSAvardec");
 
     if (AVIS_SSACOUNT (VARDEC_AVIS (arg_node)) == NULL) {
-        /* insert new missing ssa-counter */
+        /* insert ssa-counter to this baseid */
         AVIS_SSACOUNT (VARDEC_AVIS (arg_node))
-          = MakeSSAcnt (BLOCK_SSACOUNTER (INFO_SSA_BLOCK (arg_info)), UNDEF_VARDEC,
-                        StringCopy (VARDEC_NAME (arg_node)));
+          = SSAGetSSAcount (VARDEC_NAME (arg_node), UNDEF_VARDEC,
+                            INFO_SSA_BLOCK (arg_info));
     }
 
     /* jet undefined on stack */
     AVIS_SSASTACK_TOP (ARG_AVIS (arg_node)) = NULL;
+    AVIS_SSADEFINED (ARG_AVIS (arg_node)) = FALSE;
+
+    /*
+     * mark stack as activ
+     * (later added vardecs and stacks are ignored when stacking)
+     */
+    AVIS_SSASTACK_INUSE (ARG_AVIS (arg_node)) = TRUE;
+
+    /* clear all traversal infos in avis node */
+    AVIS_SSATHEN (VARDEC_AVIS (arg_node)) = NULL;
+    AVIS_SSAELSE (VARDEC_AVIS (arg_node)) = NULL;
 
     /* no direct assignment available (yet) */
     AVIS_SSAASSIGN (ARG_AVIS (arg_node)) = NULL;
@@ -337,13 +609,30 @@ SSANwith (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NWITH_WITHOP (arg_node) != NULL), "Nwith without WITHOP node!");
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
+    /*
+     * before traversing all partions, clear with ids/vec to check all
+     * partions for identical index variables
+     */
+    INFO_SSA_WITHIDS (arg_info) = NULL;
+    INFO_SSA_WITHVEC (arg_info) = NULL;
+
     /* traverse partitions */
     DBUG_ASSERT ((NWITH_PART (arg_node) != NULL), "Nwith without PART node!");
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
 
+    /* do stacking of current renaming status */
+    FOR_ALL_VARDEC_AND_ARGS (PushSSAstack, STACKFLAG_DUMMY,
+                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
+                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
+
     /* traverse code */
     DBUG_ASSERT ((NWITH_CODE (arg_node) != NULL), "Nwith without CODE node!");
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+
+    /* pop old renaming status from stack */
+    FOR_ALL_VARDEC_AND_ARGS (PopSSAstack, STACKFLAG_DUMMY,
+                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
+                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
 
     DBUG_RETURN (arg_node);
 }
@@ -368,11 +657,30 @@ SSANpart (node *arg_node, node *arg_info)
     NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
 
     DBUG_ASSERT ((NPART_WITHID (arg_node) != NULL), "Npart without Nwithid node!");
-    if (NPART_NEXT (arg_node) != NULL) {
-        /* check for unique withids !!! */
 
+    /* store first occurrence of withids and withvec for later ASSERT */
+    if (INFO_SSA_WITHIDS (arg_info) == NULL) {
+        INFO_SSA_WITHIDS (arg_info) = IDS_AVIS (NWITHID_IDS (NPART_WITHID (arg_node)));
+    }
+    if (INFO_SSA_WITHVEC (arg_info) == NULL) {
+        INFO_SSA_WITHVEC (arg_info) = IDS_AVIS (NWITHID_VEC (NPART_WITHID (arg_node)));
+    }
+
+    /* assert unique withids/withvec !!! */
+    DBUG_ASSERT ((INFO_SSA_WITHIDS (arg_info)
+                  == IDS_AVIS (NWITHID_IDS (NPART_WITHID (arg_node)))),
+                 "multigenerator withloop with inconsistent withids");
+    DBUG_ASSERT ((INFO_SSA_WITHVEC (arg_info)
+                  == IDS_AVIS (NWITHID_VEC (NPART_WITHID (arg_node)))),
+                 "multigenerator withloop with inconsistent withvec");
+
+    /* assert unique withids !!! */
+    DBUG_ASSERT ((INFO_SSA_WITHIDS (arg_info)), "no withids found");
+    DBUG_ASSERT ((INFO_SSA_WITHVEC (arg_info)), "no withvec found");
+
+    if (NPART_NEXT (arg_node) != NULL) {
         /* traverse next part */
-        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+        NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
     } else {
         /* traverse in withid */
         NPART_WITHID (arg_node) = Trav (NPART_WITHID (arg_node), arg_info);
@@ -394,6 +702,11 @@ SSANcode (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSANcode");
 
+    /* do stacking of current renaming status */
+    FOR_ALL_VARDEC_AND_ARGS (PushSSAstack, STACKFLAG_DUMMY,
+                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
+                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
+
     /* traverse block */
     if (NCODE_CBLOCK (arg_node) != NULL) {
         NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
@@ -404,6 +717,9 @@ SSANcode (node *arg_node, node *arg_info)
     NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
 
     /* restore old rename stack !!! */
+    FOR_ALL_VARDEC_AND_ARGS (PopSSAstack, STACKFLAG_DUMMY,
+                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
+                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
 
     if (NCODE_NEXT (arg_node) != NULL) {
         /* traverse next part */
@@ -452,24 +768,56 @@ SSAcond (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSAcond");
 
+    /* save this cond_node for later insertions of copy assignments */
+    INFO_SSA_CONDSTMT (arg_info) = arg_node;
+
     /* traverse conditional */
     DBUG_ASSERT ((COND_COND (arg_node) != NULL), "Ncond without cond node!");
     COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
 
-    /* do some status saving in all vardecs and args */
+    /* do stacking of current renaming status */
+    FOR_ALL_VARDEC_AND_ARGS (PushSSAstack, STACKFLAG_DUMMY,
+                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
+                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
 
     /* traverse then */
+    INFO_SSA_CONDSTATUS (arg_info) = CONDSTATUS_THENPART;
     if (COND_THEN (arg_node) != NULL) {
         COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
     }
 
+    /* save to then for later merging */
+    FOR_ALL_VARDEC_AND_ARGS (SaveTopSSAstack, STACKFLAG_THEN,
+                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
+                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
+
     /* so some status restauration */
+    FOR_ALL_VARDEC_AND_ARGS (PopSSAstack, STACKFLAG_DUMMY,
+                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
+                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
+
+    /* do stacking of current renaming status */
+    FOR_ALL_VARDEC_AND_ARGS (PushSSAstack, STACKFLAG_DUMMY,
+                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
+                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
 
     /* traverse else */
+    INFO_SSA_CONDSTATUS (arg_info) = CONDSTATUS_ELSEPART;
     if (COND_ELSE (arg_node) != NULL) {
         COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
     }
 
+    /* save to else for later merging */
+    FOR_ALL_VARDEC_AND_ARGS (SaveTopSSAstack, STACKFLAG_ELSE,
+                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
+                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
+
+    /* so some status restauration */
+    FOR_ALL_VARDEC_AND_ARGS (PopSSAstack, STACKFLAG_DUMMY,
+                             BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)),
+                             FUNDEF_ARGS (INFO_SSA_FUNDEF (arg_info)));
+
+    INFO_SSA_CONDSTATUS (arg_info) = CONDSTATUS_NOCOND;
     DBUG_RETURN (arg_node);
 }
 
@@ -488,12 +836,18 @@ SSAreturn (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSAreturn");
 
-    /* set flag in Ninfo node */
+    /*
+     * set flag in Ninfo node
+     * when processing following N_id nodes, do the phi-merging
+     */
+    INFO_SSA_RETINSTR (arg_info) = TRUE;
 
     /* traverse exprs */
     if (RETURN_EXPRS (arg_node) != NULL) {
         RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
     }
+
+    INFO_SSA_RETINSTR (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -552,16 +906,30 @@ SSAleftids (ids *arg_ids, node *arg_info)
 
     DBUG_ENTER ("SSAleftids");
 
-    if (SSACNT_COUNT (AVIS_SSACOUNT (IDS_AVIS (arg_ids))) == UNDEF_VARDEC) {
-        /* first definition of variable, no renaming needed */
-        SSACNT_COUNT (AVIS_SSACOUNT (IDS_AVIS (arg_ids))) = 0;
+    if (AVIS_SSAPHITARGET (IDS_AVIS (arg_ids))) {
+        /* special ssa phi target - no renaming needed */
         AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = IDS_AVIS (arg_ids);
+        DBUG_PRINT ("SSA", ("phi target, no renaming: %s (%p)",
+                            VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
+                            IDS_AVIS (arg_ids)));
+
+    } else if (AVIS_SSADEFINED (IDS_AVIS (arg_ids)) == FALSE) {
+        /* first definition of variable (no renaming) */
+        AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = IDS_AVIS (arg_ids);
+        /* SSACNT_COUNT(AVIS_SSACOUNT(IDS_AVIS(arg_ids))) = 0; */
+        AVIS_SSADEFINED (IDS_AVIS (arg_ids)) = TRUE;
+        DBUG_PRINT ("SSA", ("first definition, no renaming: %s (%p)",
+                            VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
+                            IDS_AVIS (arg_ids)));
 
     } else {
         /* redefinition - create new unique variable/vardec */
         new_vardec = SSANewVardec (AVIS_VARDECORARG (IDS_AVIS (arg_ids)));
         BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info))
           = AppendVardec (BLOCK_VARDEC (INFO_SSA_BLOCK (arg_info)), new_vardec);
+        DBUG_PRINT ("SSA", ("re-definition, renaming: %s (%p) -> %s",
+                            VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
+                            IDS_AVIS (arg_ids), VARDEC_NAME (new_vardec)));
 
         /* new rename-to target for old vardec */
         AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = VARDEC_AVIS (new_vardec);
@@ -579,9 +947,12 @@ SSAleftids (ids *arg_ids, node *arg_info)
         IDS_NAME (arg_ids) = StringCopy (VARDEC_NAME (new_vardec));
 #endif
     }
-
     /* AVIS_SSAASSIGN(IDS_AVIS(arg_ids)) = ##nmw## */
 
+    /* traverese next ids */
+    if (IDS_NEXT (arg_ids) != NULL) {
+        IDS_NEXT (arg_ids) = TravLeftIDS (IDS_NEXT (arg_ids), arg_info);
+    }
     DBUG_RETURN (arg_ids);
 }
 
@@ -599,8 +970,31 @@ SSArightids (ids *arg_ids, node *arg_info)
 {
     DBUG_ENTER ("SSArightids");
 
-    /* do renaming to new ssa vardec */
-    IDS_AVIS (arg_ids) = AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids));
+    /*
+     * if ids is used in return instruction it has to be checked
+     * for needed copy assignments in a conditional
+     */
+    if
+        INFO_SSA_RETINSTR (arg_info)
+        {
+            /* check for different assignments in then and else part */
+            if (AVIS_SSATHEN (IDS_AVIS (arg_ids)) != AVIS_SSAELSE (IDS_AVIS (arg_ids))) {
+                DBUG_ASSERT ((AVIS_SSATHEN (IDS_AVIS (arg_ids))),
+                             "undefined variable in then part");
+                DBUG_ASSERT ((AVIS_SSATHEN (IDS_AVIS (arg_ids))),
+                             "undefined variable in then part");
+                SSAInsertCopyAssignments (INFO_SSA_CONDSTMT (arg_info),
+                                          IDS_AVIS (arg_ids), arg_info);
+            }
+        }
+
+    /*
+     * existing phi copy target must not be renamed
+     */
+    if (!(AVIS_SSAPHITARGET (IDS_AVIS (arg_ids)))) {
+        /* do renaming to new ssa vardec */
+        IDS_AVIS (arg_ids) = AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids));
+    }
 
     /* restore all depended atributes with correct values */
     IDS_VARDEC (arg_ids) = AVIS_VARDECORARG (IDS_AVIS (arg_ids));
