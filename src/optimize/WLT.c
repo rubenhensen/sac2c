@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.2  1998/04/01 07:44:22  srs
+ * added functions to create full partition
+ *
  * Revision 1.1  1998/03/22 18:21:40  srs
  * Initial revision
  *
@@ -30,6 +33,10 @@
  - node[0]: store old information in nested WLs
  - node[1]: reference to base node of current WL (N_Nwith)
  - node[2]: always the last N_assign node
+ - node[3]: pointer to last fundef node. needed to access vardecs.
+ - varno  : number of variables in this function, see optimize.c
+ - mask[0]: DEF mask, see optimize.c
+ - mask[1]: USE mask, see optimize.c
 
  ******************************************************************************/
 
@@ -51,6 +58,246 @@
 #include "ConstantFolding.h"
 #include "WithloopFolding.h"
 #include "WLT.h"
+
+static int ig_parts;
+
+/******************************************************************************
+ *
+ * function:
+ *   intern_gen *CutSlices(..)
+ *
+ * description:
+ *   Creates a (full) partition by adding new intern_gen structs.
+ *   If the know part is a grid, this is ignored here (so the resulting
+ *   intern_gen chain may still not be a full partition, see CompleteGrid()).
+ *   The list of intern_gen is returned.
+ *
+ * parameters:
+ *   ls, us : bounds of the whole array
+ *   l, u   : bounds of the given part
+ *   dim    : number of elements of ls, us, l, u
+ *   ig     : chain of intern_gen struct where to add the new parts. If
+ *            ig != NULL, the same pointer is returned.
+ *   coden  : Pointer of N_Ncode node where the new generators shall point to.
+ *
+ ******************************************************************************/
+
+intern_gen *
+CutSlices (int *ls, int *us, int *l, int *u, int dim, intern_gen *ig, node *coden)
+{
+    int *lsc, *usc, i, d;
+    intern_gen *root_ig = NULL;
+
+    DBUG_ENTER ("CutSlices");
+
+    /* create local copies of the arrays which atr modified here*/
+    lsc = Malloc (sizeof (int) * dim);
+    usc = Malloc (sizeof (int) * dim);
+    for (i = 0; i < dim; i++) {
+        lsc[i] = ls[i];
+        usc[i] = us[i];
+    }
+
+    root_ig = ig;
+
+    for (d = 0; d < dim; d++) {
+        /* Check whether there is a cuboid above (below) the given one. */
+        if (l[d] > lsc[d]) {
+            ig = AppendInternGen (ig, dim, coden, 0);
+            for (i = 0; i < dim; i++) {
+                ig->l[i] = lsc[i];
+                ig->u[i] = usc[i];
+            }
+            ig->u[d] = l[d];
+            ig_parts++;
+
+            if (!root_ig)
+                root_ig = ig;
+        }
+
+        if (u[d] < usc[d]) {
+            ig = AppendInternGen (ig, dim, coden, 0);
+            for (i = 0; i < dim; i++) {
+                ig->l[i] = lsc[i];
+                ig->u[i] = usc[i];
+            }
+            ig->l[d] = u[d];
+            ig_parts++;
+
+            if (!root_ig)
+                root_ig = ig;
+        }
+
+        /* and modify array bounds to  continue with next dimension */
+        lsc[d] = l[d];
+        usc[d] = u[d];
+    }
+
+    DBUG_RETURN (root_ig);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   intern_gen *CompleteGrid(int *ls, int *us, int *step, int *width,
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+intern_gen *
+CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
+              node *coden)
+{
+    int i, d, *nw;
+    intern_gen *root_ig;
+
+    DBUG_ENTER ("CompleteGrid");
+    nw = Malloc (sizeof (int) * dim);
+    for (i = 0; i < dim; i++)
+        nw[i] = step[i];
+
+    root_ig = ig;
+
+    for (d = 0; d < dim; d++) {
+        if (step[d] > width[d]) { /* create new gris */
+            ig = AppendInternGen (ig, dim, coden, 1);
+            ig_parts++;
+            for (i = 0; i < dim; i++) {
+                ig->l[i] = ls[i];
+                ig->u[i] = us[i];
+                ig->step[i] = step[i];
+                ig->width[i] = nw[i];
+            }
+            ig->l[d] = ig->l[d] + width[d];
+            ig->width[d] = step[d] - width[d];
+            i = NormalizeInternGen (ig);
+            DBUG_ASSERT (!i, ("internal normalization failure"));
+
+            if (!root_ig)
+                root_ig = ig;
+        }
+
+        nw[d] = width[d];
+    }
+
+    DBUG_RETURN (root_ig);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node * CreateFullPartition(node *wln, node *arg_info)
+ *
+ * description:
+ *   generates full partition if possible:
+ *    - if withop is genarray and index vector has as much elements as
+ *      dimension of resulting WL.
+ *    - if withop is modarray and index vector has as much elements as
+ *      generator of base WL.
+ *   Returns wln.
+ *
+ * parameters:
+ *   the wln is the N_Nwith node of the WL to transfrom.
+ *   arg_info is needed to access the vardecs of the current function.
+ *
+ ******************************************************************************/
+
+node *
+CreateFullPartition (node *wln, node *arg_info)
+{
+    int gen_shape, do_create, *array_null, *array_shape;
+    node *base_wl, *coden, *psi_index, *psi_array, *idn;
+    ids *_ids;
+    intern_gen *ig;
+    char *varname;
+    types *type;
+
+    DBUG_ENTER ("CreateFullPartition");
+
+    /* this is the shape of the index vector (generator) */
+    gen_shape = IDS_SHAPE (NPART_VEC (NWITH_PART (wln)), 0);
+
+    /* genarray check */
+    do_create = (WO_genarray == NWITH_TYPE (wln)
+                 && 0 == TYPES_DIM (ID_TYPE (NCODE_CEXPR (NWITH_CODE (wln)))));
+    /* modarray check */
+    if (WO_modarray == NWITH_TYPE (wln)) {
+        base_wl = MRD (ID_VARNO (NWITHOP_ARRAY (NWITH_WITHOP (wln))));
+        do_create
+          = (base_wl
+             && N_Nwith == NODE_TYPE ((base_wl = LET_EXPR (ASSIGN_INSTR (base_wl))))
+             && gen_shape == IDS_SHAPE (NPART_VEC (NWITH_PART (base_wl)), 0)
+             && NWITH_FOLDABLE (base_wl));
+    }
+
+    /* only if we do not have a full partition yet. */
+    do_create = do_create && (NWITH_PARTS (wln) < 0);
+
+    /* start creation*/
+    if (do_create) {
+        /* create lower array bound */
+        array_null = NULL;
+        ArrayST2ArrayInt (NULL, &array_null, gen_shape);
+        if (WO_genarray == NWITH_TYPE (wln))
+            /* create upper array bound */
+            ArrayST2ArrayInt (NWITHOP_SHAPE (NWITH_WITHOP (wln)), &array_shape,
+                              gen_shape);
+        else /* modarray */
+            /* We can use the *int array of shpseg to create the upper array bound */
+            array_shape
+              = TYPES_SHPSEG (ID_TYPE (NWITHOP_ARRAY (NWITH_WITHOP (wln))))->shp;
+
+        /* determine type of expr in the operator (result of body) */
+        type = ID_TYPE (NCODE_CEXPR (NWITH_CODE (wln)));
+        /* create code for all new parts */
+        if (WO_genarray == NWITH_TYPE (wln))
+            coden = MakeNum (0);
+        else { /* modarray */
+            _ids = NPART_VEC (NWITH_PART (wln));
+            psi_index = MakeId (StringCopy (IDS_NAME (_ids)), NULL, ST_regular);
+            ID_VARDEC (psi_index) = IDS_VARDEC (_ids);
+            psi_array = DupTree (NWITHOP_OPARG (NWITH_WITHOP (wln)), NULL);
+            coden = MakePrf (F_psi, MakeExprs (psi_index, MakeExprs (psi_array, NULL)));
+        }
+        varname = TmpVar ();
+        _ids = MakeIds (varname, NULL, ST_regular); /* use memory from GetTmp() */
+        IDS_VARDEC (_ids)
+          = CreateVardec (varname, type,
+                          &FUNDEF_VARDEC (INFO_WLI_FUNDEF (
+                            arg_info))); /* varname is duplicated here (own mem) */
+        idn = MakeId (StringCopy (varname), NULL, ST_regular); /* use new mem */
+        ID_VARDEC (idn) = IDS_VARDEC (_ids);
+        /* create new N_Ncode node  */
+        coden
+          = MakeNCode (MakeBlock (MakeAssign (MakeLet (coden, _ids), NULL), NULL), idn);
+
+        /* add to code list */
+        NCODE_NEXT (coden) = NWITH_CODE (wln);
+        NWITH_CODE (wln) = coden;
+
+        /* now, create the new parts */
+        ig = Tree2InternGen (wln);
+        ig_parts = 1;
+        /* create surrounding cuboids */
+        ig = CutSlices (array_null, array_shape, ig->l, ig->u, ig->shape, ig, coden);
+        /* the original part can still be found at *ig. New create grids. */
+        if (ig->step)
+            ig = CompleteGrid (ig->l, ig->u, ig->step, ig->width, ig->shape, ig, coden);
+
+        InternGen2Tree (wln, ig);
+        NWITH_PARTS (wln) = ig_parts;
+
+        /* free the above made arrays */
+        FREE (array_null);
+        if (WO_genarray == NWITH_TYPE (wln))
+            FREE (array_shape);
+    }
+
+    DBUG_RETURN (wln);
+}
 
 /******************************************************************************
  *
@@ -188,6 +435,7 @@ WLTfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("WLTfundef");
 
     INFO_WLI_WL (arg_info) = NULL;
+    INFO_WLI_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node))
         FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
@@ -390,7 +638,10 @@ WLTlet (node *arg_node, node *arg_info)
  *
  * description:
  *   start traversal of this WL and store information in new arg_info node.
- *   all N_Npart nodes (inclusive bodies) are traversed.
+ *   All N_Npart nodes (inclusive bodies) are traversed.
+ *   Afterwards, if WL is foldable and certain conditions are fulfilled,
+ *   the WL is transformed into a WL with generators describing a full
+ *   partition.
  *
  ******************************************************************************/
 
@@ -407,7 +658,7 @@ WLTNwith (node *arg_node, node *arg_info)
     tmpn->mask[0] = INFO_DEF; /* DEF and USE information have */
     tmpn->mask[1] = INFO_USE; /* to be identical. */
     tmpn->varno = INFO_VARNO;
-
+    INFO_WLI_FUNDEF (tmpn) = INFO_WLI_FUNDEF (arg_info);
     INFO_WLI_NEXT (tmpn) = arg_info;
     arg_info = tmpn;
 
@@ -433,6 +684,15 @@ WLTNwith (node *arg_node, node *arg_info)
         tmpn = NPART_NEXT (tmpn);
     }
 
+    /* generate full partition (genarray, modarray) or let NWITH_PARTS be 1. */
+    if (NWITH_FOLDABLE (arg_node)
+        && (WO_genarray == NWITH_TYPE (arg_node) || WO_modarray == NWITH_TYPE (arg_node)))
+        arg_node = CreateFullPartition (arg_node, arg_info);
+
+    /* If withop if fold, we cannot create additional N_Npart nodes (based on what?) */
+    if (WO_foldfun == NWITH_TYPE (arg_node) || WO_foldprf == NWITH_TYPE (arg_node))
+        NWITH_PARTS (arg_node) = 1;
+
     /* restore arg_info */
     tmpn = arg_info;
     arg_info = INFO_WLI_NEXT (arg_info);
@@ -451,8 +711,7 @@ WLTNwith (node *arg_node, node *arg_info)
  *
  * description:
  *   1. traverse generator to propagate constants,
- *   2. create full partition if possible,  ?maybe better in WLTNwith (srs)
- *   3. traverse appropriate body.
+ *   2. traverse appropriate body.
  *
  ******************************************************************************/
 
