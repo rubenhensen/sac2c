@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1999/01/20 09:07:46  cg
+ * Dead function removal may now handle programs without any functions.
+ *
  * Revision 1.2  1999/01/18 15:46:02  sbs
  * DBUG_PRINT( "OPTMEM",...) inserted for mem-info during optimization
  *
@@ -69,9 +72,11 @@ node *
 DFRmodul (node *arg_node, node *info_node)
 {
     DBUG_ENTER ("DFRmodul");
-    if (F_prog == MODUL_FILETYPE (arg_node)) {
+
+    if ((F_prog == MODUL_FILETYPE (arg_node)) && (MODUL_FUNS (arg_node) != NULL)) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), info_node);
     }
+
     DBUG_RETURN (arg_node);
 }
 
