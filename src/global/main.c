@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.68  1995/10/24 13:12:39  cg
+ * Revision 1.69  1995/10/26 15:57:39  cg
+ * compiler phase 'checkdec` moved in between 'typecheck`
+ * and 'impltypes`.
+ *
+ * Revision 1.68  1995/10/24  13:12:39  cg
  * Now, all file names in error messages are written with "
  *
  * Revision 1.67  1995/10/22  17:34:40  cg
@@ -616,53 +620,53 @@ MAIN
     ABORT_ON_ERROR;
 
     if (!breakparse) {
-        switch (MODUL_FILETYPE (syntax_tree)) {
-        case F_modimp:
-            NOTE (("\nChecking module declaration: ..."));
-            syntax_tree = CheckDec (syntax_tree);
+        if (MODUL_OBJS (syntax_tree) != NULL) {
+            NOTE (("\nResolving global object initializations: ..."));
+            syntax_tree = objinit (syntax_tree);
             ABORT_ON_ERROR;
-            break;
-
-        case F_classimp:
-            NOTE (("\nChecking class declaration: ..."));
-            syntax_tree = CheckDec (syntax_tree);
-            ABORT_ON_ERROR;
-            break;
-
-        default:
-            break;
         }
         compiler_phase++;
 
-        if (!breakcheckdec) {
-            if (MODUL_OBJS (syntax_tree) != NULL) {
-                NOTE (("\nResolving global object initializations: ..."));
-                syntax_tree = objinit (syntax_tree);
+        if (!breakobjinit) {
+            if (MODUL_IMPORTS (syntax_tree) != NULL) {
+                NOTE (("\nResolving Imports: ..."));
+                syntax_tree = Import (syntax_tree);
                 ABORT_ON_ERROR;
             }
             compiler_phase++;
 
-            if (!breakobjinit) {
-                if (MODUL_IMPORTS (syntax_tree) != NULL) {
-                    NOTE (("\nResolving Imports: ..."));
-                    syntax_tree = Import (syntax_tree);
-                    ABORT_ON_ERROR;
-                }
+            if (!breakimport) {
+                NOTE (("\nFlattening: ..."));
                 compiler_phase++;
+                syntax_tree = Flatten (syntax_tree);
+                ABORT_ON_ERROR;
 
-                if (!breakimport) {
-                    NOTE (("\nFlattening: ..."));
+                if (!breakflatten) {
+                    NOTE (("\nTypechecking: ..."));
                     compiler_phase++;
-                    syntax_tree = Flatten (syntax_tree);
+                    syntax_tree = Typecheck (syntax_tree);
                     ABORT_ON_ERROR;
 
-                    if (!breakflatten) {
-                        NOTE (("\nTypechecking: ..."));
-                        compiler_phase++;
-                        syntax_tree = Typecheck (syntax_tree);
-                        ABORT_ON_ERROR;
+                    if (!breaktype) {
+                        switch (MODUL_FILETYPE (syntax_tree)) {
+                        case F_modimp:
+                            NOTE (("\nChecking module declaration: ..."));
+                            syntax_tree = CheckDec (syntax_tree);
+                            ABORT_ON_ERROR;
+                            break;
 
-                        if (!breaktype) {
+                        case F_classimp:
+                            NOTE (("\nChecking class declaration: ..."));
+                            syntax_tree = CheckDec (syntax_tree);
+                            ABORT_ON_ERROR;
+                            break;
+
+                        default:
+                            break;
+                        }
+                        compiler_phase++;
+
+                        if (!breakcheckdec) {
                             if (MODUL_IMPORTS (syntax_tree) != NULL) {
                                 NOTE (("\nResolving implicit types: ..."));
                                 syntax_tree = RetrieveImplicitTypeInfo (syntax_tree);
