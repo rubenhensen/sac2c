@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2003/04/14 14:18:34  sbs
+ * forgot to remove local parameter ....
+ *
  * Revision 3.36  2003/04/14 14:16:56  sbs
  * second parameter for va_start created in SCHMakeScheduling.
  *
@@ -448,7 +451,7 @@ sched_t *
 SCHMakeScheduling (char *discipline, ...)
 {
     va_list args;
-    char *discipline, *arg_spec, *tmp_id;
+    char *arg_spec, *tmp_id;
     sched_t *sched;
     int i, disc_no, tmp_num;
 
