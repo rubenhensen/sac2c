@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.6  2000/12/14 18:00:15  dkr
+ * warning message for Nwith2 added
+ *
  * Revision 3.5  2000/12/12 11:42:22  dkr
  * nodes N_pre, N_post, N_inc, N_dec removed
  *
@@ -2453,8 +2456,13 @@ GNMwith2 (node *arg_node, node *arg_info)
   /*
    * refcount still uses GenerateMasks() ...
    */
-  DBUG_ASSERT( (0), "GenerateMask() for N_Nwith2 not implemented!"
+  DBUG_ASSERT( (0), "GenerateMask() not implemented for N_Nwith2 nodes!"
                     " Use InferDFMs() instead!");
+#else
+#ifndef DBUG_OFF
+    SYSWARN (("GenerateMasks() not implemented for N_Nwith2 nodes"));
+    CONT_WARN (("Use InferDFMs() instead!"));
+#endif
 #endif
 
     DBUG_RETURN (arg_node);
