@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/10/30 12:11:34  sbs
+ * TYEliminateUser added.
+ *
  * Revision 3.11  2002/10/18 14:34:18  sbs
  * TYSetSimpleType, TYGetUserType, nad TYOldTypes2ProdType added.
  *
@@ -331,6 +334,7 @@ extern bool TYEqTypes (ntype *t1, ntype *t2);
 extern ntype *TYLubOfTypes (ntype *t1, ntype *t2);
 extern ntype *TYEliminateAlpha (ntype *t1);
 extern ntype *TYFixAndEliminateAlpha (ntype *t1);
+extern ntype *TYEliminateUser (ntype *t1);
 
 /*
  * General Type handling functions

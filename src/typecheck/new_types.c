@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2002/10/30 12:11:34  sbs
+ * TYEliminateUser added.
+ *
  * Revision 3.34  2002/10/28 10:41:08  sbs
  * wrong ASSERT in TYOldType2Type eliminated again 8-)
  *
@@ -2318,6 +2321,9 @@ TYDispatchFunType (ntype *fun, ntype *args)
             DBUG_EXECUTE ("NTDIS", DebugPrintDFT_state (state););
 
             fun = IRES_TYPE (ires);
+            if (NTYPE_CON (fun) != TC_fun) {
+                i = n;
+            }
         }
 
         state = FinalizeDFT_state (state);
@@ -3061,6 +3067,41 @@ TYFixAndEliminateAlpha (ntype *t1)
     } else {
         if (TYIsAlpha (t1) && (SSIGetMin (TYGetAlpha (t1)) != NULL)) {
             res = TYCopyType (SSIGetMin (ALPHA_SSI (t1)));
+        } else {
+            res = TYCopyType (t1);
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype * TYEliminateUser( ntype *t1)
+ *
+ * description:
+ *    if t1 is a user defined type, its base type is returned;
+ *    otherwise, a copy of t1 is returned.
+ *
+ ******************************************************************************/
+
+ntype *
+TYEliminateUser (ntype *t1)
+{
+    ntype *res;
+    int i;
+
+    DBUG_ENTER ("TYEliminateUser");
+
+    if (TYIsProd (t1)) {
+        res = MakeNtype (TC_prod, NTYPE_ARITY (t1));
+        for (i = 0; i < NTYPE_ARITY (t1); i++) {
+            PROD_MEMBER (res, i) = TYEliminateUser (PROD_MEMBER (t1, i));
+        }
+    } else {
+        if (TYIsArray (t1) && TYIsUser (TYGetScalar (t1))) {
+            res = TYNestTypes (t1, UTGetBaseType (USER_TYPE (TYGetScalar (t1))));
         } else {
             res = TYCopyType (t1);
         }
@@ -4126,7 +4167,7 @@ TYOldTypes2ProdType (types *old)
     int i, num_types;
     ntype *res;
 
-    num_types = CountTypes (old);
+    num_types = (HasDotTypes (old) ? CountTypes (old) - 1 : CountTypes (old));
     res = TYMakeEmptyProductType (num_types);
     for (i = 0; i < num_types; i++) {
         res = TYSetProductMember (res, i, TYOldType2Type (old));
