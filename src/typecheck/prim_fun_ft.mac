@@ -1,8 +1,11 @@
 /*
  *  $Log$
- *  Revision 1.9  1995/07/04 08:43:28  hw
- *  primitive functions F_itod, F_dtof F_dtoi & F_ftod inserted
+ *  Revision 1.10  1995/08/11 17:33:21  hw
+ *   added macros-calls for typechecking of function 'modarray'
  *
+;; Revision 1.9  1995/07/04  08:43:28  hw
+;; primitive functions F_itod, F_dtof F_dtoi & F_ftod inserted
+;;
 ;; Revision 1.8  1995/06/30  11:36:31  hw
 ;; functions F2I & I2F inserted
 ;;
@@ -95,3 +98,5 @@ FT (F_dtof, d_f, F_dtof)
 FT (F_dtof, D_F, F_dtof_A)
 FT (F_dtoi, d_i, F_dtoi)
 FT (F_dtoi, D_I, F_dtoi_A)
+FT (F_modarray, AxAxS_A, F_modarray)
+FT (F_modarray, AxAxA_A, F_modarray)
