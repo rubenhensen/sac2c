@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2004/11/14 13:44:42  ktr
+ * added F_isreused
+ *
  * Revision 3.31  2004/11/02 14:23:11  ktr
  * Added F_noop.
  *
@@ -194,6 +197,8 @@ PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCPRF_toiS, COToi),
   PRF_IF (F_reuse, "F_reuse", "_reuse_", "reuse", FALSE, 0, NTCPRF_dummy, NULL),
   PRF_IF (F_alloc_or_reuse, "F_alloc_or_reuse", "_alloc_or_reuse_", "alloc_or_reuse",
           FALSE, 0, NTCPRF_dummy, NULL),
+  PRF_IF (F_isreused, "F_isreused", "_isreused_", "isreused", FALSE, 0, NTCPRF_dummy,
+          NULL),
   PRF_IF (F_wl_assign, "F_wl_assign", "_wl_assign_", "wl_assign", FALSE, 0, NTCPRF_dummy,
           NULL),
   PRF_IF (F_suballoc, "F_suballoc", "_suballoc_", "suballoc", FALSE, 0, NTCPRF_dummy,
