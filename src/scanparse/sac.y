@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.122  1997/03/19 15:31:08  cg
+ * Revision 1.123  1997/04/25 08:53:07  sbs
+ * second arg of MakeType changed from NULL to 0
+ *
+ * Revision 1.122  1997/03/19  15:31:08  cg
  * Now, module/class implementations without any functions are supported
  *
  * Revision 1.121  1997/03/19  13:45:17  cg
@@ -2918,7 +2921,7 @@ sibtype: evclass TYPEDEF type id SEMIC sibpragmas
        | evclass TYPEDEF IMPLICIT id SEMIC sibpragmas
            {
              $$=MakeTypedef($4, NULL,
-                            MakeType(T_hidden, NULL, NULL, NULL, NULL),
+                            MakeType(T_hidden, 0, NULL, NULL, NULL),
                             $1, NULL);
              TYPEDEF_STATUS($$)=ST_imported;
              TYPEDEF_PRAGMA($$)=$6;
@@ -2931,7 +2934,7 @@ sibtype: evclass TYPEDEF type id SEMIC sibpragmas
        | evclass TYPEDEF IMPLICIT id COLON id SEMIC sibpragmas
            {
              $$=MakeTypedef($6, $4,
-                            MakeType(T_hidden, NULL, NULL, NULL, NULL),
+                            MakeType(T_hidden, 0, NULL, NULL, NULL),
                             $1, NULL);
              TYPEDEF_STATUS($$)=ST_imported;
              TYPEDEF_PRAGMA($$)=$8;
