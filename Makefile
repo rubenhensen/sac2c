@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.33  2000/03/22 17:38:17  jhs
+# Added barrier_init.o
+#
 # Revision 2.32  2000/03/17 16:07:18  dkr
 # cleanup_decls.o added
 #
@@ -232,7 +235,8 @@ MULTITHREAD= src/multithread/multithread.o src/multithread/schedule_init.o \
              src/multithread/blocks_expand.o src/multithread/multithread_lib.o \
              src/multithread/mtfuns_init.o src/multithread/blocks_cons.o \
              src/multithread/blocks_propagate.o \
-             src/multithread/dataflow_analysis.o 
+             src/multithread/dataflow_analysis.o \
+             src/multithread/barriers_init.o
 COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/precompile.o \
           src/compile/compile.o src/compile/gen_startup_code.o \
