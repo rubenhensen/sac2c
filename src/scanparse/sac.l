@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/21 11:24:33  dkr
+ * token DEFAULT removed
+ *
  * Revision 3.3  2000/12/06 12:48:03  sbs
  * ugly hack for avoiding warning that yy_cp or yy_bp might be used un-initialized.
  *
@@ -308,7 +311,6 @@ int charpos = 0;
 "linkwith"                      { FILTER( LINKWITH );}
 "wlcomp"                        { FILTER( WLCOMP );}
 "cachesim"                      { FILTER( CACHESIM );}
-"Default"                       { FILTER( DEFAULT );}
 "specialize"                    { FILTER( SPECIALIZE );}
 
 "int"                           { FILTER( TYPE_INT );}
