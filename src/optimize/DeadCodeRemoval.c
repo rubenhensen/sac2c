@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1996/09/11 14:13:08  asi
+ * Revision 1.15  1996/09/11 14:25:55  asi
+ * *** empty log message ***
+ *
+ * Revision 1.14  1996/09/11  14:13:08  asi
  * DFRmodul added
  *
  * Revision 1.13  1996/09/10  13:42:32  asi
@@ -129,8 +132,9 @@ node *
 DFRmodul (node *arg_node, node *info_node)
 {
     DBUG_ENTER ("DFRmodul");
-    if (F_prog == MODUL_FILETYPE (arg_node))
-        arg_node = Trav (arg_node, info_node);
+    if (F_prog == MODUL_FILETYPE (arg_node)) {
+        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), info_node);
+    }
     DBUG_RETURN (arg_node);
 }
 /*
