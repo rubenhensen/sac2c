@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2004/11/30 15:24:34  sah
+ * added a fix to handle CODE_CEXPRS correctly
+ *
  * Revision 3.62  2004/11/27 05:07:00  ktr
  * bugfix
  *
@@ -1745,7 +1748,7 @@ NTCcast (node *arg_node, info *arg_info)
 node *
 NTCwith (node *arg_node, info *arg_info)
 {
-    ntype *gen, *body, *res;
+    ntype *gen, *body, *res, *tmp;
 #ifndef DBUG_OFF
     char *tmp_str;
 #endif
@@ -1770,6 +1773,20 @@ NTCwith (node *arg_node, info *arg_info)
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     body = INFO_NTC_TYPE (arg_info);
     INFO_NTC_TYPE (arg_info) = NULL;
+
+    /*
+     * TODO: as the type of the body of a multi-operator withloop
+     *       is a product type, we extract the first element.
+     *       note that withloops with more than one operator are
+     *       not allowed at this stage anyways.
+     */
+
+    DBUG_ASSERT ((TYisProd (body) && (TYgetProductSize (body) == 1)),
+                 "body of withloop has none or too large product type");
+
+    tmp = body;
+    body = TYgetProductMember (body, 0);
+    tmp = TYfreeTypeConstructor (tmp);
 
     DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (body, FALSE, 0););
     DBUG_PRINT ("NTC", ("  WL - body type: %s", tmp_str));
@@ -1965,6 +1982,12 @@ NTCcode (node *arg_node, info *arg_info)
     DBUG_ENTER ("NTCcode");
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+    /*
+     * TODO: here we traverse into possibly a chain of exprs, so
+     *       the result will be a product type! In NTCwith, we will
+     *       throw away everythig except of the first element of that
+     *       type. This is no nice abstraction...
+     */
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
     DBUG_ASSERT ((CODE_NEXT (arg_node) == NULL),
