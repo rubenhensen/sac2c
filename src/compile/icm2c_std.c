@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2002/07/15 18:40:03  dkr
+ * some bugs fixed
+ *
  * Revision 3.22  2002/07/12 18:54:46  dkr
  * first (almost) complete TAGGED_ARRAYS revision.
  * some shape computations are missing yet (but SCL, AKS should be
@@ -1378,16 +1381,13 @@ ICMCompileND_COPY (char *to_nt, int to_sdim, char *from_nt, int from_sdim, char 
 
     /* allocate descriptor */
     INDENT;
-    fprintf (outfile, "SAC_ND_ALLOC__DESC( %s)\n", to_nt);
-
-    INDENT;
-    fprintf (outfile, "SAC_ND_SET__RC( %s, 1)\n", to_nt);
+    fprintf (outfile, "SAC_ND_ALLOC_BEGIN( %s, 1)\n", to_nt);
 
     /* copy descriptor entries and mirror */
     ICMCompileND_COPY__SHAPE (to_nt, to_sdim, from_nt, from_sdim);
 
     INDENT;
-    fprintf (outfile, "SAC_ND_ALLOC__DATA( %s)\n", to_nt);
+    fprintf (outfile, "SAC_ND_ALLOC_END( %s, 1)\n", to_nt);
 
     INDENT;
     fprintf (outfile, "SAC_ND_COPY__DATA( %s, %s, %s)\n", to_nt, from_nt, copyfun);
@@ -1589,7 +1589,8 @@ ICMCompileND_CREATE__VECT__SHAPE (char *nt, int sdim, int val_size, char **vala_
     for (i = 0; i < val_size; i++) {
         if ((vala_any[i][0] != '(') ||
             /* not a tagged id -> is a constant scalar! */
-            (ICUGetDataClass (vala_any[i]) == C_scl)) {
+            (ICUGetDataClass (vala_any[i]) == C_scl)
+            || (ICUGetDataClass (vala_any[i]) == C_hid)) {
             entries_are_scalars = TRUE;
         }
     }
@@ -1643,7 +1644,8 @@ ICMCompileND_CREATE__VECT__DATA (char *nt, int sdim, int val_size, char **vala_a
     for (i = 0; i < val_size; i++) {
         if ((vala_any[i][0] != '(') ||
             /* not a tagged id -> is a constant scalar! */
-            (ICUGetDataClass (vala_any[i]) == C_scl)) {
+            (ICUGetDataClass (vala_any[i]) == C_scl)
+            || (ICUGetDataClass (vala_any[i]) == C_hid)) {
             entries_are_scalars = TRUE;
         }
     }
@@ -1658,7 +1660,7 @@ ICMCompileND_CREATE__VECT__DATA (char *nt, int sdim, int val_size, char **vala_a
     } else {
         if (val_size > 0) {
             INDENT;
-            fprintf (outfile, "{ int SAC__i = 0;\n");
+            fprintf (outfile, "{ int SAC_i = 0; int SAC_j;\n");
             indent++;
             for (i = 0; i < val_size; i++) {
                 /* check whether all entries have identical size */
@@ -1676,13 +1678,13 @@ ICMCompileND_CREATE__VECT__DATA (char *nt, int sdim, int val_size, char **vala_a
                 /* assign values of entry */
                 INDENT;
                 fprintf (outfile,
-                         "for ( ; SAC__i < %d * SAC_ND_A_SIZE( %s); SAC__i++) "
-                         "{\n",
-                         (i + 1), vala_any[i]);
+                         "for (SAC_j = 0; SAC_j < SAC_ND_A_SIZE( %s);"
+                         " SAC_i++, SAC_j++) {\n",
+                         vala_any[i]);
                 indent++;
                 INDENT;
                 fprintf (outfile,
-                         "SAC_ND_WRITE( %s, SAC__i) = SAC_ND_READ( %s, SAC__i)"
+                         "SAC_ND_WRITE( %s, SAC_i) = SAC_ND_READ( %s, SAC_j)"
                          ";\n",
                          nt, vala_any[i]);
                 indent--;
@@ -1691,7 +1693,7 @@ ICMCompileND_CREATE__VECT__DATA (char *nt, int sdim, int val_size, char **vala_a
             }
             INDENT;
             fprintf (outfile,
-                     "SAC_ASSURE_TYPE( (SAC__i == SAC_ND_A_SIZE( %s)),"
+                     "SAC_ASSURE_TYPE( (SAC_i == SAC_ND_A_SIZE( %s)),"
                      " (\"Assignment with incompatible types found!\"));\n",
                      nt);
             indent--;
@@ -2169,7 +2171,7 @@ PrfModarray_Data (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
 
     if ((val_any[0] != '(') ||
         /* not a tagged id -> is a constant scalar! */
-        (ICUGetDataClass (val_any) == C_scl)) {
+        (ICUGetDataClass (val_any) == C_scl) || (ICUGetDataClass (val_any) == C_hid)) {
         /*
          * 'val_any' is scalar
          */
@@ -3238,7 +3240,7 @@ ICMCompileND_KD_ROT_CxSxA_A (int rotdim, char **numstr, int dima, char *a, char 
               InitPtr (fprintf (outfile, "-SAC_shift0"), fprintf (outfile, "0")),
               FillRes (res, INDENT; fprintf (outfile, "SAC_isrc+=SAC_bl0;\n"); INDENT;
                        fprintf (outfile, "for (SAC_i0 = 0; SAC_i0 < SAC_shift0;"
-                                         " SAC_i0++, SAC_idest++,SAC_isrc++)\n");
+                                         " SAC_i0++, SAC_idest++, SAC_isrc++)\n");
                        indent++; INDENT; fprintf (outfile,
                                                   "SAC_ND_WRITE_ARRAY( %s, SAC_idest) ="
                                                   " SAC_ND_READ_ARRAY( %s, SAC_isrc);\n",
