@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.82  1999/01/15 15:21:58  cg
+ * modified intrinsic option.
+ *
  * Revision 1.81  1999/01/07 14:01:01  sbs
  * more sophisticated breaking facilities inserted;
  * Now, a break in a specific cycle can be triggered!
@@ -112,6 +115,11 @@
  *
  * Revision 1.50  1997/08/07 11:13:38  dkr
  * added option -_DBUG<from>/<to>/<string>
+ *
+ *
+ *
+ * Revision 1.2  1994/11/10  15:44:34  sbs
+ * RCS-header inserted
  *
  *
  */
@@ -283,6 +291,7 @@ usage ()
             "\t -noAE \t\tno array elimination \n"
             "\t -noRCO\t\tno refcount optimization \n"
             "\t -noUIP\t\tno update-in-place \n"
+            /*    "\t -noTILE\t\tno tiling (blocking) \n" */
             "\n\tLower case letters may be used instead!\n");
 
     printf ("\n\t -maxoptcycles <no>\trepeat optimization phase <no> times\n"
@@ -361,25 +370,25 @@ usage ()
 
             "\t -profile [afilw]+ \tinclude runtime analysis\n"
             "\t\t\t\t  a: analyse all (same as filw)\n"
-            "\t\t\t\t  f: analyse time spend in non-inline functions\n"
-            "\t\t\t\t  i: analyse time spend in inline functions\n"
-            "\t\t\t\t  l: analyse time spend in library functions\n"
+            "\t\t\t\t  f: analyse time spent in non-inline functions\n"
+            "\t\t\t\t  i: analyse time spent in inline functions\n"
+            "\t\t\t\t  l: analyse time spent in library functions\n"
             "\t\t\t\t  w: analyse time spent in with-loops\n"
 
             "\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
 
-            "\t -intrinsic [a+-*/ptdcr]+ \tuse intrinsic array operations\n"
+            "\t -intrinsic [a+-x/tdcro]+ \tuse intrinsic array operations\n"
             "\t\t\t\t\t  a: use all intrinsic operations available\n"
-            "\t\t\t\t\t     (same as +-*/ptdcr)\n"
+            "\t\t\t\t\t     (same as +-x/tdcro)\n"
             "\t\t\t\t\t  +: use intrinsic add\n"
             "\t\t\t\t\t  -: use intrinsic sub\n"
-            "\t\t\t\t\t  *: use intrinsic mul\n"
+            "\t\t\t\t\t  x: use intrinsic mul\n"
             "\t\t\t\t\t  /: use intrinsic div\n"
-            "\t\t\t\t\t  p: use intrinsic psi\n"
             "\t\t\t\t\t  t: use intrinsic take\n"
             "\t\t\t\t\t  d: use intrinsic drop\n"
             "\t\t\t\t\t  c: use intrinsic cat\n"
             "\t\t\t\t\t  r: use intrinsic rotate\n"
+            "\t\t\t\t\t  o: use intrinsic type conversion\n"
 
             "\n\nLINK OPTIONS:\n\n"
 
