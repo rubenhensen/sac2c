@@ -66,7 +66,8 @@
  *     Internally used dbug variables which must be global.
  */
 
-#include "stdio.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifndef DBUG_OFF
 extern int _db_on_;          /* TRUE if debug currently enabled */
