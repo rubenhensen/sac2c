@@ -8,4 +8,6 @@ icm_args.c
 icm_comment.c
 icm_decl.c
 icm_trace.c
+precompile.c
+precompile.h
 trace.h
