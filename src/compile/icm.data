@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  1998/05/12 13:27:48  dkr
+ * added WL_FOLD... macros
+ *
  * Revision 1.30  1998/05/07 16:22:07  dkr
  * changed signature of WL_BEGIN, WL_ASSIGN, WL_END
  *
@@ -471,13 +474,22 @@ ICM_END( ND_KS_VECT2OFFSET, (name, dim, dims, s))
  * ICMs for compilation of new with-loop
  */
 
-#if defined(WL_BEGIN) || defined(ICM_ALL)
-ICM_DEF( WL_BEGIN, TRACE_UDF)
+#if defined(WL_NONFOLD_BEGIN) || defined(ICM_ALL)
+ICM_DEF( WL_NONFOLD_BEGIN, TRACE_UDF)
   ICM_STR(array)
   ICM_STR(idx_vec)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalar)
-ICM_END( WL_BEGIN, (array, idx_vec, dims, idx_scalar))
+ICM_END( WL_NONFOLD_BEGIN, (array, idx_vec, dims, idx_scalar))
+#endif
+
+#if defined(WL_FOLD_BEGIN) || defined(ICM_ALL)
+ICM_DEF( WL_FOLD_BEGIN, TRACE_UDF)
+  ICM_STR(array)
+  ICM_STR(idx_vec)
+  ICM_INT(dims)
+  ICM_VAR(dims, idx_scalar)
+ICM_END( WL_FOLD_BEGIN, (array, idx_vec, dims, idx_scalar))
 #endif
 
 #if defined(WL_END) || defined(ICM_ALL)
@@ -497,4 +509,14 @@ ICM_DEF( WL_ASSIGN, TRACE_UDF)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalar)
 ICM_END( WL_ASSIGN, (expr, array, idx_vec, dims, idx_scalar))
+#endif
+
+#if defined(WL_FOLD) || defined(ICM_ALL)
+ICM_DEF( WL_FOLD, TRACE_UDF)
+  ICM_STR(expr)
+  ICM_STR(array)
+  ICM_STR(idx_vec)
+  ICM_INT(dims)
+  ICM_VAR(dims, idx_scalar)
+ICM_END( WL_FOLD, (expr, array, idx_vec, dims, idx_scalar))
 #endif
