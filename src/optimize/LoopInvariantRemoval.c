@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/07/10 07:33:37  asi
+ * Revision 1.15  1995/07/28 12:58:43  asi
+ * added loop invarant unswitching
+ *
+ * Revision 1.14  1995/07/10  07:33:37  asi
  * removed bblock from structure node
  *
  * Revision 1.13  1995/07/07  15:00:57  asi
@@ -61,6 +64,7 @@
 #include "my_debug.h"
 #include "traverse.h"
 #include "typecheck.h"
+#include "access_macros.h"
 
 #include "optimize.h"
 #include "DupTree.h"
@@ -76,12 +80,14 @@ extern node *MakeNode (nodetype); /* defined in sac.y or y.tab.c respectively */
 #define UBD_MAKE arg_info->mask[5]
 
 #define MOVE arg_node->flag
+#define UNSWITCH 3
 #define MAYBE_UP 2
 #define MOVE_UP 1
 #define NONE 0
 #define MOVE_DOWN -1
 #define CAUTION -2
 #define DONE -3
+#define CAUTION_UNSWITCH -4
 
 #define TRUE 1
 #define FALSE 0
@@ -93,12 +99,14 @@ extern node *MakeNode (nodetype); /* defined in sac.y or y.tab.c respectively */
 #define LOOP_TYPE arg_info->nodetype
 #define UP arg_info->node[0]
 #define DOWN arg_info->node[1]
-#define TYPE arg_info->node[2]
+#define LIR_TYPE arg_info->node[4]
+#define COND_CHAIN arg_info->node[3]
 
 #define MAXVARNO arg_info->lineno
 
 int lir_expr_no;
 int print_warning = TRUE;
+int invaruns = 1;
 
 /*
  *
@@ -162,12 +170,12 @@ LIRfundef (node *arg_node, node *arg_info)
 
     arg_node = OptTrav (arg_node, arg_info, 0); /* functionbody */
 
-    if (NULL != TYPE) {
+    if (NULL != LIR_TYPE) {
         if (NULL == arg_node->node[0]->node[1])
             arg_node->node[0]->nnode++;
         arg_node->node[0]->node[1]
-          = AppendNodeChain (0, arg_node->node[0]->node[1], TYPE);
-        TYPE = NULL;
+          = AppendNodeChain (0, arg_node->node[0]->node[1], LIR_TYPE);
+        LIR_TYPE = NULL;
     }
     arg_node->varno = VARNO;
 
@@ -395,10 +403,10 @@ NodeBehindCast (node *arg_node)
 node *
 LIRMassign (node *arg_node, node *arg_info)
 {
-    node *move_node, *next_node;
+    node *move_node, *next_node, *old_node1;
     ids *ids_node;
     int all_up = TRUE;
-    int todo;
+    int todo, old_nnode;
 
     DBUG_ENTER ("LIRMassign");
     DBUG_PRINT ("LIR",
@@ -416,6 +424,25 @@ LIRMassign (node *arg_node, node *arg_info)
     }
 
     switch (todo) {
+    case UNSWITCH:
+
+        DBUG_PRINT ("LIR", ("Line %d unswitched.", arg_node->lineno));
+        MinusMask (USE_IN, arg_node->node[0]->mask[1], VARNO);
+        lir_expr++;
+        old_nnode = arg_node->nnode;
+        old_node1 = arg_node->node[1];
+        arg_node->nnode = 1;
+        arg_node->node[1] = NULL;
+        arg_node->flag = invaruns;
+        UP = AppendNodeChain (1, UP, arg_node);
+        arg_node = MakeNode (N_assign);
+        arg_node->nnode = old_nnode;
+        arg_node->node[0] = MakeNode (N_info);
+        arg_node->node[0]->flag = invaruns++;
+        if (2 == arg_node->nnode)
+            arg_node->node[1] = LIRMassign (old_node1, arg_info);
+        break;
+
     case MOVE_UP: /* move whole assignment above loop */
 
         DBUG_PRINT ("LIR", ("Line %d moved up.", arg_node->lineno));
@@ -490,7 +517,7 @@ LIRMassign (node *arg_node, node *arg_info)
                 /* make new vardec for defined variable */
                 new_vardec = DupDecleration (arg_node->node[0]->info.ids->node,
                                              GenCseVar (lir_expr_no), arg_info);
-                TYPE = AppendNodeChain (0, TYPE, new_vardec);
+                LIR_TYPE = AppendNodeChain (0, LIR_TYPE, new_vardec);
 
                 /* make new ids-node for move-node */
                 new_ids = MakeIds (GenCseVar (lir_expr_no));
@@ -531,7 +558,7 @@ LIRMassign (node *arg_node, node *arg_info)
                 /* make new vardec for defined variable */
                 new_vardec = DupDecleration (arg_node->node[0]->info.ids->node,
                                              GenCseVar (lir_expr_no), arg_info);
-                TYPE = AppendNodeChain (0, TYPE, new_vardec);
+                LIR_TYPE = AppendNodeChain (0, LIR_TYPE, new_vardec);
 
                 /* make new ids-node for move-node */
                 new_ids = MakeIds (GenCseVar (lir_expr_no));
@@ -593,7 +620,6 @@ LIRMassign (node *arg_node, node *arg_info)
             arg_node = NULL;
         }
         break;
-
     default:
         arg_node = OptTrav (arg_node, arg_info, 1);
         if (NULL == arg_node->node[1]) {
@@ -814,7 +840,7 @@ node *
 CheckUp (node *arg_node, node *arg_info)
 {
     int term1 = TRUE, term2 = TRUE, term3 = TRUE, term4 = TRUE, term5, term6, term7;
-    int i, getvar = 0;
+    int i, getvar = 0, cond = -1;
     ids *ids_node;
     node *node_behind;
     long *used_vars;
@@ -834,28 +860,64 @@ CheckUp (node *arg_node, node *arg_info)
     for (i = 0; i < VARNO; i++) {
         if (0 < used_vars[i]) {
             if (UNDEF == UBD[i])
-                UBD[i] = TRUE;
+                UBD[i] = TRUE; /* is variable used before defined       */
             if (TRUE == UBD[i])
-                term1 = FALSE;
+                term1 = FALSE; /* if used before defined, don't move up */
             if (FALSE == LINVAR[i])
-                term2 = FALSE;
+                term2 = FALSE; /* is variable still loop invariant      */
         }
         if (0 < DEF[i]) {
             if (UNDEF == UBD[i])
-                UBD[i] = FALSE;
+                UBD[i] = FALSE; /* is variable not used before defined   */
         }
     }
 
+    /*
+     * If all terms TRUE, mark this node as MOVE_UP
+     */
     if (term1 && term2 && term3 && term4 && (N_return != arg_node->node[0]->nodetype)) {
         MOVE = MOVE_UP;
     } else {
-        MOVE = NONE;
-        for (i = 0; i < VARNO; i++) {
-            if ((0 < used_vars[i]) && (TRUE == UBD_MAKE[i])) {
-                MOVE = CAUTION;
+        if (N_cond != arg_node->node[0]->nodetype) {
+            MOVE = NONE;
+            for (i = 0; i < VARNO; i++) {
+                if ((0 < used_vars[i]) && (TRUE == UBD_MAKE[i])) {
+                    MOVE = CAUTION;
+                }
             }
-        }
-    }
+        } else
+        /*
+         * Unswitch conditional ?
+         */
+        {
+            if (N_id == arg_node->node[0]->node[0]->nodetype)
+                cond = arg_node->node[0]->node[0]->IDS_VARNO;
+
+            if (-1 == cond)
+                MOVE = UNSWITCH;
+            else {
+                if (UNDEF == UBD[cond])
+                    UBD[cond] = TRUE;
+                if ((TRUE == UBD[cond]) || (FALSE == LINVAR[cond])) {
+                    MOVE = NONE;
+                    for (i = 0; i < VARNO; i++) {
+                        if ((0 < used_vars[i]) && (TRUE == UBD_MAKE[i])) {
+                            MOVE = CAUTION;
+                        }
+                    }
+                } else {
+                    MOVE = UNSWITCH;
+                    for (i = 0; i < VARNO; i++) {
+                        if ((((0 < used_vars[i]) && (i != cond))
+                             || ((1 < used_vars[i]) && (i == cond)))
+                            && (TRUE == UBD_MAKE[i])) {
+                            MOVE = CAUTION_UNSWITCH;
+                        } /* if */
+                    }     /* for */
+                }         /* else */
+            }             /* else */
+        }                 /* else */
+    }                     /* else */
 
     if (MOVE_UP == MOVE) {
         if (N_let == arg_node->node[0]->nodetype) {
@@ -979,12 +1041,18 @@ CheckUp (node *arg_node, node *arg_info)
         }
     }
 
-    if ((NONE == MOVE) || (CAUTION == MOVE)) {
+    /*
+     * if no movements are possible, set the LINVAR-mask and UBD_MAKE
+     */
+    if ((NONE == MOVE) || (CAUTION == MOVE) || (UNSWITCH == MOVE)
+        || (CAUTION_UNSWITCH == MOVE)) {
         for (i = 0; i < VARNO; i++) {
             if (0 < DEF[i]) {
                 LINVAR[i] = FALSE;
             }
-            if ((0 < used_vars[i]) && (TRUE == UBD_MAKE[i])) {
+            if ((((0 < used_vars[i]) && (i != cond))
+                 || ((1 < used_vars[i]) && (i == cond)))
+                && (TRUE == UBD_MAKE[i])) {
                 UBD_MAKE[i] = FALSE;
             }
         }
@@ -1017,7 +1085,7 @@ node *
 CheckDown (node *arg_node, node *arg_info)
 {
     int term1 = TRUE, term2 = TRUE, term3 = TRUE, term4, term5;
-    int i, trap;
+    int i, trap, cond = -1;
     ids *ids_node;
     node *node_behind;
     long *used_vars;
@@ -1033,6 +1101,17 @@ CheckDown (node *arg_node, node *arg_info)
     node_behind = NodeBehindCast (arg_node->node[0]->node[0]);
 
     used_vars = GetUsed (arg_node, node_behind);
+
+    if (((CAUTION_UNSWITCH == MOVE) || (UNSWITCH == MOVE))
+        && (N_id == arg_node->node[0]->node[0]->nodetype))
+        cond = arg_node->node[0]->node[0]->IDS_VARNO;
+
+    if (CAUTION_UNSWITCH == MOVE) {
+        trap = TRUE;
+        MOVE = UNSWITCH;
+    } else {
+        trap = FALSE;
+    }
 
     if (CAUTION == MOVE) {
         trap = TRUE;
@@ -1072,7 +1151,7 @@ CheckDown (node *arg_node, node *arg_info)
      * If this expression might be moved above loop, check if there are definitions
      * that might not be moved above loop but might be moved below the loop.
      */
-    if (MOVE_UP == MOVE) {
+    if ((MOVE_UP == MOVE) || (UNSWITCH == MOVE)) {
         if (N_let == arg_node->node[0]->nodetype) {
             ids_node = arg_node->node[0]->info.ids;
 
@@ -1096,7 +1175,8 @@ CheckDown (node *arg_node, node *arg_info)
     /*
      * if no movements are possible, set the LINVAR-mask.
      */
-    if ((NONE == MOVE) || ((N_let != arg_node->node[0]->nodetype) && (MOVE_UP == MOVE))) {
+    if ((NONE == MOVE) || (UNSWITCH == MOVE)
+        || ((N_let != arg_node->node[0]->nodetype) && (MOVE_UP == MOVE))) {
         for (i = 0; i < VARNO; i++) {
             if (0 < DEF[i]) {
                 LINVAR[i] = FALSE;
@@ -1124,7 +1204,7 @@ CheckDown (node *arg_node, node *arg_info)
     /*
      * if no movements are possible, set the LINVAR-mask.
      */
-    if ((NONE == MOVE) || (MOVE_UP == MOVE)) {
+    if ((NONE == MOVE) || (MOVE_UP == MOVE) || (UNSWITCH == MOVE)) {
         for (i = 0; i < VARNO; i++) {
             if ((0 < used_vars[i]) && (TRUE == LINVAR[i])) {
                 LINVAR[i] = FALSE;
@@ -1144,6 +1224,42 @@ CheckDown (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 } /* END - CheckDown */
 
+node *
+InvarUnswitch (node *arg_node, node *loop_node, node *arg_info)
+{
+    DBUG_ENTER ("InvarUnswitch");
+    if (2 == arg_node->nnode)
+        loop_node = InvarUnswitch (arg_node->node[1], loop_node, arg_info);
+    arg_node->nnode = 1;
+    arg_node->node[1] = NULL;
+    DBUG_PRINT ("LIR",
+                ("Moving nodetype %s up", mdb_nodetype[arg_node->node[0]->nodetype]));
+    if (NONE != MOVE) {
+        UNS_NO = MOVE;
+        DUPTYPE = INVARIANT;
+        UNS_NODES = arg_node->node[0]->node[1]->node[0];
+        arg_node->node[0]->node[1]->node[0] = DupTree (loop_node, arg_info);
+        UNS_NODES = arg_node->node[0]->node[2]->node[0];
+        arg_node->node[0]->node[2]->node[0] = DupTree (loop_node, arg_info);
+        MOVE = NONE;
+    } else {
+        arg_node = AppendNodeChain (1, arg_node, loop_node);
+    }
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *  functionname  : LIRsubexpr
+ *  arguments     :
+ *  description   :
+ *  global vars   : syntax_tree
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...
+ *
+ *  remarks       : --
+ *
+ */
 node *
 LIRsubexpr (node *arg_node, node *arg_info)
 {
@@ -1166,31 +1282,54 @@ LIRsubexpr (node *arg_node, node *arg_info)
             arg_node = OptTrav (arg_node, arg_info, 0);
             break;
         case N_do:
+            invaruns = 1;
             arg_node->node[0] = Trav (arg_node->node[0], arg_info);
             act_tab = lir_mov_tab;
 
             arg_node = OptTrav (arg_node, arg_info, 0);
 
-            /* Calculate variables, which are relative in loop       */
-            /* UBD-mask already linked to arg_node->node[0]->mask[2] */
-            for (i = 0; i < VARNO; i++) {
-                if ((0 == DEF[i])
-                    && ((0 < arg_node->node[0]->node[1]->mask[1][i])
-                        || (0 < arg_node->node[0]->mask[1][i])))
-                    arg_node->node[0]->mask[2][i] = TRUE;
-            }
-
-            if (NULL != UP)
-                arg_node->node[0]->flag = DONE;
             act_tab = lir_tab;
-            PlusChainMasks (1, DOWN, arg_info);
-            arg_node->node[1] = AppendNodeChain (1, DOWN, arg_node->node[1]);
-            if ((1 == arg_node->nnode) && (NULL != DOWN))
-                arg_node->nnode = 2;
-            DOWN = NULL;
-            PlusChainMasks (1, UP, arg_info);
-            arg_node = AppendNodeChain (1, UP, arg_node);
-            UP = NULL;
+
+            if (1 < invaruns) {
+                node *arg_info2, *next_node;
+
+                MinusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
+                MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
+                arg_info2 = MakeNode (N_info);
+                next_node = arg_node->node[1];
+                arg_node->node[1] = NULL;
+                arg_node->nnode = 1;
+                new_node = InvarUnswitch (UP, arg_node, arg_info2);
+                FreeTree (arg_node);
+                UP = NULL;
+                FREE (arg_info2);
+                next_node = AppendNodeChain (1, DOWN, next_node);
+                DOWN = NULL;
+                arg_node = AppendNodeChain (1, new_node, next_node);
+                arg_node = GenerateMasks (arg_node, arg_info);
+            } else {
+                /* Calculate variables, which are relative in loop       */
+                /* UBD-mask already linked to arg_node->node[0]->mask[2] */
+                for (i = 0; i < VARNO; i++) {
+                    if ((0 == DEF[i])
+                        && ((0 < arg_node->node[0]->node[1]->mask[1][i])
+                            || (0 < arg_node->node[0]->mask[1][i])))
+                        arg_node->node[0]->mask[2][i] = TRUE;
+                }
+
+                if (NULL != UP)
+                    arg_node->node[0]->flag = DONE;
+
+                PlusChainMasks (1, DOWN, arg_info);
+                arg_node->node[1] = AppendNodeChain (1, DOWN, arg_node->node[1]);
+                if ((1 == arg_node->nnode) && (NULL != DOWN))
+                    arg_node->nnode = 2;
+                DOWN = NULL;
+
+                PlusChainMasks (1, UP, arg_info);
+                arg_node = AppendNodeChain (1, UP, arg_node);
+                UP = NULL;
+            }
             break;
         case N_while: {
             long *used_mask;
@@ -1351,9 +1490,6 @@ LIRassign (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("LIRassign");
 
-    DBUG_PRINT ("LIR", ("Travers assign - %s, line - %d",
-                        mdb_nodetype[arg_node->node[0]->nodetype], arg_node->lineno));
-
     /* optimize subexpression */
     arg_node = LIRsubexpr (arg_node, arg_info);
 
@@ -1367,6 +1503,9 @@ LIRassign (node *arg_node, node *arg_info)
     case N_with:
     case N_while:
     case N_do:
+        DBUG_PRINT ("LIR", ("Travers assign - %s, line - %d",
+                            mdb_nodetype[arg_node->node[0]->nodetype], arg_node->lineno));
+
         switch (arg_node->node[0]->nodetype) {
         case N_cond:
         case N_while:
