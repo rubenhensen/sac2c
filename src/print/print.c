@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.53  1995/04/04 11:33:49  sbs
+ * Revision 1.54  1995/04/05 07:39:43  hw
+ * extended PrintIcm
+ *
+ * Revision 1.53  1995/04/04  11:33:49  sbs
  * ";" at the end of ICM-Assigns eleminated; include inserted
  *
  * Revision 1.52  1995/04/04  09:34:26  sbs
@@ -865,6 +868,12 @@ PrintIcm (node *arg_node, node *arg_info)
         if (NULL != arg_node->node[0])
             Trav (arg_node->node[0], arg_info);
         fprintf (outfile, ")");
+    }
+
+    if (NULL != arg_node->node[1]) {
+        if ((1 == show_icm) || (0 == compiled_icm))
+            fprintf (outfile, ", ");
+        Trav (arg_node->node[1], arg_info);
     }
 
     DBUG_RETURN (arg_node);
