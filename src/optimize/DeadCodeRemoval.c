@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/03/24 16:08:00  asi
+ * Revision 1.7  1995/05/15 08:42:08  asi
+ * third mask - lokal defined - removed. No longer needed, because of
+ * variable renaming in flatten.c .
+ *
+ * Revision 1.6  1995/03/24  16:08:00  asi
  * ci - Error removed
  *
  * Revision 1.5  1995/03/24  16:01:08  asi
@@ -104,7 +108,6 @@ DEADfundef (node *arg_node, node *arg_info)
         TRAV_1 = 0;
         arg_info->mask[0] = GenMask (VARNO);
         arg_info->mask[1] = GenMask (VARNO);
-        arg_info->mask[2] = GenMask (VARNO);
         arg_info->mask[4] = GenMask (VARNO);
         arg_node->node[0]
           = Trav (arg_node->node[0], arg_info); /* Trav body of function */
@@ -113,14 +116,12 @@ DEADfundef (node *arg_node, node *arg_info)
         MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
         FREE (arg_info->mask[0]);
         FREE (arg_info->mask[1]);
-        FREE (arg_info->mask[2]);
         FREE (arg_info->mask[4]);
 
         if (arg_node->node[0]->node[1] != NULL) /* Dead-Variable-Removal */
         {
             arg_info->mask[0] = arg_node->mask[0];
             arg_info->mask[1] = arg_node->mask[1];
-            arg_info->mask[2] = arg_node->mask[2];
             arg_node->node[0]->node[1] = Trav (arg_node->node[0]->node[1], arg_info);
             if (arg_node->node[0]->node[1] == NULL)
                 arg_node->node[0]->nnode--;
@@ -162,8 +163,7 @@ DEADvardec (node *arg_node, node *arg_info)
             arg_node->nnode--;
     }
     if ((arg_info->mask[0][arg_node->varno] == 0)
-        && (arg_info->mask[1][arg_node->varno] == 0)
-        && (arg_info->mask[2][arg_node->varno] == 0)) {
+        && (arg_info->mask[1][arg_node->varno] == 0)) {
         dead_var++;
         DBUG_PRINT ("DEAD",
                     ("Variable decleration %s removed", arg_node->info.types->id));
@@ -295,7 +295,6 @@ DEADassign (node *arg_node, node *arg_info)
                                      arg_node->lineno));
                 PlusMask (arg_info->mask[0], arg_node->mask[0], VARNO);
                 PlusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
-                PlusMask (arg_info->mask[2], arg_node->mask[2], VARNO);
                 if (olditype != N_fundef)
                     MinusMask (arg_info->mask[4], arg_node->mask[1], VARNO);
                 return_node = arg_node->node[1]; /* remove this assignment */
@@ -311,7 +310,6 @@ DEADassign (node *arg_node, node *arg_info)
                 if (!TRAV_1) {
                     MinusMask (arg_node->mask[0], arg_info->mask[0], VARNO);
                     MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
-                    MinusMask (arg_node->mask[2], arg_info->mask[2], VARNO);
                 }
             }
             break;
@@ -568,15 +566,12 @@ DEADwith (node *arg_node, node *arg_info)
             arg_node->node[1]->node[0]
               = Trav (arg_node->node[1]->node[0], arg_info); /* Trav body */
 
-        MinusMask (arg_node->mask[2], arg_info->mask[0], VARNO);
+        MinusMask (arg_node->mask[0], arg_info->mask[0], VARNO);
         MinusMask (arg_node->mask[1], arg_info->mask[1], VARNO);
         PlusMask (arg_info->mask[0], oldmask[0], VARNO);
         PlusMask (arg_info->mask[1], oldmask[1], VARNO);
         FREE (oldmask[0]);
         FREE (oldmask[1]);
-        oldmask[0] = arg_info->mask[0];
-        arg_info->mask[0] = arg_info->mask[2];
-        arg_info->mask[2] = oldmask[0];
         OrMask (arg_info->mask[4], arg_node->node[0]->mask[1], VARNO);
         OrMask (arg_info->mask[4], arg_node->node[1]->mask[1], VARNO);
     }
