@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.34  1995/12/01 20:26:49  cg
+ * Revision 1.35  1995/12/21 16:08:56  cg
+ * added option -flink_module
+ *
+ * Revision 1.34  1995/12/01  20:26:49  cg
  * changed compilation sequence: objinit.c now after import.c
  *
  * Revision 1.33  1995/12/01  17:12:23  cg
@@ -193,8 +196,8 @@ usage (char *prg_name)
     printf ("\t\t\t\tw with loop execution\n");
 
     printf ("\nCOMPILER OPTIONS:\n");
-    printf ("\t -fcheck_boundary\tcheck boundary of arrays while access\n");
-    /*   printf("\t -noSIB\t\t\tdon't write SIB-file\n"); */
+    printf ("\t -fcheck_boundary\tcheck boundary of arrays when accessing\n");
+    printf ("\t -flink_module\t\tlink module/class with imported modules and classes\n");
 
     printf ("\nC-COMPILER OPTIONS:\n");
     printf ("\t  (these options handed to the C-compiler)\n");
