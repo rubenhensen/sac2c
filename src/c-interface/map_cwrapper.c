@@ -1,8 +1,25 @@
 /*
  * $Log$
+ * Revision 1.7  2000/07/14 15:56:51  nmw
+ * global object handling enabled
+ *
  * Revision 1.6  2000/07/12 10:05:13  nmw
  * RCS-Header added
  *
+ * Revision 1.5  2000/07/12 09:23:59  nmw
+ * returntype counting modified
+ *
+ * Revision 1.4  2000/07/07 15:34:35  nmw
+ * counting of artificial results added
+ *
+ * Revision 1.3  2000/07/06 15:55:42  nmw
+ * cosmetic changes on output
+ *
+ * Revision 1.2  2000/07/06 10:07:22  nmw
+ * comments changed
+ *
+ * Revision 1.1  2000/07/05 11:38:19  nmw
+ * Initial revision
  *
  *
  */
@@ -43,19 +60,13 @@ MCWmodul (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("MCWmodul");
 
-    if (MODUL_OBJS (arg_node) != NULL) {
-        SYSWARN (("the c interface cannot handle global objects so far"));
-        CONT_WARN (("creating no c-library and interface"));
-        generatelibrary &= (!GENERATELIBRARY_C);
-    } else {
-        if (MODUL_FUNS (arg_node) != NULL) {
-            /* if there are some fundefs, traverse them */
-            NOTE (("analyse overloading of sac-functions...\n"));
-            INFO_MCW_MODUL (arg_info) = arg_node;
+    if (MODUL_FUNS (arg_node) != NULL) {
+        /* if there are some fundefs, traverse them */
+        NOTE (("analyse overloading of sac-functions...\n"));
+        INFO_MCW_MODUL (arg_info) = arg_node;
 
-            /* the modul node is needed to hang the wrapperchain in N_module */
-            Trav (MODUL_FUNS (arg_node), arg_info);
-        }
+        /* the modul node is needed to hang the wrapperchain in N_module */
+        Trav (MODUL_FUNS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
