@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/08/04 14:36:45  bs
+ *  reinitial revision
+ *
  * Revision 2.5  1999/05/10 11:12:59  bs
  * All functions of the tsi moved to wl_access_analyze.c
  *
@@ -40,6 +43,12 @@
 
 #define _tile_size_inference_h
 
+#define NUM_OF_CACHEPARAM 3
+
 extern node *TileSizeInference (node *arg_node);
+extern node *TSIfundef (node *arg_node, node *arg_info);
+extern node *TSIblock (node *arg_node, node *arg_info);
+extern node *TSInwith (node *arg_node, node *arg_info);
+extern node *TSIncode (node *arg_node, node *arg_info);
 
 #endif /* _tile_size_inference_h  */
