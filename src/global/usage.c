@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2002/07/15 19:05:07  dkr
+ * -intrinsic flag modified for TAGGED_ARRAYS
+ *
  * Revision 3.23  2002/07/10 16:33:38  dkr
  * -b2:yacc added
  *
@@ -646,23 +649,27 @@ usage ()
             STR_OR_EMPTY (env),
             ((NULL != env) && (env[strlen (env) - 1] != '/')) ? "/" : "", version_id);
 
-#ifndef TAGGED_ARRAYS
     printf ("\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
 
             "\t -intrinsic [a+-x/tdcrpo]+ \tuse intrinsic array operations.\n"
             "\t\t\t\t\t  a: use all intrinsic operations\n"
-            "\t\t\t\t\t     available (same as +-x/tdcrpo).\n"
+#ifndef TAGGED_ARRAYS
+            "\t\t\t\t\t     available (same as +-x/tdcrso).\n"
+#else
+            "\t\t\t\t\t     available (same as +-x/so).\n"
+#endif
             "\t\t\t\t\t  +: use intrinsic add.\n"
             "\t\t\t\t\t  -: use intrinsic sub.\n"
             "\t\t\t\t\t  x: use intrinsic mul.\n"
             "\t\t\t\t\t  /: use intrinsic div.\n"
+#ifndef TAGGED_ARRAYS
             "\t\t\t\t\t  t: use intrinsic take.\n"
             "\t\t\t\t\t  d: use intrinsic drop.\n"
             "\t\t\t\t\t  c: use intrinsic cat.\n"
             "\t\t\t\t\t  r: use intrinsic rotate.\n"
+#endif
             "\t\t\t\t\t  s: use intrinsic sel.\n"
             "\t\t\t\t\t  o: use intrinsic type conversion.\n");
-#endif
 
     printf ("\n\nLIBRARY OPTIONS:\n\n"
             "\t -genlib <lang>\tlanguage interface to generate from module.\n"

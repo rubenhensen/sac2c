@@ -1,11 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2002/07/15 19:05:03  dkr
+ * -intrinsic flag modified for TAGGED_ARRAYS
+ *
  * Revision 3.23  2002/07/03 15:27:39  dkr
  * RUNTIMECHECK_TYPE added (for TAGGED_ARRAYS)
- *
- * Revision 3.22  2002/06/24 14:36:24  dkr
- * -intrinsic flag removed for TAGGED_ARRAYS
  *
  * Revision 3.21  2002/06/07 17:11:23  mwe
  * OPT_AL added for AssociativeLaw
@@ -536,7 +536,19 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_OPTION ("initwheap", ARG_NUM (initial_worker_heapsize));
     ARGS_OPTION ("inituheap", ARG_NUM (initial_unified_heapsize));
 
-#ifndef TAGGED_ARRAYS
+#ifdef TAGGED_ARRAYS
+    ARGS_OPTION ("intrinsic", {
+        ARG_FLAGMASK_BEGIN ();
+        ARG_FLAGMASK ('a', intrinsics = INTRINSIC_ALL);
+        ARG_FLAGMASK ('+', intrinsics |= INTRINSIC_ADD);
+        ARG_FLAGMASK ('-', intrinsics |= INTRINSIC_SUB);
+        ARG_FLAGMASK ('x', intrinsics |= INTRINSIC_MUL);
+        ARG_FLAGMASK ('/', intrinsics |= INTRINSIC_DIV);
+        ARG_FLAGMASK ('s', intrinsics |= INTRINSIC_SEL);
+        ARG_FLAGMASK ('o', intrinsics |= INTRINSIC_TO);
+        ARG_FLAGMASK_END ();
+    });
+#else
     ARGS_OPTION ("intrinsic", {
         ARG_FLAGMASK_BEGIN ();
         ARG_FLAGMASK ('a', intrinsics = INTRINSIC_ALL);
