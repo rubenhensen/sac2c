@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.18  2003/09/22 11:17:23  dkr
+# target icm_test modified
+#
 # Revision 3.17  2003/09/19 15:05:13  dkr
 # target icm_test extended: some formating done with sed, code beautifier used
 #
@@ -154,8 +157,9 @@ icm_test: icm_test.C
 	$(CC) -D_SHP_=AUD -D_HID_=NHD -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ | sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
 	$(CC) -D_SHP_=AUD -D_HID_=HID -D_UNQ_=NUQ -I$$SACBASE/runtime -E $^ | sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
 	$(CC) -D_SHP_=AUD -D_HID_=HID -D_UNQ_=UNQ -I$$SACBASE/runtime -E $^ | sed -f icm_test.sed | $(CODE_BEAUTIFIER) -r >> icm_test.log
-	-grep CAT icm_test.log
+	-grep CAT[0-9] icm_test.log
 	-grep NT icm_test.log
+	-grep Item icm_test.log
 	@echo '!!! CPP output can be found in file >>icm_test.log<< !!!'
 
 clean:
