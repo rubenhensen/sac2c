@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/03/02 12:57:53  jhs
+ * Added DBUG_PRINTs.
+ *
  * Revision 1.8  2000/02/22 15:50:07  jhs
  * dummy handling for identifing unique types
  *
@@ -107,6 +110,7 @@ CheckLHSforBigArrays (node *let, int max_small_size)
     types *type;
 
     DBUG_ENTER ("CheckLHSforBigArrays");
+    DBUG_PRINT ("BLKIN", ("begin"));
 
     result = FALSE;
     /* run through ids-chain */
@@ -126,10 +130,13 @@ CheckLHSforBigArrays (node *let, int max_small_size)
         }
         letids = IDS_NEXT (letids);
     }
+
+    DBUG_PRINT ("BLKIN", ("end"));
     DBUG_RETURN (result);
 }
 
 /* #### returns bool */
+/* browses left hand side */
 static int
 CheckLHSforHeavyTypes (node *let)
 {
@@ -139,6 +146,7 @@ CheckLHSforHeavyTypes (node *let)
     types *type;
 
     DBUG_ENTER ("CheckLHSforHeavyTypes");
+    DBUG_PRINT ("BLKIN", ("begin"));
 
     result = FALSE;
     letids = LET_IDS (let);
@@ -159,6 +167,7 @@ CheckLHSforHeavyTypes (node *let)
         letids = IDS_NEXT (letids);
     }
 
+    DBUG_PRINT ("BLKIN", ("end"));
     DBUG_RETURN (result);
 }
 
@@ -169,6 +178,7 @@ testfun (node *fun)
     types *type;
 
     DBUG_ENTER ("testfun");
+    DBUG_PRINT ("BLKIN", ("begin"));
 
     arg = FUNDEF_ARGS (fun);
     while (arg != NULL) {
@@ -187,6 +197,7 @@ testfun (node *fun)
         type = TYPES_NEXT (type);
     }
 
+    DBUG_PRINT ("BLKIN", ("end"));
     DBUG_RETURN (FALSE);
 }
 
