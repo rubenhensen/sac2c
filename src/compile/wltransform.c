@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2001/02/08 16:30:13  dkr
+ * warning about uninitialized variable eliminated
+ *
  * Revision 3.28  2001/02/07 20:16:07  dkr
  * InsertNoopNodes(): NOOP optimization added
  *
@@ -5648,6 +5651,7 @@ InsertNoopNodes (node *wlnode)
 
         default:
             DBUG_ASSERT ((0), "illegal node type found!");
+            is_noop = FALSE;
             break;
         }
     } else {
