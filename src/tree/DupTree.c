@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/02/20 15:52:18  nmw
+ * handling of Avis nodes improved
+ *
  * Revision 3.14  2001/02/16 08:41:29  nmw
  * SSASTACK_INUSE added
  *
@@ -2173,6 +2176,7 @@ DupAvis (node *arg_node, node *arg_info)
     }
     AVIS_SSAPHITARGET (new_node) = AVIS_SSAPHITARGET (arg_node);
     AVIS_SSALPINV (new_node) = AVIS_SSALPINV (arg_node);
+    AVIS_SSADEFINED (new_node) = AVIS_SSADEFINED (arg_node);
     AVIS_SSASTACK (new_node) = DupTree (AVIS_SSASTACK (arg_node));
     AVIS_SSATHEN (new_node) = AVIS_SSATHEN (arg_node);
     AVIS_SSAELSE (new_node) = AVIS_SSAELSE (arg_node);
