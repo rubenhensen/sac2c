@@ -1,9 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/07/04 11:38:35  hw
- * primitive functions ifod, ftod, dtoi, dtof inserted
+ * Revision 1.9  1995/07/07 14:52:14  hw
+ * enlarged macro PRF_IF( there are 4 args now) to generate a new table
+ * called 'prf_name'( this will be done in typecheck.c)
  *
+;; Revision 1.8  1995/07/04  11:38:35  hw
+;; primitive functions ifod, ftod, dtoi, dtof inserted
+;;
 ;; Revision 1.7  1995/06/30  12:21:23  hw
 ;; F_ftoi, F_itof, F_ftoi_A & F_itof_A (primitive functions itof &
 ;; ftoi) inserted
@@ -39,28 +43,41 @@
          least one array as argument.
 */
 
-/*   Node_name       dbug-string[]  prf_string[]*/
+/*   Node_name       dbug-string[]  prf_string[]        prf_name_str[]*/
 
-PRF_IF (F_add, "F_add", "+"), PRF_IF (F_sub, "F_sub", "-"), PRF_IF (F_mul, "F_mul", "*"),
-  PRF_IF (F_div, "F_div", "/"), PRF_IF (F_ftoi, "F_ftoi", "ftoi"),
-  PRF_IF (F_ftod, "F_itof", "ftod"), PRF_IF (F_itof, "F_itof", "itof"),
-  PRF_IF (F_itod, "F_itod", "itod"), PRF_IF (F_dtoi, "F_dtoi", "dtoi"),
-  PRF_IF (F_dtof, "F_dtof", "dtof"), PRF_IF (F_and, "F_and", "&&"),
-  PRF_IF (F_or, "F_or", "||"), PRF_IF (F_not, "F_not", "!"), PRF_IF (F_le, "F_le", "<="),
-  PRF_IF (F_lt, "F_lt", "<"), PRF_IF (F_eq, "F_eq", "=="), PRF_IF (F_ge, "F_ge", ">="),
-  PRF_IF (F_gt, "F_gt", ">"), PRF_IF (F_neq, "F_neq", "!="),
+PRF_IF (F_add, "F_add", "+", "_add"), PRF_IF (F_sub, "F_sub", "-", "_sub"),
+  PRF_IF (F_mul, "F_mul", "*", "_mul"), PRF_IF (F_div, "F_div", "/", "_div"),
+  PRF_IF (F_ftoi, "F_ftoi", "ftoi", "_add"), PRF_IF (F_ftod, "F_itof", "ftod", "_add"),
+  PRF_IF (F_itof, "F_itof", "itof", "_add"), PRF_IF (F_itod, "F_itod", "itod", "_add"),
+  PRF_IF (F_dtoi, "F_dtoi", "dtoi", "_add"), PRF_IF (F_dtof, "F_dtof", "dtof", "_add"),
+  PRF_IF (F_and, "F_and", "&&", "_and"), PRF_IF (F_or, "F_or", "||", "_or"),
+  PRF_IF (F_not, "F_not", "!", "_not"), PRF_IF (F_le, "F_le", "<=", "_le"),
+  PRF_IF (F_lt, "F_lt", "<", "_lt"), PRF_IF (F_eq, "F_eq", "==", "_eq"),
+  PRF_IF (F_ge, "F_ge", ">=", "_ge"), PRF_IF (F_gt, "F_gt", ">", "_gt"),
+  PRF_IF (F_neq, "F_neq", "!=", "_neq"),
 
-  PRF_IF (F_take, "F_take", "take"), PRF_IF (F_drop, "F_drop", "drop"),
-  PRF_IF (F_psi, "F_psi", "psi"), PRF_IF (F_idx_psi, "F_idx_psi", "idx_psi"),
-  PRF_IF (F_shape, "F_shape", "shape"), PRF_IF (F_reshape, "F_reshape", "reshape"),
-  PRF_IF (F_cat, "F_cat", "cat"), PRF_IF (F_dim, "F_dim", "dim"),
-  PRF_IF (F_rotate, "F_rotate", "rotate"), PRF_IF (F_ftoi_A, "F_ftoi_A", "ftoi"),
-  PRF_IF (F_ftod_A, "F_itof_A", "ftod"), PRF_IF (F_itof_A, "F_itof_A", "itof"),
-  PRF_IF (F_itod_A, "F_itod_A", "itod"), PRF_IF (F_dtoi_A, "F_dtoi_A", "dtoi"),
-  PRF_IF (F_dtof_A, "F_dtof_A", "dtof"), PRF_IF (F_add_SxA, "F_add_SxA", "+"),
-  PRF_IF (F_add_AxS, "F_add_AxS", "+"), PRF_IF (F_add_AxA, "F_add_AxA", "+"),
-  PRF_IF (F_sub_SxA, "F_sub_SxA", "-"), PRF_IF (F_sub_AxS, "F_sub_AxS", "-"),
-  PRF_IF (F_sub_AxA, "F_sub_AxA", "-"), PRF_IF (F_mul_SxA, "F_mul_SxA", "*"),
-  PRF_IF (F_mul_AxS, "F_mul_AxS", "*"), PRF_IF (F_mul_AxA, "F_mul_AxA", "*"),
-  PRF_IF (F_div_SxA, "F_div_SxA", "/"), PRF_IF (F_div_AxS, "F_div_AxS", "/"),
-  PRF_IF (F_div_AxA, "F_div_AxA", "/")
+  PRF_IF (F_take, "F_take", "take", "_take"), PRF_IF (F_drop, "F_drop", "drop", "_drop"),
+  PRF_IF (F_psi, "F_psi", "psi", "_psi"),
+  PRF_IF (F_idx_psi, "F_idx_psi", "idx_psi", "_add"),
+  PRF_IF (F_shape, "F_shape", "shape", "_shape"),
+  PRF_IF (F_reshape, "F_reshape", "reshape", "_reshape"),
+  PRF_IF (F_cat, "F_cat", "cat", "_cat"), PRF_IF (F_dim, "F_dim", "dim", "_dim"),
+  PRF_IF (F_rotate, "F_rotate", "rotate", "_rotate"),
+  PRF_IF (F_ftoi_A, "F_ftoi_A", "ftoi", "_add"),
+  PRF_IF (F_ftod_A, "F_itof_A", "ftod", "_add"),
+  PRF_IF (F_itof_A, "F_itof_A", "itof", "_add"),
+  PRF_IF (F_itod_A, "F_itod_A", "itod", "_add"),
+  PRF_IF (F_dtoi_A, "F_dtoi_A", "dtoi", "_add"),
+  PRF_IF (F_dtof_A, "F_dtof_A", "dtof", "_add"),
+  PRF_IF (F_add_SxA, "F_add_SxA", "+", "_add"),
+  PRF_IF (F_add_AxS, "F_add_AxS", "+", "_add"),
+  PRF_IF (F_add_AxA, "F_add_AxA", "+", "_add"),
+  PRF_IF (F_sub_SxA, "F_sub_SxA", "-", "_sub"),
+  PRF_IF (F_sub_AxS, "F_sub_AxS", "-", "_sub"),
+  PRF_IF (F_sub_AxA, "F_sub_AxA", "-", "_sub"),
+  PRF_IF (F_mul_SxA, "F_mul_SxA", "*", "_mul"),
+  PRF_IF (F_mul_AxS, "F_mul_AxS", "*", "_mul"),
+  PRF_IF (F_mul_AxA, "F_mul_AxA", "*", "_mul"),
+  PRF_IF (F_div_SxA, "F_div_SxA", "/", "_div"),
+  PRF_IF (F_div_AxS, "F_div_AxS", "/", "_div"),
+  PRF_IF (F_div_AxA, "F_div_AxA", "/", "_div")
