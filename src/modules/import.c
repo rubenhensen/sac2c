@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.31  1995/11/10 15:04:53  cg
+ * Revision 1.32  1995/12/06 09:49:36  cg
+ * Name of class and its respective type are no longer shared.
+ *
+ * Revision 1.31  1995/11/10  15:04:53  cg
  * converted to new error macros
  *
  * Revision 1.30  1995/11/01  16:31:36  cg
@@ -264,7 +267,7 @@ InsertClassType (node *classdec)
 
     tmp = MakeNode (N_typedef);
     tmp->info.types = MakeTypes (T_hidden);
-    tmp->info.types->id = classdec->info.fun_name.id;
+    tmp->info.types->id = StringCopy (classdec->info.fun_name.id);
     tmp->info.types->id_mod = classdec->info.fun_name.id_mod;
     tmp->info.types->attrib = ST_unique;
     tmp->info.types->status = ST_imported;
