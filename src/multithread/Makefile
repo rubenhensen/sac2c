@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 3.23  2004/08/31 16:56:53  skt
+# replicate_functions.o added
+#
 # Revision 3.22  2004/08/24 16:50:24  skt
 # creation of specialized functions within parallel withloops enabled
 #
@@ -92,7 +95,8 @@ INCS = -I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../flatt
 
 all: multithread.o multithread_lib.o assignments_rearrange.o \
     tag_executionmode.o propagate_executionmode.o create_cells.o \
-    create_dataflowgraph.o cell_growth.o create_withinwith.o
+    create_dataflowgraph.o cell_growth.o create_withinwith.o \
+    replicate_functions.o
 
  
 
