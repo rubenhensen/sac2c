@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.75  2000/07/12 15:20:14  dkr
+ * INFO_DUP_BASEFUNDEF and INFO_DUP_DFMBASE removed
+ *
  * Revision 1.74  2000/07/12 09:23:23  nmw
  * macros changed PIH_ and MCW_
  *
@@ -18,9 +21,6 @@
  *
  * Revision 1.70  2000/07/07 08:57:01  nmw
  * MCW_CNT_ARTIFICIAL macro added
- *
- * Revision 1.69  2000/07/06 16:01:11  mab
- * *** empty log message ***
  *
  * Revision 1.68  2000/07/06 15:32:04  mab
  * added INFO_APT_ASSIGNMENTS
@@ -2272,9 +2272,7 @@ extern node *MakeInfo ();
  */
 #define INFO_DUP_CONT(n) (n->node[1])
 /*      INFO_INL_TYPES(n)                      (n->node[2])   See comment!!! */
-#define INFO_DUP_DFMBASE(n) ((DFMmask_base_t) (n->node[3]))
-#define INFO_DUP_FUNDEF(n) (n->node[4])
-#define INFO_DUP_BASEFUNDEF(n) (n->node[4])
+#define INFO_DUP_FUNDEF(n) (n->node[3])
 #define INFO_DUP_TYPE(n) (n->flag)
 #define INFO_DUP_ALL(n) (n->int_data)
 #define INFO_DUP_LUT(n) ((LUT_t) (n->dfmask[6]))
