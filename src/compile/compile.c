@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.90  1997/05/02 09:30:51  cg
+ * Revision 1.91  1997/05/29 13:41:44  sbs
+ * ND_IDX_MODARRAY... added
+ *
+ * Revision 1.90  1997/05/02  09:30:51  cg
  * CompVardec: Variable declarations are now produced for arrays with unknown
  * shape and dimension as well as arrays with known dimension but unknown shape.
  *
@@ -3083,6 +3086,100 @@ CompPrfModarray (node *arg_node, node *arg_info)
 
 /*
  *
+ *  functionname  : CompIdxModarray
+ *  arguments     : 1) N_prf node
+ *                  2)
+ *  description   : transforms N_prf node F_idx_modarray to N_icm nodes
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...,
+ *  remarks       : arg_info->info.ids contains name of assigned variable
+ *                  arg_info->node[0] contains pointer to node before
+ *                   last assign_node (to get last or next assign node use
+ *                                     macros LAST_ASSIGN or NEXT_ASSIGN )
+ *                  arg_info->node[0] is used to insert new assign_nodes
+ *                   in front of or after last assign node
+ *                  arg_info->node[1] contains pointer to last N_let
+ */
+node *
+CompIdxModarray (node *arg_node, node *arg_info)
+{
+    node *res, *n_node, *res_ref, *type_id_node, *line, *first_assign, *next_assign,
+      *icm_arg, *old_arg_node, *last_assign;
+    node *arg1 = PRF_ARG1 (arg_node);
+    node *arg2 = PRF_ARG2 (arg_node);
+    node *arg3 = PRF_ARG3 (arg_node);
+
+    simpletype s_type;
+
+    DBUG_ENTER ("CompIdxModarray");
+
+    MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+
+    /* compute basic_type of result */
+    GET_BASIC_SIMPLETYPE (s_type, arg_info->IDS_NODE->TYPES);
+    MAKENODE_ID (type_id_node, type_string[s_type]);
+
+    /* store refcount of res as N_num */
+    MAKENODE_NUM (res_ref, IDS_REFCNT (INFO_LASTIDS (arg_info)));
+
+    /* store line of prf function */
+    MAKENODE_NUM (line, arg_node->lineno);
+
+    /* index is a variable ! */
+    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id),
+                 "wrong 2nd arg of modarray (neither N_array nor N_id!");
+
+    if (NODE_TYPE (arg3) == N_array) { /* value is constant! */
+        DBUG_ASSERT (0, "sorry compilation of ND_IDX_MODARRAY_AxVxC not yet done");
+    } else {
+        DBUG_ASSERT (((TYPES_DIM (ID_TYPE (arg2)) == 0)
+                      && (TYPES_BASETYPE (ID_TYPE (arg2)) == T_int)),
+                     "indexing var of wrong type as 2nd arg of modarray!");
+
+        if ((N_id == NODE_TYPE (arg3)) ? (1 == IsArray (ID_TYPE (arg3))) : 0) {
+            char *icm_name;
+
+            if (1 == arg1->refcnt)
+                icm_name = "ND_IDX_MODARRAY_AxVxA_CHECK_REUSE";
+            else
+                icm_name = "ND_IDX_MODARRAY_AxVxA";
+
+            BIN_ICM_REUSE (arg_info->node[1], icm_name, line, type_id_node);
+            MAKE_NEXT_ICM_ARG (icm_arg, res);
+            MAKE_NEXT_ICM_ARG (icm_arg, arg1);
+            MAKE_NEXT_ICM_ARG (icm_arg, arg2);
+            MAKE_NEXT_ICM_ARG (icm_arg, arg3);
+            SET_VARS_FOR_MORE_ICMS;
+            MAKENODE_NUM (n_node, 1);
+            DEC_OR_FREE_RC_ND (arg3, n_node);
+        } else {
+            char *icm_name;
+
+            if (1 == arg1->refcnt)
+                icm_name = "ND_IDX_MODARRAY_AxVxS_CHECK_REUSE";
+            else
+                icm_name = "ND_IDX_MODARRAY_AxVxS";
+
+            BIN_ICM_REUSE (arg_info->node[1], icm_name, line, type_id_node);
+            MAKE_NEXT_ICM_ARG (icm_arg, res);
+            MAKE_NEXT_ICM_ARG (icm_arg, arg1);
+            MAKE_NEXT_ICM_ARG (icm_arg, arg2);
+            MAKE_NEXT_ICM_ARG (icm_arg, arg3);
+            SET_VARS_FOR_MORE_ICMS;
+        }
+        MAKENODE_NUM (n_node, 1);
+        INC_RC_ND (res, res_ref);
+        DEC_OR_FREE_RC_ND (arg1, n_node);
+        INSERT_ASSIGN;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
  *  functionname  : CompConvert
  *  arguments     : 1) N_prf nodei (F_toi, F_tod, F_tof, F_toi_A, F_tof_A,
  *                                  F_tod_A)
@@ -3294,6 +3391,9 @@ CompPrf (node *arg_node, node *arg_info)
         switch (arg_node->info.prf) {
         case F_modarray:
             arg_node = CompPrfModarray (arg_node, arg_info);
+            break;
+        case F_idx_modarray:
+            arg_node = CompIdxModarray (arg_node, arg_info);
             break;
         case F_add_SxA:
         case F_div_SxA:

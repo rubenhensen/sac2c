@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.37  1997/05/02 09:33:06  cg
+ * Revision 1.38  1997/05/29 13:41:44  sbs
+ * ND_IDX_MODARRAY... added
+ *
+ * Revision 1.37  1997/05/02  09:33:06  cg
  * New ICMs ND_DECL_ARRAY and ND_KD_DECL_ARRAY for arrays with unknown
  * shape and dimension as well as arrays with known dimension but unknown shape.
  *
@@ -597,6 +600,58 @@
         for (__i = 0; __i < ND_A_SIZE (res); __i++)                                      \
             ND_A_FIELD (res)[__i] = ND_A_FIELD (a)[__s++];                               \
     };
+
+/*
+ * Macros used for primitive function idx_modarray:
+ * ================================================
+ */
+
+#define ND_IDX_MODARRAY_AxVxA_CHECK_REUSE(line, basetype, res, a, s, val)                \
+    ND_CHECK_REUSE_ARRAY (a, res)                                                        \
+    {                                                                                    \
+        int __i;                                                                         \
+        ND_ALLOC_ARRAY (basetype, res, 0);                                               \
+        for (__i = 0; __i < s; __i++)                                                    \
+            ND_A_FIELD (res)[__i] = ND_A_FIELD (a)[__i];                                 \
+        for (i = i + ND_A_SIZE (val); __i < ND_A_SIZE (res); __i++)                      \
+            ND_A_FIELD (res)[__i] = ND_A_FIELD (a)[__i];                                 \
+    }                                                                                    \
+    {                                                                                    \
+        int __i, __s;                                                                    \
+        for (__s = 0, __i = s; __s < ND_A_SIZE (val); __i++, __s++)                      \
+            ND_A_FIELD (res)[__i] = ND_A_FIELD (val)[__s];                               \
+    }
+
+#define ND_IDX_MODARRAY_AxVxA(line, basetype, res, a, s, val)                            \
+    {                                                                                    \
+        int __i, __s;                                                                    \
+        ND_ALLOC_ARRAY (basetype, res, 0);                                               \
+        for (__i = 0; __i < s; __i++)                                                    \
+            ND_A_FIELD (res)[__i] = ND_A_FIELD (a)[__i];                                 \
+        for (__s = 0; __s < ND_A_SIZE (val); __i++, __s++)                               \
+            ND_A_FIELD (res)[__i] = ND_A_FIELD (val)[__s];                               \
+        for (; __i < ND_A_SIZE (res); __i++)                                             \
+            ND_A_FIELD (res)[__i] = ND_A_FIELD (a)[__i];                                 \
+    }
+
+#define ND_IDX_MODARRAY_AxVxS_CHECK_REUSE(line, basetype, res, a, s, val)                \
+    ND_CHECK_REUSE_ARRAY (a, res)                                                        \
+    {                                                                                    \
+        int __i;                                                                         \
+        ND_ALLOC_ARRAY (basetype, res, 0);                                               \
+        for (__i = 0; __i < ND_A_SIZE (res); __i++)                                      \
+            ND_A_FIELD (res)[__i] = ND_A_FIELD (a)[__i];                                 \
+    }                                                                                    \
+    ND_A_FIELD (res)[s] = val;
+
+#define ND_IDX_MODARRAY_AxVxS(line, basetype, res, a, s, val)                            \
+    {                                                                                    \
+        int __i;                                                                         \
+        ND_ALLOC_ARRAY (basetype, res, 0);                                               \
+        for (__i = 0; __i < ND_A_SIZE (res); __i++)                                      \
+            ND_A_FIELD (res)[__i] = ND_A_FIELD (a)[__i];                                 \
+    }                                                                                    \
+    ND_A_FIELD (res)[s] = val;
 
 #define ND_KS_USE_GENVAR_OFFSET(offsetvar, res) offsetvar = res##__destptr;
 
