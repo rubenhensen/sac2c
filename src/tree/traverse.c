@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2003/04/26 20:47:13  mwe
+ * support for ElimSubDiv and UndoElimSubDiv added
+ *
  * Revision 3.41  2003/03/09 17:15:00  ktr
  * added basic support for BLIR
  *
@@ -248,6 +251,8 @@
 #include "new2old.h"
 #include "create_wrapper_code.h"
 #include "handle_mops.h"
+#include "ElimSubDiv.h"
+#include "UndoElimSubDiv.h"
 
 #include "traverse.h"
 
@@ -1510,6 +1515,28 @@ static funtab blir_tab_rec = {{
                               NULL,
                               NULL};
 funtab *blir_tab = &blir_tab_rec;
+
+/*
+ *  (114) esd_tab
+ */
+static funtab esd_tab_rec = {{
+#define NIFesd(it_esd) it_esd
+#include "node_info.mac"
+                             },
+                             NULL,
+                             NULL};
+funtab *esd_tab = &esd_tab_rec;
+
+/*
+ *  (115) uesd_tab
+ */
+static funtab uesd_tab_rec = {{
+#define NIFuesd(it_uesd) it_uesd
+#include "node_info.mac"
+                              },
+                              NULL,
+                              NULL};
+funtab *uesd_tab = &uesd_tab_rec;
 
 /*
  *  nnode

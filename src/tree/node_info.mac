@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.119  2003/04/26 20:47:13  mwe
+ * support for ElimSubDiv and UndoElimSubDiv added
+ *
  * Revision 3.118  2003/04/20 20:25:59  dkr
  * PREC2ap renamed into PREC2apORprf
  *
@@ -291,7 +294,7 @@
  *   ssaili_tab      comp2_tab       precomp2_tab    insvd_tab
  *   crtwrp_tab      wls_tab         precomp4_tab    al_tab4
  *   hd_tab          nt2ot_tab       cwc_tab         unused_tab9
- *   dl_tab          blir_tab        unused_tab11    unused_tab12
+ *   dl_tab          blir_tab        esd_tab11       uesd_tab12
  *   unused_tab13    unused_tab14    unused_tab15    unused_tab16
  *
  *   nnode
@@ -712,11 +715,11 @@
 #ifndef NIFblir
 #define NIFblir(it_blir)
 #endif
-#ifndef NIFunused11
-#define NIFunused11(it_unused11)
+#ifndef NIFesd
+#define NIFesd(it_esd)
 #endif
-#ifndef NIFunused12
-#define NIFunused12(it_unused12)
+#ifndef NIFuesd
+#define NIFuesd(it_uesd)
 #endif
 
 #ifndef NIFunused13
@@ -769,7 +772,7 @@
   it_ssalur, it_ssawlt, it_ssawli, it_ssawlf,                                            \
                                                                                          \
   it_ssaili, it_comp2, it_precomp2, it_insvd, it_crtwrp, it_wls, it_precomp4, it_al,     \
-  it_hd, it_nt2ot, it_cwc, it_hm, it_dl, it_blir, it_unused11, it_unused12, it_unused13, \
+  it_hd, it_nt2ot, it_cwc, it_hm, it_dl, it_blir, it_esd, it_uesd, it_unused13,          \
   it_unused14, it_unused15, it_unused16,                                                 \
                                                                                          \
   nnode)                                                                                 \
@@ -833,10 +836,8 @@
                                                               it_nt2ot) NIFcwc (it_cwc)  \
                                                               NIFhm (it_hm) NIFdl (      \
                                                                 it_dl) NIFblir (it_blir) \
-                                                                NIFunused11 (            \
-                                                                  it_unused11)           \
-                                                                  NIFunused12 (          \
-                                                                    it_unused12)         \
+                                                                NIFesd (it_esd)          \
+                                                                  NIFuesd (it_uesd)      \
                                                                     NIFunused13 (        \
                                                                       it_unused13)       \
                                                                       NIFunused14 (      \
@@ -1287,7 +1288,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        LIRMOVblock, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, COMP2Block, TravSons, TravSons, TravSons, WLSblock, TravSons, ALblock,
-       TravSons, NT2OTblock, TravSons, TravSons, DLblock, TravSons, TravSons, TravSons,
+       TravSons, NT2OTblock, TravSons, TravSons, DLblock, TravSons, ESDblock, UESDblock,
        TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_spmd, "N_spmd", TravSons, TravSons, PrintSpmd, TravSons, TravSons, TravSons,
@@ -1481,8 +1482,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSAWLFassign,
 
        TravSons, COMP2Assign, PREC2assign, TravSons, TravSons, TravSons, TravSons,
-       ALassign, HDassign, TravSons, TravSons, TravSons, DLassign, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, 2),
+       ALassign, HDassign, TravSons, TravSons, TravSons, DLassign, TravSons, ESDassign,
+       UESDassign, TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_annotate, "N_annotate", TravSons, TravSons, PrintAnnotate, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1625,8 +1626,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, SSAWLTlet, SSAWLIlet, SSAWLFlet,
 
        TravSons, COMP2Let, PREC2let, INSVDlet, CRTWRPlet, TravSons, PREC4let, ALlet,
-       TravSons, NT2OTlet, TravSons, TravSons, DLlet, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 1),
+       TravSons, NT2OTlet, TravSons, TravSons, DLlet, TravSons, ESDlet, UESDlet, TravSons,
+       TravSons, TravSons, TravSons, 1),
 
   NIF (N_prf, "N_prf", TravSons, FltnPrf, PrintPrf, TravSons, TravSons, TravSons,
        TravSons, FreePrf, CFprf, RCprf, COMPPrf, TravSons, DupPrf, TravSons, TravSons,
@@ -1649,7 +1650,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, COMP2Prf, PREC2apORprf, TravSons, TravSons, TravSons, TravSons, ALprf,
-       HDprf, TravSons, TravSons, TravSons, DLPrfOrAp, TravSons, TravSons, TravSons,
+       HDprf, TravSons, TravSons, TravSons, DLPrfOrAp, TravSons, ESDprf, UESDprf,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_ap, "N_ap", TravSons, FltnAp, PrintAp, TravSons, GNMap, TravSons, TravSons,
@@ -2713,8 +2714,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
 #undef NIFdl
 #undef NIFblir
-#undef NIFunused11
-#undef NIFunused12
+#undef NIFesd
+#undef NIFuesd
 
 #undef NIFunused13
 #undef NIFunused14

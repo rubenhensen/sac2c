@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2003/04/26 20:47:13  mwe
+ * support for ElimSubDiv and UndoElimSubDiv added
+ *
  * Revision 3.32  2003/03/09 17:15:00  ktr
  * added basic support for BLIR
  *
@@ -318,6 +321,8 @@ extern funtab *cwc_tab;
 extern funtab *hm_tab;
 extern funtab *dl_tab;
 extern funtab *blir_tab;
+extern funtab *esd_tab;
+extern funtab *uesd_tab;
 
 extern int nnode[];
 
