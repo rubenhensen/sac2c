@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/11/26 12:44:05  mwe
+ * changes according to changes in ast.xml
+ *
  * Revision 1.10  2004/10/22 15:40:08  ktr
  * CVP now propagates variables into branches of funcond.
  *
@@ -42,14 +45,13 @@
  *
  */
 
-#define NEW_INFO
-
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "node_basic.h"
 #include "traverse.h"
 #include "dbug.h"
 #include "internal_lib.h"
@@ -151,7 +153,7 @@ typedef enum {
  */
 struct INFO {
     context_t context;
-    statustype attrib;
+    bool attrib;
     node *fundef;
 };
 
@@ -172,11 +174,11 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_CVP_FUNDEF (result) = NULL;
     INFO_CVP_CONTEXT (result) = CON_undef;
-    INFO_CVP_ATTRIB (result) = ST_undef;
+    INFO_CVP_ATTRIB (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -186,7 +188,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -350,7 +352,7 @@ AskPropagationOracle (node *let, info *arg_info)
     }
 
     /* prevent propagation of unique variables */
-    answer = ((INFO_CVP_ATTRIB (arg_info) != ST_unique) && (answer));
+    answer = ((INFO_CVP_ATTRIB (arg_info) != TRUE) && (answer));
 
     DBUG_RETURN (answer);
 }
@@ -373,7 +375,7 @@ PropagateIntoCondArgs (node *arg_node)
     DBUG_ENTER ("PropagateIntoCondArgs");
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_ap, "arg_node must be N_ap");
-    DBUG_ASSERT (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node)),
+    DBUG_ASSERT (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node)),
                  "AP_FUNDEF( arg_node) must be a CONDFUN");
 
     condargs = FUNDEF_ARGS (AP_FUNDEF (arg_node));
@@ -413,7 +415,7 @@ RemovePropagationFromCondArgs (node *arg_node)
     DBUG_ENTER ("RemovePropagationFromCondArgs");
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_ap, "arg_node must be N_ap");
-    DBUG_ASSERT (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node)),
+    DBUG_ASSERT (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node)),
                  "AP_FUNDEF( arg_node) must be a CONDFUN");
 
     condargs = FUNDEF_ARGS (AP_FUNDEF (arg_node));
@@ -445,7 +447,7 @@ CVParray (node *arg_node, info *arg_info)
 
     if (ARRAY_AELEMS (arg_node) != NULL) {
         INFO_CVP_CONTEXT (arg_info) = CON_array;
-        ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
+        ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -469,7 +471,7 @@ CVPreturn (node *arg_node, info *arg_info)
 
     if (RETURN_EXPRS (arg_node) != NULL) {
         INFO_CVP_CONTEXT (arg_info) = CON_return;
-        RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -493,15 +495,15 @@ CVPfuncond (node *arg_node, info *arg_info)
 
     if (FUNCOND_IF (arg_node) != NULL) {
         INFO_CVP_CONTEXT (arg_info) = CON_let;
-        FUNCOND_IF (arg_node) = Trav (FUNCOND_IF (arg_node), arg_info);
+        FUNCOND_IF (arg_node) = TRAVdo (FUNCOND_IF (arg_node), arg_info);
     }
     if (FUNCOND_THEN (arg_node) != NULL) {
         INFO_CVP_CONTEXT (arg_info) = CON_funcond;
-        FUNCOND_THEN (arg_node) = Trav (FUNCOND_THEN (arg_node), arg_info);
+        FUNCOND_THEN (arg_node) = TRAVdo (FUNCOND_THEN (arg_node), arg_info);
     }
     if (FUNCOND_ELSE (arg_node) != NULL) {
         INFO_CVP_CONTEXT (arg_info) = CON_funcond;
-        FUNCOND_ELSE (arg_node) = Trav (FUNCOND_ELSE (arg_node), arg_info);
+        FUNCOND_ELSE (arg_node) = TRAVdo (FUNCOND_ELSE (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -510,7 +512,7 @@ CVPfuncond (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSACSEid( node *arg_node, info *arg_info)
+ *   node *CVPid( node *arg_node, info *arg_info)
  *
  * description:
  *   First we try to look inside the definition of the id node
@@ -531,16 +533,16 @@ CVPid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CVPid");
 
-    avis = IDS_AVIS (ID_IDS (arg_node));
+    avis = ID_AVIS (arg_node);
     if ((avis != NULL) && (AVIS_SSAASSIGN (avis) != NULL)) {
 
-        INFO_CVP_ATTRIB (arg_info) = VARDEC_OR_ARG_ATTRIB (AVIS_VARDECORARG (avis));
+        INFO_CVP_ATTRIB (arg_info) = AVIS_ISUNIQUE (avis);
         let = ASSIGN_INSTR (AVIS_SSAASSIGN (avis));
 
         if (AskPropagationOracle (let, arg_info)) {
 
-            arg_node = FreeNode (arg_node);
-            arg_node = DupNode (LET_EXPR (let));
+            arg_node = FREEdoFreeNode (arg_node);
+            arg_node = DUPdoDupNode (LET_EXPR (let));
 
             cvp_expr++;
         }
@@ -567,11 +569,11 @@ CVPexprs (node *arg_node, info *arg_info)
     DBUG_ENTER ("CVPexprs");
 
     if (EXPRS_EXPR (arg_node) != NULL) {
-        EXPRS_EXPR (arg_node) = Trav (EXPRS_EXPR (arg_node), arg_info);
+        EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
     }
 
     if (EXPRS_NEXT (arg_node) != NULL) {
-        EXPRS_NEXT (arg_node) = Trav (EXPRS_NEXT (arg_node), arg_info);
+        EXPRS_NEXT (arg_node) = TRAVdo (EXPRS_NEXT (arg_node), arg_info);
     }
     DBUG_RETURN (arg_node);
 }
@@ -606,7 +608,7 @@ CVPprf (node *arg_node, info *arg_info)
          */
         INFO_CVP_CONTEXT (arg_info) = CON_ap;
         if (PRF_ARGS (arg_node) != NULL) {
-            PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         }
         break;
 
@@ -617,11 +619,11 @@ CVPprf (node *arg_node, info *arg_info)
          * second argument may only be variable
          */
         INFO_CVP_CONTEXT (arg_info) = CON_sel;
-        PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
 
         INFO_CVP_CONTEXT (arg_info) = CON_ap;
         EXPRS_EXPRS2 (PRF_ARGS (arg_node))
-          = Trav (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
+          = TRAVdo (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
         break;
 
     case F_idx_sel:
@@ -632,11 +634,11 @@ CVPprf (node *arg_node, info *arg_info)
          * Only the first argument may be constant
          */
         INFO_CVP_CONTEXT (arg_info) = CON_primfun;
-        PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
 
         INFO_CVP_CONTEXT (arg_info) = CON_ap;
         EXPRS_EXPRS2 (PRF_ARGS (arg_node))
-          = Trav (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
+          = TRAVdo (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
         break;
 
     case F_modarray:
@@ -647,13 +649,13 @@ CVPprf (node *arg_node, info *arg_info)
          * 2nd arg of modarray may be a constant array.
          */
         INFO_CVP_CONTEXT (arg_info) = CON_ap;
-        PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
 
         INFO_CVP_CONTEXT (arg_info) = CON_sel;
-        PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
+        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
 
         INFO_CVP_CONTEXT (arg_info) = CON_primfun;
-        PRF_ARG3 (arg_node) = Trav (PRF_ARG3 (arg_node), arg_info);
+        PRF_ARG3 (arg_node) = TRAVdo (PRF_ARG3 (arg_node), arg_info);
         break;
 
     case F_idx_modarray:
@@ -662,11 +664,11 @@ CVPprf (node *arg_node, info *arg_info)
          * the others can as well be constant
          */
         INFO_CVP_CONTEXT (arg_info) = CON_ap;
-        PRF_ARG1 (arg_node) = Trav (PRF_ARG1 (arg_node), arg_info);
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
 
         INFO_CVP_CONTEXT (arg_info) = CON_primfun;
         EXPRS_EXPRS2 (PRF_ARGS (arg_node))
-          = Trav (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
+          = TRAVdo (EXPRS_EXPRS2 (PRF_ARGS (arg_node)), arg_info);
         break;
 
     default:
@@ -676,7 +678,7 @@ CVPprf (node *arg_node, info *arg_info)
         INFO_CVP_CONTEXT (arg_info) = CON_primfun;
 
         if (PRF_ARGS (arg_node) != NULL) {
-            PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         }
     }
     DBUG_RETURN (arg_node);
@@ -698,17 +700,17 @@ CVPap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CVPap");
 
-    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))) {
+    if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))) {
         /*
          * special functions must be traversed when they are used
          */
-        if (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node))) {
+        if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
             arg_node = PropagateIntoCondArgs (arg_node);
         }
         if (AP_FUNDEF (arg_node) != INFO_CVP_FUNDEF (arg_info)) {
-            AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
+            AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
         }
-        if (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node))) {
+        if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
             arg_node = RemovePropagationFromCondArgs (arg_node);
         }
         INFO_CVP_CONTEXT (arg_info) = CON_specialfun;
@@ -717,7 +719,7 @@ CVPap (node *arg_node, info *arg_info)
     }
 
     if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -744,15 +746,15 @@ CVPcond (node *arg_node, info *arg_info)
     old = INFO_CVP_CONTEXT (arg_info);
     INFO_CVP_CONTEXT (arg_info) = CON_cond;
     DBUG_ASSERT ((COND_COND (arg_node) != NULL), "conditional without condition");
-    COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
+    COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     INFO_CVP_CONTEXT (arg_info) = old;
 
     if (COND_THEN (arg_node) != NULL) {
-        COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
     }
 
     if (COND_ELSE (arg_node) != NULL) {
-        COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -761,7 +763,7 @@ CVPcond (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *CVPNwith(node *arg_node, info *arg_info)
+ *   node *CVPwith(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse NPart, Nwithop and NCode in this order
@@ -769,25 +771,25 @@ CVPcond (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-CVPNwith (node *arg_node, info *arg_info)
+CVPwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CVPNwith");
+    DBUG_ENTER ("CVPwith");
 
     INFO_CVP_CONTEXT (arg_info) = CON_withloop;
 
     /* traverse and do variable substitution in partitions */
-    if (NWITH_PART (arg_node) != NULL) {
-        NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    if (WITH_PART (arg_node) != NULL) {
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     }
 
     /* traverse and do variable substitution in withops */
-    if (NWITH_WITHOP (arg_node) != NULL) {
-        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    if (WITH_WITHOP (arg_node) != NULL) {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     }
 
     /* traverse and do cse in code blocks */
-    if (NWITH_CODE (arg_node) != NULL) {
-        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    if (WITH_CODE (arg_node) != NULL) {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -804,40 +806,47 @@ CVPNwith (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-CVPNwithop (node *arg_node, info *arg_info)
+CVPgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CVPNwithop");
 
-    switch (NWITHOP_TYPE (arg_node)) {
-    case WO_genarray:
-        NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
-        if (NWITHOP_DEFAULT (arg_node) != NULL) {
-            NWITHOP_DEFAULT (arg_node) = Trav (NWITHOP_DEFAULT (arg_node), arg_info);
-        }
-        break;
+    DBUG_ENTER ("CVPgenarray");
 
-    case WO_modarray:
-        NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
-        break;
-
-    case WO_foldfun:
-    case WO_foldprf:
-        INFO_CVP_CONTEXT (arg_info) = CON_neutral;
-        NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
-        INFO_CVP_CONTEXT (arg_info) = CON_withloop;
-        break;
-
-    case WO_unknown:
-        DBUG_ASSERT ((0), "Unknown withop type found");
-        break;
+    GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
+    if (GENARRAY_DEFAULT (arg_node) != NULL) {
+        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+CVPmodarray (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("CVPmodarray");
+
+    MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+CVPfold (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ("CVPfold");
+
+    INFO_CVP_CONTEXT (arg_info) = CON_neutral;
+    FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+    INFO_CVP_CONTEXT (arg_info) = CON_withloop;
+
     DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *CVPNcode(node *arg_node, info *arg_info)
+ *   node *CVPcode(node *arg_node, info *arg_info)
  *
  * description:
  *   traverse codeblock and expression for each Ncode node
@@ -845,24 +854,24 @@ CVPNwithop (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-CVPNcode (node *arg_node, info *arg_info)
+CVPcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CVPNcode");
 
     /* traverse codeblock */
-    if (NCODE_CBLOCK (arg_node) != NULL) {
-        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    if (CODE_CBLOCK (arg_node) != NULL) {
+        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     }
 
     /*traverse expression to do variable substitution */
     INFO_CVP_CONTEXT (arg_info) = CON_withloop_cexprs;
-    if (NCODE_CEXPR (arg_node) != NULL) {
-        NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+    if (CODE_CEXPRS (arg_node) != NULL) {
+        CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
     }
 
     /* traverse to next node */
-    if (NCODE_NEXT (arg_node) != NULL) {
-        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    if (CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -887,7 +896,7 @@ CVPlet (node *arg_node, info *arg_info)
     if (LET_EXPR (arg_node) != NULL) {
 
         INFO_CVP_CONTEXT (arg_info) = CON_let;
-        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -912,11 +921,11 @@ CVPassign (node *arg_node, info *arg_info)
     INFO_CVP_CONTEXT (arg_info) = CON_undef;
 
     if (ASSIGN_INSTR (arg_node) != NULL) {
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -938,7 +947,7 @@ CVPblock (node *arg_node, info *arg_info)
     DBUG_ENTER ("CVPblock");
 
     if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -967,7 +976,7 @@ CVPfundef (node *arg_node, info *arg_info)
     INFO_CVP_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
     INFO_CVP_FUNDEF (arg_info) = oldfundef;
@@ -989,25 +998,21 @@ CVPfundef (node *arg_node, info *arg_info)
  ********************************************************************/
 
 node *
-ConstVarPropagation (node *arg_node)
+CVPdoConstVarPropagation (node *arg_node)
 {
     info *arg_info;
-    funtab *old_tab;
 
     DBUG_ENTER ("ConstVarPropagation");
     arg_info = MakeInfo ();
-
-    old_tab = act_tab;
-    act_tab = cvp_tab;
 
     DBUG_PRINT ("OPT", ("starting constant var propagation in function %s",
                         FUNDEF_NAME (arg_node)));
 
     DBUG_PRINT ("CVP", ("start with function %s", FUNDEF_NAME (arg_node)));
 
-    arg_node = Trav (arg_node, arg_info);
-
-    act_tab = old_tab;
+    TRAVpush (TR_cvp);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
 
