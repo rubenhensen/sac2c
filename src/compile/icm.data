@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/01/24 23:38:28  dkr
+ * type of arguments of ICMs MT_SCHEDULER_..._BEGIN, MT_SCHEDULER_..._END
+ * changed from int* to char**
+ *
  * Revision 3.5  2001/01/22 13:45:21  dkr
  * signature of ICMCompileMT_ADJUST_SCHEDULER modified
  *
@@ -668,31 +672,28 @@ ICM_END( MT_ADJUST_SCHEDULER, (current_dim, array_dim, lower, upper, unrolling, 
 #if defined(MT_SCHEDULER_BEGIN) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_BEGIN, TRACE_NONE)
   ICM_INT(dim)
-  ICM_VARINT((2*dim), varint)
-ICM_END( MT_SCHEDULER_BEGIN, (dim, varint))
+  ICM_VAR((2*dim), vararg)
+ICM_END( MT_SCHEDULER_BEGIN, (dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_END) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_END, TRACE_NONE)
   ICM_INT(dim)
-  ICM_VARINT((2*dim), varint)
-ICM_END( MT_SCHEDULER_END, (dim, varint))
+  ICM_VAR((2*dim), vararg)
+ICM_END( MT_SCHEDULER_END, (dim, vararg))
 #endif
 
 
 #if defined(MT_SCHEDULER_Block_BEGIN) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Block_BEGIN, TRACE_NONE)
   ICM_INT(dim)
-  ICM_VARINT((4*dim), varint)
-ICM_END( MT_SCHEDULER_Block_BEGIN, (dim, varint))
+  ICM_VAR((4*dim), vararg)
+ICM_END( MT_SCHEDULER_Block_BEGIN, (dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Block_END) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Block_END, TRACE_NONE)
   ICM_INT(dim)
-  ICM_VARINT((4*dim), varint)
-ICM_END( MT_SCHEDULER_Block_END, (dim, varint))
+  ICM_VAR((4*dim), vararg)
+ICM_END( MT_SCHEDULER_Block_END, (dim, vararg))
 #endif
-
-
-

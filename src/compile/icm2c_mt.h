@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/01/24 23:38:37  dkr
+ * type of arguments of ICMs MT_SCHEDULER_..._BEGIN, MT_SCHEDULER_..._END
+ * changed from int* to char**
+ *
  * Revision 3.2  2001/01/22 13:45:09  dkr
  * signature of ICMCompileMT_ADJUST_SCHEDULER modified
  *
@@ -71,8 +75,8 @@
  *
  *****************************************************************************/
 
-#ifndef ICM2C_MT_H
-#define ICM2C_MT_H
+#ifndef _ICM2C_MT_H_
+#define _ICM2C_MT_H_
 
 extern void ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg);
 extern void ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **vararg);
@@ -103,10 +107,10 @@ extern void ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int l
                                            int upper, int unrolling, char *array,
                                            bool adjust_offset);
 
-extern void ICMCompileMT_SCHEDULER_BEGIN (int dim, int *vararg);
-extern void ICMCompileMT_SCHEDULER_END (int dim, int *vararg);
+extern void ICMCompileMT_SCHEDULER_BEGIN (int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_END (int dim, char **vararg);
 
-extern void ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, int *vararg);
-extern void ICMCompileMT_SCHEDULER_Block_END (int dim, int *vararg);
+extern void ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Block_END (int dim, char **vararg);
 
-#endif /* ICM2C_MT_H */
+#endif /* _ICM2C_MT_H_ */

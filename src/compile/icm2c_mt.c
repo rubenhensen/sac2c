@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/01/24 23:38:44  dkr
+ * type of arguments of ICMs MT_SCHEDULER_..._BEGIN, MT_SCHEDULER_..._END
+ * changed from int* to char**
+ *
  * Revision 3.2  2001/01/22 13:44:54  dkr
  * bug in ICMCompileMT_ADJUST_SCHEDULER fixed:
  * adjustment of offset only allowed if offset is really used!
@@ -1341,8 +1345,8 @@ ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower, int up
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_BEGIN( int dim, int *vararg)
- *   void ICMCompileMT_SCHEDULER_END( int dim, int *vararg)
+ *   void ICMCompileMT_SCHEDULER_BEGIN( int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_END( int dim, char **vararg)
  *
  * description:
  *   These two ICMs implement the default scheduling.
@@ -1350,10 +1354,10 @@ ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower, int up
  ******************************************************************************/
 
 void
-ICMCompileMT_SCHEDULER_BEGIN (int dim, int *varint)
+ICMCompileMT_SCHEDULER_BEGIN (int dim, char **vararg)
 {
-    int *lower_bound = varint;
-    int *upper_bound = varint + dim;
+    char **lower_bound = vararg;
+    char **upper_bound = vararg + dim;
     int i;
 
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_BEGIN");
@@ -1365,16 +1369,16 @@ ICMCompileMT_SCHEDULER_BEGIN (int dim, int *varint)
 
     for (i = 0; i < dim; i++) {
         INDENT;
-        fprintf (outfile, "SAC_WL_MT_SCHEDULE_START(%d) = %d;\n", i, lower_bound[i]);
+        fprintf (outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i, lower_bound[i]);
         INDENT;
-        fprintf (outfile, "SAC_WL_MT_SCHEDULE_STOP(%d) = %d;\n", i, upper_bound[i]);
+        fprintf (outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i, upper_bound[i]);
     }
 
     DBUG_VOID_RETURN;
 }
 
 void
-ICMCompileMT_SCHEDULER_END (int dim, int *varint)
+ICMCompileMT_SCHEDULER_END (int dim, char **vararg)
 {
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_END");
 
@@ -1391,8 +1395,8 @@ ICMCompileMT_SCHEDULER_END (int dim, int *varint)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_Block_BEGIN(int dim, int *vararg)
- *   void ICMCompileMT_SCHEDULER_Block_END(int dim, int *vararg)
+ *   void ICMCompileMT_SCHEDULER_Block_BEGIN(int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Block_END(int dim, char **vararg)
  *
  * description:
  *   These two ICMs implement the scheduling for constant segments
@@ -1406,11 +1410,11 @@ ICMCompileMT_SCHEDULER_END (int dim, int *varint)
  ******************************************************************************/
 
 void
-ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, int *varint)
+ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, char **vararg)
 {
-    int *lower_bound = varint;
-    int *upper_bound = varint + dim;
-    int *unrolling = varint + 3 * dim;
+    char **lower_bound = vararg;
+    char **upper_bound = vararg + dim;
+    char **unrolling = vararg + 3 * dim;
     int i;
 
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Block_BEGIN");
@@ -1421,21 +1425,21 @@ ICMCompileMT_SCHEDULER_Block_BEGIN (int dim, int *varint)
 #undef MT_SCHEDULER_Block_BEGIN
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SCHEDULER_Block_DIM0(%d, %d, %d);\n", lower_bound[0],
+    fprintf (outfile, "SAC_MT_SCHEDULER_Block_DIM0( %s, %s, %s);\n", lower_bound[0],
              upper_bound[0], unrolling[0]);
 
     for (i = 1; i < dim; i++) {
         INDENT;
-        fprintf (outfile, "SAC_WL_MT_SCHEDULE_START(%d) = %d;\n", i, lower_bound[i]);
+        fprintf (outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i, lower_bound[i]);
         INDENT;
-        fprintf (outfile, "SAC_WL_MT_SCHEDULE_STOP(%d) = %d;\n", i, upper_bound[i]);
+        fprintf (outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i, upper_bound[i]);
     }
 
     DBUG_VOID_RETURN;
 }
 
 void
-ICMCompileMT_SCHEDULER_Block_END (int dim, int *varint)
+ICMCompileMT_SCHEDULER_Block_END (int dim, char **vararg)
 {
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Block_END");
 
