@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/04/24 09:15:40  dkr
+ * P_FORMAT replaced by F_PTR
+ *
  * Revision 3.2  2001/04/19 07:47:34  dkr
  * macro F_PTR used as format string for pointers
  *
@@ -168,7 +171,6 @@
  *              ASSIGN_NEXT(arg_node) equals NULL.
  */
 
-#define P_FORMAT "(%06x)" /* formatstring for pointer address */
 #define WITH_PREFIX "__w" /* name of new variable in with-statement */
 #define WITH_PREFIX_LENGTH 3
 
@@ -397,7 +399,7 @@ FindId (char *name)
         tmp = NULL;
         DBUG_PRINT ("RENAME", ("var %s not found!", name));
     } else {
-        DBUG_PRINT ("RENAME", ("found:" P_FORMAT "old: %s, new: %s, id_level: %d ,"
+        DBUG_PRINT ("RENAME", ("found:" F_PTR "old: %s, new: %s, id_level: %d ,"
                                " with_level: %d",
                                tmp, tmp->id_old, tmp->id_new, tmp->w_level, with_level));
     }
@@ -436,7 +438,7 @@ FindIdInSeg (char *name, int seg_sz, local_stack *seg)
         tmp = NULL;
         DBUG_PRINT ("RENAME", ("var %s not found!", name));
     } else {
-        DBUG_PRINT ("RENAME", ("found:" P_FORMAT "old: %s, new: %s, id_level: %d ,"
+        DBUG_PRINT ("RENAME", ("found:" F_PTR "old: %s, new: %s, id_level: %d ,"
                                " with_level: %d",
                                tmp, tmp->id_old, tmp->id_new, tmp->w_level, with_level));
     }
@@ -1631,7 +1633,7 @@ FltnNwith (node *arg_node, node *arg_info)
 
     with_level++;
     tmp_tos = tos; /* store tos */
-    DBUG_PRINT ("RENAME", ("store tos " P_FORMAT, tos));
+    DBUG_PRINT ("RENAME", ("store tos " F_PTR, tos));
 
     /*
      * for traversing the operation, the generator var(s) should
@@ -1647,7 +1649,7 @@ FltnNwith (node *arg_node, node *arg_info)
 
     with_level--;
     tos = tmp_tos;
-    DBUG_PRINT ("RENAME", ("restore tos " P_FORMAT, tos));
+    DBUG_PRINT ("RENAME", ("restore tos " F_PTR, tos));
 
     DBUG_RETURN (arg_node);
 }

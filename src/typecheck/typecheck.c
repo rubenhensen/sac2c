@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/04/24 09:16:01  dkr
+ * P_FORMAT replaced by F_PTR
+ *
  * Revision 3.22  2001/04/18 13:17:37  dkr
  * fixed a bug in TClet
  *
@@ -292,7 +295,7 @@
 #define PUSH_VAR(name, new_node)                                                         \
     {                                                                                    \
         if (tos < stack_limit) {                                                         \
-            DBUG_PRINT ("TYPE", (" push : %s" P_FORMAT " shpseg:" P_FORMAT, name, tos,   \
+            DBUG_PRINT ("TYPE", (" push : %s" F_PTR " shpseg:" F_PTR, name, tos,         \
                                  new_node->SHP));                                        \
             tos->id = name;                                                              \
             tos->node = new_node;                                                        \
@@ -420,7 +423,7 @@
         tmp->n_dub = overload;                                                           \
         tmp->node = new_node;                                                            \
         NEXT_FUN_TAB_ELEM (fun_p) = tmp;                                                 \
-        DBUG_PRINT ("TYPE", (" insert :" P_FORMAT " %s:%s", tmp,                         \
+        DBUG_PRINT ("TYPE", (" insert :" F_PTR " %s:%s", tmp,                            \
                              (NULL == tmp->id_mod) ? "" : tmp->id_mod, tmp->id));        \
     }
 
@@ -1602,7 +1605,7 @@ LookupVar (char *id)
     tmp = tos - 1;
 
     while ((tmp >= bottom) && (!is_defined)) {
-        DBUG_PRINT ("TYPE", ("current id: %s" P_FORMAT, tmp->id, tmp));
+        DBUG_PRINT ("TYPE", ("current id: %s" F_PTR, tmp->id, tmp));
 
         if (!strcmp (tmp->id, id)) {
             is_defined = TRUE;
@@ -1674,7 +1677,7 @@ LookupFun (char *fun_name, char *mod_name, node *fun_node)
         DBUG_PRINT ("TYPE", ("function not found"));
         tmp = NULL; /* not found */
     } else
-        DBUG_PRINT ("TYPE", ("function found" P_FORMAT, tmp));
+        DBUG_PRINT ("TYPE", ("function found" F_PTR, tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -2034,7 +2037,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
 
 #ifndef DBUG_OFF
                 db_str = Type2String (return_type, 0, TRUE);
-                DBUG_PRINT ("TYPE", ("return_type %s" P_FORMAT, db_str, return_type));
+                DBUG_PRINT ("TYPE", ("return_type %s" F_PTR, db_str, return_type));
                 FREE (db_str);
 #endif
             }
@@ -2082,7 +2085,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
 
 #ifndef DBUG_OFF
                 db_str = Type2String (return_type, 0, TRUE);
-                DBUG_PRINT ("TYPE", ("return_type %s" P_FORMAT, db_str, return_type));
+                DBUG_PRINT ("TYPE", ("return_type %s" F_PTR, db_str, return_type));
                 FREE (db_str);
 #endif
             } else
@@ -2804,7 +2807,7 @@ InitTypeTab (node *modul_node)
 
                 (tab + i)->node = tmp;
                 DBUG_PRINT ("TYPE",
-                            ("inserted %d: %s%s" P_FORMAT ", " P_FORMAT, i,
+                            ("inserted %d: %s%s" F_PTR ", " F_PTR, i,
                              (NULL == tmp->TYPES->id_mod) ? "" : tmp->TYPES->id_mod,
                              tmp->TYPES->id, tmp->TYPES, tmp));
                 i++;
@@ -2961,7 +2964,7 @@ InitTypeTab (node *modul_node)
                         }
                         }
                         DBUG_PRINT ("TYPE",
-                                    ("inserted %d: %s%s" P_FORMAT ", " P_FORMAT, i,
+                                    ("inserted %d: %s%s" F_PTR ", " F_PTR, i,
                                      (NULL == tmp->TYPES->id_mod) ? ""
                                                                   : tmp->TYPES->id_mod,
                                      tmp->TYPES->id, tmp->TYPES, tmp));
@@ -3193,7 +3196,7 @@ InitFunTable (node *arg_node)
    /* allocate memory for table */
    fun_table=(fun_tab_elem*)MALLOC(sizeof(fun_tab_elem)*size);
    
-   DBUG_PRINT("TYPE",("fun table from "P_FORMAT" to "P_FORMAT,
+   DBUG_PRINT("TYPE",("fun table from "F_PTR" to "F_PTR,
                       fun_table, fun_table+size));
    
    fun_tos=fun_table; /* set pointer to last entry in fun_table */
@@ -3327,8 +3330,7 @@ Typecheck (node *arg_node)
 
     stack = (stack_elem *)MALLOC (sizeof (stack_elem) * LOCAL_STACK_SIZE);
     stack_limit = LOCAL_STACK_SIZE + stack;
-    DBUG_PRINT ("TYPE",
-                ("local stack from " P_FORMAT "to " P_FORMAT, stack, stack_limit));
+    DBUG_PRINT ("TYPE", ("local stack from " F_PTR "to " F_PTR, stack, stack_limit));
     tos = stack;
 
     pseudo_fold_fundefs = NULL;
@@ -4101,7 +4103,7 @@ DuplicateFun (fun_tab_elem *fun_p)
  *  internal funs : MALLOC, IsNameInMods,  LookupFun, LookupPrf, CmpTypes,
  *                  CompatibleTypes, UpdateType
  *  external funs : sizeof, FindSymbolInModul
- *  macros        : DBUG..., NULL, P_FORMAT, NOTE, ID, TYPES, ERROR, ABORT,
+ *  macros        : DBUG..., NULL, F_PTR, NOTE, ID, TYPES, ERROR, ABORT,
  *                  WARN,  MOD_NAME
  *
  *  remarks       : if no function is found that matches the types of the
@@ -4190,7 +4192,7 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                      ? (END_OF_FUN_TAB (fun_p) ? 0 : (!(strcmp (fun_name, fun_p->id))))
                      : ((NULL != prf_p) ? *prf_fun == prf_p->prf : 0)) {
                 DBUG_PRINT ("TYPE",
-                            ("current fun '%s'" P_FORMAT " found:%d",
+                            ("current fun '%s'" F_PTR " found:%d",
                              (-1 == *prf_fun) ? ModName (FUNDEF_MOD (fun_p->node),
                                                          FUNDEF_NAME (fun_p->node))
                                               : mdb_prf[*prf_fun],
@@ -4214,7 +4216,7 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                         else
                             count_param++;
 
-                        DBUG_PRINT ("TYPE", ("%d. : %s" P_FORMAT, count_param,
+                        DBUG_PRINT ("TYPE", ("%d. : %s" F_PTR, count_param,
                                              Type2String (ARG_TYPE (fun_args), 0, TRUE),
                                              ARG_TYPE (fun_args)));
                         fun_args = ARG_NEXT (fun_args);
@@ -4593,8 +4595,8 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
         ids->node = vardec_p;
         VARDEC_STATUS (vardec_p) = ST_used;
 
-        DBUG_PRINT ("REF", ("added reference" P_FORMAT " from %s to %s", ids->node,
-                            ids->id, ids->node->info.types->id));
+        DBUG_PRINT ("REF", ("added reference" F_PTR " from %s to %s", ids->node, ids->id,
+                            ids->node->info.types->id));
 
         PUSH_VAR (ids->id, vardec_p);
     } else {
@@ -4618,8 +4620,8 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
 
         /* insert reference to variable declaration */
         ids->node = vardec;
-        DBUG_PRINT ("REF", ("added reference" P_FORMAT " from %s to %s", ids->node,
-                            ids->id, ids->node->info.types->id));
+        DBUG_PRINT ("REF", ("added reference" F_PTR " from %s to %s", ids->node, ids->id,
+                            ids->node->info.types->id));
 
         /* add variable to local stack */
         PUSH_VAR (ids->id, vardec);
@@ -4916,7 +4918,7 @@ TI (node *arg_node, node *arg_info)
                 return_type = DupTypes (stack_p->node->info.types);
                 ID_VARDEC (arg_node) = stack_p->node;
 
-                DBUG_PRINT ("REF", ("added reference" P_FORMAT " for %s to %s",
+                DBUG_PRINT ("REF", ("added reference" F_PTR " for %s to %s",
                                     arg_node->info.ids->id, arg_node->info.ids->id,
                                     arg_node->info.ids->node->info.types->id));
             } else {
@@ -4997,7 +4999,7 @@ TI (node *arg_node, node *arg_info)
  *  internal funs : LookupVar, CompatibleTypes, CheckIds,  AddIdToStack,
  *                  CompatibleTypes
  *  external funs : Type2String
- *  macros        : DBUG..., PUSH_VAR, GEN_NODE, ABORT, ERROR, P_FORMAT
+ *  macros        : DBUG..., PUSH_VAR, GEN_NODE, ABORT, ERROR, F_PTR
  *                  FREE
  *  remarks       : the reference to the variable declaration is put in
  *                  arg_node->info.ids->node
@@ -5409,7 +5411,7 @@ TClet (node *arg_node, node *arg_info)
                     break;
                 case CMP_equal: /* 1 */
                     ids->node = elem->node;
-                    DBUG_PRINT ("REF", ("added reference" P_FORMAT " from %s to %s",
+                    DBUG_PRINT ("REF", ("added reference" F_PTR " from %s to %s",
                                         ids->node, ids->id, ids->node->info.types->id));
                     break;
                 case CMP_both_unknown_shape: /* neu 8.12. */
@@ -6200,7 +6202,7 @@ TI_array (node *arg_node, node *arg_info)
  *  global vars   : tos,filename
  *  internal funs : TI, LookupFun
  *  external funs : Trav
- *  macros        : DBUG...,CHECKING, IS_CHECKED, P_FORMAT, ERROR, ABORT,
+ *  macros        : DBUG...,CHECKING, IS_CHECKED, F_PTR, ERROR, ABORT,
  *                  FREE
  *
  *  remarks       :
@@ -6221,7 +6223,7 @@ TCcond (node *arg_node, node *arg_info)
 
     old_tos = tos;
 
-    DBUG_PRINT ("STACK", ("old_tos is set to " P_FORMAT, old_tos));
+    DBUG_PRINT ("STACK", ("old_tos is set to " F_PTR, old_tos));
     DBUG_ASSERT (N_cond == NODE_TYPE (arg_node), "wrong nodetype");
 
     old_status = arg_info->node[0]->nodetype;
@@ -6247,7 +6249,7 @@ TCcond (node *arg_node, node *arg_info)
     if ((CHECKING == fun_p->tag) || (IS_CHECKED == fun_p->tag)) {
         for (i = 1; i < nnode[NODE_TYPE (arg_node)]; i++) {
             tos = old_tos;
-            DBUG_PRINT ("STACK", ("tos is set to " P_FORMAT, tos));
+            DBUG_PRINT ("STACK", ("tos is set to " F_PTR, tos));
             INFO_TC_STATUS (arg_info) += 1;
 #ifndef DBUG_OFF
             if (1 == i) {
@@ -6268,7 +6270,7 @@ TCcond (node *arg_node, node *arg_info)
         }
         if ((1 == check_again) || (2 == check_again)) {
             tos = old_tos;
-            DBUG_PRINT ("STACK", ("tos is set to " P_FORMAT, tos));
+            DBUG_PRINT ("STACK", ("tos is set to " F_PTR, tos));
             arg_info->node[0]->nodetype = old_status;
             INFO_TC_STATUS (arg_info) += 1;
 #ifndef DBUG_OFF
@@ -6290,7 +6292,7 @@ TCcond (node *arg_node, node *arg_info)
     } else {
         for (i = 1; i < nnode[NODE_TYPE (arg_node)]; i++) {
             tos = old_tos;
-            DBUG_PRINT ("STACK", ("tos is set to " P_FORMAT, tos));
+            DBUG_PRINT ("STACK", ("tos is set to " F_PTR, tos));
             INFO_TC_STATUS (arg_info) += 1;
 
             if (1 == i) {

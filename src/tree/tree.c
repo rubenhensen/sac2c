@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/04/24 09:16:31  dkr
+ * P_FORMAT replaced by F_PTR
+ *
  * Revision 3.2  2001/03/21 11:05:37  dkr
  * some superfluous includes removed
  *
@@ -214,7 +217,7 @@ MakeNode (nodetype nodetype)
     }
 
     DBUG_PRINT ("MAKENODE",
-                ("%d nodetype: %s " P_FORMAT, tmp->lineno, mdb_nodetype[nodetype], tmp));
+                ("%d nodetype: %s " F_PTR, tmp->lineno, mdb_nodetype[nodetype], tmp));
 
     DBUG_RETURN (tmp);
 }

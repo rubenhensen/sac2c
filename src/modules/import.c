@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/04/24 09:15:45  dkr
+ * P_FORMAT replaced by F_PTR
+ *
  * Revision 3.5  2001/03/22 19:33:41  dkr
  * no changes done
  *
@@ -184,9 +187,9 @@ AddSymbol (char *name, char *module, int symbkind)
         tmp->name = StringCopy (module);
         tmp->prefix = StringCopy (module);
 
-        DBUG_PRINT ("MEMIMPORT", ("Allocating mod at" P_FORMAT " name: %s(" P_FORMAT
-                                  " prefix %s (" P_FORMAT,
-                                  tmp, tmp->name, tmp->name, tmp->prefix, tmp->prefix));
+        DBUG_PRINT ("MEMIMPORT",
+                    ("Allocating mod at" F_PTR " name: %s(" F_PTR " prefix %s (" F_PTR,
+                     tmp, tmp->name, tmp->name, tmp->prefix, tmp->prefix));
 
         tmp->flag = 0;
         tmp->allflag = 0;

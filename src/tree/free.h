@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/04/24 09:15:55  dkr
+ * P_FORMAT replaced by F_PTR
+ *
  * Revision 3.10  2001/03/27 23:25:01  dkr
  * no changes done
  *
@@ -35,15 +38,13 @@
  *
  * ... [eliminated]
  *
- * Revision 1.1  1994/12/27  09:28:19  sbs
- * Initial revision
- *
  */
 
 #ifndef _sac_free_h
 #define _sac_free_h
 
 #include <stdlib.h>
+
 #include "dbug.h"
 #include "my_debug.h"
 #include "globals.h"
@@ -67,7 +68,7 @@
 #ifdef SHOW_MALLOC
 #define FREE(address)                                                                    \
     if ((address) != NULL) {                                                             \
-        DBUG_PRINT ("FREEMEM", ("Free memory at adress: " P_FORMAT, (address)));         \
+        DBUG_PRINT ("FREEMEM", ("Free memory at adress: " F_PTR, (address)));            \
         address = (void *)((char *)address - malloc_align_step);                         \
         current_allocated_mem -= *(int *)(address);                                      \
                                                                                          \
@@ -77,7 +78,7 @@
 #else /* not SHOW_MALLOC */
 #define FREE(address)                                                                    \
     if ((address) != NULL) {                                                             \
-        DBUG_PRINT ("FREEMEM", ("Free memory at adress: " P_FORMAT, (address)));         \
+        DBUG_PRINT ("FREEMEM", ("Free memory at adress: " F_PTR, (address)));            \
         DOFREE ((address));                                                              \
         address = NULL;                                                                  \
     }

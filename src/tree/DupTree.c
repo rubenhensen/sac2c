@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2001/04/24 09:16:21  dkr
+ * P_FORMAT replaced by F_PTR
+ *
  * Revision 3.41  2001/04/06 18:46:17  dkr
  * - DupAvis: call of DupTree replaced by DUPTRAV.
  * - The LUT is no longer allocated and removed for each call of DupTree/DupNode.
@@ -525,9 +528,9 @@ DupTypes_ (types *old_types, node *arg_info)
         TYPES_TDEF (new_types) = TYPES_TDEF (old_types);
         TYPES_STATUS (new_types) = TYPES_STATUS (old_types);
 
-        DBUG_PRINT ("TYPE", ("new type" P_FORMAT ",old " P_FORMAT, new_types, old_types));
-        DBUG_PRINT ("TYPE", ("new name" P_FORMAT ", old name" P_FORMAT,
-                             TYPES_NAME (new_types), TYPES_NAME (old_types)));
+        DBUG_PRINT ("TYPE", ("new type" F_PTR ",old " F_PTR, new_types, old_types));
+        DBUG_PRINT ("TYPE", ("new name" F_PTR ", old name" F_PTR, TYPES_NAME (new_types),
+                             TYPES_NAME (old_types)));
 
         if (TYPES_NEXT (old_types) != NULL) {
             TYPES_NEXT (new_types) = DupTypes_ (TYPES_NEXT (old_types), arg_info);

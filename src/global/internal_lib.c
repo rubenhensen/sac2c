@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/04/24 09:14:00  dkr
+ * P_FORMAT replaced by F_PTR
+ *
  * Revision 3.5  2001/04/09 15:58:27  nmw
  * VarName for ssalir/lirmov traversal completed
  *
@@ -156,7 +159,7 @@ Malloc (int size)
     }
 #endif
 
-    DBUG_PRINT ("MEMALLOC", ("new memory: " P_FORMAT, tmp));
+    DBUG_PRINT ("MEMALLOC", ("new memory: " F_PTR, tmp));
 
     DBUG_RETURN (tmp);
 }

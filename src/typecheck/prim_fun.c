@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/04/24 09:16:15  dkr
+ * P_FORMAT replaced by F_PTR
+ *
  * Revision 3.7  2001/03/22 20:37:49  dkr
  * no changes done
  *
@@ -191,7 +194,7 @@ enum type_class {
     tmp->user_tag = u_tag;                                                               \
     tmp->new_prf = p_new;                                                                \
     tmp->next = NULL;                                                                    \
-    DBUG_PRINT ("PRIM_FUN", ("prim_fun_elem:" P_FORMAT " %s  fun_dec:" P_FORMAT, tmp,    \
+    DBUG_PRINT ("PRIM_FUN", ("prim_fun_elem:" F_PTR " %s  fun_dec:" F_PTR, tmp,          \
                              mdb_prf[p_new], node_p))
 
 #define INT GEN_TYPE_NODE (type, T_int)
@@ -201,29 +204,29 @@ enum type_class {
 #define INT_A                                                                            \
     type = MakeTypes1 (T_int);                                                           \
     type->dim = -1;                                                                      \
-    DBUG_PRINT ("PRIM_FUN", ("param: int[]" P_FORMAT, type))
+    DBUG_PRINT ("PRIM_FUN", ("param: int[]" F_PTR, type))
 #define FLOAT_A                                                                          \
     type = MakeTypes1 (T_float);                                                         \
     type->dim = -1;                                                                      \
-    DBUG_PRINT ("PRIM_FUN", ("param: float[]" P_FORMAT, type))
+    DBUG_PRINT ("PRIM_FUN", ("param: float[]" F_PTR, type))
 #define BOOL_A                                                                           \
     type = MakeTypes1 (T_bool);                                                          \
     type->dim = -1;                                                                      \
-    DBUG_PRINT ("PRIM_FUN", ("param: bool[]" P_FORMAT, type))
+    DBUG_PRINT ("PRIM_FUN", ("param: bool[]" F_PTR, type))
 #define CHAR_A                                                                           \
     type = MakeTypes1 (T_char);                                                          \
     type->dim = -1;                                                                      \
-    DBUG_PRINT ("PRIM_FUN", ("param: char[]" P_FORMAT, type))
+    DBUG_PRINT ("PRIM_FUN", ("param: char[]" F_PTR, type))
 #define DOUBLE GEN_TYPE_NODE (type, T_double)
 #define DOUBLE_A                                                                         \
     type = MakeTypes1 (T_double);                                                        \
     type->dim = -1;                                                                      \
-    DBUG_PRINT ("PRIM_FUN", ("param: double[]" P_FORMAT, type))
+    DBUG_PRINT ("PRIM_FUN", ("param: double[]" F_PTR, type))
 
 #define INT_V                                                                            \
     type = MakeTypes1 (T_int);                                                           \
     type->dim = KNOWN_DIM_OFFSET - 1;                                                    \
-    DBUG_PRINT ("PRIM_FUN", ("param: int[.]" P_FORMAT, type))
+    DBUG_PRINT ("PRIM_FUN", ("param: int[.]" F_PTR, type))
 
 /* follwing macro is used to compare the the dimension of two types
  * especially for comparison of types with known dimension and unknown shape
@@ -394,7 +397,7 @@ InitPrimFunDeclarations ()
 
 #define TT1(n, a, t1, res)                                                               \
     tmp_node->node[1] = MakeNode (N_fundef);                                             \
-    DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " P_FORMAT, tmp_node->node[1]));             \
+    DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " F_PTR, tmp_node->node[1]));                \
     arg1 = MakeNode (N_arg);                                                             \
     t1;                                                                                  \
     arg1->info.types = type;                                                             \
@@ -408,7 +411,7 @@ InitPrimFunDeclarations ()
     tmp_node = tmp_node->node[1];
 #define TT2(n, a, t1, t2, res)                                                           \
     tmp_node->node[1] = MakeNode (N_fundef);                                             \
-    DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " P_FORMAT, tmp_node->node[1]));             \
+    DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " F_PTR, tmp_node->node[1]));                \
     arg1 = MakeNode (N_arg);                                                             \
     t1;                                                                                  \
     arg1->info.types = type;                                                             \
@@ -422,7 +425,7 @@ InitPrimFunDeclarations ()
     tmp_node = tmp_node->node[1];
 #define TT3(n, a, t1, t2, t3, res)                                                       \
     tmp_node->node[1] = MakeNode (N_fundef);                                             \
-    DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " P_FORMAT, tmp_node->node[1]));             \
+    DBUG_PRINT ("PRIM_FUN", ("prim_fun_dec: " F_PTR, tmp_node->node[1]));                \
     arg1 = MakeNode (N_arg);                                                             \
     t1;                                                                                  \
     arg1->info.types = type;                                                             \

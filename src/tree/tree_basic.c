@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2001/04/24 09:16:09  dkr
+ * P_FORMAT replaced by F_PTR
+ *
  * Revision 3.29  2001/04/02 15:06:37  dkr
  * MakeFundef modified
  *
@@ -480,7 +483,7 @@ MakeModul (char *name, file_type filetype, node *imports, node *types, node *obj
     MODUL_NAME (tmp) = name;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -503,7 +506,7 @@ MakeModdec (char *name, deps *linkwith, int isexternal, node *imports, node *exp
     MODDEC_OWN (tmp) = exports;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -526,7 +529,7 @@ MakeClassdec (char *name, deps *linkwith, int isexternal, node *imports, node *e
     CLASSDEC_OWN (tmp) = exports;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -550,7 +553,7 @@ MakeSib (char *name, int linkstyle, deps *linkwith, node *types, node *objs, nod
     SIB_LINKWITH (tmp) = linkwith;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -574,7 +577,7 @@ MakeImplist (char *name, ids *itypes, ids *etypes, ids *objs, ids *funs, node *n
     IMPLIST_NEXT (tmp) = next;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -596,7 +599,7 @@ MakeExplist (node *itypes, node *etypes, node *objs, node *funs)
     EXPLIST_FUNS (tmp) = funs;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -635,7 +638,7 @@ MakeTypedef (char *name, char *mod, types *type, statustype attrib, node *next)
     TYPEDEF_FREEFUN (tmp) = NULL;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -672,7 +675,7 @@ MakeObjdef (char *name, char *mod, types *type, node *expr, node *next)
     OBJDEF_ATTRIB (tmp) = ST_regular;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -709,7 +712,7 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
     FUNDEF_INLINE (tmp) = FALSE;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -741,7 +744,7 @@ MakeArg (char *name, types *type, statustype status, statustype attrib, node *ne
     ARG_COLCHN (tmp) = NULL;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -760,10 +763,9 @@ MakeBlock (node *instr, node *vardec)
     BLOCK_INSTR (tmp) = instr;
     BLOCK_VARDEC (tmp) = vardec;
 
-    DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT " instr: " P_FORMAT " vardec: " P_FORMAT,
-                 NODE_LINE (tmp), NODE_TEXT (tmp), tmp, BLOCK_INSTR (tmp),
-                 BLOCK_VARDEC (tmp)));
+    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " F_PTR " instr: " F_PTR " vardec: " F_PTR,
+                             NODE_LINE (tmp), NODE_TEXT (tmp), tmp, BLOCK_INSTR (tmp),
+                             BLOCK_VARDEC (tmp)));
 
     DBUG_RETURN (tmp);
 }
@@ -792,7 +794,7 @@ MakeVardec (char *name, types *type, node *next)
     VARDEC_AVIS (tmp) = MakeAvis (tmp);
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -812,10 +814,9 @@ MakeAssign (node *instr, node *next)
     ASSIGN_NEXT (tmp) = next;
     ASSIGN_INDEX (tmp) = NULL;
 
-    DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT " instr: " P_FORMAT " next: " P_FORMAT,
-                 NODE_LINE (tmp), NODE_TEXT (tmp), tmp, ASSIGN_INSTR (tmp),
-                 ASSIGN_NEXT (tmp)));
+    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " F_PTR " instr: " F_PTR " next: " F_PTR,
+                             NODE_LINE (tmp), NODE_TEXT (tmp), tmp, ASSIGN_INSTR (tmp),
+                             ASSIGN_NEXT (tmp)));
 
     DBUG_RETURN (tmp);
 }
@@ -835,7 +836,7 @@ MakeLet (node *expr, ids *ids)
     LET_IDS (tmp) = ids;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -855,7 +856,7 @@ MakeCast (node *expr, types *type)
     CAST_EXPR (tmp) = expr;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -874,7 +875,7 @@ MakeReturn (node *exprs)
     RETURN_EXPRS (tmp) = exprs;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -895,7 +896,7 @@ MakeCond (node *cond, node *Then, node *Else)
     COND_ELSE (tmp) = Else;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -915,7 +916,7 @@ MakeDo (node *cond, node *body)
     DO_BODY (tmp) = body;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -935,7 +936,7 @@ MakeWhile (node *cond, node *body)
     WHILE_BODY (tmp) = body;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -966,7 +967,7 @@ MakeAnnotate (int tag, int funno, int funapno)
     ANNOTATE_FUNAPNUMBER (tmp) = funapno;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -988,7 +989,7 @@ MakeAp (char *name, char *mod, node *args)
     AP_ATFLAG (tmp) = 0;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1008,7 +1009,7 @@ MakeExprs (node *expr, node *next)
     EXPRS_NEXT (tmp) = next;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1029,7 +1030,7 @@ MakeArray (node *aelems)
     ARRAY_TYPE (tmp) = NULL;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1052,7 +1053,7 @@ MakeVinfo (useflag flag, types *type, node *next, node *dollar)
     VINFO_VARDEC (tmp) = NULL;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1071,7 +1072,7 @@ MakeId (char *name, char *mod, statustype status)
     ID_IDS (tmp) = MakeIds (name, mod, status);
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1121,7 +1122,7 @@ MakeNum (int val)
     NUM_VAL (tmp) = val;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1140,7 +1141,7 @@ MakeChar (char val)
     CHAR_VAL (tmp) = val;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1159,7 +1160,7 @@ MakeFloat (float val)
     FLOAT_VAL (tmp) = val;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1178,7 +1179,7 @@ MakeDouble (double val)
     DOUBLE_VAL (tmp) = val;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1197,7 +1198,7 @@ MakeBool (bool val)
     BOOL_VAL (tmp) = val;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1216,7 +1217,7 @@ MakeStr (char *str)
     STR_STRING (tmp) = str;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1236,7 +1237,7 @@ MakePrf (prf prf, node *args)
     PRF_ARGS (tmp) = args;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1253,7 +1254,7 @@ MakeEmpty ()
     tmp = CreateCleanNode (N_empty);
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1308,7 +1309,7 @@ MakeIcm (char *name, node *args)
     }
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1327,7 +1328,7 @@ MakePragma ()
     PRAGMA_NUMPARAMS (tmp) = 0;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1347,7 +1348,7 @@ MakeCSEinfo (node *next, node *layer, node *let)
     CSEINFO_LET (tmp) = let;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1367,7 +1368,7 @@ MakeSSAcnt (node *next, int count, char *baseid)
     SSACNT_BASEID (tmp) = baseid;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1387,7 +1388,7 @@ MakeSSAstack (node *next, node *avis)
     SSASTACK_INUSE (tmp) = FALSE;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1412,7 +1413,7 @@ MakeAvis (node *vardecOrArg)
     AVIS_SSASTACK (tmp) = MakeSSAstack (NULL, NULL);
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1429,7 +1430,7 @@ MakeInfo ()
     tmp = CreateCleanNode (N_info);
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
@@ -1970,7 +1971,7 @@ MakeModspec (char *name, node *exports)
     MODDEC_OWN (tmp) = exports;
 
     DBUG_PRINT ("MAKENODE",
-                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+                ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
 }
