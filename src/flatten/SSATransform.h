@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/08/07 16:01:29  sbs
+ * SSAwith2 added for N_Nwith2 support
+ *
  * Revision 1.5  2004/08/07 10:10:14  sbs
  * SSANwithXXX renamed into SSAwithXXXX
  *
@@ -68,6 +71,7 @@ extern node *SSAarg (node *arg_node, info *arg_info);
 extern node *SSAvardec (node *arg_node, info *arg_info);
 extern node *SSAid (node *arg_node, info *arg_info);
 extern node *SSAwith (node *arg_node, info *arg_info);
+extern node *SSAwith2 (node *arg_node, info *arg_info);
 extern node *SSAcode (node *arg_node, info *arg_info);
 extern node *SSApart (node *arg_node, info *arg_info);
 extern node *SSAwithid (node *arg_node, info *arg_info);

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.17  2004/08/07 16:01:43  sbs
+ * SSAwith2 added for N_Nwith2 support
+ *
  * Revision 1.16  2004/08/07 13:20:11  sbs
  * code brushing finished for now. WL treatment redone.
  *
@@ -1050,6 +1053,45 @@ SSAwith (node *arg_node, info *arg_info)
      */
     DBUG_ASSERT ((NWITH_CODE (arg_node) != NULL), "Nwith without CODE node!");
     NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SSAwith2(node *arg_node, info *arg_info)
+ *
+ *   @brief traverses with-op, segs, withid and code in this order
+ *
+ ******************************************************************************/
+node *
+SSAwith2 (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("SSAwith");
+
+    /* traverse in with-op */
+    DBUG_ASSERT ((NWITH2_WITHOP (arg_node) != NULL), "Nwith2 without WITHOP node!");
+    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+
+    /* traverse segmented partitions */
+    DBUG_ASSERT ((NWITH2_SEGS (arg_node) != NULL), "Nwith2 without SEGS node!");
+    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+
+    /* traverse withid */
+    DBUG_ASSERT ((NWITH2_WITHID (arg_node) != NULL), "Nwith2 without WITHID node!");
+    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
+    /**
+     * reset FIRST_WITHID (being set in SSAwithid) for the next with loop
+     * traversal
+     */
+    INFO_SSA_FIRST_WITHID (arg_info) = NULL;
+
+    /**
+     * traverse code: as we may have more than one code stacking is done
+     * at the code nodes themselves!
+     */
+    DBUG_ASSERT ((NWITH2_CODE (arg_node) != NULL), "Nwith2 without CODE node!");
+    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

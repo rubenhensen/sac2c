@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.180  2004/08/07 16:01:01  sbs
+ * SSAwith2 added for N_Nwith2 support
+ *
  * Revision 3.179  2004/08/07 10:09:43  sbs
  * SSANwithXXX renamed into SSAwithXXXX
  *
@@ -2466,7 +2469,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, DFAnwith2, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, PREC3with2, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, SSAwith2, TravSons, TravSons,
        TravSons, TravSons, CMPTunknown, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
