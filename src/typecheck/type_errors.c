@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2003/04/11 17:59:01  sbs
+ * TEAssureProdValMatchesProdShape added.
+ *
  * Revision 1.8  2003/04/09 15:35:34  sbs
  * TEAssureNumS and TEAssureNumA added.
  *
@@ -553,6 +556,44 @@ TEAssureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
                                  obj1, obj2, TYType2String (type1, FALSE, 0),
                                  TYType2String (type2, FALSE, 0)));
             }
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void TEAssureProdValMatchesProdShape( char *obj1, ntype *type1,
+ *                                           char *obj2, ntype *type2)
+ *
+ *   @brief  makes shure, that if type1 is AKV and type2 is AKS, type1
+ *           constitutes a legal shape for the elements of type2, i.e,
+ *           prod( values(type1)) == prod( shape(type2)).
+ *
+ ******************************************************************************/
+
+void
+TEAssureProdValMatchesProdShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
+{
+    int i, dim, prod;
+    int *dv;
+
+    DBUG_ENTER ("TEAssureProdValMatchesProdShape");
+
+    if ((TYGetConstr (type1) == TC_akv)
+        && ((TYGetConstr (type2) == TC_aks) || (TYGetConstr (type2) == TC_akv))) {
+        dim = TYGetDim (type1);
+        dv = (int *)COGetDataVec (TYGetValue (type1));
+        prod = 1;
+        for (i = 0; i < dim; i++) {
+            prod *= dv[i];
+        }
+        if (prod != SHGetUnrLen (TYGetShape (type2))) {
+            ABORT (linenum, ("%s should be legal shape for the data vector of %s;"
+                             " types found: %s  and  %s",
+                             obj1, obj2, TYType2String (type1, FALSE, 0),
+                             TYType2String (type2, FALSE, 0)));
         }
     }
 

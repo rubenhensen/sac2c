@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2003/04/11 17:59:01  sbs
+ * TEAssureProdValMatchesProdShape added.
+ *
  * Revision 1.7  2003/04/09 15:35:34  sbs
  * TEAssureNumS and TEAssureNumA added.
  *
@@ -49,6 +52,8 @@ extern void TEAssureIntS (char *obj, ntype *type);
 extern void TEAssureIntVect (char *obj, ntype *type);
 extern void TEAssureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEAssureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
+extern void TEAssureProdValMatchesProdShape (char *obj1, ntype *type1, char *obj2,
+                                             ntype *type2);
 extern void TEAssureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEAssureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern ntype *TEAssureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
