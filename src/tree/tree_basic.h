@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.98  2001/05/30 14:04:43  nmw
+ * some arg_info macros moved from SSALIR to SSALIL
+ *
  * Revision 3.97  2001/05/18 07:57:54  nmw
  * INFO_CSE_macros added
  *
@@ -2570,7 +2573,6 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    bool       REMASSIGN         (flag, if assignment can be removed)
  ***    node*      PREASSIGN         (assignments to add before assignment)
  ***    node*      POSTASSIGN        (assignments to add behind assignment)
- ***    node*      ARGCHAIN          (argument chain of recursive call)
  ***    node*      MODUL             (current working modul)
  ***    node*      ASSIGN            (current working assignment)
  ***    int        NONLIRUSE         (counts non lir args on rightside of expr.)
@@ -2606,6 +2608,9 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      FUNDEF            (current working fundef)
  ***    node*      ASSIGN            (current working assignment)
  ***
+ ***  when used in SSAInferLI.c
+ ***    node*      FUNDEF            (current working fundef)
+ ***    node*      ARGCHAIN          (EXPRS chain of recursive funap)
  ***
  ***  remarks:
  ***
@@ -3069,9 +3074,8 @@ extern node *MakeInfo ();
 #define INFO_SSALIR_REMASSIGN(n) ((bool)(n->flag))
 #define INFO_SSALIR_PREASSIGN(n) (n->node[1])
 #define INFO_SSALIR_POSTASSIGN(n) (n->node[2])
-#define INFO_SSALIR_ARGCHAIN(n) (n->node[3])
-#define INFO_SSALIR_MODUL(n) (n->node[4])
-#define INFO_SSALIR_ASSIGN(n) (n->node[5])
+#define INFO_SSALIR_MODUL(n) (n->node[3])
+#define INFO_SSALIR_ASSIGN(n) (n->node[4])
 #define INFO_SSALIR_NONLIRUSE(n) (n->int_data)
 #define INFO_SSALIR_CONDSTATUS(n) (n->info.cint)
 #define INFO_SSALIR_WITHDEPTH(n) (n->varno)
@@ -3102,12 +3106,16 @@ extern node *MakeInfo ();
 /*
  * when used in SSALUR.c:
  * INFO_SSALURASSIGN/FUNDEF must be mapped to the same componentes
- * due to the shared usage of WLUnroll code */
+ * due to the shared usage of old WLUnroll code */
 #define INFO_SSALUR_ASSIGN(n) INFO_UNR_ASSIGN (n)
 #define INFO_SSALUR_FUNDEF(n) INFO_UNR_FUNDEF (n)
 #define INFO_SSALUR_MODUL(n) (n->node[2])
 #define INFO_SSALUR_REMASSIGN(n) ((bool)(n->refcnt))
 #define INFO_SSALUR_PREASSIGN(n) (n->node[3])
+
+/* when used in SSAInferLI.c */
+#define INFO_SSAILI_FUNDEF(n) (n->node[0])
+#define INFO_SSAILI_ARGCHAIN(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
