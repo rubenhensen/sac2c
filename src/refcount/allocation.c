@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/12/08 21:22:24  ktr
+ * Aliasing information is now printed correctly
+ *
  * Revision 1.8  2004/12/01 16:33:57  ktr
  * Prefun is now used in order to print ALIAS information
  *
@@ -71,6 +74,9 @@ EMAprintPreFun (node *arg_node, info *arg_info)
     case N_arg:
         if (ARG_ISALIASING (arg_node)) {
             fprintf (global.outfile, " /* ALIAS */");
+        }
+        if (AVIS_ISALIAS (ARG_AVIS (arg_node))) {
+            fprintf (global.outfile, " /* alias */");
         }
         break;
     case N_ret:
