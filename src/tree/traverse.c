@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.26  2000/06/28 15:12:16  nmw
+ * funtabs for PIH and PIW modified
+ *
  * Revision 1.25  2000/06/23 16:40:35  nmw
  * pih and pih changed to mapcw and printi
  *
@@ -1159,15 +1162,26 @@ static funtab mapcw_tab_rec = {{
 funtab *mapcw_tab = &mapcw_tab_rec;
 
 /*
- *  (82) printi_tab
+ *  (82) pih_tab
  */
-static funtab printi_tab_rec = {{
-#define NIFprinti(it_printi) it_printi
+static funtab pih_tab_rec = {{
+#define NIFpih(it_pih) it_pih
 #include "node_info.mac"
-                                },
-                                NULL,
-                                NULL};
-funtab *printi_tab = &printi_tab_rec;
+                             },
+                             NULL,
+                             NULL};
+funtab *pih_tab = &pih_tab_rec;
+
+/*
+ *  (83) piw_tab
+ */
+static funtab piw_tab_rec = {{
+#define NIFpiw(it_piw) it_piw
+#include "node_info.mac"
+                             },
+                             NULL,
+                             NULL};
+funtab *piw_tab = &piw_tab_rec;
 
 /*
  *  nnode

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2000/06/28 15:11:42  nmw
+ * funtabs for PIH and PIW modified
+ *
  * Revision 1.20  2000/06/23 16:40:17  nmw
  * pih and piw changed to mapcw and printi
  *
@@ -183,7 +186,8 @@ extern funtab *adjca2_tab;
 extern funtab *apc_tab;
 extern funtab *apt_tab;
 extern funtab *mapcw_tab;
-extern funtab *printi_tab;
+extern funtab *pih_tab;
+extern funtab *piw_tab;
 
 extern int nnode[];
 
