@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2004/11/26 23:48:22  sbs
+ * some renamings fixed
+ *
  * Revision 1.24  2004/11/24 18:14:46  sbs
  * compiles
  *
@@ -139,9 +142,9 @@ ApplyCF (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_dummy (te_info *info, ntype *args)
+NTCCTprf_dummy (te_info *info, ntype *args)
 {
-    DBUG_ENTER ("NTCPRF_dummy");
+    DBUG_ENTER ("NTCCTprf_dummy");
     DBUG_ASSERT (FALSE, "prf not yet implemented");
     DBUG_RETURN (args);
 }
@@ -149,14 +152,14 @@ NTCPRF_dummy (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_array( te_info *info, ntype *elems)
+ *    ntype *NTCCTprf_array( te_info *info, ntype *elems)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCPRF_array (te_info *info, ntype *elems)
+NTCCTprf_array (te_info *info, ntype *elems)
 {
     ntype *elem, *elem2, *res;
     constant *val, *tmp;
@@ -164,7 +167,7 @@ NTCPRF_array (te_info *info, ntype *elems)
     int num_elems;
     int i;
 
-    DBUG_ENTER ("NTCPRF_array");
+    DBUG_ENTER ("NTCCTprf_array");
 
     elem = TYcopyType (TYgetProductMember (elems, 0));
     num_elems = TYgetProductSize (elems);
@@ -218,20 +221,20 @@ NTCPRF_array (te_info *info, ntype *elems)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_cast( te_info *info, ntype *elems)
+ *    ntype *NTCCTprf_cast( te_info *info, ntype *elems)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCPRF_cast (te_info *info, ntype *elems)
+NTCCTprf_cast (te_info *info, ntype *elems)
 {
     ntype *cast_t, *cast_bt, *expr_t, *expr_bt;
     ntype *res, *res_bt;
     shape *shp, *d_shp, *s_shp;
 
-    DBUG_ENTER ("NTCPRF_cast");
+    DBUG_ENTER ("NTCCTprf_cast");
 
     cast_t = TYgetProductMember (elems, 0);
     cast_bt = TYeliminateUser (cast_t);
@@ -343,19 +346,19 @@ NTCPRF_cast (te_info *info, ntype *elems)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_dim( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_dim( te_info *info, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCPRF_dim (te_info *info, ntype *args)
+NTCCTprf_dim (te_info *info, ntype *args)
 {
     ntype *array;
     ntype *res;
 
-    DBUG_ENTER ("NTCPRF_dim");
+    DBUG_ENTER ("NTCCTprf_dim");
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "dim called with incorrect number of arguments");
 
@@ -375,21 +378,21 @@ NTCPRF_dim (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_shape( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_shape( te_info *info, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCPRF_shape (te_info *info, ntype *args)
+NTCCTprf_shape (te_info *info, ntype *args)
 {
     ntype *arg;
     ntype *res = NULL;
     shape *shp;
     int n;
 
-    DBUG_ENTER ("NTCPRF_shape");
+    DBUG_ENTER ("NTCCTprf_shape");
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "shape called with incorrect number of arguments");
 
@@ -412,7 +415,7 @@ NTCPRF_shape (te_info *info, ntype *args)
         res = TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0));
         break;
     default:
-        DBUG_ASSERT (FALSE, "NTCPRF_shape applied to non-array type");
+        DBUG_ASSERT (FALSE, "NTCCTprf_shape applied to non-array type");
     }
 
     DBUG_RETURN (TYmakeProductType (1, res));
@@ -421,19 +424,19 @@ NTCPRF_shape (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_reshape( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_reshape( te_info *info, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCPRF_reshape (te_info *info, ntype *args)
+NTCCTprf_reshape (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *new_shp, *array, *scalar;
 
-    DBUG_ENTER ("NTCPRF_reshape");
+    DBUG_ENTER ("NTCCTprf_reshape");
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "shape called with incorrect number of arguments");
 
@@ -475,19 +478,19 @@ NTCPRF_reshape (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_selS( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_selS( te_info *info, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCPRF_selS (te_info *info, ntype *args)
+NTCCTprf_selS (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *idx, *array;
 
-    DBUG_ENTER ("NTCPRF_selS");
+    DBUG_ENTER ("NTCCTprf_selS");
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "selS called with incorrect number of arguments");
 
@@ -513,19 +516,19 @@ NTCPRF_selS (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_modarrayS( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_modarrayS( te_info *info, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCPRF_modarrayS (te_info *info, ntype *args)
+NTCCTprf_modarrayS (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *idx, *array, *val;
 
-    DBUG_ENTER ("NTCPRF_modarrayS");
+    DBUG_ENTER ("NTCCTprf_modarrayS");
     DBUG_ASSERT (TYgetProductSize (args) == 3,
                  "modarrayS called with incorrect number of arguments");
 
@@ -608,7 +611,7 @@ ConvA (te_info *info, ntype *args, simpletype st)
 
 /** <!--********************************************************************-->
  *
- * @fn ntype *NTCPRF_toiS( te_info *info, ntype *args)
+ * @fn ntype *NTCCTprf_toiS( te_info *info, ntype *args)
  *
  *   @brief  computes the return type of an application of _toi_S_
  *
@@ -619,11 +622,11 @@ ConvA (te_info *info, ntype *args, simpletype st)
  ******************************************************************************/
 
 ntype *
-NTCPRF_toiS (te_info *info, ntype *args)
+NTCCTprf_toiS (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCPRF_toiS");
+    DBUG_ENTER ("NTCCTprf_toiS");
 
     res = ConvS (info, args, T_int);
 
@@ -632,7 +635,7 @@ NTCPRF_toiS (te_info *info, ntype *args)
 
 /** <!--********************************************************************-->
  *
- * @fn ntype *NTCPRF_toiA( te_info *info, ntype *args)
+ * @fn ntype *NTCCTprf_toiA( te_info *info, ntype *args)
  *
  *   @brief  computes the return type of an application of _toi_A_
  *
@@ -643,11 +646,11 @@ NTCPRF_toiS (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_toiA (te_info *info, ntype *args)
+NTCCTprf_toiA (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCPRF_toiA");
+    DBUG_ENTER ("NTCCTprf_toiA");
 
     res = ConvA (info, args, T_int);
 
@@ -656,7 +659,7 @@ NTCPRF_toiA (te_info *info, ntype *args)
 
 /** <!--********************************************************************-->
  *
- * @fn ntype *NTCPRF_tofS( te_info *info, ntype *args)
+ * @fn ntype *NTCCTprf_tofS( te_info *info, ntype *args)
  *
  *   @brief  computes the return type of an application of _tof_S_
  *
@@ -667,11 +670,11 @@ NTCPRF_toiA (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_tofS (te_info *info, ntype *args)
+NTCCTprf_tofS (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCPRF_tofS");
+    DBUG_ENTER ("NTCCTprf_tofS");
 
     res = ConvS (info, args, T_float);
 
@@ -680,7 +683,7 @@ NTCPRF_tofS (te_info *info, ntype *args)
 
 /** <!--********************************************************************-->
  *
- * @fn ntype *NTCPRF_tofA( te_info *info, ntype *args)
+ * @fn ntype *NTCCTprf_tofA( te_info *info, ntype *args)
  *
  *   @brief  computes the return type of an application of _tof_A_
  *
@@ -691,11 +694,11 @@ NTCPRF_tofS (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_tofA (te_info *info, ntype *args)
+NTCCTprf_tofA (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCPRF_tofA");
+    DBUG_ENTER ("NTCCTprf_tofA");
 
     res = ConvA (info, args, T_float);
 
@@ -704,7 +707,7 @@ NTCPRF_tofA (te_info *info, ntype *args)
 
 /** <!--********************************************************************-->
  *
- * @fn ntype *NTCPRF_todS( te_info *info, ntype *args)
+ * @fn ntype *NTCCTprf_todS( te_info *info, ntype *args)
  *
  *   @brief  computes the return type of an application of _tod_S_
  *
@@ -715,11 +718,11 @@ NTCPRF_tofA (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_todS (te_info *info, ntype *args)
+NTCCTprf_todS (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCPRF_todS");
+    DBUG_ENTER ("NTCCTprf_todS");
 
     res = ConvS (info, args, T_double);
 
@@ -728,7 +731,7 @@ NTCPRF_todS (te_info *info, ntype *args)
 
 /** <!--********************************************************************-->
  *
- * @fn ntype *NTCPRF_todA( te_info *info, ntype *args)
+ * @fn ntype *NTCCTprf_todA( te_info *info, ntype *args)
  *
  *   @brief  computes the return type of an application of _tod_A_
  *
@@ -739,11 +742,11 @@ NTCPRF_todS (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_todA (te_info *info, ntype *args)
+NTCCTprf_todA (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCPRF_todA");
+    DBUG_ENTER ("NTCCTprf_todA");
 
     res = ConvA (info, args, T_double);
 
@@ -753,7 +756,7 @@ NTCPRF_todA (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_ari_op_SxS( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_ari_op_SxS( te_info *info, ntype *args)
  *
  * description:
  *    simple []  x  simple []  ->  simple []
@@ -761,12 +764,12 @@ NTCPRF_todA (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_ari_op_SxS (te_info *info, ntype *args)
+NTCCTprf_ari_op_SxS (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *array1, *array2;
 
-    DBUG_ENTER ("NTCPRF_ari_op_SxA");
+    DBUG_ENTER ("NTCCTprf_ari_op_SxA");
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "ari_op_SxA called with incorrect number of arguments");
 
@@ -792,7 +795,7 @@ NTCPRF_ari_op_SxS (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_ari_op_SxA( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_ari_op_SxA( te_info *info, ntype *args)
  *
  * description:
  *    simple []  x  simple [shp]  ->  simple [shp]
@@ -800,12 +803,12 @@ NTCPRF_ari_op_SxS (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_ari_op_SxA (te_info *info, ntype *args)
+NTCCTprf_ari_op_SxA (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *array1, *array2;
 
-    DBUG_ENTER ("NTCPRF_ari_op_SxA");
+    DBUG_ENTER ("NTCCTprf_ari_op_SxA");
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "ari_op_SxA called with incorrect number of arguments");
 
@@ -830,7 +833,7 @@ NTCPRF_ari_op_SxA (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_ari_op_AxS( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_ari_op_AxS( te_info *info, ntype *args)
  *
  * description:
  *    simple [shp]  x  simple []  ->  simple [shp]
@@ -838,12 +841,12 @@ NTCPRF_ari_op_SxA (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_ari_op_AxS (te_info *info, ntype *args)
+NTCCTprf_ari_op_AxS (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *array1, *array2;
 
-    DBUG_ENTER ("NTCPRF_ari_op_AxS");
+    DBUG_ENTER ("NTCCTprf_ari_op_AxS");
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "ari_op_AxS called with incorrect number of arguments");
 
@@ -868,7 +871,7 @@ NTCPRF_ari_op_AxS (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_ari_op_AxA( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_ari_op_AxA( te_info *info, ntype *args)
  *
  * description:
  *    simple [shp]  x  simple [shp]  ->  simple [shp]
@@ -876,12 +879,12 @@ NTCPRF_ari_op_AxS (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_ari_op_AxA (te_info *info, ntype *args)
+NTCCTprf_ari_op_AxA (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *array1, *array2;
 
-    DBUG_ENTER ("NTCPRF_ari_op_AxA");
+    DBUG_ENTER ("NTCCTprf_ari_op_AxA");
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "ari_op_AxA called with incorrect number of arguments");
 
@@ -906,7 +909,7 @@ NTCPRF_ari_op_AxA (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_ari_op_A( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_ari_op_A( te_info *info, ntype *args)
  *
  * description:
  *    simple [shp]  ->  simple [shp]
@@ -914,12 +917,12 @@ NTCPRF_ari_op_AxA (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_ari_op_A (te_info *info, ntype *args)
+NTCCTprf_ari_op_A (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *array;
 
-    DBUG_ENTER ("NTCPRF_ari_op_A");
+    DBUG_ENTER ("NTCCTprf_ari_op_A");
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "ari_op_A called with incorrect number of arguments");
 
@@ -939,7 +942,7 @@ NTCPRF_ari_op_A (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_rel_op_AxA( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_rel_op_AxA( te_info *info, ntype *args)
  *
  * description:
  *     simple [shp]  x  simple [shp]  ->  bool [shp]
@@ -947,12 +950,12 @@ NTCPRF_ari_op_A (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_rel_op_AxA (te_info *info, ntype *args)
+NTCCTprf_rel_op_AxA (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *array1, *array2;
 
-    DBUG_ENTER ("NTCPRF_rel_op_AxA");
+    DBUG_ENTER ("NTCCTprf_rel_op_AxA");
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "rel_op_AxA called with incorrect number of arguments");
 
@@ -979,7 +982,7 @@ NTCPRF_rel_op_AxA (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_log_op_AxA( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_log_op_AxA( te_info *info, ntype *args)
  *
  * description:
  *    bool [shp]  x  bool [shp]  ->  bool [shp]
@@ -987,12 +990,12 @@ NTCPRF_rel_op_AxA (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_log_op_AxA (te_info *info, ntype *args)
+NTCCTprf_log_op_AxA (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *array1, *array2;
 
-    DBUG_ENTER ("NTCPRF_log_op_AxA");
+    DBUG_ENTER ("NTCCTprf_log_op_AxA");
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "log_op_AxA called with incorrect number of arguments");
 
@@ -1015,7 +1018,7 @@ NTCPRF_log_op_AxA (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_log_op_A( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_log_op_A( te_info *info, ntype *args)
  *
  * description:
  *    bool [shp]  ->  bool [shp]
@@ -1023,12 +1026,12 @@ NTCPRF_log_op_AxA (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_log_op_A (te_info *info, ntype *args)
+NTCCTprf_log_op_A (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *array;
 
-    DBUG_ENTER ("NTCPRF_log_op_A");
+    DBUG_ENTER ("NTCCTprf_log_op_A");
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "log_op_A called with incorrect number of arguments");
 
@@ -1048,7 +1051,7 @@ NTCPRF_log_op_A (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_int_op_SxS( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_int_op_SxS( te_info *info, ntype *args)
  *
  * description:
  *    int []  x  int []  ->  int []
@@ -1056,12 +1059,12 @@ NTCPRF_log_op_A (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_int_op_SxS (te_info *info, ntype *args)
+NTCCTprf_int_op_SxS (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *array1, *array2;
 
-    DBUG_ENTER ("NTCPRF_int_op_SxS");
+    DBUG_ENTER ("NTCCTprf_int_op_SxS");
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "int_op_SxS called with incorrect number of arguments");
 
@@ -1083,7 +1086,7 @@ NTCPRF_int_op_SxS (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_take_SxV( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_take_SxV( te_info *info, ntype *args)
  *
  * description:
  *    int []  x  simple [.]  ->  simple [.]
@@ -1091,13 +1094,13 @@ NTCPRF_int_op_SxS (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_take_SxV (te_info *info, ntype *args)
+NTCCTprf_take_SxV (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *array1, *array2;
     shape *shp;
 
-    DBUG_ENTER ("NTCPRF_take_SxV");
+    DBUG_ENTER ("NTCCTprf_take_SxV");
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "take_SxV called with incorrect number of arguments");
 
@@ -1127,7 +1130,7 @@ NTCPRF_take_SxV (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_drop_SxV( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_drop_SxV( te_info *info, ntype *args)
  *
  * description:
  *    int []  x  simple [.]  ->  simple [.]
@@ -1135,13 +1138,13 @@ NTCPRF_take_SxV (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_drop_SxV (te_info *info, ntype *args)
+NTCCTprf_drop_SxV (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *array1, *array2;
     shape *shp;
 
-    DBUG_ENTER ("NTCPRF_drop_SxV");
+    DBUG_ENTER ("NTCCTprf_drop_SxV");
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "drop_SxV called with incorrect number of arguments");
 
@@ -1174,7 +1177,7 @@ NTCPRF_drop_SxV (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCPRF_cat_VxV( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_cat_VxV( te_info *info, ntype *args)
  *
  * description:
  *    simple [.]  x  simple [.]  ->  simple [.]
@@ -1182,12 +1185,12 @@ NTCPRF_drop_SxV (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCPRF_cat_VxV (te_info *info, ntype *args)
+NTCCTprf_cat_VxV (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *array1, *array2;
 
-    DBUG_ENTER ("NTCPRF_cat_VxV");
+    DBUG_ENTER ("NTCCTprf_cat_VxV");
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "cat_VxV called with incorrect number of arguments");
 
