@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/08/08 13:30:27  sbs
+ * *** empty log message ***
+ *
  * Revision 3.7  2002/07/09 12:52:35  sbs
  * dots integrated in the other branch as well 8-))
  *
@@ -320,6 +323,7 @@ ScanParse ()
     }
 
     start_token = PARSE_PRG;
+
     My_yyparse ();
 
     pclose (yyin);
