@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.67  1998/06/03 14:23:43  cg
+ *  free now handles attribute FUNDEF_LIFTEDFROM correctly
+ *
  * Revision 1.66  1998/05/24 00:40:13  dkr
  * removed WLGRID_CODE_TEMPLATE
  *
@@ -815,10 +818,16 @@ FreeFundef (node *arg_node, node *arg_info)
 
     FREETRAV (FUNDEF_BODY (arg_node));
     FREETRAV (FUNDEF_ARGS (arg_node));
-    FREETRAV (FUNDEF_PRAGMA (arg_node));
+
+    if (FUNDEF_PRAGMA (arg_node) != NULL) {
+        FREETRAV (FUNDEF_PRAGMA (arg_node));
+    }
 
     FREE (FUNDEF_NAME (arg_node));
-    FreeNodelist (FUNDEF_NEEDOBJS (arg_node));
+
+    if (FUNDEF_STATUS (arg_node) != ST_spmdfun) {
+        FreeNodelist (FUNDEF_NEEDOBJS (arg_node));
+    }
 
     FREEMASK (FUNDEF_MASK);
 
