@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/09/13 21:51:17  dkr
+ * bug in AddDummyCode() fixed:
+ * TYPES_NAME used in a wrong manner
+ *
  * Revision 3.12  2002/09/11 23:15:09  dkr
  * prf_node_info.mac modified
  *
@@ -297,7 +301,7 @@ UBound (shpseg *old_shape, shpseg *new_shape, int dims, int current_dim)
 /*****************************************************************************
  *
  * function:
- *   static node* AddDummyPart(node* with_node, shpseg* old_shape,
+ *   static node* AddDummyPart(node* wl, shpseg* old_shape,
  *                             shpseg* new_shape, int dims)
  *
  * description:
@@ -307,23 +311,23 @@ UBound (shpseg *old_shape, shpseg *new_shape, int dims, int current_dim)
  *****************************************************************************/
 
 static node *
-AddDummyPart (node *with_node, shpseg *old_shape, shpseg *new_shape, int dims)
+AddDummyPart (node *wl, shpseg *old_shape, shpseg *new_shape, int dims)
 {
 
     int i;
     shpseg *lbound_shape;
     shpseg *ubound_shape;
-    node *lbound_array_node;
-    node *ubound_array_node;
-    node *withid_node;
-    node *part_node;
-    node *generator_node;
-    node *code_node;
+    node *lbound_array;
+    node *ubound_array;
+    node *withid;
+    node *part;
+    node *generator;
+    node *code;
 
     DBUG_ENTER ("AddDummyPart");
 
     /* dummy code put at the beginning of code-chain by AddDummyCode */
-    code_node = NWITH_CODE (with_node);
+    code = NWITH_CODE (wl);
 
     for (i = 0; i < dims; i++) {
 
@@ -332,32 +336,32 @@ AddDummyPart (node *with_node, shpseg *old_shape, shpseg *new_shape, int dims)
         if (SHPSEG_SHAPE (old_shape, i) != SHPSEG_SHAPE (new_shape, i)) {
             lbound_shape = LBound (old_shape, dims, i);
             ubound_shape = UBound (old_shape, new_shape, dims, i);
-            lbound_array_node = Shpseg2Array (lbound_shape, dims);
-            ubound_array_node = Shpseg2Array (ubound_shape, dims);
+            lbound_array = Shpseg2Array (lbound_shape, dims);
+            ubound_array = Shpseg2Array (ubound_shape, dims);
             FreeShpseg (lbound_shape);
             FreeShpseg (ubound_shape);
 
             /* generate (lower_bound <= idx < upper_bound) */
-            generator_node = MakeNGenerator (lbound_array_node, ubound_array_node, F_le,
-                                             F_lt, NULL, NULL);
+            generator
+              = MakeNGenerator (lbound_array, ubound_array, F_le, F_lt, NULL, NULL);
             /* copy reference to idx-variable from existing withid-node
              * (remember that there is only ONE idx-variable for all part-nodes
              *  of a with-loop!)
              */
-            withid_node = DupNode (NPART_WITHID (NWITH_PART (with_node)));
-            part_node = MakeNPart (withid_node, generator_node, code_node);
-            NPART_NEXT (part_node) = NWITH_PART (with_node);
-            NWITH_PART (with_node) = part_node;
+            withid = DupNode (NPART_WITHID (NWITH_PART (wl)));
+            part = MakeNPart (withid, generator, code);
+            NPART_NEXT (part) = NWITH_PART (wl);
+            NWITH_PART (wl) = part;
         }
     }
 
-    DBUG_RETURN (with_node);
+    DBUG_RETURN (wl);
 }
 
 /*****************************************************************************
  *
  * function:
- *   static node* AddDummyCode(node* with_node)
+ *   static node* AddDummyCode(node* wl)
  *
  * description:
  *   add dummy assignment (_apt_#=0;) as first code block to with-node
@@ -366,26 +370,26 @@ AddDummyPart (node *with_node, shpseg *old_shape, shpseg *new_shape, int dims)
  *****************************************************************************/
 
 node *
-AddDummyCode (node *with_node)
+AddDummyCode (node *wl)
 {
 
-    node *vardec_node;
-    types *newvardec_type;
+    node *vardec;
+    types *type;
 
-    node *expr_node;
+    node *expr;
     ids *ids_attrib;
-    node *instr_node;
-    node *assign_node;
-    node *block_node;
-    node *id_node;
-    node *code_node;
+    node *instr;
+    node *assign;
+    node *block;
+    node *id;
+    node *code;
 
     DBUG_ENTER ("AddDummyCode");
 
     /* find last vardec */
 
     /* BUG, if CODE is empty and result is specified by ARG instead if VARDEC !!!
-     * vardec_node=ID_VARDEC(NCODE_CEXPR(NWITH_CODE(with_node)));
+     * vardec = ID_VARDEC(NCODE_CEXPR(NWITH_CODE(wl)));
      *
      * Now we search the end of the vardec-list by looking at the vardec of the
      * with-loop index vector. Even, if the index vector is passed into a function
@@ -393,57 +397,52 @@ AddDummyCode (node *with_node)
      * index vector.
      */
 
-    vardec_node = ID_VARDEC (NPART_WITHID (NWITH_PART (with_node)));
-
-    while (VARDEC_NEXT (vardec_node) != NULL) {
-        vardec_node = VARDEC_NEXT (vardec_node);
+    vardec = ID_VARDEC (NPART_WITHID (NWITH_PART (wl)));
+    while (VARDEC_NEXT (vardec) != NULL) {
+        vardec = VARDEC_NEXT (vardec);
     }
 
     /* append new vardec-node */
-    DBUG_ASSERT ((TYPES_NEXT (ID_TYPE (NCODE_CEXPR (NWITH_CODE (with_node)))) == NULL),
-                 " single type expected");
-    newvardec_type = DupAllTypes (ID_TYPE (NCODE_CEXPR (NWITH_CODE (with_node))));
-    TYPES_NAME (newvardec_type) = TmpVar ();
-    VARDEC_NEXT (vardec_node)
-      = MakeVardec (TYPES_NAME (newvardec_type), newvardec_type, NULL);
-    vardec_node = VARDEC_NEXT (vardec_node);
+    type = ID_TYPE (NCODE_CEXPR (NWITH_CODE (wl)));
+    DBUG_ASSERT ((TYPES_NEXT (type) == NULL), "single type expected");
+    VARDEC_NEXT (vardec) = MakeVardec (TmpVar (), DupAllTypes (type), NULL);
+    vardec = VARDEC_NEXT (vardec);
 
     /* add dummy code */
-    switch (TYPES_BASETYPE (newvardec_type)) {
-
+    switch (TYPES_BASETYPE (type)) {
     case T_int:
-        expr_node = MakeNum (0);
+        expr = MakeNum (0);
         break;
 
     case T_double:
-        expr_node = MakeDouble (0.0);
+        expr = MakeDouble (0);
         break;
 
     case T_float:
-        expr_node = MakeFloat (0.0);
+        expr = MakeFloat (0);
         break;
 
     case T_bool:
-        expr_node = MakeBool (FALSE);
+        expr = MakeBool (FALSE);
         break;
 
     case T_char:
-        expr_node = MakeChar ('\0');
+        expr = MakeChar ('\0');
         break;
 
     default:
-        DBUG_ASSERT (FALSE, " unsupported type in with-loop!");
-        expr_node = NULL; /* just to avoid compiler warnings */
+        DBUG_ASSERT ((0), "unsupported type in with-loop!");
+        expr = NULL; /* just to avoid compiler warnings */
         break;
     }
 
-    ids_attrib = MakeIds (StringCopy (VARDEC_NAME (vardec_node)), NULL, ST_regular);
-    IDS_VARDEC (ids_attrib) = vardec_node;
-    instr_node = MakeLet (expr_node, ids_attrib);
-    assign_node = MakeAssign (instr_node, NULL);
-    block_node = MakeBlock (assign_node, NULL);
-    id_node = MakeId (StringCopy (VARDEC_NAME (vardec_node)), NULL, ST_regular);
-    ID_VARDEC (id_node) = vardec_node;
+    ids_attrib = MakeIds_Copy (VARDEC_NAME (vardec));
+    IDS_VARDEC (ids_attrib) = vardec;
+    instr = MakeLet (expr, ids_attrib);
+    assign = MakeAssign (instr, NULL);
+    block = MakeBlock (assign, NULL);
+    id = MakeId_Copy (VARDEC_NAME (vardec));
+    ID_VARDEC (id) = vardec;
 
     /*
      * dkr:
@@ -451,35 +450,35 @@ AddDummyCode (node *with_node)
      * It would be sufficient to generate an empty code here:
      *   MakeNCode( MakeEmpty(), MakeEmpty())
      */
-    code_node = MakeNCode (block_node, id_node);
+    code = MakeNCode (block, id);
 
     /* tag dummy code to identify it in further optimizations */
-    NCODE_AP_DUMMY_CODE (code_node) = TRUE;
+    NCODE_AP_DUMMY_CODE (code) = TRUE;
 
     /*
      * Last but not least, we have to build array access analysis data to
      * annotate the Ncode node with.
      */
 
-    NCODE_WLAA_INFO (code_node) = MakeInfo ();
+    NCODE_WLAA_INFO (code) = MakeInfo ();
 
-    NCODE_WLAA_ACCESS (code_node) = NULL;
-    NCODE_WLAA_ACCESSCNT (code_node) = 0;
-    NCODE_WLAA_FEATURE (code_node) = 0;
-    NCODE_WLAA_WLARRAY (code_node) = NCODE_WLAA_WLARRAY (NWITH_CODE (with_node));
-    NCODE_WLAA_INDEXVAR (code_node) = IDS_VARDEC (NWITH_VEC (with_node));
+    NCODE_WLAA_ACCESS (code) = NULL;
+    NCODE_WLAA_ACCESSCNT (code) = 0;
+    NCODE_WLAA_FEATURE (code) = 0;
+    NCODE_WLAA_WLARRAY (code) = NCODE_WLAA_WLARRAY (NWITH_CODE (wl));
+    NCODE_WLAA_INDEXVAR (code) = IDS_VARDEC (NWITH_VEC (wl));
 
     /* put dummy code at beginning of code-chain (required by AddDummyPart !!!) */
-    NCODE_NEXT (code_node) = NWITH_CODE (with_node);
-    NWITH_CODE (with_node) = code_node;
+    NCODE_NEXT (code) = NWITH_CODE (wl);
+    NWITH_CODE (wl) = code;
 
-    DBUG_RETURN (vardec_node);
+    DBUG_RETURN (vardec);
 }
 
 /*****************************************************************************
  *
  * function:
- *   static void InsertWithLoopGenerator(types* oldtype, types* newtype, node* with_node)
+ *   static void InsertWithLoopGenerator(types* oldtype, types* newtype, node* wl)
  *
  * description:
  *   insert new part-nodes and code-node into withloop to apply padding
@@ -487,7 +486,7 @@ AddDummyCode (node *with_node)
  *****************************************************************************/
 
 static void
-InsertWithLoopGenerator (types *oldtype, types *newtype, node *with_node)
+InsertWithLoopGenerator (types *oldtype, types *newtype, node *wl)
 {
 
     shpseg *shape_diff;
@@ -504,17 +503,17 @@ InsertWithLoopGenerator (types *oldtype, types *newtype, node *with_node)
         if (SHPSEG_SHAPE (shape_diff, i) > 0) {
             different = TRUE;
         }
-        DBUG_ASSERT ((SHPSEG_SHAPE (shape_diff, i) >= 0), " negative shape difference");
+        DBUG_ASSERT ((SHPSEG_SHAPE (shape_diff, i) >= 0), "negative shape difference");
     }
 
     if (different) {
 
         /* add code block */
-        assignment_vardec = AddDummyCode (with_node);
+        assignment_vardec = AddDummyCode (wl);
 
         /* add nodes to part */
-        with_node = AddDummyPart (with_node, TYPES_SHPSEG (oldtype),
-                                  TYPES_SHPSEG (newtype), TYPES_DIM (oldtype));
+        wl = AddDummyPart (wl, TYPES_SHPSEG (oldtype), TYPES_SHPSEG (newtype),
+                           TYPES_DIM (oldtype));
     }
 
     DBUG_VOID_RETURN;
@@ -641,7 +640,7 @@ APTassign (node *arg_node, node *arg_info)
 
     INFO_APT_ASSIGNMENTS (arg_info) = NULL;
 
-    DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), " unexpected empty INSTR!");
+    DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "unexpected empty ASSIGN_INSTR");
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
     /* save new assigments */
@@ -862,7 +861,6 @@ APTwithop (node *arg_node, node *arg_info)
         break;
 
     case WO_modarray:
-
         DBUG_PRINT ("APT", (" modarray-loop"));
 
         if (ID_PADDED (NWITHOP_ARRAY (arg_node))) {
@@ -972,7 +970,10 @@ APTid (node *arg_node, node *arg_info)
                       DBUG_PRINT ("APT", ("check id: %s", ID_NAME (arg_node)));
                   } else { DBUG_PRINT ("APT", ("check id: (NULL)")); });
 
-    /* (for this test ensure that args and vardecs have been traversed previously!) */
+    /*
+     * for this test ensure that args and vardecs have been
+     * previously traversed!
+     */
     if (ID_PADDED (arg_node)) {
         DBUG_PRINT ("APT", (" padding: '%s' -> '%s'", ID_NAME (arg_node),
                             ID_VARDEC_NAME (arg_node)));
