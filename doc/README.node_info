@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.18  1995/06/06 08:01:31  cg
- * status in types added.
+ * Revision 1.19  1995/06/06 10:06:45  cg
+ * statustype added.
  *
+# Revision 1.18  1995/06/06  08:01:31  cg
+# status in types added.
+#
 # Revision 1.17  1995/05/31  15:50:33  hw
 # changed information for node N_foldfun (node[1])
 #
@@ -95,7 +98,16 @@ typedef struct NODE
    int          nnode;    /* number of used children nodes */
    int          lineno;   /* commands linenumber */
    struct NODE *node[6];  /* children nodes */
-} node;                   
+} node;      
+             
+typedef enum { ST_regular,        /* normal types */
+               ST_hidden,         /* implicit type imported from module     */
+               ST_known_hidden,   /* implicit type in module implementation */
+               ST_unique,         /* implicit type imported from class      */
+               ST_known_unique,   /* implicit type in class implementation  */
+               ST_artificial      /* unique type inserted during            */
+                                  /* signature expansion                    */
+             } statustype;
           
 typedef struct TYPES{
    simpletype   simpletype;
@@ -106,9 +118,7 @@ typedef struct TYPES{
    struct TYPES *next;         /* only needed for fun-results */
    id           *id;           /* Bezeichner  */
    char         *id_mod;       /* name of modul belonging to 'id' */
-   statustype   status;        /* status of this type, used to identify */
-                               /* hidden, unique or artificially        */
-                               /* inserted types                        */
+   statustype   status;        /* type status */
 } types;
  
 typedef struct IDS{
