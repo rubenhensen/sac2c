@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2004/09/23 20:56:21  sah
+ * removed small typo
+ *
  * Revision 3.78  2004/09/23 20:45:04  sah
  * added DS traversal
  *
@@ -590,7 +593,7 @@ static funtab ser_tab_rec = {{
 #define NIFser(it_ser) it_ser
 #include "node_info.mac"
 #else
-#define NIFunused_39(it_unused26) it_unused39
+#define NIFunused_39(it_unused39) it_unused39
 #include "node_info.mac"
 #endif
                              },
@@ -606,7 +609,7 @@ static funtab ds_tab_rec = {{
 #define NIFds(it_ds) it_ds
 #include "node_info.mac"
 #else
-#define NIFunused_39(it_unused26) it_unused39
+#define NIFunused_39(it_unused39) it_unused39
 #include "node_info.mac"
 #endif
                             },
