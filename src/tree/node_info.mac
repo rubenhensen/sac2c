@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.47  2000/06/14 15:04:45  nmw
+ * PIHarg added in N_arg for PIH
+ *
  * Revision 1.46  2000/06/14 10:05:52  mab
  * added ap, exprs, id, prf, fundef for APC and APT
  *
@@ -885,7 +888,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, APCarg, APTarg,
 
-       PrintArg, PrintArg, TravSons, TravSons, 1),
+       PIHarg, PrintArg, TravSons, TravSons, 1),
 
   NIF (N_mt, "N_mt", TravSons, TravSons, PrintMT, TravSons, TravSons, TravSons, TravSons,
        FreeMT, TravSons, TravSons, COMPMt, TravSons, DupMt, TravSons, TravSons, TravSons,
