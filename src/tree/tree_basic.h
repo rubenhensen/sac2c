@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.96  2001/05/14 10:21:20  cg
+ * Removed attribute BLOCK_SCHEDULER_NUM.
+ *
  * Revision 3.95  2001/05/10 15:00:17  cg
  * Added arg_info attributes used in compile.c :
  * SCHEDULER_INIT and SCHEDULER_NUM
@@ -1235,7 +1238,6 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
  ***    node*      SPMD_PROLOG_ICMS  (O)  (N_fundef)  (compile !!)
  ***    node*      SPMD_SETUP_ARGS   (O)  (N_fundef)  (compile !!)
  ***    node*      SCHEDULER_INIT    (O)  (N_assign)  (compile !!)
- ***    node*      SCHEDULER_NUM     (O)  (N_assign)  (compile !!)
  ***
  ***    node*      SSACOUNTER (0) (N_ssacnt) ( ssaform -> optimize !!)
  ***/
@@ -1258,7 +1260,6 @@ extern node *MakeBlock (node *instr, node *vardec);
 #define BLOCK_SPMD_PROLOG_ICMS(n) (n->node[3])
 #define BLOCK_SPMD_SETUP_ARGS(n) (n->node[4])
 #define BLOCK_SCHEDULER_INIT(n) (n->info2)
-#define BLOCK_SCHEDULER_NUM(n) (n->counter)
 #define BLOCK_CACHESIM(n) (n->info.id)
 #define BLOCK_SSACOUNTER(n) (n->node[5])
 
