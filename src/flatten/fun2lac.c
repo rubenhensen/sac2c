@@ -1,8 +1,14 @@
 /*
  *
  * $Log$
- * Revision 3.5  2001/04/02 15:29:10  dkr
- * macros FUNDEF_IS... used
+ * Revision 3.6  2001/04/26 01:43:44  dkr
+ * - InlineSingleApplication() used for inlining now :-)
+ * - Probably the transformation scheme is too regide yet, especially for
+ *   SSA :-((
+ *   But okay ... let's give it a try ...
+ *
+ * Revision 3.4  2001/04/02 15:24:30  dkr
+ * macros FUNDEF_IS_... used
  *
  * Revision 3.3  2001/03/22 19:20:54  dkr
  * include of tree.h eliminated
@@ -52,13 +58,13 @@
 #include "traverse.h"
 #include "free.h"
 #include "dbug.h"
-
-#include "adjust_ids.h"
+#include "print.h"
+#include "Inline.h"
 
 /******************************************************************************
  *
  * function:
- *   int IsRecursiveCall(node *assign, node *fundef)
+ *   int IsRecursiveCall( node *assign, node *fundef)
  *
  * description:
  *
@@ -98,378 +104,270 @@ IsRecursiveCall (node *assign, node *fundef)
 /******************************************************************************
  *
  * function:
- *   node *MoveVardecs(node *source, node *dest)
+ *   node *TransformIntoWhileLoop( node *fundef)
  *
  * description:
- *   This function moves the vardec nodes from a conditional or loop function
- *   to the corresponding function definition where the conditional or loop
- *   function is applied.
+ *   This function replaces the given assignment containing the application
+ *   of a while-loop function by the (transformed) inlined body of the
+ *   corresponding function definition.
+ *
+ *   Basically the following transformation is performed:
+ *
+ *     ... WhileLoopFun( a_1, a_2, ...)
+ *     {
+ *       <vardecs>
+ *
+ *       if (<pred>) {
+ *         <statements>
+ *         r_1, r_2, ... = WhileLoopFun( A_1, A_2, ...);
+ *       }
+ *       else {
+ *       }
+ *
+ *       return( r_1, r_2, ...);
+ *     }
+ *
+ *   is being transformed into:
+ *
+ *     ... WhileLoopFun( a_1, a_2, ...)
+ *     {
+ *       <vardecs>
+ *
+ *       while (<pred>) {
+ *         <statements>
+ *         a_i = A_i;
+ *       }
+ *
+ *       return( r_1, r_2, ...);
+ *     }
  *
  ******************************************************************************/
 
 static node *
-MoveVardecs (node *source, node *dest)
+TransformIntoWhileLoop (node *fundef)
 {
+    node *cond_assign, *cond;
+    node *loop_body, *loop_pred;
+    node *int_call;
     node *tmp;
 
-    DBUG_ENTER ("MoveVardecs");
-
-    tmp = BLOCK_VARDEC (source);
-
-    if (tmp != NULL) {
-        while (VARDEC_NEXT (tmp) != NULL) {
-            tmp = VARDEC_NEXT (tmp);
-        }
-        VARDEC_NEXT (tmp) = BLOCK_VARDEC (dest);
-        BLOCK_VARDEC (dest) = BLOCK_VARDEC (source);
-        BLOCK_VARDEC (source) = NULL;
-    }
-
-    DBUG_RETURN (dest);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *ReplaceAssignmentByWhileLoopFun(node *assign, node *fundef)
- *
- * description:
- *   This function replaces the given assignment containing the application
- *   of a while-loop function by the transformed body of the corresponding
- *   function definition.
- *
- *   Basically the following transformation is performed:
- *
- *   ... WhileLoopFun(...)
- *   {
- *     if (<pred>) {
- *       <statements>;
- *       <pre-renamings>;
- *       ... = WhileLoopFun(...);
- *       <post-renamings>;
- *     }
- *     else {
- *       <empty>
- *     }
- *     <return-renamings>;
- *     return(...);
- *   }
- *
- *   ...;
- *   ... = WhileLoopFun(...);
- *   ...;
- *
- *
- *   is being transformed into:
- *
- *   ...;
- *   while (<pred>) {
- *     <statements>;
- *     <pre-renamings>;
- *   }
- *   <post-renamings>;
- *   ...;
- *
- ******************************************************************************/
-
-static node *
-ReplaceAssignmentByWhileLoopFun (node *assign, node *fundef)
-{
-    node *tmp, *cond, *loop_body, *loop_suffix, *loop_pred, *new_assign;
-    node *cond_assign, *tmp2;
-
-    DBUG_ENTER ("ReplaceAssignmentByWhileLoopFun");
-
-    cond = ASSIGN_INSTR (BLOCK_INSTR (FUNDEF_BODY (fundef)));
-
-    DBUG_ASSERT ((NODE_TYPE (cond) == N_cond),
-                 "Illegal structure of while-loop function.");
-    DBUG_ASSERT ((NODE_TYPE (BLOCK_INSTR (COND_ELSE (cond))) == N_empty),
-                 "else part of conditional in while-loop must be empty");
-    cond_assign = BLOCK_INSTR (FUNDEF_BODY (fundef));
-
-    loop_pred = COND_COND (cond);
-    COND_COND (cond) = MakeBool (0);
-
-    tmp = BLOCK_INSTR (COND_THEN (cond));
-
-    if (IsRecursiveCall (tmp, fundef)) {
-        loop_body = MakeBlock (MakeEmpty (), NULL);
-    } else {
-        while (!IsRecursiveCall (ASSIGN_NEXT (tmp), fundef)) {
-            tmp = ASSIGN_NEXT (tmp);
-        }
-        loop_body = MakeBlock (BLOCK_INSTR (COND_THEN (cond)), NULL);
-        BLOCK_INSTR (COND_THEN (cond)) = ASSIGN_NEXT (tmp);
-        ASSIGN_NEXT (tmp) = NULL;
-        tmp = BLOCK_INSTR (COND_THEN (cond));
-    }
-
-    /* search return-renamings */
-    DBUG_ASSERT ((ASSIGN_NEXT (cond_assign) != NULL),
-                 "no more assignments after conditional");
-    tmp2 = cond_assign;
-    while (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp2))) != N_return) {
-        tmp2 = ASSIGN_NEXT (tmp2);
-    }
-    ASSIGN_NEXT (tmp2) = FreeTree (ASSIGN_NEXT (tmp2));
+    DBUG_ENTER ("TransformIntoWhileLoop");
 
     /*
-     * Here tmp points to the recursive function application.
+     * CAUTION:
+     * In case of (FUNDEF_USED > 1) the 'fundef' may have been transformed into
+     * a while-loop already!
      */
+    if (NODE_TYPE (ASSIGN_INSTR (FUNDEF_INSTR (fundef))) != N_while) {
+        cond_assign = FUNDEF_INSTR (fundef);
+        cond = ASSIGN_INSTR (cond_assign);
 
-    /* build loop suffix assignment chain */
-    if (use_ssaform) {
         /*
-         * when converting back from ssaform in undossatransform
-         * the recusive return identifer have been adjusted correctly
-         * so there is no need for additional copy assignments
-         * in post-renamings..
+         * cond_assign: if (<pred>) { ... }  return(...);
+         * cond:        if (<pred>) { ... }
          */
-        if (tmp2 != ASSIGN_NEXT (cond_assign)) {
-            /* loop_suffix starts with return renamings */
-            loop_suffix = ASSIGN_NEXT (cond_assign);
-            /* preserve assignments from being freed */
-            ASSIGN_NEXT (cond_assign) = NULL;
-        } else {
-            /* no renturn renamings available */
-            loop_suffix = NULL;
+
+        if (NODE_TYPE (cond) != N_return) {
+            DBUG_ASSERT ((NODE_TYPE (cond) == N_cond),
+                         "Illegal structure of while-loop function.");
+            DBUG_ASSERT ((NODE_TYPE (BLOCK_INSTR (COND_ELSE (cond))) == N_empty),
+                         "else part of conditional in while-loop function must be"
+                         " empty");
+            DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (cond_assign)))
+                          == N_return),
+                         "after conditional in while-loop funtion no assignments are"
+                         " allowed");
+
+            loop_pred = COND_COND (cond);
+            COND_COND (cond) = MakeBool (FALSE);
+
+            /*
+             * cond_assign: if (false) { ... }  return(...);
+             * cond:        if (false) { <statements>  ... = WhileLoopFun(...); }
+             * loop_pred:   <pred>
+             */
+
+            tmp = BLOCK_INSTR (COND_THEN (cond));
+            if (IsRecursiveCall (tmp, fundef)) {
+                loop_body = MakeBlock (MakeEmpty (), NULL);
+            } else {
+                while (!IsRecursiveCall (ASSIGN_NEXT (tmp), fundef)) {
+                    tmp = ASSIGN_NEXT (tmp);
+                    DBUG_ASSERT ((tmp != NULL),
+                                 "recursive call of while-loop function not found");
+                }
+                loop_body = MakeBlock (BLOCK_INSTR (COND_THEN (cond)), NULL);
+                BLOCK_INSTR (COND_THEN (cond)) = ASSIGN_NEXT (tmp);
+                ASSIGN_NEXT (tmp) = NULL;
+                tmp = BLOCK_INSTR (COND_THEN (cond));
+            }
+            int_call = tmp;
+
+            DBUG_ASSERT ((ASSIGN_NEXT (int_call) == NULL),
+                         "recursive call of while-loop funtion must be the last"
+                         " assignments of the conditional");
+
+            /*
+             * cond_assign: if (false) { ... }  return(...);
+             * cond:        if (false) { ... = WhileLoopFun(...); }
+             * loop_pred:   <pred>
+             * loop_body:   { <statements> }
+             * int_call:    ... = WhileLoopFun(...);
+             */
+
+            /* replace cond by while-loop */
+            ASSIGN_INSTR (cond_assign) = FreeTree (ASSIGN_INSTR (cond_assign));
+            ASSIGN_INSTR (cond_assign) = MakeWhile (loop_pred, loop_body);
         }
-    } else {
-        /* without ssaform use the post-renamings */
-        loop_suffix = ASSIGN_NEXT (tmp);
-        /* preserve assignments from being freed */
-        ASSIGN_NEXT (tmp) = NULL;
     }
 
-    loop_suffix = AppendAssign (loop_suffix, ASSIGN_NEXT (assign));
-    ASSIGN_NEXT (assign) = NULL;
-
-    FreeTree (assign);
-    /* free current assignment */
-
-    new_assign = MakeAssign (MakeWhile (loop_pred, loop_body), loop_suffix);
-
-    DBUG_RETURN (new_assign);
+    DBUG_RETURN (fundef);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *ReplaceAssignmentByDoLoopFun(node *assign, node *fundef)
+ *   node *TransformIntoDoLoop( node *fundef)
  *
  * description:
  *   This function replaces the given assignment containing the application
- *   of a do-loop function by the transformed body of the corresponding
- *   function definition.
+ *   of a do-loop function by the (transformed) inlined body of the
+ *   corresponding function definition.
  *
  *   Basically the following transformation is performed:
  *
- *   ... DoLoopFun(...)
- *   {
- *     <statements>;
- *     if (<pred>) {
- *       <pre-renamings>;
- *       ... = DoLoopFun(...);
- *       <post-renamings>;
- *     }
- *     else {
- *       <empty>
- *     }
- *     <return-renamings>;
- *     return(...);
- *   }
+ *     ... DoLoopFun( a_1, a_2, ...)
+ *     {
+ *       <vardecs>
  *
- *   ...;
- *   ... = DoLoopFun(...);
- *   ...;
+ *       <statements>
+ *       if (<pred>) {
+ *         r_1, r_2, ... = DoLoopFun( A_1, A_2, ...);
+ *       }
+ *       else {
+ *       }
  *
+ *       return( r_1, r_2, ...);
+ *     }
  *
  *   is being transformed into:
  *
- *   ...;
- *   do {
- *     <statements>;
- *     <pre-renamings>;
- *   } while (<pred>);
- *   <post-renamings>;
- *   <return-renamings>;
- *   ...;
+ *     ... DoLoopFun( a_1, a_2, ...)
+ *     {
+ *       <vardecs>
+ *
+ *       do {
+ *         <statements>
+ *         a_i = A_i;
+ *       } while (<pred>);
+ *
+ *       return( r_1, r_2, ...);
+ *     }
  *
  ******************************************************************************/
 
 static node *
-ReplaceAssignmentByDoLoopFun (node *assign, node *fundef)
+TransformIntoDoLoop (node *fundef)
 {
-    node *tmp, *cond, *loop_body, *loop_suffix, *loop_pred, *new_assign;
-    node *tmp2, *cond_assign;
+    node *assigns;
+    node *cond_assign, *cond;
+    node *loop_body, *loop_pred;
+    node *int_call;
+    node *tmp;
 
-    DBUG_ENTER ("ReplaceAssignmentByDoLoopFun");
-
-    tmp = BLOCK_INSTR (FUNDEF_BODY (fundef));
-
-    if (NODE_TYPE (ASSIGN_INSTR (tmp)) == N_cond) {
-        loop_body = MakeBlock (NULL, NULL);
-    } else {
-        while (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp))) != N_cond) {
-            tmp = ASSIGN_NEXT (tmp);
-        }
-        loop_body = MakeBlock (BLOCK_INSTR (FUNDEF_BODY (fundef)), NULL);
-        BLOCK_INSTR (FUNDEF_BODY (fundef)) = ASSIGN_NEXT (tmp);
-        ASSIGN_NEXT (tmp) = NULL;
-        tmp = BLOCK_INSTR (FUNDEF_BODY (fundef));
-    }
+    DBUG_ENTER ("TransformIntoDoLoop");
 
     /*
-     * Variable tmp now points to the conditional.
+     * CAUTION:
+     * In case of (FUNDEF_USED > 1) the 'fundef' may have been transformed into
+     * a do-loop already!
      */
-    cond_assign = tmp;
-    cond = ASSIGN_INSTR (tmp);
+    if (NODE_TYPE (ASSIGN_INSTR (FUNDEF_INSTR (fundef))) != N_do) {
+        assigns = FUNDEF_INSTR (fundef);
 
-    DBUG_ASSERT ((NODE_TYPE (cond) == N_cond),
-                 "Illegal node type in conditional position.");
-    DBUG_ASSERT ((NODE_TYPE (BLOCK_INSTR (COND_ELSE (cond))) == N_empty),
-                 "else part of conditional in do-loop must be empty");
-
-    loop_pred = COND_COND (cond);
-    COND_COND (cond) = MakeBool (0);
-
-    tmp = BLOCK_INSTR (COND_THEN (cond));
-
-    if (!IsRecursiveCall (tmp, fundef)) {
-        BLOCK_INSTR (loop_body) = AppendAssign (BLOCK_INSTR (loop_body), tmp);
-
-        while (!IsRecursiveCall (ASSIGN_NEXT (tmp), fundef)) {
-            tmp = ASSIGN_NEXT (tmp);
+        if (NODE_TYPE (ASSIGN_INSTR (assigns)) == N_cond) {
+            cond_assign = assigns;
+            loop_body = MakeBlock (NULL, NULL);
+        } else {
+            tmp = assigns;
+            while ((NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp))) != N_cond)
+                   && (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp))) != N_return)) {
+                tmp = ASSIGN_NEXT (tmp);
+                DBUG_ASSERT ((tmp != NULL),
+                             "recursive call of do-loop function not found");
+            }
+            cond_assign = ASSIGN_NEXT (tmp);
+            ASSIGN_NEXT (tmp) = NULL;
+            loop_body = MakeBlock (assigns, NULL);
         }
-        BLOCK_INSTR (COND_THEN (cond)) = ASSIGN_NEXT (tmp);
-        ASSIGN_NEXT (tmp) = NULL;
-        tmp = BLOCK_INSTR (COND_THEN (cond));
-    }
+        cond = ASSIGN_INSTR (cond_assign);
 
-    /* search return-renamings */
-    DBUG_ASSERT ((ASSIGN_NEXT (cond_assign) != NULL),
-                 "no more assignments after conditional");
-    tmp2 = cond_assign;
-    while (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp2))) != N_return) {
-        tmp2 = ASSIGN_NEXT (tmp2);
-    }
-    ASSIGN_NEXT (tmp2) = FreeTree (ASSIGN_NEXT (tmp2));
-
-    /*
-     * Here tmp points to the recursive function application.
-     */
-
-    /* build loop suffix assignment chain */
-    if (use_ssaform) {
         /*
-         * when converting back from ssaform in undossatransform
-         * the recusive return identifer have been adjusted correctly
-         * so there is no need for additional copy assignments
-         * in post-renamings..
+         * cond_assign: if (<pred>) { ... }  return(...);
+         * cond:        if (<pred>) { ... }
+         * loop_body:   { <statements> }
          */
-        if (tmp2 != ASSIGN_NEXT (cond_assign)) {
-            /* loop_suffix starts with return renamings */
-            loop_suffix = ASSIGN_NEXT (cond_assign);
-            /* preserve assignments from being freed */
-            ASSIGN_NEXT (cond_assign) = NULL;
 
-        } else {
-            /* no renturn renamings available */
-            loop_suffix = NULL;
+        if (NODE_TYPE (cond) != N_return) {
+            DBUG_ASSERT ((NODE_TYPE (cond) == N_cond),
+                         "Illegal node type in conditional position.");
+            DBUG_ASSERT ((NODE_TYPE (BLOCK_INSTR (COND_ELSE (cond))) == N_empty),
+                         "else part of conditional in do-loop must be empty");
+            DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (cond_assign)))
+                          == N_return),
+                         "after conditional in do-loop funtion no assignments are"
+                         " allowed");
+
+            loop_pred = COND_COND (cond);
+            COND_COND (cond) = MakeBool (FALSE);
+
+            /*
+             * cond_assign: if (false) { ... = DoLoopFun(...); }  return(...);
+             * cond:        if (false) { ... = DoLoopFun(...); }
+             * loop_pred:   <pred>
+             * loop_body:   { <statements> }
+             */
+
+            int_call = BLOCK_INSTR (COND_THEN (cond));
+            DBUG_ASSERT ((IsRecursiveCall (int_call, fundef)
+                          && (ASSIGN_NEXT (int_call) == NULL)),
+                         "recursive call of do-loop function must be the only"
+                         " assignment in the conditional");
+
+            /*
+             * cond_assign: if (false) { ... = DoLoopFun(...); }  return(...);
+             * cond:        if (false) { ... = DoLoopFun(...); }
+             * loop_pred:   <pred>
+             * loop_body:   { <statements> }
+             * int_call:    ... = DoLoopFun(...);
+             */
+
+            /* replace cond by do-loop */
+            ASSIGN_INSTR (cond_assign) = FreeTree (ASSIGN_INSTR (cond_assign));
+            ASSIGN_INSTR (cond_assign) = MakeDo (loop_pred, loop_body);
+            FUNDEF_INSTR (fundef) = cond_assign;
         }
-    } else {
-        /* without ssaform use the post-renamings */
-        loop_suffix = ASSIGN_NEXT (tmp);
-        /* preserve assignments from being freed */
-        ASSIGN_NEXT (tmp) = NULL;
     }
 
-    loop_suffix = AppendAssign (loop_suffix, ASSIGN_NEXT (assign));
-    ASSIGN_NEXT (assign) = NULL;
-
-    FreeTree (assign);
-    /* free current assignment */
-
-    new_assign = MakeAssign (MakeDo (loop_pred, loop_body), loop_suffix);
-
-    DBUG_RETURN (new_assign);
+    DBUG_RETURN (fundef);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *ReplaceAssignmentByCondFun(node *assign, node *fundef)
+ *   node *TransformIntoCond( node *fundef)
  *
  * description:
- *   This function replaces the given assignment containing the application
- *   of a conditional function by the transformed body of the corresponding
- *   function definition.
  *
- *   Basically the following transformation is performed:
- *
- *   ... CondFun(...)
- *   {
- *     if (<pred>) {
- *       <then-statements>;
- *     }
- *     else {
- *       <else-statements>;
- *     }
- *     <return-renamings>;
- *     return(...);
- *   }
- *
- *   ...;
- *   ... =CondFun(...);
- *   ...;
- *
- *
- *   is being transformed into:
- *
- *   ...;
- *   if (<pred>) {
- *     <then-statements>;
- *   }
- *   else {
- *     <else-statements>;
- *   }
- *   <return-renamings>;
- *   ...;
  *
  ******************************************************************************/
 
 static node *
-ReplaceAssignmentByCondFun (node *assign, node *fundef)
+TransformIntoCond (node *fundef)
 {
-    node *assign_chain, *tmp;
+    DBUG_ENTER ("TransformIntoCond");
 
-    DBUG_ENTER ("ReplaceAssignmentByCondFun");
-
-    assign_chain = BLOCK_INSTR (FUNDEF_BODY (fundef));
-
-    tmp = assign_chain;
-
-    while (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp))) != N_return) {
-        /* find last assignment before return statement */
-        tmp = ASSIGN_NEXT (tmp);
-    }
-
-    BLOCK_INSTR (FUNDEF_BODY (fundef)) = ASSIGN_NEXT (tmp);
-    /* Remove all assignments but the return statement from function definition */
-
-    ASSIGN_NEXT (tmp) = ASSIGN_NEXT (assign);
-    /* append following assignments to the assignment chain of the conditional
-       function */
-
-    FUNDEF_BODY (fundef) = FreeTree (FUNDEF_BODY (fundef));
-    /* free remaining body of conditional function */
-
-    ASSIGN_NEXT (assign) = NULL;
-    FreeTree (assign);
-    /* free current assignment */
-
-    DBUG_RETURN (assign_chain);
+    DBUG_RETURN (fundef);
 }
 
 /******************************************************************************
@@ -478,28 +376,56 @@ ReplaceAssignmentByCondFun (node *assign, node *fundef)
  *   node *FUN2LACap( node *arg_node, node *arg_info)
  *
  * description:
- *   If the function applied is a cond or loop function, then the identifiers
- *   in the corresponding function definition are adjusted in order to allow
- *   naive inlining during the bottom-up traversal.
+ *   If the function applied is a cond or loop function, then the function
+ *   body is re-transformed into a cond or loop and inlined afterwards.
  *
  ******************************************************************************/
 
 node *
 FUN2LACap (node *arg_node, node *arg_info)
 {
+    node *fundef;
+    node *inl_code;
+
     DBUG_ENTER ("FUN2LACap");
 
-    if ((FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_condfun)
-        || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_whilefun)
-        || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_dofun)) {
+    fundef = AP_FUNDEF (arg_node);
 
-        AdjustIdentifiers (AP_FUNDEF (arg_node), INFO_FUN2LAC_LET (arg_info));
-        INFO_FUN2LAC_FUNDEF (arg_info) = AP_FUNDEF (arg_node);
-        /*
-         * The fundef node of an applied conditional or loop function is stored
-         * in arg_info. This allows to memory the interesting case during the
-         * following bottom-up traversal.
-         */
+    if (FUNDEF_IS_LACFUN (fundef)) {
+        switch (FUNDEF_STATUS (fundef)) {
+        case ST_condfun:
+            DBUG_PRINT ("F2L", ("Naive inlining of conditional function %s.\n",
+                                ItemName (fundef)));
+
+            fundef = TransformIntoCond (fundef);
+            break;
+
+        case ST_whilefun:
+            DBUG_PRINT ("F2L", ("Naive inlining of while-loop function %s.\n",
+                                ItemName (fundef)));
+
+            fundef = TransformIntoWhileLoop (fundef);
+            break;
+
+        case ST_dofun:
+            DBUG_PRINT ("F2L",
+                        ("Naive inlining of do-loop function %s.\n", ItemName (fundef)));
+
+            fundef = TransformIntoDoLoop (fundef);
+            break;
+
+        default:
+            DBUG_ASSERT (0, "Illegal status of abstracted cond or loop fun");
+        }
+
+        DBUG_EXECUTE ("F2L", PrintNode (fundef););
+
+        inl_code
+          = InlineSingleApplication (INFO_F2L_LET (arg_info), INFO_F2L_FUNDEF (arg_info));
+
+        DBUG_EXECUTE ("F2L", Print (inl_code););
+
+        INFO_F2L_INLINED (arg_info) = inl_code;
     }
 
     DBUG_RETURN (arg_node);
@@ -511,10 +437,7 @@ FUN2LACap (node *arg_node, node *arg_info)
  *   node *FUN2LAClet( node *arg_node, node *arg_info)
  *
  * description:
- *   The main purpose of this function is to store the let variables in the
- *   arg_info node in order to have them available if the right hand side
- *   contains an application of a cond or loop function whose identifiers
- *   have to be adjusted to the calling context.
+ *
  *
  ******************************************************************************/
 
@@ -523,11 +446,9 @@ FUN2LAClet (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("FUN2LAClet");
 
-    INFO_FUN2LAC_LET (arg_info) = arg_node;
+    INFO_F2L_LET (arg_info) = arg_node;
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-
-    INFO_FUN2LAC_LET (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -541,54 +462,23 @@ FUN2LAClet (node *arg_node, node *arg_info)
  *   The instruction behind the assignment is traversed. Iff it represents the
  *   application of a cond or loop function, this application is replaced by
  *   the inlined code of the cond or loop function, respectively.
- *   Prior to this, the identifiers of the function to be inlined have already
- *   been adjusted in a way that allows rather naive inlining.
  *
  ******************************************************************************/
 
 node *
 FUN2LACassign (node *arg_node, node *arg_info)
 {
+    node *inl_code;
+
     DBUG_ENTER ("FUN2LACassign");
 
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_FUN2LAC_FUNDEF (arg_info) != NULL) {
-        INFO_FUN2LAC_FUNBLOCK (arg_info)
-          = MoveVardecs (FUNDEF_BODY (INFO_FUN2LAC_FUNDEF (arg_info)),
-                         INFO_FUN2LAC_FUNBLOCK (arg_info));
+    inl_code = INFO_F2L_INLINED (arg_info);
+    if (inl_code != NULL) {
+        INFO_F2L_INLINED (arg_info) = NULL;
 
-        switch (FUNDEF_STATUS (INFO_FUN2LAC_FUNDEF (arg_info))) {
-        case ST_condfun: {
-            DBUG_PRINT ("FUN2LAC", ("Naive inlining of conditional function %s.\n",
-                                    ItemName (INFO_FUN2LAC_FUNDEF (arg_info))));
-
-            arg_node
-              = ReplaceAssignmentByCondFun (arg_node, INFO_FUN2LAC_FUNDEF (arg_info));
-            break;
-        }
-        case ST_whilefun: {
-            DBUG_PRINT ("FUN2LAC", ("Naive inlining of while-loop function %s.\n",
-                                    ItemName (INFO_FUN2LAC_FUNDEF (arg_info))));
-
-            arg_node = ReplaceAssignmentByWhileLoopFun (arg_node,
-                                                        INFO_FUN2LAC_FUNDEF (arg_info));
-            break;
-        }
-        case ST_dofun: {
-            DBUG_PRINT ("FUN2LAC", ("Naive inlining of do-loop function %s.\n",
-                                    ItemName (INFO_FUN2LAC_FUNDEF (arg_info))));
-
-            arg_node
-              = ReplaceAssignmentByDoLoopFun (arg_node, INFO_FUN2LAC_FUNDEF (arg_info));
-            break;
-        }
-        default: {
-            DBUG_ASSERT (0, "Illegal status of abstracted cond or loop fun");
-        }
-        }
-
-        INFO_FUN2LAC_FUNDEF (arg_info) = NULL;
+        arg_node = AppendAssign (inl_code, FreeNode (arg_node));
 
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     }
@@ -639,10 +529,10 @@ FUN2LACfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("FUN2LACfundef");
 
+    INFO_F2L_FUNDEF (arg_info) = arg_node;
+
     if ((!FUNDEF_IS_LACFUN (arg_node)) && (FUNDEF_BODY (arg_node) != NULL)) {
-        INFO_FUN2LAC_FUNBLOCK (arg_info) = FUNDEF_BODY (arg_node);
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-        INFO_FUN2LAC_FUNBLOCK (arg_info) = NULL;
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -650,10 +540,7 @@ FUN2LACfundef (node *arg_node, node *arg_info)
     }
 
     if (FUNDEF_IS_LACFUN (arg_node)) {
-        /*
-         * At this point, only the prototype of the conditional or loop
-         * function remains in the fundef chain.
-         */
+        /* only a zombie function remains in the fundef chain */
         arg_node = FreeNode (arg_node);
     }
 
@@ -666,7 +553,7 @@ FUN2LACfundef (node *arg_node, node *arg_info)
  *   node *FUN2LACmodul( node *arg_node, node *arg_info)
  *
  * description:
- *   This function traverses all function definitions under an N_modul
+ *   This function traverses all function definitions under a N_modul
  *   node.
  *
  ******************************************************************************/
@@ -678,6 +565,8 @@ FUN2LACmodul (node *arg_node, node *arg_info)
 
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+
+        arg_node = RemoveAllZombies (arg_node);
     }
 
     DBUG_RETURN (arg_node);
