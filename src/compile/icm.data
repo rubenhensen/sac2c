@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2002/07/03 15:56:40  dkr
+ * some more ICMs for TAGGED_ARRAYS added
+ *
  * Revision 3.34  2002/06/07 16:10:21  dkr
  * - some new ICMs for TAGGED_ARRAYS added
  *
@@ -168,36 +171,42 @@ ICM_DEF( ND_DECL_EXTERN, TRACE_NONE)
 ICM_END( ND_DECL_EXTERN, (basetype, nt, sdim))
 #endif
 
-#if defined(ND_DECL_MIRROR) || defined(ICM_ALL)
-ICM_DEF( ND_DECL_MIRROR, TRACE_NONE)
+/* ND_DECL__DATA( ...) is a H-ICM */
+
+/* ND_DECL__DESC( ...) is a H-ICM */
+
+#if defined(ND_DECL__MIRROR) || defined(ICM_ALL)
+ICM_DEF( ND_DECL__MIRROR, TRACE_NONE)
   ICM_STR( nt)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
-ICM_END( ND_DECL_MIRROR, (nt, sdim, shp))
+ICM_END( ND_DECL__MIRROR, (nt, sdim, shp))
 #endif
 
-#if defined(ND_DECL_MIRROR_PARAM) || defined(ICM_ALL)
-ICM_DEF( ND_DECL_MIRROR_PARAM, TRACE_NONE)
+#if defined(ND_DECL__MIRROR_PARAM) || defined(ICM_ALL)
+ICM_DEF( ND_DECL__MIRROR_PARAM, TRACE_NONE)
   ICM_STR( nt)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
-ICM_END( ND_DECL_MIRROR_PARAM, (nt, sdim, shp))
+ICM_END( ND_DECL__MIRROR_PARAM, (nt, sdim, shp))
 #endif
 
-#if defined(ND_DECL_MIRROR_EXTERN) || defined(ICM_ALL)
-ICM_DEF( ND_DECL_MIRROR_EXTERN, TRACE_NONE)
+#if defined(ND_DECL__MIRROR_EXTERN) || defined(ICM_ALL)
+ICM_DEF( ND_DECL__MIRROR_EXTERN, TRACE_NONE)
   ICM_STR( nt)
   ICM_INT( sdim)
-ICM_END( ND_DECL_MIRROR_EXTERN, (nt, sdim))
+ICM_END( ND_DECL__MIRROR_EXTERN, (nt, sdim))
 #endif
 
 
-#if defined(ND_SET_SHP) || defined(ICM_ALL)
-ICM_DEF( ND_SET_SHP, TRACE_NONE)
+/* ND_SET__RC( ...) is a H-ICM */
+
+#if defined(ND_SET__SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_SET__SHAPE, TRACE_NONE)
   ICM_STR( nt)
-  ICM_INT( sdim)
-  ICM_VARINT( sdim, shp)
-ICM_END( ND_SET_SHP, (nt, sdim, shp))
+  ICM_INT( dim)
+  ICM_VAR( dim, shp_str)
+ICM_END( ND_SET__SHAPE, (nt, dim, shp_str))
 #endif
 
 
@@ -211,28 +220,40 @@ ICM_END( ND_REFRESH_MIRROR, (nt, sdim))
 
 #if defined(ND_CHECK_REUSE) || defined(ICM_ALL)
 ICM_DEF( ND_CHECK_REUSE, TRACE_NONE)
-  ICM_STR( nt)
-ICM_END( ND_CHECK_REUSE, (nt))
+  ICM_STR( to_nt)
+  ICM_INT( to_sdim)
+  ICM_STR( from_nt)
+  ICM_INT( from_sdim)
+ICM_END( ND_CHECK_REUSE, (to_nt, to_sdim, from_nt, from_sdim))
 #endif
 
 #if defined(ND_ALLOC) || defined(ICM_ALL)
 ICM_DEF( ND_ALLOC, TRACE_NONE)
   ICM_STR( nt)
-  ICM_STR( basetype)
-  ICM_INT( sdim)
-  ICM_VARINT( sdim, shp)
   ICM_INT( rc)
-ICM_END( ND_ALLOC, (nt, basetype, sdim, shp, rc))
+  ICM_ICM( set_shape)
+ICM_END( ND_ALLOC, (nt, rc, set_shape))
 #endif
 
 #if defined(ND_ALLOC_PLACE) || defined(ICM_ALL)
 ICM_DEF( ND_ALLOC_PLACE, TRACE_NONE)
   ICM_STR( nt)
-  ICM_STR( basetype)
-  ICM_INT( sdim)
-  ICM_VARINT( sdim, shp)
   ICM_INT( rc)
-ICM_END( ND_ALLOC_PLACE, (nt, basetype, sdim, shp, rc))
+ICM_END( ND_ALLOC_PLACE, (nt, rc))
+#endif
+
+/* ND_ALLOC_DATA( ...) is a H-ICM */
+
+/* ND_ALLOC_DESC( ...) is a H-ICM */
+
+
+#if defined(ND_CHECK_MIRROR) || defined(ICM_ALL)
+ICM_DEF( ND_CHECK_MIRROR, TRACE_NONE)
+  ICM_STR( to_nt)
+  ICM_INT( to_sdim)
+  ICM_STR( from_nt)
+  ICM_INT( from_sdim)
+ICM_END( ND_CHECK_MIRROR, (to_nt, to_sdim, from_nt, from_sdim))
 #endif
 
 
@@ -241,57 +262,87 @@ ICM_DEF( ND_ASSIGN, TRACE_NONE)
   ICM_STR( to_nt)
   ICM_INT( to_sdim)
   ICM_STR( from_nt)
-ICM_END( ND_ASSIGN, (to_nt, to_sdim, from_nt))
+  ICM_INT( from_sdim)
+ICM_END( ND_ASSIGN, (to_nt, to_sdim, from_nt, from_sdim))
 #endif
 
-#if defined(ND_ASSIGN_DATA) || defined(ICM_ALL)
-ICM_DEF( ND_ASSIGN_DATA, TRACE_NONE)
+/* ASSIGN__DATA( ...) is a H-ICM */
+
+#if defined(ND_ASSIGN__DESC) || defined(ICM_ALL)
+ICM_DEF( ND_ASSIGN__DESC, TRACE_NONE)
   ICM_STR( to_nt)
   ICM_INT( to_sdim)
   ICM_STR( from_nt)
-ICM_END( ND_ASSIGN_DATA, (to_nt, to_sdim, from_nt))
+  ICM_INT( from_sdim)
+ICM_END( ND_ASSIGN__DESC, (to_nt, to_sdim, from_nt, from_sdim))
 #endif
 
-#if defined(ND_ASSIGN_MIRROR) || defined(ICM_ALL)
-ICM_DEF( ND_ASSIGN_MIRROR, TRACE_NONE)
+#if defined(ND_ASSIGN__MIRROR) || defined(ICM_ALL)
+ICM_DEF( ND_ASSIGN__MIRROR, TRACE_NONE)
   ICM_STR( to_nt)
   ICM_INT( to_sdim)
   ICM_STR( from_nt)
-ICM_END( ND_ASSIGN_MIRROR, (to_nt, to_sdim, from_nt))
+  ICM_INT( from_sdim)
+ICM_END( ND_ASSIGN__MIRROR, (to_nt, to_sdim, from_nt, from_sdim))
 #endif
 
 
 #if defined(ND_COPY) || defined(ICM_ALL)
 ICM_DEF( ND_COPY, TRACE_NONE)
   ICM_STR( to_nt)
+  ICM_INT( to_sdim)
   ICM_STR( from_nt)
-ICM_END( ND_COPY, (to_nt, from_nt))
+  ICM_INT( from_sdim)
+  ICM_STR( copyfun)
+ICM_END( ND_COPY, (to_nt, to_sdim, from_nt, from_sdim, copyfun))
+#endif
+
+/* COPY__DATA( ...) is a H-ICM */
+
+#if defined(ND_COPY__SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_COPY__SHAPE, TRACE_NONE)
+  ICM_STR( to_nt)
+  ICM_INT( to_sdim)
+  ICM_STR( from_nt)
+  ICM_INT( from_sdim)
+ICM_END( ND_COPY__SHAPE, (to_nt, to_sdim, from_nt, from_sdim))
 #endif
 
 #if defined(ND_MAKE_UNIQUE) || defined(ICM_ALL)
 ICM_DEF( ND_MAKE_UNIQUE, TRACE_NONE)
   ICM_STR( to_nt)
+  ICM_INT( to_sdim)
   ICM_STR( from_nt)
-  ICM_STR( basetype)
-ICM_END( ND_MAKE_UNIQUE, (to_nt, from_nt, basetype))
+  ICM_INT( from_sdim)
+  ICM_STR( copyfun)
+ICM_END( ND_MAKE_UNIQUE, (to_nt, to_sdim, from_nt, from_sdim, copyfun))
 #endif
 
 
-#if defined(ND_ASSIGN_CONST_VECT) || defined(ICM_ALL)
-ICM_DEF( ND_ASSIGN_CONST_VECT, TRACE_NONE)
+#if defined(ND_ASSIGN__VECT__SHAPE) || defined(ICM_ALL)
+ICM_DEF( ND_ASSIGN__VECT__SHAPE, TRACE_NONE)
   ICM_STR( nt)
   ICM_INT( len)
   ICM_VAR( len, s)
-ICM_END( ND_ASSIGN_CONST_VECT, (nt, len, s))
+ICM_END( ND_ASSIGN__VECT__SHAPE, (nt, len, s))
+#endif
+
+#if defined(ND_ASSIGN__VECT__DATA) || defined(ICM_ALL)
+ICM_DEF( ND_ASSIGN__VECT__DATA, TRACE_NONE)
+  ICM_STR( nt)
+  ICM_INT( len)
+  ICM_VAR( len, s)
+ICM_END( ND_ASSIGN__VECT__DATA, (nt, len, s))
 #endif
 
 
 #if defined(ND_PRF_SHAPE) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_SHAPE, TRACE_NONE)
   ICM_STR( to_nt)
+  ICM_INT( to_sdim)
   ICM_STR( from_nt)
   ICM_INT( from_sdim)
-ICM_END( ND_PRF_SHAPE, (to_nt, from_nt, from_sdim))
+ICM_END( ND_PRF_SHAPE, (to_nt, to_sdim, from_nt, from_sdim))
 #endif
 
 
@@ -358,9 +409,6 @@ ICM_DEF( ND_CREATE_CONST_ARRAY_A, TRACE_NONE)
   ICM_VAR( len1, A)
 ICM_END( ND_CREATE_CONST_ARRAY_A, (name, len2, len1, A))
 #endif
-
-
-#endif /* TAGGED_ARRAYS */
 
 
 #if defined(ND_KD_SEL_CxA_S) || defined(ICM_ALL)
@@ -488,6 +536,9 @@ ICM_DEF( ND_PRF_MODARRAY_AxVxA, TRACE_PRF)
   ICM_STR( v)
 ICM_END( ND_PRF_MODARRAY_AxVxA, (res_btype,dimres,res,old,val,dim,v))
 #endif
+
+
+#endif /* TAGGED_ARRAYS */
 
 
 #if defined(ND_KS_VECT2OFFSET) || defined(ICM_ALL)
