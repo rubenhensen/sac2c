@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.30  1995/05/10 13:54:38  hw
+ * Revision 1.31  1995/05/11 08:25:16  hw
+ * changed setting of refcount at beginning of userdefined functions
+ *
+ * Revision 1.30  1995/05/10  13:54:38  hw
  * changed increasing of refcounts of used variables in loops
  *
  * Revision 1.29  1995/05/09  16:39:35  hw
@@ -2015,8 +2018,13 @@ CompArg (node *arg_node, node *arg_info)
             new_assign->node[1] = arg_info->node[0];
             new_assign->nnode += 1;
             arg_info->node[0] = new_assign;
+        } else if (0 == arg_node->refcnt) {
+            MAKENODE_NUM (refcnt_node, 1);
+            CREATE_2_ARY_ICM (new_assign, "ND_DEC_RC_FREE", id_node, refcnt_node);
+            new_assign->node[1] = arg_info->node[0];
+            new_assign->nnode += 1;
+            arg_info->node[0] = new_assign;
         }
-
     } else {
         MAKENODE_ID (exprs->node[0], "in");
     }
