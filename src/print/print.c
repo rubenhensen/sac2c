@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.166  1998/03/21 14:07:13  dkr
- * changed output of PrintWLublock
+ * Revision 1.167  1998/03/21 14:16:44  dkr
+ * changed output in PrintWLublock
  *
  * Revision 1.165  1998/03/21 13:23:07  dkr
  * changed output in PrintWLproj:
@@ -2355,7 +2355,7 @@ PrintWLublock (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintWLublock");
 
     INDENT
-    fprintf (outfile, "(%d -> %d), ublock%d[%d] %d\n", WLUBLOCK_BOUND1 (arg_node),
+    fprintf (outfile, "(%d -> %d), ublock%d[%d] %d: ", WLUBLOCK_BOUND1 (arg_node),
              WLUBLOCK_BOUND2 (arg_node), WLUBLOCK_LEVEL (arg_node),
              WLUBLOCK_DIM (arg_node), WLUBLOCK_BLOCKING (arg_node));
 
