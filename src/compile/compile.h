@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  1998/04/07 14:50:15  dkr
+ * added CompNcode
+ *
  * Revision 1.23  1998/04/02 18:46:56  dkr
  * added CompConc
  *
@@ -96,6 +99,7 @@ extern node *CompTypedef (node *arg_node, node *arg_info);
 extern node *CompObjdef (node *arg_node, node *arg_info);
 extern node *CompWith (node *arg_node, node *arg_info);
 extern node *CompConc (node *arg_node, node *arg_info);
+extern node *CompNcode (node *arg_node, node *arg_info);
 extern node *CompNwith2 (node *arg_node, node *arg_info);
 
 /* and now some macros for creation of N_icms */

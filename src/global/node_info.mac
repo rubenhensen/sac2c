@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.174  1998/04/07 14:45:51  dkr
+ * added CompNcode
+ *
  * Revision 1.173  1998/04/03 19:26:49  dkr
  * corrected nnode for N_conc
  *
@@ -892,7 +895,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, 1),
 
   NIF (N_Ncode, "N_Ncode", TravSons, FltnNcode, PrintNcode, TCNcode, TravSons, TravSons,
-       TravSons, FreeNCode, CFNcode, RCNcode, TravSons, TravSons, DupChain, TravSons,
+       TravSons, FreeNCode, CFNcode, RCNcode, CompNcode, TravSons, DupChain, TravSons,
        TravSons, TravSons, TravSons, TravSons, WLINcode, TravSons, PrintNcode, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, PRECncode,
        ACTNcode, TravSons, WLTNcode, CSENcode, TravSons, TravSons, TravSons, 3),
