@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2005/01/10 16:06:03  cg
+ * Useless AbortOnError removed.
+ *
  * Revision 3.22  2004/11/26 17:33:30  jhb
  * compile
  *
@@ -245,8 +248,6 @@ APdoTransform (node *arg_node)
     TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
-
-    ABORT_ON_ERROR;
 
 #endif /* PADT_DEACTVATED */
 
