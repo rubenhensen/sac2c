@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2004/08/08 12:13:21  ktr
+ * NWITHOP_MEM is now freed, too.
+ *
  * Revision 3.61  2004/07/30 17:50:33  sah
  * switch to new INFO structure
  * PHASE I
@@ -2149,9 +2152,11 @@ FreeNWithOp (node *arg_node, info *arg_info)
     case WO_genarray:
         NWITHOP_SHAPE (arg_node) = FREETRAV (NWITHOP_SHAPE (arg_node));
         NWITHOP_DEFAULT (arg_node) = FREETRAV (NWITHOP_DEFAULT (arg_node));
+        NWITHOP_MEM (arg_node) = FREETRAV (NWITHOP_MEM (arg_node));
         break;
     case WO_modarray:
         NWITHOP_ARRAY (arg_node) = FREETRAV (NWITHOP_ARRAY (arg_node));
+        NWITHOP_MEM (arg_node) = FREETRAV (NWITHOP_MEM (arg_node));
         break;
     case WO_foldfun:
         NWITHOP_NEUTRAL (arg_node) = FREETRAV (NWITHOP_NEUTRAL (arg_node));
