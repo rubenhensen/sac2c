@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef _SAC_CHECK_H_
-#define _SAC_CHECK_H_
+#ifndef _SAC_CHECK_LIB_H_
+#define _SAC_CHECK_LIB_H_
 
 #include "types.h"
 
@@ -17,7 +17,10 @@
  * Prefix: CHK
  *
  *****************************************************************************/
-extern node *CHKExistSon (node *arg_node, char *node, char *son);
-extern node *CHKRightType (node *arg_node, char *node, char *son);
+extern node *CHKdoCheck (node *syntax_tree);
 
-#endif /*_SAC_CHECK_H_ */
+extern node *CHKexistSon (node *son, node *arg_node, char *string);
+extern node *CHKexistAttribute (void *attribute, node *arg_node, char *string);
+extern node *CHKrightType (void *attribute, node *arg_node, char *type, char *string);
+
+#endif /*_SAC_CHECK_LIB_H_ */
