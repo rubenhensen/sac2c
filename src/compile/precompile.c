@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/03/15 16:12:38  dkr
+ * RemoveArtificialIds() added (extracted from RenameIds())
+ *
  * Revision 3.12  2001/03/15 11:59:35  dkr
  * ST_inout replaced by ST_reference
  *
@@ -93,72 +96,7 @@
  * Revision 2.23  2000/07/19 16:39:32  nmw
  * objinit function modified to work with ICMs
  *
- * Revision 2.22  2000/07/14 15:44:01  nmw
- * some dead code removed
- *
- * Revision 2.21  2000/07/14 15:19:33  dkr
- * FUNDEF_INLINE is bool!
- *
- * Revision 2.20  2000/07/14 14:46:25  nmw
- * init code for global objects moved from beginning og main()
- * to a separate init function that is called during the startup
- * it can be used in sac programms and c libraries, too
- *
- * Revision 2.15  2000/06/28 09:12:23  nmw
- * added traversal for mapping of functions to c wrappers
- *
- * Revision 2.14  2000/06/23 15:11:19  dkr
- * signature of DupTree changed
- *
- * Revision 2.13  2000/05/29 14:32:13  dkr
- * precompile() renamed into Precompile()
- * precompile now performs *two* tree traversals
- *
- * Revision 2.12  2000/05/29 11:56:00  dkr
- * fixed a bug in PREClet:
- * AdjustFoldFundef() is called now *before* the traversal of the
- * let-node is started.
- *
- * Revision 2.11  2000/05/26 19:26:53  dkr
- * signature of AdjustFoldFundef modified
- *
- * Revision 2.10  2000/05/25 23:04:44  dkr
- * PREClet(): call of AdjustFoldFundef() added
- *
- * Revision 2.9  2000/04/18 14:00:48  jhs
- * Added DBUGs.
- *
- * Revision 2.8  2000/03/23 16:04:49  dkr
- * DBUG_ASSERT in RenameId() added
- *
- * Revision 2.7  2000/03/02 13:07:44  jhs
- * Commented out usage of FUNDEF_ATTRIB (search it to find the place)
- * because these flag is cleared and reused bei multithreaded.
- *
- * Revision 2.6  2000/02/23 20:16:34  cg
- * Node status ST_imported replaced by ST_imported_mod and
- * ST_imported_class in order to allow distinction between enteties
- * that are imported from a module and those that are imported from a
- * class.
- *
- * Revision 2.5  2000/02/23 17:47:34  cg
- * Header file refcount.h no longer included.
- * Type property functions IsUnique(<type>), IsBoxed(<type>)
- * moved from refcount.c to tree_compound.c.
- *
- * Revision 2.4  1999/09/01 17:12:39  jhs
- * Expanded COMPSync to refcounters in barriers.
- *
- * Revision 2.3  1999/06/25 15:19:43  rob
- * Avoid genning GetUniFromTypes if not TAGGED_ARRAYS
- *
- * Revision 2.2  1999/06/25 14:52:25  rob
- * Introduce definitions and utility infrastructure for tagged array support.
- *
  * [...]
- *
- * Revision 1.1  1995/11/28  12:23:34  cg
- * Initial revision
  *
  */
 
@@ -924,7 +862,9 @@ RenameId (node *idnode)
     DBUG_ENTER ("RenameId");
 
     DBUG_ASSERT ((NODE_TYPE (idnode) == N_id), "Wrong argument to function RenameId()");
+
     DBUG_PRINT ("PREC", ("id-name == %s", ID_NAME (idnode)));
+
     DBUG_ASSERT ((ID_VARDEC (idnode) != NULL), "Vardec not found in function RenameId()");
 
     if (NODE_TYPE (ID_VARDEC (idnode)) == N_objdef) {
@@ -966,11 +906,11 @@ RenameTypes (types *type)
             /*
              * This is a SAC data type.
              */
-            if (0 == strcmp (TYPES_MOD (type), MAIN_MOD_NAME)) {
-                tmp = (char *)Malloc (sizeof (char) * (strlen (TYPES_NAME (type)) + 6));
+            if (!strcmp (TYPES_MOD (type), MAIN_MOD_NAME)) {
+                tmp = (char *)MALLOC (sizeof (char) * (strlen (TYPES_NAME (type)) + 6));
                 sprintf (tmp, "SACt_%s", TYPES_NAME (type));
             } else {
-                tmp = (char *)Malloc (
+                tmp = (char *)MALLOC (
                   sizeof (char)
                   * (strlen (TYPES_NAME (type)) + strlen (TYPES_MOD (type)) + 8));
                 sprintf (tmp, "SACt_%s__%s", TYPES_MOD (type), TYPES_NAME (type));
@@ -986,7 +926,7 @@ RenameTypes (types *type)
             /*
              * This is an imported C data type.
              */
-            tmp = (char *)Malloc (sizeof (char) * (strlen (TYPES_NAME (type)) + 6));
+            tmp = (char *)MALLOC (sizeof (char) * (strlen (TYPES_NAME (type)) + 6));
             sprintf (tmp, "SACe_%s", TYPES_NAME (type));
 
             DBUG_PRINT ("PREC", ("renaming type %s to %s", TYPES_NAME (type), tmp));
@@ -1031,7 +971,7 @@ RenameFun (node *fun)
          */
 
         if (FUNDEF_STATUS (fun) == ST_spmdfun) {
-            new_name = (char *)Malloc (sizeof (char) * (strlen (FUNDEF_NAME (fun)) + 6));
+            new_name = (char *)MALLOC (sizeof (char) * (strlen (FUNDEF_NAME (fun)) + 6));
             sprintf (new_name, "SACf_%s", FUNDEF_NAME (fun));
         } else {
             args = FUNDEF_ARGS (fun);
@@ -1041,16 +981,16 @@ RenameFun (node *fun)
                 args = ARG_NEXT (args);
             }
 
-            if (0 == strcmp (FUNDEF_MOD (fun), MAIN_MOD_NAME)) {
+            if (!strcmp (FUNDEF_MOD (fun), MAIN_MOD_NAME)) {
                 length += (strlen (FUNDEF_NAME (fun)) + 7);
 
-                new_name = (char *)Malloc (sizeof (char) * length);
+                new_name = (char *)MALLOC (sizeof (char) * length);
 
                 sprintf (new_name, "SACf_%s_", FUNDEF_NAME (fun));
             } else {
                 length += (strlen (FUNDEF_NAME (fun)) + strlen (FUNDEF_MOD (fun)) + 9);
 
-                new_name = (char *)Malloc (sizeof (char) * length);
+                new_name = (char *)MALLOC (sizeof (char) * length);
 
                 sprintf (new_name, "SACf_%s__%s_", FUNDEF_MOD (fun), FUNDEF_NAME (fun));
             }
@@ -1060,6 +1000,7 @@ RenameFun (node *fun)
             while (args != NULL) {
                 strcat (new_name, "_");
                 strcat (new_name, ARG_TYPESTRING (args));
+                FREE (ARG_TYPESTRING (args));
                 args = ARG_NEXT (args);
             }
         }
@@ -1096,41 +1037,119 @@ RenameFun (node *fun)
 /******************************************************************************
  *
  * function:
- *   ids *RenameIds( ids *id)
+ *   ids *RenameIds( ids *arg)
  *
  * description:
  *   This function performs the renaming of identifiers stored within ids-chains.
- *   It also removes those identifiers from the chain which are marked as
- *   'artificial'.
  *
  ******************************************************************************/
 
 static ids *
-RenameIds (ids *id)
+RenameIds (ids *arg)
 {
     DBUG_ENTER ("RenameIds");
 
-    while ((id != NULL) && (IDS_STATUS (id) == ST_artificial)) {
-        id = FreeOneIds (id);
-    }
-
-    if (id != NULL) {
-        if (NODE_TYPE (IDS_VARDEC (id)) == N_objdef) {
-            FREE (IDS_NAME (id));
-            IDS_NAME (id) = StringCopy (OBJDEF_NAME (IDS_VARDEC (id)));
+    if (arg != NULL) {
+        if (NODE_TYPE (IDS_VARDEC (arg)) == N_objdef) {
+            FREE (IDS_NAME (arg));
+            IDS_NAME (arg) = StringCopy (OBJDEF_NAME (IDS_VARDEC (arg)));
             /*
              * The global object's definition has already been renamed.
              */
         } else {
-            IDS_NAME (id) = RenameLocalIdentifier (IDS_NAME (id));
+            IDS_NAME (arg) = RenameLocalIdentifier (IDS_NAME (arg));
         }
 
-        if (IDS_NEXT (id) != NULL) {
-            IDS_NEXT (id) = RenameIds (IDS_NEXT (id));
+        if (IDS_NEXT (arg) != NULL) {
+            IDS_NEXT (arg) = RenameIds (IDS_NEXT (arg));
         }
     }
 
-    DBUG_RETURN (id);
+    DBUG_RETURN (arg);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   ids *RemoveOneArtificialIds( ids *arg, node *rhs)
+ *
+ * description:
+ *   This function removes the first identifier from the given IDS chain.
+ *   If the identifier is found on the LHS of a function application it is
+ *   checked that it indeed have a counterpart of the same name on the RHS.
+ *
+ ******************************************************************************/
+
+static ids *
+RemoveOneArtificialIds (ids *arg, node *rhs)
+{
+    node *exprs;
+    bool found;
+
+    DBUG_ENTER ("RemoveOneArtificialIds");
+
+    if ((rhs != NULL) && (NODE_TYPE (rhs) == N_ap)) {
+        found = FALSE;
+        exprs = AP_ARGS (rhs);
+        while ((!found) && (exprs != NULL)) {
+            if (NODE_TYPE (EXPRS_EXPR (exprs)) == N_id) {
+                found = (!strcmp (ID_NAME (EXPRS_EXPR (exprs)), IDS_NAME (arg)));
+            }
+            exprs = EXPRS_NEXT (exprs);
+        }
+    } else {
+        found = TRUE;
+    }
+
+    if (found) {
+        arg = FreeOneIds (arg);
+    } else {
+        DBUG_ASSERT ((0), "application with corrupted reference argument found!");
+    }
+
+    DBUG_RETURN (arg);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   ids *RemoveArtificialIds( ids *arg, node *rhs)
+ *
+ * description:
+ *   This function removes those identifiers from the chain which are marked
+ *   as 'artificial'.
+ *
+ ******************************************************************************/
+
+static ids *
+RemoveArtificialIds (ids *arg, node *rhs)
+{
+    ids *tmp;
+
+    DBUG_ENTER ("RemoveArtificialIds");
+
+    /*
+     * remove artificial ids: head
+     */
+    while ((arg != NULL) && (IDS_STATUS (arg) == ST_artificial)) {
+        arg = RemoveOneArtificialIds (arg, rhs);
+    }
+
+    /*
+     * remove artificial ids: tail
+     */
+    if (arg != NULL) {
+        tmp = arg;
+        while (IDS_NEXT (tmp) != NULL) {
+            if (IDS_STATUS (IDS_NEXT (tmp)) == ST_artificial) {
+                IDS_NEXT (tmp) = RemoveOneArtificialIds (IDS_NEXT (tmp), rhs);
+            } else {
+                tmp = IDS_NEXT (tmp);
+            }
+        }
+    }
+
+    DBUG_RETURN (arg);
 }
 
 /******************************************************************************
@@ -1165,22 +1184,16 @@ PREC2modul (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : PREC2typedef
- *  arguments     : 1) N_typedef node
- *                  2) arg_info unused
- *  description   : renames types,
- *                  All types defined in SAC get the prefix "SAC_"
- *                  to avoid name clashes with C identifiers.
- *  global vars   : mod_name_con
- *  internal funs : ---
- *  external funs : Malloc, sprintf, strlen
- *  macros        : DBUG, FREE, TREE
+ * Function:
+ *   node *PREC2typedef(node *arg_node, node *arg_info)
  *
- *  remarks       :
+ * Description:
+ *   Renames types. All types defined in SAC get the prefix "SAC_" to avoid
+ *   name clashes with C identifiers.
  *
- */
+ ******************************************************************************/
 
 node *
 PREC2typedef (node *arg_node, node *arg_info)
@@ -1193,11 +1206,11 @@ PREC2typedef (node *arg_node, node *arg_info)
         /*
          * This is a SAC typedef.
          */
-        if (0 == strcmp (TYPEDEF_MOD (arg_node), MAIN_MOD_NAME)) {
-            tmp = (char *)Malloc (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
+        if (!strcmp (TYPEDEF_MOD (arg_node), MAIN_MOD_NAME)) {
+            tmp = (char *)MALLOC (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
             sprintf (tmp, "SACt_%s", TYPEDEF_NAME (arg_node));
         } else {
-            tmp = (char *)Malloc (
+            tmp = (char *)MALLOC (
               sizeof (char)
               * (strlen (TYPEDEF_NAME (arg_node)) + strlen (TYPEDEF_MOD (arg_node)) + 8));
             sprintf (tmp, "SACt_%s__%s", TYPEDEF_MOD (arg_node), TYPEDEF_NAME (arg_node));
@@ -1212,7 +1225,7 @@ PREC2typedef (node *arg_node, node *arg_info)
         /*
          * This is an imported C typedef.
          */
-        tmp = (char *)Malloc (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
+        tmp = (char *)MALLOC (sizeof (char) * (strlen (TYPEDEF_NAME (arg_node)) + 6));
         sprintf (tmp, "SACe_%s", TYPEDEF_NAME (arg_node));
 
         FREE (TYPEDEF_NAME (arg_node));
@@ -1238,7 +1251,7 @@ PREC2typedef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2objdef(node *arg_node, node *arg_info)
+ *   node *PREC2objdef( node *arg_node, node *arg_info)
  *
  * Description:
  *   Renames global objects.
@@ -1271,13 +1284,13 @@ PREC2objdef (node *arg_node, node *arg_info)
          * identifier of a global object.
          */
 
-        if (0 == strcmp (OBJDEF_MOD (arg_node), MAIN_MOD_NAME)) {
+        if (!strcmp (OBJDEF_MOD (arg_node), MAIN_MOD_NAME)) {
             new_name
-              = (char *)Malloc (sizeof (char) * (strlen (OBJDEF_NAME (arg_node)) + 6));
+              = (char *)MALLOC (sizeof (char) * (strlen (OBJDEF_NAME (arg_node)) + 6));
 
             sprintf (new_name, "SACo_%s", OBJDEF_NAME (arg_node));
         } else {
-            new_name = (char *)Malloc (
+            new_name = (char *)MALLOC (
               sizeof (char)
               * (strlen (OBJDEF_NAME (arg_node)) + strlen (OBJDEF_MOD (arg_node)) + 8));
 
@@ -1461,7 +1474,7 @@ PREC2arg (node *arg_node, node *arg_info)
             arg_node = Trav (arg_node, arg_info);
         }
     } else {
-        ARG_TYPESTRING (arg_node) = Type2String (ARG_TYPE (arg_node), 2);
+        ARG_TYPESTRING (arg_node) = Type2String (ARG_TYPE (arg_node), 2, TRUE);
         ARG_TYPE (arg_node) = RenameTypes (ARG_TYPE (arg_node));
         /*
          * ARG_TYPESTRING is only used for renaming functions, so the
@@ -1572,7 +1585,10 @@ PREC2let (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PREC2let");
 
+    LET_IDS (arg_node) = RemoveArtificialIds (LET_IDS (arg_node), LET_EXPR (arg_node));
+
     LET_IDS (arg_node) = RenameIds (LET_IDS (arg_node));
+
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
     if (LET_EXPR (arg_node) == NULL) {
@@ -1606,8 +1622,9 @@ PREC2exprs_ap (node *current, node *formal)
 
     if (EXPRS_NEXT (current) != NULL) {
         EXPRS_NEXT (current)
-          = PREC2exprs_ap (EXPRS_NEXT (current),
-                           ARG_BASETYPE (formal) == T_dots ? formal : ARG_NEXT (formal));
+          = PREC2exprs_ap (EXPRS_NEXT (current), (ARG_BASETYPE (formal) == T_dots)
+                                                   ? formal
+                                                   : ARG_NEXT (formal));
     }
 
     expr = EXPRS_EXPR (current);
@@ -1771,7 +1788,7 @@ PREC2return (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC2id(node *arg_node, node *arg_info)
+ *   node *PREC2id( node *arg_node, node *arg_info)
  *
  * Description:
  *   Applied occurrences of global objects may be renamed, if the global
