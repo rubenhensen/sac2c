@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.196  2004/07/21 17:27:02  ktr
+ * Added NWITHOP_MEM
+ *
  * Revision 3.195  2004/07/16 14:41:34  sah
  * switch to new INFO structure
  * PHASE I
@@ -3842,11 +3845,13 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
  ***    node*  EXPR                  (scanparse !!)
  ***    node*  FUNDEF    (N_fundef)  (typecheck -> precompile -> compile -> )
  ***    long*  MASK                  (optimize -> )
+ ***    node*  MEM                   (emalloc -> )
  ***
  ***  remarks:
  ***
  ***    - TYPE is WO_genarray, WO_modarray, WO_foldfun, WO_foldprf.
  ***    - FUNDEF is used if (TYPE == WO_foldfun, WO_foldprf).
+ ***    - MEM is used if (TYPE == WO_genarray, WO_modarray)
  ***/
 
 extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
@@ -3862,6 +3867,7 @@ extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
 #define NWITHOP_NEXT(n) ((n)->node[2])
 #define NWITHOP_EXPR(n) ((n)->node[3])
 #define NWITHOP_FUNDEF(n) ((n)->node[4])
+#define NWITHOP_MEM(n) ((n)->node[3])
 #define NWITHOP_MASK(n, x) ((n)->mask[x])
 
 /*--------------------------------------------------------------------------*/
