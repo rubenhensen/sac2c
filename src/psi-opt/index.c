@@ -1,6 +1,10 @@
 
 /*
  * $Log$
+ * Revision 1.21  1998/06/06 13:55:30  dkr
+ * changed ChdId():
+ *   switched to new variable names.
+ *
  * Revision 1.20  1998/05/18 08:16:10  srs
  * fixed bug in IdxPrf(), F_modarray
  *
@@ -376,7 +380,7 @@ SetIdx (node *chain, types *vartype)
  *                  2) types*: shape
  *                  R) string: new varname
  *  description   : appends the shape to the varname; e.g:
- *                  test, int[1,4,2,3]  =>  __test_1_4_2_3
+ *                  test, int[1,4,2,3]  =>  test_1_4_2_3__
  *                  does not free the argument space!
  *  global vars   :
  *  internal funs :
@@ -396,12 +400,14 @@ ChgId (char *varname, types *type)
     int *shp;
 
     DBUG_ENTER ("ChgId");
-    sprintf (buffer, "__%s", varname);
+    sprintf (buffer, "%s", varname);
     shp = SHAPES_SELEMS (type);
     for (i = 0; i < TYPES_DIM (type); i++) {
         sprintf (buffer2, "_%d", shp[i]);
         strcat (buffer, buffer2);
     }
+    sprintf (buffer2, "__");
+    strcat (buffer, buffer2);
     DBUG_RETURN (StringCopy (buffer));
 }
 
