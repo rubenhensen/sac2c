@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2001/05/16 09:53:58  nmw
+ * missing ) added :-)
+ *
  * Revision 3.26  2001/05/16 09:23:46  nmw
  * removed unnecessary SSATransform and GenerateMasks to improve performance
  *
@@ -1131,9 +1134,9 @@ OPTfundef (node *arg_node, node *arg_info)
                          mem_wlunr_expr, mem_uns_expr, mem_elim_arrays, mem_wlf_expr,
                          mem_wlt_expr, mem_cse_expr, 0, 0, NON_ZERO_ONLY);
 
-    if (!(use_ssaform) {
+        if (!(use_ssaform)) {
             DBUG_DO_NOT_EXECUTE ("PRINT_MASKS", arg_node = FreeMasks (arg_node););
-    }
+        }
     }
 
     if (FUNDEF_NEXT (arg_node)) {
