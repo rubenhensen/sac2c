@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/07/09 12:51:13  sbs
+ * break specifyer "yacc" added and EliminateSelDots called
+ *
  * Revision 3.5  2002/04/16 18:41:47  dkr
  * bug in SetFileNames() fixed:
  * F_prog -> 'modulename' is set correctly now
@@ -112,6 +115,7 @@
 #include "resource.h"
 
 #include "scnprs.h"
+#include "handle_dots.h"
 
 /******************************************************************************
  *
@@ -312,6 +316,13 @@ ScanParse ()
 
     SetFileNames (syntax_tree);
 
+    if ((break_after == PH_scanparse) && (0 == strcmp (break_specifier, "yacc"))) {
+        goto DONE;
+    }
+
+    syntax_tree = EliminateSelDots (syntax_tree);
+
+DONE:
     DBUG_RETURN (syntax_tree);
 }
 
