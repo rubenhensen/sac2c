@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.39  1998/03/30 23:57:51  dkr
+ * fixed a bug in PRECnwith:
+ *   default value for 'PREC_break_after' is now correct
+ *
  * Revision 1.38  1998/03/30 23:43:05  dkr
  * PRECnwith is completed!!!
  *
@@ -3373,7 +3377,7 @@ PRECnwith (node *arg_node, node *arg_info)
     DBUG_ENTER ("PRECnwith");
 
     /* analyse 'break_specifier' */
-    PREC_break_after = PREC_PH_fit;
+    PREC_break_after = PREC_PH_norm;
     if (break_after == PH_precompile) {
         if (strcmp (break_specifier, "cube") == 0) {
             PREC_break_after = PREC_PH_cube;
