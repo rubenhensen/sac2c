@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.15  2005/02/18 22:20:17  mwe
+ * debug message removed
+ *
  * Revision 1.14  2005/02/16 14:11:09  mwe
  * some doxygen comments added
  *
@@ -311,8 +314,6 @@ ESDblock (node *arg_node, info *arg_info)
     if (BLOCK_INSTR (arg_node) != NULL) {
         BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
-
-    CTInote ("ESDblock: %s", FUNDEF_NAME (INFO_ESD_FUNDEF (arg_info)));
 
     DBUG_RETURN (arg_node);
 }
