@@ -1,6 +1,11 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2005/03/17 12:41:21  sah
+  added special handling of char and float during deserialisation
+  as they are promoted to int and double by the c compiler when passing
+  them through an ... arg
+
   Revision 1.4  2005/02/16 22:29:13  sah
   flags are processed correctly now
 
@@ -205,13 +210,35 @@ version="1.0">
       </xsl:if>
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="'= va_arg( args, '" />
-  <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@ctype" />
-  <xsl:value-of select="');'" />
+  <xsl:value-of select="' = '" />
+  <!-- generate right hand side of assignment -->
+  <xsl:apply-templates select="key(&quot;types&quot;, ./type/@name)/@ctype"
+                       mode="gen-fill-fun" />
+  <xsl:value-of select="';'" />
   <!-- end of for loop in case of an array -->
   <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
     <xsl:value-of select="'}'"/>
   </xsl:if>
+</xsl:template>
+
+<!-- special treatment for char types beeing passed through ...
+     because they are promoted to int by the c compiler
+-->
+<xsl:template match="@ctype[. = &quot;char&quot;]" mode="gen-fill-fun">
+  <xsl:value-of select="'(char) va_arg( args, int)'" />
+</xsl:template>
+
+<!-- special treatment for float types beeing passed through ...
+     because they are promoted to double by the c compiler
+-->
+<xsl:template match="@ctype[. = &quot;float&quot;]" mode="gen-fill-fun">
+  <xsl:value-of select="'(float) va_arg( args, double)'" />
+</xsl:template>
+
+<xsl:template match="@ctype" mode="gen-fill-fun">
+  <xsl:value-of select="'va_arg( args, '" />
+  <xsl:value-of select="." />
+  <xsl:value-of select="')'" />
 </xsl:template>
 
 <xsl:template match="son" mode="gen-fill-fun">
