@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/08/05 12:04:55  skt
+ * MUTHassugn added & removed some trash
+ *
  * Revision 3.8  2004/07/29 00:40:54  skt
  * added support for creation of dataflowgraph (mtmode 3)
  *
@@ -152,9 +155,7 @@
 #include "free.h"
 #include "Error.h"
 
-#include "schedule_init.h"
 #include "repfuns_init.h"
-#include "blocks_init.h"
 #include "blocks_propagate.h"
 #include "blocks_expand.h"
 #include "mtfuns_init.h"
@@ -163,13 +164,15 @@
 #include "barriers_init.h"
 #include "blocks_lift.h"
 #include "adjust_calls.h"
+
+#include "multithread.h"
 #include "tag_executionmode.h"
 #include "propagate_executionmode.h"
-#include "assignments_rearrange.h"
 #include "create_cells.h"
 #include "create_dataflowgraph.h"
+#include "assignments_rearrange.h"
 
-/** <!--*********************************************************************->
+/** <!--********************************************************************-->
  *
  * @fn node *BuildMultiThread( node *syntax_tree)
  *
@@ -205,383 +208,118 @@ BuildMultiThread (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
-typedef int (*ignorefun) (node *arg_node, node *arg_info);
-
 /** <!--********************************************************************-->
  *
- * @fn: node *MUTHdriver(node *arg_node,
- *                      node *arg_info,
- *                      int allowOOOCs,
- *                      int topdown,
- *                      funptr driver,
- *                      ignorefun ignore)
+ * @fn node *MUTHfundef(node *arg_node, node *arg_info)
  *
- * @brief
+ *   @brief accomplish the initialization of the function-executionmode
  *
- *   This is not function of the traversal itself, but behaves like a
- *   normal traversal function.
- *
- *   - first driver is stored in INFO_MUTH_DRIVER and
- *           ignore           in INFO_MUTH_IGNORE,
- *   - then arg_node will be traversed,
- *   - and the arg_info is retored afterwards
- *
- *   While traversing the driver and ignore can be used to customize
- *   the actual traversal on the fly.
- *   Ignore says which nodes can be applied to the driver function,
- *   these node will be applied to the driver function then,
- *
- *   This function is used to customize the traversal for these many many
- *   miniphases simply on-the-fly.
- *
- * @attention This function can handle OOOCs on demand, which are explained
- *            below at MUTHfundef
- * @param arg_node Usually the syntax-tree
- * @param arg_info An information container
- * @param allowOOOCs Shows, if out of order changes are allowed; interpreted
- *                   as boolean
- * @param topdown Shows, whether to traverse top-down or bottom-up; interpreted
- *                   as boolean
- * @param driver Simple function that behaves like an ordinary traversal
- *               function, but can contain whole mini-phases or simple actions.
- * @param ignore takes an arg_node and an arg_info and decides if the node
- *               should be ignored (Result == TRUE == 1) or not
- *               (Result == FALSE = 0).
- * @return The syntax-tree with driver operated on every node
+ *   @param arg_node a N_fundef
+ *   @param arg_info
+ *   @return
  *
  *****************************************************************************/
-node *
-MUTHdriver_ (node *arg_node, node *arg_info, int allowOOOCs, /* bool */
-             int topdown,                                    /* bool */
-             funptr driver, ignorefun ignore)
-{
-    int old_allowOOOCs; /* bool */
-    int old_topdown;    /* bool */
-    funptr old_driver;
-    ignorefun old_ignore;
-
-    DBUG_ENTER ("MUTHdriver");
-
-    if (arg_node != NULL) {
-        DBUG_PRINT ("MUTH", ("begin driving"));
-        old_driver = INFO_MUTH_DRIVER (arg_info);
-        old_ignore = INFO_MUTH_IGNORE (arg_info);
-        old_allowOOOCs = INFO_MUTH_ALLOW_OOOC (arg_info);
-        old_topdown = INFO_MUTH_TOPDOWN (arg_info);
-        INFO_MUTH_DRIVER (arg_info) = driver;
-        INFO_MUTH_IGNORE (arg_info) = ignore;
-        INFO_MUTH_ALLOW_OOOC (arg_info) = allowOOOCs;
-        INFO_MUTH_TOPDOWN (arg_info) = topdown;
-
-        /* OOOC is explained at MUTHfundef */
-        if (INFO_MUTH_ALLOW_OOOC (arg_info)) {
-            /* arg_node = */ Trav (arg_node, arg_info);
-        } else {
-            arg_node = Trav (arg_node, arg_info);
-        }
-
-        INFO_MUTH_DRIVER (arg_info) = old_driver;
-        INFO_MUTH_IGNORE (arg_info) = old_ignore;
-        INFO_MUTH_ALLOW_OOOC (arg_info) = old_allowOOOCs;
-        INFO_MUTH_TOPDOWN (arg_info) = old_topdown;
-        DBUG_PRINT ("MUTH", ("end driving"));
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- * @fn node *MUTHdriver(node *arg_node,
- *                      node *arg_info,
- *                      int allowOOOCs,
- *                      funptr driver,
- *                      ignorefun ignore)
- *
- * @brief calls MUTHdriver_ with parameter topdown=TRUE
- *
- * @param arg_node Usually the syntax-tree
- * @param arg_info An information container
- * @param allowOOOCs Shows, if out of order changes are allowed; interpreted
- *                   as boolean
- * @param driver Simple function that behaves like an ordinary traversal
- *               function, but can contain whole mini-phases or simple actions.
- * @param ignore takes an arg_node and an arg_info and decides if the node
- *               should be ignored (Result == TRUE == 1) or not
- *               (Result == FALSE = 0).
- * @return The syntax-tree with driver operated on every node
- *****************************************************************************/
-node *
-MUTHdriver (node *arg_node, node *arg_info, int allowOOOCs, /* bool */
-            funptr driver, ignorefun ignore)
-{
-    return (MUTHdriver_ (arg_node, arg_info, allowOOOCs, TRUE, driver, ignore));
-}
-
-/** <!--********************************************************************-->
- *
- * function:
- *   node *MUTHfundef(node *arg_node, node *arg_info)
- *
- * description:
- *   This function
- *   - first stores the arg_node (or the actual N_fundef-node) in
- *     INFO_MUTH_FUNDEF,
- *   - then checks if the actual ignore-function INFO_MUTH_IGNORE
- *     says the actual fundef has to be applied by the
- *     actual driver-function INFO_MUTH_driver, or not,
- *   - and restores the old arg_info.
- *
- *   This function reuses information stored by MUTHdriver,
- *   MUTHdriver has to be called before the traversal reaches this function!
- *   On demand this function can handle OOOCs (see below).
- *
- * attention: --- OutOfOrderChanges (OOOCs) ---
- *   The action and perhaps the changes a traversal function applied to some
- *   node n of the syntax-tree done on part of the tree from n on, i.e. n
- *   and everything that can be reached by the sons of n.
- *   The whole travsersal started at some node s in the tree upwards (not
- *   necessary that s is the root of the tree). From s to n exists a path
- *   that is described exactly by the actual call stack, if some thing is
- *   changed in the tree structure in this path this is called an
- *   OutOfOrderChange (OOOC).
- *   - Example - Chain of functions:
- *     (a,b,c,d,e and x are some functions, n is the next attribute)
- *
- *     Before traversal ... a to e are chained x does not exist ...
- *     (1) a.n -> b
- *                b.n -> c
- *                       c.n -> d
- *                              d.n -> e
- *
- *     After the traversal we like to have this tree ...
- *     ... where x is inserted between b and c.
- *     And we know what x shall look like if we traverse e!
- *     (2) a.n -> b
- *                b.n -> x
- *                       x.n -> c
- *                              c.n -> d
- *                                     d.n -> e
- *
- *     We write a simple traversal-function ...
- *     ANYfundef (node arg_node, ...)
- *     {
- *       if (arg_node) == e) {
- *         x = new_node_by_e( e)
- *         x.n = b.n
- *         b.n = x;
- *       } else {
- *         FUNDEF_NEXT( arg_node) = Trav(FUNDEF_NEXT( arg_node), arg_info);
- *       }
- *       RETURN( arg_node);
- *     }
- *
- *     THIS WILL NOT DO WHAT WE WANT!!!
- *     The result locks (not is!) like in (1) not like in (2)!
- *
- *     Problem is when we traverse into e everything is ok, b.n == x.
- *     Then we go back up reaching c, the function returns c, and was called
- *     from b, so b.n is set to c again ... we get the tree like in (3)
- *     where x is unreachable ...
- *
- *     (3) a.n -> b
- *                b.n -> c
- *                x.n -> c
- *                       c.n -> d
- *                              d.n -> e
- *
- *     To do this traversal in this way we need to ignore the function result
- *     like in this traversal ...
- *     ANYfundef2 (node arg_node, ...)
- *     {
- *       if (arg_node) == e) {
- *         x = new_node_by_e( e)
- *         x.n = b.n
- *         b.n = x;
- *       } else {
- *         Trav(FUNDEF_NEXT( arg_node), arg_info);
- *       }
- *       RETURN( arg_node);
- *     }
- *
- ******************************************************************************/
 node *
 MUTHfundef (node *arg_node, node *arg_info)
 {
-    node *old_fundef;
-    node *before;
-    node *result;
-    node *after;
-
     DBUG_ENTER ("MUTHfundef");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
+                 "MUTHfundef expects a N_fundef as arg_node");
 
-    old_fundef = INFO_MUTH_FUNDEF (arg_info);
-    INFO_MUTH_FUNDEF (arg_info) = arg_node;
+    /* initialize the executionmode*/
+    FUNDEF_EXECMODE (arg_node) = MUTH_ANY;
 
-    if (INFO_MUTH_TOPDOWN (arg_info)) {
-        if (!INFO_MUTH_IGNORE (arg_info) (arg_node, arg_info)) {
-            DBUG_PRINT ("MUTH",
-                        ("(top-down) into driver fun (%s)", FUNDEF_NAME (arg_node)));
-            arg_node = INFO_MUTH_DRIVER (arg_info) (arg_node, arg_info);
-            DBUG_PRINT ("MUTH",
-                        ("(top-down) from driver fun (%s)", FUNDEF_NAME (arg_node)));
-        } else {
-            DBUG_PRINT ("MUTH", ("(top-down) ignore %s", FUNDEF_NAME (arg_node)));
-        }
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        DBUG_PRINT ("MUTH", ("trav into function-body"));
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        DBUG_PRINT ("MUTH", ("trav from function-body"));
     }
+
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        /*
-         *  Are OutOfOrderChanges (OOOCs) allowed???
-         *  What are OOOCs??? See comment above!
-         */
-        if (INFO_MUTH_ALLOW_OOOC (arg_info)) {
-            /*
-             *  There is a problem here ... Compare OOOC comment above ...
-             *  If a new function is inserted by a traversal-function (that is not
-             *  applied to FUNDEF_NEXT( arg_node)) that changes the value of
-             *  FUNDEF_NEXT( arg_node), we would overwrite this here, so we cannot
-             *  do this ... and so we don't by ignoring the return value.
-             */
-            /* FUNDEF_NEXT( arg_node) = */ Trav (FUNDEF_NEXT (arg_node), arg_info);
-        } else {
-            /*
-             *  Let's check if there is a OOOC ...
-             */
-            before = FUNDEF_NEXT (arg_node);
-            result = Trav (FUNDEF_NEXT (arg_node), arg_info);
-            after = FUNDEF_NEXT (arg_node);
-            if (before != after) {
-                DBUG_ASSERT (0, "not allowed OOOC occured");
-            }
-            FUNDEF_NEXT (arg_node) = result;
-        }
-    }
-    if (!INFO_MUTH_TOPDOWN (arg_info)) {
-        if (!INFO_MUTH_IGNORE (arg_info) (arg_node, arg_info)) {
-            DBUG_PRINT ("MUTH",
-                        ("(bottom-up) into driver fun (%s)", FUNDEF_NAME (arg_node)));
-            arg_node = INFO_MUTH_DRIVER (arg_info) (arg_node, arg_info);
-            DBUG_PRINT ("MUTH",
-                        ("(bottom-up) from driver fun (%s)", FUNDEF_NAME (arg_node)));
-        } else {
-            DBUG_PRINT ("MUTH", ("(bottom-up) ignore %s", FUNDEF_NAME (arg_node)));
-        }
+        DBUG_PRINT ("MUTH", ("trav into function-next"));
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        DBUG_PRINT ("MUTH", ("trav from function-next"));
     }
 
-    INFO_MUTH_FUNDEF (arg_info) = old_fundef;
-
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *ClearATTRIB(node *arg_node, node *arg_info)
+ * @fn node *MUTHassign(node *arg_node, node *arg_info)
  *
- * description:
- *   >>driver<< function, used to clean the N_fundef큦 before the first
- *   mini-phase is executed.
- *   FUNDEF_ATTRIB is set to ST_call_any for all N_fundef큦.
+ *   @brief accomplish the initialization of the assignment-executionmode
  *
- ******************************************************************************/
+ *   @param arg_node a N_assign
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
 node *
-ClearATTRIB (node *arg_node, node *arg_info)
+MUTHassign (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("ClearATTRIB");
+    DBUG_ENTER ("MUTHassign");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign),
+                 "MUTHassign expects a N_assign as 1st argument");
 
-    FUNDEF_ATTRIB (arg_node) = ST_call_any;
+    ASSIGN_EXECMODE (arg_node) = MUTH_ANY;
+    if (ASSIGN_INSTR (arg_node) != NULL) {
+        DBUG_PRINT ("MUTH", ("trav into assignment-instruction"));
+        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        DBUG_PRINT ("MUTH", ("trav from assignment-instruction"));
+    }
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        DBUG_PRINT ("MUTH", ("trav into assignment-next"));
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        DBUG_PRINT ("MUTH", ("trav from assignment-next"));
+    }
 
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *ClearCOMPANION(node *arg_node, node *arg_info)
+ * @fn node *MUTHmodul(node *arg_node, node *arg_info)
  *
- * description:
- *   >>driver<< function, used to clean the N_fundef큦 before mini-phases
- *   rfin and mtfin are executed.
- *   FUNDEF_COMPANION is set to NULL for all N_fundef큦.
+ *   @brief executes the first parts of the EX-/ST-/MT-multithreading
  *
- ******************************************************************************/
-node *
-ClearCOMPANION (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("ClearCOMPANION");
-
-    FUNDEF_COMPANION (arg_node) = NULL;
-
-    DBUG_PRINT ("MUT", ("cleared companion"));
-    DBUG_PRINT ("MUT", (FUNDEF_NAME (arg_node)));
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
+ *   @param arg_node a N_modul
+ *   @param arg_info
+ *   @return
  *
- * function:
- *   int MUTHignore(node *arg_node, node *arg_info)
- *
- * description:
- *   >>ignore<< function, used for most (all?) of the miniphases,
- *   functions with empty body, fold_funs and rep_funs are ignored.
- *
- ******************************************************************************/
-int
-MUTHignore (node *arg_node, node *arg_info)
-{
-    int result;
-
-    DBUG_ENTER ("MUTHignore");
-
-    result = (FUNDEF_BODY (arg_node) == NULL) || (FUNDEF_STATUS (arg_node) == ST_foldfun)
-             || (FUNDEF_ATTRIB (arg_node) == ST_call_rep);
-
-    DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
- *   int MUTHignore_none(node *arg_node, node *arg_info)
- *
- * description:
- *   >>ignore<< function, ignores nothing
- *
- ******************************************************************************/
-int
-MUTHignore_none (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("MUTHignore_none");
-
-    DBUG_RETURN (FALSE);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *MUTHmodul(node *arg_node, node *arg_info)
- *
- * description:
- *   muth_tab traversal function for N_modul node.
- *   Executes miniphases on all N_fundefs.
- *
- *   ** Each phase is done on all N_fundefs, before the next miniphase **
- *   ** is started!!!!                                                 **
- *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 MUTHmodul (node *arg_node, node *arg_info)
 {
     node *old_arg_info;
     DBUG_ENTER ("MUTHmodul");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
+                 "MUTHmodul expects a N_modul as 1st argument");
 
     /*
      *  --- initializing (init) ---
      */
     DBUG_PRINT ("MUTH", ("begin initializing"));
-    MODUL_FUNS (arg_node)
-      = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE, ClearATTRIB, MUTHignore_none);
+    if (MODUL_IMPORTS (arg_node) != NULL) {
+        DBUG_PRINT ("MUTH", ("trav into modul-imports"));
+        MODUL_IMPORTS (arg_node) = Trav (MODUL_IMPORTS (arg_node), arg_info);
+        DBUG_PRINT ("MUTH", ("trav from modul-imports"));
+    }
+    if (MODUL_OBJS (arg_node) != NULL) {
+        DBUG_PRINT ("MUTH", ("trav into modul-objs"));
+        MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
+        DBUG_PRINT ("MUTH", ("trav from modul-objs"));
+    }
+    if (MODUL_TYPES (arg_node) != NULL) {
+        DBUG_PRINT ("MUTH", ("trav into modul-types"));
+        MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
+        DBUG_PRINT ("MUTH", ("trav from modul-types"));
+    }
+    if (MODUL_FUNS (arg_node) != NULL) {
+        DBUG_PRINT ("MUTH", ("trav into modul-funs"));
+        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+        DBUG_PRINT ("MUTH", ("trav from modul-funs"));
+    }
     DBUG_PRINT ("MUTH", ("end initializing"));
 
     if ((break_after == PH_multithread) && (strcmp ("init", break_specifier) == 0)) {
@@ -701,24 +439,6 @@ MUTHmodul (node *arg_node, node *arg_info)
       }*/
 
     /*
-     *  --- BlocksInit (blkin) ---
-     *
-     *  FUNDEF_COMPANION used to transport information from blkin to blkpp,
-     *  it can be reused after blkpp.
-     */
-    /*  DBUG_PRINT( "MUTH", ("begin BlocksInit"));
-    MODUL_FUNS( arg_node) =
-      MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, ClearCOMPANION,
-    MUTHignore_none); MODUL_FUNS( arg_node) = MUTHdriver (MODUL_FUNS( arg_node), arg_info,
-    FALSE, BlocksInit, MUTHignore); DBUG_PRINT( "MUTH", ("end BlocksInit"));
-
-    if ((break_after == PH_multithread) &&
-        (strcmp("blkin", break_specifier)==0)) {
-      goto cont;
-    }
-    */
-
-    /*
      *  --- AssignmentsRearrange (asmra) ---
      */
     DBUG_PRINT ("MUTH", ("begin AssignmentsRearrange"));
@@ -743,26 +463,28 @@ MUTHmodul (node *arg_node, node *arg_info)
      *  FUNDEF_COMPANION used to get information from blkin, but can be
      *  reused after blkpp.
      */
-    DBUG_PRINT ("MUTH", ("begin BlocksPropagate"));
-    MODUL_FUNS (arg_node)
-      = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE, BlocksPropagate, MUTHignore);
-    DBUG_PRINT ("MUTH", ("end BlocksPropagate"));
+    /* DBUG_PRINT( "MUTH", ("begin BlocksPropagate"));
+    MODUL_FUNS( arg_node) =
+      MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, BlocksPropagate, MUTHignore);
+    DBUG_PRINT( "MUTH", ("end BlocksPropagate"));
 
-    if ((break_after == PH_multithread) && (strcmp ("blkpp", break_specifier) == 0)) {
-        goto cont;
-    }
+    if ((break_after == PH_multithread) &&
+        (strcmp("blkpp", break_specifier)==0)) {
+      goto cont;
+      }*/
 
     /*
      *  --- BlocksExpand (blkex) ---
      */
-    DBUG_PRINT ("MUTH", ("begin BlocksExpand"));
-    MODUL_FUNS (arg_node)
-      = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE, BlocksExpand, MUTHignore);
-    DBUG_PRINT ("MUTH", ("end BlocksExpand"));
+    /*DBUG_PRINT( "MUTH", ("begin BlocksExpand"));
+    MODUL_FUNS( arg_node) =
+      MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, BlocksExpand, MUTHignore);
+    DBUG_PRINT( "MUTH", ("end BlocksExpand"));
 
-    if ((break_after == PH_multithread) && (strcmp ("blkex", break_specifier) == 0)) {
-        goto cont;
-    }
+    if ((break_after == PH_multithread) &&
+        (strcmp("blkex", break_specifier)==0)) {
+      goto cont;
+      }*/
 
     /*
      *  --- MtfunsInit (mtfin) ---
@@ -770,78 +492,83 @@ MUTHmodul (node *arg_node, node *arg_info)
      *  FUNDEF_COMPANION only used within this traversal!!
      *  It can be reused afterwards
      */
-    DBUG_PRINT ("MUTH", ("begin MtfunsInit"));
-    MODUL_FUNS (arg_node) = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE,
-                                        ClearCOMPANION, MUTHignore_none);
-    MODUL_FUNS (arg_node)
-      = MUTHdriver (MODUL_FUNS (arg_node), arg_info, TRUE, MtfunsInit, MUTHignore);
-    DBUG_PRINT ("MUTH", ("end MtfunsInit"));
+    /*DBUG_PRINT( "MUTH", ("begin MtfunsInit"));
+    MODUL_FUNS( arg_node) =
+      MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, ClearCOMPANION,
+    MUTHignore_none); MODUL_FUNS( arg_node) = MUTHdriver (MODUL_FUNS( arg_node), arg_info,
+    TRUE, MtfunsInit, MUTHignore); DBUG_PRINT( "MUTH", ("end MtfunsInit"));
 
-    if ((break_after == PH_multithread) && (strcmp ("mtfin", break_specifier) == 0)) {
-        goto cont;
-    }
+    if ((break_after == PH_multithread) &&
+        (strcmp("mtfin", break_specifier)==0)) {
+      goto cont;
+      }*/
 
     /*
      *  --- BlocksCons (blkco) ---
      */
-    DBUG_PRINT ("MUTH", ("begin BlocksCons"));
-    MODUL_FUNS (arg_node) = MUTHdriver_ (MODUL_FUNS (arg_node), arg_info, FALSE, FALSE,
-                                         BlocksCons, MUTHignore);
-    DBUG_PRINT ("MUTH", ("end BlocksCons"));
+    /*DBUG_PRINT( "MUTH", ("begin BlocksCons"));
+    MODUL_FUNS( arg_node) =
+      MUTHdriver_ (MODUL_FUNS( arg_node), arg_info, FALSE, FALSE, BlocksCons, MUTHignore);
+    DBUG_PRINT( "MUTH", ("end BlocksCons"));
 
-    if ((break_after == PH_multithread) && (strcmp ("blkco", break_specifier) == 0)) {
-        goto cont;
-    }
+    if ((break_after == PH_multithread) &&
+        (strcmp("blkco", break_specifier)==0)) {
+      goto cont;
+      }*/
 
     /*
      *  --- DataflowAnalysis (dfa) ---
      */
-    DBUG_PRINT ("MUTH", ("begin DataflowAnalysis"));
-    MODUL_FUNS (arg_node)
-      = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE, DataflowAnalysis, MUTHignore);
-    DBUG_PRINT ("MUTH", ("end DataflowAnalysis"));
+    /* DBUG_PRINT( "MUTH", ("begin DataflowAnalysis"));
+    MODUL_FUNS( arg_node) =
+      MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, DataflowAnalysis, MUTHignore);
+    DBUG_PRINT( "MUTH", ("end DataflowAnalysis"));
 
-    if ((break_after == PH_multithread) && (strcmp ("dfa", break_specifier) == 0)) {
-        goto cont;
-    }
+    if ((break_after == PH_multithread) &&
+        (strcmp("dfa", break_specifier)==0)) {
+      goto cont;
+      }*/
 
     /*
      *  --- BarriersInit (barin) ---
      */
-    DBUG_PRINT ("MUTH", ("begin BarriersInit"));
-    MODUL_FUNS (arg_node)
-      = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE, BarriersInit, MUTHignore);
-    DBUG_PRINT ("MUTH", ("end BarriersInit"));
+    /* DBUG_PRINT( "MUTH", ("begin BarriersInit"));
+       MODUL_FUNS( arg_node) =
+       MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, BarriersInit, MUTHignore);
+       DBUG_PRINT( "MUTH", ("end BarriersInit"));
 
-    if ((break_after == PH_multithread) && (strcmp ("barin", break_specifier) == 0)) {
-        goto cont;
-    }
+       if ((break_after == PH_multithread) &&
+       (strcmp("barin", break_specifier)==0)) {
+       goto cont;
+      }*/
 
     /*
      *  --- BlocksLift (blkli) ---
      */
-    DBUG_PRINT ("MUTH", ("begin BlocksLift"));
-    MODUL_FUNS (arg_node)
-      = MUTHdriver (MODUL_FUNS (arg_node), arg_info, TRUE, BlocksLift, MUTHignore);
-    DBUG_PRINT ("MUTH", ("end BlocksLift"));
+    /* DBUG_PRINT( "MUTH", ("begin BlocksLift"));
+       MODUL_FUNS( arg_node) =
+       MUTHdriver (MODUL_FUNS( arg_node), arg_info, TRUE, BlocksLift, MUTHignore);
+       DBUG_PRINT( "MUTH", ("end BlocksLift"));
 
-    if ((break_after == PH_multithread) && (strcmp ("blkli", break_specifier) == 0)) {
-        goto cont;
-    }
+       if ((break_after == PH_multithread) &&
+       (strcmp("blkli", break_specifier)==0)) {
+       goto cont;
+       }*/
 
     /*
      *  --- AdjustCalls (adjca) ---
      */
-    DBUG_PRINT ("MUTH", ("begin AdjustCalls"));
-    MODUL_FUNS (arg_node)
-      = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE, AdjustCalls1, MUTHignore);
-    MODUL_FUNS (arg_node)
-      = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE, AdjustCalls2, MUTHignore);
-    DBUG_PRINT ("MUTH", ("end AdjustCalls"));
+    /*DBUG_PRINT( "MUTH", ("begin AdjustCalls"));
+      MODUL_FUNS( arg_node) =
+      MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, AdjustCalls1, MUTHignore);
+      MODUL_FUNS( arg_node) =
+      MUTHdriver (MODUL_FUNS( arg_node), arg_info, FALSE, AdjustCalls2, MUTHignore);
+      DBUG_PRINT( "MUTH", ("end AdjustCalls"));
 
-    if ((break_after == PH_multithread) && (strcmp ("adjca", break_specifier) == 0)) {
-        goto cont;
-    }
+      if ((break_after == PH_multithread) &&
+      (strcmp("adjca", break_specifier)==0)) {
+      goto cont;
+      }*/
 
 cont:
 
