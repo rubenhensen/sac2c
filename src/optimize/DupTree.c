@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.67  1998/04/23 14:08:52  srs
+ * changed setting of ID_WL in DupId()
+ *
  * Revision 1.66  1998/04/22 16:35:57  srs
  * fixed bug in DupNcode()
  *
@@ -466,7 +469,12 @@ DupId (node *arg_node, node *arg_info)
     }
 
     if (N_id == NODE_TYPE (arg_node)) {
-        ID_WL (new_node) = arg_node; /* Withloop folding (wlf) needs this. */
+        /* Withloop folding (wlf) needs this. */
+        if (ID_WL (arg_node) && N_id == NODE_TYPE (ID_WL (arg_node)))
+            /* new code in new_codes, see 'usage of ID_WL' in WLF.c for more infos */
+            ID_WL (new_node) = ID_WL (arg_node);
+        else
+            ID_WL (new_node) = arg_node; /* original code */
     }
 
     DBUG_RETURN (new_node);
