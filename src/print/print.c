@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.117  2002/09/09 19:31:40  dkr
+ * prf_name_string added
+ *
  * Revision 3.116  2002/09/09 11:52:11  dkr
  * PrintPrf(): PRF_ARGS may be NULL...
  *
@@ -236,8 +239,6 @@ static node *last_assignment_icm = NULL;
     fprintf (file, "%s", STR_OR_UNKNOWN (str));                                          \
     PRINT_POINTER_BRACKETS (file, str);
 
-/******************************************************************************/
-
 /*
  * First, we generate the external declarations for all functions that
  * expand ICMs to C.
@@ -269,14 +270,16 @@ static node *last_assignment_icm = NULL;
 #undef ICM_END
 #undef ICM_ALL
 
-/******************************************************************************/
-
 #define PRF_IF(n, s, x, y, z) x
-
 char *prf_string[] = {
 #include "prf_node_info.mac"
 };
+#undef PRF_IF
 
+#define PRF_IF(n, s, x, y, z) y
+char *prf_name_string[] = {
+#include "prf_node_info.mac"
+};
 #undef PRF_IF
 
 #ifndef DBUG_OFF
