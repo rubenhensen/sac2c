@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/10/06 17:16:50  cg
+ * Revision 1.4  1995/10/19 10:05:54  cg
+ * memory allocation now via function 'Malloc` from internal_lib
+ *
+ * Revision 1.3  1995/10/06  17:16:50  cg
  * basic access facilities for new type nodelist added
  * IDS structure modified to store global objects.
  * MakeIds extended to 3 parameters
@@ -28,6 +31,7 @@
 #include "my_debug.h"
 #include "scnprs.h"
 #include "free.h"
+#include "internal_lib.h"
 
 #define PRF_IF(n, s, x, y) y
 
@@ -41,9 +45,7 @@ char *prf_name_str[] = {
 /* local macros for heap allocation                                         */
 /*--------------------------------------------------------------------------*/
 
-#define ALLOCATE(var, type)                                                              \
-    if ((var = (type *)malloc (sizeof (type))) == NULL)                                  \
-    ERROR2 (1, ("ERROR: Out of memory"))
+#define ALLOCATE(var, type) var = (type *)Malloc (sizeof (type))
 
 /*--------------------------------------------------------------------------*/
 /* local macros for node initialization                                     */
