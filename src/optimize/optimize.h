@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/04/08 08:09:55  khf
+ * support for wlfs and wlpg added but are currently
+ * deactivated in global.c
+ *
  * Revision 3.7  2004/03/02 16:49:49  mwe
  * support for CVP added
  *
@@ -162,6 +166,8 @@ extern int ap_unsupported;
 extern int dl_expr;
 extern int sp_expr;
 extern int cvp_expr;
+extern int wlpg_expr;
+extern int wlfs_expr;
 
 extern node *Optimize (node *arg_node);
 extern node *OPTmodul (node *arg_node, node *arg_info);

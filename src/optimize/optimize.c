@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2004/04/08 08:09:55  khf
+ * support for wlfs and wlpg added but are currently
+ * deactivated in global.c
+ *
  * Revision 3.58  2004/03/02 16:49:49  mwe
  * support for CVP added
  *
@@ -327,6 +331,8 @@
 #include "UndoElimSubDiv.h"
 #include "SelectionPropagation.h"
 #include "ConstVarPropagation.h"
+#include "WLPartitionGeneration.h"
+#include "WithloopFusion.h"
 
 /**
  *
@@ -370,6 +376,8 @@ int al_expr;
 int dl_expr;
 int sp_expr;
 int cvp_expr;
+int wlpg_expr;
+int wlfs_expr;
 
 /**
  *
@@ -426,6 +434,8 @@ ResetCounters ()
     dl_expr = 0;
     sp_expr = 0;
     cvp_expr = 0;
+    wlpg_expr = 0;
+    wlfs_expr = 0;
 
     DBUG_VOID_RETURN;
 }
@@ -441,6 +451,7 @@ ResetCounters ()
  *                          int off_ap_unsupported,
  *                          int off_wls_expr, int off_al_expr, int off_dl_expr,
  *                          int off_sp_expr, int off_cvp_expr,
+ *                          int off_wlpg_expr, int off_wlfs_expr,
  *                          int flag)
  *
  *   @brief prints all counters - specified offset provided that the respective
@@ -457,7 +468,8 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
                  int off_wlunr_expr, int off_uns_expr, int off_elim_arrays,
                  int off_wlf_expr, int off_wlt_expr, int off_cse_expr, int off_ap_padded,
                  int off_ap_unsupported, int off_wls_expr, int off_al_expr,
-                 int off_dl_expr, int off_sp_expr, int off_cvp_expr, int flag)
+                 int off_dl_expr, int off_sp_expr, int off_cvp_expr, int off_wlpg_expr,
+                 int off_wlfs_expr, int flag)
 {
     int diff;
     DBUG_ENTER ("PrintStatistics");
@@ -495,6 +507,10 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     diff = cse_expr - off_cse_expr;
     if ((optimize & OPT_CSE) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d common subexpression(s) eliminated", diff));
+
+    diff = wlpg_expr - off_wlpg_expr;
+    if ((optimize & OPT_WLPG) && ((ALL == flag) || (diff > 0)))
+        NOTE (("  %d full partitions generated", diff));
 
     diff = wlf_expr - off_wlf_expr;
     if ((optimize & OPT_WLF) && ((ALL == flag) || (diff > 0)))
@@ -539,6 +555,10 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     diff = dl_expr - off_dl_expr;
     if ((optimize & OPT_DL) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d distributive law optimization(s)", diff));
+
+    diff = wlfs_expr - off_wlfs_expr;
+    if ((optimize & OPT_WLFS) && ((ALL == flag) || (diff > 0)))
+        NOTE (("  %d withloop(s) fused", diff));
 
     DBUG_VOID_RETURN;
 }
@@ -775,7 +795,8 @@ OPTmodul (node *arg_node, node *arg_info)
 
     NOTE ((""));
     NOTE (("overall optimization statistics:"));
-    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ALL);
+    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                     ALL);
 
     /*
      * index vector elimination
@@ -820,6 +841,7 @@ DONE:
  *        CF         |
  *        CVP        |
  *        SP         |
+ *        WLPG       |
  *        WLT        |
  *        WLF        |
  *        (CF)       |   (applied only if WLF succeeded!)
@@ -839,6 +861,7 @@ DONE:
  *        WLT        |
  *         |--------/
  *        DCR
+ *        WLFS
  *
  *   </pre>
  ******************************************************************************/
@@ -865,6 +888,8 @@ OPTfundef (node *arg_node, node *arg_info)
     int mem_dl_expr = dl_expr;
     int mem_sp_expr = sp_expr;
     int mem_cvp_expr = cvp_expr;
+    int mem_wlpg_expr = wlpg_expr;
+    int mem_wlfs_expr = wlfs_expr;
 
     int old_cse_expr = cse_expr;
     int old_cf_expr = cf_expr;
@@ -881,6 +906,8 @@ OPTfundef (node *arg_node, node *arg_info)
     int old_dl_expr = dl_expr;
     int old_sp_expr = sp_expr;
     int old_cvp_expr = cvp_expr;
+    int old_wlpg_expr = wlpg_expr;
+    int old_wlfs_expr = wlfs_expr;
 
     int loop1 = 0;
     int loop2 = 0;
@@ -1024,6 +1051,7 @@ OPTfundef (node *arg_node, node *arg_info)
             old_dl_expr = dl_expr;
             old_sp_expr = sp_expr;
             old_cvp_expr = cvp_expr;
+            old_wlpg_expr = wlpg_expr;
 
             /*
              * !! Important !!
@@ -1088,6 +1116,15 @@ OPTfundef (node *arg_node, node *arg_info)
 
                 if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
                     && (0 == strcmp (break_specifier, "sp"))) {
+                    goto INFO;
+                }
+
+                if (optimize & OPT_WLPG) {
+                    arg_node = WLPartitionGenerationOPT (arg_node);
+                }
+
+                if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                    && (0 == strcmp (break_specifier, "wlpg"))) {
                     goto INFO;
                 }
 
@@ -1366,7 +1403,8 @@ OPTfundef (node *arg_node, node *arg_info)
                   || (uns_expr != old_uns_expr) || (lir_expr != old_lir_expr)
                   || (wlir_expr != old_wlir_expr) || (wls_expr != old_wls_expr)
                   || (al_expr != old_al_expr) || (dl_expr != old_dl_expr)
-                  || (sp_expr != old_sp_expr) || (cvp_expr != old_cvp_expr))
+                  || (sp_expr != old_sp_expr) || (cvp_expr != old_cvp_expr)
+                  || (wlpg_expr != old_wlpg_expr))
                  && (loop1 < max_optcycles));
         /* dkr:
          * How about  cf_expr, wlt_expr, dcr_expr  ??
@@ -1465,7 +1503,7 @@ OPTfundef (node *arg_node, node *arg_info)
         }
 
         /*
-         * Finally, we apply DCR once again:
+         * We apply DCR once again:
          */
         if (use_ssaform) {
             if (optimize & OPT_DCR) {
@@ -1475,6 +1513,20 @@ OPTfundef (node *arg_node, node *arg_info)
             if (optimize & OPT_DCR) {
                 arg_node = DeadCodeRemoval (arg_node, arg_info);
             }
+        }
+
+        /*
+         * Finally, we apply WLFS, first without a loop:
+         */
+        if (use_ssaform) {
+            if (optimize & OPT_WLFS) {
+                arg_node = WithloopFusion (arg_node);
+            }
+        }
+
+        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
+            && (0 == strcmp (break_specifier, "wlfs"))) {
+            goto INFO;
         }
 
         /*
@@ -1495,7 +1547,8 @@ OPTfundef (node *arg_node, node *arg_info)
                          mem_lir_expr, mem_wlir_expr, mem_cf_expr, mem_lunr_expr,
                          mem_wlunr_expr, mem_uns_expr, mem_elim_arrays, mem_wlf_expr,
                          mem_wlt_expr, mem_cse_expr, 0, 0, mem_wls_expr, mem_al_expr,
-                         mem_dl_expr, mem_sp_expr, mem_cvp_expr, NON_ZERO_ONLY);
+                         mem_dl_expr, mem_sp_expr, mem_cvp_expr, mem_wlpg_expr,
+                         mem_wlfs_expr, NON_ZERO_ONLY);
 
         if (!(use_ssaform)) {
             DBUG_DO_NOT_EXECUTE ("PRINT_MASKS", arg_node = FreeMasks (arg_node););
