@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2002/09/06 10:35:43  sah
+ * added PrintSetWL
+ *
  * Revision 3.18  2002/08/09 16:36:21  sbs
  * basic support for N_mop written.
  *
@@ -121,6 +124,7 @@ extern node *PrintFloat (node *arg_node, node *arg_info);
 extern node *PrintDouble (node *arg_node, node *arg_info);
 extern node *PrintBool (node *arg_node, node *arg_info);
 extern node *PrintDot (node *arg_node, node *arg_info);
+extern node *PrintSetWL (node *arg_node, node *arg_info);
 extern node *PrintStr (node *arg_node, node *arg_info);
 extern node *PrintChar (node *arg_node, node *arg_info);
 extern node *PrintVectInfo (node *arg_node, node *arg_info);

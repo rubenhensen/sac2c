@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.114  2002/09/06 10:35:43  sah
+ * added PrintSetWL
+ *
  * Revision 3.113  2002/08/30 15:48:18  dkr
  * DoPrintAST: FUNDEF_RETURN added
  *
@@ -2568,6 +2571,9 @@ PrintStr (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
+ * Function:
+ *  node *PrintDot( node *arg_node, node *arg_info)
+ *
  * Description:
  *
  *
@@ -2583,6 +2589,30 @@ PrintDot (node *arg_node, node *arg_info)
     for (i = 0; i < DOT_NUM (arg_node); i++) {
         fprintf (outfile, ".");
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *  node *PrintSetWL( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PrintSetWL (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintSetWL");
+
+    fprintf (outfile, "{ [");
+    PrintIds (SETWL_IDS (arg_node), arg_info);
+    fprintf (outfile, "] -> ");
+    Trav (SETWL_EXPR (arg_node), arg_info);
+    fprintf (outfile, " }");
 
     DBUG_RETURN (arg_node);
 }
