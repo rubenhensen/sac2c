@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.102  1996/01/02 15:56:05  cg
+ * Revision 1.103  1996/01/02 17:46:48  cg
+ * SIBS can now deal with external implicit types.
+ *
+ * Revision 1.102  1996/01/02  15:56:05  cg
  * The LINKMOD slot of fundef, typedef, and objdef nodes from module/class
  * declarations are now always set to the respective module/class name
  *
@@ -2677,6 +2680,32 @@ sibtype: evclass TYPEDEF type id SEMIC sibpragmas
        | evclass TYPEDEF type id COLON id SEMIC sibpragmas
            {
              $$=MakeTypedef($6, $4, $3, $1, NULL);
+             TYPEDEF_STATUS($$)=ST_imported;
+             TYPEDEF_PRAGMA($$)=$8;
+
+            DBUG_PRINT("GENSIB",
+                       ("%s:"P_FORMAT","P_FORMAT", Id: class %s",
+                        mdb_nodetype[ $$->nodetype ], $$, 
+                        TYPEDEF_TYPE($$), ItemName($$)));
+           }
+       | evclass TYPEDEF IMPLICIT id SEMIC sibpragmas
+           {
+             $$=MakeTypedef($4, NULL,
+                            MakeType(T_hidden, NULL, NULL, NULL, NULL),
+                            $1, NULL);
+             TYPEDEF_STATUS($$)=ST_imported;
+             TYPEDEF_PRAGMA($$)=$6;
+
+            DBUG_PRINT("GENSIB",
+                       ("%s:"P_FORMAT","P_FORMAT", Id: %s",
+                        mdb_nodetype[ $$->nodetype ], $$, 
+                        TYPEDEF_TYPE($$), ItemName($$)));
+           }
+       | evclass TYPEDEF IMPLICIT id COLON id SEMIC sibpragmas
+           {
+             $$=MakeTypedef($6, $4,
+                            MakeType(T_hidden, NULL, NULL, NULL, NULL),
+                            $1, NULL);
              TYPEDEF_STATUS($$)=ST_imported;
              TYPEDEF_PRAGMA($$)=$8;
 
