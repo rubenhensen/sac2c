@@ -1,5 +1,9 @@
 #
+#
 # $Log$
+# Revision 2.5  2000/11/15 13:38:09  dkr
+# OSF_ALPHA corrected
+#
 # Revision 2.4  2000/11/14 16:29:35  dkr
 # OSF_ALPHA added
 #
@@ -23,6 +27,7 @@
 # Initial revision
 #
 #
+
 
 #
 # Makefile for generating SAC distributions
@@ -198,12 +203,13 @@ sac2c.for.OSF_ALPHA libsac.tar.for.OSF_ALPHA:
 	rsh -l $(ALPHA_USER) $(ALPHA_HOST) 'rm -rf $(ALPHA_DIR); mkdir -p $(ALPHA_DIR)' 
 	rcp $(SAC2CDIR)/src.tar.gz $(ALPHA_USER)@$(ALPHA_HOST):$(ALPHA_DIR)
 	rsh -l $(ALPHA_USER) $(ALPHA_HOST) \
+	    'export PATH=$$PATH:/usr/local/bin:/usr/bin/X11;' \
 	    'cd $(ALPHA_DIR);'       \
 	    'gunzip -f src.tar.gz;'  \
 	    'tar xvf src.tar;'       \
 	    'chmod -R u+w *;'        \
 	    'touch src/*/*;'         \
-	    '$(ALPHA_MAKE) deps;'    \
+	    '$(ALPHA_MAKE) deps OS=OSF_ALPHA;'    \
 	    '$(ALPHA_MAKE) distrib_product OS=OSF_ALPHA'
 	rcp $(ALPHA_USER)@$(ALPHA_HOST):$(ALPHA_DIR)/sac2c ./sac2c.for.OSF_ALPHA
 	rsh -l $(ALPHA_USER) $(ALPHA_HOST)   \
