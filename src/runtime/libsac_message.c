@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/05/07 08:13:24  cg
+ * SAC runtime library implementation converted to new naming conventions.
+ *
  * Revision 1.2  1998/03/24 13:51:45  cg
  * First working revision
  *
@@ -14,7 +17,7 @@
  *
  * file:   libsac_message.c
  *
- * prefix: _SAC_
+ * prefix: SAC_
  *
  * description:
  *
@@ -36,7 +39,7 @@
  */
 
 void
-_SAC_RuntimeError (char *format, ...)
+SAC_RuntimeError (char *format, ...)
 {
     va_list arg_p;
 
@@ -53,7 +56,7 @@ _SAC_RuntimeError (char *format, ...)
 }
 
 void
-_SAC_Print (char *format, ...)
+SAC_Print (char *format, ...)
 {
     va_list arg_p;
 

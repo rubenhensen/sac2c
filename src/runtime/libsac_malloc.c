@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/05/07 08:13:24  cg
+ * SAC runtime library implementation converted to new naming conventions.
+ *
  * Revision 1.1  1998/03/19 16:33:23  cg
  * Initial revision
  *
@@ -11,7 +14,7 @@
  *
  * file:   libsac_malloc.c
  *
- * prefix: _SAC_
+ * prefix: SAC_
  *
  * description:
  *
@@ -29,14 +32,14 @@
 #include "sac_message.h"
 
 void *
-_SAC_MallocCheck (unsigned int size)
+SAC_MallocCheck (unsigned int size)
 {
     void *tmp;
 
     tmp = malloc (size);
 
     if (tmp == NULL) {
-        _SAC_RuntimeError ("Unable to allocate %d bytes of memory", size);
+        SAC_RuntimeError ("Unable to allocate %d bytes of memory", size);
     }
 
     return (tmp);

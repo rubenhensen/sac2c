@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/05/07 08:13:24  cg
+ * SAC runtime library implementation converted to new naming conventions.
+ *
  * Revision 1.1  1998/03/19 16:35:59  cg
  * Initial revision
  *
@@ -11,7 +14,7 @@
  *
  * file:   libsac_misc.c
  *
- * prefix: _SAC_
+ * prefix: SAC_
  *
  * description:
  *
@@ -24,7 +27,7 @@
 /******************************************************************************
  *
  * function:
- *   void _SAC_String2Array(char *array, const char *string)
+ *   void SAC_String2Array(char *array, const char *string)
  *
  * description:
  *   This function converts string representations of character arrays
@@ -34,7 +37,7 @@
  ******************************************************************************/
 
 void
-_SAC_String2Array (char *array, const char *string)
+SAC_String2Array (char *array, const char *string)
 {
     int i = 0, j = 0;
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/05/07 08:13:24  cg
+ * SAC runtime library implementation converted to new naming conventions.
+ *
  * Revision 1.1  1998/03/19 16:36:27  cg
  * Initial revision
  *
@@ -11,7 +14,7 @@
  *
  * file:   libsac_trace.c
  *
- * prefix: _SAC_
+ * prefix: SAC_
  *
  * description:
  *
@@ -25,13 +28,13 @@
 
 #define TRACE_BUFFER_SIZE 256
 
-int _SAC_array_memcnt = 0;
-int _SAC_hidden_memcnt = 0;
+int SAC_TR_array_memcnt = 0;
+int SAC_TR_hidden_memcnt = 0;
 
 static int trace_layout_flag = 0;
 
 void
-_SAC_PrintTraceHeader (char *format, ...)
+SAC_TR_PrintTraceHeader (char *format, ...)
 {
     va_list arg_p;
     static char buffer[TRACE_BUFFER_SIZE];
@@ -51,7 +54,7 @@ _SAC_PrintTraceHeader (char *format, ...)
 }
 
 void
-_SAC_PrintTraceInfo (char *format, ...)
+SAC_TR_PrintTraceInfo (char *format, ...)
 {
     va_list arg_p;
 

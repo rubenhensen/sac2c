@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/05/07 08:13:24  cg
+ * SAC runtime library implementation converted to new naming conventions.
+ *
  * Revision 1.2  1998/03/24 13:51:45  cg
  * First working revision
  *
@@ -14,7 +17,7 @@
  *
  * file:   libsac_profile.c
  *
- * prefix: _SAC_
+ * prefix: SAC_
  *
  * description:
  *
@@ -47,10 +50,20 @@ typedef struct timeval __PF_TIMER;
     (timer1##.tv_sec + timer1##.tv_usec / 1000000.0) * 100                               \
       / (timer2##.tv_sec + timer2##.tv_usec / 1000000.0)
 
+/*
+ * Global variables
+ */
+
+int SAC_PF_act_funno = 0;
+int SAC_PF_act_funapno = 0;
+int SAC_PF_with_level = 0;
+struct rusage SAC_PF_start_timer;
+struct rusage SAC_PF_stop_timer;
+
 /******************************************************************************
  *
  * function:
- *   void _SAC_PrintHeader( char * title)
+ *   void SAC_PF_PrintHeader( char * title)
  *
  * description:
  *
@@ -61,7 +74,7 @@ typedef struct timeval __PF_TIMER;
  ******************************************************************************/
 
 void
-_SAC_PrintHeader (char *title)
+SAC_PF_PrintHeader (char *title)
 {
     fprintf (stderr, "****************************************"
                      "****************************************\n");
@@ -73,7 +86,7 @@ _SAC_PrintHeader (char *title)
 /******************************************************************************
  *
  * function:
- *   void _SAC_PrintTime( char * title, char * space, __PF_TIMER * time)
+ *   void SAC_PF_PrintTime( char * title, char * space, __PF_TIMER * time)
  *
  * description:
  *
@@ -84,7 +97,7 @@ _SAC_PrintHeader (char *title)
  ******************************************************************************/
 
 void
-_SAC_PrintTime (char *title, char *space, __PF_TIMER *time)
+SAC_PF_PrintTime (char *title, char *space, __PF_TIMER *time)
 {
     fprintf (stderr,
              "%-20s: %s "__PF_TIMER_FORMAT
@@ -95,7 +108,7 @@ _SAC_PrintTime (char *title, char *space, __PF_TIMER *time)
 /******************************************************************************
  *
  * function:
- *   void _SAC_PrintTimePercentage( char * title, char * space,
+ *   void SAC_PF_PrintTimePercentage( char * title, char * space,
  *                             __PF_TIMER * time1, __PF_TIMER * time2)
  *
  * description:
@@ -107,7 +120,8 @@ _SAC_PrintTime (char *title, char *space, __PF_TIMER *time)
  ******************************************************************************/
 
 void
-_SAC_PrintTimePercentage (char *title, char *space, __PF_TIMER *time1, __PF_TIMER *time2)
+SAC_PF_PrintTimePercentage (char *title, char *space, __PF_TIMER *time1,
+                            __PF_TIMER *time2)
 {
     fprintf (stderr,
              "%-20s:%s  "__PF_TIMER_FORMAT
