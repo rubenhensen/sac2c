@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.104  2004/11/27 02:39:27  ktr
+ * errorcorrection.
+ *
  * Revision 3.103  2004/11/27 02:12:42  ktr
  * string.h
  *
@@ -18,7 +21,7 @@
 #include "Error.h"
 #include "globals.h"
 #include "functionprecompile.h"
-#include "type_conversions.h"
+#include "typeconv_precompile.h"
 #include "renameidentifiers.h"
 
 #include <string.h>
@@ -108,6 +111,9 @@ DONE:
 /*
  *
  * $Log$
+ * Revision 3.104  2004/11/27 02:39:27  ktr
+ * errorcorrection.
+ *
  * Revision 3.103  2004/11/27 02:12:42  ktr
  * string.h
  *

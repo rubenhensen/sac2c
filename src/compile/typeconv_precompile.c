@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/11/27 02:39:27  ktr
+ * errorcorrection.
+ *
  * Revision 1.1  2004/11/27 02:35:50  ktr
  * Initial revision
  *
@@ -25,7 +28,7 @@
 
 /** <!-- ****************************************************************** -->
  *
- * @file type_conversions.c
+ * @file typeconv_precompile.c
  *
  *   - Arguments of function applications are lifted if formal and actual types
  *     differ:
@@ -35,7 +38,7 @@
  *       b = fun( a);   =>   _tmp_b = fun( a); b = _tmp_b;
  *
  ******************************************************************************/
-#include "type_conversions.h"
+#include "typeconv_precompile.h"
 
 #include "tree_basic.h"
 #include "tree_compound.h"
