@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2003/03/12 14:49:23  dkr
+ * space in DBUG_PRINT added
+ *
  * Revision 1.29  2002/10/11 16:27:14  dkr
  * unused var removed
  *
@@ -1197,7 +1200,7 @@ SSACSElet (node *arg_node, node *arg_info)
                          NODE_LINE (arg_node), IDS_NAME (LET_IDS (arg_node)), stype1,
                          ID_NAME (LET_EXPR (arg_node)), stype2));
             DBUG_ASSERT ((0), "SSACSElet() tries to substitute identifier of"
-                              "incompatible type");
+                              " incompatible type");
         } else {
             /*
              *  We have an assignment of this form:
