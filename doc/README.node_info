@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.21  1995/07/06 17:30:30  cg
- * Constants removed, statustype modified.
+ * Revision 1.22  1995/07/11 09:22:17  cg
+ * objects now implemented.
  *
+# Revision 1.21  1995/07/06  17:30:30  cg
+# Constants removed, statustype modified.
+#
 # Revision 1.20  1995/06/07  08:55:00  hw
 # added information about N_array
 #
@@ -174,9 +177,7 @@ node[0]    : import-list (N_implist) if present...
 node[1]    : typedefs (N_typedef) if present...
 node[2]    : fundefs (N_fundef) if present...
 node[3]    : objdefs (N_objdef) if present...
-              !! not yet implemented !!
 node[4]    : N_isclass node if module is a class implementation
-              !! not yet implemented !!
 info.id    : Modul name/ NULL if simple program.
 
 N_implist:
@@ -187,7 +188,6 @@ node[1]    : casted to (ids *) !!! list of implicit type names!
 node[2]    : casted to (ids *) !!! list of explicit type names!
 node[3]    : casted to (ids *) !!! list of function names!
 node[4]    : casted to (ids *) !!! list of global object names!
-              !! not yet implemented !!
 info.id    : name of import-file.
 
 - If all identifier lists are empty then it's an "import all" -
@@ -202,10 +202,9 @@ info.types : containes type and new typename (info.type->id) in one types-struct
 
 N_objdef:
 ==========
-              !! not yet implemented !!
-node[0]    : initialization expression 
-node[1]    : subsequent objdefs if present...
-info.types : containes type and name of global object.
+node[0]    : subsequent objdefs if present...
+node[1]    : initialization expression
+info.types : contains type and name of global object.
 
 N_fundef:
 =========
@@ -265,7 +264,7 @@ mask[1]    : contains number of usages for all variables in the instruction
 N_let:
 ======
 node[0]    : expression 
-info.ids   : names of variables to assign to.
+info.ids   : names of variables to assign to (maybe empty list NULL).
 
 N_cast:
 =======
@@ -274,7 +273,7 @@ info.type  : new type
 
 N_return:
 =========
-node[0]    : returnvalues (N_exprs)
+node[0]    : returnvalues (N_exprs) (maybe empty list NULL).
 /* N_return is used in two differnt ways. First it is the returnvalue
    of function and secondly it defines how an array is modified in a
    with-expression. */
