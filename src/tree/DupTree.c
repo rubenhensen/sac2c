@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2001/04/06 18:46:17  dkr
+ * - DupAvis: call of DupTree replaced by DUPTRAV.
+ * - The LUT is no longer allocated and removed for each call of DupTree/DupNode.
+ *   Instead, we generate *once* a single LUT and reuse it for further
+ *   calls.
+ *
  * Revision 3.40  2001/04/06 14:54:33  dkr
  * DupVardec,DupArg: call of DupAvis() replaced by DUPTRAV()
  *
@@ -172,6 +178,15 @@
  *   DUP_INLINE : do not duplicate N_assign nodes which contain a N_return
  *   DUP_WLF    : set ID_WL
  *
+ * CAUTION:
+ *   Do *NOT* call the external functions Dup...() within a DUP-traversal!!!!
+ *   For duplicating nodes DUPTRAV should be used and for duplicating non-node
+ *   structures appropriate Dup..._() functions are provided!
+ *
+ *   When adding new functions: Please name top-level functions Dup...()
+ *   *without* trailing '_' and name static functions Dup..._() *with*
+ *   trailing '_'.
+ *
  ******************************************************************************/
 
 #include <string.h>
@@ -191,6 +206,8 @@
 #include "scheduling.h"
 #include "generatemasks.h"
 #include "constants.h"
+
+static LUT_t dup_lut = NULL;
 
 /*
  *  always traverses son 'node'
@@ -255,18 +272,18 @@ DupTreeOrNodeLUT_Type (int NodeOnly, node *arg_node, LUT_t lut, int type)
         INFO_DUP_FUNDEF (arg_info) = NULL;
 
         /*
-         *  Via this (ugly) macro DUPCONT the decision to copy the whole tree
-         *  starting from arg_node or only the node itself (meaning not to
-         *  traverse and copy xxx_NEXT) is done.
-         *  DUPCONT compares the actual arg_node of a traversal function with the
-         *  value in INFO_DUP_CONT. If they are the same the xxx_NEXT will be
-         *  ignored, otherwise it will be traversed. If the start-node is stored as
-         *  INFO_DUP_CONT it's xx_NEXT will not be duplicated, but the xxx_NEXT's
-         *  of all sons are copied, because they differ from INFO_DUP_CONT.
-         *  If NULL is stored in INFO_DUP_CONT (and in a traversal the arg_node
-         *  never is NULL) all nodes and their xxx_NEXT's are duplicated.
-         *  So we set INFO_DUP_CONT with NULL to copy all, arg_node to copy
-         *  start_node (as decribed above) only.
+         * Via this (ugly) macro DUPCONT the decision to copy the whole tree
+         * starting from arg_node or only the node itself (meaning not to
+         * traverse and copy xxx_NEXT) is done.
+         * DUPCONT compares the actual arg_node of a traversal function with the
+         * value in INFO_DUP_CONT. If they are the same the xxx_NEXT will be
+         * ignored, otherwise it will be traversed. If the start-node is stored as
+         * INFO_DUP_CONT it's xx_NEXT will not be duplicated, but the xxx_NEXT's
+         * of all sons are copied, because they differ from INFO_DUP_CONT.
+         * If NULL is stored in INFO_DUP_CONT (and in a traversal the arg_node
+         * never is NULL) all nodes and their xxx_NEXT's are duplicated.
+         * So we set INFO_DUP_CONT with NULL to copy all, arg_node to copy
+         * start_node (as decribed above) only.
          */
         if (NodeOnly) {
             INFO_DUP_CONT (arg_info) = arg_node;
@@ -275,7 +292,15 @@ DupTreeOrNodeLUT_Type (int NodeOnly, node *arg_node, LUT_t lut, int type)
         }
 
         if (lut == NULL) {
-            INFO_DUP_LUT (arg_info) = GenerateLUT ();
+            /*
+             * It would be extremly unefficient to generate a new LUT for each call
+             * of DupTree/DupNode.
+             * Therefore, we just generate it *once* :-)
+             */
+            if (dup_lut == NULL) {
+                dup_lut = GenerateLUT ();
+            }
+            INFO_DUP_LUT (arg_info) = dup_lut;
         } else {
             INFO_DUP_LUT (arg_info) = lut;
         }
@@ -283,7 +308,11 @@ DupTreeOrNodeLUT_Type (int NodeOnly, node *arg_node, LUT_t lut, int type)
         new_node = Trav (arg_node, arg_info);
 
         if (lut == NULL) {
-            INFO_DUP_LUT (arg_info) = RemoveLUT (INFO_DUP_LUT (arg_info));
+            /*
+             * Here, we just remove the content of the LUT but *not* the LUT itself.
+             * Guess what: Most likely we will need the LUT again soon ;-)
+             */
+            dup_lut = RemoveContentLUT (dup_lut);
         }
 
         arg_info = FreeNode (arg_info);
@@ -355,7 +384,7 @@ CopyCommonNodeData (node *new_node, node *old_node)
 /******************************************************************************
  *
  * Function:
- *   DFMmask_t DupDFMmask( DFMmask_t mask, node *arg_info)
+ *   DFMmask_t DupDFMask_( DFMmask_t mask, node *arg_info)
  *
  * Description:
  *   Duplicates the given DFMmask.
@@ -367,11 +396,11 @@ CopyCommonNodeData (node *new_node, node *old_node)
  ******************************************************************************/
 
 static DFMmask_t
-DupDFMmask (DFMmask_t mask, node *arg_info)
+DupDFMask_ (DFMmask_t mask, node *arg_info)
 {
     DFMmask_t new_mask;
 
-    DBUG_ENTER ("DupDFMmask");
+    DBUG_ENTER ("DupDFMask_");
 
     if (mask != NULL) {
         new_mask = DFMDuplicateMask (mask, SearchInLUT_P (INFO_DUP_LUT (arg_info),
@@ -1147,8 +1176,8 @@ DupReturn (node *arg_node, node *arg_info)
 
     RETURN_REFERENCE (new_node) = DUPTRAV (RETURN_REFERENCE (arg_node));
 
-    RETURN_USEMASK (new_node) = DupDFMmask (RETURN_USEMASK (arg_node), arg_info);
-    RETURN_DEFMASK (new_node) = DupDFMmask (RETURN_DEFMASK (arg_node), arg_info);
+    RETURN_USEMASK (new_node) = DupDFMask_ (RETURN_USEMASK (arg_node), arg_info);
+    RETURN_DEFMASK (new_node) = DupDFMask_ (RETURN_DEFMASK (arg_node), arg_info);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1313,8 +1342,8 @@ DupLet (node *arg_node, node *arg_info)
 
     new_node = MakeLet (DUPTRAV (LET_EXPR (arg_node)), new_ids);
 
-    LET_USEMASK (new_node) = DupDFMmask (LET_USEMASK (arg_node), arg_info);
-    LET_DEFMASK (new_node) = DupDFMmask (LET_DEFMASK (arg_node), arg_info);
+    LET_USEMASK (new_node) = DupDFMask_ (LET_USEMASK (arg_node), arg_info);
+    LET_DEFMASK (new_node) = DupDFMask_ (LET_DEFMASK (arg_node), arg_info);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1530,11 +1559,11 @@ DupSpmd (node *arg_node, node *arg_info)
 
     new_node = MakeSpmd (DUPTRAV (SPMD_REGION (arg_node)));
 
-    SPMD_IN (new_node) = DupDFMmask (SPMD_IN (arg_node), arg_info);
-    SPMD_INOUT (new_node) = DupDFMmask (SPMD_INOUT (arg_node), arg_info);
-    SPMD_OUT (new_node) = DupDFMmask (SPMD_OUT (arg_node), arg_info);
-    SPMD_LOCAL (new_node) = DupDFMmask (SPMD_LOCAL (arg_node), arg_info);
-    SPMD_SHARED (new_node) = DupDFMmask (SPMD_SHARED (arg_node), arg_info);
+    SPMD_IN (new_node) = DupDFMask_ (SPMD_IN (arg_node), arg_info);
+    SPMD_INOUT (new_node) = DupDFMask_ (SPMD_INOUT (arg_node), arg_info);
+    SPMD_OUT (new_node) = DupDFMask_ (SPMD_OUT (arg_node), arg_info);
+    SPMD_LOCAL (new_node) = DupDFMask_ (SPMD_LOCAL (arg_node), arg_info);
+    SPMD_SHARED (new_node) = DupDFMask_ (SPMD_SHARED (arg_node), arg_info);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1555,11 +1584,11 @@ DupSync (node *arg_node, node *arg_info)
     SYNC_FIRST (new_node) = SYNC_FIRST (arg_node);
     SYNC_LAST (new_node) = SYNC_LAST (arg_node);
 
-    SYNC_IN (new_node) = DupDFMmask (SYNC_IN (arg_node), arg_info);
-    SYNC_INOUT (new_node) = DupDFMmask (SYNC_INOUT (arg_node), arg_info);
-    SYNC_OUT (new_node) = DupDFMmask (SYNC_OUT (arg_node), arg_info);
-    SYNC_OUTREP (new_node) = DupDFMmask (SYNC_OUTREP (arg_node), arg_info);
-    SYNC_LOCAL (new_node) = DupDFMmask (SYNC_LOCAL (arg_node), arg_info);
+    SYNC_IN (new_node) = DupDFMask_ (SYNC_IN (arg_node), arg_info);
+    SYNC_INOUT (new_node) = DupDFMask_ (SYNC_INOUT (arg_node), arg_info);
+    SYNC_OUT (new_node) = DupDFMask_ (SYNC_OUT (arg_node), arg_info);
+    SYNC_OUTREP (new_node) = DupDFMask_ (SYNC_OUTREP (arg_node), arg_info);
+    SYNC_LOCAL (new_node) = DupDFMask_ (SYNC_LOCAL (arg_node), arg_info);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1602,9 +1631,9 @@ DupNwith (node *arg_node, node *arg_info)
         NWITH_DEC_RC_IDS (new_node) = DupIds_ (NWITH_DEC_RC_IDS (arg_node), arg_info);
     }
 
-    NWITH_IN_MASK (new_node) = DupDFMmask (NWITH_IN_MASK (arg_node), arg_info);
-    NWITH_OUT_MASK (new_node) = DupDFMmask (NWITH_OUT_MASK (arg_node), arg_info);
-    NWITH_LOCAL_MASK (new_node) = DupDFMmask (NWITH_LOCAL_MASK (arg_node), arg_info);
+    NWITH_IN_MASK (new_node) = DupDFMask_ (NWITH_IN_MASK (arg_node), arg_info);
+    NWITH_OUT_MASK (new_node) = DupDFMask_ (NWITH_OUT_MASK (arg_node), arg_info);
+    NWITH_LOCAL_MASK (new_node) = DupDFMask_ (NWITH_LOCAL_MASK (arg_node), arg_info);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1785,11 +1814,11 @@ DupNwith2 (node *arg_node, node *arg_info)
         NWITH2_DEC_RC_IDS (new_node) = DupIds_ (NWITH2_DEC_RC_IDS (arg_node), arg_info);
     }
 
-    NWITH2_REUSE (new_node) = DupDFMmask (NWITH2_REUSE (arg_node), arg_info);
+    NWITH2_REUSE (new_node) = DupDFMask_ (NWITH2_REUSE (arg_node), arg_info);
 
-    NWITH2_IN_MASK (new_node) = DupDFMmask (NWITH2_IN_MASK (arg_node), arg_info);
-    NWITH2_OUT_MASK (new_node) = DupDFMmask (NWITH2_OUT_MASK (arg_node), arg_info);
-    NWITH2_LOCAL_MASK (new_node) = DupDFMmask (NWITH2_LOCAL_MASK (arg_node), arg_info);
+    NWITH2_IN_MASK (new_node) = DupDFMask_ (NWITH2_IN_MASK (arg_node), arg_info);
+    NWITH2_OUT_MASK (new_node) = DupDFMask_ (NWITH2_OUT_MASK (arg_node), arg_info);
+    NWITH2_LOCAL_MASK (new_node) = DupDFMask_ (NWITH2_LOCAL_MASK (arg_node), arg_info);
 
     NWITH2_ISSCHEDULED (new_node) = NWITH2_ISSCHEDULED (arg_node);
 
@@ -2030,9 +2059,9 @@ DupMt (node *arg_node, node *arg_info)
     new_node = MakeMT (DUPTRAV (MT_REGION (arg_node)));
     MT_IDENTIFIER (new_node) = MT_IDENTIFIER (arg_node);
 
-    MT_USEMASK (new_node) = DupDFMmask (MT_USEMASK (arg_node), arg_info);
-    MT_DEFMASK (new_node) = DupDFMmask (MT_DEFMASK (arg_node), arg_info);
-    MT_NEEDLATER (new_node) = DupDFMmask (MT_NEEDLATER (arg_node), arg_info);
+    MT_USEMASK (new_node) = DupDFMask_ (MT_USEMASK (arg_node), arg_info);
+    MT_DEFMASK (new_node) = DupDFMask_ (MT_DEFMASK (arg_node), arg_info);
+    MT_NEEDLATER (new_node) = DupDFMask_ (MT_NEEDLATER (arg_node), arg_info);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2059,10 +2088,10 @@ DupSt (node *arg_node, node *arg_info)
     new_node = MakeST (DUPTRAV (ST_REGION (arg_node)));
     ST_IDENTIFIER (new_node) = ST_IDENTIFIER (arg_node);
 
-    ST_USEMASK (new_node) = DupDFMmask (ST_USEMASK (arg_node), arg_info);
-    ST_DEFMASK (new_node) = DupDFMmask (ST_DEFMASK (arg_node), arg_info);
-    ST_NEEDLATER_ST (new_node) = DupDFMmask (ST_NEEDLATER_ST (arg_node), arg_info);
-    ST_NEEDLATER_MT (new_node) = DupDFMmask (ST_NEEDLATER_MT (arg_node), arg_info);
+    ST_USEMASK (new_node) = DupDFMask_ (ST_USEMASK (arg_node), arg_info);
+    ST_DEFMASK (new_node) = DupDFMask_ (ST_DEFMASK (arg_node), arg_info);
+    ST_NEEDLATER_ST (new_node) = DupDFMask_ (ST_NEEDLATER_ST (arg_node), arg_info);
+    ST_NEEDLATER_MT (new_node) = DupDFMask_ (ST_NEEDLATER_MT (arg_node), arg_info);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2088,7 +2117,7 @@ DupMTsignal (node *arg_node, node *arg_info)
 
     new_node = MakeMTsignal ();
 
-    MTSIGNAL_IDSET (new_node) = DupDFMmask (MTSIGNAL_IDSET (arg_node), arg_info);
+    MTSIGNAL_IDSET (new_node) = DupDFMask_ (MTSIGNAL_IDSET (arg_node), arg_info);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2114,9 +2143,9 @@ DupMTsync (node *arg_node, node *arg_info)
 
     new_node = MakeMTsync ();
 
-    MTSYNC_WAIT (new_node) = DupDFMmask (MTSYNC_WAIT (arg_node), arg_info);
+    MTSYNC_WAIT (new_node) = DupDFMask_ (MTSYNC_WAIT (arg_node), arg_info);
     MTSYNC_FOLD (new_node) = CopyDFMfoldmask (MTSYNC_FOLD (arg_node));
-    MTSYNC_ALLOC (new_node) = DupDFMmask (MTSYNC_WAIT (arg_node), arg_info);
+    MTSYNC_ALLOC (new_node) = DupDFMask_ (MTSYNC_WAIT (arg_node), arg_info);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2142,7 +2171,7 @@ DupMTalloc (node *arg_node, node *arg_info)
 
     new_node = MakeMTalloc ();
 
-    MTALLOC_IDSET (new_node) = DupDFMmask (MTALLOC_IDSET (arg_node), arg_info);
+    MTALLOC_IDSET (new_node) = DupDFMask_ (MTALLOC_IDSET (arg_node), arg_info);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2185,7 +2214,7 @@ DupAvis (node *arg_node, node *arg_info)
 
     AVIS_SSAPHITARGET (new_node) = AVIS_SSAPHITARGET (arg_node);
     AVIS_SSALPINV (new_node) = AVIS_SSALPINV (arg_node);
-    AVIS_SSASTACK (new_node) = DupTree (AVIS_SSASTACK (arg_node));
+    AVIS_SSASTACK (new_node) = DUPTRAV (AVIS_SSASTACK (arg_node));
     AVIS_SSAUNDOFLAG (new_node) = AVIS_SSAUNDOFLAG (arg_node);
 
     AVIS_SSADEFINED (new_node) = AVIS_SSADEFINED (arg_node);
