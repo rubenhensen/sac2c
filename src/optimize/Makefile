@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.3  1995/02/13 17:17:59  asi
+# Revision 1.4  1995/03/06 11:09:01  asi
+# added -I../typecheck and make deps
+#
+# Revision 1.3  1995/02/13  17:17:59  asi
 # ConstantFolding.o and DeadCodeRemoval.o added
 #
 # Revision 1.2  1995/01/18  17:40:09  asi
@@ -14,7 +17,7 @@
 MAKE=make
 CC=gcc -ansi -g
 
-INCS=-I../global -I../../inc
+INCS=-I../global -I../../inc -I../typecheck
 
 all: optimize.o ConstantFolding.o DeadCodeRemoval.o
 
@@ -40,7 +43,8 @@ ConstantFolding.o: /usr/include/sys/stdtypes.h ../global/tree.h
 ConstantFolding.o: ../global/type_info.mac ../global/node_info.mac
 ConstantFolding.o: ../global/prf_node_info.mac ../global/free.h
 ConstantFolding.o: ../global/Error.h ../../inc/dbug.h ../global/my_debug.h
-ConstantFolding.o: ../global/traverse.h optimize.h ConstantFolding.h
+ConstantFolding.o: ../global/traverse.h ../typecheck/typecheck.h optimize.h
+ConstantFolding.o: ConstantFolding.h
 DeadCodeRemoval.o: /usr/include/stdio.h /usr/include/stdlib.h
 DeadCodeRemoval.o: /usr/include/sys/stdtypes.h ../global/tree.h
 DeadCodeRemoval.o: ../global/type_info.mac ../global/node_info.mac
