@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2003/03/14 13:23:37  dkr
+ * ND_PRF_SEL__SHAPE, ND_PRF_IDX_SEL__SHAPE modified
+ *
  * Revision 3.41  2002/10/30 14:20:22  dkr
  * some new macros used
  *
@@ -2220,6 +2223,7 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_nt, int to_sdim, char *from_nt, int fro
                                 char *idx_nt)
 {
     shape_class_t to_sc = ICUGetShapeClass (to_nt);
+    int to_dim = DIM_NO_OFFSET (to_sdim);
 
     DBUG_ENTER ("ICMCompileND_PRF_SEL__SHAPE_id");
 
@@ -2239,9 +2243,11 @@ ICMCompileND_PRF_SEL__SHAPE_id (char *to_nt, int to_sdim, char *from_nt, int fro
         /*
          * for the time being implemented for scalar results only!
          */
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == SAC_ND_A_SIZE( %s)",
-                                  from_nt, idx_nt);
-                         , fprintf (outfile, "Result of F_sel has (dim != 0)!"););
+        if (to_dim != 0) {
+            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == SAC_ND_A_SIZE( %s)",
+                                      from_nt, idx_nt);
+                             , fprintf (outfile, "Result of F_sel has (dim != 0)!"););
+        }
         ICMCompileND_SET__SHAPE (to_nt, 0, NULL);
         break;
 
@@ -2284,6 +2290,7 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_nt, int to_sdim, char *from_nt, int fr
                                  int idx_size, char **idxa_any)
 {
     shape_class_t to_sc = ICUGetShapeClass (to_nt);
+    int to_dim = DIM_NO_OFFSET (to_sdim);
 
     DBUG_ENTER ("ICMCompileND_PRF_SEL__SHAPE_arr");
 
@@ -2308,8 +2315,11 @@ ICMCompileND_PRF_SEL__SHAPE_arr (char *to_nt, int to_sdim, char *from_nt, int fr
         /*
          * for the time being implemented for scalar results only!
          */
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == %d", from_nt, idx_size);
-                         , fprintf (outfile, "Result of F_sel has (dim != 0)!"););
+        if (to_dim != 0) {
+            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == %d", from_nt,
+                                      idx_size);
+                             , fprintf (outfile, "Result of F_sel has (dim != 0)!"););
+        }
         ICMCompileND_SET__SHAPE (to_nt, 0, NULL);
         break;
 
@@ -2740,7 +2750,7 @@ void
 ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_nt, int to_sdim, char *from_nt, int from_sdim,
                                  char *idx_any)
 {
-    shape_class_t to_sc = ICUGetShapeClass (to_nt);
+    int to_dim = DIM_NO_OFFSET (to_sdim);
 
     DBUG_ENTER ("ICMCompileND_PRF_IDX_SEL__SHAPE");
 
@@ -2761,25 +2771,10 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_nt, int to_sdim, char *from_nt, int fr
              " (\"ND_PRF_IDX_SEL__SHAPE( %s, %d, %s, %d, %s)\"))\n",
              to_nt, to_sdim, from_nt, from_sdim, idx_any);
 
-    switch (to_sc) {
-    case C_aud:
-        DBUG_ASSERT ((0), "idx_sel() with unknown dimension found!");
-        break;
-
-    case C_akd:
-        /* here is no break missing */
-    case C_aks:
+    if (to_dim == 0) {
+        ICMCompileND_SET__SHAPE (to_nt, 0, NULL);
+    } else {
         DBUG_ASSERT ((0), "idx_sel() with non-scalar result not yet implemented");
-        break;
-
-    case C_scl:
-        INDENT;
-        fprintf (outfile, "SAC_NOOP()\n");
-        break;
-
-    default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
-        break;
     }
 
     DBUG_VOID_RETURN;
