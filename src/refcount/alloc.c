@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/07/23 11:51:58  ktr
+ * changed IDX2OFFSET into IDXS2OFFSET
+ *
  * Revision 1.9  2004/07/21 16:57:09  ktr
  * blah
  *
@@ -755,7 +758,7 @@ EMALicm (node *arg_node, info *arg_info)
     name = ICM_NAME (arg_node);
     if ((strstr (name, "USE_GENVAR_OFFSET") != NULL)
         || (strstr (name, "VECT2OFFSET") != NULL)
-        || (strstr (name, "IDX2OFFSET") != NULL)) {
+        || (strstr (name, "IDXS2OFFSET") != NULL)) {
 
         INFO_EMAL_ALLOCLIST (arg_info)
           = MakeALS (INFO_EMAL_ALLOCLIST (arg_info),
