@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.40  2000/01/25 13:31:19  dkr
+ * include of optimize.h removed
+ *
  * Revision 2.39  2000/01/17 16:25:58  cg
  * Removed static and dynamic versions of the ICMs
  * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END].
@@ -83,7 +86,6 @@
 #include "Error.h"
 #include "traverse.h"
 #include "DataFlowMask.h"
-#include "optimize.h"
 #include "compile.h"
 #include "convert.h"
 #include "DupTree.h"
