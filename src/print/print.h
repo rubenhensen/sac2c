@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/02/24 15:56:12  dkr
+ * Print functions for old with-loop removed
+ *
  * Revision 2.4  2000/02/11 18:31:00  dkr
  * PrintNode() added
  *
@@ -156,12 +159,6 @@ extern node *PrintWhile (node *arg_node, node *arg_info);
 extern node *PrintFor (node *arg_node, node *arg_info);
 extern node *PrintEmpty (node *arg_node, node *arg_info);
 extern node *PrintCond (node *arg_node, node *arg_info);
-extern node *PrintWith (node *arg_node, node *arg_info);
-extern node *PrintGenator (node *arg_node, node *arg_info);
-extern node *PrintGenarray (node *arg_node, node *arg_info);
-extern node *PrintModarray (node *arg_node, node *arg_info);
-extern node *PrintFoldprf (node *arg_node, node *arg_info);
-extern node *PrintFoldfun (node *arg_node, node *arg_info);
 extern node *PrintArray (node *arg_node, node *arg_info);
 extern node *PrintInc (node *arg_node, node *arg_info);
 extern node *PrintDec (node *arg_node, node *arg_info);
