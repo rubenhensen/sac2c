@@ -1,3 +1,7 @@
 Makefile
+prim_fun.c
+prim_fun.h
+prim_fun_ft.mac
+prim_fun_tt.mac
 typecheck.c
 typecheck.h
