@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/08/05 17:42:19  skt
+ * moved handling of the allocation around the withloop from create_cells
+ *
  * Revision 1.5  2004/08/05 13:50:18  skt
  * welcome to the new INFO structure
  *
@@ -50,6 +53,8 @@
 #include "print.h"
 #include "propagate_executionmode.h"
 #include "multithread.h"
+#include "multithread_lib.h"
+
 /*
  * INFO structure
  */
@@ -346,12 +351,14 @@ node *
 PEMwith2 (node *arg_node, info *arg_info)
 {
     node *old_lastwith2;
+    int old_executionmode;
     DBUG_ENTER ("PEMwith2");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Nwith2),
                  "PEMwith2 expects a N_with2 as argument");
 
     old_lastwith2 = INFO_PEM_LASTWITHASSIGN (arg_info);
     INFO_PEM_LASTWITHASSIGN (arg_info) = INFO_PEM_MYASSIGN (arg_info);
+    old_executionmode = ASSIGN_EXECMODE (INFO_PEM_MYASSIGN (arg_info));
 
     if (NWITH2_SEGS (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into segments"));
@@ -368,6 +375,12 @@ PEMwith2 (node *arg_node, info *arg_info)
         DBUG_PRINT ("PEM", ("trav into withops"));
         NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
         DBUG_PRINT ("PEM", ("trav from withops"));
+    }
+
+    /* perhaps some changes appeared
+       - update the allocations of the with-loop */
+    if (old_executionmode != ASSIGN_EXECMODE (INFO_PEM_MYASSIGN (arg_info))) {
+        TagAllocs (arg_node, ASSIGN_EXECMODE (INFO_PEM_MYASSIGN (arg_info)));
     }
 
     INFO_PEM_LASTWITHASSIGN (arg_info) = old_lastwith2;
