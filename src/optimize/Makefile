@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.5  1999/05/10 10:48:10  bs
+# make deps done
+#
 # Revision 2.4  1999/03/15 21:15:30  dkr
 # make deps done
 #
@@ -318,4 +321,4 @@ optimize.o: ../print/print.h ../print/convert.h optimize.h generatemasks.h
 optimize.o: freemasks.h ConstantFolding.h DeadCodeRemoval.h
 optimize.o: DeadFunctionRemoval.h LoopInvariantRemoval.h Inline.h Unroll.h
 optimize.o: Unswitch.h ../psi-opt/ArrayElimination.h CSE.h
-optimize.o: ../psi-opt/WithloopFolding.h ../psi-opt/tile_size_inference.h
+optimize.o: ../psi-opt/WithloopFolding.h ../psi-opt/wl_access_analyze.h
