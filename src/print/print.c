@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.185  1998/04/09 09:41:55  dkr
+ * changed output in PrintConc
+ *
  * Revision 1.184  1998/04/07 17:31:47  dkr
  * PrintNcode:
  *    CODE_CEXPR could be NULL (compile)
@@ -2037,14 +2040,14 @@ PrintConc (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintConc");
 
-    fprintf (outfile, "{ /*** begin of concurrent region ***/\n");
+    fprintf (outfile, "/*** begin of concurrent region ***/\n");
 
     indent++;
     CONC_REGION (arg_node) = Trav (CONC_REGION (arg_node), arg_info);
     indent--;
 
     INDENT
-    fprintf (outfile, "} /*** end of concurrent region ***/");
+    fprintf (outfile, "/*** end of concurrent region ***/");
 
     DBUG_RETURN (arg_node);
 }
