@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.70  1998/04/24 12:12:23  dkr
+ * changed DupSPMD
+ *
  * Revision 1.69  1998/04/24 01:15:14  dkr
  * added DupSync
  *
@@ -827,6 +830,7 @@ DupSPMD (node *arg_node, node *arg_info)
     SPMD_IN (new_node) = DUPTRAV (SPMD_IN (arg_node));
     SPMD_OUT (new_node) = DUPTRAV (SPMD_OUT (arg_node));
     SPMD_INOUT (new_node) = DUPTRAV (SPMD_INOUT (arg_node));
+    SPMD_LOCAL (new_node) = DUPTRAV (SPMD_LOCAL (arg_node));
 
     DBUG_RETURN (new_node);
 }
