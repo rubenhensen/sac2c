@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2004/11/19 10:17:12  sah
+ * removed T_classtype
+ *
  * Revision 3.68  2004/11/17 19:46:47  sah
  * interface changes
  *
@@ -4925,11 +4928,7 @@ Type2OldType (ntype *new)
         TYPES_DIM (res) = ARRAY_OR_SCALAR;
         break;
     case TC_simple:
-        if (SIMPLE_TYPE (new) == T_classtype) {
-            res = MakeTypes (T_hidden, 0, NULL, NULL, NULL);
-        } else {
-            res = MakeTypes (SIMPLE_TYPE (new), 0, NULL, NULL, NULL);
-        }
+        res = MakeTypes (SIMPLE_TYPE (new), 0, NULL, NULL, NULL);
         break;
     case TC_user:
         res = MakeTypes (T_user, 0, NULL, StringCopy (UTGetName (USER_TYPE (new))),

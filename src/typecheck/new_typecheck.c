@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2004/11/19 10:16:28  sah
+ * removed T_classtype
+ *
  * Revision 3.53  2004/11/18 14:34:31  mwe
  * changed CheckAvis and chkavis to ToNewTypes and to tonewtypes
  *
@@ -846,12 +849,15 @@ NTCtypedef (node *arg_node, info *arg_info)
 #else
     nt = TYPEDEF_NTYPE (arg_node);
 #endif
-    if (TYPEDEF_ATTRIB (arg_node) == ST_unique) {
-        DBUG_ASSERT ((TYIsSimple (TYGetScalar (nt))
-                      && (TYGetSimpleType (TYGetScalar (nt)) == T_hidden)),
-                     "unique typedef is not of hidden base type!!");
-        nt = TYSetScalar (nt, TYMakeSimpleType (T_classtype));
-    }
+
+#if 0
+  if( TYPEDEF_ATTRIB( arg_node) == ST_unique) {
+    DBUG_ASSERT( ( TYIsSimple( TYGetScalar( nt))
+                   && ( TYGetSimpleType( TYGetScalar( nt)) == T_hidden)),
+                 "unique typedef is not of hidden base type!!");
+    nt = TYSetScalar( nt, TYMakeSimpleType( T_classtype));
+  }
+#endif
 
 #ifndef NEW_AST
     udt = UTFindUserType (name, mod);
