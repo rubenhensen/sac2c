@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.27  1995/07/28 13:27:20  asi
+# Revision 1.28  1995/09/01 07:44:25  cg
+# linking of sib.o added
+#
+# Revision 1.27  1995/07/28  13:27:20  asi
 # added make product
 #
 # Revision 1.26  1995/07/24  11:40:53  asi
@@ -102,7 +105,7 @@ OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
 	  src/optimize/Inline.o src/optimize/Unroll.o src/optimize/Unswitch.o \
 	  src/psi-opt/ArrayElimination.o
 PSIOPT= src/psi-opt/index.o src/psi-opt/psi-opt.o
-MODULES= src/modules/filemgr.o src/modules/import.o
+MODULES= src/modules/filemgr.o src/modules/import.o src/modules/sib.o
 REFCOUNT= src/refcount/refcount.o
 COMPILE= src/compile/compile.o src/compile/icm2c.o
 
