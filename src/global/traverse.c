@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.52  1997/11/19 19:40:05  dkr
+ * added o2nWith_tab
+ *
  * Revision 1.51  1997/11/10 23:37:06  dkr
  * removed a bug with NEWTREE
  *
@@ -203,6 +206,7 @@
 #include "rmvoidfun.h"
 #include "precompile.h"
 #include "cccall.h"
+#include "Old2NewWith.h"
 
 #include "traverse.h"
 
@@ -695,6 +699,19 @@ funptr cse_tab[] = {
     ao
 
 funptr dfr_tab[] = {
+#include "node_info.mac"
+};
+#undef NIF
+
+/*
+ * 36) o2nWith_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, nn)                  \
+    ap
+
+funptr o2nWith_tab[] = {
 #include "node_info.mac"
 };
 #undef NIF

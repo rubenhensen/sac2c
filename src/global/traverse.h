@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.37  1997/11/19 19:40:15  dkr
+ * added o2nWith_tab
+ *
  * Revision 1.36  1997/11/05 16:30:24  dkr
  * moved nnode[] from tree_compound.[ch] to traverse.[ch]
  *
@@ -196,6 +199,8 @@ extern funptr readsib_tab[];
 extern funptr cse_tab[];
 
 extern funptr dfr_tab[];
+
+extern funptr o2nWith_tab[];
 
 extern int nnode[];
 
