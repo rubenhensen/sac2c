@@ -4,6 +4,7 @@
 
 #include <stdarg.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "sac.h"
 
 /******************************************************************************
@@ -139,4 +140,31 @@ SAC_CI_FreeSACArg (SAC_arg sa)
         /*free SAC_arg datastructure */
         SAC_FREE (sa);
     }
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   SAC_arg SAC_CI_InitRefcounter(SAC_arg sa, int initvalue)
+ *
+ * description:
+ *   allocate refcounter variable and init refcounter and local refcounter
+ *   with initvalue.
+ *   returns the modified SAC_arg
+ *
+ ******************************************************************************/
+
+SAC_arg
+SAC_CI_InitRefcounter (SAC_arg sa, int initvalue)
+{
+    if (SAC_ARG_DIM (sa) > 0) {
+        /* arraytype with refcounting */
+        SAC_ARG_RC (sa) = (int *)SAC_MALLOC (sizeof (int));
+        *SAC_ARG_RC (sa) = initvalue; /* init refcounter */
+    } else {
+        /* no refcounting for simple types */
+        SAC_ARG_RC (sa) = NULL;
+    }
+    SAC_ARG_LRC (sa) = initvalue; /* init local refcounter */
+    return (sa);
 }
