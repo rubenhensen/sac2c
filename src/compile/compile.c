@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.95  1997/10/13 21:01:38  dkr
+ * removed a bug in CompWithReturn() with nnode.
+ *
  * Revision 1.94  1997/10/12 19:29:37  dkr
  * In RenameReturn(): changed the 3rd-argument of MakeId, MakeIds from NULL to 0;
  * in general NULL is NOT compatible with enum-type
@@ -5042,7 +5045,7 @@ CompWithReturn (node *arg_node, node *arg_info)
         exprs1->node[1] = exprs2;
         exprs1->nnode = 2;
         let->node[0]->node[0] = exprs1;
-        let->node[0]->node[0]->nnode = 1;
+        let->node[0]->nnode = 1;
         arg_info->IDS = let->IDS;
         arg_info->node[1] = let;
         let->node[0] = Trav (let->node[0], arg_info);
