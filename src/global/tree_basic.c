@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  1997/11/13 16:17:09  srs
+ * added functions for creation of WL-nodes (new syntaxtree)
+ *
  * Revision 1.22  1997/10/30 19:09:14  dkr
  * with defined NEWTREE, node->nnode is not used anymore
  *
@@ -119,6 +122,7 @@ char *prf_name_str[] = {
         v->flag = 0;                                                                     \
         v->varno = 0;                                                                    \
         v->lineno = linenum;                                                             \
+        v->info2 = NULL;                                                                 \
         for (i = 0; i < MAX_SONS; i++)                                                   \
             v->node[i] = NULL;                                                           \
         for (i = 0; i < MAX_MASK; i++)                                                   \
@@ -801,6 +805,8 @@ MakeAp (char *name, char *mod, node *args)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeWith (node *gen, node *operator)
 {
@@ -824,6 +830,8 @@ MakeWith (node *gen, node *operator)
     DBUG_RETURN (tmp);
 }
 
+/*--------------------------------------------------------------------------*/
+
 node *
 MakeGenerator (node *left, node *right, char *id)
 {
@@ -845,6 +853,8 @@ MakeGenerator (node *left, node *right, char *id)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
 
 node *
 MakeGenarray (node *array, node *body)
@@ -935,7 +945,7 @@ MakeFoldfun (char *name, char *mod, node *body, node *neutral)
     DBUG_RETURN (tmp);
 }
 
-extern node *
+node *
 MakeExprs (node *expr, node *next)
 {
     node *tmp;
@@ -1328,8 +1338,107 @@ MakeInfo ()
     NODE_NNODE (tmp) = 0;
 #endif
 
-    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, /**/
-                             NODE_LINE (tmp), mdb_nodetype[NODE_TYPE (tmp)], tmp));
+    DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
+                             mdb_nodetype[NODE_TYPE (tmp)], tmp));
 
     DBUG_RETURN (tmp);
 }
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeNWith ()
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeNWith");
+    INIT_NODE (tmp);
+
+    NODE_TYPE (tmp) = N_Nwith;
+
+    DBUG_RETURN (tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeNPart (node *withid, node *generator)
+{
+    node *tmp;
+    DBUG_ENTER ("MakeNPart");
+    INIT_NODE (tmp);
+
+    NODE_TYPE (tmp) = N_Npart;
+    NPART_GEN (tmp) = generator;
+    NPART_IDX (tmp) = withid;
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeNWithid (int type, ids *_ids)
+{
+    node *tmp;
+    DBUG_ENTER ("MakeNWithid");
+    INIT_NODE (tmp);
+
+    NODE_TYPE (tmp) = N_Nwithid;
+    NWITHID_TYPE (tmp) = type;
+    NWITHID_IDS (tmp) = _ids;
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeNGenerator (node *bound1, node *bound2, node *op1, node *op2, node *step, node *width)
+{
+    node *tmp;
+    DBUG_ENTER ("MakeNGenerator");
+
+    INIT_NODE (tmp);
+    NODE_TYPE (tmp) = N_Ngenerator;
+    NGEN_BOUND1 (tmp) = bound1;
+    NGEN_BOUND2 (tmp) = bound2;
+    NGEN_OP1 (tmp) = op1;
+    NGEN_OP2 (tmp) = op2;
+    NGEN_STEP (tmp) = step;
+    NGEN_WIDTH (tmp) = width;
+
+    DBUG_RETURN (tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeNWithOp (WithOpType WithOp)
+{
+    node *tmp;
+    DBUG_ENTER ("MakeNWithOp");
+    INIT_NODE (tmp);
+
+    NODE_TYPE (tmp) = N_Nwithop;
+
+    /* allocate mem to store WithOpType in. */
+    tmp->info2 = MALLOC (sizeof (WithOpType));
+    NWITHOP_TYPE (tmp) = WithOp;
+
+    DBUG_RETURN (tmp);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeNCode (node *block, node *expr)
+{
+    node *tmp;
+    DBUG_ENTER ("MakeNCODE");
+    INIT_NODE (tmp);
+
+    NODE_TYPE (tmp) = N_Ncode;
+    NCODE_USED (tmp) = 0;
+    NCODE_CBLOCK (tmp) = block;
+    NCODE_CEXPR (tmp) = expr;
+
+    DBUG_RETURN (tmp);
+}
+/*--------------------------------------------------------------------------*/
