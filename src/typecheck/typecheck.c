@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/03/15 20:39:23  dkr
+ * TI_ap: '&' for reference objects is no longer printed by Type2String
+ *
  * Revision 3.18  2001/03/15 15:17:56  dkr
  * signature of Type2String modified
  *
@@ -5907,8 +5910,16 @@ TI_ap (node *arg_node, node *arg_info)
             arg = FUNDEF_ARGS (fun_p->node);
             while (arg != NULL) {
                 tmp_str = Type2String (ARG_TYPE (arg), 0, TRUE);
-                tmp_str = strcat (tmp_str, " ");
-                tmp_str = strcat (tmp_str, ARG_NAME (arg));
+                if (ARG_ATTRIB (arg) == ST_reference) {
+                    tmp_str = strcat (tmp_str, " & ");
+                } else if (ARG_ATTRIB (arg) == ST_readonly_reference) {
+                    tmp_str = strcat (tmp_str, " (&) ");
+                } else {
+                    tmp_str = strcat (tmp_str, " ");
+                }
+                if (ARG_NAME (arg) != NULL) {
+                    tmp_str = strcat (tmp_str, ARG_NAME (arg));
+                }
                 str_buff = strncat (str_buff, tmp_str, str_spc);
                 str_spc -= strlen (tmp_str);
                 str_spc = MAX (str_spc, 0);
@@ -5920,7 +5931,7 @@ TI_ap (node *arg_node, node *arg_info)
                     str_spc = MAX (str_spc, 0);
                 }
             }
-            str_buff = strncat (str_buff, " )", str_spc);
+            str_buff = strncat (str_buff, ")", str_spc);
             str_spc -= 2;
             str_spc = MAX (str_spc, 0);
 
