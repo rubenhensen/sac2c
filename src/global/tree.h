@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.36  1995/04/24 15:13:46  asi
+ * Revision 1.37  1995/04/24 15:17:18  asi
+ * MAX_MASK set to 7
+ *
+ * Revision 1.36  1995/04/24  15:13:46  asi
  * added AppendIdsChain
  *
  * Revision 1.35  1995/04/21  15:17:06  asi
@@ -206,7 +209,7 @@ typedef enum {
 
 #undef PRF_IF
 
-#define MAX_MASK 6
+#define MAX_MASK 7
 
 typedef struct NODE {
     nodetype nodetype;
