@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.39  2004/11/27 02:10:26  ktr
+# renameidentifiers.o
+#
 # Revision 3.38  2004/11/27 00:18:24  ktr
 # dependencies reactivated
 #
@@ -117,7 +120,7 @@ SAC2C_OBJS := wlpragma_funs.o precompile.o compile.o wltransform.o \
               gen_startup_code.o icm2c.o \
               icm2c_std.o icm2c_prf.o icm2c_wl.o icm2c_mt.o icm2c_sched.o \
               icm2c_error.o icm2c_basic.o icm2c_utils.o markmemvals.o \
-              type_conversions.o functionprecompile.o
+              type_conversions.o functionprecompile.o renameidentifiers.o
 
 
 all: $(SAC2C_OBJS)
