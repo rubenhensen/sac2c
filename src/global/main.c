@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.95  1997/05/28 12:36:51  sbs
+ * Revision 1.96  1997/06/03 10:14:46  sbs
+ * -D option integrated
+ *
+ * Revision 1.95  1997/05/28  12:36:51  sbs
  * Profiling integrated
  *
  * Revision 1.94  1997/05/14  08:17:34  sbs
@@ -385,6 +388,9 @@ char commandline[MAX_PATH_LEN] = "";
 file_type filetype;
 /* kind of file: F_PROG, F_MODIMP or F_CLASSIMP */
 
+char *cppvars[MAX_CPP_VARS];
+int num_cpp_vars = 0;
+
 int Ccodeonly = 0;
 int break_compilation = 0;
 
@@ -480,7 +486,12 @@ MAIN
 
     strcpy (prgname, argv[0]);
 
-    OPT ARG 'I' : PARM
+    OPT ARG 'D' : PARM
+    {
+        cppvars[num_cpp_vars++] = *argv;
+    }
+    NEXTOPT
+    ARG 'I' : PARM
     {
         AppendPath (MODDEC_PATH, AbsolutePathname (*argv));
     }

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1997/05/28 12:36:27  sbs
+ * Revision 1.12  1997/06/03 10:14:09  sbs
+ * -D option integrated
+ *
+ * Revision 1.11  1997/05/28  12:36:27  sbs
  * Profiling integrated
  *
  * Revision 1.10  1997/05/16  09:54:45  sbs
@@ -206,6 +209,7 @@ ScanParse ()
 node *
 ScanParse ()
 {
+    int i;
     char *pathname;
     char cccallstr[MAX_PATH_LEN];
 
@@ -213,6 +217,12 @@ ScanParse ()
 
     if (sacfilename[0] == '\0') {
         sprintf (cccallstr, "cpp -P -C ");
+        if (num_cpp_vars > 0) {
+            for (i = 0; i < num_cpp_vars; i++) {
+                strcat (cccallstr, " -D");
+                strcat (cccallstr, cppvars[i]);
+            }
+        }
         NOTE (("Parsing from stdin ..."));
     } else {
         pathname = FindFile (PATH, sacfilename);
@@ -221,7 +231,15 @@ ScanParse ()
             SYSABORT (("Unable to open file \"%s\"", sacfilename));
         }
 
-        sprintf (cccallstr, "gcc -E -P -C -x c %s", pathname);
+        sprintf (cccallstr, "gcc -E -P -C -x c ");
+        if (num_cpp_vars > 0) {
+            for (i = 0; i < num_cpp_vars; i++) {
+                strcat (cccallstr, " -D");
+                strcat (cccallstr, cppvars[i]);
+            }
+        }
+        strcat (cccallstr, " ");
+        strcat (cccallstr, pathname);
         NOTE (("Parsing file \"%s\" ...", pathname));
     }
 

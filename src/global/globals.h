@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.11  1997/05/27 09:18:25  sbs
+ * Revision 1.12  1997/06/03 10:14:46  sbs
+ * -D option integrated
+ *
+ * Revision 1.11  1997/05/27  09:18:25  sbs
  * analyseflag renamed to profileflag
  *
  * Revision 1.10  1997/05/14  08:17:34  sbs
@@ -61,6 +64,9 @@ extern char ccflagsstr[];
 extern char targetdir[];
 extern char commandline[];
 extern file_type filetype;
+
+extern char *cppvars[];
+extern int num_cpp_vars;
 
 extern int Ccodeonly;
 extern int break_compilation;
