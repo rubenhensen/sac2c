@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/05/28 16:30:10  sbs
+ * *** empty log message ***
+ *
  * Revision 1.4  2004/04/08 08:13:25  khf
  * some corrections and new startfunction WLPartitionGenerationOPT
  * added
@@ -1241,7 +1244,7 @@ CheckGeneratorBounds (node *wl, shape *max_shp)
  *
  * @fn node *WLPGmodul(node *arg_node, node *arg_info)
  *
- *   @brief traverses all function definitions
+ *   @brief traverses function definitions only!
  *
  *   @param  node *arg_node:  N_modul
  *           node *arg_info:  N_info
@@ -1264,7 +1267,8 @@ WLPGmodul (node *arg_node, node *arg_info)
  *
  * @fn node *WLPGfundef(node *arg_node, node *arg_info)
  *
- *   @brief starts the traversal of the given fundef
+ *   @brief resets INFO components WL and FUNDEF, and starts the traversal
+ *          of the given fundef
  *
  *   @param  node *arg_node:  N_fundef
  *           node *arg_info:  N_info
@@ -1294,8 +1298,8 @@ WLPGfundef (node *arg_node, node *arg_info)
  *
  * @fn node *WLPGassign(node *arg_node, node *arg_info)
  *
- *   @brief traverse instruction and insert new assignments if present in
- *          front of the arg_node
+ *   @brief traverse instruction. If this creates new assignments in
+ *          INFO_WLPG_NASSIGNS these are inserted in front of the actual one.
  *
  *   @param  node *arg_node:  N_assign
  *           node *arg_info:  N_info
