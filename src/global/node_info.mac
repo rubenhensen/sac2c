@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.125  1996/02/21 15:02:42  cg
- * added function DupPragma for dup_tab
+ * Revision 1.126  1996/05/27 13:31:02  sbs
+ * RCprf inserted
  *
+;; Revision 1.125  1996/02/21  15:02:42  cg
+;; added function DupPragma for dup_tab
+;;
 ;; Revision 1.124  1996/02/11  20:19:01  sbs
 ;; IdxArgs inserted
 ;;
@@ -624,7 +627,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons),
 
   NIF (N_prf, "N_prf", TravSons, TravSons, PrintPrf, TravSons, TravSons, TravSons,
-       TravSons, FreePrf, CFprf, TravSons, CompPrf, TravSons, DupPrf, TravSons, TravSons,
+       TravSons, FreePrf, CFprf, RCprf, CompPrf, TravSons, DupPrf, TravSons, TravSons,
        TravSons, IdxPrf, TravSons, TravSons, AEprf, PrintPrf, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons),
