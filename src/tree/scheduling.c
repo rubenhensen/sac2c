@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2004/09/30 19:52:05  sah
+ * fixed hidden datatypes
+ *
  * Revision 3.40  2004/08/02 14:07:58  sah
  * added lots of ugly defines to remove
  * compiler warning when using the old
@@ -280,15 +283,16 @@ typedef struct {
     } arg;
 } sched_arg_t;
 
-typedef struct SCHED_T {
+struct SCHED_T {
     char *discipline;
     sched_class_t class;
     int line;
     int num_args;
     sched_arg_t *args;
-} sched_t;
+};
 
 #ifndef NEW_AST
+typedef struct SCHED_T sched_t;
 typedef sched_t SCHsched_t;
 #endif
 
