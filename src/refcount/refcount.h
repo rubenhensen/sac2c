@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/03/01 15:18:07  dkr
+ * macro RC_INIT added
+ *
  * Revision 3.6  2002/02/22 13:48:54  dkr
  * minor changes done
  *
@@ -115,6 +118,8 @@
 #define RC_IS_UNDEF(rc) ((rc) == RC_UNDEF)
 #define RC_IS_INACTIVE(rc) ((rc) == RC_INACTIVE)
 #define RC_IS_ACTIVE(rc) ((rc) >= 0) /* == (RC_IS_ZERO(rc) || RC_IS_VITAL(rc)) */
+
+#define RC_INIT(rc) (RC_IS_ACTIVE (rc) ? 1 : (rc))
 
 #define RC_IS_LEGAL(rc) ((RC_IS_INACTIVE (rc)) || (RC_IS_ACTIVE (rc)))
 
