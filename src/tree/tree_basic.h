@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2000/12/15 10:42:20  dkr
+ * INFO_INFDFMS_HIDELOC added
+ *
  * Revision 3.6  2000/12/12 15:34:12  dkr
  * some macros renamed
  *
@@ -2096,6 +2099,7 @@ extern node *MakePragma ();
  ***    long*      MASK[x]
  ***
  ***  when used during withloop folding:
+ ***
  ***    node*      NEXT               (N_info)
  ***    node*      SUBST              (N_Ncode)
  ***    node*      WL                 (N_Nwith)
@@ -2109,20 +2113,24 @@ extern node *MakePragma ();
  ***    node*      REPLACE            (N_id, N_array or N_num/float...)
  ***
  ***  when used in ConstantFolding.c :
+ ***
  ***    node*      ASSIGN             (N_assign)
  ***    types      TYPE               (no son)
  ***    int        VARNO
  ***
  ***  when used in DeadCodeRemoval.c:
+ ***
  ***    nodetype   TRAVTYPE
  ***    int        VARNO
  ***    int        NEWACT
  ***    long*      ACT
  ***
  ***  when used in DeadFunctionRemoval.c:
+ ***
  ***    int        SPINE
  ***
  ***  when used in index.c:
+ ***
  ***    node *     INFO_IVE_FUNDEF           (N_fundef)
  ***    node *     INFO_IVE_VARDECS          (N_vardec)
  ***    ive_mode   INFO_IVE_MODE
@@ -2130,8 +2138,10 @@ extern node *MakePragma ();
  ***    node *     INFO_IVE_TRANSFORM_VINFO  (N_vinfo)
  ***    int        INFO_IVE_NON_SCAL_LEN
  ***
+ ***
  ***  old mt!
  ***  when used in managing spmd- and sync blocks in concurrent :
+ ***
  ***    (oa) concurrent.[ch]
  ***    (ob) spmd_init.[ch]
  ***    (oc) spmd_opt.[ch]
@@ -2191,6 +2201,7 @@ extern node *MakePragma ();
  ***    node*      INFO_SYNCO_THISASSIGN
  ***
  ***    node*      INFO_SPMDC_FIRSTSYNC
+ ***
  ***
  ***  new mt!
  ***  when used in multithread ...
@@ -2281,7 +2292,6 @@ extern node *MakePragma ();
  ***    int        PROTOTYPE
  ***    int        SEPARATE
  ***
- ***
  ***  when used in refcount.c
  ***
  ***    node*      PRF
@@ -2290,8 +2300,8 @@ extern node *MakePragma ();
  ***    int*       NAIVE_RCDUMP       (only while traversing a group of N_code's)
  ***    int        VARNO
  ***
- ***
  ***  when used in print_interface.c
+ ***
  ***    int        PIH_FLAG     (switch between comment and prototype)
  ***    int        PIH_COMMA    (flag, comma neede between outputs)
  ***    int        PIH_COUNTER  (arg or type position)
@@ -2300,6 +2310,7 @@ extern node *MakePragma ();
  ***    int        PIW_COUNTER
  ***
  ***  when used in map_wrapper.c
+ ***
  ***    node*      MODUL             (access to module node)
  ***    node*      FUNDEF            (fundef parameter)
  ***    int        FLAG
@@ -2310,10 +2321,9 @@ extern node *MakePragma ();
  ***    bool       EXPRESSION_PADDED
  ***
  ***  when used in import_specializations.c
+ ***
  ***    node*      SPECS             (chain of specialized fundefs)
  ***    node*      FUNDEF            (actual working fundef)
- ***
- ***
  ***
  ***
  ***
@@ -2655,6 +2665,7 @@ extern node *MakeInfo ();
 #define INFO_INFDFMS_LOCAL(n) ((DFMmask_t) (n->dfmask[2]))
 #define INFO_INFDFMS_NEEDED(n) ((DFMmask_t) (n->dfmask[3]))
 #define INFO_INFDFMS_ISFIX(n) (n->counter)
+#define INFO_INFDFMS_HIDELOC(n) (n->varno) /* hide locals */
 
 /* cleaning up declarations (cleanup_decls.c) */
 #define INFO_CUD_FUNDEF(n) (n->node[0])
