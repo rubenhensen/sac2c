@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2003/09/26 10:14:23  sbs
+ * COIsEmptyVect added
+ *
  * Revision 1.21  2003/06/11 22:05:36  ktr
  * Added support for multidimensional arrays
  *
@@ -1079,6 +1082,15 @@ COIsFalse (constant *a, bool all)
     DBUG_ENTER ("COIsFalse");
 
     DBUG_RETURN (COIsZero (a, all));
+}
+
+bool
+COIsEmptyVect (constant *a)
+{
+    bool result;
+    DBUG_ENTER ("COIsEmptyVect");
+    result = ((COGetDim (a) == 1) && (SHGetExtent (COGetShape (a), 0) == 0));
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************

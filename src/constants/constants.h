@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.18  2003/09/26 10:14:23  sbs
+ * COIsEmptyVect added
+ *
  * Revision 1.17  2003/06/11 22:05:36  ktr
  * Added support for multidimensional arrays
  *
@@ -146,6 +149,8 @@ extern bool COIsZero (constant *a, bool all);
 extern bool COIsOne (constant *a, bool all);
 extern bool COIsTrue (constant *a, bool all);
 extern bool COIsFalse (constant *a, bool all);
+
+extern bool COIsEmptyVect (constant *a);
 
 /***
  ***
