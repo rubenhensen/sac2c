@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.36  1997/04/24 10:06:45  cg
+ * Revision 1.37  1997/05/02 09:33:06  cg
+ * New ICMs ND_DECL_ARRAY and ND_KD_DECL_ARRAY for arrays with unknown
+ * shape and dimension as well as arrays with known dimension but unknown shape.
+ *
+ * Revision 1.36  1997/04/24  10:06:45  cg
  * non-icm macros moved from icm2c.h to libsac.h
  *
  * Revision 1.35  1996/02/29  14:51:24  sbs
@@ -178,15 +182,26 @@
  * Macros for declaring refcounted data:
  * =====================================
  *
- * ND_DECL_ARRAY(basetype, name) : declares an array
+ * ND_KD_DECL_ARRAY(basetype, name, dim)
+ *   declares an array with dimension but without shape information
  *
- * ND_DECL_RC(type, name)    : declares a refcounted variable
+ * ND_DECL_ARRAY(basetype, name)
+ *   declares an array without dimension and shape information
+ *
+ * ND_DECL_RC(type, name)
+ *   declares a refcounted variable in general
  *
  */
 
 #define ND_DECL_RC(type, name)                                                           \
     type name;                                                                           \
     int ND_A_RC (name);
+
+#define ND_KD_DECL_ARRAY(basetype, name, dim)                                            \
+    ND_DECL_RC (basetype *, name)                                                        \
+    int __##name##_sz;                                                                   \
+    int __##name##_d = dim;                                                              \
+    int *__##name##_s;
 
 #define ND_DECL_ARRAY(basetype, name)                                                    \
     ND_DECL_RC (basetype *, name)                                                        \
