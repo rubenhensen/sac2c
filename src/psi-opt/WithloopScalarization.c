@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2002/05/16 09:40:07  ktr
+ * an early version of a working WithLoop-Scalarization
+ *
+ * Revision 1.1  2002/05/17 06:48:41  trojahne
+ * Initial revision
+ *
  * Revision 1.2  2002/04/09 08:13:02  ktr
  * Some functionality added, but still bugs
  *
@@ -290,27 +296,13 @@ joinWithids (node *outerwithid, node *innerwithid, node *arg_info)
 
     vardec = MakeVardec (new_name, newtype, NULL);
 
-    vec = MakeIds (new_name, NULL, ST_used);
+    vec = MakeIds (StringCopy (new_name), NULL, ST_used);
 
     FUNDEF_VARDEC (INFO_WLS_FUNDEF (arg_info))
       = AppendVardec (FUNDEF_VARDEC (INFO_WLS_FUNDEF (arg_info)), vardec);
 
     IDS_VARDEC (vec) = vardec;
     IDS_AVIS (vec) = VARDEC_AVIS (vardec);
-
-    /*
-    SSASTACK_AVIS(AVIS_SSASTACK(IDS_AVIS(vec))) = IDS_AVIS(vec);
-    SSASTACK_INUSE(AVIS_SSASTACK(IDS_AVIS(vec))) = TRUE;
-
-    ssacnt = MakeSSAcnt(BLOCK_SSACOUNTER(FUNDEF_BODY(INFO_WLS_FUNDEF(arg_info))),
-                        0,
-                        new_name);
-
-    BLOCK_SSACOUNTER(FUNDEF_BODY(INFO_WLS_FUNDEF(arg_info))) = ssacnt;
-
-    AVIS_SSACOUNT(IDS_AVIS(vec)) = ssacnt;
-
-    */
 
     scalars = AppendIds (DupAllIds (NWITHID_IDS (outerwithid)),
                          DupAllIds (NWITHID_IDS (innerwithid)));
