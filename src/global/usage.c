@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2003/09/16 16:10:11  sbs
+ * type inference options separated
+ * specmode option added.
+ *
  * Revision 3.49  2003/08/16 08:38:03  ktr
  * SelectionPropagation added. Must currently be activated with -dosp.
  *
@@ -414,6 +418,19 @@ Usage ()
     PRINT_BREAK_SPEC (PH_precompile, "prec2", "Stop after second traversal.");
     PRINT_BREAK_SPEC (PH_precompile, "prec3", "Stop after third traversal.");
 
+    printf ("\n\nTYPE INFERENCE OPTIONS:\n\n");
+    printf ("    -specmode <strat>  Specify function specialization strategy:\n"
+            "                         aks: try to infer all shapes statically,\n"
+            "                         akd: try to infer all ranks statically,\n"
+            "                         aud: do not specialize at all.\n"
+            "                         (default: %s)\n\n",
+            spec_mode_str[spec_mode]);
+
+    printf ("    -maxspec <n>       Individual functions will be specialized at most <n> "
+            "times.\n"
+            "                         (default: %d)\n",
+            max_overload);
+
     printf (
       "\n\nOPTIMIZATION OPTIONS:\n\n"
       "    -enforceIEEE    Treat floating point arithmetic as defined in the IEEE-754\n"
@@ -507,11 +524,6 @@ Usage ()
     printf ("    -maxae <n>      Try to eliminate arrays with at most <n> elements.\n"
             "                      (default: %d)\n\n",
             minarray);
-
-    printf (
-      "    -maxspec <n>    Individual functions will be specialized at most <n> times.\n"
-      "                      (default: %d)\n\n",
-      max_overload);
 
     printf (
       "    -initmheap <n>  At program startup initially request <n> KB of heap memory\n"
