@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.88  1998/05/14 21:38:59  dkr
+ * added WLGRID_CEXPR_TEMPLATE in DupWLgrid()
+ *
  * Revision 1.87  1998/05/12 22:41:21  dkr
  * added NWITH2_DIM, NWITH2_IDX_MIN, NWITH2_IDX_MAX
  *
@@ -1307,6 +1310,7 @@ DupWLgrid (node *arg_node, node *arg_info)
                     WLGRID_UNROLLING (arg_node), DUPTRAV (WLGRID_NEXTDIM (arg_node)),
                     DUPCONT (WLGRID_NEXT (arg_node)), code);
 
+    WLGRID_CEXPR_TEMPLATE (new_node) = DUPTRAV (WLGRID_CEXPR_TEMPLATE (arg_node));
     WLGRID_MODIFIED (new_node) = 0;
 
     DBUG_RETURN (new_node);
