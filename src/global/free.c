@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.7  1999/07/02 09:45:06  jhs
+ * Inserted DFMRemoveMask for SPMD_SHARED mask into FreeSpmd.
+ *
  * Revision 2.6  1999/05/12 08:47:38  sbs
  * FreeArray and FreeId adjusted to new constvec access macros.
  *
@@ -1610,6 +1613,9 @@ FreeSpmd (node *arg_node, node *arg_info)
     }
     if (SPMD_LOCAL (arg_node) != NULL) {
         SPMD_LOCAL (arg_node) = DFMRemoveMask (SPMD_LOCAL (arg_node));
+    }
+    if (SPMD_SHARED (arg_node) != NULL) {
+        SPMD_SHARED (arg_node) = DFMRemoveMask (SPMD_SHARED (arg_node));
     }
 
     FREETRAV (SPMD_ICM_BEGIN (arg_node));
