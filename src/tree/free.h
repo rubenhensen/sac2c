@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/02/15 16:58:05  nmw
+ * FreeSSAstack added
+ *
  * Revision 3.8  2001/02/12 17:03:26  nmw
  * N_avis node added
  *
@@ -177,6 +180,7 @@ extern node *FreeModspec (node *arg_node, node *arg_info);
 extern node *FreeCSEinfo (node *arg_node, node *arg_info);
 extern node *FreeSSAcnt (node *arg_node, node *arg_info);
 extern node *FreeAvis (node *arg_node, node *arg_info);
+extern node *FreeSSAstack (node *arg_node, node *arg_info);
 
 /* special functions */
 extern void FreePrf2 (node *arg_node, int arg_no); /* CF */

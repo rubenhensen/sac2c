@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/02/15 16:58:05  nmw
+ * FreeSSAstack added
+ *
  * Revision 3.8  2001/02/12 17:03:26  nmw
  * N_avis node added
  *
@@ -124,6 +127,7 @@
 #include "traverse.h"
 #include "DataFlowMask.h"
 #include "scheduling.h"
+#include "constants.h"
 
 #include "free.h"
 
@@ -2018,6 +2022,27 @@ FreeSSAcnt (node *arg_node, node *arg_info)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
+
+node *
+FreeSSAstack (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeSSAstack");
+
+    DBUG_PRINT ("FREE", ("Removing contents of N_ssastack node ..."));
+
+    tmp = FREECONT (SSASTACK_NEXT (arg_node));
+
+    DBUG_PRINT ("FREE", ("Removing N_ssastack node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
 /*--------------------------------------------------------------------------*/
 
 node *
@@ -2028,6 +2053,14 @@ FreeAvis (node *arg_node, node *arg_info)
     DBUG_ENTER ("FreeAvis");
 
     DBUG_PRINT ("FREE", ("Removing contents of N_avis node ..."));
+
+    if (AVIS_SSACONST (arg_node) != NULL) {
+        COFreeConstant (AVIS_SSACONST (arg_node));
+    }
+
+    if (AVIS_SSASTACK (arg_node) != NULL) {
+        FREETRAV (AVIS_SSASTACK (arg_node));
+    }
 
     DBUG_PRINT ("FREE", ("Removing N_avis node ..."));
 
