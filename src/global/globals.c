@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1998/04/02 16:09:41  dkr
+ * added new compiler phase name:
+ *   generating concurrent regions
+ *
  * Revision 1.8  1998/03/24 11:48:31  cg
  * added global variables used to gather compile time information
  * later used for profiling.
@@ -296,6 +300,7 @@ char *compiler_phase_name[] = {"",
                                "Running SAC optimizations",
                                "Running PSI optimizations",
                                "Running reference count inference system",
+                               "Generating concurrent regions",
                                "Preparing C code generation",
                                "Generating C code",
                                "Creating C file",
