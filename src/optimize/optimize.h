@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.36  1995/12/01 17:19:48  cg
+ * Revision 1.37  1995/12/21 13:19:27  asi
+ * added macros INFO_VARNO, INFO_DEF, INFO_USE and
+ * function OPTTrav for traversing new syntax tree
+ *
+ * Revision 1.36  1995/12/01  17:19:48  cg
  * macro FREE removed.
  *
  * Revision 1.35  1995/11/13  09:04:35  asi
@@ -163,10 +167,14 @@ extern int elim_arrays;
 
 #define INC_VAR(mask, var) mask[var] += 1
 #define DEC_VAR(mask, var) mask[var] -= 1
-#define VARNO arg_info->varno
 
+#define VARNO arg_info->varno
 #define DEF arg_node->mask[0]
 #define USE arg_node->mask[1]
+
+#define INFO_VARNO arg_info->varno /* number of variables in currenent function */
+#define INFO_DEF arg_info->mask[0] /* added or removed variable declarations    */
+#define INFO_USE arg_info->mask[1] /* added or removed variable useages         */
 
 #define VAR_LENGTH 10
 
@@ -221,6 +229,7 @@ extern short MaskIsNotZero (long *mask, int varno);
 extern long ReadMask (long *mask, long number);
 
 extern node *OptTrav (node *arg_node, node *arg_info, int node_no);
+extern node *OPTTrav (node *trav_node, node *arg_info, node *arg_node);
 
 extern node *GenerateMasks (node *arg_node, node *arg_info);
 extern node *OPTfundef (node *arg_node, node *arg_info);
