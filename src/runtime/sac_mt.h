@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1998/07/29 08:44:16  cg
+ * bug fixed in one-fold-barrier: now programs produce correct
+ * results even if started with -mt 1
+ *
  * Revision 1.10  1998/07/03 10:21:33  cg
  * ICM MT_START_SPMD replaced by MT_SPMD_EXECUTE
  *
@@ -368,7 +372,10 @@ typedef union {
             SAC_MT_SET_BARRIER_RESULT (SAC_MT_MYTHREAD (), 1, type, accu_var);           \
             SAC_TR_MT_PRINT (("Synchronisation block %d finished", id));                 \
             SAC_TR_MT_PRINT_FOLD_RESULT (type, accu_var, "Partial fold result:");        \
-            goto label_worker_continue_##id;                                             \
+            if (SAC_MT_MYTHREAD ()) {                                                    \
+                goto label_worker_continue_##id;                                         \
+            }                                                                            \
+            goto label_master_continue_##id;                                             \
         }                                                                                \
                                                                                          \
         if (SAC_MT_MYTHREAD ()) {                                                        \
