@@ -1,11 +1,23 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/03/10 17:26:51  sbs
- * Initial revision
+ * Revision 1.2  1995/03/31 13:57:34  sbs
+ * ND_CREATE_CONST_ARRAY,ND_KS_ARG_ARRAY & ND_KS_RET_ARRAY inserted
  *
+# Revision 1.1  1995/03/10  17:26:51  sbs
+# Initial revision
+#
  *
  */
+
+#ifdef ND_CREATE_CONST_ARRAY
+ICM_DEF( "ND_CREATE_CONST_ARRAY")
+  ICM_STR(type)
+  ICM_STR(name)
+  ICM_INT(dim)
+  ICM_VAR( dim, s)
+ICM_END
+#endif
 
 #ifdef ND_KS_DECL_ARRAY
 ICM_DEF( "ND_KS_DECL_ARRAY")

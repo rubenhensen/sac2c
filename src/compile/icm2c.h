@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/03/10 17:24:37  sbs
+ * Revision 1.4  1995/03/31 13:57:34  sbs
+ * ND_CREATE_CONST_ARRAY,ND_KS_ARG_ARRAY & ND_KS_RET_ARRAY inserted
+ *
+ * Revision 1.3  1995/03/10  17:24:37  sbs
  * New macros develloped; psi, take & drop integrated
  *
  * Revision 1.2  1995/03/07  18:19:10  sbs
@@ -49,6 +52,8 @@
 #define ND_A_DIM(name) __##name##_d
 #define ND_KD_A_SHAPE(name, dim) __##name##_s##dim
 #define ND_A_SHAPE(name, dim) __##name##_s[dim]
+#define ND_KS_ARG_ARRAY(type, name) type *name, int *__##name##_rc
+#define ND_KS_RET_ARRAY(name) name, __##name##_rc
 
 /*
  * Macros for initializing an array:

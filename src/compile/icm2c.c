@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/03/15 07:55:11  sbs
+ * Revision 1.5  1995/03/31 13:57:34  sbs
+ * ND_CREATE_CONST_ARRAY,ND_KS_ARG_ARRAY & ND_KS_RET_ARRAY inserted
+ *
+ * Revision 1.4  1995/03/15  07:55:11  sbs
  * bug in VectToOffset fixed
  *
  * Revision 1.3  1995/03/10  17:24:37  sbs
@@ -142,6 +145,35 @@ main ()
 #endif /* TEST_BACKEND */
 
     /*
+     * ND_CREATE_CONST_ARRAY( basic_type, name, dim, s0,..., sn)   : generates a constant
+     * array
+     *
+     * char *type, *name;
+     * int dim;
+     * char **s;
+     */
+
+#define ND_CREATE_CONST_ARRAY
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+
+    INDENT;
+    NewBlock (fprintf (outfile, "static %s __dummy[]={", type), {
+        int i;
+        for (i = 0; i < dim - 1; i++)
+            fprintf (outfile, "%s,", s[i]);
+        fprintf (outfile, "%s};\n", s[i]);
+        INDENT;
+        fprintf (outfile, "%s=__dummy;\n", name);
+    });
+    fprintf (outfile, "\n");
+
+#undef ND_CREATE_CONST_ARRAY
+
+    /*
      * ND_KS_DECL_ARRAY( basic_type, name, dim, s0,..., sn)   : declares an array
      *
      * char *type, *name;
@@ -152,12 +184,7 @@ main ()
 #define ND_KS_DECL_ARRAY
 
 #ifndef TEST_BACKEND
-    int i;
-
-    GetNextId (type, exprs);
-    GetNextId (name, exprs);
-    GetNextInt (dim, exprs);
-    GetShape (dim, s, exprs);
+#include "icm_decl.c"
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
@@ -194,11 +221,7 @@ main ()
 #define ND_KD_SET_SHAPE
 
 #ifndef TEST_BACKEND
-    int i;
-
-    GetNextId (name, exprs);
-    GetNextInt (dim, exprs);
-    GetShape (dim, s, exprs);
+#include "icm_decl.c"
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
@@ -227,11 +250,7 @@ main ()
 #define ND_KD_PSI_CxA_S
 
 #ifndef TEST_BACKEND
-    GetNextId (type, exprs);
-    GetNextId (a, exprs);
-    GetNextId (res, exprs);
-    GetNextInt (dim, exprs);
-    GetShape (dim, vi, exprs);
+#include "icm_decl.c"
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
@@ -257,11 +276,7 @@ main ()
 #define ND_KD_PSI_VxA_S
 
 #ifndef TEST_BACKEND
-    GetNextId (type, exprs);
-    GetNextId (a, exprs);
-    GetNextId (res, exprs);
-    GetNextInt (dim, exprs);
-    GetNextId (v, exprs);
+#include "icm_decl.c"
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
@@ -288,11 +303,7 @@ main ()
 #define ND_KD_PSI_CxA_A
 
 #ifndef TEST_BACKEND
-    GetNextId (type, exprs);
-    GetNextId (a, exprs);
-    GetNextId (res, exprs);
-    GetNextInt (dim, exprs);
-    GetShape (dim, vi, exprs);
+#include "icm_decl.c"
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
@@ -317,11 +328,7 @@ main ()
 #define ND_KD_PSI_VxA_A
 
 #ifndef TEST_BACKEND
-    GetNextId (type, exprs);
-    GetNextId (a, exprs);
-    GetNextId (res, exprs);
-    GetNextInt (dim, exprs);
-    GetNextId (v, exprs);
+#include "icm_decl.c"
 #endif /* no TEST_BACKEND */
 
 #include "icm_comment.c"
