@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2004/11/27 00:47:56  cg
+ * function name typos fixed
+ *
  * Revision 3.72  2004/11/27 00:36:39  cg
  * functions adapted to new naming conventions.
  *
@@ -628,7 +631,7 @@ ILIBstrBufCreate (int size)
 /******************************************************************************
  *
  * Function:
- *   str_buf *ILIBstrBufprint(  str_buf *s, const char *string);
+ *   str_buf *ILIBstrBufPrint(  str_buf *s, const char *string);
  *
  * Description:
  *
@@ -636,13 +639,13 @@ ILIBstrBufCreate (int size)
  ******************************************************************************/
 
 str_buf *
-ILIBstrBufprint (str_buf *s, const char *string)
+ILIBstrBufPrint (str_buf *s, const char *string)
 {
     int len;
     int new_size;
     char *new_buf;
 
-    DBUG_ENTER ("ILIBstrBufprint");
+    DBUG_ENTER ("ILIBstrBufPrint");
 
     len = strlen (string);
 
@@ -669,7 +672,7 @@ ILIBstrBufprint (str_buf *s, const char *string)
 /******************************************************************************
  *
  * Function:
- *   str_buf *ILIBstrBufprintf(  str_buf *s, const char *format, ...);
+ *   str_buf *ILIBstrBufPrintf(  str_buf *s, const char *format, ...);
  *
  * Description:
  *
@@ -677,12 +680,12 @@ ILIBstrBufprint (str_buf *s, const char *string)
  ******************************************************************************/
 
 str_buf *
-ILIBstrBufprintf (str_buf *s, const char *format, ...)
+ILIBstrBufPrintf (str_buf *s, const char *format, ...)
 {
     va_list arg_p;
     static char string[512];
 
-    DBUG_ENTER ("ILIBstrBufprintf");
+    DBUG_ENTER ("ILIBstrBufPrintf");
 
     va_start (arg_p, format);
     vsprintf (string, format, arg_p);
@@ -690,7 +693,7 @@ ILIBstrBufprintf (str_buf *s, const char *format, ...)
 
     DBUG_ASSERT (strlen (string) < 512, "string buffer in ILIBstrBufprintf too small!");
 
-    s = ILIBstrBufprint (s, string);
+    s = ILIBstrBufPrint (s, string);
 
     DBUG_RETURN (s);
 }
