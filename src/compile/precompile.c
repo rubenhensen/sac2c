@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2004/08/06 13:13:49  ktr
+ * MakeMergeAssign does not need to care about RC in EMM
+ *
  * Revision 3.83  2004/08/04 12:04:58  ktr
  * substituted eacc by emm
  *
@@ -435,7 +438,7 @@ LiftIds (ids *ids_arg, node *fundef, types *new_type, node **new_assigns)
     } else if (RC_IS_INACTIVE (IDS_REFCNT (ids_arg))) {
         ID_REFCNT (new_id) = IDS_REFCNT (ids_arg) = RC_INACTIVE;
     } else {
-        DBUG_ASSERT ((0), "illegal RC value found!");
+        DBUG_ASSERT (emm, "illegal RC value found!");
     }
 
     DBUG_VOID_RETURN;
@@ -1619,27 +1622,29 @@ MakeMergeAssigns (argtab_t *argtab, info *arg_info)
 
             if ((NODE_TYPE (expr) != N_id)
                 || strcmp (IDS_NAME (((ids *)argtab->ptr_out[i])), ID_NAME (expr))) {
-                if ((NODE_TYPE (expr) == N_id) && RC_IS_ACTIVE (ID_REFCNT (expr))) {
+                if (emm) {
+                    ids *out_ids;
+
+                    DBUG_ASSERT (NODE_TYPE (expr) == N_id,
+                                 "Non N_id function argument found!!!");
                     /*
                      * argument is a refcounted ID node
                      *  -> must be converted into a unique object
                      *
                      ******
                      *
-                     *  a:4 = fun( b:3);   ->   a':-1 = to_unq( b:3);
-                     *                          fun( a':-1);
-                     *                          a:4 = from_unq( a':-1);
+                     *  a = fun( b);   ->   a' = to_unq( b);
+                     *                           fun( a');
+                     *                      a  = from_unq( a');
                      */
-                    ids *out_ids;
 
-                    /* a:-1 */
+                    /* a' */
                     out_ids = DupOneIds (argtab->ptr_out[i]);
-                    IDS_REFCNT (out_ids) = 1 /* RC_INACTIVE */;
 
-                    /* to_unq( b:3) */
+                    /* to_unq( b) */
                     expr = MakePrf (F_to_unq, MakeExprs (DupTree (expr), NULL));
 
-                    /* a:-1 = to_unq( b:3); */
+                    /* a = to_unq( b); */
                     /*
                      * append at tail of 'pre_assigns'!!!
                      */
@@ -1647,12 +1652,11 @@ MakeMergeAssigns (argtab_t *argtab, info *arg_info)
                       = AppendAssign (pre_assigns,
                                       MakeAssign (MakeLet (expr, out_ids), NULL)),
 
-                      /* a:4 */
+                      /* a */
                       out_ids = DupOneIds (argtab->ptr_out[i]);
 
-                    /* from_unq( a:-1) */
+                    /* from_unq( a) */
                     expr = DupIds_Id (argtab->ptr_out[i]);
-                    ID_REFCNT (expr) = RC_INACTIVE;
                     expr = MakePrf (F_from_unq, MakeExprs (expr, NULL));
 
                     /*
@@ -1663,22 +1667,68 @@ MakeMergeAssigns (argtab_t *argtab, info *arg_info)
                     DBUG_PRINT ("PREC", ("Assignments %s = to_unq(...) added",
                                          IDS_NAME (((ids *)argtab->ptr_out[i]))));
                 } else {
-                    /*
-                     * argument is no ID node or not refcounted
-                     *  -> no conversion into a unique object is necessary
-                     *  -> create a plain assignment
-                     *
-                     ******
-                     *
-                     *  a = fun( b);   ->   a = b;
-                     *                      fun( a);
-                     */
-                    pre_assigns = MakeAssign (MakeLet (DupTree (expr),
-                                                       DupOneIds (argtab->ptr_out[i])),
-                                              pre_assigns);
+                    if ((NODE_TYPE (expr) == N_id) && RC_IS_ACTIVE (ID_REFCNT (expr))) {
+                        /*
+                         * argument is a refcounted ID node
+                         *  -> must be converted into a unique object
+                         *
+                         ******
+                         *
+                         *  a:4 = fun( b:3);   ->   a':-1 = to_unq( b:3);
+                         *                          fun( a':-1);
+                         *                          a:4 = from_unq( a':-1);
+                         */
+                        ids *out_ids;
 
-                    DBUG_PRINT ("PREC", ("Assignment %s = ... added",
-                                         IDS_NAME (((ids *)argtab->ptr_out[i]))));
+                        /* a:-1 */
+                        out_ids = DupOneIds (argtab->ptr_out[i]);
+                        IDS_REFCNT (out_ids) = 1 /* RC_INACTIVE */;
+
+                        /* to_unq( b:3) */
+                        expr = MakePrf (F_to_unq, MakeExprs (DupTree (expr), NULL));
+
+                        /* a:-1 = to_unq( b:3); */
+                        /*
+                         * append at tail of 'pre_assigns'!!!
+                         */
+                        pre_assigns
+                          = AppendAssign (pre_assigns,
+                                          MakeAssign (MakeLet (expr, out_ids), NULL)),
+
+                          /* a:4 */
+                          out_ids = DupOneIds (argtab->ptr_out[i]);
+
+                        /* from_unq( a:-1) */
+                        expr = DupIds_Id (argtab->ptr_out[i]);
+                        ID_REFCNT (expr) = RC_INACTIVE;
+                        expr = MakePrf (F_from_unq, MakeExprs (expr, NULL));
+
+                        /*
+                         * append at head of 'post_assigns'!!!
+                         */
+                        post_assigns = MakeAssign (MakeLet (expr, out_ids), post_assigns);
+
+                        DBUG_PRINT ("PREC", ("Assignments %s = to_unq(...) added",
+                                             IDS_NAME (((ids *)argtab->ptr_out[i]))));
+                    } else {
+                        /*
+                         * argument is no ID node or not refcounted
+                         *  -> no conversion into a unique object is necessary
+                         *  -> create a plain assignment
+                         *
+                         ******
+                         *
+                         *  a = fun( b);   ->   a = b;
+                         *                      fun( a);
+                         */
+                        pre_assigns
+                          = MakeAssign (MakeLet (DupTree (expr),
+                                                 DupOneIds (argtab->ptr_out[i])),
+                                        pre_assigns);
+
+                        DBUG_PRINT ("PREC", ("Assignment %s = ... added",
+                                             IDS_NAME (((ids *)argtab->ptr_out[i]))));
+                    }
                 }
             }
         }
@@ -2078,7 +2128,7 @@ PREC3assign (node *arg_node, info *arg_info)
  * description:
  *   For each id from the LHS:
  *     If we have   ... a ... = fun( ... a ... a ... )   ,
- *     were   fun   is a user-defined function
+ *     where   fun   is a user-defined function
  *       and   a   is a regular argument representing a refcounted data object,
  *       and the refcounting is *not* done by the function itself,
  *     or   fun   is a primitive function
