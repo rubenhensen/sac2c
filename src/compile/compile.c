@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.33  1999/10/19 13:11:00  sbs
+ * inclusion of type_info.mac adapted to the new .mac style
+ *
  * Revision 2.32  1999/09/20 11:35:10  jhs
  * Reduced the whole thing from 9000 to 8000 lines.
  *
@@ -78,13 +81,10 @@
 
 static int barrier_id = 0;
 
-#define TYP_IF(n, d, p, f, sz) sz
-
+#define TYP_IFsize(sz) sz
 int basetype_size[] = {
 #include "type_info.mac"
 };
-
-#undef TYP_IF
 
 #define DUMMY_NAME "__OUT_"
 #define LABEL_NAME "__Label" /* basic-name for goto label */
