@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2002/06/06 19:36:26  dkr
+ * bug without TAGGED_ARRAYS fixed
+ *
  * Revision 3.41  2002/06/06 18:13:19  dkr
  * bug about LiftIds() and LiftArg() corrected
  *
@@ -1957,10 +1960,10 @@ PREC2let (node *arg_node, node *arg_info)
             ap_argtab->ptr_in[idx + dots_off] = ap_exprs;
             ap_argtab->tag[idx + dots_off] = argtab->tag[idx];
 
+#ifdef TAGGED_ARRAYS
             ap_id = EXPRS_EXPR (ap_exprs);
             DBUG_ASSERT ((NODE_TYPE (ap_id) == N_id), "no N_id node found!");
 
-#ifdef TAGGED_ARRAYS
             actual_cls = GetDataClassFromTypes (ID_TYPE (ap_id));
             formal_cls = GetDataClassFromTypes (ARG_TYPE (args));
             if (actual_cls != formal_cls) {
