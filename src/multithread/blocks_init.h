@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/02/02 12:27:13  jhs
+ * Added INFO_MUTH_FUNDEF, improved BLKIN.
+ *
  * Revision 1.1  2000/01/28 13:21:35  jhs
  * Initial revision
  *
@@ -20,6 +23,6 @@
 
 #define BLOCKS_INIT_H
 
-extern node *ScheduleInit (node *arg_node, node *arg_info);
+extern node *BlocksInit (node *arg_node, node *arg_info);
 
 #endif /* BLOCKS_INIT_H */
