@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2000/06/08 15:47:34  nmw
+ * missing include added
+ *
  * Revision 1.22  2000/06/08 15:28:59  nmw
  * pih and piw added, counting comments corrected
  *
@@ -247,6 +250,7 @@
 #include "adjust_calls.h"
 #include "pad_collect.h"
 #include "pad_transform.h"
+#include "print_interface.h"
 
 #include "traverse.h"
 
