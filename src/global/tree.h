@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.26  1995/03/08 10:28:57  hw
+ * Revision 1.27  1995/03/13 15:12:34  asi
+ * added new structur 'nchain'
+ * added new entry in structur 'ids' -> 'nchain'
+ *
+ * Revision 1.26  1995/03/08  10:28:57  hw
  * - added new entry to struct ids (int refcnt)
  * - added new entry to struct node (int refcnt)
  *
@@ -117,10 +121,16 @@ typedef enum { C_gen, C_mod } contype;
 
 typedef char id;
 
+typedef struct NCHAIN {
+    struct NCHAIN *next;
+    struct NODE *node;
+} nchain;
+
 typedef struct IDS {
     id *id;
     int refcnt;
-    struct NODE *node;
+    struct NODE *node;     /* ptr. to decleration */
+    struct NCHAIN *nchain; /* ptr. to definition(s) resp. usage(s) */
     struct IDS *next;
 } ids;
 
@@ -166,7 +176,7 @@ typedef enum {
 
 #undef PRF_IF
 
-#define MAX_MASK 3
+#define MAX_MASK 5
 
 typedef struct NODE {
     nodetype nodetype;
@@ -187,11 +197,10 @@ typedef struct NODE {
                            */
     } info;               /* fu"r spezielle Informationen */
     int refcnt;           /* is used as referenze count information */
-    int varno;            /* number of vaiables - 1 */
+    int varno;            /* number of variables - 1 */
     long *mask[MAX_MASK]; /* special informations about variables */
     int nnode;            /* Anzahl der benutzten Knoten */
     int lineno;           /* Zeilennummer in der ein Befehl steht */
-                          /* later used for variable number while optimizing */
     struct NODE *node[4]; /* Diese Eintra"ge sind knotenspezifisch */
 } node;                   /* Knoten des Syntaxbaums  */
 
