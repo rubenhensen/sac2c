@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2004/11/27 02:33:59  ktr
+ * *** empty log message ***
+ *
  * Revision 3.77  2004/11/27 02:17:05  jhb
  * fixed bug
  *
@@ -4597,7 +4600,7 @@ TYnestTypes (ntype *outer, ntype *inner)
 /******************************************************************************
  *
  * function:
- *    ntype * TYDeNestTypes( ntype *nested, ntype *inner)
+ *    ntype * TYdeNestTypes( ntype *nested, ntype *inner)
  *
  * description:
  *    de-nests (array) types. Since this function is NOT considered a type
@@ -4607,11 +4610,11 @@ TYnestTypes (ntype *outer, ntype *inner)
  ******************************************************************************/
 
 ntype *
-TYDeNestTypes (ntype *nested, ntype *inner)
+TYdeNestTypes (ntype *nested, ntype *inner)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYDeNestTypes");
+    DBUG_ENTER ("TYdeNestTypes");
 
     DBUG_ASSERT (TYisAKS (inner),
                  "TYDeNestTypes with non AKS inner type not yet implemented!");
@@ -4991,7 +4994,7 @@ TYtype2OldType (ntype *new)
 /******************************************************************************
  *
  * Function:
- *   ntype *TYSplitWrapperType( ntype *type, bool *finished)
+ *   ntype *SplitWrapperType( ntype *type, bool *finished)
  *
  * Description:
  *   Extracts a single FUN_IBASE path from the given type 'type'.
@@ -5008,7 +5011,7 @@ SplitWrapperType (ntype *type, bool *finished)
     int n, i;
     bool old_finished, once_finished;
 
-    DBUG_ENTER ("SplitWrapperType");
+    DBUG_ENTER ("TYsplitWrapperType");
 
     if (type == NULL) {
         new_type = NULL;
@@ -5100,7 +5103,7 @@ TYgetWrapperRetType (ntype *type)
 /******************************************************************************
  *
  * Function:
- *   node *TYCorrectWrapperArgTypes( node *args, ntype *type)
+ *   node *TYcorrectWrapperArgTypes( node *args, ntype *type)
  *
  * Description:
  *
@@ -5108,9 +5111,9 @@ TYgetWrapperRetType (ntype *type)
  ******************************************************************************/
 
 node *
-TYCorrectWrapperArgTypes (node *args, ntype *type)
+TYcorrectWrapperArgTypes (node *args, ntype *type)
 {
-    DBUG_ENTER ("TYCorrectWrapperArgTypes");
+    DBUG_ENTER ("TYcorrectWrapperArgTypes");
 
     while (args != NULL) {
         DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_exprs node found!");
@@ -5127,7 +5130,7 @@ TYCorrectWrapperArgTypes (node *args, ntype *type)
         }
 
         type = IRES_TYPE (IBASE_GEN (FUN_IBASE (type, 0)));
-        ARG_NEXT (args) = TYCorrectWrapperArgTypes (ARG_NEXT (args), type);
+        ARG_NEXT (args) = TYcorrectWrapperArgTypes (ARG_NEXT (args), type);
         args = ARG_NEXT (args);
     }
 
