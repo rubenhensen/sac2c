@@ -1,6 +1,11 @@
-/*    $Id$
+/*
  *
  * $Log$
+ * Revision 2.13  2000/08/11 12:26:42  dkr
+ * bug in WLFassign fixed:
+ * INFO_WLI_NEW_ID(arg_info) is reset to NULL now after replacement is
+ * done
+ *
  * Revision 2.12  2000/06/23 15:23:55  dkr
  * signature of DupTree changed
  *
@@ -343,7 +348,6 @@ AddRen (node *old_name, char *new_name, types *type, node *arg_info, int insert)
  * description:
  *   Free whole renaming list
  *
- *
  ******************************************************************************/
 
 static renaming_type *
@@ -381,8 +385,9 @@ SearchRen (char *old_name)
     DBUG_ENTER ("SearchRen");
 
     ren = renaming;
-    while (ren && strcmp (old_name, ren->old))
+    while (ren && strcmp (old_name, ren->old)) {
         ren = ren->next;
+    }
 
     DBUG_RETURN (ren);
 }
@@ -459,8 +464,9 @@ SearchCC (node *targetn, node *substn)
     DBUG_ENTER ("SearchCC");
 
     cc = code_constr;
-    while (cc && (cc->target != targetn || cc->subst != substn))
+    while (cc && (cc->target != targetn || cc->subst != substn)) {
         cc = cc->next;
+    }
 
     DBUG_RETURN (cc);
 }
@@ -561,11 +567,11 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
                  *                       "x    x  "
                  */
                 cut = (ig->u[dim] - ig->l[dim]) % ig->step[dim];
-                if (cut == 0)
+                if (cut == 0) {
                     lbuf += ig->step[dim] - ig->width[dim];
-                else if (cut > ig->width[dim])
+                } else if (cut > ig->width[dim]) {
                     lbuf += cut - ig->width[dim];
-                else if (cut < ig->width[dim]) {
+                } else if (cut < ig->width[dim]) {
                     /* make newig */
                     newig = CopyInternGen (ig);
                     newig->l[dim] = ig->l[dim] + cut;
@@ -761,11 +767,11 @@ LinearTransformationsVector (intern_gen *ig, index_info *transformations)
 
     dim = ig->shape;
 
-    if (transformations->vector && transformations->arg_no)
+    if (transformations->vector && transformations->arg_no) {
         /* vector transformation and a valid prf. */
         for (act_dim = 0; act_dim < dim; act_dim++) { /* all dimensions */
             actig = ig;
-            if (transformations->permutation[act_dim])
+            if (transformations->permutation[act_dim]) {
                 while (actig) { /* all igs */
                     newig
                       = LinearTransformationsHelp (actig, act_dim, transformations->prf,
@@ -777,15 +783,19 @@ LinearTransformationsVector (intern_gen *ig, index_info *transformations)
                     }
                     actig = actig->next;
                 }
+            }
         }
+    }
 
-    if (transformations->last[0] && transformations->last[0]->vector)
+    if (transformations->last[0] && transformations->last[0]->vector) {
         ig = LinearTransformationsVector (ig, transformations->last[0]);
-    else { /* maybe additional scalar transformations */
-        for (act_dim = 0; act_dim < dim; act_dim++)
-            if (transformations->last[act_dim])
+    } else { /* maybe additional scalar transformations */
+        for (act_dim = 0; act_dim < dim; act_dim++) {
+            if (transformations->last[act_dim]) {
                 ig = LinearTransformationsScalar (ig, transformations->last[act_dim],
                                                   act_dim);
+            }
+        }
     }
 
     DBUG_RETURN (ig);
@@ -825,9 +835,11 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
     i = sizeof (int) * target_dim;
     help = Malloc (i);
     help = memset (help, 0, i);
-    for (i = 0; i < transformations->vector; i++)
-        if (transformations->permutation[i])
+    for (i = 0; i < transformations->vector; i++) {
+        if (transformations->permutation[i]) {
             help[transformations->permutation[i] - 1] = i + 1;
+        }
+    }
 
     /* now process all substig and create new ig list rootig */
     tmpig = substig;
@@ -849,7 +861,7 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
         if (ok) {
             /* start transformations */
             newig = CreateInternGen (target_dim, NULL != tmpig->step);
-            for (i = 0; i < target_dim; i++)
+            for (i = 0; i < target_dim; i++) {
                 if (help[i]) {
                     newig->l[i] = tmpig->l[help[i] - 1];
                     newig->u[i] = tmpig->u[help[i] - 1];
@@ -865,6 +877,7 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
                         newig->width[i] = 1;
                     }
                 }
+            }
             DBUG_ASSERT (0 == NormalizeInternGen (newig), ("Error while normalizing ig"));
 
             newig->code = tmpig->code;
@@ -988,8 +1001,9 @@ IntersectGrids (int dim)
                     intersect_grids_baseig->width[dim] = last - first;
                     IntersectGrids (dim + 1);
                     intersect_grids_baseig->l[dim] -= first; /* restore old value */
-                } else
+                } else {
                     dc = intersect_grids_baseig->step[dim]; /* stop further search */
+                }
             } else {
                 /* create new ig and add it to structures
                    if lower bound is less then upper bound. */
@@ -1007,9 +1021,9 @@ IntersectGrids (int dim)
 
                     /* add craetes code to code_constr list and to new_codes. */
                     cc = SearchCC (intersect_grids_tig->code, intersect_grids_sig->code);
-                    if (cc)
+                    if (cc) {
                         ig->code = cc->new;
-                    else {
+                    } else {
                         coden = CreateCode (intersect_grids_tig->code,
                                             intersect_grids_sig->code);
                         ig->code = coden;
@@ -1022,8 +1036,9 @@ IntersectGrids (int dim)
                     /* add new generator to intersect_intern_gen list. */
                     ig->next = intersect_intern_gen;
                     intersect_intern_gen = ig;
-                } else
+                } else {
                     dc = intersect_grids_baseig->step[dim]; /* stop further search */
+                }
             }
         }
 
@@ -1064,10 +1079,12 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
     while (target_ig) {
         sig = subst_ig;
         while (sig) {
-            if (!new_gen_step)
+            if (!new_gen_step) {
                 new_gen_step = CreateInternGen (target_ig->shape, 1);
-            if (!new_gen_nostep)
+            }
+            if (!new_gen_nostep) {
                 new_gen_nostep = CreateInternGen (target_ig->shape, 0);
+            }
 
             create_steps = target_ig->step || sig->step;
             if (create_steps) {
@@ -1083,9 +1100,9 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
             for (d = 0; d < max_dim; d++) {
                 l = MAX (target_ig->l[d], sig->l[d]);
                 u = MIN (target_ig->u[d], sig->u[d]);
-                if (l >= u)
+                if (l >= u) {
                     break; /* empty intersection */
-                else {
+                } else {
                     new_gen->l[d] = l;
                     new_gen->u[d] = u;
                 }
@@ -1099,25 +1116,33 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
                        Global pointers are used to speed up function call. */
                     /* new_gen will be the reference structure for new igs
                        created within IntersectGrids(). */
-                    if (!target_ig->step)
-                        for (d = 0; d < max_dim; d++)
+                    if (!target_ig->step) {
+                        for (d = 0; d < max_dim; d++) {
                             new_gen->step[d] = sig->step[d];
-                    else if (!sig->step)
-                        for (d = 0; d < max_dim; d++)
+                        }
+                    } else if (!sig->step) {
+                        for (d = 0; d < max_dim; d++) {
                             new_gen->step[d] = target_ig->step[d];
-                    else
-                        for (d = 0; d < max_dim; d++)
+                        }
+                    } else {
+                        for (d = 0; d < max_dim; d++) {
                             new_gen->step[d] = lcm (target_ig->step[d], sig->step[d]);
+                        }
+                    }
 
                     /* compute offsets */
-                    if (target_ig->step)
-                        for (d = 0; d < max_dim; d++)
+                    if (target_ig->step) {
+                        for (d = 0; d < max_dim; d++) {
                             intersect_grids_ot[d]
                               = (new_gen->l[d] - target_ig->l[d]) % target_ig->step[d];
-                    if (sig->step)
-                        for (d = 0; d < max_dim; d++)
+                        }
+                    }
+                    if (sig->step) {
+                        for (d = 0; d < max_dim; d++) {
                             intersect_grids_os[d]
                               = (new_gen->l[d] - sig->l[d]) % sig->step[d];
+                        }
+                    }
 
                     intersect_grids_baseig = new_gen;
                     intersect_grids_tig = target_ig;
@@ -1130,9 +1155,9 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
                 } else {
                     /* craete new code and add it to code_constr list and to new_codes. */
                     cc = SearchCC (target_ig->code, sig->code);
-                    if (cc)
+                    if (cc) {
                         new_gen->code = cc->new;
-                    else {
+                    } else {
                         coden = CreateCode (target_ig->code, sig->code);
                         new_gen->code = coden;
                         AddCC (target_ig->code, sig->code, coden);
@@ -1152,10 +1177,12 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
         target_ig = target_ig->next; /* go on with next target ig */
     }
 
-    if (new_gen_step)
+    if (new_gen_step) {
         FREE_INTERN_GEN (new_gen_step);
-    if (new_gen_nostep)
+    }
+    if (new_gen_nostep) {
         FREE_INTERN_GEN (new_gen_nostep);
+    }
 
     DBUG_RETURN (intersect_intern_gen);
 }
@@ -1214,8 +1241,9 @@ RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
                     act_ig = act_ig->next;
                 }
                 act_dim--;
-            } else
+            } else {
                 found[dim] = act_dim + 1;
+            }
         }
 
     FREE (found);
@@ -1263,7 +1291,7 @@ TransformationRangeCheck (index_info *transformations, node *substwln,
     whole_ig = CreateInternGen (dim, 0);
     switch (NWITH_TYPE (substwln)) {
     case WO_genarray:
-        tmpn = ARRAY_AELEMS (NWITHOP_SHAPE (NWITH_WITHOP (substwln)));
+        tmpn = ARRAY_AELEMS (NWITH_SHAPE (substwln));
         for (i = 0; i < dim; i++) {
             whole_ig->l[i] = 0;
             whole_ig->u[i] = NUM_VAL (EXPRS_EXPR (tmpn));
@@ -1274,7 +1302,7 @@ TransformationRangeCheck (index_info *transformations, node *substwln,
     case WO_modarray:
         for (i = 0; i < dim; i++) {
             whole_ig->l[i] = 0;
-            whole_ig->u[i] = ID_SHAPE (NWITHOP_ARRAY (NWITH_WITHOP (substwln)), i);
+            whole_ig->u[i] = ID_SHAPE (NWITH_ARRAY (substwln), i);
         }
         break;
 
@@ -1293,9 +1321,11 @@ TransformationRangeCheck (index_info *transformations, node *substwln,
     result = 0;
     dim = target_ig->shape;
     while (!result && target_ig) {
-        for (i = dim - 1; i >= 0; i--)
-            if (target_ig->l[i] < whole_ig->l[i] || target_ig->u[i] > whole_ig->u[i])
+        for (i = dim - 1; i >= 0; i--) {
+            if (target_ig->l[i] < whole_ig->l[i] || target_ig->u[i] > whole_ig->u[i]) {
                 result = i + 1;
+            }
+        }
 
         target_ig = target_ig->next;
     }
@@ -1310,7 +1340,6 @@ TransformationRangeCheck (index_info *transformations, node *substwln,
  *
  * description:
  *   The Id idn in the current (arg_info) WL has to be folded.
- *
  *
  ******************************************************************************/
 
@@ -1342,9 +1371,10 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
     transf2 = DuplicateIndexInfo (transformations);
     error = TransformationRangeCheck (transf2, substwln, target_ig);
     FREE_INDEX_INFO (transf2);
-    if (error)
+    if (error) {
         ABORT (NODE_LINE (idn),
                ("array access to %s out of range in dimension %i", ID_NAME (idn), error));
+    }
 
     /* create subst_ig */
     subst_ig = Tree2InternGen (substwln, NULL);
@@ -1356,8 +1386,9 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
 #endif
     subst_ig = FinalTransformations (subst_ig, transformations, target_ig->shape);
 
-    if (!subst_ig)
+    if (!subst_ig) {
         ABORT (NODE_LINE (idn), ("constants of index vector out of range"));
+    }
 
     /* intersect target_ig and subst_ig
        and create new code blocks */
@@ -1368,11 +1399,12 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
     /* results are in intersect_ig. At the moment, just append to new_ig. */
     DBUG_ASSERT (intersect_ig, ("No new intersections"));
     tmpig = new_ig;
-    if (!tmpig) /* at the mom: always true */
+    if (!tmpig) { /* at the mom: always true */
         new_ig = intersect_ig;
-    else {
-        while (tmpig->next)
+    } else {
+        while (tmpig->next) {
             tmpig = tmpig->next;
+        }
         tmpig->next = intersect_ig;
     }
 
@@ -1441,11 +1473,13 @@ CheckForSuperfluousCodes (node *wln)
     DBUG_ENTER ("CheckForSuperfluousCodes");
 
     tmp = &NWITH_CODE (wln);
-    while (*tmp)
-        if (!NCODE_USED ((*tmp)))
+    while (*tmp) {
+        if (!NCODE_USED ((*tmp))) {
             *tmp = FreeNode (*tmp);
-        else
+        } else {
             tmp = &NCODE_NEXT ((*tmp));
+        }
+    }
 
     DBUG_RETURN (wln);
 }
@@ -1475,16 +1509,17 @@ Modarray2Genarray (node *wln, node *substwln)
     shpseg *shpseg;
 
     DBUG_ENTER ("Modarray2Genarray");
-    DBUG_ASSERT (WO_modarray == NWITH_TYPE (wln), ("wrong withop for Modarray2Genarray"));
-    DBUG_ASSERT (substwln, ("substwln ist NULL"));
+
+    DBUG_ASSERT ((WO_modarray == NWITH_TYPE (wln)), "wrong withop for Modarray2Genarray");
+    DBUG_ASSERT (substwln, "substwln ist NULL");
 
     /* at the moment, substwln points to the assignment of the WL. */
     substwln = LET_EXPR (ASSIGN_INSTR (substwln));
     (NWITH_REFERENCES_FOLDED (substwln))++; /* removed another reference */
 
     /* compute shape of WL for NWITHOP_SHAPE() */
-    type = ID_TYPE (NWITHOP_ARRAY (NWITH_WITHOP (wln)));
-    dimensions = IDS_SHAPE (NPART_VEC (NWITH_PART (wln)), 0);
+    type = ID_TYPE (NWITH_ARRAY (wln));
+    dimensions = IDS_SHAPE (NWITH_VEC (wln), 0);
 
     eltn = NULL;
     for (i = dimensions - 1; i >= 0; i--)
@@ -1503,7 +1538,7 @@ Modarray2Genarray (node *wln, node *substwln)
     /* delete old withop and create new one */
     FreeTree (NWITH_WITHOP (wln));
     NWITH_WITHOP (wln) = MakeNWithOp (WO_genarray);
-    NWITHOP_SHAPE (NWITH_WITHOP (wln)) = shape;
+    NWITH_SHAPE (wln) = shape;
 
     DBUG_RETURN (wln);
 }
@@ -1522,7 +1557,6 @@ Modarray2Genarray (node *wln, node *substwln)
  * description:
  *   initializations to arg_info.
  *
- *
  ******************************************************************************/
 
 node *
@@ -1538,10 +1572,12 @@ WLFfundef (node *arg_node, node *arg_info)
     INFO_VARNO (arg_info) = FUNDEF_VARNO (arg_node);
 
     wlf_mode = wlfm_search_WL;
-    if (FUNDEF_BODY (arg_node))
+    if (FUNDEF_BODY (arg_node)) {
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    if (FUNDEF_ARGS (arg_node))
+    }
+    if (FUNDEF_ARGS (arg_node)) {
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1570,14 +1606,14 @@ WLFassign (node *arg_node, node *arg_info)
 
     switch (wlf_mode) {
     case wlfm_search_WL:
-        if (ASSIGN_NEXT (arg_node))
+        if (ASSIGN_NEXT (arg_node)) {
             /* We must not assign the returned node to ASSIGN_NEXT
                because the chain has been modified in Trav(wlfm_rename).
                This is not very nice and bypassed the traversal mechanism,
                but it is necessary since cross pointers are used as references
                to N_assign nodes and new code is inserted there. */
-            /*       ASSIGN_NEXT(arg_node)  = Trav(ASSIGN_NEXT(arg_node), arg_info); */
             Trav (ASSIGN_NEXT (arg_node), arg_info);
+        }
 
         /* now it's the time when we run the once traversed path through the
            syntax tree back.
@@ -1655,6 +1691,7 @@ WLFassign (node *arg_node, node *arg_info)
             tmpn = ASSIGN_INSTR (tmpn);
             LET_EXPR (tmpn) = FreeTree (LET_EXPR (tmpn));
             LET_EXPR (tmpn) = INFO_WLI_NEW_ID (arg_info);
+            INFO_WLI_NEW_ID (arg_info) = NULL;
         } else {
             if (ASSIGN_NEXT (arg_node)) {
                 ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
@@ -1665,8 +1702,9 @@ WLFassign (node *arg_node, node *arg_info)
     default:
         /* Do not assign ASSIGN_NEXT(arg_node) here!
            Why? See comment in wlfm_search_wl branch of this function. */
-        if (ASSIGN_NEXT (arg_node))
+        if (ASSIGN_NEXT (arg_node)) {
             Trav (ASSIGN_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1708,10 +1746,11 @@ WLFid (node *arg_node, node *arg_info)
         if (ID_WL (arg_node)) {           /* a WL is referenced (this is an array Id), */
             if (INFO_WLI_WL (arg_info) && /* inside WL, */
                 INDEX (INFO_WLI_ASSIGN (arg_info)) && /* valid index transformation */
-                FoldDecision (INFO_WLI_WL (arg_info), ID_WL (arg_node)))
+                FoldDecision (INFO_WLI_WL (arg_info), ID_WL (arg_node))) {
                 INFO_WLI_FLAG (arg_info) = 1;
-            else
+            } else {
                 ID_WL (arg_node) = NULL;
+            }
         }
         break;
 
@@ -1741,10 +1780,10 @@ WLFid (node *arg_node, node *arg_info)
             }
 
             /* Create substitution code. */
-            if (N_empty == NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (coden)))) {
+            if (N_empty == NODE_TYPE (NCODE_CBLOCK_INSTR (coden))) {
                 substn = NULL;
             } else {
-                substn = DupTree (BLOCK_INSTR (NCODE_CBLOCK (coden)));
+                substn = DupTree (NCODE_CBLOCK_INSTR (coden));
             }
 
             /* create assignments to rename variables which index the array we want
@@ -1773,8 +1812,8 @@ WLFid (node *arg_node, node *arg_info)
                    - no otherwise. We could duplicate masks for new code blocks,
                      but I guess that would cost more time than speculatively inserting
                      (and DC-removing) some new variables. */
-                if (!NCODE_MASK (coden, 1 /* USE mask */) /* mask does not exist */
-                    || NCODE_MASK (coden, 1)[IDS_VARNO (subst_wl_ids)]) {
+                if (!NCODE_USEMASK (coden) /* mask does not exist */
+                    || NCODE_USEMASK (coden)[IDS_VARNO (subst_wl_ids)]) {
                     arrayn = MakeArray (MakeExprs (MakeNum (count), NULL));
                     ARRAY_ISCONST (arrayn) = TRUE;
                     ARRAY_VECTYPE (arrayn) = T_int;
@@ -1794,9 +1833,10 @@ WLFid (node *arg_node, node *arg_info)
                                       IDS_TYPE (subst_wl_ids), arg_info, 0);
                         _ids = MakeIds (new_name, NULL, ST_regular);
                         IDS_VARDEC (_ids) = ren->vardec;
-                    } else
+                    } else {
                         /* keep original name */
                         _ids = DupOneIds (subst_wl_ids, NULL);
+                    }
 
                     letn = MakeLet (MakePrf (F_psi, argsn), _ids);
                     subst_header = MakeAssign (letn, subst_header);
@@ -1808,8 +1848,8 @@ WLFid (node *arg_node, node *arg_info)
 
             /* now add "iv = sel" (see example above) */
             subst_wl_ids = NPART_VEC (subst_wl_partn);
-            if (!NCODE_MASK (coden, 1 /* USE mask */) /* mask does not exist */
-                || NCODE_MASK (coden, 1)[IDS_VARNO (subst_wl_ids)]) {
+            if (!NCODE_USEMASK (coden) /* mask does not exist */
+                || NCODE_USEMASK (coden)[IDS_VARNO (subst_wl_ids)]) {
                 /* maybe the index vector variable of the subst wl has to be renamed */
                 if (target_mask[IDS_VARNO (subst_wl_ids)]) {
                     new_name = TmpVarName (IDS_NAME (subst_wl_ids));
@@ -1817,9 +1857,10 @@ WLFid (node *arg_node, node *arg_info)
                                   IDS_TYPE (subst_wl_ids), arg_info, 0);
                     _ids = MakeIds (new_name, NULL, ST_regular);
                     IDS_VARDEC (_ids) = ren->vardec;
-                } else
+                } else {
                     /* keep original name */
                     _ids = DupOneIds (subst_wl_ids, NULL);
+                }
 
                 letn = MakeLet (DupTree (vectorn), _ids);
                 subst_header = MakeAssign (letn, subst_header);
@@ -1841,11 +1882,13 @@ WLFid (node *arg_node, node *arg_info)
                melt both chains. */
             if (subst_header) {
                 INFO_WLI_SUBST (arg_info) = subst_header;
-                while (ASSIGN_NEXT (subst_header))
+                while (ASSIGN_NEXT (subst_header)) {
                     subst_header = ASSIGN_NEXT (subst_header);
+                }
                 ASSIGN_NEXT (subst_header) = substn;
-            } else
+            } else {
                 INFO_WLI_SUBST (arg_info) = substn;
+            }
         }
         break;
 
@@ -1854,9 +1897,9 @@ WLFid (node *arg_node, node *arg_info)
         ren = SearchRen (ID_NAME (arg_node));
         if (ren || (varno != -1 && target_mask[varno] != subst_mask[varno])) {
             /* we have to solve a name clash. */
-            if (ren)
+            if (ren) {
                 new_name = StringCopy (ren->new);
-            else {
+            } else {
                 new_name = TmpVarName (ID_NAME (arg_node));
                 /* Get vardec's name because ID_NAME will be deleted soon. */
                 ren = AddRen (ID_VARDEC (arg_node), new_name, ID_TYPE (arg_node),
@@ -1949,9 +1992,9 @@ WLFlet (node *arg_node, node *arg_info)
         if (varno != -1 && target_mask[varno]) {
             /* we have to solve a name clash. */
             ren = SearchRen (IDS_NAME (LET_IDS (arg_node)));
-            if (ren)
+            if (ren) {
                 new_name = StringCopy (ren->new);
-            else {
+            } else {
                 new_name = TmpVarName (IDS_NAME (LET_IDS (arg_node)));
                 ren = AddRen (IDS_VARDEC (LET_IDS (arg_node)), new_name,
                               IDS_TYPE (LET_IDS (arg_node)), arg_info, 0);
@@ -2007,9 +2050,10 @@ WLFNwith (node *arg_node, node *arg_info)
 
         /* if WO_modarray, save referenced WL to transform modarray into
            genarray later. */
-        if (WO_modarray == NWITH_TYPE (arg_node))
+        if (WO_modarray == NWITH_TYPE (arg_node)) {
             /* This ID_WL is used in case (1) here (see header of file) */
-            substwln = ID_WL (NWITHOP_ARRAY (NWITH_WITHOP (arg_node)));
+            substwln = ID_WL (NWITH_ARRAY (arg_node));
+        }
 
         /* It's faster to
            1. traverse into bodies to find WL within and fold them first
@@ -2045,8 +2089,9 @@ WLFNwith (node *arg_node, node *arg_info)
                 /* We have new codes. This means at least one folding action has been
                    done and we have to replace the N_Nparts, too. */
                 tmpn = NWITH_CODE (arg_node);
-                while (NCODE_NEXT (tmpn))
+                while (NCODE_NEXT (tmpn)) {
                     tmpn = NCODE_NEXT (tmpn);
+                }
                 NCODE_NEXT (tmpn) = new_codes;
 
                 /* before replacing the old generators with the new ones, we
@@ -2069,8 +2114,9 @@ WLFNwith (node *arg_node, node *arg_info)
            would not remove the subst WL.*/
         if (WO_modarray == NWITH_TYPE (arg_node) && substwln
             && /* can be NULL if array is not in reach (loops, function argument)*/
-            FoldDecision (arg_node, substwln))
+            FoldDecision (arg_node, substwln)) {
             arg_node = Modarray2Genarray (arg_node, substwln);
+        }
 
         /* restore arg_info */
         tmpn = arg_info;
