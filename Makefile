@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.50  2000/08/02 14:28:54  nmw
+# print_interface_*.o added
+#
 # Revision 2.49  2000/07/21 09:58:25  jhs
 # Added os lines for easy changes of os.
 #
@@ -305,7 +308,9 @@ COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/PatchWith.o
 
 CINTERFACE= src/c-interface/map_cwrapper.o src/c-interface/print_interface.o \
-            src/c-interface/import_specialization.o
+            src/c-interface/import_specialization.o \
+            src/c-interface/print_interface_header.o \
+            src/c-interface/print_interface_wrapper.o
 
 OBJ=$(GLOBAL) $(TREE) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
     $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT) \
