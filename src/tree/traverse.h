@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 18:26:04  cg
+ * Added new traversal tccp for typecheck constant propagation.
+ *
  * Revision 3.1  2000/11/20 18:03:30  sacbase
  * new release made
  *
@@ -195,6 +198,7 @@ extern funtab *mapcw_tab;
 extern funtab *pih_tab;
 extern funtab *piw_tab;
 extern funtab *impspec_tab;
+extern funtab *tccp_tab;
 
 extern int nnode[];
 

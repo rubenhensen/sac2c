@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 18:26:04  cg
+ * Added new traversal tccp for typecheck constant propagation.
+ *
  * Revision 3.1  2000/11/20 18:03:29  sacbase
  * new release made
  *
@@ -1204,6 +1207,17 @@ static funtab impspec_tab_rec = {{
                                  NULL,
                                  NULL};
 funtab *impspec_tab = &impspec_tab_rec;
+
+/*
+ *  (85) tccp_tab
+ */
+static funtab tccp_tab_rec = {{
+#define NIFtccp(it_tccp) it_tccp
+#include "node_info.mac"
+                              },
+                              NULL,
+                              NULL};
+funtab *tccp_tab = &tccp_tab_rec;
 
 /*
  *  nnode

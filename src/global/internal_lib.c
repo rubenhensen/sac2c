@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/06 18:26:04  cg
+ * Added new traversal tccp for typecheck constant propagation.
+ *
  * Revision 3.1  2000/11/20 17:59:30  sacbase
  * new release made
  *
@@ -581,6 +584,8 @@ TmpVar ()
     } else if (act_tab == print_tab) {
         s = "prt";
     } else if (act_tab == type_tab) {
+        s = "type";
+    } else if (act_tab == tccp_tab) {
         s = "type";
     } else if (act_tab == genmask_tab) {
         s = "gnm";
