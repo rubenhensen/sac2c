@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.65  1998/05/13 12:06:52  srs
+ * enhanced Elemination of F_psi in ArrayPrf()
+ *
  * Revision 1.64  1998/04/29 08:53:51  srs
  * patched ArrayPrf() to call it from typecheck.c
  *
@@ -269,6 +272,73 @@ typedef struct INSIDE_WL {
 
 static inside_wl *inside_wl_root;
 
+/******************************************************************************
+ *
+ * function:
+ *   int CompareNumArrayType(node *array1, node *array2)
+ *
+ * description:
+ *   returnes 1 if both constant arrays have the same dimension and the same
+ *   shape. Else returnes 0.
+ *   Arrays must have type T_int.
+ *
+ ******************************************************************************/
+
+int
+CompareNumArrayType (node *array1, node *array2)
+{
+    int ok, i;
+
+    DBUG_ENTER ("CompareNumArrayType");
+
+    /* check misc */
+    ok = !(N_array != NODE_TYPE (array1) || N_array != NODE_TYPE (array2)
+           || T_int != ARRAY_BASETYPE (array1) || T_int != ARRAY_BASETYPE (array2)
+           || ARRAY_DIM (array1) != ARRAY_DIM (array2));
+
+    /* compare shape */
+    for (i = 0; i < ARRAY_DIM (array1); i++)
+        if (ARRAY_SHAPE (array1, i) != ARRAY_SHAPE (array2, i))
+            ok = 0;
+
+    DBUG_RETURN (ok);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int CompareNumArrayElts(node *array1, node *array2)
+ *
+ * description:
+ *   returnes 1 if both constant arrays have the same elements. Else returnes 0.
+ *   Arrays must have type T_int.
+ *
+ ******************************************************************************/
+
+int
+CompareNumArrayElts (node *array1, node *array2)
+{
+    int ok;
+
+    DBUG_ENTER ("CompareNumArrayElts");
+
+    ok = 1;
+
+    /* compare elements */
+    array1 = ARRAY_AELEMS (array1);
+    array2 = ARRAY_AELEMS (array2);
+    while (ok && array1 && array2) {
+        ok = (N_num == NODE_TYPE (EXPRS_EXPR (array1))
+              && N_num == NODE_TYPE (EXPRS_EXPR (array2))
+              && NUM_VAL (EXPRS_EXPR (array1)) == NUM_VAL (EXPRS_EXPR (array2)));
+
+        array1 = EXPRS_NEXT (array1);
+        array2 = EXPRS_NEXT (array2);
+    }
+
+    DBUG_RETURN (ok);
+}
+
 /*
  *
  *  functionname  : IsConst
@@ -497,7 +567,7 @@ CFlet (node *arg_node, node *arg_info)
     DBUG_ENTER ("CFlet");
 
     /* get result type for potential primitive function */
-    INFO_CF_TYPE (arg_info) = GetType (VARDEC_TYPE (IDS_VARDEC (LET_IDS (arg_node))));
+    INFO_CF_TYPE (arg_info) = GetType (IDS_TYPE (LET_IDS (arg_node)));
 
     /* Trav expression */
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
@@ -1641,18 +1711,18 @@ ArrayPrf (node *arg_node, node *arg_info)
     long *used_sofar;
 
     DBUG_ENTER ("ArrayPrf");
+    DBUG_ASSERT (N_prf == NODE_TYPE (arg_node), "wrong argument");
 
     /*
      * Search Arguments for primitive Functions
      */
-    tmp = arg_node->node[0];
-    for (i = 0; i < MAXARG; i++) {
-        if (tmp != NULL) {
-            arg[i] = NodeBehindCast (tmp->node[0]);
-            tmp = tmp->node[1];
+    tmp = PRF_ARGS (arg_node);
+    for (i = 0; i < MAXARG; i++)
+        if (tmp) {
+            arg[i] = NodeBehindCast (EXPRS_EXPR (tmp));
+            tmp = EXPRS_NEXT (tmp);
         } else
             arg[i] = NULL;
-    }
 
     /*
      * Calculate primitive Functions
@@ -1921,59 +1991,140 @@ ArrayPrf (node *arg_node, node *arg_info)
         /* Fold psi-function   */
         /***********************/
     case F_psi: {
-        int dim;
-        node *shape, *array, *res_array = NULL, *first_elem;
+        int dim, ok;
+        node *shape, *array, *res_array, *first_elem;
+        node *tmpn, *modindex;
         types *array_type;
+        node **mrdmask;
+
+        res_array = NULL;
 
         /*
          * Substitute shape-vector
          */
         if (N_id == NODE_TYPE (arg[0])) {
             MRD_GETDATA (shape, ID_VARNO (arg[0]), INFO_VARNO);
-        } else {
+        } else
             shape = arg[0];
-        }
 
         if (!IsConst (shape))
             break;
-        DBUG_ASSERT ((N_array == NODE_TYPE (shape)), "Shape-vector for psi not an array");
+        DBUG_ASSERT (N_array == NODE_TYPE (shape), "Shape-vector for psi not an array");
 
         /*
          * Substitute array
          */
+#if 0
+	if (N_id==NODE_TYPE(arg[1])) {
+          array_type = ID_TYPE(arg[1]);
+          MRD_GETDATA(array, ID_VARNO(arg[1]), INFO_VARNO);
+          if (!array || N_array != NODE_TYPE(array))
+            break;
+        }
+	else {
+          DBUG_ASSERT(N_array == NODE_TYPE(arg[1]), "N_array expected");
+          array_type = ARRAY_TYPE(arg[1]);
+          array = arg[1];
+        }
+     
+	/* Arrays like [a,...] with a = [...] cannot be folded til now */
+	first_elem = EXPRS_EXPR(ARRAY_AELEMS(array));
+	if (N_id == NODE_TYPE(first_elem)) {
+          GET_DIM(dim, VARDEC_TYPE(ID_VARDEC(first_elem)));
+          if (0 != dim) {
+            break;
+            /* make array flat here !!! */
+          }
+        }
+
+	res_array = CalcPsi(shape, array, array_type, arg_info);
+#endif
+        /* srs: new part to enable folding arrays that are modified with
+           prf modarray. Only a special case is implemented here to
+           support WL-unrolling. */
+        res_array = NULL;
+
         if (N_id == NODE_TYPE (arg[1])) {
-            array_type = VARDEC_TYPE (ID_VARDEC (arg[1]));
-            MRD_GETDATA (array, ID_VARNO (arg[1]), INFO_VARNO);
-            if ((NULL == array) || (N_array != NODE_TYPE (array)))
-                break;
+            array_type = ID_TYPE (arg[1]);
+
+            /* let's have a closer look at the id. If it is a prf modarray
+               and we index the element which is modified by this prf,
+               the second arg of the prf can be used.
+               Else we search for an N_array node.*/
+            ok = 0;
+            tmpn = arg[1];
+            mrdmask = MRD_TOS.varlist;
+            do {
+                /*             MRD_GETDATA(array, ID_VARNO(tmpn), INFO_VARNO); */
+                array = mrdmask[ID_VARNO (tmpn)];
+                ok = 1;
+                if (array && N_assign == NODE_TYPE (array)
+                    && N_let == NODE_TYPE (ASSIGN_INSTR (array))) {
+                    mrdmask = (node **)ASSIGN_MRDMASK (array);
+                    array = LET_EXPR (ASSIGN_INSTR (array));
+                } else
+                    array = NULL;
+
+                if (array && N_array == NODE_TYPE (array))
+                    ; /* leave do-loop */
+                else if (array && N_prf == NODE_TYPE (array)
+                         && F_modarray == PRF_PRF (array)) {
+                    /* check index of prf modarray */
+                    modindex = PRF_ARG2 (array);
+                    if (N_id == NODE_TYPE (modindex))
+                        MRD_GETDATA (modindex, ID_VARNO (modindex), INFO_VARNO);
+                    if (IsConstantArray (modindex, N_num)
+                        && CompareNumArrayType (shape, modindex))
+                        if (CompareNumArrayElts (shape, modindex))
+                            res_array = DupTree (PRF_ARG3 (array), NULL);
+                        else {
+                            /* valid modindex, but not equal shape. */
+                            tmpn = PRF_ARG1 (array);
+                            ok = 0; /* continue searching */
+                        }
+                    else              /* F_modarray, but modindex nut supported */
+                        array = NULL; /* not successful */
+                } else                /* no N_array and no F_modarray */
+                    array = NULL;     /* not successful */
+
+            } while (!ok);
         } else {
+            /* 2nd argument is constant array ... easy */
+            DBUG_ASSERT (N_array == NODE_TYPE (arg[1]), "N_array expected");
             array_type = ARRAY_TYPE (arg[1]);
             array = arg[1];
         }
 
-        /* Arrays like [a,...] with a = [...] cannot be folded til now */
-        first_elem = EXPRS_EXPR (ARRAY_AELEMS (array));
-        if (N_id == NODE_TYPE (first_elem)) {
-            GET_DIM (dim, VARDEC_TYPE (ID_VARDEC (first_elem)));
-            if (0 != dim) {
-                break;
+        if (!array)
+            break;
+
+        if (!res_array) {
+            /* Arrays like [a,...] with a = [...] cannot be folded til now */
+            first_elem = EXPRS_EXPR (ARRAY_AELEMS (array));
+            if (N_id == NODE_TYPE (first_elem)) {
+                GET_DIM (dim, VARDEC_TYPE (ID_VARDEC (first_elem)));
+                if (0 != dim)
+                    break;
                 /* make array flat here !!! */
             }
+
+            res_array = CalcPsi (shape, array, array_type, arg_info);
         }
 
-        res_array = CalcPsi (shape, array, array_type, arg_info);
+        /* srs: end of new part */
 
-        if (NULL != res_array) {
+        if (res_array) {
             DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
                                prf_string[arg_node->info.prf], NODE_LINE (arg_info)));
             MinusMask (INFO_USE, ASSIGN_USEMASK (INFO_CF_ASSIGN (arg_info)), INFO_VARNO);
             FreeTree (arg_node);
-            /* srs: arg_info is modifies within GenMasks. As least ->mask[0],
+            /* srs: arg_info is modified within GenMasks. As least ->mask[0],
                mask[1], nodetype and node[2]. Is this intended to happen? */
             arg_node = GenerateMasks (res_array, arg_info);
             cf_expr++;
         }
     } break;
+
     case F_take:
     case F_drop:
     case F_cat:
