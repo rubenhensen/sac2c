@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2002/09/25 11:38:26  sbs
+ * some minor warnings eliminated
+ *
  * Revision 1.4  2002/09/11 23:18:22  dkr
  * prf_node_info.mac modified
  *
@@ -95,6 +98,7 @@ NTCPRF_array (te_info *info, ntype *elems)
         break;
     default:
         DBUG_ASSERT ((FALSE), "array elements of non array types not yet supported");
+        res = NULL; /* just to please gcc */
     }
 
     TYFreeTypeConstructor (elem);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2002/09/25 11:37:19  sbs
+ * some minor warnings eliminated
+ *
  * Revision 3.29  2002/09/17 16:17:44  dkr
  * TYCreateWrapperCode() modified
  *
@@ -1465,7 +1468,9 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
     bool ok;
     int i;
     int new_num_luts;
+#ifndef DBUG_OFF
     tvar **new_alphas;
+#endif
     LUT_t *new_luts;
 
     DBUG_ENTER ("MakeOverloadedFunType");
@@ -2228,7 +2233,7 @@ TYDispatchFunType (ntype *fun, ntype *args)
     ntype *arg, *ires;
     node *fundef;
     DFT_res *res;
-    DFT_state *state;
+    DFT_state *state = NULL;
 #ifndef DBUG_OFF
     char *tmp_str;
 #endif
