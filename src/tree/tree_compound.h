@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.175  2004/11/26 18:01:01  sbs
+ * PRAGMA macros eliminated.
+ *
  * Revision 3.174  2004/11/26 17:44:08  sbs
  * ARRAY_DIM typo fixed
  *
@@ -1660,14 +1663,6 @@ node *TCliftArg (node *arg, node *fundef, types *new_type, bool do_rc,
 /***
  ***  N_pragma :
  ***/
-
-/*
- *  compound access macros
- */
-
-#define PRAGMA_LS(n, i) PRAGMA_LINKSIGN (n)[i]
-#define PRAGMA_RC(n, i) PRAGMA_REFCOUNTING (n)[i]
-#define PRAGMA_RO(n, i) PRAGMA_READONLY (n)[i]
 
 /*--------------------------------------------------------------------------*/
 
