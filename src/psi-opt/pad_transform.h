@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.6  2000/06/28 10:41:35  mab
+ * completed padding functions except with node
+ * some code modifications according to code review
+ *
  * Revision 1.5  2000/06/15 14:38:55  mab
  * implemented APTfundef, APTblock, APTid
  * dummy for APTlet added
@@ -38,9 +42,6 @@
 #define sac_pad_transform_h
 
 extern void APtransform ();
-
-void APTpadShpseg (int dim, shpseg *old, shpseg *new);
-char *APTpadName (char *unpaddedName);
 
 extern node *APTarg (node *arg_node, node *arg_info);
 extern node *APTvardec (node *arg_node, node *arg_info);
