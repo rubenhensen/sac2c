@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/01/28 12:39:17  dkr
+ * removed NCODE_CODE
+ *
  * Revision 1.5  2000/01/25 16:52:20  jhs
  * Fixed a semicolon ...
  *
@@ -2621,7 +2624,6 @@ extern node *MakeInfo ();
 #define INFO_LAC2FUN_LOCAL(n) ((DFMmask_t) (n->dfmask[3]))
 #define INFO_LAC2FUN_NEEDED(n) ((DFMmask_t) (n->dfmask[4]))
 #define INFO_LAC2FUN_ISTRANS(n) (n->flag)
-#define INFO_LAC2FUN_FUNDEF(n) (n->node[0])
 #define INFO_LAC2FUN_FUNS(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
@@ -2937,7 +2939,6 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    long*      MASK                    (optimize -> )
  ***    node *     USE         (N_vinfo)   (IVE -> )
  ***    int        FLAG                    (WLI -> WLF)
- ***    node*      COPY                    ( -> DupTree )
  ***    ids*       INC_RC_IDS              (refcount -> compile )
  ***
  ***    node*      WLAA_INFO(n)            (wlaa -> )
@@ -2977,8 +2978,7 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_CEXPR(n) (n->node[1])
 #define NCODE_NEXT(n) (n->node[2])
 #define NCODE_INC_RC_IDS(n) ((ids *)(n->node[3]))
-#define NCODE_COPY(n) (n->node[4])
-#define NCODE_USE(n) (n->node[5])
+#define NCODE_USE(n) (n->node[4])
 #define NCODE_USED(n) (n->info.cint)
 #define NCODE_MASK(n, x) (n->mask[x])
 #define NCODE_NO(n) (n->refcnt)
