@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  2004/10/05 13:53:19  sah
+ * fixed a bug using ARG_AVIS on vardec nodes!
+ *
  * Revision 1.32  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -1072,8 +1075,8 @@ SSALIRvardec (node *arg_node, info *arg_info)
     AVIS_NEEDCOUNT (VARDEC_AVIS (arg_node)) = 0;
     AVIS_DEFDEPTH (VARDEC_AVIS (arg_node)) = DD_UNDEFINED;
     AVIS_SSALPINV (VARDEC_AVIS (arg_node)) = FALSE;
-    AVIS_LIRMOVE (ARG_AVIS (arg_node)) = LIRMOVE_NONE;
-    AVIS_EXPRESULT (ARG_AVIS (arg_node)) = FALSE;
+    AVIS_LIRMOVE (VARDEC_AVIS (arg_node)) = LIRMOVE_NONE;
+    AVIS_EXPRESULT (VARDEC_AVIS (arg_node)) = FALSE;
 
     /* traverse to next vardec */
     if (VARDEC_NEXT (arg_node) != NULL) {
