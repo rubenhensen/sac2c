@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/05/01 15:34:57  asi
+ * Revision 1.16  1995/05/26 14:23:42  asi
+ * function inlineing and loop unrolling added
+ *
+ * Revision 1.15  1995/05/01  15:34:57  asi
  * dup_tab inserted
  *
  * Revision 1.14  1995/04/11  15:57:47  asi
@@ -91,5 +94,9 @@ extern funptr lir_tab[];
 extern funptr lir_mov_tab[];
 
 extern funptr dup_tab[];
+
+extern funptr inline_tab[];
+
+extern funptr unroll_tab[];
 
 #endif /* _sac_traverse_h */

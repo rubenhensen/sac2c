@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.21  1995/05/01 15:34:57  asi
+ * Revision 1.22  1995/05/26 14:23:42  asi
+ * function inlineing and loop unrolling added
+ *
+ * Revision 1.21  1995/05/01  15:34:57  asi
  * dup_tab inserted
  *
  * Revision 1.20  1995/04/11  15:57:47  asi
@@ -90,6 +93,8 @@
 #include "refcount.h"
 #include "compile.h"
 #include "DupTree.h"
+#include "Inline.h"
+#include "Unroll.h"
 
 #include "traverse.h"
 
@@ -244,24 +249,48 @@ funptr lir_tab[] = {
 #undef NIF
 
 /*
- * 13) lir_mov_tab
+ * 13) dup_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j) j
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j) e
 
-funptr lir_mov_tab[] = {
+funptr dup_tab[] = {
 #include "node_info.mac"
 };
 
 #undef NIF
 
 /*
- * 14) dup_tab
+ * 14) inline_tab
  */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j) e
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j) g
 
-funptr dup_tab[] = {
+funptr inline_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 15) unroll_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j) h
+
+funptr unroll_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 16) lir_mov_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j) j
+
+funptr lir_mov_tab[] = {
 #include "node_info.mac"
 };
 

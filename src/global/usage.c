@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/05/22 12:06:24  sbs
+ * Revision 1.13  1995/05/26 14:26:02  asi
+ * function inlineing and loop unrolling added
+ *
+ * Revision 1.12  1995/05/22  12:06:24  sbs
  * tr option inserted
  *
  * Revision 1.11  1995/05/04  11:40:51  sbs
@@ -55,7 +58,7 @@ usage (char *prg_name)
     printf ("\t -c \t\t\tgenerate C-file only\n");
     printf ("\t -s \t\t\tcompile silently\n");
 
-    printf ("\n");
+    printf ("\nSTOP OPTIONS:\n");
     printf ("\t -bp \t\t\tstop after scan/parse\n");
     printf ("\t -bi \t\t\tstop after module imports\n");
     printf ("\t -bf \t\t\tstop after flatten\n");
@@ -64,12 +67,17 @@ usage (char *prg_name)
     printf ("\t -br \t\t\tstop after refcount inference\n");
     printf ("\t -bc \t\t\tstop unresolved ICM code\n");
 
-    printf ("\n");
-    printf ("\t -noOPT \t\tno optimizations\n");
-    printf ("\t -noCF  \t\tno constant folding\n");
-    printf ("\t -noDCR \t\tno dead code removal\n");
+    printf ("\nOPTIMIZATION OPTIONS:\n");
+    printf ("\t -noopt \t\t\tno optimizations\n");
+    printf ("\t -noconstant_folding  \t\tno constant folding \n");
+    printf ("\t -noinline_functions \t\tno function inlineing \n");
+    printf ("\t -nounroll_loops \t\tno loop unrolling \n");
+    printf ("\t -nodead_code_removal\t\tno dead code removal \n");
+    printf ("\t -nopartial_dead_code_removal\tno partial_dead code removal \n");
+    printf ("\t -noloop_invariant_removal\tno loop invariant removal \n");
+    printf ("\t -v <no>\t\t\treserve <no> variables for optimization\n");
 
-    printf ("\n");
+    printf ("\nTRACE OPTIONS:\n");
     printf ("\t -t [arupw] \t\ttrace array-opts\n");
     printf ("\t\t\t\ta trace all(same as rupw)\n");
     printf ("\t\t\t\tm memory ops\n");
@@ -78,11 +86,12 @@ usage (char *prg_name)
     printf ("\t\t\t\tp primitive function calls\n");
     printf ("\t\t\t\tw with loop execution\n");
 
-    printf ("\noptions handed to the C-compiler:\n");
+    printf ("\nC-COMPILER OPTIONS:\n");
+    printf ("\t  (these options handed to the C-compiler)\n");
     printf ("\t -g \t\t\tinclude debug information\n");
     printf ("\t -O[12] \t\tC-compiler level of optimization\n");
 
-    printf ("\nenvironment variables:\n");
+    printf ("\nENVIROMENT VARIABLES:\n");
     printf ("\t SAC_PATH\t\tsearch paths for program source\n");
     printf ("\t SAC_DEC_PATH\t\tsearch paths for declarations\n");
     printf ("\t SAC_LIBRARY_PATH\tsearch paths for libraries\n");

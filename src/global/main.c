@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.42  1995/05/22 12:06:24  sbs
+ * Revision 1.43  1995/05/26 14:23:42  asi
+ * function inlineing and loop unrolling added
+ *
+ * Revision 1.42  1995/05/22  12:06:24  sbs
  * tr option inserted
  *
  * Revision 1.41  1995/05/15  08:33:03  asi
@@ -161,7 +164,7 @@ extern int malloc_debug (int level);
 
 FILE *outfile;
 char filename[MAX_FILE_NAME];
-int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1;
+int opt_dcr = 1, opt_cf = 1, opt_wr = 1, opt_lir = 1, opt_inl = 1, opt_unr = 1;
 int optimize = 1;
 int optvar = 50;
 int show_refcnt = 0;
@@ -290,16 +293,22 @@ MAIN
     }
     ARG 'n' : PARM
     {
-        if (!strncmp (*argv, "oDCR", 4))
+        if (!strncmp (*argv, "odead_code_removal", 18))
             opt_dcr = 0;
-        if (!strncmp (*argv, "oCF", 3))
+        if (!strncmp (*argv, "oconstant_folding", 17))
             opt_cf = 0;
-        if (!strncmp (*argv, "oWR", 3))
+        if (!strncmp (*argv, "opartial_dead_code_removal", 26))
             opt_wr = 0;
         if (!strncmp (*argv, "oOPT", 4))
             optimize = 0;
-        if (!strncmp (*argv, "oLIR", 4))
+        if (!strncmp (*argv, "oopt", 4))
+            optimize = 0;
+        if (!strncmp (*argv, "oloop_invariant_removal", 23))
             opt_lir = 0;
+        if (!strncmp (*argv, "oinline_functions", 17))
+            opt_inl = 0;
+        if (!strncmp (*argv, "ounroll_loops", 13))
+            opt_unr = 0;
     }
     NEXTOPT
     ARG 'v' : PARM

@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.12  1995/05/15 13:38:50  asi
+# Revision 1.13  1995/05/26 14:23:42  asi
+# function inlineing and loop unrolling added
+#
+# Revision 1.12  1995/05/15  13:38:50  asi
 # make deps done
 #
 # Revision 1.11  1995/05/04  11:54:26  asi
@@ -44,7 +47,7 @@ CC=gcc -ansi -g
 INCS=-I../global -I../../inc -I../typecheck -I../print
 
 all: optimize.o ConstantFolding.o DeadCodeRemoval.o WorkReduction.o \
-     LoopInvariantRemoval.o DupTree.o
+     LoopInvariantRemoval.o DupTree.o Inline.o Unroll.o
 
 optimize.o: optimize.c
 	$(CC) -o optimize.o -c optimize.c $(INCS)
@@ -63,6 +66,12 @@ WorkReduction.o: WorkReduction.c
 
 LoopInvariantRemoval.o: LoopInvariantRemoval.c
 	$(CC) -o LoopInvariantRemoval.o -c LoopInvariantRemoval.c $(INCS)
+
+Inline.o: Inline.c
+	$(CC) -o Inline.o -c Inline.c $(INCS)
+
+Unroll.o: Unroll.c
+	$(CC) -o Unroll.o -c Unroll.c $(INCS)
 
 deps:
 	makedepend $(INCS) *.c

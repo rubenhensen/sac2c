@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.68  1995/05/22 10:11:39  hw
- * added function "CompCast" to comp_tab
+ * Revision 1.69  1995/05/26 14:23:42  asi
+ * function inlineing and loop unrolling added
  *
+;; Revision 1.68  1995/05/22  10:11:39  hw
+;; added function "CompCast" to comp_tab
+;;
 ;; Revision 1.67  1995/05/15  08:35:09  asi
 ;; Added DupNum, DupId, DupFloat, DupPrf, DupAp, DupCast, DupExprs, DupArray, DupBool,
 ;; and LIRfundef, LIRMblock, LIRassign, LIRMassign, LIRloop, LIRMloop, LIRcond.
@@ -224,7 +227,7 @@
 /*   Node_name   dbug-string   imp_tab       flat_tab      print_tab     type_tab
  *                             opt_tab       dead_tab        wr_tab      free_tab
  *                              cf_tab       refcnt_tab    comp_tab       lir_tab
- *                             dup_tab          ---           ---       lir_mov_tab
+ *                             dup_tab       inline_tab    unroll_tab   lir_mov_tab
  */
 
 NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun, DummyFun,
@@ -258,7 +261,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun),
   NIF (N_fundef, "N_fundef", DummyFun, FltnFundef, PrintFundef, TCfundef, OPTfundef,
        DEADfundef, WRfundef, FreeInfoType, CFfundef, RCfundef, CompFundef, LIRfundef,
-       DummyFun, DummyFun, DummyFun, DummyFun),
+       DummyFun, INLfundef, UNRfundef, DummyFun),
   NIF (N_vardec, "N_vardec", DummyFun, DummyFun, PrintVardec, DummyFun, OPTvardec,
        DEADvardec, DummyFun, FreeInfoType, DummyFun, DummyFun, CompVardec, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun),
