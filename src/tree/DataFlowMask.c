@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.4  2001/04/03 14:23:44  nmw
+ * DBUG_ASSERT modified for better breakpoint
+ *
  * Revision 3.3  2001/03/19 14:22:29  nmw
  * debug print added
  *
