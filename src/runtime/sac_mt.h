@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2001/06/12 11:01:53  ben
+ *   SAC_MT_SCHEDULER_Self called without tasks_per_thread now
+ *
  * Revision 3.25  2001/06/05 09:54:02  ben
  *  SAC_MT_SCHEDULER_TS_Even modified
  * SAC_MT_SCHEDULER_Affinity_INIT added
@@ -958,17 +961,17 @@ typedef union {
         taskid += SAC_MT_THREADS ();                                                     \
     }
 
-#define SAC_MT_SCHEDULER_Self_FIRST_TASK_STATIC(sched_id, tasks_per_thread, taskid)      \
+#define SAC_MT_SCHEDULER_Self_FIRST_TASK_STATIC(sched_id, taskid)                        \
     {                                                                                    \
         taskid = SAC_MT_MYTHREAD ();                                                     \
     }
 
-#define SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC(sched_id, tasks_per_thread, taskid)     \
+#define SAC_MT_SCHEDULER_Self_FIRST_TASK_DYNAMIC(sched_id, taskid)                       \
     {                                                                                    \
-        SAC_MT_SCHEDULER_Self_NEXT_TASK (sched_id, tasks_per_thread, taskid);            \
+        SAC_MT_SCHEDULER_Self_NEXT_TASK (sched_id, , taskid);                            \
     }
 
-#define SAC_MT_SCHEDULER_Self_NEXT_TASK(sched_id, tasks_per_thread, taskid)              \
+#define SAC_MT_SCHEDULER_Self_NEXT_TASK(sched_id, taskid)                                \
     {                                                                                    \
         SAC_MT_ACQUIRE_LOCK (SAC_MT_TASKLOCK (sched_id, 0, SAC_SET_NUM_SCHEDULERS));     \
                                                                                          \
