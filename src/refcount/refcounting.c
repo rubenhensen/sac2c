@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/07/27 13:05:07  ktr
+ * ICMs now use their first argument like primitive functions.
+ *
  * Revision 1.6  2004/07/23 08:49:48  ktr
  * fill operations and genarray/modarray withloops now behave like true
  * function applications with respect to the memory used.
@@ -1572,14 +1575,9 @@ EMRCicm (node *arg_node, info *arg_info)
          * does *not* consume its arguments! It is expanded to
          *      off_nt = wl_nt__off    ,
          * where 'off_nt' is a scalar and 'wl_nt__off' an internal variable!
-         *   -> store actual RC of the first argument (defined)
          *   -> do NOT traverse the second argument (used)
          */
-        avis = IDS_AVIS (ID_IDS (ICM_ARG1 (arg_node)));
-        INFO_EMRC_DEFLIST (arg_info)
-          = DefListInsert (INFO_EMRC_DEFLIST (arg_info), avis,
-                           GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info)));
-        avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
+        ICM_EXPRS1 (arg_node) = Trav (ICM_EXPRS1 (arg_node), arg_info);
     } else {
         if (strstr (name, "VECT2OFFSET") != NULL) {
             /*
@@ -1587,16 +1585,9 @@ EMRCicm (node *arg_node, info *arg_info)
              * needs RC on all but the first argument. It is expanded to
              *     off_nt = ... from_nt ...    ,
              * where 'off_nt' is a scalar variable.
-             *  -> store actual RC of the first argument (defined)
-             *  -> traverse all but the first argument (used)
              *  -> handle ICM like a prf (RCO)
              */
-            avis = IDS_AVIS (ID_IDS (ICM_ARG1 (arg_node)));
-            INFO_EMRC_DEFLIST (arg_info)
-              = DefListInsert (INFO_EMRC_DEFLIST (arg_info), avis,
-                               GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info)));
-            avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
-            ICM_EXPRS2 (arg_node) = Trav (ICM_EXPRS2 (arg_node), arg_info);
+            ICM_ARGS (arg_node) = Trav (ICM_ARGS (arg_node), arg_info);
         } else {
             if (strstr (name, "IDXS2OFFSET") != NULL) {
                 /*
@@ -1604,17 +1595,9 @@ EMRCicm (node *arg_node, info *arg_info)
                  * needs RC on all but the first argument. It is expanded to
                  *     off_nt = ... idx_1_nt[i] ... idx_n_nt[i] ...   ,
                  * where 'off_nt' is a scalar variable.
-                 *  -> store actual RC of the first argument (defined)
-                 *  -> traverse all but the first argument (used)
                  *  -> handle ICM like a prf (RCO)
                  */
-                avis = IDS_AVIS (ID_IDS (ICM_ARG1 (arg_node)));
-                INFO_EMRC_DEFLIST (arg_info)
-                  = DefListInsert (INFO_EMRC_DEFLIST (arg_info), avis,
-                                   GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info)));
-                avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
-
-                ICM_EXPRS2 (arg_node) = Trav (ICM_EXPRS2 (arg_node), arg_info);
+                ICM_ARGS (arg_node) = Trav (ICM_ARGS (arg_node), arg_info);
             } else {
                 DBUG_ASSERT ((0), "unknown ICM found during EMRC");
             }
