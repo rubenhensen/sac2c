@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2004/11/08 14:39:41  sah
+ * some new module system extensions
+ *
  * Revision 1.19  2004/09/30 15:12:35  sbs
  * eliminated FunTypes from ALL but wrapper functions
  * (memory concerns!)
@@ -91,6 +94,7 @@
 struct INFO {
     LUT_t wrapperfuns;
     int exprets;
+    node *module;
 };
 
 /**
@@ -99,6 +103,7 @@ struct INFO {
 
 #define INFO_CRTWRP_WRAPPERFUNS(n) ((n)->wrapperfuns)
 #define INFO_CRTWRP_EXPRETS(n) ((n)->exprets)
+#define INFO_CRTWRP_MODULE(n) ((n)->module)
 
 /**
  * INFO functions
@@ -114,6 +119,7 @@ MakeInfo ()
 
     INFO_CRTWRP_WRAPPERFUNS (result) = NULL;
     INFO_CRTWRP_EXPRETS (result) = 0;
+    INFO_CRTWRP_MODULE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -168,13 +174,20 @@ CreateWrappers (node *arg_node)
 
     act_tab = tmp_tab;
 
+    /* as we have deleted some used wrappers, we now have
+     * to remove the zombies
+     */
+
+    arg_node = RemoveAllZombies (arg_node);
+
     DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *FindWrapper( char *name, int num_args, int num_rets, LUT_t lut)
+ *   node *FindWrapper( char *name, char *mod, int num_args,
+ *                      int num_rets, LUT_t lut)
  *
  * description:
  *   Searches for a wrapper function in the given look-up-table (lut) that
@@ -195,7 +208,7 @@ CreateWrappers (node *arg_node)
  ******************************************************************************/
 
 static node *
-FindWrapper (char *name, int num_args, int num_rets, LUT_t lut)
+FindWrapper (char *name, char *mod, int num_args, int num_rets, LUT_t lut)
 {
     int last_parm_is_dots;
     int last_res_is_dots;
@@ -222,8 +235,11 @@ FindWrapper (char *name, int num_args, int num_rets, LUT_t lut)
                                FUNDEF_NAME (wrapper), (last_parm_is_dots ? ">=" : ""),
                                num_parms, (last_res_is_dots ? ">=" : ""), num_res));
         if (((num_res == num_rets) || (last_res_is_dots && (num_res <= num_rets)))
-            && ((num_parms == num_args)
-                || (last_parm_is_dots && (num_parms <= num_args)))) {
+            && ((num_parms == num_args) || (last_parm_is_dots && (num_parms <= num_args)))
+#ifdef NEW_AST
+            && (!strcmp (FUNDEF_MOD (wrapper), mod))
+#endif
+        ) {
             found = TRUE;
         } else {
             /* search for next wrapper in LUT */
@@ -241,7 +257,7 @@ FindWrapper (char *name, int num_args, int num_rets, LUT_t lut)
 /******************************************************************************
  *
  * function:
- *    node *CreateWrapperFor( node *fundef)
+ *    node *CreateWrapperFor( node *fundef, info *info)
  *
  * description:
  *   using a given fundef (fundef) as a template, a wrapper function is
@@ -254,29 +270,53 @@ FindWrapper (char *name, int num_args, int num_rets, LUT_t lut)
  ******************************************************************************/
 
 static node *
-CreateWrapperFor (node *fundef)
+CreateWrapperFor (node *fundef, info *info)
 {
     node *body, *wrapper, *args;
     types *rettypes;
 
     DBUG_ENTER ("CreateWrapperFor");
     DBUG_PRINT ("CRTWRP",
-                ("Creating wrapper for %s %s%d args %d rets", FUNDEF_NAME (fundef),
-                 (HasDotArgs (FUNDEF_ARGS (fundef)) ? ">=" : ""),
+                ("Creating wrapper for %s:%s %s%d args %d rets", FUNDEF_MOD (fundef),
+                 FUNDEF_NAME (fundef), (HasDotArgs (FUNDEF_ARGS (fundef)) ? ">=" : ""),
                  (HasDotArgs (FUNDEF_ARGS (fundef)) ? CountArgs (FUNDEF_ARGS (fundef)) - 1
                                                     : CountArgs (FUNDEF_ARGS (fundef))),
                  CountTypes (FUNDEF_TYPES (fundef))));
 
-    body = FUNDEF_BODY (fundef);
-    FUNDEF_BODY (fundef) = NULL;
-    wrapper = DupNode (fundef);
-    FUNDEF_BODY (fundef) = body;
+#ifdef NEW_AST
+    /*
+     * if we have a wrapper function of a used function
+     * we can just reuse it here as the new combined
+     * wrapper function. We later on just add the other
+     * instances. The old wrapper itself is then removed
+     * by the function calling this function
+     */
+    if ((FUNDEF_STATUS (fundef) == ST_wrapperfun)
+        && (strcmp (FUNDEF_MOD (fundef), MODUL_NAME (INFO_CRTWRP_MODULE (info))))) {
+        wrapper = DupNode (fundef);
+
+        /*
+         * For the time beeing, DupTree does not copy ntypes,
+         * so we do it by hand
+         */
+        DBUG_ASSERT ((FUNDEF_TYPE (wrapper) == NULL),
+                     "DupTree seems to copy ntypes now, please fix CreateWrappers.");
+
+        FUNDEF_TYPE (wrapper) = TYCopyType (FUNDEF_TYPE (fundef));
+    } else
+#endif
+    {
+        body = FUNDEF_BODY (fundef);
+        FUNDEF_BODY (fundef) = NULL;
+        wrapper = DupNode (fundef);
+        FUNDEF_BODY (fundef) = body;
+    }
 
     /*
      * marking the wrapper function:
      */
     FUNDEF_STATUS (wrapper) = ST_wrapperfun;
-
+#ifndef NEW_AST
     /*
      * wrappers of external function are not external
      *   -> remove external module name!!!
@@ -284,7 +324,7 @@ CreateWrapperFor (node *fundef)
     if (!strcmp (FUNDEF_MOD (wrapper), EXTERN_MOD_NAME)) {
         FUNDEF_MOD (wrapper) = MAIN_MOD_NAME;
     }
-
+#endif
     /*
      * setting the wrapper function's return types to _unknown_[*]
      * unless the function turns out to be void, or their basetype
@@ -319,9 +359,20 @@ CreateWrapperFor (node *fundef)
      * Since we do not allow them to be overloaded, we include
      * a pointer to the fundef here.
      * It is used when dispatching such functions (cf. new_types.c)!!
+     * of course wo do not do so if we are copying an imported
+     * wrapper! In that case, we just copy the FUNDEF_IMPL of the
+     * imported wrapper.
      */
     if (FUNDEF_ARGS (wrapper) == NULL) {
+#ifdef NEW_AST
+        if (FUNDEF_STATUS (fundef) == ST_wrapperfun) {
+            FUNDEF_IMPL (wrapper) = FUNDEF_IMPL (fundef);
+        } else {
+            FUNDEF_IMPL (wrapper) = fundef;
+        }
+#else
         FUNDEF_IMPL (wrapper) = fundef;
+#endif
     }
 
     DBUG_RETURN (wrapper);
@@ -480,6 +531,7 @@ CRTWRPmodul (node *arg_node, info *arg_info)
     DBUG_ASSERT ((MODUL_WRAPPERFUNS (arg_node) == NULL),
                  "MODUL_WRAPPERFUNS is not NULL!");
     INFO_CRTWRP_WRAPPERFUNS (arg_info) = MODUL_WRAPPERFUNS (arg_node) = GenerateLUT ();
+    INFO_CRTWRP_MODULE (arg_info) = arg_node;
 
     /**
      * First, we traverse the external functions. As these per definition
@@ -534,44 +586,89 @@ CRTWRPfundef (node *arg_node, info *arg_info)
                          : CountTypes (FUNDEF_TYPES (arg_node)));
     DBUG_PRINT ("CRTWRP", ("----- Processing function %s:%s: -----",
                            FUNDEF_MOD (arg_node), FUNDEF_NAME (arg_node)));
-    wrapper = FindWrapper (FUNDEF_NAME (arg_node), num_args, num_rets,
-                           INFO_CRTWRP_WRAPPERFUNS (arg_info));
-    if (wrapper == NULL) {
-        wrapper = CreateWrapperFor (arg_node);
-        INFO_CRTWRP_WRAPPERFUNS (arg_info)
-          = InsertIntoLUT_S (INFO_CRTWRP_WRAPPERFUNS (arg_info), FUNDEF_NAME (arg_node),
-                             wrapper);
-    } else {
-        if (dot_args || HasDotArgs (FUNDEF_ARGS (wrapper)) || dot_rets
-            || HasDotTypes (FUNDEF_TYPES (wrapper))) {
-            num_wr_args = (HasDotArgs (FUNDEF_ARGS (wrapper))
-                             ? CountArgs (FUNDEF_ARGS (wrapper)) - 1
-                             : CountArgs (FUNDEF_ARGS (wrapper)));
-            num_wr_rets = (HasDotTypes (FUNDEF_TYPES (wrapper))
-                             ? CountTypes (FUNDEF_TYPES (wrapper)) - 1
-                             : CountTypes (FUNDEF_TYPES (wrapper)));
-            if ((num_args != num_wr_args) || (num_rets != num_wr_rets)) {
-                ABORT (
-                  linenum,
-                  ("trying to overload function \"%s\" that expects %s %d argument(s) "
-                   "and %s %d return value(s) with a version that expects %s %d "
-                   "argument(s) "
-                   "and %s %d return value(s)",
-                   FUNDEF_NAME (arg_node),
-                   (HasDotArgs (FUNDEF_ARGS (wrapper)) ? ">=" : ""), num_wr_args,
-                   (HasDotTypes (FUNDEF_TYPES (wrapper)) ? ">=" : ""), num_wr_rets,
-                   (dot_args ? ">=" : ""), num_args, (dot_rets ? ">=" : ""), num_rets));
+
+#ifdef NEW_AST
+    /*
+     * the function has a different namespace than the current one
+     * it has been used. In that case, there already is a wrapper
+     * or the function itself is a wrapper
+     */
+    if (strcmp (FUNDEF_MOD (arg_node), MODUL_NAME (INFO_CRTWRP_MODULE (arg_info)))) {
+        /*
+         * used functions are just ignored, only wrappers are processed.
+         */
+
+        if (FUNDEF_STATUS (arg_node) == ST_wrapperfun) {
+            wrapper
+              = FindWrapper (FUNDEF_NAME (arg_node), FUNDEF_MOD (arg_node), num_args,
+                             num_rets, INFO_CRTWRP_WRAPPERFUNS (arg_info));
+            if (wrapper == NULL) {
+                /* create a new wrapper */
+
+                wrapper = CreateWrapperFor (arg_node, arg_info);
+                INFO_CRTWRP_WRAPPERFUNS (arg_info)
+                  = InsertIntoLUT_S (INFO_CRTWRP_WRAPPERFUNS (arg_info),
+                                     FUNDEF_NAME (arg_node), wrapper);
+            } else {
+                /* overload the existing wrapper with the fundefs funtype */
+
+                FUNDEF_TYPE (wrapper)
+                  = TYMakeOverloadedFunType (TYCopyType (FUNDEF_TYPE (arg_node)),
+                                             FUNDEF_TYPE (wrapper));
             }
         }
-    }
+    } else
+#endif
+    {
+        wrapper = FindWrapper (FUNDEF_NAME (arg_node), FUNDEF_MOD (arg_node), num_args,
+                               num_rets, INFO_CRTWRP_WRAPPERFUNS (arg_info));
+        if (wrapper == NULL) {
+            wrapper = CreateWrapperFor (arg_node, arg_info);
+            INFO_CRTWRP_WRAPPERFUNS (arg_info)
+              = InsertIntoLUT_S (INFO_CRTWRP_WRAPPERFUNS (arg_info),
+                                 FUNDEF_NAME (arg_node), wrapper);
+        } else {
+            if (dot_args || HasDotArgs (FUNDEF_ARGS (wrapper)) || dot_rets
+                || HasDotTypes (FUNDEF_TYPES (wrapper))) {
+                num_wr_args = (HasDotArgs (FUNDEF_ARGS (wrapper))
+                                 ? CountArgs (FUNDEF_ARGS (wrapper)) - 1
+                                 : CountArgs (FUNDEF_ARGS (wrapper)));
+                num_wr_rets = (HasDotTypes (FUNDEF_TYPES (wrapper))
+                                 ? CountTypes (FUNDEF_TYPES (wrapper)) - 1
+                                 : CountTypes (FUNDEF_TYPES (wrapper)));
+                if ((num_args != num_wr_args) || (num_rets != num_wr_rets)) {
+                    ABORT (linenum,
+                           ("trying to overload function \"%s\" that expects %s %d "
+                            "argument(s) "
+                            "and %s %d return value(s) with a version that expects %s %d "
+                            "argument(s) "
+                            "and %s %d return value(s)",
+                            FUNDEF_NAME (arg_node),
+                            (HasDotArgs (FUNDEF_ARGS (wrapper)) ? ">=" : ""), num_wr_args,
+                            (HasDotTypes (FUNDEF_TYPES (wrapper)) ? ">=" : ""),
+                            num_wr_rets, (dot_args ? ">=" : ""), num_args,
+                            (dot_rets ? ">=" : ""), num_rets));
+                }
+            }
+        }
 
-    FUNDEF_RET_TYPE (arg_node) = CreateFunRettype (FUNDEF_TYPES (arg_node));
-    FUNDEF_TYPE (wrapper)
-      = TYMakeOverloadedFunType (CreateFuntype (arg_node), FUNDEF_TYPE (wrapper));
+        FUNDEF_RET_TYPE (arg_node) = CreateFunRettype (FUNDEF_TYPES (arg_node));
+        FUNDEF_TYPE (wrapper)
+          = TYMakeOverloadedFunType (CreateFuntype (arg_node), FUNDEF_TYPE (wrapper));
+    }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
+
+#ifdef NEW_AST
+    /*
+     * If the current function was a used wrapper, we free it now
+     */
+    if (FUNDEF_STATUS (arg_node) == ST_wrapperfun) {
+        arg_node = FreeNode (arg_node);
+    }
+#endif
 
     /*
      * Now, we do have wrappers for all fundefs!
@@ -643,8 +740,12 @@ CRTWRPap (node *arg_node, info *arg_info)
     DBUG_ENTER ("CRTWRPap");
 
     num_args = CountExprs (AP_ARGS (arg_node));
-    wrapper = FindWrapper (AP_NAME (arg_node), num_args, INFO_CRTWRP_EXPRETS (arg_info),
-                           INFO_CRTWRP_WRAPPERFUNS (arg_info));
+    wrapper
+      = FindWrapper (AP_NAME (arg_node), AP_MOD (arg_node), num_args,
+                     INFO_CRTWRP_EXPRETS (arg_info), INFO_CRTWRP_WRAPPERFUNS (arg_info));
+
+    DBUG_PRINT ("CRTWRP", ("Adding backreference to %s:%s as " F_PTR ".",
+                           AP_MOD (arg_node), AP_NAME (arg_node), wrapper));
 
     if (wrapper == NULL) {
         ABORT (NODE_LINE (arg_node),
@@ -713,7 +814,7 @@ CRTWRPNwithop (node *arg_node, info *arg_info)
         NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
 
         num_args = 2;
-        wrapper = FindWrapper (NWITHOP_FUN (arg_node), 2, 1,
+        wrapper = FindWrapper (NWITHOP_FUN (arg_node), NWITHOP_MOD (arg_node), 2, 1,
                                INFO_CRTWRP_WRAPPERFUNS (arg_info));
 
         if (wrapper == NULL) {
