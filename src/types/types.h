@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/11/24 00:57:05  sbs
+ * converted struct node into struct NODE
+ *
  * Revision 1.12  2004/11/24 00:55:27  sah
  * *** empty log message ***
  *
@@ -370,8 +373,8 @@ typedef struct SHPSEG {
 } shpseg;
 
 typedef struct ACCESS_T {
-    struct node *array_vardec; /* */
-    struct node *iv_vardec;    /* index vector */
+    struct NODE *array_vardec; /* */
+    struct NODE *iv_vardec;    /* index vector */
     accessclass_t accessclass; /* */
     shpseg *offset;            /* */
     accessdir_t direction;     /* 0 == ADIR_read,  1 == ADIR_write */
@@ -386,15 +389,15 @@ typedef struct ACCESS_INFO_T {
     access_t *access;
     int accesscnt;
     int feature;
-    struct node *indexvar;
-    struct node *wlarray;
+    struct NODE *indexvar;
+    struct NODE *wlarray;
 } access_info_t;
 
 typedef struct TYPES {
     simpletype simpletype;
     char *name;             /* only used for T_user !! */
     char *name_mod;         /* name of modul belonging to 'name' */
-    struct node *tdef;      /* typedef of user-defined type */
+    struct NODE *tdef;      /* typedef of user-defined type */
     int dim;                /* if (dim == 0) => simpletype */
     bool poly;              /* only needed for type templates (newTC !) */
     shpseg *shpseg;         /* pointer to shape specification */
@@ -478,7 +481,7 @@ typedef struct {
 } prf_tag;
 
 typedef union INFOTYPE {
-    struct node *ids;     /* list  of identifiers               */
+    struct NODE *ids;     /* list  of identifiers               */
     char *id;             /* identifier                         */
     types *types;         /* type information                   */
     int cint;             /* integer value                      */
@@ -526,7 +529,7 @@ typedef struct NODE {
     void *dfmask[MAX_MASK];      /* dataflow masks */
     int lineno;                  /* line number in source code */
     char *src_file;              /* pointer to filename or source code */
-    struct node *node[MAX_SONS]; /* pointers to child nodes */
+    struct NODE *node[MAX_SONS]; /* pointers to child nodes */
 } node;
 #endif /* NEW_AST */
 
