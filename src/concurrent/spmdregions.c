@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/04/24 17:17:11  dkr
+ * renamed Spmd...() to SPMD...()
+ * fixed a bug in SPMDAssign
+ *
  * Revision 1.7  1998/04/24 13:28:03  dkr
  * fixed a bug with LOCAL
  *
@@ -47,18 +51,18 @@
 /******************************************************************************
  *
  * function:
- *   node *SpmdFundef(node *arg_node, node *arg_info)
+ *   node *SPMDFundef(node *arg_node, node *arg_info)
  *
  * description:
  *   fills 'INFO_SPMD_FUNDEF(info_node)' with the current fundef
- *    --- needed for creation of used/defined-masks in 'SpmdInitAssign'.
+ *    --- needed for creation of used/defined-masks in 'SPMDInitAssign'.
  *
  ******************************************************************************/
 
 node *
-SpmdInitFundef (node *arg_node, node *arg_info)
+SPMDInitFundef (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("SpmdInitFundef");
+    DBUG_ENTER ("SPMDInitFundef");
 
     /*
      * save current fundef in INFO_SPMD_FUNDEF
@@ -81,7 +85,7 @@ SpmdInitFundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SpmdInitAssign(node *arg_node, node *arg_info)
+ *   node *SPMDInitAssign(node *arg_node, node *arg_info)
  *
  * description:
  *   At the moment we simply generate a SPMD-region and sync-region for each
@@ -94,14 +98,13 @@ SpmdInitFundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-SpmdInitAssign (node *arg_node, node *arg_info)
+SPMDInitAssign (node *arg_node, node *arg_info)
 {
-    ids *spmd_ids;
-    node *spmd_let, *spmd, *sync, *fundefs, *vardec, *new_inout, *new_in, *last_in,
-      *new_local, *last_local;
+    node *spmd_let, *spmd, *sync, *fundefs, *vardec;
+    ids *spmd_ids, *new_inout, *new_in, *last_in, *new_local, *last_local;
     int varno, i;
 
-    DBUG_ENTER ("SpmdInitAssign");
+    DBUG_ENTER ("SPMDInitAssign");
 
     spmd_let = ASSIGN_INSTR (arg_node);
 
@@ -140,16 +143,12 @@ SpmdInitAssign (node *arg_node, node *arg_info)
         DBUG_ASSERT (((SPMD_DEFVARS (spmd))[IDS_VARNO (spmd_ids)] > 0),
                      "wrong mask entry for let-ids");
 
-        new_inout = MakeArg (StringCopy (IDS_NAME (spmd_ids)),
-                             DuplicateTypes (IDS_TYPE (spmd_ids), 1),
-                             IDS_STATUS (spmd_ids), IDS_ATTRIB (spmd_ids), NULL);
-        ARG_REFCNT (new_inout) = IDS_REFCNT (spmd_ids);
-        ARG_VARNO (new_inout) = IDS_VARNO (spmd_ids);
+        new_inout = DupOneIds (spmd_ids, NULL);
 
         if ((NWITH_TYPE (LET_EXPR (spmd_let)) == WO_genarray)
             || (NWITH_TYPE (LET_EXPR (spmd_let)) == WO_modarray)) {
             SPMD_INOUT (spmd) = new_inout;
-            SYNC_INOUT (sync) = DupTree (new_inout, NULL);
+            SYNC_INOUT (sync) = DupIds (new_inout, NULL);
         } else {
             SPMD_OUT (spmd) = new_inout;
         }
@@ -171,21 +170,21 @@ SpmdInitAssign (node *arg_node, node *arg_info)
                 vardec = FindVardec (i, fundefs);
 
                 if (NODE_TYPE (vardec) == N_vardec) {
-                    new_in
-                      = MakeArg (StringCopy (VARDEC_NAME (vardec)),
-                                 DuplicateTypes (VARDEC_TYPE (vardec), 1),
-                                 VARDEC_STATUS (vardec), VARDEC_ATTRIB (vardec), NULL);
-                    ARG_REFCNT (new_in) = VARDEC_REFCNT (vardec);
+                    new_in = MakeIds (StringCopy (VARDEC_NAME (vardec)), NULL,
+                                      VARDEC_STATUS (vardec));
+                    IDS_ATTRIB (new_in) = VARDEC_ATTRIB (vardec);
                 } else {
                     DBUG_ASSERT ((NODE_TYPE (vardec) == N_arg), "wrong node type");
-                    new_in = DupNode (vardec);
+                    new_in = MakeIds (StringCopy (ARG_NAME (vardec)), NULL,
+                                      ARG_STATUS (vardec));
+                    IDS_ATTRIB (new_in) = ARG_ATTRIB (vardec);
                 }
-                ARG_VARNO (new_in) = i;
+                IDS_VARDEC (new_in) = vardec;
 
                 if (SPMD_IN (spmd) == NULL) {
                     SPMD_IN (spmd) = new_in;
                 } else {
-                    ARG_NEXT (last_in) = new_in;
+                    IDS_NEXT (last_in) = new_in;
                 }
                 last_in = new_in;
             }
@@ -200,24 +199,24 @@ SpmdInitAssign (node *arg_node, node *arg_info)
 
         for (i = 0; i < varno; i++) {
 
-            if (((ASSIGN_MASK (arg_node, 0))[i] > 0) && (ARG_VARNO (new_inout) != i)) {
+            if ((ASSIGN_MASK (arg_node, 0))[i] > 0) {
                 vardec = FindVardec (i, fundefs);
-                DBUG_ASSERT ((NODE_TYPE (vardec) == N_vardec),
-                             "local var is arg of a fun");
+                if (IDS_VARDEC (new_inout) != vardec) {
+                    DBUG_ASSERT ((NODE_TYPE (vardec) == N_vardec),
+                                 "local var is arg of a fun");
 
-                new_local
-                  = MakeArg (StringCopy (VARDEC_NAME (vardec)),
-                             DuplicateTypes (VARDEC_TYPE (vardec), 1),
-                             VARDEC_STATUS (vardec), VARDEC_ATTRIB (vardec), NULL);
-                ARG_REFCNT (new_local) = VARDEC_REFCNT (vardec);
-                ARG_VARNO (new_local) = i;
+                    new_local = MakeIds (StringCopy (VARDEC_NAME (vardec)), NULL,
+                                         VARDEC_STATUS (vardec));
+                    IDS_ATTRIB (new_local) = VARDEC_ATTRIB (vardec);
+                    IDS_VARDEC (new_local) = vardec;
 
-                if (SPMD_LOCAL (spmd) == NULL) {
-                    SPMD_LOCAL (spmd) = new_local;
-                } else {
-                    ARG_NEXT (last_local) = new_local;
+                    if (SPMD_LOCAL (spmd) == NULL) {
+                        SPMD_LOCAL (spmd) = new_local;
+                    } else {
+                        IDS_NEXT (last_local) = new_local;
+                    }
+                    last_local = new_local;
                 }
-                last_local = new_local;
             }
         }
 
