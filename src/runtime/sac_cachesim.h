@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 2.9  1999/05/10 10:59:20  her
+ * adjusted in SAC_CS_Setup the functioncall of SAC_CS_CheckArguments,
+ * because SAC_CS_CheckArguments got a new parameter: profilinglevel
+ *
  * Revision 2.8  1999/05/03 11:54:17  her
  * corrected the functioncall of SAC_CS_RegisterArray from 'size in elements'
  * to 'size in bytes'
@@ -90,9 +94,10 @@ typedef enum eProfilingLevel {
  *   the application was compiled.
  *
  ******************************************************************************/
-extern void SAC_CS_CheckArguments (int argc, char *argv[], unsigned long int *cachesize1,
-                                   int *cachelinesize1, int *associativity1,
-                                   tWritePolicy *writepolicy1,
+extern void SAC_CS_CheckArguments (int argc, char *argv[],
+                                   tProfilingLevel *profilinglevel,
+                                   unsigned long int *cachesize1, int *cachelinesize1,
+                                   int *associativity1, tWritePolicy *writepolicy1,
                                    unsigned long int *cachesize2, int *cachelinesize2,
                                    int *associativity2, tWritePolicy *writepolicy2,
                                    unsigned long int *cachesize3, int *cachelinesize3,
@@ -250,11 +255,11 @@ extern void (*SAC_CS_Stop) (void);
         int associativity3 = SAC_SET_CACHE_3_ASSOC;                                      \
         tWritePolicy writepolicy3 = SAC_SET_CACHE_3_WRITEPOL;                            \
                                                                                          \
-        SAC_CS_CheckArguments (__argc, __argv, &cachesize1, &cachelinesize1,             \
-                               &associativity1, &writepolicy1, &cachesize2,              \
-                               &cachelinesize2, &associativity2, &writepolicy2,          \
-                               &cachesize3, &cachelinesize3, &associativity3,            \
-                               &writepolicy3);                                           \
+        SAC_CS_CheckArguments (__argc, __argv, &profilinglevel, &cachesize1,             \
+                               &cachelinesize1, &associativity1, &writepolicy1,          \
+                               &cachesize2, &cachelinesize2, &associativity2,            \
+                               &writepolicy2, &cachesize3, &cachelinesize3,              \
+                               &associativity3, &writepolicy3);                          \
                                                                                          \
         SAC_CS_Initialize (SAC_MT_THREADS (), profilinglevel, cachesize1,                \
                            cachelinesize1, associativity1, writepolicy1, cachesize2,     \
