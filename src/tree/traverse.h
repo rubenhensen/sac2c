@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/03/20 16:15:18  nmw
+ * SSACF Constant Folding on ssa from added
+ *
  * Revision 3.9  2001/03/09 11:50:06  sbs
  * profile_tab added.
  *
@@ -227,6 +230,7 @@ extern funtab *ssadcr_tab;
 extern funtab *ssacse_tab;
 extern funtab *cmptree_tab;
 extern funtab *profile_tab;
+extern funtab *ssacf_tab;
 
 extern int nnode[];
 

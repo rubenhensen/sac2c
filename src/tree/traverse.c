@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/03/20 16:15:18  nmw
+ * SSACF Constant Folding on ssa from added
+ *
  * Revision 3.13  2001/03/09 11:50:06  sbs
  * profile_tab added.
  *
@@ -144,6 +147,7 @@
 #include "SSACSE.h"
 #include "compare_tree.h"
 #include "annotate_fun_calls.h"
+#include "SSAConstantFolding.h"
 
 #include "traverse.h"
 
@@ -1164,6 +1168,17 @@ static funtab profile_tab_rec = {{
                                  NULL,
                                  NULL};
 funtab *profile_tab = &profile_tab_rec;
+
+/*
+ *  (93) ssacf_tab
+ */
+static funtab ssacf_tab_rec = {{
+#define NIFssacf(it_ssacf) it_ssacf
+#include "node_info.mac"
+                               },
+                               NULL,
+                               NULL};
+funtab *ssacf_tab = &ssacf_tab_rec;
 
 /*
  *  nnode
