@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/17 16:25:58  cg
+ * Added multi-threading capabilities to the heap manager.
+ *
  * Revision 1.1  2000/01/03 17:33:17  cg
  * Initial revision
  *
@@ -44,7 +47,25 @@
  *
  *****************************************************************************/
 
+#include <stdlib.h>
+
 #include "heapmgr.h"
+
+/******************************************************************************
+ *
+ * global variable:
+ *   int SAC_HM_not_yet_initialized
+ *
+ * description:
+ *
+ *   This is a global flag that allows to keep track whether the
+ *   internal data structures of the heap manager have already been
+ *   initialized or not.
+ *
+ *
+ ******************************************************************************/
+
+int SAC_HM_not_yet_initialized = 1;
 
 /******************************************************************************
  *
@@ -61,12 +82,13 @@
  ******************************************************************************/
 
 void *
-malloc (size_byte_t size)
+malloc (size_t sz)
 {
-    size_unit_t units;
+    const SAC_HM_size_byte_t size = (SAC_HM_size_byte_t)sz;
+    SAC_HM_size_unit_t units;
     void *mem;
 #ifdef MT
-    unsigned int thread_id;
+    unsigned int thread_id, *thread_id_ptr;
     const int multi_threaded = !SAC_MT_not_yet_parallel;
 #else  /* MT */
     const unsigned int thread_id = 0;
@@ -74,56 +96,80 @@ malloc (size_byte_t size)
 
     DIAG_INC_LOCK (SAC_HM_call_malloc);
 
+    if (SAC_HM_not_yet_initialized) {
+        SAC_HM_SetupMaster ();
+        SAC_HM_not_yet_initialized = 0;
+    }
+
 #ifdef MT
-    if (multi_threaded && (size <= ARENA_7_MAXCS_BYTES)) {
-        thread_id = *((unsigned int *)pthread_getspecific (SAC_MT_threadid_key));
+    if (multi_threaded && (size <= SAC_HM_ARENA_7_MAXCS_BYTES)) {
+        thread_id_ptr = (unsigned int *)pthread_getspecific (SAC_MT_threadid_key);
+        if (thread_id_ptr == NULL) {
+            thread_id = 0;
+        } else {
+            thread_id = *thread_id_ptr;
+        }
     } else {
         thread_id = 0;
     }
 #endif /* MT */
 
-    if (size <= ARENA_4_MAXCS_BYTES) {
+    if (size <= SAC_HM_ARENA_4_MAXCS_BYTES) {
         /* Now, it's arena 1, 2, 3, or 4. */
-        if (size <= ARENA_2_MAXCS_BYTES) {
+        if (size <= SAC_HM_ARENA_2_MAXCS_BYTES) {
             /* Now, it's arena 1 or 2. */
-            if (size <= ARENA_1_MAXCS_BYTES) {
+            if (size <= SAC_HM_ARENA_1_MAXCS_BYTES) {
+                DIAG_INC (SAC_HM_arenas[thread_id][1].cnt_alloc_var_size);
                 return (SAC_HM_MallocSmallChunk (2, &(SAC_HM_arenas[thread_id][1])));
             } else {
+                DIAG_INC (SAC_HM_arenas[thread_id][2].cnt_alloc_var_size);
                 return (SAC_HM_MallocSmallChunk (4, &(SAC_HM_arenas[thread_id][2])));
             }
         } else {
             /* Now, it's arena 3 or 4. */
-            if (size <= ARENA_3_MAXCS_BYTES) {
+            if (size <= SAC_HM_ARENA_3_MAXCS_BYTES) {
+                DIAG_INC (SAC_HM_arenas[thread_id][3].cnt_alloc_var_size);
                 return (SAC_HM_MallocSmallChunk (8, &(SAC_HM_arenas[thread_id][3])));
             } else {
+                DIAG_INC (SAC_HM_arenas[thread_id][4].cnt_alloc_var_size);
                 return (SAC_HM_MallocSmallChunk (16, &(SAC_HM_arenas[thread_id][4])));
             }
         }
     } else {
-        units = ((size - 1) / UNIT_SIZE) + 3;
+        units = ((size - 1) / SAC_HM_UNIT_SIZE) + 3;
 
-        if (units < ARENA_7_MINCS) {
+        if (units < SAC_HM_ARENA_7_MINCS) {
             /* Now, it's arena 5 or 6. */
-            if (units < ARENA_6_MINCS) {
+            if (units < SAC_HM_ARENA_6_MINCS) {
+                DIAG_INC (SAC_HM_arenas[thread_id][5].cnt_alloc_var_size);
                 return (SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[thread_id][5])));
             } else {
+                DIAG_INC (SAC_HM_arenas[thread_id][6].cnt_alloc_var_size);
                 return (SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[thread_id][6])));
             }
         } else {
             /* Now, it's arena 7 or 8. */
-            if (units < ARENA_8_MINCS) {
+            if (units < SAC_HM_ARENA_8_MINCS) {
+                DIAG_INC (SAC_HM_arenas[thread_id][7].cnt_alloc_var_size);
                 return (SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[thread_id][7])));
             } else {
 #ifdef MT
                 if (multi_threaded) {
-                    pthread_mutex_lock (&SAC_HM_top_arena_lock);
-                    mem = SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[0][TOP_ARENA]));
-                    pthread_mutex_unlock (&SAC_HM_top_arena_lock);
+                    SAC_MT_ACQUIRE_LOCK (SAC_HM_top_arena_lock);
+                    DIAG_INC (SAC_HM_acquire_top_arena_lock);
+                    DIAG_INC (SAC_HM_arenas[0][SAC_HM_TOP_ARENA].cnt_alloc_var_size);
+                    mem = SAC_HM_MallocLargeChunk (units,
+                                                   &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]));
+                    SAC_MT_RELEASE_LOCK (SAC_HM_top_arena_lock);
                 } else {
-                    mem = SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[0][TOP_ARENA]));
+                    DIAG_INC (SAC_HM_arenas[0][SAC_HM_TOP_ARENA].cnt_alloc_var_size);
+                    mem = SAC_HM_MallocLargeChunk (units,
+                                                   &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]));
                 }
 #else  /* MT */
-                mem = SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[0][TOP_ARENA]));
+                DIAG_INC (SAC_HM_arenas[0][SAC_HM_TOP_ARENA].cnt_alloc_var_size);
+                mem = SAC_HM_MallocLargeChunk (units,
+                                               &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]));
 #endif /* MT */
                 return (mem);
             }
@@ -150,19 +196,19 @@ free (void *addr)
 {
     SAC_HM_arena_t *arena;
 
-    DIAG_INC_LOCK (SAC_HM_call_free);
-
     if (addr != NULL) {
         DIAG_CHECK_ALLOCPATTERN_ANYCHUNK ((SAC_HM_header_t *)addr);
         arena = SAC_HM_ADDR_ARENA (addr);
 
-        if (arena->num < NUM_SMALLCHUNK_ARENAS) {
+        DIAG_INC (arena->cnt_free_var_size);
+
+        if (arena->num < SAC_HM_NUM_SMALLCHUNK_ARENAS) {
             SAC_HM_FreeSmallChunk (addr, arena);
             return;
         }
 
 #ifdef MT
-        if (arena->num < TOP_ARENA) {
+        if (arena->num < SAC_HM_TOP_ARENA) {
             SAC_HM_FreeLargeChunk (addr, arena);
         } else {
             SAC_HM_FreeTopArena_at (addr);
@@ -171,25 +217,4 @@ free (void *addr)
         SAC_HM_FreeLargeChunk (addr, arena);
 #endif /* MT */
     }
-}
-
-/******************************************************************************
- *
- * function:
- *   void *SAC_HM_MallocCheck(size_byte_t size)
- *
- * description:
- *
- *   This function definition is needed to avoid problems at link time when
- *   calls to SAC_HM_MallocCheck() are compiled into the code due to selecting
- *   the -check m compiler flag although the private heap management is used
- *   which does these checks implicitly.
- *
- *
- ******************************************************************************/
-
-void *
-SAC_HM_MallocCheck (size_byte_t size)
-{
-    return (malloc (size));
 }

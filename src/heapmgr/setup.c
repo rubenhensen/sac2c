@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/17 16:25:58  cg
+ * Added multi-threading capabilities to the heap manager.
+ *
  * Revision 1.1  2000/01/03 17:33:17  cg
  * Initial revision
  *
@@ -21,86 +24,78 @@
  *
  *****************************************************************************/
 
+#include <unistd.h>
+
 #include "heapmgr.h"
 #include "sac_message.h"
-
-#include <unistd.h>
 
 /*
  * Heap management configuration data.
  */
 
-static const size_unit_t min_chunk_size[]
-  = {ARENA_0_MINCS, ARENA_1_MINCS, ARENA_2_MINCS, ARENA_3_MINCS, ARENA_4_MINCS,
-     ARENA_5_MINCS, ARENA_6_MINCS, ARENA_7_MINCS, ARENA_8_MINCS};
+static const SAC_HM_size_unit_t min_chunk_size[]
+  = {SAC_HM_ARENA_0_MINCS, SAC_HM_ARENA_1_MINCS, SAC_HM_ARENA_2_MINCS,
+     SAC_HM_ARENA_3_MINCS, SAC_HM_ARENA_4_MINCS, SAC_HM_ARENA_5_MINCS,
+     SAC_HM_ARENA_6_MINCS, SAC_HM_ARENA_7_MINCS, SAC_HM_ARENA_8_MINCS};
 
-static const size_unit_t binsize[]
-  = {ARENA_0_BINSIZE, ARENA_1_BINSIZE, ARENA_2_BINSIZE, ARENA_3_BINSIZE, ARENA_4_BINSIZE,
-     ARENA_5_BINSIZE, ARENA_6_BINSIZE, ARENA_7_BINSIZE, ARENA_8_BINSIZE};
+static const SAC_HM_size_unit_t binsize[]
+  = {SAC_HM_ARENA_0_BINSIZE, SAC_HM_ARENA_1_BINSIZE, SAC_HM_ARENA_2_BINSIZE,
+     SAC_HM_ARENA_3_BINSIZE, SAC_HM_ARENA_4_BINSIZE, SAC_HM_ARENA_5_BINSIZE,
+     SAC_HM_ARENA_6_BINSIZE, SAC_HM_ARENA_7_BINSIZE, SAC_HM_ARENA_8_BINSIZE};
 
 /*
- * Top arena lock for synchronisation of multi-threaded memory accesses.
+ * Configuration variables for heap setup.
+ *
+ *   These variables are defined and initialized in the compiled
+ *   SAC code.
  */
 
-#ifdef MT
-pthread_mutex_t SAC_HM_top_arena_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t SAC_HM_diag_counter_lock = PTHREAD_MUTEX_INITIALIZER;
-#endif
+extern SAC_HM_size_byte_t SAC_HM_initial_master_arena_of_arenas_size;
+extern SAC_HM_size_byte_t SAC_HM_initial_worker_arena_of_arenas_size;
+extern SAC_HM_size_byte_t SAC_HM_initial_top_arena_size;
+extern unsigned int SAC_HM_max_worker_threads;
+
+/*
+ * Locks for synchronisation of multi-threaded accesses to global
+ * data structures of the heap manager.
+ */
+
+SAC_MT_DEFINE_LOCK (SAC_HM_top_arena_lock);
+SAC_MT_DEFINE_LOCK (SAC_HM_diag_counter_lock);
 
 /******************************************************************************
  *
  * function:
- *   void SAC_HM_Setup(unsigned int num_threads,
- *                     size_byte_t initial_master_arena_of_arenas_size,
- *                     size_byte_t initial_worker_arena_of_arenas_size,
- *                     size_byte_t initial_top_arena_size)
+ *   void SAC_HM_SetupMaster()
  *
  * description:
  *
- *   This function initializes the internal data structures of the heap
- *   manager. The arenas of arenas as well as the top arena are allocated
- *   and initialized immediately; their initial sizes given in KB are
- *   provided as arguments.
+ *   This function pre-allocates heap memory for the master thread´s
+ *   arena of arenas as well as the top arena and initializes
+ *   the corresponding data structures.
  *
  *   Particular care is taken of the correct alignment of these inital
  *   heap structures.
  *
  ******************************************************************************/
 
-#ifdef MT
 void
-SAC_HM_Setup_mt (unsigned int num_threads,
-                 size_byte_t initial_master_arena_of_arenas_size,
-                 size_byte_t initial_worker_arena_of_arenas_size,
-                 size_byte_t initial_top_arena_size)
-#else  /* MT */
-void
-SAC_HM_Setup (size_byte_t initial_master_arena_of_arenas_size,
-              size_byte_t initial_top_arena_size)
-#endif /* MT */
+SAC_HM_SetupMaster ()
 {
-    size_byte_t offset, initial_heap_size, pagesize;
+    SAC_HM_size_byte_t offset, initial_heap_size;
+    SAC_HM_size_byte_t initial_top_arena_size, pagesize;
     SAC_HM_header_t *freep;
-    char *mem;
-    int i, t;
-#ifndef MT
-    const unsigned int num_threads = 1;
-    size_byte_t initial_worker_arena_of_arenas_size = 0;
-#endif /* MT */
+    char *mem, *tutu;
 
     /*
      * Prepare initial request for memory from operating system.
      */
 
-    initial_master_arena_of_arenas_size *= KB;
-    initial_worker_arena_of_arenas_size *= KB;
-    initial_top_arena_size *= KB;
-
     pagesize = getpagesize ();
-    mem = (char *)sbrk (0);
+    mem = (char *)SBRK (0);
     /* Determine heap origin. */
 
-    offset = ((size_byte_t)mem) % pagesize;
+    offset = ((SAC_HM_size_byte_t)mem) % pagesize;
     /* Determine offset of heap origin from last memory page boundary. */
 
     if (offset != 0) {
@@ -108,15 +103,20 @@ SAC_HM_Setup (size_byte_t initial_master_arena_of_arenas_size,
         /* If heap does not start on page boundary, adjust heap start. */
     }
 
-    /* Compute initial heap size to be requested from operating system. */
-    initial_heap_size = offset + initial_master_arena_of_arenas_size
-                        + (initial_worker_arena_of_arenas_size * (num_threads - 1))
-                        + initial_top_arena_size;
+    /* Compute initial top arena size upon setup time. */
+    initial_top_arena_size
+      = SAC_HM_initial_worker_arena_of_arenas_size * SAC_HM_max_worker_threads
+        + SAC_HM_initial_top_arena_size;
 
-    mem = (char *)sbrk (initial_heap_size);
+    /* Compute initial heap size to be requested from operating system. */
+    initial_heap_size
+      = offset + SAC_HM_initial_master_arena_of_arenas_size + initial_top_arena_size;
+
+    mem = (char *)SBRK (initial_heap_size);
     if (mem == (char *)-1) {
         SAC_HM_OutOfMemory (initial_heap_size);
     }
+    tutu = (char *)SBRK (0);
 
     mem += offset;
 
@@ -124,11 +124,99 @@ SAC_HM_Setup (size_byte_t initial_master_arena_of_arenas_size,
     DIAG_SET (SAC_HM_heapsize, initial_heap_size);
 
     /*
-     * Initialize global array of arena descriptions.
+     * Allocate master thread´s arena of arenas.
      */
 
-    for (t = 0; t < num_threads; t++) {
-        for (i = 0; i < NUM_SMALLCHUNK_ARENAS; i++) {
+    if (SAC_HM_initial_master_arena_of_arenas_size > 0) {
+        freep = (SAC_HM_header_t *)mem;
+
+        SAC_HM_SMALLCHUNK_SIZE (freep)
+          = SAC_HM_initial_master_arena_of_arenas_size / SAC_HM_UNIT_SIZE;
+
+        SAC_HM_SMALLCHUNK_ARENA (freep) = &(SAC_HM_arenas[0][SAC_HM_ARENA_OF_ARENAS]);
+
+        SAC_HM_SMALLCHUNK_NEXTFREE (freep) = NULL;
+        SAC_HM_SMALLCHUNK_NEXTFREE (SAC_HM_arenas[0][SAC_HM_ARENA_OF_ARENAS].freelist)
+          = freep;
+
+        DIAG_SET (SAC_HM_arenas[0][SAC_HM_ARENA_OF_ARENAS].size,
+                  SAC_HM_initial_master_arena_of_arenas_size);
+        DIAG_SET (SAC_HM_arenas[0][SAC_HM_ARENA_OF_ARENAS].cnt_bins, 1);
+
+        mem += SAC_HM_initial_master_arena_of_arenas_size;
+    } else {
+        DIAG_SET (SAC_HM_arenas[0][SAC_HM_ARENA_OF_ARENAS].size, 0);
+        DIAG_SET (SAC_HM_arenas[0][SAC_HM_ARENA_OF_ARENAS].cnt_bins, 0);
+    }
+
+    /*
+     * Allocate top arena.
+     */
+
+    if (initial_top_arena_size > 0) {
+        freep = (SAC_HM_header_t *)mem;
+
+        SAC_HM_LARGECHUNK_SIZE (freep) = initial_top_arena_size / SAC_HM_UNIT_SIZE;
+        SAC_HM_LARGECHUNK_ARENA (freep) = &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]);
+        SAC_HM_LARGECHUNK_PREVSIZE (freep) = -1;
+        DIAG_SET_FREEPATTERN_LARGECHUNK (freep);
+
+        SAC_HM_arenas[0][SAC_HM_TOP_ARENA].wilderness = freep;
+
+        DIAG_SET (SAC_HM_arenas[0][SAC_HM_TOP_ARENA].size, initial_top_arena_size);
+        DIAG_SET (SAC_HM_arenas[0][SAC_HM_TOP_ARENA].cnt_bins, 1);
+    } else {
+        DIAG_SET (SAC_HM_arenas[0][SAC_HM_TOP_ARENA].size, 0);
+        DIAG_SET (SAC_HM_arenas[0][SAC_HM_TOP_ARENA].cnt_bins, 0);
+    }
+
+    /*
+     * Initialize diaganostic check patterns in initial dummy entries of
+     * free lists.
+     */
+
+#ifdef DIAG
+    {
+        int i;
+
+        for (i = 0; i < SAC_HM_NUM_SMALLCHUNK_ARENAS; i++) {
+            DIAG_SET_FREEPATTERN_SMALLCHUNK (SAC_HM_arenas[0][i].freelist);
+        }
+        for (i = SAC_HM_NUM_SMALLCHUNK_ARENAS; i <= SAC_HM_TOP_ARENA; i++) {
+            DIAG_SET_FREEPATTERN_LARGECHUNK (SAC_HM_arenas[0][i].freelist);
+        }
+    }
+#endif
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_HM_SetupWorkers( unsigned int num_threads)
+ *
+ * description:
+ *
+ *   This function pre-allocates heap memory for each worker thread
+ *   and initializes the corresponding arena data structures.
+ *
+ ******************************************************************************/
+
+#ifdef MT
+
+void
+SAC_HM_SetupWorkers (unsigned int num_threads)
+{
+    SAC_HM_size_unit_t units_total, units_per_thread;
+    SAC_HM_header_t *freep;
+    char *mem;
+    int i, t;
+
+    /*
+     * Initialize worker thread entries in global array of arenas.
+     */
+
+    for (t = 1; t < num_threads; t++) {
+        for (i = 0; i < SAC_HM_NUM_SMALLCHUNK_ARENAS; i++) {
             SAC_HM_arenas[t][i].num = i;
             SAC_HM_arenas[t][i].freelist[0].data1.size = 0;
             SAC_HM_arenas[t][i].freelist[0].data1.arena = &(SAC_HM_arenas[t][i]);
@@ -139,15 +227,10 @@ SAC_HM_Setup (size_byte_t initial_master_arena_of_arenas_size,
             SAC_HM_arenas[t][i].min_chunk_size = min_chunk_size[i];
 #ifdef DIAG
             DIAG_SET_FREEPATTERN_SMALLCHUNK (SAC_HM_arenas[t][i].freelist);
-            SAC_HM_arenas[t][i].cnt_alloc = 0;
-            SAC_HM_arenas[t][i].cnt_free = 0;
-            SAC_HM_arenas[t][i].cnt_split = 0;
-            SAC_HM_arenas[t][i].cnt_coalasce = 0;
-            SAC_HM_arenas[t][i].size = 0;
-            SAC_HM_arenas[t][i].bins = 0;
+            SAC_HM_ClearDiagCounters (&(SAC_HM_arenas[t][i]));
 #endif
         }
-        for (i = NUM_SMALLCHUNK_ARENAS; i < NUM_ARENAS - 1; i++) {
+        for (i = SAC_HM_NUM_SMALLCHUNK_ARENAS; i < SAC_HM_NUM_ARENAS - 1; i++) {
             SAC_HM_arenas[t][i].num = i;
             SAC_HM_arenas[t][i].freelist[0].data3.prevsize = -1;
             SAC_HM_arenas[t][i].freelist[1].data1.arena = &(SAC_HM_arenas[t][i]);
@@ -158,104 +241,46 @@ SAC_HM_Setup (size_byte_t initial_master_arena_of_arenas_size,
             SAC_HM_arenas[t][i].min_chunk_size = min_chunk_size[i];
 #ifdef DIAG
             DIAG_SET_FREEPATTERN_LARGECHUNK (SAC_HM_arenas[t][i].freelist);
-            SAC_HM_arenas[t][i].cnt_alloc = 0;
-            SAC_HM_arenas[t][i].cnt_free = 0;
-            SAC_HM_arenas[t][i].cnt_split = 0;
-            SAC_HM_arenas[t][i].cnt_coalasce = 0;
-            SAC_HM_arenas[t][i].size = 0;
-            SAC_HM_arenas[t][i].bins = 0;
+            SAC_HM_ClearDiagCounters (&(SAC_HM_arenas[t][i]));
 #endif
         }
-    }
-
-    SAC_HM_arenas[0][TOP_ARENA].num = TOP_ARENA;
-    SAC_HM_arenas[0][TOP_ARENA].freelist[0].data3.prevsize = -1;
-    SAC_HM_arenas[0][TOP_ARENA].freelist[1].data1.arena = &(SAC_HM_arenas[0][TOP_ARENA]);
-    SAC_HM_arenas[0][TOP_ARENA].freelist[1].data1.size = 0;
-    SAC_HM_arenas[0][TOP_ARENA].freelist[2].data2.nextfree = NULL;
-    SAC_HM_arenas[0][TOP_ARENA].wilderness = SAC_HM_arenas[0][TOP_ARENA].freelist;
-    SAC_HM_arenas[0][TOP_ARENA].binsize = binsize[TOP_ARENA];
-    SAC_HM_arenas[0][TOP_ARENA].min_chunk_size = min_chunk_size[TOP_ARENA];
-#ifdef DIAG
-    DIAG_SET_FREEPATTERN_LARGECHUNK (SAC_HM_arenas[0][TOP_ARENA].freelist);
-    SAC_HM_arenas[0][TOP_ARENA].cnt_alloc = 0;
-    SAC_HM_arenas[0][TOP_ARENA].cnt_free = 0;
-    SAC_HM_arenas[0][TOP_ARENA].cnt_split = 0;
-    SAC_HM_arenas[0][TOP_ARENA].cnt_coalasce = 0;
-    SAC_HM_arenas[0][TOP_ARENA].size = 0;
-    SAC_HM_arenas[0][TOP_ARENA].bins = 0;
-#endif
-
-    /*
-     * Allocate master arena of arenas.
-     */
-
-    if (initial_master_arena_of_arenas_size > 0) {
-        freep = (SAC_HM_header_t *)mem;
-
-        SAC_HM_SMALLCHUNK_SIZE (freep) = initial_master_arena_of_arenas_size / UNIT_SIZE;
-        SAC_HM_SMALLCHUNK_ARENA (freep) = &(SAC_HM_arenas[0][ARENA_OF_ARENAS]);
-
-        SAC_HM_SMALLCHUNK_NEXTFREE (freep) = NULL;
-        SAC_HM_SMALLCHUNK_NEXTFREE (SAC_HM_arenas[0][ARENA_OF_ARENAS].freelist) = freep;
-
-        DIAG_SET (SAC_HM_arenas[0][ARENA_OF_ARENAS].size,
-                  initial_master_arena_of_arenas_size);
-        DIAG_SET (SAC_HM_arenas[0][ARENA_OF_ARENAS].bins, 1);
-
-        mem += initial_master_arena_of_arenas_size;
-    } else {
-        DIAG_SET (SAC_HM_arenas[0][ARENA_OF_ARENAS].size, 0);
-        DIAG_SET (SAC_HM_arenas[0][ARENA_OF_ARENAS].bins, 0);
     }
 
     /*
      * Allocate worker arenas of arenas.
      */
 
-    if (initial_worker_arena_of_arenas_size > 0) {
+    if (SAC_HM_initial_worker_arena_of_arenas_size > 0) {
+        units_per_thread = SAC_HM_initial_worker_arena_of_arenas_size / SAC_HM_UNIT_SIZE;
+
+        units_total = units_per_thread * SAC_HM_max_worker_threads + 4;
+
+        mem = (char *)SAC_HM_MallocLargeChunk (units_total,
+                                               &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]));
+
         for (t = 1; t < num_threads; t++) {
             freep = (SAC_HM_header_t *)mem;
 
-            SAC_HM_SMALLCHUNK_SIZE (freep)
-              = initial_worker_arena_of_arenas_size / UNIT_SIZE;
-            SAC_HM_SMALLCHUNK_ARENA (freep) = &(SAC_HM_arenas[t][ARENA_OF_ARENAS]);
+            SAC_HM_SMALLCHUNK_SIZE (freep) = units_per_thread;
+
+            SAC_HM_SMALLCHUNK_ARENA (freep) = &(SAC_HM_arenas[t][SAC_HM_ARENA_OF_ARENAS]);
 
             SAC_HM_SMALLCHUNK_NEXTFREE (freep) = NULL;
-            SAC_HM_SMALLCHUNK_NEXTFREE (SAC_HM_arenas[t][ARENA_OF_ARENAS].freelist)
+            SAC_HM_SMALLCHUNK_NEXTFREE (SAC_HM_arenas[t][SAC_HM_ARENA_OF_ARENAS].freelist)
               = freep;
 
-            DIAG_SET (SAC_HM_arenas[t][ARENA_OF_ARENAS].size,
-                      initial_worker_arena_of_arenas_size);
-            DIAG_SET (SAC_HM_arenas[t][ARENA_OF_ARENAS].bins, 1);
+            DIAG_SET (SAC_HM_arenas[t][SAC_HM_ARENA_OF_ARENAS].size,
+                      SAC_HM_initial_worker_arena_of_arenas_size);
+            DIAG_SET (SAC_HM_arenas[t][SAC_HM_ARENA_OF_ARENAS].cnt_bins, 1);
 
-            mem += initial_worker_arena_of_arenas_size;
+            mem += SAC_HM_initial_worker_arena_of_arenas_size;
         }
     } else {
         for (t = 1; t < num_threads; t++) {
-            DIAG_SET (SAC_HM_arenas[t][ARENA_OF_ARENAS].size, 0);
-            DIAG_SET (SAC_HM_arenas[t][ARENA_OF_ARENAS].bins, 0);
+            DIAG_SET (SAC_HM_arenas[t][SAC_HM_ARENA_OF_ARENAS].size, 0);
+            DIAG_SET (SAC_HM_arenas[t][SAC_HM_ARENA_OF_ARENAS].cnt_bins, 0);
         }
     }
-
-    /*
-     * Allocate top arena.
-     */
-
-    if (initial_top_arena_size > 0) {
-        freep = (SAC_HM_header_t *)mem;
-
-        SAC_HM_LARGECHUNK_SIZE (freep) = initial_top_arena_size / UNIT_SIZE;
-        SAC_HM_LARGECHUNK_ARENA (freep) = &(SAC_HM_arenas[0][TOP_ARENA]);
-        SAC_HM_LARGECHUNK_PREVSIZE (freep) = -1;
-        DIAG_SET_FREEPATTERN_LARGECHUNK (freep);
-
-        SAC_HM_arenas[0][TOP_ARENA].wilderness = freep;
-
-        DIAG_SET (SAC_HM_arenas[0][TOP_ARENA].size, initial_top_arena_size);
-        DIAG_SET (SAC_HM_arenas[0][TOP_ARENA].bins, 1);
-    } else {
-        DIAG_SET (SAC_HM_arenas[0][TOP_ARENA].size, 0);
-        DIAG_SET (SAC_HM_arenas[0][TOP_ARENA].bins, 0);
-    }
 }
+
+#endif /* MT */

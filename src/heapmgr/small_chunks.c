@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/17 16:25:58  cg
+ * Added multi-threading capabilities to the heap manager.
+ *
  * Revision 1.1  2000/01/03 17:33:17  cg
  * Initial revision
  *
@@ -22,12 +25,14 @@
  *
  *****************************************************************************/
 
+#include <stdlib.h>
+
 #include "heapmgr.h"
 
 /******************************************************************************
  *
  * function:
- *   void *SAC_HM_MallocSmallChunk( size_unit_t units, SAC_HM_arena_t *arena)
+ *   void *SAC_HM_MallocSmallChunk( SAC_HM_size_unit_t units, SAC_HM_arena_t *arena)
  *
  * description:
  *
@@ -44,7 +49,7 @@
  ******************************************************************************/
 
 void *
-SAC_HM_MallocSmallChunk (size_unit_t units, SAC_HM_arena_t *arena)
+SAC_HM_MallocSmallChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena)
 {
     SAC_HM_header_t *freep, *wilderness;
 
@@ -65,6 +70,7 @@ SAC_HM_MallocSmallChunk (size_unit_t units, SAC_HM_arena_t *arena)
          */
         DIAG_CHECK_FREEPATTERN_SMALLCHUNK (freep, arena->num);
         DIAG_SET_ALLOCPATTERN_SMALLCHUNK (freep);
+        DIAG_INC (arena->cnt_after_freelist);
 
         SAC_HM_SMALLCHUNK_NEXTFREE (arena->freelist) = SAC_HM_SMALLCHUNK_NEXTFREE (freep);
 
@@ -84,13 +90,12 @@ SAC_HM_MallocSmallChunk (size_unit_t units, SAC_HM_arena_t *arena)
          * so split a small chunk from its top and return it to the calling
          * context.
          */
-        DIAG_INC (arena->cnt_split);
-
         SAC_HM_SMALLCHUNK_SIZE (wilderness) -= units;
         freep = wilderness + SAC_HM_SMALLCHUNK_SIZE (wilderness);
         SAC_HM_SMALLCHUNK_ARENA (freep) = arena;
 
         DIAG_SET_ALLOCPATTERN_SMALLCHUNK (freep);
+        DIAG_INC (arena->cnt_after_wilderness);
 
         return ((void *)(freep + 1));
     }
@@ -104,6 +109,7 @@ SAC_HM_MallocSmallChunk (size_unit_t units, SAC_HM_arena_t *arena)
         SAC_HM_SMALLCHUNK_ARENA (wilderness) = arena;
 
         DIAG_SET_ALLOCPATTERN_SMALLCHUNK (wilderness);
+        DIAG_INC (arena->cnt_after_wilderness);
 
         arena->wilderness = arena->freelist;
 
@@ -121,9 +127,9 @@ SAC_HM_MallocSmallChunk (size_unit_t units, SAC_HM_arena_t *arena)
     wilderness
       = SAC_HM_AllocateNewBinInArenaOfArenas (arena->binsize, arena - arena->num);
 
-    DIAG_INC (arena->bins);
-    DIAG_ADD (arena->size, arena->binsize * UNIT_SIZE);
-    DIAG_INC (arena->cnt_split);
+    DIAG_INC (arena->cnt_bins);
+    DIAG_ADD (arena->size, arena->binsize * SAC_HM_UNIT_SIZE);
+    DIAG_INC (arena->cnt_after_extension);
 
     SAC_HM_SMALLCHUNK_SIZE (wilderness) = arena->binsize - units;
     arena->wilderness = wilderness;

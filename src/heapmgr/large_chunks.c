@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/17 16:25:58  cg
+ * Added multi-threading capabilities to the heap manager.
+ *
  * Revision 1.1  2000/01/03 17:33:17  cg
  * Initial revision
  *
@@ -22,12 +25,15 @@
  *
  *****************************************************************************/
 
+#include <stdlib.h>
+
 #include "heapmgr.h"
+#include "sac_message.h"
 
 /******************************************************************************
  *
  * function:
- *   void *SAC_HM_MallocLargeChunk( size_unit_t units,
+ *   void *SAC_HM_MallocLargeChunk( SAC_HM_size_unit_t units,
  *                                  SAC_HM_arena_t *arena)
  *
  * description:
@@ -57,12 +63,12 @@
  ******************************************************************************/
 
 void *
-SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
+SAC_HM_MallocLargeChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena)
 {
     SAC_HM_header_t *freep, *bestp, *lastp, *wilderness, *new_wilderness;
     SAC_HM_header_t *prevp;
 
-    size_unit_t split_threshold;
+    SAC_HM_size_unit_t split_threshold;
 
     DIAG_INC (arena->cnt_alloc);
 
@@ -103,6 +109,9 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
          * The current chunk of memory more or less fits exactly, so remove it
          * from the free list and return it to the calling context.
          */
+
+        DIAG_INC (arena->cnt_after_freelist);
+
     exact_fit:
         SAC_HM_LARGECHUNK_NEXTFREE (lastp) = SAC_HM_LARGECHUNK_NEXTFREE (freep);
 
@@ -123,9 +132,9 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
          * large chunk of memory that will be splitted now. The chunk to be
          * returned is taken from the top.
          */
-    split:
-        DIAG_INC (arena->cnt_split);
+        DIAG_INC (arena->cnt_after_splitting);
 
+    split:
         SAC_HM_LARGECHUNK_SIZE (bestp) -= units;
         freep = bestp + SAC_HM_LARGECHUNK_SIZE (bestp);
         SAC_HM_LARGECHUNK_SIZE (freep) = units;
@@ -157,6 +166,9 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
          * However, in the case of the top arena´s wilderness chunk this allows
          * to extend the wilderness subsequently without unnecessary fragmentation.
          */
+
+        DIAG_INC (arena->cnt_after_wilderness);
+
     split_wilderness:
         new_wilderness = wilderness + units;
         SAC_HM_LARGECHUNK_SIZE (new_wilderness)
@@ -167,7 +179,6 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
 
         SAC_HM_LARGECHUNK_SIZE (wilderness) = units;
         SAC_HM_LARGECHUNK_ARENA (wilderness) = arena;
-        DIAG_INC (arena->cnt_split);
         DIAG_SET_ALLOCPATTERN_LARGECHUNK (wilderness);
 
         return ((void *)(wilderness + 2));
@@ -188,6 +199,7 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
              * The previous adjacent chunk to the current chunk is also free,
              * so coalasce the two and remove the current chunk from the free list.
              */
+            DIAG_INC (arena->cnt_coalascing);
             prevp = freep - SAC_HM_LARGECHUNK_PREVSIZE (freep);
             SAC_HM_LARGECHUNK_SIZE (prevp) += SAC_HM_LARGECHUNK_SIZE (freep);
             SAC_HM_LARGECHUNK_PREVSIZE (freep + SAC_HM_LARGECHUNK_SIZE (freep))
@@ -195,6 +207,8 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
             SAC_HM_LARGECHUNK_NEXTFREE (lastp) = SAC_HM_LARGECHUNK_NEXTFREE (freep);
 
             if (SAC_HM_LARGECHUNK_SIZE (prevp) >= units) {
+                DIAG_INC (arena->cnt_after_coalascing);
+
                 if (SAC_HM_LARGECHUNK_SIZE (freep) >= split_threshold) {
                     /*
                      * The coalasced chunk is larger than the amount of memory requested,
@@ -247,6 +261,7 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
         /*
          * The chunk adjacent to the wilderness chunk is currently free.
          */
+        DIAG_INC (arena->cnt_coalascing_wilderness);
         new_wilderness = wilderness - SAC_HM_LARGECHUNK_PREVSIZE (wilderness);
         SAC_HM_LARGECHUNK_SIZE (new_wilderness) += SAC_HM_LARGECHUNK_SIZE (wilderness);
 
@@ -258,6 +273,15 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
         lastp = arena->freelist;
         while (SAC_HM_LARGECHUNK_NEXTFREE (lastp) != new_wilderness) {
             lastp = SAC_HM_LARGECHUNK_NEXTFREE (lastp);
+#ifdef DIAG
+            if (lastp == NULL) {
+                atexit (SAC_HM_ShowDiagnostics);
+                SAC_RuntimeError (
+                  "Corrupted free list encountered upon coalascing wilderness "
+                  "chunk in arena %d",
+                  arena->num);
+            }
+#endif
         }
         SAC_HM_LARGECHUNK_NEXTFREE (lastp) = SAC_HM_LARGECHUNK_NEXTFREE (new_wilderness);
 
@@ -269,6 +293,7 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
              * Now, the wilderness is large enough, so we directly split the requested
              * amount of memory from it.
              */
+            DIAG_INC (arena->cnt_after_coalascing_wilderness);
             goto split_wilderness;
         }
     }
@@ -279,7 +304,9 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
      * arena is the top arena.
      */
 
-    if (arena->num == TOP_ARENA) {
+    DIAG_INC (arena->cnt_after_extension);
+
+    if (arena->num == SAC_HM_TOP_ARENA) {
         /*
          * The given arena is the top arena, so we try to get new memory from the
          * operating system and extend the wilderness chunk.
@@ -297,11 +324,16 @@ SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
 
         bestp = SAC_HM_AllocateNewBinInArenaOfArenas (arena->binsize, arena - arena->num);
 
-        DIAG_INC (arena->bins);
-        DIAG_ADD (arena->size, arena->binsize * UNIT_SIZE);
+        DIAG_INC (arena->cnt_bins);
+        DIAG_ADD (arena->size, arena->binsize * SAC_HM_UNIT_SIZE);
         DIAG_SET_FREEPATTERN_LARGECHUNK (bestp);
 
-        SAC_HM_LARGECHUNK_SIZE (bestp) = arena->binsize;
+        SAC_HM_LARGECHUNK_SIZE (bestp) = arena->binsize - 1;
+        /*
+         * We cannot use the full amount of arena->binsize because 1 unit is used
+         * for administrative purposes within the arena of arenas.
+         */
+
         SAC_HM_LARGECHUNK_PREVSIZE (bestp) = -1;
         SAC_HM_LARGECHUNK_ARENA (bestp) = arena;
 

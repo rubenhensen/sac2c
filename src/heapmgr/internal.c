@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/01/17 16:25:58  cg
+ * Added multi-threading capabilities to the heap manager.
+ *
  * Revision 1.1  2000/01/03 17:33:17  cg
  * Initial revision
  *
@@ -21,15 +24,15 @@
  *
  *****************************************************************************/
 
+#include <unistd.h>
+
 #include "heapmgr.h"
 #include "sac_message.h"
-
-#include <unistd.h>
 
 /******************************************************************************
  *
  * function:
- *   void SAC_HM_OutOfMemory( size_byte_t request)
+ *   void SAC_HM_OutOfMemory( SAC_HM_size_byte_t request)
  *
  * description:
  *
@@ -39,7 +42,7 @@
  ******************************************************************************/
 
 void
-SAC_HM_OutOfMemory (size_byte_t request)
+SAC_HM_OutOfMemory (SAC_HM_size_byte_t request)
 {
     SAC_RuntimeError ("SAC heap manager failed to obtain %lu Bytes of memory "
                       "from operating system !",
@@ -49,7 +52,7 @@ SAC_HM_OutOfMemory (size_byte_t request)
 /******************************************************************************
  *
  * function:
- *   SAC_HM_header_t *SAC_HM_AllocateNewBinInArenaOfArenas(size_unit_t units)
+ *   SAC_HM_header_t *SAC_HM_AllocateNewBinInArenaOfArenas(SAC_HM_size_unit_t units)
  *
  * description:
  *
@@ -66,10 +69,16 @@ SAC_HM_OutOfMemory (size_byte_t request)
  ******************************************************************************/
 
 SAC_HM_header_t *
-SAC_HM_AllocateNewBinInArenaOfArenas (size_unit_t units, SAC_HM_arena_t *arena)
+SAC_HM_AllocateNewBinInArenaOfArenas (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena)
 {
     SAC_HM_header_t *freep, *lastp;
-    size_unit_t split_threshold;
+    SAC_HM_size_unit_t split_threshold;
+
+#ifdef DIAG
+    if (arena->num != SAC_HM_ARENA_OF_ARENAS) {
+        SAC_RuntimeError ("Arena should be arena of arenas but is No. %d", arena->num);
+    }
+#endif
 
     DIAG_INC (arena->cnt_alloc);
 
@@ -89,7 +98,7 @@ SAC_HM_AllocateNewBinInArenaOfArenas (size_unit_t units, SAC_HM_arena_t *arena)
              * The current chunk of memory is larger than required, so split
              * the amount of memory needed from the top of the chunk.
              */
-            DIAG_INC (arena->cnt_split);
+            DIAG_INC (arena->cnt_after_splitting);
             SAC_HM_SMALLCHUNK_SIZE (freep) -= units;
             return (freep + SAC_HM_SMALLCHUNK_SIZE (freep));
         }
@@ -99,6 +108,7 @@ SAC_HM_AllocateNewBinInArenaOfArenas (size_unit_t units, SAC_HM_arena_t *arena)
              * The current chunk of memory more or less fits exactly, so remove it
              * from free list and return it to the calling context.
              */
+            DIAG_INC (arena->cnt_after_freelist);
             SAC_HM_SMALLCHUNK_NEXTFREE (lastp) = SAC_HM_SMALLCHUNK_NEXTFREE (freep);
             return (freep);
         }
@@ -118,28 +128,33 @@ SAC_HM_AllocateNewBinInArenaOfArenas (size_unit_t units, SAC_HM_arena_t *arena)
 
 #ifdef MT
     if (SAC_MT_not_yet_parallel) {
-        freep
-          = (SAC_HM_header_t *)SAC_HM_MallocLargeChunk (arena->binsize + 2,
-                                                        &(SAC_HM_arenas[0][TOP_ARENA]));
+        freep = (SAC_HM_header_t *)
+          SAC_HM_MallocLargeChunk (arena->binsize + 2,
+                                   &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]));
     } else {
-        pthread_mutex_lock (&SAC_HM_top_arena_lock);
-        freep
-          = (SAC_HM_header_t *)SAC_HM_MallocLargeChunk (arena->binsize + 2,
-                                                        &(SAC_HM_arenas[0][TOP_ARENA]));
-        pthread_mutex_unlock (&SAC_HM_top_arena_lock);
+        SAC_MT_ACQUIRE_LOCK (SAC_HM_top_arena_lock);
+        DIAG_INC (SAC_HM_acquire_top_arena_lock);
+        freep = (SAC_HM_header_t *)
+          SAC_HM_MallocLargeChunk (arena->binsize + 2,
+                                   &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]));
+        SAC_MT_RELEASE_LOCK (SAC_HM_top_arena_lock);
     }
 #else  /* MT */
-    freep = (SAC_HM_header_t *)SAC_HM_MallocLargeChunk (arena->binsize + 2,
-                                                        &(SAC_HM_arenas[0][TOP_ARENA]));
+    freep = (SAC_HM_header_t *)
+      SAC_HM_MallocLargeChunk (arena->binsize + 2, &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]));
 #endif /* MT */
 
-    DIAG_ADD (arena->size, arena->binsize * UNIT_SIZE);
-    DIAG_INC (arena->bins);
+    DIAG_ADD (arena->size, arena->binsize * SAC_HM_UNIT_SIZE);
+    DIAG_INC (arena->cnt_bins);
+    DIAG_INC (arena->cnt_after_extension);
 
     SAC_HM_SMALLCHUNK_SIZE (freep) = arena->binsize - units;
 
-    SAC_HM_SMALLCHUNK_NEXTFREE (freep) = SAC_HM_SMALLCHUNK_NEXTFREE (arena->freelist);
-    SAC_HM_SMALLCHUNK_NEXTFREE (arena->freelist) = freep;
+    /*
+     * The new bin is added at the end of the free list.
+     */
+    SAC_HM_SMALLCHUNK_NEXTFREE (freep) = NULL;
+    SAC_HM_SMALLCHUNK_NEXTFREE (lastp) = freep;
 
     return (freep + SAC_HM_SMALLCHUNK_SIZE (freep));
 }
@@ -147,7 +162,7 @@ SAC_HM_AllocateNewBinInArenaOfArenas (size_unit_t units, SAC_HM_arena_t *arena)
 /******************************************************************************
  *
  * function:
- *   SAC_HM_header_t *SAC_HM_ExtendTopArenaWilderness( size_unit_t units)
+ *   SAC_HM_header_t *SAC_HM_ExtendTopArenaWilderness( SAC_HM_size_unit_t units)
  *
  * description:
  *
@@ -161,12 +176,12 @@ SAC_HM_AllocateNewBinInArenaOfArenas (size_unit_t units, SAC_HM_arena_t *arena)
  ******************************************************************************/
 
 SAC_HM_header_t *
-SAC_HM_ExtendTopArenaWilderness (size_unit_t units)
+SAC_HM_ExtendTopArenaWilderness (SAC_HM_size_unit_t units)
 {
-    size_unit_t new_mem;
+    SAC_HM_size_byte_t new_mem;
     char *mem;
     SAC_HM_header_t *wilderness;
-    SAC_HM_arena_t *arena = &(SAC_HM_arenas[0][TOP_ARENA]);
+    SAC_HM_arena_t *arena = &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]);
 
     wilderness = arena->wilderness;
 
@@ -178,7 +193,7 @@ SAC_HM_ExtendTopArenaWilderness (size_unit_t units)
      * from the operating system in sufficiently large chunks since calls to
      * the system call sbrk() are usually expensive.
      */
-    new_mem = ((units - SAC_HM_LARGECHUNK_SIZE (wilderness) + 3) * UNIT_SIZE);
+    new_mem = ((units - SAC_HM_LARGECHUNK_SIZE (wilderness) + 3) * SAC_HM_UNIT_SIZE);
     new_mem = (new_mem + SBRK_CHUNK) & (~(SBRK_CHUNK - 1));
 
     DIAG_INC (SAC_HM_call_sbrk);
@@ -186,7 +201,7 @@ SAC_HM_ExtendTopArenaWilderness (size_unit_t units)
     /*
      * Actually, request memory from operating system.
      */
-    mem = (char *)sbrk (new_mem);
+    mem = (char *)SBRK (new_mem);
     if (mem == (char *)-1) {
         /*
          * The operating system has denied the request for additional memory,
@@ -197,7 +212,7 @@ SAC_HM_ExtendTopArenaWilderness (size_unit_t units)
 
     DIAG_ADD (SAC_HM_heapsize, new_mem);
     DIAG_ADD (arena->size, new_mem);
-    DIAG_INC (arena->bins);
+    DIAG_INC (arena->cnt_bins);
 
     if ((SAC_HM_header_t *)mem == wilderness + SAC_HM_LARGECHUNK_SIZE (wilderness)) {
         /*
@@ -206,7 +221,7 @@ SAC_HM_ExtendTopArenaWilderness (size_unit_t units)
          * long as only one thread has control over the top arena.
          * As a consequence the old wilderness chunk may simply be extended.
          */
-        SAC_HM_LARGECHUNK_SIZE (wilderness) += new_mem / UNIT_SIZE;
+        SAC_HM_LARGECHUNK_SIZE (wilderness) += new_mem / SAC_HM_UNIT_SIZE;
         return (wilderness);
     } else {
         /*
@@ -218,7 +233,7 @@ SAC_HM_ExtendTopArenaWilderness (size_unit_t units)
           = SAC_HM_LARGECHUNK_NEXTFREE (arena->freelist);
         SAC_HM_LARGECHUNK_NEXTFREE (arena->freelist) = wilderness;
 
-        if (new_mem >= units * UNIT_SIZE) {
+        if (new_mem >= units * SAC_HM_UNIT_SIZE) {
             /*
              * The freshly allocated memory suffices to satisfy request,
              * so make it the new wilderness chunk.
@@ -226,7 +241,7 @@ SAC_HM_ExtendTopArenaWilderness (size_unit_t units)
             wilderness = (SAC_HM_header_t *)mem;
 
             arena->wilderness = wilderness;
-            SAC_HM_LARGECHUNK_SIZE (wilderness) = new_mem / UNIT_SIZE;
+            SAC_HM_LARGECHUNK_SIZE (wilderness) = new_mem / SAC_HM_UNIT_SIZE;
             SAC_HM_LARGECHUNK_PREVSIZE (wilderness) = -1;
 
             DIAG_SET_FREEPATTERN_LARGECHUNK (wilderness);
@@ -237,13 +252,13 @@ SAC_HM_ExtendTopArenaWilderness (size_unit_t units)
              * The freshly allocated memory does NOT suffice to satisfy request,
              * so obtain additional memory from operating system.
              */
-            size_unit_t more_mem;
+            SAC_HM_size_byte_t more_mem;
             char *mem2;
 
             /*
              * Compute amount of additional memory required to satisfy the request.
              */
-            more_mem = units * UNIT_SIZE - new_mem;
+            more_mem = units * SAC_HM_UNIT_SIZE - new_mem;
             more_mem = (more_mem + SBRK_CHUNK) & (~(SBRK_CHUNK - 1));
 
             DIAG_INC (SAC_HM_call_sbrk);
@@ -251,8 +266,8 @@ SAC_HM_ExtendTopArenaWilderness (size_unit_t units)
             /*
              * Request additional memory from operating system.
              */
-            mem2 = (char *)sbrk (more_mem);
-            if ((mem2 == (char *)-1) || (mem + new_mem != mem2)) {
+            mem2 = (char *)SBRK (more_mem);
+            if (mem2 == (char *)-1) {
                 /*
                  * The operating system has denied the request for additional memory,
                  * so we give up right now.
@@ -262,10 +277,9 @@ SAC_HM_ExtendTopArenaWilderness (size_unit_t units)
 
             DIAG_ADD (SAC_HM_heapsize, more_mem);
             DIAG_ADD (arena->size, more_mem);
-            DIAG_INC (arena->bins);
+            DIAG_INC (arena->cnt_bins);
 
-            if (((SAC_HM_header_t *)mem) + new_mem * UNIT_SIZE
-                != ((SAC_HM_header_t *)mem2)) {
+            if (mem + new_mem != mem2) {
                 /*
                  * The additionally allocated memory and the originally allocated memory
                  * are not contiguous. In this case, we give up immediately, however, this
@@ -282,7 +296,7 @@ SAC_HM_ExtendTopArenaWilderness (size_unit_t units)
             wilderness = (SAC_HM_header_t *)mem;
 
             arena->wilderness = wilderness;
-            SAC_HM_LARGECHUNK_SIZE (wilderness) = (new_mem + more_mem) / UNIT_SIZE;
+            SAC_HM_LARGECHUNK_SIZE (wilderness) = (new_mem + more_mem) / SAC_HM_UNIT_SIZE;
             SAC_HM_LARGECHUNK_PREVSIZE (wilderness) = -1;
             DIAG_SET_FREEPATTERN_LARGECHUNK (wilderness);
 
