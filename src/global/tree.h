@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1994/12/30 13:49:08  hw
+ * Revision 1.17  1994/12/30 16:57:48  sbs
+ * added MakeTypes
+ *
+ * Revision 1.16  1994/12/30  13:49:08  hw
  * *** empty log message ***
  *
  * Revision 1.15  1994/12/30  13:22:09  hw
@@ -160,6 +163,7 @@ typedef struct NODE {
 
 #define GEN_NODE(type) (type *)malloc (sizeof (type))
 
+extern types *MakeTypes (simpletype simple);
 extern node *MakeNode (nodetype nodetype);
 extern node *AppendNodeChain (int pos, node *first, node *second);
 
