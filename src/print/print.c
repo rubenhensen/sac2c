@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.107  2002/08/06 07:51:47  sbs
+ * PrintNtype and PrintDebugNtype made public 8-))
+ *
  * Revision 3.106  2002/07/29 12:12:53  sbs
  * PRF_IF macro extended by z.
  *
@@ -5220,37 +5223,34 @@ PrintNodeAST (node *arg_node)
     DBUG_VOID_RETURN;
 }
 
-#if 0 /* will be publically included later */
-
-void PrintNtype( ntype *type)
+void
+PrintNtype (ntype *type)
 {
-  char *tmp;
+    char *tmp;
 
-  DBUG_ENTER( "PrintNtype");
+    DBUG_ENTER ("PrintNtype");
 
-  outfile = stdout;
+    outfile = stdout;
 
-  tmp = TYType2String( type, TRUE, 0);
-  fprintf( outfile, "%s\n", tmp);
-  tmp = Free( tmp);
+    tmp = TYType2String (type, TRUE, 0);
+    fprintf (outfile, "%s\n", tmp);
+    tmp = Free (tmp);
 
-  DBUG_VOID_RETURN;
+    DBUG_VOID_RETURN;
 }
 
-
-void PrintDebugNtype( ntype *type)
+void
+PrintDebugNtype (ntype *type)
 {
-  char *tmp;
+    char *tmp;
 
-  DBUG_ENTER( "PrintDebugNtype");
+    DBUG_ENTER ("PrintDebugNtype");
 
-  outfile = stdout;
+    outfile = stdout;
 
-  tmp = TYType2DebugString( type, TRUE, 0);
-  fprintf( outfile, "%s\n", tmp);
-  tmp = Free( tmp);
+    tmp = TYType2DebugString (type, TRUE, 0);
+    fprintf (outfile, "%s\n", tmp);
+    tmp = Free (tmp);
 
-  DBUG_VOID_RETURN;
+    DBUG_VOID_RETURN;
 }
-
-#endif
