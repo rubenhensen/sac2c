@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/02/23 16:41:42  sbs
+ * TO made external
+ *
  * Revision 3.14  2001/02/14 17:51:03  dkr
  * redundant VARDEC_TYPEDEF replaced by VARDEC_TDEF
  *
@@ -497,7 +500,6 @@ static node *pseudo_fold_fundefs;
  */
 static types *TI_prf (node *arg_node, node *arg_info);
 static types *TI_ap (node *arg_node, node *arg_info);
-static types *TI (node *arg_node, node *arg_info);
 static types *TI_cast (node *arg_node, node *arg_info);
 
 static types *TI_Nwith (node *, node *);
@@ -4809,7 +4811,7 @@ CheckIfGOonlyCBR (node *arg, node *exprs)
  *
  */
 
-static types *
+types *
 TI (node *arg_node, node *arg_info)
 {
     types *return_type, *tmp_types;
