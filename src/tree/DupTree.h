@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/01/26 23:26:12  dkr
+ * DupTreePre() and DupTreePost() added.
+ * Some code brushing done.
+ *
  * Revision 1.2  2000/01/26 17:27:53  dkr
  * type of traverse-function-table changed.
  *
@@ -29,50 +33,7 @@
  * Revision 1.34  1998/08/07 14:37:06  dkr
  * DupWLsegVar added
  *
- * Revision 1.33  1998/05/12 15:00:52  srs
- * added constant DUP_WLF
- *
- * Revision 1.32  1998/05/06 18:56:49  dkr
- * added DupExprs
- *
- * Revision 1.31  1998/04/26 21:52:53  dkr
- * DupSPMD renamed to DupSpmd
- *
- * Revision 1.30  1998/04/25 13:19:50  dkr
- * added DupIcm
- *
- * Revision 1.29  1998/04/25 12:33:56  dkr
- * added DupNwith2
- *
- * Revision 1.28  1998/04/23 17:32:36  dkr
- * added DupSync
- *
- * Revision 1.27  1998/04/20 01:11:54  dkr
- * added DupOneIds
- *
- * Revision 1.26  1998/04/17 17:26:38  dkr
- * 'concurrent regions' are now called 'SPMD regions'
- *
- * Revision 1.25  1998/04/17 11:42:17  srs
- * added DupNcode()
- *
- * Revision 1.23  1998/04/11 15:16:54  srs
- * inserted DupNwith()
- *
- * Revision 1.22  1998/04/09 21:20:57  dkr
- * renamed macros:
- *   INLINE -> DUP_INLINE
- *   NORMAL -> DUP_NORMAL
- *   INVARIANT -> DUP_INVARIANT
- *
- * Revision 1.21  1998/04/07 15:17:54  srs
- * renamed DupId to DupModarray and
- *         DupIIds to DupId.
- * Added Initialization of ID_WL to DupId.
- *
- * Revision 1.20  1998/04/02 17:41:13  dkr
- * added DupConc
- *
+ * [ ... ]
  *
  * Revision 1.1  1995/05/01  15:32:32  asi
  * Initial revision
@@ -80,7 +41,6 @@
  */
 
 #ifndef _sac_DupTree_h
-
 #define _sac_DupTree_h
 
 #define DUP_NORMAL 0
@@ -88,31 +48,19 @@
 #define DUP_INVARIANT 2
 #define DUP_WLF 3
 
-#ifndef NEWTREE
-#define UNS_NO arg_info->nnode
-#endif /* NEWTREE */
-
-#define UNS_NODES arg_info->node[0]
-
-#define DUP(s, d)                                                                        \
-    d->refcnt = s->refcnt;                                                               \
-    d->flag = s->flag;                                                                   \
-    d->counter = s->counter;                                                             \
-    d->varno = s->varno;                                                                 \
-    d->lineno = s->lineno;
-
 extern node *DupTree (node *arg_node, node *arg_info);
 extern node *DupNode (node *arg_node);
 
 extern node *DupVinfo (node *arg_node, node *arg_info);
-extern node *DupInt (node *arg_node, node *arg_info);
-extern node *DupChar (node *arg_node, node *arg_info);
+extern node *DupNum (node *arg_node, node *arg_info);
+extern node *DupBool (node *arg_node, node *arg_info);
 extern node *DupFloat (node *arg_node, node *arg_info);
 extern node *DupDouble (node *arg_node, node *arg_info);
+extern node *DupChar (node *arg_node, node *arg_info);
 extern node *DupStr (node *arg_node, node *arg_info);
-extern node *DupModarray (node *arg_node, node *arg_info);
 extern node *DupId (node *arg_node, node *arg_info);
 extern node *DupArray (node *arg_node, node *arg_info);
+extern node *DupLet (node *arg_node, node *arg_info);
 extern node *DupExprs (node *arg_node, node *arg_info);
 extern node *DupCond (node *arg_node, node *arg_info);
 extern node *DupLoop (node *arg_node, node *arg_info);
@@ -123,7 +71,6 @@ extern node *DupPrf (node *arg_node, node *arg_info);
 extern node *DupFun (node *arg_node, node *arg_info);
 extern node *DupFundef (node *arg_node, node *arg_info);
 extern node *DupDec (node *arg_node, node *arg_info);
-extern node *DupInfo (node *arg_node, node *arg_info);
 extern node *DupPragma (node *arg_node, node *arg_info);
 extern node *DupIcm (node *arg_node, node *arg_info);
 extern node *DupSpmd (node *arg_node, node *arg_info);
@@ -152,10 +99,7 @@ extern ids *DupOneIds (ids *ids, node *arg_info);
 extern ids *DupIds (ids *ids, node *arg_info);
 extern shpseg *DupShpSeg (shpseg *shp_seg);
 
-/****** pre-processing *******/
-extern node *DupPre (node *arg_node, node *arg_info);
-
-/****** post-processing ******/
-extern node *DupPost (node *arg_node, node *arg_info);
+extern node *DupTreePre (node *arg_node, node *arg_info);
+extern node *DupTreePost (node *arg_node, node *arg_info);
 
 #endif /* _sac_DupTree_h */

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/01/26 23:25:33  dkr
+ * DupTreePre() and DupTreePost() added.
+ * Some code brushing done.
+ *
  * Revision 1.2  2000/01/26 17:27:50  dkr
  * type of traverse-function-table changed.
  *
@@ -99,64 +103,7 @@
  * fixed a bug in DupCond, DupLoop:
  *   ids duplicated only, if != NULL !!!
  *
- * Revision 1.96  1998/06/05 15:32:34  cg
- * Attributes COND_THENVARS COND_ELSEVARS DO_USEVARS DO_DEFVARS are
- * now duplicated as ids-chains
- *
- * Revision 1.95  1998/05/28 23:51:00  dkr
- * fixed a bug in DupNwithop:
- *   NWITHOP_FUNDEF is copied not duplicated
- *
- * Revision 1.94  1998/05/24 00:40:25  dkr
- * removed WLGRID_CODE_TEMPLATE
- *
- * Revision 1.93  1998/05/21 15:27:16  dkr
- * fixed a bug in DupNwith, DupNwith2, DupNcode:
- *   argument of DupIds is always != NULL now
- *
- * Revision 1.92  1998/05/21 13:31:12  dkr
- * renamed NCODE_DEC_RC_IDS into NCODE_INC_RC_IDS
- *
- * Revision 1.91  1998/05/21 10:16:14  dkr
- * fixed a bug in DupNcode, DupNwith2:
- *   now ..._DEC_RC_IDS is duplicated, too
- *
- * Revision 1.90  1998/05/17 00:10:11  dkr
- * WLGRID_CEXPR_TEMPLATE is now WLGRID_CODE_TEMPLATE
- * fixed a bug with CODE_TEMPLATE:
- *   CODE_TEMPLATE is duplicated, too
- *
- * Revision 1.89  1998/05/15 23:54:21  dkr
- * changed DupNwith2
- *
- * Revision 1.88  1998/05/14 21:38:59  dkr
- * added WLGRID_CEXPR_TEMPLATE in DupWLgrid()
- *
- * Revision 1.87  1998/05/12 22:41:21  dkr
- * added NWITH2_DIM, NWITH2_IDX_MIN, NWITH2_IDX_MAX
- *
- * Revision 1.86  1998/05/12 18:46:06  dkr
- * removed ???_VARINFO
- *
- * Revision 1.85  1998/05/12 18:43:25  srs
- * inserted DUP_WLF
- *
- * Revision 1.84  1998/05/08 00:56:24  dkr
- * removed unused var
- *
- * Revision 1.83  1998/05/06 21:17:08  dkr
- * added support for DFMasks
- *
- * Revision 1.82  1998/05/06 15:11:23  srs
- * INFO_DUP_CON in now initialized correctly.
- * If arg_info is craeted here, it is set free afterwards.
- *
- * Revision 1.81  1998/05/06 13:18:00  dkr
- * Changed DupFundef
- *
- * Revision 1.80  1998/05/06 12:24:17  dkr
- * insert access macros
- *
+ * [ ... ]
  *
  * Revision 1.1  1995/05/01  15:32:27  asi
  * Initial revision
@@ -169,22 +116,15 @@
 #include "traverse.h"
 #include "free.h"
 #include "dbug.h"
-#include "my_debug.h"
-#include "typecheck.h"
-#include "internal_lib.h"
 
 #include "DupTree.h"
 #include "DataFlowMask.h"
-#include "optimize.h"
 #include "Inline.h"
+#include "typecheck.h"
 #include "scheduling.h"
 #include "generatemasks.h"
 
 /******************************************************************************/
-
-/* LEVEL is only needed to distinguishe between th two occurences
-   of N_return: inside the old WL and at the end of functions. */
-#define LEVEL arg_info->lineno
 
 /*
  * traverses son 'node'
@@ -198,6 +138,111 @@
  *  -> traverses son 'node'.
  */
 #define DUPCONT(node) (INFO_DUP_CONT (arg_info) != arg_node) ? DUPTRAV (node) : NULL
+
+#define DUP(s, d)                                                                        \
+    d->refcnt = s->refcnt;                                                               \
+    d->flag = s->flag;                                                                   \
+    d->counter = s->counter;                                                             \
+    d->varno = s->varno;                                                                 \
+    d->lineno = s->lineno;
+
+/******************************************************************************/
+
+#define PTAB_MAX 2 * 100
+
+static void **first_ptab = NULL;
+static void **last_ptab;
+static int next_ptab_pos;
+
+void
+InitPtab (void)
+{
+    DBUG_ENTER ("InitPtab");
+
+    last_ptab = first_ptab = (void **)MALLOC (sizeof (void *));
+    next_ptab_pos = 0;
+    last_ptab[next_ptab_pos] = NULL;
+    DBUG_PRINT ("DUP", ("InitPtab() finished"));
+
+    DBUG_VOID_RETURN;
+}
+
+void
+CleanPtab (void)
+{
+    void **tmp;
+
+    DBUG_ENTER ("CleanPtab");
+
+    if (first_ptab != NULL) {
+        while (first_ptab != last_ptab) {
+            tmp = first_ptab;
+            first_ptab = first_ptab[PTAB_MAX];
+            FREE (tmp);
+        }
+        FREE (first_ptab);
+        last_ptab = first_ptab = NULL;
+        DBUG_PRINT ("DUP", ("CleanPtab() finished"));
+    } else {
+        DBUG_PRINT ("DUP", ("CleanPtab() failed"));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+void
+InsertIntoPtab (void *old_entry, void *new_entry)
+{
+    DBUG_ENTER ("InsertIntoPtab");
+
+    if (first_ptab != NULL) {
+        last_ptab[next_ptab_pos] = old_entry;
+        last_ptab[next_ptab_pos + 1] = new_entry;
+        next_ptab_pos += 2;
+        if (next_ptab_pos == PTAB_MAX) {
+            last_ptab[next_ptab_pos] = (void **)MALLOC (sizeof (void *));
+            last_ptab = last_ptab[next_ptab_pos];
+            next_ptab_pos = 0;
+            DBUG_PRINT ("DUP", ("InsertIntoPtab(): new ptab created"));
+        }
+        last_ptab[next_ptab_pos] = NULL;
+        DBUG_PRINT ("DUP", ("InsertIntoPtab() finished"));
+    } else {
+        DBUG_PRINT ("DUP", ("InsertIntoPtab() failed"));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+void *
+SearchInPtab (void *old_entry)
+{
+    void **tmp;
+    void *new_entry;
+
+    DBUG_ENTER ("SearchInPtab");
+
+    new_entry = old_entry;
+    if (first_ptab != NULL) {
+        tmp = first_ptab;
+        while ((*tmp != NULL) && (new_entry == old_entry)) {
+            if (tmp == old_entry) {
+                new_entry = *(tmp + 1);
+            } else {
+                tmp += 2;
+            }
+        }
+        if (new_entry == old_entry) {
+            DBUG_PRINT ("DUP", ("SearchInPtab() finished: node not found :-("));
+        } else {
+            DBUG_PRINT ("DUP", ("SearchInPtab() finished: node found :-)"));
+        }
+    } else {
+        DBUG_PRINT ("DUP", ("SearchInPtab() failed"));
+    }
+
+    DBUG_RETURN (new_entry);
+}
 
 /******************************************************************************/
 
@@ -221,26 +266,28 @@ DupTree (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupTree");
 
-    if (arg_node) {
+    if (arg_node != NULL) {
         tmp_tab = act_tab;
         act_tab = dup_tab;
 
-        if (!arg_info) {
+        if (arg_info == NULL) {
             arg_info = MakeInfo ();
             INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
             INFO_DUP_ALL (arg_info) = 0;
             new_arg_info = 1;
         }
 
-        LEVEL = 0;
         /*
          * we want to duplicate all sons
          */
         INFO_DUP_CONT (arg_info) = NULL;
+        InitPtab ();
         new_node = Trav (arg_node, arg_info);
+        CleanPtab ();
 
-        if (new_arg_info)
+        if (new_arg_info) {
             arg_info = FreeNode (arg_info);
+        }
 
         act_tab = tmp_tab;
     }
@@ -263,19 +310,57 @@ DupNode (node *arg_node)
         tmp_tab = act_tab;
         act_tab = dup_tab;
 
-        arg_info = MakeNode (N_info);
+        arg_info = MakeInfo ();
         /*
          * duplicatation of sons of root 'arg_node' is controlled by
          *  DUPTRAV, DUPCONT
          */
         INFO_DUP_CONT (arg_info) = arg_node;
         new_node = Trav (arg_node, arg_info);
-        FREE (arg_info);
+        FreeNode (arg_info);
 
         act_tab = tmp_tab;
     }
 
     DBUG_RETURN (new_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DupTreePre( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+DupTreePre (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DupTreePre");
+
+    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[NODE_TYPE (arg_node)]));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DupTreePost( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+DupTreePost (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DupTreePost");
+
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************/
@@ -286,8 +371,6 @@ DupBlock (node *arg_node, node *arg_info)
     node *tmp, *dup_vardec, *dup_instr;
 
     DBUG_ENTER ("DupBlock");
-
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
 
     if (BLOCK_INSTR (arg_node) == NULL) {
         dup_instr = NULL;
@@ -326,56 +409,13 @@ DupChain (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupChain");
 
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
-    new_node = MakeNode (arg_node->nodetype);
+    new_node = MakeNode (NODE_TYPE (arg_node));
     DUP (arg_node, new_node);
-    LEVEL++;
-    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
-        if (arg_node->node[i])
+    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++) {
+        if (arg_node->node[i]) {
             new_node->node[i] = Trav (arg_node->node[i], arg_info);
-    LEVEL--;
-
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-
-node *
-DupInt (node *arg_node, node *arg_info)
-{
-    node *new_node;
-
-    DBUG_ENTER ("DupInt");
-
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
-    new_node = MakeNode (arg_node->nodetype);
-    new_node->info.cint = arg_node->info.cint;
-    DUP (arg_node, new_node);
-
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-
-node *
-DupVinfo (node *arg_node, node *arg_info)
-{
-    node *new_node, *rest;
-
-    DBUG_ENTER ("DupVinfo");
-
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
-    rest = NULL;
-    if (VINFO_NEXT (arg_node) != NULL)
-        rest = Trav (VINFO_NEXT (arg_node), arg_info);
-
-    if (VINFO_FLAG (arg_node) == DOLLAR) {
-        new_node = MakeVinfoDollar (rest);
-    } else {
-        new_node = MakeVinfo (VINFO_FLAG (arg_node), VINFO_TYPE (arg_node), rest,
-                              VINFO_DOLLAR (rest));
+        }
     }
-    VINFO_VARDEC (new_node) = VINFO_VARDEC (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -383,15 +423,27 @@ DupVinfo (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupChar (node *arg_node, node *arg_info)
+DupNum (node *arg_node, node *arg_info)
 {
     node *new_node;
 
-    DBUG_ENTER ("DupChar");
+    DBUG_ENTER ("DupNum");
 
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
-    new_node = MakeChar (CHAR_VAL (arg_node));
-    DUP (arg_node, new_node);
+    new_node = MakeNum (NUM_VAL (arg_node));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupBool (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupBool");
+
+    new_node = MakeBool (BOOL_VAL (arg_node));
 
     DBUG_RETURN (new_node);
 }
@@ -405,10 +457,7 @@ DupFloat (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupFloat");
 
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
-    new_node = MakeNode (arg_node->nodetype);
-    new_node->info.cfloat = arg_node->info.cfloat;
-    DUP (arg_node, new_node);
+    new_node = MakeFloat (FLOAT_VAL (arg_node));
 
     DBUG_RETURN (new_node);
 }
@@ -422,10 +471,21 @@ DupDouble (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupDouble");
 
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
-    new_node = MakeNode (arg_node->nodetype);
-    new_node->info.cdbl = arg_node->info.cdbl;
-    DUP (arg_node, new_node);
+    new_node = MakeDouble (DOUBLE_VAL (arg_node));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupChar (node *arg_node, node *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DupChar");
+
+    new_node = MakeChar (CHAR_VAL (arg_node));
 
     DBUG_RETURN (new_node);
 }
@@ -439,10 +499,32 @@ DupStr (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupStr");
 
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
-    new_node = MakeNode (arg_node->nodetype);
-    new_node->info.id = StringCopy (arg_node->info.id);
-    DUP (arg_node, new_node);
+    new_node = MakeStr (StringCopy (STR_STRING (arg_node)));
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupVinfo (node *arg_node, node *arg_info)
+{
+    node *new_node, *rest;
+
+    DBUG_ENTER ("DupVinfo");
+
+    rest = NULL;
+    if (VINFO_NEXT (arg_node) != NULL) {
+        rest = Trav (VINFO_NEXT (arg_node), arg_info);
+    }
+
+    if (VINFO_FLAG (arg_node) == DOLLAR) {
+        new_node = MakeVinfoDollar (rest);
+    } else {
+        new_node = MakeVinfo (VINFO_FLAG (arg_node), VINFO_TYPE (arg_node), rest,
+                              VINFO_DOLLAR (rest));
+    }
+    VINFO_VARDEC (new_node) = VINFO_VARDEC (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -476,7 +558,7 @@ DupOneIds (ids *old_ids, node *arg_info)
     } else {
         new_ids = MakeIds (StringCopy (IDS_NAME (old_ids)),
                            StringCopy (IDS_MOD (old_ids)), IDS_STATUS (old_ids));
-        IDS_VARDEC (new_ids) = IDS_VARDEC (old_ids);
+        IDS_VARDEC (new_ids) = SearchInPtab (IDS_VARDEC (old_ids));
         IDS_USE (new_ids) = IDS_USE (old_ids);
     }
 
@@ -507,15 +589,68 @@ DupIds (ids *old_ids, node *arg_info)
 
 /******************************************************************************/
 
-/* This function is used by N_id, N_let, N_pos, N_pre, N_generator. */
 node *
 DupId (node *arg_node, node *arg_info)
 {
     node *new_node;
-    int i;
 
     DBUG_ENTER ("DupId");
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
+
+    if ((arg_info != NULL) && (INFO_DUP_TYPE (arg_info) == DUP_INLINE)) {
+        new_node = MakeId (RenameInlinedVar (ID_NAME (arg_node)),
+                           StringCopy (ID_MOD (arg_node)), ID_STATUS (arg_node));
+        /* ID_OBJDEF and ID_VARDEC are mapped to the same data object */
+        ID_VARDEC (new_node) = SearchDecl (ID_NAME (new_node), INFO_INL_TYPES (arg_info));
+    } else {
+        new_node = MakeId (StringCopy (ID_NAME (arg_node)),
+                           StringCopy (ID_MOD (arg_node)), ID_STATUS (arg_node));
+        /* ID_OBJDEF and ID_VARDEC are mapped to the same data object */
+        ID_VARDEC (new_node) = SearchInPtab (ID_VARDEC (arg_node));
+    }
+    ID_DEF (new_node) = SearchInPtab (ID_DEF (arg_node));
+
+    ID_ATTRIB (new_node) = ID_ATTRIB (arg_node);
+    ID_REFCNT (new_node) = ID_REFCNT (arg_node);
+    ID_NAIVE_REFCNT (new_node) = ID_NAIVE_REFCNT (arg_node);
+    ID_MAKEUNIQUE (new_node) = ID_MAKEUNIQUE (arg_node);
+
+    if (DUP_WLF == INFO_DUP_TYPE (arg_info)) {
+        /* Withloop folding (wlf) needs this. */
+        if (ID_WL (arg_node) && (N_id == NODE_TYPE (ID_WL (arg_node)))) {
+            /* new code in new_codes, see 'usage of ID_WL' in WLF.c for more infos */
+            ID_WL (new_node) = ID_WL (arg_node);
+        } else {
+            ID_WL (new_node) = arg_node; /* original code */
+        }
+    }
+
+    /*  Coping the attibutes of constantvectors.
+     *  CONSTVEC itself can only be copied, if ISCONST flag is set,
+     *  otherwise VECTYPE might be T_unkown.
+     */
+    ID_ISCONST (new_node) = ID_ISCONST (arg_node);
+    ID_VECTYPE (new_node) = ID_VECTYPE (arg_node);
+    ID_VECLEN (new_node) = ID_VECLEN (arg_node);
+    if (ID_ISCONST (new_node)) {
+        ID_CONSTVEC (new_node)
+          = CopyConstVec (ID_VECTYPE (arg_node), ID_VECLEN (arg_node),
+                          ID_CONSTVEC (arg_node));
+    } else {
+        ID_CONSTVEC (new_node) = NULL;
+    }
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DupLet (node *arg_node, node *arg_info)
+{
+    node *new_node;
+    int i;
+
+    DBUG_ENTER ("DupLet");
 
     new_node = MakeNode (arg_node->nodetype);
     new_node->info.ids
@@ -546,11 +681,12 @@ DupId (node *arg_node, node *arg_info)
     if (N_id == NODE_TYPE (arg_node) && DUP_WLF == INFO_DUP_TYPE (arg_info)) {
         DBUG_PRINT ("DUP", ("duplicating N_id ..."));
         /* Withloop folding (wlf) needs this. */
-        if (ID_WL (arg_node) && N_id == NODE_TYPE (ID_WL (arg_node)))
+        if (ID_WL (arg_node) && N_id == NODE_TYPE (ID_WL (arg_node))) {
             /* new code in new_codes, see 'usage of ID_WL' in WLF.c for more infos */
             ID_WL (new_node) = ID_WL (arg_node);
-        else
+        } else {
             ID_WL (new_node) = arg_node; /* original code */
+        }
     }
 
     DBUG_RETURN (new_node);
@@ -565,8 +701,6 @@ DupArray (node *arg_node, node *arg_info)
     int i;
 
     DBUG_ENTER ("DupArray");
-
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[NODE_TYPE (arg_node)]));
 
     new_node = MakeArray (NULL);
     if (ARRAY_TYPE (arg_node) != NULL)
@@ -597,39 +731,14 @@ DupArray (node *arg_node, node *arg_info)
 /******************************************************************************/
 
 node *
-DupModarray (node *arg_node, node *arg_info)
-{
-    node *new_node;
-    int i;
-
-    DBUG_ENTER ("DupModarray");
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
-    new_node = MakeNode (arg_node->nodetype);
-    new_node->info.id = StringCopy (arg_node->info.id);
-    DUP (arg_node, new_node);
-    for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++) {
-        if (arg_node->node[i] != NULL) {
-            new_node->node[i] = Trav (arg_node->node[i], arg_info);
-        }
-    }
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-
-node *
 DupCond (node *arg_node, node *arg_info)
 {
     node *new_node;
 
     DBUG_ENTER ("DupCond");
 
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
-
-    LEVEL++;
     new_node = MakeCond (DUPTRAV (COND_COND (arg_node)), DUPTRAV (COND_THEN (arg_node)),
                          DUPTRAV (COND_ELSE (arg_node)));
-    LEVEL--;
 
     DUP (arg_node, new_node);
 
@@ -652,11 +761,7 @@ DupLoop (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupLoop");
 
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
-
-    LEVEL++;
     new_node = MakeDo (DUPTRAV (DO_COND (arg_node)), DUPTRAV (DO_BODY (arg_node)));
-    LEVEL--;
     NODE_TYPE (new_node) = NODE_TYPE (arg_node);
 
     DUP (arg_node, new_node);
@@ -680,10 +785,8 @@ DupExprs (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupExprs");
 
-    LEVEL++;
     new_node
       = MakeExprs (DUPTRAV (EXPRS_EXPR (arg_node)), DUPCONT (EXPRS_NEXT (arg_node)));
-    LEVEL--;
 
     DBUG_RETURN (new_node);
 }
@@ -697,11 +800,9 @@ DupAssign (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupAssign");
 
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
-
     switch (INFO_DUP_TYPE (arg_info)) {
     case DUP_INLINE:
-        if ((0 == LEVEL) && (N_return == NODE_TYPE (ASSIGN_INSTR (arg_node))))
+        if (N_return == NODE_TYPE (ASSIGN_INSTR (arg_node)))
             break;
     default:
         new_node = MakeAssign (DUPTRAV (ASSIGN_INSTR (arg_node)),
@@ -734,8 +835,6 @@ DupTypes (node *arg_node, node *arg_info)
     int i;
 
     DBUG_ENTER ("DupTypes");
-
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
 
     new_node = MakeNode (arg_node->nodetype);
     if (arg_node->info.types != NULL)
@@ -777,7 +876,7 @@ DupPrf (node *arg_node, node *arg_info)
     int i;
 
     DBUG_ENTER ("DupPrf");
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
+
     new_node = MakeNode (arg_node->nodetype);
     new_node->info.prf = arg_node->info.prf;
     DUP (arg_node, new_node);
@@ -798,7 +897,7 @@ DupFun (node *arg_node, node *arg_info)
     int i;
 
     DBUG_ENTER ("DupFun");
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
+
     new_node = MakeNode (arg_node->nodetype);
     new_node->info.fun_name.id = StringCopy (arg_node->info.fun_name.id);
     new_node->info.fun_name.id_mod = StringCopy (arg_node->info.fun_name.id_mod);
@@ -841,8 +940,6 @@ DupFundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupFundef");
 
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
-
     new_node = MakeNode (NODE_TYPE (arg_node));
 
     FUNDEF_TYPES (new_node) = DuplicateTypes (FUNDEF_TYPES (arg_node), 1);
@@ -867,9 +964,6 @@ DupFundef (node *arg_node, node *arg_info)
 
 /******************************************************************************/
 
-/*
- * This function is used for N_vardec & N_arg nodes
- */
 node *
 DupDec (node *arg_node, node *arg_info)
 {
@@ -879,7 +973,6 @@ DupDec (node *arg_node, node *arg_info)
 
     DBUG_ASSERT (((N_vardec == NODE_TYPE (arg_node)) || (N_arg == NODE_TYPE (arg_node))),
                  "wrong node type");
-    DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[NODE_TYPE (arg_node)]));
 
     new_node = MakeNode (NODE_TYPE (arg_node));
     DUP (arg_node, new_node);
@@ -891,32 +984,9 @@ DupDec (node *arg_node, node *arg_info)
         VARDEC_NEXT (new_node) = DUPCONT (VARDEC_NEXT (arg_node));
     }
 
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-
-node *
-DupInfo (node *arg_node, node *arg_info)
-{
-    node *new_node;
-
-    DBUG_ENTER ("DupInfo");
-#if 0 /* was ifndef NEWTREE */
-  if (UNS_NO == arg_node->flag) { /* UNS_NO: arg_info->nnode */
-    /* this condition is set by InvarUnswitch only !? */
-    /* copy arg_info->node[0] to new_node (new arg_node), free old arg_node */
-    new_node = DupTree(UNS_NODES, arg_info);  /* UNS_NODES: arg_info->node[0] */
-    FreeTree(arg_node);
-  }
-  else {  /* make new node in new_node */
-    new_node = MakeInfo();
-    new_node->flag = arg_node->flag;
-  }
+#if 0
+  InsertIntoPtab( arg_node, new_node);
 #endif
-
-    DBUG_ASSERT ((1 == 0), "DupInfo called!");
-    /* to workaround the dirty trick with nnode above ... */
 
     DBUG_RETURN (new_node);
 }
@@ -1045,7 +1115,6 @@ DupNwith (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupNwith");
 
-    LEVEL++;
     /*
      * very important: duplicate codes before parts because NCODE_COPY has to
      *  be set before the parts are traversed.
@@ -1053,7 +1122,6 @@ DupNwith (node *arg_node, node *arg_info)
     coden = DUPTRAV (NWITH_CODE (arg_node));
     partn = DUPTRAV (NWITH_PART (arg_node));
     withopn = DUPTRAV (NWITH_WITHOP (arg_node));
-    LEVEL--;
 
     new_node = MakeNWith (partn, coden, withopn);
 
@@ -1167,11 +1235,9 @@ DupNcode (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupNcode");
 
-    LEVEL++;
     new_node
       = MakeNCode (DUPTRAV (NCODE_CBLOCK (arg_node)), DUPTRAV (NCODE_CEXPR (arg_node)));
     NCODE_NEXT (new_node) = DUPCONT (NCODE_NEXT (arg_node));
-    LEVEL--;
 
     /*
      * NCODE_USED is incremented in DupNpart() via MakeNPart(),
@@ -1546,24 +1612,4 @@ DupWLgridVar (node *arg_node, node *arg_info)
                               DUPCONT (WLGRIDVAR_NEXT (arg_node)), new_code);
 
     DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-
-node *
-DupPre (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("DupPre");
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************/
-
-node *
-DupPost (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("DupPost");
-
-    DBUG_RETURN (arg_node);
 }
