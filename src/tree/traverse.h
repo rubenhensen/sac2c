@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/04/18 15:39:35  nmw
+ * while2do added
+ *
  * Revision 3.12  2001/04/09 15:55:08  nmw
  * partial traversal lirmov_tab added
  *
@@ -239,6 +242,7 @@ extern funtab *profile_tab;
 extern funtab *ssacf_tab;
 extern funtab *ssalir_tab;
 extern funtab *lirmov_tab;
+extern funtab *w2d_tab;
 
 extern int nnode[];
 

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.25  2001/04/18 15:37:02  nmw
+# while2do added
+#
 # Revision 3.24  2001/04/02 11:45:46  dkr
 # wl_bounds.o added
 #
@@ -207,7 +210,8 @@ TREE= src/tree/traverse.o src/tree/tree.o src/tree/tree_basic.o src/tree/free.o 
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o
-FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/fun2lac.o
+FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/fun2lac.o \
+         src/flatten/while2do.o
 CONSTANTS= src/constants/shape.o src/constants/constants_basic.o \
            src/constants/constants_struc_ops.o src/constants/constants_ari_ops.o \
            src/constants/cv2cv.o src/constants/cv2scalar.o src/constants/cv2str.o \

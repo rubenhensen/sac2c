@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2001/04/18 15:39:35  nmw
+ * while2do added
+ *
  * Revision 3.43  2001/04/18 12:59:46  nmw
  * SSAap, CAVap for single functions traversals added
  *
@@ -369,7 +372,7 @@
  *   mapcw_tab       pih_tab         piw_tab         impspec_tab
  *   tcpp_tab        ssafrm_tab      chkavis_tab     undossa_tab
  *   ssadcr_tab      ssacse_tab      cmptree_tab     profile_tab
- *   ssacf_tab       ssalir_tab      unused_tab3     unused_tab4
+ *   ssacf_tab       ssalir_tab      lirmov_tab      w2d_tab
  *   unused_tab5     unused_tab6     unused_tab7     unused_tab8
  *
  *   nnode
@@ -728,8 +731,8 @@
 #ifndef NIFlirmov
 #define NIFlirmov(it_lirmov)
 #endif
-#ifndef NIFunused4
-#define NIFunused4(it_unused4)
+#ifndef NIFw2d
+#define NIFw2d(it_w2d)
 #endif
 
 #ifndef NIFunused5
@@ -774,8 +777,8 @@
   it_precomp1, it_apc, it_apt,                                                           \
                                                                                          \
   it_mapcw, it_pih, it_piw, it_impspec, it_tccp, it_ssafrm, it_chkavis, it_undossa,      \
-  it_ssadcr, it_ssacse, it_cmptree, it_profile, it_ssacf, it_ssalir, it_lirmov,          \
-  it_unused4, it_unused5, it_unused6, it_unused7, it_unused8,                            \
+  it_ssadcr, it_ssacse, it_cmptree, it_profile, it_ssacf, it_ssalir, it_lirmov, it_w2d,  \
+  it_unused5, it_unused6, it_unused7, it_unused8,                                        \
                                                                                          \
   nnode)                                                                                 \
                                                                                          \
@@ -823,7 +826,7 @@
                                                     it_cmptree) NIFprofile (it_profile)  \
                                                     NIFssacf (it_ssacf) NIFssalir (      \
                                                       it_ssalir) NIFlirmov (it_lirmov)   \
-                                                      NIFunused4 (it_unused4)            \
+                                                      NIFw2d (it_w2d)                    \
                                                         NIFunused5 (it_unused5)          \
                                                           NIFunused6 (it_unused6)        \
                                                             NIFunused7 (it_unused7)      \
@@ -1437,7 +1440,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, SSADummy, TravSons, SSADummy,
-       SSADummy, SSADummy, CMPTTravSons, TravSons, SSADummy, SSADummy, SSADummy, TravSons,
+       SSADummy, SSADummy, CMPTTravSons, TravSons, SSADummy, SSADummy, SSADummy, W2Dwhile,
        TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_cond, "N_cond", TravSons, FltnCond, PrintCond, TCcond, GNMcond, DCRcond,
@@ -2309,6 +2312,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFssacf
 #undef NIFssalir
 #undef NIFlirmov
+#undef NIFw2d
 
 #undef NIFnnode
 
