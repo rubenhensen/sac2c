@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/05/03 07:46:17  hw
+ * Revision 1.11  1995/05/09 14:46:06  hw
+ * bug fixed in RCwith ( set refcount of used variables correctly )
+ *
+ * Revision 1.10  1995/05/03  07:46:17  hw
  * bug fixed in Store, StoreAndInit & Restore (now refcounting will
  *  work after optimization ; eliminated variable declarations don't
  *  matter anymore )
@@ -809,12 +812,15 @@ RCwith (node *arg_node, node *arg_info)
         }
     arg_node->node[2] = new_info;
 
+    /* now increase refcount of variables that are used before they will be
+     * defined in a with_loop.
+     */
     for (i = 0; i < varno; i++) {
         if ((with_dump[i] > 0) && (i != index_vec_varno)) {
             var_dec = FindVarDec (i);
             DBUG_ASSERT ((NULL != var_dec), "var not found");
             if (0 < var_dec->refcnt) {
-                ref_dump[i] = +1;
+                ref_dump[i] += 1;
                 DBUG_PRINT ("RC", ("set refcount of %s to %d:", var_dec->info.types->id,
                                    ref_dump[i]));
             }
