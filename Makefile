@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.47  1997/04/25 12:25:01  sbs
+# Revision 1.48  1997/04/25 14:27:10  sbs
+# fuer cg: libm.a deleted
+#
+# Revision 1.47  1997/04/25  12:25:01  sbs
 # *** empty log message ***
 #
 # Revision 1.46  1997/04/25  09:38:38  sbs
@@ -155,7 +158,7 @@ YACC=yacc -dv
 LIBS=-ly -ll -lm
 RM=rm -f
 
-LIB=lib/dbug.o /usr/lib/libm.a
+LIB=lib/dbug.o
 # /usr/lib/debug/malloc.o
 
 GLOBAL= src/global/main.o src/global/Error.o src/global/usage.o \
