@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/02/22 18:25:44  dkr
+ * FMTravSons() modified: only the first three masks are removed
+ * (the others are not used as masks but as other AST attributes and
+ * must therefore be left untouched!!)
+ *
  * Revision 3.3  2001/05/17 12:46:31  nmw
  * MALLOC/FREE changed to Malloc/Free, result of Free() used
  *
@@ -94,8 +99,11 @@ FMTravSons (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("FMTravSons");
 
-    for (i = 0; i < MAX_MASK; i++)
+    /* Only the first three masks are freed!!!                        */
+    /* The other masks are virtually mapped to other AST attributes!! */
+    for (i = 0; i < /* MAX_MASK */ 3; i++) {
         arg_node->mask[i] = Free (arg_node->mask[i]);
+    }
 
     for (i = 0; i < nnode[NODE_TYPE (arg_node)]; i++)
         if (arg_node->node[i] != NULL)
