@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/03/28 12:37:39  hw
+ * Revision 1.10  1995/03/29 12:01:34  hw
+ * PrintIcm added
+ *
+ * Revision 1.9  1995/03/28  12:37:39  hw
  * char *prf_string[] inserted
  *
  * Revision 1.8  1995/03/08  14:40:10  sbs
@@ -78,6 +81,7 @@ extern node *PrintInc (node *, node *);
 extern node *PrintDec (node *, node *);
 extern node *PrintPost (node *, node *);
 extern node *PrintPre (node *, node *);
+extern node *PrintIcm (node *, node *);
 
 extern node *Print (node *);
 
