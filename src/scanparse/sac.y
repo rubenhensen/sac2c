@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1994/11/28 13:26:02  hw
+ * Revision 1.20  1994/11/29 10:56:38  hw
+ * added assignment to ids->node in rule "ids"
+ *
+ * Revision 1.19  1994/11/28  13:26:02  hw
  * error in "exprblock" fixed
  *
  * Revision 1.18  1994/11/23  09:45:00  hw
@@ -856,11 +859,13 @@ ids:   ID COMMA ids
         { $$=GEN_NODE(ids);
           $$->id=$1;
           $$->next=$3;
+          $$->node=NULL;
         }
      | ID 
         {$$=GEN_NODE(ids); 
          $$->id=$1; 
          $$->next=NULL;
+         $$->node=NULL;
         }
      ;
 
