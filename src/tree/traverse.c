@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2004/09/24 20:21:21  sah
+ * now precompile is visible in NEW_AST mode
+ * as well
+ *
  * Revision 3.79  2004/09/23 20:56:21  sah
  * removed small typo
  *
@@ -726,7 +730,7 @@ static funtab rmcasts_tab_rec = {{
                                  NULL,
                                  NULL};
 funtab *rmcasts_tab = &rmcasts_tab_rec;
-
+#endif
 /*
  *  (30) precomp2_tab
  */
@@ -737,7 +741,7 @@ static funtab precomp2_tab_rec = {{
                                   NULL,
                                   NULL};
 funtab *precomp2_tab = &precomp2_tab_rec;
-
+#ifndef NEW_AST
 /*
  *  (31) unused_tab22
  */
@@ -1259,7 +1263,7 @@ static funtab unused_tab28_rec = {{
                                   NULL,
                                   NULL};
 funtab *unused_tab28 = &unused_tab28_rec;
-
+#endif
 /*
  *  (78) precomp1_tab
  */
@@ -1270,7 +1274,7 @@ static funtab precomp1_tab_rec = {{
                                   NULL,
                                   NULL};
 funtab *precomp1_tab = &precomp1_tab_rec;
-
+#ifndef NEW_AST
 /*
  *  (79) apc_tab
  */
@@ -1534,7 +1538,7 @@ static funtab comp_tab_rec = {{
                               NULL,
                               NULL};
 funtab *comp_tab = &comp_tab_rec;
-
+#endif /* NEW_AST */
 /*
  *  (103) precomp3_tab
  */
@@ -1545,7 +1549,7 @@ static funtab precomp3_tab_rec = {{
                                   NULL,
                                   NULL};
 funtab *precomp3_tab = &precomp3_tab_rec;
-#endif /* NEW_AST */
+
 /*
  *  (104) insvd_tab
  */
@@ -1579,7 +1583,7 @@ static funtab wls_tab_rec = {{
                              NULL,
                              NULL};
 funtab *wls_tab = &wls_tab_rec;
-
+#endif
 /*
  *  (107) precomp4_tab
  */
@@ -1590,6 +1594,7 @@ static funtab precomp4_tab_rec = {{
                                   NULL,
                                   NULL};
 funtab *precomp4_tab = &precomp4_tab_rec;
+#ifndef NEW_AST
 
 /*
  *  (108) al_tab
