@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/10/10 12:18:21  sbs
+ * prf_arity added (for usage in sac.y)
+ *
  * Revision 3.11  2002/09/11 23:20:24  dkr
  * - some PRFs renamed
  * - prf_name_string[] removed
@@ -54,63 +57,63 @@
 
 /*
  *      node_name        mdb_prf[]           prf_string[]      prf_symbol[]
- *      prf_is_infix[]   NTC
+ *      prf_is_infix[]   prf_arity           NTC
  */
 
-PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, NTCPRF_dummy, ),
-  PRF_IF (F_toi_A, "F_toi_A", "_toi_A_", "toi", FALSE, NTCPRF_dummy, ),
-  PRF_IF (F_tof_S, "F_tof_S", "_tof_S_", "tof", FALSE, NTCPRF_dummy, ),
-  PRF_IF (F_tof_A, "F_tof_A", "_tof_A_", "tof", FALSE, NTCPRF_dummy, ),
-  PRF_IF (F_tod_S, "F_tod_S", "_tod_S_", "tod", FALSE, NTCPRF_dummy, ),
-  PRF_IF (F_tod_A, "F_tod_A", "_tod_A_", "tod", FALSE, NTCPRF_dummy, ),
+PRF_IF (F_toi_S, "F_toi_S", "_toi_S_", "toi", FALSE, 1, NTCPRF_dummy),
+  PRF_IF (F_toi_A, "F_toi_A", "_toi_A_", "toi", FALSE, 1, NTCPRF_dummy),
+  PRF_IF (F_tof_S, "F_tof_S", "_tof_S_", "tof", FALSE, 1, NTCPRF_dummy),
+  PRF_IF (F_tof_A, "F_tof_A", "_tof_A_", "tof", FALSE, 1, NTCPRF_dummy),
+  PRF_IF (F_tod_S, "F_tod_S", "_tod_S_", "tod", FALSE, 1, NTCPRF_dummy),
+  PRF_IF (F_tod_A, "F_tod_A", "_tod_A_", "tod", FALSE, 1, NTCPRF_dummy),
 
-  PRF_IF (F_abs, "F_abs", "_abs_", "abs", FALSE, NTCPRF_dummy, ),
-  PRF_IF (F_not, "F_not", "_not_", "!", TRUE, NTCPRF_dummy, ),
+  PRF_IF (F_abs, "F_abs", "_abs_", "abs", FALSE, 1, NTCPRF_dummy),
+  PRF_IF (F_not, "F_not", "_not_", "!", TRUE, 1, NTCPRF_dummy),
 
-  PRF_IF (F_and, "F_and", "_and_", "&&", TRUE, NTCPRF_log_op_AxA, ),
-  PRF_IF (F_or, "F_or", "_or_", "||", TRUE, NTCPRF_log_op_AxA, ),
-  PRF_IF (F_eq, "F_eq", "_eq_", "==", TRUE, NTCPRF_rel_op_AxA, ),
-  PRF_IF (F_neq, "F_neq", "_neq_", "!=", TRUE, NTCPRF_rel_op_AxA, ),
-  PRF_IF (F_le, "F_le", "_le_", "<=", TRUE, NTCPRF_rel_op_AxA, ),
-  PRF_IF (F_lt, "F_lt", "_lt_", "<", TRUE, NTCPRF_rel_op_AxA, ),
-  PRF_IF (F_ge, "F_ge", "_ge_", ">=", TRUE, NTCPRF_rel_op_AxA, ),
-  PRF_IF (F_gt, "F_gt", "_gt_", ">", TRUE, NTCPRF_rel_op_AxA, ),
+  PRF_IF (F_and, "F_and", "_and_", "&&", TRUE, 2, NTCPRF_log_op_AxA),
+  PRF_IF (F_or, "F_or", "_or_", "||", TRUE, 2, NTCPRF_log_op_AxA),
+  PRF_IF (F_eq, "F_eq", "_eq_", "==", TRUE, 2, NTCPRF_rel_op_AxA),
+  PRF_IF (F_neq, "F_neq", "_neq_", "!=", TRUE, 2, NTCPRF_rel_op_AxA),
+  PRF_IF (F_le, "F_le", "_le_", "<=", TRUE, 2, NTCPRF_rel_op_AxA),
+  PRF_IF (F_lt, "F_lt", "_lt_", "<", TRUE, 2, NTCPRF_rel_op_AxA),
+  PRF_IF (F_ge, "F_ge", "_ge_", ">=", TRUE, 2, NTCPRF_rel_op_AxA),
+  PRF_IF (F_gt, "F_gt", "_gt_", ">", TRUE, 2, NTCPRF_rel_op_AxA),
 
-  PRF_IF (F_min, "F_min", "_min_", "min", FALSE, NTCPRF_ari_op_SxS, ),
-  PRF_IF (F_max, "F_max", "_max_", "max", FALSE, NTCPRF_ari_op_SxS, ),
-  PRF_IF (F_mod, "F_mod", "_mod_", "%", TRUE, NTCPRF_int_op_SxS, ),
+  PRF_IF (F_min, "F_min", "_min_", "min", FALSE, 2, NTCPRF_ari_op_SxS),
+  PRF_IF (F_max, "F_max", "_max_", "max", FALSE, 2, NTCPRF_ari_op_SxS),
+  PRF_IF (F_mod, "F_mod", "_mod_", "%", TRUE, 2, NTCPRF_int_op_SxS),
 
-  PRF_IF (F_add_SxS, "F_add_SxS", "_add_SxS_", "+", TRUE, NTCPRF_ari_op_SxS, ),
-  PRF_IF (F_add_SxA, "F_add_SxA", "_add_SxA_", "+", TRUE, NTCPRF_ari_op_SxA, ),
-  PRF_IF (F_add_AxS, "F_add_AxS", "_add_AxS_", "+", TRUE, NTCPRF_ari_op_AxS, ),
-  PRF_IF (F_add_AxA, "F_add_AxA", "_add_AxA_", "+", TRUE, NTCPRF_ari_op_AxA, ),
-  PRF_IF (F_sub_SxS, "F_sub_SxS", "_sub_SxS_", "-", TRUE, NTCPRF_ari_op_SxS, ),
-  PRF_IF (F_sub_SxA, "F_sub_SxA", "_sub_SxA_", "-", TRUE, NTCPRF_ari_op_SxA, ),
-  PRF_IF (F_sub_AxS, "F_sub_AxS", "_sub_AxS_", "-", TRUE, NTCPRF_ari_op_AxS, ),
-  PRF_IF (F_sub_AxA, "F_sub_AxA", "_sub_AxA_", "-", TRUE, NTCPRF_ari_op_AxA, ),
-  PRF_IF (F_mul_SxS, "F_mul_SxS", "_mul_SxS_", "*", TRUE, NTCPRF_ari_op_SxS, ),
-  PRF_IF (F_mul_SxA, "F_mul_SxA", "_mul_SxA_", "*", TRUE, NTCPRF_ari_op_SxA, ),
-  PRF_IF (F_mul_AxS, "F_mul_AxS", "_mul_AxS_", "*", TRUE, NTCPRF_ari_op_AxS, ),
-  PRF_IF (F_mul_AxA, "F_mul_AxA", "_mul_AxA_", "*", TRUE, NTCPRF_ari_op_AxA, ),
-  PRF_IF (F_div_SxS, "F_div_SxS", "_div_SxS_", "/", TRUE, NTCPRF_ari_op_SxS, ),
-  PRF_IF (F_div_SxA, "F_div_SxA", "_div_SxA_", "/", TRUE, NTCPRF_ari_op_SxA, ),
-  PRF_IF (F_div_AxS, "F_div_AxS", "_div_AxS_", "/", TRUE, NTCPRF_ari_op_AxS, ),
-  PRF_IF (F_div_AxA, "F_div_AxA", "_div_AxA_", "/", TRUE, NTCPRF_ari_op_AxA, ),
+  PRF_IF (F_add_SxS, "F_add_SxS", "_add_SxS_", "+", TRUE, 2, NTCPRF_ari_op_SxS),
+  PRF_IF (F_add_SxA, "F_add_SxA", "_add_SxA_", "+", TRUE, 2, NTCPRF_ari_op_SxA),
+  PRF_IF (F_add_AxS, "F_add_AxS", "_add_AxS_", "+", TRUE, 2, NTCPRF_ari_op_AxS),
+  PRF_IF (F_add_AxA, "F_add_AxA", "_add_AxA_", "+", TRUE, 2, NTCPRF_ari_op_AxA),
+  PRF_IF (F_sub_SxS, "F_sub_SxS", "_sub_SxS_", "-", TRUE, 2, NTCPRF_ari_op_SxS),
+  PRF_IF (F_sub_SxA, "F_sub_SxA", "_sub_SxA_", "-", TRUE, 2, NTCPRF_ari_op_SxA),
+  PRF_IF (F_sub_AxS, "F_sub_AxS", "_sub_AxS_", "-", TRUE, 2, NTCPRF_ari_op_AxS),
+  PRF_IF (F_sub_AxA, "F_sub_AxA", "_sub_AxA_", "-", TRUE, 2, NTCPRF_ari_op_AxA),
+  PRF_IF (F_mul_SxS, "F_mul_SxS", "_mul_SxS_", "*", TRUE, 2, NTCPRF_ari_op_SxS),
+  PRF_IF (F_mul_SxA, "F_mul_SxA", "_mul_SxA_", "*", TRUE, 2, NTCPRF_ari_op_SxA),
+  PRF_IF (F_mul_AxS, "F_mul_AxS", "_mul_AxS_", "*", TRUE, 2, NTCPRF_ari_op_AxS),
+  PRF_IF (F_mul_AxA, "F_mul_AxA", "_mul_AxA_", "*", TRUE, 2, NTCPRF_ari_op_AxA),
+  PRF_IF (F_div_SxS, "F_div_SxS", "_div_SxS_", "/", TRUE, 2, NTCPRF_ari_op_SxS),
+  PRF_IF (F_div_SxA, "F_div_SxA", "_div_SxA_", "/", TRUE, 2, NTCPRF_ari_op_SxA),
+  PRF_IF (F_div_AxS, "F_div_AxS", "_div_AxS_", "/", TRUE, 2, NTCPRF_ari_op_AxS),
+  PRF_IF (F_div_AxA, "F_div_AxA", "_div_AxA_", "/", TRUE, 2, NTCPRF_ari_op_AxA),
 
-  PRF_IF (F_dim, "F_dim", "_dim_", "dim", FALSE, NTCPRF_dim, ),
-  PRF_IF (F_shape, "F_shape", "_shape_", "shape", FALSE, NTCPRF_shape, ),
-  PRF_IF (F_reshape, "F_reshape", "_reshape_", "reshape", FALSE, NTCPRF_reshape, ),
-  PRF_IF (F_idx_sel, "F_idx_sel", "_idx_sel_", "idx_sel", FALSE, NTCPRF_dummy, ),
-  PRF_IF (F_idx_modarray, "F_idx_modarray", "_idx_modarray_", "idx_modarray", FALSE,
-          NTCPRF_dummy, ),
-  PRF_IF (F_sel, "F_sel", "_sel_", "sel", FALSE, NTCPRF_selS, ),
-  PRF_IF (F_modarray, "F_modarray", "_modarray_", "modarray", FALSE, NTCPRF_modarrayS, ),
-  PRF_IF (F_genarray, "F_genarray", "_genarray_", "genarray", FALSE, NTCPRF_dummy, ),
+  PRF_IF (F_dim, "F_dim", "_dim_", "dim", FALSE, 1, NTCPRF_dim),
+  PRF_IF (F_shape, "F_shape", "_shape_", "shape", FALSE, 1, NTCPRF_shape),
+  PRF_IF (F_reshape, "F_reshape", "_reshape_", "reshape", FALSE, 2, NTCPRF_reshape),
+  PRF_IF (F_idx_sel, "F_idx_sel", "_idx_sel_", "idx_sel", FALSE, 2, NTCPRF_dummy),
+  PRF_IF (F_idx_modarray, "F_idx_modarray", "_idx_modarray_", "idx_modarray", FALSE, 3,
+          NTCPRF_dummy),
+  PRF_IF (F_sel, "F_sel", "_sel_", "sel", FALSE, 2, NTCPRF_selS),
+  PRF_IF (F_modarray, "F_modarray", "_modarray_", "modarray", FALSE, 3, NTCPRF_modarrayS),
+  PRF_IF (F_genarray, "F_genarray", "_genarray_", "genarray", FALSE, 2, NTCPRF_dummy),
 
-  PRF_IF (F_take, "F_take", "_take_", "take", FALSE, NTCPRF_dummy, ),
-  PRF_IF (F_drop, "F_drop", "_drop_", "drop", FALSE, NTCPRF_dummy, ),
-  PRF_IF (F_cat, "F_cat", "_cat_", "cat", FALSE, NTCPRF_dummy, ),
-  PRF_IF (F_rotate, "F_rotate", "_rotate_", "rotate", FALSE, NTCPRF_dummy, ),
+  PRF_IF (F_take, "F_take", "_take_", "take", FALSE, 2, NTCPRF_dummy),
+  PRF_IF (F_drop, "F_drop", "_drop_", "drop", FALSE, 2, NTCPRF_dummy),
+  PRF_IF (F_cat, "F_cat", "_cat_", "cat", FALSE, 3, NTCPRF_dummy),
+  PRF_IF (F_rotate, "F_rotate", "_rotate_", "rotate", FALSE, 3, NTCPRF_dummy),
 
-  PRF_IF (F_type_error, "F_type_error", "_type_error_", "type_error", FALSE,
-          NTCPRF_dummy, )
+  PRF_IF (F_type_error, "F_type_error", "_type_error_", "type_error", FALSE, 1,
+          NTCPRF_dummy)
