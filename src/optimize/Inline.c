@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2002/08/31 04:58:27  dkr
+ * FUNDEF_INLREC correctly initialized now :)
+ *
  * Revision 3.22  2002/08/13 13:43:56  dkr
  * interface to LookUpTable.[ch] modified
  *
@@ -199,6 +202,8 @@ ResetInlineNo (node *module)
     while (fun_node != NULL) {
         if (FUNDEF_INLINE (fun_node)) {
             FUNDEF_INLREC (fun_node) = inlnum;
+        } else {
+            FUNDEF_INLREC (fun_node) = 0;
         }
         fun_node = FUNDEF_NEXT (fun_node);
     }
