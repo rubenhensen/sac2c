@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.179  2004/11/25 22:17:50  khf
+ * added PRTprintHomsv (moved from wltransform.h)
+ *
  * Revision 3.178  2004/11/25 22:03:58  cg
  * Changed access to library target format information.
  *
@@ -1816,6 +1819,41 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
     }
     INDENT;
     fprintf (outfile, (in_comment) ? " *" : " */");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void PRTprintHomsv( FILE *handle, int *vect, int dims)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+extern void
+PRTprintHomsv (FILE *handle, int *vect, int dims)
+{
+    int d;
+
+    DBUG_ENTER ("PRTprintHomsv");
+
+    if ((vect) != NULL) {
+        fprintf (handle, "[ ");
+        for (d = 0; d < (dims); d++) {
+            if ((vect)[d] > 0) {
+                fprintf (handle, "%i", (vect)[d]);
+            } else {
+                fprintf (handle, "?");
+            }
+            fprintf (handle, " ");
+        }
+        fprintf (handle, "]");
+    } else {
+        fprintf (handle, "NULL");
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -4243,7 +4281,7 @@ PrintWLsegx (node *arg_node, info *arg_info)
             fprintf (outfile, "\n");
             INDENT;
             fprintf (outfile, " * homsv: ");
-            PRINT_HOMSV (outfile, WLSEG_HOMSV (arg_node), WLSEG_DIMS (arg_node));
+            PRTprintHomsv (outfile, WLSEG_HOMSV (arg_node), WLSEG_DIMS (arg_node));
             fprintf (outfile, "\n");
             INDENT;
         }

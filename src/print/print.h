@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.32  2004/11/25 22:17:50  khf
+ * added PRTprintHomsv (moved from wltransform.h)
+ *
  * Revision 3.31  2004/11/24 17:22:59  jhb
  * changed outfile and indent to global.
  *
@@ -124,6 +127,8 @@ extern void PRTprintArgtab (argtab_t *argtab, bool is_def);
  * Other functions for external use
  */
 extern void PRTprintFunctionHeader (node *arg_node, info *arg_info, bool in_comment);
+
+extern void PRTprintHomsv (FILE *handle, int *vect, int dims);
 
 /*
  * Functions for internal use during AST traversal only!
