@@ -1,6 +1,10 @@
 /*         $Id$
  *
  * $Log$
+ * Revision 1.3  1998/05/30 19:44:46  dkr
+ * fixed a bug in CreateFold:
+ *   funname is no longer shared
+ *
  * Revision 1.2  1998/05/15 14:43:16  srs
  * functions for WL unrolling
  *
@@ -167,8 +171,8 @@ CreateFold (node *assignn, node *index)
     if (WO_foldprf == NWITH_TYPE (wln))
         letexpr = MakePrf (NWITHOP_PRF (NWITH_WITHOP (wln)), argn);
     else {
-        letexpr = MakeAp (NWITHOP_FUN (NWITH_WITHOP (wln)),
-                          NWITHOP_MOD (NWITH_WITHOP (wln)), argn);
+        letexpr = MakeAp (StringCopy (NWITHOP_FUN (NWITH_WITHOP (wln))),
+                          StringCopy (NWITHOP_MOD (NWITH_WITHOP (wln))), argn);
         AP_FUNDEF (letexpr) = NWITHOP_FUNDEF (NWITH_WITHOP (wln));
     }
 
