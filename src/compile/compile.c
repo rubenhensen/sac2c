@@ -1,10 +1,14 @@
 /*
  * $Log$
+ * Revision 2.63  2000/06/30 15:22:51  jhs
+ * BuildParamsByDFM debugged.
+ * COMPmt uses BuildParamsByDFM now.
+ *
  * Revision 2.62  2000/06/23 15:10:33  dkr
  * signature of DupTree changed
  *
  * Revision 2.61  2000/06/21 13:31:35  jhs
- * Parts of N_mt- compilation added.
+ * Parts of N_mt-compilation added.
  *
  * Revision 2.60  2000/06/05 12:34:56  dkr
  * minor corrections in comments done
@@ -226,7 +230,6 @@ int basetype_size[] = {
 
 #define ICMPARAM_TAG(expr) ID_NAME (EXPRS_EXPR (expr))
 #define ICMPARAM_ARG1(expr) EXPRS_EXPR (EXPRS_NEXT (expr))
-#define ICMPARAM_ARG2(expr) EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (expr)))
 
 /*
  * This macro indicates whether there are multiple segments present or not.
@@ -1992,6 +1995,10 @@ COMPFundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("COMPFundef");
 
     DBUG_PRINT ("COMP", ("compiling %s", FUNDEF_NAME (arg_node)));
+
+    DBUG_PRINT ("COMPjhs", ("compiling %s attrib: %s status: %s", FUNDEF_NAME (arg_node),
+                            mdb_statustype[FUNDEF_ATTRIB (arg_node)],
+                            mdb_statustype[FUNDEF_STATUS (arg_node)]));
 
     /*
      *  "push arg_info"
@@ -5338,7 +5345,10 @@ COMPObjdef (node *arg_node, node *arg_info)
  *                           char *tag, int *num_args, node *icm_args)
  *
  * description:
- *
+ *   Builds triplet-chain (tag, type, name) from dfm-mask mask,
+ *   tag will we used as base for the tags (used raw or _rc is added),
+ *   num_args will be incremented for each triplet added (maybe NULL),
+ *   at the end of this chain icm_args will be concatenated.
  *
  ******************************************************************************/
 
@@ -5364,9 +5374,16 @@ BuildParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
                        MakeExprs (MakeId1 (MakeTypeString (VARDEC_OR_ARG_TYPE (vardec))),
                                   MakeExprs (MakeId1 (VARDEC_OR_ARG_NAME (vardec)),
                                              icm_args)));
-        *num_args = *num_args + 1;
+        if (num_args != NULL) {
+            *num_args = *num_args + 1;
+        }
 
-        DBUG_PRINT ("SPMD", ("bpbdfm %i %s", *num_args, VARDEC_OR_ARG_NAME (vardec)));
+        if (num_args != NULL) {
+            DBUG_PRINT ("SPMD", ("bpbdfm num_args:%i %s", *num_args,
+                                 VARDEC_OR_ARG_NAME (vardec)));
+        } else {
+            DBUG_PRINT ("SPMD", ("bpbdfm num_args:- %s", VARDEC_OR_ARG_NAME (vardec)));
+        }
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
     }
@@ -7421,8 +7438,20 @@ MakeAssigns5 (node *part1, node *part2, node *part3, node *part4, node *part5)
     return (MakeAssign (part1, MakeAssigns4 (part2, part3, part4, part5)));
 }
 
+/*
+ *  jhs ####
+ */
 #define DO_NOT_COMPILE_MTN_xxx
 
+/******************************************************************************
+ *
+ * function:
+ *   node *COMPMt( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   compiles an N_mt-node
+ *
+ ******************************************************************************/
 node *
 COMPMt (node *arg_node, node *arg_info)
 {
@@ -7439,18 +7468,27 @@ COMPMt (node *arg_node, node *arg_info)
     DBUG_ASSERT (0, ("COMPMt not implemented yet, cannot compile this"));
 #endif
 
-    allocate = MakeIcm0 ("ALLOCATE");
+    /*
+     *  Part 1 - Allocate
+     */
+    allocate = MakeIcm0 ("ALLOCATE"); /* #### */
 
     /*
      *  Part 2 - Broadcast
      */
+    broadcast
+      = MakeIcm5 ("MT2_MASTER_BROADCAST", MakeId1 ("ALLOC"),
+                  MakeNum (MT_IDENTIFIER (arg_node)),
+                  MakeNum (DFMTestMask (MT_ALLOC (arg_node))
+                           + DFMTestMask (MT_USEMASK (arg_node))),
+                  BuildParamsByDFM (MT_ALLOC (arg_node), "alloc", NULL, NULL),
+                  BuildParamsByDFM (MT_USEMASK (arg_node), "usemask", NULL, NULL));
 
-    broadcast = MakeIcm4 ("MTN_MASTER_BROADCAST", MakeId1 ("ALLOC"),
-                          MakeNum (MT_IDENTIFIER (arg_node)),
-                          MakeNum (DFMTestMask (MT_ALLOC (arg_node))),
-                          MakeNum (DFMTestMask (MT_USEMASK (arg_node))));
-
-    activate = MakeIcm0 ("MTN_ACTIVATE");
+    /*
+     *  Part 3 - Activate
+     */
+    activate = MakeIcm2 ("MT2_ACTIVATE", MakeId1 ("SYNC"),
+                         MakeId1 (FUNDEF_NAME (MT_FUNDEF (arg_node))));
 
     /*
      *  Part 4 - Code
@@ -7460,8 +7498,14 @@ COMPMt (node *arg_node, node *arg_info)
     code = BLOCK_INSTR (MT_REGION (arg_node));
     BLOCK_INSTR (MT_REGION (arg_node)) = NULL;
 
-    barrier = MakeIcm0 ("MTN_MASTER_BARRIER");
+    /*
+     *  Part 5 - Barrier
+     */
+    barrier = MakeIcm1 ("MT2_MASTER_BARRIER", MakeNum (MT_IDENTIFIER (arg_node)));
 
+    /*
+     *  Finalization ... build result and free old tree
+     */
     result = MakeAssigns5 (allocate, broadcast, activate, code, barrier);
 
     arg_node = FreeTree (arg_node);
@@ -7469,6 +7513,15 @@ COMPMt (node *arg_node, node *arg_info)
     DBUG_RETURN (result);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *COMPMt( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   compiles an N_mt-node
+ *
+ ******************************************************************************/
 node *
 COMPSt (node *arg_node, node *arg_info)
 {
@@ -7480,7 +7533,11 @@ COMPSt (node *arg_node, node *arg_info)
     DBUG_ASSERT (0, ("COMPSt not implemented yet, cannot compile this"));
 #endif
 
-    result = MakeAssigns1 (MakeIcm0 ("CANNOT_COMPILE_N_ST"));
+    if (1) {
+        result = MakeAssigns1 (MakeIcm0 ("CANNOT_COMPILE_N_ST (master)"));
+    } else {
+        result = MakeAssigns1 (MakeIcm0 ("CANNOT_COMPILE_N_ST (worker)"));
+    }
 
     arg_node = FreeTree (arg_node);
 
@@ -7545,7 +7602,7 @@ COMPMTsync (node *arg_node, node *arg_info)
     DBUG_ASSERT (0, ("COMPMTsync not implemented yet, cannot compile this"));
 #endif
 
-    result = MakeAssigns1 (MakeIcm0 ("CANNOT_COMPILE_N_ST"));
+    result = MakeAssigns1 (MakeIcm0 ("CANNOT_COMPILE_N_SYNC"));
 
     arg_node = FreeTree (arg_node);
 
