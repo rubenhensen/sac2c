@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/04/03 19:39:28  dkr
+ * Fixed a bug in SAC_MT_ADJUST_SCHEDULER: now, upper bound also adjusted.
+ * This is crucial in case of variable with-loop bounds!
+ *
  * Revision 3.16  2001/03/28 12:48:38  ben
  * for SAC_MT_SCHEDULER_Afs_next_task the parameter param added
  *
@@ -180,9 +184,8 @@
  *
  *****************************************************************************/
 
-#ifndef SAC_MT_H
-
-#define SAC_MT_H
+#ifndef _SAC_MT_H_
+#define _SAC_MT_H_
 
 /*****************************************************************************/
 
@@ -701,69 +704,58 @@ typedef union {
 #define SAC_MT_ACQUIRE_LOCK(name) pthread_mutex_lock (&name);
 
 #define SAC_MT_RELEASE_LOCK(name) pthread_mutex_unlock (&name);
-/*
- * Warning:
- *
- * At least on Solaris 2.5 - 2.7 the static initialization of mutex locks causes
- * warnings upon compilation. The reason is that in the corresponding file
- * pthread.h, the definition of PTHREAD_MUTEX_INITIALIZER does NOT fit the
- * type definition of pthread_mutex_t.
- *
- * However, so far it works  :-)))
- */
 
 /*
  *  Definitions of macro-implemented ICMs for scheduling
  */
 
-#define SAC_MT_ADJUST_SCHEDULER__OFFSET(array, dim, lower, upper, unrolling, offset)     \
+#define SAC_MT_ADJUST_SCHEDULER_BOUND(diff, bound, lower, upper, unrolling)              \
     {                                                                                    \
-        if ((SAC_WL_MT_SCHEDULE_START (dim) > lower)                                     \
-            && (SAC_WL_MT_SCHEDULE_START (dim) < upper)) {                               \
-            int tmp = (SAC_WL_MT_SCHEDULE_START (dim) - (lower)) % (unrolling);          \
+        diff = 0;                                                                        \
+        if (((bound) > (lower)) && ((bound) < (upper))) {                                \
+            diff = ((bound) - (lower)) % (unrolling);                                    \
                                                                                          \
-            if (tmp) {                                                                   \
-                tmp = (unrolling)-tmp;                                                   \
-            }                                                                            \
+            if (diff) {                                                                  \
+                diff = (unrolling)-diff;                                                 \
                                                                                          \
-            if (tmp) {                                                                   \
-                if (SAC_WL_MT_SCHEDULE_START (dim) + tmp >= upper) {                     \
-                    tmp = (upper)-SAC_WL_MT_SCHEDULE_START (dim);                        \
-                    SAC_WL_MT_SCHEDULE_START (dim) = upper;                              \
+                if ((bound) + diff >= (upper)) {                                         \
+                    diff = (upper) - (bound);                                            \
+                    (bound) = (upper);                                                   \
                 } else {                                                                 \
-                    SAC_WL_MT_SCHEDULE_START (dim) += tmp;                               \
+                    (bound) += diff;                                                     \
                 }                                                                        \
-                SAC_WL_OFFSET (array) += tmp * (offset);                                 \
-                                                                                         \
-                SAC_TR_MT_PRINT (("Scheduler Adjustment: dim %d: %d -> %d", dim,         \
-                                  SAC_WL_MT_SCHEDULE_START (dim),                        \
-                                  SAC_WL_MT_SCHEDULE_STOP (dim)));                       \
             }                                                                            \
         }                                                                                \
     }
 
-#define SAC_MT_ADJUST_SCHEDULER(array, dim, lower, upper, unrolling, offset)             \
+#define SAC_MT_ADJUST_SCHEDULER__OFFSET(array, dims, dim, lower, upper, unrolling,       \
+                                        offset)                                          \
     {                                                                                    \
-        if ((SAC_WL_MT_SCHEDULE_START (dim) > lower)                                     \
-            && (SAC_WL_MT_SCHEDULE_START (dim) < upper)) {                               \
-            int tmp = (SAC_WL_MT_SCHEDULE_START (dim) - (lower)) % (unrolling);          \
+        int diff_start, diff_stop;                                                       \
                                                                                          \
-            if (tmp) {                                                                   \
-                tmp = (unrolling)-tmp;                                                   \
-            }                                                                            \
+        SAC_MT_ADJUST_SCHEDULER_BOUND (diff_start, SAC_WL_MT_SCHEDULE_START (dim),       \
+                                       lower, upper, unrolling)                          \
+        SAC_MT_ADJUST_SCHEDULER_BOUND (diff_stop, SAC_WL_MT_SCHEDULE_STOP (dim), lower,  \
+                                       upper, unrolling)                                 \
                                                                                          \
-            if (tmp) {                                                                   \
-                if (SAC_WL_MT_SCHEDULE_START (dim) + tmp >= upper) {                     \
-                    SAC_WL_MT_SCHEDULE_START (dim) = upper;                              \
-                } else {                                                                 \
-                    SAC_WL_MT_SCHEDULE_START (dim) += tmp;                               \
-                }                                                                        \
+        SAC_WL_OFFSET (array) += diff_start * (offset);                                  \
+        SAC_TR_MT_PRINT (("Scheduler Adjustment: dim %d: %d -> %d", dim,                 \
+                          SAC_WL_MT_SCHEDULE_START (dim),                                \
+                          SAC_WL_MT_SCHEDULE_STOP (dim)));                               \
+    }
+
+#define SAC_MT_ADJUST_SCHEDULER(array, dims, dim, lower, upper, unrolling)               \
+    {                                                                                    \
+        int diff_start, diff_stop;                                                       \
                                                                                          \
-                SAC_TR_MT_PRINT (("Scheduler Adjustment: dim %d: %d -> %d", dim,         \
-                                  SAC_WL_MT_SCHEDULE_START (dim),                        \
-                                  SAC_WL_MT_SCHEDULE_STOP (dim)));                       \
-            }                                                                            \
-        }                                                                                \
+        SAC_MT_ADJUST_SCHEDULER_BOUND (diff_start, SAC_WL_MT_SCHEDULE_START (dim),       \
+                                       lower, upper, unrolling)                          \
+        SAC_MT_ADJUST_SCHEDULER_BOUND (diff_stop, SAC_WL_MT_SCHEDULE_STOP (dim), lower,  \
+                                       upper, unrolling)                                 \
+                                                                                         \
+        SAC_TR_MT_PRINT (("Scheduler Adjustment: dim %d: %d -> %d", dim,                 \
+                          SAC_WL_MT_SCHEDULE_START (dim),                                \
+                          SAC_WL_MT_SCHEDULE_STOP (dim)));                               \
     }
 
 #define SAC_MT_SCHEDULER_Static_BEGIN()
@@ -988,4 +980,4 @@ SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
 
 #endif /* SAC_DO_MULTITHREAD */
 
-#endif /* SAC_MT_H */
+#endif /* _SAC_MT_H_ */
