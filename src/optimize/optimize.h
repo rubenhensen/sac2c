@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.50  1998/02/25 09:16:03  cg
+ * Definition of global variable mrdl_stack moved to optimize.c
+ *
  * Revision 1.49  1998/02/16 16:53:30  srs
  * added wlf_tab to MRD_TAB
  *
@@ -196,7 +199,7 @@ typedef struct STACK {
 
 #define MIN_STACK_SIZE 50
 
-stack *mrdl_stack;
+extern stack *mrdl_stack;
 
 #define MAKE_MRDL_STACK                                                                  \
     mrdl_stack = Malloc (sizeof (stack));                                                \
