@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.7  1996/02/11 20:17:07  sbs
+ * Revision 1.8  1996/02/12 15:44:46  sbs
+ * bug in idxLet fixed; now we have different code for args and vardecs:-)
+ *
+ * Revision 1.7  1996/02/11  20:17:07  sbs
  * complete revise.
  * should work now on all programs.
  * still some known problems as stated in the file itself.
@@ -631,8 +634,15 @@ IdxLet (node *arg_node, node *arg_info)
     vars = LET_IDS (arg_node);
     do {
         vardec = IDS_VARDEC (vars);
-        IDS_USE (vars) = VARDEC_ACTCHN (vardec);
-        VARDEC_ACTCHN (vardec) = NULL; /* freeing the actual chain! */
+        if (NODE_TYPE (vardec) == N_vardec) {
+            IDS_USE (vars) = VARDEC_ACTCHN (vardec);
+            VARDEC_ACTCHN (vardec) = NULL; /* freeing the actual chain! */
+        } else {
+            DBUG_ASSERT ((NODE_TYPE (vardec) == N_arg),
+                         "backref from let-var neither vardec nor arg!");
+            IDS_USE (vars) = ARG_ACTCHN (vardec);
+            ARG_ACTCHN (vardec) = NULL; /* freeing the actual chain! */
+        }
         vars = IDS_NEXT (vars);
     } while (vars);
 
