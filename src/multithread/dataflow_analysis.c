@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/03/21 16:11:34  jhs
+ * NEEDCHAIN and NEEDBLOCK are pushed and poped at N_mt and N_st now.
+ *
  * Revision 1.2  2000/03/21 13:07:54  jhs
  * Implemented extended version.
  *
@@ -274,6 +277,9 @@ DFAreturn_dn (node *arg_node, node *arg_info)
     DBUG_ENTER ("DFAreturn_dn");
     DBUG_PRINT ("DFA", ("begin %i", INFO_DFA_HEADING (arg_info)));
 
+    DFMPrintMask (stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN (arg_info));
+    DFMPrintMask (stderr, "block: %s\n", INFO_DFA_NEEDBLOCK (arg_info));
+
     RETURN_USEMASK (arg_node)
       = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)));
     RETURN_DEFMASK (arg_node)
@@ -300,6 +306,9 @@ DFAreturn_up (node *arg_node, node *arg_info)
 
     DFMSetMaskOr (INFO_DFA_NEEDCHAIN (arg_info), RETURN_USEMASK (arg_node));
     DFMSetMaskClear (INFO_DFA_NEEDBLOCK (arg_info));
+
+    DFMPrintMask (stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN (arg_info));
+    DFMPrintMask (stderr, "block: %s\n", INFO_DFA_NEEDBLOCK (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -367,6 +376,9 @@ DFAlet_dn (node *arg_node, node *arg_info)
     DBUG_ENTER ("DFAlet");
     DBUG_PRINT ("DFA", ("begin %i", INFO_DFA_HEADING (arg_info)));
 
+    DFMPrintMask (stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN (arg_info));
+    DFMPrintMask (stderr, "block: %s\n", INFO_DFA_NEEDBLOCK (arg_info));
+
     LET_USEMASK (arg_node)
       = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)));
     LET_DEFMASK (arg_node)
@@ -402,16 +414,11 @@ DFAlet_dn (node *arg_node, node *arg_info)
         }
     } else if ((NODE_TYPE (expr) == N_Nwith2)) {
         /*
-         *  If there is no scheduling, we traverse the with-loop.
-         */
-        if (!NWITH2_ISSCHEDULED (expr)) {
-            DBUG_PRINT ("DFA", ("into with-loop"));
-            LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
-            DBUG_PRINT ("DFA", ("from with-loop"));
-            expr = LET_EXPR (arg_node);
-        }
-
-        /*
+         *  We don not traverse the with-loop, because all information
+         *  is annotated at the with-loop (see below)!!!
+         *  If you want to traverse the with-loop you have to push and pop
+         *  INFO_DFA_NEEDCHAIN and INFO_DFA_NEEDBLOCK!!!
+         *
          *  the with-loop (N_Nwith2) already has DFMs attached:
          *  NWITH2_IN, NWITH2_INOUT, NWITH2_OUT and NWITH2_LOCAL.
          *  Here we use the information to build the LET_USEMASK and LET_DEFMASK.
@@ -472,6 +479,9 @@ DFAlet_dn (node *arg_node, node *arg_info)
     /* INFO_DFA_DEFMASK += LET_DEFMASK */
     DFMSetMaskOr (INFO_DFA_DEFMASK (arg_info), LET_DEFMASK (arg_node));
 
+    DFMPrintMask (stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN (arg_info));
+    DFMPrintMask (stderr, "block: %s\n", INFO_DFA_NEEDBLOCK (arg_info));
+
     DBUG_PRINT ("DFA", ("end %i", INFO_DFA_HEADING (arg_info)));
     DBUG_RETURN (arg_node);
 }
@@ -481,6 +491,10 @@ node *
 DFAlet_up (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("DFAlet_up");
+    DBUG_PRINT ("DFA", ("begin %i", INFO_DFA_HEADING (arg_info)));
+
+    DFMPrintMask (stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN (arg_info));
+    DFMPrintMask (stderr, "block: %s\n", INFO_DFA_NEEDBLOCK (arg_info));
 
     /* tag if ... #### */
 
@@ -489,6 +503,10 @@ DFAlet_up (node *arg_node, node *arg_info)
 
     DFMSetMaskMinus (INFO_DFA_NEEDBLOCK (arg_info), LET_DEFMASK (arg_node));
 
+    DFMPrintMask (stderr, "chain: %s\n", INFO_DFA_NEEDCHAIN (arg_info));
+    DFMPrintMask (stderr, "block: %s\n", INFO_DFA_NEEDBLOCK (arg_info));
+
+    DBUG_PRINT ("DFA", ("end %i", INFO_DFA_HEADING (arg_info)));
     DBUG_RETURN (arg_node);
 }
 
@@ -510,6 +528,10 @@ DFAxt_dn (node *arg_node, node *arg_info)
     node *old_cont;
     DFMmask_t old_usemask;
     DFMmask_t old_defmask;
+    DFMmask_t old_needchain;
+    DFMmask_t old_needblock;
+    DFMmask_t tmp_needchain;
+    DFMmask_t tmp_needblock;
 
     DBUG_ENTER ("DFAxt_dn");
 
@@ -519,18 +541,30 @@ DFAxt_dn (node *arg_node, node *arg_info)
     L_MT_OR_ST_DEFMASK (arg_node,
                         DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info))));
 
+    tmp_needchain = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)));
+    tmp_needblock = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)));
+
     old_usemask = INFO_DFA_USEMASK (arg_info);
     old_defmask = INFO_DFA_DEFMASK (arg_info);
     old_cont = INFO_DFA_CONT (arg_info);
-    INFO_DFA_USEMASK (arg_info) = old_usemask;
-    INFO_DFA_DEFMASK (arg_info) = old_defmask;
+    old_needchain = INFO_DFA_NEEDCHAIN (arg_info);
+    old_needblock = INFO_DFA_NEEDBLOCK (arg_info);
+    INFO_DFA_USEMASK (arg_info) = MT_OR_ST_USEMASK (arg_node);
+    INFO_DFA_DEFMASK (arg_info) = MT_OR_ST_DEFMASK (arg_node);
     INFO_DFA_CONT (arg_info) = NULL;
+    INFO_DFA_NEEDCHAIN (arg_info) = tmp_needchain;
+    INFO_DFA_NEEDBLOCK (arg_info) = tmp_needblock;
 
     L_MT_OR_ST_REGION (arg_node, Trav (MT_OR_ST_REGION (arg_node), arg_info));
 
     INFO_DFA_USEMASK (arg_info) = old_usemask;
     INFO_DFA_DEFMASK (arg_info) = old_defmask;
     INFO_DFA_CONT (arg_info) = old_cont;
+    INFO_DFA_NEEDCHAIN (arg_info) = old_needchain;
+    INFO_DFA_NEEDBLOCK (arg_info) = old_needblock;
+
+    tmp_needchain = DFMRemoveMask (tmp_needchain);
+    tmp_needblock = DFMRemoveMask (tmp_needblock);
 
     DBUG_RETURN (arg_node);
 }
@@ -584,21 +618,29 @@ node *
 DFAcond_dn (node *arg_node, node *arg_info)
 {
     node *old_cont;
+    DFMmask_t tmp_needchain;
+    DFMmask_t tmp_needblock;
 
     DBUG_ENTER ("DFAcond_dn");
 
     old_cont = INFO_DFA_CONT (arg_info);
     INFO_DFA_CONT (arg_info) = ASSIGN_NEXT (INFO_DFA_THISASSIGN (arg_info));
 
-    /* need = {} #### */
     COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
-    /* need_then = need #### */
 
-    /* need = {} #### */
+    tmp_needchain = INFO_DFA_NEEDCHAIN (arg_info);
+    tmp_needblock = INFO_DFA_NEEDBLOCK (arg_info);
+    INFO_DFA_NEEDCHAIN (arg_info)
+      = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)));
+    INFO_DFA_NEEDBLOCK (arg_info)
+      = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_MUTH_FUNDEF (arg_info)));
+
     COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
-    /* need_else = need #### */
 
-    /* need = need_then + need_else */
+    DFMSetMaskOr (INFO_DFA_NEEDCHAIN (arg_info), tmp_needchain);
+    DFMSetMaskOr (INFO_DFA_NEEDBLOCK (arg_info), tmp_needblock);
+    tmp_needchain = DFMRemoveMask (tmp_needchain);
+    tmp_needblock = DFMRemoveMask (tmp_needblock);
 
     INFO_DFA_CONT (arg_info) = old_cont;
 
