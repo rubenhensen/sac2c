@@ -1,14 +1,11 @@
 /*
  *
  * $Log$
- * Revision 3.4  2002/07/09 17:14:28  dkr
- * modification for TAGGED_ARRAYS done
+ * Revision 3.5  2002/07/10 19:28:26  dkr
+ * TAGGED_ARRAYS: access macros are functions now
  *
  * Revision 3.3  2002/07/02 13:05:00  dkr
  * global var 'print_comment' added
- *
- * Revision 3.2  2002/07/02 09:02:17  dkr
- * no changes done
  *
  * Revision 3.1  2000/11/20 18:01:14  sacbase
  * new release made
@@ -41,11 +38,27 @@
 
 extern int print_comment; /* bool */
 
-#if TAGGED_ARRAYS
-#define AccessVect(v, i) fprintf (outfile, "SAC_ND_READ( %s, %i)", v, i)
+#ifdef TAGGED_ARRAYS
+
+extern void AccessVect (void *v, char *i_str, int i);
+
+extern void AccessConst (void *v, char *i_str, int i);
+
+extern void AccessDim (void *v);
+
+extern void AccessShape (void *v, char *i_str, int i);
+
+extern void VectToOffset2 (char *offset, void *v, int dimv, void (*v_acc_dim) (void *),
+                           void (*v_acc_shp) (void *, char *, int), void *a, int dima,
+                           void (*a_acc_dim) (void *),
+                           void (*a_acc_shp) (void *, char *, int));
+
+extern void VectToOffset (char *offset, void *v, int dimv, void (*v_acc_dim) (void *),
+                          void (*v_acc_shp) (void *, char *, int), void *a, int dima);
+
 #else
+
 #define AccessVect(v, i) fprintf (outfile, "SAC_ND_READ_ARRAY( %s, %i)", v, i)
-#endif
 
 #define AccessConst(v, i) fprintf (outfile, "%s", v[i])
 
@@ -77,7 +90,9 @@ extern int print_comment; /* bool */
         }                                                                                \
     }
 
-#define VectToOffset(dim, v_i_str, dima, a)                                              \
-    VectToOffset2 (dim, v_i_str, dima, AccessShape (a, i))
+#define VectToOffset(dimv, v_i_str, dima, a)                                             \
+    VectToOffset2 (dimv, v_i_str, dima, a, AccessShape (a, i))
+
+#endif
 
 #endif /* _icm2c_basic_h */
