@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  1998/03/22 23:43:35  dkr
+ * N_WLgrid: OFFSET, WIDTH -> BOUND1, BOUND2
+ *
  * Revision 1.28  1998/03/21 23:45:24  dkr
  * fixed a few bugs in PRECnwith
  * added parts of phase 5 (split-merge)
@@ -1276,8 +1279,8 @@ CompareWLnode (node *node1, node *node2, int outline)
                                         outline);
             } else {
                 /* compare grid */
-                COMP_BEGIN (WLGRID_OFFSET (grid1), WLGRID_OFFSET (grid2), result)
-                COMP_BEGIN (WLGRID_WIDTH (grid1), WLGRID_WIDTH (grid2), result)
+                COMP_BEGIN (WLGRID_BOUND1 (grid1), WLGRID_BOUND1 (grid2), result)
+                COMP_BEGIN (WLGRID_BOUND2 (grid1), WLGRID_BOUND2 (grid2), result)
                 result = CompareWLnode (WLGRID_NEXTDIM (grid1), WLGRID_NEXTDIM (grid2),
                                         outline);
                 COMP_END
@@ -1318,6 +1321,7 @@ CompareWLnode (node *node1, node *node2, int outline)
  * description:
  *   inserts all elements of the chain 'insert_nodes' into the sorted chain
  *     'nodes'.
+ *   all elements of 'insert_nodes' that exist already in 'nodes' are freed.
  *   uses function 'CompareWLnode' to sort the elements.
  *
  *   insert_nodes: (unsorted) chain of N_WL...-nodes
@@ -1378,7 +1382,7 @@ InsertWLnodes (node *nodes, node *insert_nodes)
 /******************************************************************************
  *
  * function:
- *   node *NormalizeProj_1(node *proj, int shape_int)
+ *   node *NormalizeProj_1(node *proj)
  *
  * description:
  *   returns the IN THE FIRST DIM normalized N_WLproj-node 'proj'.
@@ -1387,10 +1391,10 @@ InsertWLnodes (node *nodes, node *insert_nodes)
  ******************************************************************************/
 
 node *
-NormalizeProj_1 (node *proj, int shape_int)
+NormalizeProj_1 (node *proj)
 {
     node *grid;
-    int bound1, bound2, step, offset, width, new_bound1, new_bound2;
+    int bound1, bound2, step, grid_b1, grid_b2, new_bound1, new_bound2, offset;
 
     DBUG_ENTER ("NormalizeProj_1");
 
@@ -1401,28 +1405,33 @@ NormalizeProj_1 (node *proj, int shape_int)
     bound1 = WLPROJ_BOUND1 (proj);
     bound2 = WLPROJ_BOUND2 (proj);
     step = WLPROJ_STEP (proj);
-    offset = WLGRID_OFFSET (grid);
-    width = WLGRID_WIDTH (grid);
+    grid_b1 = WLGRID_BOUND1 (grid);
+    grid_b2 = WLGRID_BOUND2 (grid);
 
-    /* assures: (width < step) or (width = step = 1) */
-    if ((width >= step) && (width > 1)) {
-        step = WLPROJ_STEP (proj) = width = WLGRID_WIDTH (grid) = 1;
+    /* assures: ([grid_b1; grid_b2] < [0; step]) or (grid_b2 = step = 1) */
+    if (grid_b2 > step) {
+        grid_b2 = step;
+    }
+    if ((step > 1) && (grid_b1 == 0) && (grid_b2 == step)) {
+        grid_b2 = step = 1;
     }
 
     /* maximize the outline */
-    new_bound1 = bound1 - (step - offset - width);
+    new_bound1 = bound1 - (step - grid_b2);
     new_bound1 = MAX (0, new_bound1);
 
-    if ((bound2 - bound1 - offset) % step >= width) {
-        new_bound2 = bound2 + step - ((bound2 - bound1 - offset) % step);
-        new_bound2 = MIN (new_bound2, shape_int);
+    if ((bound2 - bound1 - grid_b1) % step >= grid_b2 - grid_b1) {
+        new_bound2 = bound2 + step - ((bound2 - bound1 - grid_b1) % step);
     } else {
         new_bound2 = bound2;
     }
 
     WLPROJ_BOUND1 (proj) = new_bound1;
     WLPROJ_BOUND2 (proj) = new_bound2;
-    WLGRID_OFFSET (grid) = offset + bound1 - new_bound1;
+    WLPROJ_STEP (proj) = step;
+    offset = bound1 - new_bound1;
+    WLGRID_BOUND1 (grid) = grid_b1 + offset;
+    WLGRID_BOUND2 (grid) = grid_b2 + offset;
 
     DBUG_RETURN (proj);
 }
@@ -1430,31 +1439,26 @@ NormalizeProj_1 (node *proj, int shape_int)
 /******************************************************************************
  *
  * function:
- *   node* Parts2Projs(node *parts, node *shape_arr)
+ *   node* Parts2Projs(node *parts)
  *
  * description:
  *   converts a N_Npart-chain ('parts') into a N_WLproj-chain (return).
- *   'shape_arr' is a N_array node containing the shape.
  *
  ******************************************************************************/
 
 node *
-Parts2Projs (node *parts, node *shape_arr)
+Parts2Projs (node *parts)
 {
-    node *parts_proj, *projs, *new_proj, *last_grid, *shape_elems, *gen, *bound1, *bound2,
-      *step, *width;
-    int dims, d;
+    node *parts_proj, *projs, *new_proj, *last_grid, *gen, *bound1, *bound2, *step,
+      *width;
+    int dim;
 
     DBUG_ENTER ("Parts2Proj");
 
     parts_proj = NULL;
 
-    /* get the number of dims */
-    dims = SHPSEG_SHAPE (TYPES_SHPSEG (ARRAY_TYPE (shape_arr)), 0);
-
     while (parts != NULL) {
         projs = NULL;
-        shape_elems = ARRAY_AELEMS (shape_arr);
 
         gen = NPART_GEN (parts);
         DBUG_ASSERT ((NGEN_OP1 (gen) == F_le), "op1 in generator is not <=");
@@ -1466,21 +1470,20 @@ Parts2Projs (node *parts, node *shape_arr)
         step = ARRAY_AELEMS (NGEN_STEP (gen));
         width = ARRAY_AELEMS (NGEN_WIDTH (gen));
 
-        for (d = 0; d < dims; d++) {
-            DBUG_ASSERT ((shape_elems != NULL), "shape not complete");
-            DBUG_ASSERT ((bound1 != NULL), "bound1 of generator not complete");
+        dim = 0;
+        while (bound1 != NULL) {
             DBUG_ASSERT ((bound2 != NULL), "bound2 of generator not complete");
             DBUG_ASSERT ((step != NULL), "step of generator not complete");
             DBUG_ASSERT ((width != NULL), "width of generator not complete");
 
             /* build N_WLproj-node of current dimension */
             new_proj
-              = MakeWLproj (0, d, NUM_VAL (EXPRS_EXPR (bound1)),
+              = MakeWLproj (0, dim, NUM_VAL (EXPRS_EXPR (bound1)),
                             NUM_VAL (EXPRS_EXPR (bound2)), NUM_VAL (EXPRS_EXPR (step)), 0,
-                            MakeWLgrid (d, 0, NUM_VAL (EXPRS_EXPR (width)), 0, NULL, NULL,
-                                        NULL),
+                            MakeWLgrid (dim, 0, NUM_VAL (EXPRS_EXPR (width)), 0, NULL,
+                                        NULL, NULL),
                             NULL);
-            new_proj = NormalizeProj_1 (new_proj, NUM_VAL (EXPRS_EXPR (shape_elems)));
+            new_proj = NormalizeProj_1 (new_proj);
 
             /* append 'new_proj' to 'projs'-chain */
             if (projs == NULL) {
@@ -1491,13 +1494,12 @@ Parts2Projs (node *parts, node *shape_arr)
             last_grid = WLPROJ_CONTENTS (new_proj);
 
             /* go to next dim */
-            shape_elems = EXPRS_NEXT (shape_elems);
             bound1 = EXPRS_NEXT (bound1);
             bound2 = EXPRS_NEXT (bound2);
             step = EXPRS_NEXT (step);
             width = EXPRS_NEXT (width);
+            dim++;
         }
-        DBUG_ASSERT ((shape_elems == NULL), "shape contains more elements");
 
         WLGRID_CODE (last_grid) = NPART_CODE (parts);
         parts_proj = InsertWLnodes (parts_proj, projs);
@@ -1511,59 +1513,83 @@ Parts2Projs (node *parts, node *shape_arr)
 /******************************************************************************
  *
  * function:
- *   int IsEmpty(int bound1, int bound2, int offset)
+ *   int IndexHead(int bound1, int grid_b1)
  *
  * description:
- *   computes, whether 'bound1', 'bound2', 'offset' specifiy an empty
- *    index-set or not.
+ *   computes the maximum for 'bound1'
  *
  ******************************************************************************/
 
 int
-IsEmpty (int bound1, int bound2, int offset)
+IndexHead (int bound1, int grid_b1)
 {
-    int empty;
+    int result;
 
-    DBUG_ENTER ("IsEmpty");
+    DBUG_ENTER ("IndexHead");
 
-    empty = (bound1 + offset >= bound2);
+    result = bound1 + grid_b1;
 
-    DBUG_RETURN (empty);
+    DBUG_RETURN (result);
 }
 
 /******************************************************************************
  *
  * function:
- *   int ComputeOffset(int new_bound1,
- *                     int bound1, int step, int offset, int width)
+ *   int IndexRear(int bound1, int bound2, int step, int grid_b1, int grid_b2)
  *
  * description:
- *   computes a new offset relating to 'new_bound1'
+ *   computes the minimum for 'bound2'
  *
  ******************************************************************************/
 
 int
-ComputeOffset (int new_bound1, int bound1, int step, int offset, int width)
+IndexRear (int bound1, int bound2, int step, int grid_b1, int grid_b2)
 {
-    int new_offset;
+    int result;
 
-    DBUG_ENTER ("ComputeOffset");
+    DBUG_ENTER ("IndexRear");
 
-    new_offset = offset - ((new_bound1 - bound1) % step);
+    result
+      = bound2
+        - MAX (0, ((bound2 - bound1 - grid_b1 - 1) % step) + 1 - (grid_b2 - grid_b1));
 
-    if (new_offset < 0)
-        new_offset += step;
-    if (new_offset > step - width)
-        new_offset = 0;
+    DBUG_RETURN (result);
+}
 
-    DBUG_RETURN (new_offset);
+/******************************************************************************
+ *
+ * function:
+ *   int GridOffset(int new_bound1,
+ *                  int bound1, int step, int grid_b1, int grid_b2)
+ *
+ * description:
+ *   computes a offset for a grid relating to 'new_bound1'.
+ *   the bounds of the new grid are:
+ *         grid_b1 - offset, grid_b2 - offset
+ *   CAUTION: if (offset > grid_b1) the grid must be devided in two parts!!
+ *
+ ******************************************************************************/
+
+int
+GridOffset (int new_bound1, int bound1, int step, int grid_b2)
+{
+    int offset;
+
+    DBUG_ENTER ("GridOffset");
+
+    offset = (new_bound1 - bound1) % step;
+
+    if (offset >= grid_b2) {
+        offset -= step;
+    }
+
+    DBUG_RETURN (offset);
 }
 
 /******************************************************************************
  *
  * function:
  *   void IntersectOutline(node *proj1, node *proj2,
- *                         node *shape_elems,
  *                         node **isect1, node **isect2)
  *
  * description:
@@ -1574,12 +1600,11 @@ ComputeOffset (int new_bound1, int bound1, int step, int offset, int width)
  ******************************************************************************/
 
 void
-IntersectOutline (node *proj1, node *proj2, node *shape_elems, node **isect1,
-                  node **isect2)
+IntersectOutline (node *proj1, node *proj2, node **isect1, node **isect2)
 {
     node *grid1, *grid2, *last_isect1, *last_isect2, *new_isect1, *new_isect2;
-    int bound11, step1, width1, bound12, step2, width2, i_bound1, i_bound2, i_offset1,
-      i_offset2;
+    int bound11, bound21, step1, grid1_b1, grid1_b2, bound12, bound22, step2, grid2_b1,
+      grid2_b2, i_bound1, i_bound2, i_offset1, i_offset2;
 
     DBUG_ENTER ("IntersectOutline");
 
@@ -1596,37 +1621,83 @@ IntersectOutline (node *proj1, node *proj2, node *shape_elems, node **isect1,
         DBUG_ASSERT ((WLGRID_NEXT (grid2) == NULL), "more than one grid found");
 
         bound11 = WLPROJ_BOUND1 (proj1);
+        bound21 = WLPROJ_BOUND2 (proj1);
         step1 = WLPROJ_STEP (proj1);
-        width1 = WLGRID_WIDTH (grid1);
+        grid1_b1 = WLGRID_BOUND1 (grid1);
+        grid1_b2 = WLGRID_BOUND2 (grid1);
+
         bound12 = WLPROJ_BOUND1 (proj2);
+        bound22 = WLPROJ_BOUND2 (proj2);
         step2 = WLPROJ_STEP (proj2);
-        width2 = WLGRID_WIDTH (grid2);
+        grid2_b1 = WLGRID_BOUND1 (grid2);
+        grid2_b2 = WLGRID_BOUND2 (grid2);
 
         i_bound1 = MAX (bound11, bound12);
-        i_bound2 = MIN (WLPROJ_BOUND2 (proj1), WLPROJ_BOUND2 (proj2));
-        i_offset1
-          = ComputeOffset (i_bound1, bound11, step1, WLGRID_OFFSET (grid1), width1);
-        i_offset2
-          = ComputeOffset (i_bound1, bound12, step2, WLGRID_OFFSET (grid2), width2);
+        i_bound2 = MIN (bound21, bound22);
 
-        if ((!IsEmpty (i_bound1, i_bound2, i_offset1))
-            && (!IsEmpty (i_bound1, i_bound2, i_offset2))) {
+        if ((IndexHead (bound11, grid1_b1)
+             < IndexRear (bound12, bound22, step2, grid2_b1, grid2_b2))
+            && (IndexHead (bound12, grid2_b1)
+                < IndexRear (bound11, bound21, step1, grid1_b1, grid1_b2))) {
 
-            new_isect1
-              = MakeWLproj (WLPROJ_LEVEL (proj1), WLPROJ_DIM (proj1), i_bound1, i_bound2,
-                            step1, WLPROJ_UNROLLING (proj1),
-                            MakeWLgrid (WLGRID_DIM (grid1), i_offset1, width1,
-                                        WLGRID_UNROLLING (grid1), NULL, NULL, NULL),
-                            NULL);
-            new_isect1 = NormalizeProj_1 (new_isect1, NUM_VAL (EXPRS_EXPR (shape_elems)));
+            i_offset1 = GridOffset (i_bound1, bound11, step1, grid1_b2);
+            i_offset2 = GridOffset (i_bound1, bound12, step2, grid2_b2);
 
-            new_isect2
-              = MakeWLproj (WLPROJ_LEVEL (proj2), WLPROJ_DIM (proj2), i_bound1, i_bound2,
-                            step2, WLPROJ_UNROLLING (proj2),
-                            MakeWLgrid (WLGRID_DIM (grid2), i_offset2, width2,
-                                        WLGRID_UNROLLING (grid2), NULL, NULL, NULL),
-                            NULL);
-            new_isect2 = NormalizeProj_1 (new_isect2, NUM_VAL (EXPRS_EXPR (shape_elems)));
+            if (i_offset1 > grid1_b1) {
+                /* 'grid1' must be split into two parts */
+                new_isect1
+                  = MakeWLproj (WLPROJ_LEVEL (proj1), WLPROJ_DIM (proj1), i_bound1,
+                                i_bound2, step1, WLPROJ_UNROLLING (proj1),
+                                MakeWLgrid (WLGRID_DIM (grid1), 0, grid1_b2 - i_offset1,
+                                            WLGRID_UNROLLING (grid1), NULL, NULL, NULL),
+                                NULL);
+                new_isect1 = NormalizeProj_1 (new_isect1);
+                new_isect1
+                  = MakeWLproj (WLPROJ_LEVEL (proj1), WLPROJ_DIM (proj1), i_bound1,
+                                i_bound2, step1, WLPROJ_UNROLLING (proj1),
+                                MakeWLgrid (WLGRID_DIM (grid1),
+                                            grid1_b1 - (i_offset1 - step1), step1,
+                                            WLGRID_UNROLLING (grid1), NULL, NULL, NULL),
+                                new_isect1);
+                new_isect1 = NormalizeProj_1 (new_isect1);
+            } else {
+                new_isect1
+                  = MakeWLproj (WLPROJ_LEVEL (proj1), WLPROJ_DIM (proj1), i_bound1,
+                                i_bound2, step1, WLPROJ_UNROLLING (proj1),
+                                MakeWLgrid (WLGRID_DIM (grid1), grid1_b1 - i_offset1,
+                                            grid1_b2 - i_offset1,
+                                            WLGRID_UNROLLING (grid1), NULL, NULL, NULL),
+                                NULL);
+                new_isect1 = NormalizeProj_1 (new_isect1);
+            }
+
+            if (i_offset2 > grid2_b1) {
+                /* 'grid2' must be split into two parts */
+                new_isect2
+                  = MakeWLproj (WLPROJ_LEVEL (proj2), WLPROJ_DIM (proj2), i_bound1,
+                                i_bound2, step2, WLPROJ_UNROLLING (proj2),
+                                MakeWLgrid (WLGRID_DIM (grid2), 0, grid2_b2 - i_offset2,
+                                            WLGRID_UNROLLING (grid2), NULL, NULL, NULL),
+                                NULL);
+                new_isect2 = NormalizeProj_1 (new_isect2);
+                new_isect2
+                  = MakeWLproj (WLPROJ_LEVEL (proj2), WLPROJ_DIM (proj2), i_bound1,
+                                i_bound2, step2, WLPROJ_UNROLLING (proj2),
+                                MakeWLgrid (WLGRID_DIM (grid2),
+                                            grid2_b1 - (i_offset2 - step2), step2,
+                                            WLGRID_UNROLLING (grid2), NULL, NULL, NULL),
+                                new_isect2);
+                new_isect2 = NormalizeProj_1 (new_isect2);
+            } else {
+                new_isect2
+                  = MakeWLproj (WLPROJ_LEVEL (proj2), WLPROJ_DIM (proj2), i_bound1,
+                                i_bound2, step2, WLPROJ_UNROLLING (proj2),
+                                MakeWLgrid (WLGRID_DIM (grid2), grid2_b1 - i_offset2,
+                                            grid2_b2 - i_offset2,
+                                            WLGRID_UNROLLING (grid2), NULL, NULL, NULL),
+                                NULL);
+                new_isect2 = NormalizeProj_1 (new_isect2);
+            }
         } else {
             new_isect1 = new_isect2 = NULL;
         }
@@ -1667,14 +1738,13 @@ IntersectOutline (node *proj1, node *proj2, node *shape_elems, node **isect1,
 
         proj1 = WLGRID_NEXTDIM (grid1);
         proj2 = WLGRID_NEXTDIM (grid2);
-        shape_elems = EXPRS_NEXT (shape_elems);
     }
 }
 
 /******************************************************************************
  *
  * function:
- *   node *MergeRect(node *proj1, node *proj2)
+ *   node *MergeCube(node *proj1, node *proj2)
  *
  * description:
  *   merges 'proj2' into 'proj1'
@@ -1684,12 +1754,12 @@ IntersectOutline (node *proj1, node *proj2, node *shape_elems, node **isect1,
  ******************************************************************************/
 
 node *
-MergeRect (node *proj1, node *proj2)
+MergeCube (node *proj1, node *proj2)
 {
     node *grid1, *grid2, *new_grid, *tmp;
-    int bound11, bound12;
+    int bound11, bound12, offset;
 
-    DBUG_ENTER ("MergeRect");
+    DBUG_ENTER ("MergeCube");
 
     if (proj1 != NULL) {
 
@@ -1705,28 +1775,31 @@ MergeRect (node *proj1, node *proj2)
         /*
          * compute new offset for 'grid2'
          */
-        WLGRID_OFFSET (grid2)
-          = ComputeOffset (WLPROJ_BOUND1 (proj1), bound12, WLPROJ_STEP (proj2),
-                           WLGRID_OFFSET (grid2), WLGRID_WIDTH (grid2));
+        offset = GridOffset (WLPROJ_BOUND1 (proj1), bound12, WLPROJ_STEP (proj2),
+                             WLGRID_BOUND2 (grid2));
+
+        WLPROJ_BOUND1 (proj1) -= offset;
+        WLPROJ_BOUND2 (proj1) -= offset;
 
         /*
          * compute new offsets for all grids in 'proj1'
          */
         tmp = grid1;
         do {
-            WLGRID_OFFSET (tmp)
-              = ComputeOffset (WLPROJ_BOUND1 (proj1), bound11, WLPROJ_STEP (proj1),
-                               WLGRID_OFFSET (tmp), WLGRID_WIDTH (tmp));
+            offset = GridOffset (WLPROJ_BOUND1 (proj1), bound11, WLPROJ_STEP (proj1),
+                                 WLGRID_BOUND2 (tmp));
+            WLGRID_BOUND1 (tmp) -= offset;
+            WLGRID_BOUND2 (tmp) -= offset;
+
             tmp = WLGRID_NEXT (tmp);
         } while (tmp != NULL);
 
         /*
          * insert 'grid2'
          */
-        if (WLGRID_OFFSET (grid1) > WLGRID_OFFSET (grid2)) {
+        if (WLGRID_BOUND1 (grid1) > WLGRID_BOUND1 (grid2)) {
             /* insert 'grid2' at head of grid list */
-            DBUG_ASSERT ((WLGRID_OFFSET (grid1)
-                          >= WLGRID_OFFSET (grid2) + WLGRID_WIDTH (grid2)),
+            DBUG_ASSERT ((WLGRID_BOUND1 (grid1) >= WLGRID_BOUND2 (grid2)),
                          "wrong offset");
             new_grid = DupTree (grid2, NULL);
             WLGRID_NEXT (new_grid) = grid1;
@@ -1735,20 +1808,20 @@ MergeRect (node *proj1, node *proj2)
             /* search for correct position for insertion */
             tmp = grid1;
             while ((WLGRID_NEXT (tmp) != NULL)
-                   && (WLGRID_OFFSET (tmp) != WLGRID_OFFSET (grid2))
-                   && (WLGRID_OFFSET (WLGRID_NEXT (tmp)) <= WLGRID_OFFSET (grid2))) {
+                   && (WLGRID_BOUND1 (tmp) != WLGRID_BOUND1 (grid2))
+                   && (WLGRID_BOUND1 (WLGRID_NEXT (tmp)) <= WLGRID_BOUND1 (grid2))) {
                 tmp = WLGRID_NEXT (tmp);
             }
 
-            if (WLGRID_OFFSET (tmp) == WLGRID_OFFSET (grid2)) {
+            if (WLGRID_BOUND1 (tmp) == WLGRID_BOUND1 (grid2)) {
                 /* range of 'grid2' is already in grid list -> merge next dim */
                 WLGRID_NEXTDIM (tmp)
-                  = MergeRect (WLGRID_NEXTDIM (tmp), WLGRID_NEXTDIM (grid2));
+                  = MergeCube (WLGRID_NEXTDIM (tmp), WLGRID_NEXTDIM (grid2));
             } else {
                 /* insert 'grid2' after 'tmp' */
                 if (WLGRID_NEXT (tmp) != NULL) {
-                    DBUG_ASSERT ((WLGRID_OFFSET (WLGRID_NEXT (tmp))
-                                  >= WLGRID_OFFSET (grid2) + WLGRID_WIDTH (grid2)),
+                    DBUG_ASSERT ((WLGRID_BOUND1 (WLGRID_NEXT (tmp))
+                                  >= WLGRID_BOUND2 (grid2)),
                                  "wrong offset");
                 }
                 new_grid = DupTree (grid2, NULL);
@@ -1763,7 +1836,7 @@ MergeRect (node *proj1, node *proj2)
 
 #if 0 /* equalize steps */
     while (tmp != NULL) {
-      offset = NUM_VAL(INDEX_OFFSET(tmp));
+      offset = NUM_VAL(INDEX_BOUND1(tmp));
       step = NUM_VAL(INDEX_STEP(tmp));
       width = NUM_VAL(INDEX_WIDTH(tmp));
 
@@ -1785,7 +1858,7 @@ MergeRect (node *proj1, node *proj2)
 /******************************************************************************
  *
  * function:
- *   node *ComputeCubes(node *projs, node *shape_arr)
+ *   node *ComputeCubes(node *projs)
  *
  * description:
  *   returns the set of cubes as a N_WLproj-chain
@@ -1793,7 +1866,7 @@ MergeRect (node *proj1, node *proj2)
  ******************************************************************************/
 
 node *
-ComputeCubes (node *projs, node *shape_arr)
+ComputeCubes (node *projs)
 {
     node *tmp, *new_projs, *new_proj1, *last_proj2, *isect1, *isect2, *proj1, *proj2;
     int fixpoint;
@@ -1822,8 +1895,7 @@ ComputeCubes (node *projs, node *shape_arr)
             while (proj2 != NULL) {
 
                 /* intersect outlines of 'proj1' and 'proj2' */
-                IntersectOutline (proj1, proj2, ARRAY_AELEMS (shape_arr), &isect1,
-                                  &isect2);
+                IntersectOutline (proj1, proj2, &isect1, &isect2);
                 if ((isect1 != NULL) && (CompareWLnode (proj1, isect1, 1) != 0)) {
                     fixpoint = 0;
                     WLPROJ_MODIFIED (proj1) = 1;
@@ -1874,7 +1946,7 @@ ComputeCubes (node *projs, node *shape_arr)
      */
     while (proj2 != NULL) {
       /* intersect outlines of 'proj1' and 'proj2' */
-      IntersectOutline(proj1, proj2, ARRAY_AELEMS(shape_arr), &isect1, &isect2);
+      IntersectOutline(proj1, proj2, &isect1, &isect2);
       if (CompareWLnode(proj1, isect1, 1) == 0) {
         DBUG_ASSERT((CompareWLnode(proj2, isect2, 1) == 0), "wrong outline found");
 
@@ -1899,14 +1971,14 @@ ComputeCubes (node *projs, node *shape_arr)
 
         while (proj2 != NULL) {
             /* intersect outlines of 'proj1' and 'proj2' */
-            IntersectOutline (proj1, proj2, ARRAY_AELEMS (shape_arr), &isect1, &isect2);
+            IntersectOutline (proj1, proj2, &isect1, &isect2);
             if (CompareWLnode (proj1, isect1, 1) == 0) {
                 DBUG_ASSERT ((CompareWLnode (proj2, isect2, 1) == 0),
                              "wrong outline found");
 
                 WLPROJ_NEXT (last_proj2)
                   = WLPROJ_NEXT (proj2);                  /* remove 'proj2' from chain */
-                new_proj1 = MergeRect (new_proj1, proj2); /* merge 'proj2' with 'proj1' */
+                new_proj1 = MergeCube (new_proj1, proj2); /* merge 'proj2' with 'proj1' */
 
                 proj2 = FreeNode (proj2); /* data of 'proj2' is no longer needed */
                                           /* 'proj2' points now to his successor!! */
@@ -1949,7 +2021,9 @@ CalcSV (node *proj, long *sv)
         if (WLPROJ_DIM (proj) == 0) {
             sv[0] = 1;
         }
-        sv[WLPROJ_DIM (proj) + 1] = 1;
+        if (WLGRID_NEXTDIM (WLPROJ_CONTENTS (proj)) != NULL) {
+            sv[WLPROJ_DIM (proj) + 1] = 1;
+        }
 
         do {
             sv[WLPROJ_DIM (proj)] = lcm (sv[WLPROJ_DIM (proj)], WLPROJ_STEP (proj));
@@ -2016,19 +2090,22 @@ SetSegAttribs (node *seg)
         }
     }
 
-#if 0
-  WLSEG_BLOCKS(seg) = 2;
-
-  (WLSEG_BV(seg, 0))[0] = 600;
-  (WLSEG_BV(seg, 0))[1] = 400;
-
-  (WLSEG_BV(seg, 1))[0] = 180;
-  (WLSEG_BV(seg, 1))[1] = 156;
-
-  (WLSEG_UBV(seg))[0] = 18;
-  (WLSEG_UBV(seg))[1] = 3;
-#else
+#if 1
     WLSEG_BLOCKS (seg) = 0;
+
+    (WLSEG_BV (seg, 0))[0] = 200;
+    (WLSEG_BV (seg, 0))[1] = 100;
+    (WLSEG_BV (seg, 0))[2] = 50;
+
+    (WLSEG_BV (seg, 1))[0] = 300;
+    (WLSEG_BV (seg, 1))[1] = 150;
+    (WLSEG_BV (seg, 1))[2] = 75;
+
+    (WLSEG_UBV (seg))[0] = 1;
+    (WLSEG_UBV (seg))[1] = 1;
+    (WLSEG_UBV (seg))[2] = 1;
+#else
+    WLSEG_BLOCKS (seg) = 1;
 
     (WLSEG_BV (seg, 0))[0] = 180; /* 180 or 1 */
     (WLSEG_BV (seg, 0))[1] = 156; /* 156 */
@@ -2292,7 +2369,7 @@ BlockWL (node *proj, int dims, long *bv, int unroll)
 /******************************************************************************
  *
  * function:
- *   node *SplitProj(node *proj1, node *proj2)
+ *   node *SplitWLnode(node *proj1, node *proj2)
  *
  * description:
  *
@@ -2300,79 +2377,159 @@ BlockWL (node *proj, int dims, long *bv, int unroll)
  ******************************************************************************/
 
 node *
-SplitProj (node *proj1, node *proj2)
+SplitWLnode (node *node1, node *node2)
 {
-    node *new_proj, *new_projs;
+    node *new_node, *new_nodes;
     int bound11, bound21, bound12, bound22, i_bound1, i_bound2;
 
-    DBUG_ENTER ("SplitProj");
+    DBUG_ENTER ("SplitWLnode");
 
-    new_projs = NULL;
+    new_nodes = NULL;
 
-    bound11 = WLNODE_BOUND1 (proj1);
-    bound21 = WLNODE_BOUND2 (proj1);
-    bound12 = WLNODE_BOUND1 (proj2);
-    bound22 = WLNODE_BOUND2 (proj2);
+    bound11 = WLNODE_BOUND1 (node1);
+    bound21 = WLNODE_BOUND2 (node1);
+    bound12 = WLNODE_BOUND1 (node2);
+    bound22 = WLNODE_BOUND2 (node2);
 
     if (((bound11 != bound12) || (bound21 != bound22))
-        && /* outline(proj1), outline(proj2) not equal */
+        && /* outline(node1), outline(node2) not equal */
         ((bound12 < bound21)
-         && (bound11 < bound22))) { /* outline(proj1), outline(proj2) not disjunkt */
+         && (bound11 < bound22))) { /* outline(node1), outline(node2) not disjunkt */
 
         /*
-         * 'proj1' respectively 'proj2' must be devided in at most three parts
+         * 'node1' respectively 'node2' must be devided in at most three parts
          */
         i_bound1 = MAX (bound11, bound12); /* compute bounds of intersection */
         i_bound2 = MIN (bound21, bound22);
 
-        /* new parts of 'proj1' */
+        /* new parts of 'node1' */
         if (bound11 < i_bound1) {
-            new_proj = DupNode (proj1);
-            WLNODE_BOUND1 (new_proj) = bound11;
-            WLNODE_BOUND2 (new_proj) = i_bound1;
-            WLNODE_NEXT (new_proj) = new_projs;
-            new_projs = new_proj;
+            new_node = DupNode (node1);
+            WLNODE_BOUND1 (new_node) = bound11;
+            WLNODE_BOUND2 (new_node) = i_bound1;
+            WLNODE_NEXT (new_node) = new_nodes;
+            new_nodes = new_node;
         }
 
-        new_proj = DupNode (proj1);
-        WLNODE_BOUND1 (new_proj) = i_bound1;
-        WLNODE_BOUND2 (new_proj) = i_bound2;
-        WLNODE_NEXT (new_proj) = new_projs;
-        new_projs = new_proj;
+        new_node = DupNode (node1);
+        WLNODE_BOUND1 (new_node) = i_bound1;
+        WLNODE_BOUND2 (new_node) = i_bound2;
+        WLNODE_NEXT (new_node) = new_nodes;
+        new_nodes = new_node;
 
         if (i_bound2 < bound21) {
-            new_proj = DupNode (proj1);
-            WLNODE_BOUND1 (new_proj) = i_bound2;
-            WLNODE_BOUND2 (new_proj) = bound21;
-            WLNODE_NEXT (new_proj) = new_projs;
-            new_projs = new_proj;
+            new_node = DupNode (node1);
+            WLNODE_BOUND1 (new_node) = i_bound2;
+            WLNODE_BOUND2 (new_node) = bound21;
+            WLNODE_NEXT (new_node) = new_nodes;
+            new_nodes = new_node;
         }
 
-        /* new parts of 'proj2' */
+        /* new parts of 'node2' */
         if (bound12 < i_bound1) {
-            new_proj = DupNode (proj2);
-            WLNODE_BOUND1 (new_proj) = bound12;
-            WLNODE_BOUND2 (new_proj) = i_bound1;
-            WLNODE_NEXT (new_proj) = new_projs;
-            new_projs = new_proj;
+            new_node = DupNode (node2);
+            WLNODE_BOUND1 (new_node) = bound12;
+            WLNODE_BOUND2 (new_node) = i_bound1;
+            WLNODE_NEXT (new_node) = new_nodes;
+            new_nodes = new_node;
         }
 
-        new_proj = DupNode (proj2);
-        WLNODE_BOUND1 (new_proj) = i_bound1;
-        WLNODE_BOUND2 (new_proj) = i_bound2;
-        WLNODE_NEXT (new_proj) = new_projs;
-        new_projs = new_proj;
+        new_node = DupNode (node2);
+        WLNODE_BOUND1 (new_node) = i_bound1;
+        WLNODE_BOUND2 (new_node) = i_bound2;
+        WLNODE_NEXT (new_node) = new_nodes;
+        new_nodes = new_node;
 
         if (i_bound2 < bound22) {
-            new_proj = DupNode (proj2);
-            WLNODE_BOUND1 (new_proj) = i_bound2;
-            WLNODE_BOUND2 (new_proj) = bound22;
-            WLNODE_NEXT (new_proj) = new_projs;
-            new_projs = new_proj;
+            new_node = DupNode (node2);
+            WLNODE_BOUND1 (new_node) = i_bound2;
+            WLNODE_BOUND2 (new_node) = bound22;
+            WLNODE_NEXT (new_node) = new_nodes;
+            new_nodes = new_node;
         }
     }
 
-    DBUG_RETURN (new_projs);
+    DBUG_RETURN (new_nodes);
+}
+
+node *
+MergeWLnode (node *node1, int step)
+{
+    node *grid1, *grid2, *new_grid, *tmp;
+    int bound11, bound12;
+
+    DBUG_ENTER ("MergeWLnode");
+
+#if 0
+  if (node1 != NULL) {
+
+    grid1 = WLPROJ_CONTENTS(proj1);
+    grid2 = WLPROJ_CONTENTS(proj2);
+
+    bound11 = WLPROJ_BOUND1(proj1);
+    bound12 = WLPROJ_BOUND1(proj2);
+
+    WLPROJ_BOUND1(proj1) = MAX(bound11, bound12);
+    WLPROJ_BOUND2(proj1) = MIN(WLPROJ_BOUND2(proj1), WLPROJ_BOUND2(proj2));
+
+    /*
+     * compute new offset for 'grid2'
+     */
+    WLGRID_BOUND1(grid2) -= GridBound1(WLPROJ_BOUND1(proj1),
+                                       bound12, WLPROJ_STEP(proj2),
+                                       WLGRID_BOUND1(grid2), WLGRID_BOUND2(grid2));
+
+    /*
+     * compute new offsets for all grids in 'proj1'
+     */
+    tmp = grid1;
+    do {
+      WLGRID_BOUND1(tmp) -= GridBound1(WLPROJ_BOUND1(proj1),
+                                       bound11, WLPROJ_STEP(proj1),
+                                       WLGRID_BOUND1(tmp), WLGRID_BOUND2(tmp));
+      tmp = WLGRID_NEXT(tmp);
+    }
+    while (tmp != NULL);
+
+    /*
+     * insert 'grid2'
+     */
+    if (WLGRID_BOUND1(grid1) > WLGRID_BOUND1(grid2)) {
+      /* insert 'grid2' at head of grid list */
+      DBUG_ASSERT((WLGRID_BOUND1(grid1) >= WLGRID_BOUND2(grid2)),
+                  "wrong offset");
+      new_grid = DupTree(grid2, NULL);
+      WLGRID_NEXT(new_grid) = grid1;
+      WLPROJ_CONTENTS(proj1) = new_grid;
+    }
+    else {
+      /* search for correct position for insertion */
+      tmp = grid1;
+      while ((WLGRID_NEXT(tmp) != NULL) &&
+             (WLGRID_BOUND1(tmp) != WLGRID_BOUND1(grid2)) &&
+             (WLGRID_BOUND1(WLGRID_NEXT(tmp)) <= WLGRID_BOUND1(grid2))) {
+        tmp = WLGRID_NEXT(tmp);
+      }
+
+      if (WLGRID_BOUND1(tmp) == WLGRID_BOUND1(grid2)) {
+        /* range of 'grid2' is already in grid list -> merge next dim */
+        WLGRID_NEXTDIM(tmp) = MergeCube(WLGRID_NEXTDIM(tmp), WLGRID_NEXTDIM(grid2));
+      }
+      else {
+        /* insert 'grid2' after 'tmp' */
+        if (WLGRID_NEXT(tmp) != NULL) {
+          DBUG_ASSERT((WLGRID_BOUND1(WLGRID_NEXT(tmp)) >= WLGRID_BOUND2(grid2)),
+                      "wrong offset");
+	}
+        new_grid = DupTree(grid2, NULL);
+        WLGRID_NEXT(new_grid) = WLGRID_NEXT(tmp);
+        WLGRID_NEXT(tmp) = new_grid;
+      }
+    }
+  }
+#endif
+
+    DBUG_RETURN (node1);
 }
 
 /******************************************************************************
@@ -2386,57 +2543,111 @@ SplitProj (node *proj1, node *proj2)
  ******************************************************************************/
 
 node *
-SplitMergeWL (node *projs)
+SplitMergeWL (node *nodes)
 {
-    node *proj1, *proj2, *new_projs, *split_projs, *tmp;
-    int fixpoint;
+    node *node1, *node2, *new_node, *new_nodes, *split_nodes, *last_node1, *last_new_node,
+      *tmp;
+    int fixpoint, new_step;
 
     DBUG_ENTER ("SplitMergeWL");
 
+    /*
+     * step 1: splitting
+     */
     do {
         fixpoint = 1;
-        new_projs = NULL;
+        new_nodes = NULL;
 
         /* initialize WLNODE_MODIFIED */
-        proj1 = projs;
-        while (proj1 != NULL) {
-            WLNODE_MODIFIED (proj1) = 0;
-            proj1 = WLNODE_NEXT (proj1);
+        node1 = nodes;
+        while (node1 != NULL) {
+            WLNODE_MODIFIED (node1) = 0;
+            node1 = WLNODE_NEXT (node1);
         }
 
-        proj1 = projs;
-        while (proj1 != NULL) {
+        node1 = nodes;
+        while (node1 != NULL) {
 
-            proj2 = WLNODE_NEXT (proj1);
-            while (proj2 != NULL) {
+            node2 = WLNODE_NEXT (node1);
+            while (node2 != NULL) {
 
-                split_projs = SplitProj (proj1, proj2);
-                if (split_projs != NULL) {
+                split_nodes = SplitWLnode (node1, node2);
+                if (split_nodes != NULL) {
                     fixpoint = 0;
-                    WLNODE_MODIFIED (proj1) = WLNODE_MODIFIED (proj2) = 1;
-                    new_projs = InsertWLnodes (new_projs, split_projs);
+                    WLNODE_MODIFIED (node1) = WLNODE_MODIFIED (node2) = 1;
+                    new_nodes = InsertWLnodes (new_nodes, split_nodes);
                 }
 
-                proj2 = WLNODE_NEXT (proj2);
+                node2 = WLNODE_NEXT (node2);
             }
 
-            /* have 'proj1' only empty intersections with the others? */
-            if (WLNODE_MODIFIED (proj1) == 0) {
-                /* insert 'proj1' in 'new_projs' */
-                tmp = proj1;
-                proj1 = WLNODE_NEXT (proj1);
+            /* have 'node1' only empty intersections with the others? */
+            if (WLNODE_MODIFIED (node1) == 0) {
+                /* insert 'node1' in 'new_nodes' */
+                tmp = node1;
+                node1 = WLNODE_NEXT (node1);
                 WLNODE_NEXT (tmp) = NULL;
-                new_projs = InsertWLnodes (new_projs, tmp);
+                new_nodes = InsertWLnodes (new_nodes, tmp);
             } else {
-                proj1 = FreeNode (proj1); /* 'proj1' is no longer needed */
-                                          /* 'proj1' points now to his successor!! */
+                node1 = FreeNode (node1); /* 'node1' is no longer needed */
+                                          /* 'node1' points now to his successor!! */
             }
         }
 
-        projs = new_projs;
+        nodes = new_nodes;
     } while (!fixpoint);
 
-    DBUG_RETURN (projs);
+    /*
+     * step 2: merging
+     */
+    node1 = nodes;
+    nodes = NULL;
+    while (node1 != NULL) {
+
+        last_node1 = node1;
+
+        new_step = WLNODE_STEP (last_node1);
+
+        while ((WLNODE_NEXT (last_node1) != NULL)
+               && (WLNODE_BOUND1 (node1) == WLNODE_BOUND1 (WLNODE_NEXT (last_node1)))) {
+            DBUG_ASSERT ((NODE_TYPE (node1) == NODE_TYPE (WLNODE_NEXT (last_node1))),
+                         "wrong node type found");
+            DBUG_ASSERT ((WLNODE_BOUND2 (node1)
+                          == WLNODE_BOUND2 (WLNODE_NEXT (last_node1))),
+                         "wrong bounds found");
+
+            if (NODE_TYPE (node1) == N_WLproj) {
+                new_step = lcm (new_step, WLNODE_STEP (WLNODE_NEXT (last_node1)));
+            } else {
+                DBUG_ASSERT ((new_step == WLNODE_STEP (WLNODE_NEXT (last_node1))),
+                             "different steps found");
+            }
+
+            last_node1 = WLNODE_NEXT (last_node1);
+        }
+        if (WLNODE_NEXT (last_node1) != NULL) {
+            DBUG_ASSERT ((WLNODE_BOUND2 (node1)
+                          == WLNODE_BOUND1 (WLNODE_NEXT (last_node1))),
+                         "wrong bounds found");
+        }
+
+        tmp = node1;
+        node1 = WLNODE_NEXT (last_node1);
+        WLNODE_NEXT (last_node1) = NULL;
+
+        new_node = MergeWLnode (tmp, new_step);
+
+        tmp = FreeTree (tmp);
+
+        if (nodes == NULL) {
+            nodes = new_node;
+        } else {
+            WLNODE_NEXT (last_new_node) = new_node;
+        }
+        last_new_node = new_node;
+    }
+
+    DBUG_RETURN (nodes);
 }
 
 /******************************************************************************
@@ -2536,17 +2747,17 @@ PRECnwith (node *arg_node, node *arg_info)
     /* get number of dims of genarray: */
     dims = SHPSEG_SHAPE (TYPES_SHPSEG (ARRAY_TYPE (shape)), 0);
     DBUG_ASSERT ((NODE_TYPE (shape) == N_array), "shape of with-genarray is unknown");
-    cubes = ComputeCubes (Parts2Projs (NWITH_PART (arg_node), shape), shape);
+    cubes = ComputeCubes (Parts2Projs (NWITH_PART (arg_node)));
 
 #if 1
-    NOTE2 (("\n * step 1: cube-building\n"))
+    NOTE (("step 1: cube-building\n"))
     Print (cubes);
 #endif
 
     segs = SetSegs (cubes, dims);
 
 #if 1
-    NOTE2 (("\n * step 2: choice of segments\n"))
+    NOTE (("step 2: choice of segments\n"))
     Print (segs);
 #endif
 
@@ -2558,7 +2769,7 @@ PRECnwith (node *arg_node, node *arg_info)
               = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_BV (seg, b), 0);
             FREE (WLSEG_BV (seg, b));
 #if 1
-            NOTE2 (("\n * step 3: hierarchical blocking\n"))
+            NOTE (("step 3.%d: hierarchical blocking (level %d)\n", b, b))
             Print (segs);
 #endif
         }
@@ -2567,31 +2778,31 @@ PRECnwith (node *arg_node, node *arg_info)
         WLSEG_CONTENTS (seg) = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_UBV (seg), 1);
         FREE (WLSEG_UBV (seg));
 #if 1
-        NOTE2 (("\n * step 4: unrolling-blocking\n"))
+        NOTE (("step 4: unrolling-blocking\n"))
         Print (segs);
 #endif
 
         WLSEG_CONTENTS (seg) = SplitMergeWL (WLSEG_CONTENTS (seg));
 #if 1
-        NOTE2 (("\n * step 5: splitting-merging\n"))
+        NOTE (("step 5: splitting-merging\n"))
         Print (segs);
 #endif
 
         WLSEG_CONTENTS (seg) = OptimizeWL (WLSEG_CONTENTS (seg));
 #if 1
-        NOTE2 (("\n * step 6: optimization\n"))
+        NOTE (("step 6: optimization\n"))
         Print (segs);
 #endif
 
         WLSEG_CONTENTS (seg) = NormalizeWL (WLSEG_CONTENTS (seg));
 #if 1
-        NOTE2 (("\n * step 7: normalization\n"))
+        NOTE (("step 7: normalization\n"))
         Print (segs);
 #endif
 
         WLSEG_CONTENTS (seg) = FitWL (WLSEG_CONTENTS (seg));
 #if 1
-        NOTE2 (("\n * step 8: fitting\n"))
+        NOTE (("step 8: fitting\n"))
         Print (segs);
 #endif
 
