@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1999/09/17 14:33:34  cg
+ * New version of SAC heap manager:
+ *  - no special API functions for top arena.
+ *  - coalascing is always done deferred.
+ *  - no doubly linked free lists any more.
+ *
  * Revision 1.4  1999/07/29 07:35:41  cg
  * Two new performance related features added to SAC private heap
  * management:
@@ -36,20 +42,27 @@
 
 #include <unistd.h>
 #include <string.h>
-#ifdef DIAG
-#include <stdio.h>
-#endif
 
 #include "heapmgr.h"
 #include "sac_message.h"
 
-#define KB 1024
-#define MB (KB * KB)
-#define SBRK_CHUNK (MB)
+/*
+ * Definition and initialization of global array of arena descriptions.
+ */
 
-#define ARENA_BASE(n)                                                                    \
+#define SMALL_ARENA_BASE(n)                                                              \
     {                                                                                    \
-        {{0, NULL}}, {{0, &(SAC_HM_arenas[n])}},                                         \
+        {{DIAG_FREEPATTERN, &(SAC_HM_arenas[n])}}, {{0, NULL}},                          \
+        {                                                                                \
+            {                                                                            \
+                0, NULL                                                                  \
+            }                                                                            \
+        }                                                                                \
+    }
+
+#define LARGE_ARENA_BASE(n)                                                              \
+    {                                                                                    \
+        {{-1, (void *)DIAG_FREEPATTERN}}, {{0, &(SAC_HM_arenas[n])}},                    \
         {                                                                                \
             {                                                                            \
                 0, NULL                                                                  \
@@ -65,13 +78,13 @@
 
 #define ARENA_OF_SMALL_CHUNKS(n, size, mincs, freefun)                                   \
     {                                                                                    \
-        n, ARENA_BASE (n), size, mincs, (SAC_HM_arenas[n].base) + 1,                     \
-          (SAC_HM_arenas[n].base) + 1, &freefun DIAG_COUNTERS                            \
+        n, SMALL_ARENA_BASE (n), size, mincs, SAC_HM_arenas[n].freelist,                 \
+          &freefun DIAG_COUNTERS                                                         \
     }
 
 #define ARENA_OF_LARGE_CHUNKS(n, size, mincs, freefun)                                   \
     {                                                                                    \
-        n, ARENA_BASE (n), size, mincs, SAC_HM_arenas[n].base, SAC_HM_arenas[n].base,    \
+        n, LARGE_ARENA_BASE (n), size, mincs, SAC_HM_arenas[n].freelist,                 \
           &freefun DIAG_COUNTERS                                                         \
     }
 
@@ -81,161 +94,31 @@ SAC_HM_arena_t SAC_HM_arenas[NUM_ARENAS]
      ARENA_OF_SMALL_CHUNKS (2, 512, ARENA_3_MINCS - 1, SAC_HM_FreeSmallChunk),
      ARENA_OF_SMALL_CHUNKS (3, 256, ARENA_4_MINCS - 1, SAC_HM_FreeSmallChunk),
      ARENA_OF_SMALL_CHUNKS (4, 512, ARENA_5_MINCS - 1, SAC_HM_FreeSmallChunk),
-     ARENA_OF_LARGE_CHUNKS (5, 2048, ARENA_5_MINCS, SAC_HM_FreeLargeChunkNoCoalasce),
-     ARENA_OF_LARGE_CHUNKS (6, 8192, ARENA_6_MINCS, SAC_HM_FreeLargeChunkNoCoalasce),
-     ARENA_OF_LARGE_CHUNKS (7, 32768, ARENA_7_MINCS, SAC_HM_FreeLargeChunkNoCoalasce),
-     ARENA_OF_LARGE_CHUNKS (8, 0, ARENA_8_MINCS, SAC_HM_FreeLargeChunkNoCoalasce)};
+     ARENA_OF_LARGE_CHUNKS (5, 2048, ARENA_5_MINCS, SAC_HM_FreeLargeChunk),
+     ARENA_OF_LARGE_CHUNKS (6, 8192, ARENA_6_MINCS, SAC_HM_FreeLargeChunk),
+     ARENA_OF_LARGE_CHUNKS (7, 32768, ARENA_7_MINCS, SAC_HM_FreeLargeChunk),
+     ARENA_OF_LARGE_CHUNKS (8, 0, ARENA_8_MINCS, SAC_HM_FreeLargeChunk)};
 
-#define ARENA_OF_ARENAS 0
-#define TOP_ARENA (NUM_ARENAS - 1)
+/*
+ * Some global variables which can only be initialized at runtime.
+ */
 
 size_byte_t SAC_HM_pagesize;
 
 static size_byte_t units_per_page;
 static char *initial_break_val;
 
-#ifdef DIAG
-unsigned long int SAC_HM_call_sbrk = 0;
-unsigned long int SAC_HM_call_malloc = 0;
-unsigned long int SAC_HM_call_free = 0;
-unsigned long int SAC_HM_call_realloc = 0;
-unsigned long int SAC_HM_call_calloc = 0;
-unsigned long int SAC_HM_call_valloc = 0;
-unsigned long int SAC_HM_call_memalign = 0;
-unsigned long int SAC_HM_heapsize = 0;
-
-void
-SAC_HM_CheckAllocPattern (size_unit_t diag, int arena_num)
-{
-    if (diag == DIAG_FREEPATTERN) {
-        SAC_RuntimeError ("Tried to subsequently de-allocate heap location in arena %d",
-                          arena_num);
-    }
-
-    if (diag != DIAG_ALLOCPATTERN) {
-        SAC_RuntimeError ("Corrupted / missing heap administration data encountered "
-                          "upon memory de-allocation in arena %d",
-                          arena_num);
-    }
-}
-
-void
-SAC_HM_CheckFreePattern (size_unit_t diag, int arena_num)
-{
-    if (diag != DIAG_FREEPATTERN) {
-        SAC_RuntimeError (
-          "Corrupted free list encountered upon memory allocation in arena %d",
-          arena_num);
-    }
-}
-
-void
-SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr)
-{
-    if ((SMALLCHUNK_DIAG (addr - 1) != DIAG_ALLOCPATTERN)
-        && (SMALLCHUNK_DIAG (addr - 1) != DIAG_FREEPATTERN)
-        && (LARGECHUNK_DIAG (addr - 2) != DIAG_ALLOCPATTERN)
-        && (LARGECHUNK_DIAG (addr - 2) != DIAG_FREEPATTERN)) {
-        SAC_RuntimeError (
-          "Corrupted free list encountered upon memory allocation in unknown arena");
-    }
-}
-
-static void
-ShowDiagnosticsForArena (int num, unsigned long int size, unsigned long int bins,
-                         unsigned long int alloc, unsigned long int free,
-                         unsigned long int split, unsigned long int coalasce)
-{
-    if (num == -1) {
-        fprintf (stderr, "Total   :\n");
-    } else {
-        if (num == ARENA_OF_ARENAS) {
-            fprintf (stderr, "Arena %d :  Arena of Arenas\n", num);
-        } else {
-            if (num < NUM_SMALLCHUNK_ARENAS) {
-                fprintf (stderr, "Arena %d :  memory chunk size:  %lu Bytes\n", num,
-                         (unsigned long int)(SAC_HM_arenas[num].min_chunk_size
-                                             * UNIT_SIZE));
-            } else {
-                if (num == TOP_ARENA) {
-                    fprintf (stderr, "Arena %d :  memory chunk size:  %lu -> ... Bytes\n",
-                             num,
-                             (unsigned long int)(SAC_HM_arenas[num].min_chunk_size
-                                                 * UNIT_SIZE));
-                } else {
-                    fprintf (stderr, "Arena %d :  memory chunk size:  %lu -> %lu Bytes\n",
-                             num,
-                             (unsigned long int)(SAC_HM_arenas[num].min_chunk_size
-                                                 * UNIT_SIZE),
-                             (unsigned long int)((SAC_HM_arenas[num + 1].min_chunk_size
-                                                  - 1)
-                                                 * UNIT_SIZE));
-                }
-            }
-        }
-    }
-
-    fprintf (stderr,
-             "            %lu Bytes (%.1f MB) in %lu bins\n"
-             "            %lu allocs  %lu splittings  (%d%%)\n"
-             "            %lu frees   %lu coalascings (%d%%)\n"
-             "=================================================================\n",
-             size, ((float)size) / MB, bins, alloc, split,
-             (alloc == 0 ? 0 : (int)((((float)split) / (float)alloc) * 100)), free,
-             coalasce, (free == 0 ? 0 : (int)((((float)coalasce) / (float)free) * 100)));
-}
-
-void
-SAC_HM_ShowDiagnostics ()
-{
-    int i;
-    long int cnt_alloc_total = 0, cnt_free_total = 0, cnt_split_total = 0,
-             cnt_coalasce_total = 0;
-    long int bins_total = 0;
-
-    fprintf (stderr,
-             "=================================================================\n"
-             "Heap Management diagnostics:\n"
-             "=================================================================\n");
-
-    fprintf (stderr,
-             "calls to sbrk()  :  %lu\n"
-             "total heap size  :  %lu Bytes (%lu MB)\n"
-             "=================================================================\n",
-             SAC_HM_call_sbrk, SAC_HM_heapsize, SAC_HM_heapsize / MB);
-
-    fprintf (stderr,
-             "calls to malloc()    :  %lu\n"
-             "calls to free()      :  %lu\n"
-             "calls to calloc()    :  %lu\n"
-             "calls to realloc()   :  %lu\n"
-             "calls to valloc()    :  %lu\n"
-             "calls to memalign()  :  %lu\n"
-             "=================================================================\n",
-             SAC_HM_call_malloc, SAC_HM_call_free, SAC_HM_call_calloc,
-             SAC_HM_call_realloc, SAC_HM_call_valloc, SAC_HM_call_memalign);
-
-    for (i = 0; i < NUM_ARENAS; i++) {
-        if (SAC_HM_arenas[i].bins > 0) {
-            ShowDiagnosticsForArena (i, SAC_HM_arenas[i].size, SAC_HM_arenas[i].bins,
-                                     SAC_HM_arenas[i].cnt_alloc,
-                                     SAC_HM_arenas[i].cnt_free,
-                                     SAC_HM_arenas[i].cnt_split,
-                                     SAC_HM_arenas[i].cnt_coalasce);
-
-            bins_total += SAC_HM_arenas[i].bins;
-            cnt_alloc_total += SAC_HM_arenas[i].cnt_alloc;
-            cnt_free_total += SAC_HM_arenas[i].cnt_free;
-            cnt_split_total += SAC_HM_arenas[i].cnt_split;
-            cnt_coalasce_total += SAC_HM_arenas[i].cnt_coalasce;
-        }
-    }
-
-    ShowDiagnosticsForArena (-1, SAC_HM_heapsize, bins_total, cnt_alloc_total,
-                             cnt_free_total, cnt_split_total, cnt_coalasce_total);
-}
-
-#endif /* DIAG */
+/******************************************************************************
+ *
+ * function:
+ *   void OutOfMemory( size_byte_t request)
+ *
+ * description:
+ *
+ *   This function displays an error message and aborts program execution
+ *   whenever a request for memory cannot be satisfied by the heap manager.
+ *
+ ******************************************************************************/
 
 static void
 OutOfMemory (size_byte_t request)
@@ -245,42 +128,31 @@ OutOfMemory (size_byte_t request)
                       request);
 }
 
-/*
- * Initial heap sizes are given in MB !!
- */
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_HM_Setup(size_byte_t initial_arena_of_arenas_size,
+ *                     size_byte_t initial_top_arena_size)
+ *
+ * description:
+ *
+ *   This function initializes the internal data structures of the heap
+ *   manager. The arena of arenas as well as the top arena are allocated
+ *   and initialized immediately; their initial sizes given in MB are
+ *   provided as  arguments.
+ *
+ *   Particular care is taken of the correct alignment of these inital
+ *   heap structures.
+ *
+ ******************************************************************************/
 
 void
 SAC_HM_Setup (size_byte_t initial_arena_of_arenas_size,
               size_byte_t initial_top_arena_size)
 {
     size_byte_t offset, initial_heap_size;
-    int i;
     SAC_HM_header_t *freep;
     char *mem;
-
-    /*
-     * Initialize doubly linked free chain for dummy chunks of each arena.
-     */
-    for (i = 0; i < NUM_SMALLCHUNK_ARENAS; i++) {
-        SMALLCHUNK_PREVFREE (SAC_HM_arenas[i].freelist) = SAC_HM_arenas[i].freelist;
-        SMALLCHUNK_NEXTFREE (SAC_HM_arenas[i].freelist) = SAC_HM_arenas[i].freelist;
-        DIAG_SET_FREEPATTERN_SMALLCHUNK (SAC_HM_arenas[i].freelist);
-        /*
-         * Note here, that for small chunks the size entry and the diag patern entry
-         * of the chunk administration data structure are identical. So setting the
-         * pattern for the initial dummy chunk of size 0 which always remains in the
-         * free list only works because the particular pattern is a negative number
-         * and thereby prevents the allocation schemes from using the non-existing
-         * memory behind it.
-         * However, this "dirty" trick allows us a uniform handling of the diag patterns
-         * without having a special check for the initial dummy chunks.
-         */
-    }
-    for (i = NUM_SMALLCHUNK_ARENAS; i < NUM_ARENAS; i++) {
-        LARGECHUNK_PREVFREE (SAC_HM_arenas[i].freelist) = SAC_HM_arenas[i].freelist;
-        LARGECHUNK_NEXTFREE (SAC_HM_arenas[i].freelist) = SAC_HM_arenas[i].freelist;
-        DIAG_SET_FREEPATTERN_LARGECHUNK (SAC_HM_arenas[i].freelist);
-    }
 
     /*
      * Initialize some global variables.
@@ -298,11 +170,11 @@ SAC_HM_Setup (size_byte_t initial_arena_of_arenas_size,
     initial_top_arena_size *= MB;
 
     offset = ((size_byte_t)initial_break_val) % SAC_HM_pagesize;
-    /* determine offset from last memory page boundary */
+    /* Determine offset from last memory page boundary. */
 
     if (offset != 0) {
         offset = SAC_HM_pagesize - offset;
-        /* If heap does not start on page boundary, adjust heap start */
+        /* If heap does not start on page boundary, adjust heap start. */
     }
 
     /* Compute initial heap size requested from operating system. */
@@ -328,11 +200,8 @@ SAC_HM_Setup (size_byte_t initial_arena_of_arenas_size,
         SMALLCHUNK_SIZE (freep) = initial_arena_of_arenas_size / UNIT_SIZE;
         SMALLCHUNK_ARENA (freep) = &(SAC_HM_arenas[ARENA_OF_ARENAS]);
 
-        SMALLCHUNK_NEXTFREE (freep) = SAC_HM_arenas[ARENA_OF_ARENAS].freelist;
-        SMALLCHUNK_PREVFREE (freep)
-          = SMALLCHUNK_PREVFREE (SAC_HM_arenas[ARENA_OF_ARENAS].freelist);
-        SMALLCHUNK_NEXTFREE (SMALLCHUNK_PREVFREE (freep)) = freep;
-        SMALLCHUNK_PREVFREE (SMALLCHUNK_NEXTFREE (freep)) = freep;
+        SMALLCHUNK_NEXTFREE (freep) = NULL;
+        SMALLCHUNK_NEXTFREE (SAC_HM_arenas[ARENA_OF_ARENAS].freelist) = freep;
 
         DIAG_SET (SAC_HM_arenas[ARENA_OF_ARENAS].size, initial_arena_of_arenas_size);
         DIAG_SET (SAC_HM_arenas[ARENA_OF_ARENAS].bins, 1);
@@ -365,16 +234,29 @@ SAC_HM_Setup (size_byte_t initial_arena_of_arenas_size,
     }
 }
 
-/*
- * The diagnostic check pattern mechanism cannot be used in the arena of arenas
- * because here we use small chunks, but definitely need the sizes of all chunks
- * since these are NOT uniform.
- */
+/******************************************************************************
+ *
+ * function:
+ *   SAC_HM_header_t *AllocateNewBinInArenaOfArenas(size_unit_t units)
+ *
+ * description:
+ *
+ *   This function allocates a new bin for a specific arena within the
+ *   arena of arenas. The size of the new bin is specified in units.
+ *
+ *   The diagnostic check pattern mechanism cannot be used in the arena of arenas
+ *   because here we use small chunks, but definitely need the sizes of all chunks
+ *   since these are NOT uniform.
+ *
+ *
+ *
+ *
+ ******************************************************************************/
 
 static SAC_HM_header_t *
-AllocateArena (size_unit_t units)
+AllocateNewBinInArenaOfArenas (size_unit_t units)
 {
-    SAC_HM_header_t *freep, *firstp;
+    SAC_HM_header_t *freep, *lastp;
     SAC_HM_arena_t *arena;
     size_unit_t split_threshold;
 
@@ -382,41 +264,51 @@ AllocateArena (size_unit_t units)
 
     arena = &(SAC_HM_arenas[ARENA_OF_ARENAS]);
     split_threshold = units + arena->min_chunk_size;
-    firstp = arena->freelist;
-    freep = SMALLCHUNK_NEXTFREE (firstp);
 
-    while (freep != firstp) {
+    /*
+     * Search for sufficiently large chunk of memory in the free list.
+     */
 
-        if (SMALLCHUNK_SIZE (freep) < units) {
-            /* free space too small */
-            freep = SMALLCHUNK_NEXTFREE (freep);
-            continue;
-        }
+    lastp = arena->freelist;
+    freep = SMALLCHUNK_NEXTFREE (lastp);
 
-        /* sufficient space found */
+    while (freep != NULL) {
+
         if (SMALLCHUNK_SIZE (freep) >= split_threshold) {
-            /* Split found space */
+            /*
+             * The current chunk of memory is larger than required, so split
+             * the amount of memory needed from the top of the chunk.
+             */
             DIAG_INC (SAC_HM_arenas[ARENA_OF_ARENAS].cnt_split);
             SMALLCHUNK_SIZE (freep) -= units;
             return (freep + SMALLCHUNK_SIZE (freep));
-        } else {
-            /* Do NOT split found space, so remove it from free list */
-            SMALLCHUNK_NEXTFREE (SMALLCHUNK_PREVFREE (freep))
-              = SMALLCHUNK_NEXTFREE (freep);
-            SMALLCHUNK_PREVFREE (SMALLCHUNK_NEXTFREE (freep))
-              = SMALLCHUNK_PREVFREE (freep);
+        }
+
+        if (SMALLCHUNK_SIZE (freep) >= units) {
+            /*
+             * The current chunk of memory more or less fits exactly, so remove it
+             * from free list and return it to the calling context.
+             */
+            SMALLCHUNK_NEXTFREE (lastp) = SMALLCHUNK_NEXTFREE (freep);
             return (freep);
         }
+
+        /*
+         *  The current chunk of memory is too small, so continue with the next one.
+         */
+        lastp = freep;
+        freep = SMALLCHUNK_NEXTFREE (freep);
     }
 
     /*
-     * No sufficient space found in freelist, so, we have to allocate
-     * an additional arena of arenas.
+     * No sufficient space found in free list, so, we have to allocate
+     * an additional bin for the arena of arenas within the top arena.
+     * We will only return to this point if the additional allocation succeeds.
      */
 
     freep = (SAC_HM_header_t *)
-      SAC_HM_MallocTopArena (SAC_HM_arenas[ARENA_OF_ARENAS].arena_size + 2,
-                             &(SAC_HM_arenas[TOP_ARENA]));
+      SAC_HM_MallocLargeChunk (SAC_HM_arenas[ARENA_OF_ARENAS].arena_size + 2,
+                               &(SAC_HM_arenas[TOP_ARENA]));
 
     DIAG_ADD (SAC_HM_arenas[ARENA_OF_ARENAS].size,
               SAC_HM_arenas[ARENA_OF_ARENAS].arena_size * UNIT_SIZE);
@@ -424,45 +316,69 @@ AllocateArena (size_unit_t units)
 
     SMALLCHUNK_SIZE (freep) = arena->arena_size - units;
 
-    SMALLCHUNK_NEXTFREE (freep) = arena->freelist;
-    SMALLCHUNK_PREVFREE (freep) = SMALLCHUNK_PREVFREE (arena->freelist);
-    SMALLCHUNK_NEXTFREE (SMALLCHUNK_PREVFREE (freep)) = freep;
-    SMALLCHUNK_PREVFREE (SMALLCHUNK_NEXTFREE (freep)) = freep;
+    SMALLCHUNK_NEXTFREE (freep) = SMALLCHUNK_NEXTFREE (arena->freelist);
+    SMALLCHUNK_NEXTFREE (arena->freelist) = freep;
 
     return (freep + SMALLCHUNK_SIZE (freep));
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   void *SAC_HM_MallocSmallChunk( size_unit_t units, SAC_HM_arena_t *arena)
+ *
+ * description:
+ *
+ *   This function allocates a chunk of memory with the size given in units.
+ *   The memory is allocated from the given arena of small chunks .
+ *
+ *
+ *
+ *
+ *
+ ******************************************************************************/
+
 void *
 SAC_HM_MallocSmallChunk (size_unit_t units, SAC_HM_arena_t *arena)
 {
-    SAC_HM_header_t *freep, *firstp, *wilderness;
+    SAC_HM_header_t *freep, *wilderness;
 
     DIAG_INC (arena->cnt_alloc);
 
-    firstp = arena->freelist;
-    freep = SMALLCHUNK_NEXTFREE (firstp);
+    /*
+     * Search for chunk of memory in the free list.
+     */
 
-    DIAG_CHECK_FREEPATTERN_SMALLCHUNK (freep, arena->num);
+    freep = SMALLCHUNK_NEXTFREE (arena->freelist);
 
-    if (freep != firstp) {
-        /* free entry found, size matches due to fixed size chunks */
+    if (freep != NULL) {
+        /*
+         * Any entry in the free list will exactly fit our needs, so we may simply
+         * take the first one provided that the free list is not empty.
+         * The first entry is simply removed from the free list and returned to the
+         * calling context.
+         */
+        DIAG_CHECK_FREEPATTERN_SMALLCHUNK (freep, arena->num);
         DIAG_SET_ALLOCPATTERN_SMALLCHUNK (freep);
 
-        SMALLCHUNK_NEXTFREE (SMALLCHUNK_PREVFREE (freep)) = SMALLCHUNK_NEXTFREE (freep);
-        SMALLCHUNK_PREVFREE (SMALLCHUNK_NEXTFREE (freep)) = SMALLCHUNK_PREVFREE (freep);
+        SMALLCHUNK_NEXTFREE (arena->freelist) = SMALLCHUNK_NEXTFREE (freep);
+
         return ((void *)(freep + 1));
     }
 
     /*
-     * Try to split memory from wilderness chunk
+     * There has been no entry in the free list,
+     * so try to split memory from the arena큦 wilderness chunk.
      */
 
     wilderness = arena->wilderness;
 
     if (SMALLCHUNK_SIZE (wilderness) > units) {
-        /* sufficient space in wilderness chunk found */
-        /* split chunk from wilderness */
-
+        /*
+         * The wilderness chunk is sufficiently large to satisfy the needs,
+         * so split a small chunk from its top and return it to the calling
+         * context.
+         */
         DIAG_INC (arena->cnt_split);
 
         SMALLCHUNK_SIZE (wilderness) -= units;
@@ -475,21 +391,29 @@ SAC_HM_MallocSmallChunk (size_unit_t units, SAC_HM_arena_t *arena)
     }
 
     if (SMALLCHUNK_SIZE (wilderness) == units) {
-        /* exactly fitting space in wilderness chunk found */
-
+        /*
+         * The wilderness chunk exactly satisfies the needs,
+         * so return it to the calling context and disable wilderness
+         * chunk in arena representation.
+         */
         SMALLCHUNK_ARENA (wilderness) = arena;
 
         DIAG_SET_ALLOCPATTERN_SMALLCHUNK (wilderness);
 
         arena->wilderness = arena->freelist;
+
         return ((void *)(wilderness + 1));
     }
 
     /*
-     * Allocate new arena and use this as new wilderness chunk.
+     * There has also been not enough space in the wilderness chunk,
+     * so we have to allocate a new bin for the given arena and use this as
+     * the arena큦 new wilderness chunk.
+     * Afterwards, the reqired chunk of memory is cut from the top of the
+     * new wilderness chunk and returned to the calling context.
      */
 
-    wilderness = AllocateArena (arena->arena_size);
+    wilderness = AllocateNewBinInArenaOfArenas (arena->arena_size);
 
     DIAG_INC (arena->bins);
     DIAG_ADD (arena->size, arena->arena_size * UNIT_SIZE);
@@ -505,38 +429,71 @@ SAC_HM_MallocSmallChunk (size_unit_t units, SAC_HM_arena_t *arena)
     return ((void *)(freep + 1));
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   void *SAC_HM_MallocSmallChunkPresplit( size_unit_t units,
+ *                                          SAC_HM_arena_t *arena,
+ *                                          int presplit)
+ *
+ * description:
+ *
+ *   This function allocates a chunk of memory with the size given in units.
+ *   The memory is allocated from the given arena of small chunks.
+ *
+ *   In contrast to the previous function, a so-called pre-splitting is
+ *   performed, i.e., instead of splitting one new chunk of memory from the
+ *   wilderness chunk, a certain number of chunks is split immediately and
+ *   put into the free list.
+ *
+ *   The number of chunks split from the wilderness chunk at once are specified
+ *   by an additional parameter. The minimum value for this parameter is 2 !
+ *   This results in one additional chunk of memory to be split from the
+ *   wilderness chunk and to be put into the free list for subsequent
+ *   allocation.
+ *
+ ******************************************************************************/
+
 void *
 SAC_HM_MallocSmallChunkPresplit (size_unit_t units, SAC_HM_arena_t *arena, int presplit)
 {
-    SAC_HM_header_t *freep, *firstp, *wilderness, *lastfreep, *firstfreep, *freelist;
+    SAC_HM_header_t *freep, *wilderness, *lastfreep, *firstfreep;
 
     DIAG_INC (arena->cnt_alloc);
 
-    firstp = arena->freelist;
-    freep = SMALLCHUNK_NEXTFREE (firstp);
+    /*
+     * Search for chunk of memory in the free list.
+     */
 
-    DIAG_CHECK_FREEPATTERN_SMALLCHUNK (freep, arena->num);
+    freep = SMALLCHUNK_NEXTFREE (arena->freelist);
 
-    if (freep != firstp) {
-        /* free entry found, size matches due to fixed size chunks */
+    if (freep != NULL) {
+        /*
+         * Any entry in the free list will exactly fit our needs, so we may simply
+         * take the first one provided that the free list is not empty.
+         * The first entry is simply removed from the free list and returned to the
+         * calling context.
+         */
+        DIAG_CHECK_FREEPATTERN_SMALLCHUNK (freep, arena->num);
         DIAG_SET_ALLOCPATTERN_SMALLCHUNK (freep);
 
-        SMALLCHUNK_NEXTFREE (SMALLCHUNK_PREVFREE (freep)) = SMALLCHUNK_NEXTFREE (freep);
-        SMALLCHUNK_PREVFREE (SMALLCHUNK_NEXTFREE (freep)) = SMALLCHUNK_PREVFREE (freep);
+        SMALLCHUNK_NEXTFREE (arena->freelist) = SMALLCHUNK_NEXTFREE (freep);
+
         return ((void *)(freep + 1));
     }
 
     /*
-     * Try to split memory from wilderness chunk
+     * There has been no entry in the free list,
+     * so try to split memory from the arena큦 wilderness chunk.
      */
 
     wilderness = arena->wilderness;
 
     if (SMALLCHUNK_SIZE (wilderness) < units) {
         /*
-         * Wilderness is empty, so allocate new wilderness from arena of arenas.
+         * The wilderness is empty, so allocate new wilderness from arena of arenas.
          */
-        wilderness = AllocateArena (arena->arena_size);
+        wilderness = AllocateNewBinInArenaOfArenas (arena->arena_size);
 
         DIAG_INC (arena->bins);
         DIAG_ADD (arena->size, arena->arena_size * UNIT_SIZE);
@@ -545,8 +502,15 @@ SAC_HM_MallocSmallChunkPresplit (size_unit_t units, SAC_HM_arena_t *arena, int p
         arena->wilderness = wilderness;
     }
 
-    /* sufficient space in wilderness chunk found */
-    /* split chunk from wilderness */
+    /*
+     * Now, there is sufficient space in the wilderness chunk,
+     * so split a prespecified number of equally sized chunks of memory
+     * from theE top of the wilderness chunk.
+     *
+     * The size of the wilderness chunk is decreased by <presplit> units.
+     * The first <presplit>-1 chunks are initialized and put into the free
+     * list while the last chunk is returned to the calling context.
+     */
 
     DIAG_INC (arena->cnt_split);
 
@@ -554,30 +518,31 @@ SAC_HM_MallocSmallChunkPresplit (size_unit_t units, SAC_HM_arena_t *arena, int p
     SMALLCHUNK_SIZE (wilderness) -= units * presplit;
     firstfreep = wilderness + SMALLCHUNK_SIZE (wilderness);
 
-    freelist = arena->freelist;
-    SMALLCHUNK_NEXTFREE (freelist) = firstfreep;
-    SMALLCHUNK_PREVFREE (freelist) = lastfreep;
+    SMALLCHUNK_NEXTFREE (arena->freelist) = firstfreep;
 
-    SMALLCHUNK_NEXTFREE (firstfreep) = firstfreep + units;
-    SMALLCHUNK_PREVFREE (firstfreep) = freelist;
-    SMALLCHUNK_ARENA (firstfreep) = arena;
-    DIAG_SET_FREEPATTERN_SMALLCHUNK (firstfreep);
-
-    for (freep = firstfreep + units; freep != lastfreep; freep += units) {
+    for (freep = firstfreep; freep != lastfreep; freep += units) {
         SMALLCHUNK_NEXTFREE (freep) = freep + units;
-        SMALLCHUNK_PREVFREE (freep) = freep - units;
         SMALLCHUNK_ARENA (freep) = arena;
         DIAG_SET_FREEPATTERN_SMALLCHUNK (freep);
     }
 
-    SMALLCHUNK_NEXTFREE (lastfreep) = freelist;
-    SMALLCHUNK_PREVFREE (lastfreep) = lastfreep - units;
+    SMALLCHUNK_NEXTFREE (lastfreep) = NULL;
     SMALLCHUNK_ARENA (lastfreep) = arena;
     DIAG_SET_FREEPATTERN_SMALLCHUNK (lastfreep);
+
+    /*
+     * Maybe the wilderness chunk is empty after pre-splitting; in this
+     * case, it is removed from the arena큦 representation.
+     */
 
     if (firstfreep == wilderness) {
         arena->wilderness = arena->freelist;
     }
+
+    /*
+     * Eventually, the topmost pre-splitted chunk of memory is initalized
+     * and returned to the calling context.
+     */
 
     freep = lastfreep + units;
 
@@ -587,128 +552,83 @@ SAC_HM_MallocSmallChunkPresplit (size_unit_t units, SAC_HM_arena_t *arena, int p
     return ((void *)(freep + 1));
 }
 
-void *
-SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
-{
-    SAC_HM_header_t *freep, *firstp;
-    size_unit_t split_threshold;
-
-    DIAG_INC (arena->cnt_alloc);
-
-    split_threshold = units + arena->min_chunk_size;
-    firstp = arena->freelist;
-    freep = LARGECHUNK_NEXTFREE (firstp);
-
-    while (freep != firstp) {
-        DIAG_CHECK_FREEPATTERN_LARGECHUNK (freep, arena->num);
-
-        if (LARGECHUNK_SIZE (freep) < units) {
-            /* free space too small */
-            freep = LARGECHUNK_NEXTFREE (freep);
-            continue;
-        }
-
-        /* sufficient space found */
-        if (LARGECHUNK_SIZE (freep) >= split_threshold) {
-            /* Split found space */
-            DIAG_INC (arena->cnt_split);
-            LARGECHUNK_SIZE (freep) -= units;
-            firstp = freep + LARGECHUNK_SIZE (freep);
-            LARGECHUNK_SIZE (firstp) = -units;
-            LARGECHUNK_ARENA (firstp) = arena;
-            LARGECHUNK_PREVSIZE (firstp) = LARGECHUNK_SIZE (freep);
-            LARGECHUNK_PREVSIZE (firstp + units) = -units;
-            DIAG_SET_ALLOCPATTERN_LARGECHUNK (firstp);
-            return ((void *)(firstp + 2));
-        } else {
-            /* Do NOT split found space, so remove it from free list */
-            LARGECHUNK_NEXTFREE (LARGECHUNK_PREVFREE (freep))
-              = LARGECHUNK_NEXTFREE (freep);
-            LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (freep))
-              = LARGECHUNK_PREVFREE (freep);
-            LARGECHUNK_SIZE (freep) = -LARGECHUNK_SIZE (freep);
-            LARGECHUNK_PREVSIZE (freep - LARGECHUNK_SIZE (freep))
-              = LARGECHUNK_SIZE (freep);
-            DIAG_SET_ALLOCPATTERN_LARGECHUNK (freep);
-            return ((void *)(freep + 2));
-        }
-    }
-
-    /*
-     * No sufficient space found in freelist, so, we have to allocate
-     * an additional arena.
-     */
-
-    freep = AllocateArena (arena->arena_size);
-
-    DIAG_SET_FREEPATTERN_LARGECHUNK (freep);
-    DIAG_INC (arena->bins);
-    DIAG_ADD (arena->size, arena->arena_size * UNIT_SIZE);
-    DIAG_INC (arena->cnt_split);
-
-    LARGECHUNK_SIZE (freep) = arena->arena_size - (units + 2);
-    LARGECHUNK_PREVSIZE (freep) = -1;
-    LARGECHUNK_ARENA (freep) = arena;
-
-    LARGECHUNK_NEXTFREE (freep) = arena->freelist;
-    LARGECHUNK_PREVFREE (freep) = LARGECHUNK_PREVFREE (arena->freelist);
-    LARGECHUNK_NEXTFREE (LARGECHUNK_PREVFREE (freep)) = freep;
-    LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (freep)) = freep;
-
-    firstp = freep + LARGECHUNK_SIZE (freep);
-
-    LARGECHUNK_SIZE (firstp) = -units;
-    LARGECHUNK_ARENA (firstp) = arena;
-    LARGECHUNK_PREVSIZE (firstp) = LARGECHUNK_SIZE (freep);
-    DIAG_SET_ALLOCPATTERN_LARGECHUNK (firstp);
-
-    LARGECHUNK_SIZE (firstp + units) = -1;
-    LARGECHUNK_PREVSIZE (firstp + units) = -units; /* should be superfluous */
-
-    return ((void *)(firstp + 2));
-}
+/******************************************************************************
+ *
+ * function:
+ *   void *SAC_HM_MallocLargeChunkNoCoalasce( size_unit_t units,
+ *                                            SAC_HM_arena_t *arena)
+ *
+ * description:
+ *
+ *   This function allocates a chunk of memory with the size given in units.
+ *   The memory is allocated from the given arena of large chunks .
+ *
+ *   This allocation routine does NOT do any coalascing. Since the de-allocation
+ *   routine for large chunks also does not do coalascing, the usage of this
+ *   function leads to increasing fragmentation of the memory and an increased
+ *   overall memory consumption.
+ *
+ *
+ *
+ ******************************************************************************/
 
 void *
 SAC_HM_MallocLargeChunkNoCoalasce (size_unit_t units, SAC_HM_arena_t *arena)
 {
-    SAC_HM_header_t *freep, *firstp, *bestp;
+    SAC_HM_header_t *freep, *lastp, *bestp;
     size_unit_t split_threshold;
+
     DIAG_INC (arena->cnt_alloc);
 
     split_threshold = units + arena->min_chunk_size;
-    firstp = arena->freelist;
-    freep = LARGECHUNK_NEXTFREE (firstp);
     bestp = NULL;
 
-    while (freep != firstp) {
+    /*
+     * Search for sufficiently large chunk of memory in the free list.
+     */
+
+    lastp = arena->freelist;
+    freep = LARGECHUNK_NEXTFREE (lastp);
+
+    while (freep != NULL) {
         DIAG_CHECK_FREEPATTERN_LARGECHUNK (freep, arena->num);
 
         if (LARGECHUNK_SIZE (freep) < units) {
-            /* free space too small */
+            /*
+             *  The current chunk of memory is too small, so continue with the next one.
+             */
+            lastp = freep;
             freep = LARGECHUNK_NEXTFREE (freep);
             continue;
         }
 
         if (LARGECHUNK_SIZE (freep) >= split_threshold) {
-            /* Possible space found */
+            /*
+             * The current chunk of memory is larger than required, so remember it for
+             * potential later use and continue with the next one.
+             */
             bestp = freep;
+            lastp = freep;
             freep = LARGECHUNK_NEXTFREE (freep);
             continue;
         }
 
-        /* Exactly fitting space, so remove it from free list */
-        LARGECHUNK_NEXTFREE (LARGECHUNK_PREVFREE (freep)) = LARGECHUNK_NEXTFREE (freep);
-        LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (freep)) = LARGECHUNK_PREVFREE (freep);
+        /*
+         * The current chunk of memory more or less fits exactly, so remove it
+         * from the free list, mark it as being allocated, and return it to the
+         * calling context.
+         */
+        LARGECHUNK_NEXTFREE (lastp) = LARGECHUNK_NEXTFREE (freep);
 
-        LARGECHUNK_SIZE (freep) = -LARGECHUNK_SIZE (freep);
-        LARGECHUNK_PREVSIZE (freep - LARGECHUNK_SIZE (freep)) = LARGECHUNK_SIZE (freep);
+        LARGECHUNK_PREVSIZE (freep + LARGECHUNK_SIZE (freep)) = -1;
         DIAG_SET_ALLOCPATTERN_LARGECHUNK (freep);
+
         return ((void *)(freep + 2));
     }
 
     /*
      * No exactly fitting space found in freelist, so, we
-     * try to split from best fitting chunk.
+     * try to split from best fitting chunk found so far.
      */
 
     if (bestp == NULL) {
@@ -717,151 +637,55 @@ SAC_HM_MallocLargeChunkNoCoalasce (size_unit_t units, SAC_HM_arena_t *arena)
          * bin from the arena of arenas.
          */
 
-        bestp = AllocateArena (arena->arena_size);
+        bestp = AllocateNewBinInArenaOfArenas (arena->arena_size);
 
-        DIAG_SET_FREEPATTERN_LARGECHUNK (bestp);
         DIAG_INC (arena->bins);
         DIAG_ADD (arena->size, arena->arena_size * UNIT_SIZE);
+        DIAG_SET_FREEPATTERN_LARGECHUNK (bestp);
 
         LARGECHUNK_SIZE (bestp) = arena->arena_size - 2;
         LARGECHUNK_PREVSIZE (bestp) = -1;
         LARGECHUNK_ARENA (bestp) = arena;
 
-        LARGECHUNK_NEXTFREE (bestp) = arena->freelist;
-        LARGECHUNK_PREVFREE (bestp) = LARGECHUNK_PREVFREE (arena->freelist);
-        LARGECHUNK_NEXTFREE (LARGECHUNK_PREVFREE (bestp)) = bestp;
-        LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (bestp)) = bestp;
+        LARGECHUNK_NEXTFREE (bestp) = LARGECHUNK_NEXTFREE (arena->freelist);
+        LARGECHUNK_NEXTFREE (arena->freelist) = bestp;
 
-        LARGECHUNK_SIZE (bestp + LARGECHUNK_SIZE (bestp)) = -1;
-    }
-
-    DIAG_INC (arena->cnt_split);
-    LARGECHUNK_SIZE (bestp) -= units;
-    firstp = bestp + LARGECHUNK_SIZE (bestp);
-    LARGECHUNK_SIZE (firstp) = -units;
-    LARGECHUNK_ARENA (firstp) = arena;
-    LARGECHUNK_PREVSIZE (firstp) = LARGECHUNK_SIZE (bestp);
-    LARGECHUNK_PREVSIZE (firstp + units) = -units;
-    DIAG_SET_ALLOCPATTERN_LARGECHUNK (firstp);
-
-    return ((void *)(firstp + 2));
-}
-
-void *
-SAC_HM_MallocLargeChunkDeferredCoalasce (size_unit_t units, SAC_HM_arena_t *arena)
-{
-    SAC_HM_header_t *freep, *firstp, *bestp, *lastp;
-    size_unit_t split_threshold;
-    DIAG_INC (arena->cnt_alloc);
-
-    split_threshold = units + arena->min_chunk_size;
-    firstp = arena->freelist;
-    freep = LARGECHUNK_NEXTFREE (firstp);
-    bestp = NULL;
-
-    while (freep != firstp) {
-        DIAG_CHECK_FREEPATTERN_LARGECHUNK (freep, arena->num);
-
-        if (LARGECHUNK_SIZE (freep) < units) {
-            /* free space too small */
-            freep = LARGECHUNK_NEXTFREE (freep);
-            continue;
-        }
-
-        if (LARGECHUNK_SIZE (freep) >= split_threshold) {
-            /* Possible space found */
-            bestp = freep;
-            freep = LARGECHUNK_NEXTFREE (freep);
-            continue;
-        }
-
-        /* Exactly fitting space, so remove it from free list */
-    exact_fit:
-        LARGECHUNK_NEXTFREE (LARGECHUNK_PREVFREE (freep)) = LARGECHUNK_NEXTFREE (freep);
-        LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (freep)) = LARGECHUNK_PREVFREE (freep);
-
-        LARGECHUNK_SIZE (freep) = -LARGECHUNK_SIZE (freep);
-        LARGECHUNK_PREVSIZE (freep - LARGECHUNK_SIZE (freep)) = LARGECHUNK_SIZE (freep);
-        DIAG_SET_ALLOCPATTERN_LARGECHUNK (freep);
-        return ((void *)(freep + 2));
+        /* LARGECHUNK_SIZE(bestp + LARGECHUNK_SIZE(bestp)) = -1; */
     }
 
     /*
-     * No exactly fitting space found in freelist, so, we
-     * try to split from best fitting chunk.
+     * Now, we do have a sufficiently large amount of memory, so we simply split
+     * the required chunk size from the top of it.
      */
 
-    if (bestp == NULL) {
-        /*
-         * We haven't found any chunk of sufficient size, so we now coalasce
-         * all coalascable chunks.
-         */
-
-        freep = LARGECHUNK_NEXTFREE (firstp);
-        while (freep != firstp) {
-            if (LARGECHUNK_PREVSIZE (freep) > 0) {
-                /* Coalasce chunk with previous chunk. */
-                lastp = freep - LARGECHUNK_PREVSIZE (freep);
-                LARGECHUNK_SIZE (lastp) += LARGECHUNK_SIZE (freep);
-                LARGECHUNK_PREVSIZE (freep + LARGECHUNK_SIZE (freep))
-                  = LARGECHUNK_SIZE (lastp);
-                LARGECHUNK_NEXTFREE (LARGECHUNK_PREVFREE (freep))
-                  = LARGECHUNK_NEXTFREE (freep);
-                LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (freep))
-                  = LARGECHUNK_PREVFREE (freep);
-
-                if (LARGECHUNK_SIZE (lastp) >= units) {
-                    if (LARGECHUNK_SIZE (freep) >= split_threshold) {
-                        bestp = lastp;
-                        goto split;
-                    } else {
-                        freep = lastp;
-                        goto exact_fit;
-                    }
-                } else {
-                    freep = lastp;
-                    continue;
-                }
-            } else {
-                freep = LARGECHUNK_NEXTFREE (freep);
-            }
-        }
-
-        /*
-         * We haven't found any chunk of sufficient size, so we allocate a new
-         * bin from the arena of arenas.
-         */
-
-        bestp = AllocateArena (arena->arena_size);
-
-        DIAG_SET_FREEPATTERN_LARGECHUNK (bestp);
-        DIAG_INC (arena->bins);
-        DIAG_ADD (arena->size, arena->arena_size * UNIT_SIZE);
-
-        LARGECHUNK_SIZE (bestp) = arena->arena_size - 2;
-        LARGECHUNK_PREVSIZE (bestp) = -1;
-        LARGECHUNK_ARENA (bestp) = arena;
-
-        LARGECHUNK_NEXTFREE (bestp) = arena->freelist;
-        LARGECHUNK_PREVFREE (bestp) = LARGECHUNK_PREVFREE (arena->freelist);
-        LARGECHUNK_NEXTFREE (LARGECHUNK_PREVFREE (bestp)) = bestp;
-        LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (bestp)) = bestp;
-
-        LARGECHUNK_SIZE (bestp + LARGECHUNK_SIZE (bestp)) = -1;
-    }
-
-split:
     DIAG_INC (arena->cnt_split);
     LARGECHUNK_SIZE (bestp) -= units;
-    firstp = bestp + LARGECHUNK_SIZE (bestp);
-    LARGECHUNK_SIZE (firstp) = -units;
-    LARGECHUNK_ARENA (firstp) = arena;
-    LARGECHUNK_PREVSIZE (firstp) = LARGECHUNK_SIZE (bestp);
-    LARGECHUNK_PREVSIZE (firstp + units) = -units;
-    DIAG_SET_ALLOCPATTERN_LARGECHUNK (firstp);
+    freep = bestp + LARGECHUNK_SIZE (bestp);
+    LARGECHUNK_SIZE (freep) = units;
+    LARGECHUNK_ARENA (freep) = arena;
+    LARGECHUNK_PREVSIZE (freep) = LARGECHUNK_SIZE (bestp);
+    LARGECHUNK_PREVSIZE (freep + units) = -1;
+    DIAG_SET_ALLOCPATTERN_LARGECHUNK (freep);
 
-    return ((void *)(firstp + 2));
+    return ((void *)(freep + 2));
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   SAC_HM_header_t *ExtendTopArenaWilderness( size_unit_t units,
+ *                                              SAC_HM_arena_t *arena)
+ *
+ * description:
+ *
+ *   This function allows to extend the top arena큦 wilderness chunk by
+ *   "fresh" memory obtained from the operating system.
+ *
+ *
+ *
+ *
+ *
+ ******************************************************************************/
 
 static SAC_HM_header_t *
 ExtendTopArenaWilderness (size_unit_t units, SAC_HM_arena_t *arena)
@@ -872,217 +696,230 @@ ExtendTopArenaWilderness (size_unit_t units, SAC_HM_arena_t *arena)
 
     wilderness = arena->wilderness;
 
+    /*
+     * First, the amount of additionally required memory is computed, i.e.
+     * the requested amount of memory decreased by the amount of memory still
+     * available in the wilderness chunk. The result then is rounded up to
+     * the next multiple of SBRK_CHUNK. This guarantees that memory is requested
+     * from the operating system in sufficiently large chunks since calls to
+     * the system call sbrk() are usually expensive.
+     */
     new_mem = ((units - LARGECHUNK_SIZE (wilderness) + 3) * UNIT_SIZE);
     new_mem = (new_mem + SBRK_CHUNK) & (~(SBRK_CHUNK - 1));
 
     DIAG_INC (SAC_HM_call_sbrk);
+
+    /*
+     * Actually, request memory from operating system.
+     */
     mem = (char *)sbrk (new_mem);
     if (mem == (char *)-1) {
+        /*
+         * The operating system has denied the request for additional memory,
+         * so we give up right now.
+         */
         OutOfMemory (new_mem);
     }
+
     DIAG_ADD (SAC_HM_heapsize, new_mem);
     DIAG_ADD (arena->size, new_mem);
     DIAG_INC (arena->bins);
 
     if ((SAC_HM_header_t *)mem == wilderness + LARGECHUNK_SIZE (wilderness)) {
-        /* New memory and old wilderness chunk are contiguous. */
+        /*
+         * The new memory and the old wilderness chunk are contiguous.
+         * This should always be the case for single-threaded operation or as
+         * long as only one thread has control over the top arena.
+         * As a consequence the old wilderness chunk may simply be extended.
+         */
         LARGECHUNK_SIZE (wilderness) += new_mem / UNIT_SIZE;
         return (wilderness);
     } else {
         /*
          * New memory and old wilderness chunk are NOT contiguous.
-         * Old wilderness becomes regular free chunk. Request is
-         * satisfied from freshly allocated memory.
+         * The old wilderness becomes regular free chunk; the request will be
+         * satisfied from freshly allocated memory alone.
          */
-
-        LARGECHUNK_SIZE (wilderness) -= 3;
-        LARGECHUNK_SIZE (wilderness + LARGECHUNK_SIZE (wilderness)) = -1;
-
-        LARGECHUNK_NEXTFREE (wilderness) = arena->freelist;
-        LARGECHUNK_PREVFREE (wilderness) = LARGECHUNK_PREVFREE (arena->freelist);
-        LARGECHUNK_NEXTFREE (LARGECHUNK_PREVFREE (wilderness)) = wilderness;
-        LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (wilderness)) = wilderness;
+        LARGECHUNK_NEXTFREE (wilderness) = LARGECHUNK_NEXTFREE (arena->freelist);
+        LARGECHUNK_NEXTFREE (arena->freelist) = wilderness;
 
         if (new_mem >= units * UNIT_SIZE) {
             /*
-             * Freshly allocated memory suffices to satisfy request.
+             * The freshly allocated memory suffices to satisfy request,
+             * so make it the new wilderness chunk.
              */
             wilderness = (SAC_HM_header_t *)mem;
 
             arena->wilderness = wilderness;
             LARGECHUNK_SIZE (wilderness) = new_mem / UNIT_SIZE;
             LARGECHUNK_PREVSIZE (wilderness) = -1;
+
             DIAG_SET_FREEPATTERN_LARGECHUNK (wilderness);
+
             return (wilderness);
         } else {
             /*
-             * Get additional memory from operating system.
+             * The freshly allocated memory does NOT suffice to satisfy request,
+             * so obtain additional memory from operating system.
              */
             size_unit_t more_mem;
             char *mem2;
 
+            /*
+             * Compute amount of additional memory required to satisfy the request.
+             */
             more_mem = units * UNIT_SIZE - new_mem;
             more_mem = (more_mem + SBRK_CHUNK) & (~(SBRK_CHUNK - 1));
 
             DIAG_INC (SAC_HM_call_sbrk);
+
+            /*
+             * Request additional memory from operating system.
+             */
             mem2 = (char *)sbrk (more_mem);
             if ((mem2 == (char *)-1) || (mem + new_mem != mem2)) {
+                /*
+                 * The operating system has denied the request for additional memory,
+                 * so we give up right now.
+                 */
                 OutOfMemory (more_mem);
             }
+
             DIAG_ADD (SAC_HM_heapsize, more_mem);
             DIAG_ADD (arena->size, more_mem);
             DIAG_INC (arena->bins);
 
-            /* mem and mem2 are contiguous ! */
+            if (((SAC_HM_header_t *)mem) + new_mem * UNIT_SIZE
+                != ((SAC_HM_header_t *)mem2)) {
+                /*
+                 * The additionally allocated memory and the originally allocated memory
+                 * are not contiguous. In this case, we give up immediately, however, this
+                 * usually should not occur.
+                 */
+                SAC_RuntimeError ("Heap manager failed to obtain contiguous memory from "
+                                  "operating system");
+            }
+
+            /*
+             * Now mem and mem2 are guaranteed to refer to contiguous sections of memory.
+             * So, initialize and return the new wilderness chunk.
+             */
             wilderness = (SAC_HM_header_t *)mem;
 
             arena->wilderness = wilderness;
             LARGECHUNK_SIZE (wilderness) = (new_mem + more_mem) / UNIT_SIZE;
             LARGECHUNK_PREVSIZE (wilderness) = -1;
             DIAG_SET_FREEPATTERN_LARGECHUNK (wilderness);
+
             return (wilderness);
         }
     }
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   void *SAC_HM_MallocLargeChunk( size_unit_t units,
+ *                                  SAC_HM_arena_t *arena)
+ *
+ * description:
+ *
+ *   This function allocates a chunk of memory with the size given in units.
+ *   The memory is allocated from the given arena of large chunks .
+ *
+ *   If no suffificent space can be found in the free list but adjacent
+ *   free chunks of memory exist, such chunks are coalasced in order to
+ *   create larger free chunks and satisfy the request for memory without
+ *   extending the arena.
+ *
+ *
+ ******************************************************************************/
+
 void *
-SAC_HM_MallocTopArena (size_unit_t units, SAC_HM_arena_t *arena)
+SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena)
 {
-    SAC_HM_header_t *freep, *firstp, *wilderness;
+    SAC_HM_header_t *freep, *bestp, *lastp, *wilderness, *new_wilderness;
+    SAC_HM_header_t *prevp;
+
     size_unit_t split_threshold;
 
     DIAG_INC (arena->cnt_alloc);
 
     split_threshold = units + arena->min_chunk_size;
-    firstp = arena->freelist;
-    freep = LARGECHUNK_NEXTFREE (firstp);
-
-    while (freep != firstp) {
-        DIAG_CHECK_FREEPATTERN_LARGECHUNK (freep, arena->num);
-
-        if (LARGECHUNK_SIZE (freep) < units) {
-            /* free space too small */
-            freep = LARGECHUNK_NEXTFREE (freep);
-            continue;
-        }
-
-        /* sufficient space found */
-        if (LARGECHUNK_SIZE (freep) >= split_threshold) {
-            /* Split found space */
-            DIAG_INC (arena->cnt_split);
-            LARGECHUNK_SIZE (freep) -= units;
-            firstp = freep + LARGECHUNK_SIZE (freep);
-            LARGECHUNK_SIZE (firstp) = -units;
-            LARGECHUNK_ARENA (firstp) = arena;
-            LARGECHUNK_PREVSIZE (firstp) = LARGECHUNK_SIZE (freep);
-            LARGECHUNK_PREVSIZE (firstp + units) = -units;
-            DIAG_SET_ALLOCPATTERN_LARGECHUNK (firstp);
-            return ((void *)(firstp + 2));
-        } else {
-            /* Do NOT split found space, so remove it from free list */
-            LARGECHUNK_NEXTFREE (LARGECHUNK_PREVFREE (freep))
-              = LARGECHUNK_NEXTFREE (freep);
-            LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (freep))
-              = LARGECHUNK_PREVFREE (freep);
-            LARGECHUNK_SIZE (freep) = -LARGECHUNK_SIZE (freep);
-            LARGECHUNK_ARENA (freep) = arena;
-            LARGECHUNK_PREVSIZE (freep - LARGECHUNK_SIZE (freep))
-              = LARGECHUNK_SIZE (freep);
-            DIAG_SET_ALLOCPATTERN_LARGECHUNK (freep);
-            return ((void *)(freep + 2));
-        }
-    }
-
-    /*
-     * No sufficient space found in freelist, so, we check out the wilderness chunk.
-     */
-
-    wilderness = arena->wilderness;
-    DIAG_CHECK_FREEPATTERN_LARGECHUNK (wilderness, arena->num);
-
-    if (LARGECHUNK_SIZE (wilderness) < units + 3) {
-        /* remaining wilderness is too small. */
-        wilderness = ExtendTopArenaWilderness (units, arena);
-    }
-
-    /*
-     * Now, wilderness is guaranteed to be sufficiently large.
-     */
-
-    firstp = wilderness + units; /* firstp points to new wilderness */
-    LARGECHUNK_SIZE (firstp) = LARGECHUNK_SIZE (wilderness) - units;
-    LARGECHUNK_PREVSIZE (firstp) = -units;
-    DIAG_SET_FREEPATTERN_LARGECHUNK (firstp);
-    arena->wilderness = firstp;
-
-    LARGECHUNK_SIZE (wilderness) = -units;
-    LARGECHUNK_ARENA (wilderness) = arena;
-    DIAG_INC (arena->cnt_split);
-    DIAG_SET_ALLOCPATTERN_LARGECHUNK (wilderness);
-    return ((void *)(wilderness + 2));
-}
-
-void *
-SAC_HM_MallocTopArenaDeferredCoalasce (size_unit_t units, SAC_HM_arena_t *arena)
-{
-    SAC_HM_header_t *freep, *firstp, *bestp, *lastp, *wilderness, *new_wilderness;
-    size_unit_t split_threshold;
-    DIAG_INC (arena->cnt_alloc);
-
-    split_threshold = units + arena->min_chunk_size;
-    firstp = arena->freelist;
-    freep = LARGECHUNK_NEXTFREE (firstp);
     bestp = NULL;
 
-    while (freep != firstp) {
+    /*
+     * Search for sufficiently large chunk of memory in the free list.
+     */
+
+    lastp = arena->freelist;
+    freep = LARGECHUNK_NEXTFREE (lastp);
+
+    while (freep != NULL) {
         DIAG_CHECK_FREEPATTERN_LARGECHUNK (freep, arena->num);
 
         if (LARGECHUNK_SIZE (freep) < units) {
-            /* free space too small */
+            /*
+             *  The current chunk of memory is too small, so continue with the next one.
+             */
+            lastp = freep;
             freep = LARGECHUNK_NEXTFREE (freep);
             continue;
         }
 
         if (LARGECHUNK_SIZE (freep) >= split_threshold) {
-            /* Possible space found */
+            /*
+             * The current chunk of memory is larger than required, so remember it for
+             * potential later use and continue with the next one.
+             */
             bestp = freep;
+            lastp = freep;
             freep = LARGECHUNK_NEXTFREE (freep);
             continue;
         }
 
-        /* Exactly fitting space, so remove it from free list */
+        /*
+         * The current chunk of memory more or less fits exactly, so remove it
+         * from the free list and return it to the calling context.
+         */
     exact_fit:
-        LARGECHUNK_NEXTFREE (LARGECHUNK_PREVFREE (freep)) = LARGECHUNK_NEXTFREE (freep);
-        LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (freep)) = LARGECHUNK_PREVFREE (freep);
+        LARGECHUNK_NEXTFREE (lastp) = LARGECHUNK_NEXTFREE (freep);
 
-        LARGECHUNK_SIZE (freep) = -LARGECHUNK_SIZE (freep);
-        LARGECHUNK_PREVSIZE (freep - LARGECHUNK_SIZE (freep)) = LARGECHUNK_SIZE (freep);
+        LARGECHUNK_PREVSIZE (freep + LARGECHUNK_SIZE (freep)) = -1;
         DIAG_SET_ALLOCPATTERN_LARGECHUNK (freep);
+
         return ((void *)(freep + 2));
     }
 
     /*
-     * No exactly fitting space found in freelist, so, we
-     * try to split from best fitting chunk.
+     * No exactly fitting space found in free list, so we
+     * try to split from a larger chunk.
      */
 
     if (bestp != NULL) {
+        /*
+         * During the traversal of the free list we have found a sufficiently
+         * large chunk of memory that will be splitted now. The chunk to be
+         * returned is taken from the top.
+         */
     split:
         DIAG_INC (arena->cnt_split);
-        LARGECHUNK_SIZE (bestp) -= units;
-        firstp = bestp + LARGECHUNK_SIZE (bestp);
-        LARGECHUNK_SIZE (firstp) = -units;
-        LARGECHUNK_ARENA (firstp) = arena;
-        LARGECHUNK_PREVSIZE (firstp) = LARGECHUNK_SIZE (bestp);
-        LARGECHUNK_PREVSIZE (firstp + units) = -units;
-        DIAG_SET_ALLOCPATTERN_LARGECHUNK (firstp);
 
-        return ((void *)(firstp + 2));
+        LARGECHUNK_SIZE (bestp) -= units;
+        freep = bestp + LARGECHUNK_SIZE (bestp);
+        LARGECHUNK_SIZE (freep) = units;
+        LARGECHUNK_ARENA (freep) = arena;
+        LARGECHUNK_PREVSIZE (freep) = LARGECHUNK_SIZE (bestp);
+        LARGECHUNK_PREVSIZE (freep + units) = -1;
+
+        DIAG_SET_ALLOCPATTERN_LARGECHUNK (freep);
+
+        return ((void *)(freep + 2));
     }
 
     /*
-     *  There was no splittable chunk in free list, so we try to split
-     *  from wilderness now.
+     * We haven't found any chunk of sufficient size, so we now try to split
+     * from the wilderness chunk.
      */
 
     wilderness = arena->wilderness;
@@ -1090,50 +927,80 @@ SAC_HM_MallocTopArenaDeferredCoalasce (size_unit_t units, SAC_HM_arena_t *arena)
 
     if (LARGECHUNK_SIZE (wilderness) >= units + 3) {
         /*
-         * Wilderness is sufficiently large.
+         * The wilderness chunk is sufficiently large, so split the requested
+         * amount of memory from the bottom of the wilderness chunk.
+         * This technique is slight less efficient than splitting from the top.
+         * However, in the case of the top arena큦 wilderness chunk this allows
+         * to extend the wilderness subsequently without unnecessary fragmentation.
          */
     split_wilderness:
-        firstp = wilderness + units; /* firstp points to new wilderness */
-        LARGECHUNK_SIZE (firstp) = LARGECHUNK_SIZE (wilderness) - units;
-        LARGECHUNK_PREVSIZE (firstp) = -units;
-        DIAG_SET_FREEPATTERN_LARGECHUNK (firstp);
-        arena->wilderness = firstp;
+        new_wilderness = wilderness + units;
+        LARGECHUNK_SIZE (new_wilderness) = LARGECHUNK_SIZE (wilderness) - units;
+        LARGECHUNK_PREVSIZE (new_wilderness) = -1;
+        DIAG_SET_FREEPATTERN_LARGECHUNK (new_wilderness);
+        arena->wilderness = new_wilderness;
 
-        LARGECHUNK_SIZE (wilderness) = -units;
+        LARGECHUNK_SIZE (wilderness) = units;
         LARGECHUNK_ARENA (wilderness) = arena;
         DIAG_INC (arena->cnt_split);
         DIAG_SET_ALLOCPATTERN_LARGECHUNK (wilderness);
+
         return ((void *)(wilderness + 2));
     }
 
     /*
-     * There is no sufficient space in wilderness,
-     * we now try to coalasce free chunks.
+     * There is no sufficient space in the wilderness chunk, so we now coalasce
+     * coalascable chunks until a sufficiently large free chunk has been
+     * created or until all chunks are coalasced as far as possible.
      */
 
-    freep = LARGECHUNK_NEXTFREE (firstp);
-    while (freep != firstp) {
-        if (LARGECHUNK_PREVSIZE (freep) > 0) {
-            /* Coalasce chunk with previous chunk. */
-            lastp = freep - LARGECHUNK_PREVSIZE (freep);
-            LARGECHUNK_SIZE (lastp) += LARGECHUNK_SIZE (freep);
-            LARGECHUNK_PREVSIZE (freep + LARGECHUNK_SIZE (freep))
-              = LARGECHUNK_SIZE (lastp);
-            LARGECHUNK_NEXTFREE (LARGECHUNK_PREVFREE (freep))
-              = LARGECHUNK_NEXTFREE (freep);
-            LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (freep))
-              = LARGECHUNK_PREVFREE (freep);
+    lastp = arena->freelist;
+    freep = LARGECHUNK_NEXTFREE (lastp);
 
-            if (LARGECHUNK_SIZE (lastp) >= units) {
+    while (freep != NULL) {
+        if (LARGECHUNK_PREVSIZE (freep) > 0) {
+            /*
+             * The previous adjacent chunk to the current chunk is also free,
+             * so coalasce the two and remove the current chunk from the free list.
+             */
+            prevp = freep - LARGECHUNK_PREVSIZE (freep);
+            LARGECHUNK_SIZE (prevp) += LARGECHUNK_SIZE (freep);
+            LARGECHUNK_PREVSIZE (freep + LARGECHUNK_SIZE (freep))
+              = LARGECHUNK_SIZE (prevp);
+            LARGECHUNK_NEXTFREE (lastp) = LARGECHUNK_NEXTFREE (freep);
+
+            if (LARGECHUNK_SIZE (prevp) >= units) {
                 if (LARGECHUNK_SIZE (freep) >= split_threshold) {
-                    bestp = lastp;
+                    /*
+                     * The coalasced chunk is larger than the amount of memory requested,
+                     * so we split an appropriate chunk from the top of it.
+                     */
+                    bestp = prevp;
                     goto split;
                 } else {
-                    freep = lastp;
+                    /*
+                     * The coalasced chunk more or less exactly fits the amount of memory
+                     * requested, so it is removed from the free list and returned to the
+                     * current context.
+                     *
+                     * Unfortunately, for this purpose we need to know its predecessor in
+                     * the free list, an information that is currently not available. As a
+                     * consequence, the entire free list has to be traversed to obtain
+                     * this information.
+                     *
+                     * This of course is expensive with respect to performance, however it
+                     * avoids even more expensive doubly linked lists for the
+                     * representation of free lists.
+                     */
+                    freep = prevp;
+                    lastp = arena->freelist;
+                    while (LARGECHUNK_NEXTFREE (lastp) != freep) {
+                        lastp = LARGECHUNK_NEXTFREE (lastp);
+                    }
                     goto exact_fit;
                 }
             } else {
-                freep = lastp;
+                freep = LARGECHUNK_NEXTFREE (freep);
                 continue;
             }
         } else {
@@ -1142,59 +1009,127 @@ SAC_HM_MallocTopArenaDeferredCoalasce (size_unit_t units, SAC_HM_arena_t *arena)
     }
 
     /*
-     * We haven't found sufficient space by coalascing chunks in free list,
-     * We now try to coalasce wilderness with adjacent free chunk.
+     * We haven't found sufficient space by coalascing chunks in the free list.
+     * We now try to coalasce the wilderness with the adjacent free chunks.
      */
 
-    if (LARGECHUNK_PREVSIZE (wilderness) > 0) {
+    while (LARGECHUNK_PREVSIZE (wilderness) > 0) {
+        /*
+         * The chunk adjacent to the wilderness chunk is actually free.
+         */
         new_wilderness = wilderness - LARGECHUNK_PREVSIZE (wilderness);
         LARGECHUNK_SIZE (new_wilderness) += LARGECHUNK_SIZE (wilderness);
-        LARGECHUNK_NEXTFREE (LARGECHUNK_PREVFREE (new_wilderness))
-          = LARGECHUNK_NEXTFREE (new_wilderness);
-        LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (new_wilderness))
-          = LARGECHUNK_PREVFREE (new_wilderness);
-        arena->wilderness = new_wilderness;
 
-        if (LARGECHUNK_SIZE (new_wilderness) >= units + 3) {
+        /*
+         * Next, the coalasced free chunk adjacent to the wilderness chunk must
+         * be removed from the free list. Unfortunately, this requires a retraversal
+         * the free list.
+         */
+        lastp = arena->freelist;
+        while (LARGECHUNK_NEXTFREE (lastp) != new_wilderness) {
+            lastp = LARGECHUNK_NEXTFREE (lastp);
+        }
+        LARGECHUNK_NEXTFREE (lastp) = LARGECHUNK_NEXTFREE (new_wilderness);
+
+        wilderness = new_wilderness;
+        arena->wilderness = wilderness;
+
+        if (LARGECHUNK_SIZE (wilderness) >= units + 3) {
             /*
-             * Now, the wilderness is large enough.
+             * Now, the wilderness is large enough, so we directly split the requested
+             * amount of memory from it.
              */
-            wilderness = new_wilderness;
             goto split_wilderness;
         }
     }
 
     /*
-     * The wilderness is still insufficient, so we try to extend it.
+     * We haven't found any chunk of sufficient size, so we either allocate a new
+     * bin from the arena of arenas or we extend the wilderness chunk if the given
+     * arena is the top arena.
      */
 
-    wilderness = ExtendTopArenaWilderness (units, arena);
+    if (arena->arena_size == 0) {
+        /*
+         * The given arena is the top arena, so we try to get new memory from the
+         * operating system and extend the wilderness chunk.
+         */
 
-    goto split_wilderness;
+        wilderness = ExtendTopArenaWilderness (units, arena);
+        goto split_wilderness;
+
+    } else {
+        bestp = AllocateNewBinInArenaOfArenas (arena->arena_size);
+
+        DIAG_INC (arena->bins);
+        DIAG_ADD (arena->size, arena->arena_size * UNIT_SIZE);
+        DIAG_SET_FREEPATTERN_LARGECHUNK (bestp);
+
+        LARGECHUNK_SIZE (bestp) = arena->arena_size;
+        LARGECHUNK_PREVSIZE (bestp) = -1;
+        LARGECHUNK_ARENA (bestp) = arena;
+
+        LARGECHUNK_NEXTFREE (bestp) = LARGECHUNK_NEXTFREE (arena->freelist);
+        LARGECHUNK_NEXTFREE (arena->freelist) = bestp;
+
+        /* LARGECHUNK_SIZE(bestp + LARGECHUNK_SIZE(bestp)) = -1; */
+
+        goto split;
+    }
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_HM_FreeSmallChunk(SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
+ *
+ * description:
+ *
+ *   This function de-allocates memory chunks in arenas of small chunks.
+ *   Free chunks are inserted into the free list. There is no coalascing of
+ *   adjacent free chunks because such arenas contain only chunks of equal
+ *   size.
+ *
+ *
+ *
+ ******************************************************************************/
 
 void
 SAC_HM_FreeSmallChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
 {
-    SAC_HM_header_t *freep, *freelist;
+    SAC_HM_header_t *freep;
 
     freep = addr - 1;
-    freelist = arena->freelist;
 
     DIAG_CHECK_ALLOCPATTERN_SMALLCHUNK (freep, arena->num);
     DIAG_SET_FREEPATTERN_SMALLCHUNK (freep);
     DIAG_INC (arena->cnt_free);
 
-    SMALLCHUNK_NEXTFREE (freep) = SMALLCHUNK_NEXTFREE (freelist);
-    SMALLCHUNK_PREVFREE (freep) = freelist;
-    SMALLCHUNK_NEXTFREE (freelist) = freep;
-    SMALLCHUNK_PREVFREE (SMALLCHUNK_NEXTFREE (freep)) = freep;
+    SMALLCHUNK_NEXTFREE (freep) = SMALLCHUNK_NEXTFREE (arena->freelist);
+    SMALLCHUNK_NEXTFREE (arena->freelist) = freep;
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_HM_FreeLargeChunk(SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
+ *
+ * description:
+ *
+ *   This function de-allocates memory chunks in arenas of large chunks
+ *   including the top arena. Coalascing of adjacent free chunks is deferred
+ *   until new memory requests can no longer be satisfied without.
+ *
+ *
+ *
+ *
+ *
+ ******************************************************************************/
 
 void
 SAC_HM_FreeLargeChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
 {
-    SAC_HM_header_t *freep, *freelist, *prevp, *nextp;
+    SAC_HM_header_t *freep;
 
     freep = addr - 2;
 
@@ -1202,200 +1137,8 @@ SAC_HM_FreeLargeChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
     DIAG_SET_FREEPATTERN_LARGECHUNK (freep);
     DIAG_INC (arena->cnt_free);
 
-    nextp = freep - LARGECHUNK_SIZE (freep); /* chunk size is negated ! */
-
-    if (LARGECHUNK_SIZE (nextp) > 0) {
-        if (LARGECHUNK_PREVSIZE (freep) > 0) {
-            /*
-             * Coalasce with both neighboring chunks.
-             */
-            DIAG_INC (arena->cnt_coalasce);
-            prevp = freep - LARGECHUNK_PREVSIZE (freep);
-            LARGECHUNK_SIZE (prevp) += LARGECHUNK_SIZE (nextp) - LARGECHUNK_SIZE (freep);
-            /* chunk size is negated ! */
-            LARGECHUNK_PREVSIZE (nextp + LARGECHUNK_SIZE (nextp))
-              = LARGECHUNK_SIZE (prevp);
-            LARGECHUNK_NEXTFREE (LARGECHUNK_PREVFREE (nextp))
-              = LARGECHUNK_NEXTFREE (nextp);
-            LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (nextp))
-              = LARGECHUNK_PREVFREE (nextp);
-            return;
-        } else {
-            /*
-             * Coalasce with next chunk.
-             */
-            DIAG_INC (arena->cnt_coalasce);
-            LARGECHUNK_SIZE (freep) = LARGECHUNK_SIZE (nextp) - LARGECHUNK_SIZE (freep);
-            /* chunk size is negated ! */
-            LARGECHUNK_PREVSIZE (nextp + LARGECHUNK_SIZE (nextp))
-              = LARGECHUNK_SIZE (freep);
-            LARGECHUNK_NEXTFREE (freep) = LARGECHUNK_NEXTFREE (nextp);
-            LARGECHUNK_PREVFREE (freep) = LARGECHUNK_PREVFREE (nextp);
-            LARGECHUNK_NEXTFREE (LARGECHUNK_PREVFREE (freep)) = freep;
-            LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (freep)) = freep;
-            return;
-        }
-    } else {
-        if (LARGECHUNK_PREVSIZE (freep) > 0) {
-            /*
-             * Coalasce with previous chunk.
-             */
-            DIAG_INC (arena->cnt_coalasce);
-            prevp = freep - LARGECHUNK_PREVSIZE (freep);
-            LARGECHUNK_SIZE (prevp)
-              -= LARGECHUNK_SIZE (freep); /* chunk size is negated ! */
-            LARGECHUNK_PREVSIZE (nextp) = LARGECHUNK_SIZE (prevp);
-            return;
-        } else {
-            /*
-             * No coalascing at all.
-             */
-            LARGECHUNK_SIZE (freep) = -LARGECHUNK_SIZE (freep);
-            LARGECHUNK_PREVSIZE (nextp) = LARGECHUNK_SIZE (freep);
-            freelist = arena->freelist;
-            LARGECHUNK_NEXTFREE (freep) = LARGECHUNK_NEXTFREE (freelist);
-            LARGECHUNK_PREVFREE (freep) = freelist;
-            LARGECHUNK_NEXTFREE (freelist) = freep;
-            LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (freep)) = freep;
-            return;
-        }
-    }
-}
-
-void
-SAC_HM_FreeTopArena (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
-{
-    SAC_HM_header_t *freep, *freelist, *prevp, *nextp;
-
-    freep = addr - 2;
-
-    DIAG_CHECK_ALLOCPATTERN_LARGECHUNK (freep, arena->num);
-    DIAG_SET_FREEPATTERN_LARGECHUNK (freep);
-    DIAG_INC (arena->cnt_free);
-
-    nextp = freep - LARGECHUNK_SIZE (freep); /* chunk size is negated ! */
-
-    if (LARGECHUNK_SIZE (nextp) > 0) {
-        if (nextp == arena->wilderness) {
-            if (LARGECHUNK_PREVSIZE (freep) > 0) {
-                /*
-                 * Coalasce current and previous chunk with wilderness.
-                 */
-                DIAG_INC (arena->cnt_coalasce);
-                prevp = freep - LARGECHUNK_PREVSIZE (freep);
-                LARGECHUNK_SIZE (prevp)
-                  += LARGECHUNK_SIZE (nextp) - LARGECHUNK_SIZE (freep);
-                /* chunk size is negated ! */
-                LARGECHUNK_NEXTFREE (LARGECHUNK_PREVFREE (prevp))
-                  = LARGECHUNK_NEXTFREE (prevp);
-                LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (prevp))
-                  = LARGECHUNK_PREVFREE (prevp);
-                /* remove previous chunk from free list. */
-
-                arena->wilderness = prevp;
-                return;
-            } else {
-                /*
-                 * Coalasce current chunk with wilderness.
-                 */
-                DIAG_INC (arena->cnt_coalasce);
-                LARGECHUNK_SIZE (freep)
-                  = LARGECHUNK_SIZE (nextp) - LARGECHUNK_SIZE (freep);
-                /* chunk size is negated ! */
-                arena->wilderness = freep;
-                return;
-            }
-        } else {
-            if (LARGECHUNK_PREVSIZE (freep) > 0) {
-                /*
-                 * Coalasce with both neighboring chunks.
-                 */
-                DIAG_INC (arena->cnt_coalasce);
-                prevp = freep - LARGECHUNK_PREVSIZE (freep);
-                LARGECHUNK_SIZE (prevp)
-                  += LARGECHUNK_SIZE (nextp) - LARGECHUNK_SIZE (freep);
-                /* chunk size is negated ! */
-                LARGECHUNK_PREVSIZE (nextp + LARGECHUNK_SIZE (nextp))
-                  = LARGECHUNK_SIZE (prevp);
-                LARGECHUNK_NEXTFREE (LARGECHUNK_PREVFREE (nextp))
-                  = LARGECHUNK_NEXTFREE (nextp);
-                LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (nextp))
-                  = LARGECHUNK_PREVFREE (nextp);
-                /* remove next chunk from free list. */
-                return;
-            } else {
-                /*
-                 * Coalasce with next chunk.
-                 */
-                DIAG_INC (arena->cnt_coalasce);
-                LARGECHUNK_SIZE (freep)
-                  = LARGECHUNK_SIZE (nextp) - LARGECHUNK_SIZE (freep);
-                /* chunk size is negated ! */
-                LARGECHUNK_PREVSIZE (nextp + LARGECHUNK_SIZE (nextp))
-                  = LARGECHUNK_SIZE (freep);
-
-                LARGECHUNK_NEXTFREE (freep) = LARGECHUNK_NEXTFREE (nextp);
-                LARGECHUNK_PREVFREE (freep) = LARGECHUNK_PREVFREE (nextp);
-                LARGECHUNK_NEXTFREE (LARGECHUNK_PREVFREE (freep)) = freep;
-                LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (freep)) = freep;
-                /* Replace next chunk by current chunk in free list. */
-                return;
-            }
-        }
-    } else {
-        if (LARGECHUNK_PREVSIZE (freep) > 0) {
-            /*
-             * Coalasce with previous chunk.
-             */
-            DIAG_INC (arena->cnt_coalasce);
-            prevp = freep - LARGECHUNK_PREVSIZE (freep); /* chunk size is negated ! */
-            LARGECHUNK_SIZE (prevp) -= LARGECHUNK_SIZE (freep);
-            LARGECHUNK_PREVSIZE (nextp) = LARGECHUNK_SIZE (prevp);
-            return;
-        } else {
-            /*
-             * No coalascing at all.
-             */
-            LARGECHUNK_SIZE (freep)
-              = -LARGECHUNK_SIZE (freep); /* chunk size is negated ! */
-            LARGECHUNK_PREVSIZE (nextp) = LARGECHUNK_SIZE (freep);
-            freelist = arena->freelist;
-            LARGECHUNK_NEXTFREE (freep) = LARGECHUNK_NEXTFREE (freelist);
-            LARGECHUNK_PREVFREE (freep) = freelist;
-            LARGECHUNK_NEXTFREE (freelist) = freep;
-            LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (freep)) = freep;
-            return;
-        }
-    }
-}
-
-void
-SAC_HM_FreeLargeChunkNoCoalasce (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
-{
-    SAC_HM_header_t *freep, *freelist;
-
-    freep = addr - 2;
-    freelist = arena->freelist;
-
-    DIAG_CHECK_ALLOCPATTERN_LARGECHUNK (freep, arena->num);
-    DIAG_SET_FREEPATTERN_LARGECHUNK (freep);
-    DIAG_INC (arena->cnt_free);
-
-    LARGECHUNK_SIZE (freep) = -LARGECHUNK_SIZE (freep);
     LARGECHUNK_PREVSIZE (freep + LARGECHUNK_SIZE (freep)) = LARGECHUNK_SIZE (freep);
 
-    LARGECHUNK_NEXTFREE (freep) = LARGECHUNK_NEXTFREE (freelist);
-    LARGECHUNK_PREVFREE (freep) = freelist;
-    LARGECHUNK_NEXTFREE (freelist) = freep;
-    LARGECHUNK_PREVFREE (LARGECHUNK_NEXTFREE (freep)) = freep;
-}
-
-/*
- *
- */
-
-void *
-SAC_HM_MallocCheck (size_byte_t size)
-{
-    return (malloc (size));
+    LARGECHUNK_NEXTFREE (freep) = LARGECHUNK_NEXTFREE (arena->freelist);
+    LARGECHUNK_NEXTFREE (arena->freelist) = freep;
 }

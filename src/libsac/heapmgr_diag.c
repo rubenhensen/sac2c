@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1999/09/17 14:33:34  cg
+ * New version of SAC heap manager:
+ *  - no special API functions for top arena.
+ *  - coalascing is always done deferred.
+ *  - no doubly linked free lists any more.
+ *
  * Revision 1.1  1999/09/16 09:22:25  cg
  * Initial revision
  *
@@ -21,6 +27,13 @@
  *
  *
  *****************************************************************************/
+
+#define DIAG
+
+#include <stdio.h>
+
+#include "heapmgr.h"
+#include "sac_message.h"
 
 /*
  * Global counters for heap management diagnostics.

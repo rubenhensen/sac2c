@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1999/09/17 14:33:34  cg
+ * New version of SAC heap manager:
+ *  - no special API functions for top arena.
+ *  - coalascing is always done deferred.
+ *  - no doubly linked free lists any more.
+ *
  * Revision 1.2  1999/08/02 10:22:53  cg
  * Added dummy function definitions for new heap manager API functions
  * for pre-splitting and deferred coalascing.
@@ -34,6 +40,13 @@
 
 SAC_HM_arena_t SAC_HM_arenas[NUM_ARENAS];
 
+void
+SAC_HM_Setup (size_byte_t initial_arena_of_arenas_size,
+              size_byte_t initial_top_arena_size)
+{
+    return;
+}
+
 void *
 SAC_HM_MallocSmallChunk (size_unit_t units, SAC_HM_arena_t *arena)
 {
@@ -58,24 +71,6 @@ SAC_HM_MallocLargeChunkNoCoalasce (size_unit_t units, SAC_HM_arena_t *arena)
     return (malloc (units * UNIT_SIZE));
 }
 
-void *
-SAC_HM_MallocLargeChunkDeferredCoalasce (size_unit_t units, SAC_HM_arena_t *arena)
-{
-    return (malloc (units * UNIT_SIZE));
-}
-
-void *
-SAC_HM_MallocTopArena (size_unit_t units, SAC_HM_arena_t *arena)
-{
-    return (malloc (units * UNIT_SIZE));
-}
-
-void *
-SAC_HM_MallocTopArenaDeferredCoalasce (size_unit_t units, SAC_HM_arena_t *arena)
-{
-    return (malloc (units * UNIT_SIZE));
-}
-
 void
 SAC_HM_FreeSmallChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
 {
@@ -84,18 +79,6 @@ SAC_HM_FreeSmallChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
 
 void
 SAC_HM_FreeLargeChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
-{
-    free (addr);
-}
-
-void
-SAC_HM_FreeLargeChunkNoCoalasce (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
-{
-    free (addr);
-}
-
-void
-SAC_HM_FreeTopArena (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
 {
     free (addr);
 }

@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1999/09/17 14:33:34  cg
+ * New version of SAC heap manager:
+ *  - no special API functions for top arena.
+ *  - coalascing is always done deferred.
+ *  - no doubly linked free lists any more.
+ *
  * Revision 1.4  1999/07/29 07:35:41  cg
  * Two new performance related features added to SAC private heap
  * management:
@@ -82,8 +88,13 @@ extern void free (void *addr);
  * Type definitions of internal heap management data structures.
  */
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) < (b) ? (b) : (a))
+#ifndef SAC_MIN
+#define SAC_MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
+#ifndef SAC_MAX
+#define SAC_MAX(a, b) ((a) < (b) ? (b) : (a))
+#endif
 
 typedef union header_t {
     struct header_data1_t {
@@ -98,23 +109,26 @@ typedef union header_t {
         size_unit_t prevsize;
         size_unit_t diag;
     } data3;
-    char
-      align[(((MAX (MAX (sizeof (struct header_data1_t), sizeof (struct header_data2_t)),
-                    sizeof (struct header_data3_t))
-               - 1)
-              / ALIGNMENT)
-             + 1)
-            * ALIGNMENT];
+    char align[(((SAC_MAX (SAC_MAX (sizeof (struct header_data1_t),
+                                    sizeof (struct header_data2_t)),
+                           sizeof (struct header_data3_t))
+                  - 1)
+                 / ALIGNMENT)
+                + 1)
+               * ALIGNMENT];
 } SAC_HM_header_t;
+
+/*
+ * Memory is always administrated in chunks of UNIT_SIZE bytes.
+ */
 
 #define UNIT_SIZE (sizeof (SAC_HM_header_t))
 
 typedef struct arena_t {
     int num;
-    SAC_HM_header_t base[3];
+    SAC_HM_header_t freelist[3];
     size_unit_t arena_size;     /* in units */
     size_unit_t min_chunk_size; /* in units */
-    SAC_HM_header_t *freelist;
     SAC_HM_header_t *wilderness;
     void (*freefun) (SAC_HM_header_t *addr, struct arena_t *arena);
 #ifdef DIAG
@@ -177,17 +191,9 @@ extern void *SAC_HM_MallocSmallChunkPresplit (size_unit_t units, SAC_HM_arena_t 
                                               int presplit);
 extern void *SAC_HM_MallocLargeChunk (size_unit_t units, SAC_HM_arena_t *arena);
 extern void *SAC_HM_MallocLargeChunkNoCoalasce (size_unit_t units, SAC_HM_arena_t *arena);
-extern void *SAC_HM_MallocLargeChunkDeferredCoalasce (size_unit_t units,
-                                                      SAC_HM_arena_t *arena);
-extern void *SAC_HM_MallocTopArena (size_unit_t units, SAC_HM_arena_t *arena);
-extern void *SAC_HM_MallocTopArenaDeferredCoalasce (size_unit_t units,
-                                                    SAC_HM_arena_t *arena);
 
 extern void SAC_HM_FreeSmallChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena);
 extern void SAC_HM_FreeLargeChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena);
-extern void SAC_HM_FreeLargeChunkNoCoalasce (SAC_HM_header_t *addr,
-                                             SAC_HM_arena_t *arena);
-extern void SAC_HM_FreeTopArena (SAC_HM_header_t *addr, SAC_HM_arena_t *arena);
 
 #if SAC_DO_CHECK_HEAP
 extern void SAC_HM_ShowDiagnostics ();
@@ -233,15 +239,12 @@ extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
                  : (SAC_HM_MallocSmallChunk (16, &(SAC_HM_arenas[4])))))                 \
        : ((SAC_HM_UNITS (size) < ARENA_7_MINCS)                                          \
             ? ((SAC_HM_UNITS (size) < ARENA_6_MINCS)                                     \
-                 ? (SAC_HM_MallocLargeChunkNoCoalasce (SAC_HM_UNITS (size),              \
-                                                       &(SAC_HM_arenas[5])))             \
-                 : (SAC_HM_MallocLargeChunkNoCoalasce (SAC_HM_UNITS (size),              \
-                                                       &(SAC_HM_arenas[6]))))            \
+                 ? (SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size), &(SAC_HM_arenas[5])))  \
+                 : (SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size), &(SAC_HM_arenas[6])))) \
             : ((SAC_HM_UNITS (size) < ARENA_8_MINCS)                                     \
-                 ? (SAC_HM_MallocLargeChunkNoCoalasce (SAC_HM_UNITS (size),              \
-                                                       &(SAC_HM_arenas[7])))             \
-                 : (SAC_HM_MallocTopArenaDeferredCoalasce (SAC_HM_UNITS (size),          \
-                                                           &(SAC_HM_arenas[8]))))))
+                 ? (SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size), &(SAC_HM_arenas[7])))  \
+                 : (SAC_HM_MallocLargeChunk (SAC_HM_UNITS (size),                        \
+                                             &(SAC_HM_arenas[8]))))))
 #else
 #define SAC_HM_MALLOC_FIXED_SIZE(size) SAC_HM_MALLOC (size)
 #endif
@@ -291,19 +294,19 @@ extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
         } else {                                                                         \
             if (SAC_HM_UNITS (size) < ARENA_7_MINCS) {                                   \
                 if (SAC_HM_UNITS (size) < ARENA_6_MINCS) {                               \
-                    SAC_HM_FreeLargeChunkNoCoalasce ((SAC_HM_header_t *)addr,            \
-                                                     &(SAC_HM_arenas[5]));               \
+                    SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr,                      \
+                                           &(SAC_HM_arenas[5]));                         \
                 } else {                                                                 \
-                    SAC_HM_FreeLargeChunkNoCoalasce ((SAC_HM_header_t *)addr,            \
-                                                     &(SAC_HM_arenas[6]));               \
+                    SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr,                      \
+                                           &(SAC_HM_arenas[6]));                         \
                 }                                                                        \
             } else {                                                                     \
                 if (SAC_HM_UNITS (size) < ARENA_8_MINCS) {                               \
-                    SAC_HM_FreeLargeChunkNoCoalasce ((SAC_HM_header_t *)addr,            \
-                                                     &(SAC_HM_arenas[7]));               \
+                    SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr,                      \
+                                           &(SAC_HM_arenas[7]));                         \
                 } else {                                                                 \
-                    SAC_HM_FreeLargeChunkNoCoalasce ((SAC_HM_header_t *)addr,            \
-                                                     &(SAC_HM_arenas[8]));               \
+                    SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr,                      \
+                                           &(SAC_HM_arenas[8]));                         \
                 }                                                                        \
             }                                                                            \
         }                                                                                \

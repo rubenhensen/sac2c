@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1999/09/17 14:33:34  cg
+ * New version of SAC heap manager:
+ *  - no special API functions for top arena.
+ *  - coalascing is always done deferred.
+ *  - no doubly linked free lists any more.
+ *
  * Revision 1.3  1999/07/29 07:35:41  cg
  * Two new performance related features added to SAC private heap
  * management:
@@ -18,7 +24,7 @@
 
 /*****************************************************************************
  *
- * file:
+ * file:  heapmgr.h
  *
  * prefix: SAC_HM
  *
@@ -36,6 +42,17 @@
 
 #define SAC_DO_PHM 1
 #include "sac_heapmgr.h"
+
+/*
+ * Initialization of some basic values/sizes.
+ */
+
+#define KB 1024
+#define MB (KB * KB)
+#define SBRK_CHUNK (MB)
+
+#define ARENA_OF_ARENAS 0
+#define TOP_ARENA (NUM_ARENAS - 1)
 
 #define DIAG_FREEPATTERN -123456
 #define DIAG_ALLOCPATTERN 123456
@@ -73,9 +90,9 @@ extern unsigned long int SAC_HM_heapsize;
 
 #ifdef DIAG
 
-extern void SAC_HM_CheckAllocPattern (size_unit_t diag, int arena_num);
-extern void SAC_HM_CheckFreePattern (size_unit_t diag, int arena_num);
-extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
+extern void SAC_HM_CheckAllocDiagPattern (size_unit_t diag, int arena_num);
+extern void SAC_HM_CheckFreeDiagPattern (size_unit_t diag, int arena_num);
+extern void SAC_HM_CheckDiagPatternAnyChunk (SAC_HM_header_t *addr);
 
 #define DIAG_INC(cnt) (cnt)++
 #define DIAG_DEC(cnt) (cnt)--
@@ -91,18 +108,18 @@ extern void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
     LARGECHUNK_DIAG (freep) = DIAG_ALLOCPATTERN
 
 #define DIAG_CHECK_FREEPATTERN_SMALLCHUNK(freep, arena_num)                              \
-    SAC_HM_CheckFreePattern (SMALLCHUNK_DIAG (freep), arena_num)
+    SAC_HM_CheckFreeDiagPattern (SMALLCHUNK_DIAG (freep), arena_num)
 
 #define DIAG_CHECK_ALLOCPATTERN_SMALLCHUNK(freep, arena_num)                             \
-    SAC_HM_CheckAllocPattern (SMALLCHUNK_DIAG (freep), arena_num)
+    SAC_HM_CheckAllocDiagPattern (SMALLCHUNK_DIAG (freep), arena_num)
 
 #define DIAG_CHECK_FREEPATTERN_LARGECHUNK(freep, arena_num)                              \
-    SAC_HM_CheckFreePattern (LARGECHUNK_DIAG (freep), arena_num)
+    SAC_HM_CheckFreeDiagPattern (LARGECHUNK_DIAG (freep), arena_num)
 
 #define DIAG_CHECK_ALLOCPATTERN_LARGECHUNK(freep, arena_num)                             \
-    SAC_HM_CheckAllocPattern (LARGECHUNK_DIAG (freep), arena_num)
+    SAC_HM_CheckAllocDiagPattern (LARGECHUNK_DIAG (freep), arena_num)
 
-#define DIAG_CHECK_ALLOCPATTERN_ANYCHUNK(addr) SAC_HM_CheckAllocPatternAnyChunk (addr)
+#define DIAG_CHECK_ALLOCPATTERN_ANYCHUNK(addr) SAC_HM_CheckDiagPatternAnyChunk (addr)
 
 #else /* DIAG */
 
