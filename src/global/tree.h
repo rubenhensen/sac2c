@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.34  1995/04/11 15:57:47  asi
+ * Revision 1.35  1995/04/21 15:17:06  asi
+ * added 'flag' to struct 'ids'
+ *
+ * Revision 1.34  1995/04/11  15:57:47  asi
  * NIF macro enlarged
  *
  * Revision 1.33  1995/04/11  11:34:45  asi
@@ -151,6 +154,8 @@ typedef struct NCHAIN {
 typedef struct IDS {
     id *id;
     int refcnt;
+    int flag;              /* the flag is used for ids-status */
+                           /* (loop invariant/not loop invariant , ...) */
     struct NODE *node;     /* ptr. to decleration */
     struct NCHAIN *nchain; /* ptr. to definition(s) resp. usage(s) */
     struct IDS *next;
