@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.31  2004/12/10 17:40:37  khf
+ * corrected test on shape extent
+ *
  * Revision 1.30  2004/12/09 16:57:20  sbs
  * calls to TBmakePart adjusted.
  *
@@ -1532,7 +1535,8 @@ PropagateArrayConstants (node **expr)
                 (*expr) = tmp;
                 sco_expr = CFscoFreeStructConstant (sco_expr);
 
-            } else if (TYisAKS (ID_NTYPE ((*expr)))) {
+            } else if (TYisAKS (ID_NTYPE ((*expr)))
+                       && SHgetExtent (TYgetShape (ID_NTYPE ((*expr))), 0) > 0) {
                 gshape = GV_known_shape;
             }
         }
