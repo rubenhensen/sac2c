@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2003/10/20 15:34:42  dkr
+ * MT_SYNCBLOCK_CLEANUP
+ *
  * Revision 3.21  2003/10/15 17:30:06  dkrHH
  * MT_CREATE_LOCAL_DESC added
  *
@@ -148,6 +151,8 @@ extern void ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int vararg_cnt,
 extern void ICMCompileMT_SPMD_FUN_RET (int barrier_id, int vararg_cnt, char **vararg);
 
 extern void ICMCompileMT_SYNCBLOCK_BEGIN (int barrier_id, int vararg_cnt, char **vararg);
+extern void ICMCompileMT_SYNCBLOCK_CLEANUP (int barrier_id, int vararg_cnt,
+                                            char **vararg);
 extern void
 ICMCompileMT_SYNCBLOCK_END
 (int barrier_id, int vararg_cnt, char **vararg);
