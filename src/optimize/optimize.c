@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/04/13 14:02:56  cg
+ * function GetExpr() removed.
+ *
  * Revision 2.5  1999/04/11 10:35:16  bs
  * TSI call moved to the 'right' place.
  *
@@ -147,32 +150,6 @@ int wlf_expr;
 int wlt_expr;
 
 int old_wlf_expr, old_wlt_expr;
-
-/******************************************************************************
- *
- * function:
- *   node *GetExpr(node *arg_node)
- *
- * description:
- *   If arg_node is a let expression the RHS of it is returned.
- *   If such a RHS is of the kind "reshape(e1,e2)" only e2 is returned.
- *   Otherwise, arg_node itself is returned.
- *
- ******************************************************************************/
-
-node *
-GetExpr (node *arg_node)
-{
-    DBUG_ENTER ("GetExpr");
-    if (arg_node && (NODE_TYPE (arg_node) == N_assign)) {
-        if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let) {
-            arg_node = LET_EXPR (ASSIGN_INSTR (arg_node));
-            if (N_prf == NODE_TYPE (arg_node) && (F_reshape == PRF_PRF (arg_node)))
-                arg_node = PRF_ARG2 (arg_node);
-        }
-    }
-    DBUG_RETURN (arg_node);
-}
 
 /*
  *

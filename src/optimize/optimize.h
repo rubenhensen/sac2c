@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/04/13 14:02:56  cg
+ * function GetExpr() removed.
+ *
  * Revision 2.1  1999/02/23 12:41:54  sacbase
  * new release made
  *
@@ -127,8 +130,6 @@ extern int cse_expr;
 extern int wlf_expr;
 extern int wlt_expr;
 extern int old_wlf_expr, old_wlt_expr;
-
-extern node *GetExpr (node *arg_node);
 
 extern node *Optimize (node *arg_node);
 extern node *OPTmodul (node *arg_node, node *arg_info);
