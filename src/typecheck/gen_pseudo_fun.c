@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.5  1999/01/07 10:50:49  cg
+ * The module name is now encoded in the name of a fold-function.
+ * This is necessary to avoid name clashes with fold-functions from
+ * different modules although their actual module name is always '_FOLD'
+ *
  * Revision 1.4  1998/12/03 09:40:28  sbs
  * DBUG_ASSERT inserted.
  *
@@ -20,6 +25,7 @@
 #include "types.h"
 #include "tree_basic.h"
 #include "tree.h"
+#include "free.h"
 #include "typecheck.h"
 #include "internal_lib.h"
 #include "gen_pseudo_fun.h"
@@ -36,8 +42,8 @@
  * description:
  *  - generates an N_fundef node of the following kind:
  *
- *      <elem_type> _FOLD: _type_<n>_<fold_fun>( <elem_type> <res_var>,
- *                                               <elem_type> <body_expr>)
+ *      <elem_type> _FOLD: _type_<n>_<mod>__<fold_fun>( <elem_type> <res_var>,
+ *                                                      <elem_type> <body_expr>)
  *      {
  *        <res_var> = <fold_fun>( <res_var>, <body_expr>);
  *        return( <res_var>);
@@ -55,7 +61,7 @@ node *
 CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_var,
                      char *body_expr)
 {
-    char *pseudo_fold_fun;
+    char *pseudo_fold_fun, *buffer;
     node *new_fundef, *application, *args;
 
     DBUG_ENTER ("CreatePseudoFoldFun");
@@ -66,13 +72,26 @@ CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_v
 
     if (fold_fun != NULL) {
         application = MakeAp (StringCopy (fold_fun), NULL, args);
-        pseudo_fold_fun = TmpVarName (fold_fun);
+        pseudo_fold_fun = fold_fun;
     } else {
         DBUG_ASSERT (((fold_prf >= F_toi) && (fold_prf <= F_genarray)),
                      "fold_prf is out of range!");
         application = MakePrf (fold_prf, args);
-        pseudo_fold_fun = TmpVarName (prf_name_str[fold_prf]);
+        pseudo_fold_fun = prf_name_str[fold_prf];
     }
+
+    /*
+     * Since the module name of the fold function is always '_FOLD', the
+     * actual module name must be encoded within the name in order to guarantee
+     * that no two fold functions from different modules may have the same
+     * internal name.
+     */
+    buffer = (char *)Malloc (strlen (pseudo_fold_fun) + strlen (module_name) + 3);
+    strcpy (buffer, module_name);
+    strcat (buffer, "__");
+    strcat (buffer, pseudo_fold_fun);
+    pseudo_fold_fun = TmpVarName (buffer);
+    FREE (buffer);
 
     new_fundef
       = MakeFundef (pseudo_fold_fun, PSEUDO_MOD_FOLD, DuplicateTypes (elem_type, 1),
