@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.216  1999/02/12 17:44:51  cg
+ * WLSEGX mechanism now also used for WLSEG_SCHEDULING and WLSEGVAR_SCHEDULING
+ *
  * Revision 1.215  1999/02/12 12:32:28  bs
  * ID_CONSTARRAY and ID_ARRAYLENGTH inserted
  *
@@ -2643,6 +2646,7 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define WLSEGX_UBV(n) (n->mask[1])
 #define WLSEGX_SV(n) (n->mask[0])
 #define WLSEGX_MAXHOMDIM(n) (n->varno)
+#define WLSEGX_SCHEDULING(n) ((SCHsched_t *)n->info2)
 
 #define WLNODE_LEVEL(n) (n->lineno)
 #define WLNODE_DIM(n) (n->refcnt)
@@ -2698,7 +2702,7 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
 #define WLSEG_BV(n, level) (WLSEGX_BV (n, level))
 #define WLSEG_UBV(n) (WLSEGX_UBV (n))
 
-#define WLSEG_SCHEDULING(n) ((SCHsched_t) (n->node[4]))
+#define WLSEG_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
 #define WLSEG_MAXHOMDIM(n) (WLSEGX_MAXHOMDIM (n))
 
 /*--------------------------------------------------------------------------*/
@@ -2931,7 +2935,7 @@ extern node *MakeWLsegVar (int dims, node *contents, node *next);
 #define WLSEGVAR_BV(n, level) (WLSEGX_BV (n, level))
 #define WLSEGVAR_UBV(n) (WLSEGX_UBV (n))
 
-#define WLSEGVAR_SCHEDULING(n) ((SCHsched_t)n->node[5])
+#define WLSEGVAR_SCHEDULING(n) (WLSEGX_SCHEDULING (n))
 #define WLSEGVAR_MAXHOMDIM(n) (WLSEGX_MAXHOMDIM (n))
 
 /*--------------------------------------------------------------------------*/
