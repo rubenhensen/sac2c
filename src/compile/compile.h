@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  1998/04/24 17:14:40  dkr
+ * renamed Comp...() to COMP...()
+ *
  * Revision 1.29  1998/04/23 17:33:02  dkr
  * added CompSync
  *
@@ -91,35 +94,35 @@
 
 extern node *Compile (node *arg_node);
 
-extern node *CompModul (node *arg_node, node *arg_info);
-extern node *CompVardec (node *arg_node, node *arg_info);
-extern node *CompPrf (node *arg_node, node *arg_info);
-extern node *CompAssign (node *arg_node, node *arg_info);
-extern node *CompLet (node *arg_node, node *arg_info);
-extern node *CompArray (node *arg_node, node *arg_info);
-extern node *CompId (node *arg_node, node *arg_info);
-extern node *CompAp (node *arg_node, node *arg_info);
-extern node *CompReturn (node *arg_node, node *arg_info);
-extern node *CompArg (node *arg_node, node *arg_info);
-extern node *CompFundef (node *arg_node, node *arg_info);
-extern node *CompLoop (node *arg_node, node *arg_info);
-extern node *CompCond (node *arg_node, node *arg_info);
-extern node *CompBlock (node *arg_node, node *arg_info);
-extern node *CompCast (node *arg_node, node *arg_info);
-extern node *CompTypedef (node *arg_node, node *arg_info);
-extern node *CompObjdef (node *arg_node, node *arg_info);
-extern node *CompWith (node *arg_node, node *arg_info);
-extern node *CompSPMD (node *arg_node, node *arg_info);
-extern node *CompSync (node *arg_node, node *arg_info);
-extern node *CompNcode (node *arg_node, node *arg_info);
-extern node *CompNwith2 (node *arg_node, node *arg_info);
-extern node *CompWLseg (node *arg_node, node *arg_info);
-extern node *CompWLblock (node *arg_node, node *arg_info);
-extern node *CompWLublock (node *arg_node, node *arg_info);
-extern node *CompWLstride (node *arg_node, node *arg_info);
-extern node *CompWLgrid (node *arg_node, node *arg_info);
-extern node *CompWLstriVar (node *arg_node, node *arg_info);
-extern node *CompWLgridVar (node *arg_node, node *arg_info);
+extern node *COMPModul (node *arg_node, node *arg_info);
+extern node *COMPVardec (node *arg_node, node *arg_info);
+extern node *COMPPrf (node *arg_node, node *arg_info);
+extern node *COMPAssign (node *arg_node, node *arg_info);
+extern node *COMPLet (node *arg_node, node *arg_info);
+extern node *COMPArray (node *arg_node, node *arg_info);
+extern node *COMPId (node *arg_node, node *arg_info);
+extern node *COMPAp (node *arg_node, node *arg_info);
+extern node *COMPReturn (node *arg_node, node *arg_info);
+extern node *COMPArg (node *arg_node, node *arg_info);
+extern node *COMPFundef (node *arg_node, node *arg_info);
+extern node *COMPLoop (node *arg_node, node *arg_info);
+extern node *COMPCond (node *arg_node, node *arg_info);
+extern node *COMPBlock (node *arg_node, node *arg_info);
+extern node *COMPCast (node *arg_node, node *arg_info);
+extern node *COMPTypedef (node *arg_node, node *arg_info);
+extern node *COMPObjdef (node *arg_node, node *arg_info);
+extern node *COMPWith (node *arg_node, node *arg_info);
+extern node *COMPSPMD (node *arg_node, node *arg_info);
+extern node *COMPSync (node *arg_node, node *arg_info);
+extern node *COMPNcode (node *arg_node, node *arg_info);
+extern node *COMPNwith2 (node *arg_node, node *arg_info);
+extern node *COMPWLseg (node *arg_node, node *arg_info);
+extern node *COMPWLblock (node *arg_node, node *arg_info);
+extern node *COMPWLublock (node *arg_node, node *arg_info);
+extern node *COMPWLstride (node *arg_node, node *arg_info);
+extern node *COMPWLgrid (node *arg_node, node *arg_info);
+extern node *COMPWLstriVar (node *arg_node, node *arg_info);
+extern node *COMPWLgridVar (node *arg_node, node *arg_info);
 
 /* and now some macros for creation of N_icms */
 
