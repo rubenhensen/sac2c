@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/01/22 13:45:09  dkr
+ * signature of ICMCompileMT_ADJUST_SCHEDULER modified
+ *
  * Revision 3.1  2000/11/20 18:01:16  sacbase
  * new release made
  *
@@ -53,7 +56,6 @@
  * Revision 1.1  1998/05/13 07:22:57  cg
  * Initial revision
  *
- *
  */
 
 /*****************************************************************************
@@ -67,12 +69,9 @@
  *   This file contains the prototypes of those functions that actually
  *   implement the C implemented ICMs.
  *
- *
- *
  *****************************************************************************/
 
 #ifndef ICM2C_MT_H
-
 #define ICM2C_MT_H
 
 extern void ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg);
@@ -101,7 +100,8 @@ extern void ICMCompileMT_SPMD_ALTSEQ (char *name);
 extern void ICMCompileMT_SPMD_END (char *name);
 
 extern void ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower,
-                                           int upper, int unrolling, char *array);
+                                           int upper, int unrolling, char *array,
+                                           bool adjust_offset);
 
 extern void ICMCompileMT_SCHEDULER_BEGIN (int dim, int *vararg);
 extern void ICMCompileMT_SCHEDULER_END (int dim, int *vararg);

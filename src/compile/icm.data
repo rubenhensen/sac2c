@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/01/22 13:45:21  dkr
+ * signature of ICMCompileMT_ADJUST_SCHEDULER modified
+ *
  * Revision 3.4  2001/01/19 11:53:48  dkr
  * some with-loop ICMs renamed
  *
@@ -136,7 +139,7 @@ ICM_DEF( ND_DECL_AKS, TRACE_NONE)
   ICM_STR(nt)
   ICM_INT(dim)
   ICM_VAR( dim, s)
-ICM_END( ND_DECL_AKS, (type, nt, dim, s) )
+ICM_END( ND_DECL_AKS, (type, nt, dim, s))
 #endif
 
 
@@ -148,7 +151,7 @@ ICM_DEF( ND_KS_DECL_ARRAY, TRACE_NONE)
   ICM_STR(name)
   ICM_INT(dim)
   ICM_VAR( dim, s)
-ICM_END( ND_KS_DECL_ARRAY, (type, name, dim, s) )
+ICM_END( ND_KS_DECL_ARRAY, (type, name, dim, s))
 #endif
 
 #endif /* TAGGED_ARRAYS */
@@ -159,7 +162,7 @@ ICM_DEF( ND_KS_DECL_GLOBAL_ARRAY, TRACE_NONE)
   ICM_STR(name)
   ICM_INT(dim)
   ICM_VAR( dim, s)
-ICM_END( ND_KS_DECL_GLOBAL_ARRAY, (type, name, dim, s) )
+ICM_END( ND_KS_DECL_GLOBAL_ARRAY, (type, name, dim, s))
 #endif
 
 #if defined(ND_KD_DECL_EXTERN_ARRAY) || defined(ICM_ALL)
@@ -167,7 +170,7 @@ ICM_DEF( ND_KD_DECL_EXTERN_ARRAY, TRACE_NONE)
   ICM_STR(type)
   ICM_STR(name)
   ICM_INT(dim)
-ICM_END( ND_KD_DECL_EXTERN_ARRAY, (type, name, dim) )
+ICM_END( ND_KD_DECL_EXTERN_ARRAY, (type, name, dim))
 #endif
 
 #if defined(ND_KS_DECL_ARRAY_ARG) || defined(ICM_ALL)
@@ -175,7 +178,7 @@ ICM_DEF( ND_KS_DECL_ARRAY_ARG, TRACE_NONE)
   ICM_STR(name)
   ICM_INT(dim)
   ICM_VAR( dim, s)
-ICM_END( ND_KS_DECL_ARRAY_ARG, (name, dim, s) )
+ICM_END( ND_KS_DECL_ARRAY_ARG, (name, dim, s))
 #endif
 
 #if defined(ND_KD_SET_SHAPE) || defined(ICM_ALL)
@@ -183,7 +186,7 @@ ICM_DEF( ND_KD_SET_SHAPE, TRACE_NONE)
   ICM_STR(name)
   ICM_INT(dim)
   ICM_VAR( dim, s)
-ICM_END( ND_KD_SET_SHAPE, (name, dim, s) )
+ICM_END( ND_KD_SET_SHAPE, (name, dim, s))
 #endif
 
 #if defined(ND_KD_PSI_CxA_S) || defined(ICM_ALL)
@@ -192,7 +195,7 @@ ICM_DEF( ND_KD_PSI_CxA_S, TRACE_PRF)
   ICM_STR(res)
   ICM_INT(dim)
   ICM_VAR( dim, vi)
-ICM_END( ND_KD_PSI_CxA_S, (a, res, dim, vi) )
+ICM_END( ND_KD_PSI_CxA_S, (a, res, dim, vi))
 #endif
 
 #if defined(ND_KD_PSI_VxA_S) || defined(ICM_ALL)
@@ -201,7 +204,7 @@ ICM_DEF( ND_KD_PSI_VxA_S, TRACE_PRF)
   ICM_STR(res)
   ICM_INT(dim)
   ICM_STR( v)
-ICM_END( ND_KD_PSI_VxA_S, (a, res, dim, v) )
+ICM_END( ND_KD_PSI_VxA_S, (a, res, dim, v))
 #endif
 
 #if defined(ND_KD_PSI_CxA_A) || defined(ICM_ALL)
@@ -211,7 +214,7 @@ ICM_DEF( ND_KD_PSI_CxA_A, TRACE_PRF)
   ICM_STR(res)
   ICM_INT(dimv)
   ICM_VAR( dimv, vi)
-ICM_END( ND_KD_PSI_CxA_A, (dima, a, res, dimv, vi) )
+ICM_END( ND_KD_PSI_CxA_A, (dima, a, res, dimv, vi))
 #endif
 
 #if defined(ND_KD_PSI_VxA_A) || defined(ICM_ALL)
@@ -221,7 +224,7 @@ ICM_DEF( ND_KD_PSI_VxA_A, TRACE_PRF)
   ICM_STR(res)
   ICM_INT(dimv)
   ICM_STR( v)
-ICM_END( ND_KD_PSI_VxA_A, (dima, a, res, dimv, v) )
+ICM_END( ND_KD_PSI_VxA_A, (dima, a, res, dimv, v))
 #endif
 
 #if defined(ND_KD_TAKE_CxA_A) || defined(ICM_ALL)
@@ -231,7 +234,7 @@ ICM_DEF( ND_KD_TAKE_CxA_A, TRACE_PRF)
   ICM_STR(res)
   ICM_INT(dimv)
   ICM_VAR( dimv, vi)
-ICM_END( ND_KD_TAKE_CxA_A, (dima, a, res, dimv, vi) )
+ICM_END( ND_KD_TAKE_CxA_A, (dima, a, res, dimv, vi))
 #endif
 
 #if defined(ND_KD_DROP_CxA_A) || defined(ICM_ALL)
@@ -241,7 +244,7 @@ ICM_DEF( ND_KD_DROP_CxA_A, TRACE_PRF)
   ICM_STR(res)
   ICM_INT(dimv)
   ICM_VAR( dimv, vi)
-ICM_END( ND_KD_DROP_CxA_A, (dima, a, res, dimv, vi) )
+ICM_END( ND_KD_DROP_CxA_A, (dima, a, res, dimv, vi))
 #endif
 
 #if defined(ND_KD_CAT_SxAxA_A) || defined(ICM_ALL)
@@ -250,7 +253,7 @@ ICM_DEF( ND_KD_CAT_SxAxA_A, TRACE_PRF)
   ICM_VAR( 2,ar)
   ICM_STR(res)
   ICM_INT(catdim)
-ICM_END( ND_KD_CAT_SxAxA_A, (dima, ar, res, catdim) )
+ICM_END( ND_KD_CAT_SxAxA_A, (dima, ar, res, catdim))
 #endif
 
 #if defined(ND_KD_ROT_CxSxA_A) || defined(ICM_ALL)
@@ -260,7 +263,7 @@ ICM_DEF( ND_KD_ROT_CxSxA_A, TRACE_PRF)
   ICM_INT(dima)
   ICM_STR(a)
   ICM_STR(res)
-ICM_END( ND_KD_ROT_CxSxA_A, (rotdim, numstr, dima, a, res) )
+ICM_END( ND_KD_ROT_CxSxA_A, (rotdim, numstr, dima, a, res))
 #endif
 
 #if defined(ND_PRF_MODARRAY_AxCxS_CHECK_REUSE) || defined(ICM_ALL)
@@ -272,7 +275,7 @@ ICM_DEF( ND_PRF_MODARRAY_AxCxS_CHECK_REUSE, TRACE_PRF)
   ICM_VAR( 1, value)
   ICM_INT(dimv)
   ICM_VAR( dimv, vi)
-ICM_END( ND_PRF_MODARRAY_AxCxS_CHECK_REUSE, (res_type, dimres, res, old, value, dimv, vi) )
+ICM_END( ND_PRF_MODARRAY_AxCxS_CHECK_REUSE, (res_type, dimres, res, old, value, dimv, vi))
 #endif
 
 #if defined(ND_PRF_MODARRAY_AxCxS) || defined(ICM_ALL)
@@ -284,7 +287,7 @@ ICM_DEF( ND_PRF_MODARRAY_AxCxS, TRACE_PRF)
   ICM_VAR( 1, value)
   ICM_INT(dimv)
   ICM_VAR( dimv, vi)
-ICM_END( ND_PRF_MODARRAY_AxCxS, (res_type, dimres, res, old, value, dimv, vi) )
+ICM_END( ND_PRF_MODARRAY_AxCxS, (res_type, dimres, res, old, value, dimv, vi))
 #endif
 
 #if defined(ND_PRF_MODARRAY_AxVxS_CHECK_REUSE) || defined(ICM_ALL)
@@ -296,7 +299,7 @@ ICM_DEF( ND_PRF_MODARRAY_AxVxS_CHECK_REUSE, TRACE_PRF)
   ICM_VAR( 1, value)
   ICM_INT(dim)
   ICM_STR(v)
-ICM_END( ND_PRF_MODARRAY_AxVxS_CHECK_REUSE, (res_type,dimres,res,old,value,dim,v) )
+ICM_END( ND_PRF_MODARRAY_AxVxS_CHECK_REUSE, (res_type,dimres,res,old,value,dim,v))
 #endif
 
 #if defined(ND_PRF_MODARRAY_AxVxS) || defined(ICM_ALL)
@@ -308,7 +311,7 @@ ICM_DEF( ND_PRF_MODARRAY_AxVxS, TRACE_PRF)
   ICM_VAR( 1, value)
   ICM_INT(dim)
   ICM_STR(v)
-ICM_END( ND_PRF_MODARRAY_AxVxS, (res_type,dimres,res,old,value,dim,v) )
+ICM_END( ND_PRF_MODARRAY_AxVxS, (res_type,dimres,res,old,value,dim,v))
 #endif
 
 #if defined(ND_PRF_MODARRAY_AxCxA_CHECK_REUSE) || defined(ICM_ALL)
@@ -320,7 +323,7 @@ ICM_DEF( ND_PRF_MODARRAY_AxCxA_CHECK_REUSE, TRACE_PRF)
   ICM_STR( val)
   ICM_INT(dimv)
   ICM_VAR( dimv, vi)
-ICM_END( ND_PRF_MODARRAY_AxCxA_CHECK_REUSE, (res_type,dimres,res,old,val,dimv,vi) )
+ICM_END( ND_PRF_MODARRAY_AxCxA_CHECK_REUSE, (res_type,dimres,res,old,val,dimv,vi))
 #endif
 
 #if defined(ND_PRF_MODARRAY_AxCxA) || defined(ICM_ALL)
@@ -332,7 +335,7 @@ ICM_DEF( ND_PRF_MODARRAY_AxCxA, TRACE_PRF)
   ICM_STR(val)
   ICM_INT(dimv)
   ICM_VAR( dimv, vi)
-ICM_END( ND_PRF_MODARRAY_AxCxA, (res_type,dimres,res,old,val,dimv,vi) )
+ICM_END( ND_PRF_MODARRAY_AxCxA, (res_type,dimres,res,old,val,dimv,vi))
 #endif
 
 #if defined(ND_PRF_MODARRAY_AxVxA_CHECK_REUSE) || defined(ICM_ALL)
@@ -344,7 +347,7 @@ ICM_DEF( ND_PRF_MODARRAY_AxVxA_CHECK_REUSE, TRACE_PRF)
   ICM_STR( val)
   ICM_INT(dim)
   ICM_STR( v)
-ICM_END( ND_PRF_MODARRAY_AxVxA_CHECK_REUSE, (res_type,dimres,res,old,val,dim,v) )
+ICM_END( ND_PRF_MODARRAY_AxVxA_CHECK_REUSE, (res_type,dimres,res,old,val,dim,v))
 #endif
  
 #if defined(ND_PRF_MODARRAY_AxVxA) || defined(ICM_ALL)
@@ -356,7 +359,7 @@ ICM_DEF( ND_PRF_MODARRAY_AxVxA, TRACE_PRF)
   ICM_STR(val)
   ICM_INT(dim)
   ICM_STR( v)
-ICM_END( ND_PRF_MODARRAY_AxVxA, (res_type,dimres,res,old,val,dim,v) )
+ICM_END( ND_PRF_MODARRAY_AxVxA, (res_type,dimres,res,old,val,dim,v))
 #endif
 
 #if defined(ND_KS_VECT2OFFSET) || defined(ICM_ALL)
@@ -652,7 +655,8 @@ ICM_DEF( MT_ADJUST_SCHEDULER, TRACE_NONE)
   ICM_INT(upper)
   ICM_INT(unrolling)
   ICM_STR(array)
-ICM_END( MT_ADJUST_SCHEDULER, (current_dim, array_dim, lower, upper, unrolling, array))
+  ICM_INT(adjust_offset)
+ICM_END( MT_ADJUST_SCHEDULER, (current_dim, array_dim, lower, upper, unrolling, array, adjust_offset))
 #endif
 
 
