@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/08/09 14:52:04  dkr
+ * signature of TYType2WrapperCode modified
+ *
  * Revision 3.11  2002/08/09 13:01:18  dkr
  * TYType2WrapperCode() added
  *
@@ -3537,7 +3540,7 @@ TYType2OldType (ntype *new)
 /******************************************************************************
  *
  * Function:
- *   node *TYType2WrapperCode( ntype *type)
+ *   node *TYType2WrapperCode( ntype *type, node **vardecs)
  *
  * Description:
  *
@@ -3545,13 +3548,15 @@ TYType2OldType (ntype *new)
  ******************************************************************************/
 
 node *
-TYType2WrapperCode (ntype *type)
+TYType2WrapperCode (ntype *type, node **vardecs)
 {
-    node *cond;
+    node *assigns;
 
     DBUG_ENTER ("TYType2WrapperCode");
 
-    cond = NULL;
+    DBUG_ASSERT ((vardecs != NULL), "no pointer to vardecs found!");
 
-    DBUG_RETURN (cond);
+    assigns = NULL;
+
+    DBUG_RETURN (assigns);
 }

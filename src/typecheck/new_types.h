@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/08/09 14:51:45  dkr
+ * signature of TYType2WrapperCode modified
+ *
  * Revision 3.5  2002/08/09 13:01:06  dkr
  * TYType2WrapperCode() added
  *
@@ -53,7 +56,7 @@
  *    Among array types with identical scalar type, there exists a type
  *    hierarchy. It reflects different levels of shape restrictions:
  *      a) AUD array types   (arrays of unknown dimensionality)
- *      b) AUDGZ array types (arrays of unknown dimensionality greater than zero)
+ *      b) AUDGZ array types (arrays of unknown dimensionality greater than 0)
  *      c) AKD array types   (arrays of a fixed (known) dimensionality)
  *      d) AKS array types   (arrays of a fixed (known) shape)
  *    This hierarchy is formalized by a subtype relation which in fact is
@@ -90,7 +93,7 @@
  *    Another consequence of this design decision is the need to keep some
  *    function information attached to the individual elements of the
  *    intersection types. Therefore,
- *      -  TYMakeFunType            obtains a    node* fun_info    argument, and
+ *      -  TYMakeFunType            obtains a   node* fun_info   argument, and
  *      -  TYMakeOverloadedFunType  obtains a function pointer argument that
  *                                  merges two such fun_info nodes into a single
  *                                  one.
@@ -107,7 +110,7 @@
  *    and unwrapping of product types does not exist in any stage of the
  *    compilation process. For example, a function
  *
- *    int[*], int[*] foo( int[*] x)    with   foo::{ int[*] -> (int[*], int[*]) }
+ *    int[*], int[*] foo( int[*] x)   with   foo::{ int[*] -> (int[*], int[*]) }
  *
  *    can be used within an assignment
  *
@@ -117,9 +120,9 @@
  */
 
 /*
- * Besides the scalar types, which are of a purely technical nature (see comments
- * above), this module provides another sort of types which do not have a type
- * theoretic correspondence, i.e., TYPE VARIABLES.
+ * Besides the scalar types, which are of a purely technical nature (see
+ * comments above), this module provides another sort of types which do not
+ * have a type theoretic correspondence, i.e., TYPE VARIABLES.
  *
  * Again, guided by pragmatical considerations, only a very restricted form
  * of type variables is introduced here, namely type variables for array types
@@ -323,6 +326,6 @@ extern types *TYType2OldType (ntype *new);
 /*
  * Function for converting types into SAC code for wrapper functions
  */
-extern node *TYType2WrapperCode (ntype *type);
+extern node *TYType2WrapperCode (ntype *type, node **vardecs);
 
 #endif /* _new_types_h */
