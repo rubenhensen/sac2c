@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/07/10 08:09:21  cg
+ * some bugs fixed, appropriate renaming of macros
+ *
  * Revision 1.2  1998/06/05 07:49:45  cg
  * converted to new renaming conventions of local identifiers.
  *
@@ -39,7 +42,7 @@
  */
 
 #define SAC_ND_BINOP_AxA_A(op, a1, a2, res)                                              \
-    SAC_TR_PRINT_PRF (("ND_BINOP_AxA_A( %s, %s, %s, %s)\n", #op, #a1, #a2, #res));       \
+    SAC_TR_PRF_PRINT (("ND_BINOP_AxA_A( %s, %s, %s, %s)\n", #op, #a1, #a2, #res));       \
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (res); SAC_i++)                            \
@@ -48,7 +51,7 @@
     };
 
 #define SAC_ND_BINOP_AxS_A(op, a2, s, res)                                               \
-    SAC_TR_PRINT_PRF (("ND_BINOP_AxS_A( %s, %s, %s, %s)\n", #op, #a2, #s, #res));        \
+    SAC_TR_PRF_PRINT (("ND_BINOP_AxS_A( %s, %s, %s, %s)\n", #op, #a2, #s, #res));        \
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (res); SAC_i++)                            \
@@ -56,7 +59,7 @@
     };
 
 #define SAC_ND_BINOP_SxA_A(op, s, a2, res)                                               \
-    SAC_TR_PRINT_PRF (("ND_BINOP_SxA_A( %s, %s, %s, %s)\n", #op, #s, #a2, #res));        \
+    SAC_TR_PRF_PRINT (("ND_BINOP_SxA_A( %s, %s, %s, %s)\n", #op, #s, #a2, #res));        \
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (res); SAC_i++)                            \

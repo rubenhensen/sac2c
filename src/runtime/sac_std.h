@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/07/10 08:09:21  cg
+ * some bugs fixed, appropriate renaming of macros
+ *
  * Revision 1.4  1998/06/29 08:52:19  cg
  * streamlined tracing facilities
  * tracing on new with-loop and multi-threading operations implemented
@@ -213,7 +216,7 @@
             SAC_ND_A_FIELD (new)[__i] = SAC_ND_A_FIELD (old)[__i];                       \
         }                                                                                \
         SAC_TR_MEM_PRINT_TRACEHEADER_ALL (("ND_KS_COPY_ARRAY(%s, %s)", #old, #new));     \
-        SAC_TR_PRINT_REF (old);                                                          \
+        SAC_TR_REF_PRINT_RC (old);                                                       \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (new));                                   \
     }
 
@@ -359,7 +362,7 @@
 #define SAC_ND_MAKE_UNIQUE_HIDDEN(old, new, copyfun)                                     \
     {                                                                                    \
         SAC_TR_MEM_PRINT (("ND_MAKE_UNIQUE_HIDDEN(%s, %s, %s)", #old, #new, #copyfun));  \
-        SAC_TR_PRINT_RC (old);                                                           \
+        SAC_TR_REF_PRINT_RC (old);                                                       \
         if (SAC_ND_A_RC (old) == 1) {                                                    \
             SAC_ND_ASSIGN_HIDDEN (old, new);                                             \
             SAC_TR_MEM_PRINT (("%s is already unique.", old));                           \
@@ -372,9 +375,9 @@
 
 #define SAC_ND_KS_MAKE_UNIQUE_ARRAY(old, new, basetypesize)                              \
     {                                                                                    \
-        SAC_TR_PRINT (                                                                   \
+        SAC_TR_MEM_PRINT (                                                               \
           ("ND_KS_MAKE_UNIQUE_ARRAY(%s, %s, %d)", #old, #new, basetypesize));            \
-        SAC_TR_PRINT_RC (old);                                                           \
+        SAC_TR_REF_PRINT_RC (old);                                                       \
         if ((SAC_ND_A_RC (old)) == 1) {                                                  \
             SAC_ND_KS_ASSIGN_ARRAY (old, new);                                           \
             SAC_TR_MEM_PRINT (("%s is already unique.", old));                           \
@@ -387,9 +390,9 @@
 
 #define SAC_ND_NO_RC_MAKE_UNIQUE_HIDDEN(old, new, copyfun)                               \
     {                                                                                    \
-        SAC_TR_PRINT (                                                                   \
+        SAC_TR_MEM_PRINT (                                                               \
           ("ND_NO_RC_MAKE_UNIQUE_HIDDEN(%s, %s, %s)", #old, #new, #copyfun));            \
-        SAC_TR_PRINT_RC (old);                                                           \
+        SAC_TR_REF_PRINT_RC (old);                                                       \
         if (SAC_ND_A_RC (old) == 1) {                                                    \
             SAC_ND_NO_RC_ASSIGN_HIDDEN (old, new);                                       \
             SAC_FREE (SAC_ND_A_RCP (old));                                               \
@@ -402,9 +405,9 @@
 
 #define SAC_ND_KS_NO_RC_MAKE_UNIQUE_ARRAY(old, new, basetypesize)                        \
     {                                                                                    \
-        SAC_TR_PRINT (                                                                   \
+        SAC_TR_MEM_PRINT (                                                               \
           ("ND_KS_NO_RC_MAKE_UNIQUE_ARRAY(%s, %s, %d)", #old, #new, basetypesize));      \
-        SAC_TR_PRINT_RC (old);                                                           \
+        SAC_TR_REF_PRINT_RC (old);                                                       \
         if ((SAC_ND_A_RC (old)) == 1) {                                                  \
             SAC_ND_KS_NO_RC_ASSIGN_ARRAY (old, new);                                     \
             SAC_FREE (SAC_ND_A_RCP (old));                                               \
