@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/11/25 15:36:04  khf
+ * removed IS_REFERENCED, IS_GLOBAl
+ *
  * Revision 3.12  2004/11/25 15:13:14  khf
  * SacDevCamp04
  *
@@ -308,9 +311,6 @@ SPMDLspmd (node *arg_node, info *arg_info)
                                TBmakeAvis (ILIBstringCopy (VARDEC_NAME (vardec)), NULL)),
                              retexprs);
         }
-
-        ID_ISGLOBAL (EXPRS_EXPR (new_retexpr)) = FALSE;
-        ID_ISREFERENCE (EXPRS_EXPR (new_retexpr)) = FALSE;
 
         tmp = LUTsearchInLutPp (lut, vardec);
         DBUG_ASSERT ((tmp != NULL), "no decl for return value found in LUT!");
