@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.4  1995/07/24 11:54:09  asi
+# Revision 1.5  1995/07/24 11:56:09  asi
+# make deps done
+#
+# Revision 1.4  1995/07/24  11:54:09  asi
 # added array elimination
 #
 # Revision 1.3  1995/07/14  08:33:01  sbs
@@ -39,12 +42,21 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
+ArrayElimination.o: /usr/include/stdio.h /usr/include/stdlib.h
+ArrayElimination.o: /usr/include/sys/stdtypes.h /usr/include/string.h
+ArrayElimination.o: ../global/tree.h ../global/type_info.mac
+ArrayElimination.o: ../global/node_info.mac ../global/prf_node_info.mac
+ArrayElimination.o: ../global/Error.h ../../inc/dbug.h ../global/my_debug.h
+ArrayElimination.o: ../global/traverse.h ../typecheck/typecheck.h
+ArrayElimination.o: ../global/free.h ../optimize/DupTree.h
+ArrayElimination.o: ../global/access_macros.h ../global/internal_lib.h
+ArrayElimination.o: ../optimize/optimize.h ../optimize/Inline.h
+ArrayElimination.o: ../optimize/LoopInvariantRemoval.h ArrayElimination.h
 index.o: /usr/include/stdio.h /usr/include/string.h
 index.o: /usr/include/sys/stdtypes.h ../../inc/dbug.h ../global/tree.h
 index.o: ../global/type_info.mac ../global/node_info.mac
 index.o: ../global/prf_node_info.mac ../global/traverse.h
-index.o: ../optimize/DupTree.h index.h ../global/access_macros.h
-index.o: ../compile/compile.h
+index.o: ../optimize/DupTree.h index.h
 psi-opt.o: /usr/include/stdio.h /usr/include/stdlib.h
 psi-opt.o: /usr/include/sys/stdtypes.h ../global/tree.h
 psi-opt.o: ../global/type_info.mac ../global/node_info.mac

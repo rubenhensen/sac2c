@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.18  1995/07/24 11:53:12  asi
+# Revision 1.19  1995/07/24 11:56:05  asi
+# make deps done
+#
+# Revision 1.18  1995/07/24  11:53:12  asi
 # added -I../psi-opt to INCS
 #
 # Revision 1.17  1995/07/07  15:47:50  asi
@@ -133,8 +136,8 @@ LoopInvariantRemoval.o: ../global/type_info.mac ../global/node_info.mac
 LoopInvariantRemoval.o: ../global/prf_node_info.mac ../global/free.h
 LoopInvariantRemoval.o: ../global/Error.h ../../inc/dbug.h
 LoopInvariantRemoval.o: ../global/my_debug.h ../global/traverse.h
-LoopInvariantRemoval.o: ../typecheck/typecheck.h optimize.h DupTree.h
-LoopInvariantRemoval.o: LoopInvariantRemoval.h
+LoopInvariantRemoval.o: ../typecheck/typecheck.h ../global/access_macros.h
+LoopInvariantRemoval.o: optimize.h DupTree.h LoopInvariantRemoval.h
 Unroll.o: /usr/include/stdio.h /usr/include/stdlib.h
 Unroll.o: /usr/include/sys/stdtypes.h ../global/tree.h
 Unroll.o: ../global/type_info.mac ../global/node_info.mac
@@ -162,4 +165,4 @@ optimize.o: ../global/prf_node_info.mac ../global/free.h ../global/Error.h
 optimize.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
 optimize.o: ../print/print.h optimize.h ConstantFolding.h DeadCodeRemoval.h
 optimize.o: WorkReduction.h LoopInvariantRemoval.h Inline.h Unroll.h
-optimize.o: Unswitch.h
+optimize.o: Unswitch.h ../psi-opt/ArrayElimination.h

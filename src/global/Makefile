@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.26  1995/07/07 15:47:43  asi
+# Revision 1.27  1995/07/24 11:56:01  asi
+# make deps done
+#
+# Revision 1.26  1995/07/07  15:47:43  asi
 # make deps done
 #
 # Revision 1.25  1995/06/02  11:58:17  asi
@@ -136,6 +139,9 @@ free.o: ../../inc/dbug.h tree.h type_info.mac node_info.mac prf_node_info.mac
 free.o: traverse.h ../optimize/optimize.h
 internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
+internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/math.h
+internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/floatingpoint.h
+internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/ieeefp.h
 internal_lib.o: Error.h
 internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
 internal_lib.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
@@ -165,7 +171,8 @@ traverse.o: ../optimize/ConstantFolding.h ../optimize/DeadCodeRemoval.h
 traverse.o: ../optimize/WorkReduction.h ../optimize/LoopInvariantRemoval.h
 traverse.o: ../modules/import.h ../refcount/refcount.h ../compile/compile.h
 traverse.o: ../optimize/DupTree.h ../optimize/Inline.h ../optimize/Unroll.h
-traverse.o: ../optimize/Unswitch.h ../psi-opt/index.h traverse.h
+traverse.o: ../optimize/Unswitch.h ../psi-opt/ArrayElimination.h
+traverse.o: ../psi-opt/index.h traverse.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 tree.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 tree.o: tree.h type_info.mac node_info.mac prf_node_info.mac ../../inc/dbug.h
