@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.67  1998/05/06 17:20:31  dkr
+ * added macros NWITH_IDS, NWITH_VEC
+ *
  * Revision 1.66  1998/05/04 17:56:41  sbs
  * LET_VARDEC(n) moved from tree_basic.h to tree_compound.h!!!!
  *
@@ -1328,6 +1331,12 @@ extern node *GetCompoundNode (node *arg_node);
        ? NWITHOP_ARRAY (n)                                                               \
        : WO_genarray == NWITHOP_TYPE (n) ? NWITHOP_SHAPE (n) : NWITHOP_NEUTRAL (n))
 #define NWITH_TYPE(n) (NWITHOP_TYPE (NWITH_WITHOP (n)))
+#define NWITH_IDS(n) (NPART_IDS (NWITH_PART (n)))
+#define NWITH_VEC(n) (NPART_VEC (NWITH_PART (n)))
+/*
+ * Remark: We only need to inspect the withid of the first part,
+ *         because the withid is in *all* parts the same!!
+ */
 
 /*--------------------------------------------------------------------------*/
 
