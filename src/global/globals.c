@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/02/26 15:22:58  cg
+ * target_name now initialized as 'default'
+ *
  * Revision 1.1  1998/02/25 09:10:20  cg
  * Initial revision
  *
@@ -66,7 +69,7 @@ file_type filetype;
  * Target architecture description
  */
 
-char target_name[MAX_FILE_NAME];
+char target_name[MAX_FILE_NAME] = "default";
 /* name of target architecture, information taken from sac2crc file  */
 
 /*
