@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/06/20 15:50:30  asi
+ * Revision 1.8  1995/06/26 11:49:48  asi
+ * functions for stack-handling added
+ *
+ * Revision 1.7  1995/06/20  15:50:30  asi
  * added macros TOS, VAR
  *
  * Revision 1.6  1995/05/03  16:25:48  asi
@@ -45,6 +48,10 @@ typedef struct STACK {
 } stack;
 
 extern stack *cf_stack;
+extern void PushVL (long NumVar);
+extern void PushDupVL ();
+extern void PopVL ();
+extern void PopVL2 ();
 
 extern node *ConstantFolding (node *arg_node, node *arg_info);
 
