@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/04/02 16:24:19  dkr
+ * minor changes done
+ *
  * Revision 3.16  2001/04/02 11:16:15  nmw
  * FreeAp decrements the used counter for special fundefs and
  * removes the corresponding assignment from list
@@ -89,42 +92,7 @@
  * Revision 1.2  2000/01/26 17:27:42  dkr
  * type of traverse-function-table changed.
  *
- * Revision 1.1  2000/01/21 15:38:21  dkr
- * Initial revision
- *
- * Revision 2.10  1999/08/25 16:08:15  bs
- * FreeNCodeWLAA modified.
- *
- * Revision 2.9  1999/08/04 14:27:32  bs
- * Function FreeNCodeWLAA added.
- *
- * Revision 2.8  1999/07/07 15:03:05  sbs
- * FreeVinfo now does not free VINFO_TYPE anymore since that is used in sharing!
- *
- * Revision 2.7  1999/07/02 09:45:06  jhs
- * Inserted DFMRemoveMask for SPMD_SHARED mask into FreeSpmd.
- *
- * Revision 2.6  1999/05/12 08:47:38  sbs
- * FreeArray and FreeId adjusted to new constvec access macros.
- *
- * Revision 2.5  1999/04/13 14:06:41  cg
- * FreeBlock() now removes pragma cachesim.
- *
- * Revision 2.4  1999/03/15 13:48:21  bs
- * Some minor modifications in FreeId and FreeArray in the train of renaming of
- * access macros. For more information take a look at tree_basic.h
- *
- * Revision 2.3  1999/02/28 21:08:56  srs
- * bugfix in FreeAssign()
- *
- * Revision 2.2  1999/02/25 09:41:24  bs
- * FreeId and FreeArray modified: compact propagation of constant
- * integer vectors will be deallocated now.
- *
  * [...]
- *
- * Revision 1.1  1994/12/20  15:42:10  sbs
- * Initial revision
  *
  */
 
@@ -180,12 +148,14 @@
 #define FREETRAV(node)                                                                   \
     {                                                                                    \
         if ((node) != NULL) {                                                            \
-            (node) = Trav (node, arg_info); /* dkr: remove whole subtree !!! */          \
+            /* dkr: remove whole subtree !!! */                                          \
+            (node) = Trav (node, arg_info);                                              \
         }                                                                                \
     }
 
 #define FREECONT(node)                                                                   \
-    ((INFO_FREE_FLAG (arg_info) != NULL) && (node != NULL)) ? Trav (node, arg_info) : node
+    ((INFO_FREE_FLAG (arg_info) != NULL) && ((node) != NULL)) ? Trav (node, arg_info)    \
+                                                              : (node)
 
 /*--------------------------------------------------------------------------*/
 /*  Free-function wrapper for debugging purposes                            */
@@ -555,7 +525,6 @@ FreeNode (node *free_node)
     act_tab = free_tab;
 
     arg_info = MakeInfo ();
-    INFO_FREE_ASSIGN (arg_info) = NULL;
     INFO_FREE_FLAG (arg_info) = NULL;
 
     free_node = Trav (free_node, arg_info);
@@ -582,7 +551,6 @@ FreeTree (node *free_node)
     act_tab = free_tab;
 
     arg_info = MakeInfo ();
-    INFO_FREE_ASSIGN (arg_info) = NULL;
     INFO_FREE_FLAG (arg_info) = free_node;
 
     Trav (free_node, arg_info);
@@ -1156,7 +1124,7 @@ FreeAp (node *arg_node, node *arg_info)
     if ((AP_FUNDEF (arg_node) != NULL)
         && (FUNDEF_USED (AP_FUNDEF (arg_node)) != FUN_UNUSED)) {
 
-        FUNDEF_USED (AP_FUNDEF (arg_node)) = FUNDEF_USED (AP_FUNDEF (arg_node)) - 1;
+        (FUNDEF_USED (AP_FUNDEF (arg_node)))--;
 
         /* remove assignment from external assignment list) */
         DBUG_ASSERT ((INFO_FREE_ASSIGN (arg_info) != NULL),
@@ -1164,7 +1132,7 @@ FreeAp (node *arg_node, node *arg_info)
 
         FUNDEF_EXT_ASSIGNS (AP_FUNDEF (arg_node))
           = NodeListDelete (FUNDEF_EXT_ASSIGNS (AP_FUNDEF (arg_node)),
-                            INFO_FREE_ASSIGN (arg_info), 0);
+                            INFO_FREE_ASSIGN (arg_info), FALSE);
 
         DBUG_PRINT ("FREE", ("decrementing used counter to %d",
                              FUNDEF_USED (AP_FUNDEF (arg_node))));
