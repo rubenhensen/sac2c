@@ -1,6 +1,11 @@
 
 /*
  * $Log$
+ * Revision 2.13  2000/05/29 17:37:12  dkr
+ * functions for old with-loop removed
+ * ID_VARDEC of arguments of ND_KS_USE_GENVAR_OFFSET-icm is set
+ * correctly now. RC itself must be patch in order to ignore this icm!
+ *
  * Revision 2.12  2000/05/12 15:42:39  dkr
  * IdxLet():
  * If the LHS-var is a vector which is neither used as IDX(shp) nor as VECT,
@@ -795,7 +800,7 @@ CutVinfoChn (node *chain)
 /******************************************************************************
  *
  * function:
- *  node *AppendVinfoChn( node * ca, node * cb)
+ *  node *AppendVinfoChn( node *ca, node *cb)
  *
  * description:
  *   Expects ca to contain one chain only. If that assumption holds cb is appended
@@ -818,7 +823,7 @@ AppendVinfoChn (node *ca, node *cb)
 /******************************************************************************
  *
  * function:
- *  node *MergeVinfoChn( node * ca, node * cb)
+ *  node *MergeVinfoChn( node *ca, node *cb)
  *
  * description:
  *   Expects ca to contain one chain only. If that assumption holds the entries
@@ -878,7 +883,7 @@ MergeVinfoChn (node *ca, node *cb)
 /******************************************************************************
  *
  * function:
- *  node *DuplicateTop( node * actchn)
+ *  node *DuplicateTop( node *actchn)
  *
  * description:
  *
@@ -902,7 +907,7 @@ DuplicateTop (node *actchn)
 /******************************************************************************
  *
  * function:
- *  node *SwitchTop( node * actchn)
+ *  node *SwitchTop( node *actchn)
  *
  * description:
  *
@@ -927,7 +932,7 @@ SwitchTop (node *actchn)
 /******************************************************************************
  *
  * function:
- *  node *MergeTop( node * actchn)
+ *  node *MergeTop( node *actchn)
  *
  * description:
  *
@@ -952,7 +957,7 @@ MergeTop (node *actchn)
 /******************************************************************************
  *
  * function:
- *  node *FreeTop( node * actchn)
+ *  node *FreeTop( node *actchn)
  *
  * description:
  *
@@ -976,7 +981,7 @@ FreeTop (node *actchn)
 /******************************************************************************
  *
  * function:
- *  node *MergeCopyTop( node * actchn)
+ *  node *MergeCopyTop( node *actchn)
  *
  * description:
  *
@@ -1102,9 +1107,10 @@ VardecIdx (node *vardec, types *type)
  * function:
  *  node *CreateVect2OffsetIcm(node *vardec, types *type)
  *
- * description: vardec points to the N_vardec/ N_arg node of the original
+ * description:
+ *    'vardec' points to the N_vardec/ N_arg node of the original
  *    declaration, i.e. the "VECT"-version, of an index variable.
- *    type indicates which IDX(type) version has to be computed.
+ *    'type' indicates which IDX(type) version has to be computed.
  *    CreateVect2OffsetIcm creates the required  ND_KS_VECT2OFFSET - ICM, e.g.,
  *    if   vardec ->  int[2] iv    and   type -> double [4,5,6],
  *    an icm ND_KS_VECT2OFFSET( iv_4_5_6__, iv, 2, 3, 4, 5, 6)  is created.
@@ -1125,6 +1131,7 @@ CreateVect2OffsetIcm (node *vardec, types *type)
     int i;
 
     DBUG_ENTER ("CreateVect2OffsetIcm");
+
     /*
      * First, we create an N_exprs-chain containing the shape of type!
      */
@@ -1155,7 +1162,6 @@ CreateVect2OffsetIcm (node *vardec, types *type)
     /*
      * Finally, we mark vardec as VECT!
      */
-
     L_VARDEC_OR_ARG_COLCHN (vardec, SetVect (VARDEC_OR_ARG_COLCHN (vardec)));
 
     DBUG_RETURN (MakeAssign (icm, NULL));
@@ -1296,7 +1302,7 @@ IdxArg (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node * IdxBlock( node *arg_node, node *arg_info )
+ *  node *IdxBlock( node *arg_node, node *arg_info )
  *
  * description:
  *   Make sure that the vardecs are traversed BEFORE the body!
@@ -1338,7 +1344,7 @@ IdxBlock (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node * IdxVardec( node *arg_node, node *arg_info )
+ *  node *IdxVardec( node *arg_node, node *arg_info )
  *
  * description:
  *   if( arg_info != NULL)
@@ -1409,7 +1415,7 @@ IdxVardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node * IdxAssign( node *arg_node, node *arg_info )
+ *  node *IdxAssign( node *arg_node, node *arg_info )
  *
  * description:
  *
@@ -1991,167 +1997,6 @@ IdxNum (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *IdxWith(node *arg_node, node *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-IdxWith (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("IdxWith");
-    /* Bottom up traversal; the OPERATOR is a N_modarray,
-     * N_genarray, N_foldprf, or N_foldfun node.
-     * all these nodes do have ordenary N_block-nodes attached!
-     */
-    WITH_OPERATOR (arg_node) = Trav (WITH_OPERATOR (arg_node), NULL);
-
-    /* When traversing the generator, we potentially want to insert some
-     * index conversions into the body; therfore, we supply the
-     * N_let node as surplus argument; it does not suffice to
-     * submit the body (N_genarray, N_modarray or N_fold node)
-     * since the name of the variable that will be generated/modified
-     * is needed for the creation of the ND_KS_USE_GENVAR_OFFSET ICM !
-     */
-    WITH_GEN (arg_node)
-      = Trav (WITH_GEN (arg_node), ASSIGN_INSTR (INFO_IVE_CURRENTASSIGN (arg_info)));
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *IdxGenerator(node *arg_node, node *arg_info)
- *
- * description:
- *
- * remark:
- *   arg_info contains prior N_let node.
- *
- ******************************************************************************/
-
-node *
-IdxGenerator (node *arg_node, node *arg_info)
-{
-    node *vardec, *vinfo, *block, *icm_arg, *newassign, *newid, *arrayid;
-    node *name_node, *dim_node, *dim_node2, *body, *colvinfo;
-    types *artype;
-    int i;
-
-    DBUG_ENTER ("IdxGenerator");
-    DBUG_ASSERT ((NODE_TYPE (arg_info) == N_let), "arg_info is not a N_let-node");
-    DBUG_ASSERT ((NODE_TYPE (LET_EXPR (arg_info)) == N_with),
-                 "N_let node in arg_info contains no with-loop");
-
-    body = WITH_OPERATOR (LET_EXPR (arg_info));
-    GEN_LEFT (arg_node) = Trav (GEN_LEFT (arg_node), NULL);
-    GEN_RIGHT (arg_node) = Trav (GEN_RIGHT (arg_node), NULL);
-    vardec = GEN_VARDEC (arg_node);
-    vinfo = VARDEC_ACTCHN (vardec);
-
-    /* first, we memorize the actuall chain */
-    GEN_USE (arg_node) = vinfo;
-    /* then, we remove the actual chain! */
-    VARDEC_ACTCHN (vardec) = MakeVinfoDollar (CutVinfoChn (vinfo));
-
-    /* for each IDX-vinfo-node we have to instanciate the respective
-     * variable as first statement in the body of the with loop.
-     * for doing so, we need the root of the body which is supplied
-     * via arg_info by IdxWith!
-     */
-    DBUG_PRINT ("IDX", ("introducing idx-vars in with-bodies"));
-    while (vinfo != NULL) {
-        DBUG_PRINT ("IDX", ("examining vinfo(%p)", vinfo));
-        if (VINFO_FLAG (vinfo) == IDX) {
-            artype = LET_TYPE (arg_info);
-            DBUG_ASSERT ((artype != NULL), "missing type-info for LHS of let!");
-            switch (body->nodetype) {
-            case N_modarray:
-                block = MODARRAY_BODY (body);
-                break;
-            case N_genarray:
-                block = GENARRAY_BODY (body);
-                break;
-            case N_foldprf:
-                block = FOLDPRF_BODY (body);
-                break;
-            case N_foldfun:
-                block = FOLDFUN_BODY (body);
-                break;
-            default:
-                DBUG_ASSERT ((0 != 0), "unknown generator type in IdxGenerator");
-                /*
-                 * the following assignment is used only for convincing the C compiler
-                 * that block will be initialized in any case!
-                 */
-                block = NULL;
-            }
-
-            if (((NODE_TYPE (body) == N_modarray) || (NODE_TYPE (body) == N_genarray))
-                && EqTypes (VINFO_TYPE (vinfo), artype)) {
-                /*
-                 * we can reuse the genvar as index directly!
-                 * therefore we create an ICM of the form:
-                 * ND_KS_USE_GENVAR_OFFSET( <idx-varname>, <result-array-varname>)
-                 */
-                newid
-                  = MakeId (IdxChangeId (GEN_ID (arg_node), artype), NULL, ST_regular);
-                colvinfo = FindIdx (VARDEC_COLCHN (vardec), artype);
-                DBUG_ASSERT (((colvinfo != NULL) && (VINFO_VARDEC (colvinfo) != NULL)),
-                             "missing vardec for IDX variable!");
-                ID_VARDEC (newid) = VINFO_VARDEC (colvinfo);
-                arrayid = MakeId (StringCopy (LET_NAME (arg_info)), NULL, ST_regular);
-                /*
-                 * The backref of the arrayid is set wrongly to the actual
-                 * integer index-variable. This is done on purpose for
-                 * fooling the refcount-inference system.
-                 * The "correct" backref would be LET_VARDEC( arg_info) !
-                 */
-                ID_VARDEC (arrayid) = VINFO_VARDEC (colvinfo);
-
-                CREATE_2_ARY_ICM (newassign, "ND_KS_USE_GENVAR_OFFSET", newid, arrayid);
-            } else {
-                /*
-                 * we have to instanciate the idx-variable by an ICM of the form:
-                 * ND_KS_VECT2OFFSET( <off-name>, <var-name>,
-                 *                    <dim of var>, <dim of array>, shape_elems)
-                 */
-                newid = MakeId (IdxChangeId (GEN_ID (arg_node), VINFO_TYPE (vinfo)), NULL,
-                                ST_regular);
-                colvinfo = FindIdx (VARDEC_COLCHN (vardec), VINFO_TYPE (vinfo));
-                DBUG_ASSERT (((colvinfo != NULL) && (VINFO_VARDEC (colvinfo) != NULL)),
-                             "missing vardec for IDX variable");
-                ID_VARDEC (newid) = VINFO_VARDEC (colvinfo);
-
-                name_node = MakeId (StringCopy (GEN_ID (arg_node)), NULL, ST_regular);
-                ID_VARDEC (name_node) = vardec;
-
-                dim_node = MakeNum (VARDEC_SHAPE (vardec, 0));
-
-                dim_node2 = MakeNum (VINFO_DIM (vinfo));
-
-                CREATE_4_ARY_ICM (newassign, "ND_KS_VECT2OFFSET", newid, /* off-name */
-                                  name_node,                             /* var-name */
-                                  dim_node,                              /* dim of var */
-                                  dim_node2); /* dim of array */
-
-                /* Now, we append the shape elems to the ND_KS_VECT2OFFSET-ICM ! */
-                for (i = 0; i < VINFO_DIM (vinfo); i++)
-                    MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (VINFO_SELEMS (vinfo)[i]));
-            }
-            ASSIGN_NEXT (newassign) = BLOCK_INSTR (block);
-            BLOCK_INSTR (block) = newassign;
-        }
-        vinfo = VINFO_NEXT (vinfo);
-    }
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *IdxNwith( node *arg_node, node *arg_info)
  *
  * description:
@@ -2332,13 +2177,23 @@ IdxNcode (node *arg_node, node *arg_info)
                     array_id
                       = MakeId (StringCopy (LET_NAME (let_node)), NULL, ST_regular);
 
+#if 0
+          /* 
+           * The backref of the array-id is set wrongly to the actual
+           * integer index-variable. This is done on purpose for
+           * fooling the refcount-inference system.
+           * The "correct" backref would be LET_VARDEC( let_node) !
+           */
+          ID_VARDEC( array_id) = VINFO_VARDEC( col_vinfo);
+#else
                     /*
-                     * The backref of the arrayid is set wrongly to the actual
-                     * integer index-variable. This is done on purpose for
-                     * fooling the refcount-inference system.
-                     * The "correct" backref would be LET_VARDEC( let_node) !
+                     * The backref to declaration of the array-id must set correctly
+                     * because following compilation steps (e.g. AdjustIdentifiers())
+                     * depend on it!
+                     * Therefore RC itself must be patch in order to ignore this icm!
                      */
-                    ID_VARDEC (array_id) = VINFO_VARDEC (col_vinfo);
+                    ID_VARDEC (array_id) = LET_VARDEC (let_node);
+#endif
 
                     new_assign = MakeAssign (MakeIcm2 ("ND_KS_USE_GENVAR_OFFSET", new_id,
                                                        array_id),
@@ -2379,7 +2234,7 @@ IdxNcode (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node * IdxCond( node * arg_node, node * arg_info)
+ *  node *IdxCond( node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -2411,7 +2266,7 @@ IdxCond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node * IdxWhile( node * arg_node, node * arg_info)
+ *  node *IdxWhile( node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -2459,7 +2314,7 @@ IdxWhile (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node * IdxDo( node * arg_node, node * arg_info)
+ *  node *IdxDo( node *arg_node, node *arg_info)
  *
  * description:
  *
