@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 1.6  2003/03/21 15:53:57  sah
+# platform specific flags
+# are now set in configure
+#
 # Revision 1.5  2003/03/21 11:46:05  sah
 # added MT & PHM Makefile flags
 #
@@ -24,46 +28,13 @@
 #
 # OS setup:
 #
-# legal values for OS currently are:
-#    SOLARIS_SPARC
-#    LINUX_X86
-#    OSF_ALPHA
-#    OSX_MAC
-#
-# to allow easy changes: 
-# do not delete os lines, but "comment" all not used lines
-#
 
 OS=@OS@
 ARCH=@ARCH@
 
+################################################################################
 #
-# SOLARIS_SPARC specific flags and libraries:
-#
-#
-# The switch __EXTENSIONS__ must be set under Solaris in order to avoid warnings
-# when using non-ANSI-compliant functions.
-# Currently, these are popen(), pclose(), tempnam(), and strdup().
-#
-SOLARIS_FLAGS := -D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY
-
-#
-# LINUX_X86 specific flags and libraries:
-#
-LINUX_FLAGS     := -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE
-
-#
-# OSF_ALPHA specific flags and libraries:
-#
-OSF_FLAGS    := -D_OSF_SOURCE
-
-#
-# OSX_MAC specific flags and libraries:
-#
-OSX_FLAGS    := -traditional-cpp -Wno-long-double 
-
-#
-# MT & PHM Makefile flags
+# MT & PHM Setup:
 #
 
 DISABLE_MT   := @DISABLE_MT@
@@ -71,57 +42,14 @@ DISABLE_PHM  := @DISABLE_PHM@
 
 ################################################################################
 #
-# C compiler setup:
-#
-# legal values for CC and CCPROD currently are:
-#    gcc
-#    cc
+# general setup:
 #
 
 CC           := @CC@
 CCPROD       := @CC@
-
-#
-# gcc specific flags:
-#
-gcc_FLAGS      := -ansi -Wall -g
-gcc_PROD_FLAGS := -ansi -Wall -g -O3
-gcc_DEPS_FLAGS := -M
-
-#
-# cc specific flags for SOLARIS_SPARC :
-#
-SOLARIS_cc_FLAGS      := -erroff=E_CAST_DOESNT_YIELD_LVALUE -g
-SOLARIS_cc_PROD_FLAGS := -erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4
-SOLARIS_cc_DEPS_FLAGS := -xM
-
-#
-# cc specific flags for OSF_ALPHA:
-#
-OSF_cc_FLAGS      := -g
-OSF_cc_PROD_FLAGS := -g3
-OSF_cc_DEPS_FLAGS := -M
-
-
-################################################################################
-#
-# general setup:
-#
-
-ifeq ($(CC),cc)
-  CCFLAGS      := $($(OS)_$(CC)_FLAGS) $($(OS)_FLAGS)
-  CCDEPS_FLAGS := $($(OS)_$(CC)_DEPS_FLAGS) $(CCFLAGS)
-else
-  CCFLAGS      := $($(CC)_FLAGS) $($(OS)_FLAGS)
-  CCDEPS_FLAGS := $($(CC)_DEPS_FLAGS) $(CCFLAGS)
-endif
-
-ifeq ($(CCPROD),cc)
-  CCPROD_FLAGS := $($(OS)_$(CCPROD)_PROD_FLAGS) $($(OS)_FLAGS)
-else
-  CCPROD_FLAGS := $($(CCPROD)_PROD_FLAGS) $($(OS)_FLAGS)
-endif
-
+CCFLAGS      := @MKCCFLAGS@ @OSFLAGS@
+CCDEPS_FLAGS := @DEPSFLAG@ $(CCFLAGS)
+CCPROD_FLAGS := @PDCCFLAGS@ @OSFLAGS@
 CFLAGS       := -DSHOW_MALLOC
 CPROD_FLAGS  := -DDBUG_OFF -DPRODUCTION
 
@@ -146,7 +74,7 @@ ECHO         :=echo
 LEX          :=@LEX@ -n
 YACC         :=@YACC@ -dv
 
-ifeq ($(OS),SOLARIS)
+ifeq ($(OS),solaris2.8)
   YYFLAGS   := -DYYDEBUG=1
 else
   YYFLAGS   :=
