@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1995/02/13 17:22:28  asi
+ * Revision 1.14  1995/03/10 10:45:25  hw
+ * refcnt_tab inserted
+ *
+ * Revision 1.13  1995/02/13  17:22:28  asi
  * added include files ConstantFolding.h and DeadCodeRemoval.h
  *
  * Revision 1.12  1995/02/07  10:59:23  asi
@@ -61,6 +64,7 @@
 #include "ConstantFolding.h"
 #include "DeadCodeRemoval.h"
 #include "import.h"
+#include "refcount.h"
 
 #include "traverse.h"
 
@@ -173,6 +177,18 @@ funptr free_tab[] = {
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) a
 
 funptr cf_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 10) refcnt_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d) b
+
+funptr refcnt_tab[] = {
 #include "node_info.mac"
 };
 
