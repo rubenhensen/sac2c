@@ -1,6 +1,10 @@
 
 #
 # $Log$
+# Revision 3.140  2004/11/17 19:50:56  sah
+# made src/modules/implicittypes.o invisible in
+# new ast mode
+#
 # Revision 3.139  2004/11/14 13:42:15  ktr
 # added src/refcount/reusebranching.o
 #
@@ -435,10 +439,11 @@ PSIOPT= src/psi-opt/index.o src/psi-opt/ArrayElimination.o \
 PSIOPT_OLD=
 
 MODULES= src/modules/symboltable.o src/modules/filemgr.o \
-         src/modules/implicittypes.o src/modules/stringset.o
+         src/modules/stringset.o
 MODULES_OLD= src/modules/import.o src/modules/writesib.o \
              src/modules/analysis.o src/modules/cccall.o \
-             src/modules/checkdec.o src/modules/readsib.o
+             src/modules/checkdec.o src/modules/readsib.o \
+             src/modules/implicittypes.o 
 
 OBJECTS= src/objects/objinit.o src/objects/objects.o src/objects/uniquecheck.o
 OBJECTS_OLD=
