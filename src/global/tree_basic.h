@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.174  1998/05/15 23:43:09  dkr
+ * changed NWITH2_IDX_MIN, NWITH2_IDX_MAX
+ * (very complicated now, but 'gcc' depends on it ...)
+ *
  * Revision 1.173  1998/05/15 15:13:46  dkr
  * added WLGRIDVAR_CEXPR_TEMPLATE, INFO_WL_SHPSEG
  *
@@ -2784,8 +2788,8 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define NWITH2_WITHOP(n) (n->node[3])
 #define NWITH2_DIMS(n) (n->flag)
 
-#define NWITH2_IDX_MIN(n) ((int *)(n->mask[3]))
-#define NWITH2_IDX_MAX(n) ((int *)(n->mask[4]))
+#define NWITH2_IDX_MIN(n) (*((int **)(&(n->mask[2]))))
+#define NWITH2_IDX_MAX(n) (*((int **)(&(n->mask[3]))))
 
 #define NWITH2_DEC_RC_IDS(n) ((ids *)(n->node[5]))
 
