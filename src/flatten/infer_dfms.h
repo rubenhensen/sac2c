@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/12/06 20:03:23  dkr
+ * Infer_DFMs added
+ *
  * Revision 1.1  2000/12/06 19:57:54  dkr
  * Initial revision
  *
@@ -22,5 +25,8 @@ extern node *INFDFMSwith2 (node *arg_node, node *arg_info);
 extern node *INFDFMScond (node *arg_node, node *arg_info);
 extern node *INFDFMSwhile (node *arg_node, node *arg_info);
 extern node *INFDFMSdo (node *arg_node, node *arg_info);
+
+node *
+Infer_DFMs (node *syntax_tree)
 
 #endif /* _sac_infer_dfms_h */
