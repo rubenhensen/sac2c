@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.24  2000/07/25 10:05:40  nmw
+ * no generation of dec files when compiling for c-libraries
+ *
  * Revision 2.23  2000/07/12 10:09:18  dkr
  * phase numbers in comments corrected
  *
@@ -418,7 +421,8 @@ main (int argc, char *argv[])
     compiler_phase++;
 
     PHASE_PROLOG;
-    if (MODUL_FILETYPE (syntax_tree) != F_prog) {
+    if ((MODUL_FILETYPE (syntax_tree) != F_prog)
+        && (!(generatelibrary & GENERATELIBRARY_C))) {
         NOTE_COMPILER_PHASE;
         syntax_tree = CheckDec (syntax_tree); /* writedec_tab and checkdec_tab */
     }
@@ -447,7 +451,8 @@ main (int argc, char *argv[])
     compiler_phase++;
 
     PHASE_PROLOG;
-    if (MODUL_FILETYPE (syntax_tree) != F_prog) {
+    if ((MODUL_FILETYPE (syntax_tree) != F_prog)
+        && (!(generatelibrary & GENERATELIBRARY_C))) {
         NOTE_COMPILER_PHASE;
         syntax_tree = WriteSib (syntax_tree); /* writesib_tab */
     }
