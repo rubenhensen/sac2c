@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/07/14 12:05:14  dkr
+ * DFRblock() added
+ *
  * Revision 2.2  2000/01/26 17:26:59  dkr
  * type of traverse-function-table changed.
  *
@@ -15,8 +18,6 @@
  *
  * Revision 1.1  1999/01/07 17:36:51  sbs
  * Initial revision
- *
- *
  *
  */
 
@@ -35,9 +36,18 @@
 
 #include "optimize.h"
 
+/******************************************************************************
+ *
+ * Function:
+ *   node *DeadFunctionRemoval( node *arg_node, node *info_node)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
 node *
 DeadFunctionRemoval (node *arg_node, node *info_node)
-
 {
     funtab *tmp_tab;
     int mem_dead_fun = dead_fun;
@@ -48,32 +58,29 @@ DeadFunctionRemoval (node *arg_node, node *info_node)
 
     tmp_tab = act_tab;
     act_tab = dfr_tab;
-    info_node = MakeNode (N_info);
+
+    info_node = MakeInfo ();
     arg_node = Trav (arg_node, info_node);
-    FREE (info_node);
+    info_node = FreeTree (info_node);
 
     DBUG_PRINT ("OPT", ("                        result: %d", dead_fun - mem_dead_fun));
     DBUG_PRINT ("OPTMEM", ("mem currently allocated: %d bytes", current_allocated_mem));
 
     act_tab = tmp_tab;
+
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : DFRmodul
- *  arguments     : 1) N_modul - node
- *                  R) N_modul - node
- *  description   : Prevents DFR in modules
- *  global vars   : syntax_tree,
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG..., MODUL_FILETYPE
+ * Function:
+ *   node *DFRmodul(node *arg_node,node *info_node)
  *
- *  remarks       :
+ * Description:
+ *   Prevents DFR in modules
  *
- *
- */
+ ******************************************************************************/
+
 node *
 DFRmodul (node *arg_node, node *info_node)
 {
@@ -86,55 +93,102 @@ DFRmodul (node *arg_node, node *info_node)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : DFRfundef
- *  arguments     : 1) N_fundef - node
- *                  2) N_info - node
- *                  R) N_fundef - node
- *  description   : Traverses instruction- (if not inline marked) and function-chain
- *                  in this sequence.
- *  global vars   : --
- *  internal funs : --
- *  external funs : Trav (optimize.h)
- *  macros        : FUNDEF_NAME, FUNDEF_BODY, FUNDEF_INSTR, FUNDEF_NEXT
+ * Function:
+ *   node *DFRfundef( node *arg_node, node *arg_info)
  *
- *  remarks       : --
+ * Description:
+ *   Traverses instruction- (if not inline marked) and function-chain
+ *   in this order.
  *
- */
+ ******************************************************************************/
+
 node *
 DFRfundef (node *arg_node, node *arg_info)
 {
     node *nextfun;
 
     DBUG_ENTER ("DFRfundef");
+
     DBUG_PRINT ("DFR", ("Dead Function Removal in function: %s", FUNDEF_NAME (arg_node)));
 
-    if ((NULL != FUNDEF_BODY (arg_node)) && (0 == FUNDEF_INLINE (arg_node)))
+    if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_INLINE (arg_node) == 0)) {
         FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
+    }
 
-    if (NULL != FUNDEF_NEXT (arg_node))
+    if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
-    if (1 == FUNDEF_INLINE (arg_node)) {
+    if (FUNDEF_INLINE (arg_node)) {
         dead_fun++;
         nextfun = FUNDEF_NEXT (arg_node);
         FUNDEF_NEXT (arg_node) = NULL;
-        FreeTree (arg_node);
+        arg_node = FreeTree (arg_node);
         arg_node = nextfun;
     }
+
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *DFRblock( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Removes BLOCK_NEEDFUNS!
+ *
+ ******************************************************************************/
+
+node *
+DFRblock (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("DFRblock");
+
+    if (BLOCK_INSTR (arg_node) != NULL) {
+        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    }
+
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
+    }
+
+    /*
+     * After DFR the data stored in BLOCK_NEEDFUNS is possibly corrupted!
+     * -> remove it!
+     */
+    if (BLOCK_NEEDFUNS (arg_node) != NULL) {
+        BLOCK_NEEDFUNS (arg_node) = FreeNodelist (BLOCK_NEEDFUNS (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *DFRap( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
 node *
 DFRap (node *arg_node, node *arg_info)
 {
+    node *fundef;
+
     DBUG_ENTER ("DFRap");
-    if ((1 == FUNDEF_INLINE (AP_FUNDEF (arg_node)))
-        && (NULL != FUNDEF_INSTR (AP_FUNDEF (arg_node)))) {
-        FUNDEF_INLINE (AP_FUNDEF (arg_node)) = 0;
-        FUNDEF_INSTR (AP_FUNDEF (arg_node))
-          = Trav (FUNDEF_INSTR (AP_FUNDEF (arg_node)), arg_info);
+
+    fundef = AP_FUNDEF (arg_node);
+
+    if (FUNDEF_INLINE (fundef) && (FUNDEF_INSTR (fundef) != NULL)) {
+        FUNDEF_INLINE (fundef) = FALSE;
+        FUNDEF_INSTR (fundef) = Trav (FUNDEF_INSTR (fundef), arg_info);
     }
+
     DBUG_RETURN (arg_node);
 }
