@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/12 14:24:44  cg
+ * old comment eliminated.
+ *
  * Revision 2.1  1999/05/12 14:23:35  cg
  * new release made
  *
@@ -10,15 +13,6 @@
  *
  */
 
-/*
- * File: main_args.c
- *
- * Description:
- *
- * This file contains the definitions of some helper functions
- * for command line analysis.
- *
- */
 /*****************************************************************************
  *
  * file:    main_args.c
@@ -27,8 +21,8 @@
  *
  * description:
  *
- * This file contains the definitions of helper functions used by the macros
- * defined in main_args.h for command line analysis.
+ *  This file contains the definitions of helper functions used by the macros
+ *  defined in main_args.h for command line analysis.
  *
  *****************************************************************************/
 
