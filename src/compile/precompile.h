@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/05/26 19:25:37  dkr
+ * signature of AdjustFoldFundef() modified
+ *
  * Revision 2.3  2000/05/25 23:03:40  dkr
  * prototype for AdjustFoldFundef added
  *
@@ -120,7 +123,7 @@ extern node *PRECsync (node *arg_node, node *arg_info);
 extern node *PRECWLseg (node *arg_node, node *arg_info);
 extern node *PRECWLsegVar (node *arg_node, node *arg_info);
 
-extern node *AdjustFoldFundef (node *fundef, ids *acc, char *funname, node *cexpr);
+extern node *AdjustFoldFundef (node *fundef, ids *acc, node *cexpr);
 
 #ifdef TAGGED_ARRAYS
 
