@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.21  1999/07/21 12:05:59  sbs
+ * Now, not needed index vectors (REFCNT == 0) will neither be
+ * allocated nor updated nor de-allocated!
+ *
  * Revision 2.20  1999/07/20 16:53:28  jhs
  * Fixed bug with direct access to MT_SPMD_SETUP-icm.
  *
@@ -7014,8 +7018,11 @@ COMPNwith2 (node *arg_node, node *arg_info)
     /*
      * insert ICMs to allocate memory for index-vector
      */
-    assigns = AppendAssign (assigns,
-                            MakeAllocArrayICMs (NWITHID_VEC (NWITH2_WITHID (arg_node))));
+    if (IDS_REFCNT (NWITHID_VEC (NWITH2_WITHID (arg_node))) > 0) {
+        assigns
+          = AppendAssign (assigns,
+                          MakeAllocArrayICMs (NWITHID_VEC (NWITH2_WITHID (arg_node))));
+    }
 
     /*
      * compile all code blocks
@@ -7150,8 +7157,11 @@ COMPNwith2 (node *arg_node, node *arg_info)
     /*
      * insert 'DEC_RC_FREE'-ICM for index-vector.
      */
-    assigns = AppendAssign (assigns,
-                            MakeDecRcFreeICMs (NWITHID_VEC (NWITH2_WITHID (arg_node))));
+    if (IDS_REFCNT (NWITHID_VEC (NWITH2_WITHID (arg_node))) > 0) {
+        assigns
+          = AppendAssign (assigns,
+                          MakeDecRcFreeICMs (NWITHID_VEC (NWITH2_WITHID (arg_node))));
+    }
 
     /*
      * with-loop representation is useless now!
@@ -8028,7 +8038,7 @@ COMPWLgrid (node *arg_node, node *arg_info)
      *  and this is not a dummy grid (init, copy, noop),
      *  we must add the ICM 'WL_GRID_SET_IDX'.
      */
-    if ((IDS_REFCNT (NWITHID_VEC (NWITH2_WITHID (wl_node))) >= 0)
+    if ((IDS_REFCNT (NWITHID_VEC (NWITH2_WITHID (wl_node))) > 0)
         && ((WLGRID_CODE (arg_node) != NULL) || (WLGRID_NEXTDIM (arg_node)))) {
         assigns = MakeAssign (MakeIcm ("WL_GRID_SET_IDX", icm_args, NULL), assigns);
     }
@@ -8437,7 +8447,7 @@ COMPWLgridVar (node *arg_node, node *arg_info)
      *  and this is not a dummy grid (init, copy, noop),
      *  we must add the ICM 'WL_GRID_SET_IDX'.
      */
-    if ((IDS_REFCNT (NWITHID_VEC (NWITH2_WITHID (wl_node))) >= 0)
+    if ((IDS_REFCNT (NWITHID_VEC (NWITH2_WITHID (wl_node))) > 0)
         && ((WLGRIDVAR_CODE (arg_node) != NULL) || (WLGRIDVAR_NEXTDIM (arg_node)))) {
         assigns = MakeAssign (MakeIcm ("WL_GRID_SET_IDX", icm_args, NULL), assigns);
     }
