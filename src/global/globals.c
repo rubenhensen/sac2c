@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2003/12/10 16:07:14  skt
+ * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
+ *
  * Revision 3.40  2003/10/19 21:38:25  dkrHH
  * prf_string moved from print.[ch] to globals.[ch] (for BEtest)
  *
@@ -343,11 +346,14 @@ bool dynamic_shapes = FALSE; /* Dynamic shapes are disabled by default */
  * Multi-thread options
  */
 
-int gen_mt_code = GEN_MT_NONE;
+int gen_mt_mode = GEN_MT_NONE;
 /*
  *  will be set to
- *  GEN_MT_OLD   iff one of the following options is set: -mt
- *  GEN_MT_NEW   iff one of the following options is set: -mtn
+ *  GEN_MT_STARTSTOP iff the following option is set: -mt & -mtstyle 1
+ *  GEN_MT_LIFTWAIT iff one of the following options is set:
+ *                        (-mt & -mtstyle 2) || -mt
+ *                        (default for gen_mt_mode iff in multithread mode)
+ *  GEN_MT_MTSTBLOCK iff the following option is set: -mt & -mtstyle 3
  *  GEN_MT_NONE  otherwise
  */
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2003/12/10 16:07:14  skt
+ * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
+ *
  * Revision 3.52  2003/10/19 22:02:31  dkrHH
  * description of -intrinsic for TAGGED_ARRAYS corrected
  *
@@ -391,7 +394,7 @@ Usage ()
     PRINT_BREAK_SPEC (PH_wltrans, "fill2", "Stop after gap filling (all nodes).");
 
     printf ("\n");
-    printf ("    with \"-mt\"\n");
+    printf ("    with \"-mt [-mtmode 2]\"\n");
 
     PRINT_BREAK_SPEC (PH_multithread, "spmdinit", "Stop after building SPMD blocks.");
     PRINT_BREAK_SPEC (PH_multithread, "spmdopt", "Stop after optimizing SPMD blocks.");
@@ -403,7 +406,7 @@ Usage ()
     PRINT_BREAK_SPEC (PH_multithread, "spmdcons", "Stop after constraining SPMD blocks.");
 
     printf ("\n");
-    printf ("    with \"-mtn\" (UNDER CONSTRUCTION!!!)\n");
+    printf ("    with \"-mt -mtmode 3\" (UNDER CONSTRUCTION!!!)\n");
 
     PRINT_BREAK_SPEC (PH_multithread, "init", "Stop after internal initialization.");
     PRINT_BREAK_SPEC (PH_multithread, "schin", "Stop after schedulings initialized.");
@@ -601,10 +604,16 @@ Usage ()
             "line\n"
             "                    option \"-mt <n>\".\n"
             "\n"
-            "    -mtn            Enable a new organization scheme for multi-threaded "
-            "program\n"
+            "    -mtmode <n>     Enable a explicit organization scheme for "
+            "multi-threaded program\n"
             "                    execution.\n"
-            "                    WARNING: UNDER CONSTRUCTION!!!\n"
+            "                    Legal values:\n"
+            "                      1: with start-stop-barriers   WARNING: UNDER "
+            "CONSTRUCTION!!!\n"
+            "                      2: with lift-wait-barriers\n"
+            "                      3: with magical new techniques WARNING: UNDER "
+            "CONSTRUCTION!!!\n"
+            "                      (default: %d)\n"
             "\n"
             "    -numthreads <n> Specify at compile time the exact number of threads to "
             "be\n"
@@ -639,7 +648,8 @@ Usage ()
             "                      (default: %d)\n"
             "                    Option applies to \"-mtn\" style parallelization "
             "only.\n",
-            max_threads, max_sync_fold, min_parallel_size, max_replication_size);
+            GEN_MT_LIFTWAIT, max_threads, max_sync_fold, min_parallel_size,
+            max_replication_size);
 
 #ifdef TAGGED_ARRAYS
     printf ("\n\nBACKEND OPTIONS:\n\n"
@@ -994,7 +1004,9 @@ Usage ()
             "      Borg Enders\n"
             "      Kai Trojahner\n"
             "      Michael Werner\n"
-            "      Stephan Herhut\n");
+            "      Stephan Herhut\n"
+            "      Karsten Hinckfuﬂ\n"
+            "      Steffen Kuthe\n");
 
     printf ("\n\nCONTACT:\n\n"
 

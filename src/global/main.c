@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2003/12/10 16:07:14  skt
+ * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
+ *
  * Revision 3.28  2003/09/17 12:56:24  sbs
  * call to PrintTypeStatistics added.
  *
@@ -457,7 +460,7 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (gen_mt_code != GEN_MT_NEW) {
+    if (gen_mt_mode != GEN_MT_MTSTBLOCK) {
         compiler_phase += 2;
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
@@ -494,16 +497,17 @@ main (int argc, char *argv[])
 
     PHASE_PROLOG;
     /*
-     * gen_mt_code can be GEN_MT_OLD, GEN_MT_NEW or GEN_MT_NONE
+     * gen_mt_mode can be GEN_MT_NONE, GEN_MT_STARTSTOP, GEN_MT_LIFTWAIT
+     * or GEN_MT_MTSTBLOCK
      */
-    if (gen_mt_code == GEN_MT_OLD) {
+    if (gen_mt_mode == GEN_MT_LIFTWAIT) {
         NOTE_COMPILER_PHASE;
-        NOTE (("using old version of mt"));
+        NOTE (("using lift-wait version of mt"));
         syntax_tree = BuildSpmdRegions (syntax_tree); /* spmd..._tab, sync..._tab */
         PHASE_DONE_EPILOG;
-    } else if (gen_mt_code == GEN_MT_NEW) {
+    } else if (gen_mt_mode == GEN_MT_MTSTBLOCK) {
         NOTE_COMPILER_PHASE;
-        NOTE (("using new version of mt"));
+        NOTE (("using mt/st-block version of mt"));
         syntax_tree = BuildMultiThread (syntax_tree);
         PHASE_DONE_EPILOG;
     }
@@ -513,7 +517,7 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-    if (gen_mt_code == GEN_MT_NEW) {
+    if (gen_mt_mode == GEN_MT_MTSTBLOCK) {
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
         syntax_tree = Refcount (syntax_tree); /* refcnt_tab */
@@ -525,9 +529,9 @@ main (int argc, char *argv[])
     }
     compiler_phase++;
 
-    if (gen_mt_code == GEN_MT_NEW) {
-        SYSABORT (("New version of multithreading de-activated !!"));
-        /*
+    if ((gen_mt_mode == GEN_MT_MTSTBLOCK) || (gen_mt_mode == GEN_MT_STARTSTOP)) {
+        SYSABORT (("Version of multithreading de-activated !!"));
+        /* following comment concerning for mt/st-block version:
          * The core problem is that new-mt reuses the FUNDEF ATTRIB attribute
          * and thereby destroys its old contents. Unfortunately, it has turned
          * that this information is vital for precompile.

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2003/12/10 16:07:14  skt
+ * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
+ *
  * Revision 3.6  2001/05/17 12:52:48  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -105,9 +108,9 @@ PIHmodul (node *arg_node, node *arg_info)
     liblist[1] = PrintDepEntry (dependencies, ST_system, NULL);
 
     /* determine the needed files of the sac-runtime system */
-    if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) { /* MT */
-        if (optimize & OPT_PHM) {                                     /* PHM */
-            if (runtimecheck & RUNTIMECHECK_HEAP) {                   /* diag */
+    if ((gen_mt_mode >= GEN_MT_STARTSTOP) && (gen_mt_mode == GEN_MT_MTSTBLOCK)) { /* MT */
+        if (optimize & OPT_PHM) {                   /* PHM */
+            if (runtimecheck & RUNTIMECHECK_HEAP) { /* diag */
                 fprintf (outfile, " * -lsac_heapmgr_mt_diag\n"
                                   " * -lsac_mt\n"
                                   " * -lpthread\n");

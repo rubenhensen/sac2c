@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2003/12/10 16:07:14  skt
+ * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
+ *
  * Revision 3.24  2001/06/13 13:09:24  ben
  * WLCOMP_Tasksel added
  *
@@ -869,7 +872,7 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
 
     DBUG_ENTER ("WLCOMP_Scheduling");
 
-    if (gen_mt_code == GEN_MT_NONE) {
+    if (gen_mt_mode == GEN_MT_NONE) {
         WARN (line, ("wlcomp-pragma function Scheduling() ignored"
                      " because multi-threading is inactive"));
     } else {
@@ -925,7 +928,7 @@ WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, int line)
 
     DBUG_ENTER ("WLCOMP_Tasksel");
 
-    if (gen_mt_code == GEN_MT_NONE) {
+    if (gen_mt_mode == GEN_MT_NONE) {
         WARN (line, ("wlcomp-pragma function Tasksel() ignored"
                      " because multi-threading is inactive"));
     } else {

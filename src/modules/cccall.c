@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2003/12/10 16:07:14  skt
+ * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
+ *
  * Revision 3.10  2003/03/25 16:23:51  sah
  * added support for system libraries
  * with unkown path to GetLibstatEntry.
@@ -766,7 +769,7 @@ InvokeCC ()
             lib_efence = "";
         }
 
-        if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
+        if ((gen_mt_mode >= GEN_MT_STARTSTOP) && (gen_mt_mode <= GEN_MT_MTSTBLOCK)) {
             if (gen_cccall) {
                 shellscript = WriteOpen (".sac2c");
                 fprintf (shellscript, "#!/bin/sh -v\n\n");

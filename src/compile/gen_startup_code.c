@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2003/12/10 16:07:14  skt
+ * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
+ *
  * Revision 3.34  2003/09/30 22:35:57  dkrHH
  * GSCPrintMain(): indentation corrected
  *
@@ -510,7 +513,7 @@ PrintGlobalSettings (node *syntax_tree)
 
     PrintProfileData ();
 
-    if ((gen_mt_code == GEN_MT_OLD) || (gen_mt_code == GEN_MT_NEW)) {
+    if ((gen_mt_mode >= GEN_MT_STARTSTOP) && (gen_mt_mode <= GEN_MT_MTSTBLOCK)) {
         PrintSpmdData (syntax_tree);
     }
 
@@ -883,7 +886,7 @@ GSCPrintMain ()
     char *res_NT, *mythread_NT;
     types *tmp_type;
 #endif
-    bool print_thread_id = ((gen_mt_code == GEN_MT_OLD) && (optimize & OPT_PHM));
+    bool print_thread_id = ((gen_mt_mode == GEN_MT_LIFTWAIT) && (optimize & OPT_PHM));
 
     DBUG_ENTER ("GSCPrintMain");
 

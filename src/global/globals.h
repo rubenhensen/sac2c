@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2003/12/10 16:07:14  skt
+ * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
+ *
  * Revision 3.33  2003/10/19 21:38:25  dkrHH
  * prf_string moved from print.[ch] to globals.[ch] (for BEtest)
  *
@@ -213,11 +216,12 @@ extern bool dynamic_shapes;
 
 extern char *target_name;
 
-extern int gen_mt_code;
+extern int gen_mt_mode;
 
 #define GEN_MT_NONE 0
-#define GEN_MT_OLD 1
-#define GEN_MT_NEW 2
+#define GEN_MT_STARTSTOP 1
+#define GEN_MT_LIFTWAIT 2
+#define GEN_MT_MTSTBLOCK 3
 
 extern int num_threads;
 extern int max_sync_fold;
