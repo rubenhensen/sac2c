@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.117  1998/04/07 14:42:49  srs
+ * added comment
+ *
  * Revision 1.116  1998/04/07 12:11:17  srs
  * changed comment
  *
@@ -1733,6 +1736,10 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    int    MAKEUNIQUE                  (precompile -> compile -> )
  ***    node*  DEF                         (Unroll !, Unswitch !)
  ***    node*  WL        (O)               (wli -> wlf !!)
+ ***
+ ***  remarks:
+ ***    ID_WL is only used in wli, wlf. But every call of DupTree() initializes
+ ***    the copy's WL_ID with a pointer to it's original N_id node.
  ***
  ***/
 
