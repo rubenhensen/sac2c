@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2001/04/02 12:00:09  nmw
+ * set INFO_SSACSE_ASSIGN in SSACSEassign
+ *
  * Revision 1.9  2001/04/02 11:08:20  nmw
  * handling for multiple used special functions added
  *
@@ -396,9 +399,11 @@ SSACSEassign (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "assign node without instruction");
 
+    INFO_SSACSE_ASSIGN (arg_info) = arg_node;
     INFO_SSACSE_REMASSIGN (arg_info) = FALSE;
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     remassign = INFO_SSACSE_REMASSIGN (arg_info);
+    INFO_SSACSE_ASSIGN (arg_info) = NULL;
 
     /* traverse to next assignment in chain */
     if (ASSIGN_NEXT (arg_node) != NULL) {
