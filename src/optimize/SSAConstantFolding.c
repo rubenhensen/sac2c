@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.49  2003/11/06 15:24:10  ktr
+ * SSACFStructOpWrapper now annotates correct shape information
+ *
  * Revision 1.48  2003/09/26 10:25:16  sbs
  * new optimization for F_modarray added: if the index vector is an
  * empty vector, simply the element value constituts the result!
@@ -852,6 +855,7 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
     node *result;
     /* constant *old_hidden_co; */
     int arraydim;
+    int idxdim;
     constant *tmpidx, *tmp;
     shape *tmpshp, *idxshp, *tmpshp2;
 
@@ -863,17 +867,22 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
     /* tries to convert expr(especially arrays) into a structual constant */
     struc_co = SCOExpr2StructConstant (expr);
 
+    idxdim = SHGetUnrLen (COGetShape (idx));
+
     /* given expressession could be converted to struct_constant */
     if (struc_co != NULL) {
         /* save internal hidden input constant */
         /*    old_hidden_co = SCO_HIDDENCO(struc_co); */
 
+        /* arraydim denotes the dimensionality captured
+           in the array itself:
+           arraydim(A) = dim(A) - dim(A[0,..,0]) */
         arraydim = COGetDim (SCO_HIDDENCO (struc_co));
 
         /* perform struc-op on hidden constant */
         switch (op) {
         case F_sel:
-            if (arraydim < SHGetUnrLen (COGetShape (idx))) {
+            if (arraydim < idxdim) {
                 tmp = COMakeConstantFromInt (arraydim);
                 tmpidx = COTake (tmp, idx);
                 SCO_HIDDENCO (struc_co) = COSel (tmpidx, SCO_HIDDENCO (struc_co));
@@ -888,6 +897,11 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
                 tmpidx = COFreeConstant (tmpidx);
             } else {
                 SCO_HIDDENCO (struc_co) = COSel (idx, SCO_HIDDENCO (struc_co));
+                if (arraydim > idxdim) {
+                    tmpshp = SCO_SHAPE (struc_co);
+                    SCO_SHAPE (struc_co) = SHDropFromShape (idxdim, tmpshp);
+                    SHFreeShape (tmpshp);
+                }
                 result = SCODupStructConstant2Expr (struc_co);
             }
             break;
@@ -919,16 +933,22 @@ SSACFStructOpWrapper (prf op, constant *idx, node *expr)
             break;
 
         case F_take:
-            if (SHGetUnrLen (COGetShape (idx)) >= arraydim) {
+            if (idxdim <= arraydim) {
                 SCO_HIDDENCO (struc_co) = COTake (idx, SCO_HIDDENCO (struc_co));
+                SCO_SHAPE (struc_co)
+                  = SHAppendShapes (COGetShape (SCO_HIDDENCO (struc_co)),
+                                    SHDropFromShape (arraydim, SCO_SHAPE (struc_co)));
                 result = SCODupStructConstant2Expr (struc_co);
             } else
                 result = NULL;
             break;
 
         case F_drop:
-            if (SHGetUnrLen (COGetShape (idx)) >= arraydim) {
+            if (idxdim <= arraydim) {
                 SCO_HIDDENCO (struc_co) = CODrop (idx, SCO_HIDDENCO (struc_co));
+                SCO_SHAPE (struc_co)
+                  = SHAppendShapes (COGetShape (SCO_HIDDENCO (struc_co)),
+                                    SHDropFromShape (arraydim, SCO_SHAPE (struc_co)));
                 result = SCODupStructConstant2Expr (struc_co);
             } else
                 result = NULL;
