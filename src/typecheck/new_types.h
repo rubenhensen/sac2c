@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2004/11/14 15:21:42  sah
+ * added TYSetMod
+ *
  * Revision 3.22  2004/10/26 11:37:40  sah
  * Serialization support now hidden outside of NEW_AST mode
  *
@@ -251,6 +254,7 @@ extern simpletype TYGetSimpleType (ntype *simple);
 extern usertype TYGetUserType (ntype *user);
 extern char *TYGetName (ntype *symb);
 extern char *TYGetMod (ntype *symb);
+extern ntype *TYSetMod (ntype *symb, char *mod);
 
 /*
  * Array Types: AKS / AKD / AUDGZ / AUD
