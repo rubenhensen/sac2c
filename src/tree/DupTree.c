@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.98  2004/08/06 13:10:15  ktr
+ * NWITHOP_MEM is now duplicated as well.
+ *
  * Revision 3.97  2004/08/05 11:37:55  ktr
  * New flag NWITHID_VECNEEDED indicates in EMM whether the index vector
  * must be maintained throughout the with-loop
@@ -2043,9 +2046,11 @@ DupNwithop (node *arg_node, info *arg_info)
     case WO_genarray:
         NWITHOP_SHAPE (new_node) = DUPTRAV (NWITHOP_SHAPE (arg_node));
         NWITHOP_DEFAULT (new_node) = DUPTRAV (NWITHOP_DEFAULT (arg_node));
+        NWITHOP_MEM (new_node) = DUPTRAV (NWITHOP_MEM (arg_node));
         break;
     case WO_modarray:
         NWITHOP_ARRAY (new_node) = DUPTRAV (NWITHOP_ARRAY (arg_node));
+        NWITHOP_MEM (new_node) = DUPTRAV (NWITHOP_MEM (arg_node));
         break;
     case WO_foldfun:
         NWITHOP_NEUTRAL (new_node) = DUPTRAV (NWITHOP_NEUTRAL (arg_node));
