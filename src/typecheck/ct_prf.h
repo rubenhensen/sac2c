@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2003/03/19 10:34:30  sbs
+ * NTCPRF_drop_SxV and NTCPRF_cat_VxV added.
+ *
  * Revision 1.4  2002/10/28 14:04:15  sbs
  * NTCPRF_cast added
  *
@@ -39,5 +42,7 @@ extern ntype *NTCPRF_ari_op_AxA (te_info *info, ntype *args);
 extern ntype *NTCPRF_rel_op_AxA (te_info *info, ntype *args);
 extern ntype *NTCPRF_log_op_AxA (te_info *info, ntype *args);
 extern ntype *NTCPRF_int_op_SxS (te_info *info, ntype *args);
+extern ntype *NTCPRF_drop_SxV (te_info *info, ntype *args);
+extern ntype *NTCPRF_cat_VxV (te_info *info, ntype *args);
 
 #endif /* _ct_prf_h */

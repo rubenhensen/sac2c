@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2003/03/19 10:34:30  sbs
+ * NTCPRF_drop_SxV and NTCPRF_cat_VxV added.
+ *
  * Revision 1.10  2002/11/04 17:40:11  sbs
  * computation of cast further improved; incompatibilities of
  * user defined types are recognized much better now!
@@ -657,6 +660,78 @@ NTCPRF_int_op_SxS (te_info *info, ntype *args)
     TEAssureIntS (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
 
     res = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (0));
+
+    DBUG_RETURN (TYMakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCPRF_drop_SxV( te_info *info, ntype *args)
+ *
+ * description:
+ *    int []  x  simple [.]  ->  simple [.]
+ *
+ ******************************************************************************/
+
+ntype *
+NTCPRF_drop_SxV (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *array1, *array2;
+
+    DBUG_ENTER ("NTCPRF_drop_SxV");
+    DBUG_ASSERT (TYGetProductSize (args) == 2,
+                 "drop_SxV called with incorrect number of arguments");
+
+    array1 = TYGetProductMember (args, 0);
+    array2 = TYGetProductMember (args, 1);
+
+    TEAssureIntS (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
+    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
+    TEAssureVect (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
+
+    res = TYMakeAKD (TYCopyType (TYGetScalar (array2)), 1, SHMakeShape (0));
+
+    DBUG_RETURN (TYMakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCPRF_cat_VxV( te_info *info, ntype *args)
+ *
+ * description:
+ *    simple [.]  x  simple [.]  ->  simple [.]
+ *
+ ******************************************************************************/
+
+ntype *
+NTCPRF_cat_VxV (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *array1, *array2;
+
+    DBUG_ENTER ("NTCPRF_cat_VxV");
+    DBUG_ASSERT (TYGetProductSize (args) == 2,
+                 "cat_VxV called with incorrect number of arguments");
+
+    array1 = TYGetProductMember (args, 0);
+    array2 = TYGetProductMember (args, 1);
+
+    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
+    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
+    TEAssureSameSimpleType (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
+                            array2);
+    TEAssureVect (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
+    TEAssureVect (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
+
+    if (TYIsAKS (array1) && TYIsAKS (array2)) {
+        res = TYMakeAKS (TYCopyType (TYGetScalar (array1)),
+                         SHAppendShapes (TYGetShape (array1), TYGetShape (array2)));
+    } else {
+        res = TYMakeAKD (TYCopyType (TYGetScalar (array1)), 1, SHMakeShape (0));
+    }
 
     DBUG_RETURN (TYMakeProductType (1, res));
 }
