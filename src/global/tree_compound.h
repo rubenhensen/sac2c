@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.26  1995/12/21 13:25:55  asi
+ * Revision 1.27  1995/12/29 10:34:19  cg
+ * added ConcatNodelist
+ * added TDEF compound access macros for fundef, typedef, etc
+ *
+ * Revision 1.26  1995/12/21  13:25:55  asi
  * added WITH_OPERATORDEFMASK, WITH_OPERATORUSEMASK, OPERATOR_DEFMASK and OPERATOR_USEMASK
  *
  * Revision 1.25  1995/12/21  10:36:55  cg
@@ -408,6 +412,24 @@ extern void StoreUnresolvedNodes (nodelist *inserts, node *fundef, statustype st
 
 extern nodelist *TidyUpNodelist (nodelist *list);
 
+/*
+ *
+ *  functionname  : ConcatNodelist
+ *  arguments     : 1) first node list
+ *                  2) second node list
+ *  description   : concatenates two node lists without checking double
+ *                  occurrences
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : ---
+ *  macros        : DBUG, TREE
+ *
+ *  remarks       :
+ *
+ */
+
+extern nodelist *ConcatNodelist (nodelist *first, nodelist *second);
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -513,6 +535,7 @@ extern nodelist *TidyUpNodelist (nodelist *list);
 #define TYPEDEF_SHPSEG(n) (TYPES_SHPSEG (TYPEDEF_TYPE (n)))
 #define TYPEDEF_TNAME(n) (TYPES_NAME (TYPEDEF_TYPE (n)))
 #define TYPEDEF_TMOD(n) (TYPES_MOD (TYPEDEF_TYPE (n)))
+#define TYPEDEF_TDEF(n) (TYPES_TDEF (TYPEDEF_TYPE (n)))
 
 #define TYPEDEF_COPYFUN(n) (PRAGMA_COPYFUN (TYPEDEF_PRAGMA (n)))
 #define TYPEDEF_FREEFUN(n) (PRAGMA_FREEFUN (TYPEDEF_PRAGMA (n)))
@@ -610,6 +633,7 @@ extern node *SearchTypedef (char *name, char *mod, node *implementations);
 #define OBJDEF_SHPSEG(n) (TYPES_SHPSEG (OBJDEF_TYPE (n)))
 #define OBJDEF_TNAME(n) (TYPES_NAME (OBJDEF_TYPE (n)))
 #define OBJDEF_TMOD(n) (TYPES_MOD (OBJDEF_TYPE (n)))
+#define OBJDEF_TDEF(n) (TYPES_TDEF (OBJDEF_TYPE (n)))
 
 #define OBJDEF_LINKNAME(n) (PRAGMA_LINKNAME (OBJDEF_PRAGMA (n)))
 
@@ -691,6 +715,7 @@ extern node *SearchObjdef (char *name, char *mod, node *implementations);
 #define FUNDEF_SHPSEG(n) (TYPES_SHPSEG (FUNDEF_TYPES (n)))
 #define FUNDEF_TNAME(n) (TYPES_NAME (FUNDEF_TYPES (n)))
 #define FUNDEF_TMOD(n) (TYPES_MOD (FUNDEF_TYPES (n)))
+#define FUNDEF_TDEF(n) (TYPES_TDEF (FUNDEF_TYPES (n)))
 
 #define FUNDEF_NEEDFUNS(n) (BLOCK_NEEDFUNS (FUNDEF_BODY (n)))
 #define FUNDEF_NEEDTYPES(n) (BLOCK_NEEDTYPES (FUNDEF_BODY (n)))
@@ -707,10 +732,9 @@ extern node *SearchObjdef (char *name, char *mod, node *implementations);
 #define FUNDEF_TOUCH(n) (PRAGMA_TOUCH (FUNDEF_PRAGMA (n)))
 #define FUNDEF_READONLY(n) (PRAGMA_READONLY (FUNDEF_PRAGMA (n)))
 #define FUNDEF_REFCOUNTING(n) (PRAGMA_REFCOUNTING (FUNDEF_PRAGMA (n)))
-/*
-#define FUNDEF_NEEDTYPES(n) (PRAGMA_NEEDTYPES(FUNDEF_PRAGMA(n)))
-#define FUNDEF_NEEDFUNS(n) (PRAGMA_NEEDFUNS(FUNDEF_PRAGMA(n)))
-*/
+#define FUNDEF_PRATYPES(n) (PRAGMA_NEEDTYPES (FUNDEF_PRAGMA (n)))
+#define FUNDEF_PRAFUNS(n) (PRAGMA_NEEDFUNS (FUNDEF_PRAGMA (n)))
+#define FUNDEF_PRALINKMOD(n) (PRAGMA_LINKMOD (FUNDEF_PRAGMA (n)))
 
 /*
  *  The following compound access macros are useful whenever a fundef
@@ -861,6 +885,7 @@ extern void ObjList2ArgList (node *objdef);
 #define ARG_SHPSEG(n) (TYPES_SHPSEG (ARG_TYPE (n)))
 #define ARG_TNAME(n) (TYPES_NAME (ARG_TYPE (n)))
 #define ARG_TMOD(n) (TYPES_MOD (ARG_TYPE (n)))
+#define ARG_TDEF(n) (TYPES_TDEF (ARG_TYPE (n)))
 
 /*--------------------------------------------------------------------------*/
 
@@ -891,6 +916,7 @@ extern void ObjList2ArgList (node *objdef);
 #define VARDEC_SHPSEG(n) (TYPES_SHPSEG (VARDEC_TYPE (n)))
 #define VARDEC_TNAME(n) (TYPES_NAME (VARDEC_TYPE (n)))
 #define VARDEC_TMOD(n) (TYPES_MOD (VARDEC_TYPE (n)))
+#define VARDEC_TDEF(n) (TYPES_TDEF (VARDEC_TYPE (n)))
 
 /*--------------------------------------------------------------------------*/
 
@@ -970,6 +996,7 @@ extern node *GetCompoundNode (node *arg_node);
 #define CAST_SHPSEG(n) (TYPES_SHPSEG (CAST_TYPE (n)))
 #define CAST_TNAME(n) (TYPES_NAME (CAST_TYPE (n)))
 #define CAST_TMOD(n) (TYPES_MOD (CAST_TYPE (n)))
+#define CAST_TDEF(n) (TYPES_TDEF (CAST_TYPE (n)))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1122,6 +1149,7 @@ extern node *GetCompoundNode (node *arg_node);
 #define ARRAY_SHPSEG(n) (TYPES_SHPSEG (ARRAY_TYPE (n)))
 #define ARRAY_TNAME(n) (TYPES_NAME (ARRAY_TYPE (n)))
 #define ARRAY_TMOD(n) (TYPES_MOD (ARRAY_TYPE (n)))
+#define ARRAY_TDEF(n) (TYPES_TDEF (ARRAY_TYPE (n)))
 
 /*
  *  function declarations
