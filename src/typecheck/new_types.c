@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2002/10/31 19:46:07  dkr
+ * bug in TYCorrectWrapperArgTypes() fixed:
+ * old type ARG_TYPE is *not* removed now!!!
+ *
  * Revision 3.38  2002/10/30 16:31:30  dkr
  * TYCreateWrapperCode(): DBUG_ASSERT about T_dots added
  *
@@ -4461,7 +4465,6 @@ TYCorrectWrapperArgTypes (node *args, ntype *type)
         DBUG_ASSERT ((TYIsFun (type)), "no TC_fun found!");
         DBUG_ASSERT ((NTYPE_ARITY (type) == 1), "multiple FUN_IBASE found!");
 
-        ARG_TYPE (args) = FreeAllTypes (ARG_TYPE (args));
         if (ARG_ATTRIB (args) != ST_regular) {
             AVIS_TYPE (ARG_AVIS (args))
               = TYMakeAKS (TYCopyType (IBASE_BASE (FUN_IBASE (type, 0))),
