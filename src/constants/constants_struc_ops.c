@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2003/12/12 08:06:37  sbs
+ * Idx2Offset now asserts index compatibility!
+ *
  * Revision 1.9  2003/06/11 22:05:36  ktr
  * Added support for multidimensional arrays
  *
@@ -79,11 +82,15 @@ Idx2Offset (constant *idx, constant *a)
     DBUG_ASSERT ((lenshp >= lenidx), "Idx2Offset called with longer idx than array dim");
 
     if (lenidx > 0) {
+        DBUG_ASSERT (cvidx[0] < SHGetExtent (shp, 0),
+                     "Idx2Offset called with idx out of range");
         offset = cvidx[0];
     } else {
         offset = 0;
     }
     for (i = 1; i < lenidx; i++) {
+        DBUG_ASSERT (cvidx[i] < SHGetExtent (shp, i),
+                     "Idx2Offset called with idx out of range");
         offset = offset * SHGetExtent (shp, i) + cvidx[i];
     }
     for (; i < lenshp; i++) {
