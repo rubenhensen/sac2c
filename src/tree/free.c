@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/03/28 14:54:53  dkr
+ * minor changes done
+ *
  * Revision 3.12  2001/03/22 20:02:31  dkr
  * include of tree.h eliminated
  *
@@ -169,8 +172,8 @@
 
 #define FREETRAV(node)                                                                   \
     {                                                                                    \
-        if (node != NULL) {                                                              \
-            node = Trav (node, node); /* dkr: remove whole subtree !!! */                \
+        if ((node) != NULL) {                                                            \
+            (node) = Trav (node, node); /* dkr: remove whole subtree !!! */              \
         }                                                                                \
     }
 
@@ -1770,16 +1773,17 @@ FreeWLseg (node *arg_node, node *arg_info)
     FREETRAV (WLSEG_CONTENTS (arg_node));
     tmp = FREECONT (WLSEG_NEXT (arg_node));
 
-    FREE (WLSEG_IDX_MIN (arg_node));
-    FREE (WLSEG_IDX_MAX (arg_node));
-
     for (b = 0; b < WLSEG_BLOCKS (arg_node); b++) {
         if (WLSEG_BV (arg_node, b) != NULL) {
             FREE (WLSEG_BV (arg_node, b));
         }
     }
     FREE (WLSEG_UBV (arg_node));
+
     FREE (WLSEG_SV (arg_node));
+    FREE (WLSEG_IDX_MIN (arg_node));
+    FREE (WLSEG_IDX_MAX (arg_node));
+
     if (WLSEG_SCHEDULING (arg_node) != NULL) {
         WLSEG_SCHEDULING (arg_node) = SCHRemoveScheduling (WLSEG_SCHEDULING (arg_node));
     }
@@ -1794,6 +1798,7 @@ FreeWLseg (node *arg_node, node *arg_info)
 node *
 FreeWLsegVar (node *arg_node, node *arg_info)
 {
+    int d;
     node *tmp = NULL;
 
     DBUG_ENTER ("FreeWLsegVar");
@@ -1803,7 +1808,17 @@ FreeWLsegVar (node *arg_node, node *arg_info)
     FREETRAV (WLSEGVAR_CONTENTS (arg_node));
     tmp = FREECONT (WLSEGVAR_NEXT (arg_node));
 
+    if (WLSEGVAR_IDX_MIN (arg_node) != NULL) {
+        for (d = 0; d < WLSEGVAR_DIMS (arg_node); d++) {
+            FREETRAV ((WLSEGVAR_IDX_MIN (arg_node)[d]));
+        }
+    }
     FREE (WLSEGVAR_IDX_MIN (arg_node));
+    if (WLSEGVAR_IDX_MAX (arg_node) != NULL) {
+        for (d = 0; d < WLSEGVAR_DIMS (arg_node); d++) {
+            FREETRAV ((WLSEGVAR_IDX_MAX (arg_node)[d]));
+        }
+    }
     FREE (WLSEGVAR_IDX_MAX (arg_node));
 
     if (WLSEGVAR_SCHEDULING (arg_node) != NULL) {
