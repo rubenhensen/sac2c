@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/05/17 12:52:48  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.5  2001/03/22 18:55:22  dkr
  * include of tree.h eliminated
  *
@@ -290,7 +293,7 @@ PIHarg (node *arg_node, node *arg_info)
         /* print internal accepted types of argument */
         typestring = Type2String (ARG_TYPE (arg_node), 0, TRUE);
         fprintf (outfile, "%s", typestring);
-        FREE (typestring);
+        typestring = Free (typestring);
 
         if (ARG_ATTRIB (arg_node) == ST_reference) {
             fprintf (outfile, " &");
@@ -344,7 +347,7 @@ PIHtypes (types *arg_type, node *arg_info)
         } else {
             typestring = Type2String (arg_type, 0, FALSE);
             fprintf (outfile, "%s out%d", typestring, INFO_PIH_COUNTER (arg_info));
-            FREE (typestring);
+            typestring = Free (typestring);
         }
 
         if (TYPES_NEXT (arg_type) != NULL) {

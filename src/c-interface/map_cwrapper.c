@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/05/17 12:52:48  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.3  2001/04/27 08:46:18  nmw
  * CountFunResults() counts void results no more :-)
  *
@@ -254,7 +257,7 @@ MapCWrapper (node *syntax_tree)
 
         act_tab = old_tab;
 
-        FREE (arg_info);
+        arg_info = FreeTree (arg_info);
     }
 
     DBUG_RETURN (syntax_tree);
@@ -290,7 +293,7 @@ CountFunArgs (node *fundef)
     }
     counter = INFO_MCW_CNT_STANDARD (arg_info);
 
-    FREE (arg_info);
+    arg_info = FreeTree (arg_info);
 
     DBUG_RETURN (counter);
 }

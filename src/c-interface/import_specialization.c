@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/05/17 12:52:48  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.6  2001/03/22 18:03:00  dkr
  * tree.h no longer included
  *
@@ -363,7 +366,8 @@ AddSpecializedFundef (node *fundefs, node *spec_fundef, node *gen_fundef)
         arg_name = StringCopy (ARG_NAME (n_arg)); /* make a copy of original arg. id */
         ARG_TYPE (n_arg) = FreeOneTypes (ARG_TYPE (n_arg));
         ARG_TYPE (n_arg) = DupTypes (ARG_TYPE (s_arg));
-        FREE (ARG_NAME (n_arg));     /* free identifier of spec declaration */
+        ARG_NAME (n_arg)
+          = Free (ARG_NAME (n_arg)); /* free identifier of spec declaration */
         ARG_NAME (n_arg) = arg_name; /* reset original arg. identifier */
 
         n_arg = ARG_NEXT (n_arg);
@@ -509,7 +513,7 @@ ImportSpecialization (node *modul_node)
         syntax_tree = INFO_IMPSPEC_MODUL (arg_info);
         act_tab = old_tab;
 
-        FREE (arg_info);
+        arg_info = Free (arg_info);
 
         FreeNode (modspec);
     }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/05/17 12:52:48  nmw
+ * MALLOC/FREE replaced by Malloc/Free, using result of Free()
+ *
  * Revision 3.5  2001/04/03 12:08:56  dkr
  * GSCPrintInternalInitFileHeader modified:
  * GSCPrintDefines separated.
@@ -192,7 +195,7 @@ PrintInterface (node *syntax_tree)
     syntax_tree = Trav (syntax_tree, arg_info);
 
     act_tab = old_tab;
-    FREE (arg_info);
+    arg_info = FreeTree (arg_info);
 
     PrintSACRuntimeInitExit (syntax_tree);
 
