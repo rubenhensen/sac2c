@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2002/03/07 15:55:20  dkr
+ * ND_FUN_DEC: parameter renamed
+ *
  * Revision 3.26  2001/12/21 13:31:39  dkr
  * ICMs ..._CHECK_REUSE removed
  *
@@ -145,8 +148,8 @@ ICM_DEF( ND_FUN_DEC, TRACE_NONE)
   ICM_STR(name)
   ICM_STR(rettype)
   ICM_INT(narg)
-  ICM_VAR((3*narg), tyarg)
-ICM_END( ND_FUN_DEC, (name, rettype, narg, tyarg))
+  ICM_VAR((3*narg), arg)
+ICM_END( ND_FUN_DEC, (name, rettype, narg, arg))
 #endif
 
 #if defined(ND_FUN_AP) || defined(ICM_ALL)
