@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2002/10/18 14:15:53  ktr
+ * use of WLS now depends on wls_aggressive > 0
+ *
  * Revision 3.37  2002/10/14 12:08:19  mwe
  * counter for AL-optimize added
  *
@@ -1118,7 +1121,7 @@ OPTfundef (node *arg_node, node *arg_info)
                 goto INFO;
             }
 
-            if ((optimize & OPT_WLS) && (use_ssaform)) {
+            if ((optimize & OPT_WLS) && (wls_aggressive > 0) && (use_ssaform)) {
                 arg_node = WithloopScalarization (arg_node, INFO_OPT_MODUL (arg_info));
             }
 
