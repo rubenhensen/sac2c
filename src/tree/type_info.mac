@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/07/30 15:09:58  dkr
+ * _hidden_ renamed into SAC_hidden
+ * _user_ renamed into SAC_user
+ *
  * Revision 3.7  2001/05/02 07:57:56  nmw
  * functions for basecv table added
  *
@@ -50,40 +54,7 @@
  * Revision 2.1  1999/02/23 12:40:13  sacbase
  * new release made
  *
- * Revision 1.11  1998/06/03 14:31:26  cg
- * names of types used for the renaming of functions shortened:
- * int -> i, double -> d
- *
- * Revision 1.10  1996/02/21 15:03:40  cg
- * changed print string for N_str from 'char*' to 'string'
- * with respect to usage within SIBs
- *
- * Revision 1.9  1996/01/16  16:55:40  cg
- * added new entry for macro TYP_IF giving the size of the type
- *
- * Revision 1.8  1995/12/20  08:17:15  cg
- * added new primitive type char.
- *
- * Revision 1.7  1995/07/07  13:08:55  cg
- * new type T_void added, old type T_unique removed.
- *
- * Revision 1.6  1995/06/23  12:20:41  hw
- * enlarged macro TYP_IF( string to use for renameing of functions added)
- *
- * Revision 1.5  1995/05/30  08:56:15  cg
- * grammar version 0.5 extended types added.
- *
- * Revision 1.4  1995/01/09  13:18:47  hw
- * now type bool is bool
- *
- * Revision 1.3  1995/01/05  12:45:12  sbs
- * third component done
- *
- * Revision 1.2  1995/01/05  11:58:57  sbs
- * T_str inserted
- *
- * Revision 1.1  1994/12/21  11:32:37  hw
- * Initial revision
+ * [...]
  *
  */
 
@@ -192,7 +163,7 @@ TYP_IF (T_unknown, "unknown", "_unknown_", "", COCv2ScalarDummy, COCv2CvDummy,
   TYP_IF (T_char, "char", "char", "c", COCv2Char, COCv2CvChar, COCv2StrChar,
           sizeof (char), COZipCvDummy, COBaseCvDummy, unused, unused),
 
-  TYP_IF (T_hidden, "hidden", "_hidden_", "h", COCv2ScalarDummy, COCv2CvHidden,
+  TYP_IF (T_hidden, "hidden", "SAC_hidden", "h", COCv2ScalarDummy, COCv2CvHidden,
           COCv2StrDummy, sizeof (void *), COZipCvDummy, COBaseCvDummy, unused, unused),
 
   TYP_IF (T_void, "void", "void", "v", COCv2ScalarDummy, COCv2CvDummy, COCv2StrDummy, 0,
@@ -201,8 +172,8 @@ TYP_IF (T_unknown, "unknown", "_unknown_", "", COCv2ScalarDummy, COCv2CvDummy,
   TYP_IF (T_dots, "...", "...", "d", COCv2ScalarDummy, COCv2CvDummy, COCv2StrDummy, 0,
           COZipCvDummy, COBaseCvDummy, unused, unused),
 
-  TYP_IF (T_user, "user", "_user_", "", COCv2ScalarDummy, COCv2CvDummy, COCv2StrDummy, 0,
-          COZipCvDummy, COBaseCvDummy, unused, unused),
+  TYP_IF (T_user, "user", "SAC_user", "", COCv2ScalarDummy, COCv2CvDummy, COCv2StrDummy,
+          0, COZipCvDummy, COBaseCvDummy, unused, unused),
 
   TYP_IF (T_nothing, "nothing", "nothing", "n", COCv2ScalarDummy, COCv2CvDummy,
           COCv2StrDummy, 0, COZipCvDummy, COBaseCvDummy, unused, unused)
