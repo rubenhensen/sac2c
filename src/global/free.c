@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/03/17 15:54:56  hw
+ * Revision 1.8  1995/03/24 15:42:31  asi
+ * Bug fixed in FreeMask
+ *
+ * Revision 1.7  1995/03/17  15:54:56  hw
  * changed function FreeInfoType
  *
  * Revision 1.6  1995/01/26  15:16:55  asi
@@ -55,8 +58,8 @@ FreeIds (ids *ids)
     if (ids->next != NULL)
         FreeIds (ids->next);
     DBUG_ASSERT ((ids->id != NULL), "Ids without name of identificator");
-    free (ids->id);
-    free (ids);
+    FREE (ids->id);
+    FREE (ids);
     DBUG_VOID_RETURN;
 }
 
@@ -67,7 +70,7 @@ FreeIdsOnly (ids *ids)
     DBUG_ENTER ("FreeIdsOnly");
     if (ids->next != NULL)
         FreeIdsOnly (ids->next);
-    free (ids);
+    FREE (ids);
     DBUG_VOID_RETURN;
 }
 
@@ -83,7 +86,7 @@ FreeImplist (node *implist)
     for (i = 1; i < 4; i++)
         if (implist->node[i] != NULL)
             FreeIds ((ids *)implist->node[i]);
-    free (implist);
+    FREE (implist);
     DBUG_VOID_RETURN;
 }
 
@@ -92,9 +95,10 @@ FreeMask (node *arg_node)
 {
     int i;
     DBUG_ENTER ("FreeMask");
-    for (i = 0; i < MAX_MASK; i++)
+    for (i = 0; i < MAX_MASK; i++) {
         if (arg_node->mask[i] != NULL)
-            free (arg_node->mask[i]);
+            FREE (arg_node->mask[i]);
+    }
     DBUG_VOID_RETURN;
 }
 
@@ -104,7 +108,7 @@ FreeShpseg (shpseg *shpseg)
     DBUG_ENTER ("FreeTypes");
     if (shpseg->next != NULL)
         FreeShpseg (shpseg->next);
-    free (shpseg);
+    FREE (shpseg);
     DBUG_VOID_RETURN;
 }
 
@@ -117,9 +121,9 @@ FreeTypes (types *type)
     if (type->shpseg != NULL)
         FreeShpseg (type->shpseg);
     if (type->name != NULL)
-        free (type->name);
+        FREE (type->name);
     if (type->id != NULL)
-        free (type->id);
+        FREE (type->id);
     DBUG_VOID_RETURN;
 }
 
@@ -131,7 +135,7 @@ FreeVarArg (node *var)
         FreeVarArg (var->node[0]);
     if (var->info.types != NULL)
         FreeTypes (var->info.types);
-    free (var);
+    FREE (var);
     DBUG_VOID_RETURN;
 }
 
@@ -145,7 +149,7 @@ FreeModul (node *arg_node, node *arg_info)
         arg_node->node[1] = Trav (arg_node->node[1], arg_info);
     if (arg_node->node[2] != NULL)
         arg_node->node[2] = Trav (arg_node->node[2], arg_info);
-    free (arg_node);
+    FREE (arg_node);
     DBUG_RETURN ((node *)NULL);
 }
 
@@ -158,7 +162,7 @@ FreeNoInfo (node *arg_node, node *arg_info)
     for (i = 0; i < arg_node->nnode; i++)
         arg_node->node[i] = Trav (arg_node->node[i], arg_info);
     FreeMask (arg_node);
-    free (arg_node);
+    FREE (arg_node);
     DBUG_RETURN ((node *)NULL);
 }
 
@@ -172,7 +176,7 @@ FreeInfoIds (node *arg_node, node *arg_info)
         arg_node->node[i] = Trav (arg_node->node[i], arg_info);
     FreeMask (arg_node);
     /*  FreeIds(arg_node->info.ids);*/
-    free (arg_node);
+    FREE (arg_node);
     DBUG_RETURN ((node *)NULL);
 }
 
@@ -185,8 +189,8 @@ FreeInfoId (node *arg_node, node *arg_info)
     for (i = 0; i < arg_node->nnode; i++)
         arg_node->node[i] = Trav (arg_node->node[i], arg_info);
     FreeMask (arg_node);
-    free (arg_node->info.id);
-    free (arg_node);
+    FREE (arg_node->info.id);
+    FREE (arg_node);
     DBUG_RETURN ((node *)NULL);
 }
 
@@ -202,7 +206,7 @@ FreeInfoType (node *arg_node, node *arg_info)
         }
     FreeMask (arg_node);
     FreeTypes (arg_node->info.types);
-    free (arg_node);
+    FREE (arg_node);
     DBUG_RETURN ((node *)NULL);
 }
 
