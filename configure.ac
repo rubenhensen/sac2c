@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.31  2004/08/09 11:38:47  sah
+dnl indent parameters modified
+dnl
 dnl Revision 1.30  2004/08/09 10:22:03  sah
 dnl added check for __STDC__ flag on solaris
 dnl its seems to be set already on some
@@ -197,7 +200,7 @@ dnl check, whether we need -traditinal flag
 AC_PROG_GCC_TRADITIONAL
 
 dnl check for gnu indent 
-AC_CHECK_PROG( [CB], [indent], [indent -o -], [[\$(PROJECT_ROOT)/tools/bin/cb]])
+AC_CHECK_PROG( [CB], [indent], [indent], [[\$(PROJECT_ROOT)/tools/bin/cb]])
 
 dnl search for bison, byacc or yacc
 AC_PROG_YACC()
