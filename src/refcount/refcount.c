@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/03/16 14:04:51  hw
+ * Revision 1.5  1995/03/16 17:40:35  hw
+ * RCwith and RCcon (used for N_genarray and N_modarray) inserted
+ * bug fixed in RCfundef
+ *
+ * Revision 1.4  1995/03/16  14:04:51  hw
  * changed mechanism of refcounting
  *  - refcounts are counted in var-decs and are stored and restored
  *    when necessary
@@ -31,11 +35,6 @@
 
 extern void *Malloc (int size); /*defined in typecheck.c */
 
-#define BODY 1
-#define WHILE 2
-#define DO 3
-#define COND 4
-
 #define ID info.ids->id
 #define VAR_DEC info.ids->node
 #define CONTEXT info.cint
@@ -50,7 +49,6 @@ extern void *Malloc (int size); /*defined in typecheck.c */
     a->VAR_DEC = b;                                                                      \
     a->ID_REF = b->refcnt;
 
-#define MAX(a, b) (a >= b) ? a : b
 #define FREE(a) free (a)
 
 static int varno;         /* used to store the number of known variables in a
@@ -63,10 +61,10 @@ static node *fundef_node; /* pointer to current function declaration */
  *
  *  functionname  : IsArray
  *  arguments     : 1) N_typedef node
- *  description   :
+ *  description   : checks whether 1) is a declaration of an array or not
  *  global vars   :
  *  internal funs :
- *  external funs :
+ *  external funs : LookupType
  *  macros        : DBUG...
  *
  *  remarks       :
@@ -99,7 +97,7 @@ IsArray (node *arg_node)
  *
  *  functionname  : FindVarDec
  *  arguments     : 1) number of variable
- *  description   : returns pointer to variabledeclaration if found
+ *  description   : returns pointer to vardec if found
  *                  returns NULL if not found
  *  global vars   : fundef_node, args_no
  *  internal funs :
@@ -140,8 +138,8 @@ FindVarDec (int var_no)
  *                  returns NULL if not found
  *  global vars   :
  *  internal funs :
- *  external funs :
- *  macros        : DBUG...
+ *  external funs : strcmp
+ *  macros        : DBUG..., ID, P_FORMAT, NULL
  *
  *  remarks       :
  *
@@ -168,13 +166,13 @@ LookupId (char *id, node *id_node)
  *
  *  functionname  : StoreAndInit
  *  arguments     : 1) number to initialize
- *  description   : returns an arry of int that contain the refcount of
- *                  the variable declaration
- *                  the refcount of variable declartion is set to 1) if
+ *  description   : returns an arry of int that contains the refcount stored in
+ *                  the variable declaration part
+ *                  the refcount in the variable declartion part is set to 1) if
  *                   refcount was >= 1
  *  global vars   : fundef_node, args_no, varno
  *  internal funs :
- *  external funs :
+ *  external funs : Malloc, sizeof
  *  macros        : DBUG...
  *
  *  remarks       :
@@ -214,7 +212,7 @@ StoreAndInit (int n)
  *                  the variable declaration
  *  global vars   : fundef_node, args_no, varno
  *  internal funs :
- *  external funs :
+ *  external funs : Malloc, sizeof
  *  macros        : DBUG...
  *
  *  remarks       :
@@ -281,11 +279,11 @@ Restore (int *dump)
  *
  *  functionname  : Refcount
  *  arguments     : 1) argument node
- *  description   :
- *  global vars   :
+ *  description   : starts the refcount-traversal (sets act_tab)
+ *  global vars   : act_tab, refcnt_tab
  *  internal funs :
- *  external funs :
- *  macros        : DBUG...
+ *  external funs : MakeNode
+ *  macros        : DBUG..., FREE
  *
  *  remarks       :
  *
@@ -317,11 +315,12 @@ Refcount (node *arg_node)
  *  functionname  : RCfundef
  *  arguments     : 1) argument node
  *                  2) info node
- *  description   :
+ *  description   : calls Trav to traverse body of function
+ *                  sets varno ,fundef_node and arg_no
  *  global vars   :varno, fundef_node, args_no
  *  internal funs :
  *  external funs :
- *  macros        : DBUG...
+ *  macros        : DBUG..., NULL
  *
  *  remarks       :
  *
@@ -339,10 +338,12 @@ RCfundef (node *arg_node, node *arg_info)
          */
         varno = arg_node->varno;
         fundef_node = arg_node;
-        args = arg_node->node[1];
+        args = arg_node->node[2];
         args_no = 0;
-        while (NULL != args)
+        while (NULL != args) {
             args_no += 1;
+            args = args->node[0];
+        }
 
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
     }
@@ -357,10 +358,11 @@ RCfundef (node *arg_node, node *arg_info)
  *  functionname  : RCassign
  *  arguments     : 1) argument node
  *                  2) info node
- *  description   :
+ *  description   : traverses next N_assign node if possible
+ *                  traverses statement where 1) points to afterwards
  *  global vars   :
  *  internal funs :
- *  external funs :
+ *  external funs : Trav
  *  macros        : DBUG...
  *
  *  remarks       :
@@ -372,12 +374,10 @@ RCassign (node *arg_node, node *arg_info)
     DBUG_ENTER ("RCassign");
 
     /* goto last assign-node and start refcounting there */
-    if (1 == arg_node->nnode) {
-        arg_info->node[3] = arg_node; /* pointer to last assign */
+    if (1 == arg_node->nnode)
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
-    } else {
+    else {
         arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-        arg_info->node[3] = arg_node; /* pointer to last assign */
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
     }
     DBUG_RETURN (arg_node);
@@ -388,13 +388,13 @@ RCassign (node *arg_node, node *arg_info)
  *  functionname  : RCloop
  *  arguments     : 1) argument node
  *                  2) info node
- *  description   :
+ *  description   : refcounts while- and do-loops
  *  global vars   :
  *  internal funs :
  *  external funs :
  *  macros        : DBUG...
  *
- *  remarks       :
+ *  remarks       : - all vars that are not used in the rest of
  *
  */
 node *
@@ -526,7 +526,7 @@ RCloop (node *arg_node, node *arg_info)
                  */
                 if (defined_mask[i] > 0) {
                     if (N_do == arg_node->nodetype) {
-                        /* check weather curren variable is an argument of
+                        /* check whether curren variable is an argument of
                          * 'virtuell function'
                          */
                         if (0 == var_dec->refcnt)
@@ -627,7 +627,8 @@ RClet (node *arg_node, node *arg_info)
  *  functionname  : RCcond
  *  arguments     : 1) argument node
  *                  2) info node
- *  description   :
+ *  description   : refcounts then- and else-part of conditional and computes
+ *                  the maximum of refcounts in both parts
  *  global vars   :
  *  internal funs :
  *  external funs :
@@ -656,7 +657,7 @@ RCcond (node *arg_node, node *arg_info)
     /* store vardec refcounts after refcounting else part */
     else_dump = Store ();
 
-    /* now compute maximum of then- and else-dump and store it in vardev refcnt
+    /* now compute maximum of then- and else-dump and store it in vardec refcnt
      * store differences between then- and else dump in new_info->node[x]
      * -  x=0 if then_dump[i] < else_dump[i] (else_dump[i] - then_dump[i])
      * -  x=1 if else_dump[i] < then_dump[i] (then_dump[i] - else_dump[i])
@@ -720,5 +721,75 @@ RCcond (node *arg_node, node *arg_info)
     /* last but not least, traverse condition */
     arg_node->node[0] = Trav (arg_node->node[0], arg_info);
 
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : RCwith
+ *  arguments     : 1) argument node
+ *                  2) info node
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
+node *
+RCwith (node *arg_node, node *arg_info)
+{
+    int *ref_dump, *with_dump, index_vec_varno, i;
+    node *var_dec;
+
+    DBUG_ENTER ("RCwith");
+
+    /* store refcounts */
+    ref_dump = StoreAndInit (0);
+
+    arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+    index_vec_varno = arg_node->node[0]->info.ids->refcnt;
+
+    with_dump = Store ();
+
+    for (i = 0; i < varno; i++) {
+        if ((with_dump[i] > 0) && (i != index_vec_varno)) {
+            var_dec = FindVarDec (i);
+            DBUG_ASSERT ((NULL != var_dec), "var not found");
+            if (0 < var_dec->refcnt) {
+                ref_dump[i] = +1;
+                DBUG_PRINT ("RC", ("set refcount of %s to %d:", var_dec->info.types->id,
+                                   ref_dump[i]));
+            }
+        }
+    }
+    Restore (ref_dump);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
+ *  functionname  : RCcon
+ *  arguments     : 1) argument node
+ *                  2) info node
+ *  description   : traverses first body of with-loop and then gen- modarray
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
+node *
+RCcon (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCcon");
+    arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+    arg_node->node[0] = Trav (arg_node->node[0], arg_info);
     DBUG_RETURN (arg_node);
 }
