@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/10/28 22:09:19  sah
+ * fixed small allocation problem
+ *
  * Revision 1.6  2004/10/28 17:18:07  sah
  * added support for dependency tables
  *
@@ -70,7 +73,7 @@ AddModuleToPool (const char *name)
 
     result = Malloc (sizeof (module_t));
 
-    result->sofile = Malloc (sizeof (char) * (strlen (name) + 6));
+    result->sofile = Malloc (sizeof (char) * (strlen (name) + 7));
     sprintf (result->sofile, "lib%s.so", name);
 
     result->name = StringCopy (name);
