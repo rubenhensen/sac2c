@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/10/06 17:15:46  cg
+ * Revision 1.3  1995/10/16 17:57:00  cg
+ * added new member 'ST_objinitfun' of enum statustype
+ *
+ * Revision 1.2  1995/10/06  17:15:46  cg
  * new type nodelist added.
  * some new statuses inserted into statustype.
  *
@@ -64,8 +67,10 @@ typedef enum {
                            /* yet analysed.                          */
     ST_local,              /* identifier is local                    */
     ST_global,             /* identifier is global object            */
-    ST_imported            /* function, type, or object imported     */
+    ST_imported,           /* function, type, or object imported     */
                            /* from other module                      */
+    ST_objinitfun          /* function is automatically generated    */
+                           /* to contain global object init expr     */
 
 } statustype;
 
