@@ -21,8 +21,9 @@ CC               :=  cc
 CCFLAGS          :=  "-Wall -Wno-unused -fno-builtin"
 CCDIR            :=  "-I$SACBASE/runtime/ "
                      "-L$SACBASE/runtime/"
-CCLINK           :=  "-Wl,-multiply_defined,suppress"   
-CCMTLINK         :=  "-Wl,-multiply_defined,suppress -lpthread"
+LDFLAGS          :=  "-Wl,-multiply_defined,suppress"
+CCLINK           :=  ""
+CCMTLINK         :=  -lpthread
  
 OPT_O0           :=  ""
 OPT_O1           :=  -O1

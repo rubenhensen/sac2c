@@ -49,6 +49,12 @@
  *                  
  *  CCDIR           CCDIR specifies the directories where CC has to look for
  *                  non-standard header files, object code files, and libraries.
+ *
+ *  LDFLAGS         LDFLAGS specifies the linker flags to be used when creating
+ *                  executables. These have to be specified in the way the 
+ *                  C compiler (specified in CC) expects them to be, e.g., in
+ *                  case of gcc :   "-Wl,-multiple_defines,supress"
+ *                  instead of      "-multiple_defines supress"        .
  *                  
  *  CCLINK          CCLINK specifies the libraries an executable always has to
  *                  be linked with. 
