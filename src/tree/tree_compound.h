@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.136  2004/11/24 16:48:09  skt
+ * VARDEC_OR_ARG_NAME patched & some brushing
+ *
  * Revision 3.135  2004/11/24 16:27:42  ktr
  * Changed signature of MakeAssignLet
  *
@@ -395,6 +398,7 @@ extern bool TCisFromClass (node *symbol);
     ((NODE_TYPE (n) == N_arg)                                                            \
        ? ARG_AVIS (n)                                                                    \
        : ((NODE_TYPE (n) == N_vardec) ? VARDEC_AVIS (n) : OBJDEF_AVIS (n)))
+#define DECL_NAME(n) (AVIS_NAME (DECL_AVIS))
 
 /*--------------------------------------------------------------------------*/
 
@@ -821,9 +825,7 @@ extern node *TCappendRets (node *chain, node *item);
  *          Use the L_VARDEC_OR_... macros instead!!
  */
 #define VARDEC_OR_ARG_NAME(n)                                                            \
-    ((NODE_TYPE (n) == N_arg)                                                            \
-       ? ARG_NAME (n)                                                                    \
-       : ((NODE_TYPE (n) == N_vardec) ? VARDEC_NAME (n) : OBJDEF_NAME (n)))
+  (AVIS_NAME(DECL_AVIS(n))
 #define VARDEC_OR_ARG_TYPE(n)                                                            \
     ((NODE_TYPE (n) == N_arg)                                                            \
        ? ARG_TYPE (n)                                                                    \
@@ -918,19 +920,6 @@ extern node *TCappendRets (node *chain, node *item);
         ARG_TYPE (n) = (rhs);                                                            \
     } else {                                                                             \
         VARDEC_TYPE (n) = (rhs);                                                         \
-    }
-
-/*
- * this macro is usefull for traversing the arg- und vardec-list
- */
-#define FOREACH_VARDEC_AND_ARG(fundef, vardec, code)                                     \
-    vardec = FUNDEF_ARGS (fundef);                                                       \
-    while (vardec != NULL) {                                                             \
-        code vardec = ARG_NEXT (vardec);                                                 \
-    }                                                                                    \
-    vardec = FUNDEF_VARDEC (fundef);                                                     \
-    while (vardec != NULL) {                                                             \
-        code vardec = VARDEC_NEXT (vardec);                                              \
     }
 
 extern node *TCsearchDecl (char *name, node *decl_node);
