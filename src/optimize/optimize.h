@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.47  1998/02/12 11:10:26  srs
+ * added OPTNwith
+ *
  * Revision 1.46  1998/02/09 16:10:12  srs
  * introduced WLF
  *
@@ -273,5 +276,6 @@ extern node *OPTblock (node *arg_node, node *arg_info);
 extern node *OPTcond (node *arg_node, node *arg_info);
 extern node *OPTloop (node *arg_node, node *arg_info);
 extern node *OPTwith (node *arg_node, node *arg_info);
+extern node *OPTNwith (node *arg_node, node *arg_info);
 
 #endif /* _optimize_h */
