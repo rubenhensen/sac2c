@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/03/09 11:15:27  sbs
+ * initializations of PF.... changed to fit new profiler.
+ *
  * Revision 3.6  2001/02/09 14:39:12  nmw
  * global ssa flag added
  *
@@ -418,8 +421,8 @@ char cachesim_dir[MAX_FILE_NAME] = "";
  * Profiling information storage facilities
  */
 
-int PFfuncntr = 1;
-char *PFfunnme[PF_MAXFUN] = {"main"};
+int PFfuncntr = 0;
+char *PFfunnme[PF_MAXFUN];
 int PFfunapcntr[PF_MAXFUN];
 int PFfunapline[PF_MAXFUN][PF_MAXFUNAP];
 int PFfunapmax = 1;
