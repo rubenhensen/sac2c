@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.32  1998/04/03 11:28:06  dkr
+ * concregs renamed to concregions
+ *
  * Revision 1.31  1998/04/02 18:17:38  dkr
  * ST_WLfun renamed to ST_concfun
  *
@@ -197,7 +200,7 @@ typedef enum {
     PH_sacopt,
     PH_psiopt,
     PH_refcnt,
-    PH_concregs,
+    PH_concregions,
     PH_precompile,
     PH_compile,
     PH_genccode,

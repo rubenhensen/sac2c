@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.60  1998/04/03 11:27:55  dkr
+ * concregs renamed to concregions
+ *
  * Revision 1.59  1998/04/02 16:11:29  dkr
  * added new traverse tabular concregs_tab
  * changed signature for NIF
@@ -20,9 +23,6 @@
  *
  * Revision 1.54  1997/12/02 18:42:56  srs
  * removed NEWTREE
- *
- * Revision 1.53  1997/11/24 17:03:34  srs
- * *** empty log message ***
  *
  * Revision 1.52  1997/11/19 19:40:05  dkr
  * added o2nWith_tab
@@ -225,7 +225,7 @@
 #include "uniquecheck.h"
 #include "rmvoidfun.h"
 #include "refcount.h"
-#include "concregs.h"
+#include "concregions.h"
 #include "precompile.h"
 #include "compile.h"
 #include "cccall.h"
@@ -730,14 +730,14 @@ funptr dfr_tab[] = {
 #undef NIF
 
 /*
- * 36) concregs_tab
+ * 36) concregions_tab
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
             ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
     ap
 
-funptr concregs_tab[] = {
+funptr concregions_tab[] = {
 #include "node_info.mac"
 };
 #undef NIF

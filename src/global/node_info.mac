@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.171  1998/04/03 11:24:56  dkr
+ * concregs renamed to concregions
+ *
  * Revision 1.170  1998/04/02 18:45:41  dkr
  * added new compiler phase concregs
  * added new node type N_conc
@@ -533,7 +536,7 @@
  *                             writesib_tab  obj_tab       impltype_tab  objinit_tab
  *                             analy_tab     checkdec_tab  writedec_tab  unique_tab
  *                             rmvoid_tab    precomp_tab   active_tab    readsib_tab
- *                             wlt_tab       cse_tab       dfr_tab       concregs_tab
+ *                             wlt_tab       cse_tab       dfr_tab       concregions_tab
  *                             o2nWith_tab
  *                             nnode
  */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.117  1998/04/03 11:27:31  dkr
+ * concregs renamed to concregions
+ *
  * Revision 1.116  1998/04/02 16:05:57  dkr
  * new compiler phase:
  *   generating concurrent regions (phase 18)
@@ -403,7 +406,7 @@
 #include "objects.h"
 #include "uniquecheck.h"
 #include "rmvoidfun.h"
-#include "concregs.h"
+#include "concregions.h"
 #include "precompile.h"
 #include "compile.h"
 #include "cccall.h"
@@ -646,7 +649,7 @@ MAIN
                 show_refcnt = 1;
                 break;
             case '8':
-                break_after = PH_concregs;
+                break_after = PH_concregions;
                 tmp_break = 2;
                 break;
             case '9':
@@ -1192,11 +1195,11 @@ MAIN
 
     NOTE_COMPILER_PHASE;
     CHECK_DBUG_START;
-    syntax_tree = ConcRegions (syntax_tree); /* concregs_tab */
+    syntax_tree = ConcRegions (syntax_tree); /* concregions_tab */
     CHECK_DBUG_STOP;
     ABORT_ON_ERROR;
 
-    if (break_after == PH_concregs)
+    if (break_after == PH_concregions)
         goto BREAK;
     compiler_phase++;
 
