@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.19  2004/11/25 14:04:33  mwe
+ * SacDevCamp Dk: Compiles!!
+ *
  * Revision 1.18  2004/08/08 14:02:08  sbs
  * some doxygenic added
  *
@@ -221,11 +224,12 @@
  * @{
  *****************************************************************************/
 
-#define NEW_INFO
+#include <string.h>
 
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "node_basic.h"
 #include "internal_lib.h"
 #include "dbug.h"
 #include "globals.h"
@@ -233,24 +237,22 @@
 #include "free.h"
 #include "DupTree.h"
 #include "SSATransform.h"
+#include "Error.h"
+#include "new_types.h"
 
 #define TMP_STRING_LEN 16
 
 /* helper functions for internal usage */
-static node *SSACreateFuncondAssign (node *cond, node *id, node *assign);
-static node *SSAGetSSAcount (char *baseid, int initvalue, node *block);
-
-/* internal functions for traversing ids like nodes */
-static ids *TravLeftIDS (ids *arg_ids, info *arg_info);
-static ids *SSAleftids (ids *arg_ids, info *arg_info);
-static ids *TravRightIDS (ids *arg_ids, info *arg_info);
-static ids *SSArightids (ids *arg_ids, info *arg_info);
+static node *CreateFuncondAssign (node *cond, node *id, node *assign);
+static node *GetSsacnt (char *baseid, int initvalue, node *block);
+static node *TreatIdAsLhs (node *arg_node, info *arg_info);
+static node *TreatIdsAsRhs (node *, info *);
 
 /* special ssastack operations for ONE avis-node */
-static node *PopSSAstack (node *avis);
-static node *DupTopSSAstack (node *avis);
-static node *SaveTopSSAstackThen (node *avis);
-static node *SaveTopSSAstackElse (node *avis);
+static node *PopSsastack (node *avis);
+static node *DupTopSsastack (node *avis);
+static node *SaveTopSsastackThen (node *avis);
+static node *SaveTopSsastackElse (node *avis);
 
 /**
  *
@@ -344,7 +346,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_SSA_SINGLEFUNDEF (result) = 0;
     INFO_SSA_ALLOW_GOS (result) = FALSE;
@@ -368,7 +370,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -383,10 +385,10 @@ FreeInfo (info *info)
  * FOR_ALL_AVIS( fun , fundef )          : higher order function; maps "fun"
  *                                         to all avis nodes in the args/
  *                                         vardecs of "fundef"
- * node *PopSSAstack(node *avis)         : pop top elem
- * node *DupTopSSAstack(node *avis)      : push a copy of the top elem
- * node *SaveTopSSAstackThen(node *avis) : save top elem in AVIS_SSA_THEN
- * node *SaveTopSSAstackElse(node *avis) : save top elem in AVIS_SSA_ELSE
+ * node *PopSsastack(node *avis)         : pop top elem
+ * node *DupTopSsastack(node *avis)      : push a copy of the top elem
+ * node *SaveTopSsastackThen(node *avis) : save top elem in AVIS_SSA_THEN
+ * node *SaveTopSsastackElse(node *avis) : save top elem in AVIS_SSA_ELSE
  * -->
  *
  */
@@ -414,23 +416,23 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn static node *PopSSAstack(node *avis)
+ * @fn static node *PopSsastack(node *avis)
  *
  *   @brief frees top of SSAstack
  *          if stack is not in use to nothing
  *
  ******************************************************************************/
 static node *
-PopSSAstack (node *avis)
+PopSsastack (node *avis)
 {
     node *ssastack;
 
-    DBUG_ENTER ("PopSSAstack");
+    DBUG_ENTER ("PopSsastack");
 
     if (AVIS_SSASTACK_INUSE (avis)) {
         ssastack = AVIS_SSASTACK (avis);
         AVIS_SSASTACK (avis) = SSASTACK_NEXT (ssastack);
-        ssastack = FreeNode (ssastack);
+        ssastack = FREEdoFreeNode (ssastack);
     }
 
     DBUG_RETURN (avis);
@@ -438,21 +440,21 @@ PopSSAstack (node *avis)
 
 /** <!--********************************************************************-->
  *
- * @fn static  node *DupTopSSAstack(node *avis)
+ * @fn static  node *DupTopSsastack(node *avis)
  *
  *   @brief Duplicates value on top of stack.
  *
  ******************************************************************************/
 static node *
-DupTopSSAstack (node *avis)
+DupTopSsastack (node *avis)
 {
     node *ssastack;
 
-    DBUG_ENTER ("DupTopSSAstack");
+    DBUG_ENTER ("DupTopSsastack");
 
     if (AVIS_SSASTACK_INUSE (avis)) {
         ssastack = AVIS_SSASTACK (avis);
-        AVIS_SSASTACK (avis) = MakeSSAstack (ssastack, SSASTACK_AVIS (ssastack));
+        AVIS_SSASTACK (avis) = TBmakeSsastack (ssastack, SSASTACK_AVIS (ssastack));
         AVIS_SSASTACK_INUSE (avis) = TRUE;
     }
 
@@ -461,15 +463,15 @@ DupTopSSAstack (node *avis)
 
 /** <!--********************************************************************-->
  *
- * @fn static  node *SaveTopSSAstackThen(node *avis)
+ * @fn static  node *SaveTopSsastackThen(node *avis)
  *
  *   @brief Saves Top-Value of stack to AVIS_SSATHEN
  *
  ******************************************************************************/
 static node *
-SaveTopSSAstackThen (node *avis)
+SaveTopSsastackThen (node *avis)
 {
-    DBUG_ENTER ("SaveTopSSAstackThen");
+    DBUG_ENTER ("SaveTopSsastackThen");
 
     AVIS_SSATHEN (avis) = AVIS_SSASTACK_TOP (avis);
 
@@ -478,15 +480,15 @@ SaveTopSSAstackThen (node *avis)
 
 /** <!--********************************************************************-->
  *
- * @fn static  node *SaveTopSSAstackElse(node *avis)
+ * @fn static  node *SaveTopSsastackElse(node *avis)
  *
  *   @brief Saves Top-Value of stack to AVIS_SSATHEN
  *
  ******************************************************************************/
 static node *
-SaveTopSSAstackElse (node *avis)
+SaveTopSsastackElse (node *avis)
 {
-    DBUG_ENTER ("SaveTopSSAstackElse");
+    DBUG_ENTER ("SaveTopSsastackElse");
 
     AVIS_SSAELSE (avis) = AVIS_SSASTACK_TOP (avis);
 
@@ -500,15 +502,15 @@ SaveTopSSAstackElse (node *avis)
  *
  * <!--
  * node *SSANewVardec(node *old_vardec_or_arg)
- * node *SSACreateFuncondAssign( node *cond, node *id, node *assign)
- * node* SSAGetSSAcount(char *baseid, int initvalue, node *block)
+ * node *CreateFuncondAssign( node *cond, node *id, node *assign)
+ * node* GetSsacnt(char *baseid, int initvalue, node *block)
  * -->
  *
  */
 /*@{*/
 /** <!--********************************************************************-->
  *
- * @fn node *SSANewVardec(node *old_vardec_or_arg)
+ * @fn node *SSATnewVardec(node *old_vardec_or_arg)
  *
  *   @brief creates a new (renamed) vardec of the given original vardec.
  *          The global ssa rename counter of the baseid is incremented.
@@ -517,38 +519,38 @@ SaveTopSSAstackElse (node *avis)
  *
  ******************************************************************************/
 node *
-SSANewVardec (node *old_vardec_or_arg)
+SSATnewVardec (node *old_vardec_or_arg)
 {
     node *ssacnt;
     node *new_vardec;
     char tmpstring[TMP_STRING_LEN];
 
-    DBUG_ENTER ("SSANewVardec");
+    DBUG_ENTER ("SSATnewVardec");
 
     ssacnt = AVIS_SSACOUNT (VARDEC_OR_ARG_AVIS (old_vardec_or_arg));
 
     if (NODE_TYPE (old_vardec_or_arg) == N_arg) {
-        new_vardec = MakeVardecFromArg (old_vardec_or_arg);
-        if (compiler_phase <= PH_typecheck) {
+        new_vardec = TCmakeVardecFromArg (old_vardec_or_arg);
+        if (global.compiler_phase <= PH_typecheck) {
             /**
              * we are running SSATransform prior or during TC! Therefore,
              * the type has to be virginized, i.e., set to _unknown_ !
              */
-            VARDEC_TYPE (new_vardec) = FreeAllTypes (VARDEC_TYPE (new_vardec));
-            VARDEC_TYPE (new_vardec) = MakeTypes1 (T_unknown);
+            VARDEC_TYPE (new_vardec) = FREEfreeAllTypes (VARDEC_TYPE (new_vardec));
+            VARDEC_TYPE (new_vardec) = TBmakeTypes1 (T_unknown);
             DBUG_PRINT ("SBS", ("POOP"));
         }
     } else {
-        new_vardec = DupNode (old_vardec_or_arg);
+        new_vardec = DUPdoDupNode (old_vardec_or_arg);
     }
 
     /* increment ssa renaming counter */
     SSACNT_COUNT (ssacnt) = SSACNT_COUNT (ssacnt) + 1;
 
     /* create new unique name */
-    sprintf (tmpstring, "__SSA%d_%d", ssaform_phase, SSACNT_COUNT (ssacnt));
-    Free (VARDEC_NAME (new_vardec));
-    VARDEC_NAME (new_vardec) = StringConcat (SSACNT_BASEID (ssacnt), tmpstring);
+    sprintf (tmpstring, "__SSA%d_%d", global.ssaform_phase, SSACNT_COUNT (ssacnt));
+    ILIBfree (VARDEC_NAME (new_vardec));
+    VARDEC_NAME (new_vardec) = ILIBstringConcat (SSACNT_BASEID (ssacnt), tmpstring);
     ;
 
     DBUG_RETURN (new_vardec);
@@ -556,7 +558,7 @@ SSANewVardec (node *old_vardec_or_arg)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSACreateFuncondAssign( node *cond, node *id, node *assign)
+ * @fn node *CreateFuncondAssign( node *cond, node *id, node *assign)
  *
  *   @brief create a funcond assignment of the form
  *             <id> = cond( <p>, <id>, <id>)
@@ -569,18 +571,18 @@ SSANewVardec (node *old_vardec_or_arg)
  *
  ******************************************************************************/
 static node *
-SSACreateFuncondAssign (node *cond, node *id, node *assign)
+CreateFuncondAssign (node *cond, node *id, node *assign)
 {
     node *funcond;
     node *new_assign;
 
-    DBUG_ENTER ("SSACreateFuncondAssign");
+    DBUG_ENTER ("CreateFuncondAssign");
 
-    funcond
-      = MakeFuncond (MakeExprs (DupTree (COND_COND (cond)), NULL),
-                     MakeExprs (DupTree (id), NULL), MakeExprs (DupTree (id), NULL));
+    funcond = TBmakeFuncond (TBmakeExprs (DUPdoDupTree (COND_COND (cond)), NULL),
+                             TBmakeExprs (DUPdoDupTree (id), NULL),
+                             TBmakeExprs (DUPdoDupTree (id), NULL));
 
-    new_assign = MakeAssignLet (StringCopy (ID_NAME (id)), ID_VARDEC (id), funcond);
+    new_assign = TCmakeAssignLet (ID_AVIS (id), funcond);
 
     ASSIGN_NEXT (new_assign) = assign;
 
@@ -589,7 +591,7 @@ SSACreateFuncondAssign (node *cond, node *id, node *assign)
 
 /** <!--********************************************************************-->
  *
- * @fn static node* SSAGetSSAcount(char *baseid, int initvalue, node *block)
+ * @fn static node* GetSsacnt(char *baseid, int initvalue, node *block)
  *
  *   @brief looks in list of available ssacounter (in block) for matching
  *          baseid and returns the corresponding ssacnt node.
@@ -598,12 +600,12 @@ SSACreateFuncondAssign (node *cond, node *id, node *assign)
  *
  ******************************************************************************/
 static node *
-SSAGetSSAcount (char *baseid, int initvalue, node *block)
+GetSsacnt (char *baseid, int initvalue, node *block)
 {
     node *ssacnt;
     node *tmp;
 
-    DBUG_ENTER ("SSAGetSSAcount");
+    DBUG_ENTER ("GetSsacnt");
 
     ssacnt = NULL;
 
@@ -623,7 +625,8 @@ SSAGetSSAcount (char *baseid, int initvalue, node *block)
 
     if (ssacnt == NULL) {
         /* insert NEW ssa-counter to this baseid */
-        ssacnt = MakeSSAcnt (BLOCK_SSACOUNTER (block), initvalue, StringCopy (baseid));
+        ssacnt
+          = TBmakeSsacnt (initvalue, ILIBstringCopy (baseid), BLOCK_SSACOUNTER (block));
 
         /* add to list of ssacnt nodes */
         BLOCK_SSACOUNTER (block) = ssacnt;
@@ -641,15 +644,15 @@ SSAGetSSAcount (char *baseid, int initvalue, node *block)
 /*@{*/
 /** <!--********************************************************************-->
  *
- * @fn node *SSAfundef(node *arg_node, info *arg_info)
+ * @fn node *SSATfundef(node *arg_node, info *arg_info)
  *
  *   @brief traverses args and block of fundef in this order
  *
  ******************************************************************************/
 node *
-SSAfundef (node *arg_node, info *arg_info)
+SSATfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSAfundef");
+    DBUG_ENTER ("SSATfundef");
 
     /*
      * process only fundefs with body
@@ -664,19 +667,19 @@ SSAfundef (node *arg_node, info *arg_info)
 
         if (FUNDEF_ARGS (arg_node) != NULL) {
             /* there are some args */
-            FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
         }
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             /* there is a block */
-            FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         }
     }
 
     /* traverse next fundef */
     if ((INFO_SSA_SINGLEFUNDEF (arg_info) == SSA_TRAV_FUNDEFS)
         && (FUNDEF_NEXT (arg_node) != NULL)) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -684,26 +687,26 @@ SSAfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSAblock(node *arg_node, info *arg_info)
+ * @fn node *SSATblock(node *arg_node, info *arg_info)
  *
  *   @brief traverses vardecs and instructions in this order, subblocks do not
  *          have any vardecs.
  *
  ******************************************************************************/
 node *
-SSAblock (node *arg_node, info *arg_info)
+SSATblock (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("SSAblock");
+    DBUG_ENTER ("SSATblock");
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         /* there are some vardecs */
-        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     }
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         /* there are some instructions */
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -711,7 +714,7 @@ SSAblock (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSAassign(node *arg_node, info *arg_info)
+ * @fn node *SSATassign(node *arg_node, info *arg_info)
  *
  *   @brief traverses assign chain top down. While traversing the RHS,
  *          the actual assign node is made available in INFO_SSA_ASSIGN.
@@ -721,11 +724,11 @@ SSAblock (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSAassign (node *arg_node, info *arg_info)
+SSATassign (node *arg_node, info *arg_info)
 {
     node *old_assign;
 
-    DBUG_ENTER ("SSAassign");
+    DBUG_ENTER ("SSATassign");
 
     /* preserve the old assignment link */
     old_assign = INFO_SSA_ASSIGN (arg_info);
@@ -734,19 +737,19 @@ SSAassign (node *arg_node, info *arg_info)
 
     /* traverse expr */
     if (ASSIGN_INSTR (arg_node) != NULL) {
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
 
     /* check for potentially required insertions */
     if (INFO_SSA_ASSIGN (arg_info) != arg_node) {
         /* indirectly insert these here and traverse them again */
         arg_node = INFO_SSA_ASSIGN (arg_info);
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     }
 
     /* traverse next exprs */
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     /* restore old assignment link */
@@ -757,22 +760,22 @@ SSAassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSAlet( node *arg_node, info *arg_info)
+ * @fn node *SSATlet( node *arg_node, info *arg_info)
  *
  *   @brief travereses in expression and assigned ids.
  *
  ******************************************************************************/
 node *
-SSAlet (node *arg_node, info *arg_info)
+SSATlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSAlet");
+    DBUG_ENTER ("SSATlet");
 
     DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "N_let with empty EXPR attribute.");
-    LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     if (LET_IDS (arg_node) != NULL) {
         /* there are some ids not in a special ssa copy let */
-        LET_IDS (arg_node) = TravLeftIDS (LET_IDS (arg_node), arg_info);
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -781,19 +784,19 @@ SSAlet (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *SSAicm( node *arg_node, info *arg_info)
+ *  node *SSATicm( node *arg_node, info *arg_info)
  *
  * description:
  *   travereses in expression and assigned ids.
  *
  ******************************************************************************/
 node *
-SSAicm (node *arg_node, info *arg_info)
+SSATicm (node *arg_node, info *arg_info)
 {
     node *id;
     char *name;
 
-    DBUG_ENTER ("SSAicm");
+    DBUG_ENTER ("SSATicm");
 
     name = ICM_NAME (arg_node);
 
@@ -808,7 +811,7 @@ SSAicm (node *arg_node, info *arg_info)
         id = ICM_ARG1 (arg_node);
         DBUG_ASSERT ((NODE_TYPE (id) == N_id),
                      "1st argument of USE_GENVAR_OFFSET icm is no N_id node");
-        ID_IDS (id) = TravLeftIDS (ID_IDS (id), arg_info);
+        id = TreatIdAsLhs (id, arg_info);
     } else if (strstr (name, "VECT2OFFSET") != NULL) {
         /*
          * VECT2OFFSET( off, ., from, ., ., ...)
@@ -818,12 +821,12 @@ SSAicm (node *arg_node, info *arg_info)
          *  -> traverse all but the first argument as RHS
          *  -> traverse first argument as LHS
          */
-        ICM_EXPRS2 (arg_node) = Trav (ICM_EXPRS2 (arg_node), arg_info);
+        ICM_EXPRS2 (arg_node) = TRAVdo (ICM_EXPRS2 (arg_node), arg_info);
 
         id = ICM_ARG1 (arg_node);
         DBUG_ASSERT ((NODE_TYPE (id) == N_id),
                      "1st argument of VECT2OFFSET icm is no N_id node");
-        ID_IDS (id) = TravLeftIDS (ID_IDS (id), arg_info);
+        id = TreatIdAsLhs (id, arg_info);
     } else if (strstr (name, "IDXS2OFFSET") != NULL) {
         /*
          * IDXS2OFFSET( off_nt, ., idx_1_nt ... idx_n_nt, ., ...)
@@ -833,12 +836,12 @@ SSAicm (node *arg_node, info *arg_info)
          *  -> traverse all but the first argument as RHS
          *  -> traverse first argument as LHS
          */
-        ICM_EXPRS2 (arg_node) = Trav (ICM_EXPRS2 (arg_node), arg_info);
+        ICM_EXPRS2 (arg_node) = TRAVdo (ICM_EXPRS2 (arg_node), arg_info);
 
         id = ICM_ARG1 (arg_node);
         DBUG_ASSERT ((NODE_TYPE (id) == N_id),
                      "1st argument of IDXS2OFFSET icm is no N_id node");
-        ID_IDS (id) = TravLeftIDS (ID_IDS (id), arg_info);
+        id = TreatIdAsLhs (id, arg_info);
     } else {
         DBUG_ASSERT ((0), "unknown ICM found during RC");
     }
@@ -848,7 +851,7 @@ SSAicm (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSAarg(node *arg_node, info *arg_info)
+ * @fn node *SSATarg(node *arg_node, info *arg_info)
  *
  *   @brief check for missing SSACOUNT attribute in AVIS node. installs and
  *          inits new ssa-counter if necessary (init with 0, means unrenamed
@@ -861,17 +864,16 @@ SSAicm (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSAarg (node *arg_node, info *arg_info)
+SSATarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSAarg");
+    DBUG_ENTER ("SSATarg");
 
     DBUG_PRINT ("SSA", ("working on arg %s", ARG_NAME (arg_node)));
 
     if (AVIS_SSACOUNT (ARG_AVIS (arg_node)) == NULL) {
         /* insert ssa-counter to this baseid */
         AVIS_SSACOUNT (ARG_AVIS (arg_node))
-          = SSAGetSSAcount (ARG_NAME (arg_node), 0,
-                            FUNDEF_BODY (INFO_SSA_FUNDEF (arg_info)));
+          = GetSsacnt (ARG_NAME (arg_node), 0, FUNDEF_BODY (INFO_SSA_FUNDEF (arg_info)));
     }
 
     /* actual rename-to target on stack*/
@@ -893,7 +895,7 @@ SSAarg (node *arg_node, info *arg_info)
 
     /* traverse next arg */
     if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -901,7 +903,7 @@ SSAarg (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSAvardec(node *arg_node, info *arg_info)
+ * @fn node *SSATvardec(node *arg_node, info *arg_info)
  *
  *   @brief check for missing SSACOUNT attribute in AVIS node.
  *          installs and inits new ssa-counter if necessary (init with undef)
@@ -913,15 +915,15 @@ SSAarg (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSAvardec (node *arg_node, info *arg_info)
+SSATvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSAvardec");
+    DBUG_ENTER ("SSATvardec");
 
     if (AVIS_SSACOUNT (VARDEC_AVIS (arg_node)) == NULL) {
         /* insert ssa-counter to this baseid */
         AVIS_SSACOUNT (VARDEC_AVIS (arg_node))
-          = SSAGetSSAcount (VARDEC_NAME (arg_node), 0,
-                            FUNDEF_BODY (INFO_SSA_FUNDEF (arg_info)));
+          = GetSsacnt (VARDEC_NAME (arg_node), 0,
+                       FUNDEF_BODY (INFO_SSA_FUNDEF (arg_info)));
     }
 
     /* jet undefined on stack */
@@ -940,7 +942,7 @@ SSAvardec (node *arg_node, info *arg_info)
 
     /* traverse next vardec */
     if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -948,7 +950,7 @@ SSAvardec (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSAid( node *arg_node, info *arg_info)
+ * @fn node *SSATid( node *arg_node, info *arg_info)
  *
  *   @brief depending on INFO_SSA_GENERATE_FUNCOND either generate funconds
  *          and prepend them to INFO_SSA_ASSIGN     or
@@ -956,9 +958,10 @@ SSAvardec (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSAid (node *arg_node, info *arg_info)
+SSATid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSAid");
+    node *new_avis;
+    DBUG_ENTER ("SSATid");
 
     if (INFO_SSA_GENERATE_FUNCOND (arg_info)) {
         /* check for different assignments in then and else part */
@@ -968,13 +971,63 @@ SSAid (node *arg_node, info *arg_info)
             DBUG_ASSERT ((AVIS_SSATHEN (ID_AVIS (arg_node))),
                          "undefined variable in then part");
             INFO_SSA_ASSIGN (arg_info)
-              = SSACreateFuncondAssign (INFO_SSA_CONDSTMT (arg_info), arg_node,
-                                        INFO_SSA_ASSIGN (arg_info));
+              = CreateFuncondAssign (INFO_SSA_CONDSTMT (arg_info), arg_node,
+                                     INFO_SSA_ASSIGN (arg_info));
         }
     } else {
 
-        DBUG_ASSERT ((ID_IDS (arg_node) != NULL), "missing IDS in N_id!");
-        ID_IDS (arg_node) = TravRightIDS (ID_IDS (arg_node), arg_info);
+        if (INFO_SSA_RENAMING_MODE (arg_info) == SSA_USE_TOP) {
+            new_avis = AVIS_SSASTACK_TOP (ID_AVIS (arg_node));
+        } else if (INFO_SSA_RENAMING_MODE (arg_info) == SSA_USE_THEN) {
+            new_avis = AVIS_SSATHEN (ID_AVIS (arg_node));
+        } else {
+            DBUG_ASSERT ((INFO_SSA_RENAMING_MODE (arg_info) == SSA_USE_ELSE),
+                         "illegal value for INFO_SSA_RENAMING_MODE");
+            new_avis = AVIS_SSAELSE (ID_AVIS (arg_node));
+        }
+
+        /* do renaming to new ssa vardec */
+        if (!AVIS_SSADEFINED (ID_AVIS (arg_node)) || (new_avis == NULL)) {
+            /**
+             * One may think, that it would suffice to check AVIS_SSADEFINED here.
+             * However, it may happen that despite AVIS_SSADEFINED being set
+             * AVIS_SSASTACK_TOP is NULL!! The reason for that is the stacking
+             * mechanism for getting the scopes right.
+             * If a variable is defined in one local scope and used in another one
+             * which happens to be not within the first one, this situation occurs.
+             *
+             * Example:
+             *
+             *    int main()
+             *    {
+             *      res = with(. <= iv <.) {
+             *              a=1;
+             *            } genarray([20], a);
+             *      res = with(. <= iv <.) {
+             *            } genarray([20], a);
+             *
+             *      return(  0);
+             *    }
+             *
+             * When the second occurance of a is traversed AVIS_SSADEFINED is true,
+             * as there has been a definition before (remember: renaming is steered
+             * without taking scopes into account!). However, wrt. the actual scope
+             * there is NO valid definition. Hence AVIS_SSASTACK_TOP is NULL.
+             */
+            if (INFO_SSA_ALLOW_GOS (arg_info) == FALSE) {
+                ERROR (global.linenum,
+                       ("var %s used without definition", ID_NAME (arg_node)));
+            }
+        } else {
+            ID_AVIS (arg_node) = new_avis;
+        }
+
+        /* restore all depended attributes with correct values */
+        ID_DECL (arg_node) = AVIS_DECL (ID_AVIS (arg_node));
+
+        if (INFO_SSA_WITHID (arg_info) != NULL) {
+            AVIS_WITHID (ID_AVIS (arg_node)) = INFO_SSA_WITHID (arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -982,27 +1035,27 @@ SSAid (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSAap(node *arg_node, info *arg_info)
+ * @fn node *SSATap(node *arg_node, info *arg_info)
  *
  *   @brief traverses args and does a recursive call in case of special
  *          function applications.
  *
  ******************************************************************************/
 node *
-SSAap (node *arg_node, info *arg_info)
+SSATap (node *arg_node, info *arg_info)
 {
     info *new_arg_info;
 
-    DBUG_ENTER ("SSAap");
+    DBUG_ENTER ("SSATap");
 
     DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
 
     if (AP_ARGS (arg_node) != NULL) {
-        AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
+        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
     /* traverse special fundef without recursion (only in single fundef mode) */
-    if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
+    if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
         && (INFO_SSA_SINGLEFUNDEF (arg_info) == SSA_TRAV_SPECIALS)
         && (AP_FUNDEF (arg_node) != INFO_SSA_FUNDEF (arg_info))) {
         DBUG_PRINT ("SSA", ("traverse in special fundef %s",
@@ -1014,7 +1067,7 @@ SSAap (node *arg_node, info *arg_info)
         INFO_SSA_SINGLEFUNDEF (new_arg_info) = INFO_SSA_SINGLEFUNDEF (arg_info);
 
         /* start traversal of special fundef */
-        AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
 
         DBUG_PRINT ("SSA", ("traversal of special fundef %s finished\n",
                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -1030,26 +1083,26 @@ SSAap (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSAwith(node *arg_node, info *arg_info)
+ * @fn node *SSATwith(node *arg_node, info *arg_info)
  *
  *   @brief traverses with-op, partitions and code in this order
  *
  ******************************************************************************/
 node *
-SSAwith (node *arg_node, info *arg_info)
+SSATwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSAwith");
+    DBUG_ENTER ("SSATwith");
 
     /* traverse in with-op */
-    DBUG_ASSERT ((NWITH_WITHOP (arg_node) != NULL), "Nwith without WITHOP node!");
-    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    DBUG_ASSERT ((WITH_WITHOP (arg_node) != NULL), "Nwith without WITHOP node!");
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     /**
      * traverse partitions: this implicitly checks withid consistency between
      * several partitions!
      */
-    DBUG_ASSERT ((NWITH_PART (arg_node) != NULL), "Nwith without PART node!");
-    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    DBUG_ASSERT ((WITH_PART (arg_node) != NULL), "Nwith without PART node!");
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     /**
      * reset FIRST_WITHID (being set in SSAwithid) for the next with loop
      * traversal
@@ -1060,35 +1113,35 @@ SSAwith (node *arg_node, info *arg_info)
      * traverse code: as we may have more than one code stacking is done
      * at the code nodes themselves!
      */
-    DBUG_ASSERT ((NWITH_CODE (arg_node) != NULL), "Nwith without CODE node!");
-    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    DBUG_ASSERT ((WITH_CODE (arg_node) != NULL), "Nwith without CODE node!");
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSAwith2(node *arg_node, info *arg_info)
+ * @fn node *SSATwith2(node *arg_node, info *arg_info)
  *
  *   @brief traverses with-op, segs, withid and code in this order
  *
  ******************************************************************************/
 node *
-SSAwith2 (node *arg_node, info *arg_info)
+SSATwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSAwith");
+    DBUG_ENTER ("SSATwith2");
 
     /* traverse in with-op */
-    DBUG_ASSERT ((NWITH2_WITHOP (arg_node) != NULL), "Nwith2 without WITHOP node!");
-    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
+    DBUG_ASSERT ((WITH2_WITHOP (arg_node) != NULL), "Nwith2 without WITHOP node!");
+    WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
     /* traverse segmented partitions */
-    DBUG_ASSERT ((NWITH2_SEGS (arg_node) != NULL), "Nwith2 without SEGS node!");
-    NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
+    DBUG_ASSERT ((WITH2_SEGS (arg_node) != NULL), "Nwith2 without SEGS node!");
+    WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
 
     /* traverse withid */
-    DBUG_ASSERT ((NWITH2_WITHID (arg_node) != NULL), "Nwith2 without WITHID node!");
-    NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
+    DBUG_ASSERT ((WITH2_WITHID (arg_node) != NULL), "Nwith2 without WITHID node!");
+    WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
     /**
      * reset FIRST_WITHID (being set in SSAwithid) for the next with loop
      * traversal
@@ -1099,15 +1152,15 @@ SSAwith2 (node *arg_node, info *arg_info)
      * traverse code: as we may have more than one code stacking is done
      * at the code nodes themselves!
      */
-    DBUG_ASSERT ((NWITH2_CODE (arg_node) != NULL), "Nwith2 without CODE node!");
-    NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
+    DBUG_ASSERT ((WITH2_CODE (arg_node) != NULL), "Nwith2 without CODE node!");
+    WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSApart(node *arg_node, info *arg_info)
+ * @fn node *SSATpart(node *arg_node, info *arg_info)
  *
  *   @brief as all generators have to be done BEFORE any of the withids (these
  *          are treated as LHS which should not be visible in the generators),
@@ -1115,28 +1168,28 @@ SSAwith2 (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSApart (node *arg_node, info *arg_info)
+SSATpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSApart");
+    DBUG_ENTER ("SSATpart");
 
     /* traverse generator */
-    DBUG_ASSERT ((NPART_GEN (arg_node) != NULL), "Npart without Ngen node!");
-    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
+    DBUG_ASSERT ((PART_GENERATOR (arg_node) != NULL), "Npart without Ngen node!");
+    PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
-    if (NPART_NEXT (arg_node) != NULL) {
-        NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+    if (PART_NEXT (arg_node) != NULL) {
+        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
     }
 
     /* traverse withid on our way back up: */
-    DBUG_ASSERT ((NPART_WITHID (arg_node) != NULL), "Npart without Nwithid node!");
-    NPART_WITHID (arg_node) = Trav (NPART_WITHID (arg_node), arg_info);
+    DBUG_ASSERT ((PART_WITHID (arg_node) != NULL), "Npart without Nwithid node!");
+    PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSAwithid(node *arg_node, info *arg_info)
+ * @fn node *SSATwithid(node *arg_node, info *arg_info)
  *
  *   @brief In principle, the withids have to be treated as LHS, as they
  *          introduce new variables. However, if we do have multi generator
@@ -1152,12 +1205,12 @@ SSApart (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSAwithid (node *arg_node, info *arg_info)
+SSATwithid (node *arg_node, info *arg_info)
 {
     node *assign;
     node *first;
 
-    DBUG_ENTER ("SSAwithid");
+    DBUG_ENTER ("SSATwithid");
 
     /* Set current assign to NULL for these special ids! */
     assign = INFO_SSA_ASSIGN (arg_info);
@@ -1172,19 +1225,19 @@ SSAwithid (node *arg_node, info *arg_info)
          */
         INFO_SSA_FIRST_WITHID (arg_info) = arg_node;
 
-        if (NWITHID_VEC (arg_node) != NULL) {
+        if (WITHID_VEC (arg_node) != NULL) {
             if (INFO_SSA_EXPLICIT_ALLOCS (arg_info)) {
-                NWITHID_VEC (arg_node) = TravRightIDS (NWITHID_VEC (arg_node), arg_info);
+                WITHID_VEC (arg_node) = TreatIdsAsRhs (WITHID_VEC (arg_node), arg_info);
             } else {
-                NWITHID_VEC (arg_node) = TravLeftIDS (NWITHID_VEC (arg_node), arg_info);
+                WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
             }
         }
 
-        if (NWITHID_IDS (arg_node) != NULL) {
+        if (WITHID_IDS (arg_node) != NULL) {
             if (INFO_SSA_EXPLICIT_ALLOCS (arg_info)) {
-                NWITHID_IDS (arg_node) = TravRightIDS (NWITHID_IDS (arg_node), arg_info);
+                WITHID_IDS (arg_node) = TreatIdsAsRhs (WITHID_IDS (arg_node), arg_info);
             } else {
-                NWITHID_IDS (arg_node) = TravLeftIDS (NWITHID_IDS (arg_node), arg_info);
+                WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
             }
         }
     } else {
@@ -1195,23 +1248,23 @@ SSAwithid (node *arg_node, info *arg_info)
          * INFO_SSA_FIRST_WITHID.
          */
         first = INFO_SSA_FIRST_WITHID (arg_info);
-        if (NWITHID_VEC (arg_node) != NULL) {
-            NWITHID_VEC (arg_node) = TravRightIDS (NWITHID_VEC (arg_node), arg_info);
-            DBUG_ASSERT (IDS_AVIS (NWITHID_VEC (arg_node))
-                           == IDS_AVIS (NWITHID_VEC (first)),
+        if (WITHID_VEC (arg_node) != NULL) {
+            WITHID_VEC (arg_node) = TreatIdsAsRhs (WITHID_VEC (arg_node), arg_info);
+            DBUG_ASSERT (IDS_AVIS (WITHID_VEC (arg_node))
+                           == IDS_AVIS (WITHID_VEC (first)),
                          "multigenerator withloop with inconsistent withvec");
         } else {
-            DBUG_ASSERT (NWITHID_VEC (first) == NULL,
+            DBUG_ASSERT (WITHID_VEC (first) == NULL,
                          "multigenerator withloop with inconsistent withvec");
         }
 
-        if (NWITHID_IDS (arg_node) != NULL) {
-            NWITHID_IDS (arg_node) = TravRightIDS (NWITHID_IDS (arg_node), arg_info);
-            DBUG_ASSERT (IDS_AVIS (NWITHID_IDS (arg_node))
-                           == IDS_AVIS (NWITHID_IDS (first)),
+        if (WITHID_IDS (arg_node) != NULL) {
+            WITHID_IDS (arg_node) = TreatIdsAsRhs (WITHID_IDS (arg_node), arg_info);
+            DBUG_ASSERT (IDS_AVIS (WITHID_IDS (arg_node))
+                           == IDS_AVIS (WITHID_IDS (first)),
                          "multigenerator withloop with inconsistent withids");
         } else {
-            DBUG_ASSERT (NWITHID_IDS (first) == NULL,
+            DBUG_ASSERT (WITHID_IDS (first) == NULL,
                          "multigenerator withloop with inconsistent withids");
         }
     }
@@ -1225,7 +1278,7 @@ SSAwithid (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSAcode(node *arg_node, info *arg_info)
+ * @fn node *SSATcode(node *arg_node, info *arg_info)
  *
  *   @brief traverses block and expr and potentially epilogue in this order.
  *          While doing so, create new scope by pushing renaming stacks.
@@ -1233,33 +1286,33 @@ SSAwithid (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSAcode (node *arg_node, info *arg_info)
+SSATcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSAcode");
+    DBUG_ENTER ("SSATcode");
 
     /* do stacking of current renaming status */
-    FOR_ALL_AVIS (DupTopSSAstack, INFO_SSA_FUNDEF (arg_info));
+    FOR_ALL_AVIS (DupTopSsastack, INFO_SSA_FUNDEF (arg_info));
 
     /* traverse block */
-    if (NCODE_CBLOCK (arg_node) != NULL) {
-        NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    if (CODE_CBLOCK (arg_node) != NULL) {
+        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     }
 
     /* traverse expressions */
-    DBUG_ASSERT ((NCODE_CEXPRS (arg_node) != NULL), "Ncode without Ncexprs node!");
-    NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
+    DBUG_ASSERT ((CODE_CEXPRS (arg_node) != NULL), "Ncode without Ncexprs node!");
+    CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
     /* traverse epilogue */
-    if (NCODE_EPILOGUE (arg_node) != NULL) {
-        NCODE_EPILOGUE (arg_node) = Trav (NCODE_EPILOGUE (arg_node), arg_info);
+    if (CODE_EPILOGUE (arg_node) != NULL) {
+        CODE_EPILOGUE (arg_node) = TRAVdo (CODE_EPILOGUE (arg_node), arg_info);
     }
 
     /* restore old rename stack !!! */
-    FOR_ALL_AVIS (PopSSAstack, INFO_SSA_FUNDEF (arg_info));
+    FOR_ALL_AVIS (PopSsastack, INFO_SSA_FUNDEF (arg_info));
 
-    if (NCODE_NEXT (arg_node) != NULL) {
+    if (CODE_NEXT (arg_node) != NULL) {
         /* traverse next part */
-        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1267,7 +1320,7 @@ SSAcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSAcond(node *arg_node, info *arg_info)
+ * @fn node *SSATcond(node *arg_node, info *arg_info)
  *
  *   @brief this top-level conditional requires stacking of renaming status.
  *          traverses conditional, then and else branch in this order.
@@ -1276,44 +1329,44 @@ SSAcode (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSAcond (node *arg_node, info *arg_info)
+SSATcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSAcond");
+    DBUG_ENTER ("SSATcond");
 
     /* save this cond_node for later insertions of copy assignments */
     INFO_SSA_CONDSTMT (arg_info) = arg_node;
 
     /* traverse conditional */
     DBUG_ASSERT ((COND_COND (arg_node) != NULL), "Ncond without cond node!");
-    COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
+    COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
 
     /* do stacking of current renaming status */
-    FOR_ALL_AVIS (DupTopSSAstack, INFO_SSA_FUNDEF (arg_info));
+    FOR_ALL_AVIS (DupTopSsastack, INFO_SSA_FUNDEF (arg_info));
 
     /* traverse then */
     if (COND_THEN (arg_node) != NULL) {
-        COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+        COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
     }
 
     /* save to then for later merging */
-    FOR_ALL_AVIS (SaveTopSSAstackThen, INFO_SSA_FUNDEF (arg_info));
+    FOR_ALL_AVIS (SaveTopSsastackThen, INFO_SSA_FUNDEF (arg_info));
 
     /* so some status restauration */
-    FOR_ALL_AVIS (PopSSAstack, INFO_SSA_FUNDEF (arg_info));
+    FOR_ALL_AVIS (PopSsastack, INFO_SSA_FUNDEF (arg_info));
 
     /* do stacking of current renaming status */
-    FOR_ALL_AVIS (DupTopSSAstack, INFO_SSA_FUNDEF (arg_info));
+    FOR_ALL_AVIS (DupTopSsastack, INFO_SSA_FUNDEF (arg_info));
 
     /* traverse else */
     if (COND_ELSE (arg_node) != NULL) {
-        COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+        COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
     }
 
     /* save to else for later merging */
-    FOR_ALL_AVIS (SaveTopSSAstackElse, INFO_SSA_FUNDEF (arg_info));
+    FOR_ALL_AVIS (SaveTopSsastackElse, INFO_SSA_FUNDEF (arg_info));
 
     /* so some status restauration */
-    FOR_ALL_AVIS (PopSSAstack, INFO_SSA_FUNDEF (arg_info));
+    FOR_ALL_AVIS (PopSsastack, INFO_SSA_FUNDEF (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -1333,7 +1386,7 @@ SSAfuncond (node *arg_node, info *arg_info)
     INFO_SSA_FUNCOND_FOUND (arg_info) = TRUE;
 
     if (FUNCOND_IF (arg_node) != NULL) {
-        FUNCOND_IF (arg_node) = Trav (FUNCOND_IF (arg_node), arg_info);
+        FUNCOND_IF (arg_node) = TRAVdo (FUNCOND_IF (arg_node), arg_info);
     }
 
     if (FUNCOND_THEN (arg_node) != NULL) {
@@ -1344,14 +1397,14 @@ SSAfuncond (node *arg_node, info *arg_info)
          */
         INFO_SSA_RENAMING_MODE (arg_info)
           = (INFO_SSA_CONDSTMT (arg_info) ? SSA_USE_THEN : SSA_USE_TOP);
-        FUNCOND_THEN (arg_node) = Trav (FUNCOND_THEN (arg_node), arg_info);
+        FUNCOND_THEN (arg_node) = TRAVdo (FUNCOND_THEN (arg_node), arg_info);
         INFO_SSA_RENAMING_MODE (arg_info) = SSA_USE_TOP;
     }
 
     if (FUNCOND_ELSE (arg_node) != NULL) {
         INFO_SSA_RENAMING_MODE (arg_info)
           = (INFO_SSA_CONDSTMT (arg_info) ? SSA_USE_ELSE : SSA_USE_TOP);
-        FUNCOND_ELSE (arg_node) = Trav (FUNCOND_ELSE (arg_node), arg_info);
+        FUNCOND_ELSE (arg_node) = TRAVdo (FUNCOND_ELSE (arg_node), arg_info);
         INFO_SSA_RENAMING_MODE (arg_info) = SSA_USE_TOP;
     }
 
@@ -1393,7 +1446,7 @@ SSAreturn (node *arg_node, info *arg_info)
 
     /* traverse exprs */
     if (RETURN_EXPRS (arg_node) != NULL) {
-        RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
+        RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
     }
 
     INFO_SSA_GENERATE_FUNCOND (arg_info) = FALSE;
@@ -1424,17 +1477,18 @@ SSAreturn (node *arg_node, info *arg_info)
 /*@{*/
 /** <!--********************************************************************-->
  *
- * @fn node *SSAleftids(ids *arg_ids, info *arg_info)
+ * @fn node *SSATids(node *arg_ids, info *arg_info)
  *
  *   @brief creates new (renamed) instance of defined variables.
  *
  ******************************************************************************/
-static ids *
-SSAleftids (ids *arg_ids, info *arg_info)
+
+node *
+SSATids (node *arg_ids, info *arg_info)
 {
     node *new_vardec;
 
-    DBUG_ENTER ("SSAleftids");
+    DBUG_ENTER ("SSATids");
 
     if (!AVIS_SSADEFINED (IDS_AVIS (arg_ids))) {
         /* first definition of variable (no renaming) */
@@ -1442,30 +1496,29 @@ SSAleftids (ids *arg_ids, info *arg_info)
         /* SSACNT_COUNT(AVIS_SSACOUNT(IDS_AVIS(arg_ids))) = 0; */
         AVIS_SSADEFINED (IDS_AVIS (arg_ids)) = TRUE;
         DBUG_PRINT ("SSA", ("first definition, no renaming: %s (" F_PTR ")",
-                            VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
-                            IDS_AVIS (arg_ids)));
+                            AVIS_NAME (IDS_AVIS (arg_ids)), IDS_AVIS (arg_ids)));
 
         AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
         AVIS_WITHID (IDS_AVIS (arg_ids)) = INFO_SSA_WITHID (arg_info);
 
     } else {
         /* redefinition - create new unique variable/vardec */
-        new_vardec = SSANewVardec (AVIS_VARDECORARG (IDS_AVIS (arg_ids)));
+        new_vardec = SSATnewVardec (AVIS_DECL (IDS_AVIS (arg_ids)));
         FUNDEF_VARDEC (INFO_SSA_FUNDEF (arg_info))
-          = AppendVardec (FUNDEF_VARDEC (INFO_SSA_FUNDEF (arg_info)), new_vardec);
+          = TCappendVardec (FUNDEF_VARDEC (INFO_SSA_FUNDEF (arg_info)), new_vardec);
         DBUG_PRINT ("SSA", ("re-definition, renaming: %s (" F_PTR ") -> %s",
-                            VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
-                            IDS_AVIS (arg_ids), VARDEC_NAME (new_vardec)));
+                            AVIS_NAME (IDS_AVIS (arg_ids)), IDS_AVIS (arg_ids),
+                            AVIS_NAME (VARDEC_AVIS (new_vardec))));
 
         /* new rename-to target for old vardec */
         AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = VARDEC_AVIS (new_vardec);
 
-        if ((compiler_phase != PH_flatten) && (compiler_phase != PH_typecheck))
+        if ((global.compiler_phase != PH_flatten)
+            && (global.compiler_phase != PH_typecheck))
             AVIS_TYPE (VARDEC_AVIS (new_vardec))
-              = TYCopyType (AVIS_TYPE (IDS_AVIS (arg_ids)));
+              = TYcopyType (AVIS_TYPE (IDS_AVIS (arg_ids)));
 
         /* rename this ids */
-        IDS_VARDEC (arg_ids) = new_vardec;
         IDS_AVIS (arg_ids) = VARDEC_AVIS (new_vardec);
 
 #ifndef NO_ID_NAME
@@ -1473,8 +1526,8 @@ SSAleftids (ids *arg_ids, info *arg_info)
          * there is no real need for name string in ids structure because
          * you can get it from vardec without redundancy.
          */
-        Free (IDS_NAME (arg_ids));
-        IDS_NAME (arg_ids) = StringCopy (VARDEC_NAME (new_vardec));
+        ILIBfree (IDS_NAME (arg_ids));
+        IDS_NAME (arg_ids) = ILIBstringCopy (VARDEC_NAME (new_vardec));
 #endif
 
         /*
@@ -1482,9 +1535,10 @@ SSAleftids (ids *arg_ids, info *arg_info)
          * all global objects and artificial identifier must
          * be mapped back to their original name in undossa.
          */
-        if ((IDS_STATUS (arg_ids) == ST_artificial) || (IDS_ATTRIB (arg_ids) == ST_global)
-            || (VARDEC_OR_ARG_ATTRIB (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))
-                == ST_unique)) {
+        if (((NODE_TYPE (AVIS_DECL (IDS_AVIS (arg_ids))) == N_arg)
+             && (ARG_ISARTIFICIAL (AVIS_DECL (IDS_AVIS (arg_ids)))))
+            || (AVIS_ISUNIQUE (IDS_AVIS (arg_ids)))) {
+
             AVIS_SSAUNDOFLAG (IDS_AVIS (arg_ids)) = TRUE;
         }
         AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
@@ -1493,10 +1547,84 @@ SSAleftids (ids *arg_ids, info *arg_info)
 
     /* traverese next ids */
     if (IDS_NEXT (arg_ids) != NULL) {
-        IDS_NEXT (arg_ids) = TravLeftIDS (IDS_NEXT (arg_ids), arg_info);
+        IDS_NEXT (arg_ids) = TRAVdo (IDS_NEXT (arg_ids), arg_info);
     }
 
     DBUG_RETURN (arg_ids);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *TreatIdAsLhs(node *arg_ids, info *arg_info)
+ *
+ *   @brief creates new (renamed) instance of defined variables.
+ *          is an identical copy from SSATids, here N_id nodes are
+ *          used instead of N_ids.
+ *
+ ******************************************************************************/
+
+node *
+TreatIdAsLhs (node *arg_node, info *arg_info)
+{
+    node *new_vardec;
+
+    DBUG_ENTER ("TreatIdAsLhs");
+
+    if (!AVIS_SSADEFINED (ID_AVIS (arg_node))) {
+        /* first definition of variable (no renaming) */
+        AVIS_SSASTACK_TOP (ID_AVIS (arg_node)) = ID_AVIS (arg_node);
+        /* SSACNT_COUNT(AVIS_SSACOUNT(ID_AVIS(arg_node))) = 0; */
+        AVIS_SSADEFINED (ID_AVIS (arg_node)) = TRUE;
+        DBUG_PRINT ("SSA", ("first definition, no renaming: %s (" F_PTR ")",
+                            AVIS_NAME (ID_AVIS (arg_node)), ID_AVIS (arg_node)));
+
+        AVIS_SSAASSIGN (ID_AVIS (arg_node)) = INFO_SSA_ASSIGN (arg_info);
+        AVIS_WITHID (ID_AVIS (arg_node)) = INFO_SSA_WITHID (arg_info);
+
+    } else {
+        /* redefinition - create new unique variable/vardec */
+        new_vardec = SSATnewVardec (AVIS_DECL (ID_AVIS (arg_node)));
+        FUNDEF_VARDEC (INFO_SSA_FUNDEF (arg_info))
+          = TCappendVardec (FUNDEF_VARDEC (INFO_SSA_FUNDEF (arg_info)), new_vardec);
+        DBUG_PRINT ("SSA", ("re-definition, renaming: %s (" F_PTR ") -> %s",
+                            AVIS_NAME (ID_AVIS (arg_node)), ID_AVIS (arg_node),
+                            AVIS_NAME (VARDEC_AVIS (new_vardec))));
+
+        /* new rename-to target for old vardec */
+        AVIS_SSASTACK_TOP (ID_AVIS (arg_node)) = VARDEC_AVIS (new_vardec);
+
+        if ((global.compiler_phase != PH_flatten)
+            && (global.compiler_phase != PH_typecheck))
+            AVIS_TYPE (VARDEC_AVIS (new_vardec))
+              = TYcopyType (AVIS_TYPE (ID_AVIS (arg_node)));
+
+        /* rename this ids */
+        ID_AVIS (arg_node) = VARDEC_AVIS (new_vardec);
+
+#ifndef NO_ID_NAME
+        /* for compatiblity only
+         * there is no real need for name string in ids structure because
+         * you can get it from vardec without redundancy.
+         */
+        ILIBfree (ID_NAME (arg_node));
+        ID_NAME (arg_node) = ILIBstringCopy (VARDEC_NAME (new_vardec));
+#endif
+
+        /*
+         * mark this avis for undo ssa transform:
+         * all global objects and artificial identifier must
+         * be mapped back to their original name in undossa.
+         */
+        if (((NODE_TYPE (ID_DECL (arg_node)) == N_arg)
+             && (ARG_ISARTIFICIAL (ID_DECL (arg_node))))
+            || (AVIS_ISUNIQUE (ID_AVIS (arg_node)))) {
+            AVIS_SSAUNDOFLAG (ID_AVIS (arg_node)) = TRUE;
+        }
+        AVIS_SSAASSIGN (ID_AVIS (arg_node)) = INFO_SSA_ASSIGN (arg_info);
+        AVIS_WITHID (ID_AVIS (arg_node)) = INFO_SSA_WITHID (arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -1508,12 +1636,12 @@ SSAleftids (ids *arg_ids, info *arg_info)
  *          AVIS_SSATHEN, or AVIS_SSAELSE.
  *
  ******************************************************************************/
-static ids *
-SSArightids (ids *arg_ids, info *arg_info)
+static node *
+TreatIdsAsRhs (node *arg_ids, info *arg_info)
 {
     node *new_avis;
 
-    DBUG_ENTER ("SSArightids");
+    DBUG_ENTER ("TreatIdsAsRhs");
 
     if (INFO_SSA_RENAMING_MODE (arg_info) == SSA_USE_TOP) {
         new_avis = AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids));
@@ -1554,23 +1682,15 @@ SSArightids (ids *arg_ids, info *arg_info)
          * there is NO valid definition. Hence AVIS_SSASTACK_TOP is NULL.
          */
         if (INFO_SSA_ALLOW_GOS (arg_info) == FALSE) {
-            ERROR (linenum, ("var %s used without definition", IDS_NAME (arg_ids)));
+            ERROR (global.linenum,
+                   ("var %s used without definition", IDS_NAME (arg_ids)));
         }
     } else {
         IDS_AVIS (arg_ids) = new_avis;
     }
 
     /* restore all depended attributes with correct values */
-    IDS_VARDEC (arg_ids) = AVIS_VARDECORARG (IDS_AVIS (arg_ids));
-
-#ifndef NO_ID_NAME
-    /* for compatiblity only
-     * there is no real need for name string in ids structure because
-     * you can get it from vardec without redundancy.
-     */
-    Free (IDS_NAME (arg_ids));
-    IDS_NAME (arg_ids) = StringCopy (VARDEC_OR_ARG_NAME (IDS_VARDEC (arg_ids)));
-#endif
+    IDS_VARDEC (arg_ids) = AVIS_DECL (IDS_AVIS (arg_ids));
 
     if (INFO_SSA_WITHID (arg_info) != NULL) {
         AVIS_WITHID (IDS_AVIS (arg_ids)) = INFO_SSA_WITHID (arg_info);
@@ -1578,43 +1698,12 @@ SSArightids (ids *arg_ids, info *arg_info)
 
     /* traverese next ids */
     if (IDS_NEXT (arg_ids) != NULL) {
-        IDS_NEXT (arg_ids) = TravRightIDS (IDS_NEXT (arg_ids), arg_info);
+        IDS_NEXT (arg_ids) = TreatIdsAsRhs (IDS_NEXT (arg_ids), arg_info);
     }
 
     DBUG_RETURN (arg_ids);
 }
 
-/******************************************************************************
- *
- * function:
- *   ids *Trav[Left,Right]IDS(ids *arg_ids, info *arg_info)
- *
- * description:
- *   similar implementation of trav mechanism as used for nodes
- *   here used for ids.
- *
- ******************************************************************************/
-static ids *
-TravLeftIDS (ids *arg_ids, info *arg_info)
-{
-    DBUG_ENTER ("TravLeftIDS");
-
-    DBUG_ASSERT (arg_ids != NULL, "traversal in NULL ids");
-    arg_ids = SSAleftids (arg_ids, arg_info);
-
-    DBUG_RETURN (arg_ids);
-}
-
-static ids *
-TravRightIDS (ids *arg_ids, info *arg_info)
-{
-    DBUG_ENTER ("TravRightIDS");
-
-    DBUG_ASSERT ((arg_ids != NULL), "traversal in NULL ids");
-    arg_ids = SSArightids (arg_ids, arg_info);
-
-    DBUG_RETURN (arg_ids);
-}
 /*@}*/
 
 /**
@@ -1635,7 +1724,7 @@ TravRightIDS (ids *arg_ids, info *arg_info)
 /*@{*/
 /** <!--********************************************************************-->
  *
- * @fn node *SSATransform(node *syntax_tree)
+ * @fn node *SSATdoTransform(node *syntax_tree)
  *
  *   @brief Starts traversal of AST to transform code in SSA form. Every
  *          variable has exaclty one definition. This code transformtion relies
@@ -1647,18 +1736,17 @@ TravRightIDS (ids *arg_ids, info *arg_info)
  *
  ******************************************************************************/
 node *
-SSATransform (node *syntax_tree)
+SSATdoTransform (node *syntax_tree)
 {
     info *arg_info;
-    funtab *old_tab;
 
-    DBUG_ENTER ("SSATransform");
+    DBUG_ENTER ("SSATdoTransform");
 
-    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_modul),
+    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  "SSATransform is used for module nodes only");
 
 #ifndef DBUG_OFF
-    if (compiler_phase == PH_sacopt) {
+    if (global.compiler_phase == PH_sacopt) {
         DBUG_PRINT ("OPT", ("starting ssa transformation for ast"));
     }
 #endif
@@ -1667,22 +1755,20 @@ SSATransform (node *syntax_tree)
     INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_FUNDEFS;
     INFO_SSA_ALLOW_GOS (arg_info) = FALSE;
 
-    old_tab = act_tab;
-    act_tab = ssafrm_tab;
+    TRAVpush (TR_ssat);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    TRAVpop ();
 
-    syntax_tree = Trav (syntax_tree, arg_info);
-
-    act_tab = old_tab;
     arg_info = FreeInfo (arg_info);
 
-    valid_ssaform = TRUE;
+    global.valid_ssaform = TRUE;
 
     DBUG_RETURN (syntax_tree);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSATransformAllowGOs(node *syntax_tree)
+ * @fn node *SSATdoTransformAllowGos(node *syntax_tree)
  *
  *   @brief In principle, this is only a wrapper for SSATransform. The only
  *          difference is that it does not require all variables to be defined
@@ -1692,18 +1778,17 @@ SSATransform (node *syntax_tree)
  *
  ******************************************************************************/
 node *
-SSATransformAllowGOs (node *syntax_tree)
+SSATdoTransformAllowGos (node *syntax_tree)
 {
     info *arg_info;
-    funtab *old_tab;
 
-    DBUG_ENTER ("SSATransformAllowGOs");
+    DBUG_ENTER ("SSATdoTransformAllowGos");
 
-    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_modul),
-                 "SSATransformAllowGOs is used for module nodes only");
+    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
+                 "SSATdoTransformAllowGos is used for module nodes only");
 
 #ifndef DBUG_OFF
-    if (compiler_phase == PH_sacopt) {
+    if (global.compiler_phase == PH_sacopt) {
         DBUG_PRINT ("OPT", ("starting ssa transformation allowing GOs for ast"));
     }
 #endif
@@ -1712,22 +1797,20 @@ SSATransformAllowGOs (node *syntax_tree)
     INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_FUNDEFS;
     INFO_SSA_ALLOW_GOS (arg_info) = TRUE;
 
-    old_tab = act_tab;
-    act_tab = ssafrm_tab;
+    TRAVpush (TR_ssat);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    TRAVpop ();
 
-    syntax_tree = Trav (syntax_tree, arg_info);
-
-    act_tab = old_tab;
     arg_info = FreeInfo (arg_info);
 
-    valid_ssaform = TRUE;
+    global.valid_ssaform = TRUE;
 
     DBUG_RETURN (syntax_tree);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSATransformExplicitAllocs(node *syntax_tree)
+ * @fn node *SSATdoTransformExplicitAllocs(node *syntax_tree)
  *
  *   @brief In principle, this is only a wrapper for SSATransform. The only
  *          difference is that it assumes the withid elements to be initialized
@@ -1738,18 +1821,17 @@ SSATransformAllowGOs (node *syntax_tree)
  *
  ******************************************************************************/
 node *
-SSATransformExplicitAllocs (node *syntax_tree)
+SSATdoTransformExplicitAllocs (node *syntax_tree)
 {
     info *arg_info;
-    funtab *old_tab;
 
     DBUG_ENTER ("SSATransformExplicitAllocs");
 
-    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_modul),
+    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  "SSATransformExplicitAllocs is used for module nodes only");
 
 #ifndef DBUG_OFF
-    if (compiler_phase == PH_sacopt) {
+    if (global.compiler_phase == PH_sacopt) {
         DBUG_PRINT ("OPT",
                     ("starting ssa transformation expecting explicit withid allocs"));
     }
@@ -1759,22 +1841,20 @@ SSATransformExplicitAllocs (node *syntax_tree)
     INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_FUNDEFS;
     INFO_SSA_EXPLICIT_ALLOCS (arg_info) = TRUE;
 
-    old_tab = act_tab;
-    act_tab = ssafrm_tab;
+    TRAVpush (TR_ssat);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    TRAVpop ();
 
-    syntax_tree = Trav (syntax_tree, arg_info);
-
-    act_tab = old_tab;
     arg_info = FreeInfo (arg_info);
 
-    valid_ssaform = TRUE;
+    global.valid_ssaform = TRUE;
 
     DBUG_RETURN (syntax_tree);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSATransformOneFunction(node *fundef)
+ * @fn node *SSATdoTransformOneFunction(node *fundef)
  *
  *   @brief same as SSATransform, but traverses the given function only.
  *          Does not trverse through LC functions per se, but if a call
@@ -1782,19 +1862,18 @@ SSATransformExplicitAllocs (node *syntax_tree)
  *
  ******************************************************************************/
 node *
-SSATransformOneFunction (node *fundef)
+SSATdoTransformOneFunction (node *fundef)
 {
     info *arg_info;
-    funtab *old_tab;
 
-    DBUG_ENTER ("SSATransformOneFunction");
+    DBUG_ENTER ("SSATdoTransformOneFunction");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
                  "SSATransformOneFunction is used for fundef nodes only");
 
-    if (!(FUNDEF_IS_LACFUN (fundef))) {
+    if (!(FUNDEF_ISLACFUN (fundef))) {
 #ifndef DBUG_OFF
-        if (compiler_phase == PH_sacopt) {
+        if (global.compiler_phase == PH_sacopt) {
             DBUG_PRINT ("OPT",
                         ("starting ssa transformation for %s", FUNDEF_NAME (fundef)));
         }
@@ -1803,12 +1882,10 @@ SSATransformOneFunction (node *fundef)
         arg_info = MakeInfo ();
         INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_SPECIALS;
 
-        old_tab = act_tab;
-        act_tab = ssafrm_tab;
+        TRAVpush (TR_ssat);
+        fundef = TRAVdo (fundef, arg_info);
+        TRAVpop ();
 
-        fundef = Trav (fundef, arg_info);
-
-        act_tab = old_tab;
         arg_info = FreeInfo (arg_info);
     }
 
@@ -1817,25 +1894,24 @@ SSATransformOneFunction (node *fundef)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSATransformOneFundef(node *fundef)
+ * @fn node *SSATdoTransformOneFundef(node *fundef)
  *
  *   @brief same as SSATransform, but traverses the given fundef only.
  *          Any LC functions will not be followed through!
  *
  ******************************************************************************/
 node *
-SSATransformOneFundef (node *fundef)
+SSATdoTransformOneFundef (node *fundef)
 {
     info *arg_info;
-    funtab *old_tab;
 
-    DBUG_ENTER ("SSATransformOneFundef");
+    DBUG_ENTER ("SSATdoTransformOneFundef");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "SSATransformOneFundef is applicable to fundef nodes only");
+                 "SSATdoTransformOneFundef is applicable to fundef nodes only");
 
 #ifndef DBUG_OFF
-    if (compiler_phase == PH_sacopt) {
+    if (global.compiler_phase == PH_sacopt) {
         DBUG_PRINT ("OPT", ("starting ssa transformation for %s", FUNDEF_NAME (fundef)));
     }
 #endif
@@ -1843,13 +1919,11 @@ SSATransformOneFundef (node *fundef)
     arg_info = MakeInfo ();
     INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_NONE;
 
-    old_tab = act_tab;
-    act_tab = ssafrm_tab;
+    TRAVpush (TR_ssat);
+    fundef = TRAVdo (fundef, arg_info);
+    TRAVpop ();
 
-    fundef = Trav (fundef, arg_info);
-
-    act_tab = old_tab;
-    arg_info = Free (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (fundef);
 }
