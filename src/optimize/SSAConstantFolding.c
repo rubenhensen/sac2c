@@ -1,11 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2002/06/21 14:02:05  dkr
+ * no changes done
+ *
  * Revision 1.26  2002/04/08 19:58:14  dkr
  * debug code removed
- *
- * Revision 1.25  2002/04/08 19:57:34  dkr
- * minor changes done
  *
  * Revision 1.24  2001/12/14 16:37:54  dkr
  * bug in SSACFExpr2StructConstant() fixed
@@ -261,7 +261,6 @@ static node *SSACFSel (node *idx_expr, node *array_expr);
  *
  * function:
  *   node *SSACFPropagateConstants2Args(node *arg_chain, node *const_arg_chain)
- *
  *
  * description:
  *   to propagate constant expressions from the calling context into a special
