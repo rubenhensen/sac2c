@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.93  2002/06/28 12:53:25  sbs
+ * PrintNtype and PrintDebugNtype included.
+ * For the time being disabled, though 8-)
+ *
  * Revision 3.92  2002/06/25 14:07:03  sbs
  * PrintDot added .
  *
@@ -5099,13 +5103,19 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
  * function:
  *   void PrintAST( node *arg_node)
  *   void PrintNodeAST( node *arg_node)
+ *   void PrintNtype( ntype *type)
+ *   void PrintDebugNtype( ntype *type)
  *
  * description:
  *   These functions are for debug assistance.
- *   They print the syntax tree without any interpretation.
+ *   The first two print the syntax tree without any interpretation.
  *   Some attribues of interest are printed inside of parenthesizes behind
  *   the node name.
  *   PrintAST prints the whole chain, PrintNodeAST skips NEXT-sons.
+ *
+ *   The other two functions are used for printing types (ntype * nodes).
+ *   PrintNtype prints the types as they would be printed for code generation,
+ *   whereas PrintDebugNtype prints all internal details.
  *
  ******************************************************************************/
 
@@ -5128,3 +5138,38 @@ PrintNodeAST (node *arg_node)
 
     DBUG_VOID_RETURN;
 }
+
+#if 0 /* will be publically included later */
+
+void PrintNtype( ntype *type)
+{
+  char *tmp;
+
+  DBUG_ENTER( "PrintNtype");
+
+  outfile = stdout;
+
+  tmp = TYType2String( type, TRUE, 0);
+  fprintf( outfile, "%s\n", tmp);
+  tmp = Free( tmp);
+
+  DBUG_VOID_RETURN;
+}
+
+
+void PrintDebugNtype( ntype *type)
+{
+  char *tmp;
+
+  DBUG_ENTER( "PrintDebugNtype");
+
+  outfile = stdout;
+
+  tmp = TYType2DebugString( type, TRUE, 0);
+  fprintf( outfile, "%s\n", tmp);
+  tmp = Free( tmp);
+
+  DBUG_VOID_RETURN;
+}
+
+#endif
