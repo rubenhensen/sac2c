@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.13  1999/11/02 12:49:55  dkr
+ * potential bug in function MrdGet() marked
+ *
  * Revision 2.12  1999/10/29 16:44:44  dkr
  * ExpandMRDL() added
  *
@@ -391,6 +394,16 @@ MrdGet (int i, int varno, int what)
     mrd_change = TRUE;
 
     while (mrd_change && new) {
+#if 0
+    /*
+     * Unfortunately this property is not always hold 8-(((
+     * (e.g. Nwithop ...)
+     */
+    if (NODE_TYPE( new) != N_assign) {
+      int dummy = 0;         /* dummy expression for debugging */
+    }
+    DBUG_ASSERT( (NODE_TYPE( new) == N_assign), "MRD is not an assignment");
+#endif
         mrd_change = FALSE;
         switch (ASSIGN_INSTRTYPE (new)) {
         case N_while:
