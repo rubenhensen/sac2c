@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2003/12/10 17:30:15  khf
+ * with-loop fusion deactivated in compilation by default
+ *
  * Revision 3.41  2003/12/10 16:07:14  skt
  * changed compiler flag from -mtn to -mtmode and expanded mt-versions by one
  *
@@ -448,10 +451,10 @@ bool patch_with = FALSE;
 
 #ifdef PRODUCTION
 unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI)
-                        & (~OPT_APL) & (~OPT_DL) & (~OPT_BLIR) & (~OPT_SP);
+                        & (~OPT_APL) & (~OPT_DL) & (~OPT_BLIR) & (~OPT_SP) & (~OPT_WLFS);
 #else /* PRODUCTION */
-unsigned int optimize
-  = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_BLIR);
+unsigned int optimize = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL)
+                        & (~OPT_BLIR) & (~OPT_WLFS);
 
 #endif /* PRODUCTION */
 
