@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.194  2004/07/15 12:58:14  khf
+ * moved INFO_IVE_* to index.c
+ *
  * Revision 3.193  2004/07/03 15:09:35  sah
  * added the new node representation into the source code.
  * the new ast can be enabled by make newast int the
@@ -2671,14 +2674,6 @@ extern node *MakeAvis (node *vardecOrArg);
  ***  when used in DeadFunctionRemoval.c:
  ***    int        SPINE
  ***
- ***  when used in index.c:
- ***    node*      INFO_IVE_FUNDEF           (N_fundef)
- ***    node*      INFO_IVE_VARDECS          (N_vardec)
- ***    ive_mode   INFO_IVE_MODE
- ***    node*      INFO_IVE_CURRENTASSIGN    (N_assign)
- ***    node*      INFO_IVE_TRANSFORM_VINFO  (N_vinfo)
- ***    int        INFO_IVE_NON_SCAL_LEN
- ***
  ***
  ***  old mt!
  ***  when used in managing spmd- and sync blocks in concurrent :
@@ -3196,15 +3191,6 @@ extern node *MakeInfo ();
 /* CF */
 #define INFO_CF_ASSIGN(n) (n->node[0])
 #define INFO_CF_TYPE(n) (n->info.types)
-
-/* IVE */
-#define INFO_IVE_FUNDEF(n) (n->node[0])
-#define INFO_IVE_VARDECS(n) (n->node[1])
-#define INFO_IVE_CURRENTASSIGN(n) (n->node[2])
-#define INFO_IVE_PRE_ASSIGNS(n) (n->node[3])
-#define INFO_IVE_TRANSFORM_VINFO(n) (n->node[4])
-#define INFO_IVE_MODE(n) (n->flag)
-#define INFO_IVE_NON_SCAL_LEN(n) (n->counter)
 
 /* DCR */
 #define INFO_DCR_TRAVTYPE(n) (n->flag)
