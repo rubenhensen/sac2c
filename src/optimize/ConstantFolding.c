@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1995/05/05 09:06:17  asi
+ * Revision 1.20  1995/05/16 09:14:09  asi
+ * usages of WARN1 adjust to changes in Error.h
+ *
+ * Revision 1.19  1995/05/05  09:06:17  asi
  * Constant arrays will no longer inserted in user defined or primitive functions,
  * if these functions could not be folded.
  *
@@ -551,7 +554,7 @@ CFwhile (node *arg_node, node *arg_info)
     case N_bool:
         if (arg_node->node[0]->info.cint) {
             /*
-            WARN1(("WARNING in line %d: endless loop expected\n",arg_info->lineno));
+            WARN1(("WARNING in line %d: endless loop expected.",arg_info->lineno));
             */
         } else {
             MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0], VARNO);
@@ -610,7 +613,7 @@ CFdo (node *arg_node, node *arg_info)
 
     if ((arg_node->node[0]->info.cint) && (arg_node->node[0]->nodetype == N_bool)) {
         /*
-        WARN1(("WARNING in line %d: endless loop expected\n",arg_info->lineno));
+        WARN1(("WARNING in line %d: endless loop expected.",arg_info->lineno));
         */
     }
     if ((!arg_node->node[0]->info.cint) && (arg_node->node[0]->nodetype == N_bool)) {
@@ -841,7 +844,7 @@ SkalarPrf (int res_int, node **arg, int arg_no, int swap, node *arg_node, node *
                 ARI (/, arg[0], arg[1]);
             } else {
                 /*
-                WARN1(("WARNING %s, %d: division by zero error expected\n",
+                WARN1(("WARNING %s, %d: division by zero error expected.",
                         filename,arg_info->lineno));
                 */
                 returnnode = arg_node;
@@ -1233,7 +1236,7 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             } else {
                 CONST = FALSE;
                 /*
-                WARN1(("WARNING %s, %d: illegal vector for primitive function psi\n",
+                WARN1(("WARNING %s, %d: illegal vector for primitive function psi.",
                     filename,arg_info->lineno));
                 */
                 returnnode = arg_node;
@@ -1298,7 +1301,7 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             } else {
                 CONST = FALSE;
                 /*
-                WARN1(("WARNING %s, %d: illegal vector for primitive function psi\n",
+                WARN1(("WARNING %s, %d: illegal vector for primitive function psi.",
                        filename,arg_info->lineno));
                 */
                 returnnode = arg_node;
