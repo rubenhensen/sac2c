@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  2000/01/26 18:09:19  dkr
+ * casts for MRD_LIST corrected
+ *
  * Revision 2.16  2000/01/26 17:26:44  dkr
  * type of traverse-function-table changed.
  *
@@ -202,7 +205,7 @@ PushMRDL (long NumVar)
     DBUG_PRINT ("STACK",
                 ("Push Stack TOS = %d -> %d", mrdl_stack->tos, (mrdl_stack->tos) + 1));
     mrdl_stack->tos++;
-    MRD_LIST = (node **)Malloc (sizeof (node *) * (NumVar + 1));
+    MRD_LIST = (long *)Malloc (sizeof (node *) * (NumVar + 1));
     MRD_VLEN = NumVar;
     for (i = 0; i < NumVar; i++) {
         MRD (i) = NULL;
@@ -235,7 +238,7 @@ PushDupMRDL ()
                 ("Dup Stack TOS = %d -> %d", mrdl_stack->tos, (mrdl_stack->tos) + 1));
     NumVar = MRD_VLEN;
     mrdl_stack->tos++;
-    MRD_LIST = (node **)Malloc (sizeof (node *) * (NumVar + 1));
+    MRD_LIST = (long *)Malloc (sizeof (node *) * (NumVar + 1));
     for (i = 0; i < NumVar; i++) {
         MRD (i) = mrdl_stack->stack[mrdl_stack->tos - 1].varlist[i];
     }
@@ -292,7 +295,7 @@ ExpandMRDL (int new_num)
     NumVar = MRD_VLEN;
     if (new_num > NumVar) {
         varlist = (node **)MRD_LIST;
-        MRD_LIST = (node **)Malloc (sizeof (node *) * (new_num + 1));
+        MRD_LIST = (long *)Malloc (sizeof (node *) * (new_num + 1));
         for (i = 0; i < NumVar; i++) {
             MRD (i) = varlist[i];
         }
@@ -1268,7 +1271,7 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
                         if ((N_empty == NODE_TYPE (trav_node))
                             || (N_assign == NODE_TYPE (trav_node))) {
                             FREE (MRD_LIST);
-                            MRD_LIST = (node **)ASSIGN_MRDMASK (arg_node);
+                            MRD_LIST = (long *)ASSIGN_MRDMASK (arg_node);
                             ASSIGN_MRDMASK (arg_node) = NULL;
                         }
                         break;
@@ -1288,7 +1291,7 @@ OPTTrav (node *trav_node, node *arg_info, node *arg_node)
 
                         if (N_empty == NODE_TYPE (trav_node)) {
                             FREE (MRD_LIST);
-                            MRD_LIST = (node **)ASSIGN_MRDMASK (arg_node);
+                            MRD_LIST = (long *)ASSIGN_MRDMASK (arg_node);
                             ASSIGN_MRDMASK (arg_node) = NULL;
                         }
                         break;
