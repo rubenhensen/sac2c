@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.17  2003/06/11 22:05:36  ktr
+ * Added support for multidimensional arrays
+ *
  * Revision 1.16  2003/04/11 17:55:41  sbs
  * COConstant2Shape added.
  *

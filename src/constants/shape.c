@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2003/06/11 22:05:36  ktr
+ * Added support for multidimensional arrays
+ *
  * Revision 1.10  2002/11/04 17:41:31  sbs
  * split off SHOldShpseg2Shape from SHOldTypes2Shape in order
  * to alow preventing flattening of user defined types much better now.
@@ -31,7 +34,20 @@
  *
  */
 
-/*
+/**
+ *
+ * @defgroup shape Shape
+ *
+ * @brief Shape is an abstract datatype for keeping shapes of
+ *        arbitrary length.
+ *
+ * @{
+ */
+
+/**
+ *
+ * @file shape.c
+ *
  * This module implements an abstract datatype for keeping shapes
  * of arbitrary length.
  * Unfortunately, it is not yet used in all parts of the compiler 8-(.
@@ -57,13 +73,16 @@
 #include "free.h"
 
 /*
- * Now, we include the own interface! The reason fot this is twofold:
+ * Now, we include the own interface! The reason for this is twofold:
  * First, it ensures consistency betweeen the interface and the
  * implementation and second, it serves as a forward declaration for all
  * functions.
  */
 #include "shape.h"
 
+/**
+ * The structure to store shape/dim information in.
+ */
 struct SHAPE {
     int dim;
     int *elems;
@@ -74,17 +93,19 @@ struct SHAPE {
  * shape access macros:
  */
 
-#define SHAPE_DIM(s) s->dim
-#define SHAPE_ELEMS(s) s->elems
-#define SHAPE_EXT(s, i) s->elems[i]
+#define SHAPE_DIM(s) (s->dim)
+#define SHAPE_ELEMS(s) (s->elems)
+#define SHAPE_EXT(s, i) (s->elems[i])
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    shape *SHMakeShape( int dim)
+ * @fn shape *SHMakeShape( int dim)
  *
- * description:
- *    creates a new shape-structure of size dim which is not yet initialized!
+ * @brief creates a new shape-structure of size dim which is not yet initialized
+ *
+ * @param dim size of the shape structure to be created
+ *
+ * @return a new shape structure of size dim
  *
  ******************************************************************************/
 
@@ -106,17 +127,18 @@ SHMakeShape (int dim)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    shape *SHCreateShape( int dim, ...)
+ * @fn shape *SHCreateShape( int dim, ...)
  *
- * description:
- *    creates a new shape-structure of size dim which is initialized by
- *    the given argument values
+ * @brief creates a new shape-structure of size dim which is initialized by
+ *        the given argument values
  *
- * return:
- *    new allocated and initialized shape
+ * @param dim size of the shape structure to be created
+ * @param ... initialization values
+ *
+ * @return new allocated and initialized shape
+ *
  ******************************************************************************/
 
 shape *
@@ -141,13 +163,15 @@ SHCreateShape (int dim, ...)
     DBUG_RETURN (result);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    shape *SHCopyShape( shape *shp)
+ * @fn shape *SHCopyShape( shape *shp)
  *
- * description:
- *    duplicates the shape structure given as argument.
+ * @brief duplicates the shape structure given as argument.
+ *
+ * @param shp the shape structure to be duplicated
+ *
+ * @return a duplicate of the shape structure shp
  *
  ******************************************************************************/
 
@@ -169,13 +193,14 @@ SHCopyShape (shape *shp)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    void SHPrintShape( FILE *file, shape *shp)
+ * @fn void SHPrintShape( FILE *file, shape *shp)
  *
- * description:
- *    prints the contents of shp to file.
+ * @brief prints the contents of shp to file.
+ *
+ * @param file output file
+ * @param shp the shape structure to be printed
  *
  ******************************************************************************/
 
@@ -199,13 +224,15 @@ SHPrintShape (FILE *file, shape *shp)
     DBUG_VOID_RETURN;
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    shape *SHFreeShape( shape *shp)
+ * @fn shape *SHFreeShape( shape *shp)
  *
- * description:
- *    frees the given shape structure.
+ * @brief frees the given shape structure.
+ *
+ * @param shp the shape structure to be freed
+ *
+ * @return hopefully NULL
  *
  ******************************************************************************/
 
@@ -223,15 +250,11 @@ SHFreeShape (shape *shp)
     DBUG_RETURN (shp);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    int SHGetDim( shape *shp)
- *    int SHGetExtent( shape*shp, int dim)
- *    int SHGetUnrLen( shape*shp)
+ * @fn int SHGetDim( shape *shp)
  *
- * description:
- *    several functions for retrieving shape infos.
+ * @brief return the dimension of the given shape structure
  *
  ******************************************************************************/
 
@@ -244,6 +267,13 @@ SHGetDim (shape *shp)
     DBUG_RETURN (SHAPE_DIM (shp));
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn int SHGetExtent( shape *shp, int dim)
+ *
+ * @brief return the shape's extent along the given dimension
+ *
+ ******************************************************************************/
 int
 SHGetExtent (shape *shp, int dim)
 {
@@ -255,6 +285,13 @@ SHGetExtent (shape *shp, int dim)
     DBUG_RETURN (SHAPE_EXT (shp, dim));
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn int SHGetUnrLen( shape *shp)
+ *
+ * @brief return the length of a vector if shp was to be unrolled
+ *
+ ******************************************************************************/
 int
 SHGetUnrLen (shape *shp)
 {
@@ -271,14 +308,44 @@ SHGetUnrLen (shape *shp)
     DBUG_RETURN (length);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    shape *SHSetExtent( shape *shp, int dim, int val)
+ * @fn int SHSubarrayDim( shape *shp, int n)
  *
- * description:
- *    several functions for setting shape values.
+ * @brief returns the dimension of each subarray if an array of shape shp
+ *        would be broken up in n subarrays.
  *
+ * @param shp the shape structure
+ * @param n the number of subarrays.
+ *
+ * @return the dimensionality of each subarray
+ *
+ ******************************************************************************/
+
+int
+SHSubarrayDim (shape *shp, int n)
+{
+    int i, length;
+
+    DBUG_ENTER ("SHSubarrayDim");
+    DBUG_ASSERT ((shp != NULL), ("SHSubarrayDim called with NULL shape!"));
+
+    length = 1;
+    i = 0;
+
+    while ((length != n) && (i < SHAPE_DIM (shp)))
+        length *= SHAPE_EXT (shp, i++);
+
+    DBUG_ASSERT ((length == n), ("SHSubarrayDim called with invalid arguments."));
+
+    DBUG_RETURN (SHAPE_DIM (shp) - i);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn shape *SHSetExtent( shape *shp, int dim, int val)
+ *
+ * @brief function to set the shape extent along a given axis
  *
  ******************************************************************************/
 
@@ -294,13 +361,13 @@ SHSetExtent (shape *shp, int dim, int val)
     DBUG_RETURN (shp);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    bool SHCompareShapes( shape *a, shape *b)
+ * @fn bool SHCompareShapes( shape *a, shape *b)
  *
- * description:
- *    compares two given shapes a and b and returns true iff they are identical.
+ * @brief compares two given shapes a and b
+ *
+ * @return true iff they are identical.
  *
  ******************************************************************************/
 
@@ -323,15 +390,13 @@ SHCompareShapes (shape *a, shape *b)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    shape *SHAppendShapes( shape *a, shape *b)
+ * @fn shape *SHAppendShapes( shape *a, shape *b)
  *
- * description:
- *    appends two given shapes a and b into a new shape!
- *    Note here that both argument shapes are read only! They are neither
- *    used as part of the result, nor they are free'd.
+ * @brief appends two given shapes a and b into a new shape.
+ *        Note here that both argument shapes are read only! They are neither
+ *        used as part of the result, nor they are free'd.
  *
  ******************************************************************************/
 
@@ -358,15 +423,13 @@ SHAppendShapes (shape *a, shape *b)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    shape *SHDropFromShape( int n, shape *a)
+ * @fn shape *SHDropFromShape( int n, shape *a)
  *
- * description:
- *    creates a new shape from a by dropping n elements. If n < 0, the the last
- *    n elements will be dropped!
- *    Note here that 'a' is inspected only! The result shape is freshly created!
+ * @brief creates a new shape from a by dropping n elements.
+ *        If n < 0, the the last n elements will be dropped!
+ *        'a' is inspected only! The result shape is freshly created!
  *
  ******************************************************************************/
 
@@ -397,15 +460,50 @@ SHDropFromShape (int n, shape *a)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    char *SHShape2String( int dots, shape *shp)
+ * @fn shape *SHTakeFromShape( int n, shape *a)
  *
- * description:
- *    generates a string representation of a shape. The argument "dots" allows
- *    some dots to be inserted into the vector representsation. e.g.
- *    SHShape2String( 2, <2,3,4>)  =>  "[.,.,2,3,4]"
+ * @brief creates a new shape from a by taking n elements.
+ *        If n < 0, the the last n elements will be taken!
+ *        'a' is inspected only! The result shape is freshly created!
+ *
+ ******************************************************************************/
+
+shape *
+SHTakeFromShape (int n, shape *a)
+{
+    int m, i;
+    shape *res;
+
+    DBUG_ENTER ("SHDropFromShape");
+    DBUG_ASSERT ((a != NULL), ("SHDropFromShape called with NULL arg!"));
+
+    m = SHAPE_DIM (a);
+    DBUG_ASSERT ((m - abs (n)) >= 0, "taking more elems from shape than available!");
+
+    if (n > 0) {
+        res = SHMakeShape (n);
+        for (i = 0; i < n; i++) {
+            SHAPE_EXT (res, i) = SHAPE_EXT (a, i);
+        }
+    } else {
+        res = SHMakeShape (n);
+        for (i = 0; i < n; i++) {
+            SHAPE_EXT (res, i) = SHAPE_EXT (a, i + m - n);
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn char *SHShape2String( int dots, shape *shp)
+ *
+ * @brief generates a string representation of a shape.
+ *        The argument "dots" allows some dots to be inserted into the vector
+ *        representsation. e.g. SHShape2String( 2, <2,3,4>)  =>  "[.,.,2,3,4]"
  *
  ******************************************************************************/
 
@@ -440,14 +538,12 @@ SHShape2String (int dots, shape *shp)
     DBUG_RETURN (StringCopy (buf));
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    shape *SHOldTypes2Shape( types *types)
+ * @fn shape *SHOldTypes2Shape( types *types)
  *
- * description:
- *    if types has a dim>=0 a shape structure is created which carries the same
- *    shape info as the types-node does. Otherwise, NULL is returned.
+ * @brief if types has a dim>=0 a shape structure is created which carries the same
+ *        shape info as the types-node does. Otherwise, NULL is returned.
  *
  ******************************************************************************/
 shape *
@@ -472,14 +568,12 @@ SHOldTypes2Shape (types *types)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    shape *SHOldShpseg2Shape( int dim, shpseg *shpseg)
+ * @fn shape *SHOldShpseg2Shape( int dim, shpseg *shpseg)
  *
- * description:
- *    iff dim > 0 a new shape structure is created which contains the same
- *    shape info as the shpseg does. Otherwise, NULL is returned.
+ * @brief iff dim > 0 a new shape structure is created which contains the same
+ *        shape info as the shpseg does. Otherwise, NULL is returned.
  *
  ******************************************************************************/
 shape *
@@ -515,14 +609,12 @@ SHOldShpseg2Shape (int dim, shpseg *shpseg)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    shpseg *SHShape2OldShpseg( shape *shp)
+ * @fn shpseg *SHShape2OldShpseg( shape *shp)
  *
- * description:
- *    if shp has a dim>0 a shpseg structure is created which carries the same
- *    shape info as the shp does. Otherwise, NULL is returned.
+ * @brief if shp has a dim>0 a shpseg structure is created which carries the
+ *        same shape info as the shp does. Otherwise, NULL is returned.
  *
  ******************************************************************************/
 
@@ -558,14 +650,13 @@ SHShape2OldShpseg (shape *shp)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    bool SHCompareWithCArray( shape *shp, int* shpdata, int dim)
+ * @fn bool SHCompareWithCArray( shape *shp, int* shpdata, int dim)
  *
- * description:
- *    compares given shape with a shape specified as a c integer array
- * returns true is shapes are equal in dim and shape vector
+ * @brief compares given shape with a shape specified as a c integer array
+ *
+ * @return true iff shapes are equal in dim and shape vector
  *         false otherwise
  *
  ******************************************************************************/
@@ -591,18 +682,15 @@ SHCompareWithCArray (shape *shp, int *shpdata, int dim)
     DBUG_RETURN (flag);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *    bool SHCompareWithArguments( shape *shp, int dim, ...)
+ * @fn bool SHCompareWithArguments( shape *shp, int dim, ...)
  *
- * description:
- *    compares given shape with a shape specified as an list of arguments
- *    usage: e.g. SHCompareWithArguments(shp, 3, 4,4,5)
+ * @brief compares given shape with a shape specified as an list of arguments.
+ *        usage: e.g. SHCompareWithArguments(shp, 3, 4,4,5)
  *
- * return:
- *    true  if shapes are equal in dim and shape vector
- *    false otherwise
+ * @return true iff shapes are equal in dim and shape vector
+ *         false otherwise
  *
  ******************************************************************************/
 
@@ -629,13 +717,11 @@ SHCompareWithArguments (shape *shp, int dim, ...)
     DBUG_RETURN (flag);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   int *SHShape2IntVec( shape *shp)
+ * @fn int *SHShape2IntVec( shape *shp)
  *
- * description:
- *    creates a simple int vector from the given shape vector
+ * @brief creates a simple int vector from the given shape vector
  *
  ******************************************************************************/
 
@@ -661,13 +747,11 @@ SHShape2IntVec (shape *shp)
     DBUG_RETURN (int_vec);
 }
 
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *SHShape2Array( shape *shp)
+ * @fn node *SHShape2Array( shape *shp)
  *
- * description:
- *    creates a simple int vector from the given shape vector
+ * @brief creates a simple int vector from the given shape vector
  *
  ******************************************************************************/
 
@@ -686,7 +770,7 @@ SHShape2Array (shape *shp)
     for (i = dim - 1; i >= 0; i--) {
         array = MakeExprs (MakeNum (SHAPE_EXT (shp, i)), array);
     }
-    array = MakeArray (array);
+    array = MakeFlatArray (array);
 
     shp_seg = MakeShpseg (NULL);
     SHPSEG_SHAPE (shp_seg, 0) = dim;
@@ -694,3 +778,5 @@ SHShape2Array (shape *shp)
 
     DBUG_RETURN (array);
 }
+
+/*@}*/ /* defgroup shape */

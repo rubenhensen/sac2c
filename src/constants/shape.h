@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2003/06/11 22:05:36  ktr
+ * Added support for multidimensional arrays
+ *
  * Revision 1.6  2002/11/04 17:41:31  sbs
  * split off SHOldShpseg2Shape from SHOldTypes2Shape in order
  * to alow preventing flattening of user defined types much better now.
@@ -54,11 +57,14 @@ extern int SHGetDim (shape *shp);
 extern int SHGetExtent (shape *shp, int dim);
 extern int SHGetUnrLen (shape *shp);
 
+extern int SHSubarrayDim (shape *shp, int n);
+
 extern shape *SHSetExtent (shape *shp, int dim, int val);
 
 extern bool SHCompareShapes (shape *a, shape *b);
 extern shape *SHAppendShapes (shape *a, shape *b);
 extern shape *SHDropFromShape (int n, shape *a);
+extern shape *SHTakeFromShape (int n, shape *a);
 extern char *SHShape2String (int dots, shape *shp);
 extern int *SHShape2IntVec (shape *shp);
 extern node *SHShape2Array (shape *shp);

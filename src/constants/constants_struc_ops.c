@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2003/06/11 22:05:36  ktr
+ * Added support for multidimensional arrays
+ *
  * Revision 1.8  2003/04/07 14:27:36  sbs
  * COCat added.
  * drop and take extended for accepting scalar arguments also 8-)

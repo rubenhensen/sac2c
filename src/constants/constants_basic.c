@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  2003/06/11 22:05:36  ktr
+ * Added support for multidimensional arrays
+ *
  * Revision 1.20  2003/05/22 10:04:49  ktr
  * Even commenting needs training... :(
  *
@@ -741,7 +744,7 @@ COConstant2AST (constant *a)
               = MakeExprs (cv2scalar[CONSTANT_TYPE (a)](CONSTANT_ELEMS (a), i), exprs);
         }
         /* Finally, the N_array node is created! */
-        res = MakeArray (exprs);
+        res = MakeArray (exprs, SHCopyShape (COGetShape (a)));
         /*
          * After creating the array, we have to create a types-node to preserve
          * the shape of the array!
@@ -759,16 +762,13 @@ COConstant2AST (constant *a)
         ARRAY_CONSTVEC (res) = Array2Vec (CONSTANT_TYPE (a), ARRAY_AELEMS (res), NULL);
 
         /*
-         * Commented out to enable Constant Folding!!!
-         *
-         * if (dim > dim_elem) the array must be put into a reshape() prf!
-         */
-        /*
-             if (dim > 1) {
-               res = MakePrf( F_reshape,
-                             MakeExprs( SHShape2Array( COGetShape( a)),
-                                        MakeExprs( res, NULL)));
-            }
+         * ktr: Support for multidimensional arrays
+
+        if ((!ktr) && (dim > 1)) {
+          res = MakePrf( F_reshape,
+                         MakeExprs( SHShape2Array( COGetShape( a)),
+                                    MakeExprs( res, NULL)));
+        }
         */
     }
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2003/06/11 22:05:36  ktr
+ * Added support for multidimensional arrays
+ *
  * Revision 1.2  2001/03/22 14:27:12  nmw
  * DebugPrint added
  *
@@ -38,6 +41,8 @@ struct CONSTANT {
 #define CONSTANT_VLEN(c) (c->vlen)
 
 #define CONSTANT_DIM(c) (SHGetDim (CONSTANT_SHAPE (c)))
+#define CONSTANT_ELEMDIM(c) (SHSubarrayDim (CONSTANT_SHAPE (c), CONSTANT_VLEN (c)))
+#define CONSTANT_ELEMSIZE(c) (SHGetUnrLen (CONSTANT_SHAPE (c)) / CONSTANT_VLEN (c))
 
 /*
  * here some extern decls for helper functions defined in constants_basic.c
