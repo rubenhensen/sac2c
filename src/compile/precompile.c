@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2001/03/29 01:35:25  dkr
+ * renaming of WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX added
+ *
  * Revision 3.16  2001/03/26 15:04:58  dkr
  * some comments modified
  *
@@ -114,6 +117,7 @@
  * This module does some precompilation.
  *
  * It carries out two separate tree traversals.
+ *
  * Things done during first traversal:
  *   - Arguments of function applications are abstracted if needed:
  *       a = fun( a)   =>   tmp_a = a; a = fun( tmp_a)
@@ -125,6 +129,7 @@
  *     generated.
  *   - It is checked whether NCODE_CEXPR is identical for all N_Ncode nodes
  *     of a single with-loop.
+ *
  * Things done during second traversal:
  *   - Artificial arguments and return values are removed.
  *   - All names and identifiers are renamed in order to avoid name clashes.
@@ -599,7 +604,7 @@ PREC1let (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC1with2(node *arg_node, node *arg_info)
+ *   node *PREC1with2( node *arg_node, node *arg_info)
  *
  * description:
  *
@@ -1810,7 +1815,8 @@ PREC2id (node *arg_node, node *arg_info)
     if (ID_STATUS (arg_node) == ST_artificial) {
         arg_node = FreeTree (arg_node);
     } else {
-        if (ID_VARDEC (arg_node) != NULL) { /* is NULL for IDs in ObjInitFunctions */
+        /* ID_VARDEC is NULL for IDs in ObjInitFunctions !!! */
+        if (ID_VARDEC (arg_node) != NULL) {
             if (VARDEC_OR_ARG_STATUS (ID_VARDEC (arg_node)) == ST_artificial) {
                 ID_VARDEC (arg_node) = VARDEC_OR_ARG_OBJDEF (ID_VARDEC (arg_node));
             }
@@ -1873,7 +1879,7 @@ PREC2withid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC2do(node *arg_node, node *arg_info)
+ *   node *PREC2do( node *arg_node, node *arg_info)
  *
  * description:
  *   The compiler phase refcount unfortunately produces chains of identifiers
@@ -2049,23 +2055,35 @@ PREC2sync (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PREC2WLsegx(node *arg_node, node *arg_info)
+ *   node *PREC2WLsegx( node *arg_node, node *arg_info)
  *
  * description:
- *   Since the scheduling specification may contain the names of local
- *   identifiers, these have to be renamed according to the general renaming
- *   scheme implemented by this compiler phase.
+ *   Since the scheduling specification and WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX
+ *   may contain the names of local identifiers, these have to be renamed
+ *   according to the general renaming scheme implemented by this compiler
+ *   phase.
  *
  ******************************************************************************/
 
 node *
 PREC2WLsegx (node *arg_node, node *arg_info)
 {
+    int d;
+
     DBUG_ENTER ("PREC2WLsegx");
 
     if (WLSEGX_SCHEDULING (arg_node) != NULL) {
         WLSEGX_SCHEDULING (arg_node)
           = SCHPrecompileScheduling (WLSEGX_SCHEDULING (arg_node));
+    }
+
+    if (NODE_TYPE (arg_node) == N_WLsegVar) {
+        for (d = 0; d < WLSEGVAR_DIMS (arg_node); d++) {
+            (WLSEGVAR_IDX_MIN (arg_node))[d]
+              = Trav ((WLSEGVAR_IDX_MIN (arg_node))[d], arg_info);
+            (WLSEGVAR_IDX_MAX (arg_node))[d]
+              = Trav ((WLSEGVAR_IDX_MAX (arg_node))[d], arg_info);
+        }
     }
 
     WLSEGX_CONTENTS (arg_node) = Trav (WLSEGX_CONTENTS (arg_node), arg_info);
