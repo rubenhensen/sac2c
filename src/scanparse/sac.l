@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/07/02 15:23:12  sah
+ * nothing changed.
+ *
  * Revision 3.11  2001/11/13 23:47:23  dkr
  * rule for # lines modified:
  * some preprocessors do NOT insert a space between # and the line number!!!
@@ -241,7 +244,6 @@ int charpos = 0;
 "&"                        { FILTER( AMPERS ); }
 "?"                        { FILTER( QUESTION ); }
 "."                        { FILTER( DOT); }
-
 "&&"                       { FILTER( AND ); }
 "||"                       { FILTER( OR ); }
 "=="                       { FILTER( EQ ); }
