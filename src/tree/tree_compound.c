@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.119  2004/11/30 21:44:20  ktr
+ * TCappendVardecs fixed.
+ *
  * Revision 3.118  2004/11/27 01:42:07  mwe
  * SearchDecl to TCsearchDecl
  *
@@ -1773,7 +1776,7 @@ TCappendVardec (node *vardec_chain, node *vardec)
     DBUG_ASSERT (((vardec == NULL) || (NODE_TYPE (vardec) == N_vardec)),
                  ("Second argument of AppendVardec() has wrong node type."));
 
-    APPEND (ret, node *, TYPEDEF, vardec_chain, vardec);
+    APPEND (ret, node *, VARDEC, vardec_chain, vardec);
 
     DBUG_RETURN (ret);
 }
