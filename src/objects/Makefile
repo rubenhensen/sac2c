@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 3.13  2004/11/26 16:17:15  cg
+# INCS removed.
+# compilation of restore.c added.
+#
 # Revision 3.12  2004/11/21 11:22:03  sah
 # removed some old ast infos
 #
@@ -62,10 +66,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-INCS = -I../global -I../tree -I../../inc -I../typecheck -I../modules \
-       -I../print -I../constants -I../flatten
-
-OBJS := objinit.o objects.o uniquecheck.o objanalysis.o 
+OBJS := objinit.o objects.o uniquecheck.o objanalysis.o restore.o
 
 all: $(OBJS)
 
