@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.41  1995/05/15 08:33:03  asi
+ * Revision 1.42  1995/05/22 12:06:24  sbs
+ * tr option inserted
+ *
+ * Revision 1.41  1995/05/15  08:33:03  asi
  * added option -v no ; this options allows the user to fix the maximum
  * number of new variables generated while optimizing.
  *
@@ -250,6 +253,9 @@ MAIN
             switch (**argv) {
             case 'a':
                 traceflag = TRACE_ALL;
+                break;
+            case 'm':
+                traceflag = traceflag | TRACE_MEM;
                 break;
             case 'r':
                 traceflag = traceflag | TRACE_REF;
