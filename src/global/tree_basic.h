@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.167  1998/05/14 15:08:06  dkr
+ * added INFO_PRINT_NWITH2
+ *
  * Revision 1.166  1998/05/14 12:50:12  sbs
  * N_info  accesses added for flatten:  INFO_FLTN_xxx
  *
@@ -2394,6 +2397,7 @@ extern node *MakeInfo ();
 #define INFO_PRINT_FUNDEF(n) (n->node[0])
 #define INFO_PRINT_INT_SYN(n) (n->node[2])
 #define INFO_PRINT_WITH_RET(n) (n->node[3])
+#define INFO_PRINT_NWITH2(n) (n->node[4])
 
 /*--------------------------------------------------------------------------*/
 
@@ -2961,21 +2965,21 @@ extern node *MakeWLstride (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  sons:
  ***
- ***    node*    NEXTDIM       (N_WLblock, N_WLublock, N_WLstride)
- ***    node*    NEXT          (N_WLgrid)
+ ***    node*      NEXTDIM       (N_WLblock, N_WLublock, N_WLstride)
+ ***    node*      NEXT          (N_WLgrid)
  ***
  ***  permanent attributes:
  ***
- ***    node*    CODE          (N_Ncode)
- ***    int      LEVEL
- ***    int      DIM
- ***    int      BOUND1
- ***    int      BOUND2
- ***    int      UNROLLING
+ ***    node*      CODE          (N_Ncode)
+ ***    int        LEVEL
+ ***    int        DIM
+ ***    int        BOUND1
+ ***    int        BOUND2
+ ***    int        UNROLLING
  ***
  ***  temporary attributes:
  ***
- ***    int      MODIFIED           (Precompile ! )
+ ***    int        MODIFIED           (Precompile ! )
  ***
  ***
  ***  remarks:
