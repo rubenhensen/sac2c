@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/03/20 16:02:25  ben
+ * SCHPrintScheduling: minor changes done
+ * even added to scheduler table
+ * static adjustmentflag set to 0 again
+ *
  * Revision 3.9  2001/03/20 12:57:51  ben
  * in scheduler_table adjustmentflag for Static set to 1
  *
@@ -217,9 +222,13 @@ static struct {
     char *arg_spec;
 } scheduler_table[] = {
   /* Name            Class          Adjust Dim  Args  ArgTypes */
-  {"Block", SC_const_seg, 1, 0, 0, ""},   {"BlockVar", SC_var_seg, 1, 0, 0, ""},
-  {"AllByOne", SC_var_seg, 0, 0, 1, "i"}, {"BlockBySome", SC_const_seg, 0, 0, 2, "i,i"},
-  {"Static", SC_withloop, 1, 0, 0, ""},   {"", SC_const_seg, 0, 0, 0, ""}};
+  {"Block", SC_const_seg, 1, 0, 0, ""},
+  {"BlockVar", SC_var_seg, 1, 0, 0, ""},
+  {"Even", SC_const_seg, 1, 0, 0, ""},
+  {"AllByOne", SC_var_seg, 0, 0, 1, "i"},
+  {"BlockBySome", SC_const_seg, 0, 0, 2, "i,i"},
+  {"Static", SC_withloop, 0, 0, 0, ""},
+  {"", SC_const_seg, 0, 0, 0, ""}};
 
 /******************************************************************************
  *
@@ -365,6 +374,9 @@ SCHMakeSchedulingByPragma (node *ap_node, int line)
 
         sched = CheckSchedulingArgs (sched, scheduler_table[i].arg_spec,
                                      AP_ARGS (ap_node), line);
+    } else {
+        ABORT (line, ("Illegal argument in wlcomp-pragma found; "
+                      "Scheduling...(): Unknown scheduler"));
     }
 
     DBUG_RETURN (sched);
@@ -645,40 +657,52 @@ SCHPrintScheduling (FILE *outfile, sched_t *sched)
 
     DBUG_ENTER ("SCHPrintScheduling");
 
-    fprintf (outfile, "%s(", sched->discipline);
-
-    for (i = 0; i < sched->num_args - 1; i++) {
-        switch (sched->args[i].arg_type) {
-        case AT_num:
-        case AT_num_for_id:
-            fprintf (outfile, "%d, ", sched->args[i].arg.num);
-            break;
-
-        case AT_id:
-            fprintf (outfile, "%s, ", sched->args[i].arg.id);
-            break;
-
-        default:
-            break;
-        }
+    if (outfile == NULL) {
+        /*
+         * NULL -> stderr
+         * This is done for use in a debugging session.
+         */
+        outfile = stderr;
     }
 
-    if (sched->num_args > 0) {
-        switch (sched->args[sched->num_args - 1].arg_type) {
-        case AT_num:
-        case AT_num_for_id:
-            fprintf (outfile, "%d)", sched->args[sched->num_args - 1].arg.num);
-            break;
+    if (sched != NULL) {
+        fprintf (outfile, "%s(", sched->discipline);
 
-        case AT_id:
-            fprintf (outfile, "%s)", sched->args[sched->num_args - 1].arg.id);
-            break;
+        for (i = 0; i < sched->num_args - 1; i++) {
+            switch (sched->args[i].arg_type) {
+            case AT_num:
+            case AT_num_for_id:
+                fprintf (outfile, "%d, ", sched->args[i].arg.num);
+                break;
 
-        default:
-            break;
+            case AT_id:
+                fprintf (outfile, "%s, ", sched->args[i].arg.id);
+                break;
+
+            default:
+                break;
+            }
+        }
+
+        if (sched->num_args > 0) {
+            switch (sched->args[sched->num_args - 1].arg_type) {
+            case AT_num:
+            case AT_num_for_id:
+                fprintf (outfile, "%d)", sched->args[sched->num_args - 1].arg.num);
+                break;
+
+            case AT_id:
+                fprintf (outfile, "%s)", sched->args[sched->num_args - 1].arg.id);
+                break;
+
+            default:
+                break;
+            }
+        } else {
+            fprintf (outfile, ")");
         }
     } else {
-        fprintf (outfile, ")");
+        fprintf (outfile, "NULL");
     }
 
     DBUG_VOID_RETURN;
