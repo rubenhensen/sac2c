@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/10/18 13:41:42  sbs
+ * handling of the various ID-ATTRIBUTES changed to the new
+ * FLAG system.
+ * Furthermore, support for the correct handling of the
+ * prf F_type_error_ as used by the new TC incorporated.
+ *
  * Revision 3.6  2002/02/20 14:54:06  dkr
  * fundef DupTypes() renamed into DupAllTypes()
  *
@@ -133,6 +139,7 @@
 #include "internal_lib.h"
 #include "Error.h"
 #include "DupTree.h"
+#include "CheckAvis.h"
 
 #include <string.h>
 
@@ -157,8 +164,10 @@ HandleObjects (node *syntax_tree)
     DBUG_ENTER ("HandleObjects");
 
     act_tab = obj_tab;
+    syntax_tree = Trav (syntax_tree, NULL);
+    valid_ssaform = FALSE;
 
-    DBUG_RETURN (Trav (syntax_tree, NULL));
+    DBUG_RETURN (syntax_tree);
 }
 
 /*
@@ -515,6 +524,8 @@ OBJarg (node *arg_node, node *arg_info)
             new_return_expr
               = MakeId (StringCopy (ARG_NAME (arg_node)), NULL, ST_artificial);
             ID_VARDEC (new_return_expr) = arg_node;
+            SET_FLAG (ID, new_return_expr, IS_GLOBAL, FALSE);
+            SET_FLAG (ID, new_return_expr, IS_REFERENCE, FALSE);
             NODE_LINE (new_return_expr) = NODE_LINE (ret);
 
             DBUG_PRINT ("OBJ", ("New return value: %s", ARG_NAME (arg_node)));
@@ -584,6 +595,9 @@ OBJap (node *arg_node, node *arg_info)
 
         new_arg = MakeId (StringCopy (OBJDEF_VARNAME (obj)), NULL, ST_artificial);
         ID_VARDEC (new_arg) = OBJDEF_ARG (obj);
+        SET_FLAG (ID, new_arg, IS_REFERENCE, TRUE);
+        SET_FLAG (ID, new_arg, IS_READ_ONLY, FALSE);
+        SET_FLAG (ID, new_arg, IS_GLOBAL, TRUE);
         NODE_LINE (new_arg) = NODE_LINE (arg_node);
 
         DBUG_PRINT ("OBJ", ("Adding new argument: %s", OBJDEF_VARNAME (obj)));
@@ -614,7 +628,10 @@ OBJid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("OBJid");
 
-    if (ID_ATTRIB (arg_node) == ST_global) {
+    DBUG_PRINT ("F_IS_GLOBAL",
+                ("trying to accessing IS_GLOBAL of %s", ID_NAME (arg_node)));
+
+    if (GET_FLAG (ID, arg_node, IS_GLOBAL)) {
         ID_NAME (arg_node) = StringCopy (OBJDEF_VARNAME (ID_OBJDEF (arg_node)));
         ID_MOD (arg_node) = NULL;
         ID_VARDEC (arg_node) = OBJDEF_ARG (ID_OBJDEF (arg_node));
@@ -673,58 +690,123 @@ OBJlet (node *arg_node, node *arg_info)
             let_expr = CAST_EXPR (let_expr);
         }
 
-        if (NODE_TYPE (let_expr) != N_ap) {
-            if (NODE_TYPE (let_expr) == N_Nwith) {
-                let_expr = Trav (let_expr, arg_info);
-            }
+        if (NODE_TYPE (let_expr) == N_Nwith) {
+            let_expr = Trav (let_expr, arg_info);
         } else {
-            args = AP_ARGS (let_expr);
-            params = FUNDEF_ARGS (AP_FUNDEF (let_expr));
+            if (sbs == 1) {
+                /*
+                 * The new type checker has been running. Therefore,
+                 * the reference parameters of N_ap nodes or N_prf( F_type_error) nodes
+                 * can be detected by inspecting their IS_REFERENCE flag. If set to
+                 * ST_reference they are reference parameters, otherwise they are not.
+                 * This is ensureed by create_wrappers.c !!!
+                 */
+                if ((NODE_TYPE (let_expr) == N_ap)
+                    || ((NODE_TYPE (let_expr) == N_prf)
+                        && (PRF_PRF (let_expr) == F_type_error))) {
+                    args = AP_OR_PRF_ARGS (let_expr);
+                    while (args != NULL) {
+                        arg_id = EXPRS_EXPR (args);
 
-            while ((params != NULL) && (ARG_BASETYPE (params) != T_dots)) {
-                arg_id = EXPRS_EXPR (args);
+#ifndef DBUG_OFF
+                        if (NODE_TYPE (arg_id) == N_id) {
+                            DBUG_PRINT ("F_IS_REFERENCE",
+                                        ("trying to access IS_REFERENCE of %s",
+                                         ID_NAME (arg_id)));
+                        }
+#endif
+                        if ((NODE_TYPE (arg_id) == N_id)
+                            && (GET_FLAG (ID, arg_id, IS_REFERENCE))) {
+                            new_ids_name = StringCopy (ID_NAME (arg_id));
 
-                if (ARG_ATTRIB (params) == ST_was_reference) {
-                    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "no N_id node found!");
+                            if (new_ids == NULL) {
+                                new_ids = MakeIds (new_ids_name, NULL, ST_artificial);
+                                last_ids = new_ids;
+                            } else {
+                                IDS_NEXT (last_ids)
+                                  = MakeIds (new_ids_name, NULL, ST_artificial);
+                                last_ids = IDS_NEXT (last_ids);
+                            }
+                            old_ids = LET_IDS (arg_node);
+                            IDS_VARDEC (last_ids) = ID_VARDEC (arg_id);
 
-                    new_ids_name = StringCopy (ID_NAME (arg_id));
-                    ID_ATTRIB (arg_id) = ST_reference;
+                            DBUG_PRINT ("OBJ", ("New return value bound to %s",
+                                                IDS_NAME (last_ids)));
 
-                    if (new_ids == NULL) {
-                        new_ids = MakeIds (new_ids_name, NULL, ST_artificial);
-                        last_ids = new_ids;
-                    } else {
-                        IDS_NEXT (last_ids) = MakeIds (new_ids_name, NULL, ST_artificial);
-                        last_ids = IDS_NEXT (last_ids);
+                            if (!IsUnique (ID_TYPE (arg_id))) {
+                                ERROR (
+                                  NODE_LINE (arg_node),
+                                  ("Argument '%s` is reference parameter but not unique",
+                                   ID_NAME (arg_id)));
+                            }
+                        }
+                        args = EXPRS_NEXT (args);
+                    }
+                    LET_IDS (arg_node) = AppendIds (new_ids, LET_IDS (arg_node));
+                }
+            } else {
+                /*
+                 * The old type checker has been run. Therefore, we have to find out about
+                 * reference parameters by inspecting the ARG nodes of the function
+                 * declaration.
+                 */
+                if (NODE_TYPE (let_expr) == N_ap) {
+
+                    args = AP_ARGS (let_expr);
+                    params = FUNDEF_ARGS (AP_FUNDEF (let_expr));
+
+                    while ((params != NULL) && (ARG_BASETYPE (params) != T_dots)) {
+                        arg_id = EXPRS_EXPR (args);
+
+                        if (ARG_ATTRIB (params) == ST_was_reference) {
+                            DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id),
+                                         "no N_id node found!");
+
+                            new_ids_name = StringCopy (ID_NAME (arg_id));
+                            SET_FLAG (ID, arg_id, IS_REFERENCE, TRUE);
+                            SET_FLAG (ID, arg_id, IS_READ_ONLY, FALSE);
+
+                            if (new_ids == NULL) {
+                                new_ids = MakeIds (new_ids_name, NULL, ST_artificial);
+                                last_ids = new_ids;
+                            } else {
+                                IDS_NEXT (last_ids)
+                                  = MakeIds (new_ids_name, NULL, ST_artificial);
+                                last_ids = IDS_NEXT (last_ids);
+                            }
+
+                            old_ids = LET_IDS (arg_node);
+
+                            IDS_VARDEC (last_ids) = ID_VARDEC (arg_id);
+
+                            DBUG_PRINT ("OBJ", ("New return value bound to %s",
+                                                IDS_NAME (last_ids)));
+
+                        } else if (ARG_ATTRIB (params) == ST_readonly_reference) {
+                            DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id),
+                                         "no N_id node found!");
+                            SET_FLAG (ID, arg_id, IS_READ_ONLY, TRUE);
+
+                        } else {
+                            arg_id = NULL;
+                        }
+
+                        if (arg_id != NULL) {
+                            if (!IsUnique (ID_TYPE (arg_id))) {
+                                ERROR (
+                                  NODE_LINE (arg_node),
+                                  ("Argument '%s` is reference parameter but not unique",
+                                   ID_NAME (arg_id)));
+                            }
+                        }
+
+                        args = EXPRS_NEXT (args);
+                        params = ARG_NEXT (params);
                     }
 
-                    old_ids = LET_IDS (arg_node);
-
-                    IDS_VARDEC (last_ids) = ID_VARDEC (arg_id);
-
-                    DBUG_PRINT ("OBJ",
-                                ("New return value bound to %s", IDS_NAME (last_ids)));
-                } else if (ARG_ATTRIB (params) == ST_readonly_reference) {
-                    DBUG_ASSERT ((NODE_TYPE (arg_id) == N_id), "no N_id node found!");
-
-                    ID_ATTRIB (arg_id) = ST_readonly_reference;
-                } else {
-                    arg_id = NULL;
+                    LET_IDS (arg_node) = AppendIds (new_ids, LET_IDS (arg_node));
                 }
-
-                if (arg_id != NULL) {
-                    if (!IsUnique (ID_TYPE (arg_id))) {
-                        ERROR (NODE_LINE (arg_node),
-                               ("Argument '%s` is reference parameter but not unique",
-                                ID_NAME (arg_id)));
-                    }
-                }
-
-                args = EXPRS_NEXT (args);
-                params = ARG_NEXT (params);
             }
-
-            LET_IDS (arg_node) = AppendIds (new_ids, LET_IDS (arg_node));
         }
     }
 
