@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.13  2001/05/25 14:57:34  nmw
+ * Access to Basetypes via GetBasetype instead of TYPES_BASETYPE
+ *
  * Revision 1.12  2001/05/17 12:57:46  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -625,9 +628,9 @@ COAST2Constant (node *n)
             break;
 
         case N_array:
-            new_co = COMakeConstant (TYPES_BASETYPE (ARRAY_TYPE (n)),
+            new_co = COMakeConstant (GetBasetype (ARRAY_TYPE (n)),
                                      SHOldTypes2Shape (ARRAY_TYPE (n)),
-                                     Array2Vec (TYPES_BASETYPE (ARRAY_TYPE (n)),
+                                     Array2Vec (GetBasetype (ARRAY_TYPE (n)),
                                                 ARRAY_AELEMS (n), NULL));
             break;
 
@@ -635,7 +638,7 @@ COAST2Constant (node *n)
             new_co = COCopyConstant (AVIS_SSACONST (ID_AVIS (n)));
 
             /* update constants shape info according to type info */
-            DBUG_ASSERT ((TYPES_BASETYPE (
+            DBUG_ASSERT ((GetBasetype (
                             VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (n))))
                           == CONSTANT_TYPE (new_co)),
                          "different basetype in id and assigned array");
