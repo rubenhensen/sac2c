@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.18  2001/03/02 15:52:56  nmw
+# change_signature added
+#
 # Revision 3.17  2001/03/02 14:55:55  sbs
 # integrated constants!
 #
@@ -181,7 +184,8 @@ TREE= src/tree/traverse.o src/tree/tree.o src/tree/tree_basic.o src/tree/free.o 
       src/tree/tree_compound.o src/tree/DupTree.o src/tree/LookUpTable.o \
       src/tree/DataFlowMask.o src/tree/DataFlowMaskUtils.o src/tree/InferDFMs.o \
       src/tree/cleanup_decls.o src/tree/adjust_ids.o src/tree/scheduling.o \
-      src/tree/CheckAvis.o src/tree/SSATransform.o src/tree/UndoSSATransform.o
+      src/tree/CheckAvis.o src/tree/SSATransform.o src/tree/UndoSSATransform.o \
+      src/tree/change_signature.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.13  2001/03/02 15:50:58  nmw
+# change_signature added
+#
 # Revision 3.12  2001/03/02 14:44:52  sbs
 # constants added to INCS
 #
@@ -88,7 +91,7 @@ INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck
 all: tree.o tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
      DataFlowMask.o DataFlowMaskUtils.o InferDFMs.o CheckAvis.o \
      LookUpTable.o adjust_ids.o cleanup_decls.o scheduling.o \
-     SSATransform.o UndoSSATransform.o
+     SSATransform.o UndoSSATransform.o change_signature.o
 
 
 #
@@ -190,6 +193,15 @@ adjust_ids.o: tree_compound.h ../global/Error.h /usr/include/string.h
 adjust_ids.o: /usr/include/stdlib.h ../global/globals.h
 adjust_ids.o: ../global/internal_lib.h traverse.h free.h ../global/my_debug.h
 adjust_ids.o: DupTree.h LookUpTable.h ../print/print.h
+change_signature.o: ../../inc/dbug.h /usr/include/stdio.h
+change_signature.o: /usr/include/sys/feature_tests.h
+change_signature.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+change_signature.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+change_signature.o: ../global/globals.h ../global/types.h tree.h tree_basic.h
+change_signature.o: tree_compound.h ../global/Error.h /usr/include/string.h
+change_signature.o: /usr/include/stdlib.h ../global/internal_lib.h free.h
+change_signature.o: ../global/my_debug.h DupTree.h LookUpTable.h
+change_signature.o: ../optimize/optimize.h
 cleanup_decls.o: tree.h ../global/types.h tree_basic.h tree_compound.h
 cleanup_decls.o: ../global/Error.h /usr/include/stdio.h
 cleanup_decls.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
