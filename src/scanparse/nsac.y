@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.28  2004/12/05 16:45:38  sah
+* added SPIds SPId SPAp in frontend
+*
 * Revision 1.27  2004/12/02 15:13:20  sah
 * fixed mopsification
 *
@@ -946,15 +949,16 @@ exprblock2: ntype ids SEMIC exprblock2
                * it's own N_vardec node with it's own copy of the
                * types-structure from $1!
                */
-              while (IDS_NEXT( $2) != NULL) {  /* at least 2 vardecs! */
-                vardec_ptr = TBmakeVardec( TBmakeAvis( ILIBstringCopy( IDS_SPNAME( $2)),
-                                                       TYcopyType( $1)),
-                                           vardec_ptr);
+              while (SPIDS_NEXT( $2) != NULL) {  /* at least 2 vardecs! */
+                vardec_ptr = TBmakeVardec( 
+                               TBmakeAvis( ILIBstringCopy( SPIDS_NAME( $2)),
+                                           TYcopyType( $1)),
+                               vardec_ptr);
                 /*
                  * Now, we want to "push" $2 one IDS further
-                 * and we want to FREE the current IDS structure.
+                 * and we want to FREE the current SPIDS node.
                  */
-                ids_ptr = IDS_NEXT( $2);
+                ids_ptr = SPIDS_NEXT( $2);
                 $2 = FREEdoFreeNode( $2);
                 $2 = ids_ptr;
               }
@@ -964,9 +968,14 @@ exprblock2: ntype ids SEMIC exprblock2
                * duplicating it as done in the loop above!
                */
               $$ = $4;
-              BLOCK_VARDEC( $$) = TBmakeVardec( TBmakeAvis( ILIBstringCopy( IDS_SPNAME( $2)), $1),
+              BLOCK_VARDEC( $$) = TBmakeVardec( 
+                                    TBmakeAvis( 
+                                      ILIBstringCopy( SPIDS_NAME( $2)), $1),
                                                 vardec_ptr);
-              $2 = FREEdoFreeTree( $2);   /* Finally, we free the last IDS-node! */
+              /* 
+               * Finally, we free the last SPIDS-node! 
+               */
+              $2 = FREEdoFreeTree( $2);   
             }
           | assignsOPTret BRACE_R
             { $$ = TBmakeBlock( $1, NULL);
@@ -1046,18 +1055,16 @@ let:       ids LET { $<cint>$ = global.linenum; } expr
                EXPRS_EXPR( tmp) = NULL;
                tmp = FREEdoFreeNode( tmp);
              }
-             id = TBmakeId( NULL);
-             ID_SPNAME( id) = ILIBstringCopy( $1);
+             id = TBmakeSpid( NULL, ILIBstringCopy( $1));
 
-             ids = TBmakeIds( NULL, NULL);
-             IDS_SPNAME( ids) = $1;
+             ids = TBmakeSpids( $1, NULL);
 
-             ap = TBmakeAp( NULL,
-                            TBmakeExprs( TBmakeId( TBmakeAvis( $1, NULL)),
+             ap = TBmakeSpap( 
+                            TBmakeSpid( NULL, ILIBstringCopy( "modarray")),
+                            TBmakeExprs( id,
                               TBmakeExprs( $3,
                                 TBmakeExprs( $7,
                                   NULL))));
-             AP_SPNAME( ap) = ILIBstringCopy( "modarray");
 
              $$ = TBmakeLet( ids, ap);
              NODE_LINE( $$) = $<cint>5;
@@ -1188,8 +1195,8 @@ expr: qual_ext_id                { $$ = $1;                   }
     | string                     { $$ = String2Array( $1);    }
     | BRACKET_L expr BRACKET_R
       { $$ = $2;
-        if( NODE_TYPE( $2) == N_mop) {
-          MOP_ISFIXED( $$) = TRUE;
+        if( NODE_TYPE( $2) == N_spmop) {
+          SPMOP_ISFIXED( $$) = TRUE;
         }
       }
     | expr qual_ext_id expr %prec BM_OP
@@ -1198,43 +1205,39 @@ expr: qual_ext_id                { $$ = $1;                   }
       }
     | PLUS expr %prec MM_OP
       {
-        $$ = TCmakeAp1( NULL, $2);
-        AP_SPNAME( $$) = ILIBstringCopy( "+");
+        $$ = TCmakeSpap1( NULL, ILIBstringCopy( "+"), $2);
       }
     | MINUS expr %prec MM_OP
       {
-        $$ = TCmakeAp1( NULL, $2);
-        AP_SPNAME( $$) = ILIBstringCopy( "-");
+        $$ = TCmakeSpap1( NULL, ILIBstringCopy( "-"), $2);
       }
     | TILDE expr %prec MM_OP
       {
-        $$ = TCmakeAp1( NULL, $2);
-        AP_SPNAME( $$) = ILIBstringCopy( "~");
+        $$ = TCmakeSpap1( NULL, ILIBstringCopy( "~"), $2);
       }
     | EXCL expr %prec MM_OP
       {
-        $$ = TCmakeAp1( NULL, $2);
-        AP_SPNAME( $$) = ILIBstringCopy( "!");
+        $$ = TCmakeSpap1( NULL, ILIBstringCopy( "!"), $2);
       }
     | PLUS BRACKET_L expr COMMA exprs BRACKET_R
       {
-        $$ = TBmakeAp( NULL, TBmakeExprs( $3, $5));
-        AP_SPNAME( $$) = ILIBstringCopy( "+");
+        $$ = TBmakeSpap( TBmakeSpid( NULL, ILIBstringCopy( "+")), 
+                         TBmakeExprs( $3, $5));
       }
     | MINUS BRACKET_L expr COMMA exprs BRACKET_R
       {
-        $$ = TBmakeAp( NULL, TBmakeExprs( $3, $5));
-        AP_SPNAME( $$) = ILIBstringCopy( "-");
+        $$ = TBmakeSpap( TBmakeSpid( NULL, ILIBstringCopy( "-")), 
+                         TBmakeExprs( $3, $5));
       }
     | TILDE BRACKET_L expr COMMA exprs BRACKET_R
       {
-        $$ = TBmakeAp( NULL, TBmakeExprs( $3, $5));
-        AP_SPNAME( $$) = ILIBstringCopy( "~");
+        $$ = TBmakeSpap( TBmakeSpid( NULL, ILIBstringCopy( "~")), 
+                         TBmakeExprs( $3, $5));
       }
     | EXCL BRACKET_L expr COMMA exprs BRACKET_R
       {
-        $$ = TBmakeAp( NULL, TBmakeExprs( $3, $5));
-        AP_SPNAME( $$) = ILIBstringCopy( "!");
+        $$ = TBmakeSpap( TBmakeSpid( NULL, ILIBstringCopy( "!")), 
+                         TBmakeExprs( $3, $5));
       }
     | expr_sel                    { $$ = $1; }   /* bracket notation      */
     | expr_ap                     { $$ = $1; }   /* prefix function calls */
@@ -1243,7 +1246,7 @@ expr: qual_ext_id                { $$ = $1;                   }
       { $$ = TBmakeCast( $3, $5);
       }
     | BRACE_L ID ARROW expr BRACE_R
-      { $$ = TBmakeSetwl( TCmakeIdCopyString( $2), $4);
+      { $$ = TBmakeSetwl( TBmakeSpids( ILIBstringCopy( $2), NULL), $4);
       }
     | BRACE_L SQBR_L exprs SQBR_R ARROW expr BRACE_R
       { $$ = TBmakeSetwl( $3, $6);
@@ -1307,28 +1310,25 @@ with: BRACKET_L generator BRACKET_R wlassignblock withop
 
 expr_sel: expr SQBR_L exprs SQBR_R
           { if( TCcountExprs($3) == 1) {
-              $$ = TCmakeAp2( NULL, EXPRS_EXPR( $3), $1);
-              AP_SPNAME( $$) = ILIBstringCopy( "sel");
+              $$ = TCmakeSpap2( NULL, ILIBstringCopy( "sel"),
+                                EXPRS_EXPR( $3), $1);
               EXPRS_EXPR( $3) = NULL;
               $3 = FREEdoFreeNode( $3);
             } else {
-              $$ = TCmakeAp2( NULL, TCmakeFlatArray( $3), $1);
-              AP_SPNAME( $$) = ILIBstringCopy( "sel");
+              $$ = TCmakeSpap2( NULL, ILIBstringCopy( "sel"),
+                                TCmakeFlatArray( $3), $1);
             }
           }
         | expr SQBR_L SQBR_R
-          { $$ = TCmakeAp2( NULL, TCmakeFlatArray( NULL), $1);
-            AP_SPNAME( $$) = ILIBstringCopy( "sel");
+          { $$ = TCmakeSpap2( NULL, ILIBstringCopy( "sel"),
+                 TCmakeFlatArray( NULL), $1);
           }
         ;
 
 expr_ap: qual_ext_id BRACKET_L { $<cint>$ = global.linenum; } opt_arguments BRACKET_R
          {
-           $$ = TBmakeAp( NULL, $4);
-           AP_NAME( $$) = ILIBstringCopy( ID_SPNAME( $1));
-           AP_MOD( $$)  = ILIBstringCopy( ID_SPMOD( $1));
+           $$ = TBmakeSpap( $1, $4);
            NODE_LINE( $$) = $<cint>3;
-           $1 = FREEdoFreeTree( $1);
          }
        | prf BRACKET_L { $<cint>$ = global.linenum; } opt_arguments BRACKET_R
          { char tmp[64];
@@ -1453,8 +1453,8 @@ nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
          }
        | FOLD BRACKET_L qual_ext_id COMMA expr BRACKET_R
          { $$ = TBmakeFold( $5);
-           FOLD_FUN( $$) = ILIBstringCopy( ID_SPNAME( $3));
-           FOLD_MOD( $$) = ILIBstringCopy( ID_SPMOD( $3));
+           FOLD_FUN( $$) = ILIBstringCopy( SPID_NAME( $3));
+           FOLD_MOD( $$) = ILIBstringCopy( SPID_MOD( $3));
            $3 = FREEdoFreeTree( $3);
          }
        ;
@@ -1478,8 +1478,8 @@ withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
         }
       | FOLD BRACKET_L qual_ext_id COMMA expr COMMA expr BRACKET_R
         { $$ = TBmakeFold( $5);
-          FOLD_FUN( $$) = ILIBstringCopy( ID_SPNAME( $3));
-          FOLD_MOD( $$) = ILIBstringCopy( ID_SPMOD( $3));
+          FOLD_FUN( $$) = ILIBstringCopy( SPID_NAME( $3));
+          FOLD_MOD( $$) = ILIBstringCopy( SPID_MOD( $3));
           $3 = FREEdoFreeTree( $3);
           FOLD_SPEXPR( $$) = $7;
         }
@@ -1535,49 +1535,31 @@ prf: foldop        { $$ = $1;        }
    | PRF_DROP_SxV  { $$ = F_drop_SxV;}
    ;
 
+qual_ext_ids: qual_ext_id qual_ext_ids
+              { $$ = TBmakeExprs( $1, $2);
+              }
+            | qual_ext_id
+              { $$ = TBmakeExprs( $1, NULL);
+              }
+            ;
+
 qual_ext_id: ext_id
-             { $$ = TBmakeId( NULL);
-               ID_SPNAME( $$) = $1;
+             { $$ = TBmakeSpid( NULL, $1);
              }
            | ID COLON ext_id
-             { $$ = TBmakeId( NULL);
-               ID_SPNAME( $$) = $3;
-               ID_SPMOD( $$) = $1;
+             { $$ = TBmakeSpid( $1, $3);
              }
            ; 
-
-qual_ext_ids: ext_id 
-              { $$ = TBmakeIds( NULL, NULL);
-                IDS_SPNAME( $$) = $1;
-              }
-            | ID COLON ext_id
-              { $$ = TBmakeIds( NULL, NULL);
-                IDS_SPNAME( $$) = $3;
-                IDS_SPMOD( $$) = $1;
-              }
-            | ext_id COMMA qual_ext_ids
-              { $$ = TBmakeIds( NULL, $3);
-                IDS_SPNAME( $$) = $1;
-              }
-            | ID COLON ext_id COMMA qual_ext_ids
-              { $$ = TBmakeIds( NULL, $5);
-                IDS_SPNAME( $$) = $3;
-                IDS_SPMOD( $$) = $1;
-              }
-
-            ;
 
 ext_id: ID         { $$ = $1; }
       | reservedid { $$ = $1; }
       ; 
 
 ids: ID COMMA ids
-     { $$ = TBmakeIds( NULL, $3);
-       IDS_SPNAME( $$) = $1;
+     { $$ = TBmakeSpids( $1, $3);
      }
    | ID
-     { $$ = TBmakeIds( NULL, NULL);
-       IDS_SPNAME( $$) = $1;
+     { $$ = TBmakeSpids( $1, NULL);
      }
    ;
 
@@ -1987,8 +1969,8 @@ node *String2Array(char *str)
   ARRAY_STRING(array)=str;
 #endif  /* CHAR_ARRAY_AS_STRING */
 
-  res = TBmakeAp( NULL, TBmakeExprs( array, len_exprs));
-  AP_SPNAME( res) = ILIBstringCopy( "to_string");
+  res = TCmakeSpap2( ILIBstringCopy( "String") , ILIBstringCopy( "to_string"), 
+                    array, len_exprs);
 
   DBUG_RETURN( res); 
 }
@@ -2010,14 +1992,13 @@ node *MakeIncDecLet( char *name, char *op)
   node *let, *id, *ids, *ap;
 
   DBUG_ENTER( "MakeIncDecLet");
-  ids = TBmakeIds( NULL, NULL);
-  IDS_SPNAME( ids) = ILIBstringCopy( name);
+  ids = TBmakeSpids(  ILIBstringCopy( name), NULL);
 
-  id = TBmakeId( NULL);
-  ID_SPNAME(  id) = name;
+  id = TBmakeSpid( NULL, name);
 
-  ap = TCmakeAp2( NULL, id, TBmakeNum(1));
-  AP_SPNAME( ap) = op;
+  ap = TBmakeSpap( TBmakeSpid( NULL, op),
+                   TBmakeExprs( id, 
+                     TBmakeExprs( TBmakeNum(1), NULL)));
 
   let = TBmakeLet( ids, ap);
 
@@ -2041,14 +2022,13 @@ node *MakeOpOnLet( char *name, node *expr, char *op)
   node *let, *id, *ids, *ap;
 
   DBUG_ENTER( "MakeOpOnLet");
-  ids = TBmakeIds( NULL, NULL);
-  IDS_SPNAME( ids) = ILIBstringCopy( name);
+  ids = TBmakeSpids( ILIBstringCopy( name), NULL);
 
-  id = TBmakeId( NULL);
-  ID_SPNAME(  id) = name;
+  id = TBmakeSpid( NULL, name);
 
-  ap = TCmakeAp2( NULL, id, expr);
-  AP_SPNAME( ap) = op;
+  ap = TBmakeSpap( TBmakeSpid( NULL, op),
+                   TBmakeExprs( id,
+                     TBmakeExprs( expr, NULL)));
 
   let = TBmakeLet( ids, ap);
 
@@ -2071,10 +2051,10 @@ node *Expr2Mop( node *expr)
 
   DBUG_ENTER("Expr2Mop");
 
-  if( (NODE_TYPE( expr) == N_mop) && ! MOP_ISFIXED( expr) ) {
+  if( (NODE_TYPE( expr) == N_spmop) && ! SPMOP_ISFIXED( expr) ) {
     res = expr;
   } else {
-    res = TBmakeMop( NULL, TBmakeExprs( expr, NULL));
+    res = TBmakeSpmop( NULL, TBmakeExprs( expr, NULL));
   }
 
   DBUG_RETURN( res);
@@ -2094,30 +2074,27 @@ node *Expr2Mop( node *expr)
 static
 node *ConstructMop( node *expr1, node *fun_id, node *expr2)
 {
-  node *res, *lmop, *rmop, *fun_ids;
+  node *res, *lmop, *rmop, *fun_exprs;
 
   DBUG_ENTER("ConstructMop");
 
   lmop = Expr2Mop( expr1);
   rmop = Expr2Mop( expr2);
 
-  fun_ids = DUPdupIdIds( fun_id);
-  fun_id = FREEdoFreeNode( fun_id);
+  fun_exprs = TBmakeExprs( fun_id, SPMOP_OPS( rmop));
 
-  IDS_NEXT( fun_ids) = MOP_OPS( rmop);
-
-  res = TBmakeMop( TCappendIds( MOP_OPS( lmop),
-                                fun_ids),
-                   TCappendExprs( MOP_EXPRS( lmop),
-                                  MOP_EXPRS( rmop)));
+  res = TBmakeSpmop( TCappendExprs( SPMOP_OPS( lmop),
+                                    fun_exprs),
+                     TCappendExprs( SPMOP_EXPRS( lmop),
+                                    SPMOP_EXPRS( rmop)));
   /*
    * now we free the topmost node. Therefore we have to set the OPS and EXPRS
    * attributes to NULL, so that they do not get freed!
    */
-  MOP_EXPRS( lmop) = NULL;
-  MOP_OPS( lmop) = NULL;
-  MOP_EXPRS( rmop) = NULL;
-  MOP_OPS( rmop) = NULL;
+  SPMOP_EXPRS( lmop) = NULL;
+  SPMOP_OPS( lmop) = NULL;
+  SPMOP_EXPRS( rmop) = NULL;
+  SPMOP_OPS( rmop) = NULL;
 
   lmop = FREEdoFreeNode( lmop); 
   rmop = FREEdoFreeNode( rmop);
@@ -2172,8 +2149,8 @@ node *CheckWlcompConf( node *conf, node *exprs)
   DBUG_ASSERT( (conf != NULL), "wlcomp-pragma is empty!");
 
   if (NODE_TYPE( conf) == N_id) {
-    if (strcmp( ID_SPNAME( conf), "Default")) {
-      strcpy( yytext, ID_SPNAME( conf));
+    if (strcmp( SPID_NAME( conf), "Default")) {
+      strcpy( yytext, SPID_NAME( conf));
       yyerror( "innermost configuration is not 'Default'");
     }
 
@@ -2294,13 +2271,13 @@ static ntype *Exprs2NType( ntype *basetype, node *exprs)
   n = TCcountExprs( exprs);
 
   switch (NODE_TYPE( EXPRS_EXPR1( exprs))) {
-    case N_id:
-      if (ID_SPMOD( EXPRS_EXPR1( exprs)) != NULL) {
+    case N_spid:
+      if (SPID_MOD( EXPRS_EXPR1( exprs)) != NULL) {
         yyerror("illegal shape specification");
-      } else if (ID_SPNAME( EXPRS_EXPR1( exprs))[1] != '\0') {
+      } else if (SPID_NAME( EXPRS_EXPR1( exprs))[1] != '\0') {
         yyerror("illegal shape specification");
       } else {
-        switch (ID_SPNAME( EXPRS_EXPR1( exprs))[0]) {
+        switch (SPID_NAME( EXPRS_EXPR1( exprs))[0]) {
           case '*':
             result = TYmakeAUD( basetype);
             break;

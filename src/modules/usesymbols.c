@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 1.9  2004/11/25 11:35:11  sah
  * COMPILES
  *
@@ -40,6 +43,7 @@
 #include "dbug.h"
 #include "internal_lib.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "modulemanager.h"
 #include "deserialize.h"
 #include "new_types.h"
@@ -198,11 +202,11 @@ USSfold (node *arg_node, info *arg_info)
 }
 
 node *
-USSap (node *arg_node, info *arg_info)
+USSspap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSap");
+    DBUG_ENTER ("USSspap");
 
-    MakeSymbolAvailable (AP_SPMOD (arg_node), AP_SPNAME (arg_node), SET_wrapperhead,
+    MakeSymbolAvailable (SPAP_MOD (arg_node), SPAP_NAME (arg_node), SET_wrapperhead,
                          arg_info);
 
     arg_node = TRAVcont (arg_node, arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 1.19  2004/11/25 14:17:53  khf
  * SacDevCamp04
  *
@@ -193,14 +196,14 @@ LeftAssoc (node *lop, node *rop)
 
     DBUG_ENTER ("LeftAssoc");
 
-    prec_p = (prec_t **)LUTsearchInLutS (prec_lut, IDS_NAME (lop));
+    prec_p = (prec_t **)LUTsearchInLutS (prec_lut, SPID_NAME (lop));
     if (prec_p == NULL) {
         prec1 = &default_prec; /* no precedence found */
     } else {
         prec1 = *prec_p;
     }
 
-    prec_p = (prec_t **)LUTsearchInLutS (prec_lut, IDS_NAME (rop));
+    prec_p = (prec_t **)LUTsearchInLutS (prec_lut, SPID_NAME (rop));
     if (prec_p == NULL) {
         prec2 = &default_prec; /* no precedence found */
     } else {
@@ -229,7 +232,7 @@ LeftAssoc (node *lop, node *rop)
  *    node *Mop2Ap( ids *op, node *mop)
  *
  * description:
- *   Transformes a N_mop node into a nesting of N_ap nodes according to the
+ *   Transformes a N_mop node into a nesting of N_spap nodes according to the
  *   following algorithm (e's are expressions; o's are operations):
  *
  *   e1                   e1
@@ -263,16 +266,17 @@ Mop2Ap (node *op, node *mop)
 
     DBUG_ENTER ("Mop2Ap");
 
-    exprs = MOP_EXPRS (mop);
-    fun_ids = MOP_OPS (mop);
+    exprs = SPMOP_EXPRS (mop);
+    fun_ids = SPMOP_OPS (mop);
 
-    if ((fun_ids != NULL) && ((op == NULL) || (!LeftAssoc (op, fun_ids)))) {
+    if ((fun_ids != NULL) && ((op == NULL) || (!LeftAssoc (op, EXPRS_EXPR (fun_ids))))) {
         /*
          * there is at least one operation left  -AND-
          * 'op' is weaker (or not present at all) than 'o1'
          *    -> recursive call needed
          */
-        if ((IDS_NEXT (fun_ids) == NULL) || LeftAssoc (fun_ids, IDS_NEXT (fun_ids))) {
+        if ((EXPRS_NEXT (fun_ids) == NULL)
+            || LeftAssoc (EXPRS_EXPR (fun_ids), EXPRS_EXPR (EXPRS_NEXT (fun_ids)))) {
             /*
              * 'o2' is weaker (or not present at all) than 'o1'
              *    -> build  Ap{o1,e1,e2}
@@ -280,24 +284,25 @@ Mop2Ap (node *op, node *mop)
             exprs3 = EXPRS_EXPRS3 (exprs);
             EXPRS_EXPRS3 (exprs) = NULL;
 
-            ap = TBmakeAp (NULL, exprs);
-            AP_SPNAME (ap) = ILIBstringCopy (IDS_NAME (fun_ids));
+            ap = TBmakeSpap (EXPRS_EXPR (fun_ids), exprs);
 
-            MOP_EXPRS (mop) = TBmakeExprs (ap, exprs3);
-            MOP_OPS (mop) = FREEdoFreeNode (fun_ids);
+            SPMOP_EXPRS (mop) = TBmakeExprs (ap, exprs3);
+
+            /* we have reused the id stored in the mop, so do not free it */
+            EXPRS_EXPR (SPMOP_OPS (mop)) = NULL;
+            SPMOP_OPS (mop) = FREEdoFreeNode (fun_ids);
 
             mop = Mop2Ap (op, mop);
         } else {
-            MOP_EXPRS (mop) = EXPRS_NEXT (exprs);
-            MOP_OPS (mop) = IDS_NEXT (fun_ids);
+            SPMOP_EXPRS (mop) = EXPRS_NEXT (exprs);
+            SPMOP_OPS (mop) = EXPRS_NEXT (fun_ids);
             mop = Mop2Ap (fun_ids, mop); /* where clause! */
 
-            exprs_prime = MOP_EXPRS (mop);
+            exprs_prime = SPMOP_EXPRS (mop);
 
-            ap = TBmakeAp (NULL,
-                           TBmakeExprs (EXPRS_EXPR (exprs),
-                                        TBmakeExprs (EXPRS_EXPR (exprs_prime), NULL)));
-            AP_SPNAME (ap) = ILIBstringCopy (IDS_NAME (fun_ids));
+            ap = TBmakeSpap (EXPRS_EXPR (fun_ids),
+                             TBmakeExprs (EXPRS_EXPR (exprs),
+                                          TBmakeExprs (EXPRS_EXPR (exprs_prime), NULL)));
 
             EXPRS_EXPR (exprs_prime) = ap;
 
@@ -305,6 +310,9 @@ Mop2Ap (node *op, node *mop)
 
             EXPRS_EXPR (exprs) = NULL;
             exprs = FREEdoFreeNode (exprs);
+
+            /* we have reused the id stored in the mop, so do not free it */
+            EXPRS_EXPR (fun_ids) = NULL;
             fun_ids = FREEdoFreeNode (fun_ids);
         }
     } else {
@@ -354,7 +362,7 @@ HMdoHandleMops (node *arg_node)
 /******************************************************************************
  *
  * function:
- *    node *HMmop( node *arg_node, info *arg_info)
+ *    node *HMspmop( node *arg_node, info *arg_info)
  *
  * description:
  *    Converts a N_mop node into a nested N_ap node.
@@ -362,109 +370,22 @@ HMdoHandleMops (node *arg_node)
  ******************************************************************************/
 
 node *
-HMmop (node *arg_node, info *arg_info)
+HMspmop (node *arg_node, info *arg_info)
 {
     node *mop, *res;
 
-    DBUG_ENTER ("HMmop");
+    DBUG_ENTER ("HMspmop");
 
     mop = Mop2Ap (NULL, arg_node);
-    DBUG_ASSERT (((mop != NULL) && (NODE_TYPE (mop) == N_mop) && (MOP_OPS (mop) == NULL)
-                  && (MOP_EXPRS (mop) != NULL) && (EXPRS_NEXT (MOP_EXPRS (mop)) == NULL)),
+    DBUG_ASSERT (((mop != NULL) && (NODE_TYPE (mop) == N_spmop)
+                  && (SPMOP_OPS (mop) == NULL) && (SPMOP_EXPRS (mop) != NULL)
+                  && (EXPRS_NEXT (SPMOP_EXPRS (mop)) == NULL)),
                  "illegal result of Mop2Ap() found!");
-    res = EXPRS_EXPR (MOP_EXPRS (mop));
-    EXPRS_EXPR (MOP_EXPRS (mop)) = NULL;
+    res = EXPRS_EXPR (SPMOP_EXPRS (mop));
+    EXPRS_EXPR (SPMOP_EXPRS (mop)) = NULL;
     mop = FREEdoFreeTree (mop);
 
     res = TRAVdo (res, arg_info);
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *    bool Name2Prf( char *name, prf *primfun)
- *
- * description:
- *   this function is only needed for converting the "new prf notation",
- *   which is needed for the new type checker, into the one that is
- *   required by the old type checker.....8-((
- *   Once the new TC is as powerful as the old one is, this function
- *   (and its call in flatten) becomes obsolete 8-)).
- *
- ******************************************************************************/
-
-bool
-Name2Prf (char *name, prf *primfun)
-{
-    bool res = TRUE;
-
-    DBUG_ENTER ("Name2Prf");
-
-    if (strcmp (name, "dim") == 0) {
-        *primfun = F_dim;
-    } else if (strcmp (name, "shape") == 0) {
-        *primfun = F_shape;
-    } else if (strcmp (name, "reshape") == 0) {
-        *primfun = F_reshape;
-    } else if (strcmp (name, "take") == 0) {
-        *primfun = F_take;
-    } else if (strcmp (name, "drop") == 0) {
-        *primfun = F_drop;
-    } else if (strcmp (name, "rotate") == 0) {
-        *primfun = F_rotate;
-    } else if (strcmp (name, "cat") == 0) {
-        *primfun = F_cat;
-    } else if (strcmp (name, "sel") == 0) {
-        *primfun = F_sel;
-    } else if (strcmp (name, "genarray") == 0) {
-        *primfun = F_genarray;
-    } else if (strcmp (name, "modarray") == 0) {
-        *primfun = F_modarray;
-    } else if (strcmp (name, "toi") == 0) {
-        *primfun = F_toi_A;
-    } else if (strcmp (name, "tof") == 0) {
-        *primfun = F_tof_A;
-    } else if (strcmp (name, "tod") == 0) {
-        *primfun = F_tod_A;
-    } else if (strcmp (name, "min") == 0) {
-        *primfun = F_min;
-    } else if (strcmp (name, "max") == 0) {
-        *primfun = F_max;
-    } else if (strcmp (name, "abs") == 0) {
-        *primfun = F_abs;
-    } else if (strcmp (name, "+") == 0) {
-        *primfun = F_add_AxA;
-    } else if (strcmp (name, "-") == 0) {
-        *primfun = F_sub_AxA;
-    } else if (strcmp (name, "*") == 0) {
-        *primfun = F_mul_AxA;
-    } else if (strcmp (name, "/") == 0) {
-        *primfun = F_div_AxA;
-    } else if (strcmp (name, "%") == 0) {
-        *primfun = F_mod;
-    } else if (strcmp (name, "==") == 0) {
-        *primfun = F_eq;
-    } else if (strcmp (name, "!=") == 0) {
-        *primfun = F_neq;
-    } else if (strcmp (name, ">") == 0) {
-        *primfun = F_gt;
-    } else if (strcmp (name, ">=") == 0) {
-        *primfun = F_ge;
-    } else if (strcmp (name, "<") == 0) {
-        *primfun = F_lt;
-    } else if (strcmp (name, "<=") == 0) {
-        *primfun = F_le;
-    } else if (strcmp (name, "!") == 0) {
-        *primfun = F_not;
-    } else if (strcmp (name, "&&") == 0) {
-        *primfun = F_and;
-    } else if (strcmp (name, "||") == 0) {
-        *primfun = F_or;
-    } else {
-        res = FALSE;
-    }
 
     DBUG_RETURN (res);
 }

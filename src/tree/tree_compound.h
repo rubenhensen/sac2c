@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.181  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 3.180  2004/12/01 16:31:18  ktr
  * Some cleanup
  *
@@ -1439,6 +1442,7 @@ extern node *TCmakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
 
 /***
  ***  N_ap :
+ ***  N_spap :
  ***
  ***  watch combined macros for N_ap and N_prf
  ***  (search for "N_ap :" or "N_prf :").
@@ -1451,13 +1455,24 @@ extern node *TCmakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
 #define AP_NAME(n) FUNDEF_NAME (AP_FUNDEF (n))
 #define AP_MOD(n) FUNDEF_MOD (AP_FUNDEF (n))
 
+#define SPAP_NAME(n) SPID_NAME (SPAP_ID (n))
+#define SPAP_MOD(n) SPID_MOD (SPAP_ID (n))
+
 #define AP_EXPRS1(n) AP_ARGS (n)
 #define AP_EXPRS2(n) EXPRS_EXPRS2 (AP_ARGS (n))
 #define AP_EXPRS3(n) EXPRS_EXPRS3 (AP_ARGS (n))
 
+#define SPAP_EXPRS1(n) SPAP_ARGS (n)
+#define SPAP_EXPRS2(n) EXPRS_EXPRS2 (SPAP_ARGS (n))
+#define SPAP_EXPRS3(n) EXPRS_EXPRS3 (SPAP_ARGS (n))
+
 #define AP_ARG1(n) EXPRS_EXPR (AP_EXPRS1 (n))
 #define AP_ARG2(n) EXPRS_EXPR (AP_EXPRS2 (n))
 #define AP_ARG3(n) EXPRS_EXPR (AP_EXPRS3 (n))
+
+#define SPAP_ARG1(n) EXPRS_EXPR (SPAP_EXPRS1 (n))
+#define SPAP_ARG2(n) EXPRS_EXPR (SPAP_EXPRS2 (n))
+#define SPAP_ARG3(n) EXPRS_EXPR (SPAP_EXPRS3 (n))
 
 /*
  *  function declarations
@@ -1468,6 +1483,12 @@ extern node *TCmakeAp1 (node *fundef, node *arg1);
 extern node *TCmakeAp2 (node *fundef, node *arg1, node *arg2);
 
 extern node *TCmakeAp3 (node *fundef, node *arg1, node *arg2, node *arg3);
+
+extern node *TCmakeSpap1 (char *mod, char *name, node *arg1);
+
+extern node *TCmakeSpap2 (char *mod, char *name, node *arg1, node *arg2);
+
+extern node *TCmakeSpap3 (char *mod, char *name, node *arg1, node *arg2, node *arg3);
 
 /*--------------------------------------------------------------------------*/
 

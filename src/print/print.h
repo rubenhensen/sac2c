@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 3.39  2004/12/02 15:12:29  sah
  * added support for ops node
  *
@@ -88,13 +91,15 @@ extern node *PRTcast (node *arg_node, info *arg_info);
 extern node *PRTlet (node *arg_node, info *arg_info);
 extern node *PRTprf (node *arg_node, info *arg_info);
 extern node *PRTap (node *arg_node, info *arg_info);
-extern node *PRTmop (node *arg_node, info *arg_info);
-extern node *PRTops (node *arg_node, info *arg_info);
+extern node *PRTspap (node *arg_node, info *arg_info);
+extern node *PRTspmop (node *arg_node, info *arg_info);
 extern node *PRTempty (node *arg_node, info *arg_info);
 extern node *PRTarray (node *arg_node, info *arg_info);
 extern node *PRTexprs (node *arg_node, info *arg_info);
 extern node *PRTid (node *arg_node, info *arg_info);
 extern node *PRTids (node *arg_node, info *arg_info);
+extern node *PRTspid (node *arg_node, info *arg_info);
+extern node *PRTspids (node *arg_node, info *arg_info);
 extern node *PRTnum (node *arg_node, info *arg_info);
 extern node *PRTfloat (node *arg_node, info *arg_info);
 extern node *PRTdouble (node *arg_node, info *arg_info);

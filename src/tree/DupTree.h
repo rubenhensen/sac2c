@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 3.40  2004/12/02 15:12:29  sah
  * added support for ops node
  *
@@ -197,6 +200,7 @@ extern node *DUPstr (node *arg_node, info *arg_info);
 extern node *DUPdot (node *arg_node, info *arg_info);
 extern node *DUPsetwl (node *arg_node, info *arg_info);
 extern node *DUPid (node *arg_node, info *arg_info);
+extern node *DUPspid (node *arg_node, info *arg_info);
 extern node *DUPcast (node *arg_node, info *arg_info);
 extern node *DUPreturn (node *arg_node, info *arg_info);
 extern node *DUPblock (node *arg_node, info *arg_info);
@@ -207,6 +211,7 @@ extern node *DUParg (node *arg_node, info *arg_info);
 extern node *DUPret (node *arg_node, info *arg_info);
 extern node *DUPlet (node *arg_node, info *arg_info);
 extern node *DUPids (node *arg_node, info *arg_info);
+extern node *DUPspids (node *arg_node, info *arg_info);
 extern node *DUParray (node *arg_node, info *arg_info);
 extern node *DUPcond (node *arg_node, info *arg_info);
 extern node *DUPdo (node *arg_node, info *arg_info);
@@ -216,7 +221,8 @@ extern node *DUPassign (node *arg_node, info *arg_info);
 extern node *DUPempty (node *arg_node, info *arg_info);
 extern node *DUPprf (node *arg_node, info *arg_info);
 extern node *DUPap (node *arg_node, info *arg_info);
-extern node *DUPmop (node *arg_node, info *arg_info);
+extern node *DUPspap (node *arg_node, info *arg_info);
+extern node *DUPspmop (node *arg_node, info *arg_info);
 extern node *DUPempty (node *arg_node, info *arg_info);
 extern node *DUPmodule (node *arg_node, info *arg_info);
 extern node *DUPfundef (node *arg_node, info *arg_info);
@@ -244,7 +250,6 @@ extern node *DUPlinklist (node *arg_node, info *arg_info);
 extern node *DUPnums (node *arg_node, info *arg_info);
 extern node *DUPsymbol (node *arg_node, info *arg_info);
 extern node *DUPglobobj (node *arg_node, info *arg_info);
-extern node *DUPops (node *arg_node, info *arg_info);
 
 /* frontend with-loop */
 extern node *DUPwith (node *arg_node, info *arg_info);

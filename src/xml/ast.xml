@@ -258,12 +258,12 @@
     <phase id="scanparse" name="Parsing input file">
      <traversal id="HM" name="Handle Mops" default="sons" include="handle_mops.h" >
 	<travuser>
-	  <node name="Mop" />
+	  <node name="SPMop" />
 	</travuser>
       </traversal>
       <traversal id="HD" name="Handle Dots" default="sons" include="handle_dots.h">
         <travuser>
-	  <node name="Id" />
+	  <node name="SPId" />
 	  <node name="With" />
 	  <node name="Genarray" />
 	  <node name="Modarray" />
@@ -271,11 +271,11 @@
 	  <node name="Part" />
 	  <node name="Generator" />
 	  <node name="Dot" />
-	  <node name="Ap" />
+	  <node name="SPAp" />
 	  <node name="Prf" />
 	  <node name="Assign" />
 	  <node name="SetWL" />
-	  <node name="Id" />
+	  <node name="SPId" />
 	</travuser>
       </traversal>
       <traversal id="RSP" name="Resolve pragmas" default="sons" include="resolvepragma.h">
@@ -295,14 +295,14 @@
           <node name="Fundef" />
           <node name="Let" />
           <node name="Exprs" />
-          <node name="Ap" />
+          <node name="SPAp" />
           <node name="Block" />
           <node name="Cond" />
           <node name="While" />
           <node name="Do" />
           <node name="Array" />
           <node name="Return" />
-          <node name="Id" />
+          <node name="SPId" />
           <node name="Arg" />
           <node name="Prf" />
           <node name="With" />
@@ -336,7 +336,7 @@
 	  <node name="Fundef" />
 	  <node name="Typedef" />
 	  <node name="Objdef" />
-	  <node name="Ap" />
+	  <node name="SPAp" />
 	  <node name="Arg" />
 	  <node name="Vardec" />
 	  <node name="Module" />
@@ -348,7 +348,7 @@
 	  <node name="Fold" />
 	  <node name="Arg" />
 	  <node name="Vardec" />
-	  <node name="Ap" />
+	  <node name="SPAp" />
 	  <node name="Module" />
 	</travuser>
       </traversal>
@@ -357,8 +357,9 @@
       <traversal id="INSVD" name="Insert Vardecs" default="sons" include="insert_vardec.h" >
 	<travuser>
           <node name="Fundef" />
-          <node name="Id" />
-          <node name="Ids" />
+          <node name="SPAp" />
+          <node name="SPId" />
+          <node name="SPIds" />
           <node name="With" />
           <node name="Let" />
           <node name="Part" />
@@ -370,7 +371,7 @@
           <node name="Module" />
           <node name="Fundef" />
           <node name="Let" />
-          <node name="Ap" />
+          <node name="SPAp" />
           <node name="Genarray" />
           <node name="Fold" />
         </travuser>  
@@ -1574,13 +1575,15 @@
         <node name="Char" />
         <node name="Bool" />
         <node name="Id" />
+        <node name="Spid" />
         <node name="With" />
         <node name="Array" />
         <node name="Ap" />
+        <node name="Spap" />
         <node name="Prf" />
         <node name="Funcond" />
 	<node name="Cast" />
-	<node name="Mop" />
+	<node name="SPMop" />
 	<node name="SetWL" />
       </target>
     </nodeset>
@@ -2756,18 +2759,6 @@
         </son>
       </sons>
       <attributes>
-        <attribute name="SPName" mandatory="yes">
-          <type name="String" />
-          <phases>
-            <range from="scanparse" to="cwr" />
-          </phases>
-        </attribute>
-        <attribute name="SPMod" mandatory="no">
-          <type name="String" />
-          <phases>
-            <range from="scanparse" to="cwr" />
-          </phases>
-        </attribute>
         <attribute name="Fundef" mandatory="yes">
           <type name="ExtLink">
             <target>
@@ -2792,11 +2783,11 @@
   N_mop :
 
 -->
-    <node name="Mop">
+    <node name="SPMop">
       <sons>
         <son name="Ops" mandatory="yes" >
 	  <target>
-	    <node name="Ids" />
+	    <node name="Exprs"/>
 	  </target>
 	</son>
         <son name="Exprs" mandatory="no">
@@ -2978,18 +2969,6 @@
     <node name="Id">
       <sons></sons>
       <attributes>
-        <attribute name="SPName" default="NULL" mandatory="no">
-	  <type name="String" />
-	  <phases>
-	    <range from="scanparse" to="typecheck" />
-	  </phases>
-	</attribute>
-        <attribute name="SPMod" default="NULL" mandatory="no">
-	  <type name="String" />
-	  <phases>
-	    <range from="scanparse" to="typecheck" />
-	  </phases>
-	</attribute>
 	<attribute name="Avis" mandatory="yes" >
 	  <type name="Link" >
 	    <target>
@@ -2998,6 +2977,12 @@
 	  </type>
 	  <phases>
 	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="SPName" default="NULL" mandatory="no">
+	  <type name="String" />
+	  <phases>
+	    <range from="compile" to="final" />
 	  </phases>
 	</attribute>
         <attribute name="WL" mandatory="yes">
@@ -3188,10 +3173,10 @@
 -->
     <node name="SetWL">
       <sons>
-        <son name="Ids" mandatory="yes">
+        <son name="Vec" mandatory="yes">
           <target>
             <node name="Exprs" />
-            <node name="Id" />
+	    <node name="Spid" />
           </target>
         </son>
         <son name="Expr" mandatory="yes">
@@ -3284,17 +3269,17 @@
 	</son>
 	<son name="Effect" default="NULL" mandatory="no">
 	  <target>
-	    <node name="Ids" />
+	    <node name="Exprs" />
 	  </target>
 	</son>
 	<son name="Touch" default="NULL" mandatory="no">
 	  <target>
-	    <node name="Ids" />
+	    <node name="Exprs" />
 	  </target>
 	</son>
 	<son name="LinkSign" default="NULL" mandatory="no">
 	  <target>
-	    <node name="Ids" />
+	    <node name="Nums" />
 	  </target>
 	</son>
       </sons>
@@ -5315,18 +5300,6 @@
 	</son>
       </sons>
       <attributes>
-        <attribute name="SPName" default="NULL" mandatory="no" >
-	  <type name="String" />
-	  <phases>
-	    <all />
-	  </phases>
-	</attribute>
-	<attribute name="SPMod" default="NULL" mandatory="no" >
-	  <type name="String" />
-	  <phases>
-	    <all />
-	  </phases>
-	</attribute>
 	<attribute name="Avis" mandatory="yes" >
 	  <type name="Link">
 	    <target>
@@ -5335,6 +5308,12 @@
 	  </type>
 	  <phases>
 	    <all />
+	  </phases>
+	</attribute>
+	<attribute name="SPName" default="NULL" mandatory="no">
+	  <type name="String" />
+	  <phases>
+	    <range from="compile" to="final" />
 	  </phases>
 	</attribute>
         <attribute name="Use" mandatory="yes" >
@@ -5397,14 +5376,13 @@
       <flags>
       </flags>
     </node>
-    <node name="Ops">
-      <sons>
-        <son name="Next" mandatory="no">
-	  <target>
-	    <node name="Ops" />
-	  </target>
-	</son>
-      </sons>
+<!--
+
+  N_spid :
+
+-->
+    <node name="SPId">
+      <sons></sons>
       <attributes>
         <attribute name="Mod" mandatory="no">
 	  <type name="String" />
@@ -5419,6 +5397,50 @@
 	  </phases>
 	</attribute>
       </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_spids :
+
+-->
+    <node name="SPIds">
+      <sons>
+        <son name="Next" mandatory="no">
+	  <target>
+	    <node name="SPIds" />
+	  </target>
+	</son>
+      </sons>
+      <attributes>
+        <attribute name="Name" mandatory="yes">
+	  <type name="String" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_spap :
+
+-->
+    <node name="SPAp">
+      <sons>
+        <son name="Id" mandatory="yes" >
+	  <target>
+	    <node name="SPId" />
+	  </target>
+	</son>
+        <son name="Args" mandatory="no">
+          <target>
+            <node name="Exprs" />
+          </target>
+        </son>
+      </sons>
+      <attributes></attributes>
       <flags></flags>
     </node>
   </syntaxtree>

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 1.13  2004/12/01 18:43:28  sah
  * renamed a function
  *
@@ -55,7 +58,7 @@ extern ntype *CRTWRPcreateFuntype (node *fundef);
 extern node *CRTWRPmodule (node *arg_node, info *arg_info);
 extern node *CRTWRPfundef (node *arg_node, info *arg_info);
 extern node *CRTWRPlet (node *arg_node, info *arg_info);
-extern node *CRTWRPap (node *arg_node, info *arg_info);
+extern node *CRTWRPspap (node *arg_node, info *arg_info);
 extern node *CRTWRPgenarray (node *arg_node, info *arg_info);
 extern node *CRTWRPfold (node *arg_node, info *arg_info);
 

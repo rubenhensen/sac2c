@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 1.13  2004/12/01 15:01:03  sah
  * modified handling of SPxxx attributes
  *
@@ -209,6 +212,32 @@ INSVDfundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *INSVDspap( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+node *
+INSVDspap (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("INSVDspap");
+
+    /*
+     * we have to make sure here, that the ID of an SPAP is not traversed
+     * as it does not reference a variable and thus has not to be processed
+     */
+
+    if (SPAP_ARGS (arg_node) != NULL) {
+        SPAP_ARGS (arg_node) = TRAVdo (SPAP_ARGS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *INSVDlet( node *arg_node, info *arg_info)
  *
  * description:
@@ -230,31 +259,34 @@ INSVDlet (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INSVDid( node *arg_node, info *arg_info)
+ *   node *INSVDspid( node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-INSVDid (node *arg_node, info *arg_info)
+INSVDspid (node *arg_node, info *arg_info)
 {
     node *vardec;
 
-    DBUG_ENTER ("INSVDid");
+    DBUG_ENTER ("INSVDspid");
 
-    vardec = SearchForNameInVardecs (ID_SPNAME (arg_node), INFO_INSVD_VARDECS (arg_info));
+    vardec = SearchForNameInVardecs (SPID_NAME (arg_node), INFO_INSVD_VARDECS (arg_info));
     if (vardec == NULL) {
-        vardec = SearchForNameInArgs (ID_SPNAME (arg_node), INFO_INSVD_ARGS (arg_info));
+        vardec = SearchForNameInArgs (SPID_NAME (arg_node), INFO_INSVD_ARGS (arg_info));
     }
 
     if (vardec == NULL) {
         ERROR (global.linenum, ("Vardec for Identifier with name:%s is not available",
-                                ID_SPNAME (arg_node)));
+                                SPID_NAME (arg_node)));
     }
 
-    ID_AVIS (arg_node) = VARDEC_AVIS (vardec);
-    ID_SPNAME (arg_node) = ILIBfree (ID_SPNAME (arg_node));
+    /*
+     * now we can build a real id and remove the spid node
+     */
+    arg_node = FREEdoFreeNode (arg_node);
+    arg_node = TBmakeId (VARDEC_AVIS (vardec));
 
     DBUG_RETURN (arg_node);
 }
@@ -262,21 +294,22 @@ INSVDid (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *INSVDid( node *arg_node, info *arg_info)
+ *   node *INSVDspids( node *arg_node, info *arg_info)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-INSVDids (node *arg_node, info *arg_info)
+INSVDspids (node *arg_node, info *arg_info)
 {
     node *vardec, *avis;
-    DBUG_ENTER ("INSVDids");
+    DBUG_ENTER ("INSVDspids");
 
-    vardec = SearchForNameInVardecs (ID_SPNAME (arg_node), INFO_INSVD_VARDECS (arg_info));
+    vardec
+      = SearchForNameInVardecs (SPIDS_NAME (arg_node), INFO_INSVD_VARDECS (arg_info));
     if (vardec == NULL) {
-        vardec = SearchForNameInArgs (ID_SPNAME (arg_node), INFO_INSVD_ARGS (arg_info));
+        vardec = SearchForNameInArgs (SPIDS_NAME (arg_node), INFO_INSVD_ARGS (arg_info));
     }
 
     if (vardec == NULL) {
@@ -285,7 +318,7 @@ INSVDids (node *arg_node, info *arg_info)
          * vardec yet! So we allocate one and prepand it to vardecs.
          */
 
-        avis = TBmakeAvis (ILIBstringCopy (IDS_SPNAME (arg_node)),
+        avis = TBmakeAvis (ILIBstringCopy (SPIDS_NAME (arg_node)),
                            TYmakeAUD (TYmakeSimpleType (T_unknown)));
 
         vardec = TBmakeVardec (avis, INFO_INSVD_VARDECS (arg_info));
@@ -293,12 +326,14 @@ INSVDids (node *arg_node, info *arg_info)
         INFO_INSVD_VARDECS (arg_info) = vardec;
 
         DBUG_PRINT ("IVD", ("inserting new vardec (" F_PTR ") for id %s.", vardec,
-                            IDS_SPNAME (arg_node)));
+                            SPIDS_NAME (arg_node)));
     }
 
-    IDS_AVIS (arg_node) = VARDEC_AVIS (vardec);
-
-    IDS_SPNAME (arg_node) = ILIBfree (IDS_SPNAME (arg_node));
+    /*
+     * now we can build a real ids node and remove the spids node
+     */
+    arg_node = FREEdoFreeNode (arg_node);
+    arg_node = TBmakeIds (VARDEC_AVIS (vardec), arg_node);
 
     DBUG_RETURN (arg_node);
 }

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 1.4  2004/11/22 16:57:41  ktr
  * SACDevCamp 04 Ismop
  *
@@ -39,7 +42,7 @@ extern node *ANSprovide (node *arg_node, info *arg_info);
 extern node *ANSfundef (node *arg_node, info *arg_info);
 extern node *ANStypedef (node *arg_node, info *arg_info);
 extern node *ANSobjdef (node *arg_node, info *arg_info);
-extern node *ANSap (node *arg_node, info *arg_info);
+extern node *ANSspap (node *arg_node, info *arg_info);
 extern node *ANSarg (node *arg_node, info *arg_info);
 extern node *ANSvardec (node *arg_node, info *arg_info);
 extern node *ANSmodule (node *arg_node, info *arg_info);

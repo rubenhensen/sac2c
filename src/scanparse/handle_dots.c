@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.42  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 1.41  2004/12/02 15:14:49  sah
  * intermediate fix
  *
@@ -216,10 +219,7 @@ MakeAssignLetNV (char *var_name, node *let_expr)
 
     DBUG_ENTER ("MakeAssignLet");
 
-    tmp_ids = TBmakeIds (NULL, NULL);
-
-    /* we are prior to IVD, so we have to the the name! */
-    IDS_SPNAME (tmp_ids) = var_name;
+    tmp_ids = TBmakeSpids (var_name, NULL);
 
     tmp_node = TBmakeLet (tmp_ids, let_expr);
     tmp_node = TBmakeAssign (tmp_node, NULL);
@@ -445,12 +445,10 @@ MakeTmpId (char *name)
 
     DBUG_ENTER ("MakeTmpId");
 
-    result = TBmakeId (NULL);
-
 #ifdef HD_USE_EXPLANATORY_NAMES
-    ID_SPNAME (result) = ILIBtmpVarName (name);
+    result = TBmakeSpid (NULL, ILIBtmpVarName (name));
 #else
-    ID_SPNAME (result) = ILIBtmpVar ();
+    result = TBmakeSpid (NULL, ILIBtmpVar ());
 #endif
 
     DBUG_RETURN (result);
@@ -482,7 +480,13 @@ BuildDrop (node *left, node *right, node *vector)
 
     DBUG_RETURN (result);
 #else
-    /* TODO: build a FunAp here */
+    /*
+     * use function Stdlib:drop instead
+     */
+    result = TCmakeSpap2 (ILIBstringCopy ("Stdlib"), ILIBstringCopy ("drop"), left,
+                          TCmakeSpap2 (ILIBstringCopy ("Stdlib"), ILIBstringCopy ("drop"),
+                                       MAKE_BIN_PRF (F_mul_SxS, TBmakeNum (-1), right),
+                                       vector));
 #endif
 }
 
@@ -506,7 +510,7 @@ BuildConcat (node *a, node *b)
 
     DBUG_RETURN (result);
 #else
-    /* TODO: add a function applications */
+    result = TCmakeSpap2 (ILIBstringCopy ("Stdlib"), ILIBstringCopy ("concat"), a, b);
 #endif
 }
 
@@ -845,7 +849,7 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
         leftid = MakeTmpId ("left_index");
         BLOCK_INSTR (block)
           = TCappendAssign (BLOCK_INSTR (block),
-                            MakeAssignLetNV (ILIBstringCopy (ID_SPNAME (leftid)),
+                            MakeAssignLetNV (ILIBstringCopy (SPID_NAME (leftid)),
                                              leftindex));
     }
 
@@ -854,7 +858,7 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
         middleid = MakeTmpId ("middle_index");
         BLOCK_INSTR (block)
           = TCappendAssign (BLOCK_INSTR (block),
-                            MakeAssignLetNV (ILIBstringCopy (ID_SPNAME (middleid)),
+                            MakeAssignLetNV (ILIBstringCopy (SPID_NAME (middleid)),
                                              middleindex));
     }
 
@@ -863,7 +867,7 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
         rightid = MakeTmpId ("right_index");
         BLOCK_INSTR (block)
           = TCappendAssign (BLOCK_INSTR (block),
-                            MakeAssignLetNV (ILIBstringCopy (ID_SPNAME (rightid)),
+                            MakeAssignLetNV (ILIBstringCopy (SPID_NAME (rightid)),
                                              rightindex));
     }
 
@@ -874,7 +878,7 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
 
         BLOCK_INSTR (block)
           = TCappendAssign (BLOCK_INSTR (block),
-                            MakeAssignLetNV (ILIBstringCopy (ID_SPNAME (tmpid)),
+                            MakeAssignLetNV (ILIBstringCopy (SPID_NAME (tmpid)),
                                              BuildConcat (middleid, rightid)));
 
         middleid = tmpid;
@@ -892,7 +896,7 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
 
             BLOCK_INSTR (block)
               = TCappendAssign (BLOCK_INSTR (block),
-                                MakeAssignLetNV (ILIBstringCopy (ID_SPNAME (tmpid)),
+                                MakeAssignLetNV (ILIBstringCopy (SPID_NAME (tmpid)),
                                                  BuildConcat (leftid, middleid)));
 
             leftid = tmpid;
@@ -920,9 +924,20 @@ BuildDefaultWithloop (node *array, node *shape)
 
     DBUG_ENTER ("BuildDefaultWithloop");
 
-    result = NULL;
+    result
+      = TBmakeWith (TBmakePart (NULL,
+                                TBmakeWithid (TBmakeSpids (ILIBtmpVar (), NULL), NULL),
+                                TBmakeGenerator (F_le, F_le, TBmakeDot (1), TBmakeDot (1),
+                                                 NULL, NULL)),
+                    TBmakeCode (MAKE_EMPTY_BLOCK (),
+                                TBmakeExprs (TCmakeSpap1 (NULL, ILIBstringCopy ("zero"),
+                                                          DUPdoDupTree (array)),
+                                             NULL)),
+                    TBmakeGenarray (shape, TCmakeSpap1 (NULL, ILIBstringCopy ("zero"),
+                                                        DUPdoDupTree (array))));
 
-    /* TODO: insert function application */
+    CODE_USED (WITH_CODE (result))++;
+    PART_CODE (WITH_PART (result)) = WITH_CODE (result);
 
     DBUG_RETURN (result);
 }
@@ -972,9 +987,7 @@ BuildSelectionDefault (node *array, dotinfo *info)
         /* default is just a scalar */
 
         result = TBmakeExprs (DUPdoDupTree (array), NULL);
-        result = TBmakeAp (NULL, result);
-        AP_SPNAME (result) = ILIBstringCopy ("zero");
-        /* TODO: maybe we need a module here as well ?!? */
+        result = TBmakeSpap (TBmakeSpid (NULL, ILIBstringCopy ("zero")), result);
     }
 
     DBUG_RETURN (result);
@@ -1000,12 +1013,10 @@ BuildWithLoop (node *shape, node *iv, node *array, node *index, node *block,
 
     DBUG_ENTER ("BuildWithLoop");
 
-    ap = TBmakeAp (NULL, TBmakeExprs (index, TBmakeExprs (DUPdoDupTree (array), NULL)));
+    ap = TBmakeSpap (TBmakeSpid (NULL, ILIBstringCopy ("sel")),
+                     TBmakeExprs (index, TBmakeExprs (DUPdoDupTree (array), NULL)));
 
-    AP_SPNAME (ap) = ILIBstringCopy ("sel");
-
-    ids = TBmakeIds (NULL, NULL);
-    IDS_SPNAME (ids) = ILIBstringCopy (ID_SPNAME (iv));
+    ids = TBmakeSpids (ILIBstringCopy (SPID_NAME (iv)), NULL);
 
     result = TBmakeWith (TBmakePart (NULL, TBmakeWithid (ids, NULL),
                                      TBmakeGenerator (F_le, F_le, TBmakeDot (1),
@@ -1041,14 +1052,14 @@ BuildIdTable (node *ids, idtable *appendto)
             node *id = EXPRS_EXPR (ids);
             idtable *newtab = ILIBmalloc (sizeof (idtable));
 
-            if (NODE_TYPE (id) != N_id) {
+            if (NODE_TYPE (id) != N_spid) {
                 ERROR (global.linenum, ("found non-id as index in WL set notation"));
 
                 /* we create a dummy entry within the idtable in order */
                 /* to go on and search for further errors.             */
                 newtab->id = ILIBstringCopy ("_non_id_expr");
             } else {
-                newtab->id = ILIBstringCopy (ID_SPNAME (id));
+                newtab->id = ILIBstringCopy (SPID_NAME (id));
             }
 
             newtab->type = ID_scalar;
@@ -1061,7 +1072,7 @@ BuildIdTable (node *ids, idtable *appendto)
 #ifdef HD_SETWL_VECTOR
     {
         idtable *newtab = ILIBmalloc (sizeof (idtable));
-        newtab->id = ILIBstringCopy (ID_SPNAME (ids));
+        newtab->id = ILIBstringCopy (SPID_NAME (ids));
         newtab->type = ID_vector;
         newtab->shapes = NULL;
         newtab->next = result;
@@ -1164,13 +1175,13 @@ ScanVector (node *vector, node **array, info *arg_info)
     DBUG_ENTER ("ScanVector");
 
     while (vector != NULL) {
-        if (NODE_TYPE (EXPRS_EXPR (vector)) == N_id) {
+        if (NODE_TYPE (EXPRS_EXPR (vector)) == N_spid) {
             idtable *handle = ids;
 
             while (handle != NULL) {
                 if ((handle->type == ID_scalar)
                     && (ILIBstringCompare (handle->id,
-                                           ID_SPNAME (EXPRS_EXPR (vector))))) {
+                                           SPID_NAME (EXPRS_EXPR (vector))))) {
                     node *position = NULL;
                     node *shape = NULL;
                     shpchain *chain = NULL;
@@ -1205,7 +1216,7 @@ ScanVector (node *vector, node **array, info *arg_info)
                     /* insert assign into chain */
                     /* if not already done */
                     if (code == NULL) {
-                        code = MakeAssignLetNV (ILIBstringCopy (ID_SPNAME (id)), *array);
+                        code = MakeAssignLetNV (ILIBstringCopy (SPID_NAME (id)), *array);
                         INFO_HD_SETASSIGNS (arg_info)
                           = TCappendAssign (INFO_HD_SETASSIGNS (arg_info), code);
                         *array = id;
@@ -1247,9 +1258,9 @@ ScanId (node *id, node **array, info *arg_info)
     DBUG_ENTER ("ScanId");
 
     while (ids != NULL) {
-        if ((ids->type == ID_vector) && (ILIBstringCompare (ids->id, ID_SPNAME (id)))) {
+        if ((ids->type == ID_vector) && (ILIBstringCompare (ids->id, SPID_NAME (id)))) {
             node *id = MakeTmpId ("setassign");
-            node *code = MakeAssignLetNV (ILIBstringCopy (ID_SPNAME (id)), *array);
+            node *code = MakeAssignLetNV (ILIBstringCopy (SPID_NAME (id)), *array);
             node *shape = TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (id), NULL));
             shpchain *chain = ILIBmalloc (sizeof (shpchain));
 
@@ -1285,11 +1296,11 @@ BuildShapeVectorMin (shpchain *vectors)
     node *index = MakeTmpId ("index_min");
     node *shape = NULL;
     node *expr = NULL;
-    node *indexids = TBmakeIds (NULL, NULL);
+    node *indexids = NULL;
 
     DBUG_ENTER ("BuildVectorMin");
 
-    IDS_SPNAME (indexids) = ILIBstringCopy (ID_SPNAME (index));
+    indexids = TBmakeSpids (ILIBstringCopy (SPID_NAME (index)), NULL);
 
     shape = TBmakePrf (F_shape, TBmakeExprs (vectors->shape, NULL));
 
@@ -1399,21 +1410,19 @@ Exprs2Ids (node *exprs)
     while (exprs != NULL) {
         node *newid = NULL;
 
-        if (NODE_TYPE (EXPRS_EXPR (exprs)) == N_id) {
-            newid = TBmakeIds (NULL, NULL);
-            IDS_SPNAME (newid) = ILIBstringCopy (ID_SPNAME (EXPRS_EXPR (exprs)));
+        if (NODE_TYPE (EXPRS_EXPR (exprs)) == N_spid) {
+            newid = TBmakeSpids (ILIBstringCopy (SPID_NAME (EXPRS_EXPR (exprs))), NULL);
         } else {
             /* create dummy id in order to go on until end of phase */
             ERROR (global.linenum, ("found non-id expression in index vector"));
-            newid = TBmakeIds (NULL, NULL);
-            IDS_SPNAME (newid) = ILIBstringCopy ("unknown_id");
+            newid = TBmakeSpids (ILIBstringCopy ("unknown_id"), NULL);
         }
 
         if (handle == NULL) {
             result = newid;
             handle = newid;
         } else {
-            IDS_NEXT (handle) = newid;
+            SPIDS_NEXT (handle) = newid;
             handle = newid;
         }
 
@@ -1742,7 +1751,12 @@ HDfold (node *arg_node, info *arg_info)
 }
 
 /**
- * someone (sbs?) wrote this code but left no comment...
+ * removes the DOTINFO within the info structure, as it is no more needed
+ * now.
+ *
+ * @param arg_node current node of the AST
+ * @param arg_info info node
+ * @return current node of the AST
  */
 node *
 HDpart (node *arg_node, info *arg_info)
@@ -1853,7 +1867,11 @@ HDdot (node *arg_node, info *arg_info)
     DBUG_ENTER ("HDdot");
 
     if (INFO_HD_TRAVSTATE (arg_info) == HD_sel) {
-        ERROR (global.linenum, ("'.' or '...' not allowed here."));
+        if (DOT_NUM (arg_node) == 1) {
+            ERROR (global.linenum, ("'.' not allowed here."));
+        } else {
+            ERROR (global.linenum, ("'...' not allowed here."));
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1871,11 +1889,11 @@ HDdot (node *arg_node, info *arg_info)
  * @return transformed AST
  */
 node *
-HDap (node *arg_node, info *arg_info)
+HDspap (node *arg_node, info *arg_info)
 {
     node *result = arg_node;
 
-    DBUG_ENTER ("HDap");
+    DBUG_ENTER ("HDspap");
 
     /* only sel statements are of interest here, so just return */
     /* on anything else                                         */
@@ -1883,9 +1901,9 @@ HDap (node *arg_node, info *arg_info)
     /* is no possibility to find any dot...                     */
 
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_sel)
-        && (ILIBstringCompare (AP_SPNAME (arg_node), "sel"))
-        && (NODE_TYPE (AP_ARG1 (arg_node)) == N_array)) {
-        dotinfo *info = MakeDotInfo (ARRAY_AELEMS (AP_ARG1 (arg_node)));
+        && (ILIBstringCompare (SPAP_NAME (arg_node), "sel"))
+        && (SPAP_MOD (arg_node) == NULL) && (NODE_TYPE (AP_ARG1 (arg_node)) == N_array)) {
+        dotinfo *info = MakeDotInfo (ARRAY_AELEMS (SPAP_ARG1 (arg_node)));
 
         if (info->dotcnt != 0) {
             node *shape;
@@ -1895,11 +1913,11 @@ HDap (node *arg_node, info *arg_info)
 
             iv = MakeTmpId ("index");
             block = MAKE_EMPTY_BLOCK ();
-            shape = BuildShape (AP_ARG2 (arg_node), info);
+            shape = BuildShape (SPAP_ARG2 (arg_node), info);
 
-            index = BuildIndex (ARRAY_AELEMS (AP_ARG1 (arg_node)), iv, block, info);
+            index = BuildIndex (ARRAY_AELEMS (SPAP_ARG1 (arg_node)), iv, block, info);
 
-            result = BuildWithLoop (shape, iv, AP_ARG2 (arg_node), index, block, info);
+            result = BuildWithLoop (shape, iv, SPAP_ARG2 (arg_node), index, block, info);
 
             FREEdoFreeTree (arg_node);
             FREEdoFreeNode (iv);
@@ -1911,13 +1929,15 @@ HDap (node *arg_node, info *arg_info)
     /* if in HD_scan mode, scan for shapes */
 
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_scan)
-        && (ILIBstringCompare (AP_SPNAME (arg_node), "sel"))) {
-        if (NODE_TYPE (AP_ARG1 (arg_node)) == N_array) {
-            ScanVector (ARRAY_AELEMS (AP_ARG1 (arg_node)), &AP_ARG2 (arg_node), arg_info);
+        && (ILIBstringCompare (SPAP_NAME (arg_node), "sel"))
+        && (SPAP_MOD (arg_node) == NULL)) {
+        if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_array) {
+            ScanVector (ARRAY_AELEMS (SPAP_ARG1 (arg_node)), &SPAP_ARG2 (arg_node),
+                        arg_info);
         }
 #ifdef HD_SETWL_VECTOR
-        else if (NODE_TYPE (AP_ARG1 (arg_node)) == N_id) {
-            ScanId (AP_ARG1 (arg_node), &AP_ARG2 (arg_node), arg_info);
+        else if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_id) {
+            ScanId (SPAP_ARG1 (arg_node), &SPAP_ARG2 (arg_node), arg_info);
         }
 #endif
     }
@@ -1925,13 +1945,13 @@ HDap (node *arg_node, info *arg_info)
     /* if in HD_default mode, rebuild selection */
 
     if ((INFO_HD_TRAVSTATE (arg_info) == HD_default)
-        && (ILIBstringCompare (AP_SPNAME (arg_node), "sel"))
-        && (NODE_TYPE (AP_ARG1 (arg_node)) == N_array))
+        && (ILIBstringCompare (SPAP_NAME (arg_node), "sel"))
+        && (SPAP_MOD (arg_node) == NULL) && (NODE_TYPE (AP_ARG1 (arg_node)) == N_array))
 
     {
-        dotinfo *info = MakeDotInfo (ARRAY_AELEMS (AP_ARG1 (arg_node)));
+        dotinfo *info = MakeDotInfo (ARRAY_AELEMS (SPAP_ARG1 (arg_node)));
 
-        node *defexpr = BuildSetNotationDefault (AP_ARG2 (arg_node), info);
+        node *defexpr = BuildSetNotationDefault (SPAP_ARG2 (arg_node), info);
 
         FREEdoFreeTree (result);
         FreeDotInfo (info);
@@ -1943,9 +1963,9 @@ HDap (node *arg_node, info *arg_info)
     /* dots inside.                                      */
 
     if (result != NULL) {
-        if (NODE_TYPE (result) == N_ap) {
-            if (AP_ARGS (result) != NULL)
-                AP_ARGS (result) = TRAVdo (AP_ARGS (result), arg_info);
+        if (NODE_TYPE (result) == N_spap) {
+            if (SPAP_ARGS (result) != NULL)
+                SPAP_ARGS (result) = TRAVdo (SPAP_ARGS (result), arg_info);
         } else {
             result = TRAVdo (result, arg_info);
         }
@@ -2102,13 +2122,13 @@ HDsetwl (node *arg_node, info *arg_info)
     DBUG_ENTER ("HDsetwl");
 
     /* maybe the set-index contains some dots */
-    dotcnt = CountDotsInVector (SETWL_IDS (arg_node));
+    dotcnt = CountDotsInVector (SETWL_VEC (arg_node));
 
     /* build vector without dots */
     if (dotcnt == 0) {
-        ids = DUPdoDupTree (SETWL_IDS (arg_node));
+        ids = DUPdoDupTree (SETWL_VEC (arg_node));
     } else {
-        ids = RemoveDotsFromVector (SETWL_IDS (arg_node));
+        ids = RemoveDotsFromVector (SETWL_VEC (arg_node));
     }
 
     /* from here on, it is a set notation without any dots */
@@ -2132,8 +2152,7 @@ HDsetwl (node *arg_node, info *arg_info)
     }
 #ifdef HD_SETWL_VECTOR
     else {
-        node *newids = MakeIds (NULL, NULL);
-        IDS_SPNAME (newids) = ILIBstringCopy (ID_SPNAME (ids));
+        node *newids = MakeSpids (ILIBstringCopy (SPID_NAME (ids)), NULL);
 
         result
           = TBmakeWith (TBmakePart (TBmakeWithid (newids, NULL),
@@ -2163,20 +2182,18 @@ HDsetwl (node *arg_node, info *arg_info)
     if (dotcnt != 0) {
         node *setid = MakeTmpId ("setwithoutdots");
         node *withid = MakeTmpId ("permutationiv");
-        node *selvector = BuildPermutatedVector (SETWL_IDS (arg_node), withid);
+        node *selvector = BuildPermutatedVector (SETWL_VEC (arg_node), withid);
         node *shape = TBmakePrf (F_shape, TBmakeExprs (DUPdoDupTree (setid), NULL));
-        node *shapevector = BuildPermutatedVector (SETWL_IDS (arg_node), shape);
+        node *shapevector = BuildPermutatedVector (SETWL_VEC (arg_node), shape);
         node *defexpr = NULL;
         node *defshape = NULL;
-        node *withids = TBmakeIds (NULL, NULL);
-
-        IDS_SPNAME (withids) = ILIBstringCopy (ID_SPNAME (withid));
+        node *withids = TBmakeSpids (ILIBstringCopy (SPID_NAME (withid)), NULL);
 
         /* put the intermediate result into the assigns chain */
 
         INFO_HD_ASSIGNS (arg_info)
           = TCappendAssign (INFO_HD_ASSIGNS (arg_info),
-                            MakeAssignLetNV (ILIBstringCopy (ID_SPNAME (setid)), result));
+                            MakeAssignLetNV (ILIBstringCopy (SPID_NAME (setid)), result));
 
         /* create permutation code */
 
@@ -2214,15 +2231,15 @@ HDsetwl (node *arg_node, info *arg_info)
 }
 
 node *
-HDid (node *arg_node, info *arg_info)
+HDspid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HDid");
+    DBUG_ENTER ("HDspid");
 
     if (INFO_HD_TRAVSTATE (arg_info) == HD_default) {
-        if (IdTableContains (ID_SPNAME (arg_node), INFO_HD_IDTABLE (arg_info))) {
+        if (IdTableContains (SPID_NAME (arg_node), INFO_HD_IDTABLE (arg_info))) {
             WARN (global.linenum,
                   ("cannot infer default value for %s in set notation, using 0",
-                   ID_SPNAME (arg_node)));
+                   SPID_NAME (arg_node)));
 
             FREEdoFreeTree (arg_node);
             arg_node = TBmakeNum (0);

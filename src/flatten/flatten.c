@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 3.39  2004/11/29 20:44:49  sah
  * post-DK bugfixing
  *
@@ -367,11 +370,9 @@ InsertRenaming (node *block_or_assign, char *new_name, char *old_name)
         insert_at = &ASSIGN_NEXT (block_or_assign);
     }
 
-    ids = TBmakeIds (NULL, NULL);
-    IDS_SPNAME (ids) = ILIBstringCopy (new_name);
+    ids = TBmakeSpids (ILIBstringCopy (new_name), NULL);
 
-    id = TBmakeId (NULL);
-    ID_SPNAME (id) = ILIBstringCopy (old_name);
+    id = TBmakeSpid (NULL, ILIBstringCopy (old_name));
 
     *insert_at = TBmakeAssign (TBmakeLet (ids, id), *insert_at);
 
@@ -510,8 +511,7 @@ Abstract (node *arg_node, info *arg_info)
     DBUG_ENTER ("Abstract");
 
     tmp = ILIBtmpVar ();
-    ids = TBmakeIds (NULL, NULL);
-    IDS_SPNAME (ids) = ILIBstringCopy (tmp);
+    ids = TBmakeSpids (ILIBstringCopy (tmp), NULL);
 
     INFO_FLAT_LASTASSIGN (arg_info)
       = TBmakeAssign (TBmakeLet (ids, arg_node), INFO_FLAT_LASTASSIGN (arg_info));
@@ -520,8 +520,7 @@ Abstract (node *arg_node, info *arg_info)
                 ("node %08x inserted before %08x", INFO_FLAT_LASTASSIGN (arg_info),
                  ASSIGN_NEXT (INFO_FLAT_LASTASSIGN (arg_info))));
 
-    res = TBmakeId (NULL);
-    ID_SPNAME (res) = tmp;
+    res = TBmakeSpid (NULL, tmp);
 
     DBUG_RETURN (res);
 }
@@ -542,10 +541,9 @@ FltnMgwith (node *wloop)
 {
     node *part, *code, *withop, *first_wl;
 
-    DBUG_ENTER ("ExtractFirstGen");
+    DBUG_ENTER ("FltnMgwith");
 
-    DBUG_ASSERT ((NODE_TYPE (wloop) == N_with),
-                 "ExtractFirstGen applied to non With-Loop!");
+    DBUG_ASSERT ((NODE_TYPE (wloop) == N_with), "FltnMgwith applied to non With-Loop!");
 
     while ((PART_NEXT (WITH_PART (wloop)) != NULL)
            && (CODE_NEXT (WITH_CODE (wloop)) != NULL)) {
@@ -937,25 +935,25 @@ FLATlet (node *arg_node, info *arg_info)
     local_stack *tmp;
     node *mem_last_assign;
 
-    DBUG_ENTER ("FltnLet");
+    DBUG_ENTER ("FLATlet");
 
     mem_last_assign = INFO_FLAT_LASTASSIGN (arg_info);
     ids = LET_IDS (arg_node);
 
     if (ids != NULL) {
         DBUG_PRINT ("FLATTEN",
-                    ("flattening RHS of let-assignment to %s", IDS_SPNAME (ids)));
+                    ("flattening RHS of let-assignment to %s", SPIDS_NAME (ids)));
     }
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     if (ids != NULL) {
         DBUG_PRINT ("RENAME", ("checking LHS of let-assignment to %s for renaming",
-                               IDS_SPNAME (ids)));
+                               SPIDS_NAME (ids)));
     }
 
     while (ids != NULL) {
-        ids_name = IDS_SPNAME (ids);
+        ids_name = SPIDS_NAME (ids);
         tmp = FindId (ids_name);
 
         if (tmp == 0) {
@@ -981,7 +979,7 @@ FLATlet (node *arg_node, info *arg_info)
                  * and we rename the actual LHS:
                  */
                 ids_name = ILIBfree (ids_name);
-                IDS_SPNAME (ids) = tmp_name;
+                SPIDS_NAME (ids) = tmp_name;
             } else {                  /* the let expr is not a WL */
                 if (with_level > 0) { /* we are in the body of a WL */
                     if (tmp->w_level
@@ -997,11 +995,11 @@ FLATlet (node *arg_node, info *arg_info)
                         tmp_name = ILIBstringCopy (tmp->id_new);
                     }
                     ids_name = ILIBfree (ids_name);
-                    IDS_SPNAME (ids) = tmp_name;
+                    SPIDS_NAME (ids) = tmp_name;
                 }
             }
         }
-        ids = IDS_NEXT (ids);
+        ids = SPIDS_NEXT (ids);
     }
 
     DBUG_RETURN (arg_node);
@@ -1088,7 +1086,7 @@ FLATarray (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *FLATap(node *arg_node, info *arg_info)
+ *  node *FLATspap(node *arg_node, info *arg_info)
  *
  * description:
  *  if the application has some arguments, set the context-flag of
@@ -1098,18 +1096,18 @@ FLATarray (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-FLATap (node *arg_node, info *arg_info)
+FLATspap (node *arg_node, info *arg_info)
 {
     contextflag old_ctxt;
 
-    DBUG_ENTER ("FLATap");
+    DBUG_ENTER ("FLATspap");
 
-    DBUG_PRINT ("FLATTEN", ("flattening application of %s:", AP_SPNAME (arg_node)));
+    DBUG_PRINT ("FLATTEN", ("flattening application of %s:", SPAP_NAME (arg_node)));
 
-    if (AP_ARGS (arg_node) != NULL) {
+    if (SPAP_ARGS (arg_node) != NULL) {
         old_ctxt = INFO_FLAT_CONTEXT (arg_info);
         INFO_FLAT_CONTEXT (arg_info) = CT_ap;
-        AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
+        SPAP_ARGS (arg_node) = TRAVdo (SPAP_ARGS (arg_node), arg_info);
         INFO_FLAT_CONTEXT (arg_info) = old_ctxt;
     }
 
@@ -1315,27 +1313,27 @@ FLATexprs (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-FLATid (node *arg_node, info *arg_info)
+FLATspid (node *arg_node, info *arg_info)
 {
     char *old_name;
     local_stack *tmp;
 
-    DBUG_ENTER ("FLATid");
+    DBUG_ENTER ("FLATspid");
 
     if (0 < with_level) {
-        tmp = FindId (ID_SPNAME (arg_node));
+        tmp = FindId (SPID_NAME (arg_node));
         if (tmp) {
             DBUG_ASSERT ((with_level >= tmp->w_level), "actual with-level is smaller "
                                                        "than with-level pushed on the "
                                                        "stack!");
             if (tmp->id_new != tmp->id_old) {
-                old_name = ID_SPNAME (arg_node);
-                ID_SPNAME (arg_node) = ILIBstringCopy (tmp->id_new);
+                old_name = SPID_NAME (arg_node);
+                SPID_NAME (arg_node) = ILIBstringCopy (tmp->id_new);
 
                 old_name = ILIBfree (old_name);
             }
         } else
-            DBUG_PRINT ("RENAME", ("not found: %s", ID_SPNAME (arg_node)));
+            DBUG_PRINT ("RENAME", ("not found: %s", SPID_NAME (arg_node)));
     }
 
     DBUG_RETURN (arg_node);
@@ -1759,10 +1757,10 @@ FLATwithid (node *arg_node, info *arg_info)
      */
     _ids = WITHID_IDS (arg_node);
     while (_ids != NULL) {
-        old_name = IDS_SPNAME (_ids);
-        IDS_SPNAME (_ids) = ILIBtmpVarName (old_name);
-        PUSH (old_name, IDS_SPNAME (_ids), with_level - 1);
-        _ids = IDS_NEXT (_ids);
+        old_name = SPIDS_NAME (_ids);
+        SPIDS_NAME (_ids) = ILIBtmpVarName (old_name);
+        PUSH (old_name, SPIDS_NAME (_ids), with_level - 1);
+        _ids = SPIDS_NEXT (_ids);
     }
 
     /*
@@ -1770,14 +1768,13 @@ FLATwithid (node *arg_node, info *arg_info)
      */
     _ids = WITHID_VEC (arg_node);
     if (_ids != NULL) {
-        old_name = IDS_SPNAME (_ids);
-        IDS_SPNAME (_ids) = ILIBtmpVarName (old_name);
-        PUSH (old_name, IDS_SPNAME (_ids), with_level - 1);
+        old_name = SPIDS_NAME (_ids);
+        SPIDS_NAME (_ids) = ILIBtmpVarName (old_name);
+        PUSH (old_name, SPIDS_NAME (_ids), with_level - 1);
     }
 
     if (WITHID_VEC (arg_node) == NULL) {
-        WITHID_VEC (arg_node) = TBmakeIds (NULL, NULL);
-        IDS_SPNAME (WITHID_VEC (arg_node)) = ILIBtmpVar ();
+        WITHID_VEC (arg_node) = TBmakeSpids (ILIBtmpVar (), NULL);
     }
 
     DBUG_RETURN (arg_node);

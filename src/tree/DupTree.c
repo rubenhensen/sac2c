@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.131  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 3.130  2004/12/02 19:29:22  sbs
  * DUP_CONT usage in DUPops fixed *-)
  *
@@ -954,7 +957,7 @@ DUPsetwl (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DUPsetwl");
 
-    new_node = TBmakeSetwl (TRAVdo (SETWL_IDS (arg_node), arg_info),
+    new_node = TBmakeSetwl (TRAVdo (SETWL_VEC (arg_node), arg_info),
                             TRAVdo (SETWL_EXPR (arg_node), arg_info));
 
     CopyCommonNodeData (new_node, arg_node);
@@ -1009,6 +1012,23 @@ DUPid (node *arg_node, info *arg_info)
      * if it still exists
      */
     ID_SPNAME (new_node) = ILIBstringCopy (ID_SPNAME (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPspid (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPspid");
+
+    new_node = TBmakeSpid (ILIBstringCopy (SPID_MOD (arg_node)),
+                           ILIBstringCopy (SPID_NAME (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1572,7 +1592,23 @@ DUPids (node *arg_node, info *arg_info)
     new_node = TBmakeIds (avis, DUPCONT (IDS_NEXT (arg_node)));
 
     IDS_SPNAME (new_node) = ILIBstringCopy (IDS_SPNAME (arg_node));
-    IDS_SPMOD (new_node) = ILIBstringCopy (IDS_SPMOD (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPspids (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPspids");
+
+    new_node = TBmakeSpids (ILIBstringCopy (SPIDS_NAME (arg_node)),
+                            DUPCONT (SPIDS_NEXT (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1600,8 +1636,6 @@ DUPap (node *arg_node, info *arg_info)
     new_node = TBmakeAp (new_fundef, DUPTRAV (AP_ARGS (arg_node)));
 
     AP_ARGTAB (new_node) = DupArgtab (AP_ARGTAB (arg_node), arg_info);
-    AP_SPNAME (new_node) = ILIBstringCopy (AP_SPNAME (arg_node));
-    AP_SPMOD (new_node) = ILIBstringCopy (AP_SPMOD (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1659,15 +1693,32 @@ DUPap (node *arg_node, info *arg_info)
 /******************************************************************************/
 
 node *
-DUPmop (node *arg_node, info *arg_info)
+DUPspap (node *arg_node, info *arg_info)
 {
     node *new_node;
 
-    DBUG_ENTER ("DUPmop");
+    DBUG_ENTER ("DUPspap");
+
+    new_node = TBmakeSpap (DUPTRAV (SPAP_ID (arg_node)), DUPTRAV (SPAP_ARGS (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
+DUPspmop (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ("DUPspmop");
 
     DBUG_PRINT ("DUP", ("duplicating multi operation ..."));
 
-    new_node = TBmakeMop (DUPTRAV (MOP_OPS (arg_node)), DUPTRAV (MOP_EXPRS (arg_node)));
+    new_node
+      = TBmakeSpmop (DUPTRAV (SPMOP_OPS (arg_node)), DUPTRAV (SPMOP_EXPRS (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2581,21 +2632,6 @@ DUPwlgridvar (node *arg_node, info *arg_info)
 }
 
 /******************************************************************************/
-
-node *
-DUPops (node *arg_node, info *arg_info)
-{
-    node *new_node;
-    node *next_node;
-
-    DBUG_ENTER ("DUPops");
-
-    next_node = DUPCONT (OPS_NEXT (arg_node));
-
-    new_node = TBmakeOps (OPS_MOD (arg_node), OPS_NAME (arg_node), next_node);
-
-    DBUG_RETURN (new_node);
-}
 
 /******************************************************************************
  *

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 1.26  2004/12/01 18:43:28  sah
  * fixed the nasty bug of mystically freed ntype!
  *
@@ -582,7 +585,7 @@ CRTWRPlet (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *CRTWRPap(node *arg_node, info *arg_info)
+ *    node *CRTWRPspap(node *arg_node, info *arg_info)
  *
  * description:
  *
@@ -590,38 +593,38 @@ CRTWRPlet (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-CRTWRPap (node *arg_node, info *arg_info)
+CRTWRPspap (node *arg_node, info *arg_info)
 {
     int num_args;
-    node *wrapper;
+    node *wrapper, *new_node;
 
-    DBUG_ENTER ("CRTWRPap");
+    DBUG_ENTER ("CRTWRPspap");
 
-    num_args = TCcountExprs (AP_ARGS (arg_node));
+    num_args = TCcountExprs (SPAP_ARGS (arg_node));
     wrapper
-      = FindWrapper (AP_SPMOD (arg_node), AP_SPNAME (arg_node), num_args,
+      = FindWrapper (SPAP_MOD (arg_node), SPAP_NAME (arg_node), num_args,
                      INFO_CRTWRP_EXPRETS (arg_info), INFO_CRTWRP_WRAPPERFUNS (arg_info));
 
     DBUG_PRINT ("CRTWRP", ("Adding backreference to %s:%s as " F_PTR ".",
-                           AP_SPMOD (arg_node), AP_SPNAME (arg_node), wrapper));
+                           SPAP_MOD (arg_node), SPAP_NAME (arg_node), wrapper));
 
     if (wrapper == NULL) {
         ABORT (NODE_LINE (arg_node),
                ("No definition found for a function \"%s:%s\" that expects"
                 " %i argument(s) and yields %i return value(s)",
-                AP_SPMOD (arg_node), AP_SPNAME (arg_node), num_args,
+                SPAP_MOD (arg_node), SPAP_NAME (arg_node), num_args,
                 INFO_CRTWRP_EXPRETS (arg_info)));
     } else {
-        AP_FUNDEF (arg_node) = wrapper;
         /*
-         * as the function is dispatched now, we can remove the
-         * SPNAME and SPMOD here
+         * as the function is dispatched now, we can create a real
+         * function application now and free the spap node
          */
-        AP_SPNAME (arg_node) = ILIBfree (AP_SPNAME (arg_node));
-        AP_SPMOD (arg_node) = ILIBfree (AP_SPMOD (arg_node));
+        new_node = TBmakeAp (wrapper, SPAP_ARGS (arg_node));
+        SPAP_ARGS (arg_node) = NULL;
+        arg_node = FREEdoFreeNode (arg_node);
     }
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (new_node);
 }
 
 /** <!--********************************************************************-->

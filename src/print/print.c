@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.194  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 3.193  2004/12/02 15:12:29  sah
  * added support for ops node
  *
@@ -749,15 +752,39 @@ PRTids (node *arg_node, info *arg_info)
 
     if (arg_node != NULL) {
 
-        if (IDS_AVIS (arg_node) != NULL) {
-            fprintf (global.outfile, "%s", IDS_NAME (arg_node));
-        } else {
-            fprintf (global.outfile, "%s", IDS_SPNAME (arg_node));
-        }
+        fprintf (global.outfile, "%s", IDS_NAME (arg_node));
 
         if (NULL != IDS_NEXT (arg_node)) {
             fprintf (global.outfile, ", ");
             IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *PRTspids( node *arg_node, info *arg_info)
+ *
+ *   @brief print N_spids node
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+PRTspids (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTids");
+
+    if (arg_node != NULL) {
+
+        fprintf (global.outfile, "%s", SPIDS_NAME (arg_node));
+
+        if (NULL != SPIDS_NEXT (arg_node)) {
+            fprintf (global.outfile, ", ");
+            SPIDS_NEXT (arg_node) = TRAVdo (SPIDS_NEXT (arg_node), arg_info);
         }
     }
 
@@ -2077,34 +2104,19 @@ PRTap (node *arg_node, info *arg_info)
     DBUG_ENTER ("PRTap");
 
     fundef = AP_FUNDEF (arg_node);
-    if (global.compiler_phase >= PH_precompile) {
-        /*
-         * Precompile() renames N_fundef names only
-         *  -> we *must* find an AP_FUNDEF in order to print the correct name!
-         */
-        DBUG_ASSERT ((fundef != NULL), "no AP_FUNDEF found!");
-    }
 
-    if (fundef != NULL) {
-        /*
-         * print name of 'AP_FUNDEF(arg_node)'
-         */
-        if ((FUNDEF_ISWRAPPERFUN (fundef))) {
-            fprintf (global.outfile, "wrapper:");
-        }
-        if (FUNDEF_MOD (fundef) != NULL) {
-            fprintf (global.outfile, "%s:", FUNDEF_MOD (fundef));
-        }
-        fprintf (global.outfile, "%s", FUNDEF_NAME (fundef));
-    } else {
-        /*
-         * print name of 'arg_node'
-         */
-        if (AP_SPMOD (arg_node) != NULL) {
-            fprintf (global.outfile, "%s:", AP_SPMOD (arg_node));
-        }
-        fprintf (global.outfile, "%s", AP_SPNAME (arg_node));
+    DBUG_ASSERT ((fundef != NULL), "no AP_FUNDEF found!");
+
+    /*
+     * print name of 'AP_FUNDEF(arg_node)'
+     */
+    if ((FUNDEF_ISWRAPPERFUN (fundef))) {
+        fprintf (global.outfile, "wrapper:");
     }
+    if (FUNDEF_MOD (fundef) != NULL) {
+        fprintf (global.outfile, "%s:", FUNDEF_MOD (fundef));
+    }
+    fprintf (global.outfile, "%s", FUNDEF_NAME (fundef));
 
     fprintf (global.outfile, "(");
     if (AP_ARGS (arg_node) != NULL) {
@@ -2123,7 +2135,7 @@ PRTap (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PRTmop( node  *arg_node, info *arg_info)
+ *   node *PRTspap( node  *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -2131,57 +2143,68 @@ PRTap (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-PRTmop (node *arg_node, info *arg_info)
+PRTspap (node *arg_node, info *arg_info)
 {
-    node *exprs;
-    node *fun_ids;
+    DBUG_ENTER ("PRTspap");
 
-    DBUG_ENTER ("PRTmop");
+    SPAP_ID (arg_node) = TRAVdo (SPAP_ID (arg_node), arg_info);
 
-    if (MOP_ISFIXED (arg_node)) {
-        fprintf (global.outfile, "(");
+    fprintf (global.outfile, "(");
+    if (SPAP_ARGS (arg_node) != NULL) {
+        fprintf (global.outfile, " ");
+        TRAVdo (SPAP_ARGS (arg_node), arg_info);
     }
-
-    exprs = MOP_EXPRS (arg_node);
-    fun_ids = MOP_OPS (arg_node);
-
-    while (fun_ids) {
-        TRAVdo (EXPRS_EXPR (exprs), arg_info);
-
-        if (IDS_AVIS (fun_ids) != NULL) {
-            fprintf (global.outfile, " %s ", IDS_NAME (fun_ids));
-        } else {
-            fprintf (global.outfile, " %s ", IDS_SPNAME (fun_ids));
-        }
-
-        exprs = EXPRS_NEXT (exprs);
-        fun_ids = IDS_NEXT (fun_ids);
-    }
-    if (exprs) {
-        TRAVdo (EXPRS_EXPR (exprs), arg_info);
-    }
-
-    if (MOP_ISFIXED (arg_node)) {
-        fprintf (global.outfile, ")");
-    }
+    fprintf (global.outfile, ")");
 
     DBUG_RETURN (arg_node);
 }
 
-node *
-PRTops (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("PRTops");
+/******************************************************************************
+ *
+ * Function:
+ *   node *PRTspmop( node  *arg_node, info *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
 
-    if (OPS_MOD (arg_node) != NULL) {
-        fprintf (global.outfile, "%s:", OPS_MOD (arg_node));
+node *
+PRTspmop (node *arg_node, info *arg_info)
+{
+    node *exprs;
+    node *fun_ids;
+
+    DBUG_ENTER ("PRTspmop");
+
+    if (SPMOP_ISFIXED (arg_node)) {
+        fprintf (global.outfile, "(");
     }
 
-    fprintf (global.outfile, "%s", OPS_NAME (arg_node));
+    exprs = SPMOP_EXPRS (arg_node);
+    fun_ids = SPMOP_OPS (arg_node);
 
-    if (OPS_NEXT (arg_node) != NULL) {
-        fprintf (global.outfile, ", ");
-        OPS_NEXT (arg_node) = TRAVdo (OPS_NEXT (arg_node), arg_info);
+    while (fun_ids != NULL) {
+        TRAVdo (EXPRS_EXPR (exprs), arg_info);
+
+        if (SPID_MOD (EXPRS_EXPR (fun_ids)) != NULL) {
+            fprintf (global.outfile, " %s:", SPID_MOD (EXPRS_EXPR (fun_ids)));
+        } else {
+            fprintf (global.outfile, " ");
+        }
+
+        fprintf (global.outfile, "%s ", SPID_NAME (EXPRS_EXPR (fun_ids)));
+
+        exprs = EXPRS_NEXT (exprs);
+        fun_ids = EXPRS_NEXT (fun_ids);
+    }
+
+    if (exprs) {
+        TRAVdo (EXPRS_EXPR (exprs), arg_info);
+    }
+
+    if (SPMOP_ISFIXED (arg_node)) {
+        fprintf (global.outfile, ")");
     }
 
     DBUG_RETURN (arg_node);
@@ -2319,20 +2342,33 @@ PRTid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PRTid");
 
-    if (ID_AVIS (arg_node) != NULL) {
-        fprintf (global.outfile, "%s",
-                 ((global.compiler_phase == PH_genccode)
-                  && (ID_NT_TAG (arg_node) != NULL))
-                   ? ID_NT_TAG (arg_node)
-                   : ID_NAME (arg_node));
-    } else {
-        DBUG_ASSERT ((global.compiler_phase != PH_genccode),
-                     "missing vardec-avis link in PH_genccode");
-        if (ID_SPMOD (arg_node) != NULL) {
-            fprintf (global.outfile, "%s", ID_SPMOD (arg_node));
-        }
-        fprintf (global.outfile, "%s", ID_SPNAME (arg_node));
+    fprintf (global.outfile, "%s",
+             ((global.compiler_phase == PH_genccode) && (ID_NT_TAG (arg_node) != NULL))
+               ? ID_NT_TAG (arg_node)
+               : ID_NAME (arg_node));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *PRTspid( node *arg_node, info *arg_info)
+ *
+ *   @brief print N_spid node
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+PRTspid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTspid");
+
+    if (SPID_MOD (arg_node) != NULL) {
+        fprintf (global.outfile, "%s", SPID_MOD (arg_node));
     }
+    fprintf (global.outfile, "%s", SPID_NAME (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -2488,12 +2524,12 @@ PRTsetwl (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PRTsetwl");
 
-    if (NODE_TYPE (SETWL_IDS (arg_node)) == N_exprs) {
+    if (NODE_TYPE (SETWL_VEC (arg_node)) == N_exprs) {
         fprintf (global.outfile, "{ [");
-        TRAVdo (SETWL_IDS (arg_node), arg_info);
+        TRAVdo (SETWL_VEC (arg_node), arg_info);
         fprintf (global.outfile, "] -> ");
     } else {
-        TRAVdo (SETWL_IDS (arg_node), arg_info);
+        TRAVdo (SETWL_VEC (arg_node), arg_info);
         fprintf (global.outfile, " -> ");
     }
 

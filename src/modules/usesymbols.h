@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 1.5  2004/11/25 11:35:11  sah
  * COMPILES
  *
@@ -38,7 +41,7 @@ extern node *USStypedef (node *arg_node, info *arg_info);
 extern node *USSfold (node *arg_node, info *arg_info);
 extern node *USSarg (node *arg_node, info *arg_info);
 extern node *USSvardec (node *arg_node, info *arg_info);
-extern node *USSap (node *arg_node, info *arg_info);
+extern node *USSspap (node *arg_node, info *arg_info);
 extern node *USSmodule (node *arg_node, info *arg_info);
 
 #endif /* _SAC_USESYMBOLS_H_ */

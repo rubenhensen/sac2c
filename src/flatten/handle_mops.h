@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 1.9  2004/11/26 23:45:18  khf
  * corrected
  *
@@ -47,6 +50,6 @@
  *****************************************************************************/
 extern node *HMdoHandleMops (node *arg_node);
 
-extern node *HMmop (node *arg_node, info *arg_info);
+extern node *HMspmop (node *arg_node, info *arg_info);
 
 #endif /* _SAC_HANDLE_MOPS_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 3.5  2004/11/29 10:56:46  sah
  * fixed naming convention bug
  *
@@ -86,10 +89,10 @@ extern node *FLATwhile (node *arg_node, info *arg_info);
 extern node *FLATdo (node *arg_node, info *arg_info);
 extern node *FLATmodule (node *arg_node, info *arg_info);
 extern node *FLATfundef (node *arg_node, info *arg_info);
-extern node *FLATap (node *arg_node, info *arg_info);
+extern node *FLATspap (node *arg_node, info *arg_info);
 extern node *FLATarray (node *arg_node, info *arg_info);
 extern node *FLATreturn (node *arg_node, info *arg_info);
-extern node *FLATid (node *arg_node, info *arg_info);
+extern node *FLATspid (node *arg_node, info *arg_info);
 extern node *FLATlet (node *arg_node, info *arg_info);
 extern node *FLATarg (node *arg_node, info *arg_info);
 extern node *FLATprf (node *arg_node, info *arg_info);

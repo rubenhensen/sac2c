@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.121  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 3.120  2004/12/01 16:31:18  ktr
  * Some cleanup
  *
@@ -1312,32 +1315,40 @@ TCannotateIdWithConstVec (node *expr, node *id)
 
     DBUG_ENTER ("TCannotateIdWithConstVec");
 
-    DBUG_ASSERT ((NODE_TYPE (id) == N_id),
-                 "TCannotateIdWithConstVec called with non-compliant arguments!");
+    /*
+     * TODO: the frontend ID has no constant vector. the question here is
+     *       whether there is still a need for constant vectors anyway
+     *       as they are encoded in the type (AKV) now
+     */
+#if 0
+  DBUG_ASSERT( (NODE_TYPE( id)==N_id),
+               "TCannotateIdWithConstVec called with non-compliant arguments!");
 
-    while (NODE_TYPE (behind_casts) == N_cast) {
-        behind_casts = CAST_EXPR (behind_casts);
-    }
+  while( NODE_TYPE(behind_casts) == N_cast) {
+    behind_casts = CAST_EXPR(behind_casts);
+  }
 
-    if (NODE_TYPE (behind_casts) == N_array) {
-        ID_ISCONST (id) = ARRAY_ISCONST (behind_casts);
-        ID_VECTYPE (id) = ARRAY_VECTYPE (behind_casts);
-        ID_VECLEN (id) = ARRAY_VECLEN (behind_casts);
-        if (ID_ISCONST (id)) {
-            ID_CONSTVEC (id)
-              = TCcopyConstVec (ARRAY_VECTYPE (behind_casts), ARRAY_VECLEN (behind_casts),
-                                ARRAY_CONSTVEC (behind_casts));
-        }
-    } else if (NODE_TYPE (behind_casts) == N_id) {
-        ID_ISCONST (id) = ID_ISCONST (behind_casts);
-        ID_VECTYPE (id) = ID_VECTYPE (behind_casts);
-        ID_VECLEN (id) = ID_VECLEN (behind_casts);
-        if (ID_ISCONST (id)) {
-            ID_CONSTVEC (id)
-              = TCcopyConstVec (ID_VECTYPE (behind_casts), ID_VECLEN (behind_casts),
-                                ID_CONSTVEC (behind_casts));
-        }
+  if( NODE_TYPE( behind_casts) == N_array) {
+    ID_ISCONST( id)  = ARRAY_ISCONST( behind_casts);
+    ID_VECTYPE( id)  = ARRAY_VECTYPE( behind_casts);
+    ID_VECLEN( id)   = ARRAY_VECLEN( behind_casts);
+    if (ID_ISCONST( id)) {
+      ID_CONSTVEC( id) = TCcopyConstVec( ARRAY_VECTYPE( behind_casts),
+                                         ARRAY_VECLEN( behind_casts),
+                                         ARRAY_CONSTVEC( behind_casts));
     }
+  }
+  else if( NODE_TYPE( behind_casts) == N_id) {
+    ID_ISCONST( id)  = ID_ISCONST( behind_casts);
+    ID_VECTYPE( id)  = ID_VECTYPE( behind_casts);
+    ID_VECLEN( id)   = ID_VECLEN( behind_casts);
+    if (ID_ISCONST( id)) {
+      ID_CONSTVEC( id) = TCcopyConstVec( ID_VECTYPE( behind_casts),
+                                       ID_VECLEN( behind_casts),
+                                       ID_CONSTVEC( behind_casts));
+    }
+  }
+#endif
 
     DBUG_RETURN (id);
 }
@@ -3500,6 +3511,44 @@ TCmakeAp3 (node *fundef, node *arg1, node *arg2, node *arg3)
     DBUG_RETURN (res);
 }
 
+node *
+TCmakeSpap1 (char *mod, char *name, node *arg1)
+{
+    node *result;
+
+    DBUG_ENTER ("TCmakeSpap1");
+
+    result = TBmakeSpap (TBmakeSpid (mod, name), TBmakeExprs (arg1, NULL));
+
+    DBUG_RETURN (result);
+}
+
+node *
+TCmakeSpap2 (char *mod, char *name, node *arg1, node *arg2)
+{
+    node *result;
+
+    DBUG_ENTER ("TCmakeSpap1");
+
+    result
+      = TBmakeSpap (TBmakeSpid (mod, name), TBmakeExprs (arg1, TBmakeExprs (arg2, NULL)));
+
+    DBUG_RETURN (result);
+}
+
+node *
+TCmakeSpap3 (char *mod, char *name, node *arg1, node *arg2, node *arg3)
+{
+    node *result;
+
+    DBUG_ENTER ("TCmakeSpap1");
+
+    result
+      = TBmakeSpap (TBmakeSpid (mod, name),
+                    TBmakeExprs (arg1, TBmakeExprs (arg2, TBmakeExprs (arg3, NULL))));
+
+    DBUG_RETURN (result);
+}
 /*--------------------------------------------------------------------------*/
 
 /***

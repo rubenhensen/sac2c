@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 1.5  2004/11/25 15:23:40  khf
  * SacDevCamp04
  *
@@ -36,8 +39,9 @@
 extern node *INSVDdoInsertVardec (node *syntaxtree);
 
 extern node *INSVDfundef (node *arg_node, info *arg_info);
-extern node *INSVDid (node *arg_node, info *arg_info);
-extern node *INSVDids (node *arg_node, info *arg_info);
+extern node *INSVDspap (node *arg_node, info *arg_info);
+extern node *INSVDspid (node *arg_node, info *arg_info);
+extern node *INSVDspids (node *arg_node, info *arg_info);
 extern node *INSVDwith (node *arg_node, info *arg_info);
 extern node *INSVDpart (node *arg_node, info *arg_info);
 extern node *INSVDcode (node *arg_node, info *arg_info);

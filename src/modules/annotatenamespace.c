@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2004/12/05 16:45:38  sah
+ * added SPIds SPId SPAp in frontend
+ *
  * Revision 1.14  2004/11/25 21:48:01  sah
  * COMPILES!
  *
@@ -13,6 +16,7 @@
 #include "annotatenamespace.h"
 #include "traverse.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "symboltable.h"
 #include "new_types.h"
 #include "stringset.h"
@@ -362,19 +366,19 @@ ANSobjdef (node *arg_node, info *arg_info)
 }
 
 node *
-ANSap (node *arg_node, info *arg_info)
+ANSspap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSap");
+    DBUG_ENTER ("ANSspap");
 
-    if (AP_SPMOD (arg_node) == NULL) {
+    if (SPAP_MOD (arg_node) == NULL) {
         /*
          * look up the correct namespace
          */
 
-        AP_SPMOD (arg_node) = LookupNamespaceForSymbol (AP_SPNAME (arg_node), arg_info);
+        SPAP_MOD (arg_node) = LookupNamespaceForSymbol (SPAP_NAME (arg_node), arg_info);
     }
 
-    AddNamespaceToDependencies (AP_SPMOD (arg_node), arg_info);
+    AddNamespaceToDependencies (SPAP_MOD (arg_node), arg_info);
 
     arg_node = TRAVcont (arg_node, arg_info);
 
