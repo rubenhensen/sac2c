@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/10/27 15:50:19  khf
+ * some debugging
+ *
  * Revision 1.4  2004/10/20 08:10:29  khf
  * added identification of resolveable dependencies,
  * some DBUG_PRINTs and changed signature of startfunction
@@ -181,8 +184,9 @@ DDEPENDassign (node *arg_node, info *arg_info)
     DBUG_ENTER ("DDEPENDassign");
 
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-    if (INFO_DDEPEND_WLDEPENDENT (arg_info))
+    if (INFO_DDEPEND_WLDEPENDENT (arg_info)) {
         DBUG_RETURN (arg_node);
+    }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
@@ -387,6 +391,10 @@ DDEPENDcode (node *arg_node, info *arg_info)
         && !INFO_DDEPEND_WLDEPENDENT (arg_info)) {
         DBUG_PRINT ("WLFS", ("code contains resolveable dependencies"));
         NCODE_RESOLVEABLE_DEPEND (arg_node) = TRUE;
+    }
+
+    if (NCODE_NEXT (arg_node) != NULL) {
+        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

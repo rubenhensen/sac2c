@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/10/27 15:50:19  khf
+ * some debugging
+ *
  * Revision 1.15  2004/10/20 08:10:29  khf
  * added resolving of special dependencies,
  * intersection with fold-WLs who have a full partition
@@ -531,37 +534,6 @@ CheckDependency (node *checkid, nodelist *nl)
 
 /** <!--********************************************************************-->
  *
- * @fn nodelist *PrintNodelist( nodelist *nl)
- *
- *   @brief
- *
- *   @param
- *   @return
- ******************************************************************************/
-static nodelist *
-PrintNodelist (nodelist *nl)
-{
-    nodelist *nl_tmp;
-
-    DBUG_ENTER ("PrintNodelist");
-
-    nl_tmp = nl;
-
-    DBUG_PRINT ("WLFS", ("nodelist contains: "));
-
-    while (nl_tmp != NULL) {
-        if (ASSIGN_LHS (NODELIST_NODE (nl_tmp)) != NULL) {
-            DBUG_PRINT ("WLFS", ("%s  ", IDS_NAME (ASSIGN_LHS (NODELIST_NODE (nl_tmp)))));
-        }
-
-        nl_tmp = NODELIST_NEXT (nl_tmp);
-    }
-
-    DBUG_RETURN (nl);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn bool CheckIterationSpace( info *arg_info)
  *
  *   @brief checks whether the size of both iteration spaces are equal.
@@ -668,15 +640,12 @@ CompGenSon (node *gen_son1, node *gen_son2)
                         gen_prob = GEN_equal_var;
                     else if (gen_prob == GEN_constant) {
                         gen_prob = GEN_variable;
-                        break;
                     }
                 } else {
                     gen_prob = GEN_variable;
-                    break;
                 }
             } else {
                 gen_prob = GEN_variable;
-                break;
             }
 
             elems1 = EXPRS_NEXT (elems1);
@@ -1014,6 +983,31 @@ FuseWithloops (node *wl, info *arg_info, node *fusionable_assign)
 
 /** <!--********************************************************************-->
  *
+ * @fn node RemoveUnusedCodes(node *codes)
+ *
+ *   @brief removes all unused N_codes recursively
+ *
+ *   @param  node *codes : N_Ncode chain
+ *   @return node *      : modified N_Ncode chain
+ ******************************************************************************/
+static node *
+RemoveUnusedCodes (node *codes)
+{
+    DBUG_ENTER ("RemoveUnusedCodes");
+    DBUG_ASSERT ((codes != NULL), "no codes available!");
+    DBUG_ASSERT ((NODE_TYPE (codes) == N_Ncode), "type of codes is not N_Ncode!");
+
+    if (NCODE_NEXT (codes) != NULL)
+        NCODE_NEXT (codes) = RemoveUnusedCodes (NCODE_NEXT (codes));
+
+    if (NCODE_USED (codes) == 0)
+        codes = FreeNode (codes);
+
+    DBUG_RETURN (codes);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node CreateEntryFlatArray(int entry, int number)
  *
  *   @brief creates an flat array with 'number' elements consisting of
@@ -1215,11 +1209,23 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
       *offset_2;
     gridinfo *arg_gridinfo;
     int dim, d, lb, ub, gen_counter = 0;
+    constant *const_tmp;
     bool create_step;
 
     DBUG_ENTER ("IntersectParts");
 
-    dim = ARRAY_VECLEN (NGEN_BOUND1 (NPART_GEN (parts_1)));
+    if (ARRAY_ISCONST (NGEN_BOUND1 (NPART_GEN (parts_1)))) {
+        dim = ARRAY_VECLEN (NGEN_BOUND1 (NPART_GEN (parts_1)));
+    } else {
+        const_tmp = COAST2Constant (NGEN_BOUND1 (NPART_GEN (parts_1)));
+        if ((const_tmp != NULL)) {
+            dim = SHGetUnrLen (COGetShape (const_tmp));
+            const_tmp = COFreeConstant (const_tmp);
+        } else {
+            DBUG_ASSERT ((0), "lower bound of generator is not constant!");
+        }
+    }
+
     nparts_1 = nparts_2 = NULL;
     npart_1 = npart_2 = NULL;
 
@@ -1532,10 +1538,16 @@ BuildNewGens (node *current_wl, node *fusionable_wl)
         NWITH_PART (fusionable_wl) = FreeTree (NWITH_PART (fusionable_wl));
         NWITH_PART (fusionable_wl) = new_parts_fwl;
         NWITH_PARTS (fusionable_wl) = number_parts;
+        NWITH_CODE (fusionable_wl) = RemoveUnusedCodes (NWITH_CODE (fusionable_wl));
+        DBUG_ASSERT ((NWITH_CODE (fusionable_wl) != NULL),
+                     ("all ncodes have been removed!!!"));
 
         NWITH_PART (current_wl) = FreeTree (NWITH_PART (current_wl));
         NWITH_PART (current_wl) = new_parts_cwl;
         NWITH_PARTS (current_wl) = number_parts;
+        NWITH_CODE (current_wl) = RemoveUnusedCodes (NWITH_CODE (current_wl));
+        DBUG_ASSERT ((NWITH_CODE (fusionable_wl) != NULL),
+                     ("all ncodes have been removed!!!"));
     }
 
     DBUG_RETURN (successfull);
@@ -1675,7 +1687,8 @@ WLFSassign (node *arg_node, info *arg_info)
 
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
-        if (NODE_TYPE (ASSIGN_RHS (arg_node)) == N_Nwith) {
+        if (ASSIGN_INSTRTYPE (arg_node) == N_let
+            && NODE_TYPE (ASSIGN_RHS (arg_node)) == N_Nwith) {
 
             if (INFO_WLFS_WLACTION (arg_info) == WL_fused) {
                 /*
@@ -1735,8 +1748,9 @@ WLFSassign (node *arg_node, info *arg_info)
 
             DBUG_PRINT ("WLFS", ("travback ..."));
 
-            if (ASSIGN_TAG (ASSIGN_NEXT (arg_node))
-                == INFO_WLFS_FUSIONABLE_WL (arg_info)) {
+            if (ASSIGN_NEXT (arg_node) != NULL
+                && ASSIGN_TAG (ASSIGN_NEXT (arg_node))
+                     == INFO_WLFS_FUSIONABLE_WL (arg_info)) {
                 /*
                  * ASSIGN_TAG( ASSIGN_NEXT( arg_node)) can't be NULL,
                  * because in this mode INFO_WLFS_FUSIONABLE_WL( arg_info)
@@ -1904,9 +1918,6 @@ WLFSid (node *arg_node, info *arg_info)
             INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)
               = NodeListAppend (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info),
                                 INFO_WLFS_ASSIGN (arg_info), NULL);
-
-            DBUG_EXECUTE ("WLFS",
-                          PrintNodelist (INFO_WLFS_REFERENCES_FUSIONABLE (arg_info)););
         }
     }
 
@@ -2280,8 +2291,10 @@ WLFSNgenerator (node *arg_node, info *arg_info)
         }
     }
 
-    if (!INFO_WLFS_WL_LB_IS_ZERO (arg_info)) {
-        const_lb = COMakeConstantFromArray (NGEN_BOUND1 (arg_node));
+    if (!INFO_WLFS_WL_LB_IS_ZERO (arg_info)
+        && (INFO_WLFS_GENPROPERTY (arg_info) == GEN_equal
+            || INFO_WLFS_GENPROPERTY (arg_info) == GEN_constant)) {
+        const_lb = COAST2Constant (NGEN_BOUND1 (arg_node));
         if ((const_lb != NULL) && COIsZero (const_lb, TRUE)) {
             INFO_WLFS_WL_LB_IS_ZERO (arg_info) = TRUE;
             const_lb = COFreeConstant (const_lb);

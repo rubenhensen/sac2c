@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/27 15:50:19  khf
+ * some debugging
+ *
  * Revision 1.1  2004/10/20 08:22:52  khf
  * Initial revision
  *
@@ -70,6 +73,7 @@ struct INFO {
     node *assign;
     node *cexprs;
     bool dependent;
+    bool resolved;
 };
 
 /* usage of arg_info: */
@@ -78,6 +82,7 @@ struct INFO {
 #define INFO_RDEPEND_ASSIGN(n) (n->assign)
 #define INFO_RDEPEND_CEXPRS(n) (n->cexprs)
 #define INFO_RDEPEND_DEPENDENT(n) (n->dependent)
+#define INFO_RDEPEND_RESOLVED(n) (n->resolved)
 
 /**
  * INFO functions
@@ -96,6 +101,7 @@ MakeInfo ()
     INFO_RDEPEND_ASSIGN (result) = NULL;
     INFO_RDEPEND_CEXPRS (result) = NULL;
     INFO_RDEPEND_DEPENDENT (result) = FALSE;
+    INFO_RDEPEND_RESOLVED (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -129,6 +135,12 @@ RDEPENDassign (node *arg_node, info *arg_info)
     INFO_RDEPEND_ASSIGN (arg_info) = arg_node;
 
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
+    if (INFO_RDEPEND_RESOLVED (arg_info)) {
+        DBUG_PRINT ("WLFS", ("selection is resolved:"));
+        DBUG_EXECUTE ("WLFS", PrintNode (INFO_RDEPEND_ASSIGN (arg_info)););
+        INFO_RDEPEND_RESOLVED (arg_info) = FALSE;
+    }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
@@ -201,9 +213,6 @@ RDEPENDprfSel (node *arg_node, info *arg_info)
             && (ID_AVIS (sel)
                 == IDS_AVIS (NWITHID_VEC (INFO_RDEPEND_WITHID (arg_info))))) {
 
-            DBUG_PRINT ("WLFS", ("selection is resolveable:"));
-            DBUG_EXECUTE ("WLFS", PrintNode (INFO_RDEPEND_ASSIGN (arg_info)););
-
             ids_tmp = ASSIGN_LHS (INFO_RDEPEND_FUSIONABLE_WL (arg_info));
             cexprs = INFO_RDEPEND_CEXPRS (arg_info);
             while (ids_tmp != NULL) {
@@ -217,6 +226,8 @@ RDEPENDprfSel (node *arg_node, info *arg_info)
 
             arg_node = FreeNode (arg_node);
             arg_node = DupNode (EXPRS_EXPR (cexprs));
+
+            INFO_RDEPEND_RESOLVED (arg_info) = TRUE;
         } else {
             DBUG_ASSERT ((0), ("found unresolveable selection!"));
         }
