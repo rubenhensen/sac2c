@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.5  1999/05/10 10:48:37  bs
+# added compilation of wl_access_analyze.c
+#
 # Revision 2.4  1999/03/11 18:18:25  dkr
 # make deps done
 #
@@ -62,8 +65,7 @@ CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../../inc -I../optimize -I../compile -I../typecheck -I../modules -I../print
 
-all: index.o psi-opt.o ArrayElimination.o tile_size_inference.o \
-     WithloopFolding.o WLT.o WLI.o WLF.o
+all: index.o psi-opt.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o WithloopFolding.o WLT.o WLI.o WLF.o
 
 index.o: index.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o index.o -c index.c $(INCS)
@@ -73,6 +75,9 @@ psi-opt.o: psi-opt.c
 
 ArrayElimination.o: ArrayElimination.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o ArrayElimination.o -c ArrayElimination.c $(INCS)
+
+wl_access_analyze.o: wl_access_analyze.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o wl_access_analyze.o -c wl_access_analyze.c $(INCS)
 
 tile_size_inference.o: tile_size_inference.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o tile_size_inference.o -c tile_size_inference.c $(INCS)
@@ -195,3 +200,15 @@ tile_size_inference.o: ../global/free.h ../global/my_debug.h
 tile_size_inference.o: /usr/include/malloc.h /usr/include/sys/types.h
 tile_size_inference.o: /usr/include/sys/machtypes.h
 tile_size_inference.o: /usr/include/sys/int_types.h ../global/internal_lib.h
+wl_access_analyze.o: ../../inc/dbug.h /usr/include/stdio.h
+wl_access_analyze.o: /usr/include/sys/feature_tests.h
+wl_access_analyze.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+wl_access_analyze.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+wl_access_analyze.o: ../global/types.h ../global/tree_basic.h
+wl_access_analyze.o: ../global/tree_compound.h ../global/Error.h
+wl_access_analyze.o: /usr/include/string.h /usr/include/stdlib.h
+wl_access_analyze.o: ../global/globals.h ../global/traverse.h
+wl_access_analyze.o: ../global/free.h ../global/my_debug.h
+wl_access_analyze.o: /usr/include/malloc.h /usr/include/sys/types.h
+wl_access_analyze.o: /usr/include/sys/machtypes.h
+wl_access_analyze.o: /usr/include/sys/int_types.h ../global/internal_lib.h
