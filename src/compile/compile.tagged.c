@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.18  2002/07/03 15:56:55  dkr
- * major modifications done
+ * Revision 1.19  2002/07/04 15:45:35  dkr
+ * compilation of from_unq() and to_unq() assignments corrected
  *
  * Revision 1.17  2002/07/02 14:03:09  dkr
  * DupExprs_NT() moved to DupTree.[ch]
@@ -35,9 +35,6 @@
  *
  * Revision 1.8  2002/03/07 02:22:17  dkr
  * definition for INFO_COMP_FIRSTASSIGN added
- *
- * Revision 1.7  2002/03/01 03:20:27  dkr
- * minor changes done
  *
  * Revision 1.6  2002/02/22 13:48:19  dkr
  * error in COMPMT2FunReturn() corrected
@@ -2399,8 +2396,8 @@ COMP2Return (node *arg_node, node *arg_info)
 node *
 COMP2Let (node *arg_node, node *arg_info)
 {
-    node *ret_node;
     node *expr;
+    node *ret_node;
 
     DBUG_ENTER ("COMPLet");
 
@@ -2463,7 +2460,8 @@ COMPApIds (node *ap, node *arg_info)
         if (argtab->ptr_out[i] != NULL) {
             let_ids = argtab->ptr_out[i];
             tag = argtab->tag[i];
-            DBUG_ASSERT ((ATG_is_out[tag]), "illegal tag found!");
+            DBUG_ASSERT (((ATG_is_out[tag]) || (ATG_is_inout[tag])),
+                         "illegal tag found!");
 
             ret_node
               = MakeAssignIcm1 ("ND_REFRESH_MIRROR",
@@ -2582,10 +2580,10 @@ COMPApArgs (node *ap, node *arg_info)
 node *
 COMP2Ap (node *arg_node, node *arg_info)
 {
-    node *ret_node;
     ids *let_ids;
     node *fundef;
     node *assigns1, *assigns2;
+    node *ret_node;
 
     DBUG_ENTER ("COMPAp");
 
@@ -2646,9 +2644,9 @@ COMP2Ap (node *arg_node, node *arg_info)
 static node *
 COMPPrfDim (node *arg_node, node *arg_info, node **set_shape_icm)
 {
-    node *ret_node;
     ids *let_ids;
     node *arg;
+    node *ret_node;
 
     DBUG_ENTER ("COMPPrfDim");
 
@@ -2687,10 +2685,10 @@ COMPPrfDim (node *arg_node, node *arg_info, node **set_shape_icm)
 static node *
 COMPPrfShape (node *arg_node, node *arg_info, node **set_shape_icm)
 {
-    node *ret_node;
     node *arg;
     ids *let_ids;
     node *icm_args;
+    node *ret_node;
 
     DBUG_ENTER ("COMPPrfShape");
 
@@ -2728,10 +2726,10 @@ COMPPrfShape (node *arg_node, node *arg_info, node **set_shape_icm)
 static node *
 COMPPrfReshape (node *arg_node, node *arg_info, node **set_shape_icm)
 {
-    node *ret_node;
     node *arg1, *arg2;
     ids *let_ids;
     node *icm_args;
+    node *ret_node;
 
     DBUG_ENTER ("COMPPrfReshape");
 
@@ -2770,10 +2768,10 @@ COMPPrfReshape (node *arg_node, node *arg_info, node **set_shape_icm)
 static node *
 COMPPrfIdxSel (node *arg_node, node *arg_info, node **set_shape_icm)
 {
-    node *ret_node;
     node *arg1, *arg2;
     ids *let_ids;
     node *icm_args;
+    node *ret_node;
 
     DBUG_ENTER ("COMPPrfIdxSel");
 
@@ -2791,11 +2789,14 @@ COMPPrfIdxSel (node *arg_node, node *arg_info, node **set_shape_icm)
     }
     DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "N_id as 2nd arg of F_idx_sel expected!");
 
-    icm_args
-      = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
-                      MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE, FALSE,
-                                    MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE,
-                                                  TRUE, FALSE, NULL)));
+    icm_args = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
+#if 0
+             MakeTypeArgs( ID_NAME( arg1),
+                           ID_TYPE( arg1),
+                           FALSE, TRUE, FALSE,
+#endif
+                             MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
+                                           FALSE, NULL));
 
     (*set_shape_icm) = MakeIcm1 ("ND_PRF_IDX_SEL__SHAPE", icm_args);
 
@@ -2823,10 +2824,10 @@ COMPPrfIdxSel (node *arg_node, node *arg_info, node **set_shape_icm)
 static node *
 COMPPrfIdxModarray (node *arg_node, node *arg_info, node **set_shape_icm)
 {
-    node *ret_node;
     node *arg1, *arg2, *arg3;
     ids *let_ids;
     node *icm_args;
+    node *ret_node;
 
     DBUG_ENTER ("COMPPrfIdxModarray");
 
@@ -2850,11 +2851,15 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info, node **set_shape_icm)
     icm_args
       = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
                       MakeTypeArgs (ID_NAME (arg1), ID_TYPE (arg1), FALSE, TRUE, FALSE,
-                                    MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE,
-                                                  TRUE, FALSE,
-                                                  MakeTypeArgs (ID_NAME (arg3),
-                                                                ID_TYPE (arg3), FALSE,
-                                                                TRUE, FALSE, NULL))));
+#if 0
+             MakeTypeArgs( ID_NAME( arg2),
+                           ID_TYPE( arg2),
+                           FALSE, TRUE, FALSE,
+             MakeTypeArgs( ID_NAME( arg3),
+                           ID_TYPE( arg3),
+                           FALSE, TRUE, FALSE,
+#endif
+                                    NULL));
 
     (*set_shape_icm) = MakeIcm1 ("ND_PRF_IDX_MODARRAY__SHAPE", icm_args);
 
@@ -2881,10 +2886,10 @@ COMPPrfIdxModarray (node *arg_node, node *arg_info, node **set_shape_icm)
 static node *
 COMPPrfSel (node *arg_node, node *arg_info, node **set_shape_icm)
 {
-    node *ret_node;
     node *arg1, *arg2;
     ids *let_ids;
     node *icm_args;
+    node *ret_node;
 
     DBUG_ENTER ("COMPPrfSel");
 
@@ -2928,10 +2933,10 @@ COMPPrfSel (node *arg_node, node *arg_info, node **set_shape_icm)
 static node *
 COMPPrfModarray (node *arg_node, node *arg_info, node **set_shape_icm)
 {
-    node *ret_node;
     node *arg1, *arg2, *arg3;
     ids *let_ids;
     node *icm_args;
+    node *ret_node;
 
     DBUG_ENTER ("COMPPrfModarray");
 
@@ -3151,8 +3156,9 @@ COMP2Prf (node *arg_node, node *arg_info)
         break;
 
     case F_reshape:
-#if 0
-      check_reuse = PRF_ARG2( arg_node);
+#if 1
+#else
+        check_reuse = PRF_ARG2 (arg_node);
 #endif
         ret_node = COMPPrfReshape (arg_node, arg_info, &ret_node2);
         break;
@@ -3248,7 +3254,7 @@ COMPIdLet (node *arg_node, node *arg_info)
                                     IDS_REFCNT (let_ids), IDS_REFCNT (let_ids) - 1, NULL);
     } else {
         ret_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                    IDS_REFCNT (let_ids), IDS_REFCNT (let_ids) - 1,
+                                    IDS_REFCNT (let_ids), IDS_REFCNT (let_ids),
                                     MakeDecRcIcm (ID_NAME (arg_node), ID_TYPE (arg_node),
                                                   ID_REFCNT (arg_node), 1, NULL));
     }
@@ -3291,6 +3297,7 @@ static node *
 COMPIdFromUnique (node *arg_node, node *arg_info)
 {
     ids *let_ids;
+    types *lhs_type, *rhs_type;
     node *ret_node;
 
     DBUG_ENTER ("COMPIdFromUnique");
@@ -3299,22 +3306,62 @@ COMPIdFromUnique (node *arg_node, node *arg_info)
 
     /*
      * 'arg_node' is unique and 'let_ids' is non-unique
+     *
+     * Although this is an assignment  A = from_unq( B);  the type of B is
+     * possible non-unique, e.g. if this assignment has been added during
+     * precompilation due to the fact that B is used as update-arg for a
+     * C-function!!
      */
 
-    ret_node
-      = MakeSetRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), IDS_REFCNT (let_ids), NULL);
+    lhs_type = IDS_TYPE (let_ids);
+    DBUG_ASSERT ((!IsUnique (lhs_type)), "from_unq() with unique LHS found!");
+    rhs_type = ID_TYPE (arg_node);
 
-    if (strcmp (IDS_NAME (let_ids), ID_NAME (arg_node))) {
-        ret_node = MakeAssignIcm1 ("ND_ASSIGN",
-                                   MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                 FALSE, TRUE, FALSE,
-                                                 MakeTypeArgs (ID_NAME (arg_node),
-                                                               ID_TYPE (arg_node), FALSE,
-                                                               TRUE, FALSE, NULL)),
-                                   ret_node);
+#if 0
+  if (! IsUnique( rhs_type)) {
+    /*
+     * non-unique type -> patch it in order to fool the backend :-)
+     */
+    rhs_type = MakeTypes( T_user, 0, NULL,
+                          NULL, NULL);
+    TYPES_TDEF( rhs_type) = MakeTypedef( NULL, NULL,
+                                         DupOneTypes( ID_TYPE( arg_node)),
+                                         ST_unique,
+                                         NULL);
+  }
+#endif
+
+    if (!IsUnique (rhs_type)) {
+        /*
+         * non-unique type
+         *   -> ignore from_unq() in order to get a simpler ICM code
+         */
+        ret_node = COMPIdLet (arg_node, arg_info);
     } else {
-        ret_node = MakeAssignIcm0 ("NOOP", ret_node);
+        ret_node
+          = MakeAssignIcm1 ("ND_ASSIGN",
+                            MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
+                                          TRUE, FALSE,
+                                          MakeTypeArgs (ID_NAME (arg_node),
+                                                        ID_TYPE (arg_node), FALSE, TRUE,
+                                                        FALSE, NULL)),
+                            MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                             IDS_REFCNT (let_ids), IDS_REFCNT (let_ids),
+                                             MakeDecRcIcm (ID_NAME (arg_node),
+                                                           ID_TYPE (arg_node),
+                                                           ID_REFCNT (arg_node), 1,
+                                                           NULL)));
     }
+
+#if 0
+  if (rhs_type != ID_TYPE( arg_node)) {
+    /*
+     * free patched type
+     */
+    TYPES_TDEF( rhs_type) = FreeTree( TYPES_TDEF( rhs_type));
+    rhs_type = FreeAllTypes( rhs_type);
+  }
+#endif
 
     DBUG_RETURN (ret_node);
 }
@@ -3336,50 +3383,75 @@ static node *
 COMPIdToUnique (node *arg_node, node *arg_info)
 {
     ids *let_ids;
-    types *rhs_type;
+    types *lhs_type, *rhs_type;
+    node *icm_args;
     node *ret_node;
 
     DBUG_ENTER ("COMPIdToUnique");
 
     let_ids = INFO_COMP_LASTIDS (arg_info);
-    rhs_type = ID_TYPE (arg_node);
-
     DBUG_ASSERT (strcmp (IDS_NAME (let_ids), ID_NAME (arg_node)),
                  ".=to_unq(.) on identical objects is not allowed!");
 
     /*
      * 'arg_node' is non-unique and 'let_ids' is unique
+     *
+     * Although this is an assignment  A = to_unq( B);  the type of A is
+     * possible non-unique, e.g. if this assignment has been added during
+     * precompilation due to the fact that A is used as update-arg for a
+     * C-function.
      */
+
+    lhs_type = IDS_TYPE (let_ids);
+    rhs_type = ID_TYPE (arg_node);
+    DBUG_ASSERT ((!IsUnique (rhs_type)), "to_unq() with unique RHS found!");
+
+#if 0
+  /*
+   * non-unique type -> patch it in order to fool the backend :-)
+   */
+  if (! IsUnique( lhs_type)) {
+    lhs_type = MakeTypes( T_user, 0, NULL,
+                          NULL, NULL);
+    TYPES_TDEF( lhs_type) = MakeTypedef( NULL, NULL,
+                                         DupOneTypes( IDS_TYPE( let_ids)),
+                                         ST_unique,
+                                         NULL);
+  }
+#endif
+
+    ret_node = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                IDS_REFCNT (let_ids), IDS_REFCNT (let_ids),
+                                MakeDecRcIcm (ID_NAME (arg_node), ID_TYPE (arg_node),
+                                              ID_REFCNT (arg_node), 1, NULL));
+
+    icm_args = MakeTypeArgs (IDS_NAME (let_ids), lhs_type, FALSE, TRUE, FALSE,
+                             MakeTypeArgs (ID_NAME (arg_node), rhs_type, FALSE, TRUE,
+                                           FALSE, NULL));
+
     if (RC_IS_ACTIVE (ID_REFCNT (arg_node))) {
         DBUG_ASSERT ((ID_REFCNT (arg_node) != 0), "reference with (rc == 0) found!");
 
         if (ID_REFCNT (arg_node) == 1) {
-            ret_node
-              = MakeAssignIcm3 ("ND_MAKE_UNIQUE",
-                                MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                              FALSE, TRUE, FALSE, NULL),
-                                MakeTypeArgs (ID_NAME (arg_node), ID_TYPE (arg_node),
-                                              FALSE, TRUE, FALSE, NULL),
-                                MakeId_Copy (GenericFun (0, rhs_type)), NULL);
+            ret_node = MakeAssignIcm2 ("ND_MAKE_UNIQUE", icm_args,
+                                       MakeId_Copy (GenericFun (0, rhs_type)), ret_node);
         } else {
-            ret_node
-              = MakeAssignIcm3 ("ND_COPY",
-                                MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                              FALSE, TRUE, FALSE, NULL),
-                                MakeTypeArgs (ID_NAME (arg_node), ID_TYPE (arg_node),
-                                              FALSE, TRUE, FALSE, NULL),
-                                MakeId_Copy (GenericFun (0, rhs_type)),
-                                MakeDecRcIcm (ID_NAME (arg_node), rhs_type,
-                                              ID_REFCNT (arg_node), 1, NULL));
+            ret_node = MakeAssignIcm2 ("ND_COPY", icm_args,
+                                       MakeId_Copy (GenericFun (0, rhs_type)), ret_node);
         }
     } else {
-        ret_node = MakeAssignIcm3 ("ND_MAKE_UNIQUE",
-                                   MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                                 FALSE, TRUE, FALSE, NULL),
-                                   MakeTypeArgs (ID_NAME (arg_node), ID_TYPE (arg_node),
-                                                 FALSE, TRUE, FALSE, NULL),
-                                   MakeId_Copy (GenericFun (0, rhs_type)), NULL);
+        ret_node = MakeAssignIcm1 ("ND_ASSIGN", icm_args, ret_node);
     }
+
+#if 0
+  if (lhs_type != IDS_TYPE( let_ids)) {
+    /*
+     * free patched type
+     */
+    TYPES_TDEF( lhs_type) = FreeTree( TYPES_TDEF( lhs_type));
+    lhs_type = FreeAllTypes( lhs_type);
+  }
+#endif
 
     DBUG_RETURN (ret_node);
 }
