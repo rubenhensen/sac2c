@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/03/15 17:51:05  bs
+ * Bug fixed
+ *
  * Revision 2.5  1999/03/15 17:25:50  bs
  * Bugs fixed!
  *
@@ -1238,19 +1241,19 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
         case T_int:
             FREE (ARRAY_INTVEC (new_node));
             tmp_ivec = Array2IntVec (ARRAY_AELEMS (new_node), NULL);
-            ARRAY_INTVEC (new_node) = tmp_vec;
+            ARRAY_INTVEC (new_node) = tmp_ivec;
             ARRAY_VECLEN (new_node) = length;
             break;
         case T_float:
             FREE (ARRAY_FLOATVEC (new_node));
             tmp_fvec = Array2FloatVec (ARRAY_AELEMS (new_node), NULL);
-            ARRAY_FLOATVEC (new_node) = tmp_vec;
+            ARRAY_FLOATVEC (new_node) = tmp_fvec;
             ARRAY_VECLEN (new_node) = length;
             break;
         case T_double:
             FREE (ARRAY_DOUBLEVEC (new_node));
             tmp_dvec = Array2DblVec (ARRAY_AELEMS (new_node), NULL);
-            ARRAY_DOUBLEVEC (new_node) = tmp_vec;
+            ARRAY_DOUBLEVEC (new_node) = tmp_dvec;
             ARRAY_VECLEN (new_node) = length;
             break;
         default:
