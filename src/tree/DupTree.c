@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.148  2005/02/03 14:25:09  jhb
+ * changed NODE_ERROR to DUPTRAV
+ *
  * Revision 3.147  2005/02/01 15:25:37  mwe
  * bug fixed (corrected pointer for AVIS_SSAASSIGN and AVIS_WITHID)
  *
@@ -670,11 +673,13 @@ DupFlags (node *new_node, node *old_node)
 static void
 CopyCommonNodeData (node *new_node, node *old_node)
 {
+    info *arg_info = NULL;
+
     DBUG_ENTER ("CopyCommonNodeData");
 
     NODE_LINE (new_node) = NODE_LINE (old_node);
     NODE_FILE (new_node) = NODE_FILE (old_node);
-    NODE_ERROR (new_node) = DUPdoDupNode (NODE_ERROR (old_node));
+    NODE_ERROR (new_node) = DUPTRAV (NODE_ERROR (old_node));
 
     new_node = DupFlags (new_node, old_node);
 
@@ -2898,7 +2903,7 @@ DUPssacnt (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *Dupchk( node *arg_node, info *arg_info)
+ *   node *Duperror( node *arg_node, info *arg_info)
  *
  * description:
  *   Duplicates a Error node.
