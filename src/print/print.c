@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.95  1995/12/04 16:18:25  hw
+ * Revision 1.96  1995/12/18 16:18:48  cg
+ * Bug fixed in PrintId
+ *
+ * Revision 1.95  1995/12/04  16:18:25  hw
  * added primitve functions toi, tof & tod
  *
  * Revision 1.94  1995/12/01  20:27:18  cg
@@ -722,7 +725,7 @@ PrintFundef (node *arg_node, node *arg_info)
                 PrintFunctionHeader (arg_node, new_info);
             }
 
-            fprintf (outfile, ";");
+            fprintf (outfile, ";\n");
         }
     }
 
@@ -802,7 +805,7 @@ PrintId (node *arg_node, node *arg_info)
                  "wrong arg_node->nodetype ");
 
     if (N_id == arg_node->nodetype) {
-        if ((ID_ATTRIB (arg_node) = ST_global) && (ID_MOD (arg_node) != NULL)) {
+        if ((ID_ATTRIB (arg_node) == ST_global) && (ID_MOD (arg_node) != NULL)) {
             fprintf (outfile, "%s:", ID_MOD (arg_node));
         }
 
@@ -1262,12 +1265,12 @@ PrintIcm (node *arg_node, node *arg_info)
 #undef ICM_VAR
 #undef ICM_END
 #undef ICM_ALL
-        if (strcmp (arg_node->info.fun_name.id, "NOOP") == 0)
+        if (strcmp (ICM_NAME (arg_node), "NOOP") == 0)
             compiled_icm = 1;
 
     if ((show_icm == 1) || (compiled_icm == 0)) {
         INDENT;
-        fprintf (outfile, "%s(", arg_node->info.fun_name.id);
+        fprintf (outfile, "%s(", ICM_NAME (arg_node));
         if (NULL != arg_node->node[0])
             Trav (arg_node->node[0], arg_info);
         fprintf (outfile, ")");
@@ -1275,7 +1278,9 @@ PrintIcm (node *arg_node, node *arg_info)
 
     if (NULL != arg_node->node[1]) {
         if ((1 == show_icm) || (0 == compiled_icm)) {
-            if (0 == strcmp (arg_node->info.fun_name.id, "ND_TYPEDEF_ARRAY")) {
+            if ((0 == strcmp (ICM_NAME (arg_node), "ND_TYPEDEF_ARRAY"))
+                || (0 == strcmp (ICM_NAME (arg_node), "ND_KS_DECL_GLOBAL_ARRAY"))
+                || (0 == strcmp (ICM_NAME (arg_node), "ND_KD_DECL_EXTERN_ARRAY"))) {
                 fprintf (outfile, "\n");
                 INDENT;
             } else
