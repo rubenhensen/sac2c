@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/04/02 11:08:20  nmw
+ * handling for multiple used special functions added
+ *
  * Revision 1.1  2001/03/26 15:37:45  nmw
  * Initial revision
  *
@@ -23,7 +26,7 @@
 
 #define SAC_SSALIR_H
 
-extern node *SSALoopInvariantRemoval (node *fundef);
+extern node *SSALoopInvariantRemoval (node *fundef, node *modul);
 
 extern node *SSALIRfundef (node *arg_node, node *arg_info);
 extern node *SSALIRarg (node *arg_node, node *arg_info);

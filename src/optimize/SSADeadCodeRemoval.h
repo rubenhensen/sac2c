@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2001/04/02 11:08:20  nmw
+ * handling for multiple used special functions added
+ *
  * Revision 1.3  2001/03/23 09:30:33  nmw
  * SSADCRdo/while removed
  *
@@ -16,7 +19,7 @@
 
 #define _SAC_SSADEADCODEREMOVAL_H
 
-extern node *SSADeadCodeRemoval (node *fundef);
+extern node *SSADeadCodeRemoval (node *fundef, node *modul);
 
 extern node *SSADCRfundef (node *arg_node, node *arg_info);
 extern node *SSADCRarg (node *arg_node, node *arg_info);

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2001/04/02 11:08:20  nmw
+ * handling for multiple used special functions added
+ *
  * Revision 1.3  2001/03/23 09:29:29  nmw
  * SSACSEdo/while removed
  *
@@ -30,7 +33,7 @@
 
 #define SAC_SSACSE_H
 
-extern node *SSACSE (node *fundef);
+extern node *SSACSE (node *fundef, node *modul);
 
 extern node *SSACSEfundef (node *arg_node, node *arg_info);
 extern node *SSACSEarg (node *arg_node, node *arg_info);

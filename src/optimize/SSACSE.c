@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2001/04/02 11:08:20  nmw
+ * handling for multiple used special functions added
+ *
  * Revision 1.8  2001/03/23 09:29:54  nmw
  * SSACSEdo/while removed and copy propagation implemented
  *
@@ -48,6 +51,7 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "free.h"
+#include "DupTree.h"
 #include "SSACSE.h"
 #include "compare_tree.h"
 #include "optimize.h"
@@ -575,11 +579,20 @@ SSACSEap (node *arg_node, node *arg_info)
         && (AP_FUNDEF (arg_node) != INFO_SSACSE_FUNDEF (arg_info))) {
         DBUG_PRINT ("SSACSE", ("traverse in special fundef %s",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
+
+        INFO_SSACSE_MODUL (arg_info)
+          = CheckAndDupSpecialFundef (INFO_SSACSE_MODUL (arg_info), AP_FUNDEF (arg_node),
+                                      INFO_SSACSE_ASSIGN (arg_info));
+
+        DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (arg_node)) == 1),
+                     "more than one instance of special function used.");
+
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
 
         INFO_SSACSE_DEPTH (new_arg_info) = INFO_SSACSE_DEPTH (arg_info) + 1;
         INFO_SSACSE_CSE (new_arg_info) = NULL;
+        INFO_SSACSE_MODUL (new_arg_info) = INFO_SSACSE_MODUL (arg_info);
 
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
@@ -753,7 +766,7 @@ TravIDS (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSACSE(node* fundef)
+ *   node* SSACSE(node* fundef, node* modul)
  *
  * description:
  *   Starts the traversal for a given fundef.
@@ -765,7 +778,7 @@ TravIDS (ids *arg_ids, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSACSE (node *fundef)
+SSACSE (node *fundef, node *modul)
 {
     node *arg_info;
     funtab *old_tab;
@@ -784,6 +797,7 @@ SSACSE (node *fundef)
 
         INFO_SSACSE_DEPTH (arg_info) = SSACSE_TOPLEVEL; /* start on toplevel */
         INFO_SSACSE_CSE (arg_info) = NULL;
+        INFO_SSACSE_MODUL (arg_info) = modul;
 
         old_tab = act_tab;
         act_tab = ssacse_tab;

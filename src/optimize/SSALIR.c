@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2001/04/02 11:08:20  nmw
+ * handling for multiple used special functions added
+ *
  * Revision 1.2  2001/03/29 16:31:55  nmw
  * detection of loop invariant args implemented
  *
@@ -27,6 +30,7 @@
 #include "internal_lib.h"
 #include "traverse.h"
 #include "free.h"
+#include "DupTree.h"
 #include "optimize.h"
 #include "SSALIR.h"
 
@@ -183,7 +187,9 @@ SSALIRassign (node *arg_node, node *arg_info)
 
     DBUG_ASSERT ((ASSIGN_INSTR (arg_node)), "missing instruction in assignment");
 
+    INFO_SSALIR_ASSIGN (arg_info) = arg_node;
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    INFO_SSALIR_ASSIGN (arg_info) = NULL;
 
     /* traverse next assignment */
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -265,8 +271,16 @@ SSALIRap (node *arg_node, node *arg_info)
         DBUG_PRINT ("SSALIR", ("traverse in special fundef %s",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
+        INFO_SSALIR_MODUL (arg_info)
+          = CheckAndDupSpecialFundef (INFO_SSALIR_MODUL (arg_info), AP_FUNDEF (arg_node),
+                                      INFO_SSALIR_ASSIGN (arg_info));
+
+        DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (arg_node)) == 1),
+                     "more than one instance of special function used.");
+
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
+        INFO_SSALIR_MODUL (new_arg_info) = INFO_SSALIR_MODUL (arg_info);
 
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
@@ -393,14 +407,14 @@ SSALIRids (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* SSALoopInvariantRemoval(node* fundef)
+ *   node* SSALoopInvariantRemoval(node* fundef, node* modul)
  *
  * description:
  *
  *
  ******************************************************************************/
 node *
-SSALoopInvariantRemoval (node *fundef)
+SSALoopInvariantRemoval (node *fundef, node *modul)
 {
     node *arg_info;
     funtab *old_tab;
@@ -417,6 +431,7 @@ SSALoopInvariantRemoval (node *fundef)
     if ((FUNDEF_STATUS (fundef) != ST_condfun) && (FUNDEF_STATUS (fundef) != ST_dofun)
         && (FUNDEF_STATUS (fundef) != ST_whilefun)) {
         arg_info = MakeInfo ();
+        INFO_SSALIR_MODUL (arg_info) = modul;
 
         old_tab = act_tab;
         act_tab = ssalir_tab;

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2001/04/02 11:08:20  nmw
+ * handling for multiple used special functions added
+ *
  * Revision 1.3  2001/03/29 16:31:21  nmw
  * Constant Folding for Loops and Conditionals implemented
  *
@@ -31,6 +34,7 @@
 #include "internal_lib.h"
 #include "traverse.h"
 #include "free.h"
+#include "DupTree.h"
 #include "SSAConstantFolding.h"
 #include "constants.h"
 #include "optimize.h"
@@ -239,9 +243,11 @@ SSACFassign (node *arg_node, node *arg_info)
     /* init flags for possible code removal/movement */
     INFO_SSACF_REMASSIGN (arg_info) = FALSE;
     INFO_SSACF_POSTASSIGN (arg_info) = NULL;
+    INFO_SSACF_ASSIGN (arg_info) = arg_node;
     if (ASSIGN_INSTR (arg_node) != NULL) {
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     }
+    INFO_SSACF_ASSIGN (arg_info) = NULL;
 
     /* save removal flag for bottom-up traversal */
     remove_assignment = INFO_SSACF_REMASSIGN (arg_info);
@@ -455,6 +461,7 @@ SSACFlet (node *arg_node, node *arg_info)
                                       FUNDEF_NAME (AP_FUNDEF (LET_EXPR (arg_node))),
                                       FUNDEF_NAME (INFO_SSACF_FUNDEF (arg_info))));
 
+                /* inline special function */
                 INFO_SSACF_POSTASSIGN (arg_info)
                   = AppendAssign (InlineSingleApplication (arg_node,
                                                            INFO_SSACF_FUNDEF (arg_info),
@@ -542,13 +549,21 @@ SSACFap (node *arg_node, node *arg_info)
          || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_dofun)
          || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_whilefun))
         && (AP_FUNDEF (arg_node) != INFO_SSACF_FUNDEF (arg_info))) {
+
         DBUG_PRINT ("SSACF", ("traverse in special fundef %s",
                               FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        INFO_SSACF_MODUL (arg_info)
+          = CheckAndDupSpecialFundef (INFO_SSACF_MODUL (arg_info), AP_FUNDEF (arg_node),
+                                      INFO_SSACF_ASSIGN (arg_info));
+
+        DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (arg_node)) == 1),
+                     "more than one instance of special function used.");
 
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
 
         INFO_SSACF_DEPTH (new_arg_info) = INFO_SSACF_DEPTH (arg_info) + 1;
+        INFO_SSACF_MODUL (new_arg_info) = INFO_SSACF_MODUL (arg_info);
 
         /* propagate constant args to called special function */
         FUNDEF_ARGS (AP_FUNDEF (arg_node))
@@ -1064,7 +1079,7 @@ SSACFNgen (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSAConstantFolding (node *fundef)
+SSAConstantFolding (node *fundef, node *modul)
 {
     node *arg_info;
     funtab *old_tab;
@@ -1083,6 +1098,7 @@ SSAConstantFolding (node *fundef)
         arg_info = MakeInfo ();
 
         INFO_SSACF_DEPTH (arg_info) = SSACF_TOPLEVEL; /* start on toplevel */
+        INFO_SSACF_MODUL (arg_info) = modul;
 
         old_tab = act_tab;
         act_tab = ssacf_tab;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2001/04/02 11:08:20  nmw
+ * handling for multiple used special functions added
+ *
  * Revision 1.9  2001/03/23 09:30:33  nmw
  * SSADCRdo/while removed
  *
@@ -220,12 +223,21 @@ SSADCRarg (node *arg_node, node *arg_info)
         || ((AVIS_NEEDCOUNT (ARG_AVIS (arg_node)) == 1)
             && (AVIS_SSALPINV (ARG_AVIS (arg_node))))) {
         DBUG_PRINT ("SSADCR", ("remove arg %sa", ARG_NAME (arg_node)));
-        /* remove this argument from all applciations */
+        /* remove this argument from all applications */
         letlist = NULL;
-        if (FUNDEF_EXT_ASSIGN (INFO_SSADCR_FUNDEF (arg_info)) != NULL) {
+        if (FUNDEF_EXT_ASSIGNS (INFO_SSADCR_FUNDEF (arg_info)) != NULL) {
+            /*
+             * there must be only ONE external reference to modify the
+             * functions signature
+             */
+            DBUG_ASSERT ((NODELIST_NEXT (
+                            FUNDEF_EXT_ASSIGNS (INFO_SSADCR_FUNDEF (arg_info)))
+                          == NULL),
+                         "there must be only ONE external reference to a special function"
+                         "to modify its signature");
             letlist = NodeListAppend (letlist,
-                                      ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (
-                                        INFO_SSADCR_FUNDEF (arg_info))),
+                                      ASSIGN_INSTR (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (
+                                        INFO_SSADCR_FUNDEF (arg_info)))),
                                       NULL);
         }
         if (FUNDEF_INT_ASSIGN (INFO_SSADCR_FUNDEF (arg_info)) != NULL) {
@@ -388,12 +400,17 @@ SSADCRlet (node *arg_node, node *arg_info)
             INFO_SSADCR_REMRESULTS (arg_info) = TRUE;
             INFO_SSADCR_APFUNDEF (arg_info) = AP_FUNDEF (LET_EXPR (arg_node));
 
+            DBUG_PRINT ("SSADCR", ("FUNDEF_USED(%s) = %d",
+                                   FUNDEF_NAME (AP_FUNDEF (LET_EXPR (arg_node))),
+                                   FUNDEF_USED (AP_FUNDEF (LET_EXPR (arg_node)))));
+            DBUG_ASSERT ((FUNDEF_EXT_ASSIGNS (AP_FUNDEF (LET_EXPR (arg_node))) != NULL),
+                         "missing external application list");
             /* set correct external assign reference in called fundef node */
-            if (AP_FUNDEF (LET_EXPR (arg_node)) != INFO_SSADCR_FUNDEF (arg_info)) {
-                /* no recursive (internal) call must be the one external call */
-                FUNDEF_EXT_ASSIGN (AP_FUNDEF (LET_EXPR (arg_node)))
-                  = INFO_SSADCR_ASSIGN (arg_info);
-            }
+            /*	  if(AP_FUNDEF(LET_EXPR(arg_node)) != INFO_SSADCR_FUNDEF(arg_info)) { */
+            /* no recursive (internal) call must be the one external call */
+            /*	    FUNDEF_EXT_ASSIGN(AP_FUNDEF(LET_EXPR(arg_node))) =
+                INFO_SSADCR_ASSIGN(arg_info);
+                }*/
         }
     }
 
@@ -540,10 +557,23 @@ SSADCRap (node *arg_node, node *arg_info)
         && (AP_FUNDEF (arg_node) != INFO_SSADCR_FUNDEF (arg_info))) {
         DBUG_PRINT ("SSADCR", ("traverse in special fundef %s",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
+
+        /*
+         * duplicate the applicated funtion to avoid multiple uses of
+         * one special function
+         */
+        INFO_SSADCR_MODUL (arg_info)
+          = CheckAndDupSpecialFundef (INFO_SSADCR_MODUL (arg_info), AP_FUNDEF (arg_node),
+                                      INFO_SSADCR_ASSIGN (arg_info));
+
+        DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (arg_node)) == 1),
+                     "more than one instance of special function used.");
+
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
 
         INFO_SSADCR_DEPTH (new_arg_info) = INFO_SSADCR_DEPTH (arg_info) + 1;
+        INFO_SSADCR_MODUL (new_arg_info) = INFO_SSADCR_MODUL (arg_info);
 
         /* start traversal of special fundef (and maybe reduce parameters!) */
         AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), new_arg_info);
@@ -732,13 +762,28 @@ SSADCRleftids (ids *arg_ids, node *arg_info)
 
             /* remove result from all function applications - except this one */
             letlist = NULL;
-            if (FUNDEF_EXT_ASSIGN (INFO_SSADCR_APFUNDEF (arg_info)) != NULL) {
-                if (ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (INFO_SSADCR_APFUNDEF (arg_info)))
+            if (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (INFO_SSADCR_APFUNDEF (arg_info)))
+                != NULL) {
+                if (ASSIGN_INSTR (NODELIST_NODE (
+                      FUNDEF_EXT_ASSIGNS (INFO_SSADCR_APFUNDEF (arg_info))))
                     != INFO_SSADCR_LET (arg_info)) {
-                    letlist = NodeListAppend (letlist,
-                                              ASSIGN_INSTR (FUNDEF_EXT_ASSIGN (
-                                                INFO_SSADCR_APFUNDEF (arg_info))),
-                                              NULL);
+
+                    /*
+                     * there must be only ONE external reference to modify the
+                     * functions signature
+                     */
+                    DBUG_ASSERT ((NODELIST_NEXT (
+                                    FUNDEF_EXT_ASSIGNS (INFO_SSADCR_FUNDEF (arg_info)))
+                                  == NULL),
+                                 "there must be only one external reference to a special "
+                                 "function"
+                                 "to modify its signature");
+
+                    letlist
+                      = NodeListAppend (letlist,
+                                        ASSIGN_INSTR (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (
+                                          INFO_SSADCR_FUNDEF (arg_info)))),
+                                        NULL);
                 }
             }
             if (FUNDEF_INT_ASSIGN (INFO_SSADCR_APFUNDEF (arg_info)) != NULL) {
@@ -869,7 +914,7 @@ TravRightIDS (ids *arg_ids, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *SSADeadCodeRemoval(node *fundef)
+ *   node *SSADeadCodeRemoval(node *fundef, node *modul)
  *
  * description:
  *   starting point of DeadCodeRemoval for SSA form.
@@ -880,7 +925,7 @@ TravRightIDS (ids *arg_ids, node *arg_info)
  *
  ******************************************************************************/
 node *
-SSADeadCodeRemoval (node *fundef)
+SSADeadCodeRemoval (node *fundef, node *modul)
 {
     node *arg_info;
     funtab *old_tab;
@@ -896,6 +941,7 @@ SSADeadCodeRemoval (node *fundef)
         arg_info = MakeInfo ();
 
         INFO_SSADCR_DEPTH (arg_info) = SSADCR_TOPLEVEL; /* start on toplevel */
+        INFO_SSADCR_MODUL (arg_info) = modul;
 
         old_tab = act_tab;
         act_tab = ssadcr_tab;
