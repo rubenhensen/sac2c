@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.11  2001/03/02 10:36:37  dkr
+# /home/dkr/sac/BASE/sac2c/src/tree/RCS/Makefile,v used in touch-rules
+#
 # Revision 3.10  2001/02/22 12:41:12  nmw
 # UndoSSATransfrom added
 #
@@ -90,10 +93,10 @@ all: tree.o tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
 # recognize the dependency between *.[ch] and the .mac files!
 #
 traverse.c: node_info.mac
-	touch traverse.c
+	touch $@
 
 tree_basic.c: prf_node_info.mac
-	touch tree_basic.c
+	touch $@
 
 
 %.o: %.c
@@ -254,7 +257,7 @@ traverse.o: ../c-interface/print_interface_header.h
 traverse.o: ../c-interface/print_interface_wrapper.h
 traverse.o: ../c-interface/map_cwrapper.h
 traverse.o: ../c-interface/import_specialization.h CheckAvis.h SSATransform.h
-traverse.o: UndoSSATransform.h traverse.h
+traverse.o: UndoSSATransform.h ../optimize/SSADeadCodeRemoval.h traverse.h
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 tree.o: /usr/include/sys/isa_defs.h tree.h ../global/types.h tree_basic.h
 tree.o: tree_compound.h ../global/Error.h /usr/include/stdio.h
