@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.7  2003/04/07 14:32:39  sbs
+ * type assertions extended for AKV types.
+ * signature of TEMakeInfo extended
+ * TEAssureValMatchesShape and TEGetCFFun added.
+ *
  * Revision 1.6  2003/03/19 10:34:10  sbs
  * TEAssureVect added.
  *
@@ -30,6 +35,7 @@ struct TE_INFO {
     char *name_str; /* name of the function */
     node *wrapper;  /* for udfs, this pointer points to the wrapper function */
     node *assign;   /* for udfs, this pointer points to the assign node of the ap */
+    void *cffun;    /* for prfs, this pointer points to the CF function of the prf */
 };
 
 #define TI_LINE(n) (n->line)
@@ -37,6 +43,7 @@ struct TE_INFO {
 #define TI_NAME(n) (n->name_str)
 #define TI_FUNDEF(n) (n->wrapper)
 #define TI_ASSIGN(n) (n->assign)
+#define TI_CFFUN(n) (n->cffun)
 
 /******************************************************************************
  ***
@@ -53,6 +60,7 @@ MatchScalar (ntype *type)
     DBUG_ENTER ("MatchScalar");
 
     switch (TYGetConstr (type)) {
+    case TC_akv:
     case TC_aks:
     case TC_akd:
         res = (TYGetDim (type) == 0);
@@ -76,6 +84,7 @@ MatchVect (ntype *type)
     DBUG_ENTER ("MatchVect");
 
     switch (TYGetConstr (type)) {
+    case TC_akv:
     case TC_aks:
     case TC_akd:
         res = (TYGetDim (type) == 1);
@@ -125,7 +134,8 @@ MatchBoolA (ntype *type)
  ******************************************************************************/
 
 te_info *
-TEMakeInfo (int linenum, char *kind_str, char *name_str, node *wrapper, node *assign)
+TEMakeInfo (int linenum, char *kind_str, char *name_str, node *wrapper, node *assign,
+            void *cffun)
 {
     te_info *res;
 
@@ -137,6 +147,7 @@ TEMakeInfo (int linenum, char *kind_str, char *name_str, node *wrapper, node *as
     TI_NAME (res) = name_str;
     TI_FUNDEF (res) = wrapper;
     TI_ASSIGN (res) = assign;
+    TI_CFFUN (res) = cffun;
 
     DBUG_RETURN (res);
 }
@@ -174,6 +185,13 @@ TEGetAssign (te_info *info)
 {
     DBUG_ENTER ("TEGetAssign");
     DBUG_RETURN (TI_ASSIGN (info));
+}
+
+void *
+TEGetCFFun (te_info *info)
+{
+    DBUG_ENTER ("TEGetCFFun");
+    DBUG_RETURN (TI_CFFUN (info));
 }
 
 /******************************************************************************
@@ -431,13 +449,49 @@ TEAssureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
     DBUG_ENTER ("TEAssureShpMatchesDim");
 
-    if ((TYGetConstr (type1) == TC_aks)
-        && ((TYGetConstr (type2) == TC_aks) || (TYGetConstr (type2) == TC_akd))
+    if (((TYGetConstr (type1) == TC_aks) || (TYGetConstr (type1) == TC_akv))
+        && ((TYGetConstr (type2) == TC_akv) || (TYGetConstr (type2) == TC_aks)
+            || (TYGetConstr (type2) == TC_akd))
         && (SHGetExtent (TYGetShape (type1), 0) != TYGetDim (type2))) {
-        ABORT (linenum, ("%s should be legal index into %s;"
+        ABORT (linenum, ("shape of %s should match dimensionality of %s;"
                          " types found: %s  and  %s",
                          obj1, obj2, TYType2String (type1, FALSE, 0),
                          TYType2String (type2, FALSE, 0)));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void TEAssureValMatchesShape( char *obj1, ntype *type1,
+ *                                   char *obj2, ntype *type2)
+ *
+ *   @brief  makes shure, that if type1 is AKV and type2 is AKS, type1
+ *           constitutes a legal index into type2.
+ *
+ ******************************************************************************/
+
+void
+TEAssureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
+{
+    int i, dim;
+    int *dv;
+
+    DBUG_ENTER ("TEAssureValMatchesShape");
+
+    if ((TYGetConstr (type1) == TC_akv)
+        && ((TYGetConstr (type2) == TC_aks) || (TYGetConstr (type2) == TC_akv))) {
+        dim = TYGetDim (type2);
+        dv = (int *)COGetDataVec (TYGetValue (type1));
+        for (i = 0; i < dim; i++) {
+            if ((dv[i] < 0) || (dv[i] >= SHGetExtent (TYGetShape (type2), i))) {
+                ABORT (linenum, ("%s should be legal index into %s;"
+                                 " types found: %s  and  %s",
+                                 obj1, obj2, TYType2String (type1, FALSE, 0),
+                                 TYType2String (type2, FALSE, 0)));
+            }
+        }
     }
 
     DBUG_VOID_RETURN;
@@ -511,9 +565,33 @@ ntype *
 TEAssureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
     ntype *res = NULL;
+    ntype *pend1 = NULL, *pend2 = NULL;
+    ntype *type1_org = NULL, *type2_org = NULL;
 
     DBUG_ENTER ("TEAssureSameShape");
 
+    /**
+     * lift AKVs to AKSs!
+     * pend<i> indicates ntype structures that have to be deleted!
+     * type<i>_org is needed for better error messages!
+     */
+    if (TYGetConstr (type1) == TC_akv) {
+        pend1 = TYMakeAKS (TYCopyType (TYGetScalar (type1)),
+                           SHCopyShape (TYGetShape (type1)));
+        type1_org = type1;
+        type1 = pend1;
+    }
+    if (TYGetConstr (type2) == TC_akv) {
+        pend2 = TYMakeAKS (TYCopyType (TYGetScalar (type2)),
+                           SHCopyShape (TYGetShape (type2)));
+        type2_org = type2;
+        type2 = pend2;
+    }
+
+    /**
+     *
+     * Now, the AKV free switch:
+     */
     switch (TYGetConstr (type1)) {
     case TC_aks:
         switch (TYGetConstr (type2)) {
@@ -584,6 +662,15 @@ TEAssureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
 
     default:
         DBUG_ASSERT (FALSE, "AssureSameShape applied to non-array type");
+    }
+
+    if (pend1 != NULL) {
+        type1 = type1_org;
+        pend1 = TYFreeType (pend1);
+    }
+    if (pend2 != NULL) {
+        type2 = type2_org;
+        pend2 = TYFreeType (pend2);
     }
 
     if (res == NULL) {

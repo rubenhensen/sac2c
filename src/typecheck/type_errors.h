@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.6  2003/04/07 14:32:39  sbs
+ * type assertions extended for AKV types.
+ * signature of TEMakeInfo extended
+ * TEAssureValMatchesShape and TEGetCFFun added.
+ *
  * Revision 1.5  2003/03/19 10:34:10  sbs
  * TEAssureVect added.
  *
@@ -38,16 +43,18 @@ extern void TEAssureSimpleType (char *obj, ntype *type);
 extern void TEAssureIntS (char *obj, ntype *type);
 extern void TEAssureIntVect (char *obj, ntype *type);
 extern void TEAssureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2);
+extern void TEAssureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEAssureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern void TEAssureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern ntype *TEAssureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 
 extern te_info *TEMakeInfo (int linenum, char *kind_str, char *name_str, node *wrapper,
-                            node *assign);
+                            node *assign, void *cffun);
 extern int TEGetLine (te_info *info);
 extern char *TEGetKindStr (te_info *info);
 extern char *TEGetNameStr (te_info *info);
 extern node *TEGetWrapper (te_info *info);
 extern node *TEGetAssign (te_info *info);
+extern void *TEGetCFFun (te_info *info);
 
 #endif /* _type_errors_h */
