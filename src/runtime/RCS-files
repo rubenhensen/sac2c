@@ -2,6 +2,7 @@ Makefile
 sac.h
 sac2crc.LINUX_X86
 sac2crc.OSF_ALPHA
+sac2crc.OSX_MAC
 sac2crc.README
 sac2crc.SOLARIS_SPARC
 sac_arg.h
