@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2002/10/14 12:08:19  mwe
+ * counter for AL-optimize added
+ *
  * Revision 3.36  2002/06/07 17:15:33  mwe
  * AssociativeLaw added
  *
@@ -343,6 +346,7 @@ int wls_expr;
 int old_wlf_expr, old_wlt_expr;
 int ap_padded;
 int ap_unsupported;
+int al_expr;
 
 /*
  * Global variable needed for the correct handling of break specifiers:
@@ -385,6 +389,7 @@ ResetCounters ()
     cse_expr = 0;
     ap_padded = 0;
     ap_unsupported = 0;
+    al_expr = 0;
 
     DBUG_VOID_RETURN;
 }
@@ -399,7 +404,7 @@ ResetCounters ()
  *                       int off_elim_arrays, int off_wlf_expr, int off_wlt_expr,
  *                       int off_cse_expr, int off_ap_padded,
  *                       int off_ap_unsupported,
- *                       int off_wls_expr,
+ *                       int off_wls_expr, int off_al_expr,
  *                       int flag)
  *
  * description:
@@ -416,7 +421,7 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
                  int off_lir_expr, int off_wlir_expr, int off_cf_expr, int off_lunr_expr,
                  int off_wlunr_expr, int off_uns_expr, int off_elim_arrays,
                  int off_wlf_expr, int off_wlt_expr, int off_cse_expr, int off_ap_padded,
-                 int off_ap_unsupported, int off_wls_expr, int flag)
+                 int off_ap_unsupported, int off_wls_expr, int off_al_expr, int flag)
 {
     int diff;
     DBUG_ENTER ("PrintStatistics");
@@ -481,6 +486,10 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     diff = ap_unsupported - off_ap_unsupported;
     if ((optimize & OPT_AP) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d array type(s) unsupported for padding", diff));
+
+    diff = al_expr - off_al_expr;
+    if ((optimize & OPT_AL) && ((ALL == flag) || (diff > 0)))
+        NOTE (("  %d associative law optimization(s)", diff));
 
     DBUG_VOID_RETURN;
 }
@@ -721,7 +730,7 @@ OPTmodul (node *arg_node, node *arg_info)
 
     NOTE ((""));
     NOTE (("overall optimization statistics:"));
-    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ALL);
+    PrintStatistics (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ALL);
 
     /*
      * index vector elimination
@@ -772,6 +781,7 @@ DONE:
  *        UNS        |   (not available in ssa form)
  *        LIR        |
  *        WLS        |
+ *        AL         |
  *         |--------/
  *         |<-------\
  * loop2: CF         |
@@ -799,6 +809,7 @@ OPTfundef (node *arg_node, node *arg_info)
     int mem_wlt_expr = wlt_expr;
     int mem_cse_expr = cse_expr;
     int mem_wls_expr = wls_expr;
+    int mem_al_expr = al_expr;
 
     int old_cse_expr = cse_expr;
     int old_cf_expr = cf_expr;
@@ -811,6 +822,7 @@ OPTfundef (node *arg_node, node *arg_info)
     int old_lir_expr = lir_expr;
     int old_wlir_expr = wlir_expr;
     int old_wls_expr = wls_expr;
+    int old_al_expr = al_expr;
 
     int loop1 = 0;
     int loop2 = 0;
@@ -924,6 +936,7 @@ OPTfundef (node *arg_node, node *arg_info)
             old_lir_expr = lir_expr;
             old_wlir_expr = wlir_expr;
             old_wls_expr = wls_expr;
+            old_al_expr = al_expr;
 
             if (optimize & OPT_CSE) {
                 if (use_ssaform) {
@@ -1109,12 +1122,17 @@ OPTfundef (node *arg_node, node *arg_info)
                 arg_node = WithloopScalarization (arg_node, INFO_OPT_MODUL (arg_info));
             }
 
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                && (0 == strcmp (break_specifier, "wls"))) {
+                goto INFO;
+            }
+
             if ((optimize & OPT_AL) && (use_ssaform)) {
                 arg_node = AssociativeLaw (arg_node, arg_info);
             }
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "wls"))) {
+                && (0 == strcmp (break_specifier, "al"))) {
                 goto INFO;
             }
 
@@ -1123,7 +1141,8 @@ OPTfundef (node *arg_node, node *arg_info)
                   || (dead_fun + dead_var + dead_expr != old_dcr_expr)
                   || (lunr_expr != old_lunr_expr) || (wlunr_expr != old_wlunr_expr)
                   || (uns_expr != old_uns_expr) || (lir_expr != old_lir_expr)
-                  || (wlir_expr != old_wlir_expr) || (wls_expr != old_wls_expr))
+                  || (wlir_expr != old_wlir_expr) || (wls_expr != old_wls_expr)
+                  || (al_expr != old_al_expr))
                  && (loop1 < max_optcycles));
         /* dkr:
          * How about  cf_expr, wlt_expr, dcr_expr  ??
@@ -1208,7 +1227,8 @@ OPTfundef (node *arg_node, node *arg_info)
         PrintStatistics (mem_inl_fun, mem_dead_expr, mem_dead_var, mem_dead_fun,
                          mem_lir_expr, mem_wlir_expr, mem_cf_expr, mem_lunr_expr,
                          mem_wlunr_expr, mem_uns_expr, mem_elim_arrays, mem_wlf_expr,
-                         mem_wlt_expr, mem_cse_expr, 0, 0, mem_wls_expr, NON_ZERO_ONLY);
+                         mem_wlt_expr, mem_cse_expr, 0, 0, mem_wls_expr, mem_al_expr,
+                         NON_ZERO_ONLY);
 
         if (!(use_ssaform)) {
             DBUG_DO_NOT_EXECUTE ("PRINT_MASKS", arg_node = FreeMasks (arg_node););
