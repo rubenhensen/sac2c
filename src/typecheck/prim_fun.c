@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.25  1997/10/03 18:00:54  dkr
+ * added type-classes ixi_i, i_i
+ *
  * Revision 1.24  1996/02/20 17:53:43  hw
  * now primitive funktions infere types of known dimension, but unknown
  * shape (in modules only)
@@ -151,6 +154,8 @@ enum type_class {
     i_f,
     I_D,
     i_d,
+    i_i,
+    ixi_i,
     D_I,
     d_i,
     D_F,
