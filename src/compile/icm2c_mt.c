@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2002/08/01 12:47:44  dkr
+ * no changes done
+ *
  * Revision 3.26  2001/11/22 08:36:43  sbs
  * foldop initialized to NULL; just to please gcc 8-)
  *
@@ -448,14 +451,14 @@ ICMCompileMT_START_SYNCBLOCK (int barrier_id, int narg, char **vararg)
     for (i = 0; i < 3 * narg; i += 3) {
         if (0 == strcmp (vararg[i], "in_rc")) {
             INDENT;
-            fprintf (outfile, "int SAC_ND_A_RC(%s) = &SAC_dummy_refcount;\n",
+            fprintf (outfile, "int SAC_ND_A_RC( %s) = &SAC_dummy_refcount;\n",
                      vararg[i + 2]);
         }
     }
 
     INDENT;
-    fprintf (outfile,
-             "SAC_TR_MT_PRINT((\"Starting execution of synchronisation block\"));\n");
+    fprintf (outfile, "SAC_TR_MT_PRINT("
+                      " (\"Starting execution of synchronisation block\"));\n");
 
     DBUG_VOID_RETURN;
 }
