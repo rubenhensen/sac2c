@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/01/04 18:19:36  sbs
+ * Revision 1.8  1995/01/06 17:50:43  sbs
+ * no_mod_ext pragma inserted
+ *
+ * Revision 1.7  1995/01/04  18:19:36  sbs
  * bug fixed in GenSyms (multiple implicit types/funs do work as well now!)
  *
  * Revision 1.6  1995/01/04  13:44:59  sbs
@@ -181,6 +184,10 @@ GenMod (char *name)
     yyparse ();
 
     tmp->moddec = decl_tree;
+    if (strcmp (decl_tree->info.fun_name.id, name) != 0)
+        ERROR2 (1, ("file \"%s\" does not provide modul %s, but modul %s!\n", buffer,
+                    name, decl_tree->info.fun_name.id));
+    tmp->prefix = decl_tree->info.fun_name.id_mod;
     tmp->next = NULL;
     for (i = 0; i < 3; i++)
         tmp->syms[i] = NULL;
@@ -385,6 +392,7 @@ FindSymbolInModul (char *modname, char *name, int symbkind, mods *found, int rec
  *
  *  functionname  : AppendModnameToSymbol
  *  arguments     : 1) N_typedef or N_fundef node of symbol
+ *                  2) name of the modul which owns the symbol
  *  description   : runs for all user defined types FindSymbolInModul
  *                  and inserts the respective modul-name in types->name_mod.
  *  global vars   : ---
@@ -395,12 +403,11 @@ FindSymbolInModul (char *modname, char *name, int symbkind, mods *found, int rec
  */
 
 void
-AppendModnameToSymbol (node *symbol)
+AppendModnameToSymbol (node *symbol, char *modname)
 
 {
     node *arg = symbol->node[2];
     mods *mods, *mods2;
-    char *modname;
     types *types;
     int done;
 
@@ -410,9 +417,7 @@ AppendModnameToSymbol (node *symbol)
     while (types != NULL) {
         if (types->simpletype == T_user) {
             done = 0;
-            if (types->name_mod == NULL)
-                modname = symbol->info.types->id_mod;
-            else {
+            if (types->name_mod != NULL) {
                 modname = types->name_mod;
                 mods = FindSymbolInModul (modname, types->name, 0, NULL, 0);
                 mods2 = FindSymbolInModul (modname, types->name, 1, NULL, 0);
@@ -421,7 +426,7 @@ AppendModnameToSymbol (node *symbol)
                     done = 1;
                 FreeMods (mods);
                 FreeMods (mods2);
-            }
+            };
             if (done != 1) {
                 mods = FindSymbolInModul (modname, types->name, 0, NULL, 1);
                 mods2 = FindSymbolInModul (modname, types->name, 1, NULL, 1);
@@ -439,7 +444,7 @@ AppendModnameToSymbol (node *symbol)
                                  modname, mods->mod->name, types->name,
                                  mods->next->mod->name, types->name));
                     } else /* mods->next == NULL */
-                        types->name_mod = mods->mod->name;
+                        types->name_mod = mods->mod->prefix;
                 else /* mods == NULL */
                   if (mods2 == NULL) {
                     ERROR1 (("declaration error in modul %s: "
@@ -452,7 +457,7 @@ AppendModnameToSymbol (node *symbol)
                              modname, mods2->mod->name, types->name,
                              mods2->next->mod->name, types->name));
                 } else
-                    types->name_mod = mods2->mod->name;
+                    types->name_mod = mods2->mod->prefix;
                 FreeMods (mods);
                 FreeMods (mods2);
             }
@@ -503,7 +508,7 @@ ImportAll (mod *mod, node *modul)
                 next = 1;
             tmpnode = explist->node[i];
             while (tmpnode != NULL) {
-                AppendModnameToSymbol (tmpnode);
+                AppendModnameToSymbol (tmpnode, mod->name);
                 tmpnode = tmpnode->node[next];
             }
             modul->node[next + 1]
@@ -586,7 +591,7 @@ ImportSymbol (int symbtype, char *name, mod *mod, node *modul)
     }
 
     /* tmpdef points on the def which is to be inserted */
-    AppendModnameToSymbol (tmpdef);
+    AppendModnameToSymbol (tmpdef, mod->name);
     if (tmpdef->node[next] == NULL)
         tmpdef->nnode++;
 

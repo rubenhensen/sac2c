@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/01/04 12:35:56  sbs
+ * Revision 1.6  1995/01/06 17:50:43  sbs
+ * no_mod_ext pragma inserted
+ *
+ * Revision 1.5  1995/01/04  12:35:56  sbs
  * import mechanism including renaming (of imported symbols)
  * done. FindSymbolInModul & FreeMods provided for external use
  * (needed from the typechecker.
@@ -39,6 +42,7 @@ typedef struct SYMS {
 
 typedef struct MOD {
     char *name;    /* modul name */
+    char *prefix;  /* modul prefix */
     int flag;      /* flag for recursion protection */
     int allflag;   /* flag for recursion protection */
     node *moddec;  /* pointer to the respective N_moddec node */
