@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.2  2004/11/23 12:27:00  sah
+# added node_info.mac
+#
 # Revision 1.1  2004/11/23 11:38:05  sah
 # Initial revision
 #
@@ -30,7 +33,8 @@ TARGETS = ../tree/attribs.h ../tree/node_basic.h ../tree/node_basic.c \
           ../serialize/serialize_buildstack.c \
           ../serialize/serialize_buildstack.h \
           ../serialize/serialize_link.h ../serialize/serialize_link.c \
-          ../types/types_trav.h ../types/types_nodetype.h
+          ../types/types_trav.h ../types/types_nodetype.h \
+          ../global/node_info.mac
 
 all: $(TARGETS)
 
@@ -106,6 +110,10 @@ all: $(TARGETS)
 
 ../types/types_nodetype.h: ast.xml ast2types_nodetype_h.xsl
 	$(XSLTENGINE) ast2types_nodetype_h.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
+
+../global/node_info.mac: ast.xml ast2node_info_mac.xsl
+	$(XSLTENGINE) ast2node_info_mac.xsl ast.xml \
 	| $(CODE_BEAUTIFIER) >$@
 
 clean:
