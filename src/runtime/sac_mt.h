@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/06/03 13:20:14  jhs
+ * Added extra spmd-frame to exchange data between master & workers.
+ *
  * Revision 2.2  1999/04/06 13:43:33  cg
  * SAC_MT_THREADS() is now set to 1 in case of single threaded execution.
  *
@@ -185,7 +188,9 @@ typedef union {
 
 #endif /* SAC_MT_CACHE_LINE_MAX() */
 
-#define SAC_MT_DEFINE_SPMD_FRAME() static union SAC_SET_SPMD_FRAME SAC_MT_spmd_frame;
+#define SAC_MT_DEFINE_SPMD_FRAME()                                                       \
+    static union SAC_SET_SPMD_FRAME SAC_MT_spmd_frame;                                   \
+    static union SAC_SET_SPMD_FRAME SAC_MT_spmd_sync;
 
 #define SAC_MT_FUN_FRAME(name, blocks) struct blocks name;
 
