@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/04/03 13:58:57  sbs
+ * Revision 1.6  1995/04/05 15:35:39  sbs
+ * malloc.h included
+ *
+ * Revision 1.5  1995/04/03  13:58:57  sbs
  * first "complete" version
  *
  * Revision 1.4  1995/03/31  13:57:34  sbs
@@ -22,6 +25,7 @@
 #ifndef _sac_icm2c_h
 
 #define _sac_icm2c_h
+#include <malloc.h>
 
 /*
  * Macros for declaring arrays:
