@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/05/20 14:11:27  cg
+ * ICMs CS_START_PRAGMA and CS_STOP_PRAGMA renamed to CS_START/CS_STOP
+ *
  * Revision 2.9  1999/05/12 14:35:16  cg
  * Optimizations are now triggered by bit field optimize instead
  * of single individual int variables.
@@ -2676,7 +2679,7 @@ COMPBlock (node *arg_node, node *arg_info)
         assign = BLOCK_INSTR (arg_node);
 
         BLOCK_INSTR (arg_node)
-          = MakeAssign (MakeIcm1 ("CS_START_PRAGMA",
+          = MakeAssign (MakeIcm1 ("CS_START",
                                   MakeId (StringCopy (cs_tag), NULL, ST_regular)),
                         BLOCK_INSTR (arg_node));
 
@@ -2686,7 +2689,7 @@ COMPBlock (node *arg_node, node *arg_info)
         }
 
         ASSIGN_NEXT (assign)
-          = MakeAssign (MakeIcm1 ("CS_STOP_PRAGMA", MakeId (cs_tag, NULL, ST_regular)),
+          = MakeAssign (MakeIcm1 ("CS_STOP", MakeId (cs_tag, NULL, ST_regular)),
                         ASSIGN_NEXT (assign));
     }
 
