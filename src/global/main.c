@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/05/17 08:27:41  sbs
+ * PHASE_EPILOG splitted in PHASE_EPILOG and PHASE_DONE_EPILOG
+ * the latter is invoked iff the phase was actually done!
+ * MALLOC/FREE checked!
+ *
  * Revision 3.12  2001/05/07 15:01:34  dkr
  * PrintAST is called even with -noPAB.
  * PAB_YES, PAB_NO replaced by TRUE, FALSE.
@@ -36,86 +41,6 @@
  * Revision 3.1  2000/11/20 17:59:33  sacbase
  * new release made
  *
- * Revision 2.26  2000/11/14 13:18:42  dkr
- * no '... might be used uninitialized' warnings anymore
- *
- * Revision 2.23  2000/07/12 10:09:18  dkr
- * phase numbers in comments corrected
- *
- * Revision 2.22  2000/07/11 15:49:34  dkr
- * IVE is part of Optimize() now
- * PsiOpt() removed
- *
- * Revision 2.21  2000/06/13 13:40:01  dkr
- * Old2NewWith() renamed into PatchWith()
- *
- * Revision 2.20  2000/06/08 12:13:04  jhs
- * Phase 17 (refcount) will de done after phase 19 (multithreading)
- * when -mtn is set.
- *
- * Revision 2.19  2000/05/29 14:31:22  dkr
- * precompile() renamed into Precompile()
- *
- * Revision 2.18  2000/03/22 20:10:17  dkr
- * some PHASE_PROLOG, PHASE_EPILOG macros have been at the wrong place
- * :-(
- *
- * Revision 2.17  2000/03/17 12:07:00  dkr
- * macros PHASE_PROLOG and PHASE_EPILOG are now always called even if a
- * phase is skipped
- *
- * Revision 2.16  2000/03/16 14:29:45  dkr
- * CHECK_DBUG_START replaced by PHASE_PROLOG
- * CHECK_DBUG_STOP replaced by PHASE_EPILOG
- * call of Lac2fun, Fun2lac embedded into PHASE_PROLOG, PHASE_EPILOG
- *
- * Revision 2.15  2000/03/02 18:50:04  cg
- * Added new option -lac2fun that activates lac2fun conversion and
- * vice versa between psi optimizations and precompiling.
- *
- * Revision 2.14  2000/02/17 16:28:18  cg
- * Added test facility for Fun2Lac().
- *
- * Revision 2.13  2000/02/03 17:03:10  dkr
- * CHECK_DBUG_START/STOP for call of LaC2Fun added
- *
- * Revision 2.12  2000/01/24 12:23:08  jhs
- * Added options to activate/dactivate printing after a break
- * (-noPAB, -doPAB).
- *
- * Revision 2.11  2000/01/21 18:04:44  dkr
- * include of lac2fun.h added
- *
- * Revision 2.10  2000/01/21 13:19:53  jhs
- * Added new mt ... infrastructure expanded ...
- *
- * Revision 2.9  1999/10/28 20:01:43  sbs
- * comment changed from ARRAY_FLAT to PRINT_xxx.
- *
- * Revision 2.8  1999/09/20 11:32:34  jhs
- * Added commented FreeTree after syntaxtree is not used anymore,
- * but it is not possible to free the tree ... :((
- *
- * Revision 2.7  1999/07/09 11:52:18  cg
- * Added consistency check for command line options.
- *
- * Revision 2.6  1999/05/31 18:33:59  sbs
- * Print in BREAK surrounded by CHECK_DBUGs
- * => enables DBUG-output during print,
- * e.g. ARRAY_FLAT, MASKS
- *
- * Revision 2.5  1999/05/18 12:29:10  cg
- * added new resource entry TMPDIR to specify where sac2c puts
- * its temporary files.
- *
- * Revision 2.4  1999/05/12 14:30:07  cg
- * Analysis of command line options moved to options.c
- *
- * Revision 2.3  1999/04/14 09:21:17  cg
- * Cache simulation may now be triggered by pragmas.
- *
- * Revision 2.2  1999/03/31 11:30:27  cg
- * added command line parameter -cachesim
  *
  * ... [eliminated]
  *
@@ -125,6 +50,7 @@
  *  this file contains the main function of the SAC->C compiler!
  */
 
+#include "convert.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -274,6 +200,7 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = ScanParse ();
+    PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
     if (break_after == PH_scanparse)
@@ -284,6 +211,7 @@ main (int argc, char *argv[])
     if (MODUL_IMPORTS (syntax_tree) != NULL) {
         NOTE_COMPILER_PHASE;
         syntax_tree = Import (syntax_tree); /* imp_tab */
+        PHASE_DONE_EPILOG;
     }
     PHASE_EPILOG;
 
@@ -301,6 +229,7 @@ main (int argc, char *argv[])
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
         PrintDependencies (dependencies, makedeps);
+        PHASE_DONE_EPILOG;
         PHASE_EPILOG;
 
         syntax_tree = FreeTree (syntax_tree);
@@ -323,6 +252,7 @@ main (int argc, char *argv[])
     if (MODUL_STORE_IMPORTS (syntax_tree) != NULL) {
         NOTE_COMPILER_PHASE;
         syntax_tree = ReadSib (syntax_tree); /* readsib_tab */
+        PHASE_DONE_EPILOG;
     }
     PHASE_EPILOG;
 
@@ -333,6 +263,7 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = objinit (syntax_tree); /* objinit_tab */
+    PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
     if (break_after == PH_objinit)
@@ -342,6 +273,7 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = Flatten (syntax_tree); /* flat_tab */
+    PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
     if (break_after == PH_flatten)
@@ -351,6 +283,7 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = Typecheck (syntax_tree); /* type_tab */
+    PHASE_DONE_EPILOG;
 
     if (profileflag != 0) {
         syntax_tree = ProfileFunCalls (syntax_tree); /* profile_tab */
@@ -365,6 +298,7 @@ main (int argc, char *argv[])
     if (MODUL_FILETYPE (syntax_tree) != F_prog) {
         NOTE_COMPILER_PHASE;
         syntax_tree = CheckDec (syntax_tree); /* writedec_tab and checkdec_tab */
+        PHASE_DONE_EPILOG;
     }
     PHASE_EPILOG;
 
@@ -375,6 +309,7 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = RetrieveImplicitTypeInfo (syntax_tree); /* impltype_tab */
+    PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
     if (break_after == PH_impltype)
@@ -384,6 +319,7 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = Analysis (syntax_tree); /* analy_tab */
+    PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
     if (break_after == PH_analysis)
@@ -394,6 +330,7 @@ main (int argc, char *argv[])
     if (MODUL_FILETYPE (syntax_tree) != F_prog) {
         NOTE_COMPILER_PHASE;
         syntax_tree = WriteSib (syntax_tree); /* writesib_tab */
+        PHASE_DONE_EPILOG;
     }
     PHASE_EPILOG;
 
@@ -404,6 +341,7 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = HandleObjects (syntax_tree); /* obj_tab */
+    PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
     if (break_after == PH_objects)
@@ -413,6 +351,7 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = UniquenessCheck (syntax_tree); /* unique_tab */
+    PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
     if (break_after == PH_uniquecheck)
@@ -423,6 +362,7 @@ main (int argc, char *argv[])
     if (optimize) {
         NOTE_COMPILER_PHASE;
         syntax_tree = Optimize (syntax_tree); /* see optimize.c, Optimize() */
+        PHASE_DONE_EPILOG;
     }
     PHASE_EPILOG;
 
@@ -435,6 +375,7 @@ main (int argc, char *argv[])
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
         syntax_tree = Refcount (syntax_tree); /* refcnt_tab */
+        PHASE_DONE_EPILOG;
         PHASE_EPILOG;
 
         if (break_after == PH_refcnt)
@@ -451,6 +392,7 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = WlTransform (syntax_tree); /* wltrans_tab */
+    PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
     if (break_after == PH_wltrans)
@@ -465,6 +407,7 @@ main (int argc, char *argv[])
         NOTE_COMPILER_PHASE;
         NOTE (("using old version of mt"));
         syntax_tree = BuildSpmdRegions (syntax_tree); /* spmd..._tab, sync..._tab */
+        PHASE_DONE_EPILOG;
     } else if (gen_mt_code == GEN_MT_NEW) {
         NOTE_COMPILER_PHASE;
         NOTE (("using new version of mt"));
@@ -475,6 +418,7 @@ main (int argc, char *argv[])
          * that this information is vital for precompile.
          */
         syntax_tree = BuildMultiThread (syntax_tree);
+        PHASE_DONE_EPILOG;
     }
     PHASE_EPILOG;
 
@@ -486,6 +430,7 @@ main (int argc, char *argv[])
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
         syntax_tree = Refcount (syntax_tree); /* refcnt_tab */
+        PHASE_DONE_EPILOG;
         PHASE_EPILOG;
 
         if (break_after == PH_refcnt)
@@ -496,6 +441,7 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = Precompile (syntax_tree); /* precomp_tab */
+    PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
     if (break_after == PH_precompile)
@@ -505,6 +451,7 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = Compile (syntax_tree); /* comp_tab */
+    PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
     if (break_after == PH_compile)
@@ -514,6 +461,7 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     Print (syntax_tree);
+    PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
     if (break_after == PH_genccode)
@@ -529,6 +477,7 @@ main (int argc, char *argv[])
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     InvokeCC ();
+    PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
     compiler_phase++;
@@ -537,6 +486,7 @@ main (int argc, char *argv[])
     if (filetype != F_prog) {
         NOTE_COMPILER_PHASE;
         CreateLibrary ();
+        PHASE_DONE_EPILOG;
     }
     PHASE_EPILOG;
 
@@ -577,8 +527,10 @@ BREAK:
     }
 
 #ifdef SHOW_MALLOC
-    NOTE2 (("*** Maximum allocated memory (bytes): %u", max_allocated_mem));
-    NOTE2 (("*** Currently allocated memory (bytes): %u", current_allocated_mem));
+    NOTE2 (("*** Maximum allocated memory (bytes):   %s",
+            IntBytes2String (max_allocated_mem)));
+    NOTE2 (("*** Currently allocated memory (bytes): %s",
+            IntBytes2String (current_allocated_mem)));
 #endif
 
     NOTE2 (("*** Exit code 0"));
