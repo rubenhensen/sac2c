@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1996/02/11 20:19:01  sbs
+ * Revision 1.20  1997/03/19 13:34:57  cg
+ * added functions FreeAllDeps() and FreeOneDeps()
+ *
+ * Revision 1.19  1996/02/11  20:19:01  sbs
  * some minor corrections on stuff concerning N_vinfo
  *
  * Revision 1.18  1996/01/22  09:38:55  cg
@@ -215,7 +218,7 @@ FreeOneIds (ids *fr)
 {
     ids *tmp;
 
-    DBUG_ENTER ("FreeIds");
+    DBUG_ENTER ("FreeOneIds");
 
     if (fr != NULL) {
         DBUG_PRINT ("FREE", ("Removing ids: %s", IDS_NAME (fr)));
@@ -268,6 +271,42 @@ FreeAllNums (nums *fr)
 
     while (fr != NULL) {
         fr = FreeOneNums (fr);
+    }
+
+    DBUG_RETURN (fr);
+}
+
+deps *
+FreeOneDeps (deps *fr)
+{
+    deps *tmp;
+
+    DBUG_ENTER ("FreeDeps");
+
+    if (fr != NULL) {
+        DBUG_PRINT ("FREE", ("Removing Deps: %s", DEPS_NAME (fr)));
+
+        tmp = fr;
+        fr = DEPS_NEXT (fr);
+
+        FREE (DEPS_NAME (tmp));
+        FREE (DEPS_DECNAME (tmp));
+        FREE (DEPS_LIBNAME (tmp));
+        FreeAllDeps (DEPS_SUB (tmp));
+
+        FREE (tmp);
+    }
+
+    DBUG_RETURN (fr);
+}
+
+deps *
+FreeAllDeps (deps *fr)
+{
+    DBUG_ENTER ("FreeAllDeps");
+
+    while (fr != NULL) {
+        fr = FreeOneDeps (fr);
     }
 
     DBUG_RETURN (fr);
@@ -437,7 +476,7 @@ FreeModdec (node *arg_node, node *arg_info)
     FREETRAV (MODDEC_OWN (arg_node));
 
     FREE (MODDEC_NAME (arg_node));
-    FREE (MODDEC_PREFIX (arg_node));
+    FreeAllDeps (MODDEC_LINKWITH (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_moddec node ..."));
 
@@ -459,8 +498,7 @@ FreeClassdec (node *arg_node, node *arg_info)
     FREETRAV (CLASSDEC_OWN (arg_node));
 
     FREE (CLASSDEC_NAME (arg_node));
-
-    FREE (CLASSDEC_PREFIX (arg_node));
+    FreeAllDeps (CLASSDEC_LINKWITH (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_classdec node ..."));
 
@@ -483,6 +521,7 @@ FreeSib (node *arg_node, node *arg_info)
     FREETRAV (SIB_FUNS (arg_node));
 
     FREE (SIB_NAME (arg_node));
+    FreeAllDeps (SIB_LINKWITH (arg_node));
 
     DBUG_PRINT ("FREE", ("Removing N_sib node ..."));
 

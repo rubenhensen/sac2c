@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/12/29 10:24:18  cg
+ * Revision 1.9  1997/03/19 13:34:57  cg
+ * added functions FreeAllDeps() and FreeOneDeps()
+ *
+ * Revision 1.8  1995/12/29  10:24:18  cg
  * inserted call to malloc_verify into macro FREE, added FreeInfo
  *
  * Revision 1.7  1995/12/20  08:14:25  cg
@@ -70,6 +73,8 @@ extern ids *FreeOneIds (ids *fr);
 extern ids *FreeAllIds (ids *fr);
 extern nums *FreeOneNums (nums *fr);
 extern nums *FreeAllNums (nums *fr);
+extern deps *FreeOneDeps (deps *fr);
+extern deps *FreeAllDeps (deps *fr);
 extern strings *FreeOneStrings (strings *fr);
 extern strings *FreeAllStrings (strings *fr);
 extern nodelist *FreeNodelist (nodelist *fr);
