@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2002/08/13 14:04:13  sbs
+ * several minor bugs fixed
+ *
  * Revision 3.44  2002/08/13 10:29:53  sbs
  * completely new scanner / parser built!
  * supports N_mop's (user defined infix operators),
@@ -261,7 +264,7 @@ static node *CheckWlcompConf( node *ap, node *exprs);
 
 /* pragmas */
 %type <id> pragmacachesim
-%type <node> wlcomp_pragma_global, wlcomp_pragma_local, pragmas
+%type <node> wlcomp_pragma_global, wlcomp_pragma_local, pragmas, wlcomp_conf
 
 /* general helpers */
 %type <nums> nums
@@ -321,7 +324,7 @@ static node *CheckWlcompConf( node *ap, node *exprs);
 
 
 %right INC,DEC,STAR,PLUS,MINUS,TILDE,EXCL,LE,LT,GT,ID,PRIVATEID,
-       GENARRAY,MODARRAY,ALL
+       GENARRAY,MODARRAY,ALL,AMPERS
 %right BM_OP
 %right MM_OP,CAST
 %right SQBR_L,BRACKET_L
@@ -738,9 +741,48 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R { $<cint>$ = linenum; } exprblock
 *********************************************************************
 */
 
-wlcomp_pragma_global: {$$ = NULL};
+wlcomp_pragma_global: PRAGMA WLCOMP wlcomp_conf
+                        {
+                          if (global_wlcomp_aps != NULL) {
+                            /* remove old global pragma */
+                            global_wlcomp_aps = FreeTree( global_wlcomp_aps);
+                          }
+                          $3 = CheckWlcompConf( $3, NULL);
+                          if ($3 != NULL) {
+                            global_wlcomp_aps = $3;
+                          }
+                        }
+                    | /* empty */
+                        {
+                        }
+                    ;
 
-wlcomp_pragma_local: {$$ = NULL};
+wlcomp_pragma_local: PRAGMA WLCOMP wlcomp_conf
+                       {
+                         $3 = CheckWlcompConf( $3, NULL);
+                         if ($3 != NULL) {
+                           $$ = MakePragma();
+                           PRAGMA_WLCOMP_APS( $$) = $3;
+                         }
+                         else {
+                           $$ = NULL;
+                         }
+                       }
+                   | /* empty */
+                       { if (global_wlcomp_aps != NULL) {
+                           $$ = MakePragma();
+                           PRAGMA_WLCOMP_APS( $$) = DupTree( global_wlcomp_aps);
+                         }
+                         else {
+                           $$ = NULL;
+                         }
+                       }
+                   ;
+
+wlcomp_conf: id      { $$ = MakeId( $1, NULL, ST_regular); }
+           | expr_ap { $$ = $1; }
+           ;
+
 
 pragmacachesim: PRAGMA CACHESIM string { $$ = $3; }
               | PRAGMA CACHESIM        { $$ = StringCopy( ""); }
@@ -1151,7 +1193,8 @@ expr_sel: expr SQBR_L exprs SQBR_R
         ;
 
 expr_ap: fun_id BRACKET_L { $<cint>$ = linenum; } opt_arguments BRACKET_R
-         { $$ = MakeAp( StringCopy( IDS_NAME( $1)), StringCopy( IDS_MOD( $1)), $4);
+         {
+           $$ = MakeAp( StringCopy( IDS_NAME( $1)), StringCopy( IDS_MOD( $1)), $4);
            NODE_LINE( $$) = $<cint>3;
            $1 = FreeAllIds( $1);
          }
@@ -1177,12 +1220,20 @@ expr_ar: SQBR_L { $<cint>$ = linenum; } exprs SQBR_R
 
 generator: expr LE genidx genop expr steps width
            {
+             if( ($7 != NULL) && ($6 == NULL)) {
+               WARN( linenum, ("width vector ignored due to missing step vector"));
+               $7 = FreeTree( $7);
+             }
              $$ = MakeNPart( $3,
                              MakeNGenerator( $1, $5, F_le,  $4, $6, $7),
                              NULL);
            }
          | expr LT genidx genop expr steps width
            {
+             if( ($7 != NULL) && ($6 == NULL)) {
+               WARN( linenum, ("width vector ignored due to missing step vector"));
+               $7 = FreeTree( $7);
+             }
              $$ = MakeNPart( $3,
                              MakeNGenerator( $1, $5, F_lt,  $4, $6, $7),
                              NULL);
@@ -1300,18 +1351,19 @@ fun_id: local_fun_id { $$ = $1; }
       ; 
 
 local_fun_id: id          { $$ = MakeIds( $1, NULL, ST_regular); }
-            | GENARRAY    { $$ = MakeIds( "genarray", NULL, ST_regular); }
-            | MODARRAY    { $$ = MakeIds( "modarray", NULL, ST_regular); }
-            | ALL         { $$ = MakeIds( "all", NULL, ST_regular); }
-            | EXCL        { $$ = MakeIds( "!", NULL, ST_regular); }
-            | INC         { $$ = MakeIds( "++", NULL, ST_regular); }
-            | DEC         { $$ = MakeIds( "--", NULL, ST_regular); }
-            | PLUS        { $$ = MakeIds( "+", NULL, ST_regular); }
-            | MINUS       { $$ = MakeIds( "-", NULL, ST_regular); }
-            | STAR        { $$ = MakeIds( "*", NULL, ST_regular); }
-            | LE          { $$ = MakeIds( "<=", NULL, ST_regular); }
-            | LT          { $$ = MakeIds( "<", NULL, ST_regular); }
-            | GT          { $$ = MakeIds( ">", NULL, ST_regular); }
+            | GENARRAY    { $$ = MakeIds( StringCopy( "genarray"), NULL, ST_regular); }
+            | MODARRAY    { $$ = MakeIds( StringCopy( "modarray"), NULL, ST_regular); }
+            | ALL         { $$ = MakeIds( StringCopy( "all"), NULL, ST_regular); }
+            | AMPERS      { $$ = MakeIds( StringCopy( "&"), NULL, ST_regular); }
+            | EXCL        { $$ = MakeIds( StringCopy( "!"), NULL, ST_regular); }
+            | INC         { $$ = MakeIds( StringCopy( "++"), NULL, ST_regular); }
+            | DEC         { $$ = MakeIds( StringCopy( "--"), NULL, ST_regular); }
+            | PLUS        { $$ = MakeIds( StringCopy( "+"), NULL, ST_regular); }
+            | MINUS       { $$ = MakeIds( StringCopy( "-"), NULL, ST_regular); }
+            | STAR        { $$ = MakeIds( StringCopy( "*"), NULL, ST_regular); }
+            | LE          { $$ = MakeIds( StringCopy( "<="), NULL, ST_regular); }
+            | LT          { $$ = MakeIds( StringCopy( "<"), NULL, ST_regular); }
+            | GT          { $$ = MakeIds( StringCopy( ">"), NULL, ST_regular); }
             ; 
 
 ids: id COMMA ids

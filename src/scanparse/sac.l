@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2002/08/13 14:04:13  sbs
+ * several minor bugs fixed
+ *
  * Revision 3.14  2002/08/13 10:29:53  sbs
  * completely new scanner / parser built!
  * supports N_mop's (user defined infix operators),
@@ -130,16 +133,17 @@ int charpos = 0;
 "="                        { FILTER( LET ); }
 "."                        { FILTER( DOT); }
 
-"!"                        { FILTER( EXCL); }  /* needed for monop supp    */
-"~"                        { FILTER( TILDE); } /* needed for monop supp    */
-"-"                        { FILTER( MINUS); } /* needed for monop supp    */
-"+"                        { FILTER( PLUS); }  /* needed for AUDGZ types   */
-"*"                        { FILTER( STAR); }  /* needed for AUD types     */
-"++"                       { FILTER( INC ); }  /* needed for increment     */
-"--"                       { FILTER( DEC ); }  /* needed for decrement     */
-"<="                       { FILTER( LE);   }  /* needed for WL generators */
-"<"                        { FILTER( LT);   }  /* needed for WL generators */
-">"                        { FILTER( GT);   }  /* needed for SIBs          */
+"&"                        { FILTER( AMPERS);} /* needed for refernce params */
+"!"                        { FILTER( EXCL); }  /* needed for monop supp      */
+"~"                        { FILTER( TILDE); } /* needed for monop supp      */
+"-"                        { FILTER( MINUS); } /* needed for monop supp      */
+"+"                        { FILTER( PLUS); }  /* needed for AUDGZ types     */
+"*"                        { FILTER( STAR); }  /* needed for AUD types       */
+"++"                       { FILTER( INC ); }  /* needed for increment       */
+"--"                       { FILTER( DEC ); }  /* needed for decrement       */
+"<="                       { FILTER( LE);   }  /* needed for WL generators   */
+"<"                        { FILTER( LT);   }  /* needed for WL generators   */
+">"                        { FILTER( GT);   }  /* needed for SIBs            */
 
 "+="                       { FILTER( ADDON ); }
 "-="                       { FILTER( SUBON ); }
