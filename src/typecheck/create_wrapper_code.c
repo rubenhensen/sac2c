@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/03/05 12:04:13  sbs
+ * Now, the modified wrappers will be inserted into the fundef chain correctly 8-)
+ *
  * Revision 1.18  2004/02/20 08:14:00  mwe
  * now functions with and without body are separated
  * changed tree traversal (added traverse of MODUL_FUNDECS)
@@ -114,15 +117,11 @@ CWCmodul (node *arg_node, node *arg_info)
     DBUG_ASSERT ((MODUL_WRAPPERFUNS (arg_node) != NULL), "MODUL_WRAPPERFUNS not found!");
     INFO_CWC_WRAPPERFUNS (arg_info) = MODUL_WRAPPERFUNS (arg_node);
 
-    INFO_CWC_MODUL (arg_info) = arg_node;
-
     /*
      * create separate wrapper function for all base type constellations
+     * As all wrappers are in the FUNS, we have to traverse these only!
      */
     INFO_CWC_TRAVNO (arg_info) = 1;
-    if (MODUL_FUNDECS (arg_node) != NULL) {
-        MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
-    }
 
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
@@ -130,6 +129,7 @@ CWCmodul (node *arg_node, node *arg_info)
 
     /*
      * adjust AP_FUNDEF pointers
+     * As only FUNS may contain N_ap's we have to traverse these only!
      */
     INFO_CWC_TRAVNO (arg_info) = 2;
     if (MODUL_FUNS (arg_node) != NULL) {
@@ -137,12 +137,14 @@ CWCmodul (node *arg_node, node *arg_info)
     }
 
     /*
-     * create separate wrapper function for all base type constellations
+     * remove non-used and zombie funs!
      */
     INFO_CWC_TRAVNO (arg_info) = 3;
+
     if (MODUL_FUNDECS (arg_node) != NULL) {
         MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
     }
+
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
@@ -516,56 +518,102 @@ CorrectFundefPointer (node *fundef, char *funname, node *args)
  *
  ******************************************************************************/
 
-node *
-CWCfundef (node *arg_node, node *arg_info)
+static node *
+FundefBuildWrappers (node *arg_node, node *arg_info)
 {
     node *new_fundef;
     node *new_fundefs;
-    node *next;
+
+    DBUG_ENTER ("FundefBuildWrappers");
+
+    if (FUNDEF_STATUS (arg_node) == ST_wrapperfun) {
+        DBUG_ASSERT ((FUNDEF_BODY (arg_node) == NULL),
+                     "wrapper function has already a body!");
+
+        /*
+         * build a separate fundef for each base type constellation
+         */
+        new_fundefs = SplitWrapper (arg_node);
+
+        /*
+         * build code for all wrapper functions
+         */
+        new_fundef = new_fundefs;
+        DBUG_ASSERT ((new_fundef != NULL), "no wrapper functions found!");
+        do {
+            new_fundef = InsertWrapperCode (new_fundef);
+            new_fundef = FUNDEF_NEXT (new_fundef);
+        } while (new_fundef != NULL);
+
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        }
+
+        /*
+         * insert new wrapper functions at the begining of MODULE_FUNS and
+         * free original wrapper function (-> zombie function)
+         */
+        new_fundefs = AppendFundef (new_fundefs, FUNDEF_NEXT (arg_node));
+        arg_node = FreeNode (arg_node);
+        DBUG_ASSERT (((arg_node != NULL) && (FUNDEF_STATUS (arg_node) == ST_zombiefun)),
+                     "zombie fundef not found!");
+        FUNDEF_NEXT (arg_node) = new_fundefs;
+    }
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+FundefAdjustPointers (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("FundefAdjustPointers");
+
+    if ((FUNDEF_STATUS (arg_node) != ST_wrapperfun) && (FUNDEF_BODY (arg_node) != NULL)) {
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+FundefRemoveGarbage (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("FundefRemoveGarbage");
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
+    if (FUNDEF_STATUS (arg_node) == ST_zombiefun) {
+        /*
+         * remove zombie of generic wrapper function
+         */
+        arg_node = FreeZombie (arg_node);
+    } else if ((FUNDEF_STATUS (arg_node) == ST_wrapperfun)
+               && (FUNDEF_BODY (arg_node) == NULL)) {
+        /*
+         * remove statically dispatchable wrapper function
+         */
+        arg_node = FreeZombie (FreeNode (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+CWCfundef (node *arg_node, node *arg_info)
+{
 
     DBUG_ENTER ("CWCfundef");
 
     if (INFO_CWC_TRAVNO (arg_info) == 1) {
         /*
-         * first traversal -> build wrapper functions and there bodies
+         * first traversal -> build wrapper functions and their bodies
          */
-
-        if (FUNDEF_STATUS (arg_node) == ST_wrapperfun) {
-            DBUG_ASSERT ((FUNDEF_BODY (arg_node) == NULL),
-                         "wrapper function has already a body!");
-
-            /*
-             * build a separate fundef for each base type constellation
-             */
-            new_fundefs = SplitWrapper (arg_node);
-
-            /*
-             * build code for all wrapper functions
-             */
-            new_fundef = new_fundefs;
-            DBUG_ASSERT ((new_fundef != NULL), "no wrapper functions found!");
-            do {
-                new_fundef = InsertWrapperCode (new_fundef);
-                new_fundef = FUNDEF_NEXT (new_fundef);
-            } while (new_fundef != NULL);
-
-            if (FUNDEF_NEXT (arg_node) != NULL) {
-                FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-            }
-
-            /*
-             * insert new wrapper functions at the begining of MODULE_FUNS and
-             * free original wrapper function (-> zombie function)
-             */
-            new_fundefs
-              = AppendFundef (new_fundefs, MODUL_FUNS (INFO_CWC_MODUL (arg_info)));
-            next = FUNDEF_NEXT (arg_node);
-            arg_node = FreeNode (arg_node);
-            DBUG_ASSERT (((arg_node != NULL)
-                          && (FUNDEF_STATUS (arg_node) == ST_zombiefun)),
-                         "zombie fundef not found!");
-            FUNDEF_NEXT (arg_node) = next;
-        }
+        arg_node = FundefBuildWrappers (arg_node, arg_info);
     } else if (INFO_CWC_TRAVNO (arg_info) == 2) {
         /*
          * second traversal -> adjust all AP_FUNDEF pointers
@@ -573,36 +621,14 @@ CWCfundef (node *arg_node, node *arg_info)
          * This is needed if the original wrapper function was valid for more than
          * a single base type.
          */
-        if ((FUNDEF_STATUS (arg_node) != ST_wrapperfun)
-            && (FUNDEF_BODY (arg_node) != NULL)) {
-            FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-        }
-
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        arg_node = FundefAdjustPointers (arg_node, arg_info);
     } else {
         DBUG_ASSERT ((INFO_CWC_TRAVNO (arg_info) == 3), "illegal INFO_CWC_TRAVNO found!");
         /*
          * third traversal -> remove zombies and empty wrappers
          */
 
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-        }
-
-        if (FUNDEF_STATUS (arg_node) == ST_zombiefun) {
-            /*
-             * remove zombie of generic wrapper function
-             */
-            arg_node = FreeZombie (arg_node);
-        } else if ((FUNDEF_STATUS (arg_node) == ST_wrapperfun)
-                   && (FUNDEF_BODY (arg_node) == NULL)) {
-            /*
-             * remove statically dispatchable wrapper function
-             */
-            arg_node = FreeZombie (FreeNode (arg_node));
-        }
+        arg_node = FundefRemoveGarbage (arg_node, arg_info);
     }
 
     DBUG_RETURN (arg_node);
