@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/12/19 15:33:32  sbs
+ * phase brushed
+ *
  * Revision 1.4  2004/12/19 14:33:45  sbs
  * made functional
  *
@@ -29,6 +32,7 @@
  *****************************************************************************/
 
 #include "dbug.h"
+#include "ToOldTypes.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -37,67 +41,56 @@
 #include "internal_lib.h"
 #include "traverse.h"
 #include "free.h"
-#include "ToOldTypes.h"
 #include "type_utils.h"
 
-/***************************************************************
- *
- * function:
- *   node *TOTlet(node *arg_node, node *arg_info)
- *
- *
- * description:
- *   Traverses in expr.
- *
- ***************************************************************/
+/**
+ * INFO structure
+ */
+struct INFO {
+    types *oldtypes;
+};
 
-node *
-TOTlet (node *arg_node, info *arg_info)
+/**
+ * INFO macros
+ */
+#define INFO_TOT_TYPES(n) (n->oldtypes)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
 {
+    info *result;
 
-    DBUG_ENTER ("TOTlet");
+    DBUG_ENTER ("MakeInfo");
 
-    if (LET_EXPR (arg_node) != NULL)
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    result = ILIBmalloc (sizeof (info));
 
-    DBUG_RETURN (arg_node);
+    INFO_TOT_TYPES (result) = NULL;
+
+    DBUG_RETURN (result);
 }
 
-/***************************************************************
- *
- * function:
- *   node *TOTassign(node *arg_node, node *arg_info)
- *
- *
- * description:
- *
- ***************************************************************/
-node *
-TOTassign (node *arg_node, info *arg_info)
+static info *
+FreeInfo (info *info)
 {
+    DBUG_ENTER ("FreeInfo");
 
-    DBUG_ENTER ("TOTassign");
+    info = ILIBfree (info);
 
-    if (ASSIGN_INSTR (arg_node) != NULL)
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-
-    if (ASSIGN_NEXT (arg_node) != NULL)
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (info);
 }
 
-/***************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *TOTvardec(node *arg_node, node *arg_info)
+ * @fn node *TOTvardec( node *arg_node, node *arg_info)
  *
+ *   @brief traverse vardecs only!
+ *   @param
+ *   @return
  *
- * description:
- *   Transforms ntype-structure to types-structure.
- *   Removes ntype-structure.
- *
- ***************************************************************/
+ ******************************************************************************/
 
 node *
 TOTvardec (node *arg_node, info *arg_info)
@@ -115,25 +108,24 @@ TOTvardec (node *arg_node, info *arg_info)
 
     VARDEC_TYPE (arg_node) = TYtype2OldType (type);
 
-    AVIS_TYPE (VARDEC_AVIS (arg_node)) = TYfreeType (AVIS_TYPE (VARDEC_AVIS (arg_node)));
+    AVIS_TYPE (VARDEC_AVIS (arg_node)) = TYfreeType (type);
 
-    if (VARDEC_NEXT (arg_node) != NULL)
+    if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
 
-/***************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *TOTarg(node *arg_node, node *arg_info)
+ * @fn node *TOTarg( node *arg_node, node *arg_info)
  *
+ *   @brief traverse vardecs only!
+ *   @param
+ *   @return
  *
- * description:
- *   Transforms ntype-structure to types-structure.
- *   Removes ntype-structure.
- *
- ***************************************************************/
+ ******************************************************************************/
 
 node *
 TOTarg (node *arg_node, info *arg_info)
@@ -150,23 +142,24 @@ TOTarg (node *arg_node, info *arg_info)
 
     ARG_TYPE (arg_node) = TYtype2OldType (type);
 
-    AVIS_TYPE (ARG_AVIS (arg_node)) = TYfreeType (AVIS_TYPE (ARG_AVIS (arg_node)));
+    AVIS_TYPE (ARG_AVIS (arg_node)) = TYfreeType (type);
 
-    if (ARG_NEXT (arg_node) != NULL)
+    if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
 
-/***************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *TOTblock(node *arg_node, node *arg_info)
+ * @fn node *TOTblock( node *arg_node, node *arg_info)
  *
+ *   @brief traverse vardecs only!
+ *   @param
+ *   @return
  *
- * description:
- *
- ***************************************************************/
+ ******************************************************************************/
 
 node *
 TOTblock (node *arg_node, info *arg_info)
@@ -174,74 +167,110 @@ TOTblock (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("TOTblock");
 
-    if (BLOCK_INSTR (arg_node) != NULL)
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-
-    if (BLOCK_VARDEC (arg_node) != NULL)
+    if (BLOCK_VARDEC (arg_node) != NULL) {
         BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
-/***************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *TOTfundef(node *arg_node, node *arg_info)
+ * @fn node *TOTfundef( node *arg_node, node *arg_info)
  *
+ *   @brief
+ *   @param
+ *   @return
  *
- * description:
- *   Traverses in sons.
- *   Maybe later also transformation from ntype to types
- *
- ***************************************************************/
+ ******************************************************************************/
 
 node *
 TOTfundef (node *arg_node, info *arg_info)
 {
-    ntype *type;
-
     DBUG_ENTER ("TOTfundef");
 
-    if (FUNDEF_BODY (arg_node) != NULL)
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-    if (FUNDEF_ARGS (arg_node) != NULL)
+    if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    }
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    if (FUNDEF_RETS (arg_node) != NULL) {
+        FUNDEF_RETS (arg_node) = TRAVdo (FUNDEF_RETS (arg_node), arg_info);
+    }
 
     if (FUNDEF_TYPES (arg_node) != NULL) {
         FUNDEF_TYPES (arg_node) = FREEfreeAllTypes (FUNDEF_TYPES (arg_node));
     }
-    type = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
-    DBUG_ASSERT ((type != NULL), "missing ntypes in N_rets!");
-    FUNDEF_TYPES (arg_node) = TYtype2OldType (type);
-    type = TYfreeType (type);
+    FUNDEF_TYPES (arg_node) = INFO_TOT_TYPES (arg_info);
+    INFO_TOT_TYPES (arg_info) = NULL;
 
-    if (FUNDEF_NEXT (arg_node) != NULL)
+    if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
 
-/***************************************************************
+/** <!--********************************************************************-->
  *
- * function:
- *   node *ToOldTypes(node *syntax_tree)
+ * @fn node *TOTret( node *arg_node, node *arg_info)
  *
+ *   @brief
+ *   @param
+ *   @return
  *
- * description:
- *   Starting function of tree-traversal.
+ ******************************************************************************/
+
+node *
+TOTret (node *arg_node, info *arg_info)
+{
+    ntype *type;
+    types *old_type;
+
+    DBUG_ENTER ("TOTret");
+
+    type = RET_TYPE (arg_node);
+    DBUG_ASSERT (type != NULL, "missing ntype in N_ret!");
+
+    if (RET_NEXT (arg_node) != NULL) {
+        RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
+    }
+
+    old_type = TYtype2OldType (type);
+    TYPES_NEXT (old_type) = INFO_TOT_TYPES (arg_info);
+    INFO_TOT_TYPES (arg_info) = old_type;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
  *
- ***************************************************************/
+ * @fn node *TOTdoToOldTypes( node *arg_node)
+ *
+ *   @brief replaces "ntype" info by "types" info
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
 
 node *
 TOTdoToOldTypes (node *syntax_tree)
 {
+    info *arg_info;
 
     DBUG_ENTER ("ToOldTypes");
 
     if (global.compiler_phase > PH_typecheck) {
 
         TRAVpush (TR_tot);
-        syntax_tree = TRAVdo (syntax_tree, NULL);
+
+        arg_info = MakeInfo ();
+        syntax_tree = TRAVdo (syntax_tree, arg_info);
+        arg_info = FreeInfo (arg_info);
+
         TRAVpop ();
     }
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/12/19 15:33:32  sbs
+ * phase brushed
+ *
  * Revision 1.5  2004/12/08 17:59:15  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -38,11 +41,10 @@
  *****************************************************************************/
 extern node *TOTdoToOldTypes (node *syntax_tree);
 
-extern node *TOTlet (node *arg_node, info *arg_info);
-extern node *TOTassign (node *arg_node, info *arg_info);
-extern node *TOTvardec (node *arg_node, info *arg_info);
+extern node *TOTfundef (node *arg_node, info *arg_info);
 extern node *TOTarg (node *arg_node, info *arg_info);
 extern node *TOTblock (node *arg_node, info *arg_info);
-extern node *TOTfundef (node *arg_node, info *arg_info);
+extern node *TOTvardec (node *arg_node, info *arg_info);
+extern node *TOTret (node *arg_node, info *arg_info);
 
 #endif /* _SAC_TOOLDTYPES_H_ */
