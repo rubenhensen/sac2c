@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.15  1997/11/05 11:30:48  dkr
+ * removed a bug with NEWTREE
+ *
  * Revision 1.14  1997/11/04 13:22:46  dkr
  * with defined NEWTREE, node->nnode is not used anymore
  *
@@ -657,7 +660,7 @@ IdxLet (node *arg_node, node *arg_info)
 #ifndef NEWTREE
     int nnode;
 #else
-    node tmp;
+    node *arg_info1;
 #endif
     int i;
 
@@ -750,9 +753,10 @@ IdxLet (node *arg_node, node *arg_info)
                 newassign = DupTree (arg_info, NULL);
                 arg_info->nnode = 2;
 #else  /* NEWTREE */
-                tmp = *arg_info;
-                tmp.node[1] = NULL;
-                newassign = DupTree (&tmp, NULL);
+                arg_info1 = arg_info->node[1];
+                arg_info->node[1] = NULL;
+                newassign = DupTree (arg_info, NULL);
+                arg_info->node[1] = arg_info1;
 #endif /* NEWTREE */
                 ASSIGN_NEXT (newassign) = ASSIGN_NEXT (arg_info);
 #ifndef NEWTREE
