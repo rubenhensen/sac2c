@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/06/01 12:54:38  cg
+ * added #include <string.h> for usage of function strncpy.
+ *
  * Revision 2.2  1999/05/12 14:24:44  cg
  * old comment eliminated.
  *
@@ -26,7 +29,8 @@
  *
  *****************************************************************************/
 
-#include <stdio.h> /* for NULL only */
+#include <stdio.h>  /* for NULL only */
+#include <string.h> /* for strncpy() */
 
 #define MAX_OPT_LEN 64
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
