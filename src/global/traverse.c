@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.28  1995/08/03 14:52:45  cg
+ * Revision 1.29  1995/09/01 07:48:13  cg
+ * now sib.h is included for call of function SIBmodul
+ *
+ * Revision 1.28  1995/08/03  14:52:45  cg
  * NIF-macros adjusted to 26 parameters.
  * sib_tab and obj_tab inserted.
  *
@@ -117,6 +120,7 @@
 #include "Unswitch.h"
 #include "ArrayElimination.h"
 #include "index.h"
+#include "sib.h"
 
 #include "traverse.h"
 
