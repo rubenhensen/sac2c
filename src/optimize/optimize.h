@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/02/28 18:28:51  asi
+ * Revision 1.17  1995/03/07 10:04:45  asi
+ * added OPTwith and PrintMasks
+ *
+ * Revision 1.16  1995/02/28  18:28:51  asi
  * masks now have dynamic length, stored in varno
  *
  * Revision 1.15  1995/02/22  18:18:44  asi
@@ -85,6 +88,7 @@ extern node *Optimize (node *arg_node);
 
 extern void *MAlloc (int size);
 extern char *PrintMask (long *mask, int varno);
+extern void PrintMasks (node *arg_node, node *arg_info);
 extern void ClearMask (long *mask, int varno);
 extern long *GenMask (int varno);
 extern void MinusMask (long *mask1, long *mask2, int varno);
@@ -107,5 +111,6 @@ extern node *OPTpp (node *arg_node, node *arg_info);
 extern node *OPTblock (node *arg_node, node *arg_info);
 extern node *OPTcond (node *arg_node, node *arg_info);
 extern node *OPTloop (node *arg_node, node *arg_info);
+extern node *OPTwith (node *arg_node, node *arg_info);
 
 #endif /* _optimize_h */
