@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/23 09:51:32  dkr
+ * some comments added
+ *
  * Revision 3.4  2001/03/22 20:01:32  dkr
  * include of tree.h eliminated
  *
@@ -62,27 +65,31 @@
  *  Implementation
  *  --------------
  *
- *  The pairs of data are stored in hash tables. Pointers and strings are
- *  stored in disjoint hash tables. The pointers are stored in the tables with
- *  index [ 0 .. LUT_KEYS_POINTERS [, the strings are stored in the tables with
- *  index [ LUT_KEYS_POINTERS .. LUT_KEYS [.
+ *  The pairs of data are stored in a hash table. Pairs with identical hash
+ *  keys are stored in a collision table (i.e. collision resolution by
+ *  chaining).
+ *  The hash key spaces for pointers and strings are disjunct. The hash keys
+ *  for pointers are elements of the intervall [ 0 .. LUT_KEYS_POINTERS [, the
+ *  hash keys for strings are elements of [ LUT_KEYS_POINTERS .. LUT_KEYS [.
+ *  Thus, we need an array of size LUT_KEYS which elements are the collision
+ *  chains.
  *  The functions GetHashKey_Pointer() and GetHashKey_String() compute for a
- *  pointer and string respectively the index of the hash table the pointer/
- *  string belongs to.
- *  Each hash table is made up of linked table fragments of fixed size
- *  (LUT_SIZE) in order to minimize the data overhead. Initially each hash
+ *  pointer and string respectively the index of the collision table the
+ *  pointer/string belongs to.
+ *  Each collision table is made up of linked table fragments of fixed size
+ *  (LUT_SIZE) in order to minimize the data overhead. Initially each collision
  *  table consists of a single table fragment. Each time the last entry of a
- *  hash table has been occupied another fragment is allocated and appended
- *  to the hash table.
+ *  collision table has been occupied another fragment is allocated and appended
+ *  to the table.
  *
- *  The amount of memory (in byte) needed for all hash tables equals
+ *  The amount of memory (in byte) needed for the whole LUT equals
  *
  *            (K - 1)
  *    MEM  =   SumOf  ( ( ( C[i] + S ) div S ) ( 2 S + 1 ) + 4 ) ,
  *             i = 0
  *
  *    where  K := LUT_KEYS ,  S := LUT_SIZE  and
- *           C[i] denotes the number of pairs the i-th hash table contains.
+ *           C[i] denotes the number of pairs the i-th collision table contains.
  *
  *  Let N be the number of pairs stored in the LUT. Suppose that
  *    C[i]  =  N / K
@@ -109,26 +116,27 @@
 #include "dbug.h"
 
 /*
- * size of a hash table fragment
+ * size of a collision table fragment
  * (== # pairs of data that can be stored in the table)
  */
 #define LUT_SIZE 4
 
 /*
- * number of different hash keys (== number of hash tables)
+ * number of different hash keys
+ * (== size of hash table == # collision tables)
  */
 #define LUT_KEYS_POINTER 256 /* 2^8 */
 #define LUT_KEYS_STRING 101  /* should be a prime number */
 #define LUT_KEYS ((LUT_KEYS_POINTER) + (LUT_KEYS_STRING))
 
 /*
- * hash table fragment
+ * collision table fragment:
  *
  * 'first' points to the first item of the table.
  * 'act' points to the next free position of the table.
  * All elements of the table lie between these two addresses. The pairs of data
  * are stored as two consecutive table entries.
- * The table is of a static size. If the current table is filled, the address
+ * The table is of static size. If the current table is filled, the address
  * of a newly allocated table is stored in the last entry of the current table.
  * 'size' contains the number of items stored in the whole chain of tables.
  */
@@ -136,12 +144,14 @@ typedef struct LUT_T {
     void **first;
     void **act;
     long size;
-} single_lut_t;
+} lut_fragment_t;
 
 /*
- * an array of size LUT_KEYS containing the hash tables.
+ * hash table:
+ *
+ * an array of size LUT_KEYS containing the collision tables.
  */
-typedef single_lut_t *lut_t;
+typedef lut_fragment_t *lut_t;
 
 typedef long (*hash_key_fun_t) (void *);
 typedef bool (*is_equal_fun_t) (void *, void *);
@@ -212,6 +222,10 @@ GetHashKey_String (void *data)
     DBUG_ASSERT (((hash_key >= 0) && (hash_key < (LUT_KEYS_STRING))),
                  "hash key for strings out of bounds!");
 
+    /*
+     * use the offset LUT_KEYS_POINTERS in order to get disjoint hash key spaces
+     * for pointers and strings
+     */
     hash_key += LUT_KEYS_POINTER;
 
     DBUG_ASSERT (((hash_key >= (LUT_KEYS_POINTER)) && (hash_key < (LUT_KEYS))),
@@ -274,7 +288,7 @@ IsEqual_String (void *data1, void *data2)
  *   lut_t *GenerateLUT( void)
  *
  * description:
- *   Generates a new LUT: All the needed hash tables are created and the
+ *   Generates a new LUT: All the needed collision tables are created and the
  *   internal data structures are initialized.
  *
  ******************************************************************************/
@@ -289,7 +303,7 @@ GenerateLUT (void)
 
     lut = (lut_t *)MALLOC ((LUT_KEYS) * sizeof (lut_t));
     for (k = 0; k < (LUT_KEYS); k++) {
-        lut[k] = (single_lut_t *)MALLOC (sizeof (single_lut_t));
+        lut[k] = (lut_fragment_t *)MALLOC (sizeof (lut_fragment_t));
         lut[k]->first = (void **)MALLOC ((2 * (LUT_SIZE) + 1) * sizeof (void *));
         lut[k]->act = lut[k]->first;
         lut[k]->size = 0;
@@ -367,7 +381,7 @@ RemoveLUT (lut_t *lut)
  *
  * description:
  *   Inserts the given pair of data (old_item, new_item) into the correct
- *   hash table of the LUT.
+ *   collision table of the LUT.
  *
  ******************************************************************************/
 
@@ -395,7 +409,7 @@ InsertIntoLUT (lut_t *lut, void *old_item, void *new_item, hash_key_fun_t hash_k
             DBUG_PRINT ("LUT",
                         ("new strings inserted (hash key %li)"
                          " -> [ \"%s\" , \"%s\" ]",
-                         k - LUT_KEYS_POINTER, (char *)old_item, (char *)new_item));
+                         k - (LUT_KEYS_POINTER), (char *)old_item, (char *)new_item));
         }
 
         if (lut[k]->size % (LUT_SIZE) == 0) {
@@ -425,7 +439,7 @@ InsertIntoLUT (lut_t *lut, void *old_item, void *new_item, hash_key_fun_t hash_k
  *
  * description:
  *   Inserts the given pair of pointers (old_item, new_item) into the correct
- *   hash table of the LUT.
+ *   collision table of the LUT.
  *
  ******************************************************************************/
 
@@ -446,7 +460,7 @@ InsertIntoLUT_P (lut_t *lut, void *old_item, void *new_item)
  *
  * description:
  *   Inserts the given pair of strings (old_item, new_item) into the correct
- *   hash table of the LUT.
+ *   collision table of the LUT.
  *
  ******************************************************************************/
 
@@ -488,8 +502,15 @@ SearchInLUT (lut_t *lut, void *old_item, hash_key_fun_t hash_key_fun,
     new_item = old_item;
     if (lut != NULL) {
         if (old_item != NULL) {
+            /*
+             * calcutate hash key of 'old_item'
+             */
             k = hash_key_fun (old_item);
             DBUG_ASSERT ((lut[k] != NULL), "lut is NULL!");
+
+            /*
+             * search in the collision table for 'old_item'
+             */
             tmp = lut[k]->first;
             for (i = 0; i < lut[k]->size; i++) {
                 if (is_equal_fun (tmp[0], old_item)) {
@@ -514,7 +535,7 @@ SearchInLUT (lut_t *lut, void *old_item, hash_key_fun_t hash_key_fun,
                 } else {
                     DBUG_PRINT ("LUT", ("finished:"
                                         " string \"%s\" (hash key %li) *not* found :-(",
-                                        (char *)old_item, k - LUT_KEYS_POINTER));
+                                        (char *)old_item, k - (LUT_KEYS_POINTER)));
                 }
             } else {
                 if (k < LUT_KEYS_POINTER) {
@@ -524,7 +545,7 @@ SearchInLUT (lut_t *lut, void *old_item, hash_key_fun_t hash_key_fun,
                 } else {
                     DBUG_PRINT ("LUT", ("finished:"
                                         " string \"%s\" (hash key %li) found -> \"%s\"",
-                                        (char *)old_item, k - LUT_KEYS_POINTER,
+                                        (char *)old_item, k - (LUT_KEYS_POINTER),
                                         (char *)new_item));
                 }
             }
@@ -628,7 +649,7 @@ PrintLUT (FILE *handle, lut_t *lut)
         }
         for (k = LUT_KEYS_POINTER; k < (LUT_KEYS); k++) {
             DBUG_ASSERT ((lut[k] != NULL), "lut is NULL!");
-            fprintf (handle, "*** strings: hash key %li ***\n", k - LUT_KEYS_POINTER);
+            fprintf (handle, "*** strings: hash key %li ***\n", k - (LUT_KEYS_POINTER));
             tmp = lut[k]->first;
             for (i = 0; i < lut[k]->size; i++) {
                 fprintf (handle, "%li: [ \"%s\" -> \"%s\" ]\n", i, (char *)(tmp[0]),
