@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/03/15 14:54:16  dkr
+ * PrintNodeTree renamed to PrintAST
+ * PrintNodeAST added
+ *
  * Revision 2.5  2000/02/24 15:56:12  dkr
  * Print functions for old with-loop removed
  *
@@ -193,8 +197,9 @@ extern node *PrintWLgridVar (node *arg_node, node *arg_info);
 extern void PrintFunctionHeader (node *arg_node, node *arg_info);
 
 extern node *Print (node *syntax_tree);
-
 extern node *PrintNode (node *node);
-extern void PrintNodeTree (node *node); /* debug output */
+
+extern void PrintAST (node *node);     /* debug output */
+extern void PrintNodeAST (node *node); /* debug output */
 
 #endif /* _sac_print_h */
