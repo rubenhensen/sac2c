@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/10/17 08:28:15  cg
+ * Revision 1.3  1995/10/18 13:35:36  cg
+ * now Malloc is used instead of malloc,
+ * so error messages are no longer needed.
+ *
+ * Revision 1.2  1995/10/17  08:28:15  cg
  * all automatically generated functions now have status ST_objinitfun.
  * This tag is used by the typechecker.
  *
@@ -13,7 +17,6 @@
  */
 
 #include <string.h>
-#include <malloc.h>
 
 #include "types.h"
 #include "tree_basic.h"
@@ -21,7 +24,7 @@
 
 #include "traverse.h"
 #include "dbug.h"
-#include "Error.h"
+#include "internal_lib.h"
 
 /*
  *
@@ -66,10 +69,10 @@ OImodul (node *arg_node, node *arg_info)
  *                  initialize global objects.
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : malloc, strlen, strcpy, strcat,
+ *  external funs : Malloc, strlen, strcpy, strcat,
  *                  MakeType, MakeExprs, MakeReturn, MakeAssign, MakeBlock,
  *                  MakeFundef, MakeAp, Trav
- *  macros        : ERROR2
+ *  macros        :
  *
  *  remarks       :
  *
@@ -88,28 +91,30 @@ OIobjdef (node *arg_node, node *arg_info)
                              OBJDEF_SHPSEG (arg_node), OBJDEF_TNAME (arg_node),
                              OBJDEF_TMOD (arg_node));
 
-    new_fun_name = (char *)malloc (strlen (OBJDEF_NAME (arg_node)) + 10);
-    if (new_fun_name == NULL) {
-        ERROR2 (1, ("ERROR: out of memory"));
-    }
+    new_fun_name = (char *)Malloc (strlen (OBJDEF_NAME (arg_node)) + 10);
 
     new_fun_name = strcpy (new_fun_name, "_CREATE_");
     new_fun_name = strcat (new_fun_name, OBJDEF_NAME (arg_node));
 
     new_node = MakeExprs (OBJDEF_EXPR (arg_node), NULL);
+    NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
     /*------------------------------------------------------------------*/
     new_node->nnode = 1;
     /*------------------------------------------------------------------*/
 
     new_node = MakeReturn (new_node);
+    NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
+
     new_node = MakeAssign (new_node, NULL);
+    NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
     /*------------------------------------------------------------------*/
     new_node->nnode = 1;
     /*------------------------------------------------------------------*/
 
     new_node = MakeBlock (new_node, NULL);
+    NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
     /*------------------------------------------------------------------*/
     new_node->nnode = 1;
@@ -117,6 +122,7 @@ OIobjdef (node *arg_node, node *arg_info)
 
     new_node = MakeFundef (new_fun_name, OBJDEF_MOD (arg_node), NULL, new_fun_type, NULL,
                            new_node, MODUL_FUNS (arg_info));
+    NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
     /*------------------------------------------------------------------*/
     new_node->nnode = (MODUL_FUNS (arg_info) == NULL) ? 1 : 2;
