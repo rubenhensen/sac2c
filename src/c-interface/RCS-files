@@ -5,3 +5,7 @@ map_cwrapper.c
 map_cwrapper.h
 print_interface.c
 print_interface.h
+print_interface_header.c
+print_interface_header.h
+print_interface_wrapper.c
+print_interface_wrapper.h
