@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2001/05/07 09:04:20  nmw
+ * call to Unroll() in ssa optimizations removed. the withloop
+ * unrolling is done be SSALUR now (it uses WLUnroll.c)
+ *
  * Revision 3.22  2001/04/30 12:15:13  nmw
  * no separate optimizations of special fundefs anymore
  * Unroll() added behind SSALoopUnrolling to get WLUR
@@ -976,10 +980,9 @@ OPTfundef (node *arg_node, node *arg_info)
                     arg_node = GenerateMasks (arg_node, NULL);
                     /*
                      * important:
-                     *   SSALoopUnrolling do not implement WLUR so we have to call
-                     *   the old Unroll() function to get the WithLoopUnrolling.
+                     *   SSALoopUnrolling uses internally WLUnroll to get the
+                     *   WithLoopUnrolling.
                      */
-                    arg_node = Unroll (arg_node, arg_info); /* unroll_tab */
                 } else {
                     arg_node = Unroll (arg_node, arg_info); /* unroll_tab */
                 }
