@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.167  1998/06/08 09:50:29  dkr
+ * *** empty log message ***
+ *
  * Revision 1.166  1998/06/07 18:39:44  dkr
  * added CHECK_REUSE for new with-loop
  * (currently deactivated)
@@ -6348,28 +6351,25 @@ COMPNwith2 (node *arg_node, node *arg_info)
     arg_node = GetReuseArrays( arg_node,
                                INFO_COMP_FUNDEF( arg_info),
                                wl_ids);
-#endif
 
-        /*
-         * 'ND_CHECK_REUSE_ARRAY'
-         */
-        vardec = DFMGetMaskEntryDeclSet (NWITH2_REUSE (arg_node));
-        while (vardec != NULL) {
-            assigns
-              = MakeAssign (MakeIcm ("ND_CHECK_REUSE_ARRAY",
-                                     MakeExprs (MakeId (StringCopy (
-                                                          VARDEC_OR_ARG_NAME (vardec)),
-                                                        NULL, ST_regular),
-                                                MakeExprs (MakeId (StringCopy (
-                                                                     IDS_NAME (wl_ids)),
-                                                                   NULL, ST_regular),
-                                                           NULL)),
+    /*
+     * 'ND_CHECK_REUSE_ARRAY'
+     */
+    vardec = DFMGetMaskEntryDeclSet( NWITH2_REUSE( arg_node));
+    while (vardec != NULL) {
+      assigns = MakeAssign( MakeIcm( "ND_CHECK_REUSE_ARRAY",
+                  MakeExprs( MakeId( StringCopy( VARDEC_OR_ARG_NAME( vardec)),
+                                     NULL, ST_regular),
+                  MakeExprs( MakeId( StringCopy( IDS_NAME( wl_ids)),
+                                     NULL, ST_regular),
+                    NULL)),
                                      NULL),
                             assigns);
 
-            vardec = DFMGetMaskEntryDeclSet (NULL);
-        }
-        NWITH2_REUSE (arg_node) = DFMRemoveMask (NWITH2_REUSE (arg_node));
+      vardec = DFMGetMaskEntryDeclSet( NULL);
+    }
+    NWITH2_REUSE( arg_node) = DFMRemoveMask( NWITH2_REUSE( arg_node));
+#endif
 
         /*
          * 'ND_ALLOC_ARRAY'
