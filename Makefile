@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.26  1995/07/24 11:40:53  asi
+# Revision 1.27  1995/07/28 13:27:20  asi
+# added make product
+#
+# Revision 1.26  1995/07/24  11:40:53  asi
 # added ArrayElimination.o
 #
 # Revision 1.25  1995/07/07  15:00:40  asi
@@ -77,7 +80,9 @@
 #
 
 CC=gcc -ansi -Wall -pedantic -g 
+CCPROD=gcc -ansi -Wall -pedantic -DDBUG_OFF -O3
 MAKE=make CC="$(CC)"
+MAKEPROD=make CC="$(CCPROD)"
 LEX=lex
 YACC=yacc -dv
 LIBS=-ly -ll
@@ -106,6 +111,8 @@ OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) $(MODULES) \
 
 all: dummy sac2c
 
+product : clean prod sac2c
+
 dummy:
 	(cd src/scanparse; $(MAKE) )
 	(cd src/global; $(MAKE) )
@@ -117,6 +124,18 @@ dummy:
 	(cd src/refcount; $(MAKE) )       
 	(cd src/compile; $(MAKE) )
 	(cd src/psi-opt; $(MAKE) )
+
+prod:
+	(cd src/scanparse; $(MAKEPROD) )
+	(cd src/global; $(MAKEPROD) )
+	(cd src/print; $(MAKEPROD) )
+	(cd src/flatten; $(MAKEPROD) )
+	(cd src/typecheck; $(MAKEPROD) )
+	(cd src/optimize; $(MAKEPROD) )
+	(cd src/modules; $(MAKEPROD) )
+	(cd src/refcount; $(MAKEPROD) )       
+	(cd src/compile; $(MAKEPROD) )
+	(cd src/psi-opt; $(MAKEPROD) )
 
 sac2c: $(OBJ) $(LIB)
 	$(CC) -o sac2c $(OBJ) $(LIB) $(LIBS)
