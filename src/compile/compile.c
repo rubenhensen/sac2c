@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.108  1998/02/11 16:30:36  dkr
+ * removed NEWTREE, access-macros used
+ *
  * Revision 1.107  1998/02/10 14:57:54  dkr
  * macro WITH_USEDVARS is used
  *
@@ -449,9 +452,6 @@
 #include "typecheck.h" /* to use LookupType */
 #include "free.h"
 
-extern int CmpTypes (types *type_one, types *type_two);
-/* from typecheck.c because typecheck.h is currently locked */
-
 #define TYP_IF(n, d, p, f, sz) sz
 
 int basetype_size[] = {
@@ -479,7 +479,7 @@ int basetype_size[] = {
 
 /* the following macros are while generation of N_icms */
 
-#define MAKE_IDNODE(id) MakeId (id, NULL, ST_regular);
+#define MAKE_IDNODE(id) MakeId (id, NULL, ST_regular)
 
 #define MUST_REFCOUNT(item, arg) (item##_REFCNT (arg) >= 0)
 
@@ -602,17 +602,6 @@ int basetype_size[] = {
     CREATE_CONST_ARRAY (array, tmp_array1, type_id_node, rc);                            \
     array = tmp_array1 /* set array to __TMP */
 
-#ifndef NEWTREE
-#define CREATE_CONST_ARRAY(array, name, type, rc)                                        \
-    CREATE_3_ARY_ICM (next_assign, "ND_ALLOC_ARRAY", type, name, rc);                    \
-    APPEND_ASSIGNS (first_assign, next_assign);                                          \
-    COUNT_ELEMS (n_elems, array->node[0]);                                               \
-    MAKENODE_NUM (n_node, n_elems);                                                      \
-    CREATE_2_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_S", name, n_node);             \
-    icm_arg->node[1] = array->node[0];                                                   \
-    icm_arg->nnode = 2;                                                                  \
-    APPEND_ASSIGNS (first_assign, next_assign)
-#else /* NEWTREE */
 #define CREATE_CONST_ARRAY(array, name, type, rc)                                        \
     CREATE_3_ARY_ICM (next_assign, "ND_ALLOC_ARRAY", type, name, rc);                    \
     APPEND_ASSIGNS (first_assign, next_assign);                                          \
@@ -621,7 +610,6 @@ int basetype_size[] = {
     CREATE_2_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_S", name, n_node);             \
     icm_arg->node[1] = array->node[0];                                                   \
     APPEND_ASSIGNS (first_assign, next_assign)
-#endif /* NEWTREE */
 
 #define DECL_ARRAY(assign, Node, var_str, var_str_node)                                  \
     COUNT_ELEMS (n_elems, Node);                                                         \
@@ -631,21 +619,11 @@ int basetype_size[] = {
     CREATE_4_ARY_ICM (assign, "ND_KS_DECL_ARRAY", type_id_node, var_str_node, n_node1,   \
                       n_elems_node)
 
-#ifndef NEWTREE
-#define INSERT_ID_NODE(no, last, str)                                                    \
-    tmp = MakeNode (N_exprs);                                                            \
-    MAKENODE_ID (tmp->node[0], str);                                                     \
-    tmp->node[1] = no;                                                                   \
-    tmp->nnode = 2;                                                                      \
-    last->node[1] = tmp;                                                                 \
-    last->nnode = 2
-#else /* NEWTREE */
 #define INSERT_ID_NODE(no, last, str)                                                    \
     tmp = MakeNode (N_exprs);                                                            \
     MAKENODE_ID (tmp->node[0], str);                                                     \
     tmp->node[1] = no;                                                                   \
     last->node[1] = tmp;
-#endif /* NEWTREE */
 
 /* following macros are used to compute last but one or next N_assign form
  * a 'arg_info' node
@@ -680,38 +658,13 @@ int basetype_size[] = {
         EXPRS_EXPR (exprs) = tmp;                                                        \
     }
 
-#ifndef NEWTREE
-#define GOTO_LAST_N_EXPRS(exprs, last_exprs)                                             \
-    last_exprs = exprs;                                                                  \
-    while (2 == last_exprs->nnode) {                                                     \
-        DBUG_ASSERT (N_exprs == last_exprs->nodetype, " nodetype  != N_expr");           \
-        last_exprs = last_exprs->node[1];                                                \
-    }
-#else /* NEWTREE */
 #define GOTO_LAST_N_EXPRS(exprs, last_exprs)                                             \
     last_exprs = exprs;                                                                  \
     while (last_exprs->node[1] != NULL) {                                                \
         DBUG_ASSERT (N_exprs == last_exprs->nodetype, " nodetype  != N_expr");           \
         last_exprs = last_exprs->node[1];                                                \
     }
-#endif /* NEWTREE */
 
-#ifndef NEWTREE
-#define GOTO_LAST_BUT_LEAST_N_EXPRS(exprs, lbl_exprs)                                    \
-    {                                                                                    \
-        node *tmp;                                                                       \
-        lbl_exprs = exprs;                                                               \
-        DBUG_ASSERT (N_exprs == lbl_exprs->nodetype, " nodetype  != N_expr");            \
-        DBUG_ASSERT (2 == lbl_exprs->nnode, "there is NO N_exprs-chain contains only"    \
-                                            " one element");                             \
-        tmp = lbl_exprs->node[1];                                                        \
-        while (tmp->nnode == 2) {                                                        \
-            DBUG_ASSERT (N_exprs == tmp->nodetype, " nodetype  != N_expr");              \
-            lbl_exprs = tmp;                                                             \
-            tmp = tmp->node[1];                                                          \
-        }                                                                                \
-    }
-#else /* NEWTREE */
 #define GOTO_LAST_BUT_LEAST_N_EXPRS(exprs, lbl_exprs)                                    \
     {                                                                                    \
         node *tmp;                                                                       \
@@ -727,7 +680,6 @@ int basetype_size[] = {
             tmp = tmp->node[1];                                                          \
         }                                                                                \
     }
-#endif /* NEWTREE */
 
 #define FREE_TYPE(a)                                                                     \
     if (NULL != a->shpseg)                                                               \
@@ -747,34 +699,6 @@ int basetype_size[] = {
     }
 
 static int label_nr = 0;
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
 
 /*
  *
@@ -878,11 +802,6 @@ AdjustAddedAssigns (node *before, node *after)
 
                         {
                             ASSIGN_NEXT (last) = ASSIGN_NEXT (tmp);
-#ifndef NEWTREE
-                            if (ASSIGN_NEXT (last) == NULL) {
-                                last->nnode = 1;
-                            }
-#endif
                         } else {
                             if ((0
                                  == strcmp (ICM_NAME (ASSIGN_INSTR (tmp)),
@@ -1193,9 +1112,6 @@ MergeIcmsAp (node *out_icm, node *in_icm, types *type, int rc)
                                                          ICMPARAM_ARG1 (out_icm))),
                                                        NULL, ST_regular)),
                                      NULL);
-#ifndef NEWTREE
-            new_assign->nnode = 1;
-#endif
         }
     }
 
@@ -1290,13 +1206,6 @@ ReorganizeReturnIcm (node *icm_arg)
                 cnt += 1;
             }
         }
-
-/*********************************/
-#ifndef NEWTREE
-        last->nnode = 1;
-#endif
-        /*********************************/
-
         NUM_VAL (EXPRS_EXPR (EXPRS_NEXT (icm_arg))) = cnt;
     }
 
@@ -1512,15 +1421,6 @@ InsertApArgParam (node **icm_tab, node *icm_arg, types *type, int rc,
 
             if (new_assign != NULL) {
                 ASSIGN_NEXT (new_assign) = ASSIGN_NEXT (collect_assigns);
-
-#ifndef NEWTREE
-                if (ASSIGN_NEXT (new_assign) == NULL) {
-                    new_assign->nnode = 1;
-                } else {
-                    new_assign->nnode = 2;
-                }
-#endif
-
                 ASSIGN_NEXT (collect_assigns) = new_assign;
             }
         }
@@ -2146,18 +2046,9 @@ node *ReorganizeParameters(int tag, node *icm_args, node *fundef,
     else
     {
       EXPRS_NEXT(last)=icm_arg_tab[i];
-
-#ifndef NEWTREE
-      last->nnode=2;
-#endif /* NEWTREE */
-
       SHIFT_EXPRS_PTR(last, varblock_length);
     }
   }
-
-#ifndef NEWTREE
-  last->nnode=1;
-#endif /* NEWTREE */
  
   EXPRS_NEXT(last)=NULL;
 
@@ -2238,9 +2129,6 @@ RenameReturn (node *return_node, node *arg_info)
     next_assign = MakeNode (N_assign);
     next_assign->node[0] = return_node;
     ;
-#ifndef NEWTREE
-    next_assign->nnode = 1;
-#endif
     vardec = arg_info->node[3];
 
     while (NULL != exprs) {
@@ -2272,9 +2160,6 @@ RenameReturn (node *return_node, node *arg_info)
         node *last_assign = LAST_ASSIGN (arg_info);
         last_assign->node[0] = assign->node[0];
         last_assign->node[1] = assign->node[1];
-#ifndef NEWTREE
-        last_assign->nnode = 2;
-#endif
         arg_info->node[3] = vardec;
 
         return_node = assign->node[0];
@@ -2377,15 +2262,9 @@ ShapeToArray (node *vardec_node)
                       SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (vardec_node)), 0));
         tmp = ret_node;
         for (i = 1; i < TYPES_DIM (VARDEC_TYPE (vardec_node)); i++) {
-#ifndef NEWTREE
-            tmp->nnode = 2;
-#endif
             tmp->node[1] = MakeNode (N_exprs);
             MAKENODE_NUM (tmp->node[1]->node[0],
                           SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (vardec_node)), i));
-#ifndef NEWTREE
-            tmp->node[1]->nnode = 1;
-#endif
             tmp = tmp->node[1];
         }
     } else {
@@ -2398,28 +2277,16 @@ ShapeToArray (node *vardec_node)
                           SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (vardec_node)), 0));
             tmp = ret_node;
             for (i = 1; i < TYPES_DIM (VARDEC_TYPE (vardec_node)); i++) {
-#ifndef NEWTREE
-                tmp->nnode = 2;
-#endif
                 tmp->node[1] = MakeNode (N_exprs);
                 MAKENODE_NUM (tmp->node[1]->node[0],
                               SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (vardec_node)), i));
-#ifndef NEWTREE
-                tmp->node[1]->nnode = 1;
-#endif
                 tmp = tmp->node[1];
             }
             for (i = 0; i < TYPES_DIM (VARDEC_TYPE (basic_type_node)); i++) {
-#ifndef NEWTREE
-                tmp->nnode = 2;
-#endif
                 tmp->node[1] = MakeNode (N_exprs);
                 MAKENODE_NUM (tmp->node[1]->node[0],
                               SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (basic_type_node)),
                                             i));
-#ifndef NEWTREE
-                tmp->node[1]->nnode = 1;
-#endif
                 tmp = tmp->node[1];
             }
         } else {
@@ -2428,16 +2295,10 @@ ShapeToArray (node *vardec_node)
                           SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (basic_type_node)), 0));
             tmp = ret_node;
             for (i = 1; i < TYPES_DIM (VARDEC_TYPE (basic_type_node)); i++) {
-#ifndef NEWTREE
-                tmp->nnode = 2;
-#endif
                 tmp->node[1] = MakeNode (N_exprs);
                 MAKENODE_NUM (tmp->node[1]->node[0],
                               SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (basic_type_node)),
                                             i));
-#ifndef NEWTREE
-                tmp->node[1]->nnode = 1;
-#endif
                 tmp = tmp->node[1];
             }
         }
@@ -2519,11 +2380,6 @@ CompFundef (node *arg_node, node *arg_info)
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
         if (FUNDEF_VARDEC (arg_node) != NULL) {
             FUNDEF_VARDEC (arg_node) = Trav (FUNDEF_VARDEC (arg_node), arg_info);
-/*********************************/
-#ifndef NEWTREE
-            arg_node->node[0]->nnode = 2;
-#endif
-            /*********************************/
         }
     }
 
@@ -2834,13 +2690,13 @@ CompVardec (node *arg_node, node *arg_info)
 
         /* now create N_icm */
         MAKE_ICM (assign);
-        MAKE_ICM_NAME (assign->node[0], "ND_KS_DECL_ARRAY");
+        MAKE_ICM_NAME (ASSIGN_INSTR (assign), "ND_KS_DECL_ARRAY");
 
-        if (NULL != arg_node->node[0])
-            assign->node[1] = arg_node->node[0];
+        if (NULL != VARDEC_NEXT (arg_node))
+            ASSIGN_NEXT (assign) = VARDEC_NEXT (arg_node);
 
-        MAKE_ICM_ARG (assign->node[0]->node[0], id_type);
-        icm_arg = assign->node[0]->node[0];
+        MAKE_ICM_ARG (ICM_ARGS (ASSIGN_INSTR (assign)), id_type);
+        icm_arg = ICM_ARGS (ASSIGN_INSTR (assign));
         MAKE_NEXT_ICM_ARG (icm_arg, id_node);
         MAKE_NEXT_ICM_ARG (icm_arg, n_dim);
 
@@ -2860,12 +2716,6 @@ CompVardec (node *arg_node, node *arg_info)
 
         if (NULL != arg_node->node[1]) {
             arg_node->node[1] = Trav (arg_node->node[1], NULL);
-#ifndef NEWTREE
-            if (NULL == arg_node->node[1])
-                arg_node->nnode = 1;
-            else
-                arg_node->nnode = 2;
-#endif /* NEWTREE */
         }
     } else if (TYPES_DIM (full_type) == UNKNOWN_SHAPE) {
         /*
@@ -2878,13 +2728,13 @@ CompVardec (node *arg_node, node *arg_info)
 
         /* now create N_icm */
         MAKE_ICM (assign);
-        MAKE_ICM_NAME (assign->node[0], "ND_DECL_ARRAY");
+        MAKE_ICM_NAME (ASSIGN_INSTR (assign), "ND_DECL_ARRAY");
 
-        if (NULL != arg_node->node[0])
-            assign->node[1] = arg_node->node[0];
+        if (NULL != VARDEC_NEXT (arg_node))
+            ASSIGN_NEXT (assign) = VARDEC_NEXT (arg_node);
 
-        MAKE_ICM_ARG (assign->node[0]->node[0], id_type);
-        icm_arg = assign->node[0]->node[0];
+        MAKE_ICM_ARG (ICM_ARGS (ASSIGN_INSTR (assign)), id_type);
+        icm_arg = ICM_ARGS (ASSIGN_INSTR (assign));
         MAKE_NEXT_ICM_ARG (icm_arg, id_node);
 
         /* now free some nodes */
@@ -2895,14 +2745,8 @@ CompVardec (node *arg_node, node *arg_info)
         FREE_VARDEC (arg_node);
         arg_node = assign; /* set arg_node, because this node will be returned */
 
-        if (NULL != arg_node->node[1]) {
-            arg_node->node[1] = Trav (arg_node->node[1], NULL);
-#ifndef NEWTREE
-            if (NULL == arg_node->node[1])
-                arg_node->nnode = 1;
-            else
-                arg_node->nnode = 2;
-#endif /* NEWTREE */
+        if (NULL != VARDEC_NEXT (arg_node)) {
+            VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), NULL);
         }
     } else if (TYPES_DIM (full_type) < KNOWN_DIM_OFFSET) {
         /*
@@ -2936,12 +2780,6 @@ CompVardec (node *arg_node, node *arg_info)
 
         if (NULL != arg_node->node[1]) {
             arg_node->node[1] = Trav (arg_node->node[1], NULL);
-#ifndef NEWTREE
-            if (NULL == arg_node->node[1])
-                arg_node->nnode = 1;
-            else
-                arg_node->nnode = 2;
-#endif /* NEWTREE */
         }
     } else {
         if (IsNonUniqueHidden (VARDEC_TYPE (arg_node))) {
@@ -2950,18 +2788,7 @@ CompVardec (node *arg_node, node *arg_info)
 
             if (VARDEC_NEXT (arg_node) != NULL) {
                 ASSIGN_NEXT (assign) = Trav (VARDEC_NEXT (arg_node), NULL);
-
-#ifndef NEWTREE
-                if (ASSIGN_NEXT (assign) == NULL)
-                    assign->nnode = 1;
-                else
-                    assign->nnode = 2;
-#endif /* NEWTREE */
             }
-#ifndef NEWTREE
-            else
-                assign->nnode = 1;
-#endif /* NEWTREE */
             FREE_VARDEC (arg_node);
             arg_node = assign;
         } else {
@@ -2969,28 +2796,15 @@ CompVardec (node *arg_node, node *arg_info)
                 /* current vardec-node has unknown shape and will be removed */
                 node *tmp;
                 tmp = arg_node;
-#ifndef NEWTREE
-                if (1 == arg_node->nnode)
-#else  /* NEWTREE */
                 if (arg_node->node[0] != NULL)
-#endif /* NEWTREE */
                     arg_node = Trav (arg_node->node[0], NULL);
                 else
                     arg_node = NULL;
                 FREE_VARDEC (tmp);
             } else {
                 /* traverse next N_vardec node if any */
-#ifndef NEWTREE
-                if (1 == arg_node->nnode)
-#else  /* NEWTREE */
-                if (arg_node->node[0] != NULL)
-#endif /* NEWTREE */
-                {
+                if (arg_node->node[0] != NULL) {
                     arg_node->node[0] = Trav (arg_node->node[0], NULL);
-#ifndef NEWTREE
-                    if (NULL == arg_node->node[0])
-                        arg_node->nnode = 0;
-#endif /* NEWTREE */
                 }
             }
         }
@@ -3071,9 +2885,6 @@ CompPrfModarray (node *arg_node, node *arg_info)
                 MAKE_NEXT_ICM_ARG (icm_arg, arg3);
                 MAKE_NEXT_ICM_ARG (icm_arg, length);
                 icm_arg->node[1] = ARRAY_AELEMS (arg2);
-#ifndef NEWTREE
-                icm_arg->nnode = 2;
-#endif
                 SET_VARS_FOR_MORE_ICMS;
                 MAKENODE_NUM (n_node, 1);
                 DEC_OR_FREE_RC_ND (arg3, n_node);
@@ -3092,9 +2903,6 @@ CompPrfModarray (node *arg_node, node *arg_info)
                 MAKE_NEXT_ICM_ARG (icm_arg, arg3);
                 MAKE_NEXT_ICM_ARG (icm_arg, length);
                 icm_arg->node[1] = ARRAY_AELEMS (arg2);
-#ifndef NEWTREE
-                icm_arg->nnode = 2;
-#endif
                 SET_VARS_FOR_MORE_ICMS;
             }
             MAKENODE_NUM (n_node, 1);
@@ -3348,9 +3156,6 @@ CompConvert (node *arg_node, node *arg_info)
                 CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_A", res, n_length,
                                   n_node);
                 icm_arg->node[1] = ARRAY_AELEMS (arg1);
-#ifndef NEWTREE
-                icm_arg->nnode = 2;
-#endif
                 APPEND_ASSIGNS (first_assign, next_assign);
 
                 /* now decrement refcount of the arrays */
@@ -3366,9 +3171,6 @@ CompConvert (node *arg_node, node *arg_info)
                 /* it is an array out of scalar values */
                 CREATE_2_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_S", res, n_node);
                 icm_arg->node[1] = arg1->node[0];
-#ifndef NEWTREE
-                icm_arg->nnode = 2;
-#endif
                 APPEND_ASSIGNS (first_assign, next_assign);
             }
             INSERT_ASSIGN;
@@ -3449,9 +3251,6 @@ CompPrf (node *arg_node, node *arg_info)
                         CREATE_2_ARY_ICM (new_assign, "ND_KS_ASSIGN_ARRAY", old_name,
                                           new_name);
                         new_assign->node[1] = LAST_ASSIGN (arg_info);
-#ifndef NEWTREE
-                        new_assign->nnode = 2;
-#endif
                         INSERT_BEFORE (arg_info, new_assign);
 
                         /* set info_node to right node (update info_node )*/
@@ -3777,9 +3576,6 @@ CompPrf (node *arg_node, node *arg_info)
                 MAKE_NEXT_ICM_ARG (icm_arg, arg1);
             } else {
                 icm_arg->node[1] = arg1->node[0];
-#ifndef NEWTREE
-                icm_arg->nnode = 2;
-#endif
             }
             APPEND_ASSIGNS (first_assign, next_assign);
 
@@ -3809,17 +3605,14 @@ CompPrf (node *arg_node, node *arg_info)
                     FREE (arg_node->node[0]->node[1]);
                     arg_node = NULL;
                     arg_info->node[1]->nodetype = N_icm;
-#ifndef NEWTREE
-                    arg_info->node[1]->nnode = 0;
-#else
-                    /*
-                    for (int i=0; i<MAX_SONS; i++)
-                      arg_info->node[1]->node[i] = NULL;
-                    */
+#if 0
+               for (int i=0; i<MAX_SONS; i++)
+                 arg_info->node[1]->node[i] = NULL;
 #endif
-                    /* don't free  LET_IDS(arg_info->node[1]), because it is shared with
-                     * vardec ! FREE_IDS(LET_IDS(arg_info->node[1]));
-                     */
+#if 0
+               /* don't free  LET_IDS(arg_info->node[1]), because it is shared with vardec ! */
+               FREE_IDS(LET_IDS(arg_info->node[1]));
+#endif
                     MAKE_ICM_NAME (arg_info->node[1], "NOOP");
                 } else {
                     MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info));
@@ -3882,9 +3675,6 @@ CompPrf (node *arg_node, node *arg_info)
                         MAKE_NEXT_ICM_ARG (icm_arg, res);
                         MAKE_NEXT_ICM_ARG (icm_arg, arg1_length);
                         icm_arg->node[1] = arg1->node[0];
-#ifndef NEWTREE
-                        icm_arg->nnode = 2;
-#endif
                         /*
                          * FREE(arg1);
                          *
@@ -3916,9 +3706,6 @@ CompPrf (node *arg_node, node *arg_info)
                         CREATE_4_ARY_ICM (next_assign, "ND_KD_PSI_CxA_S", line, arg2, res,
                                           arg1_length);
                         icm_arg->node[1] = arg1->node[0];
-#ifndef NEWTREE
-                        icm_arg->nnode = 2;
-#endif
                         FREE (arg1);
                     }
                     APPEND_ASSIGNS (first_assign, next_assign);
@@ -3944,9 +3731,6 @@ CompPrf (node *arg_node, node *arg_info)
                     CREATE_5_ARY_ICM (next_assign, "ND_KD_PSI_CxA_A", line, dim_node,
                                       arg2, res, arg1_length);
                     icm_arg->node[1] = arg1->node[0];
-#ifndef NEWTREE
-                    icm_arg->nnode = 2;
-#endif
                     FREE (arg1);
                 }
                 APPEND_ASSIGNS (first_assign, next_assign);
@@ -3963,10 +3747,10 @@ CompPrf (node *arg_node, node *arg_info)
             node *arg2_ref;
             arg1 = arg_node->node[0]->node[0];
             arg2 = arg_node->node[0]->node[1]->node[0];
-            /*
-                    DBUG_ASSERT((N_id == arg1->nodetype ||
-                                 N_num == arg1->nodetype),"wrong first arg of idx_psi");
-            */
+#if 0
+        DBUG_ASSERT((N_id == arg1->nodetype ||
+                     N_num == arg1->nodetype),"wrong first arg of idx_psi");
+#endif
             DBUG_ASSERT (N_id == arg2->nodetype, "wrong second arg of idx_psi");
 
 #ifdef OLD_IDX_PSI
@@ -3974,39 +3758,36 @@ CompPrf (node *arg_node, node *arg_info)
             arg_info->node[1]->nodetype = N_icm;
             MAKENODE_ID_REUSE_IDS (res, LET_IDS (arg_info));
             if (1 == IsArray (VARDEC_TYPE (ID_VARDEC (arg_info)))) {
-                /*
-                   types *b_type;
-                   int length, i;
-                   node *next_icm_arg;
+#if 0
+           types *b_type;
+           int length, i;
+           node *next_icm_arg;
 
-                   if (T_user == TYPES_BASETYPE(VARDEC_TYPE(ID_VARDEC(arg_info))))
-                   {
-                     GET_BASIC_TYPE(b_type, VARDEC_TYPE(ID_VARDEC(arg_info)), 0);
-                   }
-                   else
-                     b_type=VARDEC_TYPE(ID_VARDEC(arg_info));
+           if (T_user == TYPES_BASETYPE(VARDEC_TYPE(ID_VARDEC(arg_info))))
+           {
+             GET_BASIC_TYPE(b_type, VARDEC_TYPE(ID_VARDEC(arg_info)), 0);
+           }
+           else
+             b_type=VARDEC_TYPE(ID_VARDEC(arg_info));
 
-                   length=1;
-                   for (i=0; i < b_type->dim; i++)
-                     length *= b_type->shpseg->shp[i];
-                   MAKENODE_NUM(n_node, length);
-                */
+           length=1;
+           for (i=0; i < b_type->dim; i++)
+             length *= b_type->shpseg->shp[i];
+           MAKENODE_NUM(n_node, length);
+#endif
                 MAKE_ICM_NAME (arg_info->node[1], "ND_IDX_PSI_A");
 
                 MAKE_ICM_ARG (icm_arg, res);
-                /*
-                   next_icm_arg=icm_arg;
-                   MAKE_NEXT_ICM_ARG(next_icm_arg, n_node);
-                */
+#if 0
+           next_icm_arg=icm_arg;
+           MAKE_NEXT_ICM_ARG(next_icm_arg, n_node);
+#endif
             } else {
                 MAKE_ICM_NAME (arg_info->node[1], "ND_IDX_PSI_S");
                 MAKE_ICM_ARG (icm_arg, res);
             }
             /* append res to arguments of current node  */
             arg_node->node[0]->node[1]->node[1] = icm_arg;
-#ifndef NEWTREE
-            arg_node->node[0]->node[1]->nnode = 2;
-#endif
 
             /* set arg_node, because arg_node will be returned */
             old_arg_node = arg_node;
@@ -4051,9 +3832,6 @@ CompPrf (node *arg_node, node *arg_info)
                 DEC_OR_FREE_RC_ND (id_node, n_node);
                 INSERT_ASSIGN;
             }
-#ifndef NEWTREE
-            arg_node->nnode = 0;
-#endif
             FREE_TREE (arg_node->node[0]);
             break;
         }
@@ -4075,17 +3853,11 @@ CompPrf (node *arg_node, node *arg_info)
                 COUNT_ELEMS (n_elems, arg1->node[0]);
                 tmp_array1 = MakeNode (N_exprs);
                 MAKENODE_NUM (tmp_array1->node[0], n_elems);
-#ifndef NEWTREE
-                tmp_array1->nnode = 1;
-#endif
                 dim = 1;
             }
             MAKENODE_NUM (length_node, dim); /* store length of shape_vector */
             CREATE_2_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_S", res, length_node);
             icm_arg->node[1] = tmp_array1; /* append shape_vector */
-#ifndef NEWTREE
-            icm_arg->nnode = 2;
-#endif
             APPEND_ASSIGNS (first_assign, next_assign);
             if (N_id == arg1->nodetype) {
                 node *id_node;
@@ -4313,9 +4085,6 @@ CompPrf (node *arg_node, node *arg_info)
                     CREATE_3_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_A", res,
                                       n_length, n_node);
                     icm_arg->node[1] = arg1->node[0];
-#ifndef NEWTREE
-                    icm_arg->nnode = 2;
-#endif
                     APPEND_ASSIGNS (first_assign, next_assign);
 
                     /* now decrement refcount of the arrays */
@@ -4332,9 +4101,6 @@ CompPrf (node *arg_node, node *arg_info)
                     CREATE_2_ARY_ICM (next_assign, "ND_CREATE_CONST_ARRAY_S", res,
                                       n_node);
                     icm_arg->node[1] = arg1->node[0];
-#ifndef NEWTREE
-                    icm_arg->nnode = 2;
-#endif
                     APPEND_ASSIGNS (first_assign, next_assign);
                 }
                 INSERT_ASSIGN;
@@ -4459,9 +4225,6 @@ CompArray (node *arg_node, node *arg_info)
 
     /* now append the elements of the array to the last N_icm */
     icm_arg->node[1] = old_arg_node->node[0];
-#ifndef NEWTREE
-    icm_arg->nnode = 2;
-#endif
     APPEND_ASSIGNS (first_assign, next_assign);
 
     INSERT_ASSIGN;
@@ -4576,9 +4339,6 @@ CompId (node *arg_node, node *arg_info)
             icm_node = MakeNode (N_icm);
             MAKE_ICM_NAME (icm_node, "ND_KS_RET_ARRAY");
             MAKE_ICM_ARG (icm_node->node[0], arg_node);
-#ifndef NEWTREE
-            icm_node->nnode = 1;
-#endif
             arg_node = icm_node;
         }
     }
@@ -4702,13 +4462,6 @@ CompAp (node *arg_node, node *arg_info)
                       = MakeVardec (StringCopy (ID_NAME (id_node)),
                                     DuplicateTypes (VARDEC_TYPE (IDS_VARDEC (ids)), 1),
                                     arg_info->node[3]);
-
-/*************************************************************/
-#ifndef NEWTREE
-                    if (VARDEC_NEXT (arg_info->node[3]) == NULL)
-                        arg_info->node[3]->nnode = 0;
-#endif
-                    /*************************************************************/
 
                     if (IsArray (VARDEC_TYPE (IDS_VARDEC (ids)))) {
                         CREATE_2_ARY_ICM (next_assign, "ND_KS_NO_RC_ASSIGN_ARRAY",
@@ -4860,15 +4613,6 @@ CompAp (node *arg_node, node *arg_info)
                  *  These refcount-ICMs must be inserted at the beginning
                  *  of the new ICMs chain.
                  */
-
-/*****************************************************************/
-#ifndef NEWTREE
-                if (ASSIGN_NEXT (next_assign) == NULL)
-                    next_assign->nnode = 1;
-                else
-                    next_assign->nnode = 2;
-#endif
-                /*****************************************************************/
             }
         } else {
             if ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id)
@@ -4889,13 +4633,7 @@ CompAp (node *arg_node, node *arg_info)
 
             MAKE_NEXT_ICM_ARG (icm_arg, MAKE_IDNODE (tag));
             EXPRS_NEXT (icm_arg) = exprs;
-#ifndef NEWTREE
-            icm_arg->nnode = 2;
-#endif
             EXPRS_NEXT (exprs) = NULL;
-#ifndef NEWTREE
-            exprs->nnode = 1;
-#endif
             icm_arg = exprs;
 
             save_icm_arg = icm_arg;
@@ -4914,13 +4652,7 @@ CompAp (node *arg_node, node *arg_info)
                 MAKE_ICM_ARG (icm_arg, MAKE_IDNODE (tag));
                 icm_tab_entry = icm_arg;
                 EXPRS_NEXT (icm_arg) = exprs;
-#ifndef NEWTREE
-                icm_arg->nnode = 2;
-#endif
                 EXPRS_NEXT (exprs) = NULL;
-#ifndef NEWTREE
-                exprs->nnode = 1;
-#endif
                 icm_arg = exprs;
 
                 save_icm_arg = icm_arg;
@@ -4930,13 +4662,7 @@ CompAp (node *arg_node, node *arg_info)
             } else {
                 MAKE_ICM_ARG (icm_tab_entry, MAKE_IDNODE (tag));
                 EXPRS_NEXT (icm_tab_entry) = exprs;
-#ifndef NEWTREE
-                icm_tab_entry->nnode = 2;
-#endif
                 EXPRS_NEXT (exprs) = NULL;
-#ifndef NEWTREE
-                exprs->nnode = 1;
-#endif
 
                 InsertApArgParam (icm_tab, icm_tab_entry, ARG_TYPE (fundef_args),
                                   ID_REFCNT (EXPRS_EXPR (exprs)), add_assigns_before,
@@ -4967,19 +4693,7 @@ CompAp (node *arg_node, node *arg_info)
 
     if (NULL != ASSIGN_NEXT (add_assigns_after)) {
         ASSIGN_NEXT (first_assign) = NEXT_ASSIGN (arg_info);
-
-#ifndef NEWTREE
-        if (NULL != ASSIGN_NEXT (first_assign))
-            first_assign->nnode = 2;
-        else
-            first_assign->nnode = 1;
-#endif
-
         ASSIGN_NEXT (last_assign) = ASSIGN_NEXT (add_assigns_after);
-
-#ifndef NEWTREE
-        last_assign->nnode = 2;
-#endif
     }
 
     /*
@@ -4995,9 +4709,6 @@ CompAp (node *arg_node, node *arg_info)
             tmp = ASSIGN_NEXT (tmp);
 
         ASSIGN_NEXT (tmp) = last_assign;
-#ifndef NEWTREE
-        tmp->nnode = 2;
-#endif
     }
 
     FREE (add_assigns_after);
@@ -5147,9 +4858,8 @@ CompWithReturn (node *arg_node, node *arg_info)
         LET_IDS (let) = MakeIds (ID_NAME (res), NULL, ST_regular);
         IDS_REFCNT (LET_IDS (let)) = ID_REFCNT (res) == -1 ? -1 : 1;
         ID_VARDEC (let) = ID_VARDEC (res);
-/*            IDS_REFCNT(LET_IDS(let))=1; */
-#ifndef NEWTREE
-        let->nnode = 1;
+#if 0
+            IDS_REFCNT(LET_IDS(let))=1;
 #endif
         exprs1 = MakeNode (N_exprs);
         MAKENODE_ID (tmp_res, StringCopy (ID_NAME (res)));
@@ -5158,27 +4868,14 @@ CompWithReturn (node *arg_node, node *arg_info)
         exprs1->node[0] = tmp_res;
         exprs2 = MakeNode (N_exprs);
         exprs2->node[0] = ret_val;
-#ifndef NEWTREE
-        exprs2->nnode = 1;
-#endif
         exprs1->node[1] = exprs2;
-#ifndef NEWTREE
-        exprs1->nnode = 2;
-#endif
         let->node[0]->node[0] = exprs1;
-#ifndef NEWTREE
-        let->node[0]->nnode = 1;
-#endif
         LET_IDS (arg_info) = LET_IDS (let);
         arg_info->node[1] = let;
         let->node[0] = Trav (let->node[0], arg_info);
 
         last_assign = LAST_ASSIGN (arg_info);
-#ifndef NEWTREE
-        while (2 == last_assign->nnode)
-#else
         while (last_assign->node[1] != NULL)
-#endif
             last_assign = last_assign->node[1];
 
         MAKE_ICM (next_assign);
@@ -5187,9 +4884,6 @@ CompWithReturn (node *arg_node, node *arg_info)
 
         /* now insert next_assign */
         last_assign->node[1] = next_assign;
-#ifndef NEWTREE
-        last_assign->nnode = 2;
-#endif
         first_assign = next_assign;
     }
 
@@ -5202,9 +4896,6 @@ CompWithReturn (node *arg_node, node *arg_info)
         first_assign = next_assign;
         /* now insert next_assign */
         arg_info->node[0]->node[1]->node[1] = next_assign;
-#ifndef NEWTREE
-        arg_info->node[0]->node[1]->nnode = 2;
-#endif
     } else {
         APPEND_ASSIGNS (first_assign, next_assign);
     }
@@ -5233,9 +4924,6 @@ CompWithReturn (node *arg_node, node *arg_info)
         } else {
             FREE (last_but_least_icm_arg->node[1]->node[0]);
         }
-#ifndef NEWTREE
-        last_but_least_icm_arg->nnode = 1;
-#endif
         FREE (last_but_least_icm_arg->node[1]);
     }
 #undef MOD_A
@@ -5335,11 +5023,6 @@ CompReturn (node *arg_node, node *arg_info)
 
             DBUG_PRINT ("COMP", ("Current return id: %s", ID_NAME (EXPRS_EXPR (exprs))));
 
-#ifndef NEWTREE
-            if (NODE_TYPE (last) == N_exprs)
-                last->nnode = 2;
-#endif /* NEWTREE */
-
             next = exprs->node[1];
 
             if (MUST_REFCOUNT (ID, exprs->node[0])) {
@@ -5365,18 +5048,12 @@ CompReturn (node *arg_node, node *arg_info)
             MAKENODE_NUM (exprs->node[0], 0);
             exprs->node[1] = arg_node->node[1];
             /* put number of ret-values in front */
-#ifndef NEWTREE
-            exprs->nnode = 2;
-#endif
             arg_node->node[0] = exprs;
             arg_node->node[1] = NULL; /* was only used temporarily */
 
             exprs = MakeNode (N_exprs);
             MAKENODE_ID (exprs->node[0], "");
             exprs->node[1] = arg_node->node[0];
-#ifndef NEWTREE
-            exprs->nnode = 2;
-#endif
             arg_node->node[0] = exprs;
 
             /*
@@ -5538,9 +5215,6 @@ CompWith (node *arg_node, node *arg_info)
          */
         neutral_node = old_arg_node->node[1]->node[1];
         DBUG_ASSERT (NULL != neutral_node, " neutral element is missing");
-#ifndef NEWTREE
-        DBUG_ASSERT (2 == old_arg_node->node[1]->nnode, " nnode != 2 ");
-#endif
         if (N_array == neutral_node->nodetype) {
             COUNT_ELEMS (length, neutral_node->node[0]);
             MAKENODE_NUM (n_neutral, length);
@@ -5548,9 +5222,6 @@ CompWith (node *arg_node, node *arg_info)
                               (is_foldprf) ? "ND_BEGIN_FOLDPRF" : "ND_BEGIN_FOLDFUN", res,
                               res_size_node, from, to, index, indexlen, n_neutral);
             icm_arg->node[1] = neutral_node->node[0];
-#ifndef NEWTREE
-            icm_arg->nnode = 2;
-#endif
             GOTO_LAST_N_EXPRS (neutral_node->node[0], icm_arg);
         } else {
             length = 1;
@@ -5594,9 +5265,6 @@ CompWith (node *arg_node, node *arg_info)
         next_assign->node[1] = old_arg_node->node[1]->node[0]->node[0];
     else
         next_assign->node[1] = old_arg_node->node[1]->node[1]->node[0];
-#ifndef NEWTREE
-    next_assign->nnode = 2;
-#endif
     arg_info->node[0] = next_assign;
     DBUG_PRINT ("COMP", ("set info->node[0] to :" P_FORMAT " (node[0]:" P_FORMAT,
                          arg_info->node[0], arg_info->node[0]->node[0]));
@@ -5610,11 +5278,7 @@ CompWith (node *arg_node, node *arg_info)
 
     /* set first_assign to the last N_assign node, that is generated by Trav() */
     first_assign = LAST_ASSIGN (arg_info);
-#ifndef NEWTREE
-    while (2 == first_assign->nnode)
-#else
     while (first_assign->node[1] != NULL)
-#endif
         first_assign = first_assign->node[1];
 
     INSERT_ASSIGN;
@@ -5696,17 +5360,11 @@ CompArg (node *arg_node, node *arg_info)
                               MakeNum (ARG_REFCNT (arg_node) - 1));
 
             new_assign->node[1] = arg_info->node[0];
-#ifndef NEWTREE
-            new_assign->nnode += 1;
-#endif
             arg_info->node[0] = new_assign;
         } else if (0 == ARG_REFCNT (arg_node)) {
             CREATE_2_ARY_ICM (new_assign, "ND_DEC_RC_FREE_ARRAY", id_node, MakeNum (1));
 
             new_assign->node[1] = arg_info->node[0];
-#ifndef NEWTREE
-            new_assign->nnode += 1;
-#endif
             arg_info->node[0] = new_assign;
         }
     } else {
@@ -5782,9 +5440,6 @@ CompArg (node *arg_node, node *arg_info)
 
         /* now put node at beginning of block of function */
         new_assign->node[1] = arg_info->node[0];
-#ifndef NEWTREE
-        new_assign->nnode += 1;
-#endif
         arg_info->node[0] = new_assign;
     }
 
@@ -5806,9 +5461,6 @@ CompArg (node *arg_node, node *arg_info)
          */
 
         new_assign->node[1] = arg_info->node[0];
-#ifndef NEWTREE
-        new_assign->nnode += 1;
-#endif
         arg_info->node[0] = new_assign;
     }
 
@@ -5904,9 +5556,6 @@ CompLoop (node *arg_node, node *arg_info)
     /* now insert INC's and DEC's at beginning of the loop */
     if (NULL != dummy_assign->node[1]) {
         first_assign->node[1] = arg_node->node[1]->node[0];
-#ifndef NEWTREE
-        first_assign->nnode = 2;
-#endif
         arg_node->node[1]->node[0] = dummy_assign->node[1];
         dummy_assign->node[1] = NULL;
     }
@@ -5959,9 +5608,6 @@ CompLoop (node *arg_node, node *arg_info)
         /* now put dummy_assign->node[1] behind while_loop */
         if (NULL != loop_assign->node[1]) {
             first_assign->node[1] = loop_assign->node[1];
-#ifndef NEWTREE
-            first_assign->nnode = 2;
-#endif
         }
         loop_assign->node[1] = dummy_assign->node[1];
     }
@@ -5972,16 +5618,10 @@ CompLoop (node *arg_node, node *arg_info)
         CREATE_1_ARY_ICM (first_assign, "ND_GOTO", label);
         if (NULL != loop_assign->node[1]) {
             first_assign->node[1] = loop_assign->node[1]; /* next assign after do-loop */
-#ifndef NEWTREE
-            first_assign->nnode = 2;
-#endif
         }
         first_assign->node[2] = loop_assign->node[0]; /* only temporary used (N_do) */
         loop_assign->node[0] = first_assign->node[0]; /* N_icm (ND_GOTO) node */
         loop_assign->node[1] = first_assign;
-#ifndef NEWTREE
-        loop_assign->nnode = 2;
-#endif
         arg_node = first_assign->node[0];
         first_assign->node[0] = first_assign->node[2]; /* put N_do node */
         first_assign->node[2] = NULL;
@@ -6013,21 +5653,13 @@ CompCond (node *arg_node, node *arg_info)
     DBUG_ENTER ("CompCond");
 
     /* compile condition, then and else part */
-#ifndef NEWTREE
-    for (i = 0; i < arg_node->nnode; i++)
-#else
     for (i = 0; i < nnode[arg_node->nodetype]; i++)
         if (arg_node->node[i] != NULL)
-#endif
-        arg_node->node[i] = Trav (arg_node->node[i], arg_info);
+            arg_node->node[i] = Trav (arg_node->node[i], arg_info);
 
     /* insert N_icms to correct refcounts of then and else part */
     dummy_assign = MakeNode (N_assign);
-#ifndef NEWTREE
-    for (i = 0; i < arg_node->nnode; i++) /* ??? i<arg_node->node[3]->nnode ??? */
-#else
     for (i = 0; i < MAX_SONS; i++)
-#endif
         if (NULL != arg_node->node[3]->node[i]) {
             id_node = arg_node->node[3]->node[i];
             first_assign = dummy_assign;
@@ -6039,9 +5671,6 @@ CompCond (node *arg_node, node *arg_info)
                 id_node = id_node->node[0];
             } while (NULL != id_node);
             first_assign->node[1] = arg_node->node[i + 1]->node[0];
-#ifndef NEWTREE
-            first_assign->nnode = 2;
-#endif
             arg_node->node[i + 1]->node[0] = dummy_assign->node[1];
         }
     FREE (dummy_assign);
@@ -6066,9 +5695,7 @@ CompCond (node *arg_node, node *arg_info)
 node *
 CompTypedef (node *arg_node, node *arg_info)
 {
-#ifdef NEWTREE
     node *tmp_node;
-#endif
 
     DBUG_ENTER ("CompTypedef");
 
@@ -6082,31 +5709,18 @@ CompTypedef (node *arg_node, node *arg_info)
         FREE_TYPE (ARRAY_TYPE (arg_node));
         arg_node->nodetype = N_icm;
         MAKE_ICM_NAME (arg_node, "ND_TYPEDEF_ARRAY");
-#ifndef NEWTREE
-        if (1 == arg_node->nnode) {
-            arg_node->node[1] = arg_node->node[0];
-        }
-#else
         if (arg_node->node[1] == NULL)
             tmp_node = arg_node->node[0];
         else
             tmp_node = NULL;
-#endif
         MAKENODE_ID (type1, typename);
         MAKE_ICM_ARG (arg_node->node[0], type1);
         icm_arg = arg_node->node[0];
         MAKENODE_ID (type2, new_typename);
         MAKE_NEXT_ICM_ARG (icm_arg, type2);
 
-#ifndef NEWTREE
-        if (1 == arg_node->nnode) {
-            arg_node->node[1] = Trav (arg_node->node[1], arg_info);
-            arg_node->nnode = 2;
-        }
-#else
         if (tmp_node != NULL)
             arg_node->node[1] = Trav (tmp_node, arg_info);
-#endif
     } else {
         if (arg_node->node[0] != NULL) {
             arg_node->node[0] = Trav (arg_node->node[0], arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1998/02/11 16:31:05  dkr
+ * removed NEWTREE, access-macros used
+ *
  * Revision 1.17  1998/02/11 11:02:53  dkr
  * *** empty log message ***
  *
@@ -81,85 +84,38 @@ extern node *CompObjdef (node *arg_node, node *arg_info);
 
 /* and now some macros for creation of N_icms */
 
-#ifndef NEWTREE
 #define MAKE_ICM(assign)                                                                 \
     assign = MakeNode (N_assign);                                                        \
-    assign->node[0] = MakeNode (N_icm);                                                  \
-    assign->nnode = 1
-#else /* NEWTREE */
-#define MAKE_ICM(assign)                                                                 \
-    assign = MakeNode (N_assign);                                                        \
-    assign->node[0] = MakeNode (N_icm)
-#endif /* NEWTREE */
+    ASSIGN_INSTR (assign) = MakeNode (N_icm)
 
-#define MAKE_ICM_NAME(var, name)                                                         \
-    var->info.fun_name.id = name;                                                        \
-    var->info.fun_name.id_mod = NULL
+#define MAKE_ICM_NAME(var, name) ICM_NAME (var) = name;
 
-#ifndef NEWTREE
-#define MAKE_ICM_ARG(var, new_node)                                                      \
-    var = MakeNode (N_exprs);                                                            \
-    var->node[0] = new_node;                                                             \
-    var->nnode = 1
-#else /* NEWTREE */
-#define MAKE_ICM_ARG(var, new_node)                                                      \
-    var = MakeNode (N_exprs);                                                            \
-    var->node[0] = new_node;
-#endif /* NEWTREE */
+#define MAKE_ICM_ARG(var, new_node) var = MakeExprs (new_node, NULL);
 
-#ifndef NEWTREE
 #define MAKE_NEXT_ICM_ARG(prev, new_node)                                                \
     {                                                                                    \
         node *tmp;                                                                       \
         MAKE_ICM_ARG (tmp, new_node);                                                    \
-        prev->node[1] = tmp;                                                             \
-        prev->nnode = 2;                                                                 \
+        EXPRS_NEXT (prev) = tmp;                                                         \
         prev = tmp;                                                                      \
     }
-#else /* NEWTREE */
-#define MAKE_NEXT_ICM_ARG(prev, new_node)                                                \
-    {                                                                                    \
-        node *tmp;                                                                       \
-        MAKE_ICM_ARG (tmp, new_node);                                                    \
-        prev->node[1] = tmp;                                                             \
-        prev = tmp;                                                                      \
-    }
-#endif /* NEWTREE */
 
-#ifndef NEWTREE
 #define APPEND_ICM_ARG(prev, new)                                                        \
-    prev->node[1] = new;                                                                 \
-    prev->nnode = 2;                                                                     \
+    EXPRS_NEXT (prev) = new;                                                             \
     prev = new;
-#else /* NEWTREE */
-#define APPEND_ICM_ARG(prev, new)                                                        \
-    prev->node[1] = new;                                                                 \
-    prev = new;
-#endif /* NEWTREE */
 
 /*
  * The following macros use a variabel 'node *icm_arg', it has to be defined
  * before usage.
  */
 
-#ifndef NEWTREE
 #define CREATE_1_ARY_ICM(assign, str, arg)                                               \
     DBUG_PRINT ("COMP", ("Creating ICM \"%s\" ...", str));                               \
     MAKE_ICM (assign);                                                                   \
-    MAKE_ICM_NAME (assign->node[0], str);                                                \
-    MAKE_ICM_ARG (assign->node[0]->node[0], arg);                                        \
-    icm_arg = assign->node[0]->node[0];                                                  \
-    assign->node[0]->nnode = 1;                                                          \
+    MAKE_ICM_NAME (ASSIGN_INSTR (assign), str);                                          \
+    MAKE_ICM_ARG (ICM_ARGS (ASSIGN_INSTR (assign)), arg);                                \
+    icm_arg = ICM_ARGS (ASSIGN_INSTR (assign));                                          \
     DBUG_PRINT ("COMP", ("ICM \"%s\" created", str));
-#else /* NEWTREE */
-#define CREATE_1_ARY_ICM(assign, str, arg)                                               \
-    DBUG_PRINT ("COMP", ("Creating ICM \"%s\" ...", str));                               \
-    MAKE_ICM (assign);                                                                   \
-    MAKE_ICM_NAME (assign->node[0], str);                                                \
-    MAKE_ICM_ARG (assign->node[0]->node[0], arg);                                        \
-    icm_arg = assign->node[0]->node[0];                                                  \
-    DBUG_PRINT ("COMP", ("ICM \"%s\" created", str));
-#endif /* NEWTREE */
 
 #define CREATE_2_ARY_ICM(assign, str, arg1, arg2)                                        \
     CREATE_1_ARY_ICM (assign, str, arg1);                                                \
@@ -188,52 +144,24 @@ extern node *CompObjdef (node *arg_node, node *arg_info);
     CREATE_6_ARY_ICM (assign, str, arg1, arg2, arg3, arg4, arg5, arg6);                  \
     MAKE_NEXT_ICM_ARG (icm_arg, arg7)
 
-#ifndef NEWTREE
 #define BIN_ICM_REUSE(reuse, str, arg1, arg2)                                            \
-    reuse->nodetype = N_icm;                                                             \
-    reuse->nnode = 1;                                                                    \
+    NODE_TYPE (reuse) = N_icm;                                                           \
     MAKE_ICM_NAME (reuse, str);                                                          \
-    MAKE_ICM_ARG (reuse->node[0], arg1);                                                 \
-    icm_arg = reuse->node[0];                                                            \
+    MAKE_ICM_ARG (ICM_ARGS (reuse), arg1);                                               \
+    icm_arg = ICM_ARGS (reuse);                                                          \
     MAKE_NEXT_ICM_ARG (icm_arg, arg2)
-#else /* NEWTREE */
-#define BIN_ICM_REUSE(reuse, str, arg1, arg2)                                            \
-    reuse->nodetype = N_icm;                                                             \
-    MAKE_ICM_NAME (reuse, str);                                                          \
-    MAKE_ICM_ARG (reuse->node[0], arg1);                                                 \
-    icm_arg = reuse->node[0];                                                            \
-    MAKE_NEXT_ICM_ARG (icm_arg, arg2)
-#endif /* NEWTREE */
 
-#ifndef NEWTREE
-#define TRI_ICM_REUSE(reuse, str, arg1, arg2, arg3)                                      \
-    reuse->nodetype = N_icm;                                                             \
-    reuse->nnode = 1;                                                                    \
-    MAKE_ICM_NAME (reuse, str);                                                          \
-    MAKE_ICM_ARG (reuse->node[0], arg1);                                                 \
-    icm_arg = reuse->node[0];                                                            \
-    MAKE_NEXT_ICM_ARG (icm_arg, arg2);                                                   \
-    MAKE_NEXT_ICM_ARG (icm_arg, arg3);
-#else /* NEWTREE */
 #define TRI_ICM_REUSE(reuse, str, arg1, arg2, arg3)                                      \
     reuse->nodetype = N_icm;                                                             \
     MAKE_ICM_NAME (reuse, str);                                                          \
-    MAKE_ICM_ARG (reuse->node[0], arg1);                                                 \
-    icm_arg = reuse->node[0];                                                            \
+    MAKE_ICM_ARG (ICM_ARGS (reuse), arg1);                                               \
+    icm_arg = ICM_ARGS (reuse);                                                          \
     MAKE_NEXT_ICM_ARG (icm_arg, arg2);                                                   \
-    MAKE_NEXT_ICM_ARG (icm_arg, arg3);
-#endif /* NEWTREE */
+    MAKE_NEXT_ICM_ARG (icm_arg, arg3)
 
-#ifndef NEWTREE
 #define APPEND_ASSIGNS(first, next)                                                      \
-    first->node[1] = next;                                                               \
-    first->nnode = 2;                                                                    \
+    ASSIGN_NEXT (first) = next;                                                          \
     first = next
-#else /* NEWTREE */
-#define APPEND_ASSIGNS(first, next)                                                      \
-    first->node[1] = next;                                                               \
-    first = next
-#endif /* NEWTREE */
 
 /* length of N_exprs-chain */
 #define COUNT_ELEMS(n, exprs)                                                            \
@@ -243,7 +171,7 @@ extern node *CompObjdef (node *arg_node, node *arg_info);
         tmp = exprs;                                                                     \
         do {                                                                             \
             n += 1;                                                                      \
-            tmp = tmp->node[1];                                                          \
+            tmp = EXPRS_NEXT (tmp);                                                      \
         } while (NULL != tmp);                                                           \
     }
 
