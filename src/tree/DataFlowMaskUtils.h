@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/02/14 14:38:08  dkr
+ * some DFM2... functions renamed
+ *
  * Revision 3.1  2000/11/20 18:03:18  sacbase
  * new release made
  *
@@ -45,8 +48,9 @@ extern void WhileDFMstack (DFMstack_t stack, fun_t fun, char *id, node *decl);
 extern types *DFM2ReturnTypes (DFMmask_t mask);
 extern node *DFM2Vardecs (DFMmask_t mask, LUT_t lut);
 extern node *DFM2Args (DFMmask_t mask, LUT_t lut);
-extern node *DFM2Exprs (DFMmask_t mask, LUT_t lut);
-extern ids *DFM2Ids (DFMmask_t mask, LUT_t lut);
+extern node *DFM2ReturnExprs (DFMmask_t mask, LUT_t lut);
+extern node *DFM2ApArgs (DFMmask_t mask, LUT_t lut);
+extern ids *DFM2LetIds (DFMmask_t mask, LUT_t lut);
 
 extern DFMmask_t DFMDuplicateMask (DFMmask_t mask, DFMmask_base_t base);
 
