@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2003/03/26 13:02:10  sah
+ * comments on mkdtemp and
+ * silly bug fix;)
+ *
  * Revision 3.20  2003/03/26 12:17:50  sah
  * replaced tmpnam by mkdtemp on
  * platforms supporting this
@@ -204,8 +208,14 @@ main (int argc, char *argv[])
      */
 
 #ifdef HAVE_MKDTEMP
-    tmp_dirname = malloc (strlen (config.mkdir) + 11)
-        : tmp_dirname = strcpy (tmp_dirname, config.tmpdir);
+    /* mkdtemp is safer than tempnam and recommended */
+    /* on linux/bsd platforms.                       */
+
+    /* malloc is used here as tempnam uses it */
+    /* internally as well.                    */
+
+    tmp_dirname = malloc (strlen (config.mkdir) + 11);
+    tmp_dirname = strcpy (tmp_dirname, config.tmpdir);
     tmp_dirname = strcat (tmp_dirname, "SAC_XXXXXX");
 
     tmp_dirname = mkdtemp (tmp_dirname);
@@ -214,6 +224,9 @@ main (int argc, char *argv[])
         SYSABORT (("System failed to create temporary directory '%s'\n", tmp_dirname));
     }
 #else
+    /* the old way for platforms not */
+    /* supporting mkdtemp            */
+
     tmp_dirname = tempnam (config.tmpdir, "SAC_");
 
     SystemCall ("%s %s", config.mkdir, tmp_dirname);
