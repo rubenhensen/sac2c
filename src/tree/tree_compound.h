@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.151  2004/11/25 20:10:12  sbs
+ * signature of MakeAp<n> functions changed.
+ *
  * Revision 3.150  2004/11/25 18:55:55  sbs
  * OBJDEF macros based on types * eliminated.
  *
@@ -1586,11 +1589,11 @@ extern node *TCmakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
  *  function declarations
  */
 
-extern node *TCmakeAp1 (char *name, char *mod, node *arg1);
+extern node *TCmakeAp1 (node *fundef, node *arg1);
 
-extern node *TCmakeAp2 (char *name, char *mod, node *arg1, node *arg2);
+extern node *TCmakeAp2 (node *fundef, node *arg1, node *arg2);
 
-extern node *TCmakeAp3 (char *name, char *mod, node *arg1, node *arg2, node *arg3);
+extern node *TCmakeAp3 (node *fundef, node *arg1, node *arg2, node *arg3);
 
 /*--------------------------------------------------------------------------*/
 
