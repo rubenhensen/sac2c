@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/01/09 13:18:47  hw
- * now type bool is bool
+ * Revision 1.5  1995/05/30 08:56:15  cg
+ * grammar version 0.5 extended types added.
  *
+;; Revision 1.4  1995/01/09  13:18:47  hw
+;; now type bool is bool
+;;
 ;; Revision 1.3  1995/01/05  12:45:12  sbs
 ;; third component done
 ;;
@@ -28,7 +31,12 @@
 
 /*   type_name       dbug-string    print-string */
 
-TYP_IF (T_int, "int", "int"), TYP_IF (T_float, "float", "float"),
+TYP_IF (T_int, "int", "int"), TYP_IF (T_short, "short", "short"),
+  TYP_IF (T_long, "long", "long"), TYP_IF (T_uint, "unsigned int", "unsigned int"),
+  TYP_IF (T_ushort, "unsigned short", "unsigned short"),
+  TYP_IF (T_ulong, "unsigned long", "unsigned long"), TYP_IF (T_float, "float", "float"),
+  TYP_IF (T_double, "double", "double"), TYP_IF (T_longdbl, "long double", "long double"),
   TYP_IF (T_bool, "bool", "bool"), TYP_IF (T_str, "string", "char *"),
-  TYP_IF (T_hidden, "hidden", "void *"), TYP_IF (T_user, "user", "_user_"),
+  TYP_IF (T_hidden, "hidden", "void *"), TYP_IF (T_unique, "unique", "void *"),
+  TYP_IF (T_dots, "...", "..."), TYP_IF (T_user, "user", "_user_"),
   TYP_IF (T_unknown, "unknown", "_unknown_")
