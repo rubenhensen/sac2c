@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2001/03/23 09:31:19  nmw
+ * SSAwhile/do removed SSADummy added
+ *
  * Revision 1.2  2001/02/14 14:40:36  nmw
  * function bodies and traversal order implemented
  *
@@ -28,8 +31,8 @@ extern node *SSANpart (node *arg_node, node *arg_info);
 extern node *SSANwithid (node *arg_node, node *arg_info);
 extern node *SSAcond (node *arg_node, node *arg_info);
 extern node *SSAreturn (node *arg_node, node *arg_info);
-extern node *SSAdo (node *arg_node, node *arg_info);
-extern node *SSAwhile (node *arg_node, node *arg_info);
+
+extern node *SSADummy (node *arg_node, node *arg_info);
 
 extern node *SSATransform (node *arg_node);
 

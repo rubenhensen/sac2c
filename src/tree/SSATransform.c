@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2001/03/23 09:31:19  nmw
+ * SSAwhile/do removed SSADummy added
+ *
  * Revision 1.10  2001/03/22 20:01:41  dkr
  * include of tree.h eliminated
  *
@@ -966,44 +969,6 @@ SSAreturn (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *SSAdo(node *arg_node, node *arg_info)
- *
- * description:
- *   after lac2fun this node must not be exist! -> ERROR
- *
- ******************************************************************************/
-node *
-SSAdo (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SSAdo");
-
-    DBUG_ASSERT ((FALSE), "no do_loops allowed in ssa form!");
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *  node *SSAwhile(node *arg_node, node *arg_info)
- *
- * description:
- *   after lac2fun this node must not be exist! -> ERROR
- *
- ******************************************************************************/
-node *
-SSAwhile (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SSAwhile");
-
-    DBUG_ASSERT ((FALSE), "no while_loops allowed in ssa form!");
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *  node *SSAleftids(ids *arg_ids, node *arg_info)
  *
  * description:
@@ -1163,6 +1128,26 @@ TravRightIDS (ids *arg_ids, node *arg_info)
     arg_ids = SSArightids (arg_ids, arg_info);
 
     DBUG_RETURN (arg_ids);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *SSADummy(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   after lac2fun no more do/while node are allowed in the ast!
+ *   this dummy dunctions is called for do and while nodes in SSA traversals.
+ *
+ ******************************************************************************/
+node *
+SSADummy (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("SSADummy");
+
+    DBUG_ASSERT ((FALSE), "no do- and while-loops allowed in ssa form!");
+
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
