@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.5  1999/04/09 09:40:53  her
+# added libsac_message.o to the CacheSimTest target
+#
 # Revision 2.4  1999/03/19 11:09:04  her
 # new OBJS (libsac_cachesim_access_detailed.o) added
 # new targets (CacheSimTest.o, CacheSimTest) added
@@ -110,7 +113,7 @@ CacheSimTest.o: CacheSimTest.c
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 
 CacheSimTest: CacheSimTest.o libsac_cachesim_basic.o libsac_cachesim_access.o\
-              libsac_cachesim_access_detailed.o
+              libsac_cachesim_access_detailed.o libsac_message.o
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ $^
 
 
