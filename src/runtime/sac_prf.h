@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2003/09/22 11:12:41  dkr
+ * bug in SAC_ND_PRF_CAT__DATA fixed
+ *
  * Revision 3.14  2003/09/20 14:16:38  dkr
  * ND_PRF_CAT__DATA added
  *
@@ -192,10 +195,10 @@
         int SAC_i, SAC_off;                                                              \
         SAC_off = SAC_ND_A_SIZE (from1_NT);                                              \
         for (SAC_i = 0; SAC_i < SAC_off; SAC_i++) {                                      \
-            SAC_ND_WRITE (to_nt, SAC_i) = SAC_ND_READ (from1_NT, SAC_i);                 \
+            SAC_ND_WRITE (to_NT, SAC_i) = SAC_ND_READ (from1_NT, SAC_i);                 \
         }                                                                                \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from2_NT); SAC_i++) {                     \
-            SAC_ND_WRITE (to_nt, SAC_off + SAC_i) = SAC_ND_READ (from2_NT, SAC_i);       \
+            SAC_ND_WRITE (to_NT, SAC_off + SAC_i) = SAC_ND_READ (from2_NT, SAC_i);       \
         }                                                                                \
     }
 
