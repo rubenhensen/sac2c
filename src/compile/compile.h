@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/03/07 02:24:18  dkr
+ * COMPArg() removed
+ *
  * Revision 3.11  2001/12/13 11:49:14  dkr
  * some more functions removed
  *
@@ -85,7 +88,6 @@ extern node *COMPArray (node *arg_node, node *arg_info);
 extern node *COMPId (node *arg_node, node *arg_info);
 extern node *COMPAp (node *arg_node, node *arg_info);
 extern node *COMPReturn (node *arg_node, node *arg_info);
-extern node *COMPArg (node *arg_node, node *arg_info);
 extern node *COMPFundef (node *arg_node, node *arg_info);
 extern node *COMPLoop (node *arg_node, node *arg_info);
 extern node *COMPCond (node *arg_node, node *arg_info);
