@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.34  1995/11/01 08:02:02  cg
+ * Revision 1.35  1995/11/06 09:21:59  cg
+ * added unique_tab
+ *
+ * Revision 1.34  1995/11/01  08:02:02  cg
  * added obj_tab and include of objects.h
  *
  * Revision 1.33  1995/10/22  17:26:20  cg
@@ -143,6 +146,7 @@
 #include "analysis.h"
 #include "checkdec.h"
 #include "objects.h"
+#include "uniquecheck.h"
 
 #include "traverse.h"
 
@@ -461,7 +465,7 @@ funptr obj_tab[] = {
 #undef NIF
 
 /*
- * 22) impltype_tab
+ * 23) impltype_tab
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
@@ -475,7 +479,7 @@ funptr impltype_tab[] = {
 #undef NIF
 
 /*
- * 23) objinit_tab
+ * 24) objinit_tab
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
@@ -489,7 +493,7 @@ funptr objinit_tab[] = {
 #undef NIF
 
 /*
- * 24) analy_tab
+ * 25) analy_tab
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
@@ -503,7 +507,7 @@ funptr analy_tab[] = {
 #undef NIF
 
 /*
- * 25) checkdec_tab
+ * 26) checkdec_tab
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
@@ -517,7 +521,7 @@ funptr checkdec_tab[] = {
 #undef NIF
 
 /*
- * 24) writedec_tab
+ * 27) writedec_tab
  */
 
 #define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
@@ -525,6 +529,20 @@ funptr checkdec_tab[] = {
     ag
 
 funptr writedec_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 28) unique_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
+            ac, ad, ae, af, ag, ah)                                                      \
+    ah
+
+funptr unique_tab[] = {
 #include "node_info.mac"
 };
 

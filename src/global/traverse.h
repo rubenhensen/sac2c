@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.25  1995/10/22 17:26:20  cg
+ * Revision 1.26  1995/11/06 09:21:59  cg
+ * added unique_tab
+ *
+ * Revision 1.25  1995/10/22  17:26:20  cg
  * added checkdec_tab and writedec_tab
  *  renamed sib_tab to writesib_tab
  *
@@ -150,5 +153,7 @@ extern funptr analy_tab[];
 extern funptr checkdec_tab[];
 
 extern funptr writedec_tab[];
+
+extern funptr unique_tab[];
 
 #endif /* _sac_traverse_h */
