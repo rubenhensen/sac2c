@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.137  1998/04/20 14:10:58  sbs
+ * N_icm remarks for NEXT inserted
+ *
  * Revision 1.136  1998/04/20 12:28:54  srs
  * added comment to N_id
  *
@@ -2049,6 +2052,10 @@ extern node *MakePre (nodetype incdec, char *id);
  ***  permanent attributes:
  ***
  ***    char*  NAME
+ ***
+ *** remarks:
+ ***    NEXT at least (!) is used for the compilation of N_typedef's
+ ***    whenever the defining type is an array type!!
  ***/
 
 extern node *MakeIcm (char *name, node *args, node *next);
