@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.20  2000/10/26 13:00:50  dkr
+ * DupShpSeg renamed into DupShpseg
+ *
  * Revision 2.19  2000/10/24 10:18:06  dkr
  * dtype_size[] removed and replaced by global basetype_size[]
  *
@@ -817,7 +820,7 @@ TSIncode (node *arg_node, node *arg_info)
     INFO_TSI_ACCESS (arg_info) = NCODE_WLAA_ACCESS (arg_node);
     INFO_TSI_FEATURE (arg_info) = NCODE_WLAA_FEATURE (arg_node);
     INFO_TSI_ACCESSCNT (arg_info) = NCODE_WLAA_ACCESSCNT (arg_node);
-    INFO_TSI_TILESHP (arg_info) = DupShpSeg (INFO_TSI_ARRAYSHP (arg_info));
+    INFO_TSI_TILESHP (arg_info) = DupShpseg (INFO_TSI_ARRAYSHP (arg_info));
 
     DBUG_ASSERT ((INFO_TSI_ARRAYSHP (arg_info) != NULL), ("Array without shape!"));
 

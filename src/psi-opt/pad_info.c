@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 1.12  2000/10/26 12:56:13  dkr
+ * DupShpSeg renamed into DupShpseg
+ *
  * Revision 1.11  2000/08/04 14:32:24  mab
  * did some minor changes
  *
@@ -22,9 +26,6 @@
  *
  * Revision 1.5  2000/07/05 09:13:10  mab
  * fixed problem with global data structure pad_info
- *
- * Revision 1.4  2000/06/30 15:21:01  mab
- * *** empty log message ***
  *
  * Revision 1.3  2000/06/28 10:43:10  mab
  * made some code modifications according to code review
@@ -1591,7 +1592,7 @@ PIgetNewType (types *old_type)
     if (table_entry != NULL) {
         new_type = DupTypes (old_type);
         FreeShpseg (TYPES_SHPSEG (new_type));
-        TYPES_SHPSEG (new_type) = DupShpSeg (PI_NEW_SHAPE (table_entry));
+        TYPES_SHPSEG (new_type) = DupShpseg (PI_NEW_SHAPE (table_entry));
         FreeOneTypes (old_type);
     }
 
@@ -1628,7 +1629,7 @@ PIgetOldType (types *new_type)
     if (table_entry != NULL) {
         old_type = DupTypes (new_type);
         FreeShpseg (TYPES_SHPSEG (old_type));
-        TYPES_SHPSEG (old_type) = DupShpSeg (PI_OLD_SHAPE (table_entry));
+        TYPES_SHPSEG (old_type) = DupShpseg (PI_OLD_SHAPE (table_entry));
         FreeOneTypes (new_type);
     }
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.13  2000/10/26 12:55:27  dkr
+ * DupShpSeg renamed into DupShpseg
+ *
  * Revision 1.12  2000/10/24 11:52:47  dkr
  * MakeType renamed into MakeTypes
  *
@@ -254,7 +257,7 @@ CollectAccessPatterns (node *arg_node)
                 col_ptr = collection;
             }
 
-            offset = DupShpSeg (ACCESS_OFFSET (access_ptr));
+            offset = DupShpseg (ACCESS_OFFSET (access_ptr));
             pt_ptr = PIconcatPatterns (pt_ptr, offset);
             COL_PATTERNS (col_ptr) = pt_ptr;
             break;
@@ -271,7 +274,7 @@ CollectAccessPatterns (node *arg_node)
     while (col_ptr != NULL) {
         type = TYPES_BASETYPE (VARDEC_TYPE (COL_ARRAY (col_ptr)));
         dim = TYPES_DIM (VARDEC_TYPE (COL_ARRAY (col_ptr)));
-        shape = DupShpSeg (TYPES_SHPSEG (VARDEC_TYPE (COL_ARRAY (col_ptr))));
+        shape = DupShpseg (TYPES_SHPSEG (VARDEC_TYPE (COL_ARRAY (col_ptr))));
         group_vect = AccessClass2Group (COL_CLASS (col_ptr), dim);
         direction = COL_DIR (col_ptr);
         patterns = COL_PATTERNS (col_ptr);

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2000/10/26 13:00:01  dkr
+ * DupShpSeg renamed into DupShpseg
+ *
  * Revision 1.6  2000/08/04 14:31:16  mab
  * added some comments
  *
@@ -1128,7 +1131,7 @@ APinfer ()
         PIprintArrayTypeElement (at_ptr);
 
         dim = PIgetArrayTypeDim (at_ptr);
-        shape = DupShpSeg (PIgetArrayTypeShape (at_ptr));
+        shape = DupShpseg (PIgetArrayTypeShape (at_ptr));
         type = PIgetArrayTypeBasetype (at_ptr);
         element_size = ctype_size[type];
 
