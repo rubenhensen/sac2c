@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2002/03/12 16:47:40  sbs
+ * ; after DBUG_VOID_REturn added.
+ *
  * Revision 1.1  2002/03/12 15:16:27  sbs
  * Initial revision
  *
@@ -101,7 +104,7 @@ AddBigger (tvar *small, tvar *big)
     TVAR_BIG (small, TVAR_NBIG (small)) = big;
     TVAR_NBIG (small) += 1;
 
-    DBUG_VOID_RETURN
+    DBUG_VOID_RETURN;
 }
 
 void
@@ -126,7 +129,7 @@ AddSmaller (tvar *big, tvar *small)
     TVAR_SMALL (big, TVAR_NSMALL (big)) = small;
     TVAR_NSMALL (big) += 1;
 
-    DBUG_VOID_RETURN
+    DBUG_VOID_RETURN;
 }
 
 /*******************************************************************************
@@ -340,7 +343,7 @@ void
 SSIKillAssumption (int assumption)
 {
     DBUG_ENTER ("SSIKillAssumption");
-    DBUG_VOID_RETURN
+    DBUG_VOID_RETURN;
 }
 
 /******************************************************************************
