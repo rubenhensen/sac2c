@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/07 18:05:01  sah
+ * improved dependency handling
+ * for external function added
+ *
  * Revision 1.4  2004/11/02 12:15:21  sah
  * empty dependencies are handeled correctly now
  *
@@ -183,21 +187,35 @@ GetLibs ()
 }
 
 static void *
-BuildDepLibsString (const char *lib, void *rest)
+BuildDepLibsStringProg (const char *lib, SStype_t kind, void *rest)
 {
     char *result;
     char *libname;
 
-    DBUG_ENTER ("BuildDepLibsString");
+    DBUG_ENTER ("BuildDepLibsStringProg");
 
-    libname = Malloc (sizeof (char) * (strlen (lib) + 6));
-
-    sprintf (libname, "lib%s.a", lib);
-
-    result = FindFile (MODIMP_PATH, libname);
+    switch (kind) {
+    case SS_saclib:
+        /*
+         * lookup lib<lib>.a
+         */
+        libname = Malloc (sizeof (char) * (strlen (lib) + 6));
+        sprintf (libname, "lib%s.a", lib);
+        result = FindFile (MODIMP_PATH, libname);
+        libname = Free (libname);
+        break;
+    case SS_extlib:
+        result = Malloc (sizeof (char) * (strlen (lib) + 3));
+        sprintf (result, "-l%s", lib);
+        break;
+    default:
+        result = StringCopy ("");
+        break;
+    }
 
     if (rest != NULL) {
-        char *temp = Malloc (sizeof (char) * (strlen (rest) + strlen (result) + 2));
+        char *temp
+          = Malloc (sizeof (char) * (strlen ((char *)rest) + strlen (result) + 2));
 
         sprintf (temp, "%s %s", (char *)rest, result);
 
@@ -205,8 +223,6 @@ BuildDepLibsString (const char *lib, void *rest)
         rest = Free (rest);
         result = temp;
     }
-
-    libname = Free (libname);
 
     DBUG_RETURN (result);
 }
@@ -218,10 +234,12 @@ InvokeCCProg (char *cccall, char *ccflags, char *libs, stringset_t *deps)
 
     DBUG_ENTER ("InvokeCCProg");
 
-    deplibs = (char *)SSFold (&BuildDepLibsString, deps, StringCopy (""));
+    deplibs = (char *)SSFold (&BuildDepLibsStringProg, deps, StringCopy (""));
 
     SystemCall ("%s %s -o %s %s %s %s", cccall, ccflags, outfilename, cfilename, deplibs,
                 libs);
+
+    deplibs = Free (deplibs);
 
     DBUG_VOID_RETURN;
 }
@@ -257,7 +275,6 @@ InvokeCC (stringset_t *deps)
     cccall = Free (cccall);
     ccflags = Free (ccflags);
     libs = Free (libs);
-    deps = SSFree (deps);
 
     DBUG_VOID_RETURN;
 }

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/11/07 18:05:01  sah
+ * improved dependency handling
+ * for external function added
+ *
  * Revision 1.2  2004/10/28 17:21:24  sah
  * the dependencytable is compiled and linked
  * now as well
@@ -18,18 +22,54 @@
 #include "internal_lib.h"
 #include "resource.h"
 
-void
-CreateLibrary ()
+static void *
+BuildDepLibsStringMod (const char *lib, SStype_t kind, void *rest)
 {
+    char *result;
+
+    DBUG_ENTER ("BuildDepLibsStringMod");
+
+    switch (kind) {
+    case SS_objfile:
+        result = StringCopy (lib);
+    default:
+        result = StringCopy ("");
+        break;
+    }
+
+    if (rest != NULL) {
+        char *temp
+          = Malloc (sizeof (char) * (strlen ((char *)rest) + strlen (result) + 2));
+
+        sprintf (temp, "%s %s", (char *)rest, result);
+
+        result = Free (result);
+        rest = Free (rest);
+        result = temp;
+    }
+
+    DBUG_RETURN (result);
+}
+
+void
+CreateLibrary (stringset_t *deps)
+{
+    char *deplibs;
+
     DBUG_ENTER ("CreateLibrary");
 
     NOTE (("Creating static SAC library `lib%s.a'", modulename));
 
-    SystemCall ("%s lib%s.a %s/fun*.o", config.ar_create, modulename, tmp_dirname);
+    deplibs = SSFold (&BuildDepLibsStringMod, deps, StringCopy (""));
+
+    SystemCall ("%s lib%s.a %s/fun*.o %s", config.ar_create, modulename, tmp_dirname,
+                deplibs);
 
     if (config.ranlib[0] != '\0') {
         SystemCall ("%s lib%s.a", config.ranlib, modulename);
     }
+
+    deplibs = Free (deplibs);
 
     NOTE (("Creating shared SAC library `lib%s.so'", modulename));
 
