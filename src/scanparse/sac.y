@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2001/03/26 08:22:45  sbs
+ * next_conf preset to NULL in order to please the compiler...
+ *
  * Revision 3.14  2001/03/23 17:57:32  dkr
  * CheckWlcompConf modified: warning '... might be used uninitialized'
  * eliminated
@@ -2752,7 +2755,7 @@ node *CheckWlcompConf( node *conf)
       yyerror( "wlcomp-function with missing configuration found");
     }
     else {
-      node *next_conf;
+      node *next_conf=NULL;
 
       if (EXPRS_NEXT( arg) == NULL) {
         next_conf = EXPRS_EXPR( arg);
