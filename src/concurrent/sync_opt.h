@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/11/21 17:54:54  skt
+ * moved functions from concurrent_lib into sync_opt to remove concurrent_lib
+ *
  * Revision 3.2  2004/11/21 17:32:02  skt
  * make it runable with the new info structure
  *
@@ -39,5 +42,7 @@
 
 extern node *SYNCOsync (node *arg_node, info *arg_info);
 extern node *SYNCOassign (node *arg_node, info *arg_info);
+
+node *MeltSYNCs (node *first_sync, node *second_sync);
 
 #endif /* SYNC_OPT_H */
