@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.86  2003/10/14 12:18:16  cg
+ * COMP2Sync(): code for moving ALLOC-ICMs corrected with
+ * respect to the new ICM names
+ *
  * Revision 1.85  2003/10/01 21:47:31  dkrHH
  * COMPPrfReshape() recoded:
  * code generation for F_reshape is correct now
@@ -6439,6 +6443,7 @@ COMP2Sync (node *arg_node, node *arg_info)
 
     bool prolog;
     bool epilog;
+    bool inside_alloc_icm;
 
     node *backup;
     node *let;
@@ -6590,7 +6595,7 @@ COMP2Sync (node *arg_node, node *arg_info)
 
             barrier_args = AppendExprs (barrier_args, icm_args);
 
-            DBUG_PRINT ("COMP", ("%s", IDS_NAME (with_ids)));
+            DBUG_PRINT ("COMP_MT", ("%s", IDS_NAME (with_ids)));
 
             /*
              * <tmp_var>, <fold_op>
@@ -6636,8 +6641,10 @@ COMP2Sync (node *arg_node, node *arg_info)
      * prolog == TRUE: current assignment is in front of WL_..._BEGIN-ICM (part of prolog)
      * epilog == TRUE: current assignment is behind WL_..._END-ICM (part of epilog)
      */
+    var_name = NULL;
     prolog = TRUE;
     epilog = FALSE;
+    inside_alloc_icm = FALSE;
     count_nesting = 0; /* # of inner WLs */
     while (assign != NULL) {
 
@@ -6645,7 +6652,6 @@ COMP2Sync (node *arg_node, node *arg_info)
         instr = ASSIGN_INSTR (assign);
         DBUG_ASSERT ((instr != NULL), "no instr found");
 
-        var_name = NULL;
         if (NODE_TYPE (instr) == N_icm) {
 
             if ((!strcmp (ICM_NAME (instr), "WL_BEGIN__OFFSET"))
@@ -6655,8 +6661,9 @@ COMP2Sync (node *arg_node, node *arg_info)
                  *  -> skip with-loop code
                  *  -> stack nested with-loops
                  */
+                var_name = NULL;
                 count_nesting++;
-                DBUG_PRINT ("COMP", ("ICM: %s is ++", ICM_NAME (instr)));
+                DBUG_PRINT ("COMP_MT", ("ICM: %s is ++", ICM_NAME (instr)));
             } else if ((!strcmp (ICM_NAME (instr), "WL_END__OFFSET"))
                        || (!strcmp (ICM_NAME (instr), "WL_END"))) {
                 /*
@@ -6665,8 +6672,9 @@ COMP2Sync (node *arg_node, node *arg_info)
                  */
                 DBUG_ASSERT ((count_nesting > 0),
                              "WL_..._BEGIN/END-ICMs non-balanced (too much ENDs)");
+                var_name = NULL;
                 count_nesting--;
-                DBUG_PRINT ("COMP", ("ICM: %s is --", ICM_NAME (instr)));
+                DBUG_PRINT ("COMP_MT", ("ICM: %s is --", ICM_NAME (instr)));
             } else if (count_nesting == 0) {
                 /*
                  *  not within any (possibly nested) with-loop
@@ -6676,31 +6684,56 @@ COMP2Sync (node *arg_node, node *arg_info)
                  *  epilog == TRUE: current icm (assignment) is part of epilog
                  */
 
-                if ((!strcmp (ICM_NAME (instr), "ND_ALLOC"))
-                    || (!strcmp (ICM_NAME (instr), "ND_CHECK_REUSE"))) {
+                if (!strcmp (ICM_NAME (instr), "ND_ALLOC_BEGIN")) {
                     var_name = ID_NAME (ICM_ARG1 (instr));
                     prolog = TRUE;
                     epilog = FALSE;
-                    DBUG_PRINT ("COMP", ("ICM: %s is prolog", ICM_NAME (instr)));
+                    inside_alloc_icm = TRUE;
+                    DBUG_PRINT ("COMP_MT", ("ICM: %s( %s) is prolog", ICM_NAME (instr),
+                                            STR_OR_EMPTY (var_name)));
+                } else if (!strcmp (ICM_NAME (instr), "ND_ALLOC_END")) {
+                    var_name = ID_NAME (ICM_ARG1 (instr));
+                    prolog = TRUE;
+                    epilog = FALSE;
+                    inside_alloc_icm = FALSE;
+                    DBUG_PRINT ("COMP_MT", ("ICM: %s( %s) is prolog", ICM_NAME (instr),
+                                            STR_OR_EMPTY (var_name)));
+                } else if (inside_alloc_icm) {
+                    /* keep the old 'var_name' from the ND_ALLOC_BEGIN icm */
+                    prolog = TRUE;
+                    epilog = FALSE;
+                    DBUG_PRINT ("COMP_MT", ("ICM: %s( %s) is prolog (inside ALLOC)",
+                                            ICM_NAME (instr), STR_OR_EMPTY (var_name)));
+                } else if (!strcmp (ICM_NAME (instr), "ND_CHECK_REUSE")) {
+                    var_name = ID_NAME (ICM_ARG1 (instr));
+                    prolog = TRUE;
+                    epilog = FALSE;
+                    DBUG_PRINT ("COMP_MT", ("ICM: %s( %s) is prolog", ICM_NAME (instr),
+                                            STR_OR_EMPTY (var_name)));
                 } else if (!strcmp (ICM_NAME (instr), "ND_INC_RC")) {
                     var_name = ID_NAME (ICM_ARG1 (instr));
                     prolog = TRUE;
                     epilog = FALSE;
-                    DBUG_PRINT ("COMP", ("ICM: %s is prolog", ICM_NAME (instr)));
+                    DBUG_PRINT ("COMP_MT", ("ICM: %s( %s) is prolog", ICM_NAME (instr),
+                                            STR_OR_EMPTY (var_name)));
                 } else if ((!strcmp (ICM_NAME (instr), "ND_DEC_RC_FREE"))
                            || (!strcmp (ICM_NAME (instr), "ND_DEC_RC"))) {
                     var_name = ID_NAME (ICM_ARG1 (instr));
                     prolog = FALSE;
                     epilog = TRUE;
-                    DBUG_PRINT ("COMP", ("ICM: %s is epilog", ICM_NAME (instr)));
+                    DBUG_PRINT ("COMP_MT", ("ICM: %s( %s) is epilog", ICM_NAME (instr),
+                                            STR_OR_EMPTY (var_name)));
                 } else {
+                    var_name = NULL;
                     prolog = FALSE;
                     epilog = FALSE;
-                    DBUG_PRINT ("COMP", ("ICM: %s is nothing", ICM_NAME (instr)));
+                    DBUG_PRINT ("COMP_MT", ("ICM: %s is neither epilog nor prolog",
+                                            ICM_NAME (instr)));
                 }
             } else {
                 var_name = NULL;
-                DBUG_PRINT ("COMP", ("ICM: %s is ignored!!!!", ICM_NAME (instr)));
+                DBUG_PRINT ("COMP_MT", ("ICM: %s is ignored for epilog/prolog!!!",
+                                        ICM_NAME (instr)));
             }
 
             if (var_name != NULL) {
@@ -6727,17 +6760,29 @@ COMP2Sync (node *arg_node, node *arg_info)
                                  ("icm cannot be in prolog and epilog at the same time"));
                     if (prolog) {
                         prolog_icms = AppendAssign (prolog_icms, new_icm);
+                        DBUG_PRINT ("COMP_MT",
+                                    ("ICM: %s( %s) is moved to prolog", ICM_NAME (instr),
+                                     STR_OR_EMPTY (var_name)));
                     }
                     if (epilog) {
                         epilog_icms = AppendAssign (epilog_icms, new_icm);
+                        DBUG_PRINT ("COMP_MT",
+                                    ("ICM: %s( %s) is moved to epilog", ICM_NAME (instr),
+                                     STR_OR_EMPTY (var_name)));
                     }
                 } else {
                     /*
-                     *  one wants to test (var_name == NULL) later to decide,
-                     *  whether the current, assignment was removed or not!
+                     *  we want to test (var_name == NULL) later
+                     *  to decide whether the current assignment was removed or not!
                      */
+                    DBUG_PRINT ("COMP_MT",
+                                ("ICM: %s( %s) is *not* moved to prolog/epilog",
+                                 ICM_NAME (instr), STR_OR_EMPTY (var_name)));
                     var_name = NULL;
                 }
+            } else {
+                DBUG_PRINT ("COMP_MT", ("ICM: %s is *not* moved to prolog/epilog",
+                                        ICM_NAME (instr)));
             }
         }
 
