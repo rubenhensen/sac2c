@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.61  1998/04/17 16:22:59  dkr
+ * NCODE_USED is now adjusted in MakeWLgrid...
+ *
  * Revision 1.60  1998/04/17 11:41:52  srs
  * fixed bug in DupNwith() and added DupNcode()
  *
@@ -1008,10 +1011,6 @@ DupWLgrid (node *arg_node, node *arg_info)
                     WLGRID_UNROLLING (arg_node), DUPTRAV (WLGRID_NEXTDIM (arg_node)),
                     DUPCONT (WLGRID_NEXT (arg_node)), WLGRID_CODE (arg_node));
 
-    if (WLGRID_CODE (new_node) != NULL) {
-        NCODE_USED (WLGRID_CODE (new_node))++;
-    }
-
     WLGRID_MODIFIED (new_node) = 0;
 
     DBUG_RETURN (new_node);
@@ -1050,10 +1049,6 @@ DupWLgridVar (node *arg_node, node *arg_info)
                        DUPTRAV (WLGRIDVAR_BOUND2 (arg_node)),
                        DUPTRAV (WLGRIDVAR_NEXTDIM (arg_node)),
                        DUPCONT (WLGRIDVAR_NEXT (arg_node)), WLGRIDVAR_CODE (arg_node));
-
-    if (WLGRIDVAR_CODE (new_node) != NULL) {
-        NCODE_USED (WLGRIDVAR_CODE (new_node))++;
-    }
 
     DBUG_RETURN (new_node);
 }
