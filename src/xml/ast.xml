@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.82  2004/11/25 20:54:51  sah
+  added another traversal. POOP!
+
   Revision 1.81  2004/11/25 20:40:54  sah
   added comment
 
@@ -327,6 +330,15 @@
       </traversal>
     </phase>
     <phase id="use" name="Processing use statements">
+      <traversal id="RSA" name="Resolve All Flag" default="sons" include="resolveall.h" >
+        <travuser>
+	  <node name="Use" />
+	  <node name="Import" />
+	  <node name="Provide" />
+	  <node name="Export" />
+	  <node name="Module" />
+	</travuser>
+      </traversal>
       <traversal id="USS" name="Use Symbols" default="sons" include="usesymbols.h" >
         <travuser>
 	  <node name="Typedef" />
