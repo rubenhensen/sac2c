@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.85  2000/07/28 08:32:37  mab
+ * added INFO_APC_WITH
+ *
  * Revision 1.84  2000/07/25 08:11:55  mab
  * added INFO_APC_COUNT_CHANGES
  *
@@ -2658,6 +2661,7 @@ extern node *MakeInfo ();
 /* when used in pad_collect.c */
 #define INFO_APC_UNSUPPORTED(n) (n->flag)
 #define INFO_APC_COUNT_CHANGES(n) (n->int_data)
+#define INFO_APC_WITH(n) (n->node[0])
 
 /* when used in pad_transform.c */
 #define INFO_APT_EXPRESSION_PADDED(n) ((bool)(n->flag))
