@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/07/24 10:00:19  asi
+ * Revision 1.2  1995/10/06 17:07:47  cg
+ * adjusted calls to function MakeIds (now 3 parameters)
+ *
+ * Revision 1.1  1995/07/24  10:00:19  asi
  * Initial revision
  *
  *
@@ -191,7 +194,7 @@ GenIds (node *arg[2])
     new_name = (char *)MAlloc (sizeof (char) * (strlen (old_name) + strlen (number))
                                + AE_PREFIX_LENGTH);
     sprintf (new_name, AE_PREFIX "%s%s", number, old_name);
-    ids_node = MakeIds (new_name);
+    ids_node = MakeIds (new_name, NULL, ST_regular);
     DBUG_RETURN (ids_node);
 }
 

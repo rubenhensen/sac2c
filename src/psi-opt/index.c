@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.5  1995/10/05 14:55:52  sbs
+ * Revision 1.6  1995/10/06 17:07:47  cg
+ * adjusted calls to function MakeIds (now 3 parameters)
+ *
+ * Revision 1.5  1995/10/05  14:55:52  sbs
  * some bug fixes.
  *
  * Revision 1.4  1995/06/26  09:59:28  sbs
@@ -597,7 +600,7 @@ IdxGenerator (node *arg_node, node *arg_info)
                 CREATE_2_ARY_ICM (newassign, "ND_KS_USE_GENVAR_OFFSET", newid, arrayid);
             } else {
                 name_node = MakeNode (N_id);
-                name_node->info.ids = MakeIds (arg_node->info.ids->id);
+                name_node->info.ids = MakeIds (arg_node->info.ids->id, NULL, ST_regular);
                 name_node->info.ids->node = arg_node->info.ids->node;
                 dim_node = MakeNum (arg_node->info.ids->node->info.types->shpseg->shp[0]);
                 dim_node2 = MakeNum (VINFO_DIM (vinfo));
@@ -745,7 +748,7 @@ IdxLet (node *arg_node, node *arg_info)
 
                     nnode = arg_info->nnode;
                     name_node = MakeNode (N_id);
-                    name_node->info.ids = MakeIds (vars->id);
+                    name_node->info.ids = MakeIds (vars->id, NULL, ST_regular);
                     name_node->info.ids->node = vars->node;
                     dim_node = MakeNum (vars->node->info.types->shpseg->shp[0]);
                     dim_node2 = MakeNum (VINFO_DIM (vinfo));

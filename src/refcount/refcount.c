@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.17  1995/06/26 13:04:02  hw
+ * Revision 1.18  1995/10/06 17:08:34  cg
+ * adjusted calls to function MakeIds (now 3 parameters)
+ *
+ * Revision 1.17  1995/06/26  13:04:02  hw
  * DBUG_ASSERT in RCwith inserted
  *
  * Revision 1.16  1995/06/26  08:12:35  asi
@@ -70,6 +73,7 @@
  *
  *
  */
+
 #include <stdlib.h>
 #include "tree.h"
 #include "my_debug.h"
@@ -86,11 +90,11 @@
 #define ID_REF refcnt
 #define DUB_ID_NODE(a, b)                                                                \
     a = MakeNode (N_id);                                                                 \
-    a->info.ids = MakeIds (StringCopy (b->info.ids->id));                                \
+    a->info.ids = MakeIds (StringCopy (b->info.ids->id), NULL, ST_regular);              \
     a->VAR_DEC = b->VAR_DEC
 #define VAR_DEC_2_ID_NODE(a, b)                                                          \
     a = MakeNode (N_id);                                                                 \
-    a->info.ids = MakeIds (StringCopy (b->info.types->id));                              \
+    a->info.ids = MakeIds (StringCopy (b->info.types->id), NULL, ST_regular);            \
     a->VAR_DEC = b;                                                                      \
     a->ID_REF = b->refcnt;
 
