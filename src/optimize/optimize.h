@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.46  1998/02/09 16:10:12  srs
+ * introduced WLF
+ *
  * Revision 1.45  1997/10/28 13:14:11  srs
  * removed dead code
  *
@@ -162,7 +165,6 @@ extern int dead_expr;
 extern int dead_var;
 extern int dead_fun;
 extern int cf_expr;
-extern int wr_expr;
 extern int lir_expr;
 extern int inl_fun;
 extern int unr_expr;
@@ -170,6 +172,7 @@ extern int uns_expr;
 extern int optvar_counter;
 extern int elim_arrays;
 extern int cse_expr;
+extern int wlf_expr;
 
 typedef struct STELM {
     int vl_len;
