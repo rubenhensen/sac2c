@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.24  1995/05/11 16:18:48  hw
+ * Revision 1.25  1995/05/11 16:50:10  hw
+ * - bug fixed in FltnWhile ( now traverse first the body of the loop and
+ *     than the termination condition, because of renaming of variables
+ *     in a with-loop)
+ *
+ * Revision 1.24  1995/05/11  16:18:48  hw
  * -bug fixed in FltnDo & FltnWhile ( empty loop-bodies will be treated
  *                                    correctly now )
  *
@@ -597,6 +602,23 @@ FltnWhile (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("FltnWhile");
 
+    info_node = MakeNode (N_info);
+    info_node->nnode = 1;
+    info_node->node[1] = arg_info->node[1]; /* list of assigns that have to be
+                                             * put infront of a with_loop
+                                             */
+    /* traverse body of while-loop */
+    arg_node->node[1] = Trav (arg_node->node[1], info_node);
+
+    arg_info->node[1] = info_node->node[1]; /* list of assigns that have to be
+                                             * put infront of a with_loop
+                                             */
+    DBUG_PRINT ("FLATTEN",
+                ("info_node: %s" P_FORMAT ": %s" P_FORMAT,
+                 mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0],
+                 mdb_nodetype[info_node->node[0]->node[0]->nodetype],
+                 info_node->node[0]->node[0]));
+
     /* create a temporary N_exprs node to flatten the termination condition
      * in FltnExprs
      */
@@ -617,24 +639,6 @@ FltnWhile (node *arg_node, node *arg_info)
                             mdb_nodetype[arg_info->node[0]->nodetype], arg_info->node[0],
                             mdb_nodetype[arg_info->node[0]->node[0]->nodetype],
                             arg_info->node[0]->node[0]));
-
-    info_node = MakeNode (N_info);
-    info_node->nnode = 1;
-    info_node->node[1] = arg_info->node[1]; /* list of assigns that have to be
-                                             * put infront of a with_loop
-                                             */
-
-    arg_node->node[1] = Trav (arg_node->node[1], info_node);
-
-    arg_info->node[1] = info_node->node[1]; /* list of assigns that have to be
-                                             * put infront of a with_loop
-                                             */
-
-    DBUG_PRINT ("FLATTEN",
-                ("info_node: %s" P_FORMAT ": %s" P_FORMAT,
-                 mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0],
-                 mdb_nodetype[info_node->node[0]->node[0]->nodetype],
-                 info_node->node[0]->node[0]));
 
     /*
      *  now we're looking for the last N_assign node in the pointer chain
@@ -681,11 +685,11 @@ FltnWhile (node *arg_node, node *arg_info)
             DBUG_ASSERT ((N_assign == dest_node->nodetype),
                          "wrong nodetype: not N_assign");
 
-            info_node->node[1] = MakeNode (N_assign);
-            info_node->nnode = 2;
-            info_node->node[1]->node[0] = DuplicateNode (dest_node->node[0]);
-            info_node->node[1]->nnode = 1;
-            info_node = info_node->node[1];
+            last_assign->node[1] = MakeNode (N_assign);
+            last_assign->nnode = 2;
+            last_assign->node[1]->node[0] = DuplicateNode (dest_node->node[0]);
+            last_assign->node[1]->nnode = 1;
+            last_assign = last_assign->node[1];
             dest_node = dest_node->node[1];
         }
     }
