@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.49  2004/11/24 15:37:43  sbs
+  NTCobjdef eliminated
+
   Revision 1.48  2004/11/24 15:35:28  ktr
   WLS traversals added.
 
@@ -289,7 +292,6 @@
       <traversal id="NTC" name="New Type Inference" default="sons" include="new_typecheck.h" >
         <travuser> 
           <node name="typedef" />
-          <node name="objdef" />
           <node name="module" />
           <node name="fundef" />
           <node name="arg" />
