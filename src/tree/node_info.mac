@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.107  2002/10/18 13:47:21  sbs
+ * CRTWRPid, NTCobjdef, and CAVobjdef inseted.
+ *
  * Revision 3.106  2002/10/08 16:33:54  dkr
  * NT2OTreturn removed
  *
@@ -982,7 +985,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSACSEid, CMPTid, TravSons, SSACFid, SSALIRid, LIRMOVid, TravSons, TravSons,
        TravSons, SSAWLIid, SSAWLFid,
 
-       TravSons, COMP2Id, TravSons, INSVDid, TravSons, TravSons, PREC4id, TravSons,
+       TravSons, COMP2Id, TravSons, INSVDid, CRTWRPid, TravSons, PREC4id, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 0),
 
@@ -1092,13 +1095,13 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, NTCobjdef, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, PIWobjdef, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, PIWobjdef, TravSons, TravSons, TravSons, CAVobjdef, TravSons,
        TravSons, TravSons, CMPTunknown, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
