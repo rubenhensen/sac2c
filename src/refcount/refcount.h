@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/01/25 13:38:33  dkr
+ * function FindVardec renamed to FindVardec_Varno and moved to
+ * tree_compound.h
+ *
  * Revision 2.1  1999/02/23 12:43:07  sacbase
  * new release made
  *
@@ -70,19 +74,6 @@
 
 #define _refcount_h
 
-/*
- * this macro is usefull for traversing the arg- und vardec-list
- */
-#define FOREACH_VARDEC_AND_ARG(fundef, vardec, code)                                     \
-    vardec = FUNDEF_ARGS (fundef);                                                       \
-    while (vardec != NULL) {                                                             \
-        code vardec = ARG_NEXT (vardec);                                                 \
-    }                                                                                    \
-    vardec = FUNDEF_VARDEC (fundef);                                                     \
-    while (vardec != NULL) {                                                             \
-        code vardec = VARDEC_NEXT (vardec);                                              \
-    }
-
 extern node *Refcount (node *arg_node);
 extern node *RCblock (node *arg_node, node *arg_info);
 extern node *RCvardec (node *arg_node, node *arg_info);
@@ -115,7 +106,5 @@ extern int IsArray (types *type);
 extern int IsNonUniqueHidden (types *type);
 extern int IsBoxed (types *type);
 extern int IsUnique (types *type);
-
-extern node *FindVardec (int varno, node *fundef);
 
 #endif /* _refcount_h */
