@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2000/05/30 14:06:18  dkr
+ * some helper functions moved from compile.c to tree_compound.c
+ *
  * Revision 1.15  2000/05/25 22:54:16  dkr
  * some macros for N_Nwith, N_Nwith2, N_WLgrid and N_WLgridVar added
  *
@@ -986,6 +989,22 @@ extern node *FindVardec_Varno (int varno, node *fundef);
         code vardec = VARDEC_NEXT (vardec);                                              \
     }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *AppendVardecs( node *vardecs, node *append)
+ *
+ * description:
+ *   Appends 'append' to 'vardecs' and returns the new chain.
+ *
+ * remark:
+ *   In order to use this function in Compile() it can handle mixed chains
+ *   containing N_vardec- *and* N_assign-nodes!
+ *
+ ******************************************************************************/
+
+extern node *AppendVardecs (node *vardecs, node *append);
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1001,6 +1020,19 @@ extern node *FindVardec_Varno (int varno, node *fundef);
 #define ASSIGN_MRDMASK(n) (ASSIGN_MASK (n, 2))
 #define ASSIGN_INSTRTYPE(n) (NODE_TYPE (ASSIGN_INSTR (n)))
 #define ASSIGN_NAME(n) (LET_NAME (ASSIGN_INSTR (n)))
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AppendAssign( node *assigns, node *assign)
+ *
+ * description:
+ *   appends 'assign' to the N_assign-chain 'assings' and returns the new
+ *    chain.
+ *
+ ******************************************************************************/
+
+extern node *AppendAssign (node *assigns, node *assign);
 
 /******************************************************************************
  *
@@ -1075,15 +1107,15 @@ extern node *GetCompoundNode (node *arg_node);
 /******************************************************************************
  *
  * function:
- *   node *AppendAssign( node *assigns, node *assign)
+ *   node *AppendAssignIcm( node *assign, char *name, node *args)
  *
  * description:
- *   appends 'assign' to the N_assign-chain 'assings' and returns the new
- *    chain.
+ *   Appends an new ICM with name and args given as an assign to the given
+ *   chain of assignments assign.
  *
  ******************************************************************************/
 
-extern node *AppendAssign (node *assigns, node *assign);
+extern node *AppendAssignIcm (node *assign, char *name, node *args);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1102,6 +1134,18 @@ extern node *AppendAssign (node *assigns, node *assign);
  ******************************************************************************/
 
 extern node *AppendExprs (node *exprs1, node *exprs2);
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeExprsNum( int num)
+ *
+ * description:
+ *   Makes an N_exprs with a N_num as EXPR, NEXT is NULL.
+ *
+ ******************************************************************************/
+
+extern node *MakeExprsNum (int num);
 
 /*--------------------------------------------------------------------------*/
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/05/30 14:06:27  dkr
+ * some helper functions moved from compile.c to tree_compound.c
+ *
  * Revision 1.5  2000/04/20 11:40:10  jhs
  * Added comment at CountFunctionParams.
  *
@@ -1034,6 +1037,46 @@ SearchFundef (node *fun, node *allfuns)
 /******************************************************************************
  *
  * function:
+ *   node *AppendVardecs( node *vardecs, node *append)
+ *
+ * description:
+ *   Appends 'append' to 'vardecs' and returns the new chain.
+ *
+ * remark:
+ *   In order to use this function in Compile() it can handle mixed chains
+ *   containing N_vardec- *and* N_assign-nodes!
+ *
+ ******************************************************************************/
+
+node *
+AppendVardecs (node *vardecs, node *append)
+{
+    node *tmp;
+
+    DBUG_ENTER ("AppendVardecs");
+
+    tmp = vardecs;
+    if (tmp != NULL) {
+        while (((NODE_TYPE (tmp) == N_assign) ? (ASSIGN_NEXT (tmp)) : (VARDEC_NEXT (tmp)))
+               != NULL) {
+            tmp
+              = (NODE_TYPE (tmp) == N_assign) ? (ASSIGN_NEXT (tmp)) : (VARDEC_NEXT (tmp));
+        }
+        if (NODE_TYPE (tmp) == N_assign) {
+            ASSIGN_NEXT (tmp) = append;
+        } else {
+            VARDEC_NEXT (tmp) = append;
+        }
+    } else {
+        vardecs = append;
+    }
+
+    DBUG_RETURN (vardecs);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *FindVardec_Name( char *name, node *fundef)
  *
  * description:
@@ -1100,6 +1143,49 @@ FindVardec_Varno (int varno, node *fundef)
  ***  N_assign :
  ***/
 
+/******************************************************************************
+ *
+ * function:
+ *   node *AppendAssign( node *assigns, node *assign)
+ *
+ * description:
+ *   appends 'assign' to the N_assign-chain 'assings' and returns the new
+ *    chain.
+ *
+ ******************************************************************************/
+
+node *
+AppendAssign (node *assigns, node *assign)
+{
+    node *tmp;
+
+    DBUG_ENTER ("AppendAssign");
+
+    if (assign != NULL) {
+        if (assigns != NULL) {
+            tmp = assigns;
+            while (ASSIGN_NEXT (tmp) != NULL) {
+                tmp = ASSIGN_NEXT (tmp);
+            }
+            ASSIGN_NEXT (tmp) = assign;
+        } else {
+            assigns = assign;
+        }
+    }
+
+    DBUG_RETURN (assigns);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *MakeAssignLet(char *var_name, node *vardec_node, node* let_expr)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
 node *
 MakeAssignLet (char *var_name, node *vardec_node, node *let_expr)
 {
@@ -1107,6 +1193,7 @@ MakeAssignLet (char *var_name, node *vardec_node, node *let_expr)
     node *tmp_node;
 
     DBUG_ENTER ("MakeAssignLet");
+
     tmp_ids = MakeIds (var_name, NULL, ST_regular);
     IDS_VARDEC (tmp_ids) = vardec_node;
     tmp_node = MakeLet (let_expr, tmp_ids);
@@ -1187,12 +1274,23 @@ MakeAssignIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node
     return (MakeAssign (MakeIcm7 (name, arg1, arg2, arg3, arg4, arg5, arg6, arg7), NULL));
 }
 
+/******************************************************************************
+ *
+ * Function:
+ *   node *GetCompoundNode(node* arg_node)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
 node *
 GetCompoundNode (node *arg_node)
 {
     node *compound_node;
 
     DBUG_ENTER ("GetCompoundNode");
+
     arg_node = ASSIGN_INSTR (arg_node);
     switch (NODE_TYPE (arg_node)) {
     case N_cond:
@@ -1218,34 +1316,24 @@ GetCompoundNode (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node *AppendAssign( node *assigns, node *assign)
+ *   node *AppendAssignIcm( node *assign, char *name, node *args)
  *
  * description:
- *   appends 'assign' to the N_assign-chain 'assings' and returns the new
- *    chain.
+ *   Appends an new ICM with name and args given as an assign to the given
+ *   chain of assignments assign.
  *
  ******************************************************************************/
 
 node *
-AppendAssign (node *assigns, node *assign)
+AppendAssignIcm (node *assign, char *name, node *args)
 {
-    node *tmp;
+    node *result;
 
-    DBUG_ENTER ("AppendAssign");
+    DBUG_ENTER ("AppendAssignIcm");
 
-    if (assign != NULL) {
-        if (assigns != NULL) {
-            tmp = assigns;
-            while (ASSIGN_NEXT (tmp) != NULL) {
-                tmp = ASSIGN_NEXT (tmp);
-            }
-            ASSIGN_NEXT (tmp) = assign;
-        } else {
-            assigns = assign;
-        }
-    }
+    result = AppendAssign (assign, MakeAssignIcm1 (name, args));
 
-    DBUG_RETURN (assigns);
+    DBUG_RETURN (result);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1284,6 +1372,28 @@ AppendExprs (node *exprs1, node *exprs2)
     }
 
     DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeExprsNum( int num)
+ *
+ * description:
+ *   Makes an N_exprs with a N_num as EXPR, NEXT is NULL.
+ *
+ ******************************************************************************/
+
+node *
+MakeExprsNum (int num)
+{
+    node *result;
+
+    DBUG_ENTER (" MakeExprsNum");
+
+    result = MakeExprs (MakeNum (num), NULL);
+
+    DBUG_RETURN (result);
 }
 
 /*--------------------------------------------------------------------------*/
