@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2003/04/25 15:15:37  sbs
+ * mkdtemp requires unistd.h to be included (at least on freeBSD.)
+ *
  * Revision 3.24  2003/04/25 15:10:16  sbs
  * missing cast inserted 8-)
  * sah: GRGRGRRRRRRR
@@ -137,6 +140,7 @@
 #include "blir.h"
 
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 
 /*
