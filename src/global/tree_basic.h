@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.215  1999/02/12 12:32:28  bs
+ * ID_CONSTARRAY and ID_ARRAYLENGTH inserted
+ *
  * Revision 1.214  1999/02/11 13:35:22  cg
  * OBJDEC_DEF() and OBJDEF_VARNAME() no longer use the same entry in the
  * underlying node structure. This caused severe memory management problems
@@ -1606,8 +1609,10 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    int    REFCNT                      (refcount -> compile -> )
  ***    int    MAKEUNIQUE                  (precompile -> compile -> )
  ***    node*  DEF                         (Unroll !, Unswitch !)
- ***    node*  WL        (O)               (wli -> wlf !!)
- ***    node*  VAL       (O)  (N_array)    (cf -> )
+ ***    node*  WL          (O)             (wli -> wlf !!)
+ ***    node*  VAL         (O) (N_array)   (cf -> )
+ ***    node*  CONSTARRAY  (O)             (flatten -> )
+ ***    int    ARRAYLENGTH (O)             (flatten -> )
  ***
  ***  remark:
  ***    ID_WL is only used in wli, wlf. But every call of DupTree() initializes
@@ -1631,6 +1636,9 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    costs. However for some other optimizations, namely tile size inference,
  ***    a constant value is an advantage.
  ***
+ ***  remark:
+ ***    CONSTARRAY and ARRAYLENGTH now are used for propagation of constant
+ ***    integer arrays.
  ***/
 
 /*
@@ -1668,6 +1676,8 @@ extern node *MakeId2 (ids *ids_node);
 #define ID_MAKEUNIQUE(n) (n->flag)
 #define ID_WL(n) (n->node[0])
 #define ID_VAL(n) (n->node[1])
+#define ID_CONSTARRAY(n) ((int *)(n->node[2]))
+#define ID_ARRAYLENGTH(n) (n->varno)
 
 /*--------------------------------------------------------------------------*/
 
