@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  1997/10/30 12:22:10  dkr
+ * with defined NEWTREE, node->nnode is not used anymore
+ *
  * Revision 1.27  1997/05/14 08:16:43  sbs
  * N_annotate added
  *
@@ -137,8 +140,10 @@ AppendNodeChain (int pos, node *first, node *second)
             tmp = tmp->node[pos];
         tmp->node[pos] = second;
         DBUG_PRINT ("APP", ("Append node chain behind line %d", tmp->lineno));
+#ifndef NEWTREE
         if (second != NULL)
             tmp->nnode++;
+#endif
     }
 
     DBUG_RETURN (first);
@@ -218,7 +223,9 @@ MakeNode (nodetype nodetype)
     tmp->nodetype = nodetype;
     for (i = 0; i < MAX_SONS; i++)
         tmp->node[i] = NULL;
+#ifndef NEWTREE
     tmp->nnode = 0;
+#endif
     tmp->info.id = NULL;
     tmp->flag = 0;
     tmp->varno = 0;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.46  1997/10/30 12:17:32  dkr
+ * with defined NEWTREE, node->nnode is not used anymore
+ *
  * Revision 1.45  1997/03/19 13:37:55  cg
  * The entire link_tab is removed
  *
@@ -705,9 +708,13 @@ Trav (node *arg_node, node *arg_info)
     DBUG_ENTER ("Trav");
     DBUG_ASSERT ((NULL != arg_node), "wrong argument:NULL pointer");
     DBUG_ASSERT ((arg_node->nodetype <= N_ok), "wrong argument: Type-tag out of range!");
+#ifndef NEWTREE
     DBUG_PRINT ("TRAV", ("case %s: node adress: %06x number of nodes: %d",
                          mdb_nodetype[arg_node->nodetype], arg_node, arg_node->nnode));
-
+#else
+    DBUG_PRINT ("TRAV", ("case %s: node adress: %06x", mdb_nodetype[arg_node->nodetype],
+                         arg_node));
+#endif
     DBUG_RETURN ((*act_tab[arg_node->nodetype]) (arg_node, arg_info));
 }
 
@@ -716,7 +723,7 @@ Trav (node *arg_node, node *arg_info)
 **  functionname  : TravSons
 **  arguments     : 1) pointer to actual node
 **                  2) pointer to further (top down) info's
-**  description   : traverses all son nodes depending on nnode.
+**  description   : traverses all son nodes.
 **  global vars   : ---
 **  internal funs : Trav
 **  external funs : ---
@@ -734,7 +741,12 @@ TravSons (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("TravSons");
 
-    for (i = 0; i < arg_node->nnode; i++) {
+#ifndef NEWTREE
+    for (i = 0; i < arg_node->nnode; i++)
+#else
+    for (i = 0; i < MAX_SONS; i++)
+#endif
+    {
         if (arg_node->node[i] != NULL) {
             arg_node->node[i] = Trav (arg_node->node[i], arg_info);
         }
