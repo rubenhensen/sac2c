@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.60  1995/07/24 09:16:02  hw
+ * Revision 1.61  1995/08/15 14:34:52  hw
+ * - enlarged DBUG_ASSERT in compilation of idx_psi
+ * - added compilation of modarray, but only following cases:
+ *   modarry(id, vec, id)
+ *
+ * Revision 1.60  1995/07/24  09:16:02  hw
  * changed test for SAC-function "main" in function Compile
  *
  * Revision 1.59  1995/07/19  12:19:16  hw
@@ -279,10 +284,12 @@ extern char filename[]; /* imported from main.c */
 #define FUN_NAME_LENGTH 256
 
 #if 0
+
 /* following macros are only temporay (they are copied from typecheck.c) */
 #define MOD(a) (NULL == a) ? "" : a
 #define MOD_CON(a) (NULL == a) ? "" : MOD_NAME_CON
 #define MOD_NAME(a) MOD (a), MOD_CON (a)
+
 #endif
 
 #ifndef DBUG_OFF
@@ -980,6 +987,106 @@ CompVardec (node *arg_node, node *arg_info)
 
 /*
  *
+ *  functionname  : CompPrfModarray
+ *  arguments     : 1) N_prf node
+ *                  2) NULL
+ *  description   : transforms N_prf node F_modarray to N_icm nodes
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...,
+ *  remarks       : arg_info->info.ids contains name of assigned variable
+ *                  arg_info->node[0] contains pointer to node before
+ *                   last assign_node (to get last or next assign node use
+ *                                     macros LAST_ASSIGN or NEXT_ASSIGN )
+ *                  arg_info->node[0] is used to insert new assign_nodes
+ *                   in front of or after last assign node
+ *                  arg_info->node[1] contains pointer to last N_let
+ */
+node *
+CompPrfModarray (node *arg_node, node *arg_info)
+{
+    node *res, *length, *n_node, *res_ref, *type_id_node, *dim_res, *line, *first_assign,
+      *next_assign, *icm_arg, *old_arg_node, *last_assign;
+    node *arg1 = arg_node->ARG1;
+    node *arg2 = arg_node->ARG2;
+    node *arg3 = arg_node->ARG3;
+
+    simpletype res_stype;
+    int n, dim;
+
+    DBUG_ENTER ("CompPrfModarray");
+
+    MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
+
+    /* compute basic_type of result */
+    GET_BASIC_SIMPLETYPE (res_stype, arg_info->IDS_NODE->TYPES);
+    MAKENODE_ID (type_id_node, type_string[res_stype]);
+
+    /* store dimension of result */
+    GET_DIM (dim, arg_info->IDS_NODE->TYPES);
+    MAKENODE_NUM (dim_res, dim);
+
+    /* store refcount of res as N_num */
+    MAKENODE_NUM (res_ref, arg_info->IDS_REFCNT);
+
+    /* store line of prf function */
+    MAKENODE_NUM (line, arg_node->lineno);
+
+    if ((N_array == arg2->nodetype) && (N_array != arg3->nodetype)) {
+        COUNT_ELEMS (n, arg2->node[0]);
+        MAKENODE_NUM (length, n);
+
+        if ((N_id == arg3->nodetype) ? (1 == IsArray (arg3->IDS_NODE->TYPES)) : 0) {
+            char *icm_name;
+
+            if (1 >= arg1->refcnt)
+                icm_name = "ND_PRF_MODARRAY_AxCxA_CHECK_REUSE";
+            else
+                icm_name = "ND_PRF_MODARRAY_AxCxA";
+
+            BIN_ICM_REUSE (arg_info->node[1], icm_name, line, type_id_node);
+            MAKE_NEXT_ICM_ARG (icm_arg, dim_res);
+            MAKE_NEXT_ICM_ARG (icm_arg, res);
+            MAKE_NEXT_ICM_ARG (icm_arg, arg1);
+            MAKE_NEXT_ICM_ARG (icm_arg, arg3);
+            MAKE_NEXT_ICM_ARG (icm_arg, length);
+            icm_arg->node[1] = arg2->node[0];
+            icm_arg->nnode = 2;
+            SET_VARS_FOR_MORE_ICMS;
+            MAKENODE_NUM (n_node, 1);
+            DEC_OR_FREE_RC_ND (arg3, n_node);
+        } else {
+            char *icm_name;
+
+            if (1 >= arg1->refcnt)
+                icm_name = "ND_PRF_MODARRAY_AxCxS_CHECK_REUSE";
+            else
+                icm_name = "ND_PRF_MODARRAY_AxCxS";
+
+            BIN_ICM_REUSE (arg_info->node[1], icm_name, line, type_id_node);
+            MAKE_NEXT_ICM_ARG (icm_arg, dim_res);
+            MAKE_NEXT_ICM_ARG (icm_arg, res);
+            MAKE_NEXT_ICM_ARG (icm_arg, arg1);
+            MAKE_NEXT_ICM_ARG (icm_arg, arg3);
+            MAKE_NEXT_ICM_ARG (icm_arg, length);
+            icm_arg->node[1] = arg2->node[0];
+            icm_arg->nnode = 2;
+            SET_VARS_FOR_MORE_ICMS;
+        }
+        MAKENODE_NUM (n_node, 1);
+        INC_RC_ND (res, res_ref);
+        DEC_RC_ND (arg1, n_node);
+        INSERT_ASSIGN;
+    } else
+        DBUG_ASSERT (0, " sorry compilation of this case of F_modarray isn't "
+                        "implemented yet");
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
  *  functionname  : CompPrf
  *  arguments     : 1) N_prf node
  *                  2) NULL
@@ -1028,6 +1135,11 @@ CompPrf (node *arg_node, node *arg_info)
         int insert_vardec = 0, insert_assign = 0;
 
         exprs = arg_node->node[0];
+        /* test whether a identifier occures on the right and left side of a
+         * let. In this case rename the one on the rigth side ,assign old and new
+         * variable and add vardec for the new vaibale.
+         * (e.g: A=A+1 => __A=A; A=__A+1; )
+         */
         while (NULL != exprs) {
             if (N_id == exprs->node[0]->nodetype)
                 if (0 == strcmp (let_ids->id, exprs->node[0]->IDS_ID)) {
@@ -1071,6 +1183,9 @@ CompPrf (node *arg_node, node *arg_info)
             exprs = exprs->node[1];
         }
         switch (arg_node->info.prf) {
+        case F_modarray:
+            arg_node = CompPrfModarray (arg_node, arg_info);
+            break;
         case F_add_SxA:
         case F_div_SxA:
         case F_sub_SxA:
@@ -1520,7 +1635,8 @@ CompPrf (node *arg_node, node *arg_info)
         case F_idx_psi: {
             arg1 = arg_node->node[0]->node[0];
             arg2 = arg_node->node[0]->node[1]->node[0];
-            DBUG_ASSERT (N_id == arg1->nodetype, "wrong first arg of idx_psi");
+            DBUG_ASSERT ((N_id == arg1->nodetype && N_num == arg1->nodetype),
+                         "wrong first arg of idx_psi");
             DBUG_ASSERT (N_id == arg2->nodetype, "wrong second arg of idx_psi");
 
             /* reuse last N_let node */
