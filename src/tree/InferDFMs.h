@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/24 18:37:09  sah
+ * Sac DevCamp DK
+ *
  * Revision 1.5  2004/11/23 10:05:24  sah
  * SaC DevCamp 04
  *
@@ -15,7 +18,7 @@
 #ifndef _SAC_INFERDFMS_H_
 #define _SAC_INFERDFMS_H_
 
-#include "DataFlowMask.h"
+#include "types.h"
 
 /*
  * bit field to steer hiding of local vars
@@ -62,7 +65,7 @@ extern node *INFDFMSwhile (node *arg_node, info *arg_info);
 extern node *INFDFMSdo (node *arg_node, info *arg_info);
 extern node *INFDFMSicm (node *arg_node, info *arg_info);
 
-extern node *INFDFMSdoInferDFMs (node *syntax_tree, int hide_locals);
-extern dfmask_t *INFDFMSdoInferInDFMAssignChain (node *assign, node *fundef);
+extern node *INFDFMSdoInferDfms (node *syntax_tree, int hide_locals);
+extern dfmask_t *INFDFMSdoInferInDfmAssignChain (node *assign, node *fundef);
 
 #endif /* _SAC_INFERDFMS_H_ */
