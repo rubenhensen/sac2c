@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/06/08 13:48:27  dkr
+ * fixed a bug
+ *
  * Revision 1.1  1998/06/07 18:43:10  dkr
  * Initial revision
  *
@@ -31,6 +34,10 @@
  *   +) if "C" occurs on a right side, it looks like
  *          "psi( idx, C)"  or  "idx_psi( idx_flat, C)"
  *      where "idx_flat" is the flat offset of "idx" (IVE).
+ *
+ *   +) "C" is found in 'NWITH2_DEC_RC_IDS'!!!!!
+ *      (otherwise "C" is not consumed by the with-loop because of RCO
+ *       --- it is not the last occur --- therefore must not be reused!!!)
  *
  ******************************************************************************/
 
@@ -88,6 +95,36 @@ CompareTypes (types *t1, types *t2)
 /******************************************************************************
  *
  * function:
+ *   int IsFound( char *varname, ids *ids_chain)
+ *
+ * description:
+ *   returns ...
+ *     ... 1, if 'varname' is found in 'ids_chain';
+ *     ... 0, otherwise.
+ *
+ ******************************************************************************/
+
+int
+IsFound (char *varname, ids *ids_chain)
+{
+    int found = 0;
+
+    DBUG_ENTER ("IsFound");
+
+    while (ids_chain != NULL) {
+        if (strcmp (varname, IDS_NAME (ids_chain)) == 0) {
+            found = 1;
+            break;
+        }
+        ids_chain = IDS_NEXT (ids_chain);
+    }
+
+    DBUG_RETURN (found);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *ReuseFundef( node *arg_node, node *arg_info)
  *
  * description:
@@ -123,6 +160,8 @@ ReuseFundef (node *arg_node, node *arg_info)
  *   'INFO_REUSE_MASK( arg_info)' contains a pointer to this mask.
  *   'INFO_REUSE_IDX( arg_info)' contains a pointer to the index vector of
  *    the with-loop.
+ *   'INFO_REUSE_DEC_RC_IDS( arg_info)' contains a pointer to
+ *   'NWITH2_DEC_RC_IDS( arg_node)'.
  *
  ******************************************************************************/
 
@@ -142,6 +181,7 @@ ReuseNwith2 (node *arg_node, node *arg_info)
               = DFMGenMaskClear (FUNDEF_DFM_BASE (INFO_REUSE_FUNDEF (arg_info)));
             INFO_REUSE_MASK (arg_info) = NWITH2_REUSE (arg_node);
             INFO_REUSE_IDX (arg_info) = NWITH2_VEC (arg_node);
+            INFO_REUSE_DEC_RC_IDS (arg_info) = NWITH2_DEC_RC_IDS (arg_node);
         }
     }
 
@@ -174,7 +214,9 @@ ReuseNwithop (node *arg_node, node *arg_info)
         NWITHOP_SHAPE (arg_node) = Trav (NWITHOP_SHAPE (arg_node), arg_info);
         break;
     case WO_modarray:
-        if (NODE_TYPE (NWITHOP_ARRAY (arg_node)) == N_id) {
+        if ((NODE_TYPE (NWITHOP_ARRAY (arg_node)) == N_id)
+            && (IsFound (ID_NAME (NWITHOP_ARRAY (arg_node)),
+                         INFO_REUSE_DEC_RC_IDS (arg_info)))) {
             DFMSetMaskEntrySet (INFO_REUSE_MASK (arg_info),
                                 ID_NAME (NWITHOP_ARRAY (arg_node)), NULL);
         }
@@ -220,6 +262,7 @@ ReuseLet (node *arg_node, node *arg_info)
     DFMmask_t old_mask;
     ids *old_wl_ids;
     ids *old_idx;
+    ids *old_dec_rc_ids;
 #endif
 
     DBUG_ENTER ("ReuseLet");
@@ -235,6 +278,7 @@ ReuseLet (node *arg_node, node *arg_info)
          */
         old_wl_ids = INFO_REUSE_WL_IDS (arg_info);
         old_idx = INFO_REUSE_IDX (arg_info);
+        old_dec_rc_ids = INFO_REUSE_DEC_RC_IDS (arg_info);
         old_mask = INFO_REUSE_MASK (arg_info);
 
         /*
@@ -242,6 +286,7 @@ ReuseLet (node *arg_node, node *arg_info)
          */
         INFO_REUSE_WL_IDS (arg_info) = LET_IDS (arg_node);
         INFO_REUSE_IDX (arg_info) = NULL;
+        INFO_REUSE_DEC_RC_IDS (arg_info) = NULL;
         INFO_REUSE_MASK (arg_info) = NULL;
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
@@ -250,6 +295,7 @@ ReuseLet (node *arg_node, node *arg_info)
          */
         INFO_REUSE_WL_IDS (arg_info) = old_wl_ids;
         INFO_REUSE_IDX (arg_info) = old_idx;
+        INFO_REUSE_DEC_RC_IDS (arg_info) = old_dec_rc_ids;
         INFO_REUSE_MASK (arg_info) = old_mask;
     }
 #endif
@@ -276,7 +322,8 @@ ReuseLet (node *arg_node, node *arg_info)
                 && (strcmp (ID_NAME (arg1), IDS_NAME (INFO_REUSE_IDX (arg_info))) == 0)
                 && (NODE_TYPE (arg2) == N_id)
                 && (CompareTypes (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)))
-                    == 0)) {
+                    == 0)
+                && (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info)))) {
                 DFMSetMaskEntrySet (INFO_REUSE_MASK (arg_info), ID_NAME (arg2), NULL);
             }
             traverse = 0;
@@ -289,7 +336,8 @@ ReuseLet (node *arg_node, node *arg_info)
             if ((NODE_TYPE (arg1) == N_id) && (strcmp (ID_NAME (arg1), idx_psi_name) == 0)
                 && (NODE_TYPE (arg2) == N_id)
                 && (CompareTypes (ID_TYPE (arg2), IDS_TYPE (INFO_REUSE_WL_IDS (arg_info)))
-                    == 0)) {
+                    == 0)
+                && (IsFound (ID_NAME (arg2), INFO_REUSE_DEC_RC_IDS (arg_info)))) {
                 DFMSetMaskEntrySet (INFO_REUSE_MASK (arg_info), ID_NAME (arg2), NULL);
             }
             FREE (idx_psi_name);
@@ -333,7 +381,7 @@ ReuseId (node *arg_node, node *arg_info)
  *   node *GetReuseArrays( node *syntax_tree, node *fundef, ids *wl_ids)
  *
  * description:
- *
+ *   starts the traversal to search for reuseable arrays.
  *
  ******************************************************************************/
 
