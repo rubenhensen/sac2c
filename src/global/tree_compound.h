@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.18  1999/09/10 14:24:39  jhs
+ * Added some DO_OR_WHILE_xxx macros to access both type of loops with one
+ * type of macro.
+ *
  * Revision 2.17  1999/09/01 12:40:34  sbs
  * typo corrected
  *
@@ -608,6 +612,8 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
     (NODE_TYPE (n) == N_assign ? ASSIGN_NEXT (n)                                         \
                                : (NODE_TYPE (n) == N_block ? BLOCK_INSTR (n) : NULL))
 
+/*--------------------------------------------------------------------------*/
+
 /*
  * CAUTION: Do not use the following macros as l-values!!!
  *          (this is *no* ANSI C style!)
@@ -629,29 +635,32 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
 #define VARDEC_OR_ARG_NAIVE_REFCNT(n)                                                    \
     ((NODE_TYPE (n) == N_arg) ? ARG_NAIVE_REFCNT (n) : VARDEC_NAIVE_REFCNT (n))
 
-#define L_VARDEC_OR_ARG_REFCNT(n, r)                                                     \
+#define L_VARDEC_OR_ARG_REFCNT(n, rhs)                                                   \
     if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_REFCNT (n) = (r);                                                            \
+        ARG_REFCNT (n) = (rhs);                                                          \
     } else {                                                                             \
-        VARDEC_REFCNT (n) = (r);                                                         \
+        VARDEC_REFCNT (n) = (rhs);                                                       \
     }
-#define L_VARDEC_OR_ARG_NAIVE_REFCNT(n, r)                                               \
+
+#define L_VARDEC_OR_ARG_NAIVE_REFCNT(n, rhs)                                             \
     if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_NAIVE_REFCNT (n) = (r);                                                      \
+        ARG_NAIVE_REFCNT (n) = (rhs);                                                    \
     } else {                                                                             \
-        VARDEC_NAIVE_REFCNT (n) = (r);                                                   \
+        VARDEC_NAIVE_REFCNT (n) = (rhs);                                                 \
     }
-#define SET_VARDEC_OR_ARG_COLCHN(n, r)                                                   \
+
+#define SET_VARDEC_OR_ARG_COLCHN(n, rhs)                                                 \
     if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_COLCHN (n) = (r);                                                            \
+        ARG_COLCHN (n) = (rhs);                                                          \
     } else {                                                                             \
-        VARDEC_COLCHN (n) = (r);                                                         \
+        VARDEC_COLCHN (n) = (rhs);                                                       \
     }
-#define SET_VARDEC_OR_ARG_ACTCHN(n, r)                                                   \
+
+#define SET_VARDEC_OR_ARG_ACTCHN(n, rhs)                                                 \
     if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_ACTCHN (n) = (r);                                                            \
+        ARG_ACTCHN (n) = (rhs);                                                          \
     } else {                                                                             \
-        VARDEC_ACTCHN (n) = (r);                                                         \
+        VARDEC_ACTCHN (n) = (rhs);                                                       \
     }
 
 /*--------------------------------------------------------------------------*/
@@ -1305,6 +1314,91 @@ extern node *AppendExprs (node *exprs1, node *exprs2);
 #define WHILE_USEMASK(n) (BLOCK_USEMASK (WHILE_BODY (n)))
 #define WHILE_TERMMASK(n) (WHILE_MASK (n, 1))
 #define WHILE_INSTR(n) (BLOCK_INSTR (WHILE_BODY (n)))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_do :  *and*  N_while :
+ ***/
+
+/*
+ *  compound access macros
+ *  (right hand use only, left hand macros see below)
+ */
+
+#define DO_OR_WHILE_COND(n) ((NODE_TYPE (n) == N_do) ? DO_COND (n) : WHILE_COND (n))
+#define DO_OR_WHILE_BODY(n) ((NODE_TYPE (n) == N_do) ? DO_BODY (n) : WHILE_BODY (n))
+#define DO_OR_WHILE_USEVARS(n)                                                           \
+    ((NODE_TYPE (n) == N_do) ? DO_USEVARS (n) : WHILE_USEVARS (n))
+#define DO_OR_WHILE_DEFVARS(n)                                                           \
+    ((NODE_TYPE (n) == N_do) ? DO_DEFVARS (n) : WHILE_DEFVARS (n))
+#define DO_OR_WHILE_NAIVE_USEVARS(n)                                                     \
+    ((NODE_TYPE (n) == N_do) ? DO_NAIVE_USEVARS (n) : WHILE_NAIVE_USEVARS (n))
+#define DO_OR_WHILE_NAIVE_DEFVARS(n)                                                     \
+    ((NODE_TYPE (n) == N_do) ? DO_NAIVE_DEFVARS (n) : WHILE_NAIVE_DEFVARS (n))
+#define DO_OR_WHILE_MASK(n, x)                                                           \
+    ((NODE_TYPE (n) == N_do) ? DO_MASK (n, x) : WHILE_MASK (n, x))
+#define DO_OR_WHILE_DEFMASK(n)                                                           \
+    ((NODE_TYPE (n) == N_do) ? DO_DEFMASK (n) : WHILE_DEFMASK (n))
+#define DO_OR_WHILE_USEMASK(n)                                                           \
+    ((NODE_TYPE (n) == N_do) ? DO_USEMASK (n) : WHILE_USEMASK (n))
+#define DO_OR_WHILE_TERMMASK(n)                                                          \
+    ((NODE_TYPE (n) == N_do) ? DO_TERMMASK (n) : WHILE_TERMMASK (n))
+#define DO_OR_WHILE_INSTR(n) ((NODE_TYPE (n) == N_do) ? DO_INSTR (n) : WHILE_INSTR (n))
+
+/*
+ *  compound set macros
+ *  (left hand use only, right hand macros see above)
+ */
+
+#define L_DO_OR_WHILE_COND(n, rhs)                                                       \
+    if (NODE_TYPE (n) == N_do) {                                                         \
+        DO_COND (n) = (rhs);                                                             \
+    } else {                                                                             \
+        WHILE_COND (n) = (rhs);                                                          \
+    }
+
+#define L_DO_OR_WHILE_BODY(n, rhs)                                                       \
+    if (NODE_TYPE (n) == N_do) {                                                         \
+        DO_BODY (n) = (rhs);                                                             \
+    } else {                                                                             \
+        WHILE_BODY (n) = (rhs);                                                          \
+    }
+
+#define L_DO_OR_WHILE_USEVARS(n, rhs)                                                    \
+    if (NODE_TYPE (n) == N_do) {                                                         \
+        DO_USEVARS (n) = (rhs);                                                          \
+    } else {                                                                             \
+        WHILE_USEVARS (n) = (rhs);                                                       \
+    }
+
+#define L_DO_OR_WHILE_DEFVARS(n, rhs)                                                    \
+    if (NODE_TYPE (n) == N_do) {                                                         \
+        DO_DEFVARS (n) = (rhs);                                                          \
+    } else {                                                                             \
+        WHILE_DEFVARS (n) = (rhs);                                                       \
+    }
+
+#define L_DO_OR_WHILE_NAIVE_USEVARS(n, rhs)                                              \
+    if (NODE_TYPE (n) == N_do) {                                                         \
+        DO_NAIVE_USEVARS (n) = (rhs);                                                    \
+    } else {                                                                             \
+        WHILE_NAIVE_USEVARS (n) = (rhs);                                                 \
+    }
+
+#define L_DO_OR_WHILE_NAIVE_DEFVARS(n, rhs)                                              \
+    if (NODE_TYPE (n) == N_do) {                                                         \
+        DO_NAIVE_DEFVARS (n) = (rhs);                                                    \
+    } else {                                                                             \
+        WHILE_NAIVE_DEFVARS (n) = (rhs);                                                 \
+    }
+
+#define L_DO_OR_WHILE_INSTR(n, rhs)                                                      \
+    if (NODE_TYPE (n) == N_do) {                                                         \
+        DO_INSTR (n) = (rhs);                                                            \
+    } else {                                                                             \
+        WHILE_INSTR (n) = (rhs);                                                         \
+    }
 
 /*--------------------------------------------------------------------------*/
 
