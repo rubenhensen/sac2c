@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/11/25 11:57:33  skt
+ * kicked ST_generic
+ *
  * Revision 1.11  2004/11/25 01:01:07  skt
  * code brushing during SACDevCampDK 2k4
  *
@@ -44,7 +47,7 @@
  ***   applied to the syntax tree before running type inference.
  ***   The main entry function is
  ***
- ***            node *ProfileFunCalls( node *arg_node)   .
+ ***            node *PFdoProfileFunCalls( node *arg_node)   .
  ***
  ***
  *** Some implementation remarks:
@@ -235,13 +238,6 @@ Fundef2FunTypeMask (node *fundef)
     if (FUNDEF_ISINLINE (fundef)) {
         funtypemask = funtypemask | INL_FUN;
     }
-    /*  if ((FUNDEF_STATUS( fundef) == ST_imported_mod) ||
-        (FUNDEF_STATUS( fundef) == ST_imported_class)) {
-      funtypemask = funtypemask | LIB_FUN;
-      }*//*HERE*/
-    /*if (FUNDEF_ATTRIB( fundef) == ST_generic) {
-      funtypemask = funtypemask | OVRLD_FUN;
-      }*/
 
     DBUG_RETURN (funtypemask);
 }
