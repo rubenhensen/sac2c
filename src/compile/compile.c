@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/04/24 14:18:53  hw
+ * Revision 1.19  1995/04/24 18:08:06  hw
+ * - renamed CompWhile to CompLoop
+ * -compilation of N_do done
+ * - refcount after KS_ASSIGN_ARRAY is set corectly
+ *
+ * Revision 1.18  1995/04/24  14:18:53  hw
  * - CompWhile & CompCond inserted
  * - changed refcount-parameter of ND_ALLOC_ARRAY if it is used with
  *   ND_CHECK_REUSE
@@ -88,6 +93,7 @@ extern int malloc_verify ();
 extern int malloc_debug (int level);
 
 #define DUMMY_NAME "__OUT_"
+#define LABEL_NAME "__Label"
 
 #define MAKE_ICM_ARG(var, new_node)                                                      \
     var = MakeNode (N_exprs);                                                            \
@@ -191,7 +197,15 @@ extern int malloc_debug (int level);
         arg_node = arg_info->node[1]->node[0];                                           \
     }
 
-#define DEC_RC_ND(array, num_node) /* create ND_DEC_RC */                                \
+#define DEC_OR_FREE_RC_ND(array, num_node)                                               \
+    if (1 < num_node->info.cint) { /* create ND_DEC_RC */                                \
+        CREATE_2_ARY_ICM (next_assign, "ND_DEC_RC", array, num_node);                    \
+        APPEND_ASSIGNS (first_assign, next_assign);                                      \
+    } else {                                                                             \
+        DEC_RC_FREE_ND (array, num_node);                                                \
+    }
+
+#define DEC_RC_ND(array, num_node)                                                       \
     CREATE_2_ARY_ICM (next_assign, "ND_DEC_RC", array, num_node);                        \
     APPEND_ASSIGNS (first_assign, next_assign)
 
@@ -316,10 +330,14 @@ extern int malloc_debug (int level);
 #define FREE_TREE(a)
 #define FREE_IDS(a)
 #endif
+
+static int label_nr = 0;
+
 /*
  *
- *  functionname  : GenDummyName
+ *  functionname  : GenName
  *  arguments     : 1) number of variable
+ *                  2) name
  *  description   :
  *  global vars   :
  *  internal funs :
@@ -329,14 +347,14 @@ extern int malloc_debug (int level);
  *
  */
 char *
-GenDummyName (int i)
+GenName (int i, char *name)
 {
     char *new_name;
 
-    DBUG_ENTER ("GenDummyName");
+    DBUG_ENTER ("GenName");
 
-    new_name = (char *)Malloc (sizeof (char) * (strlen (DUMMY_NAME) + 3));
-    sprintf (new_name, DUMMY_NAME "%d", i);
+    new_name = (char *)Malloc (sizeof (char) * (strlen (name) + 3));
+    sprintf (new_name, "%s%d", name, i);
 
     DBUG_RETURN (new_name);
 }
@@ -872,7 +890,7 @@ CompPrf (node *arg_node, node *arg_info)
 
             MAKENODE_NUM (n_node, 1);
             if (0 == array_is_const) {
-                DEC_RC_ND (arg2, n_node);
+                DEC_OR_FREE_RC_ND (arg2, n_node);
                 INC_RC_ND (res, res_ref);
             }
             if ((NULL != last_assign) && (0 == array_is_const)) {
@@ -905,8 +923,16 @@ CompPrf (node *arg_node, node *arg_info)
                 } else {
                     MAKENODE_ID_REUSE_IDS (res, arg_info->IDS);
                     BIN_ICM_REUSE (arg_info->node[1], "ND_KS_ASSIGN_ARRAY", arg2, res);
-                    old_arg_node = arg_node;
-                    arg_node = arg_info->node[1]->node[0];
+                    SET_VARS_FOR_MORE_ICMS;
+                    if (res->IDS_REFCNT > 1) {
+                        MAKENODE_NUM (n_node, res->IDS_REFCNT - 1);
+                        INC_RC_ND (res, n_node);
+                        INSERT_ASSIGN;
+                    } else if (0 == res->IDS_REFCNT) {
+                        MAKENODE_NUM (n_node, 1);
+                        DEC_OR_FREE_RC_ND (res, n_node);
+                        INSERT_ASSIGN;
+                    }
                     FREE (old_arg_node);
                 }
             }
@@ -1366,10 +1392,10 @@ CompId (node *arg_node, node *arg_info)
 
             BIN_ICM_REUSE (arg_info->node[1], "ND_KS_ASSIGN_ARRAY", arg_node, res);
             SET_VARS_FOR_MORE_ICMS;
-            if (1 >= arg_info->IDS_REFCNT) {
+            if (0 == arg_info->IDS_REFCNT) {
                 MAKENODE_NUM (n_node, 1);
                 DEC_RC_FREE_ND (res, n_node);
-            } else {
+            } else if (1 < arg_info->IDS_REFCNT) {
                 MAKENODE_NUM (n_node, arg_info->IDS_REFCNT - 1);
                 INC_RC_ND (res, n_node);
             }
@@ -1672,7 +1698,7 @@ CompFundef (node *arg_node, node *arg_info)
         MAKE_NEXT_ICM_ARG (icm_arg, type_id_node);
         if (NULL == arg_node->node[0]) {
             /* it is an extern declaration */
-            MAKENODE_ID (var_name_node, GenDummyName (i));
+            MAKENODE_ID (var_name_node, GenName (i, DUMMY_NAME));
         } else {
             MAKENODE_ID_REUSE_IDS (var_name_node, return_node->node[0]->IDS);
             return_node = return_node->node[1];
@@ -1720,7 +1746,7 @@ CompFundef (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  : CompWhile
+ *  functionname  : CompLoop
  *  arguments     : 1) arg node
  *                  2) info node
  *  description   :
@@ -1733,16 +1759,16 @@ CompFundef (node *arg_node, node *arg_info)
  *
  */
 node *
-CompWhile (node *arg_node, node *arg_info)
+CompLoop (node *arg_node, node *arg_info)
 {
-    node *first_assign, *next_assign, *icm_arg, *n_node, *tmp, *v1, *v2,
-      *dummy_assign = NULL, *V1, *V2, *while_assign;
+    node *first_assign, *next_assign, *icm_arg, *n_node, *tmp, *v1, *v2, *label,
+      *dummy_assign = NULL, *V1, *V2, *loop_assign;
     int found;
 
     DBUG_ENTER ("CompWhile");
 
-    /* first compile termination condition and body of while loop */
-    while_assign = arg_info->node[0];
+    /* first compile termination condition and body of loop */
+    loop_assign = arg_info->node[0];
     arg_node->node[0] = Trav (arg_node->node[0], arg_info);
     arg_node->node[1] = Trav (arg_node->node[1], arg_info);
 
@@ -1794,6 +1820,12 @@ CompWhile (node *arg_node, node *arg_info)
             v2 = v2->node[0];
         }
     }
+    if (N_do == arg_node->nodetype) {
+        label_nr++;
+        MAKENODE_ID (label, GenName (label_nr, LABEL_NAME));
+        CREATE_1_ARY_ICM (next_assign, "ND_LABEL", label);
+        APPEND_ASSIGNS (first_assign, next_assign);
+    }
 
     /* now insert INC's and DEC's at beginning of the loop */
     if (NULL != dummy_assign->node[1]) {
@@ -1809,6 +1841,7 @@ CompWhile (node *arg_node, node *arg_info)
     v2 = V2;
     if (NULL != v1) {
         first_assign = dummy_assign; /* will be used in some macros */
+        MAKENODE_NUM (n_node, 1);
         if (NULL != v2) {
             node *v2_tmp;
             while (NULL != v1) {
@@ -1822,23 +1855,13 @@ CompWhile (node *arg_node, node *arg_info)
                         v2_tmp = v2_tmp->node[0];
 
                 if (0 == found) {
-                    MAKENODE_NUM (n_node, v1->refcnt);
-                    if (1 < v1->refcnt) {
-                        DEC_RC_ND (v1, n_node);
-                    } else {
-                        DEC_RC_FREE_ND (v1, n_node);
-                    }
+                    DEC_OR_FREE_RC_ND (v1, n_node);
                 }
                 v1 = v1->node[0];
             }
         } else
             while (NULL != v1) {
-                MAKENODE_NUM (n_node, v1->refcnt);
-                if (1 < v1->refcnt) {
-                    DEC_RC_ND (v1, n_node);
-                } else {
-                    DEC_RC_FREE_ND (v1, n_node);
-                }
+                DEC_OR_FREE_RC_ND (v1, n_node);
                 v1 = v1->node[0];
             }
     }
@@ -1855,12 +1878,24 @@ CompWhile (node *arg_node, node *arg_info)
 
     if (NULL != dummy_assign->node[1]) {
         /* now put dummy_assign->node[1] behind while_loop */
-        first_assign->node[1] = while_assign->node[1];
+        first_assign->node[1] = loop_assign->node[1];
         first_assign->nnode = 2;
-        while_assign->node[1] = dummy_assign->node[1];
+        loop_assign->node[1] = dummy_assign->node[1];
     }
-
     FREE (dummy_assign);
+
+    if (N_do == arg_node->nodetype) {
+        /* put N_icm 'ND_GOTO', in front of N_do node */
+        CREATE_1_ARY_ICM (first_assign, "ND_GOTO", label);
+        first_assign->node[1] = loop_assign->node[1];
+        first_assign->nnode = 2;
+        first_assign->node[2] = loop_assign->node[0]; /* only temporary used */
+        loop_assign->node[0] = first_assign->node[0];
+        loop_assign->node[1] = first_assign;
+        arg_node = first_assign->node[0];
+        first_assign->node[0] = first_assign->node[2];
+        first_assign->node[2] = NULL;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1902,11 +1937,7 @@ CompCond (node *arg_node, node *arg_info)
                 MAKENODE_NUM (n_node, id_node->refcnt);
                 DBUG_PRINT ("COMP", ("%d:create DEC_RC(%s, %d)", i, id_node->IDS_ID,
                                      id_node->refcnt));
-                if (1 < id_node->refcnt) {
-                    DEC_RC_ND (id_node, n_node);
-                } else {
-                    DEC_RC_FREE_ND (id_node, n_node);
-                }
+                DEC_OR_FREE_RC_ND (id_node, n_node);
                 id_node = id_node->node[0];
             } while (NULL != id_node);
             first_assign->node[1] = arg_node->node[i + 1]->node[0];
