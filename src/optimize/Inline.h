@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/03/21 17:49:56  dkr
+ * INLvardec, INLarg removed
+ *
  * Revision 3.1  2000/11/20 18:00:31  sacbase
  * new release made
  *
@@ -29,27 +32,23 @@
  * added SearchDecl and removed SetDeclPtr
  *
  * Revision 1.2  1995/06/02  11:29:35  asi
- * Added Inline, INLfundef, INLblock, INLassign, RenameInlinedVar, SetDeclPtr and INLvar.
+ * Added Inline, INLfundef, INLblock, INLassign, RenameInlinedVar,
+ * SetDeclPtr and INLvar.
  *
  * Revision 1.1  1995/05/26  14:22:18  asi
  * Initial revision
  *
- *
  */
 
-#ifndef _Inline_h
-
-#define _Inline_h
+#ifndef _Inline_h_
+#define _Inline_h_
 
 extern node *Inline (node *arg_node, node *arg_info);
 extern node *InlineSingleApplication (node *let_node, node *fundef_node);
+extern char *CreateInlineName (char *old_name);
 
 extern node *INLmodul (node *arg_node, node *arg_info);
 extern node *INLfundef (node *arg_node, node *arg_info);
 extern node *INLassign (node *arg_node, node *arg_info);
-extern node *INLarg (node *arg_node, node *arg_info);
-extern node *INLvardec (node *arg_node, node *arg_info);
 
-extern char *RenameInlinedVar (char *old_name);
-
-#endif /* _Inline_h */
+#endif /* _Inline_h_ */
