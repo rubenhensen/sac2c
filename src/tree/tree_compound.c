@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.28  2000/10/27 02:29:25  dkr
+ * bug in GetTypes_Line fixed: condition for ABORT is no longer missing
+ *
  * Revision 1.27  2000/10/27 00:06:07  dkr
  * Type2Shpseg and Type2Exprs added,
  * some code brushing done.
@@ -423,8 +426,10 @@ GetTypes_Line (types *type, int line)
         }
 
         if (line > 0) {
-            ABORT (line, ("type '%s' is unknown",
-                          ModName (TYPES_MOD (type), TYPES_NAME (type))));
+            if (tdef == NULL) {
+                ABORT (line, ("type '%s' is unknown",
+                              ModName (TYPES_MOD (type), TYPES_NAME (type))));
+            }
         } else {
             DBUG_ASSERT ((tdef != NULL), "typedef not found!");
         }
