@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.15  1999/02/09 20:04:26  dkr
+# make deps done
+#
 # Revision 1.14  1999/01/14 13:16:19  sacbase
 # clean: rm sac2crc    added
 #
@@ -89,6 +92,9 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
+libsac_cachesim.o: /usr/include/memory.h /usr/include/stdio.h
+libsac_cachesim.o: /usr/include/sys/feature_tests.h
+libsac_cachesim.o: /usr/include/sys/va_list.h sac_cachesim.h
 libsac_malloc.o: /usr/include/malloc.h /usr/include/stdio.h
 libsac_malloc.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
 libsac_malloc.o: sac_message.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.36  1999/02/09 20:04:22  dkr
+# make deps done
+#
 # Revision 1.35  1998/11/04 18:22:35  dkr
 # make deps done
 #
@@ -209,6 +212,7 @@ readsib.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 readsib.o: /usr/include/malloc.h ../global/internal_lib.h
 readsib.o: ../global/traverse.h import.h ../scanparse/scnprs.h
 readsib.o: ../global/resource.h ../scanparse/y.tab.h filemgr.h cccall.h
+readsib.o: ../typecheck/gen_pseudo_fun.h
 writesib.o: /usr/include/string.h /usr/include/sys/feature_tests.h
 writesib.o: ../global/types.h ../global/tree_basic.h
 writesib.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h

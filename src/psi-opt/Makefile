@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.21  1999/02/09 20:04:24  dkr
+# make deps done
+#
 # Revision 1.20  1999/01/15 15:29:01  cg
 # added compilation of file tile_size_inference.c
 #
@@ -104,8 +107,9 @@ ArrayElimination.o: ../typecheck/typecheck.h ../global/free.h
 ArrayElimination.o: /usr/include/malloc.h ../global/internal_lib.h
 ArrayElimination.o: ../optimize/DupTree.h ../global/tree.h
 ArrayElimination.o: ../global/tree_basic.h ../global/tree_compound.h
-ArrayElimination.o: ../optimize/optimize.h ../optimize/Inline.h
-ArrayElimination.o: ../optimize/LoopInvariantRemoval.h ArrayElimination.h
+ArrayElimination.o: ../optimize/optimize.h ../optimize/generatemasks.h
+ArrayElimination.o: ../optimize/Inline.h ../optimize/LoopInvariantRemoval.h
+ArrayElimination.o: ArrayElimination.h
 index.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 index.o: /usr/include/sys/va_list.h /usr/include/string.h ../../inc/dbug.h
 index.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
@@ -120,3 +124,12 @@ psi-opt.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
 psi-opt.o: ../global/Error.h /usr/include/string.h ../global/globals.h
 psi-opt.o: ../global/internal_lib.h ../../inc/dbug.h ../global/traverse.h
 psi-opt.o: psi-opt.h
+tile_size_inference.o: ../../inc/dbug.h /usr/include/stdio.h
+tile_size_inference.o: /usr/include/sys/feature_tests.h
+tile_size_inference.o: /usr/include/sys/va_list.h ../global/types.h
+tile_size_inference.o: ../global/tree_basic.h ../global/tree_compound.h
+tile_size_inference.o: ../global/Error.h /usr/include/string.h
+tile_size_inference.o: /usr/include/stdlib.h ../global/globals.h
+tile_size_inference.o: ../global/traverse.h ../global/free.h
+tile_size_inference.o: ../global/my_debug.h /usr/include/malloc.h
+tile_size_inference.o: ../global/internal_lib.h

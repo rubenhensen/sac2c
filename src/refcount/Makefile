@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.15  1999/02/09 20:04:24  dkr
+# make deps done
+#
 # Revision 1.14  1998/05/12 14:22:24  dkr
 # make deps done
 #
@@ -76,4 +79,4 @@ refcount.o: ../global/globals.h ../global/internal_lib.h ../global/my_debug.h
 refcount.o: ../../inc/dbug.h ../optimize/DupTree.h ../typecheck/typecheck.h
 refcount.o: ../optimize/DataFlowMask.h ../global/traverse.h
 refcount.o: ../optimize/optimize.h ../global/free.h /usr/include/malloc.h
-refcount.o: refcount.h
+refcount.o: ../optimize/generatemasks.h refcount.h

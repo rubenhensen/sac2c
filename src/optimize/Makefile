@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.57  1999/02/09 20:04:21  dkr
+# make deps done
+#
 # Revision 1.56  1999/01/26 15:37:22  sbs
 # -DNEWTREE eliminated from CFLAGS
 #
@@ -273,6 +276,13 @@ WorkReduction.o: /usr/include/string.h ../global/globals.h
 WorkReduction.o: ../global/internal_lib.h ../../inc/dbug.h
 WorkReduction.o: ../global/my_debug.h ../global/traverse.h optimize.h
 WorkReduction.o: ../global/free.h /usr/include/malloc.h WorkReduction.h
+freemasks.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+freemasks.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+freemasks.o: /usr/include/string.h ../global/tree.h ../global/types.h
+freemasks.o: ../global/tree_basic.h ../global/tree_compound.h
+freemasks.o: ../global/Error.h ../global/globals.h ../global/internal_lib.h
+freemasks.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
+freemasks.o: /usr/include/malloc.h ../global/traverse.h
 generatemasks.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 generatemasks.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 generatemasks.o: /usr/include/string.h ../global/tree.h ../global/types.h
@@ -291,16 +301,7 @@ optimize.o: ../global/tree_basic.h ../global/tree_compound.h
 optimize.o: ../global/Error.h ../global/globals.h ../global/internal_lib.h
 optimize.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
 optimize.o: /usr/include/malloc.h ../global/traverse.h ../print/print.h
-optimize.o: optimize.h generatemasks.h ConstantFolding.h DeadCodeRemoval.h
-optimize.o: DeadFunctionRemoval.h LoopInvariantRemoval.h Inline.h Unroll.h
-optimize.o: Unswitch.h ../psi-opt/ArrayElimination.h CSE.h WithloopFolding.h
-tutu.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-tutu.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
-tutu.o: /usr/include/string.h ../global/tree.h ../global/types.h
-tutu.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
-tutu.o: ../global/globals.h ../global/internal_lib.h ../global/free.h
-tutu.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
-tutu.o: ../global/traverse.h ../print/print.h optimize.h generatemasks.h
-tutu.o: ConstantFolding.h DeadCodeRemoval.h LoopInvariantRemoval.h Inline.h
-tutu.o: Unroll.h Unswitch.h ../psi-opt/ArrayElimination.h CSE.h
-tutu.o: WithloopFolding.h
+optimize.o: ../print/convert.h optimize.h generatemasks.h freemasks.h
+optimize.o: ConstantFolding.h DeadCodeRemoval.h DeadFunctionRemoval.h
+optimize.o: LoopInvariantRemoval.h Inline.h Unroll.h Unswitch.h
+optimize.o: ../psi-opt/ArrayElimination.h CSE.h WithloopFolding.h

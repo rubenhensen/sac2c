@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.31  1999/02/09 20:04:21  dkr
+# make deps done
+#
 # Revision 1.30  1998/11/04 18:22:33  dkr
 # make deps done
 #
@@ -134,20 +137,23 @@ gen_pseudo_fun.o: /usr/include/sys/va_list.h ../global/types.h
 gen_pseudo_fun.o: ../global/tree_basic.h ../global/tree.h
 gen_pseudo_fun.o: ../global/tree_compound.h ../global/Error.h
 gen_pseudo_fun.o: /usr/include/string.h ../global/globals.h
-gen_pseudo_fun.o: ../global/internal_lib.h typecheck.h gen_pseudo_fun.h
+gen_pseudo_fun.o: ../global/internal_lib.h ../global/free.h
+gen_pseudo_fun.o: ../global/my_debug.h /usr/include/malloc.h typecheck.h
+gen_pseudo_fun.o: gen_pseudo_fun.h
 prim_fun.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-prim_fun.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
-prim_fun.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
-prim_fun.o: /usr/include/sys/va_list.h /usr/include/string.h
-prim_fun.o: ../global/globals.h ../global/internal_lib.h prim_fun.h
-prim_fun.o: ../../inc/dbug.h ../global/my_debug.h typecheck.h
+prim_fun.o: ../global/globals.h ../global/types.h /usr/include/stdio.h
+prim_fun.o: /usr/include/sys/va_list.h ../global/tree.h
+prim_fun.o: ../global/tree_basic.h ../global/tree_compound.h
+prim_fun.o: ../global/Error.h /usr/include/string.h ../global/internal_lib.h
+prim_fun.o: prim_fun.h ../../inc/dbug.h ../global/my_debug.h typecheck.h
 prim_fun.o: ../global/access_macros.h ../print/convert.h ../global/free.h
 prim_fun.o: /usr/include/malloc.h prim_fun_tt.mac prim_fun_ft.mac
 typecheck.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 typecheck.o: /usr/include/stddef.h /usr/include/string.h
 typecheck.o: /usr/include/limits.h /usr/include/sys/isa_defs.h
-typecheck.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
-typecheck.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
+typecheck.o: /usr/include/values.h ../global/tree.h ../global/types.h
+typecheck.o: ../global/tree_basic.h ../global/tree_compound.h
+typecheck.o: ../global/Error.h /usr/include/stdio.h
 typecheck.o: /usr/include/sys/va_list.h ../global/globals.h
 typecheck.o: ../global/internal_lib.h ../print/print.h ../global/my_debug.h
 typecheck.o: ../../inc/dbug.h ../global/traverse.h typecheck.h

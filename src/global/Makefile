@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.70  1999/02/09 20:04:18  dkr
+# make deps done
+#
 # Revision 1.69  1999/01/25 16:26:58  sbs
 # interrupt.[cho] added
 #
@@ -317,6 +320,11 @@ internal_lib.o: /usr/include/sys/va_list.h /usr/include/ctype.h Error.h
 internal_lib.o: /usr/include/stdio.h types.h globals.h free.h
 internal_lib.o: ../../inc/dbug.h my_debug.h /usr/include/malloc.h
 internal_lib.o: internal_lib.h traverse.h tree_compound.h tree_basic.h
+interrupt.o: /usr/include/signal.h /usr/include/sys/feature_tests.h
+interrupt.o: /usr/include/sys/signal.h /usr/include/sys/unistd.h
+interrupt.o: /usr/include/stdio.h /usr/include/sys/va_list.h Error.h
+interrupt.o: /usr/include/string.h /usr/include/stdlib.h types.h globals.h
+interrupt.o: interrupt.h
 main.o: ../../inc/main.h ../../inc/dbug.h /usr/include/stdio.h
 main.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h tree.h
 main.o: types.h tree_basic.h tree_compound.h Error.h /usr/include/string.h
@@ -330,7 +338,7 @@ main.o: ../objects/objinit.h ../modules/analysis.h ../modules/checkdec.h
 main.o: ../objects/objects.h ../objects/uniquecheck.h ../objects/rmvoidfun.h
 main.o: ../compile/wltransform.h ../concurrent/concurrent.h
 main.o: ../compile/precompile.h ../compile/compile.h ../modules/cccall.h
-main.o: ../compile/Old2NewWith.h
+main.o: ../compile/Old2NewWith.h interrupt.h
 my_debug.o: node_info.mac prf_node_info.mac type_info.mac
 resource.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 resource.o: /usr/include/stdio.h /usr/include/sys/va_list.h
@@ -344,10 +352,12 @@ traverse.o: tree_basic.h tree_compound.h Error.h /usr/include/string.h
 traverse.o: globals.h internal_lib.h ../../inc/dbug.h my_debug.h
 traverse.o: ../flatten/flatten.h ../print/print.h ../typecheck/typecheck.h
 traverse.o: ../typecheck/typecheck_WL.h ../optimize/optimize.h free.h
-traverse.o: /usr/include/malloc.h ../optimize/ConstantFolding.h
-traverse.o: ../optimize/DeadCodeRemoval.h ../optimize/LoopInvariantRemoval.h
-traverse.o: ../optimize/CSE.h ../modules/import.h ../optimize/DupTree.h
-traverse.o: ../optimize/Inline.h ../optimize/Unroll.h ../optimize/Unswitch.h
+traverse.o: /usr/include/malloc.h ../optimize/generatemasks.h
+traverse.o: ../optimize/freemasks.h ../optimize/ConstantFolding.h
+traverse.o: ../optimize/DeadCodeRemoval.h ../optimize/DeadFunctionRemoval.h
+traverse.o: ../optimize/LoopInvariantRemoval.h ../optimize/CSE.h
+traverse.o: ../modules/import.h ../optimize/DupTree.h ../optimize/Inline.h
+traverse.o: ../optimize/Unroll.h ../optimize/Unswitch.h
 traverse.o: ../psi-opt/ArrayElimination.h ../psi-opt/index.h
 traverse.o: ../modules/writesib.h ../modules/readsib.h
 traverse.o: ../modules/implicittypes.h ../objects/objinit.h
@@ -362,7 +372,8 @@ traverse.o: ../compile/gen_startup_code.h ../concurrent/scheduling.h
 traverse.o: ../concurrent/concurrent.h ../concurrent/spmd_init.h
 traverse.o: ../concurrent/spmd_opt.h ../concurrent/spmd_lift.h
 traverse.o: ../concurrent/sync_init.h ../concurrent/sync_opt.h
-traverse.o: ../concurrent/schedule.h traverse.h node_info.mac
+traverse.o: ../concurrent/schedule.h ../psi-opt/tile_size_inference.h
+traverse.o: traverse.h node_info.mac
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h tree.h types.h
 tree.o: tree_basic.h tree_compound.h Error.h /usr/include/stdio.h
 tree.o: /usr/include/sys/va_list.h /usr/include/string.h globals.h

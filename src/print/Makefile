@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.31  1999/02/09 20:04:19  dkr
+# make deps done
+#
 # Revision 1.30  1998/06/23 11:42:08  cg
 # make deps done
 #
@@ -121,7 +124,7 @@ print.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
 print.o: ../global/globals.h ../global/internal_lib.h print.h
 print.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h convert.h
 print.o: ../optimize/DataFlowMask.h ../optimize/optimize.h ../global/free.h
-print.o: /usr/include/malloc.h ../modules/filemgr.h
-print.o: ../compile/gen_startup_code.h ../optimize/WithloopFolding.h
-print.o: ../concurrent/scheduling.h ../compile/icm.data
-print.o: ../global/prf_node_info.mac
+print.o: /usr/include/malloc.h ../optimize/generatemasks.h
+print.o: ../modules/filemgr.h ../compile/gen_startup_code.h
+print.o: ../optimize/WithloopFolding.h ../concurrent/scheduling.h
+print.o: ../compile/icm.data ../global/prf_node_info.mac
