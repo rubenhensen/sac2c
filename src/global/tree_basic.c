@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  1998/02/10 14:56:19  dkr
+ * changed MakeWith (node[2] not allocated anymore)
+ *
  * Revision 1.28  1998/02/09 16:06:45  srs
  * changed MakeNWithid
  *
@@ -816,8 +819,6 @@ MakeWith (node *gen, node *operator)
 
     WITH_GEN (tmp) = gen;
     WITH_OPERATOR (tmp) = operator;
-
-    INIT_NODE (tmp->node[2]);
 
     DBUG_PRINT ("MAKENODE", ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp),
                              mdb_nodetype[NODE_TYPE (tmp)], tmp));
