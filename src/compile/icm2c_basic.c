@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2002/07/12 17:36:40  dkr
+ * some spaces in output added
+ *
  * Revision 1.5  2002/07/12 14:34:51  dkr
  * print_comment initialized with 1 now
  *
@@ -314,11 +317,11 @@ VectToOffset2 (char *offset, void *v_any, int v_size, void (*v_size_fun) (void *
                 fprintf (outfile, "}\n");
             } else {
                 INDENT;
-                fprintf (outfile, "SAC__start =");
+                fprintf (outfile, "SAC__start = ");
                 for (i = v_size - 1; i > 0; i--) {
-                    fprintf (outfile, " ( ");
+                    fprintf (outfile, "( ");
                     a_shape_fun (a_any, NULL, i);
-                    fprintf (outfile, " *");
+                    fprintf (outfile, " * ");
                 }
                 v_read_fun (v_any, NULL, i);
                 for (i = 1; i < v_size; i++) {
@@ -341,18 +344,17 @@ VectToOffset2 (char *offset, void *v_any, int v_size, void (*v_size_fun) (void *
             for (i = v_size - 1; i > 0; i--) {
                 fprintf (outfile, "( ");
                 a_shape_fun (a_any, NULL, i);
-                fprintf (outfile, "* ");
+                fprintf (outfile, " * ");
             }
             v_read_fun (v_any, NULL, i);
             for (i = 1; i < v_size; i++) {
-                fprintf (outfile, "+");
+                fprintf (outfile, " + ");
                 v_read_fun (v_any, NULL, i);
-                fprintf (outfile, ") ");
+                fprintf (outfile, " )");
             }
             for (i = v_size; i < a_dim; i++) {
-                fprintf (outfile, "*");
+                fprintf (outfile, " * ");
                 a_shape_fun (a_any, NULL, i);
-                fprintf (outfile, " ");
             }
             fprintf (outfile, ";\n");
         }
