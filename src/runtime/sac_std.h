@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/07/08 12:39:25  cg
+ * New heap manager is now used for array allocation /
+ * de-allocation purposes.
+ *
  * Revision 2.4  1999/06/25 14:50:48  jhs
  * Changed some macros. I had problems with multiple poccurences of ## during
  * expansion of combinated macros. I introduced a Macro called CAT, this solution
@@ -171,7 +175,7 @@
 
 #define SAC_ND_FREE_HIDDEN(name, freefun)                                                \
     freefun (name);                                                                      \
-    SAC_FREE (SAC_ND_A_RCP (name));                                                      \
+    SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_RCP (name), sizeof (int));                          \
     SAC_TR_MEM_PRINT (("ND_FREE_HIDDEN(%s, %s) at addr: %p", #name, #freefun, name));    \
     SAC_TR_DEC_HIDDEN_MEMCNT (1);
 
@@ -184,33 +188,37 @@
 /*
  *  Lock for comment on SECURE_ALLOC_FREE at SAC_ND_ALLOC_ARRAY.
  */
+
 #ifdef SECURE_ALLOC_FREE
+
 #define SAC_ND_FREE_ARRAY(name)                                                          \
     if (SAC_ND_A_SIZE (name) != 0) {                                                     \
-        SAC_FREE (SAC_ND_A_FIELD (name));                                                \
+        SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (name), SAC_ND_A_SIZE (name));            \
     }                                                                                    \
-    SAC_FREE (SAC_ND_A_RCP (name));                                                      \
+    SAC_FREE_FIXED_SIZE (SAC_ND_A_RCP (name), sizeof (int));                             \
     SAC_TR_MEM_PRINT (("ND_FREE_ARRAY(%s) at addr: %p", #name, name));                   \
     SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                      \
     SAC_CS_UNREGISTER_ARRAY (name);
 
 #define SAC_ND_NO_RC_FREE_ARRAY(name)                                                    \
     if (SAC_ND_A_SIZE (name) != 0) {                                                     \
-        SAC_FREE (SAC_ND_A_FIELD (name));                                                \
+        SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (name), SAC_ND_A_SIZE (name));            \
     }                                                                                    \
     SAC_TR_MEM_PRINT (("ND_NO_RC_FREE_ARRAY(%s) at addr: %p", #name, name));             \
     SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                      \
     SAC_CS_UNREGISTER_ARRAY (name);
-#else
+
+#else /* SECURE_ALLOC_FREE */
+
 #define SAC_ND_FREE_ARRAY(name)                                                          \
-    SAC_FREE (SAC_ND_A_FIELD (name));                                                    \
-    SAC_FREE (SAC_ND_A_RCP (name));                                                      \
+    SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (name), SAC_ND_A_SIZE (name));                \
+    SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_RCP (name), sizeof (int));                          \
     SAC_TR_MEM_PRINT (("ND_FREE_ARRAY(%s) at addr: %p", #name, name));                   \
     SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                      \
     SAC_CS_UNREGISTER_ARRAY (name);
 
 #define SAC_ND_NO_RC_FREE_ARRAY(name)                                                    \
-    SAC_FREE (SAC_ND_A_FIELD (name));                                                    \
+    SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_FIELD (name), SAC_ND_A_SIZE (name));                \
     SAC_TR_MEM_PRINT (("ND_NO_RC_FREE_ARRAY(%s) at addr: %p", #name, name));             \
     SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (name));                                      \
     SAC_CS_UNREGISTER_ARRAY (name);
@@ -269,7 +277,8 @@
 #define SAC_ND_KS_COPY_ARRAY(old, new, basetypesize)                                     \
     {                                                                                    \
         int __i;                                                                         \
-        SAC_ND_A_FIELD (new) = SAC_MALLOC (basetypesize * SAC_ND_A_SIZE (old));          \
+        SAC_ND_A_FIELD (new)                                                             \
+          = SAC_HM_MALLOC_FIXED_SIZE (basetypesize * SAC_ND_A_SIZE (old));               \
         SAC_CS_REGISTER_ARRAY (new);                                                     \
         for (__i = 0; __i < SAC_ND_A_SIZE (old); __i++) {                                \
             SAC_ND_WRITE_ARRAY (new, __i) = SAC_ND_READ_ARRAY (old, __i);                \
@@ -304,7 +313,8 @@
  *   Also see ND_CREATE_CONST_ARRAY_S for the creation of scalar arrays.
  */
 
-#define SAC_ND_ALLOC_RC(name) SAC_ND_A_RCP (name) = (int *)SAC_MALLOC (sizeof (int));
+#define SAC_ND_ALLOC_RC(name)                                                            \
+    SAC_ND_A_RCP (name) = (int *)SAC_HM_MALLOC_FIXED_SIZE (sizeof (int));
 
 /*  If SECURE_ALLOC_FREE is defined an extra check wheater the requested size is 0
  *  is done. In that case no call for malloc(0) is executed, but directly NULL set for
@@ -318,8 +328,8 @@
 #define SAC_ND_ALLOC_ARRAY(basetype, name, rc)                                           \
     {                                                                                    \
         if (SAC_ND_A_SIZE (name) != 0) {                                                 \
-            SAC_ND_A_FIELD (name)                                                        \
-              = (basetype *)SAC_MALLOC (sizeof (basetype) * SAC_ND_A_SIZE (name));       \
+            SAC_ND_A_FIELD (name) = (basetype *)SAC_HM_MALLOC_FIXED_SIZE (               \
+              sizeof (basetype) * SAC_ND_A_SIZE (name));                                 \
         } else {                                                                         \
             SAC_ND_A_FIELD (name) = NULL;                                                \
         }                                                                                \
@@ -334,8 +344,8 @@
 #else
 #define SAC_ND_ALLOC_ARRAY(basetype, name, rc)                                           \
     {                                                                                    \
-        SAC_ND_A_FIELD (name)                                                            \
-          = (basetype *)SAC_MALLOC (sizeof (basetype) * SAC_ND_A_SIZE (name));           \
+        SAC_ND_A_FIELD (name) = (basetype *)SAC_HM_MALLOC_FIXED_SIZE (                   \
+          sizeof (basetype) * SAC_ND_A_SIZE (name));                                     \
         SAC_ND_A_RCP (name) = (int *)SAC_MALLOC (sizeof (int));                          \
         SAC_ND_A_RC (name) = rc;                                                         \
         SAC_TR_MEM_PRINT (("ND_ALLOC_ARRAY(%s, %s, %d) at addr: %p", #basetype, #name,   \
@@ -483,7 +493,7 @@
         SAC_TR_REF_PRINT_RC (old);                                                       \
         if (SAC_ND_A_RC (old) == 1) {                                                    \
             SAC_ND_NO_RC_ASSIGN_HIDDEN (old, new);                                       \
-            SAC_FREE (SAC_ND_A_RCP (old));                                               \
+            SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_RCP (old), sizeof (int));                   \
             SAC_TR_MEM_PRINT (("%s is already unique.", old));                           \
         } else {                                                                         \
             SAC_ND_COPY_HIDDEN (old, new, copyfun);                                      \
@@ -498,7 +508,7 @@
         SAC_TR_REF_PRINT_RC (old);                                                       \
         if ((SAC_ND_A_RC (old)) == 1) {                                                  \
             SAC_ND_KS_NO_RC_ASSIGN_ARRAY (old, new);                                     \
-            SAC_FREE (SAC_ND_A_RCP (old));                                               \
+            SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_RCP (old), sizeof (int));                   \
             SAC_TR_MEM_PRINT (("%s is already unique.", old));                           \
         } else {                                                                         \
             SAC_ND_KS_COPY_ARRAY (old, new, basetypesize);                               \
