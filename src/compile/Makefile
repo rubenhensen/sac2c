@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.48  1998/04/20 01:09:31  dkr
+# make deps done
+#
 # Revision 1.47  1998/04/09 23:47:34  dkr
 # make deps done
 #
@@ -209,7 +212,6 @@ compile.o: ../global/tree.h ../global/internal_lib.h ../../inc/dbug.h
 compile.o: ../global/my_debug.h ../global/traverse.h compile.h
 compile.o: ../print/convert.h ../optimize/DupTree.h ../refcount/refcount.h
 compile.o: ../typecheck/typecheck.h ../global/free.h /usr/include/malloc.h
-compile.o: ../global/type_info.mac
 gen_startup_code.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 gen_startup_code.o: /usr/include/sys/va_list.h ../../inc/dbug.h
 gen_startup_code.o: ../global/globals.h ../global/types.h
@@ -233,10 +235,11 @@ precompile.o: /usr/include/stdlib.h ../global/globals.h ../global/free.h
 precompile.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 precompile.o: ../global/internal_lib.h ../print/convert.h
 precompile.o: ../global/traverse.h wlpragma_funs.h ../optimize/DupTree.h
-precompile.o: ../refcount/refcount.h /usr/include/limits.h
-precompile.o: /usr/include/sys/isa_defs.h
+precompile.o: ../typecheck/typecheck.h ../refcount/refcount.h
+precompile.o: /usr/include/limits.h /usr/include/sys/isa_defs.h
 wlpragma_funs.o: ../global/types.h ../global/tree_basic.h ../global/free.h
 wlpragma_funs.o: ../../inc/dbug.h /usr/include/stdio.h
 wlpragma_funs.o: /usr/include/sys/feature_tests.h /usr/include/sys/va_list.h
 wlpragma_funs.o: ../global/my_debug.h /usr/include/malloc.h
-wlpragma_funs.o: ../global/internal_lib.h wlpragma_funs.h
+wlpragma_funs.o: ../global/internal_lib.h ../optimize/DupTree.h precompile.h
+wlpragma_funs.o: wlpragma_funs.h

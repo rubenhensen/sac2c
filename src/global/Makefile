@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.62  1998/04/20 01:09:26  dkr
+# make deps done
+#
 # Revision 1.61  1998/04/03 11:50:48  dkr
 # make deps done
 #
@@ -291,7 +294,7 @@ main.o: resource.h ../scanparse/y.tab.h ../psi-opt/psi-opt.h
 main.o: ../modules/writesib.h ../modules/readsib.h ../modules/implicittypes.h
 main.o: ../objects/objinit.h ../modules/analysis.h ../modules/checkdec.h
 main.o: ../objects/objects.h ../objects/uniquecheck.h ../objects/rmvoidfun.h
-main.o: ../concurrent/concregions.h ../compile/precompile.h
+main.o: ../concurrent/spmdregions.h ../compile/precompile.h
 main.o: ../compile/compile.h ../modules/cccall.h ../compile/Old2NewWith.h
 my_debug.o: tree.h types.h tree_basic.h tree_compound.h Error.h
 my_debug.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
@@ -319,7 +322,7 @@ traverse.o: ../modules/writesib.h ../modules/readsib.h
 traverse.o: ../modules/implicittypes.h ../objects/objinit.h
 traverse.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
 traverse.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
-traverse.o: ../refcount/refcount.h ../concurrent/concregions.h
+traverse.o: ../refcount/refcount.h ../concurrent/spmdregions.h
 traverse.o: ../compile/precompile.h ../compile/compile.h ../modules/cccall.h
 traverse.o: ../compile/Old2NewWith.h ../optimize/WithloopFolding.h
 traverse.o: ../optimize/WLT.h ../optimize/WLI.h ../optimize/WLF.h traverse.h

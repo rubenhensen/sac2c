@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.6  1998/04/20 01:09:36  dkr
+# make deps done
+#
 # Revision 1.5  1998/04/17 17:24:45  dkr
 # concregions.[ch] renamed to spmdregions.[ch]
 #
@@ -48,5 +51,4 @@ spmdregions.o: /usr/include/sys/va_list.h /usr/include/string.h
 spmdregions.o: /usr/include/stdlib.h ../global/globals.h ../global/free.h
 spmdregions.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 spmdregions.o: ../global/internal_lib.h ../global/traverse.h
-spmdregions.o: ../typecheck/typecheck.h ../optimize/optimize.h
-spmdregions.o: ../optimize/DupTree.h spmdregions.h
+spmdregions.o: ../optimize/optimize.h spmdregions.h
