@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.101  2004/11/26 14:55:13  khf
+  added CSE
+
   Revision 1.100  2004/11/26 14:34:14  mwe
   rmcasts added
 
@@ -661,6 +664,23 @@
         <travuser>
           <node name="Id" />
         </travuser>
+      </traversal>
+      <traversal id="CSE" name="Common Subexpression Elimination" default="sons" include="SSACSE.h" >
+	<travuser>
+	  <node name="Fundef" />
+          <node name="Arg" />
+	  <node name="Block" />
+	  <node name="Vardec" />
+	  <node name="Assign" />
+	  <node name="Let" />
+	  <node name="Code" />
+	  <node name="Cond" />
+	  <node name="With" />
+	  <node name="Ap" />
+          <node name="Ids" />
+	  <node name="Id" />
+	  <node name="Return" />
+	</travuser>
       </traversal>
       <traversal id="CVP" name="Constant Variable Propagation" default="sons" include="ConstVarPropagation.h" >
 	<travuser>
