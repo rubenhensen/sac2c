@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2002/04/09 16:35:16  dkr
+ * break specifier added
+ *
  * Revision 3.34  2002/04/03 14:12:36  dkr
  * - some comments added
  * - LiftArg() corrected
@@ -2815,11 +2818,15 @@ Precompile (node *syntax_tree)
     act_tab = precomp1_tab;
     syntax_tree = Trav (syntax_tree, info);
 
-    act_tab = precomp2_tab;
-    syntax_tree = Trav (syntax_tree, info);
+    if (strcmp (break_specifier, "prec1")) {
+        act_tab = precomp2_tab;
+        syntax_tree = Trav (syntax_tree, info);
 
-    act_tab = precomp3_tab;
-    syntax_tree = Trav (syntax_tree, info);
+        if (strcmp (break_specifier, "prec2")) {
+            act_tab = precomp3_tab;
+            syntax_tree = Trav (syntax_tree, info);
+        }
+    }
 
     info = FreeTree (info);
 
