@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/11/25 14:07:36  mwe
+ * unused variables removed
+ *
  * Revision 1.4  2004/11/24 16:33:03  mwe
  * TNT is now activated only after PH_typecheck
  *
@@ -456,8 +459,6 @@ TNTtypedef (node *arg_node, info *arg_info)
     if (TYPEDEF_NEXT (arg_node) != NULL)
         TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
 
-    arg_node = TRAVcont (arg_node, arg_info);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -474,7 +475,7 @@ node *
 TNTfundef (node *arg_node, info *arg_info)
 {
     types *chain;
-    node *ret, *tmp, *tmp2;
+    node *ret;
     DBUG_ENTER ("TNTfundef");
 
     INFO_TNT_FUNDEF (arg_info) = arg_node;
@@ -499,14 +500,7 @@ TNTfundef (node *arg_node, info *arg_info)
 
         chain = FUNDEF_TYPES (arg_node);
 
-        tmp2 = ret = TBmakeRet (TYoldType2Type (chain), NULL);
-        chain = TYPES_NEXT (chain);
-        while (chain != NULL) {
-            tmp = TBmakeRet (TYoldType2Type (chain), NULL);
-            RET_NEXT (tmp2) = tmp;
-            tmp2 = tmp;
-            chain = TYPES_NEXT (chain);
-        }
+        ret = TCreturnTypes2Ret (chain);
 
         FUNDEF_RETS (arg_node) = ret;
     }
