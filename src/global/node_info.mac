@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.53  1995/03/31 15:43:52  hw
- * CompId, CompArg, CompWith, CompArray, CompAp, CompReturn inserted
+ * Revision 1.54  1995/04/03 16:34:48  hw
+ * CompFundef inserted
  *
+;; Revision 1.53  1995/03/31  15:43:52  hw
+;; CompId, CompArg, CompWith, CompArray, CompAp, CompReturn inserted
+;;
 ;; Revision 1.52  1995/03/29  11:58:08  hw
 ;; comp_tab inserted
 ;; N_icm inserted
@@ -199,7 +202,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_implist, "N_implist", DummyFun, DummyFun, PrintImplist, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_fundef, "N_fundef", DummyFun, FltnFundef, PrintFundef, TCfundef, OPTfundef,
-       DEADfundef, DummyFun, FreeInfoType, CFfundef, RCfundef, DummyFun, DummyFun),
+       DEADfundef, DummyFun, FreeInfoType, CFfundef, RCfundef, CompFundef, DummyFun),
   NIF (N_vardec, "N_vardec", DummyFun, DummyFun, PrintVardec, DummyFun, OPTvardec,
        DEADvardec, DummyFun, FreeInfoType, DummyFun, DummyFun, CompVardec, DummyFun),
   NIF (N_block, "N_block", DummyFun, DummyFun, PrintBlock, DummyFun, OPTblock, DEADblock,
