@@ -50,3 +50,4 @@ check.c
 check.h
 check_global.c
 check_lib.c
+check_lib.h
