@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  2004/12/09 16:57:20  sbs
+ * calls to TBmakePart adjusted.
+ *
  * Revision 1.29  2004/12/08 17:59:15  ktr
  * removed ARRAY_TYPE/ARRAY_NTYPE
  *
@@ -528,7 +531,7 @@ CreateNewPart (node *lb, node *ub, node *step, node *width, node *withid, node *
     /* create tree structures */
     genn = TBmakeGenerator (F_le, F_lt, DUPdoDupTree (lb), DUPdoDupTree (ub),
                             DUPdoDupTree (step), DUPdoDupTree (width));
-    partn = TBmakePart (DUPdoDupTree (withid), genn, coden);
+    partn = TBmakePart (coden, DUPdoDupTree (withid), genn);
     CODE_INC_USED (coden);
 
     DBUG_RETURN (partn);
@@ -1011,14 +1014,14 @@ CreateScalarWL (int dim, node *array_shape, simpletype btype, node *expr, node *
       TBmakeAvis (ILIBtmpVar (), TYmakeAKS (TYmakeSimpleType (btype), SHmakeShape (0))));
     vardecs = TBmakeVardec (ID_AVIS (id), vardecs);
 
-    wl = TBmakeWith (TBmakePart (TBmakeWithid (vec_ids, scl_ids),
-                                 TBmakeGenerator (F_le, F_lt,
-                                                  TCcreateZeroVector (dim, T_int),
-                                                  DUPdoDupNode (array_shape), NULL, NULL),
-                                 NULL),
-                     TBmakeCode (TBmakeBlock (TCmakeAssignLet (ID_AVIS (id), expr), NULL),
-                                 TBmakeExprs (id, NULL)),
-                     TBmakeGenarray (DUPdoDupNode (array_shape), NULL));
+    wl
+      = TBmakeWith (TBmakePart (NULL, TBmakeWithid (vec_ids, scl_ids),
+                                TBmakeGenerator (F_le, F_lt,
+                                                 TCcreateZeroVector (dim, T_int),
+                                                 DUPdoDupNode (array_shape), NULL, NULL)),
+                    TBmakeCode (TBmakeBlock (TCmakeAssignLet (ID_AVIS (id), expr), NULL),
+                                TBmakeExprs (id, NULL)),
+                    TBmakeGenarray (DUPdoDupNode (array_shape), NULL));
     CODE_USED (WITH_CODE (wl))++;
     PART_CODE (WITH_PART (wl)) = WITH_CODE (wl);
     WITH_PARTS (wl) = 1;
