@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.203  1998/11/08 13:25:33  dkr
+ * remark about NCODE_CBLOCK corrected
+ *
  * Revision 1.202  1998/08/13 22:20:23  dkr
  * WLNODE_INNERSTEP added
  *
@@ -2917,15 +2920,12 @@ extern node *MakeNWithOp (WithOpType WithOp);
  ***    to calculate each element of the WL. The CEXPR is the pseudo
  ***    return statement of the block.
  ***    In the flatten phase every node unequal N_id is flattened from
- ***    the CEXPR into the CBLOCK. After that we do not have to inspect the
- ***    CEXPR for every reason because we know that the *last let assignment*
- ***    in CBLOCK holds the return statement (CEXPR).
+ ***    the CEXPR into the CBLOCK.
  ***
  ***    The USED component is a reference counter for the NPART_CODE pointer.
  ***    MakeNPart increments it if the code parameter is != NULL,
  ***    FreeNPart decrements it if NPART_CODE is != NULL.
  ***    DupNpart  increments it (implicitly in MakeNPart, see condition above).
- ***
  ***/
 
 extern node *MakeNCode (node *block, node *expr);
