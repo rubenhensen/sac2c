@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.19  1995/07/24 11:56:05  asi
+# Revision 1.20  1995/07/28 13:01:11  asi
+# make deps done
+#
+# Revision 1.19  1995/07/24  11:56:05  asi
 # make deps done
 #
 # Revision 1.18  1995/07/24  11:53:12  asi
@@ -121,7 +124,8 @@ DupTree.o: /usr/include/string.h /usr/include/sys/stdtypes.h ../global/tree.h
 DupTree.o: ../global/type_info.mac ../global/node_info.mac
 DupTree.o: ../global/prf_node_info.mac ../../inc/dbug.h /usr/include/stdio.h
 DupTree.o: ../global/my_debug.h ../global/traverse.h ../typecheck/typecheck.h
-DupTree.o: ../global/internal_lib.h DupTree.h optimize.h Inline.h
+DupTree.o: ../global/internal_lib.h ../global/free.h DupTree.h optimize.h
+DupTree.o: Inline.h
 Inline.o: /usr/include/stdio.h /usr/include/stdlib.h
 Inline.o: /usr/include/sys/stdtypes.h ../global/tree.h
 Inline.o: ../global/type_info.mac ../global/node_info.mac
