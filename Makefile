@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.43  2000/06/13 13:50:11  dkr
+# Old2NewWith.o renamed into PatchWith.o
+#
 # Revision 2.42  2000/06/08 12:46:27  nmw
 # print_interface.o added
 #
@@ -273,7 +276,7 @@ COMPILE=  src/compile/wltransform.o src/compile/wlpragma_funs.o \
           src/compile/compile.o src/compile/gen_startup_code.o \
           src/compile/icm2c.o src/compile/icm2c_std.o src/compile/icm2c_mt.o \
           src/compile/icm2c_wl.o src/compile/ReuseWithArrays.o \
-          src/compile/Old2NewWith.o
+          src/compile/PatchWith.o
 
 OBJ=$(GLOBAL) $(TREE) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) \
     $(MODULES) $(OBJECTS) $(REFCOUNT) $(COMPILE) $(PSIOPT) $(CONCURRENT) \
