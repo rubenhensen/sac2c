@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2004/11/22 14:48:43  ktr
+ * deleted all IDS-Structure SacDevCamp 04
+ *
  * Revision 3.46  2004/11/22 14:42:16  sbs
  * moved from type_errors.h
  *
@@ -428,23 +431,6 @@ typedef struct ACCESS_INFO_T {
     struct NODE *wlarray;
 } access_info_t;
 
-typedef struct IDS {
-    char *id;
-    char *mod;
-    int refcnt;
-    int naive_refcnt;
-    int flag;          /* the flag is used for ids-status */
-                       /* (loop invariant/not loop invariant , ...) */
-    struct NODE *node; /* ptr. to declaration */
-    struct NODE *avis; /* ptr. to common used attribs of vardec/arg */
-    struct NODE *def;  /* ptr. to definition(s) resp. usage(s) */
-    struct NODE *use;  /* ptr. to usage chain (used only if the var */
-                       /* is a one dimensional array! */
-    statustype attrib; /* ref/deref attribute */
-    statustype status; /* regular or artificial */
-    struct IDS *next;
-} ids;
-
 typedef struct TYPESS {
     simpletype simpletype;
     char *name;             /* only used for T_user !! */
@@ -533,7 +519,7 @@ typedef struct {
 } prf_tag;
 
 typedef union {
-    ids *ids;            /* list  of identifiers               */
+    node *ids;           /* list  of identifiers               */
     char *id;            /* identifier                         */
     types *types;        /* type information                   */
     int cint;            /* integer value                      */
