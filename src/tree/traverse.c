@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2004/04/27 12:24:01  skt
+ * some traversal functions for assignmentsrearrange added
+ *
  * Revision 3.52  2004/04/22 14:13:12  skt
  * Added traversal asmra (assigmantrearrange)
  * for mt-mode 3
@@ -255,6 +258,7 @@
 #include "dataflow_analysis.h"
 #include "blocks_propagate.h"
 #include "barriers_init.h"
+#include "assignments_rearrange.h"
 #include "blocks_lift.h"
 #include "adjust_calls.h"
 #include "pad_collect.h"
