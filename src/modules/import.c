@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.21  1995/10/06 17:12:17  cg
+ * Revision 1.22  1995/10/12 13:58:31  cg
+ * analysis structures for implicitly used items are now generated in the form of
+ * nodelists.
+ *
+ * Revision 1.21  1995/10/06  17:12:17  cg
  * calls to MakeIds adjusted to new signature (3 parameters)
  *
  * Revision 1.20  1995/09/29  12:21:30  cg
@@ -88,6 +92,11 @@
 #include <limits.h>
 
 #include "tree.h"
+
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+
 #include "free.h"
 #include "Error.h"
 #include "dbug.h"
@@ -1109,39 +1118,42 @@ AddSymbol (char *name, char *module, int symbkind)
  *                     implicitly used by one of the sib-functions
  *                  2) modul node of program
  *  description   : ensures that the object is declared in the syntax tree.
- *                  If the object is yet unknown, a copy of the objdef node
- *                  is inserted.
+ *                  If the object is yet unknown, the objdef node
+ *                  is inserted. A nodelist of all objects needed by the
+ *                  particular function is generated and returned.
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : MakeNode
+ *  external funs : MakeNodelist
  *  macros        : CMP_OBJDEF
  *
- *  remarks       : The objdef node must be copied since the original one
- *                  is reused as argument information for the respective
- *                  function definition.
+ *  remarks       :
  *
  */
 
-void
+nodelist *
 EnsureExistObjects (node *object, node *modul)
 {
-    node *find_obj, *tmp;
+    node *find_obj, *next;
+    nodelist *objlist = NULL;
 
     DBUG_ENTER ("EnsureExistObjects");
 
     while (object != NULL) {
         find_obj = modul->node[3];
+
         while ((find_obj != NULL) && (!CMP_OBJDEF (object, find_obj))) {
             find_obj = find_obj->node[0];
         }
+
+        next = object->node[0];
+
         if (find_obj == NULL) /* the object does not yet exist */
         {
-            tmp = MakeNode (N_objdef);
-            tmp->TYPES = object->TYPES;
-            tmp->node[0] = modul->node[3];
-            tmp->nnode = (modul->node[3] == NULL) ? 0 : 1;
+            find_obj = object;
+            find_obj->node[0] = modul->node[3];
+            find_obj->nnode = (modul->node[3] == NULL) ? 0 : 1;
 
-            modul->node[3] = tmp;
+            modul->node[3] = find_obj;
 
             /*
                   if (FindModul(object->ID_MOD) == NULL)
@@ -1155,12 +1167,22 @@ EnsureExistObjects (node *object, node *modul)
 
             /* new symbol is added to mod_tab if it's a sac-symbol */
 
-            DBUG_PRINT ("READSIB", ("New object %s:%s inserted.", tmp->ID_MOD, tmp->ID));
+            DBUG_PRINT ("READSIB", ("Implicitly used object %s:%s inserted.",
+                                    find_obj->ID_MOD, find_obj->ID));
+
+        } else {
+            free (object);
+
+            DBUG_PRINT ("READSIB", ("Implicitly used object %s:%s already exists.",
+                                    find_obj->ID_MOD, find_obj->ID));
         }
-        object = object->node[0];
+
+        objlist = MakeNodelist (find_obj, ST_regular, objlist);
+
+        object = next;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (objlist);
 }
 
 /*
@@ -1171,20 +1193,22 @@ EnsureExistObjects (node *object, node *modul)
  *                  2) modul node of program
  *  description   : ensures that the type is declared in the syntax tree.
  *                  If the type is yet unknown, the typedef node
- *                  is inserted.
+ *                  is inserted. A nodelist of all types needed by the
+ *                  particular function is generated and returned.
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : ---
+ *  external funs : MakeNodelist
  *  macros        : CMP_TYPEDEF
  *
  *  remarks       :
  *
  */
 
-void
+nodelist *
 EnsureExistTypes (node *type, node *modul)
 {
     node *find_type, *next;
+    nodelist *typelist = NULL;
 
     DBUG_ENTER ("EnsureExistTypes");
 
@@ -1198,9 +1222,11 @@ EnsureExistTypes (node *type, node *modul)
 
         if (find_type == NULL) /* the type does not yet exist */
         {
-            type->node[0] = modul->node[1];
-            type->nnode = (modul->node[1] == NULL) ? 0 : 1;
-            modul->node[1] = type;
+            find_type = type;
+
+            find_type->node[0] = modul->node[1];
+            find_type->nnode = (modul->node[1] == NULL) ? 0 : 1;
+            modul->node[1] = find_type;
 
             if (type->ID_MOD != NULL) {
                 AddSymbol (type->ID, type->ID_MOD, 1);
@@ -1208,19 +1234,22 @@ EnsureExistTypes (node *type, node *modul)
 
             /* new symbol is added to mod_tab if it's a sac-symbol */
 
-            DBUG_PRINT ("READSIB", ("New type %s:%s inserted.", type->ID_MOD, type->ID));
+            DBUG_PRINT ("READSIB",
+                        ("Implicitly used type %s:%s inserted.", type->ID_MOD, type->ID));
 
         } else {
-            /*
-                  type->nnode=0;
-                  FreeTree(type);
-            */
+            DBUG_PRINT ("READSIB", ("Implicitly used type %s:%s already exists.",
+                                    type->ID_MOD, type->ID));
+
+            free (type);
         }
+
+        typelist = MakeNodelist (find_type, ST_regular, typelist);
 
         type = next;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (typelist);
 }
 
 /*
@@ -1231,24 +1260,27 @@ EnsureExistTypes (node *type, node *modul)
  *                  2) modul node of program
  *  description   : ensures that the function is declared in the syntax tree.
  *                  If the function is yet unknown, the fundef node
- *                  is inserted.
+ *                  is inserted. A nodelist of all functions needed by the
+ *                  particular function is generated and returned.
  *  global vars   : ---
  *  internal funs : ---
- *  external funs : ---
+ *  external funs : MakeNodelist
  *  macros        : CMP_FUNDEF
  *
  *  remarks       :
  *
  */
 
-void
+nodelist *
 EnsureExistFuns (node *fundef, node *modul)
 {
     node *find_fun, *next;
+    nodelist *funlist = NULL;
 
     DBUG_ENTER ("EnsureExistFuns");
 
-    while (fundef != NULL) {
+    while (fundef != NULL) /* search function */
+    {
         find_fun = modul->node[2];
         while ((find_fun != NULL) && (!CMP_FUNDEF (fundef, find_fun))) {
             find_fun = find_fun->node[1];
@@ -1258,9 +1290,14 @@ EnsureExistFuns (node *fundef, node *modul)
 
         if (find_fun == NULL) /* the function does not yet exist */
         {
-            fundef->node[1] = modul->node[2];
-            fundef->nnode = (modul->node[2] == NULL) ? 1 : 2;
-            modul->node[2] = fundef;
+            find_fun = fundef;
+
+            find_fun->node[1] = modul->node[2];
+
+            FUNDEF_NEEDOBJS (find_fun) = EnsureExistObjects (find_fun->node[4], modul);
+
+            find_fun->nnode = (modul->node[2] == NULL) ? 1 : 2;
+            modul->node[2] = find_fun;
 
             /*
                   if (FindModul(fundef->ID_MOD) == NULL)
@@ -1274,20 +1311,22 @@ EnsureExistFuns (node *fundef, node *modul)
 
             /* new symbol is added to mod_tab if it's a sac-symbol */
 
-            DBUG_PRINT ("READSIB",
-                        ("New function %s:%s inserted.", fundef->ID_MOD, fundef->ID));
+            DBUG_PRINT ("READSIB", ("Implicitly used function %s:%s inserted.",
+                                    fundef->ID_MOD, fundef->ID));
 
         } else {
-            /*
-                  fundef->nnode=0;
-                  FreeTree(fundef);
-            */
+            DBUG_PRINT ("READSIB", ("Implicitly used function %s:%s already exists.",
+                                    fundef->ID_MOD, fundef->ID));
+
+            free (fundef);
         }
+
+        funlist = MakeNodelist (find_fun, ST_regular, funlist);
 
         fundef = next;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN (funlist);
 }
 
 /*
@@ -1318,12 +1357,13 @@ IMfundef (node *arg_node, node *arg_info)
 
     if (arg_node->ID_MOD != NULL) {
         sib_entry = FindSibEntry (arg_node);
+
         if (sib_entry != NULL) /* SIB information available */
         {
             if (sib_entry->node[0] == NULL) /* only implicit object information */
             {
-                ObjList2ArgList (sib_entry->node[4]);
-                arg_node->node[4] = sib_entry->node[4];
+                FUNDEF_NEEDOBJS (arg_node)
+                  = EnsureExistObjects (sib_entry->node[4], arg_info);
 
                 DBUG_PRINT ("READSIB",
                             ("Adding implicit object information to function %s:%s",
@@ -1331,20 +1371,22 @@ IMfundef (node *arg_node, node *arg_info)
 
             } else /* function inlining information */
             {
-                arg_node->node[0] = sib_entry->node[0];
-                arg_node->node[2] = sib_entry->node[2];
-                arg_node->node[4] = sib_entry->node[4];
+                arg_node->node[0] = sib_entry->node[0]; /* take body from SIB */
+                arg_node->node[2] = sib_entry->node[2]; /* take args from SIB */
+
+                FUNDEF_NEEDOBJS (arg_node)
+                  = EnsureExistObjects (sib_entry->node[4], arg_info);
+
+                FUNDEF_NEEDTYPES (arg_node)
+                  = EnsureExistTypes (sib_entry->node[3], arg_info);
+
+                FUNDEF_NEEDFUNS (arg_node)
+                  = EnsureExistFuns (sib_entry->node[5], arg_info);
 
                 arg_node->flag = 1; /* inline flag */
 
                 DBUG_PRINT ("READSIB", ("Adding inline information to function %s:%s",
                                         arg_node->ID_MOD, arg_node->ID));
-
-                EnsureExistObjects (sib_entry->node[4], arg_info);
-                EnsureExistTypes (sib_entry->node[3], arg_info);
-                EnsureExistFuns (sib_entry->node[5], arg_info);
-
-                ObjList2ArgList (arg_node->node[4]);
             }
         }
     }
