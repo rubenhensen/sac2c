@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2001/05/14 10:21:20  cg
+ * Added facilities to collect maximum number of schedulers in single
+ * SPMD functions.
+ *
  * Revision 3.54  2001/05/11 14:41:35  cg
  * New ICMs for scheduler initialization are now inserted
  * when setting up environment for multithreaded execution.
@@ -2561,12 +2565,14 @@ COMPFundef (node *arg_node, node *arg_info)
         }
 
         /*
-         * Store collected scheduler information in block node.
+         * Store collected scheduler information.
          */
-        BLOCK_SCHEDULER_NUM (FUNDEF_BODY (arg_node)) = INFO_COMP_SCHEDULERID (arg_info);
-
         BLOCK_SCHEDULER_INIT (FUNDEF_BODY (arg_node))
           = INFO_COMP_SCHEDULERINIT (arg_info);
+
+        if (INFO_COMP_SCHEDULERID (arg_info) > max_schedulers) {
+            max_schedulers = INFO_COMP_SCHEDULERID (arg_info);
+        }
 
         /*
          * Destruction of last known N_sync is done here, all others have been killed
@@ -6135,14 +6141,19 @@ COMPWLsegx (node *arg_node, node *arg_info)
 
     /*
      * Collect initialization ICMs for schedulers.
+     * This is only done for 'real' schedulers, not for the pseudo schedulers
+     * used during sequential execution.
      */
-    INFO_COMP_SCHEDULERINIT (arg_info)
-      = MakeAssign (SCHCompileSchedulingInit (INFO_COMP_SCHEDULERID (arg_info),
-                                              IDS_NAME (wlids),
-                                              WLSEGX_SCHEDULING (arg_node), arg_node),
-                    INFO_COMP_SCHEDULERINIT (arg_info));
+    if (WLSEGX_SCHEDULING (arg_node) != NULL) {
 
-    INFO_COMP_SCHEDULERID (arg_info) += 1;
+        INFO_COMP_SCHEDULERINIT (arg_info)
+          = MakeAssign (SCHCompileSchedulingInit (INFO_COMP_SCHEDULERID (arg_info),
+                                                  IDS_NAME (wlids),
+                                                  WLSEGX_SCHEDULING (arg_node), arg_node),
+                        INFO_COMP_SCHEDULERINIT (arg_info));
+
+        INFO_COMP_SCHEDULERID (arg_info) += 1;
+    }
 
     /*
      * append compilat (assignment-chain) of next segment to 'assigns'
@@ -6834,6 +6845,10 @@ COMPSpmd (node *arg_node, node *arg_info)
     /*
      * Now, build up the arguments for MT_SPMD_SETUP ICM.
      */
+
+    DBUG_ASSERT ((NODE_TYPE (FUNDEF_ICM (SPMD_FUNDEF (arg_node))) == N_icm),
+                 "SPMD function MUST be compiled prior to compilation of "
+                 "corresponding SMPD block.");
 
     num_args = 0;
     icm_args = BLOCK_SPMD_SETUP_ARGS (FUNDEF_BODY (SPMD_FUNDEF (arg_node)));
