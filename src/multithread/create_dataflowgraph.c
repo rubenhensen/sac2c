@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/08/11 08:37:05  skt
+ * output for a compiler stop by 'cdfg' added
+ *
  * Revision 1.4  2004/08/09 03:47:34  skt
  * some very painful bugfixing
  * added support for dataflowgraphs within with-loops
@@ -225,13 +228,10 @@ CDFGblock (node *arg_node, info *arg_info)
     BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
     DBUG_PRINT ("CDFG", ("trav from instruction(s)"));
 
-#if CDFG_DEBUG
-    fprintf (stdout, "A N_block:\n");
-    PrintNode (arg_node);
-    fprintf (stdout, "and its dataflowgraph:\n");
-    PrintDataflowgraph (INFO_CDFG_CURRENTDFG (arg_info));
-    fprintf (stdout, "\n\n");
-#endif
+    if ((break_after == PH_multithread) && (strcmp ("cdfg", break_specifier) == 0)) {
+        PrintNode (arg_node);
+        PrintDataflowgraph (INFO_CDFG_CURRENTDFG (arg_info));
+    }
 
     /* pop info... */
     INFO_CDFG_CURRENTDFG (arg_info) = old_dataflowgraph;
@@ -380,12 +380,13 @@ PrintDataflowgraph (node *dataflowgraph)
     DBUG_ASSERT ((NODE_TYPE (dataflowgraph) == N_dataflowgraph),
                  "PrintDataflowgraph expects a N_dataflowgraph");
 
+    fprintf (stdout, "****** Dataflowgraph begin ******\n");
     member_iterator = DATAFLOWGRAPH_MEMBERS (dataflowgraph);
     while (member_iterator != NULL) {
         PrintDataflownode (NODELIST_NODE (member_iterator));
         member_iterator = NODELIST_NEXT (member_iterator);
     }
-    fprintf (stdout, "\n");
+    fprintf (stdout, "****** Dataflowgraph end ******\n\n");
     DBUG_VOID_RETURN;
 }
 
