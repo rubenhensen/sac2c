@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/11/02 14:55:27  dkr
+ * nothing changed
+ *
  * Revision 2.4  2000/03/02 14:08:39  jhs
  * Added statustype_info.mac for statustype and mdb_statustype.
  *
@@ -88,7 +91,6 @@
  *
  * Revision 1.2  1994/11/10  15:44:34  sbs
  * RCS-header inserted
- *
  *
  */
 
