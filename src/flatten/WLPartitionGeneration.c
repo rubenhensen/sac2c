@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/09/28 11:37:47  khf
+ * changed to new types
+ *
  * Revision 1.18  2004/09/27 14:28:30  khf
  * CreateFullPartition() can now handle AUD modarray WLs
  *
@@ -132,7 +135,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "types.h"
 #include "new_types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -1086,7 +1088,7 @@ CreateZeros (node *array, node **nassigns, node *fundef)
     } else if (dim == 1) {
         zero = CreateZeroVector (SHGetUnrLen (shape), btype);
     } else {
-        node *array_shape;
+        node *array_shape = NULL;
 
         if (TYIsAKV (array_type) || TYIsAKS (array_type)) {
 
@@ -1152,7 +1154,8 @@ CreateArraySel (ids *sel_vec, ids *sel_ids, node *sel_array, node **nassigns,
         sel = MakePrf (F_sel, MakeExprs (DupIds_Id (sel_vec),
                                          MakeExprs (DupNode (sel_array), NULL)));
     } else { /* (len_index < dim_array) */
-        node *new_index, *id, *vardec, *ass, *array_shape;
+        node *new_index, *id, *vardec, *ass;
+        node *array_shape = NULL;
         ids *tmp_ids;
         shape *shape, *mshape;
         simpletype btype;
@@ -1424,8 +1427,8 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
     node *lb, *ub, *lbe, *ube;
     node *code;
     node *tmpn, *assignn, *blockn, *cexpr;
+    node *nassigns = NULL;
     ids *_ids;
-    types *type;
 
     node *res;
 
@@ -1438,7 +1441,7 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
          * First, we change the generator to full scope.
          */
         let_ids = LET_IDS (INFO_WLPG_LET (arg_info));
-        dim = GetDim (IDS_TYPE (let_ids));
+        dim = SHGetDim (TYGetShape (AVIS_TYPE (IDS_AVIS (let_ids))));
         lb = NWITH_BOUND1 (wl);
         ub = NWITH_BOUND2 (wl);
         lbe = ARRAY_AELEMS (lb);
@@ -1482,13 +1485,12 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
                 /* there is no instruction in the block right now. */
                 _ids = NewIds (cexpr, INFO_WLPG_FUNDEF (arg_info));
 
-                /* determine type of expr in the operator (result of body) */
-                tmpn = CreateZeroFromType (ID_TYPE (cexpr), FALSE,
-                                           INFO_WLPG_FUNDEF (arg_info));
+                tmpn = CreateZeros (cexpr, &(nassigns), INFO_WLPG_FUNDEF (arg_info));
 
                 /* replace N_empty with new assignment "_ids = [0,..,0]" */
                 assignn = MakeAssign (MakeLet (tmpn, _ids), NULL);
-                BLOCK_INSTR (blockn) = AppendAssign (BLOCK_INSTR (blockn), assignn);
+                nassigns = AppendAssign (nassigns, assignn);
+                BLOCK_INSTR (blockn) = AppendAssign (BLOCK_INSTR (blockn), nassigns);
 
                 /* set correct backref to defining assignment */
                 AVIS_SSAASSIGN (IDS_AVIS (_ids)) = assignn;
@@ -1506,14 +1508,13 @@ CreateEmptyGenWLReplacement (node *wl, info *arg_info)
                 BLOCK_INSTR (blockn) = FreeTree (BLOCK_INSTR (blockn));
                 LET_EXPR (ASSIGN_INSTR (assignn))
                   = FreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
-                BLOCK_INSTR (blockn) = assignn;
-                _ids = LET_IDS (ASSIGN_INSTR (assignn));
-                type = IDS_TYPE (_ids);
 
-                tmpn = CreateZeroFromType (type, FALSE, INFO_WLPG_FUNDEF (arg_info));
+                tmpn = CreateZeros (cexpr, &(nassigns), INFO_WLPG_FUNDEF (arg_info));
                 NCODE_FLAG (code) = TRUE;
-
                 LET_EXPR (ASSIGN_INSTR (assignn)) = tmpn;
+                nassigns = AppendAssign (nassigns, assignn);
+
+                BLOCK_INSTR (blockn) = nassigns;
             }
         }
         break;
@@ -2200,6 +2201,7 @@ WLPGNgenerator (node *arg_node, info *arg_info)
     node *wln, *f_def, *nassigns;
     ids *let_ids;
     shape *shp;
+    ntype *type;
     bool check_bounds, check_stepwidth;
     gen_prop_t gprop;
     gen_shape_t current_shape, gshape;
@@ -2268,15 +2270,15 @@ WLPGNgenerator (node *arg_node, info *arg_info)
      * find out the generator properties:
      */
     let_ids = LET_IDS (INFO_WLPG_LET (arg_info));
+    type = AVIS_TYPE (IDS_AVIS (let_ids));
 
-    if (GetShapeDim (IDS_TYPE (let_ids)) >= 0) {
-        shp = SHOldTypes2Shape (IDS_TYPE (let_ids));
+    if (TYIsAKS (type)) {
+        shp = TYGetShape (type);
         if (check_bounds
             && ((NWITH_TYPE (wln) == WO_modarray) || (NWITH_TYPE (wln) == WO_genarray))) {
             wln = CropBounds (wln, shp);
         }
         gprop = ComputeGeneratorProperties (wln, shp);
-        shp = SHFreeShape (shp);
     } else {
         gprop = ComputeGeneratorProperties (wln, NULL);
     }
