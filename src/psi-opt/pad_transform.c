@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.7  2001/07/17 15:12:51  cg
+ * Bug fixed: new noop codes introduced by pad_transform are now
+ * annotated with respective array access analysis information.
+ *
  * Revision 3.6  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -447,6 +451,19 @@ AddDummyCode (node *with_node)
 
     /* tag dummy code to identify it in further optimizations */
     NCODE_AP_DUMMY_CODE (code_node) = TRUE;
+
+    /*
+     * Last but not least, we have to build array access analysis data to
+     * annotate the Ncode node with.
+     */
+
+    NCODE_WLAA_INFO (code_node) = MakeInfo ();
+
+    NCODE_WLAA_ACCESS (code_node) = NULL;
+    NCODE_WLAA_ACCESSCNT (code_node) = 0;
+    NCODE_WLAA_FEATURE (code_node) = 0;
+    NCODE_WLAA_WLARRAY (code_node) = NCODE_WLAA_WLARRAY (NWITH_CODE (with_node));
+    NCODE_WLAA_INDEXVAR (code_node) = IDS_VARDEC (NWITH_VEC (with_node));
 
     /* put dummy code at beginning of code-chain (required by AddDummyPart !!!) */
     NCODE_NEXT (code_node) = NWITH_CODE (with_node);
