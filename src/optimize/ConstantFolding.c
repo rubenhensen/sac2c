@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/02/20 16:08:48  dkr
+ * function DupOneTypesOnly_Replace() used instead of DupOneTypesOnly()
+ *
  * Revision 3.17  2002/02/20 14:39:24  dkr
  * function DupTypes() renamed into DupAllTypes()
  *
@@ -980,8 +983,7 @@ CFid (node *arg_node, node *arg_info)
 	VARDEC_DIM(ID_VARDEC(mrd)) = VARDEC_DIM(ID_VARDEC(arg_node));
 	VARDEC_SHPSEG(ID_VARDEC(mrd)) = DupShpseg(VARDEC_SHPSEG(ID_VARDEC(arg_node)));
 #else
-                ID_TYPE (mrd) = FreeAllTypes (ID_TYPE (mrd));
-                ID_TYPE (mrd) = DupAllTypesOnly (ID_TYPE (arg_node));
+                DupOneTypesOnly_Inplace (&(ID_TYPE (mrd)), ID_TYPE (arg_node));
 #endif
             }
 
