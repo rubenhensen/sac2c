@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.146  2004/05/05 15:02:59  ktr
+ * Added support for fourth son of Ncode: NCODE_EPILOGUE and added a few
+ * SSARC functions (SSARCNwith, SSARCNcode, SSARCNwithid)
+ *
  * Revision 3.145  2004/04/30 14:09:30  skt
  * ASMRAwith2 added
  *
@@ -2144,7 +2148,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    */
 
   NIF (N_Nwith, "N_Nwith", TravSons, FltnNwith, PrintNwith, TravSons, GNMwith, DCRNwith,
-       WLFNwith, FreeNWith, CFNwith, RCNwith, TravSons, TravSons, DupNwith, TravSons,
+       WLFNwith, FreeNWith, CFNwith, RCNwith, SSARCNwith, TravSons, DupNwith, TravSons,
        UNRNwith, TravSons, IdxNwith, TravSons, WLINwith, AENwith,
 
        PrintNwith, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, UNQNwith,
@@ -2200,7 +2204,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_Nwithid, "N_Nwithid", TravSons, FltnNwithid, PrintNwithid, TravSons, TravSons,
-       TravSons, TravSons, FreeNWithID, TravSons, RCNwithid, TravSons, TravSons,
+       TravSons, TravSons, FreeNWithID, TravSons, RCNwithid, SSARCNwithid, TravSons,
        DupNwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        PrintNwithid, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -2284,7 +2288,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_Ncode, "N_Ncode", TravSons, FltnNcode, PrintNcode, TCNcode, TravSons, TravSons,
-       WLFNcode, FreeNCode, CFNcode, RCNcode, TravSons, TravSons, DupNcode, TravSons,
+       WLFNcode, FreeNCode, CFNcode, RCNcode, SSARCNcode, TravSons, DupNcode, TravSons,
        TravSons, TravSons, IdxNcode, TravSons, WLINcode, TravSons,
 
        PrintNcode, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -2309,14 +2313,14 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 3),
+       TravSons, TravSons, TravSons, TravSons, 4),
 
   /*
    * here is the node information for the transformed new with-loop
    */
 
   NIF (N_Nwith2, "N_Nwith2", TravSons, TravSons, PrintNwith2, TravSons, GNMwith2,
-       TravSons, TravSons, FreeNwith2, TravSons, RCNwith, TravSons, TravSons, DupNwith2,
+       TravSons, TravSons, FreeNwith2, TravSons, RCNwith, SSARCNwith, TravSons, DupNwith2,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
