@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2002/03/07 20:28:15  dkr
+ * ';' added for SAC_MT_DECL_MYTHREAD
+ *
  * Revision 3.42  2001/11/28 13:58:26  sbs
  * definition of global arrays of length 0 avoided.
  * (required for OSX_MAC).
@@ -616,7 +619,7 @@ typedef union {
 
 #define SAC_MT_MYWORKERCLASS() SAC_MT_myworkerclass
 
-#define SAC_MT_DECL_MYTHREAD() const unsigned int SAC_MT_mythread = 0
+#define SAC_MT_DECL_MYTHREAD() const unsigned int SAC_MT_mythread = 0;
 
 #if 0
 #define SAC_MT_DETERMINE_THREAD_ID()                                                     \
@@ -1261,7 +1264,7 @@ SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
 
 #define SAC_MT_MYTHREAD() 0
 
-#define SAC_MT_DECL_MYTHREAD() const unsigned int SAC_MT_mythread = 0
+#define SAC_MT_DECL_MYTHREAD() const unsigned int SAC_MT_mythread = 0;
 
 #define SAC_MT_SETUP()
 #define SAC_MT_SETUP_INITIAL()
