@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.173  1998/05/15 15:13:46  dkr
+ * added WLGRIDVAR_CEXPR_TEMPLATE, INFO_WL_SHPSEG
+ *
  * Revision 1.172  1998/05/15 11:20:35  srs
  * changed comment of N_Nwith
  *
@@ -2359,6 +2362,9 @@ extern node *MakeInfo ();
 #define INFO_RC_WITH(n) (n->node[1])
 #define INFO_RC_RCDUMP(n) ((int *)(n->node[2]))
 
+/* wltransform */
+#define INFO_WL_SHPSEG(n) ((shpseg *)(n->node[0]))
+
 /* spmdregions */
 #define INFO_SPMD_FUNDEF(n) (n->node[0])
 #define INFO_SPMD_FIRST(n) (n->flag)
@@ -2778,10 +2784,10 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 #define NWITH2_WITHOP(n) (n->node[3])
 #define NWITH2_DIMS(n) (n->flag)
 
-#define NWITH2_IDX_MIN(n) ((int *)(n->mask[2]))
-#define NWITH2_IDX_MAX(n) ((int *)(n->mask[3]))
+#define NWITH2_IDX_MIN(n) ((int *)(n->mask[3]))
+#define NWITH2_IDX_MAX(n) ((int *)(n->mask[4]))
 
-#define NWITH2_DEC_RC_IDS(n) ((ids *)(n->node[4]))
+#define NWITH2_DEC_RC_IDS(n) ((ids *)(n->node[5]))
 
 #define NWITH2_IN(n) ((DFMmask_t)n->dfmask[0])
 #define NWITH2_INOUT(n) ((DFMmask_t)n->dfmask[1])
@@ -3074,20 +3080,24 @@ extern node *MakeWLstriVar (int dim, node *bound1, node *bound2, node *step,
  ***
  ***  sons:
  ***
- ***    node*    NEXTDIM       (N_WLstriVar)
- ***    node*    NEXT          (N_WLgridVar)
+ ***    node*    NEXTDIM         (N_WLstriVar)
+ ***    node*    NEXT            (N_WLgridVar)
  ***
  ***  permanent attributes:
  ***
- ***    node*    BOUND1        (N_num, N_id)
- ***    node*    BOUND2        (N_num, N_id)
- ***    node*    CODE          (N_Ncode)
+ ***    node*    BOUND1          (N_num, N_id)
+ ***    node*    BOUND2          (N_num, N_id)
+ ***    node*    CODE            (N_Ncode)
  ***    int      DIM
  ***
+ ***  temporary attributes:
+ ***
+ ***    node*    CEXPR_TEMPLATE  ("N_expr")    (wltransform -> compile )
  ***
  ***  remarks:
  ***
- ***    it makes no sense to use the nodes NEXTDIM and CODE simultaneous!
+ ***    - it makes no sense to use the nodes NEXTDIM and CODE simultaneous!
+ ***    - CEXPR_TEMPLATE: see N_WLgrid
  ***
  ***/
 
@@ -3100,5 +3110,7 @@ extern node *MakeWLgridVar (int dim, node *bound1, node *bound2, node *nextdim,
 #define WLGRIDVAR_NEXTDIM(n) (n->node[0])
 #define WLGRIDVAR_NEXT(n) (n->node[1])
 #define WLGRIDVAR_CODE(n) (n->node[4])
+
+#define WLGRIDVAR_CEXPR_TEMPLATE(n) (n->node[5])
 
 #endif /* _sac_tree_basic_h */
