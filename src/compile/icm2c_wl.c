@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1998/06/19 18:29:46  dkr
+ * added WL_NONFOLD_END, WL_FOLD_END
+ *
  * Revision 1.17  1998/06/19 10:26:12  dkr
  * removed unused vars
  *
@@ -113,21 +116,6 @@ ICMCompileWL_NONFOLD_BEGIN (char *target, char *idx_vec)
     INDENT;
     fprintf (outfile, "int %s__destptr = 0;\n", target);
 
-#if 00
-    fprintf (outfile, "#if SAC_DO_MULTITHREAD\n");
-    for (i = 0; i < dims; i++) {
-        INDENT;
-        fprintf (outfile, "int SAC_VAR( start0, %s) = %s;\n", args[3 * i],
-                 args[3 * i + 1]);
-    }
-    for (i = 0; i < dims; i++) {
-        INDENT;
-        fprintf (outfile, "int SAC_VAR( stop0, %s) = %s;\n", args[3 * i],
-                 args[3 * i + 2]);
-    }
-    fprintf (outfile, "#endif  /* SAC_DO_MULTITHREAD */\n");
-#endif
-
     DBUG_VOID_RETURN;
 }
 
@@ -156,21 +144,6 @@ ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec)
     INDENT;
     fprintf (outfile, "{\n");
     indent++;
-
-#if 00
-    fprintf (outfile, "#if SAC_DO_MULTITHREAD\n");
-    for (i = 0; i < dims; i++) {
-        INDENT;
-        fprintf (outfile, "int SAC_VAR( start0, %s) = %s;\n", args[3 * i],
-                 args[3 * i + 1]);
-    }
-    for (i = 0; i < dims; i++) {
-        INDENT;
-        fprintf (outfile, "int SAC_VAR( stop0, %s) = %s;\n", args[3 * i],
-                 args[3 * i + 2]);
-    }
-    fprintf (outfile, "#endif  /* SAC_DO_MULTITHREAD */\n");
-#endif
 
     DBUG_VOID_RETURN;
 }
@@ -420,15 +393,6 @@ ICMCompileWL_FOLD_NOOP (int dim, int dims_target, char *target, char *idx_vec, i
     INDENT;
     fprintf (outfile, "SAC_ND_A_FIELD( %s)[ %d] -= %s;\n", idx_vec, dim, bounds[0]);
 
-#if 0
-  INDENT;
-  fprintf( outfile, "%s += %d;\n",
-                    idx_scalars[ dim], bounds[ 1]);
-  INDENT;
-  fprintf( outfile, "%s -= %d;\n",
-                    idx_scalars[ dim], bounds[ 0]);
-#endif
-
     DBUG_VOID_RETURN;
 }
 
@@ -471,7 +435,7 @@ ICMCompileWL_ADJUST_OFFSET (int dim, int dims_target, char *target, char *idx_ve
         if (i < dim) {
             fprintf (outfile, " + %s )", idx_scalars[i]);
         } else {
-            fprintf (outfile, " + SAC_VAR( start, %s) )", idx_scalars[i]);
+            fprintf (outfile, " + SAC_WL_VAR( start, %s) )", idx_scalars[i]);
         }
     }
 
@@ -479,6 +443,64 @@ ICMCompileWL_ADJUST_OFFSET (int dim, int dims_target, char *target, char *idx_ve
         fprintf (outfile, " * SAC_ND_KD_A_SHAPE( %s, %d)", target, i);
     }
     fprintf (outfile, ";\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL_NONFOLD_END( char *target, char *idx_vec)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   WL_NONFOLD_END( target, idx_vec )
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_NONFOLD_END (char *target, char *idx_vec)
+{
+    DBUG_ENTER ("ICMCompileWL_NONFOLD_END");
+
+#define WL_NONFOLD_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_NONFOLD_END
+
+    indent--;
+    INDENT;
+    fprintf (outfile, "}\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL_FOLD_END( char *target, char *idx_vec)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   WL_FOLD_END( target, idx_vec )
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_FOLD_END (char *target, char *idx_vec)
+{
+    DBUG_ENTER ("ICMCompileWL_FOLD_END");
+
+#define WL_FOLD_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_FOLD_END
+
+    indent--;
+    INDENT;
+    fprintf (outfile, "}\n");
 
     DBUG_VOID_RETURN;
 }

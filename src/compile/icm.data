@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.42  1998/06/19 18:29:21  dkr
+ * added WL_NONFOLD_END, WL_FOLD_END
+ *
  * Revision 1.41  1998/06/09 16:46:19  dkr
  * changed signature of WL_NONFOLD_BEGIN, WL_FOLD_BEGIN
  *
@@ -576,6 +579,20 @@ ICM_DEF( WL_ADJUST_OFFSET, TRACE_UDF)
   ICM_INT(dims)
   ICM_VAR(dims, idx_scalars)
 ICM_END( WL_ADJUST_OFFSET, (dim, dims_target, target, idx_vec, dims, idx_scalars))
+#endif
+
+#if defined(WL_NONFOLD_END) || defined(ICM_ALL)
+ICM_DEF( WL_NONFOLD_END, TRACE_UDF)
+  ICM_STR(target)
+  ICM_STR(idx_vec)
+ICM_END( WL_NONFOLD_END, (target, idx_vec))
+#endif
+
+#if defined(WL_FOLD_END) || defined(ICM_ALL)
+ICM_DEF( WL_FOLD_END, TRACE_UDF)
+  ICM_STR(target)
+  ICM_STR(idx_vec)
+ICM_END( WL_FOLD_END, (target, idx_vec))
 #endif
 
 
