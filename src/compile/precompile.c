@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.48  1998/04/10 02:25:58  dkr
+ * added support for wlcomp-pragmas
+ *
  * Revision 1.47  1998/04/09 14:00:07  dkr
  * attributes for N_conc nodes are now build in 'concregions.[ch]'
  *
@@ -168,6 +171,7 @@
 #include "internal_lib.h"
 #include "convert.h"
 #include "traverse.h"
+#include "wlpragma_funs.h"
 
 #include "DupTree.h"
 #include "refcount.h"
@@ -1791,124 +1795,7 @@ IntersectOutline (node *stride1, node *stride2, node **i_stride1, node **i_strid
 /******************************************************************************
  *
  * function:
- *   long *CalcSV(node *stride, long *sv)
- *
- * description:
- *   calculates the lcm of all grid-steps in N_WLstride-N_WLgrid-chain 'stride'.
- *   CAUTION: sv must be initialized with 1
- *
- ******************************************************************************/
-
-long *
-CalcSV (node *stride, long *sv)
-{
-    node *grid;
-
-    DBUG_ENTER ("CalcSV");
-
-    if (stride != NULL) {
-
-        do {
-            sv[WLSTRIDE_DIM (stride)]
-              = lcm (sv[WLSTRIDE_DIM (stride)], WLSTRIDE_STEP (stride));
-
-            grid = WLSTRIDE_CONTENTS (stride);
-            DBUG_ASSERT ((grid != NULL), "no grid found");
-            do {
-                sv = CalcSV (WLGRID_NEXTDIM (grid), sv);
-                grid = WLGRID_NEXT (grid);
-            } while (grid != NULL);
-
-            stride = WLSTRIDE_NEXT (stride);
-        } while (stride != NULL);
-    }
-
-    DBUG_RETURN (sv);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SetSegAttribs(node *seg)
- *
- * description:
- *   sets the attributes UBV, BV for segment 'seg' (N_WLseg node):
- *   - calulates the lcm of all grid-steps in segment (sv)
- *   - based on this, UBV and BV are set
- *
- ******************************************************************************/
-
-node *
-SetSegAttribs (node *seg)
-{
-    long *sv;
-    int b, d;
-    int dims = WLSEG_DIMS (seg);
-
-    DBUG_ENTER ("SetSegAttribs");
-
-    /* initialize sv */
-    sv = (long *)MALLOC (sizeof (long) * dims);
-    for (d = 0; d < dims; d++) {
-        sv[d] = 1;
-    }
-    /* calculate sv */
-    sv = CalcSV (WLSEG_CONTENTS (seg), sv);
-
-    /*
-     * set ubv (must be a multiple of sv,
-     *          except that the first components could have value 1)
-     */
-    WLSEG_UBV (seg) = (long *)MALLOC (sizeof (long) * dims);
-    for (d = 0; d < dims; d++) {
-        (WLSEG_UBV (seg))[d] = 1; /* ??? */
-    }
-
-    /*
-     * set bv[] (bv[b] must be a multiple of bv[b+1],
-     *           bv[BLOCKS-1] must be a multiple of ubv,
-     *           except that the first components could have value 1
-     *           --- but in any case: (bv[b] >= bv[b+1]), (bv[BLOCK-1] >= ubv))
-     */
-    WLSEG_BLOCKS (seg) = 2; /* ??? */
-    for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
-        WLSEG_BV (seg, b) = (long *)MALLOC (sizeof (long) * dims);
-        for (d = 0; d < dims; d++) {
-            (WLSEG_BV (seg, b))[d] = 1; /* ??? */
-        }
-    }
-
-#if 0
-  WLSEG_BLOCKS(seg) = 1;
-
-  (WLSEG_BV(seg, 0))[0] = 100;
-  (WLSEG_BV(seg, 0))[1] = 100;
-  (WLSEG_BV(seg, 0))[2] = 100;
-  (WLSEG_BV(seg, 0))[3] = 100;
-
-  (WLSEG_UBV(seg))[0] = 1;
-  (WLSEG_UBV(seg))[1] = 1;
-  (WLSEG_UBV(seg))[2] = 1;
-  (WLSEG_UBV(seg))[3] = 1;
-#else
-    WLSEG_BLOCKS (seg) = 1;
-
-    (WLSEG_BV (seg, 0))[0] = 1; /* 180 or 1 */
-    (WLSEG_BV (seg, 0))[1] = 1; /* 156 */
-
-    (WLSEG_UBV (seg))[0] = 1; /* 1 */
-    (WLSEG_UBV (seg))[1] = 1; /* 6 */
-#endif
-
-    FREE (sv);
-
-    DBUG_RETURN (seg);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SetSegs(node *cubes, int dims)
+ *   node *SetSegs(node *pragma, node *cubes, int dims)
  *
  * description:
  *   returns chain of segments (based on the calculated cubes 'cubes')
@@ -1916,57 +1803,43 @@ SetSegAttribs (node *seg)
  ******************************************************************************/
 
 node *
-SetSegs (node *cubes, int dims)
+SetSegs (node *pragma, node *cubes, int dims)
 {
-    node *segs;
-#if 0
-  node *rect, *last_seg, *new_seg;
-#endif
+    node *aps;
+    int d;
+    node *segs = NULL;
 
     DBUG_ENTER ("SetSegs");
 
-    DBUG_ASSERT ((NODE_TYPE (cubes) == N_WLstride), "wrong node type found");
-
-    /* ??? */
-
-#if 1
     /*
-     * choose the hole array as the only segment
-     *
+     * create default configuration
      */
-
-    segs = MakeWLseg (dims, cubes, NULL);
-    segs = SetSegAttribs (segs);
+#if 1 /* -> sac2c flag! */
+    segs = All (segs, NULL, cubes, dims);
 #else
-    /*
-     * choose every cube as a segment
-     *
-     */
-
-    segs = NULL;
-    while (cubes != NULL) {
-        /*
-         * extract next cube
-         */
-        rect = cubes;
-        cubes = WLSTRIDE_NEXT (cubes);
-        WLSTRIDE_NEXT (rect) = NULL;
-        /*
-         * build new segment
-         */
-        new_seg = MakeWLseg (dims, rect, NULL);
-        new_seg = SetSegAttribs (new_seg);
-        /*
-         * append 'new_seg' at 'segs'
-         */
-        if (segs == NULL) {
-            segs = new_seg;
-        } else {
-            WLSEG_NEXT (last_seg) = new_seg;
-        }
-        last_seg = new_seg;
-    }
+    segs = Cubes (segs, NULL, cubes, dims);
 #endif
+
+    /*
+     * create pragma-dependent configuration
+     */
+    if (pragma != NULL) {
+        aps = PRAGMA_WLCOMP_APS (pragma);
+        while (aps != NULL) {
+
+#define WLP(fun, str)                                                                    \
+    if (strcmp (AP_NAME (EXPRS_EXPR (aps)), str) == 0) {                                 \
+        segs = fun (segs, AP_ARGS (EXPRS_EXPR (aps)), cubes, dims);                      \
+    } else
+
+#include "wlpragma_funs.mac"
+            DBUG_ASSERT ((0), "wrong function name in wlcomp-pragma");
+
+#undef WLP
+
+            aps = EXPRS_NEXT (aps);
+        }
+    }
 
     DBUG_RETURN (segs);
 }
@@ -3578,7 +3451,14 @@ PRECnwith (node *arg_node, node *arg_info)
 
         if (PREC_break_after >= PREC_PH_seg) {
             DBUG_EXECUTE ("WLprec", NOTE (("step 2: choice of segments\n")));
-            segs = SetSegs (cubes, dims);
+            segs = SetSegs (NWITH_PRAGMA (arg_node), cubes, dims);
+            /* free temporary data */
+            if (NWITH_PRAGMA (arg_node) != NULL) {
+                NWITH_PRAGMA (arg_node) = FreeTree (NWITH_PRAGMA (arg_node));
+            }
+            if (cubes != NULL) {
+                cubes = FreeTree (cubes);
+            }
 
             seg = segs;
             while (seg != NULL) {
@@ -3608,6 +3488,7 @@ PRECnwith (node *arg_node, node *arg_info)
                     WLSEG_CONTENTS (seg)
                       = BlockWL (WLSEG_CONTENTS (seg), dims, WLSEG_UBV (seg), 1);
                     FREE (WLSEG_UBV (seg));
+                    FREE (WLSEG_SV (seg));
                 }
 
                 /* merging */
