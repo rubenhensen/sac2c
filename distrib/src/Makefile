@@ -1,11 +1,9 @@
 #
 #
 # $Log$
-# Revision 2.6  2000/11/15 13:56:41  dkr
-# some minor changes done
-#
-# Revision 2.5  2000/11/15 13:38:09  dkr
-# OSF_ALPHA corrected
+# Revision 2.7  2000/11/15 17:12:25  dkr
+# system specific Makefile.Config added
+# .SECONDARY added to avoid removal of temporary files
 #
 # Revision 2.4  2000/11/14 16:29:35  dkr
 # OSF_ALPHA added
@@ -51,7 +49,7 @@ VERSION    =  0_9
 SYSTEMS    =  SOLARIS_SPARC LINUX_X86 OSF_ALPHA
 PACKAGES   =  runtime.tar stdlib.tar demo.tar
 FILES      =  install_sac LICENSE README
-SPECIFICS  =  sac2c libsac.tar sac2crc
+SPECIFICS  =  sac2c libsac.tar sac2crc Makefile.Config
 
 
 #
@@ -70,7 +68,6 @@ DEMODIR    =  $(SACBASE)/demo
 
 BINTARGETDIR  =  ../binpacks
 SRCTARGETDIR  =  ../srcpacks
-
 
 
 #
@@ -110,8 +107,8 @@ SRCDISTRIBS   :=  $(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar.gz
 CHECKFILES    :=  $(PACKAGES) $(foreach system,$(SYSTEMS), $(addsuffix .for.$(system),$(SPECIFICS)))
 
 
-
 .PHONY: all linux solaris alpha source clean update new allnew check_existing_files
+.SECONDARY: $(CHECKFILES)
 
 
 all: check_existing_files $(BINDISTRIBS) $(SRCDISTRIBS)
@@ -125,6 +122,15 @@ alpha: check_existing_files $(BINTARGETDIR)/SAC-$(VERSION)-OSF_ALPHA-$(DATE).tar
 source: check_existing_files $(SRCDISTRIBS)
 
 
+$(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar.gz: $(PACKAGES) $(FILES) src.tar.gz
+	@echo "**************************************************************"
+	@echo "*  Creating SAC source distribution"
+	@echo "**************************************************************"
+	tar cvfh $(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar $^
+	gzip -f $(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar
+	rm -f src.tar.gz
+
+
 $(BINTARGETDIR)/SAC-$(VERSION)-%-$(DATE).tar.gz: \
    $(PACKAGES) $(FILES) $(addsuffix .for.%,$(SPECIFICS))
 	@echo "**************************************************************"
@@ -136,20 +142,21 @@ $(BINTARGETDIR)/SAC-$(VERSION)-%-$(DATE).tar.gz: \
 	gzip -f $(BINTARGETDIR)/SAC-$(VERSION)-$*-$(DATE).tar
 	rm -f $(SPECIFICS)
 
+
 sac2c.for.SOLARIS_SPARC libsac.tar.for.SOLARIS_SPARC: 
 	@echo "**************************************************************"
 	@echo "*  Creating sac2c for SOLARIS_SPARC"
 	@echo "**************************************************************"
-	(cd $(SAC2CDIR); $(MAKE) tar) 
+	( cd $(SAC2CDIR); $(MAKE) tar )
 	rm -rf $(SOLARIS_DIR)
 	mkdir -p $(SOLARIS_DIR)
 	cp $(SAC2CDIR)/src.tar.gz $(SOLARIS_DIR)
-	(cd $(SOLARIS_DIR); gunzip -f src.tar.gz)
-	(cd $(SOLARIS_DIR); tar xvf src.tar)
-	(cd $(SOLARIS_DIR); $(MAKE) deps OS=SOLARIS_SPARC)
-	(cd $(SOLARIS_DIR); $(MAKE) distrib_product OS=SOLARIS_SPARC)
+	( cd $(SOLARIS_DIR); gunzip -f src.tar.gz )
+	( cd $(SOLARIS_DIR); tar xvf src.tar )
+	( cd $(SOLARIS_DIR); $(MAKE) deps OS=SOLARIS_SPARC )
+	( cd $(SOLARIS_DIR); $(MAKE) distrib_product OS=SOLARIS_SPARC )
 	cp $(SOLARIS_DIR)/sac2c sac2c.for.SOLARIS_SPARC
-	(cd $(SOLARIS_DIR)/src/runtime; tar cvfh libsac.tar libsac*.a) 
+	( cd $(SOLARIS_DIR)/src/runtime; tar cvfh libsac.tar libsac*.a ) 
 	cp $(SOLARIS_DIR)/src/runtime/libsac.tar libsac.tar.for.SOLARIS_SPARC
 	@ if [ $${?} -eq 0 ]; then  \
             rm -rf $(SOLARIS_DIR); \
@@ -169,7 +176,7 @@ sac2c.for.LINUX_X86 libsac.tar.for.LINUX_X86:
             echo "Unable to create LINUX_X86 distribution !"; \
             exit 1; \
           fi
-	(cd $(SAC2CDIR); $(MAKE) tar) 
+	( cd $(SAC2CDIR); $(MAKE) tar )
 	rsh -l $(LX86_USER) $(LX86_HOST) 'rm -rf $(LX86_DIR); mkdir -p $(LX86_DIR)' 
 	rcp $(SAC2CDIR)/src.tar.gz $(LX86_USER)@$(LX86_HOST):$(LX86_DIR)
 	rsh -l $(LX86_USER) $(LX86_HOST) \
@@ -203,11 +210,11 @@ sac2c.for.OSF_ALPHA libsac.tar.for.OSF_ALPHA:
             echo "Unable to create OSF_ALPHA distribution !"; \
             exit 1; \
           fi
-	(cd $(SAC2CDIR); $(MAKE) tar) 
+	( cd $(SAC2CDIR); $(MAKE) tar )
 	rsh -l $(ALPHA_USER) $(ALPHA_HOST) 'rm -rf $(ALPHA_DIR); mkdir -p $(ALPHA_DIR)' 
 	rcp $(SAC2CDIR)/src.tar.gz $(ALPHA_USER)@$(ALPHA_HOST):$(ALPHA_DIR)
 	rsh -l $(ALPHA_USER) $(ALPHA_HOST) \
-	    'export PATH=$$PATH:/usr/local/bin:/usr/bin/X11;' \
+	    'export PATH=$$HOME/bin:$$PATH:/usr/local/bin:/usr/bin/X11;' \
 	    'cd $(ALPHA_DIR);'       \
 	    'gunzip -f src.tar.gz;'  \
 	    'tar xvf src.tar;'       \
@@ -228,45 +235,48 @@ sac2c.for.OSF_ALPHA libsac.tar.for.OSF_ALPHA:
 	    exit 1; \
 	  fi
 
-$(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar.gz: $(PACKAGES) $(FILES) src.tar.gz
-	@echo "**************************************************************"
-	@echo "*  Creating SAC source distribution"
-	@echo "**************************************************************"
-	tar cvfh $(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar $^
-	gzip -f $(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar
-	rm -f src.tar.gz
+
+src.tar.gz:
+	( cd $(SAC2CDIR); $(MAKE) tar )
+	ln -s $(SAC2CDIR)/$@
 
 
 sac2crc.for.%: $(RUNTIMEDIR)/sac2crc.%
+	@echo "**************************************************************"
+	@echo "*  Creating sac2crc for $*"
+	@echo "**************************************************************"
 	cp $< $@
-
-
-src.tar.gz:
-	(cd $(SAC2CDIR); $(MAKE) tar)
-	ln -s $(SAC2CDIR)/src.tar.gz
 
 
 runtime.tar: 
 	@echo "**************************************************************"
-	@echo "*  Creating package runtime"
+	@echo "*  Creating package $@"
 	@echo "**************************************************************"
-	(cd $(RUNTIMEDIR); $(MAKE) runtime.tar)
-	cp $(RUNTIMEDIR)/runtime.tar .
+	( cd $(RUNTIMEDIR); $(MAKE) $@ )
+	cp $(RUNTIMEDIR)/$@ .
 
 
 stdlib.tar:
 	@echo "**************************************************************"
-	@echo "*  Creating package stdlib"
+	@echo "*  Creating package $@"
 	@echo "**************************************************************"
-	( cd $(STDLIBDIR); $(MAKE) tar)
-	cp $(STDLIBDIR)/stdlib.tar .
+	( cd $(STDLIBDIR); $(MAKE) tar; )
+	cp $(STDLIBDIR)/$@ .
+
+
+Makefile.Config.for.%:
+	@echo "**************************************************************"
+	@echo "*  Creating Makefile.Config for $*"
+	@echo "**************************************************************"
+	sed -e 's/^[ ]*OS[ ]*:=[ ]*[_A-Za-z0-9]*/OS := $*/g' $(STDLIBDIR)/Makefiles/Makefile.Config > ./$@
+
 
 demo.tar:
 	@echo "**************************************************************"
-	@echo "*  Creating package demo"
+	@echo "*  Creating package $@"
 	@echo "**************************************************************"
-	( cd $(DEMODIR); $(MAKE) tar TARFILENAME=demo.tar)
-	cp $(DEMODIR)/demo.tar . 
+	( cd $(DEMODIR); $(MAKE) tar TARFILENAME=$@ )
+	cp $(DEMODIR)/$@ . 
 
 
 check_existing_files:
@@ -277,6 +287,7 @@ check_existing_files:
 
 clean:
 	rm -f $(BINDISTRIBS) $(SRCDISTRIBS) $(addsuffix .for.*,$(SPECIFICS)) $(PACKAGES)
+	rm -f $(SPECIFICS)
 	rm -f *~ *.bak *.old
 
 update: clean
