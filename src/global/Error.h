@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/12/01 16:13:21  cg
+ * Revision 1.17  1996/01/02 15:44:25  cg
+ * modified external declaration of global variable filename
+ *
+ * Revision 1.16  1995/12/01  16:13:21  cg
  * extern declaration of global variable 'silent' removed
  * no longer required for optimize.h
  *
@@ -67,6 +70,7 @@
 #include <stdlib.h>
 
 #include "types.h"
+#include "globals.h"
 
 /*
  ********************************************
@@ -526,11 +530,12 @@ extern int current_line_length;
 extern int message_indent;
 extern int verbose_level;
 extern int compiler_phase;
+extern int max_compiler_phase;
 
-extern char filename[];             /* is set in main.c  */
-extern char sibfilename[];          /* is set in main.c  */
-extern char *compiler_phase_name[]; /* is set in Error.c */
+extern char *filename;
+extern char *compiler_phase_name[];
 extern char error_message_buffer[];
+extern char sibfilename[];
 
 extern void ProcessErrorMessage (char *format, ...);
 extern int NumberOfDigits (int);
