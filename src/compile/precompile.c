@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/12/18 16:30:55  cg
+ * Revision 1.7  1995/12/29 10:44:10  cg
+ * some DBUG_PRINTs added.
+ *
+ * Revision 1.6  1995/12/18  16:30:55  cg
  * many bugs fixed, function PRECexprs replaced by PRECexprs_ap and
  * PRECexprs_return
  *
@@ -114,6 +117,9 @@ RenameTypes (types *type)
                                  + 2 * strlen (mod_name_con) + 4));
         sprintf (tmp, "SAC%s%s%s%s", mod_name_con, MOD (TYPES_MOD (type)), mod_name_con,
                  TYPES_NAME (type));
+
+        DBUG_PRINT ("PREC", ("renaming type %s:%s to %s", MOD (TYPES_MOD (type)),
+                             TYPES_NAME (type), tmp));
 
         FREE (TYPES_NAME (type));
         TYPES_NAME (type) = tmp;
@@ -349,6 +355,8 @@ PRECobjdef (node *arg_node, node *arg_info)
     ids *new_ids;
 
     DBUG_ENTER ("PRECobjdef");
+
+    DBUG_PRINT ("PREC", ("precompiling object %s", ItemName (arg_node)));
 
     if (OBJDEF_MOD (arg_node) == NULL) {
         if ((OBJDEF_PRAGMA (arg_node) != NULL) && (OBJDEF_LINKNAME (arg_node) != NULL)) {
