@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1998/07/07 13:45:42  cg
+ * bug fixed: fold function are now retrieved correctly.
+ *
  * Revision 1.13  1998/07/03 10:18:15  cg
  * Super ICM MT_SPMD_BLOCK replaced by combinations of new ICMs
  * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END]
@@ -118,7 +121,7 @@ SearchFoldImplementation (char *foldop)
 
     DBUG_ENTER ("SearchFoldImplementation");
 
-    fundef = MODUL_FUNS (syntax_tree);
+    fundef = MODUL_FOLDFUNS (syntax_tree);
 
     while ((fundef != NULL) && (0 != strcmp (FUNDEF_NAME (fundef), foldop))) {
         fundef = FUNDEF_NEXT (fundef);
