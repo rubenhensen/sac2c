@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/04/19 13:08:28  hw
+ * Revision 1.15  1995/04/19 13:50:47  hw
+ * changed arguments of N_icm ND_KD_PSI_CxA_S &  ND_KD_PSI_VxA_S
+ *
+ * Revision 1.14  1995/04/19  13:08:28  hw
  * bug fixed in compilation of primitive function 'cat'
  *
  * Revision 1.13  1995/04/19  12:51:59  hw
@@ -943,15 +946,11 @@ CompPrf (node *arg_node, node *arg_info)
                     GET_DIM (dim, arg2->IDS_NODE->TYPES);
                     MAKENODE_NUM (dim_node, dim); /* store dimension of array */
                     if (N_id == arg1->nodetype) {
-                        BIN_ICM_REUSE (arg_info->node[1], "ND_KD_PSI_VxA_S", dim_node,
-                                       arg2);
-                        MAKE_NEXT_ICM_ARG (icm_arg, res);
+                        BIN_ICM_REUSE (arg_info->node[1], "ND_KD_PSI_VxA_S", arg2, res);
                         MAKE_NEXT_ICM_ARG (icm_arg, n_node);
                         MAKE_NEXT_ICM_ARG (icm_arg, arg1);
                     } else {
-                        BIN_ICM_REUSE (arg_info->node[1], "ND_KD_PSI_CxA_S", dim_node,
-                                       arg2);
-                        MAKE_NEXT_ICM_ARG (icm_arg, res);
+                        BIN_ICM_REUSE (arg_info->node[1], "ND_KD_PSI_CxA_S", arg2, res);
                         MAKE_NEXT_ICM_ARG (icm_arg, n_node);
                         icm_arg->node[1] = arg1->node[0];
                         icm_arg->nnode = 2;
@@ -972,14 +971,11 @@ CompPrf (node *arg_node, node *arg_info)
                     MAKENODE_NUM (tmp_rc, 0);
                     CONST_ARRAY (arg2, tmp_rc);
                     if (N_id == arg1->nodetype) {
-                        CREATE_3_ARY_ICM (next_assign, "ND_KD_PSI_VxA_S", dim_node, arg2,
-                                          res);
-                        MAKE_NEXT_ICM_ARG (icm_arg, n_node);
-                        MAKE_NEXT_ICM_ARG (icm_arg, arg1);
+                        CREATE_4_ARY_ICM (next_assign, "ND_KD_PSI_VxA_S", arg2, res,
+                                          n_node, arg1);
                     } else {
-                        CREATE_3_ARY_ICM (next_assign, "ND_KD_PSI_CxA_S", dim_node, arg2,
-                                          res);
-                        MAKE_NEXT_ICM_ARG (icm_arg, n_node);
+                        CREATE_3_ARY_ICM (next_assign, "ND_KD_PSI_CxA_S", arg2, res,
+                                          n_node);
                         icm_arg->node[1] = arg1->node[0];
                         icm_arg->nnode = 2;
                         FREE (arg1);
