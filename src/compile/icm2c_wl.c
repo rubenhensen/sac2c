@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  2000/07/06 13:11:58  dkr
+ * minor changes in comments done
+ *
  * Revision 2.7  2000/03/20 19:29:26  dkr
  * some comments added
  *
@@ -309,7 +312,6 @@ ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
 #endif
 
     if (dims_expr > 0) {
-
         INDENT;
         fprintf (outfile, "{\n");
         indent++;
@@ -337,9 +339,7 @@ ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
         indent--;
         INDENT;
         fprintf (outfile, "}\n");
-
     } else {
-
         INDENT;
         fprintf (outfile, "SAC_TR_WL_PRINT((\"Array element %s[[%%d", target);
         for (i = 1; i < dims; i++) {
@@ -393,7 +393,6 @@ ICMCompileWL_ASSIGN_INIT (int dims_target, char *target, char *idx_vec, int dims
 #endif
 
     if (dims_target > dims) {
-
         INDENT;
         fprintf (outfile, "{\n");
         indent++;
@@ -418,7 +417,6 @@ ICMCompileWL_ASSIGN_INIT (int dims_target, char *target, char *idx_vec, int dims
     fprintf (outfile, "%s__destptr++;\n", target);
 
     if (dims_target > dims) {
-
         indent--;
         INDENT;
         fprintf (outfile, "}\n");
@@ -465,7 +463,6 @@ ICMCompileWL_ASSIGN_COPY (char *source, int dims_target, char *target, char *idx
 #endif
 
     if (dims_target > dims) {
-
         INDENT;
         fprintf (outfile, "{\n");
         indent++;
@@ -493,7 +490,6 @@ ICMCompileWL_ASSIGN_COPY (char *source, int dims_target, char *target, char *idx
     fprintf (outfile, "%s__destptr++;\n", target);
 
     if (dims_target > dims) {
-
         indent--;
         INDENT;
         fprintf (outfile, "}\n");
