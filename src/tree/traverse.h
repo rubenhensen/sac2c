@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/06 20:12:25  dkr
+ * l2f_infer... renamed into infdfms_...
+ * l2f_lift... renamed into l2f...
+ *
  * Revision 3.2  2000/12/06 18:26:04  cg
  * Added new traversal tccp for typecheck constant propagation.
  *
@@ -94,7 +98,6 @@
  * Revision 1.2  1994/11/10  15:44:34  sbs
  * RCS-header inserted
  *
- *
  */
 
 #ifndef _sac_traverse_h
@@ -182,8 +185,8 @@ extern funtab *fun2lac_tab;
 extern funtab *ai_tab;
 extern funtab *blkex_tab;
 extern funtab *mtfin_tab;
-extern funtab *l2f_infer_tab;
-extern funtab *l2f_lift_tab;
+extern funtab *infdfms_tab;
+extern funtab *l2f_tab;
 extern funtab *blkco_tab;
 extern funtab *dfa_tab;
 extern funtab *blkpp_tab;

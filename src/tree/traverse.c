@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2000/12/06 20:12:18  dkr
+ * l2f_infer... renamed into infdfms_...
+ * l2f_lift... renamed into l2f...
+ *
  * Revision 3.3  2000/12/06 19:22:02  dkr
  * PrintTravPre, PrintTravPost added
  * DupTreePre renamed into DupTreeTravPre
@@ -192,7 +196,6 @@
  * Revision 1.2  1994/11/10  15:44:34  sbs
  * RCS-header inserted
  *
- *
  */
 
 #include <stdio.h>
@@ -259,6 +262,7 @@
 #include "globals.h" /* needed for linenum only!!! */
 #include "new_typecheck.h"
 #include "multithread.h"
+#include "infer_dfms.h"
 #include "lac2fun.h"
 #include "cleanup_decls.h"
 #include "fun2lac.h"
@@ -1027,26 +1031,26 @@ static funtab mtfin_tab_rec = {{
 funtab *mtfin_tab = &mtfin_tab_rec;
 
 /*
- *  (68) l2f_infer_tab
+ *  (68) infdfms_tab
  */
-static funtab l2f_infer_tab_rec = {{
-#define NIFl2f_infer(it_l2f_infer) it_l2f_infer
+static funtab infdfms_tab_rec = {{
+#define NIFinfdfms(it_infdfms) it_infdfms
 #include "node_info.mac"
-                                   },
-                                   NULL,
-                                   NULL};
-funtab *l2f_infer_tab = &l2f_infer_tab_rec;
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *infdfms_tab = &infdfms_tab_rec;
 
 /*
- *  (69) l2f_lift_tab
+ *  (69) l2f_tab
  */
-static funtab l2f_lift_tab_rec = {{
-#define NIFl2f_lift(it_l2f_lift) it_l2f_lift
+static funtab l2f_tab_rec = {{
+#define NIFl2f(it_l2f) it_l2f
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *l2f_lift_tab = &l2f_lift_tab_rec;
+                             },
+                             NULL,
+                             NULL};
+funtab *l2f_tab = &l2f_tab_rec;
 
 /*
  *  (70) blkco_tab
