@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.56  1998/04/03 21:07:14  dkr
+ * added OPTconc
+ *
  * Revision 1.55  1998/04/03 11:58:12  srs
  * exported old_wlf_expr and old_wlt_expr to be visible in WithloopFolding.c
  *
@@ -182,9 +185,9 @@
  *
  */
 
-#ifndef _optimize_h
+#ifndef _sac_optimize_h
 
-#define _optimize_h
+#define _sac_optimize_h
 
 #include "free.h"
 
@@ -262,12 +265,6 @@ extern void PopMRDL2 ();
 
 #define VAR_LENGTH 10
 
-/*
- *  The following lines should no longer be used.
- *  Concerning memory allocation/deallocation see free and internal_lib
- *  Concerning warnings see Error.[ch]
- */
-
 extern node *Optimize (node *arg_node);
 
 extern char *PrintMask (long *mask, int varno);
@@ -302,5 +299,6 @@ extern node *OPTcond (node *arg_node, node *arg_info);
 extern node *OPTloop (node *arg_node, node *arg_info);
 extern node *OPTwith (node *arg_node, node *arg_info);
 extern node *OPTNwith (node *arg_node, node *arg_info);
+extern node *OPTconc (node *arg_node, node *arg_info);
 
-#endif /* _optimize_h */
+#endif /* _sac_optimize_h */
