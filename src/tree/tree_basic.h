@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.130  2002/06/25 23:52:06  ktr
+ * INFO_WLS_WITHVEC renamed to INFO_WLS_WITHID
+ *
  * Revision 3.129  2002/06/25 14:09:29  sbs
  * N_dot added including MakeDot
  *
@@ -3113,7 +3116,7 @@ extern node *MakeInfo ();
 #define INFO_WLS_PHASE(n) (n->lineno)
 #define INFO_WLS_FUNDEF(n) (n->node[3])
 #define INFO_WLS_PARTS(n) (n->counter)
-#define INFO_WLS_WITHVEC(n) (n->info.ids)
+#define INFO_WLS_WITHID(n) (n->node[0])
 #define INFO_WLS_WITHOP(n) (n->node[1])
 #define INFO_WLS_DIMS(n) (n->varno)
 #define INFO_WLS_BLOCK(n) (n->node[2])
