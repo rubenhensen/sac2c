@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.33  1998/06/23 15:04:35  cg
+ * The printing of system calls is now triggered via the global variable
+ * show_syscall and the command line option -dshow_syscall.
+ *
  * Revision 1.32  1998/06/19 12:51:44  srs
  * compute_malloc_align_step() => ComputeMallocAlignStep()
  *
@@ -327,7 +331,7 @@ SystemCall (char *format, ...)
     /* if -dnocleanup flag is set print all syscalls !
      * This allows for easy C-code patches.
      */
-    if (!cleanup)
+    if (show_syscall)
         NOTE (("%s", syscall));
 
     exit_code = system (syscall);
@@ -375,7 +379,7 @@ SystemCall2 (char *format, ...)
     /* if -dnocleanup flag is set print all syscalls !
      * This allows for easy C-code patches.
      */
-    if (!cleanup)
+    if (show_syscall)
         NOTE (("%s", syscall));
 
     DBUG_RETURN (system (syscall));
