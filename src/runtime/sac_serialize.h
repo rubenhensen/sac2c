@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/10/26 09:34:26  sah
+ * interface changes
+ *
  * Revision 1.3  2004/10/25 11:58:47  sah
  * major code cleanup
  *
@@ -18,13 +21,14 @@
 #define _SAC_SERIALIZE_H
 
 extern void *SHLPMakeNode (int ntype, int lineno, char *sfile, ...);
-extern void *SHLPLookupFunction (const char *name);
+extern void *SHLPFixLink (void *stack, int a, int b, int c);
 extern void *CODeserializeConstant (int type, void *shp, int vlen, char *vec);
 extern void *SHCreateShape (int dim, ...);
 extern void *TYDeserializeType (int con, ...);
 extern void *StringCopy (void *s1);
 extern void *CreateIds (char *s1, char *s2, int a, int b, int c, int d, void *p1);
-
+extern void *SerializeBuildSerStack (void *node);
+extern void *DeserializeLookupFunction (const char *s, const char *t, void *p);
 extern void *STInit ();
 extern void STAdd (char *s1, char *s2, int i, void *table);
 
