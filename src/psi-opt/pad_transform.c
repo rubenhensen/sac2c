@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.5  2000/06/15 14:38:55  mab
+ * implemented APTfundef, APTblock, APTid
+ * dummy for APTlet added
+ *
  * Revision 1.4  2000/06/14 10:46:04  mab
  * implemented APTvardec, APTarg
  * added dummies for APT ap, exprs, id, prf, fundef
@@ -148,12 +152,11 @@ node *
 APTarg (node *arg_node, node *arg_info)
 {
     pad_info_t *shape_info;
-    node *padded_arg;
 
     DBUG_ENTER ("APTarg");
 
-    if (VARDEC_NAME (arg_node) != NULL)
-        DBUG_PRINT ("AP", ("Check: %s", VARDEC_NAME (arg_node)));
+    if (ARG_NAME (arg_node) != NULL)
+        DBUG_PRINT ("AP", ("Check: %s", ARG_NAME (arg_node)));
     else
         DBUG_PRINT ("AP", ("Check: (NULL)"));
 
@@ -172,16 +175,6 @@ APTarg (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-
-/*
-
-extern node *MakeExprs(node* expr,
-                       node* next);
-
-#define EXPRS_EXPR(n) (n->node[0])
-#define EXPRS_NEXT(n) (n->node[1])
-
- */
 
 /*****************************************************************************
  *
@@ -240,7 +233,12 @@ APTarray (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APTarray");
 
-    DBUG_PRINT ("AP", ("array-node detected"));
+    if (ARRAY_STRING (arg_node) != NULL)
+        DBUG_PRINT ("AP", (" String:%s", ARRAY_STRING (arg_node)));
+    else
+        DBUG_PRINT ("AP", (" String: (NULL)"));
+
+    arg_node = TravSons (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -274,12 +272,20 @@ APTNwith (node *arg_node, node *arg_info)
  *   only a dummy for now
  *
  *****************************************************************************/
+
 node *
 APTap (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APTap");
 
     DBUG_PRINT ("AP", ("ap-node detected"));
+
+    if (AP_NAME (arg_node) != NULL)
+        DBUG_PRINT ("AP", (" Name:%s", AP_NAME (arg_node)));
+    else
+        DBUG_PRINT ("AP", (" Name: (NULL)"));
+
+    arg_node = TravSons (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -293,12 +299,15 @@ APTap (node *arg_node, node *arg_info)
  *   only a dummy for now
  *
  *****************************************************************************/
+
 node *
 APTexprs (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APTexprs");
 
     DBUG_PRINT ("AP", ("exprs-node detected"));
+
+    arg_node = TravSons (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -309,15 +318,67 @@ APTexprs (node *arg_node, node *arg_info)
  *   node *APTid(node *arg_node, node *arg_info)
  *
  * description:
- *  only a dummy for now
+ *  rename node and update reference to vardec
  *
  *****************************************************************************/
+
 node *
 APTid (node *arg_node, node *arg_info)
 {
+    pad_info_t *shape_info;
+
     DBUG_ENTER ("APTid");
 
-    DBUG_PRINT ("AP", ("id-node detected"));
+    if (ID_NAME (arg_node) != NULL)
+        DBUG_PRINT ("AP", ("Name:%s", ID_NAME (arg_node)));
+    else
+        DBUG_PRINT ("AP", ("Name: (NULL)"));
+
+    /*
+    if (VARDEC_NAME(ID_VARDEC(arg_node))!=NULL)
+      DBUG_PRINT("AP",(" Vardec:%s",VARDEC_NAME(ID_VARDEC(arg_node))));
+    else
+      DBUG_PRINT("AP",(" Vardec: (NULL)"));
+
+    if (NODE_TYPE(ID_VARDEC(arg_node))==N_vardec) {
+      DBUG_PRINT("AP",(" NodeType: vardec")); }
+    else {
+      if (NODE_TYPE(ID_VARDEC(arg_node))==N_arg)
+        DBUG_PRINT("AP",(" NodeType: arg"));
+      else
+        DBUG_PRINT("AP",(" NodeType: OTHER!"));
+    }
+
+    if (VARDEC_NEXT(ID_VARDEC(arg_node))!=NULL) {
+      if (VARDEC_NAME(VARDEC_NEXT(ID_VARDEC(arg_node)))!=NULL)
+        DBUG_PRINT("AP",(" Next:%s",VARDEC_NAME(VARDEC_NEXT(ID_VARDEC(arg_node)))));
+      else
+        DBUG_PRINT("AP",(" Next: (NULL)"));
+    }
+    */
+
+    /* if matching shape: rename id-node and set reference to padded vardec */
+    if (NODE_TYPE (ID_VARDEC (arg_node)) == N_vardec) {
+        shape_info = PInewShape (VARDEC_TYPE (ID_VARDEC (arg_node)));
+        if (PIvalid (shape_info) == TRUE) {
+            ID_NAME (arg_node) = APTpadName (ID_NAME (arg_node));
+            ID_VARDEC (arg_node) = VARDEC_NEXT (ID_VARDEC (arg_node));
+            DBUG_PRINT ("AP", (" padded (vardec)"));
+        }
+    }
+
+    /* rename id-node only */
+    /* arg-nodes are modifies in place, so there's no need to modify
+       id-nodes reference to arg-node */
+    if (NODE_TYPE (ID_VARDEC (arg_node)) == N_arg) {
+        shape_info = PInewShape (ARG_TYPE (ID_VARDEC (arg_node)));
+        if (PIvalid (shape_info) == TRUE) {
+            ID_NAME (arg_node) = APTpadName (ID_NAME (arg_node));
+            DBUG_PRINT ("AP", (" padded (arg)"));
+        }
+    }
+
+    /* no sons to traverse */
 
     DBUG_RETURN (arg_node);
 }
@@ -338,6 +399,8 @@ APTprf (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("AP", ("prf-node detected"));
 
+    arg_node = TravSons (arg_node, arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
@@ -347,7 +410,7 @@ APTprf (node *arg_node, node *arg_info)
  *   node *APTfundef(node *arg_node, node *arg_info)
  *
  * description:
- *   only a dummy for now
+ *   traverse ARGS before BODY before NEXT
  *
  *****************************************************************************/
 node *
@@ -355,7 +418,74 @@ APTfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("APTfundef");
 
-    DBUG_PRINT ("AP", ("fundef-node detected"));
+    if (FUNDEF_NAME (arg_node) != NULL)
+        DBUG_PRINT ("AP", (" Name:%s", FUNDEF_NAME (arg_node)));
+    else
+        DBUG_PRINT ("AP", (" Name: (NULL)"));
+
+    if (FUNDEF_ARGS (arg_node) != NULL)
+        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+    else
+        DBUG_PRINT ("AP", (" no args"));
+
+    if (FUNDEF_BODY (arg_node) != NULL)
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    else
+        DBUG_PRINT ("AP", (" no body"));
+
+    if (FUNDEF_NEXT (arg_node) != NULL)
+        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    else
+        DBUG_PRINT ("AP", (" last fundef"));
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APTblock(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   traverse VARDEC before INSTR
+ *
+ *****************************************************************************/
+
+node *
+APTblock (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("APTblock");
+
+    DBUG_PRINT ("AP", ("block-node detected"));
+
+    if (BLOCK_VARDEC (arg_node) != NULL)
+        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
+    else
+        DBUG_PRINT ("AP", (" no vardec"));
+
+    DBUG_ASSERT ((BLOCK_INSTR (arg_node) != NULL), "Block without instructions found!");
+    BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *APTlet(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   only a dummy for now
+ *
+ *****************************************************************************/
+node *
+APTlet (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("APTlet");
+
+    DBUG_PRINT ("AP", ("let-node detected"));
+
+    arg_node = TravSons (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }

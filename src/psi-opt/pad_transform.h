@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.5  2000/06/15 14:38:55  mab
+ * implemented APTfundef, APTblock, APTid
+ * dummy for APTlet added
+ *
  * Revision 1.4  2000/06/14 10:46:04  mab
  * implemented APTvardec, APTarg
  * added dummies for APT ap, exprs, id, prf, fundef
@@ -47,5 +51,7 @@ extern node *APTexprs (node *arg_node, node *arg_info);
 extern node *APTid (node *arg_node, node *arg_info);
 extern node *APTprf (node *arg_node, node *arg_info);
 extern node *APTfundef (node *arg_node, node *arg_info);
+extern node *APTblock (node *arg_node, node *arg_info);
+extern node *APTlet (node *arg_node, node *arg_info);
 
 #endif /* sac_pad_transform_h */
