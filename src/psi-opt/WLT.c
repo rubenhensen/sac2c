@@ -1,6 +1,9 @@
-/*    $Id$
+/*
  *
  * $Log$
+ * Revision 2.14  2000/05/25 14:58:56  dkr
+ * WLTNcode(): NCODE_CEXPR is traversed now
+ *
  * Revision 2.13  2000/05/11 11:15:21  dkr
  * Function MakeNullVec renamed into CreateZeroVector.
  * Bug in function CreateFullPartition fixed:
@@ -170,7 +173,7 @@
  *
  ******************************************************************************/
 
-intern_gen *
+static intern_gen *
 CutSlices (int *ls, int *us, int *l, int *u, int dim, intern_gen *ig, node *coden)
 {
     int *lsc, *usc, i, d;
@@ -236,7 +239,7 @@ CutSlices (int *ls, int *us, int *l, int *u, int dim, intern_gen *ig, node *code
  *
  ******************************************************************************/
 
-intern_gen *
+static intern_gen *
 CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
               node *coden)
 {
@@ -285,7 +288,8 @@ CompleteGrid (int *ls, int *us, int *step, int *width, int dim, intern_gen *ig,
  *
  *
  ******************************************************************************/
-int
+
+static int
 check_genarray_full_part (node *wln)
 {
     node *lowern, *uppern, *shapen;
@@ -336,7 +340,7 @@ check_genarray_full_part (node *wln)
  *
  ******************************************************************************/
 
-node *
+static node *
 CreateFullPartition (node *wln, node *arg_info)
 {
     int gen_shape, do_create, *array_null, *array_shape;
@@ -469,7 +473,7 @@ CreateFullPartition (node *wln, node *arg_info)
  *
  ******************************************************************************/
 
-void
+static void
 CheckOptimizePsi (node **psi, node *arg_info)
 {
     int index;
@@ -530,7 +534,7 @@ CheckOptimizePsi (node **psi, node *arg_info)
  *
  ******************************************************************************/
 
-void
+static void
 CheckOptimizeArray (node **array, node *arg_info)
 {
     int elts, i;
@@ -1162,11 +1166,10 @@ WLTNgenerator (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLTNcode(node *arg_node, node *arg_info)
+ *   node *WLTNcode( node *arg_node, node *arg_info)
  *
  * description:
  *   marks this N_Ncode node as processed and enters the code block.
- *
  *
  ******************************************************************************/
 
@@ -1175,11 +1178,15 @@ WLTNcode (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("WLTNcode");
 
-    DBUG_ASSERT (!NCODE_FLAG (arg_node), ("Body traversed a second time in WLT"));
-    NCODE_FLAG (arg_node) = 1; /* this body has been traversed and all
-                                  information has been gathered. */
+    DBUG_ASSERT ((!NCODE_FLAG (arg_node)), "Body traversed a second time in WLT");
+
+    /*
+     * this body has been traversed and all information has been gathered.
+     */
+    NCODE_FLAG (arg_node) = 1;
 
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
