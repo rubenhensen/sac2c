@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/09/21 16:33:52  khf
+ * NewIds() accepts N_num also, adapted creation of ntyes,
+ * changed prf F_shape_sel to F_idx_sel
+ *
  * Revision 1.16  2004/08/25 15:45:34  khf
  * Bug 44: faulty wlgenerator property for empty bounds resolved.
  * In ComputeGeneratorProperties only check for emptiness of
@@ -246,7 +250,6 @@ CreateStructConstant (node *expr, node *nassigns)
     node *tmp1, *tmp2, *idn, *iterator;
     shpseg *nshpseg;
     int dim = 0;
-    simpletype btype;
 
     DBUG_ENTER ("CreateStructConstant");
 
@@ -272,9 +275,9 @@ CreateStructConstant (node *expr, node *nassigns)
     }
 
     tmp1 = MakeFlatArray (tmp1);
-    btype = TYPES_BASETYPE (IDS_TYPE (LET_IDS (ASSIGN_INSTR (nassigns))));
     nshpseg = MakeShpseg (MakeNums (dim, NULL));
-    ARRAY_TYPE (tmp1) = MakeTypes (btype, 1, nshpseg, NULL, NULL);
+    ARRAY_TYPE (tmp1) = MakeTypes (T_int, 1, nshpseg, NULL, NULL);
+    ARRAY_NTYPE (tmp1) = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (dim));
     if (expr != NULL) {
         expr = FreeTree (expr);
     }
@@ -285,17 +288,17 @@ CreateStructConstant (node *expr, node *nassigns)
 
 /** <!--********************************************************************-->
  *
- * @fn ids *NewIds( node *id, node *fundef)
+ * @fn ids *NewIds( node *nd, node *fundef)
  *
  *   @brief creates new IDS.
  *
- *   @param  node *id       :  N_id node the new name and type will be
+ *   @param  node *nd       :  if N_id node the new name and type will be
  *                             infered from
  *           node *fundef   :  N_fundef
  *   @return ids *          :  new Ids
  ******************************************************************************/
 static ids *
-NewIds (node *id, node *fundef)
+NewIds (node *nd, node *fundef)
 {
     node *vardec;
     ids *_ids;
@@ -303,13 +306,23 @@ NewIds (node *id, node *fundef)
 
     DBUG_ENTER ("NewIds");
 
-    DBUG_ASSERT ((id != NULL) && (NODE_TYPE (id) == N_id), "ID is empty or not N_id");
+    DBUG_ASSERT ((nd != NULL) && ((NODE_TYPE (nd) == N_id) || (NODE_TYPE (nd) == N_num)),
+                 "ID is empty or not N_id/N_num");
 
-    nvarname = TmpVarName (ID_NAME (id));
-    _ids = MakeIds (nvarname, NULL, ST_regular);
-    vardec = MakeVardec (StringCopy (nvarname), DupOneTypes (ID_TYPE (id)), NULL);
+    if (NODE_TYPE (nd) == N_id) {
+        nvarname = TmpVarName (ID_NAME (nd));
+        _ids = MakeIds (nvarname, NULL, ST_regular);
+        vardec = MakeVardec (StringCopy (nvarname), DupOneTypes (ID_TYPE (nd)), NULL);
 
-    AVIS_TYPE (VARDEC_AVIS (vardec)) = TYCopyType (AVIS_TYPE (ID_AVIS (id)));
+        AVIS_TYPE (VARDEC_AVIS (vardec)) = TYCopyType (AVIS_TYPE (ID_AVIS (nd)));
+    } else {
+        nvarname = TmpVar ();
+        _ids = MakeIds (nvarname, NULL, ST_regular);
+        vardec = MakeVardec (StringCopy (nvarname), MakeTypes1 (T_int), NULL);
+
+        AVIS_TYPE (VARDEC_AVIS (vardec))
+          = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (0));
+    }
 
     IDS_VARDEC (_ids) = vardec;
     IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
@@ -321,18 +334,17 @@ NewIds (node *id, node *fundef)
 
 /** <!--********************************************************************-->
  *
- * @fn node CreateEntryFlatArray(int entry, int number, types *type)
+ * @fn node CreateEntryFlatArray(int entry, int number)
  *
  *   @brief creates an flat array with 'number' elements consisting of
  *          'entry'
  *
  *   @param  int entry   : entry within the new array
  *           int number  : number of elements in the new array
- *           types *type : type of the elements
  *   @return node *      : N_array
  ******************************************************************************/
 static node *
-CreateEntryFlatArray (int entry, int number, types *type)
+CreateEntryFlatArray (int entry, int number)
 {
     node *tmp;
     int i;
@@ -346,13 +358,15 @@ CreateEntryFlatArray (int entry, int number, types *type)
         tmp = MakeExprs (MakeNum (entry), tmp);
     }
     tmp = MakeFlatArray (tmp);
-    ARRAY_TYPE (tmp) = DupAllTypes (type);
+
+    ARRAY_TYPE (tmp)
+      = MakeTypes (T_int, 1, MakeShpseg (MakeNums (number, NULL)), NULL, NULL);
+    ARRAY_NTYPE (tmp) = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (number));
 
     ARRAY_ISCONST (tmp) = TRUE;
-    ARRAY_VECTYPE (tmp) = TYPES_BASETYPE (ARRAY_TYPE (tmp));
+    ARRAY_VECTYPE (tmp) = T_int;
     ARRAY_VECLEN (tmp) = number;
-    ARRAY_CONSTVEC (tmp)
-      = Array2Vec (TYPES_BASETYPE (ARRAY_TYPE (tmp)), ARRAY_AELEMS (tmp), NULL);
+    ARRAY_CONSTVEC (tmp) = Array2Vec (T_int, ARRAY_AELEMS (tmp), NULL);
     DBUG_RETURN (tmp);
 }
 
@@ -416,7 +430,6 @@ static int
 NormalizeStepWidth (node **step, node **width)
 {
     node *stp, *wth;
-    shpseg *nshpseg;
     int stpnum, wthnum, veclen;
     int error = 0, is_1 = 1;
 
@@ -433,9 +446,7 @@ NormalizeStepWidth (node **step, node **width)
             else
                 veclen = CountExprs (ARRAY_AELEMS ((*step)));
 
-            nshpseg = MakeShpseg (MakeNums (veclen, NULL));
-            (*width) = CreateEntryFlatArray (1, veclen,
-                                             MakeTypes (T_int, 1, nshpseg, NULL, NULL));
+            (*width) = CreateEntryFlatArray (1, veclen);
         }
 
         stp = ARRAY_AELEMS ((*step));
@@ -862,8 +873,8 @@ CreateFullPartition (node *wln, info *arg_info)
                                                *nassigns;
     ids *_ids;
     types *type;
-    shpseg *oshpseg, *nshpseg;
-    char *varname;
+    shpseg *nshpseg;
+    char *nvarname;
     int dim, i, gen_shape = 0;
     bool do_create;
 
@@ -882,26 +893,28 @@ CreateFullPartition (node *wln, info *arg_info)
     case WO_modarray: {
         /* create upper array bound */
 
-        oshpseg = Type2Shpseg (ID_TYPE (NWITH_ARRAY (wln)), &dim);
+        nshpseg = Type2Shpseg (ID_TYPE (NWITH_ARRAY (wln)), &dim);
 
         if (dim > 0) {
             tmp1 = NULL;
             for (i = (gen_shape - 1); i >= 0; i--) {
-                tmp1 = MakeExprs (MakeNum (SHPSEG_SHAPE (oshpseg, i)), tmp1);
+                tmp1 = MakeExprs (MakeNum (SHPSEG_SHAPE (nshpseg, i)), tmp1);
             }
             array_shape = MakeFlatArray (tmp1);
-            nshpseg = MakeShpseg (MakeNums (gen_shape, NULL));
-            ARRAY_TYPE (array_shape) = MakeTypes (T_int, 1, nshpseg, NULL, NULL);
+
+            ARRAY_TYPE (array_shape)
+              = MakeTypes (T_int, 1, MakeShpseg (MakeNums (gen_shape, NULL)), NULL, NULL);
+            ARRAY_NTYPE (array_shape)
+              = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (gen_shape));
 
             ARRAY_ISCONST (array_shape) = TRUE;
-            ARRAY_VECTYPE (array_shape) = TYPES_BASETYPE (ARRAY_TYPE (array_shape));
+            ARRAY_VECTYPE (array_shape) = T_int;
             ARRAY_VECLEN (array_shape) = gen_shape;
             ARRAY_CONSTVEC (array_shape)
-              = Array2Vec (TYPES_BASETYPE (ARRAY_TYPE (array_shape)),
-                           ARRAY_AELEMS (array_shape), NULL);
+              = Array2Vec (T_int, ARRAY_AELEMS (array_shape), NULL);
 
-            if (oshpseg != NULL)
-                oshpseg = FreeShpseg (oshpseg);
+            if (nshpseg != NULL)
+                nshpseg = FreeShpseg (nshpseg);
         } else if (dim <= -3) {
             /*
              * < -2: dimension == -2 - DIM and  unknown shape
@@ -910,13 +923,24 @@ CreateFullPartition (node *wln, info *arg_info)
             nassigns = NULL;
 
             for (i = (gen_shape - 1); i >= 0; i--) {
-                _ids = NewIds (NWITH_ARRAY (wln), INFO_WLPG_FUNDEF (arg_info));
+                nvarname = TmpVarName (ID_NAME (NWITH_ARRAY (wln)));
+                _ids = MakeIds (nvarname, NULL, ST_regular);
+                vardec = MakeVardec (StringCopy (nvarname), MakeTypes1 (T_int), NULL);
+
+                AVIS_TYPE (VARDEC_AVIS (vardec))
+                  = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (0));
+
+                IDS_VARDEC (_ids) = vardec;
+                IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
+
+                INFO_WLPG_FUNDEF (arg_info)
+                  = AddVardecs (INFO_WLPG_FUNDEF (arg_info), vardec);
 
                 /* index position for selection */
                 tmp1 = MakeNum (i);
                 /* the array for selection */
                 tmp2 = MakeExprs (DupTree (NWITH_ARRAY (wln)), NULL);
-                tmp1 = MakePrf (F_shape_sel, MakeExprs (tmp1, tmp2));
+                tmp1 = MakePrf (F_idx_shape_sel, MakeExprs (tmp1, tmp2));
 
                 nassigns = MakeAssign (MakeLet (tmp1, _ids), nassigns);
 
@@ -954,9 +978,7 @@ CreateFullPartition (node *wln, info *arg_info)
         /* determine type of expr in the operator (result of body) */
         type = ID_TYPE (NWITH_CEXPR (wln));
 
-        nshpseg = MakeShpseg (MakeNums (gen_shape, NULL));
-        array_null = CreateEntryFlatArray (0, gen_shape,
-                                           MakeTypes (T_int, 1, nshpseg, NULL, NULL));
+        array_null = CreateEntryFlatArray (0, gen_shape);
 
         /* create code for all new parts */
         if (NWITH_TYPE (wln) == WO_genarray) {
@@ -981,9 +1003,12 @@ CreateFullPartition (node *wln, info *arg_info)
                                INFO_WLPG_FUNDEF (arg_info));
         }
 
-        varname = TmpVar ();
-        _ids = MakeIds (varname, NULL, ST_regular);
-        vardec = MakeVardec (StringCopy (varname), DupOneTypes (type), NULL);
+        nvarname = TmpVar ();
+        _ids = MakeIds (nvarname, NULL, ST_regular);
+        vardec = MakeVardec (StringCopy (nvarname), DupOneTypes (type), NULL);
+
+        AVIS_TYPE (VARDEC_AVIS (vardec))
+          = TYCopyType (AVIS_TYPE (ID_AVIS (NWITH_CEXPR (wln))));
         IDS_VARDEC (_ids) = vardec;
         IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
         INFO_WLPG_FUNDEF (arg_info) = AddVardecs (INFO_WLPG_FUNDEF (arg_info), vardec);
@@ -1189,9 +1214,11 @@ CreateNewAssigns (node *expr, node *f_def)
     for (i = ID_SHAPE (expr, 0) - 1; i >= 0; i--) {
         nvarname = TmpVarName (ID_NAME (expr));
         _ids = MakeIds (nvarname, NULL, ST_regular);
-        type = MakeTypes1 (TYPES_BASETYPE (ID_TYPE (expr)));
+        type = MakeTypes1 (T_int);
         vardec = MakeVardec (StringCopy (nvarname), type, NULL);
 
+        AVIS_TYPE (VARDEC_AVIS (vardec))
+          = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (0));
         IDS_VARDEC (_ids) = vardec;
         IDS_AVIS (_ids) = VARDEC_AVIS (vardec);
 
