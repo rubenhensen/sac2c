@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/22 16:22:25  nmw
+ * when compiling for a c library, generic functions
+ * are not checked anymore to avoid conflicts for the
+ * typechecker
+ *
  * Revision 3.1  2000/11/20 18:00:18  sacbase
  * new release made
  *
@@ -2521,14 +2526,20 @@ CheckRest (node *arg_node, int kind)
                               FUNDEF_STATUS (fun_p->node), FUNDEF_ATTRIB (fun_p->node)));
         switch (fun_p->tag) {
         case NOT_CHECKED: {
-            if ((fun_p->n_dub == max_overload)
-                && (FUNDEF_STATUS (fun_p->node) != ST_imported_mod)
-                && (FUNDEF_STATUS (fun_p->node) != ST_imported_class)
-                && (FUNDEF_STATUS (fun_p->node) != ST_objinitfun)
-                && (FUNDEF_STATUS (fun_p->node) != ST_foldfun)) {
-                WARN (NODE_LINE (fun_p->node),
-                      ("Function '%s` is neither used nor has been specialized",
-                       ModName (fun_p->id_mod, fun_p->id)));
+            /* ignore generic functions when compiling for a c library */
+            if (!((generatelibrary & GENERATELIBRARY_C)
+                  && ((FUNDEF_ATTRIB (fun_p->node) == ST_shp_indep)
+                      || (FUNDEF_ATTRIB (fun_p->node) == ST_dim_indep)
+                      || (FUNDEF_ATTRIB (fun_p->node) == ST_generic)))) {
+                if ((fun_p->n_dub == max_overload)
+                    && (FUNDEF_STATUS (fun_p->node) != ST_imported_mod)
+                    && (FUNDEF_STATUS (fun_p->node) != ST_imported_class)
+                    && (FUNDEF_STATUS (fun_p->node) != ST_objinitfun)
+                    && (FUNDEF_STATUS (fun_p->node) != ST_foldfun)) {
+                    WARN (NODE_LINE (fun_p->node),
+                          ("Function '%s` is neither used nor has been specialized",
+                           ModName (fun_p->id_mod, fun_p->id)));
+                }
             }
             if (FUNDEF_STATUS (fun_p->node) != ST_objinitfun) {
                 arg_node = DeleteFun (fun_p->node, arg_node);
@@ -3276,7 +3287,11 @@ Typecheck (node *arg_node)
                 if ((FUNDEF_BODY (fun_p->node) != NULL)
                     && (FUNDEF_STATUS (fun_p->node) != ST_imported_mod)
                     && (FUNDEF_STATUS (fun_p->node) != ST_imported_class)
-                    && (FUNDEF_STATUS (fun_p->node) != ST_foldfun)) {
+                    && (FUNDEF_STATUS (fun_p->node) != ST_foldfun)
+                    && (!(((generatelibrary & GENERATELIBRARY_C)
+                           && ((FUNDEF_ATTRIB (fun_p->node) == ST_shp_indep)
+                               || (FUNDEF_ATTRIB (fun_p->node) == ST_dim_indep)
+                               || (FUNDEF_ATTRIB (fun_p->node) == ST_generic)))))) {
                     /*
                      * When typechecking a module/class implementation, we cannot simply
                      * start with the main function. Aleternatively, each function that is
