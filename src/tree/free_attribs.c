@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/09/24 20:22:44  sah
+ * Dataflowmasks are no more freed
+ *
  * Revision 1.2  2004/08/29 18:10:05  sah
  * general improvements
  *
@@ -400,9 +403,13 @@ FreeDFMMaskAttrib (DFMmask_t attr)
 {
     DBUG_ENTER ("FreeDFMMaskAttrib");
 
+    /* TODO
+
     if (attr != NULL) {
-        attr = DFMRemoveMask (attr);
+      attr = DFMRemoveMask( attr);
     }
+
+    */
 
     DBUG_RETURN (attr);
 }
