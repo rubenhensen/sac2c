@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.184  1998/04/21 13:36:50  dkr
+ * added a missing colon ...
+ *
  * Revision 1.183  1998/04/21 13:30:04  dkr
  * added funs CompWL...
  *
@@ -945,7 +948,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_WLblock, "N_WLblock", TravSons, TravSons, PrintWLblock, TravSons, TravSons,
-       TravSons, TravSons, FreeWLblock, TravSons, TravSons, CompWLblock TravSons,
+       TravSons, TravSons, FreeWLblock, TravSons, TravSons, CompWLblock, TravSons,
        DupWLblock, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
