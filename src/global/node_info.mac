@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.166  1998/03/26 13:59:25  dkr
+ * changed nnode for N_WLgrid:
+ *    CODE must be a attribute, not a son!
+ *
  * Revision 1.165  1998/03/22 18:04:54  srs
  * added new phase WLT
  *
@@ -899,7 +903,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, FreeWLgrid, TravSons, TravSons, TravSons, TravSons, DupWLgrid,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 3),
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
   /* ATTENTION !!!! N_ok has to be the last node declared here;
    *                otherwise a DBUG_ASSERT in traverse.c: Trav will
