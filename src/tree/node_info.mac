@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.233  2004/11/07 18:08:47  sah
+ * added ResolvePragma (rsp) traversal
+ *
  * Revision 3.232  2004/11/07 14:26:08  ktr
  * added EMREvardec.
  *
@@ -502,7 +505,7 @@
  *   muth_tab        crwiw_tab       concel_tab      repfun_tab
  *   func2lac_tab    ai_tab          uss_tab         unused_tab36
  *   l2f_tab         unused_tab30    unused_tab35    unused_tab34
- *   cudecls_tab     unused_tab29    unused_tab33    unused_tab27
+ *   cudecls_tab     unused_tab29    rsp_tab         unused_tab27
  *   unused_tab28    precomp3_tab    apc_tab         apt_tab
  *
  *   mapcw_tab       pih_tab         piw_tab         impspec_tab
@@ -811,8 +814,8 @@
 #ifndef NIFunused_29
 #define NIFunused_29(it_unused_29)
 #endif
-#ifndef NIFunused_33
-#define NIFunused_33(it_unused_33)
+#ifndef NIFrsp
+#define NIFrsp(it_rsp)
 #endif
 #ifndef NIFunused_27
 #define NIFunused_27(it_unused_27)
@@ -1055,8 +1058,8 @@
   it_emia, it_ntc, it_infdfms,                                                                         \
                                                                                                        \
   it_muth, it_crwiw, it_concel, it_repfun, it_fun2lac, it_ai, it_uss, it_unused_36,                    \
-  it_l2f, it_unused_30, it_unused_35, it_unused_34, it_cudecls, it_unused_29,                          \
-  it_unused_33, it_unused_27, it_unused_28, it_precomp3, it_apc, it_apt,                               \
+  it_l2f, it_unused_30, it_unused_35, it_unused_34, it_cudecls, it_unused_29, it_rsp,                  \
+  it_unused_27, it_unused_28, it_precomp3, it_apc, it_apt,                                             \
                                                                                                        \
   it_mapcw, it_pih, it_piw, it_impspec, it_tccp, it_ssafrm, it_chkavis, it_undossa,                    \
   it_ssadcr, it_ssacse, it_cmptree, it_profile, it_ssacf, it_ssalir, it_lirmov, it_wlpg,               \
@@ -1104,8 +1107,8 @@
                                 it_unused_36) NIFl2f (it_l2f) NIFunused_30 (it_unused_30)              \
                                 NIFunused_35 (it_unused_35) NIFunused_34 (                             \
                                   it_unused_34) NIFcudecls (it_cudecls)                                \
-                                  NIFunused_29 (it_unused_29) NIFunused_33 (                           \
-                                    it_unused_33) NIFunused_27 (it_unused_27)                          \
+                                  NIFunused_29 (it_unused_29) NIFrsp (                                 \
+                                    it_rsp) NIFunused_27 (it_unused_27)                                \
                                     NIFunused_28 (it_unused_28) NIFprecomp3 (                          \
                                       it_precomp3) NIFapc (it_apc) NIFapt (it_apt)                     \
                                                                                                        \
@@ -1434,7 +1437,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, NTCmodul, TravSons,
 
        MUTHmodul, TravSons, TravSons, TravSons, FUN2LACmodul, TravSons, USSModul,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, RSPModul,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
        MCWmodul, PIHmodul, PIWmodul, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -1577,7 +1580,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
        MUTHfundef, CRWIWfundef, CONCELfundef, REPFUNfundef, FUN2LACfundef, AIfundef,
        TravSons, TravSons, L2Ffundef, TravSons, TravSons, TravSons, CUDfundef, TravSons,
-       TravSons, TravSons, TravSons, PREC3fundef, APCfundef, APTfundef,
+       RSPFundef, TravSons, TravSons, PREC3fundef, APCfundef, APTfundef,
 
        MCWfundef, PIHfundef, PIWfundef, IMPSPECfundef, TCCPfundef, SSAfundef, CAVfundef,
        USSAfundef, SSADCRfundef, SSACSEfundef, CMPTunknown, PFfundef, SSACFfundef,
@@ -3522,7 +3525,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
 
 #undef NIFcudecls
 #undef NIFunused_29
-#undef NIFunused_33
+#undef NIFrsp
 #undef NIFunused_27
 
 #undef NIFunused_28

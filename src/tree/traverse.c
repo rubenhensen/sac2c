@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.106  2004/11/07 18:08:47  sah
+ * added ResolvePragma (rsp) traversal
+ *
  * Revision 3.105  2004/11/02 14:23:11  ktr
  * Added emlr_tab, emlro_tab, emdr_tab
  *
@@ -458,6 +461,7 @@
 #include "usesymbols.h"
 #include "serialize_link.h"
 #include "prepareinline.h"
+#include "resolvepragma.h"
 #include "filterrc.h"
 #include "aliasanalysis.h"
 #include "interfaceanalysis.h"
@@ -1350,15 +1354,15 @@ static funtab unused_tab29_rec = {{
 funtab *unused_tab29 = &unused_tab29_rec;
 
 /*
- *  (75) unused_tab33
+ *  (75) rsp_tab
  */
-static funtab unused_tab33_rec = {{
-#define NIFunused_33(it_unused_33) it_unused_33
+static funtab rsp_tab_rec = {{
+#define NIFrsp(it_rsp) it_rsp
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab33 = &unused_tab33_rec;
+                             },
+                             NULL,
+                             NULL};
+funtab *rsp_tab = &rsp_tab_rec;
 
 /*
  *  (76) unused_tab27

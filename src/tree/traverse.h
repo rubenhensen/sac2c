@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.81  2004/11/07 18:08:47  sah
+ * added ResolvePragma (rsp) traversal
+ *
  * Revision 3.80  2004/11/02 14:23:11  ktr
  * Added emlr_tab, emlro_tab, emdr_tab
  *
@@ -430,7 +433,7 @@ extern funtab *unused_tab35;
 extern funtab *unused_tab34;
 extern funtab *cudecls_tab;
 extern funtab *unused_tab29;
-extern funtab *unused_tab33;
+extern funtab *rsp_tab;
 extern funtab *unused_tab27;
 extern funtab *unused_tab28;
 extern funtab *apc_tab;
