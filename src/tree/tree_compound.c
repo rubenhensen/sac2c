@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.117  2004/11/27 00:40:03  khf
+ * adjusted names of TCmakePrf*
+ *
  * Revision 3.116  2004/11/26 21:52:28  ktr
  * LiftArg removed.
  *
@@ -3387,9 +3390,9 @@ TCisPhiFun (node *id)
 /******************************************************************************
  *
  * function:
- *   node *TBmakePrf1( prf prf, node *arg1)
- *   node *TBmakePrf2( prf prf, node *arg1, node *arg2)
- *   node *TBmakePrf3( prf prf, node *arg1, node *arg2, node *arg3)
+ *   node *TCmakePrf1( prf prf, node *arg1)
+ *   node *TCmakePrf2( prf prf, node *arg1, node *arg2)
+ *   node *TCmakePrf3( prf prf, node *arg1, node *arg2, node *arg3)
  *
  * description:
  *   create N_prf node for primitive function application with 1, 2, or 3
@@ -3398,7 +3401,7 @@ TCisPhiFun (node *id)
  ******************************************************************************/
 
 node *
-TBmakePrf1 (prf prf, node *arg1)
+TCmakePrf1 (prf prf, node *arg1)
 {
     node *res;
 
@@ -3410,7 +3413,7 @@ TBmakePrf1 (prf prf, node *arg1)
 }
 
 node *
-TBmakePrf2 (prf prf, node *arg1, node *arg2)
+TCmakePrf2 (prf prf, node *arg1, node *arg2)
 {
     node *res;
 
@@ -3422,7 +3425,7 @@ TBmakePrf2 (prf prf, node *arg1, node *arg2)
 }
 
 node *
-TBmakePrf3 (prf prf, node *arg1, node *arg2, node *arg3)
+TCmakePrf3 (prf prf, node *arg1, node *arg2, node *arg3)
 {
     node *res;
 
