@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/05/12 18:49:56  dkr
+ * changed some ICMs
+ *
  * Revision 1.6  1998/05/07 16:20:43  dkr
  * changed signature of ICMs
  *
@@ -39,27 +42,27 @@
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_BEGIN( char *array, char *idx_vec,
- *                            int dims, char **idx_scalar)
+ *   void ICMCompileWL_NONFOLD_BEGIN( char *array, char *idx_vec,
+ *                                    int dims, char **idx_scalar)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_BEGIN( array, idx_vec, dims, [ idx_scalar ]* )
+ *   WL_NONFOLD_BEGIN( array, idx_vec, dims, [ idx_scalar ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_BEGIN (char *array, char *idx_vec, int dims, char **idx_scalar)
+ICMCompileWL_NONFOLD_BEGIN (char *array, char *idx_vec, int dims, char **idx_scalar)
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileWL_BEGIN");
+    DBUG_ENTER ("ICMCompileWL_NONFOLD_BEGIN");
 
-#define WL_BEGIN
+#define WL_NONFOLD_BEGIN
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef WL_BEGIN
+#undef WL_NONFOLD_BEGIN
 
     INDENT;
     fprintf (outfile, "{\n");
@@ -70,14 +73,62 @@ ICMCompileWL_BEGIN (char *array, char *idx_vec, int dims, char **idx_scalar)
 
     for (i = 0; i < dims; i++) {
         INDENT;
-        fprintf (outfile, "int __stop_%s = ", idx_scalar[i]);
-        AccessShape (array, i);
+        fprintf (outfile, "%s = ", idx_scalar[i]);
+        fprintf (outfile, "0");
         fprintf (outfile, ";\n");
     }
     for (i = 0; i < dims; i++) {
         INDENT;
+        fprintf (outfile, "int __stop_%s = ", idx_scalar[i]);
+        AccessShape (array, i);
+        fprintf (outfile, ";\n");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL_FOLD_BEGIN( char *array, char *idx_vec,
+ *                                 int dims, char **idx_scalar)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   WL_FOLD_BEGIN( array, idx_vec, dims, [ idx_scalar ]* )
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_FOLD_BEGIN (char *array, char *idx_vec, int dims, char **idx_scalar)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileWL_FOLD_BEGIN");
+
+#define WL_FOLD_BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_FOLD_BEGIN
+
+    INDENT;
+    fprintf (outfile, "{\n");
+
+    indent++;
+    INDENT;
+    fprintf (outfile, "int %s__destptr = 0;\n", array);
+
+    for (i = 0; i < dims; i++) {
+        INDENT;
         fprintf (outfile, "%s = ", idx_scalar[i]);
         fprintf (outfile, "0");
+        fprintf (outfile, ";\n");
+    }
+    for (i = 0; i < dims; i++) {
+        INDENT;
+        fprintf (outfile, "int __stop_%s = ", idx_scalar[i]);
+        AccessShape (array, i);
         fprintf (outfile, ";\n");
     }
 
@@ -136,6 +187,54 @@ ICMCompileWL_ASSIGN (char *expr, char *array, char *idx_vec, int dims, char **id
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef WL_ASSIGN
+
+    INDENT;
+    fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s__destptr] = %s;\n", array, array, expr);
+
+#if 0
+  {
+    int i;
+
+    fprintf( outfile, "fprintf( stderr, \"");
+    for (i = 0; i < dims; i++) {
+      fprintf( outfile, "idx%d=%%d ", i);
+    }
+    fprintf( outfile, "\\n\"");
+    for (i = 0; i < dims; i++) {
+      fprintf( outfile, ", %s", idx_scalar[ i]);
+    }
+    fprintf( outfile, ");\n");
+  }
+#endif
+
+    INDENT;
+    fprintf (outfile, "%s__destptr++;\n", array);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL_FOLD( char *expr, char *array, char *idx_vec,
+ *                           int dims, char **idx_scalar)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   WL_FOLD( expr, array, idx_vec, dims, [ idx_scalar ]* )
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_FOLD (char *expr, char *array, char *idx_vec, int dims, char **idx_scalar)
+{
+    DBUG_ENTER ("ICMCompileWL_FOLD");
+
+#define WL_FOLD
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_FOLD
 
     INDENT;
     fprintf (outfile, "SAC_ND_A_FIELD(%s)[%s__destptr] = %s;\n", array, array, expr);
