@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2002/07/02 09:02:17  dkr
+ * no changes done
+ *
  * Revision 3.1  2000/11/20 18:01:14  sacbase
  * new release made
  *
@@ -28,7 +31,6 @@
  */
 
 #ifndef _icm2c_basic_h
-
 #define _icm2c_basic_h
 
 #define AccessVect(v, i) fprintf (outfile, "SAC_ND_READ_ARRAY( %s, %i)", v, i)
