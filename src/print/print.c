@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2001/04/27 14:21:31  nmw
+ * PrintFundef does not longer print code of zombie fundefs to
+ * header- or separate files of modules
+ *
  * Revision 3.55  2001/04/26 09:23:36  dkr
  * DoPrintAST: minor modifications done
  *
@@ -1229,15 +1233,19 @@ PrintFundef (node *arg_node, node *arg_info)
     INFO_PRINT_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_STATUS (arg_node) == ST_zombiefun) {
-        fprintf (outfile, "/*\n");
-        INDENT;
-        fprintf (outfile, " * zombie function:\n");
-        INDENT
-        fprintf (outfile, " *   ");
-        PrintFunctionHeader (arg_node, arg_info);
-        fprintf (outfile, "\n");
-        INDENT;
-        fprintf (outfile, " */\n\n");
+        if ((INFO_PRINT_SEPARATE (arg_info) == FALSE)
+            && (INFO_PRINT_PROTOTYPE (arg_info) == FALSE)) {
+            /* do not print zombie code in header files, do not generate separate files */
+            fprintf (outfile, "/*\n");
+            INDENT;
+            fprintf (outfile, " * zombie function:\n");
+            INDENT;
+            fprintf (outfile, " *   ");
+            PrintFunctionHeader (arg_node, arg_info);
+            fprintf (outfile, "\n");
+            INDENT;
+            fprintf (outfile, " */\n\n");
+        }
     } else {
 
         if (INFO_PRINT_PROTOTYPE (arg_info)) {
