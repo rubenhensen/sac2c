@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/15 13:07:13  dkr
+ * DBUG_ASSERT for BlockVar scheduler added
+ *
  * Revision 3.1  2000/11/20 18:02:27  sacbase
  * new release made
  *
@@ -102,6 +105,8 @@ MakeDefaultSchedulingVarSegment ()
     DBUG_ENTER ("MakeDefaultSchedulingVarSegment");
 
     sched = SCHMakeScheduling ("BlockVar");
+
+    DBUG_ASSERT ((0), "Sorry, the 'BlockVar' scheduler is not implemented yet!");
 
     DBUG_RETURN (sched);
 }
