@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2003/10/19 21:38:25  dkrHH
+ * prf_string moved from print.[ch] to globals.[ch] (for BEtest)
+ *
  * Revision 3.39  2003/09/16 16:09:35  sbs
  * spec_mode and spec_mode_str added.
  *
@@ -756,6 +759,12 @@ int indent = 0;
 #define TYP_IFsize(sz) sz
 int basetype_size[] = {
 #include "type_info.mac"
+};
+
+char *prf_string[] = {
+#define PRF_IF(a, b, c, d, e, f, g, h) c
+#include "prf_node_info.mac"
+#undef PRF_IF
 };
 
 int min_array_rep = MIN_ARRAY_REP_SCL_AKS;

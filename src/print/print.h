@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2003/10/19 21:39:45  dkrHH
+ * prf_string moved from print.[ch] to globals.[ch] (for BEtest)
+ *
  * Revision 3.21  2002/09/11 23:15:57  dkr
  * prf_name_string[] removed
  * prf_symbol[] added
@@ -78,8 +81,8 @@
 
 #define INDENT DO_INDENT (indent)
 
-extern char *prf_string[];
 extern char *prf_symbol[];
+extern bool prf_is_infix[];
 
 /*
  * Functions for printing (parts of) the AST

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.142  2003/10/19 21:39:45  dkrHH
+ * prf_string moved from print.[ch] to globals.[ch] (for BEtest)
+ *
  * Revision 3.141  2003/10/15 12:25:48  dkrHH
  * indent warning deactivated for SPMD-funs only
  *
@@ -347,12 +350,6 @@ static node *last_assignment_icm = NULL;
 #undef ICM_VARINT
 #undef ICM_END
 #undef ICM_ALL
-
-char *prf_string[] = {
-#define PRF_IF(a, b, c, d, e, f, g, h) c
-#include "prf_node_info.mac"
-#undef PRF_IF
-};
 
 char *prf_symbol[] = {
 #define PRF_IF(a, b, c, d, e, f, g, h) d

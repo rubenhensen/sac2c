@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2003/10/19 21:38:25  dkrHH
+ * prf_string moved from print.[ch] to globals.[ch] (for BEtest)
+ *
  * Revision 3.32  2003/09/17 18:12:34  dkr
  * RCAO renamed into DAO for TAGGED_ARRAYS
  *
@@ -469,6 +472,8 @@ extern deps *dependencies;
 extern int indent;
 
 extern int basetype_size[];
+
+extern char *prf_string[];
 
 extern int min_array_rep;
 
