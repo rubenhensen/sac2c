@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2001/02/14 10:22:13  dkr
+ * PrintAST extended: FUNDEF_TYPES, ..._STATUS, ..._ATTRIB are printed
+ * now, too
+ *
  * Revision 3.20  2001/02/12 16:56:07  nmw
  * warning corrected
  *
@@ -612,6 +616,7 @@ PrintIds (ids *arg, node *arg_info)
         if (NULL != IDS_NEXT (arg)) {
             fprintf (outfile, ", ");
         }
+
         PrintIds (IDS_NEXT (arg), arg_info);
     }
 
@@ -1865,7 +1870,7 @@ PrintExprs (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PrintId(node *arg_node, node *arg_info)
+ *   node *PrintId( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -1997,7 +2002,8 @@ PrintBool (node *arg_node, node *arg_info)
 
 /******************************************************************************
  *
- * Function: node *PrintStr(node *arg_node, node *arg_info)
+ * Function:
+ *   node *PrintStr(node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -3847,21 +3853,21 @@ DoPrintShapeAST (int dim, shpseg *shape)
 /******************************************************************************
  *
  * function:
- *   void DoPrintTypesAST( types *type)
+ *   void DoPrintBasicTypeAST( types *type)
  *
  * description:
- *   This function is called from 'DoPrintAST' only.
- *   Prints a types-structure.
+ *   Prints a basic types-structure.
+ *   This function is called from 'DoPrintAllTypeAST' only.
  *
  ******************************************************************************/
 
 static void
-DoPrintTypesAST_ (types *type)
+DoPrintBasicTypeAST (types *type)
 {
     shpseg *shape;
     int dim;
 
-    DBUG_ENTER ("DoPrintTypesAST_");
+    DBUG_ENTER ("DoPrintBasicTypeAST");
 
     fprintf (outfile, "%s", type_string[GetBasetype (type)]);
     shape = Type2Shpseg (type, &dim);
@@ -3873,36 +3879,78 @@ DoPrintTypesAST_ (types *type)
     DBUG_VOID_RETURN;
 }
 
+/******************************************************************************
+ *
+ * Function:
+ *   void DoPrintAllTypeAST( types *type)
+ *
+ * Description:
+ *   Prints a single types-structure.
+ *   This function is called from 'DoPrintTypesAST' only.
+ *
+ ******************************************************************************/
+
 static void
-DoPrintTypesAST (types *type)
+DoPrintAllTypeAST (types *type)
 {
     node *tdef;
 
+    DBUG_ENTER ("DoPrintAllTypeAST");
+
+    if (TYPES_BASETYPE (type) == T_user) {
+        if (TYPES_NAME (type) != NULL) {
+            fprintf (outfile, "%s", TYPES_NAME (type));
+        } else {
+            fprintf (outfile, "?");
+        }
+        DoPrintShapeAST (TYPES_DIM (type), TYPES_SHPSEG (type));
+        if (TYPES_NAME (type) != NULL) {
+            fprintf (outfile, "<" F_PTR ">", TYPES_NAME (type));
+        }
+
+        fprintf (outfile, "/");
+
+        tdef = TYPES_TDEF (type);
+        if (tdef != NULL) {
+            DoPrintBasicTypeAST (type);
+            fprintf (outfile, "<" F_PTR ">", tdef);
+        } else {
+            fprintf (outfile, "NULL");
+        }
+    } else {
+        DoPrintBasicTypeAST (type);
+    }
+
+    if (TYPES_NEXT (type) != NULL) {
+        fprintf (outfile, " ");
+        DoPrintAllTypeAST (TYPES_NEXT (type));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void DoPrintTypesAST( types *type)
+ *
+ * Description:
+ *   Prints all the data of a types-structure.
+ *
+ ******************************************************************************/
+
+static void
+DoPrintTypesAST (types *type)
+{
     DBUG_ENTER ("DoPrintTypesAST");
 
     if (type != NULL) {
-        if (TYPES_BASETYPE (type) == T_user) {
-            if (TYPES_NAME (type) != NULL) {
-                fprintf (outfile, "%s", TYPES_NAME (type));
-            } else {
-                fprintf (outfile, "?");
-            }
-            DoPrintShapeAST (TYPES_DIM (type), TYPES_SHPSEG (type));
-            if (TYPES_NAME (type) != NULL) {
-                fprintf (outfile, "<" F_PTR ">", TYPES_NAME (type));
-            }
-
-            fprintf (outfile, "/");
-
-            tdef = TYPES_TDEF (type);
-            if (tdef != NULL) {
-                DoPrintTypesAST_ (type);
-                fprintf (outfile, "<" F_PTR ">", tdef);
-            } else {
-                fprintf (outfile, "NULL");
-            }
-        } else {
-            DoPrintTypesAST_ (type);
+        if (TYPES_NEXT (type) != NULL) {
+            fprintf (outfile, "{ ");
+        }
+        DoPrintAllTypeAST (type);
+        if (TYPES_NEXT (type) != NULL) {
+            fprintf (outfile, " }");
         }
     } else {
         fprintf (outfile, "NULL");
@@ -3914,7 +3962,7 @@ DoPrintTypesAST (types *type)
 /******************************************************************************
  *
  * function:
- *   void DoPrintIdsAST( ids *vars)
+ *   void DoPrintIdsAST( ids *vars, bool print_status)
  *
  * description:
  *   This function is called from 'DoPrintAST' only.
@@ -3923,7 +3971,7 @@ DoPrintTypesAST (types *type)
  ******************************************************************************/
 
 static void
-DoPrintIdsAST (ids *vars)
+DoPrintIdsAST (ids *vars, bool print_status)
 {
     DBUG_ENTER ("DoPrintIdsAST");
 
@@ -3931,8 +3979,16 @@ DoPrintIdsAST (ids *vars)
     while (vars != NULL) {
         fprintf (outfile, "%s<" F_PTR ">", IDS_NAME (vars), IDS_NAME (vars));
         PrintRC (IDS_REFCNT (vars), IDS_NAIVE_REFCNT (vars), 1);
-        fprintf (outfile, " ");
 
+        if (print_status) {
+            fprintf (outfile, " (");
+            fprintf (outfile, "attr: %s", mdb_statustype[IDS_ATTRIB (vars)]);
+            fprintf (outfile, ", ");
+            fprintf (outfile, "stat: %s", mdb_statustype[IDS_STATUS (vars)]);
+            fprintf (outfile, ")");
+        }
+
+        fprintf (outfile, " ");
         vars = IDS_NEXT (vars);
     }
     fprintf (outfile, "}");
@@ -3976,9 +4032,17 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
         switch (NODE_TYPE (arg_node)) {
         case N_typedef:
             fprintf (outfile, "(");
+
             DoPrintTypesAST (TYPEDEF_TYPE (arg_node));
             fprintf (outfile, " %s<" F_PTR ">",
                      STR_OR_NULL (TYPEDEF_NAME (arg_node), "?"), TYPEDEF_NAME (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "attr: %s", mdb_statustype[TYPEDEF_ATTRIB (arg_node)]);
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "stat: %s", mdb_statustype[TYPEDEF_STATUS (arg_node)]);
+
             fprintf (outfile, ")");
 
             skip = TYPEDEF_NEXT (arg_node);
@@ -3986,9 +4050,17 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
         case N_objdef:
             fprintf (outfile, "(");
+
             DoPrintTypesAST (OBJDEF_TYPE (arg_node));
             fprintf (outfile, " %s<" F_PTR ">", STR_OR_NULL (OBJDEF_NAME (arg_node), "?"),
                      OBJDEF_NAME (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "attr: %s", mdb_statustype[OBJDEF_ATTRIB (arg_node)]);
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "stat: %s", mdb_statustype[OBJDEF_STATUS (arg_node)]);
+
             fprintf (outfile, ")");
 
             skip = OBJDEF_NEXT (arg_node);
@@ -3996,8 +4068,17 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
         case N_fundef:
             fprintf (outfile, "(");
-            fprintf (outfile, "%s<" F_PTR ">", FUNDEF_NAME (arg_node),
+
+            DoPrintTypesAST (FUNDEF_TYPES (arg_node));
+            fprintf (outfile, " %s<" F_PTR ">", FUNDEF_NAME (arg_node),
                      FUNDEF_NAME (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "attr: %s", mdb_statustype[FUNDEF_ATTRIB (arg_node)]);
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "stat: %s", mdb_statustype[FUNDEF_STATUS (arg_node)]);
+
             fprintf (outfile, ")");
 
             skip = FUNDEF_NEXT (arg_node);
@@ -4015,11 +4096,22 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
         case N_arg:
             fprintf (outfile, "(");
+
             DoPrintTypesAST (ARG_TYPE (arg_node));
             fprintf (outfile, " %s<" F_PTR ">", STR_OR_NULL (ARG_NAME (arg_node), "?"),
                      ARG_NAME (arg_node));
+
             PrintRC (ARG_REFCNT (arg_node), ARG_NAIVE_REFCNT (arg_node), 1);
-            fprintf (outfile, ", varno: %i", ARG_VARNO (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "varno: %i", ARG_VARNO (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "attr: %s", mdb_statustype[ARG_ATTRIB (arg_node)]);
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "stat: %s", mdb_statustype[ARG_STATUS (arg_node)]);
+
             fprintf (outfile, ")");
 
             skip = ARG_NEXT (arg_node);
@@ -4031,11 +4123,22 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
         case N_vardec:
             fprintf (outfile, "(");
+
             DoPrintTypesAST (ARG_TYPE (arg_node));
             fprintf (outfile, " %s<" F_PTR ">", STR_OR_NULL (VARDEC_NAME (arg_node), "?"),
                      VARDEC_NAME (arg_node));
+
             PrintRC (VARDEC_REFCNT (arg_node), VARDEC_NAIVE_REFCNT (arg_node), 1);
-            fprintf (outfile, ", varno: %i", VARDEC_VARNO (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "varno: %i", VARDEC_VARNO (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "attr: %s", mdb_statustype[VARDEC_ATTRIB (arg_node)]);
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "stat: %s", mdb_statustype[VARDEC_STATUS (arg_node)]);
+
             fprintf (outfile, ")");
 
             skip = VARDEC_NEXT (arg_node);
@@ -4050,47 +4153,66 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             break;
 
         case N_let:
-            DoPrintIdsAST (LET_IDS (arg_node));
+            DoPrintIdsAST (LET_IDS (arg_node), TRUE);
             break;
 
         case N_ap:
             fprintf (outfile, "(");
+
             fprintf (outfile, "%s<" F_PTR ">", AP_NAME (arg_node), AP_NAME (arg_node));
+
             fprintf (outfile, ")");
             break;
 
         case N_prf:
             fprintf (outfile, "(");
+
             fprintf (outfile, "%s", mdb_prf[PRF_PRF (arg_node)]);
+
             fprintf (outfile, ")");
             break;
 
         case N_id:
             fprintf (outfile, "(");
+
             if (ID_VARDEC (arg_node) != NULL) {
                 DoPrintTypesAST (ID_TYPE (arg_node));
                 fprintf (outfile, " ");
             }
             fprintf (outfile, "%s<" F_PTR ">", ID_NAME (arg_node), ID_NAME (arg_node));
+
             PrintRC (ID_REFCNT (arg_node), ID_NAIVE_REFCNT (arg_node), 1);
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "attr: %s", mdb_statustype[ID_ATTRIB (arg_node)]);
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "stat: %s", mdb_statustype[ID_STATUS (arg_node)]);
+
             fprintf (outfile, ")");
             break;
 
         case N_num:
             fprintf (outfile, "(");
+
             fprintf (outfile, "%i", NUM_VAL (arg_node));
+
             fprintf (outfile, ")");
             break;
 
         case N_array:
             fprintf (outfile, "(");
+
             DoPrintTypesAST (ARRAY_TYPE (arg_node));
+
             fprintf (outfile, ")");
             break;
 
         case N_icm:
             fprintf (outfile, "(");
+
             fprintf (outfile, "%s", ICM_NAME (arg_node));
+
             fprintf (outfile, ")");
             break;
 
@@ -4107,10 +4229,12 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
         case N_Nwithid:
             fprintf (outfile, "(");
+
             if (NWITHID_VEC (arg_node) != NULL) {
                 char *withid = IDS_NAME (NWITHID_VEC (arg_node));
 
                 fprintf (outfile, "%s<" F_PTR ">", withid, withid);
+
                 PrintRC (IDS_REFCNT (NWITHID_VEC (arg_node)),
                          IDS_NAIVE_REFCNT (NWITHID_VEC (arg_node)), 1);
             } else {
@@ -4118,28 +4242,33 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             }
             fprintf (outfile, " = ");
             if (NWITHID_IDS (arg_node) != NULL) {
-                DoPrintIdsAST (NWITHID_IDS (arg_node));
+                DoPrintIdsAST (NWITHID_IDS (arg_node), TRUE);
             } else {
                 fprintf (outfile, "?");
             }
+
             fprintf (outfile, ")");
             break;
 
         case N_Nwithop:
             fprintf (outfile, "(");
+
             if (NWITHOP_FUNDEF (arg_node) != NULL) {
                 fprintf (outfile, "%s", FUNDEF_NAME (NWITHOP_FUNDEF (arg_node)));
             }
+
             fprintf (outfile, ")");
             break;
 
         case N_Npart:
             fprintf (outfile, "(");
+
             if (NPART_CODE (arg_node) != NULL) {
                 fprintf (outfile, "code used: " F_PTR, NPART_CODE (arg_node));
             } else {
                 fprintf (outfile, "no code");
             }
+
             fprintf (outfile, ")");
 
             skip = NPART_NEXT (arg_node);
@@ -4147,7 +4276,9 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
         case N_Ncode:
             fprintf (outfile, "(");
+
             fprintf (outfile, "<" F_PTR ">, used: %d", arg_node, NCODE_USED (arg_node));
+
             fprintf (outfile, ")");
 
             skip = NCODE_NEXT (arg_node);
@@ -4155,32 +4286,42 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
         case N_Nwith2:
             fprintf (outfile, "(");
+
             fprintf (outfile, "offset_needed: %i", NWITH2_OFFSET_NEEDED (arg_node));
+
             fprintf (outfile, ")");
             break;
 
         case N_WLseg:
             fprintf (outfile, "(");
+
             fprintf (outfile, "idx_min: ");
             PRINT_VECT (outfile, WLSEG_IDX_MIN (arg_node), WLSEG_DIMS (arg_node), "%i");
 
-            fprintf (outfile, ", idx_max: ");
+            fprintf (outfile, ", ");
+            fprintf (outfile, "idx_max: ");
             PRINT_VECT (outfile, WLSEG_IDX_MAX (arg_node), WLSEG_DIMS (arg_node), "%i");
 
-            fprintf (outfile, ", sv: ");
+            fprintf (outfile, ", ");
+            fprintf (outfile, "sv: ");
             PRINT_VECT (outfile, WLSEG_SV (arg_node), WLSEG_DIMS (arg_node), "%i");
 
             for (i = 0; i < WLSEG_BLOCKS (arg_node); i++) {
-                fprintf (outfile, ", bv%i: ", i);
+                fprintf (outfile, ", ");
+                fprintf (outfile, "bv%i: ", i);
                 PRINT_VECT (outfile, WLSEG_BV (arg_node, i), WLSEG_DIMS (arg_node), "%i");
             }
 
-            fprintf (outfile, ", ubv: ");
+            fprintf (outfile, ", ");
+            fprintf (outfile, "ubv: ");
             PRINT_VECT (outfile, WLSEG_UBV (arg_node), WLSEG_DIMS (arg_node), "%i");
 
-            fprintf (outfile, ", homsv: ");
+            fprintf (outfile, ", ");
+            fprintf (outfile, "homsv: ");
             PRINT_VECT (outfile, WLSEG_HOMSV (arg_node), WLSEG_DIMS (arg_node), "%i");
-            fprintf (outfile, ", maxhomdim: %i", WLSEG_MAXHOMDIM (arg_node));
+            fprintf (outfile, ", ");
+            fprintf (outfile, "maxhomdim: %i", WLSEG_MAXHOMDIM (arg_node));
+
             fprintf (outfile, ")");
 
             skip = WLSEG_NEXT (arg_node);
@@ -4188,10 +4329,12 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
         case N_WLsegVar:
             fprintf (outfile, "(");
+
             fprintf (outfile, "idx_min: ");
             PRINT_VECT (outfile, WLSEG_IDX_MIN (arg_node), WLSEG_DIMS (arg_node), "%i");
 
-            fprintf (outfile, ", idx_max: ");
+            fprintf (outfile, ", ");
+            fprintf (outfile, "idx_max: ");
             PRINT_VECT (outfile, WLSEG_IDX_MAX (arg_node), WLSEG_DIMS (arg_node), "%i");
 
             fprintf (outfile, ")");
@@ -4201,10 +4344,14 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
         case N_WLblock:
             fprintf (outfile, "(");
+
             fprintf (outfile, "%d->%d block%d[%d] %d", WLBLOCK_BOUND1 (arg_node),
                      WLBLOCK_BOUND2 (arg_node), WLBLOCK_LEVEL (arg_node),
                      WLBLOCK_DIM (arg_node), WLBLOCK_STEP (arg_node));
-            fprintf (outfile, ", noop: %i", WLBLOCK_NOOP (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "noop: %i", WLBLOCK_NOOP (arg_node));
+
             fprintf (outfile, ")");
 
             skip = WLBLOCK_NEXT (arg_node);
@@ -4212,10 +4359,14 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
         case N_WLublock:
             fprintf (outfile, "(");
+
             fprintf (outfile, "%d->%d ublock%d[%d] %d", WLUBLOCK_BOUND1 (arg_node),
                      WLUBLOCK_BOUND2 (arg_node), WLUBLOCK_LEVEL (arg_node),
                      WLUBLOCK_DIM (arg_node), WLUBLOCK_STEP (arg_node));
-            fprintf (outfile, ", noop: %i", WLUBLOCK_NOOP (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "noop: %i", WLUBLOCK_NOOP (arg_node));
+
             fprintf (outfile, ")");
 
             skip = WLUBLOCK_NEXT (arg_node);
@@ -4223,10 +4374,14 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
         case N_WLstride:
             fprintf (outfile, "(");
+
             fprintf (outfile, "%d->%d step%d[%d] %d", WLSTRIDE_BOUND1 (arg_node),
                      WLSTRIDE_BOUND2 (arg_node), WLSTRIDE_LEVEL (arg_node),
                      WLSTRIDE_DIM (arg_node), WLSTRIDE_STEP (arg_node));
-            fprintf (outfile, ", noop: %i", WLSTRIDE_NOOP (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "noop: %i", WLSTRIDE_NOOP (arg_node));
+
             fprintf (outfile, ")");
 
             skip = WLSTRIDE_NEXT (arg_node);
@@ -4234,13 +4389,18 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
         case N_WLstrideVar:
             fprintf (outfile, "(");
+
             PrintWLboundVar (WLSTRIDEVAR_BOUND1 (arg_node), WLSTRIDEVAR_DIM (arg_node));
             fprintf (outfile, "->");
             PrintWLboundVar (WLSTRIDEVAR_BOUND2 (arg_node), WLSTRIDEVAR_DIM (arg_node));
-            fprintf (outfile, ", step%d[%d] ", WLSTRIDEVAR_LEVEL (arg_node),
+            fprintf (outfile, ", ");
+            fprintf (outfile, "step%d[%d] ", WLSTRIDEVAR_LEVEL (arg_node),
                      WLSTRIDEVAR_DIM (arg_node));
             PrintWLboundVar (WLSTRIDEVAR_STEP (arg_node), WLSTRIDEVAR_DIM (arg_node));
-            fprintf (outfile, ", noop: %i", WLSTRIDEVAR_NOOP (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "noop: %i", WLSTRIDEVAR_NOOP (arg_node));
+
             fprintf (outfile, ")");
 
             skip = WLSTRIDEVAR_NEXT (arg_node);
@@ -4248,10 +4408,16 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
         case N_WLgrid:
             fprintf (outfile, "(");
+
             fprintf (outfile, "%d->%d [%d]", WLGRID_BOUND1 (arg_node),
                      WLGRID_BOUND2 (arg_node), WLGRID_DIM (arg_node));
-            fprintf (outfile, ", fitted: %i", WLGRID_FITTED (arg_node));
-            fprintf (outfile, ", noop: %i", WLGRID_NOOP (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "fitted: %i", WLGRID_FITTED (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "noop: %i", WLGRID_NOOP (arg_node));
+
             fprintf (outfile, ")");
 
             if (WLGRID_CODE (arg_node) != NULL) {
@@ -4265,12 +4431,18 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
 
         case N_WLgridVar:
             fprintf (outfile, "(");
+
             PrintWLboundVar (WLGRIDVAR_BOUND1 (arg_node), WLGRIDVAR_DIM (arg_node));
             fprintf (outfile, "->");
             PrintWLboundVar (WLGRIDVAR_BOUND2 (arg_node), WLGRIDVAR_DIM (arg_node));
             fprintf (outfile, " [%d]", WLGRIDVAR_DIM (arg_node));
-            fprintf (outfile, ", fitted: %i", WLGRIDVAR_FITTED (arg_node));
-            fprintf (outfile, ", noop: %i", WLGRIDVAR_NOOP (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "fitted: %i", WLGRIDVAR_FITTED (arg_node));
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "noop: %i", WLGRIDVAR_NOOP (arg_node));
+
             fprintf (outfile, ")");
 
             skip = WLGRIDVAR_NEXT (arg_node);
