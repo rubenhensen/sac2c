@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.38  2004/11/27 00:18:24  ktr
+# dependencies reactivated
+#
 # Revision 3.37  2004/11/27 00:16:00  ktr
 # added type_conversions.
 #
@@ -157,4 +160,4 @@ clean:
 # - relies on INCS to be set appropriately
 #
 
-# include ../../Makefile.Deps
+include ../../Makefile.Deps
