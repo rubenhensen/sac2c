@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/03/27 21:39:23  dkr
+ * macro PRINT_VECT moved to internal_lib.h
+ *
  * Revision 3.11  2001/03/22 19:26:25  dkr
  * include of tree.h eliminated
  *
@@ -85,21 +88,6 @@
     }
 
 #define INDENT DO_INDENT (indent)
-
-#define PRINT_VECT(file, vect, dims, format)                                             \
-    {                                                                                    \
-        int d;                                                                           \
-        if (vect != NULL) {                                                              \
-            fprintf (file, "[ ");                                                        \
-            for (d = 0; d < dims; d++) {                                                 \
-                fprintf (file, format, (vect)[d]);                                       \
-                fprintf (file, " ");                                                     \
-            }                                                                            \
-            fprintf (file, "]");                                                         \
-        } else {                                                                         \
-            fprintf (file, "NULL");                                                      \
-        }                                                                                \
-    }
 
 extern char *prf_string[];
 
