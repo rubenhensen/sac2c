@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/04/14 09:24:31  cg
+ * ICMs are now printed with a following ';'
+ *
  * Revision 2.9  1999/04/13 14:02:27  cg
  * added printing of #pragma cachesim.
  *
@@ -1665,7 +1668,7 @@ PrintIcm (node *arg_node, node *arg_info)
         if (NULL != ICM_ARGS (arg_node)) {
             Trav (ICM_ARGS (arg_node), arg_info);
         }
-        fprintf (outfile, ")");
+        fprintf (outfile, ");");
     }
 
     if (NULL != ICM_NEXT (arg_node)) {
