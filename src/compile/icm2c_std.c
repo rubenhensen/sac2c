@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2003/12/01 18:29:41  dkrHH
+ * DBUG_ASSERT for ND_DECL__MIRROR_PARAM added:
+ * checks whether array size >=0
+ *
  * Revision 3.58  2003/12/01 18:27:46  dkrHH
  * DBUG_ASSERT for ND_DECL__MIRROR added:
  * checks whether array size >=0
@@ -485,6 +489,7 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
             fprintf (outfile, "const int SAC_ND_A_MIRROR_SHAPE( %s, %d) = %d;\n", var_NT,
                      i, shp[i]);
             size *= shp[i];
+            DBUG_ASSERT ((size >= 0), "array with size <0 found!");
         }
         INDENT;
         fprintf (outfile, "const int SAC_ND_A_MIRROR_SIZE( %s) = %d;\n", var_NT, size);
