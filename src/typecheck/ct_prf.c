@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2003/09/10 09:42:35  sbs
+ * NTCPRF_drop_SxV improved /
+ * NTCPRF_take_SxV added.
+ *
  * Revision 1.18  2003/09/09 14:56:11  sbs
  * extended type error reporting added
  *
@@ -1072,6 +1076,50 @@ NTCPRF_int_op_SxS (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
+ *    ntype *NTCPRF_take_SxV( te_info *info, ntype *args)
+ *
+ * description:
+ *    int []  x  simple [.]  ->  simple [.]
+ *
+ ******************************************************************************/
+
+ntype *
+NTCPRF_take_SxV (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *array1, *array2;
+    shape *shp;
+
+    DBUG_ENTER ("NTCPRF_take_SxV");
+    DBUG_ASSERT (TYGetProductSize (args) == 2,
+                 "take_SxV called with incorrect number of arguments");
+
+    array1 = TYGetProductMember (args, 0);
+    array2 = TYGetProductMember (args, 1);
+
+    TEAssureIntS (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
+    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
+    TEAssureVect (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
+    TEAssureAbsValFitsShape (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
+                             array2);
+
+    if (TYIsAKV (array1)) {
+        if (TYIsAKV (array2)) {
+            res = TYMakeAKV (TYCopyType (TYGetScalar (array2)), ApplyCF (info, args));
+        } else {
+            shp = SHCreateShape (1, abs (((int *)COGetDataVec (TYGetValue (array1)))[0]));
+            res = TYMakeAKS (TYCopyType (TYGetScalar (array2)), shp);
+        }
+    } else {
+        res = TYMakeAKD (TYCopyType (TYGetScalar (array2)), 1, SHMakeShape (0));
+    }
+
+    DBUG_RETURN (TYMakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
  *    ntype *NTCPRF_drop_SxV( te_info *info, ntype *args)
  *
  * description:
@@ -1096,6 +1144,8 @@ NTCPRF_drop_SxV (te_info *info, ntype *args)
     TEAssureIntS (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
     TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
     TEAssureVect (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
+    TEAssureAbsValFitsShape (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
+                             array2);
 
     if (TYIsAKV (array1) && (TYIsAKV (array2) || TYIsAKS (array2))) {
         if (TYIsAKV (array2)) {
