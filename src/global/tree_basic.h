@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.61  2000/01/05 17:26:51  dkr
+ * status type ST_loopfun in comment for N_fundef added
+ *
  * Revision 2.60  1999/12/13 16:50:57  dkr
  * definition of COND_NAIVE_ELSE changed in order to satisfy CC
  *
@@ -1062,6 +1065,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *          ST_imported     imported function (maybe declaration only)
  *          ST_generic      class conversion function
  *          ST_spmdfun      function containing lifted SPMD-region
+ *          ST_loopfun      function represents a loop
  *
  *  ATTRIB: ST_regular      dimension-dependent or non-array function
  *          ST_independent  dimension-independent array function
