@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.142  1998/05/04 15:36:37  dkr
+ * changed usage of WL_ASSIGN
+ *
  * Revision 1.141  1998/05/03 14:02:40  dkr
  * changed COMPWL...
  *
@@ -6246,7 +6249,7 @@ COMPNcode (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-ids *wl_ids = NULL;
+node *wl_icm_args = NULL;
 node *wl_withid = NULL;
 
 /******************************************************************************
@@ -6259,8 +6262,8 @@ node *wl_withid = NULL;
  *
  * remarks:
  *   - 'wl_withid' points always to the N_withid-node.
- *   - 'wl_ids' points always to the ids of the with-loop let: A = with (...)
- *                                                             ^
+ *   - 'wl_icm_args' points to the args-list of the ICMs WL_BEGIN, WL_END.
+ *     This is needed to reuse this args for WL_ASSIGN.
  *   - INFO_COMP_MT decides weather the memory managment for with-loops is done
  *     in the N_sync- or the N_with2- code!!
  *
@@ -6270,7 +6273,7 @@ node *
 COMPNwith2 (node *arg_node, node *arg_info)
 {
     node *icm_args, *icm_arg, *last_icm_arg;
-    ids *with_ids;
+    ids *wl_ids, *withid_ids;
     int num_args;
     node *assigns = NULL;
 
@@ -6316,9 +6319,9 @@ COMPNwith2 (node *arg_node, node *arg_info)
 
     num_args = 0;
     icm_args = NULL;
-    with_ids = NWITHID_IDS (wl_withid);
-    while (with_ids != NULL) {
-        icm_arg = MakeExprs (MakeId2 (DupOneIds (with_ids, NULL)), NULL);
+    withid_ids = NWITHID_IDS (wl_withid);
+    while (withid_ids != NULL) {
+        icm_arg = MakeExprs (MakeId2 (DupOneIds (withid_ids, NULL)), NULL);
 
         if (icm_args == NULL) {
             icm_args = icm_arg;
@@ -6327,14 +6330,21 @@ COMPNwith2 (node *arg_node, node *arg_info)
         }
         last_icm_arg = icm_arg;
         num_args++;
-        with_ids = IDS_NEXT (with_ids);
+        withid_ids = IDS_NEXT (withid_ids);
     }
     icm_args = MakeExprs (MakeNum (num_args), icm_args);
 
     icm_args = MakeExprs (MakeId (OffsetVar (NWITHID_VEC (wl_withid)), NULL, ST_regular),
                           icm_args);
 
+    icm_args = MakeExprs (MakeId2 (DupOneIds (NWITHID_VEC (wl_withid), NULL)), icm_args);
+
     icm_args = MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)), icm_args);
+
+    /*
+     * store the ICM args for later use (WL_ASSIGN)
+     */
+    wl_icm_args = icm_args;
 
     assigns
       = AppendAssign (assigns, MakeAssign (MakeIcm ("WL_BEGIN", icm_args, NULL), NULL));
@@ -6374,8 +6384,7 @@ COMPNwith2 (node *arg_node, node *arg_info)
  *
  * remarks:
  *   - 'wl_withid' points always to the N_withid-node.
- *   - 'wl_ids' points always to the ids of the with-loop let: A = with (...)
- *                                                             ^
+ *
  ******************************************************************************/
 
 node *
@@ -6413,8 +6422,7 @@ COMPWLseg (node *arg_node, node *arg_info)
  *
  * remarks:
  *   - 'wl_withid' points always to the N_withid-node.
- *   - 'wl_ids' points always to the ids of the with-loop let: A = with (...)
- *                                                             ^
+ *
  ******************************************************************************/
 
 node *
@@ -6491,8 +6499,7 @@ COMPWLblock (node *arg_node, node *arg_info)
  *
  * remarks:
  *   - 'wl_withid' points always to the N_withid-node.
- *   - 'wl_ids' points always to the ids of the with-loop let: A = with (...)
- *                                                             ^
+ *
  ******************************************************************************/
 
 node *
@@ -6569,8 +6576,7 @@ COMPWLublock (node *arg_node, node *arg_info)
  *
  * remarks:
  *   - 'wl_withid' points always to the N_withid-node.
- *   - 'wl_ids' points always to the ids of the with-loop let: A = with (...)
- *                                                             ^
+ *
  ******************************************************************************/
 
 node *
@@ -6635,8 +6641,7 @@ COMPWLstride (node *arg_node, node *arg_info)
  *
  * remarks:
  *   - 'wl_withid' points always to the N_withid-node.
- *   - 'wl_ids' points always to the ids of the with-loop let: A = with (...)
- *                                                             ^
+ *
  ******************************************************************************/
 
 node *
@@ -6675,18 +6680,8 @@ COMPWLgrid (node *arg_node, node *arg_info)
 
         DBUG_ASSERT ((NCODE_CEXPR (WLGRID_CODE (arg_node)) != NULL),
                      "no code expr found");
-        icm_args2
-          = MakeExprs (MakeId2 (DupOneIds (wl_ids, NULL)),
-                       MakeExprs (MakeId2 (DupOneIds (ids_vector, NULL)),
-                                  MakeExprs (MakeId2 (DupOneIds (ids_scalar, NULL)),
-                                             MakeExprs (MakeId (OffsetVar (NWITHID_VEC (
-                                                                  wl_withid)),
-                                                                NULL, ST_regular),
-                                                        MakeExprs (DupTree (NCODE_CEXPR (
-                                                                              WLGRID_CODE (
-                                                                                arg_node)),
-                                                                            NULL),
-                                                                   NULL)))));
+        icm_args2 = MakeExprs (DupTree (NCODE_CEXPR (WLGRID_CODE (arg_node)), NULL),
+                               DupTree (wl_icm_args, NULL));
 
         assigns
           = AppendAssign (assigns,
