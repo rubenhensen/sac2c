@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.72  1995/11/01 16:23:05  cg
+ * Revision 1.73  1995/11/06 14:15:38  cg
+ * added compiler phase 'uniqueness check' and new break option -bq
+ *
+ * Revision 1.72  1995/11/01  16:23:05  cg
  * Information about implicit types will now always be retrieved.
  *
  * Revision 1.71  1995/11/01  09:41:46  cg
@@ -259,6 +262,7 @@
 #include "analysis.h"
 #include "checkdec.h"
 #include "objects.h"
+#include "uniquecheck.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -299,7 +303,7 @@ MAIN
     int Ccodeonly = 0;
     int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, breakopt = 0,
         breakpsiopt = 0, breakref = 0, breaksib = 0, breakimpltype = 0, breakobjinit = 0,
-        breakanalysis = 0, breakcheckdec = 0, breakobjects = 0;
+        breakanalysis = 0, breakcheckdec = 0, breakobjects = 0, breakuniquecheck = 0;
     int write_sib = 1;
     char prgname[MAX_FILE_NAME];
     char outfilename[MAX_FILE_NAME];
@@ -397,6 +401,9 @@ MAIN
             break;
         case 'e':
             breakobjects = 1;
+            break;
+        case 'q':
+            breakuniquecheck = 1;
             break;
         default:
             SYSWARN (("Unknown break parameter '%s`", *argv));
@@ -708,33 +715,43 @@ MAIN
                                         compiler_phase++;
 
                                         if (!breakobjects) {
-                                            if (sac_optimize) {
-                                                NOTE (("\nSAC-Optimizing: ..."));
-                                                syntax_tree = Optimize (syntax_tree);
-                                                ABORT_ON_ERROR;
-                                            }
+                                            NOTE (("\nChecking objects (Uniqueness "
+                                                   "check): ..."));
+                                            syntax_tree = UniquenessCheck (syntax_tree);
+                                            ABORT_ON_ERROR;
                                             compiler_phase++;
 
-                                            if (!breakopt) {
+                                            if (!breakuniquecheck) {
                                                 if (sac_optimize) {
-                                                    NOTE (("\nPsi-Optimizing: ..."));
-                                                    syntax_tree = PsiOpt (syntax_tree);
+                                                    NOTE (("\nSAC-Optimizing: ..."));
+                                                    syntax_tree = Optimize (syntax_tree);
                                                     ABORT_ON_ERROR;
                                                 }
                                                 compiler_phase++;
 
-                                                if (!breakpsiopt) {
-                                                    NOTE (("\nRefcounting: ..."));
-                                                    syntax_tree = Refcount (syntax_tree);
-                                                    ABORT_ON_ERROR;
+                                                if (!breakopt) {
+                                                    if (psi_optimize) {
+                                                        NOTE (("\nPsi-Optimizing: ..."));
+                                                        syntax_tree
+                                                          = PsiOpt (syntax_tree);
+                                                        ABORT_ON_ERROR;
+                                                    }
                                                     compiler_phase++;
 
-                                                    if (!breakref) {
-                                                        NOTE (("\nCompiling: ..."));
+                                                    if (!breakpsiopt) {
+                                                        NOTE (("\nRefcounting: ..."));
                                                         syntax_tree
-                                                          = Compile (syntax_tree);
+                                                          = Refcount (syntax_tree);
                                                         ABORT_ON_ERROR;
                                                         compiler_phase++;
+
+                                                        if (!breakref) {
+                                                            NOTE (("\nCompiling: ..."));
+                                                            syntax_tree
+                                                              = Compile (syntax_tree);
+                                                            ABORT_ON_ERROR;
+                                                            compiler_phase++;
+                                                        }
                                                     }
                                                 }
                                             }
