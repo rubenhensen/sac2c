@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  1997/12/05 16:36:40  srs
+ * StringCopy: allocate one byte less now
+ *
  * Revision 1.19  1997/11/23 15:18:45  dkr
  * CC-flag: show_malloc -> SHOW_MALLOC
  *
@@ -147,14 +150,13 @@ StringCopy (char *source)
 
     DBUG_ENTER ("StringCopy");
 
-    if (NULL != source) {
+    if (source) {
         DBUG_PRINT ("STRINGCOPY", ("copying string \"%s\"", source));
 
-        ret = (char *)Malloc (sizeof (char) * (strlen (source) + 2));
+        ret = (char *)Malloc (sizeof (char) * (strlen (source) + 1));
         strcpy (ret, source);
-    } else {
+    } else
         ret = NULL;
-    }
 
     DBUG_RETURN (ret);
 }
