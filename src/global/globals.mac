@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/11/27 03:12:25  sbs
+ * changed the very important version decsriptor
+ *
  * Revision 1.17  2004/11/26 11:10:25  cg
  * Added string conversion tables.
  *
@@ -101,7 +104,7 @@ GLOBAL (FILE *, yyin, NULL);
  *  Version control
  */
 
-GLOBAL (const char *, version_id, "v1.00-alpha")
+GLOBAL (const char *, version_id, "v1.00-beta (Codename Denmark)")
 /*
  * version string
  */
