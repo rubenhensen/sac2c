@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2002/02/26 14:47:10  dkr
+ * several NODE_LINE errors corrected
+ *
  * Revision 3.36  2002/02/21 15:45:57  dkr
  * access macros used
  *
@@ -721,7 +724,7 @@ objdec: type id SEMIC pragmas
 fundecs: fundec fundecs 
            {
              $$ = $1;
-             $$->node[1] = $2;
+             FUNDEF_NEXT( $$) = $2;
            }
        | fundec { $$ = $1; }
        ;
@@ -772,17 +775,19 @@ fundec: varreturntypes id BRACKET_L fundec2
           }
       ;
 
-fundec2: varargtypes BRACKET_R SEMIC pragmas
+fundec2: varargtypes BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
            {
              $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
-             FUNDEF_PRAGMA( $$) = $4;
+             NODE_LINE( $$) = $<cint>3;
+             FUNDEF_PRAGMA( $$) = $5;
            }
-       | varargs BRACKET_R SEMIC pragmas
+       | varargs BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
            {
              $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
-             FUNDEF_PRAGMA( $$) = $4;
+             NODE_LINE( $$) = $<cint>3;
+             FUNDEF_PRAGMA( $$) = $5;
            }
-       | TYPE_DOTS BRACKET_R SEMIC pragmas
+       | TYPE_DOTS BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
            {
              if ((F_extmoddec != file_kind) && (F_extclassdec != file_kind)) {
                strcpy( yytext, "...");
@@ -795,30 +800,35 @@ fundec2: varargtypes BRACKET_R SEMIC pragmas
                                          ST_regular, ST_regular,
                                          NULL),
                                 NULL, NULL);
-               FUNDEF_PRAGMA( $$) = $4;
+               NODE_LINE( $$) = $<cint>3;
+               FUNDEF_PRAGMA( $$) = $5;
              }
            }
-       | BRACKET_R SEMIC pragmas
+       | BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
            {
              $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL);
-             FUNDEF_PRAGMA( $$) = $3;
+             NODE_LINE( $$) = $<cint>2;
+             FUNDEF_PRAGMA( $$) = $4;
            }
        ;
 
-fundec3: argtypes BRACKET_R SEMIC pragmas
+fundec3: argtypes BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
            {
              $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
-             FUNDEF_PRAGMA( $$) = $4;
+             NODE_LINE( $$) = $<cint>3;
+             FUNDEF_PRAGMA( $$) = $5;
            }
-       | args BRACKET_R SEMIC pragmas
+       | args BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
            {
              $$ = MakeFundef( NULL, NULL, NULL, $1, NULL, NULL);
-             FUNDEF_PRAGMA( $$) = $4;
+             NODE_LINE( $$) = $<cint>3;
+             FUNDEF_PRAGMA( $$) = $5;
            }
-       | BRACKET_R SEMIC pragmas
+       | BRACKET_R { $<cint>$ = linenum; } SEMIC pragmas
            {
              $$ = MakeFundef( NULL, NULL, NULL, NULL, NULL, NULL);
-             FUNDEF_PRAGMA( $$) = $3;
+             NODE_LINE( $$) = $<cint>2;
+             FUNDEF_PRAGMA( $$) = $4;
            }
        ;
 
@@ -1306,11 +1316,12 @@ prf_name : AND        { $$ = StringCopy( prf_name_str[F_and]); }
         ;
 
 
-main: TYPE_INT K_MAIN BRACKET_L BRACKET_R exprblock
+main: TYPE_INT K_MAIN BRACKET_L BRACKET_R { $<cint>$ = linenum; } exprblock
         {
           $$ = MakeFundef( NULL, NULL,
                            MakeTypes1( T_int),
-                           NULL, $5, NULL);
+                           NULL, $6, NULL);
+          NODE_LINE( $$) = $<cint>5;
 
           FUNDEF_NAME( $$) = StringCopy( "main");
           FUNDEF_STATUS( $$) = ST_exported;
@@ -1381,10 +1392,11 @@ wlcomp_conf: id      { $$ = MakeId( $1, NULL, ST_regular); }
  */
 
 
-exprblock: BRACE_L pragmacachesim exprblock2 
+exprblock: BRACE_L { $<cint>$ = linenum; } pragmacachesim exprblock2 
            {
-             $$ = $3;
-             BLOCK_CACHESIM( $$) = $2;
+             $$ = $4;
+             BLOCK_CACHESIM( $$) = $3;
+             NODE_LINE( $$) = $<cint>2;
            }
          ;
 
@@ -1439,7 +1451,10 @@ exprblock2: typeNOudt_arr ids SEMIC exprblock2
               Free( $2); /* Finally, we free the last IDS-node! */
 
             }
-          | assignsOPTret BRACE_R { $$ = MakeBlock( $1, NULL); }
+          | assignsOPTret BRACE_R
+            {
+              $$ = MakeBlock( $1, NULL);
+            }
           ;
 
 
@@ -1451,7 +1466,7 @@ wlassignblock: BRACE_L { $<cint>$ = linenum; } assigns BRACE_R
                    $$ = MakeBlock( $3, NULL);
                  }
                  NODE_LINE( $$) = $<cint>2;
-               } 
+               }
              |
                {
                  $$ = MAKE_EMPTY_BLOCK();
@@ -1508,11 +1523,11 @@ assignsOPTret: /*
                { $$ = MakeAssign( MakeReturn( $4), NULL);
                  NODE_LINE( $$) = $<cint>3;
                }
-             | assign assignsOPTret
+             | assign { $<cint>$ = linenum; } assignsOPTret
                { if (NODE_TYPE( $1) == N_assign) {
                    /*
                     * The only situation where "assign" returns an N_assign
-                    * node is when a for-loop had to be parsed.
+                    * node is when a while-loop had to be parsed.
                     * In this case we get a tree of the form:
                     *
                     * N_assign -> N_let
@@ -1526,10 +1541,11 @@ assignsOPTret: /*
                        && (ASSIGN_NEXT( ASSIGN_NEXT( $1)) == NULL),
                      "corrupted node returned for \"assign\"!");
                    $$ = $1;
-                   ASSIGN_NEXT( ASSIGN_NEXT( $$)) = $2;
+                   ASSIGN_NEXT( ASSIGN_NEXT( $$)) = $3;
                  }
                  else {
-                   $$ = MakeAssign( $1, $2);
+                   $$ = MakeAssign( $1, $3);
+                   NODE_LINE( $$) = $<cint>2;
                  }
                }
              ;
@@ -2369,10 +2385,11 @@ sibfuns: sibfun sibfuns
          }
        ;
 
-sibfun: sibevmarker varreturntypes fun_name 
-        BRACKET_L sibarglist BRACKET_R sibfunbody sibpragmas
+sibfun: sibevmarker varreturntypes fun_name BRACKET_L sibarglist
+        BRACKET_R { $<cint>$ = linenum; } sibfunbody sibpragmas
           {
-            $$ = MakeFundef( $3, NULL, $2, $5, $7, NULL);
+            $$ = MakeFundef( $3, NULL, $2, $5, $8, NULL);
+            NODE_LINE( $$) = $<cint>7;
             switch ($1) {
               case 0:
                 FUNDEF_STATUS( $$) = sib_imported_status;
@@ -2387,16 +2404,17 @@ sibfun: sibevmarker varreturntypes fun_name
                 FUNDEF_INLINE( $$) = FALSE;
                 break;
             }
-            FUNDEF_PRAGMA( $$) = $8;
+            FUNDEF_PRAGMA( $$) = $9;
 
            DBUG_PRINT("PARSE_SIB",("%s"F_PTR"SibFun %s",
                                mdb_nodetype[ NODE_TYPE( $$)],
                                $$, ItemName( $$)));
           }
-      | sibevmarker varreturntypes id COLON fun_name 
-        BRACKET_L sibarglist BRACKET_R sibfunbody sibpragmas
+      | sibevmarker varreturntypes id COLON fun_name BRACKET_L sibarglist
+        BRACKET_R { $<cint>$ = linenum; } sibfunbody sibpragmas
           {
-            $$ = MakeFundef( $5, $3, $2, $7, $9, NULL);
+            $$ = MakeFundef( $5, $3, $2, $7, $10, NULL);
+            NODE_LINE( $$) = $<cint>9;
             switch ($1) {
               case 0:
                 FUNDEF_STATUS( $$) = sib_imported_status;
@@ -2411,12 +2429,11 @@ sibfun: sibevmarker varreturntypes fun_name
                 FUNDEF_INLINE( $$) = FALSE;
                 break;
             }
-            FUNDEF_PRAGMA( $$) = $10;
+            FUNDEF_PRAGMA( $$) = $11;
 
             DBUG_PRINT("PARSE_SIB",("%s"F_PTR"SibFun %s",
                                 mdb_nodetype[ NODE_TYPE( $$)],
                                 $$, ItemName( $$)));
-
           }
         ;
 
