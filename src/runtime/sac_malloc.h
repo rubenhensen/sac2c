@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/31 19:03:35  sbs
+ * found a lousy #%$@#^@*$& grrrrrr
+ * BUG: SAC_DO_MALLOCCHECK changed in SAC_DO_CHECK_MALLOC...
+ *
  * Revision 2.1  1999/02/23 12:43:52  sacbase
  * new release made
  *
@@ -25,7 +29,7 @@
  *   memory.
  *
  *   Currently, the standard functions malloc() and free() are used for
- *   heap management. By the global switch MALLOCCHECK the libsac function
+ *   heap management. By the global switch CHECK_MALLOC the libsac function
  *   SAC_MallocCheck() may be used instead of malloc(). This function
  *   in turn uses malloc() for storage allocation, but additionally checks
  *   for success and terminates program execution with an error message
@@ -37,19 +41,19 @@
 
 #define SAC_MALLOC_H
 
-#if SAC_DO_MALLOCCHECK
+#if SAC_DO_CHECK_MALLOC
 
 extern void *SAC_MallocCheck (unsigned int);
 
 #define SAC_MALLOC(size) SAC_MallocCheck (size)
 
-#else /* SAC_DO_MALLOCCHECK */
+#else /* SAC_DO_CHECK_MALLOC */
 
 extern void *malloc (unsigned int);
 
 #define SAC_MALLOC(size) malloc (size)
 
-#endif /* SAC_DO_MALLOCCHECK */
+#endif /* SAC_DO_CHECK_MALLOC */
 
 extern void free (void *);
 
