@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 1.5  2000/02/04 14:43:14  jhs
+# Added repfuns_init.[ch]
+#
 # Revision 1.4  2000/01/28 13:49:43  jhs
 # blocks_init added
 #
@@ -23,7 +26,7 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../global -I../tree -I../../inc -I../optimize -I../typecheck -I../refcount \
      -I../print -I../compile
 
-all: multithread.o schedule_init.o blocks_init.o
+all: multithread.o schedule_init.o repfuns_init.o blocks_init.o
 
 %.o: %.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
