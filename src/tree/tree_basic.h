@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.106  2002/02/12 15:42:45  dkr
+ * implementation of ARG_AVIS and VARDEC_AVIS modified
+ *
  * Revision 3.105  2001/12/12 12:44:55  dkr
  * function MakeId_Copy_NT added
  *
@@ -1006,7 +1009,8 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  *   ST_regular            : non-unique parameter
  *   ST_unique             : unique parameter
  *   ST_reference          : (unique) reference parameter
- *   ST_readonly_reference : (unique) reference parameter which remains unmodified
+ *   ST_readonly_reference : (unique) reference parameter which remains
+ *                           unmodified
  *   ST_was_reference      : eliminated (unique) reference parameter
  *
  * TYPESTRING contains the argument's type as a string, used for renaming
@@ -1024,13 +1028,13 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
 #define ARG_NAME(n) (n->info.types->id)
 #define ARG_STATUS(n) (n->info.types->status)
 #define ARG_ATTRIB(n) (n->info.types->attrib)
-#define ARG_AVIS(n) ((node *)(n->dfmask[0]))
+#define ARG_AVIS(n) ((node *)(n->node[1]))
 #define ARG_VARNO(n) (n->varno)
 #define ARG_REFCNT(n) (n->refcnt)
 #define ARG_NAIVE_REFCNT(n) (n->int_data)
 #define ARG_PADDED(n) ((bool)(n->flag))
 #define ARG_NEXT(n) (n->node[0])
-#define ARG_TYPESTRING(n) ((char *)(n->node[1]))
+#define ARG_TYPESTRING(n) ((char *)(n->dfmask[0]))
 #define ARG_OBJDEF(n) (n->node[2])
 #define ARG_ACTCHN(n) (n->node[3])
 #define ARG_COLCHN(n) (n->node[4])
@@ -1141,7 +1145,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
 #define VARDEC_NAME(n) (n->info.types->id)
 #define VARDEC_STATUS(n) (n->info.types->status)
 #define VARDEC_ATTRIB(n) (n->info.types->attrib)
-#define VARDEC_AVIS(n) ((node *)(n->dfmask[0]))
+#define VARDEC_AVIS(n) (n->node[1])
 #define VARDEC_VARNO(n) (n->varno)
 #define VARDEC_REFCNT(n) (n->refcnt)
 #define VARDEC_NAIVE_REFCNT(n) (n->int_data)
@@ -3409,14 +3413,14 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_ID(n) ((n)->refcnt)
 #define NCODE_FLAG(n) ((bool)((n)->flag))
 
-#define NCODE_WLAA_INFO(n) ((node *)(n)->info2)
-#define NCODE_WLAA_ACCESS(n) ((access_t *)(((node *)(n)->info2)->info2))
-#define NCODE_WLAA_ACCESSCNT(n) (((node *)(n)->info2)->counter)
-#define NCODE_WLAA_FEATURE(n) (((node *)(n)->info2)->varno)
-#define NCODE_WLAA_INDEXVAR(n) (((node *)(n)->info2)->node[2])
-#define NCODE_WLAA_WLARRAY(n) (((node *)(n)->info2)->node[3])
+#define NCODE_WLAA_INFO(n) ((node *)((n)->info2))
+#define NCODE_WLAA_ACCESS(n) ((access_t *)(((node *)((n)->info2))->info2))
+#define NCODE_WLAA_ACCESSCNT(n) (((node *)((n)->info2))->counter)
+#define NCODE_WLAA_FEATURE(n) (((node *)((n)->info2))->varno)
+#define NCODE_WLAA_INDEXVAR(n) (((node *)((n)->info2))->node[2])
+#define NCODE_WLAA_WLARRAY(n) (((node *)((n)->info2))->node[3])
 
-#define NCODE_TSI_TILESHP(n) ((shpseg *)(((node *)(n)->info2)->node[4]))
+#define NCODE_TSI_TILESHP(n) ((shpseg *)(((node *)((n)->info2))->node[4]))
 
 #define NCODE_AP_DUMMY_CODE(n) ((bool)((n)->int_data))
 
