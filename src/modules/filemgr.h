@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.4  1996/01/07 16:58:23  cg
+ * Revision 1.5  1996/09/11 06:22:51  cg
+ * Modified construction of paths.
+ * Now: 1. paths added by command line option, 2. cwd, 3.shell variable
+ *
+ * Revision 1.4  1996/01/07  16:58:23  cg
  * handling of temporary directories modified.
  * cccall.c now only needs 2 of these
  *
@@ -36,6 +40,8 @@ extern char *FindFile (pathkind p, char *name);
 extern void InitPaths ();
 extern int AppendPath (pathkind p, char *path);
 extern int AppendEnvVar (pathkind p, char *var);
+extern void RearrangePaths ();
+extern char *AbsolutePathname (char *path);
 
 extern FILE *WriteOpen (char *format, ...);
 extern void CreateTmpDirectories ();

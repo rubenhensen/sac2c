@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.8  1996/01/22 17:31:38  cg
+ * Revision 1.9  1996/09/11 06:22:51  cg
+ * Modified construction of paths.
+ * Now: 1. paths added by command line option, 2. cwd, 3.shell variable
+ *
+ * Revision 1.8  1996/01/22  17:31:38  cg
  * modified InitPaths
  *
  * Revision 1.7  1996/01/07  16:58:23  cg
@@ -169,6 +173,43 @@ AppendPath (pathkind p, char *path)
 
 /*
  *
+ *  functionname  : RearrangePaths
+ *  arguments     : ---
+ *  description   : If additional search paths are provided as command line
+ *                  parameters, then these have a higher priority than the
+ *                  standard search path (current directory+shell variables).
+ *                  This function modifies the internal path representation
+ *                  if necessary after scanning the command line.
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+void
+RearrangePaths ()
+{
+    int i;
+    char buffer[MAX_PATH_LEN];
+
+    DBUG_ENTER ("RearrangePaths");
+
+    for (i = 0; i <= 2; i++) {
+        if (strlen (path_bufs[i]) > 1) {
+            strcpy (buffer, path_bufs[i] + 2);
+            strcat (buffer, ":.");
+            strcpy (path_bufs[i], buffer);
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
  *  functionname  : AppendEnvVar
  *  arguments     : pathkind, path to be appended
  *  description   :
@@ -202,6 +243,45 @@ AppendEnvVar (pathkind p, char *var)
         }
     }
     DBUG_RETURN (v);
+}
+
+/*
+ *
+ *  functionname  :
+ *  arguments     :
+ *  description   :
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        :
+ *
+ *  remarks       :
+ *
+ */
+
+char *
+AbsolutePathname (char *path)
+{
+    char *pwd;
+    static char buffer[MAX_PATH_LEN];
+
+    DBUG_ENTER ("AbsolutePathname");
+
+    if (path[0] == '/') {
+        strcpy (buffer, path);
+    } else {
+        pwd = getenv ("PWD");
+
+        if (pwd == NULL) {
+            SYSABORT (("No Shell Variable PWD"));
+        }
+
+        strcpy (buffer, pwd);
+        strcat (buffer, "/");
+        strcat (buffer, path);
+    }
+
+    DBUG_RETURN (buffer);
 }
 
 /*
@@ -304,34 +384,6 @@ CreateTmpDirectories ()
 
     DBUG_VOID_RETURN;
 }
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
 
 /*
  *
