@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2001/06/20 12:28:33  ben
+ *  most first versions for SchedulingWithTasksel functions implemented
+ * two functions are not yet ready for use
+ *
  * Revision 3.29  2001/06/19 12:29:26  ben
  * Entry of Self in SchedulerTable modified
  *
@@ -323,7 +327,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
 
     DBUG_ENTER ("CheckSchedulingArgs");
 
-    arg_spec = strtok (spec, ",");
+    arg_spec = StrTok (spec, ",");
 
     for (i = 0; i < sched->num_args; i++) {
         DBUG_ASSERT ((arg_spec != NULL), "Illegal scheduling specification");
@@ -390,7 +394,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
             DBUG_ASSERT ((arg_spec != NULL), "Illegal scheduling specification");
         }
 
-        arg_spec = strtok (NULL, ",");
+        arg_spec = StrTok (NULL, ",");
         exprs = EXPRS_NEXT (exprs);
     }
 
@@ -457,7 +461,7 @@ sched_t *SCHMakeScheduling (va_alist) va_dcl
         sched->args = (sched_arg_t *)Malloc (sched->num_args * sizeof (sched_arg_t));
     }
 
-    arg_spec = strtok (scheduler_table[disc_no].arg_spec, ",");
+    arg_spec = StrTok (scheduler_table[disc_no].arg_spec, ",");
 
     for (i = 0; i < sched->num_args; i++) {
         DBUG_ASSERT ((arg_spec != NULL), "Illegal scheduling specification");
@@ -501,7 +505,7 @@ sched_t *SCHMakeScheduling (va_alist) va_dcl
             DBUG_ASSERT ((arg_spec != NULL), "Illegal scheduling specification");
         }
 
-        arg_spec = strtok (NULL, ",");
+        arg_spec = StrTok (NULL, ",");
     }
 
     va_end (args);
@@ -1137,10 +1141,19 @@ SCHCompileSchedulingInit (int seg_id, char *wl_name, sched_t *sched, node *arg_n
  *
  ******************************************************************************/
 
+/******************************************************************************
+ *
+ *     In tasksel_t is the argvector composed first of the dimensions
+ *     for the arrangement of tasks followed by optional other arguments.
+ *
+ ******************************************************************************/
+
 typedef struct {
     char *discipline;
     int line;
-    int dim;
+    int num_args;
+    int *arg;
+    int dims;
 } tasksel_t;
 
 typedef tasksel_t *SCHtasksel_t;
@@ -1151,16 +1164,19 @@ typedef tasksel_t *SCHtasksel_t;
  *
  * description:
  *   This global variable defines a table of Taskselector specifications. Each
- *   Taskselector is described by one entrie: the selctors name.
+ *   Taskselector is described by three entries: the selectors name, the number
+ *   of arguments he needs and the number of dimensions for task arrangements.
  *
  ******************************************************************************/
 
 static struct {
     char *discipline;
+    int num_args;
+    int dims;
 } taskselector_table[] = {
-  /* Name           */
-  {"Even"},
-  {"Factoring"}};
+  /* Name           num_args,  dims*/
+  {"Even", 2, 1},
+  {"Factoring", 1, 1}};
 
 /******************************************************************************
  *
@@ -1178,32 +1194,36 @@ static struct {
 static tasksel_t *
 CheckTaskselArgs (tasksel_t *tasksel, node *exprs, int line)
 {
-
+    int i;
     node *expr;
 
     DBUG_ENTER ("CheckTaskselArgs");
 
-    if (exprs == NULL) {
-        ABORT (line, ("Taskselector discipline '%s` expects 1 arguments"
-                      "(too few specified)",
-                      tasksel->discipline));
+    for (i = 0; i < tasksel->num_args; i++) {
+
+        if (exprs == NULL) {
+            ABORT (line, ("Taskselector discipline '%s` expects %d arguments"
+                          "(too few specified)",
+                          tasksel->discipline, tasksel->num_args));
+        }
+
+        expr = EXPRS_EXPR (exprs);
+
+        if (NODE_TYPE (expr) != N_num) {
+            ABORT (line, ("Argument %d of taskselector discipline '%s` must be"
+                          " a number",
+                          i, tasksel->discipline));
+        }
+
+        tasksel->arg[i] = NUM_VAL (expr);
+
+        exprs = EXPRS_NEXT (exprs);
     }
-
-    expr = EXPRS_EXPR (exprs);
-
-    if (NODE_TYPE (expr) != N_num) {
-        ABORT (line, ("Argument 1 of taskselector discipline '%s` must be"
-                      " a number",
-                      tasksel->discipline));
-    }
-    tasksel->dim = NUM_VAL (expr);
-
-    exprs = EXPRS_NEXT (exprs);
 
     if (exprs != NULL) {
-        ABORT (line, ("Taskselector discipline '%s` expects 1 arguments "
+        ABORT (line, ("Taskselector discipline '%s` expects %d arguments "
                       "(too many specified)",
-                      tasksel->discipline));
+                      tasksel->discipline, tasksel->num_args));
     }
 
     DBUG_RETURN (tasksel);
@@ -1239,6 +1259,13 @@ SCHMakeTaskselByPragma (node *ap_node, int line)
         tasksel = (tasksel_t *)Malloc (sizeof (tasksel_t));
         tasksel->discipline = taskselector_table[i].discipline;
 
+        tasksel->num_args = taskselector_table[i].num_args;
+        tasksel->dims = taskselector_table[i].dims;
+        if (tasksel->num_args == 0) {
+            tasksel->arg = NULL;
+        } else {
+            tasksel->arg = (int *)Malloc (tasksel->num_args * sizeof (int));
+        }
         tasksel->line = line;
 
         tasksel = CheckTaskselArgs (tasksel, AP_ARGS (ap_node), line);
@@ -1271,6 +1298,9 @@ SCHRemoveTasksel (tasksel_t *tasksel)
      * The discipline string must not be freed since it is only a pointer
      * to the respective entry of the taskselector table.
      */
+    if (tasksel->num_args > 0) {
+        Free (tasksel->arg);
+    }
 
     tasksel = Free (tasksel);
 
@@ -1291,6 +1321,7 @@ SCHRemoveTasksel (tasksel_t *tasksel)
 tasksel_t *
 SCHCopyTasksel (tasksel_t *tasksel)
 {
+    int i;
     tasksel_t *new_tasksel;
 
     DBUG_ENTER ("SCHCopyTasksel");
@@ -1303,8 +1334,19 @@ SCHCopyTasksel (tasksel_t *tasksel)
      * to the respective entry of the scheduler table.
      */
 
-    new_tasksel->dim = tasksel->dim;
     new_tasksel->line = tasksel->line;
+    new_tasksel->num_args = tasksel->num_args;
+    new_tasksel->dims = tasksel->dims;
+
+    if (tasksel->num_args > 0) {
+        new_tasksel->arg = (int *)Malloc (tasksel->num_args * sizeof (int));
+
+        for (i = 0; i < tasksel->num_args; i++) {
+            new_tasksel->arg[i] = tasksel->arg[i];
+        }
+    } else {
+        new_tasksel->arg = NULL;
+    }
 
     DBUG_RETURN (new_tasksel);
 }
@@ -1341,6 +1383,7 @@ SCHPrecompileTasksel (tasksel_t *tasksel)
 void
 SCHPrintTasksel (FILE *outfile, tasksel_t *tasksel)
 {
+    int i;
 
     DBUG_ENTER ("SCHPrintTasksel");
 
@@ -1354,7 +1397,11 @@ SCHPrintTasksel (FILE *outfile, tasksel_t *tasksel)
 
     if (tasksel != NULL) {
         fprintf (outfile, "%s(", tasksel->discipline);
-        fprintf (outfile, "%d", tasksel->dim);
+        if (tasksel->num_args > 0) {
+            for (i = 0; i < tasksel->num_args - 1; i++)
+                fprintf (outfile, "%d,", tasksel->arg[i]);
+            fprintf (outfile, "%d", tasksel->arg[tasksel->num_args - 1]);
+        }
         fprintf (outfile, ")");
 
     } else {
@@ -1362,4 +1409,301 @@ SCHPrintTasksel (FILE *outfile, tasksel_t *tasksel)
     }
 
     DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CompileSchedulingWithTaskselArgs( int seg_id, sched_t *sched, tasksel_t
+ **tasksel, node *args)
+ *
+ * description:
+ *   This function converts the arguments of an abstract scheduling and
+ *   taskselector specification into ICM arguments.
+ *   Numbers in the case of type 'x' scheduling arguments are transformed
+ *   into string representations.
+ *
+ *   The segment ID is added to all scheduler ICMs as first argument.
+ *
+ ******************************************************************************/
+
+static node *
+CompileSchedulingWithTaskselArgs (int seg_id, sched_t *sched, tasksel_t *tasksel,
+                                  node *args)
+{
+    node *new_arg;
+    int i;
+
+    DBUG_ENTER ("CompileSchedulingWithTaskselArgs");
+
+    if (tasksel != NULL) {
+        for (i = tasksel->dims; i < tasksel->num_args; i++)
+            args = MakeExprs (MakeNum (tasksel->arg[i]), args);
+    }
+
+    if (sched != NULL) {
+        for (i = 0; i < sched->num_args; i++) {
+            switch (sched->args[i].arg_type) {
+            case AT_num:
+                new_arg = MakeNum (sched->args[i].arg.num);
+                break;
+
+            case AT_id:
+                new_arg = MakeId (StringCopy (sched->args[i].arg.id), NULL, ST_regular);
+                break;
+
+            case AT_num_for_id:
+                new_arg = MakeId (itoa (sched->args[i].arg.num), NULL, ST_regular);
+                break;
+
+            default:
+                new_arg = NULL;
+                DBUG_ASSERT (0, "Vector arguments for scheduling disciplines not yet"
+                                " implemented");
+            }
+
+            args = MakeExprs (new_arg, args);
+        }
+    }
+
+    args = MakeExprs (MakeNum (seg_id), args);
+
+    DBUG_RETURN (args);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CompileConstSegSchedulingWithTaskselArgs( char *wl_name, node *wlseg,
+ *                                        sched_t *sched, tasksel_t *tasksel)
+ *
+ * description:
+ *   In addition to their individual arguments, scheduling ICMs have addtional
+ *   arguments depending on their position and on the choosen taskselector.
+ *   Schedulings for constant segments
+ *   are equipped with detailed segment information. These are the segment's
+ *   dimensionality, its bounds and its outermost unrolling vector.
+ *
+ ******************************************************************************/
+
+/* NEEDS MODIFICATIONS */
+static node *
+CompileConstSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *sched,
+                                          tasksel_t *tasksel)
+{
+    node *index, *args;
+    int d;
+
+    DBUG_ENTER ("CompileConstSegSchedulingWithTaskselArgs");
+
+    DBUG_ASSERT ((NODE_TYPE (wlseg) == N_WLseg), "no constant segment found!");
+
+    args = NULL;
+
+    if (sched != NULL) {
+        for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
+            if (SCHAdjustmentRequired (d, wlseg)) {
+                args = MakeExprs (MakeNum (1), args);
+            } else {
+                args = MakeExprs (MakeNum (WLSEG_SV (wlseg)[d]), args);
+            }
+        }
+    }
+
+    for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
+        index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
+                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_name,
+                                     TRUE, TRUE);
+        DBUG_ASSERT ((index != NULL), "illegal supremum found!");
+        args = MakeExprs (index, args);
+    }
+
+    for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
+        index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
+                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_name,
+                                     TRUE, TRUE);
+        DBUG_ASSERT ((index != NULL), "illegal infimum found!");
+        args = MakeExprs (index, args);
+    }
+
+    args = MakeExprs (MakeNum (WLSEG_DIMS (wlseg)), args);
+
+    DBUG_RETURN (args);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CompileVarSegSchedulingWithTaskselArgs( char *wl_name, node *wlseg,
+ *                                      sched_t *sched, tasksel_t *tasksel)
+ *
+ * description:
+ *   In addition to their individual arguments, scheduling ICMs have additional
+ *   arguments depending on their position and on the choosen taskselector.
+ *   Currently, schedulings for variable
+ *   segments do not have general arguments.
+ *
+ ******************************************************************************/
+
+/* NEEDS MODIFICATIONS */
+static node *
+CompileVarSegSchedulingWithTaskselArgs (char *wl_name, node *wlseg, sched_t *sched,
+                                        tasksel_t *tasksel)
+{
+    node *index, *args;
+    int d;
+
+    DBUG_ENTER ("CompileVarSegSchedulingWithTaskselArgs");
+
+    DBUG_ASSERT ((NODE_TYPE (wlseg) == N_WLsegVar), "no var. segment found!");
+
+    args = NULL;
+
+    if (sched != NULL) {
+        for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
+            args = MakeExprs (MakeNum (1), args);
+        }
+    }
+
+    for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
+        index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
+                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MAX, d), d, wl_name,
+                                     TRUE, TRUE);
+        DBUG_ASSERT ((index != NULL), "illegal supremum found!");
+        args = MakeExprs (index, args);
+    }
+
+    for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
+        index = NodeOrInt_MakeIndex (NODE_TYPE (wlseg),
+                                     WLSEGX_IDX_GET_ADDR (wlseg, IDX_MIN, d), d, wl_name,
+                                     TRUE, TRUE);
+        DBUG_ASSERT ((index != NULL), "illegal infimum found!");
+        args = MakeExprs (index, args);
+    }
+
+    args = MakeExprs (MakeNum (WLSEGVAR_DIMS (wlseg)), args);
+
+    DBUG_RETURN (args);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CompileSchedulingWithTasksel( int seg_id, char *wl_name, sched_t
+ **sched,tasksel_t *tasksel, node *arg_node, char *suffix)
+ *
+ * description:
+ *   This function compiles abstract scheduling specifications to ICMs
+ *    "SAC_MT_SCHEDULER_<discipline>_BEGIN"
+ *    "SAC_MT_SCHEDULER_<discipline>_END"
+ *    "SAC_MT_SCHEDULER_<discipline>_INIT"
+ *   depending on the parameter 'suffix'.
+ *
+ ******************************************************************************/
+
+static node *
+CompileSchedulingWithTasksel (int seg_id, char *wl_name, sched_t *sched,
+                              tasksel_t *tasksel, node *arg_node, char *suffix)
+{
+    node *icm, *general_args;
+    char *name;
+
+    DBUG_ENTER ("CompileSchedulingWithTasksel");
+
+    if (sched != NULL) {
+        name = (char *)Malloc (sizeof (char)
+                               * (strlen (sched->discipline) + strlen (suffix) + 15));
+        sprintf (name, "MT_SCHEDULER_%s_%s", sched->discipline, suffix);
+    } else {
+        name = (char *)Malloc (sizeof (char) * (strlen (suffix) + 15));
+        sprintf (name, "MT_SCHEDULER_%s", suffix);
+    }
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_WLseg:
+        general_args
+          = CompileConstSegSchedulingWithTaskselArgs (wl_name, arg_node, sched, tasksel);
+        break;
+
+    case N_WLsegVar:
+        general_args
+          = CompileVarSegSchedulingWithTaskselArgs (wl_name, arg_node, sched, tasksel);
+        break;
+
+    default:
+        general_args = NULL;
+        DBUG_ASSERT ((0), "wrong node type found");
+    }
+
+    icm = MakeIcm (name, CompileSchedulingArgs (seg_id, sched, general_args));
+
+    DBUG_RETURN (icm);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SCHCompileSchedulingWithTaskselBegin( int seg_id, char *wl_name, sched_t
+ **sched, tasksel_t *tasksel, node *arg_node)
+ *
+ *   node *SCHCompileSchedulingWithTaskselEnd( int seg_id, char *wl_name, sched_t *sched,
+ *tasksel_t *tasksel, node *arg_node)
+ *
+ *   node *SCHCompileSchedulingWithTaskselInit( int seg_id, char *wl_name, sched_t *sched,
+ *tasksel_t *tasksel, node *arg_node)
+ *
+ * description:
+ *
+ *   These functions initiate the compilation of abstract scheduling and taskselector
+ *   specifications into ICMs, where each scheduling is associated with three
+ *   ICMs. Whereas the former two enclose the with-loop code to be scheduled,
+ *   the latter one initializes potentially needed internal data structures
+ *   of the scheduling facility.
+ *
+ *   The segment ID specifies the position of the scheduler within an SPMD
+ *   section. It is needed to identify the appropriate set of scheduler-internal
+ *   data structures.
+ *
+ ******************************************************************************/
+
+node *
+SCHCompileSchedulingWithTaskselBegin (int seg_id, char *wl_name, sched_t *sched,
+                                      tasksel_t *tasksel, node *arg_node)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("SCHCompileSchedulingWithTaskselBegin");
+
+    ret_node
+      = CompileSchedulingWithTasksel (seg_id, wl_name, sched, tasksel, arg_node, "BEGIN");
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+SCHCompileSchedulingWithTaskselEnd (int seg_id, char *wl_name, sched_t *sched,
+                                    tasksel_t *tasksel, node *arg_node)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("SCHCompileSchedulingWithTaskselEnd");
+
+    ret_node
+      = CompileSchedulingWithTasksel (seg_id, wl_name, sched, tasksel, arg_node, "END");
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+SCHCompileSchedulingWithTaskselInit (int seg_id, char *wl_name, sched_t *sched,
+                                     tasksel_t *tasksel, node *arg_node)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("SCHCompileSchedulingWithTaskselInit");
+
+    ret_node
+      = CompileSchedulingWithTasksel (seg_id, wl_name, sched, tasksel, arg_node, "INIT");
+
+    DBUG_RETURN (ret_node);
 }
