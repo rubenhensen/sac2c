@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.94  2004/10/11 14:17:35  ktr
+ * Added IDS_NTYPE, PRF_EXPRS4, PRF_ARG4
+ *
  * Revision 3.93  2004/10/07 12:12:45  sah
  * added NCODE_INC_USED macro
  *
@@ -537,6 +540,7 @@ extern bool IsNonUniqueHidden (types *type);
 
 #define IDS_VARNO(n) VARDEC_OR_ARG_VARNO (IDS_VARDEC (n))
 #define IDS_TYPE(n) VARDEC_OR_ARG_TYPE (IDS_VARDEC (n))
+#define IDS_NTYPE(n) AVIS_NTYPE (IDS_AVIS (n))
 #define IDS_DIM(n) VARDEC_OR_ARG_DIM (IDS_VARDEC (n))
 #define IDS_SHPSEG(n) TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (IDS_VARDEC (n)))
 #define IDS_SHAPE(n, x) SHPSEG_SHAPE (IDS_SHPSEG (n), x)
@@ -1902,10 +1906,12 @@ extern bool isPhiFun (node *id);
 #define PRF_EXPRS1(n) PRF_ARGS (n)
 #define PRF_EXPRS2(n) EXPRS_EXPRS2 (PRF_ARGS (n))
 #define PRF_EXPRS3(n) EXPRS_EXPRS3 (PRF_ARGS (n))
+#define PRF_EXPRS4(n) EXPRS_EXPRS4 (PRF_ARGS (n))
 
 #define PRF_ARG1(n) EXPRS_EXPR (PRF_EXPRS1 (n))
 #define PRF_ARG2(n) EXPRS_EXPR (PRF_EXPRS2 (n))
 #define PRF_ARG3(n) EXPRS_EXPR (PRF_EXPRS3 (n))
+#define PRF_ARG4(n) EXPRS_EXPR (PRF_EXPRS4 (n))
 
 #define MAKE_BIN_PRF(f, arg1, arg2) MakePrf (f, MakeExprs (arg1, MakeExprs (arg2, NULL)))
 
