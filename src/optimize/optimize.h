@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/03/13 17:11:38  asi
+ * Revision 1.19  1995/03/14 11:12:40  asi
+ * added OptTrav
+ *
+ * Revision 1.18  1995/03/13  17:11:38  asi
  * added extern var optimize
  *
  * Revision 1.17  1995/03/07  10:04:45  asi
@@ -103,6 +106,8 @@ extern void PlusMask (long *mask1, long *mask2, int varno);
 extern void If3_2Mask (long *mask1, long *mask2, long *mask3, int varno);
 extern short MaskIsNotZero (long *mask, int varno);
 extern long ReadMask (long *mask, long number);
+
+extern node *OptTrav (node *arg_node, node *arg_info, int node_no);
 
 extern node *OPTfundef (node *arg_node, node *arg_info);
 extern node *OPTarg (node *arg_node, node *arg_info);
