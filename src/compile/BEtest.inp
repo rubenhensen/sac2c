@@ -13,3 +13,14 @@ MT_SYNC_ONEFOLD( double arg2 tmp foldop )
 MT_SPMD_FUN_RET( 2 out arg2 out_rc arg4 )
 clear-indent !
 MT_SPMD_BLOCK( myspmdfun 5 in float arg1 out double arg2 preset_rc int* arg3 out_rc float* arg4 inout_rc5 double* arg5 )
+clear-indent !
+WL_MT_SCHEDULER_SET_OFFSET( target idx 1 1)
+WL_MT_SCHEDULER_SET_OFFSET( target idx 2 2)
+WL_MT_SCHEDULER_SET_OFFSET( target idx 3 3)
+WL_MT_SCHEDULER_SET_OFFSET( target idx 4 4)
+WL_MT_SCHEDULER_SET_OFFSET( target idx 1 5)
+WL_MT_SCHEDULER_SET_OFFSET( target idx 2 5)
+WL_MT_SCHEDULER_SET_OFFSET( target idx 3 5)
+WL_MT_SCHEDULER_SET_OFFSET( target idx 4 5)
+
+
