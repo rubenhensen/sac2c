@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/07/07 15:50:38  jhs
+ * Corrected some copypasted bugs in some assertions.
+ *
  * Revision 2.2  1999/07/07 14:29:45  jhs
  * Removed SYNC_WITH_PTRS from routine SCHEDsync.
  *
@@ -317,11 +320,11 @@ SCHEDsync (node *arg_node, node *arg_info)
     /* traverse N_assigns */
     if (assign != NULL) {
         let = ASSIGN_INSTR (assign);
-        DBUG_ASSERT ((NODE_TYPE (assign) == N_let),
+        DBUG_ASSERT ((NODE_TYPE (let) == N_let),
                      "N_let expected, but another kind of node found");
 
         with = LET_EXPR (let);
-        DBUG_ASSERT ((NODE_TYPE (assign) == N_Nwith2),
+        DBUG_ASSERT ((NODE_TYPE (with) == N_Nwith2),
                      "N_Nwith2 expected, but another kind of node found");
 
         if (NWITH2_SCHEDULING (with) != NULL) {
