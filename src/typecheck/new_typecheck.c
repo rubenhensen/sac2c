@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/10/18 14:36:52  sbs
+ * several additions made .
+ * In particular, NTCobjdef added which generates ntypes for all
+ * objdef nodes!
+ *
  * Revision 3.21  2002/09/11 23:16:48  dkr
  * prf_name_string replaced by prf_string
  *
@@ -135,6 +140,7 @@
 #define INFO_NTC_NUM_EXPRS_SOFAR(n) (n->flag)
 #define INFO_NTC_LAST_ASSIGN(n) (n->node[0])
 #define INFO_NTC_RETURN(n) (n->node[1])
+#define INFO_NTC_OBJDEFS(n) (n->node[2])
 
 typedef enum { NTC_not_checked, NTC_checking, NTC_checked } NTC_stat;
 
@@ -261,41 +267,50 @@ TypeCheckFunctionBody (node *fundef, node *arg_info)
         FUNDEF_RETURN (fundef) = INFO_NTC_RETURN (arg_info);
         INFO_NTC_RETURN (arg_info) = NULL;
 
+    } else {
+        DBUG_ASSERT (FUNDEF_IS_EXTERNAL (fundef),
+                     "non external function with NULL body found but not expected here!");
         /*
-         * Furthermore, the inferred result type is now available in INFO_NTC_TYPE(
-         * arg_info). Iff legal, we insert it into the specified result type.
+         * We simply accept the type found in the external. declaration here:
          */
-
-        inf_type = INFO_NTC_TYPE (arg_info);
-
-        DBUG_EXECUTE ("NTC", tmp_str = TYType2String (inf_type, FALSE, 0););
-        DBUG_PRINT ("NTC", ("inferred return type of \"%s\" is %s", FUNDEF_NAME (fundef),
-                            tmp_str));
-        DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
-
-        spec_type = FUNDEF_RET_TYPE (fundef);
-
-        for (i = 0; i < TYGetProductSize (spec_type); i++) {
-            stype = TYGetProductMember (spec_type, i);
-            itype = TYGetProductMember (inf_type, i);
-
-            ok = SSINewTypeRel (itype, stype);
-
-            if (!ok) {
-                ABORT (NODE_LINE (fundef),
-                       ("component #%d of inferred return type (%s) is not within %s", i,
-                        TYType2String (itype, FALSE, 0),
-                        TYType2String (stype, FALSE, 0)));
-            }
-        }
-        TYFreeType (inf_type);
-        INFO_NTC_TYPE (arg_info) = NULL;
-
-        DBUG_EXECUTE ("NTC", tmp_str = TYType2String (spec_type, FALSE, 0););
-        DBUG_PRINT ("NTC", ("final return type of \"%s\" is: %s", FUNDEF_NAME (fundef),
-                            tmp_str));
-        DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+        INFO_NTC_TYPE (arg_info) = TYOldTypes2ProdType (FUNDEF_TYPES (fundef));
+        DBUG_PRINT ("NTC", ("trusting imported return type"));
     }
+
+    /*
+     * The inferred result type is now available in INFO_NTC_TYPE( arg_info).
+     * Iff legal, we insert it into the specified result type.
+     */
+
+    inf_type = INFO_NTC_TYPE (arg_info);
+
+    DBUG_EXECUTE ("NTC", tmp_str = TYType2String (inf_type, FALSE, 0););
+    DBUG_PRINT ("NTC",
+                ("inferred return type of \"%s\" is %s", FUNDEF_NAME (fundef), tmp_str));
+    DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+
+    spec_type = FUNDEF_RET_TYPE (fundef);
+
+    for (i = 0; i < TYGetProductSize (spec_type); i++) {
+        stype = TYGetProductMember (spec_type, i);
+        itype = TYGetProductMember (inf_type, i);
+
+        ok = SSINewTypeRel (itype, stype);
+
+        if (!ok) {
+            ABORT (NODE_LINE (fundef),
+                   ("component #%d of inferred return type (%s) is not within %s", i,
+                    TYType2String (itype, FALSE, 0), TYType2String (stype, FALSE, 0)));
+        }
+    }
+    TYFreeType (inf_type);
+    INFO_NTC_TYPE (arg_info) = NULL;
+
+    DBUG_EXECUTE ("NTC", tmp_str = TYType2String (spec_type, FALSE, 0););
+    DBUG_PRINT ("NTC",
+                ("final return type of \"%s\" is: %s", FUNDEF_NAME (fundef), tmp_str));
+    DBUG_EXECUTE ("NTC", tmp_str = Free (tmp_str););
+
     DBUG_RETURN (fundef);
 }
 
@@ -333,8 +348,20 @@ NTCmodul (node *arg_node, node *arg_info)
     ABORT_ON_ERROR;
 
     /*
+     * Then we traverse all objdefs in order to attach new types to them.
+     * After that, we insert the topmost objdef into the arg_info node
+     * for later reference.
+     */
+
+    if (MODUL_OBJS (arg_node) != NULL) {
+        MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
+    }
+
+    INFO_NTC_OBJDEFS (arg_info) = MODUL_OBJS (arg_node);
+
+    /*
      * Before doing the actual type inference, we want to switch to the FUN-
-     * representation. This requires seeral preparational steps:
+     * representation. This requires several preparational steps:
      *
      * I) Inserting Vardecs
      * =====================
@@ -380,7 +407,7 @@ NTCmodul (node *arg_node, node *arg_info)
         goto DONE;
     }
 
-    arg_node = SSATransform (arg_node);
+    arg_node = SSATransformAllowGOs (arg_node);
     if ((break_after == PH_typecheck) && (0 == strcmp (break_specifier, "ssa"))) {
         goto DONE;
     }
@@ -439,7 +466,7 @@ NTCmodul (node *arg_node, node *arg_info)
      */
     arg_node = Lac2Fun (arg_node);
     arg_node = CheckAvis (arg_node);
-    arg_node = SSATransform (arg_node);
+    arg_node = SSATransformAllowGOs (arg_node);
 
 DONE:
     DBUG_RETURN (arg_node);
@@ -583,12 +610,22 @@ NTCtypedef (node *arg_node, node *arg_info)
 {
     char *name, *mod;
     ntype *nt, *base;
+    types *potential_hidden_definition;
     usertype udt;
+#ifndef DBUG_OFF
+    char *tmp_str;
+#endif
 
     DBUG_ENTER ("NTCtypedef");
     name = TYPEDEF_NAME (arg_node);
-    mod = TYPEDEF_MOD (arg_node);
+    mod = (TYPEDEF_MOD (arg_node) ? TYPEDEF_MOD (arg_node) : StringCopy (""));
     nt = TYOldType2Type (TYPEDEF_TYPE (arg_node));
+    if (TYPEDEF_ATTRIB (arg_node) == ST_unique) {
+        DBUG_ASSERT ((TYIsSimple (TYGetScalar (nt))
+                      && (TYGetSimpleType (TYGetScalar (nt)) == T_hidden)),
+                     "unique typedef is not of hidden base type!!");
+        nt = TYSetScalar (nt, TYMakeSimpleType (T_classtype));
+    }
 
     udt = UTFindUserType (name, mod);
     if (udt != UT_NOT_DEFINED) {
@@ -596,14 +633,58 @@ NTCtypedef (node *arg_node, node *arg_info)
                          " previous definition in line %d",
                          mod, name, UTGetLine (udt)));
     }
-    udt = UTAddUserType (name, mod, nt, NULL, linenum);
+    udt = UTAddUserType (name, mod, nt, NULL, linenum, arg_node);
+
+    DBUG_EXECUTE ("UDT", tmp_str = TYType2String (nt, FALSE, 0););
+    DBUG_PRINT ("UDT", ("adding user type %s:%s defined as %s", mod, name, tmp_str));
+    DBUG_EXECUTE ("UDT", tmp_str = Free (tmp_str););
 
     if (TYPEDEF_NEXT (arg_node) != NULL)
         TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
 
     base = CheckUdtAndSetBaseType (udt, NULL);
-    TYPEDEF_TYPE (arg_node) = Free (TYPEDEF_TYPE (arg_node));
+
+    /*
+     * Now, we insert the computed base type into the typedef.
+     * However, we have to make sure that a potentially hidden definition
+     * of the type (which would be attached in the NEXT field of the
+     * types structure !!!!), survives this operation!
+     */
+    potential_hidden_definition = TYPES_NEXT (TYPEDEF_TYPE (arg_node));
+    TYPEDEF_TYPE (arg_node) = FreeOneTypes (TYPEDEF_TYPE (arg_node));
     TYPEDEF_TYPE (arg_node) = TYType2OldType (base);
+    TYPES_NEXT (TYPEDEF_TYPE (arg_node)) = potential_hidden_definition;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCobjdef(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   Basically, this is a double conversion old type => new type => old type.
+ *   It is included here, since the determination of the module the type
+ *   comes from is required to be done during type check anyways.
+ *   The "back conversion" is a kind of ugly hack here to avoid yet another
+ *   nt2ot function... (similar to the ugly hack in NTCtypedef....)
+ *
+ ******************************************************************************/
+
+node *
+NTCobjdef (node *arg_node, node *arg_info)
+{
+    ntype *tmp;
+
+    DBUG_ENTER ("NTCobjdef");
+
+    tmp = TYOldType2Type (OBJDEF_TYPE (arg_node));
+    OBJDEF_TYPE (arg_node) = FreeOneTypes (OBJDEF_TYPE (arg_node));
+    OBJDEF_TYPE (arg_node) = TYType2OldType (tmp);
+
+    if (OBJDEF_NEXT (arg_node) != NULL)
+        OBJDEF_NEXT (arg_node) = Trav (OBJDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -653,9 +734,33 @@ NTCfundef (node *arg_node, node *arg_info)
 node *
 NTCarg (node *arg_node, node *arg_info)
 {
+    ntype *new_type, *scalar;
+#ifndef DBUG_OFF
+    char *tmp_str;
+#endif
+
     DBUG_ENTER ("NTCarg");
 
-    AVIS_TYPE (ARG_AVIS (arg_node)) = TYOldType2Type (ARG_TYPE (arg_node));
+    new_type = TYOldType2Type (ARG_TYPE (arg_node));
+    AVIS_TYPE (ARG_AVIS (arg_node)) = new_type;
+
+    scalar = TYGetScalar (new_type);
+    if ((TYIsUser (scalar)
+         && (TYPEDEF_ATTRIB (UTGetTdef (TYGetUserType (scalar))) == ST_unique))
+        && (ARG_ATTRIB (arg_node) == ST_regular)) {
+
+        DBUG_EXECUTE ("UNQ", tmp_str = TYType2String (new_type, FALSE, 0););
+        DBUG_PRINT ("UNQ", ("argument \"%s\" of type \"%s\" marked as unique",
+                            ARG_NAME (arg_node), tmp_str));
+        DBUG_EXECUTE ("UNQ", tmp_str = Free (tmp_str););
+
+        ARG_ATTRIB (arg_node) = ST_unique;
+        if (!TYIsScalar (new_type)) {
+            ERROR (NODE_LINE (arg_node),
+                   ("unique type \"%s\" used in non-scalar form",
+                    TYType2String (TYGetScalar (new_type), FALSE, 0)));
+        }
+    }
 
     if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
@@ -1093,15 +1198,26 @@ node *
 NTCid (node *arg_node, node *arg_info)
 {
     ntype *type;
+    node *objdef;
 
     DBUG_ENTER ("NTCid");
 
     type = AVIS_TYPE (ID_AVIS (arg_node));
 
     if (type == NULL) {
-        ABORT (NODE_LINE (arg_node), ("Cannot infer type for %s as it may be"
-                                      " used without a previous definition",
-                                      ID_NAME (arg_node)));
+        /*
+         * There has been no assignment, so we have to look for
+         * a potential object definition:
+         */
+        if (GET_FLAG (ID, arg_node, IS_GLOBAL)) {
+            objdef = ID_OBJDEF (arg_node);
+            INFO_NTC_TYPE (arg_info) = TYOldType2Type (OBJDEF_TYPE (objdef));
+            AVIS_TYPE (ID_AVIS (arg_node)) = TYCopyType (INFO_NTC_TYPE (arg_info));
+        } else {
+            ABORT (NODE_LINE (arg_node), ("Cannot infer type for %s as it may be"
+                                          " used without a previous definition",
+                                          ID_NAME (arg_node)));
+        }
     } else {
         INFO_NTC_TYPE (arg_info) = TYCopyType (type);
     }
