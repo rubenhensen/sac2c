@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.102  1999/01/15 16:59:46  sbs
+# freemasks.o added
+#
 # Revision 1.101  1999/01/15 15:28:15  cg
 # added linking of file psi-opt/tile_size_inference.o
 #
@@ -189,7 +192,7 @@ TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/generatemasks.o src/optimize/DeadCodeRemoval.o \
-          src/optimize/DeadFunctionRemoval.o \
+          src/optimize/DeadFunctionRemoval.o src/optimize/freemasks.o \
 	  src/optimize/LoopInvariantRemoval.o src/optimize/DupTree.o \
 	  src/optimize/Inline.o src/optimize/Unroll.o src/optimize/WLUnroll.o \
           src/optimize/Unswitch.o src/optimize/CSE.o \
