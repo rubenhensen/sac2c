@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  1997/11/07 14:27:14  dkr
+ * with defined NEWTREE node.nnode is not used anymore
+ *
  * Revision 1.8  1997/04/25 12:13:00  sbs
  * MAlloc replaced by Malloc from internal.lib
  *
@@ -549,14 +552,18 @@ GenLetNode (linfo *loop_info, node *arg_info)
     assign_node->mask[1] = GenMask (VARNO);
     INC_VAR (assign_node->mask[0], loop_info->decl_node->varno);
     INC_VAR (arg_info->mask[0], loop_info->decl_node->varno);
-    assign_node->nnode = 1;
 
+#ifndef NEWTREE
+    assign_node->nnode = 1;
+#endif
     assign_node->node[0] = MakeNode (N_let);
     assign_node->node[0]->info.ids
       = MakeIds (loop_info->decl_node->info.types->id, NULL, ST_regular);
     assign_node->node[0]->info.ids->node = loop_info->decl_node;
 
+#ifndef NEWTREE
     assign_node->node[0]->nnode = 1;
+#endif
     assign_node->node[0]->node[0] = MakeNode (N_num);
     assign_node->node[0]->node[0]->info.cint = loop_info->start_num;
 
@@ -579,7 +586,11 @@ GenLetNode (linfo *loop_info, node *arg_info)
 node *
 DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
 {
+#ifndef NEWTREE
     int old_nnode;
+#else
+    node *arg_node1;
+#endif
     long old_test_num;
     node *second_loop = NULL;
     node *unrolled_loop = NULL;
@@ -599,8 +610,13 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
         MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
 
         /* isulate loop */
+#ifndef NEWTREE
         old_nnode = arg_node->nnode;
         arg_node->nnode = 1;
+#else
+        arg_node1 = arg_node->node[1];
+        arg_node->node[1] = NULL;
+#endif
 
         /* modify first loop */
         cond_info->insert_node->node[0] = cond_info->chain1;
@@ -609,8 +625,11 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
         arg_node = GenerateMasks (arg_node, arg_info);
 
         /* append assign-chain below loop-assign */
+#ifndef NEWTREE
         arg_node->nnode = old_nnode;
-
+#else
+        arg_node->node[1] = arg_node1;
+#endif
         break;
 
     case between:
@@ -623,7 +642,12 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
         MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
 
         /* isulate loop */
+#ifndef NEWTREE
         arg_node->nnode = 1;
+#else
+        arg_node1 = arg_node->node[1]; /* not used anymore ??? */
+        arg_node->node[1] = NULL;
+#endif
 
         if (cond_info->last_test != cond_info->test_num) {
             /* creat second loop */
@@ -681,7 +705,9 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
 
         /* and second loop to first loop */
         arg_node->node[1] = unrolled_loop;
+#ifndef NEWTREE
         arg_node->nnode = 2;
+#endif
 
         break;
 
@@ -695,7 +721,12 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
         MinusMask (arg_info->mask[1], arg_node->mask[1], VARNO);
 
         /* isulate loop */
+#ifndef NEWTREE
         arg_node->nnode = 1;
+#else
+        arg_node1 = arg_node->node[1]; /* not used anymore ??? */
+        arg_node->node[1] = NULL;
+#endif
 
         if (cond_info->test_num != cond_info->last_test) {
             /* creat second loop */
@@ -743,7 +774,9 @@ DoUnswitch (node *arg_node, node *arg_info, cinfo *cond_info, linfo *loop_info)
 
         /* and second loop to first loop */
         arg_node->node[1] = second_loop;
+#ifndef NEWTREE
         arg_node->nnode = 2;
+#endif
 
         break;
 
