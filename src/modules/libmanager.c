@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/09/23 21:15:39  sah
+ * interface complete and
+ * working implementation for Solaris
+ *
  * Revision 1.1  2004/09/21 17:54:00  sah
  * Initial revision
  *
@@ -14,7 +18,7 @@
 #include <link.h>
 #include <dlfcn.h>
 
-static char *
+static const char *
 LibManagerError ()
 {
     char *error;
@@ -30,23 +34,38 @@ LibManagerError ()
 }
 
 dynlib_t
-LoadLibrary (char *name)
+LoadLibrary (const char *name)
 {
     dynlib_t result;
 
     DBUG_ENTER ("LoadLibrary");
 
-    result = dlopen (name, RTLD_WORLD | RTLD_GROUP);
+    result = dlopen (name, RTLD_WORLD | RTLD_LAZY);
 
     if (result == NULL) {
-        SYSERROR (("Cannot open library `%s': %s", name, LibManagerError ()));
+        SYSABORT (("Cannot open library `%s': %s", name, LibManagerError ()));
     }
 
     DBUG_RETURN (result);
 }
 
+dynlib_t
+UnLoadLibrary (dynlib_t lib)
+{
+    int result;
+
+    DBUG_ENTER ("UnLoadLibrary");
+
+    result = dlclose (lib);
+
+    if (result != 0)
+        SYSABORT (("Cannot close library: %s", LibManagerError ()));
+
+    DBUG_RETURN ((dynlib_t)NULL);
+}
+
 dynfun_t
-GetLibraryFunction (char *name, dynlib_t lib)
+GetLibraryFunction (const char *name, dynlib_t lib)
 {
     dynfun_t result;
 
@@ -55,7 +74,7 @@ GetLibraryFunction (char *name, dynlib_t lib)
     result = dlsym (lib, name);
 
     if (result == NULL) {
-        SYSERROR (("Cannot open library function `%s': %s", name, LibManagerError ()));
+        SYSABORT (("Cannot open library function `%s': %s", name, LibManagerError ()));
     }
 
     DBUG_RETURN (result);
