@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/06/24 15:31:29  sbs
+ * Due to the implicit filename-adjustment in Trav, instead of creating
+ * file.dec files, file.sac was destroyed if file.dec was not yet
+ * available at compile-time!
+ * This could be avoided by calling WDECmodul explicitly rather than using Trav!
+ *
  * Revision 2.1  1999/02/23 12:42:02  sacbase
  * new release made
  *
@@ -85,6 +91,7 @@
 #include "scnprs.h"
 #include "implicittypes.h"
 #include "print.h"
+#include "checkdec.h"
 
 /*
  *
@@ -223,7 +230,12 @@ CheckDec (node *syntax_tree)
 
         act_tab = writedec_tab;
 
-        Trav (syntax_tree, NULL);
+        /*
+         * Here, we cannot call Trav, since that would destroy the global
+         * variable filename, which is used when opening the .dec-file
+         * to be generated!!!
+         */
+        syntax_tree = WDECmodul (syntax_tree, NULL);
 
         ABORT_ON_ERROR;
 
