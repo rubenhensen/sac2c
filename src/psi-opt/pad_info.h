@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2000/08/03 15:35:24  mab
+ * completed implementation of data structure
+ *
  * Revision 1.7  2000/07/21 14:40:50  mab
  * added PIlinearizeAccessVector, PIgetArrayType*, PIgetPatternShape
  *
@@ -52,6 +55,7 @@ typedef struct PATTERN_T {
 /* structure for grouping access patterns by conflict groups */
 typedef struct CONFLICT_GROUP_T {
     shpseg *group;
+    accessdir_t direction;
     pattern_t *patterns;
     struct CONFLICT_GROUP_T *next;
 } conflict_group_t;
@@ -84,19 +88,29 @@ typedef struct PAD_INFO_T {
     struct PAD_INFO_T *next;
 } pad_info_t;
 
+/* used in pad.c */
 extern void PIinit ();
+extern void PIfree ();
 
 /* used in pad_collect.c */
 extern pattern_t *PIconcatPatterns (pattern_t *pattern, shpseg *shape);
 extern void PIaddAccessPattern (simpletype type, int dim, shpseg *shape, shpseg *group,
-                                pattern_t *patterns);
+                                accessdir_t direction, pattern_t *patterns);
+extern void PIprintShpSeg (int dim, shpseg *shape);
+extern void PIprintArrayTypeElement (array_type_t *at_ptr);
+extern void PIprintConflictGroupElement (array_type_t *at_ptr, conflict_group_t *cg_ptr);
+extern void PIprintPatternElement (array_type_t *at_ptr, pattern_t *pt_ptr);
 extern void PIprintAccessPatterns ();
-extern void PIaddUnsupportedShape (types *array_type);
+
+extern bool PIaddUnsupportedShape (types *array_type);
+extern bool PIisUnsupportedShape (types *array_type);
 extern void PIprintUnsupportedShapes ();
+
 extern void PItidyAccessPattern ();
+extern void PIremoveUnsupportedShapes ();
 
 /* used in pad_infer.c */
-extern int PIlinearizeAccessVector (int dim, shpseg *shape, shpseg *vect);
+extern int PIlinearizeVector (int dim, shpseg *shape, shpseg *vect);
 extern int PIgetArrayTypeDim (array_type_t *at_ptr);
 extern shpseg *PIgetArrayTypeShape (array_type_t *at_ptr);
 extern simpletype PIgetArrayTypeBasetype (array_type_t *at_ptr);
@@ -111,12 +125,10 @@ extern void PIaddInferredShape (simpletype type, int dim, shpseg *old_shape,
                                 shpseg *new_shape);
 
 /* used in pad_transform.c */
-extern void PIPrintPadInfo ();
+extern void PIprintPadInfo ();
 extern types *PIgetNewType (types *old_type);
 extern types *PIgetOldType (types *old_type);
 extern node *PIgetFundefPad (types *old_type);
 extern node *PIgetFundefUnpad (types *old_type);
-
-extern void PIfree ();
 
 #endif /* sac_pad_info_h */
