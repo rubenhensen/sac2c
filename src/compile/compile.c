@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.110  1998/02/15 04:08:38  dkr
+ * partitioning of index-projections added (experimental !!)
+ *
  * Revision 1.109  1998/02/11 16:39:46  dkr
  * now the type cmp_types is used (CMP_equal, CmpTypes())
  *
@@ -451,8 +454,9 @@
 #include "traverse.h"
 #include "compile.h"
 #include "convert.h"
+#include "DupTree.h"
 #include "refcount.h"
-#include "typecheck.h" /* to use LookupType */
+#include "typecheck.h" /* to use LookupType() */
 #include "free.h"
 
 #define TYP_IF(n, d, p, f, sz) sz
@@ -2199,8 +2203,6 @@ GenName (int i, char *name)
 }
 
 #if 0
-/*  it seems as if this function is no longer used */
-
 /*
  *
  *  functionname  : GenFunName
@@ -5289,11 +5291,655 @@ CompWith (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
- **********************************************************************************
- * compile new with-loop
- **********************************************************************************
+/***********************************************************************************
+ * compilation of new with-loop
  */
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeProj(node *bound1, node *bound2, node *offset, node *step, node *width)
+ *
+ * description:
+ *   generates a new N_indexproj-node
+ *
+ ******************************************************************************/
+
+node *
+MakeProj (node *bound1, node *bound2, node *offset, node *step, node *width)
+{
+    node *new_node;
+
+    DBUG_ENTER ("MakeProj");
+
+    new_node = MakeEmpty ();
+    PROJ_BOUND1 (new_node) = bound1;
+    PROJ_BOUND2 (new_node) = bound2;
+    PROJ_OFFSET (new_node) = offset;
+    PROJ_STEP (new_node) = step;
+    PROJ_WIDTH (new_node) = width;
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *ProjNormalize(node *proj, int shape)
+ *
+ * description:
+ *   normalizes the values of the N_indexproj-node 'proj'
+ *   (maximally shape; (width < step) or (width = step = 1))
+ *
+ ******************************************************************************/
+
+node *
+ProjNormalize (node *proj, int shape)
+{
+    int bound1, bound2, offset, step, width, new_bound1, new_bound2;
+
+    DBUG_ENTER ("ProjNormalize");
+
+    bound1 = NUM_VAL (PROJ_BOUND1 (proj));
+    bound2 = NUM_VAL (PROJ_BOUND2 (proj));
+    offset = NUM_VAL (PROJ_OFFSET (proj));
+    step = NUM_VAL (PROJ_STEP (proj));
+    width = NUM_VAL (PROJ_WIDTH (proj));
+
+    /* assures: (width < step) or (width = step = 1) */
+    if ((width >= step) && (width > 1)) {
+        step = NUM_VAL (PROJ_STEP (proj)) = width = NUM_VAL (PROJ_WIDTH (proj)) = 1;
+    }
+
+    /* maximize the shape */
+    new_bound1 = bound1 - (step - offset - width);
+    new_bound1 = MAX (0, new_bound1);
+
+    if ((bound2 - bound1 - offset) % step >= width) {
+        new_bound2 = bound2 + step - ((bound2 - bound1 - offset) % step);
+        new_bound2 = MIN (new_bound2, shape);
+    } else {
+        new_bound2 = bound2;
+    }
+
+    NUM_VAL (PROJ_BOUND1 (proj)) = new_bound1;
+    NUM_VAL (PROJ_BOUND2 (proj)) = new_bound2;
+    NUM_VAL (PROJ_OFFSET (proj)) = bound1 - new_bound1;
+
+    DBUG_RETURN (proj);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int IsEmpty(int bound1, int bound2, int offset)
+ *
+ * description:
+ *   computes, whether 'bound1', 'bound2', 'offset' specifiy an empty
+ *    index-set or not.
+ *
+ ******************************************************************************/
+
+int
+IsEmpty (int bound1, int bound2, int offset)
+{
+    int empty;
+
+    DBUG_ENTER ("IsEmpty");
+
+    empty = (bound1 + offset >= bound2);
+
+    DBUG_RETURN (empty);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int ProjIsEmpty(node *proj)
+ *
+ * description:
+ *   computes, whether 'proj' is an empty index-set or not
+ *   ('proj' is a N_indexproj-node)
+ *
+ ******************************************************************************/
+
+int
+ProjIsEmpty (node *proj)
+{
+    int empty;
+
+    DBUG_ENTER ("ProjIsEmpty");
+
+    empty = IsEmpty (NUM_VAL (PROJ_BOUND1 (proj)), NUM_VAL (PROJ_BOUND2 (proj)),
+                     NUM_VAL (PROJ_OFFSET (proj)));
+
+    DBUG_RETURN (empty);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int lcm(int x, int y)
+ *
+ * description:
+ *   returns the lowest-common-multiple of x, y.
+ *
+ ******************************************************************************/
+
+int
+lcm (int x, int y)
+{
+    int u, v;
+
+    DBUG_ENTER ("lcm");
+
+    u = x;
+    v = y;
+    while (u != v) {
+        if (u < v) {
+            u += x;
+        } else {
+            v += y;
+        }
+    }
+
+    DBUG_RETURN (u);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *ProjIntersect(node *proj1, node *proj2, int shape)
+ *
+ * description:
+ *   returns the intersection of 'proj1' and 'proj2'
+ *     (as a N_exprs-chain of normalized N_indexproj-nodes);
+ *   returns NULL if intersection is empty.
+ *
+ *   'proj1', 'proj2' are normalized (!!!) N_indexproj-nodes.
+ *
+ ******************************************************************************/
+
+node *
+ProjIntersect (node *proj1, node *proj2, int shape)
+{
+    node *isection = NULL;
+    int k, bound1, bound2, offset, step, width, bound1_1, bound2_1, offset_1, step_1,
+      width_1, bound1_2, bound2_2, offset_2, step_2, width_2;
+
+    DBUG_ENTER ("ProjIntersect");
+
+    bound1_1 = NUM_VAL (PROJ_BOUND1 (proj1));
+    bound2_1 = NUM_VAL (PROJ_BOUND2 (proj1));
+    offset_1 = NUM_VAL (PROJ_OFFSET (proj1));
+    step_1 = NUM_VAL (PROJ_STEP (proj1));
+    width_1 = NUM_VAL (PROJ_WIDTH (proj1));
+
+    bound1_2 = NUM_VAL (PROJ_BOUND1 (proj2));
+    bound2_2 = NUM_VAL (PROJ_BOUND2 (proj2));
+    offset_2 = NUM_VAL (PROJ_OFFSET (proj2));
+    step_2 = NUM_VAL (PROJ_STEP (proj2));
+    width_2 = NUM_VAL (PROJ_WIDTH (proj2));
+
+    if ((bound2_1 > bound1_2) && (bound1_1 < bound2_2)) {
+        bound1 = MAX (bound1_1, bound1_2);
+        bound2 = MIN (bound2_1, bound2_2);
+
+        step = lcm (step_1, step_2);
+        step = MIN (step, (bound2 - bound1));
+
+        offset = -1;
+        for (k = 0; k < step; k++) {
+            if (((k + bound1 - bound1_1) % step_1 < width_1)
+                && ((k + bound1 - bound1_2) % step_2 < width_2)) {
+                /* offset k matches both rasters */
+                if (offset == -1)
+                    /* at the beginning of a new intersection-raster */
+                    offset = k;
+            } else {
+                if (offset >= 0) {
+                    /* a completed intersection-raster is found */
+                    width = k - offset;
+
+                    if (!IsEmpty (bound1, bound2, offset)) {
+                        isection
+                          = MakeExprs (MakeProj (MakeNum (bound1), MakeNum (bound2),
+                                                 MakeNum (offset), MakeNum (step),
+                                                 MakeNum (width)),
+                                       isection);
+                        /* normalize new intersection-raster and insert it in 'isection'
+                         */
+                        EXPRS_EXPR (isection)
+                          = ProjNormalize (EXPRS_EXPR (isection), shape);
+                    }
+
+                    offset = -1;
+                }
+            }
+        }
+
+        if (offset >= 0) {
+            /* a completed intersection-raster is found */
+            width = k - offset;
+
+            if (!IsEmpty (bound1, bound2, offset)) {
+                isection = MakeExprs (MakeProj (MakeNum (bound1), MakeNum (bound2),
+                                                MakeNum (offset), MakeNum (step),
+                                                MakeNum (width)),
+                                      isection);
+                /* normalize new intersection-raster and insert it in 'isection' */
+                EXPRS_EXPR (isection) = ProjNormalize (EXPRS_EXPR (isection), shape);
+            }
+        }
+    }
+
+    DBUG_RETURN (isection);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int ProjEmptyIsect(node *proj1, node *proj2)
+ *
+ * description:
+ *   computes, whether the intersection of 'proj1', 'proj2' is empty or not.
+ *   ('proj1', 'proj2' are N_indexproj-nodes)
+ *
+ ******************************************************************************/
+
+int
+ProjEmptyIsect (node *proj1, node *proj2, int shape)
+{
+    int result;
+
+    DBUG_ENTER ("ProjEmptyIsect");
+
+    result = (ProjIntersect (proj1, proj2, shape) == NULL);
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int ProjCompare(node *proj1, node *proj2)
+ *
+ * description:
+ *   compares 'proj1' and 'proj2' (N_indexproj-nodes)
+ *
+ *   return: -1 -> 'proj1' < 'proj2'
+ *            1 -> 'proj1' > 'proj2'
+ *            0 -> 'proj1' = 'proj2'
+ *
+ ******************************************************************************/
+
+int
+ProjCompare (node *proj1, node *proj2)
+{
+    int bound1_1, bound2_1, offset_1, step_1, width_1, bound1_2, bound2_2, offset_2,
+      step_2, width_2;
+    int result;
+
+    DBUG_ENTER ("ProjCompare");
+
+    bound1_1 = NUM_VAL (PROJ_BOUND1 (proj1));
+    bound2_1 = NUM_VAL (PROJ_BOUND2 (proj1));
+    offset_1 = NUM_VAL (PROJ_OFFSET (proj1));
+    step_1 = NUM_VAL (PROJ_STEP (proj1));
+    width_1 = NUM_VAL (PROJ_WIDTH (proj1));
+
+    bound1_2 = NUM_VAL (PROJ_BOUND1 (proj2));
+    bound2_2 = NUM_VAL (PROJ_BOUND2 (proj2));
+    offset_2 = NUM_VAL (PROJ_OFFSET (proj2));
+    step_2 = NUM_VAL (PROJ_STEP (proj2));
+    width_2 = NUM_VAL (PROJ_WIDTH (proj2));
+
+#define TEST_BEGIN(a, b)                                                                 \
+    if (a > b) {                                                                         \
+        result = 1;                                                                      \
+    } else {                                                                             \
+        if (a < b) {                                                                     \
+            result = -1;                                                                 \
+        } else {
+#define TEST_END                                                                         \
+    }                                                                                    \
+    }
+
+    TEST_BEGIN (bound1_1, bound1_2)
+    TEST_BEGIN (bound2_1, bound2_2)
+    TEST_BEGIN (offset_1, offset_2)
+    TEST_BEGIN (step_1, step_2)
+    TEST_BEGIN (width_1, width_2)
+    result = 0;
+    TEST_END
+    TEST_END
+    TEST_END
+    TEST_END
+    TEST_END
+
+#undef TEST_BEGIN
+#undef TEST_END
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *ProjInsert(node *to_insert, node *projs)
+ *
+ * description:
+ *   inserts the elements of 'to_insert' in the sorted chain 'projs'.
+ *   any element of 'to_insert', that is already found in 'projs', is freed!!
+ *
+ *   'to_insert' and 'projs' are N_exprs-chains of N_indexproj-nodes
+ *
+ ******************************************************************************/
+
+node *
+ProjInsert (node *insert, node *projs)
+{
+    node *to_insert, *insert_here;
+    int compare;
+
+    DBUG_ENTER ("ProjInsert");
+
+    if (projs == NULL) { /* 'projs' is empty */
+        /* return the 'insert'-chain */
+        projs = insert;
+    } else { /* 'projs' contains elements */
+        while (insert != NULL) {
+            /* insert all elements of 'insert'-chain in 'projs' */
+            to_insert = insert;
+            insert = EXPRS_NEXT (insert);
+
+            compare = ProjCompare (EXPRS_EXPR (to_insert), EXPRS_EXPR (projs));
+            if (compare == 0) {
+                /* this projection was found already, hence of no use */
+#if 0
+        FreeTree(to_insert);
+#endif
+            } else {
+                if (compare == -1) {
+                    /* insert current element of 'insert'-chain at top of 'projs' */
+                    EXPRS_NEXT (to_insert) = projs;
+                    projs = to_insert;
+                } else {
+                    /* search for insert-position in 'projs' */
+                    insert_here = projs;
+                    while (EXPRS_NEXT (insert_here) != NULL) {
+                        compare = ProjCompare (EXPRS_EXPR (to_insert),
+                                               EXPRS_EXPR (EXPRS_NEXT (insert_here)));
+                        if (compare == 0) {
+                            /* this projection was found already, hence of no use */
+#if 0
+              FreeTree(to_insert);
+#else
+                            to_insert = NULL;
+#endif
+                        }
+                        if (compare != 1)
+                            break;
+                        insert_here = EXPRS_NEXT (insert_here);
+                    }
+
+                    if (to_insert != NULL) {
+                        /* insert current element of 'insert'-chain at the found position
+                         */
+                        EXPRS_NEXT (to_insert) = EXPRS_NEXT (insert_here);
+                        EXPRS_NEXT (insert_here) = to_insert;
+                    }
+                }
+            }
+        }
+    }
+
+    DBUG_RETURN (projs);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *GetRelevantProjs(node *withpart, node *shape, node *prev_projs)
+ *
+ * description:
+ *   withpart: any N_Npart-node
+ *   shape: N_array-node containing the shape
+ *   prev_projs: set of previous projections (dimensions 0..d-1)
+ *               ('prev_proj' is a N_exprs-chain of d N_indexproj-nodes)
+ *
+ *   return: the projections (dimension d) of the generator-index-sets ('withpart'),
+ *           which lie in 'prev_projs'
+ *           (returned as a N_exprs-chain of normalized N_indexproj-nodes)
+ *
+ ******************************************************************************/
+
+node *
+GetRelevantProjs (node *withpart, node *shape, node *prev_projs)
+{
+    int relevant;
+    node *part, *shape_, *prev_proj, *projs, *insert, *tmp, *bound1, *bound2, *step,
+      *width;
+
+    DBUG_ENTER ("GetRelevantProjs");
+
+    /* create temporary node */
+    tmp = MakeExprs (MakeProj (NULL, NULL, MakeNum (0), NULL, NULL), NULL);
+
+    projs = NULL;
+    part = withpart;
+    /* visit all generator-index-set */
+    while (part != NULL) {
+        relevant = 1;
+        shape_ = ARRAY_AELEMS (shape);
+        prev_proj = prev_projs;
+
+        /* get projection of current generator-index-set */
+        bound1 = ARRAY_AELEMS (NGEN_BOUND1 (NPART_GEN (part)));
+        bound2 = ARRAY_AELEMS (NGEN_BOUND2 (NPART_GEN (part)));
+        step = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (part)));
+        width = ARRAY_AELEMS (NGEN_WIDTH (NPART_GEN (part)));
+
+        /* test, if generator-index-set is relevant */
+        while (prev_proj != NULL) {
+            DBUG_ASSERT ((shape_ != NULL), "shape component not found");
+            DBUG_ASSERT ((bound1 != NULL), "bound1 of generator not found");
+            DBUG_ASSERT ((bound2 != NULL), "bound2 of generator not found");
+            DBUG_ASSERT ((step != NULL), "step of generator not found");
+            DBUG_ASSERT ((width != NULL), "width of generator not found");
+
+            /* build a N_indexproj-node */
+            PROJ_BOUND1 (EXPRS_EXPR (tmp)) = EXPRS_EXPR (bound1);
+            PROJ_BOUND2 (EXPRS_EXPR (tmp)) = EXPRS_EXPR (bound2);
+            PROJ_STEP (EXPRS_EXPR (tmp)) = EXPRS_EXPR (step);
+            PROJ_WIDTH (EXPRS_EXPR (tmp)) = EXPRS_EXPR (width);
+
+            if (ProjIsEmpty (EXPRS_EXPR (tmp))
+                || (!ProjEmptyIsect (EXPRS_EXPR (tmp), EXPRS_EXPR (prev_proj),
+                                     NUM_VAL (EXPRS_EXPR (shape_))))) {
+                relevant = 0;
+                break;
+            }
+
+            prev_proj = EXPRS_NEXT (prev_proj);
+            shape_ = EXPRS_NEXT (shape_);
+
+            bound1 = EXPRS_NEXT (bound1);
+            bound2 = EXPRS_NEXT (bound2);
+            step = EXPRS_NEXT (step);
+            width = EXPRS_NEXT (width);
+        }
+
+        if (relevant) {
+            DBUG_ASSERT ((shape_ != NULL), "shape component not found");
+            DBUG_ASSERT ((bound1 != NULL), "bound1 of generator not found");
+            DBUG_ASSERT ((bound2 != NULL), "bound2 of generator not found");
+            DBUG_ASSERT ((step != NULL), "step of generator not found");
+            DBUG_ASSERT ((width != NULL), "width of generator not found");
+
+            /* build a N_indexproj-node */
+            insert
+              = MakeExprs (MakeProj (MakeNum (NUM_VAL (EXPRS_EXPR (bound1))),
+                                     MakeNum (NUM_VAL (EXPRS_EXPR (bound2))), MakeNum (0),
+                                     MakeNum (NUM_VAL (EXPRS_EXPR (step))),
+                                     MakeNum (NUM_VAL (EXPRS_EXPR (width)))),
+                           NULL);
+
+            /* store relevant generator-index-set */
+            projs = ProjInsert (insert, projs);
+        }
+
+        part = NPART_NEXT (part);
+    }
+
+    /* remove temporary node */
+#if 0
+  FreeTree(tmp);
+#endif
+
+    DBUG_RETURN (projs);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *ProjPartition(node *withpart, node *shape, node *prev_proj)
+ *
+ * description:
+ *   withpart: NWITH_PART(...)
+ *   shape: N_array-node containing the shape
+ *   prev_proj: set of previous projections (dimensions 0..d-1)
+ *              ('prev_proj' is a N_exprs-chain with d N_indexproj-nodes)
+ *
+ *   return: partition of the current projection
+ *           (N_exprs-chain of N_indexproj-nodes)
+ *
+ ******************************************************************************/
+
+node *
+ProjPartition (node *withpart, node *shape, node *prev_proj)
+{
+    node *shape_, *old_projs, *proj1, *proj2, *projs, *isection, *tmp;
+    int fixpoint;
+
+    DBUG_ENTER ("ProjPartition");
+
+    old_projs = GetRelevantProjs (withpart, shape, prev_proj);
+
+    /* compute the right shape-component */
+    shape_ = ARRAY_AELEMS (shape);
+    while (prev_proj != NULL) {
+        shape_ = EXPRS_NEXT (shape_);
+        prev_proj = EXPRS_NEXT (prev_proj);
+    }
+
+    do {
+        fixpoint = 1;
+        projs = NULL;
+
+        /* initialize NPART_ISECTED(...) */
+        proj1 = old_projs;
+        while (proj1 != NULL) {
+            PROJ_ISECTED (EXPRS_EXPR (proj1)) = 0;
+            proj1 = EXPRS_NEXT (proj1);
+        }
+
+        /* intersect the elements of 'old_projs' in pairs */
+        proj1 = old_projs;
+        while (proj1 != NULL) {
+            proj2 = EXPRS_NEXT (proj1);
+            while (proj2 != NULL) {
+                /* intersect 'proj1' and 'proj2' */
+                isection = ProjIntersect (EXPRS_EXPR (proj1), EXPRS_EXPR (proj2),
+                                          NUM_VAL (EXPRS_EXPR (shape_)));
+                if (isection != NULL) {
+                    fixpoint = 0;
+                    PROJ_ISECTED (EXPRS_EXPR (proj1)) = PROJ_ISECTED (EXPRS_EXPR (proj2))
+                      = 1;
+                    projs = ProjInsert (isection, projs);
+#if 0
+          tmp = isection;
+          while (EXPRS_NEXT(tmp) != NULL)
+            tmp = EXPRS_NEXT(tmp);
+          EXPRS_NEXT(tmp) = projs;
+          projs = isection;
+#endif
+                }
+
+                proj2 = EXPRS_NEXT (proj2);
+            }
+
+            tmp = proj1;
+            proj1 = EXPRS_NEXT (proj1);
+            EXPRS_NEXT (tmp) = NULL;
+
+            /* have 'proj1' only empty intersections with the others? */
+            if (PROJ_ISECTED (EXPRS_EXPR (tmp)) == 0) {
+                /* insert 'proj1' in 'projs' */
+                projs = ProjInsert (tmp, projs);
+#if 0
+        EXPRS_NEXT(tmp) = projs;
+        projs = tmp;
+#endif
+            } else {
+                /* 'proj1' is no longer needed */
+#if 0
+        FreeTree(tmp);
+#endif
+            }
+        }
+
+        old_projs = projs;
+    } while (!fixpoint);
+
+    DBUG_RETURN (projs);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void BuildProjs(int dim, int max_dim, node *withpart, node *shape, node *proj)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+BuildProjs (int dim, int max_dim, node *withpart, node *shape, node *proj)
+{
+    node *partition, *curr_proj, *last_proj;
+
+    DBUG_ENTER ("BuildProjs");
+
+    partition = ProjPartition (withpart, shape, proj);
+
+    last_proj = proj;
+    if (last_proj != NULL) {
+        while (EXPRS_NEXT (last_proj) != NULL) {
+            last_proj = EXPRS_NEXT (last_proj);
+        }
+    }
+
+    while (partition != NULL) {
+        curr_proj = partition;
+        partition = EXPRS_NEXT (partition);
+        EXPRS_NEXT (curr_proj) = NULL;
+
+        if (last_proj == NULL) {
+            proj = curr_proj;
+        } else {
+            EXPRS_NEXT (last_proj) = curr_proj;
+        }
+
+        if (dim == max_dim - 1) {
+            /* projections complete ('proj') !!! */
+            dim = dim; /* dummy */
+        } else {
+            BuildProjs (dim + 1, max_dim, withpart, shape, proj);
+        }
+    }
+}
 
 /*
  *
@@ -5316,10 +5962,29 @@ CompWith (node *arg_node, node *arg_info)
 node *
 CompNWith (node *arg_node, node *arg_info)
 {
+    node *partition;
+
     DBUG_ENTER ("CompNWith");
+
+    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+
+    DBUG_ASSERT ((arg_info != NULL), "arg_info not found");
+
+    if ((NPART_NEXT (NWITH_PART (arg_node)) != NULL)
+        && (NWITHOP_TYPE (NWITH_WITHOP (arg_node)) == WO_genarray)) {
+        BuildProjs (0,
+                    SHPSEG_SHAPE (TYPES_SHPSEG (
+                                    ARRAY_TYPE (NWITHOP_SHAPE (NWITH_WITHOP (arg_node)))),
+                                  0),
+                    NWITH_PART (arg_node), NWITHOP_SHAPE (NWITH_WITHOP (arg_node)), NULL);
+    }
 
     DBUG_RETURN (arg_node);
 }
+
+/*
+ * compilation of new with-loop
+ *****************************************************************************/
 
 /*
  *
