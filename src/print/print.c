@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.184  2004/11/27 02:17:09  mwe
+ * function renaming
+ *
  * Revision 3.183  2004/11/27 00:14:38  cg
  * New types are printed whenever available.
  *
@@ -618,7 +621,7 @@ TSIprintInfo (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 void
-PrintArgtab (argtab_t *argtab, bool is_def)
+PRTprintArgtab (argtab_t *argtab, bool is_def)
 {
     int i;
 
@@ -3594,13 +3597,13 @@ PrintWLsegx (node *arg_node, info *arg_info)
 node *
 PRTwlseg (node *arg_node, info *arg_info)
 {
-    return (PrintWLsegx (arg_node, arg_info));
+    return (PRTwlseg (arg_node, arg_info));
 }
 
 node *
 PRTwlsegvar (node *arg_node, info *arg_info)
 {
-    return (PrintWLsegx (arg_node, arg_info));
+    return (PRTwlseg (arg_node, arg_info));
 }
 
 /******************************************************************************
@@ -3685,9 +3688,45 @@ PRTwlublock (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-PRTwlstridex (node *arg_node, info *arg_info)
+PRTwlstride (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PRTwlstridex");
+
+    INDENT;
+    fprintf (global.outfile, "(");
+    WLBnodeOrIntPrint (global.outfile, NODE_TYPE (arg_node),
+                       WLSTRIDEX_GET_ADDR (arg_node, BOUND1), WLSTRIDEX_DIM (arg_node));
+    fprintf (global.outfile, " %s> ", (NODE_TYPE (arg_node) == N_wlstride) ? "-" : "=");
+    WLBnodeOrIntPrint (global.outfile, NODE_TYPE (arg_node),
+                       WLSTRIDEX_GET_ADDR (arg_node, BOUND2), WLSTRIDEX_DIM (arg_node));
+    fprintf (global.outfile, "), step%d[%d] ", WLSTRIDEX_LEVEL (arg_node),
+             WLSTRIDEX_DIM (arg_node));
+    WLBnodeOrIntPrint (global.outfile, NODE_TYPE (arg_node),
+                       WLSTRIDEX_GET_ADDR (arg_node, STEP), WLSTRIDEX_DIM (arg_node));
+
+    if (WLSTRIDEX_ISNOOP (arg_node)) {
+        fprintf (global.outfile, ": /* noop */");
+    }
+
+    fprintf (global.outfile, "\n");
+
+    if (WLSTRIDEX_CONTENTS (arg_node) != NULL) {
+        global.indent++;
+        TRAVdo (WLSTRIDEX_CONTENTS (arg_node), arg_info);
+        global.indent--;
+    }
+
+    if (WLSTRIDEX_NEXT (arg_node) != NULL) {
+        PRINT_CONT (TRAVdo (WLSTRIDEX_NEXT (arg_node), arg_info), ;);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PRTwlstridevar (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("PRTwlstridevar");
 
     INDENT;
     fprintf (global.outfile, "(");
@@ -3791,7 +3830,45 @@ PRTwlcode (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-PrintWLgridx (node *arg_node, info *arg_info)
+PRTwlgrid (node *arg_node, info *arg_info)
+{
+    char *str = (NODE_TYPE (arg_node) == N_wlgrid) ? "-" : "=";
+
+    DBUG_ENTER ("PrintWLgridx");
+
+    INDENT;
+    fprintf (global.outfile, "(");
+    WLBnodeOrIntPrint (global.outfile, NODE_TYPE (arg_node),
+                       WLGRIDX_GET_ADDR (arg_node, BOUND1), WLGRIDX_DIM (arg_node));
+    fprintf (global.outfile, " %s%s> ", str, WLGRIDX_FITTED (arg_node) ? str : ">");
+    WLBnodeOrIntPrint (global.outfile, NODE_TYPE (arg_node),
+                       WLGRIDX_GET_ADDR (arg_node, BOUND2), WLGRIDX_DIM (arg_node));
+    fprintf (global.outfile, "):");
+
+    if (WLGRIDX_NEXTDIM (arg_node) != NULL) {
+        fprintf (global.outfile, "\n");
+        global.indent++;
+        TRAVdo (WLGRIDX_NEXTDIM (arg_node), arg_info);
+        global.indent--;
+    } else {
+        if ((WLGRIDX_CODE (arg_node) != NULL) || (!WLGRIDX_ISNOOP (arg_node))) {
+            PRTwlcode (WLGRIDX_CODE (arg_node), arg_info);
+        }
+        if (WLGRIDX_ISNOOP (arg_node)) {
+            fprintf (global.outfile, " /* noop */");
+        }
+        fprintf (global.outfile, "\n");
+    }
+
+    if (WLGRIDX_NEXT (arg_node) != NULL) {
+        PRINT_CONT (TRAVdo (WLGRIDX_NEXT (arg_node), arg_info), ;);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+PRTwlgridvar (node *arg_node, info *arg_info)
 {
     char *str = (NODE_TYPE (arg_node) == N_wlgrid) ? "-" : "=";
 
@@ -3840,7 +3917,7 @@ PrintWLgridx (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
-node *PrintCWrapper(node *arg_node, info *arg_info)
+node *PRTcwrapper(node *arg_node, info *arg_info)
 {
   DBUG_ENTER("PrintCWrapper");
   
@@ -4076,7 +4153,7 @@ PrintTRAVdo (node *syntax_tree, info *arg_info)
  ******************************************************************************/
 
 node *
-PrintTravPre (node *arg_node, info *arg_info)
+PRTtravPre (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PrintTravPre");
 
@@ -4097,7 +4174,7 @@ PrintTravPre (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-PrintTravPost (node *arg_node, info *arg_info)
+PRTtravPost (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PrintTravPost");
 
@@ -4183,10 +4260,10 @@ PRTdoPrintNode (node *syntax_tree)
  *
  *****************************************************************************/
 node *
-PrintDataflowgraph (node *arg_node, info *arg_info)
+PRTdataflowgraph (node *arg_node, info *arg_info)
 {
     nodelist *member_iterator;
-    DBUG_ENTER ("PrintDataflowgraph");
+    DBUG_ENTER ("PRTdataflowgraph");
 
     global.outfile = stdout;
 
