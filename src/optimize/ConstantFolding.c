@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.18  1995/05/03 16:25:48  asi
+ * Revision 1.19  1995/05/05 09:06:17  asi
+ * Constant arrays will no longer inserted in user defined or primitive functions,
+ * if these functions could not be folded.
+ *
+ * Revision 1.18  1995/05/03  16:25:48  asi
  * CFap added
  *
  * Revision 1.17  1995/05/02  08:48:34  asi
@@ -72,6 +76,7 @@
 
 #include "tree.h"
 #include "free.h"
+#include "print.h"
 #include "Error.h"
 #include "dbug.h"
 #include "my_debug.h"
@@ -317,12 +322,11 @@ CFid (node *arg_node, node *arg_info)
         case N_num:
         case N_float:
         case N_bool:
-            return_node = DupTree (value, arg_info);
             DEC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
+            return_node = DupTree (value, arg_info);
             break;
         case N_array:
-            return_node = DupTree (value, arg_info);
-            DEC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
+            return_node = arg_node;
             break;
         default:
             CONST = FALSE;
@@ -508,7 +512,7 @@ CFlet (node *arg_node, node *arg_info)
     if ((arg_node->node[0]->info.prf == F_reshape)
         && (arg_node->node[0]->nodetype == N_prf))
         VAR (arg_node->info.ids->node->varno)
-          = arg_node->node[0]->node[0]->node[1]->node[0];
+          = TOS.varlist[arg_node->node[0]->node[0]->node[1]->node[0]->varno];
 
     DBUG_RETURN (arg_node);
 }
@@ -546,11 +550,14 @@ CFwhile (node *arg_node, node *arg_info)
     switch (arg_node->node[0]->nodetype) {
     case N_bool:
         if (arg_node->node[0]->info.cint) {
-            WARN1 (("WARNING in line %d: endless loop expected\n", arg_info->lineno));
+            /*
+            WARN1(("WARNING in line %d: endless loop expected\n",arg_info->lineno));
+            */
         } else {
             MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0], VARNO);
             MinusMask (arg_info->mask[1], arg_node->node[1]->mask[1], VARNO);
             FreeTree (arg_node);
+            DBUG_PRINT ("CF", ("while-loop eliminated in line %d", arg_info->lineno));
             cf_expr++;
             arg_node = MakeNode (N_empty);
             PopVL ();
@@ -602,11 +609,14 @@ CFdo (node *arg_node, node *arg_info)
     arg_node = OptTrav (arg_node, arg_info, 0); /* Trav do-condition */
 
     if ((arg_node->node[0]->info.cint) && (arg_node->node[0]->nodetype == N_bool)) {
-        WARN1 (("WARNING in line %d: endless loop expected\n", arg_info->lineno));
+        /*
+        WARN1(("WARNING in line %d: endless loop expected\n",arg_info->lineno));
+        */
     }
     if ((!arg_node->node[0]->info.cint) && (arg_node->node[0]->nodetype == N_bool)) {
         PopVL ();
         arg_node = OptTrav (arg_node, arg_info, 1); /* Trav do-body */
+        DBUG_PRINT ("CF", ("do-loop eliminated in line %d", arg_info->lineno));
         cf_expr++;
         tmp = arg_node;
         arg_node = arg_node->node[1]->node[0];
@@ -653,6 +663,8 @@ CFcond (node *arg_node, node *arg_info)
             FreeTree (arg_node->node[2]);
             returnnode = arg_node->node[1]->node[0];
             FREE (arg_node->node[1]);
+            DBUG_PRINT ("CF", ("else-part of conditional eliminated in line %d",
+                               arg_info->lineno));
             cf_expr++;
         } else {
             MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0], VARNO);
@@ -660,6 +672,8 @@ CFcond (node *arg_node, node *arg_info)
             FreeTree (arg_node->node[1]);
             returnnode = arg_node->node[2]->node[0];
             FREE (arg_node->node[2]);
+            DBUG_PRINT ("CF", ("else-part of conditional eliminated in line %d",
+                               arg_info->lineno));
             cf_expr++;
         }
     } else {
@@ -786,15 +800,20 @@ SkalarPrf (int res_int, node **arg, int arg_no, int swap, node *arg_node, node *
         else                                                                             \
             a1->info.cfloat = SELARG (a2) op SELARG (a1);                                \
         returnnode = GetReturnType (res_int, arg, arg_info);                             \
+        DBUG_PRINT ("CF", ("primitive function %s folded in line %d",                    \
+                           prf_string[arg_node->info.prf], arg_info->lineno));           \
+        cf_expr++;                                                                       \
     }
 
     DBUG_ENTER ("SkalarPrf");
     if (CONST) {
-        cf_expr++;
         switch (arg_node->info.prf) {
         case F_not:
             arg[0]->info.cint = !arg[0]->info.cint;
             returnnode = arg[0];
+            DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
+                               prf_string[arg_node->info.prf], arg_info->lineno));
+            cf_expr++;
             break;
         case F_add:
         case F_add_AxA:
@@ -821,8 +840,10 @@ SkalarPrf (int res_int, node **arg, int arg_no, int swap, node *arg_node, node *
             if (SELARG (arg[1]) != 0) {
                 ARI (/, arg[0], arg[1]);
             } else {
-                WARN1 (("WARNING %s, %d: division by zero error expected\n", filename,
-                        arg_info->lineno));
+                /*
+                WARN1(("WARNING %s, %d: division by zero error expected\n",
+                        filename,arg_info->lineno));
+                */
                 returnnode = arg_node;
             }
             break;
@@ -858,11 +879,15 @@ SkalarPrf (int res_int, node **arg, int arg_no, int swap, node *arg_node, node *
         case F_and:
             if ((arg[0]->nodetype == N_bool) && (!SELARG (arg[0]))) {
                 returnnode = arg[0];
+                DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
+                                   prf_string[arg_node->info.prf], arg_info->lineno));
                 cf_expr++;
                 break;
             }
             if ((arg[1]->nodetype == N_bool) && (!SELARG (arg[1]))) {
                 returnnode = arg[1];
+                DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
+                                   prf_string[arg_node->info.prf], arg_info->lineno));
                 cf_expr++;
                 break;
             }
@@ -871,11 +896,15 @@ SkalarPrf (int res_int, node **arg, int arg_no, int swap, node *arg_node, node *
         case F_or:
             if ((arg[0]->nodetype == N_bool) && (SELARG (arg[0]))) {
                 returnnode = arg[0];
+                DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
+                                   prf_string[arg_node->info.prf], arg_info->lineno));
                 cf_expr++;
                 break;
             }
             if ((arg[1]->nodetype == N_bool) && (SELARG (arg[1]))) {
                 returnnode = arg[1];
+                DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
+                                   prf_string[arg_node->info.prf], arg_info->lineno));
                 cf_expr++;
                 break;
             }
@@ -1063,6 +1092,19 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
         if (!CONST) {
             returnnode = arg_node;
             break;
+        } else {
+            node *value;
+
+            if (N_id == arg[0]->nodetype) {
+                value = TOS.varlist[arg[0]->info.ids->node->varno];
+                DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
+                arg[0] = DupTree (value, arg_info);
+            }
+            if (N_id == arg[1]->nodetype) {
+                value = TOS.varlist[arg[1]->info.ids->node->varno];
+                DEC_VAR (arg_info->mask[1], arg[1]->info.ids->node->varno);
+                arg[1] = DupTree (value, arg_info);
+            }
         }
         if (arg[0]->nodetype != N_array) { /* swaps the arguments of primitive function,
                                               SkalarPrf will react */
@@ -1113,6 +1155,8 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             arg[0]->node[0]->node[1] = 0;
             FREE (arg_node);
             returnnode = arg[0];
+            DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
+                               prf_string[arg_node->info.prf], arg_info->lineno));
             cf_expr++;
             break;
         case N_id:
@@ -1133,6 +1177,8 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
                 expr[0]->node[0]->info.cint = shape->shp[i];
             }
             DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
+            DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
+                               prf_string[arg_node->info.prf], arg_info->lineno));
             cf_expr++;
             break;
         default:
@@ -1149,6 +1195,8 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             arg_node->nnode = 0;
             arg_node->node[0] = NULL;
             returnnode = arg_node;
+            DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
+                               prf_string[arg_node->info.prf], arg_info->lineno));
             cf_expr++;
             break;
         case N_id:
@@ -1159,6 +1207,8 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
             arg_node->node[0] = NULL;
             returnnode = arg_node;
             DEC_VAR (arg_info->mask[1], arg[0]->info.ids->node->varno);
+            DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
+                               prf_string[arg_node->info.prf], arg_info->lineno));
             cf_expr++;
             break;
         default:
@@ -1177,11 +1227,15 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
                 returnnode->node[0]
                   = GenArray (arg[0]->node[0]->node[0]->info.cint, 1, arg[1]);
                 FreeTree (arg_node);
+                DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
+                                   prf_string[arg_node->info.prf], arg_info->lineno));
                 cf_expr++;
             } else {
                 CONST = FALSE;
-                WARN1 (("WARNING %s, %d: illegal vector for primitive function psi\n",
-                        filename, arg_info->lineno));
+                /*
+                WARN1(("WARNING %s, %d: illegal vector for primitive function psi\n",
+                    filename,arg_info->lineno));
+                */
                 returnnode = arg_node;
             }
             break;
@@ -1238,11 +1292,15 @@ ArrayPrf (int res_int, node **arg, node *arg_node, node *arg_info)
                                   TOS.varlist[arg[1]->info.ids->node->varno]);
                 }
                 FreeTree (arg_node);
+                DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
+                                   prf_string[arg_node->info.prf], arg_info->lineno));
                 cf_expr++;
             } else {
                 CONST = FALSE;
-                WARN1 (("WARNING %s, %d: illegal vector for primitive function psi\n",
-                        filename, arg_info->lineno));
+                /*
+                WARN1(("WARNING %s, %d: illegal vector for primitive function psi\n",
+                       filename,arg_info->lineno));
+                */
                 returnnode = arg_node;
             }
         } break;
