@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2001/04/30 12:31:34  nmw
+ * SHShape2IntVec added
+ *
  * Revision 1.2  2001/03/05 16:57:04  sbs
  * SHCompareShapes added
  *
@@ -537,4 +540,35 @@ SHCompareWithArguments (shape *shp, int dim, ...)
     }
 
     DBUG_RETURN (flag);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   int *SHShape2IntVec( shape *a)
+ *
+ * description:
+ *    creates a simple int vector from the given shape vector
+ *
+ ******************************************************************************/
+int *
+SHShape2IntVec (shape *a)
+{
+    int *int_vec;
+    int i;
+    int n;
+
+    DBUG_ENTER ("SHShape2IntVec");
+
+    n = SHAPE_DIM (a);
+    if (n > 0) {
+        int_vec = (int *)MALLOC (n * sizeof (int));
+        for (i = 0; i < n; i++) {
+            int_vec[i] = SHAPE_EXT (a, i);
+        }
+    } else {
+        int_vec = NULL;
+    }
+
+    DBUG_RETURN (int_vec);
 }

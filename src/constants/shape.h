@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2001/04/30 12:31:34  nmw
+ * SHShape2IntVec added
+ *
  * Revision 1.2  2001/03/05 16:57:04  sbs
  * SHCompareShapes added
  *
@@ -46,6 +49,7 @@ extern shape *SHSetExtent (shape *shp, int dim, int val);
 extern bool SHCompareShapes (shape *a, shape *b);
 extern shape *SHAppendShapes (shape *a, shape *b);
 extern char *SHShape2String (int dots, shape *shp);
+extern int *SHShape2IntVec (shape *a);
 
 extern shape *SHOldTypes2Shape (types *shpseg);
 extern shpseg *SHShape2OldShpseg (shape *shp);
