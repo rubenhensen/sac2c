@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/14 16:25:09  dkr
+ * signature (parameter types) of icm MT_ADJUST_SCHEDULER modified
+ *
  * Revision 3.4  2001/03/14 10:12:43  ben
  *  ICMs MT_SCHEDULER_BlockVar_... implemented
  *
@@ -1310,8 +1313,8 @@ ICMCompileMT_SPMD_PRESET (char *name, int narg, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower, int upper,
-                               int unrolling, char *array, bool adjust_offset)
+ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, char *lower, char *upper,
+                               char *unrolling, char *array, bool adjust_offset)
 {
     int i;
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/14 16:25:02  dkr
+ * signature (parameter types) of icm MT_ADJUST_SCHEDULER modified
+ *
  * Revision 3.4  2001/03/14 10:13:49  ben
  *  ICMs MT_SCHEDULER_BlockVar_... implemented
  *
@@ -106,8 +109,8 @@ extern void ICMCompileMT_SPMD_BEGIN (char *name);
 extern void ICMCompileMT_SPMD_ALTSEQ (char *name);
 extern void ICMCompileMT_SPMD_END (char *name);
 
-extern void ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, int lower,
-                                           int upper, int unrolling, char *array,
+extern void ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, char *lower,
+                                           char *upper, char *unrolling, char *array,
                                            bool adjust_offset);
 
 extern void ICMCompileMT_SCHEDULER_BEGIN (int dim, char **vararg);

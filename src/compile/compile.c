@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2001/03/14 16:25:16  dkr
+ * signature (parameter types) of icm MT_ADJUST_SCHEDULER modified
+ *
  * Revision 3.25  2001/03/14 15:55:04  dkr
  * ups, typo in InsertIcm_MT_ADJUST_SCHEDULER corrected ...
  *
@@ -5106,15 +5109,15 @@ InsertIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
                                   NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                        WLBLOCKSTR_GET_ADDR (arg_node,
                                                                             BOUND1),
-                                                       dim, IDS_NAME (wl_ids), FALSE),
+                                                       dim, IDS_NAME (wl_ids), TRUE),
                                   NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                        WLBLOCKSTR_GET_ADDR (arg_node,
                                                                             BOUND2),
-                                                       dim, IDS_NAME (wl_ids), FALSE),
+                                                       dim, IDS_NAME (wl_ids), TRUE),
                                   NodeOrInt_MakeIndex (NODE_TYPE (arg_node),
                                                        WLBLOCKSTR_GET_ADDR (arg_node,
                                                                             STEP),
-                                                       dim, IDS_NAME (wl_ids), FALSE),
+                                                       dim, IDS_NAME (wl_ids), TRUE),
                                   DupIds_Id (wl_ids),
                                   MakeNum (NWITH2_OFFSET_NEEDED (wl_node))),
                         assigns);

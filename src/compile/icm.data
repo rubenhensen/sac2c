@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/03/14 16:25:24  dkr
+ * signature (parameter types) of icm MT_ADJUST_SCHEDULER modified
+ *
  * Revision 3.9  2001/03/14 10:03:37  ben
  * BlockVar Scheduling implemented
  *
@@ -645,9 +648,9 @@ ICM_END( MT_SPMD_PRESET, (name, narg, vararg))
 ICM_DEF( MT_ADJUST_SCHEDULER, TRACE_NONE)
   ICM_INT(current_dim)
   ICM_INT(array_dim)
-  ICM_INT(lower)
-  ICM_INT(upper)
-  ICM_INT(unrolling)
+  ICM_STR(lower)
+  ICM_STR(upper)
+  ICM_STR(unrolling)
   ICM_STR(array)
   ICM_INT(adjust_offset)
 ICM_END( MT_ADJUST_SCHEDULER, (current_dim, array_dim, lower, upper, unrolling, array, adjust_offset))
