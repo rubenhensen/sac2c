@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2000/12/06 19:24:45  dkr
+ * minor changes done
+ *
  * Revision 3.3  2000/11/29 13:57:15  dkr
  * no '... might be used uninitialized' warnings anymore
  *
@@ -3064,18 +3067,24 @@ COMPReturn (node *arg_node, node *arg_info)
     fundef = INFO_COMP_FUNDEF (arg_info);
 
     if (gen_mt_code == GEN_MT_NEW) {
-        if ((FUNDEF_ATTRIB (fundef) == ST_call_mtlift)
-            || (FUNDEF_ATTRIB (fundef) == ST_call_mt_worker)
-            || (FUNDEF_ATTRIB (fundef) == ST_call_mt_master)
-            || (FUNDEF_ATTRIB (fundef) == ST_call_rep)) {
+        switch (FUNDEF_ATTRIB (fundef)) {
+        case ST_call_mtlift:
+        case ST_call_mt_worker:
+        case ST_call_mt_master:
+        case ST_call_rep:
             arg_node = COMPMT2FunReturn (arg_node, arg_info);
-        } else if ((FUNDEF_ATTRIB (fundef) == ST_call_st)
-                   || (FUNDEF_ATTRIB (fundef) == ST_regular)) {
+            break;
+
+        case ST_call_st:
+        case ST_regular:
             arg_node = COMPNormalFunReturn (arg_node, arg_info);
-        } else {
+            break;
+
+        default:
             DBUG_PRINT ("jhs", ("%s", mdb_statustype[FUNDEF_ATTRIB (fundef)]));
             DBUG_PRINT ("jhs", ("%s", mdb_statustype[FUNDEF_STATUS (fundef)]));
             DBUG_ASSERT (0, "unknown kind of function while in mt2");
+            break;
         }
     } else if (FUNDEF_STATUS (fundef) == ST_spmdfun) {
         arg_node = COMPSpmdFunReturn (arg_node, arg_info);
@@ -4759,7 +4768,7 @@ COMPId (node *arg_node, node *arg_info)
 
     default:
         ret_node = NULL;
-        DBUG_ASSERT (0, "unknown type of class conversion function found");
+        DBUG_ASSERT (0, "unknown kind of class conversion function found");
         break;
     }
 
