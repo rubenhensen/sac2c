@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2003/09/16 14:00:18  dkr
+ * *** empty log message ***
+ *
  * Revision 3.1  2000/11/20 18:02:51  sacbase
  * new release made
  *
@@ -11,10 +14,10 @@
  * Revision 1.1  2000/01/03 17:33:17  cg
  * Initial revision
  *
- *
  */
 
 /*
+ *
  * Revision 1.3  1999/09/17 14:33:34  cg
  * New version of SAC heap manager:
  *  - no special API functions for top arena.
@@ -26,7 +29,6 @@
  *
  * Revision 1.1  1999/07/08 12:28:56  cg
  * Initial revision
- *
  *
  */
 
@@ -52,7 +54,7 @@
 
 #include "heapmgr.h"
 
-/******************************************************************************
+/*****************************************************************************
  *
  * function:
  *   void *calloc(size_t nelem, size_t elsize)
@@ -63,7 +65,7 @@
  *
  *
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 void *
 calloc (size_t nelem, size_t elsize)
