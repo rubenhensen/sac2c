@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.146  2005/01/27 16:48:51  mwe
+ * corrected duplication of fungroup in N_fundef
+ *
  * Revision 3.145  2005/01/26 10:34:45  mwe
  * just edited last log message...
  *
@@ -1269,6 +1272,20 @@ DUPfundef (node *arg_node, info *arg_info)
     if (FUNDEF_WRAPPERTYPE (arg_node) != NULL) {
 
         FUNDEF_WRAPPERTYPE (new_node) = TYcopyType (FUNDEF_WRAPPERTYPE (arg_node));
+    }
+
+    if ((!FUNDEF_ISLACFUN (arg_node)) && (FUNDEF_FUNGROUP (arg_node) != NULL)) {
+
+        FUNDEF_FUNGROUP (new_node) = FUNDEF_FUNGROUP (arg_node);
+        /*
+         * increse reference counter in fungroup and add new_node to funlist
+         */
+        (FUNGROUP_REFCOUNTER (FUNDEF_FUNGROUP (new_node))) += 1;
+
+        FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (new_node))
+          = TBmakeLinklist (new_node, FUNGROUP_FUNLIST (FUNDEF_FUNGROUP (new_node)));
+    } else {
+        FUNDEF_FUNGROUP (new_node) = NULL;
     }
 
     INFO_DUP_FUNDEF (arg_info) = old_fundef;
