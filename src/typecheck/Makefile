@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.14  2000/03/16 14:16:28  dkr
+# target typecheck.h added
+#
 # Revision 2.13  2000/03/01 14:52:34  dkr
 # make deps done
 #
@@ -16,9 +19,6 @@
 # Handling of target platform unified: One of the following
 # is always defined:
 # SAC_FOR_SOLARIS_SPARC, SAC_FOR_LINUX_X86, OR SAC_FOR_OSF_ALPHA.
-#
-# Revision 2.8  1999/12/13 11:27:53  dkr
-# *** empty log message ***
 #
 # Revision 2.7  1999/10/20 13:02:06  sbs
 # new lines for constants / new-Types added.
@@ -71,6 +71,13 @@ INCS=-I../global -I../tree -I../../inc -I../print -I../modules -I../optimize -I.
 all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o \
      new_typecheck.o new_types.o shape.o user_types.o \
      constants.o cv2scalar.o cv2cv.o
+
+#
+# the typecheck.h object is to fool makedepend which does not
+# recognize the dependency between typecheck.h and the .mac files!
+#
+typecheck.h: cmp_type.mac
+	touch typecheck.h
 
 new_typecheck.o: new_typecheck.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o new_typecheck.o -c new_typecheck.c $(INCS)
