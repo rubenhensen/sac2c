@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/02/17 16:18:37  cg
+ * Function DuplicateTypes() moved from typecheck.c.
+ * New function DupTypes() added.
+ *
  * Revision 1.5  2000/02/03 17:30:52  dkr
  * DupTreeLUT and DupNodeLUT added
  *
@@ -49,7 +53,8 @@
 #ifndef _sac_DupTree_h
 #define _sac_DupTree_h
 
-#include <LookUpTable.h>
+#include "LookUpTable.h"
+#include "types.h"
 
 #define DUP_NORMAL 0
 #define DUP_INLINE 1
@@ -67,6 +72,8 @@ extern node *DupTreePost (node *arg_node, node *arg_info);
 extern shpseg *DupShpSeg (shpseg *shp_seg);
 extern ids *DupOneIds (ids *ids, node *arg_info);
 extern ids *DupIds (ids *ids, node *arg_info);
+extern types *DuplicateTypes (types *source, int share);
+extern types *DupTypes (types *source);
 
 extern node *DupVinfo (node *arg_node, node *arg_info);
 extern node *DupNum (node *arg_node, node *arg_info);
