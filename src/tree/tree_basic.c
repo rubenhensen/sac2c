@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2002/10/16 11:07:04  sbs
+ * OBJDEF_AVIS(n) added.
+ *
  * Revision 3.67  2002/09/09 19:18:19  dkr
  * prf_name_str removed
  *
@@ -695,6 +698,8 @@ MakeObjdef (char *name, char *mod, types *type, node *expr, node *next)
     OBJDEF_LINKMOD (tmp) = NULL;
     OBJDEF_STATUS (tmp) = ST_regular;
     OBJDEF_ATTRIB (tmp) = ST_regular;
+
+    OBJDEF_AVIS (tmp) = MakeAvis (tmp);
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
