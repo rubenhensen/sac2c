@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.10  1994/11/15 16:55:53  hw
+ * Revision 1.11  1994/11/17 16:53:57  hw
+ * bug fixed in Append
+ * all N_return nodes are children of N_assign nodes now.
+ *
+ * Revision 1.10  1994/11/15  16:55:53  hw
  * changed assignblock rule
  * converted for loop to while loop
  * => eliminated N_for
@@ -165,21 +169,11 @@ main: TYPE_INT MAIN BRACKET_L BRACKET_R exprblock
       ;
 
 exprblock: BRACE_L vardecs assigns retassign COLON BRACE_R 
-            { node *tmp;
-              $$=MakeNode(N_block);
-              $$->node[0]=$3;  /* Anweisungen im Block */
+            { $$=MakeNode(N_block);
+              $$->node[0]=Append($3,$4); /* append retassign node($4) to assigns nodes */
               $$->node[1]=$2;  /* Variablendeklarationen */
-
-              /* append retassign node($4) to assigns nodes */
-              tmp=$$->node[0];
-              while( NULL != tmp->node[1] )      /* look for last N_assign node */
-                 tmp=tmp->node[1];
-              tmp->node[1]=MakeNode(N_assign);
-              tmp->nnode=2;
-              tmp->node[1]->node[0]=$4;
-              tmp->node[1]->nnode=1;                /* set number of children nodes */
-
               $$->nnode=2;              /* set number of child nodes */
+
               DBUG_PRINT("GENTREE",
                          ("%s "P_FORMAT", %s "P_FORMAT,
                           mdb_nodetype[$$->nodetype], $$,
@@ -190,33 +184,31 @@ exprblock: BRACE_L vardecs assigns retassign COLON BRACE_R
          | BRACE_L assigns retassign COLON BRACE_R 
             { node *tmp;
               $$=MakeNode(N_block);
-              $$->node[0]=$2;  /* Anweisung im Block */
+              $$->node[0]=Append($2,$3); /* append retassign node($4) to assigns nodes */
               $$->nnode=1;
 
-              /* append retassign node($4) to assigns nodes */
-              tmp=$$->node[0];
-              while( NULL != tmp->node[1] )      /* look for last N_assign node */
-                 tmp=tmp->node[1];
-              tmp->node[1]=MakeNode(N_assign);
-              tmp->nnode=2;
-              tmp->node[1]->node[0]=$3;
-              tmp->node[1]->nnode=1;                /* set number of children nodes */
-
               DBUG_PRINT("GENTREE",
-                         ("%s "P_FORMAT, ", %s"P_FORMAT,
+                         ("%s "P_FORMAT", %s"P_FORMAT,
                           mdb_nodetype[$$->nodetype], $$,
                           mdb_nodetype[$$->node[0]->nodetype], $$->node[0]));
             }
          | BRACE_L retassign COLON BRACE_R 
-            { $$=MakeNode(N_block);
-              $$->node[0]=$2;  /* Returnanweisung */
+            { $$=MakeNode(N_block); 
+              $$->node[0]=MakeNode(N_assign);
+              $$->node[0]->node[0]=$2;  /* Returnanweisung */
+              $$->node[0]->nnode=1;
               $$->nnode=1;
-
+              
               DBUG_PRINT("GENTREE",
-                         ("%s "P_FORMAT", %s "P_FORMAT,
+                         ("%s "P_FORMAT", %s " P_FORMAT ,
+                          mdb_nodetype[$$->node[0]->nodetype],$$->node[0],
+                          mdb_nodetype[$$->node[0]->node[0]->nodetype],
+                          $$->node[0]->node[0]));
+                      
+              DBUG_PRINT("GENTREE",
+                         ("%s "P_FORMAT", %s " P_FORMAT ,
                           mdb_nodetype[$$->nodetype], $$,
-                          mdb_nodetype[$$->node[0]->nodetype], $$->node[0]));
-
+                          mdb_nodetype[$$->node[0]->nodetype],$$->node[0]));
             }
            ;
 
@@ -252,8 +244,16 @@ retassignblock: BRACE_L assigns retassign COLON BRACE_R
                   } 
                 | retassign
                     { $$=MakeNode(N_block);
-                      $$->node[0]=$1;  /* Returnanweisung */
+                      $$->node[0]=MakeNode(N_assign);
+                      $$->node[0]->node[0]=$1;  /* Returnanweisung */
+                      $$->node[0]->nnode=1;
                       $$->nnode=1;
+                      
+                      DBUG_PRINT("GENTREE",
+                                 ("%s "P_FORMAT", %s " P_FORMAT ,
+                                  mdb_nodetype[$$->node[0]->nodetype],$$->node[0],
+                                  mdb_nodetype[$$->node[0]->node[0]->nodetype],
+                                  $$->node[0]->node[0]));
                       
                       DBUG_PRINT("GENTREE",
                                  ("%s "P_FORMAT", %s " P_FORMAT ,
@@ -430,6 +430,12 @@ forassign: DO assignblock WHILE BRACKET_L expr BRACKET_R
                 $$->node[1]->node[0]->nnode=2;
                 $$->node[1]->nnode=1;
                 
+                DBUG_PRINT("GENTREE",
+                           ("%s "P_FORMAT": %s "P_FORMAT,
+                            mdb_nodetype[$$->node[1]->nodetype], $$->node[1],
+                            mdb_nodetype[$$->node[1]->node[0]->nodetype],
+                            $$->node[1]->node[0]));
+                                
                 DBUG_PRINT("GENTREE",
                            ("%s "P_FORMAT": %s "P_FORMAT", %s "P_FORMAT,
                             mdb_nodetype[$$->node[1]->node[0]->nodetype], $$,
@@ -925,13 +931,30 @@ node *GenVardec( types *type, ids *ids_p)
   DBUG_RETURN(vardec_p);
 }
 
-node *Append(node *target_node, const node *append_node)
+/*
+ *
+ *  functionname  : Append
+ *  arguments     : 1) node to append to; nodetype: N_assign or N_block
+ *                  2) node to append
+ *  description   : appends node 2) to node 1) and creates a new N_assign node
+ *                  if necessary
+ *  global vars   : ---
+ *  internal funs : MakeNode
+ *  external funs : ---
+ *  macros        : DBUG..., P_FORMAT
+ *
+ *  remarks       :
+ *
+ */
+node *Append(node *target_node, node *append_node)
 {
    node *tmp;
    
    DBUG_ENTER("Append");
-
-   tmp=target_node->node[0];
+   if (N_block == target_node->nodetype)
+      tmp=target_node->node[0];
+   else
+      tmp=target_node;
    while( NULL != tmp->node[1] )      /* look for last N_assign node */
       tmp=tmp->node[1];
    
