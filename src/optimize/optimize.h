@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.62  1998/05/12 15:11:41  srs
+ * added ae_tab to MRD_TAB
+ *
  * Revision 1.61  1998/04/29 17:15:58  dkr
  * removed OPTSpmd
  *
@@ -249,7 +252,8 @@ extern stack *mrdl_stack;
 #define MRD_TOS mrdl_stack->stack[mrdl_stack->tos]
 #define MRD_TAB                                                                          \
     (cf_tab == act_tab || unroll_tab == act_tab || unswitch_tab == act_tab               \
-     || cse_tab == act_tab || wli_tab == act_tab || wlt_tab == act_tab)
+     || cse_tab == act_tab || ae_tab == act_tab || wli_tab == act_tab                    \
+     || wlt_tab == act_tab)
 #define MRD_LIST (long *)MRD_TOS.varlist
 #define MRD(i) MRD_TOS.varlist[i]
 
