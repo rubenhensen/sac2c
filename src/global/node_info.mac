@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.138  1997/11/19 19:38:29  dkr
+ * added o2nWith_tab
+ * added print-functions for N_Nwith, N_Npart
+ *
  * Revision 1.137  1997/11/13 16:15:14  srs
  * changed node structure for new WL
  * all nodes (and related functions in other sourcefiles)
@@ -454,7 +458,7 @@
  *                             writesib_tab  obj_tab       impltyp_tab   objinit_tab
  *                             analy_tab     checkdec_tab  writedec_tab  unique_tab
  *                             rmvoid_tab    precomp_tab   active_tab    readsib_tab
- *                             unused        cse_tab       dfr_tab       unused nnode
+ *                             unused        cse_tab       dfr_tab       o2nWith_tab nnode
  */
 
 NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons, TravSons,
@@ -717,7 +721,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, FreeWith, CFwith, RCwith, CompWith, LIRloop, DupChain, TravSons, UNRwith,
        LIRMloop, IdxWith, UNSwith, TravSons, TravSons, PrintWith, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, UNQwith, TravSons, TravSons, ACTwith,
-       TravSons, TravSons, CSEwith, TravSons, TravSons, 2),
+       TravSons, TravSons, CSEwith, TravSons, O2Nwith, 2),
 
   NIF (N_generator, "N_generator", TravSons, FltnGen, PrintGenator, TravSons, TravSons,
        TravSons, TravSons, FreeGenerator, TravSons, RCgen, TravSons, TravSons, DupIIds,
@@ -762,12 +766,12 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    *
    */
 
-  NIF (N_Nwith, "N_Nwith", NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
+  NIF (N_Nwith, "N_Nwith", NoTrav, NoTrav, PrintNWith, NoTrav, NoTrav, NoTrav, NoTrav,
        FreeNWith, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
        NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
        NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, 3),
 
-  NIF (N_Npart, "N_Npart", NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
+  NIF (N_Npart, "N_Npart", NoTrav, NoTrav, PrintNPart, NoTrav, NoTrav, NoTrav, NoTrav,
        FreeNPart, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
        NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav,
        NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, NoTrav, 3),
