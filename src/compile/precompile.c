@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2002/06/07 15:50:41  dkr
+ * new ATG_... arrays used
+ *
  * Revision 3.42  2002/06/06 19:36:26  dkr
  * bug without TAGGED_ARRAYS fixed
  *
@@ -1329,7 +1332,7 @@ InsertOut (argtab_t *argtab, node *fundef, int param_id, types *rettype, bool *d
 
             DBUG_PRINT ("PREC", ("%s(): out-arg " F_PTR
                                  " (TYPE) inserted at position %d with tag %s.",
-                                 FUNDEF_NAME (fundef), rettype, idx, mdb_argtag[argtag]));
+                                 FUNDEF_NAME (fundef), rettype, idx, ATG_string[argtag]));
         } else if (idx == 0) {
             ERROR (line, ("Pragma 'linksign' illegal"));
             CONT_ERROR (("Return value found twice"));
@@ -1439,7 +1442,7 @@ InsertOut (argtab_t *argtab, node *fundef, int param_id, types *rettype, bool *d
 
             DBUG_PRINT ("PREC", ("%s(): out-arg " F_PTR
                                  " (TYPE) inserted at position %d with tag %s.",
-                                 FUNDEF_NAME (fundef), rettype, idx, mdb_argtag[argtag]));
+                                 FUNDEF_NAME (fundef), rettype, idx, ATG_string[argtag]));
         } else if (idx == 0) {
             ERROR (line, ("Pragma 'linksign' illegal"));
             CONT_ERROR (("Return value found twice"));
@@ -1525,7 +1528,7 @@ InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
                 DBUG_PRINT ("PREC", ("%s(): in-arg " F_PTR "," F_PTR
                                      " (ARG,TYPE) inserted at position %d with tag %s.",
                                      FUNDEF_NAME (fundef), arg, ARG_TYPE (arg), idx,
-                                     mdb_argtag[argtag]));
+                                     ATG_string[argtag]));
             } else if ((argtab->tag[idx] == ATG_out_nodesc)
                        && (argtag == ATG_in_nodesc)) {
                 /*
@@ -1541,7 +1544,7 @@ InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
                                          " (ARG,TYPE) merged with out-arg " F_PTR
                                          " (TYPE) at position %d with tag %s.",
                                          FUNDEF_NAME (fundef), arg, ARG_TYPE (arg),
-                                         argtab->ptr_out[idx], idx, mdb_argtag[argtag]));
+                                         argtab->ptr_out[idx], idx, ATG_string[argtag]));
                 } else {
                     ERROR (line, ("Pragma 'linksign' illegal"));
                     CONT_ERROR (("Mappings allowed exclusively between parameters"
@@ -1627,7 +1630,7 @@ InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
                 DBUG_PRINT ("PREC", ("%s(): in-arg " F_PTR "," F_PTR
                                      " (ARG,TYPE) inserted at position %d with tag %s.",
                                      FUNDEF_NAME (fundef), arg, ARG_TYPE (arg), idx,
-                                     mdb_argtag[argtag]));
+                                     ATG_string[argtag]));
             } else if ((argtab->tag[idx] == ATG_out) && (argtag == ATG_in)) {
                 /*
                  * merge 'argtab->ptr_out[idx]' and 'arg'
@@ -1641,7 +1644,7 @@ InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
                                          " (ARG,TYPE) merged with out-arg " F_PTR
                                          " (TYPE) at position %d with tag %s.",
                                          FUNDEF_NAME (fundef), arg, ARG_TYPE (arg),
-                                         argtab->ptr_out[idx], idx, mdb_argtag[argtag]));
+                                         argtab->ptr_out[idx], idx, ATG_string[argtag]));
                 } else {
                     ERROR (line, ("Pragma 'linksign' illegal"));
                     CONT_ERROR (("Mappings allowed exclusively between parameters"
@@ -1927,7 +1930,7 @@ PREC2let (node *arg_node, node *arg_info)
 #ifdef TAGGED_ARRAYS
             actual_cls = GetDataClassFromTypes (IDS_TYPE (ap_ids));
             formal_cls = GetDataClassFromTypes (rettypes);
-            if (actual_cls != formal_cls) {
+            if (ATG_has_shp[argtab->tag[idx]] && (actual_cls != formal_cls)) {
                 DBUG_PRINT ("PREC",
                             ("Return value with inappropriate data class found:"));
                 DBUG_PRINT ("PREC",
@@ -1966,7 +1969,7 @@ PREC2let (node *arg_node, node *arg_info)
 
             actual_cls = GetDataClassFromTypes (ID_TYPE (ap_id));
             formal_cls = GetDataClassFromTypes (ARG_TYPE (args));
-            if (actual_cls != formal_cls) {
+            if (ATG_has_shp[argtab->tag[idx]] && (actual_cls != formal_cls)) {
                 DBUG_PRINT ("PREC", ("Argument with inappropriate data class found:"));
                 DBUG_PRINT ("PREC",
                             ("   ... = %s( ... %s ...), %s instead of %s",
@@ -2256,29 +2259,15 @@ PREC3let (node *arg_node, node *arg_info)
                         if ((NODE_TYPE (arg_id) == N_id)
                             && (RC_IS_ACTIVE (ID_REFCNT (arg_id)))
                             && (!strcmp (ID_NAME (arg_id), IDS_NAME (let_ids)))) {
-#ifdef TAGGED_ARRAYS
-                            DBUG_ASSERT ((argtab->tag[arg_idx] == ATG_in_nodesc)
-                                           || (argtab->tag[arg_idx] == ATG_in),
+                            DBUG_ASSERT (ATG_is_in[argtab->tag[arg_idx]],
                                          "illegal tag found!");
 
-                            if (argtab->tag[arg_idx] == ATG_in_nodesc) {
+                            if (!ATG_has_rc[argtab->tag[arg_idx]]) {
                                 LiftOrReplaceArg (arg_id, INFO_PREC_FUNDEF (arg_info),
                                                   new_id, NULL,
                                                   &(INFO_PREC3_LASTASSIGN (arg_info)));
                                 new_id = arg_id;
                             }
-#else
-                            DBUG_ASSERT ((argtab->tag[arg_idx] == ATG_in)
-                                           || (argtab->tag[arg_idx] == ATG_in_rc),
-                                         "illegal tag found!");
-
-                            if (argtab->tag[arg_idx] == ATG_in) {
-                                LiftOrReplaceArg (arg_id, INFO_PREC_FUNDEF (arg_info),
-                                                  new_id, NULL,
-                                                  &(INFO_PREC3_LASTASSIGN (arg_info)));
-                                new_id = arg_id;
-                            }
-#endif
                         }
                     }
                 }
