@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2004/11/07 14:31:34  ktr
+ * CreateCppCallString now needs a third parameter for the temporary file
+ * created in /tmp that is used for CPP's output.
+ *
  * Revision 3.26  2004/11/02 14:58:36  sah
  * added MemCopy
  *
@@ -180,7 +184,7 @@ extern void SystemCall (char *format, ...);
 extern int SystemCall2 (char *format, ...);
 extern int SystemTest (char *format, ...);
 
-extern void CreateCppCallString (char *file, char *cccallstr);
+extern void CreateCppCallString (char *file, char *cccallstr, char *cppfile);
 
 extern char *PrefixForTmpVar (void);
 extern char *TmpVar (void);

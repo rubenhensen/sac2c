@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.61  2004/11/07 14:31:34  ktr
+ * CreateCppCallString now needs a third parameter for the temporary file
+ * created in /tmp that is used for CPP's output.
+ *
  * Revision 3.60  2004/11/02 14:58:36  sah
  * added MemCopy
  *
@@ -1054,7 +1058,7 @@ SystemTest (char *format, ...)
  ******************************************************************************/
 
 void
-CreateCppCallString (char *file, char *cccallstr)
+CreateCppCallString (char *file, char *cccallstr, char *cppfile)
 {
     int i;
 
@@ -1079,6 +1083,9 @@ CreateCppCallString (char *file, char *cccallstr)
         strcat (cccallstr, " ");
         strcat (cccallstr, file);
     }
+
+    strcat (cccallstr, " ");
+    strcat (cccallstr, cppfile);
 
     DBUG_VOID_RETURN;
 }
