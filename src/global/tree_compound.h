@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.47  1997/04/25 13:21:59  sbs
+ * Revision 1.48  1997/05/02 13:53:00  sbs
+ * VINFO_SHPSEG inserted
+ *
+ * Revision 1.47  1997/04/25  13:21:59  sbs
  * CHECK_NULL inserted.
  *
  * Revision 1.46  1997/04/25  09:35:40  sbs
@@ -1316,6 +1319,7 @@ extern node *Shape2Array (shapes *shp);
  */
 
 #define VINFO_DIM(n) SHAPES_DIM (VINFO_TYPE (n))
+#define VINFO_SHPSEG(n) SHAPES_SHPSEG (VINFO_TYPE (n))
 #define VINFO_SELEMS(n) SHAPES_SELEMS (VINFO_TYPE (n))
 
 /*--------------------------------------------------------------------------*/
