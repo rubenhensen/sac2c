@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.22  1998/11/09 17:44:14  sbs
+ * Float2String and Double2String patched:
+ * Now 260 byte are allocated rather than 256;
+ * => prevents SEFAULTS for very long constants ....
+ *
  * Revision 1.21  1998/06/05 15:27:49  cg
  * global variable mod_name_con and macros MOD_NAME_CON MOD MOD_NAME MOD_CON removed
  * Now, module name and symbol name are combined correctly by ':'.
@@ -128,7 +133,7 @@ Float2String (float val)
 
     DBUG_ENTER ("Float2String");
 
-    tmp_string = (char *)Malloc (sizeof (char) * 256);
+    tmp_string = (char *)Malloc (sizeof (char) * 260);
     if (val == floor (val))
         sprintf (tmp_string, "%.256g.0f", val);
     else
@@ -158,7 +163,7 @@ Double2String (double val)
 
     DBUG_ENTER ("Double2String");
 
-    tmp_string = (char *)Malloc (sizeof (char) * 256);
+    tmp_string = (char *)Malloc (sizeof (char) * 260);
     if (val == floor (val))
         sprintf (tmp_string, "%.256g.0", val);
     else
