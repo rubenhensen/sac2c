@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/08/07 12:56:58  dkr
+ * FltnNwithid() added, NWITHID_VEC is created if missing
+ *
  * Revision 3.17  2002/08/07 12:14:46  dkr
  * FltnPrf: dirty hack for TAGGED_ARRAYS no longer needed
  *
@@ -1817,7 +1820,7 @@ FltnNwithop (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *FltnNpart(node *arg_node, node *arg_info)
+ *   node *FltnNpart( node *arg_node, node *arg_info)
  *
  * description:
  *   flattens all N_Npart nodes
@@ -1825,10 +1828,10 @@ FltnNwithop (node *arg_node, node *arg_info)
  * remark:
  *   the index variables are always renamed to unique names (this differs
  *   from the old WLs). This is done in respect of later Withloop folding.
- *   During WL-folding WL bodies are merged and with unique generators name clashes
- *   can beavoided. Example:
- *   A: with (...i...) { ...B... }
- *   B: with((...j...) { ...tmp = i... }  i bound outside withloop.
+ *   During WL-folding WL bodies are merged and with unique generators name
+ *   clashes can beavoided. Example:
+ *     A: with (...i...) { ...B... }
+ *     B: with((...j...) { ...tmp = i... }   i bound outside withloop.
  *   substitute B in A and i is bound to index variable of A.
  *
  ******************************************************************************/
@@ -1836,21 +1839,43 @@ FltnNwithop (node *arg_node, node *arg_info)
 node *
 FltnNpart (node *arg_node, node *arg_info)
 {
+    DBUG_ENTER ("FltnNpart");
+
+    /* flatten the sons */
+    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
+    NPART_WITHID (arg_node) = Trav (NPART_WITHID (arg_node), arg_info);
+
+    /* at this early point there are no other N_Npart nodes */
+    DBUG_ASSERT ((NPART_NEXT (arg_node) == NULL), "NPART_NEXT should not yet exist");
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *FltnNwithid( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Creates NWITHID_VEC if missing.
+ *
+ ******************************************************************************/
+
+node *
+FltnNwithid (node *arg_node, node *arg_info)
+{
     ids *_ids;
     char *old_name;
 
-    DBUG_ENTER ("FltnNpart");
-
-    /* flatten the generator */
-    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
+    DBUG_ENTER ("FltnNwithid");
 
     /*
      * rename index scalars:
      * in the old WL renaming was only done if a variable of the same name
      * was found before. Here we rename all index variables.
      */
-    _ids = NPART_IDS (arg_node);
-    while (_ids) {
+    _ids = NWITHID_IDS (arg_node);
+    while (_ids != NULL) {
         old_name = IDS_NAME (_ids);
         IDS_NAME (_ids) = TmpVarName (old_name);
         PUSH (old_name, IDS_NAME (_ids), with_level - 1);
@@ -1860,15 +1885,16 @@ FltnNpart (node *arg_node, node *arg_info)
     /*
      * rename index-vector:
      */
-    _ids = NPART_VEC (arg_node);
-    if (_ids) {
+    _ids = NWITHID_VEC (arg_node);
+    if (_ids != NULL) {
         old_name = IDS_NAME (_ids);
         IDS_NAME (_ids) = TmpVarName (old_name);
         PUSH (old_name, IDS_NAME (_ids), with_level - 1);
     }
 
-    /* at this early point there are no other N_Npart nodes */
-    DBUG_ASSERT (!NPART_NEXT (arg_node), "NPART_NEXT() should not yet exist.");
+    if (NWITHID_VEC (arg_node) == NULL) {
+        NWITHID_VEC (arg_node) = MakeIds (TmpVar (), NULL, ST_regular);
+    }
 
     DBUG_RETURN (arg_node);
 }
