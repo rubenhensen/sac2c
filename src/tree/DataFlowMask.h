@@ -1,6 +1,8 @@
 /*
- *
  * $Log$
+ * Revision 1.2  2000/05/31 13:21:22  dkr
+ * function DFMPrintMaskDetailed() added
+ *
  * Revision 1.1  2000/01/21 11:16:21  dkr
  * Initial revision
  *
@@ -39,8 +41,6 @@
  *
  * Revision 1.1  1998/05/04 15:53:12  cg
  * Initial revision
- *
- *
  */
 
 /*****************************************************************************
@@ -182,6 +182,7 @@ extern int DFMTest3Masks (DFMmask_t mask1, DFMmask_t mask2, DFMmask_t mask3);
 extern DFMmask_t DFMRemoveMask (DFMmask_t mask);
 
 extern void DFMPrintMask (FILE *handle, const char *format, DFMmask_t mask);
+extern void DFMPrintMaskDetailed (FILE *handle, DFMmask_t mask);
 
 extern void DFMSetMaskEntryClear (DFMmask_t mask, char *id, node *decl);
 extern void DFMSetMaskEntrySet (DFMmask_t mask, char *id, node *decl);
