@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.16  1995/07/13 15:43:05  hw
+ * Revision 1.17  1995/07/14 12:03:49  hw
+ * macro GET_BASIC_SIMPLETYPE_OF_NODE( stype, Node) inserted
+ *
+ * Revision 1.16  1995/07/13  15:43:05  hw
  * changed macro GET_LENGTH( second argument is now a 'types' struct;
  *  size of basic-type will be computed correctly now)
  *
@@ -81,6 +84,16 @@ extern types *DuplicateTypes (types *source, int share);
         res = LookupType (type->name, type->name_mod, 042)->SIMPLETYPE;                  \
     else                                                                                 \
         res = type->simpletype
+
+#define GET_BASIC_SIMPLETYPE_OF_NODE(stype, Node)                                        \
+    if (N_array == Node->nodetype) {                                                     \
+        DBUG_ASSERT (NULL != Node->TYPES, "info.types of node N_array missing");         \
+        GET_BASIC_SIMPLETYPE (stype, Node->TYPES);                                       \
+    } else if (N_id == Node->nodetype) {                                                 \
+        DBUG_ASSERT (NULL != Node->IDS_NODE, "pointer to var_dec missing");              \
+        GET_BASIC_SIMPLETYPE (stype, Node->IDS_NODE->TYPES);                             \
+    } else                                                                               \
+        DBUG_ASSERT (0, "wrong nodetype != N_id,N_array")
 
 /* a new types-stucture will be created */
 #define GET_BASIC_TYPE(res_type, arg_type, line)                                         \
