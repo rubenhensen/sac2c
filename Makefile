@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.28  2000/02/17 16:10:58  cg
+# Added linking of new files flatten/fun2lac.o and flatten/adjust_ids.o.
+#
 # Revision 2.27  2000/02/04 14:47:37  jhs
 # Added repfuns_init.o.
 #
@@ -181,7 +184,8 @@ TREE= src/tree/traverse.o src/tree/tree.o src/tree/tree_basic.o src/tree/free.o 
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o
-FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o
+FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/fun2lac.o \
+         src/flatten/adjust_ids.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
            src/typecheck/typecheck_WL.o src/typecheck/gen_pseudo_fun.o \
            src/typecheck/new_typecheck.o src/typecheck/new_types.o \
