@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/05/03 16:47:25  nmw
+ * set correct AVIS_SSAASSIGN attribute for return copy assignments
+ *
  * Revision 3.17  2001/04/24 17:14:30  dkr
  * call of InferDFMs() removed: after modification of DupTree() there is
  * no need to hold the DFMs consistent anymore ...
@@ -392,7 +395,7 @@ InlineVardec (node *arg_node, node *arg_info)
      * insert pointers ['old_avis', 'new_avis'] into INFO_INL_LUT
      */
     INFO_INL_LUT (arg_info)
-      = InsertIntoLUT_P (INFO_INL_LUT (arg_info), ARG_AVIS (arg_node), new_avis);
+      = InsertIntoLUT_P (INFO_INL_LUT (arg_info), VARDEC_AVIS (arg_node), new_avis);
 
     /*
      * insert pointers ['arg_node', 'new_vardec'] into INFO_INL_LUT
@@ -447,6 +450,15 @@ InlineRetExprs (node *arg_node, node *arg_info)
         INFO_INL_EPILOG (arg_info)
           = MakeAssign (MakeLet (new_expr, DupOneIds (INFO_INL_IDS (arg_info))),
                         INFO_INL_EPILOG (arg_info));
+
+        /* set the correct AVIS_SSAASSIGN() attribute for this new assignment */
+        if (IDS_AVIS (INFO_INL_IDS (arg_info)) != NULL) {
+            DBUG_PRINT ("INL", ("set correct SSAASSIGN attribute for %s",
+                                VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (
+                                  IDS_AVIS (INFO_INL_IDS (arg_info))))));
+            AVIS_SSAASSIGN (IDS_AVIS (INFO_INL_IDS (arg_info)))
+              = INFO_INL_EPILOG (arg_info);
+        }
     }
 
     if (EXPRS_NEXT (arg_node) != NULL) {
