@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 1.9  2000/03/09 18:32:39  jhs
+# Added dfa and blkpp.
+#
 # Revision 1.8  2000/03/02 12:55:48  jhs
 # Added mtfuns_init.o and blkco_cons.o.
 #
@@ -40,9 +43,11 @@ all: multithread.o \
      schedule_init.o \
      repfuns_init.o \
      blocks_init.o \
+     blocks_propagate.o \
      blocks_expand.o \
      mtfuns_init.o \
-     blocks_cons.o
+     blocks_cons.o \
+     dataflow_analysis.o
 
 
 %.o: %.c 
