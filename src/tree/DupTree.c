@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2003/06/11 22:03:09  ktr
+ * The shape structure in N_array is now copied.
+ *
  * Revision 3.79  2002/10/24 13:11:32  ktr
  * removed support for ASSIGN_INDENT
  *
@@ -1588,7 +1591,8 @@ DupArray (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupArray");
 
-    new_node = MakeArray (DUPTRAV (ARRAY_AELEMS (arg_node)));
+    new_node = MakeArray (DUPTRAV (ARRAY_AELEMS (arg_node)),
+                          SHCopyShape (ARRAY_SHAPE (arg_node)));
     ARRAY_STRING (new_node) = StringCopy (ARRAY_STRING (arg_node));
 
     ARRAY_TYPE (new_node) = DupTypes_ (ARRAY_TYPE (arg_node), arg_info);
