@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.65  2001/03/29 16:30:03  nmw
+ * INFO_DUP_ macros added, comments for scheduling modified
+ *
  * Revision 3.64  2001/03/28 14:56:11  dkr
  * WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX modified
  *
@@ -2454,6 +2457,7 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    node*      POSTASSIGN        (assignments to add behind assignment)
  ***    node*      TOPBLOCK          (vardec chain of actual function)
  ***    node*      RESULTS           (exprs chain of return statement)
+ ***    bool       INLINEAP          (flag, to inline special function)
  ***
  ***  when used in SSALIR.c
  ***    node*      FUNDEF            (current working fundef)
@@ -2485,6 +2489,8 @@ extern node *MakeInfo ();
 #define INFO_DUP_CONT(n) (n->node[0])
 #define INFO_DUP_FUNDEF(n) (n->node[1])
 #define INFO_DUP_LUT(n) ((LUT_t) (n->dfmask[0]))
+#define INFO_DUP_INSPECIAL(n) ((bool)(n->counter))
+#define INFO_DUP_ASSIGN(n) (n->node[2])
 
 /* flatten */
 #define INFO_FLTN_CONTEXT(n) (n->flag)
@@ -2893,6 +2899,7 @@ extern node *MakeInfo ();
 #define INFO_SSACF_POSTASSIGN(n) (n->node[1])
 #define INFO_SSACF_TOPBLOCK(n) (n->node[2])
 #define INFO_SSACF_RESULTS(n) (n->node[3])
+#define INFO_SSACF_INLINEAP(n) ((bool)(n->counter))
 
 /* when used in SSALIR.c */
 #define INFO_SSALIR_FUNDEF(n) (n->node[0])
@@ -2980,7 +2987,6 @@ extern node *MakeSpmd (node *region);
  ***  temporary attributes:
  ***
  ***    node*      WITH_PTRS   (N_exprs)   (syncinit -> syncopt -> compile !!)
- ***    SCHsched_t SCHEDULING              (syncinit (O) -> sched -> compile !!)
  ***/
 
 extern node *MakeSync (node *region);
@@ -2989,7 +2995,6 @@ extern node *MakeSync (node *region);
 #define SYNC_LAST(n) (n->int_data)
 #define SYNC_FOLDCOUNT(n) (n->varno)
 #define SYNC_REGION(n) (n->node[0])
-#define SYNC_SCHEDULING(n) ((SCHsched_t) (n->node[1]))
 
 #define SYNC_IN(n) (n->dfmask[0])
 #define SYNC_INOUT(n) (n->dfmask[1])
@@ -3410,7 +3415,6 @@ extern node *MakeNCode (node *block, node *expr);
  ***
  ***    bool       OFFSET_NEEDED         (wltransform -> compile )
  ***
- ***    SCHsched_t SCHEDULING   (O)      (wltransform -> compile )
  ***    bool       ISSCHEDULED           (new_mt -> ...)
  ***                            [Signals whether any segment is scheduled or not]
  ***/
@@ -3427,7 +3431,6 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
 
 #define NWITH2_DEC_RC_IDS(n) ((ids *)((n)->node[5]))
 #define NWITH2_OFFSET_NEEDED(n) ((bool)((n)->int_data))
-#define NWITH2_SCHEDULING(n) ((SCHsched_t) ((n)->info2))
 #define NWITH2_ISSCHEDULED(n) ((n)->info.prf_dec.tag)
 
 #define NWITH2_IN_MASK(n) ((n)->dfmask[0])
@@ -3520,6 +3523,9 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***
  ***    int        DIMS       [number of dims]
  ***
+ ***    int*       IDX_MIN                             (wltransform -> compile )
+ ***    int*       IDX_MAX                             (wltransform -> compile )
+ ***
  ***    int*       UBV        [unrolling-bl. vector]
  ***
  ***    int        BLOCKS     [number of blocking levels (0..3)
@@ -3529,9 +3535,6 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop, int 
  ***  temporary attributes:
  ***
  ***    int*       SV         [step vector]            (wltransform -> )
- ***
- ***    int*       IDX_MIN                             (wltransform -> compile )
- ***    int*       IDX_MAX                             (wltransform -> compile )
  ***
  ***    int        MAXHOMDIM  [last homog. dimension]  (wltransform -> compile )
  ***    SCHsched_t SCHEDULING                          (wltransform -> compile )
@@ -3575,10 +3578,10 @@ extern node *MakeWLseg (int dims, node *contents, node *next);
  ***
  ***    int        DIMS       [number of dims]
  ***
- ***  temporary attributes:
- ***
  ***    node**     IDX_MIN       (N_num, N_id)         (wltransform -> compile )
  ***    node**     IDX_MAX       (N_num, N_id)         (wltransform -> compile )
+ ***
+ ***  temporary attributes:
  ***
  ***    SCHsched_t SCHEDULING                          (wltransform -> compile )
  ***
