@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2003/09/29 19:08:23  dkr
+ * PREC2apORprf() corrected
+ *
  * Revision 3.72  2003/09/25 10:54:33  dkr
  * to_unq() and from_unq() are prfs now
  *
@@ -165,10 +168,12 @@
  *   - Constant arguments of function applications are abstracted out:
  *       a = fun( 1);   =>   _tmp = 1; a = fun( _tmp);
  *     This can be done *after* type-checking only, because this modification
- *     should not be done for primitive functions (it is superfluous for prfs
- *     and we should minimize the number of local variables used ...).
+ *     should not be done for (most) primitive functions. (It is superfluous
+ *     for most prfs and we should minimize the number of local variables used.)
  *     Unfortunately, only the type system can decide whether an application
  *     uses a primitive or a user-defined function (overloading!).
+ *     Moreover, several optimizations (WLUR, IVE, ...) produce unflattened SAC
+ *     code for the time being anyway!!!
  *   - Function signatures are transformed into the final form:
  *     At most a single return value, remapping because of a linksign pragma,
  *     parameter tags (in, out, inout, ...).
@@ -1965,7 +1970,7 @@ PREC2let (node *arg_node, node *arg_info)
  *   node *PREC2apORprf( node *arg_node, node *arg_info)
  *
  * Description:
- *
+ *   Lifts scalars from all N_ap and some N_prf applications.
  *
  ******************************************************************************/
 
@@ -1973,7 +1978,10 @@ node *
 PREC2apORprf (node *arg_node, node *arg_info)
 {
 #ifdef TAGGED_ARRAYS
+    prf *prf;
     node *args, *arg;
+    int arg_cnt;
+    types *type;
 #endif /* TAGGED_ARRAYS */
 
     DBUG_ENTER ("PREC2apORprf");
@@ -1983,15 +1991,21 @@ PREC2apORprf (node *arg_node, node *arg_info)
     }
 
 #ifdef TAGGED_ARRAYS
-    if ((NODE_TYPE (arg_node) == N_ap)
-        || ((NODE_TYPE (arg_node) == N_prf)
-            && ((PRF_PRF (arg_node) == F_dim) || (PRF_PRF (arg_node) == F_shape)))) {
-        args = AP_OR_PRF_ARGS (arg_node);
-        while (args != NULL) {
-            arg = EXPRS_EXPR (args);
-            if (NODE_TYPE (arg) != N_id) {
-                types *type;
+    if (NODE_TYPE (arg_node) == N_ap) {
+        prf = NULL;
+    } else {
+        prf = &(PRF_PRF (arg_node));
+    }
 
+    args = AP_OR_PRF_ARGS (arg_node);
+    arg_cnt = 0;
+    while (args != NULL) {
+        arg = EXPRS_EXPR (args);
+        if ((NODE_TYPE (arg) != N_id) && (NODE_TYPE (arg) != N_array)) {
+            if ((prf == NULL) ||                            /* all N_ap args */
+                (*prf == F_dim) ||                          /* F_dim arg */
+                (*prf == F_shape) ||                        /* F_shape arg */
+                ((*prf == F_modarray) && (arg_cnt == 0))) { /* 1st F_modarray arg */
                 switch (NODE_TYPE (arg)) {
                 case N_num:
                     type = MakeTypes1 (T_int);
@@ -2017,9 +2031,9 @@ PREC2apORprf (node *arg_node, node *arg_info)
                 EXPRS_EXPR (args) = LiftArg (arg, INFO_PREC_FUNDEF (arg_info), type, TRUE,
                                              &(INFO_PREC2_PREASSIGNS (arg_info)));
             }
-
-            args = EXPRS_NEXT (args);
         }
+        args = EXPRS_NEXT (args);
+        arg_cnt++;
     }
 #endif /* TAGGED_ARRAYS */
 
