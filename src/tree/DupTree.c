@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.92  2004/05/05 14:35:56  ktr
+ * Added support for NCODE_EPILOGUE
+ *
  * Revision 3.91  2004/03/09 23:57:59  dkrHH
  * old backend removed
  *
@@ -1946,6 +1949,8 @@ DupNcode (node *arg_node, node *arg_info)
 
     new_node = MakeNCodeExprs (DUPTRAV (NCODE_CBLOCK (arg_node)),
                                DUPTRAV (NCODE_CEXPRS (arg_node)));
+
+    NCODE_EPILOGUE (new_node) = DUPTRAV (NCODE_EPILOGUE (arg_node));
 
     INFO_DUP_LUT (arg_info)
       = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);

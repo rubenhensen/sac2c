@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2004/05/05 14:35:56  ktr
+ * Added support for NCODE_EPILOGUE
+ *
  * Revision 3.54  2004/03/05 19:14:27  mwe
  * support for new node N_funcond added
  *
@@ -2086,6 +2089,7 @@ FreeNCode (node *arg_node, node *arg_info)
 
     NCODE_CBLOCK (arg_node) = FREETRAV (NCODE_CBLOCK (arg_node));
     NCODE_CEXPRS (arg_node) = FREETRAV (NCODE_CEXPRS (arg_node));
+    NCODE_EPILOGUE (arg_node) = FREETRAV (NCODE_EPILOGUE (arg_node));
 
     NCODE_INC_RC_IDS (arg_node) = FreeAllIds (NCODE_INC_RC_IDS (arg_node));
 
