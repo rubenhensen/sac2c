@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/04/04 16:21:04  hw
+ * Revision 1.8  1995/04/11 15:10:55  hw
+ * changed args of functio IsArray
+ *
+ * Revision 1.7  1995/04/04  16:21:04  hw
  * changed IsArray   (now arrays with unknown shapes will be treated as arrays)
  *
  * Revision 1.6  1995/03/28  12:09:38  hw
@@ -40,6 +43,7 @@
 #include "internal_lib.h"
 #include "refcount.h"
 
+#define TYPES info.types
 #define ID info.ids->id
 #define VAR_DEC info.ids->node
 #define CONTEXT info.cint
@@ -65,7 +69,7 @@ static node *fundef_node; /* pointer to current function declaration */
 /*
  *
  *  functionname  : IsArray
- *  arguments     : 1) N_typedef node
+ *  arguments     : 1) types struct
  *  description   : checks whether 1) is a declaration of an array or not
  *  global vars   :
  *  internal funs :
@@ -76,19 +80,18 @@ static node *fundef_node; /* pointer to current function declaration */
  *
  */
 int
-IsArray (node *arg_node)
+IsArray (types *type)
 {
     node *type_node;
     int ret = 0;
 
     DBUG_ENTER ("IsArray");
-    DBUG_PRINT ("RC", ("looking for %s", arg_node->info.types->id));
+    DBUG_PRINT ("RC", ("looking for %s", type->id));
 
-    if ((1 <= arg_node->info.types->dim) || (-1 == arg_node->info.types->dim))
+    if ((1 <= type->dim) || (-1 == type->dim))
         ret = 1;
-    else if (T_user == arg_node->info.types->simpletype) {
-        type_node
-          = LookupType (arg_node->info.types->name, arg_node->info.types->name_mod, 042);
+    else if (T_user == type->simpletype) {
+        type_node = LookupType (type->name, type->name_mod, 042);
         /* 042 is only a dummy argument */
         if ((1 <= type_node->info.types->dim) || (-1 == type_node->info.types->dim))
             ret = 1;
@@ -432,7 +435,7 @@ RCloop (node *arg_node, node *arg_info)
         if ((defined_mask[i] > 0) || (used_mask[i] > 0)) {
             var_dec = FindVarDec (i);
             DBUG_ASSERT ((NULL != var_dec), "variable not found");
-            if (1 == IsArray (var_dec)) {
+            if (1 == IsArray (var_dec->TYPES)) {
 
                 /* first store used and defined variables (v1), (v2) */
                 if ((defined_mask[i] > 0) && (ref_dump[i] > 0)) {
@@ -503,7 +506,7 @@ RCloop (node *arg_node, node *arg_info)
         if ((defined_mask[i] > 0) || (used_mask[i] > 0)) {
             var_dec = FindVarDec (i);
             DBUG_ASSERT ((NULL != var_dec), "variable not found");
-            if (1 == IsArray (var_dec)) {
+            if (1 == IsArray (var_dec->TYPES)) {
 #if 0
             if((defined_mask[i]>0) &&( ref_dump[i] >0))
             {
@@ -580,7 +583,7 @@ RCid (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("RCid");
 
-    if (1 == IsArray (arg_node->VAR_DEC)) {
+    if (1 == IsArray (arg_node->VAR_DEC->TYPES)) {
         arg_node->VAR_DEC->refcnt += 1;
         arg_node->ID_REF = arg_node->VAR_DEC->refcnt;
     } else
@@ -615,7 +618,7 @@ RClet (node *arg_node, node *arg_info)
 
     ids = arg_node->info.ids;
     while (NULL != ids) {
-        if (1 == IsArray (ids->node)) {
+        if (1 == IsArray (ids->node->TYPES)) {
             ids->refcnt = ids->node->refcnt;
             ids->node->refcnt = 0;
         } else
