@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/02/23 10:07:56  dkr
+ * cond-, do- and while-dummy-functions are now traversed, too.
+ *
  * Revision 2.1  1999/02/23 12:41:57  sacbase
  * new release made
  *
@@ -110,9 +113,12 @@ FindAllNeededObjects (node *arg_node)
 
     DBUG_ENTER ("FindAllNeededObjects");
 
-    if ((FUNDEF_STATUS (arg_node) == ST_regular)
-        || ((FUNDEF_STATUS (arg_node) == ST_objinitfun)
-            && (FUNDEF_BODY (arg_node) != NULL))) {
+#if 0
+  if ((FUNDEF_STATUS(arg_node)==ST_regular)
+      || ((FUNDEF_STATUS(arg_node)==ST_objinitfun)
+          && (FUNDEF_BODY(arg_node)!=NULL))) {
+#endif
+    if ((FUNDEF_STATUS (arg_node) != ST_imported) && (FUNDEF_BODY (arg_node) != NULL)) {
         /*
          *  For each not imported function the list of called functions
          *  is traversed.
@@ -209,9 +215,11 @@ ANAfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("ANAfundef");
 
-    if ((FUNDEF_STATUS (arg_node) == ST_regular)
-        || ((FUNDEF_STATUS (arg_node) == ST_objinitfun)
-            && (FUNDEF_BODY (arg_node) != NULL))) {
+#if 0
+  if ((FUNDEF_STATUS( arg_node) == ST_regular) ||
+     ((FUNDEF_STATUS( arg_node) == ST_objinitfun) && (FUNDEF_BODY( arg_node) != NULL))) {
+#endif
+    if ((FUNDEF_STATUS (arg_node) != ST_imported) && (FUNDEF_BODY (arg_node) != NULL)) {
         Trav (FUNDEF_BODY (arg_node), arg_node);
         FUNDEF_NEEDTYPES (arg_node) = TidyUpNodelist (FUNDEF_NEEDTYPES (arg_node));
     }
