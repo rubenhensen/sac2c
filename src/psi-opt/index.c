@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/06/27 15:27:03  dkr
+ * bug in IdxNcode() fixed:
+ * INFO_IVE_TRANSFORM_VINFO reset before NCODE_CEXPR is traversed
+ *
  * Revision 3.15  2001/12/11 15:56:04  dkr
  * GetDim() renamed into GetShapeDim()
  *
@@ -2132,6 +2136,11 @@ IdxNcode (node *arg_node, node *arg_info)
      */
     current_assign = INFO_IVE_CURRENTASSIGN (arg_info);
     let_node = ASSIGN_INSTR (current_assign);
+
+    /*
+     * this is an implicit return statement! (see IdxReturn())
+     */
+    INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
 
     NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
