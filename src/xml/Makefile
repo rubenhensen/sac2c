@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.6  2004/11/29 10:29:32  sah
+# added target check
+#
 # Revision 1.5  2004/11/24 17:47:01  sah
 # added some files
 #
@@ -48,6 +51,9 @@ TARGETS = ../tree/attribs.h ../tree/node_basic.h ../tree/node_basic.c \
           ../tree/traverse_helper.c
 
 all: $(TARGETS)
+
+check:
+	$(XSLTENGINE) check-integrity.xsl ast.xml
 
 #
 # these rules generate the [ch] files using the xml/xslt decriptions
