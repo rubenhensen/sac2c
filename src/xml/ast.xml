@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.88  2004/11/25 23:39:00  sbs
+  ASSIGN_INDEX and IndexInfo added.
+
   Revision 1.87  2004/11/25 22:00:14  sah
   ...
 
@@ -148,6 +151,8 @@
     <type name="RCCounter" ctype="rc_counter*" init="NULL"
     copy="function" persist="no" />
     <type name="StringSet" ctype="stringset_t*" init="NULL"
+    copy="function" persist="no" />
+    <type name="IndexInfo" ctype="index_info*" init="NULL"
     copy="function" persist="no" />
   </attributetypes>
   <phases>
@@ -2130,6 +2135,12 @@
           </type>
           <phases>
             <range from="multithread" to="multithread" />
+          </phases>
+        </attribute>
+        <attribute name="Index" mandatory="yes">
+          <type name="IndexInfo" />
+          <phases>
+            <range from="WLI" to="WLF" />
           </phases>
         </attribute>
       </attributes>
