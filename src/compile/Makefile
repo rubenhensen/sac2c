@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.19  2001/11/21 11:04:43  dkr
+# target 'all': BEtest added
+#
 # Revision 3.18  2001/11/21 10:32:04  dkr
 # rules simplified
 #
@@ -63,7 +66,7 @@ SAC2C_OBJS = wltransform.o wlpragma_funs.o precompile.o compile.o \
              icm2c_std.o icm2c_wl.o icm2c_mt.o icm2c_sched.o icm2c_utils.o
 
 
-all: $(SAC2C_OBJS)
+all: $(SAC2C_OBJS) BEtest
 
 
 #
