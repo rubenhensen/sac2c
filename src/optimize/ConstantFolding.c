@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.42  2000/10/26 12:47:47  dkr
+ * DupShpSeg renamed into DupShpseg
+ *
  * Revision 2.41  2000/10/20 15:31:11  dkr
  * macro GET_DIM replaced by function GetDim
  *
@@ -865,7 +868,7 @@ CFid (node *arg_node, node *arg_info)
                   */
                 VARDEC_DIM (ID_VARDEC (mrd)) = VARDEC_DIM (ID_VARDEC (arg_node));
                 VARDEC_SHPSEG (ID_VARDEC (mrd))
-                  = DupShpSeg (VARDEC_SHPSEG (ID_VARDEC (arg_node)));
+                  = DupShpseg (VARDEC_SHPSEG (ID_VARDEC (arg_node)));
             }
 
             FreeTree (arg_node);
