@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/03/30 12:23:30  dkr
+ * some comments added
+ *
  * Revision 2.15  2000/02/24 15:55:43  dkr
  * RC functions for old with-loop removed
  *
@@ -1891,7 +1894,7 @@ RCNwith (node *arg_node, node *arg_info)
      * The neutral element of a fold-with-loop is neither RC-counted here,
      *  nor inserted into 'NWITH_DEC_RC_IDS'.
      * This is done, because 'RCNwithop' has counted it already, and the
-     *  with-loop do not consume it
+     *  with-loop does not consume it
      * (compile generates a 'ASSIGN_ARRAY( neutral, wl_id)' instead!!).
      */
 
