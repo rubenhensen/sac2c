@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2002/10/29 20:29:45  dkr
+ * include of stdlib.h removed again...
+ *
  * Revision 3.3  2002/10/29 19:07:57  dkr
  * stdlib.h included
  *
@@ -77,8 +80,6 @@
 
 #ifndef _SAC_H_
 #define _SAC_H_
-
-#include <stdlib.h>
 
 #include "sac_icm.h"
 
