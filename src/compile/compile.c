@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.140  2004/10/07 15:45:00  khf
+ * COMPSync(): added support of multioperator WLs
+ *
  * Revision 3.139  2004/10/05 17:42:05  khf
  * only removing of fold-functions if Inlining was applied
  * MakeIcm_MT_ADJUST_SCHEDULER(): added support of
@@ -8311,6 +8314,8 @@ COMPSync (node *arg_node, info *arg_info)
   node *setup_args;
 #endif
     node *assigns = NULL;
+    node *withop = NULL;
+    node *cexprs = NULL;
     ids *with_ids;
     argtag_t tag;
     char *icm_name, *var_name, *fold_type;
@@ -8403,24 +8408,28 @@ COMPSync (node *arg_node, info *arg_info)
             with = LET_EXPR (let);
             /* #### comments missing */
             if (NODE_TYPE (with) == N_Nwith2) {
-                DBUG_ASSERT ((NODE_TYPE (with) == N_Nwith2), ("wrong node type"));
 
+                withop = NWITH2_WITHOP (with);
                 with_ids = LET_IDS (let);
 
-                if (NWITH2_IS_FOLD (with)) {
-                    num_fold_args++;
+                while (with_ids != NULL) {
+                    if (NWITHOP_IS_FOLD (withop)) {
+                        num_fold_args++;
 
-                    fold_type = GetFoldTypeTag (with_ids);
+                        fold_type = GetFoldTypeTag (with_ids);
 
-                    /*
-                     * <fold_type>, <accu_NT>
-                     */
-                    fold_args
-                      = MakeExprs (MakeId_Copy (fold_type),
-                                   MakeExprs (DupIds_Id_NT (with_ids), fold_args));
+                        /*
+                         * <fold_type>, <accu_NT>
+                         */
+                        fold_args
+                          = MakeExprs (MakeId_Copy (fold_type),
+                                       MakeExprs (DupIds_Id_NT (with_ids), fold_args));
 
-                    DBUG_PRINT ("COMP_MT", ("last's folds %s is %s", IDS_NAME (with_ids),
-                                            fold_type));
+                        DBUG_PRINT ("COMP_MT", ("last's folds %s is %s",
+                                                IDS_NAME (with_ids), fold_type));
+                    }
+                    with_ids = IDS_NEXT (with_ids);
+                    withop = NWITHOP_NEXT (withop);
                 }
             }
             assign = ASSIGN_NEXT (assign);
@@ -8451,41 +8460,57 @@ COMPSync (node *arg_node, info *arg_info)
         with_ids = LET_IDS (let);
 
         /*
-         *  Is this assignment a fold-with-loop?
+         *  Is this assignment a with-loop with fold-operators?
          *  If so, one needs some arguments for the barrier from it.
          */
-        if ((NODE_TYPE (with) == N_Nwith2) && NWITH2_IS_FOLD (with)) {
+        if (NODE_TYPE (with) == N_Nwith2) {
+
+            withop = NWITH2_WITHOP (with);
             /*
-             *  Increase the number of fold-with-loops.
+             * take only cexprs of first NCODE because the special fold-functions
+             * used for syncronisation are adapted (in precompile) on those cexprs
              */
-            num_barrier_args++;
+            cexprs = NCODE_CEXPRS (NWITH2_CODE (with));
 
-            /*
-             * create fold_type-tag
-             */
-            fold_type = GetFoldTypeTag (with_ids);
+            while (with_ids != NULL) {
+                if (NWITHOP_IS_FOLD (withop)) {
+                    /*
+                     *  Increase the number of fold-with-loops.
+                     */
+                    num_barrier_args++;
 
-            /*
-             * <fold_type>, <accu_var>
-             */
-            icm_args = MakeExprs (MakeId_Copy (fold_type),
-                                  MakeExprs (DupIds_Id_NT (with_ids), NULL));
+                    /*
+                     * create fold_type-tag
+                     */
+                    fold_type = GetFoldTypeTag (with_ids);
 
-            barrier_args = AppendExprs (barrier_args, icm_args);
+                    /*
+                     * <fold_type>, <accu_var>
+                     */
+                    icm_args = MakeExprs (MakeId_Copy (fold_type),
+                                          MakeExprs (DupIds_Id_NT (with_ids), NULL));
 
-            DBUG_PRINT ("COMP_MT", ("%s", IDS_NAME (with_ids)));
+                    barrier_args = AppendExprs (barrier_args, icm_args);
 
-            /*
-             * <tmp_var>, <fold_op>
-             */
-            DBUG_ASSERT ((NWITH2_FUNDEF (with) != NULL), "no fundef found");
-            DBUG_ASSERT ((NODE_TYPE (NWITH2_CEXPR (with)) == N_id),
-                         "NWITH2_CEXPR is no N_id node");
-            barrier_args = AppendExprs (barrier_args,
-                                        MakeExprs (DupId_NT (NWITH2_CEXPR (with)),
-                                                   MakeExprs (MakeId_Copy (FUNDEF_NAME (
-                                                                NWITH2_FUNDEF (with))),
-                                                              NULL)));
+                    DBUG_PRINT ("COMP_MT", ("%s", IDS_NAME (with_ids)));
+
+                    /*
+                     * <tmp_var>, <fold_op>
+                     */
+                    DBUG_ASSERT ((NWITHOP_FUNDEF (withop) != NULL), "no fundef found");
+                    DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (cexprs)) == N_id),
+                                 "CEXPR is no N_id node");
+                    barrier_args
+                      = AppendExprs (barrier_args,
+                                     MakeExprs (DupId_NT (EXPRS_EXPR (cexprs)),
+                                                MakeExprs (MakeId_Copy (FUNDEF_NAME (
+                                                             NWITHOP_FUNDEF (withop))),
+                                                           NULL)));
+                }
+                cexprs = EXPRS_NEXT (cexprs);
+                with_ids = IDS_NEXT (with_ids);
+                withop = NWITHOP_NEXT (withop);
+            }
         }
 
         assign = ASSIGN_NEXT (assign);
