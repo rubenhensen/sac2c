@@ -1,6 +1,10 @@
 /*
  *
- * $Log: *
+ * $Log$
+ * Revision 1.2  2004/09/21 16:34:27  sah
+ * ongoing implementation of
+ * serialize traversal
+ *
  *
  *
  */
@@ -20,7 +24,10 @@
  * @{
  */
 
+#define NEW_INFO
+
 #include "serialize_attribs.h"
+#include "serialize_info.h"
 
 /** <!--******************************************************************-->
  *
@@ -39,6 +46,13 @@ void
 SerializeStringAttrib (char *vname, info *info, char *attr, node *parent)
 {
     DBUG_ENTER ("SerializeStringAttrib");
+
+    if (attr == NULL) {
+        fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+    } else {
+        fprintf (INFO_SER_FILE (info), "%s = \"%s\";\n", vname, attr);
+    }
+
     DBUG_VOID_RETURN;
 }
 
@@ -59,6 +73,13 @@ void
 SerializeSharedStringAttrib (char *vname, info *info, char *attr, node *parent)
 {
     DBUG_ENTER ("SerializeSharedStringAttrib");
+
+    if (attr == NULL) {
+        fprintf (INFO_SER_FILE (info), "%s = NULL;\n", vname);
+    } else {
+        fprintf (INFO_SER_FILE (info), "%s = \"%s\";\n", vname, attr);
+    }
+
     DBUG_VOID_RETURN;
 }
 
@@ -79,6 +100,9 @@ void
 SerializeIntegerAttrib (char *vname, info *info, int attr, node *parent)
 {
     DBUG_ENTER ("SerializeIntegerAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = %d;\n", vname, attr);
+
     DBUG_VOID_RETURN;
 }
 
@@ -99,6 +123,9 @@ void
 SerializeLongAttrib (char *vname, info *info, long attr, node *parent)
 {
     DBUG_ENTER ("SerializeLongAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = %d;\n", vname, attr);
+
     DBUG_VOID_RETURN;
 }
 
@@ -119,6 +146,9 @@ void
 SerializeBoolAttrib (char *vname, info *info, bool attr, node *parent)
 {
     DBUG_ENTER ("SerializeBoolAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = %d;\n", vname, attr);
+
     DBUG_VOID_RETURN;
 }
 
@@ -139,6 +169,9 @@ void
 SerializeFloatAttrib (char *vname, info *info, float attr, node *parent)
 {
     DBUG_ENTER ("SerializeFloatAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = %f;\n", vname, attr);
+
     DBUG_VOID_RETURN;
 }
 
@@ -159,6 +192,9 @@ void
 SerializeDoubleAttrib (char *vname, info *info, double attr, node *parent)
 {
     DBUG_ENTER ("SerializeDoubleAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = %f;\n", vname, attr);
+
     DBUG_VOID_RETURN;
 }
 
@@ -179,6 +215,9 @@ void
 SerializeCharAttrib (char *vname, info *info, char attr, node *parent)
 {
     DBUG_ENTER ("SerializeCharAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = %c;\n", vname, attr);
+
     DBUG_VOID_RETURN;
 }
 
@@ -319,6 +358,9 @@ void
 SerializeFileTypeAttrib (char *vname, info *info, file_type attr, node *parent)
 {
     DBUG_ENTER ("SerializeFileTypeAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = %d;\n", vname, attr);
+
     DBUG_VOID_RETURN;
 }
 
@@ -359,6 +401,9 @@ void
 SerializeWithOpTypeAttrib (char *vname, info *info, WithOpType attr, node *parent)
 {
     DBUG_ENTER ("SerializeWithOpTypeAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = %d;\n", vname, attr);
+
     DBUG_VOID_RETURN;
 }
 
@@ -379,6 +424,9 @@ void
 SerializePrfAttrib (char *vname, info *info, prf attr, node *parent)
 {
     DBUG_ENTER ("SerializePrfAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = %d;\n", vname, attr);
+
     DBUG_VOID_RETURN;
 }
 
@@ -460,6 +508,9 @@ void
 SerializeStatusTypeAttrib (char *vname, info *info, statustype attr, node *parent)
 {
     DBUG_ENTER ("SerializeStatusTypeAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = %d;\n", vname, attr);
+
     DBUG_VOID_RETURN;
 }
 
@@ -720,6 +771,9 @@ void
 SerializeUseFlagAttrib (char *vname, info *info, useflag attr, node *parent)
 {
     DBUG_ENTER ("SerializeUseFlagAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = %d;\n", vname, attr);
+
     DBUG_VOID_RETURN;
 }
 
@@ -902,6 +956,9 @@ void
 SerializeBitFieldAttrib (char *vname, info *info, int attr, node *parent)
 {
     DBUG_ENTER ("SerializeBitFieldAttrib");
+
+    fprintf (INFO_SER_FILE (info), "%s = %d;\n", vname, attr);
+
     DBUG_VOID_RETURN;
 }
 

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.2  2004/09/21 16:34:27  sah
+ * ongoing implementation of
+ * serialize traversal
+ *
  * Revision 1.1  2004/09/21 10:18:46  sah
  * Initial revision
  *
@@ -109,4 +113,22 @@ SerStackFindPos (node *val, serstack_t *stack)
     DBUG_ASSERT ((ptr != NULL), "cannot find element on stack");
 
     DBUG_RETURN (pos);
+}
+
+node *
+SerStackLookup (int pos, serstack_t *stack)
+{
+    int cnt = 0;
+    serentry_t *ptr = stack->head;
+
+    DBUG_ENTER ("SerStackLookup");
+
+    while ((cnt < pos) && (ptr != NULL)) {
+        ptr = ptr->next;
+        cnt++;
+    }
+
+    DBUG_ASSERT ((cnt == pos), "stack selection out of bounds.");
+
+    DBUG_RETURN (ptr);
 }
