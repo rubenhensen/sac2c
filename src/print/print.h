@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.24  1998/03/13 16:22:04  dkr
+ * new nodes added:
+ *   N_WLblock, N_WLublock
+ *
  * Revision 1.23  1998/03/03 23:54:21  dkr
  * added PrintNwithid, PrintNwithop, PrintNcode, ...
  * added print-routines for N_Nwith2-nodes
@@ -138,6 +142,8 @@ extern node *PrintNpart (node *arg_node, node *arg_info);
 extern node *PrintNwithop (node *arg_node, node *arg_info);
 extern node *PrintNwith2 (node *arg_node, node *arg_info);
 extern node *PrintWLseg (node *arg_node, node *arg_info);
+extern node *PrintWLblock (node *arg_node, node *arg_info);
+extern node *PrintWLublock (node *arg_node, node *arg_info);
 extern node *PrintWLproj (node *arg_node, node *arg_info);
 extern node *PrintWLgrid (node *arg_node, node *arg_info);
 

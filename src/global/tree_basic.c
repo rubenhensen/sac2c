@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.39  1998/03/13 16:21:33  dkr
+ * new nodes added:
+ *   N_WLblock, N_WLublock
+ *
  * Revision 1.38  1998/03/06 13:22:29  srs
  * modified MakeAssign and MakeNwith
  *
@@ -1373,7 +1377,7 @@ MakeNWith2 (node *withid, node *seg, node *code, node *withop)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLseg (node *seg, node *next)
+MakeWLseg (node *inner, node *next)
 {
     node *new_node;
 
@@ -1381,7 +1385,7 @@ MakeWLseg (node *seg, node *next)
     INIT_NODE (new_node);
 
     NODE_TYPE (new_node) = N_WLseg;
-    WLSEG_PROJ (new_node) = seg;
+    WLSEG_INNER (new_node) = inner;
     WLSEG_NEXT (new_node) = next;
 
     DBUG_RETURN (new_node);
@@ -1389,7 +1393,56 @@ MakeWLseg (node *seg, node *next)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLproj (int bound1, int bound2, int step, node *grid, node *next)
+MakeWLblock (int level, int dim, int bound1, int bound2, int blocking, node *nextdim,
+             node *inner, node *next)
+{
+    node *new_node;
+
+    DBUG_ENTER ("MakeWLblock");
+    INIT_NODE (new_node);
+
+    NODE_TYPE (new_node) = N_WLblock;
+
+    WLBLOCK_LEVEL (new_node) = level;
+    WLBLOCK_DIM (new_node) = dim;
+    WLBLOCK_BOUND1 (new_node) = bound1;
+    WLBLOCK_BOUND2 (new_node) = bound2;
+    WLBLOCK_BLOCKING (new_node) = blocking;
+    WLBLOCK_NEXTDIM (new_node) = nextdim;
+    WLBLOCK_INNER (new_node) = inner;
+    WLBLOCK_NEXT (new_node) = next;
+
+    DBUG_RETURN (new_node);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeWLublock (int level, int dim, int bound1, int bound2, int blocking, node *nextdim,
+              node *inner, node *next)
+{
+    node *new_node;
+
+    DBUG_ENTER ("MakeWLublock");
+    INIT_NODE (new_node);
+
+    NODE_TYPE (new_node) = N_WLublock;
+
+    WLUBLOCK_LEVEL (new_node) = level;
+    WLUBLOCK_DIM (new_node) = dim;
+    WLUBLOCK_BOUND1 (new_node) = bound1;
+    WLUBLOCK_BOUND2 (new_node) = bound2;
+    WLUBLOCK_BLOCKING (new_node) = blocking;
+    WLUBLOCK_NEXTDIM (new_node) = nextdim;
+    WLUBLOCK_INNER (new_node) = inner;
+    WLUBLOCK_NEXT (new_node) = next;
+
+    DBUG_RETURN (new_node);
+}
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeWLproj (int level, int dim, int bound1, int bound2, int step, int unrolling,
+            node *inner, node *next)
 {
     node *new_node;
 
@@ -1398,10 +1451,13 @@ MakeWLproj (int bound1, int bound2, int step, node *grid, node *next)
 
     NODE_TYPE (new_node) = N_WLproj;
 
+    WLPROJ_LEVEL (new_node) = level;
+    WLPROJ_DIM (new_node) = dim;
     WLPROJ_BOUND1 (new_node) = bound1;
     WLPROJ_BOUND2 (new_node) = bound2;
     WLPROJ_STEP (new_node) = step;
-    WLPROJ_GRID (new_node) = grid;
+    WLPROJ_UNROLLING (new_node) = unrolling;
+    WLPROJ_INNER (new_node) = inner;
     WLPROJ_NEXT (new_node) = next;
 
     DBUG_RETURN (new_node);
@@ -1409,7 +1465,8 @@ MakeWLproj (int bound1, int bound2, int step, node *grid, node *next)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeWLgrid (int offset, int width, node *nextdim, node *code, node *next)
+MakeWLgrid (int dim, int offset, int width, int unrolling, node *nextdim, node *code,
+            node *next)
 {
     node *new_node;
 
@@ -1417,8 +1474,11 @@ MakeWLgrid (int offset, int width, node *nextdim, node *code, node *next)
     INIT_NODE (new_node);
 
     NODE_TYPE (new_node) = N_WLgrid;
+
+    WLGRID_DIM (new_node) = dim;
     WLGRID_OFFSET (new_node) = offset;
     WLGRID_WIDTH (new_node) = width;
+    WLGRID_UNROLLING (new_node) = unrolling;
     WLGRID_NEXTDIM (new_node) = nextdim;
     WLGRID_CODE (new_node) = code;
     WLGRID_NEXT (new_node) = next;

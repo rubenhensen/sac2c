@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.83  1998/03/13 16:21:42  dkr
+ * new nodes added:
+ *   N_WLblock, N_WLublock
+ *
  * Revision 1.82  1998/03/06 13:23:58  srs
  * new ASSIGN, INFO, NCODE and NWITH access macros
  *
@@ -2238,10 +2242,6 @@ extern node *MakeNCode (node *block, node *expr);
  ***    node*    CODE     (0)     (N_Ncode)
  ***    node*    WITHOP   (0)     (N_Nwithop)
  ***
- ***  temporary attributes:
- ***
- ***    ???
- ***
  ***/
 
 extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
@@ -2258,45 +2258,121 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
  ***
  ***  sons:
  ***
- ***    node*    PROJ     (0)     (N_WLproj)
+ ***    node*    INNER    (0)     (N_WLblock, N_WLublock, N_WLproj)
  ***    node*    NEXT     (0)     (N_WLseg)
- ***
- ***  temporary attributes:
- ***
- ***    ???
  ***
  ***/
 
-extern node *MakeWLseg (node *proj, node *next);
+extern node *MakeWLseg (node *inner, node *next);
 
-#define WLSEG_PROJ(n) (n->node[0])
+#define WLSEG_INNER(n) (n->node[0])
 #define WLSEG_NEXT(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
 
-/*
- *  N_WLproj :
- *
- *  sons:
- *
- *    node*    BOUND1   (0)     (int)
- *    node*    BOUND2   (0)     (int)
- *    node*    STEP     (0)     (int)
- *    node*    GRID     (0)     (N_WLgrid)
- *    node*    NEXT     (0)     (N_WLproj)
- *
- *  temporary attributes:
- *
- *    ???
- *
- */
+/***
+ *** N_WLblock :
+ ***
+ ***  sons:
+ ***
+ ***    node*    NEXTDIM   (0)    (N_WLblock)
+ ***    node*    INNER     (0)    (N_WLublock, N_WLproj)
+ ***    node*    NEXT      (0)    (N_WLblock)
+ ***
+ ***  permanent attributes:
+ ***
+ ***    int      LEVEL     (0)
+ ***    int      DIM       (0)
+ ***    int      BOUND1    (0)
+ ***    int      BOUND2    (0)
+ ***    int      BLOCKING  (0)
+ ***
+ ***
+ ***  remark:
+ ***    it makes no sense to use the nodes NEXTDIM and INNER simultaneous!
+ ***
+ ***/
 
-extern node *MakeWLproj (int bound1, int bound2, int step, node *grid, node *next);
+extern node *MakeWLblock (int level, int dim, int bound1, int bound2, int blocking,
+                          node *nextdim, node *inner, node *next);
 
-#define WLPROJ_BOUND1(n) (n->refcnt)
-#define WLPROJ_BOUND2(n) (n->flag)
-#define WLPROJ_STEP(n) (n->counter)
-#define WLPROJ_GRID(n) (n->node[0])
+#define WLBLOCK_LEVEL(n) (n->refcnt)
+#define WLBLOCK_DIM(n) (n->flag)
+#define WLBLOCK_BOUND1(n) (n->counter)
+#define WLBLOCK_BOUND2(n) (n->varno)
+#define WLBLOCK_BLOCKING(n) (n->lineno)
+#define WLBLOCK_NEXTDIM(n) (n->node[0])
+#define WLBLOCK_INNER(n) (n->node[1])
+#define WLBLOCK_NEXT(n) (n->node[2])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ *** N_WLublock :
+ ***
+ ***  sons:
+ ***
+ ***    node*    NEXTDIM   (0)    (N_WLublock)
+ ***    node*    INNER     (0)    (N_WLproj)
+ ***    node*    NEXT      (0)    (N_WLublock)
+ ***
+ ***  permanent attributes:
+ ***
+ ***    int      LEVEL     (0)
+ ***    int      DIM       (0)
+ ***    int      BOUND1    (0)
+ ***    int      BOUND2    (0)
+ ***    int      BLOCKING  (0)
+ ***
+ ***
+ ***  remark:
+ ***    it makes no sense to use the nodes NEXTDIM and INNER simultaneous!
+ ***
+ ***/
+
+extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int blocking,
+                           node *nextdim, node *inner, node *next);
+
+#define WLUBLOCK_LEVEL(n) (n->refcnt)
+#define WLUBLOCK_DIM(n) (n->flag)
+#define WLUBLOCK_BOUND1(n) (n->counter)
+#define WLUBLOCK_BOUND2(n) (n->varno)
+#define WLUBLOCK_BLOCKING(n) (n->lineno)
+#define WLUBLOCK_NEXTDIM(n) (n->node[0])
+#define WLUBLOCK_INNER(n) (n->node[1])
+#define WLUBLOCK_NEXT(n) (n->node[2])
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ *** N_WLproj :
+ ***
+ ***  sons:
+ ***
+ ***    node*    INNER     (0)    (N_WLgrid)
+ ***    node*    NEXT      (0)    (N_WLproj)
+ ***
+ ***  permanent attributes:
+ ***
+ ***    int      LEVEL     (0)
+ ***    int      DIM       (0)
+ ***    int      BOUND1    (0)
+ ***    int      BOUND2    (0)
+ ***    int      STEP      (0)
+ ***    int      UNROLLING (0)
+ ***
+ ***/
+
+extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
+                         int unrolling, node *inner, node *next);
+
+#define WLPROJ_LEVEL(n) (n->refcnt)
+#define WLPROJ_DIM(n) (n->flag)
+#define WLPROJ_BOUND1(n) (n->counter)
+#define WLPROJ_BOUND2(n) (n->varno)
+#define WLPROJ_STEP(n) (n->lineno)
+#define WLPROJ_UNROLLING(n) (n->info.cint)
+#define WLPROJ_INNER(n) (n->node[0])
 #define WLPROJ_NEXT(n) (n->node[1])
 
 /*--------------------------------------------------------------------------*/
@@ -2306,25 +2382,30 @@ extern node *MakeWLproj (int bound1, int bound2, int step, node *grid, node *nex
  ***
  ***  sons:
  ***
- ***    node*    OFFSET   (0)     (int)
- ***    node*    WIDTH    (0)     (int)
- ***    node*    NEXTDIM  (0)     (N_WLproj)
- ***    node*    CODE     (0)     (N_Ncode)
- ***    node*    NEXT     (0)     (N_WLgrid)
+ ***    node*    NEXTDIM   (0)    (N_WLblock, N_WLublock, N_WLproj)
+ ***    node*    CODE      (0)    (N_Ncode)
+ ***    node*    NEXT      (0)    (N_WLgrid)
+ ***
+ ***  permanent attributes:
+ ***
+ ***    int      DIM       (0)
+ ***    int      OFFSET    (0)
+ ***    int      WIDTH     (0)
+ ***    int      UNROLLING (0)
+ ***
  ***
  ***  remark:
- ***    it makes no sense to use the nodes NEXTDIM and CODE simultaneous !
- ***
- ***  temporary attributes:
- ***
- ***    ???
+ ***    it makes no sense to use the nodes NEXTDIM and CODE simultaneous!
  ***
  ***/
 
-extern node *MakeWLgrid (int offset, int width, node *nextdim, node *code, node *next);
+extern node *MakeWLgrid (int dim, int offset, int width, int unrolling, node *nextdim,
+                         node *code, node *next);
 
-#define WLGRID_OFFSET(n) (n->refcnt)
-#define WLGRID_WIDTH(n) (n->flag)
+#define WLGRID_DIM(n) (n->refcnt)
+#define WLGRID_OFFSET(n) (n->flag)
+#define WLGRID_WIDTH(n) (n->counter)
+#define WLGRID_UNROLLING(n) (n->varno)
 #define WLGRID_NEXTDIM(n) (n->node[0])
 #define WLGRID_CODE(n) (n->node[1])
 #define WLGRID_NEXT(n) (n->node[2])

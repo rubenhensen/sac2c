@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.151  1998/03/13 16:21:55  dkr
+ * new nodes added:
+ *   N_WLblock, N_WLublock
+ *
  * Revision 1.150  1998/03/03 23:53:19  dkr
  * added PrintNwithid, PrintNwithop, PrintNcode, ...
  * added print-routines for N_Nwith2-nodes
@@ -2232,9 +2236,73 @@ PrintWLseg (node *arg_node, node *arg_info)
     do {
         INDENT
         fprintf (outfile, "/* segment %d: */", i++);
-        WLSEG_PROJ (arg_node) = Trav (WLSEG_PROJ (arg_node), arg_info);
+        WLSEG_INNER (arg_node) = Trav (WLSEG_INNER (arg_node), arg_info);
         seg = WLSEG_NEXT (seg);
     } while (seg != NULL);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintWLblock(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_WLblock-nodes
+ *
+ ******************************************************************************/
+
+node *
+PrintWLblock (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintWLblock");
+
+    fprintf (outfile, "\n");
+    INDENT
+    fprintf (outfile, "(%d -> %d), block%d %d\n", WLBLOCK_BOUND1 (arg_node),
+             WLBLOCK_BOUND2 (arg_node), WLBLOCK_DIM (arg_node),
+             WLBLOCK_BLOCKING (arg_node));
+
+    indent++;
+    WLBLOCK_INNER (arg_node) = Trav (WLBLOCK_INNER (arg_node), arg_info);
+    indent--;
+
+    if (WLBLOCK_NEXT (arg_node) != NULL) {
+        WLBLOCK_NEXT (arg_node) = Trav (WLBLOCK_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *PrintWLublock(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   prints N_WLublock-nodes
+ *
+ ******************************************************************************/
+
+node *
+PrintWLublock (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PrintWLublock");
+
+    fprintf (outfile, "\n");
+    INDENT
+    fprintf (outfile, "(%d -> %d), ublock%d %d\n", WLUBLOCK_BOUND1 (arg_node),
+             WLUBLOCK_BOUND2 (arg_node), WLUBLOCK_DIM (arg_node),
+             WLUBLOCK_BLOCKING (arg_node));
+
+    indent++;
+    WLUBLOCK_INNER (arg_node) = Trav (WLUBLOCK_INNER (arg_node), arg_info);
+    indent--;
+
+    if (WLUBLOCK_NEXT (arg_node) != NULL) {
+        WLUBLOCK_NEXT (arg_node) = Trav (WLUBLOCK_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -2256,11 +2324,11 @@ PrintWLproj (node *arg_node, node *arg_info)
 
     fprintf (outfile, "\n");
     INDENT
-    fprintf (outfile, "(%d -> %d), step %d\n", WLPROJ_BOUND1 (arg_node),
-             WLPROJ_BOUND2 (arg_node), WLPROJ_STEP (arg_node));
+    fprintf (outfile, "(%d -> %d), step%d %d\n", WLPROJ_BOUND1 (arg_node),
+             WLPROJ_BOUND2 (arg_node), WLPROJ_DIM (arg_node), WLPROJ_STEP (arg_node));
 
     indent++;
-    WLPROJ_GRID (arg_node) = Trav (WLPROJ_GRID (arg_node), arg_info);
+    WLPROJ_INNER (arg_node) = Trav (WLPROJ_INNER (arg_node), arg_info);
     indent--;
 
     if (WLPROJ_NEXT (arg_node) != NULL) {
