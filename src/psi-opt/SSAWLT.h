@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/11/22 17:29:51  sbs
+ * SacDevCamp04
+ *
  * Revision 1.4  2004/10/05 13:50:58  sah
  * lifted start of WLI/WLT traversal to the
  * defining source files to allow for local
@@ -18,21 +21,26 @@
  * created from WLT.h, Revision 3.2 on 2001/05/14 by nmw
  */
 
-#ifndef _SSAWLT_h
-#define _SSAWLT_h
+#ifndef _SAC_WLT_H_
+#define _SAC_WLT_H_
 
-extern node *SSAWLTfundef (node *, info *);
-extern node *SSAWLTassign (node *, info *);
-extern node *SSAWLTcond (node *, info *);
-extern node *SSAWLTlet (node *, info *);
-extern node *SSAWLTap (node *, info *);
+include "types.h"
 
-extern node *SSAWLTNwith (node *, info *);
-extern node *SSAWLTNwithop (node *, info *);
-extern node *SSAWLTNpart (node *, info *);
-extern node *SSAWLTNgenerator (node *, info *);
-extern node *SSAWLTNcode (node *, info *);
+  extern node *
+  WLTfundef (node *, info *);
+extern node *WLTassign (node *, info *);
+extern node *WLTcond (node *, info *);
+extern node *WLTlet (node *, info *);
+extern node *WLTap (node *, info *);
 
-extern node *DoSSAWLT (node *arg_node);
+extern node *WLTwith (node *, info *);
+extern node *WLTgenarray (node *, info *);
+extern node *WLTmodarray (node *, info *);
+extern node *WLTfold (node *, info *);
+extern node *WLTpart (node *, info *);
+extern node *WLTgenerator (node *, info *);
+extern node *WLTcode (node *, info *);
 
-#endif
+extern node *WLTdoWLT (node *arg_node);
+
+#endif /* _SAC_WLT_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/11/22 17:29:51  sbs
+ * SacDevCamp04
+ *
  * Revision 3.3  2004/07/19 14:19:38  sah
  * switch to new INFO structure
  * PHASE I
@@ -48,16 +51,17 @@
  *
  *****************************************************************************/
 
-#ifndef _wl_access_analyze_h
+#ifndef _SAC_WL_ACCESS_ANALYZE_H_
+#define _SAC_WL_ACCESS_ANALYZE_H_
 
-#define _wl_access_analyze_h
+#include "types.h"
 
-extern node *WLAccessAnalyze (node *arg_node);
+extern node *WLAAdoAccessAnalyze (node *arg_node);
 
 extern node *WLAAfundef (node *arg_node, info *arg_info);
 extern node *WLAAblock (node *arg_node, info *arg_info);
-extern node *WLAAnwith (node *arg_node, info *arg_info);
-extern node *WLAAncode (node *arg_node, info *arg_info);
+extern node *WLAAwith (node *arg_node, info *arg_info);
+extern node *WLAAcode (node *arg_node, info *arg_info);
 extern node *WLAAassign (node *arg_node, info *arg_info);
 extern node *WLAAlet (node *arg_node, info *arg_info);
 extern node *WLAAap (node *arg_node, info *arg_info);
@@ -66,4 +70,4 @@ extern node *WLAAdo (node *arg_node, info *arg_info);
 extern node *WLAAcond (node *arg_node, info *arg_info);
 extern node *WLAAprf (node *arg_node, info *arg_info);
 
-#endif /* _wl_access_analyze_h  */
+#endif /* _SAC_WL_ACCESS_ANALYZE_H_  */

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.2  2004/11/22 17:29:51  sbs
+ * SacDevCamp04
+ *
  * Revision 3.1  2000/11/20 18:01:51  sacbase
  * new release made
  *
@@ -13,9 +16,9 @@
  *
  */
 
-#ifndef sac_pad_infer_h
+#ifndef _SAC_PAD_INFER_H_
+#define _SAC_PAD_INFER_H_
 
 extern void APinfer ();
-#define sac_pad_infer_h
 
-#endif /* sac_pad_infer_h */
+#endif /* _SAC_PAD_INFER_H_ */

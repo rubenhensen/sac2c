@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/11/22 17:29:51  sbs
+ * SacDevCamp04
+ *
  * Revision 1.2  2004/07/19 14:19:38  sah
  * switch to new INFO structure
  * PHASE I
@@ -12,14 +15,16 @@
  *
  */
 
-#ifndef _SSAWLF_h
-#define _SSAWLF_h
+#ifndef _SAC_WLF_H_
+#define _SAC_WLF_H_
 
-extern node *SSAWLFfundef (node *arg_node, info *arg_info);
-extern node *SSAWLFassign (node *arg_node, info *arg_info);
-extern node *SSAWLFid (node *arg_node, info *arg_info);
-extern node *SSAWLFNwith (node *arg_node, info *arg_info);
-extern node *SSAWLFlet (node *arg_node, info *arg_info);
-extern node *SSAWLFNcode (node *arg_node, info *arg_info);
+#include "types.h"
 
-#endif
+extern node *WLFfundef (node *arg_node, info *arg_info);
+extern node *WLFassign (node *arg_node, info *arg_info);
+extern node *WLFid (node *arg_node, info *arg_info);
+extern node *WLFwith (node *arg_node, info *arg_info);
+extern node *WLFlet (node *arg_node, info *arg_info);
+extern node *WLFcode (node *arg_node, info *arg_info);
+
+#endif /* _SAC_SSAWLF_H_ */

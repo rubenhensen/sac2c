@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.3  2004/11/22 17:29:51  sbs
+ * SacDevCamp04
+ *
  * Revision 3.2  2004/07/19 14:19:38  sah
  * switch to new INFO structure
  * PHASE I
@@ -48,11 +51,12 @@
  *
  *****************************************************************************/
 
-#ifndef sac_pad_collect_h
+#ifndef _SAC_PAD_COLLECT_H_
+#define _SAC_PAD_COLLECT_H_
 
-#define sac_pad_collect_h
+#include "types.h"
 
-extern void APcollect ();
+extern void APCdoCollect ();
 extern node *APCarray (node *arg_node, info *arg_info);
 extern node *APCwith (node *arg_node, info *arg_info);
 extern node *APCap (node *arg_node, info *arg_info);
@@ -60,7 +64,9 @@ extern node *APCid (node *arg_node, info *arg_info);
 extern node *APCprf (node *arg_node, info *arg_info);
 extern node *APCfundef (node *arg_node, info *arg_info);
 extern node *APClet (node *arg_node, info *arg_info);
-extern node *APCwithop (node *arg_node, info *arg_info);
+extern node *APCgenarray (node *arg_node, info *arg_info);
+extern node *APCmodarray (node *arg_node, info *arg_info);
+extern node *APCfold (node *arg_node, info *arg_info);
 extern node *APCcode (node *arg_node, info *arg_info);
 
-#endif /* sac_pad_collect_h */
+#endif /* _SAC_PAD_COLLECT_H_ */

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2004/11/22 17:29:51  sbs
+ * SacDevCamp04
+ *
  * Revision 1.6  2004/11/16 16:35:08  mwe
  * code for type upgrade added
  * use ntype-structure instead of type-structure
@@ -27,8 +30,10 @@
  * created from: WithloopFolding.h, Revision 3.1  on 2001/05/14 by  nmw
  */
 
-#ifndef _SSAWithloopFolding_h_
-#define _SSAWithloopFolding_h_
+#ifndef _SAC_WITHLOOPFOLDING_H_
+#define _SAC_WITHLOOPFOLDING_H_
+
+#include "types.h"
 
 /******************************************************************************
  *
@@ -37,33 +42,33 @@
  ******************************************************************************/
 
 /* general functions */
-extern node *SSAWithloopFolding (node *arg_node, int loop);
-extern node *SSAWithloopFoldingWLT (node *arg_node);
-extern int SSALocateIndexVar (node *idn, node *wln);
+extern node *WLFdoWithloopFolding (node *arg_node, int loop);
+extern node *WLFdoWithloopFoldingWLT (node *arg_node);
+extern int WLFlocateIndexVar (node *idn, node *wln);
+
 #ifdef MWE_NTYPE_READY
-extern node *SSACreateVardec (char *name, ntype *type, node **vardecs);
+extern node *WLFcreateVardec (char *name, ntype *type, node **vardecs);
 #else
-extern node *SSACreateVardec (char *name, types *type, node **vardecs);
+extern node *WLFcreateVardec (char *name, types *type, node **vardecs);
 #endif
-extern void SSAArrayST2ArrayInt (node *arrayn, int **iarray, int shape);
+
+extern void WLFarrayST2ArrayInt (node *arrayn, int **iarray, int shape);
 
 /* index_info related functions */
-extern index_info *SSACreateIndex (int vector);
-extern index_info *SSADuplicateIndexInfo (index_info *iinfo);
-extern index_info *SSAValidLocalId (node *idn);
-extern void SSADbugIndexInfo (index_info *iinfo);
+extern index_info *WLFcreateIndex (int vector);
+extern index_info *WLFduplicateIndexInfo (index_info *iinfo);
+extern index_info *WLFvalidLocalId (node *idn);
+extern void WLFdbugIndexInfo (index_info *iinfo);
 
 /* intern_gen related functions */
-extern intern_gen *SSATree2InternGen (node *wln, node *filter);
-extern node *SSAInternGen2Tree (node *wln, intern_gen *ig);
-extern int SSANormalizeInternGen (intern_gen *ig);
-extern intern_gen *SSACreateInternGen (int shape, int stepwidth);
-extern intern_gen *SSAAppendInternGen (intern_gen *, int, node *, int);
-extern intern_gen *SSACopyInternGen (intern_gen *source);
-extern intern_gen *SSAFreeInternGen (intern_gen *tmp);
-extern intern_gen *SSAFreeInternGenChain (intern_gen *ig);
-/*  extern void        DbugInternGen      (intern_gen *ig);
-    is implemented in WithloopFolding.c ! (old code) */
+extern intern_gen *WLFtree2InternGen (node *wln, node *filter);
+extern node *WLFinternGen2Tree (node *wln, intern_gen *ig);
+extern int WLFnormalizeInternGen (intern_gen *ig);
+extern intern_gen *WLFcreateInternGen (int shape, int stepwidth);
+extern intern_gen *WLFappendInternGen (intern_gen *, int, node *, int);
+extern intern_gen *WLFcopyInternGen (intern_gen *source);
+extern intern_gen *WLFfreeInternGen (intern_gen *tmp);
+extern intern_gen *WLFfreeInternGenChain (intern_gen *ig);
 
 /******************************************************************************
  *
@@ -78,4 +83,4 @@ extern intern_gen *SSAFreeInternGenChain (intern_gen *ig);
 /* index_info related macros. */
 #define SSAINDEX(n) ((index_info *)ASSIGN_INDEX (n))
 
-#endif
+#endif /* _SAC_WITHLOOPFOLDING_H_ */

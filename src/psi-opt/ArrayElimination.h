@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/11/22 17:29:51  sbs
+ * SacDevCamp04
+ *
  * Revision 3.4  2004/07/19 14:19:38  sah
  * switch to new INFO structure
  * PHASE I
@@ -33,18 +36,20 @@
  *
  */
 
-#ifndef _ArrayElimination_h
+#ifndef _SAC_ARRAYELIMINATION_H_
+#define _SAC_ARRAYELIMINATION_H_
 
-#define _ArrayElimination_h
+include "types.h"
 
-extern node *ArrayElimination (node *arg_node);
+  extern node *
+  AEdoArrayElimination (node *arg_node);
 
 extern node *AEprf (node *arg_node, info *arg_info);
 extern node *AEfundef (node *arg_node, info *arg_info);
 extern node *AEassign (node *arg_node, info *arg_info);
 extern node *AEcond (node *arg_node, info *arg_info);
 extern node *AEdo (node *arg_node, info *arg_info);
-extern node *AENwith (node *arg_node, info *arg_info);
+extern node *AEwith (node *arg_node, info *arg_info);
 extern node *AEap (node *arg_node, info *arg_info);
 
-#endif /* _ArrayElimination_h */
+#endif /* _SAC_ARRAYELIMINATION_H_ */
