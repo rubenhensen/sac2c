@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.62  2004/11/25 00:11:37  mwe
+  fun2lac added
+
   Revision 1.61  2004/11/25 00:07:10  skt
   profiling traversal added
 
@@ -318,6 +321,17 @@
 	  <node name="Cond" />
 	</user>
       </traversal>
+      <traversal id="F2L" name="Fun2Lac Traversal" default="sons" include="fun2lac.h" >
+	<user>
+	  <node name="Assign" />
+	  <node name="Module" />
+	  <node name="Fundef" />
+	  <node name="Let" />
+	  <node name="Ap" />
+	  <node name="Block" />
+	</user>
+      </traversal>
+
     </general>
     <phase id="scanparse" name="Parsing input file">
       <traversal id="HD" name="Handle Dots" default="sons" include="handle_dots.h">
