@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.107  1998/04/01 07:39:25  srs
+ * renames INFO_* macros for CF
+ *
  * Revision 1.106  1998/03/30 23:42:32  dkr
  * added attribute LEVEL for N_WLgrid
  *
@@ -2060,7 +2063,7 @@ extern node *MakePragma ();
  ***
  ***  when used in ConstantFolding.c :
  ***    node*      ASSIGN             (N_assign)
- ***
+ ***    types      TYPE               (no son)
  ***
  *** remarks:
  ***    N_info is used in many other phases without access macros :((
@@ -2106,8 +2109,8 @@ extern node *MakeInfo ();
 #define INFO_WLI_FUNDEF(n) (n->node[3])
 
 /* CF */
-#define INFO_ASSIGN(n) (n->node[0])
-#define INFO_TYPE(n) (n->info.types)
+#define INFO_CF_ASSIGN(n) (n->node[0])
+#define INFO_CF_TYPE(n) (n->info.types)
 
 /*--------------------------------------------------------------------------*/
 
