@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.165  2003/05/22 01:21:08  ktr
+ * INFO_PRINT_DIM set to n->info.cint
+ *
  * Revision 3.164  2003/04/24 16:19:52  sbs
  * OBJDEF_VARNAME replaced from int_data to dfmask[1].
  * Reason: On the alpha, sizeof( char*) == 8 != 4 == sizeof(int)
@@ -3093,6 +3096,10 @@ extern node *MakeInfo ();
 #define INFO_PRINT_VARNO(n) (n->varno)
 #define INFO_PRINT_PROTOTYPE(n) (n->refcnt)
 #define INFO_PRINT_SEPARATE(n) (n->int_data)
+
+#define INFO_PRINT_DIM(n) (n->info.cint)
+#define INFO_PRINT_SHAPE(n) ((shpseg *)(n->info2))
+#define INFO_PRINT_SHAPE_COUNTER(n) ((shpseg *)(n->info3))
 
 /* WL access analyze */
 #define INFO_WLAA_LASTLETIDS(n) (n->info.ids)
