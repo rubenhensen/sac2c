@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.144  2005/01/26 10:24:38  mwe
+ * AVIS_SSAASSIGN removed and replaced by usage of akv types
+ *
  * Revision 3.143  2005/01/20 14:16:06  ktr
  * some bugfixing
  *
@@ -2785,10 +2788,6 @@ DUPavis (node *arg_node, info *arg_info)
       = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN2 (arg_node));
     AVIS_WITHID (new_node)
       = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), AVIS_WITHID (arg_node));
-
-    if (AVIS_SSACONST (arg_node) != NULL) {
-        AVIS_SSACONST (new_node) = COcopyConstant (AVIS_SSACONST (arg_node));
-    }
 
     AVIS_SSALPINV (new_node) = AVIS_SSALPINV (arg_node);
     AVIS_SSASTACK (new_node) = DUPTRAV (AVIS_SSASTACK (arg_node));

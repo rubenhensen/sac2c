@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  2005/01/26 10:24:38  mwe
+ * AVIS_SSAASSIGN removed and replaced by usage of akv types
+ *
  * Revision 1.34  2004/12/14 17:05:43  ktr
  * COAST2constant corrected.
  *
@@ -721,7 +724,7 @@ COconstant2AST (constant *a)
  *    this funtion can deal with scalar types like
  *      N_num, N_double, N_float, N_bool
  *    arrays (N_array)
- *    and identifier (N_id with marked AVIS_SSACONST attribute)
+ *    and identifier (N_id with akv type)
  *
  ******************************************************************************/
 
@@ -776,11 +779,11 @@ COaST2Constant (node *n)
             break;
 
         case N_id:
-            /*
-             * TODO
-             * replace AVIS_SSACONST with AKV types
-             */
-            new_co = COcopyConstant (AVIS_SSACONST (ID_AVIS (n)));
+            if (TYisAKV (AVIS_TYPE (ID_AVIS (n)))) {
+                new_co = COcopyConstant (TYgetValue (AVIS_TYPE (ID_AVIS (n))));
+            } else {
+                new_co = NULL;
+            }
             break;
 
         default:
@@ -806,7 +809,7 @@ COaST2Constant (node *n)
  *    this funtion can deal with scalar types like
  *      N_num, N_double, N_float, N_bool
  *    arrays (N_array)
- *    and identifier (N_id with marked AVIS_SSACONST attribute)
+ *    and identifier (N_id with akv type)
  *
  ******************************************************************************/
 
@@ -831,7 +834,7 @@ COisConstant (node *n)
             break;
 
         case N_id:
-            res = (AVIS_SSACONST (ID_AVIS (n)) != NULL);
+            res = (TYisAKV (AVIS_TYPE (ID_AVIS (n))));
             break;
 
         default:

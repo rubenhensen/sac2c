@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.24  2005/01/26 10:24:38  mwe
+ * AVIS_SSAASSIGN removed and replaced by usage of akv types
+ *
  * Revision 1.23  2005/01/11 13:32:21  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -137,6 +140,7 @@
 #include "SSAWithloopFolding.h"
 #include "SSAWLI.h"
 #include "SSAWLT.h"
+#include "new_types.h"
 
 /******************************************************************************
  *
@@ -565,8 +569,9 @@ WLFarrayST2ArrayInt (node *arrayn, int **iarray, int shape)
     } else /* (NODE_TYPE(arrayn) == N_id) */ {
         DBUG_ASSERT ((NODE_TYPE (arrayn) == N_id), "wrong arrayn");
 
-        if (AVIS_SSACONST (ID_AVIS (arrayn)) != NULL) {
-            tmp = COgetDataVec (AVIS_SSACONST (ID_AVIS (arrayn)));
+        if (TYisAKV (AVIS_TYPE (ID_AVIS (arrayn)))) {
+            tmp
+              = COgetDataVec (COcopyConstant (TYgetValue (AVIS_TYPE (ID_AVIS (arrayn)))));
             for (i = 0; i < shape; i++) {
                 (*iarray)[i] = tmp[i];
             }

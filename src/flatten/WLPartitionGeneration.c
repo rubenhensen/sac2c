@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  2005/01/26 10:24:38  mwe
+ * AVIS_SSAASSIGN removed and replaced by usage of akv types
+ *
  * Revision 1.34  2005/01/11 11:19:19  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -1868,7 +1871,7 @@ WLPGassign (node *arg_node, info *arg_info)
  * @fn node *WLPGlet(node *arg_node, info *arg_info)
  *
  *   @brief traverses in expression and checks assigned ids for constant
- *          value and sets corresponding AVIS_SSACONST attribute
+ *          value and creates corresponding akv type
  *
  *   @param  node *arg_node:  N_let
  *           info *arg_info:  N_info
@@ -1890,9 +1893,21 @@ WLPGlet (node *arg_node, info *arg_info)
      */
     if ((LET_IDS (arg_node) != NULL) && (IDS_NEXT (LET_IDS (arg_node)) == NULL)) {
 
-        if (AVIS_SSACONST (IDS_AVIS (LET_IDS (arg_node))) == NULL) {
-            AVIS_SSACONST (IDS_AVIS (LET_IDS (arg_node)))
-              = COaST2Constant (LET_EXPR (arg_node));
+        if (!TYisAKV (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))))) {
+            constant *new_co = NULL;
+            simpletype simple;
+
+            new_co = COaST2Constant (LET_EXPR (arg_node));
+            if (NULL != new_co) {
+                /*
+                 * it is possible to infer constant value
+                 */
+                simple = TYgetSimpleType (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))));
+                AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)))
+                  = TYfreeType (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))));
+                AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)))
+                  = TYmakeAKV (TYmakeSimpleType (simple), new_co);
+            }
         }
     }
 
