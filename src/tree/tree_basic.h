@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2001/03/15 12:33:06  dkr
+ * comments about STATUS and ATTRIB updated
+ *
  * Revision 3.46  2001/03/15 10:54:29  nmw
  * AVIS_SSAUNDOFLAG added
  *
@@ -311,14 +314,14 @@ extern shpseg *MakeShpseg (nums *num);
  ***/
 
 /*
- *  STATUS: ST_artificial : artificial return type due to the resolution of
- *                          reference parameters and global objects.
- *          ST_crettype   : return type of a function that is compiled to the
- *                          actual return type of the resulting C function.
- *          ST_regular    : otherwise
+ * STATUS:
+ *   ST_artificial : artificial return type due to the resolution of reference
+ *                   parameters and global objects.
+ *   ST_crettype   : return type of a function that is compiled to the actual
+ *                   return type of the resulting C function.
+ *   ST_regular    : otherwise
  *
- *  TDEF is a reference to the defining N_typedef node of a user-defined
- *  type.
+ * TDEF is a reference to the defining N_typedef node of a user-defined type.
  */
 
 extern types *MakeTypes1 (simpletype btype);
@@ -359,11 +362,17 @@ extern types *MakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name,
  ***/
 
 /*
- *  STATUS: ST_regular    : from original source code
- *          ST_artificial : added by obj-handling
+ * STATUS:
+ *   ST_regular       : from original source code
+ *   ST_artificial    : LHS of a function application which belongs to a
+ *                      eliminated reference parameter
  *
- *  ATTRIB: ST_regular    : local variable or function parameter
- *          ST_global     : reference to global object
+ * ATTRIB:
+ *   ST_regular       : local variable or function parameter
+ *   ST_global        : reference to global object
+ *
+ * CLSCONV is a flag which is set in those N_id nodes which were
+ * arguments to a class conversion (to_class, from_class) function.
  */
 
 extern ids *MakeIds (char *name, char *mod, statustype status);
@@ -431,10 +440,11 @@ extern strings *MakeStrings (char *string, strings *next);
  ***/
 
 /*
- * STATUS: ST_sac      : SAC module/class
- *         ST_external : external module/class
- *         ST_system   : external system library
- *         ST_own      : own declaration of module implementation
+ * STATUS:
+ *   ST_sac      : SAC module/class
+ *   ST_external : external module/class
+ *   ST_system   : external system library
+ *   ST_own      : own declaration of module implementation
  */
 
 extern deps *MakeDeps (char *name, char *decname, char *libname, statustype status,
@@ -463,19 +473,31 @@ extern deps *MakeDeps (char *name, char *decname, char *libname, statustype stat
  ***/
 
 /*
- *  Possible values for ATTRIB :
- *      in function node lists : ST_resolved | ST_unresolved
- *      in object node lists   : ST_reference | ST_readonly_reference
- *      in typedef node lists  : ST_regular
- *  Possible values for STATUS : ST_regular | ST_artificial
+ * STATUS:
+ *   ST_regular
+ *   ST_artificial
+ *
+ * ATTRIB: (in function node lists)
+ *   ST_resolved
+ *   ST_unresolved
+ *
+ * ATTRIB: (in object node lists)
+ *   ST_reference
+ *   ST_readonly_reference
+ *
+ * ATTRIB: (in typedef node lists)
+ *   ST_regular
  */
 
-/* srs: to use a nodelist in more general situations I have inserted a
-   new attribut ATTRIB2 which can store any suitable information.
-   Functions to handle a general node list can be found in tree_compound.h,
-   starting with NodeList... .
-   MakeNodelist(), MakeNodelistNode() are not needed to create the general
-   node list. */
+/*
+ * srs:
+ * to use a nodelist in more general situations I have inserted a
+ * new attribut ATTRIB2 which can store any suitable information.
+ * Functions to handle a general node list can be found in tree_compound.h,
+ * starting with NodeList... .
+ * MakeNodelist(), MakeNodelistNode() are not needed to create the general
+ * node list.
+ */
 
 extern nodelist *MakeNodelist (node *node, statustype status, nodelist *next);
 extern nodelist *MakeNodelistNode (node *node, nodelist *next);
@@ -746,23 +768,23 @@ extern node *MakeExplist (node *itypes, node *etypes, node *objs, node *funs);
  ***/
 
 /*
- *  The ATTRIB indicates whether a type is unique or not.
- *  Possible values: ST_regular | ST_unique
+ * The STATUS indicates whether a type is defined or imported.
+ * Possible values: ST_regular | ST_imported_mod | ST_imported_class
  *
- *  The STATUS indicates whether a type is defined or imported.
- *  Possible values: ST_regular | ST_imported
+ * The ATTRIB indicates whether a type is unique or not.
+ * Possible values: ST_regular | ST_unique
  *
- *  The TYPEDEC_DEF slot is only used when a typedef node is used as a
- *  representation of a type declaration. It then points to the
- *  typedef node which contains the respective definition.
+ * The TYPEDEC_DEF slot is only used when a typedef node is used as a
+ * representation of a type declaration. It then points to the
+ * typedef node which contains the respective definition.
  *
- *  For each Non-SAC hidden type the name of a copy and a free function
- *  is stored in COPYFUN and FREEFUN, respectively. These must be provided
- *  with the external module/class. The names may be generic or user-defined
- *  using pragmas.
+ * For each Non-SAC hidden type the name of a copy and a free function
+ * is stored in COPYFUN and FREEFUN, respectively. These must be provided
+ * with the external module/class. The names may be generic or user-defined
+ * using pragmas.
  *
- *  The attribute ICM holds the associated N_icm node in the case of
- *  compiled typedefs
+ * The attribute ICM holds the associated N_icm node in the case of
+ * compiled typedefs
  */
 
 extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
@@ -816,9 +838,9 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
 
 /*
  *  The STATUS indicates whether an object is defined or imported.
- *  Possible values: ST_regular | ST_imported
+ *  Possible values: ST_regular | ST_imported_mod | ST_imported_class
  *
- *  ATTRIB : ST_regular | ST_resolved
+ *  ATTRIB: ST_unresolved | ST_resolved
  *  used in objects.c to distinguish between already initialized and
  *  not yet initialized global objects.
  *
@@ -919,49 +941,54 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***/
 
 /*
- *  STATUS: ST_regular         function defined in this module
- *          ST_imported_mod    function imported from module
- *          ST_imported_class  function imported from class
- *          ST_exported        function is exported by module/class or program ('main')
- *          ST_Cfun            function implemented in C
- *          ST_objinitfun      generic function for object initialization
- *          ST_classfun        class conversion function
- *          ST_foldfun         dummy function containing fold code for with-loop
- *          ST_condfun         function representing an if-else-clause
- *          ST_dofun           function representing a do-loop
- *          ST_whilefun        function representing a while-loop
+ * STATUS:
+ *   ST_regular        : function defined in this module
+ *   ST_imported_mod   : function imported from module
+ *   ST_imported_class : function imported from class
+ *   ST_exported       : function is exported by module/class or program ('main')
+ *   ST_objinitfun     : generic function for object initialization
+ *   ST_classfun       : class conversion function
+ *   ST_Cfun           : function implemented in C
+ *   ST_foldfun        : dummy function containing fold code for with-loop
+ *   ST_condfun        : function representing an if-else-clause
+ *   ST_dofun          : function representing a do-loop
+ *   ST_whilefun       : function representing a while-loop
  *
- *  before multithreading:
- *  ATTRIB: ST_regular      shape-dependent or non-array function
- *          ST_shp_indep    shape-independent but dim.-dependent array function
- *          ST_dim_indep    dimension-independent array function
- *          ST_generic      generic function derived from shape-independent
- *                          array function
- *          ST_gen_remove   generic function that has been specialized and will
- *                          be removed before typechecking
+ * before multithreading:
+ * ATTRIB:
+ *   ST_regular    : shape-dependent or non-array function
+ *   ST_shp_indep  : shape-independent but dim.-dependent array function
+ *   ST_dim_indep  : dimension-independent array function
+ *   ST_generic    : generic function derived from shape-independent array
+ *                   function
+ *   ST_gen_remove : generic function that has been specialized and will be
+ *                   removed before typechecking
+ *   ST_ignore     : unused generic function when compiling for c library
  *
- *  while/after multithreading:
- *  ATTRIB: ST_call_any       default_flag
- *                            (will be installed before using ATTRIB in mt-phases,
- *                             should not occur after mt-phases done)
- *          ST_call_st        function is CALL_ST
- *          ST_call_mt_master function is CALL_MT to be used by master
- *          ST_call_mt_worker function is CALL_MT to be used by workers
- *          ST_call_rep       function is CALL_REP
- *          ST_call_mtlift    function is a thread-function
+ * while/after multithreading:
+ * ATTRIB:
+ *   ST_spmd_fun       : SPMD function
  *
+ *   ST_call_any       : default_flag
+ *                       (will be installed before using ATTRIB in mt-phases,
+ *                        should not occur after mt-phases done)
+ *   ST_call_st        : function is CALL_ST
+ *   ST_call_mt_master : function is CALL_MT to be used by master
+ *   ST_call_mt_worker : function is CALL_MT to be used by workers
+ *   ST_call_rep       : function is CALL_REP
+ *   ST_call_mtlift    : function is a thread-function
  *
- *  The FUNDEC_DEF slot is only used when a fundef node is used as a
- *  representation of a function declaration. It then points to the
- *  fundef node which contains the respective definition.
+ * The FUNDEC_DEF slot is only used when a fundef node is used as a
+ * representation of a function declaration. It then points to the
+ * fundef node which contains the respective definition.
  *
- *  LINKMOD contains the name of the module which has to be linked with
- *  in order to make the code of this function available. If LINKMOD is
- *  NULL, then link with the module given by MOD.
+ * LINKMOD contains the name of the module which has to be linked with
+ * in order to make the code of this function available. If LINKMOD is
+ * NULL, then link with the module given by MOD.
  *
- *  If the fundef is a definition of a LAC-dummy-function, LAC_LET is a link to
- *  the (unambiguous!) let-node outside of the fundef-body containing a call of
- *  this function.
+ * If the fundef is a definition of a LAC-dummy-function, LAC_LET is a link to
+ * the (unambiguous!) let-node outside of the fundef-body containing a call of
+ * this function.
  */
 
 extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *body,
@@ -1029,21 +1056,23 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  ***/
 
 /*
- *  STATUS: ST_regular     original argument
- *          ST_artificial  additional argument added by object-handler
+ * STATUS:
+ *   ST_regular    : original argument
+ *   ST_artificial : additional argument added by object-handler
  *
- *  ATTRIB: ST_regular     non-unique parameter
- *          ST_unique      unique parameter
- *          ST_reference   (unique) reference parameter
- *          ST_readonly_reference (unique) reference parameter which remains
- *                                         unmodified
+ * ATTRIB:
+ *   ST_regular            : non-unique parameter
+ *   ST_unique             : unique parameter
+ *   ST_reference          : (unique) reference parameter
+ *   ST_readonly_reference : (unique) reference parameter which remains unmodified
+ *   ST_was_reference      : eliminated (unique) reference parameter
  *
- *  TYPESTRING contains the argument's type as a string, used for renaming
- *             of functions.
+ * TYPESTRING contains the argument's type as a string, used for renaming
+ * of functions.
  *
  * ATTENTION:
- *   N_vardec and N_arg node have to have the same structure. See remark
- *   at N_id node.
+ *   N_vardec and N_arg node have to have the same structure.
+ *   See remark at N_id node.
  */
 
 extern node *MakeArg (char *name, types *type, statustype status, statustype attrib,
@@ -1145,18 +1174,20 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***/
 
 /*
- * STATUS : ST_regular    : original vardec in source code
- *          ST_used       : after typecheck detected necessity of vardec
- *          ST_artificial : artificial vardec produced by function inlining
- *                          of a function which uses a global object.
- *                          Such vardecs are removed by the precompiler.
+ * STATUS:
+ *   ST_regular    : original vardec in source code
+ *   ST_used       : used in typecheck only: vardec necessary?
+ *   ST_artificial : artificial vardec produced by function inlining of a
+ *                   function which uses a global object.
+ *                   Such vardecs are removed by the precompiler.
  *
- * ATTRIB : ST_regular : normal variable
- *          ST_unique  : unique variable
+ * ATTRIB:
+ *   ST_regular : normal variable
+ *   ST_unique  : unique variable
  *
  * ATTENTION:
- *   N_vardec and Narg node have to have the same structure. See remark
- *   at N_id node.
+ *   N_vardec and N_arg node have to have the same structure.
+ *   See remark at N_id node.
  */
 
 extern node *MakeVardec (char *name, types *type, node *next);
@@ -1622,22 +1653,30 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***/
 
 /*
- *  STATUS:  ST_regular     original argument
- *                          in a function application or return-statement
- *           ST_artificial  additional argument added by object-handler
- *                          in a function application or return-statement
+ * STATUS:
+ *   ST_regular       : original argument
+ *                        in a function application or return-statement
+ *   ST_artificial    : additional argument added by object-handler
+ *                        in a function application or return-statement
  *
- *  ATTRIB:  ST_regular     ordinary argument
- *                          in a function application or return-statement
- *           ST_global      global object
- *           ST_readonly_reference/
- *           ST_reference   argument in a function application which
- *                          is passed as a reference parameter or
- *                          additional argument in a return-statement
- *                          which belongs to a reference parameter
+ * ATTRIB:
+ *   ST_regular       : ordinary argument
+ *                        in a function application or return-statement
+ *   ST_global        : global object
+ *   ST_readonly_reference/
+ *   ST_reference     : argument in a function application which is passed as
+ *                      a reference parameter
+ *                      -- or --
+ *                      additional argument in a return-statement which belongs
+ *                      to a reference parameter
+ *   ST_was_reference : argument in a function application which is passed as
+ *                      a eliminated reference parameter
+ *                      -- or --
+ *                      additional argument in a return-statement which belongs
+ *                      to a eliminated reference parameter
  *
- *  CLSCONV is a flag which is set in those N_id nodes which were
- *  arguments to a class conversion (to_class, from_class) function.
+ * CLSCONV is a flag which is set in those N_id nodes which were
+ * arguments to a class conversion (to_class, from_class) function.
  */
 
 extern node *MakeId (char *name, char *mod, statustype status);
