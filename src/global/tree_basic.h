@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.196  1998/07/16 15:55:55  srs
+ * added INFO_UNR_FUNDEF
+ *
  * Revision 1.195  1998/07/16 15:27:02  dkr
  * WL..._INNERSTEP, WLSEG_MAXHOMDIM, WLSEGVAR_MAXHOMDIM inserted
  *
@@ -2575,6 +2578,7 @@ extern node *MakeInfo ();
 
 /* Unrolling */
 #define INFO_UNR_ASSIGN(n) (n->node[0])
+#define INFO_UNR_FUNDEF(n) (n->node[1])
 
 /* Icm2c, ... */
 #define INFO_FUNDEF(n) (n->node[0])
