@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2004/11/25 19:11:33  mwe
+ * SacDevCamp Dk: Compiles!!
+ *
  * Revision 1.7  2004/11/25 11:12:59  cg
  * Moved deprecated bit manipulation macros from internal_lib.
  *
@@ -65,9 +68,9 @@
             ? TEST_BIT (bf, HIDE_LOCALS_WHILE)                                           \
             : ((NODE_TYPE (arg_node) == N_cond)                                          \
                  ? TEST_BIT (bf, HIDE_LOCALS_COND)                                       \
-                 : ((NODE_TYPE (arg_node) == N_Nwith)                                    \
+                 : ((NODE_TYPE (arg_node) == N_with)                                     \
                       ? TEST_BIT (bf, HIDE_LOCALS_WITH)                                  \
-                      : ((NODE_TYPE (arg_node) == N_Nwith2)                              \
+                      : ((NODE_TYPE (arg_node) == N_with2)                               \
                            ? TEST_BIT (bf, HIDE_LOCALS_WITH2)                            \
                            : FALSE)))))
 
@@ -79,9 +82,9 @@ extern node *INFDFMSap (node *arg_node, info *arg_info);
 extern node *INFDFMSid (node *arg_node, info *arg_info);
 extern node *INFDFMSwithid (node *arg_node, info *arg_info);
 extern node *INFDFMScode (node *arg_node, info *arg_info);
-extern node *INFDFMSwithx (node *arg_node, info *arg_info);
+extern node *INFDFMSwith (node *arg_node, info *arg_info);
 extern node *INFDFMScond (node *arg_node, info *arg_info);
-extern node *INFDFMSwhile (node *arg_node, info *arg_info);
+extern node *INFDFMSwith2 (node *arg_node, info *arg_info);
 extern node *INFDFMSdo (node *arg_node, info *arg_info);
 extern node *INFDFMSicm (node *arg_node, info *arg_info);
 
