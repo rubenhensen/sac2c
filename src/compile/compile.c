@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.135  2004/09/22 19:11:24  khf
+ * fixed bug in MakeIcm_WL_ADJUST_OFFSET (infinite loop)
+ *
  * Revision 3.134  2004/09/21 17:29:33  ktr
  * Added support for F_idx_shape_sel, F_shape_sel
  *
@@ -6427,6 +6430,8 @@ MakeIcm_WL_ADJUST_OFFSET (node *arg_node, node *assigns)
             assigns = MakeAssignIcm2 ("WL_ADJUST_OFFSET", MakeNum (WLNODE_DIM (arg_node)),
                                       MakeIcmArgs_WL_OP2 (arg_node, tmp_ids), assigns);
         }
+        tmp_ids = IDS_NEXT (tmp_ids);
+        withop = NWITHOP_NEXT (withop);
     }
 
     DBUG_RETURN (assigns);
