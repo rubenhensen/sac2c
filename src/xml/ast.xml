@@ -241,6 +241,7 @@
           <node name="Empty" />
 	</travuser>
       </traversal>
+	  <traversal id="CHK" name="Check the Tree" default="sons" include="check_lib.h" />
     </general>
 
     <phase id="scanparse" name="Parsing input file">
