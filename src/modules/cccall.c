@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.19  2000/11/17 16:02:16  nmw
+ * ALPHA special handling for ar -x call added
+ *
  * Revision 2.18  2000/11/14 13:18:50  dkr
  * no '... might be used uninitialized' warnings anymore
  *
@@ -619,7 +622,10 @@ CreateLibrary ()
                     "if [ -n \"$filelist\" ]; then"
                     "  for archive in *.a ;"
                     "    do ar -x $archive ;" /* extract file from archive */
-                    "    for file in *.o ;"   /* rename all files of this archive */
+#ifdef SAC_FOR_OSF_ALPHA
+                    "    rm -f ________64ELEL_ ;" /* kill ar extracted magic file */
+#endif
+                    "    for file in *.o ;" /* rename all files of this archive */
                     "      do %s $file \"$archive.$file\" ;"
                     "    done ;"
                     "    %s SAC_full.archive *.o ;" /* add to new archive */
