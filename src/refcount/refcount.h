@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/02/22 13:48:54  dkr
+ * minor changes done
+ *
  * Revision 3.5  2001/05/08 13:14:44  dkr
  * new macros for RC added
  *
@@ -109,14 +112,14 @@
 /*
  * macros for testing the RC status
  */
-#define RC_IS_UNDEF(rc) (rc == RC_UNDEF)
-#define RC_IS_INACTIVE(rc) (rc == RC_INACTIVE)
-#define RC_IS_ACTIVE(rc) (rc >= 0) /* == (RC_IS_ZERO(rc) || RC_IS_VITAL(rc)) */
+#define RC_IS_UNDEF(rc) ((rc) == RC_UNDEF)
+#define RC_IS_INACTIVE(rc) ((rc) == RC_INACTIVE)
+#define RC_IS_ACTIVE(rc) ((rc) >= 0) /* == (RC_IS_ZERO(rc) || RC_IS_VITAL(rc)) */
 
 #define RC_IS_LEGAL(rc) ((RC_IS_INACTIVE (rc)) || (RC_IS_ACTIVE (rc)))
 
-#define RC_IS_ZERO(rc) (rc == 0)
-#define RC_IS_VITAL(rc) (rc > 0)
+#define RC_IS_ZERO(rc) ((rc) == 0)
+#define RC_IS_VITAL(rc) ((rc) > 0)
 
 /*
  *  Steering which variables to be refcounted.
