@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 2.13  2000/11/20 17:10:00  sbs
+# sac2crc.for.%-2_5 / sac2crc.for.%-2_7 rules extended by mv!
+#
 # Revision 2.12  2000/11/20 16:38:17  dkr
 # new targets solaris25, solaris27 added
 #
@@ -313,9 +316,11 @@ src.tar.gz:
 
 sac2crc.for.%-2_5:
 	$(MAKE) sac2crc.for.$*
+	mv sac2crc.for.$* $@
 
 sac2crc.for.%-2_7:
 	$(MAKE) sac2crc.for.$*
+	mv sac2crc.for.$* $@
 
 sac2crc.for.%: $(RUNTIMEDIR)/sac2crc.%
 	@echo "**************************************************************"
