@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.44  2004/11/19 21:04:45  sah
+  adaption to mwes changes
+
   Revision 1.43  2004/11/19 15:11:10  sah
   removed NEEDOBJS
   added OBJECTS
@@ -1349,6 +1352,12 @@
       <attributes>
         <attribute name="Type" mandatory="yes">
           <type name="OldType" />
+          <phases>
+            <all />
+          </phases>
+        </attribute>
+        <attribute name="NType" default="NULL" mandatory="yes">
+          <type name="NewType" />
           <phases>
             <all />
           </phases>
