@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.61  1998/04/03 11:50:48  dkr
+# make deps done
+#
 # Revision 1.60  1998/04/03 11:39:28  dkr
 # added dir concurrent to include path
 #
@@ -284,12 +287,12 @@ main.o: /usr/include/stdlib.h globals.h internal_lib.h free.h my_debug.h
 main.o: /usr/include/malloc.h usage.h ../flatten/flatten.h ../print/print.h
 main.o: ../typecheck/typecheck.h ../optimize/optimize.h ../modules/filemgr.h
 main.o: ../modules/import.h ../refcount/refcount.h ../scanparse/scnprs.h
-main.o: resource.h ../scanparse/y.tab.h ../compile/compile.h
-main.o: ../psi-opt/psi-opt.h ../modules/writesib.h ../modules/readsib.h
-main.o: ../modules/implicittypes.h ../objects/objinit.h ../modules/analysis.h
-main.o: ../modules/checkdec.h ../objects/objects.h ../objects/uniquecheck.h
-main.o: ../objects/rmvoidfun.h ../compile/precompile.h ../modules/cccall.h
-main.o: ../compile/Old2NewWith.h
+main.o: resource.h ../scanparse/y.tab.h ../psi-opt/psi-opt.h
+main.o: ../modules/writesib.h ../modules/readsib.h ../modules/implicittypes.h
+main.o: ../objects/objinit.h ../modules/analysis.h ../modules/checkdec.h
+main.o: ../objects/objects.h ../objects/uniquecheck.h ../objects/rmvoidfun.h
+main.o: ../concurrent/concregions.h ../compile/precompile.h
+main.o: ../compile/compile.h ../modules/cccall.h ../compile/Old2NewWith.h
 my_debug.o: tree.h types.h tree_basic.h tree_compound.h Error.h
 my_debug.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 my_debug.o: /usr/include/sys/va_list.h /usr/include/string.h
@@ -309,14 +312,15 @@ traverse.o: ../flatten/flatten.h ../print/print.h ../typecheck/typecheck.h
 traverse.o: ../optimize/optimize.h free.h /usr/include/malloc.h
 traverse.o: ../optimize/ConstantFolding.h ../optimize/DeadCodeRemoval.h
 traverse.o: ../optimize/LoopInvariantRemoval.h ../optimize/CSE.h
-traverse.o: ../modules/import.h ../refcount/refcount.h ../compile/compile.h
-traverse.o: ../optimize/DupTree.h ../optimize/Inline.h ../optimize/Unroll.h
-traverse.o: ../optimize/Unswitch.h ../psi-opt/ArrayElimination.h
-traverse.o: ../psi-opt/index.h ../modules/writesib.h ../modules/readsib.h
+traverse.o: ../modules/import.h ../optimize/DupTree.h ../optimize/Inline.h
+traverse.o: ../optimize/Unroll.h ../optimize/Unswitch.h
+traverse.o: ../psi-opt/ArrayElimination.h ../psi-opt/index.h
+traverse.o: ../modules/writesib.h ../modules/readsib.h
 traverse.o: ../modules/implicittypes.h ../objects/objinit.h
 traverse.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
 traverse.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
-traverse.o: ../compile/precompile.h ../modules/cccall.h
+traverse.o: ../refcount/refcount.h ../concurrent/concregions.h
+traverse.o: ../compile/precompile.h ../compile/compile.h ../modules/cccall.h
 traverse.o: ../compile/Old2NewWith.h ../optimize/WithloopFolding.h
 traverse.o: ../optimize/WLT.h ../optimize/WLI.h ../optimize/WLF.h traverse.h
 traverse.o: node_info.mac

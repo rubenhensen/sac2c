@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.44  1998/04/03 11:50:59  dkr
+# make deps done
+#
 # Revision 1.43  1998/04/03 11:38:31  dkr
 # concregions now in directory concurrent
 #
@@ -217,4 +220,5 @@ precompile.o: /usr/include/stdlib.h ../global/globals.h ../global/free.h
 precompile.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
 precompile.o: ../global/internal_lib.h ../print/convert.h
 precompile.o: ../global/traverse.h ../refcount/refcount.h
-precompile.o: ../optimize/DupTree.h
+precompile.o: ../optimize/DupTree.h /usr/include/limits.h
+precompile.o: /usr/include/sys/isa_defs.h
