@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.97  2004/11/26 13:23:03  sbs
+  CODE_WLAAFEATURE added.
+
   Revision 1.96  2004/11/26 12:52:24  khf
   added CMPTids
 
@@ -152,6 +155,8 @@
     <type name="UseFlag" ctype="useflag" init="DOLLAR"
     copy="literal" />
     <type name="AccessInfo" ctype="access_info_t*" init="NULL"
+    copy="function" persist="no" />
+    <type name="AccessFeature" ctype="feature_t*" init="NULL"
     copy="function" persist="no" />
     <type name="ShpSeg" ctype="shpseg*" init="NULL"
     copy="function" />
@@ -3949,6 +3954,12 @@
         </attribute>
         <attribute name="WLAA_Info" mandatory="yes">
           <type name="AccessInfo" />
+          <phases>
+            <range from="wlaa" to="final" />
+          </phases>
+        </attribute>
+        <attribute name="WLAA_Feature" mandatory="yes">
+          <type name="AccessFeature" />
           <phases>
             <range from="wlaa" to="final" />
           </phases>
