@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2000/12/04 13:32:58  dkr
+ * DoPrintTypesAST extended
+ *
  * Revision 3.3  2000/11/27 21:05:17  cg
  * Added print support for APL pragma in Nwith2 nodes.
  *
@@ -233,7 +236,11 @@
 #define WARN_INDENT
 
 /* format string for pointers */
-#define F_PTR "%p" /* "0x%p"  or  "%p" */
+#ifdef SAC_FOR_SOLARIS_SPARC
+#define F_PTR "0x%p"
+#else
+#define F_PTR "%p"
+#endif
 
 /*
  * PrintNode(): INFO_PRINT_CONT(arg_info) contains the root of syntaxtree.
@@ -3958,6 +3965,40 @@ DoPrintAttrAST (int num, node *arg_node)
 /******************************************************************************
  *
  * function:
+ *   void DoPrintShapeAST( int dim, shpseg *shape)
+ *
+ * description:
+ *   This function is called from 'DoPrintAST' only.
+ *
+ ******************************************************************************/
+
+static void
+DoPrintShapeAST (int dim, shpseg *shape)
+{
+    int d;
+
+    if (dim != SCALAR) {
+        fprintf (outfile, "[");
+        if (dim == ARRAY_OR_SCALAR) {
+            fprintf (outfile, "?");
+        } else if (KNOWN_SHAPE (dim)) {
+            fprintf (outfile, "%i", SHPSEG_SHAPE (shape, 0));
+            for (d = 1; d < dim; d++) {
+                fprintf (outfile, ",%i", SHPSEG_SHAPE (shape, d));
+            }
+        } else if (KNOWN_DIMENSION (dim)) {
+            fprintf (outfile, ".");
+            for (d = 1; d < dim; d++) {
+                fprintf (outfile, ",.");
+            }
+        }
+        fprintf (outfile, "]");
+    }
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void DoPrintTypesAST( types *type)
  *
  * description:
@@ -3967,36 +4008,57 @@ DoPrintAttrAST (int num, node *arg_node)
  ******************************************************************************/
 
 static void
+DoPrintTypesAST_ (types *type)
+{
+    shpseg *shape;
+    int dim;
+
+    DBUG_ENTER ("DoPrintTypesAST_");
+
+    fprintf (outfile, "%s", type_string[GetBasetype (type)]);
+    shape = Type2Shpseg (type, &dim);
+    DoPrintShapeAST (dim, shape);
+    if (shape != NULL) {
+        shape = FreeShpseg (shape);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+static void
 DoPrintTypesAST (types *type)
 {
     node *tdef;
 
     DBUG_ENTER ("DoPrintTypesAST");
 
-    fprintf (outfile, "{");
     if (type != NULL) {
         if (TYPES_BASETYPE (type) == T_user) {
             if (TYPES_NAME (type) != NULL) {
-                fprintf (outfile, "%s:" F_PTR " ", TYPES_NAME (type), TYPES_NAME (type));
+                fprintf (outfile, "%s", TYPES_NAME (type));
             } else {
-                fprintf (outfile, "? ");
+                fprintf (outfile, "?");
             }
-            fprintf (outfile, "(");
+            DoPrintShapeAST (TYPES_DIM (type), TYPES_SHPSEG (type));
+            if (TYPES_NAME (type) != NULL) {
+                fprintf (outfile, "<" F_PTR ">", TYPES_NAME (type));
+            }
+
+            fprintf (outfile, "/");
+
             tdef = TYPES_TDEF (type);
             if (tdef != NULL) {
-                fprintf (outfile, F_PTR ":%s", tdef,
-                         type_string[TYPEDEF_BASETYPE (tdef)]);
+                DoPrintTypesAST_ (type);
+                fprintf (outfile, "<" F_PTR ">", tdef);
             } else {
                 fprintf (outfile, "NULL");
             }
-            fprintf (outfile, ")");
         } else {
-            fprintf (outfile, "%s", type_string[TYPES_BASETYPE (type)]);
+            DoPrintTypesAST_ (type);
         }
     } else {
         fprintf (outfile, "NULL");
     }
-    fprintf (outfile, "}");
 
     DBUG_VOID_RETURN;
 }
@@ -4017,15 +4079,15 @@ DoPrintIdsAST (ids *vars)
 {
     DBUG_ENTER ("DoPrintIdsAST");
 
-    fprintf (outfile, "< ");
+    fprintf (outfile, "{ ");
     while (vars != NULL) {
-        fprintf (outfile, "%s:" F_PTR, IDS_NAME (vars), IDS_NAME (vars));
+        fprintf (outfile, "%s<" F_PTR ">", IDS_NAME (vars), IDS_NAME (vars));
         PrintRC (IDS_REFCNT (vars), IDS_NAIVE_REFCNT (vars), 1);
         fprintf (outfile, " ");
 
         vars = IDS_NEXT (vars);
     }
-    fprintf (outfile, ">");
+    fprintf (outfile, "}");
 
     DBUG_VOID_RETURN;
 }
@@ -4063,8 +4125,8 @@ DoPrintAST (node *arg_node, bool skip_next)
         case N_typedef:
             fprintf (outfile, "(");
             DoPrintTypesAST (TYPEDEF_TYPE (arg_node));
-            fprintf (outfile, " %s:" F_PTR, STR_OR_NULL (TYPEDEF_NAME (arg_node), "?"),
-                     TYPEDEF_NAME (arg_node));
+            fprintf (outfile, " %s<" F_PTR ">",
+                     STR_OR_NULL (TYPEDEF_NAME (arg_node), "?"), TYPEDEF_NAME (arg_node));
             fprintf (outfile, ")\n");
             skip = TYPEDEF_NEXT (arg_node);
             break;
@@ -4072,7 +4134,7 @@ DoPrintAST (node *arg_node, bool skip_next)
         case N_objdef:
             fprintf (outfile, "(");
             DoPrintTypesAST (OBJDEF_TYPE (arg_node));
-            fprintf (outfile, " %s:" F_PTR, STR_OR_NULL (OBJDEF_NAME (arg_node), "?"),
+            fprintf (outfile, " %s<" F_PTR ">", STR_OR_NULL (OBJDEF_NAME (arg_node), "?"),
                      OBJDEF_NAME (arg_node));
             fprintf (outfile, ")\n");
             skip = OBJDEF_NEXT (arg_node);
@@ -4110,7 +4172,12 @@ DoPrintAST (node *arg_node, bool skip_next)
             break;
 
         case N_id:
-            fprintf (outfile, "(%s:" F_PTR, ID_NAME (arg_node), ID_NAME (arg_node));
+            fprintf (outfile, "(");
+            if (ID_VARDEC (arg_node) != NULL) {
+                DoPrintTypesAST (ID_TYPE (arg_node));
+                fprintf (outfile, " ");
+            }
+            fprintf (outfile, "%s<" F_PTR ">", ID_NAME (arg_node), ID_NAME (arg_node));
             PrintRC (ID_REFCNT (arg_node), ID_NAIVE_REFCNT (arg_node), 1);
             fprintf (outfile, ")\n");
             break;
@@ -4130,13 +4197,15 @@ DoPrintAST (node *arg_node, bool skip_next)
             break;
 
         case N_ap:
-            fprintf (outfile, "(%s:" F_PTR ")\n", AP_NAME (arg_node), AP_NAME (arg_node));
+            fprintf (outfile, "(");
+            fprintf (outfile, "%s<" F_PTR ">", AP_NAME (arg_node), AP_NAME (arg_node));
+            fprintf (outfile, ")\n");
             break;
 
         case N_arg:
             fprintf (outfile, "(");
             DoPrintTypesAST (ARG_TYPE (arg_node));
-            fprintf (outfile, " %s:" F_PTR, STR_OR_NULL (ARG_NAME (arg_node), "?"),
+            fprintf (outfile, " %s<" F_PTR ">", STR_OR_NULL (ARG_NAME (arg_node), "?"),
                      ARG_NAME (arg_node));
             PrintRC (ARG_REFCNT (arg_node), ARG_NAIVE_REFCNT (arg_node), 1);
             fprintf (outfile, ")\n");
@@ -4147,7 +4216,7 @@ DoPrintAST (node *arg_node, bool skip_next)
         case N_vardec:
             fprintf (outfile, "(");
             DoPrintTypesAST (ARG_TYPE (arg_node));
-            fprintf (outfile, " %s:" F_PTR, STR_OR_NULL (VARDEC_NAME (arg_node), "?"),
+            fprintf (outfile, " %s<" F_PTR ">", STR_OR_NULL (VARDEC_NAME (arg_node), "?"),
                      VARDEC_NAME (arg_node));
             PrintRC (VARDEC_REFCNT (arg_node), VARDEC_NAIVE_REFCNT (arg_node), 1);
             fprintf (outfile, ")\n");
@@ -4156,8 +4225,10 @@ DoPrintAST (node *arg_node, bool skip_next)
             break;
 
         case N_fundef:
-            fprintf (outfile, "(%s:" F_PTR ")\n", FUNDEF_NAME (arg_node),
+            fprintf (outfile, "(");
+            fprintf (outfile, "%s<" F_PTR ">", FUNDEF_NAME (arg_node),
                      FUNDEF_NAME (arg_node));
+            fprintf (outfile, ")\n");
 
             skip = FUNDEF_NEXT (arg_node);
             break;
@@ -4176,7 +4247,7 @@ DoPrintAST (node *arg_node, bool skip_next)
             if (NWITHID_VEC (arg_node) != NULL) {
                 char *withid = IDS_NAME (NWITHID_VEC (arg_node));
 
-                fprintf (outfile, "%s:" F_PTR, withid, withid);
+                fprintf (outfile, "%s<" F_PTR ">", withid, withid);
                 PrintRC (IDS_REFCNT (NWITHID_VEC (arg_node)),
                          IDS_NAIVE_REFCNT (NWITHID_VEC (arg_node)), 1);
             } else {
@@ -4210,7 +4281,7 @@ DoPrintAST (node *arg_node, bool skip_next)
             break;
 
         case N_Ncode:
-            fprintf (outfile, "(adr: " F_PTR ", used: %d)\n", arg_node,
+            fprintf (outfile, "(<" F_PTR ">, used: %d)\n", arg_node,
                      NCODE_USED (arg_node));
 
             skip = NCODE_NEXT (arg_node);
