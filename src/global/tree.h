@@ -1,7 +1,15 @@
 /*
  *
  * $Log$
- * Revision 1.58  1995/09/07 09:49:48  sbs
+ * Revision 1.59  1995/09/27 15:16:54  cg
+ * ATTENTION:
+ * tree.c and tree.h are not part of the new virtual syntax tree.
+ * They are kept for compatibility reasons with old code only !
+ * All parts of their old versions which are to be used in the future are moved
+ * to tree_basic and tree_compound.
+ * DON'T use tree.c and tree.h when writing new code !!
+ *
+ * Revision 1.58  1995/09/07  09:49:48  sbs
  * first set of Make<N_...> functions/ access macros
  * inserted.
  *
@@ -185,174 +193,21 @@
 
 #define _sac_tree_h
 
-#define SHP_SEG_SIZE 16
-
 /*
- *  first some intermediate nodes needed for yacc
+ * The following included header files contain all the syntax tree
+ * information. They are included here for compatability reasons only!
+ * Please, include them directly when your files are converted to the
+ * new virtual syntax tree.
  */
 
-typedef struct NUMS {
-    int num;
-    struct NUMS *next;
-} nums;
-/*
- *  now, the nodes generated from lex/yacc
- */
-
-/* typedef enum { T_int, T_float, T_bool, T_hidden, T_user, T_unknown } simpletype;
- */
-
-#define TYP_IF(n, s, p, f) n
-
-typedef enum {
-#include "type_info.mac"
-} simpletype;
-
-#undef TYP_IF
-
-typedef enum { A_let, A_sel, A_for, A_ret } assigntype;
-typedef enum { E_int, E_float, E_bool, E_prf, E_id, E_ap, E_with, E_sel } exprtype;
-typedef enum { L_for, L_do, L_while } looptype;
-typedef enum { ARG_int, ARG_float, ARG_id } argtype;
-typedef enum { C_gen, C_mod } contype;
-typedef enum {
-    ST_regular,            /* normal types */
-    ST_unique,             /* unique types */
-    ST_reference,          /* reference parameter (unique)           */
-    ST_readonly_reference, /* readonly reference param (unique)  */
-    ST_ref,                /* Id must be referenced                  */
-    ST_deref,              /* Id must be dereferenced                */
-    ST_duplicted_fun,      /* function is duplicated while typecheking */
-    ST_artificial_fun,     /* function is only generated for temporary */
-                           /* typechecking                           */
-    ST_artificial,         /* unique type inserted during            */
-                           /* signature expansion                    */
-    ST_prototype,          /* function on array that is not type-    */
-                           /* checked so far.                        */
-    ST_duplicate,          /* duplicate derived from prototype       */
-    ST_inline_import       /* inline function imported from other    */
-                           /* module                                 */
-} statustype;
-typedef enum { VECT, IDX } useflag;
-
-typedef enum {
-    F_prog,
-    F_modimp,
-    F_classimp,
-    F_moddec,
-    F_extmoddec,
-    F_classdec,
-    F_extclassdec
-} file_type;
-
-typedef struct CHARLIST {
-    char *name;
-    struct CHARLIST *next;
-} charlist;
-
-typedef char id;
-
-typedef struct IDS {
-    id *id;
-    int refcnt;
-    int flag;          /* the flag is used for ids-status */
-                       /* (loop invariant/not loop invariant , ...) */
-    struct NODE *node; /* ptr. to decleration */
-    struct NODE *def;  /* ptr. to definition(s) resp. usage(s) */
-    struct NODE *use;  /* ptr. to usage chain (used only if the var */
-                       /* is a one dimensional array! */
-    statustype attrib; /* ref/deref attribute */
-    statustype status; /* regular or artificial */
-
-    struct IDS *next;
-} ids;
-
-typedef struct SHPSEG {
-    int shp[SHP_SEG_SIZE];
-    struct SHPSEG *next;
-} shpseg;
-
-typedef struct TYPES {
-    simpletype simpletype;
-    char *name;     /* only used for T_user !! */
-    char *name_mod; /* name of modul belonging to 'name' */
-    int dim;        /* if (dim == 0) => simpletype */
-    shpseg *shpseg;
-    struct TYPES *next; /* only needed for fun-results */
-    id *id;             /* Bezeichner  */
-    char *id_mod;       /* name of modul belonging to 'id' */
-    statustype attrib;  /* uniqueness attribute */
-    statustype status;  /* regular or artificial */
-} types;
-
-typedef types shapes; /* this definition is primarily needed for
-                       * the vinfo nodes; there we need the shape
-                       * only( including the dim)...
-                       */
-
-typedef struct FUN_NAME {
-    char *id;     /* name of function */
-    char *id_mod; /* name of modul belonging to 'id' */
-} fun_name;
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
 
 /*
- * Neue Knoten fu"r yacc un den Syntabaum
- *
- */
-
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa, ab, ac,   \
-            ad, ae)                                                                      \
-    n
-
-typedef enum {
-#include "node_info.mac"
-} nodetype; /* Typ fu"r die node Knoten des Syntaxbaums */
-
-#undef NIF
-
-#define PRF_IF(n, s, x, y) n
-
-typedef enum {
-#include "prf_node_info.mac"
-} prf;
-
-#undef PRF_IF
-
-#define MAX_MASK 7
-#define MAX_SONS 6
-
-typedef struct NODE {
-    nodetype nodetype;
-    union {
-        ids *ids;          /* list  of identifiers               */
-        id *id;            /* identifier                         */
-        types *types;      /* typeinformation                    */
-        int cint;          /* integer value                      */
-        float cfloat;      /* float value                        */
-        double cdbl;       /* double value                       */
-        prf prf;           /* tag for primitive functions        */
-        fun_name fun_name; /* used in N_ap nodes                 */
-        useflag use;       /* used in N_vect_info nodes          */
-        struct {
-            int tag;             /* tag for return type */
-            int tc;              /* type class */
-        } prf_dec;               /* used for declaration of primitive functions
-                                  * this declarations are used to look for argument
-                                  * and result type of primitive functions
-                                  */
-    } info;                      /* fu"r spezielle Informationen */
-    int refcnt;                  /* is used as referenze count information */
-    int flag;                    /* the flag is used for node-status */
-                                 /* (loop invariant/not loop invariant , ...) */
-    int varno;                   /* number of variables - 1 */
-    long *mask[MAX_MASK];        /* special informations about variables */
-    int nnode;                   /* Anzahl der benutzten Knoten */
-    int lineno;                  /* Zeilennummer in der ein Befehl steht */
-    struct NODE *node[MAX_SONS]; /* Diese Eintra"ge sind knotenspezifisch */
-} node;                          /* Knoten des Syntaxbaums  */
-
-/*
- *  macro for the generation of nodes
+ *  The following macros for the generation of nodes are only supported
+ *  for compatibility with old code. Please, do not use them in new code.
+ *  You will find equivalent ones in tree_basic.h and tree_compound.h
  */
 
 #define GEN_NODE(type) (type *)malloc (sizeof (type))
@@ -381,115 +236,11 @@ typedef struct NODE {
     no = MakeNode (N_id);                                                                \
     no->IDS = Ids
 
-/*
- * macros for module_name-access
- */
-
-#define MOD_NAME_CON "__"
-#define MOD(a) (NULL == a) ? "" : a
-#define MOD_CON(a) (NULL == a) ? "" : MOD_NAME_CON
-#define MOD_NAME(a) MOD (a), MOD_CON (a)
-
 extern char *prf_name_str[];
 
 extern types *MakeTypes (simpletype simple);
 extern node *MakeNode (nodetype nodetype);
 extern node *AppendNodeChain (int pos, node *first, node *second);
-extern ids *MakeIds (char *id);
 extern ids *AppendIdsChain (ids *first, ids *second);
 
-/* HERE WE START OUT THE NEW PART ..... */
-
-/*
- * Non-node-structures
- * -------------------
- */
-
-/*
- *  Shapes : int                DIM
- *           int[SHP_SEG_SIZE]  SELEMS
- *
- */
-
-#define SHAPES_DIM(s) (s->dim)
-#define SHAPES_SELEMS(s) (s->shpseg->shp)
-
-/*
- * Node-structures
- * ---------------
- */
-
-/*----------------------------------------------------------------------------*/
-/*
- *  N_num : int VAL
- */
-
-extern node *MakeNum (int val);
-
-#define NUM_VAL(n) (n->info.cint)
-
-/*----------------------------------------------------------------------------*/
-/*
- *  N_Exprs : node * EXPR
- *            node * NEXT
- */
-
-extern node *MakeExprs (node *expr, node *next);
-
-#define EXPRS_EXPR(n) (n->node[0])
-#define EXPRS_NEXT(n) (n->node[1])
-
-/*----------------------------------------------------------------------------*/
-/*
- * N_array : node * AELEMS
- */
-
-extern node *MakeArray (node *aelems);
-
-#define ARRAY_AELEMS(n) n->node[0]
-
-/*
- * infos added during compilation:
- *
- * TYPE		| INSERTED IN:			| USED IN:
- * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- * TYPES        | typecheck.c                   | ???
- */
-
-#define ARRAY_TYPES(n) (n->info.types)
-
-/*
- * Compound Access Macros:
- */
-
-/*----------------------------------------------------------------------------*/
-/*
- *  N_vinfo : useflag  FLAG
- *            shapes * SHP
- *            node   * NEXT
- *
- */
-
-extern node *MakeVinfo (useflag flag, shapes *shp, node *next);
-
-#define VINFO_FLAG(n) (n->info.use)
-#define VINFO_SHP(n) ((shapes *)n->node[1])
-#define VINFO_NEXT(n) (n->node[0])
-
-/*
- * Compound Access Macros:
- */
-
-#define VINFO_DIM(n) SHAPES_DIM (VINFO_SHP (n))
-#define VINFO_SELEMS(n) SHAPES_DIM (VINFO_SELEMS (n))
-
-/*----------------------------------------------------------------------------*/
-
-/*
- * Some conversion functions
- *
- */
-
-extern node *Shape2Array (shapes *shp);
-
-#endif /* _sac_tree_h */
+#endif /* _sac_tree_h  */

@@ -1,7 +1,15 @@
 /*
  *
  * $Log$
- * Revision 1.22  1995/09/07 09:49:48  sbs
+ * Revision 1.23  1995/09/27 15:16:54  cg
+ * ATTENTION:
+ * tree.c and tree.h are not part of the new virtual syntax tree.
+ * They are kept for compatibility reasons with old code only !
+ * All parts of their old versions which are to be used in the future are moved
+ * to tree_basic and tree_compound.
+ * DON'T use tree.c and tree.h when writing new code !!
+ *
+ * Revision 1.22  1995/09/07  09:49:48  sbs
  * first set of Make<N_...> functions/ access macros
  * inserted.
  *
@@ -79,13 +87,92 @@
 #include "scnprs.h"
 #include "optimize.h"
 
-#define PRF_IF(n, s, x, y) y
+/*--------------------------------------------------------------------------*/
+/* The following functions are supported for compatibility reasons only     */
+/*--------------------------------------------------------------------------*/
 
-char *prf_name_str[] = {
-#include "prf_node_info.mac"
-};
+/*
+ *
+ *  functionname  : AppendNodeChain
+ *  arguments     : int pos: node-index of chain
+ *                  node *first: first node chain
+ *                  node *second: node chain to be appended
+ *  description   : follows first chain to it's end and
+ *                  appends second.
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
 
-#undef PRF_IF
+node *
+AppendNodeChain (int pos, node *first, node *second)
+
+{
+    node *tmp;
+
+    DBUG_ENTER ("AppendNodeChain");
+
+    if (first == NULL)
+        first = second;
+    else {
+        tmp = first;
+        while (tmp->node[pos] != NULL)
+            tmp = tmp->node[pos];
+        tmp->node[pos] = second;
+        DBUG_PRINT ("APP", ("Append node chain behind line %d", tmp->lineno));
+        if (second != NULL)
+            tmp->nnode++;
+    }
+
+    DBUG_RETURN (first);
+}
+
+/*
+ *
+ *  functionname  : AppendIdsChain
+ *  arguments     : node *first: first ids chain
+ *                  node *second: ids chain to be appended
+ *  description   : follows first chain to it's end and
+ *                  appends second.
+ *  global vars   :
+ *  internal funs :
+ *  external funs :
+ *  macros        : DBUG...
+ *
+ *  remarks       :
+ *
+ */
+
+ids *
+AppendIdsChain (ids *first, ids *second)
+
+{
+    ids *tmp;
+
+    DBUG_ENTER ("AppendIdsChain");
+
+    if (first == NULL)
+        first = second;
+    else {
+        tmp = first;
+        while (tmp->next != NULL)
+            tmp = tmp->next;
+        tmp->next = second;
+    }
+
+    DBUG_RETURN (first);
+}
+
+/*
+ * The functions AppendNodeChain and AppendIdsChain should be replaced
+ * by new functions in tree_compound.c
+ * Unfortunately, this is not directly possible. Different functions are
+ * needed for objdef-, fundef-, or typedef-chains.
+ */
 
 /*
  *
@@ -169,82 +256,6 @@ MakeNode (nodetype nodetype)
 
 /*
  *
- *  functionname  : AppendNodeChain
- *  arguments     : int pos: node-index of chain
- *                  node *first: first node chain
- *                  node *second: node chain to be appended
- *  description   : follows first chain to it's end and
- *                  appends second.
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...
- *
- *  remarks       :
- *
- */
-
-node *
-AppendNodeChain (int pos, node *first, node *second)
-
-{
-    node *tmp;
-
-    DBUG_ENTER ("AppendNodeChain");
-
-    if (first == NULL)
-        first = second;
-    else {
-        tmp = first;
-        while (tmp->node[pos] != NULL)
-            tmp = tmp->node[pos];
-        tmp->node[pos] = second;
-        DBUG_PRINT ("APP", ("Append node chain behind line %d", tmp->lineno));
-        if (second != NULL)
-            tmp->nnode++;
-    }
-
-    DBUG_RETURN (first);
-}
-
-/*
- *
- *  functionname  : AppendIdsChain
- *  arguments     : node *first: first ids chain
- *                  node *second: ids chain to be appended
- *  description   : follows first chain to it's end and
- *                  appends second.
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        : DBUG...
- *
- *  remarks       :
- *
- */
-
-ids *
-AppendIdsChain (ids *first, ids *second)
-
-{
-    ids *tmp;
-
-    DBUG_ENTER ("AppendIdsChain");
-
-    if (first == NULL)
-        first = second;
-    else {
-        tmp = first;
-        while (tmp->next != NULL)
-            tmp = tmp->next;
-        tmp->next = second;
-    }
-
-    DBUG_RETURN (first);
-}
-
-/*
- *
  *  functionname  : MakeIds
  *  arguments     : 1) identifier
  *  description   : generates and initialises a new 'ids' struct;
@@ -257,25 +268,30 @@ AppendIdsChain (ids *first, ids *second)
  *
  */
 
-ids *
-MakeIds (char *id)
+/*
+ *  function MakeIds replaced by new version in tree_basic.c
+ */
+
+/*
+ids *MakeIds(char *id)
 {
-    ids *tmp;
+   ids *tmp;
 
-    DBUG_ENTER ("MakeIds");
+   DBUG_ENTER("MakeIds");
 
-    tmp = GEN_NODE (ids);
-    DBUG_ASSERT ((NULL != tmp), "out of memory");
-    tmp->id = id;
-    tmp->refcnt = 0;
-    tmp->node = NULL;
-    tmp->attrib = ST_regular;
-    tmp->status = ST_regular;
-    tmp->next = NULL;
-    tmp->def = NULL;
+   tmp=GEN_NODE(ids);
+   DBUG_ASSERT((NULL != tmp),"out of memory");
+   tmp->id=id;
+   tmp->refcnt=0;
+   tmp->node=NULL;
+   tmp->attrib=ST_regular;
+   tmp->status=ST_regular;
+   tmp->next=NULL;
+   tmp->def=NULL;
 
-    DBUG_RETURN (tmp);
+   DBUG_RETURN(tmp);
 }
+*/
 
 /*
  *
@@ -291,18 +307,23 @@ MakeIds (char *id)
  *
  */
 
-node *
-MakeNum (int val)
+/*
+ *  function MakeNum replaced by new version in tree_basic.c
+ */
+
+/*
+node *MakeNum( int val)
 {
-    node *num;
+  node *num;
 
-    DBUG_ENTER ("MakeNum");
+  DBUG_ENTER("MakeNum");
 
-    num = MakeNode (N_num);
-    NUM_VAL (num) = val;
+  num= MakeNode( N_num);
+  NUM_VAL( num)= val;
 
-    DBUG_RETURN (num);
+  DBUG_RETURN( num);
 }
+*/
 
 /*
  *
@@ -319,20 +340,25 @@ MakeNum (int val)
  *
  */
 
-node *
-MakeExprs (node *expr, node *next)
+/*
+ *  function MakeExprs replaced by new version in tree_basic.c
+ */
+
+/*
+node *MakeExprs( node *expr, node *next)
 {
-    node *exprs;
+  node *exprs;
 
-    DBUG_ENTER ("MakeExprs");
+  DBUG_ENTER("MakeExprs");
 
-    exprs = MakeNode (N_exprs);
-    EXPRS_EXPR (exprs) = expr;
-    EXPRS_NEXT (exprs) = NULL;
-    exprs->nnode = 1;
+  exprs= MakeNode( N_exprs);
+  EXPRS_EXPR( exprs)= expr;
+  EXPRS_NEXT( exprs)= next;
+  exprs->nnode= 1;
 
-    DBUG_RETURN (exprs);
+  DBUG_RETURN(exprs);
 }
+*/
 
 /*
  *
@@ -348,19 +374,24 @@ MakeExprs (node *expr, node *next)
  *
  */
 
-node *
-MakeArray (node *aelems)
+/*
+ *  function MakeArray replaced by new version in tree_basic.c
+ */
+
+/*
+node *MakeArray( node *aelems)
 {
-    node *array;
+  node *array;
 
-    DBUG_ENTER ("MakeArray");
+  DBUG_ENTER("MakeArray");
 
-    array = MakeNode (N_array);
-    ARRAY_AELEMS (array) = aelems;
-    array->nnode = 1;
+  array= MakeNode( N_array);
+  ARRAY_AELEMS( array)= aelems;
+  array->nnode= 1;
 
-    DBUG_RETURN (array);
+  DBUG_RETURN(array);
 }
+*/
 
 /*
  *
@@ -376,63 +407,26 @@ MakeArray (node *aelems)
  *
  */
 
-node *
-MakeVinfo (useflag flag, shapes *shp, node *next)
-{
-    node *vinfo;
-
-    DBUG_ENTER ("MakeVinfo");
-
-    vinfo = MakeNode (N_vinfo);
-    VINFO_FLAG (vinfo) = flag;
-    VINFO_SHP (vinfo) = shp;
-    VINFO_NEXT (vinfo) = next;
-    if (next == NULL)
-        vinfo->nnode = 0;
-    else
-        vinfo->nnode = 1;
-
-    DBUG_RETURN (vinfo);
-}
-
 /*
- * Some conversion functions:
- *
- * node *Shape2Array( shapes *shp) : creates an array-node of type int[n] with
- *                                   all sub-structures needed that represents
- *                                   the shape vector.
+ *  function MakeVinfo replaced by new version in tree_basic.c
  */
 
 /*
- *
- *  functionname  : Shape2Array
- *  arguments     : 1) shapes *shp
- *  description   : creates an array-node of type int[n] with all sub-structures
- *                  needed that represents the shape vector shp.
- *  global vars   :
- *  internal funs : MakeExprs, MakeNum
- *  external funs :
- *  macros        : DBUG..., SHAPES_SELEMS, SHAPES_DIM
- *
- *  remarks       :
- *
- */
-
-node *
-Shape2Array (shapes *shp)
-
+node *MakeVinfo( useflag flag, shapes *shp, node *next)
 {
-    int i;
-    node *next;
+  node *vinfo;
 
-    DBUG_ENTER ("Shape2Array");
+  DBUG_ENTER("MakeVinfo");
 
-    i = SHAPES_DIM (shp) - 1;
-    next = MakeExprs (MakeNum (SHAPES_SELEMS (shp)[i]), NULL);
-    i--;
-    for (; i >= 0; i--) {
-        next = MakeExprs (MakeNum (SHAPES_SELEMS (shp)[i]), next);
-        next->nnode = 2;
-    }
-    DBUG_RETURN (MakeArray (next));
+  vinfo= MakeNode( N_vinfo);
+  VINFO_FLAG( vinfo)= flag;
+  VINFO_SHP( vinfo)= shp;
+  VINFO_NEXT( vinfo)= next;
+  if( next == NULL)
+    vinfo->nnode= 0;
+  else
+    vinfo->nnode= 1;
+
+  DBUG_RETURN(vinfo);
 }
+*/
