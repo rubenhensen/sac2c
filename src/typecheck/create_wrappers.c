@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2002/10/30 12:13:38  sbs
+ * handling of ... args / rets corrected..
+ *
  * Revision 1.11  2002/10/28 19:04:06  dkr
  * CreateWrapperFor(): wrapper functions are never external now
  *
@@ -137,10 +140,12 @@ FindWrapper (char *name, int num_args, int num_rets, LUT_t lut)
     wrapper_p = (node **)SearchInLUT_S (lut, name);
     while ((wrapper_p != NULL) && (!found)) {
         wrapper = *wrapper_p;
-        num_parms = CountArgs (FUNDEF_ARGS (wrapper));
-        num_res = CountTypes (FUNDEF_TYPES (wrapper));
         last_parm_is_dots = HasDotArgs (FUNDEF_ARGS (wrapper));
         last_res_is_dots = HasDotTypes (FUNDEF_TYPES (wrapper));
+        num_parms = (last_parm_is_dots ? CountArgs (FUNDEF_ARGS (wrapper)) - 1
+                                       : CountArgs (FUNDEF_ARGS (wrapper)));
+        num_res = (last_res_is_dots ? CountTypes (FUNDEF_TYPES (wrapper)) - 1
+                                    : CountTypes (FUNDEF_TYPES (wrapper)));
         DBUG_PRINT ("CRTWRP", (" ... checking %s %s%d args %s%d rets",
                                FUNDEF_NAME (wrapper), (last_parm_is_dots ? ">=" : ""),
                                num_parms, (last_res_is_dots ? ">=" : ""), num_res));
@@ -186,7 +191,9 @@ CreateWrapperFor (node *fundef)
     DBUG_PRINT ("CRTWRP",
                 ("Creating wrapper for %s %s%d args %d rets", FUNDEF_NAME (fundef),
                  (HasDotArgs (FUNDEF_ARGS (fundef)) ? ">=" : ""),
-                 CountArgs (FUNDEF_ARGS (fundef)), CountTypes (FUNDEF_TYPES (fundef))));
+                 (HasDotArgs (FUNDEF_ARGS (fundef)) ? CountArgs (FUNDEF_ARGS (fundef)) - 1
+                                                    : CountArgs (FUNDEF_ARGS (fundef))),
+                 CountTypes (FUNDEF_TYPES (fundef))));
 
     body = FUNDEF_BODY (fundef);
     FUNDEF_BODY (fundef) = NULL;
@@ -267,7 +274,7 @@ FuntypeFromArgs (ntype *res, node *args, node *fundef)
 {
     DBUG_ENTER ("FuntypeFromArgs");
 
-    if (args != NULL) {
+    if ((args != NULL) && (TYPES_BASETYPE (ARG_TYPE (args)) != T_dots)) {
         res = FuntypeFromArgs (res, ARG_NEXT (args), fundef);
         res = TYMakeFunType (TYOldType2Type (ARG_TYPE (args)), res, fundef);
     }
@@ -289,7 +296,7 @@ CreateFuntype (node *fundef)
                  "CreateFuntype applied to non-fundef node!");
 
     old_ret = FUNDEF_TYPES (fundef);
-    num_rets = CountTypes (old_ret);
+    num_rets = (HasDotTypes (old_ret) ? CountTypes (old_ret) - 1 : CountTypes (old_ret));
 
     res = TYMakeEmptyProductType (num_rets);
 
@@ -328,7 +335,7 @@ TagReferenceArgs (node *act_args, node *args)
     DBUG_ENTER ("TagReferenceArgs");
 
     exprs = act_args;
-    while (args != NULL) {
+    while ((args != NULL) && (TYPES_BASETYPE (ARG_TYPE (args)) != T_dots)) {
         DBUG_ASSERT ((exprs != NULL), "TagReferenceArgs called with act_args and args of "
                                       "different length");
         if (NODE_TYPE (EXPRS_EXPR (exprs)) == N_id) {
@@ -401,19 +408,47 @@ node *
 CRTWRPfundef (node *arg_node, node *arg_info)
 {
     node *wrapper;
-    int num_args;
+    int num_args, num_rets;
+    bool dot_args, dot_rets;
+    int num_wr_args, num_wr_rets;
 
     DBUG_ENTER ("CRTWRPfundef");
 
-    num_args = CountArgs (FUNDEF_ARGS (arg_node));
-    wrapper = FindWrapper (FUNDEF_NAME (arg_node), num_args,
-                           CountTypes (FUNDEF_TYPES (arg_node)),
+    dot_args = HasDotArgs (FUNDEF_ARGS (arg_node));
+    dot_rets = HasDotTypes (FUNDEF_TYPES (arg_node));
+    num_args = (dot_args ? CountArgs (FUNDEF_ARGS (arg_node)) - 1
+                         : CountArgs (FUNDEF_ARGS (arg_node)));
+    num_rets = (dot_rets ? CountTypes (FUNDEF_TYPES (arg_node)) - 1
+                         : CountTypes (FUNDEF_TYPES (arg_node)));
+    wrapper = FindWrapper (FUNDEF_NAME (arg_node), num_args, num_rets,
                            INFO_CRTWRP_WRAPPERFUNS (arg_info));
     if (wrapper == NULL) {
         wrapper = CreateWrapperFor (arg_node);
         INFO_CRTWRP_WRAPPERFUNS (arg_info)
           = InsertIntoLUT_S (INFO_CRTWRP_WRAPPERFUNS (arg_info), FUNDEF_NAME (arg_node),
                              wrapper);
+    } else {
+        if (dot_args || HasDotArgs (FUNDEF_ARGS (wrapper)) || dot_rets
+            || HasDotTypes (FUNDEF_TYPES (wrapper))) {
+            num_wr_args = (HasDotArgs (FUNDEF_ARGS (wrapper))
+                             ? CountArgs (FUNDEF_ARGS (wrapper)) - 1
+                             : CountArgs (FUNDEF_ARGS (wrapper)));
+            num_wr_rets = (HasDotTypes (FUNDEF_TYPES (wrapper))
+                             ? CountTypes (FUNDEF_TYPES (wrapper)) - 1
+                             : CountTypes (FUNDEF_TYPES (wrapper)));
+            if ((num_args != num_wr_args) || (num_rets != num_wr_rets)) {
+                ABORT (
+                  linenum,
+                  ("trying to overload function \"%s\" that expects %s %d argument(s) "
+                   "and %s %d return value(s) with a version that expects %s %d "
+                   "argument(s) "
+                   "and %s %d return value(s)",
+                   FUNDEF_NAME (arg_node),
+                   (HasDotArgs (FUNDEF_ARGS (wrapper)) ? ">=" : ""), num_wr_args,
+                   (HasDotTypes (FUNDEF_TYPES (wrapper)) ? ">=" : ""), num_wr_rets,
+                   (dot_args ? ">=" : ""), num_args, (dot_rets ? ">=" : ""), num_rets));
+            }
+        }
     }
 
     FUNDEF_TYPE (arg_node) = CreateFuntype (arg_node);
