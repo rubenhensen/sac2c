@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.93  1995/08/16 09:23:55  asi
- * changed DupChain to DupTypes for N_array (duplicating info.types now)
+ * Revision 1.94  1995/09/01 07:47:18  cg
+ * call of SIBmodul added to SIB-tab.
  *
+;; Revision 1.93  1995/08/16  09:23:55  asi
+;; changed DupChain to DupTypes for N_array (duplicating info.types now)
+;;
 ;; Revision 1.92  1995/08/09  15:53:59  cg
 ;; IMfundef inserted for inline functions from other modules.
 ;;
@@ -340,7 +343,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun),
   NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, DummyFun, OPTmodul, OPTmodul,
        OPTmodul, FreeModul, OPTmodul, DummyFun, DummyFun, OPTmodul, OPTmodul, INLmodul,
-       OPTmodul, DummyFun, IdxModul, OPTmodul, DummyFun, OPTmodul, DummyFun, DummyFun,
+       OPTmodul, DummyFun, IdxModul, OPTmodul, DummyFun, OPTmodul, SIBmodul, DummyFun,
        DummyFun, DummyFun),
   NIF (N_moddec, "N_moddec", DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
