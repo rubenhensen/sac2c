@@ -5,3 +5,4 @@ ast2attribs_h.xsl
 ast2html.xsl
 ast2node_basic_c.xsl
 ast2node_basic_h.xsl
+common-accessor-macros.xsl
