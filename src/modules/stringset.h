@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/28 17:22:01  sah
+ * moved the typedef to types.h
+ *
  * Revision 1.1  2004/10/27 13:10:51  sah
  * Initial revision
  *
@@ -13,7 +16,6 @@
 
 #include "types.h"
 
-typedef struct STRINGSET_T stringset_t;
 typedef void *(*SSfoldfun_p) (const char *elem, void *rest);
 
 extern bool SSContains (const char *string, stringset_t *set);
