@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.65  1995/11/01 07:25:06  sbs
+ * Revision 1.66  1995/12/01 17:22:16  cg
+ * moved renaming of functions to precompiler
+ * moved generation of additional extern declarations for mutual
+ * recursive functions to print.c
+ *
+ * Revision 1.65  1995/11/01  07:25:06  sbs
  * dirty hack: sharing info.types in forward declarations
  * in Compile !
  *
@@ -295,7 +300,6 @@ extern char filename[]; /* imported from main.c */
 
 #define DUMMY_NAME "__OUT_"
 #define LABEL_NAME "__Label" /* basic-name for goto label */
-#define FUN_NAME_LENGTH 256
 
 #if 0
 
@@ -488,12 +492,6 @@ extern char filename[]; /* imported from main.c */
         }                                                                                \
     }
 
-#define FREE(a)                                                                          \
-    {                                                                                    \
-        DBUG_PRINT ("FREE", (P_FORMAT, a));                                              \
-        free (a);                                                                        \
-    }
-
 #define FREE_TYPE(a)                                                                     \
     if (NULL != a->shpseg)                                                               \
         FREE (a->shpseg)                                                                 \
@@ -508,7 +506,7 @@ extern char filename[]; /* imported from main.c */
 #define FREE_IDS(a)                                                                      \
     {                                                                                    \
         DBUG_PRINT ("FREE", (P_FORMAT, a));                                              \
-        FreeIds (a);                                                                     \
+        FreeAllIds (a);                                                                  \
     }
 
 #if 0
@@ -548,60 +546,6 @@ RenameVar (char *string, int i)
     }
 
     DBUG_RETURN (new_name);
-}
-
-/*
- *
- *  functionname  : RenameFunName
- *  arguments     : 1) N_fundef node
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs : Malloc, strlen, sprintf, sizeof, Type2String
- *  macros        : DBUG..., NULL, ID_MOD, ID, FUN_NAME_LENGTH,
- *                  MDB_DECLARE, MDB_ASSIGN, FREE
- *
- *  remarks       : imported "non sac" functions and functions without
- *                  arguments and modul-name will NOT be renamed
- *
- */
-node *
-RenameFunName (node *fun_node)
-{
-    node *tmp_fun_node, *args;
-    char *arg_type, *new_name;
-    MDB_DECLARE (int, length);
-
-    DBUG_ENTER ("RenameFunName");
-    tmp_fun_node = fun_node;
-    do {
-        if (((NULL != tmp_fun_node->node[0])
-             || ((NULL != tmp_fun_node->ID_MOD) && (NULL == tmp_fun_node->node[0])))
-            && ((NULL != tmp_fun_node->node[2]) || (NULL != tmp_fun_node->ID_MOD))) {
-            args = tmp_fun_node->node[2];
-            new_name = (char *)Malloc (sizeof (char) * FUN_NAME_LENGTH);
-            sprintf (new_name, "%s%s%s_", MOD_NAME (tmp_fun_node->ID_MOD),
-                     tmp_fun_node->ID);
-            MDB_ASSIGN (length, strlen (new_name));
-            while (NULL != args) {
-                arg_type = Type2String (args->TYPES, 2);
-                MDB_ASSIGN (length, length + strlen (arg_type));
-                DBUG_ASSERT (length < FUN_NAME_LENGTH, "new fun_name is to long");
-                strcat (new_name, arg_type);
-                args = args->node[0];
-            }
-            FREE (tmp_fun_node->ID);
-            /* don't free tmp_fun_node->ID_MOD, because it is shared !! */
-            tmp_fun_node->ID = new_name;
-            tmp_fun_node->ID_MOD = NULL;
-        } else if ((NULL == tmp_fun_node->node[0]) && (NULL == tmp_fun_node->ID_MOD)
-                   && (NULL != tmp_fun_node->node[5]))
-            tmp_fun_node->ID = (char *)tmp_fun_node->node[5];
-
-        tmp_fun_node = tmp_fun_node->node[1];
-    } while (NULL != tmp_fun_node);
-
-    DBUG_RETURN (fun_node);
 }
 
 /*
@@ -856,7 +800,8 @@ ShapeToArray (node *vardec_node)
 node *
 Compile (node *arg_node)
 {
-    node *info, *fundef, *tmp_fundef, *new_fundef;
+    node *info;
+
     DBUG_ENTER ("Compile");
 
 #ifdef MALLOC_TOOL
@@ -867,8 +812,6 @@ Compile (node *arg_node)
     info = MakeNode (N_info);
     if (N_modul == arg_node->nodetype) {
         if (NULL != arg_node->node[2]) {
-            /* first rename function names */
-            arg_node->node[2] = RenameFunName (arg_node->node[2]);
             /* traverse functions */
             arg_node->node[2] = Trav (arg_node->node[2], info);
         }
@@ -879,35 +822,6 @@ Compile (node *arg_node)
         DBUG_ASSERT ((N_fundef == arg_node->nodetype), "wrong node");
         arg_node = Trav (arg_node, info);
     }
-    /* now create a extern declaration for each non imported function, except for
-     * main
-     */
-    if (N_modul == arg_node->nodetype)
-        fundef = arg_node->node[2];
-    else
-        fundef = arg_node->node[1];
-    tmp_fundef = fundef;
-    /* first skip imported functions */
-    while (NULL == tmp_fundef->node[0])
-        tmp_fundef = tmp_fundef->node[1];
-    /* now add "extern" declarations */
-    while (NULL != tmp_fundef)
-        if (0 != strcmp (tmp_fundef->ID, "main")) {
-            /* this isn't the main function */
-            new_fundef = MakeNode (N_fundef);
-            new_fundef->info.types = tmp_fundef->info.types; /* share info.types! */
-            new_fundef->node[3] = tmp_fundef->node[3];       /* share N_icm ND_FUN_DEC */
-            new_fundef->node[1] = fundef; /* put it in front of N_fundef nodes */
-            fundef = new_fundef;
-            tmp_fundef = tmp_fundef->node[1];
-        } else
-            tmp_fundef = tmp_fundef->node[1];
-
-    /* insert expanded tree */
-    if (N_modul == arg_node->nodetype)
-        arg_node->node[2] = fundef;
-    else
-        arg_node->node[1] = fundef;
 
 #ifdef MALLOC_TOOL
     malloc_verify ();
