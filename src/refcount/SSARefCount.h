@@ -20,5 +20,7 @@ extern node *SSARCfloat (node *arg_node, node *arg_info);
 extern node *SSARCdouble (node *arg_node, node *arg_info);
 extern node *SSARCstr (node *arg_node, node *arg_info);
 extern node *SSARCarray (node *arg_node, node *arg_info);
+extern node *SSARCfuncond (node *arg_node, node *arg_info);
+extern node *SSARCcond (node *arg_node, node *arg_info);
 
 #endif /* _sac_ssarefcount_h */

@@ -10,7 +10,7 @@
 #include "ssa.h"
 #include "SSARefCount.h"
 
-/*#define SSARC_DEVELOP*/
+#define SSARC_DEVELOP
 
 typedef enum {
     rc_undef,
@@ -19,15 +19,12 @@ typedef enum {
     rc_funap,
     rc_prfap,
     rc_array,
-    rc_const
+    rc_const,
+    rc_cond,
+    rc_funcond
 } rc_rhs_type;
 
-typedef enum {
-    rc_default,
-    rc_both, /* Needed in order to refcount conditionals */
-    rc_then,
-    rc_else
-} rc_mode;
+typedef enum { rc_default, rc_else } rc_mode;
 
 typedef struct RC_LIST_STRUCT {
     node *avis;
@@ -46,84 +43,83 @@ typedef struct RC_COUNTER {
 #define INFO_SSARC_RHS(n) ((rc_rhs_type) (n->flag))
 #define INFO_SSARC_DECLIST(n) ((rc_list_struct *)(n->node[0]))
 #define INFO_SSARC_INCLIST(n) ((rc_list_struct *)(n->node[1]))
-#define INFO_SSARC_RESULT(n) (n->refcnt)
+#define INFO_SSARC_FUNDEF(n) (n->node[2])
 
 #define AVIS_SSARC_COUNTED(n) ((bool)(n->info.cint))
-#define AVIS_SSARC_DEFAULT(n) ((rc_counter *)(n->dfmask[0]))
-#define AVIS_SSARC_ELSE(n) ((rc_counter *)(n->dfmask[1]))
+#define AVIS_SSARC_COUNTER(n) ((rc_counter *)(n->dfmask[0]))
+#define AVIS_SSARC_COUNTER2(n) ((rc_counter *)(n->dfmask[1]))
+
 /**
  *
  *  HELPER FUNCTIONS
  *
  ****************************************************************************/
 void
-InitializeEnv (node *avis)
+InitializeEnv (node *avis, node *arg_info)
 {
     AVIS_SSARC_COUNTED (avis) = FALSE;
-    AVIS_SSARC_DEFAULT (avis) = NULL;
-    AVIS_SSARC_ELSE (avis) = NULL;
+    AVIS_SSARC_COUNTER2 (avis) = NULL;
+    AVIS_SSARC_COUNTER (avis) = NULL;
 }
 
-rc_counter *
-IncreaseGivenEnv (rc_counter *rc_count, node *arg_info, bool incOverOne)
+void
+PushEnv (node *avis)
 {
-    rc_counter *rcc;
-
-    DBUG_ASSERT ((rc_count == NULL) || (INFO_SSARC_DEPTH (arg_info) >= rc_count->depth),
-                 "Illegal reference counter stack state");
-
-    if ((rc_count == NULL) || (INFO_SSARC_DEPTH (arg_info) > rc_count->depth)) {
-        rcc = Malloc (sizeof (rc_counter));
-        rcc->depth = INFO_SSARC_DEPTH (arg_info);
-        rcc->count = 1;
-        rcc->next = rc_count;
-        INFO_SSARC_RESULT (arg_info) = TRUE;
-        return rcc;
-    } else {
-        if (incOverOne)
-            rc_count->count += 1;
-        INFO_SSARC_RESULT (arg_info) = FALSE;
-        return rc_count;
+    if (AVIS_SSARC_COUNTED (avis) == FALSE) {
+        AVIS_SSARC_COUNTER2 (avis) = AVIS_SSARC_COUNTER (avis);
+        AVIS_SSARC_COUNTER (avis) = NULL;
     }
+}
+
+void
+KillSecondEnv (node *avis)
+{
+    DBUG_ASSERT (AVIS_SSARC_COUNTER (avis) == NULL, "Environement != NULL!!!");
+    AVIS_SSARC_COUNTER (avis) = AVIS_SSARC_COUNTER2 (avis);
+    AVIS_SSARC_COUNTER2 (avis) = NULL;
+    AVIS_SSARC_COUNTED (avis) = FALSE;
 }
 
 bool
-IncreaseEnvPar (node *avis, node *arg_info, bool incOverOne)
+AddEnvPar (node *avis, node *arg_info, int n, bool incOverOne)
 {
-    switch (INFO_SSARC_MODE (arg_info)) {
-    case rc_then:
-    case rc_default:
-        AVIS_SSARC_DEFAULT (avis)
-          = IncreaseGivenEnv (AVIS_SSARC_DEFAULT (avis), arg_info, incOverOne);
-        return (INFO_SSARC_RESULT (arg_info));
-        break;
-    case rc_else:
-        AVIS_SSARC_ELSE (avis)
-          = IncreaseGivenEnv (AVIS_SSARC_ELSE (avis), arg_info, incOverOne);
-        return (INFO_SSARC_RESULT (arg_info));
-        break;
-    case rc_both:
-        AVIS_SSARC_DEFAULT (avis)
-          = IncreaseGivenEnv (AVIS_SSARC_DEFAULT (avis), arg_info, incOverOne);
-        AVIS_SSARC_ELSE (avis)
-          = IncreaseGivenEnv (AVIS_SSARC_ELSE (avis), arg_info, incOverOne);
-        return (INFO_SSARC_RESULT (arg_info));
-        break;
+    rc_counter *rcc;
+
+    DBUG_ASSERT ((AVIS_SSARC_COUNTER (avis) == NULL)
+                   || (INFO_SSARC_DEPTH (arg_info) >= AVIS_SSARC_COUNTER (avis)->depth),
+                 "Illegal reference counter stack state");
+
+    if ((AVIS_SSARC_COUNTER (avis) == NULL)
+        || (INFO_SSARC_DEPTH (arg_info) > AVIS_SSARC_COUNTER (avis)->depth)) {
+        rcc = Malloc (sizeof (rc_counter));
+        rcc->depth = INFO_SSARC_DEPTH (arg_info);
+        rcc->count = n;
+        rcc->next = AVIS_SSARC_COUNTER (avis);
+        AVIS_SSARC_COUNTER (avis) = rcc;
+        return TRUE;
+    } else {
+        if (incOverOne)
+            AVIS_SSARC_COUNTER (avis)->count += n;
+        return FALSE;
     }
-    DBUG_ASSERT (FALSE, "Cannot arrive here");
-    return FALSE;
+}
+
+void
+AddEnv (node *avis, node *arg_info, int n)
+{
+    AddEnvPar (avis, arg_info, n, TRUE);
 }
 
 bool
 IncreaseEnv (node *avis, node *arg_info)
 {
-    return IncreaseEnvPar (avis, arg_info, TRUE);
+    return AddEnvPar (avis, arg_info, 1, TRUE);
 }
 
 bool
 IncreaseEnvOnZero (node *avis, node *arg_info)
 {
-    return IncreaseEnvPar (avis, arg_info, FALSE);
+    return AddEnvPar (avis, arg_info, 1, FALSE);
 }
 
 int
@@ -136,33 +132,13 @@ PopEnv (node *avis, node *arg_info)
 
     AVIS_SSARC_COUNTED (avis) = TRUE;
 
-    switch (INFO_SSARC_MODE (arg_info)) {
-    case rc_then:
-    case rc_default:
-    case rc_both:
-        if (AVIS_SSARC_DEFAULT (avis) == NULL)
-            return 0;
-        else {
-            res = AVIS_SSARC_DEFAULT (avis)->count;
-            AVIS_SSARC_DEFAULT (avis) = Free (AVIS_SSARC_DEFAULT (avis));
-            if (AVIS_SSARC_ELSE (avis) != NULL)
-                AVIS_SSARC_ELSE (avis) = Free (AVIS_SSARC_ELSE (avis));
-            return (res);
-        }
-        break;
-    case rc_else:
-        if (AVIS_SSARC_ELSE (avis) == NULL)
-            return 0;
-        else {
-            res = AVIS_SSARC_ELSE (avis)->count;
-            AVIS_SSARC_ELSE (avis) = Free (AVIS_SSARC_ELSE (avis));
-            return (res);
-        }
-        break;
+    if (AVIS_SSARC_COUNTER (avis) == NULL)
+        return 0;
+    else {
+        res = AVIS_SSARC_COUNTER (avis)->count;
+        AVIS_SSARC_COUNTER (avis) = Free (AVIS_SSARC_COUNTER (avis));
+        return (res);
     }
-
-    DBUG_ASSERT (FALSE, "Cannot arrive here!");
-    return 0;
 }
 
 bool
@@ -252,12 +228,12 @@ MakeAdjustRC (node *avis, int count, node *next_node)
         return next_node;
 #endif
 
-    ids1 = MakeIds (VARDEC_NAME (AVIS_VARDECORARG (avis)), NULL, ST_regular);
+    ids1 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (avis))), NULL, ST_regular);
 
     IDS_AVIS (ids1) = avis;
     IDS_VARDEC (ids1) = AVIS_VARDECORARG (avis);
 
-    ids2 = MakeIds (VARDEC_NAME (AVIS_VARDECORARG (avis)), NULL, ST_regular);
+    ids2 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (avis))), NULL, ST_regular);
 
     IDS_AVIS (ids2) = avis;
     IDS_VARDEC (ids2) = AVIS_VARDECORARG (avis);
@@ -265,8 +241,10 @@ MakeAdjustRC (node *avis, int count, node *next_node)
     n = MakeAssign (MakeLet (MakePrf (F_adjust_rc,
                                       MakeExprs (MakeIdFromIds (ids1),
                                                  MakeExprs (MakeNum (count), NULL))),
-                             DupOneIds (ids2)),
-                    next_node);
+                             ids2),
+                    (((next_node != NULL) && (NODE_TYPE (next_node) == N_assign))
+                       ? next_node
+                       : NULL));
 
     return (n);
 }
@@ -290,12 +268,11 @@ SSARCfundef (node *fundef, node *arg_info)
 
     DBUG_ENTER ("SSARCfundef");
 
-    if (FUNDEF_IS_CONDFUN (fundef))
-        INFO_SSARC_MODE (arg_info) = rc_both;
-    else
-        INFO_SSARC_MODE (arg_info) = rc_default;
-
+    INFO_SSARC_FUNDEF (arg_info) = fundef;
     INFO_SSARC_DEPTH (arg_info) = 0;
+    INFO_SSARC_MODE (arg_info) = rc_default;
+
+    Print (fundef);
 
     /* Traverse args in order to initialize refcounting environment */
     if (FUNDEF_ARGS (fundef) != NULL)
@@ -305,6 +282,7 @@ SSARCfundef (node *fundef, node *arg_info)
     if (FUNDEF_BODY (fundef) != NULL)
         FUNDEF_BODY (fundef) = Trav (FUNDEF_BODY (fundef), arg_info);
 
+    /* Annotate missing ADJUST_RCs */
     arg = FUNDEF_ARGS (fundef);
     while (arg != NULL) {
         BLOCK_INSTR (FUNDEF_BODY (fundef))
@@ -313,10 +291,8 @@ SSARCfundef (node *fundef, node *arg_info)
         arg = ARG_NEXT (arg);
     }
 
-#ifndef SSARC_DEVELOP
     /* Restore SSA form */
     fundef = RestoreSSAOneFundef (fundef);
-#endif
 
     /* Traverse other fundefs */
     if (FUNDEF_NEXT (fundef) != NULL)
@@ -330,10 +306,24 @@ SSARCarg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSARCarg");
 
-    InitializeEnv (ARG_AVIS (arg_node));
+    InitializeEnv (ARG_AVIS (arg_node), arg_info);
 
     if (ARG_NEXT (arg_node) != NULL)
         ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+SSARCvardec (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("SSARCvardec");
+
+    InitializeEnv (VARDEC_AVIS (arg_node), arg_info);
+
+    if (VARDEC_NEXT (arg_node) != NULL) {
+        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -352,20 +342,6 @@ SSARCblock (node *arg_node, node *arg_info)
                                                    " (should be a N_empty node)");
 
     BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-SSARCvardec (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("SSARCvardec");
-
-    InitializeEnv (VARDEC_AVIS (arg_node));
-
-    if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
-    }
 
     DBUG_RETURN (arg_node);
 }
@@ -423,6 +399,67 @@ SSARCreturn (node *arg_node, node *arg_info)
 }
 
 node *
+SSARCcond (node *arg_node, node *arg_info)
+{
+    int m, t, e;
+    node *n;
+
+    DBUG_ENTER ("SSARCcond");
+
+    if (INFO_SSARC_MODE (arg_info) == rc_default) {
+        COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+        if (IncreaseEnvOnZero (ID_AVIS (COND_COND (arg_node)), arg_info))
+            BLOCK_INSTR (COND_THEN (arg_node))
+              = MakeAdjustRC (ID_AVIS (COND_COND (arg_node)), -1, arg_info);
+
+    } else {
+        COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+        if (IncreaseEnvOnZero (ID_AVIS (COND_COND (arg_node)), arg_info))
+            BLOCK_INSTR (COND_ELSE (arg_node))
+              = MakeAdjustRC (ID_AVIS (COND_COND (arg_node)), -1, arg_info);
+
+        /* After both environments have been created,
+           annote missing ADJUST_RCs at the beginning of blocks and
+           simultaneously merge both environments */
+        n = FUNDEF_ARGS (INFO_SSARC_FUNDEF (arg_info));
+        while (n != NULL) {
+            t = PopEnv (ARG_AVIS (n), arg_info);
+            KillSecondEnv (ARG_AVIS (n));
+            e = PopEnv (ARG_AVIS (n), arg_info);
+            KillSecondEnv (ARG_AVIS (n));
+            m = e < t ? e : t;
+            AddEnv (ARG_AVIS (n), arg_info, m);
+            BLOCK_INSTR (COND_THEN (arg_node))
+              = MakeAdjustRC (ARG_AVIS (n), t - m, BLOCK_INSTR (COND_THEN (arg_node)));
+            BLOCK_INSTR (COND_ELSE (arg_node))
+              = MakeAdjustRC (ARG_AVIS (n), e - m, BLOCK_INSTR (COND_ELSE (arg_node)));
+            n = ARG_NEXT (n);
+        }
+
+        n = BLOCK_VARDEC (FUNDEF_BODY (INFO_SSARC_FUNDEF (arg_info)));
+        while (n != NULL) {
+            if (AVIS_SSARC_COUNTED (VARDEC_AVIS (n)) == FALSE) {
+                t = PopEnv (VARDEC_AVIS (n), arg_info);
+                KillSecondEnv (VARDEC_AVIS (n));
+                e = PopEnv (VARDEC_AVIS (n), arg_info);
+                KillSecondEnv (VARDEC_AVIS (n));
+                m = e < t ? e : t;
+                AddEnv (VARDEC_AVIS (n), arg_info, m);
+                BLOCK_INSTR (COND_THEN (arg_node))
+                  = MakeAdjustRC (VARDEC_AVIS (n), t - m,
+                                  BLOCK_INSTR (COND_THEN (arg_node)));
+                BLOCK_INSTR (COND_ELSE (arg_node))
+                  = MakeAdjustRC (VARDEC_AVIS (n), e - m,
+                                  BLOCK_INSTR (COND_ELSE (arg_node)));
+            }
+            n = VARDEC_NEXT (n);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
 SSARClet (node *arg_node, node *arg_info)
 {
     ids *ids;
@@ -434,7 +471,6 @@ SSARClet (node *arg_node, node *arg_info)
 
     switch (INFO_SSARC_RHS (arg_info)) {
     case rc_funap:
-    case rc_copy:
         rhs_val = -1;
         break;
     case rc_prfap:
@@ -442,7 +478,17 @@ SSARClet (node *arg_node, node *arg_info)
     case rc_array:
         rhs_val = 0;
         break;
+    case rc_copy:
+        /* Copy assignment: a=b */
+        /* Env(b) += Env(a) */
+        AddEnv (IDS_AVIS (ID_IDS (LET_EXPR (arg_node))), arg_info,
+                PopEnv (IDS_AVIS (LET_IDS (arg_node)), arg_info));
+        DBUG_RETURN (arg_node);
+    case rc_funcond:
+        /* Don't do anything as FunCond is a pseudo function */
+        DBUG_RETURN (arg_node);
     default:
+        Print (arg_node);
         DBUG_ASSERT (FALSE, "Cannot happen");
     }
 
@@ -458,6 +504,26 @@ SSARClet (node *arg_node, node *arg_info)
 }
 
 node *
+SSARCfuncond (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("SSARCfuncond");
+
+    INFO_SSARC_RHS (arg_info) = rc_funcond;
+
+    switch (INFO_SSARC_MODE (arg_info)) {
+    case rc_default:
+        if (FUNCOND_THEN (arg_node) != NULL)
+            FUNCOND_THEN (arg_node) = Trav (FUNCOND_THEN (arg_node), arg_info);
+        break;
+    case rc_else:
+        if (FUNCOND_ELSE (arg_node) != NULL)
+            FUNCOND_ELSE (arg_node) = Trav (FUNCOND_ELSE (arg_node), arg_info);
+        break;
+    }
+    DBUG_RETURN (arg_node);
+}
+
+node *
 SSARCid (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSARCid");
@@ -466,11 +532,12 @@ SSARCid (node *arg_node, node *arg_info)
     case rc_undef:
         INFO_SSARC_RHS (arg_info) = rc_copy;
         /* Add one to the environment */
-        IncreaseEnv (ID_AVIS (arg_node), arg_info);
+        /*      IncreaseEnv(ID_AVIS(arg_node), arg_info);*/
         /* Don't put id into declist as this is a copy assignment */
         break;
     case rc_funap:
     case rc_return:
+    case rc_funcond:
         /* Add one to the environment */
         IncreaseEnv (ID_AVIS (arg_node), arg_info);
 
@@ -480,6 +547,7 @@ SSARCid (node *arg_node, node *arg_info)
 
     case rc_array:
     case rc_prfap:
+    case rc_cond:
         /* Add one to the environment iff it is zero */
         if (IncreaseEnvOnZero (ID_AVIS (arg_node), arg_info))
 
@@ -488,6 +556,7 @@ SSARCid (node *arg_node, node *arg_info)
         break;
     case rc_const:
     case rc_copy:
+        Print (arg_node);
         DBUG_ASSERT (FALSE, "No ID node must appear in this context");
     }
     DBUG_RETURN (arg_node);
@@ -563,6 +632,7 @@ node *
 SSARCassign (node *arg_node, node *arg_info)
 {
     rc_list_struct *rls;
+    node *n;
 
     DBUG_ENTER ("SSARCassign");
 
@@ -573,8 +643,35 @@ SSARCassign (node *arg_node, node *arg_info)
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    INFO_SSARC_RHS (arg_node) = rc_undef;
+    INFO_SSARC_RHS (arg_info) = rc_undef;
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
+    /* If this node happens to be a conditional,
+       traverse again! */
+    if (INFO_SSARC_RHS (arg_info) = rc_cond) {
+        INFO_SSARC_MODE (arg_info) = rc_else;
+
+        n = FUNDEF_ARGS (INFO_SSARC_FUNDEF (arg_info));
+        while (n != NULL) {
+            PushEnv (ARG_AVIS (n));
+            n = ARG_NEXT (n);
+        }
+
+        n = BLOCK_VARDEC (FUNDEF_BODY (INFO_SSARC_FUNDEF (arg_info)));
+        while (n != NULL) {
+            PushEnv (VARDEC_AVIS (n));
+            n = VARDEC_NEXT (n);
+        }
+
+        if (ASSIGN_NEXT (arg_node) != NULL) {
+            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        }
+
+        INFO_SSARC_RHS (arg_info) = rc_undef;
+        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
+        INFO_SSARC_MODE (arg_node) = rc_default;
+    }
 
     /* Insert ADJUST_RC prfs from DECLIST */
     while (DecList_HasNext (arg_info)) {
@@ -609,6 +706,8 @@ SSARefCount (node *syntax_tree)
     syntax_tree = Trav (syntax_tree, info);
 
     info = FreeTree (info);
+
+    syntax_tree = UndoSSA (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
