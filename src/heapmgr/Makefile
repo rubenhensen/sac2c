@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.12  2003/03/20 14:39:13  sbs
+# now builds the mt version iff DISABLE_MT is not set!
+#
 # Revision 3.11  2002/06/06 19:56:03  dkr
 # target clean modified
 #
@@ -70,8 +73,11 @@ OBJS_HEAPMGR_MT_DIAG := $(patsubst %.c, %_mt_diag.o, $(FILES_HEAPMGR))
 .PHONY: all tar clean prod
 
 
-all: libsac_heapmgr.a libsac_heapmgr_diag.a   \
-     libsac_heapmgr_mt.a libsac_heapmgr_mt_diag.a 
+all: libsac_heapmgr.a libsac_heapmgr_diag.a
+
+ifneq ($(DISABLE_MT),yes)
+all: libsac_heapmgr_mt.a libsac_heapmgr_mt_diag.a 
+endif
 
 
 libsac_heapmgr.a: $(OBJS_HEAPMGR)
