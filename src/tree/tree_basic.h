@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2001/02/15 16:59:03  nmw
+ * node N_ssastack added
+ * ,
+ *
  * Revision 3.28  2001/02/14 17:51:49  dkr
  * redundant VARDEC_TYPEDEF removed
  *
@@ -1907,6 +1911,30 @@ extern node *MakeSSAcnt (node *next, int count, char *baseid);
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***  N_ssastack :
+ ***
+ ***  sons:
+ ***
+ ***    node*    NEXT     (O)  (N_ssastack)
+ ***
+ ***  permanent attributes:
+ ***
+ ***    node*    AVIS           (N_avis)  rename-to Avis node in stack-list
+ ***/
+
+/*
+ * ssastack does the stacking of rename-to avis nodes during ssa-traversal
+ * in vardec or arg-avis nodes.
+ */
+
+extern node *MakeSSAstack (node *next, node *avis);
+
+#define SSASTACK_NEXT(n) (n->node[0])
+#define SSASTACK_AVIS(n) (n->node[1])
+
+/*--------------------------------------------------------------------------*/
+
+/***
  ***  N_avis :
  ***
  ***  sons:
@@ -1923,8 +1951,7 @@ extern node *MakeSSAcnt (node *next, int count, char *baseid);
  ***    bool        SSALPINV (0)                     (lir -> optimize !!)
  ***
  ***    the following attributes are only used within ssaform traversal:
- ***    node*       SSASUBST (0)    (N_avis)         (ssaform!!)
- ***    node*       SSACOND (0)     (N_avis)         (ssaform!!)
+ ***    node*       SSASUBST (0)    (N_ssastack)     (ssaform!!)
  ***    node*       SSATHEN (0)     (N_avis)         (ssaform!!)
  ***    node*       SSAELSE (0)     (N_avis)         (ssaform!!)
  ***/
@@ -1942,10 +1969,9 @@ extern node *MakeAvis (node *vardecOrArg);
 #define AVIS_SSACONST(n) ((constant *)(n->info2))
 #define AVIS_SSAPHITARGET(n) ((bool)(n->flag))
 #define AVIS_SSALPINV(n) ((bool)(n->refcnt))
-#define AVIS_SSASUBST(n) ((node *)(n->dfmask[0]))
-#define AVIS_SSACOND(n) ((node *)(n->dfmask[1]))
-#define AVIS_SSATHEN(n) ((node *)(n->dfmask[2]))
-#define AVIS_SSAELSE(n) ((node *)(n->dfmask[3]))
+#define AVIS_SSASTACK(n) ((node *)(n->dfmask[0]))
+#define AVIS_SSATHEN(n) ((node *)(n->dfmask[1]))
+#define AVIS_SSAELSE(n) ((node *)(n->dfmask[2]))
 
 /*--------------------------------------------------------------------------*/
 

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/02/15 16:59:03  nmw
+ * node N_ssastack added
+ * ,
+ *
  * Revision 3.15  2001/02/14 15:05:35  dkr
  * ATTRIB/STATUS are always initialized now.
  * Pre-processor flag NAMES_IN_TYPES added:
@@ -1339,6 +1343,26 @@ MakeSSAcnt (node *next, int count, char *baseid)
 
     DBUG_RETURN (tmp);
 }
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeSSAstack (node *next, node *avis)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeSSAstack");
+
+    tmp = CreateCleanNode (N_ssastack);
+    SSASTACK_NEXT (tmp) = next;
+    SSASTACK_AVIS (tmp) = avis;
+
+    DBUG_PRINT ("MAKENODE",
+                ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+
+    DBUG_RETURN (tmp);
+}
+
 /*--------------------------------------------------------------------------*/
 
 extern node *
@@ -1352,6 +1376,9 @@ MakeAvis (node *vardecOrArg)
     AVIS_VARDECORARG (tmp) = vardecOrArg;
     AVIS_SSAPHITARGET (tmp) = FALSE;
     AVIS_SSALPINV (tmp) = FALSE;
+
+    /* create empty stack */
+    AVIS_SSASTACK (tmp) = MakeSSAstack (NULL, NULL);
 
     DBUG_PRINT ("MAKENODE",
                 ("%d:nodetype: %s " P_FORMAT, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
