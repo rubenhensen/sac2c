@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.112  1998/03/04 16:21:00  cg
+ * C compiler invocations and file handling converted to new
+ * configuration files.
+ *
  * Revision 1.111  1998/03/02 13:58:37  cg
  * Scanning of command line options streamlined.
  *
@@ -499,14 +503,17 @@ MAIN
     ARG 'O' : PARM
     {
         switch (**argv) {
+        case '0':
+            cc_optimize = 0;
+            break;
         case '1':
-            strcat (ccflagsstr, "-O1 ");
+            cc_optimize = 1;
             break;
         case '2':
-            strcat (ccflagsstr, "-O2 ");
+            cc_optimize = 2;
             break;
         case '3':
-            strcat (ccflagsstr, "-O3 ");
+            cc_optimize = 3;
             break;
         default:
             SYSWARN (("Unknown optimize parameter '%s`", *argv));
@@ -731,7 +738,7 @@ MAIN
     }
     ARG 'g':
     {
-        strcat (ccflagsstr, "-g ");
+        cc_debug = 1;
     }
     ARG 'v' : PARM
     {
@@ -902,6 +909,16 @@ MAIN
     }
 
     /*
+     * Now, we read in the sac2c configuration files.
+     */
+
+    ABORT_ON_ERROR;
+
+    NOTE_COMPILER_PHASE;
+
+    RSCEvaluateConfiguration (target_name);
+
+    /*
      * Now, we set our search paths for the source program, module declarations,
      * and module implementations...
      *
@@ -926,10 +943,12 @@ MAIN
      *
      * Actually, only one temp directory is created whose name may be
      * accessed trough the global variable tmp_dirname
-     * which is defined in filemgr.c.
+     * which is defined in globals.c.
      */
 
-    CreateTmpDirectories ();
+    tmp_dirname = tempnam (NULL, "SAC_");
+
+    SystemCall ("%s %s", config.mkdir, tmp_dirname);
 
     /*
      * If sac2c was started with the option -libstat,
@@ -943,12 +962,6 @@ MAIN
 
         exit (0);
     }
-
-    ABORT_ON_ERROR;
-
-    NOTE_COMPILER_PHASE;
-
-    RSCEvaluateConfiguration (target_name);
 
     ABORT_ON_ERROR;
 
