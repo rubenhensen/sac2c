@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2001/05/18 09:43:28  cg
+ * MALLOC replaced by Malloc.
+ *
  * Revision 1.8  2001/05/17 11:49:40  dkr
  * FREE eliminated
  *
@@ -126,7 +129,7 @@ Fundef2ProfileString (node *fundef)
     node *arg;
 
     DBUG_ENTER ("Fundef2ProfileString");
-    str_buff = (char *)MALLOC (sizeof (char) * PF_MAXFUNNAMELEN);
+    str_buff = (char *)Malloc (sizeof (char) * PF_MAXFUNNAMELEN);
     str_buff[0] = '\0';
     str_buff = strncpy (str_buff, FUNDEF_NAME (fundef), str_spc);
     str_spc -= strlen (FUNDEF_NAME (fundef));
