@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2004/08/05 11:15:12  khf
+ * earlier setting of NWITH_FOLDABLE
+ *
  * Revision 1.15  2004/07/19 14:19:38  sah
  * switch to new INFO structure
  * PHASE I
@@ -952,8 +955,6 @@ SSAWLINwith (node *arg_node, info *arg_info)
     }
     DBUG_PRINT ("WLI", ("searching done"));
 
-    NWITH_FOLDABLE (arg_node) = INFO_SSAWLI_FOLDABLE (arg_info);
-
     /* traverse N_Nwithop */
     if (NWITH_WITHOP (arg_node) != NULL) {
         NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
@@ -1007,7 +1008,7 @@ SSAWLINwithop (node *arg_node, info *arg_info)
  *   node *SSAWLINpart(node *arg_node, info *arg_info)
  *
  * description:
- *   traverse appropriate body.
+ *   traverse appropriate generator and body.
  *
  ******************************************************************************/
 node *
@@ -1016,6 +1017,14 @@ SSAWLINpart (node *arg_node, info *arg_info)
     DBUG_ENTER ("SSAWLINpart");
 
     NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
+
+    /* traverse first next part to determine FOLDABLE
+    if (NPART_NEXT(arg_node) != NULL) {
+      NPART_NEXT(arg_node) = Trav(NPART_NEXT(arg_node), arg_info);
+    }
+
+    /* all parts are traversed */
+    NWITH_FOLDABLE (INFO_SSAWLI_WL (arg_info)) = INFO_SSAWLI_FOLDABLE (arg_info);
 
     /* traverse code. But do this only once, even if there are more than
        one referencing generators.
