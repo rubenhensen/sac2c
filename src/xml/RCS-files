@@ -28,3 +28,4 @@ common-travfun.xsl
 ast.xml
 Makefile
 ast2node_info_mac.xsl
+ast2traverse_tables_c.xsl
