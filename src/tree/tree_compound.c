@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2002/08/03 00:35:13  dkr
+ * DBUG-output for CreateScalarWith() corrected
+ *
  * Revision 3.66  2002/07/24 13:19:55  dkr
  * macros MUST_REFCOUNT renamed
  *
@@ -3911,9 +3914,9 @@ CreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr, node *fu
     ids *tmp_ids;
     int i;
 
-    DBUG_ENTER ("CreateZero");
+    DBUG_ENTER ("CreateScalarWith");
 
-    DBUG_ASSERT ((dim >= 0), "CreateZero() used with unknown shape!");
+    DBUG_ASSERT ((dim >= 0), "CreateScalarWith() used with unknown shape!");
 
     vec_ids = MakeIds (TmpVar (), NULL, ST_regular);
     vardecs
