@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.81  2000/07/21 11:30:35  jhs
+ * Added FUNDEF_MT2USE, FUNDEF_MT2DEF and FUNDEF_IDENTIFIER.
+ *
  * Revision 1.80  2000/07/21 08:20:42  nmw
  * Modspec added
  *
@@ -1006,7 +1009,9 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_INLINE(n) (n->flag)
 #define FUNDEF_INLREC(n) (n->refcnt)
 #define FUNDEF_DFM_BASE(n) (n->dfmask[0])
-
+#define FUNDEF_IDENTIFIER(n) ((int)(n->dfmask[1]))
+#define FUNDEF_MT2USE(n) (n->dfmask[2])
+#define FUNDEF_MT2DEF(n) (n->dfmask[3])
 #define FUNDEF_LIFTEDFROM(n) ((node *)(n->dfmask[4]))
 #define FUNDEF_WORKER(n) ((node *)(n->dfmask[5]))
 #define FUNDEF_COMPANION(n) ((node *)(n->dfmask[6]))
