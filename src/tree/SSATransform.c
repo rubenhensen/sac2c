@@ -1,10 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2002/10/09 02:09:55  dkr
+ * SSANpart(): transformation of multi-generator WLs corrected
+ * (calls of SSArightids() added!)
+ *
  * Revision 1.24  2002/08/15 10:12:25  sbs
- * Now, SSArightids produces an error message whenever a non previously defined variable i
- * encountered,
- * ,
+ * Now, SSArightids produces an error message whenever a non previously
+ * defined variable i encountered.
  *
  * Revision 1.23  2002/08/05 09:52:04  sbs
  * eliminated the requirement for Nwithid nodes to always have both,
@@ -12,9 +15,6 @@
  * to convert to SSA form prior to type checking. Furthermore, not being
  * restricted to the AKS case anymore, we cannot guarantee the existance
  * of the IDS attribute in all cases anymore !!!!
- *
- * Revision 1.22  2002/02/12 15:44:20  dkr
- * no changes done
  *
  * Revision 1.21  2001/05/17 11:38:56  dkr
  * MALLOC FREE aliminated
@@ -97,7 +97,7 @@
  *
  *    In performing a top-down traversal for each re-definition of some
  *    identifier there will be created a new, renamed identifier (e.g.
- *    i is renamend to i__SSA_1). The counter for this is stored in a
+ *    i is renamed to i__SSA_1). The counter for this is stored in a
  *    SSACNT node for each variable name (stored as attribute in AVIS node).
  *    All SSACNT nodes are chained as attribute of the top block of the
  *    concerning function). The counter is used in sharing for all renamed
@@ -676,7 +676,7 @@ SSAarg (node *arg_node, node *arg_info)
     AVIS_SSADEFINED (ARG_AVIS (arg_node)) = TRUE;
 
     /*
-     * mark stack as activ
+     * mark stack as active
      * (later added vardecs and stacks are ignored when stacking)
      */
     AVIS_SSASTACK_INUSE (ARG_AVIS (arg_node)) = TRUE;
@@ -742,7 +742,7 @@ SSAvardec (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *  node *SSAid(node *arg_node, node *arg_info)
+ *  node *SSAid( node *arg_node, node *arg_info)
  *
  * description:
  *  does necessary renaming of variables used on right sides of expressions.
@@ -910,10 +910,20 @@ SSANpart (node *arg_node, node *arg_info)
     if (NPART_NEXT (arg_node) != NULL) {
         /* traverse next part */
         NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+        /*
+         * not the last withid -> traverse it as RHS occurance
+         */
+        NWITHID_VEC (NPART_WITHID (arg_node))
+          = SSArightids (NWITHID_VEC (NPART_WITHID (arg_node)), arg_info);
+        NWITHID_IDS (NPART_WITHID (arg_node))
+          = SSArightids (NWITHID_IDS (NPART_WITHID (arg_node)), arg_info);
     } else {
-        /* traverse in withid */
+        /*
+         * last withid -> traverse it as LHS occurance
+         */
         NPART_WITHID (arg_node) = Trav (NPART_WITHID (arg_node), arg_info);
     }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -957,6 +967,7 @@ SSANcode (node *arg_node, node *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
 /******************************************************************************
  *
  * function:
@@ -964,7 +975,7 @@ SSANcode (node *arg_node, node *arg_info)
  *
  * description:
  *  traverses in vector and ids strutures. because the withids do not have a
- *  defining assignment. we set the currect assignmentr to NULL when processing
+ *  defining assignment. we set the current assignment to NULL when processing
  *  these ids.
  *
  ******************************************************************************/
@@ -1121,8 +1132,7 @@ SSAleftids (ids *arg_ids, node *arg_info)
         } else {
             AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
         }
-
-    } else if (AVIS_SSADEFINED (IDS_AVIS (arg_ids)) == FALSE) {
+    } else if (!AVIS_SSADEFINED (IDS_AVIS (arg_ids))) {
         /* first definition of variable (no renaming) */
         AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids)) = IDS_AVIS (arg_ids);
         /* SSACNT_COUNT(AVIS_SSACOUNT(IDS_AVIS(arg_ids))) = 0; */
@@ -1162,7 +1172,6 @@ SSAleftids (ids *arg_ids, node *arg_info)
          * mark this avis for undo ssa transform:
          * all global objects and artificial identifier must
          * be mapped back to their original name in undossa.
-         *
          */
         if ((IDS_STATUS (arg_ids) == ST_artificial) || (IDS_ATTRIB (arg_ids) == ST_global)
             || (VARDEC_OR_ARG_ATTRIB (AVIS_VARDECORARG (IDS_AVIS (arg_ids)))
@@ -1215,7 +1224,7 @@ SSArightids (ids *arg_ids, node *arg_info)
      */
     if (AVIS_SSAPHITARGET (IDS_AVIS (arg_ids)) == PHIT_NONE) {
         /* do renaming to new ssa vardec */
-        if (AVIS_SSADEFINED (IDS_AVIS (arg_ids)) == FALSE) {
+        if (!AVIS_SSADEFINED (IDS_AVIS (arg_ids))) {
             ERROR (linenum, ("var %s used without definition", IDS_NAME (arg_ids)));
         } else {
             IDS_AVIS (arg_ids) = AVIS_SSASTACK_TOP (IDS_AVIS (arg_ids));
@@ -1233,6 +1242,11 @@ SSArightids (ids *arg_ids, node *arg_info)
     Free (IDS_NAME (arg_ids));
     IDS_NAME (arg_ids) = StringCopy (VARDEC_OR_ARG_NAME (IDS_VARDEC (arg_ids)));
 #endif
+
+    /* traverese next ids */
+    if (IDS_NEXT (arg_ids) != NULL) {
+        IDS_NEXT (arg_ids) = TravRightIDS (IDS_NEXT (arg_ids), arg_info);
+    }
 
     DBUG_RETURN (arg_ids);
 }
@@ -1263,7 +1277,7 @@ TravRightIDS (ids *arg_ids, node *arg_info)
 {
     DBUG_ENTER ("TravRightIDS");
 
-    DBUG_ASSERT (arg_ids != NULL, "traversal in NULL ids");
+    DBUG_ASSERT ((arg_ids != NULL), "traversal in NULL ids");
     arg_ids = SSArightids (arg_ids, arg_info);
 
     DBUG_RETURN (arg_ids);
