@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2000/07/05 09:13:10  mab
+ * fixed problem with global data structure pad_info
+ *
  * Revision 1.3  2000/06/28 10:43:10  mab
  * made some code modifications according to code review
  *
@@ -39,8 +42,6 @@ typedef struct pad_i {
     node *fundef_unpad;
     struct pad_i *next;
 } pad_info_t;
-
-pad_info_t *pad_info;
 
 extern void PIinit ();
 extern void PIadd (types *old_type, shpseg *new_shape);
