@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1994/11/11 13:50:54  hw
+ * Revision 1.4  1994/12/14 10:18:39  sbs
+ * PrintModul & PrintImportlist & PrintTypedef inserted
+ *
+ * Revision 1.3  1994/11/11  13:50:54  hw
  * added new Print-functions: PrintInc PrintDec PrintPost PrintPre
  *
  * Revision 1.2  1994/11/10  15:35:18  sbs
@@ -18,6 +21,9 @@ extern node *PrintAssign (node *, node *);
 extern node *PrintBlock (node *, node *);
 extern node *PrintLet (node *, node *);
 extern node *PrintFundef (node *, node *);
+extern node *PrintTypedef (node *, node *);
+extern node *PrintModul (node *, node *);
+extern node *PrintImplist (node *, node *);
 extern node *PrintPrf (node *, node *);
 extern node *PrintId (node *, node *);
 extern node *PrintNum (node *, node *);
