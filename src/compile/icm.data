@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/05/04 11:46:22  ben
+ * MT_SCHEDULER_Even_... deleted
+ * MT_SCHEDULER_Cyclic_... renamed to _Static_
+ * MT_SCHEDULER_Afs_... renamed to Affinity
+ *
  * Revision 3.18  2001/04/03 19:40:02  dkr
  * MT_ADJUST_SCHEDULER__OFFSET added.
  * MT_ADJUST_SCHEDULER is a h-icm now.
@@ -729,64 +734,50 @@ ICM_DEF( MT_SCHEDULER_BlockVar_END, TRACE_NONE)
 ICM_END( MT_SCHEDULER_BlockVar_END, (dim, vararg))
 #endif
 
-#if defined(MT_SCHEDULER_Even_BEGIN) || defined(ICM_ALL)
-ICM_DEF( MT_SCHEDULER_Even_BEGIN, TRACE_NONE)
-  ICM_INT(dim)
-  ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Even_BEGIN, ( dim, vararg))
-#endif
-
-#if defined(MT_SCHEDULER_Even_END) || defined(ICM_ALL)
-ICM_DEF( MT_SCHEDULER_Even_END, TRACE_NONE)
-  ICM_INT(dim)
-  ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Even_END, ( dim, vararg))
-#endif
-
 #if defined(MT_SCHEDULER_Cyclic_BEGIN) || defined(ICM_ALL)
-ICM_DEF( MT_SCHEDULER_Cyclic_BEGIN, TRACE_NONE)
-  ICM_INT(param)
+ICM_DEF( MT_SCHEDULER_Static_BEGIN, TRACE_NONE)
+  ICM_INT(tasks_per_thread)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Cyclic_BEGIN, (param, dim, vararg))
+ICM_END( MT_SCHEDULER_Static_BEGIN, (tasks_per_thread, dim, vararg))
 #endif
 
-#if defined(MT_SCHEDULER_Cyclic_END) || defined(ICM_ALL)
-ICM_DEF( MT_SCHEDULER_Cyclic_END, TRACE_NONE)
-  ICM_INT(param)
+#if defined(MT_SCHEDULER_Static_END) || defined(ICM_ALL)
+ICM_DEF( MT_SCHEDULER_Static_END, TRACE_NONE)
+  ICM_INT(tasks_per_thread)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Cyclic_END, (param, dim, vararg))
+ICM_END( MT_SCHEDULER_Static_END, (tasks_per_thread, dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Self_BEGIN) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Self_BEGIN, TRACE_NONE)
-  ICM_INT(param)
+  ICM_INT(tasks_per_thread)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Self_BEGIN, (param, dim, vararg))
+ICM_END( MT_SCHEDULER_Self_BEGIN, (tasks_per_thread, dim, vararg))
 #endif
 
 #if defined(MT_SCHEDULER_Self_END) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Self_END, TRACE_NONE)
-  ICM_INT(param)
+  ICM_INT(tasks_per_thread)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Self_END, (param, dim, vararg))
+ICM_END( MT_SCHEDULER_Self_END, (tasks_per_thread, dim, vararg))
 #endif
 
-#if defined(MT_SCHEDULER_Afs_BEGIN) || defined(ICM_ALL)
-ICM_DEF( MT_SCHEDULER_Afs_BEGIN, TRACE_NONE)
-  ICM_INT(param)
+#if defined(MT_SCHEDULER_Affinity_BEGIN) || defined(ICM_ALL)
+ICM_DEF( MT_SCHEDULER_Affinity_BEGIN, TRACE_NONE)
+  ICM_INT(tasks_per_thread)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Afs_BEGIN, (param, dim, vararg))
+ICM_END( MT_SCHEDULER_Affinity_BEGIN, (tasks_per_thread, dim, vararg))
 #endif
 
-#if defined(MT_SCHEDULER_Afs_END) || defined(ICM_ALL)
-ICM_DEF( MT_SCHEDULER_Afs_END, TRACE_NONE)
-  ICM_INT(param)
+#if defined(MT_SCHEDULER_Affinity_END) || defined(ICM_ALL)
+ICM_DEF( MT_SCHEDULER_Affinity_END, TRACE_NONE)
+  ICM_INT(tasks_per_thread)
   ICM_INT(dim)
   ICM_VAR((3*dim), vararg)
-ICM_END( MT_SCHEDULER_Afs_END, (param, dim, vararg))
+ICM_END( MT_SCHEDULER_Affinity_END, (tasks_per_thread, dim, vararg))
 #endif
