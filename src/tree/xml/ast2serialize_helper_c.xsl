@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.6  2004/10/25 12:32:28  sah
+  added SHLPFixLink
+
   Revision 1.5  2004/10/19 14:06:44  sah
   added support for persist flag
 
@@ -37,7 +40,7 @@ version="1.0">
 
      MakeNode to allocate and fill an empty node structure
 
-     LookupFunction
+     FixLink to fix links between nodes
 
      templates:
 
@@ -89,7 +92,7 @@ version="1.0">
 
   </xsl:text>
   <xsl:apply-templates select="." mode="gen-make-fun" />
-  <xsl:apply-templates select="." mode="gen-lookup-fun" />
+  <xsl:apply-templates select="." mode="gen-fixlink-fun" />
   <xsl:call-template name="travfun-group-end"/>
 </xsl:template>
 
@@ -216,9 +219,48 @@ version="1.0">
   <xsl:value-of select="'= va_arg( args, node*);'" />
 </xsl:template>
 
-<xsl:template match="/" mode="gen-lookup-fun">
-  <xsl:value-of select="'node *SHLPLookupFunction( const char *funname)'" />
-  <xsl:value-of select="'{ return( NULL);}'" />
+<xsl:template match="/" mode="gen-fixlink-fun">
+  <xsl:value-of select="'void SHLPFixLink( serstack_t *stack, int from, int no, int to) {'" />
+  <xsl:value-of select="'node *fromp = NULL;node *top = NULL;'" />
+  <xsl:value-of select="'if ( from != SERSTACK_NOT_FOUND ) {'" />
+  <xsl:value-of select="'fromp = SerStackLookup( from, stack);'" />
+  <xsl:value-of select="'if ( to != SERSTACK_NOT_FOUND) {'" />
+  <xsl:value-of select="'top = SerStackLookup( to, stack); }'" />
+  <xsl:value-of select="'switch (NODE_TYPE( fromp)) {'" />
+  <xsl:apply-templates select="//syntaxtree/node" mode="gen-fixlink-fun" />
+  <xsl:value-of select="'default: break; } } }'" />
+</xsl:template>
+
+<xsl:template match="node" mode="gen-fixlink-fun">
+  <xsl:value-of select="'case '" />
+  <xsl:call-template name="name-to-nodeenum">
+    <xsl:with-param name="name">
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="': switch( no) {'" />
+  <xsl:apply-templates select="attributes/attribute[type/@name = &quot;Link&quot;]" mode="gen-fixlink-fun" />
+  <xsl:value-of select="'default: break;'" />
+  <xsl:value-of select="'} break;'" />
+</xsl:template>
+
+<xsl:template match="attributes/attribute" mode="gen-fixlink-fun">
+  <xsl:value-of select="'case '" />
+  <xsl:value-of select="position()" />
+  <xsl:value-of select="': '" />
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">
+      <xsl:value-of select="'fromp'" />
+    </xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name" />
+      </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="' = top;'" />
+  <xsl:value-of select="'break;'" />
 </xsl:template>
 
 </xsl:stylesheet>
