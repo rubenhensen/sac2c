@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2004/10/21 17:19:42  sah
+ * removes macro for MakeNWith as it is no more needed
+ *
  * Revision 1.9  2004/10/13 15:18:28  sah
  * MakeIdFromIds works in NEW_AST mode now!
  *
@@ -70,7 +73,6 @@
 #define MakeCast(a, b) MakeCast (b, a)
 #define MakeMop(a, b, c) MakeMop (b, c, a)
 #define MakeSSAstack(a, b) MakeSSAstack (b, a)
-#define MakeNWith(a, b, c) MakeNWith (b, a, c)
 #define MakeCSEinfo(a, b, c) MakeCSEinfo (b, c, a)
 #define MakeNWith2(withid, seg, code, withop, dims)                                      \
     MakeNWith2 (dims, withid, seg, code, withop)
@@ -115,7 +117,6 @@
 #undef MakeSSAstack
 #undef MakeNGenerator
 #undef MakeNPart
-#undef MakeNWith
 #undef MakeCSEinfo
 #undef MakeNWith2
 #undef MakeWLgrid
