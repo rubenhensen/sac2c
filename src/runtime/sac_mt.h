@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2001/11/28 13:58:26  sbs
+ * definition of global arrays of length 0 avoided.
+ * (required for OSX_MAC).
+ *
  * Revision 3.41  2001/08/01 20:09:53  ben
  * one minor bug fixed (Affinity_NEXT_TASK)
  *
@@ -429,6 +433,8 @@ typedef union {
  *  Definition of macro implemented ICMs for global symbol definitions
  */
 
+#if SAC_SET_NUM_SCHEDULERS
+
 #define SAC_MT_DEFINE()                                                                  \
     SAC_MT_DEFINE_BARRIER ()                                                             \
     SAC_MT_DEFINE_SPMD_FRAME ()                                                          \
@@ -440,6 +446,24 @@ typedef union {
     SAC_MT_DEFINE_ACT_TASKSIZE ()                                                        \
     SAC_MT_DEFINE_LAST_TASKEND ()                                                        \
     SAC_MT_DEFINE_TASKCOUNT ()
+
+#else /* SAC_SET_NUM_SCHEDULERS == 0 */
+
+/*
+ * If (SAC_SET_NUM_SCHEDULERS == 0) the macros SAC_MT_DEFINE_TASKS(), etc.
+ * would lead to definitions of global arrays of size 0. On OSX_MAC this
+ * leads to a linker error!!
+ * Unfortunately, libsac_mt.a requires SAC_MT_Tasklock and SAC_MT_TS_Tasklock
+ * to be defined. Therefore, we have to insert dummy definitions for them.
+ */
+
+#define SAC_MT_DEFINE()                                                                  \
+    SAC_MT_DEFINE_BARRIER ()                                                             \
+    SAC_MT_DEFINE_SPMD_FRAME ()                                                          \
+    SAC_MT_DEFINE_DUMMY_TASKLOCKS ()                                                     \
+    SAC_MT_DEFINE_DUMMY_TS_TASKLOCKS ()
+
+#endif
 
 #define SAC_MT_DEFINE_BARRIER()                                                          \
     volatile SAC_MT_barrier_t SAC_MT_barrier_space[SAC_SET_THREADS_MAX + 1];
@@ -453,6 +477,8 @@ typedef union {
 
 #define SAC_MT_DEFINE_TASKLOCKS()                                                        \
     pthread_mutex_t SAC_MT_Tasklock[SAC_SET_THREADS_MAX * SAC_SET_NUM_SCHEDULERS];
+
+#define SAC_MT_DEFINE_DUMMY_TASKLOCKS() pthread_mutex_t SAC_MT_Tasklock[1];
 
 #define SAC_MT_TASKLOCK(sched_id, num)                                                   \
     SAC_MT_Tasklock[num + SAC_SET_NUM_SCHEDULERS * sched_id]
@@ -488,6 +514,8 @@ typedef union {
 
 #define SAC_MT_DEFINE_TS_TASKLOCKS()                                                     \
     pthread_mutex_t SAC_MT_TS_Tasklock[SAC_SET_NUM_SCHEDULERS];
+
+#define SAC_MT_DEFINE_DUMMY_TS_TASKLOCKS() pthread_mutex_t SAC_MT_TS_Tasklock[1];
 
 #define SAC_MT_TS_TASKLOCK(sched_id) SAC_MT_TS_Tasklock[sched_id]
 
