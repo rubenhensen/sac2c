@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.78  2003/11/11 14:25:11  dkr
+ * NWITH_DEFAULT, NWITH2_DEFAULT added
+ *
  * Revision 3.77  2003/06/17 16:07:51  dkr
  * NWITH_OR_NWITH2_CEXPR added
  *
@@ -2042,6 +2045,7 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 #define NWITH_MOD(n) (NWITHOP_MOD (NWITH_WITHOP (n)))
 #define NWITH_FUNDEF(n) (NWITHOP_FUNDEF (NWITH_WITHOP (n)))
 #define NWITH_SHAPE(n) (NWITHOP_SHAPE (NWITH_WITHOP (n)))
+#define NWITH_DEFAULT(n) (NWITHOP_DEFAULT (NWITH_WITHOP (n)))
 #define NWITH_ARRAY(n) (NWITHOP_ARRAY (NWITH_WITHOP (n)))
 #define NWITH_NEUTRAL(n) (NWITHOP_NEUTRAL (NWITH_WITHOP (n)))
 
@@ -2124,6 +2128,7 @@ extern node *CreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
 #define NWITH2_MOD(n) (NWITHOP_MOD (NWITH2_WITHOP (n)))
 #define NWITH2_FUNDEF(n) (NWITHOP_FUNDEF (NWITH2_WITHOP (n)))
 #define NWITH2_SHAPE(n) (NWITHOP_SHAPE (NWITH2_WITHOP (n)))
+#define NWITH2_DEFAULT(n) (NWITHOP_DEFAULT (NWITH2_WITHOP (n)))
 #define NWITH2_ARRAY(n) (NWITHOP_ARRAY (NWITH2_WITHOP (n)))
 #define NWITH2_NEUTRAL(n) (NWITHOP_NEUTRAL (NWITH2_WITHOP (n)))
 
