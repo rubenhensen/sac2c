@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/05/12 14:28:54  cg
+ * command line options streamlined.
+ *
  * Revision 2.3  1999/04/14 09:22:00  cg
  * Cache simulation is now explained in detail.
  *
@@ -159,6 +162,8 @@
 
 #include "usage.h"
 #include "globals.h"
+#include "build.h"
+
 #include "dbug.h"
 
 /*
@@ -177,16 +182,9 @@ usage ()
     printf ("\n\n\t  sac2c  --  The ultimate SAC compiler\n"
             "\t----------------------------------------\n\n"
 
-            "NAME:     \tsac2c\n\n"
+            "NAME:     \tsac2c\n"
 
-            "BUILD:    \t%s\n\n"
-
-            "VERSION:  \t%s for %s\n\n"
-
-            "SYNOPSIS: \tsac2c [options] [filename]\n",
-            build_date_time, version_id, target_platform);
-
-    printf ("\n\nDESCRIPTION:\n\n"
+            "\n\nDESCRIPTION:\n\n"
 
             "\tThe sac2c compiler transforms SAC source code into executable programs\n"
             "\t(SAC programs) or into a SAC specific library format (SAC module and\n"
@@ -213,19 +211,26 @@ usage ()
 
             "\n\nSPECIAL OPTIONS:\n\n"
 
-            "\t -h\t\tdisplay this helptext\n"
-            "\t -i\t\tdisplay copyright/disclaimer\n\n"
-            "\t -libstat\tprint status information about a SAC library file\n"
-            "\t -M\t\tonly detect dependencies from imported\n"
-            "\t\t\t  modules/classes and write them to stdout\n"
-            "\t\t\t  in a way suitable for the make utility.\n"
-            "\t\t\t  Dependences from declaration files are\n"
-            "\t\t\t  considered exclusively.\n"
-            "\t -Mlib\t\tonly detect dependencies from imported\n"
-            "\t\t\t  modules/classes and write them to stdout\n"
-            "\t\t\t  in a way suitable for the make utility.\n"
-            "\t\t\t  Dependences from declaration files as well as\n"
+            "\t -h\t\tdisplay this helptext.\n"
+            "\t -help\t\tdisplay this helptext.\n"
+            "\t -copyright\tdisplay copyright/disclaimer.\n"
+            "\t -V\t\tdisplay version identification.\n"
+            "\n"
+            "\t -libstat \tprint status information of the given SAC library file.\n"
+            "\t\t\t  This option requires the environment variables PWD, USER, and\n"
+            "\t\t\t  HOST to be set when compiling the module/class implementation\n"
+            "\t\t\t  in order to work correctly.\n"
+            "\t -M\t\tdetect dependencies from imported modules/classes and write\n"
+            "\t\t\t  them to stdout in a way suitable for the make utility.\n"
+            "\t\t\t  Only dependencies from declaration files are\n"
+            "\t\t\t  considered.\n"
+            "\t -Mlib\t\tdetect dependencies from imported modules/classes and write\n"
+            "\t\t\t  them to stdout in a way suitable for the make utility.\n"
+            "\t\t\t  Dependencies from declaration files as well as\n"
             "\t\t\t  library files are (recursively) considered.\n"
+            "\n"
+            "\tWhen called with one of these options, sac2c does not perform\n"
+            "\tany compilation steps.\n"
 
             "\n\nGENERAL OPTIONS:\n\n"
 
@@ -243,31 +248,33 @@ usage ()
             "\t\t\t  0: error messages only\n"
             "\t\t\t  1: error messages and warnings\n"
             "\t\t\t  2: basic compile time information\n"
-            "\t\t\t  3: full compile time information (default)\n");
+            "\t\t\t  3: full compile time information\n"
+            "\t\t\t  default: -v %d\n",
+            verbose_level);
 
     printf ("\n\nBREAK OPTIONS:\n\n");
 
-    printf ("\t -bu -b1\tstop after: %s\n", compiler_phase_name[1]);
-    printf ("\t -bp -b2\tstop after: %s\n", compiler_phase_name[2]);
-    printf ("\t -bi -b3\tstop after: %s\n", compiler_phase_name[3]);
-    printf ("\t -bb -b4\tstop after: %s\n", compiler_phase_name[4]);
-    printf ("\t -bj -b5\tstop after: %s\n", compiler_phase_name[5]);
-    printf ("\t -bf -b6\tstop after: %s\n", compiler_phase_name[6]);
-    printf ("\t -bt -b7\tstop after: %s\n", compiler_phase_name[7]);
-    printf ("\t -bd -b8\tstop after: %s\n", compiler_phase_name[8]);
-    printf ("\t -bm -b9\tstop after: %s\n", compiler_phase_name[9]);
-    printf ("\t -ba -b10\tstop after: %s\n", compiler_phase_name[10]);
-    printf ("\t -bw -b11\tstop after: %s\n", compiler_phase_name[11]);
-    printf ("\t -be -b12\tstop after: %s\n", compiler_phase_name[12]);
-    printf ("\t -bq -b13\tstop after: %s\n", compiler_phase_name[13]);
-    printf ("\t -bv -b14\tstop after: %s\n", compiler_phase_name[14]);
-    printf ("\t -bo -b15\tstop after: %s\n", compiler_phase_name[15]);
-    printf ("\t -bs -b16\tstop after: %s\n", compiler_phase_name[16]);
-    printf ("\t -br -b17\tstop after: %s\n", compiler_phase_name[17]);
-    printf ("\t -bn -b18\tstop after: %s\n", compiler_phase_name[18]);
-    printf ("\t -by -b19\tstop after: %s\n", compiler_phase_name[19]);
-    printf ("\t -bl -b20\tstop after: %s\n", compiler_phase_name[20]);
-    printf ("\t -bc -b21\tstop after: %s\n", compiler_phase_name[21]);
+    printf ("\t -b1\tstop after: %s\n", compiler_phase_name[1]);
+    printf ("\t -b2\tstop after: %s\n", compiler_phase_name[2]);
+    printf ("\t -b3\tstop after: %s\n", compiler_phase_name[3]);
+    printf ("\t -b4\tstop after: %s\n", compiler_phase_name[4]);
+    printf ("\t -b5\tstop after: %s\n", compiler_phase_name[5]);
+    printf ("\t -b6\tstop after: %s\n", compiler_phase_name[6]);
+    printf ("\t -b7\tstop after: %s\n", compiler_phase_name[7]);
+    printf ("\t -b8\tstop after: %s\n", compiler_phase_name[8]);
+    printf ("\t -b9\tstop after: %s\n", compiler_phase_name[9]);
+    printf ("\t -b10\tstop after: %s\n", compiler_phase_name[10]);
+    printf ("\t -b11\tstop after: %s\n", compiler_phase_name[11]);
+    printf ("\t -b12\tstop after: %s\n", compiler_phase_name[12]);
+    printf ("\t -b13\tstop after: %s\n", compiler_phase_name[13]);
+    printf ("\t -b14\tstop after: %s\n", compiler_phase_name[14]);
+    printf ("\t -b15\tstop after: %s\n", compiler_phase_name[15]);
+    printf ("\t -b16\tstop after: %s\n", compiler_phase_name[16]);
+    printf ("\t -b17\tstop after: %s\n", compiler_phase_name[17]);
+    printf ("\t -b18\tstop after: %s\n", compiler_phase_name[18]);
+    printf ("\t -b19\tstop after: %s\n", compiler_phase_name[19]);
+    printf ("\t -b20\tstop after: %s\n", compiler_phase_name[20]);
+    printf ("\t -b21\tstop after: %s\n", compiler_phase_name[21]);
 
     printf ("\n\nBREAK SPECIFIERS:\n\n"
             "\tBreak specifiers allow you to stop the compilation process\n"
@@ -280,13 +287,13 @@ usage ()
             "\t-b15:dcr      \tstop after dead code removal\n"
             "\t-b15:cycN:cse \tstop after common subexpression elimination in cycle N\n"
             "\t-b15:cycN:cf  \tstop after constant folding in cycle N\n"
-            "\t-b15:cycN:wlt \tstop after withloop transformation in cycle N\n"
-            "\t-b15:cycN:wli \tstop after withloop information gathering in cycle N\n"
-            "\t-b15:cycN:wlf \tstop after withloop folding in cycle N\n"
+            "\t-b15:cycN:wlt \tstop after with-loop transformation in cycle N\n"
+            "\t-b15:cycN:wli \tstop after with-loop information gathering in cycle N\n"
+            "\t-b15:cycN:wlf \tstop after with-loop folding in cycle N\n"
             "\t-b15:cycN:cf2 \tstop after second constant folding in cycle N\n"
             "\t-b15:cycN:dcr \tstop after dead code removal in cycle N\n"
-            "\t-b15:cycN:unr \tstop after (with-) loop unrolling in cycle N\n"
-            "\t-b15:cycN:uns \tstop after loop unswitching in cycle N\n"
+            "\t-b15:cycN:lur \tstop after (with-)loop unrolling in cycle N\n"
+            "\t-b15:cycN:lus \tstop after loop unswitching in cycle N\n"
             "\t-b15:cycN:lir \tstop after loop invariant removal in cycle N\n"
             "\n"
             "\t-b18:conv     \tstop after converting\n"
@@ -308,134 +315,176 @@ usage ()
 
     printf ("\n\nOPTIMIZATION OPTIONS:\n\n"
 
-            "\t -noOPT\t\tno optimizations at all\n"
-            "\n\t -noCF \t\tno constant folding \n"
-            "\t -noINL\t\tno function inlining \n"
-            "\t -noLUNR\tno loop unrolling \n"
-            "\t -noWLUNR\tno withloop unrolling \n"
-            "\t -noUNS\t\tno loop unswitching \n"
-            "\t -noDCR\t\tno dead code removal \n"
-            "\t -noDFR\t\tno dead function removal \n"
-            "\t -noLIR\t\tno loop invariant removal \n"
-            "\t -noCSE\t\tno common subexpression elimination \n"
-            "\t -noWLT\t\tno withloop transformations (implies -noWLF) \n"
-            "\t -noWLF\t\tno withloop folding \n"
-            "\t -noDLAW\tno applications of the distributive law\n"
-            "\t -noIVE\t\tno index vector elimination \n"
-            "\t -noAE \t\tno array elimination \n"
-            "\t -noRCO\t\tno refcount optimization \n"
-            "\t -noUIP\t\tno update-in-place \n"
-            /*    "\t -noTILE\t\tno tiling (blocking) \n" */
-            "\n\tLower case letters may be used instead!\n");
+            "\t -no <opt>\tdisable optimization technique <opt>\n"
+            "\t -do <opt>\tenable optimization technique <opt>\n"
+            "\n"
+            "\t The following optimization techniques are currently supported:\n\n"
+            "\t\tCF  \t constant folding \n"
+            "\t\tINL \t function inlining \n"
+            "\t\tLUR \t loop unrolling \n"
+            "\t\tWLUR\t with-loop unrolling \n"
+            "\t\tLUS \t loop unswitching \n"
+            "\t\tDCR \t dead code removal \n"
+            "\t\tDFR \t dead function removal \n"
+            "\t\tLIR \t loop invariant removal \n"
+            "\t\tCSE \t common subexpression elimination \n"
+            "\t\tWLT \t with-loop transformation \n"
+            "\t\tWLF \t with-loop folding \n"
+            "\t\tDLAW\t application of the distributive law\n"
+            "\t\tIVE \t index vector elimination \n"
+            "\t\tAE  \t array elimination \n"
+            "\t\tRCO \t refcount optimization \n"
+            "\t\tUIP \t update-in-place \n"
+            "\t\tTSI \t tile size inference (blocking) \n"
+            "\t\tTSP \t tile size pragmas (blocking) \n"
+            "\n"
+            "\t\tOPT  \t enables/disables all optimizations at once.\n"
+            "\n"
+            "\tLower case letters may be used to indicate optimization techniques.\n"
+            "\n"
+            "\tCommand line arguments are evaluated from left to right, i.e.,\n"
+            "\t\"-no OPT -do INL\" disables all optimizations except for \n"
+            "\tfunction inlining.\n\n");
 
-    printf ("\n\t -maxoptcycles <no>\trepeat optimization phase <no> times\n"
-            "\t\t\t\t  Default: -maxoptcycles %d\n",
+    printf ("\tOptimization side conditions:\n\n");
+
+    printf ("\t -maxoptcyc <no>    \trepeat optimization phase <no> times.\n"
+            "\t\t\t\t  Default: -maxoptcyc %d\n",
             max_optcycles);
-    printf ("\t -maxoptvar <no>\treserve <no> variables for optimization\n"
+    printf ("\t -maxoptvar <no>    \treserve <no> variables for optimization.\n"
             "\t\t\t\t  Default: -maxoptvar %d\n",
             optvar);
-    printf ("\t -maxinline <no>\tinline recursive functions <no> times\n"
-            "\t\t\t\t  Default: -maxinline %d\n",
+    printf ("\t -maxinl <no>       \tinline recursive functions <no> times.\n"
+            "\t\t\t\t  Default: -maxinl %d\n",
             inlnum);
-    printf ("\t -maxunroll <no>\tunroll loops having no more than <no>\n"
-            "\t\t\t\titerations\n"
-            "\t\t\t\t  Default: -maxunroll %d\n",
+    printf ("\t -maxlur <no>       \tunroll loops having no more than <no>\n"
+            "\t\t\t\titerations.\n"
+            "\t\t\t\t  Default: -maxlur %d\n",
             unrnum);
-    printf ("\t -maxwlunroll <no>\tunroll withloops having no more than <no>\n"
-            "\t\t\t\telements\n"
-            "\t\t\t\t  Default: -maxwlunroll %d\n",
+    printf ("\t -maxwlur <no>      \tunroll with-loops having no more than <no>\n"
+            "\t\t\t\telements.\n"
+            "\t\t\t\t  Default: -maxwlur %d\n",
             wlunrnum);
-    printf ("\t -minarray <no>\t\ttry array elimination for arrays with length\n"
-            "\t\t\t\t<= <no>\n"
-            "\t\t\t\t  Default: -minarray %d\n",
+    printf ("\t -minae <no>        \ttry array elimination for arrays with length\n"
+            "\t\t\t\tless than or equal <no>.\n"
+            "\t\t\t\t  Default: -minae %d\n",
             minarray);
-    printf ("\t -maxoverload <no>\tfunctions with unknown shape will <no> times\n"
-            "\t\t\t\toverloaded\n"
-            "\t\t\t\t  Default: -maxoverload %d\n",
+    printf ("\t -maxspecialize <no>\tfunctions with unknown shape will at most\n"
+            "\t\t\t\t<no> times be specialized.\n"
+            "\t\t\t\t  Default: -maxspecialize %d\n",
             max_overload);
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
-            "\t -mtstatic <no>\t\tcompile program for multi-threaded execution\n"
-            "\t\t\t\twith exact number of threads specified.\n"
-            "\t -mtdynamic <no>\tcompile program for multi-threaded execution\n"
-            "\t\t\t\twith upper bound for the number of threads\n"
-            "\t\t\t\tspecified. The exact number of threads must be\n"
-            "\t\t\t\tgiven upon application startup using the\n"
-            "\t\t\t\tgeneric command line option '-mt <no>`.\n"
-            "\t -mtall <no>\t\tcompile program for multi-threaded execution\n"
-            "\t\t\t\tand derive <no>+1 executables, one that is\n"
-            "\t\t\t\tcompiled for the dynamic specification of the\n"
-            "\t\t\t\tnumber of threads with <no> as upper limit\n"
-            "\t\t\t\tand <no> ones using the respective number of\n"
-            "\t\t\t\tthreads statically.\n"
+            "\t -mt \t\t\tcompile program for multi-threaded execution.\n"
+            "\t\t\t\tThe number of threads to be used can either be\n"
+            "\t\t\t\tspecified statically using the option \"-numthreads\"\n"
+            "\t\t\t\tor dynamically upon application startup using the\n"
+            "\t\t\t\tgeneric command line option \"-mt <no>\".\n\n"
+            "\t -numthreads <no>\tspecify exact number of threads to be used.\n"
+            "\t\t\t\t  Default: -numthreads %d.\n"
+            "\t -maxthreads <no>\tmaximum number of threads to be used when exact\n"
+            "\t\t\t\t  number is specified dynamically.\n"
+            "\t\t\t\t  Default: -maxthreads %d.\n"
             "\t -maxsyncfold <no>\tmaximum number of fold with-loops in a single\n"
             "\t\t\t\tsynchronisation block.\n"
             "\t\t\t\t  Default: -maxsyncfold %d.\n"
-            "\t -minparsize <no>\tminimum generator size for parallel execution\n"
+            "\t -minmtsize <no>\tminimum generator size for parallel execution\n"
             "\t\t\t\tof with-loops.\n"
-            "\t\t\t\t  Default: -minparsize %d.\n",
-            max_sync_fold, min_parallel_size);
+            "\t\t\t\t  Default: -minmtsize %d.\n",
+            num_threads, max_threads, max_sync_fold, min_parallel_size);
 
     printf (
+
       "\n\nDEBUG OPTIONS:\n\n"
 
-      "\t -defence\t\tfor compilation of programs:\n"
+      "\t -d efence\t\tfor compilation of programs:\n"
       "\t\t\t\t  link executable with ElectricFence\n"
-      "\t\t\t\t  (malloc debugger)\n"
-      "\t -dcheck_boundary\tcheck boundary of arrays upon access\n"
-      "\t -dnocleanup\t\tdon't remove temporary files and directories\n"
-      "\t -dshow_syscall\t\tshow all system calls during compilation\n"
-      "\t -dcheck_malloc\t\tcheck success of memory allocations\n"
-      "\t -dcccall\t\tgenerate shell script '.sac2c' that contains C\n"
-      "\t\t\t\tcompiler call. This implies option -dnocleanup.\n"
+      "\t\t\t\t  (malloc debugger).\n"
+      "\t -d nocleanup\t\tdon't remove temporary files and directories.\n"
+      "\t -d syscall\t\tshow all system calls during compilation.\n"
+      "\t -d cccall\t\tgenerate shell script '.sac2c' that contains C\n"
+      "\t\t\t\tcompiler call. This implies option \"-d nocleanup\".\n"
       "\n\t -# <str>\t\toptions (string) for DBUG information\n"
-      "\t\t\t\t(\"-#<str>\" is equivalent to \"-_DBUG//<str>\")\n"
-      "\t -_DBUG<from>/<to>/<str>\n"
-      "\t\t\t\tDBUG information only in compiler phases\n"
+      "\t -# <from>/<to>/<str>\tDBUG information only in compiler phases\n"
       "\t\t\t\t<from>..<to>\n"
-      "\t\t\t\t  Default: <from> = 1,\n"
-      "\t\t\t\t           <to> = last compiler phase\n"
+      "\t\t\t\t  Default: <from> = first compiler phase,\n"
+      "\t\t\t\t           <to>   = last compiler phase\n"
 
-      "\n\nTRACE OPTIONS:\n\n"
+      "\n\nRUNTIME CHECK OPTIONS:\n\n"
 
-      "\t -trace [amrfpowt]+ \ttrace program execution\n"
-      "\t\t\t\t  a: trace all (same as mrfpowt)\n"
-      "\t\t\t\t  m: trace memory operations\n"
-      "\t\t\t\t  r: trace refcount operations\n"
-      "\t\t\t\t  f: trace user defined function calls\n"
-      "\t\t\t\t  p: trace primitive function calls\n"
-      "\t\t\t\t  o: trace old with-loop execution\n"
-      "\t\t\t\t  w: trace new with-loop execution\n"
-      "\t\t\t\t  t: trace multi-threading specific operations\n"
+      "\t -check [abme]+ \tinclude runtime checks into executable program.\n"
+      "\t\t\t\t  a: include all checks available.\n"
+      "\t\t\t\t  b: check array accesses for boundary violations.\n"
+      "\t\t\t\t  m: check success of memory allocations.\n"
+      "\t\t\t\t  e: check errno variable upon applications of external\n"
+      "\t\t\t\t     functions.\n"
 
-      "\n\nPROFILING OPTIONS:\n\n"
+      "\n\nRUNTIME TRACE OPTIONS:\n\n"
 
-      "\t -profile [afilw]+ \tinclude runtime analysis\n"
-      "\t\t\t\t  a: analyse all (same as filw)\n"
-      "\t\t\t\t  f: analyse time spent in non-inline functions\n"
-      "\t\t\t\t  i: analyse time spent in inline functions\n"
-      "\t\t\t\t  l: analyse time spent in library functions\n"
-      "\t\t\t\t  w: analyse time spent in with-loops\n"
+      "\t -trace [amrfpowt]+ \tinclude runtime program tracing.\n"
+      "\t\t\t\t  a: trace all (same as mrfpowt).\n"
+      "\t\t\t\t  m: trace memory operations.\n"
+      "\t\t\t\t  r: trace reference counting operations.\n"
+      "\t\t\t\t  f: trace user-defined function calls.\n"
+      "\t\t\t\t  p: trace primitive function calls.\n"
+      "\t\t\t\t  o: trace old with-loop execution.\n"
+      "\t\t\t\t  w: trace new with-loop execution.\n"
+      "\t\t\t\t  t: trace multi-threading specific operations.\n"
+
+      "\n\nRUNTIME PROFILING OPTIONS:\n\n"
+
+      "\t -profile [afilw]+ \tinclude runtime profiling analysis.\n"
+      "\t\t\t\t  a: analyse all (same as filw).\n"
+      "\t\t\t\t  f: analyse time spent in non-inline functions.\n"
+      "\t\t\t\t  i: analyse time spent in inline functions.\n"
+      "\t\t\t\t  l: analyse time spent in library functions.\n"
+      "\t\t\t\t  w: analyse time spent in with-loops.\n"
 
       "\n\nCACHE SIMULATION OPTIONS:\n\n"
 
-      "\t -cachesim [sa][gl] \tenable cache simulation at run-time\n"
-      /*  "\t\t\t\t  f: store memory accesses in file\n" */
-      "\t\t\t\t  s: simple cache simulation\n"
-      "\t\t\t\t  a: advanced cache simulation\n"
-      "\t\t\t\t  g: global cache simulation\n"
-      "\t\t\t\t  p: cache simulation triggered by pragmas\n\n"
-
+      "\t -cs\t\tenable runtime cache simulation\n"
+      "\n"
+      "\t -csdefaults [sagbifp]+ \n\n"
+      "\t\tset default parameters for cache simulation.\n"
+      "\t\tThese settings may be overridden when starting the analysis of\n"
+      "\t\tan application program.\n"
+      "\t\t  s: simple cache simulation.\n"
+      "\t\t  a: advanced cache simulation.\n"
+      "\t\t  g: global cache simulation.\n"
+      "\t\t  b: cache simulation on selected blocks.\n"
+      "\t\t  i: immediate analysis of memory accesses.\n"
+      "\t\t  f: storage of memory accesses in file.\n"
+      "\t\t  p: piping of memory accesses to concurrently running analyser.\n"
+      "\n"
+      "\tThe default simulation parameters are 'sgp'.\n"
+      "\n"
       "\tSimple cache simulation only counts cache hits and cache misses while\n"
       "\tadvanced cache simulation additionally classifies cache misses into\n"
       "\tcold start, cross interference, self interference, and invalidation\n"
       "\tmisses.\n"
+      "\n"
       "\tSimulation results may be presented for the entire program run or more\n"
       "\tspecifically for any code block marked by the following pragma:\n"
       "\t\t#pragma cachesim [tag]\n"
       "\tThe optional tag allows to distinguish between the simulation results\n"
       "\tfor various code blocks. The tag must be a string.\n"
+      "\n"
+      "\tMemory accesses may be evaluated with respect to their cache behavior either\n"
+      "\timmediately withing the application process, stored in a file named <file>.cs\n"
+      "\twhere <file> means the name of the application ptogram analysed, or they may\n"
+      "\tbe piped to a concurrently running analyser process. While immediate analysis\n"
+      "\tusually is the fastest alternative, results, inparticular for advanced "
+      "analysis,\n"
+      "\tare often inaccurate due to changes in the memory layout caused by the "
+      "analyser.\n"
+      "\tIf you choose to write memory accesses to a file, beware that even for small\n"
+      "\tprograms to be analysed the amount of data may be quite large.\n"
+      "\n"
+      "\tThese default cache simulation parameters may be overridden when invoking\n"
+      "\tthe application program to be analysed by using the command line option\n"
+      "\t\t-cs [sagbifp]+\n"
+      "\n"
       "\tCache parameters for up to 3 levels of caches may be provided as target\n"
       "\tspecification in the sac2crc file. However, these only serve as a default\n"
       "\tcache specification which may well be altered when running the compiled\n"
@@ -450,33 +499,39 @@ usage ()
 
       "\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
 
-      "\t -intrinsic [a+-x/tdcrpo]+ \tuse intrinsic array operations\n"
+      "\t -intrinsic [a+-x/tdcrpo]+ \tuse intrinsic array operations.\n"
       "\t\t\t\t\t  a: use all intrinsic operations\n"
-      "\t\t\t\t\t     available (same as +-x/tdcrpo)\n"
-      "\t\t\t\t\t  +: use intrinsic add\n"
-      "\t\t\t\t\t  -: use intrinsic sub\n"
-      "\t\t\t\t\t  x: use intrinsic mul\n"
-      "\t\t\t\t\t  /: use intrinsic div\n"
-      "\t\t\t\t\t  t: use intrinsic take\n"
-      "\t\t\t\t\t  d: use intrinsic drop\n"
-      "\t\t\t\t\t  c: use intrinsic cat\n"
-      "\t\t\t\t\t  r: use intrinsic rotate\n"
-      "\t\t\t\t\t  p: use intrinsic psi\n"
-      "\t\t\t\t\t  o: use intrinsic type conversion\n"
+      "\t\t\t\t\t     available (same as +-x/tdcrpo).\n"
+      "\t\t\t\t\t  +: use intrinsic add.\n"
+      "\t\t\t\t\t  -: use intrinsic sub.\n"
+      "\t\t\t\t\t  x: use intrinsic mul.\n"
+      "\t\t\t\t\t  /: use intrinsic div.\n"
+      "\t\t\t\t\t  t: use intrinsic take.\n"
+      "\t\t\t\t\t  d: use intrinsic drop.\n"
+      "\t\t\t\t\t  c: use intrinsic cat.\n"
+      "\t\t\t\t\t  r: use intrinsic rotate.\n"
+      "\t\t\t\t\t  p: use intrinsic psi.\n"
+      "\t\t\t\t\t  o: use intrinsic type conversion.\n"
 
       "\n\nLINK OPTIONS:\n\n"
 
-      "\t -l <n>\t\t\tlink level for generating SAC library\n"
-      "\t\t\t\t  1: compile to one large object file\n"
-      "\t\t\t\t  2: compile to archive of object files\n"
-      "\t\t\t\t     (default)\n"
+      "\t -l <n>\t\tlink level for generating SAC library.\n"
+      "\t\t\t  1: compile to one large object file.\n"
+      "\t\t\t  2: compile to archive of object files.\n"
+      "\t\t\t  Default: -l %d\n"
 
       "\n\nC-COMPILER OPTIONS:\n\n"
 
-      "\t -g \t\t\tinclude debug information into object code\n"
-      "\t -O [0123] \t\tC compiler level of optimization\n"
-      "\t\t\t\t  default: 0\n"
-      "\n\tThe actual effects of the above options are C compiler specific!\n"
+      "\t -g     \tinclude debug information into object code.\n"
+      "\n"
+      "\t -O <n> \tC compiler level of optimization.\n"
+      "\t\t\t  0: no C compiler optimizations.\n"
+      "\t\t\t  1: minor C compiler optimizations.\n"
+      "\t\t\t  2: medium C compiler optimizations.\n"
+      "\t\t\t  3: full C compiler optimizations.\n"
+      "\t\t\t  Default: -O %d\n"
+      "\n"
+      "\tThe actual effects of these options are C compiler specific!\n"
 
       "\n\nCUSTOMIZATION\n\n"
 
@@ -484,7 +539,7 @@ usage ()
       "\t\t\tCompilation targets are used to customize sac2c for\n"
       "\t\t\tvarious target architectures, operating systems, and C\n"
       "\t\t\tcompilers.\n"
-      "\t\t\tThe target description is read either from the\n"
+      "\t\t\tThe target description is either read from the\n"
       "\t\t\tinstallation specific file $SACBASE/runtime/sac2crc or\n"
       "\t\t\tfrom a file named .sac2crc within the user's home\n"
       "\t\t\tdirectory.\n"
@@ -495,6 +550,10 @@ usage ()
       "\t SAC_PATH\t\tsearch paths for program source\n"
       "\t SAC_DEC_PATH\t\tsearch paths for declarations\n"
       "\t SAC_LIBRARY_PATH\tsearch paths for libraries\n"
+      "\n"
+      "\t The following environment variables must be set correctly when compiling\n"
+      "\t a SAC module/class implementation in order to enable full usability of\n"
+      "\t sac2c command line option \"-libstat\": PWD, USER, and HOST.\n"
 
       "\n\nAUTHORS:\n\n"
 
@@ -504,6 +563,9 @@ usage ()
       "\t Clemens Grelck\n"
       "\t Dietmar Kreye\n"
       "\t Soeren Schwartz\n"
+      "\t Bjoern Schierau\n"
+      "\t Helge Ernst\n"
+      "\t Jan-Hendrik Schoeler\n"
 
       "\n\nCONTACT:\n\n"
 
@@ -521,7 +583,41 @@ usage ()
       "\t Therefore, we decided to preset -noLIR and -noDLAW in the current\n"
       "\t compiler release!\n"
 
-      "\n");
+      "\n",
+      linkstyle, cc_optimize);
+
+    DBUG_VOID_RETURN;
+}
+
+void
+version ()
+{
+    DBUG_ENTER ("version");
+
+    printf ("\n\t\tSAC - Single Assignment C\n"
+            "\t--------------------------------------------\n"
+            "\n"
+            "NAME:      sac2c\n"
+            "VERSION:   %s\n"
+            "PLATFORM:  %s\n\n"
+            "BUILD:     %s\n"
+            "BY USER:   %s\n"
+            "ON HOST:   %s\n"
+            "\n"
+            "\n"
+
+            "(c) Copyright 1994 - 1999 by\n\n"
+
+            "  Christian-Albrechts-Universitaet zu Kiel\n"
+            "  Institut fuer Informatik und Praktische Mathematik\n"
+            "  Preusserstrasse 1 - 9\n"
+            "  D-24105 Kiel\n"
+            "  Germany\n\n",
+            version_id[0] == '\0' ? "???" : version_id,
+            target_platform[0] == '\0' ? "???" : target_platform,
+            build_date[0] == '\0' ? "???" : build_date,
+            build_user[0] == '\0' ? "???" : build_user,
+            build_host[0] == '\0' ? "???" : build_host);
 
     DBUG_VOID_RETURN;
 }
@@ -534,10 +630,6 @@ copyright ()
     printf ("\n\t\tSAC - Single Assignment C\n"
             "\t--------------------------------------------\n"
             "\n"
-            "BUILD:   \t%s\n\n"
-            "VERSION: \t%s for %s\n"
-            "\n"
-            "\n"
 
             "\tSAC COPYRIGHT NOTICE, LICENSE, AND DISCLAIMER\n\n"
             "(c) Copyright 1994 - 1999 by\n\n"
@@ -546,8 +638,7 @@ copyright ()
             "  Institut fuer Informatik und Praktische Mathematik\n"
             "  Preusserstrasse 1 - 9\n"
             "  D-24105 Kiel\n"
-            "  Germany\n\n",
-            build_date_time, version_id, target_platform);
+            "  Germany\n\n");
 
     printf ("The SAC compiler, the SAC standard library, and all accompanying\n"
             "software and documentation (in the following named this software)\n"

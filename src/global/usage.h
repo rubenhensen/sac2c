@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/12 14:28:54  cg
+ * command line options streamlined.
+ *
  * Revision 2.1  1999/02/23 12:40:17  sacbase
  * new release made
  *
@@ -19,9 +22,8 @@
 #ifndef _usage_h
 #define _usage_h
 
-extern char build_date_time[];
-
 extern void usage ();
 extern void copyright ();
+extern void version ();
 
 #endif /* _usage_h */
