@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.90  2004/09/22 18:42:00  ktr
+ * Small bugfix.
+ *
  * Revision 3.89  2004/09/22 18:11:37  khf
  * moved renaming of cexprs from markmemvals
  * to third traversal of precompile
@@ -2466,7 +2469,7 @@ PREC3withop (node *arg_node, info *arg_info)
              */
             FUNDEF_VARDEC (INFO_PREC_FUNDEF (arg_info))
               = AppendVardec (FUNDEF_VARDEC (INFO_PREC_FUNDEF (arg_info)),
-                              FUNDEF_VARDEC (new_foldfun));
+                              DupTree (FUNDEF_VARDEC (new_foldfun)));
 
             FUNDEF_DFM_BASE (INFO_PREC_FUNDEF (arg_info))
               = DFMUpdateMaskBase (FUNDEF_DFM_BASE (INFO_PREC_FUNDEF (arg_info)),
