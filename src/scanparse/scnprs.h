@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/07/21 14:48:52  nmw
+ * global var spec_tree added
+ *
  * Revision 2.3  1999/10/04 09:24:07  sbs
  * linenum moved to globals.[ch]
  *
@@ -60,6 +63,7 @@ extern int start_token;
 extern node *syntax_tree;
 extern node *decl_tree;
 extern node *sib_tree;
+extern node *spec_tree;
 
 extern node *ScanParse ();
 extern int My_yyparse ();
