@@ -1,9 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.35  2000/08/17 10:09:32  dkr
+ * all the NT stuff is now in a separate modul (NameTuples.[ch])
+ *
  * Revision 2.34  2000/07/21 08:22:54  nmw
  * F_modspec filetype added
- * ,
  *
  * Revision 2.33  2000/07/11 15:38:51  jhs
  * changed DFMfoldmask.name => DFMfoldmask.vardec
@@ -493,42 +495,5 @@ typedef struct FM {
     node *foldop;
     struct FM *next;
 } DFMfoldmask_t;
-
-/*
- * This section defines types for tagged array support
- */
-
-/*
- * Enumerated types for DATA class and uniqueness class
- */
-
-typedef enum {
-#define ATTRIB 1
-#define NTIFtype(it_type) it_type
-#include "nt_info.mac"
-} data_class_t;
-
-typedef enum {
-#define ATTRIB 2
-#define NTIFtype(it_type) it_type
-#include "nt_info.mac"
-} uniqueness_class_t;
-
-/*
- * The following defines indicate the position of tags
- * within name tuples. They should be kept in synch with the
- * NAME_NAME, NAME_CLASS and NAME_UNI macros in sac_std.h
- */
-
-#define NT_NAME_INDEX 0
-#define NT_CLASS_INDEX 1
-#define NT_UNI_INDEX 2
-
-/*
- * Number of extra characters needed to turn MyName into a Name Tuple:
- *  (MyName,(AKS,(NUQ,NIL)))
- *
- */
-#define NT_OVERHEAD 18
 
 #endif /* _sac_types_h */

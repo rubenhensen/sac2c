@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 2.8  2000/08/17 10:12:25  dkr
+ * all the NT stuff is now in a separate modul (NameTuples.[ch])
+ *
  * Revision 2.7  2000/07/14 14:46:05  nmw
  * PRECObjInitFunctionName added
  *
@@ -74,6 +78,7 @@
  *
  * Revision 1.1  1995/11/28  12:23:34  cg
  * Initial revision
+ *
  */
 
 #ifndef _sac_precompile_h
@@ -106,16 +111,8 @@ extern node *PREC2WLseg (node *arg_node, node *arg_info);
 extern node *PREC2WLsegVar (node *arg_node, node *arg_info);
 
 extern node *AdjustFoldFundef (node *fundef, ids *acc, node *cexpr);
-extern char *PRECObjInitFunctionName ();
+extern char *ObjInitFunctionName ();
 
-#ifdef TAGGED_ARRAYS
-extern uniqueness_class_t GetUniFromTypes (types *typ);
-extern data_class_t GetClassFromTypes (types *typ);
-
-extern char *PRECRenameLocalIdentifier (char *id, data_class_t d_class,
-                                        uniqueness_class_t u_class);
-#else  /* TAGGED_ARRAYS */
-extern char *PRECRenameLocalIdentifier (char *id);
-#endif /* TAGGED_ARRAYS */
+extern char *RenameLocalIdentifier (char *id);
 
 #endif /* _sac_precompile_h */

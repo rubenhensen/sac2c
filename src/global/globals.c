@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.34  2000/08/17 10:06:18  dkr
+ * all the NT stuff is now in a separate modul (NameTuples.[ch])
+ *
  * Revision 2.33  2000/08/02 14:22:23  mab
  * added flag "-apdiag"
  *
@@ -557,22 +560,4 @@ int indent = 0;
 #define TYP_IFsize(sz) sz
 int simpletype_size[] = {
 #include "type_info.mac"
-};
-
-/*
- * These character arrays are the macro-name-parts used to select
- * array class and array uniqueness properties.
- * See NT_NAME_CLASS_INDEX and NT_UNI_CLASS_INDEX in types.h
- */
-
-char *nt_class_str[] = {
-#define ATTRIB 1
-#define NTIFstr(it_str) it_str
-#include "nt_info.mac"
-};
-
-char *nt_uni_str[] = {
-#define ATTRIB 2
-#define NTIFstr(it_str) it_str
-#include "nt_info.mac"
 };

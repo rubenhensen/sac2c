@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 2.24  2000/08/17 10:12:13  dkr
+ * all the NT stuff is now in a separate modul (NameTuples.[ch])
+ *
  * Revision 2.23  2000/07/19 16:39:32  nmw
  * objinit function modified to work with ICMs
  *
@@ -13,15 +17,6 @@
  * init code for global objects moved from beginning og main()
  * to a separate init function that is called during the startup
  * it can be used in sac programms and c libraries, too
- *
- * Revision 2.19  2000/07/14 08:48:40  dkr
- * minor changes for TAGGED_ARRAYS done
- *
- * Revision 2.18  2000/07/11 12:08:19  dkr
- * uups .... syntax error without TAGGED_ARRAYS removed.
- *
- * Revision 2.17  2000/07/11 09:56:00  dkr
- * minor changed for TAGGED_ARRAYS done
  *
  * Revision 2.15  2000/06/28 09:12:23  nmw
  * added traversal for mapping of functions to c wrappers
@@ -92,6 +87,7 @@
  *
  * Revision 1.1  1995/11/28  12:23:34  cg
  * Initial revision
+ *
  */
 
 #include "dbug.h"
@@ -111,9 +107,6 @@
 #include "precompile.h"
 
 #include <string.h>
-
-/* functions with only local usage */
-static node *CreateObjInitFundef (node *module, node *arg_info);
 
 /******************************************************************************
  *
@@ -149,7 +142,7 @@ CreateObjInitFundef (node *module, node *arg_info)
     assign = MakeAssign (returns, NULL);
 
     /* create void procedure without args and with empty return in body */
-    fundef = MakeFundef (PRECObjInitFunctionName (), MODUL_NAME (module),
+    fundef = MakeFundef (ObjInitFunctionName (), MODUL_NAME (module),
                          MakeType (T_void, 0, NULL, NULL, NULL), NULL,
                          MakeBlock (assign, NULL), MODUL_FUNS (module));
 
@@ -165,7 +158,7 @@ CreateObjInitFundef (node *module, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   char *PRECObjInitFunctionName()
+ *   char *ObjInitFunctionName()
  *
  * description:
  *   Returns new allocated string with objinitfunction name
@@ -176,10 +169,11 @@ CreateObjInitFundef (node *module, node *arg_info)
  ******************************************************************************/
 
 char *
-PRECObjInitFunctionName ()
+ObjInitFunctionName ()
 {
     char *new_name;
-    DBUG_ENTER ("PRECNObjInitFunctionName");
+
+    DBUG_ENTER ("ObjInitFunctionName");
 
     new_name = StringConcat ("SACf_GlobalObjInit_for_", modulename);
 
@@ -292,70 +286,7 @@ PREC1let (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   data_class_t GetClassFromTypes( types *type)
- *
- * description:
- *   Returns the Data Class of an object (usually an array) from its type.
- *
- ******************************************************************************/
-
-#ifdef TAGGED_ARRAYS
-data_class_t
-GetClassFromTypes (types *type)
-{
-    data_class_t z;
-
-    DBUG_ENTER ("GetClassFromTypes");
-
-    if (IsHidden (type)) {
-        z = C_hid;
-    } else if (TYPES_DIM (type) == SCALAR) {
-        z = C_scl;
-    } else if (KNOWN_SHAPE (TYPES_DIM (type))) {
-        z = C_aks;
-    } else {
-        z = C_akd;
-    }
-
-    DBUG_RETURN (z);
-}
-#endif /* TAGGED_ARRAYS */
-
-/******************************************************************************
- *
- * function:
- *   uniqueness_class_t GetUniFromTypes( types *type)
- *
- * description:
- *   Returns the Uniqueness Class of an object (usually an array) from
- *   its type.
- *
- ******************************************************************************/
-
-#ifdef TAGGED_ARRAYS
-uniqueness_class_t
-GetUniFromTypes (types *type)
-{
-    uniqueness_class_t z;
-
-    DBUG_ENTER ("GetUniFromTypes");
-
-    if (IsUnique (type)) {
-        z = C_unq;
-    } else {
-        z = C_nuq;
-    }
-
-    DBUG_RETURN (z);
-}
-#endif /* TAGGED_ARRAYS */
-
-/******************************************************************************
- *
- * function:
- *   char *PRECRenameLocalIdentifier( char *id,
- *                                    data_class_t d_class,
- *                                    uniqueness_class_t u_class)
+ *   char *RenameLocalIdentifier( char *id)
  *
  * description:
  *   This function renames a given local identifier name for precompiling
@@ -368,17 +299,12 @@ GetUniFromTypes (types *type)
  ******************************************************************************/
 
 char *
-PRECRenameLocalIdentifier (char *id
-#ifdef TAGGED_ARRAYS
-                           ,
-                           data_class_t nt_class, uniqueness_class_t nt_uni
-#endif /* TAGGED_ARRAYS */
-)
+RenameLocalIdentifier (char *id)
 {
     char *name_prefix;
     char *new_name;
 
-    DBUG_ENTER ("PRECRenameLocalIdentifier");
+    DBUG_ENTER ("RenameLocalIdentifier");
 
     if (id[0] == '_') {
         /*
@@ -396,20 +322,8 @@ PRECRenameLocalIdentifier (char *id
         name_prefix = "SACl_";
     }
 
-#ifdef TAGGED_ARRAYS
-    if (nt_class == C_scl) {
-#endif /* TAGGED_ARRAYS */
-        new_name
-          = (char *)MALLOC (sizeof (char) * (strlen (id) + strlen (name_prefix) + 1));
-        sprintf (new_name, "%s%s", name_prefix, id);
-#ifdef TAGGED_ARRAYS
-    } else {
-        new_name = (char *)MALLOC (
-          sizeof (char) * (strlen (id) + strlen (name_prefix) + 1 + NT_OVERHEAD));
-        sprintf (new_name, "(%s%s,(%s,(%s,)))", name_prefix, id, nt_class_str[nt_class],
-                 nt_uni_str[nt_uni]);
-    }
-#endif /* TAGGED_ARRAYS */
+    new_name = (char *)MALLOC (sizeof (char) * (strlen (id) + strlen (name_prefix) + 1));
+    sprintf (new_name, "%s%s", name_prefix, id);
 
     FREE (id);
 
@@ -445,14 +359,7 @@ RenameId (node *idnode)
          * The global object's definition has already been renamed.
          */
     } else {
-        ID_NAME (idnode)
-          = PRECRenameLocalIdentifier (ID_NAME (idnode)
-#ifdef TAGGED_ARRAYS
-                                         ,
-                                       GetClassFromTypes (ID_TYPE (idnode)),
-                                       GetUniFromTypes (ID_TYPE (idnode))
-#endif /* TAGGED_ARRAYS */
-          );
+        ID_NAME (idnode) = RenameLocalIdentifier (ID_NAME (idnode));
     }
 
     DBUG_RETURN (idnode);
@@ -487,13 +394,7 @@ PrecompileIds (ids *id)
              * The global object's definition has already been renamed.
              */
         } else {
-            IDS_NAME (id) = PRECRenameLocalIdentifier (IDS_NAME (id)
-#ifdef TAGGED_ARRAYS
-                                                         ,
-                                                       GetClassFromTypes (IDS_TYPE (id)),
-                                                       GetUniFromTypes (IDS_TYPE (id))
-#endif /* TAGGED_ARRAYS */
-            );
+            IDS_NAME (id) = RenameLocalIdentifier (IDS_NAME (id));
         }
 
         if (IDS_NEXT (id) != NULL) {
@@ -1037,14 +938,7 @@ PREC2arg (node *arg_node, node *arg_info)
              * The attribute ARG_NAME may not be set in the case of imported function
              * declarations.
              */
-            ARG_NAME (arg_node)
-              = PRECRenameLocalIdentifier (ARG_NAME (arg_node)
-#ifdef TAGGED_ARRAYS
-                                             ,
-                                           GetClassFromTypes (ARG_TYPE (arg_node)),
-                                           GetUniFromTypes (ARG_TYPE (arg_node))
-#endif /* TAGGED_ARRAYS */
-              );
+            ARG_NAME (arg_node) = RenameLocalIdentifier (ARG_NAME (arg_node));
         }
 
         if (ARG_NEXT (arg_node) != NULL) {
@@ -1079,15 +973,7 @@ PREC2vardec (node *arg_node, node *arg_info)
         }
     } else {
         VARDEC_TYPE (arg_node) = RenameTypes (VARDEC_TYPE (arg_node));
-
-        VARDEC_NAME (arg_node)
-          = PRECRenameLocalIdentifier (VARDEC_NAME (arg_node)
-#ifdef TAGGED_ARRAYS
-                                         ,
-                                       GetClassFromTypes (ARG_TYPE (arg_node)),
-                                       GetUniFromTypes (ARG_TYPE (arg_node))
-#endif /* TAGGED_ARRAYS */
-          );
+        VARDEC_NAME (arg_node) = RenameLocalIdentifier (VARDEC_NAME (arg_node));
 
         if (VARDEC_NEXT (arg_node) != NULL) {
             VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.35  2000/08/17 10:06:09  dkr
+ * all the NT stuff is now in a separate modul (NameTuples.[ch])
+ *
  * Revision 2.34  2000/08/02 14:22:23  mab
  * added flag "-apdiag"
  *
@@ -306,8 +309,5 @@ extern deps *dependencies;
 extern int indent;
 
 extern int simpletype_size[];
-
-extern char *nt_class_str[];
-extern char *nt_uni_str[];
 
 #endif /* _sac_globals_h */
