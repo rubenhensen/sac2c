@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.33  2000/04/27 11:34:21  jhs
+ * Fixed Bug in CFarray.
+ *
  * Revision 2.32  2000/04/26 12:45:58  jhs
  * Worked around bug while folding empty arrays ...
  *
@@ -722,10 +725,12 @@ CFarray (node *arg_node, node *arg_info)
 
     if (IsConstArray (arg_node)) {
         if (ARRAY_AELEMS (arg_node) != NULL) {
-            ARRAY_ISCONST (arg_node) = TRUE;
-            ARRAY_VECTYPE (arg_node) = T_int;
-            ARRAY_CONSTVEC (arg_node)
-              = Array2IntVec (ARRAY_AELEMS (arg_node), &ARRAY_VECLEN (arg_node));
+            if (ARRAY_NODETYPE (arg_node) == N_num) {
+                ARRAY_ISCONST (arg_node) = TRUE;
+                ARRAY_VECTYPE (arg_node) = T_int;
+                ARRAY_CONSTVEC (arg_node)
+                  = Array2IntVec (ARRAY_AELEMS (arg_node), &ARRAY_VECLEN (arg_node));
+            }
         } else {
             /* we do not know the type of this :(, so we cannot fold here */
         }
