@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.6  2001/03/12 12:25:49  dkr
+# make deps done
+#
 # Revision 3.5  2001/03/09 11:53:43  sbs
 # make deps done
 #
@@ -164,5 +167,3 @@ clean:
 	$(RM) sac2crc CacheSimAnalyser
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
-
-tutu.o: sac_icm.h sac_std.tagged.h
