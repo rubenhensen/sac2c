@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.7  2004/12/07 14:12:35  sah
+# added generation of static html
+#
 # Revision 1.6  2004/11/29 10:29:32  sah
 # added target check
 #
@@ -50,10 +53,15 @@ TARGETS = ../tree/attribs.h ../tree/node_basic.h ../tree/node_basic.c \
           ../tree/traverse_tables.h ../tree/sons.h \
           ../tree/traverse_helper.c
 
-all: $(TARGETS)
+all: $(TARGETS) html
 
 check:
 	$(XSLTENGINE) check-integrity.xsl ast.xml
+
+html: ast.html
+
+ast.html: ast.xml ast2html.xsl
+	$(XSLTENGINE) ast2html.xsl ast.xml > ast.html
 
 #
 # these rules generate the [ch] files using the xml/xslt decriptions
@@ -150,6 +158,6 @@ check:
 	| $(CODE_BEAUTIFIER) >$@
 
 clean:
-	$(RM) $(TARGETS)
+	$(RM) $(TARGETS) ast.html
 
 
