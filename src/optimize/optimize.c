@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.18  2000/07/28 13:21:47  dkr
+ * a break in OPTfundef is reported to OPTmoduls now
+ *
  * Revision 2.17  2000/07/28 08:33:30  mab
  * fixed minor bug in ResetCounters
  *
@@ -182,6 +185,15 @@ int wlt_expr;
 int old_wlf_expr, old_wlt_expr;
 int ap_padded;
 int ap_unsupported;
+
+/*
+ * Global variable needed for the correct handling of break specifiers:
+ * If a break is found during the call of OPTfundef() this fact must be
+ * reported to OPTmodul() in order to skip the remaining optimization
+ * steps of OPTmodul(), too.
+ */
+
+bool do_break = FALSE;
 
 /*
  *
@@ -428,6 +440,13 @@ OPTmodul (node *arg_node, node *arg_info)
          * Now, we apply the intra-procedural optimizations function-wise!
          */
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+
+        /*
+         * OPTfundef() sets the global variable 'do_break' to report a break!
+         */
+        if (do_break) {
+            goto DONE;
+        }
     }
 
     /*
@@ -537,19 +556,26 @@ OPTfundef (node *arg_node, node *arg_info)
     int mem_wlt_expr = wlt_expr;
     int mem_cse_expr = cse_expr;
 
-    int old_lir_expr, old_lunr_expr, old_wlunr_expr, old_uns_expr;
-    int old_cse_expr, old_wlf_expr, old_wlt_expr, old_dcr_expr, old_cf_expr;
+    int old_cse_expr, old_cf_expr, old_wlt_expr, old_wlf_expr, old_dcr_expr;
+    int old_lunr_expr, old_wlunr_expr, old_uns_expr, old_lir_expr;
 
     int loop1 = 0;
     int loop2 = 0;
 
     node *arg;
-    static char argtype_buffer[80];
-    static int buffer_space;
     char *tmp_str;
     int tmp_str_size;
 
+    static char argtype_buffer[80];
+    static int buffer_space;
+
     DBUG_ENTER ("OPTfundef");
+
+    /*
+     * The global variable 'do_break' is used to report a break to OPTmodul().
+     * If no break occurs this variable is unset later on.
+     */
+    do_break = TRUE;
 
     strcpy (argtype_buffer, "( ");
     buffer_space = 77;
@@ -591,8 +617,7 @@ OPTfundef (node *arg_node, node *arg_info)
             arg_node = ArrayElimination (arg_node, arg_node); /* ae_tab */
         }
 
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-            && (0 == strcmp (break_specifier, "ae")))
+        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "ae")))
             goto INFO;
 
         /*
@@ -605,13 +630,12 @@ OPTfundef (node *arg_node, node *arg_info)
             arg_node = DeadCodeRemoval (arg_node, arg_info);
         }
 
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-            && (0 == strcmp (break_specifier, "dcr")))
+        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "dcr")))
             goto INFO;
 
         /*
          * Now, we enter the first loop. It consists of:
-         *   CSE, CF, WLT, WLF, (CF), DCR, LUNR/WLUNR, UNS, and LIR.
+         *   CSE, CF, WLT, WLF, (CF), DCR, LUNR/ WLUNR, UNS, and LIR.
          */
         do {
             loop1++;
@@ -619,15 +643,15 @@ OPTfundef (node *arg_node, node *arg_info)
                         ("---------------------------------------- loop ONE, pass %d",
                          loop1));
 
-            old_lir_expr = lir_expr;
+            old_cse_expr = cse_expr;
+            old_cf_expr = cf_expr;
+            old_wlt_expr = wlt_expr;
+            old_wlf_expr = wlf_expr;
+            old_dcr_expr = dead_fun + dead_var + dead_expr;
             old_lunr_expr = lunr_expr;
             old_wlunr_expr = wlunr_expr;
             old_uns_expr = uns_expr;
-            old_cse_expr = cse_expr;
-            old_wlf_expr = wlf_expr;
-            old_wlt_expr = wlt_expr;
-            old_dcr_expr = dead_fun + dead_var + dead_expr;
-            old_cf_expr = cf_expr;
+            old_lir_expr = lir_expr;
 
             if (optimize & OPT_CSE) {
                 arg_node = CSE (arg_node, arg_info); /* cse_tab */
@@ -651,7 +675,6 @@ OPTfundef (node *arg_node, node *arg_info)
                    after CF. But the USE mask of b is not reduced.
                    This leads to a DCR problem (b = a is removed but variable declaration
                    for b not. */
-
                 /* quick fix: always rebuild masks after CF */
                 arg_node = GenerateMasks (arg_node, NULL);
             }
@@ -732,17 +755,23 @@ OPTfundef (node *arg_node, node *arg_info)
                 && (0 == strcmp (break_specifier, "lir")))
                 goto INFO;
 
-        } while (((lir_expr != old_lir_expr) || (lunr_expr != old_lunr_expr)
-                  || (uns_expr != old_uns_expr) || (wlunr_expr != old_wlunr_expr)
-                  || (wlf_expr != old_wlf_expr) || (cse_expr != old_cse_expr))
+        } while (((cse_expr != old_cse_expr) || (cf_expr != old_cf_expr)
+                  || (wlt_expr != old_wlt_expr) || (wlf_expr != old_wlf_expr)
+                  || (dead_fun + dead_var + dead_expr != old_dcr_expr)
+                  || (lunr_expr != old_lunr_expr) || (wlunr_expr != old_wlunr_expr)
+                  || (uns_expr != old_uns_expr) || (lir_expr != old_lir_expr))
                  && (loop1 < max_optcycles));
+        /* dkr:
+         * How about  cf_expr, wlt_expr, dcr_expr  ??
+         * I think we should compare these counters here, too!
+         */
 
         /*
          * Now, we enter the second loop consisting of
-         *   WLT and CF only.
+         *   CF and WLT only.
          */
         while ((wlt_expr != old_wlt_expr) && (optimize & OPT_CF)
-               && (loop1 + loop2) < max_optcycles) {
+               && ((loop1 + loop2) < max_optcycles)) {
             old_wlt_expr = wlt_expr;
             old_cf_expr = cf_expr;
 
@@ -762,15 +791,14 @@ OPTfundef (node *arg_node, node *arg_info)
                 goto INFO;
 
             /*
-             *  This is needed to transform more index vectors in skalars
-             * or vice versa.
+             * This is needed to transform more index vectors in scalars or vice versa.
              */
             DBUG_PRINT ("WLF", ("WITHLOOP TRANSFORMATIONS"));
             arg_node = WithloopFoldingWLT (arg_node, arg_info); /* wlt */
             arg_node = GenerateMasks (arg_node, NULL);
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == (loop1 + loop2))
-                && (0 == strcmp (break_specifier, "wli")))
+                && (0 == strcmp (break_specifier, "wlt")))
                 goto INFO;
         }
 
@@ -781,6 +809,10 @@ OPTfundef (node *arg_node, node *arg_info)
             arg_node = DeadCodeRemoval (arg_node, arg_info);
         }
 
+        /*
+         * no break yet!
+         */
+        do_break = FALSE;
     INFO:
         if (loop1 + loop2 == max_optcycles
             && ((lir_expr != old_lir_expr) || (lunr_expr != old_lunr_expr)
