@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.53  1999/09/01 17:50:36  jhs
+ * And again again ...
+ *
  * Revision 2.52  1999/09/01 17:46:14  jhs
  * And again ...
  *
@@ -2411,6 +2414,8 @@ extern node *MakeInfo ();
  */
 #define INFO_DUP_CONT(n) (n->node[1])
 #define INFO_DUP_FOLDINL(n) (n->node[3])
+#define INFO_DUP_TYPE(n) (n->flag)
+#define INFO_DUP_ALL(n) (n->int_data)
 
 /* flatten */
 #define INFO_FLTN_CONTEXT(n) (n->flag)
