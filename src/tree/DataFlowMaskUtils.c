@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/11/17 19:00:36  sah
+ * fixed ktr changes, should work now as intended by ktr
+ *
  * Revision 3.13  2004/11/17 09:03:35  ktr
  * added support for AVIS nodes.
  *
@@ -595,11 +598,12 @@ DFM2Args (DFMmask_t mask, LUT_t lut)
                              mdb_statustype[ARG_STATUS (args)]));
 
         lut = InsertIntoLUT_P (lut, decl, args);
-        if (VARDEC_AVIS (decl) != NULL) {
-            if (AVIS_TYPE (VARDEC_AVIS (decl)) != NULL) {
-                AVIS_TYPE (args) = TYCopyType (AVIS_TYPE (VARDEC_AVIS (decl)));
+        if (VARDEC_OR_ARG_AVIS (decl) != NULL) {
+            if (AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl)) != NULL) {
+                AVIS_TYPE (ARG_AVIS (args))
+                  = TYCopyType (AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl)));
             }
-            lut = InsertIntoLUT_P (lut, VARDEC_AVIS (decl), ARG_AVIS (args));
+            lut = InsertIntoLUT_P (lut, VARDEC_OR_ARG_AVIS (decl), ARG_AVIS (args));
         }
         decl = DFMGetMaskEntryDeclSet (NULL);
     }
@@ -634,7 +638,7 @@ DFM2ReturnExprs (DFMmask_t mask, LUT_t lut)
          * ID_VARDEC and ID_OBJDEF are mapped to the same node!
          */
         ID_VARDEC (id) = SearchInLUT_PP (lut, decl);
-        ID_AVIS (id) = VARDEC_AVIS (ID_VARDEC (id));
+        ID_AVIS (id) = VARDEC_OR_ARG_AVIS (ID_VARDEC (id));
         SET_FLAG (ID, id, IS_GLOBAL, (NODE_TYPE (ID_VARDEC (id)) == N_objdef));
         SET_FLAG (ID, id, IS_REFERENCE, FALSE);
 
@@ -704,7 +708,7 @@ DFM2ApArgs (DFMmask_t mask, LUT_t lut)
          * ID_VARDEC and ID_OBJDEF are mapped to the same node!
          */
         ID_VARDEC (id) = SearchInLUT_PP (lut, decl);
-        ID_AVIS (id) = VARDEC_AVIS (ID_VARDEC (id));
+        ID_AVIS (id) = VARDEC_OR_ARG_AVIS (ID_VARDEC (id));
 
         SET_FLAG (ID, id, IS_GLOBAL, (NODE_TYPE (ID_VARDEC (id)) == N_objdef));
         SET_FLAG (ID, id, IS_REFERENCE,
@@ -752,7 +756,7 @@ DFM2LetIds (DFMmask_t mask, LUT_t lut)
         tmp = _ids;
         _ids = MakeIds_Copy (VARDEC_OR_ARG_NAME (decl));
         IDS_VARDEC (_ids) = SearchInLUT_PP (lut, decl);
-        IDS_AVIS (_ids) = VARDEC_AVIS (IDS_VARDEC (_ids));
+        IDS_AVIS (_ids) = VARDEC_OR_ARG_AVIS (IDS_VARDEC (_ids));
         IDS_NEXT (_ids) = tmp;
 
         /*
