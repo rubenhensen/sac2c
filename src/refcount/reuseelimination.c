@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/23 20:08:48  jhb
+ * compile
+ *
  * Revision 1.6  2004/11/19 15:42:41  ktr
  * Support for F_alloc_or_reshape added.
  *
@@ -39,6 +42,8 @@
  */
 #define NEW_INFO
 
+#include "reuseelimination.h"
+
 #include "globals.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -48,15 +53,17 @@
 #include "DupTree.h"
 #include "LookUpTable.h"
 #include "DataFlowMask.h"
+#include "internal_lib.h"
+#include "free.h"
 
 /**
  * INFO structure
  */
 struct INFO {
     bool remassign;
-    ids *lhs;
-    LUT_t lut;
-    DFMmask_t mask;
+    node *lhs;
+    lut_t *lut;
+    dfmask_t *mask;
 };
 
 /**
@@ -77,7 +84,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_RE_REMASSIGN (result) = FALSE;
     INFO_RE_LHS (result) = NULL;
@@ -92,7 +99,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -119,9 +126,11 @@ EMREReuseElimination (node *syntax_tree)
 
     info = MakeInfo ();
 
-    act_tab = emre_tab;
+    TRAVpush (TR_emre);
 
-    syntax_tree = Trav (syntax_tree, info);
+    syntax_tree = TRAVdo (syntax_tree, info);
+
+    TRAVpop ();
 
     info = FreeInfo (info);
 
@@ -159,17 +168,17 @@ EMREassign (node *arg_node, info *arg_info)
     /*
      * Top-down traversal
      */
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     remassign = INFO_RE_REMASSIGN (arg_info);
     INFO_RE_REMASSIGN (arg_info) = FALSE;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     if (remassign) {
-        arg_node = FreeNode (arg_node);
+        arg_node = FREEdoFreeNode (arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -190,29 +199,29 @@ EMREassign (node *arg_node, info *arg_info)
 node *
 EMREcond (node *arg_node, info *arg_info)
 {
-    DFMmask_t oldmask;
-    LUT_t oldlut;
+    dfmask_t *oldmask;
+    lut_t *oldlut;
 
     DBUG_ENTER ("EMREcond");
 
     oldmask = INFO_RE_MASK (arg_info);
     oldlut = INFO_RE_LUT (arg_info);
 
-    INFO_RE_MASK (arg_info) = DFMGenMaskCopy (oldmask);
-    INFO_RE_LUT (arg_info) = DuplicateLUT (oldlut);
+    INFO_RE_MASK (arg_info) = DFMgenMaskCopy (oldmask);
+    INFO_RE_LUT (arg_info) = LUTduplicateLut (oldlut);
 
-    COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+    COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
 
-    INFO_RE_MASK (arg_info) = DFMRemoveMask (INFO_RE_MASK (arg_info));
-    INFO_RE_LUT (arg_info) = RemoveLUT (INFO_RE_LUT (arg_info));
+    INFO_RE_MASK (arg_info) = DFMremoveMask (INFO_RE_MASK (arg_info));
+    INFO_RE_LUT (arg_info) = LUTremoveLut (INFO_RE_LUT (arg_info));
 
-    INFO_RE_MASK (arg_info) = DFMGenMaskCopy (oldmask);
-    INFO_RE_LUT (arg_info) = DuplicateLUT (oldlut);
+    INFO_RE_MASK (arg_info) = DFMgenMaskCopy (oldmask);
+    INFO_RE_LUT (arg_info) = LUTduplicateLut (oldlut);
 
-    COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
+    COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
-    INFO_RE_MASK (arg_info) = DFMRemoveMask (INFO_RE_MASK (arg_info));
-    INFO_RE_LUT (arg_info) = RemoveLUT (INFO_RE_LUT (arg_info));
+    INFO_RE_MASK (arg_info) = DFMremoveMask (INFO_RE_MASK (arg_info));
+    INFO_RE_LUT (arg_info) = LUTremoveLut (INFO_RE_LUT (arg_info));
 
     INFO_RE_MASK (arg_info) = oldmask;
     INFO_RE_LUT (arg_info) = oldlut;
@@ -238,29 +247,29 @@ EMREfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMREfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        DFMmask_base_t maskbase;
+        dfmask_base_t *maskbase;
 
         DBUG_PRINT ("EMRE", ("Performing Reuse elimination in function %s...",
                              FUNDEF_NAME (arg_node)));
 
-        maskbase = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+        maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
-        INFO_RE_MASK (arg_info) = DFMGenMaskClear (maskbase);
-        INFO_RE_LUT (arg_info) = GenerateLUT ();
+        INFO_RE_MASK (arg_info) = DFMgenMaskClear (maskbase);
+        INFO_RE_LUT (arg_info) = LUTgenerateLut ();
 
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-        INFO_RE_LUT (arg_info) = RemoveLUT (INFO_RE_LUT (arg_info));
-        INFO_RE_MASK (arg_info) = DFMRemoveMask (INFO_RE_MASK (arg_info));
+        INFO_RE_LUT (arg_info) = LUTremoveLut (INFO_RE_LUT (arg_info));
+        INFO_RE_MASK (arg_info) = DFMremoveMask (INFO_RE_MASK (arg_info));
 
-        maskbase = DFMRemoveMaskBase (maskbase);
+        maskbase = DFMremoveMaskBase (maskbase);
 
         DBUG_PRINT ("EMRE", ("Reuse elimination in function %s complete.",
                              FUNDEF_NAME (arg_node)));
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -287,10 +296,10 @@ EMRElet (node *arg_node, info *arg_info)
 
     INFO_RE_LHS (arg_info) = LET_IDS (arg_node);
 
-    new_node = Trav (LET_EXPR (arg_node), arg_info);
+    new_node = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     if (new_node != LET_EXPR (arg_node)) {
-        arg_node = FreeNode (arg_node);
+        arg_node = FREEdoFreeNode (arg_node);
         arg_node = new_node;
     }
 
@@ -312,7 +321,7 @@ EMRElet (node *arg_node, info *arg_info)
 node *
 EMREprf (node *arg_node, info *arg_info)
 {
-    node *vardec;
+    node *avis;
 
     DBUG_ENTER ("EMREprf");
 
@@ -324,14 +333,13 @@ EMREprf (node *arg_node, info *arg_info)
          * 1. Replace a with b in remaining program
          */
         INFO_RE_LUT (arg_info)
-          = InsertIntoLUT_P (INFO_RE_LUT (arg_info), IDS_VARDEC (INFO_RE_LHS (arg_info)),
-                             ID_VARDEC (PRF_ARG2 (arg_node)));
+          = LUTinsertIntoLutP (INFO_RE_LUT (arg_info), IDS_AVIS (INFO_RE_LHS (arg_info)),
+                               ID_AVIS (PRF_ARG2 (arg_node)));
 
         /*
          * 2. Mark b in MASK
          */
-        DFMSetMaskEntrySet (INFO_RE_MASK (arg_info), NULL,
-                            ID_VARDEC (PRF_ARG2 (arg_node)));
+        DFMsetMaskEntrySet (INFO_RE_MASK (arg_info), NULL, ID_AVIS (PRF_ARG2 (arg_node)));
 
         /*
          * 3. Convert into NOOP / F_inc_rc
@@ -341,9 +349,10 @@ EMREprf (node *arg_node, info *arg_info)
         } else {
             DBUG_ASSERT (NUM_VAL (PRF_ARG1 (arg_node)) > 1, "Illegal rc value");
 
-            arg_node = MakeLet (MakePrf2 (F_inc_rc, DupNode (PRF_ARG2 (arg_node)),
-                                          MakeNum (NUM_VAL (PRF_ARG1 (arg_node)) - 1)),
-                                NULL);
+            arg_node
+              = TBmakeLet (TCmakePrf2 (F_inc_rc, DUPdoDupNode (PRF_ARG2 (arg_node)),
+                                       TBmakeNum (NUM_VAL (PRF_ARG1 (arg_node)) - 1)),
+                           NULL);
         }
         break;
 
@@ -353,8 +362,7 @@ EMREprf (node *arg_node, info *arg_info)
          *
          * Mark b in MASK
          */
-        DFMSetMaskEntrySet (INFO_RE_MASK (arg_info), NULL,
-                            ID_VARDEC (PRF_ARG4 (arg_node)));
+        DFMsetMaskEntrySet (INFO_RE_MASK (arg_info), NULL, ID_AVIS (PRF_ARG4 (arg_node)));
         break;
 
     case F_wl_assign:
@@ -362,16 +370,12 @@ EMREprf (node *arg_node, info *arg_info)
         /*
          * Replace memory variable with reused variable
          */
-        vardec = SearchInLUT_PP (INFO_RE_LUT (arg_info), ID_VARDEC (PRF_ARG2 (arg_node)));
+        avis = LUTsearchInLutPp (INFO_RE_LUT (arg_info), ID_AVIS (PRF_ARG2 (arg_node)));
 
-        if (vardec != ID_VARDEC (PRF_ARG2 (arg_node))) {
+        if (avis != ID_AVIS (PRF_ARG2 (arg_node))) {
 
-            PRF_ARG2 (arg_node) = FreeNode (PRF_ARG2 (arg_node));
-
-            PRF_ARG2 (arg_node)
-              = MakeId (StringCopy (VARDEC_NAME (vardec)), NULL, ST_regular);
-            ID_VARDEC (PRF_ARG2 (arg_node)) = vardec;
-            ID_AVIS (PRF_ARG2 (arg_node)) = VARDEC_AVIS (vardec);
+            PRF_ARG2 (arg_node) = FREEdoFreeNode (PRF_ARG2 (arg_node));
+            PRF_ARG2 (arg_node) = TBmakeId (avis);
         }
         break;
 
@@ -379,16 +383,12 @@ EMREprf (node *arg_node, info *arg_info)
         /*
          * Replace memory variable with reused variable
          */
-        vardec = SearchInLUT_PP (INFO_RE_LUT (arg_info), ID_VARDEC (PRF_ARG1 (arg_node)));
+        avis = LUTsearchInLutPp (INFO_RE_LUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)));
 
-        if (vardec != ID_VARDEC (PRF_ARG1 (arg_node))) {
+        if (avis != ID_AVIS (PRF_ARG1 (arg_node))) {
 
-            PRF_ARG1 (arg_node) = FreeNode (PRF_ARG1 (arg_node));
-
-            PRF_ARG1 (arg_node)
-              = MakeId (StringCopy (VARDEC_NAME (vardec)), NULL, ST_regular);
-            ID_VARDEC (PRF_ARG1 (arg_node)) = vardec;
-            ID_AVIS (PRF_ARG1 (arg_node)) = VARDEC_AVIS (vardec);
+            PRF_ARG1 (arg_node) = FREEdoFreeNode (PRF_ARG1 (arg_node));
+            PRF_ARG1 (arg_node) = TBmakeId (avis);
         }
         break;
 
@@ -396,8 +396,8 @@ EMREprf (node *arg_node, info *arg_info)
         /*
          * remove dec_rcs of reused variables
          */
-        if (DFMTestMaskEntry (INFO_RE_MASK (arg_info), NULL,
-                              ID_VARDEC (PRF_ARG1 (arg_node)))) {
+        if (DFMtestMaskEntry (INFO_RE_MASK (arg_info), NULL,
+                              ID_AVIS (PRF_ARG1 (arg_node)))) {
             INFO_RE_REMASSIGN (arg_info) = TRUE;
         }
         break;
@@ -427,11 +427,12 @@ EMREvardec (node *arg_node, info *arg_info)
     DBUG_ENTER ("EMREvardec");
 
     if (VARDEC_NEXT (arg_node) != NULL) {
-        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+        VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
     }
 
-    if (SearchInLUT_PP (INFO_RE_LUT (arg_info), arg_node) != arg_node) {
-        arg_node = FreeNode (arg_node);
+    if (LUTsearchInLutPp (INFO_RE_LUT (arg_info), VARDEC_AVIS (arg_node))
+        != VARDEC_AVIS (arg_node)) {
+        arg_node = FREEdoFreeNode (arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -439,7 +440,7 @@ EMREvardec (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMREwithop(node *arg_node, info *arg_info)
+ * @fn node *EMREgenarray(node *arg_node, info *arg_info)
  *
  * @brief
  *
@@ -450,39 +451,61 @@ EMREvardec (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-EMREwithop (node *arg_node, info *arg_info)
+EMREgenarray (node *arg_node, info *arg_info)
 {
-    node *vardec;
+    node *avis;
 
-    DBUG_ENTER ("EMREwithop");
+    DBUG_ENTER ("EMREgenarray");
 
-    switch (NWITHOP_TYPE (arg_node)) {
-    case WO_genarray:
-    case WO_modarray:
-        /*
-         * replace memory variables with reused variables
-         */
-        vardec
-          = SearchInLUT_PP (INFO_RE_LUT (arg_info), ID_VARDEC (NWITHOP_MEM (arg_node)));
+    /*
+     * replace memory variables with reused variables
+     */
+    avis = LUTsearchInLutPp (INFO_RE_LUT (arg_info), ID_AVIS (GENARRAY_MEM (arg_node)));
 
-        if (vardec != ID_VARDEC (NWITHOP_MEM (arg_node))) {
+    if (avis != ID_AVIS (GENARRAY_MEM (arg_node))) {
 
-            NWITHOP_MEM (arg_node) = FreeNode (NWITHOP_MEM (arg_node));
-
-            NWITHOP_MEM (arg_node)
-              = MakeId (StringCopy (VARDEC_NAME (vardec)), NULL, ST_regular);
-            ID_VARDEC (NWITHOP_MEM (arg_node)) = vardec;
-            ID_AVIS (NWITHOP_MEM (arg_node)) = VARDEC_AVIS (vardec);
-        }
-
-        break;
-
-    default:
-        break;
+        GENARRAY_MEM (arg_node) = FREEdoFreeNode (GENARRAY_MEM (arg_node));
+        GENARRAY_MEM (arg_node) = TBmakeId (avis);
     }
 
-    if (NWITHOP_NEXT (arg_node) != NULL) {
-        NWITHOP_NEXT (arg_node) = Trav (NWITHOP_NEXT (arg_node), arg_info);
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMREmodarray(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+node *
+EMREmodarray (node *arg_node, info *arg_info)
+{
+    node *avis;
+
+    DBUG_ENTER ("EMREmodarray");
+
+    /*
+     * replace memory variables with reused variables
+     */
+    avis = LUTsearchInLutPp (INFO_RE_LUT (arg_info), ID_AVIS (MODARRAY_MEM (arg_node)));
+
+    if (avis != ID_AVIS (MODARRAY_MEM (arg_node))) {
+
+        MODARRAY_MEM (arg_node) = FREEdoFreeNode (MODARRAY_MEM (arg_node));
+        MODARRAY_MEM (arg_node) = TBmakeId (avis);
+    }
+
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
