@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2003/02/08 15:58:00  mwe
+ * OPT_DL deactivated by default
+ *
  * Revision 3.27  2003/01/25 22:05:11  ktr
  * Reactivated WLS. Fixed memory management and lots of related issues.
  *
@@ -416,10 +419,11 @@ bool patch_with = FALSE;
  */
 
 #ifdef PRODUCTION
-unsigned int optimize
-  = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_WLS);
+unsigned int optimize = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI)
+                        & (~OPT_APL) & (~OPT_WLS) & (~OPT_DL);
 #else /* PRODUCTION */
-unsigned int optimize = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL);
+unsigned int optimize
+  = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_DL);
 
 #endif /* PRODUCTION */
 
