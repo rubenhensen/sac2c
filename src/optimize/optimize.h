@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.55  1998/04/03 11:58:12  srs
+ * exported old_wlf_expr and old_wlt_expr to be visible in WithloopFolding.c
+ *
  * Revision 1.54  1998/04/02 13:47:23  srs
  * NOTE_OPTIMIZER_PHASE() deleted
  *
@@ -198,6 +201,7 @@ extern int elim_arrays;
 extern int cse_expr;
 extern int wlf_expr;
 extern int wlt_expr;
+extern int old_wlf_expr, old_wlt_expr;
 
 typedef struct STELM {
     int vl_len;
