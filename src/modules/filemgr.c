@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/04/05 17:24:16  sbs
+ * Revision 1.4  1995/04/07 09:36:35  sbs
+ * bug resulting from change FILE * => char * eliminated
+ *
+ * Revision 1.3  1995/04/05  17:24:16  sbs
  * GenLinkList inserted
  *
  * Revision 1.2  1995/02/22  14:14:36  hw
@@ -49,8 +52,9 @@ FindFile (pathkind p, char *name)
     DBUG_ENTER ("FindFile");
 
     strcpy (buffer2, path_bufs[p]);
+    strcpy (buffer, name);
     path = strtok (buffer2, ":");
-    file = fopen (name, "r");
+    file = fopen (buffer, "r");
     while ((file == NULL) && (path != NULL)) {
         strcpy (buffer, path);
         strcat (buffer, "/");
