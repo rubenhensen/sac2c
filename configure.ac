@@ -1,5 +1,9 @@
 dnl
 dnl $Log$
+dnl Revision 1.21  2003/04/16 15:34:47  sah
+dnl phm is now disabled on macos aka darwin
+dnl by default
+dnl
 dnl Revision 1.20  2003/04/16 14:42:25  sbs
 dnl -traditional-cpp added for mac RCCCFLAGS.
 dnl
@@ -236,6 +240,13 @@ AC_DEFINE(DISABLE_PHM, 1, set to disable private heapmanagement)
 AC_SUBST(DISABLE_PHM, yes)
 ])
 
+dnl hack, as we don't know why phm doesn't work
+dnl on macs. just disable it there
+case "$target_os" in
+    *darwin*) AC_DEFINE(DISABLE_PHM, 1)
+              AC_SUBST(DISABLE_PHM, yes)
+esac
+
 dnl check if we need to define _REENTRANT
 dnl or if its defined in pthreads.d
 AC_MSG_CHECKING(for need of _REENTRANT)
@@ -378,6 +389,7 @@ else
   AC_SUBST(MKCCFLAGS, [""])
   AC_SUBST(PDCCFLAGS, [""])
   AC_SUBST(DEPSFLAG, ["-M"])
+  AC_SUBST(CPPFILE, ["cpp -C"])
   AC_MSG_RESULT([none found])
 fi   
 
