@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2004/09/28 16:40:17  skt
+ * added DATAFLOWNODE_USEDNODES support
+ *
  * Revision 1.9  2004/08/18 13:33:46  skt
  * added a wonderful shortlink into UpdateDependencies
  * (thank you Clemens)
@@ -653,6 +656,8 @@ CDFGUpdateDataflowgraph (node *graph, node *node_one, node *node_two)
         DATAFLOWNODE_DEPENDENT (from_node)
           = NodeListAppend (DATAFLOWNODE_DEPENDENT (from_node), to_node, NULL);
         DATAFLOWNODE_REFCOUNT (to_node)++;
+        DATAFLOWNODE_USEDNODES (to_node)
+          = NodeListAppend (DATAFLOWNODE_USEDNODES (to_node), from_node, NULL);
     }
 
     DBUG_VOID_RETURN;

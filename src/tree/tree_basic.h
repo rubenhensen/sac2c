@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.222  2004/09/28 16:40:17  skt
+ * added DATAFLOWNODE_USEDNODES support
+ *
  * Revision 3.221  2004/09/28 14:11:18  ktr
  * removed old refcount and generatemasks
  *
@@ -4594,6 +4597,7 @@ extern node *MakeModspec (char *name, node *exports);
  ***  permanent attributes:
  ***
  ***    nodelist*     DEPENDENT (O)
+ ***    nodelist*     USEDNODES (O)
  ***    char*         NAME      (O)
  ***    int           REFCOUNT
  ***    node*         ASSIGN    (O)  (N_assign)
@@ -4611,6 +4615,7 @@ extern node *MakeModspec (char *name, node *exports);
  ***
  ***  remarks:
  ***           DEPENDENT could only be NULL if it's the sink
+ ***           USEDNODES could only be NULL if it's the source
  ***           ASSIGN is only optional for the source (always) and the sink (if
  ***                  the belonging N_block is empty) of a dataflowgraph
  ***           DFGTHEN in case of an conditional-assignment in ASSIGN, DGFTHEN
@@ -4621,6 +4626,7 @@ extern node *MakeModspec (char *name, node *exports);
 extern node *MakeDataflownode (node *graph, node *assignment, char *name);
 
 #define DATAFLOWNODE_DEPENDENT(n) ((nodelist *)(n->info2))
+#define DATAFLOWNODE_USEDNODES(n) ((nodelist *)(n->info3))
 #define DATAFLOWNODE_NAME(n) (n->info.id)
 #define DATAFLOWNODE_REFCOUNT(n) (n->refcnt)
 #define DATAFLOWNODE_ASSIGN(n) (n->node[0])

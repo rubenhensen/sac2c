@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.100  2004/09/28 16:40:17  skt
+ * added DATAFLOWNODE_USEDNODES support
+ *
  * Revision 3.99  2004/09/28 14:11:18  ktr
  * removed old refcount and generatemasks
  *
@@ -2303,6 +2306,7 @@ MakeDataflownode (node *graph, node *assignment, char *name)
         DATAFLOWNODE_EXECMODE (tmp) = MUTH_ANY;
     }
     DATAFLOWNODE_NAME (tmp) = name;
+    DATAFLOWNODE_USEDNODES (tmp) = NULL;
 
     /* add node to the graph members*/
     DATAFLOWGRAPH_MEMBERS (graph)

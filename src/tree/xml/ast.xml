@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.14  2004/09/28 16:40:17  skt
+  added DATAFLOWNODE_USEDNODES support
+
   Revision 1.13  2004/09/28 14:11:38  ktr
   removed old refcount and generatemasks
 
@@ -3894,19 +3897,6 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="LinkWith" default="NULL" mandatory="no">
-          <type name="Deps" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
-        <attribute name="IsExternal" default="FALSE"
-        mandatory="yes">
-          <type name="Bool" />
-          <phases>
-            <all />
-          </phases>
-        </attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -3914,6 +3904,13 @@
       <sons></sons>
       <attributes>
         <attribute name="Dependent" mandatory="no">
+	  <type name="NodeList" />
+	  <phases>
+	    <all />
+	  </phases>
+	</attribute>
+      <attributes>
+        <attribute name="UsedNodes" mandatory="no">
 	  <type name="NodeList" />
 	  <phases>
 	    <all />
