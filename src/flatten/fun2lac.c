@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/02/18 14:03:55  cg
+ * Added reconversion of while- and do-loops. Do-loops are yet untested
+ * due to missing corresponding capability of lac2fun.c.
+ *
  * Revision 1.2  2000/02/18 10:49:47  cg
  * All initial bugs fixed; this version successfully reconverts
  * conditionals.
@@ -50,6 +54,49 @@
 /******************************************************************************
  *
  * function:
+ *
+ *
+ * description:
+ *
+ *
+ *
+ *
+ *
+ ******************************************************************************/
+
+static int
+IsRecursiveCall (node *assign, node *fundef)
+{
+    int res;
+    node *instr, *expr;
+
+    DBUG_ENTER ("IsRecursiveCall");
+
+    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
+                 "Wrong 1st argument to IsRecursiveCall().");
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "Wrong 2nd argument to IsRecursiveCall().");
+
+    instr = ASSIGN_INSTR (assign);
+
+    if (NODE_TYPE (instr) == N_let) {
+        expr = LET_EXPR (instr);
+
+        if ((NODE_TYPE (expr) == N_ap) && (AP_FUNDEF (expr) == fundef)) {
+            res = 1;
+        } else {
+            res = 0;
+        }
+    } else {
+        res = 0;
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *MoveVardecs(node *source, node *dest)
  *
  * description:
@@ -84,55 +131,238 @@ MoveVardecs (node *source, node *dest)
 /******************************************************************************
  *
  * function:
- *   node *InlineWhileFun(node *fundef)
+ *   node *ReplaceAssignmentByWhileLoopFun(node *assign, node *fundef)
  *
  * description:
  *
- *   This function transforms the given while-loop function into an assignment
- *   that is suitable to replace the corresponding function application.
+ *   This function replaces the given assignment containing the application
+ *   of a while-loop function by the transformed body of the corresponding
+ *   function definition.
  *
+ *   Basically the following transformation is performed:
+ *
+ *   ... WhileLoopFun(...)
+ *   {
+ *     if (<pred>) {
+ *       <statements>;
+ *       <pre-renamings>;
+ *       ... = WhileLoopFun(...);
+ *       <post-renamings>;
+ *     }
+ *     else {
+ *       <anything>;
+ *     }
+ *     <return-renamings>;
+ *     return(...);
+ *   }
+ *
+ *   ...;
+ *   ... = WhileLoopFun(...);
+ *   ...;
+ *
+ *
+ *   is being transformed into:
+ *
+ *   ...;
+ *   while (<pred>) {
+ *     <statements>;
+ *     <pre-renamings>;
+ *   }
+ *   <post-renamings>;
+ *   ...;
  *
  ******************************************************************************/
 
 static node *
-InlineWhileFun (node *fundef)
+ReplaceAssignmentByWhileLoopFun (node *assign, node *fundef)
 {
-    DBUG_ENTER ("InlineWhileFun");
+    node *tmp, *cond, *loop_body, *loop_suffix, *loop_pred, *new_assign;
 
-    DBUG_RETURN (NULL);
+    DBUG_ENTER ("ReplaceAssignmentByWhileLoopFun");
+
+    cond = ASSIGN_INSTR (BLOCK_INSTR (FUNDEF_BODY (fundef)));
+
+    DBUG_ASSERT ((NODE_TYPE (cond) == N_cond),
+                 "Illegal structure of while-loop function.");
+
+    loop_pred = COND_COND (cond);
+    COND_COND (cond) = MakeBool (0);
+
+    tmp = BLOCK_INSTR (COND_THEN (cond));
+
+    if (IsRecursiveCall (tmp, fundef)) {
+        loop_body = MakeBlock (MakeEmpty (), NULL);
+    } else {
+        while (!IsRecursiveCall (ASSIGN_NEXT (tmp), fundef)) {
+            tmp = ASSIGN_NEXT (tmp);
+        }
+        loop_body = MakeBlock (BLOCK_INSTR (COND_THEN (cond)), NULL);
+        BLOCK_INSTR (COND_THEN (cond)) = ASSIGN_NEXT (tmp);
+        ASSIGN_NEXT (tmp) = NULL;
+        tmp = BLOCK_INSTR (COND_THEN (cond));
+    }
+
+    /*
+     * Here tmp points to the recursive function application.
+     */
+
+    loop_suffix = AppendAssign (ASSIGN_NEXT (tmp), ASSIGN_NEXT (assign));
+    ASSIGN_NEXT (tmp) = NULL;
+    ASSIGN_NEXT (assign) = NULL;
+
+    FreeTree (assign);
+    /* free current assignment */
+
+    new_assign = MakeAssign (MakeWhile (loop_pred, loop_body), loop_suffix);
+
+    DBUG_RETURN (new_assign);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *InlineDoFun(node *fundef)
+ *   node *ReplaceAssignmentByDoLoopFun(node *assign, node *fundef)
  *
  * description:
  *
- *   This function transforms the given do-loop function into an assignment
- *   that is suitable to replace the corresponding function application.
+ *   This function replaces the given assignment containing the application
+ *   of a do-loop function by the transformed body of the corresponding
+ *   function definition.
  *
+ *   Basically the following transformation is performed:
+ *
+ *   ... DoLoopFun(...)
+ *   {
+ *     <statements>;
+ *     if (<pred>) {
+ *       <pre-renamings>;
+ *       ... = DoLoopFun(...);
+ *       <post-renamings>;
+ *     }
+ *     else {
+ *       <anything>;
+ *     }
+ *     <return-renamings>;
+ *     return(...);
+ *   }
+ *
+ *   ...;
+ *   ... = DoLoopFun(...);
+ *   ...;
+ *
+ *
+ *   is being transformed into:
+ *
+ *   ...;
+ *   do {
+ *     <statements>;
+ *     <pre-renamings>;
+ *   } while (<pred>);
+ *   <post-renamings>;
+ *   ...;
  *
  ******************************************************************************/
 
 static node *
-InlineDoFun (node *fundef)
+ReplaceAssignmentByDoLoopFun (node *assign, node *fundef)
 {
-    DBUG_ENTER ("InlineDoFun");
+    node *tmp, *cond, *loop_body, *loop_suffix, *loop_pred, *new_assign;
 
-    DBUG_RETURN (NULL);
+    DBUG_ENTER ("ReplaceAssignmentByDoLoopFun");
+
+    tmp = BLOCK_INSTR (FUNDEF_BODY (fundef));
+
+    if (NODE_TYPE (ASSIGN_INSTR (tmp)) == N_cond) {
+        loop_body = MakeBlock (NULL, NULL);
+    } else {
+        while (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp))) != N_cond) {
+            tmp = ASSIGN_NEXT (tmp);
+        }
+        loop_body = MakeBlock (BLOCK_INSTR (FUNDEF_BODY (fundef)), NULL);
+        BLOCK_INSTR (FUNDEF_BODY (fundef)) = ASSIGN_NEXT (tmp);
+        ASSIGN_NEXT (tmp) = NULL;
+        tmp = BLOCK_INSTR (FUNDEF_BODY (fundef));
+    }
+
+    /*
+     * Variable tmp now points to the conditional.
+     */
+
+    cond = ASSIGN_INSTR (tmp);
+
+    DBUG_ASSERT ((NODE_TYPE (cond) == N_cond),
+                 "Illegal node type in conditional position.");
+
+    tmp = BLOCK_INSTR (COND_THEN (cond));
+
+    if (!IsRecursiveCall (tmp, fundef)) {
+        BLOCK_INSTR (loop_body) = AppendAssign (BLOCK_INSTR (loop_body), tmp);
+
+        while (!IsRecursiveCall (ASSIGN_NEXT (tmp), fundef)) {
+            tmp = ASSIGN_NEXT (tmp);
+        }
+        BLOCK_INSTR (COND_THEN (cond)) = ASSIGN_NEXT (tmp);
+        ASSIGN_NEXT (tmp) = NULL;
+        tmp = BLOCK_INSTR (COND_THEN (cond));
+    }
+
+    /*
+     * Here tmp points to the recursive function application.
+     */
+
+    loop_suffix = AppendAssign (ASSIGN_NEXT (tmp), ASSIGN_NEXT (assign));
+    ASSIGN_NEXT (tmp) = NULL;
+    ASSIGN_NEXT (assign) = NULL;
+
+    FreeTree (assign);
+    /* free current assignment */
+
+    new_assign = MakeAssign (MakeDo (loop_pred, loop_body), loop_suffix);
+
+    DBUG_RETURN (new_assign);
 }
 
 /******************************************************************************
  *
  * function:
- *   node *InlineCondFun(node *fundef)
+ *   node *ReplaceAssignmentByCondFun(node *assign, node *fundef)
  *
  * description:
  *
- *   This function transforms the given conditional function into an assignment
- *   that is suitable to replace the corresponding function application.
+ *   This function replaces the given assignment containing the application
+ *   of a conditional function by the transformed body of the corresponding
+ *   function definition.
  *
+ *   Basically the following transformation is performed:
+ *
+ *   ... CondFun(...)
+ *   {
+ *     if (<pred>) {
+ *       <then-statements>;
+ *     }
+ *     else {
+ *       <else-statements>;
+ *     }
+ *     <return-renamings>;
+ *     return(...);
+ *   }
+ *
+ *   ...;
+ *   ... =CondFun(...);
+ *   ...;
+ *
+ *
+ *   is being transformed into:
+ *
+ *   ...;
+ *   if (<pred>) {
+ *     <then-statements>;
+ *   }
+ *   else {
+ *     <else-statements>;
+ *   }
+ *   <return-renamings>;
+ *   ...;
  *
  ******************************************************************************/
 
@@ -141,7 +371,7 @@ ReplaceAssignmentByCondFun (node *assign, node *fundef)
 {
     node *assign_chain, *tmp;
 
-    DBUG_ENTER ("InlineCondFun");
+    DBUG_ENTER ("ReplaceAssignmentByCondFun");
 
     assign_chain = BLOCK_INSTR (FUNDEF_BODY (fundef));
 
@@ -249,8 +479,6 @@ FUN2LAClet (node *arg_node, node *arg_info)
 node *
 FUN2LACassign (node *arg_node, node *arg_info)
 {
-    node *tmp;
-
     DBUG_ENTER ("FUN2LACassign");
 
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
@@ -273,14 +501,16 @@ FUN2LACassign (node *arg_node, node *arg_info)
             DBUG_PRINT ("FUN2LAC", ("Naive inlining of while-loop function %s.\n",
                                     ItemName (INFO_FUN2LAC_FUNDEF (arg_info))));
 
-            ASSIGN_INSTR (arg_node) = InlineWhileFun (INFO_FUN2LAC_FUNDEF (arg_info));
+            arg_node = ReplaceAssignmentByWhileLoopFun (arg_node,
+                                                        INFO_FUN2LAC_FUNDEF (arg_info));
             break;
         }
         case ST_dofun: {
             DBUG_PRINT ("FUN2LAC", ("Naive inlining of do-loop function %s.\n",
                                     ItemName (INFO_FUN2LAC_FUNDEF (arg_info))));
 
-            ASSIGN_INSTR (arg_node) = InlineDoFun (INFO_FUN2LAC_FUNDEF (arg_info));
+            arg_node
+              = ReplaceAssignmentByDoLoopFun (arg_node, INFO_FUN2LAC_FUNDEF (arg_info));
             break;
         }
         default: {
