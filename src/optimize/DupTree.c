@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.53  1998/04/08 07:39:33  srs
+ * removed wrong assertion in DupId
+ *
  * Revision 1.52  1998/04/07 15:19:19  srs
  * renamed DupId to DupModarray and
  *         DupIIds to DupId.
@@ -350,6 +353,7 @@ DupIds (ids *old_ids, node *arg_info)
 
 /******************************************************************************/
 
+/* This function is used by N_id, N_let, N_pos, N_pre, N_generator. */
 node *
 DupId (node *arg_node, node *arg_info)
 {
@@ -358,7 +362,6 @@ DupId (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupId");
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
-    DBUG_ASSERT (N_id == NODE_TYPE (arg_node), ("wrong nodetype"));
 
     new_node = MakeNode (arg_node->nodetype);
     new_node->info.ids
@@ -368,7 +371,8 @@ DupId (node *arg_node, node *arg_info)
         if (arg_node->node[i] != NULL)
             new_node->node[i] = Trav (arg_node->node[i], arg_info);
 
-    ID_WL (new_node) = arg_node; /* Withloop folding (wlf) needs this. */
+    if (N_id == NODE_TYPE (arg_node))
+        ID_WL (new_node) = arg_node; /* Withloop folding (wlf) needs this. */
 
     DBUG_RETURN (new_node);
 }
