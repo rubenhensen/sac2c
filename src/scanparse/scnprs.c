@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/07/09 12:52:35  sbs
+ * dots integrated in the other branch as well 8-))
+ *
  * Revision 3.6  2002/07/09 12:51:13  sbs
  * break specifyer "yacc" added and EliminateSelDots called
  *
@@ -244,6 +247,13 @@ ScanParse ()
 
     SetFileNames (syntax_tree);
 
+    if ((break_after == PH_scanparse) && (0 == strcmp (break_specifier, "yacc"))) {
+        goto DONE;
+    }
+
+    syntax_tree = EliminateSelDots (syntax_tree);
+
+DONE:
     DBUG_RETURN (syntax_tree);
 }
 
