@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/08/30 14:09:36  bs
+ * The tile size inference is activated now.
+ *
  * Revision 2.8  1999/05/12 14:35:16  cg
  * Optimizations are now triggered by bit field optimize instead
  * of single individual int variables.
@@ -136,6 +139,7 @@
 #include "CSE.h"
 #include "WithloopFolding.h"
 #include "wl_access_analyze.h"
+#include "tile_size_inference.h"
 
 /*
  * global variables to keep track of optimization's success
@@ -437,6 +441,8 @@ DONE:
  *        WLT        |
  *         |--------/
  *        DCR
+ *        WLAA
+ *        TSI
  *
  ******************************************************************************/
 
@@ -706,6 +712,19 @@ OPTfundef (node *arg_node, node *arg_info)
          */
         if (optimize & OPT_TSI) {
             arg_node = WLAccessAnalyze (arg_node);
+
+            if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "wlaa")))
+                goto INFO;
+        }
+
+        /*
+         * At last we have to infere the tilesize.
+         */
+        if (optimize & OPT_TSI) {
+            arg_node = TileSizeInference (arg_node);
+
+            if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "tsi")))
+                goto INFO;
         }
 
     INFO:
