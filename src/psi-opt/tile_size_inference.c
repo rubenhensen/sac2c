@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.17  2000/07/05 15:21:23  bs
+ * Unused expression changed into DBUG_PRINT.
+ *
  * Revision 2.16  2000/07/04 17:47:31  bs
  * Bug fixed in RecreateEnhAccesslist.
  * Bug fixed in InSortByCLine.
@@ -592,7 +595,7 @@ TileSizeInference (node *arg_node)
          *   If there's no target specified, it's not possibile to infere a tilesize,
          *   because the TSI have to know the cache parameters.
          */
-        (("No target specified. No TSI possible!"));
+        DBUG_PRINT ("PRINT_TSI", ("No target specified. No TSI possible!"));
     }
 
     arg_info = FreeInfo (arg_info, NULL);
