@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.10  2003/03/20 22:15:43  sah
+# added ../../src/global to includes
+#
 # Revision 3.9  2001/11/15 16:13:12  sacbase
 # CLOCK_SKEW_ELIMINATION and dpendency machanism eliminated
 # due to circular reference with cse!!
@@ -51,7 +54,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 # local settings:
 #
 
-INCS= -I../../inc
+INCS= -I../../inc -I../../src/global
 
 all: ../dbug.o ../main_args.o 
 
