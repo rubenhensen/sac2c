@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 2.25  2000/08/15 18:03:12  dkr
+ * extern declaration of 'yytext' corrected:
+ * 'yytext' has type char* NOT char[]!!!!
+ *
  * Revision 2.24  2000/07/21 14:48:17  nmw
  * parsing of specialization files added
  *
@@ -354,7 +358,7 @@
 
 extern int charpos;
 extern char *linebuf_ptr;
-extern char yytext[];
+extern char *yytext;
 
 int i;
 
