@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/07/24 09:01:48  asi
+ * Revision 1.5  1996/01/05 12:26:54  cg
+ * added functions SystemTest and SystemCall
+ *
+ * Revision 1.4  1995/07/24  09:01:48  asi
  * added function itoa
  *
  * Revision 1.3  1995/07/19  18:41:23  asi
@@ -23,6 +26,8 @@
 void *Malloc (int size);
 char *StringCopy (char *source);
 char *itoa (long number);
+void SystemCall (char *format, ...);
+int SystemTest (char *format, ...);
 
 #define SWAP(ptr1, ptr2)                                                                 \
     {                                                                                    \

@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/12/28 14:24:12  cg
+ * Revision 1.10  1996/01/05 12:26:54  cg
+ * added functions SystemTest and SystemCall
+ *
+ * Revision 1.9  1995/12/28  14:24:12  cg
  * bug in StringCopy fixed, StringCopy extremely simplified.
  *
  * Revision 1.8  1995/12/28  10:31:55  cg
@@ -35,11 +38,14 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "Error.h"
 #include "dbug.h"
 #include "my_debug.h"
 #include "internal_lib.h"
+
+#define MAX_SYSCALL 1000
 
 /*
  *
@@ -143,4 +149,92 @@ itoa (long number)
         number = number % ((int)pow (10, (length - 1)));
     }
     DBUG_RETURN (str);
+}
+
+/*
+ *
+ *  functionname  : SystemCall
+ *  arguments     : 1) format string like that of printf
+ *                  2) variable argument list for 1)
+ *  description   : evaluates the given string and executes the respective
+ *                  system call. If the system call fails, an error message
+ *                  occurs and compilation is aborted.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : system, vsprintf, va_start, va_end
+ *  macros        : vararg macros
+ *
+ *  remarks       :
+ *
+ */
+
+void
+SystemCall (char *format, ...)
+{
+    va_list arg_p;
+    static char syscall[MAX_SYSCALL];
+    int exit_code;
+
+    DBUG_ENTER ("SystemCall");
+
+    va_start (arg_p, format);
+    vsprintf (syscall, format, arg_p);
+    va_end (arg_p);
+
+    DBUG_PRINT ("SYSCALL", ("%s", syscall));
+
+    exit_code = system (syscall);
+
+    if (exit_code > 0) {
+        SYSABORT (("System failed to execute shell command\n%s\n"
+                   "with exit code %d",
+                   syscall, exit_code / 256));
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ *
+ *  functionname  : SystemTest
+ *  arguments     : 1) format string like that of printf
+ *                  2) variable argument list for 1)
+ *  description   : evaluates the given string and executes the respective
+ *                  system call. If the system call fails, an error message
+ *                  occurs and compilation is aborted.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : system, vsprintf, va_start, va_end
+ *  macros        : vararg macros
+ *
+ *  remarks       :
+ *
+ */
+
+int
+SystemTest (char *format, ...)
+{
+    va_list arg_p;
+    static char syscall[MAX_SYSCALL];
+    int exit_code;
+
+    DBUG_ENTER ("SystemTest");
+
+    strcpy (syscall, "test ");
+
+    va_start (arg_p, format);
+    vsprintf (syscall + 5 * sizeof (char), format, arg_p);
+    va_end (arg_p);
+
+    DBUG_PRINT ("SYSCALL", ("%s", syscall));
+
+    exit_code = system (syscall);
+
+    if (exit_code == 0) {
+        exit_code = 1;
+    } else {
+        exit_code = 0;
+    }
+
+    DBUG_RETURN (exit_code);
 }
