@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/02/13 17:36:36  dkr
+ * act_tab is stacked now
+ *
  * Revision 3.9  2001/02/12 21:22:58  dkr
  * FUNDEF_EXT_ASSIGN, FUNDEF_INT_ASSIGN added and set correctly
  *
@@ -667,6 +670,7 @@ node *
 Lac2Fun (node *syntax_tree)
 {
     node *info_node;
+    funtab *old_funtab;
 
     DBUG_ENTER ("Lac2Fun");
 
@@ -677,8 +681,12 @@ Lac2Fun (node *syntax_tree)
     syntax_tree = InferDFMs (syntax_tree, HIDE_LOCALS_LAC);
 
     info_node = MakeInfo ();
+
+    old_funtab = act_tab;
     act_tab = l2f_tab;
     syntax_tree = Trav (syntax_tree, info_node);
+    act_tab = old_funtab;
+
     info_node = FreeNode (info_node);
 
     /*
