@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.34  2003/04/26 20:48:47  mwe
+ * esd_tab added
+ *
  * Revision 3.33  2003/03/24 16:36:16  sbs
  * CreateCppCallString added.
  *
@@ -948,6 +951,8 @@ PrefixForTmpVar (void)
         s = "al";
     } else if (act_tab == nt2ot_tab) {
         s = "nt2ot";
+    } else if (act_tab == esd_tab) {
+        s = "esd";
     } else if (act_tab == dl_tab) {
         s = "dl";
     } else {
