@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/31 11:30:27  cg
+ * added command line parameter -cachesim
+ *
  * Revision 2.1  1999/02/23 12:40:16  sacbase
  * new release made
  *
@@ -410,6 +413,13 @@ usage ()
             "\t\t\t\t  i: analyse time spent in inline functions\n"
             "\t\t\t\t  l: analyse time spent in library functions\n"
             "\t\t\t\t  w: analyse time spent in with-loops\n"
+
+            "\n\nCACHE SIMULATION OPTIONS:\n\n"
+
+            "\t -cachesim [fsa] \tenable cache simulation at run-time\n"
+            "\t\t\t\t  f: store memory accesses in file\n"
+            "\t\t\t\t  s: simple immediate cache simulation\n"
+            "\t\t\t\t  a: advanced immediate cache simulation\n"
 
             "\n\nINTRINSIC ARRAY OPERATIONS OPTIONS:\n\n"
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/03/31 11:30:27  cg
+ * added command line parameter -cachesim
+ *
  * Revision 2.1  1999/02/23 12:39:28  sacbase
  * new release made
  *
@@ -579,10 +582,40 @@ MAIN
         }
     }
     NEXTOPT
+    /*ARG 'c': { break_after=PH_genccode; }*/
     ARG 'c':
     {
-        break_after = PH_genccode;
+        if (0 == strcmp (*argv, "cachesim")) {
+            if (--argc >= 1) {
+                argv++;
+                if ((*argv)[1] == '\0') {
+                    switch (**argv) {
+                    case 'f':
+                        cachesim = CACHESIM_FILE;
+                        break;
+                    case 's':
+                        cachesim = CACHESIM_SIMPLE;
+                        break;
+                    case 'a':
+                        cachesim = CACHESIM_ADVANCED;
+                        break;
+                    default:
+                        SYSERROR (("Unknown cache simulation style '%c`", **argv));
+                    }
+                } else {
+                    SYSERROR (("Unknown cache simulation style '%s`", *argv));
+                }
+            } else
+                SYSERROR (("Missing cache simulation style"));
+        } else {
+            if (0 == strcmp (*argv, "c")) {
+                break_after = PH_genccode;
+            } else {
+                SYSWARN (("Unknown command line option '-%s`", *argv));
+            }
+        }
     }
+    NEXTOPT
     ARG 'g':
     {
         cc_debug = 1;
