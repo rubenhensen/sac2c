@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.150  2005/02/16 22:29:13  sah
+ * fixed DupArg/DupRet
+ *
  * Revision 3.149  2005/02/16 14:34:56  jhb
  * added next to TBmakeError
  *
@@ -1322,6 +1325,7 @@ DUParg (node *arg_node, info *arg_info)
 
     ARG_VARNO (new_node) = ARG_VARNO (arg_node);
     ARG_OBJDEF (new_node) = ARG_OBJDEF (arg_node);
+    ARG_LINKSIGN (new_node) = ARG_LINKSIGN (arg_node);
     ARG_FLAGSTRUCTURE (new_node) = ARG_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
@@ -1346,6 +1350,8 @@ DUPret (node *arg_node, info *arg_info)
 
     new_node
       = TBmakeRet (TYcopyType (RET_TYPE (arg_node)), DUPCONT (RET_NEXT (arg_node)));
+
+    RET_LINKSIGN (new_node) = RET_LINKSIGN (arg_node);
 
     RET_FLAGSTRUCTURE (new_node) = RET_FLAGSTRUCTURE (arg_node);
 
