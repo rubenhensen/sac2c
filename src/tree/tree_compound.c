@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2001/12/17 21:30:46  dkr
+ * MakeAssignInstr() modified
+ *
  * Revision 3.49  2001/12/13 15:15:52  dkr
  * signature of MakeAssignIcm?() modified
  *
@@ -2390,7 +2393,9 @@ MakeAssignInstr (node *instr, node *next)
 {
     node *result;
 
-    if (NODE_TYPE (instr) == N_assign) {
+    if (instr == NULL) {
+        result = next;
+    } else if (NODE_TYPE (instr) == N_assign) {
         result = AppendAssign (instr, next);
     } else {
         result = MakeAssign (instr, next);
