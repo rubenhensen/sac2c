@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  1997/10/28 12:35:56  srs
+ * renamed macro MALLOC to RT_MALLOC (runtime malloc)
+ *
  * Revision 1.13  1997/10/10 13:25:27  dkr
  * added a prototype for prf abs(): int abs(int)
  *
@@ -148,14 +151,10 @@ extern void *__SAC__Runtime_malloc (int size);
 #endif /* TRACE_PRF */
 
 #ifdef CHECK_MALLOC
-
-#define MALLOC(size) __SAC__Runtime_malloc (size)
-
-#else /* CHECK_MALLOC  */
-
-#define MALLOC(size) malloc (size)
-
-#endif /* CHECK_MALLOC  */
+#define RT_MALLOC(size) __SAC__Runtime_malloc (size)
+#else
+#define RT_MALLOC(size) malloc (size)
+#endif
 
 /*
  * PROFILING-MACROS:

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.43  1997/10/28 12:35:09  srs
+ * renamed macro MALLOC to RT_MALLOC (runtime malloc)
+ *
  * Revision 1.42  1997/10/10 13:42:19  srs
  * counter for mem allocation
  *
@@ -317,7 +320,7 @@
 #define ND_KS_NO_RC_ASSIGN_ARRAY(name, res) ND_A_FIELD (res) = ND_A_FIELD (name);
 
 #define ND_KS_COPY_ARRAY(old, new, basetypesize)                                         \
-    ND_A_FIELD (new) = MALLOC (basetypesize * ND_A_SIZE (old));                          \
+    ND_A_FIELD (new) = RT_MALLOC (basetypesize * ND_A_SIZE (old));                       \
     memcpy (ND_A_FIELD (new), ND_A_FIELD (old), basetypesize *ND_A_SIZE (old));          \
     PRINT_TRACEHEADER_ALL (("ND_COPY_ARRAY(%s, %s)", #old, #new));                       \
     PRINT_REF (old);                                                                     \
@@ -346,14 +349,15 @@
  */
 
 #define ND_ALLOC_RC(name)                                                                \
-    ND_A_RCP (name) = (int *)MALLOC (sizeof (int));                                      \
+    ND_A_RCP (name) = (int *)RT_MALLOC (sizeof (int));                                   \
     INC_HIDDEN_MEMCNT (1);
 
 #define ND_ALLOC_ARRAY(basetype, name, rc)                                               \
     {                                                                                    \
         PRINT_TRACEHEADER_ALL (("ND_ALLOC_ARRAY(%s, %s, %d)", #basetype, #name, rc));    \
-        ND_A_FIELD (name) = (basetype *)MALLOC (sizeof (basetype) * ND_A_SIZE (name));   \
-        ND_A_RCP (name) = (int *)MALLOC (sizeof (int));                                  \
+        ND_A_FIELD (name)                                                                \
+          = (basetype *)RT_MALLOC (sizeof (basetype) * ND_A_SIZE (name));                \
+        ND_A_RCP (name) = (int *)RT_MALLOC (sizeof (int));                               \
         ND_A_RC (name) = rc;                                                             \
         INC_ARRAY_MEMCNT (ND_A_SIZE (name));                                             \
         PRINT_REF (name);                                                                \
