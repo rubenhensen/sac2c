@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2001/01/25 14:35:47  dkr
+ * InferSchedulingParams() renamed into InferSegsSchedulingParams().
+ * InferSegParams() renamed into InferSegsParams().
+ * signature of NormWL() modified.
+ * NormWL() can handle also N_WLxblock-nodes now.
+ *
  * Revision 3.19  2001/01/25 12:07:08  dkr
  * ResetBV() added
  *
@@ -4170,15 +4176,13 @@ FitWL (node *nodes)
 /******************************************************************************
  *
  * Function:
- *   node *NormWL( node *nodes, int *width)
+ *   node *NormalizeWL( node *nodes, int *width)
  *
  * Description:
  *   Returns the normalized N_WL...-tree 'nodes'.
- *   'idx_max' is the supremum of the index vector set.
  *   'width' is an array with one component for each dimension initially
  *     containing the supremum of the index vector set. This array is modified
- *     during calculation (here we save the width of the index ranges) but in
- *     the end it contains the correct value again.
+ *     during calculation (the width of the index ranges is stored there).
  *
  * Remark:
  *   During normalization another fitting might be needed. Example:
@@ -4214,12 +4218,12 @@ FitWL (node *nodes)
  ******************************************************************************/
 
 static node *
-NormWL (node *nodes, int *width)
+NormalizeWL (node *nodes, int *width)
 {
     node *node;
     int curr_width;
 
-    DBUG_ENTER ("NormWL");
+    DBUG_ENTER ("NormalizeWL");
 
     if (nodes != NULL) {
         /*
@@ -4272,16 +4276,16 @@ NormWL (node *nodes, int *width)
             case N_WLblock:
                 /* here is no break missing! */
             case N_WLublock:
-                WLXBLOCK_NEXTDIM (node) = NormWL (WLXBLOCK_NEXTDIM (node), width);
-                WLXBLOCK_CONTENTS (node) = NormWL (WLXBLOCK_CONTENTS (node), width);
+                WLXBLOCK_NEXTDIM (node) = NormalizeWL (WLXBLOCK_NEXTDIM (node), width);
+                WLXBLOCK_CONTENTS (node) = NormalizeWL (WLXBLOCK_CONTENTS (node), width);
                 break;
 
             case N_WLstride:
-                WLSTRIDE_CONTENTS (node) = NormWL (WLSTRIDE_CONTENTS (node), width);
+                WLSTRIDE_CONTENTS (node) = NormalizeWL (WLSTRIDE_CONTENTS (node), width);
                 break;
 
             case N_WLgrid:
-                WLGRID_NEXTDIM (node) = NormWL (WLGRID_NEXTDIM (node), width);
+                WLGRID_NEXTDIM (node) = NormalizeWL (WLGRID_NEXTDIM (node), width);
                 break;
 
             default:
@@ -4298,6 +4302,34 @@ NormWL (node *nodes, int *width)
          */
         width[WLNODE_DIM (nodes)] = curr_width;
     }
+
+    DBUG_RETURN (nodes);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *NormWL( int dims, node *nodes)
+ *
+ * Description:
+ *   Returns the normalized N_WL...-tree 'nodes'.
+ *
+ ******************************************************************************/
+
+static node *
+NormWL (int dims, node *nodes)
+{
+    int *width;
+    int d;
+
+    DBUG_ENTER ("NormWL");
+
+    width = (int *)MALLOC (dims * sizeof (int));
+    for (d = 0; d < dims; d++) {
+        width[d] = INT_MAX;
+    }
+
+    nodes = NormalizeWL (nodes, width);
 
     DBUG_RETURN (nodes);
 }
@@ -5827,6 +5859,9 @@ ComputeIndexMinMax (int *idx_min, int *idx_max, node *wlnode)
         case N_WLstride:
             /* here is no break missing! */
         case N_WLstrideVar:
+            ComputeIndexMinMax (idx_min, idx_max, WLSTRIDEX_CONTENTS (wlnode));
+            ComputeIndexMinMax (idx_min, idx_max, WLSTRIDEX_NEXT (wlnode));
+
             d = WLSTRIDEX_DIM (wlnode);
             NodeOrInt_GetNameOrVal (NULL, &min, NODE_TYPE (wlnode),
                                     WL_GET_ADDRESS (wlnode, N_WLstride, WLSTRIDE,
@@ -5834,7 +5869,37 @@ ComputeIndexMinMax (int *idx_min, int *idx_max, node *wlnode)
             NodeOrInt_GetNameOrVal (NULL, &max, NODE_TYPE (wlnode),
                                     WL_GET_ADDRESS (wlnode, N_WLstride, WLSTRIDE,
                                                     BOUND2));
+            break;
 
+        case N_WLblock:
+            /* here is no break missing! */
+        case N_WLublock:
+            ComputeIndexMinMax (idx_min, idx_max, WLXBLOCK_NEXTDIM (wlnode));
+            ComputeIndexMinMax (idx_min, idx_max, WLXBLOCK_NEXT (wlnode));
+
+            d = WLXBLOCK_DIM (wlnode);
+            min = WLXBLOCK_BOUND1 (wlnode);
+            max = WLXBLOCK_BOUND2 (wlnode);
+            break;
+
+        case N_WLgrid:
+            /* here is no break missing! */
+        case N_WLgridVar:
+            ComputeIndexMinMax (idx_min, idx_max, WLGRIDX_NEXTDIM (wlnode));
+            ComputeIndexMinMax (idx_min, idx_max, WLGRIDX_NEXT (wlnode));
+
+            /*
+             * skip adjustment of 'idx_min', 'idx_max'
+             */
+            d = (-1);
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "illegal node type found!");
+            break;
+        }
+
+        if (d >= 0) {
             if ((idx_min[d] == IDX_SHAPE) || (min == 0)
                 || ((idx_min[d] > 0) && (min > 0) && (min < idx_min[d]))
                 || ((idx_min[d] != 0) && (min == IDX_OTHER))) {
@@ -5846,21 +5911,6 @@ ComputeIndexMinMax (int *idx_min, int *idx_max, node *wlnode)
                 || ((idx_max[d] != IDX_SHAPE) && (max == IDX_OTHER))) {
                 idx_max[d] = max;
             }
-
-            ComputeIndexMinMax (idx_min, idx_max, WLSTRIDEX_CONTENTS (wlnode));
-            ComputeIndexMinMax (idx_min, idx_max, WLSTRIDEX_NEXT (wlnode));
-            break;
-
-        case N_WLgrid:
-            /* here is no break missing! */
-        case N_WLgridVar:
-            ComputeIndexMinMax (idx_min, idx_max, WLGRIDX_NEXTDIM (wlnode));
-            ComputeIndexMinMax (idx_min, idx_max, WLGRIDX_NEXT (wlnode));
-            break;
-
-        default:
-            DBUG_ASSERT ((0), "illegal node type found!");
-            break;
         }
     }
 
@@ -5940,7 +5990,7 @@ InferSegsParams (node *segs)
 /******************************************************************************
  ******************************************************************************
  **
- **  functions for InferSchedulingParams()
+ **  functions for InferSegsSchedulingParams()
  **
  **/
 
@@ -6004,65 +6054,67 @@ IsHomSV (node *nodes, int dim, int sv)
 /******************************************************************************
  *
  * Function:
- *   node *InferSchedulingParams( node *seg)
+ *   node *InferSegsSchedulingParams( node *segs)
  *
  * Description:
- *   Infers WLSEG_HOMSV and WLSEG_MAXHOMDIM for the given segment 'seg'.
+ *   Infers WLSEG_HOMSV and WLSEG_MAXHOMDIM for the given segments 'segs'.
  *
  ******************************************************************************/
 
 static node *
-InferSchedulingParams (node *seg)
+InferSegsSchedulingParams (node *segs)
 {
     int new_sv, d;
 
-    DBUG_ENTER ("InferSchedulingParams");
+    DBUG_ENTER ("InferSegsSchedulingParams");
 
-    DBUG_ASSERT (((NODE_TYPE (seg) == N_WLseg) || (NODE_TYPE (seg) == N_WLsegVar)),
-                 "no segment found");
+    if (segs != NULL) {
+        if (NODE_TYPE (segs) == N_WLseg) {
+            WLSEG_HOMSV (segs) = (int *)MALLOC (WLSEG_DIMS (segs) * sizeof (int));
 
-    if (NODE_TYPE (seg) == N_WLseg) {
-        WLSEG_HOMSV (seg) = (int *)MALLOC (WLSEG_DIMS (seg) * sizeof (int));
+            for (d = 0; d < WLSEG_DIMS (segs); d++) {
+                /*
+                 * We must recalculate SV here because the with-loop transformations
+                 * (especially the fitting) probabily have modified the layout!
+                 */
+                new_sv = GetLcmUnroll (WLSEG_CONTENTS (segs), d);
 
-        for (d = 0; d < WLSEG_DIMS (seg); d++) {
-            /*
-             * We must recalculate SV here because the with-loop transformations
-             * (especially the fitting) probabily have modified the layout!
-             */
-            new_sv = GetLcmUnroll (WLSEG_CONTENTS (seg), d);
-
-            /*
-             * Stores the recalculated SV entries in WLSEG_HOMSV until an inhomogeneous
-             * dimension is found.
-             */
-            if (IsHomSV (WLSEG_CONTENTS (seg), d, new_sv)) {
-                (WLSEG_HOMSV (seg))[d] = new_sv;
-            } else {
-                break;
+                /*
+                 * Stores the recalculated SV entries in WLSEG_HOMSV until an
+                 * inhomogeneous dimension is found.
+                 */
+                if (IsHomSV (WLSEG_CONTENTS (segs), d, new_sv)) {
+                    (WLSEG_HOMSV (segs))[d] = new_sv;
+                } else {
+                    break;
+                }
             }
+
+            WLSEG_MAXHOMDIM (segs) = (d - 1);
+            /*
+             * WLSEG_HOMSV is set to 0 for the dimensions beyond WLSEG_MAXHOMDIM.
+             */
+            for (; d < WLSEG_DIMS (segs); d++) {
+                (WLSEG_HOMSV (segs))[d] = 0;
+            }
+
+            DBUG_EXECUTE ("WLtrans", fprintf (stderr, "InferSegsSchedulingParams: ");
+                          fprintf (stderr, "WLSEG_HOMSV = ");
+                          PRINT_VECT (stderr, WLSEG_HOMSV (segs), WLSEG_DIMS (segs),
+                                      "%i");
+                          fprintf (stderr, ", WLSEG_MAXHOMDIM = %i\n",
+                                   WLSEG_MAXHOMDIM (segs)););
         }
 
-        WLSEG_MAXHOMDIM (seg) = (d - 1);
-        /*
-         * WLSEG_HOMSV is set to 0 for the dimensions beyond WLSEG_MAXHOMDIM.
-         */
-        for (; d < WLSEG_DIMS (seg); d++) {
-            (WLSEG_HOMSV (seg))[d] = 0;
-        }
-
-        DBUG_EXECUTE ("WLtrans", fprintf (stderr, "InferSchedulingParams: ");
-                      fprintf (stderr, "WLSEG_HOMSV = ");
-                      PRINT_VECT (stderr, WLSEG_HOMSV (seg), WLSEG_DIMS (seg), "%i");
-                      fprintf (stderr, ", WLSEG_MAXHOMDIM = %i\n",
-                               WLSEG_MAXHOMDIM (seg)););
+        WLSEGX_NEXT (segs) = InferSegsSchedulingParams (WLSEGX_NEXT (segs));
     }
 
-    DBUG_RETURN (seg);
+    DBUG_RETURN (segs);
 }
 
 /**
  **
- **  functions for InferSchedulingParams()
+ **  functions for InferSegsSchedulingParams()
  **
  ******************************************************************************
  ******************************************************************************/
@@ -6276,8 +6328,6 @@ WLTRAwith (node *arg_node, node *arg_info)
              *   -> build one segment containing the strides.
              */
             segs = All (NULL, NULL, strides, wl_dims, line);
-            /* compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV */
-            segs = InferSegsParams (segs);
         } else {
             /*
              * build the cubes
@@ -6336,8 +6386,6 @@ WLTRAwith (node *arg_node, node *arg_info)
                  *  -> build one segment containing all cubes.
                  */
                 segs = All (NULL, NULL, cubes, wl_dims, line);
-                /* compute SEG_IDX_MIN, SEG_IDX_MAX, SEG_IDX_SV */
-                segs = InferSegsParams (segs);
             } else {
                 DBUG_EXECUTE ("WLtrans", NOTE (("step 2: choice of segments\n")));
 
@@ -6450,11 +6498,9 @@ WLTRAwith (node *arg_node, node *arg_info)
                                 DBUG_EXECUTE ("WLtrans",
                                               NOTE (("step 9: normalization\n")));
                                 WLSEGX_CONTENTS (seg)
-                                  = NormWL (WLSEGX_CONTENTS (seg), WLSEGX_IDX_MAX (seg));
+                                  = NormWL (wl_dims, WLSEGX_CONTENTS (seg));
                             }
                         }
-
-                        seg = InferSchedulingParams (seg);
 
                         seg = WLSEG_NEXT (seg);
                     }
@@ -6468,6 +6514,12 @@ WLTRAwith (node *arg_node, node *arg_info)
                 cubes = FreeTree (cubes);
             }
         }
+
+        /* compute SEGX_IDX_MIN, SEGX_IDX_MAX, SEGX_IDX_SV */
+        segs = InferSegsParams (segs);
+
+        /* compute SEG_HOMSV, SEG_MAXHOMDIM */
+        segs = InferSegsSchedulingParams (segs);
 
         NWITH2_SEGS (new_node) = segs;
     }
