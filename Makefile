@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.61  1998/01/28 13:46:49  srs
+# SHOW_MALLOC is now default
+#
 # Revision 1.60  1997/11/27 10:45:29  dkr
 # added target lib/dbug.o
 #
@@ -203,7 +206,7 @@ cc_FLAGS  := -xsb
 
 CCFLAGS :=$($(CC)_FLAGS) -g
 
-override CFLAGS :=-D__EXTENSIONS__ -DNEWTREE $(CFLAGS)
+override CFLAGS :=-D__EXTENSIONS__ -DNEWTREE -DSHOW_MALLOC $(CFLAGS)
 
 CCPROD       :=gcc
 
