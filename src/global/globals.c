@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2003/01/25 22:05:11  ktr
+ * Reactivated WLS. Fixed memory management and lots of related issues.
+ *
  * Revision 3.26  2002/11/21 17:15:28  ktr
  * Deactiveted WLS for I have no time to fix it at the moment.
  *
@@ -416,8 +419,7 @@ bool patch_with = FALSE;
 unsigned int optimize
   = OPT_ALL & (~OPT_LIR) & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_WLS);
 #else /* PRODUCTION */
-unsigned int optimize
-  = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL) & (~OPT_WLS);
+unsigned int optimize = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_APL);
 
 #endif /* PRODUCTION */
 
