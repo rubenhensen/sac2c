@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/05/18 11:39:45  dkr
+ * function IsEmptyLUT added
+ *
  * Revision 3.6  2001/04/10 09:38:26  dkr
  * DuplicateLUT added
  *
@@ -71,6 +74,8 @@ extern LUT_t GenerateLUT (void);
 extern LUT_t DuplicateLUT (LUT_t lut);
 extern LUT_t RemoveContentLUT (LUT_t lut);
 extern LUT_t RemoveLUT (LUT_t lut);
+
+extern bool IsEmptyLUT (LUT_t lut);
 
 extern void PrintLUT (FILE *handle, LUT_t lut);
 
