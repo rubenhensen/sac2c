@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  2000/09/25 15:14:13  dkr
+ * ICM ND_TYPEDEF_ARRAY moved to sac_std.h
+ *
  * Revision 2.1  1999/02/23 12:43:54  sacbase
  * new release made
  *
@@ -39,11 +42,5 @@ extern void SAC_String2Array (char *array, const char *string);
 #define SAC_ND_GOTO(label) goto label;
 #define SAC_ND_LABEL(label)                                                              \
     label:
-
-/*
- * Macro for typedefs of arrays:
- */
-
-#define SAC_ND_TYPEDEF_ARRAY(basetype, name) typedef basetype name;
 
 #endif /* SAC_MISC_H */
