@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.48  2004/11/24 15:35:28  ktr
+  WLS traversals added.
+
   Revision 1.47  2004/11/24 14:57:14  mwe
   ToNewTypes added
 
@@ -545,6 +548,48 @@
         <traverror>
         </traverror>
       </traversal>
+      <traversal id="WLS" name="With-Loop Scalarization" defaults="sons" include="wls.h">
+        <travuser>
+          <node name="Ap" />
+          <node name="Assign" />
+          <node name="Fundef" />
+          <node name="With" />
+        </travuser>
+      </traversal>
+      <traversal id="WLSC" name="With-Loop Scalarization Check traversal" defaults="sons">
+        <travuser>
+          <node name="Block" />
+          <node name="Code" />
+          <node name="Id" />
+          <node name="Part" />
+          <node name="With" />
+          <node name="Withid" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+          <node name="Fold" />
+        </travuser>
+      </traversal>
+      <traversal id="WLSW" name="With-Loop Scalarization Withloopification traversal" defaults="sons">
+        <travuser>
+          <node name="Code" />
+          <node name="Id" />
+          <node name="Let" />
+          <node name="Part" />
+          <node name="With" />
+          <node name="Withid" />
+        </travuser>
+      </traversal>
+      <traversal id="WLSB" name="With-Loop Scalarization Build traversal" defaults="sons">
+        <travuser>
+          <node name="Code" />
+          <node name="Generator" />
+          <node name="Part" />
+          <node name="With" />
+          <node name="Withid" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+        </travuser>
+      </traversal>
     </phase>
     <phase id="alloc" name="Introducing explicit allocation instructions">
       <traversal id="EMAA" name="Alias analysis" default="sons" include="aliasanalysis.h" >
@@ -689,6 +734,7 @@
           <node name="Fundef" />
           <node name="Id" />
           <node name="Let" />
+          <node name="Ret" />
           <node name="Return" />
           <node name="Vardec" />
           <node name="with" />
