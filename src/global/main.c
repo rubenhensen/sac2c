@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2004/09/22 15:22:03  sah
+ * added support for new PrintStat
+ *
  * Revision 3.55  2004/09/21 16:34:57  sah
  * added serialize traversal in NEW_AST mode
  *
@@ -234,7 +237,11 @@
 #include "precompile.h"
 #include "compile.h"
 #include "annotate_fun_calls.h"
+#ifndef NEW_AST
 #include "cccall.h"
+#else
+#include "libstat.h"
+#endif
 #include "PatchWith.h"
 #include "resource.h"
 #include "interrupt.h"
@@ -350,7 +357,6 @@ main (int argc, char *argv[])
     SystemCall ("%s %s", config.mkdir, tmp_dirname);
 #endif
 
-#ifndef NEW_AST
     /*
      * If sac2c was started with the option -libstat,
      * then the library status is printed to stdout and the
@@ -358,13 +364,15 @@ main (int argc, char *argv[])
      */
 
     if (libstat) {
+#ifndef NEW_AST
         PrintLibStat ();
+#else
+        PrintLibStat (sacfilename);
+#endif
         CleanUp ();
 
         exit (0);
     }
-
-#endif /* NEW_AST */
 
     ABORT_ON_ERROR;
 
