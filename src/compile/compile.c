@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2000/12/12 15:32:28  dkr
+ * functions Make...RcIcms() are not static anymore
+ *
  * Revision 3.4  2000/12/06 19:24:45  dkr
  * minor changes done
  *
@@ -337,6 +340,7 @@
 #include "ReuseWithArrays.h"
 #include "free.h"
 #include "scheduling.h"
+#include "refcount.h"
 #include "precompile.h"
 #include "typecheck.h" /* for some ugly old macros ... */
 
@@ -476,7 +480,7 @@ MakeBasetypeNode (types *type)
  *
  ******************************************************************************/
 
-static char *
+char *
 GenericFun (int which, types *type)
 {
     node *tdef;
@@ -629,7 +633,7 @@ GetIndexIds (ids *index_ids, int dim)
  *
  ******************************************************************************/
 
-static node *
+node *
 MakeIncRcIcm (char *name, types *type, int rc, int num)
 {
     node *icm = NULL;
@@ -661,7 +665,7 @@ MakeIncRcIcm (char *name, types *type, int rc, int num)
  *
  ******************************************************************************/
 
-static node *
+node *
 MakeDecRcIcm (char *name, types *type, int rc, int num)
 {
     node *icm = NULL;
@@ -703,19 +707,17 @@ MakeDecRcIcm (char *name, types *type, int rc, int num)
  *
  ******************************************************************************/
 
-static node *
+node *
 MakeAdjustRcIcm (char *name, types *type, int rc, int num)
 {
     node *icm = NULL;
 
     DBUG_ENTER ("MakeAdjustRcIcm");
 
-    if (rc >= 0) { /* is it a refcounted data? */
-        if (num > 0) {
-            icm = MakeIncRcIcm (name, type, rc, num);
-        } else if (num < 0) {
-            icm = MakeDecRcIcm (name, type, rc, -num);
-        }
+    if (num > 0) {
+        icm = MakeIncRcIcm (name, type, rc, num);
+    } else if (num < 0) {
+        icm = MakeDecRcIcm (name, type, rc, -num);
     }
 
     DBUG_RETURN (icm);
@@ -2321,8 +2323,7 @@ COMPFundef (node *arg_node, node *arg_info)
         /*
          * first ICM arg: tag
          */
-        if ((IsArray (rettypes) + IsNonUniqueHidden (rettypes))
-            && (FUN_DOES_REFCOUNT (arg_node, cnt_param))) {
+        if ((MUST_REFCOUNT (rettypes)) && (FUN_DOES_REFCOUNT (arg_node, cnt_param))) {
             icm_args = MakeExprs (MakeId_Copy ("out_rc"), icm_args);
         } else {
             icm_args = MakeExprs (MakeId_Copy ("out"), icm_args);
