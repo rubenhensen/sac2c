@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.14  2002/07/12 15:49:28  dkr
- * modifications for TAGGED_ARRAYS done
+ * Revision 3.15  2002/07/12 17:17:10  dkr
+ * some modifications for TAGGED_ARRAYS done
  *
  * Revision 3.13  2001/04/03 22:32:12  dkr
  * modification of SAC_WL_MT_BLOCK_LOOP0_BEGIN (revision 3.12) undone
@@ -86,7 +86,11 @@
  *** current array entry.
  ***/
 
+#ifdef TAGGED_ARRAYS
+#define SAC_WL_OFFSET(to_nt) CAT0 (NT_NAME (to_nt), __off)
+#else
 #define SAC_WL_OFFSET(target) CAT0 (target, __off)
+#endif
 
 /*****************************************************************************/
 
