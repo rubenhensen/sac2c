@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2002/08/06 15:53:47  sbs
+ * in case sbs == 1 , i.e., the new TS, shape exprs of genarray WLS are
+ * flattened as well now
+ *
  * Revision 3.15  2002/08/06 08:39:17  sbs
  * bug in FltnNgenerator (new TS version) fixed
  *
@@ -1771,10 +1775,13 @@ FltnNwithop (node *arg_node, node *arg_info)
         break;
 
     case WO_genarray:
-        expr = NULL;
         if (sbs == 1) {
-            INFO_FLTN_DOTSHAPE (arg_info) = DupTree (NWITHOP_SHAPE (arg_node));
+            expr = NWITHOP_SHAPE (arg_node);
+            NWITHOP_SHAPE (arg_node) = Abstract (expr, arg_info);
+            expr2 = Trav (expr, arg_info);
+            INFO_FLTN_DOTSHAPE (arg_info) = DupTree (expr2);
         } else {
+            expr = NULL;
             INFO_FLTN_DOTSHAPE (arg_info) = NULL;
         }
 
