@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.18  1997/08/05 11:32:26  sbs
+# make deps done
+#
 # Revision 1.17  1997/05/28 12:48:29  sbs
 # make deps done
 #
@@ -75,20 +78,21 @@ clean:
 	$(RM) typecheck.o prim_fun.o *.bak
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-prim_fun.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
+prim_fun.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 prim_fun.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
 prim_fun.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
-prim_fun.o: /usr/include/string.h ../global/globals.h
-prim_fun.o: ../global/internal_lib.h prim_fun.h ../../inc/dbug.h
-prim_fun.o: ../global/my_debug.h typecheck.h ../global/access_macros.h
-prim_fun.o: ../print/convert.h ../global/free.h /usr/include/malloc.h
-prim_fun.o: prim_fun_tt.mac prim_fun_ft.mac
-typecheck.o: /usr/include/stdlib.h /usr/include/sys/stdtypes.h
+prim_fun.o: /usr/include/sys/va_list.h /usr/include/string.h
+prim_fun.o: ../global/globals.h ../global/internal_lib.h prim_fun.h
+prim_fun.o: ../../inc/dbug.h ../global/my_debug.h typecheck.h
+prim_fun.o: ../global/access_macros.h ../print/convert.h ../global/free.h
+prim_fun.o: /usr/include/malloc.h prim_fun_tt.mac prim_fun_ft.mac
+typecheck.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 typecheck.o: /usr/include/stddef.h /usr/include/string.h ../global/tree.h
 typecheck.o: ../global/types.h ../global/tree_basic.h
 typecheck.o: ../global/tree_compound.h ../global/Error.h /usr/include/stdio.h
-typecheck.o: ../global/globals.h ../global/internal_lib.h
-typecheck.o: ../global/my_debug.h ../../inc/dbug.h ../global/traverse.h
-typecheck.o: typecheck.h ../print/convert.h ../modules/import.h prim_fun.h
-typecheck.o: ../global/free.h /usr/include/malloc.h ../global/access_macros.h
+typecheck.o: /usr/include/sys/va_list.h ../global/globals.h
+typecheck.o: ../global/internal_lib.h ../global/my_debug.h ../../inc/dbug.h
+typecheck.o: ../global/traverse.h typecheck.h ../print/convert.h
+typecheck.o: ../modules/import.h prim_fun.h ../global/free.h
+typecheck.o: /usr/include/malloc.h ../global/access_macros.h
 typecheck.o: ../optimize/DupTree.h ../compile/profile.h prim_fun_tt.mac

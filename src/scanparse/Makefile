@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.15  1997/08/05 11:32:25  sbs
+# make deps done
+#
 # Revision 1.14  1996/01/04 18:11:07  cg
 # make deps done
 #
@@ -79,18 +82,20 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-lex.yy.o: /usr/include/stdio.h /usr/include/stdlib.h
-lex.yy.o: /usr/include/sys/stdtypes.h ../global/tree.h ../global/types.h
-lex.yy.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
-lex.yy.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-lex.yy.o: y.tab.h
-scnprs.o: /usr/include/stdio.h ../global/types.h ../global/tree_basic.h
-scnprs.o: ../global/Error.h /usr/include/string.h /usr/include/sys/stdtypes.h
-scnprs.o: /usr/include/stdlib.h ../global/globals.h ../../inc/dbug.h
-scnprs.o: ../modules/filemgr.h scnprs.h y.tab.h
-y.tab.o: /usr/include/stdio.h /usr/include/stdlib.h
-y.tab.o: /usr/include/sys/stdtypes.h /usr/include/memory.h ../../inc/dbug.h
-y.tab.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
-y.tab.o: ../global/tree_compound.h ../global/Error.h /usr/include/string.h
-y.tab.o: ../global/globals.h ../global/internal_lib.h ../global/my_debug.h
-y.tab.o: ../global/free.h /usr/include/malloc.h ../modules/readsib.h
+lex.yy.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+lex.yy.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
+lex.yy.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
+lex.yy.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+lex.yy.o: ../global/internal_lib.h y.tab.h
+scnprs.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+scnprs.o: /usr/include/sys/va_list.h ../global/types.h ../global/tree_basic.h
+scnprs.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
+scnprs.o: ../global/globals.h ../../inc/dbug.h ../modules/filemgr.h scnprs.h
+scnprs.o: y.tab.h
+y.tab.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+y.tab.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+y.tab.o: /usr/include/memory.h ../../inc/dbug.h ../global/tree.h
+y.tab.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
+y.tab.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+y.tab.o: ../global/internal_lib.h ../global/my_debug.h ../global/free.h
+y.tab.o: /usr/include/malloc.h ../modules/readsib.h /usr/include/values.h

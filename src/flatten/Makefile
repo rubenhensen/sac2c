@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.10  1997/08/05 11:32:22  sbs
+# make deps done
+#
 # Revision 1.9  1996/01/04 18:11:05  cg
 # make deps done
 #
@@ -41,9 +44,10 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-flatten.o: /usr/include/stdio.h /usr/include/stdlib.h
-flatten.o: /usr/include/sys/stdtypes.h ../global/tree.h ../global/types.h
-flatten.o: ../global/tree_basic.h ../global/tree_compound.h ../global/Error.h
-flatten.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-flatten.o: ../../inc/dbug.h ../global/my_debug.h ../global/traverse.h
-flatten.o: ../global/access_macros.h ../global/free.h /usr/include/malloc.h
+flatten.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+flatten.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
+flatten.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
+flatten.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+flatten.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
+flatten.o: ../global/traverse.h ../global/access_macros.h ../global/free.h
+flatten.o: /usr/include/malloc.h
