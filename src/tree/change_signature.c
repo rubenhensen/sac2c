@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2002/02/22 14:28:54  dkr
+ * CSAddResult: workaround for FUNDEF_NAME as a part of TYPES is no
+ * longer needed :-)
+ *
  * Revision 1.8  2002/02/20 14:36:55  dkr
  * function DupTypes() renamed into DupAllTypes()
  *
@@ -385,8 +389,6 @@ CSAddResult (node *fundef, node *vardec, nodelist *letlist)
 {
     ids *new_ids;
     node *new_id;
-    char *keep_name, *keep_mod, *keep_cmod;
-    statustype keep_status, keep_attrib;
 
     DBUG_ENTER ("CSAddResult");
 
@@ -430,13 +432,6 @@ CSAddResult (node *fundef, node *vardec, nodelist *letlist)
         RETURN_EXPRS (FUNDEF_RETURN (fundef))
           = MakeExprs (new_id, RETURN_EXPRS (FUNDEF_RETURN (fundef)));
 
-        /* save fundef data, stored in first type */
-        keep_name = FUNDEF_NAME (fundef);
-        keep_mod = FUNDEF_MOD (fundef);
-        keep_cmod = FUNDEF_LINKMOD (fundef);
-        keep_status = FUNDEF_STATUS (fundef);
-        keep_attrib = FUNDEF_ATTRIB (fundef);
-
         if (TYPES_BASETYPE (FUNDEF_TYPES (fundef)) == T_void) {
             FUNDEF_TYPES (fundef) = FreeAllTypes (FUNDEF_TYPES (fundef));
         }
@@ -444,13 +439,6 @@ CSAddResult (node *fundef, node *vardec, nodelist *letlist)
         /* create new type */
         FUNDEF_TYPES (fundef)
           = AppendTypes (DupAllTypes (VARDEC_TYPE (vardec)), FUNDEF_TYPES (fundef));
-
-        /* restore fundef information */
-        FUNDEF_NAME (fundef) = keep_name;
-        FUNDEF_MOD (fundef) = keep_mod;
-        FUNDEF_LINKMOD (fundef) = keep_cmod;
-        FUNDEF_STATUS (fundef) = keep_status;
-        FUNDEF_ATTRIB (fundef) = keep_attrib;
     }
 
     DBUG_RETURN (fundef);

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/02/22 14:29:47  dkr
+ * CSAddResult: workaround for FUNDEF_NAME as a part of TYPES is no
+ * longer needed :-)
+ *
  * Revision 3.8  2002/02/20 15:00:08  dkr
  * fundef DupTypes() renamed into DupAllTypes()
  *
@@ -345,15 +349,12 @@ isSpecializationType (types *s_type, types *g_type)
  *   generic body.
  *
  ******************************************************************************/
-
 static node *
 AddSpecializedFundef (node *fundefs, node *spec_fundef, node *gen_fundef)
 {
-    types *old_type;
     node *new_fundef;
     node *s_arg;
     node *n_arg;
-    char *arg_name;
 
     DBUG_ENTER ("AddSpecializedFundef");
     NOTE (("Adding specialization for %s...\n", FUNDEF_NAME (gen_fundef)));
@@ -366,29 +367,15 @@ AddSpecializedFundef (node *fundefs, node *spec_fundef, node *gen_fundef)
     s_arg = FUNDEF_ARGS (spec_fundef);
     n_arg = FUNDEF_ARGS (new_fundef);
     while (n_arg != NULL) {
-        arg_name = StringCopy (ARG_NAME (n_arg)); /* make a copy of original arg. id */
-        ARG_TYPE (n_arg) = FreeOneTypes (ARG_TYPE (n_arg));
+        ARG_TYPE (n_arg) = FreeAllTypes (ARG_TYPE (n_arg));
         ARG_TYPE (n_arg) = DupAllTypes (ARG_TYPE (s_arg));
-        ARG_NAME (n_arg)
-          = Free (ARG_NAME (n_arg)); /* free identifier of spec declaration */
-        ARG_NAME (n_arg) = arg_name; /* reset original arg. identifier */
 
         n_arg = ARG_NEXT (n_arg);
         s_arg = ARG_NEXT (s_arg);
     }
 
     /* adjust to specialized resulttypes */
-    old_type = FUNDEF_TYPES (new_fundef);
     FUNDEF_TYPES (new_fundef) = DupAllTypes (FUNDEF_TYPES (spec_fundef));
-
-    /* transfer fundef data stored in type and free old type */
-    FUNDEF_NAME (new_fundef) = old_type->id;
-    FUNDEF_MOD (new_fundef) = old_type->id_mod;
-    FUNDEF_LINKMOD (new_fundef) = old_type->id_cmod;
-    FUNDEF_STATUS (new_fundef) = old_type->status;
-    FUNDEF_ATTRIB (new_fundef) = old_type->attrib;
-
-    old_type = FreeAllTypes (old_type);
 
     /*
      * Mark specialized function as being exported in order to prevent its
