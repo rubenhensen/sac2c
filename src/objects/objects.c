@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.5  1995/11/01 16:33:55  cg
+ * Revision 1.6  1995/11/02 13:14:40  cg
+ * Now, the necessary references to variable declarations or
+ * function parameters respectively are generated for all
+ * additional identifiers.
+ *
+ * Revision 1.5  1995/11/01  16:33:55  cg
  * Now, additional parameters and return values are concerned in
  * function applications as well as in function definitions.
  *
@@ -28,6 +33,7 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "internal_lib.h"
+#include "Error.h"
 
 #include <string.h>
 
@@ -123,6 +129,8 @@ OBJfundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("OBJfundef");
 
+    DBUG_PRINT ("OBJ", ("Handling function %s", ItemName (arg_node)));
+
     need_objs = FUNDEF_NEEDOBJS (arg_node);
 
     while (need_objs != NULL) {
@@ -142,6 +150,7 @@ OBJfundef (node *arg_node, node *arg_info)
         /*-------------------------------------------------------------*/
 
         FUNDEF_ARGS (arg_node) = new_arg;
+        OBJDEF_ARG (obj) = new_arg;
 
         need_objs = NODELIST_NEXT (need_objs);
     }
@@ -157,6 +166,8 @@ OBJfundef (node *arg_node, node *arg_info)
     keep_status = FUNDEF_STATUS (arg_node);
     /*-------------------------------------------------------------*/
 
+    DBUG_PRINT ("OBJ", ("Traversing args of function %s", ItemName (arg_node)));
+
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_node);
     }
@@ -170,6 +181,8 @@ OBJfundef (node *arg_node, node *arg_info)
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
+
+    DBUG_PRINT ("OBJ", ("Traversing body of function %s", ItemName (arg_node)));
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
@@ -209,6 +222,8 @@ OBJobjdef (node *arg_node, node *arg_info)
     strcat (buffer, MOD (OBJDEF_MOD (arg_node)));
     strcat (buffer, mod_name_con);
     strcat (buffer, OBJDEF_NAME (arg_node));
+
+    DBUG_PRINT ("OBJ", ("Generating varname %s for %s", buffer, ItemName (arg_node)));
 
     OBJDEF_VARNAME (arg_node) = buffer;
 
@@ -255,6 +270,10 @@ OBJarg (node *arg_node, node *arg_info)
 
         if (ret != NULL) {
             new_return_expr = MakeId (ARG_NAME (arg_node), NULL, ST_artificial);
+            ID_VARDEC (new_return_expr) = arg_node;
+
+            DBUG_PRINT ("OBJ", ("New return value: %s", ARG_NAME (arg_node)));
+
             new_return_expr = MakeExprs (new_return_expr, RETURN_EXPRS (ret));
 
             /*-------------------------------------------------------------*/
@@ -273,12 +292,18 @@ OBJarg (node *arg_node, node *arg_info)
             FUNDEF_SHPSEG (arg_info) = ARG_SHPSEG (arg_node);
             FUNDEF_TNAME (arg_info) = ARG_TNAME (arg_node);
             FUNDEF_TMOD (arg_info) = ARG_TMOD (arg_node);
+
+            DBUG_PRINT ("OBJ", ("Converted return type void to %s:%s",
+                                FUNDEF_TMOD (arg_info), FUNDEF_TNAME (arg_info)));
         } else {
             new_return_type = MakeType (ARG_BASETYPE (arg_node), ARG_DIM (arg_node),
                                         ARG_SHPSEG (arg_node), ARG_TNAME (arg_node),
                                         ARG_TMOD (arg_node));
             TYPES_NEXT (new_return_type) = FUNDEF_TYPES (arg_info);
             FUNDEF_TYPES (arg_info) = new_return_type;
+
+            DBUG_PRINT ("OBJ", ("Added return type %s:%s", FUNDEF_TMOD (arg_info),
+                                FUNDEF_TNAME (arg_info)));
         }
 
         ARG_ATTRIB (arg_node) = ST_was_reference;
@@ -312,6 +337,8 @@ OBJap (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("OBJap");
 
+    DBUG_PRINT ("OBJ", ("Handling application of %s", ItemName (AP_FUNDEF (arg_node))));
+
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), NULL);
     }
@@ -322,6 +349,9 @@ OBJap (node *arg_node, node *arg_info)
         obj = NODELIST_NODE (need_objs);
 
         new_arg = MakeId (OBJDEF_VARNAME (obj), NULL, ST_artificial);
+        ID_VARDEC (new_arg) = OBJDEF_ARG (obj);
+
+        DBUG_PRINT ("OBJ", ("Adding new argument: %s", OBJDEF_VARNAME (obj)));
 
         new_arg = MakeExprs (new_arg, AP_ARGS (arg_node));
 
@@ -365,6 +395,10 @@ OBJid (node *arg_node, node *arg_info)
     if (ID_ATTRIB (arg_node) == ST_global) {
         ID_NAME (arg_node) = OBJDEF_VARNAME (ID_OBJDEF (arg_node));
         ID_MOD (arg_node) = NULL;
+        ID_VARDEC (arg_node) = OBJDEF_ARG (ID_OBJDEF (arg_node));
+
+        DBUG_PRINT ("OBJ",
+                    ("Converting call of global object to %s", ID_NAME (arg_node)));
     }
 
     DBUG_RETURN (arg_node);
@@ -373,12 +407,16 @@ OBJid (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : OBJlet
- *  arguments     :
- *  description   :
- *  global vars   :
+ *  arguments     : 1) pointer to N_let node
+ *                  2) arg_info unused
+ *  description   : First, the right hand side of the let is traversed.
+ *                  If this is a function application, then the additional
+ *                  return values of this function are considered and bound
+ *                  to the current arguments by extending the ids-chain.
+ *  global vars   : ---
  *  internal funs :
- *  external funs :
- *  macros        :
+ *  external funs : MakeIds, AppendIdsChain
+ *  macros        : TREE, DBUG
  *
  *  remarks       :
  *
@@ -410,6 +448,10 @@ OBJlet (node *arg_node, node *arg_info)
                       = MakeIds (ID_NAME (EXPRS_EXPR (args)), NULL, ST_artificial);
                     last_ids = IDS_NEXT (last_ids);
                 }
+
+                IDS_VARDEC (last_ids) = ID_VARDEC (EXPRS_EXPR (args));
+
+                DBUG_PRINT ("OBJ", ("New return value bound to %s", IDS_NAME (last_ids)));
             }
             args = EXPRS_NEXT (args);
             params = ARG_NEXT (params);
