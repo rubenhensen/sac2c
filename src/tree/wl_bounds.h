@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2001/04/02 11:41:07  dkr
+ * includes added
+ *
  * Revision 1.1  2001/03/30 14:07:30  dkr
  * Initial revision
  *
@@ -24,6 +27,12 @@
  *    respresentations of index bounds uniformly.
  *
  ******************************************************************************/
+
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
+#include "dbug.h"
 
 /*
  * symbolic bounds for strides/grids and IDX_MIN, IDX_MAX
