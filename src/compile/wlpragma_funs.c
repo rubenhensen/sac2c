@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/06 10:57:33  dkr
+ * nothing changed
+ *
  * Revision 3.2  2000/11/29 13:00:30  dkr
  * no warnings ...
  *
@@ -431,9 +434,7 @@ ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
         }
 
         segs = NoBlocking (segs, parms, cubes, dims, line);
-
     } else {
-
         WARN (line, ("wlcomp-pragma function ConstSeg() ignored"
                      " because generator is not constant"));
     }
