@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.90  1998/03/20 20:51:33  dkr
+ * added attributes to N_WLseg for blocking
+ * changed usage of MakeWLseg
+ *
  * Revision 1.89  1998/03/20 17:24:54  dkr
  * in N_WL... nodes: INNER is now called CONTENTS
  *
@@ -2282,25 +2286,27 @@ extern node *MakeNWith2 (node *withid, node *seg, node *code, node *withop);
  ***
  ***  sons:
  ***
- ***    node*    CONTENTS (0)     (N_WLblock, N_WLublock, N_WLproj)
- ***    node*    NEXT     (0)     (N_WLseg)
+ ***    node*    CONTENTS  (0)     (N_WLblock, N_WLublock, N_WLproj)
+ ***    node*    NEXT      (0)     (N_WLseg)
  ***
  ***  permanent attributes:
  ***
- ***    int      DIM      (0)
+ ***    int      DIMS      (0)  (number of dims)
  ***
  ***  temporary attributes:
  ***
- ***    long*    BV       (0)     (Precompile -> )
- ***    long*    UBV      (0)     (Precompile -> )
+ ***    int      BLOCKS    (number of blocking levels --- without unrolling-blocking)
+ ***    long*    BV
+ ***    long*    UBV
  ***
  ***/
 
-extern node *MakeWLseg (int dim, node *contents, node *next);
+extern node *MakeWLseg (int dims, node *contents, node *next);
 
-#define WLSEG_DIM(n) (n->refcnt)
-#define WLSEG_BV(n) (n->mask[0])
-#define WLSEG_UBV(n) (n->mask[1])
+#define WLSEG_DIMS(n) (n->refcnt)
+#define WLSEG_BLOCKS(n) (n->flag)
+#define WLSEG_BV(n, level) (n->mask[level + 1])
+#define WLSEG_UBV(n) (n->mask[0])
 #define WLSEG_CONTENTS(n) (n->node[0])
 #define WLSEG_NEXT(n) (n->node[1])
 
