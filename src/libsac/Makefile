@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.7  2000/01/17 16:25:58  cg
+# Reorganized generation of two runtime libraries, one for
+# sequential execution and one dedicated to multi-thraeded execution.
+#
 # Revision 1.6  1999/12/13 11:29:06  dkr
 # *** empty log message ***
 #
@@ -25,34 +29,23 @@
 CC        := gcc
 CCFLAGS   := -ansi -Wall -D__EXTENSIONS__ -g 
 
-MTFLAGS   := -D_REENTRANT -D_POSIX_C_SOURCE=199506L
+MTFLAGS   := -DMT -D_REENTRANT -D_POSIX_C_SOURCE=199506L
 
 INCS := -I../runtime -I../../inc
 LIBS := -L.
 
-OBJS_LIBSAC := boundcheck.o message.o misc.o profile.o trace.o  \
+OBJS_LIBSAC := boundcheck.o message.o misc.o profile.o trace.o nophm.o \
                cachesim_access_advanced.o cachesim_access_simple.o   \
                cachesim_basic.o ../../lib/main_args.o	
 
-OBJS_LIBSAC_MT := boundcheck_mt.o message_mt.o misc_mt.o trace_mt.o mt.o 
-
-OBJS_LIBSAC_HEAPMGR := heapmgr_basic.o heapmgr_malloc.o heapmgr_memalign.o \
-                       heapmgr_realloc.o
-
-OBJS_LIBSAC_HEAPMGR_DIAG := heapmgr_basic_diag.o heapmgr_malloc_diag.o heapmgr_memalign_diag.o \
-                            heapmgr_realloc_diag.o heapmgr_diag.o
-
-OBJS_LIBSAC_NOHEAPMGR := heapmgr_disabled.o
-
-OBJS_LIBSAC_NOHEAPMGR_MT := heapmgr_disabled_mt.o
-
+OBJS_LIBSAC_MT := boundcheck_mt.o message_mt.o misc_mt.o trace_mt.o mt.o  \
+                  mt_trace.o nophm_mt.o
 
 
 .PHONY: all tar clean prod
 
 
-all: libsac.a libsac_mt.a libsac_heapmgr.a libsac_heapmgr_diag.a   \
-     libsac_noheapmgr.a libsac_noheapmgr_mt.a
+all: libsac.a libsac_mt.a 
 
 
 libsac.a: $(OBJS_LIBSAC)
@@ -63,25 +56,9 @@ libsac_mt.a: $(OBJS_LIBSAC_MT)
 	ar rc $@ $^
 	ranlib $@
 
-libsac_heapmgr.a: $(OBJS_LIBSAC_HEAPMGR)
-	ar rc $@ $^
-	ranlib $@
 
-libsac_heapmgr_diag.a: $(OBJS_LIBSAC_HEAPMGR_DIAG)
-	ar rc $@ $^
-	ranlib $@
-
-libsac_noheapmgr.a: $(OBJS_LIBSAC_NOHEAPMGR)
-	ar rc $@ $^
-	ranlib $@
-
-libsac_noheapmgr_mt.a: $(OBJS_LIBSAC_NOHEAPMGR_MT)
-	ar rc $@ $^
-	ranlib $@
-
-
-trace_mt.o: mt.c 
-	$(CC) -DTRACE $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
+mt_trace.o: mt.c 
+	$(CC) -DTRACE $(CCFLAGS) $(CFLAGS) $(INCS) $(MTFLAGS) -o $@ -c $<
 
 cachesim_access_simple.o: cachesim_access.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
@@ -92,9 +69,6 @@ cachesim_access_advanced.o: cachesim_access.c
 
 %_mt.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) $(MTFLAGS) -o $@ -c $<
-
-%_diag.o: %.c
-	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -DDIAG -o $@ -c $<
 
 %.o: %.c 
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
@@ -129,18 +103,9 @@ cachesim_basic.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 cachesim_basic.o: /usr/include/stdlib.h /usr/include/stdio.h
 cachesim_basic.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 cachesim_basic.o: /usr/include/stdio_impl.h /usr/include/string.h
-cachesim_basic.o: /usr/include/math.h ../runtime/sac_cachesim.h
-cachesim_basic.o: ../runtime/sac_message.h cachesim.h ../../inc/main_args.h
-heapmgr_basic.o: /usr/include/unistd.h /usr/include/sys/feature_tests.h
-heapmgr_basic.o: /usr/include/sys/isa_defs.h /usr/include/sys/types.h
-heapmgr_basic.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-heapmgr_basic.o: /usr/include/sys/unistd.h /usr/include/string.h heapmgr.h
-heapmgr_basic.o: ../runtime/sac_heapmgr.h ../runtime/sac_message.h
-heapmgr_disabled.o: ../runtime/sac_message.h heapmgr.h
-heapmgr_disabled.o: ../runtime/sac_heapmgr.h
-heapmgr_malloc.o: heapmgr.h ../runtime/sac_heapmgr.h
-heapmgr_memalign.o: heapmgr.h ../runtime/sac_heapmgr.h
-heapmgr_realloc.o: heapmgr.h ../runtime/sac_heapmgr.h
+cachesim_basic.o: /usr/include/unistd.h /usr/include/sys/unistd.h
+cachesim_basic.o: ../runtime/sac_cachesim.h ../runtime/sac_message.h
+cachesim_basic.o: cachesim.h ../../inc/main_args.h
 message.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 message.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 message.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
