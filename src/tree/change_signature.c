@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2001/04/17 15:48:35  nmw
+ * AddResult implemented
+ *
  * Revision 1.6  2001/04/10 15:20:09  nmw
  * wrong macro access eliminated
  *
@@ -131,11 +134,11 @@ CSRemoveArg (node *fundef, node *arg, nodelist *letlist, bool freearg)
  *   removes result on given position from fundefs return and adjust all let
  *   exprs in list.
  *   also removes corresponding type from fundefs types list.
- *   be carefull when removing the concering result from traversing a resultlist
+ *   be carefull removing the concering result from traversing a resultlist
  *   of this function. Do not add this let to the letlist and remove this one
  *   ids on your own.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 CSRemoveResult (node *fundef, int position, nodelist *letlist)
 {
@@ -329,7 +332,7 @@ CSFreeFundefNtype (types *typelist, int actpos, int freepos)
  *   that should be inserted in the function application.
  *   the result is the modified fundef
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
 CSAddArg (node *fundef, node *arg, nodelist *letlist)
 {
@@ -365,22 +368,87 @@ CSAddArg (node *fundef, node *arg, nodelist *letlist)
  * function:
  *
  * description:
- *   adds the given id as additional result to the given fundef. all let-ap
+ *   adds the given vardec as additional result to the given fundef. all let-ap
  *   nodes of this fundef are adjusted to deal with the additional result.
- *   the NODELIST_ATTRIB2 parameter gives the necessary vardecs for the
+ *   the NODELIST_ATTRIB2 parameter gives the necessary vardecs for each
  *   additional result identifier.
- * remark: the AVIS_SSAASSIGN attribute is not set by this function
+ * remark: the AVIS_SSAASSIGN attribute is not set by this function.
  *   if you are in ssaform, you have to correct the attribute on your own for
  *   all new identifiers.
  *
- ******************************************************************************/
+ *****************************************************************************/
 node *
-CSAddResult (node *fundef, node *id, nodelist *letlist)
+CSAddResult (node *fundef, node *vardec, nodelist *letlist)
 {
+    ids *new_ids;
+    node *new_id;
+    char *keep_name, *keep_mod, *keep_cmod;
+    statustype keep_status, keep_attrib;
+
     DBUG_ENTER ("CSAddResult");
 
-    DBUG_ASSERT ((FALSE), "CSAddResult not implemented yet");
-    /* remember the types chain!!! */
+    if (letlist != NULL) {
+        DBUG_ASSERT ((NODE_TYPE (LET_EXPR (NODELIST_NODE (letlist))) == N_ap),
+                     "no function application");
+        DBUG_ASSERT ((AP_FUNDEF (LET_EXPR (NODELIST_NODE (letlist))) == fundef),
+                     "call to different fundef");
+        DBUG_ASSERT ((NODE_TYPE ((node *)(NODELIST_ATTRIB2 (letlist))) == N_vardec),
+                     "no vardec for new result identifier");
+
+        /*
+         * create new ids for given vardec and add it as additional argument
+         * of the function application.
+         */
+
+        new_ids = MakeIds_Copy (
+          StringCopy (VARDEC_NAME (((node *)(NODELIST_ATTRIB2 (letlist))))));
+        IDS_VARDEC (new_ids) = NODELIST_ATTRIB2 (letlist);
+        IDS_AVIS (new_ids) = VARDEC_AVIS (((node *)(NODELIST_ATTRIB2 (letlist))));
+
+        LET_IDS (NODELIST_NODE (letlist))
+          = AppendIds (new_ids, LET_IDS (NODELIST_NODE (letlist)));
+
+        /* traverse to next application */
+        fundef = CSAddResult (fundef, vardec, NODELIST_NEXT (letlist));
+
+    } else {
+        /*
+         * all applictions adjusted, now adjust fundef:
+         * 1. add additional result (given id in exprs chain)
+         * 2. add additional type to types chain
+         */
+        DBUG_ASSERT ((FUNDEF_RETURN (fundef) != NULL),
+                     "missing link to return statement");
+
+        new_id = MakeId_Copy (StringCopy (VARDEC_OR_ARG_NAME (vardec)));
+        ID_VARDEC (new_id) = vardec;
+        ID_AVIS (new_id) = VARDEC_OR_ARG_AVIS (vardec);
+
+        RETURN_EXPRS (FUNDEF_RETURN (fundef))
+          = MakeExprs (new_id, RETURN_EXPRS (FUNDEF_RETURN (fundef)));
+
+        /* save fundef data, stored in first type */
+        keep_name = FUNDEF_NAME (fundef);
+        keep_mod = FUNDEF_MOD (fundef);
+        keep_cmod = FUNDEF_LINKMOD (fundef);
+        keep_status = FUNDEF_STATUS (fundef);
+        keep_attrib = FUNDEF_ATTRIB (fundef);
+
+        if (TYPES_BASETYPE (FUNDEF_TYPES (fundef)) == T_void) {
+            FUNDEF_TYPES (fundef) = FreeAllTypes (FUNDEF_TYPES (fundef));
+        }
+
+        /* create new type */
+        FUNDEF_TYPES (fundef)
+          = AppendTypes (DupTypes (VARDEC_TYPE (vardec)), FUNDEF_TYPES (fundef));
+
+        /* restore fundef information */
+        FUNDEF_NAME (fundef) = keep_name;
+        FUNDEF_MOD (fundef) = keep_mod;
+        FUNDEF_LINKMOD (fundef) = keep_cmod;
+        FUNDEF_STATUS (fundef) = keep_status;
+        FUNDEF_ATTRIB (fundef) = keep_attrib;
+    }
 
     DBUG_RETURN (fundef);
 }

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2001/04/17 15:48:35  nmw
+ * AddResult implemented
+ *
  * Revision 1.2  2001/04/09 15:54:19  nmw
  * CSAddArg implemented
  *
@@ -30,6 +33,6 @@ extern node *CSRemoveArg (node *fundef, node *arg, nodelist *letlist, bool freea
 extern node *CSRemoveResult (node *fundef, int position, nodelist *letlist);
 
 extern node *CSAddArg (node *fundef, node *arg, nodelist *letlist);
-extern node *CSAddResult (node *fundef, node *id, nodelist *letlist);
+extern node *CSAddResult (node *fundef, node *vardec, nodelist *letlist);
 
 #endif /* SAC_CHANGE_SIGNATURE_H */
