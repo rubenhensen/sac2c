@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1998/02/24 15:46:19  srs
+ * fixed bug in DCRfundef
+ *
  * Revision 1.18  1998/02/23 13:09:43  srs
  * added DCR for new WLs
  *
@@ -171,13 +174,15 @@ DCRfundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("DCR", ("Dead Code Removal in function: %s", FUNDEF_NAME (arg_node)));
     INFO_VARNO = FUNDEF_VARNO (arg_node);
 
-    FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
+    if (FUNDEF_BODY (arg_node))
+        FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
 
     INFO_DEF = FUNDEF_DEFMASK (arg_node);
     INFO_USE = FUNDEF_USEMASK (arg_node);
     INFO_VARNO = FUNDEF_VARNO (arg_node);
 
-    FUNDEF_VARDEC (arg_node) = OPTTrav (FUNDEF_VARDEC (arg_node), arg_info, arg_node);
+    if (FUNDEF_BODY (arg_node))
+        FUNDEF_VARDEC (arg_node) = OPTTrav (FUNDEF_VARDEC (arg_node), arg_info, arg_node);
     INFO_DEF = NULL;
     INFO_USE = NULL;
     INFO_VARNO = 0;
