@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/01/24 23:37:24  dkr
+ * semantics of WLSEGX_IDX_MAX slightly modified
+ * NameOrVal_MakeIndex() used
+ *
  * Revision 3.1  2000/11/20 18:03:28  sacbase
  * new release made
  *
@@ -77,9 +81,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <varargs.h>
+#include <limits.h> /* INT_MAX */
 
 #include "types.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "internal_lib.h"
 #include "free.h"
 #include "traverse.h"
@@ -264,13 +270,11 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
                                   " an identifier or a number",
                                   i, sched->discipline));
                 }
-
                 break;
 
             default:
                 DBUG_ASSERT ((arg_spec != NULL), "Illegal scheduling specification");
             }
-
             break;
 
         case 'v':
@@ -520,9 +524,11 @@ SCHRemoveScheduling (sched_t *sched)
             case AT_num_for_id_vec:
                 FREE (sched->args[i].arg.num_vec);
                 break;
+
             case AT_id_vec:
                 FREE (sched->args[i].arg.id_vec);
                 break;
+
             default:
                 break;
             }
@@ -577,9 +583,11 @@ SCHCopyScheduling (sched_t *sched)
             case AT_num_for_id_vec:
                 new_sched->args[i].arg.num = sched->args[i].arg.num;
                 break;
+
             case AT_id_vec:
                 new_sched->args[i].arg.id = sched->args[i].arg.id;
                 break;
+
             default:
                 break;
             }
@@ -601,8 +609,6 @@ SCHCopyScheduling (sched_t *sched)
  * description:
  *
  *
- *
- *
  ******************************************************************************/
 
 void
@@ -620,9 +626,11 @@ SCHPrintScheduling (FILE *outfile, sched_t *sched)
         case AT_num_for_id:
             fprintf (outfile, "%d, ", sched->args[i].arg.num);
             break;
+
         case AT_id:
             fprintf (outfile, "%s, ", sched->args[i].arg.id);
             break;
+
         default:
             break;
         }
@@ -634,9 +642,11 @@ SCHPrintScheduling (FILE *outfile, sched_t *sched)
         case AT_num_for_id:
             fprintf (outfile, "%d)", sched->args[sched->num_args - 1].arg.num);
             break;
+
         case AT_id:
             fprintf (outfile, "%s)", sched->args[sched->num_args - 1].arg.id);
             break;
+
         default:
             break;
         }
@@ -758,13 +768,11 @@ sched_t *SCHMakeScheduling (va_alist) va_dcl
                     sched->args[i].arg_type = AT_id;
                     sched->args[i].arg.id = tmp_id;
                 }
-
                 break;
 
             default:
                 DBUG_ASSERT ((arg_spec != NULL), "Illegal scheduling specification");
             }
-
             break;
 
         case 'v':
@@ -816,7 +824,7 @@ SCHPrecompileScheduling (sched_t *sched)
 /******************************************************************************
  *
  * function:
- *   node *CompileSchedulingArgs(sched_t *sched, node *args)
+ *   node *CompileSchedulingArgs( sched_t *sched, node *args)
  *
  * description:
  *   This function converts the arguments of an abstract scheduling
@@ -840,12 +848,15 @@ CompileSchedulingArgs (sched_t *sched, node *args)
             case AT_num:
                 new_arg = MakeNum (sched->args[i].arg.num);
                 break;
+
             case AT_id:
                 new_arg = MakeId (StringCopy (sched->args[i].arg.id), NULL, ST_regular);
                 break;
+
             case AT_num_for_id:
                 new_arg = MakeId (itoa (sched->args[i].arg.num), NULL, ST_regular);
                 break;
+
             default:
                 new_arg = NULL;
                 DBUG_ASSERT (0, "Vector arguments for scheduling disciplines not yet"
@@ -862,7 +873,7 @@ CompileSchedulingArgs (sched_t *sched, node *args)
 /******************************************************************************
  *
  * function:
- *   node *CompileConstSegSchedulingArgs(node *wlseg)
+ *   node *CompileConstSegSchedulingArgs( char *wl_name, node *wlseg, sched_t *sched)
  *
  * description:
  *   In addition to their individual arguments, scheduling ICMs have addtional
@@ -874,38 +885,41 @@ CompileSchedulingArgs (sched_t *sched, node *args)
  ******************************************************************************/
 
 static node *
-CompileConstSegSchedulingArgs (node *wlseg, sched_t *sched)
+CompileConstSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
 {
-    node *args;
-    int i;
+    node *index, *args;
+    int d;
 
     DBUG_ENTER ("CompileConstSegSchedulingArgs");
 
     args = NULL;
 
     if (sched != NULL) {
-
-        for (i = WLSEG_DIMS (wlseg) - 1; i >= 0; i--) {
-            if (SCHAdjustmentRequired (i, wlseg)) {
+        for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
+            if (SCHAdjustmentRequired (d, wlseg)) {
                 args = MakeExprs (MakeNum (1), args);
             } else {
                 args
-                  = MakeExprs (MakeNum (MAX (WLSEG_UBV (wlseg)[i], WLSEG_SV (wlseg)[i])),
+                  = MakeExprs (MakeNum (MAX (WLSEG_UBV (wlseg)[d], WLSEG_SV (wlseg)[d])),
                                args);
             }
         }
 
-        for (i = WLSEG_DIMS (wlseg) - 1; i >= 0; i--) {
-            args = MakeExprs (MakeNum (WLSEG_BV (wlseg, 0)[i]), args);
+        for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
+            args = MakeExprs (MakeNum (WLSEG_BV (wlseg, 0)[d]), args);
         }
     }
 
-    for (i = WLSEG_DIMS (wlseg) - 1; i >= 0; i--) {
-        args = MakeExprs (MakeNum (WLSEG_IDX_MAX (wlseg)[i]), args);
+    for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
+        index = NameOrVal_MakeIndex (NULL, WLSEG_IDX_MAX (wlseg)[d], d, wl_name, TRUE);
+        DBUG_ASSERT ((index != NULL), "illegal supremum found!");
+        args = MakeExprs (index, args);
     }
 
-    for (i = WLSEG_DIMS (wlseg) - 1; i >= 0; i--) {
-        args = MakeExprs (MakeNum (WLSEG_IDX_MIN (wlseg)[i]), args);
+    for (d = WLSEG_DIMS (wlseg) - 1; d >= 0; d--) {
+        index = NameOrVal_MakeIndex (NULL, WLSEG_IDX_MIN (wlseg)[d], d, wl_name, TRUE);
+        DBUG_ASSERT ((index != NULL), "illegal infimum found!");
+        args = MakeExprs (index, args);
     }
 
     args = MakeExprs (MakeNum (WLSEG_DIMS (wlseg)), args);
@@ -916,7 +930,7 @@ CompileConstSegSchedulingArgs (node *wlseg, sched_t *sched)
 /******************************************************************************
  *
  * function:
- *   node *CompileVarSegSchedulingArgs(node *wlseg)
+ *   node *CompileVarSegSchedulingArgs( char *wl_name, node *wlseg, sched_t *sched)
  *
  * description:
  *   In addition to their individual arguments, scheduling ICMs have addtional
@@ -926,38 +940,45 @@ CompileConstSegSchedulingArgs (node *wlseg, sched_t *sched)
  ******************************************************************************/
 
 static node *
-CompileVarSegSchedulingArgs (node *wlseg, sched_t *sched)
+CompileVarSegSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
 {
-    node *args;
-    int i;
+    node *index, *args;
+    int d;
 
     DBUG_ENTER ("CompileConstSegSchedulingArgs");
 
     args = NULL;
 
     if (sched != NULL) {
-
-        for (i = WLSEGVAR_DIMS (wlseg) - 1; i >= 0; i--) {
-            if (SCHAdjustmentRequired (i, wlseg)) {
+        for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
+            if (SCHAdjustmentRequired (d, wlseg)) {
                 args = MakeExprs (MakeNum (1), args);
             } else {
-                args = MakeExprs (MakeNum (MAX (WLSEGVAR_UBV (wlseg)[i],
-                                                WLSEGVAR_SV (wlseg)[i])),
+                args = MakeExprs (MakeNum (MAX (WLSEGVAR_UBV (wlseg)[d],
+                                                WLSEGVAR_SV (wlseg)[d])),
                                   args);
             }
         }
 
-        for (i = WLSEGVAR_DIMS (wlseg) - 1; i >= 0; i--) {
-            args = MakeExprs (MakeNum (WLSEGVAR_BV (wlseg, 0)[i]), args);
+        for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
+            args = MakeExprs (MakeNum (WLSEGVAR_BV (wlseg, 0)[d]), args);
         }
     }
 
-    for (i = WLSEGVAR_DIMS (wlseg) - 1; i >= 0; i--) {
-        args = MakeExprs (MakeNum (WLSEGVAR_IDX_MAX (wlseg)[i]), args);
+    for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
+        index = NameOrVal_MakeIndex (NULL, WLSEGVAR_IDX_MAX (wlseg)[d], d, wl_name, TRUE);
+        if (index == NULL) {
+            index = MakeNum (INT_MAX);
+        }
+        args = MakeExprs (index, args);
     }
 
-    for (i = WLSEGVAR_DIMS (wlseg) - 1; i >= 0; i--) {
-        args = MakeExprs (MakeNum (WLSEGVAR_IDX_MIN (wlseg)[i]), args);
+    for (d = WLSEGVAR_DIMS (wlseg) - 1; d >= 0; d--) {
+        index = NameOrVal_MakeIndex (NULL, WLSEGVAR_IDX_MIN (wlseg)[d], d, wl_name, TRUE);
+        if (index == NULL) {
+            index = MakeNum (0);
+        }
+        args = MakeExprs (index, args);
     }
 
     args = MakeExprs (MakeNum (WLSEGVAR_DIMS (wlseg)), args);
@@ -968,7 +989,7 @@ CompileVarSegSchedulingArgs (node *wlseg, sched_t *sched)
 /******************************************************************************
  *
  * function:
- *   node *CompileSyncblockSchedulingArgs(node *wlseg)
+ *   node *CompileSyncblockSchedulingArgs( char *wl_name, node *wlseg, sched_t *sched)
  *
  * description:
  *   In addition to their individual arguments, scheduling ICMs have addtional
@@ -978,7 +999,7 @@ CompileVarSegSchedulingArgs (node *wlseg, sched_t *sched)
  ******************************************************************************/
 
 static node *
-CompileSyncblockSchedulingArgs (node *wlseg, sched_t *sched)
+CompileSyncblockSchedulingArgs (char *wl_name, node *wlseg, sched_t *sched)
 {
     node *args;
 
@@ -992,7 +1013,8 @@ CompileSyncblockSchedulingArgs (node *wlseg, sched_t *sched)
 /******************************************************************************
  *
  * function:
- *   node *CompileScheduling(sched_t *sched, node *arg_node, char *suffix)
+ *   node *CompileScheduling( char *wl_name, sched_t *sched, node *arg_node,
+ *                            char *suffix)
  *
  * description:
  *   This function compiles abstract scheduling specifications to ICMs
@@ -1003,7 +1025,7 @@ CompileSyncblockSchedulingArgs (node *wlseg, sched_t *sched)
  ******************************************************************************/
 
 static node *
-CompileScheduling (sched_t *sched, node *arg_node, char *suffix)
+CompileScheduling (char *wl_name, sched_t *sched, node *arg_node, char *suffix)
 {
     node *icm, *general_args;
     char *name;
@@ -1021,14 +1043,17 @@ CompileScheduling (sched_t *sched, node *arg_node, char *suffix)
 
     switch (NODE_TYPE (arg_node)) {
     case N_WLseg:
-        general_args = CompileConstSegSchedulingArgs (arg_node, sched);
+        general_args = CompileConstSegSchedulingArgs (wl_name, arg_node, sched);
         break;
+
     case N_WLsegVar:
-        general_args = CompileVarSegSchedulingArgs (arg_node, sched);
+        general_args = CompileVarSegSchedulingArgs (wl_name, arg_node, sched);
         break;
+
     case N_sync:
-        general_args = CompileSyncblockSchedulingArgs (arg_node, sched);
+        general_args = CompileSyncblockSchedulingArgs (wl_name, arg_node, sched);
         break;
+
     default:
         general_args = NULL;
         DBUG_ASSERT ((0), "wrong node type found");
@@ -1042,8 +1067,11 @@ CompileScheduling (sched_t *sched, node *arg_node, char *suffix)
 /******************************************************************************
  *
  * function:
- *   node *SCHCompileSchedulingBegin(sched_t *sched, node *arg_node)
- *   node *SCHCompileSchedulingEnd(sched_t *sched, node *arg_node)
+ *   node *SCHCompileSchedulingBegin( char *wl_name, sched_t *sched,
+ *                                    node *arg_node)
+ *
+ *   node *SCHCompileSchedulingEnd( char *wl_name, sched_t *sched,
+ *                                  node *arg_node)
  *
  * description:
  *   These two functions initiate the compilation of abstract scheduling
@@ -1052,17 +1080,25 @@ CompileScheduling (sched_t *sched, node *arg_node, char *suffix)
  ******************************************************************************/
 
 node *
-SCHCompileSchedulingBegin (sched_t *sched, node *arg_node)
+SCHCompileSchedulingBegin (char *wl_name, sched_t *sched, node *arg_node)
 {
+    node *ret_node;
+
     DBUG_ENTER ("SCHCompileSchedulingBegin");
 
-    DBUG_RETURN (CompileScheduling (sched, arg_node, "BEGIN"));
+    ret_node = CompileScheduling (wl_name, sched, arg_node, "BEGIN");
+
+    DBUG_RETURN (ret_node);
 }
 
 node *
-SCHCompileSchedulingEnd (sched_t *sched, node *arg_node)
+SCHCompileSchedulingEnd (char *wl_name, sched_t *sched, node *arg_node)
 {
+    node *ret_node;
+
     DBUG_ENTER ("SCHCompileSchedulingEnd");
 
-    DBUG_RETURN (CompileScheduling (sched, arg_node, "END"));
+    ret_node = CompileScheduling (wl_name, sched, arg_node, "END");
+
+    DBUG_RETURN (ret_node);
 }
