@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  2000/01/26 14:50:25  dkr
+ * type of traverse-function-table changed from funptr* to funtab
+ *
  * Revision 2.10  1999/10/28 19:39:16  dkr
  * DBUG-string MASK changed to PRINT_MASKS
  *
@@ -50,9 +53,6 @@
  *
  * Revision 1.104  1999/01/07 13:56:58  sbs
  * optimization process restructured for a function-wise optimization!
- *
- * Revision 1.103  1998/12/10 17:28:27  sbs
- * *** empty log message ***
  *
  * Revision 1.102  1998/11/08 15:05:56  dkr
  * OptTrav:
@@ -324,7 +324,7 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
 node *
 Optimize (node *arg_node)
 {
-    funptr *tmp_tab;
+    funtab tmp_tab;
 
     DBUG_ENTER ("Optimize");
 

@@ -1,6 +1,9 @@
 
 /*
  * $Log$
+ * Revision 1.2  2000/01/26 14:48:42  dkr
+ * type of traverse-function-table changed from funptr* to funtab
+ *
  * Revision 1.1  1999/10/20 12:51:11  sbs
  * Initial revision
  *
@@ -51,7 +54,7 @@
 node *
 NewTypeCheck (node *arg_node)
 {
-    funptr *tmp_tab;
+    funtab tmp_tab;
 
     DBUG_ENTER ("NewTypeCheck");
 
