@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.10  2001/04/26 21:09:47  dkr
+# make deps done
+#
 # Revision 3.9  2001/03/22 20:20:01  dkr
 # make deps done
 #
@@ -153,9 +156,9 @@ PatchWith.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 PatchWith.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 PatchWith.o: /usr/include/stdio_impl.h /usr/include/string.h
 PatchWith.o: /usr/include/stdlib.h ../global/globals.h
-PatchWith.o: ../global/internal_lib.h ../tree/traverse.h
-PatchWith.o: ../typecheck/typecheck.h ../tree/free.h ../../inc/dbug.h
-PatchWith.o: ../global/my_debug.h ../tree/DupTree.h ../tree/LookUpTable.h
+PatchWith.o: ../global/internal_lib.h ../tree/traverse.h ../tree/free.h
+PatchWith.o: ../../inc/dbug.h ../global/my_debug.h ../tree/DupTree.h
+PatchWith.o: ../tree/LookUpTable.h
 ReuseWithArrays.o: ../../inc/dbug.h /usr/include/stdio.h
 ReuseWithArrays.o: /usr/include/sys/feature_tests.h
 ReuseWithArrays.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
@@ -172,17 +175,18 @@ compile.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 compile.o: ../global/Error.h /usr/include/stdio.h /usr/include/sys/va_list.h
 compile.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 compile.o: ../global/globals.h ../global/internal_lib.h ../tree/prf.h
-compile.o: ../print/print.h ../../inc/dbug.h ../global/my_debug.h
-compile.o: ../tree/traverse.h ../tree/DataFlowMask.h compile.h
-compile.o: ../print/convert.h ../tree/DupTree.h ../tree/LookUpTable.h
-compile.o: ReuseWithArrays.h ../tree/free.h ../typecheck/typecheck.h
-compile.o: ../tree/scheduling.h wltransform.h ../refcount/refcount.h
+compile.o: ../../inc/dbug.h ../global/my_debug.h ../tree/traverse.h
+compile.o: ../tree/free.h ../tree/DupTree.h ../tree/LookUpTable.h
+compile.o: ../print/convert.h ../print/print.h ../tree/DataFlowMask.h
+compile.o: ReuseWithArrays.h ../typecheck/typecheck.h ../tree/scheduling.h
+compile.o: ../tree/wl_bounds.h ../refcount/refcount.h compile.h
 gen_startup_code.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 gen_startup_code.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 gen_startup_code.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 gen_startup_code.o: /usr/include/string.h /usr/include/stdlib.h
 gen_startup_code.o: ../../inc/dbug.h ../global/globals.h ../global/types.h
 gen_startup_code.o: ../global/resource.h ../tree/tree_basic.h
+gen_startup_code.o: ../tree/tree_compound.h ../global/Error.h
 gen_startup_code.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
 gen_startup_code.o: ../global/internal_lib.h precompile.h
 icm2c.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
@@ -239,18 +243,16 @@ icm_icm2c.o: icm.data
 icm_trace.o: icm.data
 icm_vars.o: icm.data
 precompile.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-precompile.o: /usr/include/sys/isa_defs.h ../global/types.h
-precompile.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+precompile.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
 precompile.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 precompile.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-precompile.o: /usr/include/stdlib.h ../global/globals.h
-precompile.o: ../global/internal_lib.h ../../inc/dbug.h ../tree/DupTree.h
-precompile.o: ../tree/LookUpTable.h ../tree/free.h ../global/my_debug.h
-precompile.o: ../tree/prf.h ../tree/traverse.h ../print/convert.h
-precompile.o: ../tree/DataFlowMask.h ../typecheck/typecheck.h
-precompile.o: ../tree/scheduling.h ../tree/adjust_ids.h
-precompile.o: ../c-interface/map_cwrapper.h ../refcount/refcount.h compile.h
-precompile.o: precompile.h
+precompile.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+precompile.o: ../global/Error.h /usr/include/stdlib.h ../global/globals.h
+precompile.o: ../global/internal_lib.h ../tree/prf.h ../tree/free.h
+precompile.o: ../global/my_debug.h ../tree/DupTree.h ../tree/LookUpTable.h
+precompile.o: ../tree/traverse.h ../print/convert.h ../tree/DataFlowMask.h
+precompile.o: ../tree/adjust_ids.h ../c-interface/map_cwrapper.h
+precompile.o: ../tree/scheduling.h compile.h precompile.h
 wlpragma_funs.o: ../global/types.h ../tree/tree_basic.h
 wlpragma_funs.o: ../tree/tree_compound.h ../global/Error.h
 wlpragma_funs.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
@@ -270,6 +272,6 @@ wltransform.o: /usr/include/stdio_impl.h /usr/include/string.h
 wltransform.o: /usr/include/stdlib.h ../global/globals.h
 wltransform.o: ../global/internal_lib.h ../tree/traverse.h ../tree/free.h
 wltransform.o: ../../inc/dbug.h ../global/my_debug.h ../tree/DupTree.h
-wltransform.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h wltransform.h
-wltransform.o: wlpragma_funs.h wlpragma_funs.mac ../print/print.h
-wltransform.o: /usr/include/limits.h
+wltransform.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h ../print/print.h
+wltransform.o: ../tree/wl_bounds.h wlpragma_funs.h wlpragma_funs.mac
+wltransform.o: wltransform.h

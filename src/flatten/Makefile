@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.15  2001/04/26 21:09:40  dkr
+# make deps done
+#
 # Revision 3.14  2001/04/18 15:39:09  nmw
 # while2to.o added
 #
@@ -130,14 +133,15 @@ flatten.o: /usr/include/string.h /usr/include/stdlib.h ../../inc/dbug.h
 flatten.o: ../global/my_debug.h ../global/internal_lib.h ../tree/tree_basic.h
 flatten.o: ../tree/tree_compound.h ../tree/traverse.h ../tree/free.h
 flatten.o: ../tree/DupTree.h ../tree/LookUpTable.h flatten.h
-fun2lac.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
-fun2lac.o: ../global/Error.h /usr/include/stdio.h
+fun2lac.o: ../../inc/dbug.h /usr/include/stdio.h
 fun2lac.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 fun2lac.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-fun2lac.o: /usr/include/stdio_impl.h /usr/include/string.h
+fun2lac.o: /usr/include/stdio_impl.h ../global/types.h ../tree/tree_basic.h
+fun2lac.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
 fun2lac.o: /usr/include/stdlib.h ../global/globals.h ../global/internal_lib.h
-fun2lac.o: ../tree/traverse.h ../tree/free.h ../../inc/dbug.h
-fun2lac.o: ../global/my_debug.h ../tree/adjust_ids.h
+fun2lac.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
+fun2lac.o: ../tree/DupTree.h ../tree/LookUpTable.h ../print/print.h
+fun2lac.o: ../optimize/Inline.h
 lac2fun.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 lac2fun.o: ../global/Error.h /usr/include/stdio.h
 lac2fun.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h

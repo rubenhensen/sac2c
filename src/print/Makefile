@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.6  2001/04/26 21:09:42  dkr
+# make deps done
+#
 # Revision 3.5  2001/03/22 20:19:57  dkr
 # make deps done
 #
@@ -138,5 +141,5 @@ print.o: ../optimize/optimize.h ../tree/free.h ../optimize/generatemasks.h
 print.o: ../modules/filemgr.h ../compile/gen_startup_code.h
 print.o: ../psi-opt/WithloopFolding.h ../tree/scheduling.h
 print.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
-print.o: ../global/NameTuples.h ../compile/wltransform.h ../compile/icm.data
-print.o: ../tree/prf_node_info.mac
+print.o: ../global/NameTuples.h ../compile/wltransform.h ../tree/wl_bounds.h
+print.o: ../compile/icm.data ../tree/prf_node_info.mac

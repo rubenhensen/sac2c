@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.10  2001/04/26 21:09:43  dkr
+# make deps done
+#
 # Revision 3.9  2001/04/12 15:40:33  sbs
 # force -O0 when compiling prim_fun.c on DEC_ALPHA...
 # Otherwise, the product version yields strange type errors
@@ -99,40 +102,39 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 gen_pseudo_fun.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-gen_pseudo_fun.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
-gen_pseudo_fun.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-gen_pseudo_fun.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-gen_pseudo_fun.o: ../global/types.h ../tree/prf.h ../tree/tree_basic.h
-gen_pseudo_fun.o: ../tree/tree.h ../tree/tree_compound.h ../global/Error.h
-gen_pseudo_fun.o: /usr/include/string.h ../global/globals.h
-gen_pseudo_fun.o: ../global/internal_lib.h ../tree/free.h
+gen_pseudo_fun.o: /usr/include/sys/isa_defs.h ../global/types.h
+gen_pseudo_fun.o: ../tree/tree_basic.h ../tree/tree_compound.h
+gen_pseudo_fun.o: ../global/Error.h /usr/include/stdio.h
+gen_pseudo_fun.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+gen_pseudo_fun.o: /usr/include/stdio_impl.h /usr/include/string.h
+gen_pseudo_fun.o: ../global/globals.h ../global/internal_lib.h
+gen_pseudo_fun.o: ../../inc/dbug.h ../tree/prf.h ../tree/free.h
 gen_pseudo_fun.o: ../global/my_debug.h ../tree/DupTree.h
 gen_pseudo_fun.o: ../tree/LookUpTable.h gen_pseudo_fun.h typecheck.h
 new_typecheck.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 new_typecheck.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 new_typecheck.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-new_typecheck.o: /usr/include/string.h ../../inc/dbug.h ../tree/tree.h
-new_typecheck.o: ../global/types.h ../tree/tree_basic.h
-new_typecheck.o: ../tree/tree_compound.h ../global/Error.h
-new_typecheck.o: /usr/include/stdlib.h ../global/globals.h
+new_typecheck.o: /usr/include/string.h ../../inc/dbug.h ../global/types.h
+new_typecheck.o: ../tree/tree_basic.h ../tree/tree_compound.h
+new_typecheck.o: ../global/Error.h /usr/include/stdlib.h ../global/globals.h
 new_typecheck.o: ../global/internal_lib.h ../tree/traverse.h user_types.h
 new_typecheck.o: new_types.h ../tree/free.h ../global/my_debug.h
 new_typecheck.o: ../constants/shape.h new_typecheck.h
-new_types.o: ../../inc/dbug.h /usr/include/stdio.h
+new_types.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+new_types.o: ../global/Error.h /usr/include/stdio.h
 new_types.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 new_types.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-new_types.o: /usr/include/stdio_impl.h ../tree/free.h /usr/include/stdlib.h
-new_types.o: ../global/my_debug.h ../global/globals.h ../global/types.h
-new_types.o: ../global/internal_lib.h ../tree/tree.h ../tree/tree_basic.h
-new_types.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
-new_types.o: ../print/convert.h ../constants/shape.h
+new_types.o: /usr/include/stdio_impl.h /usr/include/string.h
+new_types.o: /usr/include/stdlib.h ../global/globals.h
+new_types.o: ../global/internal_lib.h ../../inc/dbug.h ../tree/free.h
+new_types.o: ../global/my_debug.h ../print/convert.h ../constants/shape.h
 new_types.o: type_constructor_info.mac new_types.h user_types.h
 prim_fun.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-prim_fun.o: /usr/include/sys/isa_defs.h ../global/globals.h
+prim_fun.o: /usr/include/sys/isa_defs.h ../tree/tree.h ../global/types.h
+prim_fun.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
 prim_fun.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 prim_fun.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-prim_fun.o: ../global/types.h ../tree/tree.h ../tree/tree_basic.h
-prim_fun.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
+prim_fun.o: /usr/include/string.h ../global/globals.h
 prim_fun.o: ../global/internal_lib.h prim_fun.h ../../inc/dbug.h
 prim_fun.o: ../global/my_debug.h ../tree/DupTree.h ../tree/LookUpTable.h
 prim_fun.o: ../print/convert.h ../tree/free.h typecheck.h prim_fun_tt.mac

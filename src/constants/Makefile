@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.5  2001/04/26 21:09:59  dkr
+# make deps done
+#
 # Revision 1.4  2001/03/22 20:20:22  dkr
 # make deps done
 #
@@ -86,11 +89,11 @@ constants_basic.o: cv2scalar.h cv2cv.h cv2str.h ../tree/tree_compound.h
 constants_basic.o: ../tree/tree_basic.h ../global/Error.h
 constants_basic.o: /usr/include/string.h constants.h constants_internal.h
 constants_struc_ops.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-constants_struc_ops.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h
+constants_struc_ops.o: /usr/include/sys/isa_defs.h ../global/internal_lib.h
+constants_struc_ops.o: ../global/types.h ../../inc/dbug.h
 constants_struc_ops.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 constants_struc_ops.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-constants_struc_ops.o: constants.h shape.h ../global/types.h
-constants_struc_ops.o: constants_internal.h
+constants_struc_ops.o: constants.h shape.h constants_internal.h
 cv2cv.o: ../../inc/dbug.h /usr/include/stdio.h
 cv2cv.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 cv2cv.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.20  2001/04/26 21:09:57  dkr
+# make deps done
+#
 # Revision 3.19  2001/04/02 11:45:39  dkr
 # wl_bounds.o added
 #
@@ -157,12 +160,12 @@ InferDFMs.o: ../global/internal_lib.h traverse.h free.h ../../inc/dbug.h
 InferDFMs.o: ../global/my_debug.h DupTree.h LookUpTable.h DataFlowMask.h
 InferDFMs.o: DataFlowMaskUtils.h InferDFMs.h
 LookUpTable.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-LookUpTable.o: /usr/include/sys/isa_defs.h ../global/types.h tree_basic.h
-LookUpTable.o: tree_compound.h ../global/Error.h /usr/include/stdio.h
+LookUpTable.o: /usr/include/sys/isa_defs.h ../global/internal_lib.h
+LookUpTable.o: ../global/types.h free.h /usr/include/stdlib.h
+LookUpTable.o: ../../inc/dbug.h /usr/include/stdio.h
 LookUpTable.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-LookUpTable.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
-LookUpTable.o: ../global/globals.h ../global/internal_lib.h free.h
-LookUpTable.o: ../../inc/dbug.h ../global/my_debug.h
+LookUpTable.o: /usr/include/stdio_impl.h ../global/my_debug.h
+LookUpTable.o: ../global/globals.h
 SSATransform.o: ../global/types.h tree_basic.h tree_compound.h
 SSATransform.o: ../global/Error.h /usr/include/stdio.h
 SSATransform.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -222,15 +225,22 @@ free.o: ../global/types.h tree_basic.h tree_compound.h ../global/Error.h
 free.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
 free.o: traverse.h DataFlowMask.h scheduling.h ../constants/constants.h
 free.o: ../constants/shape.h free.h
+rmcasts.o: ../global/types.h tree_basic.h tree_compound.h ../global/Error.h
+rmcasts.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+rmcasts.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+rmcasts.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+rmcasts.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
+rmcasts.o: ../../inc/dbug.h traverse.h ../global/internal_lib.h free.h
+rmcasts.o: ../global/my_debug.h
 scheduling.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 scheduling.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 scheduling.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-scheduling.o: /usr/include/string.h /usr/include/varargs.h
-scheduling.o: /usr/include/limits.h ../global/types.h tree_basic.h
-scheduling.o: tree_compound.h ../global/Error.h /usr/include/stdlib.h
-scheduling.o: ../global/globals.h ../global/internal_lib.h free.h
-scheduling.o: ../../inc/dbug.h ../global/my_debug.h traverse.h
-scheduling.o: ../compile/precompile.h
+scheduling.o: /usr/include/string.h /usr/include/varargs.h ../global/types.h
+scheduling.o: tree_basic.h tree_compound.h ../global/Error.h
+scheduling.o: /usr/include/stdlib.h ../global/globals.h
+scheduling.o: ../global/internal_lib.h free.h ../../inc/dbug.h
+scheduling.o: ../global/my_debug.h traverse.h ../compile/precompile.h
+scheduling.o: wl_bounds.h
 traverse.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 traverse.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 traverse.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -249,20 +259,19 @@ traverse.o: ../psi-opt/ArrayElimination.h ../psi-opt/index.h
 traverse.o: ../modules/writesib.h ../modules/readsib.h
 traverse.o: ../modules/implicittypes.h ../objects/objinit.h
 traverse.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
-traverse.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
-traverse.o: ../refcount/refcount.h ../compile/wltransform.h
-traverse.o: ../compile/precompile.h ../compile/compile.h
-traverse.o: ../compile/ReuseWithArrays.h ../modules/cccall.h
-traverse.o: ../compile/PatchWith.h ../psi-opt/WithloopFolding.h
-traverse.o: ../psi-opt/WLT.h ../psi-opt/WLI.h ../psi-opt/WLF.h
-traverse.o: ../compile/gen_startup_code.h scheduling.h
+traverse.o: ../objects/uniquecheck.h ../refcount/refcount.h
+traverse.o: ../compile/wltransform.h ../compile/precompile.h
+traverse.o: ../compile/compile.h ../compile/ReuseWithArrays.h
+traverse.o: ../modules/cccall.h ../compile/PatchWith.h
+traverse.o: ../psi-opt/WithloopFolding.h ../psi-opt/WLT.h ../psi-opt/WLI.h
+traverse.o: ../psi-opt/WLF.h ../compile/gen_startup_code.h scheduling.h
 traverse.o: ../concurrent/concurrent.h ../concurrent/spmd_init.h
 traverse.o: ../concurrent/spmd_opt.h ../concurrent/spmd_lift.h
 traverse.o: ../concurrent/sync_init.h ../concurrent/sync_opt.h
 traverse.o: ../concurrent/spmd_trav.h DataFlowMask.h
 traverse.o: ../concurrent/spmd_cons.h ../concurrent/schedule.h
 traverse.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
-traverse.o: ../typecheck/new_typecheck.h tree.h ../multithread/multithread.h
+traverse.o: ../typecheck/new_typecheck.h ../multithread/multithread.h
 traverse.o: InferDFMs.h ../flatten/lac2fun.h cleanup_decls.h
 traverse.o: ../flatten/fun2lac.h adjust_ids.h ../multithread/schedule_init.h
 traverse.o: ../multithread/blocks_init.h ../multithread/blocks_expand.h
@@ -278,6 +287,7 @@ traverse.o: ../c-interface/import_specialization.h CheckAvis.h SSATransform.h
 traverse.o: UndoSSATransform.h ../optimize/SSADeadCodeRemoval.h
 traverse.o: ../optimize/SSACSE.h compare_tree.h
 traverse.o: ../profile/annotate_fun_calls.h ../optimize/SSAConstantFolding.h
+traverse.o: ../optimize/SSALIR.h ../flatten/while2do.h ../optimize/SSALUR.h
 traverse.o: traverse.h
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 tree.o: /usr/include/sys/isa_defs.h tree.h ../global/types.h tree_basic.h
@@ -301,3 +311,11 @@ tree_compound.o: /usr/include/stdlib.h ../global/globals.h DupTree.h
 tree_compound.o: LookUpTable.h ../../inc/dbug.h ../global/my_debug.h free.h
 tree_compound.o: ../global/internal_lib.h ../typecheck/typecheck.h
 tree_compound.o: ../compile/wltransform.h
+wl_bounds.o: wl_bounds.h ../global/types.h tree_basic.h tree_compound.h
+wl_bounds.o: ../global/Error.h /usr/include/stdio.h
+wl_bounds.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+wl_bounds.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+wl_bounds.o: /usr/include/stdio_impl.h /usr/include/string.h
+wl_bounds.o: /usr/include/stdlib.h ../global/globals.h
+wl_bounds.o: ../global/internal_lib.h ../../inc/dbug.h free.h
+wl_bounds.o: ../global/my_debug.h DupTree.h LookUpTable.h

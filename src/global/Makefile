@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.8  2001/04/26 21:09:41  dkr
+# make deps done
+#
 # Revision 3.7  2001/03/22 20:19:57  dkr
 # make deps done
 #
@@ -103,9 +106,9 @@ Error.o: /usr/include/stdarg.h /usr/include/varargs.h
 Error.o: /usr/include/sys/va_list.h /usr/include/stdio.h
 Error.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 Error.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-Error.o: /usr/include/string.h Error.h /usr/include/stdlib.h types.h
-Error.o: globals.h ../tree/tree_basic.h ../../inc/dbug.h internal_lib.h
-Error.o: ../modules/filemgr.h resource.h
+Error.o: /usr/include/string.h ../../inc/dbug.h types.h ../tree/tree_basic.h
+Error.o: internal_lib.h globals.h ../modules/filemgr.h resource.h Error.h
+Error.o: /usr/include/stdlib.h
 NameTuples.o: ../../inc/dbug.h /usr/include/stdio.h
 NameTuples.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 NameTuples.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -145,7 +148,7 @@ main.o: ../modules/filemgr.h ../modules/import.h ../refcount/refcount.h
 main.o: ../scanparse/scnprs.h resource.h ../scanparse/y.tab.h
 main.o: ../modules/writesib.h ../modules/readsib.h ../modules/implicittypes.h
 main.o: ../objects/objinit.h ../modules/analysis.h ../modules/checkdec.h
-main.o: ../objects/objects.h ../objects/uniquecheck.h ../objects/rmvoidfun.h
+main.o: ../objects/objects.h ../objects/uniquecheck.h
 main.o: ../compile/wltransform.h ../concurrent/concurrent.h
 main.o: ../compile/precompile.h ../compile/compile.h
 main.o: ../profile/annotate_fun_calls.h ../modules/cccall.h
@@ -168,5 +171,5 @@ resource.o: Error.h
 usage.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 usage.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 usage.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-usage.o: /usr/include/stdlib.h /usr/include/string.h usage.h globals.h
-usage.o: types.h build.h ../../inc/dbug.h
+usage.o: /usr/include/stdlib.h /usr/include/string.h globals.h types.h
+usage.o: build.h internal_lib.h ../../inc/dbug.h usage.h

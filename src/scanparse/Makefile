@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.6  2001/04/26 21:09:43  dkr
+# make deps done
+#
 # Revision 3.5  2001/03/22 20:19:58  dkr
 # make deps done
 #
@@ -98,9 +101,9 @@ scnprs.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 scnprs.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 scnprs.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 scnprs.o: /usr/include/string.h ../global/types.h ../tree/tree_basic.h
-scnprs.o: ../global/Error.h /usr/include/stdlib.h ../global/globals.h
-scnprs.o: ../../inc/dbug.h ../modules/filemgr.h scnprs.h ../global/resource.h
-scnprs.o: y.tab.h
+scnprs.o: ../global/internal_lib.h ../global/Error.h /usr/include/stdlib.h
+scnprs.o: ../global/globals.h ../../inc/dbug.h ../modules/filemgr.h
+scnprs.o: ../global/resource.h scnprs.h y.tab.h
 y.tab.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 y.tab.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 y.tab.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h

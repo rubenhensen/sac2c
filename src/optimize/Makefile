@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.17  2001/04/26 21:09:44  dkr
+# make deps done
+#
 # Revision 3.16  2001/04/20 11:17:07  nmw
 # SSALUR.o added
 #
@@ -176,8 +179,9 @@ Inline.o: /usr/include/stdlib.h ../global/globals.h ../global/types.h
 Inline.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
 Inline.o: /usr/include/string.h ../../inc/dbug.h ../global/my_debug.h
 Inline.o: ../tree/traverse.h ../tree/free.h ../global/internal_lib.h
-Inline.o: ../typecheck/typecheck.h optimize.h LoopInvariantRemoval.h
-Inline.o: ../tree/DupTree.h ../tree/LookUpTable.h Inline.h
+Inline.o: ../typecheck/typecheck.h ../tree/InferDFMs.h optimize.h
+Inline.o: LoopInvariantRemoval.h ../tree/DupTree.h ../tree/LookUpTable.h
+Inline.o: Inline.h
 LoopInvariantRemoval.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 LoopInvariantRemoval.o: /usr/include/sys/isa_defs.h
 LoopInvariantRemoval.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -240,7 +244,9 @@ SSALUR.o: /usr/include/stdio_impl.h /usr/include/string.h
 SSALUR.o: /usr/include/stdlib.h ../global/globals.h ../global/internal_lib.h
 SSALUR.o: ../../inc/dbug.h ../tree/traverse.h ../tree/free.h
 SSALUR.o: ../global/my_debug.h ../tree/DupTree.h ../tree/LookUpTable.h
-SSALUR.o: SSALUR.h optimize.h
+SSALUR.o: SSALUR.h optimize.h ../constants/constants.h ../constants/shape.h
+SSALUR.o: /usr/include/math.h ../tree/SSATransform.h ../tree/CheckAvis.h
+SSALUR.o: Unroll.h generatemasks.h ../tree/prf_node_info.mac
 Unroll.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 Unroll.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 Unroll.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.9  2001/04/26 21:09:48  dkr
+# make deps done
+#
 # Revision 3.8  2001/03/27 11:12:49  nmw
 # include of directory ../constants added
 #
@@ -151,7 +154,7 @@ WLF.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
 WLF.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h ../tree/DupTree.h
 WLF.o: ../tree/LookUpTable.h ../tree/traverse.h ../optimize/optimize.h
 WLF.o: ../optimize/generatemasks.h ../optimize/ConstantFolding.h
-WLF.o: WithloopFolding.h WLF.h
+WLF.o: WithloopFolding.h WLF.h ../constants/shape.h
 WLI.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WLI.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 WLI.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h

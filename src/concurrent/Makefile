@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.7  2001/04/26 21:09:52  dkr
+# make deps done
+#
 # Revision 3.6  2001/01/17 10:13:08  dkr
 # make deps done
 #
@@ -150,8 +153,7 @@ spmd_lift.o: /usr/include/stdio_impl.h ../global/types.h ../tree/tree_basic.h
 spmd_lift.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
 spmd_lift.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
 spmd_lift.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/DataFlowMask.h
-spmd_lift.o: ../typecheck/typecheck.h ../global/internal_lib.h
-spmd_lift.o: concurrent_lib.h
+spmd_lift.o: ../global/internal_lib.h concurrent_lib.h ../tree/InferDFMs.h
 spmd_opt.o: ../../inc/dbug.h /usr/include/stdio.h
 spmd_opt.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 spmd_opt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
