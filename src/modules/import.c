@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.45  1997/04/24 10:02:15  cg
+ * Revision 1.46  1997/04/30 11:53:36  cg
+ * Bug fixed in InsertClassType()
+ *
+ * Revision 1.45  1997/04/24  10:02:15  cg
  * improved PrintDependencies for -Mlib option
  * bug fixed concerning class types upon selective import when checking
  * a module's own declaration file
@@ -396,7 +399,9 @@ InsertClassType (node *classdec)
     tmp = MakeNode (N_typedef);
     tmp->info.types = MakeTypes (T_hidden);
     tmp->info.types->id = StringCopy (classdec->info.fun_name.id);
-    tmp->info.types->id_mod = classdec->info.fun_name.id_mod;
+    tmp->info.types->id_mod
+      = CLASSDEC_ISEXTERNAL (classdec) ? NULL : StringCopy (classdec->info.fun_name.id);
+
     tmp->info.types->attrib = ST_unique;
     tmp->info.types->status = ST_imported;
     tmp->lineno = 0;
