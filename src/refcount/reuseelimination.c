@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/12/01 16:35:23  ktr
+ * Rule for Block added.
+ *
  * Revision 1.10  2004/11/24 14:08:15  ktr
  * MakeLet permutation.
  *
@@ -186,6 +189,32 @@ EMREassign (node *arg_node, info *arg_info)
 
     if (remassign) {
         arg_node = FREEdoFreeNode (arg_node);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *EMREblock(node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *
+ *****************************************************************************/
+node *
+EMREblock (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMREblock");
+
+    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

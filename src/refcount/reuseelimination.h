@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/12/01 16:35:23  ktr
+ * Rule for Block added.
+ *
  * Revision 1.5  2004/11/21 20:42:14  ktr
  * Ismop
  *
@@ -32,6 +35,7 @@
 extern node *EMREdoReuseElimination (node *syntax_tree);
 
 extern node *EMREassign (node *arg_node, info *arg_info);
+extern node *EMREblock (node *arg_node, info *arg_info);
 extern node *EMREcond (node *arg_node, info *arg_info);
 extern node *EMREfundef (node *arg_node, info *arg_info);
 extern node *EMREgenarray (node *arg_node, info *arg_info);
