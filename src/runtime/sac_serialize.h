@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/04 14:53:43  sah
+ * implemented dependencies between modules
+ *
  * Revision 1.5  2004/11/02 12:15:08  sah
  * added MemCopy
  *
@@ -35,5 +38,6 @@ extern void *SerializeBuildSerStack (void *node);
 extern void *DeserializeLookupFunction (const char *s, const char *t, void *p);
 extern void *STInit ();
 extern void STAdd (char *s1, char *s2, int i, void *table);
+extern void *SSAdd (char *s1, void *p);
 
 #endif /* _SAC_SERIALIZE_H */

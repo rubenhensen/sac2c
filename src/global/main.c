@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.72  2004/11/04 14:53:43  sah
+ * implemented dependencies between modules
+ *
  * Revision 3.71  2004/11/03 17:23:19  sah
  * the tree is freed again now.
  *
@@ -292,6 +295,7 @@
 #include "ccmanager.h"
 #include "libbuilder.h"
 #include "prepareinline.h"
+#include "dependencies.h"
 #else
 #include "cccall.h"
 #endif /* NEW_AST */
@@ -464,7 +468,10 @@ main (int argc, char *argv[])
     NOTE_COMPILER_PHASE;
     NOTE (("Processing use and import statements..."));
     ResolveAll (syntax_tree);
+    NOTE (("Resolving namespaces..."));
     DoAnnotateNamespace (syntax_tree);
+    NOTE (("Resolving dependencies..."));
+    DoResolveDependencies (syntax_tree);
     NOTE (("Getting used symbols..."));
     DoUseSymbols (syntax_tree);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/04 14:53:43  sah
+ * implemented dependencies between modules
+ *
  * Revision 1.4  2004/11/01 21:49:59  sah
  * added SSPrint
  *
@@ -82,6 +85,31 @@ SSFold (SSfoldfun_p fun, stringset_t *set, void *init)
     }
 
     DBUG_RETURN (init);
+}
+
+stringset_t *
+SSJoin (stringset_t *one, stringset_t *two)
+{
+    stringset_t *result;
+
+    DBUG_ENTER ("SSJoin");
+
+    result = one;
+
+    while (two != NULL) {
+        stringset_t *act = two;
+        two = two->next;
+
+        if (SSContains (act->val, result)) {
+            act->next = NULL;
+            act = SSFree (act);
+        } else {
+            act->next = result;
+            result = act;
+        }
+    }
+
+    DBUG_RETURN (result);
 }
 
 stringset_t *

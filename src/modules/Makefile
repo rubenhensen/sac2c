@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.24  2004/11/04 14:53:43  sah
+# implemented dependencies between modules
+#
 # Revision 3.23  2004/10/28 17:17:49  sah
 # added some files
 #
@@ -106,7 +109,7 @@ ifeq ($(NEWAST),no)
 else
   OBJS := libmanager.o modulemanager.o libstat.o export.o \
           ccmanager.o libbuilder.o resolveall.o annotatenamespace.o \
-          usesymbols.o prepareinline.o $(OBJS)
+          usesymbols.o prepareinline.o dependencies.o $(OBJS)
 endif
 
 all: $(OBJS)

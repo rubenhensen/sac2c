@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.133  2004/11/04 14:53:43  sah
+# implemented dependencies between modules
+#
 # Revision 3.132  2004/11/02 14:42:02  ktr
 # Added src/refcount/datareuse.o, src/refcount/loopreuseopt.o.
 #
@@ -38,7 +41,7 @@
 # added resolvedependencies.o
 #
 # Revision 3.120  2004/10/17 17:47:54  sah
-# added serialize_helper.
+# added serialize_helper.o
 #
 # Revision 3.119  2004/10/17 17:02:25  sah
 # added new ccmanager
@@ -331,7 +334,7 @@ ifeq ($(NEWAST),yes)
                src/modules/resolveall.o src/modules/annotatenamespace.o \
                src/modules/usesymbols.o src/tree/serialize_link.o \
                src/tree/serialize.o src/tree/serialize_stack.o  \
-               src/modules/prepareinline.o
+               src/modules/prepareinline.o src/modules/dependencies.o
   NEWASTFLAGS = -ldl --export-dynamic
 endif
 
