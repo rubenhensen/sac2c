@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.42  2004/11/22 14:19:00  sbs
+ * type_conversion_flag added
+ *
  * Revision 3.41  2004/11/22 14:15:46  sbs
  * ct_res added
  *
@@ -795,5 +798,10 @@ typedef enum {
     TY_hcs, /* types are unrelated but do have a common supertype */
     TY_dis  /* types are disjoint */
 } ct_res;
+
+/*
+ * Functions for converting from old to new types and back
+ */
+typedef enum { TY_symb, TY_user } type_conversion_flag;
 
 #endif /* _SAC_TYPES_H_ */
