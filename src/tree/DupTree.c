@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.32  2000/07/24 14:57:55  nmw
+ * bug in DupTypes fixed. TYPES_STATUS was missing
+ *
  * Revision 1.31  2000/07/14 13:44:04  dkr
  * DupModul and DupImplist added
  * fixed a bug in DupFundef
@@ -632,6 +635,7 @@ DupTypes (types *source)
             tmp->attrib = source->attrib;
             tmp->status = source->status;
             TYPES_TDEF (tmp) = TYPES_TDEF (source);
+            TYPES_STATUS (tmp) = TYPES_STATUS (source);
 
             if (source->next == NULL) {
                 tmp->next = NULL;
