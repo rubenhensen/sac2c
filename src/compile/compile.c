@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/02/26 10:47:14  bs
+ * COMPPrf() modified: prepared for copact int. vectors.
+ *
  * Revision 2.1  1999/02/23 12:42:28  sacbase
  * new release made
  *
@@ -3384,6 +3387,9 @@ COMPPrf (node *arg_node, node *arg_info)
             exprs = EXPRS_NEXT (exprs);
         }
 
+        /*
+         * Select primitive funcction:
+         */
         switch (PRF_PRF (arg_node)) {
         case F_modarray:
             arg_node = COMPPrfModarray (arg_node, arg_info);
@@ -3638,88 +3644,106 @@ COMPPrf (node *arg_node, node *arg_info)
         }
         case F_drop:
             is_drop = 1;
-            /* here is NO break missing */
-
+            /*
+             * here is NO break missing
+             */
         case F_take: {
             node *num;
-
-            /* store arguments and result (res contains refcount and pointer to
+            /*
+             * store arguments and result (res contains refcount and pointer to
              * vardec ( don't free INFO_COMP_LASTIDS(arg_info) !!! )
              *
              * if first argument of prf is a scalar (N_um), it will be compiled
              * like an vector (array) with one element
+             *
+            arg1=arg_node->node[0]->node[0];
+            arg2=arg_node->node[0]->node[1]->node[0];
              */
-            arg1 = arg_node->node[0]->node[0];
-            arg2 = arg_node->node[0]->node[1]->node[0];
-            DBUG_ASSERT (((N_array == arg1->nodetype) || (N_num == arg1->nodetype)),
+            arg1 = EXPRS_EXPR (PRF_ARGS (arg_node));
+            arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
+            DBUG_ASSERT (((NODE_TYPE (arg1) == N_array) || (NODE_TYPE (arg1) == N_num)
+                          || ((NODE_TYPE (arg1) == N_id) && (ID_ARRAYLENGTH (arg1) > 0))),
                          "first argument of take/drop isn't an array or scalar");
 
             MAKENODE_ID_REUSE_IDS (res, INFO_COMP_LASTIDS (arg_info));
 
-            /* compute basic_type of result */
+            /*
+             * compute basic_type of result
+             */
             GET_BASIC_SIMPLETYPE (s_type, VARDEC_TYPE (
                                             IDS_VARDEC (INFO_COMP_LASTIDS (arg_info))));
-            MAKENODE_ID (type_id_node, type_string[s_type]);
+            type_id_node = MakeId (StringCopy (type_string[s_type]), NULL, ST_regular);
+            /*
+             * store refcount of res as N_num
+             */
+            res_ref = MakeNum (IDS_REFCNT (INFO_COMP_LASTIDS (arg_info)));
 
-            /* store refcount of res as N_num */
-            MAKENODE_NUM (res_ref, IDS_REFCNT (INFO_COMP_LASTIDS (arg_info)));
-
-            MAKENODE_NUM (num, 0);
-            if (N_id == arg2->nodetype) {
+            num = MakeNum (0);
+            if (NODE_TYPE (arg2) == N_id) {
                 GET_DIM (dim, VARDEC_TYPE (ID_VARDEC (arg2)));
-                MAKENODE_NUM (dim_node, dim); /* store dimension of argument-array */
+                /*
+                 *  store dimension of argument-array
+                 */
+                dim_node = MakeNum (dim);
                 BIN_ICM_REUSE (INFO_COMP_LASTLET (arg_info), "ND_ALLOC_ARRAY",
                                type_id_node, res);
                 MAKE_NEXT_ICM_ARG (icm_arg, num);
                 SET_VARS_FOR_MORE_ICMS;
             } else {
-                DBUG_ASSERT ((N_array == arg2->nodetype), "wrong nodetype");
-
-                MAKENODE_NUM (dim_node, 1); /* store dimension of argument-array */
+                DBUG_ASSERT ((NODE_TYPE (arg2) == N_array), "wrong nodetype");
+                /*
+                 *  store dimension of argument-array
+                 */
+                dim_node = MakeNum (1);
                 CREATE_TMP_CONST_ARRAY (arg2, res_ref);
                 CREATE_3_ARY_ICM (next_assign, "ND_ALLOC_ARRAY", type_id_node, res, num);
                 APPEND_ASSIGNS (first_assign, next_assign);
             }
 
-            if (N_array == arg1->nodetype) {
-                exprs = arg1->node[0];
-                n_elems = 0;
-                do {
-                    n_elems += 1;
-                    exprs = exprs->node[1];
-                } while (NULL != exprs);
-            } else
-                n_elems = 1;
-
-            MAKENODE_NUM (n_node, n_elems);
-            if (1 == is_drop) {
+            if (NODE_TYPE (arg1) == N_array)
+                n_elems = ARRAY_LENGTH (arg1);
+            else {
+                if (NODE_TYPE (arg1) == N_id)
+                    n_elems = ID_ARRAYLENGTH (arg1);
+                else /* if (NODE_TYPE(arg1) == N_num) */
+                    n_elems = 1;
+            }
+            n_node = MakeNum (n_elems);
+            if (is_drop == 1) {
                 CREATE_4_ARY_ICM (next_assign, "ND_KD_DROP_CxA_A", dim_node, arg2, res,
                                   n_node);
             } else {
                 CREATE_4_ARY_ICM (next_assign, "ND_KD_TAKE_CxA_A", dim_node, arg2, res,
                                   n_node);
             }
-            if (N_num == arg1->nodetype) {
+            if (NODE_TYPE (arg1) == N_num) {
                 MAKE_NEXT_ICM_ARG (icm_arg, arg1);
             } else {
-                icm_arg->node[1] = arg1->node[0];
+                if (NODE_TYPE (arg1) == N_array) {
+                    MAKE_ICM_ARG (icm_arg, ARRAY_AELEMS (arg1));
+                } else /* if (NODE_TYPE(arg1) == N_id) */ {
+                    int i;
+                    for (i = 0; i < n_elems; i++) {
+                        num = MakeNum (ID_CONSTARRAY (arg1)[i]);
+                        MAKE_NEXT_ICM_ARG (icm_arg, num);
+                    }
+                }
             }
+
             APPEND_ASSIGNS (first_assign, next_assign);
 
-            MAKENODE_NUM (n_node, 1);
-            if (0 == array_is_const) {
+            n_node = MakeNum (1);
+            if (array_is_const == 0) {
                 DEC_OR_FREE_RC_ND (arg2, n_node);
                 INC_RC_ND (res, res_ref);
-            }
-            if (0 == array_is_const) {
                 INSERT_ASSIGN;
             }
             FREE (old_arg_node);
             break;
         }
         case F_reshape: {
-            arg1 = arg_node->node[0]->node[0];
-            arg2 = arg_node->node[0]->node[1]->node[0];
+            arg1 = EXPRS_EXPR (PRF_ARGS (arg_node));
+            arg2 = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
             FreeTree (arg1);
             FREE (arg_node->node[0]);
             if (N_array == NODE_TYPE (arg2)) {
