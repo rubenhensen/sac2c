@@ -1,6 +1,9 @@
 /*
  * $Log$
- * Revision 1.22  1995/10/17 08:29:12  cg
+ * Revision 1.23  1996/01/25 16:24:06  hw
+ * added macros  SAC_MOD & SAC_PRG as synonym for F_modimpl & F_prog
+ *
+ * Revision 1.22  1995/10/17  08:29:12  cg
  * new function declaration 'TCobjdef' added
  *
  * Revision 1.21  1995/08/09  15:55:07  cg
@@ -227,5 +230,8 @@ extern char *module_name;      /* name of module to typecheck;
         } else                                                                           \
             Shape_array = NULL;                                                          \
     }
+
+#define SAC_PRG F_prog
+#define SAC_MOD F_modimp
 
 #endif /* _typecheck_h */
