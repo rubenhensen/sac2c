@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2004/08/17 10:37:31  skt
+ * push / pop added at N_block
+ *
  * Revision 1.10  2004/08/16 18:15:26  skt
  * implementation finished
  *
@@ -38,7 +41,7 @@
  * @defgroup crece Create Cells
  * @ingroup muth
  *
- * @brief tags the mode of execution on an assignment
+ * @brief creates initial cells
  * @{
  **/
 
@@ -49,9 +52,9 @@
  * prefix: CRECE
  *
  * description:
- *   creates a seperate cell around each MUTH_EXCLUSIVE, MUTH_SINGLE and
- *   MUTH_MULTI tagged assignment. Includes the corresponding allocation for
- *   an MUTH_MULTI withloop into the same with-loop, too.
+ *   creates a seperate cell around each first assignment of a CELLID, which
+ *   is MUTH_EXCLUSIVE, MUTH_SINGLE or MUTH_MULTI tagged
+ *
  *****************************************************************************/
 
 #define NEW_INFO
@@ -155,10 +158,15 @@ CreateCells (node *arg_node)
 node *
 CRECEblock (node *arg_node, info *arg_info)
 {
+    int old_cellid;
+    int old_execmode;
     DBUG_ENTER ("CRECEblock");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_block), "arg_node is not a N_block");
 
-    /* initialization */
+    /* push info... */
+    old_cellid = INFO_CRECE_LASTCELLID (arg_info);
+    old_execmode = INFO_CRECE_LASTEXECMODE (arg_info);
+
     INFO_CRECE_LASTCELLID (arg_info) = 0;
     INFO_CRECE_LASTEXECMODE (arg_info) = MUTH_ANY;
 
@@ -168,6 +176,10 @@ CRECEblock (node *arg_node, info *arg_info)
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
         DBUG_PRINT ("CRECE", ("trav from instruction(s)"));
     }
+
+    /* pop info... */
+    INFO_CRECE_LASTCELLID (arg_info) = old_cellid;
+    INFO_CRECE_LASTEXECMODE (arg_info) = old_execmode;
 
     DBUG_RETURN (arg_node);
 }
