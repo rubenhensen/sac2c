@@ -174,7 +174,17 @@ if [ -f $SACBASE/runtime/runtime.tar ] ; then
 else
   warn "runtime.tar NOT UNPACKED !!"
 fi
-insert_component f libsac.a $base/runtime/libsac.a r
+
+insert_component f libsac.tar $base/runtime/libsac.tar r
+if [ -f $SACBASE/runtime/libsac.tar ] ; then
+  (cd $SACBASE/runtime; tar xvf libsac.tar; rm libsac.tar)
+  chmod -R u+w $SACBASE/runtime
+  mess "libsac.tar UNPACKED !!"
+else
+  warn "libsac.tar NOT UNPACKED !!"
+fi
+
+
 insert_component f sac2crc $base/runtime/sac2crc r
 
 echo
