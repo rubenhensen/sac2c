@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.15  1995/04/24 15:13:46  asi
+ * Revision 1.16  1995/06/01 10:10:54  cg
+ * status in MakeTypes initialized.
+ *
+ * Revision 1.15  1995/04/24  15:13:46  asi
  * added AppendIdsChain
  *
  * Revision 1.14  1995/04/11  11:34:45  asi
@@ -87,6 +90,7 @@ MakeTypes (simpletype simple)
     tmp->next = NULL;
     tmp->id = NULL;
     tmp->id_mod = NULL;
+    tmp->status = ST_regular;
 
     DBUG_PRINT ("MAKETYPES", (P_FORMAT, tmp));
 
