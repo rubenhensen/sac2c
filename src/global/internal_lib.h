@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.11  1997/12/06 17:16:01  srs
+ * new global var malloc_align_step
+ * new function compute_malloc_align_step()
+ *
  * Revision 1.10  1997/10/28 12:30:18  srs
  * inserted macro MALLOC
  *
@@ -46,6 +50,11 @@ extern void SystemCall (char *format, ...);
 extern int SystemCall2 (char *format, ...);
 extern int SystemTest (char *format, ...);
 extern char *TmpVar ();
+
+#ifdef SHOW_MALLOC
+extern void compute_malloc_align_step (void);
+int malloc_align_step;
+#endif
 
 #define SWAP(ptr1, ptr2)                                                                 \
     {                                                                                    \
