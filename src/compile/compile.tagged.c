@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.76  2003/09/18 14:57:32  dkr
+ * *** empty log message ***
+ *
  * Revision 1.75  2003/09/18 14:57:02  dkr
  * support for F_neg added
  *
@@ -3830,7 +3833,7 @@ COMPPrfTake (node *arg_node, node *arg_info, node **check_reuse1, node **check_r
 
     (*get_dim) = MakeNum (1);
 
-    (*set_shape_icm) = MakeIcm2 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (1),
+    (*set_shape_icm) = MakeIcm4 ("ND_SET__SHAPE", DupIds_Id_NT (let_ids), MakeNum (1),
                                  DupNode (arg1)); /* NT missing!!! */
 
     ret_node = NULL;
