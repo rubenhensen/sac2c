@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.7  2004/09/20 16:16:15  sah
+# added serialize_attribs.h generation
+#
 # Revision 1.6  2004/09/01 14:13:07  sah
 # ongoing work
 #
@@ -42,7 +45,8 @@ include $(PROJECT_ROOT)/Makefile.Config
 TARGETS = ../attribs.h ../node_basic.h ../node_basic.c ../free_node.c \
           ../free_node.h ../free_attribs.h \
           ../check_node.h ../check_node.c \
-          ../serialize_node.h ../serialize_node.c
+          ../serialize_node.h ../serialize_node.c \
+          ../serialize_attribs.h
 
 all: $(TARGETS)
 
@@ -95,6 +99,10 @@ all: $(TARGETS)
 
 ../serialize_node.c: ast.xml ast2serialize_node_c.xsl
 	$(XSLTENGINE) ast2serialize_node_c.xsl ast.xml \
+	| $(CODE_BEAUTIFIER) >$@
+
+../serialize_attribs.h: ast.xml ast2serialize_attribs_h.xsl
+	$(XSLTENGINE) ast2serialize_attribs_h.xsl ast.xml \
 	| $(CODE_BEAUTIFIER) >$@
 
 clean:
