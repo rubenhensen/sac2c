@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.141  1997/12/10 18:36:27  srs
+ * changed output of new WLs
+ *
  * Revision 1.140  1997/12/02 18:48:06  srs
  * enhanced output of PrintNodeTree
  *
@@ -1900,14 +1903,18 @@ PrintNWith (node *arg_node, node *arg_info)
     DBUG_ASSERT (arg_info, "arg_info is NULL");
     buffer = arg_info->node[2];
 
+    /* check wether to use output format 1 (multiple
+       NParts) or 2 (only one NPart) and use
+       arg_info->node[2] as flag for traversal. */
     if (NPART_NEXT (NWITH_PART (arg_node))) {
-        /* more than one Npart */
+        /* output format 1 */
         arg_info->node[2] = NULL;
         fprintf (outfile, "new_with\n");
         indent++;
         Trav (NWITH_PART (arg_node), arg_info);
         indent--;
     } else {
+        /* output format 2 */
         arg_info->node[2] = (node *)!NULL; /* set != NULL */
         fprintf (outfile, "new_with ");
         Trav (NWITH_PART (arg_node), arg_info);
@@ -1922,17 +1929,21 @@ PrintNWith (node *arg_node, node *arg_info)
     case WO_modarray:
         fprintf (outfile, "modarray( ");
         Trav (NWITHOP_ARRAY (NWITH_WITHOP (arg_node)), arg_info);
+        if (!NPART_NEXT (NWITH_PART (arg_node))) /* output format 2 */
+            fprintf (outfile, ", dummy");
         break;
     case WO_foldfun:
         if (NWITHOP_MOD (NWITH_WITHOP (arg_node)) == NULL)
-            fprintf (outfile, "fold( %s, ", NWITHOP_FUN (NWITH_WITHOP (arg_node)));
+            fprintf (outfile, "fold/*fun*/( %s, ", NWITHOP_FUN (NWITH_WITHOP (arg_node)));
         else
-            fprintf (outfile, "fold( %s:%s, ", NWITHOP_MOD (NWITH_WITHOP (arg_node)),
+            fprintf (outfile, "fold/*fun*/( %s:%s, ",
+                     NWITHOP_MOD (NWITH_WITHOP (arg_node)),
                      NWITHOP_FUN (NWITH_WITHOP (arg_node)));
         Trav (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node)), arg_info);
         break;
     case WO_foldprf:
-        fprintf (outfile, "fold( %s", prf_string[NWITHOP_PRF (NWITH_WITHOP (arg_node))]);
+        fprintf (outfile, "fold/*prf*/( %s",
+                 prf_string[NWITHOP_PRF (NWITH_WITHOP (arg_node))]);
         if (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node))) {
             fprintf (outfile, ", ");
             Trav (NWITHOP_NEUTRAL (NWITH_WITHOP (arg_node)), arg_info);
@@ -1941,7 +1952,8 @@ PrintNWith (node *arg_node, node *arg_info)
     }
 
     if (!NPART_NEXT (NWITH_PART (arg_node))) {
-        /* now we have in arg_info->node[2] the last expr. */
+        /* output format 2: now we have in
+           arg_info->node[2] the last expr. */
         fprintf (outfile, ", ");
         Trav (arg_info->node[2], arg_info);
     }
@@ -1953,9 +1965,15 @@ PrintNWith (node *arg_node, node *arg_info)
 }
 /* ----------------------------------------------------------------------- */
 
+/* -------------------------------------------------------------------------- *
+ * task: prints a generator
+ *
+ * remarks: ATTENTION: this fkt. is not being used by the conventional
+ * traversation algorithm but from within PrintNPart.
+ * Unusual arguments.
+ * -------------------------------------------------------------------------- */
 node *
 PrintNGenerator (node *gen, node *idx, node *arg_info)
-/* attention: unusual arguments for this file */
 {
     DBUG_ENTER ("PrintNGenerator");
 
@@ -1998,6 +2016,11 @@ PrintNGenerator (node *gen, node *idx, node *arg_info)
 }
 /* ----------------------------------------------------------------------- */
 
+/* -------------------------------------------------------------------------- *
+ * task: prints N_Npart nodes
+ *
+ * remarks: -
+ * -------------------------------------------------------------------------- */
 node *
 PrintNPart (node *arg_node, node *arg_info)
 {
@@ -2050,6 +2073,11 @@ PrintNPart (node *arg_node, node *arg_info)
 }
 /* ----------------------------------------------------------------------- */
 
+/* -------------------------------------------------------------------------- *
+ * task: initiates traversal of print functions
+ *
+ * remarks: -
+ * -------------------------------------------------------------------------- */
 node *
 Print (node *arg_node)
 {
@@ -2097,6 +2125,11 @@ Print (node *arg_node)
 }
 /* ---------------------------------------------------------------- */
 
+/* -------------------------------------------------------------------------- *
+ * task: print syntax tree without any interpretation
+ *
+ * remarks: mostly used for debugging
+ * -------------------------------------------------------------------------- */
 void
 PrintNodeTree (node *node)
 {
