@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2003/08/04 18:03:59  dkr
+ * GSCPrintMain(): tags for SAC_MT_mythread added
+ *
  * Revision 3.27  2003/08/04 14:30:52  dkr
  * GSCicm(): error messages for MT_SPMD_SETUP corrected
  *
@@ -842,7 +845,7 @@ void
 GSCPrintMain ()
 {
 #ifdef TAGGED_ARRAYS
-    char *tmp_nt;
+    char *res_nt, *mythread_nt;
     types *tmp_type;
 #endif
     bool print_thread_id = ((gen_mt_code == GEN_MT_OLD) && (optimize & OPT_PHM));
@@ -856,27 +859,33 @@ GSCPrintMain ()
     }
 #ifdef TAGGED_ARRAYS
     tmp_type = MakeTypes1 (T_int);
-    tmp_nt = CreateNtTag ("SAC_res", tmp_type);
+    res_nt = CreateNtTag ("SAC_res", tmp_type);
+    mythread_nt = CreateNtTag ("SAC_MT_mythread", tmp_type);
     tmp_type = FreeAllTypes (tmp_type);
-    ICMCompileND_DECL (tmp_nt, "int", 0, NULL); /* create ND_DECL icm */
+    ICMCompileND_DECL (res_nt, "int", 0, NULL); /* create ND_DECL icm */
 #else
     fprintf (outfile, "  int SAC_res;\n\n");
 #endif
     GSCPrintMainBegin ();
 
 #ifdef TAGGED_ARRAYS
-    fprintf (outfile, "  SACf_main( SAC_ND_ARG_out( %s)", tmp_nt);
+    fprintf (outfile, "  SACf_main( ", res_nt);
+    if (print_thread_id) {
+        fprintf (outfile, "SAC_ND_ARG_in( %s), ", mythread_nt);
+    }
+    fprintf (outfile, "SAC_ND_ARG_out( %s)", res_nt);
 #else
     fprintf (outfile, "  SAC_res = SACf_main(");
-#endif
     if (print_thread_id) {
-        fprintf (outfile, " SAC_ND_ARG_in( SAC_MT_mythread)");
+        fprintf (outfile, "SAC_ND_ARG_in( %s)", mythread_nt);
     }
+#endif
     fprintf (outfile, ");\n\n");
     GSCPrintMainEnd ();
 #ifdef TAGGED_ARRAYS
-    fprintf (outfile, "  return( SAC_ND_READ( %s, 0));\n", tmp_nt);
-    tmp_nt = Free (tmp_nt);
+    fprintf (outfile, "  return( SAC_ND_READ( %s, 0));\n", res_nt);
+    res_nt = Free (res_nt);
+    mythread_nt = Free (mythread_nt);
 #else
     fprintf (outfile, "  return( SAC_res);\n");
 #endif
