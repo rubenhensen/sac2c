@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/04/12 07:02:53  sbs
+ * Revision 1.13  1995/04/12 15:14:00  sbs
+ * cat & rot inserted.
+ *
+ * Revision 1.12  1995/04/12  07:02:53  sbs
  * separation of IN and OUT arrays added
  *
  * Revision 1.11  1995/04/11  16:08:48  sbs
@@ -118,7 +121,6 @@
 #define NewBlock(init, body)                                                             \
     fprintf (outfile, "{\n");                                                            \
     indent++;                                                                            \
-    INDENT;                                                                              \
     init;                                                                                \
     body;                                                                                \
     indent--;                                                                            \
@@ -126,6 +128,7 @@
     fprintf (outfile, "}")
 
 #define InitPtr(src, dest)                                                               \
+    INDENT;                                                                              \
     fprintf (outfile, "int __isrc=");                                                    \
     src;                                                                                 \
     fprintf (outfile, ";\n");                                                            \
@@ -235,9 +238,12 @@ MAIN
     int dim = 3, dima = 4, dimv = 3;
     char *s[] = {"40", "50", "60"};
     char *vi[] = {"10", "20", "30"};
+    char *ar[] = {"firstarray", "secondarray"};
     char *arg[] = {"in", "i", "in_a", "ia", "out", "o1", "out", "o2", "out_a", "oa"};
     char *tyarg[] = {"in", "int", "i",   "in_a", "int",   "ia",  "out", "int",
                      "o1", "out", "int", "o2",   "out_a", "int", "oa"};
+    char *rotdimstr[] = {"rotindim"};
+    char *numstr[] = {"rotnum"};
     char v[] = "vector";
     char a[] = "arg";
     char a1[] = "arg1";
@@ -246,6 +252,8 @@ MAIN
     int i;
     int narg = 5;
     int indent = 1;
+    int catdim = 2;
+    int rotdim = 1;
 
     OPT OTHER
     {
@@ -654,6 +662,94 @@ TakeSeg (a, dima, VectToOffset (dimv, AccessConst (vi, i), dima, a), /* offset *
 fprintf (outfile, "\n\n");
 
 #undef ND_KD_DROP_CxA_A
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_KD_CAT_SxAxA_A( dima, ar0, ar1, res, catdim):
+ */
+
+#define ND_KD_CAT_SxAxA_A
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+
+INDENT;
+NewBlock (
+  InitPtr (fprintf (outfile, "0"), fprintf (outfile, "0"));
+  InitVecs (1, 2, "__isrc", fprintf (outfile, "0"));
+  InitVecs (0, 2, "__i", fprintf (outfile, "0"));
+  InitVecs (0, 2, "__bl",
+            {
+                int j;
+                for (j = catdim; j < dima; j++)
+                    fprintf (outfile, "ND_KD_A_SHAPE(%s, %d)*", ar[i], j);
+                fprintf (outfile, "1");
+            }),
+  FillRes (res, INDENT; fprintf (outfile, "for(__i0=0; __i0<__bl0; __i0++)\n"); indent++;
+           INDENT;
+           fprintf (outfile, "ND_A_FIELD(%s)[__idest++] = ND_A_FIELD(%s)[__isrc++];\n",
+                    res, ar[0]);
+           indent--; INDENT; fprintf (outfile, "for(__i1=0; __i1<__bl1; __i1++)\n");
+           indent++; INDENT;
+           fprintf (outfile, "ND_A_FIELD(%s)[__idest++] = ND_A_FIELD(%s)[__isrc1++];\n",
+                    res, ar[1]);
+           indent--; INDENT));
+fprintf (outfile, "\n\n");
+
+#undef ND_KD_CAT_SxAxA_A
+
+#ifndef TEST_BACKEND
+DBUG_VOID_RETURN;
+}
+#endif /* no TEST_BACKEND */
+
+/*
+ * ND_KD_ROT_CxSxA_A( rotdim, numstr, dima, a, res):
+ */
+
+#define ND_KD_ROT_CxSxA_A
+
+#ifndef TEST_BACKEND
+#include "icm_decl.c"
+#include "icm_args.c"
+#endif /* no TEST_BACKEND */
+
+#include "icm_comment.c"
+
+INDENT;
+NewBlock (
+  InitVecs (0, 1, "__bl",
+            {
+                int j;
+                for (j = rotdim + 1; j < dima; j++)
+                    fprintf (outfile, "ND_KD_A_SHAPE(%s, %d)*", a, j);
+                fprintf (outfile, "(%s<0 ? ", numstr[0]);
+                fprintf (outfile,
+                         "ND_KD_A_SHAPE(%s, %d)+ (%s %% ND_KD_SHAPE(%s, %d)) : ", a,
+                         rotdim, numstr[0], a, rotdim);
+                fprintf (outfile, "%s %% ND_KD_SHAPE(%s, %d))", numstr[0], a, rotdim);
+            });
+  InitPtr (fprintf (outfile, "ND_KD_SIZE(%s)-__bl0", a),
+           fprintf (outfile, "ND_KD_SIZE(%s)", res)),
+  INDENT;
+  fprintf (outfile, "do {\n"); indent++; INDENT;
+  fprintf (outfile, "ND_A_FIELD(%s)[__idest--] = ND_A_FIELD(%s)[__isrc--];\n", res, a);
+  indent--; INDENT; fprintf (outfile, "} while( __idest >= __bl0);\n"); INDENT;
+  fprintf (outfile, "__isrc = ND_KD_SIZE(%s) - __bl0;\n", a); INDENT;
+  fprintf (outfile, "do {\n"); indent++; INDENT;
+  fprintf (outfile, "ND_A_FIELD(%s)[__idest--] = ND_A_FIELD(%s)[__isrc--];\n", res, a);
+  indent--; INDENT; fprintf (outfile, "} while( __idest >= 0);\n"););
+fprintf (outfile, "\n\n");
+
+#undef ND_KD_ROT_SxSxA_A
 
 #ifdef TEST_BACKEND
 return (0);

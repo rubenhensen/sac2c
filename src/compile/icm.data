@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/04/11 16:08:48  sbs
- * some minor bugs fixed
+ * Revision 1.7  1995/04/12 15:14:00  sbs
+ * cat & rot inserted.
  *
+# Revision 1.6  1995/04/11  16:08:48  sbs
+# some minor bugs fixed
+#
 # Revision 1.5  1995/04/11  15:03:13  sbs
 # ND_FUN_[DEC/AP/RET] inserted
 #
@@ -127,5 +130,34 @@ ICM_DEF( ND_KD_DROP_CxA_A)
   ICM_INT(dimv)
   ICM_VAR( dimv, vi)
 ICM_END( ND_KD_DROP_CxA_A )
+#endif
+
+#if defined(ND_KD_CAT_SxAxA_A) || defined(ICM_ALL)
+ICM_DEF( ND_KD_CAT_SxAxA_A)
+  ICM_INT(dima)
+  ICM_VAR( 2,ar)
+  ICM_STR(res)
+  ICM_INT(catdim)
+ICM_END( ND_KD_CAT_SxAxA_A )
+#endif
+
+#if defined(ND_KD_ROT_CxSxA_A) || defined(ICM_ALL)
+ICM_DEF( ND_KD_ROT_CxSxA_A)
+  ICM_INT( rotdim)
+  ICM_VAR( 1, numstr)
+  ICM_INT(dima)
+  ICM_STR(a)
+  ICM_STR(res)
+ICM_END( ND_KD_ROT_CxSxA_A )
+#endif
+
+#if defined(ND_KD_ROT_SxSxA_A) || defined(ICM_ALL)
+ICM_DEF( ND_KD_ROT_SxSxA_A)
+  ICM_VAR( 1, rotdimstr)
+  ICM_VAR( 1, numstr)
+  ICM_INT(dima)
+  ICM_STR(a)
+  ICM_STR(res)
+ICM_END( ND_KD_ROT_SxSxA_A )
 #endif
 

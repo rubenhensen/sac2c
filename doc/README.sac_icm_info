@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.3  1995/03/31 13:26:08  sbs
- * includes take drop psi binop & const
+ * Revision 1.4  1995/04/12 15:13:23  sbs
+ * cat & rot inserted.
  *
+# Revision 1.3  1995/03/31  13:26:08  sbs
+# includes take drop psi binop & const
+#
 # Revision 1.2  1995/03/07  18:03:37  sbs
 # PSI-macros done.
 #
@@ -45,12 +48,26 @@ Macros for array access:
 ========================
 +ND_A_FIELD( name)		: for accessing elements of the array
 +ND_A_RC( name)			: accesses the refcnt
++ND_A_RCP( name)		: accesses the pointer to the refcnt
 +ND_A_SIZE( name)		: accesses the size of the unrolling (in elements)
 +ND_A_DIM( name)		: accesses the dimension of the array
 +ND_KD_A_SHAPE( name, dim)	: accesses one shape component of an array
 +ND_A_SHAPE( name, dim)		: accesses one shape component of an array
-+ND_KS_ARG_ARRAY( type, name)   : macro for argument(s) in primitive functions
-+ND_KS_RET_ARRAY( name)         : macro for return statement
+
+Macros for arrays as arguments:
+===============================
++ND_KS_DEC_IN_ARRAY( type, name): macro for prototyping array as "in" parameters
++ND_KS_DEC_OUT_ARRAY( type, name):macro for prototyping array as "out" parameters
++ND_KS_AP_IN_ARRAY( name)	: macro for giving an array as argument
++ND_KS_AP_OUT_ARRAY( name)	: macro for getting an array as result
++ND_KS_RET_OUT_ARRAY( name)	: macro for returning an array
+
+ ND_FUN_DEC( name, n, [ {in, in_a, out, out_a, inout, inout_a}, type, arg ] )	:
+				  macro for generating a function declaration
+ ND_FUN_AP( name, n, [ {in, in_a, out, out_a, inout, inout_a}, arg ] )		:
+				  macro for generating a function application
+ ND_FUN_RET( n, [ { out, out_a, inout, inout_a}, arg ] )			:
+				  macro for returning resuluts of a function
 
 Macros for initializing an array:
 =================================
@@ -71,22 +88,28 @@ Macros for initializing an array:
 
  ND_KD_SET_SHAPE( name, dim, s0,..., sn)	: sets all shape components of an array
 +ND_SET_SHAPE( name, dim, s)			: sets one shape component of an array
-+ND_CREATE_CONST_ARRAY( basic_type, name, dim, s0,..., sn)   : generates a constant array
+ ND_CREATE_CONST_ARRAY( basic_type, name, dim, s0,..., sn)   : generates a constant array
++ND_KS_ASSIGN_ARRAY( name, res)			: copy pointer(s) for "res=name;"
 
 
 Macros for primitve arithmetic operations:
 ==========================================
 
 +ND_BINOP_SxA_A( op, s, a2, res)	: realizes res=(s op a2)
++ND_BINOP_AxS_A( op, s, a2, res)	: realizes res=(a2 op s)
 +ND_BINOP_AxA_A( op, a1, a2, res)	: realizes res=(a1 op a2)
 
 Macros for PSI-primitves:
 =========================
 
- ND_KD_PSI_CxA_S( type, a, res, dim, v0,..., vn): selects a single element of the array
- ND_KD_PSI_VxA_S( type, a, res, dim, v )	: selects a single element of the array
- ND_KD_PSI_CxA_A( type, a, res, dim, v0,..., vn): selects a sub-array
- ND_KD_PSI_VxA_A( type, a, res, dim, v )	: selects a sub-array
+ ND_KD_PSI_CxA_S( dima, a, res, dimv, v0,..., vn): selects a single element of the array
+ ND_KD_PSI_VxA_S( dima, a, res, dimv, v )	: selects a single element of the array
+ ND_KD_PSI_CxA_A( dima, a, res, dimv, v0,..., vn): selects a sub-array
+ ND_KD_PSI_VxA_A( dima, a, res, dimv, v )	: selects a sub-array
 
- ND_KD_TAKE_CxA_A( type, a, res, dim, v0,..., vn):
- ND_KD_DROP_CxA_A( type, a, res, dim, v0,..., vn):
+ ND_KD_TAKE_CxA_A( dima, a, res, dimv, v0,..., vn):
+ ND_KD_DROP_CxA_A( dima, a, res, dimv, v0,..., vn):
+
+ ND_KD_CAT_SxAxA_A( dima, a, b, res, catdim)	: 
+ ND_KD_ROT_CxSxA_A( rotdim, numstr, dima, a, res):
+ ND_KD_ROT_SxSxA_A( rotdimstr, numstr, dima, a, res):

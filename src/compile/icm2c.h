@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/04/12 07:02:53  sbs
+ * Revision 1.10  1995/04/12 15:14:00  sbs
+ * cat & rot inserted.
+ *
+ * Revision 1.9  1995/04/12  07:02:53  sbs
  * separation of IN and OUT arrays added
  *
  * Revision 1.8  1995/04/07  09:29:39  sbs
@@ -56,9 +59,15 @@
  *
  * ND_A_FIELD : for accessing elements of the array
  * ND_A_RC    : accesses the refcnt
+ * ND_A_RCP   : accesses the pointer to the refcnt
  * ND_A_SIZE  : accesses the size of the unrolling (in elements)
  * ND_A_DIM   : accesses the dimension of the array
  * ND_A_SHAPE : accesses one shape component of an array
+ * ND_KS_DEC_IN_ARRAY	: macro for prototyping array as "in" parameters
+ * ND_KS_DEC_OUT_ARRAY	: macro for prototyping array as "out" parameters
+ * ND_KS_AP_IN_ARRAY	: macro for giving an array as argument
+ * ND_KS_AP_OUT_ARRAY   : macro for getting an array as result
+ * ND_KS_RET_OUT_ARRAY  : macro for returning an array
  *
  */
 
@@ -84,17 +93,21 @@
  *
  * ND_ALLOC_ARRAY : allocates memory needed
  *
+ * ND_REUSE       : reuses old for new
+ * ND_CHECK_REUSE : tries to reuse old for new
+ *
  * ND_SET_RC      : sets the refcnt
  * ND_INC_RC      : increments the refcnt
- * ND_CHECK_RC    : inspects the refcnt
  * ND_DEC_RC      : decrements the refcnt
  * ND_DEC_RC_FREE : decrements the refcnt
  *                  AND frees the array if refcnt becomes zero!
- * ND_CHECK_SIZE  : inspects the size of the unrolling in elements
  * ND_SET_SIZE    : sets the size of the unrolling in elements
  *
- * ND_CHECK_DIM   : inspects the dimension of the array
  * ND_SET_DIM     : sets the dimension of the array
+ *
+ * ND_SET_SHAPE        : sets one shape component of an array
+ *
+ * ND_KS_ASSIGN_ARRAY  : copy pointer(s) for "res=name;"
  *
  */
 
@@ -136,6 +149,7 @@
  * ==========================================
  *
  * ND_BINOP_SxA_A( op, s, a2, res)        : realizes res=(s op a2)
+ * ND_BINOP_AxS_A( op, s, a2, res)        : realizes res=(a2 op s)
  * ND_BINOP_AxA_A( op, a1, a2, res)       : realizes res=(a1 op a2)
  *
  */
@@ -145,6 +159,13 @@
         int __i;                                                                         \
         for (__i = 0; __i < ND_A_SIZE (res); __i++)                                      \
             ND_A_FIELD (res)[__i] = ND_A_FIELD (a1)[__i] op ND_A_FIELD (a2)[__i];        \
+    };
+
+#define ND_BINOP_AxS_A(op, s, a2, res)                                                   \
+    {                                                                                    \
+        int __i;                                                                         \
+        for (__i = 0; __i < ND_A_SIZE (res); __i++)                                      \
+            ND_A_FIELD (res)[__i] = ND_A_FIELD (a2)[__i] op s;                           \
     };
 
 #define ND_BINOP_SxA_A(op, s, a2, res)                                                   \
