@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/04/20 11:40:10  jhs
+ * Added comment at CountFunctionParams.
+ *
  * Revision 1.4  2000/02/23 17:49:22  cg
  * Type property functions IsUnique(<type>), IsBoxed(<type>)
  * moved from refcount.c to tree_compound.c.
@@ -899,6 +902,16 @@ ObjList2ArgList (node *objdef)
  ***  N_fundef :
  ***/
 
+/******************************************************************************
+ *
+ * function:
+ *   int CountFunctionParams(node *fundef)
+ *
+ * description:
+ *   Counts the number of arguments AND return-values, adds both and returns
+ *   the sum.
+ *
+ ******************************************************************************/
 int
 CountFunctionParams (node *fundef)
 {
