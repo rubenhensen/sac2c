@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.50  1999/08/30 18:27:19  bs
+ * Access macros added.
+ * (INFO_WLAA_INDEXDIM, INFO_TSI_INDEXDIM and NCODE_WLAA_INDEXDIM)
+ *
  * Revision 2.49  1999/08/27 11:08:25  jhs
  * Added some INFO_SPMDCO_XXX macros and INFO_SYNC_OUTREP.
  *
@@ -2612,21 +2616,28 @@ extern node *MakeInfo ();
 #define INFO_WLAA_TMPACCESS(n) ((access_t *)(n->node[2]))
 #define INFO_WLAA_WLARRAY(n) (n->node[3])
 
+#define INFO_WLAA_INDEXDIM(n) VARDEC_DIM (INFO_WLAA_INDEXVAR (n))
+#define INFO_WLAA_ARRAYDIM(n) VARDEC_DIM (INFO_WLAA_WLARRAY (n))
+
 /* Tile Size Inference */
 
 #define INFO_TSI_ACCESS(n) ((access_t *)(n->info2))
 #define INFO_TSI_ACCESSCNT(n) (n->counter)
-#define INFO_TSI_ARRAYDIM(n) (n->int_data)
 #define INFO_TSI_MINLINE(n) (n->flag)
 #define INFO_TSI_MAXLINE(n) (n->refcnt)
-#define INFO_TSI_FEATURE(n) (n->varno)
+#define INFO_TSI_FEATURE(n) (n->lineno)
 #define INFO_TSI_ARRAYSHP(n) ((shpseg *)(n->node[0]))
 #define INFO_TSI_BLOCKSHP(n) ((shpseg *)(n->node[1]))
+#define INFO_TSI_INDEXVAR(n) (n->node[2])
 #define INFO_TSI_WLARRAY(n) (n->node[3])
 #define INFO_TSI_CACHEPARAM(n) ((int *)(n->node[4]))
 #define INFO_TSI_CACHESIZE(n) ((int *)(n->node[4]))[0]
 #define INFO_TSI_LINESIZE(n) ((int *)(n->node[4]))[1]
 #define INFO_TSI_DATATYPE(n) ((int *)(n->node[4]))[2]
+#define INFO_TSI_WLCOMP(n) (n->node[5])
+
+#define INFO_TSI_INDEXDIM(n) VARDEC_DIM (INFO_TSI_INDEXVAR (n))
+#define INFO_TSI_ARRAYDIM(n) VARDEC_DIM (INFO_TSI_WLARRAY (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -2990,10 +3001,13 @@ extern node *MakeNCode (node *block, node *expr);
 #define NCODE_WLAA_INFO(n) ((node *)n->info2)
 #define NCODE_WLAA_ACCESS(n) ((access_t *)(((node *)n->info2)->info2))
 #define NCODE_WLAA_ACCESSCNT(n) (((node *)n->info2)->counter)
-#define NCODE_WLAA_ARRAYDIM(n) (((node *)n->info2)->int_data)
 #define NCODE_WLAA_FEATURE(n) (((node *)n->info2)->varno)
 #define NCODE_WLAA_ARRAYSHP(n) ((shpseg *)(((node *)n->info2)->node[0]))
+#define NCODE_WLAA_INDEXVAR(n) (((node *)n->info2)->node[2])
 #define NCODE_WLAA_WLARRAY(n) (((node *)n->info2)->node[3])
+
+#define NCODE_WLAA_INDEXDIM(n) VARDEC_DIM (NCODE_WLAA_INDEXVAR (n))
+#define NCODE_WLAA_ARRAYDIM(n) VARDEC_DIM (NCODE_WLAA_WLARRAY (n))
 
 /*--------------------------------------------------------------------------*/
 
