@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/02/09 13:34:33  dkr
+ * some comments corrected
+ *
  * Revision 3.17  2001/02/09 10:47:07  dkr
  * macros PRF_EXPRS?, AP_EXPRS? added
  *
@@ -1392,7 +1395,7 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
 
 #define AP_ARG1(n) EXPRS_EXPR (AP_EXPRS1 (n))
 #define AP_ARG2(n) EXPRS_EXPR (AP_EXPRS2 (n))
-#define AP_ARG3(n) EXPRS_EXPR (AP_EXRPS3 (n))
+#define AP_ARG3(n) EXPRS_EXPR (AP_EXPRS3 (n))
 
 /*--------------------------------------------------------------------------*/
 
