@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/03/01 02:35:49  dkr
+ * mdb_argtag added
+ *
  * Revision 3.2  2001/04/24 09:30:05  dkr
  * macro STR_OR_NULL moved to internal_lib.h
  *
@@ -49,5 +52,6 @@ extern char *mdb_nodetype[];
 extern char *mdb_prf[];
 extern char *mdb_type[];
 extern char *mdb_statustype[];
+extern char *mdb_argtag[];
 
 #endif /* _SAC_my_debug_h_ */

@@ -1,14 +1,11 @@
 /*
  *
  * $Log$
- * Revision 3.2  2001/03/22 19:28:51  dkr
- * no changes done
+ * Revision 3.3  2002/03/01 02:36:21  dkr
+ * mdb_argtag added
  *
  * Revision 3.1  2000/11/20 17:59:34  sacbase
  * new release made
- *
- * Revision 2.5  2000/11/02 14:55:27  dkr
- * nothing changed
  *
  * Revision 2.4  2000/03/02 14:08:39  jhs
  * Added statustype_info.mac for statustype and mdb_statustype.
@@ -44,45 +41,6 @@
  * Revision 1.19  1996/01/16 16:45:45  cg
  * extended macro TYP_IF to 5 positions
  *
- * Revision 1.18  1996/01/02  15:48:32  cg
- * macro NIF extended.
- *
- * Revision 1.17  1995/11/16  19:37:21  cg
- * NIF macro extended by 4 new parameters.
- *
- * Revision 1.16  1995/10/20  09:24:17  cg
- * added 4 new items for macro NIF
- *
- * Revision 1.15  1995/08/03  14:51:40  cg
- * Macro NIF adjusted to 26 parameters.
- *
- * Revision 1.14  1995/07/07  14:27:54  hw
- * enlarged macro PRF_IF( there are 4 args now)
- *
- * Revision 1.13  1995/06/23  12:18:07  hw
- * enlarged macro TYP_IF
- *
- * Revision 1.12  1995/06/02  12:13:08  sbs
- * NIF macro prolongated
- *
- * Revision 1.11  1995/04/11  15:57:47  asi
- * NIF macro enlarged
- *
- * Revision 1.10  1995/01/31  14:59:33  asi
- * opt4_tab inserted and NIF macro enlarged
- *
- * Revision 1.9  1995/01/05  12:37:02  sbs
- * third component for type_info.mac inserted
- *
- * Revision 1.8  1994/12/30  16:57:01  sbs
- * commented out #ifndef DBUG_OFF
- *
- * Revision 1.7  1994/12/21  11:33:29  hw
- * added char *mdb_type[]
- *
- * Revision 1.6  1994/12/16  14:20:59  sbs
- * imp_tab inserted and NIF macro enlarged
- *
  * [...]
  *
  */
@@ -110,4 +68,9 @@ char *mdb_type[] = {
 char *mdb_statustype[] = {
 #define SELECTtext(it_text) it_text
 #include "status_info.mac"
+};
+
+char *mdb_argtag[] = {
+#define SELECTtext(it_text) it_text
+#include "argtag_info.mac"
 };
