@@ -13,3 +13,6 @@ icm_decl.c
 icm_trace.c
 precompile.c
 precompile.h
+wlpragma_funs.c
+wlpragma_funs.h
+wlpragma_funs.mac
