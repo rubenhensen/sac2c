@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.100  2004/11/26 14:34:14  mwe
+  rmcasts added
+
   Revision 1.99  2004/11/26 14:10:32  skt
   CODE_WLAAFEATURE killed
 
@@ -725,6 +728,11 @@
 	  <node name="Assign" />
 	  <node name="Prf" />
    	</travuser>
+      </traversal>
+      <traversal id="RC" name="Remove Cast" default="sons" include="rmcasts.h" >
+        <travuser>
+          <node name="Cast" />
+        </travuser>
       </traversal>
       <traversal id="TDEPEND" name="Tag Dependencies" default="sons" include="tagdependencies.h" >
 	<travuser>
