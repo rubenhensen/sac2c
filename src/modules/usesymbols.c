@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/10/28 17:20:09  sah
+ * now deserialisation has an internal state
+ * ,
+ *
  * Revision 1.3  2004/10/26 09:33:56  sah
  * ongoing implementation
  *
@@ -77,7 +81,7 @@ USSAp (node *arg_node, info *arg_info)
     if (strcmp (AP_MOD (arg_node), MODUL_NAME (INFO_USS_MODULE (arg_info)))) {
         module = LoadModule (AP_MOD (arg_node));
 
-        AddSymbolToAst (AP_NAME (arg_node), module, INFO_USS_MODULE (arg_info));
+        AddSymbolToAst (AP_NAME (arg_node), module);
     }
 
     DBUG_RETURN (arg_node);
@@ -90,9 +94,13 @@ USSModul (node *arg_node, info *arg_info)
 
     INFO_USS_MODULE (arg_info) = arg_node;
 
+    InitDeserialize (arg_node);
+
     if (MODUL_FUNS (arg_node) != NULL) {
         MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
     }
+
+    FinishDeserialize (arg_node);
 
     DBUG_RETURN (arg_node);
 }
