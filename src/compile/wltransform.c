@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.33  1998/08/11 18:17:34  dkr
+ * InferMaxHomDim() added (not yet completed :-((
+ *
  * Revision 1.32  1998/08/11 14:46:04  dkr
  * support for N_WLsegVar added (not yet completed)
  * WL..._INNERSTEP infered
@@ -3753,7 +3756,7 @@ InferInnerStep (node *nodes, int curr_dim, int dims)
             }
         }
     } else {
-        /* non-constant segment */
+        /* non-constant stride */
 
         /* not yet implemented :-( */
     }
@@ -3764,7 +3767,7 @@ InferInnerStep (node *nodes, int curr_dim, int dims)
 /******************************************************************************
  *
  * function:
- *   int InferMaxHomDim( node *seg)
+ *   int InferMaxHomDim( node *wlnode, int *sv, int max_hom_dim)
  *
  * description:
  *
@@ -3772,13 +3775,26 @@ InferInnerStep (node *nodes, int curr_dim, int dims)
  ******************************************************************************/
 
 int
-InferMaxHomDim (node *seg)
+InferMaxHomDim (node *wlnode, long *sv, int max_hom_dim)
 {
-    int max_dim = -1;
-
     DBUG_ENTER ("InferMaxHomDim");
 
-    DBUG_RETURN (max_dim);
+#if 0
+  while (wlnode != NULL) {
+    width = WLNODE_BOUND2( wlnode) - WLNODE_BOUND1( wlnode);
+    if ((width % sv[ WLNODE_DIM( wlnode)]) != 0) {
+      max_hom_dim = WLNODE_DIM( wlnode) - 1;
+      break;
+    }
+
+    wlnode = WLNODE_NEXT( wlnode);
+  }
+
+#else
+    max_hom_dim = -1;
+#endif
+
+    DBUG_RETURN (max_hom_dim);
 }
 
 /******************************************************************************
@@ -3800,7 +3816,8 @@ InferParams (node *seg)
 
     WLSEGX_CONTENTS (seg) = InferInnerStep (WLSEGX_CONTENTS (seg), 0, WLSEGX_DIMS (seg));
 
-    WLSEGX_MAXHOMDIM (seg) = InferMaxHomDim (seg);
+    WLSEGX_MAXHOMDIM (seg)
+      = InferMaxHomDim (WLSEGX_CONTENTS (seg), WLSEGX_SV (seg), WLSEGX_DIMS (seg) - 1);
 
     DBUG_RETURN (seg);
 }
