@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  2000/03/31 12:25:43  jhs
+ * Added duplication of dfmmasks at lte, return, mt, st.
+ *
  * Revision 1.19  2000/03/24 00:50:39  dkr
  * the LUT is now part of arg_info :)
  *
@@ -73,93 +76,13 @@
  * Bug fixed in DupAssign: data flow masks are only copied
  * when a new node is actually created.
  *
- * Revision 2.15  1999/09/01 17:11:01  jhs
- * Fixed Duplicating of masks in DupAssign.
- *
- * Revision 2.14  1999/08/27 11:12:55  jhs
- * Added copy of naive-refcounter while copying IDS.
- * Added copy of DEF-, USE- and MRDMASKs during DupAssign.
- *
- * Revision 2.13  1999/07/19 14:45:26  jhs
- * updated duplication of N_sync (SYNC_[FIRST|LAST are duplicated correctly).
- * Changed signature of MakeSync by the way.
- *
- * Revision 2.12  1999/07/07 15:04:25  sbs
- * DupVinfo added; it implicitly generates consistent VINFO_DOLLAR
- * pointers!!!
- *
- * Revision 2.11  1999/05/17 11:21:26  jhs
- * CopyConstVec will be called only if ID/ARRAY_ISCONST.
- *
- * Revision 2.10  1999/05/14 15:20:35  jhs
- * DupId checks whether the ID has a constant vector annotated before
- * it copies this constant vector.
- *
- * Revision 2.9  1999/05/14 09:25:13  jhs
- * Dbugged constvec annotations and their housekeeping in various compilation stages.
- *
- * Revision 2.8  1999/05/12 09:56:35  jhs
- * Adjusted macros to access constant vectors.
- *
- * Revision 2.7  1999/04/14 13:17:29  jhs
- * DupBlock does not traverse into not existing vardecs or exprs anymore.
- *
- * Revision 2.6  1999/04/13 14:01:48  cg
- * added function DupBlock for duplication of N_block nodes.
- *
- * Revision 2.5  1999/03/15 18:55:43  dkr
- * some modifications made (for CC)
- *
- * Revision 2.4  1999/03/15 14:04:57  bs
- * Access macros renamed (take a look at tree_basic.h).
- * DupArray modified.
- *
- * Revision 2.3  1999/03/03 09:46:49  bs
- * I did some code-cosmetics in DupArray for a better understanding.
- *
- * Revision 2.2  1999/02/25 10:58:42  bs
- * DupArray added.
+ * [...]
  *
  * Revision 2.1  1999/02/23 12:41:17  sacbase
  * new release made
  *
  * Revision 1.107  1998/08/11 14:36:00  dkr
  * DupWLstriVar, DupWLgridVar changed
- *
- * Revision 1.106  1998/08/11 12:10:06  dkr
- * DupWLsegVar changed
- *
- * Revision 1.105  1998/08/11 00:11:21  dkr
- * minor bug in DupFundef fixed
- * changed DupWLsegVar
- *
- * Revision 1.104  1998/08/07 14:36:57  dkr
- * DupWLsegVar added
- *
- * Revision 1.103  1998/07/20 19:06:50  dkr
- * In DupOneIds:
- *   ASSERT is replaced by a warning
- *
- * Revision 1.102  1998/07/20 16:52:28  dkr
- * fixed a bug in DupPragma
- *
- * Revision 1.101  1998/06/18 13:44:04  cg
- * file is now able to deal correctly with data objects of
- * the abstract data type for the representation of schedulings.
- *
- * Revision 1.100  1998/06/09 16:52:42  dkr
- * fixed a bug in DupWLseg()
- *
- * Revision 1.99  1998/06/09 16:45:49  dkr
- * IDX_MIN, IDX_MAX now segment-specific
- *
- * Revision 1.98  1998/06/08 12:37:52  cg
- * Function DupTypes now only duplicates the types structure if
- * an original one is present.
- *
- * Revision 1.97  1998/06/06 13:30:20  dkr
- * fixed a bug in DupCond, DupLoop:
- *   ids duplicated only, if != NULL !!!
  *
  * [ ... ]
  *
@@ -267,6 +190,7 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
     DFMmask_base_t old_base;
     node *new_node;
     node *old_fundef;
+    node *old_basefundef;
     int own_arg_info; /* bool */
 
     DBUG_ENTER ("DupTreeOrNodeLUT");
@@ -313,8 +237,10 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
          */
         old_base = INFO_DUP_DFMBASE (arg_info);
         old_fundef = INFO_DUP_FUNDEF (arg_info);
+        old_basefundef = INFO_DUP_BASEFUNDEF (arg_info);
         INFO_DUP_DFMBASE (arg_info) = NULL;
         INFO_DUP_FUNDEF (arg_info) = NULL;
+        INFO_DUP_BASEFUNDEF (arg_info) = NULL;
 
         if (lut == NULL) {
             INFO_DUP_LUT (arg_info) = GenerateLUT ();
@@ -329,6 +255,7 @@ DupTreeOrNodeLUT (int NodeOnly, node *arg_node, node *arg_info, LUT_t lut)
         }
 
         INFO_DUP_FUNDEF (arg_info) = old_fundef;
+        INFO_DUP_BASEFUNDEF (arg_info) = old_basefundef;
         INFO_DUP_DFMBASE (arg_info) = old_base;
 
         if (own_arg_info) {
@@ -855,6 +782,13 @@ DupReturn (node *arg_node, node *arg_info)
 
     INFO_DUP_LUT (arg_info) = InsertIntoLUT (INFO_DUP_LUT (arg_info), arg_node, new_node);
 
+    if (INFO_DUP_DFMBASE (arg_info) != NULL) {
+        RETURN_USEMASK (new_node)
+          = DFMDuplicateMask (RETURN_USEMASK (arg_node), INFO_DUP_DFMBASE (arg_info));
+        RETURN_DEFMASK (new_node)
+          = DFMDuplicateMask (RETURN_DEFMASK (arg_node), INFO_DUP_DFMBASE (arg_info));
+    }
+
     DBUG_RETURN (new_node);
 }
 
@@ -870,10 +804,15 @@ DupBlock (node *arg_node, node *arg_info)
 
     new_vardec = DUPTRAV (BLOCK_VARDEC (arg_node));
 
-    if (INFO_DUP_FUNDEF (arg_info) != NULL) {
+    /*
+     *  If we find an INFO_DUP_BASEFUNDEF, we know we have to copy the
+     *  DFMBASE, then reset INFO_DUP_BASEFUNDEF, look at FupFundef for further
+     *  comment.
+     */
+    if (INFO_DUP_BASEFUNDEF (arg_info) != NULL) {
         INFO_DUP_DFMBASE (arg_info)
-          = DFMGenMaskBase (FUNDEF_ARGS (INFO_DUP_FUNDEF (arg_info)), new_vardec);
-        INFO_DUP_FUNDEF (arg_info) = NULL;
+          = DFMGenMaskBase (FUNDEF_ARGS (INFO_DUP_BASEFUNDEF (arg_info)), new_vardec);
+        INFO_DUP_BASEFUNDEF (arg_info) = NULL;
     }
 
     new_node = MakeBlock (DUPTRAV (BLOCK_INSTR (arg_node)), new_vardec);
@@ -1043,6 +982,13 @@ DupLet (node *arg_node, node *arg_info)
 
     NODE_LINE (new_node) = NODE_LINE (arg_node);
     NODE_FILE (new_node) = NODE_FILE (arg_node);
+
+    if (INFO_DUP_DFMBASE (arg_info) != NULL) {
+        LET_USEMASK (new_node)
+          = DFMDuplicateMask (LET_USEMASK (arg_node), INFO_DUP_DFMBASE (arg_info));
+        LET_DEFMASK (new_node)
+          = DFMDuplicateMask (LET_DEFMASK (arg_node), INFO_DUP_DFMBASE (arg_info));
+    }
 
     DBUG_RETURN (new_node);
 }
@@ -1284,7 +1230,8 @@ node *
 DupFundef (node *arg_node, node *arg_info)
 {
     DFMmask_base_t old_base;
-    node *old_fun;
+    node *old_fundef;
+    node *old_basefundef;
     node *new_node;
 
     DBUG_ENTER ("DupFundef");
@@ -1300,8 +1247,9 @@ DupFundef (node *arg_node, node *arg_info)
      *  new masks. On the other hand to create the base we must already have
      *  the new FUNDEF_ARGS and FUNDEF_VARDEC.
      *  The solution is to create the basic function via MakeFundef without
-     *  the body, create the base, duplicate the body with base stored in arg_info
-     *  and finally attach the body to the fundef. (jhs)
+     *  the body, create the base while duplicating the body
+     *  and finally attach the body to the fundef.
+     *  INFO_DUP_BASEFUNDEF will tell DupBlock to copy the base or not. (jhs)
      */
 
     new_node = MakeFundef (StringCopy (FUNDEF_NAME (arg_node)),
@@ -1310,29 +1258,29 @@ DupFundef (node *arg_node, node *arg_info)
                            DUPTRAV (FUNDEF_ARGS (arg_node)), NULL,
                            DUPCONT (FUNDEF_NEXT (arg_node)));
 
+    /* push the information at arg_info and store new one */
+    old_base = INFO_DUP_DFMBASE (arg_info);
+    old_fundef = INFO_DUP_FUNDEF (arg_info);
+    old_basefundef = INFO_DUP_BASEFUNDEF (arg_info);
     if (FUNDEF_DFM_BASE (arg_node) != NULL) {
-        /*    FUNDEF_DFM_BASE( new_node) = DFMGenMaskBase( FUNDEF_ARGS( new_node),
-                                                       FUNDEF_VARDEC( new_node)); */
-
-        /* push the information at arg_info and store new one */
-        old_base = INFO_DUP_DFMBASE (arg_info);
-        old_fun = INFO_DUP_FUNDEF (arg_info);
         INFO_DUP_DFMBASE (arg_info) = NULL;
         INFO_DUP_FUNDEF (arg_info) = new_node;
+        INFO_DUP_BASEFUNDEF (arg_info) = new_node;
         /* copy the body */
         FUNDEF_BODY (new_node) = DUPTRAV (FUNDEF_BODY (arg_node));
-        /* pop information */
         FUNDEF_DFM_BASE (new_node) = INFO_DUP_DFMBASE (arg_info);
-        INFO_DUP_DFMBASE (arg_info) = old_base;
-        INFO_DUP_FUNDEF (arg_info) = old_fun;
     } else {
-        /* copy the body */
-        old_fun = INFO_DUP_FUNDEF (arg_info);
+        INFO_DUP_DFMBASE (arg_info) = NULL;
         INFO_DUP_FUNDEF (arg_info) = NULL;
+        INFO_DUP_BASEFUNDEF (arg_info) = NULL;
+        /* copy the body */
         FUNDEF_BODY (new_node) = DUPTRAV (FUNDEF_BODY (arg_node));
         FUNDEF_DFM_BASE (new_node) = NULL;
-        INFO_DUP_FUNDEF (arg_info) = old_fun;
     }
+    /* pop information */
+    INFO_DUP_DFMBASE (arg_info) = old_base;
+    INFO_DUP_FUNDEF (arg_info) = old_fundef;
+    INFO_DUP_BASEFUNDEF (arg_info) = old_basefundef;
 
     /* now we copy all the other things ... */
 
@@ -1949,6 +1897,15 @@ DupMt (node *arg_node, node *arg_info)
 
     new_node = MakeMT (DUPTRAV (MT_REGION (arg_node)));
 
+    if (INFO_DUP_DFMBASE (arg_info) != NULL) {
+        MT_USEMASK (new_node)
+          = DFMDuplicateMask (MT_USEMASK (arg_node), INFO_DUP_DFMBASE (arg_info));
+        MT_DEFMASK (new_node)
+          = DFMDuplicateMask (MT_DEFMASK (arg_node), INFO_DUP_DFMBASE (arg_info));
+        MT_NEEDLATER (new_node)
+          = DFMDuplicateMask (MT_NEEDLATER (arg_node), INFO_DUP_DFMBASE (arg_info));
+    }
+
     DBUG_RETURN (new_node);
 }
 
@@ -1962,6 +1919,17 @@ DupSt (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupSt");
 
     new_node = MakeST (DUPTRAV (ST_REGION (arg_node)));
+
+    if (INFO_DUP_DFMBASE (arg_info) != NULL) {
+        ST_USEMASK (new_node)
+          = DFMDuplicateMask (ST_USEMASK (arg_node), INFO_DUP_DFMBASE (arg_info));
+        ST_DEFMASK (new_node)
+          = DFMDuplicateMask (ST_DEFMASK (arg_node), INFO_DUP_DFMBASE (arg_info));
+        ST_NEEDLATER_ST (new_node)
+          = DFMDuplicateMask (ST_NEEDLATER_ST (arg_node), INFO_DUP_DFMBASE (arg_info));
+        ST_NEEDLATER_MT (new_node)
+          = DFMDuplicateMask (ST_NEEDLATER_MT (arg_node), INFO_DUP_DFMBASE (arg_info));
+    }
 
     DBUG_RETURN (new_node);
 }
