@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.123  2004/08/05 11:39:33  ktr
+ * index vector is maintained throughout the with-loop iff NWITHID_VECNEEDED
+ * is set.
+ *
  * Revision 3.122  2004/08/04 17:10:04  ktr
  * Descriptor of A_sub is now only built if some runtimechecks are done
  *
@@ -7413,8 +7417,13 @@ COMPWLgridx (node *arg_node, info *arg_info)
                                         node_icms);
         }
     } else {
-        node_icms
-          = MakeAssignIcm1 ("WL_SET_IDXVEC", MakeIcmArgs_WL_LOOP1 (arg_node), node_icms);
+        if ((NWITHID_VECNEEDED (NWITH2_WITHID (wlnode))) && (!WLGRIDX_NOOP (arg_node))
+            && ((WLGRIDX_CODE (arg_node) != NULL)
+                || (WLGRIDX_NEXTDIM (arg_node) != NULL))) {
+            DBUG_PRINT ("COMP", ("IV %s is built! :(", IDS_NAME (NWITH2_VEC (wlnode))));
+            node_icms = MakeAssignIcm1 ("WL_SET_IDXVEC", MakeIcmArgs_WL_LOOP1 (arg_node),
+                                        node_icms);
+        }
     }
 
     if (WLGRIDX_NOOP (arg_node)) {
