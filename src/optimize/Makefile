@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.38  1998/03/03 22:08:58  dkr
+# make deps done
+#
 # Revision 1.37  1998/02/16 21:43:59  dkr
 # make deps done
 #
@@ -242,7 +245,7 @@ WithloopFolding.o: ../global/tree_compound.h ../global/Error.h
 WithloopFolding.o: /usr/include/string.h ../global/globals.h
 WithloopFolding.o: ../global/internal_lib.h ../global/free.h ../../inc/dbug.h
 WithloopFolding.o: ../global/my_debug.h /usr/include/malloc.h
-WithloopFolding.o: ../global/traverse.h WithloopFolding.h
+WithloopFolding.o: ../global/traverse.h optimize.h WithloopFolding.h
 WorkReduction.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WorkReduction.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 WorkReduction.o: ../global/tree.h ../global/types.h ../global/tree_basic.h
@@ -252,12 +255,12 @@ WorkReduction.o: ../global/internal_lib.h ../../inc/dbug.h
 WorkReduction.o: ../global/my_debug.h ../global/traverse.h optimize.h
 WorkReduction.o: ../global/free.h /usr/include/malloc.h WorkReduction.h
 optimize.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-optimize.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
-optimize.o: ../global/types.h ../global/tree_basic.h
-optimize.o: ../global/tree_compound.h ../global/Error.h /usr/include/string.h
-optimize.o: ../global/globals.h ../global/internal_lib.h ../global/free.h
-optimize.o: ../../inc/dbug.h ../global/my_debug.h /usr/include/malloc.h
-optimize.o: ../global/traverse.h ../print/print.h optimize.h
-optimize.o: ConstantFolding.h DeadCodeRemoval.h LoopInvariantRemoval.h
-optimize.o: Inline.h Unroll.h Unswitch.h ../psi-opt/ArrayElimination.h CSE.h
-optimize.o: WithloopFolding.h
+optimize.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
+optimize.o: /usr/include/string.h ../global/tree.h ../global/types.h
+optimize.o: ../global/tree_basic.h ../global/tree_compound.h
+optimize.o: ../global/Error.h ../global/globals.h ../global/internal_lib.h
+optimize.o: ../global/free.h ../../inc/dbug.h ../global/my_debug.h
+optimize.o: /usr/include/malloc.h ../global/traverse.h ../print/print.h
+optimize.o: optimize.h ConstantFolding.h DeadCodeRemoval.h
+optimize.o: LoopInvariantRemoval.h Inline.h Unroll.h Unswitch.h
+optimize.o: ../psi-opt/ArrayElimination.h CSE.h WithloopFolding.h

@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.22  1998/03/03 22:08:56  dkr
+# make deps done
+#
 # Revision 1.21  1998/02/16 21:43:57  dkr
 # make deps done
 #
@@ -113,12 +116,12 @@ lex.yy.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 lex.yy.o: /usr/include/sys/va_list.h /usr/include/stdlib.h ../global/tree.h
 lex.yy.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
 lex.yy.o: ../global/Error.h /usr/include/string.h ../global/globals.h
-lex.yy.o: ../global/internal_lib.h y.tab.h
+lex.yy.o: ../global/internal_lib.h ../global/resource.h y.tab.h
 scnprs.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-scnprs.o: /usr/include/sys/va_list.h ../global/types.h ../global/tree_basic.h
-scnprs.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
+scnprs.o: /usr/include/sys/va_list.h /usr/include/string.h ../global/types.h
+scnprs.o: ../global/tree_basic.h ../global/Error.h /usr/include/stdlib.h
 scnprs.o: ../global/globals.h ../../inc/dbug.h ../modules/filemgr.h scnprs.h
-scnprs.o: y.tab.h
+scnprs.o: ../global/resource.h y.tab.h
 y.tab.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 y.tab.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
 y.tab.o: /usr/include/memory.h ../../inc/dbug.h ../global/tree.h
@@ -126,4 +129,4 @@ y.tab.o: ../global/types.h ../global/tree_basic.h ../global/tree_compound.h
 y.tab.o: ../global/Error.h /usr/include/string.h ../global/globals.h
 y.tab.o: ../global/internal_lib.h ../typecheck/typecheck.h
 y.tab.o: ../global/my_debug.h ../global/free.h /usr/include/malloc.h
-y.tab.o: ../modules/readsib.h /usr/include/values.h
+y.tab.o: ../modules/readsib.h ../global/resource.h /usr/include/values.h
