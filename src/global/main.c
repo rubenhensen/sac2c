@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.83  2004/11/26 23:21:59  mwe
+ * OIdoObjinit
+ * deactivated
+ *
  * Revision 3.82  2004/11/25 17:53:48  cg
  * SacDevCamp 04
  *
@@ -540,15 +544,16 @@ main (int argc, char *argv[])
     global.compiler_phase += 1;
 #endif /* NEW_AST */
 
-    PHASE_PROLOG;
-    NOTE_COMPILER_PHASE;
-    syntax_tree = OIdoObjInit (syntax_tree); /* objinit_tab */
-    PHASE_DONE_EPILOG;
-    PHASE_EPILOG;
+#if 0
+  PHASE_PROLOG;
+  NOTE_COMPILER_PHASE;
+  syntax_tree = OIdoObjInit( syntax_tree);  /* objinit_tab */
+  PHASE_DONE_EPILOG;
+  PHASE_EPILOG;
 
-    if (global.break_after == PH_objinit)
-        goto BREAK;
-    global.compiler_phase++;
+  if (global.break_after == PH_objinit) goto BREAK;
+  global.compiler_phase++;
+#endif
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
