@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.17  1996/01/04 18:11:10  cg
+# Revision 1.18  1996/01/09 09:19:14  cg
+# added compilation of libsac.c
+#
+# Revision 1.17  1996/01/04  18:11:10  cg
 # make deps done
 #
 # Revision 1.16  1995/12/15  10:41:12  cg
@@ -61,7 +64,7 @@ CC=gcc -ansi -g
 INCS=-I../global -I../../inc -I../print -I../typecheck -I../refcount
 MACS=icm.data icm_decl.c icm_args.c icm_comment.c icm_trace.c
 
-all: compile.o icm2c.o precompile.o
+all: compile.o icm2c.o precompile.o libsac.a
 
 BEtest: icm2c.c $(MACS)
 	$(CC) -o BEtest icm2c.c -DTEST_BACKEND $(INCS) ../../lib/dbug.o
@@ -75,12 +78,20 @@ icm2c.o: icm2c.c
 precompile.o: precompile.c
 	$(CC) -o precompile.o -c precompile.c $(INCS)
 
+libsac.a: libsac.o
+	ar rc libsac.a libsac.o
+	ranlib libsac.a
+
+libsac.o: libsac.c
+	$(CC) -o libsac.o -c libsac.c $(INCS)
+
 
 deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) compile.o icm2c.o precompile.o *.bak BEtest
+	$(RM) compile.o icm2c.o precompile.o libsac.a libsac.o  \
+              *.bak BEtest *.sib *.sac
 
 
 
