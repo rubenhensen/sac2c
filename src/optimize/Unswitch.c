@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/22 21:10:21  dkr
+ * no changes done
+ *
  * Revision 3.5  2001/02/13 17:28:36  dkr
  * MakeNode() eliminated
  *
@@ -92,14 +95,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "tree.h" /* old tree definition */
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "globals.h"
-#include "tree.h"
 #include "free.h"
 #include "Error.h"
 #include "dbug.h"
 #include "my_debug.h"
 #include "traverse.h"
-#include "internal_lib.h"
 
 #include "optimize.h"
 #include "generatemasks.h"

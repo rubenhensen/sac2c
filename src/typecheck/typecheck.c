@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 3.20  2001/03/22 20:35:40  dkr
- * include of tree.h eliminated
+ * Revision 3.21  2001/03/22 21:03:58  dkr
+ * no changes done
  *
  * Revision 3.19  2001/03/15 20:39:23  dkr
  * TI_ap: '&' for reference objects is no longer printed by Type2String
@@ -233,6 +233,7 @@
 #include <limits.h> /* for INT_MIN, INT_MAX */
 #include <float.h>  /* for FLT_MIN, DBL_MIN, FLT_MAX, DBL_MAX */
 
+#include "tree.h" /* old tree definition */
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"

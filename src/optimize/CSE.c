@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.4  2001/03/22 21:12:52  dkr
+ * no changes done
+ *
  * Revision 3.3  2001/02/13 17:13:58  dkr
  * MakeNode(N_info) replaced by MakeInfo()
  *
@@ -81,12 +85,17 @@
  *
  * Revision 1.1  1996/01/17  15:54:09  asi
  * Initial revision
+ *
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tree.h"
+#include "tree.h" /* old tree definition */
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "free.h"
 #include "print.h"
 #include "Error.h"
@@ -95,7 +104,6 @@
 #include "my_debug.h"
 #include "traverse.h"
 #include "typecheck.h"
-#include "internal_lib.h"
 
 #include "optimize.h"
 #include "generatemasks.h"

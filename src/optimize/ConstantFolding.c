@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/03/22 21:09:02  dkr
+ * no changes done
+ *
  * Revision 3.6  2001/03/22 14:23:36  nmw
  * F_abs implemented without abs() for different types
  *
@@ -315,7 +318,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tree.h"
+#include "tree.h" /* old tree definition */
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "free.h"
 #include "prf.h"
 #include "print.h"
@@ -324,7 +331,6 @@
 #include "globals.h"
 #include "my_debug.h"
 #include "traverse.h"
-#include "internal_lib.h"
 #include "typecheck.h" /* to use some ugly old macros ... */
 
 #include "optimize.h"

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/03/22 21:14:46  dkr
+ * no changes done
+ *
  * Revision 3.8  2001/03/22 13:29:45  dkr
  * DUP_INVARIANT removed
  *
@@ -144,7 +147,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tree.h"
+#include "tree.h" /* old tree definition */
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
 #include "internal_lib.h"
 #include "free.h"
 #include "Error.h"

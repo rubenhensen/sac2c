@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 3.7  2001/03/22 21:07:51  dkr
+ * no changes done
+ *
  * Revision 3.6  2000/12/14 18:00:15  dkr
  * warning message for Nwith2 added
  *
@@ -93,6 +97,7 @@
  *
  * Revision 1.1  1999/01/07 17:37:18  sbs
  * Initial revision
+ *
  */
 
 /* General information:
@@ -129,7 +134,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tree.h"
+#include "tree.h" /* old tree definition */
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
 #include "internal_lib.h"
 #include "free.h"
 #include "globals.h"
