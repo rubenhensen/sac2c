@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.18  2000/05/24 13:31:03  nmw
+ * (jhs) Added workaround for BLOCK_INSTR == NULL
+ *
  * Revision 2.17  2000/03/31 14:09:34  dkr
  * refcounting for N_Nwith2 added
  *
@@ -665,7 +668,9 @@ RCblock (node *arg_node, node *arg_info)
     if (BLOCK_VARDEC (arg_node) != NULL) {
         BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
     }
-    BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    if (BLOCK_INSTR (arg_node) != NULL) {
+        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
