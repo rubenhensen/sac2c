@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.107  2004/11/24 16:41:56  skt
+ * FindVardec_Name deleted
+ *
  * Revision 3.106  2004/11/24 16:27:42  ktr
  * Changed signature of MakeAssignLet
  *
@@ -1845,63 +1848,6 @@ AppendObjdef (node *objdef_chain, node *objdef)
 /***
  ***  N_fundef :
  ***/
-
-/******************************************************************************
- *
- * function:
- *   node *FindVardec_Name( char *name, node *fundef)
- *
- * description:
- *   returns a pointer to the vardec of var with name 'name'
- *
- ******************************************************************************/
-
-node *
-FindVardec_Name (char *name, node *fundef)
-{
-    node *tmp, *vardec = NULL;
-
-    DBUG_ENTER ("FindVardec_Name");
-
-    FOREACH_VARDEC_AND_ARG (fundef, tmp,
-                            if (strcmp (VARDEC_OR_ARG_NAME (tmp), name) == 0) {
-                                vardec = tmp;
-                                break;
-                            }) /* FOREACH_VARDEC_AND_ARG */
-
-    if (vardec == NULL) {
-        DBUG_PRINT ("SPMDL", ("Cannot find %s", name));
-    }
-
-    DBUG_RETURN (vardec);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *FindVardec_Varno(int varno, node *fundef)
- *
- * description:
- *   returns the vardec of var number 'varno'
- *   Search runs through arguments and vardecs of the function, so erery
- *   variable valid in the function has to be found here.
- *
- ******************************************************************************/
-
-node *
-FindVardec_Varno (int varno, node *fundef)
-{
-    node *tmp, *vardec = NULL;
-
-    DBUG_ENTER ("FindVardec_Varno");
-
-    FOREACH_VARDEC_AND_ARG (fundef, tmp, if (ARG_VARNO (tmp) == varno) {
-        vardec = tmp;
-        break;
-    }) /* FOREACH_VARDEC_AND_ARG */
-
-    DBUG_RETURN (vardec);
-}
 
 /******************************************************************************
  *
