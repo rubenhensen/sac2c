@@ -13,7 +13,6 @@ SSATransform.h
 SSATransform.c
 UndoSSATransform.c
 UndoSSATransform.h
-CheckAvis.h
 ssa.c
 ssa.h
 WLPartitionGeneration.c
