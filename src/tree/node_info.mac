@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.239  2004/11/14 15:24:22  sah
+ * extended EXP traversal
+ *
  * Revision 3.238  2004/11/14 13:44:42  ktr
  * added emrb_tab (reuse branching)
  *
@@ -1492,7 +1495,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravNone, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravNone, TravSons, TravSons, TravSons, ANSTypedef,
+       TravSons, TravSons, TravSons, TravNone, EXPTypedef, TravSons, TravSons, ANSTypedef,
        TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_objdef, "N_objdef", IMobjdef, TravSons, PrintObjdef, TCobjdef, SBTObjdef,
@@ -1520,7 +1523,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, SBTNum, TravSons, T
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravNone, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravNone, TravSons, TravSons, TravSons, ANSObjdef,
+       TravSons, TravSons, TravSons, TravNone, EXPObjdef, TravSons, TravSons, ANSObjdef,
        TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_explist, "N_explist", TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
