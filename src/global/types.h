@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.21  2000/01/05 17:28:37  dkr
+ * status ST_loopfun added
+ *
  * Revision 2.20  1999/11/18 12:51:57  bs
  * FEATURE_UNKNOWN added.
  *
@@ -31,9 +34,6 @@
  * Revision 2.11  1999/05/18 16:55:33  dkr
  * added int_data in NODE
  *
- * Revision 2.10  1999/05/12 07:43:58  sbs
- * *** empty log message ***
- *
  * Revision 2.9  1999/05/10 13:28:57  sbs
  * changed struct TYPES into struct TYPESS
  * due to collisions with the TYPES-token of sac.l
@@ -50,7 +50,6 @@
  *
  * Revision 2.5  1999/04/14 16:23:48  jhs
  * EMPTY_ARRAY removed for second try on empty arrays.
- * /.
  *
  * Revision 2.4  1999/04/09 13:53:13  jhs
  * Macros for known shape and known dimension added.
@@ -212,8 +211,6 @@
  *
  * Revision 1.1  1995/09/27  15:13:26  cg
  * Initial revision
- *
- *
  */
 
 /*
@@ -367,7 +364,8 @@ typedef enum {
     ST_system,             /* external system library                */
     ST_own,                /* own declaration of module impl.        */
     ST_foldfun,            /* dummy function containing the fold-op  */
-    ST_spmdfun             /* function generated from a spmd-region  */
+    ST_spmdfun,            /* function generated from a spmd-region  */
+    ST_loopfun             /* function represents a loop             */
 } statustype;
 
 typedef enum { DOLLAR, VECT, IDX } useflag;
