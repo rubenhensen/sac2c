@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.33  1999/10/19 08:09:11  dkr
+ * comment corrected
+ *
  * Revision 2.32  1999/09/20 11:37:12  jhs
  * Added USE/DEFVARS to do-loop.
  *
@@ -2363,7 +2366,7 @@ PrintNcode (node *arg_node, node *arg_info)
         INDENT;
     }
     /*
-     *  NCODE_WLAA_ACCESS(arg_node) is set to NULL by initializing the N_Ncode node.
+     *  NCODE_WLAA_INFO(arg_node) is set to NULL by initializing the N_Ncode node.
      */
     if ((compiler_phase == PH_sacopt) && (NCODE_WLAA_INFO (arg_node) != NULL))
         WLAAprintAccesses (arg_node, arg_info);
