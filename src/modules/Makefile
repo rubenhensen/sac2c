@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.2  1994/12/16 14:33:39  sbs
+# Revision 1.3  1994/12/21 12:22:07  sbs
+# includes extended
+#
+# Revision 1.2  1994/12/16  14:33:39  sbs
 # import.o inserted
 #
 # Revision 1.1  1994/12/11  17:33:27  sbs
@@ -12,7 +15,7 @@
 MAKE=make
 CC=gcc -ansi -g
 
-INCS=-I../global -I../../inc
+INCS=-I../global -I../../inc -I../scanparse
 
 all: filemgr.o import.o
 
