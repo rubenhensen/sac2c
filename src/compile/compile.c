@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.79  2000/07/28 12:30:48  cg
+ * N_typedef nodes are no longer replaced by N_icm node during
+ * code generation. Instead an N_icm node is added to the N_typedef
+ * node as additional temporary attribute when necessary.
+ *
  * Revision 2.78  2000/07/28 11:41:21  cg
  * Added code to handle dummy parts of iteration spaces due to
  * array padding efficiently, i.e. to perform no action at all.
@@ -5494,8 +5499,8 @@ COMPCond (node *arg_node, node *arg_info)
  *  functionname  : COMPTypedef
  *  arguments     : 1) arg node
  *                  2) info node
- *  description   : transforms N_typedef to N_icm if it is a definition of an
- *                  array
+ *  description   : If the type implementation is an array, an appropriate
+ *                  ICM node is added as temporary attribute
  *  remarks       :
  *
  */
@@ -5503,6 +5508,8 @@ COMPCond (node *arg_node, node *arg_info)
 node *
 COMPTypedef (node *arg_node, node *arg_info)
 {
+    node *type1, *type2;
+
     DBUG_ENTER ("COMPTypedef");
 
     if (0 != TYPEDEF_DIM (arg_node)) {
@@ -5512,32 +5519,14 @@ COMPTypedef (node *arg_node, node *arg_info)
          * Therefore, we have to translate the typedef-node
          * into an ICM-node "ND_TYPEDEF_ARRAY" ....
          */
-        node *type1, *type2, *icm_node;
-
         type1 = MakeId1 (type_string[TYPEDEF_BASETYPE (arg_node)]);
         type2 = MakeId1 (TYPEDEF_NAME (arg_node));
 
-        icm_node = MakeIcm2 ("ND_TYPEDEF_ARRAY", type1, type2);
+        TYPEDEF_ICM (arg_node) = MakeIcm2 ("ND_TYPEDEF_ARRAY", type1, type2);
+    }
 
-        /*
-         * Now, we free the old typedef node and implicitly set arg_node to the
-         * TYPEDEF_NEXT(arg_node)!
-         */
-        arg_node = FreeNode (arg_node);
-
-        if (arg_node != NULL) {
-            ICM_NEXT (icm_node) = Trav (arg_node, arg_info);
-        }
-        arg_node = icm_node; /* for returning the new node 8-) */
-    } else {
-        /*
-         * arg_node defines a type-synonym of a simple type and
-         * therefore has not to be translated into an ICM!!
-         * Hence, we simply traverse the next typedef!
-         */
-        if (TYPEDEF_NEXT (arg_node) != NULL) {
-            TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
-        }
+    if (TYPEDEF_NEXT (arg_node) != NULL) {
+        TYPEDEF_NEXT (arg_node) = Trav (TYPEDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 2.89  2000/07/28 12:30:48  cg
+ * N_typedef nodes are no longer replaced by N_icm node during
+ * code generation. Instead an N_icm node is added to the N_typedef
+ * node as additional temporary attribute when necessary.
+ *
  * Revision 2.88  2000/07/28 11:36:33  dkr
  * DoPrintAST: \n added
  *
@@ -1031,19 +1036,29 @@ PrintImplist (node *arg_node, node *arg_info)
 node *
 PrintTypedef (node *arg_node, node *arg_info)
 {
+    char *type_string;
+
     DBUG_ENTER ("PrintTypedef");
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[NODE_TYPE (arg_node)], arg_node));
 
-    fprintf (outfile, "typedef %s ", Type2String (TYPEDEF_TYPE (arg_node), 0));
-    if (TYPEDEF_MOD (arg_node) != NULL) {
-        fprintf (outfile, "%s:", TYPEDEF_MOD (arg_node));
-    }
-    fprintf (outfile, "%s;\n", TYPEDEF_NAME (arg_node));
-
     if (TYPEDEF_COPYFUN (arg_node) != NULL) {
         fprintf (outfile, "\nextern void *%s(void *);\n", TYPEDEF_COPYFUN (arg_node));
         fprintf (outfile, "extern void %s(void *);\n\n", TYPEDEF_FREEFUN (arg_node));
+    }
+
+    if (TYPEDEF_ICM (arg_node) == NULL) {
+        type_string = Type2String (TYPEDEF_TYPE (arg_node), 0);
+        fprintf (outfile, "typedef %s ", type_string);
+        FREE (type_string);
+
+        if (TYPEDEF_MOD (arg_node) != NULL) {
+            fprintf (outfile, "%s:", TYPEDEF_MOD (arg_node));
+        }
+        fprintf (outfile, "%s;\n", TYPEDEF_NAME (arg_node));
+    } else {
+        Trav (TYPEDEF_ICM (arg_node), arg_info);
+        fprintf (outfile, ";\n");
     }
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
@@ -1905,6 +1920,8 @@ PrintIcm (node *arg_node, node *arg_info)
         }
 
         if (NULL != ICM_NEXT (arg_node)) {
+            DBUG_ASSERT (0, "ICM_NEXT reached");
+
             if (0 == strcmp (ICM_NAME (arg_node), "ND_TYPEDEF_ARRAY")) {
                 /*
                  * ICM's within the typedef-chain are connected via ICM_NEXT!
