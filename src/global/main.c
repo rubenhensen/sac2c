@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.58  1995/08/16 10:57:55  asi
+ * Revision 1.59  1995/09/01 07:45:58  cg
+ * writing of SIB-files integrated.
+ * new options -bb and -noSIB added.
+ *
+ * Revision 1.58  1995/08/16  10:57:55  asi
  * added -ba to break compilation after array elimination
  *
  * Revision 1.57  1995/07/24  11:41:35  asi
@@ -204,6 +208,7 @@
 #include "trace.h"
 #include "compile.h"
 #include "psi-opt.h"
+#include "sib.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -240,7 +245,8 @@ MAIN
     int set_outfile = 0;
     int Ccodeonly = 0;
     int breakparse = 0, breakimport = 0, breakflatten = 0, breaktype = 0, breakopt = 0,
-        breakpsiopt = 0, breakref = 0;
+        breakpsiopt = 0, breakref = 0, breaksib = 0;
+    int write_sib = 1;
     char prgname[MAX_FILE_NAME];
     char outfilename[MAX_FILE_NAME];
     char cfilename[MAX_FILE_NAME];
@@ -319,6 +325,9 @@ MAIN
             break;
         case 'c':
             show_icm = 1;
+            break;
+        case 'b':
+            breaksib = 1;
             break;
         default:
             ERROR1 (("unknown break parameter \"%s\"", *argv));
@@ -416,6 +425,10 @@ MAIN
             opt_ae = 0;
         if (!strncmp (*argv, "oAE", 3))
             opt_ae = 0;
+
+        /* temporary command line option to get around problems with writing SIBs */
+        if (!strncmp (*argv, "oSIB", 4))
+            write_sib = 0;
     }
     NEXTOPT
     ARG 'm' : PARM
@@ -530,28 +543,54 @@ MAIN
         ERROR2 (1, ("Couldn't open Outfile !\n"));
 
     start_token = PARSE_PRG;
+
+    NOTE (("Parsing %s: ...", *argv));
     yyparse ();
+    NOTE (("\n"));
 
     if (!breakparse) {
         NOTE (("Resolving Imports: ..."));
         syntax_tree = Import (syntax_tree);
         NOTE (("\n"));
+
         if (!breakimport) {
+            NOTE (("Flattening: ..."));
             syntax_tree = Flatten (syntax_tree);
+            NOTE (("\n"));
+
             if ((!breakflatten) && (0 == errors)) {
                 NOTE (("Typechecking: ..."));
                 syntax_tree = Typecheck (syntax_tree);
                 NOTE (("\n%d Warnings, %d Errors \n", warnings, errors));
-                if ((!breaktype) && (errors == 0)) {
-                    syntax_tree = Optimize (syntax_tree);
-                    if (!breakopt) {
-                        syntax_tree = PsiOpt (syntax_tree);
-                        if (!breakpsiopt) {
-                            NOTE (("Refcounting: ...\n"));
-                            syntax_tree = Refcount (syntax_tree);
-                            if (!breakref) {
-                                NOTE (("Compiling: ...\n"));
-                                syntax_tree = Compile (syntax_tree);
+                NOTE (("\n"));
+
+                if ((!breaktype) && (0 == errors)) {
+                    if (write_sib) {
+                        NOTE (("Writing SIB: ..."));
+                        syntax_tree = WriteSib (syntax_tree);
+                        NOTE (("\n"));
+                    }
+
+                    if ((!breaksib) && (errors == 0)) {
+                        NOTE (("Optimizing: ..."));
+                        syntax_tree = Optimize (syntax_tree);
+                        NOTE (("\n"));
+
+                        if (!breakopt) {
+                            NOTE (("Psi-Optimizing: ..."));
+                            syntax_tree = PsiOpt (syntax_tree);
+                            NOTE (("\n"));
+
+                            if (!breakpsiopt) {
+                                NOTE (("Refcounting: ...\n"));
+                                syntax_tree = Refcount (syntax_tree);
+                                NOTE (("\n"));
+
+                                if (!breakref) {
+                                    NOTE (("Compiling: ...\n"));
+                                    syntax_tree = Compile (syntax_tree);
+                                    NOTE (("\n"));
+                                }
                             }
                         }
                     }
