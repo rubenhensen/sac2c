@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2004/07/31 16:11:35  sah
+ * moved MakeId_xxx functions to tree_compund
+ *
  * Revision 3.83  2004/07/29 13:06:29  ktr
  * LiftArgs now allocates memory for scalars explicitly, although this should
  * be necessaray as scalars are now flattened out of function applications.
@@ -317,6 +320,7 @@
 #include "wltransform.h"
 #include "refcount.h"
 #include "globals.h"
+#include "NameTuplesUtils.h"
 
 /*
  * macro template for append functions
@@ -3767,6 +3771,52 @@ MakeVinfoDollar (node *next)
 /***
  ***  N_id :
  ***/
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeId_Copy (char *name)
+{
+    node *result;
+
+    DBUG_ENTER ("MakeId_Copy");
+
+    if (name == NULL) {
+        name = "";
+    }
+
+    result = MakeId (StringCopy (name), NULL, ST_regular);
+
+    DBUG_RETURN (result);
+}
+
+node *
+MakeId_Copy_NT (char *name, types *type)
+{
+    node *result;
+
+    DBUG_ENTER ("MakeId_Copy_NT");
+
+    result = MakeId_Copy (name);
+    ID_NT_TAG (result) = CreateNtTag (name, type);
+
+    DBUG_RETURN (result);
+}
+
+node *
+MakeId_Num (int val)
+{
+    char *name;
+    node *result;
+
+    DBUG_ENTER ("MakeId_Num");
+
+    name = (char *)Malloc (20 * sizeof (char));
+    sprintf (name, "%d", val);
+    result = MakeId (name, NULL, ST_regular);
+
+    DBUG_RETURN (result);
+}
 
 /***************************************************************************
  *

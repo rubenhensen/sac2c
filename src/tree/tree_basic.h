@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.203  2004/07/31 16:11:35  sah
+ * moved MakeId_xxx functions to tree_compund
+ *
  * Revision 3.202  2004/07/31 13:48:11  sah
  * removed MakeNCodeExprs
  * moved NCODE_WLAA_* macros to tree_compound, as they
@@ -2124,12 +2127,6 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
 extern node *MakeId (char *name, char *mod, statustype status);
 
 extern node *MakeIdFromIds (ids *idss);
-
-extern node *MakeId_Copy (char *str);
-
-extern node *MakeId_Copy_NT (char *str, types *type);
-
-extern node *MakeId_Num (int val);
 
 #define ID_IDS(n) (n->info.ids)
 #define ID_NAME(n) (IDS_NAME (ID_IDS (n)))

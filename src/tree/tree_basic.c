@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.88  2004/07/31 16:11:35  sah
+ * moved MakeId_xxx functions to tree_compund
+ *
  * Revision 3.87  2004/07/31 13:48:11  sah
  * removed MakeNCodeExprs
  * moved NCODE_WLAA_* macros to tree_compound, as they
@@ -1272,56 +1275,6 @@ MakeIdFromIds (ids *idss)
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
 
     DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-MakeId_Copy (char *name)
-{
-    node *result;
-
-    DBUG_ENTER ("MakeId_Copy");
-
-    if (name == NULL) {
-        name = "";
-    }
-
-    result = MakeId (StringCopy (name), NULL, ST_regular);
-
-    DBUG_RETURN (result);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-MakeId_Copy_NT (char *name, types *type)
-{
-    node *result;
-
-    DBUG_ENTER ("MakeId_Copy");
-
-    result = MakeId_Copy (name);
-    ID_NT_TAG (result) = CreateNtTag (name, type);
-
-    DBUG_RETURN (result);
-}
-
-/*--------------------------------------------------------------------------*/
-
-node *
-MakeId_Num (int val)
-{
-    char *name;
-    node *result;
-
-    DBUG_ENTER ("MakeId_Num");
-
-    name = (char *)Malloc (20 * sizeof (char));
-    sprintf (name, "%d", val);
-    result = MakeId (name, NULL, ST_regular);
-
-    DBUG_RETURN (result);
 }
 
 /*--------------------------------------------------------------------------*/

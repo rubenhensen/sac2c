@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.84  2004/07/31 16:11:35  sah
+ * moved MakeId_xxx functions to tree_compund
+ *
  * Revision 3.83  2004/07/31 13:48:11  sah
  * removed MakeNCodeExprs
  * moved NCODE_WLAA_* macros to tree_compound, as they
@@ -1833,6 +1836,12 @@ extern node *MakeVinfoDollar (node *next);
 
 #define ID_OR_CAST_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : CAST_TYPE (n))
 #define ID_OR_ARRAY_TYPE(n) ((NODE_TYPE (n) == N_id) ? ID_TYPE (n) : ARRAY_TYPE (n))
+
+extern node *MakeId_Copy (char *str);
+
+extern node *MakeId_Copy_NT (char *str, types *type);
+
+extern node *MakeId_Num (int val);
 
 /***************************************************************************
  *
