@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.43  2003/09/18 12:23:37  dkr
+ * BYTE_SIZE_OF_DESC added.
+ * some bugs fixed.
+ *
  * Revision 3.42  2003/09/18 11:38:48  dkr
  * ND_ALLOC__DESC_AND_DATA added (for DAO)
  *
@@ -165,6 +169,8 @@ typedef int *SAC_array_descriptor_t;
 #define VAR_SIZE_OF_DESC 1
 /* size of the descriptor = (FIXED_SIZE_OF_DESC + dim * VAR_SIZE_OF_DESC) */
 #define SIZE_OF_DESC(dim) (FIXED_SIZE_OF_DESC + dim * VAR_SIZE_OF_DESC)
+
+#define BYTE_SIZE_OF_DESC(dim) (SIZE_OF_DESC (dim) * sizeof (int))
 
 #define DESC_RC(desc) desc[0]
 #define DESC_DIM(desc) desc[1]
@@ -974,8 +980,7 @@ typedef int *SAC_array_descriptor_t;
         SAC_ASSURE_TYPE ((dim == SAC_ND_A_MIRROR_DIM (nt)),                              \
                          ("Inconsistant dimension for array %s found!", NT_NAME (nt)));  \
         SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (nt),                                    \
-                                  SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (nt))                \
-                                    * sizeof (*SAC_ND_A_DESC (nt)))                      \
+                                  BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (nt)))          \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DESC( %s, %d) at addr: %p", #nt, #dim, SAC_ND_A_DESC (nt)))        \
     }
@@ -1057,8 +1062,7 @@ typedef int *SAC_array_descriptor_t;
     {                                                                                    \
         SAC_ASSURE_TYPE ((dim >= 0),                                                     \
                          ("Illegal dimension for array %s found!", NT_NAME (nt)));       \
-        SAC_HM_MALLOC (SAC_ND_A_DESC (nt),                                               \
-                       SIZE_OF_DESC (dim) * sizeof (*SAC_ND_A_DESC (nt)))                \
+        SAC_HM_MALLOC (SAC_ND_A_DESC (nt), BYTE_SIZE_OF_DESC (dim))                      \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DESC( %s, %d) at addr: %p", #nt, #dim, SAC_ND_A_DESC (nt)))        \
         SAC_ND_A_DESC_DIM (nt) = SAC_ND_A_MIRROR_DIM (nt) = dim;                         \
@@ -1124,8 +1128,7 @@ typedef int *SAC_array_descriptor_t;
     {                                                                                    \
         SAC_TR_MEM_PRINT (("ND_FREE__DESC( %s) at addr: %p", #nt, SAC_ND_A_DESC (nt)))   \
         SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_DESC (nt),                                      \
-                                SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (nt))                  \
-                                  * sizeof (*SAC_ND_A_DESC (nt)))                        \
+                                BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (nt)))            \
     }
 
 #define SAC_ND_FREE__DATA__AKS_NHD(nt, freefun)                                          \
@@ -1156,8 +1159,7 @@ typedef int *SAC_array_descriptor_t;
     {                                                                                    \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_FREE__DATA( %s, %s) at addr: %p", #nt, #freefun, SAC_ND_A_FIELD (nt)))    \
-        SAC_HM_FREE (SAC_ND_A_FIELD (nt),                                                \
-                     SAC_ND_A_SIZE (nt) * sizeof (*SAC_ND_A_FIELD (nt)))                 \
+        SAC_HM_FREE (SAC_ND_A_FIELD (nt))                                                \
         SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (nt))                                     \
         SAC_CS_UNREGISTER_ARRAY (nt)                                                     \
     }
@@ -1170,8 +1172,7 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_FREE__DESC__AUD(nt)                                                       \
     {                                                                                    \
         SAC_TR_MEM_PRINT (("ND_FREE__DESC( %s) at addr: %p", #nt, SAC_ND_A_DESC (nt)))   \
-        SAC_HM_FREE (SAC_ND_A_DESC (nt), SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (nt))         \
-                                           * sizeof (*SAC_ND_A_DESC (nt)))               \
+        SAC_HM_FREE (SAC_ND_A_DESC (nt))                                                 \
     }
 
 #define SAC_ND_FREE__DATA__AUD_NHD(nt, freefun) SAC_ND_FREE__DATA__AKD_NHD (nt, freefun)
