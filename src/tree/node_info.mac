@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.197  2004/09/02 15:27:01  khf
+ * DDEPENDwithop and TDEPENDwithop removed
+ *
  * Revision 3.196  2004/09/01 16:01:38  skt
  * CRWIWfundef & REPFUNfundef added
  *
@@ -2470,9 +2473,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, HDwithop, NT2OTwithop, CWCwithop, HMNwithop, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, CVPNwithop, WLFSNwithop,
 
-       TravSons, TravSons, TravSons, EMALwithop, DDEPENDwithop, TDEPENDwithop, TravSons,
+       TravSons, TravSons, TravSons, EMALwithop, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, 4),
+       TravSons, TravSons, TravSons, TravSons, 4),
 
   NIF (N_ncode, "N_ncode", TravSons, FltnNcode, PrintNcode, TCNcode, TravSons, TravSons,
        TravSons, FreeNCode, TravSons, RCNcode, EMRCNcode, RIcode, DupNcode, TravSons,
