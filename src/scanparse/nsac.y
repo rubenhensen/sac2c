@@ -4,6 +4,9 @@
 /*
 *
 * $Log$
+* Revision 1.24  2004/11/26 23:57:50  sbs
+* *** empty log message ***
+*
 * Revision 1.23  2004/11/25 22:37:57  sbs
 * for Stephan
 *
@@ -1801,18 +1804,18 @@ resources: ID COLON LET string resources
 /******************************************************************************
  *
  * Function:
- *   int My_yyparse()
+ *   int SPmyYyparse()
  *
  * Description:
  *   
  *
  ******************************************************************************/
 
-int My_yyparse()
+int SPmyYyparse()
 {
   char *tmp;
 
-  DBUG_ENTER( "My_yyparse");
+  DBUG_ENTER( "SPmyYyparse");
 
   /* 
    * make a copy of the actual filename, which will be used for
