@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 2.12  2000/11/20 16:38:17  dkr
+# new targets solaris25, solaris27 added
+#
 # Revision 2.11  2000/11/20 14:32:58  sacbase
 # locker and update targets extended by DEMOBASE and rmobsfiles
 #
@@ -59,7 +62,7 @@ VERSION    =  0_9
 #  Settings for file and package sets
 #
 
-SYSTEMS  =  SOLARIS_SPARC LINUX_X86 OSF_ALPHA
+SYSTEMS  =  SOLARIS_SPARC-2_5 SOLARIS_SPARC-2_7 LINUX_X86 OSF_ALPHA
 INST_PACKAGES   =  runtime.tar stdlib.tar demo.tar
 INST_FILES      =  install_sac LICENSE README
 INST_SPECIFICS  =  sac2c sac2crc
@@ -77,11 +80,11 @@ TEMPDIR    =  /tmp
 #  Settings for source directories
 #
 
-SAC2CDIR   =  ../..
-RUNTIMEDIR =  $(SAC2CDIR)/src/runtime
-STDLIBDIR  =  $(SACBASE)/stdlib
-DEMOBASE   =  $(HOME)/sac
-DEMODIR    =  $(SACBASE)/demo
+SAC2CDIR    =  $(shell pwd)/../..
+RUNTIMEDIR  =  $(SAC2CDIR)/src/runtime
+STDLIBDIR   =  $(SACBASE)/stdlib
+DEMOBASE    =  $(HOME)/sac
+DEMODIR     =  $(SACBASE)/demo
 
 
 #
@@ -96,7 +99,9 @@ SRCTARGETDIR  =  ../srcpacks
 #  Settings for system SOLARIS_SPARC
 #
 
-SOLARIS_DIR   =  /var/tmp/$(USER)_sac_distrib
+SOLARIS_HOST-2_5  =  twice
+SOLARIS_HOST-2_7  =  idefix
+SOLARIS_DIR       =  /var/tmp/$(USER)_sac_distrib
 
 
 #
@@ -142,13 +147,16 @@ all:     check_existing_files $(BINDISTRIBS) $(SRCDISTRIBS)
 source:  check_existing_files $(SRCDISTRIBS)
 
 linux:   check_existing_files \
-         $(BINTARGETDIR)/SAC-$(VERSION)-LINUX_X86-$(DATE).tar.gz
+  $(BINTARGETDIR)/SAC-$(VERSION)-LINUX_X86-$(DATE).tar.gz
 
-solaris: check_existing_files \
-         $(BINTARGETDIR)/SAC-$(VERSION)-SOLARIS_SPARC-$(DATE).tar.gz
+solaris25: check_existing_files \
+  $(BINTARGETDIR)/SAC-$(VERSION)-SOLARIS_SPARC-2_5-$(DATE).tar.gz
+
+solaris27: check_existing_files \
+  $(BINTARGETDIR)/SAC-$(VERSION)-SOLARIS_SPARC-2_7-$(DATE).tar.gz
 
 alpha:   check_existing_files \
-         $(BINTARGETDIR)/SAC-$(VERSION)-OSF_ALPHA-$(DATE).tar.gz
+  $(BINTARGETDIR)/SAC-$(VERSION)-OSF_ALPHA-$(DATE).tar.gz
 
 
 $(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar.gz: \
@@ -162,7 +170,7 @@ $(SRCTARGETDIR)/SAC-$(VERSION)-$(DATE).tar.gz: \
 
 
 $(BINTARGETDIR)/SAC-$(VERSION)-%-$(DATE).tar.gz: \
-   $(INST_PACKAGES) $(INST_FILES) $(addsuffix .for.%,$(SPECIFICS))
+  $(INST_PACKAGES) $(INST_FILES) $(addsuffix .for.%,$(SPECIFICS))
 	@echo "**************************************************************"
 	@echo "*  Creating SAC binary distribution for $*"
 	@echo "**************************************************************"
@@ -190,6 +198,15 @@ $(BINTARGETDIR)/SAC-$(VERSION)-%-$(DATE).tar.gz: \
 	  gzip -f SAC-$(VERSION)-$*-$(DATE).tar )
 	mv -f $(TEMPDIR)/$*/SAC-$(VERSION)-$*-$(DATE).tar.gz $(BINTARGETDIR)
 	rm -rf $(TEMPDIR)/$*
+
+
+sac2c.for.SOLARIS_SPARC-% libsac.tar.for.SOLARIS_SPARC-%: 
+	rsh $(SOLARIS_HOST-$*)            \
+	    'setenv PATH $(PATH);'        \
+            'cd $(SAC2CDIR)/distrib/src;' \
+	    '$(MAKE) sac2c.for.SOLARIS_SPARC'
+	mv -f sac2c.for.SOLARIS_SPARC sac2c.for.SOLARIS_SPARC-$*
+	mv -f libsac.tar.for.SOLARIS_SPARC libsac.tar.for.SOLARIS_SPARC-$*
 
 
 sac2c.for.SOLARIS_SPARC libsac.tar.for.SOLARIS_SPARC: 
@@ -293,6 +310,12 @@ src.tar.gz:
 	( cd $(SAC2CDIR); $(MAKE) tar )
 	ln -s $(SAC2CDIR)/$@
 
+
+sac2crc.for.%-2_5:
+	$(MAKE) sac2crc.for.$*
+
+sac2crc.for.%-2_7:
+	$(MAKE) sac2crc.for.$*
 
 sac2crc.for.%: $(RUNTIMEDIR)/sac2crc.%
 	@echo "**************************************************************"
