@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.161  2004/08/19 10:13:14  skt
+ * handling of CELLID (needed for mtmode 3) in PrintAssign added
+ *
  * Revision 3.160  2004/08/12 12:39:28  skt
  * PrintDataflowgraph & PrintDataflownode added
  *
@@ -2211,6 +2214,12 @@ PrintAssign (node *arg_node, info *arg_info)
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
+        if ((break_after == PH_multithread) && (strcmp ("asmra", break_specifier) == 0)
+            && (ASSIGN_EXECMODE (ASSIGN_NEXT (arg_node)) == MUTH_MULTI)
+            && (ASSIGN_EXECMODE (arg_node) == MUTH_MULTI)
+            && (ASSIGN_CELLID (ASSIGN_NEXT (arg_node)) != ASSIGN_CELLID (arg_node))) {
+            fprintf (outfile, "---------------\n");
+        }
         PRINT_CONT (Trav (ASSIGN_NEXT (arg_node), arg_info), ;);
     }
 
