@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.54  1998/10/29 13:07:59  cg
+ * bug fixed in PrintDependencies():
+ * Options -M/-Mlib now work correctly even if a module/program depends
+ * on nothing.
+ *
  * Revision 1.53  1998/05/27 11:19:44  cg
  * global variable 'filename' which contains the current file name in order
  * to provide better error messages is now handled correctly.
@@ -2165,7 +2170,36 @@ PrintDependencies (deps *depends, int mode)
 
     printf ("%s: ", outfilename);
 
-    if (tmp != NULL) {
+    tmp = depends;
+
+    while (tmp != NULL) {
+        printf ("  \\\n  %s", DEPS_DECNAME (tmp));
+        tmp = DEPS_NEXT (tmp);
+    }
+
+    if (mode == 1) {
+        printf ("\n");
+    } else {
+        tmp = depends;
+
+        while (tmp != NULL) {
+            strcpy (buffer, DEPS_NAME (tmp));
+
+            if (DEPS_STATUS (tmp) == ST_sac) {
+                strcat (buffer, ".lib");
+            } else {
+                strcat (buffer, ".a");
+            }
+
+            printf ("  \\\n  %s", buffer);
+            tmp = DEPS_NEXT (tmp);
+        }
+
+        strcpy (buffer, sacfilename);
+        strcpy (buffer + strlen (sacfilename) - 4, ".d");
+
+        printf ("\n\n%s:", buffer);
+
         tmp = depends;
 
         while (tmp != NULL) {
@@ -2173,69 +2207,38 @@ PrintDependencies (deps *depends, int mode)
             tmp = DEPS_NEXT (tmp);
         }
 
-        if (mode == 1) {
-            printf ("\n");
-        } else {
-            tmp = depends;
+        printf ("\n\nalldeps:");
 
-            while (tmp != NULL) {
-                strcpy (buffer, DEPS_NAME (tmp));
+        tmp = depends;
 
-                if (DEPS_STATUS (tmp) == ST_sac) {
-                    strcat (buffer, ".lib");
-                } else {
-                    strcat (buffer, ".a");
-                }
+        while (tmp != NULL) {
+            printf ("  \\\n  %s", DEPS_NAME (tmp));
+            tmp = DEPS_NEXT (tmp);
+        }
 
-                printf ("  \\\n  %s", buffer);
-                tmp = DEPS_NEXT (tmp);
-            }
+        printf ("\n\n.PHONY:");
 
-            strcpy (buffer, sacfilename);
-            strcpy (buffer + strlen (sacfilename) - 4, ".d");
+        tmp = depends;
 
-            printf ("\n\n%s:", buffer);
+        while (tmp != NULL) {
+            printf ("  \\\n  %s", DEPS_NAME (tmp));
+            tmp = DEPS_NEXT (tmp);
+        }
 
-            tmp = depends;
+        printf ("\n\n");
 
-            while (tmp != NULL) {
-                printf ("  \\\n  %s", DEPS_DECNAME (tmp));
-                tmp = DEPS_NEXT (tmp);
-            }
+        tmp = depends;
 
-            printf ("\n\nalldeps:");
+        while (tmp != NULL) {
+            printf ("%s:\n\t", DEPS_NAME (tmp));
 
-            tmp = depends;
+            strcpy (buffer, DEPS_DECNAME (tmp));
+            filename = strrchr (buffer, '/');
+            *filename = 0;
 
-            while (tmp != NULL) {
-                printf ("  \\\n  %s", DEPS_NAME (tmp));
-                tmp = DEPS_NEXT (tmp);
-            }
+            printf ("(cd %s; $(MAKE) %s)\n\n", buffer, DEPS_NAME (tmp));
 
-            printf ("\n\n.PHONY:");
-
-            tmp = depends;
-
-            while (tmp != NULL) {
-                printf ("  \\\n  %s", DEPS_NAME (tmp));
-                tmp = DEPS_NEXT (tmp);
-            }
-
-            printf ("\n\n");
-
-            tmp = depends;
-
-            while (tmp != NULL) {
-                printf ("%s:\n\t", DEPS_NAME (tmp));
-
-                strcpy (buffer, DEPS_DECNAME (tmp));
-                filename = strrchr (buffer, '/');
-                *filename = 0;
-
-                printf ("(cd %s; $(MAKE) %s)\n\n", buffer, DEPS_NAME (tmp));
-
-                tmp = DEPS_NEXT (tmp);
-            }
+            tmp = DEPS_NEXT (tmp);
         }
     }
 
