@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2002/09/05 20:29:23  dkr
+ * PrefixForTmpVar() added
+ *
  * Revision 3.26  2002/09/03 14:40:28  sbs
  * ntc prefix for tmp_var added
  *
@@ -283,9 +286,10 @@ struct STR_BUF {
 /******************************************************************************
  *
  * Function:
- *   str_buf *StrBufCreate(  int size);
+ *   str_buf *StrBufCreate( int size);
  *
  * Description:
+ *
  *
  ******************************************************************************/
 
@@ -312,6 +316,7 @@ StrBufCreate (int size)
  *   str_buf *StrBufprint(  str_buf *s, const char *string);
  *
  * Description:
+ *
  *
  ******************************************************************************/
 
@@ -352,6 +357,7 @@ StrBufprint (str_buf *s, const char *string)
  *
  * Description:
  *
+ *
  ******************************************************************************/
 
 str_buf *
@@ -380,12 +386,14 @@ StrBufprintf (str_buf *s, const char *format, ...)
  *
  * Description:
  *
+ *
  ******************************************************************************/
 
 char *
 StrBuf2String (str_buf *s)
 {
     DBUG_ENTER ("StrBuf2String");
+
     DBUG_RETURN (StringCopy (s->buf));
 }
 
@@ -395,6 +403,7 @@ StrBuf2String (str_buf *s)
  *   void StrBufFlush(  str_buf *s)
  *
  * Description:
+ *
  *
  ******************************************************************************/
 
@@ -412,9 +421,10 @@ StrBufFlush (str_buf *s)
 /******************************************************************************
  *
  * Function:
- *   bool     StrBufIsEmpty( str_buf *s)
+ *   bool StrBufIsEmpty( str_buf *s)
  *
  * Description:
+ *
  *
  ******************************************************************************/
 
@@ -429,7 +439,7 @@ StrBufIsEmpty (str_buf *s)
 /******************************************************************************
  *
  * Function:
- *   void *StrBufFree(  str_buf *s);
+ *   void *StrBufFree( str_buf *s);
  *
  * Description:
  *
@@ -732,25 +742,19 @@ SystemTest (char *format, ...)
 /******************************************************************************
  *
  * Function:
- *   char *TmpVar()
+ *   char *PrefixForTmpVar( void)
  *
  * Description:
- *   Generates string to be used as artificial variable.
- *   The variable name is different in each call of TmpVar().
- *   The string has the form "__tmp_" ++ compiler phase ++ consecutive number.
+ *
  *
  ******************************************************************************/
 
 char *
-TmpVar ()
+PrefixForTmpVar (void)
 {
-    static int counter = 0;
-    char *result;
-    char *s = NULL;
+    char *s;
 
-    DBUG_ENTER ("TmpVar");
-
-    result = (char *)Malloc (sizeof (char) * 16);
+    DBUG_ENTER ("PrexfixForTmpVar");
 
     if (act_tab == imp_tab) {
         s = "imp";
@@ -882,10 +886,34 @@ TmpVar ()
         s = "al";
     } else {
         s = "unknown";
-        DBUG_ASSERT ((0), "TmpVar(): unknown trav-tab found!");
+        DBUG_ASSERT ((0), "PrefixForTmpVar(): unknown trav-tab found!");
     }
 
-    sprintf (result, "_%s_%d", s, counter);
+    DBUG_RETURN (s);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   char *TmpVar( void)
+ *
+ * Description:
+ *   Generates string to be used as artificial variable.
+ *   The variable name is different in each call of TmpVar().
+ *   The string has the form "__tmp_" ++ compiler phase ++ consecutive number.
+ *
+ ******************************************************************************/
+
+char *
+TmpVar (void)
+{
+    static int counter = 0;
+    char *result;
+
+    DBUG_ENTER ("TmpVar");
+
+    result = (char *)Malloc (sizeof (char) * 16);
+    sprintf (result, "_%s_%d", PrefixForTmpVar (), counter);
     counter++;
 
     DBUG_RETURN (result);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2002/09/05 20:29:19  dkr
+ * PrefixForTmpVar() added
+ *
  * Revision 3.19  2002/09/03 13:18:06  sbs
  * StrBuf support added
  *
@@ -147,7 +150,8 @@ extern void SystemCall (char *format, ...);
 extern int SystemCall2 (char *format, ...);
 extern int SystemTest (char *format, ...);
 
-extern char *TmpVar ();
+extern char *PrefixForTmpVar (void);
+extern char *TmpVar (void);
 extern char *TmpVarName (char *postfix);
 
 #ifdef SHOW_MALLOC
@@ -155,7 +159,7 @@ extern void ComputeMallocAlignStep (void);
 #endif
 
 #ifndef DBUG_OFF
-extern void DbugMemoryLeakCheck ();
+extern void DbugMemoryLeakCheck (void);
 #endif
 
 /*********************************
