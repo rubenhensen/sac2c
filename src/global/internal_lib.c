@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2004/11/26 23:36:01  sbs
+ * *** empty log message ***
+ *
  * Revision 3.69  2004/11/26 23:16:36  sbs
  * *** empty log message ***
  *
@@ -1030,7 +1033,7 @@ lcm (int x, int y)
 /******************************************************************************
  *
  * Function:
- *   void SystemCall( char *format, ...)
+ *   void ILIBsystemCall( char *format, ...)
  *
  * Description:
  *   Evaluates the given string and executes the respective system call.
@@ -1040,13 +1043,13 @@ lcm (int x, int y)
  ******************************************************************************/
 
 void
-SystemCall (char *format, ...)
+ILIBsystemCall (char *format, ...)
 {
     va_list arg_p;
     static char syscall[MAX_SYSCALL];
     int exit_code;
 
-    DBUG_ENTER ("SystemCall");
+    DBUG_ENTER ("ILIBsystemCall");
 
     va_start (arg_p, format);
     vsprintf (syscall, format, arg_p);
