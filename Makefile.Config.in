@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.7  2003/09/19 15:04:39  dkr
+# CODE_BEAUTIFIER added
+#
 # Revision 1.6  2003/03/21 15:53:57  sah
 # platform specific flags
 # are now set in configure
@@ -81,7 +84,4 @@ else
 endif
 
 CLOCK_SKEW_ELIMINATION   := $(PROJECT_ROOT)/tools/bin/cse
-
-
-
-
+CODE_BEAUTIFIER          := $(PROJECT_ROOT)/tools/bin/cb
