@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/11/22 21:19:32  ktr
+ * prefix USAGE --> USG
+ *
  * Revision 3.3  2004/11/22 15:42:55  ktr
  * SACDevCamp 04 Ismop
  *
@@ -37,12 +40,12 @@
  *
  * Usage
  *
- * Prefix: USAGE
+ * Prefix: USG
  *
  *****************************************************************************/
-extern void USAGEusage ();
-extern void USAGEcopyright ();
-extern void USAGEversion ();
-extern void USAGEversionVerbose ();
+extern void USGprintUsage ();
+extern void USGprintCopyright ();
+extern void USGprintVersion ();
+extern void USGprintVersionVerbose ();
 
 #endif /* _SAC_USAGE_H_ */
