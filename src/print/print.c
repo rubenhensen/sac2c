@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.149  1998/03/03 17:30:09  cg
+ * The C file resulting from a module/class implementation compiled with
+ * link style 1 (one large object code file) is now printed to the temporary
+ * directory for further processing instead of being printed to the target
+ * directory as it happens for C files resulting from SAC programs.
+ *
  * Revision 1.148  1998/02/26 14:10:45  srs
  * changed output of N_empty node (was "\t;\n").
  *
@@ -2123,7 +2129,23 @@ Print (node *arg_node)
             outfile = stdout;
             fprintf (outfile, "\n-----------------------------------------------\n");
         } else {
-            outfile = WriteOpen ("%s%s", targetdir, cfilename);
+            if (linkstyle == 1) {
+                /*
+                 * The current file is a module/class implementation, but the functions
+                 * are nevertheless not compiled separatly to the archive.
+                 * Therefore, the C file is generated within the temprorary directory.
+                 */
+
+                outfile = WriteOpen ("%s/%s", tmp_dirname, cfilename);
+            } else {
+                /*
+                 * The current file is a SAC program.
+                 * Therefore, the C file is generated within the target directory.
+                 */
+
+                outfile = WriteOpen ("%s%s", targetdir, cfilename);
+            }
+
             NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
         }
 
