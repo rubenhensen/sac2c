@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2004/09/21 11:09:07  sah
+ * added SET (serialize traverse) traversal
+ *
  * Revision 3.59  2004/09/18 16:08:34  ktr
  * Added support for spmdemm_tab
  *
@@ -309,7 +312,7 @@ extern funtab *emri_tab;
 extern funtab *cegro_tab;
 extern funtab *dup_tab;
 extern funtab *inline_tab;
-extern funtab *unused_tab23;
+extern funtab *set_tab;
 extern funtab *unused_tab24;
 extern funtab *idx_tab;
 extern funtab *unused_tab26;

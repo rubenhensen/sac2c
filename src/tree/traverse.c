@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.75  2004/09/21 11:09:07  sah
+ * added SET (serialize traverse) traversal
+ *
  * Revision 3.74  2004/09/18 16:08:34  ktr
  * Added support for spmdemm_tab
  *
@@ -365,6 +368,7 @@
 #include "detectdependencies.h"
 #include "tagdependencies.h"
 #include "spmd_emm.h"
+#include "serialize_node.h"
 
 #include "traverse.h"
 
@@ -527,18 +531,24 @@ static funtab inline_tab_rec = {{
                                 NULL,
                                 NULL};
 funtab *inline_tab = &inline_tab_rec;
-#ifndef NEW_AST
-/*
- *  (15) unused_tab23
- */
-static funtab unused_tab23_rec = {{
-#define NIFunused_23(it_unused_23) it_unused_23
-#include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab23 = &unused_tab23_rec;
 
+/*
+ *  (15) set_tab
+ */
+static funtab set_tab_rec = {{
+#ifdef NEW_AST
+#define NIFset(it_set) it_set
+#include "node_info.mac"
+#else
+#define NIFunused_24(it_unused24) it_unused24
+#include "node_info.mac"
+#endif
+                             },
+                             NULL,
+                             NULL};
+funtab *set_tab = &set_tab_rec;
+
+#ifndef NEW_AST
 /*
  *  (16) cegro_tab
  */
