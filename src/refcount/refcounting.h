@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/07/18 08:50:42  ktr
+ * all functions renamed into EMsomething
+ *
  * Revision 1.3  2004/07/17 10:26:04  ktr
  * changed header guards to refcounting-something...
  *
@@ -32,25 +35,25 @@
 #ifndef _sac_refcounting_h
 #define _sac_refcounting_h
 
-extern node *SSARefCount (node *syntax_tree);
+extern node *EMRefCount (node *syntax_tree);
 
-extern node *SSARCfundef (node *arg_node, info *arg_info);
-extern node *SSARCassign (node *arg_node, info *arg_info);
-extern node *SSARCreturn (node *arg_node, info *arg_info);
-extern node *SSARCprf (node *arg_node, info *arg_info);
-extern node *SSARCid (node *arg_node, info *arg_info);
-extern node *SSARClet (node *arg_node, info *arg_info);
-extern node *SSARCarg (node *arg_node, info *arg_info);
-extern node *SSARCblock (node *arg_node, info *arg_info);
-extern node *SSARCvardec (node *arg_node, info *arg_info);
-extern node *SSARCap (node *arg_node, info *arg_info);
-extern node *SSARCconst (node *arg_node, info *arg_info);
-extern node *SSARCarray (node *arg_node, info *arg_info);
-extern node *SSARCfuncond (node *arg_node, info *arg_info);
-extern node *SSARCcond (node *arg_node, info *arg_info);
-extern node *SSARCNwith (node *arg_node, info *arg_info);
-extern node *SSARCNwith2 (node *arg_node, info *arg_info);
-extern node *SSARCNcode (node *arg_node, info *arg_info);
-extern node *SSARCNwithid (node *arg_node, info *arg_info);
-extern node *SSARCicm (node *arg_node, info *arg_info);
+extern node *EMRCfundef (node *arg_node, info *arg_info);
+extern node *EMRCassign (node *arg_node, info *arg_info);
+extern node *EMRCreturn (node *arg_node, info *arg_info);
+extern node *EMRCprf (node *arg_node, info *arg_info);
+extern node *EMRCid (node *arg_node, info *arg_info);
+extern node *EMRClet (node *arg_node, info *arg_info);
+extern node *EMRCarg (node *arg_node, info *arg_info);
+extern node *EMRCblock (node *arg_node, info *arg_info);
+extern node *EMRCvardec (node *arg_node, info *arg_info);
+extern node *EMRCap (node *arg_node, info *arg_info);
+extern node *EMRCconst (node *arg_node, info *arg_info);
+extern node *EMRCarray (node *arg_node, info *arg_info);
+extern node *EMRCfuncond (node *arg_node, info *arg_info);
+extern node *EMRCcond (node *arg_node, info *arg_info);
+extern node *EMRCNwith (node *arg_node, info *arg_info);
+extern node *EMRCNwith2 (node *arg_node, info *arg_info);
+extern node *EMRCNcode (node *arg_node, info *arg_info);
+extern node *EMRCNwithid (node *arg_node, info *arg_info);
+extern node *EMRCicm (node *arg_node, info *arg_info);
 #endif /* _sac_refcounting_h */

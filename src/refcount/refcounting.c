@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/07/18 08:50:42  ktr
+ * all functions renamed into EMsomething
+ *
  * Revision 1.2  2004/07/16 14:41:34  sah
  * switch to new INFO structure
  * PHASE I
@@ -43,7 +46,7 @@
  * Removed some printf output.
  *
  * Revision 1.11  2004/05/06 17:51:10  ktr
- * SSARefCount now should handle IVE ICMs, too. :)
+ * EMRefCount now should handle IVE ICMs, too. :)
  *
  * Revision 1.10  2004/05/05 20:23:31  ktr
  * Home -> ISP
@@ -109,7 +112,7 @@ typedef enum {
 
 /** <!--******************************************************************-->
  *
- *  Enumeration of the different modes of SSARefcounting.
+ *  Enumeration of the different modes of EMRefcounting.
  *
  ***************************************************************************/
 typedef enum { rc_default, rc_else, rc_annotate_cfuns } rc_mode;
@@ -179,16 +182,16 @@ struct INFO {
 /**
  * INFO macros
  */
-#define INFO_SSARC_MODE(n) (n->mode)
-#define INFO_SSARC_DEPTH(n) (n->depth)
-#define INFO_SSARC_RHS(n) (n->rhs)
-#define INFO_SSARC_DECLIST(n) (n->declist)
-#define INFO_SSARC_INCLIST(n) (n->inclist)
-#define INFO_SSARC_ALLOCLIST(n) (n->alloclist)
-#define INFO_SSARC_FUNDEF(n) (n->fundef)
-#define INFO_SSARC_LHS(n) (n->lhs)
-#define INFO_SSARC_FUNAP(n) (n->funap)
-#define INFO_SSARC_REUSELIST(n) (n->reuselist)
+#define INFO_EMRC_MODE(n) (n->mode)
+#define INFO_EMRC_DEPTH(n) (n->depth)
+#define INFO_EMRC_RHS(n) (n->rhs)
+#define INFO_EMRC_DECLIST(n) (n->declist)
+#define INFO_EMRC_INCLIST(n) (n->inclist)
+#define INFO_EMRC_ALLOCLIST(n) (n->alloclist)
+#define INFO_EMRC_FUNDEF(n) (n->fundef)
+#define INFO_EMRC_LHS(n) (n->lhs)
+#define INFO_EMRC_FUNAP(n) (n->funap)
+#define INFO_EMRC_REUSELIST(n) (n->reuselist)
 
 /**
  * INFO functions
@@ -215,9 +218,9 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-#define AVIS_SSARC_DEFLEVEL(n) (n->int_data)
-#define AVIS_SSARC_COUNTER(n) ((rc_counter *)(n->dfmask[0]))
-#define AVIS_SSARC_COUNTER2(n) ((rc_counter *)(n->dfmask[1]))
+#define AVIS_EMRC_DEFLEVEL(n) (n->int_data)
+#define AVIS_EMRC_COUNTER(n) ((rc_counter *)(n->dfmask[0]))
+#define AVIS_EMRC_COUNTER2(n) ((rc_counter *)(n->dfmask[1]))
 
 /**
  *
@@ -444,9 +447,9 @@ InitializeEnvironment (node *avis, int deflevel)
 {
     DBUG_ENTER ("InitializeEnvironment");
 
-    AVIS_SSARC_DEFLEVEL (avis) = deflevel;
-    AVIS_SSARC_COUNTER2 (avis) = NULL;
-    AVIS_SSARC_COUNTER (avis) = NULL;
+    AVIS_EMRC_DEFLEVEL (avis) = deflevel;
+    AVIS_EMRC_COUNTER2 (avis) = NULL;
+    AVIS_EMRC_COUNTER (avis) = NULL;
 
     DBUG_RETURN (avis);
 }
@@ -468,8 +471,8 @@ SetDefLevel (node *avis, int deflevel)
 {
     DBUG_ENTER ("SetDefLevel");
 
-    if (AVIS_SSARC_DEFLEVEL (avis) == -1) {
-        AVIS_SSARC_DEFLEVEL (avis) = deflevel;
+    if (AVIS_EMRC_DEFLEVEL (avis) == -1) {
+        AVIS_EMRC_DEFLEVEL (avis) = deflevel;
     }
 
     DBUG_RETURN (avis);
@@ -490,7 +493,7 @@ static int
 GetDefLevel (node *avis)
 {
     DBUG_ENTER ("GetDefLevel");
-    DBUG_RETURN (AVIS_SSARC_DEFLEVEL (avis));
+    DBUG_RETURN (AVIS_EMRC_DEFLEVEL (avis));
 }
 
 /** <!--******************************************************************-->
@@ -512,8 +515,8 @@ RescueEnvironment (node *avis)
 {
     DBUG_ENTER ("RescueEnvironment");
 
-    AVIS_SSARC_COUNTER2 (avis) = AVIS_SSARC_COUNTER (avis);
-    AVIS_SSARC_COUNTER (avis) = NULL;
+    AVIS_EMRC_COUNTER2 (avis) = AVIS_EMRC_COUNTER (avis);
+    AVIS_EMRC_COUNTER (avis) = NULL;
 
     DBUG_RETURN (avis);
 }
@@ -537,10 +540,10 @@ RestoreEnvironment (node *avis)
 {
     DBUG_ENTER ("RestoreEnvironment");
 
-    DBUG_ASSERT (AVIS_SSARC_COUNTER (avis) == NULL, "Environment != NULL!!!");
+    DBUG_ASSERT (AVIS_EMRC_COUNTER (avis) == NULL, "Environment != NULL!!!");
 
-    AVIS_SSARC_COUNTER (avis) = AVIS_SSARC_COUNTER2 (avis);
-    AVIS_SSARC_COUNTER2 (avis) = NULL;
+    AVIS_EMRC_COUNTER (avis) = AVIS_EMRC_COUNTER2 (avis);
+    AVIS_EMRC_COUNTER2 (avis) = NULL;
 
     DBUG_RETURN (avis);
 }
@@ -565,7 +568,7 @@ GetEnvironment (node *avis, int codelevel)
 
     DBUG_ENTER ("GetEnvironment");
 
-    rcc = AVIS_SSARC_COUNTER (avis);
+    rcc = AVIS_EMRC_COUNTER (avis);
 
     while ((rcc != NULL) && (rcc->depth > codelevel)) {
         rcc = rcc->next;
@@ -599,11 +602,11 @@ PopEnvironment (node *avis, int codelevel)
 
     DBUG_ENTER ("PopEnvironment");
 
-    while ((AVIS_SSARC_COUNTER (avis) != NULL)
-           && (AVIS_SSARC_COUNTER (avis)->depth >= codelevel)) {
-        tmp = AVIS_SSARC_COUNTER (avis)->next;
-        Free (AVIS_SSARC_COUNTER (avis));
-        AVIS_SSARC_COUNTER (avis) = tmp;
+    while ((AVIS_EMRC_COUNTER (avis) != NULL)
+           && (AVIS_EMRC_COUNTER (avis)->depth >= codelevel)) {
+        tmp = AVIS_EMRC_COUNTER (avis)->next;
+        Free (AVIS_EMRC_COUNTER (avis));
+        AVIS_EMRC_COUNTER (avis) = tmp;
     }
 
     DBUG_RETURN (avis);
@@ -659,8 +662,8 @@ AddEnvironment (node *avis, int codelevel, int n)
 {
     DBUG_ENTER ("AddEnvironment");
 
-    AVIS_SSARC_COUNTER (avis)
-      = IncreaseEnvCounter (AVIS_SSARC_COUNTER (avis), codelevel, n);
+    AVIS_EMRC_COUNTER (avis)
+      = IncreaseEnvCounter (AVIS_EMRC_COUNTER (avis), codelevel, n);
 
     DBUG_RETURN (avis);
 }
@@ -1000,7 +1003,7 @@ FilterReuseList (node *reuselist, rc_list_struct *declist, ids *ids)
 
     if (reuselist != NULL) {
         if ((DecListContains (declist, ID_AVIS (EXPRS_EXPR (reuselist)),
-                              AVIS_SSARC_DEFLEVEL (ID_AVIS (EXPRS_EXPR (reuselist)))))
+                              AVIS_EMRC_DEFLEVEL (ID_AVIS (EXPRS_EXPR (reuselist)))))
             && (equalTypes (IDS_TYPE (ids), ID_TYPE (EXPRS_EXPR (reuselist))))
             && (!ReuseListContainsAvis (EXPRS_NEXT (reuselist),
                                         ID_AVIS (EXPRS_EXPR (reuselist))))) {
@@ -1222,12 +1225,12 @@ MakeDecAssignments (info *arg_info, node *next_node)
 
     DBUG_ENTER ("MakeDecAssignment");
 
-    if (DecListHasNext (INFO_SSARC_DECLIST (arg_info), INFO_SSARC_DEPTH (arg_info))) {
+    if (DecListHasNext (INFO_EMRC_DECLIST (arg_info), INFO_EMRC_DEPTH (arg_info))) {
 
-        rls = DecListGetNext (INFO_SSARC_DECLIST (arg_info));
-        INFO_SSARC_DECLIST (arg_info) = DecListPopNext (INFO_SSARC_DECLIST (arg_info));
+        rls = DecListGetNext (INFO_EMRC_DECLIST (arg_info));
+        INFO_EMRC_DECLIST (arg_info) = DecListPopNext (INFO_EMRC_DECLIST (arg_info));
 
-        next_node = MakeAdjustRCFromRLS (rls, INFO_SSARC_LHS (arg_info),
+        next_node = MakeAdjustRCFromRLS (rls, INFO_EMRC_LHS (arg_info),
                                          MakeDecAssignments (arg_info, next_node));
     }
 
@@ -1253,13 +1256,13 @@ MakeIncAssignments (info *arg_info, node *next_node)
 
     DBUG_ENTER ("MakeIncAssignments");
 
-    if (IncListHasNext (INFO_SSARC_INCLIST (arg_info))) {
+    if (IncListHasNext (INFO_EMRC_INCLIST (arg_info))) {
 
-        rls = IncListGetNext (INFO_SSARC_INCLIST (arg_info));
+        rls = IncListGetNext (INFO_EMRC_INCLIST (arg_info));
 
-        INFO_SSARC_INCLIST (arg_info) = IncListPopNext (INFO_SSARC_INCLIST (arg_info));
+        INFO_EMRC_INCLIST (arg_info) = IncListPopNext (INFO_EMRC_INCLIST (arg_info));
 
-        next_node = MakeAdjustRCFromRLS (rls, INFO_SSARC_LHS (arg_info),
+        next_node = MakeAdjustRCFromRLS (rls, INFO_EMRC_LHS (arg_info),
                                          MakeIncAssignments (arg_info, next_node));
     }
 
@@ -1285,12 +1288,12 @@ MakeAllocAssignments (info *arg_info, node *next_node)
 
     DBUG_ENTER ("MakeAllocAssignments");
 
-    if (AllocListHasNext (INFO_SSARC_ALLOCLIST (arg_info))) {
+    if (AllocListHasNext (INFO_EMRC_ALLOCLIST (arg_info))) {
 
-        als = AllocListGetNext (INFO_SSARC_ALLOCLIST (arg_info));
+        als = AllocListGetNext (INFO_EMRC_ALLOCLIST (arg_info));
 
-        INFO_SSARC_ALLOCLIST (arg_info)
-          = AllocListPopNext (INFO_SSARC_ALLOCLIST (arg_info));
+        INFO_EMRC_ALLOCLIST (arg_info)
+          = AllocListPopNext (INFO_EMRC_ALLOCLIST (arg_info));
 
         next_node
           = MakeAllocOrReuseFromALS (als, MakeAllocAssignments (arg_info, next_node));
@@ -1310,7 +1313,7 @@ MakeAllocAssignments (info *arg_info, node *next_node)
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCap
+ * @fn EMRCap
  *
  *  @brief adds one to each of the argument's environments
  *
@@ -1328,19 +1331,19 @@ MakeAllocAssignments (info *arg_info, node *next_node)
  *
  ***************************************************************************/
 node *
-SSARCap (node *arg_node, info *arg_info)
+EMRCap (node *arg_node, info *arg_info)
 {
     node *args, *avis;
     int argc;
 
-    DBUG_ENTER ("SSARCap");
+    DBUG_ENTER ("EMRCap");
 
-    INFO_SSARC_RHS (arg_info) = rc_funap;
+    INFO_EMRC_RHS (arg_info) = rc_funap;
 
-    INFO_SSARC_FUNAP (arg_info) = AP_FUNDEF (arg_node);
+    INFO_EMRC_FUNAP (arg_info) = AP_FUNDEF (arg_node);
 
     args = AP_ARGS (arg_node);
-    argc = CountIds (INFO_SSARC_LHS (arg_info));
+    argc = CountIds (INFO_EMRC_LHS (arg_info));
 
     while (args != NULL) {
 
@@ -1352,21 +1355,21 @@ SSARCap (node *arg_node, info *arg_info)
              * Add one to the environment at the arguments DEFLEVEL
              * iff it is zero
              */
-            if ((GetDefLevel (avis) != INFO_SSARC_DEPTH (arg_info))
+            if ((GetDefLevel (avis) != INFO_EMRC_DEPTH (arg_info))
                 && (GetEnvironment (avis, GetDefLevel (avis)) == 0)) {
-                INFO_SSARC_DECLIST (arg_info)
-                  = DecListInsert (INFO_SSARC_DECLIST (arg_info), avis,
+                INFO_EMRC_DECLIST (arg_info)
+                  = DecListInsert (INFO_EMRC_DECLIST (arg_info), avis,
                                    GetDefLevel (avis));
                 avis = AddEnvironment (avis, GetDefLevel (avis), 1);
             }
 
-            if (!FUNDEF_EXT_NOT_REFCOUNTED (INFO_SSARC_FUNAP (arg_info), argc)) {
+            if (!FUNDEF_EXT_NOT_REFCOUNTED (INFO_EMRC_FUNAP (arg_info), argc)) {
                 /*
                  * If this function is not an external function which's argument
                  * must be refcounted like a prf argument
                  * we increase the environment at the current codelevel by one
                  */
-                avis = AddEnvironment (avis, INFO_SSARC_DEPTH (arg_info), 1);
+                avis = AddEnvironment (avis, INFO_EMRC_DEPTH (arg_info), 1);
             }
         }
         argc += 1;
@@ -1378,7 +1381,7 @@ SSARCap (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCarg
+ * @fn EMRCarg
  *
  *  @brief Function arguments are only traversed to initialize the
  *         variable environments
@@ -1390,9 +1393,9 @@ SSARCap (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCarg (node *arg_node, info *arg_info)
+EMRCarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSARCarg");
+    DBUG_ENTER ("EMRCarg");
 
     ARG_AVIS (arg_node) = InitializeEnvironment (ARG_AVIS (arg_node), 0);
 
@@ -1405,7 +1408,7 @@ SSARCarg (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCArray
+ * @fn EMRCArray
  *
  *  @brief traverses the array's arguments and allocates memory iff the
  *         array appears on a RHS of a LET-Node
@@ -1417,12 +1420,12 @@ SSARCarg (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCarray (node *arg_node, info *arg_info)
+EMRCarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSARCarray");
+    DBUG_ENTER ("EMRCarray");
 
-    if (INFO_SSARC_RHS (arg_info) == rc_undef) {
-        INFO_SSARC_RHS (arg_info) = rc_array;
+    if (INFO_EMRC_RHS (arg_info) == rc_undef) {
+        INFO_EMRC_RHS (arg_info) = rc_array;
 
         /*
          * Make memory allocation
@@ -1432,9 +1435,9 @@ SSARCarray (node *arg_node, info *arg_info)
              * [ a, ... ]
              * alloc_or_reuse( 1, outer_dim + dim(a), genarray( outer_shape, a))
              */
-            INFO_SSARC_ALLOCLIST (arg_info)
-              = MakeARList (INFO_SSARC_ALLOCLIST (arg_info),
-                            IDS_AVIS (INFO_SSARC_LHS (arg_info)), MakeNum (1),
+            INFO_EMRC_ALLOCLIST (arg_info)
+              = MakeARList (INFO_EMRC_ALLOCLIST (arg_info),
+                            IDS_AVIS (INFO_EMRC_LHS (arg_info)), MakeNum (1),
 
                             MakePrf2 (F_add_SxS,
                                       MakeNum (SHGetDim (ARRAY_SHAPE (arg_node))),
@@ -1452,9 +1455,9 @@ SSARCarray (node *arg_node, info *arg_info)
              * []: empty array
              * alloc_or_reuse( 1, outer_dim, outer_shape)
              */
-            INFO_SSARC_ALLOCLIST (arg_info)
-              = MakeARList (INFO_SSARC_ALLOCLIST (arg_info),
-                            IDS_AVIS (INFO_SSARC_LHS (arg_info)), MakeNum (1),
+            INFO_EMRC_ALLOCLIST (arg_info)
+              = MakeARList (INFO_EMRC_ALLOCLIST (arg_info),
+                            IDS_AVIS (INFO_EMRC_LHS (arg_info)), MakeNum (1),
 
                             MakeNum (SHGetDim (ARRAY_SHAPE (arg_node))),
 
@@ -1468,7 +1471,7 @@ SSARCarray (node *arg_node, info *arg_info)
         ARRAY_AELEMS (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
     }
 
-    DBUG_ASSERT (INFO_SSARC_REUSELIST (arg_info) == NULL,
+    DBUG_ASSERT (INFO_EMRC_REUSELIST (arg_info) == NULL,
                  "REUSELIST must have no members");
 
     DBUG_RETURN (arg_node);
@@ -1476,7 +1479,7 @@ SSARCarray (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCassign
+ * @fn EMRCassign
  *
  *  @brief traverses an N_assign node.
  *
@@ -1492,12 +1495,12 @@ SSARCarray (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCassign (node *arg_node, info *arg_info)
+EMRCassign (node *arg_node, info *arg_info)
 {
     node *n;
     ids *i;
 
-    DBUG_ENTER ("SSARCassign");
+    DBUG_ENTER ("EMRCassign");
 
     /*
      * Top down traversal:
@@ -1506,7 +1509,7 @@ SSARCassign (node *arg_node, info *arg_info)
     if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let) {
         i = LET_IDS (ASSIGN_INSTR (arg_node));
         while (i != NULL) {
-            IDS_AVIS (i) = SetDefLevel (IDS_AVIS (i), INFO_SSARC_DEPTH (arg_info));
+            IDS_AVIS (i) = SetDefLevel (IDS_AVIS (i), INFO_EMRC_DEPTH (arg_info));
             i = IDS_NEXT (i);
         }
     }
@@ -1514,7 +1517,7 @@ SSARCassign (node *arg_node, info *arg_info)
     if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_icm) {
         ID_AVIS (ICM_ARG1 (ASSIGN_INSTR (arg_node)))
           = SetDefLevel (ID_AVIS (ICM_ARG1 (ASSIGN_INSTR (arg_node))),
-                         INFO_SSARC_DEPTH (arg_info));
+                         INFO_EMRC_DEPTH (arg_info));
     }
 
     /*
@@ -1525,23 +1528,23 @@ SSARCassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    INFO_SSARC_RHS (arg_info) = rc_undef;
+    INFO_EMRC_RHS (arg_info) = rc_undef;
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
     /*
      * If this node happens to be a conditional,
      * traverse again!
      */
-    if (INFO_SSARC_RHS (arg_info) == rc_cond) {
-        INFO_SSARC_MODE (arg_info) = rc_else;
+    if (INFO_EMRC_RHS (arg_info) == rc_cond) {
+        INFO_EMRC_MODE (arg_info) = rc_else;
 
-        n = FUNDEF_ARGS (INFO_SSARC_FUNDEF (arg_info));
+        n = FUNDEF_ARGS (INFO_EMRC_FUNDEF (arg_info));
         while (n != NULL) {
             ARG_AVIS (n) = RescueEnvironment (ARG_AVIS (n));
             n = ARG_NEXT (n);
         }
 
-        n = BLOCK_VARDEC (FUNDEF_BODY (INFO_SSARC_FUNDEF (arg_info)));
+        n = BLOCK_VARDEC (FUNDEF_BODY (INFO_EMRC_FUNDEF (arg_info)));
         while (n != NULL) {
             VARDEC_AVIS (n) = RescueEnvironment (VARDEC_AVIS (n));
             n = VARDEC_NEXT (n);
@@ -1551,10 +1554,10 @@ SSARCassign (node *arg_node, info *arg_info)
             ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
         }
 
-        INFO_SSARC_RHS (arg_info) = rc_undef;
+        INFO_EMRC_RHS (arg_info) = rc_undef;
         ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
-        INFO_SSARC_MODE (arg_info) = rc_default;
+        INFO_EMRC_MODE (arg_info) = rc_default;
     }
 
     /*
@@ -1572,14 +1575,14 @@ SSARCassign (node *arg_node, info *arg_info)
      */
     arg_node = MakeAllocAssignments (arg_info, arg_node);
 
-    INFO_SSARC_LHS (arg_info) = NULL;
+    INFO_EMRC_LHS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCblock
+ * @fn EMRCblock
  *
  *  @brief traverse vardecs in order to initialize environments and
  *         traverses code
@@ -1591,9 +1594,9 @@ SSARCassign (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCblock (node *arg_node, info *arg_info)
+EMRCblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSARCblock");
+    DBUG_ENTER ("EMRCblock");
 
     /*
      * Traverse vardecs in order to initialize RC-Counters
@@ -1614,7 +1617,7 @@ SSARCblock (node *arg_node, info *arg_info)
  *
  * @fn AnnotateBranches
  *
- *  @brief a helper function to SSARCcond which inserts ADJUST_RC statements
+ *  @brief a helper function to EMRCcond which inserts ADJUST_RC statements
  *         for a given variable prior in front of each branches code
  *
  *  @param avis the given variable
@@ -1631,28 +1634,28 @@ AnnotateBranches (node *avis, node *cond, info *arg_info)
 
     DBUG_ENTER ("AnnotateBranches");
 
-    DBUG_ASSERT (INFO_SSARC_DEPTH (arg_info) == 0, "Invalid DEPTH: != 0");
+    DBUG_ASSERT (INFO_EMRC_DEPTH (arg_info) == 0, "Invalid DEPTH: != 0");
 
-    e = GetEnvironment (avis, INFO_SSARC_DEPTH (arg_info));
-    avis = PopEnvironment (avis, INFO_SSARC_DEPTH (arg_info));
+    e = GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
+    avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
     avis = RestoreEnvironment (avis);
 
-    t = GetEnvironment (avis, INFO_SSARC_DEPTH (arg_info));
-    avis = PopEnvironment (avis, INFO_SSARC_DEPTH (arg_info));
+    t = GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
+    avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
     avis = RestoreEnvironment (avis);
 
     if (e + t > 0) {
         m = e < t ? e : t;
         m = m > 1 ? m : 1;
-        avis = AddEnvironment (avis, INFO_SSARC_DEPTH (arg_info), m);
+        avis = AddEnvironment (avis, INFO_EMRC_DEPTH (arg_info), m);
 
-        INFO_SSARC_INCLIST (arg_info)
-          = IncListInsert (INFO_SSARC_INCLIST (arg_info), avis, t - m);
+        INFO_EMRC_INCLIST (arg_info)
+          = IncListInsert (INFO_EMRC_INCLIST (arg_info), avis, t - m);
         BLOCK_INSTR (COND_THEN (cond))
           = MakeIncAssignments (arg_info, BLOCK_INSTR (COND_THEN (cond)));
 
-        INFO_SSARC_INCLIST (arg_info)
-          = IncListInsert (INFO_SSARC_INCLIST (arg_info), avis, e - m);
+        INFO_EMRC_INCLIST (arg_info)
+          = IncListInsert (INFO_EMRC_INCLIST (arg_info), avis, e - m);
         BLOCK_INSTR (COND_ELSE (cond))
           = MakeIncAssignments (arg_info, BLOCK_INSTR (COND_ELSE (cond)));
     }
@@ -1661,9 +1664,9 @@ AnnotateBranches (node *avis, node *cond, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCcond
+ * @fn EMRCcond
  *
- *  @brief depending on INFO_SSARC_MODE (rc_default or rc_else) a
+ *  @brief depending on INFO_EMRC_MODE (rc_default or rc_else) a
  *         conditionals then or else branches are traversed. When both
  *         branches have been traversed, adjust_rc instructions are inserted
  *         to make both branches behave equal from an external point of view.
@@ -1675,14 +1678,14 @@ AnnotateBranches (node *avis, node *cond, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCcond (node *arg_node, info *arg_info)
+EMRCcond (node *arg_node, info *arg_info)
 {
     node *n;
     node *avis;
 
-    DBUG_ENTER ("SSARCcond");
+    DBUG_ENTER ("EMRCcond");
 
-    if (INFO_SSARC_MODE (arg_info) == rc_default) {
+    if (INFO_EMRC_MODE (arg_info) == rc_default) {
         COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
 
         if (NODE_TYPE (COND_COND (arg_node)) == N_id) {
@@ -1691,8 +1694,8 @@ SSARCcond (node *arg_node, info *arg_info)
              */
             avis = ID_AVIS (COND_COND (arg_node));
             if (GetEnvironment (avis, GetDefLevel (avis)) == 0) {
-                INFO_SSARC_DECLIST (arg_info)
-                  = DecListInsert (INFO_SSARC_DECLIST (arg_info), avis,
+                INFO_EMRC_DECLIST (arg_info)
+                  = DecListInsert (INFO_EMRC_DECLIST (arg_info), avis,
                                    GetDefLevel (avis));
                 avis = AddEnvironment (avis, GetDefLevel (avis), 1);
             }
@@ -1713,8 +1716,8 @@ SSARCcond (node *arg_node, info *arg_info)
              */
             avis = ID_AVIS (COND_COND (arg_node));
             if (GetEnvironment (avis, GetDefLevel (avis)) == 0) {
-                INFO_SSARC_DECLIST (arg_info)
-                  = DecListInsert (INFO_SSARC_DECLIST (arg_info), avis,
+                INFO_EMRC_DECLIST (arg_info)
+                  = DecListInsert (INFO_EMRC_DECLIST (arg_info), avis,
                                    GetDefLevel (avis));
                 avis = AddEnvironment (avis, GetDefLevel (avis), 1);
             }
@@ -1731,27 +1734,27 @@ SSARCcond (node *arg_node, info *arg_info)
          * annote missing ADJUST_RCs at the beginning of blocks and
          * simultaneously merge both environments
          */
-        n = FUNDEF_ARGS (INFO_SSARC_FUNDEF (arg_info));
+        n = FUNDEF_ARGS (INFO_EMRC_FUNDEF (arg_info));
         while (n != NULL) {
             ARG_AVIS (n) = AnnotateBranches (ARG_AVIS (n), arg_node, arg_info);
             n = ARG_NEXT (n);
         }
 
-        n = BLOCK_VARDEC (FUNDEF_BODY (INFO_SSARC_FUNDEF (arg_info)));
+        n = BLOCK_VARDEC (FUNDEF_BODY (INFO_EMRC_FUNDEF (arg_info)));
         while (n != NULL) {
             VARDEC_AVIS (n) = AnnotateBranches (VARDEC_AVIS (n), arg_node, arg_info);
             n = VARDEC_NEXT (n);
         }
     }
 
-    INFO_SSARC_RHS (arg_info) = rc_cond;
+    INFO_EMRC_RHS (arg_info) = rc_cond;
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCconst
+ * @fn EMRCconst
  *
  *  @brief allocates memory iff this constand appears on a RHS of a LET-NODE
  *
@@ -1762,22 +1765,22 @@ SSARCcond (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCconst (node *arg_node, info *arg_info)
+EMRCconst (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSARCconst");
+    DBUG_ENTER ("EMRCconst");
 
-    if (INFO_SSARC_RHS (arg_info) == rc_undef) {
-        INFO_SSARC_RHS (arg_info) = rc_const;
+    if (INFO_EMRC_RHS (arg_info) == rc_undef) {
+        INFO_EMRC_RHS (arg_info) = rc_const;
 
         /*
          * Make memory allocation
          */
-        INFO_SSARC_ALLOCLIST (arg_info)
-          = MakeARList (INFO_SSARC_ALLOCLIST (arg_info),
-                        IDS_AVIS (INFO_SSARC_LHS (arg_info)), MakeNum (1), MakeNum (0),
+        INFO_EMRC_ALLOCLIST (arg_info)
+          = MakeARList (INFO_EMRC_ALLOCLIST (arg_info),
+                        IDS_AVIS (INFO_EMRC_LHS (arg_info)), MakeNum (1), MakeNum (0),
                         CreateZeroVector (0, T_int), NULL);
 
-        DBUG_ASSERT (INFO_SSARC_REUSELIST (arg_info) == NULL,
+        DBUG_ASSERT (INFO_EMRC_REUSELIST (arg_info) == NULL,
                      "REUSELIST must have no members!!!");
     }
 
@@ -1786,9 +1789,9 @@ SSARCconst (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCfuncond
+ * @fn EMRCfuncond
  *
- *  @brief traverses a funcond only to set INFO_SSARC_RHS to rc_funcond
+ *  @brief traverses a funcond only to set INFO_EMRC_RHS to rc_funcond
  *
  *  @param arg_node
  *  @param arg_info
@@ -1797,18 +1800,18 @@ SSARCconst (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCfuncond (node *arg_node, info *arg_info)
+EMRCfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSARCfuncond");
+    DBUG_ENTER ("EMRCfuncond");
 
-    INFO_SSARC_RHS (arg_info) = rc_funcond;
+    INFO_EMRC_RHS (arg_info) = rc_funcond;
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCfundef
+ * @fn EMRCfundef
  *
  *  @brief traverses a fundef node by first initializing the argument
  *         variables and then traversing the functions block.
@@ -1821,14 +1824,14 @@ SSARCfuncond (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCfundef (node *fundef, info *arg_info)
+EMRCfundef (node *fundef, info *arg_info)
 {
     node *arg;
     node *avis;
 
-    DBUG_ENTER ("SSARCfundef");
+    DBUG_ENTER ("EMRCfundef");
 
-    if (INFO_SSARC_MODE (arg_info) == rc_annotate_cfuns) {
+    if (INFO_EMRC_MODE (arg_info) == rc_annotate_cfuns) {
         /*
          * special module name -> must be an external C-fun
          */
@@ -1843,9 +1846,9 @@ SSARCfundef (node *fundef, info *arg_info)
         DBUG_RETURN (fundef);
     }
 
-    INFO_SSARC_FUNDEF (arg_info) = fundef;
-    INFO_SSARC_DEPTH (arg_info) = 0;
-    INFO_SSARC_MODE (arg_info) = rc_default;
+    INFO_EMRC_FUNDEF (arg_info) = fundef;
+    INFO_EMRC_DEPTH (arg_info) = 0;
+    INFO_EMRC_MODE (arg_info) = rc_default;
 
     /*
      * Traverse args in order to initialize refcounting environment
@@ -1865,10 +1868,10 @@ SSARCfundef (node *fundef, info *arg_info)
         arg = FUNDEF_ARGS (fundef);
         while (arg != NULL) {
             avis = ARG_AVIS (arg);
-            INFO_SSARC_INCLIST (arg_info)
-              = IncListInsert (INFO_SSARC_INCLIST (arg_info), avis,
-                               GetEnvironment (avis, INFO_SSARC_DEPTH (arg_info)) - 1);
-            avis = PopEnvironment (avis, INFO_SSARC_DEPTH (arg_info));
+            INFO_EMRC_INCLIST (arg_info)
+              = IncListInsert (INFO_EMRC_INCLIST (arg_info), avis,
+                               GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info)) - 1);
+            avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
 
             arg = ARG_NEXT (arg);
         }
@@ -1894,7 +1897,7 @@ SSARCfundef (node *fundef, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn SSARClet
+ * @fn EMRClet
  *
  *  @brief traverses the RHS and subsequently adds LHS identifiers to INCLIST
  *
@@ -1905,23 +1908,23 @@ SSARCfundef (node *fundef, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARClet (node *arg_node, info *arg_info)
+EMRClet (node *arg_node, info *arg_info)
 {
     ids *ids;
     node *avis;
 
-    DBUG_ENTER ("SSARClet");
+    DBUG_ENTER ("EMRClet");
 
     /*
      * Remember LHS ids in order to be able to identify which
      * fun ap parameters must be refcounted like prf paramters using
      * PRAGMA_REFCOUNTING
      */
-    INFO_SSARC_LHS (arg_info) = LET_IDS (arg_node);
+    INFO_EMRC_LHS (arg_info) = LET_IDS (arg_node);
 
     LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
-    switch (INFO_SSARC_RHS (arg_info)) {
+    switch (INFO_EMRC_RHS (arg_info)) {
 
     case rc_with:
     case rc_prfap:
@@ -1966,10 +1969,10 @@ SSARClet (node *arg_node, info *arg_info)
              * Subtraction needed because ALLOC / FunAp initializes RC with 1
              */
             avis = IDS_AVIS (ids);
-            INFO_SSARC_INCLIST (arg_info)
-              = IncListInsert (INFO_SSARC_INCLIST (arg_info), avis,
-                               GetEnvironment (avis, INFO_SSARC_DEPTH (arg_info)) - 1);
-            avis = PopEnvironment (avis, INFO_SSARC_DEPTH (arg_info));
+            INFO_EMRC_INCLIST (arg_info)
+              = IncListInsert (INFO_EMRC_INCLIST (arg_info), avis,
+                               GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info)) - 1);
+            avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
 
             ids = IDS_NEXT (ids);
         }
@@ -1983,36 +1986,36 @@ SSARClet (node *arg_node, info *arg_info)
         avis = IDS_AVIS (LET_IDS (arg_node));
         IDS_AVIS (ID_IDS (LET_EXPR (arg_node)))
           = AddEnvironment (IDS_AVIS (ID_IDS (LET_EXPR (arg_node))),
-                            INFO_SSARC_DEPTH (arg_info),
-                            GetEnvironment (avis, INFO_SSARC_DEPTH (arg_info)));
-        avis = PopEnvironment (avis, INFO_SSARC_DEPTH (arg_info));
+                            INFO_EMRC_DEPTH (arg_info),
+                            GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info)));
+        avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
         break;
 
     case rc_funcond:
         /*
          * Treat FunCond like a variable Copy assignment
          */
-        switch (INFO_SSARC_MODE (arg_info)) {
+        switch (INFO_EMRC_MODE (arg_info)) {
         case rc_default:
             avis = ID_AVIS (EXPRS_EXPR (FUNCOND_THEN (LET_EXPR (arg_node))));
-            avis = SetDefLevel (avis, INFO_SSARC_DEPTH (arg_info));
-            avis = AddEnvironment (avis, INFO_SSARC_DEPTH (arg_info),
+            avis = SetDefLevel (avis, INFO_EMRC_DEPTH (arg_info));
+            avis = AddEnvironment (avis, INFO_EMRC_DEPTH (arg_info),
                                    GetEnvironment (IDS_AVIS (LET_IDS (arg_node)),
-                                                   INFO_SSARC_DEPTH (arg_info)));
+                                                   INFO_EMRC_DEPTH (arg_info)));
             IDS_AVIS (LET_IDS (arg_node)) = PopEnvironment (IDS_AVIS (LET_IDS (arg_node)),
-                                                            INFO_SSARC_DEPTH (arg_info));
+                                                            INFO_EMRC_DEPTH (arg_info));
             IDS_AVIS (LET_IDS (arg_node))
               = RestoreEnvironment (IDS_AVIS (LET_IDS (arg_node)));
             break;
 
         case rc_else:
             avis = ID_AVIS (EXPRS_EXPR (FUNCOND_ELSE (LET_EXPR (arg_node))));
-            avis = SetDefLevel (avis, INFO_SSARC_DEPTH (arg_info));
-            avis = AddEnvironment (avis, INFO_SSARC_DEPTH (arg_info),
+            avis = SetDefLevel (avis, INFO_EMRC_DEPTH (arg_info));
+            avis = AddEnvironment (avis, INFO_EMRC_DEPTH (arg_info),
                                    GetEnvironment (IDS_AVIS (LET_IDS (arg_node)),
-                                                   INFO_SSARC_DEPTH (arg_info)));
+                                                   INFO_EMRC_DEPTH (arg_info)));
             IDS_AVIS (LET_IDS (arg_node)) = PopEnvironment (IDS_AVIS (LET_IDS (arg_node)),
-                                                            INFO_SSARC_DEPTH (arg_info));
+                                                            INFO_EMRC_DEPTH (arg_info));
             break;
         default:
             DBUG_ASSERT (FALSE, "Cannot happen");
@@ -2027,7 +2030,7 @@ SSARClet (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCicm
+ * @fn EMRCicm
  *
  *  @brief ICMs introduced by IVE require a special treatment (see below)
  *
@@ -2038,14 +2041,14 @@ SSARClet (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCicm (node *arg_node, info *arg_info)
+EMRCicm (node *arg_node, info *arg_info)
 {
     char *name;
     node *avis;
 
-    DBUG_ENTER ("SSARCicm");
+    DBUG_ENTER ("EMRCicm");
 
-    INFO_SSARC_RHS (arg_info) = rc_icm;
+    INFO_EMRC_RHS (arg_info) = rc_icm;
 
     name = ICM_NAME (arg_node);
 
@@ -2059,13 +2062,13 @@ SSARCicm (node *arg_node, info *arg_info)
          *   -> do NOT traverse the second argument (used)
          */
         avis = IDS_AVIS (ID_IDS (ICM_ARG1 (arg_node)));
-        INFO_SSARC_ALLOCLIST (arg_info)
-          = MakeARList (INFO_SSARC_ALLOCLIST (arg_info), avis, MakeNum (1), MakeNum (0),
+        INFO_EMRC_ALLOCLIST (arg_info)
+          = MakeARList (INFO_EMRC_ALLOCLIST (arg_info), avis, MakeNum (1), MakeNum (0),
                         CreateZeroVector (0, T_int), NULL);
-        INFO_SSARC_INCLIST (arg_info)
-          = IncListInsert (INFO_SSARC_INCLIST (arg_info), avis,
-                           GetEnvironment (avis, INFO_SSARC_DEPTH (arg_info)));
-        avis = PopEnvironment (avis, INFO_SSARC_DEPTH (arg_info));
+        INFO_EMRC_INCLIST (arg_info)
+          = IncListInsert (INFO_EMRC_INCLIST (arg_info), avis,
+                           GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info)));
+        avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
     } else {
         if (strstr (name, "VECT2OFFSET") != NULL) {
             /*
@@ -2078,13 +2081,13 @@ SSARCicm (node *arg_node, info *arg_info)
              *  -> handle ICM like a prf (RCO)
              */
             avis = IDS_AVIS (ID_IDS (ICM_ARG1 (arg_node)));
-            INFO_SSARC_ALLOCLIST (arg_info)
-              = MakeARList (INFO_SSARC_ALLOCLIST (arg_info), avis, MakeNum (1),
+            INFO_EMRC_ALLOCLIST (arg_info)
+              = MakeARList (INFO_EMRC_ALLOCLIST (arg_info), avis, MakeNum (1),
                             MakeNum (0), CreateZeroVector (0, T_int), NULL);
-            INFO_SSARC_INCLIST (arg_info)
-              = IncListInsert (INFO_SSARC_INCLIST (arg_info), avis,
-                               GetEnvironment (avis, INFO_SSARC_DEPTH (arg_info)));
-            avis = PopEnvironment (avis, INFO_SSARC_DEPTH (arg_info));
+            INFO_EMRC_INCLIST (arg_info)
+              = IncListInsert (INFO_EMRC_INCLIST (arg_info), avis,
+                               GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info)));
+            avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
             ICM_EXPRS2 (arg_node) = Trav (ICM_EXPRS2 (arg_node), arg_info);
         } else {
             if (strstr (name, "IDXS2OFFSET") != NULL) {
@@ -2098,17 +2101,17 @@ SSARCicm (node *arg_node, info *arg_info)
                  *  -> handle ICM like a prf (RCO)
                  */
                 avis = IDS_AVIS (ID_IDS (ICM_ARG1 (arg_node)));
-                INFO_SSARC_ALLOCLIST (arg_info)
-                  = MakeARList (INFO_SSARC_ALLOCLIST (arg_info), avis, MakeNum (1),
+                INFO_EMRC_ALLOCLIST (arg_info)
+                  = MakeARList (INFO_EMRC_ALLOCLIST (arg_info), avis, MakeNum (1),
                                 MakeNum (0), CreateZeroVector (0, T_int), NULL);
-                INFO_SSARC_INCLIST (arg_info)
-                  = IncListInsert (INFO_SSARC_INCLIST (arg_info), avis,
-                                   GetEnvironment (avis, INFO_SSARC_DEPTH (arg_info)));
-                avis = PopEnvironment (avis, INFO_SSARC_DEPTH (arg_info));
+                INFO_EMRC_INCLIST (arg_info)
+                  = IncListInsert (INFO_EMRC_INCLIST (arg_info), avis,
+                                   GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info)));
+                avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
 
                 ICM_EXPRS2 (arg_node) = Trav (ICM_EXPRS2 (arg_node), arg_info);
             } else {
-                DBUG_ASSERT ((0), "unknown ICM found during SSARC");
+                DBUG_ASSERT ((0), "unknown ICM found during EMRC");
             }
         }
     }
@@ -2118,7 +2121,7 @@ SSARCicm (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCid
+ * @fn EMRCid
  *
  *  @brief traverses RHS identifiers. Depending on the surrounding construct,
  *         different actions are done. (see comments below)
@@ -2130,25 +2133,25 @@ SSARCicm (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCid (node *arg_node, info *arg_info)
+EMRCid (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("SSARCid");
+    DBUG_ENTER ("EMRCid");
 
     avis = ID_AVIS (arg_node);
 
-    switch (INFO_SSARC_RHS (arg_info)) {
+    switch (INFO_EMRC_RHS (arg_info)) {
 
     case rc_undef:
-        INFO_SSARC_RHS (arg_info) = rc_copy;
+        INFO_EMRC_RHS (arg_info) = rc_copy;
         break;
 
     case rc_return:
         /*
          * Add one to the environment at the current level (level 0)
          */
-        avis = AddEnvironment (avis, INFO_SSARC_DEPTH (arg_info), 1);
+        avis = AddEnvironment (avis, INFO_EMRC_DEPTH (arg_info), 1);
         break;
 
     case rc_cexprs:
@@ -2157,7 +2160,7 @@ SSARCid (node *arg_node, info *arg_info)
          * as this can only happen if the variable has
          * been defined in the current CBLOCK
          */
-        avis = SetDefLevel (avis, INFO_SSARC_DEPTH (arg_info));
+        avis = SetDefLevel (avis, INFO_EMRC_DEPTH (arg_info));
 
         /*
          * Here is no break missing
@@ -2171,8 +2174,8 @@ SSARCid (node *arg_node, info *arg_info)
          * and put the variable into DECLIST
          */
         if (GetEnvironment (avis, GetDefLevel (avis)) == 0) {
-            INFO_SSARC_DECLIST (arg_info)
-              = DecListInsert (INFO_SSARC_DECLIST (arg_info), avis, GetDefLevel (avis));
+            INFO_EMRC_DECLIST (arg_info)
+              = DecListInsert (INFO_EMRC_DECLIST (arg_info), avis, GetDefLevel (avis));
             avis = AddEnvironment (avis, GetDefLevel (avis), 1);
         }
         break;
@@ -2183,16 +2186,16 @@ SSARCid (node *arg_node, info *arg_info)
          * and put the variable into DECLIST
          */
         if (GetEnvironment (avis, GetDefLevel (avis)) == 0) {
-            INFO_SSARC_DECLIST (arg_info)
-              = DecListInsert (INFO_SSARC_DECLIST (arg_info), avis, GetDefLevel (avis));
+            INFO_EMRC_DECLIST (arg_info)
+              = DecListInsert (INFO_EMRC_DECLIST (arg_info), avis, GetDefLevel (avis));
             avis = AddEnvironment (avis, GetDefLevel (avis), 1);
 
             /*
              * Potentially, this N_id could be reused.
              *  -> Add it to REUSELIST
              */
-            INFO_SSARC_REUSELIST (arg_info)
-              = AppendExprs (INFO_SSARC_REUSELIST (arg_info),
+            INFO_EMRC_REUSELIST (arg_info)
+              = AppendExprs (INFO_EMRC_REUSELIST (arg_info),
                              MakeExprs (DupNode (arg_node), NULL));
         }
         break;
@@ -2211,7 +2214,7 @@ SSARCid (node *arg_node, info *arg_info)
  *
  * @fn AnnotateCBlock
  *
- *  @brief Helper function to SSARCNcode which annotates ADJUST_RC
+ *  @brief Helper function to EMRCNcode which annotates ADJUST_RC
  *         statement at a block's beginning
  *
  *  @param avis
@@ -2228,11 +2231,11 @@ AnnotateCBlock (node *avis, node *cblock, info *arg_info)
 
     DBUG_ENTER ("AnnotateCBlock");
 
-    env = GetEnvironment (avis, INFO_SSARC_DEPTH (arg_info));
-    avis = PopEnvironment (avis, INFO_SSARC_DEPTH (arg_info));
+    env = GetEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
+    avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info));
 
-    INFO_SSARC_INCLIST (arg_info)
-      = IncListInsert (INFO_SSARC_INCLIST (arg_info), avis, env);
+    INFO_EMRC_INCLIST (arg_info)
+      = IncListInsert (INFO_EMRC_INCLIST (arg_info), avis, env);
 
     BLOCK_INSTR (cblock) = MakeIncAssignments (arg_info, BLOCK_INSTR (cblock));
 
@@ -2241,7 +2244,7 @@ AnnotateCBlock (node *avis, node *cblock, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCNcode
+ * @fn EMRCNcode
  *
  *  @brief traverses a with-loop's code and inserts ADJUST_RCs before and
  *         after (in NCODE_EPILOGUE) the code block
@@ -2253,17 +2256,17 @@ AnnotateCBlock (node *avis, node *cblock, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCNcode (node *arg_node, info *arg_info)
+EMRCNcode (node *arg_node, info *arg_info)
 {
     node *n, *epicode;
 
-    DBUG_ENTER ("SSARCNcode");
+    DBUG_ENTER ("EMRCNcode");
 
     /*
      * Traverse CEXPRS and insert adjust_rc operations into
      * NCODE_EPILOGUE
      */
-    INFO_SSARC_RHS (arg_info) = rc_cexprs;
+    INFO_EMRC_RHS (arg_info) = rc_cexprs;
     NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
 
     DBUG_ASSERT (NCODE_EPILOGUE (arg_node) == NULL, "Epilogue must not exist yet!");
@@ -2280,7 +2283,7 @@ SSARCNcode (node *arg_node, info *arg_info)
     /*
      * Prepend block with Adjust_RC prfs
      */
-    n = FUNDEF_ARGS (INFO_SSARC_FUNDEF (arg_info));
+    n = FUNDEF_ARGS (INFO_EMRC_FUNDEF (arg_info));
     while (n != NULL) {
         NCODE_CBLOCK (arg_node)
           = AnnotateCBlock (ARG_AVIS (n), NCODE_CBLOCK (arg_node), arg_info);
@@ -2288,7 +2291,7 @@ SSARCNcode (node *arg_node, info *arg_info)
         n = ARG_NEXT (n);
     }
 
-    n = BLOCK_VARDEC (FUNDEF_BODY (INFO_SSARC_FUNDEF (arg_info)));
+    n = BLOCK_VARDEC (FUNDEF_BODY (INFO_EMRC_FUNDEF (arg_info)));
     while (n != NULL) {
         NCODE_CBLOCK (arg_node)
           = AnnotateCBlock (VARDEC_AVIS (n), NCODE_CBLOCK (arg_node), arg_info);
@@ -2310,7 +2313,7 @@ SSARCNcode (node *arg_node, info *arg_info)
  *
  * @fn AllocateWithID
  *
- *  @brief Helper function to SSARCNWith(2) which allocates memory for
+ *  @brief Helper function to EMRCNWith(2) which allocates memory for
  *         the index variables
  *
  *  @param withid
@@ -2333,14 +2336,14 @@ AllocateWithID (node *withid, info *arg_info, node *iv_shp)
      * after the with-loop such that iv is deallocated
      */
     avis = IDS_AVIS (NWITHID_VEC (withid));
-    INFO_SSARC_ALLOCLIST (arg_info) = MakeARList (INFO_SSARC_ALLOCLIST (arg_info), avis,
-                                                  MakeNum (1), MakeNum (1), iv_shp, NULL);
+    INFO_EMRC_ALLOCLIST (arg_info) = MakeARList (INFO_EMRC_ALLOCLIST (arg_info), avis,
+                                                 MakeNum (1), MakeNum (1), iv_shp, NULL);
     if (GetEnvironment (avis, GetDefLevel (avis)) == 0) {
-        INFO_SSARC_DECLIST (arg_info)
-          = DecListInsert (INFO_SSARC_DECLIST (arg_info), avis, GetDefLevel (avis));
+        INFO_EMRC_DECLIST (arg_info)
+          = DecListInsert (INFO_EMRC_DECLIST (arg_info), avis, GetDefLevel (avis));
         avis = AddEnvironment (avis, GetDefLevel (avis), 1);
     }
-    avis = PopEnvironment (avis, INFO_SSARC_DEPTH (arg_info) - 1);
+    avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info) - 1);
 
     /*
      * Allocate the index variables and make sure to have an ADJUST_RC( x, -1)
@@ -2349,15 +2352,15 @@ AllocateWithID (node *withid, info *arg_info, node *iv_shp)
     i = NWITHID_IDS (withid);
     while (i != NULL) {
         avis = IDS_AVIS (i);
-        INFO_SSARC_ALLOCLIST (arg_info)
-          = MakeARList (INFO_SSARC_ALLOCLIST (arg_info), avis, MakeNum (1), MakeNum (0),
+        INFO_EMRC_ALLOCLIST (arg_info)
+          = MakeARList (INFO_EMRC_ALLOCLIST (arg_info), avis, MakeNum (1), MakeNum (0),
                         CreateZeroVector (0, T_int), NULL);
         if (GetEnvironment (avis, GetDefLevel (avis)) == 0) {
-            INFO_SSARC_DECLIST (arg_info)
-              = DecListInsert (INFO_SSARC_DECLIST (arg_info), avis, GetDefLevel (avis));
+            INFO_EMRC_DECLIST (arg_info)
+              = DecListInsert (INFO_EMRC_DECLIST (arg_info), avis, GetDefLevel (avis));
             avis = AddEnvironment (avis, GetDefLevel (avis), 1);
         }
-        avis = PopEnvironment (avis, INFO_SSARC_DEPTH (arg_info) - 1);
+        avis = PopEnvironment (avis, INFO_EMRC_DEPTH (arg_info) - 1);
         i = i->next;
     }
 
@@ -2368,7 +2371,7 @@ AllocateWithID (node *withid, info *arg_info, node *iv_shp)
  *
  * @fn MakeWithAlloc
  *
- *  @brief Helper function to SSARCNwith(2) which allocates memory for
+ *  @brief Helper function to EMRCNwith(2) which allocates memory for
  *         the result array
  *
  *  @param als ALLOCLIST
@@ -2395,8 +2398,8 @@ MakeWithAlloc (ar_list_struct *als, ids *ids, node *withop, node *cexpr, info *a
 
                             Shpseg2Array (IDS_SHPSEG (ids), GetShapeDim (IDS_TYPE (ids))),
 
-                            FilterReuseList (INFO_SSARC_REUSELIST (arg_info),
-                                             INFO_SSARC_DECLIST (arg_info), ids));
+                            FilterReuseList (INFO_EMRC_REUSELIST (arg_info),
+                                             INFO_EMRC_DECLIST (arg_info), ids));
         } else {
             if (KNOWN_SHAPE (GetShapeDim (ID_TYPE (cexpr)))) {
                 als = MakeARList (als, IDS_AVIS (ids), MakeNum (1),
@@ -2412,8 +2415,8 @@ MakeWithAlloc (ar_list_struct *als, ids *ids, node *withop, node *cexpr, info *a
                                             Shpseg2Array (ID_SHPSEG (cexpr),
                                                           GetShapeDim (ID_TYPE (cexpr)))),
 
-                                  FilterReuseList (INFO_SSARC_REUSELIST (arg_info),
-                                                   INFO_SSARC_DECLIST (arg_info), ids));
+                                  FilterReuseList (INFO_EMRC_REUSELIST (arg_info),
+                                                   INFO_EMRC_DECLIST (arg_info), ids));
             } else {
                 als = MakeARList (als, IDS_AVIS (ids), MakeNum (1),
 
@@ -2430,8 +2433,8 @@ MakeWithAlloc (ar_list_struct *als, ids *ids, node *withop, node *cexpr, info *a
                                                      DupNode (NWITHOP_SHAPE (withop)),
                                                      DupNode (NWITHOP_DEFAULT (withop)))),
 
-                                  FilterReuseList (INFO_SSARC_REUSELIST (arg_info),
-                                                   INFO_SSARC_DECLIST (arg_info), ids));
+                                  FilterReuseList (INFO_EMRC_REUSELIST (arg_info),
+                                                   INFO_EMRC_DECLIST (arg_info), ids));
             }
         }
         break;
@@ -2443,8 +2446,8 @@ MakeWithAlloc (ar_list_struct *als, ids *ids, node *withop, node *cexpr, info *a
 
                           MakePrf (F_shape, DupNode (NWITHOP_ARRAY (withop))),
 
-                          FilterReuseList (INFO_SSARC_REUSELIST (arg_info),
-                                           INFO_SSARC_DECLIST (arg_info), ids));
+                          FilterReuseList (INFO_EMRC_REUSELIST (arg_info),
+                                           INFO_EMRC_DECLIST (arg_info), ids));
         break;
 
     case WO_foldfun:
@@ -2461,7 +2464,7 @@ MakeWithAlloc (ar_list_struct *als, ids *ids, node *withop, node *cexpr, info *a
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCNwith
+ * @fn EMRCNwith
  *
  *  @brief traverses a withloop and thereby allocates memory for the index
  *         variables and the result
@@ -2473,21 +2476,21 @@ MakeWithAlloc (ar_list_struct *als, ids *ids, node *withop, node *cexpr, info *a
  *
  ***************************************************************************/
 node *
-SSARCNwith (node *arg_node, info *arg_info)
+EMRCNwith (node *arg_node, info *arg_info)
 {
     ids *ids;
     node *withop;
     node *cexprs;
 
-    DBUG_ENTER ("SSARCNwith");
+    DBUG_ENTER ("EMRCNwith");
 
     /*
      * LHS must be rescued here in order to be accessible after
      * traversal of With-loop
      */
-    ids = INFO_SSARC_LHS (arg_info);
+    ids = INFO_EMRC_LHS (arg_info);
 
-    INFO_SSARC_DEPTH (arg_info) += 1;
+    INFO_EMRC_DEPTH (arg_info) += 1;
 
     NWITH_WITHID (arg_node) = Trav (NWITH_WITHID (arg_node), arg_info);
 
@@ -2499,9 +2502,9 @@ SSARCNwith (node *arg_node, info *arg_info)
       = AllocateWithID (NWITH_WITHID (arg_node), arg_info,
                         MakePrf (F_shape, DupNode (NWITH_SHAPE (arg_node))));
 
-    INFO_SSARC_DEPTH (arg_info) -= 1;
+    INFO_EMRC_DEPTH (arg_info) -= 1;
 
-    INFO_SSARC_RHS (arg_info) = rc_with;
+    INFO_EMRC_RHS (arg_info) = rc_with;
 
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
@@ -2515,15 +2518,15 @@ SSARCNwith (node *arg_node, info *arg_info)
     /*
      * REUSELIST must be empty
      */
-    DBUG_ASSERT (INFO_SSARC_REUSELIST (arg_info) == NULL, "REUSELIST must be empty!");
+    DBUG_ASSERT (INFO_EMRC_REUSELIST (arg_info) == NULL, "REUSELIST must be empty!");
 
     while (ids != NULL) {
 
         /*
          * Annotate allocation in ALLOCLIST
          */
-        INFO_SSARC_ALLOCLIST (arg_info)
-          = MakeWithAlloc (INFO_SSARC_ALLOCLIST (arg_info), ids, withop,
+        INFO_EMRC_ALLOCLIST (arg_info)
+          = MakeWithAlloc (INFO_EMRC_ALLOCLIST (arg_info), ids, withop,
                            EXPRS_EXPR (cexprs), arg_info);
 
         ids = IDS_NEXT (ids);
@@ -2531,14 +2534,14 @@ SSARCNwith (node *arg_node, info *arg_info)
         cexprs = EXPRS_NEXT (cexprs);
     }
 
-    INFO_SSARC_RHS (arg_info) = rc_with;
+    INFO_EMRC_RHS (arg_info) = rc_with;
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCNwith2
+ * @fn EMRCNwith2
  *
  *  @brief traverses a withloop and thereby allocates memory for the index
  *         variables and the result
@@ -2550,21 +2553,21 @@ SSARCNwith (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCNwith2 (node *arg_node, info *arg_info)
+EMRCNwith2 (node *arg_node, info *arg_info)
 {
     ids *ids;
     node *withop;
     node *cexprs;
 
-    DBUG_ENTER ("SSARCNwith2");
+    DBUG_ENTER ("EMRCNwith2");
 
     /*
      * LHS must be rescued here in order to be accessible after
      * traversal of With-loop
      */
-    ids = INFO_SSARC_LHS (arg_info);
+    ids = INFO_EMRC_LHS (arg_info);
 
-    INFO_SSARC_DEPTH (arg_info) += 1;
+    INFO_EMRC_DEPTH (arg_info) += 1;
 
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
     if (NWITH2_CODE (arg_node) != NULL)
@@ -2573,9 +2576,9 @@ SSARCNwith2 (node *arg_node, info *arg_info)
       = AllocateWithID (NWITH2_WITHID (arg_node), arg_info,
                         MakePrf (F_shape, DupNode (NWITH2_SHAPE (arg_node))));
 
-    INFO_SSARC_DEPTH (arg_info) -= 1;
+    INFO_EMRC_DEPTH (arg_info) -= 1;
 
-    INFO_SSARC_RHS (arg_info) = rc_with;
+    INFO_EMRC_RHS (arg_info) = rc_with;
 
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
@@ -2592,25 +2595,25 @@ SSARCNwith2 (node *arg_node, info *arg_info)
          * Some nasty things happen with DFM.
          * They should probably be rebuilt here.
          */
-        INFO_SSARC_REUSELIST (arg_info) = NULL;
+        INFO_EMRC_REUSELIST (arg_info) = NULL;
         /*
          * GetReuseCandidates( arg_node,
-         *                     INFO_SSARC_FUNDEF( arg_info),
+         *                     INFO_EMRC_FUNDEF( arg_info),
          *                     ids);
          */
 
         /*
          * Annotate allocation in ALLOCLIST
          */
-        INFO_SSARC_ALLOCLIST (arg_info)
-          = MakeWithAlloc (INFO_SSARC_ALLOCLIST (arg_info), ids, withop,
+        INFO_EMRC_ALLOCLIST (arg_info)
+          = MakeWithAlloc (INFO_EMRC_ALLOCLIST (arg_info), ids, withop,
                            EXPRS_EXPR (cexprs), arg_info);
 
         /*
          * Free REUSELIST
          */
-        if (INFO_SSARC_REUSELIST (arg_info) != NULL) {
-            INFO_SSARC_REUSELIST (arg_info) = FreeTree (INFO_SSARC_REUSELIST (arg_info));
+        if (INFO_EMRC_REUSELIST (arg_info) != NULL) {
+            INFO_EMRC_REUSELIST (arg_info) = FreeTree (INFO_EMRC_REUSELIST (arg_info));
         }
 
         ids = IDS_NEXT (ids);
@@ -2618,14 +2621,14 @@ SSARCNwith2 (node *arg_node, info *arg_info)
         cexprs = EXPRS_NEXT (cexprs);
     }
 
-    INFO_SSARC_RHS (arg_info) = rc_with;
+    INFO_EMRC_RHS (arg_info) = rc_with;
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCNwithid
+ * @fn EMRCNwithid
  *
  *  @brief annotates the index variables' definition level as
  *         current code level - 1
@@ -2637,19 +2640,19 @@ SSARCNwith2 (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCNwithid (node *arg_node, info *arg_info)
+EMRCNwithid (node *arg_node, info *arg_info)
 {
     ids *iv_ids;
-    DBUG_ENTER ("SSARCNwithid");
+    DBUG_ENTER ("EMRCNwithid");
 
     /* IV must be refcounted like if it was taken into the WL
        from a higher level */
-    AVIS_SSARC_DEFLEVEL (IDS_AVIS (NWITHID_VEC (arg_node)))
-      = INFO_SSARC_DEPTH (arg_info) - 1;
+    AVIS_EMRC_DEFLEVEL (IDS_AVIS (NWITHID_VEC (arg_node)))
+      = INFO_EMRC_DEPTH (arg_info) - 1;
 
     iv_ids = NWITHID_IDS (arg_node);
     while (iv_ids != NULL) {
-        AVIS_SSARC_DEFLEVEL (IDS_AVIS (iv_ids)) = INFO_SSARC_DEPTH (arg_info) - 1;
+        AVIS_EMRC_DEFLEVEL (IDS_AVIS (iv_ids)) = INFO_EMRC_DEPTH (arg_info) - 1;
         iv_ids = IDS_NEXT (iv_ids);
     }
 
@@ -2658,7 +2661,7 @@ SSARCNwithid (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCprf
+ * @fn EMRCprf
  *
  *  @brief traverses a prf's arguments and allocates memory for the result
  *
@@ -2669,13 +2672,13 @@ SSARCNwithid (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCprf (node *arg_node, info *arg_info)
+EMRCprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSARCprf");
+    DBUG_ENTER ("EMRCprf");
 
-    INFO_SSARC_RHS (arg_info) = rc_prfap;
+    INFO_EMRC_RHS (arg_info) = rc_prfap;
 
-    DBUG_ASSERT (INFO_SSARC_REUSELIST (arg_info) == NULL, "REUSELIST MUST BE EMPTY!!!");
+    DBUG_ASSERT (INFO_EMRC_REUSELIST (arg_info) == NULL, "REUSELIST MUST BE EMPTY!!!");
 
     if (PRF_ARGS (arg_node) != NULL) {
         PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
@@ -2685,12 +2688,12 @@ SSARCprf (node *arg_node, info *arg_info)
      * Make memory allocation
      */
 #define ALLOC(dim, shape)                                                                \
-    INFO_SSARC_ALLOCLIST (arg_info)                                                      \
-      = MakeARList (INFO_SSARC_ALLOCLIST (arg_info),                                     \
-                    IDS_AVIS (INFO_SSARC_LHS (arg_info)), MakeNum (1), dim, shape,       \
-                    FilterReuseList (INFO_SSARC_REUSELIST (arg_info),                    \
-                                     INFO_SSARC_DECLIST (arg_info),                      \
-                                     INFO_SSARC_LHS (arg_info)))
+    INFO_EMRC_ALLOCLIST (arg_info)                                                       \
+      = MakeARList (INFO_EMRC_ALLOCLIST (arg_info), IDS_AVIS (INFO_EMRC_LHS (arg_info)), \
+                    MakeNum (1), dim, shape,                                             \
+                    FilterReuseList (INFO_EMRC_REUSELIST (arg_info),                     \
+                                     INFO_EMRC_DECLIST (arg_info),                       \
+                                     INFO_EMRC_LHS (arg_info)))
 
     switch (PRF_PRF (arg_node)) {
     case F_dim:
@@ -2748,7 +2751,7 @@ SSARCprf (node *arg_node, info *arg_info)
          * a = idx_sel( idx, A);
          * alloc_or_reuse( 1, dim( a), shape( idx_sel( idx, A)));
          */
-        ALLOC (MakeNum (GetDim (IDS_TYPE (INFO_SSARC_LHS (arg_info)))),
+        ALLOC (MakeNum (GetDim (IDS_TYPE (INFO_EMRC_LHS (arg_info)))),
                MakePrf (F_shape, DupNode (arg_node)));
         break;
 
@@ -2849,8 +2852,8 @@ SSARCprf (node *arg_node, info *arg_info)
 
 #undef ALLOC
 
-    if (INFO_SSARC_REUSELIST (arg_info) != NULL) {
-        INFO_SSARC_REUSELIST (arg_info) = FreeTree (INFO_SSARC_REUSELIST (arg_info));
+    if (INFO_EMRC_REUSELIST (arg_info) != NULL) {
+        INFO_EMRC_REUSELIST (arg_info) = FreeTree (INFO_EMRC_REUSELIST (arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -2858,9 +2861,9 @@ SSARCprf (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCreturn
+ * @fn EMRCreturn
  *
- *  @brief sets INFO_SSARC_RHS to rc_return and
+ *  @brief sets INFO_EMRC_RHS to rc_return and
  *         traverses the returned identifiers
  *
  *  @param arg_node
@@ -2870,11 +2873,11 @@ SSARCprf (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCreturn (node *arg_node, info *arg_info)
+EMRCreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSARCreturn");
+    DBUG_ENTER ("EMRCreturn");
 
-    INFO_SSARC_RHS (arg_info) = rc_return;
+    INFO_EMRC_RHS (arg_info) = rc_return;
 
     if (RETURN_EXPRS (arg_node) != NULL) {
         RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), arg_info);
@@ -2884,7 +2887,7 @@ SSARCreturn (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn SSARCvardec
+ * @fn EMRCvardec
  *
  *  @brief initializes a vardec's environment
  *
@@ -2895,9 +2898,9 @@ SSARCreturn (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARCvardec (node *arg_node, info *arg_info)
+EMRCvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSARCvardec");
+    DBUG_ENTER ("EMRCvardec");
 
     VARDEC_AVIS (arg_node) = InitializeEnvironment (VARDEC_AVIS (arg_node), -1);
 
@@ -2910,9 +2913,9 @@ SSARCvardec (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
- * @fn SSARefCount
+ * @fn EMRefCount
  *
- *  @brief Starting function of SSA based reference counting inference
+ *  @brief Starting function of EM based reference counting inference
  *
  *  @param syntax_tree
  *
@@ -2921,24 +2924,24 @@ SSARCvardec (node *arg_node, info *arg_info)
  *
  ***************************************************************************/
 node *
-SSARefCount (node *syntax_tree)
+EMRefCount (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("SSARefCount");
+    DBUG_ENTER ("EMRefCount");
 
     info = MakeInfo ();
 
-    INFO_SSARC_INCLIST (info) = NULL;
-    INFO_SSARC_DECLIST (info) = NULL;
-    INFO_SSARC_ALLOCLIST (info) = NULL;
-    INFO_SSARC_REUSELIST (info) = NULL;
+    INFO_EMRC_INCLIST (info) = NULL;
+    INFO_EMRC_DECLIST (info) = NULL;
+    INFO_EMRC_ALLOCLIST (info) = NULL;
+    INFO_EMRC_REUSELIST (info) = NULL;
 
-    act_tab = ssarefcnt_tab;
-    INFO_SSARC_MODE (info) = rc_annotate_cfuns;
+    act_tab = emrefcnt_tab;
+    INFO_EMRC_MODE (info) = rc_annotate_cfuns;
     syntax_tree = Trav (syntax_tree, info);
 
-    INFO_SSARC_MODE (info) = rc_default;
+    INFO_EMRC_MODE (info) = rc_default;
     syntax_tree = Trav (syntax_tree, info);
 
     info = FreeInfo (info);
