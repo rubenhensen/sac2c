@@ -1,0 +1,115 @@
+
+
+#ifndef SELECTelement
+#define SELECTelement(it_element)
+#endif
+
+#ifndef SELECTtext
+#define SELECTtext(it_text)
+#endif
+
+/* the commnt is not to be selected anywhere ... */
+
+#define SELECT(it_element, it_text, it_comment)                                          \
+    SELECTelement (it_element) SELECTtext (it_text)
+
+SELECT (ST_regular, "ST_regular",
+        /* normal types                            */),
+
+  SELECT (ST_unique, "ST_unique",
+          /* unique types                            */),
+
+  SELECT (ST_reference, "ST_reference",
+          /* reference parameter (unique)            */),
+
+  SELECT (ST_was_reference, "ST_was_reference",
+          /* for eliminated reference parameter      */),
+
+  SELECT (ST_readonly_reference, "ST_readonly_refernce",
+          /* readonly reference param (unique)       */),
+
+  SELECT (ST_inout, "ST_inout",
+          /* for compilation of reference params     */),
+
+  SELECT (ST_spmd_inout, "ST_spmd_inout",
+          /* for comp. of spmd-fun inout params      */),
+
+  SELECT (ST_artificial, "ST_artificial",
+          /* unique type inserted during signature expansion */),
+
+  SELECT (ST_independent, "ST_independent",
+          /* dimension-independent function                  */),
+
+  SELECT (ST_generic, "ST_generic",
+          /* generic function derived from dimension-independent function */),
+
+  SELECT (ST_resolved, "ST_resolved",
+          /* objects from called function are analysed. */),
+
+  SELECT (ST_unresolved, "ST_unresolved",
+          /* objects from called function are not yet analysed. */),
+
+  SELECT (ST_global, "ST_global",
+          /* identifier is global object             */),
+
+  SELECT (ST_imported_class, "ST_imported_class",
+          /* function, type, or object imported from other class  */),
+
+  SELECT (ST_imported_mod, "ST_imported_mod",
+          /* function, type, or object imported from other module */),
+
+  SELECT (ST_Cfun, "ST_Cfun",
+          /* function implemented in C               */),
+
+  SELECT (ST_used, "ST_used",
+          /* var declaration is used in body         */),
+
+  SELECT (ST_objinitfun, "ST_objinitfun",
+          /* function is automatically generated to contain global object init expr */),
+
+  SELECT (ST_classfun, "ST_classfun",
+          /* generic function for class conversion   */),
+
+  SELECT (ST_sac, "ST_sac",
+          /* SAC module/class                        */),
+
+  SELECT (ST_external, "ST_external",
+          /* external module/class                   */),
+
+  SELECT (ST_system, "ST_system",
+          /* external system library                 */),
+
+  SELECT (ST_own, "ST_own",
+          /* own declaration of module impl.         */),
+
+  SELECT (ST_foldfun, "ST_foldfun",
+          /* dummy function containing the fold-op   */),
+
+  SELECT (ST_spmdfun, "ST_spmdfun",
+          /* function generated from a spmd-region   */),
+
+  SELECT (ST_condfun, "ST_condfun",
+          /* function representing an if-else-clause */),
+
+  SELECT (ST_dofun, "ST_dofun",
+          /* function representing a do-loop         */),
+
+  SELECT (ST_whilefun, "ST_whilefun",
+          /* function representing a while-loop      */),
+
+  SELECT (ST_call_rep, "ST_call_rep",
+          /* function replicated for mt-execution    */),
+
+  SELECT (ST_call_st, "ST_call_st",
+          /* function for st-execution               */),
+
+  SELECT (ST_call_mt, "ST_call_mt",
+          /* function for mt-execution               */),
+
+  SELECT (ST_call_any, "ST_call_any",
+          /* default flag, used during inferation    */)
+
+#undef SELECT
+
+#undef SELECTelement
+#undef SELECTtext
