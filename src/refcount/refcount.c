@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.5  2000/12/12 17:14:50  dkr
+ * L_VARDEC_OR_ARG... macros instead of VARDEC_OR_ARG... macros used on
+ * LHS
+ *
  * Revision 3.4  2000/12/12 15:31:27  dkr
  * call of InferDFMs added
  *
@@ -1330,7 +1334,11 @@ RCid (node *arg_node, node *arg_info)
                  *  the N_id node.
                  */
 
-                VARDEC_OR_ARG_REFCNT (ID_VARDEC (arg_node))++;
+                if (NODE_TYPE (ID_VARDEC (arg_node)) == N_vardec) {
+                    VARDEC_REFCNT (ID_VARDEC (arg_node))++;
+                } else {
+                    ARG_REFCNT (ID_VARDEC (arg_node))++;
+                }
                 ID_REFCNT (arg_node) = VARDEC_OR_ARG_REFCNT (ID_VARDEC (arg_node));
                 DBUG_PRINT ("RC", ("RC for %s increased to %d.", ID_NAME (arg_node),
                                    ID_REFCNT (arg_node)));
@@ -1356,7 +1364,11 @@ RCid (node *arg_node, node *arg_info)
         /*
          *  Naive refcounting is always done.
          */
-        VARDEC_OR_ARG_NAIVE_REFCNT (ID_VARDEC (arg_node))++;
+        if (NODE_TYPE (ID_VARDEC (arg_node)) == N_vardec) {
+            VARDEC_NAIVE_REFCNT (ID_VARDEC (arg_node))++;
+        } else {
+            ARG_NAIVE_REFCNT (ID_VARDEC (arg_node))++;
+        }
         ID_NAIVE_REFCNT (arg_node) = VARDEC_OR_ARG_NAIVE_REFCNT (ID_VARDEC (arg_node));
         DBUG_PRINT ("RC", ("NAIVE RC for %s increased to %d.", ID_NAME (arg_node),
                            ID_NAIVE_REFCNT (arg_node)));
@@ -1415,7 +1427,7 @@ RClet (node *arg_node, node *arg_info)
         if (!INFO_RC_ONLYNAIVE (arg_info)) {
             if (MUST_REFCOUNT (IDS_TYPE (ids))) {
                 IDS_REFCNT (ids) = VARDEC_OR_ARG_REFCNT (IDS_VARDEC (ids));
-                VARDEC_OR_ARG_REFCNT (IDS_VARDEC (ids)) = 0;
+                L_VARDEC_OR_ARG_REFCNT (IDS_VARDEC (ids), 0);
 
                 DBUG_PRINT ("RC", ("(standard) refcount of %s zeroed", IDS_NAME (ids)));
             } else {
@@ -1424,7 +1436,7 @@ RClet (node *arg_node, node *arg_info)
         }
         if (MUST_NAIVEREFCOUNT (IDS_TYPE (ids))) {
             IDS_NAIVE_REFCNT (ids) = VARDEC_OR_ARG_NAIVE_REFCNT (IDS_VARDEC (ids));
-            VARDEC_OR_ARG_NAIVE_REFCNT (IDS_VARDEC (ids)) = 0;
+            L_VARDEC_OR_ARG_NAIVE_REFCNT (IDS_VARDEC (ids), 0);
 
             DBUG_PRINT ("RC", ("(naive) refcount of %s zeroed", IDS_NAME (ids)));
         } else {
