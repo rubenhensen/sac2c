@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  1998/04/25 12:36:44  sbs
+ * sorry, I wrote level instead of indent 8-(
+ *
  * Revision 1.23  1998/04/25 12:02:17  sbs
  * indent inserted
  *
@@ -216,6 +219,6 @@ extern int my_dbug_active;
 extern char *my_dbug_str;
 
 extern int Make_Old2NewWith;
-extern int level;
+extern int indent;
 
 #endif /* _sac_globals_h */
