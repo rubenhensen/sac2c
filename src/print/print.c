@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.150  2004/03/01 16:53:12  sbs
+ * output on fundefs changed again...
+ *
  * Revision 3.149  2004/03/01 15:02:34  sbs
  * Now, fundefs are preceeded by the correct comment 8-)
  *
@@ -1243,7 +1246,7 @@ PrintModul (node *arg_node, node *arg_info)
         if (MODUL_FUNDECS (arg_node) != NULL) {
             fprintf (outfile, "\n\n"
                               "/*\n"
-                              " *  function declarations (FUNDECS)\n"
+                              " *  prototypes for externals (FUNDECS)\n"
                               " */\n\n");
             INFO_PRINT_PROTOTYPE (arg_info) = TRUE;
             /* print function declarations */
@@ -1254,7 +1257,7 @@ PrintModul (node *arg_node, node *arg_info)
         if (MODUL_FUNS (arg_node) != NULL) {
             fprintf (outfile, "\n\n"
                               "/*\n"
-                              " *  function definitions (FUNDEFS)\n"
+                              " *  prototypes for locals (FUNDEFS)\n"
                               " */\n\n");
             INFO_PRINT_PROTOTYPE (arg_info) = TRUE;
             /* print function declarations */
@@ -1274,7 +1277,7 @@ PrintModul (node *arg_node, node *arg_info)
         if (MODUL_FUNS (arg_node) != NULL) {
             fprintf (outfile, "\n\n"
                               "/*\n"
-                              " *  function definitions\n"
+                              " *  function definitions (FUNDEFS)\n"
                               " */\n\n");
             /* print function definitions */
             Trav (MODUL_FUNS (arg_node), arg_info);
