@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2003/06/17 16:56:17  sbs
+ * bug in MakeOverloadedFunType eliminated
+ * Now, overloading of functions with disjoint result type specifications
+ * (eg. nt and int 8-) is detected and leads to program abortion!
+ *
  * Revision 3.50  2003/06/17 13:58:40  sbs
  * inserted DeleteSon. This function is needed in FilterFundefs:
  * if all potential functions are gone, the respective (non-generic)
@@ -1618,7 +1623,7 @@ TYMakeOverloadedFunType (ntype *fun1, ntype *fun2)
 static ntype *
 MakeOverloadedFunType (ntype *fun1, ntype *fun2)
 {
-    ntype *res;
+    ntype *lub, *res;
     tvar *old_alpha;
     bool ok;
     int i;
@@ -1727,15 +1732,26 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
                     res = MakeNtype (TC_alpha, 0);
                     ALPHA_SSI (res) = old_alpha;
                 } else {
-                    res = TYMakeAlphaType (TYLubOfTypes (SSIGetMax (ALPHA_SSI (fun1)),
-                                                         SSIGetMax (ALPHA_SSI (fun2))));
-                    ok = SSINewRel (ALPHA_SSI (fun1), ALPHA_SSI (res));
-                    DBUG_ASSERT (ok, "SSINewRel did not work in TYMakeOverloadFunType");
-                    ok = SSINewRel (ALPHA_SSI (fun2), ALPHA_SSI (res));
-                    DBUG_ASSERT (ok, "SSINewRel did not work in TYMakeOverloadFunType");
-                    overload_luts[overload_pos]
-                      = InsertIntoLUT_P (overload_luts[overload_pos], ALPHA_SSI (fun2),
-                                         ALPHA_SSI (res));
+                    lub = TYLubOfTypes (SSIGetMax (ALPHA_SSI (fun1)),
+                                        SSIGetMax (ALPHA_SSI (fun2)));
+                    if (lub == NULL) {
+                        ABORT (linenum,
+                               ("cannot overload functions with disjoint result type;"
+                                " types found: \"%s\" and \"%s\"",
+                                TYType2String (SSIGetMax (ALPHA_SSI (fun1)), FALSE, 0),
+                                TYType2String (SSIGetMax (ALPHA_SSI (fun2)), FALSE, 0)));
+                    } else {
+                        res = TYMakeAlphaType (lub);
+                        ok = SSINewRel (ALPHA_SSI (fun1), ALPHA_SSI (res));
+                        DBUG_ASSERT (ok,
+                                     "SSINewRel did not work in TYMakeOverloadFunType");
+                        ok = SSINewRel (ALPHA_SSI (fun2), ALPHA_SSI (res));
+                        DBUG_ASSERT (ok,
+                                     "SSINewRel did not work in TYMakeOverloadFunType");
+                        overload_luts[overload_pos]
+                          = InsertIntoLUT_P (overload_luts[overload_pos],
+                                             ALPHA_SSI (fun2), ALPHA_SSI (res));
+                    }
                 }
             }
             overload_pos++;
