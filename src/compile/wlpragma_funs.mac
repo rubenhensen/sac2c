@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/03/20 19:04:40  dkr
+ * wlcomp-pragma functions SchedulingWL(), SchedulingSegs() replaced by
+ * Scheduling()
+ *
  * Revision 3.3  2001/03/20 16:05:08  ben
  * wlcomp-pragma functions SchedulingWL, SchedulingSegs added
  *
@@ -34,5 +38,4 @@ WLP (WLCOMP_BvL0, "BvL0")
 WLP (WLCOMP_BvL1, "BvL1")
 WLP (WLCOMP_BvL2, "BvL2")
 WLP (WLCOMP_Ubv, "Ubv")
-WLP (WLCOMP_SchedulingWL, "SchedulingWL")
-WLP (WLCOMP_SchedulingSegs, "SchedulingSegs")
+WLP (WLCOMP_Scheduling, "Scheduling")

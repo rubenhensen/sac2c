@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/03/20 19:05:03  dkr
+ * wlcomp-pragma functions SchedulingWL(), SchedulingSegs() replaced by
+ * Scheduling()
+ *
  * Revision 3.10  2001/03/20 16:02:25  ben
  * SCHPrintScheduling: minor changes done
  * even added to scheduler table
@@ -376,7 +380,7 @@ SCHMakeSchedulingByPragma (node *ap_node, int line)
                                      AP_ARGS (ap_node), line);
     } else {
         ABORT (line, ("Illegal argument in wlcomp-pragma found; "
-                      "Scheduling...(): Unknown scheduler"));
+                      "Scheduling(): Unknown scheduler"));
     }
 
     DBUG_RETURN (sched);

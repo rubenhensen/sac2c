@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2001/03/20 19:04:53  dkr
+ * wlcomp-pragma functions SchedulingWL(), SchedulingSegs() replaced by
+ * Scheduling()
+ *
  * Revision 3.13  2001/03/20 16:02:55  ben
  * wlcomp-pragma functions SchedulingWL, SchedulingSegs added
  *
@@ -448,7 +452,7 @@ WLCOMP_All (node *segs, node *parms, node *cubes, int dims, int line)
 
     if (parms != NULL) {
         ABORT (line, ("Illegal argument in wlcomp-pragma found; "
-                      "All(): Parameters found"));
+                      "All(): Too many parameters found"));
     }
 
     if (segs != NULL) {
@@ -482,7 +486,7 @@ WLCOMP_Cubes (node *segs, node *parms, node *cubes, int dims, int line)
 
     if (parms != NULL) {
         ABORT (line, ("Illegal argument in wlcomp-pragma found; "
-                      "Cubes(): Parameters found"));
+                      "Cubes(): Too many parameters found"));
     }
 
     if (segs != NULL) {
@@ -608,7 +612,7 @@ WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
 
     if (parms != NULL) {
         ABORT (line, ("Illegal argument in wlcomp-pragma found; "
-                      "NoBlocking(): Parameters found"));
+                      "NoBlocking(): Too many parameters found"));
     }
 
     while (seg != NULL) {
@@ -671,7 +675,7 @@ WLCOMP_Bv (node *segs, node *parms, node *cubes, int dims, int line)
 
     if (parms == NULL) {
         ABORT (line, ("Illegal argument in wlcomp-pragma found; "
-                      "Bv(): First parameter not found"));
+                      "Bv(): No parameters found"));
     }
 
     DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
@@ -809,7 +813,7 @@ WLCOMP_Ubv (node *segs, node *parms, node *cubes, int dims, int line)
 /******************************************************************************
  *
  * Function:
- *   node *WLCOMP_SchedulingWL( node *segs, node *parms, node *cubes, int dims, int line)
+ *   node *WLCOMP_Scheduling( node *segs, node *parms, node *cubes, int dims, int line)
  *
  * Description:
  *
@@ -817,62 +821,17 @@ WLCOMP_Ubv (node *segs, node *parms, node *cubes, int dims, int line)
  ******************************************************************************/
 
 node *
-WLCOMP_SchedulingWL (node *segs, node *parms, node *cubes, int dims, int line)
-{
-    node *arg1;
-    node *seg = segs;
-
-    DBUG_ENTER ("WLCOMP_SchedulingWL");
-
-    if (parms == NULL) {
-        ABORT (line, ("Illegal argument in wlcomp-pragma found; "
-                      "SchedulingWL(): No Parameters found"));
-    }
-
-    DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
-                 "illegal parameter of wlcomp-pragma found!");
-
-    arg1 = EXPRS_EXPR (parms);
-    if (NODE_TYPE (arg1) != N_ap) {
-        ABORT (line, ("Illegal argument in wlcomp-pragma found; "
-                      "SchedulingWL(): First argument is not an application"));
-    }
-
-    while (seg != NULL) {
-        /*
-         * set SCHEDULING
-         */
-        WLSEGX_SCHEDULING (seg) = SCHMakeSchedulingByPragma (arg1, line);
-
-        seg = WLSEGX_NEXT (seg);
-    }
-
-    DBUG_RETURN (segs);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *WLCOMP_SchedulingSegs( node *segs, node *parms, node *cubes, int dims, int
- *line)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-WLCOMP_SchedulingSegs (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
 {
     node *arg;
     node *seg = segs;
 
-    DBUG_ENTER ("WLCOMP_SchedulingSegs");
+    DBUG_ENTER ("WLCOMP_Scheduling");
 
     while (seg != NULL) {
         if (parms == NULL) {
             ABORT (line, ("Illegal argument in wlcomp-pragma found; "
-                          "SchedulingSegs(): Missing Parameter"));
+                          "Scheduling(): Missing Parameter"));
         }
 
         DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
@@ -881,7 +840,7 @@ WLCOMP_SchedulingSegs (node *segs, node *parms, node *cubes, int dims, int line)
         arg = EXPRS_EXPR (parms);
         if (NODE_TYPE (arg) != N_ap) {
             ABORT (line, ("Illegal argument in wlcomp-pragma found; "
-                          "SchedulingSegs(): Argument is not an application"));
+                          "Scheduling(): Argument is not an application"));
         }
 
         /*
@@ -890,7 +849,9 @@ WLCOMP_SchedulingSegs (node *segs, node *parms, node *cubes, int dims, int line)
         WLSEGX_SCHEDULING (seg) = SCHMakeSchedulingByPragma (arg, line);
 
         seg = WLSEGX_NEXT (seg);
-        parms = EXPRS_NEXT (parms);
+        if (EXPRS_NEXT (parms) != NULL) {
+            parms = EXPRS_NEXT (parms);
+        }
     }
 
     DBUG_RETURN (segs);
