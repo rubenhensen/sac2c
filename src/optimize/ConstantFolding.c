@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/04/21 15:37:29  jhs
+ * Deleted never valid DBUG_ASSERT in DupPartialArray.
+ * Not r_expr but expr0 was meant there.
+ *
  * Revision 2.10  1999/04/21 10:06:13  bs
  * Some access macros added.
  * Function ArrayPrf modified: F_shape
@@ -1219,7 +1223,6 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
 {
     node *new_node;
     node *expr0, *expr1;
-    node *r_expr = NULL;
     int i;
     int *tmp_ivec;
     float *tmp_fvec;
@@ -1237,7 +1240,7 @@ DupPartialArray (int start, int length, node *array, node *arg_info)
          */
         for (i = 0; i < start; i++) {
 
-            DBUG_ASSERT ((r_expr != NULL), ("not a constant vector or vector too small"));
+            DBUG_ASSERT ((expr0 != NULL), ("not a constant vector or vector too small"));
 
             expr1 = EXPRS_NEXT (expr0);
             EXPRS_NEXT (expr0) = NULL;
