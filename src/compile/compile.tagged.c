@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.87  2003/10/15 01:06:03  dkrHH
+ * some superfluous code removed
+ * signature of START_SYNCBLOCK icm modified
+ *
  * Revision 1.86  2003/10/14 12:18:16  cg
  * COMP2Sync(): code for moving ALLOC-ICMs corrected with
  * respect to the new ICM names
@@ -1797,7 +1801,7 @@ CheckAp (node *ap, node *arg_info)
  * @fn  node *MakeParamsByDFM( DFMmask_t *mask,
  *                             char *tag, int *num_args, node *icm_args)
  *
- * @brief  Builds triplet-chain (tag, type, name) from dfm-mask mask,
+ * @brief  Builds tuple-chain (tag, name) from dfm-mask mask,
  *         'tag' is used as tag,
  *         'num_args' will be incremented for each triplet added (maybe NULL),
  *         at the end of this chain icm_args will be concatenated.
@@ -1823,7 +1827,7 @@ MakeParamsByDFM (DFMmask_t *mask, char *tag, int *num_args, node *icm_args)
                                                              VARDEC_OR_ARG_TYPE (vardec)),
                                              icm_args)));
         if (num_args != NULL) {
-            *num_args = *num_args + 1;
+            (*num_args)++;
         }
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
@@ -6355,16 +6359,18 @@ COMP2Spmd (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NODE_TYPE (FUNDEF_ICM (SPMD_FUNDEF (arg_node))) == N_icm),
                  "SPMD function MUST be compiled prior to compilation of "
                  "corresponding SMPD block.");
-    num_args = 0;
-    icm_args = BLOCK_SPMD_SETUP_ARGS (FUNDEF_BODY (SPMD_FUNDEF (arg_node)));
-    while (icm_args != NULL) {
-        num_args++;
-        icm_args = EXPRS_EXPRS4 (icm_args);
-        /*
-         * Icm args are organized in triples, i.e. three ICM args belong
-         * to a single original parameter.
-         */
-    }
+#if 0 /* dkr: this code is never used */
+  num_args = 0;
+  icm_args = BLOCK_SPMD_SETUP_ARGS( FUNDEF_BODY( SPMD_FUNDEF( arg_node)));
+  while (icm_args != NULL) {
+    num_args++;
+    icm_args = EXPRS_EXPRS3( icm_args);
+    /*
+     * Icm args are organized in tuples, i.e. two ICM args belong
+     * to a single original parameter.
+     */
+  }
+#endif
 
     num_args = 0;
     icm_args = NULL; /* dkr: should be FreeTree( icm_args) ?!? */
@@ -6435,7 +6441,11 @@ node *
 COMP2Sync (node *arg_node, node *arg_info)
 {
     node *icm_args, *icm_args3, *vardec, *with, *block, *instr, *assign, *last_assign,
-      *prolog_icms, *epilog_icms, *new_icm, *setup_args, *assigns = NULL;
+      *prolog_icms, *epilog_icms, *new_icm;
+#if 0
+  node *setup_args;
+#endif
+    node *assigns = NULL;
     ids *with_ids;
     argtag_t tag;
     char *icm_name, *var_name, *fold_type;
@@ -6468,13 +6478,16 @@ COMP2Sync (node *arg_node, node *arg_info)
     vardec = DFMGetMaskEntryDeclSet (SYNC_IN (arg_node));
     while (vardec != NULL) {
         tag = ATG_in;
-        icm_args3 = AppendExprs (
-          icm_args3,
-          MakeExprs (MakeId_Copy (ATG_string[tag]),
-                     MakeExprs (MakeBasetypeArg (VARDEC_OR_ARG_TYPE (vardec)),
-                                MakeExprs (MakeId_Copy_NT (VARDEC_OR_ARG_NAME (vardec),
-                                                           VARDEC_OR_ARG_TYPE (vardec)),
-                                           NULL))));
+        icm_args3
+          = AppendExprs (icm_args3,
+                         MakeExprs (MakeId_Copy (ATG_string[tag]),
+                                    MakeExprs (MakeId_Copy_NT (VARDEC_OR_ARG_NAME (
+                                                                 vardec),
+                                                               VARDEC_OR_ARG_TYPE (
+                                                                 vardec)),
+                                               MakeExprs (MakeNum (GetDim (
+                                                            VARDEC_OR_ARG_TYPE (vardec))),
+                                                          NULL))));
         num_args++;
 
         vardec = DFMGetMaskEntryDeclSet (NULL);
@@ -6838,14 +6851,18 @@ COMP2Sync (node *arg_node, node *arg_info)
             fold_args = FreeTree (fold_args);
         }
 
-        num_args = 0;
-        setup_args = NULL;
-        setup_args = MakeParamsByDFM (SYNC_INOUT (arg_node), "in", &num_args, setup_args);
+#if 0 /* dkr: never used! */
+    num_args = 0;
+    setup_args = NULL;
+    setup_args = MakeParamsByDFM( SYNC_INOUT( arg_node), "in", &num_args, setup_args);
 
-        DBUG_PRINT ("COMP_MT", ("num_args %i", num_args));
+    DBUG_PRINT( "COMP_MT", ("num_args %i", num_args));
+#endif
 
         BLOCK_SPMD_PROLOG_ICMS (FUNDEF_BODY (INFO_COMP2_FUNDEF (arg_info))) = prolog_icms;
-        BLOCK_SPMD_SETUP_ARGS (FUNDEF_BODY (INFO_COMP2_FUNDEF (arg_info))) = setup_args;
+#if 0 /* dkr: never used! */
+    BLOCK_SPMD_SETUP_ARGS(FUNDEF_BODY(INFO_COMP2_FUNDEF( arg_info))) = setup_args;
+#endif
     }
     barrier_id++;
 
