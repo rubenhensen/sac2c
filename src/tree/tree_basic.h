@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.49  2000/06/16 15:00:03  nmw
+ * N_info for function->wrapper matching added
+ *
  * Revision 1.48  2000/06/14 12:05:37  jhs
  * Added ST_IDENTIFIER and MT_IDENTIFIER.
  * Each new N_mt and N_st will be provided with an unique id.
@@ -2220,6 +2223,18 @@ extern node *MakePragma ();
  ***    int*       NAIVE_RCDUMP       (only while traversing a group of N_code's)
  ***    int        VARNO
  ***
+ ***
+ ***  when used in print_interface.c  (sorting of fundefs -> wrapper funs)
+ ***    node*      FUNDEF             (N_fundef) - link to fundef
+ ***    node*      NEXT_FUNDEF        (N_info)   - link to N_info with next fundef of this
+ *wrapper
+ ***    node*      NEXT_WRAPPER       (N_info)   - link to next wrapper N_info node
+ ***    int        RETPOS                        - position of simple returntype (-1 if
+ *void)
+ ***    int        ARGCOUNT                      - # of arguments
+ ***    char*      WRAPPERNAME                   - string with wrapper name
+ ***
+ ***
  *** remarks:
  ***    N_info is used in many other phases without access macros :((
  ***/
@@ -2582,6 +2597,14 @@ extern node *MakeInfo ();
 #define INFO_AI_FUNDEF(n) (n->node[2])
 #define INFO_AI_PREASSIGN(n) (n->node[3])
 #define INFO_AI_POSTASSIGN(n) (n->node[4])
+
+/* when used in print_interface.c  (sorting of fundefs -> wrapper funs) */
+#define INFO_PIW_FUNDEF(n) (n->node[0])
+#define INFO_PIW_NEXT_FUNDEF(n) (n->node[1])
+#define INFO_PIW_NEXT_WRAPPER(n) (n->node[2])
+#define INFO_PIW_RETPOS(n) (n->int_data)
+#define INFO_PIW_ARGCOUNT(n) (n->counter)
+#define INFO_PIW_WRAPPERNAME(n) (n->src_file)
 
 /*--------------------------------------------------------------------------*/
 
