@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.38  1995/12/07 14:15:09  cg
+ * Revision 1.39  1995/12/21 13:23:18  asi
+ * changed dead_tab to dcr_tab and added active_tab
+ *
+ * Revision 1.38  1995/12/07  14:15:09  cg
  * removed DummyFun2
  * renamed DummyFun to TravSons
  *
@@ -247,7 +250,7 @@ funptr imp_tab[] = {
             ac, ad, ae, af, ag, ah, ai, aj, ak, al)                                      \
     x
 
-funptr dead_tab[] = {
+funptr dcr_tab[] = {
 #include "node_info.mac"
 };
 
@@ -584,6 +587,20 @@ funptr rmvoid_tab[] = {
     aj
 
 funptr precomp_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 31) active_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al)                                      \
+    ak
+
+funptr active_tab[] = {
 #include "node_info.mac"
 };
 

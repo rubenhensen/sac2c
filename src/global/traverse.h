@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.29  1995/12/07 14:15:09  cg
+ * Revision 1.30  1995/12/21 13:23:18  asi
+ * changed dead_tab to dcr_tab and added active_tab
+ *
+ * Revision 1.29  1995/12/07  14:15:09  cg
  * removed DummyFun2
  * renamed DummyFun to TravSons
  *
@@ -119,7 +122,8 @@ extern funptr type_tab[];
 
 extern funptr opt_tab[];
 
-extern funptr dead_tab[];
+extern funptr active_tab[];
+extern funptr dcr_tab[];
 
 extern funptr cf_tab[];
 
