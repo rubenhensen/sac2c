@@ -210,7 +210,7 @@ demo=$ask_res
 
 insert_component d demo.tar $demo/
 if [ -f $demo/demo.tar ] ; then
-  (cd $demo; tar xvf demo.tar; rm demo.tar)
+  (cd $demo; tar xvf demo.tar; $make untar TARFILENAME=demo.tar; rm demo.tar)
   chmod -R u+w $demo
   mess "demo.tar UNPACKED !!"
 else
