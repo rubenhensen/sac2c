@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2002/06/27 11:01:55  dkr
+ * - CreateScalarWith() and CreateSel() added
+ * - bug in CreateScalarWith() fixed
+ *
  * Revision 3.59  2002/06/26 08:49:05  dkr
  * CreateZero() creates vectors for WL-unrolling only :)
  *
@@ -3096,90 +3100,6 @@ CountExprs (node *exprs)
 
 /******************************************************************************
  *
- * Function:
- *   node *CreateZero( int dim, shpseg *shape, simpletype btype, bool unroll,
- *                     node *fundef)
- *
- * Description:
- *   Creates an array of zeros.
- *
- ******************************************************************************/
-
-node *
-CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll, node *fundef)
-{
-    node *zero;
-    int length = GetShpsegLength (dim, shape);
-
-    DBUG_ENTER ("CreateZero");
-
-    DBUG_ASSERT ((dim >= 0), "CreateZero() used with unknown shape!");
-
-    if (dim == 0) {
-        zero = CreateZeroScalar (btype);
-    } else if (unroll && (dim == 1)) {
-        zero = CreateZeroVector (length, btype);
-    } else {
-        if (unroll) {
-            zero
-              = MakePrf (F_reshape,
-                         MakeExprs (Shpseg2Array (shape, dim),
-                                    MakeExprs (CreateZeroVector (length, btype), NULL)));
-        } else {
-            node *vardecs = NULL;
-            node *id;
-            ids *vec_ids;
-            ids *scl_ids = NULL;
-            ids *tmp_ids;
-            int i;
-
-            vec_ids = MakeIds (TmpVar (), NULL, ST_regular);
-            vardecs = MakeVardec (StringCopy (IDS_NAME (vec_ids)),
-                                  MakeTypes (T_int, 1, MakeShpseg (MakeNums (dim, NULL)),
-                                             NULL, NULL),
-                                  vardecs);
-            IDS_VARDEC (vec_ids) = vardecs;
-
-            for (i = 0; i < dim; i++) {
-                tmp_ids = MakeIds (TmpVar (), NULL, ST_regular);
-                vardecs = MakeVardec (StringCopy (IDS_NAME (tmp_ids)), MakeTypes1 (T_int),
-                                      vardecs);
-                IDS_NEXT (tmp_ids) = scl_ids;
-                scl_ids = tmp_ids;
-                IDS_VARDEC (scl_ids) = vardecs;
-            }
-
-            id = MakeId (TmpVar (), NULL, ST_regular);
-            vardecs = MakeVardec (StringCopy (ID_NAME (id)),
-                                  MakeTypes (btype, dim, DupShpseg (shape), NULL, NULL),
-                                  vardecs);
-            ID_VARDEC (id) = vardecs;
-
-            zero
-              = MakeNWith (MakeNPart (MakeNWithid (vec_ids, scl_ids),
-                                      MakeNGenerator (CreateZeroVector (dim, T_int),
-                                                      Shpseg2Array (shape, dim), F_le,
-                                                      F_lt, NULL, NULL),
-                                      NULL),
-                           MakeNCode (MakeBlock (MakeAssignLet (StringCopy (ID_NAME (id)),
-                                                                vardecs,
-                                                                CreateZeroScalar (btype)),
-                                                 NULL),
-                                      id),
-                           MakeNWithOp (WO_genarray, Shpseg2Array (shape, dim)));
-            NCODE_USED (NWITH_CODE (zero))++;
-            NPART_CODE (NWITH_PART (zero)) = NWITH_CODE (zero);
-            NWITH_PARTS (zero) = 1;
-
-            fundef = AddVardecs (fundef, vardecs);
-        }
-    }
-
-    DBUG_RETURN (zero);
-}
-
-/******************************************************************************
- *
  * function:
  *   node *CreateZeroScalar( simpletype btype)
  *
@@ -3822,6 +3742,169 @@ MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5
 /***
  ***  N_Nwith :
  ***/
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *CreateScalarWith( int dim, shpseg *shape, simpletype btype,
+ *                           node *expr, node *fundef)
+ *
+ * Description:
+ *   Creates an array of zeros.
+ *
+ ******************************************************************************/
+
+node *
+CreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr, node *fundef)
+{
+    node *wl;
+    node *id;
+    node *vardecs = NULL;
+    ids *vec_ids;
+    ids *scl_ids = NULL;
+    ids *tmp_ids;
+    int i;
+
+    DBUG_ENTER ("CreateZero");
+
+    DBUG_ASSERT ((dim >= 0), "CreateZero() used with unknown shape!");
+
+    vec_ids = MakeIds (TmpVar (), NULL, ST_regular);
+    vardecs
+      = MakeVardec (StringCopy (IDS_NAME (vec_ids)),
+                    MakeTypes (T_int, 1, MakeShpseg (MakeNums (dim, NULL)), NULL, NULL),
+                    vardecs);
+    IDS_VARDEC (vec_ids) = vardecs;
+
+    for (i = 0; i < dim; i++) {
+        tmp_ids = MakeIds (TmpVar (), NULL, ST_regular);
+        vardecs
+          = MakeVardec (StringCopy (IDS_NAME (tmp_ids)), MakeTypes1 (T_int), vardecs);
+        IDS_NEXT (tmp_ids) = scl_ids;
+        scl_ids = tmp_ids;
+        IDS_VARDEC (scl_ids) = vardecs;
+    }
+
+    id = MakeId (TmpVar (), NULL, ST_regular);
+    vardecs = MakeVardec (StringCopy (ID_NAME (id)), MakeTypes1 (btype), vardecs);
+    ID_VARDEC (id) = vardecs;
+
+    wl = MakeNWith (MakeNPart (MakeNWithid (vec_ids, scl_ids),
+                               MakeNGenerator (CreateZeroVector (dim, T_int),
+                                               Shpseg2Array (shape, dim), F_le, F_lt,
+                                               NULL, NULL),
+                               NULL),
+                    MakeNCode (MakeBlock (MakeAssignLet (StringCopy (ID_NAME (id)),
+                                                         vardecs, expr),
+                                          NULL),
+                               id),
+                    MakeNWithOp (WO_genarray, Shpseg2Array (shape, dim)));
+    NCODE_USED (NWITH_CODE (wl))++;
+    NPART_CODE (NWITH_PART (wl)) = NWITH_CODE (wl);
+    NWITH_PARTS (wl) = 1;
+
+    fundef = AddVardecs (fundef, vardecs);
+
+    DBUG_RETURN (wl);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *CreateZero( int dim, shpseg *shape, simpletype btype, bool unroll,
+ *                     node *fundef)
+ *
+ * Description:
+ *   Creates an array of zeros.
+ *
+ ******************************************************************************/
+
+node *
+CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll, node *fundef)
+{
+    node *zero;
+    int length = GetShpsegLength (dim, shape);
+
+    DBUG_ENTER ("CreateZero");
+
+    DBUG_ASSERT ((dim >= 0), "CreateZero() used with unknown shape!");
+
+    if (dim == 0) {
+        zero = CreateZeroScalar (btype);
+    } else if (unroll && (dim == 1)) {
+        zero = CreateZeroVector (length, btype);
+    } else {
+        if (unroll) {
+            zero
+              = MakePrf (F_reshape,
+                         MakeExprs (Shpseg2Array (shape, dim),
+                                    MakeExprs (CreateZeroVector (length, btype), NULL)));
+        } else {
+            zero = CreateScalarWith (dim, shape, btype, CreateZeroScalar (btype), fundef);
+        }
+    }
+
+    DBUG_RETURN (zero);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *CreateSel( node *sel_index, node *sel_array, node *fundef)
+ *
+ * Description:
+ *   Creates an array of zeros.
+ *
+ ******************************************************************************/
+
+node *
+CreateSel (node *sel_index, node *sel_array, node *fundef)
+{
+    node *sel;
+    int len_index, dim_array;
+
+    DBUG_ENTER ("CreateSel");
+
+    DBUG_ASSERT ((NODE_TYPE (sel_index) == N_id), "no N_id node found!");
+    DBUG_ASSERT ((NODE_TYPE (sel_array) == N_id), "no N_id node found!");
+
+    len_index = GetTypesLength (ID_TYPE (sel_index));
+    DBUG_ASSERT ((len_index > 0), "illegal index length found!");
+
+    dim_array = GetDim (ID_TYPE (sel_array));
+    DBUG_ASSERT ((dim_array > 0), "illegal array dimensionality found!");
+
+    if (len_index > dim_array) {
+        DBUG_ASSERT ((0), "illegal array selection found!");
+    } else if (len_index == dim_array) {
+        sel = MakePrf (F_sel, MakeExprs (sel_index, MakeExprs (sel_array, NULL)));
+    } else { /* (len_index < dim_array) */
+        node *new_index;
+        shpseg *shape, *shape2;
+        simpletype btype;
+        int dim, i;
+
+        btype = GetBasetype (ID_TYPE (sel_array));
+
+        /*
+         * compute shape of
+         */
+        dim = (dim_array - len_index);
+        shape = Type2Shpseg (ID_TYPE (sel_array), NULL);
+        shape2 = Type2Shpseg (ID_TYPE (sel_array), NULL);
+        for (i = 0; i < dim; i++) {
+            SHPSEG_SHAPE (shape, i) = SHPSEG_SHAPE (shape2, (len_index + i));
+        }
+        shape2 = FreeShpseg (shape2);
+
+        sel = CreateScalarWith (dim, shape, btype, NULL, fundef);
+        new_index = NULL;
+        ASSIGN_RHS (BLOCK_INSTR (NWITH_CBLOCK (sel)))
+          = MakePrf (F_sel, MakeExprs (new_index, MakeExprs (sel_array, NULL)));
+    }
+
+    DBUG_RETURN (sel);
+}
 
 /*--------------------------------------------------------------------------*/
 

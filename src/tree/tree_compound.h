@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2002/06/27 10:59:52  dkr
+ * - CreateScalarWith() and CreateSel() added
+ * - bug in CreateScalarWith() fixed
+ *
  * Revision 3.59  2002/06/25 23:52:06  ktr
  * NPART_CEXPR and NPART_CBLOCK added.
  *
@@ -351,8 +355,11 @@ extern int CountNums (nums *numsp);
  ***/
 
 extern void *CopyConstVec (simpletype vectype, int veclen, void *const_vec);
+
 extern void *AllocConstVec (simpletype vectype, int veclen);
+
 extern void *ModConstVec (simpletype vectype, void *const_vec, int idx, node *const_node);
+
 extern node *AnnotateIdWithConstVec (node *expr, node *id);
 
 /*--------------------------------------------------------------------------*/
@@ -432,7 +439,10 @@ extern nodelist *ConcatNodelist (nodelist *first, nodelist *second);
 /******************************************************************************
  *
  * function:
- *   -
+ *   nodelist *NodeListAppend( nodelist *nl, node *newnode, void *attrib)
+ *   nodelist *NodeListDelete( nodelist *nl, node *node, bool free_attrib)
+ *   nodelist *NodeListFree( nodelist *nl, bool free_attrib)
+ *   nodelist *NodeListFind( nodelist *nl, node *node)
  *
  * description:
  *   the following functions realize basic functions on pure node lists.
@@ -463,6 +473,7 @@ extern nodelist *NodeListFind (nodelist *nl, node *node);
  ***/
 
 extern int GetArgtabIndexOut (types *type, argtab_t *argtab);
+
 extern int GetArgtabIndexIn (types *type, argtab_t *argtab);
 
 /*--------------------------------------------------------------------------*/
@@ -854,6 +865,7 @@ extern node *AppendObjdef (node *objdef_chain, node *objdef);
     ((CMP_FUN_ID (a, b)) ? CmpDomain (FUNDEF_ARGS (a), FUNDEF_ARGS (b)) : 0)
 
 extern node *FindVardec_Name (char *name, node *fundef);
+
 extern node *FindVardec_Varno (int varno, node *fundef);
 
 /*
@@ -1040,7 +1052,9 @@ extern node *AdjustAvisData (node *new_vardec, node *fundef);
 #define ARG_TDEF(n) (TYPES_TDEF (ARG_TYPE (n)))
 
 extern int CountArgs (node *args);
+
 extern int HasDotArgs (node *args);
+
 extern int CmpDomain (node *args1, node *args2);
 
 /*--------------------------------------------------------------------------*/
@@ -1590,9 +1604,8 @@ extern int CountExprs (node *exprs);
  *  function declarations
  */
 
-extern node *CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll,
-                         node *fundef);
 extern node *CreateZeroScalar (simpletype btype);
+
 extern node *CreateZeroVector (int length, simpletype btype);
 
 /******************************************************************************
@@ -1718,7 +1731,9 @@ extern node *MakeVinfoDollar (node *next);
  */
 
 extern node *MakePrf1 (prf prf, node *arg1);
+
 extern node *MakePrf2 (prf prf, node *arg1, node *arg2);
+
 extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
 
 /*--------------------------------------------------------------------------*/
@@ -1903,6 +1918,14 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
 
 #define NWITH_IS_FOLD(n)                                                                 \
     ((NWITH_TYPE (n) == WO_foldprf) || (NWITH_TYPE (n) == WO_foldfun))
+
+extern node *CreateScalarWith (int dim, shpseg *shape, simpletype btype, node *expr,
+                               node *fundef);
+
+extern node *CreateZero (int dim, shpseg *shape, simpletype btype, bool unroll,
+                         node *fundef);
+
+extern node *CreateSel (node *sel_index, node *sel_array, node *fundef);
 
 /*--------------------------------------------------------------------------*/
 
