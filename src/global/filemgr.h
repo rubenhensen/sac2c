@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/24 18:53:00  cg
+ * *** empty log message ***
+ *
  * Revision 1.5  2004/11/23 23:25:26  ktr
  * Just 4 u!
  *
@@ -93,14 +96,15 @@
  * Prefix: FMGR
  *
  *****************************************************************************/
-extern char *FMGRfindFile (pathkind p, char *name);
+
+extern char *FMGRfindFile (pathkind_t p, char *name);
 extern void FMGRinitPaths ();
-extern void FMGRappendPath (pathkind p, char *path);
+extern void FMGRappendPath (pathkind_t p, char *path);
 extern void FMGRrearrangePaths ();
 extern char *FMGRabsolutePathname (char *path);
 extern FILE *FMGRwriteOpen (char *format, ...);
-extern int FMGRcheckExistFile (char *dir, char *name);
+extern bool FMGRcheckExistFile (char *dir, char *name);
 extern locationtype FMGRfindLocationOfFile (char *file);
-extern int FMGRcheckSystemLibrary (char *name);
+extern bool FMGRcheckSystemLibrary (char *name);
 
 #endif /* _SAC_FILEMGR_H_ */
