@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/02/09 09:59:16  dkr
+ * FUNDEF_LAC_LET added
+ *
  * Revision 1.5  2000/02/08 16:40:33  dkr
  * LAC2FUNwith() and LAC2FUNwith2() added
  *
@@ -163,11 +166,16 @@ DefinedVar (char *id, node *decl, DFMmask_t needed, DFMmask_t *in, DFMmask_t *ou
 {
     DBUG_ENTER ("DefinedVar");
 
-    DFMSetMaskEntryClear (*in, id, decl);
-    if (DFMTestMaskEntry (needed, id, decl)) {
-        DFMSetMaskEntrySet (*out, id, decl);
+    if ((NODE_TYPE (decl) == N_vardec) || (NODE_TYPE (decl) == N_arg)) {
+        DFMSetMaskEntryClear (*in, id, decl);
+        if (DFMTestMaskEntry (needed, id, decl)) {
+            DFMSetMaskEntrySet (*out, id, decl);
+        } else {
+            DFMSetMaskEntrySet (*local, id, decl);
+        }
     } else {
-        DFMSetMaskEntrySet (*local, id, decl);
+        DBUG_ASSERT ((NODE_TYPE (decl) == N_objdef),
+                     "declaration is neither a N_arg/N_vardec-node nor a N_objdef-node");
     }
 
     DBUG_VOID_RETURN;
@@ -192,8 +200,13 @@ UsedVar (char *id, node *decl, DFMmask_t *in, DFMmask_t *local)
 {
     DBUG_ENTER ("UsedVar");
 
-    DFMSetMaskEntrySet (*in, id, decl);
-    DFMSetMaskEntryClear (*local, id, decl);
+    if ((NODE_TYPE (decl) == N_vardec) || (NODE_TYPE (decl) == N_arg)) {
+        DFMSetMaskEntrySet (*in, id, decl);
+        DFMSetMaskEntryClear (*local, id, decl);
+    } else {
+        DBUG_ASSERT ((NODE_TYPE (decl) == N_objdef),
+                     "declaration is neither a N_arg/N_vardec-node nor a N_objdef-node");
+    }
 
     DBUG_VOID_RETURN;
 }
@@ -552,6 +565,7 @@ LAC2FUNcond (node *arg_node, node *arg_info)
     arg_node = FreeTree (arg_node);
     arg_node = MakeDummyFunLet (funname, fundef, INFO_LAC2FUN_IN (arg_info),
                                 INFO_LAC2FUN_OUT (arg_info));
+    FUNDEF_LAC_LET (fundef) = arg_node;
     INFO_LAC2FUN_ISTRANS (arg_info) = 1;
 
     /*

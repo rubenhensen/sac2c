@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  2000/02/09 09:59:31  dkr
+ * FUNDEF_LAC_LET added
+ *
  * Revision 1.9  2000/02/04 14:46:53  jhs
  * Added rfin_tab and it's functions.
  * Added INFO_RFIN_xxx.
@@ -1000,6 +1003,10 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  *  case of an SPMD function. Since SPMD functions are generated relatively
  *  late during the entire compilation process when the NEEDOBJS attribute
  *  is no longer required, LIFTEDFROM and NEEDOBJS may share the same node entry.
+ *
+ *  If the fundef is a definition of a LAC-dummy-function, LAC_LET is a link to
+ *  the (unambiguous!) let-node outside of the fundef-body containing a call of
+ *  this function.
  */
 
 extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *body,
@@ -1021,6 +1028,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEC_DEF(n) (n->node[3])
 #define FUNDEF_NEEDOBJS(n) ((nodelist *)(n->node[4]))
 #define FUNDEF_LIFTEDFROM(n) (n->node[4])
+#define FUNDEF_LAC_LET(n) ((node *)(n->info2))
 #define FUNDEF_PRAGMA(n) (n->node[5])
 #define FUNDEF_VARNO(n) (n->varno)
 #define FUNDEF_MASK(n, x) (n->mask[x])
