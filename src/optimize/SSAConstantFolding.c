@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2002/07/29 12:12:53  sbs
+ * PRF_IF macro extended by z.
+ *
  * Revision 1.28  2002/07/12 19:37:24  dkr
  * TAGGED_ARRAYS: constants propagation for N_ap deactivated
  *
@@ -163,7 +166,7 @@
 
 /* prf-function name for debug output */
 #ifndef DBUG_OFF
-#define PRF_IF(n, s, x, y) x
+#define PRF_IF(n, s, x, y, z) x
 static char *prf_string[] = {
 #include "prf_node_info.mac"
 };

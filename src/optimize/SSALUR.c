@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2002/07/29 12:12:53  sbs
+ * PRF_IF macro extended by z.
+ *
  * Revision 1.10  2001/06/28 10:09:19  sbs
  * colon inserted in empty default case of switch.
  *
@@ -75,7 +78,7 @@
 #define UNR_NONE -1
 
 #ifndef DBUG_OFF
-#define PRF_IF(n, s, x, y) x
+#define PRF_IF(n, s, x, y, z) x
 static char *prf_string[] = {
 #include "prf_node_info.mac"
 };

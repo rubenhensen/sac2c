@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.106  2002/07/29 12:12:53  sbs
+ * PRF_IF macro extended by z.
+ *
  * Revision 3.105  2002/07/24 10:07:16  sah
  * changed printing of F_sel
  *
@@ -238,7 +241,7 @@ static node *last_assignment_icm = NULL;
 
 /******************************************************************************/
 
-#define PRF_IF(n, s, x, y) x
+#define PRF_IF(n, s, x, y, z) x
 
 char *prf_string[] = {
 #include "prf_node_info.mac"

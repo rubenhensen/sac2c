@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2002/07/29 12:12:53  sbs
+ * PRF_IF macro extended by z.
+ *
  * Revision 3.59  2002/07/12 18:29:41  dkr
  * minor changes in MakeIcm() done
  *
@@ -114,7 +117,7 @@
 
 /*--------------------------------------------------------------------------*/
 
-#define PRF_IF(n, s, x, y) y
+#define PRF_IF(n, s, x, y, z) y
 
 char *prf_name_str[] = {
 #include "prf_node_info.mac"

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.9  2002/07/29 12:12:53  sbs
+ * PRF_IF macro extended by z.
+ *
  * Revision 3.8  2002/02/20 14:56:49  dkr
  * fundef DupTypes() renamed into DupAllTypes()
  *
@@ -103,7 +106,7 @@
 #include "my_debug.h"
 
 #ifndef DBUG_OFF
-#define PRF_IF(n, s, x, y) x
+#define PRF_IF(n, s, x, y, z) x
 static char *prf_string[] = {
 #include "prf_node_info.mac"
 };

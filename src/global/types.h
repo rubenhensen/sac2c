@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/07/29 12:12:53  sbs
+ * PRF_IF macro extended by z.
+ *
  * Revision 3.17  2002/07/12 18:38:30  dkr
  * CT_prf removed (okay, that was a bullshit idea ... #$%@&)
  *
@@ -249,7 +252,7 @@ typedef enum {
 } nodetype; /* Type of nodes of syntax tree */
 
 typedef enum {
-#define PRF_IF(n, s, x, y) n
+#define PRF_IF(n, s, x, y, z) n
 #include "prf_node_info.mac"
 } prf;
 #undef PRF_IF

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/07/29 12:12:53  sbs
+ * PRF_IF macro extended by z.
+ *
  * Revision 3.4  2002/06/07 13:47:36  dkr
  * 'mdb_argtag' renamed into 'ATG_string' and move to argtag.[ch]
  *
@@ -58,7 +61,7 @@ char *mdb_nodetype[] = {
 };
 
 char *mdb_prf[] = {
-#define PRF_IF(n, s, x, y) s
+#define PRF_IF(n, s, x, y, z) s
 #include "prf_node_info.mac"
 #undef PRF_IF
 };
