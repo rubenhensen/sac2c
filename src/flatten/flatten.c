@@ -1,7 +1,14 @@
 /*
  *
  * $Log$
- * Revision 1.20  1995/04/25 09:08:02  hw
+ * Revision 1.21  1995/04/26 17:23:03  hw
+ *  - arrays will be abstacted out of generator part of a with-loop
+ *  - index_variable of a with_loop will be renamed, if they are modified
+ *    in the body of the with-loop
+ *  - the variable that a with-loop assignes to , will be renamed in the
+ *    body of a with-loop
+ *
+ * Revision 1.20  1995/04/25  09:08:02  hw
  * index vector of with-loop will be renamed if necessary
  *
  * Revision 1.19  1995/04/21  12:44:18  hw
@@ -211,12 +218,21 @@ RenameWithVar (char *name, int level)
 {
     char *string;
     DBUG_ENTER ("RenameWithVar");
-
-    string = (char *)Malloc (sizeof (char) * (strlen (name) + WITH_PREFIX_LENGTH + 2));
-    /* 2 will be added, because 'with_level' will be part of new name */
-
-    sprintf (string, WITH_PREFIX "%d_%s", level, name);
-
+    if (0 <= level) {
+        string
+          = (char *)Malloc (sizeof (char) * (strlen (name) + WITH_PREFIX_LENGTH + 5));
+        /* 5 will be added, because 'with_level' and `_` will be part of
+         * new name
+         */
+        sprintf (string, WITH_PREFIX "%d_%s", level, name);
+    } else {
+        string
+          = (char *)Malloc (sizeof (char) * (strlen (name) + WITH_PREFIX_LENGTH + 6));
+        /* 6 will be added, because 'with_level' and '__' will be part of
+         * new name
+         */
+        sprintf (string, WITH_PREFIX "%d__%s", -level, name);
+    }
     DBUG_RETURN (string);
 }
 
@@ -661,13 +677,15 @@ FltnWith (node *arg_node, node *arg_info)
 
     info_node = MakeNode (N_info);
     info_node->nnode = 1;
-    tmp_tos = tos;                                           /* store tos */
+    tmp_tos = tos; /* store tos */
+    DBUG_PRINT ("RENAME", ("store tos " P_FORMAT, tos));
     arg_node->node[0] = Trav (arg_node->node[0], arg_info);  /* traverse generator */
     arg_node->node[1] = Trav (arg_node->node[1], info_node); /* traverse  body */
 
     with_level -= 1; /* now decrease it */
 
     tos = tmp_tos; /*restore tos */
+    DBUG_PRINT ("RENAME", ("restore tos " P_FORMAT, tos));
 
     /* insert assignments stored in arg_info->node[1] */
     if (NULL != info_node->node[1]) {
@@ -873,7 +891,8 @@ FltnGen (node *arg_node, node *arg_info)
     DBUG_ENTER ("FltnGen");
     for (i = 0; i < arg_node->nnode; i++)
         if ((arg_node->node[i]->nodetype == N_ap)
-            || (arg_node->node[i]->nodetype == N_prf)) {
+            || (arg_node->node[i]->nodetype == N_prf)
+            || (arg_node->node[i]->nodetype == N_array)) {
 
             /* This argument is a function application and thus has to be abstracted
              ** out. Therefore a new N_assign, a new N_let, and a new temporary
@@ -908,8 +927,13 @@ FltnGen (node *arg_node, node *arg_info)
     tmp = FindId (arg_node->IDS_ID);
     if (NULL != tmp) {
         old_name = arg_node->IDS_ID;
-        arg_node->IDS_ID = RenameWithVar (old_name, with_level);
-        PUSH (old_name, arg_node->IDS_ID, with_level);
+        arg_node->IDS_ID = RenameWithVar (old_name, -with_level);
+        PUSH (old_name, arg_node->IDS_ID, with_level - 1);
+    } else {
+        /* to rename index-vector if used later on the left side
+         * of a Let
+         */
+        PUSH (arg_node->IDS_ID, arg_node->IDS_ID, with_level - 1);
     }
 
     DBUG_RETURN (arg_node);
@@ -1006,12 +1030,20 @@ FltnId (node *arg_node, node *arg_info)
 
     if (0 < with_level) {
         tmp = FindId (arg_node->IDS_ID);
-        if (NULL != tmp)
+        if (NULL != tmp) {
+            DBUG_PRINT ("RENAME",
+                        ("found:" P_FORMAT "old: %s, new: %s, id_level: %d ,"
+                         " with_level: %d",
+                         tmp, arg_node->IDS_ID, tmp->id_new, tmp->w_level, with_level));
+
             if ((0 < with_level) && (with_level >= tmp->w_level) && (0 < tmp->w_level)) {
                 old_name = arg_node->IDS_ID;
                 arg_node->IDS_ID = StringCopy (tmp->id_new);
                 FREE (old_name);
             }
+        } else {
+            DBUG_PRINT ("RENAME", ("not found: %s", arg_node->IDS_ID));
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1041,30 +1073,56 @@ FltnLet (node *arg_node, node *arg_info)
 {
     ids *ids;
     char *old_name;
-    local_stack *tmp;
+    local_stack *tmp, *tmp_tos;
+    node *new_assign;
 
     DBUG_ENTER ("FltnLet");
 
-    /* add assigned variable to local stack only if it is not part of it */
     ids = arg_node->IDS;
-    do {
-        tmp = FindId (ids->id);
-        if (NULL == tmp) {
-            PUSH (ids->id, ids->id, with_level);
-
-        } else {
-            if ((0 < with_level) && (with_level > tmp->w_level)) {
-                old_name = ids->id;
-                ids->id = RenameWithVar (old_name, with_level);
-                PUSH (old_name, ids->id, with_level);
-                arg_info->node[1]
-                  = AppendIdentity (arg_info->node[1], StringCopy (tmp->id_new), ids->id);
+    if (N_with != arg_node->node[0]->nodetype) {
+        do {
+            tmp = FindId (ids->id);
+            if (NULL == tmp) {
+                PUSH (ids->id, ids->id, with_level);
+            } else {
+                if ((0 < with_level) && (with_level > tmp->w_level)) {
+                    old_name = ids->id;
+                    ids->id = RenameWithVar (old_name, with_level);
+                    PUSH (old_name, ids->id, with_level);
+                    arg_info->node[1]
+                      = AppendIdentity (arg_info->node[1], StringCopy (tmp->id_new),
+                                        ids->id);
+                }
             }
+            ids = ids->next;
+        } while (NULL != ids);
+    } else {
+        new_assign = MakeNode (N_assign);
+        tmp = FindId (ids->id);
+        if (NULL != tmp) {
+            char *new_name;
+            new_name = RenameWithVar (ids->id, -(with_level + 1));
+            tmp_tos = tos;
+            PUSH (ids->id, new_name, with_level + 1);
+            new_assign = AppendIdentity (new_assign, StringCopy (tmp->id_new), new_name);
         }
-        ids = ids->next;
-    } while (NULL != ids);
-
+    }
     arg_node->node[0] = Trav (arg_node->node[0], arg_info);
+
+    if (N_with == arg_node->node[0]->nodetype) {
+        if (NULL != new_assign->node[0]) {
+            FREE (new_assign->node[1]->node[1]);
+            /* a new node is put in front! */
+            new_assign->node[1] = arg_info->node[0];
+            if (NULL != new_assign->node[1]->node[1])
+                new_assign->nnode = 2;
+            else
+                new_assign->nnode = 1;
+            arg_info->node[0] = new_assign;
+            tos = tmp_tos;
+        } else
+            FREE (new_assign);
+    }
 
     DBUG_RETURN (arg_node);
 }
