@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1998/04/02 16:06:40  dkr
+ * changed signature of NIF
+ *
  * Revision 1.20  1997/11/05 09:33:26  dkr
  * usage of NIF-macro has changed
  *
@@ -72,8 +75,8 @@
 ** global array used for DBUG purposes only
 */
 
-#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, aa, ab, ac,   \
-            ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ap, aq, ar, nn)                  \
+#define NIF(n, s, i, f, p, t, o, x, y, z, a, b, c, d, e, g, h, j, k, l, m, q, aa, ab,    \
+            ac, ad, ae, af, ag, ah, ai, aj, ak, al, am, an, ao, ap, aq, nn)              \
     s
 
 char *mdb_nodetype[] = {
