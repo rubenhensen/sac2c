@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.111  1998/02/16 00:50:45  dkr
+ * removed bugs
+ *
  * Revision 1.110  1998/02/15 04:08:38  dkr
  * partitioning of index-projections added (experimental !!)
  *
@@ -5328,7 +5331,7 @@ MakeProj (node *bound1, node *bound2, node *offset, node *step, node *width)
  *   node *ProjNormalize(node *proj, int shape)
  *
  * description:
- *   normalizes the values of the N_indexproj-node 'proj'
+ *   returns the normalized values of the N_indexproj-node 'proj'
  *   (maximally shape; (width < step) or (width = step = 1))
  *
  ******************************************************************************/
@@ -5364,7 +5367,7 @@ ProjNormalize (node *proj, int shape)
 
     NUM_VAL (PROJ_BOUND1 (proj)) = new_bound1;
     NUM_VAL (PROJ_BOUND2 (proj)) = new_bound2;
-    NUM_VAL (PROJ_OFFSET (proj)) = bound1 - new_bound1;
+    NUM_VAL (PROJ_OFFSET (proj)) = offset + bound1 - new_bound1;
 
     DBUG_RETURN (proj);
 }
@@ -5464,8 +5467,8 @@ node *
 ProjIntersect (node *proj1, node *proj2, int shape)
 {
     node *isection = NULL;
-    int k, bound1, bound2, offset, step, width, bound1_1, bound2_1, offset_1, step_1,
-      width_1, bound1_2, bound2_2, offset_2, step_2, width_2;
+    int k, bound1, bound2, offset, step, bound1_1, bound2_1, offset_1, step_1, width_1,
+      bound1_2, bound2_2, offset_2, step_2, width_2;
 
     DBUG_ENTER ("ProjIntersect");
 
@@ -5481,8 +5484,8 @@ ProjIntersect (node *proj1, node *proj2, int shape)
     step_2 = NUM_VAL (PROJ_STEP (proj2));
     width_2 = NUM_VAL (PROJ_WIDTH (proj2));
 
-    if ((bound2_1 > bound1_2) && (bound1_1 < bound2_2)) {
-        bound1 = MAX (bound1_1, bound1_2);
+    if ((bound2_1 > bound1_2 + offset_2) && (bound2_2 > bound1_1 + offset_1)) {
+        bound1 = MAX (bound1_1 + offset_1, bound1_2 + offset_2);
         bound2 = MIN (bound2_1, bound2_2);
 
         step = lcm (step_1, step_2);
@@ -5490,8 +5493,8 @@ ProjIntersect (node *proj1, node *proj2, int shape)
 
         offset = -1;
         for (k = 0; k < step; k++) {
-            if (((k + bound1 - bound1_1) % step_1 < width_1)
-                && ((k + bound1 - bound1_2) % step_2 < width_2)) {
+            if (((k + bound1 - bound1_1 - offset_1) % step_1 < width_1)
+                && ((k + bound1 - bound1_2 - offset_2) % step_2 < width_2)) {
                 /* offset k matches both rasters */
                 if (offset == -1)
                     /* at the beginning of a new intersection-raster */
@@ -5499,13 +5502,11 @@ ProjIntersect (node *proj1, node *proj2, int shape)
             } else {
                 if (offset >= 0) {
                     /* a completed intersection-raster is found */
-                    width = k - offset;
-
                     if (!IsEmpty (bound1, bound2, offset)) {
                         isection
                           = MakeExprs (MakeProj (MakeNum (bound1), MakeNum (bound2),
                                                  MakeNum (offset), MakeNum (step),
-                                                 MakeNum (width)),
+                                                 MakeNum (k - offset)),
                                        isection);
                         /* normalize new intersection-raster and insert it in 'isection'
                          */
@@ -5520,12 +5521,10 @@ ProjIntersect (node *proj1, node *proj2, int shape)
 
         if (offset >= 0) {
             /* a completed intersection-raster is found */
-            width = k - offset;
-
             if (!IsEmpty (bound1, bound2, offset)) {
                 isection = MakeExprs (MakeProj (MakeNum (bound1), MakeNum (bound2),
                                                 MakeNum (offset), MakeNum (step),
-                                                MakeNum (width)),
+                                                MakeNum (k - offset)),
                                       isection);
                 /* normalize new intersection-raster and insert it in 'isection' */
                 EXPRS_EXPR (isection) = ProjNormalize (EXPRS_EXPR (isection), shape);
@@ -5734,7 +5733,7 @@ GetRelevantProjs (node *withpart, node *shape, node *prev_projs)
         shape_ = ARRAY_AELEMS (shape);
         prev_proj = prev_projs;
 
-        /* get projection of current generator-index-set */
+        /* get components of current generator-index-set */
         bound1 = ARRAY_AELEMS (NGEN_BOUND1 (NPART_GEN (part)));
         bound2 = ARRAY_AELEMS (NGEN_BOUND2 (NPART_GEN (part)));
         step = ARRAY_AELEMS (NGEN_STEP (NPART_GEN (part)));
@@ -5755,8 +5754,8 @@ GetRelevantProjs (node *withpart, node *shape, node *prev_projs)
             PROJ_WIDTH (EXPRS_EXPR (tmp)) = EXPRS_EXPR (width);
 
             if (ProjIsEmpty (EXPRS_EXPR (tmp))
-                || (!ProjEmptyIsect (EXPRS_EXPR (tmp), EXPRS_EXPR (prev_proj),
-                                     NUM_VAL (EXPRS_EXPR (shape_))))) {
+                || (ProjEmptyIsect (EXPRS_EXPR (tmp), EXPRS_EXPR (prev_proj),
+                                    NUM_VAL (EXPRS_EXPR (shape_))))) {
                 relevant = 0;
                 break;
             }
@@ -5784,7 +5783,8 @@ GetRelevantProjs (node *withpart, node *shape, node *prev_projs)
                                      MakeNum (NUM_VAL (EXPRS_EXPR (step))),
                                      MakeNum (NUM_VAL (EXPRS_EXPR (width)))),
                            NULL);
-
+            EXPRS_EXPR (insert)
+              = ProjNormalize (EXPRS_EXPR (insert), NUM_VAL (EXPRS_EXPR (shape_)));
             /* store relevant generator-index-set */
             projs = ProjInsert (insert, projs);
         }
