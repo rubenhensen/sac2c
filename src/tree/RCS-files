@@ -15,7 +15,6 @@ SSATransform.c
 SSATransform.h
 UndoSSATransform.c
 UndoSSATransform.h
-access_macros.h
 adjust_ids.c
 adjust_ids.h
 change_signature.c
@@ -33,8 +32,6 @@ scheduling.c
 scheduling.h
 traverse.c
 traverse.h
-tree.c
-tree.h
 tree_basic.c
 tree_basic.h
 tree_compound.c
