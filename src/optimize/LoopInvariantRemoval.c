@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/12 11:41:18  dkr
+ * nodes N_pre, N_post, N_inc, N_dec removed
+ *
  * Revision 3.2  2000/11/27 13:05:53  sbs
  * some warnings eliminated
  *
@@ -882,8 +885,6 @@ GetUsed (node *arg_node, node *node_behind)
         used_vars = arg_node->node[0]->mask[2];
         break;
     case N_let:
-    case N_post:
-    case N_pre:
     case N_return:
 #if 0
       if (N_with==node_behind->nodetype) {
@@ -1612,8 +1613,6 @@ LIRassign (node *arg_node, node *arg_info)
         case N_while:
         case N_do:
         case N_let:
-        case N_post:
-        case N_pre:
         case N_return: {
             long *old_LINVAR;
             long *old_UBD_MAKE;

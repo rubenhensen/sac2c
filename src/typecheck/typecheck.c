@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2000/12/12 11:40:53  dkr
+ * nodes N_pre, N_post, N_inc, N_dec removed
+ *
  * Revision 3.8  2000/12/08 08:31:16  cg
  * Bug fixed in the handling of typechecker function table.
  *
@@ -4826,16 +4829,6 @@ TI (node *arg_node, node *arg_info)
         return_type = TI_Nwith (arg_node, arg_info);
         break;
 
-    case N_post:
-    case N_pre: {
-        stack_elem *stack_p;
-
-        if (NULL != (stack_p = LookupVar (arg_node->info.ids->id)))
-            return_type = DupTypes (stack_p->node->info.types);
-        else
-            return_type = NULL;
-        break;
-    }
     case N_id: {
         node *odef;
         stack_elem *stack_p;
@@ -6542,54 +6535,6 @@ TCwhile (node *arg_node, node *arg_info)
 
     /* now free infered type_information */
     FREE_TYPES (expr_type);
-
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : TCunaryOp
- *  arguments     : 1) argument node
- *                  2) info_node
- *  description   : checks the type of pre & post increment/decrement
- *                  used for N_post & N_pre
- *
- *  global vars   : filename
- *  internal funs : LookupVar
- *  external funs : Type2String
- *  macros        : DBUG..., ERROR, P_FORMAT
- *
- *  remarks       : the reference to the variabledeclaration
- *                  is put to arg_node->node[1], nnode is still 1
- *
- */
-
-node *
-TCunaryOp (node *arg_node, node *arg_info)
-{
-    stack_elem *stack_p;
-
-    DBUG_ENTER ("TCunaryOp");
-
-    stack_p = LookupVar (arg_node->info.ids->id);
-    if (NULL == stack_p) {
-        ERROR (NODE_LINE (arg_node),
-               ("Identifier '%s` undefined", arg_node->info.ids->id));
-    } else {
-        types *type = stack_p->node->info.types;
-
-        if ((0 != type->dim)
-            || (!((T_int == TYPES_BASETYPE (type))
-                  || (T_float == TYPES_BASETYPE (type))))) {
-            ERROR (NODE_LINE (arg_node), ("Identifier '%s` has wrong type (%s)",
-                                          arg_node->info.ids->id, Type2String (type, 0)));
-        } else {
-            arg_node->info.ids->node = stack_p->node;
-            DBUG_PRINT ("REF", ("added reference" P_FORMAT " for %s to %s",
-                                arg_node->info.ids->node, arg_node->info.ids->id,
-                                arg_node->info.ids->node->info.types->id));
-        }
-    }
 
     DBUG_RETURN (arg_node);
 }

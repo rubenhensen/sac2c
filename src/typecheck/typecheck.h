@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/12 11:40:47  dkr
+ * nodes N_pre, N_post, N_inc, N_dec removed
+ *
  * Revision 3.2  2000/12/06 18:26:04  cg
  * Added new functionality to the typechecker that allows to propagate
  * constant integer arrays in certain situations and to successfully
@@ -82,7 +85,6 @@ extern node *TCblock (node *arg_node, node *arg_info);
 extern node *TCassign (node *arg_node, node *arg_info);
 extern node *TCdo (node *arg_node, node *arg_info);
 extern node *TCwhile (node *arg_node, node *arg_info);
-extern node *TCunaryOp (node *arg_node, node *arg_info);
 extern node *TCobjdef (node *arg_node, node *arg_info);
 extern node *TCNcode (node *arg_node, node *arg_info);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/12 11:42:02  dkr
+ * nodes N_pre, N_post, N_inc, N_dec removed
+ *
  * Revision 3.2  2000/12/06 18:55:58  dkr
  * GNMwith2 added
  *
@@ -41,8 +44,6 @@
  *
  * Revision 1.1  1999/01/07 17:37:34  sbs
  * Initial revision
- *
- *
  *
  */
 
@@ -137,7 +138,6 @@ extern node *GNMmodul (node *arg_node, node *arg_info);
 extern node *GNMlet (node *arg_node, node *arg_info);
 extern node *GNMid (node *arg_node, node *arg_info);
 extern node *GNMassign (node *arg_node, node *arg_info);
-extern node *GNMpp (node *arg_node, node *arg_info);
 extern node *GNMblock (node *arg_node, node *arg_info);
 extern node *GNMcond (node *arg_node, node *arg_info);
 extern node *GNMloop (node *arg_node, node *arg_info);

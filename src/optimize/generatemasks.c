@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.5  2000/12/12 11:42:22  dkr
+ * nodes N_pre, N_post, N_inc, N_dec removed
+ *
  * Revision 3.4  2000/12/07 14:37:21  dkr
  * DBUG_ASSERT for GNMwith2 removed
  *
@@ -2186,36 +2189,6 @@ GNMid (node *arg_node, node *arg_info)
     DBUG_ASSERT ((ID_VARDEC (arg_node) != NULL), "N_id without pointer to declaration.");
     DBUG_PRINT ("VAR", ("Usage of Variable %d", ID_VARNO (arg_node)));
     INC_VAR (arg_info->mask[1], ID_VARNO (arg_node));
-    DBUG_RETURN (arg_node);
-}
-
-/*
- *
- *  functionname  : GNMpp
- *  arguments     : 1) ptr to post- or pre-node
- *                  2) ptr to info_node
- *                  R) not modified 1)
- *  description   : dertermines defined and used variables and stores information
- *                  in arg_info->mask[0] and arg_info->mask[1].
- *  global vars   : syntax_tree, info_node
- *  internal funs : ---
- *  external funs : Trav
- *  macros        : DBUG..., INC_VAR
- *
- *  remarks       :
- *
- */
-
-node *
-GNMpp (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("GNMpp");
-    DBUG_ASSERT ((NULL != arg_node->info.ids->node),
-                 "N_pre/post without pointer to declaration.");
-    DBUG_PRINT ("VAR", ("Definition of Variable %d", arg_node->info.ids->node->varno));
-    INC_VAR (arg_info->mask[0], arg_node->info.ids->node->varno);
-    DBUG_PRINT ("VAR", ("Usage of Variable %d", arg_node->info.ids->node->varno));
-    INC_VAR (arg_info->mask[1], arg_node->info.ids->node->varno);
     DBUG_RETURN (arg_node);
 }
 
