@@ -3,6 +3,16 @@
 /*
  *
  * $Log$
+ * Revision 1.143  1997/12/10 14:19:32  sbs
+ * SOURCE-CODE-BRUSHING   STARTED !
+ * the area brushed is marked by
+ * BRUSH BEGIN and BRUSH END
+ * started the elimination of GENTREE-DBUG-output
+ * eliminated early node-creations for linenum preservation:
+ * instead linenum is pushed by $<cint>$=linenum and
+ * the result's NODE_LINE is updated accordingly!
+ * the usage of Make... functions is forced!
+ *
  * Revision 1.142  1997/11/25 12:22:27  sbs
  * if then else ala C
  * and a[1] now is recognized as a[[1]]!
@@ -566,7 +576,7 @@ static file_type file_kind = F_prog;
 %token <cdbl> DOUBLE
 %token <cchar> CHAR
 
-%type <prf> foldop Ngenop
+%type <prf> foldop, Ngenop, monop, binop, triop
 %type <nodetype> modclass
 %type <cint> evextern, sibheader, sibevmarker, dots
 %type <ids> ids, modnames, modname
@@ -586,8 +596,7 @@ static file_type file_kind = F_prog;
              exprblock3, assign, assigns, assignblock, letassign, retassign,
              selassign, forassign, optretassign, optassignblock, optelse,
              exprsNOar, exprNOdot, exprORdot, exprNOar, exprNOnum,
-             expr, expr_main, expr_ap, expr_ar, expr_num,
-             exprs, monop, binop, triop, 
+             expr, expr_main, expr_ap, expr_ar, expr_num, exprs,
              Ngenerator, Nsteps, Nwidth, Nwithop, Ngenidx,
              conexpr, generator, unaryop,
              moddec, expdesc, expdesc2, expdesc3, expdesc4, fundecs, fundec,
@@ -1914,406 +1923,161 @@ exprsNOar: exprNOar COMMA exprsNOar
            }
          ;
 
-exprNOdot: expr %prec GENERATOR
-           { $$ = $1; }
+/*   BRUSH BEGIN   */
+
+exprNOdot: expr %prec GENERATOR { $$ = $1; }
          ;
 
-exprORdot: expr %prec GENERATOR
-           { $$ = $1; }
-         | DOT
-           { $$ = NULL; }
+exprORdot: expr %prec GENERATOR { $$ = $1;   }
+         | DOT                  { $$ = NULL; }
          ;
 
 exprNOar: expr_main {$$ = $1;}
-        | expr_ap {$$ = $1;}
-        | expr_num {$$ = $1;}
+        | expr_ap   {$$ = $1;}
+        | expr_num  {$$ = $1;}
         ;
  
 exprNOnum: expr_main {$$ = $1;}
-         | expr_ar {$$ = $1;}
-         | expr_ap {$$ = $1;}
+         | expr_ar   {$$ = $1;}
+         | expr_ap   {$$ = $1;}
          ;
  
 expr: expr_main {$$ = $1;}
-    | expr_ar {$$ = $1;}
-    | expr_ap {$$ = $1;}
-    | expr_num {$$ = $1;}
+    | expr_ar   {$$ = $1;}
+    | expr_ap   {$$ = $1;}
+    | expr_num  {$$ = $1;}
     ;
  
-expr_num: NUM
-          { $$=MakeNum( yylval.cint);
- 
-            DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %d",
-                                  mdb_nodetype[NODE_TYPE($$)], $$, NUM_VAL($$)));
-          }
+expr_num: NUM {$$=MakeNum( yylval.cint);}
         ;
 
-expr_ar: SQBR_L {$$=MakeNode(N_array);} exprsNOar SQBR_R
-       { $$=$<node>2;
-         ARRAY_AELEMS($$) = $3;
-         
-         DBUG_PRINT("GENTREE",
-                    ("%s " P_FORMAT ": %s " P_FORMAT,
-                     mdb_nodetype[ $$->nodetype], $$,
-                     mdb_nodetype[ $$->node[0]->nodetype], $$->node[0]));
-       }
+expr_ar: SQBR_L {$<cint>$=linenum;} exprsNOar SQBR_R
+         { $$=MakeArray( $3);
+           NODE_LINE($$)=$<cint>2;
+         }
        ;
 
-expr_ap: id BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
-         { $$=$<node>3;
-           AP_ARGS($$) = $4;
-           AP_NAME($$) = $1;
-           AP_MOD($$)  = NULL;
-
-           DBUG_PRINT("GENTREE",
-                      ("%s: "P_FORMAT ": Id: %s, Arg:%s " P_FORMAT,
-                       mdb_nodetype[ $$->nodetype ], $$, $$->info.fun_name.id,
-                       mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
+expr_ap: id BRACKET_L {$<cint>$=linenum;} exprs BRACKET_R
+         { $$=MakeAp( $1, NULL, $4);
+           NODE_LINE($$)=$<cint>3;
          }
        | id BRACKET_L BRACKET_R
          { $$=MakeAp($1, NULL, NULL);
-
-           DBUG_PRINT("GENTREE",
-                      ("%s " P_FORMAT " Id: %s,",
-                       mdb_nodetype[ $$->nodetype ], $$, $$->info.fun_name.id));
          }
-       | id COLON id  BRACKET_L {$$=MakeNode(N_ap);} exprs BRACKET_R
-          { $$=$<node>5;
-            AP_ARGS($$) = $6;
-            AP_NAME($$) = $3;
-            AP_MOD($$)  = $1;
-
-            DBUG_PRINT("GENTREE",
-                       ("%s: "P_FORMAT ": Id: %s:%s, Arg:%s " P_FORMAT,
-                        mdb_nodetype[ $$->nodetype ], $$, AP_MOD($$),
-                        $$->info.fun_name.id,
-                        mdb_nodetype[ $$->node[0]->nodetype ], $$->node[0]));
+       | id COLON id  BRACKET_L {$<cint>$=linenum;} exprs BRACKET_R
+          { $$=MakeAp( $3, $1, $6);
+            NODE_LINE($$)=$<cint>5;
           }
        | id COLON id BRACKET_L BRACKET_R
          { $$=MakeAp($3, $1, NULL);
-
-           DBUG_PRINT("GENTREE",
-                      ("%s " P_FORMAT " Id: %s:%s,",
-                       mdb_nodetype[ $$->nodetype ], $$, AP_MOD($$),
-                       $$->info.fun_name.id));
          }
        ;
 
 
-expr_main: id 
-         { $$=MakeNode(N_id);
-           $$->info.ids=MakeIds($1, NULL, ST_regular);  /* name of variable*/
+expr_main: id  { $$=MakeId( $1, NULL, ST_regular); }
+         | id COLON id  { $$=MakeId( $3, $1, ST_regular); }
+         | MINUS id %prec UMINUS
+           { /*
+              * substitute unary minus by multiplication
+              * with -1!
+              */
+             $$=MAKE_BIN_PRF( F_mul, 
+                                MakeNum( -1),
+                                  MakeId($2, NULL, ST_regular) );
+           }
+         | BRACKET_L COLON type BRACKET_R expr %prec CAST
+           { $$=MakeCast( $5, $3);
+           }
+         | NOT expr
+           { MakePrf( F_not,
+               MakeExprs( $2,
+                 NULL));
+           }
+         | BRACKET_L expr BRACKET_R { $$=$2; }
+         | expr SQBR_L exprNOnum SQBR_R
+           { $$ = MAKE_BIN_PRF( F_psi, $3, $1);
+             NODE_LINE($$) = NODE_LINE( $1);
+           }
+         | expr SQBR_L expr_num SQBR_R
+           { $$ = MakePrf( F_psi,
+                    MakeExprs( MakeArray( MakeExprs( $3, NULL)),
+                      MakeExprs( $1,
+                        NULL)) );
+             NODE_LINE($$) = NODE_LINE( $1);
+           }
+         | expr SQBR_L expr COMMA exprs SQBR_R
+           { $$ = MakePrf( F_psi,
+                    MakeExprs( MakeArray( MakeExprs( $3, $5)), 
+                      MakeExprs( $1,
+                        NULL)) );
+             NODE_LINE($$) = NODE_LINE( $1);
+           }
+         | monop BRACKET_L expr BRACKET_R 
+           { $$=MakePrf( $1,
+                  MakeExprs( $3,
+                    NULL));
+           }
+         | binop BRACKET_L expr COMMA expr BRACKET_R 
+           { $$=MAKE_BIN_PRF( $1, $3, $5);
+           }
+         | triop BRACKET_L expr COMMA expr COMMA expr BRACKET_R 
+           { $$=MakePrf( $1, 
+                  MakeExprs( $3,
+                    MakeExprs( $5,
+                      MakeExprs( $7,
+                        NULL))));
+           }
+         | expr AND expr     { $$=MAKE_BIN_PRF( F_and,$1,$3); }
+         | expr OR expr      { $$=MAKE_BIN_PRF( F_or ,$1,$3); }
+         | expr EQ expr      { $$=MAKE_BIN_PRF( F_eq ,$1,$3); }
+         | expr NEQ expr     { $$=MAKE_BIN_PRF( F_neq,$1,$3); }
+         | expr LE expr      { $$=MAKE_BIN_PRF( F_le ,$1,$3); }
+         | expr LT expr      { $$=MAKE_BIN_PRF( F_lt ,$1,$3); }
+         | expr GE expr      { $$=MAKE_BIN_PRF( F_ge ,$1,$3); }
+         | expr GT expr      { $$=MAKE_BIN_PRF( F_gt ,$1,$3); }
+         | expr PLUS expr    { $$=MAKE_BIN_PRF( F_add,$1,$3); }
+         | expr MINUS expr   { $$=MAKE_BIN_PRF( F_sub,$1,$3); }
+         | expr DIV expr     { $$=MAKE_BIN_PRF( F_div,$1,$3); }
+         | expr MUL expr     { $$=MAKE_BIN_PRF( F_mul,$1,$3); }
+         | expr PRF_MOD expr { $$=MAKE_BIN_PRF( F_mod,$1,$3); }
+         | MINUS NUM %prec UMINUS    { $$=MakeNum( -yylval.cint);  }
+         | PLUS  NUM %prec UMINUS    { $$=MakeNum( yylval.cint);   }
+         | CHAR                      { $$=MakeChar(yylval.cchar);  }
+         | FLOAT                     { $$=MakeFloat( $1);          }
+         | MINUS FLOAT %prec UMINUS  { $$=MakeFloat( -$2);         }
+         | PLUS FLOAT %prec UMINUS   { $$=MakeFloat( $2);          }
+         | DOUBLE                    { $$=MakeDouble( $1);         }
+         | MINUS DOUBLE %prec UMINUS { $$=MakeDouble( -$2);        }
+         | PLUS DOUBLE %prec UMINUS  { $$=MakeDouble( $2);         }
+         | TRUE                      { $$=MakeBool( 1);            }
+         | FALSE                     { $$=MakeBool( 0);            }
+         | STR                       { $$=string2array2string($1); }
+         | NWITH {$<cint>$=linenum;} BRACKET_L Ngenerator BRACKET_R
+           optassignblock Nwithop 
+           { /*
+              * the tricky part about this rule is that $7 (an N_Nwithop node)
+              * carries the goal-expression of the With-Loop, i.e., the "N-expr"
+              * node which belongs into the N_Ncode node!!!
+              * The reason for this is that an exclusion of the goal expression
+              * from the non-terminal Nwithop would lead to a shift/reduce
+              * conflict in that rule!
+              */
+             $$=MakeNWith( $4, MakeNCode( $6, NWITHOP_EXPR($7)), $7);
+             NODE_LINE($$)= $<cint>2;
 
-           DBUG_PRINT("GENTREE",("%s " P_FORMAT ": %s ",
-                            mdb_nodetype[$$->nodetype],$$,$$->info.ids->id));  
-         }
-      | id COLON id
-         { $$=MakeNode(N_id);
-           $$->info.ids=MakeIds($3, $1, ST_regular);  /* name of variable*/
+             /*
+              * Finally, we generate the connection between the 
+              * (only) partition and the (only) code!
+              */
+             NPART_CODE( NWITH_PART($$)) = NWITH_CODE($$);
+           }
+         | WITH {$<cint>$=linenum;} BRACKET_L generator  BRACKET_R conexpr 
+           { $$=MakeWith( $4, $6);
+           }
+         ;
 
-           DBUG_PRINT("GENTREE",("%s " P_FORMAT ": %s:%s ",
-                                 mdb_nodetype[$$->nodetype],
-                                 $$,
-                                 $$->info.ids->mod,
-                                 $$->info.ids->id));  
-         }
-      | MINUS id %prec UMINUS
-        {   node *exprs1, *exprs2;
-            exprs2=MakeNode(N_exprs);
-            exprs2->node[0]=MakeNode(N_id);
-            exprs2->node[0]->info.ids=MakeIds($2, NULL, ST_regular);
-            exprs1=MakeNode(N_exprs);
-            exprs1->node[0]=MakeNode(N_num);
-            exprs1->node[0]->info.cint=-1;
-            exprs1->node[1]=exprs2;
-            $$=MakeNode(N_prf);
-            $$->info.prf=F_mul;
-            $$->node[0]=exprs1;
-            
-            DBUG_PRINT("GENTREE",("%s "P_FORMAT": %d",
-                                  mdb_nodetype[exprs1->node[0]->nodetype], 
-                                  exprs1->node[0], exprs1->node[0]->info.cint));
-            DBUG_PRINT("GENTREE",("%s " P_FORMAT ": %s ",
-                                  mdb_nodetype[exprs2->node[0]->nodetype],
-                                  exprs2->node[0], 
-                                  exprs2->node[0]->info.ids->id));
 
-            DBUG_PRINT("GENTREE",
-                       ("%s " P_FORMAT ": %s " P_FORMAT ", %s" P_FORMAT,
-                        mdb_prf[$$->info.prf], $$,
-                        mdb_nodetype[exprs1->node[0]->nodetype], 
-                        exprs1->node[0],
-                        mdb_nodetype[exprs2->node[0]->nodetype], 
-                        exprs2->node[0]));
-         }
-      | BRACKET_L COLON type BRACKET_R expr %prec CAST
-         {$$=MakeNode(N_cast);
-          $$->info.types=$3;
-          $$->node[0]=$5;
-
-          DBUG_PRINT("GENTREE",
-                     ("%s "P_FORMAT": %s: " P_FORMAT ,
-                      mdb_nodetype[ $$->nodetype], $$,
-                      mdb_nodetype[ $$->node[0]->nodetype], $$->node[0]));
-         }
-      | NOT expr
-         {  node *exprs;
-            exprs=MakeNode(N_exprs);
-            exprs->node[0]=$2;
-            $$=MakeNode(N_prf);
-            $$->info.prf=F_not;
-            $$->node[0]=exprs;
-         }
-      | BRACKET_L expr BRACKET_R 
-         { $$=$2;
-         }
-      | expr SQBR_L exprNOnum SQBR_R
-         { $$ = MakePrf( F_psi,
-                  MakeExprs( $3, 
-                    MakeExprs( $1,
-                      NULL)) );
-           NODE_LINE($$) = NODE_LINE( $1);
-           
-           DBUG_PRINT("GENTREE",
-                      ("%s (%s)"P_FORMAT": %s"P_FORMAT", %s"P_FORMAT,
-                       mdb_nodetype[ $$->nodetype], mdb_prf[$$->info.prf],$$, 
-                       mdb_nodetype[$$->node[0]->node[0]->nodetype], 
-                       $$->node[0]->node[0],
-                       mdb_nodetype[ $$->node[0]->node[1]->node[0]->nodetype ],
-                       $$->node[0]->node[1]->node[0]));
-         }
-      | expr SQBR_L expr_num SQBR_R
-         { $$ = MakePrf( F_psi,
-                  MakeExprs( MakeArray( MakeExprs( $3, NULL)),
-                    MakeExprs( $1,
-                      NULL)) );
-           NODE_LINE($$) = NODE_LINE( $1);
- 
- 
-           DBUG_PRINT("GENTREE",
-                      ("%s (%s)"P_FORMAT": %s"P_FORMAT", %s"P_FORMAT,
-                       mdb_nodetype[ $$->nodetype], mdb_prf[$$->info.prf],$$,
-                       mdb_nodetype[$$->node[0]->node[0]->nodetype],
-                       $$->node[0]->node[0],
-                       mdb_nodetype[ $$->node[0]->node[1]->node[0]->nodetype ],
-                       $$->node[0]->node[1]->node[0]));
-        }
-      | expr SQBR_L expr COMMA exprs SQBR_R
-         { $$ = MakePrf( F_psi,
-                  MakeExprs( MakeArray( MakeExprs( $3, $5)), 
-                    MakeExprs( $1,
-                      NULL)) );
-           NODE_LINE($$) = NODE_LINE( $1);
-
-           
-           DBUG_PRINT("GENTREE",
-                      ("%s (%s)"P_FORMAT": %s"P_FORMAT", %s"P_FORMAT,
-                       mdb_nodetype[ $$->nodetype], mdb_prf[$$->info.prf],$$, 
-                       mdb_nodetype[$$->node[0]->node[0]->nodetype], 
-                       $$->node[0]->node[0],
-                       mdb_nodetype[ $$->node[0]->node[1]->node[0]->nodetype ],
-                       $$->node[0]->node[1]->node[0]));
-        }
-      | monop BRACKET_L expr BRACKET_R 
-         { 
-            node *exprs;
-            exprs=MakeNode(N_exprs);
-            exprs->node[0]=$3;
-                           
-            $$=$1;          /* Monop-Knoten u"bernehmen */
-            $$->node[0]=exprs;   /* Argument  */
-            DBUG_PRINT("GENTREE",
-                       ("%s (%s)" P_FORMAT ": %s " P_FORMAT "",
-                        mdb_nodetype[$$->nodetype], mdb_prf[$$->info.prf], $$,
-                        mdb_nodetype[ $$->node[0]->nodetype], $$->node[0] ));
-         }
-      | binop BRACKET_L expr COMMA expr  BRACKET_R 
-         { 
-            node *exprs1, *exprs2;
-
-            exprs2=MakeNode(N_exprs);
-            exprs2->node[0]=$5;       /* 2. Argument  */
-            exprs1=MakeNode(N_exprs);
-            exprs1->node[0]=$3;       /* 1. Argument  */
-            exprs1->node[1]=exprs2;
-            
-            $$=$1;         /* Binop-Knoten u"berbnehmmen  */
-            $$->node[0]=exprs1;  
-            
-            DBUG_PRINT("GENTREE",
-                       ("%s (%s)"P_FORMAT": %s " P_FORMAT ", %s " P_FORMAT,
-                        mdb_nodetype[$$->nodetype], mdb_prf[$$->info.prf], $$,
-                        mdb_nodetype[$3->nodetype], $3, 
-                        mdb_nodetype[$5->nodetype], $5 ));
-          }
-     | triop BRACKET_L expr COMMA expr COMMA expr 
-       BRACKET_R 
-         { 
-            node *exprs1, *exprs2, *exprs3;
-            
-            exprs3=MakeNode(N_exprs);
-            exprs3->node[0]=$7;            /* 3. Argument  */
-            exprs2=MakeNode(N_exprs);
-            exprs2->node[0]=$5;           /* 2. Argument  */
-            exprs2->node[1]=exprs3;
-            exprs1=MakeNode(N_exprs);
-            exprs1->node[0]=$3;           /* 1. Argument  */
-            exprs1->node[1]=exprs2;
-            
-            $$=$1;         /* Triop-Knoten u"berbnehmmen  */
-            $$->node[0]=exprs1;  
-
-            DBUG_PRINT("GENTREE",
-                      ("%s (%s)"P_FORMAT": %s"P_FORMAT", %s"P_FORMAT
-                       ", %s"P_FORMAT,
-                       mdb_nodetype[$$->nodetype], mdb_prf[$$->info.prf], $$,
-                       mdb_nodetype[$3->nodetype], $3, 
-                       mdb_nodetype[$5->nodetype], $5,
-                       mdb_nodetype[$7->nodetype], $7));
-         }
-      | expr AND expr    { $$=GenPrfNode(F_and,$1,$3); }
-      | expr OR expr      { $$=GenPrfNode(F_or ,$1,$3); }
-      | expr EQ expr      { $$=GenPrfNode(F_eq ,$1,$3); }
-      | expr NEQ expr     { $$=GenPrfNode(F_neq,$1,$3); }
-      | expr LE expr      { $$=GenPrfNode(F_le ,$1,$3); }
-      | expr LT expr      { $$=GenPrfNode(F_lt ,$1,$3); }
-      | expr GE expr      { $$=GenPrfNode(F_ge ,$1,$3); }
-      | expr GT expr      { $$=GenPrfNode(F_gt ,$1,$3); }
-      | expr PLUS expr    { $$=GenPrfNode(F_add,$1,$3); }
-      | expr MINUS expr   { $$=GenPrfNode(F_sub,$1,$3); }
-      | expr DIV expr     { $$=GenPrfNode(F_div,$1,$3); }
-      | expr MUL expr     { $$=GenPrfNode(F_mul,$1,$3); }
-      | expr PRF_MOD expr { $$=GenPrfNode(F_mod,$1,$3); }
-      | MINUS NUM %prec UMINUS
-         {$$=MakeNode(N_num);
-          $$->info.cint=-yylval.cint;
-          DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %d",
-                                mdb_nodetype[$$->nodetype],$$,$$->info.cint));
-         }
-      | PLUS  NUM %prec UMINUS
-         {$$=MakeNode(N_num);
-          $$->info.cint=yylval.cint;
-          DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %d",
-                                mdb_nodetype[$$->nodetype],$$,$$->info.cint));
-         }
-      | CHAR
-         {$$=MakeChar(yylval.cchar);
-          DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %d",
-                                mdb_nodetype[$$->nodetype],$$,$$->info.cchar));
-         }
-      | FLOAT
-         { $$=MakeNode(N_float);
-           $$->info.cfloat=$1;
-           
-           DBUG_PRINT("GENTREE",
-                      ("%s " P_FORMAT ": %f ", 
-                       mdb_nodetype[$$->nodetype], $$, $$->info.cfloat)); 
-         }
-      | MINUS FLOAT %prec UMINUS
-         { $$=MakeNode(N_float);
-           $$->info.cfloat=-$2;
-           
-           DBUG_PRINT("GENTREE",
-                      ("%s " P_FORMAT ": %f ", 
-                       mdb_nodetype[$$->nodetype], $$, $$->info.cfloat)); 
-         }
-      | PLUS FLOAT %prec UMINUS
-         { $$=MakeNode(N_float);
-           $$->info.cfloat=$2;
-           
-           DBUG_PRINT("GENTREE",
-                      ("%s " P_FORMAT ": %f ", 
-                       mdb_nodetype[$$->nodetype], $$, $$->info.cfloat)); 
-         }
-      | DOUBLE
-         { $$=MakeNode(N_double);
-           $$->info.cdbl=$1;
-
-           DBUG_PRINT("GENTREE",
-                      ("%s " P_FORMAT ": %f ",
-                       mdb_nodetype[$$->nodetype], $$, $$->info.cdbl));
-         }
-      | MINUS DOUBLE %prec UMINUS
-         { $$=MakeNode(N_double);
-           $$->info.cdbl=-$2;
-
-           DBUG_PRINT("GENTREE",
-                      ("%s " P_FORMAT ": %f ",
-                       mdb_nodetype[$$->nodetype], $$, $$->info.cdbl));
-         }
-      | PLUS DOUBLE %prec UMINUS
-         { $$=MakeNode(N_double);
-           $$->info.cdbl=$2;
-
-           DBUG_PRINT("GENTREE",
-                      ("%s " P_FORMAT ": %f ",
-                       mdb_nodetype[$$->nodetype], $$, $$->info.cdbl));
-         }
-      | TRUE 
-         { $$=MakeNode(N_bool);
-           $$->info.cint=1;
-
-           DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %s",
-                                 mdb_nodetype[$$->nodetype],$$,
-                                 $$->info.cint ? "true" : "false"));
-         }
-      | FALSE
-         { $$=MakeNode(N_bool);
-           $$->info.cint=0;
-
-           DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %s",
-                                 mdb_nodetype[$$->nodetype],$$,
-                                 $$->info.cint ? "true" : "false"));
-         }
-      | STR
-        {
-          $$=string2array2string($1);
-          
-          DBUG_PRINT("GENTREE",("%s" P_FORMAT ": %s",
-                                mdb_nodetype[$$->nodetype],$$,
-                                $1));
-        }
-    | NWITH {$$=MakeNWith(NULL, NULL, NULL);} BRACKET_L Ngenerator BRACKET_R
-      optassignblock Nwithop 
-      { /*
-         * the tricky part about this rule is that $7 (an N_Nwithop node)
-         * carries the goal-expression of the With-Loop, i.e., the "N-expr"
-         * node which belongs into the N_Ncode node!!!
-         * The reason for this is that an exclusion of the goal expression
-         * from the non-terminal Nwithop would lead to a shift/reduce conflict
-         * in that rule!
-         */
-        $$=$<node>2;
-        NWITH_PART($$) = $4;
-        NWITH_CODE($$) = MakeNCode( $6, NWITHOP_EXPR($7));
-        NWITH_WITHOP($$) = $7;
-
-        /*
-         * Finally, we generate the connection between the 
-         * (only) partition and the (only) code!
-         */
-        NPART_CODE( NWITH_PART($$)) = NWITH_CODE($$);
-
-        DBUG_PRINT("GENTREE",
-         ("%s "P_FORMAT": %s: "P_FORMAT",%s: "P_FORMAT",%s: "P_FORMAT ,
-          mdb_nodetype[ NODE_TYPE($$)], $$,
-          mdb_nodetype[ NODE_TYPE(NWITH_PART($$))], NWITH_PART($$),
-          mdb_nodetype[ NODE_TYPE(NWITH_CODE($$))], NWITH_CODE($$),
-          mdb_nodetype[ NODE_TYPE(NWITH_WITHOP($$))], NWITH_WITHOP($$)));
-        }
-      | WITH {$$=MakeNode(N_with);} BRACKET_L generator  BRACKET_R conexpr 
-        { $$=$<node>2;
-          $$->node[0]=$4;   /* Generator und Filter */
-          $$->node[0]->lineno=$$->lineno;
-          $$->node[1]=$6;   /* Rumpf */
-
-          DBUG_PRINT("GENTREE",
-                     ("%s "P_FORMAT": %s: " P_FORMAT ",%s: " P_FORMAT ,
-                      mdb_nodetype[ $$->nodetype], $$,
-                      mdb_nodetype[ $$->node[0]->nodetype], $$->node[0],
-                      mdb_nodetype[ $$->node[1]->nodetype], $$->node[1] ));
-        }
-      ;
+/*   BRUSH END  */
 
 Ngenerator: exprORdot Ngenop Ngenidx Ngenop exprORdot
             Nsteps Nwidth
@@ -2561,59 +2325,19 @@ foldop:   PLUS {$$=F_add; }
 	| NEQ {$$=F_neq;}
 	;
 
-monop:   ABS
-         {
-            $$=MakeNode(N_prf);
-            $$->info.prf=F_abs;
-         }
-       | DIM
-         { 
-            $$=MakeNode(N_prf);
-            $$->info.prf=F_dim;
-         }
-       | SHAPE
-          { 
-             $$=MakeNode(N_prf);
-             $$->info.prf=F_shape;
-          }
-       | TOI
-          {  $$=MakeNode(N_prf);
-             $$->info.prf=F_toi; 
-          }
-       | TOF
-          {  $$=MakeNode(N_prf);
-             $$->info.prf=F_tof; 
-          }
-       | TOD
-          {  $$=MakeNode(N_prf);
-             $$->info.prf=F_tod; 
-          }
-       | F2I
-          {  $$=MakeNode(N_prf);
-             $$->info.prf=F_ftoi; 
-          }
-       | F2D
-          {  $$=MakeNode(N_prf);
-             $$->info.prf=F_ftod;
-          }
-       | I2F
-          {  $$=MakeNode(N_prf);
-             $$->info.prf=F_itof; 
-          }
-       | I2D
-          {  $$=MakeNode(N_prf);
-             $$->info.prf=F_itod;
-          }
-       | D2I
-          {  $$=MakeNode(N_prf);
-             $$->info.prf=F_dtoi;
-          }
-       | D2F
-          {  $$=MakeNode(N_prf);
-             $$->info.prf=F_dtof;
-          }
-
-          ;
+monop: ABS   { $$=F_abs; }
+     | DIM   { $$=F_dim; }
+     | SHAPE { $$=F_shape; }
+     | TOI   { $$=F_toi;   }
+     | TOF   { $$=F_tof;   }
+     | TOD   { $$=F_tod;   }
+     | F2I   { $$=F_ftoi;  }
+     | F2D   { $$=F_ftod;  }
+     | I2F   { $$=F_itof;  }
+     | I2D   { $$=F_itod;  }
+     | D2I   { $$=F_dtoi;  }
+     | D2F   { $$=F_dtof;  }
+     ;
 
 unaryop: INC
           { $$=MakeNode(N_inc);
@@ -2625,50 +2349,20 @@ unaryop: INC
           }
            ;
 
-binop:  PSI
-         { $$=MakeNode(N_prf);
-           $$->info.prf=F_psi;
-         }
-      | TAKE
-         { $$=MakeNode(N_prf);
-           $$->info.prf=F_take;
-         }
-      | DROP
-         { $$=MakeNode(N_prf);
-           $$->info.prf=F_drop;
-         }
-      | RESHAPE 
-         { $$=MakeNode(N_prf);
-           $$->info.prf=F_reshape;
-        }
-      | GENARRAY
-         { $$=MakeNode(N_prf);
-           $$->info.prf=F_genarray;
-         }
-      | PRF_MIN
-         { $$=MakeNode(N_prf);
-           $$->info.prf=F_min;
-         }
-      | PRF_MAX
-         { $$=MakeNode(N_prf);
-           $$->info.prf=F_max;
-         }
-      ;
+binop: PSI      { $$=F_psi;      }
+     | TAKE     { $$=F_take;     }
+     | DROP     { $$=F_drop;     }
+     | RESHAPE  { $$=F_reshape;  }
+     | GENARRAY { $$=F_genarray; }
+     | PRF_MIN  { $$=F_min;      }
+     | PRF_MAX  { $$=F_max;      }
+     ;
 
 
-triop : ROTATE
-         { $$=MakeNode(N_prf);
-           $$->info.prf=F_rotate;
-         }
-      | CAT
-         { $$=MakeNode(N_prf);
-           $$->info.prf=F_cat;
-         }
-      | MODARRAY
-         { $$=MakeNode(N_prf);
-           $$->info.prf=F_modarray;
-         }
-       ;
+triop: ROTATE   { $$=F_rotate;   }
+     | CAT      { $$=F_cat;      }
+     | MODARRAY { $$=F_modarray; }
+     ;
 
 ids:   id COMMA ids 
         { 
