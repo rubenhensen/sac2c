@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/01/25 10:17:50  dkr
+ * PH_spmdregions renamed into PH_multithread
+ *
  * Revision 3.2  2000/12/12 11:38:12  dkr
  * refcount is phase 18 now
  *
@@ -15,7 +18,6 @@
  *
  * Revision 1.1  2000/03/16 14:25:28  dkr
  * Initial revision
- *
  *
  */
 
@@ -78,7 +80,7 @@ PH_SEL (PH_initial, "", 0, 0),
 
   PH_SEL (PH_wltrans, "Transforming with-loop representation", 0, 0),
 
-  PH_SEL (PH_spmdregions, "Generating SPMD- and SYNC-regions", 0, 0),
+  PH_SEL (PH_multithread, "Generating annotations for MT", 0, 0),
 
   PH_SEL (PH_refcnt, "Running reference count inference system", 0, 0),
 

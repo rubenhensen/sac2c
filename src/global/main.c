@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/01/25 10:18:25  dkr
+ * PH_spmdregions renamed into PH_multithread
+ *
  * Revision 3.3  2000/12/12 15:30:47  dkr
  * internal flag 'dkr' added
  *
@@ -561,7 +564,7 @@ main (int argc, char *argv[])
     }
     PHASE_EPILOG;
 
-    if (break_after == PH_spmdregions)
+    if (break_after == PH_multithread)
         goto BREAK;
     compiler_phase++;
 

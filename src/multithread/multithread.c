@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/01/25 10:17:57  dkr
+ * PH_spmdregions renamed into PH_multithread
+ *
  * Revision 3.1  2000/11/20 18:03:10  sacbase
  * new release made
  *
@@ -62,7 +65,6 @@
  *
  * Revision 1.1  2000/01/21 11:11:38  jhs
  * Initial revision
- *
  *
  */
 
@@ -522,7 +524,7 @@ MUTHmodul (node *arg_node, node *arg_info)
       = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE, ClearATTRIB, MUTHignore_none);
     DBUG_PRINT ("MUTH", ("end initializing"));
 
-    if ((break_after == PH_spmdregions) && (strcmp ("init", break_specifier) == 0)) {
+    if ((break_after == PH_multithread) && (strcmp ("init", break_specifier) == 0)) {
         goto cont;
     }
 
@@ -534,7 +536,7 @@ MUTHmodul (node *arg_node, node *arg_info)
       = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE, ScheduleInit, MUTHignore);
     DBUG_PRINT ("MUTH", ("end ScheduleInit"));
 
-    if ((break_after == PH_spmdregions) && (strcmp ("schin", break_specifier) == 0)) {
+    if ((break_after == PH_multithread) && (strcmp ("schin", break_specifier) == 0)) {
         goto cont;
     }
 
@@ -551,7 +553,7 @@ MUTHmodul (node *arg_node, node *arg_info)
       = MUTHdriver (MODUL_FUNS (arg_node), arg_info, TRUE, RepfunsInit, MUTHignore);
     DBUG_PRINT ("MUTH", ("end RepfunsInit"));
 
-    if ((break_after == PH_spmdregions) && (strcmp ("rfin", break_specifier) == 0)) {
+    if ((break_after == PH_multithread) && (strcmp ("rfin", break_specifier) == 0)) {
         goto cont;
     }
 
@@ -568,7 +570,7 @@ MUTHmodul (node *arg_node, node *arg_info)
       = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE, BlocksInit, MUTHignore);
     DBUG_PRINT ("MUTH", ("end BlocksInit"));
 
-    if ((break_after == PH_spmdregions) && (strcmp ("blkin", break_specifier) == 0)) {
+    if ((break_after == PH_multithread) && (strcmp ("blkin", break_specifier) == 0)) {
         goto cont;
     }
 
@@ -583,7 +585,7 @@ MUTHmodul (node *arg_node, node *arg_info)
       = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE, BlocksPropagate, MUTHignore);
     DBUG_PRINT ("MUTH", ("end BlocksPropagate"));
 
-    if ((break_after == PH_spmdregions) && (strcmp ("blkpp", break_specifier) == 0)) {
+    if ((break_after == PH_multithread) && (strcmp ("blkpp", break_specifier) == 0)) {
         goto cont;
     }
 
@@ -595,7 +597,7 @@ MUTHmodul (node *arg_node, node *arg_info)
       = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE, BlocksExpand, MUTHignore);
     DBUG_PRINT ("MUTH", ("end BlocksExpand"));
 
-    if ((break_after == PH_spmdregions) && (strcmp ("blkex", break_specifier) == 0)) {
+    if ((break_after == PH_multithread) && (strcmp ("blkex", break_specifier) == 0)) {
         goto cont;
     }
 
@@ -612,7 +614,7 @@ MUTHmodul (node *arg_node, node *arg_info)
       = MUTHdriver (MODUL_FUNS (arg_node), arg_info, TRUE, MtfunsInit, MUTHignore);
     DBUG_PRINT ("MUTH", ("end MtfunsInit"));
 
-    if ((break_after == PH_spmdregions) && (strcmp ("mtfin", break_specifier) == 0)) {
+    if ((break_after == PH_multithread) && (strcmp ("mtfin", break_specifier) == 0)) {
         goto cont;
     }
 
@@ -624,7 +626,7 @@ MUTHmodul (node *arg_node, node *arg_info)
                                          BlocksCons, MUTHignore);
     DBUG_PRINT ("MUTH", ("end BlocksCons"));
 
-    if ((break_after == PH_spmdregions) && (strcmp ("blkco", break_specifier) == 0)) {
+    if ((break_after == PH_multithread) && (strcmp ("blkco", break_specifier) == 0)) {
         goto cont;
     }
 
@@ -636,7 +638,7 @@ MUTHmodul (node *arg_node, node *arg_info)
       = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE, DataflowAnalysis, MUTHignore);
     DBUG_PRINT ("MUTH", ("end DataflowAnalysis"));
 
-    if ((break_after == PH_spmdregions) && (strcmp ("dfa", break_specifier) == 0)) {
+    if ((break_after == PH_multithread) && (strcmp ("dfa", break_specifier) == 0)) {
         goto cont;
     }
 
@@ -648,7 +650,7 @@ MUTHmodul (node *arg_node, node *arg_info)
       = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE, BarriersInit, MUTHignore);
     DBUG_PRINT ("MUTH", ("end BarriersInit"));
 
-    if ((break_after == PH_spmdregions) && (strcmp ("barin", break_specifier) == 0)) {
+    if ((break_after == PH_multithread) && (strcmp ("barin", break_specifier) == 0)) {
         goto cont;
     }
 
@@ -660,7 +662,7 @@ MUTHmodul (node *arg_node, node *arg_info)
       = MUTHdriver (MODUL_FUNS (arg_node), arg_info, TRUE, BlocksLift, MUTHignore);
     DBUG_PRINT ("MUTH", ("end BlocksLift"));
 
-    if ((break_after == PH_spmdregions) && (strcmp ("blkli", break_specifier) == 0)) {
+    if ((break_after == PH_multithread) && (strcmp ("blkli", break_specifier) == 0)) {
         goto cont;
     }
 
@@ -674,7 +676,7 @@ MUTHmodul (node *arg_node, node *arg_info)
       = MUTHdriver (MODUL_FUNS (arg_node), arg_info, FALSE, AdjustCalls2, MUTHignore);
     DBUG_PRINT ("MUTH", ("end AdjustCalls"));
 
-    if ((break_after == PH_spmdregions) && (strcmp ("adjca", break_specifier) == 0)) {
+    if ((break_after == PH_multithread) && (strcmp ("adjca", break_specifier) == 0)) {
         goto cont;
     }
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/01/25 10:18:01  dkr
+ * PH_spmdregions renamed into PH_multithread
+ *
  * Revision 3.4  2000/12/15 18:24:54  dkr
  * infer_dfms.h renamed into InferDFMs.h
  *
@@ -216,7 +219,7 @@ CONCfundef (node *arg_node, node *arg_info)
             DBUG_PRINT ("SPMDI", ("--- end a SPMDI traversal ---"));
             DBUG_PRINT ("CONC", ("--- end a SPMDI traversal ---"));
 
-            if ((break_after == PH_spmdregions)
+            if ((break_after == PH_multithread)
                 && (0 == strcmp ("spmdinit", break_specifier))) {
                 goto cont;
             }
@@ -239,7 +242,7 @@ CONCfundef (node *arg_node, node *arg_info)
                 DBUG_PRINT ("SPMDO", ("--- no SPMDO traversal ---"));
             }
 
-            if ((break_after == PH_spmdregions)
+            if ((break_after == PH_multithread)
                 && (0 == strcmp ("spmdopt", break_specifier))) {
                 goto cont;
             }
@@ -256,7 +259,7 @@ CONCfundef (node *arg_node, node *arg_info)
             DBUG_PRINT ("SPMDL", ("--- end a SPMDL (mt = 0) traversal ---"));
             DBUG_PRINT ("CONC", ("--- end a SPMDL (mt = 0) traversal ---"));
 
-            if ((break_after == PH_spmdregions)
+            if ((break_after == PH_multithread)
                 && (0 == strcmp ("spmdlift", break_specifier))) {
                 goto cont;
             }
@@ -272,7 +275,7 @@ CONCfundef (node *arg_node, node *arg_info)
             DBUG_PRINT ("CONC", ("--- end a SCHED traversal ---"));
         } else {
 
-            if ((break_after == PH_spmdregions)
+            if ((break_after == PH_multithread)
                 && ((0 == strcmp ("spmdinit", break_specifier))
                     || (0 == strcmp ("spmdopt", break_specifier)))) {
                 goto cont;
@@ -291,7 +294,7 @@ CONCfundef (node *arg_node, node *arg_info)
             DBUG_PRINT ("SPMDL", ("--- end a SPMDL (mt = 1) traversal ---"));
             DBUG_PRINT ("CONC", ("--- end a SPMDL (mt = 1) traversal ---"));
 
-            if ((break_after == PH_spmdregions)
+            if ((break_after == PH_multithread)
                 && (0 == strcmp ("spmdlift", break_specifier))) {
                 goto cont;
             }
@@ -309,7 +312,7 @@ CONCfundef (node *arg_node, node *arg_info)
             DBUG_PRINT ("SYNCI", ("--- end a SYNCI traversal ---"));
             DBUG_PRINT ("CONC", ("--- end a SYNCI traversal ---"));
 
-            if ((break_after == PH_spmdregions)
+            if ((break_after == PH_multithread)
                 && (0 == strcmp ("syncinit", break_specifier))) {
                 goto cont;
             }
@@ -332,7 +335,7 @@ CONCfundef (node *arg_node, node *arg_info)
                 DBUG_PRINT ("SYNCO", ("--- no SYNCO traversal ---"));
             }
 
-            if ((break_after == PH_spmdregions)
+            if ((break_after == PH_multithread)
                 && (0 == strcmp ("syncopt", break_specifier))) {
                 goto cont;
             }
@@ -369,7 +372,7 @@ CONCfundef (node *arg_node, node *arg_info)
      */
     if ((FUNDEF_BODY (arg_node) != NULL) && (FUNDEF_STATUS (arg_node) != ST_foldfun)) {
 
-        if ((break_after == PH_spmdregions)
+        if ((break_after == PH_multithread)
             && ((0 == strcmp ("spmdinit", break_specifier))
                 || (0 == strcmp ("spmdopt", break_specifier))
                 || (0 == strcmp ("spmdlift", break_specifier))
@@ -392,7 +395,7 @@ CONCfundef (node *arg_node, node *arg_info)
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
             DBUG_PRINT ("SPMDC", ("--- end a SPMDC traversal ---"));
             DBUG_PRINT ("CONC", ("--- end a SPMDC traversal ---"));
-            if ((break_after == PH_spmdregions)
+            if ((break_after == PH_multithread)
                 && (0 == strcmp ("spmdcons", break_specifier))) {
                 goto cont2;
             }
