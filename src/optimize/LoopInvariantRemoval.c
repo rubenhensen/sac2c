@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/07/12 15:15:57  dkr
+ * function DuplicateTypes renamed into DupTypes
+ *
  * Revision 2.9  2000/06/23 15:18:29  dkr
  * function DupTree() with argument (arg_info != NULL) replaced by
  * function DupTreeInfo()
@@ -426,7 +429,7 @@ DupDecleration (node *var_node, char *var_name, node *arg_info)
     DBUG_ASSERT ((0 != optvar_counter), "Not enough variables for LIR");
     optvar_counter--;
     new_node = MakeNode (N_vardec);
-    new_node->info.types = DuplicateTypes (var_node->info.types, 0); /* share strings */
+    new_node->info.types = DupTypes (var_node->info.types);
     new_node->varno = INFO_VARNO (arg_info)++;
     /* FREE(new_node->info.types->id); */
     new_node->info.types->id = var_name;

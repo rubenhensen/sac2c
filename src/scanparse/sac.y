@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.22  2000/07/12 15:10:41  dkr
+ * function DuplicateTypes renamed into DupTypes
+ *
  * Revision 2.21  2000/07/11 10:19:52  dkr
  * GEN_NODE replaced by MALLOC
  *
@@ -1546,10 +1549,9 @@ exprblock2: typeNOudt_arr ids SEMIC exprblock2
                * types-structure from $1!
                */
               while( IDS_NEXT($2) != NULL) { /* at least 2 vardecs! */
-                vardec_ptr=MakeVardec(
-                             IDS_NAME($2),
-                               DuplicateTypes( $1, 1),
-                                 vardec_ptr);
+                vardec_ptr=MakeVardec( IDS_NAME($2),
+                                       DupTypes( $1),
+                                       vardec_ptr);
                 /* 
                  * Now, we want to "push" $2 one IDS further
                  * and we want to FREE the current IDS structure.

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.70  2000/07/12 15:15:15  dkr
+ * function DuplicateTypes renamed into DupTypes
+ *
  * Revision 2.69  2000/07/11 15:45:21  jhs
  * Added homework ...
  * containing BuildParamsByDFMfold, compilations of N_mt, N_st,
@@ -921,7 +924,7 @@ AddVardec (node *vardec, types *type, char *name, node *fundef)
         /*
          * now insert new vardec node
          */
-        types *new_type = DuplicateTypes (type, 0);
+        types *new_type = DupTypes (type);
         node *new_vardec = MakeVardec (StringCopy (name), new_type, NULL);
 
         if (vardec != NULL) {
@@ -4318,7 +4321,7 @@ COMPAp (node *arg_node, node *arg_info)
 #if 0
           INFO_COMP_VARDECS( arg_info)
             = MakeVardec( StringCopy( ID_NAME( id_node)),
-                          DuplicateTypes( VARDEC_TYPE( IDS_VARDEC( ids)), 1),
+                          DupTypes( VARDEC_TYPE( IDS_VARDEC( ids))),
                           INFO_COMP_VARDECS( arg_info));
 #else
                     INFO_COMP_VARDECS (arg_info)

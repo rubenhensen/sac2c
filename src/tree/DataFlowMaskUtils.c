@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2000/07/12 15:15:49  dkr
+ * function DuplicateTypes renamed into DupTypes
+ *
  * Revision 1.11  2000/07/12 13:35:24  dkr
  * DFMDuplicateMask: NOTE replaced by DBUG_PRINT
  *
@@ -263,7 +266,7 @@ DFM2ReturnTypes (DFMmask_t mask)
     decl = DFMGetMaskEntryDeclSet (mask);
     while (decl != NULL) {
         tmp = rettypes;
-        rettypes = DuplicateTypes (VARDEC_OR_ARG_TYPE (decl), 1);
+        rettypes = DupTypes (VARDEC_OR_ARG_TYPE (decl));
         /*
          * Unfortunately the 'attrib' value is part of the type structure.
          * But an attrib value 'ST_reference' or 'ST_readonly_reference'
@@ -322,7 +325,7 @@ DFM2Vardecs (DFMmask_t mask, LUT_t lut)
             DBUG_ASSERT ((NODE_TYPE (decl) == N_arg),
                          "mask entry is neither an arg nor a vardec.");
             vardecs = MakeVardec (StringCopy (ARG_NAME (decl)),
-                                  DuplicateTypes (ARG_TYPE (decl), 1), vardecs);
+                                  DupTypes (ARG_TYPE (decl)), vardecs);
             VARDEC_ATTRIB (vardecs) = ARG_ATTRIB (decl);
             VARDEC_OBJDEF (vardecs) = ARG_OBJDEF (decl);
         }
@@ -367,9 +370,9 @@ DFM2Args (DFMmask_t mask, LUT_t lut)
         } else {
             DBUG_ASSERT ((NODE_TYPE (decl) == N_vardec),
                          "mask entry is neither an arg nor a vardec.");
-            args = MakeArg (StringCopy (VARDEC_NAME (decl)),
-                            DuplicateTypes (VARDEC_TYPE (decl), 1), VARDEC_STATUS (decl),
-                            VARDEC_ATTRIB (decl), args);
+            args
+              = MakeArg (StringCopy (VARDEC_NAME (decl)), DupTypes (VARDEC_TYPE (decl)),
+                         VARDEC_STATUS (decl), VARDEC_ATTRIB (decl), args);
             ARG_OBJDEF (args) = VARDEC_OBJDEF (decl);
         }
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.43  2000/07/12 15:10:32  dkr
+ * function DuplicateTypes renamed into DupTypes
+ *
  * Revision 2.42  2000/06/25 01:44:49  dkr
  * limits of floating-point-numbers: values.h is not portable, therefore
  * float.h is used now.
@@ -613,7 +616,7 @@ Types2Array (types *type, types *res_type)
         if (0 < b_type->dim + type->dim) {
             node *dummy = MakeNode (N_exprs);
             shape_array = MakeNode (N_array);
-            ARRAY_TYPE (shape_array) = DuplicateTypes (res_type, 0);
+            ARRAY_TYPE (shape_array) = DupTypes (res_type);
             shape_array->node[0] = dummy;
             for (i = 0; i < type->dim - 1; i++) {
                 dummy->node[0] = MakeNum (type->shpseg->shp[i]);
@@ -640,7 +643,7 @@ Types2Array (types *type, types *res_type)
         if (0 < type->dim) {
             node *dummy = MakeNode (N_exprs);
             shape_array = MakeNode (N_array);
-            ARRAY_TYPE (shape_array) = DuplicateTypes (res_type, 0);
+            ARRAY_TYPE (shape_array) = DupTypes (res_type);
             shape_array->node[0] = dummy;
             for (i = 0; i < type->dim - 1; i++) {
                 dummy->node[0] = MakeNum (type->shpseg->shp[i]);
@@ -2002,13 +2005,6 @@ TypecheckFunctionDeclarations (node *fundef)
  *  description   : checks whether function ( 2) ) has to be typechecked or not
  *                  - calls Trav to typecheck function if necessary
  *                  - returns infered type of the function
- *
- *  global vars   :
- *  internal funs : DuplicateTypes
- *  external funs : Trav, Type2String, strcmp
- *  macros        : DBUG...,FREE, NULL,  BODY, ABORT, FAST_CHECK, ID_MOD,
- *                  GEN_TYPE_NODE, FUN_MOD_NAME, FUN_MOD_NAME, P_FORMAT,
- *                  IS_CHECKED, TMP_CHECKED, CHECKING, DO_NOT_SET_FUN_MOD_NAME
  *  remarks       : - arg_node->info.fun_name... contains the name and the modul
  *                    name
  *                  - the compilation-macro DO_NOT_SET_FUN_MOD_NAME can be set
@@ -2051,7 +2047,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
                 } else
                     arg_node->FUN_MOD_NAME = StringCopy (fun_p->node->ID_MOD);
 #endif
-                return_type = DuplicateTypes (fun_p->node->info.types, 1);
+                return_type = DupTypes (fun_p->node->info.types);
 
 #ifndef DBUG_OFF
                 db_str = Type2String (return_type, 0);
@@ -2099,7 +2095,7 @@ TI_fun (node *arg_node, fun_tab_elem *fun_p, node *arg_info)
 #ifndef DO_NOT_SET_FUN_MOD_NAME
                 arg_node->FUN_MOD_NAME = fun_p->node->ID_MOD;
 #endif
-                return_type = DuplicateTypes (fun_p->node->info.types, 1);
+                return_type = DupTypes (fun_p->node->info.types);
 
 #ifndef DBUG_OFF
                 db_str = Type2String (return_type, 0);
@@ -3610,13 +3606,9 @@ CmpTypes (types *type_one, types *type_two)
  *  description   : checks whether type_one  is compatible to type_two
  *                  if 3)==-1 then compatibiltiy of int and float is considered
  *                  too
- *  global vars   : filename
- *  internal funs : Type2String, Malloc, LookupType, DuplicateTypes, CmpTypes
- *  external funs :
  *  macros        : DBUG..., GEN_NODE, NULL, FREE, SHP_SEG_SIZE, TYPES,
  *                  MOD_NAME, ABORT
  *
- *  remarks       :
  */
 
 static cmp_types
@@ -3651,7 +3643,7 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
             ABORT (line, ("Type '%s` is unknown",
                           ModName (type_one->name_mod, type_one->name)));
         } else {
-            type_1 = DuplicateTypes (t_node->TYPES, 1);
+            type_1 = DupTypes (t_node->TYPES);
             if (type_one->dim > 0) {
                 if (type_1->dim >= 0) {
                     int dim;
@@ -3683,7 +3675,7 @@ CompatibleTypes (types *type_one, types *type_two, int convert_prim_type, int li
             ABORT (line, ("Type '%s` is unknown",
                           ModName (type_two->name_mod, type_two->name)));
         } else {
-            type_2 = DuplicateTypes (t_node->TYPES, 1);
+            type_2 = DupTypes (t_node->TYPES);
             if (type_two->dim > 0) {
                 if (type_2->dim >= 0) {
                     int i, dim;
@@ -4416,13 +4408,6 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
  *               Therefore, I switched the flag for calling CompatibleTypes
  *               (see below...)
  *
- *  global vars   : filename
- *  internal funs : CompatibleTypes, UpdateType,DuplicateTypes
- *  external funs :Type2String, MakeNode, strcmp
- *  macros        : DBUG..., PUSH_VAR, ERROR,  NOTE, NULL
- *
- *  remarks       :
- *
  */
 
 static void
@@ -4521,7 +4506,7 @@ AddIdToStack (ids *ids, types *type, node *arg_info, int line)
         types *id_type;
 
         vardec_p = INFO_TC_VARDEC (arg_info); /* pointer to var declaration */
-        id_type = DuplicateTypes (type, 1);
+        id_type = DupTypes (type);
         vardec = MakeNode (N_vardec);
         VARDEC_TYPE (vardec) = id_type;
         VARDEC_NAME (vardec) = StringCopy (ids->id);
@@ -4759,12 +4744,6 @@ CheckIfGOonlyCBR (node *arg, node *exprs)
  *  description   : returns the type of the expression behind 1) if one
  *                  can derive it
  *                  or NULL if one can't infer the type
- *  global vars   :
- *  internal funs : TI_prf, LookupVar, DuplicateTypes, TI_ap, TI_cast
- *                  LookupObject
- *  external funs : Error, sprintf
- *  macros        : DBUG...,GEN_TYPE_NODE, NULL
- *
  *  remarks       : the result pointer has to be freed, when one does not
  *                  use it any more
  *
@@ -4794,12 +4773,6 @@ TI (node *arg_node, node *arg_info)
         if (return_type->id_mod != NULL) {
             return_type->id_mod = NULL;
         }
-        /*
-         * Unfortunately, a function's name and module are stored in the first
-         * return types structure (in the actual syntax tree, not in the virtual
-         * of course). So, these have been copied by DuplicateTypes() and should
-         * now be removed as they are just meaningless in this context.
-         */
 
         cnt = 0;
         tmp_types = return_type;
@@ -4826,7 +4799,7 @@ TI (node *arg_node, node *arg_info)
         stack_elem *stack_p;
 
         if (NULL != (stack_p = LookupVar (arg_node->info.ids->id)))
-            return_type = DuplicateTypes (stack_p->node->info.types, 1);
+            return_type = DupTypes (stack_p->node->info.types);
         else
             return_type = NULL;
         break;
@@ -4855,7 +4828,7 @@ TI (node *arg_node, node *arg_info)
             arg_node->info.ids->mod = OBJDEF_MOD (odef);
             ID_OBJDEF (arg_node) = odef; /* link to object definition */
 
-            return_type = DuplicateTypes (OBJDEF_TYPE (odef), 1);
+            return_type = DupTypes (OBJDEF_TYPE (odef));
         } else {
             /*
              *  The identifier may be a local variable or a global object.
@@ -4864,7 +4837,7 @@ TI (node *arg_node, node *arg_info)
             stack_p = LookupVar (arg_node->info.ids->id);
 
             if (stack_p) {
-                return_type = DuplicateTypes (stack_p->node->info.types, 1);
+                return_type = DupTypes (stack_p->node->info.types);
                 ID_VARDEC (arg_node) = stack_p->node;
 
                 DBUG_PRINT ("REF", ("added reference" P_FORMAT " for %s to %s",
@@ -4883,7 +4856,7 @@ TI (node *arg_node, node *arg_info)
                     ID_ATTRIB (arg_node) = ST_global;
                     ID_OBJDEF (arg_node) = odef;
 
-                    return_type = DuplicateTypes (OBJDEF_TYPE (odef), 1);
+                    return_type = DupTypes (OBJDEF_TYPE (odef));
                 } else {
                     /*
                      *  The identifier is still unknown, so no type can be infered.
@@ -5398,7 +5371,7 @@ TClet (node *arg_node, node *arg_info)
                                    ("Unable to infer type of variable %s",
                                     IDS_NAME (ids)));
                     }
-                    declared_type = DuplicateTypes (VARDEC_TYPE (declaration), 1);
+                    declared_type = DupTypes (VARDEC_TYPE (declaration));
                     AddIdToStack (ids, declared_type, arg_info, NODE_LINE (arg_node));
                 } else {
                     AddIdToStack (ids, type, arg_info, NODE_LINE (arg_node));
@@ -6126,7 +6099,7 @@ TI_array (node *arg_node, node *arg_info)
         FREE (db_str);
 #endif
         /* store type of array in arg_node->info.types */
-        arg_node->info.types = DuplicateTypes (return_type, 1);
+        arg_node->info.types = DupTypes (return_type);
     } else {
         ABORT (NODE_LINE (arg_node), ("Type of array not inferable"));
     }
@@ -6571,15 +6544,8 @@ TCunaryOp (node *arg_node, node *arg_info)
  *                  2) info_node
  *  description   : computes the type of a casted expression
  *
- *  global vars   : filename
- *  internal funs : TI, DuplicateTypes, CompatibleTypes
- *  external funs : Type2String
- *  macros        : DBUG..., ERROR, ABORT, TYPES, MOD_NAME, FUN_MOD_NAME,
- *                  FUN_NAME, FREE
- *
- *  remarks       :
- *
  */
+
 static types *
 TI_cast (node *arg_node, node *arg_info)
 {
@@ -6590,7 +6556,7 @@ TI_cast (node *arg_node, node *arg_info)
     DBUG_ENTER ("TI_cast");
 
     /* store casted types in ret_type */
-    ret_type = DuplicateTypes (CAST_TYPE (arg_node), 1);
+    ret_type = DupTypes (CAST_TYPE (arg_node));
 
     if (TYPES_BASETYPE (ret_type) == T_user) {
         t_node = LookupType (TYPES_NAME (ret_type), TYPES_MOD (ret_type),
@@ -6616,7 +6582,7 @@ TI_cast (node *arg_node, node *arg_info)
    type=ret_type;
    cast_node=CAST_EXPR(arg_node);
    while( N_cast == NODE_TYPE(cast_node)) {
-      type->next=DuplicateTypes(cast_node->TYPES, 1);
+      type->next=DupTypes(cast_node->TYPES);
       type=type->next;
       if( (T_user == TYPES_BASETYPE(type)) && (NULL == type->name_mod)) {
          t_node=LookupType(type->name, NULL, NODE_LINE(cast_node));
@@ -7474,7 +7440,7 @@ TI_Npart (node *arg_node, types *default_bound_type, node *new_shp, node *arg_in
     TI_NPART_HELP (step_type, "step");
     TI_NPART_HELP (width_type, "width");
 
-    gen_type = (concrete_type) ? DuplicateTypes (*concrete_type, 1) : NULL;
+    gen_type = (concrete_type) ? DupTypes (*concrete_type) : NULL;
     if (gen_type && TYPES_NAME (gen_type))
         FREE (TYPES_NAME (gen_type));
     if (gen_type && TYPES_MOD (gen_type))

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.15  2000/07/12 15:13:26  dkr
+ * function DuplicateTypes renamed into DupTypes
+ *
  * Revision 2.14  2000/07/11 10:19:27  dkr
  * code for OLD_GET_TYPE_NODE removed
  *
@@ -525,11 +528,6 @@ MakeTypeNN (simpletype basetype, int dim, shpseg *shpseg)
  *                  which has the shape of array one and simpletype 3)
  *                  if shapes are equal
  *                  return type T_unknown if shapes are different
- *  global vars   :
- *  internal funs :
- *  external funs : DuplicateTypes
- *  macros        : DBUG..., GEN_TYPE_NODE
- *
  *  remarks       : is part of macro TT2 and is used in typecheck.c
  *
  */
@@ -597,16 +595,16 @@ AxA (types *array1, types *array2, simpletype s_type)
         switch (new_type) {
         case 0:
             if (1 == ret)
-                ret_type = DuplicateTypes (array1, 0);
+                ret_type = DupTypes (array1);
             else
-                ret_type = DuplicateTypes (array2, 0);
+                ret_type = DupTypes (array2);
             ret_type->simpletype = s_type;
             break;
         case 1:
             if (1 == ret)
                 ret_type = tmp_array1;
             else {
-                ret_type = DuplicateTypes (array2, 0);
+                ret_type = DupTypes (array2);
                 FreeOneTypes (tmp_array1);
             }
             ret_type->simpletype = s_type;
@@ -615,7 +613,7 @@ AxA (types *array1, types *array2, simpletype s_type)
             if (2 == ret)
                 ret_type = tmp_array2;
             else {
-                ret_type = DuplicateTypes (array1, 0);
+                ret_type = DupTypes (array1);
                 FreeOneTypes (tmp_array2);
             }
             ret_type->simpletype = s_type;
@@ -1648,11 +1646,6 @@ TakeDropS (node *s_node, types *array, int tag)
  *  description   : computes the resulttype of a 'rotate' operation
  *                  if 0 <= 1) < dim( 2) ) the type given by 2) will be returned
  *                  otherwise type T_unknown
- *  global vars   :
- *  internal funs :DuplicateTypes
- *  external funs :
- *  macros        : DBUG..., GEN_TYPE_NODE
- *
  *  remarks       : is part of macro TT2 and is used in typecheck.c
  *                  1) has to be a N_num node
  *                  range of 1): 0 <= 1) < dim( 2)
@@ -1667,7 +1660,7 @@ Rot (node *s_node, types *array)
     if (SAC_PRG == kind_of_file) {
         if (N_num == s_node->nodetype)
             if ((0 <= s_node->info.cint) && (s_node->info.cint < array->dim))
-                ret_type = DuplicateTypes (array, 0);
+                ret_type = DupTypes (array);
             else {
                 ERROR (s_node->lineno, ("1.argument of function 'rotate` is constant %d "
                                         "but rotated array has dimension %d",
@@ -1675,27 +1668,27 @@ Rot (node *s_node, types *array)
                 GEN_TYPE_NODE (ret_type, T_unknown);
             }
         else {
-            ret_type = DuplicateTypes (array, 0);
+            ret_type = DupTypes (array);
         }
     } else {
         /* for modules only */
         if (N_num == NODE_TYPE (s_node)) {
             if (SCALAR < TYPES_DIM (array)) {
                 if ((0 <= NUM_VAL (s_node)) && (NUM_VAL (s_node) < array->dim))
-                    ret_type = DuplicateTypes (array, 0);
+                    ret_type = DupTypes (array);
                 else
                     GEN_TYPE_NODE (ret_type, T_unknown);
             } else if (KNOWN_DIM_OFFSET > TYPES_DIM (array)) {
                 if ((0 <= NUM_VAL (s_node))
                     && (NUM_VAL (s_node) < POS_DIM (TYPES_DIM (array))))
-                    ret_type = DuplicateTypes (array, 0);
+                    ret_type = DupTypes (array);
                 else
                     GEN_TYPE_NODE (ret_type, T_unknown);
             } else
-                ret_type = DuplicateTypes (array, 0);
+                ret_type = DupTypes (array);
         } else
             /* the type of 'array' remains as it is */
-            ret_type = DuplicateTypes (array, 0);
+            ret_type = DupTypes (array);
     }
 
     DBUG_RETURN (ret_type);
@@ -1851,12 +1844,7 @@ Cat (node *s_node, types *array1, types *array2)
  *  functionname  : ConvertType
  *  arguments     : 1) type of array
  *                  2) new simpletype
- *  description   :  returns the type 2) with shape of 1)
- *  global vars   :
- *  internal funs :
- *  external funs : DuplicateTypes
- *  macros        : DBUG...,
- *
+ *  description   : returns the type 2) with shape of 1)
  *  remarks       : is part of macros TT1 & TT2 and is used in typecheck.c
  *
  */

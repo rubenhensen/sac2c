@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.6  2000/07/12 15:10:27  dkr
+ * function DuplicateTypes renamed into DupTypes
+ *
  * Revision 2.5  2000/05/30 12:35:45  dkr
  * functions for old with-loop removed
  *
@@ -119,10 +122,10 @@ extern char *module_name; /* name of module to typecheck;
                 ABORT (line, ("type '%s' is unknown",                                    \
                               ModName (TYPES_MOD (arg_type), TYPES_NAME (arg_type))))    \
             else {                                                                       \
-                res_type = DuplicateTypes (t_node->info.types, 0);                       \
+                res_type = DupTypes (t_node->info.types);                                \
             }                                                                            \
         } else                                                                           \
-            res_type = DuplicateTypes (arg_type, 0);                                     \
+            res_type = DupTypes (arg_type);                                              \
     }
 
 /* number of total elements of an array */

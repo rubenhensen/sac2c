@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2000/07/12 15:15:27  dkr
+ * function DuplicateTypes renamed into DupTypes
+ *
  * Revision 1.2  2000/06/23 15:10:24  dkr
  * signature of DupTree changed
  *
@@ -102,7 +105,7 @@ ReadOneGenPart (FILE *infile, types *type)
         arr_node = NULL;
     } else {
         arr_node = MakeArray (aelems);
-        ARRAY_TYPE (arr_node) = DuplicateTypes (type, 1);
+        ARRAY_TYPE (arr_node) = DupTypes (type);
     }
 
     DBUG_RETURN (arr_node);
@@ -296,8 +299,7 @@ PWwith (node *arg_node, node *arg_info)
         /* shape is the maximum of all bound2-values */
         shape = DupTree (NGEN_BOUND2 (NPART_GEN (NWITH_PART (arg_node))));
         ARRAY_TYPE (shape)
-          = DuplicateTypes (ARRAY_TYPE (NGEN_BOUND2 (NPART_GEN (NWITH_PART (arg_node)))),
-                            1);
+          = DupTypes (ARRAY_TYPE (NGEN_BOUND2 (NPART_GEN (NWITH_PART (arg_node)))));
         tmp_node = NPART_NEXT (NWITH_PART (arg_node));
         while (tmp_node != NULL) {
             bound2_el = ARRAY_AELEMS (NGEN_BOUND2 (NPART_GEN (tmp_node)));

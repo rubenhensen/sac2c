@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.13  2000/07/12 15:13:17  dkr
+ * function DuplicateTypes renamed into DupTypes
+ *
  * Revision 2.12  2000/06/23 15:24:45  dkr
  * signature of DupTree changed
  *
@@ -157,8 +160,6 @@
 #include "traverse.h"
 #include "optimize.h"
 #include "generatemasks.h"
-#include "Inline.h"    /* SearchDecl() */
-#include "typecheck.h" /* DuplicateTypes() */
 #include "ConstantFolding.h"
 #include "WithloopFolding.h"
 #include "WLT.h"
@@ -770,7 +771,7 @@ CreateArrayFromInternGen (int *source, int number, types *type)
     ARRAY_VECTYPE (arrayn) = T_int;
     ((int *)ARRAY_CONSTVEC (arrayn)) = Array2IntVec (tmpn, NULL);
     ARRAY_VECLEN (arrayn) = number;
-    ARRAY_TYPE (arrayn) = DuplicateTypes (type, 1);
+    ARRAY_TYPE (arrayn) = DupTypes (type);
 
     DBUG_RETURN (arrayn);
 }
@@ -886,7 +887,7 @@ CreateVardec (char *name, types *type, node **vardecs)
     DBUG_ENTER ("CreateVardec");
 
     /* search for already existing vardec for this name. */
-    vardecn = SearchDecl (name, *vardecs); /* from Inline.c */
+    vardecn = SearchDecl (name, *vardecs);
 
     /* if not found, create vardec. */
     if (!vardecn) {
@@ -898,7 +899,7 @@ CreateVardec (char *name, types *type, node **vardecs)
             DBUG_ASSERT (0, (c));
         }
 
-        type = DuplicateTypes (type, 42);
+        type = DupTypes (type);
         vardecn = MakeVardec (StringCopy (name), type, *vardecs);
         VARDEC_VARNO (vardecn) = -1;
 

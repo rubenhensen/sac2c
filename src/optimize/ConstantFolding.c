@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.38  2000/07/12 15:13:40  dkr
+ * function DuplicateTypes renamed into DupTypes
+ *
  * Revision 2.37  2000/06/23 15:14:44  dkr
  * signature of DupTree changed
  *
@@ -2095,7 +2098,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                                                         * Gives Array the correct type
                                                         */
             ARRAY_TYPE (arg[0]) = FreeOneTypes (ARRAY_TYPE (arg[0]));
-            ARRAY_TYPE (arg[0]) = DuplicateTypes (INFO_CF_TYPE (arg_info), 0);
+            ARRAY_TYPE (arg[0]) = DupTypes (INFO_CF_TYPE (arg_info));
             ARRAY_VECLEN (arg[0]) = 1;
             ((int *)ARRAY_CONSTVEC (arg[0])) = Array2IntVec (ARRAY_AELEMS (arg[0]), NULL);
             ARRAY_VECTYPE (arg[0]) = T_int;
@@ -2418,8 +2421,7 @@ ArrayPrf (node *arg_node, node *arg_info)
                                               LET_IDS (ASSIGN_INSTR (assign)));
                                             new_vardec
                                               = MakeVardec (StringCopy (fresh_var),
-                                                            DuplicateTypes (ID_TYPE (val),
-                                                                            0),
+                                                            DupTypes (ID_TYPE (val)),
                                                             VARDEC_NEXT (vardecs));
                                             VARDEC_NEXT (vardecs) = new_vardec;
                                             VARDEC_VARNO (new_vardec)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/07/12 15:15:39  dkr
+ * function DuplicateTypes renamed into DupTypes
+ *
  * Revision 2.2  2000/02/17 16:19:35  cg
  * File now includes DupTree.h instead of typecheck.h in order
  * to use function DuplicateTypes().
@@ -103,7 +106,7 @@ OImodul (node *arg_node, node *arg_info)
 
         MODUL_TYPES (arg_node)
           = MakeTypedef (StringCopy (MODUL_NAME (arg_node)), MODUL_NAME (arg_node),
-                         DuplicateTypes (MODUL_CLASSTYPE (arg_node), 1), ST_unique,
+                         DupTypes (MODUL_CLASSTYPE (arg_node)), ST_unique,
                          MODUL_TYPES (arg_node));
 
         toclass = (char *)Malloc (MAX_FILE_NAME);
@@ -119,8 +122,8 @@ OImodul (node *arg_node, node *arg_info)
           = MakeFundef (toclass, MODUL_NAME (arg_node),
                         MakeType (T_user, 0, NULL, StringCopy (MODUL_NAME (arg_node)),
                                   MODUL_NAME (arg_node)),
-                        MakeArg (NULL, DuplicateTypes (MODUL_CLASSTYPE (arg_node), 1),
-                                 ST_regular, ST_regular, NULL),
+                        MakeArg (NULL, DupTypes (MODUL_CLASSTYPE (arg_node)), ST_regular,
+                                 ST_regular, NULL),
                         NULL, MODUL_FUNS (arg_node));
 
         FUNDEF_STATUS (MODUL_FUNS (arg_node)) = ST_classfun;

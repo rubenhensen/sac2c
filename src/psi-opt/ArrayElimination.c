@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.10  2000/07/12 15:10:19  dkr
+ * function DuplicateTypes renamed into DupTypes
+ *
  * Revision 2.9  2000/06/13 12:32:14  dkr
  * function for old with-loop removed
  *
@@ -94,7 +97,6 @@
 
 #include "optimize.h"
 #include "generatemasks.h"
-#include "Inline.h"
 #include "LoopInvariantRemoval.h"
 #include "ArrayElimination.h"
 
@@ -287,11 +289,11 @@ GenPsi (ids *ids_node, node *arg_info)
             DBUG_PRINT ("AE", ("Generating new vardec for %s", new_let->info.ids->id));
             new_vardec = MakeNode (N_vardec);
             /* srs: something is wrong here and we lose memory.
-               GET_BASIC_TYPES always calls DuplicateTypes(). */
+               GET_BASIC_TYPES always calls DupTypes(). */
             GET_BASIC_TYPE (new_vardec->info.types, type, 0);
             /* srs: and here in the next line we yank it without setting it free.
-               This is wrong since DuplicateTypes ALWAYS allocetes new mem. */
-            new_vardec->info.types = DuplicateTypes (new_vardec->info.types, 1);
+               This is wrong since DupTypes ALWAYS allocetes new mem. */
+            new_vardec->info.types = DupTypes (new_vardec->info.types);
             new_vardec->info.types->dim = 0;
             FREE (new_vardec->info.types->id);
             new_vardec->info.types->id = StringCopy (new_let->info.ids->id);

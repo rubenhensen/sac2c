@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/07/12 15:15:00  dkr
+ * function DuplicateTypes renamed into DupTypes
+ *
  * Revision 1.8  2000/07/11 15:41:31  jhs
  * Added lut-entries of args while lifting.
  *
@@ -247,9 +250,9 @@ BLKLImt (node *arg_node, node *arg_info)
             new_arg = DupNode (vardec);
             ARG_NEXT (new_arg) = new_args;
         } else {
-            new_arg = MakeArg (StringCopy (ARG_NAME (vardec)),
-                               DuplicateTypes (VARDEC_TYPE (vardec), 1), ST_regular,
-                               ST_regular, new_args);
+            new_arg
+              = MakeArg (StringCopy (ARG_NAME (vardec)), DupTypes (VARDEC_TYPE (vardec)),
+                         ST_regular, ST_regular, new_args);
             /* refcnt and varno also need corrections */
             ARG_REFCNT (new_arg) = GET_STD_REFCNT (VARDEC, vardec);
             ARG_VARNO (new_arg) = VARDEC_VARNO (vardec);
@@ -271,7 +274,7 @@ BLKLImt (node *arg_node, node *arg_info)
     vardec = DFMGetMaskEntryDeclSet (MT_DEFMASK (arg_node));
     while (vardec != NULL) {
         if (NODE_TYPE (vardec) == N_arg) {
-            new_rettype = DuplicateTypes (ARG_TYPE (vardec), 1);
+            new_rettype = DupTypes (ARG_TYPE (vardec));
 
             new_retexpr
               = MakeExprs (MakeId (StringCopy (ARG_NAME (vardec)), NULL, ST_regular),
@@ -280,7 +283,7 @@ BLKLImt (node *arg_node, node *arg_info)
             ID_REFCNT (EXPRS_EXPR (new_retexpr)) = GET_ZERO_REFCNT (ARG, vardec);
             ID_VARDEC (EXPRS_EXPR (new_retexpr)) = vardec;
         } else {
-            new_rettype = DuplicateTypes (VARDEC_TYPE (vardec), 1);
+            new_rettype = DupTypes (VARDEC_TYPE (vardec));
 
             new_retexpr
               = MakeExprs (MakeId (StringCopy (VARDEC_NAME (vardec)), NULL, ST_regular),

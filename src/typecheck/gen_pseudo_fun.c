@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.3  2000/07/12 15:13:33  dkr
+ * function DuplicateTypes renamed into DupTypes
+ *
  * Revision 2.2  2000/02/17 17:04:17  cg
  * Prototype of function DuplicateTypes() is now included from
  * DupTree.h instead of typecheck.h.
@@ -103,12 +106,11 @@ CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_v
     FREE (buffer);
 
     new_fundef
-      = MakeFundef (pseudo_fold_fun, PSEUDO_MOD_FOLD, DuplicateTypes (elem_type, 1),
-                    MakeArg (StringCopy (res_var), DuplicateTypes (elem_type, 1),
-                             ST_regular, ST_regular,
-                             MakeArg (StringCopy (body_expr),
-                                      DuplicateTypes (elem_type, 1), ST_regular,
-                                      ST_regular, NULL)),
+      = MakeFundef (pseudo_fold_fun, PSEUDO_MOD_FOLD, DupTypes (elem_type),
+                    MakeArg (StringCopy (res_var), DupTypes (elem_type), ST_regular,
+                             ST_regular,
+                             MakeArg (StringCopy (body_expr), DupTypes (elem_type),
+                                      ST_regular, ST_regular, NULL)),
                     MakeBlock (MakeAssign (MakeLet (application,
                                                     MakeIds (StringCopy (res_var), NULL,
                                                              ST_regular)),
