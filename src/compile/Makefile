@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.56  1998/05/13 09:24:25  dkr
+# BEtest no longer needs gen_startup_code.o
+#
 # Revision 1.55  1998/05/13 07:14:22  cg
 # added compilation of icm2c_mt.c
 #
@@ -182,9 +185,9 @@ MACS=icm.data icm_comment.c icm_trace.c
 all: wltransform.o wlpragma_funs.o precompile.o compile.o icm2c.o icm2c_std.o \
      icm2c_wl.o icm2c_mt.o gen_startup_code.o Old2NewWith.o
 
-BEtest: BEtest.c icm_vars.c icm_betest.c icm.data icm2c_std.o icm2c_wl.o gen_startup_code.o
+BEtest: BEtest.c icm_vars.c icm_betest.c icm.data icm2c_std.o icm2c_wl.o
 	$(CC) $(CCFLAGS) $(CFLAGS) -o BEtest BEtest.c $(INCS) \
-	../../lib/dbug.o icm2c_std.o icm2c_wl.o gen_startup_code.o ../global/globals.o
+	../../lib/dbug.o icm2c_std.o icm2c_wl.o ../global/globals.o
 
 wltransform.o: wltransform.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o wltransform.o -c wltransform.c $(INCS)
