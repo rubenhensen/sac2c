@@ -5,3 +5,5 @@ index.c
 index.h
 psi-opt.c
 psi-opt.h
+tile_size_inference.c
+tile_size_inference.h
