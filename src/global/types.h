@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.25  1998/03/06 13:28:35  srs
+ * added new type WL_INFO
+ *
  * Revision 1.24  1998/02/25 09:13:12  cg
  * added type compiler_phase_t
  *
@@ -339,6 +342,14 @@ typedef types shapes; /* this definition is primarily needed for
                        * the vinfo nodes; there we need the shape
                        * only( including the dim)...
                        */
+
+typedef struct WL_INFO {
+    int referenced;
+    int referenced_fold;
+    int parts;
+    int complex;
+    int foldable;
+} wl_info;
 
 typedef struct FUN_NAME {
     char *id;     /* name of function */
