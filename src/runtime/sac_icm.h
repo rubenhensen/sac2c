@@ -1,20 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/10/08 01:53:15  dkr
+ * more CAT?? macros added
+ *
  * Revision 3.6  2002/07/31 15:35:52  dkr
- * some more CAT?? macros added
- *
- * Revision 3.5  2002/07/23 16:14:13  dkr
- * more CAT? macros added
- *
- * Revision 3.4  2002/07/15 19:44:19  dkr
- * CAT6 added
+ * more CAT?? macros added
  *
  * Revision 3.3  2002/06/28 12:58:46  dkr
  * ICM_UNDEF moved to sac_misc.h
- *
- * Revision 3.2  2002/04/30 08:46:28  dkr
- * no changes done
  *
  * Revision 3.1  2000/11/20 18:02:15  sacbase
  * new release made
@@ -186,6 +180,15 @@
 
 #define CAT16(x, y) xCAT16 (x, y)
 #define xCAT16(x, y) x##y
+
+#define CAT17(x, y) xCAT17 (x, y)
+#define xCAT17(x, y) x##y
+
+#define CAT18(x, y) xCAT18 (x, y)
+#define xCAT18(x, y) x##y
+
+#define CAT19(x, y) xCAT19 (x, y)
+#define xCAT19(x, y) x##y
 
 #define AddParens(a) xAddParens (a)
 #define xAddParens(a) (##a##)
