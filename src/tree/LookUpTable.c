@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/03/22 17:56:14  dkr
+ * hash key functions implemented :-)
+ *
  * Revision 3.2  2001/03/22 13:30:52  dkr
  * support for strings added
  *
@@ -60,11 +63,37 @@
  *  stored in disjoint hash tables. The pointers are stored in the tables with
  *  index [ 0 .. LUT_KEYS_POINTERS [, the strings are stored in the tables with
  *  index [ LUT_KEYS_POINTERS .. LUT_KEYS [.
+ *  The functions GetHashKey_Pointer() and GetHashKey_String() compute for a
+ *  pointer and string respectively the index of the hash table the pointer/
+ *  string belongs to.
  *  Each hash table is made up of linked table fragments of fixed size
  *  (LUT_SIZE) in order to minimize the data overhead. Initially each hash
  *  table consists of a single table fragment. Each time the last entry of a
- *  hash table has been occupied another fragments is allocated and appended
+ *  hash table has been occupied another fragment is allocated and appended
  *  to the hash table.
+ *
+ *  The amount of memory (in byte) needed for all hash tables equals
+ *
+ *            (K - 1)
+ *    MEM  =   SumOf  ( ( ( C[i] + S ) div S ) ( 2 S + 1 ) + 4 ) ,
+ *             i = 0
+ *
+ *    where  K := LUT_KEYS ,  S := LUT_SIZE  and
+ *           C[i] denotes the number of pairs the i-th hash table contains.
+ *
+ *  Let N be the number of pairs stored in the LUT. Suppose that
+ *    C[i]  =  N / K
+ *  is hold, i.e. we have an optimal hash key function.
+ *  Then the best value for S is
+ *    S  =  N / K + 1 ,
+ *  thus the value for MEM equals approximately
+ *    MEM  =  K ( ( ( N / K + N / K + 1 ) div ( N / K + 1 ) ) ( 2 S + 1 ) + 4 )
+ *         =  K (                          1                  ( 2 S + 1 ) + 4 )
+ *         =  K ( 2 S + 5 )
+ *         =  K ( 2 ( N / K + 1 ) + 5 )
+ *        ~=  2 N + 7 K .
+ *  The time complexity for searching in the LUT is proportional to
+ *    TC  =  N / K .
  */
 
 #include <string.h>
@@ -74,20 +103,20 @@
 #include "dbug.h"
 
 /*
- * Size of a single hash table.
- * (-> # pairs of data that can be stored in the table.)
+ * size of a hash table fragment
+ * (== # pairs of data that can be stored in the table)
  */
-#define LUT_SIZE 30
+#define LUT_SIZE 4
 
 /*
- * number of different hash values (-> tables)
+ * number of different hash keys (== number of hash tables)
  */
-#define LUT_KEYS_POINTER 1
-#define LUT_KEYS_STRING 1
+#define LUT_KEYS_POINTER 256 /* 2^8 */
+#define LUT_KEYS_STRING 101  /* should be a prime number */
 #define LUT_KEYS ((LUT_KEYS_POINTER) + (LUT_KEYS_STRING))
 
 /*
- * a single hash table
+ * hash table fragment
  *
  * 'first' points to the first item of the table.
  * 'act' points to the next free position of the table.
@@ -133,7 +162,11 @@ GetHashKey_Pointer (void *data)
 
     DBUG_ASSERT ((data != NULL), "NULL has no hash key!");
 
-    hash_key = 0;
+    /*
+     * hash key: bits 11 .. 4
+     *  ->  0 <= key < 2^8
+     */
+    hash_key = (((int)data) & 0xff0) >> 4;
 
     DBUG_ASSERT (((hash_key >= 0) && (hash_key < (LUT_KEYS_POINTER))),
                  "hash key for pointers out of bounds!");
@@ -164,8 +197,11 @@ GetHashKey_String (void *data)
 
     DBUG_ASSERT ((data != NULL), "NULL has no hash key!");
 
-    str = (char *)data;
     hash_key = 0;
+    for (str = (char *)data; ((*str) != '\0'); str++) {
+        hash_key += (*str);
+    }
+    hash_key %= LUT_KEYS_STRING;
 
     DBUG_ASSERT (((hash_key >= 0) && (hash_key < (LUT_KEYS_STRING))),
                  "hash key for strings out of bounds!");
@@ -311,7 +347,7 @@ RemoveLUT (lut_t *lut)
         FREE (lut);
         DBUG_PRINT ("LUT", ("finished"));
     } else {
-        DBUG_PRINT ("LUT", ("FAILED"));
+        DBUG_PRINT ("LUT", ("FAILED: lut is NULL"));
     }
 
     DBUG_RETURN (lut);
@@ -350,9 +386,10 @@ InsertIntoLUT (lut_t *lut, void *old_item, void *new_item, hash_key_fun_t hash_k
                                 " -> [ 0x%p , 0x%p ]",
                                 k, old_item, new_item));
         } else {
-            DBUG_PRINT ("LUT", ("new strings inserted (hash key %li)"
-                                " -> [ \"%s\" , \"%s\" ]",
-                                k, (char *)old_item, (char *)new_item));
+            DBUG_PRINT ("LUT",
+                        ("new strings inserted (hash key %li)"
+                         " -> [ \"%s\" , \"%s\" ]",
+                         k - LUT_KEYS_POINTER, (char *)old_item, (char *)new_item));
         }
 
         if (lut[k]->size % (LUT_SIZE) == 0) {
@@ -369,7 +406,7 @@ InsertIntoLUT (lut_t *lut, void *old_item, void *new_item, hash_key_fun_t hash_k
 
         DBUG_PRINT ("LUT", ("finished: new LUT size -> %li", lut[k]->size));
     } else {
-        DBUG_PRINT ("LUT", ("FAILED"));
+        DBUG_PRINT ("LUT", ("FAILED: lut is NULL"));
     }
 
     DBUG_RETURN (lut);
@@ -471,7 +508,7 @@ SearchInLUT (lut_t *lut, void *old_item, hash_key_fun_t hash_key_fun,
                 } else {
                     DBUG_PRINT ("LUT", ("finished:"
                                         " string \"%s\" (hash key %li) *not* found :-(",
-                                        (char *)old_item, k));
+                                        (char *)old_item, k - LUT_KEYS_POINTER));
                 }
             } else {
                 if (k < LUT_KEYS_POINTER) {
@@ -481,14 +518,15 @@ SearchInLUT (lut_t *lut, void *old_item, hash_key_fun_t hash_key_fun,
                 } else {
                     DBUG_PRINT ("LUT", ("finished:"
                                         " string \"%s\" (hash key %li) found -> \"%s\"",
-                                        (char *)old_item, k, (char *)new_item));
+                                        (char *)old_item, k - LUT_KEYS_POINTER,
+                                        (char *)new_item));
                 }
             }
         } else {
             DBUG_PRINT ("LUT", ("finished: pointer/string is NULL"));
         }
     } else {
-        DBUG_PRINT ("LUT", ("FAILED"));
+        DBUG_PRINT ("LUT", ("FAILED: lut is NULL"));
     }
 
     DBUG_RETURN (new_item);
@@ -565,17 +603,12 @@ PrintLUT (FILE *handle, lut_t *lut)
     }
 
     if (lut != NULL) {
-        for (k = 0; k < (LUT_KEYS); k++) {
+        for (k = 0; k < (LUT_KEYS_POINTER); k++) {
             DBUG_ASSERT ((lut[k] != NULL), "lut is NULL!");
-            fprintf (handle, "*** hash key %li ***\n", k);
+            fprintf (handle, "*** pointers: hash key %li ***\n", k);
             tmp = lut[k]->first;
             for (i = 0; i < lut[k]->size; i++) {
-                if (k < LUT_KEYS_POINTER) {
-                    fprintf (handle, "%li: [ 0x%p -> 0x%p ]\n", i, tmp[0], tmp[1]);
-                } else {
-                    fprintf (handle, "%li: [ \"%s\" -> \"%s\" ]\n", i, (char *)(tmp[0]),
-                             (char *)(tmp[1]));
-                }
+                fprintf (handle, "%li: [ 0x%p -> 0x%p ]\n", i, tmp[0], tmp[1]);
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /*
@@ -587,9 +620,23 @@ PrintLUT (FILE *handle, lut_t *lut)
             }
             fprintf (handle, "number of entries: %li\n", lut[k]->size);
         }
+        for (k = LUT_KEYS_POINTER; k < (LUT_KEYS); k++) {
+            DBUG_ASSERT ((lut[k] != NULL), "lut is NULL!");
+            fprintf (handle, "*** strings: hash key %li ***\n", k - LUT_KEYS_POINTER);
+            tmp = lut[k]->first;
+            for (i = 0; i < lut[k]->size; i++) {
+                fprintf (handle, "%li: [ \"%s\" -> \"%s\" ]\n", i, (char *)(tmp[0]),
+                         (char *)(tmp[1]));
+                tmp += 2;
+                if ((i + 1) % (LUT_SIZE) == 0) {
+                    tmp = *tmp;
+                }
+            }
+            fprintf (handle, "number of entries: %li\n", lut[k]->size);
+        }
         DBUG_PRINT ("LUT", ("finished"));
     } else {
-        DBUG_PRINT ("LUT", ("FAILED"));
+        DBUG_PRINT ("LUT", ("FAILED: lut is NULL"));
     }
 
     DBUG_VOID_RETURN;
