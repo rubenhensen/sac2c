@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/07/19 14:53:38  ktr
+ * Genarray-WL results are now markes ST_artificial such that they are
+ * removed by precompile. This nicely reflects that genarray-wls are nothing
+ * but fancy fill operations.
+ *
  * Revision 1.6  2004/07/19 12:38:47  ktr
  * INFO structure is now initialized correctly.
  *
@@ -196,6 +201,38 @@ FreeALS (alloclist_struct *als)
     }
 
     DBUG_RETURN (als);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn AlloclistContains
+ *
+ *  @brief
+ *
+ *  @param ALLOCLIST
+ *  @param avis
+ *
+ *  @return bool
+ *
+ ***************************************************************************/
+static bool
+AlloclistContains (alloclist_struct *als, node *avis)
+{
+    bool res;
+
+    DBUG_ENTER ("AlloclistContains");
+
+    if (als == NULL) {
+        res = FALSE;
+    } else {
+        if (als->avis == avis) {
+            res = TRUE;
+        } else {
+            res = AlloclistContains (als->next, avis);
+        }
+    }
+
+    DBUG_RETURN (res);
 }
 
 /** <!--******************************************************************-->
@@ -492,10 +529,10 @@ EMALcode (node *arg_node, info *arg_info)
             /*
              * Create fill operation
              */
-            lhs = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (cexavis))), NULL,
+            lhs = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (avis))), NULL,
                            ST_artificial);
-            IDS_AVIS (lhs) = cexavis;
-            IDS_VARDEC (lhs) = AVIS_VARDECORARG (cexavis);
+            IDS_AVIS (lhs) = avis;
+            IDS_VARDEC (lhs) = AVIS_VARDECORARG (avis);
 
             arg1 = MakeIds (StringCopy (VARDEC_NAME (AVIS_VARDECORARG (cexavis))), NULL,
                             ST_regular);
@@ -529,6 +566,12 @@ EMALcode (node *arg_node, info *arg_info)
                                                       INFO_EMAL_INDEXVECTOR (arg_info))),
                                           lhs),
                                  assign);
+
+            /*
+             * Substitute cexpr
+             */
+            EXPRS_EXPR (cexprs) = FreeTree (EXPRS_EXPR (cexprs));
+            EXPRS_EXPR (cexprs) = MakeIdFromIds (DupOneIds (lhs));
         }
 
         als = als->next;
@@ -737,30 +780,32 @@ EMALlet (node *arg_node, info *arg_info)
         /*
          * Wrap RHS in Fill-operation if necessary
          */
-        if (INFO_EMAL_MUSTFILL (arg_info)) {
-            ids = LET_IDS (arg_node);
+        ids = LET_IDS (arg_node);
 
+        if (INFO_EMAL_MUSTFILL (arg_info)) {
             LET_EXPR (arg_node)
               = MakePrf (F_fill, MakeExprs (LET_EXPR (arg_node), Ids2Exprs (ids)));
-
-            /*
-             * By setting IDS_STATUS of LHS identifiers to ST_artificial,
-             * SSATransform will mark these with SSAUNDOFLAG causing
-             * UndoSSATransform to rename these into their original identifiers:
-             *
-             * Before UndoSSATransform:
-             * a' = fill( ..., a);
-             *
-             * After UndoSSATransform:
-             * a  = fill( ..., a);
-             */
-            while (ids != NULL) {
-                IDS_STATUS (ids) = ST_artificial;
-                ids = IDS_NEXT (ids);
-            }
-
-            INFO_EMAL_MUSTFILL (arg_info) = FALSE;
         }
+
+        /*
+         * By setting IDS_STATUS of LHS identifiers to ST_artificial,
+         * SSATransform will mark these with SSAUNDOFLAG causing
+         * UndoSSATransform to rename these into their original identifiers:
+         *
+         * Before UndoSSATransform:
+         * a' = fill( ..., a);
+         *
+         * After UndoSSATransform:
+         * a  = fill( ..., a);
+         */
+        while (ids != NULL) {
+            if (AlloclistContains (INFO_EMAL_ALLOCLIST (arg_info), IDS_AVIS (ids))) {
+                IDS_STATUS (ids) = ST_artificial;
+            }
+            ids = IDS_NEXT (ids);
+        }
+
+        INFO_EMAL_MUSTFILL (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
