@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2002/07/15 17:24:38  dkr
+ * LiftArg() moved to tree_compound.c
+ *
  * Revision 3.50  2002/07/15 15:24:59  dkr
  * comment in file header corrected
  *
@@ -79,63 +82,6 @@
  * Revision 3.27  2002/02/06 17:08:53  dkr
  * PREC1let() modified: *all* primitive functions are flattened now
  *
- * Revision 3.26  2001/12/13 13:18:57  dkr
- * signature of MakeAssignIcm?() modified
- *
- * Revision 3.25  2001/06/28 07:46:51  cg
- * Primitive function psi() renamed to sel().
- *
- * Revision 3.24  2001/06/14 12:39:51  dkr
- * PREC1WLseg(): call of SCHPrecompileTasksel() added
- *
- * Revision 3.23  2001/05/17 12:02:28  dkr
- * MALLOC, FREE eliminated
- *
- * Revision 3.22  2001/05/08 13:28:16  dkr
- * new RC macros used
- *
- * Revision 3.21  2001/04/25 01:19:20  dkr
- * PREC1fundef: FUNDEF_DFM_BASE created if NULL
- *
- * Revision 3.20  2001/04/06 18:50:35  dkr
- * fixed a bug in PREC1let
- *
- * Revision 3.19  2001/04/04 17:10:01  dkr
- * include of refcount.h removed
- *
- * Revision 3.18  2001/03/29 14:46:54  dkr
- * NWITH2_SCHEDULING removed
- *
- * Revision 3.17  2001/03/29 01:35:25  dkr
- * renaming of WLSEGVAR_IDX_MIN, WLSEGVAR_IDX_MAX added
- *
- * Revision 3.16  2001/03/26 15:04:58  dkr
- * some comments modified
- *
- * Revision 3.15  2001/03/22 19:44:52  dkr
- * precompile.h now include once
- *
- * Revision 3.14  2001/03/22 19:16:20  dkr
- * include of tree.h eliminated
- *
- * Revision 3.13  2001/03/15 16:12:38  dkr
- * RemoveArtificialIds() added (extracted from RenameIds())
- *
- * Revision 3.12  2001/03/15 11:59:35  dkr
- * ST_inout replaced by ST_reference
- *
- * Revision 3.11  2001/03/05 18:33:30  dkr
- * ups! missing \n in message of DBUG_ASSERT added ...
- *
- * Revision 3.10  2001/03/05 18:30:00  dkr
- * PREC1code: DBUG_ASSERT added
- *
- * Revision 3.9  2001/03/05 15:39:56  dkr
- * PREC1code added
- *
- * Revision 3.8  2001/03/02 16:10:11  dkr
- * generation of individual pseudo fold-funs done in PREC1withop now
- *
  * [...]
  *
  */
@@ -164,7 +110,8 @@
  *       b = fun( a);   =>   _tmp_b = fun( a); b = _tmp_b;
  *
  * Things done during third traversal:
- *   - Arguments of function applications are abstracted out if needed:
+ *   - Arguments of function applications are abstracted out if needed for
+ *     generating correct code for reference counting:
  *       a = fun( a)   =>   tmp_a = a; a = fun( tmp_a)
  *     This can only be done *after* type-checking, because types are needed
  *     to decide if abstraction is needed or not, and *after* code optimizations
@@ -268,9 +215,6 @@ LiftIds (ids *ids_arg, node *fundef, types *new_type, node **new_assigns)
 
     DBUG_ENTER ("LiftIds");
 
-    DBUG_PRINT ("PREC", ("lifting return value (%s) of function application",
-                         IDS_NAME (ids_arg)));
-
     new_name = TmpVarName (IDS_NAME (ids_arg));
     /* Insert vardec for new var */
     if (new_type == NULL) {
@@ -310,82 +254,6 @@ LiftIds (ids *ids_arg, node *fundef, types *new_type, node **new_assigns)
 /******************************************************************************
  *
  * Function:
- *   node *LiftArg( node *arg, node *fundef, types *new_type,
- *                  node **new_assigns)
- *
- * Description:
- *   Lifts the given argument of a function application:
- *    - Generates a new and fresh varname.
- *    - Generates a new vardec and inserts it into the vardec chain of 'fundef'.
- *      If 'new_type' is not NULL, 'new_type' is used as VARDEC_TYPE instead
- *      of ID_TYPE(arg).
- *    - Builds a new assignment and inserts it into the assignment chain
- *      'new_assigns'.
- *    - Returns the new argument.
- *
- ******************************************************************************/
-
-static node *
-LiftArg (node *arg, node *fundef, types *new_type, node **new_assigns)
-{
-    char *new_name;
-    node *new_vardec;
-    node *new_arg;
-    ids *new_ids;
-
-    DBUG_ENTER ("LiftArg");
-
-    if (NODE_TYPE (arg) == N_id) {
-        DBUG_PRINT ("PREC",
-                    ("lifting argument (%s) of function application", ID_NAME (arg)));
-
-        new_name = TmpVarName (ID_NAME (arg));
-        /* Insert vardec for new var */
-        if (new_type == NULL) {
-            new_type = ID_TYPE (arg);
-        }
-    } else {
-        DBUG_PRINT ("PREC", ("lifting argument (no id) of function application"));
-
-        new_name = TmpVar ();
-        DBUG_ASSERT ((new_type != NULL), "no type found!");
-    }
-
-    new_vardec = MakeVardec (StringCopy (new_name), DupAllTypes (new_type), NULL);
-    fundef = AddVardecs (fundef, new_vardec);
-
-    /*
-     * Abstract the given argument out:
-     *   ... = fun( A:n, ...);
-     * is transformed into
-     *   __A:1 = A:n;
-     *   ... = fun( __A:1, ...);
-     */
-    new_ids = MakeIds (new_name, NULL, ST_regular);
-    IDS_VARDEC (new_ids) = new_vardec;
-    (*new_assigns) = MakeAssign (MakeLet (arg, new_ids), (*new_assigns));
-
-    new_arg = DupIds_Id (new_ids);
-
-    if (NODE_TYPE (arg) == N_id) {
-        if (RC_IS_ACTIVE (ID_REFCNT (arg))) {
-            IDS_REFCNT (new_ids) = ID_REFCNT (new_arg) = 1;
-        } else if (RC_IS_INACTIVE (ID_REFCNT (new_arg))) {
-            IDS_REFCNT (new_ids) = ID_REFCNT (new_arg) = RC_INACTIVE;
-        } else {
-            DBUG_ASSERT ((0), "illegal RC value found!");
-        }
-    } else {
-        IDS_REFCNT (new_ids) = ID_REFCNT (new_arg)
-          = MUST_REFCOUNT (new_type) ? 1 : RC_INACTIVE;
-    }
-
-    DBUG_RETURN (new_arg);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *LiftOrReplaceArg( node *arg_id, node *fundef,
  *                           node *new_id, types *new_type,
  *                           node **new_assigns)
@@ -402,7 +270,7 @@ LiftOrReplaceArg (node *arg_id, node *fundef, node *new_id, types *new_type,
     DBUG_ENTER ("LiftOrReplaceArg");
 
     if (new_id == NULL) {
-        arg_id = LiftArg (arg_id, fundef, new_type, new_assigns);
+        arg_id = LiftArg (arg_id, fundef, new_type, TRUE, new_assigns);
     } else {
         /*
          * temporary var already generated
@@ -1958,7 +1826,7 @@ PREC2let (node *arg_node, node *arg_info)
                                  nt_data_string[actual_cls], nt_data_string[formal_cls]));
                     EXPRS_EXPR (ap_exprs)
                       = LiftArg (ap_id, INFO_PREC_FUNDEF (arg_info), ARG_TYPE (args),
-                                 &(INFO_PREC2_PRE_ASSIGNS (arg_info)));
+                                 TRUE, &(INFO_PREC2_PRE_ASSIGNS (arg_info)));
                 }
             }
 #endif
