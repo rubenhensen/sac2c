@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.3  2004/08/06 21:19:57  sah
+  uses common-node-access.xsl to define thae macros now
+
   Revision 1.2  2004/07/31 16:16:57  sah
   added support for flags and moved to memory saving attribute
   structure.
@@ -14,6 +17,7 @@
 version="1.0">
 
 <xsl:import href="common-c-code.xsl"/>
+<xsl:import href="common-node-access.xsl"/>
 
 <xsl:output method="text" indent="no"/>
 <xsl:strip-space elements="*"/>
@@ -21,14 +25,16 @@ version="1.0">
 <!-- generate accessors for nodes -->
 <xsl:template match="son" mode="accessor-macros">
   <xsl:value-of select="'#define '"/>
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string"><xsl:value-of select="../../@name"/></xsl:with-param>
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">n</xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name" />
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="'_'"/>
-  <xsl:call-template name="uppercase">                                          
-    <xsl:with-param name="string"><xsl:value-of select="@name"/></xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="'(n) n->node['"/>
+  <xsl:value-of select="' n->node['"/>
   <xsl:value-of select="position() - 1"/>
   <xsl:value-of select="']'"/>
   <xsl:call-template name="newline"/>
@@ -37,19 +43,24 @@ version="1.0">
 <!-- generate accessors for attributes -->
 <xsl:template match="attribute" mode="accessor-macros">
   <xsl:value-of select="'#define '"/>
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string"><xsl:value-of select="../../@name"/></xsl:with-param>
+  <!-- generate left side of macro -->
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">n</xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name" />
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
+    <!-- if the attribute is an array, we need to add the index to the macro -->
+    <xsl:with-param name="index">
+      <xsl:if test="//attributetypes/type[@name = current()/type/@name]/@size" >
+        <xsl:value-of select="'x'" />
+      </xsl:if>
+    </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="'_'"/>
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="string"><xsl:value-of select="@name"/></xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="'(n'" />
-  <!-- if the attribute is an array, we need to add the index to the macro -->
-  <xsl:if test="//attributetypes/type[@name = current()/type/@name]/@size" >
-    <xsl:value-of select="', x'" />
-  </xsl:if>
-  <xsl:value-of select="') n->attribs.N_'"/> 
+  <!-- generate right side of macro -->
+  <xsl:value-of select="'n->attribs.N_'"/> 
   <xsl:value-of select="../../@name"/>
   <xsl:value-of select="'->'"/>
   <xsl:value-of select="@name"/>
