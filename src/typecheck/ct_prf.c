@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2002/10/10 12:17:51  sbs
+ * PRF_IF macro definition adjusted to changes made in prf_node_info.mac
+ *
  * Revision 1.5  2002/09/25 11:38:26  sbs
  * some minor warnings eliminated
  *
@@ -23,7 +26,7 @@
 #include "type_errors.h"
 
 ct_funptr NTCPRF_funtab[] = {
-#define PRF_IF(a, b, c, d, e, f, g) f
+#define PRF_IF(a, b, c, d, e, f, g) g
 #include "prf_node_info.mac"
 #undef PRF_IF
 };
