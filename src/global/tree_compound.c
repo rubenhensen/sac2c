@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1995/12/21 10:36:55  cg
+ * Revision 1.20  1995/12/29 10:33:11  cg
+ * added ConcatNodelist
+ *
+ * Revision 1.19  1995/12/21  10:36:55  cg
  * added function CountFunctionParams
  *
  * Revision 1.18  1995/12/15  14:13:56  asi
@@ -485,6 +488,32 @@ TidyUpNodelist (nodelist *list)
             last = list;
             list = NODELIST_NEXT (list);
         }
+    }
+
+    DBUG_RETURN (first);
+}
+
+/***
+ ***  ConcatNodelist
+ ***/
+
+nodelist *
+ConcatNodelist (nodelist *first, nodelist *second)
+{
+    nodelist *tmp;
+
+    DBUG_ENTER ("ConcatNodelist");
+
+    if (first == NULL) {
+        first = second;
+    } else {
+        tmp = first;
+
+        while (NODELIST_NEXT (tmp) != NULL) {
+            tmp = NODELIST_NEXT (tmp);
+        }
+
+        NODELIST_NEXT (tmp) = second;
     }
 
     DBUG_RETURN (first);
