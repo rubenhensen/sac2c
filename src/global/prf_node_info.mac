@@ -1,9 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/06/26 10:00:12  sbs
- * F_idx_psi inserted
+ * Revision 1.7  1995/06/30 12:21:23  hw
+ * F_ftoi, F_itof, F_ftoi_A & F_itof_A (primitive functions itof &
+ * ftoi) inserted
  *
+;; Revision 1.6  1995/06/26  10:00:12  sbs
+;; F_idx_psi inserted
+;;
 ;; Revision 1.5  1995/03/08  14:21:53  hw
 ;; added new enumerators for primitive functions add, mul, sub, div
 ;; to  distinguish weather one argument is a scalar or array
@@ -35,7 +39,8 @@
 /*   Node_name       dbug-string[]  prf_string[]*/
 
 PRF_IF (F_add, "F_add", "+"), PRF_IF (F_sub, "F_sub", "-"), PRF_IF (F_mul, "F_mul", "*"),
-  PRF_IF (F_div, "F_div", "/"), PRF_IF (F_and, "F_and", "&&"),
+  PRF_IF (F_div, "F_div", "/"), PRF_IF (F_ftoi, "F_ftoi", "ftoi"),
+  PRF_IF (F_itof, "F_itof", "itof"), PRF_IF (F_and, "F_and", "&&"),
   PRF_IF (F_or, "F_or", "||"), PRF_IF (F_not, "F_not", "!"), PRF_IF (F_le, "F_le", "<="),
   PRF_IF (F_lt, "F_lt", "<"), PRF_IF (F_eq, "F_eq", "=="), PRF_IF (F_ge, "F_ge", ">="),
   PRF_IF (F_gt, "F_gt", ">"), PRF_IF (F_neq, "F_neq", "!="),
@@ -44,7 +49,8 @@ PRF_IF (F_add, "F_add", "+"), PRF_IF (F_sub, "F_sub", "-"), PRF_IF (F_mul, "F_mu
   PRF_IF (F_psi, "F_psi", "psi"), PRF_IF (F_idx_psi, "F_idx_psi", "idx_psi"),
   PRF_IF (F_shape, "F_shape", "shape"), PRF_IF (F_reshape, "F_reshape", "reshape"),
   PRF_IF (F_cat, "F_cat", "cat"), PRF_IF (F_dim, "F_dim", "dim"),
-  PRF_IF (F_rotate, "F_rotate", "rotate"), PRF_IF (F_add_SxA, "F_add_SxA", "+"),
+  PRF_IF (F_rotate, "F_rotate", "rotate"), PRF_IF (F_ftoi_A, "F_ftoi_A", "ftoi"),
+  PRF_IF (F_itof_A, "F_itof_A", "itof"), PRF_IF (F_add_SxA, "F_add_SxA", "+"),
   PRF_IF (F_add_AxS, "F_add_AxS", "+"), PRF_IF (F_add_AxA, "F_add_AxA", "+"),
   PRF_IF (F_sub_SxA, "F_sub_SxA", "-"), PRF_IF (F_sub_AxS, "F_sub_AxS", "-"),
   PRF_IF (F_sub_AxA, "F_sub_AxA", "-"), PRF_IF (F_mul_SxA, "F_mul_SxA", "*"),
