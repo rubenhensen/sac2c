@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/22 15:38:19  ktr
+ * Ongoing implementation.
+ *
  * Revision 1.1  2004/10/15 09:05:08  ktr
  * Initial revision
  *
@@ -32,11 +35,20 @@
 #include "print.h"
 #include "new_types.h"
 #include "DataFlowMask.h"
+#include "user_types.h"
 
 /**
  * CONTEXT enumeration: aa_context_t
  */
-typedef enum { AA_undef, AA_begin, AA_end, AA_let, AA_ap } aa_context_t;
+typedef enum {
+    AA_undef,
+    AA_begin,
+    AA_end,
+    AA_let,
+    AA_ap,
+    AA_unqargs,
+    AA_argnoalias
+} aa_context_t;
 
 /*
  * INFO structure
@@ -46,7 +58,9 @@ struct INFO {
     node *fundef;
     ids *lhs;
     DFMmask_t mask;
+    DFMmask_t apmask;
     node *funargs;
+    node *apargs;
 };
 
 /*
@@ -56,7 +70,14 @@ struct INFO {
 #define INFO_AA_FUNDEF(n) (n->fundef)
 #define INFO_AA_LHS(n) (n->lhs)
 #define INFO_AA_MASK(n) (n->mask)
+#define INFO_AA_APMASK(n) (n->apmask)
 #define INFO_AA_FUNARGS(n) (n->funargs)
+#define INFO_AA_APARGS(n) (n->apargs)
+
+/*
+ * Convergence counter
+ */
+int unaliased;
 
 /*
  * INFO functions
@@ -74,7 +95,9 @@ MakeInfo (node *fundef)
     INFO_AA_FUNDEF (result) = fundef;
     INFO_AA_LHS (result) = NULL;
     INFO_AA_MASK (result) = NULL;
+    INFO_AA_APMASK (result) = NULL;
     INFO_AA_FUNARGS (result) = NULL;
+    INFO_AA_APARGS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -103,15 +126,25 @@ FreeInfo (info *info)
 node *
 EMAAAliasAnalysis (node *syntax_tree)
 {
+    int counter;
+
     DBUG_ENTER ("EMAAAliasAnalysis");
 
     DBUG_PRINT ("EMAA", ("Starting alias analysis..."));
 
     act_tab = emaa_tab;
 
-    syntax_tree = Trav (syntax_tree, NULL);
+    counter = 0;
+    unaliased = -1;
 
-    DBUG_PRINT ("EMSRF", ("Alias analysis complete."));
+    while (unaliased != 0) {
+        unaliased = 0;
+        syntax_tree = Trav (syntax_tree, NULL);
+        counter += unaliased;
+    }
+
+    DBUG_PRINT ("EMAA", ("%d variables unaliased.", counter));
+    DBUG_PRINT ("EMAA", ("Alias analysis complete."));
 
     DBUG_RETURN (syntax_tree);
 }
@@ -121,6 +154,119 @@ EMAAAliasAnalysis (node *syntax_tree)
  * Helper functions
  *
  *****************************************************************************/
+static node *
+SetAvisAlias (node *avis, bool newval)
+{
+    DBUG_ENTER ("SetAvisAlias");
+
+    if ((!AVIS_ALIAS (avis)) && newval) {
+        DBUG_ASSERT ((0), "Alias analysis does not converge!");
+    } else {
+        if (AVIS_ALIAS (avis) && (!newval)) {
+            AVIS_ALIAS (avis) = FALSE;
+            unaliased += 1;
+        }
+    }
+    DBUG_RETURN (avis);
+}
+
+static node *
+SetArgAlias (node *arg, bool newval)
+{
+    DBUG_ENTER ("SetArgAlias");
+
+    if ((!ARG_ALIAS (arg)) && newval) {
+        /*     DBUG_ASSERT( (0), "Alias analysis does not converge!"); */
+    } else {
+        if (ARG_ALIAS (arg) && (!newval)) {
+            ARG_ALIAS (arg) = FALSE;
+        }
+    }
+    DBUG_RETURN (arg);
+}
+
+static node *
+InitializeRetAlias (node *fundef)
+{
+    DBUG_ENTER ("InitializeRetAlias");
+
+    if (FUNDEF_RETALIAS (fundef) == NULL) {
+        DBUG_PRINT ("EMAA",
+                    ("FUNDEF_RETALIAS initialized function: %s", FUNDEF_NAME (fundef)));
+        int retvals = TYGetProductSize (FUNDEF_RET_TYPE (fundef));
+        while (retvals > 0) {
+            FUNDEF_RETALIAS (fundef)
+              = MakeNodelistNode (MakeBool (TRUE), FUNDEF_RETALIAS (fundef));
+            retvals -= 1;
+        }
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+static bool
+GetRetAlias (node *fundef, int num)
+{
+    nodelist *nl;
+
+    DBUG_ENTER ("GetRetAlias");
+
+    fundef = InitializeRetAlias (fundef);
+
+    nl = FUNDEF_RETALIAS (fundef);
+    while (num > 0) {
+        nl = NODELIST_NEXT (nl);
+        num -= 1;
+    }
+
+    DBUG_RETURN (BOOL_VAL (NODELIST_NODE (nl)));
+}
+
+static node *
+SetRetAlias (node *fundef, int num, bool newval)
+{
+    nodelist *nl;
+
+    DBUG_ENTER ("SetRetAlias");
+
+    fundef = InitializeRetAlias (fundef);
+
+    nl = FUNDEF_RETALIAS (fundef);
+    while (num > 0) {
+        nl = NODELIST_NEXT (nl);
+        num -= 1;
+    }
+
+    if ((!BOOL_VAL (NODELIST_NODE (nl))) && newval) {
+        /*     DBUG_ASSERT( (0), "Alias analysis does not converge!"); */
+    } else {
+        if (BOOL_VAL (NODELIST_NODE (nl)) && (!newval)) {
+            BOOL_VAL (NODELIST_NODE (nl)) = FALSE;
+        }
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+static bool
+IsUniqueNT (ntype *ty)
+{
+    bool res = FALSE;
+
+    DBUG_ENTER ("IsUniqueNT");
+
+    if (TYIsUser (ty)) {
+        node *tdef = UTGetTdef (TYGetUserType (ty));
+        DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
+
+        if (TYPEDEF_ATTRIB (tdef) == ST_unique) {
+            res = TRUE;
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
 /** <!--********************************************************************-->
  *
  * @node EliminateDupes( node *arg_node, info *arg_info)
@@ -157,6 +303,30 @@ EliminateDupes (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @node EliminateArg( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+static node *
+EliminateArg (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EliminateArg");
+
+    if (NODE_TYPE (ID_VARDEC (arg_node)) == N_arg) {
+        DFMSetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, ID_VARDEC (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * Alias analysis traversal (emaa_tab)
@@ -179,9 +349,12 @@ EliminateDupes (node *arg_node, info *arg_info)
 node *
 EMAAap (node *arg_node, info *arg_info)
 {
+    ids *_ids;
+    int argc;
+
     DBUG_ENTER ("EMAAap");
 
-    if (FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node))) {
+    if (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node))) {
         /*
          * Parameters must not be passed more than once to special functions
          */
@@ -207,30 +380,17 @@ EMAAap (node *arg_node, info *arg_info)
     /*
      * Check whether return values are alias-free
      */
-    if (FUNDEF_RETURN (AP_FUNDEF (arg_node)) != NULL) {
-        ids *_ids;
-        node *retexprs;
+    argc = 0;
+    _ids = INFO_AA_LHS (arg_info);
 
-        _ids = INFO_AA_LHS (arg_info);
-        retexprs = RETURN_EXPRS (FUNDEF_RETURN (AP_FUNDEF (arg_node)));
-
-        while (_ids != NULL) {
-            if (AVIS_ALIAS (ID_AVIS (EXPRS_EXPR (retexprs)))) {
-                DFMSetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, IDS_VARDEC (_ids));
-            }
-            retexprs = EXPRS_NEXT (retexprs);
-            _ids = IDS_NEXT (_ids);
-        }
-    } else {
-        ids *_ids;
-
-        _ids = INFO_AA_LHS (arg_info);
-
-        while (_ids != NULL) {
+    while (_ids != NULL) {
+        if (GetRetAlias (AP_FUNDEF (arg_node), argc)) {
             DFMSetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, IDS_VARDEC (_ids));
-            _ids = IDS_NEXT (_ids);
         }
+        _ids = IDS_NEXT (_ids);
+        argc += 1;
     }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -254,8 +414,31 @@ EMAAarg (node *arg_node, info *arg_info)
     switch (INFO_AA_CONTEXT (arg_info)) {
 
     case AA_end:
-        ARG_ALIAS (arg_node) = DFMTestMaskEntry (INFO_AA_MASK (arg_info), NULL, arg_node);
-        AVIS_ALIAS (ARG_AVIS (arg_node)) = TRUE;
+        arg_node = SetArgAlias (arg_node, DFMTestMaskEntry (INFO_AA_MASK (arg_info), NULL,
+                                                            arg_node));
+
+        if (FUNDEF_IS_CONDFUN (INFO_AA_FUNDEF (arg_info))) {
+            node *id = EXPRS_EXPR (INFO_AA_APARGS (arg_info));
+            bool apargalias
+              = DFMTestMaskEntry (INFO_AA_APMASK (arg_info), NULL, ID_VARDEC (id));
+
+            ARG_AVIS (arg_node)
+              = SetAvisAlias (ARG_AVIS (arg_node), ARG_ALIAS (arg_node) || apargalias);
+
+            INFO_AA_APARGS (arg_info) = EXPRS_NEXT (INFO_AA_APARGS (arg_info));
+        }
+        break;
+
+    case AA_unqargs:
+        if (AVIS_TYPE (ARG_AVIS (arg_node)) != NULL) {
+            if (IsUniqueNT (TYGetScalar (AVIS_TYPE (ARG_AVIS (arg_node))))) {
+                arg_node = SetArgAlias (arg_node, FALSE);
+            }
+        }
+        break;
+
+    case AA_argnoalias:
+        arg_node = SetArgAlias (arg_node, FALSE);
         break;
 
     default:
@@ -386,12 +569,25 @@ EMAAcond (node *arg_node, info *arg_info)
 node *
 EMAAfuncond (node *arg_node, info *arg_info)
 {
+    node *thenid, *elseid;
+
     DBUG_ENTER ("EMAAfuncond");
 
-    if ((DFMTestMaskEntry (INFO_AA_MASK (arg_info), NULL,
-                           ID_VARDEC (EXPRS_EXPR (FUNCOND_THEN (arg_node)))))
-        || (DFMTestMaskEntry (INFO_AA_MASK (arg_info), NULL,
-                              ID_VARDEC (EXPRS_EXPR (FUNCOND_THEN (arg_node)))))) {
+    thenid = EXPRS_EXPR (FUNCOND_THEN (arg_node));
+    elseid = EXPRS_EXPR (FUNCOND_ELSE (arg_node));
+
+    /*
+     * Arguments must not be function arguments
+     */
+    thenid = EliminateArg (thenid, arg_info);
+    elseid = EliminateArg (elseid, arg_info);
+
+    /*
+     * Arguments must themselves not be aliases
+     */
+    if ((DFMTestMaskEntry (INFO_AA_MASK (arg_info), NULL, ID_VARDEC (thenid)))
+        || (DFMTestMaskEntry (INFO_AA_MASK (arg_info), NULL, ID_VARDEC (elseid)))) {
+
         DFMSetMaskEntrySet (INFO_AA_MASK (arg_info), NULL,
                             IDS_VARDEC (INFO_AA_LHS (arg_info)));
     }
@@ -416,13 +612,19 @@ EMAAfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMAAfundef");
 
-    if ((!FUNDEF_IS_LACFUN (arg_node)) || (arg_info != NULL)) {
+    DBUG_PRINT ("EMAA", ("Traversing function %s", FUNDEF_NAME (arg_node)));
+
+    if ((!FUNDEF_IS_CONDFUN (arg_node)) || (arg_info != NULL)) {
+        info *info;
+        int count;
+        bool retalias;
+
+        info = MakeInfo (arg_node);
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             DFMmask_base_t maskbase;
-            info *info;
-
-            info = MakeInfo (arg_node);
+            node *retexprs;
+            int retcount;
 
             maskbase = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
@@ -434,17 +636,69 @@ EMAAfundef (node *arg_node, info *arg_info)
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), info);
 
             /*
+             * Annotate RETALIAS information
+             */
+            retexprs = RETURN_EXPRS (ASSIGN_RHS (FUNDEF_RETURN (arg_node)));
+            retcount = 0;
+            while (retexprs != NULL) {
+                arg_node = SetRetAlias (arg_node, retcount,
+                                        AVIS_ALIAS (ID_AVIS (EXPRS_EXPR (retexprs))));
+
+                retexprs = EXPRS_NEXT (retexprs);
+                retcount += 1;
+            }
+
+            /*
              * Traverse args to annotate ARG_ALIAS information
              */
+            if (FUNDEF_IS_CONDFUN (arg_node)) {
+                DBUG_ASSERT (FUNDEF_USED (arg_node) == 1, "CONDFUN used more than once!");
+                INFO_AA_APARGS (info)
+                  = AP_ARGS (ASSIGN_RHS (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (arg_node))));
+                INFO_AA_APMASK (info) = INFO_AA_MASK (arg_info);
+            }
+
             INFO_AA_CONTEXT (info) = AA_end;
             if (FUNDEF_ARGS (arg_node) != NULL) {
                 FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), info);
             }
 
             INFO_AA_MASK (info) = DFMRemoveMask (INFO_AA_MASK (info));
-
-            info = FreeInfo (info);
         }
+
+        /*
+         * Mark unique parameters and return values not ALIAS
+         */
+        INFO_AA_CONTEXT (info) = AA_unqargs;
+        if (FUNDEF_ARGS (arg_node) != NULL) {
+            FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), info);
+        }
+
+        for (count = 0; count < TYGetProductSize (FUNDEF_RET_TYPE (arg_node)); count++) {
+            ntype *scl;
+            scl = TYGetScalar (TYGetProductMember (FUNDEF_RET_TYPE (arg_node), count));
+            if (IsUniqueNT (scl)) {
+                arg_node = SetRetAlias (arg_node, count, FALSE);
+            }
+        }
+
+        /*
+         * When no return value is aliased, no argument is aliased
+         */
+        retalias = FALSE;
+
+        for (count = 0; count < TYGetProductSize (FUNDEF_RET_TYPE (arg_node)); count++) {
+            retalias = retalias || GetRetAlias (arg_node, count);
+        }
+
+        if (!retalias) {
+            INFO_AA_CONTEXT (info) = AA_argnoalias;
+            if (FUNDEF_ARGS (arg_node) != NULL) {
+                FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), info);
+            }
+        }
+
+        info = FreeInfo (info);
     }
 
     if (arg_info == NULL) {
@@ -559,7 +813,7 @@ EMAAprf (node *arg_node, info *arg_info)
     case F_accu:
         _ids = INFO_AA_LHS (arg_info);
         while (_ids != NULL) {
-            AVIS_ALIAS (IDS_AVIS (_ids)) = TRUE;
+            DFMSetMaskEntrySet (INFO_AA_MASK (arg_info), NULL, IDS_VARDEC (_ids));
             _ids = IDS_NEXT (_ids);
         }
         break;
@@ -601,10 +855,7 @@ EMAAreturn (node *arg_node, info *arg_info)
      * Returned variables must not be function arguments
      */
     while (retexprs != NULL) {
-        if (NODE_TYPE (ID_VARDEC (EXPRS_EXPR (retexprs))) == N_arg) {
-            DFMSetMaskEntrySet (INFO_AA_MASK (arg_info), NULL,
-                                ID_VARDEC (EXPRS_EXPR (retexprs)));
-        }
+        EXPRS_EXPR (retexprs) = EliminateArg (EXPRS_EXPR (retexprs), arg_info);
         retexprs = EXPRS_NEXT (retexprs);
     }
 
@@ -677,8 +928,10 @@ EMAAwithop (node *arg_node, info *arg_info)
     switch (NWITHOP_TYPE (arg_node)) {
     case WO_foldfun:
     case WO_foldprf:
-        AVIS_ALIAS (IDS_AVIS (INFO_AA_LHS (arg_info))) = TRUE;
-        AVIS_ALIAS (ID_AVIS (NWITHOP_NEUTRAL (arg_node))) = TRUE;
+        DFMSetMaskEntrySet (INFO_AA_MASK (arg_info), NULL,
+                            IDS_VARDEC (INFO_AA_LHS (arg_info)));
+        DFMSetMaskEntrySet (INFO_AA_MASK (arg_info), NULL,
+                            ID_VARDEC (NWITHOP_NEUTRAL (arg_node)));
         break;
 
     case WO_genarray:
@@ -714,8 +967,9 @@ EMAAvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMAAvardec");
 
-    AVIS_ALIAS (VARDEC_AVIS (arg_node))
-      = DFMTestMaskEntry (INFO_AA_MASK (arg_info), NULL, arg_node);
+    VARDEC_AVIS (arg_node)
+      = SetAvisAlias (VARDEC_AVIS (arg_node),
+                      DFMTestMaskEntry (INFO_AA_MASK (arg_info), NULL, arg_node));
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/22 15:38:19  ktr
+ * Ongoing implementation.
+ *
  * Revision 1.1  2004/10/21 16:18:25  ktr
  * Initial revision
  *
@@ -10,7 +13,7 @@
 
 /******************************************************************************
  *
- * Static free traversal
+ * Static reuse traversal
  *
  * Prefix: EMSR
  *

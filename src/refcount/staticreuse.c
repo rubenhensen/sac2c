@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2004/10/22 15:38:19  ktr
+ * Ongoing implementation.
+ *
  * Revision 1.1  2004/10/21 16:18:17  ktr
  * Initial revision
  *
@@ -102,6 +105,13 @@ EMSRprf (node *arg_node, info *arg_info)
                 node *new_node = MakePrf1 (F_reuse, DupNode (rc));
                 arg_node = FreeNode (arg_node);
                 arg_node = new_node;
+
+                /*
+                 * a = reuse( b, 1);
+                 *
+                 * Mark b as ALIASed such that it will not be statically freed
+                 */
+                AVIS_ALIAS (ID_AVIS (PRF_ARG1 (arg_node))) = TRUE;
                 break;
             }
             rcexprs = EXPRS_NEXT (rcexprs);
