@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 2.39  2000/05/30 14:14:07  dkr
+ * TypecheckFunctionDeclarations() is called for pseudo-fold-functions,
+ * too, in order to get the correct back references to corresponding
+ * N_typedef nodes!
+ *
  * Revision 2.38  2000/05/30 12:35:50  dkr
  * functions for old with-loop removed
  *
@@ -1899,6 +1904,8 @@ node *ComputeNeutralElem(prf prf_fun, types *neutral_type)
  *   to the corresponding N_typedef node, function declarations have to be
  *   checked for user-defined types.
  *
+ *   The same is hold for pseudo-fold-functions!
+ *
  ******************************************************************************/
 
 static node *
@@ -1913,14 +1920,16 @@ TypecheckFunctionDeclarations (node *fundef)
 
     while (fun != NULL) {
 
-        if (FUNDEF_BODY (fun) == NULL) {
+        if ((FUNDEF_BODY (fun) == NULL) || (FUNDEF_STATUS (fun) == ST_foldfun)) {
+            /*
+             * Pseudo-fold-functions don't have back references to N_typedef nodes
+             * yet either!!
+             */
 
             /*
              * First, the return types are checked.
              */
-
             type = FUNDEF_TYPES (fun);
-
             while (type != NULL) {
                 if (TYPES_BASETYPE (type) == T_user) {
                     tdef
@@ -1940,9 +1949,7 @@ TypecheckFunctionDeclarations (node *fundef)
             /*
              * Second, the argument types are checked.
              */
-
             arg = FUNDEF_ARGS (fun);
-
             while (arg != NULL) {
                 if (TYPES_BASETYPE (ARG_TYPE (arg)) == T_user) {
                     tdef = LookupType (TYPES_NAME (ARG_TYPE (arg)),
@@ -7197,26 +7204,32 @@ TI_Nwith (node *arg_node, node *arg_info)
 }
                     } else {
                         ABORT (NODE_LINE (arg_node), ("Wrong dimension of type!"));
-                    } /* if */
+                    }
                     LET_EXPR (ASSIGN_INSTR (INFO_TC_CURRENTASSIGN (arg_info))) = new_expr;
 
                     /* Cleanup the arg_node, no parts are reused here!
                      * So we can cleanup the whole arg_node. */
-                    /*      FreeTree (arg_node);  */
-                    /*  arg_node = NULL; */
+#if 0
+          arg_node = FreeTree (arg_node);
+#endif
                 } /* if (NGEN_OP1_ORIG(...) ...) else ... */
 
                 /* foldprf & foldfun missing here */
 
             } else {
-  /*      ABORT(NODE_LINE(arg_node), ("Wrong type of withloop applied to empty indexvectors"));   
-   */   } /* if (NWITHOP_TYPE(...) ...) else ... */
-        } /* if (lowerbound_empty && upperbound_empty) ... */
+#if 0
+       ABORT( NODE_LINE(arg_node),
+              ("Wrong type of withloop applied to empty indexvectors"));
+#endif
+            } /* if (NWITHOP_TYPE(...) ...) else ... */
+        }     /* if (lowerbound_empty && upperbound_empty) ... */
     }
+
     DBUG_RETURN (base_array_type);
 }
 
 /******************************************************************************/
+
 #define TI_NPART_HELP(bound, nodetext)                                                   \
     if (bound) {                                                                         \
         if (T_int != TYPES_BASETYPE (bound))                                             \
