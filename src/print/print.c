@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.202  2005/01/11 13:09:05  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 3.201  2004/12/19 13:31:49  sbs
  * PRTfold brushed!
  *
@@ -85,7 +88,7 @@
 #include "DupTree.h"
 #include "dbug.h"
 #include "traverse.h"
-#include "Error.h"
+#include "ctinfo.h"
 #include "free.h"
 #include "convert.h"
 #include "DataFlowMask.h"
@@ -100,6 +103,7 @@
 #include "constants.h"
 #include "print_interface.h"
 #include "shape.h"
+#include "internal_lib.h"
 
 #define WARN_INDENT
 
@@ -1472,10 +1476,10 @@ PRTfundef (node *arg_node, info *arg_info)
             /*
              * for the time being, indentation of MT funs is always unbalanced :-(
              */
-            SYSWARN (("Indentation unbalanced while printing function %s."
-                      " Indentation at beginning of function: %i."
-                      " Indentation at end of function: %i",
-                      FUNDEF_NAME (arg_node), old_indent, global.indent));
+            CTIwarn ("Indentation unbalanced while printing function %s."
+                     " Indentation at beginning of function: %i."
+                     " Indentation at end of function: %i",
+                     FUNDEF_NAME (arg_node), old_indent, global.indent);
         }
 #endif
         global.indent = old_indent;
@@ -1694,11 +1698,11 @@ PRTblock (node *arg_node, info *arg_info)
             /*
              * for the time being, indentation of MT funs is always unbalanced :-(
              */
-            SYSWARN (("Indentation unbalanced while printing block of function %s."
-                      " Indentation at beginning of block: %i."
-                      " Indentation at end of block: %i",
-                      FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), old_indent,
-                      global.indent));
+            CTIwarn ("Indentation unbalanced while printing block of function %s."
+                     " Indentation at beginning of block: %i."
+                     " Indentation at end of block: %i",
+                     FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), old_indent,
+                     global.indent);
         }
 #endif
         global.indent = old_indent;
@@ -4131,7 +4135,7 @@ PrintTRAVdo (node *syntax_tree, info *arg_info)
              * Therefore, the C file is generated within the target directory.
              */
             global.outfile = FMGRwriteOpen ("%s%s", global.targetdir, global.cfilename);
-            NOTE (("Writing file \"%s%s\"", global.targetdir, global.cfilename));
+            CTInote ("Writing file \"%s%s\"", global.targetdir, global.cfilename);
 
             GSCprintFileHeader (syntax_tree);
             syntax_tree = TRAVdo (syntax_tree, arg_info);

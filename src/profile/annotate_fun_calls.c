@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2005/01/11 13:12:54  cg
+ * Converted output from Error.h to ctinfo.c
+ *
  * Revision 1.12  2004/11/25 11:57:33  skt
  * kicked ST_generic
  *
@@ -82,10 +85,11 @@
 #include "internal_lib.h"
 #include "traverse.h"
 #include "free.h"
+#include "ctinfo.h"
 #include "globals.h"
 #include "convert.h"
+
 #include <string.h>
-#include "Error.h"
 
 /*
  * INFO structure
@@ -274,9 +278,10 @@ PFfundef (node *arg_node, info *arg_info)
         str_buff = Fundef2ProfileString (arg_node);
         DBUG_PRINT ("PFFUN", ("annotating \"%s\"", str_buff));
         if (global.profile_funcntr == PF_MAXFUN) {
-            SYSWARN (("\"PF_MAXFUN\" too low"));
-            CONT_WARN (("function \"%s\" will not be profiled separately!", str_buff));
-            CONT_WARN (("Instead, it's time will be accounted to \"main\""));
+            CTIwarn ("\"PF_MAXFUN\" too low!\n"
+                     "Function \"%s\" will not be profiled separately. "
+                     "Instead, it's time will be accounted to \"main\"",
+                     str_buff);
             FUNDEF_FUNNO (arg_node) = 1;
             str_buff = ILIBfree (str_buff);
         } else {
@@ -341,12 +346,11 @@ PFassign (node *arg_node, info *arg_info)
          */
         if (global.profile_funapcntr[funno] == PF_MAXFUNAP) {
             str_buff = Fundef2ProfileString (INFO_PF_FUNDEF (arg_info));
-            SYSWARN (("\"PF_MAXFUNAP\" too low"));
-            CONT_WARN (("application of function \"%s\" in line %d will not "
-                        "be profiled separately but be accounted to the application "
-                        "in line %d !",
-                        str_buff, NODE_LINE (arg_node),
-                        global.profile_funapline[funno][0]));
+            CTIwarn ("\"PF_MAXFUNAP\" too low!\n"
+                     "Application of function \"%s\" in line %d will not "
+                     "be profiled separately, but be accounted to the application "
+                     "in line %d",
+                     str_buff, NODE_LINE (arg_node), global.profile_funapline[funno][0]);
             str_buff = ILIBfree (str_buff);
             funap_cnt = 0;
         } else {
