@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/07/13 13:23:41  cg
+ * Useless global variable total_allocated_memory eliminated.
+ *
  * Revision 3.9  2001/06/28 07:46:51  cg
  * Primitive function psi() renamed to sel().
  *
@@ -338,15 +341,14 @@ extern compiler_phase_t my_dbug_to;
 extern int my_dbug;
 extern int my_dbug_active;
 extern char *my_dbug_str;
+
 #ifdef SHOW_MALLOC
 extern int malloc_align_step;
+extern unsigned int current_allocated_mem;
+extern unsigned int max_allocated_mem;
 #endif
 
 extern int do_lac2fun[], do_fun2lac[];
-
-extern unsigned int total_allocated_mem;
-extern unsigned int current_allocated_mem;
-extern unsigned int max_allocated_mem;
 
 extern int print_objdef_for_header_file;
 extern int function_counter;

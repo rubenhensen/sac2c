@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/07/13 13:23:41  cg
+ * Useless global variable total_allocated_memory eliminated.
+ *
  * Revision 3.12  2001/05/31 12:11:09  sbs
  * max_optcycles increased to 10.
  *
@@ -549,8 +552,11 @@ compiler_phase_t my_dbug_to = PH_final;
 int my_dbug = 0;
 int my_dbug_active = 0;
 char *my_dbug_str = NULL;
+
 #ifdef SHOW_MALLOC
 int malloc_align_step;
+unsigned int current_allocated_mem = 0;
+unsigned int max_allocated_mem = 0;
 #endif
 
 /*
@@ -567,14 +573,6 @@ int do_lac2fun[PH_final + 1] = {
 int do_fun2lac[PH_final + 1] = {
 #include "phase_info.mac"
 };
-
-/*
- * Memory counters
- */
-
-unsigned int total_allocated_mem = 0;
-unsigned int current_allocated_mem = 0;
-unsigned int max_allocated_mem = 0;
 
 /*
  * Special purpose global variables
