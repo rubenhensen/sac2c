@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.218  1998/08/06 15:39:13  dkr
+ * added OPTicm
+ *
  * Revision 1.217  1998/07/03 10:14:49  cg
  * function PRECspmd removed because attribute INOUT_IDS is no longer needed.
  *
@@ -968,13 +971,12 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, 0),
 
-  NIF (N_icm, "N_icm", TravSons, TravSons, PrintIcm, TravSons, TravSons, TravSons,
-       TravSons, FreeIcm, TravSons, RCicm, NoTrav, TravSons, DupIcm, TravSons, TravSons,
+  NIF (N_icm, "N_icm", TravSons, TravSons, PrintIcm, TravSons, OPTicm, TravSons, TravSons,
+       FreeIcm, TravSons, RCicm, NoTrav, TravSons, DupIcm, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, GSCicm, TravSons, TravSons, TravSons, TravSons,
-       TravSons, 2),
+       TravSons, TravSons, GSCicm, TravSons, TravSons, TravSons, TravSons, TravSons, 2),
 
   NIF (N_vinfo, "N_vinfo", TravSons, TravSons, PrintVectInfo, TravSons, TravSons,
        TravSons, TravSons, FreeVinfo, TravSons, TravSons, TravSons, TravSons, TravSons,
