@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.53  2000/06/22 13:32:07  mab
+ * INFO_APT_EXPRESSION_PADDED corrected
+ *
  * Revision 1.52  2000/06/22 09:54:54  nmw
  * changes made in N_info access macros for usage in PIW
  *
@@ -2630,7 +2633,7 @@ extern node *MakeInfo ();
 #define INFO_PIW_RETCOUNT(n) (n->flag)
 
 /* when used in pad_transform.c */
-#define INFO_APT_EXPRESSION_PADDED (n->flag)
+#define INFO_APT_EXPRESSION_PADDED(n) (n->flag)
 
 /*--------------------------------------------------------------------------*/
 
