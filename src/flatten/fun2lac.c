@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/05/07 14:22:41  nmw
+ * BuildRenamingAssigns processes all args now :-)
+ *
  * Revision 3.7  2001/04/26 13:26:29  dkr
  * BuildRenamingAssigns() and ReturnVarsAreIdentical() added
  *
@@ -127,7 +130,8 @@ BuildRenamingAssigns (node *ext_args, node *int_args)
     DBUG_ASSERT ((CountArgs (ext_args) == CountExprs (int_args)),
                  "arguments of BuildRenamingAssigns() are inconsistent!");
 
-    if (ext_args != NULL) {
+    while (ext_args != NULL) {
+        DBUG_ASSERT ((int_args != NULL), "inconsistent LAC-signature found");
         int_expr = EXPRS_EXPR (int_args);
         if ((NODE_TYPE (int_expr) != N_id)
             || (strcmp (ARG_NAME (ext_args), ID_NAME (int_expr)))) {
@@ -140,6 +144,8 @@ BuildRenamingAssigns (node *ext_args, node *int_args)
         ext_args = ARG_NEXT (ext_args);
         int_args = EXPRS_NEXT (int_args);
     }
+
+    DBUG_ASSERT ((int_args == NULL), "inconsistent LAC-signature found");
 
     DBUG_RETURN (assigns);
 }
