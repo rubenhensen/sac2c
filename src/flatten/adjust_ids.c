@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/03/02 17:50:11  cg
+ * Added support for debug printing functions right after having
+ * adjusted the identifiers.
+ *
  * Revision 1.2  2000/02/18 14:03:55  cg
  * Minor bugs fixed.
  *
@@ -47,7 +51,7 @@
 #include "free.h"
 #include "internal_lib.h"
 #include "DupTree.h"
-#include "../print/print.h"
+#include "print.h"
 
 /******************************************************************************
  *
@@ -88,42 +92,46 @@
  *
  ******************************************************************************/
 
-static node *
-FindOrMakeVardec (char *var_name, node *fundef, node *vardec_or_arg)
+#if 0
+static
+node *FindOrMakeVardec(char *var_name, node *fundef, node *vardec_or_arg) 
 {
-    node *vardec;
-
-    DBUG_ENTER ("*FindOrMakeVardec");
-
-    vardec = BLOCK_VARDEC (FUNDEF_BODY (fundef));
-
-    while (vardec != NULL) {
-        if (0 == strcmp (var_name, VARDEC_NAME (vardec))) {
-            break;
-        }
-        vardec = VARDEC_NEXT (vardec);
+  node *vardec;
+  
+  DBUG_ENTER("*FindOrMakeVardec");
+  
+  vardec = BLOCK_VARDEC(FUNDEF_BODY(fundef));
+  
+  while (vardec != NULL) {
+    if (0 == strcmp(var_name, VARDEC_NAME(vardec))) {
+      break;
     }
-
-    if (vardec == NULL) {
-        if (NODE_TYPE (vardec_or_arg) == N_vardec) {
-            vardec = DupNode (vardec_or_arg);
-            VARDEC_NEXT (vardec) = BLOCK_VARDEC (FUNDEF_BODY (fundef));
-        } else {
-            vardec = MakeVardec (StringCopy (ARG_NAME (vardec_or_arg)),
-                                 DupTypes (ARG_TYPE (vardec_or_arg)),
-                                 BLOCK_VARDEC (FUNDEF_BODY (fundef)));
-            VARDEC_STATUS (vardec) = ARG_STATUS (vardec_or_arg);
-            if ((ARG_ATTRIB (vardec_or_arg) == ST_unique)
-                || (ARG_ATTRIB (vardec_or_arg) == ST_reference)
-                || (ARG_ATTRIB (vardec_or_arg) == ST_readonly_reference)) {
-                VARDEC_ATTRIB (vardec) = ST_unique;
-            }
-        }
-        BLOCK_VARDEC (FUNDEF_BODY (fundef)) = vardec;
+    vardec = VARDEC_NEXT(vardec);
+  }
+  
+  if (vardec == NULL) {
+    if (NODE_TYPE(vardec_or_arg) == N_vardec) {
+      vardec = DupNode(vardec_or_arg);
+      VARDEC_NEXT(vardec) = BLOCK_VARDEC(FUNDEF_BODY(fundef));
     }
+    else {
+      vardec = MakeVardec(StringCopy(ARG_NAME(vardec_or_arg)),
+                          DupTypes(ARG_TYPE(vardec_or_arg)),
+                          BLOCK_VARDEC(FUNDEF_BODY(fundef)));
+      VARDEC_STATUS(vardec) = ARG_STATUS(vardec_or_arg);
+      if ((ARG_ATTRIB(vardec_or_arg) == ST_unique) 
+          || (ARG_ATTRIB(vardec_or_arg) == ST_reference) 
+          || (ARG_ATTRIB(vardec_or_arg) == ST_readonly_reference)) {
+        VARDEC_ATTRIB(vardec) = ST_unique;
+      }
+    }
+    BLOCK_VARDEC(FUNDEF_BODY(fundef)) = vardec;
+  }
 
-    DBUG_RETURN (vardec);
+  DBUG_RETURN(vardec);
 }
+
+#endif /*  0  */
 
 /******************************************************************************
  *
@@ -149,15 +157,25 @@ AIids (ids *arg_ids, node *arg_info)
         new_let = MakeLet (MakeId (StringCopy (IDS_NAME (INFO_AI_IDS (arg_info))), NULL,
                                    ST_regular),
                            arg_ids);
-        ID_VARDEC (LET_EXPR (new_let))
-          = FindOrMakeVardec (IDS_NAME (INFO_AI_IDS (arg_info)),
-                              INFO_AI_FUNDEF (arg_info),
-                              IDS_VARDEC (INFO_AI_IDS (arg_info)));
+        /*
+        ID_VARDEC(LET_EXPR(new_let)) = FindOrMakeVardec(IDS_NAME(INFO_AI_IDS(arg_info)),
+                                                        INFO_AI_FUNDEF(arg_info),
+                                                        IDS_VARDEC(INFO_AI_IDS(arg_info)));
+        */
+        ID_VARDEC (LET_EXPR (new_let)) = IDS_VARDEC (INFO_AI_IDS (arg_info));
+        if (IDS_REFCNT (arg_ids) == -1) {
+            ID_REFCNT (LET_EXPR (new_let)) = -1;
+        } else {
+            ID_REFCNT (LET_EXPR (new_let)) = 1;
+        }
+
         INFO_AI_POSTASSIGN (arg_info)
           = MakeAssign (new_let, INFO_AI_POSTASSIGN (arg_info));
         arg_ids
           = MakeIds (StringCopy (IDS_NAME (INFO_AI_IDS (arg_info))), NULL, ST_regular);
         IDS_VARDEC (arg_ids) = ID_VARDEC (LET_EXPR (new_let));
+        IDS_REFCNT (arg_ids) = ID_REFCNT (LET_EXPR (new_let));
+
         IDS_NEXT (arg_ids) = IDS_NEXT (LET_IDS (new_let));
         IDS_NEXT (LET_IDS (new_let)) = NULL;
     }
@@ -365,16 +383,24 @@ AIid (node *arg_node, node *arg_info)
             new_let = MakeLet (arg_node,
                                MakeIds (StringCopy (IDS_NAME (INFO_AI_IDS (arg_info))),
                                         NULL, ST_regular));
+            /*
+            IDS_VARDEC(LET_IDS(new_let)) =
+            FindOrMakeVardec(IDS_NAME(INFO_AI_IDS(arg_info)), INFO_AI_FUNDEF(arg_info),
+                                                            IDS_VARDEC(INFO_AI_IDS(arg_info)));
+            */
+            IDS_VARDEC (LET_IDS (new_let)) = IDS_VARDEC (INFO_AI_IDS (arg_info));
+            if (ID_REFCNT (arg_node) == -1) {
+                IDS_REFCNT (LET_IDS (new_let)) = -1;
+            } else {
+                IDS_REFCNT (LET_IDS (new_let)) = 1;
+            }
 
-            IDS_VARDEC (LET_IDS (new_let))
-              = FindOrMakeVardec (IDS_NAME (INFO_AI_IDS (arg_info)),
-                                  INFO_AI_FUNDEF (arg_info),
-                                  IDS_VARDEC (INFO_AI_IDS (arg_info)));
             INFO_AI_PREASSIGN (arg_info)
               = MakeAssign (new_let, INFO_AI_PREASSIGN (arg_info));
             arg_node
               = MakeId (StringCopy (IDS_NAME (INFO_AI_IDS (arg_info))), NULL, ST_regular);
             ID_VARDEC (arg_node) = IDS_VARDEC (LET_IDS (new_let));
+            ID_REFCNT (arg_node) = IDS_REFCNT (LET_IDS (new_let));
         }
     }
 
@@ -394,15 +420,25 @@ AIid (node *arg_node, node *arg_info)
              */
             new_let
               = MakeLet (arg_node, MakeIds (StringCopy (desired_name), NULL, ST_regular));
-
+            /*
+            IDS_VARDEC(LET_IDS(new_let))
+              = FindOrMakeVardec(desired_name,
+                                 INFO_AI_FUNDEF(arg_info),
+                                 ID_VARDEC(EXPRS_EXPR(INFO_AI_ARGS(arg_info))));
+            */
             IDS_VARDEC (LET_IDS (new_let))
-              = FindOrMakeVardec (desired_name, INFO_AI_FUNDEF (arg_info),
-                                  ID_VARDEC (EXPRS_EXPR (INFO_AI_ARGS (arg_info))));
+              = ID_VARDEC (EXPRS_EXPR (INFO_AI_ARGS (arg_info)));
+            if (ID_REFCNT (arg_node) == -1) {
+                IDS_REFCNT (LET_IDS (new_let)) = -1;
+            } else {
+                IDS_REFCNT (LET_IDS (new_let)) = 1;
+            }
 
             INFO_AI_PREASSIGN (arg_info)
               = MakeAssign (new_let, INFO_AI_PREASSIGN (arg_info));
             arg_node = MakeId (StringCopy (desired_name), NULL, ST_regular);
             ID_VARDEC (arg_node) = IDS_VARDEC (LET_IDS (new_let));
+            ID_REFCNT (arg_node) = IDS_REFCNT (LET_IDS (new_let));
         }
     }
 
@@ -616,9 +652,7 @@ AdjustIdentifiers (node *fundef, node *let)
 
     fundef = Trav (fundef, info_node);
 
-#if 1
-    PrintNode (fundef);
-#endif
+    DBUG_EXECUTE ("PRINT_AI", PrintNode (fundef););
 
     FreeNode (info_node);
 
