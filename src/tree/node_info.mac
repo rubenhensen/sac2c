@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.113  2003/02/08 16:50:57  mwe
+ * undefine NIFdl
+ *
  * Revision 3.112  2003/02/08 15:54:48  mwe
  * dl_tab added
  *
@@ -2690,7 +2693,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFcwc
 #undef NIFhm
 
-#undef NIFunused9
+#undef NIFdl
 #undef NIFunused10
 #undef NIFunused11
 #undef NIFunused12
