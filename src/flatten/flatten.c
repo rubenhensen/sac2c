@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.61  1998/02/18 11:34:10  srs
+ * fixed bug in FltnNgenerator
+ *
  * Revision 1.60  1998/02/15 21:15:02  srs
  * fixed bug in flattening of neutral element of WL-fold
  *
@@ -689,8 +692,8 @@ FltnExprs (node *arg_node, node *arg_info)
  *  macros        :
  *
  *  remarks       : arg_info->node[1] contains list of assigns that have to
- *                   be put in front of a with_loop, if conditional is part
- *                   of a with_loop and there are variables to 'copy'
+ *                  be put in front of a with_loop, if conditional is part
+ *                  of a with_loop and there are variables to 'copy'
  *
  */
 
@@ -1337,7 +1340,7 @@ FltnLet (node *arg_node, node *arg_info)
 
     ids = LET_IDS (arg_node);
     if (N_with != NODE_TYPE (LET_EXPR (arg_node))
-        && N_Nwith != NODE_TYPE (LET_EXPR (arg_node))) {
+        && N_Nwith != NODE_TYPE (LET_EXPR (arg_node))) { /* this is not a WL */
         while (ids) {
             tmp = FindId (ids->id);
             if (!tmp) {
@@ -1348,9 +1351,8 @@ FltnLet (node *arg_node, node *arg_info)
                     old_name = ids->id;
                     ids->id = RenameWithVar (old_name, with_level);
                     PUSH (old_name, ids->id, with_level);
-                    /*             arg_info->node[1]=AppendIdentity(arg_info->node[1],  */
-                    /* 						StringCopy(tmp->id_new), ids->id);
-                     */
+                    /* arg_info->node[1]=AppendIdentity(arg_info->node[1],
+                     * StringCopy(tmp->id_new), ids->id); */
                     arg_info->node[1]
                       = AppendIdentity (arg_info->node[1], tmp->id_new, ids->id);
                 } else if ((0 < with_level) && (with_level == tmp->w_level)) {
@@ -1360,8 +1362,7 @@ FltnLet (node *arg_node, node *arg_info)
             }
             ids = ids->next;
         }
-
-    } else {
+    } else { /* the let expr is a WL */
         new_assign = MakeNode (N_assign);
         tmp = FindId (ids->id);
         if (tmp) {
@@ -1631,7 +1632,7 @@ FltnNpart (node *arg_node, node *arg_info)
 node *
 FltnNgenerator (node *arg_node, node *arg_info)
 {
-    node **akt_son, *let_node, *tmp_node;
+    node **act_son, *let_node, *tmp_node;
     char *new_id;
     int i;
     DBUG_ENTER ("FltnNgenerator");
@@ -1655,32 +1656,31 @@ FltnNgenerator (node *arg_node, node *arg_info)
         NGEN_BOUND2 (arg_node) = MakePrf (F_add, tmp_node);
     }
 
-    /* extract bound1/2, step or width if not id. Even arrays are removed and
-     reinserted later (CF) if constant. */
+    /* extract bound1/2, step or width if not id. Even constant arrays are removed
+       and eventually reinserted later (in phase WLF, if WLF is possible). */
     for (i = 0; i < 4; i++) {
         switch (i) {
         case 0:
-            akt_son = &NGEN_BOUND1 (arg_node);
+            act_son = &NGEN_BOUND1 (arg_node);
             break;
         case 1:
-            akt_son = &NGEN_BOUND2 (arg_node);
+            act_son = &NGEN_BOUND2 (arg_node);
             break;
         case 2:
-            akt_son = &NGEN_STEP (arg_node);
+            act_son = &NGEN_STEP (arg_node);
             break;
         case 3:
-            akt_son = &NGEN_WIDTH (arg_node);
+            act_son = &NGEN_WIDTH (arg_node);
             break;
         default:;
         }
 
-        if (*akt_son && N_id != NODE_TYPE (*akt_son)) {
+        if (*act_son && N_id != NODE_TYPE (*act_son)) {
             new_id = GenTmpVar (var_counter++);
-            let_node
-              = MakeLet (Trav (*akt_son, arg_info), MakeIds (new_id, NULL, ST_regular));
-            *akt_son = MakeId (new_id, NULL, ST_regular);
-            arg_info->node[0]
-              = MakeAssign (let_node, arg_info->node[0]); /* assign node */
+            let_node = MakeLet (NULL, MakeIds (new_id, NULL, ST_regular));
+            arg_info->node[0] = MakeAssign (let_node, arg_info->node[0]);
+            LET_EXPR (let_node) = Trav (*act_son, arg_info);
+            *act_son = MakeId (new_id, NULL, ST_regular);
         }
     }
 
