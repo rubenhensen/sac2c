@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  2000/07/21 08:22:18  nmw
+ * impspec_tab added
+ *
  * Revision 1.26  2000/06/28 15:12:16  nmw
  * funtabs for PIH and PIW modified
  *
@@ -261,6 +264,7 @@
 #include "pad_transform.h"
 #include "print_interface.h"
 #include "map_cwrapper.h"
+#include "import_specialization.h"
 
 #include "traverse.h"
 
@@ -1182,6 +1186,17 @@ static funtab piw_tab_rec = {{
                              NULL,
                              NULL};
 funtab *piw_tab = &piw_tab_rec;
+
+/*
+ *  (84) impspec_tab
+ */
+static funtab impspec_tab_rec = {{
+#define NIFimpspec(it_impspec) it_impspec
+#include "node_info.mac"
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *impspec_tab = &impspec_tab_rec;
 
 /*
  *  nnode

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2000/07/21 08:22:07  nmw
+ * impspec_tab added
+ *
  * Revision 1.21  2000/06/28 15:11:42  nmw
  * funtabs for PIH and PIW modified
  *
@@ -188,6 +191,7 @@ extern funtab *apt_tab;
 extern funtab *mapcw_tab;
 extern funtab *pih_tab;
 extern funtab *piw_tab;
+extern funtab *impspec_tab;
 
 extern int nnode[];
 
