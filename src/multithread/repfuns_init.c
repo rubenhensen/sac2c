@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/04/18 14:02:24  jhs
+ * Added assertion to be aware of functions with NULL-body.
+ *
  * Revision 1.6  2000/03/09 18:33:54  jhs
  * Brushing
  *
@@ -221,7 +224,7 @@ RFINnwith2 (node *arg_node, node *arg_info)
  * description:
  *   Depending on the kind of LET_EXPR that is found this routine takes
  *   special actions:
- *   - N_api   : The call is changed, if necessary the function will be
+ *   - N_ap    : The call is changed, if necessary the function will be
  *               copied (if already done this is skipped)
  *   - N_prf   : No body is existent, so we can't copy ...
  *   - N_Nwith2: Traversal into the body
@@ -239,18 +242,21 @@ RFINlet (node *arg_node, node *arg_info)
 
     /* if lhs application then lift */
     if (INFO_RFIN_WITHINWITH (arg_info)) {
-        if ((NODE_TYPE (LET_EXPR (arg_node)) == N_ap)
-            && (FUNDEF_BODY (AP_FUNDEF (LET_EXPR (arg_node))) != NULL)) {
-            DBUG_PRINT ("RFIN", ("ap-let: lift %s",
-                                 FUNDEF_NAME (AP_FUNDEF (LET_EXPR (arg_node)))));
+        if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
+            if (FUNDEF_BODY (AP_FUNDEF (LET_EXPR (arg_node))) != NULL) {
+                DBUG_PRINT ("RFIN", ("ap-let != NULL: lift %s",
+                                     FUNDEF_NAME (AP_FUNDEF (LET_EXPR (arg_node)))));
 
-            ap = LET_EXPR (arg_node);
+                ap = LET_EXPR (arg_node);
 
-            old_fundef = AP_FUNDEF (ap);
+                old_fundef = AP_FUNDEF (ap);
 
-            new_fundef = ReplicateFundef (old_fundef, arg_info);
+                new_fundef = ReplicateFundef (old_fundef, arg_info);
 
-            ap = MUTHExchangeApplication (ap, new_fundef);
+                ap = MUTHExchangeApplication (ap, new_fundef);
+            } else {
+                DBUG_ASSERT (0, "ap-let == NULL");
+            }
         }
     } else if (NODE_TYPE (LET_EXPR (arg_node)) == N_Nwith2) {
         DBUG_PRINT ("RFIN", ("with-let: traverse into"));
