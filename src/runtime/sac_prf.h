@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2005/02/16 09:58:13  ktr
+ * Typo fixed for Bodo.
+ *
  * Revision 3.22  2004/11/17 13:37:15  ktr
  * added SAC_ND_PRF_IS_REUSED( to_NT, from_NT, from2_NT)
  *
@@ -313,9 +316,9 @@
     SAC_ND_A_FIELD (to_NT) = (SAC_ND_A_FIELD (from_NT) == SAC_ND_A_FIELD (from2_NT));
 
 #define SAC_ND_PRF_IS_REUSED__AKD(to_NT, from_NT, from2_NT)                              \
-    SAC_ND_PRF_IS_REUSED_AKS (to_NT, from_NT, from2_NT)
+    SAC_ND_PRF_IS_REUSED__AKS (to_NT, from_NT, from2_NT)
 
 #define SAC_ND_PRF_IS_REUSED__AUD(to_NT, from_NT, from2_NT)                              \
-    SAC_ND_PRF_IS_REUSED_AKS (to_NT, from_NT, from2_NT)
+    SAC_ND_PRF_IS_REUSED__AKS (to_NT, from_NT, from2_NT)
 
 #endif /* _SAC_PRF_H_ */
