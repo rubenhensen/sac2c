@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.44  1998/03/26 11:11:33  dkr
+ * changed DupWLproj
+ *
  * Revision 1.43  1998/03/24 21:44:44  dkr
  * changed DupWLproj:
  *   copies WLPROJ_PART
@@ -807,9 +810,8 @@ DupWLproj (node *arg_node, node *arg_info)
                            WLPROJ_STEP (arg_node), WLPROJ_UNROLLING (arg_node),
                            DUPTRAV (WLPROJ_CONTENTS (arg_node)), NULL);
 
-    if (WLPROJ_PART (arg_node) != NULL) {
-        WLPROJ_PART (new_node) = WLPROJ_PART (arg_node);
-    }
+    WLPROJ_PART (new_node) = WLPROJ_PART (arg_node);
+    WLPROJ_MDOFIED (new_node) = 0;
 
     WLPROJ_NEXT (new_node) = DUPCONT (WLPROJ_NEXT (arg_node));
 
