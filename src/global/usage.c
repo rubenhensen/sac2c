@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.56  1998/02/06 13:32:58  srs
+ * new switch -noWLF
+ *
  * Revision 1.55  1997/10/02 13:21:50  cg
  * option -Mlib explained again.
  *
@@ -260,6 +263,7 @@ usage (char *prg_name)
     printf ("\t -nodead_function_removal or -noDFR \t  no dead function removal \n");
     printf ("\t -noloop_invariant_removal or -noLIR \t  no loop invariant removal \n");
     printf ("\t -nocse or -noCSE \t\t\t  no common subexpression elimination \n");
+    printf ("\t -nowlf or -noWLF \t\t\t  no withloop folding \n");
     printf ("\n\t -nopsiopt\t\t\t\t  no psi optimisations\n");
     printf ("\t -noindex_vect_elimination or -noIVE \t  no index vector elimination \n");
     printf ("\t -noarray_elimination or -noAE \t\t  no array elimination \n");
