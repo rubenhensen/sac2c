@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/01/08 17:13:47  dkr
+ * MakeIcm simplified
+ *
  * Revision 3.3  2000/12/29 14:22:48  cg
  * Added support for new ICM MT_DECL_MYTHREAD.
  *
@@ -1213,108 +1216,17 @@ MakeIcm (char *name, node *args)
 
     DBUG_ASSERT (name != NULL, "MakeIcm called with empty ICM name.");
 
-    if (strcmp (name, "WL_NONFOLD_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_NONFOLD_END") == 0) {
-        ICM_INDENT_BEFORE (tmp) = -1;
-        ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strcmp (name, "WL_FOLD_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_FOLD_END") == 0) {
-        ICM_INDENT_BEFORE (tmp) = -1;
-        ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strcmp (name, "WL_BLOCK_LOOP0_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_BLOCK_LOOP_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_BLOCK_LOOP_END") == 0) {
-        ICM_INDENT_BEFORE (tmp) = -1;
-        ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strcmp (name, "WL_UBLOCK_LOOP0_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_UBLOCK_LOOP_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 1;
-        ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strcmp (name, "WL_UBLOCK_LOOP_END") == 0) {
-        ICM_INDENT_BEFORE (tmp) = -1;
-        ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strcmp (name, "WL_STRIDE_LOOP0_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_STRIDE_LOOP_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_STRIDE_LOOP_END") == 0) {
-        ICM_INDENT_BEFORE (tmp) = -1;
-        ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strcmp (name, "WL_STRIDE_UNROLL_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_STRIDE_UNROLL_END") == 0) {
-        ICM_INDENT_BEFORE (tmp) = -1;
-        ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strcmp (name, "WL_GRID_LOOP_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_GRID_LOOP_END") == 0) {
-        ICM_INDENT_BEFORE (tmp) = -1;
-        ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strcmp (name, "WL_GRID_UNROLL_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_GRID_UNROLL_END") == 0) {
-        ICM_INDENT_BEFORE (tmp) = -1;
-        ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strcmp (name, "WL_MT_BLOCK_LOOP0_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_MT_BLOCK_LOOP_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_MT_BLOCK_LOOP_END") == 0) {
-        ICM_INDENT_BEFORE (tmp) = -1;
-        ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strcmp (name, "WL_MT_UBLOCK_LOOP0_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_MT_UBLOCK_LOOP_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_MT_UBLOCK_LOOP_END") == 0) {
-        ICM_INDENT_BEFORE (tmp) = -1;
-        ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strcmp (name, "WL_MT_STRIDE_LOOP0_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_MT_STRIDE_LOOP_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_MT_STRIDE_LOOP_END") == 0) {
-        ICM_INDENT_BEFORE (tmp) = -1;
-        ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strcmp (name, "WL_MT_STRIDE_UNROLL_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_MT_STRIDE_UNROLL_END") == 0) {
-        ICM_INDENT_BEFORE (tmp) = -1;
-        ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strcmp (name, "WL_MT_GRID_LOOP_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_MT_GRID_LOOP_END") == 0) {
-        ICM_INDENT_BEFORE (tmp) = -1;
-        ICM_INDENT_AFTER (tmp) = 0;
-    } else if (strcmp (name, "WL_MT_GRID_UNROLL_BEGIN") == 0) {
-        ICM_INDENT_BEFORE (tmp) = 0;
-        ICM_INDENT_AFTER (tmp) = 1;
-    } else if (strcmp (name, "WL_MT_GRID_UNROLL_END") == 0) {
-        ICM_INDENT_BEFORE (tmp) = -1;
-        ICM_INDENT_AFTER (tmp) = 0;
+    if (strncmp (name, "WL_", 3) == 0) {
+        if (strcmp (name + strlen (name) - 6, "_BEGIN") == 0) {
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 1;
+        } else if (strcmp (name + strlen (name) - 4, "_END") == 0) {
+            ICM_INDENT_BEFORE (tmp) = -1;
+            ICM_INDENT_AFTER (tmp) = 0;
+        } else {
+            ICM_INDENT_BEFORE (tmp) = 0;
+            ICM_INDENT_AFTER (tmp) = 0;
+        }
     } else if (strcmp (name, "MT_START_SYNCBLOCK") == 0) {
         ICM_INDENT_BEFORE (tmp) = 0;
         ICM_INDENT_AFTER (tmp) = 1;
