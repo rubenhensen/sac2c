@@ -1,7 +1,7 @@
 /*
  *
  * $Log$
- * Revision 3.5  2001/03/29 01:37:57  dkr
+ * Revision 3.6  2001/04/18 10:07:24  dkr
  * signature of InlineSingleApplication() modified
  *
  * Revision 3.4  2001/03/27 13:47:38  dkr
@@ -323,7 +323,7 @@ CreateFold (node *assignn, node *index)
      * compilation process.
      */
 
-    assigns = InlineSingleApplication (ASSIGN_INSTR (assigns), fundef, 0);
+    assigns = InlineSingleApplication (ASSIGN_INSTR (assigns), fundef);
 
     /*
      * Now, we prepand it to assignn:

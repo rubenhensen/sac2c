@@ -1,5 +1,9 @@
 /*
+ *
  * $Log$
+ * Revision 1.5  2001/04/18 10:06:17  dkr
+ * signature of InlineSingleApplication() modified
+ *
  * Revision 1.4  2001/04/02 11:08:20  nmw
  * handling for multiple used special functions added
  *
@@ -11,7 +15,6 @@
  *
  * Revision 1.1  2001/03/20 16:16:54  nmw
  * Initial revision
- *
  *
  */
 
@@ -464,8 +467,7 @@ SSACFlet (node *arg_node, node *arg_info)
                 /* inline special function */
                 INFO_SSACF_POSTASSIGN (arg_info)
                   = AppendAssign (InlineSingleApplication (arg_node,
-                                                           INFO_SSACF_FUNDEF (arg_info),
-                                                           INL_COUNT),
+                                                           INFO_SSACF_FUNDEF (arg_info)),
                                   INFO_SSACF_POSTASSIGN (arg_info));
 
                 FUNDEF_STATUS (AP_FUNDEF (LET_EXPR (arg_node))) = ST_regular;
