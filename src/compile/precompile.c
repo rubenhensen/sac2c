@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1997/11/24 15:45:45  dkr
+ * removed a bug in PREClet(), PRECassign():
+ * - LET_EXPR, ASSIGN_INSTR now only freed once!
+ *
  * Revision 1.15  1997/11/22 15:41:31  dkr
  * problem with shared linknames fixed:
  * RenameFun() now copies the linkname to FUNDEF_NAME
@@ -710,13 +714,13 @@ PRECassign (node *arg_node, node *arg_info)
 
     instrs = Trav (ASSIGN_INSTR (arg_node), NULL);
 
+    ASSIGN_INSTR (arg_node) = instrs;
     if (instrs == NULL) {
         arg_node = FreeNode (arg_node);
         if (arg_node != NULL) {
             arg_node = Trav (arg_node, arg_info);
         }
     } else {
-        ASSIGN_INSTR (arg_node) = instrs;
         if (ASSIGN_NEXT (arg_node) != NULL) {
             ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
         }
@@ -759,10 +763,9 @@ PREClet (node *arg_node, node *arg_info)
 
     expr = Trav (LET_EXPR (arg_node), arg_info);
 
+    LET_EXPR (arg_node) = expr;
     if (expr == NULL) {
         arg_node = FreeTree (arg_node);
-    } else {
-        LET_EXPR (arg_node) = expr;
     }
 
     DBUG_RETURN (arg_node);
