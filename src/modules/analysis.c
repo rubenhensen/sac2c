@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1995/10/19 11:04:05  cg
+ * Revision 1.2  1995/10/20 09:29:02  cg
+ * first working revision
+ *
+ * Revision 1.1  1995/10/19  11:04:05  cg
  * Initial revision
  *
  *
@@ -18,7 +21,7 @@
 
 /*
  *
- *  functionname  : analysis
+ *  functionname  : Analysis
  *  arguments     : 1) syntax tree
  *  description   : starts traversal mechanism for function analysis
  *                  For each not imported function, it is analysed
@@ -36,9 +39,9 @@
  */
 
 node *
-analysis (node *syntaxtree)
+Analysis (node *syntaxtree)
 {
-    DBUG_ENTER ("analysis");
+    DBUG_ENTER ("Analysis");
 
     act_tab = analy_tab;
 
@@ -93,7 +96,7 @@ ANAfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("ANAfundef");
 
     if (FUNDEF_STATUS (arg_node) == ST_regular) {
-        arg_node = Trav (FUNDEF_BODY (arg_node), arg_node);
+        Trav (FUNDEF_BODY (arg_node), arg_node);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -129,8 +132,8 @@ ANAvardec (node *arg_node, node *arg_info)
         FUNDEF_NEEDTYPES (arg_info) = InsertNode (VARDEC_TYPEDEF (arg_node), arg_info);
     }
 
-    if (VARDEC_NEXT (vardec) != NULL) {
-        VARDEC_NEXT (vardec) = Trav (VARDEC_NEXT (vardec), arg_info);
+    if (VARDEC_NEXT (arg_node) != NULL) {
+        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
