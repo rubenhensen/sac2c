@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 2.7  1999/07/14 14:36:32  bs
+ * Bug fixed in ArrayST2ArrayInt.
+ *
  * Revision 2.6  1999/07/08 14:54:27  sbs
  * Array2BoolVec used instead of Array2IntVec
  *
@@ -647,21 +650,21 @@ ArrayST2ArrayInt (node *arrayn, int **iarray, int shape)
 
     DBUG_ENTER ("ArrayST2ArrayInt");
 
-    DBUG_ASSERT (!arrayn || N_array == NODE_TYPE (arrayn), ("Wrong arrayn"));
-
-    if (arrayn)
-        arrayn = ARRAY_AELEMS (arrayn);
     if (!*iarray)
         *iarray = Malloc (shape * sizeof (int));
 
-    for (i = 0; i < shape; i++)
-        if (arrayn) {
-            DBUG_ASSERT (N_num == NODE_TYPE (EXPRS_EXPR (arrayn)),
-                         ("not a constant array"));
-            (*iarray)[i] = NUM_VAL (EXPRS_EXPR (arrayn));
-            arrayn = EXPRS_NEXT (arrayn);
-        } else
+    if (arrayn == NULL) {
+        for (i = 0; i < shape; i++)
             (*iarray)[i] = 0;
+    } else if (NODE_TYPE (arrayn) == N_array) {
+        for (i = 0; i < shape; i++)
+            (*iarray)[i] = ((int *)ARRAY_CONSTVEC (arrayn))[i];
+    } else /* (NODE_TYPE(arrayn) == N_id) */ {
+        DBUG_ASSERT ((NODE_TYPE (arrayn) == N_id), ("Wrong arrayn"));
+
+        for (i = 0; i < shape; i++)
+            (*iarray)[i] = ((int *)ID_CONSTVEC (arrayn))[i];
+    }
 
     DBUG_VOID_RETURN;
 }
