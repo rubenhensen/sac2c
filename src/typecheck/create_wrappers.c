@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2002/09/06 17:29:44  sbs
+ * *** empty log message ***
+ *
  * Revision 1.8  2002/09/06 15:16:40  sbs
  * FUNDEF_RETURN now set properly?!
  *
@@ -359,6 +362,7 @@ CRTWRPfundef (node *arg_node, node *arg_info)
     FUNDEF_TYPE (arg_node) = CreateFuntype (arg_node);
     FUNDEF_TYPE (wrapper) = TYMakeOverloadedFunType (TYCopyType (FUNDEF_TYPE (arg_node)),
                                                      FUNDEF_TYPE (wrapper));
+
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
