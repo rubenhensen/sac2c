@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.110  2004/11/23 13:18:28  skt
+ * SacDevCampDK 2k4
+ *
  * Revision 3.109  2004/11/23 13:14:05  skt
  * SacDevCampDK 2k4
  *
@@ -151,13 +154,7 @@ extern int CountIds (node *ids_arg);
 
 extern node *TClookupIds (const char *name, node *ids_chain);
 
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  NUMS :
- ***/
-
-extern int TCcountNums (nums *numsp);
+extern int TCcountNums (node *numsp);
 
 /*--------------------------------------------------------------------------*/
 
@@ -959,7 +956,7 @@ extern node *TCmakeAssignIcm4 (char *name, node *arg1, node *arg2, node *arg3, n
 extern node *TCmakeAssignIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
                                node *arg5, node *next);
 extern node *TCmakeAssignIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
-                               node *arg5, node *arg6 node *next);
+                               node *arg5, node *arg6, node *next);
 extern node *TCmakeAssignIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
                                node *arg5, node *arg6, node *arg7, node *next);
 
@@ -1637,7 +1634,7 @@ extern node *TCcreateScalarWith (int dim, shpseg *shape, simpletype btype, node 
 extern node *TCcreateZero (int dim, shpseg *shape, simpletype btype, bool unroll,
                            node *fundef);
 
-extern node *TCcreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_wl,
+extern node *TCcreateSel (node *sel_vec, node *sel_ids, node *sel_array, bool no_wl,
                           node *fundef);
 
 /*--------------------------------------------------------------------------*/
@@ -1663,21 +1660,21 @@ extern node *TCcreateSel (ids *sel_vec, ids *sel_ids, node *sel_array, bool no_w
  ***  N_Ncode :
  ***/
 
-#define NCODE_CBLOCK_INSTR(n) (BLOCK_INSTR (NCODE_CBLOCK (n)))
-#define NCODE_CEXPR(n) EXPRS_EXPR (NCODE_CEXPRS (n))
+#define CODE_CBLOCK_INSTR(n) (BLOCK_INSTR (CODE_CBLOCK (n)))
+#define CODE_CEXPR(n) EXPRS_EXPR (CODE_CEXPRS (n))
 
-#define NCODE_WLAA_ACCESS(n) (NCODE_WLAA_INFO (n)->access)
-#define NCODE_WLAA_ACCESSCNT(n) (NCODE_WLAA_INFO (n)->accesscnt)
-#define NCODE_WLAA_FEATURE(n) (NCODE_WLAA_INFO (n)->feature)
-#define NCODE_WLAA_INDEXVAR(n) (NCODE_WLAA_INFO (n)->indexvar)
-#define NCODE_WLAA_WLARRAY(n) (NCODE_WLAA_INFO (n)->wlarray)
+#define CODE_WLAA_ACCESS(n) (CODE_WLAA_INFO (n)->access)
+#define CODE_WLAA_ACCESSCNT(n) (CODE_WLAA_INFO (n)->accesscnt)
+#define CODE_WLAA_FEATURE(n) (CODE_WLAA_INFO (n)->feature)
+#define CODE_WLAA_INDEXVAR(n) (CODE_WLAA_INFO (n)->indexvar)
+#define CODE_WLAA_WLARRAY(n) (CODE_WLAA_INFO (n)->wlarray)
 
-#define NCODE_WLAA_ARRAYSHP(n) VARDEC_SHPSEG (NCODE_WLAA_WLARRAY (n))
-#define NCODE_WLAA_INDEXDIM(n) VARDEC_SHAPE (NCODE_WLAA_INDEXVAR (n), 0)
-#define NCODE_WLAA_ARRAYDIM(n) VARDEC_DIM (NCODE_WLAA_WLARRAY (n))
+#define CODE_WLAA_ARRAYSHP(n) VARDEC_SHPSEG (CODE_WLAA_WLARRAY (n))
+#define CODE_WLAA_INDEXDIM(n) VARDEC_SHAPE (CODE_WLAA_INDEXVAR (n), 0)
+#define CODE_WLAA_ARRAYDIM(n) VARDEC_DIM (CODE_WLAA_WLARRAY (n))
 
-#define NCODE_INC_USED(n) NCODE_USED (n) = NCODE_USED (n) + 1
-#define NCODE_DEC_USED(n)                                                                \
+#define CODE_INC_USED(n) NCODE_USED (n) = NCODE_USED (n) + 1
+#define CODE_DEC_USED(n)                                                                 \
     if (NCODE_USED (n) == 0) {                                                           \
         DBUG_ASSERT (0, "NCODE_USED dropped below 0");                                   \
     } else {                                                                             \
