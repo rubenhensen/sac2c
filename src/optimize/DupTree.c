@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.82  1998/05/06 15:11:23  srs
+ * INFO_DUP_CON in now initialized correctly.
+ * If arg_info is craeted here, it is set free afterwards.
+ *
  * Revision 1.81  1998/05/06 13:18:00  dkr
  * Changed DupFundef
  *
@@ -286,12 +290,12 @@
 #define DUPTRAV(node) (node != NULL) ? Trav (node, arg_info) : NULL
 
 /*
- * DupNode: INFO_DUPCONT(arg_info) contains the root of syntaxtree.
+ * DupNode: INFO_DUP_CONT(arg_info) contains the root of syntaxtree.
  *  -> traverses son 'node' if and only if its parent is not the root.
- * DupTree: INFO_DUPCONT(arg_info) is NULL.
+ * DupTree: INFO_DUP_CONT(arg_info) is NULL.
  *  -> traverses son 'node'.
  */
-#define DUPCONT(node) (INFO_DUPCONT (arg_info) != arg_node) ? DUPTRAV (node) : NULL
+#define DUPCONT(node) (INFO_DUP_CONT (arg_info) != arg_node) ? DUPTRAV (node) : NULL
 
 /******************************************************************************/
 
@@ -299,6 +303,11 @@
  *  DupTree duplicates the whole sub tree behind the given pointer.
  *
  *  DupNode duplicates only the given node without next node.
+ *
+ * Usage of arg_info is not very nice:
+ * If the given arg_info is NULL, everything is copies in DUP_NORMAL mode.
+ * Else the mode is taken from arg_info->flag (see DUPTYPE macro).
+ *
  */
 
 node *
@@ -306,6 +315,7 @@ DupTree (node *arg_node, node *arg_info)
 {
     funptr *tmp_tab;
     node *new_node = NULL;
+    int new_arg_info = 0;
 
     DBUG_ENTER ("DupTree");
 
@@ -314,16 +324,20 @@ DupTree (node *arg_node, node *arg_info)
         act_tab = dup_tab;
 
         if (NULL == arg_info) {
-            arg_info = MakeNode (N_info);
-            /* dkr: where can we free this N_info node?? */
+            arg_info = MakeInfo ();
+            DUPTYPE = DUP_NORMAL;
+            new_arg_info = 1;
         }
 
         LEVEL = 0;
         /*
          * we want to duplicate all sons
          */
-        INFO_DUPCONT (arg_info) = NULL;
+        INFO_DUP_CONT (arg_info) = NULL;
         new_node = Trav (arg_node, arg_info);
+
+        if (new_arg_info)
+            arg_info = FreeNode (arg_info);
 
         act_tab = tmp_tab;
     }
@@ -351,7 +365,7 @@ DupNode (node *arg_node)
          * duplicatation of sons of root 'arg_node' is controlled by
          *  DUPTRAV, DUPCONT
          */
-        INFO_DUPCONT (arg_info) = arg_node;
+        INFO_DUP_CONT (arg_info) = arg_node;
         new_node = Trav (arg_node, arg_info);
         FREE (arg_info);
 
