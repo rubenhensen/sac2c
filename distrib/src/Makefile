@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.2  1999/05/07 09:44:00  sbs
+# version set to 0.9
+#
 # Revision 2.1  1999/02/23 12:44:24  sacbase
 # new release made
 #
@@ -23,7 +26,7 @@
 #  Settings for version control
 #
 
-VERSION    =  0_8
+VERSION    =  0_9
 
 
 #
