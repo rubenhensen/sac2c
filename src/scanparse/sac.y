@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.8  1994/11/10 17:31:54  sbs
+ * Revision 1.9  1994/11/11 13:48:31  hw
+ * added prefix & postfix increment-& decrementation
+ * added new nodes: N_pre N_post N_inc N_dec
+ *
+ * Revision 1.8  1994/11/10  17:31:54  sbs
  * error in modarray fixed
  *
  * Revision 1.7  1994/11/10  17:30:44  sbs
@@ -61,8 +65,7 @@ node *syntax_tree;
              exprblock, assign, assigns, assignblock, letassign, retassign,
              selassign, forassign, retassignblock, let, 
              expr, exprs, monop, binop, triop, 
-             conexpr, generator;
-
+             conexpr, generator, unaryop;
 
 %left OR
 %left AND
@@ -332,8 +335,30 @@ letassign: ids let expr
                                     $$->info.ids->id));
 
              }
-         | ID monpostop {$$=NULL;}
+         | ID unaryop 
+            { $$=MakeNode(N_post);
+              $$->info.id=$1;
+              $$->node[0]=$2;
+              $$->nnode=1;
+              
+              DBUG_PRINT("GENTREE",
+                         ("%s "P_FORMAT": %s "P_FORMAT,
+                          mdb_nodetype[$$->nodetype], $$, $$->info.id,
+                          mdb_nodetype[$$->node[0]->nodetype] ));
+           }
+         | unaryop ID
+            {  $$=MakeNode(N_pre);
+               $$->info.id=$2;    
+               $$->node[0]=$1;
+               $$->nnode=1;
+
+               DBUG_PRINT("GENTREE",
+                          ("%s "P_FORMAT": %s "P_FORMAT,
+                           mdb_nodetype[$$->nodetype], $$, $$->info.id,
+                           mdb_nodetype[$$->node[0]->nodetype] )); 
+            }
          ;
+
 
 let: LET { $$=MakeNode(N_let); }
      | ADDON { $$=MakeNode(N_addon); 
@@ -661,8 +686,14 @@ monop: DIM
           }
        ;
 
-monpostop: INC
-           | DEC
+unaryop: INC
+          { $$=MakeNode(N_inc);
+          }
+
+   
+       | DEC
+          { $$=MakeNode(N_dec);
+          }
            ;
 
 binop : PSI
