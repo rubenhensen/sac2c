@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.10  2005/01/19 16:44:44  mwe
+ * some new lines of code
+ *
  * Revision 1.9  2005/01/18 16:30:24  mwe
  * ongoing implementation...
  *
@@ -33,9 +36,9 @@
  *   ast.xml, DupTree, print: implement FUNGROUP (DONE)
  *   DeadFunctionRemoval: remove function from FUNGROUP_FUNLIST and decrease REFCOUNTER
  * (DONE) DupTree: check if all necessary attributes of FUNDEF are copied (DONE) ast.xml:
- * add missing arguments to FUNDEF (DONE) implement funcond traversal implement support
- * for type_error implement creation of fungroups (DONE, but maybe find better place for
- * code) comment everything insert DBUG_PRINT's
+ * add missing arguments to FUNDEF (DONE) implement funcond traversal (DONE) implement
+ * support for type_error (DONE) implement creation of fungroups (DONE, but maybe find
+ * better place for code) comment everything insert DBUG_PRINT's
  */
 
 /**************************************************************************
@@ -79,6 +82,9 @@ struct INFO {
     ntype *type;
     ntype *wlexpr;
     node *bestfit;
+    bool then_terr;
+    bool else_terr;
+    bool type_error;
 };
 
 #define INFO_TUP_FUNDEF(n) (n->fundef)
@@ -89,6 +95,9 @@ struct INFO {
 #define INFO_TUP_TYPECOUNTER(n) (n->counter)
 #define INFO_TUP_WLEXPR(n) (n->wlexpr)
 #define INFO_TUP_BESTFITTINGFUN(n) (n->bestfit)
+#define INFO_TUP_THENTYPEERROR(n) (n->then_terr)
+#define INFO_TUP_ELSETYPEERROR(n) (n->else_terr)
+#define INFO_TUP_TYPEERROR(n) (n->type_error)
 
 static info *
 MakeInfo ()
@@ -106,7 +115,9 @@ MakeInfo ()
     INFO_TUP_TYPECOUNTER (result) = 0;
     INFO_TUP_WLEXPR (result) = NULL;
     INFO_TUP_BESTFITTINGFUN (result) = NULL;
-
+    INFO_TUP_THENTYPEERROR (result) = FALSE;
+    INFO_TUP_ELSETYPEERROR (result) = FALSE;
+    INFO_TUP_TYPEERROR (result) = FALSE;
     DBUG_RETURN (result);
 }
 
@@ -251,6 +262,18 @@ AssignTypeToExpr (node *expr, ntype *type)
     DBUG_RETURN (expr);
 }
 
+static bool
+IsTypeErrorFun (node *arg_node)
+{
+    bool result = FALSE;
+    DBUG_ENTER ("IsTypeErrorFun");
+
+    if (ILIBstringCompare ("Type_Error", FUNDEF_NAME (arg_node))) {
+        result = TRUE;
+    }
+
+    DBUG_RETURN (result);
+}
 /**********************************************************************
  *
  * function:
@@ -1428,7 +1451,7 @@ TUPcode (node *arg_node, info *arg_info)
     }
 
     /*
-     * TODO: check if WLEXPRS is correct and used later
+     * WLEXPRS needed later for computation of final type of withloop
      */
     INFO_TUP_WLEXPR (arg_info) = NTCnewTypeCheck_Expr (CODE_CEXPRS (arg_node));
 
@@ -1448,75 +1471,81 @@ TUPap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TUPap");
 
-    if (INFO_TUP_CHECKLOOPFUN (arg_info)) {
+    if (!IsTypeErrorFun (arg_node)) {
 
-        /*
-         * TODO: put in a separate function
-         */
-        /*
-         * at the moment we are checking, if the recursive call of a loop function
-         * will work with specialized signature
-         */
+        if (INFO_TUP_CHECKLOOPFUN (arg_info)) {
 
-        node *signature, *args;
+            /*
+             * TODO: put in a separate function
+             */
+            /*
+             * at the moment we are checking, if the recursive call of a loop function
+             * will work with specialized signature
+             */
 
-        signature = FUNDEF_ARGS (AP_FUNDEF (arg_node));
-        args = AP_ARGS (arg_node);
+            node *signature, *args;
 
-        while ((INFO_TUP_CORRECTFUNCTION (arg_info)) && (signature != NULL)) {
+            signature = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+            args = AP_ARGS (arg_node);
 
-            switch (TYcmpTypes (AVIS_TYPE (ARG_AVIS (signature)),
-                                AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))))) {
+            while ((INFO_TUP_CORRECTFUNCTION (arg_info)) && (signature != NULL)) {
 
-            case TY_eq: /* same types, that's ok */
-                break;
-            case TY_gt: /* argument is more special than signature, that's ok */
-                break;
-            case TY_lt: /* signature is more special than argument, that's a problem */
-                INFO_TUP_CORRECTFUNCTION (arg_info) = FALSE;
-                break;
-            case TY_hcs:
-            case TY_dis: /* both types are unrelated, should not be possible */
-                DBUG_ASSERT ((FALSE), "former type is unrelated to new type! ");
-                break;
+                switch (TYcmpTypes (AVIS_TYPE (ARG_AVIS (signature)),
+                                    AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))))) {
 
-            default: /* no other cases exist */
-                DBUG_ASSERT ((FALSE), "New element in enumeration added?");
+                case TY_eq: /* same types, that's ok */
+                    break;
+                case TY_gt: /* argument is more special than signature, that's ok */
+                    break;
+                case TY_lt: /* signature is more special than argument, that's a problem
+                             */
+                    INFO_TUP_CORRECTFUNCTION (arg_info) = FALSE;
+                    break;
+                case TY_hcs:
+                case TY_dis: /* both types are unrelated, should not be possible */
+                    DBUG_ASSERT ((FALSE), "former type is unrelated to new type! ");
+                    break;
+
+                default: /* no other cases exist */
+                    DBUG_ASSERT ((FALSE), "New element in enumeration added?");
+                }
+                signature = ARG_NEXT (signature);
+                args = EXPRS_NEXT (args);
             }
-            signature = ARG_NEXT (signature);
-            args = EXPRS_NEXT (args);
+        } else {
+
+            node *result = NULL;
+            /*
+             * first of all, try to find an already existing
+             * specialized function
+             */
+            result = TryToFindSpecializedFunction (AP_FUNDEF (arg_node),
+                                                   AP_ARGS (arg_node), arg_info);
+
+            if (result == AP_FUNDEF (arg_node)) {
+                /*
+                 * no better fitting specialized functions found
+                 * try to specialize current function
+                 */
+                result = TryToSpecializeFunction (AP_FUNDEF (arg_node),
+                                                  AP_ARGS (arg_node), arg_info);
+            }
+
+            if (result != AP_FUNDEF (arg_node)) {
+                /*
+                 * more special function exists
+                 * use more special function
+                 */
+                AP_FUNDEF (arg_node) = result;
+                /*
+                 * TODO: add counter
+                 */
+            }
         }
     } else {
 
-        node *result = NULL;
-        /*
-         * first of all, try to find an already existing
-         * specialized function
-         */
-        result = TryToFindSpecializedFunction (AP_FUNDEF (arg_node), AP_ARGS (arg_node),
-                                               arg_info);
-
-        if (result == AP_FUNDEF (arg_node)) {
-            /*
-             * no better fitting specialized functions found
-             * try to specialize current function
-             */
-            result = TryToSpecializeFunction (AP_FUNDEF (arg_node), AP_ARGS (arg_node),
-                                              arg_info);
-        }
-
-        if (result != AP_FUNDEF (arg_node)) {
-            /*
-             * more special function exists
-             * use more special function
-             */
-            AP_FUNDEF (arg_node) = result;
-            /*
-             * TODO: add counter
-             */
-        }
+        INFO_TUP_TYPEERROR (arg_info) = TRUE;
     }
-
     if (INFO_TUP_CORRECTFUNCTION (arg_info)) {
 
         INFO_TUP_TYPE (arg_info)
@@ -1833,11 +1862,39 @@ TUPprf (node *arg_node, info *arg_info)
 node *
 TUPfuncond (node *arg_node, info *arg_info)
 {
+    ntype *then_type, *else_type, *tmp;
     DBUG_ENTER ("TUPfuncond");
+
+    then_type = TYcopyType (AVIS_TYPE (ID_AVIS (FUNCOND_THEN (arg_node))));
+    else_type = TYcopyType (AVIS_TYPE (ID_AVIS (FUNCOND_ELSE (arg_node))));
+
+    tmp = GetLowestType (then_type, else_type);
+    INFO_TUP_TYPE (arg_info) = TYmakeProductType (1, tmp);
+    tmp = TYfreeType (tmp);
 
     DBUG_RETURN (arg_node);
 }
 
+node *
+TUPcond (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("TUPcond");
+
+    INFO_TUP_THENTYPEERROR (arg_info) = FALSE;
+    INFO_TUP_ELSETYPEERROR (arg_info) = FALSE;
+    INFO_TUP_TYPEERROR (arg_info) = FALSE;
+
+    COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
+
+    INFO_TUP_THENTYPEERROR (arg_info) = INFO_TUP_TYPEERROR (arg_info);
+    INFO_TUP_TYPEERROR (arg_info) = FALSE;
+
+    COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
+
+    INFO_TUP_ELSETYPEERROR (arg_info) = INFO_TUP_TYPEERROR (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
 /*********************************************************************************
  *
  * function:
