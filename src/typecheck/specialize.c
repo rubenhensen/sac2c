@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/09/30 15:12:35  sbs
+ * eliminated FunTypes from ALL but wrapper functions
+ * (memory concerns!)
+ * Now, the function signatures of individual instances are
+ * stored in the AVIS_TYPE and FUNDEF_RET_TYPE only!!!!!
+ *
  * Revision 1.10  2004/03/05 12:09:20  sbs
  * UpdateVarSignature added. Loops are the only functions where the arguments
  * have to be type vars!!!
@@ -270,7 +276,9 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
 
     /* do actually specialize the copy !! */
     UpdateFixSignature (res, args);
-    FUNDEF_TYPE (res) = CreateFuntype (res);
+
+    /* create the return type */
+    FUNDEF_RET_TYPE (res) = CreateFunRettype (FUNDEF_TYPES (res));
 
     /*
      * Finally, we make the result type variable(s) (a) subtype(s) of the
@@ -284,7 +292,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
 
     /* insert the new type signature into the wrapper */
     FUNDEF_TYPE (wrapper)
-      = TYMakeOverloadedFunType (TYCopyType (FUNDEF_TYPE (res)), FUNDEF_TYPE (wrapper));
+      = TYMakeOverloadedFunType (CreateFuntype (res), FUNDEF_TYPE (wrapper));
 
     FUNDEF_SPECS (fundef)++;
 
@@ -406,10 +414,8 @@ SPECHandleLacFun (node *fundef, node *assign, ntype *args)
     } else {
         UpdateVarSignature (fun, args);
     }
-    if (FUNDEF_TYPE (fun) != NULL) {
-        FUNDEF_TYPE (fun) = TYFreeType (FUNDEF_TYPE (fun));
-    }
-    FUNDEF_TYPE (fun) = CreateFuntype (fun);
+
+    FUNDEF_RET_TYPE (fun) = CreateFunRettype (FUNDEF_TYPES (fun));
 
     DBUG_RETURN (fun);
 }

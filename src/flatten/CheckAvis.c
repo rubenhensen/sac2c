@@ -1,5 +1,11 @@
 /*
  * $Log$
+ * Revision 1.6  2004/09/30 15:14:39  sbs
+ * eliminated FunTypes from ALL but wrapper functions
+ * (memory concerns!)
+ * Now, the function signatures of individual instances are
+ * stored in the AVIS_TYPE and FUNDEF_RET_TYPE only!!!!!
+ *
  * Revision 1.5  2004/09/29 13:47:32  sah
  * extended the ntype generation to
  * function and return types
@@ -405,32 +411,6 @@ CAVfundef (node *arg_node, info *arg_info)
                                 " converted to new type",
                                 FUNDEF_NAME (arg_node)));
         }
-    }
-
-    /* finally, try to build a function type */
-    if ((FUNDEF_RET_TYPE (arg_node) != NULL) && (FUNDEF_TYPE (arg_node) == NULL)) {
-        ntype *result;
-
-        DBUG_PRINT ("CAV", ("trying to construct new function type for"
-                            " fundef `%s'",
-                            FUNDEF_NAME (arg_node)));
-
-        result = TYArgs2FunType (FUNDEF_ARGS (arg_node),
-                                 TYCopyType (FUNDEF_RET_TYPE (arg_node)), arg_node);
-
-#ifndef DBUG_OFF
-        if (result != NULL) {
-            DBUG_PRINT ("CAV", ("successfully built new function type for"
-                                " fundef `%s'",
-                                FUNDEF_NAME (arg_node)));
-        } else {
-            DBUG_PRINT ("CAV", ("failed to built new function type for"
-                                " fundef `%s'",
-                                FUNDEF_NAME (arg_node)));
-        }
-#endif
-
-        FUNDEF_TYPE (arg_node) = result;
     }
 
     DBUG_RETURN (arg_node);

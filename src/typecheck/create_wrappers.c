@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/09/30 15:12:35  sbs
+ * eliminated FunTypes from ALL but wrapper functions
+ * (memory concerns!)
+ * Now, the function signatures of individual instances are
+ * stored in the AVIS_TYPE and FUNDEF_RET_TYPE only!!!!!
+ *
  * Revision 1.18  2004/07/30 17:29:21  sbs
  * switch to new INFO structure
  * PHASE I
@@ -349,19 +355,14 @@ FuntypeFromArgs (ntype *res, node *args, node *fundef)
 }
 
 ntype *
-CreateFuntype (node *fundef)
+CreateFunRettype (types *old_ret)
 {
     int num_rets;
-    types *old_ret;
     ntype *res, *maxtype;
     int i;
 
-    DBUG_ENTER ("CreateFuntype");
+    DBUG_ENTER ("CreateFunRettype");
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "CreateFuntype applied to non-fundef node!");
-
-    old_ret = FUNDEF_TYPES (fundef);
     num_rets = (HasDotTypes (old_ret) ? CountTypes (old_ret) - 1 : CountTypes (old_ret));
 
     res = TYMakeEmptyProductType (num_rets);
@@ -375,9 +376,23 @@ CreateFuntype (node *fundef)
         old_ret = TYPES_NEXT (old_ret);
     }
 
-    FUNDEF_RET_TYPE (fundef) = TYCopyType (res);
+    DBUG_RETURN (res);
+}
 
-    res = FuntypeFromArgs (res, FUNDEF_ARGS (fundef), fundef);
+ntype *
+CreateFuntype (node *fundef)
+{
+    ntype *res;
+
+    DBUG_ENTER ("CreateFuntype");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "CreateFuntype applied to non-fundef node!");
+    DBUG_ASSERT ((FUNDEF_RET_TYPE (fundef) != NULL),
+                 "CreateFuntype called without FUNDEF_RET_TYPE!");
+
+    res = FuntypeFromArgs (TYCopyType (FUNDEF_RET_TYPE (fundef)), FUNDEF_ARGS (fundef),
+                           fundef);
 
     DBUG_RETURN (res);
 }
@@ -550,9 +565,9 @@ CRTWRPfundef (node *arg_node, info *arg_info)
         }
     }
 
-    FUNDEF_TYPE (arg_node) = CreateFuntype (arg_node);
-    FUNDEF_TYPE (wrapper) = TYMakeOverloadedFunType (TYCopyType (FUNDEF_TYPE (arg_node)),
-                                                     FUNDEF_TYPE (wrapper));
+    FUNDEF_RET_TYPE (arg_node) = CreateFunRettype (FUNDEF_TYPES (arg_node));
+    FUNDEF_TYPE (wrapper)
+      = TYMakeOverloadedFunType (CreateFuntype (arg_node), FUNDEF_TYPE (wrapper));
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
