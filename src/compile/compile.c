@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.59  1995/07/19 12:19:16  hw
+ * Revision 1.60  1995/07/24 09:16:02  hw
+ * changed test for SAC-function "main" in function Compile
+ *
+ * Revision 1.59  1995/07/19  12:19:16  hw
  * changed RenameFunName( the name of a userdefined "external" primitive
  *  function will be set to the one specified in the module or
  *  class declartion ( it is stored in node[5] of N_fundef))
@@ -868,7 +871,7 @@ Compile (node *arg_node)
         tmp_fundef = tmp_fundef->node[1];
     /* now add "extern" declarations */
     while (NULL != tmp_fundef)
-        if (NULL != tmp_fundef->node[1]) {
+        if (0 != strcmp (tmp_fundef->ID, "main")) {
             /* this isn't the main function */
             new_fundef = MakeNode (N_fundef);
             new_fundef->node[3] = tmp_fundef->node[3]; /* share N_icm ND_FUN_DEC */
