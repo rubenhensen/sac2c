@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  1998/05/13 13:46:35  srs
+ * added WL unrolling
+ *
  * Revision 1.12  1998/02/26 12:35:05  srs
  * traversal through new WLs possible
  *
@@ -60,6 +63,7 @@
 #include "ConstantFolding.h"
 #include "DupTree.h"
 #include "Unroll.h"
+#include "WLUnroll.h"
 
 #define FALSE 0
 #define TRUE 1
@@ -484,10 +488,10 @@ DoUnroll (node *arg_node, node *arg_info, linfo *loop_info)
     node *tmp, *unroll = NULL;
 
     DBUG_ENTER ("DoUnroll");
-    if (opt_unr && (loop_info->loop_num <= unrnum)) {
+    if (opt_lunr && (loop_info->loop_num <= unrnum)) {
         DBUG_PRINT ("UNR", ("Unrolling %d times %s in line %d", loop_info->loop_num,
                             mdb_nodetype[arg_node->nodetype], arg_node->lineno));
-        unr_expr++;
+        lunr_expr++;
         switch (loop_info->loop_num) {
         case 0:
             MinusMask (arg_info->mask[0], arg_node->node[1]->mask[0], VARNO);
@@ -550,32 +554,34 @@ UNRdo (node *arg_node, node *arg_info)
     DBUG_PRINT ("UNR", ("Trav do loop in line %d", NODE_LINE (arg_node)));
     DO_INSTR (arg_node) = OPTTrav (DO_INSTR (arg_node), arg_info, arg_node);
 
-    cond_node = DO_COND (arg_node);
+    if (opt_lunr) {
+        cond_node = DO_COND (arg_node);
 
-    if (N_id == NODE_TYPE (cond_node))
-        MRD_GETLAST (ID_DEF (cond_node), ID_VARNO (cond_node), INFO_VARNO);
+        if (N_id == NODE_TYPE (cond_node))
+            MRD_GETLAST (ID_DEF (cond_node), ID_VARNO (cond_node), INFO_VARNO);
 
-    loop_info = (linfo *)Malloc (sizeof (linfo));
-    loop_info->loop_num = UNDEF;
-    loop_info->ltype = N_do;
+        loop_info = (linfo *)Malloc (sizeof (linfo));
+        loop_info->loop_num = UNDEF;
+        loop_info->ltype = N_do;
 
-    /* Calculate numbers of iterations */
-    switch (NODE_TYPE (cond_node)) {
-    case N_bool:
-        if (FALSE == BOOL_VAL (cond_node)) {
-            loop_info->loop_num = 1;
+        /* Calculate numbers of iterations */
+        switch (NODE_TYPE (cond_node)) {
+        case N_bool:
+            if (FALSE == BOOL_VAL (cond_node)) {
+                loop_info->loop_num = 1;
+            }
+            break;
+        case N_id:
+            loop_info = AnalyseLoop (loop_info, cond_node, LEVEL);
+            break;
+        default:
+            break;
         }
-        break;
-    case N_id:
-        loop_info = AnalyseLoop (loop_info, cond_node, LEVEL);
-        break;
-    default:
-        break;
-    }
 
-    if (UNDEF != loop_info->loop_num) {
-        arg_node = DoUnroll (arg_node, arg_info, loop_info);
-        FREE (loop_info);
+        if (UNDEF != loop_info->loop_num) {
+            arg_node = DoUnroll (arg_node, arg_info, loop_info);
+            FREE (loop_info);
+        }
     }
 
     LEVEL--;
@@ -714,6 +720,31 @@ UNRNwith (node *arg_node, node *arg_info)
     while (tmpn) {
         tmpn = OPTTrav (tmpn, arg_info, arg_node);
         tmpn = NCODE_NEXT (tmpn);
+    }
+
+    /* can this WL be unrolled? */
+    switch (NWITH_TYPE (arg_node)) {
+    case WO_modarray:
+        if (CheckUnrollModarray (arg_node)) {
+            tmpn = DoUnrollModarray (arg_node); /* returns list of assignments */
+            FreeTree (arg_node);
+            arg_node = tmpn;
+        }
+        break;
+    case WO_genarray:
+        if (CheckUnrollGenarray (arg_node)) {
+            tmpn = DoUnrollGenarray (arg_node); /* returns list of assignments */
+            FreeTree (arg_node);
+            arg_node = tmpn;
+        }
+        break;
+    default:
+        if (CheckUnrollFold (arg_node)) {
+            tmpn = DoUnrollFold (arg_node); /* returns list of assignments */
+            FreeTree (arg_node);
+            arg_node = tmpn;
+        }
+        break;
     }
 
     LEVEL--;
