@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/07/15 21:45:37  skt
+ * some debug-information added (and fixed a compiler warning)
+ *
  * Revision 1.1  2004/07/06 12:31:30  skt
  * Initial revision
  *
@@ -59,7 +62,7 @@ PropagateExecutionmode (node *arg_node, node *arg_info)
 
     /* push info ... */
     old_tab = act_tab;
-    /*act_tab = pem_tab;*/
+    act_tab = pem_tab;
 
     /* some initialisation */
     INFO_PEM_FIRSTTRAV (arg_info) = 1;
@@ -115,6 +118,13 @@ PEMfundef (node *arg_node, node *arg_info)
         DBUG_PRINT ("PEM", ("trav from function-body"));
     }
 
+#if PEM_DEBUG
+    fprintf (stdout, "current function:\n");
+    PrintNode (arg_info);
+    fprintf (stdout, "Executionmode changed from %s into %s\n",
+             DecodeExecmode (old_execmode),
+             DecodeExecmode (INFO_PEM_FUNEXECMODE (arg_info)));
+#endif
     /* set any changing if appeared */
     if (old_execmode != INFO_PEM_FUNEXECMODE (arg_info)) {
         FUNDEF_EXECMODE (arg_node) = INFO_PEM_FUNEXECMODE (arg_info);
@@ -210,6 +220,8 @@ UpdateFunexecmode (int fun_execmode, int assign_execmode)
 {
     int result;
     DBUG_ENTER ("UpdateFunexecmode");
+
+    result = MUTH_EXCLUSIVE;
 
     switch (assign_execmode) {
     case MUTH_EXCLUSIVE:
