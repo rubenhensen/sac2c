@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2002/08/15 11:58:23  dkr
+ * EmptyParts2Expr(): no cc warning anymore
+ *
  * Revision 3.61  2002/08/09 12:44:46  dkr
  * minor changes done
  *
@@ -2843,7 +2846,7 @@ Parts2Strides (node *parts, int dims, int *shape)
 static node *
 EmptyParts2Expr (node *wl)
 {
-    node *new_node;
+    node *new_node = NULL;
 
     DBUG_ENTER ("EmptyParts2Expr");
 
@@ -2853,7 +2856,6 @@ EmptyParts2Expr (node *wl)
          * empty genarray with-loops are not allowed!!!
          */
         ERROR (line, ("genarray-with-loop with empty index vector set found"));
-        new_node = NULL;
         break;
 
     case WO_modarray:
