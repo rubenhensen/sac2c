@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2002/09/04 12:59:46  sbs
+ * SpecializationOracle changed so that part deriveables are not specialized anymore 8-((
+ *
  * Revision 1.3  2002/09/03 15:02:53  sbs
  * bug in SPECHandleLacFun eliminated
  *
@@ -42,7 +45,8 @@ static node *specialized_fundefs = NULL;
 /******************************************************************************
  *
  * function:
- *    ntype * SpecializationOracle( node *wrapper, node *fundef, ntype *args)
+ *    ntype * SpecializationOracle( node *wrapper, node *fundef, ntype *args, DFT_res *
+ *dft)
  *
  * description:
  *    for a given argument type and a given fundef the oracle computes a new
@@ -52,12 +56,36 @@ static node *specialized_fundefs = NULL;
  ******************************************************************************/
 
 static ntype *
-SpecializationOracle (node *wrapper, node *fundef, ntype *args)
+SpecializationOracle (node *wrapper, node *fundef, ntype *args, DFT_res *dft)
 {
-    ntype *res;
+    ntype *type, *res;
+    node *arg;
+    int i;
 
     DBUG_ENTER ("SpecializationOracle");
-    res = NULL;
+    if ((dft->num_deriveable_partials > 1)
+        || ((dft->num_deriveable_partials == 1) && (dft->deriveable != NULL))) {
+
+        arg = FUNDEF_ARGS (fundef);
+        res = TYMakeEmptyProductType (CountArgs (arg));
+        i = 0;
+        while (arg != NULL) {
+            type = AVIS_TYPE (ARG_AVIS (arg));
+            if (type == NULL) {
+                /* not yet converted ! */
+                type = TYOldType2Type (ARG_TYPE (arg));
+            } else {
+                type = TYCopyType (type);
+            }
+            res = TYSetProductMember (res, i, type);
+            arg = ARG_NEXT (arg);
+            i++;
+        }
+
+    } else {
+        res = NULL;
+    }
+
     DBUG_RETURN (res);
 }
 
@@ -197,7 +225,7 @@ SPECHandleDownProjections (DFT_res *dft, node *wrapper, ntype *args)
     DBUG_ENTER ("HandleDownProjections");
 
     while (dft->deriveable != NULL) {
-        new_args = SpecializationOracle (wrapper, dft->deriveable, args);
+        new_args = SpecializationOracle (wrapper, dft->deriveable, args, dft);
         if (new_args == NULL) {
             new_fundef = DoSpecialize (wrapper, dft->deriveable, args);
             for (i = 0; i < dft->num_deriveable_partials; i++) {
@@ -210,7 +238,7 @@ SPECHandleDownProjections (DFT_res *dft, node *wrapper, ntype *args)
     }
 
     while (dft->num_deriveable_partials > 0) {
-        new_args = SpecializationOracle (wrapper, dft->deriveable_partials[0], args);
+        new_args = SpecializationOracle (wrapper, dft->deriveable_partials[0], args, dft);
         if (new_args == NULL) {
             for (i = 0; i < dft->num_deriveable_partials; i++) {
                 new_fundef = DoSpecialize (wrapper, dft->deriveable_partials[i], args);
