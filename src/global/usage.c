@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.41  2003/03/13 15:49:19  dkr
+ * -minarrayrep added
+ *
  * Revision 3.40  2003/03/12 23:32:57  dkr
  * some break specifiers for -b15 removed
  *
@@ -574,6 +577,16 @@ usage ()
             "                    Option applies to \"-mtn\" style parallelization "
             "only.\n",
             max_threads, max_sync_fold, min_parallel_size, max_replication_size);
+
+    printf ("\n\nBACKEND OPTIONS:\n\n"
+
+            "    -minarrayrep <class>\n"
+            "                    Specify the minimum array representation class used:\n"
+            "                      s: use all (SCL, AKS, AKD, AUD) representations,\n"
+            "                      d: use SCL, AKD, AUD representations only,\n"
+            "                      +: use SCL, AUD representations only,\n"
+            "                      *: use AUD representation only.\n"
+            "                    (default: s)\n");
 
     printf (
       "\n\nGENERAL DEBUG OPTIONS:\n\n"
