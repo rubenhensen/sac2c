@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/06/19 12:32:06  ben
+ * SCHEDULER_Self modified  with parameter first_task
+ *
  * Revision 3.1  2001/05/11 14:35:09  cg
  * Initial revision.
  *
@@ -47,11 +50,11 @@ extern void ICMCompileMT_SCHEDULER_Static_INIT (int sched_id, int tasks_per_thre
                                                 int dim, char **vararg);
 
 extern void ICMCompileMT_SCHEDULER_Self_BEGIN (int sched_id, int tasks_per_thread,
-                                               int dim, char **vararg);
-extern void ICMCompileMT_SCHEDULER_Self_END (int sched_id, int tasks_per_thread, int dim,
-                                             char **vararg);
-extern void ICMCompileMT_SCHEDULER_Self_INIT (int sched_id, int tasks_per_thread, int dim,
-                                              char **vararg);
+                                               char *first_task, int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Self_END (int sched_id, int tasks_per_thread,
+                                             char *first_task, int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Self_INIT (int sched_id, int tasks_per_thread,
+                                              char *first_task, int dim, char **vararg);
 
 extern void ICMCompileMT_SCHEDULER_Affinity_BEGIN (int sched_id, int tasks_per_thread,
                                                    int dim, char **vararg);
