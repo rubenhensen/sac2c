@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/07/16 09:34:12  cg
+ * Added facilities for heap management diagnostics.
+ *
  * Revision 2.10  1999/07/09 12:45:32  cg
  * Basic prerequisites for diagnostic heap management introduced.
  *
@@ -753,7 +756,8 @@ GSCPrintMainEnd ()
      * outfile is already indented by 2
      */
     fprintf (outfile, "\n  SAC_PF_PRINT();\n");
-    fprintf (outfile, "  SAC_CS_FINALIZE();\n\n");
+    fprintf (outfile, "  SAC_CS_FINALIZE();\n");
+    fprintf (outfile, "  SAC_HM_PRINT();\n\n");
 
     DBUG_VOID_RETURN;
 }

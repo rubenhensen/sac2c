@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/07/16 09:34:12  cg
+ * Added facilities for heap management diagnostics.
+ *
  * Revision 2.5  1999/07/09 07:32:30  cg
  * Executables are now linked with customized versions of the
  * SAC runtime library:
@@ -634,7 +637,10 @@ InvokeCC ()
                 fprintf (shellscript, "%s %s %s -L%s %s -o %s %s %s %s -lsac %s %s",
                          config.cc, config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
                          outfilename, cfilename, linklist,
-                         optimize & OPT_PHM ? "-lsac_heapmgr" : "-lsac_noheapmgr",
+                         (optimize & OPT_PHM
+                            ? (runtimecheck & RUNTIMECHECK_HEAP ? "-lsac_heapmgr_diag"
+                                                                : "-lsac_heapmgr")
+                            : "-lsac_noheapmgr"),
                          config.cclink, (use_efence ? lib_efence : ""));
                 fclose (shellscript);
                 SystemCall ("chmod a+x .sac2c");
@@ -643,7 +649,10 @@ InvokeCC ()
             SystemCall ("%s %s %s -L%s %s -o %s %s %s %s -lsac %s %s", config.cc,
                         config.ccflags, config.ccdir, tmp_dirname, opt_buffer,
                         outfilename, cfilename, linklist,
-                        optimize & OPT_PHM ? "-lsac_heapmgr" : "-lsac_noheapmgr",
+                        (optimize & OPT_PHM
+                           ? (runtimecheck & RUNTIMECHECK_HEAP ? "-lsac_heapmgr_diag"
+                                                               : "-lsac_heapmgr")
+                           : "-lsac_noheapmgr"),
                         config.cclink, (use_efence ? lib_efence : ""));
         }
 
