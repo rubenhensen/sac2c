@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 1.20  1998/11/18 15:07:24  srs
+ * N_empty nodes are supported now
+ *
  * Revision 1.19  1998/07/14 12:58:25  srs
  * enhanced ASSERT text of CreateVardec()
  *
@@ -850,23 +853,29 @@ SearchWLHelp (int id_varno, node *assignn, int *valid, int mode, int ol)
 {
     *valid = -1;
 
-    while (ASSIGN_NEXT (assignn))
-        assignn = ASSIGN_NEXT (assignn);
+    if (NODE_TYPE (assignn) == N_empty) {
+        /* we entered an empty assignment-block. We have no chance to
+           find a WL here, so we can exit without doing anything. */
+    } else {
+        while (ASSIGN_NEXT (assignn))
+            assignn = ASSIGN_NEXT (assignn);
 
-    /* if Id is defined in this last instr of the body*/
-    if (ASSIGN_DEFMASK (assignn)[id_varno]) {
-        if (N_let == ASSIGN_INSTRTYPE (assignn)
-            && N_Nwith == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assignn)))) {
-            /* this is the bad boy */
-            if (0 == mode || 1 == mode)
-                NWITH_NO_CHANCE (LET_EXPR (ASSIGN_INSTR (assignn))) = 1;
-            if (0 == mode)
-                NWITH_REFERENCED (LET_EXPR (ASSIGN_INSTR (assignn)))++;
-        } else /* if not, this may be a compound node. */
+        /* if Id is defined in this last instr of the body*/
+        if (ASSIGN_DEFMASK (assignn)[id_varno]) {
+            if (N_let == ASSIGN_INSTRTYPE (assignn)
+                && N_Nwith == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assignn)))) {
+                /* this is the bad boy */
+                if (0 == mode || 1 == mode)
+                    NWITH_NO_CHANCE (LET_EXPR (ASSIGN_INSTR (assignn))) = 1;
+                if (0 == mode)
+                    NWITH_REFERENCED (LET_EXPR (ASSIGN_INSTR (assignn)))++;
+            } else /* if not, this may be a compound node. */
+                SearchWL (id_varno, assignn, valid, mode, ol);
+        } else { /* else it is defined somewhere above and we can use the ASSIGN_MRDMASK
+                  */
+            assignn = (node *)ASSIGN_MRDMASK (assignn)[id_varno];
             SearchWL (id_varno, assignn, valid, mode, ol);
-    } else { /* else it is defined somewhere above and we can use the ASSIGN_MRDMASK */
-        assignn = (node *)ASSIGN_MRDMASK (assignn)[id_varno];
-        SearchWL (id_varno, assignn, valid, mode, ol);
+        }
     }
 }
 
@@ -934,9 +943,9 @@ SearchWL (int id_varno, node *startn, int *valid, int mode, int original_level)
         case N_while:
         case N_do:
             if (N_while == ASSIGN_INSTRTYPE (startn))
-                tmpn = BLOCK_INSTR (WHILE_BODY (ASSIGN_INSTR (startn)));
+                tmpn = BLOCK_INSTR (WHILE_BODY (ASSIGN_INSTR (startn))); /* while */
             else
-                tmpn = BLOCK_INSTR (DO_BODY (ASSIGN_INSTR (startn)));
+                tmpn = BLOCK_INSTR (DO_BODY (ASSIGN_INSTR (startn))); /* do */
 
             /* now we have to distinguish where the 'pointer comes from'. Do we
                use the Id from within the loop or from behind it? */

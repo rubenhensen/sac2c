@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.16  1998/11/18 15:06:48  srs
+ * N_empty nodes are supported now
+ *
  * Revision 1.15  1998/08/20 12:18:20  srs
  * added comments
  * fixed bug in WLFid()
@@ -1407,22 +1410,29 @@ WLFassign (node *arg_node, node *arg_info)
                chain. Therefor, reuse the current assign node because the
                previous assign node (which cannot be reached from here) points
                to it. */
-            last_assign = MakeAssign (ASSIGN_INSTR (arg_node), ASSIGN_NEXT (arg_node));
+
             substn = INFO_WLI_SUBST (arg_info);
+            /* ist there something to insert? */
+            if (substn) {
+                last_assign
+                  = MakeAssign (ASSIGN_INSTR (arg_node), ASSIGN_NEXT (arg_node));
+                ASSIGN_INSTR (arg_node) = ASSIGN_INSTR (substn);
+                ASSIGN_NEXT (arg_node) = ASSIGN_NEXT (substn);
 
-            ASSIGN_INSTR (arg_node) = ASSIGN_INSTR (substn);
-            ASSIGN_NEXT (arg_node) = ASSIGN_NEXT (substn);
+                /* fisrt assignment node of substn is not needed anymore. */
+                ASSIGN_INSTR (substn) = NULL;
+                FreeNode (substn); /* free only node, not tree! */
 
-            ASSIGN_INSTR (substn) = NULL;
-            FreeNode (substn); /* Free only this one node. */
-
-            tmpn = arg_node;
-            while (ASSIGN_NEXT (tmpn))
+                tmpn = arg_node;
+                while (ASSIGN_NEXT (tmpn))
+                    tmpn = ASSIGN_NEXT (tmpn);
+                ASSIGN_NEXT (tmpn) = last_assign;
                 tmpn = ASSIGN_NEXT (tmpn);
-            ASSIGN_NEXT (tmpn) = last_assign;
+            } else
+                tmpn = arg_node;
 
             /* transform psi(.,array) into Id. */
-            tmpn = ASSIGN_INSTR (ASSIGN_NEXT (tmpn));
+            tmpn = ASSIGN_INSTR (tmpn);
             LET_EXPR (tmpn) = FreeTree (LET_EXPR (tmpn));
             LET_EXPR (tmpn) = INFO_WLI_NEW_ID (arg_info);
         } else if (ASSIGN_NEXT (arg_node))
@@ -1502,7 +1512,7 @@ WLFid (node *arg_node, node *arg_info)
             if (target_mask[varno]) { /* target_mask was initialized before Fold() */
                 new_name = TmpVarName (ID_NAME (NCODE_CEXPR (coden)));
                 ren = AddRen (ID_VARDEC (NCODE_CEXPR (coden)), new_name,
-                              ID_TYPE (NCODE_CEXPR (coden)), arg_info, 0);
+                              ID_TYPE (NCODE_CEXPR (coden)), arg_info, 1);
                 INFO_WLI_NEW_ID (arg_info) = MakeId (new_name, NULL, ST_regular);
                 ID_VARDEC (INFO_WLI_NEW_ID (arg_info)) = ren->vardec;
             } else
@@ -1510,7 +1520,10 @@ WLFid (node *arg_node, node *arg_info)
                 INFO_WLI_NEW_ID (arg_info) = DupTree (NCODE_CEXPR (coden), NULL);
 
             /* Create substitution code. */
-            substn = DupTree (BLOCK_INSTR (NCODE_CBLOCK (coden)), NULL);
+            if (N_empty == NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (coden))))
+                substn = NULL;
+            else
+                substn = DupTree (BLOCK_INSTR (NCODE_CBLOCK (coden)), NULL);
 
             /* create assignments to rename variables which index the array we want
                to replace.
@@ -1586,12 +1599,14 @@ WLFid (node *arg_node, node *arg_info)
             }
 
             /* trav subst code with wlfm_rename to solve name clashes. */
-            wlf_mode = wlfm_rename;
-            old_arg_info_assign = INFO_WLI_ASSIGN (arg_info); /* save arg_info */
-            substn = Trav (substn, arg_info);
-            INFO_WLI_ASSIGN (arg_info) = old_arg_info_assign;
-            FreeRen (); /* set list free (created in wlfm_rename) */
-            wlf_mode = wlfm_replace;
+            if (substn) {
+                wlf_mode = wlfm_rename;
+                old_arg_info_assign = INFO_WLI_ASSIGN (arg_info); /* save arg_info */
+                substn = Trav (substn, arg_info);
+                INFO_WLI_ASSIGN (arg_info) = old_arg_info_assign;
+                FreeRen (); /* set list free (created in wlfm_rename) */
+                wlf_mode = wlfm_replace;
+            }
 
             /* merge subst_header and substn */
             /* we dont' need the old _SUBST info anymore so we return the

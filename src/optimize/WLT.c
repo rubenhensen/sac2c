@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.13  1998/11/18 15:07:01  srs
+ * N_empty nodes are supported now
+ *
  * Revision 1.12  1998/08/20 12:22:57  srs
  * added comments
  * freed pointers in CutSlices() and CompleteGrid()
@@ -820,10 +823,12 @@ WLTNpart (node *arg_node, node *arg_info)
 node *
 WLTNgenerator (node *arg_node, node *arg_info)
 {
-    node *tmpn, **bound, *lbound, *ubound, *assignn, *blockn, *wln;
+    node *tmpn, **bound, *lbound, *ubound, *assignn, *blockn, *wln, *idn;
     int i, check_bounds, empty, warning;
     int lnum, unum, tnum, dim;
-    ids *_ids;
+    ids *_ids, *let_ids;
+    char *varname;
+    types *type;
 
     DBUG_ENTER ("WLTNgenerator");
 
@@ -882,13 +887,13 @@ WLTNgenerator (node *arg_node, node *arg_info)
             lbound = ARRAY_AELEMS (NGEN_BOUND1 (arg_node));
             ubound = ARRAY_AELEMS (NGEN_BOUND2 (arg_node));
 
-            _ids = LET_IDS (INFO_WLI_LET (arg_info));
+            let_ids = LET_IDS (INFO_WLI_LET (arg_info));
             while (lbound) {
                 lnum = NUM_VAL (EXPRS_EXPR (lbound));
                 unum = NUM_VAL (EXPRS_EXPR (ubound));
 
                 if (WO_modarray == NWITH_TYPE (wln) || WO_genarray == NWITH_TYPE (wln)) {
-                    tnum = IDS_SHAPE (_ids, dim);
+                    tnum = IDS_SHAPE (let_ids, dim);
                     if (lnum < 0) {
                         warning = 1;
                         NUM_VAL (EXPRS_EXPR (lbound)) = 0;
@@ -921,13 +926,13 @@ WLTNgenerator (node *arg_node, node *arg_info)
                       ("Withloop generator specifies empty index set"));
                 if (WO_genarray == NWITH_TYPE (INFO_WLI_WL (arg_info))) {
                     /* change generator: full scope.  */
-                    dim = TYPES_DIM (IDS_TYPE (_ids));
+                    dim = TYPES_DIM (IDS_TYPE (let_ids));
                     lbound = ARRAY_AELEMS (NGEN_BOUND1 (arg_node));
                     ubound = ARRAY_AELEMS (NGEN_BOUND2 (arg_node));
 
                     for (i = 0; i < dim; i++) {
                         NUM_VAL (EXPRS_EXPR (lbound)) = 0;
-                        NUM_VAL (EXPRS_EXPR (ubound)) = IDS_SHAPE (_ids, i);
+                        NUM_VAL (EXPRS_EXPR (ubound)) = IDS_SHAPE (let_ids, i);
                         lbound = EXPRS_NEXT (lbound);
                         ubound = EXPRS_NEXT (ubound);
                     }
@@ -942,25 +947,69 @@ WLTNgenerator (node *arg_node, node *arg_info)
                     blockn
                       = NCODE_CBLOCK (NPART_CODE (NWITH_PART (INFO_WLI_WL (arg_info))));
                     tmpn = BLOCK_INSTR (blockn);
-                    /* search last assignment and make it the only one in the block. */
-                    while (ASSIGN_NEXT (tmpn))
-                        tmpn = ASSIGN_NEXT (tmpn);
-                    assignn = DupTree (tmpn, NULL);
-                    FreeTree (BLOCK_INSTR (blockn));
-                    FreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
-                    BLOCK_INSTR (blockn) = assignn;
-                    LET_EXPR (ASSIGN_INSTR (assignn))
-                      = MakeNullVec (TYPES_DIM (IDS_TYPE (_ids))
-                                       - ARRAY_SHAPE (NWITHOP_SHAPE (NWITH_WITHOP (
-                                                        INFO_WLI_WL (arg_info))),
-                                                      0),
-                                     T_int);
-                    ASSIGN_MASK (assignn, 0) = GenMask (INFO_VARNO);
-                    ASSIGN_MASK (assignn, 1) = GenMask (INFO_VARNO);
+                    if (N_empty == NODE_TYPE (tmpn)) {
+                        /* there is no instruction in the block right now. */
+                        BLOCK_INSTR (blockn) = FreeTree (BLOCK_INSTR (blockn));
+                        /* first, introduce a new variable */
+                        varname = TmpVar ();
+                        _ids = MakeIds (varname, NULL,
+                                        ST_regular); /* use memory from GetTmp() */
+                        /* determine type of expr in the operator (result of body) */
+                        type
+                          = ID_TYPE (NCODE_CEXPR (NWITH_CODE (INFO_WLI_WL (arg_info))));
+                        IDS_VARDEC (_ids)
+                          = CreateVardec (varname, type,
+                                          &FUNDEF_VARDEC (INFO_WLI_FUNDEF (
+                                            arg_info))); /* varname is duplicated here
+                                                            (own mem) */
+
+                        /* create nullvec */
+                        tmpn = MakeNullVec (TYPES_DIM (IDS_TYPE (let_ids))
+                                              - ARRAY_SHAPE (NWITHOP_SHAPE (NWITH_WITHOP (
+                                                               INFO_WLI_WL (arg_info))),
+                                                             0),
+                                            T_int);
+                        /* replace N_empty with new assignment "_ids = [0,..,0]" */
+                        assignn = MakeAssign (MakeLet (tmpn, _ids), NULL);
+                        ASSIGN_MASK (assignn, 0) = GenMask (INFO_VARNO);
+                        ASSIGN_MASK (assignn, 1) = GenMask (INFO_VARNO);
+                        BLOCK_INSTR (blockn) = assignn;
+
+                        /* replace CEXPR */
+                        idn = MakeId (StringCopy (varname), NULL,
+                                      ST_regular); /* use new mem */
+                        ID_VARDEC (idn) = IDS_VARDEC (_ids);
+                        tmpn = NPART_CODE (NWITH_PART (INFO_WLI_WL (arg_info)));
+                        NCODE_CEXPR (tmpn) = FreeTree (NCODE_CEXPR (tmpn));
+                        NCODE_CEXPR (tmpn) = idn;
+                    } else {
+                        /* we have a non-empty block.
+                           search last assignment and make it the only one in the block.
+                         */
+                        while (ASSIGN_NEXT (tmpn))
+                            tmpn = ASSIGN_NEXT (tmpn);
+                        assignn = DupTree (tmpn, NULL);
+                        FreeTree (BLOCK_INSTR (blockn));
+                        FreeTree (LET_EXPR (ASSIGN_INSTR (assignn)));
+                        BLOCK_INSTR (blockn) = assignn;
+                        LET_EXPR (ASSIGN_INSTR (assignn))
+                          = MakeNullVec (TYPES_DIM (IDS_TYPE (let_ids))
+                                           - ARRAY_SHAPE (NWITHOP_SHAPE (NWITH_WITHOP (
+                                                            INFO_WLI_WL (arg_info))),
+                                                          0),
+                                         T_int);
+                        ASSIGN_MASK (assignn, 0) = GenMask (INFO_VARNO);
+                        ASSIGN_MASK (assignn, 1) = GenMask (INFO_VARNO);
+                    }
                 } else {
-                    /* replace WL with the base array (modarray). */
-                    /* replace WL with neutral element (fold). */
-                    tmpn = NWITHOP_NEUTRAL (NWITH_WITHOP (INFO_WLI_WL (arg_info)));
+                    if (WO_modarray == NWITH_TYPE (INFO_WLI_WL (arg_info)))
+                        /* replace WL with the base array (modarray). */
+                        tmpn = NWITHOP_ARRAY (NWITH_WITHOP (INFO_WLI_WL (arg_info)));
+                    else
+                        /* replace WL with neutral element (fold). */
+                        tmpn = NWITHOP_NEUTRAL (NWITH_WITHOP (INFO_WLI_WL (arg_info)));
+                    /* the INFO_WLI_REPLACE-mechanism is used to insert the
+                       new id or constant. */
                     INFO_WLI_REPLACE (arg_info) = DupTree (tmpn, NULL);
                 }
             }
