@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/10 18:27:29  mwe
+ * code for type upgrade added
+ * use ntype-structure instead of type-structure
+ * new code deactivated by MWE_NTYPE_READY
+ *
  * Revision 1.8  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -272,26 +277,42 @@ TryReplaceSelection (node *assign, info *arg_info)
         repl = repl->next;
 
     if (repl != NULL) {
+#ifdef MWE_NTYPE_READY
+        vardec
+          = MakeVardec (TmpVar (), NULL,
+                        TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (1, 1)), NULL);
+
+#else
         vardec
           = MakeVardec (TmpVar (),
                         MakeTypes (T_int, 1, MakeShpseg (MakeNums (1, NULL)), NULL, NULL),
                         NULL);
-
+#endif
         tmpnode
           = MakeAssignLet (StringCopy (VARDEC_NAME (vardec)), vardec,
                            MakeFlatArray (MakeExprs (MakeNum (repl->offset), NULL)));
 
+#ifdef MWE_NTYPE_READY
+        ARRAY_NTYPE (ASSIGN_RHS (tmpnode))
+          = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (1, 1));
+#else
         ARRAY_TYPE (ASSIGN_RHS (tmpnode))
           = MakeTypes (T_int, 1, MakeShpseg (MakeNums (1, NULL)), NULL, NULL);
+#endif
 
         AddVardecs (INFO_SP_FUNDEF (arg_info), vardec);
 
         AVIS_SSAASSIGN (IDS_AVIS (ASSIGN_LHS (tmpnode))) = tmpnode;
-
+#ifdef MWE_NTYPE_READY
+        vardec
+          = MakeVardec (TmpVar (), NULL,
+                        TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (1, 1)), NULL);
+#else
         vardec
           = MakeVardec (TmpVar (),
                         MakeTypes (T_int, 1, MakeShpseg (MakeNums (1, NULL)), NULL, NULL),
                         NULL);
+#endif
 
         ASSIGN_NEXT (tmpnode)
           = MakeAssignLet (StringCopy (VARDEC_NAME (vardec)), vardec,
@@ -393,6 +414,26 @@ getScalarPrf (prf Prf)
     }
 }
 
+#ifdef MWE_NTYPE_READY
+node *
+selectOrIdentity (node *arg, node *index, bool isArray, ntype *t, info *arg_info)
+{
+    node *vardec = NULL;
+    node *tmp;
+
+    vardec = MakeVardec (TmpVar (), NULL, TYCopyType (t), NULL);
+
+    AddVardecs (INFO_SP_FUNDEF (arg_info), vardec);
+
+    tmp = MakeAssignLet (StringCopy (VARDEC_NAME (vardec)), vardec,
+                         isArray ? MakePrf2 (F_sel, DupNode (index), DupNode (arg))
+                                 : DupNode (arg));
+
+    AVIS_SSAASSIGN (VARDEC_AVIS (vardec)) = tmp;
+
+    return tmp;
+}
+#else
 node *
 selectOrIdentity (node *arg, node *index, bool isArray, types *t, info *arg_info)
 {
@@ -411,7 +452,7 @@ selectOrIdentity (node *arg, node *index, bool isArray, types *t, info *arg_info
 
     return tmp;
 }
-
+#endif
 node *
 propagateSelection (node *arg_node, info *arg_info)
 {
@@ -437,6 +478,15 @@ propagateSelection (node *arg_node, info *arg_info)
 
     origop = ASSIGN_RHS (ID_SSAASSIGN (PRF_ARG2 (ASSIGN_RHS (arg_node))));
 
+#ifdef MWE_NTYPE_READY
+    left_sel = selectOrIdentity (PRF_ARG1 (origop), PRF_ARG1 (ASSIGN_RHS (arg_node)),
+                                 isLeftArray (PRF_PRF (origop)),
+                                 AVIS_TYPE (IDS_AVIS (ASSIGN_LHS (arg_node))), arg_info);
+
+    right_sel = selectOrIdentity (PRF_ARG2 (origop), PRF_ARG1 (ASSIGN_RHS (arg_node)),
+                                  isRightArray (PRF_PRF (origop)),
+                                  AVIS_TYPE (IDS_AVIS (ASSIGN_LHS (arg_node))), arg_info);
+#else
     left_sel = selectOrIdentity (PRF_ARG1 (origop), PRF_ARG1 (ASSIGN_RHS (arg_node)),
                                  isLeftArray (PRF_PRF (origop)),
                                  IDS_TYPE (ASSIGN_LHS (arg_node)), arg_info);
@@ -444,6 +494,7 @@ propagateSelection (node *arg_node, info *arg_info)
     right_sel = selectOrIdentity (PRF_ARG2 (origop), PRF_ARG1 (ASSIGN_RHS (arg_node)),
                                   isRightArray (PRF_PRF (origop)),
                                   IDS_TYPE (ASSIGN_LHS (arg_node)), arg_info);
+#endif
 
     FreeNode (ASSIGN_RHS (arg_node));
 

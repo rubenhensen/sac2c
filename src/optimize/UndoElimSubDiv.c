@@ -1,5 +1,10 @@
 /* *
  * $Log$
+ * Revision 1.6  2004/11/10 18:27:29  mwe
+ * code for type upgrade added
+ * use ntype-structure instead of type-structure
+ * new code deactivated by MWE_NTYPE_READY
+ *
  * Revision 1.5  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -295,10 +300,12 @@ UESDlet (node *arg_node, info *arg_info)
         if ((LET_IDS (arg_node) != NULL) && (IDS_AVIS (LET_IDS (arg_node)) != NULL)) {
             types *tmp
               = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (IDS_AVIS (LET_IDS (arg_node))));
-            if ((!enforce_ieee)
-                || ((TYPES_BASETYPE (tmp) != T_double)
-                    && (TYPES_BASETYPE (tmp) != T_float)))
-
+            if ((!enforce_ieee) ||
+#ifdef MWE_NTYPE_READY
+                (TYGetBaseType (tmp) != T_double) && (TYGetBaseType (tmp) != T_float))
+#else
+                ((TYPES_BASETYPE (tmp) != T_double) && (TYPES_BASETYPE (tmp) != T_float)))
+#endif
                 LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
         }
     }

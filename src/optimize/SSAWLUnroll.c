@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/11/10 18:27:29  mwe
+ * code for type upgrade added
+ * use ntype-structure instead of type-structure
+ * new code deactivated by MWE_NTYPE_READY
+ *
  * Revision 1.11  2004/08/04 12:03:27  ktr
  * substituted eacc by emm
  *
@@ -347,10 +352,14 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
             }
             index = MakeFlatArray (index);
             /* nums struct is freed inside MakeShpseg() */
+#ifdef MWE_NTYPE_READY
+            ARRAY_NTYPE (index)
+              = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (1, maxdim));
+#else
             shpseg = MakeShpseg (MakeNums (maxdim, NULL));
             type = MakeTypes (T_int, 1, shpseg, NULL, NULL);
             ARRAY_TYPE (index) = type;
-
+#endif
             assignn = opfun (assignn, index);
         } else {
             assignn = ForEachElementHelp (l, u, s, w, dim + 1, maxdim, assignn);
@@ -404,8 +413,13 @@ ForEachElement (node *partn, node *assignn)
         /* create index */
         index = MakeFlatArray (NULL);
         /* nums struct is freed inside MakeShpseg() */
+#ifdef MWE_NTYPE_READY
+        ARRAY_NTYPE (index)
+          = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (1, maxdim));
+#else
         ARRAY_TYPE (index)
           = MakeTypes (T_int, 1, MakeShpseg (MakeNums (maxdim, NULL)), NULL, NULL);
+#endif
 
         res = opfun (assignn, index);
     } else {
@@ -659,9 +673,13 @@ SSACheckUnrollGenarray (node *wln, info *arg_info)
 
     DBUG_ENTER ("SSACheckUnrollGenarray");
 
+#ifdef MWE_NTYPE_READY
+    length = SHGetUnrLen (TYGetShape (
+      AVIS_TYPE (IDS_AVIS (LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)))))));
+#else
     type = IDS_TYPE (LET_IDS (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info))));
     length = GetTypesLength (type);
-
+#endif
     /*
      * Everything constant?
      * If the first part is constant, all others are constant, too.
@@ -724,8 +742,15 @@ SSADoUnrollGenarray (node *wln, info *arg_info)
     /*
      * finally add   arrayname = reshape( ..., [0,...,0])
      */
+#ifdef MWE_NTYPE_READY
+    let_expr = CreateZeroFromType (NULL,
+                                   AVIS_TYPE (LET_AVIS (
+                                     ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)))),
+                                   TRUE, INFO_SSALUR_FUNDEF (arg_info));
+#else
     type = LET_TYPE (ASSIGN_INSTR (INFO_SSALUR_ASSIGN (arg_info)));
     let_expr = CreateZeroFromType (type, TRUE, INFO_SSALUR_FUNDEF (arg_info));
+#endif
     letn = MakeLet (let_expr, DupOneIds (arrayname));
     res = MakeAssign (letn, res);
 

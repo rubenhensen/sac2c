@@ -1,5 +1,10 @@
 /* *
  * $Log$
+ * Revision 1.27  2004/11/10 18:27:29  mwe
+ * code for type upgrade added
+ * use ntype-structure instead of type-structure
+ * new code deactivated by MWE_NTYPE_READY
+ *
  * Revision 1.26  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -306,6 +311,7 @@ struct INFO {
     nodelist *optlist;
     nodelist *arraylist;
     nodelist *constarraylist;
+    ntype *newtype;
 };
 
 /*
@@ -326,6 +332,7 @@ struct INFO {
 #define INFO_AL_OPTLIST(n) (n->optlist)
 #define INFO_AL_ARRAYLIST(n) (n->arraylist)
 #define INFO_AL_CONSTARRAYLIST(n) (n->constarraylist)
+#define INFO_AL_NTYPE(n) (n->newtype)
 
 /*
  * INFO functions
@@ -353,6 +360,7 @@ MakeInfo ()
     INFO_AL_OPTLIST (result) = NULL;
     INFO_AL_ARRAYLIST (result) = NULL;
     INFO_AL_CONSTARRAYLIST (result) = NULL;
+    INFO_AL_NTYPE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -693,44 +701,79 @@ MakeAssignNodeFromCurrentNode (node *newnode, info *arg_info, int dim)
 {
 
     node *newvardec;
+#ifdef MWE_NTYPE_READY
+    ntype *type;
+#else
     types *type;
+#endif
     char *newname1, *newname2;
-
-    shpseg *shp;
-    node *shpnode;
-    int shpint;
-
+#if 0
+  shpseg* shp;
+  node *shpnode;
+  int shpint;
+#endif
     DBUG_ENTER ("MakeAssignNodeFromCurrentNode");
 
-    if (NODE_TYPE (newnode) == N_id) {
+#if 0
+  if (NODE_TYPE(newnode) == N_id){
 
-        shpint = TYPES_DIM ((INFO_AL_TYPE (arg_info)));
-        shpnode = Shpseg2Array (TYPES_SHPSEG (INFO_AL_TYPE (arg_info)), shpint);
-        shp = Array2Shpseg (shpnode, &shpint);
+    shpint = TYPES_DIM(( INFO_AL_TYPE(arg_info)));
+    shpnode = Shpseg2Array(TYPES_SHPSEG( INFO_AL_TYPE(arg_info)), shpint);
+    shp = Array2Shpseg(shpnode, &shpint);
 
-        type = VARDEC_TYPE (ID_VARDEC (newnode));
-        type = MakeTypes (TYPES_BASETYPE (type), TYPES_DIM (type), shp, NULL, NULL);
 
-    } else {
+    type = VARDEC_TYPE( ID_VARDEC( newnode));
+    type = MakeTypes( TYPES_BASETYPE( type ),
+		      TYPES_DIM(type ),
+		      shp,
+		      NULL,
+		      NULL);
 
-        if (dim > 0) {
+  }
+  else{
 
-            shpint = TYPES_DIM ((INFO_AL_TYPE (arg_info)));
-            shpnode = Shpseg2Array (TYPES_SHPSEG (INFO_AL_TYPE (arg_info)), shpint);
-            shp = Array2Shpseg (shpnode, &shpint);
-            type = MakeTypes (TYPES_BASETYPE ((INFO_AL_TYPE (arg_info))),
-                              TYPES_DIM ((INFO_AL_TYPE (arg_info))), shp, NULL, NULL);
-        } else {
+    if (dim > 0){
 
-            type = MakeTypes (TYPES_BASETYPE ((INFO_AL_TYPE (arg_info))), 0, NULL, NULL,
-                              NULL);
-        }
+
+      shpint = TYPES_DIM(( INFO_AL_TYPE(arg_info)));
+      shpnode = Shpseg2Array(TYPES_SHPSEG( INFO_AL_TYPE(arg_info)), shpint);
+      shp = Array2Shpseg(shpnode, &shpint);
+      type = MakeTypes( TYPES_BASETYPE( (INFO_AL_TYPE(arg_info)) ),
+			TYPES_DIM(( INFO_AL_TYPE(arg_info)) ),
+			shp,
+			NULL,
+			NULL);
     }
+    else{
+
+      type = MakeTypes( TYPES_BASETYPE( (INFO_AL_TYPE(arg_info)) ),
+			0,
+			NULL,
+			NULL,
+			NULL);
+    }
+  }
+#endif
+
+#ifdef MWE_NTYPES_READY
+    type = TYCopyType (INFO_AL_NTYPE (arg_info));
+#else
+    if (NODE_TYPE (newnode) == N_id)
+        type = DupAllTypes (VARDEC_TYPE (ID_VARDEC (newnode)));
+    else
+        type = DupAllTypes (INFO_AL_TYPE (arg_info));
+#endif
 
     newname1 = TmpVar ();
 
+#ifdef MWE_NTYPE_READY
+    newvardec = MakeVardec (newname1, type, newtype,
+                            (BLOCK_VARDEC (INFO_AL_BLOCKNODE (arg_info))));
+
+#else
     newvardec
       = MakeVardec (newname1, type, (BLOCK_VARDEC (INFO_AL_BLOCKNODE (arg_info))));
+#endif
 
     BLOCK_VARDEC (INFO_AL_BLOCKNODE (arg_info)) = newvardec;
 
@@ -1056,8 +1099,12 @@ ContainsAnArray (node *expr)
 
     DBUG_ENTER ("ContainsAnArray");
 
+#ifdef MWE_NTYPE_READY
+    result = TYIsArray (VARDEC_NTYPE (ID_VARDEC (EXPRS_EXPR (expr))));
+#else
     if (TYPES_DIM (VARDEC_TYPE (ID_VARDEC (EXPRS_EXPR (expr)))) > 0)
         result = TRUE;
+#endif
 
     DBUG_RETURN (result);
 }
@@ -1262,6 +1309,7 @@ AssociativeLaw (node *arg_node)
 
         act_tab = old_tab;
 
+        INFO_AL_NTYPE (arg_info) = NULL;
         arg_info = FreeInfo (arg_info);
     }
 
@@ -1291,6 +1339,7 @@ ALblock (node *arg_node, info *arg_info)
          */
         if (BLOCK_VARDEC (arg_node) != NULL) {
             INFO_AL_TYPE (arg_info) = VARDEC_TYPE (BLOCK_VARDEC (arg_node));
+            INFO_AL_NTYPE (arg_info) = AVIS_TYPE (VARDEC_AVIS (BLOCK_VARDEC (arg_node)));
             INFO_AL_BLOCKNODE (arg_info) = arg_node;
         }
 
@@ -1417,6 +1466,7 @@ ALlet (node *arg_node, info *arg_info)
         if ((LET_IDS (arg_node) != NULL) && (IDS_AVIS (LET_IDS (arg_node)) != NULL))
             INFO_AL_TYPE (arg_info)
               = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (IDS_AVIS (LET_IDS (arg_node))));
+        INFO_AL_NTYPE (arg_info) = AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)));
 
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
     }
@@ -1450,6 +1500,9 @@ ALprf (node *arg_node, info *arg_info)
     node *node1, *node2;
     nodelist *tmp;
     nodelist *tmp1;
+#ifdef MWE_NTYPE_READY
+    ntype *basetype;
+#endif
 
     DBUG_ENTER ("AssociativeLawOptimize");
 
@@ -1487,10 +1540,25 @@ ALprf (node *arg_node, info *arg_info)
 
                 nodetype = IDS_VARDEC (LET_IDS (INFO_AL_LETNODE (arg_info)));
 
+#ifdef MWE_NTYPE_READY
+
+                if (TYIsSimple (VARDEC_NTYPE (nodetype)))
+                    basetype = VARDEC_NTYPE (nodetype);
+                else if (TYIsArray (VARDEC_NTYPE (nodetype)))
+                    basetype = TYGetScalar (VARDEC_NTYPE (nodetype));
+                else {
+                    basetype = NULL;
+                    DBUG_ASSERT ((FALSE), "unhandled kind of ntype occured");
+                }
+
+                if (!(enforce_ieee)
+                    || ((TYGetSimpleType (basetype) != T_float)
+                        && (TYGetSimpleType (basetype) != T_double))) {
+#else
                 if (!(enforce_ieee)
                     || ((TYPES_BASETYPE (VARDEC_TYPE (nodetype)) != T_float)
                         && (TYPES_BASETYPE (VARDEC_TYPE (nodetype)) != T_double))) {
-
+#endif
                     /*
                      * start optimization
                      */
@@ -1552,6 +1620,23 @@ ALprf (node *arg_node, info *arg_info)
 
                             int dim, tmp;
 
+#ifdef MWE_NTYPE_READY
+                            tmp = TYGetDim (
+                              VARDEC_NTYPE (IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node1)))));
+                            if (tmp == 0) {
+                                if (TYGetDim (VARDEC_NTYPE (
+                                      IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node2)))))
+                                    == 0)
+                                    dim = 0;
+                                else
+                                    dim = 1;
+                            } else if (TYGetDim (VARDEC_NTYPE (
+                                         IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node2)))))
+                                       == 0)
+                                dim = 2;
+                            else
+                                dim = 3;
+#else
                             tmp = TYPES_DIM (
                               VARDEC_TYPE (IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node1)))));
                             if (tmp == 0) {
@@ -1567,6 +1652,7 @@ ALprf (node *arg_node, info *arg_info)
                                 dim = 2;
                             else
                                 dim = 3;
+#endif
 
                             INFO_AL_CONSTANTLIST (arg_info)
                               = MakeNodelistNode (node1, MakeNodelistNode (node2, NULL));

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.41  2004/11/10 18:27:29  mwe
+ * code for type upgrade added
+ * use ntype-structure instead of type-structure
+ * new code deactivated by MWE_NTYPE_READY
+ *
  * Revision 1.40  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -439,11 +444,17 @@ CmpIdsTypes (ids *ichain1, ids *ichain2)
 
     if (ichain1 != NULL) {
         DBUG_ASSERT ((ichain2 != NULL), "comparing different ids chains");
+#ifdef MWE_NTYPE_READY
+        if (TYCmpTypes (AVIS_TYPES (AVIS_VARDECORARG (IDS_AVIS (ichain1))),
+                        AVIS_TYPES (AVIS_VARDECORARG (IDS_AVIS (ichain2))))
+            == TY_eq) {
+#else
         if (CompareTypesImplementation (VARDEC_OR_ARG_TYPE (
                                           AVIS_VARDECORARG (IDS_AVIS (ichain1))),
                                         VARDEC_OR_ARG_TYPE (
                                           AVIS_VARDECORARG (IDS_AVIS (ichain2))))
             == 0) {
+#endif
             result = CmpIdsTypes (IDS_NEXT (ichain1), IDS_NEXT (ichain2));
         } else {
             result = FALSE;
@@ -577,11 +588,19 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
     node *act_fun_arg;
     node *act_ap_arg;
     node *ext_ap_avis;
+#ifdef MWE_NTYPES_READY
+    ntype *ext_ap_type;
+#else
     types *ext_ap_type;
+#endif
     node *search_fun_arg;
     node *search_ap_arg;
     bool found_match;
+#ifdef MWE_NTYPE_READY
+    CT_res cmp;
+#else
     int cmp;
+#endif
     char *stype1, *stype2;
 
     DBUG_ENTER ("SSACSEPropagateSubst2Args");
@@ -599,15 +618,28 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (act_ap_arg)) == N_id),
                      "non N_id node as arg in special function application");
         ext_ap_avis = ID_AVIS (EXPRS_EXPR (act_ap_arg));
+#ifdef MWE_NTYPE_READY
+        ext_ap_type = AVIS_TYPE (ext_ap_avis);
+#else
         ext_ap_type = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ext_ap_avis));
-
+#endif
         /*
          * specialize types of formal parameters if possible
          */
+#ifdef MWE_NTYPE_READY
+        cmp = TYCmpTypes (AVIS_TYPE (ARG_AVIS (act_fun_arg)), ext_ap_type);
+
+#else
         cmp = CompareTypesImplementation (ARG_TYPE (act_fun_arg), ext_ap_type);
+#endif
         stype1 = Type2String (ARG_TYPE (act_fun_arg), 0, TRUE);
+#ifdef MWE_NTYPE_READY
+        stype1 = TYType2String (AVIS_TYPE (ARG_AVIS (act_fun_arg)), TRUE, 0);
+        if ((cmp == TY_eq) || (cmp == TY_gt)) {
+#else
         stype2 = Type2String (ext_ap_type, 0, TRUE);
         if ((cmp == 0) || (cmp == 1)) {
+#endif
             DBUG_PRINT ("SSACSE",
                         ("type of formal LaC-fun (%s) arg specialized in line %d:"
                          "  %s:%s->%s",
@@ -617,8 +649,17 @@ SSACSEPropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
              * actual type is subtype of formal type -> specialize
              */
             ARG_TYPE (act_fun_arg) = FreeAllTypes (ARG_TYPE (act_fun_arg));
+#ifdef MWE_NTYPE_READY
+            AVIS_TYPE (ARG_AVIS (act_fun_arg)) = TYCopyType (ext_ap_type);
+#else
             ARG_TYPE (act_fun_arg) = DupAllTypes (ext_ap_type);
-        } else if (cmp == 2) {
+#endif
+        }
+#ifdef MWE_NTYPE_READY
+        else if ((cmp == TY_dis) || (TY_hcs)) {
+#else
+        else if (cmp == 2) {
+#endif
             /*
              * special function application with incompatible types found
              */

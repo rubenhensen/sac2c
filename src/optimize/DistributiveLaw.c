@@ -1,5 +1,10 @@
 /* *
  * $Log$
+ * Revision 1.16  2004/11/10 18:27:29  mwe
+ * code for type upgrade added
+ * use ntype-structure instead of type-structure
+ * new code deactivated by MWE_NTYPE_READY
+ *
  * Revision 1.15  2004/07/18 19:54:54  sah
  * switch to new INFO structure
  * PHASE I
@@ -349,6 +354,7 @@ struct INFO {
     nodelist *countlist;
     nodelist *tmplist;
     int ieeeflag;
+    ntype *newtype;
 };
 
 /*
@@ -368,6 +374,7 @@ struct INFO {
 #define INFO_DL_COUNTLIST(n) (n->countlist)
 #define INFO_DL_TMPLIST(n) (n->tmplist)
 #define INFO_DL_IEEEFLAG(n) (n->ieeeflag)
+#define INFO_DL_NTYPE(n) (n->newtype)
 
 /*
  * INFO functions
@@ -395,6 +402,7 @@ MakeInfo ()
     INFO_DL_COUNTLIST (result) = NULL;
     INFO_DL_TMPLIST (result) = NULL;
     INFO_DL_IEEEFLAG (result) = 0;
+    INFO_DL_NTYPE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -425,6 +433,9 @@ GetNeutralElement (node *op, info *arg_info)
 {
 
     node *neutral_elem;
+#ifdef MWE_NTYPE_READY
+    simpletype *basetype;
+#endif
 
     DBUG_ENTER ("GetNeutralElement");
 
@@ -437,6 +448,23 @@ GetNeutralElement (node *op, info *arg_info)
         if ((PRF_PRF (op) == F_add_SxS) || (PRF_PRF (op) == F_add_AxS)
             || (PRF_PRF (op) == F_add_SxA) || (PRF_PRF (op) == F_add_AxA)) {
 
+#ifdef MWE_NTYPE_READY
+            basetype = TYGetBaseType (INFO_DL_NTYPE (arg_info));
+            /* choose correct basetype of the neutral element */
+            if (basetype == T_int) {
+
+                neutral_elem = MakeNum (0);
+            }
+
+            if (basetype == T_float) {
+
+                neutral_elem = MakeFloat (0.0f);
+            }
+            if (basetype == T_double) {
+
+                neutral_elem = MakeDouble (0.0);
+            }
+#else
             /* choose correct basetype of the neutral element */
             if (TYPES_BASETYPE (INFO_DL_TYPE (arg_info)) == T_int) {
 
@@ -451,13 +479,30 @@ GetNeutralElement (node *op, info *arg_info)
 
                 neutral_elem = MakeDouble (0.0);
             }
-
+#endif
         }
 
         /* is 'op' a supported operator? */
         else if ((PRF_PRF (op) == F_mul_SxS) || (PRF_PRF (op) == F_mul_AxS)
                  || (PRF_PRF (op) == F_mul_SxA) || (PRF_PRF (op) == F_mul_AxA)) {
 
+#ifdef MWE_NTYPE_READY
+            basetype = TYGetBaseType (INFO_DL_NTYPE (arg_info));
+            /* choose correct basetype of the neutral element */
+            if (basetype == T_int) {
+
+                neutral_elem = MakeNum (1);
+            }
+
+            if (basetype == T_float) {
+
+                neutral_elem = MakeFloat (1.0f);
+            }
+            if (basetype == T_double) {
+
+                neutral_elem = MakeDouble (1.0);
+            }
+#else
             /* choose correct basetype of the neutral element */
             if (TYPES_BASETYPE (INFO_DL_TYPE (arg_info)) == T_int) {
 
@@ -472,7 +517,7 @@ GetNeutralElement (node *op, info *arg_info)
 
                 neutral_elem = MakeDouble (1.0);
             }
-
+#endif
         }
 
         /* is 'op' a supported operator? */
@@ -1167,9 +1212,12 @@ IsAnArray (node *expr, info *arg_info)
         result = FALSE;
     else if (N_id == NODE_TYPE (expr)) {
 
+#ifdef MWE_NTYPE_READY
+        result = TYIsArray (VARDEC_NTYPE (ID_VARDEC (expr)));
+#else
         if (!(TYPES_DIM (VARDEC_TYPE (ID_VARDEC (expr))) > 0))
             result = FALSE;
-
+#endif
     } else {
         DBUG_ASSERT ((FALSE), "Unexpected EXPRS_EXPR node!");
     }
@@ -1336,29 +1384,50 @@ MakeAssignLetNodeFromCurrentNode (node *newnode, info *arg_info, int flag)
     node *newvardec;
     types *type;
     char *newname1, *newname2;
-    shpseg *shp;
-    node *shpnode;
-    int shpint;
+#if 0
+  shpseg* shp;
+  node *shpnode;
+  int shpint;
+#endif
 
     DBUG_ENTER ("MakeAssignNodeFromExprsNode");
 
-    if (flag == 0)
-        type
-          = MakeTypes (TYPES_BASETYPE ((INFO_DL_TYPE (arg_info))), 0, NULL, NULL, NULL);
-    else {
+#if 0
+  if (flag == 0)
+    type = MakeTypes( TYPES_BASETYPE( (INFO_DL_TYPE(arg_info)) ),
+		      0,
+		      NULL,
+		      NULL,
+		      NULL);
+  else{
 
-        shpint = TYPES_DIM ((INFO_DL_TYPE (arg_info)));
-        shpnode = Shpseg2Array (TYPES_SHPSEG (INFO_DL_TYPE (arg_info)), shpint);
-        shp = Array2Shpseg (shpnode, &shpint);
+    shpint = TYPES_DIM(( INFO_DL_TYPE(arg_info)));
+    shpnode = Shpseg2Array(TYPES_SHPSEG( INFO_DL_TYPE(arg_info)), shpint);
+    shp = Array2Shpseg(shpnode, &shpint);
 
-        type = MakeTypes (TYPES_BASETYPE ((INFO_DL_TYPE (arg_info))),
-                          TYPES_DIM ((INFO_DL_TYPE (arg_info))), shp, NULL, NULL);
-    }
+    type = MakeTypes( TYPES_BASETYPE( (INFO_DL_TYPE(arg_info)) ),
+		      TYPES_DIM(( INFO_DL_TYPE(arg_info)) ),
+		      shp,
+		      NULL,
+		      NULL);
+  }
+#endif
 
+#ifdef MWE_NTYPE_READY
+    type = TYCopyType (INFO_DL_NTYPE (arg_info));
+#else
+    type = DupAllTypes (INFO_DL_TYPE (arg_info));
+#endif
     newname1 = TmpVar ();
 
+#ifdef MWE_NTYPE_READY
+    newvardec = MakeVardec (newname1, type, newtype,
+                            (BLOCK_VARDEC (INFO_DL_BLOCKNODE (arg_info))));
+
+#else
     newvardec
       = MakeVardec (newname1, type, (BLOCK_VARDEC (INFO_DL_BLOCKNODE (arg_info))));
+#endif
 
     BLOCK_VARDEC (INFO_DL_BLOCKNODE (arg_info)) = newvardec;
 
@@ -2712,6 +2781,8 @@ DistributiveLaw (node *arg_node)
 
         act_tab = old_tab;
 
+        INFO_DL_NTYPE (arg_info) = NULL;
+
         arg_info = FreeInfo (arg_info);
     }
 
@@ -2852,7 +2923,7 @@ DLlet (node *arg_node, info *arg_info)
         if ((LET_IDS (arg_node) != NULL) && (IDS_AVIS (LET_IDS (arg_node)) != NULL))
             INFO_DL_TYPE (arg_info)
               = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (IDS_AVIS (LET_IDS (arg_node))));
-
+        INFO_DL_NTYPE (arg_info) = AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)));
         LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
 
         /*

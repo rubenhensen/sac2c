@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.74  2004/11/10 18:27:29  mwe
+ * code for type upgrade added
+ * use ntype-structure instead of type-structure
+ * new code deactivated by MWE_NTYPE_READY
+ *
  * Revision 1.73  2004/10/15 11:39:04  ktr
  * Reactived constant propagation.
  *
@@ -455,8 +460,17 @@ SCOExpr2StructConstant (node *expr)
         if (NODE_TYPE (expr) == N_id) {
             if (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL) {
                 /* expression is an identifier */
+#ifdef MWE_NTYPE_READY
+                if ((TYIsAKD (AVIS_TYPE (ID_AVIS (expr))))
+                    || (TYIsAKS (AVIS_TYPE (ID_AVIS (expr))))
+                    || (TYIsAKV (AVIS_TYPE (ID_AVIS (expr)))))
+                    dim = TYGetDim (AVIS_TYPE (ID_AVIS (expr)));
+                else
+                    dim = -1;
+#else
                 dim
                   = GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
+#endif
                 if (dim == SCALAR) {
                     /* id is a defined scalar */
                     struc_co = SCOScalar2StructConstant (expr);
@@ -467,8 +481,17 @@ SCOExpr2StructConstant (node *expr)
             } else {
                 if (AVIS_WITHID (ID_AVIS (expr))) {
                     /* expression is given by a withid */
+#ifdef MWE_NTYPE_READY
+                    if ((TYIsAKD (AVIS_TYPE (ID_AVIS (expr))))
+                        || (TYIsAKS (AVIS_TYPE (ID_AVIS (expr))))
+                        || (TYIsAKV (AVIS_TYPE (ID_AVIS (expr)))))
+                        dim = TYGetDim (AVIS_TYPE (ID_AVIS (expr)));
+                    else
+                        dim = -1;
+#else
                     dim = GetShapeDim (
                       VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
+#endif
                     if (dim == SCALAR) {
                         /* id is a defined scalar */
                         struc_co = SCOScalar2StructConstant (expr);
@@ -502,7 +525,11 @@ SCOWithidVec2StructConstant (node *expr)
     node *exprs;
     int elem_count;
     node *tmp;
+#ifdef MWE_NTYPE_READY
+    ntype *vtype;
+#else
     types *vtype;
+#endif
     node **node_vec;
     shape *vshape;
     int i;
@@ -518,7 +545,11 @@ SCOWithidVec2StructConstant (node *expr)
     elem_count = CountIds (scalars);
 
     /* create structural constant of vector */
+#ifdef MWE_NTYPE_READY
+    vtype = AVIS_TYPE (ID_AVIS (expr));
+#else
     vtype = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)));
+#endif
 
     /* alloc hidden vector */
     vshape = SHCreateShape (1, elem_count);
@@ -534,8 +565,13 @@ SCOWithidVec2StructConstant (node *expr)
     /* create struct_constant */
     struc_co = (struct_constant *)Malloc (sizeof (struct_constant));
     SCO_BASETYPE (struc_co) = T_int;
+#ifdef MWE_NTYPE_READY
+    SCO_NAME (struc_co) = TYGetName (vtype);
+    SCO_MOD (struc_co) = TYGetMod (vtype);
+#else
     SCO_NAME (struc_co) = TYPES_NAME (vtype);
     SCO_MOD (struc_co) = TYPES_MOD (vtype);
+#endif
     SCO_SHAPE (struc_co) = SHCopyShape (vshape);
 
     SCO_HIDDENCO (struc_co) = COMakeConstant (T_hidden, vshape, node_vec);
@@ -560,7 +596,11 @@ SCOArray2StructConstant (node *expr)
 {
     struct_constant *struc_co;
     node *array;
+#ifdef MWE_NTYPE_READY
+    ntype *atype;
+#else
     types *atype;
+#endif
     shape *realshape;
     shape *ashape;
     node **node_vec;
@@ -580,8 +620,13 @@ SCOArray2StructConstant (node *expr)
         /* explicit array as N_array node */
         array = expr;
         /* shape of the given array */
+#ifdef MWE_NTYPE_READY
+        DBUG_ASSERT ((ARRAY_NTYPE (array) != NULL), "unknown array type");
+        atype = ARRAY_NTYPE (array);
+#else
         DBUG_ASSERT ((ARRAY_TYPE (array) != NULL), "unknown array type");
         atype = ARRAY_TYPE (array);
+#endif
 
     } else if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)
                && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr)))))
@@ -591,7 +636,11 @@ SCOArray2StructConstant (node *expr)
         array = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr))));
 
         /* shape of the given array */
+#ifdef MWE_NTYPE_READY
+        atype = AVIS_TYPE (ID_AVIS (expr));
+#else
         atype = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)));
+#endif
     } else {
         /* unsupported node type */
         array = NULL;
@@ -600,7 +649,11 @@ SCOArray2StructConstant (node *expr)
     /* build an abstract structural constant of type (void*) T_hidden */
     if (array != NULL) {
         /* alloc hidden vector */
+#ifdef MWE_NTYPE_READY
+        realshape = TYType2Shape (atype);
+#else
         realshape = SHOldTypes2Shape (atype);
+#endif
         ashape = SHCopyShape (ARRAY_SHAPE (array));
 
         /* ktr: before it was SHGetUnrLen(realshape); */
@@ -623,9 +676,15 @@ SCOArray2StructConstant (node *expr)
 
         /* create struct_constant */
         struc_co = (struct_constant *)Malloc (sizeof (struct_constant));
+#ifdef MWE_NTYPE_READY
+        SCO_BASETYPE (struc_co) = TYGetBasetype (atype);
+        SCO_NAME (struc_co) = TYGetName (atype);
+        SCO_MOD (struc_co) = TYGetMod (atype);
+#else
         SCO_BASETYPE (struc_co) = GetBasetype (atype);
         SCO_NAME (struc_co) = TYPES_NAME (atype);
         SCO_MOD (struc_co) = TYPES_MOD (atype);
+#endif
         SCO_SHAPE (struc_co) = realshape;
 
         SCO_HIDDENCO (struc_co) = COMakeConstant (T_hidden, ashape, node_vec);
@@ -657,7 +716,11 @@ SCOScalar2StructConstant (node *expr)
 {
     struct_constant *struc_co;
     shape *cshape;
+#ifdef MWE_NTYPES_READY
+    ntype *ctype;
+#else
     types *ctype;
+#endif
     node **elem;
     nodetype nt;
 
@@ -666,11 +729,18 @@ SCOScalar2StructConstant (node *expr)
     nt = NODE_TYPE (expr);
 
     if ((nt == N_num) || (nt == N_float) || (nt == N_double) || (nt == N_bool)
-        || ((nt == N_id)
-            && (GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))))
-                == SCALAR))) {
+        || ((nt == N_id) &&
+#ifdef MWE_NTYPE_READY
+            (TYGetDim (AVIS_TYPE (ID_AVIS (expr))) == SCALAR))) {
+        /* create structural constant as scalar */
+        ctype = AVIS_TYPE (ID_AVIS (expr));
+#else
+            (GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))))
+             == SCALAR))) {
+
         /* create structural constant of scalar */
         ctype = VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr)));
+#endif
 
         /* alloc hidden vector */
         cshape = SHMakeShape (0);
@@ -681,9 +751,15 @@ SCOScalar2StructConstant (node *expr)
 
         /* create struct_constant */
         struc_co = (struct_constant *)Malloc (sizeof (struct_constant));
+#ifdef MWE_NTYPES_READY
+        SCO_BASETYPE (struc_co) = TYGetBasetype (ctype);
+        SCO_NAME (struc_co) = TYGetName (ctype);
+        SCO_MOD (struc_co) = TYGetMod (ctype);
+#else
         SCO_BASETYPE (struc_co) = TYPES_BASETYPE (ctype);
         SCO_NAME (struc_co) = TYPES_NAME (ctype);
         SCO_MOD (struc_co) = TYPES_MOD (ctype);
+#endif
         SCO_SHAPE (struc_co) = SHCopyShape (cshape);
         SCO_HIDDENCO (struc_co) = COMakeConstant (T_hidden, cshape, elem);
 
@@ -735,10 +811,15 @@ SCODupStructConstant2Expr (struct_constant *struc_co)
         /* build array node */
         expr = MakeArray (aelems, SHCopyShape (COGetShape (SCO_HIDDENCO (struc_co))));
 
+#ifdef MWE_NTYPE_READY
+        ARRAY_NTYPE (expr)
+          = TYMakeAKS (TYMakeSimpleType (SCO_BASETYPE (struc_co)), SCO_SHAPE (struc_co));
+#else
         ARRAY_TYPE (expr)
           = MakeTypes (SCO_BASETYPE (struc_co), SHGetDim (SCO_SHAPE (struc_co)),
                        SHShape2OldShpseg (SCO_SHAPE (struc_co)),
                        StringCopy (SCO_NAME (struc_co)), SCO_MOD (struc_co));
+#endif
     }
     DBUG_RETURN (expr);
 }
@@ -934,12 +1015,21 @@ SSACFDim (node *expr)
     DBUG_ENTER ("SSACFDim");
 
     if (NODE_TYPE (expr) == N_id) {
+#ifdef MWE_NTYPE_READY
+        if (TYHasKnownDim (AVIS_TYPE (ID_AVIS (expr)))) {
+            dim = TYGetDim (AVIS_TYPE (ID_AVIS (expr)));
+            result = COMakeConstantFromInt (dim);
+        } else {
+            result = NULL;
+        }
+#else
         dim = GetDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
         if (dim >= 0) {
             result = COMakeConstantFromInt (dim);
         } else {
             result = NULL;
         }
+#endif
     } else {
         result = NULL;
     }
@@ -970,6 +1060,20 @@ SSACFShape (node *expr)
     DBUG_ENTER ("SSACFDim");
 
     if (NODE_TYPE (expr) == N_id) {
+#ifdef MWE_NTYPE_READY
+        if (TYHasKnownDim (AVIS_TYPE (ID_AVIS (expr)))) {
+            dim = TYGetDim (AVIS_TYPE (ID_AVIS (expr)));
+            /* store known shape as constant (int vector of len dim) */
+            cshape
+              = SHOldTypes2Shape (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
+            int_vec = SHShape2IntVec (cshape);
+            cshape = SHFreeShape (cshape);
+
+            result = COMakeConstant (T_int, SHCreateShape (1, dim), int_vec);
+        } else {
+            result = NULL;
+        }
+#else
         dim = GetShapeDim (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
         if (KNOWN_SHAPE (dim)) {
             /* store known shape as constant (int vector of len dim) */
@@ -982,6 +1086,7 @@ SSACFShape (node *expr)
         } else {
             result = NULL;
         }
+#endif
     } else {
         result = NULL;
     }
@@ -1528,9 +1633,15 @@ SSACFGetShapeOfExpr (node *expr)
         break;
 
     case N_array:
+#ifdef MWE_NTYPE_READY
+        /* get shape from array type attribute */
+        DBUG_ASSERT ((ARRAY_NTYPE (expr) != NULL), "array type attribute is missing");
+        shp = TYGetShape (ARRAY_NTYPE (expr));
+#else
         /* get shape from array type attribute */
         DBUG_ASSERT ((ARRAY_TYPE (expr) != NULL), "array type attribute is missing");
         shp = SHOldTypes2Shape (ARRAY_TYPE (expr));
+#endif
         break;
 
     default:
@@ -1561,13 +1672,22 @@ SSACFGetBasetypeOfExpr (node *expr)
     switch (NODE_TYPE (expr)) {
     case N_id:
         /* get basetype from type info */
+#ifdef MWE_NTYPE_READY
+        stype = TYGetBasetype (AVIS_TYPE (ID_AVIS (expr)));
+#else
         stype = GetBasetype (VARDEC_OR_ARG_TYPE (AVIS_VARDECORARG (ID_AVIS (expr))));
+#endif
         break;
 
     case N_array:
         /* get shape from array type attribute */
+#ifdef MWE_NTYPE_READY
+        DBUG_ASSERT ((ARRAY_NTYPE (expr) != NULL), "array type attribute is missing");
+        stype = TYGetBasetype (ARRAY_NTYPE (expr));
+#else
         DBUG_ASSERT ((ARRAY_TYPE (expr) != NULL), "array type attribute is missing");
         stype = GetBasetype (ARRAY_TYPE (expr));
+#endif
         break;
 
     default:
@@ -1681,11 +1801,17 @@ SSACFModarray (node *a, constant *idx, node *elem)
 
             if (SCO_ELEMDIM (struc_a) != SCO_ELEMDIM (struc_elem)) {
                 newarray = MakeFlatArray (MakeExprs (elem, NULL));
+#ifdef MWE_NTYPE_READY
+                ARRAY_NTYPE (newarray)
+                  = TYMakeAKS (TYMakeSimpleType (COGetType (SCO_HIDDENCO (struc_elem))),
+                               SCO_SHAPE (struc_elem));
+#else
                 ARRAY_TYPE (newarray)
                   = MakeTypes (COGetType (SCO_HIDDENCO (struc_elem)),
                                SHGetDim (SCO_SHAPE (struc_elem)),
                                SHShape2OldShpseg (SCO_SHAPE (struc_elem)),
                                SCO_NAME (struc_elem), SCO_MOD (struc_elem));
+#endif
                 struc_elem = SCOFreeStructConstant (struc_elem);
                 struc_elem = SCOArray2StructConstant (newarray);
             }
@@ -2476,18 +2602,27 @@ SSACFlet (node *arg_node, info *arg_info)
                     if (sbs == 1) {
                         computed_type = TYMakeAKS (TYMakeSimpleType (COGetType (new_co)),
                                                    SHCopyShape (COGetShape (new_co)));
+#ifdef MWE_NTYPE_READY
+                        infered_type = AVIS_TYPE (IDS_AVIS (ids));
+#else
                         inferred_type = TYOldType2Type (IDS_TYPE (ids));
-
+#endif
                         DBUG_ASSERT (TYLeTypes (computed_type, inferred_type),
                                      "CF lead to a result type that is not a proper "
                                      "subtype of the inferred type!");
-
+#ifdef MWE_NTYPE_READY
+                        AVIS_TYPE (IDS_AVIS (ids))
+                          = TYFreeType (AVIS_TYPE (IDS_AVIS (ids)));
+                        AVIS_TYPE (IDS_AVIS (ids)) = computed_type;
+                        inferred_type = TYFreeType (inferred_type);
+#else
                         L_VARDEC_OR_ARG_TYPE (IDS_VARDEC (ids),
                                               FreeOneTypes (IDS_TYPE (ids)));
                         L_VARDEC_OR_ARG_TYPE (IDS_VARDEC (ids),
                                               TYType2OldType (computed_type));
                         computed_type = TYFreeType (computed_type);
                         inferred_type = TYFreeType (inferred_type);
+#endif
                     }
                 } else {
                     /* expression is not constant */
@@ -2644,8 +2779,11 @@ SSACFarray (node *arg_node, info *arg_info)
 {
     node *newelems = NULL;
     node *oldelems, *tmp;
+#ifdef MWE_NTYPE_READY
+    ntype *newarrtypes;
+#else
     types *newarrtypes;
-
+#endif
     shape *shp = NULL, *newshp;
 
     DBUG_ENTER ("SSACFarray");
@@ -2685,13 +2823,21 @@ SSACFarray (node *arg_node, info *arg_info)
                                                     ID_SSAASSIGN (EXPRS_EXPR (tmp))))));
                 tmp = EXPRS_NEXT (tmp);
             }
+#ifdef MWE_NTYPE_READY
+            newarrtypes = TYCopyType (ARRAY_NTYPE (arg_node));
+#else
             newarrtypes = DupOneTypes (ARRAY_TYPE (arg_node));
+#endif
             newshp = SHAppendShapes (ARRAY_SHAPE (arg_node), shp);
 
             FreeTree (arg_node);
 
             arg_node = MakeArray (newelems, newshp);
+#ifdef MWE_NTYPE_READY
+            ARRAY_NTYPE (arg_node) = newarrtypes;
+#else
             ARRAY_TYPE (arg_node) = newarrtypes;
+#endif
         }
     }
     INFO_SSACF_INSCONST (arg_info) = FALSE;
