@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.112  1996/02/21 09:17:42  cg
+ * Revision 1.113  1996/02/21 15:05:12  cg
+ * usage of function specifiers 'class' and 'inline' in SIBs corrected
+ *
+ * Revision 1.112  1996/02/21  09:17:42  cg
  * bug fixed in parsing SIBs: better use breaks in cases
  *
  * Revision 1.111  1996/02/08  18:05:46  hw
@@ -2889,8 +2892,8 @@ sibfun: evmarker varreturntypes fun_name
           }
         ;
 
-evmarker: INLINE   {$$=2;} 
-        | CLASSIMP {$$=1;}
+evmarker: INLINE   {$$=1;} 
+        | CLASSIMP {$$=2;}
         |          {$$=0;}
         ;
 
