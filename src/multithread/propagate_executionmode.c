@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.10  2004/08/19 09:07:33  skt
+ * now a N_return gets the same executionmode as its funcion
+ *
  * Revision 1.9  2004/08/18 13:24:31  skt
  * switch to mtexecmode_t done
  *
@@ -74,6 +77,7 @@ struct INFO {
     node *myassign;
     node *lastconditionalassignment;
     node *lastwithloopassignment;
+    node *lastvisitedassign;
 };
 
 /*
@@ -84,6 +88,10 @@ struct INFO {
  *                             traversal (=>1) or not (=>0)
  *   node*      MYASSIGN      (the current assignment, the traversal.mechanism
  *                             is in)
+ *   node*      LASTVISETEDASSIGN (the last assignment visited - used to set
+ *                                 the executionmode of the return-assignment
+ *                                 to the same as the executionmode of its
+ *                                 function)
  */
 #define INFO_PEM_ANYCHANGE(n) (n->changeflag)
 #define INFO_PEM_FIRSTTRAV(n) (n->firstflag)
@@ -91,6 +99,7 @@ struct INFO {
 #define INFO_PEM_MYASSIGN(n) (n->myassign)
 #define INFO_PEM_LASTCONDASSIGN(n) (n->lastconditionalassignment)
 #define INFO_PEM_LASTWITHASSIGN(n) (n->lastwithloopassignment)
+#define INFO_PEM_LASTVISTEDASSIGN(n) (n->lastvisitedassign)
 
 /*
  * INFO functions
@@ -212,6 +221,12 @@ PEMfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("PEM", ("trav from function-body"));
     }
 
+    /* set the execmode of the return statement */
+    DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (INFO_PEM_LASTWITHASSIGN (arg_info)))
+                  == N_return),
+                 "N_return as last assignment expected");
+    ASSIGN_EXECMODE (INFO_PEM_LASTWITHASSIGN (arg_info)) = FUNDEF_EXECMODE (arg_node);
+
     INFO_PEM_ACTFUNDEF (arg_info) = NULL;
 
 #if PEM_DEBUG
@@ -269,6 +284,10 @@ PEMassign (node *arg_node, info *arg_info)
 
     /* pop_info */
     INFO_PEM_MYASSIGN (arg_info) = old_assign;
+
+    /* store this assignment - if it's the last of a function's N_block,
+     * PEMfundef will set its executionmode */
+    INFO_PEM_LASTWITHASSIGN (arg_info) = arg_node;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("PEM", ("trav into next"));
