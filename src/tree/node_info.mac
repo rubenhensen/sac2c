@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.168  2004/07/28 09:09:01  khf
+ * MMVassign, MMVcode added and support for fourth son
+ * of Ncode: NCODE_EPILOGUE removed
+ *
  * Revision 3.167  2004/07/26 16:24:22  skt
  * added support for cell creation
  * (part of mt-mode 3)
@@ -1710,7 +1714,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SPMDIassign, SPMDOassign, TravSons, SYNCIassign,
 
        SYNCOassign, WLTRAassign, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, WLAAassign, TravSons, SPMDRMassign, SPMDROassign, TravSons, TravSons,
+       TravSons, WLAAassign, MMVassign, SPMDRMassign, SPMDROassign, TravSons, TravSons,
        TravSons, TravSons, SPMDPMassign, SPMDCOassign, NTCassign, INFDFMSassign,
 
        TravSons, TravSons, BLKINassign, TravSons, FUN2LACassign, AIassign, BLKEXassign,
@@ -2388,7 +2392,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, WLTRAcode, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       WLAAncode, TravSons, TravSons, TravSons, TravSons, TSIncode, TravSons, TravSons,
+       WLAAncode, MMVcode, TravSons, TravSons, TravSons, TSIncode, TravSons, TravSons,
        TravSons, TravSons, NTCNcode, INFDFMScode,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, AIcode, TravSons, TravSons,
@@ -2405,7 +2409,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, EMALcode, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 4),
+       TravSons, TravSons, TravSons, TravSons, 3),
 
   /*
    * here is the node information for the transformed new with-loop
