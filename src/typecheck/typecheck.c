@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  1999/03/17 16:09:05  bs
+ * Braces in if-clauses added!
+ *
  * Revision 2.4  1999/03/15 14:03:19  bs
  * Access macros renamed (take a look at tree_basic.h).
  *
@@ -1495,12 +1498,13 @@ LookupType (char *type_name, char *mod_name, int line)
                     defined = 0;
                     for (i = 0; i < 2; i++) {
                         mods[i] = FindSymbolInModul (mod_name, type_name, i, NULL, 1);
-                        if (NULL != mods[i])
+                        if (NULL != mods[i]) {
                             if (NULL != mods[i]->next) {
                                 defined += 2;
                                 break;
                             } else
                                 defined += 1;
+                        }
                     }
 
                     if (0 == defined)
@@ -1531,13 +1535,14 @@ LookupType (char *type_name, char *mod_name, int line)
             }
     } else {
         for (i = 0; i < type_tab_size; i++)
-            if (!strcmp (type_name, (type_table + i)->node->ID))
+            if (!strcmp (type_name, (type_table + i)->node->ID)) {
                 if (1 == (type_table + i)->id_count) {
                     ret_node = (type_table + i)->node;
                     break;
                 } else {
                     ABORT (line, ("Type '%s` has more than one definition", type_name));
                 }
+            }
     }
 
     DBUG_RETURN (ret_node);
@@ -1625,11 +1630,12 @@ LookupFun (char *fun_name, char *mod_name, node *fun_node)
         DBUG_PRINT ("TYPE", ("looking for function '%s'", ModName (mod_name, fun_name)));
 
         for (tmp = fun_table; !END_OF_FUN_TAB (tmp); tmp = NEXT_FUN_TAB_ELEM (tmp))
-            if (!strcmp (fun_name, tmp->id))
+            if (!strcmp (fun_name, tmp->id)) {
                 if (NULL == mod_name)
                     break;
                 else if (CMP_MOD (mod_name, tmp->id_mod))
                     break;
+            }
     } else {
         DBUG_PRINT ("TYPE", ("looking for function '%s%s%s'",
                              ModName (FUNDEF_MOD (fun_node), FUNDEF_NAME (fun_node))));
@@ -2467,9 +2473,10 @@ CheckRest (node *arg_node, int kind)
 #ifndef DBUG_OFF
     DBUG_PRINT ("CHECK", ("tags of local functions after first run "));
     for (fun_p = fun_table; !END_OF_FUN_TAB (fun_p); fun_p = NEXT_FUN_TAB_ELEM (fun_p))
-        if (NULL != fun_p->node->node[0])
+        if (NULL != fun_p->node->node[0]) {
             DBUG_PRINT ("CHECK",
                         ("function %s has tag :%s", fun_p->id, CHECK_NAME (fun_p->tag)));
+        }
     DBUG_PRINT ("CHECK", (""));
 #endif
 
@@ -2744,12 +2751,13 @@ InitTypeTab (node *modul_node)
                 defined = 0;
                 for (k = 0; k < 2; k++) {
                     mods[k] = FindSymbolInModul (mod_name, name, k, NULL, 1);
-                    if (NULL != mods[k])
+                    if (NULL != mods[k]) {
                         if (NULL != mods[k]->next) {
                             defined += 2;
                             break;
                         } else
                             defined += 1;
+                    }
                 }
 
                 if (0 == defined)
@@ -6594,7 +6602,7 @@ TI_foldprf (node *arg_node, types *generator_type, types *w_return_type, node *a
                 prf_string[NWITHOP_PRF (arg_node)]));
     } else if (CMP_equal
                != CompatibleTypes (w_return_type, ret_type, -1,
-                                   NODE_LINE (arg_node))) /* 1*/
+                                   NODE_LINE (arg_node))) /* 1*/ {
         if (N_foldfun == arg_node->nodetype) {
             ABORT (NODE_LINE (arg_node),
                    ("Function '%s` has return type '%s` != '%s`",
@@ -6605,6 +6613,7 @@ TI_foldprf (node *arg_node, types *generator_type, types *w_return_type, node *a
                    ("Function '%s` has return type '%s` != '%s`",
                     prf_string[arg_node->info.prf], Type2String (ret_type, 0),
                     Type2String (w_return_type, 0)));
+    }
     if (FOLDPRF_NEUTRAL (arg_node)) {
         types *neutral_type = TI (arg_node->node[1], arg_info);
         if (CMP_equal != CmpTypes (neutral_type, ret_type)) /* 1 */ {
@@ -7624,18 +7633,19 @@ TI_Nfoldprf (node *arg_node, types *body_type, types *neutral_type, node *arg_in
                ("Primitive function '%s` is applied to wrong arguments",
                 prf_string[NWITHOP_PRF (arg_node)]));
     } else if (CMP_equal
-               != CompatibleTypes (body_type, ret_type, -1, NODE_LINE (arg_node)))
+               != CompatibleTypes (body_type, ret_type, -1, NODE_LINE (arg_node))) {
         if (WO_foldfun == NWITHOP_TYPE (arg_node)) {
             ABORT (NODE_LINE (arg_node),
                    ("Function '%s` has return type '%s` != '%s`",
                     ModName (NWITHOP_MOD (arg_node), NWITHOP_FUN (arg_node)),
                     Type2String (ret_type, 0), Type2String (body_type, 0)));
-        } else
+        } else {
             ABORT (NODE_LINE (arg_node),
                    ("Function '%s` has return type '%s` != '%s`",
                     prf_string[arg_node->info.prf], Type2String (ret_type, 0),
                     Type2String (body_type, 0)));
-
+        }
+    }
     if (NWITHOP_NEUTRAL (arg_node)) {
         if (CMP_equal != CmpTypes (neutral_type, ret_type)) /* 1 */ {
             ABORT (NODE_LINE (arg_node),
