@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.23  1998/04/25 12:02:17  sbs
+ * indent inserted
+ *
  * Revision 1.22  1998/03/24 11:48:31  cg
  * added global variables used to gather compile time information
  * later used for profiling.
@@ -213,5 +216,6 @@ extern int my_dbug_active;
 extern char *my_dbug_str;
 
 extern int Make_Old2NewWith;
+extern int level;
 
 #endif /* _sac_globals_h */
