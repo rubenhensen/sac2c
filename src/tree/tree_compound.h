@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.123  2004/11/23 22:27:57  khf
+ * added TCmakeFlatArray
+ *
  * Revision 3.122  2004/11/23 22:18:10  ktr
  * take it!!!
  *
@@ -1307,7 +1310,7 @@ extern node *TCnodeBehindCast (node *arg_node);
 /*
  *  function declarations
  */
-
+extern node *TCmakeFlatArray (node *aelems);
 extern node *TCcreateZeroScalar (simpletype btype);
 extern node *TCcreateZeroVector (int length, simpletype btype);
 

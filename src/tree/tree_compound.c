@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.100  2004/11/23 22:27:57  khf
+ * added TCmakeFlatArray
+ *
  * Revision 3.99  2004/11/23 22:18:50  skt
  * code brushing during SACDevCampDK 2k4
  *
@@ -2997,6 +3000,24 @@ NodeBehindCast (node *arg_node)
 /***
  ***  N_array :
  ***/
+
+/******************************************************************************
+ *
+ * function:
+ *   node *TCmakeFlatArray( node *aelems)
+ *
+ * description:
+ *   Returns a vector.
+ *
+ ******************************************************************************/
+
+node *
+TCmakeFlatArray (node *aelems)
+{
+    DBUG_ENTER ("MakeFlatArray");
+
+    DBUG_RETURN (TBmakeArray (aelems, SHcreateShape (1, TCcountExprs (aelems))));
+}
 
 /******************************************************************************
  *
