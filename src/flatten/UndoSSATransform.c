@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/02/09 15:23:53  mwe
+ * PHIT_NONE assignments for PHITARGET added
+ *
  * Revision 1.2  2004/02/06 14:19:33  mwe
  * condTransform added
  * replace primitive phi function with PHITARGET
@@ -725,6 +728,11 @@ USSAfundef (node *arg_node, node *arg_info)
                 if (NODE_TYPE (ASSIGN_INSTR (assign)) == N_cond) {
                     INFO_USSA_PHIFUN (arg_info) = assign;
                     condTransform (ASSIGN_INSTR (assign), arg_info);
+                } else if ((NODE_TYPE (ASSIGN_INSTR (assign)) == N_let)
+                           && (LET_IDS (ASSIGN_INSTR (assign)) != NULL)
+                           && (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign))) != NULL)) {
+                    AVIS_SSAPHITARGET (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign))))
+                      = PHIT_NONE;
                 }
                 assign = ASSIGN_NEXT (assign);
             }
