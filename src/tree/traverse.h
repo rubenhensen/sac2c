@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/05/30 14:04:11  nmw
+ * ssalil_tab traversal added (SSAInferLoopInvariants())
+ *
  * Revision 3.18  2001/05/22 14:58:46  nmw
  * rmcasts traversal added
  *
@@ -262,6 +265,7 @@ extern funtab *ssawlt_tab;
 extern funtab *ssawli_tab;
 extern funtab *ssawlf_tab;
 extern funtab *rmcasts_tab;
+extern funtab *ssaili_tab;
 
 extern int nnode[];
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2001/05/30 14:04:11  nmw
+ * ssalil_tab traversal added (SSAInferLoopInvariants())
+ *
  * Revision 3.24  2001/05/22 14:58:46  nmw
  * rmcasts traversal added
  *
@@ -187,6 +190,7 @@
 #include "SSAWLI.h"
 #include "SSAWLF.h"
 #include "rmcasts.h"
+#include "SSAInferLI.h"
 
 #include "traverse.h"
 
@@ -1295,6 +1299,17 @@ static funtab ssawlf_tab_rec = {{
                                 NULL,
                                 NULL};
 funtab *ssawlf_tab = &ssawlf_tab_rec;
+
+/*
+ *  (101) ssaili_tab
+ */
+static funtab ssaili_tab_rec = {{
+#define NIFssaili(it_ssaili) it_ssaili
+#include "node_info.mac"
+                                },
+                                NULL,
+                                NULL};
+funtab *ssaili_tab = &ssaili_tab_rec;
 
 /*
  *  nnode
