@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.160  2004/11/25 22:18:43  mwe
+ * missing brace paranthesis added
+ *
  * Revision 3.159  2004/11/25 22:15:01  skt
  * according to some very special change for mwe
  *
@@ -870,8 +873,7 @@ extern node *TCreturnTypes2Ret (types *type);
  *          Use the L_VARDEC_OR_... macros instead!!
  */
 #define VARDEC_OR_ARG_NAME(n) (AVIS_NAME (DECL_AVIS (n)))
-#define VARDEC_OR_ARG_TYPE(n)                                                            \
-  ((NODE_TYPE(n) == N_arg) ? ARG_TYPE(n) : VARDEC_TYPE(n)
+#define VARDEC_OR_ARG_TYPE(n) ((NODE_TYPE (n) == N_arg) ? ARG_TYPE (n) : VARDEC_TYPE (n))
 #define VARDEC_OR_ARG_STATUS(n)                                                          \
     ((NODE_TYPE (n) == N_arg)                                                            \
        ? ARG_STATUS (n)                                                                  \
