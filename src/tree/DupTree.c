@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.57  2002/03/01 02:40:09  dkr
+ * DupFundef() and DupAp() modified: ARGTAB is duplicated now
+ *
  * Revision 3.56  2002/02/22 14:27:53  dkr
  * functions Dup...TypesOnly(), DupOneTypesOnly_Inplace() removed
  *
@@ -641,7 +644,7 @@ DupId (node *arg_node, node *arg_info)
     ID_ATTRIB (new_node) = ID_ATTRIB (arg_node);
     ID_REFCNT (new_node) = ID_REFCNT (arg_node);
     ID_NAIVE_REFCNT (new_node) = ID_NAIVE_REFCNT (arg_node);
-    ID_CLSCONV (new_node) = ID_CLSCONV (arg_node);
+    ID_UNQCONV (new_node) = ID_UNQCONV (arg_node);
 
     ID_AVIS (new_node) = SearchInLUT_P (INFO_DUP_LUT (arg_info), ID_AVIS (arg_node));
 
@@ -849,6 +852,7 @@ DupFundef (node *arg_node, node *arg_info)
   FUNDEF_ICM( new_node) = ???;
   FUNDEC_DEF( new_node) = ???;
   FUNDEF_MASK( new_node, ?) = ???;
+  FUNDEF_ARGTAB( new_node) = ???;
 #endif
 
     CopyCommonNodeData (new_node, arg_node);
@@ -1117,6 +1121,10 @@ DupReturn (node *arg_node, node *arg_info)
 
     RETURN_REFERENCE (new_node) = DUPTRAV (RETURN_REFERENCE (arg_node));
 
+#if 0
+  RETURN_CRET( new_node) = ???;
+#endif
+
     RETURN_USEMASK (new_node) = DupDFMask_ (RETURN_USEMASK (arg_node), arg_info);
     RETURN_DEFMASK (new_node) = DupDFMask_ (RETURN_DEFMASK (arg_node), arg_info);
 
@@ -1301,6 +1309,10 @@ DupAp (node *arg_node, node *arg_info)
 
     AP_FUNDEF (new_node) = new_fundef;
     AP_ATFLAG (new_node) = AP_ATFLAG (arg_node);
+
+#if 0
+  AP_ARGTAB( new_node) = ???;
+#endif
 
     CopyCommonNodeData (new_node, arg_node);
 
