@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.15  2002/07/12 19:32:10  dkr
+ * bug in SAC_IS_LASTREF__BLOCK_... fixed
+ *
  * Revision 3.14  2002/07/12 19:11:15  dkr
  * ND_PARAM_() added
  *
@@ -1262,11 +1265,11 @@ typedef int SAC_hidden_descriptor; /* reference count */
 #define SAC_IS_LASTREF__ELSE(nt) else
 
 #define SAC_IS_LASTREF__BLOCK_BEGIN(nt)                                                  \
-    IS_LASTREF__THEN (nt)                                                                \
+    SAC_IS_LASTREF__THEN (nt)                                                            \
     {
 #define SAC_IS_LASTREF__BLOCK_ELSE(nt)                                                   \
     }                                                                                    \
-    IS_LASTREF__ELSE (nt)                                                                \
+    SAC_IS_LASTREF__ELSE (nt)                                                            \
     {
 #define SAC_IS_LASTREF__BLOCK_END(nt) }
 
