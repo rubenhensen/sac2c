@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/11/23 12:04:50  sah
+  changed Ids
+
   Revision 1.1  2004/11/23 11:37:46  sah
   Initial revision
 
@@ -86,7 +89,15 @@
     copy="function" persist="no" />
   </attributetypes>
   <traversals>
-    <traversal id="CF" name="Constant Folding" />
+    <!-- id is the short id of the traversal 
+         name is a descriptive name
+	 default gives the default traversal mode
+	   user  a user defined function
+	   sons  TravSons
+	   none  TravNone
+	   error TravError
+    -->
+    <traversal id="CF" name="Constant Folding" default="user" />
   </traversals>
   <nodesets>
     <nodeset name="Expr">
@@ -885,16 +896,16 @@
     </node>
     <node name="Let">
       <sons>
-        <son name="Ids" mandatory="yes">
-	  <target>
-	    <node name="Ids" />
-	  </target>
-	</son>
         <son name="Expr" mandatory="yes">
           <target>
             <set name="Expr" />
           </target>
         </son>
+        <son name="Ids" mandatory="yes">
+	  <target>
+	    <node name="Ids" />
+	  </target>
+	</son>
       </sons>
       <attributes>
         <attribute name="UseMask" mandatory="yes">
