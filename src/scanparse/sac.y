@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.111  1996/02/08 18:05:46  hw
+ * Revision 1.112  1996/02/21 09:17:42  cg
+ * bug fixed in parsing SIBs: better use breaks in cases
+ *
+ * Revision 1.111  1996/02/08  18:05:46  hw
  * type-declaration with known dimenson, but unknown shape will be parsed
  * now e.g int[.,.]
  *
@@ -2842,12 +2845,15 @@ sibfun: evmarker varreturntypes fun_name
             case 0:
               FUNDEF_STATUS($$)=ST_imported;
               FUNDEF_INLINE($$)=0;
+              break;
             case 1:
               FUNDEF_STATUS($$)=ST_imported;
               FUNDEF_INLINE($$)=1;
+              break;
             case 2:
               FUNDEF_STATUS($$)=ST_classfun;
               FUNDEF_INLINE($$)=0;
+              break;
             }
             FUNDEF_PRAGMA($$)=$8;
 
@@ -2864,12 +2870,15 @@ sibfun: evmarker varreturntypes fun_name
             case 0:
               FUNDEF_STATUS($$)=ST_imported;
               FUNDEF_INLINE($$)=0;
+              break;
             case 1:
               FUNDEF_STATUS($$)=ST_imported;
               FUNDEF_INLINE($$)=1;
+              break;
             case 2:
               FUNDEF_STATUS($$)=ST_classfun;
               FUNDEF_INLINE($$)=0;
+              break;
             }
             FUNDEF_PRAGMA($$)=$10;
 
