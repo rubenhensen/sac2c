@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.35  1999/07/07 15:30:22  jhs
+ * Removed SYNC_WITH_PTRS.
+ *
  * Revision 2.34  1999/07/07 06:00:19  sbs
  * added VINFO_DOLLAR and adjusted MakeVinfo
  *
@@ -2559,8 +2562,7 @@ extern node *MakeSync (node *region, int first);
 #define SYNC_FIRST(n) (n->flag)
 #define SYNC_LAST(n) (n->int_data)
 #define SYNC_REGION(n) (n->node[0])
-#define SYNC_WITH_PTRS(n) (n->node[1])
-#define SYNC_SCHEDULING(n) ((SCHsched_t) (n->node[2]))
+#define SYNC_SCHEDULING(n) ((SCHsched_t) (n->node[1]))
 
 #define SYNC_IN(n) ((DFMmask_t)n->dfmask[0])
 #define SYNC_INOUT(n) ((DFMmask_t)n->dfmask[1])
