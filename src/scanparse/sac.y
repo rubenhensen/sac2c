@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 2.21  2000/07/11 10:19:52  dkr
+ * GEN_NODE replaced by MALLOC
+ *
  * Revision 2.20  2000/06/23 15:26:21  dkr
  * signature of DupTree changed
  *
@@ -1407,7 +1410,7 @@ main: TYPE_INT K_MAIN BRACKET_L BRACKET_R { $$=MakeNode(N_fundef); } exprblock
           $$->node[0]=$6;                 /* Funktionsrumpf */
 
           $$->info.types=MakeTypes(T_int);  /* Knoten fu"r Typinformation */ 
-          $$->info.types->id=(char *)Malloc(sizeof(char)*5); 
+          $$->info.types->id=(char *)MALLOC(sizeof(char)*5); 
           strcpy($$->info.types->id, "main");   /* Funktionsnamen eintragen */
 
           DBUG_PRINT("GENTREE",("%s:"P_FORMAT", main "P_FORMAT
@@ -2243,7 +2246,7 @@ string: STR
         }
       | STR string
         {
-          $$=(char *)Malloc(strlen($1)+strlen($2)+1);
+          $$=(char *)MALLOC(strlen($1)+strlen($2)+1);
           strcpy($$, $1);
           strcat($$, $2);
           FREE($1);
@@ -2760,7 +2763,7 @@ int My_yyparse()
    * make a copy of the actual filename, which will be used for
    * all subsequent nodes...
    */
-  tmp = (char *)Malloc( (strlen(filename)+1) * sizeof( char));
+  tmp = (char *)MALLOC( (strlen(filename)+1) * sizeof( char));
   strcpy( tmp, filename);
   filename = tmp;
 
@@ -2893,7 +2896,7 @@ types *GenComplexType( types *types, nums *numsp)
 
   DBUG_ENTER("GenComplexType");
 
-  types->shpseg=GEN_NODE(shpseg);
+  types->shpseg=(shpseg *)MALLOC(sizeof(shpseg));
   destptr=types->shpseg->shp;
   do {
     types->dim++;
