@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2001/03/22 13:15:31  dkr
+ * MakeIds(): IDS_AVIS initialized
+ *
  * Revision 3.23  2001/03/21 11:05:13  dkr
  * superfluous include of scnprs.h removed
  *
@@ -265,6 +268,7 @@ MakeIds (char *name, char *mod, statustype status)
     IDS_NAIVE_REFCNT (tmp) = 0;
     IDS_NEXT (tmp) = NULL;
     IDS_VARDEC (tmp) = NULL;
+    IDS_AVIS (tmp) = NULL;
     IDS_DEF (tmp) = NULL;
     IDS_USE (tmp) = NULL;
     IDS_STATUS (tmp) = status;
