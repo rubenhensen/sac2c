@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2004/09/29 16:55:48  sah
+ * added lots of DBUG_PRINT statements and switched DFM2ProductType to
+ * a recursive implementation avoiding copying types
+ *
  * Revision 3.11  2004/09/27 12:29:02  sah
  * DFM2FunctionType and DFM2ProductType
  * handle empty types (prior to ti)
@@ -326,12 +330,25 @@ DFM2ReturnTypes (DFMmask_t mask)
          */
         if (VARDEC_OR_ARG_ATTRIB (decl) == ST_was_reference) {
             TYPES_STATUS (rettypes) = ST_artificial;
-            DBUG_PRINT ("DFMU", ("TYPES_STATUS[ %s ] := ST_artificial !!!",
-                                 TYPES_NAME (rettypes)));
+#ifndef DBUG_OFF
+            if (TYPES_NAME (rettypes) != NULL) {
+                DBUG_PRINT ("DFMU", ("TYPES_STATUS[ %s ] := ST_artificial !!!",
+                                     TYPES_NAME (rettypes)));
+            } else {
+                DBUG_PRINT ("DFMU", ("TYPES_STATUS[ (null) ] := ST_artificial !!!"));
+            }
+#endif
         } else {
             TYPES_STATUS (rettypes) = VARDEC_OR_ARG_STATUS (decl);
-            DBUG_PRINT ("DFMU", ("TYPES_STATUS[ %s ] == %s", TYPES_NAME (rettypes),
-                                 mdb_statustype[TYPES_STATUS (rettypes)]));
+#ifndef DBUG_OFF
+            if (TYPES_NAME (rettypes) != NULL) {
+                DBUG_PRINT ("DFMU", ("TYPES_STATUS[ %s ] == %s", TYPES_NAME (rettypes),
+                                     mdb_statustype[TYPES_STATUS (rettypes)]));
+            } else {
+                DBUG_PRINT ("DFMU", ("TYPES_STATUS[ (null) ] == %s",
+                                     mdb_statustype[TYPES_STATUS (rettypes)]));
+            }
+#endif
         }
 
         TYPES_NEXT (rettypes) = tmp;
@@ -346,6 +363,52 @@ DFM2ReturnTypes (DFMmask_t mask)
     }
 
     DBUG_RETURN (rettypes);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn ntype *DFM2ProductType( DFMmask_t mask)
+ *
+ * @brief recursive helper function for creating a product type
+ *
+ * @param decl DFM iterator on vardecs/args
+ * @param pos  position in DFM iterator
+ *
+ ******************************************************************************/
+static ntype *
+DFM2ProductTypeRec (node *decl, int pos)
+{
+    ntype *result;
+
+    DBUG_ENTER ("DFM2ProductTypeRec");
+
+    if (decl == NULL) {
+        if (pos == 0) {
+            result = NULL;
+        } else {
+            result = TYMakeEmptyProductType (pos);
+        }
+    } else {
+        ntype *ptype = AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl));
+
+        if (ptype != NULL) {
+            result = DFM2ProductTypeRec (DFMGetMaskEntryDeclSet (NULL), pos + 1);
+        } else {
+            /**
+             * We have found a return value without a ntype attached to it.
+             */
+
+            DBUG_PRINT ("DFMU", ("Found return value with missing ntype"));
+
+            result = NULL;
+        }
+
+        if (result != NULL) {
+            TYSetProductMember (result, pos, TYCopyType (ptype));
+        }
+    }
+
+    DBUG_RETURN (result);
 }
 
 /** <!--********************************************************************-->
@@ -367,31 +430,7 @@ DFM2ProductType (DFMmask_t mask)
 
     decl = DFMGetMaskEntryDeclSet (mask);
 
-    while (decl != NULL) {
-        if (result == NULL) {
-            result = TYCopyType (AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl)));
-            if (result != NULL) {
-                result = TYMakeProductType (1, result);
-            }
-        } else {
-            int cnt;
-            ntype *new = TYMakeEmptyProductType (TYGetProductSize (result) + 1);
-
-            for (cnt = 0; cnt < TYGetProductSize (result); cnt++) {
-                TYSetProductMember (new, cnt,
-                                    TYCopyType (TYGetProductMember (result, cnt)));
-            }
-
-            TYSetProductMember (new, TYGetProductSize (result),
-                                TYCopyType (AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl))));
-
-            result = TYFreeType (result);
-
-            result = new;
-        }
-
-        decl = DFMGetMaskEntryDeclSet (NULL);
-    }
+    result = DFM2ProductTypeRec (decl, 0);
 
     DBUG_RETURN (result);
 }
@@ -415,23 +454,56 @@ DFM2FunctionType (DFMmask_t in, DFMmask_t out, node *fundef)
 
     DBUG_ENTER ("DFM2FunctionType");
 
+    DBUG_PRINT ("DFMU", ("Creating ntype for function `%s'", FUNDEF_NAME (fundef)));
+
     result = DFM2ProductType (out);
 
-    decl = DFMGetMaskEntryDeclSet (in);
+    if (result != NULL) {
+        decl = DFMGetMaskEntryDeclSet (in);
 
-    while (decl != NULL) {
-        ntype *tmp = AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl));
+        while (decl != NULL) {
+            ntype *tmp = AVIS_TYPE (VARDEC_OR_ARG_AVIS (decl));
 
-        if (tmp != NULL) {
-            if (result != NULL) {
+            if (tmp != NULL) {
                 result = TYMakeFunType (TYCopyType (tmp), result, fundef);
             } else {
-                result = tmp;
-            }
-        }
+                /**
+                 * We have found an argument without a ntype! This may happen
+                 * when using the old typechecker and the argument is a T_dots
+                 * which cannot be transformed into an ntype. Therefor the
+                 * function (containing the T_dots) cannot be given a proper
+                 * function type.
+                 *
+                 * For the time beeing, we just return a NULL pointer!
+                 */
+                if (result != NULL) {
+                    result = TYFreeType (result);
+                }
 
-        decl = DFMGetMaskEntryDeclSet (NULL);
+                DBUG_PRINT ("DFMU", ("Missing Argument type for function `%s'",
+                                     FUNDEF_NAME (fundef)));
+
+                break;
+            }
+
+            decl = DFMGetMaskEntryDeclSet (NULL);
+        }
+    } else {
+        /**
+         * For some reason we were not able to create a return type.
+         * Maybe one of the results has a T_dots type assigned by
+         * the old typechecker, so there simply is no ntype type for
+         * it. In this case there is no valid function ntype as well.
+         *
+         * So, again we just return a NULL pointer
+         */
+
+        DBUG_PRINT ("DFMU", ("Unable to create return type for function `%s'",
+                             FUNDEF_NAME (fundef)));
     }
+
+    DBUG_PRINT ("DFMU",
+                ("Finished creating ntype for function `%s'", FUNDEF_NAME (fundef)));
 
     DBUG_RETURN (result);
 }
