@@ -12,13 +12,13 @@ libsac_mt.c
 libsac_profile.c
 libsac_trace.c
 sac.h
+sac2crc
 sac2crc.LINUX_X86
 sac2crc.README
 sac2crc.SOLARIS_SPARC
 sac_bool.h
 sac_boundcheck.h
 sac_cachesim.h
-sac_icm.h
 sac_idx.h
 sac_malloc.h
 sac_message.h
