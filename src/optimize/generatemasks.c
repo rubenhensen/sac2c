@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.21  2000/08/17 10:04:47  dkr
+ * PrintDefUseMasks() split into PrintDefMask() and PrintUseMask()
+ *
  * Revision 2.20  2000/06/23 14:09:47  dkr
  * nodes for old with-loop removed
  *
@@ -615,12 +618,6 @@ CopyMask (long *mask1, int varno1, long *mask2, int varno2)
  *                  2) variable number
  *                  R) the current value for the variable
  *  description   : Reads value of 'mask' for variable 'number' and returns it
- *  global vars   : --
- *  internal funs : --
- *  external funs : --
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
@@ -676,7 +673,7 @@ PrintDefUseMask (FILE *handle, long *mask, int varno)
 /******************************************************************************
  *
  * function:
- *   void PrintDefUseMasks( FILE *handle, long *defmask, long *usemask, int varno)
+ *   void PrintDefMask( FILE *handle, long *defmask, int varno)
  *
  * description:
  *
@@ -684,12 +681,31 @@ PrintDefUseMask (FILE *handle, long *mask, int varno)
  ******************************************************************************/
 
 void
-PrintDefUseMasks (FILE *handle, long *defmask, long *usemask, int varno)
+PrintDefMask (FILE *handle, long *defmask, int varno)
 {
-    DBUG_ENTER ("PrintMasks");
+    DBUG_ENTER ("PrintDefMask");
 
     fprintf (handle, "**Def. Vars: ");
     PrintDefUseMask (handle, defmask, varno);
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void PrintUseMask( FILE *handle, long *usemask, int varno)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+PrintUseMask (FILE *handle, long *usemask, int varno)
+{
+    DBUG_ENTER ("PrintUseMask");
+
     fprintf (handle, "**Used Vars: ");
     PrintDefUseMask (handle, usemask, varno);
 

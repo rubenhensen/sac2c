@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.11  2000/08/17 10:04:53  dkr
+ * PrintDefUseMasks() split into PrintDefMask() and PrintUseMask()
+ *
  * Revision 2.10  2000/05/30 12:35:19  dkr
  * functions for old with-loop removed
  *
@@ -98,7 +101,8 @@ extern void ExpandMRDL (int new_num);
 #define INFO_USE arg_info->mask[1] /* added or removed variable useages         */
 
 extern void PrintDefUseMask (FILE *handle, long *mask, int varno);
-extern void PrintDefUseMasks (FILE *handle, long *defmask, long *usemask, int varno);
+extern void PrintDefMask (FILE *handle, long *defmask, int varno);
+extern void PrintUseMask (FILE *handle, long *usemask, int varno);
 extern void PrintMrdMask (FILE *handle, long *mrdmask, int varno);
 
 extern void SetMask (long *mask, long value, int varno);
