@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2002/04/16 21:09:40  dkr
+ * dummy for GSCPrintMainEnd() no longer needed
+ *
  * Revision 3.4  2001/11/22 10:34:01  sbs
  * string.h included (required on ALPHA)
  *
@@ -67,28 +70,6 @@ node *arg_info = NULL;
 #define ICM_ALL
 #include "icm_vars.c"
 #undef ICM_ALL
-
-/******************************************************************************
- *
- * function:
- *   void GSCPrintMainEnd()
- *
- * description:
- *   This is a dummy function:
- *   'ICMCompileND_FUN_RET' needs a function of this name, normally defined
- *   in modul 'gen_startup_code.o'. Because 'GSCPrintMainEnd' is never called
- *   in 'BEtest' and we do not want to link 'gen_startup_code.o' (to keep
- *   'BEtest' small), this dummy is defined for linkage only.
- *
- ******************************************************************************/
-
-void
-GSCPrintMainEnd ()
-{
-    DBUG_ENTER ("GSCPrintMainEnd");
-
-    DBUG_VOID_RETURN;
-}
 
 /******************************************************************************
  *
