@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.35  2005/03/11 14:18:59  cg
+ * EXT_ASSIGN information removed when special functions are turned
+ * into regular ones.
+ *
  * Revision 3.34  2005/03/04 21:21:42  cg
  * fun2lac radically simplified:
  * loop and conditional functions are transformed into loops
@@ -761,6 +765,7 @@ TransformIntoDoLoop (node *fundef)
 
     FUNDEF_INSTR (fundef) = TCappendAssign (ass1, cond_assign);
     FUNDEF_INT_ASSIGN (fundef) = NULL;
+    FUNDEF_EXT_ASSIGN (fundef) = NULL;
 
     FUNDEF_ISDOFUN (fundef) = FALSE;
     FUNDEF_ISINLINE (fundef) = TRUE;
@@ -783,6 +788,7 @@ TransformIntoCond (node *fundef)
 {
     DBUG_ENTER ("TransformIntoCond");
 
+    FUNDEF_EXT_ASSIGN (fundef) = NULL;
     FUNDEF_ISCONDFUN (fundef) = FALSE;
     FUNDEF_ISINLINE (fundef) = TRUE;
 
