@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.7  1995/04/19 13:39:22  sbs
- * ND_KD_PSI_VxA_S & ND_KD_PSI_CxA_S updated
+ * Revision 1.8  1995/04/26 14:02:13  hw
+ * Macros for with-loop inserted
  *
+# Revision 1.7  1995/04/19  13:39:22  sbs
+# ND_KD_PSI_VxA_S & ND_KD_PSI_CxA_S updated
+#
 # Revision 1.6  1995/04/18  14:49:34  sbs
 # ND_ALLOC_ARRAY modified; initial rc parameter;
 # ND_CREATE_CONST_ARRAY modified; initial basic_type parameter eliminated;
@@ -123,3 +126,12 @@ Macros for PSI-primitves:
  ND_KD_CAT_SxAxA_A( dima, a, b, res, catdim)	: 
  ND_KD_ROT_CxSxA_A( rotdim, numstr, dima, a, res):
  < ND_KD_ROT_SxSxA_A( rotdimstr, numstr, dima, a, res): >
+
+Macros for WITH-loop:
+=====================
+
+ ND_BEGIN_MODARRAY( res, dim_res, arg, from, to, index_vector)
+ ND_BEGIN_GENARRAY( res, dim_res, form, to, index_vector)
+ 
+ ND_END_WITH_S( res, value)
+ ND_END_WITH_A( res, array)
