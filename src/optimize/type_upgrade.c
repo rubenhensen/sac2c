@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.15  2005/01/28 16:39:18  mwe
+ * debugging
+ *
  * Revision 1.14  2005/01/27 17:01:59  mwe
  * debugging
  *
@@ -269,6 +272,39 @@ GetLowestType (ntype *a, ntype *b)
     DBUG_RETURN (result);
 }
 
+/**********************************************************************
+ *
+ * @fn
+ * @brief
+ * @param
+ * @return
+ *
+ **********************************************************************/
+static int
+GetSizeOfChain (node *root)
+{
+    int result = 0;
+    DBUG_ENTER ("GetSizeOfChain");
+
+    if (root != NULL) {
+        if (N_arg == NODE_TYPE (root)) {
+            while (root != NULL) {
+                result++;
+                root = ARG_NEXT (root);
+            }
+        } else if (N_exprs == NODE_TYPE (root)) {
+            while (root != NULL) {
+                result++;
+                root = EXPRS_NEXT (root);
+            }
+        } else {
+            DBUG_ASSERT ((FALSE), "unexpected node type found");
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
 /***********************************************************************
  *
  * function:
@@ -477,6 +513,7 @@ TryStaticDispatch (node *fundef, node *args, info *arg_info)
             } else {
                 fundef_res = dft_res->deriveable;
             }
+
             DBUG_PRINT ("TUP", ("  dispatched statically %s", funname));
         }
     }
@@ -500,17 +537,20 @@ ArgumentIsSpecializeable (ntype *type)
     DBUG_ENTER ("ArgumentIsSpecializeable");
 
     switch (global.spec_mode) {
+
     case SS_aud:
         result = FALSE;
         break;
+
     case SS_akd:
         if (TYisAKD (type)) {
             result = FALSE;
         }
+
     case SS_aks:
-        /*if ((TYisAKV(type)) || (TYisAKS( type))) {
-          result = FALSE;
-          }*/
+        if ((TYisAKV (type)) || (TYisAKS (type))) {
+            result = FALSE;
+        }
         break;
     default:
         DBUG_ASSERT ((FALSE),
@@ -530,6 +570,8 @@ ArgumentIsSpecializeable (ntype *type)
  *    speciliazation of fundef.
  *    This means: - speciliazation counter has not reached limit
  *                - at least one argument could be specialized
+ *                - number of arguments in exprs- and arg-chain
+ *                  are the same
  *    If this is fulfilled, this function returns TRUE,
  *    otherwise FALSE.
  ***********************************************************************/
@@ -551,10 +593,9 @@ IsSpecializeable (node *fundef, node *args)
          * limit of function specialization is still not reached
          */
         fun_args = FUNDEF_ARGS (fundef);
-        while (fun_args != NULL) {
-#if 0
-      /*if ( (ArgumentIsSpecializeable(AVIS_TYPE( ID_AVIS( EXPRS_EXPR( args))))) &&*/
-#endif
+
+        while ((fun_args != NULL) && (args != NULL)) {
+
             if ((ArgumentIsSpecializeable (AVIS_TYPE (ARG_AVIS (fun_args))))
                 && (TY_lt
                     == TYcmpTypes (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))),
@@ -563,10 +604,12 @@ IsSpecializeable (node *fundef, node *args)
                  * at least one argument could be specialized
                  */
                 result = TRUE;
-                break;
             }
             fun_args = ARG_NEXT (fun_args);
             args = EXPRS_NEXT (args);
+        }
+        if (args != fun_args) {
+            result = FALSE;
         }
     }
 
@@ -667,10 +710,6 @@ SpecializationOracle (node *fundef, node *args)
         while (signature != NULL) {
 
             if (ArgumentIsSpecializeable (AVIS_TYPE (ARG_AVIS (signature)))) {
-                /*      if (ArgumentIsSpecializeable( AVIS_TYPE( ID_AVIS( EXPRS_EXPR(
-                 * args))))) {*/
-                /* TODO: if argument is too special, try to find less special but better
-                 * fitting argument*/
 
                 /*
                  * signature could be updated
@@ -816,25 +855,10 @@ TryToSpecializeFunction (node *fundef, node *args, info *arg_info)
                 /*
                  * it is possible to specialiaze loop function
                  */
-#if 0
-	FUNDEF_RETS( fundef) = FREEdoFreeTree( FUNDEF_RETS( fundef));
-	FUNDEF_RETS( fundef) = FUNDEF_RETS( tmp);
-	FUNDEF_RETS( tmp) = NULL;
 
-	FUNDEF_ARGS( fundef) = FREEdoFreeTree( FUNDEF_ARGS( fundef));
-	FUNDEF_ARGS( fundef) = FUNDEF_ARGS( tmp);
-	FUNDEF_ARGS( tmp) = NULL;
-
-	FUNDEF_BODY( fundef) = FREEdoFreeTree( FUNDEF_BODY( fundef));
-	FUNDEF_BODY( fundef) = FUNDEF_BODY( tmp);
-	FUNDEF_BODY( tmp) = NULL;
-
-	FREEdoFreeTree( tmp);
-#else
                 AppendFundef (fundef, tmp);
                 fundef = tmp;
                 tup_fdp_expr++;
-#endif
             } else {
                 /*
                  * it is not possible to specialize loop function
@@ -889,65 +913,67 @@ GetBestFittingFun (node *fun1, node *fun2, node *args)
     ntype *t1, *t2;
     bool fits = TRUE;
     ct_res cmp;
+
     DBUG_ENTER ("GetBestFittingFun");
 
     arg1 = FUNDEF_ARGS (fun1);
     arg2 = FUNDEF_ARGS (fun2);
     args_tmp = args;
 
-    while (arg1 != NULL) {
-        t1 = AVIS_TYPE (ARG_AVIS (arg1));
-        t2 = AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args_tmp)));
-        cmp = TYcmpTypes (t1, t2);
-        if ((cmp == TY_lt) || (cmp == TY_dis) || (cmp == TY_hcs)) {
-            /*
-             * function signature is to special or does not fit
-             */
-            fits = FALSE;
-            break;
-        }
-        arg1 = ARG_NEXT (arg1);
-        args_tmp = EXPRS_NEXT (args_tmp);
-    }
-
-    if (fits) {
-        int t1_counter, t2_counter;
-
-        /*
-         * fun1 could be used as function call for args
-         * fun2 would also fit (precondition)
-         * now find best fitting function
-         */
-        t1_counter = t2_counter = 0;
-        arg1 = FUNDEF_ARGS (fun1);
+    if (GetSizeOfChain (args) == GetSizeOfChain (arg1)) {
         while (arg1 != NULL) {
             t1 = AVIS_TYPE (ARG_AVIS (arg1));
-            t2 = AVIS_TYPE (ARG_AVIS (arg2));
-
-            switch (TYcmpTypes (t1, t2)) {
-            case TY_eq:
+            t2 = AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args_tmp)));
+            cmp = TYcmpTypes (t1, t2);
+            if ((cmp == TY_lt) || (cmp == TY_dis) || (cmp == TY_hcs)) {
+                /*
+                 * function signature is to special or does not fit
+                 */
+                fits = FALSE;
                 break;
-            case TY_lt:
-                t1_counter++;
-                break;
-            case TY_gt:
-                t2_counter++;
-                break;
-            case TY_dis:
-            case TY_hcs:
-            default:
-                DBUG_ASSERT ((FALSE), "This should not happen!");
             }
-
             arg1 = ARG_NEXT (arg1);
-            arg2 = ARG_NEXT (arg2);
+            args_tmp = EXPRS_NEXT (args_tmp);
         }
-        if (t1_counter > t2_counter) {
 
-            result = fun1;
+        if (fits) {
+            int t1_counter, t2_counter;
+
+            /*
+             * fun1 could be used as function call for args
+             * fun2 would also fit (precondition)
+             * now find best fitting function
+             */
+            t1_counter = t2_counter = 0;
+            arg1 = FUNDEF_ARGS (fun1);
+            while (arg1 != NULL) {
+                t1 = AVIS_TYPE (ARG_AVIS (arg1));
+                t2 = AVIS_TYPE (ARG_AVIS (arg2));
+
+                switch (TYcmpTypes (t1, t2)) {
+                case TY_eq:
+                    break;
+                case TY_lt:
+                    t1_counter++;
+                    break;
+                case TY_gt:
+                    t2_counter++;
+                    break;
+                case TY_dis:
+                case TY_hcs:
+                default:
+                    DBUG_ASSERT ((FALSE), "This should not happen!");
+                }
+
+                arg1 = ARG_NEXT (arg1);
+                arg2 = ARG_NEXT (arg2);
+            }
+            if (t1_counter > t2_counter) {
+
+                result = fun1;
+            }
         }
     }
-
     DBUG_RETURN (result);
 }
 
@@ -973,7 +999,7 @@ IsFittingSignature (node *fundef, node *wrapper)
     wrapper_args = FUNDEF_ARGS (wrapper);
     fundef_args = FUNDEF_ARGS (fundef);
 
-    while (NULL != wrapper_args) {
+    while ((NULL != wrapper_args) && (NULL != fundef_args)) {
         switch (TYcmpTypes (AVIS_TYPE (ARG_AVIS (fundef_args)),
                             AVIS_TYPE (ARG_AVIS (wrapper_args)))) {
 
@@ -989,6 +1015,9 @@ IsFittingSignature (node *fundef, node *wrapper)
         }
         wrapper_args = ARG_NEXT (wrapper_args);
         fundef_args = ARG_NEXT (fundef_args);
+    }
+    if (fundef_args != wrapper_args) {
+        result = FALSE;
     }
 
     DBUG_RETURN (result);
@@ -1352,10 +1381,12 @@ TUPwith (node *arg_node, info *arg_info)
      */
 
     if (NULL != WITH_PART (arg_node)) {
+
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     }
 
     if (NULL != WITH_CODE (arg_node)) {
+
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     }
 
@@ -1364,6 +1395,7 @@ TUPwith (node *arg_node, info *arg_info)
      */
 
     if (NULL != WITH_WITHOP (arg_node)) {
+
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     }
 
@@ -1396,19 +1428,26 @@ TUPpart (node *arg_node, info *arg_info)
      * generator variable, i.e, we check whether we do have scalar indices:
      */
     idxs = WITHID_IDS (PART_WITHID (arg_node));
+
     if (idxs != NULL) {
+
         num_ids = TCcountIds (idxs);
         idx = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, num_ids));
     } else {
+
         idx = TYmakeAKD (TYmakeSimpleType (T_int), 1, SHcreateShape (0));
     }
+
     INFO_TUP_WITHINDEX (arg_info) = idx;
     INFO_TUP_WITHID (arg_info) = PART_WITHID (arg_node);
+
     if (PART_GENERATOR (arg_node) != NULL) {
+
         PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
     }
 
     if (PART_NEXT (arg_node) != NULL) {
+
         PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
     }
 
@@ -1489,7 +1528,10 @@ TUPgenerator (node *arg_node, info *arg_info)
 
     withid = INFO_TUP_WITHID (arg_info);
 
-    if ((!TYisAKV (current)) && (!TYisAKV (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))))) {
+    /*
+     * WITHID_VEC should never become an AKV-type
+     */
+    if (!TYisAKV (current)) {
         switch (TYcmpTypes (current, AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid))))) {
         case TY_eq:
             break;
@@ -1507,6 +1549,23 @@ TUPgenerator (node *arg_node, info *arg_info)
 
         default:
             DBUG_ASSERT ((FALSE), "unexpected result of type comparison!");
+        }
+    } else {
+        if ((TYisAKD (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))))
+            || (TYisAUD (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))))
+            || (TYisAUDGZ (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))))) {
+
+            AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))
+              = TYfreeType (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid))));
+            AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid)))
+              = TYmakeAKS (TYcopyType (TYgetScalar (current)),
+                           SHcopyShape (TYgetShape (current)));
+        } else if (TYisAKS (AVIS_TYPE (IDS_AVIS (WITHID_VEC (withid))))) {
+            /*
+             * nothing to do
+             */
+        } else {
+            DBUG_ASSERT ((FALSE), "AKV-Type note expected!");
         }
     }
     current = TYfreeType (current);
@@ -1535,10 +1594,12 @@ TUPcode (node *arg_node, info *arg_info)
      */
 
     if (CODE_CBLOCK (arg_node) != NULL) {
+
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     }
 
     if (CODE_NEXT (arg_node) != NULL) {
+
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
@@ -1546,8 +1607,12 @@ TUPcode (node *arg_node, info *arg_info)
      * WLEXPRS needed later for computation of final type of withloop
      */
     tmp = NTCnewTypeCheck_Expr (CODE_CEXPRS (arg_node));
+
+    /*
+     * TODO: change to support multiple result types (not only one product member)
+     */
     INFO_TUP_WLEXPR (arg_info) = TYcopyType (TYgetProductMember (tmp, 0));
-    TYfreeType (tmp);
+    tmp = TYfreeType (tmp);
     DBUG_RETURN (arg_node);
 }
 
@@ -1565,39 +1630,42 @@ TUPap (node *arg_node, info *arg_info)
     DBUG_ENTER ("TUPap");
 
     if (INFO_TUP_CHECKLOOPFUN (arg_info)) {
+        if (ILIBstringCompare (FUNDEF_NAME (INFO_TUP_FUNDEF (arg_info)),
+                               FUNDEF_NAME (AP_FUNDEF (arg_node)))) {
+            /*
+             * at the moment we are checking, if the recursive call of a loop function
+             * will work with specialized signature
+             */
 
-        /*
-         * at the moment we are checking, if the recursive call of a loop function
-         * will work with specialized signature
-         */
+            node *signature, *args;
 
-        node *signature, *args;
+            signature = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+            args = AP_ARGS (arg_node);
 
-        signature = FUNDEF_ARGS (AP_FUNDEF (arg_node));
-        args = AP_ARGS (arg_node);
+            while ((INFO_TUP_CORRECTFUNCTION (arg_info)) && (signature != NULL)) {
 
-        while ((INFO_TUP_CORRECTFUNCTION (arg_info)) && (signature != NULL)) {
+                switch (TYcmpTypes (AVIS_TYPE (ARG_AVIS (signature)),
+                                    AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))))) {
 
-            switch (TYcmpTypes (AVIS_TYPE (ARG_AVIS (signature)),
-                                AVIS_TYPE (ID_AVIS (EXPRS_EXPR (args))))) {
+                case TY_eq: /* same types, that's ok */
+                    break;
+                case TY_gt: /* argument is more special than signature, that's ok */
+                    break;
+                case TY_lt: /* signature is more special than argument, that's a problem
+                             */
+                    INFO_TUP_CORRECTFUNCTION (arg_info) = FALSE;
+                    break;
+                case TY_hcs:
+                case TY_dis: /* both types are unrelated, should not be possible */
+                    DBUG_ASSERT ((FALSE), "former type is unrelated to new type! ");
+                    break;
 
-            case TY_eq: /* same types, that's ok */
-                break;
-            case TY_gt: /* argument is more special than signature, that's ok */
-                break;
-            case TY_lt: /* signature is more special than argument, that's a problem */
-                INFO_TUP_CORRECTFUNCTION (arg_info) = FALSE;
-                break;
-            case TY_hcs:
-            case TY_dis: /* both types are unrelated, should not be possible */
-                DBUG_ASSERT ((FALSE), "former type is unrelated to new type! ");
-                break;
-
-            default: /* no other cases exist */
-                DBUG_ASSERT ((FALSE), "New element in enumeration added?");
+                default: /* no other cases exist */
+                    DBUG_ASSERT ((FALSE), "New element in enumeration added?");
+                }
+                signature = ARG_NEXT (signature);
+                args = EXPRS_NEXT (args);
             }
-            signature = ARG_NEXT (signature);
-            args = EXPRS_NEXT (args);
         }
     } else {
 
@@ -1652,16 +1720,22 @@ TUPids (node *arg_node, info *arg_info)
     ntype *type, *oldtype;
 
     DBUG_ENTER ("TUPids");
+
     if (INFO_TUP_TYPE (arg_info) != NULL) {
+
         if (N_assign != NODE_TYPE (AVIS_SSAASSIGN (IDS_AVIS (arg_node)))) {
+
             DBUG_ASSERT ((N_assign == NODE_TYPE (AVIS_SSAASSIGN (IDS_AVIS (arg_node)))),
                          "wrong backref...");
         }
+
         oldtype = AVIS_TYPE (IDS_AVIS (arg_node));
 
         if (!TYisProd (INFO_TUP_TYPE (arg_info))) {
+
             DBUG_ASSERT ((TYisProd (INFO_TUP_TYPE (arg_info))), "Product type expected!");
         }
+
         type = TYgetProductMember (INFO_TUP_TYPE (arg_info),
                                    INFO_TUP_TYPECOUNTER (arg_info));
 
@@ -1695,11 +1769,14 @@ TUPids (node *arg_node, info *arg_info)
         INFO_TUP_TYPECOUNTER (arg_info) = INFO_TUP_TYPECOUNTER (arg_info) + 1;
 
         if (IDS_NEXT (arg_node) != NULL) {
+
             IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
         }
+
         DBUG_ASSERT ((N_assign == NODE_TYPE (AVIS_SSAASSIGN (IDS_AVIS (arg_node)))),
                      "wrong back-ref");
     }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1723,14 +1800,15 @@ TUPmodarray (node *arg_node, info *arg_info)
     expr = TYcopyType (INFO_TUP_WLEXPR (arg_info));
 
     if (!TYisArray (expr)) {
+
         DBUG_ASSERT ((TYisArray (expr)), "array type expected");
     }
+
     info = TEmakeInfo (global.linenum, "with", "", "modarray", NULL, NULL, NULL, NULL);
     prod = TYmakeProductType (3, idx, array, expr);
 
     INFO_TUP_TYPE (arg_info) = NTCCTwl_mod (info, prod);
 
-    /*prod = TYfreeType(prod);*/
     INFO_TUP_WLEXPR (arg_info) = NULL;
     DBUG_RETURN (arg_node);
 }
@@ -1835,6 +1913,7 @@ TUPid (node *arg_node, info *arg_info)
 
         INFO_TUP_TYPE (arg_info) = TYmakeProductType (1, TYcopyType (type));
     } else {
+
         INFO_TUP_TYPE (arg_info) = TYcopyType (type);
     }
 
@@ -1860,9 +1939,10 @@ TUParray (node *arg_node, info *arg_info)
     DBUG_ENTER ("TUParray");
 
     if (NULL != ARRAY_AELEMS (arg_node)) {
-        ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
 
+        ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
     } else {
+
         DBUG_ASSERT ((FALSE), "array without elements");
         INFO_TUP_TYPE (arg_info) = TYmakeProductType (0);
     }
@@ -1883,8 +1963,6 @@ TUParray (node *arg_node, info *arg_info)
                            NULL, NULL);
         type = NTCCTprf_array (info, elems);
 
-        /*TYfreeType( elems);*/
-
     } else {
         /**
          * we are dealing with an empty array here!
@@ -1898,9 +1976,7 @@ TUParray (node *arg_node, info *arg_info)
                                                              NULL)));
     }
 
-    /*INFO_TUP_TYPE( arg_info) = TYgetProductMember( type, 0);*/
     INFO_TUP_TYPE (arg_info) = type;
-    /*TYfreeTypeConstructor( type);*/
 
     DBUG_RETURN (arg_node);
 }
@@ -1933,8 +2009,10 @@ TUPprf (node *arg_node, info *arg_info)
          */
 
         if (NULL != PRF_ARGS (arg_node)) {
+
             PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         } else {
+
             DBUG_ASSERT ((FALSE), "primitive function without arguments");
             INFO_TUP_TYPE (arg_info) = TYmakeProductType (0);
         }
@@ -1952,6 +2030,7 @@ TUPprf (node *arg_node, info *arg_info)
         TYfreeType (args);
         INFO_TUP_TYPE (arg_info) = res;
     } else {
+
         INFO_TUP_TYPE (arg_info) = NULL;
     }
 
@@ -1977,11 +2056,14 @@ TUPfuncond (node *arg_node, info *arg_info)
 
     tmp = GetLowestType (then_type, else_type);
     INFO_TUP_TYPE (arg_info) = TYmakeProductType (1, tmp);
-    /*tmp = TYfreeType( tmp);*/
 
     DBUG_RETURN (arg_node);
 }
 
+/****************************************************************************************
+ *
+ *
+ ***************************************************************************************/
 node *
 TUPcond (node *arg_node, info *arg_info)
 {
@@ -2002,6 +2084,7 @@ TUPcond (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
 /*********************************************************************************
  *
  * function:
