@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.26  1998/10/29 20:38:26  dkr
+ * - signature of ICM WL_FOLD_NOOP changed
+ * - WL_FOLD_NOOP is empty now
+ *
  * Revision 1.25  1998/08/07 19:47:30  dkr
  * WL_ADJUST_OFFSET changed
  *
@@ -480,8 +484,7 @@ ICMCompileWL_ASSIGN_COPY (char *source, int dims_target, char *target, char *idx
 /******************************************************************************
  *
  * function:
- *   void ICMCompileWL_FOLD_NOOP( int dim,
- *                                int dims_target, char *target,
+ *   void ICMCompileWL_FOLD_NOOP( int dims_target, char *target,
  *                                char *idx_vec,
  *                                int dims, char **idx_scalars,
  *                                int cnt_bounds, char **bounds)
@@ -489,14 +492,13 @@ ICMCompileWL_ASSIGN_COPY (char *source, int dims_target, char *target, char *idx
  * description:
  *   implements the compilation of the following ICM:
  *
- *   WL_FOLD_NOOP( dim, dims_target, target, idx_vec, dims, [ idx_scalars ]*,
- *                 2, [ bounds ]* )
+ *   WL_FOLD_NOOP( dims_target, target, idx_vec, dims, [ idx_scalars ]* )
  *
  ******************************************************************************/
 
 void
-ICMCompileWL_FOLD_NOOP (int dim, int dims_target, char *target, char *idx_vec, int dims,
-                        char **idx_scalars, int cnt_bounds, char **bounds)
+ICMCompileWL_FOLD_NOOP (int dims_target, char *target, char *idx_vec, int dims,
+                        char **idx_scalars)
 {
     DBUG_ENTER ("ICMCompileWL_FOLD_NOOP");
 
@@ -505,12 +507,8 @@ ICMCompileWL_FOLD_NOOP (int dim, int dims_target, char *target, char *idx_vec, i
 #include "icm_trace.c"
 #undef WL_FOLD_NOOP
 
-    DBUG_ASSERT ((cnt_bounds == 2), "wrong parameter found");
-
     INDENT;
-    fprintf (outfile, "SAC_ND_A_FIELD( %s)[ %d] += %s;\n", idx_vec, dim, bounds[1]);
-    INDENT;
-    fprintf (outfile, "SAC_ND_A_FIELD( %s)[ %d] -= %s;\n", idx_vec, dim, bounds[0]);
+    fprintf (outfile, "/* empty */\n");
 
     DBUG_VOID_RETURN;
 }
