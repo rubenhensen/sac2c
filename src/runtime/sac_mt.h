@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.33  2001/06/28 11:15:13  ben
+ * one minor optimation added to TS_Even
+ *
  * Revision 3.32  2001/06/28 09:51:20  sbs
  * prep concat eliminated in definition of SAC_MT_SPMD_SETARG_out_rc.
  *
@@ -915,22 +918,25 @@ typedef union {
         const int iterations_per_thread = (iterations / number_of_tasks) * unrolling;    \
         const int iterations_rest = iterations % number_of_tasks;                        \
                                                                                          \
-        if (iterations_rest && (taskid < iterations_rest)) {                             \
-            SAC_WL_MT_SCHEDULE_START (tasks_on_dim)                                      \
-              = lower + (iterations_per_thread + unrolling) * (taskid);                  \
-            SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim)                                       \
-              = SAC_WL_MT_SCHEDULE_START (tasks_on_dim) + iterations_per_thread          \
-                + unrolling;                                                             \
-        } else {                                                                         \
-            SAC_WL_MT_SCHEDULE_START (tasks_on_dim)                                      \
-              = (lower + iterations_rest * unrolling) + taskid * iterations_per_thread;  \
-            SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim)                                       \
-              = SAC_WL_MT_SCHEDULE_START (tasks_on_dim) + iterations_per_thread;         \
-        }                                                                                \
-        SAC_TR_MT_PRINT (("'TS_Even': dim %d: %d -> %d, Task: %d", tasks_on_dim,         \
-                          SAC_WL_MT_SCHEDULE_START (tasks_on_dim),                       \
-                          SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim), taskid));              \
         worktodo = (taskid < number_of_tasks);                                           \
+        if (worktodo) {                                                                  \
+            if (iterations_rest && (taskid < iterations_rest)) {                         \
+                SAC_WL_MT_SCHEDULE_START (tasks_on_dim)                                  \
+                  = lower + (iterations_per_thread + unrolling) * (taskid);              \
+                SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim)                                   \
+                  = SAC_WL_MT_SCHEDULE_START (tasks_on_dim) + iterations_per_thread      \
+                    + unrolling;                                                         \
+            } else {                                                                     \
+                SAC_WL_MT_SCHEDULE_START (tasks_on_dim)                                  \
+                  = (lower + iterations_rest * unrolling)                                \
+                    + taskid * iterations_per_thread;                                    \
+                SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim)                                   \
+                  = SAC_WL_MT_SCHEDULE_START (tasks_on_dim) + iterations_per_thread;     \
+            }                                                                            \
+            SAC_TR_MT_PRINT (("'TS_Even': dim %d: %d -> %d, Task: %d", tasks_on_dim,     \
+                              SAC_WL_MT_SCHEDULE_START (tasks_on_dim),                   \
+                              SAC_WL_MT_SCHEDULE_STOP (tasks_on_dim), taskid));          \
+        }                                                                                \
     }
 
 #define SAC_MT_SCHEDULER_TS_Factoring_INIT(sched_id, lower, upper)                       \
