@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.27  2000/03/23 14:00:51  jhs
+ * Brushing around includes of nt_info.mac.
+ *
  * Revision 2.26  2000/03/16 14:28:25  dkr
  * do_lac_fun_transformation replaced by do_lac2fun, do_fun2lac
  * phase_info.mac used
@@ -526,19 +529,15 @@ int simpletype_size[] = {
  * array class and array uniqueness properties.
  * See NT_NAME_CLASS_INDEX and NT_UNI_CLASS_INDEX in types.h
  */
-#define NTIF(type, str) str
-#define ATTRIB 1
 
 char *nt_class_str[] = {
+#define ATTRIB 1
+#define NTIFstr(it_str) it_str
 #include "nt_info.mac"
 };
-#undef ATTRIB
-
-#define ATTRIB 2
 
 char *nt_uni_str[] = {
+#define ATTRIB 2
+#define NTIFstr(it_str) it_str
 #include "nt_info.mac"
 };
-
-#undef ATTRIB
-#undef NTIF
