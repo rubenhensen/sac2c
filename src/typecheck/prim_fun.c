@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/27 13:14:43  sbs
+ * warning eliminated
+ *
  * Revision 3.1  2000/11/20 18:00:11  sacbase
  * new release made
  *
@@ -982,10 +985,10 @@ TakeV (node *vec, types *vec_type, types *array)
 
     GET_BASIC_TYPE (array_btype, array, NODE_LINE (vec));
 
-    if (N_array == NODE_TYPE (vec)) {
+    if (N_array == NODE_TYPE (vec)) { /*initializes ret_type */
         tmp = ARRAY_AELEMS (vec);
 
-        if (SCALAR < TYPES_DIM (array_btype)) {
+        if (SCALAR < TYPES_DIM (array_btype)) { /* initializes ret_type */
             /* array has known shape */
 
             /* check weather entries in 1) are ok */
@@ -1016,7 +1019,7 @@ TakeV (node *vec, types *vec_type, types *array)
                     }
                 } /* for */
             }     /* if ... else ... */
-        } else {
+        } else {  /* initializes ret_type */
             /*  Array has got an unknown shape */
             if (UNKNOWN_SHAPE == TYPES_DIM (array_btype)) {
                 ret_type = MakeTypeNN (TYPES_BASETYPE (array_btype), UNKNOWN_SHAPE, NULL);
@@ -1064,7 +1067,7 @@ TakeV (node *vec, types *vec_type, types *array)
             dim2 = ID_VECLEN (vec);
             tmp2 = (int *)ID_CONSTVEC (vec);
 
-            if (SCALAR < TYPES_DIM (array_btype)) {
+            if (SCALAR < TYPES_DIM (array_btype)) { /* initializes ret_type */
                 /* array has got a known shape */
 
                 /* check weather the entries in 1) are ok */
@@ -1121,6 +1124,10 @@ TakeV (node *vec, types *vec_type, types *array)
                               = MakeTypes (TYPES_BASETYPE (array_btype),
                                            TYPES_DIM (array_btype), NULL, NULL, NULL);
 #endif /* KNOWN_DIM */
+                        } else {
+                            DBUG_ASSERT (0, "ret_type is not initialized here! ");
+                            ret_type = NULL; /* this eliminates warning - but may I do
+                                                it???? ASSERT will show */
                         }
                     } else {
                         DBUG_ASSERT (0, " wrong dimension of array_btype");
