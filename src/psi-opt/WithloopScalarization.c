@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2002/10/17 19:13:42  ktr
+ * improved safety of aggressive mode
+ *
  * Revision 1.14  2002/10/17 17:54:31  ktr
  * aggressive behaviour now based upon switch -wlsx
  *
@@ -456,7 +459,7 @@ checkGeneratorDependencies (node *outerpart, node *innerpart)
  * description:
  *   checks if the two nested withloops have compatible types
  *
- *   Compatibility means both Withloops are genarray-WLs.
+ *   Compatibility means both Withloops are not FOLD-WLs
  *
  * parameters:
  *   node *outerWithOP:   N_NWITHOP
@@ -466,8 +469,78 @@ checkGeneratorDependencies (node *outerpart, node *innerpart)
 int
 compatWLTypes (node *outerWithOP, node *innerWithOP)
 {
-    return ((NWITHOP_TYPE (outerWithOP) == WO_genarray)
-            && (NWITHOP_TYPE (innerWithOP) == WO_genarray));
+    return (((NWITHOP_TYPE (outerWithOP) == WO_genarray)
+             || (NWITHOP_TYPE (outerWithOP) == WO_modarray))
+            && ((NWITHOP_TYPE (innerWithOP) == WO_genarray)
+                || (NWITHOP_TYPE (innerWithOP) == WO_modarray)));
+}
+
+int
+doProbePart (node *arg_node, node *arg_info)
+{
+
+    /* Is the inner CEXPR a nonscalar? */
+    if (!VARDEC_DIM (AVIS_VARDECORARG (ID_AVIS (NPART_CEXPR (arg_node)))) > 0)
+        return FALSE;
+
+    if (wls_aggressive) {
+        /* Check whether inner CEXPR is computer by an inner WL */
+        if ((NODE_TYPE (NPART_LETEXPR (arg_node)) == N_Nwith)
+            && (isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
+                                     BLOCK_INSTR (NPART_CBLOCK (arg_node))))) {
+
+            /* Is the inner WITHLOOP a MG-WL? */
+            if (!(NWITH_PARTS (NPART_LETEXPR (arg_node)) > 0))
+                return FALSE;
+
+            /* Are all the inner Generators independent from the outer? */
+            if (!checkGeneratorDependencies (arg_node,
+                                             NWITH_PART (NPART_LETEXPR (arg_node))))
+                return FALSE;
+
+            /* Are both WLs of compatible Type? */
+            if (!compatWLTypes (INFO_WLS_WITHOP (arg_info),
+                                NWITH_WITHOP (NPART_LETEXPR (arg_node))))
+                return FALSE;
+        } else {
+        }
+    } else {
+        /* Is the inner CEXPR computed by a withloop? */
+        if (!(NODE_TYPE (NPART_LETEXPR (arg_node)) == N_Nwith))
+            return FALSE;
+
+        /* Is the inner WITHLOOP a MG-WL? */
+        if (!(NWITH_PARTS (NPART_LETEXPR (arg_node)) > 0))
+            return FALSE;
+
+        /* Is the inner Withloop really inside of this part? */
+        if (!isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
+                                  BLOCK_INSTR (NPART_CBLOCK (arg_node))))
+            return FALSE;
+
+        /* Is this a perfect nesting of WLs? */
+        if (!(BLOCK_INSTR (NPART_CBLOCK (arg_node)) == NPART_SSAASSIGN (arg_node)))
+            return FALSE;
+
+        /* Are all the inner Generators independent from the outer? */
+        if (!checkGeneratorDependencies (arg_node, NWITH_PART (NPART_LETEXPR (arg_node))))
+            return FALSE;
+
+        /* Are both WLs of compatible Type? */
+        if (!compatWLTypes (INFO_WLS_WITHOP (arg_info),
+                            NWITH_WITHOP (NPART_LETEXPR (arg_node))))
+            return FALSE;
+
+        /* Do all inner WLs iterate over the same dimensions? */
+        if (INFO_WLS_DIMS (arg_info) == -1)
+            INFO_WLS_DIMS (arg_info)
+              = VARDEC_SHAPE (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))), 0);
+        else
+            return (
+              INFO_WLS_DIMS (arg_info)
+              == VARDEC_SHAPE (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))), 0));
+    }
+    return TRUE;
 }
 
 /******************************************************************************
@@ -487,59 +560,8 @@ probePart (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("probePart");
 
-    /* Is the inner CEXPR a nonscalar? */
     if (INFO_WLS_POSSIBLE (arg_info))
-        INFO_WLS_POSSIBLE (arg_info)
-          = (VARDEC_DIM (AVIS_VARDECORARG (ID_AVIS (NPART_CEXPR (arg_node)))) > 0);
-
-    if (wls_aggressive) {
-    } else {
-        /* perhaps some of these conditions should be made assertions in the
-           distribution phase */
-        /* Is the inner CEXPR computed by a withloop? */
-        if (INFO_WLS_POSSIBLE (arg_info))
-            INFO_WLS_POSSIBLE (arg_info)
-              = (NODE_TYPE (NPART_LETEXPR (arg_node)) == N_Nwith);
-
-        /* Is the inner WITHLOOP a MG-WL? */
-        if (INFO_WLS_POSSIBLE (arg_info))
-            INFO_WLS_POSSIBLE (arg_info) = (NWITH_PARTS (NPART_LETEXPR (arg_node)) > 0);
-
-        /* Is the inner Withloop really inside of this part? */
-        if (INFO_WLS_POSSIBLE (arg_info))
-            INFO_WLS_POSSIBLE (arg_info)
-              = (isAssignInsideBlock (NPART_SSAASSIGN (arg_node),
-                                      BLOCK_INSTR (NPART_CBLOCK (arg_node))));
-
-        /* Is this a perfect nesting of WLs? */
-        if (INFO_WLS_POSSIBLE (arg_info))
-            INFO_WLS_POSSIBLE (arg_info)
-              = (BLOCK_INSTR (NPART_CBLOCK (arg_node)) == NPART_SSAASSIGN (arg_node));
-
-        /* Are all the inner Generators independent from the outer? */
-        if (INFO_WLS_POSSIBLE (arg_info))
-            INFO_WLS_POSSIBLE (arg_info)
-              = (checkGeneratorDependencies (arg_node,
-                                             NWITH_PART (NPART_LETEXPR (arg_node))));
-
-        /* Are both WLs of compatible Type? */
-        if (INFO_WLS_POSSIBLE (arg_info))
-            INFO_WLS_POSSIBLE (arg_info)
-              = (compatWLTypes (INFO_WLS_WITHOP (arg_info),
-                                NWITH_WITHOP (NPART_LETEXPR (arg_node))));
-
-        /* Do all inner WLs iterate over the same dimensions? */
-        if (INFO_WLS_POSSIBLE (arg_info)) {
-            if (INFO_WLS_DIMS (arg_info) == -1)
-                INFO_WLS_DIMS (arg_info)
-                  = VARDEC_SHAPE (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))), 0);
-            else
-                INFO_WLS_POSSIBLE (arg_info)
-                  = (INFO_WLS_DIMS (arg_info)
-                     == VARDEC_SHAPE (IDS_VARDEC (NWITH_VEC (NPART_LETEXPR (arg_node))),
-                                      0));
-        }
-    }
+        INFO_WLS_POSSIBLE (arg_info) = doProbePart (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1463,9 +1485,9 @@ WLSNwith (node *arg_node, node *arg_info)
     INFO_WLS_BLOCK (arg_info) = outerblock;
 
     /* Check if WLS is possible vor all parts */
-
     INFO_WLS_PARTS (arg_info) = NWITH_PARTS (arg_node);
 
+    /* First of all, the Withloop must be a MG-WL */
     INFO_WLS_POSSIBLE (arg_info) = INFO_WLS_PARTS (arg_info) > 0;
 
     if (INFO_WLS_POSSIBLE (arg_info)) {
