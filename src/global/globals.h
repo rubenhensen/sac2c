@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/06/09 08:41:02  rob
+ * Introduce support for dynamic shape arrays option "ds".
+ *
  * Revision 2.8  1999/06/04 14:32:48  cg
  * added global variable cachesim_host
  *
@@ -95,6 +98,8 @@ extern char targetdir[];
 extern char commandline[];
 extern file_type filetype;
 extern char *tmp_dirname;
+
+extern int dynamic_shapes;
 
 extern char *target_name;
 

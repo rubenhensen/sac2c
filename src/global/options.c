@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/06/09 08:41:02  rob
+ * Introduce support for dynamic shape arrays option "ds".
+ *
  * Revision 2.8  1999/06/04 14:33:46  cg
  * Added new option -cshost.
  * Added missing options -noMTO and -noSBE
@@ -166,6 +169,8 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_FLAG ("cs", cachesim |= CACHESIM_YES);
 
     ARGS_FLAG ("c", break_after = PH_genccode);
+
+    ARGS_FLAG ("ds", dynamic_shapes = 1);
 
     ARGS_OPTION ("do", {
         ARG_CHOICE_BEGIN ();

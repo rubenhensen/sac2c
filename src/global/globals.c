@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  1999/06/09 08:41:02  rob
+ * Introduce support for dynamic shape arrays option "ds".
+ *
  * Revision 2.8  1999/06/04 14:32:48  cg
  * added global variable cachesim_host
  *
@@ -231,6 +234,12 @@ char *tmp_dirname = NULL;
 
 char *target_name = "default";
 /* name of target architecture, information taken from sac2crc file  */
+
+/*
+ * Dynamic-sized arrays option
+ */
+
+int dynamic_shapes = 0; /* Dynamic shapes are disabled by default */
 
 /*
  * Multi-thread options
