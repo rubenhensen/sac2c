@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.24  1996/01/21 14:04:31  cg
- * added icm ND_CREATE_CONST_ARRAY_H
+ * Revision 1.25  1996/08/04 14:40:12  sbs
+ * modarray_AxVxA with and without reuse check inserted.
  *
+# Revision 1.24  1996/01/21  14:04:31  cg
+# added icm ND_CREATE_CONST_ARRAY_H
+#
 # Revision 1.23  1995/12/18  16:25:39  cg
 # ICMs ND_FUN_DEC, ND_FUN_AP and ND_FUN_RET modified
 # new ICMs ND_KS_DECL_GLOBAL_ARRAY and ND_KD_DECL_EXTERN_ARRAY for
@@ -279,6 +282,32 @@ ICM_DEF( ND_PRF_MODARRAY_AxCxS, TRACE_PRF)
   ICM_INT(dimv)
   ICM_VAR( dimv, vi)
 ICM_END( ND_KD_DROP_CxA_A )
+#endif
+
+#if defined(ND_PRF_MODARRAY_AxVxS_CHECK_REUSE) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_MODARRAY_AxVxS_CHECK_REUSE, TRACE_PRF)
+  ICM_INT(line)
+  ICM_STR(res_type)
+  ICM_INT(dimres)
+  ICM_STR(res)
+  ICM_STR(old)
+  ICM_VAR( 1, value)
+  ICM_INT(dim)
+  ICM_STR(v)
+ICM_END( ND_PRF_MODARRAY_AxVxS_CHECK_REUSE )
+#endif
+
+#if defined(ND_PRF_MODARRAY_AxVxS) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_MODARRAY_AxVxS, TRACE_PRF)
+  ICM_INT(line)
+  ICM_STR(res_type)
+  ICM_INT(dimres)
+  ICM_STR(res)
+  ICM_STR(old)
+  ICM_VAR( 1, value)
+  ICM_INT(dim)
+  ICM_STR(v)
+ICM_END( ND_PRF_MODARRAY_AxVxS )
 #endif
 
 #if defined(ND_PRF_MODARRAY_AxCxA_CHECK_REUSE) || defined(ICM_ALL)

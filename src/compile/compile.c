@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.84  1996/08/01 09:53:18  cg
+ * Revision 1.85  1996/08/04 14:40:12  sbs
+ * modarray_AxVxA with and without reuse check inserted.
+ *
+ * Revision 1.84  1996/08/01  09:53:18  cg
  * bug fixed in compiling applications of functions with a
  * variable number of return values.
  *
@@ -2852,9 +2855,9 @@ CompPrfModarray (node *arg_node, node *arg_info)
 {
     node *res, *length, *n_node, *res_ref, *type_id_node, *dim_res, *line, *first_assign,
       *next_assign, *icm_arg, *old_arg_node, *last_assign;
-    node *arg1 = arg_node->ARG1;
-    node *arg2 = arg_node->ARG2;
-    node *arg3 = arg_node->ARG3;
+    node *arg1 = PRF_ARG1 (arg_node);
+    node *arg2 = PRF_ARG2 (arg_node);
+    node *arg3 = PRF_ARG3 (arg_node);
 
     int n, dim;
     simpletype s_type;
@@ -2877,54 +2880,110 @@ CompPrfModarray (node *arg_node, node *arg_info)
     /* store line of prf function */
     MAKENODE_NUM (line, arg_node->lineno);
 
-    if ((N_array == arg2->nodetype) && (N_array != arg3->nodetype)) {
-        COUNT_ELEMS (n, arg2->node[0]);
-        MAKENODE_NUM (length, n);
-
-        if ((N_id == arg3->nodetype) ? (1 == IsArray (arg3->IDS_NODE->TYPES)) : 0) {
-            char *icm_name;
-
-            if (1 == arg1->refcnt)
-                icm_name = "ND_PRF_MODARRAY_AxCxA_CHECK_REUSE";
-            else
-                icm_name = "ND_PRF_MODARRAY_AxCxA";
-
-            BIN_ICM_REUSE (arg_info->node[1], icm_name, line, type_id_node);
-            MAKE_NEXT_ICM_ARG (icm_arg, dim_res);
-            MAKE_NEXT_ICM_ARG (icm_arg, res);
-            MAKE_NEXT_ICM_ARG (icm_arg, arg1);
-            MAKE_NEXT_ICM_ARG (icm_arg, arg3);
-            MAKE_NEXT_ICM_ARG (icm_arg, length);
-            icm_arg->node[1] = arg2->node[0];
-            icm_arg->nnode = 2;
-            SET_VARS_FOR_MORE_ICMS;
-            MAKENODE_NUM (n_node, 1);
-            DEC_OR_FREE_RC_ND (arg3, n_node);
+    if (NODE_TYPE (arg2) == N_array) /* index is constant! */
+    {
+        if (NODE_TYPE (arg3) == N_array) { /* value is constant! */
+            DBUG_ASSERT (0, "sorry compilation of ND_PRF_MODARRAY_AxCxC not yet done");
         } else {
-            char *icm_name;
+            COUNT_ELEMS (n, ARRAY_AELEMS (arg2));
+            MAKENODE_NUM (length, n);
 
-            if (1 == arg1->refcnt)
-                icm_name = "ND_PRF_MODARRAY_AxCxS_CHECK_REUSE";
-            else
-                icm_name = "ND_PRF_MODARRAY_AxCxS";
+            if ((N_id == arg3->nodetype) ? (1 == IsArray (arg3->IDS_NODE->TYPES)) : 0) {
+                char *icm_name;
 
-            BIN_ICM_REUSE (arg_info->node[1], icm_name, line, type_id_node);
-            MAKE_NEXT_ICM_ARG (icm_arg, dim_res);
-            MAKE_NEXT_ICM_ARG (icm_arg, res);
-            MAKE_NEXT_ICM_ARG (icm_arg, arg1);
-            MAKE_NEXT_ICM_ARG (icm_arg, arg3);
-            MAKE_NEXT_ICM_ARG (icm_arg, length);
-            icm_arg->node[1] = arg2->node[0];
-            icm_arg->nnode = 2;
-            SET_VARS_FOR_MORE_ICMS;
+                if (1 == arg1->refcnt)
+                    icm_name = "ND_PRF_MODARRAY_AxCxA_CHECK_REUSE";
+                else
+                    icm_name = "ND_PRF_MODARRAY_AxCxA";
+
+                BIN_ICM_REUSE (arg_info->node[1], icm_name, line, type_id_node);
+                MAKE_NEXT_ICM_ARG (icm_arg, dim_res);
+                MAKE_NEXT_ICM_ARG (icm_arg, res);
+                MAKE_NEXT_ICM_ARG (icm_arg, arg1);
+                MAKE_NEXT_ICM_ARG (icm_arg, arg3);
+                MAKE_NEXT_ICM_ARG (icm_arg, length);
+                icm_arg->node[1] = ARRAY_AELEMS (arg2);
+                icm_arg->nnode = 2;
+                SET_VARS_FOR_MORE_ICMS;
+                MAKENODE_NUM (n_node, 1);
+                DEC_OR_FREE_RC_ND (arg3, n_node);
+            } else {
+                char *icm_name;
+
+                if (1 == arg1->refcnt)
+                    icm_name = "ND_PRF_MODARRAY_AxCxS_CHECK_REUSE";
+                else
+                    icm_name = "ND_PRF_MODARRAY_AxCxS";
+
+                BIN_ICM_REUSE (arg_info->node[1], icm_name, line, type_id_node);
+                MAKE_NEXT_ICM_ARG (icm_arg, dim_res);
+                MAKE_NEXT_ICM_ARG (icm_arg, res);
+                MAKE_NEXT_ICM_ARG (icm_arg, arg1);
+                MAKE_NEXT_ICM_ARG (icm_arg, arg3);
+                MAKE_NEXT_ICM_ARG (icm_arg, length);
+                icm_arg->node[1] = ARRAY_AELEMS (arg2);
+                icm_arg->nnode = 2;
+                SET_VARS_FOR_MORE_ICMS;
+            }
+            MAKENODE_NUM (n_node, 1);
+            INC_RC_ND (res, res_ref);
+            DEC_OR_FREE_RC_ND (arg1, n_node);
+            INSERT_ASSIGN;
         }
-        MAKENODE_NUM (n_node, 1);
-        INC_RC_ND (res, res_ref);
-        DEC_OR_FREE_RC_ND (arg1, n_node);
-        INSERT_ASSIGN;
-    } else
-        DBUG_ASSERT (0, " sorry compilation of this case of F_modarray isn't "
-                        "implemented yet");
+    } else { /* index is a variable ! */
+        DBUG_ASSERT ((NODE_TYPE (arg2) == N_id),
+                     "wrong 2nd arg of modarray (neither N_array nor N_id!");
+
+        if (NODE_TYPE (arg3) == N_array) { /* value is constant! */
+            DBUG_ASSERT (0, "sorry compilation of ND_PRF_MODARRAY_AxVxC not yet done");
+        } else {
+            DBUG_ASSERT (((TYPES_DIM (ID_TYPE (arg2)) == 1)
+                          && (TYPES_BASETYPE (ID_TYPE (arg2)) == T_int)),
+                         "indexing var of wrong type as 2nd arg of modarray!");
+
+            length = MakeNum (TYPES_SHAPE (ID_TYPE (arg2), 0));
+
+            if ((N_id == NODE_TYPE (arg3)) ? (1 == IsArray (ID_TYPE (arg3))) : 0) {
+                char *icm_name;
+
+                if (1 == arg1->refcnt)
+                    icm_name = "ND_PRF_MODARRAY_AxVxA_CHECK_REUSE";
+                else
+                    icm_name = "ND_PRF_MODARRAY_AxVxA";
+
+                BIN_ICM_REUSE (arg_info->node[1], icm_name, line, type_id_node);
+                MAKE_NEXT_ICM_ARG (icm_arg, dim_res);
+                MAKE_NEXT_ICM_ARG (icm_arg, res);
+                MAKE_NEXT_ICM_ARG (icm_arg, arg1);
+                MAKE_NEXT_ICM_ARG (icm_arg, arg3);
+                MAKE_NEXT_ICM_ARG (icm_arg, length);
+                MAKE_NEXT_ICM_ARG (icm_arg, arg2);
+                SET_VARS_FOR_MORE_ICMS;
+                MAKENODE_NUM (n_node, 1);
+                DEC_OR_FREE_RC_ND (arg3, n_node);
+            } else {
+                char *icm_name;
+
+                if (1 == arg1->refcnt)
+                    icm_name = "ND_PRF_MODARRAY_AxVxS_CHECK_REUSE";
+                else
+                    icm_name = "ND_PRF_MODARRAY_AxVxS";
+
+                BIN_ICM_REUSE (arg_info->node[1], icm_name, line, type_id_node);
+                MAKE_NEXT_ICM_ARG (icm_arg, dim_res);
+                MAKE_NEXT_ICM_ARG (icm_arg, res);
+                MAKE_NEXT_ICM_ARG (icm_arg, arg1);
+                MAKE_NEXT_ICM_ARG (icm_arg, arg3);
+                MAKE_NEXT_ICM_ARG (icm_arg, length);
+                MAKE_NEXT_ICM_ARG (icm_arg, arg2);
+                SET_VARS_FOR_MORE_ICMS;
+            }
+            MAKENODE_NUM (n_node, 1);
+            INC_RC_ND (res, res_ref);
+            DEC_OR_FREE_RC_ND (arg1, n_node);
+            INSERT_ASSIGN;
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
