@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2004/08/12 12:04:46  ktr
+ * replaced flag reuse with flag noreuse.
+ *
  * Revision 3.67  2004/08/10 16:13:42  ktr
  * reuse inference in EMM can now be activated using -reuse.
  *
@@ -809,6 +812,8 @@ AnalyseCommandline (int argc, char *argv[])
         }
     });
 
+    ARGS_FLAG ("noreuse", reuse = FALSE);
+
     ARGS_OPTION ("no", {
         ARG_CHOICE_BEGIN ();
 
@@ -943,8 +948,6 @@ AnalyseCommandline (int argc, char *argv[])
         ARG_FLAGMASK ('w', profileflag |= PROFILE_WITH);
         ARG_FLAGMASK_END ();
     });
-
-    ARGS_FLAG ("reuse", reuse = TRUE);
 
     ARGS_FLAG ("sbs", sbs = TRUE);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.62  2004/08/12 12:09:29  ktr
+ * replaced flag reuse with flag noreuse.
+ *
  * Revision 3.61  2004/08/11 11:41:46  khf
  * break specifier for phase wlenhance and optimization wlpg inserted
  *
@@ -498,7 +501,7 @@ Usage ()
       "\n"
       "    -emm            Use explicit memory management (experimental).\n"
       "\n"
-      "    -reuse          Enable reuse inference in emm (experimental).\n"
+      "    -noreuse        Disable reuse inference in emm.\n"
       "\n"
       "    -no <opt>       Disable optimization technique <opt>.\n"
       "\n"
