@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.162  1998/06/03 14:51:37  cg
+ * ICMs MT_SPMD_FUN_DEC and MT_SPMD_FUN_RET are now generated correctly.
+ *
  * Revision 1.161  1998/05/24 00:44:53  dkr
  * fixed some minor bugs
  * added an ICM for blocking
@@ -1450,15 +1453,23 @@ MergeIcmsFundef (node *out_icm, node *in_icm, types *out_type, types *in_type, i
     DBUG_VOID_RETURN;
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : ReorganizeReturnIcm
- *  description   :
- *  remarks       :
+ * function:
+ *   node *ReorganizeReturnIcm(node *icm_arg)
  *
- */
+ * description:
+ *
+ *   The ND_FUN_DEC / ND_FUN_RET ICMs handle the first out-parameter of a
+ *   function different from all others since this one is compiled to the
+ *   original single return value of a C function. The decision actually
+ *   is made when compiling the function definition. Because the function
+ *   body is compiled before, the already existing ND_FUN_RET ICM has to
+ *   be adjusted according to the ND_FUN_DEC ICM.
+ *
+ ******************************************************************************/
 
-node *
+static node *
 ReorganizeReturnIcm (node *icm_arg)
 {
     node *tmp, *last;
@@ -1565,24 +1576,21 @@ CreateApIcm (node *icm, char *name, node **icm_tab, int tab_size)
 /******************************************************************************
  *
  * function:
- *   node *CreateFundefIcm(char *name, statustype status,
- *                         node **icm_tab, int tab_size)
+ *   node *CreateIcmND_FUN_DEC(char *name, node **icm_tab, int tab_size)
  *
  * description:
- *   creates a fundef ICM.
- *     status == ST_spmdfun: MT_SPMD_FUN_DEC
- *     otherwise:            ND_FUN_DEC
+ *   creates a ND_FUN_DEC ICM.
  *
  ******************************************************************************/
 
-node *
-CreateFundefIcm (char *name, statustype status, node **icm_tab, int tab_size)
+static node *
+CreateIcmND_FUN_DEC (char *name, node **icm_tab, int tab_size)
 {
     node *icm, *icm_arg;
     int i;
     int cnt_icm = 0;
 
-    DBUG_ENTER ("CreateFundefIcm");
+    DBUG_ENTER ("CreateIcmND_FUN_DEC");
 
     DBUG_PRINT ("COMP", ("Creating ICM \"ND_FUN_DEC\""));
 
@@ -1614,6 +1622,52 @@ CreateFundefIcm (char *name, statustype status, node **icm_tab, int tab_size)
 
     if (icm_tab[0] != NULL) {
         APPEND_ICM_ARG (icm_arg, icm_tab[0]);
+    }
+
+    DBUG_RETURN (icm);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *CreateIcmMT_SPMD_FUN_DEC(char *name, node **icm_tab, int tab_size)
+ *
+ * description:
+ *   creates a MT_SPMD_FUN_DEC ICM.
+ *
+ ******************************************************************************/
+
+static node *
+CreateIcmMT_SPMD_FUN_DEC (char *name, char *from, node **icm_tab, int tab_size)
+{
+    node *icm, *icm_arg;
+    int i;
+    int cnt_icm = 0;
+
+    DBUG_ENTER ("CreateIcmMT_SPMD_FUN_DEC");
+
+    DBUG_PRINT ("COMP", ("Creating ICM \"MT_SPMD_FUN_DEC\""));
+
+    icm = MakeIcm ("MT_SPMD_FUN_DEC", NULL, NULL);
+
+    MAKE_ICM_ARG (icm_arg, MAKE_IDNODE (StringCopy (name)));
+    ICM_ARGS (icm) = icm_arg;
+
+    MAKE_NEXT_ICM_ARG (icm_arg, MAKE_IDNODE (from));
+
+    for (i = 1; i < tab_size; i++) {
+        if (icm_tab[i] != NULL) {
+            cnt_icm++;
+        }
+    }
+
+    MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (cnt_icm));
+
+    for (i = 1; i < tab_size; i++) {
+        if (icm_tab[i] != NULL) {
+            APPEND_ICM_ARG (icm_arg, icm_tab[i]);
+            icm_arg = EXPRS_NEXT (EXPRS_NEXT (icm_arg));
+        }
     }
 
     DBUG_RETURN (icm);
@@ -1833,397 +1887,6 @@ InsertDefReturnParam (node **icm_tab, node *icm_arg, types **type_tab, types *ty
     DBUG_VOID_RETURN;
 }
 
-#if 0
-/*
- *
- *  functionname  : GenStandardIcmTab
- *  description   : 
- *  remarks       : 
- *
- */
-
-node **GenStandardIcmTab(node *vars_arg_start, int n_vars, int varblock_length)
-{
-  node *tmp;
-  int i;
-  
-  DBUG_ENTER("GenStandardIcmTab");
-
-  icm_arg_tab=(node**)Malloc(sizeof(node*)*(n_vars+1));
-
-  for (i = 0; i <= n_vars; i++) {
-    icm_arg_tab[i]=NULL;
-  }
-  
-  /*
-   *  A table for variable icm args is created and initialized.
-   */
-
-  tmp = vars_arg_start;
-  i = 1;
-    
-  while (tmp != NULL) {
-    /*
-     *  All variable icm args are inserted into the table.
-     *  The first "out" parameter is inserted at position 0, all other
-     *  parameters are inserted in their original sequence starting with
-     *  position 1.
-     */
-
-    if (0 == strcmp(ID_NAME(EXPRS_EXPR(tmp)), "out_bx")) {
-      ID_NAME(EXPRS_EXPR(tmp)) = "out";
-    }
-    else {
-      if (0 == strcmp(ID_NAME(EXPRS_EXPR(tmp)), "in_bx")) {
-        ID_NAME(EXPRS_EXPR(tmp)) = "in";
-      }
-    }
-    
-    if ((0 == strcmp(ID_NAME(EXPRS_EXPR(tmp)), "out")) &&
-        (icm_arg_tab[0] == NULL)) {
-      icm_arg_tab[0]=tmp;
-
-      DBUG_PRINT("COMP", ("First OUT parameter moved to special position"));
-    }
-    else {
-      icm_arg_tab[i] = tmp;
-      i++;
-    }
-      
-    SHIFT_EXPRS_PTR(tmp, varblock_length);
-  }
-
-  DBUG_RETURN(icm_arg_tab);
-}
-
-
-
-/*
- *
- *  functionname  : GenSpecialIcmTabFundef
- *  description   : 
- *  remarks       : 
- *
- */
-
-node **GenSpecialIcmTabFundef(node *vars_arg_start, int n_vars,
-                              node *fundef, int *mapping_info)
-{
-  int varblock_length=3, *linksign;
-  node **icm_arg_tab, *current_arg;
-  types **arg_type_tab, *current_type;
-  
-  DBUG_ENTER("GenSpecialIcmTabFundef");
-  
-  linksign = PRAGMA_LINKSIGN(FUNDEF_PRAGMA(fundef));
-  
-  /*
-   *  A table for variable icm args is created and initialized.
-   */
-
-  icm_arg_tab=(node**)Malloc(sizeof(node*)*(n_vars+1));
-  arg_type_tab=(types**)Malloc(sizeof(types*)*(n_vars+1));
-
-  for (i=0; i<=n_vars; i++) {
-    icm_arg_tab[i] = NULL;
-    arg_type_tab[i] = NULL;
-  }
-  
-  /*
-   *  First, the local variables current_arg and current_type are
-   *  initialized. These are traversed simultaniously to the icms
-   *  in order to know each parameter's type.
-   */
-
-  if (FUNDEF_BASETYPE(fundef) == T_void) {
-    current_arg=FUNDEF_ARGS(fundef);
-    if (current_arg != NULL) {
-      current_type=ARG_TYPE(current_arg);
-    }
-  }
-  else {
-    current_arg=NULL;
-    current_type=FUNDEF_TYPES(fundef);
-  }
-
-  tmp = vars_arg_start;
-  i = 0;
-  
-  while (tmp!=NULL) {
-    /*
-     *  All variable icm args are inserted into the table
-     *  depending on pragma linksign.
-     */
-
-    if (icm_arg_tab[linksign[i]] == NULL) {
-      if (0==strcmp(ID_NAME(EXPRS_EXPR(tmp)), "out_bx")) {
-        ID_NAME(EXPRS_EXPR(tmp))="out";
-      }
-      else {
-        if (0==strcmp(ID_NAME(EXPRS_EXPR(tmp)), "in_bx")) {
-          ID_NAME(EXPRS_EXPR(tmp))="in";
-        }    
-      }
-      
-      icm_arg_tab[linksign[i]]=tmp;
-      arg_type_tab[linksign[i]]=current_type;
-
-      DBUG_PRINT("COMP",
-                 ("Parameter #%d moved to link position #%d",
-                  i, linksign[i]));
-    }
-    else {
-      MergeIcmsFundef(icm_arg_tab[linksign[i]], tmp, 
-                      arg_type_tab[linksign[i]], current_type,
-                      NODE_LINE(fundef), mapping_info[2*i]);
-    }      
-      
-    i++;
-    SHIFT_EXPRS_PTR(tmp, varblock_length);
-
-    /*
-     *  Finally, current_type and current_arg are shifted.
-     */
-
-    if (current_arg==NULL) {
-      if (TYPES_NEXT(current_type)==NULL) {
-        current_arg=FUNDEF_ARGS(fundef);
-        if (current_arg!=NULL) {
-          current_type=ARG_TYPE(current_arg);
-        }
-      }
-      else {
-        current_type=TYPES_NEXT(current_type);
-      }
-    }
-    else {
-      current_arg=ARG_NEXT(current_arg);
-      if (current_arg != NULL) {
-        current_type=ARG_TYPE(current_arg);
-      }
-    }
-  }
-        
-  FREE(arg_type_tab);
-  FREE(mapping_info);
-  
-  DBUG_RETURN(icm_arg_tab);
-}
-
-
-
-/*
- *
- *  functionname  : GenSpecialIcmTabNonFundef
- *  description   : 
- *  remarks       : 
- *
- */
-
-node **GenSpecialIcmTabNonFundef(node *vars_arg_start, int n_vars,
-                                 int *linksign, node *collect_assigns)
-{
-  int varblock_length=2, i;
-  node **icm_arg_tab, *tmp;
-  
-  DBUG_ENTER("GenSpecialIcmTabNonFundef");
-
-  /*
-   *  A table for variable icm args is created and initialized.
-   */
-
-  icm_arg_tab=(node**)Malloc(sizeof(node*)*(n_vars+1));
-
-  for (i=0; i<=n_vars; i++) {
-    icm_arg_tab[i]=NULL;
-  }
-  
-
-  tmp=vars_arg_start;
-  i=0;
-  
-  while (tmp!=NULL) {
-    /*
-     *  All variable icm args are inserted into the table
-     *  depending on pragma linksign.
-     */
-
-    if (icm_arg_tab[linksign[i]]==NULL) {
-      if (0==strcmp(ID_NAME(EXPRS_EXPR(tmp)), "out_bx")) {
-        ID_NAME(EXPRS_EXPR(tmp))="out";
-      }
-      else {
-        if (0==strcmp(ID_NAME(EXPRS_EXPR(tmp)), "in_bx")) {
-          ID_NAME(EXPRS_EXPR(tmp))="in";
-        }    
-      }
-      
-      icm_arg_tab[linksign[i]]=tmp;
-
-      DBUG_PRINT("COMP",
-                 ("Parameter #%d moved to link position #%d",
-                  i, linksign[i]));
-    }
-    else {
-      new_assign=MergeIcmsAp(icm_arg_tab[linksign[i]], tmp, 
-                             mapping_info[2*i], mapping_info[2*i+1]);
-
-      if (new_assign!=NULL)
-      {
-        ASSIGN_NEXT(new_assign)=ASSIGN_NEXT(collect_assigns);
-        ASSIGN_NEXT(collect_assigns)=new_assign;
-      }
-    }      
-      
-    i++;
-    SHIFT_EXPRS_PTR(tmp, varblock_length);
-  }
-
-  DBUG_RETURN(icm_arg_tab);
-}
-
-  
-
-/*
- *
- *  functionname  : ReorganizeParameters
- *  arguments     : 1) tag which identifies the ICM to be reorganized:
- *                     1: ND_FUN_DEC
- *                     2: ND_FUN_RET
- *                     3: ND_FUN_AP
- *                  2) ICM args to reorganize
- *                  3) fundef node
- *  description   : 
- *  remarks       : 
- *
- */
-
-node *ReorganizeParameters(int tag, node *icm_args, node *fundef,
-                           int *mapping_info)
-{
-  int header_length, varblock_length, i, n_vars;
-  node *tmp, *n_vars_arg, *vars_arg_start, *ret_arg, *last_header_arg,
-       *last, **icm_arg_tab, *collect_assigns=NULL;
-  int *linksign;
-  types *current_type, **arg_type_tab;
-  
-  DBUG_ENTER("ReorganizeParameters");
-  
-  if (FUNDEF_PRAGMA(fundef) == NULL) {
-    linksign=NULL;
-  }
-  else {
-    linksign=PRAGMA_LINKSIGN(FUNDEF_PRAGMA(fundef));
-  }
-  
-  header_length=(tag==2)?2:3;
-    /* number of static icm args (before ICM_VAR) */
- 
-  varblock_length=(tag==1)?3:2;
-    /* number of dynamic icm args which belong together */
-  
-  DBUG_PRINT("COMP",
-             ("Reorganizing parameters (tag=%d, pragma=%d)", tag, linksign));
-  
-  if (tag == 2) {
-    tmp = icm_args;           /* ND_FUN_RET */
-  }
-  else {
-    tmp = EXPRS_NEXT(icm_args);
-  }
-  
-  ret_arg=EXPRS_EXPR(tmp);
-  tmp=EXPRS_NEXT(tmp);
-
-  last_header_arg=tmp;
-  vars_arg_start=EXPRS_NEXT(tmp);
-  n_vars_arg=EXPRS_EXPR(tmp);
-
-  /*
-   *  ret_arg points to the special return identifier or return type
-   *  respectively.
-   *
-   *  n_vars_arg points to that icm arg which stores the number of 
-   *  following variable arguments.
-   *
-   *  vars_arg_start points to the list of variable icm args, whose
-   *  number is stored in the icm arg before.
-   */
-
-  tmp=vars_arg_start;
-  n_vars=0;
-  
-  while (tmp != NULL) {
-    n_vars++;
-    SHIFT_EXPRS_PTR(tmp, varblock_length);
-  }
-
-  DBUG_PRINT("COMP", ("%d icm args found", n_vars));
-  
-  /*
-   *  The number of following variable icm args is counted 
-   *  and stored in n_vars.
-   */
-
-
-  if (linksign==NULL) {
-    icm_arg_tab=GenStandardIcmTab(vars_arg_start, n_vars, varblock_length);
-  }
-  else {
-    if (tag==1) {
-      icm_arg_tab=GenSpecialIcmTabFundef(vars_arg_start, n_vars, fundef,
-                                         mapping_info);
-    }
-    else {
-      collect_assigns=MakeAssign(NULL, NULL);
-      icm_arg_tab=GenSpecialIcmTabNonFundef(vars_arg_start, n_vars,
-                                            linksign, collect_assigns,
-                                            mapping_info);
-    }
-  }
-  
-  
-  /*
-   *  The real return parameter is moved to its special position.
-   */
-
-  if (icm_arg_tab[0] != NULL) {
-    ID_NAME(ret_arg)=ID_NAME(EXPRS_EXPR(EXPRS_NEXT(icm_arg_tab[0])));
-    NUM_VAL(n_vars_arg) = n_vars - 1;
-  }
-  else {
-    NUM_VAL(n_vars_arg)=n_vars;
-  }
-    
-  /*
-   *  All other parameters are put together into a chain again.
-   */
-
-  last=last_header_arg;
-  
-  for (i = 1; i <= NUM_VAL(n_vars_arg); i++) {
-    if (icm_arg_tab[i]==NULL) {
-      ERROR(NODE_LINE(fundef), ("Pragma 'linksign` illegal"));
-      CONT_ERROR(("No SAC parameter mapped to C parameter %d", i));
-    }
-    else {
-      EXPRS_NEXT(last) = icm_arg_tab[i];
-      SHIFT_EXPRS_PTR(last, varblock_length);
-    }
-  }
- 
-  EXPRS_NEXT(last)=NULL;
-
-  if (collect_assigns != NULL) {
-    tmp=collect_assigns;
-    collect_assigns=ASSIGN_NEXT(collect_assigns);
-    FREE(tmp);
-  }
-    
-  DBUG_RETURN(collect_assigns);
-}
-#endif /* 0 */
-
 /*
  *
  *  functionname  : RenameVar
@@ -2256,7 +1919,7 @@ RenameVar (char *string, int i)
  *  functionname  : RenameReturn
  *  arguments     : 1) N_return node
  *                  2) arg_info
- *  description   : - renames the variables in a return_sttatement,
+ *  description   : - renames the variables in a return_statement,
  *                  - adds variable declaration
  *                  - inserts new assignments (after CURR_ASSIGN(arg_info))
  *  remarks       : - pointer to variable declaration is stored in
@@ -2467,6 +2130,8 @@ COMPModul (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+#if 0
+
 /******************************************************************************
  *
  * function:
@@ -2482,16 +2147,224 @@ COMPModul (node *arg_node, node *arg_info)
  *
  ******************************************************************************/
 
+node *COMPNormalFundef( node *arg_node, node *arg_info)
+{
+  node *return_node, *icm_arg, *type_id_node, *var_name_node,
+    *tag_node, **icm_tab, *icm_tab_entry;
+  types *rettypes, *fulltype, **type_tab;
+  int cnt_param, tab_size, i;
+
+  DBUG_ENTER( "COMPNormalFundef");
+
+  rettypes = FUNDEF_TYPES(arg_node);
+
+  if ((NULL != FUNDEF_RETURN(arg_node))
+      && (TYPES_BASETYPE(rettypes) != T_void)) {
+    /*
+     * FUNDEF_RETURN(arg_node) points to a N_icm (ND_FUN_RET).
+     * return_node will point to the first N_exprs belonging to a 
+     * return_value. This exists only for functions with at least
+     * one return value.
+     */
+
+    return_node = EXPRS_NEXT(EXPRS_NEXT(EXPRS_NEXT(
+                                 ICM_ARGS(FUNDEF_RETURN(arg_node)))));
+  }
+
+  cnt_param = 0;
+
+  tab_size = CountFunctionParams(arg_node) + 2;
+  icm_tab = (node **) Malloc(sizeof(node *) * tab_size);
+  type_tab = (types **) Malloc(sizeof(types *) * tab_size);
+
+  for (i = 0; i < tab_size; i++) {
+    icm_tab[i] = NULL;
+    type_tab[i] = NULL;
+  }
+   
+  while ((NULL != rettypes) &&
+         (TYPES_BASETYPE(rettypes) != T_void) &&
+         (TYPES_BASETYPE(rettypes) != T_dots)) {
+
+    if ((MUST_REFCOUNT(TYPE, rettypes)) &&
+        (FUN_DOES_REFCOUNT(arg_node, cnt_param))) {
+      MAKENODE_ID(tag_node, "out_rc");
+    }
+    else {
+      MAKENODE_ID(tag_node, "out");
+    }
+
+    MAKE_ICM_ARG(icm_arg, tag_node);
+    icm_tab_entry = icm_arg;
+      
+    GET_BASIC_TYPE(fulltype, rettypes, 042);
+      
+    MAKENODE_ID(type_id_node, MakeTypeString(fulltype));
+    MAKE_NEXT_ICM_ARG(icm_arg, type_id_node);
+
+    if (NULL == FUNDEF_BODY(arg_node)) {
+      /* it is an extern declaration */
+#ifdef IMPORTED_WITH_NAME
+      MAKENODE_ID(var_name_node, GenName(i, DUMMY_NAME));
+#else 
+      MAKENODE_ID(var_name_node, "");
+#endif
+
+    }
+    else {
+      DBUG_ASSERT((return_node != NULL), "no return icm found");
+      DBUG_ASSERT((N_id == NODE_TYPE(EXPRS_EXPR(return_node))),
+                  "wrong nodetype != N_id");
+      MAKENODE_ID_REUSE_IDS(var_name_node,
+                            LET_IDS(EXPRS_EXPR(return_node)));
+      if (EXPRS_NEXT(return_node) != NULL) {
+        /*
+         * put return_node to next N_exprs where a function return_value
+         * is behind
+         */
+        return_node = EXPRS_NEXT(EXPRS_NEXT(return_node));
+      }
+    }
+
+    MAKE_NEXT_ICM_ARG(icm_arg, var_name_node);
+
+    InsertDefReturnParam(icm_tab, icm_tab_entry,
+                         type_tab, rettypes, 
+                         (FUNDEF_PRAGMA(arg_node) == NULL)
+                         ? NULL
+                         : FUNDEF_LINKSIGN(arg_node),
+                         cnt_param, NODE_LINE(arg_node));
+      
+    rettypes = rettypes->next;
+    cnt_param++;
+  }
+
+  if ((rettypes!=NULL) && (TYPES_BASETYPE(rettypes)==T_dots)) {
+    MAKENODE_ID(tag_node, "in");
+    MAKE_ICM_ARG(icm_arg, tag_node);
+    icm_tab_entry = icm_arg;
+    MAKENODE_ID(type_id_node, MakeTypeString(rettypes));
+    MAKE_NEXT_ICM_ARG(icm_arg, type_id_node);
+    MAKENODE_ID(var_name_node, "");
+    MAKE_NEXT_ICM_ARG(icm_arg, var_name_node);
+
+    InsertDefDotsParam(icm_tab, icm_tab_entry);
+  }
+   
+  if (NULL != FUNDEF_ARGS(arg_node)) {
+    if (NULL != FUNDEF_BODY(arg_node)) {
+      /* first assign of body */
+      INFO_COMP_FIRSTASSIGN(arg_info) = BLOCK_INSTR(FUNDEF_BODY(arg_node));
+    }
+
+    INFO_COMP_CNTPARAM(arg_info) = (cnt_param == 0) ? 1 : cnt_param;
+    INFO_COMP_ICMTAB(arg_info) = icm_tab;
+    INFO_COMP_TYPETAB(arg_info) = type_tab;
+      
+    /*
+     *  the arg_node is needed while compiling args as argument for 
+     *  FUN_DOES_REFCOUNT
+     */
+
+    /* traverse formal parameters (N_arg) */
+    Trav( FUNDEF_ARGS( arg_node), arg_info); 
+
+    if (NULL != FUNDEF_BODY(arg_node)) {
+      /* new first assign of body */
+      BLOCK_INSTR(FUNDEF_BODY(arg_node)) = INFO_COMP_FIRSTASSIGN(arg_info);
+      INFO_COMP_FIRSTASSIGN(arg_info) = NULL;
+    }
+
+    INFO_COMP_CNTPARAM(arg_info) = 0;
+    INFO_COMP_ICMTAB(arg_info) = NULL;
+    INFO_COMP_TYPETAB(arg_info) = NULL;
+  }
+
+  if ((FUNDEF_RETURN(arg_node) != NULL) 
+      && (ICM_ARGS(FUNDEF_RETURN(arg_node)) != NULL)
+      && (FUNDEF_STATUS( arg_node) != ST_spmdfun)) {
+    ReorganizeReturnIcm(ICM_ARGS(FUNDEF_RETURN(arg_node)));
+  }
+
+  if (FUNDEF_STATUS( arg_node) == ST_spmdfun) {
+    FUNDEF_ICM( arg_node) = CreateFundefIcm( FUNDEF_NAME( arg_node),
+                                             FUNDEF_STATUS( arg_node),
+                                             icm_tab, tab_size);
+  }
+  else {
+    FUNDEF_ICM( arg_node) = CreateFundefIcm( FUNDEF_NAME( arg_node),
+                                             FUNDEF_STATUS( arg_node),
+                                             icm_tab, tab_size);
+  }
+   
+  /*
+   * From now on FUNDEF_RETURN(fundef) points to N_icm instead of function's
+   * return-statement.
+   */
+   
+  FREE(icm_tab);
+  FREE(type_tab);
+
+  DBUG_RETURN( arg_node);
+}
+
+
+
+/******************************************************************************
+ *
+ * function:
+ *   node *COMPSpmdFundef( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   
+ *
+ ******************************************************************************/
+
+node *COMPSpmdFundef( node *arg_node, node *arg_info)
+{
+  DBUG_ENTER( "COMPSpmdFundef");
+
+  DBUG_RETURN( arg_node);
+}
+
+#endif
+
+/******************************************************************************
+ *
+ * function:
+ *   node *COMPFundef(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   traverses child-nodes.
+ *
+ * remarks:
+ *   - sets INFO_COMP_VARDECS(arg_info) to variable declaration.
+ *
+ ******************************************************************************/
+
 node *
-COMPNormalFundef (node *arg_node, node *arg_info)
+COMPFundef (node *arg_node, node *arg_info)
 {
     node *return_node, *icm_arg, *type_id_node, *var_name_node, *tag_node, **icm_tab,
       *icm_tab_entry;
     types *rettypes, *fulltype, **type_tab;
     int cnt_param, tab_size, i;
 
-    DBUG_ENTER ("COMPNormalFundef");
+    DBUG_ENTER ("COMPFundef");
 
+    INFO_COMP_FUNDEF (arg_info) = arg_node;
+
+    /*
+     * traverse body
+     */
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        INFO_COMP_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    /*
+     * compile return types
+     */
     rettypes = FUNDEF_TYPES (arg_node);
 
     if ((NULL != FUNDEF_RETURN (arg_node)) && (TYPES_BASETYPE (rettypes) != T_void)) {
@@ -2611,18 +2484,19 @@ COMPNormalFundef (node *arg_node, node *arg_info)
     }
 
     if ((FUNDEF_RETURN (arg_node) != NULL)
-        && (ICM_ARGS (FUNDEF_RETURN (arg_node)) != NULL)) {
+        && (ICM_ARGS (FUNDEF_RETURN (arg_node)) != NULL)
+        && (FUNDEF_STATUS (arg_node) != ST_spmdfun)) {
         ReorganizeReturnIcm (ICM_ARGS (FUNDEF_RETURN (arg_node)));
     }
 
     if (FUNDEF_STATUS (arg_node) == ST_spmdfun) {
         FUNDEF_ICM (arg_node)
-          = CreateFundefIcm (FUNDEF_NAME (arg_node), FUNDEF_STATUS (arg_node), icm_tab,
-                             tab_size);
+          = CreateIcmMT_SPMD_FUN_DEC (FUNDEF_NAME (arg_node),
+                                      FUNDEF_NAME (FUNDEF_LIFTEDFROM (arg_node)), icm_tab,
+                                      tab_size);
     } else {
         FUNDEF_ICM (arg_node)
-          = CreateFundefIcm (FUNDEF_NAME (arg_node), FUNDEF_STATUS (arg_node), icm_tab,
-                             tab_size);
+          = CreateIcmND_FUN_DEC (FUNDEF_NAME (arg_node), icm_tab, tab_size);
     }
 
     /*
@@ -2633,64 +2507,6 @@ COMPNormalFundef (node *arg_node, node *arg_info)
     FREE (icm_tab);
     FREE (type_tab);
 
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *COMPSpmdFundef( node *arg_node, node *arg_info)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-COMPSpmdFundef (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("COMPSpmdFundef");
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *COMPFundef(node *arg_node, node *arg_info)
- *
- * description:
- *   traverses child-nodes.
- *
- * remarks:
- *   - sets INFO_COMP_VARDECS(arg_info) to variable declaration.
- *
- ******************************************************************************/
-
-node *
-COMPFundef (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("COMPFundef");
-
-    INFO_COMP_FUNDEF (arg_info) = arg_node;
-
-    /*
-     * traverse body
-     */
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        INFO_COMP_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    }
-
-    /*
-     * different compilation schemes for non-SPMD- and SPMD-funs
-     */
-    if (FUNDEF_STATUS (arg_node) == ST_spmdfun) {
-        arg_node = COMPSpmdFundef (arg_node, arg_info);
-    } else {
-        arg_node = COMPNormalFundef (arg_node, arg_info);
-    }
-
     /*
      * traverse next function if any
      */
@@ -2699,7 +2515,7 @@ COMPFundef (node *arg_node, node *arg_info)
     }
 
     /*
-     * traverse pragma
+     * remove pragma
      */
     if (FUNDEF_PRAGMA (arg_node) != NULL) {
         FUNDEF_PRAGMA (arg_node) = FreeNode (FUNDEF_PRAGMA (arg_node));
@@ -5022,7 +4838,8 @@ COMPWithReturn (node *arg_node, node *arg_info)
     /* 'dec_rc' points to a list of variables whose refcount has to be
      * decremented
      */
-    dec_rc = INFO_COMP_WITHBEGIN (arg_info)->node[3]->node[0];
+
+    dec_rc = INFO_COMP_WITHBEGIN (arg_info)->node[3];
 
     /* store name of resulting array */
     res = with_icm_arg->node[0];
@@ -5149,14 +4966,26 @@ COMPWithReturn (node *arg_node, node *arg_info)
         DEC_RC_FREE_ND (mod_array, n_node);
     }
 
+#if 0
+   while(NULL != dec_rc) {
+      if ((0 != strcmp(ID_NAME(index_node), ID_NAME(dec_rc))) && 
+          ((NULL == mod_array) ||
+           (0 != strcmp(ID_NAME(mod_array), ID_NAME(dec_rc))))) {
+         DEC_RC_FREE_ND(dec_rc, n_node);
+      }
+      dec_rc=dec_rc->node[0];
+   }
+#else
     while (NULL != dec_rc) {
-        if ((0 != strcmp (ID_NAME (index_node), ID_NAME (dec_rc)))
+        if ((0 != strcmp (ID_NAME (index_node), ID_NAME (EXPRS_EXPR (dec_rc))))
             && ((NULL == mod_array)
-                || (0 != strcmp (ID_NAME (mod_array), ID_NAME (dec_rc))))) {
-            DEC_RC_FREE_ND (dec_rc, n_node);
+                || (0 != strcmp (ID_NAME (mod_array), ID_NAME (EXPRS_EXPR (dec_rc)))))) {
+            DEC_RC_FREE_ND (EXPRS_EXPR (dec_rc), n_node);
         }
-        dec_rc = dec_rc->node[0];
+        dec_rc = EXPRS_NEXT (dec_rc);
     }
+#endif
+
     if (FOLD == con_type) {
         /* return contains to N_foldfun or N_foldprf, so the refcount of the
          * result is stored in the last_argument of the BEGIN N_icm.
@@ -5344,7 +5173,7 @@ COMPSpmdFunReturn (node *arg_node, node *arg_info)
 
     args = MakeExprs (MakeNum (cnt_params), args);
 
-    arg_node = MakeIcm ("MT_FUN_RET", args, NULL);
+    arg_node = MakeIcm ("MT_SPMD_FUN_RET", args, NULL);
 
     DBUG_RETURN (arg_node);
 }
@@ -5418,7 +5247,12 @@ COMPArg (node *arg_node, node *arg_info)
     if ((MUST_REFCOUNT (ARG, arg_node))
         && (FUN_DOES_REFCOUNT (INFO_COMP_FUNDEF (arg_info),
                                INFO_COMP_CNTPARAM (arg_info)))) {
-        tag = (ARG_ATTRIB (arg_node) == ST_inout) ? "inout_rc" : "in_rc";
+        if ((ARG_ATTRIB (arg_node) == ST_inout)
+            || (ARG_ATTRIB (arg_node) == ST_spmd_inout)) {
+            tag = "inout_rc";
+        } else {
+            tag = "in_rc";
+        }
 
         /* put ND_INC_RC at beginning of function block */
 
@@ -6001,7 +5835,7 @@ COMPWith (node *arg_node, node *arg_info)
         /* store pointer to variables that have to be increased in
          * in INFO_COMP_WITHBEGIN(arg_info)->node[3] (it will be used in COMPReturn)
          */
-        INFO_COMP_WITHBEGIN (arg_info)->node[3] = WITH_USEDVARS (old_arg_node);
+        INFO_COMP_WITHBEGIN (arg_info)->node[3] = WITH_USEVARS (old_arg_node);
 
         APPEND_ASSIGNS (first_assign, next_assign);
     } else {
@@ -6013,7 +5847,7 @@ COMPWith (node *arg_node, node *arg_info)
             /* store pointer to variables that have to be increased in
              * in INFO_COMP_WITHBEGIN(arg_info)->node[3] ( it will be used in COMPReturn )
              */
-            INFO_COMP_WITHBEGIN (arg_info)->node[3] = WITH_USEDVARS (old_arg_node);
+            INFO_COMP_WITHBEGIN (arg_info)->node[3] = WITH_USEVARS (old_arg_node);
             APPEND_ASSIGNS (first_assign, next_assign);
         } else {
             if (N_foldprf == NODE_TYPE (old_arg_node->node[1])) {
@@ -6074,7 +5908,7 @@ COMPWith (node *arg_node, node *arg_info)
         /* store pointer to variables that have to be increased in
          * in INFO_COMP_WITHBEGIN(arg_info)->node[3] ( it will be used in COMPReturn )
          */
-        INFO_COMP_WITHBEGIN (arg_info)->node[3] = WITH_USEDVARS (old_arg_node);
+        INFO_COMP_WITHBEGIN (arg_info)->node[3] = WITH_USEVARS (old_arg_node);
 
         /* Store  N_prf or N_ap  in node[2] of current N_icm.
          * It will be used in COMPReturn and than eliminated.
@@ -6084,12 +5918,22 @@ COMPWith (node *arg_node, node *arg_info)
     }
 
     /* now add some INC_RC's */
-    inc_rc = WITH_USEDVARS (old_arg_node)->node[0];
-    while (NULL != inc_rc) {
-        MAKENODE_NUM (n_node, ID_REFCNT (inc_rc));
-        INC_RC_ND (inc_rc, n_node);
-        inc_rc = inc_rc->node[0];
+#if 0
+  inc_rc=WITH_USEDVARS(old_arg_node)->node[0];
+  while (NULL != inc_rc) {
+    MAKENODE_NUM(n_node, ID_REFCNT(inc_rc));
+    INC_RC_ND(inc_rc, n_node);
+    inc_rc=inc_rc->node[0];
+  }
+#else
+    inc_rc = WITH_USEVARS (old_arg_node);
+    while (inc_rc != NULL) {
+        MAKENODE_NUM (n_node, ID_REFCNT (EXPRS_EXPR (inc_rc)));
+        INC_RC_ND (EXPRS_EXPR (inc_rc), n_node);
+        inc_rc = EXPRS_NEXT (inc_rc);
     }
+#endif
+
     /* update arg_info, after inserting new N_assign nodes */
     if ((N_foldprf == old_arg_node->node[1]->nodetype)
         || (N_foldfun == old_arg_node->node[1]->nodetype))
