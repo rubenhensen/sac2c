@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/11 19:01:51  khf
+ * fixed bug 83
+ *
  * Revision 1.3  2004/08/09 13:14:17  khf
  * some comments added
  *
@@ -203,6 +206,49 @@ MakeFoldFunAssign (node *fundef, node *withop, ids *accu_ids, node *cexpr)
     DBUG_RETURN (nassign);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *InsertAccuPrf( node *ncode, info *arg_info);
+ *
+ *   @brief
+ *
+ *   @param  node *ncode    :  N_code of current withloop
+ *           node *arg_info :  N_info
+ *   @return node *         :  modified N_code
+ ******************************************************************************/
+static node *
+InsertAccuPrf (node *ncode, info *arg_info)
+{
+    node *wl, *nblock, *accuassign, *ffassign, *nassign, *nid;
+
+    DBUG_ENTER ("InsertAccuPrf");
+
+    wl = INFO_EA_WL (arg_info);
+    nblock = NCODE_CBLOCK (ncode);
+
+    /* <acc> = F_accu( <idx-varname>); */
+    accuassign = MakeAccuAssign (INFO_EA_FUNDEF (arg_info), INFO_EA_LHS_IDS (arg_info),
+                                 NWITH_VEC (wl));
+
+    /*   <res> = <fun>( <acc>, <cexpr>); */
+    ffassign = MakeFoldFunAssign (INFO_EA_FUNDEF (arg_info), NWITH_WITHOP (wl),
+                                  ASSIGN_LHS (accuassign), NWITH_CEXPR (wl));
+
+    nassign = AppendAssign (BLOCK_INSTR (nblock), ffassign);
+
+    ASSIGN_NEXT (accuassign) = nassign;
+
+    BLOCK_INSTR (nblock) = accuassign;
+
+    /* replace CEXPR */
+    nid = DupIds_Id (ASSIGN_LHS (ffassign));
+
+    NWITH_CEXPR (wl) = FreeNode (NWITH_CEXPR (wl));
+    NWITH_CEXPR (wl) = nid;
+
+    DBUG_RETURN (ncode);
+}
+
 /**
  *
  *  TRAVERSAL FUNCTIONS
@@ -304,17 +350,33 @@ EAlet (node *arg_node, info *arg_info)
 node *
 EANwith (node *arg_node, info *arg_info)
 {
-    node *tmp;
+    info *tmp;
+
     DBUG_ENTER ("EANwith");
 
-    if (NWITH_IS_FOLD (arg_node) && (NWITH_CODE (arg_node) != NULL)) {
+    /* stack arg_info */
+    tmp = arg_info;
+    arg_info = MakeInfo ();
+    INFO_EA_FUNDEF (arg_info) = INFO_EA_FUNDEF (tmp);
 
-        tmp = INFO_EA_WL (arg_info);
+    /* modify bottom up */
+    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+
+    /* pop arg_info */
+    arg_info = FreeInfo (arg_info);
+    arg_info = tmp;
+
+    if (NWITH_IS_FOLD (arg_node)) {
+
+        DBUG_PRINT ("EA", ("Fold WL found, inserting F_Accu..."));
+
         INFO_EA_WL (arg_info) = arg_node; /* store the current node for later */
 
-        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+        DBUG_ASSERT ((NCODE_NEXT (NWITH_CODE (arg_node)) == NULL),
+                     "Withloop has more than one N_code!");
+        NWITH_CODE (arg_node) = InsertAccuPrf (NWITH_CODE (arg_node), arg_info);
 
-        INFO_EA_WL (arg_info) = tmp;
+        DBUG_PRINT ("EA", (" inserting complete"));
 
     } /* else nothing to do */
 
@@ -335,34 +397,9 @@ EANwith (node *arg_node, info *arg_info)
 node *
 EANcode (node *arg_node, info *arg_info)
 {
-    node *wl, *nblock, *accuassign, *ffassign, *nassign, *nid;
-
     DBUG_ENTER ("EANcode");
 
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
-
-    wl = INFO_EA_WL (arg_info);
-    nblock = NCODE_CBLOCK (arg_node);
-
-    /* <acc> = F_accu( <idx-varname>); */
-    accuassign = MakeAccuAssign (INFO_EA_FUNDEF (arg_info), INFO_EA_LHS_IDS (arg_info),
-                                 NWITH_VEC (wl));
-
-    /*   <res> = <fun>( <acc>, <cexpr>); */
-    ffassign = MakeFoldFunAssign (INFO_EA_FUNDEF (arg_info), NWITH_WITHOP (wl),
-                                  ASSIGN_LHS (accuassign), NWITH_CEXPR (wl));
-
-    nassign = AppendAssign (BLOCK_INSTR (nblock), ffassign);
-
-    ASSIGN_NEXT (accuassign) = nassign;
-
-    BLOCK_INSTR (nblock) = accuassign;
-
-    /* replace CEXPR */
-    nid = DupIds_Id (ASSIGN_LHS (ffassign));
-
-    NWITH_CEXPR (wl) = FreeNode (NWITH_CEXPR (wl));
-    NWITH_CEXPR (wl) = nid;
 
     DBUG_RETURN (arg_node);
 }
