@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/08/05 13:50:18  skt
+ * welcome to the new INFO structure
+ *
  * Revision 1.7  2004/07/23 10:05:08  skt
  * TEMfundef added
  *
@@ -37,39 +40,25 @@
 
 #define TAG_EXECUTIONMODE_H
 
-/* access macros for arg_info
- *
- *   node*      ORIGLHS    (left-hand-side of the assignemt, before F_fill was
- *                         added / args 2..n of fill())
- *   int        EXECMODE  (the current execution mode)
- *   int        WITHDEEP  (the current with-loop-deepness)
- *   int        TRAVMODE  (the current traversalmode MUSTEX, MUSTST or COULDMT)
- */
-#define INFO_TEM_LETLHS(n) (n->info2)
-#define INFO_TEM_EXECMODE(n) (n->refcnt)
-#define INFO_TEM_WITHDEEP(n) (n->flag)
-#define INFO_TEM_TRAVMODE(n) (n->counter)
 #define TEM_DEBUG 0
 #define TEM_TRAVMODE_DEFAULT 0
 #define TEM_TRAVMODE_MUSTEX 1
 #define TEM_TRAVMODE_MUSTST 2
 #define TEM_TRAVMODE_COULDMT 3
 
-extern node *TagExecutionmode (node *arg_node, node *arg_info);
+extern node *TagExecutionmode (node *arg_node);
 
-extern node *TEMfundef (node *arg_node, node *arg_info);
+extern node *TEMassign (node *arg_node, info *arg_info);
 
-extern node *TEMassign (node *arg_node, node *arg_info);
+extern node *TEMwith2 (node *arg_node, info *arg_info);
 
-extern node *TEMwith2 (node *arg_node, node *arg_info);
+extern node *TEMprf (node *arg_node, info *arg_info);
 
-extern node *TEMprf (node *arg_node, node *arg_info);
+extern node *TEMlet (node *arg_node, info *arg_info);
 
-extern node *TEMlet (node *arg_node, node *arg_info);
+extern node *TEMap (node *arg_node, info *arg_info);
 
-extern node *TEMap (node *arg_node, node *arg_info);
-
-extern node *TEMarray (node *arg_node, node *arg_info);
+extern node *TEMarray (node *arg_node, info *arg_info);
 
 int IsMTAllowed (node *withloop);
 
@@ -83,11 +72,11 @@ int StrongestRestriction (int execmode1, int execmode2);
 
 void TagAllocs (node *wlops /*, node *arg_info*/);
 
-int MustExecuteExclusive (node *assign, node *arg_info);
+int MustExecuteExclusive (node *assign, info *arg_info);
 
-int CouldExecuteMulti (node *assign, node *arg_info);
+int CouldExecuteMulti (node *assign, info *arg_info);
 
-int MustExecuteSingle (node *assign, node *arg_info);
+int MustExecuteSingle (node *assign, info *arg_info);
 
 int AnyUniqueTypeInThere (ids *letids);
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/08/05 13:50:18  skt
+ * welcome to the new INFO structure
+ *
  * Revision 3.9  2004/08/05 12:04:55  skt
  * MUTHassugn added & removed some trash
  *
@@ -146,6 +149,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include "dbug.h"
 
 #include "types.h"
@@ -172,6 +177,46 @@
 #include "create_dataflowgraph.h"
 #include "assignments_rearrange.h"
 
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *modul;
+};
+
+/*
+ * INFO macros
+ *    node*    MUTH_MODUL                  (just a placeholder)
+ */
+#define INFO_MUTH_MODUL(n) (n->modul)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_MUTH_MODUL (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *BuildMultiThread( node *syntax_tree)
@@ -190,7 +235,7 @@ BuildMultiThread (node *syntax_tree)
 {
     funtab *old_tab;
 
-    node *arg_info;
+    info *arg_info;
 
     DBUG_ENTER ("BuildMultiThread");
 
@@ -203,14 +248,14 @@ BuildMultiThread (node *syntax_tree)
 
     act_tab = old_tab;
 
-    arg_info = FreeTree (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (syntax_tree);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *MUTHfundef(node *arg_node, node *arg_info)
+ * @fn node *MUTHfundef(node *arg_node, info *arg_info)
  *
  *   @brief accomplish the initialization of the function-executionmode
  *
@@ -220,7 +265,7 @@ BuildMultiThread (node *syntax_tree)
  *
  *****************************************************************************/
 node *
-MUTHfundef (node *arg_node, node *arg_info)
+MUTHfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MUTHfundef");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
@@ -246,7 +291,7 @@ MUTHfundef (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *MUTHassign(node *arg_node, node *arg_info)
+ * @fn node *MUTHassign(node *arg_node, info *arg_info)
  *
  *   @brief accomplish the initialization of the assignment-executionmode
  *
@@ -256,7 +301,7 @@ MUTHfundef (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-MUTHassign (node *arg_node, node *arg_info)
+MUTHassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("MUTHassign");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign),
@@ -279,7 +324,7 @@ MUTHassign (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *MUTHmodul(node *arg_node, node *arg_info)
+ * @fn node *MUTHmodul(node *arg_node, info *arg_info)
  *
  *   @brief executes the first parts of the EX-/ST-/MT-multithreading
  *
@@ -289,9 +334,8 @@ MUTHassign (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-MUTHmodul (node *arg_node, node *arg_info)
+MUTHmodul (node *arg_node, info *arg_info)
 {
-    node *old_arg_info;
     DBUG_ENTER ("MUTHmodul");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
                  "MUTHmodul expects a N_modul as 1st argument");
@@ -327,36 +371,11 @@ MUTHmodul (node *arg_node, node *arg_info)
     }
 
     /*
-     *  --- TagExecutionmode (TEM) ---
-     */
-    DBUG_PRINT ("MUTH", ("begin TagExecutionmode"));
-
-    old_arg_info = arg_info;
-    arg_info = MakeInfo ();
-
-    arg_node = TagExecutionmode (arg_node, arg_info);
-
-    arg_info = FreeTree (arg_info);
-    arg_info = old_arg_info;
-
-    DBUG_PRINT ("MUTH", ("end TagExecutionmode"));
-
-    if ((break_after == PH_multithread) && (strcmp ("tem", break_specifier) == 0)) {
-        goto cont;
-    }
-
-    /*
      *  --- TagExecutionmode (tem) ---
      */
     DBUG_PRINT ("MUTH", ("begin TagExecutionmode"));
 
-    old_arg_info = arg_info;
-    arg_info = MakeInfo ();
-
-    arg_node = TagExecutionmode (arg_node, arg_info);
-
-    arg_info = FreeTree (arg_info);
-    arg_info = old_arg_info;
+    arg_node = TagExecutionmode (arg_node);
 
     DBUG_PRINT ("MUTH", ("end TagExecutionmode"));
 
@@ -369,13 +388,7 @@ MUTHmodul (node *arg_node, node *arg_info)
      */
     DBUG_PRINT ("MUTH", ("begin PropagateExecutionmode"));
 
-    old_arg_info = arg_info;
-    arg_info = MakeInfo ();
-
-    arg_node = PropagateExecutionmode (arg_node, arg_info);
-
-    arg_info = FreeTree (arg_info);
-    arg_info = old_arg_info;
+    arg_node = PropagateExecutionmode (arg_node);
 
     DBUG_PRINT ("MUTH", ("end PropagateExecutionmode"));
 
@@ -388,13 +401,7 @@ MUTHmodul (node *arg_node, node *arg_info)
      */
     DBUG_PRINT ("MUTH", ("begin CreateCells"));
 
-    old_arg_info = arg_info;
-    arg_info = MakeInfo ();
-
-    arg_node = CreateCells (arg_node, arg_info);
-
-    arg_info = FreeTree (arg_info);
-    arg_info = old_arg_info;
+    arg_node = CreateCells (arg_node);
 
     DBUG_PRINT ("MUTH", ("end CreateCells"));
 
@@ -407,13 +414,7 @@ MUTHmodul (node *arg_node, node *arg_info)
      */
     DBUG_PRINT ("MUTH", ("begin CreateDataflowgraph"));
 
-    old_arg_info = arg_info;
-    arg_info = MakeInfo ();
-
-    arg_node = CreateDataflowgraph (arg_node, arg_info);
-
-    arg_info = FreeTree (arg_info);
-    arg_info = old_arg_info;
+    arg_node = CreateDataflowgraph (arg_node);
 
     DBUG_PRINT ("MUTH", ("end CreateDataflowgraph"));
 
@@ -441,21 +442,16 @@ MUTHmodul (node *arg_node, node *arg_info)
     /*
      *  --- AssignmentsRearrange (asmra) ---
      */
-    DBUG_PRINT ("MUTH", ("begin AssignmentsRearrange"));
+    /*DBUG_PRINT( "MUTH", ("begin AssignmentsRearrange"));
 
-    old_arg_info = arg_info;
-    arg_info = MakeInfo ();
+    arg_node = AssignmentsRearrange(arg_node, arg_info);
 
-    arg_node = AssignmentsRearrange (arg_node, arg_info);
+    DBUG_PRINT( "MUTH", ("end AssignmentsRearrange"));
 
-    arg_info = FreeTree (arg_info);
-    arg_info = old_arg_info;
-
-    DBUG_PRINT ("MUTH", ("end AssignmentsRearrange"));
-
-    if ((break_after == PH_multithread) && (strcmp ("asmra", break_specifier) == 0)) {
-        goto cont;
-    }
+    if ((break_after == PH_multithread) &&
+        (strcmp("asmra", break_specifier)==0)) {
+      goto cont;
+      }*/
 
     /*
      *  --- BlocksPropagate (blkpp) ---

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/08/05 13:50:18  skt
+ * welcome to the new INFO structure
+ *
  * Revision 1.1  2004/07/29 08:39:12  skt
  * Initial revision
  *
@@ -29,6 +32,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "dbug.h"
 
 #include "types.h"
@@ -39,24 +44,79 @@
 #include "multithread.h"
 #include "print.h"
 
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *dataflowgraph;
+    node *outerassignment;
+    node *actualnode;
+    int executionmode;
+    int withdeep;
+};
+
+/*
+ * INFO macros
+ *   node*      DATAFLOWGRAPH  (the dataflowgraph of the currunt function
+ *                              as far as it has been constructed)
+ *   int        EXECUTIONMODE  (the current execution mode)
+ */
+#define INFO_CDFG_DATAFLOWGRAPH(n) (n->dataflowgraph)
+#define INFO_CDFG_OUTERASSIGN(n) (n->outerassignment)
+#define INFO_CDFG_ACTNODE(n) (n->actualnode)
+#define INFO_CDFG_EXECUTIONMODE(n) (n->executionmode)
+#define INFO_CDFG_WITHDEEP(n) (n->withdeep)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_CDFG_DATAFLOWGRAPH (result) = NULL;
+    INFO_CDFG_OUTERASSIGN (result) = NULL;
+    INFO_CDFG_ACTNODE (result) = NULL;
+    INFO_CDFG_EXECUTIONMODE (result) = MUTH_ANY;
+    INFO_CDFG_WITHDEEP (result) = 0;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
+
 /******************************************************************************
  *
  * function:
- *   node *CreateDataflowgraph(node *arg_node, node *arg_info)
+ *   node *CreateDataflowgraph(node *arg_node)
  *
  * description:
  *   Inits the traversal for this phase
  *
  ******************************************************************************/
 node *
-CreateDataflowgraph (node *arg_node, node *arg_info)
+CreateDataflowgraph (node *arg_node)
 {
     funtab *old_tab;
-
+    info *arg_info;
     DBUG_ENTER ("CreateDataflowgraph");
-
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
                  "CreateDataflowgraph expects a N_modul as arg_node");
+
+    arg_info = MakeInfo ();
 
     /* push info ... */
     old_tab = act_tab;
@@ -69,18 +129,20 @@ CreateDataflowgraph (node *arg_node, node *arg_info)
     /* pop info ... */
     act_tab = old_tab;
 
+    arg_info = FreeInfo (arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************->>
  *
- * @fn node *CDFGfundef(node *arg_node, node *arg_info)
+ * @fn node *CDFGfundef(node *arg_node, info *arg_info)
  *
  * @brief
  *
  ******************************************************************************/
 node *
-CDFGfundef (node *arg_node, node *arg_info)
+CDFGfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CDFGfundef");
 
@@ -116,7 +178,7 @@ CDFGfundef (node *arg_node, node *arg_info)
 }
 
 node *
-CDFGassign (node *arg_node, node *arg_info)
+CDFGassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CDFGassign");
 
@@ -169,13 +231,13 @@ CDFGassign (node *arg_node, node *arg_info)
 }
 
 node *
-CDFGlet (node *arg_node, node *arg_info)
+CDFGlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CDFGlet");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_let), "node is not a N_let");
 
-    if (INFO_CDFG_WITHDEEP (arg_node) == 0) {
+    if (INFO_CDFG_WITHDEEP (arg_info) == 0) {
         /* create dataflownode out of the let-ids */
         DBUG_PRINT ("CDFG", ("before MakeDataflowNode"));
         INFO_CDFG_ACTNODE (arg_info)
@@ -197,7 +259,7 @@ CDFGlet (node *arg_node, node *arg_info)
 }
 
 node *
-CDFGid (node *arg_node, node *arg_info)
+CDFGid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CDFGid");
 
@@ -212,7 +274,7 @@ CDFGid (node *arg_node, node *arg_info)
 }
 
 node *
-CDFGwith2 (node *arg_node, node *arg_info)
+CDFGwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CDFGNwith2");
 
@@ -234,7 +296,7 @@ CDFGwith2 (node *arg_node, node *arg_info)
 }
 
 node *
-InitiateDataflowgraph (char *name, node *arg_info)
+InitiateDataflowgraph (char *name, info *arg_info)
 {
     node *graph;
     DBUG_ENTER ("CreateDataflowgraph");
@@ -344,13 +406,13 @@ UpdateReturn (node *graph, node *arg_node)
 }
 
 node *
-MakeDataflowNode (char *name, node *inner_assign, node *arg_info)
+MakeDataflowNode (char *name, node *inner_assign, info *arg_info)
 {
     node *tmp;
 
     DBUG_ENTER ("MakeDataflowNode");
 
-    tmp = MakeInfo ();
+    /*tmp = MakeInfo();*/
 
     INFO_MUTH_DFGNAME (tmp) = name;
     /* the inner assignment means, that its instruction is the N_let of the

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/08/05 13:50:18  skt
+ * welcome to the new INFO structure
+ *
  * Revision 3.6  2004/07/28 17:47:40  skt
  * added N_ex into assertion
  *
@@ -379,20 +382,20 @@ MUTHInsertBlock (node *assign, node *block, node *fundef)
 /******************************************************************************
  *
  * function:
- *   static node *MUTHInsertMT(node *assign, node *arg_info)
+ *   static node *MUTHInsertMT(node *assign, node *fundef)
  *
  * description:
  *   inserts mt-cell around the instruction of the assignment
  *
  ******************************************************************************/
 node *
-MUTHInsertMT (node *assign, node *arg_info)
+MUTHInsertMT (node *assign, node *fundef)
 {
     DBUG_ENTER ("MUTHInsertMT");
 
     DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "assign-node is not a N_assign");
 
-    assign = MUTHInsertBlock (assign, MakeMT (NULL), INFO_MUTH_FUNDEF (arg_info));
+    assign = MUTHInsertBlock (assign, MakeMT (NULL), fundef);
 
     DBUG_RETURN (assign);
 }
@@ -400,20 +403,20 @@ MUTHInsertMT (node *assign, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static node *MUTHInsertEX(node *assign, node *arg_info)
+ *   static node *MUTHInsertEX(node *assign, node *fundef)
  *
  * description:
  *   inserts ex-cell around the instruction of the assignment
  *
  ******************************************************************************/
 node *
-MUTHInsertEX (node *assign, node *arg_info)
+MUTHInsertEX (node *assign, node *fundef)
 {
     DBUG_ENTER ("MUTHInsertEX");
 
     DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "assign-node is not a N_assign");
 
-    assign = MUTHInsertBlock (assign, MakeEX (NULL), INFO_MUTH_FUNDEF (arg_info));
+    assign = MUTHInsertBlock (assign, MakeEX (NULL), fundef);
 
     DBUG_RETURN (assign);
 }
@@ -421,20 +424,20 @@ MUTHInsertEX (node *assign, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   static node *MUTHInsertST(node *assign, node *arg_info)
+ *   static node *MUTHInsertST(node *assign, node *fundef)
  *
  * description:
  *   inserts st-cell around the instruction of the assignment
  *
  ******************************************************************************/
 node *
-MUTHInsertST (node *assign, node *arg_info)
+MUTHInsertST (node *assign, node *fundef)
 {
     DBUG_ENTER ("MUTHInsertST");
 
     DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "assign-node is not a N_assign");
 
-    assign = MUTHInsertBlock (assign, MakeST (NULL), INFO_MUTH_FUNDEF (arg_info));
+    assign = MUTHInsertBlock (assign, MakeST (NULL), fundef);
 
     DBUG_RETURN (assign);
 }

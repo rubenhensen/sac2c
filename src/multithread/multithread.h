@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2004/08/05 13:50:18  skt
+ * welcome to the new INFO structure
+ *
  * Revision 3.5  2004/08/05 12:04:55  skt
  * MUTHassugn added & removed some trash
  *
@@ -74,10 +77,10 @@
 
 extern node *BuildMultiThread (node *syntax_tree);
 
-extern node *MUTHmodul (node *arg_node, node *arg_info);
+extern node *MUTHmodul (node *arg_node, info *arg_info);
 
-extern node *MUTHfundef (node *arg_node, node *arg_info);
+extern node *MUTHfundef (node *arg_node, info *arg_info);
 
-extern node *MUTHassign (node *arg_node, node *arg_info);
+extern node *MUTHassign (node *arg_node, info *arg_info);
 
 #endif /* MULTITHREAD_H */

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/08/05 13:50:18  skt
+ * welcome to the new INFO structure
+ *
  * Revision 1.4  2004/07/29 13:25:59  skt
  * fixed the "doubled withop"-bug
  *
@@ -31,10 +34,12 @@
  *
  * description:
  *   propagates the executionmode
- *   it concerns only applications
+ *   it concerns only applications and conditionals
  *
  *
  *****************************************************************************/
+
+#define NEW_INFO
 
 #include "dbug.h"
 
@@ -45,10 +50,70 @@
 #include "print.h"
 #include "propagate_executionmode.h"
 #include "multithread.h"
+/*
+ * INFO structure
+ */
+struct INFO {
+    int changeflag;
+    int firstflag;
+    node *actualfundef;
+    node *myassign;
+    node *lastconditionalassignment;
+    node *lastwithloopassignment;
+};
+
+/*
+ * INFO macros
+ *   int        ANYCHANGE     (is 1, if there was a change of the executionmode
+ *                             somewhere in the current traversal)
+ *   int        FIRSTTRAV     (holds the information, wheter this is the first
+ *                             traversal (=>1) or not (=>0)
+ *   int        FUNEXECMODE   (holds the current executionmode of the function)
+ *   node*      ASSIGN        (the current assignment, the traversal.mechanism
+ *                             is in)
+ */
+#define INFO_PEM_ANYCHANGE(n) (n->changeflag)
+#define INFO_PEM_FIRSTTRAV(n) (n->firstflag)
+#define INFO_PEM_ACTFUNDEF(n) (n->actualfundef)
+#define INFO_PEM_MYASSIGN(n) (n->myassign)
+#define INFO_PEM_LASTCONDASSIGN(n) (n->lastconditionalassignment)
+#define INFO_PEM_LASTWITHASSIGN(n) (n->lastwithloopassignment)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_PEM_ANYCHANGE (result) = FALSE;
+    INFO_PEM_FIRSTTRAV (result) = TRUE;
+    INFO_PEM_ACTFUNDEF (result) = NULL;
+    INFO_PEM_MYASSIGN (result) = NULL;
+    INFO_PEM_LASTCONDASSIGN (result) = NULL;
+    INFO_PEM_LASTWITHASSIGN (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /** <!--********************************************************************-->
  *
- * @fn node *PropagateExecutionmode(node *arg_node, node *arg_info)
+ * @fn node *PropagateExecutionmode(node *arg_node)
  *
  *   @brief  Inits the traversal for this phase
  *
@@ -58,9 +123,10 @@
  *
  *****************************************************************************/
 node *
-PropagateExecutionmode (node *arg_node, node *arg_info)
+PropagateExecutionmode (node *arg_node)
 {
     funtab *old_tab;
+    info *arg_info;
 #if PEM_DEBUG
     int counter;
     counter = 1;
@@ -69,16 +135,11 @@ PropagateExecutionmode (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
                  "PropagateExecutionmode expects a N_modul as arg_node");
 
+    arg_info = MakeInfo ();
+
     /* push info ... */
     old_tab = act_tab;
     act_tab = pem_tab;
-
-    /* some initialisation */
-    INFO_PEM_FIRSTTRAV (arg_info) = TRUE;
-    INFO_PEM_MYASSIGN (arg_info) = NULL;
-    INFO_PEM_LASTCONDASSIGN (arg_info) = NULL;
-    INFO_PEM_LASTWITHASSIGN (arg_info) = NULL;
-    INFO_PEM_ACTFUNDEF (arg_info) = NULL;
 
     do {
 #if PEM_DEBUG
@@ -102,13 +163,14 @@ PropagateExecutionmode (node *arg_node, node *arg_info)
 
     /* pop info ... */
     act_tab = old_tab;
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *PEMfundef(node *arg_node, node *arg_info)
+ * @fn node *PEMfundef(node *arg_node, info *arg_info)
  *
  *   @brief
  *
@@ -118,7 +180,7 @@ PropagateExecutionmode (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-PEMfundef (node *arg_node, node *arg_info)
+PEMfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PEMfundef");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
@@ -155,7 +217,7 @@ PEMfundef (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *PEMassign(node *arg_node, node *arg_info)
+ * @fn node *PEMassign(node *arg_node, info *arg_info)
  *
  *   @brief propagates the N_assign with its executionmode
  *
@@ -165,7 +227,7 @@ PEMfundef (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-PEMassign (node *arg_node, node *arg_info)
+PEMassign (node *arg_node, info *arg_info)
 {
     node *old_assign;
     int my_old_execmode;
@@ -206,7 +268,7 @@ PEMassign (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *PEMap(node *arg_node, node *arg_info)
+ * @fn node *PEMap(node *arg_node, info *arg_info)
  *
  *   @brief
  *
@@ -216,7 +278,7 @@ PEMassign (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-PEMap (node *arg_node, node *arg_info)
+PEMap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("PEMap");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_ap), "PEMap expects a N_ap as argument");
@@ -233,7 +295,7 @@ PEMap (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *PEMcond(node *arg_node, node *arg_info)
+ * @fn node *PEMcond(node *arg_node, info *arg_info)
  *
  *   @brief
  *
@@ -243,7 +305,7 @@ PEMap (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-PEMcond (node *arg_node, node *arg_info)
+PEMcond (node *arg_node, info *arg_info)
 {
     node *old_lastcond;
     DBUG_ENTER ("PEMcond");
@@ -271,7 +333,7 @@ PEMcond (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *PEMwith2(node *arg_node, node *arg_info)
+ * @fn node *PEMwith2(node *arg_node, info *arg_info)
  *
  *   @brief
  *
@@ -281,7 +343,7 @@ PEMcond (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-PEMwith2 (node *arg_node, node *arg_info)
+PEMwith2 (node *arg_node, info *arg_info)
 {
     node *old_lastwith2;
     DBUG_ENTER ("PEMwith2");
@@ -315,7 +377,7 @@ PEMwith2 (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn void UpdateExecmodes(node *assign, node *arg_info)
+ * @fn void UpdateExecmodes(node *assign, info *arg_info)
  *
  *   @brief
  *
@@ -325,7 +387,7 @@ PEMwith2 (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 void
-UpdateExecmodes (node *assign, node *arg_info)
+UpdateExecmodes (node *assign, info *arg_info)
 {
     DBUG_ENTER ("UpdateExecmodes");
     DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),

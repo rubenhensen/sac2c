@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2004/08/05 13:50:18  skt
+ * welcome to the new INFO structure
+ *
  * Revision 1.1  2004/07/29 08:38:53  skt
  * Initial revision
  *
@@ -24,29 +27,29 @@
  *                              as far as it has been constructed)
  *   int        EXECUTIONMODE  (the current execution mode)
  */
-#define INFO_CDFG_DATAFLOWGRAPH(n) (n->node[0])
-#define INFO_CDFG_OUTERASSIGN(n) (n->node[1])
-#define INFO_CDFG_ACTNODE(n) (n->node[2])
-#define INFO_CDFG_EXECUTIONMODE(n) (n->flag)
-#define INFO_CDFG_WITHDEEP(n) (n->refcnt)
+/*#define INFO_CDFG_DATAFLOWGRAPH(n)  (n->node[0])
+#define INFO_CDFG_OUTERASSIGN(n)    (n->node[1])
+#define INFO_CDFG_ACTNODE(n)        (n->node[2])
+#define INFO_CDFG_EXECUTIONMODE(n)  (n->flag)
+#define INFO_CDFG_WITHDEEP(n)       (n->refcnt)*/
 
 #define CDFG_DEBUG 1
 
-extern node *CreateDataflowgraph (node *arg_node, node *arg_info);
+extern node *CreateDataflowgraph (node *arg_node);
 
-extern node *CDFGfundef (node *arg_node, node *arg_info);
+extern node *CDFGfundef (node *arg_node, info *arg_info);
 
-extern node *CDFGassign (node *arg_node, node *arg_info);
+extern node *CDFGassign (node *arg_node, info *arg_info);
 
-extern node *CDFGlet (node *arg_node, node *arg_info);
+extern node *CDFGlet (node *arg_node, info *arg_info);
 
-extern node *CDFGid (node *arg_node, node *arg_info);
+extern node *CDFGid (node *arg_node, info *arg_info);
 
-extern node *CDFGwith2 (node *arg_node, node *arg_info);
+extern node *CDFGwith2 (node *arg_node, info *arg_info);
 
 /* Some functions to create, administrate and delete dataflowgraphs */
 
-node *InitiateDataflowgraph (char *name, node *arg_info);
+node *InitiateDataflowgraph (char *name, info *arg_info);
 
 int PrintDataflowgraph (node *dataflowgraph, char *name);
 
@@ -56,7 +59,7 @@ node *GetReturnNode (node *graph);
 
 node *UpdateReturn (node *graph, node *arg_node);
 
-node *MakeDataflowNode (char *name, node *inner_assign, node *arg_info);
+node *MakeDataflowNode (char *name, node *inner_assign, info *arg_info);
 
 node *AddDataflowNode (node *graph, node *newnode);
 

@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.8  2004/08/05 13:50:18  skt
+ * welcome to the new INFO structure
+ *
  * Revision 1.7  2004/07/23 10:05:08  skt
  * TEMfundef added
  *
@@ -50,6 +53,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "dbug.h"
 
 #include "types.h"
@@ -60,9 +65,62 @@
 #include "tag_executionmode.h"
 #include "multithread.h"
 
+/*
+ * INFO structure
+ */
+struct INFO {
+    ids *lefthandside;
+    int executionmode;
+    int withdeep;
+    int traversalmode;
+};
+
+/* access macros for arg_info
+ *
+ *   node*      ORIGLHS    (left-hand-side of the assignemt, before F_fill was
+ *                         added / args 2..n of fill())
+ *   int        EXECMODE  (the current execution mode)
+ *   int        WITHDEEP  (the current with-loop-deepness)
+ *   int        TRAVMODE  (the current traversalmode MUSTEX, MUSTST or COULDMT)
+ */
+#define INFO_TEM_LETLHS(n) (n->lefthandside)
+#define INFO_TEM_EXECMODE(n) (n->executionmode)
+#define INFO_TEM_WITHDEEP(n) (n->withdeep)
+#define INFO_TEM_TRAVMODE(n) (n->traversalmode)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_TEM_LETLHS (result) = NULL;
+    INFO_TEM_EXECMODE (result) = MUTH_ANY;
+    INFO_TEM_WITHDEEP (result) = 0;
+    INFO_TEM_TRAVMODE (result) = TEM_TRAVMODE_DEFAULT;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
+
 /** <!--********************************************************************-->
  *
- * @fn node *TagExecutionmode(node *arg_node, node *arg_info)
+ * @fn node *TagExecutionmode(node *arg_node, info)
  *
  *   @brief  Inits the traversal for this phase
  *
@@ -72,14 +130,16 @@
  *
  *****************************************************************************/
 node *
-TagExecutionmode (node *arg_node, node *arg_info)
+TagExecutionmode (node *arg_node)
 {
     funtab *old_tab;
+    info *arg_info;
 
     DBUG_ENTER ("TagExecutionmode");
-
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_modul),
                  "TagExecutionmode expects a N_modul as arg_node");
+
+    arg_info = MakeInfo ();
 
     /* some initialisation */
     INFO_TEM_LETLHS (arg_info) = NULL;
@@ -97,48 +157,14 @@ TagExecutionmode (node *arg_node, node *arg_info)
     /* pop info ... */
     act_tab = old_tab;
 
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *TEMfundef(node *arg_node, node *arg_info)
- *
- *   @brief
- *
- *   @param arg_node a N_fundef
- *   @param arg_info
- *   @return
- *
- *****************************************************************************/
-node *
-TEMfundef (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("TEMfundef");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "TEMfundef expects a N_fundef as arg_node");
-
-    /* initialize the executionmode*/
-    FUNDEF_EXECMODE (arg_node) = MUTH_ANY;
-
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_PRINT ("TEM", ("trav into function-body"));
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-        DBUG_PRINT ("TEM", ("trav from function-body"));
-    }
-
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        DBUG_PRINT ("TEM", ("trav into function-next"));
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-        DBUG_PRINT ("TEM", ("trav from function-next"));
-    }
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *TEMassign(node *arg_node, node *arg_info)
+ * @fn node *TEMassign(node *arg_node, info *arg_info)
  *
  *   @brief tags the N_assign with its executionmode
  *<pre>
@@ -158,7 +184,7 @@ TEMfundef (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-TEMassign (node *arg_node, node *arg_info)
+TEMassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TEMassign");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign),
@@ -208,7 +234,7 @@ TEMassign (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TEMwith2(node *arg_node, node *arg_info)
+ * @fn node *TEMwith2(node *arg_node, info *arg_info)
  *
  *   @brief check with-loop on possibility of being parallelizable
  *
@@ -222,7 +248,7 @@ TEMassign (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-TEMwith2 (node *arg_node, node *arg_info)
+TEMwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TEMwith2");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Nwith2),
@@ -278,7 +304,7 @@ TEMwith2 (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TEMprf(node *arg_node, node *arg_info)
+ * @fn node *TEMprf(node *arg_node, info *arg_info)
  *
  *   @brief in MUSTST-traversal: test, whether it would be clever to execute
  *                               this primitive function ST or not,
@@ -290,7 +316,7 @@ TEMwith2 (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-TEMprf (node *arg_node, node *arg_info)
+TEMprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TEMprf");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_prf), "TEMprf expects a N_prf as argument");
@@ -309,7 +335,7 @@ TEMprf (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TEMlet(node *arg_node, node *arg_info)
+ * @fn node *TEMlet(node *arg_node, info *arg_info)
  *
  *   @brief stores the LHS of let in INFO_TEM_LETLHS(arg_info)
  *          checks lhs for unique type, if in musts-st traversal
@@ -320,7 +346,7 @@ TEMprf (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-TEMlet (node *arg_node, node *arg_info)
+TEMlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TEMlet");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_let), "TEMlet expects a N_let as argument");
@@ -348,7 +374,7 @@ TEMlet (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TEMap(node *arg_node, node *arg_info)
+ * @fn node *TEMap(node *arg_node, info *arg_info)
  *
  *   @brief the behaviour depends on the traversal mode:
  *          MUSTEX: check for empty function body => executionmode:=MUTH_EX
@@ -360,7 +386,7 @@ TEMlet (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-TEMap (node *arg_node, node *arg_info)
+TEMap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TEMap");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_ap), "TEMap expects a N_ap as argument");
@@ -385,7 +411,7 @@ TEMap (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TEMarray(node *arg_node, node *arg_info)
+ * @fn node *TEMarray(node *arg_node, info *arg_info)
  *
  *   @brief set the executionmode to MUTH_SINGLE, if it would be better to
  *          create the array in one thread than in all
@@ -396,7 +422,7 @@ TEMap (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-TEMarray (node *arg_node, node *arg_info)
+TEMarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TEMarray");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_array),
@@ -418,7 +444,7 @@ TEMarray (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TEMcond(node *arg_node, node *arg_info)
+ * @fn node *TEMcond(node *arg_node, info *arg_info)
  *
  *   @brief
  *
@@ -428,7 +454,7 @@ TEMarray (node *arg_node, node *arg_info)
  *
  *****************************************************************************/
 node *
-TEMcond (node *arg_node, node *arg_info)
+TEMcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("TEMcond");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_cond),
@@ -438,11 +464,15 @@ TEMcond (node *arg_node, node *arg_info)
         && INFO_TEM_WITHDEEP (arg_info) == 0 && IsSTClever (INFO_TEM_LETLHS (arg_info))) {
         INFO_TEM_EXECMODE (arg_info) = MUTH_SINGLE;
     }
-    /* otherwise continue traversal */
-    else if (ARRAY_AELEMS (arg_node) != NULL) {
-        DBUG_PRINT ("TEM", ("trav into array-elements"));
-        ASSIGN_INSTR (arg_node) = Trav (ARRAY_AELEMS (arg_node), arg_info);
-        DBUG_PRINT ("TEM", ("trav from array-elements"));
+    if (COND_THEN (arg_node) != NULL) {
+        DBUG_PRINT ("TEM", ("trav into then-branch"));
+        ASSIGN_NEXT (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+        DBUG_PRINT ("TEM", ("trav from then-branch"));
+    }
+    if (COND_ELSE (arg_node) != NULL) {
+        DBUG_PRINT ("TEM", ("trav into else-branch"));
+        ASSIGN_NEXT (arg_node) = Trav (COND_THEN (arg_node), arg_info);
+        DBUG_PRINT ("TEM", ("trav from else-branch"));
     }
 
     DBUG_RETURN (arg_node);
@@ -726,7 +756,7 @@ StrongestRestriction (int execmode1, int execmode2)
 
 /** <!--********************************************************************-->
  *
- * @fn int MustExecuteExclusive(node * assign, node* arginfo)
+ * @fn int MustExecuteExclusive(node * assign, info *arg_info)
  *
  *   @brief decide, whether a assignment has to be executed exclusive or not
  *
@@ -739,7 +769,7 @@ StrongestRestriction (int execmode1, int execmode2)
  *
  *****************************************************************************/
 int
-MustExecuteExclusive (node *assign, node *arg_info)
+MustExecuteExclusive (node *assign, info *arg_info)
 {
     int exclusive;
     DBUG_ENTER (MustExecuteExclusive);
@@ -767,7 +797,7 @@ MustExecuteExclusive (node *assign, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn int CouldExecuteMulti(node * assign, node* arginfo)
+ * @fn int CouldExecuteMulti(node * assign, info* arg_info)
  *
  *   @brief decide, whether a assignment could be executed multi-threaded
  *          or not
@@ -783,7 +813,7 @@ MustExecuteExclusive (node *assign, node *arg_info)
  *
  *****************************************************************************/
 int
-CouldExecuteMulti (node *assign, node *arg_info)
+CouldExecuteMulti (node *assign, info *arg_info)
 {
     int multi;
     DBUG_ENTER (CouldExecuteMulti);
@@ -811,7 +841,7 @@ CouldExecuteMulti (node *assign, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn int MustExecuteSingle(node * assign, node* arginfo)
+ * @fn int MustExecuteSingle(node * assign, info* arg_info)
  *
  *   @brief decide, whether a assignment has to be executed single-threaded
  *          or not
@@ -830,7 +860,7 @@ CouldExecuteMulti (node *assign, node *arg_info)
  *
  *****************************************************************************/
 int
-MustExecuteSingle (node *assign, node *arg_info)
+MustExecuteSingle (node *assign, info *arg_info)
 {
     int single;
     DBUG_ENTER (MustExecuteSingle);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/08/05 13:50:18  skt
+ * welcome to the new INFO structure
+ *
  * Revision 3.4  2004/07/26 16:53:07  skt
  * added support for exclusive cells
  *
@@ -59,9 +62,9 @@ extern node *MUTHMeltBlocksOnCopies (node *first_block, node *second_block);
 extern node *MUTHExchangeApplication (node *arg_node, node *new_fundef);
 extern node *MUTHExpandFundefName (node *fundef, char *prefix);
 extern node *MUTHReduceFundefName (node *fundef, int count);
-extern node *MUTHInsertEX (node *assign, node *arg_info);
-extern node *MUTHInsertST (node *assign, node *arg_info);
-extern node *MUTHInsertMT (node *assign, node *arg_info);
+extern node *MUTHInsertEX (node *assign, node *fundef);
+extern node *MUTHInsertST (node *assign, node *fundef);
+extern node *MUTHInsertMT (node *assign, node *fundef);
 extern node *MUTHGetLastExpression (node *expression);
 
 #endif /* _SAC_CONCURRENT_LIB_H_ */
