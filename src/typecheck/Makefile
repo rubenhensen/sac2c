@@ -1,10 +1,8 @@
 #
-# $Log$
-# Revision 2.24  2000/10/12 15:48:18  dkr
-# make deps done
 #
-# Revision 2.23  2000/08/17 10:17:30  dkr
-# make deps done
+# $Log$
+# Revision 2.25  2000/11/02 14:37:04  dkr
+# explicit .mac dependencies added
 #
 # Revision 2.22  2000/07/24 14:46:00  dkr
 # suffix rule for .c.o added
@@ -12,38 +10,11 @@
 # Revision 2.21  2000/07/21 14:44:16  nmw
 # include path c-interface added
 #
-# Revision 2.20  2000/07/11 15:56:22  dkr
-# make deps done
-#
-# Revision 2.19  2000/07/05 14:23:42  dkr
-# make deps done
-#
-# Revision 2.18  2000/06/23 09:51:19  nmw
-# make deps
-#
-# Revision 2.17  2000/05/29 14:36:37  dkr
-# make deps done
-#
-# Revision 2.16  2000/05/29 14:35:12  dkr
-# make deps done
-#
-# Revision 2.15  2000/03/31 09:33:43  jhs
-# make deps done
-#
 # Revision 2.14  2000/03/16 14:16:28  dkr
 # target typecheck.h added
 #
-# Revision 2.13  2000/03/01 14:52:34  dkr
-# make deps done
-#
-# Revision 2.12  2000/01/21 17:02:05  dkr
-# make deps done
-#
 # Revision 2.11  2000/01/21 12:03:53  dkr
 # directory tree added
-#
-# Revision 2.10  2000/01/17 18:40:57  cg
-# make deps done
 #
 # Revision 2.9  2000/01/17 18:37:49  cg
 # Handling of target platform unified: One of the following
@@ -62,20 +33,10 @@
 # Revision 2.4  1999/05/12 08:57:55  jhs
 # -DNEWTREE eliminated from CFLAGS.
 #
-# Revision 2.3  1999/03/11 18:18:21  dkr
-# make deps done
-#
-# Revision 2.2  1999/02/26 14:17:39  dkr
-# make deps done
-#
-# Revision 2.1  1999/02/23 12:40:41  sacbase
-# new release made
-#
 # ... [ eliminated ]
 #
 # Revision 1.1  1994/12/02  10:13:42  hw
 # Initial revision
-#
 # 
 #
 
@@ -103,12 +64,29 @@ all: typecheck.o prim_fun.o typecheck_WL.o gen_pseudo_fun.o \
      new_typecheck.o new_types.o shape.o user_types.o \
      constants.o cv2scalar.o cv2cv.o
 
+
 #
-# the typecheck.h object is to fool makedepend which does not
-# recognize the dependency between typecheck.h and the .mac files!
+# the *.[ch] objects are to fool makedepend which does not
+# recognize the dependency between *.[ch] and the .mac files!
 #
 typecheck.h: cmp_type.mac
 	touch typecheck.h
+
+typecheck.c: prim_fun_tt.mac cmp_type.mac
+	touch typecheck.c
+
+prim_fun.c: prim_fun_ft.mac
+	touch prim_fun.c
+
+cv2cv.c: ../tree/type_info.mac
+	touch cv2cv.c
+
+cv2scalar.c: ../tree/type_info.mac
+	touch cv2scalar.c
+
+new_types.c: type_constructor_info.mac
+	touch new_types.c
+
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)

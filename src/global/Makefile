@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.32  2000/11/02 14:36:55  dkr
+# explicit .mac dependencies added
+#
 # Revision 2.31  2000/08/17 10:10:09  dkr
 # NameTupels.[ch] added
 #
@@ -69,11 +72,26 @@ all: main.o Error.o usage.o my_debug.o internal_lib.o globals.o resource.o types
      build.o interrupt.o options.o NameTuples.o
 
 #
-# the types.h object is to fool makedepend which does not
-# recognize the dependency between types.h and the .mac files!
+# the *.[ch] objects are to fool makedepend which does not
+# recognize the dependency between *.[ch] and the .mac files!
 #
-types.h: ../global/nt_info.mac ../global/phase_info.mac ../global/status_info.mac ../tree/node_info.mac ../tree/prf_node_info.mac ../tree/type_info.mac
+types.h: ../tree/type_info.mac ../global/phase_info.mac ../global/status_info.mac \
+         ../tree/node_info.mac ../tree/prf_node_info.mac
 	touch types.h
+
+NameTuples.h: ../global/nt_info.mac
+	touch NameTuples.h
+
+NameTuples.c: ../global/nt_info.mac
+	touch NameTuples.c
+
+globals.c: ../tree/type_info.mac ../global/phase_info.mac
+	touch globals.c
+
+my_debug.c:  ../tree/node_info.mac ../tree/prf_node_info.mac ../tree/type_info.mac \
+             ../global/status_info.mac
+	touch my_debug.c
+
 
 build.c: 
 	echo "char build_date[] = \"`date`\";"  >  build.c
@@ -116,7 +134,6 @@ globals.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 globals.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 globals.o: /usr/include/stdio_impl.h types.h globals.h Error.h
 globals.o: /usr/include/string.h /usr/include/stdlib.h internal_lib.h
-globals.o: ../tree/type_info.mac
 internal_lib.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 internal_lib.o: /usr/include/sys/isa_defs.h /usr/include/math.h
 internal_lib.o: /usr/include/string.h /usr/include/stdarg.h
