@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/02/22 14:30:57  dkr
+ * DFM2ReturnTypes: workaround for FUNDEF_NAME as a part of TYPES no
+ * longer needed
+ *
  * Revision 3.6  2002/02/20 14:37:23  dkr
  * function DupTypes() renamed into DupAllTypes()
  *
@@ -318,8 +322,7 @@ DFM2ReturnTypes (DFMmask_t mask)
     }
 
     /*
-     * CAUTION: FUNDEF_NAME is for the time being a part of FUNDEF_TYPES!!
-     *          That's why we must build a void-type, when ('rettypes' == NULL).
+     * we must build a void-type if ('rettypes' == NULL) is hold
      */
     if (rettypes == NULL) {
         rettypes = MakeTypes1 (T_void);
