@@ -1,8 +1,10 @@
 /*
  *
  * $Log$
- * Revision 3.29  2002/02/21 12:04:02  dkr
- * forced check-in :-(
+ * Revision 3.30  2002/03/01 03:17:55  dkr
+ * third traversal added:
+ * reorganisation of fundefs and aps (argument remapping, mapping to
+ * C-signature, ...) is done here already and not in compile
  *
  * Revision 3.28  2002/02/20 15:02:47  dkr
  * fundef DupTypes() renamed into DupAllTypes()
@@ -67,83 +69,6 @@
  * Revision 3.8  2001/03/02 16:10:11  dkr
  * generation of individual pseudo fold-funs done in PREC1withop now
  *
- * Revision 3.7  2001/02/14 14:43:54  dkr
- * PREC2fundef: Removal of artificial return types re-implemented
- *
- * Revision 3.6  2001/01/19 11:55:44  dkr
- * PREC2WLseg() and PREC2WLsegVar() replaced by PREC2WLsegx()
- *
- * Revision 3.5  2000/12/12 12:24:06  dkr
- * PREC1fundef: marking of c-functions is done during RC now
- *
- * Revision 3.4  2000/12/06 18:12:16  cg
- * Re-introduced code for the elimination of function bodies
- * of imported, non-specialized functions. This was disabled
- * due to a resource conflict with new MT compilation. However
- * this turned out to be erroneous.
- *
- * Revision 3.3  2000/12/04 13:34:45  dkr
- * PREC2array added: ARRAY_TYPE renamed correctly now
- *
- * Revision 3.2  2000/12/01 18:34:51  dkr
- * no cc warnings '... might be used uninitialized' anymore
- * global comment added
- *
- * Revision 3.1  2000/11/20 18:01:26  sacbase
- * new release made
- *
- * Revision 2.37  2000/11/17 12:52:09  cg
- * External C types are now consistentlt renamed for their usage
- * within SAC to avoid accidental name clashes with other symbols
- * on the C level.
- *
- * Revision 2.36  2000/11/14 13:38:39  dkr
- * some '... might be used uninitialized in this function' warnings
- * removed
- *
- * Revision 2.35  2000/10/31 23:17:51  dkr
- * Trav: NWITH2_CODE might be NULL
- *
- * Revision 2.34  2000/10/31 13:47:52  dkr
- * bug in PREC1let fixed:
- * dummy fold-funs have unique names now
- *
- * Revision 2.33  2000/10/31 13:05:27  dkr
- * bug in PREC1fundef fixed:
- * status flag of main function is not set to ST_Cfun anymore
- *
- * Revision 2.32  2000/10/30 19:23:10  dkr
- * bug in PREC2ap fixed:
- * applications of class conversion functions to scalar values are
- * excepted now.
- *
- * Revision 2.31  2000/10/26 12:49:36  dkr
- * signature of DupOneIds changed
- *
- * Revision 2.30  2000/10/24 13:23:33  dkr
- * MakeTypes renamed into MakeTypes1
- *
- * Revision 2.29  2000/10/23 10:28:17  dkr
- * MakeId1 replaced by MakeId_Copy
- *
- * Revision 2.28  2000/10/18 09:44:53  dkr
- * PREC1let modified: 2nd argument of F_reshape is never flattened now
- *
- * Revision 2.27  2000/10/17 17:51:09  dkr
- * flattening of applications from from flatten.c to precompile.c
- *
- * Revision 2.26  2000/10/09 19:16:20  dkr
- * PREC1fundef() added
- *
- * Revision 2.25  2000/09/20 18:19:44  dkr
- * ID_MAKEUNIQUE renamed into ID_CLSCONV
- *
- * Revision 2.24  2000/08/17 10:12:13  dkr
- * all the NT stuff is now in a separate modul (NameTuples.[ch])
- *
- * Revision 2.23  2000/07/19 16:39:32  nmw
- * objinit function modified to work with ICMs
- *
  * [...]
  *
  */
@@ -174,6 +99,8 @@
  *   - Function signatures are transformed into the final form:
  *     At most a single return value, remapping because of a linksign pragma,
  *     parameter tags (in, in_rc, out, out_rc, inout_rc, upd, upd_bx).
+ *     The reorganized layout is stored in FUNDEF_ARGTAB and AP_ARGTAB
+ *     respectively. Note, that the node information of the AST is left as is.
  *
  ******************************************************************************/
 
@@ -191,6 +118,7 @@
 #include "convert.h"
 #include "DataFlowMask.h"
 #include "adjust_ids.h"
+#include "typecheck.h"
 #include "refcount.h"
 #include "map_cwrapper.h"
 #include "scheduling.h"
@@ -202,14 +130,22 @@
 
 #define FUNDEF_WANTS_REFCOUNT(n, idx)                                                    \
     ((FUNDEF_STATUS (n) == ST_Cfun) && (FUNDEF_PRAGMA (n) != NULL)                       \
-     && (FUNDEF_REFCOUNTING (n) != NULL) && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) > idx) \
-     && (FUNDEF_REFCOUNTING (n)[idx]))
+     && (FUNDEF_REFCOUNTING (n) != NULL)                                                 \
+     && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) > (idx)) && (FUNDEF_REFCOUNTING (n)[idx]))
 
-#define FUNDEF_GET_LINKSIGN(n, idx)                                                      \
-    ((FUNDEF_STATUS (n) == ST_Cfun) && (FUNDEF_PRAGMA (n) != NULL)                       \
-     && (FUNDEF_LINKSIGN (n) != NULL) && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) > idx))   \
-      ? (FUNDEF_LINKSIGN (fundef))[idx]                                                  \
-      : (idx + 1)
+#define FUNDEF_HAS_LINKSIGN(n, idx)                                                      \
+    (((FUNDEF_STATUS (n) == ST_Cfun) && (FUNDEF_PRAGMA (n) != NULL)                      \
+      && (FUNDEF_LINKSIGN (n) != NULL)                                                   \
+      && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) > (idx)))                                 \
+       ? TRUE                                                                            \
+       : FALSE)
+
+#define FUNDEF_GET_LINKSIGN(n, idx, dots)                                                \
+    (((FUNDEF_STATUS (n) == ST_Cfun) && (FUNDEF_PRAGMA (n) != NULL)                      \
+      && (FUNDEF_LINKSIGN (n) != NULL)                                                   \
+      && (PRAGMA_NUMPARAMS (FUNDEF_PRAGMA (n)) > (idx)))                                 \
+       ? (FUNDEF_LINKSIGN (fundef))[idx]                                                 \
+       : ((dots) ? (idx) : ((idx) + 1)))
 
 /******************************************************************************
  *
@@ -1768,7 +1704,7 @@ PREC2ap (node *arg_node, node *arg_info)
                 DBUG_ASSERT ((!IsUnique (ID_TYPE (arg_node))),
                              "Argument of to_class function is unique already!");
 
-                ID_CLSCONV (arg_node) = TO_CLASS;
+                ID_UNQCONV (arg_node) = TO_UNQ;
             } else {
                 /*
                  * This must be a "from" function. So, the argument is of a class
@@ -1776,7 +1712,7 @@ PREC2ap (node *arg_node, node *arg_info)
                  */
                 arg_node = RenameId (arg_node);
 
-                ID_CLSCONV (arg_node) = FROM_CLASS;
+                ID_UNQCONV (arg_node) = FROM_UNQ;
             }
         } else {
             /* argument of class conversion function is no N_id node */
@@ -1848,7 +1784,7 @@ PREC2id (node *arg_node, node *arg_info)
 
             arg_node = RenameId (arg_node);
 
-            ID_CLSCONV (arg_node) = NO_CLSCONV;
+            ID_UNQCONV (arg_node) = NO_UNQCONV;
         }
     }
 
@@ -2117,42 +2053,48 @@ PREC2WLsegx (node *arg_node, node *arg_info)
  *
  */
 
-#define TRAV3 0
-
-#if TRAV3
-typedef struct {
-    void *node;
-    argtag_t tag;
-} argtabentry_t;
-
-typedef struct {
-    int size;
-    argtabentry_t **tab;
-} argtab_t;
-
 /******************************************************************************
  *
  * Function:
- *   argtab_t Argtab_Init( int size)
+ *   argtab_t *CompressArgtab( argtab_t *argtab)
  *
  * Description:
  *
  *
  ******************************************************************************/
 
-argtab_t
-Argtab_Init (int size)
+static argtab_t *
+CompressArgtab (argtab_t *argtab)
 {
-    argtab_t argtab;
-    int i;
+    int pos, idx;
+    int old_size;
 
-    DBUG_ENTER ("InitArgtab");
+    DBUG_ENTER ("CompressArgtab");
 
-    argtab.size = size;
-    argtab.tab = malloc ((size + 2) * sizeof (argtabentry_t *));
+    pos = idx = 1;
+    while (pos < argtab->size) {
+        if (argtab->tag[pos] != ATG_notag) {
+            if (pos > idx) {
+                argtab->tag[idx] = argtab->tag[pos];
+                argtab->ptr_in[idx] = argtab->ptr_in[pos];
+                argtab->ptr_out[idx] = argtab->ptr_out[pos];
+            }
+            idx++;
+        } else {
+            DBUG_ASSERT ((argtab->ptr_in[pos] == NULL), "argtab inconsistent");
+            DBUG_ASSERT ((argtab->ptr_out[pos] == NULL), "argtab inconsistent");
+        }
+        pos++;
+    }
+    /* adjust size */
+    old_size = argtab->size;
+    argtab->size = idx;
 
-    for (i = 0; i < size + 2; i++) {
-        argtab.tab[i] = NULL;
+    /* clear superfluous entries */
+    for (; idx < old_size; idx++) {
+        argtab->tag[idx] = ATG_notag;
+        argtab->ptr_in[idx] = NULL;
+        argtab->ptr_out[idx] = NULL;
     }
 
     DBUG_RETURN (argtab);
@@ -2160,58 +2102,251 @@ Argtab_Init (int size)
 
 /******************************************************************************
  *
+ * function:
+ *   node *PREC3modul( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PREC3modul (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("PREC2modul");
+
+    if (MODUL_FUNS (arg_node) != NULL) {
+        MODUL_FUNS (arg_node) = Trav (MODUL_FUNS (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
  * Function:
- *   argtab_t Argtab_InsertOutNode( argtab_t argtab, node *fundef, int param_id,
- *                                  types *rettypes, void *tabnode)
+ *   argtab_t *InsertOut( argtab_t argtab, node *fundef,
+ *                        int param_id, types *rettype,
+ *                        bool *dots, node *ret)
  *
  * Description:
  *
  *
  ******************************************************************************/
 
-static argtab_t
-Argtab_InsertOutNode (argtab_t argtab, node *fundef, int param_id, types *rettype,
-                      void *tabnode)
+static argtab_t *
+InsertOut (argtab_t *argtab, node *fundef, int param_id, types *rettype, bool *dots,
+           node *ret)
 {
-    argtag_t tabtag;
+    argtag_t argtag;
     int idx;
+    int line;
 
-    DBUG_ENTER ("Argtab_InsertOutNode");
+    DBUG_ENTER ("InsertOut");
 
+    line = NODE_LINE (fundef);
+
+    idx = FUNDEF_GET_LINKSIGN (fundef, param_id, *dots);
     if (TYPES_BASETYPE (rettype) != T_dots) {
-        idx = FUNDEF_GET_LINKSIGN (fundef, param_id) + 1;
-        tabtag = (MUST_REFCOUNT (rettype)) ? ATG_out_rc : ATG_out;
-    } else {
-        idx = 0;
-        tabtag = ATG_in;
-    }
+        if (MUST_REFCOUNT (rettype)) {
+            if (FUNDEF_DOES_REFCOUNT (fundef, param_id)) {
+                argtag = ATG_out_rc;
 
-    if (idx < argtab.size) {
-        if (argtab.tab[idx] == NULL) {
-            argtab.tab[idx] = malloc (sizeof (argtabentry_t));
-            argtab.tab[idx]->node = tabnode;
-            argtab.tab[idx]->tag = tabtag;
-        } else {
-            if (idx > 1) {
-                ERROR (NODE_LINE (fundef), ("illegal linksign pragma: "
-                                            "out-parameter at position %d found twice",
-                                            idx - 1));
-            } else if (idx == 1) {
-                ERROR (NODE_LINE (fundef), ("illegal linksign pragma: "
-                                            "return value (position 0) found twice"));
+                if (idx == 0) {
+                    ERROR (line, ("Pragma 'linksign' or 'refcounting' illegal"));
+                    CONT_ERROR (("Function cannot do refcouting on return value"));
+                }
             } else {
-                DBUG_ASSERT ((0), "more than one T_dots out-parameter found!");
+                argtag = ATG_out;
+            }
+        } else {
+            if (FUNDEF_WANTS_REFCOUNT (fundef, param_id)) {
+                WARN (line, ("Pragma 'refcounting' illegal"));
+                CONT_WARN (("Function wants to do refcounting on non-refcounted "
+                            "parameter at position %d",
+                            param_id));
+            }
+
+            argtag = ATG_out;
+        }
+
+        if ((argtab->ptr_out[0] == NULL) && (argtag == ATG_out)
+            && ((FUNDEF_PRAGMA (fundef) == NULL) || (FUNDEF_LINKSIGN (fundef) == NULL))) {
+            node *ret_exprs;
+            int i;
+
+            /*
+             * no linksign pragma given and no C return value found yet?
+             *  -> use this out-param as C return value!
+             */
+            idx = 0;
+
+            /*
+             * set RETURN_CRET(ret)
+             */
+            if (ret != NULL) {
+                DBUG_ASSERT ((NODE_TYPE (ret) == N_return), "no N_return node found!");
+
+                ret_exprs = RETURN_EXPRS (ret);
+                for (i = 0; i < param_id; i++) {
+                    DBUG_ASSERT ((ret_exprs != NULL), "not enough return values found!");
+                    ret_exprs = EXPRS_NEXT (ret_exprs);
+                }
+                DBUG_ASSERT ((ret_exprs != NULL), "not enough return values found!");
+
+                RETURN_CRET (ret) = EXPRS_EXPR (ret_exprs);
             }
         }
     } else {
-        ERROR (NODE_LINE (fundef), ("illegal linksign pragma: "
-                                    "entry [%d] == %d >= %d",
-                                    param_id, idx, argtab.size));
+        DBUG_ASSERT (((*dots) == FALSE), "more than one T_dots parameter found");
+
+        if ((idx != argtab->size - 1) && FUNDEF_HAS_LINKSIGN (fundef, param_id)) {
+            ERROR (line, ("Pragma 'linksign' illegal"));
+            CONT_ERROR (("Parameter '...' must be mapped to the last position"));
+        }
+        (*dots) = TRUE;
+
+        idx = argtab->size - 1;
+        argtag = FUNDEF_DOES_REFCOUNT (fundef, param_id) ? ATG_out_rc : ATG_out;
+    }
+
+    if ((idx >= 0) && (idx < argtab->size)) {
+        DBUG_ASSERT ((argtab->ptr_in[idx] == NULL), "argtab is inconsistent");
+
+        if (argtab->tag[idx] == ATG_notag) {
+            DBUG_ASSERT ((argtab->ptr_out[idx] == NULL), "argtab is inconsistent");
+
+            argtab->ptr_out[idx] = rettype;
+            argtab->tag[idx] = argtag;
+
+            DBUG_PRINT ("PREC3",
+                        ("%s(): out-arg " F_PTR
+                         " (TYPE) inserted at position %d with tag %s.",
+                         FUNDEF_NAME (fundef), rettype, idx, mdb_argtag[argtag]));
+        } else if (idx == 0) {
+            ERROR (line, ("Pragma 'linksign' illegal"));
+            CONT_ERROR (("Return value found twice"));
+        } else {
+            ERROR (line, ("Pragma 'linksign' illegal"));
+            CONT_ERROR (("Out-parameter at position %d found twice", idx));
+        }
+    } else {
+        ERROR (line, ("Pragma 'linksign' illegal"));
+        CONT_ERROR (("Entry at position %d contains illegal value %d", param_id, idx));
     }
 
     DBUG_RETURN (argtab);
 }
-#endif
+
+/******************************************************************************
+ *
+ * Function:
+ *   argtab_t *InsertIn( argtab_t *argtab, node *fundef,
+ *                       int param_id, node *arg,
+ *                       bool *dots)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static argtab_t *
+InsertIn (argtab_t *argtab, node *fundef, int param_id, node *arg, bool *dots)
+{
+    argtag_t argtag;
+    int idx;
+    int line;
+
+    DBUG_ENTER ("InsertIn");
+
+    line = NODE_LINE (fundef);
+
+    idx = FUNDEF_GET_LINKSIGN (fundef, param_id, *dots);
+    if (ARG_BASETYPE (arg) != T_dots) {
+        if (RC_IS_ACTIVE (ARG_REFCNT (arg)) && FUNDEF_DOES_REFCOUNT (fundef, param_id)) {
+            argtag = (ARG_ATTRIB (arg) == ST_reference) ? ATG_inout_rc : ATG_in_rc;
+        } else {
+            if (FUNDEF_WANTS_REFCOUNT (fundef, param_id)) {
+                WARN (line, ("Pragma 'refcounting' illegal"));
+                CONT_WARN (("Function wants to do refcounting on non-refcounted "
+                            "parameter at position %d",
+                            param_id));
+            }
+
+            if (ARG_ATTRIB (arg) == ST_reference) {
+                if (FUNDEF_STATUS (fundef) == ST_Cfun) {
+                    argtag = (IsBoxed (ARG_TYPE (arg))) ? ATG_upd_bx : ATG_upd;
+                } else {
+                    argtag = ATG_inout;
+                }
+            } else {
+                argtag = ATG_in;
+            }
+        }
+    } else {
+        DBUG_ASSERT (((*dots) == FALSE), "more than one T_dots parameter found");
+
+        if ((idx != argtab->size - 2) && FUNDEF_HAS_LINKSIGN (fundef, param_id)) {
+            ERROR (line, ("Pragma 'linksign' illegal"));
+            CONT_ERROR (("Parameter '...' must be mapped to the last position"));
+        }
+        (*dots) = TRUE;
+
+        idx = argtab->size - 1;
+        argtag = FUNDEF_DOES_REFCOUNT (fundef, param_id) ? ATG_in_rc : ATG_in;
+    }
+
+    if (idx == 0) {
+        ERROR (line, ("Pragma 'linksign' illegal"));
+        CONT_ERROR (
+          ("In-parameter at position %d cannot be used as return value", param_id));
+    } else if ((idx > 0) && (idx < argtab->size)) {
+        if (argtab->ptr_in[idx] == NULL) {
+            if (argtab->ptr_out[idx] == NULL) {
+                DBUG_ASSERT ((argtab->tag[idx] == ATG_notag), "argtab is inconsistent");
+
+                argtab->ptr_in[idx] = arg;
+                argtab->tag[idx] = argtag;
+
+                DBUG_PRINT ("PREC3", ("%s(): in-arg " F_PTR "," F_PTR
+                                      " (ARG,TYPE) inserted at position %d with tag %s.",
+                                      FUNDEF_NAME (fundef), arg, ARG_TYPE (arg), idx,
+                                      mdb_argtag[argtag]));
+            } else if ((argtab->tag[idx] == ATG_out) && (argtag == ATG_in)) {
+                /*
+                 * merge 'argtab->ptr_out[idx]' and 'arg'
+                 */
+                if (CmpTypes (argtab->ptr_out[idx], ARG_TYPE (arg)) == CMP_equal) {
+                    argtag = IsBoxed (ARG_TYPE (arg)) ? ATG_upd_bx : ATG_upd;
+                    argtab->ptr_in[idx] = arg;
+                    argtab->tag[idx] = argtag;
+
+                    DBUG_PRINT ("PREC3", ("%s(): in-arg " F_PTR "," F_PTR
+                                          " (ARG,TYPE) merged with out-arg " F_PTR
+                                          " (TYPE) at position %d with tag %s.",
+                                          FUNDEF_NAME (fundef), arg, ARG_TYPE (arg),
+                                          argtab->ptr_out[idx], idx, mdb_argtag[argtag]));
+                } else {
+                    ERROR (line, ("Pragma 'linksign' illegal"));
+                    CONT_ERROR (("Mappings allowed exclusively between parameters"
+                                 " with identical types"));
+                }
+            } else {
+                ERROR (line, ("Pragma 'linksign' illegal"));
+                CONT_ERROR (("Mappings allowed exclusively between parameters"
+                             " on which the function does no refcounting"));
+            }
+        } else {
+            ERROR (line, ("Pragma 'linksign' illegal"));
+            CONT_ERROR (("In-parameter at position %d found twice", idx));
+        }
+    } else {
+        ERROR (line, ("Pragma 'linksign' illegal"));
+        CONT_ERROR (("Entry at position %d contains illegal value %d", param_id, idx));
+    }
+
+    DBUG_RETURN (argtab);
+}
 
 /******************************************************************************
  *
@@ -2226,37 +2361,40 @@ Argtab_InsertOutNode (argtab_t argtab, node *fundef, int param_id, types *rettyp
 node *
 PREC3fundef (node *arg_node, node *arg_info)
 {
-#if TRAV3
     types *rettypes;
     node *args;
-    argtab_t argtab;
-    node *tabnode;
+    argtab_t *argtab;
     int param_id;
-#endif
+    bool dots;
 
     DBUG_ENTER ("PREC3fundef");
 
-#if TRAV3
     if (FUNDEF_STATUS (arg_node) != ST_zombiefun) {
         rettypes = FUNDEF_TYPES (arg_node);
         args = FUNDEF_ARGS (arg_node);
         param_id = 0;
-        argtab = Argtab_Init (CountFunctionParams (arg_node));
+        dots = FALSE;
+        argtab = MakeArgtab (CountFunctionParams (arg_node));
 
         while (rettypes != NULL) {
-            tabnode
-              = MakeArg (NULL, DupOneTypesOnly (rettypes), ST_regular, ST_regular, NULL);
-            argtab = Argtab_InsertOutNode (argtab, arg_node, param_id, rettypes, tabnode);
+            if (TYPES_BASETYPE (rettypes) != T_void) {
+                argtab = InsertOut (argtab, arg_node, param_id, rettypes, &dots,
+                                    FUNDEF_RETURN (arg_node));
+                param_id++;
+            }
 
             rettypes = TYPES_NEXT (rettypes);
-            param_id++;
         }
 
         while (args != NULL) {
+            argtab = InsertIn (argtab, arg_node, param_id, args, &dots);
+            param_id++;
 
             args = ARG_NEXT (args);
-            param_id++;
         }
+
+        ABORT_ON_ERROR;
+        FUNDEF_ARGTAB (arg_node) = CompressArgtab (argtab);
 
         /*
          * traverse next fundef
@@ -2266,20 +2404,22 @@ PREC3fundef (node *arg_node, node *arg_info)
         }
 
         /*
-         * traverse body
+         * all FUNDEF_ARGTABs are build now
+         *  -> traverse body
          */
+        INFO_PREC3_POST_ASSIGNS (arg_info) = NULL;
+        INFO_PREC3_PRE_ASSIGNS (arg_info) = NULL;
         if (FUNDEF_BODY (arg_node) != NULL) {
             FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
         }
 
         /*
-         * all functions traversed -> we can remove the pragmas
+         * we can remove the pragmas
          */
         if (FUNDEF_PRAGMA (arg_node) != NULL) {
             FUNDEF_PRAGMA (arg_node) = FreeNode (FUNDEF_PRAGMA (arg_node));
         }
     }
-#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -2287,7 +2427,7 @@ PREC3fundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *PREC3return( node *arg_node, node *arg_info)
+ *   node *PREC3assign( node *arg_node, node *arg_info)
  *
  * Description:
  *
@@ -2295,11 +2435,123 @@ PREC3fundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-PREC3return (node *arg_node, node *arg_info)
+PREC3assign (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("PREC3return");
+    DBUG_ENTER ("PREC3assign");
+
+    if (ASSIGN_NEXT (arg_node) != NULL) {
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
+    if (INFO_PREC3_POST_ASSIGNS (arg_info) != NULL) {
+        ASSIGN_NEXT (arg_node)
+          = AppendAssign (INFO_PREC3_POST_ASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
+        INFO_PREC3_POST_ASSIGNS (arg_info) = NULL;
+    }
+    if (INFO_PREC3_PRE_ASSIGNS (arg_info) != NULL) {
+        arg_node = AppendAssign (INFO_PREC3_PRE_ASSIGNS (arg_info), arg_node);
+        INFO_PREC3_PRE_ASSIGNS (arg_info) = NULL;
+    }
 
     DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *MakeMergeAssigns( argtab_t *argtab, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+MakeMergeAssigns (argtab_t *argtab, node *arg_info)
+{
+    node *expr;
+    int i;
+    node *pre_assigns = NULL;
+    node *post_assigns = NULL;
+
+    DBUG_ENTER ("MakeMergeAssigns");
+
+    DBUG_ASSERT ((INFO_PREC3_PRE_ASSIGNS (arg_info) == NULL),
+                 "INFO_PREC3_PRE_ASSIGNS not NULL");
+    DBUG_ASSERT ((INFO_PREC3_POST_ASSIGNS (arg_info) == NULL),
+                 "INFO_PREC3_POST_ASSIGNS not NULL");
+
+    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
+
+    for (i = argtab->size - 1; i >= 1; i--) {
+        if ((argtab->ptr_out[i] != NULL) && (argtab->ptr_in[i] != NULL)) {
+            DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_exprs),
+                         "no N_exprs node found in argtab!");
+            expr = EXPRS_EXPR (argtab->ptr_in[i]);
+
+            if ((NODE_TYPE (expr) == N_id) && RC_IS_ACTIVE (ID_REFCNT (expr))) {
+                /*
+                 * argument is a refcounted ID node
+                 *  -> must be converted into a unique object
+                 *
+                 ******
+                 *
+                 *  a:4 = fun( b:3);   ->   a':1 = to_unq( b:3);
+                 *                          fun( a':-1);
+                 *                          a:4 = from_unq( a':1);
+                 */
+                ids *out_ids;
+
+                /* a:1 */
+                out_ids = DupOneIds (argtab->ptr_out[i]);
+                IDS_REFCNT (out_ids) = 1;
+
+                /* to_unq( b:3) */
+                expr = DupTree (expr);
+                ID_UNQCONV (expr) = TO_UNQ;
+
+                /* a:1 = to_unq( b:3); */
+                pre_assigns = MakeAssign (MakeLet (expr, out_ids), pre_assigns);
+
+                /* a:4 */
+                out_ids = DupOneIds (argtab->ptr_out[i]);
+
+                /* from_unq( a:1) */
+                expr = DupIds_Id (argtab->ptr_out[i]);
+                ID_REFCNT (expr) = 1;
+                ID_UNQCONV (expr) = FROM_UNQ;
+
+                post_assigns = MakeAssign (MakeLet (expr, out_ids), post_assigns);
+
+                DBUG_PRINT ("PREC3", ("Assignments %s = to_unq(...) added",
+                                      IDS_NAME (((ids *)argtab->ptr_out[i]))));
+            } else {
+                /*
+                 * argument is no ID node or not refcounted
+                 *  -> no conversion into a unique object is necessary
+                 *  -> create a plain assignment
+                 *
+                 ******
+                 *
+                 *  a = fun( b);   ->   a = b;
+                 *                      fun( a);
+                 */
+                pre_assigns
+                  = MakeAssign (MakeLet (DupTree (expr), DupOneIds (argtab->ptr_out[i])),
+                                pre_assigns);
+
+                DBUG_PRINT ("PREC3", ("Assignment %s = ... added",
+                                      IDS_NAME (((ids *)argtab->ptr_out[i]))));
+            }
+        }
+    }
+
+    INFO_PREC3_PRE_ASSIGNS (arg_info) = pre_assigns;
+    INFO_PREC3_POST_ASSIGNS (arg_info) = post_assigns;
+
+    DBUG_RETURN (arg_info);
 }
 
 /******************************************************************************
@@ -2315,9 +2567,77 @@ PREC3return (node *arg_node, node *arg_info)
 node *
 PREC3let (node *arg_node, node *arg_info)
 {
+    node *ap, *fundef;
+    argtab_t *ap_argtab, *argtab;
+    ids *ap_ids;
+    types *rettypes;
+    node *ap_exprs, *args;
+    int idx, dots_off;
+
     DBUG_ENTER ("PREC3let");
 
-    if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
+    ap = LET_EXPR (arg_node);
+    if (NODE_TYPE (ap) == N_ap) {
+        fundef = AP_FUNDEF (ap);
+        DBUG_ASSERT ((fundef != NULL), "AP_FUNDEF not found!");
+
+        DBUG_PRINT ("PREC3", ("Application of %s().", FUNDEF_NAME (fundef)));
+
+        ap_ids = LET_IDS (arg_node);
+        rettypes = FUNDEF_TYPES (fundef);
+        ap_exprs = AP_ARGS (ap);
+        args = FUNDEF_ARGS (fundef);
+
+        ap_argtab = MakeArgtab (CountIds (ap_ids) + CountExprs (ap_exprs));
+        argtab = FUNDEF_ARGTAB (fundef);
+        DBUG_ASSERT ((argtab != NULL), "FUNDEF_ARGTAB not found!");
+
+        dots_off = 0;
+        while (ap_ids != NULL) {
+            DBUG_ASSERT ((rettypes != NULL), "application is inconsistant");
+
+            if (dots_off == 0) {
+                idx = GetArgtabIndexOut (rettypes, argtab);
+            }
+            DBUG_ASSERT ((idx + dots_off < ap_argtab->size), "illegal index");
+            DBUG_ASSERT ((idx < argtab->size), "illegal index");
+            ap_argtab->ptr_out[idx + dots_off] = ap_ids;
+            ap_argtab->tag[idx + dots_off] = argtab->tag[idx];
+
+            ap_ids = IDS_NEXT (ap_ids);
+            if (TYPES_BASETYPE (rettypes) != T_dots) {
+                rettypes = TYPES_NEXT (rettypes);
+            } else {
+                dots_off++;
+            }
+        }
+
+        dots_off = 0;
+        while (ap_exprs != NULL) {
+            DBUG_ASSERT ((args != NULL), "application is inconsistant");
+
+            if (dots_off == 0) {
+                idx = GetArgtabIndexIn (ARG_TYPE (args), argtab);
+            }
+            DBUG_ASSERT ((idx + dots_off < ap_argtab->size), "illegal index");
+            DBUG_ASSERT ((idx < argtab->size), "illegal index");
+            ap_argtab->ptr_in[idx + dots_off] = ap_exprs;
+            ap_argtab->tag[idx + dots_off] = argtab->tag[idx];
+
+            ap_exprs = EXPRS_NEXT (ap_exprs);
+            if (ARG_BASETYPE (args) != T_dots) {
+                args = ARG_NEXT (args);
+            } else {
+                dots_off++;
+            }
+        }
+
+        ABORT_ON_ERROR;
+        AP_ARGTAB (ap) = CompressArgtab (ap_argtab);
+
+        arg_info = MakeMergeAssigns (ap_argtab, arg_info);
+    } else {
+        LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2373,10 +2693,8 @@ Precompile (node *syntax_tree)
     act_tab = precomp2_tab;
     syntax_tree = Trav (syntax_tree, info);
 
-#if TRAV3
     act_tab = precomp3_tab;
     syntax_tree = Trav (syntax_tree, info);
-#endif
 
     info = FreeTree (info);
 
