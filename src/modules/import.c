@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.40  1996/01/23 09:58:05  cg
+ * Revision 1.41  1996/03/05 10:02:06  cg
+ * implemented a better consistency check for pragmas
+ * linksign, refcounting, and readonly
+ *
+ * Revision 1.40  1996/01/23  09:58:05  cg
  * Now, the name length of imported modules is checked
  *
  * Revision 1.39  1996/01/23  09:01:39  cg
@@ -477,12 +481,18 @@ Nums2IntArray (int line, int size, nums *numsp)
     for (i = 0, tmp = numsp; (i < size) && (tmp != NULL); i++, tmp = NUMS_NEXT (tmp)) {
         DBUG_PRINT ("PRAGMA", ("Nums value is %d", NUMS_NUM (tmp)));
 
+        if ((NUMS_NUM (tmp) < 0) || (NUMS_NUM (tmp) > size)) {
+            ERROR (line, ("Invalid argument of pragma 'linksign`"));
+            CONT_ERROR (
+              ("Entry no.%d does not match a valid parameter position !", i + 1));
+        }
+
         ret[i] = NUMS_NUM (tmp);
     }
 
     if (i < size) {
         ERROR (line, ("Invalid argument of pragma 'linksign`"));
-        CONT_ERROR (("Less entries (%d) than parameters of function (%d)", i, size));
+        CONT_ERROR (("Less entries (%d) than parameters of function (%d) !", i, size));
     }
 
     if (tmp != NULL) {
@@ -495,7 +505,7 @@ Nums2IntArray (int line, int size, nums *numsp)
         } while (tmp != NULL);
 
         ERROR (line, ("Invalid argument of pragma 'linksign`:"));
-        CONT_ERROR (("More entries (%d) than parameters of function (%d)", i, size));
+        CONT_ERROR (("More entries (%d) than function parameters (%d) !", i, size));
     }
 
     FreeAllNums (numsp);
@@ -545,7 +555,8 @@ Nums2BoolArray (int line, int size, nums *numsp)
 
         if ((NUMS_NUM (tmp) < 0) || (NUMS_NUM (tmp) >= size)) {
             ERROR (line, ("Invalid argument of pragma 'readonly` or 'refcounting`:"));
-            CONT_ERROR (("Entry %d out of range (%d)", i, NUMS_NUM (tmp)));
+            CONT_ERROR (
+              ("Entry no.%d does not match a function parameter !", i, NUMS_NUM (tmp)));
         } else {
             ret[NUMS_NUM (tmp)] = 1;
         }
