@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.45  2001/12/10 15:33:14  dkr
+# compile.tagged.o added
+#
 # Revision 3.44  2001/12/06 16:17:08  dkr
 # no changes done
 #
@@ -145,7 +148,7 @@ MULTITHREAD= src/multithread/multithread.o src/multithread/schedule_init.o \
              src/multithread/adjust_calls.o
 COMPILE= src/compile/wltransform.o src/compile/wlpragma_funs.o \
          src/compile/precompile.o \
-         src/compile/compile.o src/compile/gen_startup_code.o \
+         src/compile/compile.o src/compile/compile.tagged.o src/compile/gen_startup_code.o \
          src/compile/icm2c.o src/compile/icm2c_std.o src/compile/icm2c_mt.o \
          src/compile/icm2c_sched.o src/compile/icm2c_wl.o  \
          src/compile/ReuseWithArrays.o src/compile/PatchWith.o
