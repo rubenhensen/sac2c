@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/07/30 13:48:12  jhs
+ * Added comments.
+ *
  * Revision 2.3  1999/07/28 13:07:45  jhs
  * CountOccurences gets fundef now.
  *
@@ -21,19 +24,19 @@
  *
  *         SPMDTCO - CountOccurences
  *         SPMDTRO - ReduceOccurences
+ *         SPMDTRM - ReduceMasks
  *
  * description:
+ *   This file implements some travsersals needed by spmd_opt:
  *
- *  #### implements three traversals
- *      ro -> reduce ocuurences
- *      rm -> reduce masks
- *      co -> count occurences
+ *   *co -> count occurences*
+ *   Count occurences of Variables in certain blocks.
  *
- *   This file implements the traversal of N_blocks to find the last usage of
- *   a variable in this block and fetch its reference counter.
+ *   *ro -> reduce occurences*
+ *   Reduces occurences in a certain block.
  *
- *   This is needed to determine the combinations of two consecutive
- *   DataFlowMasks.
+ *   *rm -> reduce masks*
+ *   Reduces masks in a certain block.
  *
  *****************************************************************************/
 
@@ -51,7 +54,7 @@
 /******************************************************************************
  *
  * function
- *   void ReduceOccurences (mode * block, int * counters)
+ *   void ReduceOccurences (node *block, int *counters, DFMmask_t mask)
  *
  * description:
  *   modifies the naive refcounters (occurences) in block.
@@ -78,7 +81,10 @@ ReduceOccurences (node *block, int *counters, DFMmask_t mask)
     block = Trav (block, arg_info);
 
     act_tab = old_tab;
-    /* #### clear new masks */
+
+    INFO_SPMDT_CHECK (arg_info) = DFMRemoveMask (INFO_SPMDT_CHECK (arg_info));
+    INFO_SPMDT_COUNTERS (arg_info) = NULL;
+    FreeTree (arg_info);
 
     DBUG_VOID_RETURN;
 }
@@ -89,12 +95,15 @@ ReduceOccurences (node *block, int *counters, DFMmask_t mask)
  *   DFMmask_t ReduceMasks ( node *block, DFMmask_t first_out)
  *
  * description:
- *   ???? to be pointed out
+ *   #### ???? to be pointed out
  *
  *   reduces the out mask to the variables really used behind two melted
  *   blocks
  *   all the out variables are set somewhere in the block, so there
  *   is at least one left handed occurence
+ *
+ * attention:
+ *   Contens of first_out are changed.
  *
  ******************************************************************************/
 DFMmask_t
@@ -111,8 +120,7 @@ ReduceMasks (node *block, DFMmask_t first_out)
     old_tab = act_tab;
     act_tab = spmdrmtrav_tab;
 
-    INFO_SPMDT_FIRSTOUT (arg_info) = first_out;
-    INFO_SPMDT_RESULT (arg_info) = DFMGenMaskCopy (first_out);
+    INFO_SPMDT_RESULT (arg_info) = first_out;
     INFO_SPMDT_CHECK (arg_info) = DFMGenMaskCopy (first_out);
 
     /*
@@ -124,8 +132,9 @@ ReduceMasks (node *block, DFMmask_t first_out)
 
     result = INFO_SPMDT_RESULT (arg_info);
 
+    INFO_SPMDT_RESULT (arg_info) = NULL; /* used as function result */
+    INFO_SPMDT_CHECK (arg_info) = DFMRemoveMask (INFO_SPMDT_CHECK (arg_info));
     FreeTree (arg_info);
-    /* #### all extra masks to be freed here */
 
     DBUG_RETURN (result);
 }
@@ -247,6 +256,17 @@ CountOccurences (node *block, DFMmask_t which, node *fundef)
 
     DBUG_RETURN (result);
 }
+
+/******************************************************************************
+ ******************************************************************************
+ **
+ ** section:
+ **   SPMDTCO - SPMD - Traversal to Count Occurences
+ **
+ ******************************************************************************
+ ******************************************************************************/
+
+/* #### not yet implemented as real traversal */
 
 /******************************************************************************
  ******************************************************************************
