@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2004/11/23 22:08:32  skt
+ * changed BuildSpmdRegions into CONCdoConcurrent
+ *
  * Revision 3.79  2004/11/23 19:41:21  cg
  * changed signature of GLOBinitializeGlobal().
  *
@@ -785,13 +788,13 @@ main (int argc, char *argv[])
         NOTE (("Using create-join version of multithreading (MT1)"));
         /* spmd..._tab, sync..._tab */
         syntax_tree = UndoSSA (syntax_tree);
-        syntax_tree = BuildSpmdRegions (syntax_tree);
+        syntax_tree = CONCdoConcurrent (syntax_tree);
         break;
     case MT_startstop:
         NOTE (("Using start-stop version of multithreading (MT2)"));
         /* spmd..._tab, sync..._tab */
         syntax_tree = UndoSSA (syntax_tree);
-        syntax_tree = BuildSpmdRegions (syntax_tree);
+        syntax_tree = CONCdoConcurrent (syntax_tree);
         break;
     case MT_mtstblock:
         /* something's missing... */
