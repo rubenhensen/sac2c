@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/04/18 13:42:30  dkr
+ * bug in AEassign fixed: LHS might be void!
+ *
  * Revision 3.4  2001/03/22 19:40:34  dkr
  * no changes done
  *
@@ -58,7 +61,8 @@
  * I did some code cosmetics with the MRD_GET... macros.
  *
  * Revision 2.2  1999/03/17 20:37:13  bs
- * Function GenPsi modified: arrays with compact vector propagation will be generated.
+ * Function GenPsi modified: arrays with compact vector propagation will
+ * be generated.
  *
  * Revision 2.1  1999/02/23 12:43:08  sacbase
  * new release made
@@ -421,24 +425,26 @@ AEfundef (node *arg_node, node *arg_info)
  *
  * description:
  *
+ *
  ******************************************************************************/
 
 node *
 AEassign (node *arg_node, node *arg_info)
 {
     node *new_nodes = NULL;
-    ids *ids_node;
+    ids *_ids;
 
     DBUG_ENTER ("AEassign");
+
     /* create new assignments if array is smaler than threshold */
     if (N_let == NODE_TYPE (ASSIGN_INSTR (arg_node))) {
-        ids_node = LET_IDS (ASSIGN_INSTR (arg_node));
-        if (!IDS_NEXT (ids_node)) {
-            if (CorrectArraySize (ids_node)) {
-                VARDEC_FLAG (IDS_VARDEC (ids_node)) = TRUE;
-                new_nodes = GenPsi (ids_node, arg_info);
+        _ids = LET_IDS (ASSIGN_INSTR (arg_node));
+        if ((_ids != NULL) && (IDS_NEXT (_ids) == NULL)) {
+            if (CorrectArraySize (_ids)) {
+                VARDEC_FLAG (IDS_VARDEC (_ids)) = TRUE;
+                new_nodes = GenPsi (_ids, arg_info);
             } else
-                VARDEC_FLAG (IDS_VARDEC (ids_node)) = FALSE;
+                VARDEC_FLAG (IDS_VARDEC (_ids)) = FALSE;
         }
     }
 
