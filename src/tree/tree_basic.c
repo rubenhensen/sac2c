@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2003/09/16 18:54:55  ktr
+ * MakeNWithid: vec is now tested for NULL before writing to its AVIS-node.
+ *
  * Revision 3.73  2003/09/16 18:19:11  ktr
  * Added support for AVIS_WITHID
  *
@@ -1860,7 +1863,7 @@ MakeNWithid (ids *vec, ids *scalars)
     NWITHID_VEC (tmp) = vec;
     NWITHID_IDS (tmp) = scalars;
 
-    if (IDS_AVIS (vec) != NULL)
+    if ((vec) && (IDS_AVIS (vec) != NULL))
         AVIS_WITHID (IDS_AVIS (vec)) = tmp;
 
     while (scalars != NULL) {
