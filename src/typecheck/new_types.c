@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.56  2004/09/29 13:47:08  sah
+ * added TYArgs2FunType
+ *
  * Revision 3.55  2004/09/27 19:09:28  sbs
  * 1) sharing of components from FUNDEF_RET_TYPE as introduced
  * while building Applications removed.
@@ -4796,6 +4799,50 @@ TYType2OldType (ntype *new)
     DBUG_EXECUTE ("NTY", tmp_str2 = Free (tmp_str2););
 
     DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn ntype *TYArgs2FunType( node *args, ntype *rettype, node *fundef)
+ *
+ * @brief Converts an arg chain and a return type to a function type
+ *
+ * @param args an NArg node chain already having ntype attributes
+ * @param rettype the return type of the function
+ * @param fundef pointer to the fundef itself
+ *
+ ******************************************************************************/
+ntype *
+TYArgs2FunType (node *args, ntype *rettype, node *fundef)
+{
+    ntype *result;
+
+    DBUG_ENTER ("TYArgs2FunType");
+
+    if (args == NULL) {
+        result = rettype;
+    } else if (AVIS_TYPE (ARG_AVIS (args)) != NULL) {
+        result = TYArgs2FunType (ARG_NEXT (args), rettype, fundef);
+
+        if (result != NULL) {
+            /* in case we were not able to build a type so far
+             * we cannot go on, so we do not build a further
+             * function type
+             */
+            result
+              = TYMakeFunType (TYCopyType (AVIS_TYPE (ARG_AVIS (args))), result, fundef);
+        }
+    } else {
+        /* we found a missing N_Arg type, so we stop here.
+         * furthermore we have to free the return type as
+         * it wont be used
+         */
+
+        rettype = TYFreeType (rettype);
+        result = NULL;
+    }
+
+    DBUG_RETURN (result);
 }
 
 /**

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.20  2004/09/29 13:47:08  sah
+ * added TYArgs2FunType
+ *
  * Revision 3.19  2004/09/27 13:15:20  sah
  * added serialization support
  *
@@ -389,6 +392,7 @@ extern ntype *TYOldType2ScalarType (types *old);
 extern ntype *TYOldType2Type (types *old);
 extern types *TYType2OldType (ntype *new);
 extern ntype *TYOldTypes2ProdType (types *old);
+extern ntype *TYArgs2FunType (node *args, ntype *rettype, node *fundef);
 
 /*
  * Functions for converting types into SAC code for wrapper functions
