@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/10/06 16:35:40  cg
+ * Revision 1.17  1996/02/13 13:59:24  asi
+ * unknown
+ *
+ * Revision 1.16  1995/10/06  16:35:40  cg
  * calls to MakeIds adjusted to new signature (3 parameters)
  *
  * Revision 1.15  1995/07/28  12:58:43  asi
@@ -603,6 +606,7 @@ LIRMassign (node *arg_node, node *arg_info)
         last_node = arg_node;
         arg_node = last_node->node[1];
         last_node->nnode = 1;
+        last_node->node[1] = NULL;
         FreeTree (last_node);
     } break;
     case MOVE_DOWN: /* move whole assignment below loop */
