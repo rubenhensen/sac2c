@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.153  2002/10/10 23:51:41  dkr
+ * comment for N_Nwith modified
+ *
  * Revision 3.152  2002/10/10 09:21:34  mwe
  * INFO_AL_ macros added
  *
@@ -3465,7 +3468,6 @@ extern node *MakeMTalloc ();
  ***    bool       FOLDABLE              (wlt -> wlf !!)
  ***    bool       NO_CHANCE             (wlt -> wlf !!)
  ***    ids*       DEC_RC_IDS            (refcount -> wltransform !!)
- ***    node*      TSI                   (tile size inference -> )
  ***
  ***    DFMmask_t  IN_MASK            (infer_dfms -> lac2fun -> wltransform !!)
  ***    DFMmask_t  OUT_MASK           (infer_dfms -> lac2fun -> wltransform !!)
@@ -3479,7 +3481,6 @@ extern node *MakeNWith (node *part, node *code, node *withop);
 #define NWITH_WITHOP(n) ((n)->node[2])
 #define NWITH_PRAGMA(n) ((n)->node[3])
 #define NWITH_DEC_RC_IDS(n) ((ids *)((n)->node[4]))
-#define NWITH_WLAA(n) ((n)->node[5])
 
 #define NWITH_PARTS(n) (((wl_info *)((n)->info2))->parts)
 #define NWITH_REFERENCED(n) (((wl_info *)((n)->info2))->referenced)
