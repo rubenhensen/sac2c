@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.178  1998/04/11 15:09:32  srs
+ * added DupNwith
+ *
  * Revision 1.177  1998/04/09 13:54:29  dkr
  * added ConcNpart, ConcNcode, ...
  *
@@ -871,7 +874,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
    */
 
   NIF (N_Nwith, "N_Nwith", TravSons, FltnNwith, PrintNwith, TravSons, OPTNwith, DCRNwith,
-       WLFNwith, FreeNWith, CFNwith, RCNwith, TravSons, TravSons, DupChain, TravSons,
+       WLFNwith, FreeNWith, CFNwith, RCNwith, TravSons, TravSons, DupNwith, TravSons,
        UNRNwith, TravSons, TravSons, TravSons, WLINwith, TravSons, PrintNwith, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, UNQNwith, TravSons, PRECnwith,
        ACTNwith, TravSons, WLTNwith, CSENwith, TravSons, TravSons, O2Nnwith, 3),
