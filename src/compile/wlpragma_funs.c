@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2001/05/18 12:17:02  dkr
+ * WLCOMP_Scheduling: call of SCHRemoveScheduling() added
+ *
  * Revision 3.21  2001/04/03 10:00:00  dkr
  * WLCOMP_Bv() renamed to StoreBv()
  *
@@ -518,6 +521,7 @@ StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, int lin
                 if (level >= 0) {
                     DBUG_ASSERT ((level < WLSEG_BLOCKS (seg)),
                                  "illegal blocking level found!");
+
                     WLSEG_BV (seg, level)
                       = Array2Bv (EXPRS_EXPR (parms), WLSEG_BV (seg, level), dims,
                                   fun_name, line);
@@ -880,6 +884,7 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
             /*
              * set SCHEDULING
              */
+            WLSEGX_SCHEDULING (seg) = SCHRemoveScheduling (WLSEGX_SCHEDULING (seg));
             WLSEGX_SCHEDULING (seg) = SCHMakeSchedulingByPragma (arg, line);
 
             seg = WLSEGX_NEXT (seg);
