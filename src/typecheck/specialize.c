@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.17  2004/11/27 02:15:19  sbs
+ * *** empty log message ***
+ *
  * Revision 1.16  2004/11/27 02:14:16  sbs
  * *** empty log message ***
  *
@@ -368,7 +371,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
 /******************************************************************************
  *
  * function:
- *    dft_res *SPECHandleDownProjections( dft_res *dft,
+ *    dft_res *SPEChandleDownProjections( dft_res *dft,
  *                                          node *wrapper,
  *                                            ntype *args)
  *
@@ -377,7 +380,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
  ******************************************************************************/
 
 dft_res *
-SPECHandleDownProjections (dft_res *dft, node *wrapper, ntype *args)
+SPEChandleDownProjections (dft_res *dft, node *wrapper, ntype *args)
 {
     node *new_fundef;
     ntype *new_args;
@@ -423,19 +426,19 @@ SPECHandleDownProjections (dft_res *dft, node *wrapper, ntype *args)
 /******************************************************************************
  *
  * function:
- *    node *SPECHandleLacFun( node *fundef, node *assign, ntype *args)
+ *    node *SPEChandleLacFun( node *fundef, node *assign, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 node *
-SPECHandleLacFun (node *fundef, node *assign, ntype *args)
+SPEChandleLacFun (node *fundef, node *assign, ntype *args)
 {
     node *fun, *module;
 
-    DBUG_ENTER ("SPECHandleLacFun");
-    DBUG_ASSERT (FUNDEF_ISLACFUN (fundef), "SPECHandleLacFun called with non LaC fun!");
+    DBUG_ENTER ("SPEChandleLacFun");
+    DBUG_ASSERT (FUNDEF_ISLACFUN (fundef), "SPEChandleLacFun called with non LaC fun!");
 
     if (FUNDEF_USED (fundef) > 1) {
         /*
