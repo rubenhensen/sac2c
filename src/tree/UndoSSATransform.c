@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2001/03/15 10:53:31  nmw
+ * Undo SSA for all vardecs marked with SSAUNDOFLAG
+ *
  * Revision 1.3  2001/03/12 17:20:43  nmw
  * Pointer Sharing fixed
  *
@@ -32,7 +35,17 @@
  *    are re-renamed.
  *
  * 2. All result-variables of a multigenerator fold-withloop are made identical
- *    by inserting an additional variable and corresponding assignments.
+ *    by inserting an additional variable and corresponding assignments at
+ *    the end of each Ncode CBLOCK and adjusting the CEXPR identifier to
+ *    the new created variable.
+ *
+ * 3. in special functions (lifted do and while loops) a removal of the
+ *    phi-copy-target assignments is done by renaming different variables in
+ *    then- and else-part to the single variable used in the return statement.
+ *    Constant phi-copy-targets in the else-part are moved down behind the
+ *    conditional.
+ *
+ *    Example: < ##nmw## >
  *
  *****************************************************************************/
 
@@ -75,8 +88,7 @@ USSAarg (node *arg_node, node *arg_info)
  *   node *USSAvardec(node *arg_node, node *arg_info)
  *
  * description:
- *   checks all artificial vardec for the corresponding base vardec/arg
- *   to undo renaming.
+ *   checks all vardec
  *
  ******************************************************************************/
 node *
@@ -85,43 +97,60 @@ USSAvardec (node *arg_node, node *arg_info)
     node *tmp;
 
     DBUG_ENTER ("USSAvardec");
-    DBUG_PRINT ("USSA", ("working on vardec %s, avis (%p)", VARDEC_NAME (arg_node),
-                         VARDEC_AVIS (arg_node)));
+    DBUG_PRINT ("USSA", ("name %s: STATUS %s, ATTRIB %s\n", VARDEC_NAME (arg_node),
+                         mdb_statustype[VARDEC_STATUS (arg_node)],
+                         mdb_statustype[VARDEC_ATTRIB (arg_node)]));
 
-    if (((VARDEC_STATUS (arg_node) == ST_artificial)
-         || (VARDEC_ATTRIB (arg_node) == ST_was_reference)
-         || (VARDEC_ATTRIB (arg_node) == ST_unique))
+    if ((AVIS_SSAUNDOFLAG (VARDEC_AVIS (arg_node)))
         && (strcmp (SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (arg_node))),
                     VARDEC_NAME (arg_node))
             != 0)) {
         /* artificial vardec with renamed ids -> search for original vardec/arg */
 
         /* first search in arg chain */
-        VARDEC_UNDOAVIS (arg_node) = NULL;
+        AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) = NULL;
         tmp = INFO_USSA_ARGS (arg_info);
-        while ((tmp != NULL) && (VARDEC_UNDOAVIS (arg_node) == NULL)) {
+        while ((tmp != NULL) && (AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) == NULL)) {
             if (strcmp (SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (arg_node))),
                         ARG_NAME (tmp))
                 == 0) {
-                VARDEC_UNDOAVIS (arg_node) = ARG_AVIS (tmp);
+                AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) = ARG_AVIS (tmp);
             }
             tmp = ARG_NEXT (tmp);
         }
 
+        /* then search in vardec chain */
         tmp = BLOCK_VARDEC (INFO_USSA_TOPBLOCK (arg_info));
-        while ((tmp != NULL) && (VARDEC_UNDOAVIS (arg_node) == NULL)) {
+        while ((tmp != NULL) && (AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) == NULL)) {
             if (strcmp (SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (arg_node))),
                         VARDEC_NAME (tmp))
                 == 0) {
-                VARDEC_UNDOAVIS (arg_node) = VARDEC_AVIS (tmp);
+                AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) = VARDEC_AVIS (tmp);
             }
             tmp = VARDEC_NEXT (tmp);
         }
 
-        DBUG_ASSERT ((VARDEC_UNDOAVIS (arg_node) != NULL),
-                     "no matching base id found - no re-renaming possible!");
+        /*
+         * no original vardec found (maybe removed by optimizations)!
+         * so rename this vardec to original name.
+         */
+        if (AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) == NULL) {
+            FREE (VARDEC_NAME (arg_node));
+            VARDEC_NAME (arg_node)
+              = StringCopy (SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (arg_node))));
+
+            /* force renaming of identifier of this vardec */
+            AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) = VARDEC_AVIS (arg_node);
+
+            DBUG_PRINT ("USSA", ("set %s as new baseid", VARDEC_NAME (arg_node)));
+        }
+        DBUG_PRINT ("USSA", ("-> rename %s to %s", VARDEC_NAME (arg_node),
+                             SSACNT_BASEID (AVIS_SSACOUNT (VARDEC_AVIS (arg_node)))));
+
+        DBUG_ASSERT ((AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) != NULL),
+                     "no matching baseid found - no re-renaming possible.");
     } else {
-        VARDEC_UNDOAVIS (arg_node) = NULL;
+        AVIS_UNDOAVIS (VARDEC_AVIS (arg_node)) = NULL;
     }
 
     if (VARDEC_NEXT (arg_node) != NULL) {
@@ -365,6 +394,9 @@ USSAfundef (node *arg_node, node *arg_info)
      * are never renamed. Only new vardec as rename target of
      * an arg might exist.
      */
+
+    DBUG_PRINT ("USSA", ("\nrestoring names in function %s", FUNDEF_NAME (arg_node)));
+
     INFO_USSA_ARGS (arg_info) = FUNDEF_ARGS (arg_node);
 
     if (FUNDEF_BODY (arg_node) != NULL) {
@@ -428,9 +460,9 @@ USSAids (ids *arg_ids, node *arg_info)
 
     if (NODE_TYPE (AVIS_VARDECORARG (IDS_AVIS (arg_ids))) == N_vardec) {
 
-        if (VARDEC_UNDOAVIS (AVIS_VARDECORARG (IDS_AVIS (arg_ids))) != NULL) {
+        if (AVIS_UNDOAVIS (IDS_AVIS (arg_ids)) != NULL) {
             /* restore rename back to undo vardec */
-            IDS_AVIS (arg_ids) = VARDEC_UNDOAVIS (AVIS_VARDECORARG (IDS_AVIS (arg_ids)));
+            IDS_AVIS (arg_ids) = AVIS_UNDOAVIS (IDS_AVIS (arg_ids));
             IDS_VARDEC (arg_ids) = AVIS_VARDECORARG (IDS_AVIS (arg_ids));
 
 #ifndef NO_ID_NAME
