@@ -1,8 +1,11 @@
 /*
  * $Log$
- * Revision 1.23  1995/07/17 14:14:14  hw
- * information about N_fundef updated
+ * Revision 1.24  1995/08/15 12:39:06  cg
+ * object handling updated.
  *
+# Revision 1.23  1995/07/17  14:14:14  hw
+# information about N_fundef updated
+#
 # Revision 1.22  1995/07/11  09:22:17  cg
 # objects now implemented.
 #
@@ -171,7 +174,6 @@ node[0]    : implicit types (N_typedef) if present...
 node[1]    : explicit types (N_typedef) if present...
 node[2]    : function declarations (N_fundef with NULL-body) if present...
 node[3]    : object declarations (N_objdef with NULL-initialization) if present...
-              !! not yet implemented !!
 
 N_modul:
 ========
@@ -198,15 +200,14 @@ info.id    : name of import-file.
 N_typedef:
 ==========
 node[0]    : subsequent typedefs if present...
-info.types : containes type and new typename (info.type->id) in one types-structure.
+info.types : contains type and new typename (info.type->id) in one types-structure.
              If type is T_hidden then the next types-structure may
              contain the actual base type.
-             !! not yet implemented !!
 
 N_objdef:
 ==========
 node[0]    : subsequent objdefs if present...
-node[1]    : initialization expression
+node[1]    : initialization expression if object defined here
 info.types : contains type and name of global object.
 
 N_fundef:
@@ -215,8 +216,7 @@ node[0]	   : functionbody (N_block)
 node[1]    : next function (N_fundef), if there is one
 node[2]    : arguments of function (N_arg), if there are some
 node[5]    : alternative name for function( casted to( char *))
-             only used for 'extern' userdefined primitive functions
-                !! not yet implemented !!
+             only used for 'extern' user defined functions
 
 info.types : first types structure contains the functions name (info.types->id,
              info.types->id_mod) and the first part of the functions type. 
@@ -225,9 +225,10 @@ info.types : first types structure contains the functions name (info.types->id,
 
 -added after type check:
 node[3]    : pointer to corresponding N_return
-node[4]    : casted to (ids *) !!! list of global object identifiers
-             needed by this function 
-              !! not yet implemented !!
+
+-added after object handling:
+node[4]    : list of global object identifiers needed by this function 
+             (N_objdef) (for imported functions used from beginning)
 
 - after compilation(creation of ICMs ) -
 node[3]    : N_icm: ND_FUNDEC
@@ -354,7 +355,7 @@ mask[1] : contains number of usages for all variables in with body
 
 N_id:
 =====
-info.ids->id     : name of identificator
+info.ids->id     : name of identifier
 info.ids->node   : pointer to the belonging variable declaration.
                    it will be set while typechecking. 
 info.ids->refcnt : set while refcounting and is used while compilation
