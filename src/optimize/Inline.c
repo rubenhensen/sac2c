@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/09/01 17:11:01  jhs
+ * Fixed Duplicating of masks in DupAssign.
+ *
  * Revision 2.1  1999/02/23 12:41:19  sacbase
  * new release made
  *
@@ -292,7 +295,7 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
     var_node = FUNDEF_ARGS (AP_FUNDEF (ap_node));
     expr_node = AP_ARGS (ap_node);
 
-    DUPTYPE = DUP_NORMAL;
+    INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
 
     while (var_node && expr_node) {
         new_name = RenameInlinedVar (ARG_NAME (var_node));
@@ -310,7 +313,7 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
     ids_node = LET_IDS (let_node);
     expr_node = RETURN_EXPRS (FUNDEF_RETURN (AP_FUNDEF (ap_node)));
 
-    DUPTYPE = DUP_INLINE;
+    INFO_DUP_TYPE (arg_info) = DUP_INLINE;
 
     while (ids_node && expr_node) {
         new_name = StringCopy (IDS_NAME (ids_node));
@@ -324,7 +327,7 @@ DoInline (node *let_node, node *ap_node, node *arg_info)
     /*
      * Duplicate function (with variable renameing)
      */
-    DUPTYPE = DUP_INLINE;
+    INFO_DUP_TYPE (arg_info) = DUP_INLINE;
     inl_nodes = DupTree (BLOCK_INSTR (FUNDEF_BODY (AP_FUNDEF (ap_node))), arg_info);
 
     /*

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/09/01 17:11:01  jhs
+ * Fixed Duplicating of masks in DupAssign.
+ *
  * Revision 2.5  1999/07/07 15:04:25  sbs
  * DupVinfo added; it implicitly generates consistent VINFO_DOLLAR
  * pointers!!!
@@ -74,7 +77,6 @@
 
 #define _sac_DupTree_h
 
-#define DUPTYPE arg_info->flag
 #define DUP_NORMAL 0
 #define DUP_INLINE 1
 #define DUP_INVARIANT 2

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/09/01 17:11:01  jhs
+ * Fixed Duplicating of masks in DupAssign.
+ *
  * Revision 2.2  1999/04/19 12:43:53  jhs
  * TRUE and FALSE from internal_lib.h used now.
  *
@@ -176,7 +179,7 @@ LoopInvariantRemoval (node *arg_node, node *arg_info)
     tmp_tab = act_tab;
     act_tab = lir_tab;
     arg_info = MakeNode (N_info);
-    DUPTYPE = DUP_NORMAL;
+    INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
 
     arg_node = Trav (arg_node, arg_info);
 
@@ -1348,7 +1351,7 @@ InvarUnswitch (node *arg_node, node *loop_node, node *arg_info)
         /* only DupInfo depends on this assignment ?!? it is a kind of dirty trick, ey ??
          */
 #endif
-        DUPTYPE = DUP_INVARIANT; /* arg_info->flag = 2 */
+        INFO_DUP_TYPE (arg_info) = DUP_INVARIANT; /* arg_info->flag = 2 */
         UNS_NODES
           = arg_node->node[0]->node[1]->node[0]; /* UNS_NODES: arg_info->node[0] */
         arg_node->node[0]->node[1]->node[0] = DupTree (loop_node, arg_info);

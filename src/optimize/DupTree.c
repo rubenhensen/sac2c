@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  1999/09/01 17:11:01  jhs
+ * Fixed Duplicating of masks in DupAssign.
+ *
  * Revision 2.14  1999/08/27 11:12:55  jhs
  * Added copy of naive-refcounter while copying IDS.
  * Added copy of DEF-, USE- and MRDMASKs during DupAssign.
@@ -193,9 +196,9 @@
  *
  *  DupNode duplicates only the given node without next node.
  *
- * Usage of arg_info is not very nice:
- * If the given arg_info is NULL, everything is copies in DUP_NORMAL mode.
- * Else the mode is taken from arg_info->flag (see DUPTYPE macro).
+ *  Usage of arg_info is not very nice:
+ *  If the given arg_info is NULL, everything is copied in DUP_NORMAL mode,
+ *  else the mode is taken from INFO_DUP_TYPE.
  *
  */
 
@@ -214,7 +217,8 @@ DupTree (node *arg_node, node *arg_info)
 
         if (!arg_info) {
             arg_info = MakeInfo ();
-            DUPTYPE = DUP_NORMAL;
+            INFO_DUP_TYPE (arg_info) = DUP_NORMAL;
+            INFO_DUP_ALL (arg_info) = 0;
             new_arg_info = 1;
         }
 
@@ -442,7 +446,7 @@ DupOneIds (ids *old_ids, node *arg_info)
 
     DBUG_ENTER ("DupOneIds");
 
-    if ((arg_info != NULL) && (DUPTYPE == DUP_INLINE)) {
+    if ((arg_info != NULL) && (INFO_DUP_TYPE (arg_info) == DUP_INLINE)) {
         new_ids = MakeIds (RenameInlinedVar (IDS_NAME (old_ids)),
                            StringCopy (IDS_MOD (old_ids)), IDS_STATUS (old_ids));
         IDS_VARDEC (new_ids) = SearchDecl (IDS_NAME (new_ids), INFO_INL_TYPES (arg_info));
@@ -529,7 +533,7 @@ DupId (node *arg_node, node *arg_info)
         ID_CONSTVEC (new_node) = NULL;
     }
 
-    if (N_id == NODE_TYPE (arg_node) && DUP_WLF == DUPTYPE) {
+    if (N_id == NODE_TYPE (arg_node) && DUP_WLF == INFO_DUP_TYPE (arg_info)) {
         DBUG_PRINT ("DUP", ("duplicating N_id ..."));
         /* Withloop folding (wlf) needs this. */
         if (ID_WL (arg_node) && N_id == NODE_TYPE (ID_WL (arg_node)))
@@ -685,16 +689,18 @@ DupAssign (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
 
-    switch (DUPTYPE) {
-
+    switch (INFO_DUP_TYPE (arg_info)) {
     case DUP_INLINE:
         if ((0 == LEVEL) && (N_return == NODE_TYPE (ASSIGN_INSTR (arg_node))))
             break;
-
     default:
         new_node = MakeAssign (DUPTRAV (ASSIGN_INSTR (arg_node)),
                                DUPCONT (ASSIGN_NEXT (arg_node)));
         DUP (arg_node, new_node);
+        break;
+    }
+
+    if (INFO_DUP_ALL (arg_info)) {
         if (ASSIGN_DEFMASK (arg_node) != NULL) {
             ASSIGN_DEFMASK (new_node) = DupMask (ASSIGN_DEFMASK (arg_node), 400);
         }
@@ -704,7 +710,6 @@ DupAssign (node *arg_node, node *arg_info)
         if (ASSIGN_MRDMASK (arg_node) != NULL) {
             ASSIGN_MRDMASK (new_node) = DupMask (ASSIGN_MRDMASK (arg_node), 400);
         }
-        break;
     }
 
     DBUG_RETURN (new_node);
@@ -1016,10 +1021,6 @@ DupSync (node *arg_node, node *arg_info)
     }
     if (SYNC_LOCAL (arg_node) != NULL) {
         SYNC_LOCAL (new_node) = DFMGenMaskCopy (SYNC_LOCAL (arg_node));
-    }
-
-    if (SYNC_SCHEDULING (arg_node) != NULL) {
-        SYNC_SCHEDULING (new_node) = SCHCopyScheduling (SYNC_SCHEDULING (arg_node));
     }
 
     DBUG_RETURN (new_node);
