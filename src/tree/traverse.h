@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2004/10/22 09:01:55  sah
+ * added annotatenamespace traversal.
+ *
  * Revision 3.73  2004/10/21 17:19:26  sah
  * added rsa (resolve all) traversal
  *
@@ -468,7 +471,7 @@ extern funtab *emaa_tab;
 extern funtab *exp_tab;
 extern funtab *rdepend_tab;
 extern funtab *emsr_tab;
-extern funtab *unused_tab16;
+extern funtab *ans_tab;
 extern funtab *unused_tab17;
 extern funtab *unused_tab18;
 extern funtab *unused_tab19;

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.21  2004/10/22 09:01:55  sah
+# added annotatenamespace traversal.
+#
 # Revision 3.20  2004/10/21 17:21:22  sah
 # added resolveall.o
 #
@@ -96,7 +99,8 @@ ifeq ($(NEWAST),no)
           checkdec.o cccall.o $(OBJS)
 else
   OBJS := libmanager.o modulemanager.o libstat.o export.o \
-          ccmanager.o libbuilder.o resolveall.o $(OBJS)
+          ccmanager.o libbuilder.o resolveall.o annotatenamespace.o \
+          $(OBJS)
 endif
 
 all: $(OBJS)

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.97  2004/10/22 09:01:55  sah
+ * added annotatenamespace traversal.
+ *
  * Revision 3.96  2004/10/22 08:32:10  sah
  * rsa tab is now hidden in old sac2c
  *
@@ -426,6 +429,7 @@
 #include "serialize_buildstack.h"
 #include "export.h"
 #include "resolveall.h"
+#include "annotatenamespace.h"
 #include "filterrc.h"
 #include "aliasanalysis.h"
 #include "staticreuse.h"
@@ -836,7 +840,7 @@ static funtab readsib_tab_rec = {{
 funtab *readsib_tab = &readsib_tab_rec;
 #endif /* NEW_AST */
 /*
- *  (33) unused_tab39
+ *  (33) unused_tab39 DO NOT USE!!!
  */
 static funtab unused_tab39_rec = {{
 #define NIFunused_39(it_unused_39) it_unused_39
@@ -938,8 +942,13 @@ funtab *syncopt_tab = &syncopt_tab_rec;
  *  (42) wltrans_tab
  */
 static funtab wltrans_tab_rec = {{
+#ifdef NEW_AST
 #define NIFwltrans(it_wltrans) it_wltrans
 #include "node_info.mac"
+#else /* NEW_AST */
+#define NIFunused_39(it_unused39) it_unused39
+#include "node_info.mac"
+#endif /* NEW_AST */
                                  },
                                  NULL,
                                  NULL};
@@ -1946,7 +1955,7 @@ static funtab exp_tab_rec = {{
 #define NIFexp(it_exp) it_exp
 #include "node_info.mac"
 #else
-#define NIFunused_16(it_unused_16) it_unused_16
+#define NIFunused_39(it_unused_39) it_unused_39
 #include "node_info.mac"
 #endif /* NEW_AST */
                              },
@@ -1977,15 +1986,15 @@ static funtab emsr_tab_rec = {{
 funtab *emsr_tab = &emsr_tab_rec;
 
 /*
- *  (136) unused_tab16
+ *  (136) ans_tab
  */
-static funtab unused_tab16_rec = {{
-#define NIFunused_16(it_unused_16) it_unused_16
+static funtab ans_tab_rec = {{
+#define NIFans(it_ans) it_ans
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab16 = &unused_tab16_rec;
+                             },
+                             NULL,
+                             NULL};
+funtab *ans_tab = &ans_tab_rec;
 
 /*
  *  (137) unused_tab17

@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.124  2004/10/22 09:01:55  sah
+# added annotatenamespace traversal.
+#
 # Revision 3.123  2004/10/21 17:21:09  sah
 # added resolveall.o
 #
@@ -301,7 +304,7 @@ ifeq ($(NEWAST),yes)
                src/tree/deserialize.o src/tree/serialize_buildstack.o \
                src/modules/export.o src/modules/ccmanager.o \
                src/modules/libbuilder.o src/tree/serialize_helper.o \
-               src/modules/resolveall.o
+               src/modules/resolveall.o src/modules/annotatenamespace.o
   NEWASTFLAGS = -ldl --export-dynamic
 endif
 
