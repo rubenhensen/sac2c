@@ -1,3 +1,5 @@
+CheckAvis.c
+CheckAvis.h
 DataFlowMask.c
 DataFlowMask.h
 DataFlowMaskUtils.c
@@ -9,6 +11,7 @@ InferDFMs.h
 LookUpTable.c
 LookUpTable.h
 Makefile
+access_macros.h
 adjust_ids.c
 adjust_ids.h
 cleanup_decls.c
