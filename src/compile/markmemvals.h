@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/09/18 16:07:23  ktr
+ * SPMD blocks and functions are treated as well
+ *
  * Revision 1.5  2004/08/01 13:18:36  ktr
  * added MMVwlsegx
  *
@@ -30,6 +33,7 @@ extern node *MMVfundef (node *arg_node, info *arg_info);
 extern node *MMVid (node *arg_node, info *arg_info);
 extern node *MMVlet (node *arg_node, info *arg_info);
 extern node *MMVprf (node *arg_node, info *arg_info);
+extern node *MMVspmd (node *arg_node, info *arg_info);
 extern node *MMVwith (node *arg_node, info *arg_info);
 extern node *MMVwith2 (node *arg_node, info *arg_info);
 extern node *MMVwithop (node *arg_node, info *arg_info);

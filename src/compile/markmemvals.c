@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  2004/09/18 16:07:23  ktr
+ * SPMD blocks and functions are treated as well
+ *
  * Revision 1.11  2004/09/07 20:55:45  khf
  * corrected creation of new assigns for renamed cexprs
  *
@@ -115,6 +118,7 @@
 #include "DupTree.h"
 #include "free.h"
 #include "scheduling.h"
+#include "DataFlowMask.h"
 
 /**
  * INFO structure
@@ -163,6 +167,39 @@ FreeInfo (info *info)
     info = Free (info);
 
     DBUG_RETURN (info);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn UpdateDFM
+ *
+ *  @brief Updates a DFM accoring to INFO_MMV_LUT
+ *
+ *  @param DFM
+ *  @param arg_info
+ *
+ *  @return modified DFM
+ *
+ ***************************************************************************/
+static DFMmask_t
+UpdateDFM (DFMmask_t dfm, info *arg_info)
+{
+    node *vardec;
+
+    DBUG_ENTER ("UpdateDFM");
+
+    vardec = FUNDEF_VARDEC (INFO_MMV_FUNDEF (arg_info));
+    while (vardec != NULL) {
+
+        if (DFMTestMaskEntry (dfm, NULL, vardec)) {
+            DFMSetMaskEntrySet (dfm, NULL,
+                                SearchInLUT_PP (INFO_MMV_LUT (arg_info), vardec));
+        }
+
+        vardec = VARDEC_NEXT (vardec);
+    }
+
+    DBUG_RETURN (dfm);
 }
 
 /**
@@ -219,22 +256,65 @@ MMVdo (node *arg_node, info *arg_info)
 node *
 MMVfundef (node *arg_node, info *arg_info)
 {
+    info *info;
+    node *arg;
+    char *newname;
+
     DBUG_ENTER ("MMVfundef");
 
-    INFO_MMV_FUNDEF (arg_info) = arg_node;
+    if (FUNDEF_STATUS (arg_node) == ST_spmdfun) {
+        if (arg_info != NULL) {
+            /*
+             * SPMD-Functions: Arguments must be renamed
+             */
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_EXECUTE ("MMV", PrintNode (arg_node););
+            info = MakeInfo ();
+            INFO_MMV_FUNDEF (info) = arg_node;
 
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+            DBUG_EXECUTE ("MMV", PrintNode (arg_node););
+            arg = FUNDEF_ARGS (arg_node);
+            while (arg != NULL) {
+                newname = SearchInLUT_SS (INFO_MMV_LUT (arg_info), ARG_NAME (arg));
+                if (newname != ARG_NAME (arg)) {
+                    InsertIntoLUT_S (INFO_MMV_LUT (info), ARG_NAME (arg),
+                                     StringCopy (newname));
 
-        DBUG_EXECUTE ("MMV", PrintNode (arg_node););
-    }
+                    ARG_NAME (arg) = Free (ARG_NAME (arg));
+                    ARG_NAME (arg) = StringCopy (newname);
+                }
 
-    INFO_MMV_LUT (arg_info) = RemoveContentLUT (INFO_MMV_LUT (arg_info));
+                arg = ARG_NEXT (arg);
+            }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+            if (FUNDEF_BODY (arg_node) != NULL) {
+                FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), info);
+            }
+            DBUG_EXECUTE ("MMV", PrintNode (arg_node););
+
+            INFO_MMV_LUT (info) = RemoveContentLUT (INFO_MMV_LUT (info));
+            info = FreeInfo (info);
+        } else {
+            if (FUNDEF_NEXT (arg_node) != NULL) {
+                FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+            }
+        }
+    } else {
+        /*
+         * Regular function
+         */
+        info = MakeInfo ();
+        INFO_MMV_FUNDEF (info) = arg_node;
+
+        if (FUNDEF_BODY (arg_node) != NULL) {
+            FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), info);
+        }
+
+        INFO_MMV_LUT (info) = RemoveContentLUT (INFO_MMV_LUT (info));
+        info = FreeInfo (info);
+
+        if (FUNDEF_NEXT (arg_node) != NULL) {
+            FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -587,6 +667,36 @@ MMVprf (node *arg_node, info *arg_info)
 
 /** <!--******************************************************************-->
  *
+ * @fn MMVspmd
+ *
+ *  @brief Corrects the dataflow masks in SPMD blocks
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return
+ *
+ ***************************************************************************/
+node *
+MMVspmd (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("MMVspmd");
+
+    SPMD_REGION (arg_node) = Trav (SPMD_REGION (arg_node), arg_info);
+
+    SPMD_IN (arg_node) = UpdateDFM (SPMD_IN (arg_node), arg_info);
+    SPMD_OUT (arg_node) = UpdateDFM (SPMD_OUT (arg_node), arg_info);
+    SPMD_INOUT (arg_node) = UpdateDFM (SPMD_INOUT (arg_node), arg_info);
+    SPMD_LOCAL (arg_node) = UpdateDFM (SPMD_LOCAL (arg_node), arg_info);
+    SPMD_SHARED (arg_node) = UpdateDFM (SPMD_SHARED (arg_node), arg_info);
+
+    SPMD_FUNDEF (arg_node) = Trav (SPMD_FUNDEF (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn MMVwith
  *
  *  @brief
@@ -902,13 +1012,9 @@ MarkMemVals (node *syntax_tree)
 
     DBUG_ENTER ("MarkMemVals");
 
-    info = MakeInfo ();
-
     act_tab = mmv_tab;
 
-    syntax_tree = Trav (syntax_tree, info);
-
-    info = FreeInfo (info);
+    syntax_tree = Trav (syntax_tree, NULL);
 
     DBUG_RETURN (syntax_tree);
 }
