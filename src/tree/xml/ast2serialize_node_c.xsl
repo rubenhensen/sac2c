@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.2  2004/09/20 19:56:01  sah
+  ongoing work
+
   Revision 1.1  2004/08/31 14:23:46  sah
   Initial revision
 
@@ -72,6 +75,7 @@ version="1.0">
 
 #define NEW_INFO
 
+#include &lt;stdio.h&gt;
 #include "serialize_node.h"
 #include "serialize_attribs.h"
 #include "serialize_info.h"
@@ -117,14 +121,18 @@ version="1.0">
   <xsl:apply-templates select="@name"/>
   <!-- start of body -->
   <xsl:value-of select="'{'"/>
+  <!-- define a cnt var if needed -->
+  <xsl:if test="attributes/attribute[key(&quot;arraytypes&quot;, ./type/@name)]">
+    <xsl:value-of select="'int cnt;'" />
+  </xsl:if>
   <!-- DBUG_ENTER statement -->
   <xsl:value-of select="'DBUG_ENTER( &quot;Serialize'"/>
   <xsl:value-of select="@name"/>
   <xsl:value-of select="'&quot;);'"/>
   <!-- print start of new block -->
-  <xsl:value-of select="'fprintf( INFO_FILE( arg_info), &quot;{\n&quot;);'"/>
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;{\n&quot;);'"/>
   <!-- print comment of what is to be done -->
-  <xsl:value-of select="'fprintf( INFO_FILE( arg_info), &quot;/* serialization of '" />
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;/* serialization of '" />
   <xsl:value-of select="@name" />
   <xsl:value-of select="' node /*\n&quot;);'" />
   <!-- print defines for all needed vars -->
@@ -132,7 +140,7 @@ version="1.0">
   <!-- print generators of all vars -->
   <xsl:apply-templates select="." mode="gen-values"/>
   <!-- print end of block -->
-  <xsl:value-of select="'fprintf( INFO_FILE( arg_info), &quot;}\n&quot;);'"/>
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;}\n&quot;);'"/>
   <!-- DBUG_RETURN call -->
   <xsl:value-of select="'DBUG_RETURN( arg_node);'"/>
   <!-- end of body -->
@@ -174,7 +182,7 @@ version="1.0">
 
 <xsl:template match="node" mode="gen-vars">
   <!-- gen printf -->
-  <xsl:value-of select="'fprintf( INFO_FILE( arg_info), &quot;node *tmp;\n&quot;);'" />
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;node *tmp;&quot;);'" />
   <!-- continue traversal -->
   <xsl:apply-templates select="sons/son" mode="gen-vars" />
   <xsl:apply-templates select="attributes/attribute" mode="gen-vars" />
@@ -192,7 +200,7 @@ version="1.0">
 
 <xsl:template match="son" mode="gen-vars">
   <!-- gen printf -->
-  <xsl:value-of select="'fprintf( INFO_FILE( arg_info), &quot;node *son_'" />
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;node *son_'" />
   <xsl:value-of select="@name" />
   <xsl:value-of select="';\n&quot;);'" />
 </xsl:template>
@@ -209,11 +217,17 @@ version="1.0">
 
 <xsl:template match="attribute" mode="gen-vars">
   <!-- gen printf -->
-  <xsl:value-of select="'fprintf( INFO_FILE( arg_info), &quot;'" />
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;'" />
   <!-- type of attribute -->
   <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@ctype" />
   <xsl:value-of select="' attr_'" />
   <xsl:value-of select="@name" />
+  <!-- check for array types -->
+  <xsl:if test="key(&quot;types&quot;, ./type/@name)/@size">
+    <xsl:value-of select="'['" />
+    <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@size" />
+    <xsl:value-of select="']'" />
+  </xsl:if>
   <xsl:value-of select="';\n&quot;);'" />
 </xsl:template>
 
@@ -232,16 +246,147 @@ version="1.0">
 -->
 
 <xsl:template match="node" mode="gen-values">
-  <!-- allocate node -->
-  <xsl:value-of select="'fprintf( INFO_FILE( arg_info), &quot;tmp = AllocateNode( '" />
+  <!-- Allocate node pointer -->
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;tmp = AllocateNode( '" />
   <xsl:call-template name="name-to-nodeenum">
-    <xsl:with-param name="name"><xsl:value-of select="@name"/></xsl:with-param>
+    <xsl:with-param name="name">
+      <xsl:value-of select="@name" />
+    </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="');\n&quot;);'" />
   <!-- push current node -->
   <xsl:value-of select="'PUSH( arg_node);'"/>
   <!-- print push for generated node -->
-  <xsl:value-of select="'fprintf( INFO_FILE( arg_info), &quot;PUSH( tmp);\n&quot;);'" />
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;PUSH( tmp);\n&quot;);'" />
+  <!-- generate all sons and attributes -->
+  <xsl:apply-templates select="sons/son" mode="gen-values"/>
+  <xsl:apply-templates select="attributes/attribute" mode="gen-values"/>
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;FillNode( tmp&quot;);'" />
+  <!-- add all attributes and sons as argument -->
+  <xsl:apply-templates select="attributes/attribute" mode="gen-allocnode-params" />
+  <xsl:apply-templates select="sons/son" mode="gen-allocnode-params"
+ />
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;);\n&quot;);'" />
 </xsl:template>
 
+<xsl:template match="attributes/attribute" mode="gen-values">
+  <!-- if it is an array, we have to build a for loop over its elements -->
+  <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
+    <xsl:value-of select="'for( cnt = 0; cnt &lt; '" />
+    <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@size"/>
+    <xsl:value-of select="'; cnt++) { '" />
+  </xsl:if>
+  <!-- call serialization function for attribute -->
+  <xsl:value-of select="'Serialize'" />
+  <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@name" />
+  <xsl:value-of select="'Attrib( &quot;attr_'" />
+  <xsl:value-of select="@name" />
+  <xsl:value-of select="'&quot; '" />
+  <!-- if it is an array, we need to pass the selector as well -->
+  <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
+    <xsl:value-of select="', cnt'" />
+  </xsl:if>
+  <xsl:value-of select="', arg_info, '" />
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">arg_node</xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name"/>
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name"/>
+    </xsl:with-param>
+    <!-- if its is an array, we have to add another parameter -->
+    <xsl:with-param name="index">
+      <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
+        <xsl:value-of select="'cnt'"/>
+      </xsl:if>
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="');'" />
+  <!-- if it is an array, we have to complete the for loop -->
+  <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
+    <xsl:value-of select="'}'"/>
+  </xsl:if>
+</xsl:template>
+
+<xsl:template match="sons/son" mode="gen-values">
+  <xsl:value-of select="'Trav( '" />
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">arg_node</xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name"/>
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name"/>
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="', arg_info);'" />
+  <xsl:value-of select="' fprintf(INFO_SER_FILE(arg_info), &quot;son_'" />
+  <xsl:value-of select="@name" />
+  <xsl:value-of select="' = LOOKUP( %d);&quot;, FINDPOS( '"/>
+  <xsl:call-template name="node-access">
+    <xsl:with-param name="node">arg_node</xsl:with-param>
+    <xsl:with-param name="nodetype">
+      <xsl:value-of select="../../@name"/>
+    </xsl:with-param>
+    <xsl:with-param name="field">
+      <xsl:value-of select="@name"/>
+    </xsl:with-param>
+  </xsl:call-template>
+  <xsl:value-of select="'));'" />
+</xsl:template>
+
+<!--
+     traversal gen-allocnode-params attributes/attribute
+
+     generates the name of an attr field for the argumentlist
+     of the FillNode function.
+
+     result:
+
+     fprintf( INFO_SER_FILE( arg_info), &quot;, attr_Name&quot;);
+-->
+
+<xsl:template match="attributes/attribute" mode="gen-allocnode-params">
+  <xsl:choose>
+    <xsl:when test="key(&quot;arraytypes&quot;, ./type/@name)">
+      <!-- array attributes have the size as first argument -->
+      <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;,'" />
+      <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@size" />
+      <xsl:value-of select="'&quot;);'" />
+      <!-- generate for loop -->
+      <xsl:value-of select="'for (cnt=0; cnt &lt; '"/>
+      <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@size" />
+      <xsl:value-of select="'; cnt++) {'" />
+      <!-- add each arg -->
+      <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, attr_'" />
+      <xsl:value-of select="@name" />
+      <xsl:value-of select="'[%d]&quot;, cnt);'"/>
+      <!-- end of for loop -->
+      <xsl:value-of select="'}'" />
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, attr_'" />
+      <xsl:value-of select="@name" />
+      <xsl:value-of select="'&quot;);'" />
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
+
+<!-- 
+     traversal gen-allocnode-params sons/son
+
+     generates the name of a son field for the argumentlist
+     of the FillNode function.
+
+     result:
+
+     , son_Next
+-->
+
+<xsl:template match="sons/son" mode="gen-allocnode-params">
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, son_'" />
+  <xsl:value-of select="@name" />
+  <xsl:value-of select="'&quot;);'" />
+</xsl:template>
 </xsl:stylesheet>
