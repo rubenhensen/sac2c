@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2004/11/21 17:59:37  skt
+ * moved 2 defines from concurrent_lib.h into here
+ *
  * Revision 3.9  2004/11/21 17:32:02  skt
  * make it runable with the new info structure
  *
@@ -102,10 +105,21 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "internal_lib.h"
-#include "concurrent_lib.h"
 #include "LookUpTable.h"
 #include "InferDFMs.h"
 #include "concurrent_info.h"
+
+/*
+ *  returns 0 for refcounting-objects and -1 otherwise
+ */
+#define GET_ZERO_REFCNT(prefix, node)                                                    \
+    (RC_IS_ACTIVE (prefix##_REFCNT (node)) ? 0 : RC_INACTIVE)
+
+/*
+ *  returns 1 for refcounting-objects and -1 otherwise
+ */
+#define GET_STD_REFCNT(prefix, node)                                                     \
+    (RC_IS_ACTIVE (prefix##_REFCNT (node)) ? 1 : RC_INACTIVE)
 
 /******************************************************************************
  *
