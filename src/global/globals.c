@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/05/08 13:11:56  nmw
+ * flag valid_ssaform added
+ *
  * Revision 3.9  2001/05/07 15:01:48  dkr
  * PAB_YES, PAB_NO replaced by TRUE, FALSE.
  *
@@ -359,6 +362,7 @@ unsigned int optimize = OPT_ALL & (~OPT_MTO) & (~OPT_SBE) & (~OPT_MTI) & (~OPT_A
  * per default do not use ssa-form based optimizations (yet)
  */
 bool use_ssaform = FALSE;
+bool valid_ssaform = FALSE;
 
 /*
  * Command line options for specifying particular side conditions

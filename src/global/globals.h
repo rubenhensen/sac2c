@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/05/08 13:11:56  nmw
+ * flag valid_ssaform added
+ *
  * Revision 3.6  2001/05/07 15:02:46  dkr
  * type of flags is defined as 'bool' instead of 'int' now
  *
@@ -183,6 +186,9 @@ extern unsigned int optimize;
 
 /* use ssa-form based optimizations instead of old opts */
 extern bool use_ssaform;
+
+/* ast is in ssa form */
+extern bool valid_ssaform;
 
 extern int optvar;
 extern int inlnum;
