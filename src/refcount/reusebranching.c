@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2004/11/26 16:33:58  jhb
+ * compile
+ *
  * Revision 1.10  2004/11/25 18:04:36  jhb
  * INFDFMSdoInterInDFMAssignChain changed to INFDFMSdoInterInDfmAssignChain
  *
@@ -284,9 +287,9 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, dfmask_t 
             assids = ASSIGN_LHS (asslast);
             while (assids != NULL) {
                 cfrets
-                  = TCappendRets (cfrets,
-                                  TBmakeRet (TYcopyType (AVIS_TYPE (IDS_AVIS (assids))),
-                                             NULL));
+                  = TCappendRet (cfrets,
+                                 TBmakeRet (TYcopyType (AVIS_TYPE (IDS_AVIS (assids))),
+                                            NULL));
 
                 cftypes = TCappendTypes (cftypes,
                                          TYtype2OldType (AVIS_TYPE (IDS_AVIS (assids))));
