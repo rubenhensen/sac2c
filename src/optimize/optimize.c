@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2004/11/26 16:27:36  mwe
+ * SacDevCamp
+ *
  * Revision 3.68  2004/10/07 12:38:00  ktr
  * Replaced the old With-Loop Scalarization with a new implementation.
  *
@@ -311,8 +314,6 @@
  *
  */
 
-#define NEW_INFO
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -325,10 +326,11 @@
 #include "globals.h"
 #include "Error.h"
 #include "dbug.h"
-#include "my_debug.h"
+#include "node_basic.h"
 #include "traverse.h"
 #include "print.h"
 #include "convert.h"
+#include "new_types.h"
 
 #include "optimize.h"
 #include "DeadFunctionRemoval.h"
@@ -352,7 +354,6 @@
 #include "SSAInferLI.h"
 #include "ElimSubDiv.h"
 #include "UndoElimSubDiv.h"
-#include "SelectionPropagation.h"
 #include "ConstVarPropagation.h"
 #include "WLPartitionGeneration.h"
 #include "WithloopFusion.h"
@@ -361,13 +362,13 @@
  * INFO structure
  */
 struct INFO {
-    node *modul;
+    node *module;
 };
 
 /*
  * INFO macros
  */
-#define INFO_OPT_MODUL(n) (n->modul)
+#define INFO_OPT_MODULE(n) (n->module)
 
 /*
  * INFO functions
@@ -379,9 +380,9 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
-    INFO_OPT_MODUL (result) = NULL;
+    INFO_OPT_MODULE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -391,7 +392,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -468,8 +469,7 @@ bool do_break = FALSE;
  *   @brief sets all global optimization counters to zero.
  *
  ******************************************************************************/
-
-void
+static void
 ResetCounters ()
 {
     DBUG_ENTER ("ResetCounters");
@@ -521,7 +521,7 @@ ResetCounters ()
 #define NON_ZERO_ONLY 0
 #define ALL 1
 
-void
+static void
 PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_dead_fun,
                  int off_lir_expr, int off_wlir_expr, int off_cf_expr, int off_lunr_expr,
                  int off_wlunr_expr, int off_uns_expr, int off_elim_arrays,
@@ -534,85 +534,85 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
     DBUG_ENTER ("PrintStatistics");
 
     diff = inl_fun - off_inl_fun;
-    if ((optimize & OPT_INL) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.doinl) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d function(s) inlined", diff));
 
     diff = elim_arrays - off_elim_arrays;
-    if ((optimize & OPT_AE) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.doae) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d array(s) eliminated", diff));
 
     diff = cf_expr - off_cf_expr;
-    if ((optimize & OPT_CF) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.docf) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d primfun application(s) eliminated by constant folding", diff));
 
     diff = cvp_expr - off_cvp_expr;
-    if ((optimize & OPT_CVP) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.docvp) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d values propagated", diff));
 
     diff = sp_expr - off_sp_expr;
-    if ((optimize & OPT_SP) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.dosp) && ((ALL == flag) || (diff > 0)))
         NOTE (
           ("  %d primitive map operation(s) eliminated by selection propagation", diff));
 
     diff = (dead_expr - off_dead_expr) + (dead_var - off_dead_var);
-    if ((optimize & OPT_DCR) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.dodcr) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d dead assignment(s) and %d unused variable declaration(s) removed",
                dead_expr - off_dead_expr, dead_var - off_dead_var));
 
     diff = dead_fun - off_dead_fun;
-    if ((optimize & OPT_DFR) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.dodfr) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d dead functions(s) removed", diff));
 
     diff = cse_expr - off_cse_expr;
-    if ((optimize & OPT_CSE) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.docse) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d common subexpression(s) eliminated", diff));
 
     diff = wlf_expr - off_wlf_expr;
-    if ((optimize & OPT_WLF) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.dowlf) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d with-loop(s) folded", diff));
 
     diff = wls_expr - off_wls_expr;
-    if ((optimize & OPT_WLS) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.dowls) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d with-loop(s) scalarized", diff));
 
     diff = lir_expr - off_lir_expr;
-    if ((optimize & OPT_LIR) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.dolir) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d loop invariant expression(s) moved", diff));
 
     diff = wlir_expr - off_wlir_expr;
-    if ((optimize & OPT_LIR) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.dolir) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d with-loop invariant expression(s) moved", diff));
 
     diff = uns_expr - off_uns_expr;
-    if ((optimize & OPT_LUS) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.dolus) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d loop(s) unswitched", diff));
 
     diff = lunr_expr - off_lunr_expr;
-    if ((optimize & OPT_LUR) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.dolur) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d loop(s) unrolled", diff));
 
     diff = wlunr_expr - off_wlunr_expr;
-    if ((optimize & OPT_WLUR) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.dowlur) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d with-loop(s) unrolled", diff));
 
     diff = ap_padded - off_ap_padded;
-    if ((optimize & OPT_AP) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.doap) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d array type(s) padded", diff));
 
     diff = ap_unsupported - off_ap_unsupported;
-    if ((optimize & OPT_AP) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.doap) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d array type(s) unsupported for padding", diff));
 
     diff = al_expr - off_al_expr;
-    if ((optimize & OPT_AL) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.doal) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d associative law optimization(s)", diff));
 
     diff = dl_expr - off_dl_expr;
-    if ((optimize & OPT_DL) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.dodl) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d distributive law optimization(s)", diff));
 
     diff = wlfs_expr - off_wlfs_expr;
-    if ((optimize & OPT_WLFS) && ((ALL == flag) || (diff > 0)))
+    if ((global.optimize.dowlfs) && ((ALL == flag) || (diff > 0)))
         NOTE (("  %d with-loop(s) fused", diff));
 
     DBUG_VOID_RETURN;
@@ -636,27 +636,23 @@ PrintStatistics (int off_inl_fun, int off_dead_expr, int off_dead_var, int off_d
  ******************************************************************************/
 
 node *
-Optimize (node *arg_node)
+OPTdoOptimize (node *arg_node)
 {
-    funtab *tmp_tab;
     info *arg_info;
 
     DBUG_ENTER ("Optimize");
 
-    optvar_counter = optvar;
+    optvar_counter = global.optvar;
 
     ResetCounters ();
 
-    tmp_tab = act_tab;
-    act_tab = opt_tab;
-
+    TRAVpush (TR_opt);
     arg_info = MakeInfo ();
 
-    Trav (arg_node, arg_info);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
-
-    act_tab = tmp_tab;
 
     DBUG_RETURN (arg_node);
 }
@@ -678,7 +674,7 @@ Optimize (node *arg_node)
 
 /** <!--*********************************************************************-->
  *
- * @fn node *OPTmodul( node *arg_node, info *arg_info)
+ * @fn node *OPTmodule( node *arg_node, info *arg_info)
  *
  *   @brief this functions applies all those optimizations that are inter-procedural,
  *          i.e., Inlining (INL) and DeadFunctionRemoval (DFR).
@@ -715,30 +711,30 @@ Optimize (node *arg_node)
  ******************************************************************************/
 
 node *
-OPTmodul (node *arg_node, info *arg_info)
+OPTmodule (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("OPTmodul");
 
-    INFO_OPT_MODUL (arg_info) = arg_node;
+    INFO_OPT_MODULE (arg_info) = arg_node;
 
     /* remove all cast from AST */
-    arg_node = RemoveCasts (arg_node); /* rmcasts_tab */
+    arg_node = RCdoRemoveCasts (arg_node); /* rmcasts_tab */
 
-    if (optimize & OPT_INL) {
-        arg_node = Inline (arg_node); /* inline_tab */
+    if (global.optimize.doinl) {
+        arg_node = INLdoInline (arg_node); /* inline_tab */
     }
 
-    if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-        && (0 == strcmp (break_specifier, "inl"))) {
+    if ((global.break_after == PH_sacopt) && (global.break_cycle_specifier == 0)
+        && (0 == strcmp (global.break_specifier, "inl"))) {
         goto DONE;
     }
 
-    if (optimize & OPT_DFR) {
-        arg_node = DeadFunctionRemoval (arg_node);
+    if (global.optimize.dodfr) {
+        arg_node = DFRdoDeadFunctionRemoval (arg_node);
     }
 
-    if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-        && (0 == strcmp (break_specifier, "dfr"))) {
+    if ((global.break_after == PH_sacopt) && (global.break_cycle_specifier == 0)
+        && (0 == strcmp (global.break_specifier, "dfr"))) {
         goto DONE;
     }
 
@@ -757,24 +753,24 @@ OPTmodul (node *arg_node, info *arg_info)
 
     NOTE (("using ssa-form based optimizations."));
 
-    arg_node = DoSSA (arg_node);
+    arg_node = SSAdoSsa (arg_node);
     /* necessary to guarantee, that the compilation can be stopped
        during the call of DoSSA */
-    if ((break_after == PH_sacopt)
-        && ((0 == strcmp (break_specifier, "l2f"))
-            || (0 == strcmp (break_specifier, "cha"))
-            || (0 == strcmp (break_specifier, "ssa")))) {
+    if ((global.break_after == PH_sacopt)
+        && ((0 == strcmp (global.break_specifier, "l2f"))
+            || (0 == strcmp (global.break_specifier, "cha"))
+            || (0 == strcmp (global.break_specifier, "ssa")))) {
         goto DONE;
     }
 
-    if (MODUL_FUNS (arg_node)) {
+    if (MODULE_FUNS (arg_node)) {
         /*
          * Now, we apply the intra-procedural optimizations function-wise!
          * The result of Trav is MUST NOT BE STORED in MODUL_FUNS, because
          * there might be some special fundefs duplicated and added in front
          * of the fundef chain.
          */
-        Trav (MODUL_FUNS (arg_node), arg_info);
+        TRAVdo (MODULE_FUNS (arg_node), arg_info);
 
         /*
          * OPTfundef() sets the global variable 'do_break' to report a break!
@@ -785,28 +781,29 @@ OPTmodul (node *arg_node, info *arg_info)
     }
 
     /* allows to stop after fundef optimizations */
-    if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-        && (0 == strcmp (break_specifier, "funopt"))) {
+    if ((global.break_after == PH_sacopt) && (global.break_cycle_specifier == 0)
+        && (0 == strcmp (global.break_specifier, "funopt"))) {
         goto DONE;
     }
 
     NOTE (("undo ssa-form"));
-    arg_node = UndoSSA (arg_node);
+    arg_node = SSAundoSsa (arg_node);
     /* necessary to guarantee, that the compilation can be stopped
        during the call of UndoSSA */
-    if ((break_after == PH_sacopt)
-        && ((0 == strcmp (break_specifier, "ussa"))
-            || (0 == strcmp (break_specifier, "f2l")))) {
+    if ((global.break_after == PH_sacopt)
+        && ((0 == strcmp (global.break_specifier, "ussa"))
+            || (0 == strcmp (global.break_specifier, "f2l")))) {
         goto DONE;
     }
 
     /*
      * Now, it's indicated to analyze the array accesses within WLs.
      */
-    if (optimize & (OPT_TSI | OPT_AP)) {
-        arg_node = WLAccessAnalyze (arg_node);
+    if ((global.optimize.dotsi) || (global.optimize.doap)) {
+        arg_node = WLAAdoAccessAnalyze (arg_node);
 
-        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "wlaa"))) {
+        if ((global.break_after == PH_sacopt)
+            && (0 == strcmp (global.break_specifier, "wlaa"))) {
             goto DONE;
         }
     }
@@ -814,10 +811,11 @@ OPTmodul (node *arg_node, info *arg_info)
     /*
      * Now, we apply array padding
      */
-    if (optimize & OPT_AP) {
-        arg_node = ArrayPadding (arg_node);
+    if (global.optimize.doap) {
+        arg_node = APdoArrayPadding (arg_node);
 
-        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "ap"))) {
+        if ((global.break_after == PH_sacopt)
+            && (0 == strcmp (global.break_specifier, "ap"))) {
             goto DONE;
         }
     }
@@ -825,10 +823,11 @@ OPTmodul (node *arg_node, info *arg_info)
     /*
      * infere the tilesize
      */
-    if (optimize & OPT_TSI) {
-        arg_node = TileSizeInference (arg_node);
+    if (global.optimize.dotsi) {
+        arg_node = TSIdoTileSizeInference (arg_node);
 
-        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "tsi"))) {
+        if ((global.break_after == PH_sacopt)
+            && (0 == strcmp (global.break_specifier, "tsi"))) {
             goto DONE;
         }
     }
@@ -836,11 +835,12 @@ OPTmodul (node *arg_node, info *arg_info)
     /*
      * we apply DFR once again!
      */
-    if (optimize & OPT_DFR) {
-        arg_node = DeadFunctionRemoval (arg_node);
+    if (global.optimize.dodfr) {
+        arg_node = DFRdoDeadFunctionRemoval (arg_node);
     }
 
-    if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "dfr2"))) {
+    if ((global.break_after == PH_sacopt)
+        && (0 == strcmp (global.break_specifier, "dfr2"))) {
         goto DONE;
     }
 
@@ -852,10 +852,11 @@ OPTmodul (node *arg_node, info *arg_info)
     /*
      * index vector elimination
      */
-    if (optimize & OPT_IVE) {
-        arg_node = IndexVectorElimination (arg_node);
+    if (global.optimize.doive) {
+        arg_node = IDXdoIndexVectorElimination (arg_node);
 
-        if ((break_after == PH_sacopt) && (0 == strcmp (break_specifier, "ive"))) {
+        if ((global.break_after == PH_sacopt)
+            && (0 == strcmp (global.break_specifier, "ive"))) {
             goto DONE;
         }
     }
@@ -974,7 +975,7 @@ OPTfundef (node *arg_node, info *arg_info)
     buffer_space = 77;
 
     /* no optimizations of prototypes and special fundefs */
-    if ((FUNDEF_BODY (arg_node) != NULL) && (!(FUNDEF_IS_LACFUN (arg_node)))) {
+    if ((FUNDEF_BODY (arg_node) != NULL) && (!(FUNDEF_ISLACFUN (arg_node)))) {
         /*
          * The global variable 'do_break' is used to report a break to OPTmodul().
          * If no break occurs this variable is unset later on.
@@ -987,7 +988,7 @@ OPTfundef (node *arg_node, info *arg_info)
          */
         arg = FUNDEF_ARGS (arg_node);
         while ((arg != NULL) && (buffer_space > 5)) {
-            tmp_str = Type2String (ARG_TYPE (arg), 0, TRUE);
+            tmp_str = TYtype2String (AVIS_TYPE (ARG_AVIS (arg)), TRUE, 0);
             tmp_str_size = strlen (tmp_str);
 
             if ((tmp_str_size + 3) <= buffer_space) {
@@ -1002,7 +1003,7 @@ OPTfundef (node *arg_node, info *arg_info)
                 buffer_space = 0;
             }
 
-            tmp_str = Free (tmp_str);
+            tmp_str = ILIBfree (tmp_str);
             arg = ARG_NEXT (arg);
         }
 
@@ -1013,22 +1014,22 @@ OPTfundef (node *arg_node, info *arg_info)
          * optimization for SSA-form
          */
 
-        if (optimize & OPT_AE) {
-            arg_node = ArrayElimination (arg_node); /* ae_tab */
-            arg_node = RestoreSSAOneFunction (arg_node);
+        if (global.optimize.doae) {
+            arg_node = AEdoArrayElimination (arg_node); /* ae_tab */
+            arg_node = SSArestoreSsaOneFunction (arg_node);
         }
 
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-            && (0 == strcmp (break_specifier, "ae"))) {
+        if ((global.break_after == PH_sacopt) && (global.break_cycle_specifier == 0)
+            && (0 == strcmp (global.break_specifier, "ae"))) {
             goto INFO;
         }
 
-        if (optimize & OPT_DCR) {
-            arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
+        if (global.optimize.dodcr) {
+            arg_node = DCRdoDeadCodeRemoval (arg_node, INFO_OPT_MODULE (arg_info));
         }
 
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-            && (0 == strcmp (break_specifier, "dcr"))) {
+        if ((global.break_after == PH_sacopt) && (global.break_cycle_specifier == 0)
+            && (0 == strcmp (global.break_specifier, "dcr"))) {
             goto INFO;
         }
 
@@ -1063,71 +1064,69 @@ OPTfundef (node *arg_node, info *arg_info)
              * optimization for SSA-form
              */
 
-            if (optimize & OPT_CSE) {
-                arg_node = SSACSE (arg_node, INFO_OPT_MODUL (arg_info));
+            if (global.optimize.docse) {
+                arg_node = CSEdoCse (arg_node, INFO_OPT_MODULE (arg_info));
             }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "cse"))) {
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && (0 == strcmp (global.break_specifier, "cse"))) {
                 goto INFO;
             }
 
             /* infere loop invariant arguments */
-            arg_node = SSAInferLoopInvariants (arg_node);
+            arg_node = ILIdoInferLoopInvariants (arg_node);
 
-            if (optimize & OPT_CF) {
-                arg_node = SSAConstantFolding (arg_node,
-                                               INFO_OPT_MODUL (arg_info)); /* ssacf_tab */
+            if (global.optimize.docf) {
+                arg_node
+                  = CFdoConstantFolding (arg_node,
+                                         INFO_OPT_MODULE (arg_info)); /* ssacf_tab */
             }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "cf"))) {
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && (0 == strcmp (global.break_specifier, "cf"))) {
                 goto INFO;
             }
 
-            if (optimize & OPT_CVP) {
-                arg_node = ConstVarPropagation (arg_node); /* cvp_tab */
+            if (global.optimize.docvp) {
+                arg_node = CVPdoConstVarPropagation (arg_node); /* cvp_tab */
             }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "cvp"))) {
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && (0 == strcmp (global.break_specifier, "cvp"))) {
                 goto INFO;
             }
 
-            if (optimize & OPT_SP) {
-                arg_node = SelectionPropagation (arg_node, INFO_OPT_MODUL (arg_info));
+            if (global.optimize.dowlpg) {
+                arg_node = WLPGdoWlPartitionGenerationOpt (arg_node);
             }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "sp"))) {
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && (0 == strcmp (global.break_specifier, "wlpg"))) {
                 goto INFO;
             }
 
-            if (optimize & OPT_WLPG) {
-                arg_node = WLPartitionGenerationOPT (arg_node);
+            if (global.optimize.dowlt) {
+                arg_node = WLFdoWithloopFoldingWlt (arg_node);
             }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "wlpg"))) {
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && (0 == strcmp (global.break_specifier, "wlt"))) {
                 goto INFO;
             }
 
-            if (optimize & OPT_WLT) {
-                arg_node = SSAWithloopFoldingWLT (arg_node);
+            if (global.optimize.dowlf) {
+                arg_node = WLFdoWithloopFolding (arg_node, loop1);
             }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "wlt"))) {
-                goto INFO;
-            }
-
-            if (optimize & OPT_WLF) {
-                arg_node = SSAWithloopFolding (arg_node, loop1);
-            }
-
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && ((0 == strcmp (break_specifier, "wli"))
-                    || (0 == strcmp (break_specifier, "wlf")))) {
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && ((0 == strcmp (global.break_specifier, "wli"))
+                    || (0 == strcmp (global.break_specifier, "wlf")))) {
                 goto INFO;
             }
 
@@ -1136,36 +1135,39 @@ OPTfundef (node *arg_node, info *arg_info)
                  * this may speed up the optimization phase a lot if a lot of code
                  * has been inserted by WLF.
                  */
-                if (optimize & OPT_CF) {
-                    arg_node = SSAConstantFolding (arg_node, INFO_OPT_MODUL (arg_info));
+                if (global.optimize.docf) {
+                    arg_node = CFdoConstantFolding (arg_node, INFO_OPT_MODULE (arg_info));
                 }
             }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "cf2"))) {
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && (0 == strcmp (global.break_specifier, "cf2"))) {
                 goto INFO;
             }
 
-            if (optimize & OPT_DCR) {
-                arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
+            if (global.optimize.dodcr) {
+                arg_node = DCRdoDeadCodeRemoval (arg_node, INFO_OPT_MODULE (arg_info));
             }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "dcr"))) {
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && (0 == strcmp (global.break_specifier, "dcr"))) {
                 goto INFO;
             }
 
-            if (optimize & OPT_WLS) {
-                arg_node = WLSWithloopScalarization (arg_node);
+            if (global.optimize.dowls) {
+                arg_node = WLSdoWithloopScalarization (arg_node);
             }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "wls"))) {
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && (0 == strcmp (global.break_specifier, "wls"))) {
                 goto INFO;
             }
 
-            if ((optimize & OPT_LUR) || (optimize & OPT_WLUR)) {
-                arg_node = SSALoopUnrolling (arg_node, INFO_OPT_MODUL (arg_info));
+            if ((global.optimize.dolur) || (global.optimize.dowlur)) {
+                arg_node = LURdoLoopUnrolling (arg_node, INFO_OPT_MODULE (arg_info));
                 /*
                  * important:
                  *   SSALoopUnrolling uses internally SSAWLUnroll to get the
@@ -1173,8 +1175,9 @@ OPTfundef (node *arg_node, info *arg_info)
                  */
             }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "lur"))) {
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && (0 == strcmp (global.break_specifier, "lur"))) {
                 goto INFO;
             }
 
@@ -1183,55 +1186,59 @@ OPTfundef (node *arg_node, info *arg_info)
                  * this may speed up the optimization phase a lot if a lot of code
                  * has been inserted by Unrolling..
                  */
-                if (optimize & OPT_CF) {
-                    arg_node = SSAConstantFolding (arg_node, INFO_OPT_MODUL (arg_info));
+                if (global.optimize.docf) {
+                    arg_node = CFdoConstantFolding (arg_node, INFO_OPT_MODULE (arg_info));
                 }
             }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "cf3"))) {
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && (0 == strcmp (global.break_specifier, "cf3"))) {
                 goto INFO;
             }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "lus"))) {
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && (0 == strcmp (global.break_specifier, "lus"))) {
                 goto INFO;
             }
 
-            if (optimize & OPT_LIR) {
-                arg_node = SSALoopInvariantRemoval (arg_node, INFO_OPT_MODUL (arg_info));
+            if (global.optimize.dolir) {
+                arg_node
+                  = LIRdoLoopInvariantRemoval (arg_node, INFO_OPT_MODULE (arg_info));
                 /* ktr: This is a very dirty solution for bug #16.
                    The problem of AVIS_SSAASSIGN being wrongly assigned in SSALIR.c
                    is still unresolved. */
-                arg_node = RestoreSSAOneFunction (arg_node);
+                arg_node = SSArestoreSsaOneFunction (arg_node);
             }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "lir"))) {
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && (0 == strcmp (global.break_specifier, "lir"))) {
                 goto INFO;
             }
 
-            if ((optimize & OPT_AL) || (optimize & OPT_DL)) {
-                arg_node = ElimSubDiv (arg_node);
+            if ((global.optimize.doal) || (global.optimize.dodl)) {
+                arg_node = ESDdoElimSubDiv (arg_node);
             }
 
-            if (optimize & OPT_AL) {
-                arg_node = AssociativeLaw (arg_node);
+            if (global.optimize.doal) {
+                arg_node = ALdoAssociativeLaw (arg_node);
             }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "al"))) {
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && (0 == strcmp (global.break_specifier, "al"))) {
                 goto INFO;
             }
 
-#ifndef NEW_AST
-            if (optimize & OPT_DL) {
-                arg_node = DistributiveLaw (arg_node);
+            if (global.optimize.dodl) {
+                arg_node = DLdoDistributiveLaw (arg_node);
             }
-#endif /* NEW_AST */
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
-                && (0 == strcmp (break_specifier, "dl"))) {
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == loop1)
+                && (0 == strcmp (global.break_specifier, "dl"))) {
                 goto INFO;
             }
 
@@ -1245,22 +1252,22 @@ OPTfundef (node *arg_node, info *arg_info)
                 || (wlir_expr != old_wlir_expr) || (wls_expr != old_wls_expr)
                 || (al_expr != old_al_expr) || (dl_expr != old_dl_expr)
                 || (sp_expr != old_sp_expr) || (cvp_expr != old_cvp_expr))
-               && (loop1 < max_optcycles));
+               && (loop1 < global.max_optcycles));
         /* dkr:
          * How about  cf_expr, wlt_expr, dcr_expr  ??
          * I think we should compare these counters here, too!
          */
 
-        if (((optimize & OPT_AL) || (optimize & OPT_DL))) {
-            arg_node = UndoElimSubDiv (arg_node);
+        if (((global.optimize.doal) || (global.optimize.dodl))) {
+            arg_node = UESDdoUndoElimSubDiv (arg_node);
         }
 
         /*
          * Now, we enter the second loop consisting of
          *   CF and WLT only.
          */
-        while ((wlt_expr != old_wlt_expr) && (optimize & OPT_CF)
-               && ((loop1 + loop2) < max_optcycles)) {
+        while ((wlt_expr != old_wlt_expr) && (global.optimize.docf)
+               && ((loop1 + loop2) < global.max_optcycles)) {
             old_wlt_expr = wlt_expr;
             old_cf_expr = cf_expr;
 
@@ -1274,25 +1281,28 @@ OPTfundef (node *arg_node, info *arg_info)
              * optimization for SSA-form
              */
 
-            if (optimize & OPT_CF) {
-                arg_node = SSAConstantFolding (arg_node,
-                                               INFO_OPT_MODUL (arg_info)); /* ssacf_tab */
+            if (global.optimize.docf) {
+                arg_node
+                  = CFdoConstantFolding (arg_node,
+                                         INFO_OPT_MODULE (arg_info)); /* ssacf_tab */
             }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == (loop1 + loop2))
-                && (0 == strcmp (break_specifier, "cf"))) {
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == (loop1 + loop2))
+                && (0 == strcmp (global.break_specifier, "cf"))) {
                 goto INFO;
             }
 
             /*
              * This is needed to transform more index vectors in scalars or vice versa.
              */
-            if (optimize & OPT_WLT) {
-                arg_node = SSAWithloopFoldingWLT (arg_node);
+            if (global.optimize.dowlt) {
+                arg_node = WLFdoWithloopFoldingWlt (arg_node);
             }
 
-            if ((break_after == PH_sacopt) && (break_cycle_specifier == (loop1 + loop2))
-                && (0 == strcmp (break_specifier, "wlt"))) {
+            if ((global.break_after == PH_sacopt)
+                && (global.break_cycle_specifier == (loop1 + loop2))
+                && (0 == strcmp (global.break_specifier, "wlt"))) {
                 goto INFO;
             }
         }
@@ -1300,30 +1310,30 @@ OPTfundef (node *arg_node, info *arg_info)
         /*
          * We apply DCR once again:
          */
-        if (optimize & OPT_DCR) {
-            arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
+        if (global.optimize.dodcr) {
+            arg_node = DCRdoDeadCodeRemoval (arg_node, INFO_OPT_MODULE (arg_info));
         }
 
         /*
          * Finally, we apply WLFS followed by CSE and DCR:
          */
-        if (optimize & OPT_WLFS) {
-            arg_node = WithloopFusion (arg_node);
+        if (global.optimize.dowlfs) {
+            arg_node = WLFSdoWithloopFusion (arg_node);
         }
 
         if (wlfs_expr != mem_wlfs_expr) {
 
-            if (optimize & OPT_CSE) {
-                arg_node = SSACSE (arg_node, INFO_OPT_MODUL (arg_info));
+            if (global.optimize.docse) {
+                arg_node = CSEdoCse (arg_node, INFO_OPT_MODULE (arg_info));
             }
 
-            if (optimize & OPT_DCR) {
-                arg_node = SSADeadCodeRemoval (arg_node, INFO_OPT_MODUL (arg_info));
+            if (global.optimize.dodcr) {
+                arg_node = DCRdoDeadCodeRemoval (arg_node, INFO_OPT_MODULE (arg_info));
             }
         }
 
-        if ((break_after == PH_sacopt) && (break_cycle_specifier == 0)
-            && (0 == strcmp (break_specifier, "wlfs"))) {
+        if ((global.break_after == PH_sacopt) && (global.break_cycle_specifier == 0)
+            && (0 == strcmp (global.break_specifier, "wlfs"))) {
             goto INFO;
         }
 
@@ -1332,7 +1342,7 @@ OPTfundef (node *arg_node, info *arg_info)
          */
         do_break = FALSE;
     INFO:
-        if (loop1 + loop2 == max_optcycles
+        if (loop1 + loop2 == global.max_optcycles
             && ((cse_expr != old_cse_expr) || (cf_expr != old_cf_expr)
                 || (wlt_expr != old_wlt_expr) || (wlf_expr != old_wlf_expr)
                 || (dead_fun + dead_var + dead_expr != old_dcr_expr)
@@ -1350,7 +1360,7 @@ OPTfundef (node *arg_node, info *arg_info)
     }
 
     if (FUNDEF_NEXT (arg_node)) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
