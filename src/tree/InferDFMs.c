@@ -1,7 +1,7 @@
 /*
  *
  * $Log$
- * Revision 1.21  2002/07/12 16:56:56  dkr
+ * Revision 1.22  2002/07/12 17:00:46  dkr
  * INFDFMSicm(): modifications for TAGGED_ARRAYS done
  *
  * Revision 1.20  2002/04/16 18:27:15  dkr
@@ -1683,9 +1683,17 @@ INFDFMSicm (node *arg_node, node *arg_info)
     }
 #ifdef TAGGED_ARRAYS
     else if (!strcmp (name, "ND_VECT2OFFSET")) {
+        /*
+         * ND_VECT2OFFSET( off_name, ., arr_name, ...):
+         *   off_name = ... arr_name ...;
+         *
+         * def: 1st arg
+         * use: 3nd arg
+         */
+        arg_info = DefinedId (arg_info, ICM_ARG1 (arg_node));
+        arg_info = UsedId (arg_info, ICM_ARG3 (arg_node));
 #else
     else if (!strcmp (name, "ND_KS_VECT2OFFSET")) {
-#endif
         /*
          * ND_KS_VECT2OFFSET( off_name, arr_name, ...):
          *   off_name = ... arr_name ...;
@@ -1695,6 +1703,7 @@ INFDFMSicm (node *arg_node, node *arg_info)
          */
         arg_info = DefinedId (arg_info, ICM_ARG1 (arg_node));
         arg_info = UsedId (arg_info, ICM_ARG2 (arg_node));
+#endif
     } else {
         DBUG_ASSERT ((0), "unknown ICM found!");
     }
