@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2002/11/26 00:17:56  dkr
+ * several superfluous concat-operators removed in macro definitions
+ *
  * Revision 3.7  2002/10/08 01:53:15  dkr
  * more CAT?? macros added
  *
@@ -191,23 +194,20 @@
 #define xCAT19(x, y) x##y
 
 #define AddParens(a) xAddParens (a)
-#define xAddParens(a) (##a##)
-
-#define PrependComma(a) xPrependComma (a)
-#define xPrependComma(a) , ##a
+#define xAddParens(a) (a)
 
 /*
  * Catenate arguments, insert commas, add parens.
  */
 
 #define BuildArgs2(a, b) xBuildArgs2 (a, b)
-#define xBuildArgs2(a, b) (##a##, ##b##)
+#define xBuildArgs2(a, b) (a, b)
 
 #define BuildArgs3(a, b, c) xBuildArgs3 (a, b, c)
-#define xBuildArgs3(a, b, c) (##a##, ##b##, ##c##)
+#define xBuildArgs3(a, b, c) (a, b, c)
 
 #define BuildArgs4(a, b, c, d) xBuildArgs4 (a, b, c, d)
-#define xBuildArgs4(a, b, c, d) (##a##, ##b##, ##c##, ##d##)
+#define xBuildArgs4(a, b, c, d) (a, b, c, d)
 
 /*
  * VIEW is a handy viewer for testing macros
