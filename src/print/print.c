@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.26  1995/01/05 15:28:00  asi
- * DBUG_PRINT( OPTP,... added - defined and used variables
+ * Revision 1.27  1995/01/06 14:57:10  asi
+ * changed OPTP to MASK and spezial Variable output added
+ *
+ * Revision 1.26  1995/01/05  15:28:00  asi
+ * DBUG_PRINT( MASK,... added - defined and used variables
  * will be printed
  *
  * Revision 1.25  1995/01/05  11:51:25  sbs
@@ -137,8 +140,10 @@ PrintAssign (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
-    DBUG_PRINT ("OPTP", ("Def. Variables : %s", PrintMask (arg_node->mask[0])));
-    DBUG_PRINT ("OPTP", ("Used Variables : %s", PrintMask (arg_node->mask[1])));
+    DBUG_PRINT ("MASK", ("Def. Variables : %s", PrintMask (arg_node->mask[0])));
+    DBUG_PRINT ("MASK", ("Used Variables : %s", PrintMask (arg_node->mask[1])));
+    DBUG_PRINT ("MASK", ("Spz. Variables : %s", PrintMask (arg_node->mask[2])));
+
     for (i = 0; i < arg_node->nnode; i++) {
         INDENT;
         if (1 == i)
@@ -269,8 +274,8 @@ PrintFundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintFundef");
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
-    DBUG_PRINT ("OPTP", ("Def. Variables : %s", PrintMask (arg_node->mask[0])));
-    DBUG_PRINT ("OPTP", ("Used Variables : %s", PrintMask (arg_node->mask[1])));
+    DBUG_PRINT ("MASK", ("Def. Variables : %s", PrintMask (arg_node->mask[0])));
+    DBUG_PRINT ("MASK", ("Used Variables : %s", PrintMask (arg_node->mask[1])));
 
     fprintf (outfile, "\n");
     if (arg_node->node[0] == NULL) /* pure fundec! */
@@ -453,7 +458,7 @@ node *
 PrintArg (node *arg_node, node *info_node)
 {
     DBUG_ENTER ("PrintArg");
-    DBUG_PRINT ("OPTP", ("Number= : %d", arg_node->lineno));
+    DBUG_PRINT ("MASK", ("Number= : %d", arg_node->lineno));
 
     fprintf (outfile, "%s", Type2String (arg_node->info.types, 1));
 
@@ -471,7 +476,7 @@ PrintVardec (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintVardec");
 
     INDENT;
-    DBUG_PRINT ("OPTP", ("Number= : %d", arg_node->lineno));
+    DBUG_PRINT ("MASK", ("Number= : %d", arg_node->lineno));
 
     fprintf (outfile, "%s;\n", Type2String (arg_node->info.types, 1));
     if (1 == arg_node->nnode)
