@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2001/04/24 16:09:07  nmw
+ * SSATransformSingleFundef renamed to SSATransformOneFunction
+ *
  * Revision 1.5  2001/04/18 12:58:47  nmw
  * additional traversal setup function for single fundef traversal added
  *
@@ -42,7 +45,8 @@ extern node *SSAap (node *arg_node, node *arg_info);
 extern node *SSADummy (node *arg_node, node *arg_info);
 
 extern node *SSATransform (node *ast);
-extern node *SSATransformSingleFundef (node *fundef);
+extern node *SSATransformOneFunction (node *fundef);
+extern node *SSATransformOneFundef (node *fundef);
 
 extern node *SSANewVardec (node *old_vardec_or_arg);
 #endif /* _SSAtransform_h */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  2001/04/24 16:09:07  nmw
+ * SSATransformSingleFundef renamed to SSATransformOneFunction
+ *
  * Revision 1.15  2001/04/19 08:03:22  dkr
  * macro F_PTR used as format string for pointers
  *
@@ -124,6 +127,11 @@
 #include "SSATransform.h"
 
 #define TMP_STRING_LEN 16
+
+/* INFO_SSA_SINGLEFUNDEF */
+#define SSA_TRAV_FUNDEFS 0
+#define SSA_TRAV_SPECIALS 1
+#define SSA_TRAV_NONE 2
 
 /* INFO_SSA_CONDSTATUS */
 #define CONDSTATUS_NOCOND 0
@@ -483,7 +491,8 @@ SSAfundef (node *arg_node, node *arg_info)
     }
 
     /* traverse next fundef */
-    if ((INFO_SSA_SINGLEFUNDEF (arg_info) == FALSE) && (FUNDEF_NEXT (arg_node) != NULL)) {
+    if ((INFO_SSA_SINGLEFUNDEF (arg_info) == SSA_TRAV_FUNDEFS)
+        && (FUNDEF_NEXT (arg_node) != NULL)) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
@@ -744,7 +753,7 @@ SSAap (node *arg_node, node *arg_info)
 
     /* traverse special fundef without recursion (only in single fundef mode) */
     if ((FUNDEF_IS_LACFUN (AP_FUNDEF (arg_node)))
-        && (INFO_SSA_SINGLEFUNDEF (arg_info) == TRUE)
+        && (INFO_SSA_SINGLEFUNDEF (arg_info) == SSA_TRAV_SPECIALS)
         && (AP_FUNDEF (arg_node) != INFO_SSA_FUNDEF (arg_info))) {
         DBUG_PRINT ("SSA", ("traverse in special fundef %s",
                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
@@ -1239,7 +1248,7 @@ SSATransform (node *syntax_tree)
     DBUG_PRINT ("OPT", ("starting ssa transformation for ast"));
 
     arg_info = MakeInfo ();
-    INFO_SSA_SINGLEFUNDEF (arg_info) = FALSE;
+    INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_FUNDEFS;
 
     old_tab = act_tab;
     act_tab = ssafrm_tab;
@@ -1256,31 +1265,29 @@ SSATransform (node *syntax_tree)
 /******************************************************************************
  *
  * function:
- *   node *SSATransformSingleFundef(node *fundef)
+ *   node *SSATransformOneFunction(node *fundef)
  *
  * description:
- *   same as SSATransform, but traverses only the given single fundef. this
- *   improves performance, when updating ssaform in the optimization cycle.
- *   it does NOT traverse special fundefs (they will be traverses in order
- *   of their usage)
+ *   same as SSATransform, but traverses only the given single functions
+ *   including the (implicit inlined) special fundefs, too.
  *
  ******************************************************************************/
 node *
-SSATransformSingleFundef (node *fundef)
+SSATransformOneFunction (node *fundef)
 {
     node *arg_info;
     funtab *old_tab;
 
-    DBUG_ENTER ("SSATransformSingleFundef");
+    DBUG_ENTER ("SSATransformOneFunction");
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "SSATransformSingleFundef is used for fundef nodes only");
+                 "SSATransformOneFunction is used for fundef nodes only");
 
     if (!(FUNDEF_IS_LACFUN (fundef))) {
         DBUG_PRINT ("OPT", ("starting ssa transformation for %s", FUNDEF_NAME (fundef)));
 
         arg_info = MakeInfo ();
-        INFO_SSA_SINGLEFUNDEF (arg_info) = TRUE;
+        INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_SPECIALS;
 
         old_tab = act_tab;
         act_tab = ssafrm_tab;
@@ -1291,6 +1298,44 @@ SSATransformSingleFundef (node *fundef)
 
         FREE (arg_info);
     }
+
+    DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SSATransformOneFundef(node *fundef)
+ *
+ * description:
+ *   same as SSATransform, but traverses only the given single fundef without
+ *   used special fundefs.
+ *
+ ******************************************************************************/
+node *
+SSATransformOneFundef (node *fundef)
+{
+    node *arg_info;
+    funtab *old_tab;
+
+    DBUG_ENTER ("SSATransformOneFundef");
+
+    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+                 "SSATransformOneFundef is used for fundef nodes only");
+
+    DBUG_PRINT ("OPT", ("starting ssa transformation for %s", FUNDEF_NAME (fundef)));
+
+    arg_info = MakeInfo ();
+    INFO_SSA_SINGLEFUNDEF (arg_info) = SSA_TRAV_NONE;
+
+    old_tab = act_tab;
+    act_tab = ssafrm_tab;
+
+    fundef = Trav (fundef, arg_info);
+
+    act_tab = old_tab;
+
+    FREE (arg_info);
 
     DBUG_RETURN (fundef);
 }
