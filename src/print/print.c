@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.134  2003/05/21 16:38:54  ktr
+ * printArray now prints multidimensional N_array nodes.
+ *
  * Revision 3.133  2003/04/04 17:01:02  sbs
  * prf_node_info.mac extended
  *
@@ -2485,13 +2488,29 @@ PrintArray (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintArray");
 
+    int i;
+
+    int old_print_dim = INFO_PRINT_DIM (arg_info);
+    shpseg *old_print_shape = INFO_PRINT_SHAPE (arg_info);
+    shpseg *old_print_shape_counter = INFO_PRINT_SHAPE_COUNTER (arg_info);
+
     if (ARRAY_AELEMS (arg_node) != NULL) {
-        fprintf (outfile, "[ ");
+        INFO_PRINT_DIM (arg_info) = ARRAY_DIM (arg_node);
+        INFO_PRINT_SHAPE (arg_info) = ARRAY_SHPSEG (arg_node);
+        INFO_PRINT_SHAPE_COUNTER (arg_info)
+          = Array2Shpseg (CreateZeroVector (ARRAY_DIM (arg_node), T_int), NULL);
+        for (i = 0; i < ARRAY_DIM (arg_node); i++)
+            fprintf (outfile, "[ ");
         Trav (ARRAY_AELEMS (arg_node), arg_info);
-        fprintf (outfile, " ]");
+        for (i = 0; i < ARRAY_DIM (arg_node); i++)
+            fprintf (outfile, " ]");
     } else {
         fprintf (outfile, "[]");
     }
+
+    INFO_PRINT_DIM (arg_info) = old_print_dim;
+    INFO_PRINT_SHAPE (arg_info) = old_print_shape;
+    INFO_PRINT_SHAPE_COUNTER (arg_info) = old_print_shape_counter;
 
     if (compiler_phase != PH_genccode) {
         DBUG_EXECUTE ("PRINT_CAR", DbugPrintArray (arg_node););
@@ -2515,10 +2534,22 @@ PrintExprs (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintExprs");
 
+    int i;
+    int j;
+
     Trav (EXPRS_EXPR (arg_node), arg_info);
 
     if (EXPRS_NEXT (arg_node) != NULL) {
+        for (i = 0; (i < INFO_PRINT_DIM (arg_info))
+                    && (++SHPSEG_SHAPE (INFO_PRINT_SHAPE_COUNTER (arg_info), i)
+                        >= SHPSEG_SHAPE (INFO_PRINT_SHAPE (arg_info), i));
+             i++)
+            SHPSEG_SHAPE (INFO_PRINT_SHAPE_COUNTER (arg_info), i) = 0;
+        for (j = 0; j < i; j++)
+            fprintf (outfile, " ]");
         fprintf (outfile, ", ");
+        for (j = 0; j < i; j++)
+            fprintf (outfile, "[ ");
         PRINT_CONT (Trav (EXPRS_NEXT (arg_node), arg_info), ;);
     }
 
@@ -4412,6 +4443,8 @@ Print (node *syntax_tree)
     /* we want to duplicate all sons */
     INFO_PRINT_CONT (arg_info) = NULL;
 
+    INFO_PRINT_DIM (arg_info) = 0;
+
     syntax_tree = PrintTrav (syntax_tree, arg_info);
 
     arg_info = Free (arg_info);
@@ -4444,6 +4477,8 @@ PrintNode (node *syntax_tree)
     arg_info = MakeInfo ();
     /* we want to duplicate all sons */
     INFO_PRINT_CONT (arg_info) = syntax_tree;
+
+    INFO_PRINT_DIM (arg_info) = 0;
 
     syntax_tree = PrintTrav (syntax_tree, arg_info);
 
