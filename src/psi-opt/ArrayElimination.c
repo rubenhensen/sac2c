@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.12  2000/07/14 11:34:41  dkr
+ * FUNDEF_INLINE==0 replaced by !FUNDEF_INLINE
+ *
  * Revision 2.11  2000/07/14 09:35:17  dkr
  * DupIds called with (arg_info = NULL) now
  *
@@ -374,7 +377,7 @@ AEfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("AEfundef");
 
-    if (FUNDEF_BODY (arg_node) && 0 == FUNDEF_INLINE (arg_node)) {
+    if (FUNDEF_BODY (arg_node) && (!FUNDEF_INLINE (arg_node))) {
         DBUG_PRINT ("AE", ("*** Trav function %s", FUNDEF_NAME (arg_node)));
 
         INFO_AE_TYPES (arg_info) = NULL;

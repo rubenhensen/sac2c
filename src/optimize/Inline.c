@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.6  2000/07/14 11:34:47  dkr
+ * FUNDEF_INLINE==0 replaced by !FUNDEF_INLINE
+ *
  * Revision 2.5  2000/07/12 15:14:31  dkr
  * function DuplicateTypes renamed into DupTypes
  * function SearchDecl moved to tree_compound.c
@@ -195,11 +198,6 @@ INLmodul (node *arg_node, node *arg_info)
  *  description   : temporary attribute FUNDEF_INLREC set to maximun
  *                  of allowed recursive substitutions
  *  global vars   : inlnum
- *  internal funs : ---
- *  external funs : ---
- *  macros        : FUNDEF_INLINE, FUNDEF_INLREC, FUNDEF_NEXT
- *
- *  remarks       : ---
  *
  */
 
@@ -212,10 +210,12 @@ InlineNo (node *first)
 
     fun_node = first;
     while (fun_node) {
-        if (FUNDEF_INLINE (fun_node))
+        if (FUNDEF_INLINE (fun_node)) {
             FUNDEF_INLREC (fun_node) = inlnum;
+        }
         fun_node = FUNDEF_NEXT (fun_node);
     }
+
     DBUG_VOID_RETURN;
 }
 
@@ -226,12 +226,6 @@ InlineNo (node *first)
  *                  2) N_info - node
  *                  R) N_fundef - node
  *  description   : Traverses instructons if function not inlined marked
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : Trav            (traverse.h)
- *                  AppendNodeChain (tree.h)
- *  macros        : FUNDEF_BODY, FUNDEF_INLINE, FUNDEF_NAME, FIRST_FUNC, INL_TYPES,
- *                  FUNDEF_INSTR, FUNDEF_VARDEC, FUNDEF_NEXT
  *
  */
 
@@ -240,8 +234,9 @@ INLfundef (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("INLfundef");
 
-    if (FUNDEF_BODY (arg_node) && (0 == FUNDEF_INLINE (arg_node))) {
+    if (FUNDEF_BODY (arg_node) && (!FUNDEF_INLINE (arg_node))) {
         DBUG_PRINT ("INL", ("*** Trav function %s", FUNDEF_NAME (arg_node)));
+
         InlineNo (INFO_INL_FIRST_FUNC (arg_info));
 
         INFO_INL_TYPES (arg_info) = NULL;
@@ -252,8 +247,9 @@ INLfundef (node *arg_node, node *arg_info)
           = AppendNodeChain (0, INFO_INL_TYPES (arg_info), FUNDEF_VARDEC (arg_node));
     }
 
-    if (FUNDEF_NEXT (arg_node))
+    if (FUNDEF_NEXT (arg_node)) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -400,14 +396,6 @@ InlineSingleApplication (node *let_node, node *fundef_node)
  *                  2) N_info - node
  *                  R) N_assign - chain
  *  description   : Initiate function inlining if substitution-counter not 0
- *  global vars   : ---
- *  internal funs : DoInline
- *  external funs : Trav            (traverse.h)
- *                  AppendNodeChain (tree.h)
- *  macros        : NODE_TYPE, AP_NAME, NODE_LINE, FUNDEF_INLINE, FUNDEF_INLREC,
- *                  AP_FUNDEF, ASSIGN_INSTR, ASSIGN_NEXT,
- *
- *  remarks       : ---
  *
  */
 
