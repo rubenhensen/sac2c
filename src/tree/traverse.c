@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/06 19:22:02  dkr
+ * PrintTravPre, PrintTravPost added
+ * DupTreePre renamed into DupTreeTravPre
+ * DupTreePost renamed into DupTreeTravPost
+ *
  * Revision 3.2  2000/12/06 18:26:04  cg
  * Added new traversal tccp for typecheck constant propagation.
  *
@@ -313,8 +318,8 @@ static funtab print_tab_rec = {{
 #define NIFprint(it_print) it_print
 #include "node_info.mac"
                                },
-                               NULL,
-                               NULL};
+                               PrintTravPre,
+                               PrintTravPost};
 funtab *print_tab = &print_tab_rec;
 
 /*
@@ -423,8 +428,8 @@ static funtab dup_tab_rec = {{
 #define NIFdup(it_dup) it_dup
 #include "node_info.mac"
                              },
-                             DupTreePre,
-                             DupTreePost};
+                             DupTreeTravPre,
+                             DupTreeTravPost};
 funtab *dup_tab = &dup_tab_rec;
 
 /*
