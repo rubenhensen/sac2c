@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.5  2001/07/18 13:08:19  cg
+# make deps done
+#
 # Revision 3.4  2001/03/02 14:46:00  sbs
 # make deps done
 #
@@ -102,8 +105,9 @@ dbug.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 dbug.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 dbug.o: /usr/include/string.h /usr/include/stdlib.h /usr/include/unistd.h
 dbug.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-dbug.o: /usr/include/sys/int_types.h /usr/include/sys/unistd.h
-dbug.o: /usr/include/malloc.h ../../inc/dbug.h
+dbug.o: /usr/include/sys/int_types.h /usr/include/sys/select.h
+dbug.o: /usr/include/sys/time.h /usr/include/sys/time.h
+dbug.o: /usr/include/sys/unistd.h /usr/include/malloc.h ../../inc/dbug.h
 main_args.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 main_args.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 main_args.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h

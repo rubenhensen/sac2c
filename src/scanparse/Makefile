@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.7  2001/07/18 13:08:16  cg
+# make deps done
+#
 # Revision 3.6  2001/04/26 21:09:43  dkr
 # make deps done
 #
@@ -109,9 +112,10 @@ y.tab.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 y.tab.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 y.tab.o: /usr/include/stdlib.h /usr/include/memory.h /usr/include/sys/types.h
 y.tab.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-y.tab.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
+y.tab.o: /usr/include/sys/select.h /usr/include/sys/time.h
+y.tab.o: /usr/include/sys/time.h ../global/types.h ../tree/tree_basic.h
 y.tab.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
 y.tab.o: ../global/globals.h ../global/internal_lib.h ../../inc/dbug.h
 y.tab.o: ../typecheck/typecheck.h ../tree/DupTree.h ../tree/LookUpTable.h
 y.tab.o: ../global/my_debug.h ../tree/free.h ../modules/readsib.h
-y.tab.o: ../global/resource.h
+y.tab.o: ../global/resource.h /usr/include/alloca.h

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.7  2001/07/18 13:08:17  cg
+# make deps done
+#
 # Revision 3.6  2001/03/22 20:20:00  dkr
 # make deps done
 #
@@ -119,14 +122,15 @@ clean:
 analysis.o: ../../inc/dbug.h /usr/include/stdio.h
 analysis.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 analysis.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-analysis.o: /usr/include/stdio_impl.h ../global/types.h ../tree/tree_basic.h
-analysis.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
-analysis.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
+analysis.o: /usr/include/stdio_impl.h /usr/include/stdlib.h ../global/types.h
+analysis.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+analysis.o: /usr/include/string.h ../global/globals.h ../tree/traverse.h
 cccall.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 cccall.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 cccall.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 cccall.o: /usr/include/time.h /usr/include/sys/types.h
 cccall.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+cccall.o: /usr/include/sys/select.h /usr/include/sys/time.h
 cccall.o: /usr/include/stdlib.h ../global/types.h ../tree/tree_basic.h
 cccall.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
 cccall.o: ../global/globals.h ../../inc/dbug.h ../global/internal_lib.h
@@ -143,11 +147,12 @@ checkdec.o: ../global/internal_lib.h import.h ../print/convert.h filemgr.h
 checkdec.o: implicittypes.h ../print/print.h checkdec.h
 filemgr.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 filemgr.o: /usr/include/sys/isa_defs.h /usr/include/string.h
-filemgr.o: /usr/include/stdarg.h /usr/include/varargs.h
-filemgr.o: /usr/include/sys/va_list.h /usr/include/unistd.h
-filemgr.o: /usr/include/sys/types.h /usr/include/sys/machtypes.h
-filemgr.o: /usr/include/sys/int_types.h /usr/include/sys/unistd.h
-filemgr.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/stdio_tag.h
+filemgr.o: /usr/include/stdarg.h /usr/include/sys/va_list.h
+filemgr.o: /usr/include/unistd.h /usr/include/sys/types.h
+filemgr.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+filemgr.o: /usr/include/sys/select.h /usr/include/sys/time.h
+filemgr.o: /usr/include/time.h /usr/include/sys/unistd.h ../../inc/dbug.h
+filemgr.o: /usr/include/stdio.h /usr/include/stdio_tag.h
 filemgr.o: /usr/include/stdio_impl.h ../global/internal_lib.h
 filemgr.o: ../global/types.h ../global/Error.h ../global/globals.h
 filemgr.o: ../tree/free.h ../global/my_debug.h filemgr.h ../global/resource.h
@@ -162,9 +167,9 @@ implicittypes.o: ../print/convert.h ../tree/free.h ../../inc/dbug.h
 implicittypes.o: ../global/my_debug.h ../global/internal_lib.h
 implicittypes.o: ../tree/traverse.h
 import.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-import.o: /usr/include/sys/isa_defs.h /usr/include/limits.h ../tree/tree.h
-import.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
-import.o: ../global/Error.h /usr/include/stdio.h /usr/include/sys/va_list.h
+import.o: /usr/include/sys/isa_defs.h /usr/include/limits.h ../global/types.h
+import.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+import.o: /usr/include/stdio.h /usr/include/sys/va_list.h
 import.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 import.o: /usr/include/stdlib.h ../global/globals.h ../global/internal_lib.h
 import.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h

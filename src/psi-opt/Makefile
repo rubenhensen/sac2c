@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.12  2001/07/18 13:08:19  cg
+# make deps done
+#
 # Revision 3.11  2001/05/15 16:38:38  nmw
 # SSAWLI.o and SSAWLF.o added
 #
@@ -144,14 +147,54 @@ ArrayElimination.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 ArrayElimination.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 ArrayElimination.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 ArrayElimination.o: /usr/include/stdlib.h /usr/include/string.h
-ArrayElimination.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
+ArrayElimination.o: ../global/types.h ../tree/tree_basic.h
 ArrayElimination.o: ../tree/tree_compound.h ../global/Error.h
 ArrayElimination.o: ../global/globals.h ../global/internal_lib.h
 ArrayElimination.o: ../../inc/dbug.h ../global/my_debug.h ../tree/traverse.h
-ArrayElimination.o: ../typecheck/typecheck.h ../tree/free.h ../tree/DupTree.h
-ArrayElimination.o: ../tree/LookUpTable.h ../optimize/optimize.h
-ArrayElimination.o: ../optimize/generatemasks.h
+ArrayElimination.o: ../tree/free.h ../tree/DupTree.h ../tree/LookUpTable.h
+ArrayElimination.o: ../optimize/optimize.h ../optimize/generatemasks.h
 ArrayElimination.o: ../optimize/LoopInvariantRemoval.h ArrayElimination.h
+SSAWLF.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+SSAWLF.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+SSAWLF.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+SSAWLF.o: /usr/include/stdlib.h /usr/include/limits.h ../global/types.h
+SSAWLF.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+SSAWLF.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
+SSAWLF.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
+SSAWLF.o: ../tree/DupTree.h ../tree/LookUpTable.h ../tree/traverse.h
+SSAWLF.o: ../optimize/optimize.h SSAWithloopFolding.h SSAWLF.h
+SSAWLF.o: ../constants/shape.h
+SSAWLI.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+SSAWLI.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+SSAWLI.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+SSAWLI.o: /usr/include/stdlib.h ../global/types.h ../tree/tree_basic.h
+SSAWLI.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
+SSAWLI.o: ../global/globals.h ../global/internal_lib.h ../tree/free.h
+SSAWLI.o: ../../inc/dbug.h ../global/my_debug.h ../tree/traverse.h
+SSAWLI.o: ../optimize/optimize.h ../optimize/SSAConstantFolding.h
+SSAWLI.o: SSAWithloopFolding.h SSAWLI.h
+SSAWLT.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+SSAWLT.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+SSAWLT.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+SSAWLT.o: /usr/include/stdlib.h ../global/types.h ../tree/tree_basic.h
+SSAWLT.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
+SSAWLT.o: ../global/globals.h ../global/internal_lib.h ../tree/free.h
+SSAWLT.o: ../../inc/dbug.h ../global/my_debug.h ../tree/DupTree.h
+SSAWLT.o: ../tree/LookUpTable.h ../tree/traverse.h ../optimize/optimize.h
+SSAWLT.o: SSAWithloopFolding.h SSAWLT.h
+SSAWithloopFolding.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+SSAWithloopFolding.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+SSAWithloopFolding.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+SSAWithloopFolding.o: /usr/include/stdlib.h ../global/types.h
+SSAWithloopFolding.o: ../tree/tree_basic.h ../tree/tree_compound.h
+SSAWithloopFolding.o: ../global/Error.h /usr/include/string.h
+SSAWithloopFolding.o: ../global/globals.h ../global/internal_lib.h
+SSAWithloopFolding.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
+SSAWithloopFolding.o: ../print/print.h ../tree/DupTree.h
+SSAWithloopFolding.o: ../tree/LookUpTable.h ../tree/traverse.h
+SSAWithloopFolding.o: ../optimize/optimize.h ../tree/CheckAvis.h
+SSAWithloopFolding.o: ../tree/SSATransform.h SSAWithloopFolding.h SSAWLT.h
+SSAWithloopFolding.o: SSAWLI.h
 WLF.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WLF.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 WLF.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
@@ -199,51 +242,53 @@ index.o: /usr/include/string.h ../global/types.h ../tree/tree_basic.h
 index.o: ../tree/tree_compound.h ../global/Error.h /usr/include/stdlib.h
 index.o: ../global/globals.h ../global/internal_lib.h ../../inc/dbug.h
 index.o: ../print/print.h ../tree/traverse.h ../tree/DupTree.h
-index.o: ../tree/LookUpTable.h ../tree/free.h ../global/my_debug.h index.h
-pad.o: /usr/include/stdarg.h /usr/include/varargs.h
-pad.o: /usr/include/sys/va_list.h ../../inc/dbug.h /usr/include/stdio.h
-pad.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-pad.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h ../global/types.h
+index.o: ../tree/LookUpTable.h ../tree/free.h ../global/my_debug.h
+index.o: ../print/convert.h index.h
+pad.o: /usr/include/stdarg.h /usr/include/sys/va_list.h ../../inc/dbug.h
+pad.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+pad.o: /usr/include/sys/isa_defs.h /usr/include/stdio_tag.h
+pad.o: /usr/include/stdio_impl.h /usr/include/stdlib.h ../global/types.h
 pad.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-pad.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
-pad.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
-pad.o: ../global/internal_lib.h ../modules/filemgr.h ../global/resource.h
-pad.o: pad.h pad_info.h pad_collect.h pad_infer.h pad_transform.h
+pad.o: /usr/include/string.h ../global/globals.h ../tree/traverse.h
+pad.o: ../tree/free.h ../global/my_debug.h ../global/internal_lib.h
+pad.o: ../modules/filemgr.h ../global/resource.h pad.h pad_info.h
+pad.o: pad_collect.h pad_infer.h pad_transform.h
 pad_collect.o: ../../inc/dbug.h /usr/include/stdio.h
 pad_collect.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 pad_collect.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-pad_collect.o: /usr/include/stdio_impl.h ../global/types.h
-pad_collect.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-pad_collect.o: /usr/include/string.h /usr/include/stdlib.h
-pad_collect.o: ../global/globals.h ../tree/traverse.h ../tree/free.h
-pad_collect.o: ../global/my_debug.h ../global/internal_lib.h
-pad_collect.o: ../tree/DupTree.h ../tree/LookUpTable.h pad_info.h
-pad_collect.o: pad_collect.h ../tree/prf_node_info.mac
+pad_collect.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+pad_collect.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+pad_collect.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+pad_collect.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
+pad_collect.o: ../global/internal_lib.h ../tree/DupTree.h
+pad_collect.o: ../tree/LookUpTable.h pad_info.h pad_collect.h
+pad_collect.o: ../tree/prf_node_info.mac
 pad_infer.o: ../../inc/dbug.h /usr/include/stdio.h
 pad_infer.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 pad_infer.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-pad_infer.o: /usr/include/stdio_impl.h ../global/types.h ../tree/tree_basic.h
-pad_infer.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
-pad_infer.o: /usr/include/stdlib.h ../global/globals.h ../tree/free.h
-pad_infer.o: ../global/my_debug.h ../global/internal_lib.h ../tree/DupTree.h
-pad_infer.o: ../tree/LookUpTable.h ../global/resource.h ../print/convert.h
-pad_infer.o: pad_infer.h pad_info.h pad.h ../tree/type_info.mac
+pad_infer.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+pad_infer.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+pad_infer.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+pad_infer.o: ../tree/free.h ../global/my_debug.h ../global/internal_lib.h
+pad_infer.o: ../tree/DupTree.h ../tree/LookUpTable.h ../global/resource.h
+pad_infer.o: ../print/convert.h pad_infer.h pad_info.h pad.h
+pad_infer.o: ../tree/type_info.mac
 pad_info.o: ../../inc/dbug.h /usr/include/stdio.h
 pad_info.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 pad_info.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-pad_info.o: /usr/include/stdio_impl.h ../global/types.h ../tree/tree_basic.h
-pad_info.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
-pad_info.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
+pad_info.o: /usr/include/stdio_impl.h /usr/include/stdlib.h ../global/types.h
+pad_info.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+pad_info.o: /usr/include/string.h ../global/globals.h ../tree/traverse.h
 pad_info.o: ../tree/free.h ../global/my_debug.h ../global/internal_lib.h
 pad_info.o: ../tree/DupTree.h ../tree/LookUpTable.h ../optimize/optimize.h
 pad_info.o: ../print/convert.h pad_info.h pad.h
 pad_transform.o: ../../inc/dbug.h /usr/include/stdio.h
 pad_transform.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 pad_transform.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-pad_transform.o: /usr/include/stdio_impl.h ../global/types.h
-pad_transform.o: ../tree/tree_basic.h ../tree/tree_compound.h
-pad_transform.o: ../global/Error.h /usr/include/string.h
-pad_transform.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
+pad_transform.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+pad_transform.o: ../global/types.h ../tree/tree_basic.h
+pad_transform.o: ../tree/tree_compound.h ../global/Error.h
+pad_transform.o: /usr/include/string.h ../global/globals.h ../tree/traverse.h
 pad_transform.o: ../tree/free.h ../global/my_debug.h ../global/internal_lib.h
 pad_transform.o: ../tree/DupTree.h ../tree/LookUpTable.h pad_info.h
 pad_transform.o: pad_transform.h ../tree/prf_node_info.mac

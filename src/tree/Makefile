@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.23  2001/07/18 13:08:21  cg
+# make deps done
+#
 # Revision 3.22  2001/07/18 12:57:45  cg
 # Compilation of file tree.c eliminated.
 #
@@ -126,18 +129,18 @@ clean:
 CheckAvis.o: ../../inc/dbug.h /usr/include/stdio.h
 CheckAvis.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 CheckAvis.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-CheckAvis.o: /usr/include/stdio_impl.h ../global/types.h tree_basic.h
-CheckAvis.o: tree_compound.h ../global/Error.h /usr/include/string.h
-CheckAvis.o: /usr/include/stdlib.h ../global/globals.h
+CheckAvis.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+CheckAvis.o: ../global/types.h tree_basic.h tree_compound.h ../global/Error.h
+CheckAvis.o: /usr/include/string.h ../global/globals.h
 CheckAvis.o: ../global/internal_lib.h traverse.h free.h ../global/my_debug.h
 CheckAvis.o: CheckAvis.h
 DataFlowMask.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 DataFlowMask.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 DataFlowMask.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-DataFlowMask.o: /usr/include/string.h ../../inc/dbug.h ../global/types.h
-DataFlowMask.o: tree_basic.h tree_compound.h ../global/Error.h
-DataFlowMask.o: /usr/include/stdlib.h ../global/globals.h
-DataFlowMask.o: ../global/internal_lib.h free.h ../global/my_debug.h
+DataFlowMask.o: /usr/include/string.h ../../inc/dbug.h /usr/include/stdlib.h
+DataFlowMask.o: ../global/types.h tree_basic.h tree_compound.h
+DataFlowMask.o: ../global/Error.h ../global/globals.h
+DataFlowMask.o: ../global/internal_lib.h
 DataFlowMaskUtils.o: ../global/types.h tree_basic.h tree_compound.h
 DataFlowMaskUtils.o: ../global/Error.h /usr/include/stdio.h
 DataFlowMaskUtils.o: /usr/include/sys/feature_tests.h
@@ -192,9 +195,9 @@ UndoSSATransform.o: UndoSSATransform.h DupTree.h LookUpTable.h
 adjust_ids.o: ../../inc/dbug.h /usr/include/stdio.h
 adjust_ids.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 adjust_ids.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-adjust_ids.o: /usr/include/stdio_impl.h ../global/types.h tree_basic.h
-adjust_ids.o: tree_compound.h ../global/Error.h /usr/include/string.h
-adjust_ids.o: /usr/include/stdlib.h ../global/globals.h
+adjust_ids.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+adjust_ids.o: ../global/types.h tree_basic.h tree_compound.h
+adjust_ids.o: ../global/Error.h /usr/include/string.h ../global/globals.h
 adjust_ids.o: ../global/internal_lib.h traverse.h free.h ../global/my_debug.h
 adjust_ids.o: DupTree.h LookUpTable.h ../refcount/refcount.h ../print/print.h
 change_signature.o: ../global/types.h tree_basic.h tree_compound.h
@@ -287,13 +290,8 @@ traverse.o: UndoSSATransform.h ../optimize/SSADeadCodeRemoval.h
 traverse.o: ../optimize/SSACSE.h compare_tree.h
 traverse.o: ../profile/annotate_fun_calls.h ../optimize/SSAConstantFolding.h
 traverse.o: ../optimize/SSALIR.h ../flatten/while2do.h ../optimize/SSALUR.h
-traverse.o: traverse.h
-tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
-tree.o: /usr/include/sys/isa_defs.h tree.h ../global/types.h tree_basic.h
-tree.o: tree_compound.h ../global/Error.h /usr/include/stdio.h
-tree.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-tree.o: /usr/include/stdio_impl.h /usr/include/string.h ../global/globals.h
-tree.o: ../global/internal_lib.h ../../inc/dbug.h ../global/my_debug.h
+traverse.o: ../psi-opt/SSAWLT.h ../psi-opt/SSAWLI.h ../psi-opt/SSAWLF.h
+traverse.o: ../optimize/rmcasts.h ../optimize/SSAInferLI.h traverse.h
 tree_basic.o: ../global/types.h tree_basic.h ../global/Error.h
 tree_basic.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 tree_basic.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h

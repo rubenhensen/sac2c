@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.21  2001/07/18 13:08:17  cg
+# make deps done
+#
 # Revision 3.20  2001/05/30 14:00:40  nmw
 # SSAInferLI.o added
 #
@@ -145,16 +148,16 @@ clean:
 CSE.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 CSE.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 CSE.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-CSE.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
-CSE.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-CSE.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-CSE.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h ../print/print.h
+CSE.o: /usr/include/stdlib.h ../global/types.h ../tree/tree_basic.h
+CSE.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
+CSE.o: ../global/globals.h ../global/internal_lib.h ../tree/free.h
+CSE.o: ../../inc/dbug.h ../global/my_debug.h ../print/print.h
 CSE.o: ../tree/traverse.h ../typecheck/typecheck.h optimize.h generatemasks.h
 CSE.o: ../tree/DupTree.h ../tree/LookUpTable.h CSE.h
 ConstantFolding.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 ConstantFolding.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 ConstantFolding.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-ConstantFolding.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
+ConstantFolding.o: /usr/include/stdlib.h ../global/types.h
 ConstantFolding.o: ../tree/tree_basic.h ../tree/tree_compound.h
 ConstantFolding.o: ../global/Error.h /usr/include/string.h
 ConstantFolding.o: ../global/globals.h ../global/internal_lib.h
@@ -196,7 +199,7 @@ LoopInvariantRemoval.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 LoopInvariantRemoval.o: /usr/include/sys/isa_defs.h
 LoopInvariantRemoval.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 LoopInvariantRemoval.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
-LoopInvariantRemoval.o: ../tree/tree.h ../global/types.h ../tree/tree_basic.h
+LoopInvariantRemoval.o: ../global/types.h ../tree/tree_basic.h
 LoopInvariantRemoval.o: ../tree/tree_compound.h ../global/Error.h
 LoopInvariantRemoval.o: /usr/include/string.h ../global/globals.h
 LoopInvariantRemoval.o: ../global/internal_lib.h ../tree/free.h
@@ -212,14 +215,14 @@ SSACSE.o: /usr/include/stdio_impl.h /usr/include/string.h
 SSACSE.o: /usr/include/stdlib.h ../global/globals.h ../global/internal_lib.h
 SSACSE.o: ../../inc/dbug.h ../tree/traverse.h ../tree/free.h
 SSACSE.o: ../global/my_debug.h ../tree/DupTree.h ../tree/LookUpTable.h
-SSACSE.o: SSACSE.h ../tree/compare_tree.h optimize.h ../typecheck/typecheck.h
+SSACSE.o: SSACSE.h ../tree/compare_tree.h optimize.h
 SSAConstantFolding.o: ../../inc/dbug.h /usr/include/stdio.h
 SSAConstantFolding.o: /usr/include/sys/feature_tests.h
 SSAConstantFolding.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 SSAConstantFolding.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-SSAConstantFolding.o: ../global/types.h ../tree/tree_basic.h
-SSAConstantFolding.o: ../tree/tree_compound.h ../global/Error.h
-SSAConstantFolding.o: /usr/include/string.h /usr/include/stdlib.h
+SSAConstantFolding.o: /usr/include/stdlib.h ../global/types.h
+SSAConstantFolding.o: ../tree/tree_basic.h ../tree/tree_compound.h
+SSAConstantFolding.o: ../global/Error.h /usr/include/string.h
 SSAConstantFolding.o: ../global/globals.h ../global/internal_lib.h
 SSAConstantFolding.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
 SSAConstantFolding.o: ../tree/DupTree.h ../tree/LookUpTable.h
@@ -241,19 +244,21 @@ SSADeadCodeRemoval.o: ../tree/change_signature.h
 SSAInferLI.o: ../../inc/dbug.h /usr/include/stdio.h
 SSAInferLI.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 SSAInferLI.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-SSAInferLI.o: /usr/include/stdio_impl.h ../tree/tree_basic.h
-SSAInferLI.o: ../global/types.h ../tree/tree_compound.h ../global/Error.h
-SSAInferLI.o: /usr/include/string.h /usr/include/stdlib.h ../global/globals.h
-SSAInferLI.o: ../tree/traverse.h SSAInferLI.h
+SSAInferLI.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+SSAInferLI.o: ../tree/tree_basic.h ../global/types.h ../tree/tree_compound.h
+SSAInferLI.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+SSAInferLI.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
+SSAInferLI.o: ../global/internal_lib.h SSAInferLI.h
 SSALIR.o: ../../inc/dbug.h /usr/include/stdio.h
 SSALIR.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 SSALIR.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-SSALIR.o: /usr/include/stdio_impl.h ../tree/tree_basic.h ../global/types.h
-SSALIR.o: ../global/internal_lib.h ../tree/traverse.h ../tree/free.h
-SSALIR.o: /usr/include/stdlib.h ../global/my_debug.h ../global/globals.h
-SSALIR.o: ../tree/DupTree.h ../tree/LookUpTable.h optimize.h SSALIR.h
-SSALIR.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
-SSALIR.o: ../tree/change_signature.h ../tree/SSATransform.h
+SSALIR.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+SSALIR.o: ../tree/tree_basic.h ../global/types.h ../global/internal_lib.h
+SSALIR.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
+SSALIR.o: ../global/globals.h ../tree/DupTree.h ../tree/LookUpTable.h
+SSALIR.o: optimize.h SSALIR.h ../tree/tree_compound.h ../global/Error.h
+SSALIR.o: /usr/include/string.h ../tree/change_signature.h
+SSALIR.o: ../tree/SSATransform.h
 SSALUR.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
 SSALUR.o: ../global/Error.h /usr/include/stdio.h
 SSALUR.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -268,21 +273,20 @@ SSALUR.o: WLUnroll.h ../tree/prf_node_info.mac
 Unroll.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 Unroll.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 Unroll.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-Unroll.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
-Unroll.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-Unroll.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
-Unroll.o: ../tree/free.h ../../inc/dbug.h ../global/my_debug.h
-Unroll.o: ../tree/traverse.h optimize.h generatemasks.h ConstantFolding.h
-Unroll.o: ../tree/DupTree.h ../tree/LookUpTable.h Unroll.h WLUnroll.h
+Unroll.o: /usr/include/stdlib.h ../global/types.h ../tree/tree_basic.h
+Unroll.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
+Unroll.o: ../global/globals.h ../global/internal_lib.h ../tree/free.h
+Unroll.o: ../../inc/dbug.h ../global/my_debug.h ../tree/traverse.h optimize.h
+Unroll.o: generatemasks.h ConstantFolding.h ../tree/DupTree.h
+Unroll.o: ../tree/LookUpTable.h Unroll.h WLUnroll.h
 Unswitch.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 Unswitch.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 Unswitch.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-Unswitch.o: /usr/include/stdlib.h ../tree/tree.h ../global/types.h
-Unswitch.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-Unswitch.o: /usr/include/string.h ../global/globals.h
-Unswitch.o: ../global/internal_lib.h ../tree/free.h ../../inc/dbug.h
-Unswitch.o: ../global/my_debug.h ../tree/traverse.h optimize.h
-Unswitch.o: generatemasks.h ConstantFolding.h ../tree/DupTree.h
+Unswitch.o: /usr/include/stdlib.h ../global/types.h ../tree/tree_basic.h
+Unswitch.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
+Unswitch.o: ../global/globals.h ../global/internal_lib.h ../tree/free.h
+Unswitch.o: ../../inc/dbug.h ../global/my_debug.h ../tree/traverse.h
+Unswitch.o: optimize.h generatemasks.h ConstantFolding.h ../tree/DupTree.h
 Unswitch.o: ../tree/LookUpTable.h Unroll.h Unswitch.h
 WLUnroll.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 WLUnroll.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
@@ -312,7 +316,7 @@ freemasks.o: ../../inc/dbug.h ../global/my_debug.h ../tree/traverse.h
 generatemasks.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 generatemasks.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 generatemasks.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-generatemasks.o: /usr/include/stdlib.h /usr/include/string.h ../tree/tree.h
+generatemasks.o: /usr/include/stdlib.h /usr/include/string.h
 generatemasks.o: ../global/types.h ../tree/tree_basic.h
 generatemasks.o: ../tree/tree_compound.h ../global/Error.h
 generatemasks.o: ../global/globals.h ../global/internal_lib.h ../tree/free.h
@@ -342,7 +346,7 @@ optimize.o: ../psi-opt/SSAWithloopFolding.h rmcasts.h SSAInferLI.h
 rmcasts.o: ../../inc/dbug.h /usr/include/stdio.h
 rmcasts.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 rmcasts.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-rmcasts.o: /usr/include/stdio_impl.h ../global/types.h ../tree/tree_basic.h
-rmcasts.o: ../tree/traverse.h ../tree/free.h /usr/include/stdlib.h
+rmcasts.o: /usr/include/stdio_impl.h /usr/include/stdlib.h ../global/types.h
+rmcasts.o: ../tree/tree_basic.h ../tree/traverse.h ../tree/free.h
 rmcasts.o: ../global/my_debug.h ../global/globals.h ../global/internal_lib.h
 rmcasts.o: rmcasts.h

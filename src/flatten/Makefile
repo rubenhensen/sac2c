@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.16  2001/07/18 13:08:15  cg
+# make deps done
+#
 # Revision 3.15  2001/04/26 21:09:40  dkr
 # make deps done
 #
@@ -136,9 +139,9 @@ flatten.o: ../tree/DupTree.h ../tree/LookUpTable.h flatten.h
 fun2lac.o: ../../inc/dbug.h /usr/include/stdio.h
 fun2lac.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 fun2lac.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-fun2lac.o: /usr/include/stdio_impl.h ../global/types.h ../tree/tree_basic.h
-fun2lac.o: ../tree/tree_compound.h ../global/Error.h /usr/include/string.h
-fun2lac.o: /usr/include/stdlib.h ../global/globals.h ../global/internal_lib.h
+fun2lac.o: /usr/include/stdio_impl.h /usr/include/stdlib.h ../global/types.h
+fun2lac.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+fun2lac.o: /usr/include/string.h ../global/globals.h ../global/internal_lib.h
 fun2lac.o: ../tree/traverse.h ../tree/free.h ../global/my_debug.h
 fun2lac.o: ../tree/DupTree.h ../tree/LookUpTable.h ../print/print.h
 fun2lac.o: ../optimize/Inline.h
@@ -155,7 +158,7 @@ lac2fun.o: ../tree/InferDFMs.h ../tree/cleanup_decls.h lac2fun.h
 while2do.o: ../../inc/dbug.h /usr/include/stdio.h
 while2do.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 while2do.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-while2do.o: /usr/include/stdio_impl.h ../global/types.h ../tree/tree_basic.h
-while2do.o: ../tree/traverse.h ../tree/DupTree.h ../tree/LookUpTable.h
-while2do.o: ../tree/free.h /usr/include/stdlib.h ../global/my_debug.h
+while2do.o: /usr/include/stdio_impl.h /usr/include/stdlib.h ../global/types.h
+while2do.o: ../tree/tree_basic.h ../tree/traverse.h ../tree/DupTree.h
+while2do.o: ../tree/LookUpTable.h ../tree/free.h ../global/my_debug.h
 while2do.o: ../global/globals.h ../global/internal_lib.h while2do.h

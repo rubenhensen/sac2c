@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.9  2001/07/18 13:08:15  cg
+# make deps done
+#
 # Revision 3.8  2001/04/26 21:09:41  dkr
 # make deps done
 #
@@ -102,19 +105,18 @@ clean:
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-Error.o: /usr/include/stdarg.h /usr/include/varargs.h
-Error.o: /usr/include/sys/va_list.h /usr/include/stdio.h
-Error.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
-Error.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-Error.o: /usr/include/string.h ../../inc/dbug.h types.h ../tree/tree_basic.h
-Error.o: internal_lib.h globals.h ../modules/filemgr.h resource.h Error.h
-Error.o: /usr/include/stdlib.h
+Error.o: /usr/include/stdarg.h /usr/include/sys/va_list.h
+Error.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+Error.o: /usr/include/sys/isa_defs.h /usr/include/stdio_tag.h
+Error.o: /usr/include/stdio_impl.h /usr/include/string.h ../../inc/dbug.h
+Error.o: /usr/include/stdlib.h types.h ../tree/tree_basic.h internal_lib.h
+Error.o: globals.h ../modules/filemgr.h resource.h Error.h
 NameTuples.o: ../../inc/dbug.h /usr/include/stdio.h
 NameTuples.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 NameTuples.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-NameTuples.o: /usr/include/stdio_impl.h types.h ../tree/tree_basic.h
-NameTuples.o: ../tree/tree_compound.h Error.h /usr/include/string.h
-NameTuples.o: /usr/include/stdlib.h globals.h NameTuples.h
+NameTuples.o: /usr/include/stdio_impl.h /usr/include/stdlib.h types.h
+NameTuples.o: ../tree/tree_basic.h ../tree/tree_compound.h Error.h
+NameTuples.o: /usr/include/string.h globals.h NameTuples.h
 globals.o: ../modules/filemgr.h /usr/include/stdio.h
 globals.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 globals.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -123,12 +125,13 @@ globals.o: /usr/include/string.h /usr/include/stdlib.h internal_lib.h
 internal_lib.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 internal_lib.o: /usr/include/sys/isa_defs.h /usr/include/math.h
 internal_lib.o: /usr/include/string.h /usr/include/stdarg.h
-internal_lib.o: /usr/include/varargs.h /usr/include/sys/va_list.h
-internal_lib.o: /usr/include/ctype.h Error.h /usr/include/stdio.h
-internal_lib.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h types.h
-internal_lib.o: globals.h ../tree/free.h ../../inc/dbug.h my_debug.h
-internal_lib.o: internal_lib.h ../tree/traverse.h ../tree/tree_basic.h
-internal_lib.o: ../tree/tree_compound.h
+internal_lib.o: /usr/include/sys/va_list.h /usr/include/ctype.h Error.h
+internal_lib.o: /usr/include/stdio.h /usr/include/stdio_tag.h
+internal_lib.o: /usr/include/stdio_impl.h types.h globals.h ../tree/DupTree.h
+internal_lib.o: ../tree/LookUpTable.h ../tree/free.h ../../inc/dbug.h
+internal_lib.o: my_debug.h internal_lib.h ../scanparse/scnprs.h resource.h
+internal_lib.o: ../scanparse/y.tab.h ../tree/traverse.h ../tree/tree_basic.h
+internal_lib.o: ../tree/tree_compound.h ../print/convert.h
 interrupt.o: /usr/include/signal.h /usr/include/sys/feature_tests.h
 interrupt.o: /usr/include/sys/isa_defs.h /usr/include/sys/signal.h
 interrupt.o: /usr/include/sys/unistd.h /usr/include/stdio.h
@@ -136,23 +139,23 @@ interrupt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 interrupt.o: /usr/include/stdio_impl.h Error.h /usr/include/string.h
 interrupt.o: /usr/include/stdlib.h types.h globals.h interrupt.h
 interrupt.o: internal_lib.h build.h
-main.o: types.h ../tree/tree_basic.h ../tree/tree_compound.h Error.h
-main.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-main.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
-main.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-main.o: /usr/include/string.h /usr/include/stdlib.h globals.h internal_lib.h
-main.o: ../tree/free.h ../../inc/dbug.h my_debug.h usage.h
-main.o: ../flatten/lac2fun.h ../flatten/fun2lac.h ../flatten/flatten.h
-main.o: ../print/print.h ../typecheck/typecheck.h ../optimize/optimize.h
-main.o: ../modules/filemgr.h ../modules/import.h ../refcount/refcount.h
-main.o: ../scanparse/scnprs.h resource.h ../scanparse/y.tab.h
-main.o: ../modules/writesib.h ../modules/readsib.h ../modules/implicittypes.h
-main.o: ../objects/objinit.h ../modules/analysis.h ../modules/checkdec.h
-main.o: ../objects/objects.h ../objects/uniquecheck.h
-main.o: ../compile/wltransform.h ../concurrent/concurrent.h
-main.o: ../compile/precompile.h ../compile/compile.h
-main.o: ../profile/annotate_fun_calls.h ../modules/cccall.h
-main.o: ../compile/PatchWith.h interrupt.h options.h
+main.o: ../print/convert.h types.h ../tree/tree_basic.h
+main.o: ../tree/tree_compound.h Error.h /usr/include/stdio.h
+main.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+main.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+main.o: /usr/include/stdio_impl.h /usr/include/string.h /usr/include/stdlib.h
+main.o: globals.h internal_lib.h ../tree/free.h ../../inc/dbug.h my_debug.h
+main.o: ../tree/DupTree.h ../tree/LookUpTable.h usage.h ../flatten/lac2fun.h
+main.o: ../flatten/fun2lac.h ../flatten/flatten.h ../print/print.h
+main.o: ../typecheck/typecheck.h ../optimize/optimize.h ../modules/filemgr.h
+main.o: ../modules/import.h ../refcount/refcount.h ../scanparse/scnprs.h
+main.o: resource.h ../scanparse/y.tab.h ../modules/writesib.h
+main.o: ../modules/readsib.h ../modules/implicittypes.h ../objects/objinit.h
+main.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
+main.o: ../objects/uniquecheck.h ../compile/wltransform.h
+main.o: ../concurrent/concurrent.h ../compile/precompile.h
+main.o: ../compile/compile.h ../profile/annotate_fun_calls.h
+main.o: ../modules/cccall.h ../compile/PatchWith.h interrupt.h options.h
 main.o: ../multithread/multithread.h
 options.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 options.o: /usr/include/sys/isa_defs.h ../../inc/dbug.h /usr/include/stdio.h

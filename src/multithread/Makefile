@@ -1,6 +1,9 @@
 #
 # 
 # $Log$
+# Revision 3.9  2001/07/18 13:08:21  cg
+# make deps done
+#
 # Revision 3.8  2001/05/08 13:29:44  dkr
 # make deps done
 #
@@ -97,21 +100,21 @@ clean:
 adjust_calls.o: ../../inc/dbug.h /usr/include/stdio.h
 adjust_calls.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 adjust_calls.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-adjust_calls.o: /usr/include/stdio_impl.h ../global/types.h
-adjust_calls.o: ../tree/tree_basic.h ../tree/tree_compound.h
-adjust_calls.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
-adjust_calls.o: ../global/globals.h ../tree/traverse.h ../tree/scheduling.h
-adjust_calls.o: ../tree/DupTree.h ../tree/LookUpTable.h
+adjust_calls.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+adjust_calls.o: ../global/types.h ../tree/tree_basic.h
+adjust_calls.o: ../tree/tree_compound.h ../global/Error.h
+adjust_calls.o: /usr/include/string.h ../global/globals.h ../tree/traverse.h
+adjust_calls.o: ../tree/scheduling.h ../tree/DupTree.h ../tree/LookUpTable.h
 adjust_calls.o: ../optimize/generatemasks.h ../tree/free.h
 adjust_calls.o: ../global/my_debug.h ../global/internal_lib.h
 adjust_calls.o: multithread_lib.h ../refcount/refcount.h
 barriers_init.o: ../../inc/dbug.h /usr/include/stdio.h
 barriers_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 barriers_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-barriers_init.o: /usr/include/stdio_impl.h ../global/types.h
-barriers_init.o: ../tree/tree_basic.h ../tree/tree_compound.h
-barriers_init.o: ../global/Error.h /usr/include/string.h
-barriers_init.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
+barriers_init.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+barriers_init.o: ../global/types.h ../tree/tree_basic.h
+barriers_init.o: ../tree/tree_compound.h ../global/Error.h
+barriers_init.o: /usr/include/string.h ../global/globals.h ../tree/traverse.h
 barriers_init.o: ../tree/scheduling.h ../tree/DupTree.h ../tree/LookUpTable.h
 barriers_init.o: ../optimize/generatemasks.h ../tree/free.h
 barriers_init.o: ../global/my_debug.h ../global/internal_lib.h
@@ -120,21 +123,20 @@ barriers_init.o: ../refcount/refcount.h
 blocks_cons.o: ../../inc/dbug.h /usr/include/stdio.h
 blocks_cons.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 blocks_cons.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-blocks_cons.o: /usr/include/stdio_impl.h ../global/types.h
-blocks_cons.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-blocks_cons.o: /usr/include/string.h /usr/include/stdlib.h
-blocks_cons.o: ../global/globals.h ../tree/traverse.h ../tree/scheduling.h
-blocks_cons.o: ../tree/DupTree.h ../tree/LookUpTable.h
-blocks_cons.o: ../optimize/generatemasks.h ../tree/free.h
-blocks_cons.o: ../global/my_debug.h ../global/internal_lib.h
+blocks_cons.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+blocks_cons.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+blocks_cons.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+blocks_cons.o: ../tree/traverse.h ../tree/scheduling.h ../tree/DupTree.h
+blocks_cons.o: ../tree/LookUpTable.h ../optimize/generatemasks.h
+blocks_cons.o: ../tree/free.h ../global/my_debug.h ../global/internal_lib.h
 blocks_cons.o: multithread_lib.h ../refcount/refcount.h
 blocks_expand.o: ../../inc/dbug.h /usr/include/stdio.h
 blocks_expand.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 blocks_expand.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-blocks_expand.o: /usr/include/stdio_impl.h ../global/types.h
-blocks_expand.o: ../tree/tree_basic.h ../tree/tree_compound.h
-blocks_expand.o: ../global/Error.h /usr/include/string.h
-blocks_expand.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
+blocks_expand.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+blocks_expand.o: ../global/types.h ../tree/tree_basic.h
+blocks_expand.o: ../tree/tree_compound.h ../global/Error.h
+blocks_expand.o: /usr/include/string.h ../global/globals.h ../tree/traverse.h
 blocks_expand.o: ../tree/scheduling.h ../tree/DupTree.h ../tree/LookUpTable.h
 blocks_expand.o: ../optimize/generatemasks.h ../global/my_debug.h
 blocks_expand.o: multithread_lib.h ../refcount/refcount.h ../tree/free.h
@@ -142,33 +144,31 @@ blocks_expand.o: ../global/internal_lib.h
 blocks_init.o: ../../inc/dbug.h /usr/include/stdio.h
 blocks_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 blocks_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-blocks_init.o: /usr/include/stdio_impl.h ../global/types.h
-blocks_init.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-blocks_init.o: /usr/include/string.h /usr/include/stdlib.h
-blocks_init.o: ../global/globals.h ../tree/traverse.h ../tree/scheduling.h
-blocks_init.o: ../tree/DupTree.h ../tree/LookUpTable.h
-blocks_init.o: ../optimize/generatemasks.h ../global/my_debug.h
-blocks_init.o: multithread_lib.h ../refcount/refcount.h
+blocks_init.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+blocks_init.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+blocks_init.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+blocks_init.o: ../tree/traverse.h ../tree/scheduling.h ../tree/DupTree.h
+blocks_init.o: ../tree/LookUpTable.h ../optimize/generatemasks.h
+blocks_init.o: ../global/my_debug.h multithread_lib.h ../refcount/refcount.h
 blocks_init.o: ../global/internal_lib.h
 blocks_lift.o: ../../inc/dbug.h /usr/include/stdio.h
 blocks_lift.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 blocks_lift.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-blocks_lift.o: /usr/include/stdio_impl.h ../global/types.h
-blocks_lift.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-blocks_lift.o: /usr/include/string.h /usr/include/stdlib.h
-blocks_lift.o: ../global/globals.h ../tree/traverse.h ../tree/scheduling.h
-blocks_lift.o: ../tree/DupTree.h ../tree/LookUpTable.h
-blocks_lift.o: ../optimize/generatemasks.h ../global/my_debug.h
-blocks_lift.o: ../tree/DataFlowMask.h ../tree/DataFlowMaskUtils.h
-blocks_lift.o: multithread_lib.h ../refcount/refcount.h
-blocks_lift.o: ../global/internal_lib.h
+blocks_lift.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+blocks_lift.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+blocks_lift.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+blocks_lift.o: ../tree/traverse.h ../tree/scheduling.h ../tree/DupTree.h
+blocks_lift.o: ../tree/LookUpTable.h ../optimize/generatemasks.h
+blocks_lift.o: ../global/my_debug.h ../tree/DataFlowMask.h
+blocks_lift.o: ../tree/DataFlowMaskUtils.h multithread_lib.h
+blocks_lift.o: ../refcount/refcount.h ../global/internal_lib.h
 blocks_propagate.o: ../../inc/dbug.h /usr/include/stdio.h
 blocks_propagate.o: /usr/include/sys/feature_tests.h
 blocks_propagate.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 blocks_propagate.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-blocks_propagate.o: ../global/types.h ../tree/tree_basic.h
-blocks_propagate.o: ../tree/tree_compound.h ../global/Error.h
-blocks_propagate.o: /usr/include/string.h /usr/include/stdlib.h
+blocks_propagate.o: /usr/include/stdlib.h ../global/types.h
+blocks_propagate.o: ../tree/tree_basic.h ../tree/tree_compound.h
+blocks_propagate.o: ../global/Error.h /usr/include/string.h
 blocks_propagate.o: ../global/globals.h ../tree/traverse.h
 blocks_propagate.o: ../tree/scheduling.h ../tree/DupTree.h
 blocks_propagate.o: ../tree/LookUpTable.h ../optimize/generatemasks.h
@@ -179,9 +179,9 @@ dataflow_analysis.o: ../../inc/dbug.h /usr/include/stdio.h
 dataflow_analysis.o: /usr/include/sys/feature_tests.h
 dataflow_analysis.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 dataflow_analysis.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-dataflow_analysis.o: ../global/types.h ../tree/tree_basic.h
-dataflow_analysis.o: ../tree/tree_compound.h ../global/Error.h
-dataflow_analysis.o: /usr/include/string.h /usr/include/stdlib.h
+dataflow_analysis.o: /usr/include/stdlib.h ../global/types.h
+dataflow_analysis.o: ../tree/tree_basic.h ../tree/tree_compound.h
+dataflow_analysis.o: ../global/Error.h /usr/include/string.h
 dataflow_analysis.o: ../global/globals.h ../tree/traverse.h
 dataflow_analysis.o: ../tree/scheduling.h ../tree/DupTree.h
 dataflow_analysis.o: ../tree/LookUpTable.h ../optimize/generatemasks.h
@@ -192,20 +192,19 @@ dataflow_analysis.o: ../refcount/refcount.h mtfuns_init.h
 mtfuns_init.o: ../../inc/dbug.h /usr/include/stdio.h
 mtfuns_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 mtfuns_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-mtfuns_init.o: /usr/include/stdio_impl.h ../global/types.h
-mtfuns_init.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-mtfuns_init.o: /usr/include/string.h /usr/include/stdlib.h
-mtfuns_init.o: ../global/globals.h ../tree/traverse.h ../tree/scheduling.h
-mtfuns_init.o: ../tree/DupTree.h ../tree/LookUpTable.h
-mtfuns_init.o: ../optimize/generatemasks.h ../tree/free.h
-mtfuns_init.o: ../global/my_debug.h ../global/internal_lib.h
+mtfuns_init.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+mtfuns_init.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+mtfuns_init.o: ../global/Error.h /usr/include/string.h ../global/globals.h
+mtfuns_init.o: ../tree/traverse.h ../tree/scheduling.h ../tree/DupTree.h
+mtfuns_init.o: ../tree/LookUpTable.h ../optimize/generatemasks.h
+mtfuns_init.o: ../tree/free.h ../global/my_debug.h ../global/internal_lib.h
 mtfuns_init.o: multithread_lib.h ../refcount/refcount.h mtfuns_init.h
 multithread.o: ../../inc/dbug.h /usr/include/stdio.h
 multithread.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 multithread.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-multithread.o: /usr/include/stdio_impl.h ../global/types.h
-multithread.o: ../tree/tree_basic.h ../tree/traverse.h ../global/globals.h
-multithread.o: ../tree/free.h /usr/include/stdlib.h ../global/my_debug.h
+multithread.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+multithread.o: ../global/types.h ../tree/tree_basic.h ../tree/traverse.h
+multithread.o: ../global/globals.h ../tree/free.h ../global/my_debug.h
 multithread.o: ../global/internal_lib.h ../global/Error.h
 multithread.o: /usr/include/string.h schedule_init.h repfuns_init.h
 multithread.o: blocks_init.h blocks_propagate.h blocks_expand.h mtfuns_init.h
@@ -215,9 +214,9 @@ multithread_lib.o: ../../inc/dbug.h /usr/include/stdio.h
 multithread_lib.o: /usr/include/sys/feature_tests.h
 multithread_lib.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 multithread_lib.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-multithread_lib.o: /usr/include/string.h ../tree/tree_basic.h
-multithread_lib.o: ../global/types.h ../tree/tree_compound.h
-multithread_lib.o: ../global/Error.h /usr/include/stdlib.h
+multithread_lib.o: /usr/include/stdlib.h /usr/include/string.h
+multithread_lib.o: ../tree/tree_basic.h ../global/types.h
+multithread_lib.o: ../tree/tree_compound.h ../global/Error.h
 multithread_lib.o: ../global/globals.h ../tree/free.h ../global/my_debug.h
 multithread_lib.o: ../global/internal_lib.h ../tree/DupTree.h
 multithread_lib.o: ../tree/LookUpTable.h ../tree/DataFlowMask.h
@@ -225,19 +224,19 @@ multithread_lib.o: ../optimize/generatemasks.h
 repfuns_init.o: ../../inc/dbug.h /usr/include/stdio.h
 repfuns_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 repfuns_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-repfuns_init.o: /usr/include/stdio_impl.h ../global/types.h
-repfuns_init.o: ../tree/tree_basic.h ../tree/tree_compound.h
-repfuns_init.o: ../global/Error.h /usr/include/string.h /usr/include/stdlib.h
-repfuns_init.o: ../global/globals.h ../tree/traverse.h ../tree/scheduling.h
-repfuns_init.o: ../tree/DupTree.h ../tree/LookUpTable.h
+repfuns_init.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+repfuns_init.o: ../global/types.h ../tree/tree_basic.h
+repfuns_init.o: ../tree/tree_compound.h ../global/Error.h
+repfuns_init.o: /usr/include/string.h ../global/globals.h ../tree/traverse.h
+repfuns_init.o: ../tree/scheduling.h ../tree/DupTree.h ../tree/LookUpTable.h
 repfuns_init.o: ../optimize/generatemasks.h ../tree/free.h
 repfuns_init.o: ../global/my_debug.h ../global/internal_lib.h
 repfuns_init.o: multithread_lib.h ../refcount/refcount.h
 schedule_init.o: ../../inc/dbug.h /usr/include/stdio.h
 schedule_init.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 schedule_init.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
-schedule_init.o: /usr/include/stdio_impl.h ../global/types.h
-schedule_init.o: ../tree/tree_basic.h ../tree/tree_compound.h
-schedule_init.o: ../global/Error.h /usr/include/string.h
-schedule_init.o: /usr/include/stdlib.h ../global/globals.h ../tree/traverse.h
+schedule_init.o: /usr/include/stdio_impl.h /usr/include/stdlib.h
+schedule_init.o: ../global/types.h ../tree/tree_basic.h
+schedule_init.o: ../tree/tree_compound.h ../global/Error.h
+schedule_init.o: /usr/include/string.h ../global/globals.h ../tree/traverse.h
 schedule_init.o: ../tree/scheduling.h ../global/internal_lib.h
