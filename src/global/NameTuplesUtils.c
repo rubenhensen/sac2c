@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2002/07/12 21:37:58  dkr
+ * fixed a bug in GetDataClassFromTypes()
+ *
  * Revision 1.4  2002/07/11 13:58:57  dkr
  * AddNtTag() added
  *
@@ -41,16 +44,6 @@ GetDataClassFromTypes (types *type)
 
     DBUG_ASSERT ((type != NULL), "No type found!");
 
-    /*
-     * if a typedef exists for the given type, we have to use the type
-     * definition for class inference!
-     */
-    if (TYPES_TDEF (type) != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (TYPES_TDEF (type)) == N_typedef),
-                     "TYPES_TDEF is not a N_typedef node!");
-        type = TYPEDEF_TYPE (TYPES_TDEF (type));
-    }
-
     if ((TYPES_BASETYPE (type) == T_user) && (TYPES_TDEF (type) == NULL)) {
         /*
          * the TC has probably not been called yet :-(
@@ -58,14 +51,18 @@ GetDataClassFromTypes (types *type)
         z = C_unknownd;
     } else if (IsHidden (type)) {
         z = C_hid;
-    } else if (TYPES_DIM (type) == SCALAR) {
-        z = C_scl;
-    } else if (KNOWN_SHAPE (TYPES_DIM (type))) {
-        z = C_aks;
-    } else if (KNOWN_DIMENSION (TYPES_DIM (type))) {
-        z = C_akd;
     } else {
-        z = C_aud;
+        int dim = GetShapeDim (type);
+
+        if (dim == SCALAR) {
+            z = C_scl;
+        } else if (KNOWN_SHAPE (dim)) {
+            z = C_aks;
+        } else if (KNOWN_DIMENSION (dim)) {
+            z = C_akd;
+        } else {
+            z = C_aud;
+        }
     }
 
     DBUG_RETURN (z);
