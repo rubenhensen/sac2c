@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.16  1998/05/13 13:38:57  srs
+ * added opt_wlunr and renamed opt_unr to opt_lunr
+ *
  * Revision 1.15  1998/05/11 08:31:05  srs
  * activated LIR again
  *
@@ -190,8 +193,9 @@ int opt_lir = 1;
 int opt_inl = 1;
 /* enable/disable function inlining */
 
-int opt_unr = 1;
-/* enable/disable loop unrolling */
+int opt_lunr = 1;
+int opt_wlunr = 1;
+/* enable/disable loop unrolling/ WL unrolling */
 
 int opt_uns = 1;
 /* enable/disable loop unswitching */
