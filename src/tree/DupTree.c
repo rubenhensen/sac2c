@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.133  2004/12/06 13:21:19  sah
+ * added copying of flags to all other nodes
+ * (hopefully)
+ *
  * Revision 3.132  2004/12/06 11:55:56  sah
  * flag test
  *
@@ -990,6 +994,8 @@ DUPid (node *arg_node, info *arg_info)
         }
     }
 
+    ID_FLAGSTRUCTURE (new_node) = ID_FLAGSTRUCTURE (arg_node);
+
     /*
      * Coping the attibutes of constantvectors.
      * CONSTVEC itself can only be copied, if ISCONST flag is set,
@@ -1092,6 +1098,8 @@ DUPtypedef (node *arg_node, info *arg_info)
                               TYcopyType (TYPEDEF_NTYPE (arg_node)),
                               DUPCONT (TYPEDEF_NEXT (arg_node)));
 
+    TYPEDEF_FLAGSTRUCTURE (new_node) = TYPEDEF_FLAGSTRUCTURE (arg_node);
+
     CopyCommonNodeData (new_node, arg_node);
 
     INFO_DUP_LUT (arg_info)
@@ -1114,6 +1122,8 @@ DUPobjdef (node *arg_node, info *arg_info)
                       ILIBstringCopy (OBJDEF_MOD (arg_node)),
                       ILIBstringCopy (OBJDEF_NAME (arg_node)),
                       DUPTRAV (OBJDEF_EXPR (arg_node)), DUPCONT (OBJDEF_NEXT (arg_node)));
+
+    OBJDEF_FLAGSTRUCTURE (new_node) = OBJDEF_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1261,6 +1271,7 @@ DUParg (node *arg_node, info *arg_info)
 
     ARG_VARNO (new_node) = ARG_VARNO (arg_node);
     ARG_OBJDEF (new_node) = ARG_OBJDEF (arg_node);
+    ARG_FLAGSTRUCTURE (new_node) = ARG_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1284,6 +1295,8 @@ DUPret (node *arg_node, info *arg_info)
 
     new_node
       = TBmakeRet (TYcopyType (RET_TYPE (arg_node)), DUPCONT (RET_NEXT (arg_node)));
+
+    RET_FLAGSTRUCTURE (new_node) = RET_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1379,6 +1392,7 @@ DUPvardec (node *arg_node, info *arg_info)
 
     VARDEC_VARNO (new_node) = VARDEC_VARNO (arg_node);
     VARDEC_OBJDEF (new_node) = VARDEC_OBJDEF (arg_node);
+    VARDEC_FLAGSTRUCTURE (new_node) = VARDEC_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1495,6 +1509,8 @@ DUPassign (node *arg_node, info *arg_info)
 
         INFO_DUP_LUT (arg_info)
           = LUTinsertIntoLutP (INFO_DUP_LUT (arg_info), arg_node, new_node);
+
+        ASSIGN_FLAGSTRUCTURE (new_node) = ASSIGN_FLAGSTRUCTURE (arg_node);
 
         CopyCommonNodeData (new_node, arg_node);
     } else {
@@ -1724,6 +1740,8 @@ DUPspmop (node *arg_node, info *arg_info)
     new_node
       = TBmakeSpmop (DUPTRAV (SPMOP_OPS (arg_node)), DUPTRAV (SPMOP_EXPRS (arg_node)));
 
+    SPMOP_FLAGSTRUCTURE (new_node) = SPMOP_FLAGSTRUCTURE (arg_node);
+
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
@@ -1745,6 +1763,8 @@ DUParray (node *arg_node, info *arg_info)
 
     ARRAY_TYPE (new_node) = DupTypes (ARRAY_TYPE (arg_node), arg_info);
     ARRAY_NTYPE (new_node) = TYcopyType (ARRAY_NTYPE (arg_node));
+
+    ARRAY_FLAGSTRUCTURE (new_node) = ARRAY_FLAGSTRUCTURE (arg_node);
 
     ARRAY_ISCONST (new_node) = ARRAY_ISCONST (arg_node);
     ARRAY_VECLEN (new_node) = ARRAY_VECLEN (arg_node);
@@ -1917,6 +1937,8 @@ DUPexport (node *arg_node, info *arg_info)
     new_node = TBmakeExport (DUPTRAV (EXPORT_NEXT (arg_node)),
                              DUPTRAV (EXPORT_SYMBOL (arg_node)));
 
+    EXPORT_FLAGSTRUCTURE (new_node) = EXPORT_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2053,7 +2075,6 @@ DUPicm (node *arg_node, info *arg_info)
 
     /*
      * The ICM name is not copied here because ICM names are predominantly static
-
      * string constants and therefore aren't freed anyway.
      */
 
@@ -2061,6 +2082,8 @@ DUPicm (node *arg_node, info *arg_info)
     ICM_INDENT_AFTER (new_node) = ICM_INDENT_AFTER (arg_node);
     ICM_FUNDEF (new_node)
       = LUTsearchInLutPp (INFO_DUP_LUT (arg_info), ICM_FUNDEF (arg_node));
+
+    ICM_FLAGSTRUCTURE (new_node) = ICM_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2118,6 +2141,8 @@ DUPsync (node *arg_node, info *arg_info)
     SYNC_OUT (new_node) = DupDfmask (SYNC_OUT (arg_node), arg_info);
     SYNC_OUTREP (new_node) = DupDfmask (SYNC_OUTREP (arg_node), arg_info);
     SYNC_LOCAL (new_node) = DupDfmask (SYNC_LOCAL (arg_node), arg_info);
+
+    SYNC_FLAGSTRUCTURE (new_node) = SYNC_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2214,6 +2239,8 @@ DUPwith (node *arg_node, info *arg_info)
     WITH_OUT_MASK (new_node) = DupDfmask (WITH_OUT_MASK (arg_node), arg_info);
     WITH_LOCAL_MASK (new_node) = DupDfmask (WITH_LOCAL_MASK (arg_node), arg_info);
 
+    WITH_FLAGSTRUCTURE (new_node) = WITH_FLAGSTRUCTURE (arg_node);
+
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
@@ -2301,6 +2328,8 @@ DUPpart (node *arg_node, info *arg_info)
     CODE_INC_USED (PART_CODE (new_node));
     PART_NEXT (new_node) = DUPCONT (PART_NEXT (arg_node));
 
+    PART_FLAGSTRUCTURE (new_node) = PART_FLAGSTRUCTURE (arg_node);
+
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
@@ -2334,7 +2363,7 @@ DUPcode (node *arg_node, info *arg_info)
      *                          in DUPwgrid() via CODE_INC_USED
      */
     CODE_USED (new_node) = 0;
-    CODE_VISITED (new_node) = CODE_VISITED (arg_node);
+    CODE_FLAGSTRUCTURE (new_node) = CODE_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2353,7 +2382,8 @@ DUPwithid (node *arg_node, info *arg_info)
     new_node
       = TBmakeWithid (DUPTRAV (WITHID_VEC (arg_node)), DUPTRAV (WITHID_IDS (arg_node)));
 
-    WITHID_VECNEEDED (new_node) = WITHID_VECNEEDED (arg_node);
+    WITHID_FLAGSTRUCTURE (new_node) = WITHID_FLAGSTRUCTURE (arg_node);
+
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
@@ -2404,6 +2434,8 @@ DUPwith2 (node *arg_node, info *arg_info)
     WITH2_IN_MASK (new_node) = DupDfmask (WITH2_IN_MASK (arg_node), arg_info);
     WITH2_OUT_MASK (new_node) = DupDfmask (WITH2_OUT_MASK (arg_node), arg_info);
     WITH2_LOCAL_MASK (new_node) = DupDfmask (WITH2_LOCAL_MASK (arg_node), arg_info);
+
+    WITH2_FLAGSTRUCTURE (new_node) = WITH2_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2546,7 +2578,7 @@ DUPwlstride (node *arg_node, info *arg_info)
                         DUPCONT (WLSTRIDE_NEXT (arg_node)));
 
     WLSTRIDE_PART (new_node) = WLSTRIDE_PART (arg_node);
-    WLSTRIDE_DOUNROLL (new_node) = WLSTRIDE_DOUNROLL (arg_node);
+    WLSTRIDE_FLAGSTRUCTURE (new_node) = WLSTRIDE_FLAGSTRUCTURE (arg_node);
     /*
      * duplicated strides are not modified yet ;)
      */
@@ -2604,6 +2636,8 @@ DUPwlgrid (node *arg_node, info *arg_info)
      */
     WLGRID_MODIFIED (new_node) = NULL;
 
+    WLGRID_FLAGSTRUCTURE (new_node) = WLGRID_FLAGSTRUCTURE (arg_node);
+
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
@@ -2629,6 +2663,8 @@ DUPwlgridvar (node *arg_node, info *arg_info)
     if (WLGRIDVAR_CODE (new_node) != NULL) {
         CODE_INC_USED (WLGRIDVAR_CODE (new_node));
     }
+
+    WLGRIDVAR_FLAGSTRUCTURE (new_node) = WLGRIDVAR_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2734,6 +2770,8 @@ DUPavis (node *arg_node, info *arg_info)
     AVIS_SUBST (new_node) = AVIS_SUBST (arg_node);
     AVIS_SUBSTUSSA (new_node) = AVIS_SUBSTUSSA (arg_node);
 
+    AVIS_FLAGSTRUCTURE (new_node) = AVIS_FLAGSTRUCTURE (arg_node);
+
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
@@ -2759,7 +2797,7 @@ DUPssastack (node *arg_node, info *arg_info)
     new_node
       = TBmakeSsastack (SSASTACK_AVIS (arg_node), DUPCONT (SSASTACK_NEXT (arg_node)));
 
-    SSASTACK_INUSE (arg_node) = SSASTACK_INUSE (arg_node);
+    SSASTACK_FLAGSTRUCTURE (new_node) = SSASTACK_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
