@@ -2,6 +2,10 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/09/22 18:11:37  khf
+ * moved renaming of cexprs from markmemvals
+ * to third traversal of precompile
+ *
  * Revision 1.13  2004/09/20 17:48:14  ktr
  * Removed unused variable.
  *
@@ -926,8 +930,6 @@ MMVwithop (node *arg_node, info *arg_info)
 node *
 MMVcode (node *arg_node, info *arg_info)
 {
-    node *cexprs, *withop, *cexpr, *nassign, *tmp;
-    ids *_ids;
 
     DBUG_ENTER ("AACCcode");
 
@@ -937,53 +939,6 @@ MMVcode (node *arg_node, info *arg_info)
 
     if (NCODE_CEXPRS (arg_node) != NULL) {
         NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
-    }
-
-    if (emm) {
-
-        /* A,B = with(iv)
-         *        gen:{res1 = ...;
-         *             res2 = ...;
-         *            }:res1,res2
-         *       fold( op1, n1)
-         *            ...
-         *
-         *     rename cexpr: res1 -> A
-         *     add assign  : A = res1
-         *
-         */
-
-        _ids = INFO_MMV_LHS_WL (arg_info);
-        cexprs = NCODE_CEXPRS (arg_node);
-        withop = INFO_MMV_WITHOP (arg_info);
-        nassign = NULL;
-        tmp = NULL;
-
-        while (withop != NULL) {
-            if (NWITHOP_IS_FOLD (withop)) {
-                DBUG_ASSERT ((_ids != NULL), "ids is missing");
-                cexpr = EXPRS_EXPR (cexprs);
-                DBUG_ASSERT ((cexpr != NULL), "CEXPR is missing");
-                DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "CEXPR is not a N_id");
-
-                if (IDS_VARDEC (_ids) != ID_VARDEC (cexpr)) {
-                    tmp = MakeAssign (MakeLet (DupNode (cexpr), DupOneIds (_ids)), NULL);
-                    nassign = AppendAssign (nassign, tmp);
-
-                    EXPRS_EXPR (cexprs) = FreeNode (EXPRS_EXPR (cexprs));
-                    EXPRS_EXPR (cexprs) = DupIds_Id (_ids);
-                }
-            }
-
-            _ids = IDS_NEXT (_ids);
-            cexprs = EXPRS_NEXT (cexprs);
-            withop = NWITHOP_NEXT (withop);
-        }
-
-        if (nassign != NULL) {
-            BLOCK_INSTR (NCODE_CBLOCK (arg_node))
-              = AppendAssign (BLOCK_INSTR (NCODE_CBLOCK (arg_node)), nassign);
-        }
     }
 
     if (NCODE_NEXT (arg_node) != NULL) {
