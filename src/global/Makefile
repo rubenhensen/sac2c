@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.58  1998/03/22 18:03:52  srs
+# made deps
+#
 # Revision 1.57  1998/03/19 17:08:28  dkr
 # make deps done
 #
@@ -308,7 +311,8 @@ traverse.o: ../modules/implicittypes.h ../objects/objinit.h
 traverse.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
 traverse.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
 traverse.o: ../compile/precompile.h ../modules/cccall.h
-traverse.o: ../compile/Old2NewWith.h ../optimize/WithloopFolding.h traverse.h
+traverse.o: ../compile/Old2NewWith.h ../optimize/WithloopFolding.h
+traverse.o: ../optimize/WLT.h ../optimize/WLI.h ../optimize/WLF.h traverse.h
 traverse.o: node_info.mac
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h tree.h types.h
 tree.o: tree_basic.h tree_compound.h Error.h /usr/include/stdio.h
