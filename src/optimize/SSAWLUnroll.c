@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2003/06/17 13:36:42  dkr
+ * bug in ForEachElement() fixed:
+ * WLUR works for empty WL-shape as well now
+ *
  * Revision 1.4  2003/06/11 21:47:29  ktr
  * Added support for multidimensional arrays.
  *
@@ -263,6 +267,7 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
 
     DBUG_ENTER ("ForEachElementHelp");
 
+    DBUG_ASSERT ((maxdim > 0), "illegal max. dim found!");
     count = l[dim];
     act_w = 0;
     while (count + act_w < u[dim]) {
@@ -274,7 +279,7 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
                 index = MakeExprs (MakeNum (ind[i - 1]), index);
             }
             index = MakeFlatArray (index);
-            /* nums struct is freed inside MakeShpseg. */
+            /* nums struct is freed inside MakeShpseg() */
             shpseg = MakeShpseg (MakeNums (maxdim, NULL));
             type = MakeTypes (T_int, 1, shpseg, NULL, NULL);
             ARRAY_TYPE (index) = type;
@@ -285,7 +290,7 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
         }
 
         /* advance to next element */
-        if (w && act_w + 1 < w[dim]) {
+        if (w && (act_w + 1 < w[dim])) {
             act_w++;
         } else {
             act_w = 0;
@@ -310,6 +315,7 @@ static node *
 ForEachElement (node *partn, node *assignn)
 {
     node *res;
+    node *index;
     int maxdim, *l, *u, *s, *w;
 
     DBUG_ENTER ("ForEachElement");
@@ -327,7 +333,17 @@ ForEachElement (node *partn, node *assignn)
         SSAArrayST2ArrayInt (NGEN_WIDTH (NPART_GEN (partn)), &w, maxdim);
     }
 
-    res = ForEachElementHelp (l, u, s, w, 0, maxdim, assignn);
+    if (maxdim == 0) {
+        /* create index */
+        index = MakeFlatArray (NULL);
+        /* nums struct is freed inside MakeShpseg() */
+        ARRAY_TYPE (index)
+          = MakeTypes (T_int, 1, MakeShpseg (MakeNums (maxdim, NULL)), NULL, NULL);
+
+        res = opfun (assignn, index);
+    } else {
+        res = ForEachElementHelp (l, u, s, w, 0, maxdim, assignn);
+    }
 
     l = Free (l);
     u = Free (u);
