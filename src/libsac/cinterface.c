@@ -4,20 +4,17 @@
  */
 
 #include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "sac.h"
 #include "sac_cinterface.h"
-
-/* macros for accessing memory management functions */
-#define SAC_CI_MALLOC(size) malloc (size)
-#define SAC_CI_FREE(addr) free (addr)
 
 /* constants */
 #define SAC_CI_SIMPLETYPE 1
 #define SAC_CI_ARRAYTYPE 2
 
-/* fucntions with only local use */
+/* global vars */
+static bool SAC_CI_runtime_system_active;
+
+/* functions with only local use */
 static void SAC_CI_ExitOnInvalidArg (SAC_arg sa, SAC_ARG_simpletype basetype,
                                      int arg_mode);
 
@@ -34,6 +31,11 @@ static void SAC_CI_ExitOnInvalidArg (SAC_arg sa, SAC_ARG_simpletype basetype,
 void
 SAC_InitRuntimeSystem ()
 {
+    if (!SAC_CI_runtime_system_active) {
+        /* do some inits */
+
+        SAC_CI_runtime_system_active = true;
+    }
 }
 
 /******************************************************************************
@@ -49,6 +51,9 @@ SAC_InitRuntimeSystem ()
 void
 SAC_FreeRuntimeSystem ()
 {
+    if (!SAC_CI_runtime_system_active) {
+        /* do some cleanup */
+    }
 }
 
 /*
@@ -68,7 +73,7 @@ SAC_IntArray2Sac (int *array, int dim, int *shape, SAC_reusetype reuseflag)
 
     if (reuseflag == SAC_COPY_ARGS) {
         /* create copy of args for internal usage */
-        shpvec = (int *)SAC_CI_MALLOC (dim * sizeof (int));
+        shpvec = (int *)SAC_MALLOC (dim * sizeof (int));
         shpvec = memcpy (shpvec, shape, dim * sizeof (int));
 
         /* calculate number of dataelements */
@@ -80,16 +85,18 @@ SAC_IntArray2Sac (int *array, int dim, int *shape, SAC_reusetype reuseflag)
             SAC_RuntimeError ("Illegal shape vector!");
         }
 
-        elems = (int *)SAC_CI_MALLOC (elemscount * sizeof (int));
+        elems = (int *)SAC_MALLOC (elemscount * sizeof (int));
         elems = memcpy (elems, array, elemscount * sizeof (int));
     } else {
-        /* reuse args internally */
+        /* args cans be reused internally */
         shpvec = shape;
         elems = array;
     }
+
     result = SAC_CI_NewSACArg (T_int, dim, shpvec);
     SAC_ARG_ELEMS (result) = elems;
-    SAC_ARG_RC (result) = (int *)SAC_CI_MALLOC (sizeof (int));
+    SAC_ARG_RC (result) = (int *)SAC_MALLOC (sizeof (int));
+    *SAC_ARG_RC (result) = 1; /* init refcounter */
     return (result);
 }
 
@@ -98,15 +105,19 @@ SAC_Int2Sac (int value)
 {
     SAC_arg result;
     result = SAC_CI_NewSACArg (T_int, 0, NULL);
-    SAC_ARG_ELEMS (result) = (int *)SAC_CI_MALLOC (sizeof (int));
-    SAC_ARG_RC (result) = (int *)SAC_CI_MALLOC (sizeof (int));
+    SAC_ARG_ELEMS (result) = (int *)SAC_MALLOC (sizeof (int));
+    SAC_ARG_RC (result) = (int *)SAC_MALLOC (sizeof (int));
+    *SAC_ARG_RC (result) = 1; /* init refcounter */
     return (result);
 }
 
 int *
 SAC_Sac2IntArray (SAC_arg sa)
 {
-    return (NULL);
+    /* check for valid data */
+    SAC_CI_ExitOnInvalidArg (sa, T_int, SAC_CI_ARRAYTYPE);
+    /* return value */
+    return ((int *)SAC_ARG_ELEMS (sa));
 }
 
 int

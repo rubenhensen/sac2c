@@ -3,13 +3,7 @@
  */
 
 #include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "sac.h"
-
-/* macros for accessing memory management functions */
-#define SAC_CI_MALLOC(size) malloc (size)
-#define SAC_CI_FREE(addr) free (addr)
 
 /******************************************************************************
  *
@@ -28,10 +22,7 @@ SAC_CI_NewSACArg (SAC_ARG_simpletype basetype, int dim, int *shpvec)
 {
     SAC_arg result;
 
-    result = (SAC_arg)SAC_CI_MALLOC (sizeof (SAC_ARG_STRUCT));
-    if (result == NULL) {
-        SAC_RuntimeError ("ERROR: unable to allocate SAC_arg data structure.\n");
-    }
+    result = (SAC_arg)SAC_MALLOC (sizeof (SAC_ARG_STRUCT));
 
     /* init structure */
     SAC_ARG_LRC (result) = 0;
@@ -77,10 +68,7 @@ SAC_CI_CreateSACArg (SAC_ARG_simpletype basetype, int dim, ...)
         shpvec = NULL; /* no shape needed */
     } else {
         /* create array tyoe */
-        shpvec = (int *)SAC_CI_MALLOC (dim * sizeof (int));
-        if (shpvec == NULL) {
-            SAC_RuntimeError ("ERROR: unable to allocate Shapevector.\n");
-        }
+        shpvec = (int *)SAC_MALLOC (dim * sizeof (int));
         va_start (Argp, dim);
         for (i = 0; i < dim; i++) {
             shpvec[i] = va_arg (Argp, int);
@@ -104,7 +92,7 @@ bool
 SAC_CI_CmpSACArgType (SAC_arg sa, SAC_ARG_simpletype basetype, int dim, ...)
 {
     va_list Argp;
-    int res = 1;
+    bool res = true;
     int i;
 
     if ((SAC_ARG_TYPE (sa) == basetype) && (SAC_ARG_DIM (sa) == dim)) {
@@ -112,10 +100,10 @@ SAC_CI_CmpSACArgType (SAC_arg sa, SAC_ARG_simpletype basetype, int dim, ...)
         va_start (Argp, dim);
         for (i = 0; i < dim; i++) {
             if ((SAC_ARG_SHPVEC (sa))[i] != va_arg (Argp, int))
-                res = 0;
+                res = false;
         }
     } else {
-        res = 0;
+        res = false;
     }
     return (res);
 }
@@ -139,15 +127,15 @@ SAC_CI_FreeSACArg (SAC_arg sa)
         if (SAC_ARG_LRC (sa) > 0) {
             /* free data and refcount */
             if (SAC_ARG_RC (sa) != NULL)
-                SAC_CI_FREE (SAC_ARG_RC (sa));
+                SAC_FREE (SAC_ARG_RC (sa));
             if (SAC_ARG_ELEMS (sa) != NULL)
-                SAC_CI_FREE (SAC_ARG_ELEMS (sa));
+                SAC_FREE (SAC_ARG_ELEMS (sa));
         }
         /* if arraytype free shapevector */
         if (SAC_ARG_DIM (sa) > 0)
-            SAC_CI_FREE (SAC_ARG_SHPVEC (sa));
+            SAC_FREE (SAC_ARG_SHPVEC (sa));
 
         /*free SAC_arg datastructure */
-        SAC_CI_FREE (sa);
+        SAC_FREE (sa);
     }
 }
