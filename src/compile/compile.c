@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.118  2004/07/31 21:31:43  ktr
+ * fixed some master run warnings
+ * scalar genarray/modarray withloops should work with emm now.
+ *
  * Revision 3.117  2004/07/29 12:13:50  ktr
  * compile no longer inserts RC-Instructions for not refcounting c-functions.
  * DO_SKIP is treated more correctly now.
@@ -1402,7 +1406,7 @@ DFM2AllocIcm_CheckReuse (char *name, types *type, int rc, node *get_dim,
 static node *
 MakeGetDimIcm (node *arg_node)
 {
-    node *get_dim;
+    node *get_dim = NULL;
 
     DBUG_ENTER ("MakeGetDimIcm");
 
@@ -1460,11 +1464,9 @@ static node *
 MakeSetShapeIcm (node *arg_node, ids *let_ids)
 {
     node *arg1, *arg2;
-    node *set_shape;
+    node *set_shape = NULL;
 
     DBUG_ENTER ("MakeSetShapeIcm");
-
-    DBUG_EXECUTE ("COMP", Print (arg_node););
 
     switch (NODE_TYPE (arg_node)) {
     case N_array:
@@ -1538,11 +1540,11 @@ MakeSetShapeIcm (node *arg_node, ids *let_ids)
                 break;
 
             case N_prf:
-                arg1 = PRF_ARG1 (arg_node);
-                arg2 = PRF_ARG2 (arg_node);
 
                 switch (PRF_PRF (arg_node)) {
                 case F_cat_VxV:
+                    arg1 = PRF_ARG1 (arg_node);
+                    arg2 = PRF_ARG2 (arg_node);
                     /*
                      * shape( cat( a, b))
                      * => ND_PRF_CAT__SHAPE
@@ -1570,6 +1572,8 @@ MakeSetShapeIcm (node *arg_node, ids *let_ids)
                     break;
 
                 case F_drop_SxV:
+                    arg1 = PRF_ARG1 (arg_node);
+                    arg2 = PRF_ARG2 (arg_node);
                     /*
                      * shape( drop( a, b))
                      * => ND_PRF_DROP_SHAPE
@@ -1596,6 +1600,8 @@ MakeSetShapeIcm (node *arg_node, ids *let_ids)
                     break;
 
                 case F_take_SxV:
+                    arg1 = PRF_ARG1 (arg_node);
+                    arg2 = PRF_ARG2 (arg_node);
                     /*
                      * shape( take( a, b))
                      * => ND_PRF_TAKE_SHAPE
@@ -1622,6 +1628,8 @@ MakeSetShapeIcm (node *arg_node, ids *let_ids)
                     break;
 
                 case F_sel:
+                    arg1 = PRF_ARG1 (arg_node);
+                    arg2 = PRF_ARG2 (arg_node);
                     switch (NODE_TYPE (arg1)) {
                     case N_array:
                         /*
@@ -1676,6 +1684,8 @@ MakeSetShapeIcm (node *arg_node, ids *let_ids)
                     break;
 
                 case F_idx_sel:
+                    arg1 = PRF_ARG1 (arg_node);
+                    arg2 = PRF_ARG2 (arg_node);
                     /*
                      * shape( idx_sel( a, b))
                      * => ND_PRF_IDX_SEL_SHAPE
@@ -1703,6 +1713,8 @@ MakeSetShapeIcm (node *arg_node, ids *let_ids)
                     break;
 
                 case F_reshape:
+                    arg1 = PRF_ARG1 (arg_node);
+                    arg2 = PRF_ARG2 (arg_node);
                     switch (NODE_TYPE (arg1)) {
                     case N_array:
                         /*
@@ -1739,6 +1751,8 @@ MakeSetShapeIcm (node *arg_node, ids *let_ids)
                     break;
 
                 case F_genarray:
+                    arg1 = PRF_ARG1 (arg_node);
+                    arg2 = PRF_ARG2 (arg_node);
                     /*
                      * shape( genarray( a, b))
                      * => ND_WL_GENARRAY__SHAPE_id
@@ -1753,6 +1767,14 @@ MakeSetShapeIcm (node *arg_node, ids *let_ids)
                                                                          FALSE, TRUE,
                                                                          FALSE, NULL))));
 
+                    break;
+                case F_shape:
+                    arg1 = PRF_ARG1 (arg_node);
+                    /*
+                     * shape( shape( a))
+                     */
+                    set_shape = MakeIcm3 ("ND_SET__SHAPE_arr", DupIds_Id_NT (let_ids),
+                                          MakeNum (1), MakeDimArg (arg1, FALSE));
                     break;
 
                 default:
@@ -3775,7 +3797,7 @@ COMPArray (node *arg_node, info *arg_info)
         shape *shp;
         int dim;
         node *icm_args, *icm_args2;
-        node *get_dim, *set_shape;
+        node *get_dim = NULL, *set_shape;
         int val0_sdim;
         char *copyfun;
         int i;
@@ -4020,6 +4042,42 @@ COMPPrfFree (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node COMPPrfSuballoc( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_suballoc
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_COMP_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfSuballoc (node *arg_node, info *arg_info)
+{
+    ids *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfSuballoc");
+
+    let_ids = INFO_COMP_LASTIDS (arg_info);
+
+    if (GetShapeDim (IDS_TYPE (let_ids)) == 0) {
+        ret_node = MakeAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1, MakeNum (0),
+                                 MakeIcm2 ("ND_SET__SHAPE_arr", DupIds_Id_NT (let_ids),
+                                           MakeNum (0)),
+                                 NULL, NULL);
+    } else {
+        DBUG_ASSERT ((0), "not yet implemented!");
+        ret_node = NULL;
+    }
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node COMPPrfCopy( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_copy
@@ -4164,7 +4222,7 @@ COMPPrfReshape (node *arg_node, info *arg_info, node *rc_icms)
 {
     node *arg1, *arg2;
     ids *let_ids;
-    node *get_dim, *set_shape_icm, *alloc_icm;
+    node *get_dim = NULL, *set_shape_icm = NULL, *alloc_icm;
     int reuse;
     char *copyfun;
     int dim_new, dim_old;
@@ -5001,7 +5059,7 @@ static node *
 COMPPrfBin (char *icm_name, node *arg_node, info *arg_info, node **check_reuse1,
             node **check_reuse2, node **get_dim, node **set_shape_icm)
 {
-    node *arg1, *arg2, *arg;
+    node *arg1, *arg2, *arg = NULL;
     ids *let_ids;
     char *icm_name2;
     bool arg1_is_scalar, arg2_is_scalar;
@@ -5126,7 +5184,7 @@ COMPPrf (node *arg_node, info *arg_info)
     ids *let_ids;
     node *args, *arg;
     node *check_reuse1, *check_reuse2;
-    node *ret_node, *ret_node2 = NULL;
+    node *ret_node = NULL, *ret_node2 = NULL;
     node *get_dim = NULL;
     node *set_shape_icm = NULL;
 
@@ -5193,7 +5251,7 @@ COMPPrf (node *arg_node, info *arg_info)
             break;
 
         case F_suballoc:
-            DBUG_ASSERT ((0), "Not yet implemented!");
+            ret_node = COMPPrfSuballoc (arg_node, arg_info);
             break;
 
         case F_copy:
@@ -7135,19 +7193,43 @@ COMPWLgridx (node *arg_node, info *arg_info)
                     DBUG_ASSERT ((offset_needed), "wrong value for OFFSET_NEEDED found!");
                     DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "code expr is not a id");
 
-                    icm_name = "WL_ASSIGN";
-                    icm_args
-                      = AppendExprs (MakeTypeArgs (ID_NAME (cexpr), ID_TYPE (cexpr),
-                                                   FALSE, TRUE, FALSE,
-                                                   MakeIcmArgs_WL_OP2 (arg_node)),
-                                     MakeExprs (MakeId_Copy (
-                                                  GenericFun (0, ID_TYPE (cexpr))),
-                                                NULL));
-                    /*
-                     * we must decrement the RC of 'cexpr' (consumed argument)
-                     */
-                    code_rc_icms = MakeDecRcIcm (ID_NAME (cexpr), ID_TYPE (cexpr),
-                                                 ID_REFCNT (cexpr), 1, NULL);
+                    if (!emm) {
+                        icm_name = "WL_ASSIGN";
+                        icm_args
+                          = AppendExprs (MakeTypeArgs (ID_NAME (cexpr), ID_TYPE (cexpr),
+                                                       FALSE, TRUE, FALSE,
+                                                       MakeIcmArgs_WL_OP2 (arg_node)),
+                                         MakeExprs (MakeId_Copy (
+                                                      GenericFun (0, ID_TYPE (cexpr))),
+                                                    NULL));
+                        /*
+                         * we must decrement the RC of 'cexpr' (consumed argument)
+                         */
+                        code_rc_icms = MakeDecRcIcm (ID_NAME (cexpr), ID_TYPE (cexpr),
+                                                     ID_REFCNT (cexpr), 1, NULL);
+                    } else {
+                        if (GetShapeDim (ID_TYPE (cexpr)) == 0) {
+                            icm_name = "WL_ASSIGN";
+                            icm_args
+                              = AppendExprs (MakeTypeArgs (ID_NAME (cexpr),
+                                                           ID_TYPE (cexpr), FALSE, TRUE,
+                                                           FALSE,
+                                                           MakeIcmArgs_WL_OP2 (arg_node)),
+                                             MakeExprs (MakeId_Copy (
+                                                          GenericFun (0,
+                                                                      ID_TYPE (cexpr))),
+                                                        NULL));
+                            /*
+                             * we must decrement the RC of 'cexpr' (consumed argument)
+                             */
+                            code_rc_icms = MakeDecRcIcm (ID_NAME (cexpr), ID_TYPE (cexpr),
+                                                         1, 1, NULL);
+                        } else {
+                            icm_name = NULL;
+                            icm_args = NULL;
+                            code_rc_icms = NULL;
+                        }
+                    }
                     break;
 
                 case WO_foldfun:
@@ -7178,8 +7260,10 @@ COMPWLgridx (node *arg_node, info *arg_info)
                 }
             }
 
-            node_icms = AppendAssign (node_icms,
-                                      MakeAssignIcm1 (icm_name, icm_args, code_rc_icms));
+            if (icm_name != NULL) {
+                node_icms = AppendAssign (node_icms, MakeAssignIcm1 (icm_name, icm_args,
+                                                                     code_rc_icms));
+            }
         }
     }
 
