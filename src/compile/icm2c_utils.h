@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/06/02 21:36:56  dkr
+ * functions renamed
+ *
  * Revision 3.2  2002/05/31 17:21:33  dkr
  * functions renamed
  *
@@ -39,7 +42,7 @@
 
 #include "NameTuples.h"
 
-extern data_class_t ICUGetClass (char *nt);
-extern unq_class_t ICUGetUnq (char *nt);
+extern data_class_t ICUGetDataClass (char *nt);
+extern unq_class_t ICUGetUnqClass (char *nt);
 
 #endif /* _icm2c_utils_h */

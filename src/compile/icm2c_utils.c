@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/06/02 21:36:56  dkr
+ * functions renamed
+ *
  * Revision 3.2  2002/05/31 17:21:29  dkr
  * functions renamed
  *
@@ -82,7 +85,7 @@ FindParen (char *nt, int n)
 /******************************************************************************
  *
  * function:
- *   data_class_t ICUGetClass( char *nt)
+ *   data_class_t ICUGetDataClass( char *nt)
  *
  * description:
  *   Returns the class tag of an array or other object
@@ -90,24 +93,24 @@ FindParen (char *nt, int n)
  ******************************************************************************/
 
 data_class_t
-ICUGetClass (char *nt)
+ICUGetDataClass (char *nt)
 {
     int nc, i;
     data_class_t z;
 
-    DBUG_ENTER ("ICUGetClass");
+    DBUG_ENTER ("ICUGetDataClass");
 
-    nc = FindParen (nt, NT_CLASS_INDEX + 1) + 1;
+    nc = FindParen (nt, NT_DATA_INDEX + 1) + 1;
     i = 0;
     z = C_unknownc;
     while ((i != C_unknownc) && (z == C_unknownc)) {
-        if (!strncmp (nt + nc, nt_class_string[i], 3)) {
+        if (!strncmp (nt + nc, nt_data_string[i], 3)) {
             z = i;
         }
         i++;
     }
 
-    DBUG_ASSERT ((z != C_unknownc), "ICUGetClass() did not find valid class tag");
+    DBUG_ASSERT ((z != C_unknownc), "ICUGetDataClass() did not find valid class tag");
 
     DBUG_RETURN (z);
 }
@@ -115,7 +118,7 @@ ICUGetClass (char *nt)
 /******************************************************************************
  *
  * function:
- *   unq_class_t ICUGetUnq( char *nt)
+ *   unq_class_t ICUGetUnqClass( char *nt)
  *
  * description:
  *   Returns the uniqueness tag of an array or other object
@@ -123,12 +126,12 @@ ICUGetClass (char *nt)
  ******************************************************************************/
 
 unq_class_t
-ICUGetUnq (char *nt)
+ICUGetUnqClass (char *nt)
 {
     int nc, i;
     unq_class_t z;
 
-    DBUG_ENTER ("ICUGetUnq");
+    DBUG_ENTER ("ICUGetUnqClass");
 
     nc = FindParen (nt, NT_UNQ_INDEX + 1) + 1;
     i = 0;
@@ -140,7 +143,7 @@ ICUGetUnq (char *nt)
         i++;
     }
 
-    DBUG_ASSERT ((z != C_unknownu), "ICUGetUnq() did not find valid uniqueness tag");
+    DBUG_ASSERT ((z != C_unknownu), "ICUGetUnqClass() did not find valid uniqueness tag");
 
     DBUG_RETURN (z);
 }
