@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2001/05/02 08:01:24  nmw
+ * COIsZero, COIsOne, ... and COMakeZero, COMakeOne, ... added
+ *
  * Revision 1.6  2001/04/30 12:29:15  nmw
  * GetDataVec() added
  *
@@ -67,6 +70,7 @@
 #include "cv2cv.h"
 #include "cv2str.h"
 #include "tree_compound.h"
+#include "basecv.h"
 
 /*
  * Now, we include the own interface! The reason fot this is twofold:
@@ -675,4 +679,125 @@ COIsConstant (node *n)
         res = FALSE;
     }
     DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   constant *COMakeZero( simpletype type, shape *shp)
+ *   constant *COMakeOne( simpletype type, shape *shp)
+ *   constant *COMakeTrue( simpletype type, shape *shp)
+ *   constant *COMakeFalse( simpletype type, shape *shp)
+ *
+ * description:
+ *   create a constant of the given basetype and shape filled with 0 or 1
+ *   (for boolean FALSE/TRUE). if no constant can be created for this basetype
+ *   the result will be NULL.
+ *
+ ******************************************************************************/
+constant *
+COMakeZero (simpletype type, shape *shp)
+{
+    DBUG_ENTER ("COMakeZero");
+    DBUG_RETURN (basecv_zero[type](shp));
+}
+
+constant *
+COMakeOne (simpletype type, shape *shp)
+{
+    DBUG_ENTER ("COMakeOne");
+    DBUG_RETURN (basecv_one[type](shp));
+}
+
+constant *
+COMakeTrue (shape *shp)
+{
+    DBUG_ENTER ("COMakeTrue");
+    DBUG_RETURN (basecv_one[T_bool](shp));
+}
+
+constant *
+COMakeFalse (shape *shp)
+{
+    DBUG_ENTER ("COMakeFalse");
+    DBUG_RETURN (basecv_zero[T_bool](shp));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   bool COIsZero( constant *a)
+ *   bool COIsOne( constant *a)
+ *   bool COIsTrue( constant *a)
+ *   bool COIsFalse( constant *a)
+ *
+ * description:
+ *   checks if the given constant consists only of 0 or 1 elements.
+ *   (FALSE/TRUE for boolean)
+ *
+ ******************************************************************************/
+bool
+COIsZero (constant *a)
+{
+    bool result;
+    constant *zero;
+    constant *eq;
+
+    DBUG_ENTER ("COIsZero");
+    DBUG_ASSERT ((a != NULL), "COIsZero called with NULL pointer");
+
+    /* create a zero constant with one element */
+    zero = COMakeZero (COGetType (a), SHMakeShape (0));
+
+    /* check for correct constant */
+    if (zero != NULL) {
+        /* compare constants */
+        eq = COEq (a, zero);
+        result = *((bool *)(CONSTANT_ELEMS (eq)));
+        eq = COFreeConstant (eq);
+    } else {
+        result = FALSE;
+    }
+
+    DBUG_RETURN (result);
+}
+
+bool
+COIsOne (constant *a)
+{
+    bool result;
+    constant *one;
+    constant *eq;
+
+    DBUG_ENTER ("COIsOne");
+    DBUG_ASSERT ((a != NULL), "COIsOne called with NULL pointer");
+
+    /* create a "one" constant with one element */
+    one = COMakeOne (COGetType (a), SHMakeShape (0));
+
+    /* check for correct constant */
+    if (one != NULL) {
+        /* compare constants */
+        eq = COEq (a, one);
+        result = *((bool *)(CONSTANT_ELEMS (eq)));
+        eq = COFreeConstant (eq);
+    } else {
+        result = FALSE;
+    }
+
+    DBUG_RETURN (result);
+}
+
+bool
+COIsTrue (constant *a)
+{
+    DBUG_ENTER ("COIsTrue");
+    DBUG_RETURN (COIsOne (a));
+}
+
+bool
+COIsFalse (constant *a)
+{
+    DBUG_ENTER ("COIsFalse");
+    DBUG_RETURN (COIsZero (a));
 }

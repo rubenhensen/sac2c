@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.7  2001/05/02 08:00:46  nmw
+ * COIsZero, COIsOne, ... and COMakeZero, COMakeOne, ... added
+ *
  * Revision 1.6  2001/04/30 12:28:43  nmw
  * GetDataVec added
  *
@@ -78,6 +81,11 @@ extern constant *COMakeConstant (simpletype type, shape *shp, void *elems);
 extern constant *COMakeConstantFromInt (int val);
 extern constant *COMakeConstantFromArray (node *a);
 
+extern constant *COMakeZero (simpletype type, shape *shp);
+extern constant *COMakeOne (simpletype type, shape *shp);
+extern constant *COMakeTrue (shape *shp);
+extern constant *COMakeFalse (shape *shp);
+
 /*
  * Functions for extracting info from constants:
  */
@@ -95,6 +103,12 @@ extern constant *COFreeConstant (constant *a);
 extern node *COConstant2AST (constant *a);
 extern constant *COAST2Constant (node *a);
 extern bool COIsConstant (node *a);
+
+/* basic value compares */
+extern bool COIsZero (constant *a);
+extern bool COIsOne (constant *a);
+extern bool COIsTrue (constant *a);
+extern bool COIsFalse (constant *a);
 
 /***
  ***
