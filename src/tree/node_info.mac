@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.63  2002/02/27 14:48:42  dkr
+ * PREC3assign added
+ *
  * Revision 3.62  2002/02/27 11:56:22  dkr
  * PREC3modul added
  *
@@ -1205,8 +1208,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSALIRassign, LIRMOVassign, TravSons, SSALURassign, SSAWLTassign, SSAWLIassign,
        SSAWLFassign,
 
-       TravSons, COMP2Assign, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       2),
+       TravSons, COMP2Assign, PREC3assign, TravSons, TravSons, TravSons, TravSons,
+       TravSons, 2),
 
   NIF (N_annotate, "N_annotate", TravSons, TravSons, PrintAnnotate, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
