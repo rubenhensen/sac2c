@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.35  1996/02/29 14:51:24  sbs
+ * Revision 1.36  1997/04/24 10:06:45  cg
+ * non-icm macros moved from icm2c.h to libsac.h
+ *
+ * Revision 1.35  1996/02/29  14:51:24  sbs
  * implementation for ND_IDX_PSI_A debugged;
  * accepts now constants as source parameter as well
  *
@@ -126,6 +129,8 @@
 #include <malloc.h>
 #include <memory.h>
 
+#include "libsac.h"
+
 /*
  *  README: The difference between 'type' and 'basetype'
  *
@@ -139,87 +144,6 @@
  *  'int' for an integer, 'void*' for a hidden, etc.
  *
  */
-
-/*
- * Internal Macros :
- * =================
- *
- */
-
-#if (defined(TRACE_MEM) || defined(TRACE_REF))
-
-#define PRINT_TRACEHEADER_ALL(text) __SAC__Runtime_PrintTraceHeader text
-
-#define PRINT_ARRAY_FREE(name)                                                           \
-    __SAC__Runtime_PrintTraceInfo ("freeing array %s (adr: %p)", #name, ND_A_FIELD (name))
-
-#define PRINT_HIDDEN_FREE(name)                                                          \
-    __SAC__Runtime_PrintTraceInfo ("freeing hidden %s (adr: %p)", #name, name)
-
-#else
-
-#define PRINT_TRACEHEADER_ALL(text)
-#define PRINT_ARRAY_FREE(name)
-#define PRINT_HIDDEN_FREE(name)
-
-#endif /* TRACE_MEM || TRACE_REF */
-
-#ifdef TRACE_REF
-
-#define PRINT_TRACEHEADER_REF(text) __SAC__Runtime_PrintTraceHeader text
-
-#define PRINT_REF(name)                                                                  \
-    __SAC__Runtime_PrintTraceInfo ("refcnt of %s: %d", #name, ND_A_RC (name))
-
-#else
-
-#define PRINT_TRACEHEADER_REF(text)
-#define PRINT_REF(name)
-
-#endif /* TRACE_REF */
-
-#ifdef TRACE_MEM
-
-#define PRINT_TRACEHEADER_MEM(text) __SAC__Runtime_PrintTraceHeader text
-
-#define PRINT_ARRAY_MEM(name)                                                            \
-    __SAC__Runtime_PrintTraceInfo ("adr: %p, size: %d elements", ND_A_FIELD (name),      \
-                                   ND_A_SIZE (name));                                    \
-    __SAC__Runtime_PrintTraceInfo ("total # of array elements: %d",                      \
-                                   __SAC__Runtime_array_memcnt)
-
-#define PRINT_HIDDEN_MEM(name)                                                           \
-    __SAC__Runtime_PrintTraceInfo ("adr: %p", name);                                     \
-    __SAC__Runtime_PrintTraceInfo ("total # of hidden objects: %d",                      \
-                                   __SAC__Runtime_hidden_memcnt)
-
-#define INC_ARRAY_MEMCNT(size) __SAC__Runtime_array_memcnt += size
-#define DEC_ARRAY_MEMCNT(size) __SAC__Runtime_array_memcnt -= size
-
-#define INC_HIDDEN_MEMCNT(size) __SAC__Runtime_hidden_memcnt += size
-#define DEC_HIDDEN_MEMCNT(size) __SAC__Runtime_hidden_memcnt -= size
-
-#else
-
-#define PRINT_TRACEHEADER_MEM(text)
-#define PRINT_ARRAY_MEM(name)
-#define PRINT_HIDDEN_MEM(name)
-#define INC_ARRAY_MEMCNT(size)
-#define DEC_ARRAY_MEMCNT(size)
-#define INC_HIDDEN_MEMCNT(size)
-#define DEC_HIDDEN_MEMCNT(size)
-
-#endif /* TRACE_MEM */
-
-#ifdef CHECK_MALLOC
-
-#define MALLOC(size) __SAC__Runtime_malloc (size)
-
-#else /* CHECK_MALLOC  */
-
-#define MALLOC(size) malloc (size)
-
-#endif /* CHECK_MALLOC  */
 
 /*
  * Macros for array access:
