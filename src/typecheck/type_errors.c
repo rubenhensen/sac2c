@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.17  2004/11/24 18:14:46  sbs
+ * compiles
+ *
  * Revision 1.16  2004/11/24 17:42:48  sbs
  * not yet
  *
@@ -305,7 +308,7 @@ TEextendedAbort ()
 /******************************************************************************
  *
  * function:
- *    char *TEPrfArg2Obj( char *prf_str, int pos )
+ *    char *TEprfArg2Obj( const char *prf_str, int pos )
  *
  * description:
  *
@@ -313,12 +316,12 @@ TEextendedAbort ()
  ******************************************************************************/
 
 char *
-TEPrfArg2Obj (char *prf_str, int pos)
+TEprfArg2Obj (const char *prf_str, int pos)
 {
     static char buffer[64];
     char *tmp = &buffer[0];
 
-    DBUG_ENTER ("TEPrfArg2Obj");
+    DBUG_ENTER ("TEprfArg2Obj");
 
     tmp += sprintf (tmp, "argument #%d of \"%s\"", pos, prf_str);
 
@@ -328,7 +331,7 @@ TEPrfArg2Obj (char *prf_str, int pos)
 /******************************************************************************
  *
  * function:
- *    char *TEArg2Obj( int pos )
+ *    char *TEarg2Obj( int pos )
  *
  * description:
  *
@@ -336,12 +339,12 @@ TEPrfArg2Obj (char *prf_str, int pos)
  ******************************************************************************/
 
 char *
-TEArg2Obj (int pos)
+TEarg2Obj (int pos)
 {
     static char buffer[64];
     char *tmp = &buffer[0];
 
-    DBUG_ENTER ("TEArg2Obj");
+    DBUG_ENTER ("TEarg2Obj");
 
     tmp += sprintf (tmp, "argument #%d", pos);
 
@@ -351,7 +354,7 @@ TEArg2Obj (int pos)
 /******************************************************************************
  *
  * function:
- *    char *TEArrayElem2Obj( int pos )
+ *    char *TEarrayElem2Obj( int pos )
  *
  * description:
  *
@@ -359,12 +362,12 @@ TEArg2Obj (int pos)
  ******************************************************************************/
 
 char *
-TEArrayElem2Obj (int pos)
+TEarrayElem2Obj (int pos)
 {
     static char buffer[64];
     char *tmp = &buffer[0];
 
-    DBUG_ENTER ("TEArrayElem2Obj");
+    DBUG_ENTER ("TEarrayElem2Obj");
 
     tmp += sprintf (tmp, "array element #%d", pos);
 

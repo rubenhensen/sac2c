@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2004/11/24 18:14:46  sbs
+ * compiles
+ *
  * Revision 1.23  2004/08/08 16:05:08  sah
  * fixed some includes.
  *
@@ -24,7 +27,7 @@
  * error in NTCPRF_modarrayS eliminated.
  *
  * Revision 1.16  2003/04/14 10:49:49  sbs
- * no double usage of TEPrfArg2Obj anymore as this fun uses static buffers 8-)
+ * no double usage of TEprfArg2Obj anymore as this fun uses static buffers 8-)
  *
  * Revision 1.15  2003/04/11 17:56:37  sbs
  * implementation of NTCPRF_reshape extended for akv types.
@@ -82,21 +85,12 @@
 #include "dbug.h"
 #include "ct_prf.h"
 #include "constants.h"
+#include "new_types.h"
 #include "type_errors.h"
 #include "user_types.h"
+#include "shape.h"
+#include "constants.h"
 #include "Error.h"
-
-ct_funptr NTCPRF_funtab[] = {
-#define PRF_IF(a, b, c, d, e, f, g, h) g
-#include "prf_node_info.mac"
-#undef PRF_IF
-};
-
-void *NTCPRF_cffuntab[] = {
-#define PRF_IF(a, b, c, d, e, f, g, h) (void *)h
-#include "prf_node_info.mac"
-#undef PRF_IF
-};
 
 static constant *
 ApplyCF (te_info *info, ntype *args)
@@ -105,18 +99,18 @@ ApplyCF (te_info *info, ntype *args)
 
     DBUG_ENTER ("NTCApplyCF");
 
-    switch (TYGetProductSize (args)) {
+    switch (TYgetProductSize (args)) {
     case 1:
-        res = ((monCF)TEGetCFFun (info)) (TYGetValue (TYGetProductMember (args, 0)));
+        res = ((monCF)TEgetCFFun (info)) (TYgetValue (TYgetProductMember (args, 0)));
         break;
     case 2:
-        res = ((binCF)TEGetCFFun (info)) (TYGetValue (TYGetProductMember (args, 0)),
-                                          TYGetValue (TYGetProductMember (args, 1)));
+        res = ((binCF)TEgetCFFun (info)) (TYgetValue (TYgetProductMember (args, 0)),
+                                          TYgetValue (TYgetProductMember (args, 1)));
         break;
     case 3:
-        res = ((triCF)TEGetCFFun (info)) (TYGetValue (TYGetProductMember (args, 0)),
-                                          TYGetValue (TYGetProductMember (args, 1)),
-                                          TYGetValue (TYGetProductMember (args, 2)));
+        res = ((triCF)TEgetCFFun (info)) (TYgetValue (TYgetProductMember (args, 0)),
+                                          TYgetValue (TYgetProductMember (args, 1)),
+                                          TYgetValue (TYgetProductMember (args, 2)));
         break;
     default:
         DBUG_ASSERT (FALSE, "Constant Folding failed for the given number of arguments!");
@@ -172,43 +166,43 @@ NTCPRF_array (te_info *info, ntype *elems)
 
     DBUG_ENTER ("NTCPRF_array");
 
-    elem = TYCopyType (TYGetProductMember (elems, 0));
-    num_elems = TYGetProductSize (elems);
+    elem = TYcopyType (TYgetProductMember (elems, 0));
+    num_elems = TYgetProductSize (elems);
 
     for (i = 1; i < num_elems; i++) {
-        elem2 = TYGetProductMember (elems, i);
-        TEAssureSameScalarType ("array element #0", elem, TEArrayElem2Obj (i), elem2);
-        elem2 = TEAssureSameShape ("array element #0", elem, TEArrayElem2Obj (i), elem2);
-        TYFreeType (elem);
+        elem2 = TYgetProductMember (elems, i);
+        TEassureSameScalarType ("array element #0", elem, TEarrayElem2Obj (i), elem2);
+        elem2 = TEassureSameShape ("array element #0", elem, TEarrayElem2Obj (i), elem2);
+        TYfreeType (elem);
         elem = elem2;
     }
 
-    if (TYIsProdOfAKV (elems)) {
-        val = COCopyConstant (TYGetValue (TYGetProductMember (elems, 0)));
+    if (TYisProdOfAKV (elems)) {
+        val = COcopyConstant (TYgetValue (TYgetProductMember (elems, 0)));
         for (i = 1; i < num_elems; i++) {
             tmp = val;
-            val = COCat (tmp, TYGetValue (TYGetProductMember (elems, i)));
-            tmp = COFreeConstant (tmp);
+            val = COcat (tmp, TYgetValue (TYgetProductMember (elems, i)));
+            tmp = COfreeConstant (tmp);
         }
-        shp = SHCreateShape (1, num_elems);
-        tmp = COMakeConstantFromShape (SHAppendShapes (shp, TYGetShape (elem)));
-        SHFreeShape (shp);
-        res = TYMakeAKV (TYCopyType (TYGetScalar (elem)), COReshape (tmp, val));
-        tmp = COFreeConstant (tmp);
-        val = COFreeConstant (val);
+        shp = SHcreateShape (1, num_elems);
+        tmp = COmakeConstantFromShape (SHappendShapes (shp, TYgetShape (elem)));
+        SHfreeShape (shp);
+        res = TYmakeAKV (TYcopyType (TYgetScalar (elem)), COreshape (tmp, val));
+        tmp = COfreeConstant (tmp);
+        val = COfreeConstant (val);
     } else {
-        switch (TYGetConstr (elem)) {
+        switch (TYgetConstr (elem)) {
         case TC_aks:
-            shp = SHCreateShape (1, num_elems);
-            res = TYMakeAKS (TYGetScalar (elem), SHAppendShapes (shp, TYGetShape (elem)));
-            SHFreeShape (shp);
+            shp = SHcreateShape (1, num_elems);
+            res = TYmakeAKS (TYgetScalar (elem), SHappendShapes (shp, TYgetShape (elem)));
+            SHfreeShape (shp);
             break;
         case TC_akd:
-            res = TYMakeAKD (TYGetScalar (elem), TYGetDim (elem) + 1, SHMakeShape (0));
+            res = TYmakeAKD (TYgetScalar (elem), TYgetDim (elem) + 1, SHmakeShape (0));
             break;
         case TC_audgz:
         case TC_aud:
-            res = TYMakeAUDGZ (TYGetScalar (elem));
+            res = TYmakeAUDGZ (TYgetScalar (elem));
             break;
         default:
             DBUG_ASSERT ((FALSE), "array elements of non array types not yet supported");
@@ -216,9 +210,9 @@ NTCPRF_array (te_info *info, ntype *elems)
         }
     }
 
-    TYFreeTypeConstructor (elem);
+    TYfreeTypeConstructor (elem);
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -239,20 +233,20 @@ NTCPRF_cast (te_info *info, ntype *elems)
 
     DBUG_ENTER ("NTCPRF_cast");
 
-    cast_t = TYGetProductMember (elems, 0);
-    cast_bt = TYEliminateUser (cast_t);
-    expr_t = TYGetProductMember (elems, 1);
-    expr_bt = TYEliminateUser (expr_t);
+    cast_t = TYgetProductMember (elems, 0);
+    cast_bt = TYeliminateUser (cast_t);
+    expr_t = TYgetProductMember (elems, 1);
+    expr_bt = TYeliminateUser (expr_t);
 
-    TEAssureSameScalarType ("cast-type", cast_bt, "expr-type", expr_bt);
-    res_bt = TEAssureSameShape ("cast-type", cast_bt, "expr-type", expr_bt);
-    cast_bt = TYFreeType (cast_bt);
-    expr_bt = TYFreeType (expr_bt);
+    TEassureSameScalarType ("cast-type", cast_bt, "expr-type", expr_bt);
+    res_bt = TEassureSameShape ("cast-type", cast_bt, "expr-type", expr_bt);
+    cast_bt = TYfreeType (cast_bt);
+    expr_bt = TYfreeType (expr_bt);
 
     /*
-     * Unfortunately, this TEAssureSameShape in certain situations does not detect
-     * incompatabilities. The problem arises from the application of TYEliminateUser:
-     * e.g.  TYEliminateUser( complex[.])  =>   double[.,.]   which does not contain
+     * Unfortunately, this TEassureSameShape in certain situations does not detect
+     * incompatabilities. The problem arises from the application of TYeliminateUser:
+     * e.g.  TYeliminateUser( complex[.])  =>   double[.,.]   which does not contain
      *       the information that complex[.] in fact is double[.,2]! As a consequence,
      * it can be casted into double[3,4] which obviously is wrong!!
      * Such situations can accur, if
@@ -264,64 +258,64 @@ NTCPRF_cast (te_info *info, ntype *elems)
      * the user types of "cast_t" and "expr_t" have to be compared:
      */
 
-    if (TYIsAKS (res_bt)) {
-        shp = TYGetShape (res_bt);
-        if (TYIsArray (cast_t) && TYIsUser (TYGetScalar (cast_t))) {
-            d_shp = TYGetShape (UTGetBaseType (TYGetUserType (TYGetScalar (cast_t))));
-            s_shp = SHDropFromShape (SHGetDim (shp) - SHGetDim (d_shp), shp);
-            if (!SHCompareShapes (d_shp, s_shp)) {
-                ERROR (linenum, ("cast type %s does not match expression type %s "
-                                 "as \"%s\" is defined as %s",
-                                 TYType2String (cast_t, FALSE, 0),
-                                 TYType2String (expr_t, FALSE, 0),
-                                 UTGetName (TYGetUserType (TYGetScalar (cast_t))),
-                                 TYType2String (UTGetBaseType (
-                                                  TYGetUserType (TYGetScalar (cast_t))),
-                                                FALSE, 0)));
-                TEExtendedAbort ();
+    if (TYisAKS (res_bt)) {
+        shp = TYgetShape (res_bt);
+        if (TYisArray (cast_t) && TYisUser (TYgetScalar (cast_t))) {
+            d_shp = TYgetShape (UTgetBaseType (TYgetUserType (TYgetScalar (cast_t))));
+            s_shp = SHdropFromShape (SHgetDim (shp) - SHgetDim (d_shp), shp);
+            if (!SHcompareShapes (d_shp, s_shp)) {
+                ERROR (global.linenum, ("cast type %s does not match expression type %s "
+                                        "as \"%s\" is defined as %s",
+                                        TYtype2String (cast_t, FALSE, 0),
+                                        TYtype2String (expr_t, FALSE, 0),
+                                        UTgetName (TYgetUserType (TYgetScalar (cast_t))),
+                                        TYtype2String (UTgetBaseType (TYgetUserType (
+                                                         TYgetScalar (cast_t))),
+                                                       FALSE, 0)));
+                TEextendedAbort ();
             }
         }
-        if (TYIsArray (expr_t) && TYIsUser (TYGetScalar (expr_t))) {
-            d_shp = TYGetShape (UTGetBaseType (TYGetUserType (TYGetScalar (expr_t))));
-            s_shp = SHDropFromShape (SHGetDim (shp) - SHGetDim (d_shp), shp);
-            if (!SHCompareShapes (d_shp, s_shp)) {
-                ERROR (linenum, ("cast type %s does not match expression type %s "
-                                 "as \"%s\" is defined as %s",
-                                 TYType2String (cast_t, FALSE, 0),
-                                 TYType2String (expr_t, FALSE, 0),
-                                 UTGetName (TYGetUserType (TYGetScalar (expr_t))),
-                                 TYType2String (UTGetBaseType (
-                                                  TYGetUserType (TYGetScalar (expr_t))),
-                                                FALSE, 0)));
-                TEExtendedAbort ();
+        if (TYisArray (expr_t) && TYisUser (TYgetScalar (expr_t))) {
+            d_shp = TYgetShape (UTgetBaseType (TYgetUserType (TYgetScalar (expr_t))));
+            s_shp = SHdropFromShape (SHgetDim (shp) - SHgetDim (d_shp), shp);
+            if (!SHcompareShapes (d_shp, s_shp)) {
+                ERROR (global.linenum, ("cast type %s does not match expression type %s "
+                                        "as \"%s\" is defined as %s",
+                                        TYtype2String (cast_t, FALSE, 0),
+                                        TYtype2String (expr_t, FALSE, 0),
+                                        UTgetName (TYgetUserType (TYgetScalar (expr_t))),
+                                        TYtype2String (UTgetBaseType (TYgetUserType (
+                                                         TYgetScalar (expr_t))),
+                                                       FALSE, 0)));
+                TEextendedAbort ();
             }
         }
     } else {
-        if (TYIsArray (cast_t) && TYIsUser (TYGetScalar (cast_t)) && TYIsArray (expr_t)
-            && TYIsUser (TYGetScalar (expr_t))) {
-            shp = TYGetShape (UTGetBaseType (TYGetUserType (TYGetScalar (cast_t))));
-            d_shp = TYGetShape (UTGetBaseType (TYGetUserType (TYGetScalar (expr_t))));
-            if (SHGetDim (shp) < SHGetDim (d_shp)
-                  ? !SHCompareShapes (shp,
-                                      SHDropFromShape (SHGetDim (d_shp) - SHGetDim (shp),
+        if (TYisArray (cast_t) && TYisUser (TYgetScalar (cast_t)) && TYisArray (expr_t)
+            && TYisUser (TYgetScalar (expr_t))) {
+            shp = TYgetShape (UTgetBaseType (TYgetUserType (TYgetScalar (cast_t))));
+            d_shp = TYgetShape (UTgetBaseType (TYgetUserType (TYgetScalar (expr_t))));
+            if (SHgetDim (shp) < SHgetDim (d_shp)
+                  ? !SHcompareShapes (shp,
+                                      SHdropFromShape (SHgetDim (d_shp) - SHgetDim (shp),
                                                        d_shp))
-                  : !SHCompareShapes (SHDropFromShape (SHGetDim (shp) - SHGetDim (d_shp),
+                  : !SHcompareShapes (SHdropFromShape (SHgetDim (shp) - SHgetDim (d_shp),
                                                        shp),
                                       d_shp)) {
-                ERROR (linenum,
+                ERROR (global.linenum,
                        ("cast type %s does not match expression type %s "
                         "as \"%s\" is defined as %s whereas \"%s\" is defined as %s",
-                        TYType2String (cast_t, FALSE, 0),
-                        TYType2String (expr_t, FALSE, 0),
-                        UTGetName (TYGetUserType (TYGetScalar (cast_t))),
-                        TYType2String (UTGetBaseType (
-                                         TYGetUserType (TYGetScalar (cast_t))),
+                        TYtype2String (cast_t, FALSE, 0),
+                        TYtype2String (expr_t, FALSE, 0),
+                        UTgetName (TYgetUserType (TYgetScalar (cast_t))),
+                        TYtype2String (UTgetBaseType (
+                                         TYgetUserType (TYgetScalar (cast_t))),
                                        FALSE, 0),
-                        UTGetName (TYGetUserType (TYGetScalar (expr_t))),
-                        TYType2String (UTGetBaseType (
-                                         TYGetUserType (TYGetScalar (expr_t))),
+                        UTgetName (TYgetUserType (TYgetScalar (expr_t))),
+                        TYtype2String (UTgetBaseType (
+                                         TYgetUserType (TYgetScalar (expr_t))),
                                        FALSE, 0)));
-                TEExtendedAbort ();
+                TEextendedAbort ();
             }
         }
     }
@@ -334,16 +328,16 @@ NTCPRF_cast (te_info *info, ntype *elems)
      * user type from the back of "res_bt".
      */
 
-    if (TYIsArray (cast_t) && TYIsUser (TYGetScalar (cast_t))) {
+    if (TYisArray (cast_t) && TYisUser (TYgetScalar (cast_t))) {
         res
-          = TYDeNestTypes (res_bt, UTGetBaseType (TYGetUserType (TYGetScalar (cast_t))));
-        res = TYSetScalar (res, TYCopyType (TYGetScalar (cast_t)));
-        res_bt = TYFreeType (res_bt);
+          = TYdeNestTypes (res_bt, UTgetBaseType (TYgetUserType (TYgetScalar (cast_t))));
+        res = TYsetScalar (res, TYcopyType (TYgetScalar (cast_t)));
+        res_bt = TYfreeType (res_bt);
     } else {
         res = res_bt;
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -362,20 +356,20 @@ NTCPRF_dim (te_info *info, ntype *args)
     ntype *res;
 
     DBUG_ENTER ("NTCPRF_dim");
-    DBUG_ASSERT (TYGetProductSize (args) == 1,
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "dim called with incorrect number of arguments");
 
-    array = TYGetProductMember (args, 0);
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 1), array);
+    array = TYgetProductMember (args, 0);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array);
 
-    if (TYIsAKV (array) || TYIsAKS (array) || TYIsAKD (array)) {
-        res = TYMakeAKV (TYMakeSimpleType (T_int),
-                         COMakeConstantFromInt (TYGetDim (array)));
+    if (TYisAKV (array) || TYisAKS (array) || TYisAKD (array)) {
+        res = TYmakeAKV (TYmakeSimpleType (T_int),
+                         COmakeConstantFromInt (TYgetDim (array)));
     } else {
-        res = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (0));
+        res = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -396,32 +390,32 @@ NTCPRF_shape (te_info *info, ntype *args)
     int n;
 
     DBUG_ENTER ("NTCPRF_shape");
-    DBUG_ASSERT (TYGetProductSize (args) == 1,
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "shape called with incorrect number of arguments");
 
-    arg = TYGetProductMember (args, 0);
+    arg = TYgetProductMember (args, 0);
 
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 1), arg);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), arg);
 
-    switch (TYGetConstr (arg)) {
+    switch (TYgetConstr (arg)) {
     case TC_akv:
     case TC_aks:
-        shp = TYGetShape (arg);
-        res = TYMakeAKV (TYMakeSimpleType (T_int), COMakeConstantFromShape (shp));
+        shp = TYgetShape (arg);
+        res = TYmakeAKV (TYmakeSimpleType (T_int), COmakeConstantFromShape (shp));
         break;
     case TC_akd:
-        n = TYGetDim (arg);
-        res = TYMakeAKS (TYMakeSimpleType (T_int), SHCreateShape (1, n));
+        n = TYgetDim (arg);
+        res = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, n));
         break;
     case TC_audgz:
     case TC_aud:
-        res = TYMakeAKD (TYMakeSimpleType (T_int), 1, SHMakeShape (0));
+        res = TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0));
         break;
     default:
         DBUG_ASSERT (FALSE, "NTCPRF_shape applied to non-array type");
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -440,42 +434,42 @@ NTCPRF_reshape (te_info *info, ntype *args)
     ntype *new_shp, *array, *scalar;
 
     DBUG_ENTER ("NTCPRF_reshape");
-    DBUG_ASSERT (TYGetProductSize (args) == 2,
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "shape called with incorrect number of arguments");
 
-    new_shp = TYGetProductMember (args, 0);
-    array = TYGetProductMember (args, 1);
+    new_shp = TYgetProductMember (args, 0);
+    array = TYgetProductMember (args, 1);
 
-    TEAssureIntVect (TEPrfArg2Obj (TEGetNameStr (info), 1), new_shp);
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array);
-    TEAssureProdValMatchesProdShape (TEPrfArg2Obj (TEGetNameStr (info), 1), new_shp,
-                                     TEArg2Obj (2), array);
+    TEassureIntVect (TEprfArg2Obj (TEgetNameStr (info), 1), new_shp);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array);
+    TEassureProdValMatchesProdShape (TEprfArg2Obj (TEgetNameStr (info), 1), new_shp,
+                                     TEarg2Obj (2), array);
 
-    scalar = TYGetScalar (array);
+    scalar = TYgetScalar (array);
 
-    switch (TYGetConstr (new_shp)) {
+    switch (TYgetConstr (new_shp)) {
     case TC_akv:
-        if (TYGetConstr (array) == TC_akv) {
-            res = TYMakeAKV (TYCopyType (TYGetScalar (array)), ApplyCF (info, args));
+        if (TYgetConstr (array) == TC_akv) {
+            res = TYmakeAKV (TYcopyType (TYgetScalar (array)), ApplyCF (info, args));
         } else {
             res
-              = TYMakeAKS (TYCopyType (scalar), COConstant2Shape (TYGetValue (new_shp)));
+              = TYmakeAKS (TYcopyType (scalar), COconstant2Shape (TYgetValue (new_shp)));
         }
         break;
     case TC_aks:
-        res = TYMakeAKD (TYCopyType (scalar), SHGetExtent (TYGetShape (new_shp), 0),
-                         SHMakeShape (0));
+        res = TYmakeAKD (TYcopyType (scalar), SHgetExtent (TYgetShape (new_shp), 0),
+                         SHmakeShape (0));
         break;
     case TC_akd:
     case TC_audgz:
     case TC_aud:
-        res = TYMakeAUD (TYCopyType (scalar));
+        res = TYmakeAUD (TYcopyType (scalar));
         break;
     default:
         DBUG_ASSERT (FALSE, "NTCPRF_reshape applied to non-array type");
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -494,26 +488,26 @@ NTCPRF_selS (te_info *info, ntype *args)
     ntype *idx, *array;
 
     DBUG_ENTER ("NTCPRF_selS");
-    DBUG_ASSERT (TYGetProductSize (args) == 2,
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "selS called with incorrect number of arguments");
 
-    idx = TYGetProductMember (args, 0);
-    array = TYGetProductMember (args, 1);
+    idx = TYgetProductMember (args, 0);
+    array = TYgetProductMember (args, 1);
 
-    TEAssureIntVect (TEPrfArg2Obj (TEGetNameStr (info), 1), idx);
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array);
-    TEAssureShpMatchesDim (TEPrfArg2Obj (TEGetNameStr (info), 1), idx, TEArg2Obj (2),
+    TEassureIntVect (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array);
+    TEassureShpMatchesDim (TEprfArg2Obj (TEgetNameStr (info), 1), idx, TEarg2Obj (2),
                            array);
-    TEAssureValMatchesShape (TEPrfArg2Obj (TEGetNameStr (info), 1), idx, TEArg2Obj (2),
+    TEassureValMatchesShape (TEprfArg2Obj (TEgetNameStr (info), 1), idx, TEarg2Obj (2),
                              array);
 
-    if (TYIsAKV (idx) && TYIsAKV (array)) {
-        res = TYMakeAKV (TYCopyType (TYGetScalar (array)), ApplyCF (info, args));
+    if (TYisAKV (idx) && TYisAKV (array)) {
+        res = TYmakeAKV (TYcopyType (TYgetScalar (array)), ApplyCF (info, args));
     } else {
-        res = TYMakeAKS (TYCopyType (TYGetScalar (array)), SHMakeShape (0));
+        res = TYmakeAKS (TYcopyType (TYgetScalar (array)), SHmakeShape (0));
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -532,36 +526,36 @@ NTCPRF_modarrayS (te_info *info, ntype *args)
     ntype *idx, *array, *val;
 
     DBUG_ENTER ("NTCPRF_modarrayS");
-    DBUG_ASSERT (TYGetProductSize (args) == 3,
+    DBUG_ASSERT (TYgetProductSize (args) == 3,
                  "modarrayS called with incorrect number of arguments");
 
-    array = TYGetProductMember (args, 0);
-    idx = TYGetProductMember (args, 1);
-    val = TYGetProductMember (args, 2);
+    array = TYgetProductMember (args, 0);
+    idx = TYgetProductMember (args, 1);
+    val = TYgetProductMember (args, 2);
 
-    TEAssureIntVect (TEPrfArg2Obj (TEGetNameStr (info), 1), idx);
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array);
-    TEAssureShpMatchesDim (TEPrfArg2Obj (TEGetNameStr (info), 2), idx, TEArg2Obj (1),
+    TEassureIntVect (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array);
+    TEassureShpMatchesDim (TEprfArg2Obj (TEgetNameStr (info), 2), idx, TEarg2Obj (1),
                            array);
-    TEAssureValMatchesShape (TEPrfArg2Obj (TEGetNameStr (info), 2), idx, TEArg2Obj (1),
+    TEassureValMatchesShape (TEprfArg2Obj (TEgetNameStr (info), 2), idx, TEarg2Obj (1),
                              array);
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 3), val);
-    TEAssureScalar (TEPrfArg2Obj (TEGetNameStr (info), 3), val);
-    TEAssureSameSimpleType (TEArg2Obj (2), array, TEPrfArg2Obj (TEGetNameStr (info), 3),
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 3), val);
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 3), val);
+    TEassureSameSimpleType (TEarg2Obj (2), array, TEprfArg2Obj (TEgetNameStr (info), 3),
                             val);
 
-    if (TYIsAKV (array)) {
-        if (TYIsAKV (idx) && TYIsAKV (val)) {
-            res = TYMakeAKV (TYCopyType (TYGetScalar (array)), ApplyCF (info, args));
+    if (TYisAKV (array)) {
+        if (TYisAKV (idx) && TYisAKV (val)) {
+            res = TYmakeAKV (TYcopyType (TYgetScalar (array)), ApplyCF (info, args));
         } else {
-            res = TYMakeAKS (TYCopyType (TYGetScalar (array)),
-                             SHCopyShape (TYGetShape (array)));
+            res = TYmakeAKS (TYcopyType (TYgetScalar (array)),
+                             SHcopyShape (TYgetShape (array)));
         }
     } else {
-        res = TYCopyType (array);
+        res = TYcopyType (array);
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 static ntype *
@@ -571,20 +565,20 @@ ConvS (te_info *info, ntype *args, simpletype st)
     ntype *array;
 
     DBUG_ENTER ("ConvS");
-    DBUG_ASSERT (TYGetProductSize (args) == 1,
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "ConvS called with incorrect number of arguments");
 
-    array = TYGetProductMember (args, 0);
+    array = TYgetProductMember (args, 0);
 
-    TEAssureNumS (TEPrfArg2Obj (TEGetNameStr (info), 1), array);
+    TEassureNumS (TEprfArg2Obj (TEgetNameStr (info), 1), array);
 
-    if (TYIsAKV (array)) {
-        res = TYMakeAKV (TYMakeSimpleType (st), ApplyCF (info, args));
+    if (TYisAKV (array)) {
+        res = TYmakeAKV (TYmakeSimpleType (st), ApplyCF (info, args));
     } else {
-        res = TYMakeAKS (TYMakeSimpleType (st), SHMakeShape (0));
+        res = TYmakeAKS (TYmakeSimpleType (st), SHmakeShape (0));
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 static ntype *
@@ -594,22 +588,22 @@ ConvA (te_info *info, ntype *args, simpletype st)
     ntype *array, *scal;
 
     DBUG_ENTER ("ConvA");
-    DBUG_ASSERT (TYGetProductSize (args) == 1,
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "ConvA called with incorrect number of arguments");
 
-    array = TYGetProductMember (args, 0);
+    array = TYgetProductMember (args, 0);
 
-    TEAssureNumA (TEPrfArg2Obj (TEGetNameStr (info), 1), array);
+    TEassureNumA (TEprfArg2Obj (TEgetNameStr (info), 1), array);
 
-    if (TYIsAKV (array)) {
-        res = TYMakeAKV (TYMakeSimpleType (st), ApplyCF (info, args));
+    if (TYisAKV (array)) {
+        res = TYmakeAKV (TYmakeSimpleType (st), ApplyCF (info, args));
     } else {
-        res = TYCopyType (array);
-        scal = TYGetScalar (res);
-        scal = TYSetSimpleType (scal, st);
+        res = TYcopyType (array);
+        scal = TYgetScalar (res);
+        scal = TYsetSimpleType (scal, st);
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /** <!--********************************************************************-->
@@ -773,26 +767,26 @@ NTCPRF_ari_op_SxS (te_info *info, ntype *args)
     ntype *array1, *array2;
 
     DBUG_ENTER ("NTCPRF_ari_op_SxA");
-    DBUG_ASSERT (TYGetProductSize (args) == 2,
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "ari_op_SxA called with incorrect number of arguments");
 
-    array1 = TYGetProductMember (args, 0);
-    array2 = TYGetProductMember (args, 1);
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
 
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
-    TEAssureSameSimpleType (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureSameSimpleType (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                             array2);
-    TEAssureScalar (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
-    TEAssureScalar (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
 
-    if (TYIsAKV (array1) && TYIsAKV (array2)) {
-        res = TYMakeAKV (TYCopyType (TYGetScalar (array1)), ApplyCF (info, args));
+    if (TYisAKV (array1) && TYisAKV (array2)) {
+        res = TYmakeAKV (TYcopyType (TYgetScalar (array1)), ApplyCF (info, args));
     } else {
-        res = TYMakeAKS (TYCopyType (TYGetScalar (array1)), SHMakeShape (0));
+        res = TYmakeAKS (TYcopyType (TYgetScalar (array1)), SHmakeShape (0));
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -812,25 +806,25 @@ NTCPRF_ari_op_SxA (te_info *info, ntype *args)
     ntype *array1, *array2;
 
     DBUG_ENTER ("NTCPRF_ari_op_SxA");
-    DBUG_ASSERT (TYGetProductSize (args) == 2,
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "ari_op_SxA called with incorrect number of arguments");
 
-    array1 = TYGetProductMember (args, 0);
-    array2 = TYGetProductMember (args, 1);
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
 
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
-    TEAssureSameSimpleType (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureSameSimpleType (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                             array2);
-    TEAssureScalar (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
 
-    if (TYIsAKV (array1) && TYIsAKV (array2)) {
-        res = TYMakeAKV (TYCopyType (TYGetScalar (array1)), ApplyCF (info, args));
+    if (TYisAKV (array1) && TYisAKV (array2)) {
+        res = TYmakeAKV (TYcopyType (TYgetScalar (array1)), ApplyCF (info, args));
     } else {
-        res = TYCopyType (array2);
+        res = TYcopyType (array2);
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -850,25 +844,25 @@ NTCPRF_ari_op_AxS (te_info *info, ntype *args)
     ntype *array1, *array2;
 
     DBUG_ENTER ("NTCPRF_ari_op_AxS");
-    DBUG_ASSERT (TYGetProductSize (args) == 2,
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "ari_op_AxS called with incorrect number of arguments");
 
-    array1 = TYGetProductMember (args, 0);
-    array2 = TYGetProductMember (args, 1);
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
 
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
-    TEAssureSameSimpleType (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureSameSimpleType (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                             array2);
-    TEAssureScalar (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
 
-    if (TYIsAKV (array1) && TYIsAKV (array2)) {
-        res = TYMakeAKV (TYCopyType (TYGetScalar (array1)), ApplyCF (info, args));
+    if (TYisAKV (array1) && TYisAKV (array2)) {
+        res = TYmakeAKV (TYcopyType (TYgetScalar (array1)), ApplyCF (info, args));
     } else {
-        res = TYCopyType (array1);
+        res = TYcopyType (array1);
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -888,25 +882,25 @@ NTCPRF_ari_op_AxA (te_info *info, ntype *args)
     ntype *array1, *array2;
 
     DBUG_ENTER ("NTCPRF_ari_op_AxA");
-    DBUG_ASSERT (TYGetProductSize (args) == 2,
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "ari_op_AxA called with incorrect number of arguments");
 
-    array1 = TYGetProductMember (args, 0);
-    array2 = TYGetProductMember (args, 1);
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
 
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
-    TEAssureSameSimpleType (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureSameSimpleType (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                             array2);
-    res = TEAssureSameShape (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
+    res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                              array2);
 
-    if (TYIsAKV (array1) && TYIsAKV (array2)) {
-        res = TYFreeType (res);
-        res = TYMakeAKV (TYCopyType (TYGetScalar (array1)), ApplyCF (info, args));
+    if (TYisAKV (array1) && TYisAKV (array2)) {
+        res = TYfreeType (res);
+        res = TYmakeAKV (TYcopyType (TYgetScalar (array1)), ApplyCF (info, args));
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -926,20 +920,20 @@ NTCPRF_ari_op_A (te_info *info, ntype *args)
     ntype *array;
 
     DBUG_ENTER ("NTCPRF_ari_op_A");
-    DBUG_ASSERT (TYGetProductSize (args) == 1,
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "ari_op_A called with incorrect number of arguments");
 
-    array = TYGetProductMember (args, 0);
+    array = TYgetProductMember (args, 0);
 
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 1), array);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array);
 
-    if (TYIsAKV (array)) {
-        res = TYMakeAKV (TYCopyType (TYGetScalar (array)), ApplyCF (info, args));
+    if (TYisAKV (array)) {
+        res = TYmakeAKV (TYcopyType (TYgetScalar (array)), ApplyCF (info, args));
     } else {
-        res = TYCopyType (array);
+        res = TYcopyType (array);
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -959,27 +953,27 @@ NTCPRF_rel_op_AxA (te_info *info, ntype *args)
     ntype *array1, *array2;
 
     DBUG_ENTER ("NTCPRF_rel_op_AxA");
-    DBUG_ASSERT (TYGetProductSize (args) == 2,
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "rel_op_AxA called with incorrect number of arguments");
 
-    array1 = TYGetProductMember (args, 0);
-    array2 = TYGetProductMember (args, 1);
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
 
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
-    TEAssureSameSimpleType (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureSameSimpleType (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                             array2);
-    res = TEAssureSameShape (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
+    res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                              array2);
 
-    res = TYSetScalar (res, TYMakeSimpleType (T_bool));
+    res = TYsetScalar (res, TYmakeSimpleType (T_bool));
 
-    if (TYIsAKV (array1) && TYIsAKV (array2)) {
-        res = TYFreeType (res);
-        res = TYMakeAKV (TYMakeSimpleType (T_bool), ApplyCF (info, args));
+    if (TYisAKV (array1) && TYisAKV (array2)) {
+        res = TYfreeType (res);
+        res = TYmakeAKV (TYmakeSimpleType (T_bool), ApplyCF (info, args));
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -999,23 +993,23 @@ NTCPRF_log_op_AxA (te_info *info, ntype *args)
     ntype *array1, *array2;
 
     DBUG_ENTER ("NTCPRF_log_op_AxA");
-    DBUG_ASSERT (TYGetProductSize (args) == 2,
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "log_op_AxA called with incorrect number of arguments");
 
-    array1 = TYGetProductMember (args, 0);
-    array2 = TYGetProductMember (args, 1);
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
 
-    TEAssureBoolA (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
-    TEAssureBoolA (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
-    res = TEAssureSameShape (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
+    TEassureBoolA (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureBoolA (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                              array2);
 
-    if (TYIsAKV (array1) && TYIsAKV (array2)) {
-        res = TYFreeType (res);
-        res = TYMakeAKV (TYMakeSimpleType (T_bool), ApplyCF (info, args));
+    if (TYisAKV (array1) && TYisAKV (array2)) {
+        res = TYfreeType (res);
+        res = TYmakeAKV (TYmakeSimpleType (T_bool), ApplyCF (info, args));
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -1035,20 +1029,20 @@ NTCPRF_log_op_A (te_info *info, ntype *args)
     ntype *array;
 
     DBUG_ENTER ("NTCPRF_log_op_A");
-    DBUG_ASSERT (TYGetProductSize (args) == 1,
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "log_op_A called with incorrect number of arguments");
 
-    array = TYGetProductMember (args, 0);
+    array = TYgetProductMember (args, 0);
 
-    TEAssureBoolA (TEPrfArg2Obj (TEGetNameStr (info), 1), array);
+    TEassureBoolA (TEprfArg2Obj (TEgetNameStr (info), 1), array);
 
-    if (TYIsAKV (array)) {
-        res = TYMakeAKV (TYMakeSimpleType (T_bool), ApplyCF (info, args));
+    if (TYisAKV (array)) {
+        res = TYmakeAKV (TYmakeSimpleType (T_bool), ApplyCF (info, args));
     } else {
-        res = TYCopyType (array);
+        res = TYcopyType (array);
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -1068,22 +1062,22 @@ NTCPRF_int_op_SxS (te_info *info, ntype *args)
     ntype *array1, *array2;
 
     DBUG_ENTER ("NTCPRF_int_op_SxS");
-    DBUG_ASSERT (TYGetProductSize (args) == 2,
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "int_op_SxS called with incorrect number of arguments");
 
-    array1 = TYGetProductMember (args, 0);
-    array2 = TYGetProductMember (args, 1);
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
 
-    TEAssureIntS (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
-    TEAssureIntS (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
+    TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
 
-    if (TYIsAKV (array1) && TYIsAKV (array2)) {
-        res = TYMakeAKV (TYMakeSimpleType (T_int), ApplyCF (info, args));
+    if (TYisAKV (array1) && TYisAKV (array2)) {
+        res = TYmakeAKV (TYmakeSimpleType (T_int), ApplyCF (info, args));
     } else {
-        res = TYMakeAKS (TYMakeSimpleType (T_int), SHMakeShape (0));
+        res = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -1104,30 +1098,30 @@ NTCPRF_take_SxV (te_info *info, ntype *args)
     shape *shp;
 
     DBUG_ENTER ("NTCPRF_take_SxV");
-    DBUG_ASSERT (TYGetProductSize (args) == 2,
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "take_SxV called with incorrect number of arguments");
 
-    array1 = TYGetProductMember (args, 0);
-    array2 = TYGetProductMember (args, 1);
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
 
-    TEAssureIntS (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
-    TEAssureVect (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
-    TEAssureAbsValFitsShape (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
+    TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureVect (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureAbsValFitsShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                              array2);
 
-    if (TYIsAKV (array1)) {
-        if (TYIsAKV (array2)) {
-            res = TYMakeAKV (TYCopyType (TYGetScalar (array2)), ApplyCF (info, args));
+    if (TYisAKV (array1)) {
+        if (TYisAKV (array2)) {
+            res = TYmakeAKV (TYcopyType (TYgetScalar (array2)), ApplyCF (info, args));
         } else {
-            shp = SHCreateShape (1, abs (((int *)COGetDataVec (TYGetValue (array1)))[0]));
-            res = TYMakeAKS (TYCopyType (TYGetScalar (array2)), shp);
+            shp = SHcreateShape (1, abs (((int *)COgetDataVec (TYgetValue (array1)))[0]));
+            res = TYmakeAKS (TYcopyType (TYgetScalar (array2)), shp);
         }
     } else {
-        res = TYMakeAKD (TYCopyType (TYGetScalar (array2)), 1, SHMakeShape (0));
+        res = TYmakeAKD (TYcopyType (TYgetScalar (array2)), 1, SHmakeShape (0));
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -1148,33 +1142,33 @@ NTCPRF_drop_SxV (te_info *info, ntype *args)
     shape *shp;
 
     DBUG_ENTER ("NTCPRF_drop_SxV");
-    DBUG_ASSERT (TYGetProductSize (args) == 2,
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "drop_SxV called with incorrect number of arguments");
 
-    array1 = TYGetProductMember (args, 0);
-    array2 = TYGetProductMember (args, 1);
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
 
-    TEAssureIntS (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
-    TEAssureVect (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
-    TEAssureAbsValFitsShape (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
+    TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureVect (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureAbsValFitsShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                              array2);
 
-    if (TYIsAKV (array1) && (TYIsAKV (array2) || TYIsAKS (array2))) {
-        if (TYIsAKV (array2)) {
-            res = TYMakeAKV (TYCopyType (TYGetScalar (array2)), ApplyCF (info, args));
+    if (TYisAKV (array1) && (TYisAKV (array2) || TYisAKS (array2))) {
+        if (TYisAKV (array2)) {
+            res = TYmakeAKV (TYcopyType (TYgetScalar (array2)), ApplyCF (info, args));
         } else {
-            shp = SHCopyShape (TYGetShape (array2));
-            shp = SHSetExtent (shp, 0,
-                               SHGetExtent (shp, 0)
-                                 - abs (((int *)COGetDataVec (TYGetValue (array1)))[0]));
-            res = TYMakeAKS (TYCopyType (TYGetScalar (array2)), shp);
+            shp = SHcopyShape (TYgetShape (array2));
+            shp = SHsetExtent (shp, 0,
+                               SHgetExtent (shp, 0)
+                                 - abs (((int *)COgetDataVec (TYgetValue (array1)))[0]));
+            res = TYmakeAKS (TYcopyType (TYgetScalar (array2)), shp);
         }
     } else {
-        res = TYMakeAKD (TYCopyType (TYGetScalar (array2)), 1, SHMakeShape (0));
+        res = TYmakeAKD (TYcopyType (TYgetScalar (array2)), 1, SHmakeShape (0));
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
@@ -1194,29 +1188,29 @@ NTCPRF_cat_VxV (te_info *info, ntype *args)
     ntype *array1, *array2;
 
     DBUG_ENTER ("NTCPRF_cat_VxV");
-    DBUG_ASSERT (TYGetProductSize (args) == 2,
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "cat_VxV called with incorrect number of arguments");
 
-    array1 = TYGetProductMember (args, 0);
-    array2 = TYGetProductMember (args, 1);
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
 
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
-    TEAssureSimpleType (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
-    TEAssureSameSimpleType (TEArg2Obj (1), array1, TEPrfArg2Obj (TEGetNameStr (info), 2),
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureSameSimpleType (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                             array2);
-    TEAssureVect (TEPrfArg2Obj (TEGetNameStr (info), 1), array1);
-    TEAssureVect (TEPrfArg2Obj (TEGetNameStr (info), 2), array2);
+    TEassureVect (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureVect (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
 
-    if (TYIsAKV (array1) && TYIsAKV (array2)) {
-        res = TYMakeAKV (TYCopyType (TYGetScalar (array1)), ApplyCF (info, args));
-    } else if ((TYIsAKV (array1) || TYIsAKS (array1))
-               && (TYIsAKV (array2) || TYIsAKS (array2))) {
-        res = TYMakeAKS (TYCopyType (TYGetScalar (array1)),
-                         SHCreateShape (1, SHGetExtent (TYGetShape (array1), 0)
-                                             + SHGetExtent (TYGetShape (array2), 0)));
+    if (TYisAKV (array1) && TYisAKV (array2)) {
+        res = TYmakeAKV (TYcopyType (TYgetScalar (array1)), ApplyCF (info, args));
+    } else if ((TYisAKV (array1) || TYisAKS (array1))
+               && (TYisAKV (array2) || TYisAKS (array2))) {
+        res = TYmakeAKS (TYcopyType (TYgetScalar (array1)),
+                         SHcreateShape (1, SHgetExtent (TYgetShape (array1), 0)
+                                             + SHgetExtent (TYgetShape (array2), 0)));
     } else {
-        res = TYMakeAKD (TYCopyType (TYGetScalar (array1)), 1, SHMakeShape (0));
+        res = TYmakeAKD (TYcopyType (TYgetScalar (array1)), 1, SHmakeShape (0));
     }
 
-    DBUG_RETURN (TYMakeProductType (1, res));
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
