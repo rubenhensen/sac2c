@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  2005/01/14 08:44:39  cg
+ * Beautified layout of error messages.
+ *
  * Revision 1.7  2005/01/11 12:32:52  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -66,7 +69,7 @@ LIBMloadLibrary (const char *name)
 #endif
 
     if (result == NULL) {
-        CTIabort ("Cannot open library `%s': %s", name, LibManagerError ());
+        CTIabort ("Cannot open library `%s':\n%s", name, LibManagerError ());
     }
 
     DBUG_PRINT ("LIB", ("Done loading library"));
@@ -86,7 +89,7 @@ LIBMunLoadLibrary (dynlib_t lib)
     result = dlclose (lib);
 
     if (result != 0) {
-        CTIabort ("Cannot close library: %s", LibManagerError ());
+        CTIabort ("Cannot close library:\n%s", LibManagerError ());
     }
 
     DBUG_PRINT ("LIB", ("Done unloading library"));
@@ -106,7 +109,7 @@ LIBMgetLibraryFunction (const char *name, dynlib_t lib)
     result = dlsym (lib, name);
 
     if (result == NULL) {
-        CTIabort ("Cannot open library function `%s': %s", name, LibManagerError ());
+        CTIabort ("Cannot open library function `%s':\n%s", name, LibManagerError ());
     }
 
     DBUG_PRINT ("LIB", ("Done getting library function"));
