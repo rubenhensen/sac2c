@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/10/24 20:37:47  dkr
+ * SAC_WL_SHAPE_FACTOR added
+ *
  * Revision 3.16  2002/07/30 20:04:19  dkr
  * prefix for varnames is SAC_ instead of SAC__ now
  *
@@ -102,6 +105,8 @@
  ***/
 
 #define SAC_WL_VAR(type, idx_scl) CAT0 (CAT0 (CAT0 (SAC_, type), _), idx_scl)
+
+#define SAC_WL_SHAPE_FACTOR(res, dim) CAT0 (CAT0 (CAT0 (SAC_, res), _shpfac), dim)
 
 #define SAC_WL_MT_SCHEDULE_START(dim) CAT0 (SAC_schedule_start, dim)
 
