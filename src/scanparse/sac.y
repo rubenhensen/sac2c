@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.127  1997/05/05 07:46:09  cg
+ * Revision 1.128  1997/05/05 11:53:18  cg
+ * SIB syntax slightly modified
+ *
+ * Revision 1.127  1997/05/05  07:46:09  cg
  * SIB limit removed
  *
  * Revision 1.126  1997/04/28  12:00:25  cg
@@ -512,7 +515,7 @@ static file_type file_kind = F_prog;
        OWN, CONSTANTS, GLOBAL, OBJECTS, CLASSIMP,
        ARRAY,SC, TRUE, FALSE, EXTERN, C_KEYWORD,
        PRAGMA, LINKNAME, LINKSIGN, EFFECT, READONLY, REFCOUNTING,
-       TOUCH, COPYFUN, FREEFUN, INITFUN, LINKWITH, SIBLIMIT
+       TOUCH, COPYFUN, FREEFUN, INITFUN, LINKWITH
 %token <id> ID, STR,AND, OR, EQ, NEQ, NOT, LE, LT, GE, GT, MUL, DIV, PLUS,
             F2I, F2D, I2F,I2D, D2I, D2F,
             TOI, TOF, TOD, 
@@ -2852,7 +2855,7 @@ sibheader: LT id GT
              }
          ;
 
-siblinkwith: PRAGMA LINKWITH siblinklist {$$=$3;}
+siblinkwith: LINKWITH siblinklist {$$=$2;}
              | {$$=NULL;}
 	          ;
 
@@ -2890,13 +2893,6 @@ sibsublinklist: BRACE_L siblinklist BRACE_R
              }
            ;
 
-siblimit: SIBLIMIT
-          {
-            /* CreateArchive(mod_name); */
-          }
-        ;
-
- 
 
 sibtypes: sibtype sibtypes
             {

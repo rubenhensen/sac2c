@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.13  1997/04/28 12:00:25  cg
+ * Revision 1.14  1997/05/05 11:53:18  cg
+ * SIB syntax slightly modified
+ *
+ * Revision 1.13  1997/04/28  12:00:25  cg
  * SIB syntax slightly changed:
  * key word classtype used instead of Class.
  *
@@ -139,7 +142,7 @@ SIBPrintDependencies (FILE *sibfile, deps *depends, int level)
     DBUG_ENTER ("SIBPrintDependencies");
 
     if ((dependencies != NULL) && (level == 1)) {
-        fprintf (sibfile, "#pragma linkwith\n");
+        fprintf (sibfile, "linkwith\n");
     }
 
     tmp = depends;
@@ -1082,8 +1085,6 @@ WSIBmodul (node *arg_node, node *arg_info)
         FreeNodelist (INFO_EXPORTFUNS (export));
         FreeNode (export);
     }
-
-    fprintf (sibfile, "\n<###>\n");
 
     fclose (sibfile);
 
