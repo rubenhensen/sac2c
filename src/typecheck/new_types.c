@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/09/04 12:59:46  sbs
+ * some further StrBufprintf changed into StrBufprint.
+ *
  * Revision 3.20  2002/09/04 12:20:37  dkr
  * some comments added...
  *
@@ -3549,7 +3552,8 @@ TYType2DebugString (ntype *type, bool multiline, int offset)
             break;
         case TC_ibase:
             tmp_str = TYType2DebugString (IBASE_BASE (type), FALSE, offset);
-            buf = StrBufprintf (buf, "%s,", tmp_str);
+            buf = StrBufprint (buf, tmp_str);
+            buf = StrBufprint (buf, ",");
             tmp_str = Free (tmp_str);
             break;
         case TC_idim:
@@ -3597,10 +3601,10 @@ TYType2DebugString (ntype *type, bool multiline, int offset)
                 if (multiline) {
                     buf = StrBufprintf (buf, "\n%*s", offset - 1, "");
                 }
-                buf = StrBufprintf (buf, "%s", tmp_str);
+                buf = StrBufprint (buf, tmp_str);
             } else {
                 buf = PrintFunSep (buf, multiline, offset);
-                buf = StrBufprintf (buf, "%s", tmp_str);
+                buf = StrBufprint (buf, tmp_str);
             }
             tmp_str = Free (tmp_str);
         }
