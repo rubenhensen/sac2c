@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/07/17 10:26:04  ktr
+ * EMAL now uses an INFO structure.
+ *
  * Revision 1.4  2004/07/16 12:52:05  ktr
  * support for F_accu added.
  *
@@ -33,6 +36,8 @@
  * much more text needed
  *
  */
+#define NEW_INFO
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -61,11 +66,50 @@ typedef struct ALLOCLIST_STRUCT {
     struct ALLOCLIST_STRUCT *next;
 } alloclist_struct;
 
-#define INFO_EMAL_ALLOCLIST(n) ((alloclist_struct *)(n->node[0]))
-#define INFO_EMAL_FUNDEF(n) (n->node[3])
-#define INFO_EMAL_WITHOPS(n) (n->node[4])
-#define INFO_EMAL_INDEXVECTOR(n) (n->node[5])
-#define INFO_EMAL_MUSTFILL(n) (n->flag)
+/**
+ * INFO structure
+ */
+struct INFO {
+    alloclist_struct *alloclist;
+    node *fundef;
+    node *withops;
+    node *indexvector;
+    bool mustfill;
+};
+
+/**
+ * INFO macros
+ */
+#define INFO_EMAL_ALLOCLIST(n) (n->alloclist)
+#define INFO_EMAL_FUNDEF(n) (n->fundef)
+#define INFO_EMAL_WITHOPS(n) (n->withops)
+#define INFO_EMAL_INDEXVECTOR(n) (n->indexvector)
+#define INFO_EMAL_MUSTFILL(n) (n->mustfill)
+
+/**
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 #define NWITHOP_MEMAVIS(n) (n->node[3])
 
@@ -219,7 +263,7 @@ MakeAllocAssignment (alloclist_struct *als, node *next_node)
  *
  ***************************************************************************/
 node *
-EMALap (node *arg_node, node *arg_info)
+EMALap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMALap");
 
@@ -247,7 +291,7 @@ EMALap (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-EMALarray (node *arg_node, node *arg_info)
+EMALarray (node *arg_node, info *arg_info)
 {
     alloclist_struct *als;
 
@@ -255,7 +299,7 @@ EMALarray (node *arg_node, node *arg_info)
 
     als = INFO_EMAL_ALLOCLIST (arg_info);
 
-    if (ARRAY_AELEMS (arg_info) != NULL) {
+    if (ARRAY_AELEMS (arg_node) != NULL) {
         /*
          * [ a, ... ]
          * alloc( outer_dim + dim(a), shape( genarray( outer_shape, a)))
@@ -302,7 +346,7 @@ EMALarray (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-EMALassign (node *arg_node, node *arg_info)
+EMALassign (node *arg_node, info *arg_info)
 {
     alloclist_struct *als;
 
@@ -348,7 +392,7 @@ EMALassign (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-EMALcode (node *arg_node, node *arg_info)
+EMALcode (node *arg_node, info *arg_info)
 {
     ids *lhs, *arg1, *arg2;
     alloclist_struct *als;
@@ -506,7 +550,7 @@ EMALcode (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-EMALconst (node *arg_node, node *arg_info)
+EMALconst (node *arg_node, info *arg_info)
 {
     alloclist_struct *als;
 
@@ -538,7 +582,7 @@ EMALconst (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-EMALfuncond (node *arg_node, node *arg_info)
+EMALfuncond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMALfuncond");
 
@@ -561,7 +605,7 @@ EMALfuncond (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-EMALfundef (node *fundef, node *arg_info)
+EMALfundef (node *fundef, info *arg_info)
 {
     DBUG_ENTER ("EMALfundef");
 
@@ -602,7 +646,7 @@ EMALfundef (node *fundef, node *arg_info)
  *
  ***************************************************************************/
 node *
-EMALicm (node *arg_node, node *arg_info)
+EMALicm (node *arg_node, info *arg_info)
 {
     char *name;
 
@@ -636,7 +680,7 @@ EMALicm (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-EMALid (node *arg_node, node *arg_info)
+EMALid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMALid");
 
@@ -658,7 +702,7 @@ EMALid (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-EMALlet (node *arg_node, node *arg_info)
+EMALlet (node *arg_node, info *arg_info)
 {
     ids *ids;
 
@@ -726,7 +770,7 @@ EMALlet (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-EMALprf (node *arg_node, node *arg_info)
+EMALprf (node *arg_node, info *arg_info)
 {
     alloclist_struct *als;
 
@@ -934,7 +978,7 @@ EMALprf (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-EMALwith (node *arg_node, node *arg_info)
+EMALwith (node *arg_node, info *arg_info)
 {
     ids *i;
 
@@ -1009,7 +1053,7 @@ EMALwith (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-EMALwith2 (node *arg_node, node *arg_info)
+EMALwith2 (node *arg_node, info *arg_info)
 {
     ids *i;
 
@@ -1083,7 +1127,7 @@ EMALwith2 (node *arg_node, node *arg_info)
  *
  ***************************************************************************/
 node *
-EMALwithop (node *arg_node, node *arg_info)
+EMALwithop (node *arg_node, info *arg_info)
 {
     alloclist_struct *als;
 
@@ -1190,7 +1234,7 @@ EMALwithop (node *arg_node, node *arg_info)
 node *
 EMAllocateFill (node *syntax_tree)
 {
-    node *info;
+    info *info;
 
     DBUG_ENTER ("EMALAllocateFill");
 
@@ -1200,7 +1244,7 @@ EMAllocateFill (node *syntax_tree)
     act_tab = emalloc_tab;
     syntax_tree = Trav (syntax_tree, info);
 
-    info = FreeTree (info);
+    info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }
