@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.77  1995/06/08 09:54:18  asi
- * added INLmodul
+ * Revision 1.78  1995/06/08 17:48:26  hw
+ * -CompTypedef inserted
  *
+;; Revision 1.77  1995/06/08  09:54:18  asi
+;; added INLmodul
+;;
 ;; Revision 1.76  1995/06/07  15:48:59  sbs
 ;; DummyFun2 used in N_fundef
 ;;
@@ -273,7 +276,7 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun, DupFloat, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_typedef, "N_typedef", DummyFun, DummyFun, PrintTypedef, DummyFun, DummyFun,
-       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
+       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, CompTypedef, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_constdef, "N_constdef", DummyFun, DummyFun, PrintConstdef, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun,
