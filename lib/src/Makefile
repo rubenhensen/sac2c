@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.8  2001/11/15 15:52:39  sacbase
+# PROJECT_ROOT and CLOCK_SKEW_ELIMINATION added.
+#
 # Revision 3.7  2001/11/14 12:59:48  sbs
 # deps line replaced by inclusion of Makefile.Deps
 # ( .xxx.d mechanism)
@@ -35,7 +38,8 @@
 # include general setup:
 #
 
-include ../../Makefile.Config
+PROJECT_ROOT := ../..
+include $(PROJECT_ROOT)/Makefile.Config
 
 
 #######################################################################################
@@ -49,9 +53,11 @@ all: ../dbug.o ../main_args.o
 
 ../dbug.o: dbug.c
 	$(CC) $(CFLAGS) $(MYFLAGS) -o ../dbug.o -c dbug.c $(INCS)
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 ../main_args.o: main_args.c
 	$(CC) $(CFLAGS) $(MYFLAGS) -o ../main_args.o -c main_args.c $(INCS)
+	$(CLOCK_SKEW_ELIMINATION) $@
 
 clean:
 	$(RM) ../dbug.o ../main_args.o *.bak *~ .*.d
