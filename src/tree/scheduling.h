@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/08/16 13:43:59  dkr
+ * include-guard prefixed with 'SAC_'
+ *
  * Revision 1.1  2000/01/24 10:53:36  jhs
  * Initial revision
  *
@@ -18,7 +21,6 @@
  * Revision 1.2  1998/06/18 14:19:41  cg
  * file now only contains implementation of abstract data type
  * for the representation of schedulings
- *
  *
  */
 
@@ -42,9 +44,9 @@
  *
  *****************************************************************************/
 
-#ifndef SCHEDULING_H
+#ifndef SAC_SCHEDULING_H
 
-#define SCHEDULING_H
+#define SAC_SCHEDULING_H
 
 #include <stdio.h>
 
@@ -69,4 +71,4 @@ extern SCHsched_t *SCHMakeCompatibleSyncblockScheduling (SCHsched_t *old_sched,
 extern node *SCHCompileSchedulingEnd (SCHsched_t sched, node *arg_node);
 extern node *SCHCompileSchedulingBegin (SCHsched_t sched, node *arg_node);
 
-#endif /* SCHEDULING_H */
+#endif /* SAC_SCHEDULING_H */
