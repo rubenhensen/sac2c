@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2000/08/02 12:00:28  nmw
+ * phase comment removed
+ *
  * Revision 1.8  2000/07/28 14:46:32  nmw
  * handling of void functions added
  *
@@ -65,7 +68,7 @@ MCWmodul (node *arg_node, node *arg_info)
 
     if (MODUL_FUNS (arg_node) != NULL) {
         /* if there are some fundefs, traverse them */
-        NOTE (("analyse overloading of sac-functions...\n"));
+        DBUG_PRINT ("MCW", ("MCWmodul: analyse overloading of sac-functions...\n"));
         INFO_MCW_MODUL (arg_info) = arg_node;
 
         /* the modul node is needed to hang the wrapperchain in N_module */
