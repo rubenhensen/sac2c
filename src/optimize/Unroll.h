@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.8  1998/02/26 12:35:22  srs
+ * traversal through new WLs possible
+ *
  * Revision 1.7  1995/07/19 18:54:21  asi
  * AnalyseLoop, DoUnroll, ReversePrf and structure linfo modified
  *
@@ -73,5 +76,6 @@ extern node *UNRcond (node *arg_node, node *arg_info);
 extern node *UNRid (node *arg_node, node *arg_info);
 extern node *UNRlet (node *arg_node, node *arg_info);
 extern node *UNRassign (node *arg_node, node *arg_info);
+extern node *UNRNwith (node *arg_node, node *arg_info);
 
 #endif /* _Unroll_h */

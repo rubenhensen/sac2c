@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1998/02/26 12:35:05  srs
+ * traversal through new WLs possible
+ *
  * Revision 1.11  1997/11/26 14:22:01  srs
  * removed use of old macros from acssass_macros.h
  *
@@ -671,6 +674,48 @@ UNRwith (node *arg_node, node *arg_info)
         DBUG_ASSERT ((FALSE), "Operator not implemented for with_node");
         break;
     }
+    LEVEL--;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *UNRNwith(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   at the moment, unrolling for WL is not done. Here we just
+ *   traverse the bodies of the WL.
+ *
+ ******************************************************************************/
+
+node *
+UNRNwith (node *arg_node, node *arg_info)
+{
+    node *tmpn;
+
+    DBUG_ENTER ("UNRNwith");
+
+    LEVEL++;
+
+    /* traverse the N_Nwithop node */
+    NWITH_WITHOP (arg_node) = OPTTrav (NWITH_WITHOP (arg_node), arg_info, arg_node);
+
+    /* traverse all generators */
+    tmpn = NWITH_PART (arg_node);
+    while (tmpn) {
+        tmpn = OPTTrav (tmpn, arg_info, arg_node);
+        tmpn = NPART_NEXT (tmpn);
+    }
+
+    /* traverse bodies */
+    tmpn = NWITH_CODE (arg_node);
+    while (tmpn) {
+        tmpn = OPTTrav (tmpn, arg_info, arg_node);
+        tmpn = NCODE_NEXT (tmpn);
+    }
+
     LEVEL--;
 
     DBUG_RETURN (arg_node);
