@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1995/04/11 15:03:13  sbs
+ * Revision 1.10  1995/04/11 15:06:35  sbs
+ * arg->tyarg in ND_FUN_DEC
+ *
+ * Revision 1.9  1995/04/11  15:03:13  sbs
  * ND_FUN_[DEC/AP/RET] inserted
  *
  * Revision 1.8  1995/04/07  12:19:48  sbs
@@ -266,7 +269,7 @@ extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
 #include "icm_comment.c"
 
     INDENT;
-    FirstOut (arg, 3 * narg, fprintf (outfile, "%s ", tyarg[i]), 2);
+    FirstOut (tyarg, 3 * narg, fprintf (outfile, "%s ", tyarg[i]), 2);
     fprintf (outfile, "%s( ", name);
     ScanArglist (tyarg, 3 * narg, fprintf (outfile, " %s %s", tyarg[i++], tyarg[i++]),
                  i += 2;
