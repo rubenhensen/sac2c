@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/02/08 10:17:02  dkr
+ * wrong include instruction removed
+ *
  * Revision 1.2  2000/02/03 17:29:23  dkr
  * conditions are lifted now correctly :)
  *
@@ -16,7 +19,6 @@
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
-#include "AdjustTree.h"
 
 /******************************************************************************
  *
@@ -223,37 +225,45 @@ LAC2FUNfundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("LAC2FUNfundef");
 
-    INFO_LAC2FUN_FUNS (arg_info) = NULL;
-
-    INFO_LAC2FUN_DFMBASE (arg_info)
-      = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
-
-    INFO_LAC2FUN_IN (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
-    INFO_LAC2FUN_OUT (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
-    INFO_LAC2FUN_LOCAL (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
-    INFO_LAC2FUN_NEEDED (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
-    INFO_LAC2FUN_ISTRANS (arg_info) = 0;
-
-    FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-
-    INFO_LAC2FUN_IN (arg_info) = DFMRemoveMask (INFO_LAC2FUN_IN (arg_info));
-    INFO_LAC2FUN_OUT (arg_info) = DFMRemoveMask (INFO_LAC2FUN_OUT (arg_info));
-    INFO_LAC2FUN_LOCAL (arg_info) = DFMRemoveMask (INFO_LAC2FUN_LOCAL (arg_info));
-    INFO_LAC2FUN_NEEDED (arg_info) = DFMRemoveMask (INFO_LAC2FUN_NEEDED (arg_info));
-
-    INFO_LAC2FUN_DFMBASE (arg_info) = DFMRemoveMaskBase (INFO_LAC2FUN_DFMBASE (arg_info));
-
-    /*
-     * insert dummy fundefs into the AST
-     */
-    tmp = INFO_LAC2FUN_FUNS (arg_info);
-    if (tmp != NULL) {
-        while (FUNDEF_NEXT (tmp) != NULL) {
-            tmp = FUNDEF_NEXT (tmp);
-        }
-        FUNDEF_NEXT (tmp) = arg_node;
-        ret = INFO_LAC2FUN_FUNS (arg_info);
+    if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_LAC2FUN_FUNS (arg_info) = NULL;
+
+        INFO_LAC2FUN_DFMBASE (arg_info)
+          = DFMGenMaskBase (FUNDEF_ARGS (arg_node), (FUNDEF_BODY (arg_node) != NULL)
+                                                      ? FUNDEF_VARDEC (arg_node)
+                                                      : NULL);
+
+        INFO_LAC2FUN_IN (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
+        INFO_LAC2FUN_OUT (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
+        INFO_LAC2FUN_LOCAL (arg_info) = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
+        INFO_LAC2FUN_NEEDED (arg_info)
+          = DFMGenMaskClear (INFO_LAC2FUN_DFMBASE (arg_info));
+        INFO_LAC2FUN_ISTRANS (arg_info) = 0;
+
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+
+        INFO_LAC2FUN_IN (arg_info) = DFMRemoveMask (INFO_LAC2FUN_IN (arg_info));
+        INFO_LAC2FUN_OUT (arg_info) = DFMRemoveMask (INFO_LAC2FUN_OUT (arg_info));
+        INFO_LAC2FUN_LOCAL (arg_info) = DFMRemoveMask (INFO_LAC2FUN_LOCAL (arg_info));
+        INFO_LAC2FUN_NEEDED (arg_info) = DFMRemoveMask (INFO_LAC2FUN_NEEDED (arg_info));
+
+        INFO_LAC2FUN_DFMBASE (arg_info)
+          = DFMRemoveMaskBase (INFO_LAC2FUN_DFMBASE (arg_info));
+
+        /*
+         * insert dummy fundefs into the AST
+         */
+        tmp = INFO_LAC2FUN_FUNS (arg_info);
+        if (tmp != NULL) {
+            while (FUNDEF_NEXT (tmp) != NULL) {
+                tmp = FUNDEF_NEXT (tmp);
+            }
+            FUNDEF_NEXT (tmp) = arg_node;
+            ret = INFO_LAC2FUN_FUNS (arg_info);
+            INFO_LAC2FUN_FUNS (arg_info) = NULL;
+        } else {
+            ret = arg_node;
+        }
     } else {
         ret = arg_node;
     }
