@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.39  2001/04/04 13:11:42  nmw
+ * AVIS_SSACOUNT is now set via look-up-table
+ *
  * Revision 3.38  2001/04/04 09:56:45  nmw
  * DupFundef modified to duplicate ssacnt node in correct order
  * DupSSAcnt added
@@ -2168,7 +2171,8 @@ DupAvis (node *arg_node, node *arg_info)
     INFO_DUP_LUT (arg_info)
       = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
 
-    AVIS_SSACOUNT (new_node) = AVIS_SSACOUNT (arg_node);
+    AVIS_SSACOUNT (new_node)
+      = SearchInLUT_P (INFO_DUP_LUT (arg_info), AVIS_SSACOUNT (arg_node));
 
     AVIS_SSAASSIGN (new_node)
       = SearchInLUT_P (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN (arg_node));
