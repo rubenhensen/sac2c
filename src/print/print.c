@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.202  1998/04/25 11:45:56  sbs
+ * indent moved into globals!
+ *
  * Revision 1.201  1998/04/24 17:16:23  dkr
  * changed usage of SPMD_IN/OUT/INOUT, SYNC_INOUT
  *
@@ -679,8 +682,6 @@
 #include "gen_startup_code.h"
 
 /******************************************************************************/
-
-int indent = 0;
 
 static int print_separate = 0;
 

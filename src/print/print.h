@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.30  1998/04/25 11:45:56  sbs
+ * indent moved into globals!
+ *
  * Revision 1.29  1998/04/23 17:32:50  dkr
  * added PrintSync
  *
@@ -95,8 +98,7 @@
 #define _sac_print_h
 
 #include "tree.h"
-
-extern int indent;
+#include "globals.h"
 
 #define INDENT                                                                           \
     {                                                                                    \
