@@ -1,6 +1,5 @@
 Makefile
 checkdec.c
-checkdec.h
 filemgr.c
 filemgr.h
 implicittypes.c
