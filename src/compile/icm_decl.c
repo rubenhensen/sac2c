@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/05/04 11:42:34  sbs
+ * Revision 1.4  1997/05/14 08:12:43  sbs
+ * Print<ICM> now gets arg_info as well
+ *
+ * Revision 1.3  1995/05/04  11:42:34  sbs
  * trf inserted in ICM-macros
  *
  * Revision 1.2  1995/04/03  13:58:57  sbs
@@ -14,7 +17,7 @@
  */
 
 #define ICM_DEF(prf, trf)                                                                \
-    void Print##prf (node *exprs)                                                        \
+    void Print##prf (node *exprs, node *arg_info)                                        \
     {
 #define ICM_STR(name) char *name;
 #define ICM_INT(name) int name;
