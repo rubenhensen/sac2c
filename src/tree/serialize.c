@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.17  2004/11/01 21:56:26  sah
+ * added a missing newline and some
+ * further support for debugging
+ *
  * Revision 1.16  2004/10/28 17:23:40  sah
  * added serialisation of dependency tables
  *
@@ -127,6 +131,8 @@ SerializeBuildSerStack (node *arg_node)
     act_tab = store_tab;
 
     info = FreeInfo (info);
+
+    DBUG_EXECUTE ("BST", SerStackDump (stack););
 
     DBUG_RETURN (stack);
 }
@@ -421,7 +427,7 @@ GenerateSerFunMiddle (node *fundef, STentrytype_t type, info *info)
 {
     DBUG_ENTER ("GenerateSerFunMiddle");
 
-    fprintf (INFO_SER_FILE (info), ");\nstack = SerializeBuildSerStack( result);");
+    fprintf (INFO_SER_FILE (info), ");\nstack = SerializeBuildSerStack( result);\n");
 
     DBUG_VOID_RETURN;
 }
