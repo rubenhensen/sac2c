@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2004/11/08 14:51:30  ktr
+ * NWITHOP_MEM is now traversed, too.
+ *
  * Revision 1.17  2004/09/24 12:53:41  ktr
  * Mask Base is now also updated after renaming args of SPMD-Functions.
  *
@@ -904,6 +907,8 @@ MMVwithop (node *arg_node, info *arg_info)
             NWITHOP_DEFAULT (arg_node) = Trav (NWITHOP_DEFAULT (arg_node), arg_info);
         }
         if (NWITHOP_MEM (arg_node) != NULL) {
+            NWITHOP_MEM (arg_node) = Trav (NWITHOP_MEM (arg_node), arg_info);
+
             InsertIntoLUT_S (INFO_MMV_LUT (arg_info), IDS_NAME (INFO_MMV_LHS (arg_info)),
                              ID_NAME (NWITHOP_MEM (arg_node)));
 
@@ -919,6 +924,8 @@ MMVwithop (node *arg_node, info *arg_info)
             NWITHOP_ARRAY (arg_node) = Trav (NWITHOP_ARRAY (arg_node), arg_info);
         }
         if (NWITHOP_MEM (arg_node) != NULL) {
+            NWITHOP_MEM (arg_node) = Trav (NWITHOP_MEM (arg_node), arg_info);
+
             InsertIntoLUT_S (INFO_MMV_LUT (arg_info), IDS_NAME (INFO_MMV_LHS (arg_info)),
                              ID_NAME (NWITHOP_MEM (arg_node)));
 
