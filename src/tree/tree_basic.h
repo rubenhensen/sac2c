@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2001/04/04 15:11:41  nmw
+ * *** empty log message ***
+ *
  * Revision 3.72  2001/04/04 13:21:53  dkr
  * INFO_COMP_TABSIZE added
  *
@@ -2509,6 +2512,7 @@ extern node *MakeAvis (node *vardecOrArg);
  ***    int        NONLIRUSE         (counts non lir args on rightside of expr.)
  ***    int        CONDSTATUS        (flag for part of conditional)
  ***    int        WITHDEPTH         (counter for depth of with loops)
+ ***    int        FLAG              (controls behavior of some functions)
  ***
  ***  when used in free.c
  ***    node*      FLAG              (mode flag for FreeTrav/FreeNode)
@@ -2968,8 +2972,9 @@ extern node *MakeInfo ();
 #define INFO_SSALIR_MODUL(n) (n->node[4])
 #define INFO_SSALIR_ASSIGN(n) (n->node[5])
 #define INFO_SSALIR_NONLIRUSE(n) (n->int_data)
-#define INFO_SSALIR_CONDSTATUS(n) (n->flag)
+#define INFO_SSALIR_CONDSTATUS(n) (n->info.cint)
 #define INFO_SSALIR_WITHDEPTH(n) (n->varno)
+#define INFO_SSALIR_FLAG(n) (n->flag)
 
 /* when used in free.c */
 #define INFO_FREE_FLAG(n) (n->node[0])
