@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.147  1998/02/25 09:14:43  cg
+ * switched to new compiler_phase representation using the enumeration type
+ * compiler_phase_t
+ *
  * Revision 1.146  1998/02/13 12:50:08  srs
  * changed PrintNgenerator. = now between vector and scalars
  *
@@ -2098,7 +2102,7 @@ Print (node *arg_node)
     mod_name_con = mod_name_con_1;
     indent = 0;
 
-    if ((linkstyle > 1) && (!break_compilation) && (!Ccodeonly)) {
+    if ((linkstyle > 1) && (break_after == PH_final)) {
         print_separate = 1;
         arg_node = Trav (arg_node, NULL);
 
@@ -2112,7 +2116,7 @@ Print (node *arg_node)
     } else {
         print_separate = 0;
 
-        if (break_compilation) {
+        if (break_after < PH_genccode) {
             outfile = stdout;
             fprintf (outfile, "\n-----------------------------------------------\n");
         } else {
@@ -2143,7 +2147,7 @@ Print (node *arg_node)
  * description:
  *   this function is for debug assistance.
  *   It prints the syntax tree without any interpretation.
- *   Some attribues of interrest are printed inside of parenthesizes behind
+ *   Some attribues of interest are printed inside of parenthesizes behind
  *   the node name.
  *
  ******************************************************************************/
