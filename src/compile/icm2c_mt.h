@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2003/10/14 23:44:11  dkrHH
+ * SPMD_PRESET removed
+ *
  * Revision 3.18  2003/09/17 14:17:27  dkr
  * some function parameters renamed
  *
@@ -153,7 +156,6 @@ extern void ICMCompileMT_MASTER_SEND_SYNCARGS (int syncargs_cnt, char **syncargs
 extern void ICMCompileMT_MASTER_RECEIVE_SYNCARGS (int syncargs_cnt, char **syncargs);
 
 extern void ICMCompileMT_SPMD_SETUP (char *name, int vararg_cnt, char **vararg);
-extern void ICMCompileMT_SPMD_PRESET (char *name, int vararg_cnt, char **vararg);
 
 extern void ICMCompileMT_SPMD_BEGIN (char *name);
 extern void ICMCompileMT_SPMD_ALTSEQ (char *name);

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.67  2003/10/14 23:44:57  dkrHH
+ * SPMD_PRESET removed
+ *
  * Revision 3.66  2003/09/30 19:31:44  dkr
  * ND_CHECK__MIRROR removed
  *
@@ -1119,14 +1122,6 @@ ICM_DEF( MT_SPMD_SETUP, TRACE_NONE)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
 ICM_END( MT_SPMD_SETUP, (name, vararg_cnt, vararg))
-#endif
-
-#if defined(MT_SPMD_PRESET) || defined(ICM_ALL)
-ICM_DEF( MT_SPMD_PRESET, TRACE_NONE)
-  ICM_ID( name)
-  ICM_INT( vararg_cnt)
-  ICM_VARANY( (2*vararg_cnt), vararg)
-ICM_END( MT_SPMD_PRESET, (name, vararg_cnt, vararg))
 #endif
 
 #if defined(MT_ADJUST_SCHEDULER__OFFSET) || defined(ICM_ALL)
