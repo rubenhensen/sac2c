@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.8  1999/07/09 11:38:47  cg
+# make deps done
+#
 # Revision 2.7  1999/06/01 15:17:04  dkr
 # make deps done
 #
@@ -171,6 +174,10 @@ ConstantFolding.o: ../print/print.h ../global/traverse.h
 ConstantFolding.o: ../typecheck/typecheck.h ../global/access_macros.h
 ConstantFolding.o: optimize.h generatemasks.h DupTree.h
 ConstantFolding.o: LoopInvariantRemoval.h ConstantFolding.h
+DFMtest.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
+DFMtest.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+DFMtest.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h DataFlowMask.h
+DFMtest.o: ../global/types.h
 DataFlowMask.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 DataFlowMask.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 DataFlowMask.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h

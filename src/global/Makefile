@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.7  1999/07/09 11:38:40  cg
+# make deps done
+#
 # Revision 2.6  1999/06/16 14:36:17  dkr
 # make deps done
 #
@@ -141,7 +144,7 @@ globals.o: ../modules/filemgr.h /usr/include/stdio.h
 globals.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
 globals.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 globals.o: /usr/include/stdio_impl.h types.h globals.h Error.h
-globals.o: /usr/include/string.h /usr/include/stdlib.h
+globals.o: /usr/include/string.h /usr/include/stdlib.h nt_info.mac
 internal_lib.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 internal_lib.o: /usr/include/sys/isa_defs.h /usr/include/math.h
 internal_lib.o: /usr/include/string.h /usr/include/stdarg.h
@@ -224,6 +227,7 @@ traverse.o: ../compile/gen_startup_code.h ../concurrent/scheduling.h
 traverse.o: ../concurrent/concurrent.h ../concurrent/spmd_init.h
 traverse.o: ../concurrent/spmd_opt.h ../concurrent/spmd_lift.h
 traverse.o: ../concurrent/sync_init.h ../concurrent/sync_opt.h
+traverse.o: ../concurrent/spmd_trav.h ../optimize/DataFlowMask.h
 traverse.o: ../concurrent/schedule.h ../psi-opt/wl_access_analyze.h
 traverse.o: ../scanparse/scnprs.h resource.h ../scanparse/y.tab.h traverse.h
 traverse.o: node_info.mac

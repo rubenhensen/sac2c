@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.6  1999/07/09 11:38:49  cg
+# make deps done
+#
 # Revision 2.5  1999/06/01 15:17:05  dkr
 # make deps done
 #
@@ -201,7 +204,7 @@ checkdec.o: /usr/include/malloc.h /usr/include/sys/types.h
 checkdec.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
 checkdec.o: ../global/internal_lib.h import.h ../print/convert.h filemgr.h
 checkdec.o: ../scanparse/scnprs.h ../global/resource.h ../scanparse/y.tab.h
-checkdec.o: implicittypes.h ../print/print.h ../global/tree.h
+checkdec.o: implicittypes.h ../print/print.h ../global/tree.h checkdec.h
 filemgr.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 filemgr.o: /usr/include/sys/isa_defs.h /usr/include/string.h
 filemgr.o: /usr/include/stdarg.h /usr/include/varargs.h

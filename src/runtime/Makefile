@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.15  1999/07/09 11:39:00  cg
+# make deps done
+#
 # Revision 2.14  1999/07/08 12:34:12  cg
 # Complete implementation of libsac is now moved to new directory
 # src/libsac; implementation of CacheSimAnalyser is moved to new
@@ -120,3 +123,4 @@ clean:
 	$(RM) sac2crc CacheSimAnalyser
 
 
+# DO NOT DELETE THIS LINE -- make depend depends on it.
