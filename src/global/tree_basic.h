@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.49  1997/03/19 13:38:16  cg
+ * Revision 1.50  1997/04/30 11:49:29  cg
+ * new macro VARDEC_OBJDEF
+ *
+ * Revision 1.49  1997/03/19  13:38:16  cg
  * Added new data type 'deps' with respective access macros and
  * creation function
  *
@@ -903,7 +906,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  ***    int         VARNO                        (optimize -> )
  ***    int         REFCNT                       (refcount -> compile -> )
  ***    char*       TYPESTRING (O)               (precompile -> )
- ***    node*       OBJDEF     (O)               (obj-handling ->
+ ***    node*       OBJDEF     (O)  (N_objdef)   (obj-handling ->
  ***                                             ( -> precompile !!)
  ***    node*       ACTCHN     (O)  (N_vinfo)    (psi-optimize -> )
  ***    node*       COLCHN     (O)  (N_vinfo)    (psi-optimize -> )
@@ -986,6 +989,8 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***  temporary attributes:
  ***
  ***    node*       TYPEDEF  (O)  (N_typedef)  (typecheck -> fun_analysis -> )
+ ***    node*       OBJDEF   (O)  (N_objdef)   (inlining ->
+ ***                                           ( -> precompile !!)
  ***    node*       ACTCHN   (O)  (N_vinfo)    (psi-optimize -> )
  ***    node*       COLCHN   (O)  (N_vinfo)    (psi-optimize -> )
  ***    int         REFCNT                     (refcount -> compile -> )
@@ -995,8 +1000,11 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***/
 
 /*
- * STATUS : ST_regular :  original vardec in source code
- *          ST_used    :  after typecheck detected necessity of vardec
+ * STATUS : ST_regular    :  original vardec in source code
+ *          ST_used       :  after typecheck detected necessity of vardec
+ *          ST_artificial :  artificial vardec produced by function inlining
+ *                           of a function which uses a global object.
+ *                           Such vardecs are removed by the precompiler.
  *
  * ATTRIB : ST_regular :  normal variable
  *          ST_unique  :  unique variable
@@ -1019,6 +1027,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
 #define VARDEC_ACTCHN(n) (n->node[2])
 #define VARDEC_COLCHN(n) (n->node[3])
 #define VARDEC_FLAG(n) (n->flag)
+#define VARDEC_OBJDEF(n) (n->node[4])
 
 /*--------------------------------------------------------------------------*/
 
