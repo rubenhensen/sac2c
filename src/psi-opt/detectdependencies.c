@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/10/20 08:10:29  khf
+ * added identification of resolveable dependencies,
+ * some DBUG_PRINTs and changed signature of startfunction
+ *
  * Revision 1.3  2004/09/21 17:03:34  khf
  * memory allocation has to be done first
  *
@@ -19,12 +23,13 @@
  *
  * @file detectdependencies.c
  *
- * In this traversal a dependency between two withloops
- * is identified.
- * This traversal starts with one withloop and seaches for
- * direct or indirect references onto another WL. References
- * to that WL until current Withloop are stored in
- *    NWITH_REFERENCES_FUSIONABLE( arg_node).
+ * This traversal is an special travesal for WithloopFusion and
+ * identifies dependencies between two withloops.
+ *
+ * It starts with one withloop and seaches for
+ * direct or indirect references onto another WL stored at
+ * INFO_DDPEND_FUSIONABLE_WL( arg_info). Collected references
+ * until current WL are stored at INFO_DDPEND_REFERENCES_FUSIONABLE( arg_info).
  *
  * Ex.:
  *   A = with(iv)
@@ -44,6 +49,11 @@
  *   and this leads to dependency between B and A since
  *   Ncode of B contains a reference on c
  *
+ * Additonal resolveable dependencies are identified.
+ * This are direct references on LHS identifier of considered Withloop
+ * selecting Elmenents by untransformed index-vector of current WL.
+ *  Ex.: val = ...A[iv]...;
+ * These dependencies can be resolved in an later step of WithloopFusion.
  *
  */
 
@@ -63,19 +73,28 @@
 #include "dbug.h"
 #include "traverse.h"
 #include "constants.h"
+#include "print.h"
 #include "detectdependencies.h"
 
 /**
  * INFO structure
  */
 struct INFO {
-    bool wldependent;
+    node *fusionable_wl;
     nodelist *references_fusionable;
+    node *withid;
+    bool wldependent;
+    bool chk_direct_depend;
+    bool resolv_depend;
 };
 
 /* usage of arg_info: */
-#define INFO_DDEPEND_WLDEPENDENT(n) (n->wldependent)
+#define INFO_DDEPEND_FUSIONABLE_WL(n) (n->fusionable_wl)
 #define INFO_DDEPEND_REFERENCES_FUSIONABLE(n) (n->references_fusionable)
+#define INFO_DDEPEND_WITHID(n) (n->withid)
+#define INFO_DDEPEND_WLDEPENDENT(n) (n->wldependent)
+#define INFO_DDEPEND_CHECK_DIRECT_DEPENDENCY(n) (n->chk_direct_depend)
+#define INFO_DDEPEND_RESOLVEABLE_DEPENDENCIES(n) (n->resolv_depend)
 
 /**
  * INFO functions
@@ -89,8 +108,12 @@ MakeInfo ()
 
     result = Malloc (sizeof (info));
 
-    INFO_DDEPEND_WLDEPENDENT (result) = FALSE;
+    INFO_DDEPEND_FUSIONABLE_WL (result) = NULL;
     INFO_DDEPEND_REFERENCES_FUSIONABLE (result) = NULL;
+    INFO_DDEPEND_WITHID (result) = NULL;
+    INFO_DDEPEND_WLDEPENDENT (result) = FALSE;
+    INFO_DDEPEND_CHECK_DIRECT_DEPENDENCY (result) = FALSE;
+    INFO_DDEPEND_RESOLVEABLE_DEPENDENCIES (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -100,7 +123,6 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    INFO_DDEPEND_REFERENCES_FUSIONABLE (info) = NULL;
     info = Free (info);
 
     DBUG_RETURN (info);
@@ -171,12 +193,95 @@ DDEPENDassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *DDEPENDprfSel(node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *
+ *   @param  node *arg_node:  N_prf
+ *           info *arg_info:  N_info
+ *   @return node *        :  N_prf
+ ******************************************************************************/
+node *
+DDEPENDprfSel (node *arg_node, info *arg_info)
+{
+    node *sel;
+
+    DBUG_ENTER ("DDEPENDprfSel");
+
+    DBUG_PRINT ("WLFS", ("consider following selection:"));
+    DBUG_EXECUTE ("WLFS", PrintNode (arg_node););
+
+    /* only if WL is independent so far */
+    if (!INFO_DDEPEND_WLDEPENDENT (arg_info)) {
+
+        /* first traverse into first argument to detect direct dependency */
+        INFO_DDEPEND_CHECK_DIRECT_DEPENDENCY (arg_info) = TRUE;
+        PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
+        INFO_DDEPEND_CHECK_DIRECT_DEPENDENCY (arg_info) = FALSE;
+
+        /*
+         * if there is a direct dependency to fusionable WL,
+         * check if the second argument only contains the non-transformed
+         * index-vector
+         *  -> resolveable dependency
+         */
+        if (INFO_DDEPEND_WLDEPENDENT (arg_info)) {
+            sel = PRF_ARG1 (arg_node);
+
+            if ((NODE_TYPE (sel) == N_id)
+                && (ID_AVIS (sel)
+                    == IDS_AVIS (NWITHID_VEC (INFO_DDEPEND_WITHID (arg_info))))) {
+
+                DBUG_PRINT ("WLFS", ("selection is resolveable"));
+
+                INFO_DDEPEND_WLDEPENDENT (arg_info) = FALSE;
+                INFO_DDEPEND_RESOLVEABLE_DEPENDENCIES (arg_info) = TRUE;
+            }
+        } else {
+            /* check for indirect dependencies */
+            if (PRF_ARGS (arg_node) != NULL) {
+                PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+            }
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *DDEPENDprf(node *arg_node, info *arg_info)
+ *
+ *   @brief  calls special function if this prf is F_sel.
+ *
+ *   @param  node *arg_node:  N_prf
+ *           info *arg_info:  N_info
+ *   @return node *        :  N_prf
+ ******************************************************************************/
+node *
+DDEPENDprf (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("DDEPENDprf");
+
+    switch (PRF_PRF (arg_node)) {
+    case F_sel:
+        arg_node = DDEPENDprfSel (arg_node, arg_info);
+        break;
+
+    default:
+        if (PRF_ARGS (arg_node) != NULL) {
+            PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+        }
+    }
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *DDEPENDid(node *arg_node, info *arg_info)
  *
- *   @brief  Checks if this Id is contained in
- *             INFO_DDEPEND_REFERENCES_FUSIONABLE( arg_info).
- *           If it is contained the current assigment is (indirect)
- *           dependent on the fusionable withloop.
+ *   @brief  Checks if this Id references (direct/indirect) the other
+ *           considered Withloop.
  *
  *   @param  node *arg_node:  N_id
  *           info *arg_info:  N_info
@@ -189,8 +294,19 @@ DDEPENDid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("DDEPENDid");
 
-    is_dependent
-      = CheckDependency (arg_node, INFO_DDEPEND_REFERENCES_FUSIONABLE (arg_info));
+    if (INFO_DDEPEND_CHECK_DIRECT_DEPENDENCY (arg_info)) {
+        if (AVIS_SSAASSIGN (ID_AVIS (arg_node))
+            == INFO_DDEPEND_FUSIONABLE_WL (arg_info)) {
+            DBUG_PRINT ("WLFS", ("found direct dependency"));
+            is_dependent = TRUE;
+        } else
+            is_dependent = FALSE;
+    } else {
+        /* check for direct and indirect dependencies */
+        is_dependent
+          = CheckDependency (arg_node, INFO_DDEPEND_REFERENCES_FUSIONABLE (arg_info));
+    }
+
     INFO_DDEPEND_WLDEPENDENT (arg_info)
       = (INFO_DDEPEND_WLDEPENDENT (arg_info) || is_dependent);
 
@@ -202,7 +318,7 @@ DDEPENDid (node *arg_node, info *arg_info)
  * @fn node *DDEPENDwith(node *arg_node, info *arg_info)
  *
  *   @brief to find dependent assignments we had to traverse
- *          into N_CODE and N_WITHOP.
+ *          into N_PARTS, N_CODE and N_WITHOP.
  *
  *   @param  node *arg_node:  N_Nwith
  *           info *arg_info:  N_info
@@ -214,14 +330,22 @@ DDEPENDwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DDEPENDwith");
 
+    INFO_DDEPEND_WITHID (arg_info) = NWITH_WITHID (arg_node);
+
+    /*
+     * Traverse into parts
+     */
     DBUG_ASSERT ((NWITH_PART (arg_node) != NULL), "no Part is available!");
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
 
-    if (NWITH_CODE (arg_node) != NULL) {
-        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-    }
+    /*
+     * Traverse into codes
+     */
+    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
 
-    DBUG_ASSERT ((NWITH_WITHOP (arg_node) != NULL), "N_NWITHOP is missing!");
+    /*
+     * Traverse into withops
+     */
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -229,61 +353,99 @@ DDEPENDwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *DetectDependencies( node *arg_node, info *arg_info)
+ * @fn node *DDEPENDcode(node *arg_node, info *arg_info)
  *
- *   @brief  Starting point for traversal DetectDependencies.
+ *   @brief traverse only cblock and cexprs
  *
- *   @param  node *arg_node:  N_with node
- *   @param  info *arg_info:
- *   @return node *        :  N_with node
+ *   @param  node *arg_node:  N_Ncode
+ *           info *arg_info:  info
+ *   @return node *        :  N_Ncode
  ******************************************************************************/
 
 node *
-DetectDependencies (node *arg_node)
+DDEPENDcode (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("DDEPENDcode");
+
+    NCODE_RESOLVEABLE_DEPEND (arg_node) = FALSE;
+
+    /*
+     * Traverse into cblock
+     */
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+
+    /*
+     * Traverse into cexprs
+     */
+    NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
+
+    /*
+     * if code contains at most resolveable dependencies
+     *   -> mark code for later modification while fusioning
+     */
+    if (INFO_DDEPEND_RESOLVEABLE_DEPENDENCIES (arg_info)
+        && !INFO_DDEPEND_WLDEPENDENT (arg_info)) {
+        DBUG_PRINT ("WLFS", ("code contains resolveable dependencies"));
+        NCODE_RESOLVEABLE_DEPEND (arg_node) = TRUE;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *DetectDependencies( node *with, node *fusionable_wl,
+ *                               nodelist references_fwl)
+ *
+ *   @brief  Starting point for traversal DetectDependencies.
+ *
+ *   @param  node *with               :  N_with node
+ *           node *fusionable_wl      :  N_assign node which belongs to
+ *                                       fusionable With-Loop
+ *           nodelist *references_fwl :  list of direct and indirect references
+ *                                       on fusionable_wl
+ *   @return node *                   :  N_with node
+ ******************************************************************************/
+
+node *
+DetectDependencies (node *with, node *fusionable_wl, nodelist *references_fwl)
 {
     funtab *tmp_tab;
     info *arg_info;
 
     DBUG_ENTER ("DetectDependencies");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Nwith),
+    DBUG_ASSERT ((NODE_TYPE (with) == N_Nwith),
                  "DetectDependencies not started with N_Nwith node");
 
-    DBUG_ASSERT ((NWITH_REFERENCES_FUSIONABLE (arg_node) != NULL),
-                 "no references on fusionable withloop found");
+    DBUG_ASSERT ((fusionable_wl != NULL), "no fusionable withloop found");
 
-    DBUG_PRINT ("DDEPEND", ("starting DetectDependencies"));
+    DBUG_ASSERT ((references_fwl != NULL), "no references on fusionable withloop found");
+
+    DBUG_PRINT ("WLFS", ("starting detection of dependencies"));
 
     arg_info = MakeInfo ();
+
+    INFO_DDEPEND_FUSIONABLE_WL (arg_info) = fusionable_wl;
+    INFO_DDEPEND_REFERENCES_FUSIONABLE (arg_info) = references_fwl;
 
     tmp_tab = act_tab;
     act_tab = ddepend_tab;
 
-    INFO_DDEPEND_REFERENCES_FUSIONABLE (arg_info)
-      = NWITH_REFERENCES_FUSIONABLE (arg_node);
-
     /*
-     * traverse into N_PARTs, N_CODEs and N_WITHOPs to detect possible
+     * traverse into N_WITH to detect possible
      * dependencies from current withloop on the fusionable.
      * The result is stored in NWITH_DEPENDENT( arg_node)
      */
-    INFO_DDEPEND_WLDEPENDENT (arg_info) = FALSE;
 
-    DBUG_ASSERT ((NWITH_PART (arg_node) != NULL),
-                 "NWITH_PARTS is >= 1 although no PART is available!");
-    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    with = Trav (with, arg_info);
 
-    if (NWITH_CODE (arg_node) != NULL) {
-        NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-    }
+    NWITH_DEPENDENT (with) = INFO_DDEPEND_WLDEPENDENT (arg_info);
 
-    DBUG_ASSERT ((NWITH_WITHOP (arg_node) != NULL), "N_NWITHOP is missing!");
-    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
-
-    NWITH_DEPENDENT (arg_node) = INFO_DDEPEND_WLDEPENDENT (arg_info);
+    DBUG_PRINT ("WLFS", ("detection of dependencies complete"));
 
     arg_info = FreeInfo (arg_info);
     act_tab = tmp_tab;
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (with);
 }
