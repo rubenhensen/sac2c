@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1998/05/24 00:44:30  dkr
+ * changed signature of some WL_ICMs
+ *
  * Revision 1.9  1998/05/19 15:42:31  dkr
  * ICMs for fold changed
  *
@@ -40,16 +43,20 @@ extern void ICMCompileWL_NONFOLD_BEGIN (char *array, char *idx_vec, int dims,
 
 extern void ICMCompileWL_FOLD_BEGIN (char *target, char *idx_vec, int dims, char **args);
 
-extern void ICMCompileWL_ASSIGN (char *array, char *idx_vec, int dims, char **idx_scalars,
-                                 int dims_expr, char *expr);
+extern void ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
+                                 char *idx_vec, int dims, char **idx_scalars);
 
-extern void ICMCompileWL_ASSIGN_INIT (char *array, char *idx_vec, int dims,
-                                      char **idx_scalars, int dims_templ, char *templ);
+extern void ICMCompileWL_ASSIGN_INIT (int dims_target, char *target, char *idx_vec,
+                                      int dims, char **idx_scalars);
 
-extern void ICMCompileWL_ASSIGN_COPY (char *source, char *array, char *idx_vec, int dims,
-                                      char **idx_scalars, int dims_templ, char *templ);
+extern void ICMCompileWL_ASSIGN_COPY (char *source, int dims_target, char *target,
+                                      char *idx_vec, int dims, char **idx_scalars);
 
-extern void ICMCompileWL_FOLD_NOOP (int dim, char *idx_vec, int dims, char **idx_scalars,
-                                    int cnt_bounds, char **bounds);
+extern void ICMCompileWL_FOLD_NOOP (int dim, int dims_target, char *target, char *idx_vec,
+                                    int dims, char **idx_scalars, int cnt_bounds,
+                                    char **bounds);
+
+extern void ICMCompileWL_ADJUST_OFFSET (int dim, int dims_target, char *target,
+                                        char *idx_vec, int dims, char **idx_scalars);
 
 #endif /* _icm2c_wl_h */
