@@ -1,9 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.82  1995/06/26 16:22:49  asi
- * added UNRfundef
+ * Revision 1.83  1995/07/04 08:34:12  hw
+ * N_double inserted
  *
+;; Revision 1.82  1995/06/26  16:22:49  asi
+;; added UNRfundef
+;;
 ;; Revision 1.81  1995/06/26  10:00:12  sbs
 ;; Idx-calls inserted
 ;;
@@ -287,6 +290,9 @@ NIF (N_num, "N_num", DummyFun, DummyFun, PrintNum, DummyFun, DummyFun, DummyFun,
   NIF (N_float, "N_float", DummyFun, DummyFun, PrintFloat, DummyFun, DummyFun, DummyFun,
        DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun, DupFloat, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
+  NIF (N_double, "N_double", DummyFun, DummyFun, PrintDouble, DummyFun, DummyFun,
+       DummyFun, DummyFun, FreeNoInfo, DummyFun, DummyFun, DummyFun, DummyFun, DupDouble,
+       DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
   NIF (N_typedef, "N_typedef", DummyFun, DummyFun, PrintTypedef, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, CompTypedef, DummyFun, DummyFun,
        DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun, DummyFun),
