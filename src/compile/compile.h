@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  1998/02/15 04:06:28  dkr
+ * added some macros for N_indexproj-nodes (experimental !!)
+ *
  * Revision 1.18  1998/02/11 16:31:05  dkr
  * removed NEWTREE, access-macros used
  *
@@ -176,3 +179,32 @@ extern node *CompObjdef (node *arg_node, node *arg_info);
     }
 
 #endif /* _compile_h */
+
+/****************************************************
+ * macros for the compilation of the new with-loop: *
+ *
+ */
+
+/*
+ *  N_indexproj :
+ *
+ *  sons:
+ *        BOUND1   (N_num)
+ *        BOUND2   (N_num)
+ *        OFFSET   (N_num)
+ *        STEP     (N_num)
+ *        WIDTH    (N_num)
+ *
+ *  temporary attributes:
+ *        ISECTED  (int)          (Compile ! )
+ */
+extern node *MakeProj (node *bound1, node *bound2, node *offset, node *step, node *width);
+
+#define PROJ_BOUND1(n) (n->node[0])
+#define PROJ_BOUND2(n) (n->node[1])
+#define PROJ_OFFSET(n) (n->node[2])
+#define PROJ_STEP(n) (n->node[3])
+#define PROJ_WIDTH(n) (n->node[4])
+#define PROJ_ISECTED(n) (n->flag)
+
+/****************************************************/
