@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  2001/05/04 11:55:50  nmw
+ * added support for correct handling of AVIS_SSAASSIGN for withids
+ *
  * Revision 1.17  2001/05/03 16:51:34  nmw
  * set correct SSAASSIGN attributes when updating phi_targets
  *
@@ -515,12 +518,8 @@ SSAfundef (node *arg_node, node *arg_info)
 node *
 SSAblock (node *arg_node, node *arg_info)
 {
-    node *old_assign;
 
     DBUG_ENTER ("SSAblock");
-
-    /* save old assignment link when starting with new block */
-    old_assign = INFO_SSA_ASSIGN (arg_info);
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         /* there are some vardecs */
@@ -533,9 +532,6 @@ SSAblock (node *arg_node, node *arg_info)
         /* there are some instructions */
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
     }
-
-    /* restore old assignment link */
-    INFO_SSA_ASSIGN (arg_info) = old_assign;
 
     DBUG_RETURN (arg_node);
 }
@@ -578,7 +574,13 @@ SSAexprs (node *arg_node, node *arg_info)
 node *
 SSAassign (node *arg_node, node *arg_info)
 {
+    node *old_assign;
+
     DBUG_ENTER ("SSAassign");
+
+    /* save old assignment link */
+    old_assign = INFO_SSA_ASSIGN (arg_info);
+
     /* traverse expr */
     DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "no instruction in assign!");
 
@@ -590,6 +592,9 @@ SSAassign (node *arg_node, node *arg_info)
     if (EXPRS_NEXT (arg_node) != NULL) {
         EXPRS_NEXT (arg_node) = Trav (EXPRS_NEXT (arg_node), arg_info);
     }
+
+    /* restore old assignment link */
+    INFO_SSA_ASSIGN (arg_info) = old_assign;
 
     DBUG_RETURN (arg_node);
 }
@@ -924,13 +929,21 @@ SSANcode (node *arg_node, node *arg_info)
  *  node *SSANwithid(node *arg_node, node *arg_info)
  *
  * description:
- *  traverses in vector and ids strutures
+ *  traverses in vector and ids strutures. because the withids do not have a
+ *  defining assignment. we set the currect assignmentr to NULL when processing
+ *  these ids.
  *
  ******************************************************************************/
 node *
 SSANwithid (node *arg_node, node *arg_info)
 {
+    node *assign;
+
     DBUG_ENTER ("SSANwithid");
+
+    /* set current assign to NULL for these special ids */
+    assign = INFO_SSA_ASSIGN (arg_info);
+    INFO_SSA_ASSIGN (arg_info) = NULL;
 
     DBUG_ASSERT ((NWITHID_VEC (arg_node) != NULL),
                  "NWITHID node with empty VEC attribute");
@@ -939,6 +952,9 @@ SSANwithid (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NWITHID_IDS (arg_node) != NULL),
                  "NWITHID node with empty IDS attribute");
     NWITHID_IDS (arg_node) = TravLeftIDS (NWITHID_IDS (arg_node), arg_info);
+
+    /* restore currect assign for further processing */
+    INFO_SSA_ASSIGN (arg_info) = assign;
 
     DBUG_RETURN (arg_node);
 }
@@ -1079,6 +1095,7 @@ SSAleftids (ids *arg_ids, node *arg_info)
         DBUG_PRINT ("SSA", ("first definition, no renaming: %s (" F_PTR ")",
                             VARDEC_OR_ARG_NAME (AVIS_VARDECORARG (IDS_AVIS (arg_ids))),
                             IDS_AVIS (arg_ids)));
+
         AVIS_SSAASSIGN (IDS_AVIS (arg_ids)) = INFO_SSA_ASSIGN (arg_info);
 
     } else {
