@@ -1,5 +1,9 @@
 dnl
 dnl $Log$
+dnl Revision 1.11  2003/03/21 16:59:24  sah
+dnl added test on
+dnl bison functionality
+dnl
 dnl Revision 1.10  2003/03/21 16:41:37  sah
 dnl updated sbrk detection
 dnl
@@ -114,6 +118,22 @@ AC_PROG_GCC_TRADITIONAL
 dnl search for bison, byacc or yacc
 AC_PROG_YACC()
 
+dnl check whether a non yacc works
+if [ test "$YACC" != "yacc" ]; then
+  AC_MSG_CHECKING([whether $YACC works])
+  mkdir .ac_yacc_test
+  cd .ac_yacc_test
+  cp ../src/scanparse/sac.y .
+  if [ $YACC sac.y ]; then
+    AC_MSG_RESULT(ok)
+  else
+    YACC=yacc
+    AC_MSG_RESULT(failed)
+  fi
+  cd ..
+  rm -rf .ac_yacc_test
+fi
+
 dnl search for flex or lex
 AC_PROG_LEX()
 
@@ -160,7 +180,7 @@ AC_SUBST(DISABLE_PHM, yes)
 AC_MSG_RESULT(not found)
 [ else ]
 AC_DEFINE_UNQUOTED(SBRK_T,$name,set to the type of sbrk argument)
-AC_MSG_RESULT($sbrk_types)
+AC_MSG_RESULT($name)
 AC_SUBST(DISABLE_PHM, no)
 [ fi ]
 ],[

@@ -2386,6 +2386,24 @@ done
 test -n "$YACC" || YACC="yacc"
 
 
+if  test "$YACC" != "yacc" ; then
+  echo "$as_me:$LINENO: checking whether $YACC works" >&5
+echo $ECHO_N "checking whether $YACC works... $ECHO_C" >&6
+  mkdir .ac_yacc_test
+  cd .ac_yacc_test
+  cp ../src/scanparse/sac.y .
+  if  $YACC sac.y ; then
+    echo "$as_me:$LINENO: result: ok" >&5
+echo "${ECHO_T}ok" >&6
+  else
+    YACC=yacc
+    echo "$as_me:$LINENO: result: failed" >&5
+echo "${ECHO_T}failed" >&6
+  fi
+  cd ..
+  rm -rf .ac_yacc_test
+fi
+
 for ac_prog in flex lex
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
@@ -3386,8 +3404,8 @@ cat >>confdefs.h <<_ACEOF
 #define SBRK_T $name
 _ACEOF
 
-echo "$as_me:$LINENO: result: $sbrk_types" >&5
-echo "${ECHO_T}$sbrk_types" >&6
+echo "$as_me:$LINENO: result: $name" >&5
+echo "${ECHO_T}$name" >&6
 DISABLE_PHM=no
 
  fi
