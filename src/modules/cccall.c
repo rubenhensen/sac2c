@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/05/18 11:22:19  cg
+ * Unfortunately, if tar fails, it does NOT produce an error condition.
+ * So, we have to check whether extracted files actually exist after the
+ * call of tar in order to handle this error condition correctly and
+ * create an appropriate error message.
+ *
  * Revision 2.2  1999/05/04 11:10:04  sbs
  * fixed a bug in GenLibStat:
  * HOST, PWD, and USER are not mandatory for compiling
@@ -281,7 +287,7 @@ GenLibStat ()
 void
 PrintLibStat ()
 {
-    char *pathname, *abspathname, *modname, *nopath;
+    char *pathname, *abspathname, *modname, *nopath, *stt_filename;
     int success;
 
     DBUG_ENTER ("PrintLibStat");
@@ -300,12 +306,19 @@ PrintLibStat ()
 
     modname[strlen (modname) - 4] = 0;
 
-    success = SystemCall2 ("%s %s; %s %s %s.stt %s", config.chdir, tmp_dirname,
-                           config.tar_extract, abspathname, modname, config.dump_output);
+    stt_filename = (char *)Malloc ((strlen (modname) + 6) * sizeof (char));
+    strcpy (stt_filename, modname);
+    strcat (stt_filename, ".stt");
 
-    if (success != 0) {
+    success
+      = SystemCall2 ("%s %s; %s %s %s %s", config.chdir, tmp_dirname, config.tar_extract,
+                     abspathname, stt_filename, config.dump_output);
+
+    if ((success != 0) || !CheckExistFile (tmp_dirname, stt_filename)) {
         SYSABORT (("Corrupted library file format: \"%s\"", abspathname));
     }
+
+    FREE (stt_filename);
 
     SystemCall ("%s %s/%s.stt", config.cat, tmp_dirname, modname);
 

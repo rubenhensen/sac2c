@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/05/18 11:22:19  cg
+ * Unfortunately, if tar fails, it does NOT produce an error condition.
+ * So, we have to check whether extracted files actually exist after the
+ * call of tar in order to handle this error condition correctly and
+ * create an appropriate error message.
+ *
  * Revision 2.2  1999/05/06 15:38:46  sbs
  * call of yyparse changed to My_yyparse.
  *
@@ -394,21 +400,29 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
                             strcat (buffer, ".sib");
 
                             yyin = fopen (buffer, "r");
-                            DBUG_ASSERT (yyin != NULL, "Failure while opening SIB");
 
-                            linenum = 1;
-                            filename = puresibname;
-                            start_token = PARSE_SIB;
+                            if (yyin == NULL) {
+                                /*
+                                 * Unable to extract SIB from library.
+                                 */
+                                SYSERROR (
+                                  ("Corrupted library file format: \"%s\"", abspathname));
+                            } else {
 
-                            My_yyparse ();
+                                linenum = 1;
+                                filename = puresibname;
+                                start_token = PARSE_SIB;
 
-                            fclose (yyin);
+                                My_yyparse ();
 
-                            SIB_NEXT (sib_tree) = sib_tab;
-                            sib_tab = sib_tree;
+                                fclose (yyin);
 
-                            DEPS_SUB (tmp) = SIB_LINKWITH (sib_tree);
-                            SIB_LINKWITH (sib_tree) = NULL;
+                                SIB_NEXT (sib_tree) = sib_tab;
+                                sib_tab = sib_tree;
+
+                                DEPS_SUB (tmp) = SIB_LINKWITH (sib_tree);
+                                SIB_LINKWITH (sib_tree) = NULL;
+                            }
                         }
                     } else {
                         success
@@ -417,7 +431,9 @@ CheckLibraries (deps *depends, strings *done, char *required_by, int level)
                                          config.chdir, tmp_dirname, config.tar_extract,
                                          abspathname, DEPS_NAME (tmp));
 
-                        if (success != 0) {
+                        sprintf (buffer, "lib%s.a", DEPS_NAME (tmp));
+
+                        if ((success != 0) || !CheckExistFile (tmp_dirname, buffer)) {
                             SYSERROR (
                               ("Corrupted library file format: \"%s\"", abspathname));
                         }
