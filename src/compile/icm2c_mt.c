@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/03/23 13:35:38  ben
+ * ICMCompileMT_SCHEDULER_Self_... modified
+ *
  * Revision 3.12  2001/03/22 17:39:30  ben
  * ICMs MT_SCHEDULER_Self_... added
  *
@@ -1729,15 +1732,7 @@ ICMCompileMT_SCHEDULER_Self_BEGIN (int dim, char **vararg)
 #undef MT_SCHEDULER_Self_BEGIN
 
     INDENT;
-    fprintf (outfile, "int taskid;\n");
-    INDENT;
-    fprintf (outfile, "SAC_MT_ACQUIRE_LOCK(SAC_MT_TASKLOCK(0));\n");
-    INDENT;
-    fprintf (outfile, "taskid=SAC_MT_TASK(0);\n");
-    INDENT;
-    fprintf (outfile, " SAC_MT_TASK(0)++;\n");
-    INDENT;
-    fprintf (outfile, "SAC_MT_RELEASE_LOCK(SAC_MT_TASKLOCK(0));\n");
+    fprintf (outfile, "int taskid=SAC_MT_MYTHREAD();\n");
     INDENT;
     fprintf (outfile, " while (taskid<SAC_MT_THREADS()*3){\n");
     SelectTask (dim, vararg, 1, 0, "SAC_MT_THREADS()*3", "taskid");
@@ -1758,6 +1753,10 @@ ICMCompileMT_SCHEDULER_Self_END (int dim, char **vararg)
     INDENT;
     fprintf (outfile, "SAC_MT_ACQUIRE_LOCK(SAC_MT_TASKLOCK(0));\n");
     INDENT;
+    fprintf (outfile, "if (SAC_MT_TASK(0)==0)\n");
+    INDENT;
+    fprintf (outfile, "  SAC_MT_TASK(0)=SAC_MT_THREADS();\n");
+    INDENT;
     fprintf (outfile, "taskid=SAC_MT_TASK(0);\n");
     INDENT;
     fprintf (outfile, " SAC_MT_TASK(0)++;\n");
@@ -1766,7 +1765,7 @@ ICMCompileMT_SCHEDULER_Self_END (int dim, char **vararg)
     INDENT;
     fprintf (outfile, "}\n");
     INDENT;
-    fprintf (outfile, "SAC_MT_SCHEDULER_Reset_Tasks();\n");
+    fprintf (outfile, "SAC_MT_SCHEDULER_Reset_Tasks( );\n");
     fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
