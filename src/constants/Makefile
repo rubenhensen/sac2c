@@ -1,6 +1,10 @@
 #
 #
 # $Log$
+# Revision 1.6  2001/05/02 07:58:49  nmw
+# basecv.o added
+# ;.
+#
 # Revision 1.5  2001/04/26 21:09:59  dkr
 # make deps done
 #
@@ -40,7 +44,7 @@ INCS=-I../../inc -I../tree -I../global
 
 all: shape.o \
      constants_basic.o constants_struc_ops.o constants_ari_ops.o \
-     cv2scalar.o cv2cv.o cv2str.o zipcv.o
+     cv2scalar.o cv2cv.o cv2str.o zipcv.o basecv.o
 
 
 #
