@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.117  2004/07/29 12:13:50  ktr
+ * compile no longer inserts RC-Instructions for not refcounting c-functions.
+ * DO_SKIP is treated more correctly now.
+ * COMPPrfCopy implemented.
+ *
  * Revision 3.116  2004/07/28 12:23:39  ktr
  * accu compiles into NOOP now
  *
@@ -1418,6 +1423,15 @@ MakeGetDimIcm (node *arg_node)
                                 MakeGetDimIcm (PRF_ARG1 (arg_node)),
                                 MakeGetDimIcm (PRF_ARG2 (arg_node)));
             break;
+        case F_sel:
+            DBUG_ASSERT ((NODE_TYPE (PRF_ARG1 (arg_node)) == N_num)
+                           && (NUM_VAL (PRF_ARG1 (arg_node)) == 0)
+                           && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_prf)
+                           && (PRF_PRF (PRF_ARG2 (arg_node)) == F_shape),
+                         "Invalid MakeSizeArg descriptor found!");
+            get_dim = MakeSizeArg (PRF_ARG1 (PRF_ARG2 (arg_node)), FALSE);
+            break;
+
         default:
             DBUG_ASSERT ((0), "Unrecognized dim descriptor");
             break;
@@ -1449,6 +1463,8 @@ MakeSetShapeIcm (node *arg_node, ids *let_ids)
     node *set_shape;
 
     DBUG_ENTER ("MakeSetShapeIcm");
+
+    DBUG_EXECUTE ("COMP", Print (arg_node););
 
     switch (NODE_TYPE (arg_node)) {
     case N_array:
@@ -3323,9 +3339,11 @@ COMPApIds (node *ap, info *arg_info)
                 if (ATG_is_out[tag]) { /* it is an out- (but no inout-) parameter */
                     if (ATG_has_rc[tag]) {
                         /* function does refcounting */
-                        ret_node
-                          = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                             IDS_REFCNT (let_ids), ret_node);
+                        if (!emm) {
+                            ret_node
+                              = MakeAdjustRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                                 IDS_REFCNT (let_ids), ret_node);
+                        }
                     } else {
                         /* function does no refcounting */
                         ret_node = MakeSetRcIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids),
@@ -3400,8 +3418,10 @@ COMPApArgs (node *ap, info *arg_info)
                 /* function does no refcounting */
 
                 if (NODE_TYPE (arg) == N_id) {
-                    ret_node = MakeDecRcIcm (ID_NAME (arg), ID_TYPE (arg),
-                                             ID_REFCNT (arg), 1, ret_node);
+                    if (!emm) {
+                        ret_node = MakeDecRcIcm (ID_NAME (arg), ID_TYPE (arg),
+                                                 ID_REFCNT (arg), 1, ret_node);
+                    }
                 }
             }
         }
@@ -3994,6 +4014,37 @@ COMPPrfFree (node *arg_node, info *arg_info)
 
     ret_node = MakeSetRcIcm (ID_NAME (PRF_ARG1 (arg_node)), ID_TYPE (PRF_ARG1 (arg_node)),
                              0, NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node COMPPrfCopy( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_copy
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfCopy (node *arg_node, info *arg_info)
+{
+    ids *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfCopy");
+
+    let_ids = INFO_COMP_LASTIDS (arg_info);
+
+    ret_node
+      = MakeAssignIcm3 ("ND_COPY__DATA", DupIds_Id_NT (let_ids),
+                        DupId_NT (PRF_ARG1 (arg_node)),
+                        MakeId_Copy (GenericFun (0, ID_TYPE (PRF_ARG1 (arg_node)))),
+                        NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -5146,7 +5197,7 @@ COMPPrf (node *arg_node, info *arg_info)
             break;
 
         case F_copy:
-            DBUG_ASSERT ((0), "Not yet implemented!");
+            ret_node = COMPPrfCopy (arg_node, arg_info);
             break;
 
         case F_free:
@@ -5446,8 +5497,10 @@ COMPLoop (node *arg_node, info *arg_info)
             defvar = IDS_NEXT (defvar);
         }
     } else {
-        last_node = AppendAssign (last_node, BLOCK_INSTR (DO_SKIP (arg_node)));
-        BLOCK_INSTR (DO_SKIP (arg_node)) = NULL;
+        if (NODE_TYPE (BLOCK_INSTR (DO_SKIP (arg_node))) != N_empty) {
+            last_node = AppendAssign (last_node, BLOCK_INSTR (DO_SKIP (arg_node)));
+            BLOCK_INSTR (DO_SKIP (arg_node)) = MakeEmpty ();
+        }
 
         while (ASSIGN_NEXT (last_node) != NULL) {
             last_node = ASSIGN_NEXT (last_node);
