@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/03/13 15:47:32  hw
+ * Revision 1.11  1995/03/13 16:04:19  asi
+ * changed MakeIds
+ *
+ * Revision 1.10  1995/03/13  15:47:32  hw
  * MakeIds inserted
  *
  * Revision 1.9  1995/03/13  15:13:36  asi
@@ -179,7 +182,7 @@ MakeIds (char *id)
 
     DBUG_ENTER ("MakeIds");
 
-    tmp = GEN_NODE (tmp);
+    tmp = GEN_NODE (ids);
     DBUG_ASSERT ((NULL != tmp), "out of memory");
     tmp->id = id;
     tmp->refcnt = 0;
