@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.10  2004/11/02 16:06:27  sah
+  traversal stops at Typedef and Objde3f Next now
+
   Revision 1.9  2004/11/02 11:45:45  sah
   added a long specifier
 
@@ -214,6 +217,20 @@ version="1.0">
   <xsl:apply-templates select="flags" mode="gen-values"/>
 </xsl:template>
 
+<xsl:template match="node[@name = &quot;Typedef&quot;]" mode="gen-values">
+  <!-- generate all sons and attributes for Fundef node -->
+  <xsl:apply-templates select="attributes/attribute" mode="gen-values"/>
+  <xsl:apply-templates select="sons/son" mode="gen-values-nonext"/>
+  <xsl:apply-templates select="flags" mode="gen-values"/>
+</xsl:template>
+
+<xsl:template match="node[@name = &quot;Objdef&quot;]" mode="gen-values">
+  <!-- generate all sons and attributes for Fundef node -->
+  <xsl:apply-templates select="attributes/attribute" mode="gen-values"/>
+  <xsl:apply-templates select="sons/son" mode="gen-values-nonext"/>
+  <xsl:apply-templates select="flags" mode="gen-values"/>
+</xsl:template>
+
 <xsl:template match="node" mode="gen-values">
   <!-- generate all sons and attributes -->
   <xsl:apply-templates select="attributes/attribute" mode="gen-values"/>
@@ -276,15 +293,19 @@ version="1.0">
 
 <xsl:template match="attributes/attribute[key(&quot;types&quot;, ./type/@name)/@persist = &quot;no&quot;]" mode="gen-values" />
 
-<xsl:template match="son[@name = &quot;Next&quot;]" mode="gen-values-fundef">
-  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, NULL&quot;);'" />
-</xsl:template>
-
 <xsl:template match="son[@name = &quot;Body&quot;]" mode="gen-values-fundef">
   <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, NULL&quot;);'" />
 </xsl:template>
 
 <xsl:template match="son" mode="gen-values-fundef">
+  <xsl:apply-templates select="." mode="gen-values-nonext" />
+</xsl:template>
+
+<xsl:template match="son[@name = &quot;Next&quot;]" mode="gen-values-nonext">
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, NULL&quot;);'" />
+</xsl:template>
+
+<xsl:template match="son" mode="gen-values-nonext">
   <xsl:apply-templates select="." mode="gen-values" />
 </xsl:template>
 

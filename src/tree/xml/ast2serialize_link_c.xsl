@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.6  2004/11/02 16:06:27  sah
+  traversal stops at Typedef and Objde3f Next now
+
   Revision 1.5  2004/11/02 10:44:39  sah
   fixed typoe
 
@@ -223,6 +226,14 @@ version="1.0">
 
 <xsl:template match="sons[../@name=&quot;Fundef&quot;]" >
   <xsl:apply-templates select="son[not( @name = &quot;Next&quot;)][not( @name = &quot;Body&quot;)]" />
+</xsl:template>
+
+<xsl:template match="sons[../@name=&quot;Typedef&quot;]" >
+  <xsl:apply-templates select="son[not( @name = &quot;Next&quot;)]" />
+</xsl:template>
+
+<xsl:template match="sons[../@name=&quot;Objdef&quot;]" >
+  <xsl:apply-templates select="son[not( @name = &quot;Next&quot;)]" />
 </xsl:template>
 
 <xsl:template match="sons" >
