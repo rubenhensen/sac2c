@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.70  2004/10/28 17:16:17  sah
+ * included some more parts of the new modulesystem
+ *
  * Revision 3.69  2004/10/22 15:16:51  sah
  * added DoUseSymbol
  *
@@ -277,12 +280,17 @@
 #include "precompile.h"
 #include "compile.h"
 #include "annotate_fun_calls.h"
-#include "cccall.h"
 #ifdef NEW_AST
 #include "libstat.h"
 #include "resolveall.h"
 #include "annotatenamespace.h"
 #include "usesymbols.h"
+#include "libstat.h"
+#include "ccmanager.h"
+#include "libbuilder.h"
+#include "prepareinline.h"
+#else
+#include "cccall.h"
 #endif /* NEW_AST */
 #include "PatchWith.h"
 #include "resource.h"
@@ -305,6 +313,9 @@ int
 main (int argc, char *argv[])
 {
     node *syntax_tree = NULL;
+#ifdef NEW_AST
+    stringset_t *dependencies;
+#endif
     int i;
 
 #ifdef SHOW_MALLOC
@@ -442,21 +453,23 @@ main (int argc, char *argv[])
     compiler_phase++;
 
     PHASE_PROLOG;
+#ifndef NEW_AST
     if (MODUL_IMPORTS (syntax_tree) != NULL) {
         NOTE_COMPILER_PHASE;
-#ifndef NEW_AST
         syntax_tree = Import (syntax_tree); /* imp_tab */
 #else
-        NOTE (("Processing use and import statements..."));
-        ResolveAll (syntax_tree);
-        DoAnnotateNamespace (syntax_tree);
-        NOTE (("Getting used symbols..."));
-        DoUseSymbols (syntax_tree);
+    NOTE (("Processing use and import statements..."));
+    ResolveAll (syntax_tree);
+    DoAnnotateNamespace (syntax_tree);
+    NOTE (("Getting used symbols..."));
+    DoUseSymbols (syntax_tree);
 
-        ABORT_ON_ERROR;
+    ABORT_ON_ERROR;
 #endif /* NEW_AST */
         PHASE_DONE_EPILOG;
+#ifndef NEW_AST
     }
+#endif /* NEW_AST */
     PHASE_EPILOG;
 
     if (break_after == PH_import)
@@ -562,19 +575,26 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-#ifndef NEW_AST
     PHASE_PROLOG;
+#ifndef NEW_AST
     if (MODUL_FILETYPE (syntax_tree) != F_prog) {
         NOTE_COMPILER_PHASE;
         syntax_tree = CheckDec (syntax_tree); /* writedec_tab and checkdec_tab */
         PHASE_DONE_EPILOG;
     }
+#else
+    NOTE_COMPILER_PHASE;
+    DoExport (syntax_tree);
+    PrepareInline (syntax_tree);
+    PHASE_DONE_EPILOG;
+#endif
     PHASE_EPILOG;
 
     if (break_after == PH_checkdec)
         goto BREAK;
     compiler_phase++;
 
+#ifndef NEW_AST
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
     syntax_tree = RetrieveImplicitTypeInfo (syntax_tree); /* impltype_tab */
@@ -594,21 +614,13 @@ main (int argc, char *argv[])
     if (break_after == PH_analysis)
         goto BREAK;
     compiler_phase++;
-#else
-    compiler_phase += 3;
-#endif /* NEW_AST */
 
     PHASE_PROLOG;
     if (MODUL_FILETYPE (syntax_tree) != F_prog) {
         NOTE_COMPILER_PHASE;
-#ifndef NEW_AST
         syntax_tree = WriteSib (syntax_tree); /* writesib_tab */
-#else                                         /* NEW_AST */
-        DoExport (syntax_tree);
-#endif                                        /* NEW_AST */
         PHASE_DONE_EPILOG;
     }
-    PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
     if (break_after == PH_writesib)
@@ -634,6 +646,9 @@ main (int argc, char *argv[])
     if (break_after == PH_uniquecheck)
         goto BREAK;
     compiler_phase++;
+#else
+    compiler_phase += 5;
+#endif /* NEW_AST */
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
@@ -796,6 +811,16 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
+#ifdef NEW_AST
+    /*
+     * prior to freeing the syntax tree, we have to save the dependencies
+     * as these are needed for calling the CC
+     */
+
+    dependencies = MODUL_DEPENDENCIES (syntax_tree);
+    MODUL_DEPENDENCIES (syntax_tree) = NULL;
+#endif /* NEW_AST */
+
     /*
      *  After the C file has been written, the syntax tree may be released.
      */
@@ -806,7 +831,11 @@ main (int argc, char *argv[])
 
     PHASE_PROLOG;
     NOTE_COMPILER_PHASE;
+#ifndef NEW_AST
     InvokeCC ();
+#else
+    InvokeCC (dependencies);
+#endif
     PHASE_DONE_EPILOG;
     PHASE_EPILOG;
 
