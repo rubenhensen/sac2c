@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.23  2000/07/19 16:40:16  nmw
+ * flag SAC_GENERATE_CLIBRARY added
+ *
  * Revision 2.22  2000/07/14 15:07:19  nmw
  * missing include added - no more warnings
  *
@@ -331,6 +334,9 @@ PrintGlobalSwitches ()
 
     fprintf (outfile, "#define SAC_DO_COMPILE_MODULE  %d\n",
              ((filetype == F_modimp) || (filetype == F_classimp)) ? 1 : 0);
+    if (generatelibrary & GENERATELIBRARY_C) {
+        fprintf (outfile, "#define SAC_GENERATE_CLIBRARY\n");
+    }
     fprintf (outfile, "\n");
 
     DBUG_VOID_RETURN;
