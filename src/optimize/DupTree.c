@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.19  1996/02/21 15:07:02  cg
+ * Revision 1.20  1996/09/06 16:19:37  cg
+ * bug fixed in DupIIds: empty ids lists no longer cause segmentation faults.
+ *
+ * Revision 1.19  1996/02/21  15:07:02  cg
  * function DupFundef reimplemented. Internal information will now be copied as well.
  * added new function DupPragma
  *
@@ -205,7 +208,8 @@ DupIIds (node *arg_node, node *arg_info)
     DBUG_ENTER ("DupIIds");
     DBUG_PRINT ("DUP", ("Duplicating - %s", mdb_nodetype[arg_node->nodetype]));
     new_node = MakeNode (arg_node->nodetype);
-    new_node->info.ids = DupIds (arg_node->info.ids, arg_info);
+    new_node->info.ids
+      = ((arg_node->info.ids == NULL) ? NULL : DupIds (arg_node->info.ids, arg_info));
     DUP (arg_node, new_node);
     for (i = 0; i < arg_node->nnode; i++) {
         new_node->node[i] = Trav (arg_node->node[i], arg_info);
