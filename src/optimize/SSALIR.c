@@ -1,8 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.23  2001/05/25 08:43:45  nmw
+ * comments added, bug in WLIR of complete withloops fixed
+ *
  * Revision 1.22  2001/05/22 14:53:14  nmw
- * code movement of WLIR code improved, now moving surrouding code, too
+ * code movement of WLIR code improved, now moving surrounding code, too
  *
  * Revision 1.21  2001/05/17 12:09:02  nmw
  * missing FreeTree added
@@ -72,18 +75,128 @@
  *
  */
 
-/*****************************************************************************
+/******************************************************************************
  *
  * file:   SSALIR.c
  *
  * prefix: SSALIR
  *
  * description:
- *   this module implements loop invariant removal on code in ssa form.
- *   (only do-loops are directly supported by this algorithm, while-loops
- *   have to be transformed in do-loops!)
+ *   this module implements loop invariant removal on code in ssa form. loop
+ *   invariant assignments in do (LIR) and with-loops (WLIR) are moved out of
+ *   the loops. because the implemented algorithm supports no while loops all
+ *   while loops are transformed into do loops before. this happens in
+ *   the While2Do() transformation called in optimize.c
  *
- *****************************************************************************/
+ * details:
+ *   do-loop-invariant removal: assignments that depends only on constants and
+ *   other loop-invariant expressions are itself loop invariant and can be
+ *   moved up before the do loop.
+ *   if we find an assignment in the loop body that is only referenced in the
+ *   else-conditional part of the loop, this assignment can be moved down
+ *   behind the loop (if an assignment can be moved up and down at the same time
+ *   it is moved up, because this let to fewer arguments/results).
+ *   we have to analyse only one loop because one special fundef can contain
+ *   only one loop.
+ *   first we analyse the functions args to find the loop invariant args. these
+ *   arg arguments that are used unchanged in the recursive loop function call.
+ *   all loop invariant args arg marked in AVIS_SSALPINV(avis) == TRUE.
+ *   this information is used in other optimization phases, too, e.g. constant
+ *   propagation in SSACF, copy propagation in SSACSE, loop unrolling analysis
+ *   in SSALUR.
+ *
+ *   example: do-loop invariant removal
+ *
+ *   ...                            lir_y = expr(a,b,5);
+ *   x = f_do(a,b,c,d,e)        --> lir_x, lir_c, lir_g = f_do(a,b,c,d,e,lir_y);
+ *   ...                            x = expr2(lir_c, lir_g);
+ *
+ *   int f_do(a,b,c,d,e)            int,... f_do(a,b,c,d,e,y)
+ *   {                              {
+ *     ...                            ...
+ *     y = expr(a,b,5);               <removed>
+ *     z = expr2(c,g);                <removed>
+ *     if(cond) {                     if(cond) {
+ *       ... = f_do(a,b,c,d',e');       .. = d_do(a,b,c,d',e',y);
+ *     } else {                       } else {
+ *       ...                            ...
+ *       z2  = z;                       c2 = c;
+ *       ...                            g2 = g;
+ *     }                              }
+ *     return(z2);                    return(z2, c2, g2);
+ *   }                              }
+ *
+ *
+ *   with-loop-invariant removal: assignments that depends only on expressions
+ *   defined in outer level withloops we can move the assignment on the level
+ *   with the minimal possible level.
+ *
+ *   c = 5;                    -->  c = 5;
+ *   x = with(..iv1..) {            y = expr(5,c);
+ *       y = expr(5,c);             w = expr(c);
+ *       z = with(..iv2..) {        x = with(..iv1..) {
+ *           u = expr(y,iv2);           v = expr(c,iv1);
+ *           v = expr(c,iv1);           z = with(..iv2..) {
+ *           w = expr(c);                   u = expr(y,iv2);
+ *           } op(...);                     } op(...);
+ *       } op(...);                     } op(...);
+ *
+ *   in the next optimization cycle the z = withloop will be moved out of the
+ *   surrounding withloop:
+ *                                  c = 5;
+ *                                  y = expr(5,c);
+ *                                  w = expr(c);
+ *                                  z = with(..iv2..) {
+ *                                      u = expr(y,iv2);
+ *                                      } op(...);
+ *                                  x = with(..iv2..) {
+ *                                      v = expr(c, iv1)
+ *                                      } op(...);
+ *
+ * implementation notes:
+ *   because loop invariant removal is a quite difficult task we need two
+ *   traversals to implement it. in a first traversal we check expressions
+ *   to be do-loop invariant and mark them, we also mark local identifiers,
+ *   e.g. used in withloops. in this travseral we do the withloop independend
+ *   removal, too. this is no problem, as we only can move up code in the
+ *   fundef itself, we need no vardec adjustment or other signature
+ *   modifications.
+ *   every assignment is tagged with the definition depth in stacked withloops.
+ *   if we get an expression that depends only on expressions with a smaller
+ *   definition depth, we can move up the assignment in the context of the
+ *   surrounding withloop with this depth. to do so, we add this assignments
+ *   to a stack of assignment chains (one for each definition level) in the
+ *   movement target level. when the withloop of one level has been processed
+ *   all moved assignment are inserted in front of the withloop assignment.
+ *   that is why we cannot move a withloop in the same step as other assignments
+ *   because it can let to wrong code, when we move code together with the
+ *   moved withloop do another level.
+ *
+ *   the do-loop-invariant marking allows three tags:
+ *   move_up: an expression can be moved up in front of the do-loop, because it
+ *               depends only on loop invariant expressions.
+ *   move_down: an expression can be moved down behind the do-loop, because it
+ *               is referenced only in the else part of the loop conditional.
+ *   local: an expression is needed only in local usage, e.g. in withloops
+ *
+ *   on bottom up traversal we check, if all results of an assignment are marked
+ *   for move-down, so we can move down the whole expression.
+ *
+ *
+ *   in a second traversal (lirmov) the marked do-invariant expressions are
+ *   moved in the surrounding fundef and the function signature is adjusted.
+ *   we used DupTree() with a special LoopUpTable to do the code movement. in
+ *   the LUT we store pairs of internal/external vardec/avis/name to get the
+ *   correct substitution when we copy the code.
+ *   to have the correct replacements we need two LUTs, one for the general
+ *   mapping between args and calling parameters and the moved local identifiers
+ *   and a second one for the mapping between return expressions and results.
+ *   the LUT is created freshly for each movement, because DupTree() modifies
+ *   the LUT with additional entries. for move_up only the general LUT is needed
+ *   but if we move down code we must update the entries of the general LUT
+ *   with the entries of the result mapping LUT.
+ *
+ ******************************************************************************/
 
 #include "dbug.h"
 #include "tree_basic.h"
@@ -141,9 +254,9 @@ static nodelist *InsListGetFrame (nodelist *il, int depth);
  * description:
  *   checks the given assign-instruction (should be a let) to have all results
  *   marked as move_down to mark the whole let for move_down. a partial move
- *   down of expressions is not supported.
+ *   down of expressions is not possible.
  *
- *****************************************************************************/
+ ******************************************************************************/
 static node *
 CheckMoveDownFlag (node *instr, node *arg_info)
 {
@@ -195,7 +308,7 @@ CheckMoveDownFlag (node *instr, node *arg_info)
  *     5. modify functions signature (AddResult)
  *     6. insert phi-copy-assignments in then and else part of conditional
  *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 CreateNewResult (node *avis, node *arg_info)
 {
@@ -222,7 +335,10 @@ CreateNewResult (node *avis, node *arg_info)
         DBUG_ASSERT ((FALSE), "unsupported nodetype");
     }
 
+    /* update duplicated avis node for usage in new fundef */
     new_ext_avis = AdjustAvisData (new_ext_vardec, INFO_SSALIR_EXTFUNDEF (arg_info));
+
+    /* create new name */
     new_name = TmpVarName (VARDEC_NAME (new_ext_vardec));
     VARDEC_NAME (new_ext_vardec) = Free (VARDEC_NAME (new_ext_vardec));
     VARDEC_NAME (new_ext_vardec) = new_name;
@@ -382,7 +498,7 @@ InsertMappingsIntoLUT (LUT_t move_table, nodelist *mappings)
  * description:
  *   remove duplicate definitions after inserting move down assignments by
  *   inserting new dummy variables in the result list of the external call.
- *   new_ids is the list of new defined identifiers
+ *   new_assigns is the list of moved down assignments,
  *   ext_assign/ext_fundef are links to the external assignment and fundef
  *
  *****************************************************************************/
@@ -410,8 +526,7 @@ AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef)
 
             while (result_chain != NULL) {
                 if (IDS_AVIS (new_ids) == IDS_AVIS (result_chain)) {
-                    /* corresponding ids found - create new vardec and rename result_ids
-                     */
+                    /* matching ids found - create new vardec and rename result_ids */
                     new_vardec
                       = SSANewVardec (AVIS_VARDECORARG (IDS_AVIS (result_chain)));
                     BLOCK_VARDEC (FUNDEF_BODY (ext_fundef))
@@ -462,7 +577,7 @@ AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef)
  *   number to add moved assignments. So this data structure is based on a
  *   chained list nodelist.
  *
- *****************************************************************************/
+ ******************************************************************************/
 static nodelist *
 InsListPushFrame (nodelist *il)
 {
@@ -489,7 +604,7 @@ InsListPushFrame (nodelist *il)
  * description:
  *   removed the latest frame from the InserList il
  *
- *****************************************************************************/
+ ******************************************************************************/
 static nodelist *
 InsListPopFrame (nodelist *il)
 {
@@ -510,7 +625,7 @@ InsListPopFrame (nodelist *il)
  * description:
  *   appends given assignment(s) to the chain in frame depth.
  *
- *****************************************************************************/
+ ******************************************************************************/
 static nodelist *
 InsListAppendAssigns (nodelist *il, node *assign, int depth)
 {
@@ -532,7 +647,7 @@ InsListAppendAssigns (nodelist *il, node *assign, int depth)
  * description:
  *   set the given assignment in in frame depth.
  *
- *****************************************************************************/
+ ******************************************************************************/
 static nodelist *
 InsListSetAssigns (nodelist *il, node *assign, int depth)
 {
@@ -608,10 +723,10 @@ InsListGetFrame (nodelist *il, int depth)
  *
  * description:
  *   traverses fundef two times:
- *      first: infere expressions to move (and do WLIR locally)
- *     second: do the external code movement and fundef adjustment
+ *      first: infere expressions to move (and do WLIR in the local fundef)
+ *     second: do the external code movement and fundef adjustment (lirmov_tab)
  *
- *****************************************************************************/
+ ******************************************************************************/
 node *
 SSALIRfundef (node *arg_node, node *arg_info)
 {
@@ -666,8 +781,8 @@ SSALIRfundef (node *arg_node, node *arg_info)
                      "missing recursive call in do/while special function");
 
         /* save pointer to archain of external function application */
-        INFO_SSALIR_APARGCHAIN (arg_info) = AP_ARGS (
-          LET_EXPR (ASSIGN_INSTR (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (arg_node)))));
+        INFO_SSALIR_APARGCHAIN (arg_info)
+          = AP_ARGS (ASSIGN_RHS (NODELIST_NODE (FUNDEF_EXT_ASSIGNS (arg_node))));
 
     } else {
         /* non loop function */
@@ -723,6 +838,8 @@ SSALIRfundef (node *arg_node, node *arg_info)
  *   comparing the args with the corresponding identifier in the recursive
  *   call. if they are identical the args is a loop invariant arg and will be
  *   tagged.
+ *   also insert mappings between args and external vardecs for all loop
+ *   invariant arguemnts to move LUT.
  *
  *****************************************************************************/
 node *
@@ -748,13 +865,17 @@ SSALIRarg (node *arg_node, node *arg_info)
         }
     }
 
-    /* build up LUT between args and their corresponding calling vardecs */
+    /*
+     * build up LUT between args and their corresponding calling vardecs
+     * for all loop invariant arguments
+     */
     if ((INFO_SSALIR_MOVELUT (arg_info) != NULL)
-        && (INFO_SSALIR_APARGCHAIN (arg_info) != NULL)) {
+        && (INFO_SSALIR_APARGCHAIN (arg_info) != NULL)
+        && (AVIS_SSALPINV (ARG_AVIS (arg_node)) == TRUE)) {
         DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (INFO_SSALIR_APARGCHAIN (arg_info))) == N_id),
                      "non N_id node in function application");
 
-        /* add internal->external connections to LUT: */
+        /* add internal->external pairs to LUT: */
         /* vardec */
         INFO_SSALIR_MOVELUT (arg_info)
           = InsertIntoLUT_P (INFO_SSALIR_MOVELUT (arg_info), arg_node,
@@ -887,8 +1008,8 @@ SSALIRblock (node *arg_node, node *arg_info)
  *   node* SSALIRassign(node *arg_node, node *arg_info)
  *
  * description:
- *   traverse assign instructions in top-down order to infere LI-assignments,
- *   mark move up expressions and do the WLIR movement on the bottomo up
+ *   traverse assign instructions in top-down order to infere do LI-assignments,
+ *   mark move up expressions and do the WLIR movement on the bottom up
  *   return traversal.
  *
  ******************************************************************************/
@@ -915,7 +1036,7 @@ SSALIRassign (node *arg_node, node *arg_info)
     old_maxdepth = INFO_SSALIR_MAXDEPTH (arg_info);
     INFO_SSALIR_MAXDEPTH (arg_info) = 0;
 
-    /* start traversl in instruction */
+    /* start traversal of instruction */
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
     /* analyse and store results of instruction traversal */
@@ -929,14 +1050,21 @@ SSALIRassign (node *arg_node, node *arg_info)
     /*
      * check for with loop independend expressions:
      * if all used identifiers are defined on a outer level, we can move
-     * up the whole assignment to this level.
+     * up the whole assignment to this level. when moving a complete withloop
+     * this can let to wrong programms if the withloop carries some preassign
+     * statements that should be inserted in front of this withloop, but on
+     * the current level. if now the withloop is moved on another level we
+     * must move the preassignments, too, but this might result in wrong code.
+     * so we let this withloop at its current level and try to move it in the
+     * next opt cycle as standalone expression without dependend preassigns.
      */
-    if (INFO_SSALIR_MAXDEPTH (arg_info) < INFO_SSALIR_WITHDEPTH (arg_info)) {
+    if ((INFO_SSALIR_MAXDEPTH (arg_info) < INFO_SSALIR_WITHDEPTH (arg_info))
+        && (!((NODE_TYPE (ASSIGN_RHS (arg_node)) == N_Nwith) && (pre_assign != NULL)))) {
         wlir_move_up = INFO_SSALIR_MAXDEPTH (arg_info);
 
         /*
          * now we add this assignment to the respective insert level chain
-         * and add a new assignment node in this chain that will be removed
+         * and add a new assignment node in the current chain that will be removed
          * later on bottom up traversal (this gives us a correct chain).
          */
         tmp = arg_node;
@@ -963,7 +1091,7 @@ SSALIRassign (node *arg_node, node *arg_info)
         INFO_SSALIR_INSLIST (arg_info)
           = InsListAppendAssigns (INFO_SSALIR_INSLIST (arg_info), tmp, wlir_move_up);
 
-        /* and now the postassogn code */
+        /* and now the postassign code */
         if (INFO_SSALIR_POSTASSIGN (arg_info) != NULL) {
             INFO_SSALIR_INSLIST (arg_info)
               = InsListAppendAssigns (INFO_SSALIR_INSLIST (arg_info),
@@ -971,7 +1099,7 @@ SSALIRassign (node *arg_node, node *arg_info)
             INFO_SSALIR_POSTASSIGN (arg_info) = NULL;
         }
 
-        /* increment statistic counter */
+        /* increment optimize statistics counter */
         wlir_expr++;
     }
 
@@ -1023,7 +1151,7 @@ SSALIRassign (node *arg_node, node *arg_info)
  *
  * description:
  *   traverse let expression and result identifiers
- *   checks, if the dependend used identifier are loop invariant and marks the
+ *   checks, if the dependend used identifiers are loop invariant and marks the
  *   expression for move_up (only in topblock). expressions in with loops
  *   that only depends on local identifiers are marked as local, too.
  *   all other expressions are marked as normal, which means nothing special.
@@ -1080,15 +1208,17 @@ SSALIRlet (node *arg_node, node *arg_info)
     }
 
     /* detect withloop independend expression, will be moved up */
-    if (INFO_SSALIR_MAXDEPTH (arg_info) < INFO_SSALIR_WITHDEPTH (arg_info)) {
-        /* new target definition depth */
+    if ((INFO_SSALIR_MAXDEPTH (arg_info) < INFO_SSALIR_WITHDEPTH (arg_info))
+        && (!((NODE_TYPE (LET_EXPR (arg_node)) == N_Nwith)
+              && (INFO_SSALIR_PREASSIGN (arg_info) != NULL)))) {
+        /* set new target definition depth */
         INFO_SSALIR_SETDEPTH (arg_info) = INFO_SSALIR_MAXDEPTH (arg_info);
         DBUG_PRINT ("SSALIR",
                     ("moving assignment from depth %d to depth %d",
                      INFO_SSALIR_WITHDEPTH (arg_info), INFO_SSALIR_MAXDEPTH (arg_info)));
 
     } else {
-        /* current depth */
+        /* set current depth */
         INFO_SSALIR_SETDEPTH (arg_info) = INFO_SSALIR_WITHDEPTH (arg_info);
     }
 
@@ -1110,7 +1240,7 @@ SSALIRlet (node *arg_node, node *arg_info)
  *
  * description:
  *   normal mode:
- *     checks identifier for being loop invariant or increments nonlituse
+ *     checks identifier for being loop invariant or increments nonliruse
  *     counter always increments the needed counter.
  *
  *   inreturn mode:
@@ -1135,7 +1265,7 @@ SSALIRid (node *arg_node, node *arg_info)
         AVIS_NEEDCOUNT (ID_AVIS (arg_node)) = AVIS_NEEDCOUNT (ID_AVIS (arg_node)) + 1;
 
         /*
-         * if id is NOT loop invariant or locally defined
+         * if id is NOT loop invariant or local defined
          * increment nonliruse counter
          */
         if (!((AVIS_SSALPINV (ID_AVIS (arg_node)))
@@ -1160,7 +1290,6 @@ SSALIRid (node *arg_node, node *arg_info)
         if (INFO_SSALIR_MAXDEPTH (arg_info) < AVIS_DEFDEPTH (ID_AVIS (arg_node))) {
             INFO_SSALIR_MAXDEPTH (arg_info) = AVIS_DEFDEPTH (ID_AVIS (arg_node));
         }
-
         break;
 
     case SSALIR_INRETURN:
@@ -1173,14 +1302,12 @@ SSALIRid (node *arg_node, node *arg_info)
                           == N_let),
                          "non let assignment node");
 
-            if ((NODE_TYPE (
-                   LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN2 (ID_AVIS (arg_node)))))
-                 == N_id)) {
+            if ((NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN2 (ID_AVIS (arg_node)))) == N_id)) {
                 /*
                  * this is the identifier in the loop, that is returned via the
                  * ssa-phicopy assignment
                  */
-                id = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN2 (ID_AVIS (arg_node))));
+                id = ASSIGN_RHS (AVIS_SSAASSIGN2 (ID_AVIS (arg_node)));
 
                 /*
                  * look for the corresponding result ids in the let_node of
@@ -1199,11 +1326,11 @@ SSALIRid (node *arg_node, node *arg_info)
 
                 /*
                  * if return identifier is used only once (in phi copy assignment):
-                 * this identifier can be moved down behind the loop, because it is not
-                 * needed in the loop.
+                 * this identifier can be moved down behind the loop, because it is
+                 * not needed in the loop.
                  * the marked variables will be checked in the bottom up traversal
                  * to be defined on an left side where all identifiers are marked for
-                 * move down (see CheckMoveDownFlag).
+                 * move down (see CheckMoveDownFlag()).
                  */
 
                 if (AVIS_NEEDCOUNT (ID_AVIS (id)) == 1) {
@@ -1272,7 +1399,7 @@ SSALIRap (node *arg_node, node *arg_info)
         DBUG_PRINT ("SSALIR", ("traversal of special fundef %s finished\n",
                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
 
-        /* save post/preassign to integrate them in currect assignment chain */
+        /* save post/preassign to integrate them in current assignment chain */
         INFO_SSALIR_PREASSIGN (arg_info) = INFO_SSALIR_EXTPREASSIGN (new_arg_info);
         INFO_SSALIR_POSTASSIGN (arg_info) = INFO_SSALIR_EXTPOSTASSIGN (new_arg_info);
 
@@ -1334,7 +1461,7 @@ SSALIRcond (node *arg_node, node *arg_info)
  *   node* SSALIRreturn(node *arg_node, node *arg_info)
  *
  * description:
- *   in loops look for move-down assignments and mark them
+ *   in loops: look for possibled move-down assignments and mark them
  *
  ******************************************************************************/
 node *
@@ -1378,6 +1505,9 @@ SSALIRreturn (node *arg_node, node *arg_info)
  * description:
  *   traverses with-loop, increments withdepth counter during traversal,
  *   adds a new frame to the InsertList stack for later code movement.
+ *   after traversing the withloop, put the assignments moved to the current
+ *   depth into INFO_SSALIR_PREASSIGN() to be inserted in front of this
+ *   assignment.
  *
  ******************************************************************************/
 node *
@@ -1411,7 +1541,7 @@ SSALIRNwith (node *arg_node, node *arg_info)
     /* decrement withdepth counter */
     INFO_SSALIR_WITHDEPTH (arg_info) = INFO_SSALIR_WITHDEPTH (arg_info) - 1;
 
-    /* move the assigns into PREASSIGN */
+    /* move the assigns of this depth into PREASSIGN */
     INFO_SSALIR_PREASSIGN (arg_info)
       = AppendAssign (INFO_SSALIR_PREASSIGN (arg_info),
                       InsListGetAssigns (INFO_SSALIR_INSLIST (arg_info),
@@ -1529,23 +1659,6 @@ SSALIRleftids (ids *arg_ids, node *arg_info)
         DBUG_ASSERT ((FALSE), "unable to handle case");
     }
 
-#if 0  
-  /*
-   * this update is not needed anymore, because all optimizations should
-   * preserve the correct ssaform
-   */
-
-  /* update AVIS_SSAASSIGN(2) attributes */
-  if ((INFO_SSALIR_CONDSTATUS(arg_info) == CONDSTATUS_ELSEPART)
-      && (AVIS_SSAPHITARGET(IDS_AVIS(arg_ids)) != PHIT_NONE)) {
-    /* set AVIS_ASSIGN2 attribute for second definition of phitargets */
-    AVIS_SSAASSIGN2(IDS_AVIS(arg_ids)) = INFO_SSALIR_ASSIGN(arg_info);    
-  } else {
-    /* set AVIS_ASSIGN attribute */
-    AVIS_SSAASSIGN(IDS_AVIS(arg_ids)) = INFO_SSALIR_ASSIGN(arg_info);
-  }
-#endif
-
     /* traverse to next expression */
     if (IDS_NEXT (arg_ids) != NULL) {
         IDS_NEXT (arg_ids) = SSALIRleftids (IDS_NEXT (arg_ids), arg_info);
@@ -1554,13 +1667,14 @@ SSALIRleftids (ids *arg_ids, node *arg_info)
     DBUG_RETURN (arg_ids);
 }
 
+/* traversal functions for lirmov_tab */
 /******************************************************************************
  *
  * function:
  *   node* LIRMOVblock(node *arg_node, node *arg_info)
  *
  * description:
- *   traverses body (not the vardecs)
+ *   traverses only body (not the vardecs)
  *
  ******************************************************************************/
 
@@ -1665,7 +1779,7 @@ LIRMOVassign (node *arg_node, node *arg_info)
             /* one loop invarinat expression removed */
             lir_expr++;
 
-            /* move up expression can be removed - there are no further references */
+            /* move up expression can be removed - no further references */
             remove_assignment = TRUE;
             break;
 
@@ -1717,7 +1831,7 @@ LIRMOVassign (node *arg_node, node *arg_info)
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    /* remove this assignment */
+    /* on bottom up traversal remove marked assignments */
     if (remove_assignment) {
         tmp = arg_node;
         arg_node = ASSIGN_NEXT (arg_node);
@@ -1766,9 +1880,9 @@ LIRMOVid (node *arg_node, node *arg_info)
 
     /*
      * do the necessary substitution, but only if this identifier stays
-     * in this fundef. if it is moved up, we do not substitute, because
+     * in this fundef. if it is moved up, we do not substitute it, because
      * the moving duptree will adjust the references to the according external
-     * vardec and avis nodes
+     * vardec and avis nodes and this code here is removed later
      */
     if ((AVIS_SUBST (ID_AVIS (arg_node)) != NULL)
         && (INFO_SSALIR_FLAG (arg_info) != SSALIR_MOVEUP)) {
@@ -1858,7 +1972,7 @@ LIRMOVNwithid (node *arg_node, node *arg_info)
  *   node* LIRMOVreturn(node *arg_node, node *arg_info)
  *
  * description:
- *
+ *   traverses the return expression
  *
  ******************************************************************************/
 node *
@@ -1879,7 +1993,8 @@ LIRMOVreturn (node *arg_node, node *arg_info)
  *   ids* LIRMOVleftids(ids *arg_ids, node *arg_info)
  *
  * description:
- *
+ *   creates external references for moved identifiers and modifies the
+ *   function signature according to the moved identifier (for non local id).
  *
  ******************************************************************************/
 static ids *
@@ -2006,7 +2121,7 @@ LIRMOVleftids (ids *arg_ids, node *arg_info)
  *   node* SSALoopInvariantRemoval(node* fundef, node* modul)
  *
  * description:
- *
+ *   starts the loop invariant removal for non special fundefs.
  *
  ******************************************************************************/
 node *
@@ -2024,8 +2139,7 @@ SSALoopInvariantRemoval (node *fundef, node *modul)
                         FUNDEF_NAME (fundef)));
 
     /* do not start traversal in special functions */
-    if ((FUNDEF_STATUS (fundef) != ST_condfun) && (FUNDEF_STATUS (fundef) != ST_dofun)
-        && (FUNDEF_STATUS (fundef) != ST_whilefun)) {
+    if (!(FUNDEF_IS_LACFUN (fundef))) {
         arg_info = MakeInfo ();
         INFO_SSALIR_MODUL (arg_info) = modul;
 
