@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.52  1997/09/05 13:44:22  cg
+# The compiler flag -D__EXTENSIONS__ is now set to avoid warnings
+# upon non-ANSI-compliant functions (popen, pclose, tempnam, strdup).
+#
 # Revision 1.51  1997/08/04 17:03:22  dkr
 # added libefence support
 #
@@ -157,9 +161,14 @@
 #
 # -pedantic switched off to avoid those disgusting warnings about
 # casts in lvalues.
- 
-CC=gcc -ansi -Wall -g 
-CCPROD=gcc -ansi -Wall -pedantic -DDBUG_OFF -O3
+#
+# The switch __EXTENSIONS__ must be set under Solaris in order to avoid warnings
+# when using non-ANSI-compliant functions.
+# Currently, these are popen(), pclose(), tempnam(), and strdup().
+#
+
+CC=gcc -ansi -Wall -g -D__EXTENSIONS__
+CCPROD=gcc -ansi -Wall -pedantic -DDBUG_OFF -O3 -D__EXTENSIONS__
 MAKE=make CC="$(CC)"
 MAKEPROD=make CC="$(CCPROD)"
 LEX=lex
