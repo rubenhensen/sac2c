@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/11/25 22:19:32  khf
+ * move PRINT_HOMSV to print
+ *
  * Revision 3.13  2004/11/25 15:15:07  skt
  * renaming
  *
@@ -71,25 +74,6 @@
 #define _SAC_WLTRANSFORM_H_
 
 #include "types.h"
-
-#define PRINT_HOMSV(handle, vect, dims)                                                  \
-    {                                                                                    \
-        int d;                                                                           \
-        if ((vect) != NULL) {                                                            \
-            fprintf (handle, "[ ");                                                      \
-            for (d = 0; d < (dims); d++) {                                               \
-                if ((vect)[d] > 0) {                                                     \
-                    fprintf (handle, "%i", (vect)[d]);                                   \
-                } else {                                                                 \
-                    fprintf (handle, "?");                                               \
-                }                                                                        \
-                fprintf (handle, " ");                                                   \
-            }                                                                            \
-            fprintf (handle, "]");                                                       \
-        } else {                                                                         \
-            fprintf (handle, "NULL");                                                    \
-        }                                                                                \
-    }
 
 extern node *WLTRAdoWlTransform (node *syntax_tree);
 
