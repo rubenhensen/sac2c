@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/08/02 14:07:58  sah
+ * added lots of ugly defines to remove
+ * compiler warning when using the old
+ * ast;)
+ *
  * Revision 3.7  2004/07/31 12:46:07  sah
  * modified abstract datatype from void* pointers
  * to abstract structures
@@ -120,6 +125,10 @@
 
 #include <stdio.h>
 #include <string.h>
+
+#ifdef NEW_AST
+#include "DataFlowMask.h"
+#endif
 
 #include "dbug.h"
 #include "types.h"

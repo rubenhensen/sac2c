@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/08/02 14:07:58  sah
+ * added lots of ugly defines to remove
+ * compiler warning when using the old
+ * ast;)
+ *
  * Revision 3.10  2004/08/01 16:28:53  sah
  * all abstract types are now abstract structures
  * instead of void pointers
@@ -84,7 +89,11 @@
 #include <stdio.h>
 #include "LookUpTable.h"
 
+#ifdef NEW_AST
 typedef struct SCHED_T *SCHsched_t;
+#else
+typedef void *SCHsched_t;
+#endif
 
 extern SCHsched_t SCHMakeScheduling (char *discipline, ...);
 extern SCHsched_t SCHMakeSchedulingByPragma (node *ap_node, int line);
@@ -107,7 +116,11 @@ extern node *SCHCompileSchedulingEnd (int seg_id, ids *wl_ids, SCHsched_t sched,
 extern node *SCHCompileSchedulingInit (int seg_id, ids *wl_ids, SCHsched_t sched,
                                        node *arg_node);
 
+#ifdef NEW_AST
 typedef struct TASKSEL_T *SCHtasksel_t;
+#else
+typedef void *SCHtasksel_t;
+#endif
 
 extern SCHtasksel_t SCHMakeTaskselByPragma (node *ap_node, int line);
 

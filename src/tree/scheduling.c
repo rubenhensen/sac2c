@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2004/08/02 14:07:58  sah
+ * added lots of ugly defines to remove
+ * compiler warning when using the old
+ * ast;)
+ *
  * Revision 3.39  2004/08/01 16:28:53  sah
  * all abstract types are now abstract structures
  * instead of void pointers
@@ -209,7 +214,10 @@
 #include <string.h>
 #include <stdarg.h>
 
+#ifdef NEW_AST
 #include "scheduling.h"
+#endif
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -279,6 +287,10 @@ typedef struct SCHED_T {
     int num_args;
     sched_arg_t *args;
 } sched_t;
+
+#ifndef NEW_AST
+typedef sched_t SCHsched_t;
+#endif
 
 /******************************************************************************
  *

@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 3.3  2004/08/02 14:07:58  sah
+ * added lots of ugly defines to remove
+ * compiler warning when using the old
+ * ast;)
+ *
  * Revision 3.2  2004/07/31 12:46:07  sah
  * modified abstract datatype from void* pointers
  * to abstract structures
@@ -156,8 +161,13 @@
  * abstract data types
  */
 
+#ifdef NEW_AST
 typedef struct MASK_BASE_T *DFMmask_base_t;
 typedef struct MASK_T *DFMmask_t;
+#else
+typedef void *DFMmask_base_t;
+typedef void *DFMmask_t;
+#endif
 
 /*
  * function declarations
