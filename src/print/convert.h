@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.6  1995/06/23 12:32:27  hw
+ * Revision 1.7  1995/06/30 11:58:25  hw
+ * mmoved macro MOD to tree.h
+ *
+ * Revision 1.6  1995/06/23  12:32:27  hw
  * macro SIMPLE4FUN_RENAME inserted
  * "extern char *rename_type[];" inserted
  *
@@ -32,7 +35,6 @@
     ((type->name != NULL) ? type->name : type_string[type->simpletype])
 #define SIMPLE4FUN_RENAME(type)                                                          \
     ((type->name != NULL) ? type->name : rename_type[type->simpletype])
-#define MOD_NAME_CON "__"
 
 extern char *type_string[];
 extern char *rename_type[];
