@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/04/19 07:55:58  dkr
+ * macro F_PTR used as format string for pointers
+ *
  * Revision 3.4  2001/03/22 19:41:33  dkr
  * include of tree.h eliminated
  *
@@ -312,7 +315,7 @@ DbugInternGen (intern_gen *ig)
             printf ("]");
         }
 
-        printf ("   code: %p\n", ig->code);
+        printf ("   code: " F_PTR "\n", ig->code);
 
         ig = ig->next;
     }
