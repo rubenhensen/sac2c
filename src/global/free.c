@@ -1,7 +1,14 @@
 /*
  *
  * $Log$
- * Revision 1.12  1995/12/01 16:14:27  cg
+ * Revision 1.13  1995/12/07 14:16:18  cg
+ * Now, the free functions traverse chained lists onlyn with
+ * respect to the current setting of nnode, which may be different
+ * to the original setting in the respective Make function due to
+ * old code. This applies to the following nodes:
+ * N_arg, N_vardec, N_assign, N_exprs, N_vinfo, N_icm
+ *
+ * Revision 1.12  1995/12/01  16:14:27  cg
  * added function FreePragma for new node type N_pragma.
  * renamed function FreeTypes to FreeOneTypes in contrast to FreeAllTypes.
  * same with other free functions for non-node structures.
@@ -64,7 +71,7 @@
 #include "free.h"
 
 /*
- *  Important Remark:
+ *  Important Remarks:
  *
  *  All removals of parts of or the entire syntax tree should be done
  *  by using the functions in this file.
@@ -72,6 +79,11 @@
  *  Module names are never be freed, because it is difficult if not
  *  impossible to decide whether it is a private heap location or
  *  a heap location shared with other nodes.
+ *
+ *  To guarantee the compatibility with old code, 'nnode' is used
+ *  temporarily in some free functions for node structures,
+ *  i.e. the next node in chained lists is only traversed if there
+ *  is one and if 'nnode' allows it concerning its old usage.
  *
  *
  *
@@ -98,7 +110,9 @@
     }
 
 #define FREECONT(node)                                                                   \
-    ((arg_info != NULL) && (node != NULL)) ? Trav (node, arg_info) : node
+    ((arg_info != NULL) && (node != NULL) && (arg_node->nnode == nnode_default))         \
+      ? Trav (node, arg_info)                                                            \
+      : node
 
 /*--------------------------------------------------------------------------*/
 /*  Free-functions for non-node structures                                  */
@@ -461,6 +475,7 @@ node *
 FreeImplist (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
+    int nnode_default = arg_node->nnode;
 
     DBUG_ENTER ("FreeImplist");
 
@@ -507,6 +522,7 @@ node *
 FreeTypedef (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
+    int nnode_default = arg_node->nnode;
 
     DBUG_ENTER ("FreeTypedef");
 
@@ -530,13 +546,12 @@ node *
 FreeObjdef (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
+    int nnode_default = arg_node->nnode;
 
     DBUG_ENTER ("FreeObjdef");
 
     DBUG_PRINT ("FREE",
                 ("Removing contents of N_objdef node %s ...", ItemName (arg_node)));
-
-    tmp = FREECONT (OBJDEF_NEXT (arg_node));
 
     FREETRAV (OBJDEF_EXPR (arg_node));
     FREETRAV (OBJDEF_PRAGMA (arg_node));
@@ -556,6 +571,7 @@ node *
 FreeFundef (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
+    int nnode_default = arg_node->nnode;
 
     DBUG_ENTER ("FreeFundef");
 
@@ -593,6 +609,7 @@ node *
 FreeArg (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
+    int nnode_default = 1;
 
     DBUG_ENTER ("FreeArg");
 
@@ -636,6 +653,7 @@ node *
 FreeVardec (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
+    int nnode_default = 1;
 
     DBUG_ENTER ("FreeVardec");
 
@@ -658,6 +676,7 @@ node *
 FreeAssign (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
+    int nnode_default = 2;
 
     DBUG_ENTER ("FreeAssign");
 
@@ -965,6 +984,7 @@ node *
 FreeExprs (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
+    int nnode_default = 2;
 
     DBUG_ENTER ("FreeExprs");
 
@@ -1004,6 +1024,7 @@ node *
 FreeVinfo (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
+    int nnode_default = 1;
 
     DBUG_ENTER ("FreeVinfo");
 
@@ -1213,6 +1234,7 @@ node *
 FreeIcm (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
+    int nnode_default = 2;
 
     DBUG_ENTER ("FreeIcm");
 
