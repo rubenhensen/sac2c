@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.19  1995/12/06 09:48:22  cg
+ * Revision 1.20  1996/01/21 14:18:12  cg
+ * new macro MUST_REFCOUNT to distinguish between refcounted
+ * and not refcounted variables.
+ *
+ * Revision 1.19  1995/12/06  09:48:22  cg
  * external implicit types (void*) are now refcounted too.
  *
  * Revision 1.18  1995/10/06  17:08:34  cg
@@ -78,12 +82,14 @@
  */
 
 #include <stdlib.h>
+
 #include "tree.h"
 #include "my_debug.h"
 #include "dbug.h"
 #include "typecheck.h" /* to use LookupType */
 #include "traverse.h"
 #include "internal_lib.h"
+#include "free.h"
 #include "refcount.h"
 
 #define TYPES info.types
@@ -91,19 +97,22 @@
 #define VAR_DEC info.ids->node
 #define CONTEXT info.cint
 #define ID_REF refcnt
+
 #define DUB_ID_NODE(a, b)                                                                \
     a = MakeNode (N_id);                                                                 \
     a->info.ids = MakeIds (StringCopy (b->info.ids->id), NULL, ST_regular);              \
     a->VAR_DEC = b->VAR_DEC
+
 #define VAR_DEC_2_ID_NODE(a, b)                                                          \
     a = MakeNode (N_id);                                                                 \
     a->info.ids = MakeIds (StringCopy (b->info.types->id), NULL, ST_regular);            \
     a->VAR_DEC = b;                                                                      \
     a->ID_REF = b->refcnt;
 
-#define FREE(a) free (a)
+#define MUST_REFCOUNT(type) (IsArray (type) || IsNonUniqueHidden (type))
 
-extern node *GenerateMasks (node *arg_node, node *arg_info); /* from optimize.c */
+extern node *GenerateMasks (node *arg_node, node *arg_info);
+/* from optimize.c */
 
 static int varno;         /* used to store the number of known variables in a
                              sac-function (used for mask[])
@@ -127,20 +136,27 @@ static node *fundef_node; /* pointer to current function declaration */
 int
 IsArray (types *type)
 {
-    node *type_node;
+    node *tdef;
     int ret = 0;
 
     DBUG_ENTER ("IsArray");
+
     DBUG_PRINT ("RC", ("looking for %s", type->id));
 
-    if ((1 <= type->dim) || (-1 == type->dim))
+    if ((1 <= TYPES_DIM (type)) || (-1 == TYPES_DIM (type))) {
         ret = 1;
-    else if (T_user == type->simpletype) {
-        type_node = LookupType (type->name, type->name_mod, 042);
-        /* 042 is only a dummy argument */
-        if ((1 <= type_node->info.types->dim) || (-1 == type_node->info.types->dim))
-            ret = 1;
+    } else {
+        if (T_user == TYPES_BASETYPE (type)) {
+            tdef = LookupType (TYPES_NAME (type), TYPES_MOD (type), 042);
+            /* 042 is only a dummy argument */
+            DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
+
+            if ((1 <= TYPEDEF_DIM (tdef)) || (-1 == TYPEDEF_DIM (tdef))) {
+                ret = 1;
+            }
+        }
     }
+
     DBUG_PRINT ("RC", ("%d", ret));
 
     DBUG_RETURN (ret);
@@ -164,24 +180,30 @@ IsArray (types *type)
 int
 IsNonUniqueHidden (types *type)
 {
-    int ret;
+    int ret = 0;
     node *tdef;
 
     DBUG_ENTER ("IsNonUniqueHidden");
 
-    if (type->simpletype == T_user) {
-        tdef = LookupType (type->name, type->name_mod, 042);
+    if (TYPES_BASETYPE (type) == T_user) {
+        tdef = LookupType (TYPES_NAME (type), TYPES_MOD (type), 042);
         /* 042 is only a dummy argument */
+        DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
 
-        if ((TYPEDEF_ATTRIB (tdef) == ST_regular)
-            && (TYPEDEF_BASETYPE (tdef) == T_hidden)) {
-            ret = 1;
-        }
-    } else {
-        if ((type->simpletype == T_hidden) && (type->attrib == ST_regular)) {
-            ret = 1;
-        } else {
-            ret = 0;
+        if ((TYPEDEF_BASETYPE (tdef) == T_hidden)
+            || (TYPEDEF_BASETYPE (tdef) == T_user)) {
+            if (TYPEDEF_TNAME (tdef) == NULL) {
+                if (TYPEDEF_ATTRIB (tdef) == ST_regular) {
+                    ret = 1;
+                }
+            } else {
+                tdef = LookupType (TYPEDEF_TNAME (tdef), TYPEDEF_TMOD (tdef), 042);
+                DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
+
+                if (TYPEDEF_ATTRIB (tdef) == ST_regular) {
+                    ret = 1;
+                }
+            }
         }
     }
 
@@ -423,6 +445,42 @@ Refcount (node *arg_node)
 
 /*
  *
+ *  functionname  : RCarg
+ *  arguments     : 1) argument node
+ *                  2) info node unused
+ *  description   : initializes ARG_REFCNT for refcounted (0) and not
+ *                  refcounted parameters (-1)
+ *                  This information is needed by compile.c to distinguish
+ *                  between refcounted and not refcounted parameters.
+ *  global vars   : ---
+ *  internal funs : ---
+ *  external funs : Trav
+ *  macros        : DBUG... , MUST_REFCOUNT
+ *
+ *  remarks       :
+ *
+ */
+
+node *
+RCarg (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCarg");
+
+    if (MUST_REFCOUNT (ARG_TYPE (arg_node))) {
+        ARG_REFCNT (arg_node) = 0;
+    } else {
+        ARG_REFCNT (arg_node) = -1;
+    }
+
+    if (ARG_NEXT (arg_node) != NULL) {
+        ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ *
  *  functionname  : RCfundef
  *  arguments     : 1) argument node
  *                  2) info node
@@ -443,6 +501,16 @@ RCfundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("RCfundef");
 
+    if (FUNDEF_ARGS (arg_node) != NULL) {
+        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+
+        /*
+         *  The args are traversed to mark refcounted parameters
+         *  and initialize ARG_REFCNT.
+         *  This information is needed by compile.c .
+         */
+    }
+
     if (NULL != arg_node->node[0]) {
         /* setting some global variables to use with the 'mask'
          * and storage of refcounts
@@ -458,8 +526,10 @@ RCfundef (node *arg_node, node *arg_info)
 
         arg_node->node[0] = Trav (arg_node->node[0], arg_info);
     }
-    if (NULL != arg_node->node[1])
+
+    if (NULL != arg_node->node[1]) {
         arg_node->node[1] = Trav (arg_node->node[1], arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -541,8 +611,7 @@ RCloop (node *arg_node, node *arg_info)
         if ((defined_mask[i] > 0) || (used_mask[i] > 0)) {
             var_dec = FindVarDec (i);
             DBUG_ASSERT ((NULL != var_dec), "variable not found");
-            if ((1 == IsArray (var_dec->TYPES))
-                || (1 == IsNonUniqueHidden (var_dec->TYPES))) {
+            if (MUST_REFCOUNT (var_dec->TYPES)) {
 
                 /* first store used and defined variables (v1), (v2) */
                 if ((defined_mask[i] > 0) && (ref_dump[i] > 0)) {
@@ -613,8 +682,7 @@ RCloop (node *arg_node, node *arg_info)
         if ((defined_mask[i] > 0) || (used_mask[i] > 0)) {
             var_dec = FindVarDec (i);
             DBUG_ASSERT ((NULL != var_dec), "variable not found");
-            if ((1 == IsArray (var_dec->TYPES))
-                || (1 == IsNonUniqueHidden (var_dec->TYPES))) {
+            if (MUST_REFCOUNT (var_dec->TYPES)) {
                 if ((used_mask[i] > 0) && (0 < var_dec->refcnt) && (1 == again)) {
                     /* update refcount of used variables  (v1)
                      */
@@ -688,8 +756,7 @@ RCid (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("RCid");
 
-    if ((1 == IsArray (arg_node->VAR_DEC->TYPES))
-        || (1 == IsNonUniqueHidden (arg_node->VAR_DEC->TYPES))) {
+    if (MUST_REFCOUNT (arg_node->VAR_DEC->TYPES)) {
         arg_node->VAR_DEC->refcnt += 1;
         arg_node->ID_REF = arg_node->VAR_DEC->refcnt;
     } else
@@ -724,8 +791,7 @@ RClet (node *arg_node, node *arg_info)
 
     ids = arg_node->info.ids;
     while (NULL != ids) {
-        if ((1 == IsArray (ids->node->TYPES))
-            || (1 == IsNonUniqueHidden (ids->node->TYPES))) {
+        if (MUST_REFCOUNT (ids->node->TYPES)) {
             ids->refcnt = ids->node->refcnt;
             ids->node->refcnt = 0;
         } else
@@ -886,8 +952,7 @@ RCwith (node *arg_node, node *arg_info)
         if (used_mask[i] > 0) {
             var_dec = FindVarDec (i);
             DBUG_ASSERT ((NULL != var_dec), "variable not found");
-            if ((1 == IsArray (var_dec->TYPES))
-                || (1 == IsNonUniqueHidden (var_dec->TYPES)))
+            if (MUST_REFCOUNT (var_dec->TYPES))
                 if (0 < var_dec->refcnt) {
                     /* store refcount of used variables in new_info->node[0]
                      */
