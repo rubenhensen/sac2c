@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.13  1995/01/18 17:28:00  asi
+# Revision 1.14  1995/03/08 17:04:59  asi
+# added -I../global
+#
+# Revision 1.13  1995/01/18  17:28:00  asi
 # make deps
 #
 # Revision 1.12  1994/12/20  15:44:22  sbs
@@ -46,7 +49,7 @@ MAKE=make
 CC=gcc -ansi -g 
 
 INCS=-I../../inc -I../print -I../flatten -I../scanparse -I../typecheck \
-     -I../optimize -I../modules \
+     -I../optimize -I../modules -I../global \
      -I/usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include
 
 all: main.o Error.o traverse.o usage.o my_debug.o tree.o free.o
