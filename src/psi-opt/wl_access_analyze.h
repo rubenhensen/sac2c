@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.1  1999/05/12 14:03:25  bs
+ * new release number
+ *
  * Revision 1.2  1999/05/10 12:20:46  bs
  * *** empty log message ***
  *
@@ -27,8 +30,6 @@
 #ifndef _wl_access_analyze_h
 
 #define _wl_access_analyze_h
-
-extern node *WLAccessAnalyze (node *arg_node);
 
 extern node *WLAAfundef (node *arg_node, node *arg_info);
 extern node *WLAAblock (node *arg_node, node *arg_info);
