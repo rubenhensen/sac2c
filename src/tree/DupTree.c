@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/02/14 14:59:05  dkr
+ * parts of the (physical) types-structure which are not part of the
+ * (virtual) TPYES-structure are initialized in DupTypes() now, but
+ * *not* in DupTypes_().
+ *
  * Revision 3.11  2001/02/12 17:03:03  nmw
  * N_avis node added
  *
@@ -585,12 +590,6 @@ DupTypes_ (types *old_types, node *arg_info)
         DBUG_PRINT ("TYPE", ("new name" P_FORMAT ", old name" P_FORMAT,
                              TYPES_NAME (new_types), TYPES_NAME (old_types)));
 
-        new_types->id = StringCopy (old_types->id);
-        new_types->id_mod = StringCopy (old_types->id_mod);
-        new_types->id_cmod = StringCopy (old_types->id_cmod);
-        new_types->attrib = old_types->attrib;
-        new_types->status = old_types->status;
-
         if (TYPES_NEXT (old_types) != NULL) {
             TYPES_NEXT (new_types) = DupTypes_ (TYPES_NEXT (old_types), arg_info);
         }
@@ -1115,10 +1114,10 @@ DupVardec (node *arg_node, node *arg_info)
         /* we have to duplicate the containing avis node */
         FreeAvis (VARDEC_AVIS (new_node), arg_info);
         VARDEC_AVIS (new_node) = DupAvis (VARDEC_AVIS (arg_node), arg_info);
-        /* correct backreferece */
+        /* correct backreference */
         AVIS_VARDECORARG (VARDEC_AVIS (new_node)) = new_node;
     } else {
-        /* nop, the created empty avis node is ok */
+        /* noop, the created empty avis node is ok */
     }
 
 #if 0
@@ -2343,6 +2342,18 @@ DupTypes (types *old_types)
     DBUG_ENTER ("DupTypes");
 
     new_types = DupTypes_ (old_types, NULL);
+
+#if 1
+    /*
+     * these entries are *not* part of the TYPES structure
+     *  but part of the TYPEDEF/OBDEF/FUNDEF/ARG/VARDEC node!!
+     */
+    new_types->id = StringCopy (old_types->id);
+    new_types->id_mod = StringCopy (old_types->id_mod);
+    new_types->id_cmod = StringCopy (old_types->id_cmod);
+    new_types->attrib = old_types->attrib;
+    new_types->status = old_types->status;
+#endif
 
     DBUG_RETURN (new_types);
 }
