@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1995/12/28 10:28:10  cg
+ * Revision 1.11  1996/01/21 16:02:47  cg
+ * bug fixed in OBJobjdef
+ *
+ * Revision 1.10  1995/12/28  10:28:10  cg
  * bug fixed in OBJarg: names of artificial return types won't be shared
  * in any situation now.
  *
@@ -267,8 +270,8 @@ OBJobjdef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("OBJobjdef");
 
-    buffer = Malloc (strlen (OBJDEF_NAME (arg_node)) + strlen (OBJDEF_MOD (arg_node))
-                     + strlen (mod_name_con) + 1);
+    buffer = Malloc (strlen (OBJDEF_NAME (arg_node))
+                     + strlen (MOD (OBJDEF_MOD (arg_node))) + strlen (mod_name_con) + 1);
 
     strcpy (buffer, MOD (OBJDEF_MOD (arg_node)));
     strcat (buffer, mod_name_con);
