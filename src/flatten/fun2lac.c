@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/02/18 10:49:47  cg
+ * All initial bugs fixed; this version successfully reconverts
+ * conditionals.
+ *
  * Revision 1.1  2000/02/17 16:15:25  cg
  * Initial revision
  *
@@ -46,6 +50,40 @@
 /******************************************************************************
  *
  * function:
+ *   node *MoveVardecs(node *source, node *dest)
+ *
+ * description:
+ *
+ *   This function moves the vardec nodes from a conditional or loop function
+ *   to the corresponding function definition where the conditional or loop
+ *   function is applied.
+ *
+ ******************************************************************************/
+
+static node *
+MoveVardecs (node *source, node *dest)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MoveVardecs");
+
+    tmp = BLOCK_VARDEC (source);
+
+    if (tmp != NULL) {
+        while (VARDEC_NEXT (tmp) != NULL) {
+            tmp = VARDEC_NEXT (tmp);
+        }
+        VARDEC_NEXT (tmp) = BLOCK_VARDEC (dest);
+        BLOCK_VARDEC (dest) = BLOCK_VARDEC (source);
+        BLOCK_VARDEC (source) = NULL;
+    }
+
+    DBUG_RETURN (dest);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *InlineWhileFun(node *fundef)
  *
  * description:
@@ -61,7 +99,7 @@ InlineWhileFun (node *fundef)
 {
     DBUG_ENTER ("InlineWhileFun");
 
-    DBUG_RETURN (fundef);
+    DBUG_RETURN (NULL);
 }
 
 /******************************************************************************
@@ -82,7 +120,7 @@ InlineDoFun (node *fundef)
 {
     DBUG_ENTER ("InlineDoFun");
 
-    DBUG_RETURN (fundef);
+    DBUG_RETURN (NULL);
 }
 
 /******************************************************************************
@@ -99,11 +137,36 @@ InlineDoFun (node *fundef)
  ******************************************************************************/
 
 static node *
-InlineCondFun (node *fundef)
+ReplaceAssignmentByCondFun (node *assign, node *fundef)
 {
+    node *assign_chain, *tmp;
+
     DBUG_ENTER ("InlineCondFun");
 
-    DBUG_RETURN (fundef);
+    assign_chain = BLOCK_INSTR (FUNDEF_BODY (fundef));
+
+    tmp = assign_chain;
+
+    while (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp))) != N_return) {
+        /* find last assignment before return statement */
+        tmp = ASSIGN_NEXT (tmp);
+    }
+
+    BLOCK_INSTR (FUNDEF_BODY (fundef)) = ASSIGN_NEXT (tmp);
+    /* Remove all assignments but the return statement from function definition */
+
+    ASSIGN_NEXT (tmp) = ASSIGN_NEXT (assign);
+    /* append following assignments to the assignment chain of the conditional
+       function */
+
+    FUNDEF_BODY (fundef) = FreeTree (FUNDEF_BODY (fundef));
+    /* free remaining body of conditional function */
+
+    ASSIGN_NEXT (assign) = NULL;
+    FreeTree (assign);
+    /* free current assignment */
+
+    DBUG_RETURN (assign_chain);
 }
 
 /******************************************************************************
@@ -125,11 +188,16 @@ FUN2LACap (node *arg_node, node *arg_info)
     DBUG_ENTER ("FUN2LACap");
 
     if ((FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_condfun)
-        && (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_whilefun)
-        && (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_dofun)) {
+        || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_whilefun)
+        || (FUNDEF_STATUS (AP_FUNDEF (arg_node)) == ST_dofun)) {
 
         AdjustIdentifiers (AP_FUNDEF (arg_node), INFO_FUN2LAC_LET (arg_info));
         INFO_FUN2LAC_FUNDEF (arg_info) = AP_FUNDEF (arg_node);
+        /*
+         * The fundef node of an applied conditional or loop function is stored
+         * in arg_info. This allows to memory the interesting case during the
+         * following bottom-up traversal.
+         */
     }
 
     DBUG_RETURN (arg_node);
@@ -181,23 +249,37 @@ FUN2LAClet (node *arg_node, node *arg_info)
 node *
 FUN2LACassign (node *arg_node, node *arg_info)
 {
+    node *tmp;
+
     DBUG_ENTER ("FUN2LACassign");
 
-    arg_node = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_FUN2LAC_FUNDEF (arg_info) != NULL) {
-        ASSIGN_INSTR (arg_node) = FreeTree (ASSIGN_INSTR (arg_node));
+        INFO_FUN2LAC_FUNBLOCK (arg_info)
+          = MoveVardecs (FUNDEF_BODY (INFO_FUN2LAC_FUNDEF (arg_info)),
+                         INFO_FUN2LAC_FUNBLOCK (arg_info));
 
         switch (FUNDEF_STATUS (INFO_FUN2LAC_FUNDEF (arg_info))) {
         case ST_condfun: {
-            ASSIGN_INSTR (arg_node) = InlineCondFun (INFO_FUN2LAC_FUNDEF (arg_info));
+            DBUG_PRINT ("FUN2LAC", ("Naive inlining of conditional function %s.\n",
+                                    ItemName (INFO_FUN2LAC_FUNDEF (arg_info))));
+
+            arg_node
+              = ReplaceAssignmentByCondFun (arg_node, INFO_FUN2LAC_FUNDEF (arg_info));
             break;
         }
         case ST_whilefun: {
+            DBUG_PRINT ("FUN2LAC", ("Naive inlining of while-loop function %s.\n",
+                                    ItemName (INFO_FUN2LAC_FUNDEF (arg_info))));
+
             ASSIGN_INSTR (arg_node) = InlineWhileFun (INFO_FUN2LAC_FUNDEF (arg_info));
             break;
         }
         case ST_dofun: {
+            DBUG_PRINT ("FUN2LAC", ("Naive inlining of do-loop function %s.\n",
+                                    ItemName (INFO_FUN2LAC_FUNDEF (arg_info))));
+
             ASSIGN_INSTR (arg_node) = InlineDoFun (INFO_FUN2LAC_FUNDEF (arg_info));
             break;
         }
@@ -272,9 +354,13 @@ FUN2LACfundef (node *arg_node, node *arg_info)
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
-    if ((FUNDEF_STATUS (arg_node) != ST_condfun)
-        && (FUNDEF_STATUS (arg_node) != ST_whilefun)
-        && (FUNDEF_STATUS (arg_node) != ST_dofun)) {
+    if ((FUNDEF_STATUS (arg_node) == ST_condfun)
+        || (FUNDEF_STATUS (arg_node) == ST_whilefun)
+        || (FUNDEF_STATUS (arg_node) == ST_dofun)) {
+        /*
+         * At this point, only the prototype of the conditional or loop
+         * function remains in the fundef chain.
+         */
         arg_node = FreeNode (arg_node);
     }
 
