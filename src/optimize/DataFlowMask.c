@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/08/27 11:12:25  jhs
+ * Added some DBUG_PRINTs.
+ *
  * Revision 2.2  1999/07/20 16:50:42  jhs
  * Changed behaviour of DFMTest[|2|3]Mask[s].
  * They do not only test, but count hits.
@@ -193,6 +196,7 @@ DFMGenMaskBase (node *arguments, node *vardecs)
         access_mask = 1;
 
         for (cnt = 0; cnt < 8 * sizeof (unsigned int); cnt++) {
+            DBUG_PRINT ("DFM", ("i %i mask %i", cnt, access_mask));
             access_mask_table[cnt] = access_mask;
             access_mask <<= 1;
         }
@@ -1145,6 +1149,10 @@ DFMTestMaskEntry (mask_t *mask, char *id, node *decl)
 
     res = mask->bitfield[i / (8 * sizeof (unsigned int))]
           & access_mask_table[i % (8 * sizeof (unsigned int))];
+
+    DBUG_PRINT ("DFM", ("i %i mask %i acces %i res %i", i,
+                        mask->bitfield[i / (8 * sizeof (unsigned int))],
+                        access_mask_table[i % (8 * sizeof (unsigned int))], res));
 
     DBUG_RETURN (res);
 }
