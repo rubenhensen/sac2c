@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/07/28 12:26:24  khf
+ * F_accu will be removed in compile.c
+ *
  * Revision 1.4  2004/07/28 11:29:53  khf
  * insert N_empty node if BLOCK_INSTR is empty after removal
  * of F_accu
@@ -44,8 +47,6 @@
  *    in Withloops are renamed into references to the corresponding
  *    return values of the fold operators.
  *    The corresponding cexpr is also be renamed.
- *    The accu operation is no longer needed because it's only pseudo syntax
- *    and can be removed.
  *
  *
  *    Ex.:
@@ -65,7 +66,8 @@
  *
  *    is transformed into
  *      A,B,C = with(iv)
- *               gen:{ val1  = ...;
+ *               gen:{ A,B   = accu( iv);
+ *                     val1  = ...;
  *                     val2  = ...;
  *                     val3  = ...;
  *                     emal1 = alloc(...);
@@ -100,14 +102,12 @@ struct INFO {
     ids *lhs;
     ids *lhs_wl;
     node *withop;
-    bool is_accu;
 };
 
 #define INFO_MMV_LUT(n) (n->lut)
 #define INFO_MMV_LHS(n) (n->lhs)
 #define INFO_MMV_LHS_WL(n) (n->lhs_wl)
 #define INFO_MMV_WITHOP(n) (n->withop)
-#define INFO_MMV_IS_ACCU(n) (n->is_accu)
 
 /**
  * INFO functions
@@ -125,7 +125,6 @@ MakeInfo ()
     INFO_MMV_LHS (result) = NULL;
     INFO_MMV_LHS_WL (result) = NULL;
     INFO_MMV_WITHOP (result) = NULL;
-    INFO_MMV_IS_ACCU (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -208,47 +207,6 @@ MMVfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn MMVassign
- *
- *  @brief Traverses ASSIGN's instruction and remove current node
- *         afterwards iff rhs contain prf F_accu
- *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return
- *
- ***************************************************************************/
-node *
-MMVassign (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("MMVassign");
-
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
-
-    if (INFO_MMV_IS_ACCU (arg_info)) {
-        /*
-         * We have an assignment with F_accu on RHS.
-         * This assignment can be removed
-         */
-        arg_node = FreeNode (arg_node);
-        INFO_MMV_IS_ACCU (arg_info) = FALSE;
-
-        if (arg_node != NULL) {
-            arg_node = Trav (arg_node, arg_info);
-        }
-    } else {
-        if (ASSIGN_NEXT (arg_node) != NULL) {
-            ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-        }
     }
 
     DBUG_RETURN (arg_node);
@@ -401,7 +359,6 @@ MMVprf (node *arg_node, info *arg_info)
          *     rename: a -> A
          */
 
-        INFO_MMV_IS_ACCU (arg_info) = TRUE;
         ids_assign = INFO_MMV_LHS (arg_info);
         ids_wl = INFO_MMV_LHS_WL (arg_info);
         withop = INFO_MMV_WITHOP (arg_info);
@@ -627,14 +584,6 @@ MMVcode (node *arg_node, info *arg_info)
     }
 
     if (eacc) {
-
-        /*
-         * BLOCK_INSTR can be empty after removal of F_accu,
-         * therefore insert N_empty node
-         */
-        if (BLOCK_INSTR (NCODE_CBLOCK (arg_node)) == NULL) {
-            BLOCK_INSTR (NCODE_CBLOCK (arg_node)) = MakeEmpty ();
-        }
 
         /* A,B = with(iv)
          *        gen:{res1 = ...;
