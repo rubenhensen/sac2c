@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.88  2003/11/24 10:17:56  sbs
+ * WL syntax warning temporarily deactivated.
+ *
  * Revision 3.87  2003/11/12 08:34:42  sbs
  * new with-loop syntax added. old one extended for optional default values
  *
@@ -1328,8 +1331,14 @@ expr: fun_id                     { if( (file_kind == F_sib) && (sbs == 1)
 
 with: BRACKET_L generator BRACKET_R wlassignblock withop
       { 
+#if 0
+        /*
+         * For now, we do not yet ask for the new syntax, BUT later we will
+         * activate the following two lines....
+         */
         WARN( linenum, ( "Old with-loop style depricated!"));
         CONT_WARN( ("Please use the new syntax instead"));
+#endif
 
         /*
          * the tricky part about this rule is that $5 (an N_Nwithop node)
