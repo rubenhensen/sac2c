@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.10  1999/05/14 15:20:35  jhs
+ * DupId checks whether the ID has a constant vector annotated before
+ * it copies this constant vector.
+ *
  * Revision 2.9  1999/05/14 09:25:13  jhs
  * Dbugged constvec annotations and their housekeeping in various compilation stages.
  *
@@ -468,11 +472,20 @@ DupId (node *arg_node, node *arg_info)
     }
     DBUG_PRINT ("DUP", ("Traversals finished"));
 
+    /*  Coping the attibutes of constantvectors.
+     *  CONSTVEC itself can only be copied, if ISCONST flag is set,
+     *  otherwise VECTYPE might be T_unkown.
+     */
     ID_ISCONST (new_node) = ID_ISCONST (arg_node);
     ID_VECTYPE (new_node) = ID_VECTYPE (arg_node);
     ID_VECLEN (new_node) = ID_VECLEN (arg_node);
-    ID_CONSTVEC (new_node) = CopyConstVec (ID_VECTYPE (arg_node), ID_VECLEN (arg_node),
-                                           ID_CONSTVEC (arg_node));
+    if (ID_ISCONST (new_node)) {
+        ID_CONSTVEC (new_node)
+          = CopyConstVec (ID_VECTYPE (arg_node), ID_VECLEN (arg_node),
+                          ID_CONSTVEC (arg_node));
+    } else {
+        ID_CONSTVEC (new_node) = NULL;
+    }
 
     if (N_id == NODE_TYPE (arg_node) && DUP_WLF == DUPTYPE) {
         DBUG_PRINT ("DUP", ("duplicating N_id ..."));
