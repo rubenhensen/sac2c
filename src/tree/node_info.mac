@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.89  2002/08/13 09:55:56  sah
+ * added several traversalfunctions for
+ * handle_dots traversal.
+ *
  * Revision 3.88  2002/08/12 09:30:50  dkr
  * CWCap added
  *
@@ -1582,9 +1586,9 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SSACSEap, CMPTap, PFap, SSACFap, SSALIRap, TravSons, TravSons, SSALURap, SSAWLTap,
        SSAWLIap, TravSons,
 
-       SSAILIap, COMP2Ap, PREC2ap, TravSons, CRTWRPap, TravSons, TravSons, TravSons,
-       TravSons, TravSons, CWCap, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, 1),
+       SSAILIap, COMP2Ap, PREC2ap, TravSons, CRTWRPap, TravSons, TravSons, TravSons, HDap,
+       TravSons, CWCap, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, 1),
 
   NIF (N_cast, "N_cast", TravSons, TravSons, PrintCast, TravSons, TravSons, TravSons,
        TravSons, FreeCast, CFcast, TravSons, COMPCast, TravSons, DupCast, TravSons,
@@ -1851,7 +1855,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, SSALURNwith, SSAWLTNwith, SSAWLINwith, SSAWLFNwith,
 
        TravSons, COMP2With, TravSons, TravSons, TravSons, WLSNwith, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       HDwith, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 3),
 
   NIF (N_Npart, "N_Npart", TravSons, FltnNpart, PrintNpart, TravSons, TravSons, TravSons,
@@ -1923,7 +1927,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, SSAWLTNgenerator, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       HDgenerator, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, 4),
 
   NIF (N_Nwithop, "N_Nwithop", TravSons, FltnNwithop, PrintNwithop, TravSons, TravSons,
@@ -1947,7 +1951,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, SSAWLINwithop, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, CRTWRPNwithop, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, HDwithop, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, 1),
 
   NIF (N_Ncode, "N_Ncode", TravSons, FltnNcode, PrintNcode, TCNcode, TravSons, TravSons,
