@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2002/10/30 16:31:30  dkr
+ * TYCreateWrapperCode(): DBUG_ASSERT about T_dots added
+ *
  * Revision 3.37  2002/10/30 16:10:31  dkr
  * TYStaticDispatchWrapper() added
  *
@@ -5088,6 +5091,10 @@ TYCreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
         assigns = BuildApAssign (FUNDEF_IMPL (fundef), FUNDEF_ARGS (fundef), vardecs,
                                  new_vardecs);
     } else {
+        DBUG_ASSERT ((!HasDotTypes (FUNDEF_TYPES (fundef))),
+                     "wrapper function with ... return type found!");
+        DBUG_ASSERT ((!HasDotArgs (FUNDEF_ARGS (fundef))),
+                     "wrapper function with ... argument found!");
         assigns
           = CreateWrapperCode (type, NULL, 0, FUNDEF_NAME (fundef), FUNDEF_ARGS (fundef),
                                FUNDEF_ARGS (fundef), vardecs, new_vardecs);
