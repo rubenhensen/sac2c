@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.46  2004/12/08 11:20:21  sah
+ * profiling code is pnly generated if profiling is enabled
+ *
  * Revision 3.45  2004/11/29 19:30:08  sah
  * added namespace for function main
  *
@@ -485,7 +488,9 @@ PrintGlobalSettings (node *syntax_tree)
 
     fprintf (global.outfile, "\n");
 
-    PrintProfileData ();
+    if (global.doprofile) {
+        PrintProfileData ();
+    }
 
     if (global.mtmode != MT_none) {
         PrintSpmdData (syntax_tree);
