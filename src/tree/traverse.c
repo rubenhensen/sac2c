@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2000/02/03 17:47:38  dkr
+ * Trav(): instruction DBUG_ASSERT(arg_node==NULL) now *before* the first
+ * access to arg_node :)
+ *
  * Revision 1.4  2000/02/02 17:22:07  jhs
  * Added blkin_tab.
  *
@@ -911,13 +915,6 @@ Trav (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("Trav");
 
-    /*
-     * Make sure the line-number will be set
-     * correctly in case MakeXxx is called.
-     */
-    linenum = NODE_LINE (arg_node);
-    filename = NODE_FILE (arg_node);
-
 #ifndef DBUG_OFF
     /*
      * This ifndef construction is ugly(!) but it simplifies debugging
@@ -935,6 +932,13 @@ Trav (node *arg_node, node *arg_info)
     DBUG_PRINT ("TRAV", ("case %s: node adress: %06x", mdb_nodetype[NODE_TYPE (arg_node)],
                          arg_node));
 #endif /* not DBUG_OFF */
+
+    /*
+     * Make sure the line-number will be set
+     * correctly in case MakeXxx is called.
+     */
+    linenum = NODE_LINE (arg_node);
+    filename = NODE_FILE (arg_node);
 
     if (*act_tab->prefun != NULL) {
         arg_node = (*act_tab->prefun) (arg_node, arg_info);
