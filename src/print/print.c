@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.155  1998/03/16 19:28:31  dkr
+ * fixed a bug in PrintNwith2
+ *
  * Revision 1.154  1998/03/16 18:45:27  dkr
  * changed output of ops in PrintNwith2()
  *
@@ -2221,7 +2224,6 @@ PrintNwith2 (node *arg_node, node *arg_info)
     indent++;
     NWITH2_SEG (arg_node) = Trav (NWITH2_SEG (arg_node), arg_info);
     indent--;
-    fprintf (outfile, "\n");
 
     NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
     fprintf (outfile, ")");
@@ -2252,6 +2254,7 @@ PrintWLseg (node *arg_node, node *arg_info)
         INDENT
         fprintf (outfile, "/* segment %d: */", i++);
         WLSEG_INNER (arg_node) = Trav (WLSEG_INNER (arg_node), arg_info);
+        fprintf (outfile, "\n");
         seg = WLSEG_NEXT (seg);
     } while (seg != NULL);
 
