@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2001/03/20 13:18:39  ben
+ * ICMs MT_SCHEDULER_Static_... (first version) implemented
+ * SelectTask implemented
+ *
  * Revision 3.5  2001/03/14 16:25:02  dkr
  * signature (parameter types) of icm MT_ADJUST_SCHEDULER modified
  *
@@ -121,5 +125,8 @@ extern void ICMCompileMT_SCHEDULER_Block_END (int dim, char **vararg);
 
 extern void ICMCompileMT_SCHEDULER_BlockVar_BEGIN (int dim, char **vararg);
 extern void ICMCompileMT_SCHEDULER_BlockVar_END (int dim, char **vararg);
+
+extern void ICMCompileMT_SCHEDULER_Static_BEGIN (int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_Static_END (int dim, char **vararg);
 
 #endif /* _ICM2C_MT_H_ */

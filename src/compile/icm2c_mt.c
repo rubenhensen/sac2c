@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/03/20 13:19:33  ben
+ * ICMs MT_SCHEDULER_Static_... (first version) implemented
+ * SelectTask implemented
+ *
  * Revision 3.7  2001/03/15 11:15:16  dkr
  * fixed a bug in ICMCompileMT_ADJUST_SCHEDULER:
  * right format string used now ... :-/
@@ -1409,6 +1413,59 @@ ICMCompileMT_SCHEDULER_END (int dim, char **vararg)
 /******************************************************************************
  *
  * function:
+ *   void SelectTask(int dim, char **vararg,int strategy, int strategy_param,
+ *                                          char *num_tasks, char *next_taskid)
+ *
+ * description:
+ *   this function divides the given withloop (dim,vararg) with the strategy
+ *   (strategy,strategy_param) into tasks for multithreaded computation.
+ *   The number of tasks is num_tasks and next_taskid is the number of the
+ *    next task, which should be computated.
+ *
+ *   implemented strategies: (name/value of strategy for functioncall/ meaning of
+ *strategy_param)
+ *
+ *      block    1     dimension on which the withloop will be divided into num_tasks
+ *blocks
+ *
+ ******************************************************************************/
+void
+SelectTask (int dim, char **vararg, int strategy, int strategy_param, char *num_tasks,
+            char *next_taskid)
+{
+#define BLOCK_ST 1
+    char **lower_bound = vararg;
+    char **upper_bound = vararg + dim;
+    /* char **unrolling   = vararg+3*dim;*/
+    int i;
+
+    DBUG_ENTER ("SelectTask");
+
+    for (i = 0; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i, lower_bound[i]);
+        INDENT;
+        fprintf (outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i, upper_bound[i]);
+    }
+
+    switch (strategy) {
+    case BLOCK_ST:
+        DBUG_ASSERT ((strategy_param >= 0) && (strategy_param < dim),
+                     "Blockdistributiondimension schould be between 0 and the dimension "
+                     "of the withloop");
+        INDENT;
+        fprintf (outfile, "SAC_MT_SCHEDULER_Select_Block(%d, %s, %s, %s, %s);\n",
+                 strategy_param, lower_bound[strategy_param], upper_bound[strategy_param],
+                 num_tasks, next_taskid);
+        break;
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void ICMCompileMT_SCHEDULER_Block_BEGIN(int dim, char **vararg)
  *   void ICMCompileMT_SCHEDULER_Block_END(int dim, char **vararg)
  *
@@ -1522,6 +1579,53 @@ ICMCompileMT_SCHEDULER_BlockVar_END (int dim, char **vararg)
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_SCHEDULER_BlockVar_END
+
+    fprintf (outfile, "\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_SCHEDULER_Static_BEGIN(int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Staic_END(int dim, char **vararg)
+ *
+ * description:
+ *   These two ICMs implement the scheduling for withloops
+ *
+ *   This scheduling is a very simple one that partitions the iteration
+ *   space with the strategy specified for SelectTask (at the moment
+ *   Blocks on dimension 0).
+ *
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_SCHEDULER_Static_BEGIN (int dim, char **vararg)
+{
+
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Static_BEGIN");
+
+#define MT_SCHEDULER_Static_BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_Static_BEGIN
+
+    SelectTask (dim, vararg, 1, 0, "SAC_MT_THREADS()", "SAC_MT_MYTHREAD()");
+
+    DBUG_VOID_RETURN;
+}
+
+void
+ICMCompileMT_SCHEDULER_Static_END (int dim, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Static_END");
+
+#define MT_SCHEDULER_Block_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_Block_END
 
     fprintf (outfile, "\n");
 
