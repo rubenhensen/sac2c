@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.16  1995/11/06 09:22:21  cg
+ * Revision 1.17  1995/11/16 19:40:45  cg
+ * Macros for accessing Masks modified,
+ * old style macros for masks moved to tree_compound.h
+ *
+ * Revision 1.16  1995/11/06  09:22:21  cg
  * added macro VARDEC_ATTRIB
  *
  * Revision 1.15  1995/11/02  13:13:31  cg
@@ -127,8 +131,11 @@ The following compilation steps are used:
  - analysis
  - write-SIB
  - obj-handling
+ - unique-check
+ - rm-void-fun
  - optimize
  - psi-optimize
+ - tidy-up
  - refcount
  - compile
 
@@ -593,8 +600,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***                                         ( -> obj-handling -> )
  ***    node*      ICM           (N_icm)     (compile -> )
  ***    int        VARNO                     (optimize -> )
- ***    long*      DEFMASK                   (optimize -> )
- ***    long*      USEMASK                   (optimize -> )
+ ***    long*      MASK[x]                   (optimize -> )
  ***
  ***    node*      FUNDEC_DEF (O) (N_fundef) (checkdec -> writesib !!)
  ***/
@@ -622,8 +628,7 @@ extern node *MakeFundef (char *name, char *mod, char *alias, types *types, node 
 #define FUNDEF_NEEDOBJS(n) ((nodelist *)(n->node[4]))
 #define FUNDEF_ICM(n) (n->node[3])
 #define FUNDEF_VARNO(n) (n->varno)
-#define FUNDEF_DEFMASK(n) (n->mask[0])
-#define FUNDEF_USEMASK(n) (n->mask[1])
+#define FUNDEF_MASK(n, x) (n->mask[x])
 #define FUNDEF_STATUS(n) (n->info.types->status)
 #define FUNDEF_INLINE(n) (n->flag)
 
@@ -677,16 +682,14 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
  ***                                      ( -> write-SIB -> )
  ***    nodelist*  NEEDTYPES  (O)         (analysis -> )
  ***                                      ( -> write-SIB -> )
- ***    long*      DEFMASK                (optimize -> )
- ***    long*      USEMASK                (optimize -> )
+ ***    long*      MASK[x]                (optimize -> )
  ***/
 
 extern node *MakeBlock (node *instr, node *vardec);
 
 #define BLOCK_INSTR(n) (n->node[0])
 #define BLOCK_VARDEC(n) (n->node[1])
-#define DEFMASK(n) (n->mask[0])
-#define USEMASK(n) (n->mask[1])
+#define BLOCK_MASK(n, x) (n->mask[x])
 #define BLOCK_NEEDFUNS(n) ((nodelist *)(n->node[2]))
 #define BLOCK_NEEDTYPES(n) ((nodelist *)(n->node[3]))
 
@@ -748,16 +751,14 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***
  ***  temporary attributes:
  ***
- ***    long*  DEFMASK                    (optimize -> )
- ***    long*  USEMASK                    (optimize -> )
+ ***    long*  MASK[x]                    (optimize -> )
  ***/
 
 extern node *MakeAssign (node *instr, node *next);
 
 #define ASSIGN_INSTR(n) (n->node[0])
 #define ASSIGN_NEXT(n) (n->node[1])
-#define ASSIGN_DEFMASK(n) (n->mask[0])
-#define ASSIGN_USEMASK(n) (n->mask[1])
+#define ASSIGN_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
 
@@ -826,11 +827,7 @@ extern node *MakeReturn (node *exprs);
  ***
  ***    node*  THENVARS     (N_id)      (refcount -> compile -> )
  ***    node*  ELSEVARS     (N_id)      (refcount -> compile -> )
- ***    long*  CONDUSEMASK              (optimize -> )
- ***    long*  THENDEFMASK              (optimize -> )
- ***    long*  THENUSEMASK              (optimize -> )
- ***    long*  ELSEDEFMASK              (optimize -> )
- ***    long*  ELSEUSEMASK              (optimize -> )
+ ***    long*  MASK[x]                  (optimize -> )
  ***/
 
 extern node *MakeCond (node *cond, node *Then, node *Else);
@@ -840,11 +837,7 @@ extern node *MakeCond (node *cond, node *Then, node *Else);
 #define COND_ELSE(n) (n->node[2])
 #define COND_THENVARS(n) (n->node[3]->node[0])
 #define COND_ELSEVARS(n) (n->node[3]->node[1])
-#define COND_CONDUSEMASK(n) (n->mask[1])
-#define COND_THENDEFMASK(n) (n->node[1]->mask[0])
-#define COND_THENUSEMASK(n) (n->node[1]->mask[1])
-#define COND_ELSEDEFMASK(n) (n->node[2]->mask[0])
-#define COND_ELSEUSEMASK(n) (n->node[2]->mask[1])
+#define COND_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
 
@@ -860,8 +853,7 @@ extern node *MakeCond (node *cond, node *Then, node *Else);
  ***
  ***    node*  USEVARS    (N_id)      (refcount -> compile -> )
  ***    node*  DEFVARS    (N_id)      (refcount -> compile -> )
- ***    long*  DEFMASK                (optimize -> )
- ***    long*  USEMASK                (optimize -> )
+ ***    long*  MASK[x]                (optimize -> )
  ***/
 
 extern node *MakeDo (node *cond, node *body);
@@ -870,8 +862,7 @@ extern node *MakeDo (node *cond, node *body);
 #define DO_BODY(n) (n->node[1])
 #define DO_USEVARS(n) (n->node[2]->node[0])
 #define DO_DEFVARS(n) (n->node[2]->node[1])
-#define DO_DEFMASK(n) (n->mask[0])
-#define DO_USEMASK(n) (n->mask[1])
+#define DO_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
 
@@ -887,8 +878,7 @@ extern node *MakeDo (node *cond, node *body);
  ***
  ***    node*  USEVARS    (N_id)      (refcount -> compile -> )
  ***    node*  DEFVARS    (N_id)      (refcount -> compile -> )
- ***    long*  DEFMASK                (optimize -> )
- ***    long*  USEMASK                (optimize -> )
+ ***    long*  MASK[x]                (optimize -> )
  ***/
 
 extern node *MakeWhile (node *cond, node *body);
@@ -897,8 +887,7 @@ extern node *MakeWhile (node *cond, node *body);
 #define WHILE_BODY(n) (n->node[1])
 #define WHILE_USEVARS(n) (n->node[2]->node[0])
 #define WHILE_DEFVARS(n) (n->node[2]->node[1])
-#define WHILE_DEFMASK(n) (n->mask[0])
-#define WHILE_USEMASK(n) (n->mask[1])
+#define WHILE_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
 
@@ -939,22 +928,14 @@ extern node *MakeAp (char *name, char *mod, node *args);
  ***
  ***  temporary attributes:
  ***
- ***    long*  ARRAYUSEMASK            (optimize -> )
- ***    long*  GENDEFMASK              (optimize -> )
- ***    long*  GENUSEMASK              (optimize -> )
- ***    long*  BODYDEFMASK             (optimize -> )
- ***    long*  BODYUSEMASK             (optimize -> )
+ ***    long*  MASK[x]                 (optimize -> )
  ***/
 
 extern node *MakeWith (node *gen, node *body);
 
 #define WITH_GEN(n) (n->node[0])
 #define WITH_BODY(n) (n->node[1])
-#define WITH_ARRAYUSEMASK(n) (n->node[1]->mask[1])
-#define WITH_GENDEFMASK(n, x) (n->node[0]->mask[0])
-#define WITH_GENUSEMASK(n, x) (n->node[0]->mask[1])
-#define WITH_BODYDEFMASK(n, x) (n->mask[0])
-#define WITH_BODYUSEMASK(n, x) (n->mask[1])
+#define WITH_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
 
@@ -969,6 +950,10 @@ extern node *MakeWith (node *gen, node *body);
  ***  permanent attributes:
  ***
  ***    char*  ID
+ ***
+ ***  temporary attributes:
+ ***
+ ***    long*  MASK[x]                 (optimize -> )
  ***/
 
 extern node *MakeGenerator (node *left, node *right, char *id);
@@ -976,6 +961,7 @@ extern node *MakeGenerator (node *left, node *right, char *id);
 #define GEN_LEFT(n) (n->node[0])
 #define GEN_RIGHT(n) (n->node[1])
 #define GEN_ID(n) (n->info.ids->id)
+#define GEN_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
 
@@ -1038,12 +1024,12 @@ extern node *MakeFoldprf (prf prf, node *body, node *neutral);
  ***  sons:
  ***
  ***    node*  BODY          (N_block)
+ ***    node*  NEUTRAL       ("N_expr")
  ***
  ***  permanent attributes:
  ***
  ***    char*  NAME
  ***    char*  MOD      (O)
- ***    node*  NEUTRAL       ("N_expr")
  ***
  ***  temporary attributes:
  ***
@@ -1204,6 +1190,20 @@ extern node *MakeBool (int val);
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***  N_str :
+ ***
+ ***  permanent attributes:
+ ***
+ ***    char*  STRING
+ ***/
+
+extern node *MakeStr (char *str);
+
+#define STR_STRING(n) (n->info.id)
+
+/*--------------------------------------------------------------------------*/
+
+/***
  ***  N_prf :
  ***
  ***  sons:
@@ -1271,8 +1271,6 @@ extern node *MakePost (int incdec, char *id);
  ***
  ***    node*  DECL    (N_vardec)  (typecheck -> )
  ***/
-
-extern node *MakePre (nodetype incdec, char *id);
 
 extern node *MakePre (nodetype incdec, char *id);
 
