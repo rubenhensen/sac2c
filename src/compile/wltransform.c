@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2001/04/03 17:52:21  dkr
+ * calculation of WLSEG_SV corrected (BV is also taken into account now)
+ *
  * Revision 3.44  2001/04/03 10:47:08  dkr
  * minor changes in ComputeIndexMinMax() done
  *
@@ -143,7 +146,7 @@
  * This module implements the transformation of the with-loops from the
  * frontend representation (N_Nwith) into the backend representation (N_Nwith2).
  *
- * **CAUTION**
+ * *** CAUTION ***
  * For a successful transformation the AST has to meet some requirements:
  *   - All N_Ngenerator nodes of a with-loop ...
  *       - ... use <= as OP1 and < as OP2.
@@ -836,19 +839,19 @@ For every segment the following steps must be performed:
 
 
 8.) Projection Fitting (Removes incomplete periods at the tail and adjusts ...
-    ------------------                                   ... blocking factors)
+    ------------------                                   ... block sizes)
     (^ after the optimization we have in general no cubes anymore ...)
 
     In each subtree and each dimension the boundaries of the most outer node
-    as well as each blocking factor are adjusted to the number of unrolled
-    elements (= max( ubv_d, step)).
-    The adjustment of the blocking factor is crucial to preserve the periodicity
+    as well as each block size are adjusted to the number of unrolled elements
+    (= max( ubv_d, step)).
+    The adjustment of the block size is crucial to preserve the periodicity
     of the block content!!!
 
   In the example with bv = (180,158):
 
     000->045, block[0] 180:      // bounds: (050 - 000 = 50) % (step[0] = 9) = 5
-        000->150, block[1] 156:  // blocking factor: 158 % (ublock[1] = 6)  =  2
+        000->150, block[1] 156:  // block size: 158 % (ublock[1] = 6)  =  2
               0->180, step[0] 1
                            0->1: 0->156, ublock[1] 6:
                                                 0->6, step[1] 1
@@ -1360,7 +1363,7 @@ Internal representation in the abstract syntax tree:
                dim       (int)
                bound1    (int)
                bound2    (int)
-               step      (int)                // blocking-factor
+               step      (int)                // block size
                nextdim   (WLblock)            // blocking-node of next dim
                contents  (WLublock, WLstride) // op. of interior of block
                next      (WLblock)            // next blocking this dim
@@ -1999,28 +2002,33 @@ IndexRearStride (node *stride)
 /******************************************************************************
  *
  * Function:
- *   int GetLcmUnroll( node *nodes, int dim)
+ *   int GetLcmUnroll( node *nodes, int dim, bool include_blocks)
  *
  * Description:
- *   Returns the maximal number of elements that must be unrolled
- *     in dimension 'dim' of the WL-tree 'nodes'.
- *   We must search for the first N_WLublock- or N_WLstride-node in each
- *     leaf of the 'nodes'-tree and calculate the lcm of there steps.
+ *   Returns the maximal number of elements that must be unrolled in dimension
+ *   'dim' of the WL-tree 'nodes'.
+ *   We must search for the first N_WLublock- or N_WLstride-node in each leaf
+ *   of the 'nodes'-tree and calculate the lcm of their steps.
+ *
+ *   'include_blocks' denotes whether N_WLblock nodes are considered to be
+ *   undivisible (WLSEG_SV -> multi-threading) or not.
  *
  ******************************************************************************/
 
 static int
-GetLcmUnroll (node *nodes, int dim)
+GetLcmUnroll (node *nodes, int dim, bool include_blocks)
 {
     int unroll = 1;
 
     DBUG_ENTER ("GetLcmUnroll");
 
     if (nodes != NULL) {
-        unroll = GetLcmUnroll (WLNODE_NEXT (nodes), dim);
+        unroll = GetLcmUnroll (WLNODE_NEXT (nodes), dim, include_blocks);
 
         if ((WLNODE_DIM (nodes) == dim)
-            && ((NODE_TYPE (nodes) == N_WLublock) || (NODE_TYPE (nodes) == N_WLstride))) {
+            && (((NODE_TYPE (nodes) == N_WLblock) && (include_blocks))
+                || (NODE_TYPE (nodes) == N_WLublock)
+                || (NODE_TYPE (nodes) == N_WLstride))) {
             /*
              * we have found a node with unrolling information
              */
@@ -2033,16 +2041,20 @@ GetLcmUnroll (node *nodes, int dim)
             case N_WLblock:
                 /* here is no break missing! */
             case N_WLublock:
-                unroll = lcm (unroll, GetLcmUnroll (WLXBLOCK_NEXTDIM (nodes), dim));
-                unroll = lcm (unroll, GetLcmUnroll (WLXBLOCK_CONTENTS (nodes), dim));
+                unroll = lcm (unroll, GetLcmUnroll (WLXBLOCK_NEXTDIM (nodes), dim,
+                                                    include_blocks));
+                unroll = lcm (unroll, GetLcmUnroll (WLXBLOCK_CONTENTS (nodes), dim,
+                                                    include_blocks));
                 break;
 
             case N_WLstride:
-                unroll = lcm (unroll, GetLcmUnroll (WLSTRIDE_CONTENTS (nodes), dim));
+                unroll = lcm (unroll, GetLcmUnroll (WLSTRIDE_CONTENTS (nodes), dim,
+                                                    include_blocks));
                 break;
 
             case N_WLgrid:
-                unroll = lcm (unroll, GetLcmUnroll (WLGRID_NEXTDIM (nodes), dim));
+                unroll = lcm (unroll,
+                              GetLcmUnroll (WLGRID_NEXTDIM (nodes), dim, include_blocks));
                 break;
 
             default:
@@ -3015,10 +3027,10 @@ CheckParams (node *seg)
             last = (WLSEG_BV (seg, b))[d];
             for (; b >= 0; b--) {
                 if ((WLSEG_BV (seg, b))[d] < last) {
-                    ABORT (line,
-                           ("Inner Blocking step (%i) is smaller than outer one (%i)."
-                            " Please check parameters of functions in wlcomp-pragma",
-                            (WLSEG_BV (seg, b))[d], last));
+                    ABORT (line, ("Inner Blocking step (%i) is smaller than outer one"
+                                  " (%i). Please check parameters of functions in"
+                                  " wlcomp-pragma",
+                                  (WLSEG_BV (seg, b))[d], last));
                 }
                 last = (WLSEG_BV (seg, b))[d];
             }
@@ -4155,7 +4167,7 @@ OptWL (node *nodes)
 /******************************************************************************
  *
  * Function:
- *   int AdjustBlockingFactor( int old_bv, int unroll, bool warn)
+ *   int AdjustBlockSize( int old_bv, int unroll, bool warn)
  *
  * Description:
  *
@@ -4163,11 +4175,11 @@ OptWL (node *nodes)
  ******************************************************************************/
 
 static int
-AdjustBlockingFactor (int old_bv, int unroll, bool warn)
+AdjustBlockSize (int old_bv, int unroll, bool warn)
 {
     int mod, new_bv;
 
-    DBUG_ENTER ("AdjustBlockingFactor");
+    DBUG_ENTER ("AdjustBlockSize");
 
     mod = old_bv % unroll;
     if ((old_bv > 1) && (mod != 0)) {
@@ -4177,13 +4189,13 @@ AdjustBlockingFactor (int old_bv, int unroll, bool warn)
             new_bv = old_bv + unroll - mod;
         }
 
-        DBUG_ASSERT ((new_bv % unroll == 0), "adjustment of blocking factor wrong!");
+        DBUG_ASSERT ((new_bv % unroll == 0), "adjustment of block size wrong!");
     } else {
         new_bv = old_bv;
     }
 
     if (warn && (old_bv != new_bv)) {
-        WARN (line, ("Blocking factor adjusted: %i instead of %i", new_bv, old_bv));
+        WARN (line, ("Block size adjusted: %i instead of %i", new_bv, old_bv));
     }
 
     DBUG_RETURN (new_bv);
@@ -4274,7 +4286,8 @@ FitWL (node *wlnode)
 
                 WLBLOCK_NEXTDIM (wlnode) = FitWL (WLBLOCK_NEXTDIM (wlnode));
 
-                unroll = GetLcmUnroll (WLBLOCK_NEXTDIM (wlnode), WLBLOCK_DIM (wlnode));
+                unroll
+                  = GetLcmUnroll (WLBLOCK_NEXTDIM (wlnode), WLBLOCK_DIM (wlnode), FALSE);
             } else {
                 /*
                  * fit contents of block; compute unrolling information
@@ -4285,14 +4298,15 @@ FitWL (node *wlnode)
 
                 WLBLOCK_CONTENTS (wlnode) = FitWL (WLBLOCK_CONTENTS (wlnode));
 
-                unroll = GetLcmUnroll (WLBLOCK_CONTENTS (wlnode), WLBLOCK_DIM (wlnode));
+                unroll
+                  = GetLcmUnroll (WLBLOCK_CONTENTS (wlnode), WLBLOCK_DIM (wlnode), FALSE);
             }
 
             /*
-             * adjust blocking factor (blocking factor must be a multiple of 'unroll')
+             * adjust block size
+             * (block size must be a multiple of 'unroll')
              */
-            WLBLOCK_STEP (wlnode)
-              = AdjustBlockingFactor (WLBLOCK_STEP (wlnode), unroll, TRUE);
+            WLBLOCK_STEP (wlnode) = AdjustBlockSize (WLBLOCK_STEP (wlnode), unroll, TRUE);
             /*
              * the upper bound of the related ublock/stride-nodes in the contents
              * of the block is corrected later on. (just a few lines ahead ...)
@@ -4359,14 +4373,13 @@ FitWL (node *wlnode)
                  * block or unrolling-block. That means, the lower bound must be equal
                  * to 0 and the upper bound should be a multiple of the step.
                  * If the latter is not hold, this node correspondes with a block-node
-                 * whose blocking factor had been adjusted
+                 * whose block size had been adjusted
                  *   -> we must fathom this adjustment here!
                  */
                 DBUG_ASSERT ((WLNODE_BOUND1 (wlnode) == 0),
                              "lower bound of inner node is != 0");
                 WLNODE_BOUND2 (wlnode)
-                  = AdjustBlockingFactor (WLNODE_BOUND2 (wlnode), WLNODE_STEP (wlnode),
-                                          FALSE);
+                  = AdjustBlockSize (WLNODE_BOUND2 (wlnode), WLNODE_STEP (wlnode), FALSE);
             }
         }
 
@@ -6203,7 +6216,7 @@ InferSegsParams_Pre (node *segs, shpseg *shape)
                 WLSEG_SV (segs) = (int *)MALLOC (WLSEG_DIMS (segs) * sizeof (int));
             }
             for (d = 0; d < WLSEG_DIMS (segs); d++) {
-                (WLSEG_SV (segs))[d] = GetLcmUnroll (WLSEG_CONTENTS (segs), d);
+                (WLSEG_SV (segs))[d] = GetLcmUnroll (WLSEG_CONTENTS (segs), d, FALSE);
             }
 
             DBUG_EXECUTE ("WLtrans", fprintf (stderr, ", WLSEG_IDX_MIN = ");
@@ -6264,7 +6277,7 @@ InferSegsParams_Pre (node *segs, shpseg *shape)
  *
  * Description:
  *   Infers for the given wlnode tree whether in dimension 'dim' the extend
- *   of each ublock- or stride-node is a multiple of step factor 'sv'.
+ *   of each top-level block-, ublock- or stride- node is a multiple of 'sv'.
  *
  ******************************************************************************/
 
@@ -6279,7 +6292,8 @@ IsHomSV (node *nodes, int dim, int sv)
         ishom = IsHomSV (WLNODE_NEXT (nodes), dim, sv);
 
         if ((WLNODE_DIM (nodes) == dim)
-            && ((NODE_TYPE (nodes) == N_WLublock) || (NODE_TYPE (nodes) == N_WLstride))) {
+            && ((NODE_TYPE (nodes) == N_WLblock) || (NODE_TYPE (nodes) == N_WLublock)
+                || (NODE_TYPE (nodes) == N_WLstride))) {
             /*
              * we have found a relevant node
              */
@@ -6348,8 +6362,10 @@ InferSegsParams_Post (node *segs)
                 /*
                  * We must recalculate SV here because the with-loop transformations
                  * (especially the fitting) probabily have modified the layout!
+                 * Moreover we have to consider blocks as undivisible here!
+                 * (I.e. only complete blocks can be scheduled for multi-threading!)
                  */
-                sv = GetLcmUnroll (WLSEG_CONTENTS (segs), d);
+                sv = GetLcmUnroll (WLSEG_CONTENTS (segs), d, TRUE);
                 (WLSEG_SV (segs))[d] = sv;
 
                 if (!IsHomSV (WLSEG_CONTENTS (segs), d, sv)) {
@@ -6358,7 +6374,8 @@ InferSegsParams_Post (node *segs)
             }
 
             DBUG_EXECUTE ("WLtrans", fprintf (stderr, "WLSEG_SV = ");
-                          PRINT_VECT (stderr, WLSEG_SV (segs), WLSEG_DIMS (segs), "%i");
+                          PRINT_SV (stderr, WLSEG_SV (segs), WLSEG_DIMS (segs),
+                                    WLSEG_MAXHOMDIM (segs));
                           fprintf (stderr, ", WLSEG_MAXHOMDIM = %i",
                                    WLSEG_MAXHOMDIM (segs));
                           fprintf (stderr, "\n"););
