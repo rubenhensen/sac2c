@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.27  1998/08/06 01:16:12  dkr
+ * fixed some minor bugs
+ *
  * Revision 1.26  1998/07/08 13:02:00  dkr
  * added ; behind DBUG_VOID_RETURN
  *
@@ -1386,7 +1389,7 @@ static int line;
  *   possibly present next nodes in 'node1' or 'node2' are ignored.
  *
  *   if (outline > 0) ALL GRID DATA IS IGNORED!!!
- *   (this feature is used by 'ComputeCubes', to determine whether two strides
+ *   (this feature is used by 'ComputeCubes', to determine weather two strides
  *    lie in the same cube or not)
  *
  *   this function definies the sort order for InsertWLnodes.
@@ -2185,6 +2188,104 @@ SetSegs (node *pragma, node *cubes, int dims)
 /******************************************************************************
  *
  * function:
+ *   node *CheckParams( node *seg)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+CheckParams (node *seg)
+{
+    int last, first_block, d, j;
+
+    DBUG_ENTER (" CheckParams");
+
+    /* test, weather (bv0 >= bv1 >= bv2 >= ... >= 1), (ubv >= 1) */
+    for (d = 0; d < WLSEG_DIMS (seg); d++) {
+        j = WLSEG_BLOCKS (seg) - 1;
+        if ((WLSEG_BV (seg, j))[d] < 1) {
+            ABORT (line, ("Blocking step is smaller than 1."
+                          " Please check parameters of functions in wlcomp-pragma"));
+        }
+        last = (WLSEG_BV (seg, j))[d];
+        for (; j >= 0; j--) {
+            if ((WLSEG_BV (seg, j))[d] < last) {
+                ABORT (line, ("Inner Blocking step is smaller than outer one."
+                              " Please check parameters of functions in wlcomp-pragma"));
+            }
+            last = (WLSEG_BV (seg, j))[d];
+        }
+
+        if ((WLSEG_UBV (seg))[d] < 1) {
+            ABORT (line, ("Unrolling-blocking step is smaller than 1."
+                          " Please check parameters of functions in wlcomp-pragma"));
+        }
+    }
+
+    /*
+     * check bv:
+     *
+     * checks for all bv (bv0, bv1, bv2, ...):
+     *  exists k: (forall (d < k): bv_d = 1) and (forall (d >= k): bv_d >= max(sv_j,
+     * ubv_j))
+     */
+    first_block = 0;
+    for (j = 0; j < WLSEG_BLOCKS (seg); j++) {
+        /* goto first dim with (bv_d > 1) */
+        d = 0;
+        while (((WLSEG_BV (seg, j))[d] == 1) && (d < WLSEG_DIMS (seg))) {
+            d++;
+        }
+
+        if (d < WLSEG_DIMS (seg)) {
+            first_block = d;
+        }
+        for (; d < WLSEG_DIMS (seg); d++) {
+            if ((WLSEG_BV (seg, j))[d]
+                < MAX ((WLSEG_SV (seg))[d], (WLSEG_UBV (seg)[d]))) {
+                ABORT (line, ("Blocking step is smaller than stride step, "
+                              "unrolling-blocking step respectively."
+                              " Please check parameters of functions in wlcomp-pragma"));
+            }
+        }
+    }
+
+    /*
+     * check ubv:
+     *
+     * checks for ubv:
+     *  - exists k: (forall (d < k): ubv_d = 1) and (forall (d >= k): sv_d | ubv_d)
+     *  - ubv <= bv, for most inner bv with (bv != 1)
+     *    (we must prevent e.g. bv = (1,40), ubv = (2,2), sv = (2,2),
+     *     but this is allowed: bv = (1,1),  ubv = (2,2), sv = (2,2))
+     */
+
+    /* goto first dim with (bv_d > 1) */
+    d = 0;
+    while (((WLSEG_UBV (seg))[d] == 1) && (d < WLSEG_DIMS (seg))) {
+        d++;
+    }
+
+    if (d < first_block) {
+        ABORT (line, ("Unrolling-blocking step is greater than most inner blocking step."
+                      " Please check parameters of functions in wlcomp-pragma"));
+    }
+
+    for (; d < WLSEG_DIMS (seg); d++) {
+        if ((WLSEG_UBV (seg))[d] % (WLSEG_SV (seg))[d] != 0) {
+            ABORT (line, ("Stride step is not a divisor of unrolling-blocking step."
+                          " Please check parameters of functions in wlcomp-pragma"));
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *NewBoundsStride( node *stride, int dim,
  *                          int new_bound1, int new_bound2)
  *
@@ -2468,28 +2569,6 @@ BlockStride (node *stride, long *bv, int unroll)
                 grids = WLGRID_NEXT (grids);
             } while (grids != NULL);
 
-            /*
-             * contains bv an illegal value?
-             *  -> abort compilation and produce an error-message
-             */
-            if (bv[WLSTRIDE_DIM (curr_stride)] < 1) {
-                ABORT (line, ("Blocking step is not >= 1."
-                              " Please check parameters of functions in wlcomp-pragma"));
-            }
-            if (bv[WLSTRIDE_DIM (curr_stride)] == 1) {
-                ABORT (line, ("Blocking step 1 is allowed in first dimensions only."
-                              " Please check parameters of functions in wlcomp-pragma"));
-            }
-            if (bv[WLSTRIDE_DIM (curr_stride)] < WLSTRIDE_STEP (curr_stride)) {
-                ABORT (line,
-                       ("Blocking step is greater than 1 and smaller than stride step."
-                        " Please check parameters of functions in wlcomp-pragma"));
-            }
-            if ((bv[WLSTRIDE_DIM (curr_stride)] % WLSTRIDE_STEP (curr_stride)) != 0) {
-                ABORT (line, ("Stride step is not a divisor of blocking step."
-                              " Please check parameters of functions in wlcomp-pragma"));
-            }
-
             /* fit bounds of stride to blocking step */
             WLSTRIDE_BOUND1 (curr_stride) = 0;
             WLSTRIDE_BOUND2 (curr_stride) = bv[WLSTRIDE_DIM (curr_stride)];
@@ -2588,11 +2667,8 @@ BlockWL (node *stride, int dims, long *bv, int unroll)
             curr_stride = stride;
             while (curr_stride != NULL) {
 
-                if (bv[WLSTRIDE_DIM (curr_stride)] < 1) {
-                    ABORT (line,
-                           ("Blocking step is not >= 1."
-                            " Please check parameters of functions in wlcomp-pragma"));
-                }
+                DBUG_ASSERT ((bv[WLSTRIDE_DIM (curr_stride)] >= 1),
+                             "wrong bv-value found");
                 if (bv[WLSTRIDE_DIM (curr_stride)] == 1) {
                     /*
                      * no blocking -> go to next dim
@@ -3543,6 +3619,26 @@ NormalizeWL (node *nodes, int *idx_max)
 /******************************************************************************
  *
  * function:
+ *   node *InferParams( node *seg)
+ *
+ * description:
+ *   infers WLSEG_MAXHOMDIM for the given segment 'seg' and WL..._INNERSTEP
+ *   for all contained WLblock-, WLublock-, WLstride-nodes with
+ *   (WL..._LEVEL == 0).
+ *
+ ******************************************************************************/
+
+node *
+InferParams (node *seg)
+{
+    DBUG_ENTER ("InferParams");
+
+    DBUG_RETURN (seg);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *GenerateCompleteGrid( node *stride_var)
  *
  * description:
@@ -4095,7 +4191,7 @@ GenerateCompleteDomainVar (node *stride_var, int dims, shpseg *shape)
  * remark:
  *   The new generators contain no pointer to a code-block. We inspect the
  *   type of the with-loop (WO_genarray, WO_modarray, WO_fold...) to decide
- *   wheather we must ...
+ *   weather we must ...
  *     ... initialize the array-part with 0 (WO_genarray -> 'init'),
  *     ... copy the source-array (WO_modarray -> 'copy'),
  *     ... do nothing (WO_fold -> 'noop').
@@ -4462,6 +4558,9 @@ WLTRANwith (node *arg_node, node *arg_info)
 
                 seg = segs;
                 while (seg != NULL) {
+                    /* check params of segment */
+                    CheckParams (seg);
+
                     /* splitting */
                     if (WL_break_after >= WL_PH_split) {
                         DBUG_EXECUTE ("WLprec", NOTE (("step 3: splitting\n")));
@@ -4513,6 +4612,9 @@ WLTRANwith (node *arg_node, node *arg_info)
                         WLSEG_CONTENTS (seg)
                           = NormalizeWL (WLSEG_CONTENTS (seg), WLSEG_IDX_MAX (seg));
                     }
+
+                    /* infer WLSEG_MAXHOMDIM and WL..._INNERSTEP */
+                    seg = InferParams (seg);
 
                     seg = WLSEG_NEXT (seg);
                 }

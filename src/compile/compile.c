@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.181  1998/08/06 01:16:43  dkr
+ * fixed some minor bugs
+ *
  * Revision 1.180  1998/08/03 10:53:11  cg
  * Now, MT_ADJUST_SCHEDULER ICMs are generated where necessary.
  *
@@ -7336,18 +7339,16 @@ COMPWLgrid (node *arg_node, node *arg_info)
          */
 
         /*
-         * get first blocking-vector > 1 (or ubv)
-         * (bv > 1  <->  bv_(n-1) > 1,  where n is number of dims)
+         * if (bv0 > 1) get bv0, otherwise ubv
          */
-        i = 0;
-        while ((i < WLSEG_BLOCKS (wl_seg))
-               && ((WLSEG_BV (wl_seg, i))[WLSEG_DIMS (wl_seg) - 1] == 1)) {
-            i++;
+        bv = NULL;
+        for (d = 0; d < WLSEG_DIMS (wl_seg); d++) {
+            if ((WLSEG_BV (wl_seg, 0))[d] > 1) {
+                bv = WLSEG_BV (wl_seg, 0);
+                break;
+            }
         }
-        if ((i < WLSEG_BLOCKS (wl_seg))
-            && ((WLSEG_BV (wl_seg, i))[WLSEG_DIMS (wl_seg) - 1] > 1)) {
-            bv = WLSEG_BV (wl_seg, i);
-        } else {
+        if (bv == NULL) {
             bv = WLSEG_UBV (wl_seg);
         }
 
@@ -7355,7 +7356,7 @@ COMPWLgrid (node *arg_node, node *arg_info)
          * is next dim the last blocked dim?
          */
         last_blocking = 0;
-        if ((bv != NULL) && (WLGRID_DIM (arg_node) + 1 < WLSEG_DIMS (wl_seg))) {
+        if ((WLGRID_DIM (arg_node) + 1 < WLSEG_DIMS (wl_seg))) {
             last_blocking = (bv[WLGRID_DIM (arg_node) + 1] > 1);
             if (last_blocking > 0) {
                 for (d = WLGRID_DIM (arg_node) + 2; d < WLSEG_DIMS (wl_seg); d++) {
