@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 2.8  1999/08/05 13:32:04  jhs
+# build.c is displayed (more) after creation
+# (I like to see the values ...).
+#
 # Revision 2.7  1999/07/09 11:38:40  cg
 # make deps done
 #
@@ -114,6 +118,7 @@ build.c:
 	echo "char build_date[] = \"`date`\";"  >  build.c
 	echo "char build_user[] = \"$(USER)\";" >> build.c
 	echo "char build_host[] = \"$(HOST)\";" >> build.c
+	more build.c
 
 deps:
 	makedepend $(INCS) *.c
