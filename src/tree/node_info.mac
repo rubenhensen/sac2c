@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.60  2000/07/24 14:58:49  nmw
+ * traverse function PIWobjdef added
+ *
  * Revision 1.59  2000/07/21 14:37:58  mab
  * added APCcode and APCwithop
  *
@@ -767,7 +770,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, TravSons, TravSons, TravSons, 2),
+       TravSons, TravSons, PIWobjdef, TravSons, 2),
 
   NIF (N_modul, "N_modul", IMmodul, FltnModul, PrintModul, TravSons, GNMmodul, GNMmodul,
        GNMmodul, FreeModul, GNMmodul, TravSons, COMPModul, GNMmodul, DupModul, INLmodul,
