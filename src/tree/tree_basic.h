@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/02/04 14:46:53  jhs
+ * Added rfin_tab and it's functions.
+ * Added INFO_RFIN_xxx.
+ *
  * Revision 1.8  2000/02/02 12:29:09  jhs
  * Added INFO_MUTH_FUNDEF.
  * Added N_mt and N_st.
@@ -2321,6 +2325,9 @@ extern node *MakePragma ();
  ***    int        INFO_SCHIN_INNERWLS
  ***    int        INFO_SCHIN_ALLOWED
  ***
+ ***  in (na), (nc):
+ ***    int        INFO_RFIN_WITHINWITH
+ ***
  ***  in (na), (nd):
  ***    [nothing]
  ***
@@ -2512,6 +2519,10 @@ extern node *MakeInfo ();
 #define INFO_SCHIN_SCHEDULING(n) (n->node[1])
 #define INFO_SCHIN_INNERWLS(n) (n->int_data)
 #define INFO_SCHIN_ALLOWED(n) (n->flag)
+
+/* multithread - repfuns_init */
+/* DO NOT OVERRIDE ANY INFO_MUTH_XXX HERE!!! */
+#define INFO_RFIN_WITHINWITH(n) (n->int_data)
 
 /* precompile */
 #define INFO_PREC_MODUL(n) (n->node[0])

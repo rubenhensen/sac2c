@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2000/02/04 14:46:53  jhs
+ * Added rfin_tab and it's functions.
+ * Added INFO_RFIN_xxx.
+ *
  * Revision 1.5  2000/02/03 17:47:38  dkr
  * Trav(): instruction DBUG_ASSERT(arg_node==NULL) now *before* the first
  * access to arg_node :)
@@ -179,6 +183,7 @@
 #include "lac2fun.h"
 #include "schedule_init.h"
 #include "blocks_init.h"
+#include "repfuns_init.h"
 
 #include "traverse.h"
 
@@ -880,6 +885,17 @@ static funtab blkin_tab_rec = {{
                                NULL,
                                NULL};
 funtab *blkin_tab = &blkin_tab_rec;
+
+/*
+ *  (64) rfin_tab
+ */
+static funtab rfin_tab_rec = {{
+#define NIFrfin(it_rfin) it_rfin
+#include "node_info.mac"
+                              },
+                              NULL,
+                              NULL};
+funtab *rfin_tab = &rfin_tab_rec;
 
 /*
  *  nnode

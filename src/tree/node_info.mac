@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2000/02/04 14:46:53  jhs
+ * Added rfin_tab and it's functions.
+ * Added INFO_RFIN_xxx.
+ *
  * Revision 1.8  2000/02/03 15:20:10  jhs
  * Added PrintMT and PrintST.
  *
@@ -173,16 +177,15 @@
  *   spmdcons_tab    tsi_tab         spmdlc_tab      spmddn_tab
  *   spmdpm_tab      spmdco_tab      ntc_tab         lac2fun_tab
  *
- *   muth_tab        schin_tab       blkin_tab       unused_tab1
- *   unused_tab2     unused_tab3     unused_tab4     unused_tab5
+ *   muth_tab        schin_tab       blkin_tab       rfin_tab
+ *   unused_tab1     unused_tab2     unused_tab3     unused_tab4
  *
  *   nnode
  *
  ***  Always (!!!) fill the tab-lines up to 4 tables by using
  ***  unused_tabX, whers X is 1 to 8.
- ***  The unused_tabX are accesed by the not to be deleted NIFunusedX macros.
- ***  You also have to add TravSons for this tables in the usages
- ***  of the NIF-macro.
+ ***  These additinal tables will be ignored in NIFmacro by
+ ***  translating the arguments int nothing (by not using them at all).
  *
  * usage (in this file):
  *   To define a table one needs an identifier for this table (e.g. item),
@@ -432,60 +435,19 @@
 #define NIFblkin(it_blkin)
 #endif
 
-/***
- ***  DO NOT DELETE ANY NIFunusedX MACROS
- ***
- ***  They will be needed again sometime and I hate
- ***  to rebuild all the time (jhs)
- ***/
-
-/* do not delete, read warning above */
-#ifndef NIFunused1
-#define NIFunused1(it_unused1)
+#ifndef NIFrfin
+#define NIFrfin(it_rfin)
 #endif
-
-/* do not delete, read warning above */
-#ifndef NIFunused2
-#define NIFunused2(it_unused2)
-#endif
-
-/* do not delete, read warning above */
-#ifndef NIFunused4
-#define NIFunused4(it_unused3)
-#endif
-
-/* do not delete, read warning above */
-#ifndef NIFunused5
-#define NIFunused5(it_unused4)
-#endif
-
-/* do not delete, read warning above */
-#ifndef NIFunused6
-#define NIFunused6(it_unused5)
-#endif
-
-/* do not delete, read warning above */
-#ifndef NIFunused7
-#define NIFunused7(it_unused6)
-#endif
-
-/* do not delete, read warning above */
-#ifndef NIFunused7
-#define NIFunused7(it_unused7)
-#endif
-
-/* do not delete, read warning above */
-#ifndef NIFunused8
-#define NIFunused8(it_unused8)
-#endif
-
-/***
- ***  READ WARNING ABOVE!!
- ***/
 
 #ifndef NIFnnode
 #define NIFnnode(nnode)
 #endif
+
+/***
+ ***  Always fill up the arguments to a number divideable by 4,
+ ***  translate these additinal arguments into nothing, by
+ ***  not using them at all!!
+ ***/
 
 #define NIF(                                                                             \
                                                                                          \
@@ -499,8 +461,8 @@
                                                                                          \
   it_syncopt, it_wltrans, it_gsc, it_reuse, it_o2nWith, it_sched, it_conc, it_opt,       \
   it_wlaa, it_freemask, it_spmdrm, it_spmdro, it_spmdcons, it_tsi, it_spmdlc, it_spmddn, \
-  it_spmdpm, it_spmdco, it_ntc, it_lac2fun, it_muth, it_schin, it_blkin, it_unused1,     \
-  it_unused2, it_unused3, it_unused4, it_unused5,                                        \
+  it_spmdpm, it_spmdco, it_ntc, it_lac2fun, it_muth, it_schin, it_blkin, it_rfin,        \
+  it_unused1, it_unused2, it_unused3, it_unused4,                                        \
                                                                                          \
   nnode)                                                                                 \
                                                                                          \
@@ -521,34 +483,22 @@
                           NIFspmdopt (it_spmdopt) NIFspmdlift (it_spmdlift)              \
                             NIFsyncinit (it_syncinit)                                    \
                                                                                          \
-                              NIFsyncopt (it_syncopt) NIFwltrans (it_wltrans) NIFgsc (   \
-                                it_gsc) NIFreuse (it_reuse) NIFo2nWith (it_o2nWith)      \
-                                NIFsched (it_sched) NIFconc (it_conc) NIFopt (it_opt)    \
-                                  NIFwlaa (it_wlaa) NIFfreemask (it_freemask)            \
-                                    NIFspmdrm (it_spmdrm) NIFspmdro (it_spmdro)          \
-                                      NIFspmdcons (it_spmdcons) NIFtsi (it_tsi)          \
-                                        NIFspmdlc (it_spmdlc) NIFspmddn (it_spmddn)      \
-                                          NIFspmdpm (it_spmdpm) NIFspmdco (it_spmdco)    \
-                                            NIFntc (it_ntc) NIFlac2fun (it_lac2fun)      \
+                              NIFsyncopt (it_syncopt) NIFwltrans (it_wltrans)            \
+                                NIFgsc (it_gsc) NIFreuse (it_reuse)                      \
+                                  NIFo2nWith (it_o2nWith) NIFsched (it_sched)            \
+                                    NIFconc (it_conc) NIFopt (it_opt) NIFwlaa (it_wlaa)  \
+                                      NIFfreemask (it_freemask) NIFspmdrm (it_spmdrm)    \
+                                        NIFspmdro (it_spmdro) NIFspmdcons (it_spmdcons)  \
+                                          NIFtsi (it_tsi) NIFspmdlc (it_spmdlc)          \
+                                            NIFspmddn (it_spmddn) NIFspmdpm (it_spmdpm)  \
+                                              NIFspmdco (it_spmdco) NIFntc (it_ntc)      \
+                                                NIFlac2fun (it_lac2fun)                  \
                                                                                          \
-                                              NIFmuth (it_muth) NIFschin (it_schin)      \
-                                                NIFblkin (it_blkin)                      \
-                                                  NIFunused1 (it_unused1)                \
-                                                    NIFunused1 (it_unused2)              \
-                                                      NIFunused1 (it_unused3)            \
-                                                        NIFunused1 (it_unused4)          \
-                                                          NIFunused1 (it_unused5)        \
-                                                            NIFunused1 (it_unused6)      \
-                                                              NIFunused1 (it_unused7)    \
+                                                  NIFmuth (it_muth) NIFschin (it_schin)  \
+                                                    NIFblkin (it_blkin)                  \
+                                                      NIFrfin (it_rfin)                  \
                                                                                          \
-                                                                NIFnnode (nnode)
-
-/***
- ***  Always fill up the tables to a number dividable by 4 !!!
- ***  use predefined
- ***    NIFunusedX(it_unusedX)
- ***  where X is 1 .. 8.
- ***/
+                                                        NIFnnode (nnode)
 
 /******************************************************************************
  *
@@ -987,7 +937,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        WLAAlet, TravSons, SPMDRMlet, SPMDROlet, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, LAC2FUNlet,
 
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, TravSons, RFINlet, TravSons, TravSons, TravSons, TravSons,
 
        1),
 
@@ -1504,7 +1454,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
-       TravSons, SCHINnwith2, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, SCHINnwith2, TravSons, RFINnwith2, TravSons, TravSons, TravSons,
+       TravSons,
 
        4),
 
@@ -1749,26 +1700,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 #undef NIFmuth
 #undef NIFschin
 #undef NIFblkin
-
-/***
- ***  DO NOT DELETE ANY NIFunusedX MACROS
- ***
- ***  They will be needed again sometime and I hate
- ***  to rebuild all the time (jhs)
- ***/
-
-#undef NIFunused1
-#undef NIFunused2
-#undef NIFunused3
-#undef NIFunused4
-#undef NIFunused5
-#undef NIFunused6
-#undef NIFunused7
-#undef NIFunused8
-
-/***
- ***  READ WARNING ABOVE!!!
- ***/
+#undef NIFrfin
 
 #undef NIFnnode
 
