@@ -260,7 +260,7 @@ PACKAGE_VERSION='rcs'
 PACKAGE_STRING='sac2c rcs'
 PACKAGE_BUGREPORT='info@sac-home.org'
 
-ac_unique_file="Makefile.Config.in"
+ac_unique_file="."
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -1231,7 +1231,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-ac_config_files="$ac_config_files Makefile.Config"
+ac_config_files="$ac_config_files Makefile.Config src/runtime/sac2crc"
 
 ac_config_headers="$ac_config_headers ./src/global/config.h"
 
@@ -1318,19 +1318,6 @@ test -n "$target_alias" &&
   test "$program_prefix$program_suffix$program_transform_name" = \
     NONENONEs,x,x, &&
   program_prefix=${target_alias}-
-
-
-case $target_os in
- *solaris*) target_os=SOLARIS;;
- *linux*)   target_os=LINUX;;
- *OSF*)   target_OS=OSF;;
-esac
-
-case $target_cpu in
- sparc)  target_cpu=SPARC;;
- i?86)   target_cpu=X86;;
- alpha*) target_cpu=ALPHA;;
-esac
 
 
 cat >>confdefs.h <<_ACEOF
@@ -1887,6 +1874,144 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
+echo "$as_me:$LINENO: checking whether cc is a Sun Pro C compiler" >&5
+echo $ECHO_N "checking whether cc is a Sun Pro C compiler... $ECHO_C" >&6
+
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+#ifndef __SUNPRO_C
+  choke me
+#endif
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+SUNC=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+SUNC=no
+
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+
+echo "$as_me:$LINENO: checking whether cc is a Compaq/DEC C compiler" >&5
+echo $ECHO_N "checking whether cc is a Compaq/DEC C compiler... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+#ifndef __DECC
+  choke me
+#endif
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+DECC=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+DECC=no
+
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+
+echo "$as_me:$LINENO: checking need of _EXTENSIONS_ flag" >&5
+echo $ECHO_N "checking need of _EXTENSIONS_ flag... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <stdio.h>
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+popen("rw","testfile")
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+need_ext_flags=no
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+need_ext_flags=yes
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -2087,6 +2212,91 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
+set dummy ${ac_tool_prefix}ranlib; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_RANLIB+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$RANLIB"; then
+  ac_cv_prog_RANLIB="$RANLIB" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_RANLIB="${ac_tool_prefix}ranlib"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+fi
+fi
+RANLIB=$ac_cv_prog_RANLIB
+if test -n "$RANLIB"; then
+  echo "$as_me:$LINENO: result: $RANLIB" >&5
+echo "${ECHO_T}$RANLIB" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+fi
+if test -z "$ac_cv_prog_RANLIB"; then
+  ac_ct_RANLIB=$RANLIB
+  # Extract the first word of "ranlib", so it can be a program name with args.
+set dummy ranlib; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_ac_ct_RANLIB+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$ac_ct_RANLIB"; then
+  ac_cv_prog_ac_ct_RANLIB="$ac_ct_RANLIB" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_ct_RANLIB="ranlib"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  test -z "$ac_cv_prog_ac_ct_RANLIB" && ac_cv_prog_ac_ct_RANLIB=":"
+fi
+fi
+ac_ct_RANLIB=$ac_cv_prog_ac_ct_RANLIB
+if test -n "$ac_ct_RANLIB"; then
+  echo "$as_me:$LINENO: result: $ac_ct_RANLIB" >&5
+echo "${ECHO_T}$ac_ct_RANLIB" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  RANLIB=$ac_ct_RANLIB
+else
+  RANLIB="$ac_cv_prog_RANLIB"
+fi
+
+if test "$RANLIB"; then
+  RANLIB="$RANLIB -c"
+fi
 
 
 if test $ac_cv_c_compiler_gnu = yes; then
@@ -2837,6 +3047,31 @@ fi
 if test $ac_cv_header_pthread_h = yes; then
 
 
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PTHREAD_H 1
+_ACEOF
+
+DISABLE_MT=no
+
+
+
+else
+
+
+
+cat >>confdefs.h <<\_ACEOF
+#define DISABLE_MT 1
+_ACEOF
+
+DISABLE_MT=yes
+
+
+
+fi
+
+
+
 echo "$as_me:$LINENO: checking for library containing fabs" >&5
 echo $ECHO_N "checking for library containing fabs... $ECHO_C" >&6
 if test "${ac_cv_search_fabs+set}" = set; then
@@ -2944,31 +3179,6 @@ if test "$ac_cv_search_fabs" != no; then
   test "$ac_cv_search_fabs" = "none required" || LIBS="$ac_cv_search_fabs $LIBS"
 
 fi
-
-
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_PTHREAD_H 1
-_ACEOF
-
-DISABLE_MT=no
-
-
-
-else
-
-
-
-cat >>confdefs.h <<\_ACEOF
-#define DISABLE_MT 1
-_ACEOF
-
-DISABLE_MT=yes
-
-
-
-fi
-
 
 
 
@@ -3121,16 +3331,66 @@ echo $ECHO_N "checking for sbrk argument type... $ECHO_C" >&6
 include_file_list=`ls -1 /usr/include/*.h`
 sbrk_types=`for name in $include_file_list; do grep sbrk $name 2>/dev/null; done`
 sbrk_types=`echo "$sbrk_types" | sed -e 's/[A-Za-z0-9 _*]*([ ]*//g' | sed -e 's/)[A-Za-z0-9_* ;]*//g' | sed -e 's/ [A-Za-z0-9_* ]*//g'`
+ for name in "$sbrk_types"; do
+ cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+#include <unistd.h>
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+sbrk(($name) 0)
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  break
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+name=none
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+ done
+
+ if test $name = none ; then
+cat >>confdefs.h <<\_ACEOF
+#define DISABLE_PHM 1
+_ACEOF
+
+DISABLE_PHM=yes
+
+echo "$as_me:$LINENO: result: not found" >&5
+echo "${ECHO_T}not found" >&6
+ else
 
 cat >>confdefs.h <<_ACEOF
-#define SBRK_T $sbrk_types
+#define SBRK_T $name
 _ACEOF
 
 echo "$as_me:$LINENO: result: $sbrk_types" >&5
 echo "${ECHO_T}$sbrk_types" >&6
 DISABLE_PHM=no
 
-
+ fi
 
 else
 
@@ -3303,6 +3563,133 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 fi
+
+echo "$as_me:$LINENO: checking sac2crc compiler flags" >&5
+echo $ECHO_N "checking sac2crc compiler flags... $ECHO_C" >&6
+if  test "$GCC" = yes ; then
+  OPT_O0=""
+
+  OPT_O1=-O1
+
+  OPT_O2=-O2
+
+  OPT_O3=-O3
+
+  OPT_g=-g
+
+  RCLDFLAGS=""
+
+  RCCCFLAGS="-Wall -Wno-unused -fno-builtin"
+
+  MKCCFLAGS="-ansi -Wall -g"
+
+  PDCCFLAGS="-ansi -Wall -g -O3"
+
+  DEPSFLAG="-M"
+
+  echo "$as_me:$LINENO: result: gcc settings" >&5
+echo "${ECHO_T}gcc settings" >&6
+elif  test "$SUNC" = yes ; then
+  OPT_O0=""
+
+  OPT_O1=-xO2
+
+  OPT_O2=-xO4
+
+  OPT_O3=-x05
+
+  OPT_g=-g
+
+  RCLDFLAGS=""
+
+  RCCCFLAGS="-dalign -fsimple -xsafe=mem"
+
+  MKCCFLAGS="-erroff=E_CAST_DOESNT_YIELD_LVALUE -g"
+
+  PDCCFLAGS="-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4"
+
+  DEPSFLAG="-xM"
+
+  echo "$as_me:$LINENO: result: Sun cc settings" >&5
+echo "${ECHO_T}Sun cc settings" >&6
+elif  test "$DECC" = yes ; then
+  OPT_O0=""
+
+  OPT_O1=-xO2
+
+  OPT_O2=-xO4
+
+  OPT_O3=-x05
+
+  OPT_g=-g
+
+  RCLDFLAGS=""
+
+  RCCCFLAGS=""
+
+  MKCCFLAGS="-g"
+
+  PDCCFLAGS="-g3"
+
+  DEPSFLAG="-M"
+
+  echo "$as_me:$LINENO: result: Compaq/DEC cc settings" >&5
+echo "${ECHO_T}Compaq/DEC cc settings" >&6
+elif  test "$MACC" = yes ; then
+  OPT_O0=""
+
+  OPT_O1=-xO2
+
+  OPT_O2=-xO4
+
+  OPT_O3=-x05
+
+  OPT_g=-g
+
+  RCLDFLAGS="-Wl,-multiply_defined,suppress"
+
+  RCCCFLAGS="-Wall -Wno-unused -fno-builtin"
+
+  echo "$as_me:$LINENO: result: Apple cc settings" >&5
+echo "${ECHO_T}Apple cc settings" >&6
+else
+  OPT_O0=""
+
+  OPT_O1=""
+
+  OPT_O2=""
+
+  OPT_O3=""
+
+  OPT_g=""
+
+  RCLDFLAGS=""
+
+  RCCCFLAGS=""
+
+  echo "$as_me:$LINENO: result: none found" >&5
+echo "${ECHO_T}none found" >&6
+fi
+
+
+
+
+
+RCSUN=$srcdir/src/runtime/sac2crc.SUN
+RCX86=$srcdir/src/runtime/sac2crc.X86
+RCALPHA=$srcdir/src/runtime/sac2crc.ALPHA
+RCMAC=$srcdir/src/runtime/sac2crc.MAC
+
+OSFLAGS=""
+case "$target_os" in
+  solaris*)     OSFLAGS="-D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY";;
+  *linux*)      OSFLAGS="-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE";;
+  *osf*)	OSFLAGS="-D_OSF_SOURCE";;
+  *macos*)      OSFLAGS="-traditional-cpp -Wno-long-double";;
+esac
+
+
+
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -3775,6 +4162,7 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "Makefile.Config" ) CONFIG_FILES="$CONFIG_FILES Makefile.Config" ;;
+  "src/runtime/sac2crc" ) CONFIG_FILES="$CONFIG_FILES src/runtime/sac2crc" ;;
   "./src/global/config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS ./src/global/config.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -3879,12 +4267,33 @@ s,@ac_ct_CC@,$ac_ct_CC,;t t
 s,@EXEEXT@,$EXEEXT,;t t
 s,@OBJEXT@,$OBJEXT,;t t
 s,@CPP@,$CPP,;t t
+s,@RANLIB@,$RANLIB,;t t
+s,@ac_ct_RANLIB@,$ac_ct_RANLIB,;t t
 s,@YACC@,$YACC,;t t
 s,@LEX@,$LEX,;t t
 s,@LEXLIB@,$LEXLIB,;t t
 s,@LEX_OUTPUT_ROOT@,$LEX_OUTPUT_ROOT,;t t
 s,@DISABLE_MT@,$DISABLE_MT,;t t
 s,@DISABLE_PHM@,$DISABLE_PHM,;t t
+s,@OPT_O0@,$OPT_O0,;t t
+s,@OPT_O1@,$OPT_O1,;t t
+s,@OPT_O2@,$OPT_O2,;t t
+s,@OPT_O3@,$OPT_O3,;t t
+s,@OPT_g@,$OPT_g,;t t
+s,@RCLDFLAGS@,$RCLDFLAGS,;t t
+s,@RCCCFLAGS@,$RCCCFLAGS,;t t
+s,@MKCCFLAGS@,$MKCCFLAGS,;t t
+s,@PDCCFLAGS@,$PDCCFLAGS,;t t
+s,@DEPSFLAG@,$DEPSFLAG,;t t
+/@RCSUN@/r $RCSUN
+s,@RCSUN@,,;t t
+/@RCX86@/r $RCX86
+s,@RCX86@,,;t t
+/@RCALPHA@/r $RCALPHA
+s,@RCALPHA@,,;t t
+/@RCMAC@/r $RCMAC
+s,@RCMAC@,,;t t
+s,@OSFLAGS@,$OSFLAGS,;t t
 CEOF
 
 _ACEOF

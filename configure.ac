@@ -1,5 +1,9 @@
 dnl
 dnl $Log$
+dnl Revision 1.9  2003/03/21 15:53:04  sah
+dnl added handling of platform
+dnl specific compiler flags
+dnl
 dnl Revision 1.8  2003/03/21 11:37:47  sah
 dnl fixed alpha cc bug
 dnl
@@ -36,14 +40,14 @@ dnl parameters: package name, version, where to send bugreports
 AC_INIT(sac2c, rcs, info@sac-home.org)
 
 dnl set source directory and scripting directory
-AC_CONFIG_SRCDIR(Makefile.Config.in)
+AC_CONFIG_SRCDIR(.)
 AC_CONFIG_AUX_DIR(./config)
 
 dnl we use C as our compiler language
 AC_LANG(C)
 
 dnl and which files to create
-AC_CONFIG_FILES(Makefile.Config)
+AC_CONFIG_FILES(Makefile.Config src/runtime/sac2crc)
 AC_CONFIG_HEADER(./src/global/config.h)
 
 dnl check for host type
@@ -52,23 +56,6 @@ AC_CANONICAL_HOST()
 AC_CANONICAL_TARGET()
 
 dnl set OS and ARCH flags
-
-dnl match autoconf os names to 
-dnl the ususal sac ones
-case $target_os in
- *solaris*) target_os=SOLARIS;;
- *linux*)   target_os=LINUX;;
- *OSF*)   target_OS=OSF;;
-esac
-
-dnl match autoconf arch names to
-dnl the usual sac ones
-case $target_cpu in
- sparc)  target_cpu=SPARC;;
- i?86)   target_cpu=X86;;
- alpha*) target_cpu=ALPHA;;
-esac
-
 AC_DEFINE_UNQUOTED(OS,"$target_os",set to the os type)
 AC_SUBST(OS,$target_os)
 AC_DEFINE_UNQUOTED(ARCH,"$target_cpu",set to the architecture)
@@ -76,6 +63,47 @@ AC_SUBST(ARCH,$target_cpu)
 
 dnl search for a C compiler
 AC_PROG_CC(gcc cc)
+
+dnl check whether its suns cc
+AC_MSG_CHECKING(whether cc is a Sun Pro C compiler)
+AC_TRY_COMPILE(,
+[#ifndef __SUNPRO_C
+  choke me
+#endif],
+AC_MSG_RESULT(yes)
+SUNC=yes,
+AC_MSG_RESULT(no)
+SUNC=no
+)
+
+dnl check whether its comapcs (or dec) cc
+AC_MSG_CHECKING(whether cc is a Compaq/DEC C compiler)
+AC_TRY_COMPILE(,
+[#ifndef __DECC
+  choke me
+#endif],
+AC_MSG_RESULT(yes)
+DECC=yes,
+AC_MSG_RESULT(no)
+DECC=no
+)
+
+dnl check whether popen is an extension
+AC_MSG_CHECKING([need of _EXTENSIONS_ flag])
+AC_TRY_COMPILE([#include <stdio.h>],[popen("rw","testfile")],
+AC_MSG_RESULT(no)
+need_ext_flags=no,
+AC_MSG_RESULT(yes)
+need_ext_flags=yes)
+
+dnl check for C preprocessor
+AC_PROG_CPP()
+
+dnl check for ranlib
+AC_PROG_RANLIB()
+if test "$RANLIB"; then
+  RANLIB="$RANLIB -c"
+fi
 
 dnl check, whether we need -traditinal flag
 AC_PROG_GCC_TRADITIONAL
@@ -92,9 +120,6 @@ AC_CHECK_HEADERS(malloc.h)
 dnl search for pthread.h
 AC_CHECK_HEADER(pthread.h,[
 
-dnl check whether to link math library
-AC_SEARCH_LIBS(fabs, m)
-
 dnl if found, enable multi threading
 AC_DEFINE(HAVE_PTHREAD_H, 1, set to 1 if you have the <pthread.h> header file)
 AC_SUBST(DISABLE_MT, no)
@@ -106,6 +131,9 @@ AC_DEFINE(DISABLE_MT, 1, set to 1 to disable multi threading)
 AC_SUBST(DISABLE_MT, yes)
 
 ])
+
+dnl check whether to link math library
+AC_SEARCH_LIBS(fabs, m)
 
 dnl checking for presence of strtok and strrchr
 AC_CHECK_FUNCS([strtok strrchr])
@@ -119,10 +147,19 @@ AC_MSG_CHECKING(for sbrk argument type)
 include_file_list=`ls -1 /usr/include/*.h`
 sbrk_types=`for name in $include_file_list; do grep sbrk $name 2>/dev/null; done`
 [sbrk_types=`echo "$sbrk_types" | sed -e 's/[A-Za-z0-9 _*]*([ ]*//g' | sed -e 's/)[A-Za-z0-9_* ;]*//g' | sed -e 's/ [A-Za-z0-9_* ]*//g'` ]
-AC_DEFINE_UNQUOTED(SBRK_T,$sbrk_types,set to the type of sbrk argument)
+[ for name in "$sbrk_types"; do ]
+ AC_TRY_COMPILE([#include <unistd.h>],[sbrk(($name) 0)],break,name=none)
+[ done ]
+
+[ if test $name = none ; then ]
+AC_DEFINE(DISABLE_PHM, 1)
+AC_SUBST(DISABLE_PHM, yes)
+AC_MSG_RESULT(not found)
+[ else ]
+AC_DEFINE_UNQUOTED(SBRK_T,$name,set to the type of sbrk argument)
 AC_MSG_RESULT($sbrk_types)
 AC_SUBST(DISABLE_PHM, no)
-
+[ fi ]
 ],[
 
 dnl otherwise disable pm
@@ -205,6 +242,88 @@ dnl reference YYLABELS
 if test "$YACC" = "yacc"; then
   AC_DEFINE(MUST_REFERENCE_YYLABELS, 1, set to 1 if gcc complains about unused labels)
 fi
+
+dnl test for compiler flags
+dnl for sac2crc
+AC_MSG_CHECKING([sac2crc compiler flags])
+if [ test "$GCC" = yes ]; then
+  AC_SUBST(OPT_O0, [""])
+  AC_SUBST(OPT_O1, [-O1])
+  AC_SUBST(OPT_O2, [-O2])
+  AC_SUBST(OPT_O3, [-O3])
+  AC_SUBST(OPT_g, [-g])
+  AC_SUBST(RCLDFLAGS, [""])
+  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin"])
+  AC_SUBST(MKCCFLAGS, ["-ansi -Wall -g"])
+  AC_SUBST(PDCCFLAGS, ["-ansi -Wall -g -O3"])
+  AC_SUBST(DEPSFLAG, ["-M"])
+  AC_MSG_RESULT([gcc settings])
+elif [ test "$SUNC" = yes ]; then
+  AC_SUBST(OPT_O0, [""])
+  AC_SUBST(OPT_O1, [-xO2])
+  AC_SUBST(OPT_O2, [-xO4])
+  AC_SUBST(OPT_O3, [-x05])
+  AC_SUBST(OPT_g, [-g])
+  AC_SUBST(RCLDFLAGS, [""])
+  AC_SUBST(RCCCFLAGS, ["-dalign -fsimple -xsafe=mem"])
+  AC_SUBST(MKCCFLAGS, ["-erroff=E_CAST_DOESNT_YIELD_LVALUE -g"])
+  AC_SUBST(PDCCFLAGS, ["-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4"])
+  AC_SUBST(DEPSFLAG, ["-xM"])
+  AC_MSG_RESULT([Sun cc settings])
+elif [ test "$DECC" = yes ]; then
+  AC_SUBST(OPT_O0, [""])
+  AC_SUBST(OPT_O1, [-xO2])
+  AC_SUBST(OPT_O2, [-xO4])
+  AC_SUBST(OPT_O3, [-x05])
+  AC_SUBST(OPT_g, [-g])
+  AC_SUBST(RCLDFLAGS, [""])
+  AC_SUBST(RCCCFLAGS, [""])
+  AC_SUBST(MKCCFLAGS, ["-g"])
+  AC_SUBST(PDCCFLAGS, ["-g3"])
+  AC_SUBST(DEPSFLAG, ["-M"])
+  AC_MSG_RESULT([Compaq/DEC cc settings])
+elif [ test "$MACC" = yes ]; then
+  AC_SUBST(OPT_O0, [""])
+  AC_SUBST(OPT_O1, [-xO2])
+  AC_SUBST(OPT_O2, [-xO4])
+  AC_SUBST(OPT_O3, [-x05])
+  AC_SUBST(OPT_g, [-g])
+  AC_SUBST(RCLDFLAGS, ["-Wl,-multiply_defined,suppress"])
+  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin"])
+  AC_MSG_RESULT([Apple cc settings])
+else
+  AC_SUBST(OPT_O0, [""])
+  AC_SUBST(OPT_O1, [""])
+  AC_SUBST(OPT_O2, [""])
+  AC_SUBST(OPT_O3, [""])
+  AC_SUBST(OPT_g, [""])
+  AC_SUBST(RCLDFLAGS, [""])
+  AC_SUBST(RCCCFLAGS, [""])
+  AC_MSG_RESULT([none found])
+fi   
+
+dnl append platform specific files
+dnl to sac2crc
+AC_SUBST_FILE(RCSUN)
+AC_SUBST_FILE(RCX86)
+AC_SUBST_FILE(RCALPHA)
+AC_SUBST_FILE(RCMAC)
+RCSUN=$srcdir/src/runtime/sac2crc.SUN
+RCX86=$srcdir/src/runtime/sac2crc.X86
+RCALPHA=$srcdir/src/runtime/sac2crc.ALPHA
+RCMAC=$srcdir/src/runtime/sac2crc.MAC
+
+dnl generate specific flags for known os
+OSFLAGS=""
+case "$target_os" in
+  solaris*)     OSFLAGS=["-D__EXTENSIONS__ -D__STDC__=0 -DMUST_INIT_YY"];;
+  *linux*)      OSFLAGS=["-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE"];;
+  *osf*)	OSFLAGS=["-D_OSF_SOURCE"];;
+  *macos*)      OSFLAGS=["-traditional-cpp -Wno-long-double"];;
+esac
+AC_SUBST(OSFLAGS)
+
+
 
 dnl generate the Makefile.Config out of Makefile.Config.in
 AC_OUTPUT()
