@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.169  2004/07/28 12:25:55  khf
+ * MMVassign removed
+ *
  * Revision 3.168  2004/07/28 09:09:01  khf
  * MMVassign, MMVcode added and support for fourth son
  * of Ncode: NCODE_EPILOGUE removed
@@ -1714,7 +1717,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        SPMDIassign, SPMDOassign, TravSons, SYNCIassign,
 
        SYNCOassign, WLTRAassign, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, WLAAassign, MMVassign, SPMDRMassign, SPMDROassign, TravSons, TravSons,
+       TravSons, WLAAassign, TravSons, SPMDRMassign, SPMDROassign, TravSons, TravSons,
        TravSons, TravSons, SPMDPMassign, SPMDCOassign, NTCassign, INFDFMSassign,
 
        TravSons, TravSons, BLKINassign, TravSons, FUN2LACassign, AIassign, BLKEXassign,
