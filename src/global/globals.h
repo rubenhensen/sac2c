@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2002/10/18 14:16:50  ktr
+ * changed option -wlsx to -wls <level>
+ *
  * Revision 3.17  2002/10/17 17:53:08  ktr
  * added option -wlsx for aggressive WLS
  *
@@ -225,8 +228,8 @@ extern bool use_ssaform;
 /* ast is in ssa form */
 extern bool valid_ssaform;
 
-/* aggressive behaviour in WLS */
-extern bool wls_aggressive;
+/* level of WLS aggressiveness */
+extern int wls_aggressive;
 
 extern int optvar;
 extern int inlnum;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2002/10/18 14:16:50  ktr
+ * changed option -wlsx to -wls <level>
+ *
  * Revision 3.28  2002/10/17 17:53:08  ktr
  * added option -wlsx for aggressive WLS
  *
@@ -788,7 +791,7 @@ AnalyseCommandline (int argc, char *argv[])
 
     ARGS_FLAG ("ssa", use_ssaform = TRUE);
 
-    ARGS_FLAG ("wlsx", wls_aggressive = TRUE);
+    ARGS_OPTION ("wls", ARG_RANGE (wls_aggressive, 0, 2));
 
     ARGS_OPTION ("o", {
         strcpy (outfilename, ARG);

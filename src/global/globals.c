@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/10/18 14:16:50  ktr
+ * changed option -wlsx to -wls <level>
+ *
  * Revision 3.21  2002/10/17 17:53:08  ktr
  * added option -wlsx for aggressive WLS
  *
@@ -415,7 +418,7 @@ bool valid_ssaform = FALSE;
 /*
  * per default do not use aggressive WLS
  */
-bool wls_aggressive = FALSE;
+int wls_aggressive = 1;
 
 /*
  * Command line options for specifying particular side conditions

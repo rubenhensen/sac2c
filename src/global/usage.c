@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2002/10/18 14:16:50  ktr
+ * changed option -wlsx to -wls <level>
+ *
  * Revision 3.28  2002/10/17 17:53:08  ktr
  * added option -wlsx for aggressive WLS
  *
@@ -482,7 +485,10 @@ usage ()
             "\t\t\t\tdefault: -apdiaglimit %d\n\n",
             apdiag_limit);
 
-    printf ("\t -wlsx \t\t\tenable aggressive WLS\n\n");
+    printf ("\t -wls <level> \t\tset WLS optimization level\n"
+            "\t\t\t\t0: no optimization (same as -noWLS)\n"
+            "\t\t\t\t1: conservative WLS optimization scheme (default)\n"
+            "\t\t\t\t2: aggressive WLS optimization scheme (experimental)\n\n");
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
