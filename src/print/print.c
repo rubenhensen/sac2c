@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.168  1998/03/22 15:32:48  dkr
+ * N_WLproj: OFFSET, WIDTH -> BOUND1, BOUND2
+ *
  * Revision 1.167  1998/03/21 14:16:44  dkr
  * changed output in PrintWLublock
  *
@@ -2427,8 +2430,7 @@ PrintWLgrid (node *arg_node, node *arg_info)
     DBUG_ENTER ("PrintWLgrid");
 
     INDENT
-    fprintf (outfile, "(%d -> %d): ", WLGRID_OFFSET (arg_node),
-             WLGRID_OFFSET (arg_node) + WLGRID_WIDTH (arg_node));
+    fprintf (outfile, "(%d -> %d): ", WLGRID_BOUND1 (arg_node), WLGRID_BOUND2 (arg_node));
 
     indent++;
     if (WLGRID_NEXTDIM (arg_node) != NULL) {

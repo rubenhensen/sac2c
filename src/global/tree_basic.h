@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.95  1998/03/22 15:31:54  dkr
+ * N_WLproj: OFFSET, WIDTH -> BOUND1, BOUND2
+ *
  * Revision 1.94  1998/03/22 14:21:26  dkr
  * WLBLOCK_BLOCKING -> WLBLOCK_STEP
  *
@@ -2471,8 +2474,8 @@ extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
  ***  permanent attributes:
  ***
  ***    int      DIM       (0)
- ***    int      OFFSET    (0)
- ***    int      WIDTH     (0)
+ ***    int      BOUND1    (0)
+ ***    int      BOUND2    (0)
  ***    int      UNROLLING (0)
  ***
  ***
@@ -2481,15 +2484,15 @@ extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
  ***
  ***/
 
-extern node *MakeWLgrid (int dim, int offset, int width, int unrolling, node *nextdim,
+extern node *MakeWLgrid (int dim, int bound1, int bound2, int unrolling, node *nextdim,
                          node *code, node *next);
 
 #define WLGRID_DIM(n) (n->refcnt)
-#define WLGRID_OFFSET(n) (n->flag)
-#define WLGRID_WIDTH(n) (n->counter)
-#define WLGRID_UNROLLING(n) (n->varno)
+#define WLGRID_BOUND1(n) (n->flag)
+#define WLGRID_BOUND2(n) (WLNODE_BOUND1 (n))
+#define WLGRID_UNROLLING(n) (WLNODE_BOUND2 (n))
 #define WLGRID_NEXTDIM(n) (n->node[0])
 #define WLGRID_CODE(n) (n->node[1])
-#define WLGRID_NEXT(n) (n->node[2])
+#define WLGRID_NEXT(n) (WLNODE_NEXT (n))
 
 #endif /* _sac_tree_basic_h */

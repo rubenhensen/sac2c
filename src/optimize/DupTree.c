@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.40  1998/03/22 15:33:16  dkr
+ * N_WLproj: OFFSET, WIDTH -> BOUND1, BOUND2
+ *
  * Revision 1.39  1998/03/21 21:45:31  dkr
  * added macro DUPTRAV:
  *   DupNode now skips only the NEXT node of the root
@@ -808,8 +811,8 @@ DupWLgrid (node *arg_node, node *arg_info)
     node *new_node;
 
     DBUG_ENTER ("DupWLgrid");
-    new_node = MakeWLgrid (WLGRID_DIM (arg_node), WLGRID_OFFSET (arg_node),
-                           WLGRID_WIDTH (arg_node), WLGRID_UNROLLING (arg_node), NULL,
+    new_node = MakeWLgrid (WLGRID_DIM (arg_node), WLGRID_BOUND1 (arg_node),
+                           WLGRID_BOUND2 (arg_node), WLGRID_UNROLLING (arg_node), NULL,
                            WLGRID_CODE (arg_node), NULL);
 
     if (WLGRID_CODE (new_node) != NULL) {
