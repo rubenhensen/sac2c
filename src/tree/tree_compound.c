@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2001/01/24 23:34:42  dkr
+ * NameOrVal_MakeIndex, NodeOrInt_MakeIndex added
+ *
  * Revision 3.6  2001/01/19 14:16:59  dkr
  * include of DupTree.h added
  *
@@ -2724,7 +2727,7 @@ MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5
 /******************************************************************************
  *
  * Function:
- *   node *MakeWLsegX( int dims, int full_range, node *contents, node *next)
+ *   node *MakeWLsegX( int dims, node *contents, node *next)
  *
  * Description:
  *
@@ -2732,16 +2735,16 @@ MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5
  ******************************************************************************/
 
 node *
-MakeWLsegX (int dims, int full_range, node *contents, node *next)
+MakeWLsegX (int dims, node *contents, node *next)
 {
     node *new_node;
 
     DBUG_ENTER ("MakeWLsegX");
 
     if (AllStridesAreConstant (contents, TRUE, TRUE)) {
-        new_node = MakeWLseg (dims, full_range, contents, next);
+        new_node = MakeWLseg (dims, contents, next);
     } else {
-        new_node = MakeWLsegVar (dims, full_range, contents, next);
+        new_node = MakeWLsegVar (dims, contents, next);
     }
 
     DBUG_RETURN (new_node);
@@ -2770,22 +2773,32 @@ NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt, void *node_o
 {
     DBUG_ENTER ("NodeOrInt_GetNameOrVal");
 
-    *ret_name = NULL;
-    *ret_val = (-1);
+    if (ret_name != NULL) {
+        (*ret_name) = NULL;
+    }
+    if (ret_val != NULL) {
+        (*ret_val) = IDX_OTHER;
+    }
 
     switch (nt) {
     case N_WLstrideVar:
     case N_WLgridVar:
         if (NODE_TYPE ((*((node **)node_or_int))) == N_id) {
-            (*ret_name) = ID_NAME ((*((node **)node_or_int)));
+            if (ret_name != NULL) {
+                (*ret_name) = ID_NAME ((*((node **)node_or_int)));
+            }
         } else {
-            (*ret_val) = NUM_VAL ((*((node **)node_or_int)));
+            if (ret_val != NULL) {
+                (*ret_val) = NUM_VAL ((*((node **)node_or_int)));
+            }
         }
         break;
 
     case N_WLstride:
     case N_WLgrid:
-        (*ret_val) = *((int *)node_or_int);
+        if (ret_val != NULL) {
+            (*ret_val) = *((int *)node_or_int);
+        }
         break;
 
     default:
@@ -2809,11 +2822,11 @@ NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt, void *node_o
 node *
 NameOrVal_MakeNode (char *name, int val, void *node_or_int)
 {
-    node *ret;
+    node *ret = FALSE;
 
     DBUG_ENTER ("NameOrVal_MakeNode");
 
-    if (val >= 0) {
+    if (val != IDX_OTHER) {
         ret = MakeNum (val);
     } else {
         if (node_or_int != NULL) {
@@ -2827,13 +2840,16 @@ NameOrVal_MakeNode (char *name, int val, void *node_or_int)
         }
     }
 
+    DBUG_ASSERT ((ret != NULL), "illegal return value found");
+
     DBUG_RETURN (ret);
 }
 
 /******************************************************************************
  *
  * Function:
- *   node *NodeOrInt_MakeNode( nodetype nt, void *node_or_int)
+ *   node *NodeOrInt_MakeNode( nodetype nt, void *node_or_int,
+ *                             bool no_num)
  *
  * Description:
  *
@@ -2858,6 +2874,80 @@ NodeOrInt_MakeNode (nodetype nt, void *node_or_int)
 /******************************************************************************
  *
  * Function:
+ *   node *NameOrVal_MakeIndex( char *name, int val,
+ *                              int dim, char *wl_name,
+ *                              bool no_num)
+ *
+ * Description:
+ *   This function is used to convert the parameters of N_WLstride(Var),
+ *   and N_WLgrid(Var) nodes into an index.
+ *   If ('name' != NULL) the function returns a new N_id node containing the
+ *   correct index selection (node_or_int[dim]).
+ *   If ('name' == NULL) and ('val' == IDX_SHAPE) the functions returns a new
+ *   N_id node containing the shape of the current with-loop.
+ *   If ('name' == NULL) and ('val' != IDX_OTHER) the function returns a new
+ *   N_num node containing the value of 'val'.
+ *
+ ******************************************************************************/
+
+node *
+NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name, bool no_num)
+{
+    char *str;
+    node *index = NULL;
+
+    DBUG_ENTER ("NodeOrInt_MakeIndex");
+
+    if (name == NULL) {
+        if (val == IDX_SHAPE) {
+            str = (char *)MALLOC ((strlen (wl_name) + 40) * sizeof (char));
+            sprintf (str, "SAC_ND_A_SHAPE( %s, %d)", wl_name, dim);
+            index = MakeId (str, NULL, ST_regular);
+        } else if (val != IDX_OTHER) {
+            if (no_num) {
+                index = MakeId_Num (val);
+            } else {
+                index = MakeNum (val);
+            }
+        }
+    } else {
+        str = (char *)MALLOC ((strlen (name) + 43) * sizeof (char));
+        sprintf (str, "SAC_ND_READ_ARRAY( %s, %d)", name, dim);
+        index = MakeId (str, NULL, ST_regular);
+    }
+
+    DBUG_RETURN (index);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *NodeOrInt_MakeIndex( nodetype nt, void *node_or_int,
+ *                              int dim, char *wl_name)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, char *wl_name, bool no_num)
+{
+    node *index;
+    char *name;
+    int val;
+
+    DBUG_ENTER ("NodeOrInt_MakeIndex");
+
+    NodeOrInt_GetNameOrVal (&name, &val, nt, node_or_int);
+    index = NameOrVal_MakeIndex (name, val, dim, wl_name, no_num);
+
+    DBUG_RETURN (index);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   bool NameOrVal_Eq( char *name1, int val1, char *name2, int val2)
  *
  * Description:
@@ -2869,12 +2959,11 @@ NodeOrInt_MakeNode (nodetype nt, void *node_or_int)
 bool
 NameOrVal_Eq (char *name1, int val1, char *name2, int val2)
 {
-    bool ret;
+    bool ret = FALSE;
 
     DBUG_ENTER ("NameOrVal_Eq");
 
-    ret = FALSE;
-    if ((val1 >= 0) && (val2 >= 0)) {
+    if ((val1 != IDX_OTHER) && (val2 != IDX_OTHER)) {
         ret = (val1 == val2);
     } else if ((name1 != NULL) && (name2 != NULL)) {
         ret = (strcmp (name1, name2) == 0);
@@ -2958,7 +3047,7 @@ NodeOrInt_StrEq (nodetype nt1, void *node_or_int1, char *name2)
     DBUG_ENTER ("NodeOrInt_StrEq");
 
     NodeOrInt_GetNameOrVal (&name1, &val1, nt1, node_or_int1);
-    ret = NameOrVal_Eq (name1, val1, name2, (-1));
+    ret = NameOrVal_Eq (name1, val1, name2, IDX_OTHER);
 
     DBUG_RETURN (ret);
 }

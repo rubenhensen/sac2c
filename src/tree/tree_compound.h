@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/01/24 23:34:24  dkr
+ * NameOrVal_MakeIndex, NodeOrInt_MakeIndex added
+ *
  * Revision 3.10  2001/01/19 11:54:43  dkr
  * signature of NameOrVal_MakeNode modified
  *
@@ -1696,7 +1699,7 @@ extern node *MakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg
  ***  N_WLseg :  *and*  N_WLsegVar :
  ***/
 
-extern node *MakeWLsegX (int dims, int full_range, node *contents, node *next);
+extern node *MakeWLsegX (int dims, node *contents, node *next);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1771,6 +1774,11 @@ extern void NodeOrInt_GetNameOrVal (char **ret_name, int *ret_val, nodetype nt,
 
 extern node *NameOrVal_MakeNode (char *name, int val, void *node_or_int);
 extern node *NodeOrInt_MakeNode (nodetype nt, void *node_or_int);
+
+extern node *NameOrVal_MakeIndex (char *name, int val, int dim, char *wl_name,
+                                  bool no_num);
+extern node *NodeOrInt_MakeIndex (nodetype nt, void *node_or_int, int dim, char *wl_name,
+                                  bool no_num);
 
 extern bool NameOrVal_Eq (char *name1, int val1, char *name2, int val2);
 extern bool NodeOrInt_Eq (nodetype nt1, void *node_or_int1, nodetype nt2,
