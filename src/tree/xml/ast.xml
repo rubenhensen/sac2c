@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.5  2004/08/07 16:23:48  sah
+  fixed some nodes
+  renamed type Pragma to PragmaLink
+
   Revision 1.4  2004/08/06 14:39:48  sah
   some ast improvements
 
@@ -48,7 +52,9 @@
     copy="literal" />
     <type name="NodeList" ctype="nodelist*" init="NULL"
     copy="function" />
-    <type name="Pragma" ctype="node*" init="NULL"
+    <type name="SharedNodeList" ctype="nodelist*" init="NULL"
+    copy="function" />
+    <type name="PragmaLink" ctype="node*" init="NULL"
     copy="function" />
     <type name="DFMMask" ctype="DFMmask_t" init="NULL"
     copy="function" />
@@ -456,7 +462,7 @@
           </phases>
         </attribute>
         <attribute name="Pragma" mandatory="no">
-          <type name="Pragma" />
+          <type name="PragmaLink" />
           <phases>
             <range from="import" to="writesib" />
           </phases>
@@ -566,7 +572,7 @@
           </phases>
         </attribute>
         <attribute name="Pragma" mandatory="yes">
-          <type name="Pragma" />
+          <type name="PragmaLink" />
           <phases>
             <range from="import" to="final" />
           </phases>
@@ -592,7 +598,7 @@
           </phases>
         </attribute>
         <attribute name="NeedObjs" mandatory="yes">
-          <type name="NodeList" />
+          <type name="SharedNodeList" />
           <phases>
             <range from="import" to="final" />
           </phases>
@@ -622,7 +628,7 @@
     </node>
     <node name="Fundef">
       <sons>
-        <son name="Args" mandatory="yes">
+        <son name="Args" mandatory="no">
           <target>
             <node name="Arg" />
           </target>
@@ -708,7 +714,7 @@
           </phases>
         </attribute>
         <attribute name="Pragma" default="NULL" mandatory="no">
-          <type name="Pragma" />
+          <type name="PragmaLink" />
           <phases>
             <all />
           </phases>
@@ -906,7 +912,7 @@
     </node>
     <node name="Arg">
       <sons>
-        <son name="Next" mandatory="yes">
+        <son name="Next" mandatory="no">
           <target>
             <node name="Arg" />
           </target>
@@ -1301,6 +1307,12 @@
             <range from="wls" to="final" />
           </phases>
         </attribute>
+	<attribute name="ExecMode" mandatory="yes">
+	  <type name="Integer" />
+	  <phases>
+	    <range from="BuildMultithread" to="CreateCells" />
+	  </phases>
+	</attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -1362,7 +1374,7 @@
       <sons>
         <son name="Exprs" mandatory="yes">
           <target>
-            <set name="Expr" />
+            <node name="Exprs" />
           </target>
         </son>
       </sons>
@@ -1628,7 +1640,7 @@
       <sons>
         <son name="Args" mandatory="no">
           <target>
-            <set name="Expr" />
+            <node name="Exprs" />
           </target>
         </son>
       </sons>
@@ -1698,7 +1710,7 @@
       <sons>
         <son name="Expr" mandatory="yes">
           <target>
-            <set name="Expr" />
+            <unknown />
           </target>
         </son>
         <son name="Next" mandatory="no">
@@ -2871,7 +2883,7 @@
           </phases>
         </attribute>
         <attribute name="Pragma" mandatory="yes">
-          <type name="Pragma" />
+          <type name="PragmaLink" />
           <phases>
             <range from="scanparse" to="wltransform" />
           </phases>
@@ -2994,6 +3006,12 @@
             <all />
           </phases>
         </attribute>
+	<attribute name="VecNeeded" mandatory="yes">
+	  <type name="Bool" />
+	  <phases>
+	    <range from="refcounting" to="compile" />
+	  </phases>
+	</attribute>
       </attributes>
       <flags></flags>
     </node>
@@ -3171,7 +3189,7 @@
           </phases>
         </attribute>
         <attribute name="Pragma" default="NULL" mandatory="yes">
-          <type name="Pragma" />
+          <type name="PragmaLink" />
           <phases>
             <all />
           </phases>
