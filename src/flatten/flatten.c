@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.8  1994/11/22 17:27:48  hw
+ * Revision 1.9  1994/12/12 16:03:59  asi
+ * Error fixed in FltnDo
+ *
+ * Revision 1.8  1994/11/22  17:27:48  hw
  * added function DuplicateNode
  * call DuplicateNode in function FltnWhile to have only one referenze to each node
  *
@@ -523,17 +526,16 @@ FltnDo (node *arg_node, node *arg_info)
     /* traverse body of do-loop */
     arg_node->node[0] = Trav (arg_node->node[0], info_node);
 
-    DBUG_PRINT ("FLATTEN",
-                ("info_node: %s" P_FORMAT ": %s" P_FORMAT,
-                 mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0],
-                 mdb_nodetype[info_node->node[0]->node[0]->nodetype],
-                 info_node->node[0]->node[0]));
-
     /* append flattened termination condition to last assignment in the loop's body */
     last_assign->node[1] = info_node->node[0];
-    if (NULL != last_assign->node[1])
+    if (NULL != last_assign->node[1]) {
+        DBUG_PRINT ("FLATTEN",
+                    ("info_node: %s" P_FORMAT ": %s" P_FORMAT,
+                     mdb_nodetype[info_node->node[0]->nodetype], info_node->node[0],
+                     mdb_nodetype[info_node->node[0]->node[0]->nodetype],
+                     info_node->node[0]->node[0]));
         last_assign->nnode = 2;
-
+    }
     free (tmp);
 
     DBUG_RETURN (arg_node);
