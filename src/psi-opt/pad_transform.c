@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.11  2000/07/13 14:17:58  mab
+ * changed padding of with-loops
+ * added support for further PRFs
+ *
  * Revision 1.10  2000/07/07 12:05:41  mab
  * completed first version of padding-transformation :-)
  *
@@ -232,7 +236,7 @@ UBound (shpseg *old_shape, shpseg *new_shape, int dims, int current_dim)
 
     ubound_shape = MakeShpseg (NULL);
     for (j = 0; j < dims; j++) {
-        if (j <= current_dim) {
+        if (j >= current_dim) {
             SHPSEG_SHAPE (ubound_shape, j) = SHPSEG_SHAPE (new_shape, j);
         } else {
             SHPSEG_SHAPE (ubound_shape, j) = SHPSEG_SHAPE (old_shape, j);
@@ -611,7 +615,7 @@ APTarray (node *arg_node, node *arg_info)
                       DBUG_PRINT ("APT", (" trav array: %s", ARRAY_STRING (arg_node)));
                   } else { DBUG_PRINT ("APT", (" trav array: (NULL)")); });
 
-    /* constant arrays arn't padded ! */
+    /* constant arrays won't padded ! */
     INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
 
     /* do not traverse sons */
@@ -853,6 +857,12 @@ APTwithop (node *arg_node, node *arg_info)
 
         break;
 
+    case WO_foldfun:
+
+        /* check all sons for paddable code */
+        NWITHOP_NEUTRAL (arg_node) = Trav (NWITHOP_NEUTRAL (arg_node), arg_info);
+        break;
+
     default:
         DBUG_ASSERT (FALSE, " unsupported withop-type");
         break;
@@ -1049,9 +1059,58 @@ APTprf (node *arg_node, node *arg_info)
 
         break;
 
+        /* accept PRFs for scalar arguments, but do no padding */
+    case F_toi:
+    case F_tof:
+    case F_tod:
+    case F_abs:
+    case F_not:
+    case F_min:
+    case F_max:
+    case F_add:
+    case F_sub:
+    case F_mul:
+    case F_div:
+    case F_mod:
+    case F_and:
+    case F_or:
+    case F_le:
+    case F_lt:
+    case F_eq:
+    case F_ge:
+    case F_gt:
+    case F_neq:
+
+        /* only arguments of scalar type, so we do not need to traverse them */
+        INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
+
+        break;
+
+        /* F_add_*, F_sub_*, F_mul* */
+    case F_add_SxA:
+    case F_add_AxS:
+    case F_add_AxA:
+    case F_sub_SxA:
+    case F_sub_AxS:
+    case F_sub_AxA:
+    case F_mul_SxA:
+    case F_mul_AxS:
+    case F_mul_AxA:
+
+        /* traverse arguments to apply padding */
+        PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+        /* APTprf will return padding-state of PRF_ARGS */
+        break;
+
     default:
 
-        /* results of unsupported functions have unpadded shape */
+        /* results of unsupported functions have unpadded shape
+         *
+         * currently unsupported are:
+         * F_take, F_drop, F_idx_psi, F_reshape, F_cat, F_rotate,
+         * F_toi_A, F_tof_A, F_tod_A, F_div_SxA, F_div_AxS, F_div_AxA,
+         * F_modarray, F_idx_modarray, F_genarray
+         */
 
         /* do not traverse sons */
 
