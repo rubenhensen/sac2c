@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/10/18 13:35:36  cg
+ * Revision 1.4  1995/12/01 17:25:00  cg
+ * now shape segments and strings are always copied when generated
+ * from existing nodes.
+ *
+ * Revision 1.3  1995/10/18  13:35:36  cg
  * now Malloc is used instead of malloc,
  * so error messages are no longer needed.
  *
@@ -87,9 +91,10 @@ OIobjdef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("OIobjdef");
 
-    new_fun_type = MakeType (OBJDEF_BASETYPE (arg_node), OBJDEF_DIM (arg_node),
-                             OBJDEF_SHPSEG (arg_node), OBJDEF_TNAME (arg_node),
-                             OBJDEF_TMOD (arg_node));
+    new_fun_type
+      = MakeType (OBJDEF_BASETYPE (arg_node), OBJDEF_DIM (arg_node),
+                  CopyShpseg (OBJDEF_SHPSEG (arg_node)),
+                  StringCopy (OBJDEF_TNAME (arg_node)), OBJDEF_TMOD (arg_node));
 
     new_fun_name = (char *)Malloc (strlen (OBJDEF_NAME (arg_node)) + 10);
 
@@ -120,7 +125,7 @@ OIobjdef (node *arg_node, node *arg_info)
     new_node->nnode = 1;
     /*------------------------------------------------------------------*/
 
-    new_node = MakeFundef (new_fun_name, OBJDEF_MOD (arg_node), NULL, new_fun_type, NULL,
+    new_node = MakeFundef (new_fun_name, OBJDEF_MOD (arg_node), new_fun_type, NULL,
                            new_node, MODUL_FUNS (arg_info));
     NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
@@ -135,12 +140,12 @@ OIobjdef (node *arg_node, node *arg_info)
      * This tag is needed by the typechecker to ensure that these functions
      * are actually typechecked even if they are exclusively applied in
      * a global object initialization of a SAC-program.
-     * In the typechecker, their status is changed to ST_regular.
      */
 
     MODUL_FUNS (arg_info) = new_node;
+    OBJDEF_INITFUN (arg_node) = new_node;
 
-    new_node = MakeAp (new_fun_name, OBJDEF_MOD (arg_node), NULL);
+    new_node = MakeAp (StringCopy (new_fun_name), OBJDEF_MOD (arg_node), NULL);
     OBJDEF_EXPR (arg_node) = new_node;
 
     if (OBJDEF_NEXT (arg_node) != NULL) {

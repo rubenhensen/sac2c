@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.8  1995/11/16 19:45:50  cg
+ * Revision 1.9  1995/12/01 17:23:56  cg
+ * now shape segments and strings are always copied when generated
+ * from existing nodes.
+ *
+ * Revision 1.8  1995/11/16  19:45:50  cg
  * Some bug fixes
  *
  * Revision 1.7  1995/11/06  14:20:20  cg
@@ -115,7 +119,7 @@ OBJmodul (node *arg_node, node *arg_info)
  *  description   : For each needed global object an additional parameter
  *                  is added to the function's parameter list with
  *                  status 'ST_artificial' and attribute 'ST_reference'
- *                  Afterwards, the modofied parameter list is traversed.
+ *                  Afterwards, the modified parameter list is traversed.
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : MakeType, MakeArg, Trav
@@ -147,7 +151,7 @@ OBJfundef (node *arg_node, node *arg_info)
     node *obj, *new_arg;
     types *new_type;
     char *keep_name, *keep_mod;
-    statustype keep_status;
+    statustype keep_status, keep_attrib;
 
     DBUG_ENTER ("OBJfundef");
 
@@ -158,13 +162,16 @@ OBJfundef (node *arg_node, node *arg_info)
     while (need_objs != NULL) {
         obj = NODELIST_NODE (need_objs);
 
-        new_type = MakeType (OBJDEF_BASETYPE (obj), OBJDEF_DIM (obj), OBJDEF_SHPSEG (obj),
-                             OBJDEF_TNAME (obj), OBJDEF_TMOD (obj));
+        new_type
+          = MakeType (OBJDEF_BASETYPE (obj), OBJDEF_DIM (obj),
+                      CopyShpseg (OBJDEF_SHPSEG (obj)), StringCopy (OBJDEF_TNAME (obj)),
+                      StringCopy (OBJDEF_TMOD (obj)));
 
-        new_arg = MakeArg (OBJDEF_VARNAME (obj), new_type, ST_artificial, ST_reference,
-                           FUNDEF_ARGS (arg_node));
+        new_arg = MakeArg (StringCopy (OBJDEF_VARNAME (obj)), new_type, ST_artificial,
+                           ST_reference, FUNDEF_ARGS (arg_node));
 
         NODE_LINE (new_arg) = NODE_LINE (arg_node);
+        ARG_OBJDEF (new_arg) = obj;
 
         /*-------------------------------------------------------------*/
         if (FUNDEF_ARGS (arg_node) == NULL) {
@@ -188,6 +195,7 @@ OBJfundef (node *arg_node, node *arg_info)
     keep_name = FUNDEF_NAME (arg_node);
     keep_mod = FUNDEF_MOD (arg_node);
     keep_status = FUNDEF_STATUS (arg_node);
+    keep_attrib = FUNDEF_ATTRIB (arg_node);
     /*-------------------------------------------------------------*/
 
     DBUG_PRINT ("OBJ", ("Traversing args of function %s", ItemName (arg_node)));
@@ -200,6 +208,7 @@ OBJfundef (node *arg_node, node *arg_info)
     FUNDEF_NAME (arg_node) = keep_name;
     FUNDEF_MOD (arg_node) = keep_mod;
     FUNDEF_STATUS (arg_node) = keep_status;
+    FUNDEF_ATTRIB (arg_node) = keep_attrib;
     /*-------------------------------------------------------------*/
 
     DBUG_PRINT ("OBJ", ("Traversing body of function %s", ItemName (arg_node)));
@@ -307,7 +316,8 @@ OBJarg (node *arg_node, node *arg_info)
         ret = FUNDEF_RETURN (arg_info);
 
         if (ret != NULL) {
-            new_return_expr = MakeId (ARG_NAME (arg_node), NULL, ST_artificial);
+            new_return_expr
+              = MakeId (StringCopy (ARG_NAME (arg_node)), NULL, ST_artificial);
             ID_VARDEC (new_return_expr) = arg_node;
             NODE_LINE (new_return_expr) = NODE_LINE (ret);
 
@@ -329,8 +339,8 @@ OBJarg (node *arg_node, node *arg_info)
         if (FUNDEF_BASETYPE (arg_info) == T_void) {
             FUNDEF_BASETYPE (arg_info) = ARG_BASETYPE (arg_node);
             FUNDEF_DIM (arg_info) = ARG_DIM (arg_node);
-            FUNDEF_SHPSEG (arg_info) = ARG_SHPSEG (arg_node);
-            FUNDEF_TNAME (arg_info) = ARG_TNAME (arg_node);
+            FUNDEF_SHPSEG (arg_info) = CopyShpseg (ARG_SHPSEG (arg_node));
+            FUNDEF_TNAME (arg_info) = StringCopy (ARG_TNAME (arg_node));
             FUNDEF_TMOD (arg_info) = ARG_TMOD (arg_node);
 
             DBUG_PRINT ("OBJ", ("Converted return type void to %s:%s",
@@ -388,7 +398,7 @@ OBJap (node *arg_node, node *arg_info)
     while (need_objs != NULL) {
         obj = NODELIST_NODE (need_objs);
 
-        new_arg = MakeId (OBJDEF_VARNAME (obj), NULL, ST_artificial);
+        new_arg = MakeId (StringCopy (OBJDEF_VARNAME (obj)), NULL, ST_artificial);
         ID_VARDEC (new_arg) = OBJDEF_ARG (obj);
         NODE_LINE (new_arg) = NODE_LINE (arg_node);
 
@@ -434,7 +444,7 @@ OBJid (node *arg_node, node *arg_info)
     DBUG_ENTER ("OBJid");
 
     if (ID_ATTRIB (arg_node) == ST_global) {
-        ID_NAME (arg_node) = OBJDEF_VARNAME (ID_OBJDEF (arg_node));
+        ID_NAME (arg_node) = StringCopy (OBJDEF_VARNAME (ID_OBJDEF (arg_node)));
         ID_MOD (arg_node) = NULL;
         ID_VARDEC (arg_node) = OBJDEF_ARG (ID_OBJDEF (arg_node));
 
@@ -488,9 +498,7 @@ OBJlet (node *arg_node, node *arg_info)
 
             while (params != NULL) {
                 if (ARG_ATTRIB (params) == ST_was_reference) {
-                    new_ids_name
-                      = (char *)Malloc (strlen (ID_NAME (EXPRS_EXPR (args))) + 1);
-                    strcpy (new_ids_name, ID_NAME (EXPRS_EXPR (args)));
+                    new_ids_name = StringCopy (ID_NAME (EXPRS_EXPR (args)));
 
                     if (new_ids == NULL) {
                         new_ids = MakeIds (new_ids_name, NULL, ST_artificial);
@@ -502,14 +510,21 @@ OBJlet (node *arg_node, node *arg_info)
 
                     old_ids = LET_IDS (arg_node);
 
-                    while (old_ids != NULL) {
-                        if (strcmp (IDS_NAME (old_ids), IDS_NAME (last_ids)) == 0) {
-                            ERROR (NODE_LINE (arg_node),
-                                   ("Object '%s` already existing", IDS_NAME (old_ids)));
-                        }
+                    /*
+                     *  task done by uniqueness checker
+                     *
+                              while (old_ids!=NULL)
+                              {
+                                if (strcmp(IDS_NAME(old_ids), IDS_NAME(last_ids))==0)
+                                {
+                                  ERROR(NODE_LINE(arg_node),
+                                        ("Object '%s` already existing",
+                                         IDS_NAME(old_ids)));
+                                }
 
-                        old_ids = IDS_NEXT (old_ids);
-                    }
+                                old_ids=IDS_NEXT(old_ids);
+                              }
+                    */
 
                     IDS_VARDEC (last_ids) = ID_VARDEC (EXPRS_EXPR (args));
 
