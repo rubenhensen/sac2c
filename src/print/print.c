@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.147  2003/12/23 10:54:48  khf
+ * Old syntax (output format 2) in PrintNwith, PrintNcode, PrintNpart removed.
+ * Now only multigenerator syntax (internal syntax) available.
+ * PrintNcode modified for printing NCODE_CEXPRS.
+ * PrintNwithop modified for printing NWITHOP_NEXT.
+ *
  * Revision 3.146  2003/11/14 15:41:17  sbs
  * minor bug eliminated.
  *
@@ -3446,26 +3452,12 @@ PrintMTalloc (node *arg_node, node *arg_info)
  * description:
  *   prints Nwith node.
  *
- * remarks: there are syntactic alternatives to print the new WLs.
- * If only one Npart node exists the WL is printed in the way the
- * scanner can handle it. This is essential because the SIBs (which are
- * written with this code) have to be scanned again.
- * If a complete partition exists (more than one Npart) an internal
- * syntax is used.
- *
- * INFO_PRINT_INT_SYN(arg_info) is NULL for the internal syntax or != NULL
- * if 'PrintNpart' shall return the last expr.
- *
  ******************************************************************************/
 
 node *
 PrintNwith (node *arg_node, node *arg_info)
 {
-    node *buffer;
-
     DBUG_ENTER ("PrintNwith");
-
-    buffer = INFO_PRINT_INT_SYN (arg_info);
 
     DBUG_EXECUTE ("WLI",
                   fprintf (outfile,
@@ -3485,46 +3477,15 @@ PrintNwith (node *arg_node, node *arg_info)
 
     indent++;
 
-    /*
-     * check wether to use output format 1 (multiple NParts)
-     * or 2 (only one NPart) and use INFO_PRINT_INT_SYN(arg_info)
-     * as flag for traversal.
-     */
-    if (NPART_NEXT (NWITH_PART (arg_node)) != NULL) {
-        /* output format 1 */
-        INFO_PRINT_INT_SYN (arg_info) = NULL;
-        fprintf (outfile, "with\n");
-        indent++;
-        Trav (NWITH_PART (arg_node), arg_info);
-        indent--;
-    } else {
-        /* output format 2 */
-        INFO_PRINT_INT_SYN (arg_info) = arg_node; /* set != NULL */
-        fprintf (outfile, "with ");
-        Trav (NWITH_PART (arg_node), arg_info);
-    }
+    fprintf (outfile, "with");
+    fprintf (outfile, " ( ");
+    PrintIds (NWITHID_VEC (NPART_WITHID (NWITH_PART (arg_node))), arg_info);
+    fprintf (outfile, " )\n");
+    indent++;
+    Trav (NWITH_PART (arg_node), arg_info);
+    indent--;
 
     Trav (NWITH_WITHOP (arg_node), arg_info);
-
-    if (NPART_NEXT (NWITH_PART (arg_node)) == NULL) {
-        /*
-         * output format 2:
-         * now, INFO_PRINT_INT_SYN(arg_info) contains the last expr.
-         */
-        if (WO_modarray == NWITH_TYPE (arg_node)) {
-            fprintf (outfile, ", dummy, ");
-        } else {
-            fprintf (outfile, ", ");
-        }
-        Trav (INFO_PRINT_INT_SYN (arg_info), arg_info);
-        if (WO_genarray == NWITH_TYPE (arg_node)) {
-            if (NWITHOP_DEFAULT (NWITH_WITHOP (arg_node)) != NULL) {
-                fprintf (outfile, ", ");
-                Trav (NWITHOP_DEFAULT (NWITH_WITHOP (arg_node)), arg_info);
-            }
-        }
-    }
-    fprintf (outfile, ")");
 
     indent--;
 
@@ -3541,8 +3502,6 @@ PrintNwith (node *arg_node, node *arg_info)
                   INDENT;);
 
     indent--;
-
-    INFO_PRINT_INT_SYN (arg_info) = buffer;
 
     DBUG_RETURN (arg_node);
 }
@@ -3687,18 +3646,10 @@ PrintNcode (node *arg_node, node *arg_info)
         TSIprintInfo (arg_node, arg_info);
     });
 
-    /*
-     * print the expression if internal syntax should be used.
-     * else return expr in INFO_PRINT_INT_SYN( arg_info)
-     */
-    if (NCODE_CEXPR (arg_node) != NULL) {
-        if (INFO_PRINT_INT_SYN (arg_info) != NULL) {
-            INFO_PRINT_INT_SYN (arg_info) = NCODE_CEXPR (arg_node);
-        } else {
-            fprintf (outfile, " : ");
-            Trav (NCODE_CEXPR (arg_node), arg_info);
-        }
-    }
+    fprintf (outfile, " : ");
+    Trav (NCODE_CEXPRS (arg_node), arg_info);
+    fprintf (outfile, " ; ");
+
     if (NCODE_AP_DUMMY_CODE (arg_node)) {
         fprintf (outfile, " /* dummy code for AP */");
     }
@@ -3738,9 +3689,7 @@ PrintNpart (node *arg_node, node *arg_info)
                   INDENT;);
 
     /* print generator */
-    if (INFO_PRINT_INT_SYN (arg_info) == NULL) {
-        INDENT; /* each gen in a new line. */
-    }
+    INDENT; /* each gen in a new line. */
     Trav (NPART_GEN (arg_node), arg_info);
 
     DBUG_ASSERT ((NPART_CODE (arg_node) != NULL),
@@ -3792,6 +3741,10 @@ PrintNwithop (node *arg_node, node *arg_info)
     case WO_genarray:
         fprintf (outfile, "genarray( ");
         Trav (NWITHOP_SHAPE (arg_node), arg_info);
+        if (NWITHOP_DEFAULT (arg_node) != NULL) {
+            fprintf (outfile, " , ");
+            Trav (NWITHOP_DEFAULT (arg_node), arg_info);
+        }
         break;
 
     case WO_modarray:
@@ -3820,6 +3773,16 @@ PrintNwithop (node *arg_node, node *arg_info)
     default:
         DBUG_ASSERT ((0), "illegal WL type found!");
         break;
+    }
+
+    fprintf (outfile, ")");
+
+    if (NWITHOP_NEXT (arg_node) != NULL) {
+        fprintf (outfile, ",\n");
+        /*
+         * continue with other withops
+         */
+        PRINT_CONT (Trav (NWITHOP_NEXT (arg_node), arg_info), ;);
     }
 
     DBUG_RETURN (arg_node);
