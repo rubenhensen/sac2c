@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.58  1998/03/07 17:00:55  srs
+ * added IsConstantArray() and ID_SHAPE
+ *
  * Revision 1.57  1998/03/02 13:55:08  srs
  * new macro MAKE_INCDEC_LET
  *
@@ -1358,6 +1361,11 @@ extern node *GetCompoundNode (node *arg_node);
 
 extern node *Shape2Array (shapes *shp);
 
+/* description:
+ *   returns number of constant elements if all elements are either
+ *   N_num, N_char, N_float, N_double or N-bool or otherwise returns 0. */
+extern int IsConstantArray (node *array);
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1384,6 +1392,7 @@ extern node *Shape2Array (shapes *shp);
 
 #define ID_VARNO(n) VARDEC_VARNO (ID_VARDEC (n))
 #define ID_TYPE(n) VARDEC_TYPE (ID_VARDEC (n))
+#define ID_SHAPE(n, x) SHPSEG_SHAPE (TYPES_SHPSEG (VARDEC_TYPE (ID_VARDEC (n))), x)
 
 /*--------------------------------------------------------------------------*/
 
