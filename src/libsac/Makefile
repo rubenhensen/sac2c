@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.5  1999/09/20 13:16:23  cg
+# Added compilation of new source file heapmgr_diag.c
+#
 # Revision 1.4  1999/07/23 12:42:47  cg
 # Added new target prod to allow local compilations with
 # optimizations enabled.
@@ -34,7 +37,7 @@ OBJS_LIBSAC_HEAPMGR := heapmgr_basic.o heapmgr_malloc.o heapmgr_memalign.o \
                        heapmgr_realloc.o
 
 OBJS_LIBSAC_HEAPMGR_DIAG := heapmgr_basic_diag.o heapmgr_malloc_diag.o heapmgr_memalign_diag.o \
-                            heapmgr_realloc_diag.o
+                            heapmgr_realloc_diag.o heapmgr_diag.o
 
 OBJS_LIBSAC_NOHEAPMGR := heapmgr_disabled.o
 
