@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2001/05/17 13:29:29  cg
+ * Eliminated some obsolete function prototypes.
+ * Removed some ugly de-allocation macros.
+ * Redefined macro FREE(n) for temporary compatibility reasons.
+ *
  * Revision 3.12  2001/04/26 01:39:25  dkr
  * FreeZombie(), RemoveAllZombies() added
  *
@@ -47,61 +52,18 @@
 #include "globals.h"
 #include "internal_lib.h"
 
-#ifdef DBUG_OFF
-#define DOFREE(a) free (a)
-#else
-#define DOFREE(a) Free (a)
-#endif
+/*
+ * The following macro is only for compatibility with existing code
+ * and MUST no longer be used.
+ */
+#define FREE(n) (n) = Free (n)
 
 /*
- * For debugging purposes, free() is not called directly but through the
- * wrapper function Free(). This allows us to set a break point on Free().
- * Together with conditions on breakpoints, this feature allows to detect
- * when a certain address is freed.
+ * Top-level free functions.
+ *
+ * These are the only functions which should be called from outside
+ * the free module for freeing syntax (sub) trees.
  */
-
-#ifndef NOFREE
-
-#ifdef SHOW_MALLOC
-#define FREE(address)                                                                    \
-    if ((address) != NULL) {                                                             \
-        DBUG_PRINT ("FREEMEM", ("Free memory at adress: " F_PTR, (address)));            \
-        address = (void *)((char *)address - malloc_align_step);                         \
-        current_allocated_mem -= *(int *)(address);                                      \
-                                                                                         \
-        DOFREE ((address));                                                              \
-        address = NULL;                                                                  \
-    }
-#else /* not SHOW_MALLOC */
-#define FREE(address)                                                                    \
-    if ((address) != NULL) {                                                             \
-        DBUG_PRINT ("FREEMEM", ("Free memory at adress: " F_PTR, (address)));            \
-        DOFREE ((address));                                                              \
-        address = NULL;                                                                  \
-    }
-#endif
-
-#else /* NOFREE */
-
-#define FREE(address)
-
-#endif /* NOFREE */
-
-/* struct INDEX_INFO (Withloop Folding) */
-#define FREE_INDEX_INFO(tmp)                                                             \
-    {                                                                                    \
-        FREE (tmp->permutation);                                                         \
-        FREE (tmp->last);                                                                \
-        FREE (tmp->const_arg);                                                           \
-        FREE (tmp);                                                                      \
-        tmp = NULL;                                                                      \
-    }
-
-/*
- * user functions for nodes
- */
-
-extern void Free (void *addr);
 
 extern node *FreeNode (node *arg_node);
 extern node *FreeTree (node *arg_node);
@@ -109,13 +71,11 @@ extern node *FreeTree (node *arg_node);
 extern node *FreeZombie (node *fundef);
 extern node *RemoveAllZombies (node *arg_node);
 
-/* for compatibility only */
-extern void FreePrf2 (node *arg_node, int arg_no); /* CF */
-
 /*
  * user functions for non-node data
  */
 
+extern index_info *FreeIndexInfo (index_info *fr);
 extern shpseg *FreeShpseg (shpseg *fr);
 extern types *FreeOneTypes (types *fr);
 extern types *FreeAllTypes (types *fr);
