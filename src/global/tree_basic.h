@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.98  1998/03/24 21:08:25  dkr
+ * added temp. attr. WLPROJ_PART
+ *
  * Revision 1.97  1998/03/24 10:56:23  srs
  * added comment to N_Ncode
  *
@@ -2458,7 +2461,8 @@ extern node *MakeWLublock (int level, int dim, int bound1, int bound2, int step,
  ***
  ***  temporary attributes:
  ***
- ***    int      MODIFIED  (!)    (Precompile ! )
+ ***    node*    PART      (0)    (Precompile ! )
+ ***    int      MODIFIED  (0)    (Precompile ! )
  ***
  ***/
 
@@ -2474,6 +2478,7 @@ extern node *MakeWLproj (int level, int dim, int bound1, int bound2, int step,
 #define WLPROJ_CONTENTS(n) (n->node[0])
 #define WLPROJ_NEXT(n) (WLNODE_NEXT (n))
 
+#define WLPROJ_PART(n) (n->node[5])
 #define WLPROJ_MODIFIED(n) (WLNODE_MODIFIED (n))
 
 /*--------------------------------------------------------------------------*/
