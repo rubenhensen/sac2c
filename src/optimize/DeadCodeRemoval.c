@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.18  1998/02/23 13:09:43  srs
+ * added DCR for new WLs
+ *
  * Revision 1.17  1997/05/13 16:31:49  sbs
  * N_assign node with N_annotate-instr generally marked as
  * active!
@@ -168,15 +171,16 @@ DCRfundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("DCR", ("Dead Code Removal in function: %s", FUNDEF_NAME (arg_node)));
     INFO_VARNO = FUNDEF_VARNO (arg_node);
 
-    if (NULL != FUNDEF_BODY (arg_node))
-        FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
+    FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
 
     INFO_DEF = FUNDEF_DEFMASK (arg_node);
     INFO_USE = FUNDEF_USEMASK (arg_node);
-    if (NULL != FUNDEF_BODY (arg_node))
-        FUNDEF_VARDEC (arg_node) = OPTTrav (FUNDEF_VARDEC (arg_node), arg_info, arg_node);
+    INFO_VARNO = FUNDEF_VARNO (arg_node);
+
+    FUNDEF_VARDEC (arg_node) = OPTTrav (FUNDEF_VARDEC (arg_node), arg_info, arg_node);
     INFO_DEF = NULL;
     INFO_USE = NULL;
+    INFO_VARNO = 0;
 
     FUNDEF_NEXT (arg_node) = OPTTrav (FUNDEF_NEXT (arg_node), arg_info, arg_node);
     DBUG_RETURN (arg_node);
@@ -253,11 +257,6 @@ DFRfundef (node *arg_node, node *arg_info)
         dead_fun++;
         nextfun = FUNDEF_NEXT (arg_node);
         FUNDEF_NEXT (arg_node) = NULL;
-/*-----------------------------------------------------------------------------------*/
-#ifndef NEWTREE
-        arg_node->nnode = 1;
-#endif
-        /*-----------------------------------------------------------------------------------*/
         FreeTree (arg_node);
         arg_node = nextfun;
     }
@@ -299,15 +298,8 @@ node *
 DCRvardec (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("DCRvardec");
-    if (NULL != VARDEC_NEXT (arg_node)) {
+    if (VARDEC_NEXT (arg_node))
         VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
-/*-----------------------------------------------------------------------------------*/
-#ifndef NEWTREE
-        if (NULL == VARDEC_NEXT (arg_node))
-            arg_node->nnode = 0;
-#endif
-        /*-----------------------------------------------------------------------------------*/
-    }
     if ((0 == INFO_DEF[VARDEC_VARNO (arg_node)])
         && (0 == INFO_USE[VARDEC_VARNO (arg_node)])) {
         if (VARDEC_FLAG (arg_node))
@@ -344,20 +336,15 @@ DCRassign (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DCRassign");
     ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
-/*-----------------------------------------------------------------------------------*/
-#ifndef NEWTREE
-    if (NULL == ASSIGN_NEXT (arg_node))
-        arg_node->nnode = 1;
-#endif
-    /*-----------------------------------------------------------------------------------*/
     if (redundant == ASSIGN_STATUS (arg_node)) {
         DBUG_PRINT ("DCR", ("Assignment removed in line %d", NODE_LINE (arg_node)));
-        if (NULL != (tmp = GetCompoundNode (arg_node))) {
+        if ((tmp = GetCompoundNode (arg_node))) {
             switch (NODE_TYPE (tmp)) {
             case N_cond:
                 WARN (NODE_LINE (tmp), ("Conditional removed"));
                 break;
             case N_with:
+            case N_Nwith:
                 WARN (NODE_LINE (tmp), ("With-expression removed"));
                 break;
             case N_do:
@@ -372,9 +359,8 @@ DCRassign (node *arg_node, node *arg_info)
         MinusMask (INFO_USE, ASSIGN_USEMASK (arg_node), INFO_VARNO);
         arg_node = FreeNode (arg_node);
         dead_expr++;
-    } else {
+    } else
         ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
-    }
     DBUG_RETURN (arg_node);
 }
 
@@ -405,12 +391,12 @@ ACTassign (node *arg_node, node *arg_info)
     if (N_assign == INFO_TRAVTYPE)
         ASSIGN_STATUS (arg_node) = redundant;
 
-    if (NULL != ASSIGN_NEXT (arg_node))
+    if (ASSIGN_NEXT (arg_node))
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
 
     if (redundant == ASSIGN_STATUS (arg_node)) {
-        if ((N_return == ASSIGN_INSTRTYPE (arg_node))
-            || (N_annotate == ASSIGN_INSTRTYPE (arg_node)))
+        if (N_return == ASSIGN_INSTRTYPE (arg_node)
+            || N_annotate == ASSIGN_INSTRTYPE (arg_node))
             ASSIGN_STATUS (arg_node) = active;
         else {
             int egal = FALSE;
@@ -423,7 +409,7 @@ ACTassign (node *arg_node, node *arg_info)
 
             if (!egal) {
                 for (i = 0; i < VARNO; i++) {
-                    if (0 != ASSIGN_DEFMASK (arg_node)[i] && INFO_ACT[i]) {
+                    if (ASSIGN_DEFMASK (arg_node)[i] && INFO_ACT[i]) {
                         ASSIGN_STATUS (arg_node) = active;
                         INFO_NEWACT = TRUE;
                         DBUG_PRINT ("DCR", ("Assignment marked active in line %d",
@@ -435,7 +421,7 @@ ACTassign (node *arg_node, node *arg_info)
     }
 
     if (active == ASSIGN_STATUS (arg_node)) {
-        if (NULL != (tmp = GetCompoundNode (arg_node))) {
+        if ((tmp = GetCompoundNode (arg_node))) {
             switch (NODE_TYPE (tmp)) {
             case N_cond:
             case N_while:
@@ -443,9 +429,11 @@ ACTassign (node *arg_node, node *arg_info)
                 ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
                 break;
             case N_with:
-                ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+            case N_Nwith:
+                /* i is varno of the resulting WL array. */
                 i = VARDEC_VARNO (IDS_VARDEC (LET_IDS (ASSIGN_INSTR (arg_node))));
                 INFO_ACT[i] = FALSE;
+                ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
                 break;
             default:
                 DBUG_ASSERT ((FALSE), "Compound-node not implemented for DCR");
@@ -453,16 +441,16 @@ ACTassign (node *arg_node, node *arg_info)
             }
         } else {
             for (i = 0; i < VARNO; i++) {
-                if (0 != ASSIGN_DEFMASK (arg_node)[i])
+                if (ASSIGN_DEFMASK (arg_node)[i])
                     INFO_ACT[i] = FALSE;
-                if (0 != ASSIGN_USEMASK (arg_node)[i])
+                if (ASSIGN_USEMASK (arg_node)[i])
                     INFO_ACT[i] = TRUE;
             }
         }
     }
+
     DBUG_RETURN (arg_node);
 }
-
 /*
  *
  *  functionname  : ACTcond
@@ -734,11 +722,39 @@ ACTwith (node *arg_node, node *arg_info)
     }
     DBUG_PRINT ("DCR", ("Travers with-body END"));
 
-    for (i = 0; i < INFO_VARNO; i++) {
-        INFO_ACT[i] = INFO_ACT[i] || (old_INFOACT[i] && !(WITH_GENDEFMASK (arg_node)[i]))
-                      || WITH_GENUSEMASK (arg_node)[i]
+    /*   for(i=0;i<INFO_VARNO;i++) { */
+    /*     INFO_ACT[i] = INFO_ACT[i]  */
+    /*       || (old_INFOACT[i] && !(WITH_GENDEFMASK(arg_node)[i])) */
+    /*       || WITH_GENUSEMASK(arg_node)[i]  */
+    /*       || WITH_OPERATORUSEMASK(arg_node)[i]; */
+    /*   } */
+
+    /*  The situation
+        (old_INFOACT[i] && !(WITH_GENDEFMASK(arg_node)[i]))
+        is independent from the second term since every DEF in the generator
+        refers only to WL-local variables.
+
+        if we find a situation
+          with (..iv..)..;
+          ..=iv;
+        we get a typecheck error because iv is unknown in the 2nd line.
+
+        if we have
+          iv = ..;
+          with (..iv..)..;
+          ..=iv
+        the index vector is renamed (therefore cannot be active) and
+
+        if we have
+          with (..iv..)..;
+          iv = ..;
+          ..=iv
+        the index vector will keep it's name but iv is not active while
+        processing the WL. */
+
+    for (i = 0; i < INFO_VARNO; i++)
+        INFO_ACT[i] = INFO_ACT[i] || old_INFOACT[i] || WITH_GENUSEMASK (arg_node)[i]
                       || WITH_OPERATORUSEMASK (arg_node)[i];
-    }
 
     FREE (old_INFOACT);
     DBUG_RETURN (arg_node);
@@ -789,5 +805,152 @@ DCRwith (node *arg_node, node *arg_info)
         DBUG_ASSERT ((FALSE), "Operator not implemented for with_node");
         break;
     }
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *ACTNwith(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   activate variables which are needed inside a WL.
+ *
+ * remark:
+ *   bodies are traversed from within ACTNpart.
+ *
+ ******************************************************************************/
+
+node *
+ACTNwith (node *arg_node, node *arg_info)
+{
+    int i;
+
+    DBUG_ENTER ("ACTNwith");
+
+    /* activate used vars in generator, call traversal of the body and
+       deactivate index variables. */
+    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+
+    /* activate variables used in N_Nwithop (neutral elt,...) */
+    for (i = 0; i < INFO_VARNO; i++)
+        INFO_ACT[i] = INFO_ACT[i] || NWITHOP_MASK (NWITH_WITHOP (arg_node), 1)[i];
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *ACTNpart(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   All variables which are used in the generator are activated.
+ *   Bodies belonging to the generator are traversed.
+ *
+ * remarks:
+ *   The variables which are DEFined in the N_Nwithid node do not have to
+ *   be defined outside for the WL to work properly. So for each body, in which
+ *   an adequate index vector is active, it should be deactivated again.
+ *   This would not be necessary since variable renaming in flatten but it
+ *   keeps the ACT list consistent.
+ *
+ ******************************************************************************/
+
+node *
+ACTNpart (node *arg_node, node *arg_info)
+{
+    int i;
+
+    DBUG_ENTER ("ACTNpart");
+
+    /* activate all used vars in body. */
+    /* if code is shared between Nparts this code will be traversed
+       multiple times. */
+    NPART_CODE (arg_node) = Trav (NPART_CODE (arg_node), arg_info);
+
+    /* activate all vars which are used in the generator */
+    for (i = 0; i < INFO_VARNO; i++)
+        INFO_ACT[i] = INFO_ACT[i] || NPART_MASK (arg_node, 1)[i];
+
+    /* deactivate withid vars */
+    for (i = 0; i < INFO_VARNO; i++)
+        INFO_ACT[i] = INFO_ACT[i] && !NPART_MASK (arg_node, 0)[i];
+
+    /* next N_Npart */
+    if (NPART_NEXT (arg_node))
+        NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *ACTNcode(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   create active-list for current body and add active variables to the
+ *   superior active-list.
+ *
+ * attention:
+ *   We need to activate the NCODE_CEXPR before traversing the NCODE_CBLOCK
+ *   because we do not have a return statement at the end of NCODE_CBLOCK
+ *   (which is usually the sign for ACTassign to activate a var).
+ *
+ ******************************************************************************/
+
+node *
+ACTNcode (node *arg_node, node *arg_info)
+{
+    int i;
+    long *old_INFOACT;
+
+    DBUG_ENTER ("ACTNcode");
+
+    old_INFOACT = INFO_ACT;
+    INFO_ACT = GenMask (INFO_VARNO);
+
+    /* activate NCODE_CEXPR */
+    /* we should have an id since flatten phase */
+    DBUG_ASSERT (N_id == NODE_TYPE (NCODE_CEXPR (arg_node)), ("No id in NCODE_CEXPR"));
+    i = VARDEC_VARNO (ID_VARDEC (NCODE_CEXPR (arg_node)));
+    INFO_ACT[i] = TRUE;
+
+    /* traverse body */
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+
+    for (i = 0; i < INFO_VARNO; i++)
+        INFO_ACT[i] = INFO_ACT[i] || old_INFOACT[i];
+
+    FREE (old_INFOACT);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *DCRNwith(node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ *
+ ******************************************************************************/
+
+node *
+DCRNwith (node *arg_node, node *arg_info)
+{
+    node *code;
+
+    DBUG_ENTER ("DCRNwith");
+
+    code = NWITH_CODE (arg_node);
+    while (code) {
+        code = OPTTrav (code, arg_info, arg_node);
+        code = NCODE_NEXT (code);
+    }
+
     DBUG_RETURN (arg_node);
 }

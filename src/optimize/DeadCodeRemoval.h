@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  1998/02/23 13:09:32  srs
+ * added DCR for new WLs
+ *
  * Revision 1.5  1996/09/11 14:13:08  asi
  * DFRmodul added
  *
@@ -41,5 +44,9 @@ extern node *ACTwhile (node *arg_node, node *arg_info);
 extern node *DCRwhile (node *arg_node, node *arg_info);
 extern node *ACTwith (node *arg_node, node *arg_info);
 extern node *DCRwith (node *arg_node, node *arg_info);
+extern node *ACTNwith (node *arg_node, node *arg_info);
+extern node *DCRNwith (node *arg_node, node *arg_info);
+extern node *ACTNpart (node *arg_node, node *arg_info);
+extern node *ACTNcode (node *arg_node, node *arg_info);
 
 #endif /* _DeadCodeRemoval_h */
