@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2001/03/05 15:11:12  dkr
+ * NCODE_NO renamed into NCODE_ID
+ * handling of NCODE_ID modified
+ *
  * Revision 3.24  2001/03/05 13:32:50  dkr
  * NGEN_OP?_GEN removed
  *
@@ -3011,6 +3015,7 @@ node *
 PrintNwith2 (node *arg_node, node *arg_info)
 {
     node *code, *tmp_nwith2;
+    int id;
 
     DBUG_ENTER ("PrintNwith2");
 
@@ -3048,9 +3053,14 @@ PrintNwith2 (node *arg_node, node *arg_info)
     INDENT;
     fprintf (outfile, "/********** operators: **********/\n");
     code = NWITH2_CODE (arg_node);
+    id = 0;
     while (code != NULL) {
         INDENT;
-        fprintf (outfile, "op_%d =\n", NCODE_NO (code));
+        fprintf (outfile, "op_%d =\n", id);
+        /*
+         * store code-id before printing NWITH2_SEGS!!
+         */
+        NCODE_ID (code) = id++;
         indent++;
         Trav (code, arg_info);
         indent--;
@@ -3343,7 +3353,7 @@ PrintWLcode (node *arg_node, node *arg_info)
          */
         DBUG_ASSERT ((NCODE_USED (arg_node) > 0), "illegal NCODE_USED value!");
 
-        fprintf (outfile, "op_%d", NCODE_NO (arg_node));
+        fprintf (outfile, "op_%d", NCODE_ID (arg_node));
     } else {
         if (INFO_PRINT_NWITH (arg_info) != NULL) {
             DBUG_ASSERT ((NODE_TYPE (INFO_PRINT_NWITH (arg_info)) == N_Nwith2),
