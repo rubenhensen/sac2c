@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.11  1995/05/09 14:46:06  hw
+ * Revision 1.12  1995/05/17 14:37:58  hw
+ * bug fixed in RCloop ( refcounts of variables that belongs to
+ *  'virtual function application' will be set correctly now, i hope ;-)
+ *
+ * Revision 1.11  1995/05/09  14:46:06  hw
  * bug fixed in RCwith ( set refcount of used variables correctly )
  *
  * Revision 1.10  1995/05/03  07:46:17  hw
@@ -557,9 +561,9 @@ RCloop (node *arg_node, node *arg_info)
                 /* now compute new refcounts, because of 'virtuell function
                  * application'
                  */
-                if (defined_mask[i] > 0) {
+                if ((defined_mask[i] > 0) && (ref_dump[i] > 0)) {
                     if (N_do == arg_node->nodetype) {
-                        /* check whether curren variable is an argument of
+                        /* check whether current variable is an argument of
                          * 'virtuell function'
                          */
                         if (0 == var_dec->refcnt)
@@ -568,10 +572,14 @@ RCloop (node *arg_node, node *arg_info)
                             ref_dump[i] = 1;
                     } else
                         ref_dump[i] = 1;
-                } else
+
+                    DBUG_PRINT ("RC", ("set refcount of %s(%d) to: %d",
+                                       var_dec->info.types->id, i, ref_dump[i]));
+                } else if ((used_mask[i] > 0) && (ref_dump[i] > 0)) {
                     ref_dump[i] += 1;
-                DBUG_PRINT ("RC", ("set refcount of %s(%d) to: %d",
-                                   var_dec->info.types->id, i, ref_dump[i]));
+                    DBUG_PRINT ("RC", ("increased  refcount of %s(%d) to: %d",
+                                       var_dec->info.types->id, i, ref_dump[i]));
+                }
             }
         }
 
