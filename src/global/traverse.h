@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.46  1998/04/29 19:54:19  dkr
+ * added funptr tabs
+ *
  * Revision 1.45  1998/04/28 15:44:01  srs
  * added tcwl_tab
  *
@@ -191,8 +194,12 @@ extern funptr wlt_tab[];
 extern funptr cse_tab[];
 extern funptr dfr_tab[];
 extern funptr tcwl_tab[];
+extern funptr wltrans_tab[];
 extern funptr spmdinit_tab[];
 extern funptr spmdopt_tab[];
+extern funptr spmdlift_tab[];
+extern funptr syncinit_tab[];
+extern funptr syncopt_tab[];
 extern funptr o2nWith_tab[];
 
 extern int nnode[];

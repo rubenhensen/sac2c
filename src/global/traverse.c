@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.64  1998/04/29 19:53:22  dkr
+ * added funptr tabs
+ *
  * Revision 1.63  1998/04/28 15:43:52  srs
  * added tcwl_tab
  *
@@ -237,6 +240,7 @@
 #include "rmvoidfun.h"
 #include "refcount.h"
 #include "spmdregions.h"
+#include "wltransform.h"
 #include "precompile.h"
 #include "compile.h"
 #include "cccall.h"
@@ -260,7 +264,7 @@ funptr *act_tab;
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t1
 
 funptr imp_tab[] = {
@@ -274,7 +278,7 @@ funptr imp_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t2
 
 funptr flat_tab[] = {
@@ -288,7 +292,7 @@ funptr flat_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t3
 
 funptr print_tab[] = {
@@ -302,7 +306,7 @@ funptr print_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t4
 
 funptr type_tab[] = {
@@ -316,7 +320,7 @@ funptr type_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t5
 
 funptr opt_tab[] = {
@@ -330,7 +334,7 @@ funptr opt_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t6
 
 funptr dcr_tab[] = {
@@ -344,7 +348,7 @@ funptr dcr_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t7
 
 funptr wlf_tab[] = {
@@ -358,7 +362,7 @@ funptr wlf_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t8
 
 funptr free_tab[] = {
@@ -372,7 +376,7 @@ funptr free_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t9
 
 funptr cf_tab[] = {
@@ -386,7 +390,7 @@ funptr cf_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t10
 
 funptr refcnt_tab[] = {
@@ -400,7 +404,7 @@ funptr refcnt_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t11
 
 funptr comp_tab[] = {
@@ -414,7 +418,7 @@ funptr comp_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t12
 
 funptr lir_tab[] = {
@@ -428,7 +432,7 @@ funptr lir_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t13
 
 funptr dup_tab[] = {
@@ -442,7 +446,7 @@ funptr dup_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t14
 
 funptr inline_tab[] = {
@@ -456,7 +460,7 @@ funptr inline_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t15
 
 funptr unroll_tab[] = {
@@ -470,7 +474,7 @@ funptr unroll_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t16
 
 funptr lir_mov_tab[] = {
@@ -484,7 +488,7 @@ funptr lir_mov_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t17
 
 funptr idx_tab[] = {
@@ -498,7 +502,7 @@ funptr idx_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t18
 
 funptr unswitch_tab[] = {
@@ -512,7 +516,7 @@ funptr unswitch_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t19
 
 funptr wli_tab[] = {
@@ -526,7 +530,7 @@ funptr wli_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t20
 
 funptr ae_tab[] = {
@@ -540,7 +544,7 @@ funptr ae_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t21
 
 funptr writesib_tab[] = {
@@ -554,7 +558,7 @@ funptr writesib_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t22
 
 funptr obj_tab[] = {
@@ -568,7 +572,7 @@ funptr obj_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t23
 
 funptr impltype_tab[] = {
@@ -582,7 +586,7 @@ funptr impltype_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t24
 
 funptr objinit_tab[] = {
@@ -596,7 +600,7 @@ funptr objinit_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t25
 
 funptr analy_tab[] = {
@@ -610,7 +614,7 @@ funptr analy_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t26
 
 funptr checkdec_tab[] = {
@@ -624,7 +628,7 @@ funptr checkdec_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t27
 
 funptr writedec_tab[] = {
@@ -638,7 +642,7 @@ funptr writedec_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t28
 
 funptr unique_tab[] = {
@@ -652,7 +656,7 @@ funptr unique_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t29
 
 funptr rmvoid_tab[] = {
@@ -666,7 +670,7 @@ funptr rmvoid_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t30
 
 funptr precomp_tab[] = {
@@ -680,7 +684,7 @@ funptr precomp_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t31
 
 funptr active_tab[] = {
@@ -694,7 +698,7 @@ funptr active_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t32
 
 funptr readsib_tab[] = {
@@ -708,7 +712,7 @@ funptr readsib_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t33
 
 funptr wlt_tab[] = {
@@ -722,7 +726,7 @@ funptr wlt_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t34
 
 funptr cse_tab[] = {
@@ -736,7 +740,7 @@ funptr cse_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t35
 
 funptr dfr_tab[] = {
@@ -750,7 +754,7 @@ funptr dfr_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t36
 
 funptr tcwl_tab[] = {
@@ -764,7 +768,7 @@ funptr tcwl_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t37
 
 funptr spmdinit_tab[] = {
@@ -778,7 +782,7 @@ funptr spmdinit_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t38
 
 funptr spmdopt_tab[] = {
@@ -786,16 +790,72 @@ funptr spmdopt_tab[] = {
 };
 #undef NIF
 
-#if 0
 /*
- * 39) *unused*
+ * 39) spmdlift_tab
  */
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     t39
 
+funptr spmdlift_tab[] = {
+#include "node_info.mac"
+};
+#undef NIF
+
+/*
+ * 40) syncinit_tab
+ */
+
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
+    t40
+
+funptr syncinit_tab[] = {
+#include "node_info.mac"
+};
+#undef NIF
+
+/*
+ * 41) syncopt_tab
+ */
+
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
+    t41
+
+funptr syncopt_tab[] = {
+#include "node_info.mac"
+};
+#undef NIF
+
+/*
+ * 42) wltrans_tab
+ */
+
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
+    t42
+
+funptr wltrans_tab[] = {
+#include "node_info.mac"
+};
+#undef NIF
+
+#if 0
+/*
+ * 43) *unused*
+ */
+
+#define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
+            t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
+    t43
+
 funptr ???[]={
 #include "node_info.mac"
                   };
@@ -804,13 +864,13 @@ funptr ???[]={
 
 #if 0
 /*
- * 40) *unused*
+ * 44) *unused*
  */
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
-    t40
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
+    t44
 
 funptr ???[]={
 #include "node_info.mac"
@@ -819,13 +879,13 @@ funptr ???[]={
 #endif
 
 /*
- * 41) o2nWith_tab
+ * 45) o2nWith_tab
  */
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
-    t41
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
+    t45
 
 funptr o2nWith_tab[] = {
 #include "node_info.mac"
@@ -838,7 +898,7 @@ funptr o2nWith_tab[] = {
 
 #define NIF(n, s, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, \
             t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31,   \
-            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, nn)                        \
+            t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, nn)    \
     nn
 
 int nnode[] = {
