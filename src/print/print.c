@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.98  2000/08/18 11:49:08  dkr
+ * PrintIcm(): no seg.fault anymore during printing isolated ND_FUN_RET()
+ * ICMs (e.g. in debugging sessions)
+ *
  * Revision 2.97  2000/08/17 11:10:42  dkr
  * signature of PrintNT changed
  *
@@ -2330,6 +2334,7 @@ PrintIcm (node *arg_node, node *arg_info)
     if ((compiler_phase != PH_genccode) || (compiled_icm == 0)) {
 
         if ((strcmp (ICM_NAME (arg_node), "ND_FUN_RET") == 0)
+            && (INFO_PRINT_FUNDEF (arg_info) != NULL)
             && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)
             && (compiler_phase == PH_genccode)) {
             GSCPrintMainEnd ();
