@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.77  1998/06/24 10:37:43  dkr
+ * removed WL_END from indent-mechanismus
+ *
  * Revision 1.76  1998/06/23 12:40:57  cg
  * added indentation information for mt-ICMs
  *
@@ -1489,8 +1492,6 @@ MakeIcm (char *name, node *args, node *next)
     else if (strcmp (name, "WL_NONFOLD_END") == 0)
         ICM_INDENT (tmp) = -1;
     else if (strcmp (name, "WL_FOLD_END") == 0)
-        ICM_INDENT (tmp) = -1;
-    else if (strcmp (name, "WL_END") == 0)
         ICM_INDENT (tmp) = -1;
     else if (strncmp (name, "MT_SCHEDULER_", 13) == 0) {
         if (strcmp (name + strlen (name) - 6, "_BEGIN") == 0)
