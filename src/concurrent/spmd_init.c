@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2000/12/07 08:54:08  cg
+ * Bug fixed in initialization of some variables after
+ * warning elimination.
+ *
  * Revision 3.2  2000/12/06 19:22:16  cg
  * Removed compiler warnings in production mode.
  *
@@ -296,11 +300,11 @@ node *
 SPMDIassign (node *arg_node, node *arg_info)
 {
     node *spmd_let;
-    int old_lastspmd = NULL;
-    int old_nextspmd = NULL;
-    nodetype old_context = NULL;
-    int old_expandcontext = NULL;
-    int old_expandstep = NULL;
+    int old_lastspmd = 0;
+    int old_nextspmd = 0;
+    nodetype old_context = N_ok;
+    int old_expandcontext = 0;
+    int old_expandstep = 0;
     int pullable;
     nodetype dummy;
     node *block1;
