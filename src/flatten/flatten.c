@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.77  1998/08/21 12:36:29  sbs
+ * some dummy assignments in some default-cases inserted
+ * for convincing the C compiler that these vars indeed
+ * are initialized in any case!
+ *
  * Revision 1.76  1998/06/05 15:01:21  dkr
  * N_id nodes in NCODE_CEXPR are not flattened anymore
  *
@@ -1135,6 +1140,11 @@ FltnExprs (node *arg_node, node *arg_info)
         break;
     default:
         DBUG_ASSERT (0, "illegal context !");
+        /*
+         * the following assignment is used only for convincing the C compiler
+         * that abstract will be initialized in any case!
+         */
+        abstract = 0;
     }
 
     DBUG_PRINT ("FLATTEN",
@@ -1610,6 +1620,12 @@ FltnCon (node *arg_node, node *arg_info)
     }
     default: {
         DBUG_ASSERT (0, "wrong nodetype in WL constructor!");
+        /*
+         * the following assignment is used only for convincing the C compiler
+         * that expr & body will be initialized in any case!
+         */
+        expr = NULL;
+        body = NULL;
         break;
     }
     }
@@ -1713,6 +1729,11 @@ FltnNwithop (node *arg_node, node *arg_info)
         break;
     default:
         DBUG_ASSERT (0, "wrong withop tag in N_Nwithop node!");
+        /*
+         * the following assignment is used only for convincing the C compiler
+         * that expr will be initialized in any case!
+         */
+        expr = 0;
         break;
     }
 
@@ -1842,7 +1863,12 @@ FltnNgenerator (node *arg_node, node *arg_info)
             act_son = &NGEN_WIDTH (arg_node);
             DBUG_PRINT ("FLATTEN", ("flattening width parameter!"));
             break;
-        default:;
+        default:
+            /*
+             * the following assignment is used only for convincing the C compiler
+             * that act_son will be initialized in any case!
+             */
+            act_son = NULL;
         }
 
         act_son_expr = *act_son;

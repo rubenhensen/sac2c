@@ -1,6 +1,11 @@
 
 /*
  * $Log$
+ * Revision 1.26  1998/08/21 12:40:41  sbs
+ * some dummy assignments in some default-cases inserted
+ * for convincing the C compiler that these vars indeed
+ * are initialized in any case!
+ *
  * Revision 1.25  1998/08/06 21:24:31  dkr
  * fix a bug in IdxArg
  *
@@ -1228,6 +1233,11 @@ IdxGenerator (node *arg_node, node *arg_info)
                 break;
             default:
                 DBUG_ASSERT ((0 != 0), "unknown generator type in IdxGenerator");
+                /*
+                 * the following assignment is used only for convincing the C compiler
+                 * that block will be initialized in any case!
+                 */
+                block = NULL;
             }
 
             if (((NODE_TYPE (body) == N_modarray) || (NODE_TYPE (body) == N_genarray))
