@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.22  1995/07/24 13:38:56  asi
+ * Revision 1.23  1995/09/01 07:48:46  cg
+ * new options -bb (break after writing SIB-file) and
+ * -noSIB (don't write SIB-file) explained
+ *
+ * Revision 1.22  1995/07/24  13:38:56  asi
  * bug fixed
  *
  * Revision 1.21  1995/07/24  13:35:22  asi
@@ -94,6 +98,7 @@ usage (char *prg_name)
     printf ("\t -bi \t\t\tstop after module imports\n");
     printf ("\t -bf \t\t\tstop after flatten\n");
     printf ("\t -bt \t\t\tstop after typecheck\n");
+    printf ("\t -bb \t\t\tstop after writing SIB-file\n");
     printf ("\t -bo \t\t\tstop after sac-optimizations\n");
     printf ("\t -bs \t\t\tstop after psi-optimizations\n");
     printf ("\t -br \t\t\tstop after refcount inference\n");
@@ -142,6 +147,7 @@ usage (char *prg_name)
 
     printf ("\nCOMPILER OPTIONS:\n");
     printf ("\t -fcheck_boundary\tcheck boundary of arrays while access\n");
+    printf ("\t -noSIB\t\t\tdon't write SIB-file\n");
 
     printf ("\nC-COMPILER OPTIONS:\n");
     printf ("\t  (these options handed to the C-compiler)\n");
