@@ -3,6 +3,11 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2001/11/13 21:57:23  dkr
+ * rule for # lines modified:
+ * some preprocessors do NOT insert a space between # and the line
+ * number!!!
+ *
  * Revision 3.9  2001/06/28 13:06:17  sbs
  * flex smuggles in a hash filename line at the beginning of each file!!
  * Unfortunately, on some systems this is preceede by dot-slash.
@@ -493,7 +498,7 @@ int charpos = 0;
 
 "\f"                       { charpos += yyleng; }
 
-#\ .*\n                    { linenum=atoi(yytext+2)-1;
+#.*\n                      { linenum=atoi(yytext+1)-1;
                              { int start, len;
                                start = strcspn( yytext, "\"")+1;
                                len   = strcspn( yytext + start, "\"");
