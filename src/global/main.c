@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2004/07/15 13:40:49  ktr
+ * removed show_refcount = FALSE in PH_refcnt
+ *
  * Revision 3.44  2004/07/15 13:36:59  ktr
  * reorganized phases after wltransform.
  *
@@ -559,7 +562,6 @@ main (int argc, char *argv[])
     if (ktr) {
         PHASE_PROLOG;
         NOTE_COMPILER_PHASE;
-        show_refcnt = FALSE;
         syntax_tree = EMAllocateFill (syntax_tree); /* emalloc_tab */
         PHASE_DONE_EPILOG;
         PHASE_EPILOG;
