@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1997/11/22 15:41:31  dkr
+ * problem with shared linknames fixed:
+ * RenameFun() now copies the linkname to FUNDEF_NAME
+ *
  * Revision 1.14  1997/09/05 13:46:04  cg
  * All cast expressions are now removed by rmvoidfun.c. Therefore,
  * the respective attempts in precompile.c and ConstantFolding.c
@@ -291,7 +295,7 @@ RenameFun (node *fun)
 
             /* don't free FUNDEF_MOD(fun) because it is shared !! */
 
-            FUNDEF_NAME (fun) = FUNDEF_LINKNAME (fun);
+            FUNDEF_NAME (fun) = StringCopy (FUNDEF_LINKNAME (fun));
         }
     }
 
