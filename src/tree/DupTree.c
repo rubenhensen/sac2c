@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.79  2002/10/24 13:11:32  ktr
+ * removed support for ASSIGN_INDENT
+ *
  * Revision 3.78  2002/10/20 13:23:59  ktr
  * Added support for WLS N_assign indentation by adding field ASSIGN_INDENT(n) to N_assign
  * node which is increased on every indentation performed by WLS.
@@ -1364,7 +1367,6 @@ DupAssign (node *arg_node, node *arg_info)
 
         ASSIGN_STATUS (new_node) = ASSIGN_STATUS (arg_node);
         ASSIGN_LEVEL (new_node) = ASSIGN_LEVEL (arg_node);
-        ASSIGN_INDENT (new_node) = ASSIGN_INDENT (arg_node);
 
 #if 0
     ASSIGN_MASK( new_node, ?) = ???;
