@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.13  1995/02/13 17:25:14  asi
+# Revision 1.14  1995/03/10 10:52:39  hw
+# refcount inserted
+#
+# Revision 1.13  1995/02/13  17:25:14  asi
 # added ConstantFolding.o and DeadCodeRemoval.o
 #
 # Revision 1.12  1995/02/03  07:57:47  hw
@@ -54,7 +57,9 @@ TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o
 OPTIMIZE= src/optimize/optimize.o src/optimize/ConstantFolding.o \
           src/optimize/DeadCodeRemoval.o
 MODULES= src/modules/filemgr.o src/modules/import.o
-OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) $(MODULES)
+REFCOUNT= src/refcount/refcount.o
+OBJ=$(GLOBAL) $(SCANP) $(PRINT) $(FLATTEN) $(TYPECHECK) $(OPTIMIZE) $(MODULES) \
+    $(REFCOUNT)
 
 all: dummy sac2c
 
@@ -66,6 +71,7 @@ dummy:
 	(cd src/typecheck; $(MAKE) )
 	(cd src/optimize; $(MAKE) )
 	(cd src/modules; $(MAKE) )
+	(cd src/refcount; $(MAKE) )        
 
 sac2c: $(OBJ) $(LIB)
 	$(CC) -o sac2c $(OBJ) $(LIB) $(LIBS)
@@ -78,7 +84,7 @@ deps:
 	(cd src/typecheck; $(MAKE) deps)
 	(cd src/optimize; $(MAKE) deps)
 	(cd src/modules; $(MAKE) deps)
-        
+	(cd src/refcount; $(MAKE) deps )
 clean:
 	(cd src/scanparse; $(MAKE) clean)
 	(cd src/global; $(MAKE) clean)
@@ -87,4 +93,5 @@ clean:
 	(cd src/typecheck; $(MAKE) clean)
 	(cd src/optimize; $(MAKE) clean)
 	(cd src/modules; $(MAKE) clean)
+	(cd src/refcount; $(MAKE) clean)
 	$(RM) sac2c
