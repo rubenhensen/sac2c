@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.124  2002/06/06 18:23:38  dkr
+ * comment about ID_NT_TAG corrected
+ *
  * Revision 3.123  2002/06/05 16:32:59  dkr
  * INFO_PREC3_FUNDEF renamed into INFO_PREC_FUNDEF
  *
@@ -1687,7 +1690,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***    int         ISCONST                     (flatten -> )
  ***    int         NUM
  ***
- ***    nt_tag_t*   NT_TAG                      (compile -> )
+ ***    char*       NT_TAG                      (compile -> )
  ***
  ***
  ***  remarks:
@@ -1708,9 +1711,6 @@ extern node *MakeVinfo (useflag flag, types *type, node *next, node *dollar);
  ***    normally slows down the code due to memory allocation/de-allocation
  ***    costs. However for some other optimizations, namely tile size inference,
  ***    a constant value is an advantage.
- ***
- ***    NT_TAG contains a pointer to the vardec iff this id should be printed
- ***    as name tuple (relevant for ICM arguments only).
  ***
  ***  caution:
  ***
