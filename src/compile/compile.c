@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.190  1998/08/27 14:49:24  cg
+ * compilation of ICM ADJUST_SCHEDULER now fixed.
+ *
  * Revision 1.189  1998/08/11 14:34:44  dkr
  * comment for inline-fold-bug added
  *
@@ -6991,22 +6994,24 @@ COMPWLblock (node *arg_node, node *arg_info)
         assigns = MakeAssign (
           MakeIcm (
             "MT_ADJUST_SCHEDULER",
-            MakeExprs (MakeNum (WLBLOCK_DIM (arg_node)),
-                       MakeExprs (MakeNum (WLSEG_DIMS (wl_seg)),
-                                  MakeExprs (MakeNum (WLBLOCK_BOUND1 (wl_seg)),
-                                             MakeExprs (MakeNum (
-                                                          MAX (WLSEG_SV (
-                                                                 wl_seg)[WLBLOCK_DIM (
-                                                                 arg_node)],
-                                                               WLSEG_UBV (
-                                                                 wl_seg)[WLBLOCK_DIM (
-                                                                 arg_node)])),
-                                                        MakeExprs (MakeId (StringCopy (
-                                                                             IDS_NAME (
-                                                                               wl_ids)),
-                                                                           NULL,
-                                                                           ST_regular),
-                                                                   NULL))))),
+            MakeExprs (
+              MakeNum (WLBLOCK_DIM (arg_node)),
+              MakeExprs (MakeNum (WLSEG_DIMS (wl_seg)),
+                         MakeExprs (MakeNum (WLBLOCK_BOUND1 (arg_node)),
+                                    MakeExprs (MakeNum (WLBLOCK_BOUND2 (arg_node)),
+                                               MakeExprs (MakeNum (
+                                                            MAX (WLSEG_SV (
+                                                                   wl_seg)[WLBLOCK_DIM (
+                                                                   arg_node)],
+                                                                 WLSEG_UBV (
+                                                                   wl_seg)[WLBLOCK_DIM (
+                                                                   arg_node)])),
+                                                          MakeExprs (MakeId (StringCopy (
+                                                                               IDS_NAME (
+                                                                                 wl_ids)),
+                                                                             NULL,
+                                                                             ST_regular),
+                                                                     NULL)))))),
             NULL),
           assigns);
     }
@@ -7114,22 +7119,24 @@ COMPWLublock (node *arg_node, node *arg_info)
         assigns = MakeAssign (
           MakeIcm (
             "MT_ADJUST_SCHEDULER",
-            MakeExprs (MakeNum (WLUBLOCK_DIM (arg_node)),
-                       MakeExprs (MakeNum (WLSEG_DIMS (wl_seg)),
-                                  MakeExprs (MakeNum (WLUBLOCK_BOUND1 (wl_seg)),
-                                             MakeExprs (MakeNum (
-                                                          MAX (WLSEG_SV (
-                                                                 wl_seg)[WLUBLOCK_DIM (
-                                                                 arg_node)],
-                                                               WLSEG_UBV (
-                                                                 wl_seg)[WLUBLOCK_DIM (
-                                                                 arg_node)])),
-                                                        MakeExprs (MakeId (StringCopy (
-                                                                             IDS_NAME (
-                                                                               wl_ids)),
-                                                                           NULL,
-                                                                           ST_regular),
-                                                                   NULL))))),
+            MakeExprs (
+              MakeNum (WLUBLOCK_DIM (arg_node)),
+              MakeExprs (MakeNum (WLSEG_DIMS (wl_seg)),
+                         MakeExprs (MakeNum (WLUBLOCK_BOUND1 (arg_node)),
+                                    MakeExprs (MakeNum (WLUBLOCK_BOUND2 (arg_node)),
+                                               MakeExprs (MakeNum (
+                                                            MAX (WLSEG_SV (
+                                                                   wl_seg)[WLUBLOCK_DIM (
+                                                                   arg_node)],
+                                                                 WLSEG_UBV (
+                                                                   wl_seg)[WLUBLOCK_DIM (
+                                                                   arg_node)])),
+                                                          MakeExprs (MakeId (StringCopy (
+                                                                               IDS_NAME (
+                                                                                 wl_ids)),
+                                                                             NULL,
+                                                                             ST_regular),
+                                                                     NULL)))))),
             NULL),
           assigns);
     }
@@ -7262,22 +7269,24 @@ COMPWLstride (node *arg_node, node *arg_info)
         assigns = MakeAssign (
           MakeIcm (
             "MT_ADJUST_SCHEDULER",
-            MakeExprs (MakeNum (WLSTRIDE_DIM (arg_node)),
-                       MakeExprs (MakeNum (WLSEG_DIMS (wl_seg)),
-                                  MakeExprs (MakeNum (WLBLOCK_BOUND1 (wl_seg)),
-                                             MakeExprs (MakeNum (
-                                                          MAX (WLSEG_SV (
-                                                                 wl_seg)[WLSTRIDE_DIM (
-                                                                 arg_node)],
-                                                               WLSEG_UBV (
-                                                                 wl_seg)[WLSTRIDE_DIM (
-                                                                 arg_node)])),
-                                                        MakeExprs (MakeId (StringCopy (
-                                                                             IDS_NAME (
-                                                                               wl_ids)),
-                                                                           NULL,
-                                                                           ST_regular),
-                                                                   NULL))))),
+            MakeExprs (
+              MakeNum (WLSTRIDE_DIM (arg_node)),
+              MakeExprs (MakeNum (WLSEG_DIMS (wl_seg)),
+                         MakeExprs (MakeNum (WLSTRIDE_BOUND1 (arg_node)),
+                                    MakeExprs (MakeNum (WLSTRIDE_BOUND2 (arg_node)),
+                                               MakeExprs (MakeNum (
+                                                            MAX (WLSEG_SV (
+                                                                   wl_seg)[WLSTRIDE_DIM (
+                                                                   arg_node)],
+                                                                 WLSEG_UBV (
+                                                                   wl_seg)[WLSTRIDE_DIM (
+                                                                   arg_node)])),
+                                                          MakeExprs (MakeId (StringCopy (
+                                                                               IDS_NAME (
+                                                                                 wl_ids)),
+                                                                             NULL,
+                                                                             ST_regular),
+                                                                     NULL)))))),
             NULL),
           assigns);
     }
