@@ -22,7 +22,7 @@ CC               :=  gcc
 CCFLAGS          :=  "-Wall -Wno-unused -fno-builtin"
 CCDIR            :=  "-I$SACBASE/runtime/ "
                    "-L$SACBASE/runtime/"
-CCLINK           :=  -lsac
+CCLINK           :=  ""    
 CCMTLINK         :=  -lpthread
  
 OPT_O0           :=  ""

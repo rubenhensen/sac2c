@@ -21,7 +21,7 @@ CC               :=  gcc
 CCFLAGS          :=  "-Wall -Wno-unused -fno-builtin"
 CCDIR            :=  "-I$SACBASE/runtime/ "
                      "-L$SACBASE/runtime/"
-CCLINK           :=  -lsac
+CCLINK           :=  ""   
 CCMTLINK         :=  -lpthreads
  
 OPT_O0           :=  ""
