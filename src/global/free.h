@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1997/03/19 13:34:57  cg
+ * Revision 1.10  1997/04/24 14:05:37  sbs
+ * HAVE_MALLOC_O inserted
+ *
+ * Revision 1.9  1997/03/19  13:34:57  cg
  * added functions FreeAllDeps() and FreeOneDeps()
  *
  * Revision 1.8  1995/12/29  10:24:18  cg
@@ -49,6 +52,8 @@
 
 #ifndef NOFREE
 
+#ifdef HAVE_MALLOC_O
+
 #define FREE(address)                                                                    \
     if ((address) != NULL) {                                                             \
         DBUG_PRINT ("FREEMEM", ("Free memory at adress: " P_FORMAT, (address)));         \
@@ -56,6 +61,17 @@
         DBUG_EXECUTE ("MEMVERIFY", malloc_verify (););                                   \
         address = NULL;                                                                  \
     }
+
+#else /* HAVE_MALLOC_O */
+
+#define FREE(address)                                                                    \
+    if ((address) != NULL) {                                                             \
+        DBUG_PRINT ("FREEMEM", ("Free memory at adress: " P_FORMAT, (address)));         \
+        free ((address));                                                                \
+        address = NULL;                                                                  \
+    }
+
+#endif /* HAVE_MALLOC_O */
 
 #else
 

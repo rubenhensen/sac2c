@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.92  1997/04/24 09:54:53  cg
+ * Revision 1.93  1997/04/24 14:05:37  sbs
+ * HAVE_MALLOC_O inserted
+ *
+ * Revision 1.92  1997/04/24  09:54:53  cg
  * added -Mlib option
  * dependencies now printed after import
  *
@@ -909,9 +912,13 @@ MAIN
      *  Now, we reset some debugging tools.
      */
 
+#ifdef HAVE_MALLOC_O
+
     malloc_debug (0);
 
     DBUG_EXECUTE ("MEMVERIFY", malloc_debug (2););
+
+#endif
 
     filename = sacfilename;
 
