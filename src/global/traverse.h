@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1994/12/09 10:45:33  sbs
+ * Revision 1.5  1994/12/16 14:22:10  sbs
+ * imp_tab inserted and NIF macro enlarged
+ *
+ * Revision 1.4  1994/12/09  10:45:33  sbs
  * opt_tab inserted
  *
  * Revision 1.3  1994/12/01  17:41:09  hw
@@ -24,6 +27,8 @@ extern node *Trav (node *arg_node, node *arg_info);
 extern node *DummyFun (node *arg_node, node *arg_info);
 
 extern funptr *act_tab;
+
+extern funptr imp_tab[];
 
 extern funptr flat_tab[];
 

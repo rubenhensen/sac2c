@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.5  1994/12/05 13:02:03  hw
+ * Revision 1.6  1994/12/16 14:20:59  sbs
+ * imp_tab inserted and NIF macro enlarged
+ *
+ * Revision 1.5  1994/12/05  13:02:03  hw
  * removed char *type_string[]
  * included "convert.h" to have char *type_string[]
  * included "tree.h" to have no problem with including "convert.h"
@@ -27,7 +30,7 @@
 ** global array used for DBUG purposes only
 */
 
-#define NIF(n, s, f, p, t, z) s
+#define NIF(n, s, i, f, p, t, o, x, y, z) s
 
 char *mdb_nodetype[] = {
 #include "node_info.mac"

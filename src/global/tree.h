@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.9  1994/12/15 14:19:11  asi
+ * Revision 1.10  1994/12/16 14:20:59  sbs
+ * imp_tab inserted and NIF macro enlarged
+ *
+ * Revision 1.9  1994/12/15  14:19:11  asi
  * added member char *mask[2] to union node->info
  *
  * Revision 1.8  1994/12/14  16:51:24  sbs
@@ -78,7 +81,7 @@ typedef struct TYPES {
  *
  */
 
-#define NIF(n, s, f, p, t, z) n
+#define NIF(n, s, i, f, p, t, o, x, y, z) n
 
 typedef enum {
 #include "node_info.mac"

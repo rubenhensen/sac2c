@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1994/12/09 10:13:19  sbs
+ * Revision 1.5  1994/12/16 14:22:10  sbs
+ * imp_tab inserted and NIF macro enlarged
+ *
+ * Revision 1.4  1994/12/09  10:13:19  sbs
  * optimize inserted
  *
  * Revision 1.3  1994/12/01  17:41:40  hw
@@ -26,6 +29,7 @@
 #include "print.h"
 #include "typecheck.h"
 #include "optimize.h"
+#include "import.h"
 
 #include "traverse.h"
 
@@ -39,7 +43,7 @@ funptr *act_tab;
 **
 */
 
-#define NIF(n, s, f, p, t, z) f
+#define NIF(n, s, i, f, p, t, o, x, y, z) f
 
 funptr flat_tab[] = {
 #include "node_info.mac"
@@ -51,7 +55,7 @@ funptr flat_tab[] = {
 **  2) print_tab
 */
 
-#define NIF(n, s, f, p, t, z) p
+#define NIF(n, s, i, f, p, t, o, x, y, z) p
 
 funptr print_tab[] = {
 #include "node_info.mac"
@@ -63,7 +67,7 @@ funptr print_tab[] = {
  * 3) type_tab
  */
 
-#define NIF(n, s, f, p, t, z) t
+#define NIF(n, s, i, f, p, t, o, x, y, z) t
 
 funptr type_tab[] = {
 #include "node_info.mac"
@@ -75,9 +79,21 @@ funptr type_tab[] = {
  * 4) opt_tab
  */
 
-#define NIF(n, s, f, p, t, o) o
+#define NIF(n, s, i, f, p, t, o, x, y, z) o
 
 funptr opt_tab[] = {
+#include "node_info.mac"
+};
+
+#undef NIF
+
+/*
+ * 5) imp_tab
+ */
+
+#define NIF(n, s, i, f, p, t, o, x, y, z) i
+
+funptr imp_tab[] = {
 #include "node_info.mac"
 };
 
