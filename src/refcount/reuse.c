@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/08/11 13:13:25  ktr
+ * empty fundefs are no longer traversed.
+ *
  * Revision 1.3  2004/08/10 16:42:59  ktr
  * All prfs should be handled now.
  *
@@ -189,7 +192,7 @@ RIarg (node *arg_node, info *arg_info)
     if (ARG_STATUS (arg_node) == ST_regular) {
         node *id;
 
-        id = MakeId (ARG_NAME (arg_node), NULL, ST_regular);
+        id = MakeId (StringCopy (ARG_NAME (arg_node)), NULL, ST_regular);
 
         ID_VARDEC (id) = arg_node;
         ID_AVIS (id) = ARG_AVIS (arg_node);
@@ -334,39 +337,40 @@ RIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("RIfundef");
 
-    INFO_RI_FUNDEF (arg_info) = arg_node;
-
-    /*
-     * Generate DFM-base
-     */
-    FUNDEF_DFM_BASE (arg_node)
-      = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
-
-    /*
-     * FUNDEF args are the initial reuse candidates
-     */
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
-    }
-
-    /*
-     * Traverse body
-     */
     if (FUNDEF_BODY (arg_node) != NULL) {
+
+        INFO_RI_FUNDEF (arg_info) = arg_node;
+
+        /*
+         * Generate DFM-base
+         */
+        FUNDEF_DFM_BASE (arg_node)
+          = DFMGenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+
+        /*
+         * FUNDEF args are the initial reuse candidates
+         */
+        if (FUNDEF_ARGS (arg_node) != NULL) {
+            FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+        }
+
+        /*
+         * Traverse body
+         */
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    }
 
-    /*
-     * Free reuse candidates list
-     */
-    if (INFO_RI_CANDIDATES (arg_info) != NULL) {
-        INFO_RI_CANDIDATES (arg_info) = FreeTree (INFO_RI_CANDIDATES (arg_info));
-    }
+        /*
+         * Free reuse candidates list
+         */
+        if (INFO_RI_CANDIDATES (arg_info) != NULL) {
+            INFO_RI_CANDIDATES (arg_info) = FreeTree (INFO_RI_CANDIDATES (arg_info));
+        }
 
-    /*
-     * Remove DFM-base
-     */
-    FUNDEF_DFM_BASE (arg_node) = DFMRemoveMaskBase (FUNDEF_DFM_BASE (arg_node));
+        /*
+         * Remove DFM-base
+         */
+        FUNDEF_DFM_BASE (arg_node) = DFMRemoveMaskBase (FUNDEF_DFM_BASE (arg_node));
+    }
 
     /*
      * Traverse other fundefs
