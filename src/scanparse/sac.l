@@ -3,6 +3,10 @@
 /*
  *
  * $Log$
+ * Revision 1.47  1997/10/05 13:31:58  dkr
+ * a few <cr>s in lex-rules have been removed
+ * because some (f)lex-implementations can not handle them.
+ *
  * Revision 1.46  1997/10/03 17:57:27  dkr
  * added prf abs()
  *
@@ -374,14 +378,11 @@ int start_token;
 
 (0?|([1-9][0-9]*))              {FILTER3 ( NUM);}
 
-(0?|([1-9][0-9]*))[.][0-9]+(e([+]?|[-]?)[0-9]+)? \
-				{FILTER4 ( DOUBLE);}
+(0?|([1-9][0-9]*))[.][0-9]+(e([+]?|[-]?)[0-9]+)?           {FILTER4 ( DOUBLE);}
 
-(0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[fF] \
-                                {FILTER6 ( FLOAT);}
+(0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[fF]    {FILTER6 ( FLOAT);}
 
-(0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[Dd] \
-                                {FILTER5 ( DOUBLE);}
+(0?|([1-9][0-9]*))([.][0-9]+(e([+]?|[-]?)[0-9]+)?)?[Dd]    {FILTER5 ( DOUBLE);}
 
 
 "/*"	{ if (commlevel++ == 1)
