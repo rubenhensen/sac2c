@@ -1,3 +1,5 @@
+AssociativeLaw.c
+AssociativeLaw.h
 CSE.c
 CSE.h
 ConstantFolding.c
@@ -23,6 +25,8 @@ SSALIR.c
 SSALIR.h
 SSALUR.c
 SSALUR.h
+SSAWLUnroll.c
+SSAWLUnroll.h
 Unroll.c
 Unroll.h
 Unswitch.c
@@ -39,5 +43,3 @@ optimize.c
 optimize.h
 rmcasts.c
 rmcasts.h
-AssociativeLaw.h
-AssociativeLaw.c
