@@ -1,6 +1,9 @@
 
 #
 # $Log$
+# Revision 3.145  2004/11/24 09:52:25  sbs
+# type_utils.o added
+#
 # Revision 3.144  2004/11/23 12:34:08  cg
 # Removed some files.
 #
@@ -401,7 +404,8 @@ TYPECHECK= src/typecheck/gen_pseudo_fun.o \
            src/typecheck/ct_with.o src/typecheck/type_errors.o \
            src/typecheck/specialize.o src/typecheck/new2old.o \
            src/typecheck/create_wrapper_code.o \
-           src/typecheck/type_statistics.o src/typecheck/typecheck.o
+           src/typecheck/type_statistics.o src/typecheck/typecheck.o \
+           src/typecheck/type_utils.o
 
 OPTIMIZE= src/optimize/optimize.o \
           src/optimize/DeadFunctionRemoval.o \
