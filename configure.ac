@@ -1,5 +1,8 @@
 dnl
 dnl $Log$
+dnl Revision 1.8  2003/03/21 11:37:47  sah
+dnl fixed alpha cc bug
+dnl
 dnl Revision 1.7  2003/03/21 01:29:51  sah
 dnl stderr bugfix
 dnl
@@ -55,13 +58,15 @@ dnl the ususal sac ones
 case $target_os in
  *solaris*) target_os=SOLARIS;;
  *linux*)   target_os=LINUX;;
+ *OSF*)   target_OS=OSF;;
 esac
 
 dnl match autoconf arch names to
 dnl the usual sac ones
 case $target_cpu in
- sparc) target_cpu=SPARC;;
- i?86)  target_cpu=X86;;
+ sparc)  target_cpu=SPARC;;
+ i?86)   target_cpu=X86;;
+ alpha*) target_cpu=ALPHA;;
 esac
 
 AC_DEFINE_UNQUOTED(OS,"$target_os",set to the os type)
@@ -70,7 +75,7 @@ AC_DEFINE_UNQUOTED(ARCH,"$target_cpu",set to the architecture)
 AC_SUBST(ARCH,$target_cpu)
 
 dnl search for a C compiler
-AC_PROG_CC(gcc,cc)
+AC_PROG_CC(gcc cc)
 
 dnl check, whether we need -traditinal flag
 AC_PROG_GCC_TRADITIONAL
