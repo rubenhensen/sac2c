@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.173  2004/08/01 13:18:11  ktr
+ * added call to MMVwlsegx
+ *
  * Revision 3.172  2004/07/29 14:14:09  skt
  * location of PEMcond changed
  *
@@ -2465,7 +2468,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, SCHEDwlseg, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, MMVwlsegx, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, SCHINwlseg, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
@@ -2493,7 +2496,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, SCHEDwlsegVar, TravSons,
-       TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, MMVwlsegx, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons,
 
        TravSons, SCHINwlsegVar, TravSons, TravSons, TravSons, TravSons, TravSons,
