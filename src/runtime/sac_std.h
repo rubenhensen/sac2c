@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/04/17 15:46:07  dkr
+ * definition of SAC_INITGLOBALOBJECT_BEGIN modified
+ *
  * Revision 3.6  2002/03/07 20:21:57  dkr
  * ICMs for function arguments modified
  *
@@ -691,18 +694,16 @@
  * SAC_INITGLOBALOBJECT( initfun, varname )
  *
  * ICM for initializing global objects.
- * when compiling for program or ususal sac module it only calls
- * the objinit function (initfun). if used in a c library it has to check
- * if the global obj has been initialized by another module (uses varname as flag)
- *
+ * When compiling for program or ususal sac module it only calls the objinit
+ * function (initfun). If used in a c library it has to check if the global
+ * object has been initialized by another module (uses varname as flag).
  */
 #ifdef SAC_GENERATE_CLIBRARY
 /* with check */
 #define SAC_INITGLOBALOBJECT_BEGIN(varname)                                              \
-    if (!varname) {                                                                      \
+    if (!CAT0 (varname, SAC_INIT_FLAG_)) {                                               \
         varname = true;
 #define SAC_INITGLOBALOBJECT_END() }
-
 #else
 /* without check -> NOP */
 #define SAC_INITGLOBALOBJECT_BEGIN(varname)
