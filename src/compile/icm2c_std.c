@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.54  2003/09/30 00:04:33  dkr
+ * minor modification in Set_Shape()
+ *
  * Revision 3.53  2003/09/29 23:45:48  dkr
  * ND_CHECK_REUSE: unique objects are reused as well now
  *
@@ -684,6 +687,43 @@ Set_Shape (char *to_NT, int to_sdim, void *shp, void (*shp_size_fun) (void *),
     DBUG_ENTER ("Set_Shape");
 
     /*
+     * check constant part of mirror
+     */
+    switch (to_sc) {
+    case C_scl:
+        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == ", to_NT);
+                         GetAttr (shp, to_dim, shp_size_fun);
+                         ,
+                         fprintf (outfile, "Assignment with incompatible types found!"););
+        break;
+
+    case C_aks:
+        DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+        for (i = 0; i < to_dim; i++) {
+            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d) == ", to_NT, i);
+                             shp_read_fun (shp, NULL, i);
+                             , fprintf (outfile,
+                                        "Assignment with incompatible types found!"););
+        }
+        /* here is no break missing */
+
+    case C_akd:
+        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == ", to_NT);
+                         GetAttr (shp, to_dim, shp_size_fun);
+                         ,
+                         fprintf (outfile, "Assignment with incompatible types found!"););
+        break;
+
+    case C_aud:
+        /* noop */
+        break;
+
+    default:
+        DBUG_ASSERT ((0), "Unknown shape class found!");
+        break;
+    }
+
+    /*
      * set descriptor and non-constant part of mirror
      */
     switch (to_sc) {
@@ -725,43 +765,6 @@ Set_Shape (char *to_NT, int to_sdim, void *shp, void (*shp_size_fun) (void *),
     case C_aks:
         /* here is no break missing */
     case C_scl:
-        /* noop */
-        break;
-
-    default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
-        break;
-    }
-
-    /*
-     * check constant parts of mirror
-     */
-    switch (to_sc) {
-    case C_scl:
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == ", to_NT);
-                         GetAttr (shp, to_dim, shp_size_fun);
-                         ,
-                         fprintf (outfile, "Assignment with incompatible types found!"););
-        break;
-
-    case C_aks:
-        DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
-        for (i = 0; i < to_dim; i++) {
-            ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_SHAPE( %s, %d) == ", to_NT, i);
-                             shp_read_fun (shp, NULL, i);
-                             , fprintf (outfile,
-                                        "Assignment with incompatible types found!"););
-        }
-        /* here is no break missing */
-
-    case C_akd:
-        ASSURE_TYPE_ASS (fprintf (outfile, "SAC_ND_A_DIM( %s) == ", to_NT);
-                         GetAttr (shp, to_dim, shp_size_fun);
-                         ,
-                         fprintf (outfile, "Assignment with incompatible types found!"););
-        break;
-
-    case C_aud:
         /* noop */
         break;
 
@@ -935,7 +938,7 @@ ICMCompileND_CHECK__MIRROR (char *to_NT, int to_sdim, char *from_NT, int from_sd
 #undef ND_CHECK__MIRROR
 
     /*
-     * check constant parts of mirror
+     * check constant part of mirror
      */
     switch (to_sc) {
     case C_scl:
