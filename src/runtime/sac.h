@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2002/07/03 13:59:16  dkr
+ * sac_boundcheck.h renamed into sac_runtimecheck.h
+ *
  * Revision 3.1  2000/11/20 18:02:07  sacbase
  * new release made
  *
@@ -75,9 +78,9 @@
 
 #include "sac_icm.h"
 
-#include "sac_boundcheck.h"
-#include "sac_misc.h"
 #include "sac_message.h"
+#include "sac_runtimecheck.h"
+#include "sac_misc.h"
 #include "sac_bool.h"
 
 #ifdef TAGGED_ARRAYS

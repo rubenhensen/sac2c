@@ -7,7 +7,6 @@ sac2crc.README
 sac2crc.SOLARIS_SPARC
 sac_arg.h
 sac_bool.h
-sac_boundcheck.h
 sac_cachesim.h
 sac_cinterface.h
 sac_cwrapper.h
@@ -20,6 +19,7 @@ sac_mt.h
 sac_mt2.h
 sac_prf.h
 sac_profile.h
+sac_runtimecheck.h
 sac_std.h
 sac_std.tagged.h
 sac_trace.h
