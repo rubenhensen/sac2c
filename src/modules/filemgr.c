@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.9  1996/09/11 06:22:51  cg
+ * Revision 1.10  1997/03/11 16:25:33  cg
+ * Improved function AbsolutePathname: Now, minimal absolute pathnames
+ * are constructed from relative path names, removing leading ../../
+ *
+ * Revision 1.9  1996/09/11  06:22:51  cg
  * Modified construction of paths.
  * Now: 1. paths added by command line option, 2. cwd, 3.shell variable
  *
@@ -39,6 +43,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <unistd.h>
 
 #include "dbug.h"
 #include "internal_lib.h"
@@ -262,7 +267,7 @@ AppendEnvVar (pathkind p, char *var)
 char *
 AbsolutePathname (char *path)
 {
-    char *pwd;
+    char *tmp;
     static char buffer[MAX_PATH_LEN];
 
     DBUG_ENTER ("AbsolutePathname");
@@ -270,13 +275,14 @@ AbsolutePathname (char *path)
     if (path[0] == '/') {
         strcpy (buffer, path);
     } else {
-        pwd = getenv ("PWD");
+        getcwd (buffer, MAX_PATH_LEN);
 
-        if (pwd == NULL) {
-            SYSABORT (("No Shell Variable PWD"));
+        while (0 == strncmp ("../", path, 3)) {
+            path += 3;
+            tmp = strrchr (buffer, '/');
+            *tmp = 0;
         }
 
-        strcpy (buffer, pwd);
         strcat (buffer, "/");
         strcat (buffer, path);
     }
