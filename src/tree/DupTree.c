@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.18  2001/03/05 14:42:53  dkr
+ * NCODE_NO removed
+ *
  * Revision 3.17  2001/03/02 15:47:25  dkr
  * bug in DupAssign fixed
  *
@@ -1592,7 +1595,6 @@ DupNcode (node *arg_node, node *arg_info)
      *                           in DupWLgrid() via MakeWLgrid(), respectively
      */
     NCODE_USED (new_node) = 0;
-    NCODE_NO (new_node) = NCODE_NO (arg_node);
     NCODE_FLAG (new_node) = NCODE_FLAG (arg_node);
 
     if (NCODE_INC_RC_IDS (arg_node) != NULL) {
