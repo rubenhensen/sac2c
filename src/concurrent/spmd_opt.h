@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.6  1999/08/27 11:58:47  jhs
+ * Added DBUG_PRINTS.
+ * Added function SPMDoptimize. to do spmd-opt from the outside.
+ *
  * Revision 2.5  1999/08/02 09:48:35  jhs
  * Moved MeltBlocks[OnCopies] from spmd_opt.[ch] to concurrent_lib.[ch].
  *
@@ -40,6 +44,8 @@
 #define SPMD_OPT_H
 
 #include "types.h"
+
+extern node *SPMDoptimize (node *arg_node, node *fundef);
 
 extern node *SPMDOspmd (node *arg_node, node *arg_info);
 extern node *SPMDOassign (node *arg_node, node *arg_info);

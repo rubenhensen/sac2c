@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/08/27 11:58:47  jhs
+ * Added DBUG_PRINTS.
+ * Added function SPMDoptimize. to do spmd-opt from the outside.
+ *
  * Revision 2.10  1999/08/09 11:32:20  jhs
  * Cleaned up info-macros for concurrent-phase.
  *
@@ -64,6 +68,50 @@
 
 #include "spmd_opt.h"
 
+int actions = -1;
+
+void
+DebugPrintMask (DFMmask_t mask, char *maskname)
+{
+    node *vardec;
+
+    DBUG_ENTER ("DebugPrintMask");
+
+    DBUG_PRINT ("SPMDO", ("begin mask print %s", maskname));
+    vardec = DFMGetMaskEntryDeclSet (mask);
+    while (vardec != NULL) {
+        DBUG_PRINT ("SPMDO", ("name %s", VARDEC_NAME (vardec)));
+        vardec = DFMGetMaskEntryDeclSet (NULL);
+    }
+    DBUG_PRINT ("SPMDO", ("end mask print %s", maskname));
+
+    DBUG_VOID_RETURN;
+}
+
+node *
+SPMDoptimize (node *arg_node, node *fundef)
+{
+    node *arg_info;
+    funptr *old_tab;
+
+    DBUG_ENTER ("SPMDoptimize");
+
+    arg_info = MakeInfo ();
+    INFO_CONC_FUNDEF (arg_info) = fundef;
+
+    old_tab = act_tab;
+    act_tab = spmdopt_tab;
+
+    DBUG_PRINT ("SPMDO", ("Entering trav from SPMDoptimze"));
+    arg_node = Trav (arg_node, arg_info);
+    DBUG_PRINT ("SPMDO", ("Leaving trav from SPMDoptimze"));
+
+    act_tab = old_tab;
+    arg_info = FreeTree (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * function:
@@ -107,36 +155,54 @@ MeltSPMDs (node *first_spmd, node *second_spmd, node *fundef)
                  "SPMD_STATIC differs in SPMDs to be melted");
 
     /*
-     *  Count which variables are consumned how often in second block and ...
+     *  Count which variables are consumned how often in second block
+     *  (until they are set again) and ...
      */
-    DBUG_PRINT ("SPMD", ("Entering CountOccurences"));
+    DBUG_PRINT ("SPMDO", ("Entering CountOccurences"));
     counters = CountOccurences (SPMD_REGION (second_spmd), SPMD_OUT (first_spmd), fundef);
-    DBUG_PRINT ("SPMD", ("Leaving CountOccurences"));
+    DBUG_PRINT ("SPMDO", ("Leaving CountOccurences %i", counters == NULL));
 
     /*
      *  this is only to debug, it prints out all variables (each with a varno
      *  and the corresponding value of counter[varno].
      */
     vardec = BLOCK_VARDEC (FUNDEF_BODY (fundef));
-    for (i = 0; i < 20; i++) {
+    for (i = 0; vardec != NULL; i++) {
         if (vardec != NULL) {
-            DBUG_PRINT ("SPMD", ("%i %i %s(varno=%i)", i, counters[VARDEC_VARNO (vardec)],
-                                 VARDEC_NAME (vardec), VARDEC_VARNO (vardec)));
+            DBUG_PRINT ("SPMDO",
+                        ("%i %i %s(varno=%i)", i, counters[VARDEC_VARNO (vardec)],
+                         VARDEC_NAME (vardec), VARDEC_VARNO (vardec)));
             vardec = VARDEC_NEXT (vardec);
         } else {
             /* rest will be NULL, so we jump out of here */
-            DBUG_PRINT ("SPMD", ("Rest NULL!!!"));
+            DBUG_PRINT ("SPMDO", ("Rest NULL!!!"));
             break;
         }
+    }
+
+    vardec = DFMGetMaskEntryDeclSet (SPMD_OUT (first_spmd));
+    while (vardec != NULL) {
+        DBUG_PRINT ("SPMDO", ("spmdout before ro %s", VARDEC_NAME (vardec)));
+        vardec = DFMGetMaskEntryDeclSet (NULL);
     }
 
     /*
      *  ... reduce all this occurences in the first block.
      */
-    DBUG_PRINT ("SPMD", ("Entering ReduceOccurences"));
-    ReduceOccurences (SPMD_REGION (first_spmd), counters, SPMD_OUT (first_spmd));
-    DestroyCM (counters);
-    DBUG_PRINT ("SPMD", ("Leaving ReduceOccurences"));
+    DBUG_PRINT ("SPMDO", ("Entering ReduceOccurences"));
+    if (actions != 0) {
+        ReduceOccurences (SPMD_REGION (first_spmd), counters, SPMD_OUT (first_spmd));
+    }
+
+    /* DBUG_PRINT( "SPMDO", ("inbetween")); */
+    counters = DestroyCM (counters);
+    DBUG_PRINT ("SPMDO", ("Leaving ReduceOccurences"));
+
+    vardec = DFMGetMaskEntryDeclSet (SPMD_OUT (first_spmd));
+    while (vardec != NULL) {
+        DBUG_PRINT ("SPMDO", ("spmdout after ro %s", VARDEC_NAME (vardec)));
+        vardec = DFMGetMaskEntryDeclSet (NULL);
+    }
 
     /* build one combined region from the two original regions */
     SPMD_REGION (first_spmd)
@@ -144,6 +210,16 @@ MeltSPMDs (node *first_spmd, node *second_spmd, node *fundef)
     SPMD_REGION (second_spmd) = NULL;
 
     /* melt the masks of used variables */
+
+    DBUG_PRINT ("SPMDO", ("--- begin ---"));
+    DebugPrintMask (SPMD_IN (first_spmd), "first in");
+    DebugPrintMask (SPMD_INOUT (first_spmd), "first inout");
+    DebugPrintMask (SPMD_OUT (first_spmd), "first out");
+    DebugPrintMask (SPMD_SHARED (first_spmd), "first shared");
+    DebugPrintMask (SPMD_IN (second_spmd), "second in");
+    DebugPrintMask (SPMD_INOUT (second_spmd), "second inout");
+    DebugPrintMask (SPMD_OUT (second_spmd), "second out");
+    DebugPrintMask (SPMD_SHARED (second_spmd), "second shared");
 
     /*  -> IN <- */
     /*  newin = first's ins and second's ins,
@@ -159,11 +235,13 @@ MeltSPMDs (node *first_spmd, node *second_spmd, node *fundef)
     DFMSetMaskOr (newout, SPMD_OUT (second_spmd));
     /*
      *  cut out the ones produced in first but not used beyond second.
-     *  (here one runs over both blocks now melted, that makes no difference).
+     *  (here one runs over both blocks now melted, but that makes no difference).
      */
-    DBUG_PRINT ("SPMD", ("Entering ReduceMasks"));
-    newout = ReduceMasks (SPMD_REGION (first_spmd), newout);
-    DBUG_PRINT ("SPMD", ("Leaving ReduceMasks"));
+    DBUG_PRINT ("SPMDO", ("Entering ReduceMasks"));
+    if (actions != 0) {
+        newout = ReduceMasks (SPMD_REGION (first_spmd), newout);
+    }
+    DBUG_PRINT ("SPMDO", ("Leaving ReduceMasks"));
 
     /* -> SHARED <- */
     /* combination of - (first's outs and second's ins)
@@ -193,6 +271,12 @@ MeltSPMDs (node *first_spmd, node *second_spmd, node *fundef)
 
     /* -> INOUT <- */
     /* nothing to be done, only values of first needed */
+
+    DebugPrintMask (SPMD_IN (first_spmd), "new in");
+    DebugPrintMask (SPMD_INOUT (first_spmd), "new inout");
+    DebugPrintMask (SPMD_OUT (first_spmd), "new out");
+    DebugPrintMask (SPMD_SHARED (first_spmd), "new shared");
+    DBUG_PRINT ("SPMDO", ("--- end ---"));
 
     FreeTree (second_spmd);
 
@@ -266,14 +350,20 @@ SPMDOspmd (node *arg_node, node *arg_info)
      *  if this SPMD-Block is followed directly (!) by another SPMD-Block both
      *  blocks are melted here.
      */
-    while ((INFO_SPMDO_NEXTASSIGN (arg_info) != NULL)
+    DBUG_PRINT ("SPMDO", ("actions %i", actions));
+    while ((actions != 0) && (INFO_SPMDO_NEXTASSIGN (arg_info) != NULL)
            && (NODE_TYPE (ASSIGN_INSTR (INFO_SPMDO_NEXTASSIGN (arg_info))) == N_spmd)) {
-        DBUG_PRINT ("SPMDO", ("melting spmd-blocks"));
+        if ((actions != -1) && (actions != 0)) {
+            actions--;
+        }
+        DBUG_PRINT ("SPMDO", ("actions %i", actions));
         /*
          *  The actual optimization of SPMD-blocks takes place here.
          */
+        DBUG_PRINT ("SPMDO", ("before melting spmd-blocks"));
         result = MeltSPMDs (arg_node, ASSIGN_INSTR (INFO_SPMDO_NEXTASSIGN (arg_info)),
                             INFO_CONC_FUNDEF (arg_info));
+        DBUG_PRINT ("SPMDO", ("after melting spmd-blocks"));
 
         /*
          *  Rearrange the pointers between the two assigments around the assignment
@@ -335,6 +425,8 @@ SPMDOassign (node *arg_node, node *arg_info)
     INFO_SPMDO_THISASSIGN (arg_info) = arg_node;
     INFO_SPMDO_NEXTASSIGN (arg_info) = ASSIGN_NEXT (arg_node);
 
+    DBUG_PRINT ("SPMDO", ("SPMDOassign trav into instr %s",
+                          mdb_nodetype[NODE_TYPE (ASSIGN_INSTR (arg_node))]));
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     /*
      *  NEXT might have changed during traversal of instruction!
