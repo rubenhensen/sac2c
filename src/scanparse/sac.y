@@ -3,7 +3,12 @@
 /*
  *
  * $Log$
- * Revision 1.86  1995/10/06 17:13:36  cg
+ * Revision 1.87  1995/10/12 13:47:41  cg
+ * bug in SIB-part fixed
+ * now different name spaces for external and SAC-main-program items. The latter ones
+ * are now prefixed "__SAC".
+ *
+ * Revision 1.86  1995/10/06  17:13:36  cg
  * calls to MakeIds adjusted to new signature (3 parameters)
  *
  * Revision 1.85  1995/10/01  17:00:26  cg
@@ -320,7 +325,7 @@ node *decl_tree;
 node *sib_tree;
 
 
-static char *mod_name=NULL;
+static char *mod_name="__SAC";
 
 
 /* used to distinguish the different kinds of files  */
@@ -562,10 +567,14 @@ imptype: ID SEMIC
               {
               $$=MakeNode(N_typedef);
               $$->info.types=MakeTypes(T_hidden);
+
               DBUG_PRINT("GENTREE",("type:"P_FORMAT" %s",
-                                     $$->info.types, mdb_type[$$->info.types->simpletype]));
+                                    $$->info.types,
+                                    mdb_type[$$->info.types->simpletype]));
+
               $$->info.types->id=$1;
               $$->info.types->id_mod=mod_name;
+              $$->info.types->status=ST_imported;
 
               DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT","P_FORMAT", Id: %s",
@@ -587,6 +596,7 @@ exptype: ID LET type SEMIC
             $$->info.types=$3;
             $$->info.types->id=$1;
             $$->info.types->id_mod=mod_name;
+            $$->info.types->status=ST_imported;
 
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT","P_FORMAT", Id: %s",
@@ -607,6 +617,7 @@ objdec: type ID SEMIC
              $$->info.types=$1;
              $$->info.types->id=$2;   /* object name */
              $$->info.types->id_mod=mod_name;
+             $$->info.types->status=ST_imported;
              $$->node[1]=NULL;	/* there is no object init here! */
              $$->nnode=0;
              
@@ -631,7 +642,8 @@ fundec: varreturntypes ID BRACKET_L fundec2
             $$->info.types=$1;
             $$->info.types->id=$2; /* function name */
             $$->info.types->id_mod=mod_name; /* modul name */
-
+            $$->info.types->status=ST_imported;
+            
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT" Id: %s , NULL body,  %s" P_FORMAT,
                         mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
@@ -652,6 +664,7 @@ fundec: varreturntypes ID BRACKET_L fundec2
               $$->info.types=$1;
               $$->info.types->id=$2; /* function name */
               $$->info.types->id_mod=mod_name; /* modul name */
+              $$->info.types->status=ST_imported;
               $$->node[5]=(node *)$4; /* new name for primitive function */
 
                DBUG_PRINT("GENTREE",
@@ -680,6 +693,7 @@ fundec: varreturntypes ID BRACKET_L fundec2
                 $$->info.types=$1;
                 $$->info.types->id=$2; /* function name */
                 $$->info.types->id_mod=mod_name; /* modul name */
+                $$->info.types->status=ST_imported;
 
                 DBUG_PRINT("GENTREE",
                          ("%s:"P_FORMAT" Id: %s ,new_name: %s NULL body, "
@@ -706,7 +720,8 @@ fundec: varreturntypes ID BRACKET_L fundec2
                 $$->info.types=$1;
                 $$->info.types->id=$2; /* function name */
                 $$->info.types->id_mod=mod_name; /* module name */
-
+                $$->info.types->status=ST_imported;
+                
             DBUG_PRINT("GENTREE",
                        ("%s:"P_FORMAT" Id: %s , NULL body,  %s" P_FORMAT,
                         mdb_nodetype[ $$->nodetype ], $$, $$->info.types->id,
@@ -798,6 +813,15 @@ def4: fundefs { $$=MakeNode(N_modul);
                             mdb_nodetype[ $$->node[2]->nodetype ],
                             $$->node[2]));
               }
+    |         { $$=MakeNode(N_modul);
+                $$->info.id=NULL;
+                $$->node[2]=NULL;
+
+                DBUG_PRINT("GENTREE",
+                           ("%s:"P_FORMAT,
+                            mdb_nodetype[ $$->nodetype ], $$));
+                
+              }
 	;
 
 modimp: impclass ID {  mod_name=$2; } COLON defs
@@ -816,6 +840,7 @@ impclass : MODIMP   { file_kind=F_modimp;}
          ;
 
 prg: defs { $$=$1;
+            MODUL_NAME($$)=mod_name;
             MODUL_FILETYPE($$)=F_prog;
           }
         ;
@@ -1534,6 +1559,16 @@ expr:   apl {$$=$1; $$->info.fun_name.id_mod=NULL; }
            DBUG_PRINT("GENTREE",("%s " P_FORMAT ": %s ",
                             mdb_nodetype[$$->nodetype],$$,$$->info.ids->id));  
          }
+      | ID COLON ID
+         { $$=MakeNode(N_id);
+           $$->info.ids=MakeIds($3, $1, ST_global);  /* name of variable*/
+
+           DBUG_PRINT("GENTREE",("%s " P_FORMAT ": %s:%s ",
+                                 mdb_nodetype[$$->nodetype],
+                                 $$,
+                                 $$->info.ids->mod,
+                                 $$->info.ids->id));  
+         }
       | MINUS ID %prec UMINUS
         {   node *exprs1, *exprs2;
             exprs2=MakeNode(N_exprs);
@@ -2243,6 +2278,7 @@ sibtypes: sibtype sibtypes
 sibtype: typedef
            {
              $$=$1;
+             $$->info.types->status=ST_imported;
 
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT","P_FORMAT", Id: %s",
@@ -2268,6 +2304,7 @@ sibfun: fun_name BRACKET_L sibfun2
             $$=$3;
             $$->info.types->id=$1;    /*  function name */
             $$->info.types->id_mod=mod_name;
+            $$->info.types->status=ST_imported;
 
            DBUG_PRINT("GENSIB",("%s"P_FORMAT"SibFun %s:%s",
                                mdb_nodetype[$$->nodetype],$$,
@@ -2419,6 +2456,7 @@ sibimpltype:  ID LET sibimpltypedef
                  $$->info.types=$3;
                  $$->info.types->id=$1;
                  $$->info.types->id_mod=NULL;
+                 $$->info.types->status=ST_imported;
 
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT", implicit usage, Id: %s:%s, Status: %d",
@@ -2434,7 +2472,8 @@ sibimpltype:  ID LET sibimpltypedef
                  $$->info.types->id=$2;
                  $$->info.types->id_mod=NULL;
                  $$->info.types->attrib=ST_unique;
-                 
+                 $$->info.types->status=ST_imported;
+
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT", implicit usage, Id: %s:%s, Status: %d",
                         mdb_nodetype[ $$->nodetype ], $$, 
@@ -2448,6 +2487,7 @@ sibimpltype:  ID LET sibimpltypedef
                  $$->info.types=$5;
                  $$->info.types->id=$3;
                  $$->info.types->id_mod=$1;
+                 $$->info.types->status=ST_imported;
 
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT", implicit usage, Id: %s:%s, Status: %d",
@@ -2463,6 +2503,7 @@ sibimpltype:  ID LET sibimpltypedef
                  $$->info.types->id=$4;
                  $$->info.types->id_mod=$2;
                  $$->info.types->attrib=ST_unique;
+                 $$->info.types->status=ST_imported;
                  
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT", implicit usage, Id: %s:%s, Status: %d",
@@ -2503,6 +2544,7 @@ sibimplfun: varreturntypes ID evactfun BRACKET_L sibimplfun2
                  $$->info.types=$1;
                  $$->info.types->id=$2;
                  $$->info.types->id_mod=NULL;
+                 $$->info.types->status=ST_imported;
                  $$->node[5]=(node*)$3;
 
             DBUG_PRINT("GENSIB",
@@ -2518,6 +2560,7 @@ sibimplfun: varreturntypes ID evactfun BRACKET_L sibimplfun2
                  $$->info.types=$1;
                  $$->info.types->id=$4;
                  $$->info.types->id_mod=$2;
+                 $$->info.types->status=ST_imported;
                  $$->node[5]=(node*)$5;
 
             DBUG_PRINT("GENSIB",
@@ -2574,12 +2617,13 @@ sibimplfunobjs: sibimplfunobj COMMA sibimplfunobjs
 
 sibimplfunobj: type sibobjattrib ID
                  {
-                   $$=MakeNode(N_arg);
+                   $$=MakeNode(N_objdef);
                    $$->info.types=$1;
                    $$->info.types->id=$3;
                    $$->info.types->id_mod=NULL;
                    $$->info.types->status=ST_artificial;
                    $$->info.types->attrib=$2;
+                   $$->info.types->status=ST_imported;
 
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT", impl obj of impl used fun, Id: %s:%s",
@@ -2588,13 +2632,14 @@ sibimplfunobj: type sibobjattrib ID
                  }
              | type sibobjattrib ID COLON ID
                  {
-                   $$=MakeNode(N_arg);
+                   $$=MakeNode(N_objdef);
                    $$->info.types=$1;
                    $$->info.types->id=$5;
                    $$->info.types->id_mod=$3;
                    $$->info.types->status=ST_artificial;
                    $$->info.types->attrib=$2;
-
+                   $$->info.types->status=ST_imported;
+                   
             DBUG_PRINT("GENSIB",
                        ("%s:"P_FORMAT", impl obj of impl used fun, Id: %s:%s",
                         mdb_nodetype[ $$->nodetype ], $$, 
@@ -2622,6 +2667,7 @@ sibimplobject: type sibobjattrib ID SEMIC
                    $$->info.types->id_mod=NULL;
                    $$->info.types->status=ST_artificial;
                    $$->info.types->attrib=$2;
+                   $$->info.types->status=ST_imported;
 
               DBUG_PRINT("GENSIB",
                          ("%s: "P_FORMAT", implicit usage, Id: %s:%s, Attrib: %d, Status: %d  ",
@@ -2639,6 +2685,7 @@ sibimplobject: type sibobjattrib ID SEMIC
                    $$->info.types->id_mod=$3;
                    $$->info.types->status=ST_artificial;
                    $$->info.types->attrib=$2;
+                   $$->info.types->status=ST_imported;
 
               DBUG_PRINT("GENSIB",
                          ("%s: "P_FORMAT", implicit usage, Id: %s:%s, Attrib: %d, Status: %d  ",
