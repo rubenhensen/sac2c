@@ -1,6 +1,4 @@
 Makefile
-analyse.c
-analyse.h
 compile.c
 compile.h
 icm.data
@@ -14,4 +12,6 @@ libsac.c
 libsac.h
 precompile.c
 precompile.h
+profile.c
+profile.h
 trace.h
