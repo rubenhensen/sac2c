@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  1998/05/12 22:46:04  dkr
+ * added some macros for fold
+ *
  * Revision 1.4  1998/05/12 18:50:11  dkr
  * changed some ICMs
  *
@@ -21,12 +24,11 @@
 #define _icm2c_wl_h
 
 extern void ICMCompileWL_NONFOLD_BEGIN (char *array, char *idx_vec, int dims,
-                                        char **idx_scalar);
+                                        char **args);
 
-extern void ICMCompileWL_FOLD_BEGIN (char *array, char *idx_vec, int dims,
-                                     char **idx_scalar);
+extern void ICMCompileWL_FOLD_BEGIN (char *array, char *idx_vec, int dims, char **args);
 
-extern void ICMCompileWL_END (char *array, char *idx_vec, int dims, char **idx_scalar);
+extern void ICMCompileWL_END (char *array, char *idx_vec, int dims, char **args);
 
 extern void ICMCompileWL_ASSIGN (char *expr, char *array, char *idx_vec, int dims,
                                  char **idx_scalar);
