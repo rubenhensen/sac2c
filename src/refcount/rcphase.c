@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2004/11/23 20:23:28  jhb
+ * compile
+ *
  * Revision 1.3  2004/11/19 15:42:41  ktr
  * Support for F_alloc_or_reshape added.
  *
@@ -27,6 +30,8 @@
  *
  *
  */
+#include "rcphase.h"
+
 #include "globals.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -36,6 +41,7 @@
 #include "refcounting.h"
 #include "rcopt.h"
 #include "reuseelimination.h"
+#include <string.h>
 
 /** <!--*******************************************************************-->
  *
@@ -53,32 +59,35 @@ RCphase (node *syntax_tree)
 {
     DBUG_ENTER ("RCphase");
 
-    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_modul),
-                 "RCphase not started with N_modul node");
+    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
+                 "RCphase not started with N_module node");
 
     /*
      * Reference counting
      */
-    syntax_tree = EMRefCount (syntax_tree);
-    if ((break_after == PH_refcnt) && (0 == strcmp (break_specifier, "rc"))) {
+    syntax_tree = EMrefcounting (syntax_tree);
+    if ((global.break_after == PH_refcnt)
+        && (0 == strcmp (global.break_specifier, "rc"))) {
         goto DONE;
     }
 
     /*
      * Reference counting optimizations
      */
-    if (optimize & OPT_RCO) {
-        syntax_tree = EMRCORefCountOpt (syntax_tree);
+    if (global.optimize.dorco) {
+        syntax_tree = EMRCOdoRefCountOpt (syntax_tree);
     }
-    if ((break_after == PH_refcnt) && (0 == strcmp (break_specifier, "rco"))) {
+    if ((global.break_after == PH_refcnt)
+        && (0 == strcmp (global.break_specifier, "rco"))) {
         goto DONE;
     }
 
     /*
      * Reuse elimination
      */
-    syntax_tree = EMREReuseElimination (syntax_tree);
-    if ((break_after == PH_refcnt) && (0 == strcmp (break_specifier, "re"))) {
+    syntax_tree = EMREdoReuseElimination (syntax_tree);
+    if ((global.break_after == PH_refcnt)
+        && (0 == strcmp (global.break_specifier, "re"))) {
         goto DONE;
     }
 
