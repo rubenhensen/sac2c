@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1995/05/12 13:14:10  hw
+ * Revision 1.3  1995/07/24 09:01:48  asi
+ * added function itoa
+ *
+ * Revision 1.2  1995/05/12  13:14:10  hw
  * changed tag of DBUG_PRINT in function Malloc to MEM
  *
  * Revision 1.1  1995/03/28  12:01:50  hw
@@ -11,6 +14,8 @@
  */
 
 #include <stdlib.h>
+#include <math.h>
+
 #include "Error.h"
 #include "dbug.h"
 #include "my_debug.h"
@@ -74,5 +79,42 @@ StringCopy (char *source)
             str[i] = source[i];
     } else
         str = NULL;
+    DBUG_RETURN (str);
+}
+
+/*
+ *
+ *  functionname  : itoa
+ *  arguments     : 1) number
+ *		    R) result string
+ *  description   : converts long to string
+ *  global vars   :
+ *  internal funs : Malloc
+ *  external funs : sizeof
+ *  macros        : DBUG..., NULL
+ *
+ *  remarks       :
+ *
+ */
+char *
+itoa (long number)
+{
+    char *str;
+    int tmp;
+    int length, i;
+
+    DBUG_ENTER ("ltoa");
+    tmp = number;
+    length = 1;
+    while (1 < tmp) {
+        tmp /= 10;
+        length++;
+    }
+    str = (char *)Malloc (sizeof (char) * length + 1);
+    str[length] = atoi ("\0");
+    for (i = length - 1; (0 <= i); i--) {
+        str[i] = ((int)'0') + (number / pow (10, (length - 1)));
+        number = number % ((int)pow (10, (length - 1)));
+    }
     DBUG_RETURN (str);
 }

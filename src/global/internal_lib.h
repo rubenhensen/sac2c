@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1995/07/19 18:41:23  asi
+ * Revision 1.4  1995/07/24 09:01:48  asi
+ * added function itoa
+ *
+ * Revision 1.3  1995/07/19  18:41:23  asi
  * added macros MIN and MAX
  *
  * Revision 1.2  1995/07/14  17:04:31  asi
@@ -19,6 +22,7 @@
 
 void *Malloc (int size);
 char *StringCopy (char *source);
+char *itoa (long number);
 
 #define SWAP(ptr1, ptr2)                                                                 \
     {                                                                                    \
