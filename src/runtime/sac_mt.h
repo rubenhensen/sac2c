@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.8  1999/07/28 13:02:56  jhs
+ * Barriers are static now.
+ *
  * Revision 2.7  1999/07/20 16:57:01  jhs
  * Added SAC_MT_SYNC_MULTIFOLD_[1|2|3][A|B].
  *
@@ -193,12 +196,12 @@ typedef union {
 #if SAC_MT_CACHE_LINE_MAX()
 
 #define SAC_MT_DEFINE_BARRIER()                                                          \
-    SAC_MT_barrier_t SAC_MT_barrier_space[SAC_SET_THREADS_MAX + 1];
+    static SAC_MT_barrier_t SAC_MT_barrier_space[SAC_SET_THREADS_MAX + 1];
 
 #else /* SAC_MT_CACHE_LINE_MAX() */
 
 #define SAC_MT_DEFINE_BARRIER()                                                          \
-    SAC_MT_barrier_t SAC_MT_barrier_space[SAC_SET_THREADS_MAX];
+    static SAC_MT_barrier_t SAC_MT_barrier_space[SAC_SET_THREADS_MAX];
 
 #endif /* SAC_MT_CACHE_LINE_MAX() */
 
