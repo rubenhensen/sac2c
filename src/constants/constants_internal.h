@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2004/11/26 15:04:30  jhb
+ * add prefix COINT to the functions
+ *
  * Revision 1.5  2004/11/26 14:34:03  sbs
  * change run
  *
@@ -55,12 +58,13 @@ struct CONSTANT {
  * here some extern decls for helper functions defined in constants_basic.c
  */
 
-extern constant *MakeConstant (simpletype type, shape *shp, void *elems, int vlen);
-extern void *AllocCV (simpletype type, int length);
-extern void *PickNElemsFromCV (simpletype type, void *elems, int offset, int length);
-extern void CopyElemsFromCVToCV (simpletype type, void *from, int off, int len, void *to,
-                                 int to_off);
-extern void DbugPrintBinOp (char *fun, constant *arg1, constant *arg2, constant *res);
-extern void DbugPrintUnaryOp (char *fun, constant *arg1, constant *res);
+extern constant *COINTmakeConstant (simpletype type, shape *shp, void *elems, int vlen);
+extern void *COINTallocCV (simpletype type, int length);
+extern void *COINTpickNElemsFromCV (simpletype type, void *elems, int offset, int length);
+extern void COINTcopyElemsFromCVToCV (simpletype type, void *from, int off, int len,
+                                      void *to, int to_off);
+extern void COINTdbugPrintBinOp (char *fun, constant *arg1, constant *arg2,
+                                 constant *res);
+extern void COINTdbugPrintUnaryOp (char *fun, constant *arg1, constant *res);
 
 #endif /* _SAC_CONSTANTS_INTERNAL_H_ */
