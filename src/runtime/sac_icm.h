@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1999/06/24 14:26:37  rob
+ * Try to resolve RCS missing module problem.
+ *
  * Revision 1.3  1999/06/24 14:24:30  rob
  * Try to resolve RCS problem with missing modules.
  *
