@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.25  1999/07/08 16:00:52  bs
+ * Bug fixed in WLAAprintAccesses.
+ *
  * Revision 2.24  1999/07/07 05:57:44  sbs
  * adjust the function for printing Vinfo-Nodes for the new Dollar separated chains
  *
@@ -164,8 +167,8 @@
       ? ("ACL_unknown")                                                                  \
       : ((arg == ACL_irregular)                                                          \
            ? ("ACL_irregular")                                                           \
-           : ((arg == ACL_offset) ? ("ACL_offset")                                       \
-                                  : ((arg == ACL_const) ? ("ACL_const") : (""))))
+           : ((arg == ACL_offset) ? ("ACL_offset:")                                      \
+                                  : ((arg == ACL_const) ? ("ACL_const :") : (""))))
 
 #define IV(a) ((a) == 0) ? ("") : ("iv + ")
 
@@ -397,7 +400,7 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
             iv = 0;
             offset = ACCESS_OFFSET (access);
             INDENT;
-            fprintf (outfile, " *   %s : ", ACLT (ACCESS_CLASS (access)));
+            fprintf (outfile, " *   %s ", ACLT (ACCESS_CLASS (access)));
             switch (ACCESS_CLASS (access)) {
             case ACL_irregular:
                 /*
@@ -405,7 +408,7 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
                  */
             case ACL_unknown:
                 fprintf (outfile, "\n");
-                access = NULL;
+                access = ACCESS_NEXT (access);
                 break;
             case ACL_offset:
                 iv = 1;
