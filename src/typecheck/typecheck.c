@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.36  2000/05/03 06:07:01  sbs
+ * warning inserted when maxspecialize is exceeded!
+ *
  * Revision 2.35  2000/02/23 20:16:34  cg
  * Node status ST_imported replaced by ST_imported_mod and
  * ST_imported_class in order to allow distinction between enteties
@@ -3872,8 +3875,11 @@ DuplicateFun (fun_tab_elem *fun_p)
         OLD_INSERT_FUN (fun_p, new_fun_node->ID, new_fun_node->ID_MOD, new_fun_node,
                         NOT_CHECKED, -2);
         new_fun_p = NEXT_FUN_TAB_ELEM (fun_p);
-    } else
+    } else {
+        WARN (NODE_LINE (fun_p->node),
+              ("maxspecialize exceeded for function %s", FUNDEF_NAME (fun_p->node)));
         new_fun_p = fun_p;
+    }
 
     DBUG_RETURN (new_fun_p);
 }
