@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/03/15 11:59:57  dkr
+ * PrintStatus added
+ *
  * Revision 3.8  2001/02/12 15:57:34  nmw
  * Print functions for N_cseinfo, N_ssacnt and N_avis added
  *
@@ -152,6 +155,7 @@ extern node *PrintWLgridx (node *arg_node, node *arg_info);
 
 extern node *PrintCWrapper (node *arg_node, node *arg_info);
 
+extern void PrintStatus (statustype status, bool do_it);
 extern void PrintFunctionHeader (node *arg_node, node *arg_info);
 
 extern node *Print (node *syntax_tree);
