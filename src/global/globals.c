@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/03/09 12:43:18  sbs
+ * PFfunnme[0] has to be initialized even if profiling is turned off!!!
+ * (GenStartupCode breaks otherwise.
+ *
  * Revision 3.7  2001/03/09 11:15:27  sbs
  * initializations of PF.... changed to fit new profiler.
  *
@@ -422,7 +426,7 @@ char cachesim_dir[MAX_FILE_NAME] = "";
  */
 
 int PFfuncntr = 0;
-char *PFfunnme[PF_MAXFUN];
+char *PFfunnme[PF_MAXFUN] = {"main"};
 int PFfunapcntr[PF_MAXFUN];
 int PFfunapline[PF_MAXFUN][PF_MAXFUNAP];
 int PFfunapmax = 1;
