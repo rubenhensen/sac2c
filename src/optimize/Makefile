@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.29  2003/04/26 20:45:38  mwe
+# ElimSubDiv and UndoElimSubDiv added
+#
 # Revision 3.28  2003/02/08 16:00:01  mwe
 # DistributiveLaw.o added
 #
@@ -71,7 +74,8 @@ all: optimize.o generatemasks.o ConstantFolding.o DeadCodeRemoval.o \
      LoopInvariantRemoval.o Inline.o Unroll.o Unswitch.o CSE.o \
      WLUnroll.o DeadFunctionRemoval.o freemasks.o \
      SSADeadCodeRemoval.o SSACSE.o SSAConstantFolding.o SSALIR.o SSALUR.o \
-     SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o DistributiveLaw.o
+     SSAWLUnroll.o SSAInferLI.o AssociativeLaw.o rmcasts.o DistributiveLaw.o \
+     UndoElimSubDiv.o ElimSubDiv.o
 
 
 %.o: %.c

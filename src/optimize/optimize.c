@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.47  2003/04/26 20:45:38  mwe
+ * ElimSubDiv and UndoElimSubDiv added
+ *
  * Revision 3.46  2003/03/26 15:42:31  sbs
  * *** empty log message ***
  *
@@ -280,6 +283,8 @@
 #include "SSAWithloopFolding.h"
 #include "rmcasts.h"
 #include "SSAInferLI.h"
+#include "ElimSubDiv.h"
+#include "UndoElimSubDiv.h"
 
 /**
  *
@@ -786,9 +791,11 @@ DONE:
  *        UNS        |   (not available in ssa form)
  *        LIR        |
  *        WLS        |
+ *        ESD        |
  *        DL         |
  *        AL         |
  *         |--------/
+ *        UESD
  *         |<-------\
  * loop2: CF         |
  *        WLT        |
@@ -926,7 +933,7 @@ OPTfundef (node *arg_node, node *arg_info)
 
         /*
          * Now, we enter the first loop. It consists of:
-         *   CSE, CF, WLT, WLF, (CF), DCR, LUNR/ WLUNR, UNS, LIR and WLS.
+         *   CSE, CF, WLT, WLF, (CF), DCR, LUNR/ WLUNR, UNS, LIR WLS, (ESD), AL and DL.
          */
         do {
             loop1++;
@@ -1137,6 +1144,10 @@ OPTfundef (node *arg_node, node *arg_info)
                 goto INFO;
             }
 
+            if (((optimize & OPT_AL) || (optimize & OPT_DL)) && (use_ssaform)) {
+                arg_node = ElimSubDiv (arg_node, arg_info);
+            }
+
             if ((optimize & OPT_AL) && (use_ssaform)) {
                 arg_node = AssociativeLaw (arg_node, arg_info);
             }
@@ -1167,6 +1178,10 @@ OPTfundef (node *arg_node, node *arg_info)
          * How about  cf_expr, wlt_expr, dcr_expr  ??
          * I think we should compare these counters here, too!
          */
+
+        if (((optimize & OPT_AL) || (optimize & OPT_DL)) && (use_ssaform)) {
+            arg_node = UndoElimSubDiv (arg_node, arg_info);
+        }
 
         /*
          * Now, we enter the second loop consisting of
