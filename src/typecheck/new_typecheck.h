@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/10/18 14:36:03  sbs
+ * NTCobjdef added.
+ *
  * Revision 3.6  2002/09/03 14:41:45  sbs
  * DupTree machanism for duplicating condi funs established
  *
@@ -37,6 +40,7 @@ extern node *NewTypeCheck (node *arg_node);
 extern ntype *NewTypeCheck_Expr (node *arg_node);
 
 extern node *NTCtypedef (node *arg_node, node *arg_info);
+extern node *NTCobjdef (node *arg_node, node *arg_info);
 extern node *NTCmodul (node *arg_node, node *arg_info);
 extern node *NTCfundef (node *arg_node, node *arg_info);
 extern node *NTCarg (node *arg_node, node *arg_info);
