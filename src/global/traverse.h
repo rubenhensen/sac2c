@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.38  1998/02/05 17:08:52  srs
+ * removed wr_tab and changed fusion_tab into wlf_tab
+ *
  * Revision 1.37  1997/11/19 19:40:15  dkr
  * added o2nWith_tab
  *
@@ -148,7 +151,7 @@ extern funptr dcr_tab[];
 
 extern funptr cf_tab[];
 
-extern funptr wr_tab[];
+extern funptr unused2_tab[];
 
 extern funptr free_tab[];
 
@@ -170,7 +173,7 @@ extern funptr unswitch_tab[];
 
 extern funptr idx_tab[];
 
-extern funptr fusion_tab[];
+extern funptr wlf_tab[];
 
 extern funptr ae_tab[];
 
