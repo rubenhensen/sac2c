@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  2000/07/11 10:23:00  dkr
+ * macro GEN_NODE moved to tree.c
+ *
  * Revision 1.1  2000/01/21 15:38:43  dkr
  * Initial revision
  *
@@ -167,14 +170,8 @@
  * Revision 1.19  1995/01/02  11:20:44  asi
  * changed type of mask from char to long
  *
- * Revision 1.18  1995/01/02  10:50:03  asi
- * *** empty log message ***
- *
  * Revision 1.17  1994/12/30  16:57:48  sbs
  * added MakeTypes
- *
- * Revision 1.16  1994/12/30  13:49:08  hw
- * *** empty log message ***
  *
  * Revision 1.15  1994/12/30  13:22:09  hw
  * changed struct types (added id_mod & name_mod)
@@ -218,7 +215,6 @@
  * Revision 1.2  1994/11/10  15:44:34  sbs
  * RCS-header inserted
  *
- *
  */
 
 #ifndef _sac_tree_h
@@ -236,14 +232,6 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "internal_lib.h"
-
-/*
- *  The following macros for the generation of nodes are only supported
- *  for compatibility with old code. Please, do not use them in new code.
- *  You will find equivalent ones in tree_basic.h and tree_compound.h
- */
-
-#define GEN_NODE(type) (type *)Malloc (sizeof (type))
 
 extern types *MakeTypes (simpletype simple);
 extern node *MakeNode (nodetype nodetype);
