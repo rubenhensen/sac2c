@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2003/10/08 15:50:23  cg
+ * De-allocation of descriptors is now done using tailor-made ICM.
+ *
  * Revision 3.49  2003/09/29 23:46:27  dkr
  * SAC_IS_REUSED__BLOCK_BEGIN__SCL corrected
  *
@@ -1169,13 +1172,18 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_FREE__DESC__SCL(var_NT)                                                   \
     CAT12 (SAC_ND_FREE__DESC__SCL_, NT_HID (var_NT) (var_NT))
+
 #define SAC_ND_FREE__DESC__SCL_NHD(var_NT) SAC_NOOP ()
+
 #define SAC_ND_FREE__DESC__SCL_HID(var_NT)                                               \
     CAT13 (SAC_ND_FREE__DESC__SCL_HID_, NT_UNQ (var_NT) (var_NT))
+
 #define SAC_ND_FREE__DESC__SCL_HID_NUQ(var_NT) SAC_ND_FREE__DESC__AKS (var_NT)
+
 #define SAC_ND_FREE__DESC__SCL_HID_UNQ(var_NT) SAC_NOOP ()
 
 #define SAC_ND_FREE__DATA__SCL_NHD(var_NT, freefun) SAC_NOOP ()
+
 #define SAC_ND_FREE__DATA__SCL_HID(var_NT, freefun)                                      \
     {                                                                                    \
         SAC_TR_MEM_PRINT (("ND_FREE__DATA( %s, %s) at addr: %p", #var_NT, #freefun,      \
@@ -1192,8 +1200,7 @@ typedef int *SAC_array_descriptor_t;
     {                                                                                    \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_FREE__DESC( %s) at addr: %p", #var_NT, SAC_ND_A_DESC (var_NT)))           \
-        SAC_HM_FREE_FIXED_SIZE (SAC_ND_A_DESC (var_NT),                                  \
-                                BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)))        \
+        SAC_HM_FREE_DESC (SAC_ND_A_DESC (var_NT))                                        \
     }
 
 #define SAC_ND_FREE__DATA__AKS_NHD(var_NT, freefun)                                      \
@@ -1206,6 +1213,7 @@ typedef int *SAC_array_descriptor_t;
         SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
         SAC_CS_UNREGISTER_ARRAY (var_NT)                                                 \
     }
+
 #define SAC_ND_FREE__DATA__AKS_HID(var_NT, freefun)                                      \
     {                                                                                    \
         int SAC_i;                                                                       \
@@ -1229,6 +1237,7 @@ typedef int *SAC_array_descriptor_t;
         SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
         SAC_CS_UNREGISTER_ARRAY (var_NT)                                                 \
     }
+
 #define SAC_ND_FREE__DATA__AKD_HID(var_NT, freefun)                                      \
     SAC_ND_FREE__DATA__AKS_HID (var_NT, freefun)
 
@@ -1236,15 +1245,11 @@ typedef int *SAC_array_descriptor_t;
  * AUD
  */
 
-#define SAC_ND_FREE__DESC__AUD(var_NT)                                                   \
-    {                                                                                    \
-        SAC_TR_MEM_PRINT (                                                               \
-          ("ND_FREE__DESC( %s) at addr: %p", #var_NT, SAC_ND_A_DESC (var_NT)))           \
-        SAC_HM_FREE (SAC_ND_A_DESC (var_NT))                                             \
-    }
+#define SAC_ND_FREE__DESC__AUD(var_NT) SAC_ND_FREE__DESC__AKD (var_NT)
 
 #define SAC_ND_FREE__DATA__AUD_NHD(var_NT, freefun)                                      \
     SAC_ND_FREE__DATA__AKD_NHD (var_NT, freefun)
+
 #define SAC_ND_FREE__DATA__AUD_HID(var_NT, freefun)                                      \
     SAC_ND_FREE__DATA__AKS_HID (var_NT, freefun)
 
