@@ -1,0 +1,53 @@
+/******************************************************************************
+ * 
+ * file:  sac2crc
+ * 
+ * description:
+ *
+ *  sac2c public configuration file
+ *
+ * 
+ *
+ *
+ ******************************************************************************/
+ 
+
+target default:
+
+CC             :=  gcc
+CFLAGS         :=  "-Wall -Wno-unused -fno-builtin"
+
+O0_FLAG        :=  ""
+O1_FLAG        :=  -O1
+O2_FLAG        :=  -O2
+O3_FLAG        :=  -O3
+g_FLAG         :=  -g
+
+CPP            :=  "cpp -C"
+TAR_CREATE     :=  "tar cf"
+TAR_EXTRACT    :=  "tar xf"
+AR             :=  "ar cr"
+RANLIB         :=  ""
+
+CACHE1_SIZE    :=  0
+CACHE1_LINE    :=  0
+CACHE1_ASSOC   :=  0
+
+CACHE2_SIZE    :=  0
+CACHE2_LINE    :=  0
+CACHE2_ASSOC   :=  0
+
+CACHE3_SIZE    :=  0
+CACHE3_LINE    :=  0
+CACHE3_ASSOC   :=  0
+
+
+
+/*******************************************************************************/
+
+
+
+
+
+
+
