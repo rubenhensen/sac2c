@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/08/13 13:43:56  dkr
+ * interface to LookUpTable.[ch] modified
+ *
  * Revision 3.21  2001/05/17 12:46:31  nmw
  * MALLOC/FREE changed to Malloc/Free, result of Free() used
  *
@@ -559,7 +562,7 @@ DoInline (node *let_node, node *arg_info)
     if ((FUNDEF_STATUS (inl_fundef) == ST_dofun)
         || (FUNDEF_STATUS (inl_fundef) == ST_whilefun)) {
         node *int_assign
-          = SearchInLUT_P (INFO_INL_LUT (arg_info), FUNDEF_INT_ASSIGN (inl_fundef));
+          = SearchInLUT_PP (INFO_INL_LUT (arg_info), FUNDEF_INT_ASSIGN (inl_fundef));
 
         DBUG_ASSERT ((int_assign != FUNDEF_INT_ASSIGN (inl_fundef)),
                      "duplicated FUNDEF_INT_ASSIGN not found in LUT!");

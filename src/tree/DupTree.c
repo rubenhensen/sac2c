@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.69  2002/08/13 13:43:28  dkr
+ * interface to LookUpTable.[ch] modified
+ *
  * Revision 3.68  2002/08/12 14:58:52  sbs
  * N_mop representation changed
  *
@@ -368,8 +371,8 @@ DupDFMask_ (DFMmask_t mask, node *arg_info)
 
 #if DUP_DFMS
     if (mask != NULL) {
-        new_mask = DFMDuplicateMask (mask, SearchInLUT_P (INFO_DUP_LUT (arg_info),
-                                                          DFMGetMaskBase (mask)));
+        new_mask = DFMDuplicateMask (mask, SearchInLUT_PP (INFO_DUP_LUT (arg_info),
+                                                           DFMGetMaskBase (mask)));
     } else {
         new_mask = NULL;
     }
@@ -402,11 +405,11 @@ DupIds_ (ids *arg_ids, node *arg_info)
     if (arg_ids != NULL) {
         LUT_t *lut = (arg_info != NULL) ? INFO_DUP_LUT (arg_info) : NULL;
 
-        new_name = SearchInLUT_S (lut, IDS_NAME (arg_ids));
+        new_name = SearchInLUT_SS (lut, IDS_NAME (arg_ids));
         new_ids = MakeIds (StringCopy (new_name), StringCopy (IDS_MOD (arg_ids)),
                            IDS_STATUS (arg_ids));
 
-        IDS_VARDEC (new_ids) = SearchInLUT_P (lut, IDS_VARDEC (arg_ids));
+        IDS_VARDEC (new_ids) = SearchInLUT_PP (lut, IDS_VARDEC (arg_ids));
         IDS_USE (new_ids) = IDS_USE (arg_ids);
 
         IDS_ATTRIB (new_ids) = IDS_ATTRIB (arg_ids);
@@ -530,7 +533,7 @@ DupNodelist_ (nodelist *nl, node *arg_info)
 
     if (nl != NULL) {
         new_nl
-          = MakeNodelist (SearchInLUT_P (INFO_DUP_LUT (arg_info), NODELIST_NODE (nl)),
+          = MakeNodelist (SearchInLUT_PP (INFO_DUP_LUT (arg_info), NODELIST_NODE (nl)),
                           NODELIST_STATUS (nl),
                           DupNodelist_ (NODELIST_NEXT (nl), arg_info));
         NODELIST_ATTRIB (new_nl) = NODELIST_ATTRIB (nl);
@@ -566,11 +569,11 @@ DupArgtab_ (argtab_t *argtab, node *arg_info)
             new_argtab->tag[i] = argtab->tag[i];
             new_argtab->ptr_in[i]
               = (argtab->ptr_in[i] != NULL)
-                  ? SearchInLUT_P (INFO_DUP_LUT (arg_info), argtab->ptr_in[i])
+                  ? SearchInLUT_PP (INFO_DUP_LUT (arg_info), argtab->ptr_in[i])
                   : NULL;
             new_argtab->ptr_out[i]
               = (argtab->ptr_out[i] != NULL)
-                  ? SearchInLUT_P (INFO_DUP_LUT (arg_info), argtab->ptr_out[i])
+                  ? SearchInLUT_PP (INFO_DUP_LUT (arg_info), argtab->ptr_out[i])
                   : NULL;
         }
     } else {
@@ -727,14 +730,14 @@ DupId (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupId");
 
-    new_name = SearchInLUT_S (INFO_DUP_LUT (arg_info), ID_NAME (arg_node));
+    new_name = SearchInLUT_SS (INFO_DUP_LUT (arg_info), ID_NAME (arg_node));
     new_node = MakeId (StringCopy (new_name), StringCopy (ID_MOD (arg_node)),
                        ID_STATUS (arg_node));
 
     /* ID_OBJDEF and ID_VARDEC are mapped to the same data object */
-    ID_VARDEC (new_node) = SearchInLUT_P (INFO_DUP_LUT (arg_info), ID_VARDEC (arg_node));
+    ID_VARDEC (new_node) = SearchInLUT_PP (INFO_DUP_LUT (arg_info), ID_VARDEC (arg_node));
 
-    ID_DEF (new_node) = SearchInLUT_P (INFO_DUP_LUT (arg_info), ID_DEF (arg_node));
+    ID_DEF (new_node) = SearchInLUT_PP (INFO_DUP_LUT (arg_info), ID_DEF (arg_node));
 
     ID_ATTRIB (new_node) = ID_ATTRIB (arg_node);
     ID_REFCNT (new_node) = ID_REFCNT (arg_node);
@@ -743,7 +746,7 @@ DupId (node *arg_node, node *arg_info)
     ID_UNQCONV (new_node) = ID_UNQCONV (arg_node);
 #endif
 
-    ID_AVIS (new_node) = SearchInLUT_P (INFO_DUP_LUT (arg_info), ID_AVIS (arg_node));
+    ID_AVIS (new_node) = SearchInLUT_PP (INFO_DUP_LUT (arg_info), ID_AVIS (arg_node));
 
     if (INFO_DUP_TYPE (arg_info) == DUP_WLF) {
         /* Withloop folding (wlf) needs this. */
@@ -1000,15 +1003,15 @@ DupFundef (node *arg_node, node *arg_info)
      */
 #if DUP_DFMS
     FUNDEF_DFM_BASE (new_node)
-      = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_DFM_BASE (arg_node));
+      = SearchInLUT_PP (INFO_DUP_LUT (arg_info), FUNDEF_DFM_BASE (arg_node));
 #else
     FUNDEF_DFM_BASE (new_node) = NULL;
 #endif
     FUNDEF_RETURN (new_node)
-      = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_RETURN (arg_node));
+      = SearchInLUT_PP (INFO_DUP_LUT (arg_info), FUNDEF_RETURN (arg_node));
     if (FUNDEF_IS_LACFUN (new_node)) {
         FUNDEF_INT_ASSIGN (new_node)
-          = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_INT_ASSIGN (arg_node));
+          = SearchInLUT_PP (INFO_DUP_LUT (arg_info), FUNDEF_INT_ASSIGN (arg_node));
     }
 
     INFO_DUP_FUNDEF (arg_info) = old_fundef;
@@ -1129,8 +1132,8 @@ DupBlock (node *arg_node, node *arg_info)
      */
     if ((old_base != NULL) && (arg_node == FUNDEF_BODY (INFO_DUP_FUNDEF (arg_info)))) {
         new_base
-          = DFMGenMaskBase (FUNDEF_ARGS (SearchInLUT_P (INFO_DUP_LUT (arg_info),
-                                                        INFO_DUP_FUNDEF (arg_info))),
+          = DFMGenMaskBase (FUNDEF_ARGS (SearchInLUT_PP (INFO_DUP_LUT (arg_info),
+                                                         INFO_DUP_FUNDEF (arg_info))),
                             new_vardecs);
 
         INFO_DUP_LUT (arg_info)
@@ -1167,11 +1170,11 @@ DupBlock (node *arg_node, node *arg_info)
         while (new_vardecs != NULL) {
             if (VARDEC_AVIS (new_vardecs) != NULL) {
                 AVIS_SSAASSIGN (VARDEC_AVIS (new_vardecs))
-                  = SearchInLUT_P (INFO_DUP_LUT (arg_info),
-                                   AVIS_SSAASSIGN (VARDEC_AVIS (new_vardecs)));
+                  = SearchInLUT_PP (INFO_DUP_LUT (arg_info),
+                                    AVIS_SSAASSIGN (VARDEC_AVIS (new_vardecs)));
                 AVIS_SSAASSIGN2 (VARDEC_AVIS (new_vardecs))
-                  = SearchInLUT_P (INFO_DUP_LUT (arg_info),
-                                   AVIS_SSAASSIGN2 (VARDEC_AVIS (new_vardecs)));
+                  = SearchInLUT_PP (INFO_DUP_LUT (arg_info),
+                                    AVIS_SSAASSIGN2 (VARDEC_AVIS (new_vardecs)));
             }
             new_vardecs = VARDEC_NEXT (new_vardecs);
         }
@@ -1238,7 +1241,7 @@ DupReturn (node *arg_node, node *arg_info)
     RETURN_REFERENCE (new_node) = DUPTRAV (RETURN_REFERENCE (arg_node));
 
     RETURN_CRET (new_node)
-      = SearchInLUT_P (INFO_DUP_LUT (arg_info), RETURN_CRET (arg_node));
+      = SearchInLUT_PP (INFO_DUP_LUT (arg_info), RETURN_CRET (arg_node));
 
     RETURN_USEMASK (new_node) = DupDFMask_ (RETURN_USEMASK (arg_node), arg_info);
     RETURN_DEFMASK (new_node) = DupDFMask_ (RETURN_DEFMASK (arg_node), arg_info);
@@ -1421,7 +1424,7 @@ DupAp (node *arg_node, node *arg_info)
                                                 : "?"));
 
     old_fundef = AP_FUNDEF (arg_node);
-    new_fundef = SearchInLUT_P (INFO_DUP_LUT (arg_info), old_fundef);
+    new_fundef = SearchInLUT_PP (INFO_DUP_LUT (arg_info), old_fundef);
 
     new_node = MakeAp (StringCopy (AP_NAME (arg_node)), StringCopy (AP_MOD (arg_node)),
                        DUPTRAV (AP_ARGS (arg_node)));
@@ -1620,7 +1623,7 @@ DupIcm (node *arg_node, node *arg_info)
     ICM_INDENT_BEFORE (new_node) = ICM_INDENT_BEFORE (arg_node);
     ICM_INDENT_AFTER (new_node) = ICM_INDENT_AFTER (arg_node);
     ICM_FUNDEF (new_node)
-      = SearchInLUT_P (INFO_DUP_LUT (arg_info), ICM_FUNDEF (arg_node));
+      = SearchInLUT_PP (INFO_DUP_LUT (arg_info), ICM_FUNDEF (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1752,13 +1755,13 @@ DupNwithop (node *arg_node, node *arg_info)
         NWITHOP_NEUTRAL (new_node) = DUPTRAV (NWITHOP_NEUTRAL (arg_node));
         NWITHOP_MOD (new_node) = StringCopy (NWITHOP_MOD (arg_node));
         NWITHOP_FUNDEF (new_node)
-          = SearchInLUT_P (INFO_DUP_LUT (arg_info), NWITHOP_FUNDEF (arg_node));
+          = SearchInLUT_PP (INFO_DUP_LUT (arg_info), NWITHOP_FUNDEF (arg_node));
         NWITHOP_FUN (new_node) = StringCopy (NWITHOP_FUN (arg_node));
         break;
     case WO_foldprf:
         NWITHOP_NEUTRAL (new_node) = DUPTRAV (NWITHOP_NEUTRAL (arg_node));
         NWITHOP_FUNDEF (new_node)
-          = SearchInLUT_P (INFO_DUP_LUT (arg_info), NWITHOP_FUNDEF (arg_node));
+          = SearchInLUT_PP (INFO_DUP_LUT (arg_info), NWITHOP_FUNDEF (arg_node));
         NWITHOP_PRF (new_node) = NWITHOP_PRF (arg_node);
         break;
     default:
@@ -1787,7 +1790,7 @@ DupNpart (node *arg_node, node *arg_info)
 
     new_node
       = MakeNPart (DUPTRAV (NPART_WITHID (arg_node)), DUPTRAV (NPART_GEN (arg_node)),
-                   SearchInLUT_P (INFO_DUP_LUT (arg_info), NPART_CODE (arg_node)));
+                   SearchInLUT_PP (INFO_DUP_LUT (arg_info), NPART_CODE (arg_node)));
 
     NPART_NEXT (new_node) = DUPCONT (NPART_NEXT (arg_node));
 
@@ -2089,7 +2092,7 @@ DupWLgrid (node *arg_node, node *arg_info)
                     WLGRID_BOUND1 (arg_node), WLGRID_BOUND2 (arg_node),
                     WLGRID_UNROLLING (arg_node), DUPTRAV (WLGRID_NEXTDIM (arg_node)),
                     DUPCONT (WLGRID_NEXT (arg_node)),
-                    SearchInLUT_P (INFO_DUP_LUT (arg_info), WLGRID_CODE (arg_node)));
+                    SearchInLUT_PP (INFO_DUP_LUT (arg_info), WLGRID_CODE (arg_node)));
 
     WLGRID_FITTED (new_node) = WLGRID_FITTED (arg_node);
     WLGRID_NOOP (new_node) = WLGRID_NOOP (arg_node);
@@ -2118,8 +2121,8 @@ DupWLgridVar (node *arg_node, node *arg_info)
                               DUPTRAV (WLGRIDVAR_BOUND2 (arg_node)),
                               DUPTRAV (WLGRIDVAR_NEXTDIM (arg_node)),
                               DUPCONT (WLGRIDVAR_NEXT (arg_node)),
-                              SearchInLUT_P (INFO_DUP_LUT (arg_info),
-                                             WLGRIDVAR_CODE (arg_node)));
+                              SearchInLUT_PP (INFO_DUP_LUT (arg_info),
+                                              WLGRIDVAR_CODE (arg_node)));
 
     WLGRIDVAR_FITTED (new_node) = WLGRIDVAR_FITTED (arg_node);
     WLGRIDVAR_NOOP (new_node) = WLGRIDVAR_NOOP (arg_node);
@@ -2292,12 +2295,12 @@ DupAvis (node *arg_node, node *arg_info)
       = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
 
     AVIS_SSACOUNT (new_node)
-      = SearchInLUT_P (INFO_DUP_LUT (arg_info), AVIS_SSACOUNT (arg_node));
+      = SearchInLUT_PP (INFO_DUP_LUT (arg_info), AVIS_SSACOUNT (arg_node));
 
     AVIS_SSAASSIGN (new_node)
-      = SearchInLUT_P (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN (arg_node));
+      = SearchInLUT_PP (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN (arg_node));
     AVIS_SSAASSIGN2 (new_node)
-      = SearchInLUT_P (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN2 (arg_node));
+      = SearchInLUT_PP (INFO_DUP_LUT (arg_info), AVIS_SSAASSIGN2 (arg_node));
 
     if (AVIS_SSACONST (arg_node) != NULL) {
         AVIS_SSACONST (new_node) = COCopyConstant (AVIS_SSACONST (arg_node));
