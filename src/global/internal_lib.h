@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/04/27 13:50:19  cg
+ * Bug fixed in DBUG_OFF versions of CHECK_DBUG_START and CHECK_DBUG_STOP.
+ *
  * Revision 2.14  2000/03/17 20:43:26  dkr
  * fixed a bug in CHECK_DBUG_STOP
  *
@@ -185,8 +188,8 @@ extern void ComputeMallocAlignStep (void);
         }                                                                                \
     }
 #else /* DBUG_OFF */
-#define CHECK_DBUG_START(compiler_phase)
-#define CHECK_DBUG_STOP(compiler_phase)
+#define CHECK_DBUG_START
+#define CHECK_DBUG_STOP
 #endif /* DBUG_OFF */
 
 #endif /* _internal_lib_h */
