@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.23  2005/02/14 15:51:48  mwe
+ * bug fixed
+ *
  * Revision 1.22  2005/02/11 12:10:42  mwe
  * names of flags changed
  *
@@ -2068,7 +2071,7 @@ TUPap (node *arg_node, info *arg_info)
 
                 if ((!FUNDEF_ISPROVIDED (AP_FUNDEF (arg_node)))
                     && (!FUNDEF_ISEXPORTED (AP_FUNDEF (arg_node)))
-                    && (FUNDEF_BODY (arg_node) != NULL)) {
+                    && (FUNDEF_BODY (AP_FUNDEF (arg_node)) != NULL)) {
                     result = TryToSpecializeFunction (AP_FUNDEF (arg_node), arg_node);
                 }
             }
