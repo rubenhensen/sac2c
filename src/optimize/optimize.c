@@ -1,8 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.25  2000/10/31 18:10:16  cg
+ * Added additional break specifier -b15:dfr2.
+ *
  * Revision 2.24  2000/10/31 18:08:09  cg
- * Dead function removal completely re-implemented.
  *
  * Revision 2.23  2000/10/27 11:39:09  cg
  * Slightly modified layout of status messages during optimization.

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.41  2000/10/31 18:06:27  cg
+ * Added additional break specifier -b15:dfr2.
+ *
  * Revision 2.40  2000/10/27 13:23:13  cg
  * Added new command line options -aplimit and -apdiaglimit.
  *
@@ -266,7 +269,7 @@ usage ()
             "\tCurrently supported:\n\n"
 
             "\t -b15:inl          stop after function inlining\n"
-            "\t -b15:dfr          stop after dead function removal\n"
+            "\t -b15:dfr          stop after initial dead function removal\n"
             "\t -b15:ae           stop after array elimination\n"
             "\t -b15:dcr          stop after dead code removal\n"
             "\t -b15:cyc<N>:cse   stop after common subexpression elimination ...\n"
@@ -283,6 +286,7 @@ usage ()
             "\t -b15:wlaa         stop after with loop array access inference\n"
             "\t -b15:ap           stop after array padding\n"
             "\t -b15:tsi          stop after tile size inference\n"
+            "\t -b15:dfr2         stop after final dead function removal\n"
             "\t -b15:ive          stop after index vector elimination\n"
             "\n"
             "\t -b17:conv         stop after converting\n"
