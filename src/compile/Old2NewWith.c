@@ -214,50 +214,58 @@ ReadCode (FILE *infile)
 node *
 BuildNpart (FILE *infile, node *arg_node)
 {
-    node *tmp_node, *new_node;
+    node *new_parts, *new_part, *last_part, *withid, *gen, *code;
     types *type;
 
     DBUG_ENTER ("BuildNpart");
 
     error = 0;
-    new_node = NULL;
+    new_parts = new_part = NULL;
 
     do {
-        tmp_node = new_node;
-        new_node
-          = DupTree (arg_node, NULL); /* arg_node is the source of the new syntaxtree */
-        NPART_NEXT (new_node) = tmp_node;
+        last_part = new_part;
 
         type = VARDEC_TYPE (ID_VARDEC (NGEN_BOUND1 (NPART_GEN (arg_node))));
 
+        withid = DupTree (NPART_WITHID (arg_node), NULL);
+        gen = DupTree (NPART_GEN (arg_node), NULL);
+        code = NULL;
+
         /* replace now the generator-nodes */
         if (!error) {
-            NGEN_BOUND1 (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
+            NGEN_BOUND1 (gen) = ReadOneGenPart (infile, type);
         }
         if (!error) {
-            NGEN_BOUND2 (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
+            NGEN_BOUND2 (gen) = ReadOneGenPart (infile, type);
         }
         if (!error) {
-            NGEN_STEP (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
+            NGEN_STEP (gen) = ReadOneGenPart (infile, type);
         }
         if (!error) {
-            NGEN_WIDTH (NPART_GEN (new_node)) = ReadOneGenPart (infile, type);
+            NGEN_WIDTH (gen) = ReadOneGenPart (infile, type);
         }
         if (!error) {
-            NPART_CODE (new_node) = ReadCode (infile);
+            code = ReadCode (infile);
         }
+
+        new_part = MakeNPart (withid, gen, code);
+        if (new_parts == NULL) {
+            new_parts = new_part;
+        } else {
+            NPART_NEXT (last_part) = new_part;
+        }
+
     } while (!error);
 
     if (error) {
-        /* remove uncompleted part of the new Npart-syntaxtree */
-        new_node = FreeNode (new_node);
-        /* 'new_node' points now to his successor!! */
+        /* remove uncompleted generator */
+        NPART_NEXT (last_part) = FreeTree (NPART_NEXT (last_part));
     }
 
     /* if generation was succesful, only use new Npart-syntaxtree */
-    if (new_node != NULL) {
+    if (new_parts != NULL) {
         arg_node = FreeTree (arg_node);
-        arg_node = new_node;
+        arg_node = new_parts;
     }
 
     DBUG_RETURN (arg_node);
@@ -279,6 +287,8 @@ O2Nnpart (node *arg_node, node *arg_info)
     FILE *infile;
 
     DBUG_ENTER ("O2Nnpart");
+
+    NPART_CODE (arg_node) = NULL;
 
     infile = stdin; /* use standard input */
     if (infile != NULL) {
