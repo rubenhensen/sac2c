@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/09/02 07:00:22  sbs
+ * extended CSE for abstracting arrays also.
+ * Since I did not yet have time to check that properly - per default -
+ * it is NOT included. If anyone wants to try it, you have to compile
+ * it with CSE_ON_ARRAYS_ALSO being defined!!!!!
+ *
  * Revision 2.3  1999/04/19 12:45:29  jhs
  * TRUE and FALSE from internal_lib.h used now
  *
@@ -429,6 +435,32 @@ FindCS (node *arg1, node *arg2, node *arg_info)
                     DBUG_PRINT ("CSE", (">CSE, same constant value"));
                     break;
 
+#ifdef CSE_ON_ARRAYS_ALSO
+
+                case N_array:
+                    if ((EQUAL_NTYPE)
+                        && (CmpTypes (LET_TYPE (ASSIGN_INSTR (arg1)),
+                                      LET_TYPE (ASSIGN_INSTR (arg2)))
+                            == 1)) {
+                        equal = TRUE;
+                        arg1_expr = ARRAY_AELEMS (arg1_expr);
+                        arg2_expr = ARRAY_AELEMS (arg2_expr);
+                        do {
+                            if (Equal (EXPRS_EXPR (arg1_expr), EXPRS_EXPR (arg2_expr),
+                                       arg_info)) {
+                                arg1_expr = EXPRS_NEXT (arg1_expr);
+                                arg2_expr = EXPRS_NEXT (arg2_expr);
+                            } else
+                                equal = FALSE;
+                        } while (equal && ((NULL != arg1_expr) && (NULL != arg2_expr)));
+                        if (equal) {
+                            DBUG_PRINT ("CSE", (">CSE, identical const arrays"));
+                            cs = arg2;
+                        }
+                    }
+                    break;
+#endif
+
                 case N_prf:
                     if (EQUAL_NTYPE && (PRF_PRF (arg1_expr) == PRF_PRF (arg2_expr))) {
                         equal = TRUE;
@@ -441,7 +473,7 @@ FindCS (node *arg1, node *arg2, node *arg_info)
                                 arg2_expr = EXPRS_NEXT (arg2_expr);
                             } else
                                 equal = FALSE;
-                        } while (equal && ((NULL != arg1_expr) || (NULL != arg2_expr)));
+                        } while (equal && ((NULL != arg1_expr) && (NULL != arg2_expr)));
                         if (equal) {
                             DBUG_PRINT ("CSE", (">CSE, same primitive function"));
                             cs = arg2;
@@ -533,6 +565,9 @@ Eliminate (node *arg_node, node *equal_node, node *arg_info)
         let_node = MakeLet (id_node, ids_node);
         new_node = MakeAssign (let_node, NULL);
         break;
+#ifdef CSE_ON_ARRAYS_ALSO
+    case N_array:
+#endif
     case N_prf:
         if (CheckScope (MRD_LIST, equal_node, INFO_VARNO, TRUE)) {
             ids_node = DupIds (LET_IDS (ASSIGN_INSTR (equal_node)), arg_info);
