@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.24  2004/07/21 12:52:15  ktr
+ * updated some comments.
+ *
  * Revision 3.23  2004/07/16 17:36:23  sah
  * switch to new INFO structure
  * PHASE I
@@ -544,8 +547,8 @@ ReturnVarsAreIdentical (node *ext_rets, ids *int_rets)
  *   BuildRenamingAssignsForDo())
  *
  *
- *   Important: The following will only happen AFTER SSARefcounting!
- *              SSAReferenceCounting inserts adjust_rc-operations
+ *   Important: The following will only happen AFTER EMRefcounting!
+ *              EMReferenceCounting inserts adjust_rc-operations
  *              in both, THEN- and ELSE-Branch of the conditional
  *              These operations are extracted from the conditional
  *              before transformation starts. Later, they are reintroduced
@@ -555,11 +558,11 @@ ReturnVarsAreIdentical (node *ext_rets, ids *int_rets)
  *     {
  *       <ass>
  *       if (<pred>) {
- *         B\A = dec_rc( B\A);
+ *         dec_rc( B\A);
  *         res_1 = DoLoopFun( A );
  *       }
  *       else {
- *         A\B = dec_rc( A\B);
+ *         dec_rc( A\B);
  *       }
  *       return( B);
  *     }
