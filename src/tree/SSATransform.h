@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.2  2001/02/14 14:40:36  nmw
+ * function bodies and traversal order implemented
+ *
  * Revision 1.1  2001/02/13 15:16:19  nmw
  * Initial revision
  *
@@ -14,10 +17,14 @@
 extern node *SSAfundef (node *arg_node, node *arg_info);
 extern node *SSAblock (node *arg_node, node *arg_info);
 extern node *SSAexprs (node *arg_node, node *arg_info);
+extern node *SSAassign (node *arg_node, node *arg_info);
 extern node *SSAlet (node *arg_node, node *arg_info);
 extern node *SSAarg (node *arg_node, node *arg_info);
 extern node *SSAvardec (node *arg_node, node *arg_info);
 extern node *SSAid (node *arg_node, node *arg_info);
+extern node *SSANwith (node *arg_node, node *arg_info);
+extern node *SSANcode (node *arg_node, node *arg_info);
+extern node *SSANpart (node *arg_node, node *arg_info);
 extern node *SSANwithid (node *arg_node, node *arg_info);
 extern node *SSAcond (node *arg_node, node *arg_info);
 extern node *SSAreturn (node *arg_node, node *arg_info);
