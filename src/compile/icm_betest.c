@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.2  1998/06/29 08:47:50  cg
+ * implemented new icm-argument type VARINT
+ *
  * Revision 1.1  1998/04/25 16:21:06  sbs
  * Initial revision
  *
@@ -35,6 +38,17 @@
         }                                                                                \
     }
 
+#define ICM_VARINT(dim, varint)                                                          \
+    {                                                                                    \
+        int i;                                                                           \
+        varint = (int *)malloc (dim * sizeof (int));                                     \
+        DBUG_PRINT ("BEtest", ("varint-arg with %d elems:\n", dim));                     \
+        for (i = 0; i < dim; i++) {                                                      \
+            scanf ("%d", &(varint[i]));                                                  \
+            DBUG_PRINT ("BEtest", ("  varint-arg: %d\n", varint[i]));                    \
+        }                                                                                \
+    }
+
 #define ICM_END(prf, args)                                                               \
     ICMCompile##prf args;                                                                \
     }                                                                                    \
@@ -46,4 +60,5 @@
 #undef ICM_STR
 #undef ICM_INT
 #undef ICM_VAR
+#undef ICM_VARINT
 #undef ICM_END
