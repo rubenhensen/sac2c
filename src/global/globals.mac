@@ -2,6 +2,9 @@
 /*
  *
  * $Log$
+ * Revision 1.22  2005/02/16 15:16:05  mwe
+ * bug fixed
+ *
  * Revision 1.21  2005/02/11 14:40:30  jhb
  * added global treecheck
  *
@@ -307,9 +310,9 @@ GLOBAL (optimize_flags_t, optimize_all, optimize_all_init)
 GLOBAL (optimize_flags_t, optimize_none, optimize_none_init)
 
 #ifdef PRODUCTION
-GLOBAL (optimize_flags_t, optimize, optimize_developer_init)
-#else  /* PRODUCTION */
 GLOBAL (optimize_flags_t, optimize, optimize_production_init)
+#else  /* PRODUCTION */
+GLOBAL (optimize_flags_t, optimize, optimize_developer_init)
 #endif /* PRODUCTION */
 
 /*
