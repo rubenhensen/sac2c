@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2004/11/24 14:14:29  khf
+ * SacDevCamp04: compiles
+ *
  * Revision 1.5  2004/10/27 15:50:19  khf
  * some debugging
  *
@@ -60,15 +63,14 @@
  *
  */
 
-#define NEW_INFO
-
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "types.h"
 #include "new_types.h"
 #include "tree_basic.h"
+#include "node_basic.h"
 #include "tree_compound.h"
+#include "internal_lib.h"
 #include "free.h"
 #include "DupTree.h"
 #include "Error.h"
@@ -109,7 +111,7 @@ MakeInfo ()
 
     DBUG_ENTER ("MakeInfo");
 
-    result = Malloc (sizeof (info));
+    result = ILIBmalloc (sizeof (info));
 
     INFO_DDEPEND_FUSIONABLE_WL (result) = NULL;
     INFO_DDEPEND_REFERENCES_FUSIONABLE (result) = NULL;
@@ -126,7 +128,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ("FreeInfo");
 
-    info = Free (info);
+    info = ILIBfree (info);
 
     DBUG_RETURN (info);
 }
@@ -183,13 +185,13 @@ DDEPENDassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DDEPENDassign");
 
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     if (INFO_DDEPEND_WLDEPENDENT (arg_info)) {
         DBUG_RETURN (arg_node);
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -213,14 +215,14 @@ DDEPENDprfSel (node *arg_node, info *arg_info)
     DBUG_ENTER ("DDEPENDprfSel");
 
     DBUG_PRINT ("WLFS", ("consider following selection:"));
-    DBUG_EXECUTE ("WLFS", PrintNode (arg_node););
+    DBUG_EXECUTE ("WLFS", PRTdoPrintNode (arg_node););
 
     /* only if WL is independent so far */
     if (!INFO_DDEPEND_WLDEPENDENT (arg_info)) {
 
         /* first traverse into first argument to detect direct dependency */
         INFO_DDEPEND_CHECK_DIRECT_DEPENDENCY (arg_info) = TRUE;
-        PRF_ARG2 (arg_node) = Trav (PRF_ARG2 (arg_node), arg_info);
+        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
         INFO_DDEPEND_CHECK_DIRECT_DEPENDENCY (arg_info) = FALSE;
 
         /*
@@ -234,7 +236,7 @@ DDEPENDprfSel (node *arg_node, info *arg_info)
 
             if ((NODE_TYPE (sel) == N_id)
                 && (ID_AVIS (sel)
-                    == IDS_AVIS (NWITHID_VEC (INFO_DDEPEND_WITHID (arg_info))))) {
+                    == IDS_AVIS (WITHID_VEC (INFO_DDEPEND_WITHID (arg_info))))) {
 
                 DBUG_PRINT ("WLFS", ("selection is resolveable"));
 
@@ -244,7 +246,7 @@ DDEPENDprfSel (node *arg_node, info *arg_info)
         } else {
             /* check for indirect dependencies */
             if (PRF_ARGS (arg_node) != NULL) {
-                PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+                PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
             }
         }
     }
@@ -274,7 +276,7 @@ DDEPENDprf (node *arg_node, info *arg_info)
 
     default:
         if (PRF_ARGS (arg_node) != NULL) {
-            PRF_ARGS (arg_node) = Trav (PRF_ARGS (arg_node), arg_info);
+            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         }
     }
     DBUG_RETURN (arg_node);
@@ -324,9 +326,9 @@ DDEPENDid (node *arg_node, info *arg_info)
  *   @brief to find dependent assignments we had to traverse
  *          into N_PARTS, N_CODE and N_WITHOP.
  *
- *   @param  node *arg_node:  N_Nwith
+ *   @param  node *arg_node:  N_with
  *           info *arg_info:  N_info
- *   @return node *        :  N_Nwith
+ *   @return node *        :  N_with
  ******************************************************************************/
 
 node *
@@ -334,23 +336,23 @@ DDEPENDwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DDEPENDwith");
 
-    INFO_DDEPEND_WITHID (arg_info) = NWITH_WITHID (arg_node);
+    INFO_DDEPEND_WITHID (arg_info) = WITH_WITHID (arg_node);
 
     /*
      * Traverse into parts
      */
-    DBUG_ASSERT ((NWITH_PART (arg_node) != NULL), "no Part is available!");
-    NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    DBUG_ASSERT ((WITH_PART (arg_node) != NULL), "no Part is available!");
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
     /*
      * Traverse into codes
      */
-    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     /*
      * Traverse into withops
      */
-    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -361,9 +363,9 @@ DDEPENDwith (node *arg_node, info *arg_info)
  *
  *   @brief traverse only cblock and cexprs
  *
- *   @param  node *arg_node:  N_Ncode
+ *   @param  node *arg_node:  N_code
  *           info *arg_info:  info
- *   @return node *        :  N_Ncode
+ *   @return node *        :  N_code
  ******************************************************************************/
 
 node *
@@ -371,17 +373,17 @@ DDEPENDcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("DDEPENDcode");
 
-    NCODE_RESOLVEABLE_DEPEND (arg_node) = FALSE;
+    CODE_HASRESOLVEABLEDEPENDENCIES (arg_node) = FALSE;
 
     /*
      * Traverse into cblock
      */
-    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
     /*
      * Traverse into cexprs
      */
-    NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
+    CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
     /*
      * if code contains at most resolveable dependencies
@@ -390,11 +392,11 @@ DDEPENDcode (node *arg_node, info *arg_info)
     if (INFO_DDEPEND_RESOLVEABLE_DEPENDENCIES (arg_info)
         && !INFO_DDEPEND_WLDEPENDENT (arg_info)) {
         DBUG_PRINT ("WLFS", ("code contains resolveable dependencies"));
-        NCODE_RESOLVEABLE_DEPEND (arg_node) = TRUE;
+        CODE_HASRESOLVEABLEDEPENDENCIES (arg_node) = TRUE;
     }
 
-    if (NCODE_NEXT (arg_node) != NULL) {
-        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    if (CODE_NEXT (arg_node) != NULL) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -402,8 +404,8 @@ DDEPENDcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *DetectDependencies( node *with, node *fusionable_wl,
- *                               nodelist references_fwl)
+ * @fn node *DEPENDdoDetectDependencies( node *with, node *fusionable_wl,
+ *                                       nodelist references_fwl)
  *
  *   @brief  Starting point for traversal DetectDependencies.
  *
@@ -416,15 +418,14 @@ DDEPENDcode (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
-DetectDependencies (node *with, node *fusionable_wl, nodelist *references_fwl)
+DEPENDdoDetectDependencies (node *with, node *fusionable_wl, nodelist *references_fwl)
 {
-    funtab *tmp_tab;
     info *arg_info;
 
-    DBUG_ENTER ("DetectDependencies");
+    DBUG_ENTER ("DEPENDdoDetectDependencies");
 
-    DBUG_ASSERT ((NODE_TYPE (with) == N_Nwith),
-                 "DetectDependencies not started with N_Nwith node");
+    DBUG_ASSERT ((NODE_TYPE (with) == N_with),
+                 "DEPENDdoDetectDependencies not started with N_with node");
 
     DBUG_ASSERT ((fusionable_wl != NULL), "no fusionable withloop found");
 
@@ -437,23 +438,21 @@ DetectDependencies (node *with, node *fusionable_wl, nodelist *references_fwl)
     INFO_DDEPEND_FUSIONABLE_WL (arg_info) = fusionable_wl;
     INFO_DDEPEND_REFERENCES_FUSIONABLE (arg_info) = references_fwl;
 
-    tmp_tab = act_tab;
-    act_tab = ddepend_tab;
-
     /*
      * traverse into N_WITH to detect possible
      * dependencies from current withloop on the fusionable.
-     * The result is stored in NWITH_DEPENDENT( arg_node)
+     * The result is stored in WITH_DEPENDENT( arg_node)
      */
 
-    with = Trav (with, arg_info);
+    TRAVpush (TR_ddepend);
+    with = TRAVdo (with, arg_info);
+    TRAVpop ();
 
-    NWITH_DEPENDENT (with) = INFO_DDEPEND_WLDEPENDENT (arg_info);
+    WITH_ISDEPENDENT (with) = INFO_DDEPEND_WLDEPENDENT (arg_info);
 
     DBUG_PRINT ("WLFS", ("detection of dependencies complete"));
 
     arg_info = FreeInfo (arg_info);
-    act_tab = tmp_tab;
 
     DBUG_RETURN (with);
 }
