@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/07/24 18:53:33  dkr
+ * TAGGED_ARRAYS: scalar arguments are flattened in precompile now
+ *
  * Revision 3.12  2002/07/12 18:48:20  dkr
  * CT_prf removed (okay, that idea was bullshit... @1)
  *
@@ -1250,14 +1253,14 @@ FltnExprs (node *arg_node, node *arg_info)
      */
     switch (INFO_FLTN_CONTEXT (arg_info)) {
     case CT_ap:
+        abstract = (
 #ifdef TAGGED_ARRAYS
-        /* here is no break missing! */
-#else
-        abstract = ((NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_ap)
-                    || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_Nwith)
-                    || (NODE_TYPE (expr) == N_cast));
-        break;
+          (NODE_TYPE (expr) == N_str) ||
 #endif
+          (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_ap)
+          || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_Nwith)
+          || (NODE_TYPE (expr) == N_cast));
+        break;
     case CT_return:
         abstract = ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_float)
                     || (NODE_TYPE (expr) == N_double) || (NODE_TYPE (expr) == N_bool)
@@ -1271,14 +1274,12 @@ FltnExprs (node *arg_node, node *arg_info)
                     || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_cast));
         break;
     case CT_array:
+        abstract = (
 #ifdef TAGGED_ARRAYS
-        abstract = ((NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array)
-                    || (NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
-                    || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_cast));
-#else
-        abstract = ((NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
-                    || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_cast));
+          (NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array) ||
 #endif
+          (NODE_TYPE (expr) == N_ap) || (NODE_TYPE (expr) == N_prf)
+          || (NODE_TYPE (expr) == N_Nwith) || (NODE_TYPE (expr) == N_cast));
         INFO_FLTN_VECTYPE (arg_info)
           = FltnPreTypecheck (NODE_TYPE (expr), INFO_FLTN_VECTYPE (arg_info));
         INFO_FLTN_VECLEN (arg_info) = info_fltn_array_index + 1;
