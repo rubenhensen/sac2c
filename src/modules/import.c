@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/22 19:33:41  dkr
+ * no changes done
+ *
  * Revision 3.4  2001/02/14 10:16:42  dkr
  * MakeNode eliminated
  *
@@ -39,216 +42,7 @@
  * Revision 2.2  1999/05/06 15:38:46  sbs
  * call of yyparse changed to My_yyparse.
  *
- * Revision 2.1  1999/02/23 12:42:10  sacbase
- * new release made
- *
- * Revision 1.57  1999/01/20 09:26:24  cg
- * bug fixed in function ImportSymbol()
- *
- * Revision 1.56  1999/01/19 17:26:35  cg
- * Bug fixed in selective import in the presence of function overloading.
- * Now, all functions with the given name but varying parameters
- * are actually imported.
- *
- * Revision 1.55  1999/01/19 16:22:04  cg
- * removed bug in handling of file names when reading a module's
- * own declaration.
- *
- * Revision 1.54  1998/10/29 13:07:59  cg
- * bug fixed in PrintDependencies():
- * Options -M/-Mlib now work correctly even if a module/program depends
- * on nothing.
- *
- * Revision 1.53  1998/05/27 11:19:44  cg
- * global variable 'filename' which contains the current file name in order
- * to provide better error messages is now handled correctly.
- *
- * Revision 1.52  1998/04/03 20:45:08  dkr
- * removed a wrong cast in AddClasstypeOnSelectiveImport
- *   (type of IMPLIST_ITYPES is not *node but *ids)
- *
- * Revision 1.51  1998/02/27 16:32:58  cg
- * added correct setting of file names for diagnostic output
- * while parsing (global variable 'filename')
- *
- * Revision 1.50  1997/11/07 14:41:54  dkr
- * eliminated another nnode
- *
- * Revision 1.49  1997/11/07 12:28:12  srs
- * NEWTREE: nnode is ignored
- *
- * Revision 1.48  1997/10/29 14:30:44  srs
- * free -> FREE
- *
- * Revision 1.47  1997/08/04 17:13:17  dkr
- * removed strcpy/strlen-bug in GenSyms
- *
- * Revision 1.46  1997/04/30  11:53:36  cg
- * Bug fixed in InsertClassType()
- *
- * Revision 1.45  1997/04/24  10:02:15  cg
- * improved PrintDependencies for -Mlib option
- * bug fixed concerning class types upon selective import when checking
- * a module's own declaration file
- *
- * Revision 1.44  1997/03/19  13:48:59  cg
- * Now, all imported modules are stored in the global dependency tree for
- * later use (checking libraries, link list)
- *
- * Revision 1.43  1997/03/11  16:27:10  cg
- * new function PrintDependencies corresponding to compiler option -M
- * old compiler option -deps (updating makefile) no longer supported
- * absolute pathnams used for all dependencies
- *
- * Revision 1.42  1996/09/11  06:25:15  cg
- * Imported modules are stored in special structure to create libstat
- * information later.
- *
- * Revision 1.41  1996/03/05  10:02:06  cg
- * implemented a better consistency check for pragmas
- * linksign, refcounting, and readonly
- *
- * Revision 1.40  1996/01/23  09:58:05  cg
- * Now, the name length of imported modules is checked
- *
- * Revision 1.39  1996/01/23  09:01:39  cg
- * bug fixed in function ImportOwnDeclaration
- *
- * Revision 1.38  1996/01/22  18:34:18  cg
- * added new pragmas for global objects: effect, initfun
- *
- * Revision 1.37  1996/01/07  16:59:29  cg
- * pragmas copyfun, freefun, linkname, effect, touch and readonly
- * are now immediately resolved
- *
- * Revision 1.36  1996/01/02  16:03:09  cg
- * handling of global variable filename simplified
- *
- * Revision 1.35  1995/12/29  10:39:37  cg
- * All functions concerning SIBs extracted and moved to readsib.c
- *
- * Revision 1.34  1995/12/21  15:05:28  cg
- * pragmas will be imported and checked for plausibility.
- *
- * Revision 1.33  1995/12/18  18:26:19  cg
- * Now, we look in MODIMP-Path for SIBs instead of MODDEC-Path.
- *
- * Revision 1.32  1995/12/06  09:49:36  cg
- * Name of class and its respective type are no longer shared.
- *
- * Revision 1.31  1995/11/10  15:04:53  cg
- * converted to new error macros
- *
- * Revision 1.30  1995/11/01  16:31:36  cg
- * bug fixed in usage of attributes of global objects derived from
- * sib file as implicitly needed. Now, the specific attribute is removed.
- * Later it can be used to distinguish between read-objects and
- * read-write-objects.
- *
- * Revision 1.29  1995/10/31  15:37:46  sbs
- * error in mod init: sib not set to NULL for external imports!
- *
- * Revision 1.28  1995/10/31  14:47:21  sbs
- * GenLinkerList modifyed : ERROR->WARNING
- *
- * Revision 1.27  1995/10/31  09:41:02  cg
- * Now, SIB information will be retrieved for functions which themselves
- * are only needed by other imported inline functions.
- *
- * Revision 1.26  1995/10/26  16:13:25  cg
- *  new function ImportOwnDeclaration used to check the declaration file
- * when compiling a module/class implementation.
- * error messages improved.
- *
- * Revision 1.25  1995/10/24  13:14:30  cg
- *  Now, all file names in error messages are written with "
- *
- * Revision 1.24  1995/10/18  16:48:19  cg
- * converted to new error macros.
- * improved error messages.
- *
- * Revision 1.23  1995/10/16  12:41:21  cg
- * new function 'ModulePrefix' added for use in typechecker.
- *
- * Revision 1.22  1995/10/12  13:58:31  cg
- * analysis structures for implicitly used items are now generated in
- * the form of
- * nodelists.
- *
- * Revision 1.21  1995/10/06  17:12:17  cg
- * calls to MakeIds adjusted to new signature (3 parameters)
- *
- * Revision 1.20  1995/09/29  12:21:30  cg
- * charlist renamed to strings.
- *
- * Revision 1.19  1995/08/30  14:05:12  cg
- * compare-macros extracted to new header-file.
- *
- * Revision 1.18  1995/08/28  16:15:00  cg
- * Bugs in GenLinkerList fixed.
- *
- * Revision 1.17  1995/08/24  14:17:09  cg
- * GenLinkerlist modified.
- * GenExtmodlist added.
- *
- * Revision 1.16  1995/08/15  09:29:24  cg
- * SIB information retrieved about:
- * -inline function bodies
- * -implicitly used objects
- * -implicitly used functions and types in inline functions
- * -implicitly imported modules/classes
- * GenLinkerList extended with respect to implicitly imported modules
- *
- * Revision 1.15  1995/08/08  09:57:28  cg
- * SIB information about hidden type implementations are now retrieved.
- *
- * Revision 1.14  1995/07/31  07:10:12  cg
- * sibs will be read and stored in modtab.
- *
- * Revision 1.13  1995/07/25  07:37:10  cg
- * global objects may be imported now.
- * class types are automatically imported.
- *
- * Revision 1.12  1995/04/05  17:24:16  sbs
- * GenLinkList inserted
- *
- * Revision 1.11  1995/04/05  15:23:20  sbs
- * GenLinkerList added
- *
- * Revision 1.10  1995/01/16  15:34:06  hw
- * changed description of FindSymbolInModul
- *
- * Revision 1.9  1995/01/06  19:30:30  sbs
- * bug fixed in AppendModsToSymbol
- *
- * Revision 1.8  1995/01/06  17:50:43  sbs
- * no_mod_ext pragma inserted
- *
- * Revision 1.7  1995/01/04  18:19:36  sbs
- * bug fixed in GenSyms (multiple implicit types/funs do work as well now!)
- *
- * Revision 1.6  1995/01/04  13:44:59  sbs
- * bug in AppendModnameToSymbol fixed:
- * done resetted to 0 after each types-node!
- *
- * Revision 1.5  1995/01/04  12:35:56  sbs
- * import mechanism including renaming (of imported symbols)
- * done. FindSymbolInModul & FreeMods provided for external use
- * (needed from the typechecker.
- *
- * Revision 1.4  1995/01/02  19:24:34  sbs
- * first release with new N_explist nodes!
- * does not (yet?) automaticly introduce the modul names for applied
- * user defined types!
- *
- * Revision 1.3  1994/12/31  14:31:32  sbs
- * preliminary (working) version
- *
- * Revision 1.2  1994/12/21  12:21:48  sbs
- * preliminary version
- *
- * Revision 1.1  1994/12/16  14:39:17  sbs
- * Initial revision
+ * [...]
  *
  */
 
@@ -259,17 +53,16 @@
 #include <string.h>
 #include <limits.h>
 
-#include "tree.h"
-
+#include "tree.h" /* old tree definition */
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "internal_lib.h"
 
 #include "free.h"
 #include "Error.h"
 #include "dbug.h"
 #include "my_debug.h"
-#include "internal_lib.h"
 #include "globals.h"
 
 #include "scnprs.h"
