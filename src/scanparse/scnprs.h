@@ -4,7 +4,10 @@
 /*
  *
  * $Log$
- * Revision 1.2  1994/12/16 14:34:28  sbs
+ * Revision 1.3  1994/12/20 11:24:29  sbs
+ * decl_tree inserted
+ *
+ * Revision 1.2  1994/12/16  14:34:28  sbs
  * moddec  and start_token inserted
  *
  * Revision 1.1  1994/11/22  13:47:03  sbs
@@ -24,5 +27,8 @@
 extern int yyparse ();
 extern FILE *yyin;
 extern int start_token;
+
+extern node *syntax_tree;
+extern node *decl_tree;
 
 #endif /* _scnprs_h */

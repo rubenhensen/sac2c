@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.31  1994/12/16 14:34:28  sbs
+ * Revision 1.32  1994/12/20 11:24:29  sbs
+ * decl_tree inserted
+ *
+ * Revision 1.31  1994/12/16  14:34:28  sbs
  * moddec  and start_token inserted
  *
  * Revision 1.30  1994/12/15  17:29:16  sbs
@@ -116,6 +119,7 @@ extern char yytext[];
 
 int indent, i;
 node *syntax_tree;
+node *decl_tree;
 
 
 %}
@@ -172,7 +176,7 @@ node *syntax_tree;
 
 file:   PARSE_PRG prg {syntax_tree=$2;}
 	| PARSE_PRG modimp {syntax_tree=$2;}
-	| PARSE_DEC moddec {syntax_tree=$2;}
+	| PARSE_DEC moddec {decl_tree=$2;}
 	;
 
 moddec: MODDEC ID COLON OWN COLON expdesc
