@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.2  2004/08/18 09:59:34  sbs
+# no dependencies for cb!
+#
 # Revision 1.1  2003/09/19 14:40:02  dkr
 # Initial revision
 #
@@ -36,10 +39,12 @@ clean:
 
 #######################################################################################
 #
-# include automatic dependency mechanism
+#  we do NOT include the automatic dependency mechanism here !!
 #
-# - relies on INCS to be set appropriately
+#  the reason being that all *.h files generated from *.xml files have to
+#  be generated PRIOR to generating the dependencies. However, their generation
+#  requires the existance of cb!!!
 #
 
-include $(PROJECT_ROOT)/Makefile.Deps
+# include $(PROJECT_ROOT)/Makefile.Deps
 
