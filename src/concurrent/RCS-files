@@ -1,5 +1,15 @@
 Makefile
+concurrent.c
+concurrent.h
 scheduling.c
 scheduling.h
-spmdregions.c
-spmdregions.h
+spmd_init.c
+spmd_init.h
+spmd_lift.c
+spmd_lift.h
+spmd_opt.c
+spmd_opt.h
+sync_init.c
+sync_init.h
+sync_opt.c
+sync_opt.h
