@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1997/11/07 11:23:39  srs
+ * NEWTREE: nnode is ignored
+ *
  * Revision 1.3  1997/10/29 14:33:04  srs
  * free -> FREE
  *
@@ -305,18 +308,22 @@ IMPLmodul (node *arg_node, node *arg_info)
 
                         TYPEDEF_NEXT (last) = TYPEDEF_NEXT (act);
 
-                        /********************************************************************/
+/********************************************************************/
+#ifndef NEWTREE
                         if (TYPEDEF_NEXT (act) == NULL) {
                             last->nnode = 0;
                         }
+#endif
                         /********************************************************************/
 
                         TYPEDEF_NEXT (new_typedef) = MODUL_TYPES (arg_node);
 
-                        /********************************************************************/
+/********************************************************************/
+#ifndef NEWTREE
                         if (MODUL_TYPES (arg_node) != NULL) {
                             new_typedef->nnode = 1;
                         }
+#endif
                         /********************************************************************/
 
                         MODUL_TYPES (arg_node) = new_typedef;
