@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.110  1996/01/22 17:29:58  cg
+ * Revision 1.111  1996/01/23 09:00:58  cg
+ * changed printing of objdefs and pragmas
+ *
+ * Revision 1.110  1996/01/22  17:29:58  cg
  * pragma initfun is now printed
  *
  * Revision 1.109  1996/01/21  13:56:54  cg
@@ -657,23 +660,23 @@ PrintObjdef (node *arg_node, node *arg_info)
         fprintf (outfile, "\n");
     } else {
         if (arg_node->info.types->status == ST_imported) {
-            fprintf (outfile, "extern %s ", Type2String (arg_node->info.types, 0));
-            if (arg_node->info.types->id_mod != NULL)
-                fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
-            fprintf (outfile, "%s;\n", arg_node->info.types->id);
-        } else {
-            fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
-            if (arg_node->info.types->id_mod != NULL)
-                fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
-            fprintf (outfile, "%s", arg_node->info.types->id);
-
-            if (arg_node->node[1] != NULL) {
-                fprintf (outfile, " = ");
-                Trav (arg_node->node[1], arg_info);
-            }
-
-            fprintf (outfile, ";\n");
+            fprintf (outfile, "extern ");
         }
+
+        fprintf (outfile, "%s ", Type2String (arg_node->info.types, 0));
+
+        if (arg_node->info.types->id_mod != NULL) {
+            fprintf (outfile, "%s%s", arg_node->info.types->id_mod, mod_name_con);
+        }
+
+        fprintf (outfile, "%s", arg_node->info.types->id);
+
+        if (arg_node->node[1] != NULL) {
+            fprintf (outfile, " = ");
+            Trav (arg_node->node[1], arg_info);
+        }
+
+        fprintf (outfile, ";\n");
 
         if (OBJDEF_PRAGMA (arg_node) != NULL) {
             Trav (OBJDEF_PRAGMA (arg_node), arg_info);
@@ -765,7 +768,7 @@ PrintFundef (node *arg_node, node *arg_info)
         if ((arg_node->node[0] == NULL)
             || ((NULL != arg_node->node[3]) && (N_icm == arg_node->node[3]->nodetype)
                 && (strcmp (arg_node->info.types->id, "main") != 0))) {
-            fprintf (outfile, "\nextern ");
+            fprintf (outfile, "extern ");
 
             if ((NULL != arg_node->node[3]) && (N_icm == arg_node->node[3]->nodetype)) {
                 Trav (arg_node->node[3], new_info); /* print N_icm ND_FUN_DEC */
@@ -1462,12 +1465,6 @@ PrintIcm (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
- *  arg_info is used as a flag:
- *    arg_info==NULL :  print pragmas in comments
- *    arg_info!=NULL :  print pragmas without comments (for SIBs)
- */
-
 node *
 PrintPragma (node *arg_node, node *arg_info)
 {
@@ -1475,18 +1472,11 @@ PrintPragma (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("PrintPragma");
 
-    if (arg_info == NULL)
-        fprintf (outfile, "\n/*\n");
-
     if (PRAGMA_LINKNAME (arg_node) != NULL) {
-        if (arg_info == NULL)
-            fprintf (outfile, " *  ");
         fprintf (outfile, "#pragma linkname \"%s\"\n", PRAGMA_LINKNAME (arg_node));
     }
 
     if (PRAGMA_LINKSIGN (arg_node) != NULL) {
-        if (arg_info == NULL)
-            fprintf (outfile, " *  ");
         fprintf (outfile, "#pragma linksign [%d", PRAGMA_LS (arg_node, 0));
 
         for (i = 1; i < PRAGMA_NUMPARAMS (arg_node); i++) {
@@ -1497,8 +1487,6 @@ PrintPragma (node *arg_node, node *arg_info)
     }
 
     if (PRAGMA_REFCOUNTING (arg_node) != NULL) {
-        if (arg_info == NULL)
-            fprintf (outfile, " *  ");
         fprintf (outfile, "#pragma refcounting [");
         first = 1;
 
@@ -1517,8 +1505,6 @@ PrintPragma (node *arg_node, node *arg_info)
     }
 
     if (PRAGMA_READONLY (arg_node) != NULL) {
-        if (arg_info == NULL)
-            fprintf (outfile, " *  ");
         fprintf (outfile, "#pragma readonly [");
         first = 1;
 
@@ -1537,44 +1523,30 @@ PrintPragma (node *arg_node, node *arg_info)
     }
 
     if (PRAGMA_EFFECT (arg_node) != NULL) {
-        if (arg_info == NULL)
-            fprintf (outfile, " *  ");
         fprintf (outfile, "#pragma effect ");
         PrintIds (PRAGMA_EFFECT (arg_node));
         fprintf (outfile, "\n");
     }
 
     if (PRAGMA_TOUCH (arg_node) != NULL) {
-        if (arg_info == NULL)
-            fprintf (outfile, " *  ");
         fprintf (outfile, "#pragma touch ");
         PrintIds (PRAGMA_TOUCH (arg_node));
         fprintf (outfile, "\n");
     }
 
     if (PRAGMA_COPYFUN (arg_node) != NULL) {
-        if (arg_info == NULL)
-            fprintf (outfile, " *  ");
         fprintf (outfile, "#pragma copyfun \"%s\"\n", PRAGMA_COPYFUN (arg_node));
     }
 
     if (PRAGMA_FREEFUN (arg_node) != NULL) {
-        if (arg_info == NULL)
-            fprintf (outfile, " *  ");
         fprintf (outfile, "#pragma freefun \"%s\"\n", PRAGMA_FREEFUN (arg_node));
     }
 
     if (PRAGMA_INITFUN (arg_node) != NULL) {
-        if (arg_info == NULL)
-            fprintf (outfile, " *  ");
         fprintf (outfile, "#pragma initfun \"%s\"\n", PRAGMA_INITFUN (arg_node));
     }
 
-    if (arg_info == NULL) {
-        fprintf (outfile, " */\n\n");
-    } else {
-        fprintf (outfile, "\n");
-    }
+    fprintf (outfile, "\n");
 
     DBUG_RETURN (arg_node);
 }
