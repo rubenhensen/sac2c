@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.9  2004/10/11 16:56:07  sah
+ * added SerializeBuildStack
+ *
  * Revision 1.8  2004/10/01 08:13:10  sah
  * fixed include to avoid warning
  * on linux platform
@@ -85,6 +88,32 @@ SerializeLookupFunction (const char *module, const char *name)
     DBUG_RETURN ((node *)NULL);
 }
 
+serstack_t *
+SerializeBuildSerStack (node *arg_node)
+{
+    info *info;
+    funtab *store_tab;
+    serstack_t *stack;
+
+    DBUG_ENTER ("SerializeBuildSerStack");
+
+    info = MakeInfo ();
+    stack = SerStackInit ();
+
+    INFO_SER_STACK (info) = stack;
+
+    store_tab = act_tab;
+    act_tab = sbt_tab;
+
+    arg_node = Trav (arg_node, info);
+
+    act_tab = store_tab;
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (stack);
+}
+
 static node *
 StartSerializeTraversal (node *node, info *info)
 {
@@ -166,7 +195,7 @@ SerializeSymbolTable (node *module, symboltable_t *table)
 
     DBUG_ENTER ("SerializeSymbolTable");
 
-    file = WriteOpen (TempFileName (tmp_dirname, "STAB_", ".c"));
+    file = WriteOpen ("%s/symboltable.c", tmp_dirname);
 
     GenerateSerSymbolTableHead (module, file);
 
@@ -179,6 +208,8 @@ SerializeSymbolTable (node *module, symboltable_t *table)
     chain = SymbolTableSymbolChainRelease (chain);
 
     GenerateSerSymbolTableTail (module, file);
+
+    fclose (file);
 
     DBUG_VOID_RETURN;
 }
@@ -193,8 +224,6 @@ GenerateSerFileHead (info *info)
     fprintf (INFO_SER_FILE (info), "#include \"serialize_stack.h\"\n");
     fprintf (INFO_SER_FILE (info), "#include \"tree_basic.h\"\n\n");
 
-    fprintf (INFO_SER_FILE (info), "#define PUSH( x) SerStackPush( x, stack)\n");
-    fprintf (INFO_SER_FILE (info), "#define LOOKUP( x) SerStackLookup( x, stack)\n");
     fprintf (INFO_SER_FILE (info), "#define DROP( x, y) y\n");
 
     DBUG_VOID_RETURN;
@@ -264,7 +293,7 @@ GenerateSerFunHead (node *fundef, symbolentrytype_t type, info *info)
     DBUG_ENTER ("GenerateSerFunBodyHead");
 
     fprintf (INFO_SER_FILE (info), "node *%s()", GenerateSerFunName (type, fundef));
-    fprintf (INFO_SER_FILE (info), "{ serstack_t *stack = SerStackInit();\n");
+    fprintf (INFO_SER_FILE (info), "{\n");
     fprintf (INFO_SER_FILE (info), "node *result;\n");
     fprintf (INFO_SER_FILE (info), "result = DROP( x");
 
@@ -278,7 +307,6 @@ GenerateSerFunTail (node *fundef, symbolentrytype_t type, info *info)
 
     fprintf (INFO_SER_FILE (info), ");\n");
 
-    fprintf (INFO_SER_FILE (info), "stack = SerStackDestroy( stack);\n");
     fprintf (INFO_SER_FILE (info), "return( result);\n}\n");
 
     DBUG_VOID_RETURN;
@@ -287,29 +315,18 @@ GenerateSerFunTail (node *fundef, symbolentrytype_t type, info *info)
 static void
 SerializeFundefBody (node *fundef, info *info)
 {
-    char *filename;
-
     DBUG_ENTER ("SerializeFundefBody");
 
-    filename = TempFileName (tmp_dirname, "SER_", ".c");
-    INFO_SER_FILE (info) = WriteOpen (filename);
-
-    INFO_SER_STACK (info) = SerStackInit ();
+    INFO_SER_STACK (info) = SerializeBuildSerStack (FUNDEF_BODY (fundef));
 
     SymbolTableAdd (FUNDEF_NAME (fundef), GenerateSerFunName (STE_funbody, fundef),
                     STE_funbody, INFO_SER_TABLE (info));
 
-    GenerateSerFileHead (info);
     GenerateSerFunHead (fundef, STE_funbody, info);
 
     FUNDEF_BODY (fundef) = StartSerializeTraversal (FUNDEF_BODY (fundef), info);
 
     GenerateSerFunTail (fundef, STE_funbody, info);
-
-    fclose (INFO_SER_FILE (info));
-    Free (filename);
-
-    INFO_SER_FILE (info) = NULL;
 
     INFO_SER_STACK (info) = SerStackDestroy (INFO_SER_STACK (info));
 
@@ -319,29 +336,18 @@ SerializeFundefBody (node *fundef, info *info)
 static void
 SerializeFundefHead (node *fundef, info *info)
 {
-    char *filename;
-
     DBUG_ENTER ("SerializeFundefHead");
 
-    filename = TempFileName (tmp_dirname, "SER_", ".c");
-    INFO_SER_FILE (info) = WriteOpen (filename);
-
-    INFO_SER_STACK (info) = SerStackInit ();
+    INFO_SER_STACK (info) = SerializeBuildSerStack (fundef);
 
     SymbolTableAdd (FUNDEF_NAME (fundef), GenerateSerFunName (STE_funhead, fundef),
                     STE_funhead, INFO_SER_TABLE (info));
 
-    GenerateSerFileHead (info);
     GenerateSerFunHead (fundef, STE_funhead, info);
 
     fundef = StartSerializeTraversal (fundef, info);
 
     GenerateSerFunTail (fundef, STE_funhead, info);
-
-    fclose (INFO_SER_FILE (info));
-    Free (filename);
-
-    INFO_SER_FILE (info) = NULL;
 
     INFO_SER_STACK (info) = SerStackDestroy (INFO_SER_STACK (info));
 
@@ -360,6 +366,10 @@ SerializeModule (node *module)
 
     info = MakeInfo ();
 
+    INFO_SER_FILE (info) = WriteOpen ("%s/serialize.c", tmp_dirname);
+
+    GenerateSerFileHead (info);
+
     store_tab = act_tab;
     act_tab = ser_tab;
 
@@ -368,6 +378,9 @@ SerializeModule (node *module)
     act_tab = store_tab;
 
     SerializeSymbolTable (module, INFO_SER_TABLE (info));
+
+    fclose (INFO_SER_FILE (info));
+    INFO_SER_FILE (info) = NULL;
 
     info = FreeInfo (info);
 

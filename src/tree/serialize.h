@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/10/11 17:00:28  sah
+ * added SerializeBuildStack
+ *
  * Revision 1.3  2004/09/24 20:21:53  sah
  * intermediate version
  *
@@ -18,8 +21,10 @@
 #define _SERIALIZE_H
 
 #include "symboltable.h"
+#include "serialize_stack.h"
 
 extern void SerializeModule (node *module);
+extern serstack_t *SerializeBuildSerStack (node *arg_node);
 
 extern const char *GenerateSerFunName (symbolentrytype_t type, node *node);
 extern node *SerializeLookupFunction (const char *module, const char *name);
