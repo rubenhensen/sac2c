@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.23  1995/01/31 14:59:33  asi
+ * Revision 1.24  1995/02/02 14:54:36  hw
+ * bug fixed prf_dec is now a struct
+ *
+ * Revision 1.23  1995/01/31  14:59:33  asi
  * opt4_tab inserted and NIF macro enlarged
  *
  * Revision 1.22  1995/01/31  10:57:29  hw
@@ -167,7 +170,7 @@ typedef struct NODE {
         float cfloat;      /* Float-Wert                         */
         prf prf;           /* tag for primitive functions        */
         fun_name fun_name; /* used in N_ap nodes                 */
-        union {
+        struct {
             int tag;      /* tag for return type */
             int tc;       /* type class */
         } prf_dec;        /* used for declaration of primitive functions
