@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/10/24 11:50:07  dkr
+ * MakeTypes renamed into MakeTypes1
+ *
  * Revision 2.3  2000/09/22 13:52:44  dkr
  * STR_OR_NULL used for DBUG_PRINT
  *
@@ -242,12 +245,6 @@ RecoverTypedefs (node *alltypes)
  *  description   : From previous SIB-Files, information is stored about
  *                  the implementation of non-external implicit types
  *                  This information is now retrieved.
- *  global vars   : ---
- *  internal funs : RecoverTypedefs
- *  external funs : MakeTypedef, MakeType
- *  macros        : FREE
- *
- *  remarks       :
  *
  */
 
@@ -290,7 +287,7 @@ IMPLmodul (node *arg_node, node *arg_info)
                      *  typedef-chain.
                      */
 
-                    new_type = MakeType (T_hidden, 0, NULL, NULL, NULL);
+                    new_type = MakeTypes1 (T_hidden);
                     new_typedef
                       = MakeTypedef (TYPEDEF_TNAME (tmp), TYPEDEF_TMOD (tmp), new_type,
                                      ST_regular, MODUL_TYPES (arg_node));

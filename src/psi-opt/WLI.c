@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/10/24 11:55:00  dkr
+ * MakeTypes renamed into MakeTypes1
+ *
  * Revision 2.13  2000/08/14 12:41:47  dkr
  * some comments added
  *
@@ -535,7 +538,7 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                     iinfo->const_arg[i] = val;
                 } else {
                     /* constant. Use FoldPrfScalars() to constantfold. */
-                    type = MakeType (T_int, 0, NULL, NULL, NULL);
+                    type = MakeTypes1 (T_int);
                     args[0] = MakeNum (val);
                     args[1] = MakeNum (tmpinfo->const_arg[i]);
                     cf_node
@@ -577,7 +580,7 @@ CreateIndexInfoA (node *prfn, node *arg_info)
                 /* is the element in the other vector a constant, too?
                    Then we have to fold immedeately. */
                 if (!iinfo->permutation[i]) {
-                    type = MakeType (T_int, 0, NULL, NULL, NULL);
+                    type = MakeTypes1 (T_int);
                     args[0] = MakeNum (val);
                     args[1] = MakeNum (iinfo->const_arg[i]);
                     cf_node

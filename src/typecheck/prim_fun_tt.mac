@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/10/24 11:46:27  dkr
+ * MakeTypes renamed into MakeTypes1
+ *
  * Revision 2.4  2000/08/08 09:25:40  dkr
  * header corrected
  *
@@ -79,27 +82,27 @@
  *						some checks
  */
 
-TT2 (0, SxS_S, INT, INT, MakeTypes (T_int))
-TT2 (1, SxS_S, INT, FLOAT, MakeTypes (T_float))
-TT2 (2, SxS_S, FLOAT, INT, MakeTypes (T_float))
-TT2 (3, SxS_S, FLOAT, FLOAT, MakeTypes (T_float))
-TT2 (4, SxS_S, DOUBLE, INT, MakeTypes (T_double))
-TT2 (5, SxS_S, INT, DOUBLE, MakeTypes (T_double))
-TT2 (6, SxS_S, DOUBLE, FLOAT, MakeTypes (T_double))
-TT2 (7, SxS_S, FLOAT, DOUBLE, MakeTypes (T_double))
-TT2 (8, SxS_S, DOUBLE, DOUBLE, MakeTypes (T_double))
+TT2 (0, SxS_S, INT, INT, MakeTypes1 (T_int))
+TT2 (1, SxS_S, INT, FLOAT, MakeTypes1 (T_float))
+TT2 (2, SxS_S, FLOAT, INT, MakeTypes1 (T_float))
+TT2 (3, SxS_S, FLOAT, FLOAT, MakeTypes1 (T_float))
+TT2 (4, SxS_S, DOUBLE, INT, MakeTypes1 (T_double))
+TT2 (5, SxS_S, INT, DOUBLE, MakeTypes1 (T_double))
+TT2 (6, SxS_S, DOUBLE, FLOAT, MakeTypes1 (T_double))
+TT2 (7, SxS_S, FLOAT, DOUBLE, MakeTypes1 (T_double))
+TT2 (8, SxS_S, DOUBLE, DOUBLE, MakeTypes1 (T_double))
 
-TT2 (20, BxB_B, BOOL, BOOL, MakeTypes (T_bool))
+TT2 (20, BxB_B, BOOL, BOOL, MakeTypes1 (T_bool))
 
-TT2 (21, SxS_B, INT, INT, MakeTypes (T_bool))
-TT2 (22, SxS_B, INT, FLOAT, MakeTypes (T_bool))
-TT2 (23, SxS_B, FLOAT, INT, MakeTypes (T_bool))
-TT2 (24, SxS_B, FLOAT, FLOAT, MakeTypes (T_bool))
-TT2 (25, SxS_B, DOUBLE, INT, MakeTypes (T_bool))
-TT2 (26, SxS_B, INT, DOUBLE, MakeTypes (T_bool))
-TT2 (27, SxS_B, DOUBLE, FLOAT, MakeTypes (T_bool))
-TT2 (28, SxS_B, FLOAT, DOUBLE, MakeTypes (T_bool))
-TT2 (29, SxS_B, DOUBLE, DOUBLE, MakeTypes (T_bool))
+TT2 (21, SxS_B, INT, INT, MakeTypes1 (T_bool))
+TT2 (22, SxS_B, INT, FLOAT, MakeTypes1 (T_bool))
+TT2 (23, SxS_B, FLOAT, INT, MakeTypes1 (T_bool))
+TT2 (24, SxS_B, FLOAT, FLOAT, MakeTypes1 (T_bool))
+TT2 (25, SxS_B, DOUBLE, INT, MakeTypes1 (T_bool))
+TT2 (26, SxS_B, INT, DOUBLE, MakeTypes1 (T_bool))
+TT2 (27, SxS_B, DOUBLE, FLOAT, MakeTypes1 (T_bool))
+TT2 (28, SxS_B, FLOAT, DOUBLE, MakeTypes1 (T_bool))
+TT2 (29, SxS_B, DOUBLE, DOUBLE, MakeTypes1 (T_bool))
 
 TT2 (40, AxA_A, INT_A, INT_A, AxA (arg_type[0], arg_type[1], T_int))
 TT2 (41, AxA_A, INT_A, FLOAT_A, AxA (arg_type[1], arg_type[0], T_float))
@@ -134,15 +137,15 @@ TT2 (87, SxA_A, DOUBLE, FLOAT_A, ConvertType (arg_type[1], T_double))
 TT2 (88, SxA_A, DOUBLE, DOUBLE_A, DupTypes (arg_type[1]))
 TT2 (89, SxV_V, INT, INT_V, DupTypes (arg_type[1]))
 
-TT2 (100, SxS_F, INT, INT, MakeTypes (T_float))
-TT2 (101, SxS_F, INT, FLOAT, MakeTypes (T_float))
-TT2 (102, SxS_F, INT, DOUBLE, MakeTypes (T_double))
-TT2 (103, SxS_F, FLOAT, INT, MakeTypes (T_float))
-TT2 (104, SxS_F, FLOAT, FLOAT, MakeTypes (T_float))
-TT2 (105, SxS_F, FLOAT, DOUBLE, MakeTypes (T_double))
-TT2 (106, SxS_F, DOUBLE, INT, MakeTypes (T_double))
-TT2 (107, SxS_F, DOUBLE, FLOAT, MakeTypes (T_double))
-TT2 (108, SxS_F, DOUBLE, DOUBLE, MakeTypes (T_double))
+TT2 (100, SxS_F, INT, INT, MakeTypes1 (T_float))
+TT2 (101, SxS_F, INT, FLOAT, MakeTypes1 (T_float))
+TT2 (102, SxS_F, INT, DOUBLE, MakeTypes1 (T_double))
+TT2 (103, SxS_F, FLOAT, INT, MakeTypes1 (T_float))
+TT2 (104, SxS_F, FLOAT, FLOAT, MakeTypes1 (T_float))
+TT2 (105, SxS_F, FLOAT, DOUBLE, MakeTypes1 (T_double))
+TT2 (106, SxS_F, DOUBLE, INT, MakeTypes1 (T_double))
+TT2 (107, SxS_F, DOUBLE, FLOAT, MakeTypes1 (T_double))
+TT2 (108, SxS_F, DOUBLE, DOUBLE, MakeTypes1 (T_double))
 
 TT2 (120, AxA_F, INT_A, INT_A, AxA (arg_type[0], arg_type[1], T_float))
 TT2 (121, AxA_F, INT_A, FLOAT_A, AxA (arg_type[1], arg_type[0], T_float))
@@ -257,7 +260,7 @@ TT2 (253, VxS_Ag, INT_A, DOUBLE,
 TT2 (254, VxS_Ag, INT_A, CHAR,
      Genarray_S (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[0], arg_type[1]))
 
-TT2 (260, CxC_B, CHAR, CHAR, MakeTypes (T_bool))
+TT2 (260, CxC_B, CHAR, CHAR, MakeTypes1 (T_bool))
 
 TT3 (300, SxAxA_A, INT, INT_A, INT_A,
      Cat (EXPRS_EXPR (PRF_ARGS (arg_node)), arg_type[1], arg_type[2]))
@@ -305,25 +308,25 @@ TT1 (502, V_As, BOOL_A, Shp (arg_type[0]))
 TT1 (503, V_As, DOUBLE_A, Shp (arg_type[0]))
 TT1 (504, V_As, CHAR_A, Shp (arg_type[0]))
 
-TT1 (510, A_S, INT_A, MakeTypes (T_int))
-TT1 (511, A_S, FLOAT_A, MakeTypes (T_int))
-TT1 (512, A_S, BOOL_A, MakeTypes (T_int))
-TT1 (513, A_S, DOUBLE_A, MakeTypes (T_int))
-TT1 (514, A_S, CHAR_A, MakeTypes (T_int))
+TT1 (510, A_S, INT_A, MakeTypes1 (T_int))
+TT1 (511, A_S, FLOAT_A, MakeTypes1 (T_int))
+TT1 (512, A_S, BOOL_A, MakeTypes1 (T_int))
+TT1 (513, A_S, DOUBLE_A, MakeTypes1 (T_int))
+TT1 (514, A_S, CHAR_A, MakeTypes1 (T_int))
 
-TT1 (520, B_B, BOOL, MakeTypes (T_bool))
-TT1 (530, f_i, FLOAT, MakeTypes (T_int))
+TT1 (520, B_B, BOOL, MakeTypes1 (T_bool))
+TT1 (530, f_i, FLOAT, MakeTypes1 (T_int))
 TT1 (531, F_I, FLOAT_A, ConvertType (arg_type[0], T_int))
-TT1 (532, f_d, FLOAT, MakeTypes (T_double))
+TT1 (532, f_d, FLOAT, MakeTypes1 (T_double))
 TT1 (533, F_D, FLOAT_A, ConvertType (arg_type[0], T_double))
-TT1 (540, i_f, INT, MakeTypes (T_float))
+TT1 (540, i_f, INT, MakeTypes1 (T_float))
 TT1 (541, I_F, INT_A, ConvertType (arg_type[0], T_float))
-TT1 (542, i_d, INT, MakeTypes (T_double))
+TT1 (542, i_d, INT, MakeTypes1 (T_double))
 TT1 (543, I_D, INT_A, ConvertType (arg_type[0], T_double))
-TT1 (550, d_f, DOUBLE, MakeTypes (T_float))
+TT1 (550, d_f, DOUBLE, MakeTypes1 (T_float))
 TT1 (551, D_F, DOUBLE_A, ConvertType (arg_type[0], T_float))
-TT1 (552, d_i, DOUBLE, MakeTypes (T_int))
+TT1 (552, d_i, DOUBLE, MakeTypes1 (T_int))
 TT1 (553, D_I, DOUBLE_A, ConvertType (arg_type[0], T_int))
 
-TT2 (600, ixi_i, INT, INT, MakeTypes (T_int))
-TT1 (601, i_i, INT, MakeTypes (T_int))
+TT2 (600, ixi_i, INT, INT, MakeTypes1 (T_int))
+TT1 (601, i_i, INT, MakeTypes1 (T_int))

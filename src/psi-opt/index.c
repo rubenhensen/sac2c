@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/10/24 11:53:44  dkr
+ * MakeTypes renamed into MakeTypes1
+ *
  * Revision 2.15  2000/07/11 15:49:49  dkr
  * function IndexVectorElimination() added
  *
@@ -1085,13 +1088,11 @@ VardecIdx (node *vardec, types *type)
          */
         varname = IdxChangeId (VARDEC_OR_ARG_NAME (vardec), type);
         if (NODE_TYPE (vardec) == N_vardec) {
-            newvardec = MakeVardec (varname, MakeType (T_int, 0, NULL, NULL, NULL),
-                                    VARDEC_NEXT (vardec));
+            newvardec = MakeVardec (varname, MakeTypes1 (T_int), VARDEC_NEXT (vardec));
             VARDEC_NEXT (vardec) = newvardec;
         } else {
             block = FUNDEF_BODY (ARG_FUNDEF (vardec));
-            newvardec = MakeVardec (varname, MakeType (T_int, 0, NULL, NULL, NULL),
-                                    BLOCK_VARDEC (block));
+            newvardec = MakeVardec (varname, MakeTypes1 (T_int), BLOCK_VARDEC (block));
             BLOCK_VARDEC (block) = newvardec;
         }
         VINFO_VARDEC (vinfo) = newvardec;

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.11  2000/10/24 11:51:58  dkr
+ * MakeTypes renamed into MakeTypes1
+ *
  * Revision 1.10  2000/07/21 11:29:59  jhs
  * FUNDEF_MT2USE, FUNDEF_MT2DEF, FUNDEF_IDENTIFIER are set while
  * lifting mt-blocks.
@@ -318,7 +321,7 @@ BLKLImt (node *arg_node, node *arg_info)
      *          That's why we must build a void-type, when ('rettypes' == NULL).
      */
     if (rettypes == NULL) {
-        rettypes = MakeType (T_void, 0, NULL, NULL, NULL);
+        rettypes = MakeTypes1 (T_void);
     }
 
     new_base = DFMGenMaskBase (new_args, new_vardecs);

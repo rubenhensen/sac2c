@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/10/24 11:48:02  dkr
+ * MakeTypes renamed into MakeTypes1
+ *
  * Revision 2.4  2000/08/04 17:19:32  dkr
  * NEWTREE removed
  *
@@ -441,12 +444,6 @@ AddSymbol (char *name, char *module, int symbkind)
  *  description   : Inserts a new implicit type with uniqueness attribute
  *                  and the same name as the class itself to the class
  *                  declaration.
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : MakeNode, MakeTypes
- *  macros        : DBUG...
- *
- *  remarks       :
  *
  */
 
@@ -458,7 +455,7 @@ InsertClassType (node *classdec)
     DBUG_ENTER ("InsertClassType");
 
     tmp = MakeNode (N_typedef);
-    tmp->info.types = MakeTypes (T_hidden);
+    tmp->info.types = MakeTypes1 (T_hidden);
     tmp->info.types->id = StringCopy (classdec->info.fun_name.id);
     tmp->info.types->id_mod
       = CLASSDEC_ISEXTERNAL (classdec) ? NULL : StringCopy (classdec->info.fun_name.id);

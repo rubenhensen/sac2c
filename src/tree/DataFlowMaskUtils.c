@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  2000/10/24 11:56:11  dkr
+ * MakeTypes renamed into MakeTypes1
+ *
  * Revision 1.14  2000/10/23 11:33:48  dkr
  * MakeIds1 renamed into MakeIds_Copy
  *
@@ -296,7 +299,7 @@ DFM2ReturnTypes (DFMmask_t mask)
      *          That's why we must build a void-type, when ('rettypes' == NULL).
      */
     if (rettypes == NULL) {
-        rettypes = MakeType (T_void, 0, NULL, NULL, NULL);
+        rettypes = MakeTypes1 (T_void);
     }
 
     DBUG_RETURN (rettypes);

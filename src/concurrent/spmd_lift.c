@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.9  2000/10/24 11:51:31  dkr
+ * MakeTypes renamed into MakeTypes1
+ *
  * Revision 2.8  2000/07/12 15:15:06  dkr
  * function DuplicateTypes renamed into DupTypes
  *
@@ -272,7 +275,7 @@ SPMDLspmd (node *arg_node, node *arg_info)
      *          That's why we must build a void-type, when ('rettypes' == NULL).
      */
     if (rettypes == NULL) {
-        rettypes = MakeType (T_void, 0, NULL, NULL, NULL);
+        rettypes = MakeTypes1 (T_void);
     }
 
     new_fundef = MakeFundef (TmpVarName (FUNDEF_NAME (fundef)), "_SPMD", rettypes, fargs,
