@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/06/25 09:36:21  skt
+ * added TEMlet and some helper functions
+ *
  * Revision 1.3  2004/06/23 15:44:47  skt
  * TEMreturn, TEMap & TEMarray added
  *
@@ -32,6 +35,7 @@
  *   int        WITHDEEP  (the current with-loop-deepness)
  */
 #define INFO_TEM_ORIGLHS(n) (n->node[0])
+#define INFO_TEM_LETLHS(n) (n->node[1])
 #define INFO_TEM_EXECMODE(n) (n->refcnt)
 #define INFO_TEM_WITHDEEP(n) (n->flag)
 #define TEM_DEBUG 0
@@ -44,7 +48,7 @@ extern node *TEMwith2 (node *arg_node, node *arg_info);
 
 extern node *TEMprf (node *arg_node, node *arg_info);
 
-extern node *TEMexprs (node *arg_node, node *arg_info);
+extern node *TEMlet (node *arg_node, node *arg_info);
 
 extern node *TEMreturn (node *arg_node, node *arg_info);
 
@@ -58,6 +62,14 @@ int IsGeneratorBigEnough (node *exprs);
 
 int IsMTClever (node *exprs);
 
+int IsSTClever (node *exprs);
+
+int StrongestRestriction (int execmode1, int execmode2);
+
 node *TagAllocs (node *exprs);
+
+#if TEM_DEBUG
+char *DecodeExecmode (int execmode);
+#endif
 
 #endif /* TAG_EXECUTIONMODE_H */

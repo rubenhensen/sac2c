@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.4  2004/06/25 09:36:21  skt
+ * added TEMlet and some helper functions
+ *
  * Revision 1.3  2004/06/23 15:45:17  skt
  * TEMreturn, TEMap, TEMarray added and some debugging done
  *
@@ -100,9 +103,6 @@ TagExecutionmode (node *arg_node, node *arg_info)
 node *
 TEMassign (node *arg_node, node *arg_info)
 {
-#if TEM_DEBUG
-    char *mode;
-#endif
     DBUG_ENTER ("TEMassign");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign),
@@ -122,27 +122,16 @@ TEMassign (node *arg_node, node *arg_info)
         ASSIGN_EXECMODE (arg_info) = INFO_TEM_EXECMODE (arg_info);
 
 #if TEM_DEBUG
-        switch (INFO_TEM_EXECMODE (arg_info)) {
-        case MUTH_ANY:
-            mode = "AT";
-            break;
-        case MUTH_EXCLUSIVE:
-            mode = "EX";
-            break;
-        case MUTH_SINGLE:
-            mode = "ST";
-            break;
-        case MUTH_MULTI:
-            mode = "MT";
-        }
         if (INFO_TEM_EXECMODE (arg_info) != MUTH_ANY) {
             PrintNode (arg_node);
-            fprintf (stdout, "The upper assignment is %s.\n", mode);
+            fprintf (stdout, "The upper assignment is %s.\n",
+                     DecodeExecmode (INFO_TEM_EXECMODE (arg_info)));
         }
 #endif
     }
     if (ASSIGN_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("TEM", ("trav into next"));
+        PrintNode (ASSIGN_NEXT (arg_node));
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
         DBUG_PRINT ("TEM", ("trav from next"));
     }
@@ -259,25 +248,24 @@ TEMprf (node *arg_node, node *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TEMexprs(node *arg_node, node *arg_info)
+ * @fn node *TEMlet(node *arg_node, node *arg_info)
  *
- *   @brief avoids traversal of
+ *   @brief stores the LHS of let in INFO_TEM_LETLHS(arg_info)
  *
- *   @param arg_node a N_exprs
+ *   @param arg_node a N_let
  *   @param arg_info
- *   @return syntax branch with
+ *   @return syntax branch
  *
  *****************************************************************************/
 node *
-TEMexprs (node *arg_node, node *arg_info)
+TEMlet (node *arg_node, node *arg_info)
 {
-    DBUG_ENTER ("TEMexprs");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_exprs),
-                 "TEMexprs expects a N_exprs as argument");
+    DBUG_ENTER ("TEMlet");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_let), "TEMlet expects a N_let as argument");
 
     /*  if(arg_node != INFO_TEM_ORIGLHS(arg_info)) {*/
     DBUG_PRINT ("TEM", ("trav into expr"));
-    EXPRS_EXPR (arg_node) = Trav (EXPRS_EXPR (arg_node), arg_info);
+    EXPRS_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
     DBUG_PRINT ("TEM", ("trav from expr"));
 
     DBUG_RETURN (arg_node);
@@ -320,7 +308,12 @@ TEMap (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("TEMap");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_ap), "TEMap expects a N_ap as argument");
-
+    if (FUNDEF_BODY (AP_FUNDEF (arg_node)) == NULL) {
+        DBUG_PRINT ("TEM", ("N_ap with unknown Body => MUTH_EXCLUSIVE"));
+        INFO_TEM_EXECMODE (arg_info) = MUTH_EXCLUSIVE;
+    } else {
+        DBUG_PRINT ("TEM", ("N_ap with known Body"));
+    }
     DBUG_RETURN (arg_node);
 }
 
@@ -328,7 +321,8 @@ TEMap (node *arg_node, node *arg_info)
  *
  * @fn node *TEMarray(node *arg_node, node *arg_info)
  *
- *   @brief avoids traversing into the expressions of N_return
+ *   @brief set the executionmode to MUTH_SINGLE, if it would be better to
+ *          create the array in one thread than in all
  *
  *   @param arg_node a N_array
  *   @param arg_info
@@ -341,6 +335,17 @@ TEMarray (node *arg_node, node *arg_info)
     DBUG_ENTER ("TEMarray");
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_array),
                  "TEMarray expects a N_array as argument");
+
+    if (INFO_TEM_WITHDEEP (arg_info) == 0 &&   /* Top-Level ?*/
+        INFO_TEM_ORIGLHS (arg_info) != NULL && /* inside a pr. function fill ? */
+        IsSTClever (INFO_TEM_ORIGLHS (arg_info)) /* better to do ST ? */) {
+        INFO_TEM_EXECMODE (arg_info) = MUTH_SINGLE;
+    }
+
+#if TEM_DEBUG
+    fprintf (stdout, "TEMarray: act. execmode = %s\n",
+             DecodeExecmode (INFO_TEM_EXECMODE (arg_info)));
+#endif
 
     DBUG_RETURN (arg_node);
 }
@@ -422,7 +427,7 @@ IsGeneratorBigEnough (node *exprs)
             is_bigenough = TRUE;
             exprs = EXPRS_NEXT (exprs);
         }
-        /* If one Variable on the left-hand-side is not big enough to be
+        /* If one variable on the left-hand-side is not big enough to be
          * partitioned into max_threads threads, the whole generator ist to small
          */
         else {
@@ -444,15 +449,16 @@ IsGeneratorBigEnough (node *exprs)
  *
  *   @param exprs expecs N_exprs-chain, the parameter 2..n of the primitive
  *                function fill(), added by SSARefCount
- *   @return int interpretated as boolean - whether MT should be parallelized
- *           or not
+ *   @return int interpretated as boolean - whether calculation should be
+ *               parallelized or not
  *
  *****************************************************************************/
 int
 IsMTClever (node *exprs)
 {
     int is_clever;
-    int var_dim, var_size; /* dimension and size of an actual variable */
+    int var_dim;     /* dimension and size of an actual variable */
+    double var_size; /* size of an actual variable */
     int i;
     node *vardec;
     DBUG_ENTER ("IsMTClever");
@@ -471,12 +477,12 @@ IsMTClever (node *exprs)
 
         vardec = ID_VARDEC (EXPRS_EXPR (exprs));
         var_dim = VARDEC_DIM (vardec);
-        var_size = 1;
+        var_size = 1.0;
         for (i = 0; i < var_dim; i++) {
-            var_size *= VARDEC_SHAPE (vardec, i);
+            var_size *= (double)VARDEC_SHAPE (vardec, i);
         }
 
-        if (var_size >= (min_parallel_size_per_thread * max_threads))
+        if (var_size >= (double)(min_parallel_size_per_thread * max_threads))
             is_clever = TRUE;
 
         exprs = EXPRS_NEXT (exprs);
@@ -489,10 +495,60 @@ IsMTClever (node *exprs)
 
 /** <!--********************************************************************-->
  *
+ * @fn int *IsSTClever(node *exprs)
+ *
+ *   @brief This function decides whether it is clever to execute the
+ *          assignment of the variables in the given exprs-chain in single-mode
+ *
+ *   @param exprs expecs N_exprs-chain, the parameter 2..n of the primitive
+ *                function fill(), added by SSARefCount
+ *   @return int interpretated as boolean - whether the assignment should be
+ *               done single-threaded or not
+ *
+ *****************************************************************************/
+int
+IsSTClever (node *exprs)
+{
+    int is_clever;
+    int var_dim;     /* dimension and size of an actual variable */
+    double var_size; /* dimension and size of an actual variable */
+    int i;
+    node *vardec;
+    DBUG_ENTER ("IsMTClever");
+
+    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs),
+                 "IsSTClever expects a N_exprs as argument");
+
+    /* some initialization */
+    is_clever = FALSE;
+
+    while ((is_clever == FALSE) && (exprs != NULL)) {
+
+        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id), "N_id expected");
+
+        vardec = ID_VARDEC (EXPRS_EXPR (exprs));
+        var_dim = VARDEC_DIM (vardec);
+        var_size = 1.0;
+        for (i = 0; i < var_dim; i++) {
+            var_size *= (double)VARDEC_SHAPE (vardec, i);
+        }
+
+        if (var_size >= (double)max_replication_size)
+            is_clever = TRUE;
+
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    DBUG_RETURN (is_clever);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *TagAllocs(node *exprs)
  *
- *   @brief This function tags the allocation-assignments for the variables in
- *          exprs
+ *   @brief This function tags the executionmode of the allocation-assignments
+ *          for the variables in the exprs-chain into MUTH_SINGLE, if their
+ *          executionmode was not strict enough
  *
  *   @param exprs chain of expressions, consists of Variables, which are the
  *                left-hand-side of a multi-threaded with-loop
@@ -516,19 +572,20 @@ TagAllocs (node *exprs)
     while (tmp != NULL) {
         expr = EXPRS_EXPR (exprs);
 
-        DBUG_ASSERT ((NODE_TYPE (expr) == N_id), "TagAlloca expects a N_id here");
+        DBUG_ASSERT ((NODE_TYPE (expr) == N_id), "TagAllocs expects a N_id here");
         assign = AVIS_SSAASSIGN (ID_AVIS (expr));
 
-        /* no changes, if the executionmode is the stricter MUTH_EXCLUSIVE */
-        if (ASSIGN_EXECMODE (assign) != MUTH_EXCLUSIVE) {
-            DBUG_ASSERT ((ASSIGN_EXECMODE (assign) = MUTH_MULTI),
-                         "The executionmode of this assignment must'n be MUTH_MULTI");
-            ASSIGN_EXECMODE (assign) = MUTH_SINGLE;
-        }
+        DBUG_ASSERT ((ASSIGN_EXECMODE (assign) = MUTH_MULTI),
+                     "The executionmode of this assignment must'n be MUTH_MULTI");
+        /* change executionmode of the assignment, if it's not as strict as
+           MUTH_SINGLE */
+        ASSIGN_EXECMODE (assign)
+          = StrongestRestriction (MUTH_SINGLE, ASSIGN_EXECMODE (assign));
 
 #if TEM_DEBUG
         PrintNode (assign);
-        fprintf (stdout, "Executionmode changed into %i\n", ASSIGN_EXECMODE (assign));
+        fprintf (stdout, "Executionmode changed into %s\n",
+                 DecodeExecmode (ASSIGN_EXECMODE (assign)));
 #endif
 
         tmp = EXPRS_NEXT (tmp);
@@ -539,6 +596,73 @@ TagAllocs (node *exprs)
 
     DBUG_RETURN (exprs);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn int StrongestRestriction(int execmode1, int execmode2)
+ *
+ *   @brief gets two executionmodes and returns the most restricted of them
+ *
+ *   @param execmode1 the first executionmode
+ *   @param execmode2 the second executionmode
+ *   @return the most restricted executionmode of the two arguments
+ *
+ *****************************************************************************/
+int
+StrongestRestriction (int execmode1, int execmode2)
+{
+    int result;
+    DBUG_ENTER (StrongestRestriction);
+    DBUG_ASSERT (((execmode1 == MUTH_ANY) || (execmode1 == MUTH_EXCLUSIVE)
+                  || (execmode1 == MUTH_SINGLE) || (execmode1 == MUTH_MULTI)),
+                 "StrongestRestriction expects a valid executionmode in #1 arg.");
+    DBUG_ASSERT (((execmode2 == MUTH_ANY) || (execmode2 == MUTH_EXCLUSIVE)
+                  || (execmode2 == MUTH_SINGLE) || (execmode2 == MUTH_MULTI)),
+                 "StrongestRestriction expects a valid executionmode in #2 arg.");
+
+    if ((execmode1 == MUTH_EXCLUSIVE) || (execmode2 == MUTH_EXCLUSIVE)) {
+        result = MUTH_EXCLUSIVE;
+    } else if ((execmode1 == MUTH_SINGLE) || (execmode2 == MUTH_SINGLE)) {
+        result = MUTH_SINGLE;
+    } else if ((execmode1 == MUTH_MULTI) || (execmode2 == MUTH_MULTI)) {
+        result = MUTH_MULTI;
+    } else {
+        result = MUTH_ANY;
+    }
+
+    DBUG_RETURN (result);
+}
+
+#if TEM_DEBUG
+/** <!--********************************************************************-->
+ *
+ * @fn char *DecodeExecmode(int execmode)
+ *
+ *   @brief A small helper function to make debug-output more readable
+ *          !It must be adapted if the names of the modes change!
+ *
+ *   @param execmode the executionmode to decode
+ *   @return the name of the executionmode as a string
+ *
+ *****************************************************************************/
+char *
+DecodeExecmode (int execmode)
+{
+    switch (execmode) {
+    case MUTH_ANY:
+        return ("AT");
+    case MUTH_EXCLUSIVE:
+        return ("EX");
+    case MUTH_SINGLE:
+        return ("ST");
+    case MUTH_MULTI:
+        return ("MT");
+    default:
+        DBUG_ASSERT (0, "DecodeExecmode expects a valid executionmode");
+    }
+    return "NN";
+}
+#endif
 
 /**
  * @}
