@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2002/03/07 20:12:14  dkr
+ * Support for ICMs arguments of type N_icm (H-ICMs with str-, int-, var- or
+ * varint-arguments only) added (ICM_ICM).
+ * This feature is not just yet, so it might contain several bugs...
+ *
  * Revision 3.1  2000/11/20 18:01:24  sacbase
  * new release made
  *
@@ -34,8 +39,6 @@
  * Revision 1.1  1995/05/04  11:48:35  sbs
  * Initial revision
  *
- *
- *
  */
 
 #define SEP                                                                              \
@@ -49,6 +52,12 @@
         int sep = 0;                                                                     \
         INDENT;                                                                          \
         fprintf (outfile, "SAC_Print( \"%s( \");\n", #prf);
+
+#define ICM_ICM(name)                                                                    \
+    SEP;                                                                                 \
+    INDENT;                                                                              \
+    fprintf (outfile, "SAC_Print( \"%s \");\n", name);                                   \
+    sep = 1;
 
 #define ICM_STR(name)                                                                    \
     SEP;                                                                                 \
@@ -95,13 +104,13 @@
 #define ICM_END(prf, args)                                                               \
     INDENT;                                                                              \
     fprintf (outfile, "SAC_Print( \")\\n\");\n");                                        \
-    }                                                                                    \
-    ;
+    }
 
 #include "icm.data"
 
 #undef SEP
 #undef ICM_DEF
+#undef ICM_ICM
 #undef ICM_STR
 #undef ICM_INT
 #undef ICM_VAR

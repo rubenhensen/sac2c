@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/03/07 20:11:52  dkr
+ * Support for ICMs arguments of type N_icm (H-ICMs with str-, int-, var- or
+ * varint-arguments only) added (ICM_ICM).
+ * This feature is not just yet, so it might contain several bugs...
+ *
  * Revision 3.2  2001/02/06 01:46:34  dkr
  * no changes done
  *
@@ -41,8 +46,9 @@
  */
 
 #define SEP                                                                              \
-    if (sep)                                                                             \
-        fprintf (outfile, ", ");
+    if (sep) {                                                                           \
+        fprintf (outfile, ", ");                                                         \
+    }
 
 #define ICM_DEF(prf, trf)                                                                \
     {                                                                                    \
@@ -52,6 +58,11 @@
         fprintf (outfile, "/*\n");                                                       \
         INDENT;                                                                          \
         fprintf (outfile, " * %s( ", #prf);
+
+#define ICM_ICM(name)                                                                    \
+    SEP;                                                                                 \
+    fprintf (outfile, "%s", name);                                                       \
+    sep = 1;
 
 #define ICM_STR(name)                                                                    \
     SEP;                                                                                 \
@@ -93,6 +104,7 @@
 
 #undef SEP
 #undef ICM_DEF
+#undef ICM_ICM
 #undef ICM_STR
 #undef ICM_INT
 #undef ICM_VAR

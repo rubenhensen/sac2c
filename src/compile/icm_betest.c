@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2002/03/07 20:13:03  dkr
+ * Support for ICMs arguments of type N_icm (H-ICMs with str-, int-, var- or
+ * varint-arguments only) added (ICM_ICM).
+ * This feature is not just yet, so it might contain several bugs...
+ *
  * Revision 3.2  2001/01/22 13:38:51  dkr
  * tabs removed
  *
@@ -25,6 +30,11 @@
 #define ICM_DEF(prf, trf)                                                                \
     if (strcmp (buffer, #prf) == 0) {                                                    \
         DBUG_PRINT ("BEtest", ("reading args:\n"));
+
+#define ICM_ICM(name)                                                                    \
+    scanf ("%s", buffer);                                                                \
+    DBUG_PRINT ("BEtest", ("icm-arg: %s\n", buffer));                                    \
+    STR_DUP (buffer, name);
 
 #define ICM_STR(name)                                                                    \
     scanf ("%s", buffer);                                                                \
@@ -66,6 +76,7 @@
 #include "icm.data"
 
 #undef ICM_DEF
+#undef ICM_ICM
 #undef ICM_STR
 #undef ICM_INT
 #undef ICM_VAR
