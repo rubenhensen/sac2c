@@ -18,3 +18,4 @@ writesib.h
 libmanager.c
 libmanager.h
 modulemanager.c
+modulemanager.h
