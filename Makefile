@@ -1,5 +1,9 @@
 #
 # $Log$
+# Revision 1.96  1998/12/07 17:28:34  cg
+# Added mechanism to link with different libraries on different
+# platforms; added correct settings to please target LINUX_X86.
+#
 # Revision 1.95  1998/12/07 09:41:28  sbs
 # check_os added. check_os makes sure that OS is set properly!
 #
@@ -97,7 +101,7 @@ cc_PROD_FLAGS  :=
 OS        := SOLARIS_SPARC
 
 #
-# SOLARIS_SPARC specific flags:
+# SOLARIS_SPARC specific flags and libraries:
 #
 #
 # The switch __EXTENSIONS__ must be set under Solaris in order to avoid warnings
@@ -105,11 +109,14 @@ OS        := SOLARIS_SPARC
 # Currently, these are popen(), pclose(), tempnam(), and strdup().
 #
 SOLARIS_SPARC_FLAGS := -D__EXTENSIONS__
+SOLARIS_SPARC_LIBS  := -ll -ly
 
 #
-# LINUX_X86 specific flags:
+# LINUX_X86 specific flags and libraries:
 #
-LINUX_X86_FLAGS     := 
+LINUX_X86_FLAGS     := -D_POSIX_SOURCE
+LINUX_X86_LIBS      := -lfl
+
 
 ################################################################################
 #
@@ -129,7 +136,7 @@ MAKEFLAGS    += --no-print-directory
 TAR          :=tar
 LEX          :=lex
 YACC         :=yacc -dv
-LIBS         :=-ly -ll -lm
+LIBS         :=-lm $($(OS)_LIBS)
 EFLIBS       :=-L/home/dkr/c/lib/ElectricFence -lefence
 RM           :=rm -f
 ECHO         :=echo
