@@ -1,6 +1,9 @@
 /*      $Id$
  *
  * $Log$
+ * Revision 1.14  1998/04/24 17:31:44  srs
+ * added MakeNullVec() and changed CreateVardec()
+ *
  * Revision 1.13  1998/04/20 09:07:59  srs
  * changed CreateInternGen() and WithloopFoldingWLT()
  *
@@ -748,7 +751,7 @@ InternGen2Tree (node *wln, intern_gen *ig)
  *
  ******************************************************************************/
 
-void *
+intern_gen *
 FreeInternGenChain (intern_gen *ig)
 {
     intern_gen *tmpig;
@@ -795,6 +798,8 @@ CreateVardec (char *name, types *type, node **vardecs)
         DBUG_ASSERT (type, ("wrong parameters"));
         type = DuplicateTypes (type, 42);
         vardecn = MakeVardec (StringCopy (name), type, *vardecs);
+        VARDEC_VARNO (vardecn) = -1;
+
         *vardecs = vardecn;
     }
 
@@ -1042,6 +1047,38 @@ StartSearchWL (node *idn, node *assignn, int mode)
     resultn = SearchWL (varno, mrdn, &valid, mode, ASSIGN_LEVEL (assignn));
 
     DBUG_ASSERT (0 == valid || 1 == valid, ("invalid value for variable valid"));
+
+    DBUG_RETURN (resultn);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MakeNullVec(int dim)
+ *
+ * description:
+ *   returns an N_array node with 'dim' components, each 0. If dim == 0,
+ *   an N_num node (0) is returned.
+ *
+ ******************************************************************************/
+
+node *
+MakeNullVec (int dim)
+{
+    node *resultn, *tmpn;
+    int i;
+
+    DBUG_ENTER ("MakeNullVec");
+
+    if (0 == dim)
+        resultn = MakeNum (0);
+    else {
+        tmpn = NULL;
+        for (i = 0; i < dim; i++)
+            tmpn = MakeExprs (MakeNum (0), tmpn);
+
+        resultn = MakeArray (tmpn);
+    }
 
     DBUG_RETURN (resultn);
 }
