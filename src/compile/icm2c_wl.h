@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  1998/05/15 23:56:03  dkr
+ * changed signature and name of some macros
+ *
  * Revision 1.6  1998/05/14 21:37:45  dkr
  * changed some ICMs
  *
@@ -31,16 +34,19 @@ extern void ICMCompileWL_NONFOLD_BEGIN (char *array, char *idx_vec, int dims,
 
 extern void ICMCompileWL_FOLD_BEGIN (char *array, char *idx_vec, int dims, char **args);
 
+extern void ICMCompileWL_FOLDVAR_BEGIN (char *array, char *idx_vec, int dims,
+                                        char **args);
+
 extern void ICMCompileWL_END (char *array, char *idx_vec, int dims, char **args);
 
 extern void ICMCompileWL_ASSIGN (char *array, char *idx_vec, int dims, char **idx_scalars,
                                  int dim_expr, char *expr);
 
-extern void ICMCompileWL_ASSIGN_GEN (char *array, char *idx_vec, int dims,
-                                     char **idx_scalars, char *templ);
+extern void ICMCompileWL_ASSIGN_INIT (char *array, char *idx_vec, int dims,
+                                      char **idx_scalars, int dim_templ, char *templ);
 
-extern void ICMCompileWL_ASSIGN_MOD (char *source, char *array, char *idx_vec, int dims,
-                                     char **idx_scalars, char *templ);
+extern void ICMCompileWL_ASSIGN_COPY (char *source, char *array, char *idx_vec, int dims,
+                                      char **idx_scalars, int dim_templ, char *templ);
 
 extern void ICMCompileWL_FOLD (char *array, char *idx_vec, int dims, char **idx_scalars,
                                int dim_expr, char *expr);
