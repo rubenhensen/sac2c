@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.39  2000/10/23 16:38:43  dkr
+ * ICM_ARG5, ICM_ARG6 added
+ *
  * Revision 1.38  2000/10/20 15:38:40  dkr
  * some functions on types added
  *
@@ -1472,6 +1475,11 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
 #define ICM_ARG2(n) EXPRS_EXPR (EXPRS_NEXT (ICM_ARGS (n)))
 #define ICM_ARG3(n) EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n))))
 #define ICM_ARG4(n) EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n)))))
+#define ICM_ARG5(n)                                                                      \
+    EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n))))))
+#define ICM_ARG6(n)                                                                      \
+    EXPRS_EXPR (                                                                         \
+      EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (EXPRS_NEXT (ICM_ARGS (n)))))))
 
 /******************************************************************************
  *
