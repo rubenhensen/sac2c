@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/04/16 18:31:02  dkr
+ * PREC4... functions added
+ *
  * Revision 3.11  2002/03/07 02:24:01  dkr
  * some functions renamed
  *
@@ -69,25 +72,16 @@
 extern node *Precompile (node *syntax_tree);
 
 extern node *PREC1modul (node *arg_node, node *arg_info);
-extern node *PREC1typedef (node *arg_node, node *arg_info);
 extern node *PREC1objdef (node *arg_node, node *arg_info);
 extern node *PREC1fundef (node *arg_node, node *arg_info);
 extern node *PREC1arg (node *arg_node, node *arg_info);
 extern node *PREC1vardec (node *arg_node, node *arg_info);
 extern node *PREC1assign (node *arg_node, node *arg_info);
-extern node *PREC1do (node *arg_node, node *arg_info);
-extern node *PREC1while (node *arg_node, node *arg_info);
-extern node *PREC1cond (node *arg_node, node *arg_info);
 extern node *PREC1let (node *arg_node, node *arg_info);
+extern node *PREC1icm (node *arg_node, node *arg_info);
 extern node *PREC1ap (node *arg_node, node *arg_info);
 extern node *PREC1return (node *arg_node, node *arg_info);
 extern node *PREC1id (node *arg_node, node *arg_info);
-extern node *PREC1array (node *arg_node, node *arg_info);
-extern node *PREC1with2 (node *arg_node, node *arg_info);
-extern node *PREC1withid (node *arg_node, node *arg_info);
-extern node *PREC1WLsegx (node *arg_node, node *arg_info);
-extern node *PREC1code (node *arg_node, node *arg_info);
-extern node *PREC1sync (node *arg_node, node *arg_info);
 
 extern node *PREC2modul (node *arg_node, node *arg_info);
 extern node *PREC2fundef (node *arg_node, node *arg_info);
@@ -102,7 +96,26 @@ extern node *PREC3with2 (node *arg_node, node *arg_info);
 extern node *PREC3withop (node *arg_node, node *arg_info);
 extern node *PREC3code (node *arg_node, node *arg_info);
 
-extern char *ObjInitFunctionName ();
+extern node *PREC4modul (node *arg_node, node *arg_info);
+extern node *PREC4typedef (node *arg_node, node *arg_info);
+extern node *PREC4objdef (node *arg_node, node *arg_info);
+extern node *PREC4fundef (node *arg_node, node *arg_info);
+extern node *PREC4arg (node *arg_node, node *arg_info);
+extern node *PREC4vardec (node *arg_node, node *arg_info);
+extern node *PREC4let (node *arg_node, node *arg_info);
+extern node *PREC4return (node *arg_node, node *arg_info);
+extern node *PREC4icm (node *arg_node, node *arg_info);
+extern node *PREC4array (node *arg_node, node *arg_info);
+extern node *PREC4id (node *arg_node, node *arg_info);
+extern node *PREC4do (node *arg_node, node *arg_info);
+extern node *PREC4while (node *arg_node, node *arg_info);
+extern node *PREC4cond (node *arg_node, node *arg_info);
+extern node *PREC4with2 (node *arg_node, node *arg_info);
+extern node *PREC4withid (node *arg_node, node *arg_info);
+extern node *PREC4code (node *arg_node, node *arg_info);
+extern node *PREC4WLsegx (node *arg_node, node *arg_info);
+
+extern char *ObjInitFunctionName (bool before_rename);
 
 extern char *RenameLocalIdentifier (char *id);
 
