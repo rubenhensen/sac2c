@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2001/04/04 00:09:24  dkr
+ * fixed a bug in COMPSync: fold type tag is generated correctly now even
+ * for user defined types.
+ *
  * Revision 3.36  2001/04/03 22:43:19  dkr
  * GetFoldCode: DBUG_ASSERT condition corrected
  *
@@ -6350,6 +6354,44 @@ COMPSpmd (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
+ *   char *GetFoldTypeTag( ids *with_ids)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static char *
+GetFoldTypeTag (ids *with_ids)
+{
+    char *fold_type;
+    types *type;
+    simpletype btype;
+
+    DBUG_ENTER ("GetFoldTypeTag");
+
+    type = IDS_TYPE (with_ids);
+    if (TYPES_DIM (type) > 0) {
+        if (IS_REFCOUNTED (IDS, with_ids)) {
+            fold_type = "array_rc";
+        } else {
+            fold_type = "array";
+        }
+    } else {
+        btype = GetBasetype (type);
+        if (btype == T_user) {
+            fold_type = "hidden";
+        } else {
+            fold_type = type_string[btype];
+        }
+    }
+
+    DBUG_RETURN (fold_type);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *COMPSync( node *arg_node, node *arg_info)
  *
  * Description:
@@ -6370,7 +6412,6 @@ COMPSync (node *arg_node, node *arg_info)
     node *icm_args, *icm_args3, *vardec, *with, *block, *instr, *assign, *last_assign,
       *prolog_icms, *epilog_icms, *new_icm, *setup_args, *assigns = NULL;
     ids *with_ids;
-    types *type;
     char *tag, *icm_name, *var_name, *fold_type;
     int num_args, count_nesting;
 
@@ -6468,12 +6509,7 @@ COMPSync (node *arg_node, node *arg_info)
                 if (NWITH2_IS_FOLD (with)) {
                     num_fold_args++;
 
-                    type = IDS_TYPE (with_ids);
-                    if (TYPES_DIM (type) > 0) {
-                        fold_type = "array";
-                    } else {
-                        fold_type = type_string[GetBasetype (type)];
-                    }
+                    fold_type = GetFoldTypeTag (with_ids);
 
                     /*
                      * <fold_type>, <accu_var>
@@ -6525,16 +6561,7 @@ COMPSync (node *arg_node, node *arg_info)
             /*
              * create fold_type-tag
              */
-            type = IDS_TYPE (with_ids);
-            if (TYPES_DIM (type) > 0) {
-                if (IS_REFCOUNTED (IDS, with_ids)) {
-                    fold_type = "array_rc";
-                } else {
-                    fold_type = "array";
-                }
-            } else {
-                fold_type = type_string[GetBasetype (type)];
-            }
+            fold_type = GetFoldTypeTag (with_ids);
 
             /*
              * <fold_type>, <accu_var>
