@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/07/06 16:38:38  dkr
+ * macro SAC_WL_DEST added
+ *
  * Revision 2.4  2000/03/10 10:34:53  dkr
  * minor modifications in ICM definitions done
  *
@@ -93,10 +96,23 @@
 /*
  *
  * for each loop-prolog-ICM two different versions exist:
- *  ...LOOP0_BEGIN is used for the outermost node of each dimension (...LEVEL == 0)
- *  ...LOOP_BEGIN is used for all inner nodes of each dimension (...LEVEL > 0)
+ *  ..LOOP0_BEGIN is used for the outermost node of each dimension (..LEVEL == 0)
+ *  ..LOOP_BEGIN is used for all inner nodes of each dimension (..LEVEL > 0)
  *
  */
+
+/*****************************************************************************/
+
+/***
+ *** Definition the name of the destination variable of the with-loop.
+ *** During the with-loop iteration this variable always points to the
+ *** current array entry.
+ ***
+
+
+#define SAC_WL_DEST( var) \
+  var##__destptr
+
 
 /*****************************************************************************/
 
