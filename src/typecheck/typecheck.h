@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.28  1997/11/04 11:29:15  srs
+ * NEWTREE: nnode is ignored
+ *
  * Revision 1.27  1997/05/14 08:13:50  sbs
  * N_annotate's inserted around function apps
  *
@@ -190,6 +193,7 @@ extern char *module_name;      /* name of module to typecheck;
  * computed N_array-node is stored in Shape_array
  * NOTE: if the type is not the type of an array, NULL will be returned
  */
+#ifndef NEWTREE
 #define SHAPE_2_ARRAY(Shape_array, Type, res_type)                                       \
     {                                                                                    \
         int i;                                                                           \
@@ -244,6 +248,53 @@ extern char *module_name;      /* name of module to typecheck;
         } else                                                                           \
             Shape_array = NULL;                                                          \
     }
+#else /* NEWTREE */
+#define SHAPE_2_ARRAY(Shape_array, Type, res_type)                                       \
+    {                                                                                    \
+        int i;                                                                           \
+        if (T_user == Type->simpletype) {                                                \
+            types *b_type = LookupType (Type->name, Type->name_mod, 042)->info.types;    \
+            if (0 < b_type->dim + Type->dim) {                                           \
+                node *dummy = MakeNode (N_exprs);                                        \
+                Shape_array = MakeNode (N_array);                                        \
+                ARRAY_TYPE (Shape_array) = DuplicateTypes (res_type, 0);                 \
+                Shape_array->node[0] = dummy;                                            \
+                for (i = 0; i < Type->dim - 1; i++) {                                    \
+                    MAKENODE_NUM (dummy->node[0], Type->shpseg->shp[i]);                 \
+                    dummy->node[1] = MakeNode (N_exprs);                                 \
+                    dummy = dummy->node[1];                                              \
+                }                                                                        \
+                if (0 < Type->dim) {                                                     \
+                    MAKENODE_NUM (dummy->node[0], Type->shpseg->shp[i]);                 \
+                    if (0 < b_type->dim) {                                               \
+                        dummy->node[1] = MakeNode (N_exprs);                             \
+                        dummy = dummy->node[1];                                          \
+                    }                                                                    \
+                }                                                                        \
+                for (i = 0; i < b_type->dim - 1; i++) {                                  \
+                    MAKENODE_NUM (dummy->node[0], b_type->shpseg->shp[i]);               \
+                    dummy->node[1] = MakeNode (N_exprs);                                 \
+                    dummy = dummy->node[1];                                              \
+                }                                                                        \
+                if (0 < b_type->dim) {                                                   \
+                    MAKENODE_NUM (dummy->node[0], b_type->shpseg->shp[i]);               \
+                }                                                                        \
+            }                                                                            \
+        } else if (0 < Type->dim) {                                                      \
+            node *dummy = MakeNode (N_exprs);                                            \
+            Shape_array = MakeNode (N_array);                                            \
+            ARRAY_TYPE (Shape_array) = DuplicateTypes (res_type, 0);                     \
+            Shape_array->node[0] = dummy;                                                \
+            for (i = 0; i < Type->dim - 1; i++) {                                        \
+                MAKENODE_NUM (dummy->node[0], Type->shpseg->shp[i]);                     \
+                dummy->node[1] = MakeNode (N_exprs);                                     \
+                dummy = dummy->node[1];                                                  \
+            }                                                                            \
+            MAKENODE_NUM (dummy->node[0], Type->shpseg->shp[i]);                         \
+        } else                                                                           \
+            Shape_array = NULL;                                                          \
+    }
+#endif /* NEWTREE */
 
 #define SAC_PRG F_prog
 #define SAC_MOD F_modimp
