@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/10/13 14:03:36  sbs
+ * bixed bug 68 by allowing two constants in CreateIndexInfoA
+ * added some more comments
+ *
  * Revision 1.18  2004/10/05 13:50:58  sah
  * lifted start of WLI/WLT traversal to the
  * defining source files to allow for local
@@ -64,6 +68,10 @@
 
  This file realizes the information gathering for the SAC-WLs (SSAWLI phase).
  The decision to fold or not to fold (SSAWLF) is based on these informations.
+
+   ASSIGN_INFO : whenever there is an index-offset calculation in the RHS
+   ID_WL : for all N-ids pointing to WL results
+
  This implementation is aware of the ssa form and does not use any masks.
  Most code is unchanged from the original implementation in WLI.c.
 
@@ -83,8 +91,15 @@
      marks all WL with constant borders, step and so on.
      only for these WLs withloop folding can be computed.
 
- additionally all id get the attribute ID_WL, which is pointing to a definition
- assignment with a WL as RHS or NULL else.
+ additionally all N_id get the attribute ID_WL:
+   ID_WL(id)
+     points to a defining wl if id is defined by a wl, NULL otherwise
+
+ furthermore, N_assign nodes within wls may obtain the ASSIGN_INFO attribute:
+   ASSIGN_INFO(assign)
+     if present, it indicates an index-offset calculation into a wl-defined
+     variable in its RHS
+     Note here, that this is referred to by the macro SSAINDEX !
 
 
  *******************************************************************************
@@ -528,16 +543,28 @@ CreateIndexInfoA (node *prfn, info *arg_info)
     const1 = COAST2Constant (PRF_ARG1 (prfn));
     const2 = COAST2Constant (PRF_ARG2 (prfn));
 
-    /* Which argument is the constant (so which will be the Id)? */
+    /* Which argument is constant (so which will be an Id)? */
     if (const1 != NULL) {
-        idn = PRF_ARG2 (prfn);
-        constn = const1;
+        if (const2 != NULL) {
+            /**
+             * if both are constant, no index structure is required.
+             * As a consequence, both constants can be freed.
+             * This should fix bug 68!
+             */
+            const1 = COFreeConstant (const1);
+            const2 = COFreeConstant (const2);
+
+        } else {
+            idn = PRF_ARG2 (prfn);
+            constn = const1;
+        }
+    } else {
+        if (const2 != NULL) {
+            idn = PRF_ARG1 (prfn);
+            constn = const2;
+        }
     }
-    if (const2 != NULL) {
-        idn = PRF_ARG1 (prfn);
-        constn = const2;
-    }
-    DBUG_ASSERT (((const1 == NULL) || (const2 == NULL)), "both arguments are constants!");
+
     if (constn != NULL) {
         const_elems = COGetDataVec (constn);
 
