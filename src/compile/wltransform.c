@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 2.19  2000/07/05 14:28:05  dkr
+ * CheckWithids() added
+ *
  * Revision 2.18  2000/06/25 01:54:32  dkr
  * WLTRAfundef removed
  *
@@ -182,6 +185,24 @@
  * Revision 1.1  1998/04/29 17:17:15  dkr
  * Initial revision
  */
+
+/******************************************************************************
+ *
+ * file: wltransform.c
+ *
+ * description:
+ *
+ * This module implements the transformation of the with-loops from the
+ * frontend representation (N_Nwith) into the backend representation (N_Nwith2).
+ *
+ * **CAUTION**
+ * For a successful transformation the AST has to meet some requirements:
+ *   - All N_Ngenerator nodes of a with-loop ...
+ *       - ... use <= as OP1 and < as OP2.
+ *       - ... have non-NULL sons BOUND1, BOUND2, STEP, WIDTH.
+ *   - All N_withid nodes of a single with-loop use the same VEC and IDS names.
+ *
+ ******************************************************************************/
 
 #include "tree.h"
 #include "traverse.h"
@@ -1934,6 +1955,70 @@ GetLcmUnroll (node *nodes, int dim)
  **
  ******************************************************************************
  ******************************************************************************/
+
+/******************************************************************************
+ *
+ * Function:
+ *   bool CheckWithids( node *part)
+ *
+ * Description:
+ *   Checks whether NWITHID_VEC, NWITHID_IDS of all parts contain the same
+ *   names.
+ *
+ ******************************************************************************/
+
+static bool
+CheckWithids (node *part)
+{
+    node *tmp;
+    ids *_ids_part, *_ids_tmp;
+    bool res = TRUE;
+
+    DBUG_ENTER ("CheckWithids");
+
+    DBUG_ASSERT ((NODE_TYPE (part) == N_Npart), "CheckWithids() needs a N_Npart node!");
+
+    if (part != NULL) {
+        tmp = NPART_NEXT (part);
+
+        /*
+         * compares each part (tmp) with the first one (part)
+         */
+        while (res && (tmp != NULL)) {
+            /*
+             * compares VEC
+             */
+            if (IDS_VARDEC (NPART_VEC (part)) != IDS_VARDEC (NPART_VEC (tmp))) {
+                res = FALSE;
+            } else {
+                /*
+                 * compares each ids-entry in IDS
+                 */
+                _ids_part = NPART_IDS (part);
+                _ids_tmp = NPART_IDS (tmp);
+                while (res && (_ids_part != NULL) && (_ids_tmp != NULL)) {
+                    if (IDS_VARDEC (_ids_part) != IDS_VARDEC (_ids_tmp)) {
+                        res = FALSE;
+                    }
+                    _ids_part = IDS_NEXT (_ids_part);
+                    _ids_tmp = IDS_NEXT (_ids_tmp);
+                }
+
+                /*
+                 * are some ids-entries left?
+                 *  -> dimensionality differs -> error
+                 */
+                if ((_ids_part != NULL) || (_ids_tmp != NULL)) {
+                    res = FALSE;
+                }
+            }
+
+            tmp = NPART_NEXT (tmp);
+        }
+    }
+
+    DBUG_RETURN (res);
+}
 
 /******************************************************************************
  *
@@ -5909,10 +5994,18 @@ WLTRAwith (node *arg_node, node *arg_info)
     /*
      * get number of dims of with-loop index range
      */
-    dims = IDS_SHAPE (NWITHID_VEC (NPART_WITHID (NWITH_PART (arg_node))), 0);
+    dims = IDS_SHAPE (NWITH_VEC (arg_node), 0);
 
-    new_node = MakeNWith2 (NPART_WITHID (NWITH_PART (arg_node)), NULL,
-                           NWITH_CODE (arg_node), NWITH_WITHOP (arg_node), dims);
+    /*
+     * check whether NWITHID_VEC, NWITHID_IDS of all parts contain the same names.
+     */
+    DBUG_ASSERT ((CheckWithids (NWITH_PART (arg_node))),
+                 "Not all N_Nwithid nodes of the with-loop contain"
+                 " the same VEC and IDS names!\n"
+                 "This is probably due to an error during with-loop-folding.");
+
+    new_node = MakeNWith2 (NWITH_WITHID (arg_node), NULL, NWITH_CODE (arg_node),
+                           NWITH_WITHOP (arg_node), dims);
 
     NWITH2_DEC_RC_IDS (new_node) = NWITH_DEC_RC_IDS (arg_node);
     NWITH2_IN (new_node) = NWITH_IN (arg_node);
@@ -5947,13 +6040,9 @@ WLTRAwith (node *arg_node, node *arg_info)
      * consistence check: ensures that the strides are pairwise disjoint
      */
     DBUG_EXECUTE ("WLprec", NOTE (("step 0.2: checking disjointness of strides\n")));
-#ifndef DBUG_OFF
-    if (!CheckDisjointness (strides)) {
-        DBUG_ASSERT ((0),
-                     "Consistence check failed: Not all strides are pairwise disjoint!\n"
-                     "This is probably due to an error during with-loop-folding.");
-    }
-#endif
+    DBUG_ASSERT ((CheckDisjointness (strides)),
+                 "Consistence check failed: Not all strides are pairwise disjoint!\n"
+                 "This is probably due to an error during with-loop-folding.");
 
     if (WL_break_after >= WL_PH_cubes) {
         /*
