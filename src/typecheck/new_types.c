@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.64  2004/10/26 11:37:40  sah
+ * Serialization support now hidden outside of NEW_AST mode
+ *
  * Revision 3.63  2004/10/26 11:07:32  sah
  * rewrote TYFixAndEliminateAlpha
  *
@@ -5752,6 +5755,8 @@ TYCreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
  ** Serialization support
  **/
 
+#ifdef NEW_AST
+
 static void
 SerializeSimpleType (FILE *file, ntype *type)
 {
@@ -6358,5 +6363,7 @@ TYDeserializeType (typeconstr con, ...)
 
     DBUG_RETURN (result);
 }
+
+#endif
 
 /* @} */ /* defgroup nty */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2004/10/26 11:37:40  sah
+ * Serialization support now hidden outside of NEW_AST mode
+ *
  * Revision 3.21  2004/09/30 17:09:57  sah
  * removed TYArgs2FunType
  * added TYArgs2FunTypeString
@@ -411,7 +414,11 @@ extern node *TYCreateWrapperCode (node *fundef, node *vardecs, node **new_vardec
  * Serialization and Deserialization support
  */
 
+#ifdef NEW_AST
+
 extern void TYSerializeType (FILE *file, ntype *type);
 extern ntype *TYDeserializeType (typeconstr con, ...);
+
+#endif
 
 #endif /* _new_types_h */
