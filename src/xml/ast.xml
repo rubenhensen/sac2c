@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.113  2004/11/26 21:56:32  mwe
+  SSALIR added
+
   Revision 1.112  2004/11/26 21:26:21  khf
   added DCR
 
@@ -825,6 +828,35 @@
 	  <node name="Module" />
 	  <node name="Assign" />
 	  <node name="Fundef" />
+	</travuser>
+      </traversal>
+      <traversal id="LIR" name="Loop Invariants Traversal" default="sons" include="SSALIR.h" >
+	<travuser>
+	  <node name="Ids" />
+	  <node name="Assign" />
+	  <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Vardec" />
+          <node name="Block" />
+          <node name="Let" />
+          <node name="Id" />
+          <node name="Ap" />
+          <node name="Cond" />
+          <node name="Return" />
+          <node name="With" />
+          <node name="Withid" />
+          <node name="Exprs" />
+	</travuser>
+      </traversal>
+      <traversal id="LIRMOV" name="Loop Inveriants Move Traversal" default="sons" include="SSALIR.h" >
+	<travuser>
+	  <node name="Id" />
+	  <node name="Withid" />
+	  <node name="Assign" />
+          <node name="Block" />
+          <node name="Let" />
+          <node name="Return" />
+          <node name="Ids" />
 	</travuser>
       </traversal>
       <traversal id="LUR" name="Loop Unrolling Traversal" default="sons" include="SSALUR.h" >
