@@ -1,7 +1,13 @@
 /*
  *
  * $Log$
- * Revision 1.119  1996/08/09 10:10:11  sbs
+ * Revision 1.120  1996/09/11 06:16:49  cg
+ * Different link styles for modules added.
+ * Now, the default is to generate one file for each function and to create
+ * an archive using ar afterwards.
+ * This includes a new format for lib-files.
+ *
+ * Revision 1.119  1996/08/09  10:10:11  sbs
  * removed 'fprintf(outfile,"%s",arg_node->info.id);'
  * from PrintPost. This led to errorneous charackters
  * in id++ statements between the idtentifier id and ++
@@ -398,6 +404,8 @@
 
 int indent;
 
+static int print_separate = 0;
+
 /*
  * First, we generate the external declarations for all functions that
  * expand ICMs to C.
@@ -424,6 +432,33 @@ char *prf_string[] = {
 };
 
 #undef PRF_IF
+
+void
+PrintFileHeader ()
+{
+    DBUG_ENTER ("PrintFileHeader");
+
+    if (show_icm == 0) {
+        if (traceflag != 0) {
+            if (traceflag & TRACE_MEM) {
+                fprintf (outfile, "#define TRACE_MEM\n");
+            }
+
+            if (traceflag & TRACE_REF) {
+                fprintf (outfile, "#define TRACE_REF\n");
+            }
+        }
+
+        if (check_malloc) {
+            fprintf (outfile, "#define CHECK_MALLOC\n");
+        }
+
+        fprintf (outfile, "#include \"libsac.h\"\n");
+        fprintf (outfile, "#include \"icm2c.h\"\n");
+    }
+
+    DBUG_VOID_RETURN;
+}
 
 /*
  * prints ids-information to outfile
@@ -558,59 +593,100 @@ PrintModul (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("PRINT", ("%s " P_FORMAT, mdb_nodetype[arg_node->nodetype], arg_node));
 
-    switch (MODUL_FILETYPE (arg_node)) {
-    case F_modimp:
-        fprintf (outfile, "\n/*\n *  Module %s :\n */\n", arg_node->info.id);
-        break;
-    case F_classimp:
-        fprintf (outfile, "\n/*\n *  Class %s :\n", arg_node->info.id);
-        if (MODUL_CLASSTYPE (arg_node) != NULL) {
-            fprintf (outfile, " *  classtype %s;\n",
-                     Type2String (MODUL_CLASSTYPE (arg_node), 0));
+    if (print_separate) {
+        outfile = WriteOpen ("%sheader.h", store_dirname);
+        PrintFileHeader ();
+
+        if (NULL != arg_node->node[1]) {
+            fprintf (outfile, "\n\n");
+            Trav (arg_node->node[1], arg_info); /* print typedefs */
         }
-        fprintf (outfile, " */\n");
-        break;
-    case F_prog:
-        fprintf (outfile, "\n/*\n *  SAC-Program %s :\n */\n", filename);
-        break;
-    default:;
-    }
 
-    if (NULL != arg_node->node[0]) {
-        fprintf (outfile, "\n");
-        Trav (arg_node->node[0], arg_info); /* print import-list */
-    }
+        if (NULL != arg_node->node[2]) {
+            fprintf (outfile, "\n\n");
+            Trav (arg_node->node[2], arg_node); /* print function declarations */
+        }
 
-    if (NULL != arg_node->node[1]) {
-        fprintf (outfile, "\n\n");
-        fprintf (outfile, "/*\n");
-        fprintf (outfile, " *  type definitions\n");
-        fprintf (outfile, " */\n\n");
-        Trav (arg_node->node[1], arg_info); /* print typedefs */
-    }
+        if (NULL != arg_node->node[3]) {
+            fprintf (outfile, "\n\n");
+            print_objdef_for_header_file = 1;
 
-    if (NULL != arg_node->node[2]) {
-        fprintf (outfile, "\n\n");
-        fprintf (outfile, "/*\n");
-        fprintf (outfile, " *  function declarations\n");
-        fprintf (outfile, " */\n\n");
-        Trav (arg_node->node[2], arg_node); /* print functions */
-    }
+            Trav (arg_node->node[3], arg_info); /* print object declarations */
+        }
 
-    if (NULL != arg_node->node[3]) {
-        fprintf (outfile, "\n\n");
-        fprintf (outfile, "/*\n");
-        fprintf (outfile, " *  global objects\n");
-        fprintf (outfile, " */\n\n");
-        Trav (arg_node->node[3], arg_info); /* print objdefs */
-    }
+        fclose (outfile);
 
-    if (NULL != arg_node->node[2]) {
-        fprintf (outfile, "\n\n");
-        fprintf (outfile, "/*\n");
-        fprintf (outfile, " *  function definitions\n");
-        fprintf (outfile, " */\n");
-        Trav (arg_node->node[2], NULL); /* print functions */
+        outfile = WriteOpen ("%sglobals.c", store_dirname);
+        fprintf (outfile, "#include \"header.h\"\n");
+
+        if (NULL != arg_node->node[3]) {
+            fprintf (outfile, "\n\n");
+            print_objdef_for_header_file = 0;
+
+            Trav (arg_node->node[3], arg_info); /* print object definitions */
+        }
+
+        fclose (outfile);
+
+        if (NULL != arg_node->node[2]) {
+            fprintf (outfile, "\n\n");
+            Trav (arg_node->node[2], NULL); /* print function definitions */
+        }
+    } else {
+        switch (MODUL_FILETYPE (arg_node)) {
+        case F_modimp:
+            fprintf (outfile, "\n/*\n *  Module %s :\n */\n", arg_node->info.id);
+            break;
+        case F_classimp:
+            fprintf (outfile, "\n/*\n *  Class %s :\n", arg_node->info.id);
+            if (MODUL_CLASSTYPE (arg_node) != NULL) {
+                fprintf (outfile, " *  classtype %s;\n",
+                         Type2String (MODUL_CLASSTYPE (arg_node), 0));
+            }
+            fprintf (outfile, " */\n");
+            break;
+        case F_prog:
+            fprintf (outfile, "\n/*\n *  SAC-Program %s :\n */\n", filename);
+            break;
+        default:;
+        }
+
+        if (NULL != arg_node->node[0]) {
+            fprintf (outfile, "\n");
+            Trav (arg_node->node[0], arg_info); /* print import-list */
+        }
+
+        if (NULL != arg_node->node[1]) {
+            fprintf (outfile, "\n\n");
+            fprintf (outfile, "/*\n");
+            fprintf (outfile, " *  type definitions\n");
+            fprintf (outfile, " */\n\n");
+            Trav (arg_node->node[1], arg_info); /* print typedefs */
+        }
+
+        if (NULL != arg_node->node[2]) {
+            fprintf (outfile, "\n\n");
+            fprintf (outfile, "/*\n");
+            fprintf (outfile, " *  function declarations\n");
+            fprintf (outfile, " */\n\n");
+            Trav (arg_node->node[2], arg_node); /* print functions */
+        }
+
+        if (NULL != arg_node->node[3]) {
+            fprintf (outfile, "\n\n");
+            fprintf (outfile, "/*\n");
+            fprintf (outfile, " *  global objects\n");
+            fprintf (outfile, " */\n\n");
+            Trav (arg_node->node[3], arg_info); /* print objdefs */
+        }
+
+        if (NULL != arg_node->node[2]) {
+            fprintf (outfile, "\n\n");
+            fprintf (outfile, "/*\n");
+            fprintf (outfile, " *  function definitions\n");
+            fprintf (outfile, " */\n");
+            Trav (arg_node->node[2], NULL); /* print functions */
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -693,7 +769,8 @@ PrintObjdef (node *arg_node, node *arg_info)
         Trav (OBJDEF_ICM (arg_node), arg_info);
         fprintf (outfile, "\n");
     } else {
-        if (arg_node->info.types->status == ST_imported) {
+        if ((arg_node->info.types->status == ST_imported)
+            || print_objdef_for_header_file) {
             fprintf (outfile, "extern ");
         }
 
@@ -779,6 +856,12 @@ PrintFundef (node *arg_node, node *arg_info)
          */
 
         if (arg_node->node[0] != NULL) {
+            if (print_separate) {
+                outfile = WriteOpen ("%sfun%d.c", store_dirname, function_counter);
+
+                fprintf (outfile, "#include \"header.h\"\n");
+            }
+
             fprintf (outfile, "\n");
 
             if ((NULL != arg_node->node[3]) && (N_icm == arg_node->node[3]->nodetype)) {
@@ -792,6 +875,11 @@ PrintFundef (node *arg_node, node *arg_info)
 
             if (FUNDEF_PRAGMA (arg_node) != NULL) {
                 Trav (FUNDEF_PRAGMA (arg_node), NULL);
+            }
+
+            if (print_separate) {
+                fclose (outfile);
+                function_counter += 1;
             }
         }
     } else {
@@ -1605,55 +1693,37 @@ Print (node *arg_node)
     mod_name_con = mod_name_con_1;
     indent = 0;
 
-    if (break_compilation) {
-        outfile = stdout;
-        fprintf (outfile, "\n-----------------------------------------------\n");
+    if ((linkstyle > 1) && (!break_compilation) && (!Ccodeonly)) {
+        print_separate = 1;
+        arg_node = Trav (arg_node, NULL);
+
+        /*
+         * If a full compilation is performed, the object of the compilation
+         * is a module/class implementation and the link style is 1 or 2,
+         * then all functions are printed into separate files into the
+         * tmp directory store_dir.
+         * In this case no C-file is generated in the current directory.
+         */
     } else {
-        outfile = WriteOpen ("%s%s", targetdir, cfilename);
-        NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
-    }
+        print_separate = 0;
 
-    /*
-      if(show_icm == 0) {
-        if(traceflag != 0 ) {
-          fprintf(outfile,"#include <stdio.h>\n");
-          fprintf(outfile,"\nchar __trace_buffer[128];\n\n");
-          if(traceflag & TRACE_MEM) {
-            fprintf(outfile,"#define TRACE_MEM\n");
-            fprintf(outfile,"\nint __trace_mem_cnt=0;\n\n");
-          }
-          if(traceflag & TRACE_REF)
-            fprintf(outfile,"#define TRACE_REF\n");
-        }
-        fprintf(outfile,"#include \"icm2c.h\"\n");
-      }
-    */
-
-    if (show_icm == 0) {
-        if (traceflag != 0) {
-            if (traceflag & TRACE_MEM) {
-                fprintf (outfile, "#define TRACE_MEM\n");
-            }
-
-            if (traceflag & TRACE_REF) {
-                fprintf (outfile, "#define TRACE_REF\n");
-            }
+        if (break_compilation) {
+            outfile = stdout;
+            fprintf (outfile, "\n-----------------------------------------------\n");
+        } else {
+            outfile = WriteOpen ("%s%s", targetdir, cfilename);
+            NOTE (("Writing file \"%s%s\"", targetdir, cfilename));
         }
 
-        if (check_malloc) {
-            fprintf (outfile, "#define CHECK_MALLOC\n");
+        PrintFileHeader ();
+
+        arg_node = Trav (arg_node, NULL);
+
+        if (outfile == stdout) {
+            fprintf (outfile, "\n------------------------------------------------\n");
+        } else {
+            fclose (outfile);
         }
-
-        fprintf (outfile, "#include \"libsac.h\"\n");
-        fprintf (outfile, "#include \"icm2c.h\"\n");
-    }
-
-    arg_node = Trav (arg_node, NULL);
-
-    if (outfile == stdout) {
-        fprintf (outfile, "\n------------------------------------------------\n");
-    } else {
-        fclose (outfile);
     }
 
     DBUG_RETURN (arg_node);
