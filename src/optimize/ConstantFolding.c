@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.43  1996/04/26 14:26:00  asi
+ * Revision 1.44  1996/05/02 14:03:44  asi
+ * bug fixed in CFassign
+ *
+ * Revision 1.43  1996/04/26  14:26:00  asi
  * Bug fixed for Psi Calculations
  *
  * Revision 1.42  1996/02/13  15:09:28  asi
@@ -320,6 +323,7 @@ CFassign (node *arg_node, node *arg_info)
     NODE_LINE (arg_info) = NODE_LINE (arg_node);
     ntype = NODE_TYPE (ASSIGN_INSTR (arg_node));
     if (N_return != ntype) {
+        INFO_ASSIGN = arg_node;
         ASSIGN_INSTR (arg_node) = OPTTrav (ASSIGN_INSTR (arg_node), arg_info, arg_node);
 
         switch (NODE_TYPE (ASSIGN_INSTR (arg_node))) {
@@ -346,7 +350,6 @@ CFassign (node *arg_node, node *arg_info)
             }
             break;
         default:
-            INFO_ASSIGN = arg_node;
             ASSIGN_NEXT (arg_node) = OPTTrav (ASSIGN_NEXT (arg_node), arg_info, arg_node);
             returnnode = arg_node;
             break;
@@ -1632,11 +1635,11 @@ ArrayPrf (node *arg_node, node *arg_info)
             res_array = CalcPsi (shape, array, array_type, arg_info);
 
         if (NULL != res_array) {
+            DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
+                               prf_string[arg_node->info.prf], NODE_LINE (arg_info)));
             MinusMask (INFO_USE, ASSIGN_USEMASK (INFO_ASSIGN), INFO_VARNO);
             FreeTree (arg_node);
             arg_node = GenerateMasks (res_array, arg_info);
-            DBUG_PRINT ("CF", ("primitive function %s folded in line %d",
-                               prf_string[arg_node->info.prf], NODE_LINE (arg_info)));
             cf_expr++;
         }
     } break;
