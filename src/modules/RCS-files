@@ -13,7 +13,5 @@ import.c
 import.h
 readsib.c
 readsib.h
-sib.c
-sib.h
 writesib.c
 writesib.h
