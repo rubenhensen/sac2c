@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.2  2004/02/06 14:19:33  mwe
+ * condTransform added
+ * replace primitive phi function with PHITARGET
+ *
  * Revision 1.1  2004/01/28 16:56:18  skt
  * Initial revision
  *
@@ -161,6 +165,8 @@ static ids *USSAids (ids *arg_ids, node *arg_info);
 /* helper functions for local use */
 static void USSAInitAvisFlags (node *fundef);
 static node *USSARemoveUnusedVardecs (node *vardecs);
+
+static node *condTransform (node *arg_node, node *arg_info);
 
 /******************************************************************************
  *
@@ -701,7 +707,29 @@ USSANwith (node *arg_node, node *arg_info)
 node *
 USSAfundef (node *arg_node, node *arg_info)
 {
+
+    node *block, *assign;
     DBUG_ENTER ("USSAfundef");
+
+    /* pre-traversal to find all cond nodes */
+
+    if ((FUNDEF_STATUS (arg_node) == ST_condfun) || (FUNDEF_STATUS (arg_node) == ST_dofun)
+        || (FUNDEF_STATUS (arg_node) == ST_whilefun)) {
+
+        INFO_USSA_FUNDEF (arg_info) = arg_node;
+
+        block = FUNDEF_BODY (arg_node);
+        if (block != NULL) {
+            assign = BLOCK_INSTR (block);
+            while (assign != NULL) {
+                if (NODE_TYPE (ASSIGN_INSTR (assign)) == N_cond) {
+                    INFO_USSA_PHIFUN (arg_info) = assign;
+                    condTransform (ASSIGN_INSTR (assign), arg_info);
+                }
+                assign = ASSIGN_NEXT (assign);
+            }
+        }
+    }
 
     USSAInitAvisFlags (arg_node);
 
@@ -795,6 +823,11 @@ USSAassign (node *arg_node, node *arg_info)
 
     INFO_USSA_OPASSIGN (arg_info) = OPASSIGN_NOOP;
 
+    /* save pointer to current assignment node */
+    /* needed to remove possible phi functions */
+
+    INFO_USSA_PHIFUN (arg_info) = arg_node;
+
     /* traverse instruction */
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -832,6 +865,168 @@ USSAassign (node *arg_node, node *arg_info)
               = AppendAssign (INFO_USSA_CONSTASSIGNS (arg_info), tmp);
         }
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node *USSAcond(node *arg_node, node* arg_info)
+ *
+ * description:
+ *   This method is executed at the begining of the traversal for each
+ *   fundef-node for all conditionals which are childs of that fundef.
+ *   After execution of this method all primitive phi functions are
+ *   replaced by PHITARGET assignments inside the conditionals.
+ *   This is the old representation of conditionals in SAC, which was
+ *   used when UndoSSATransform was written.
+ *   To reuse the old code, the old representation has to be used.
+ *
+ * example:
+ *
+ *   ...                                           ...
+ *   if (<cond>){                                  if (<cond>){
+ *     ...                                           ...
+ *     a = ...;                                      a = ...;
+ *     ...                                           ...
+ *   }                                               result = a;
+ *   else {                   is transformed to    }
+ *     ...                                         else {
+ *     b = ...;                                      ...
+ *     ...                                           b = ...;
+ *   }                                               ...
+ *   result = phi(a, b);                             result = b;
+ *   return(result);                               }
+ *                                                 return(result);
+ *
+ ****************************************************************************/
+static node *
+condTransform (node *arg_node, node *arg_info)
+{
+
+    node *then_node, *else_node;
+    node *phifun, *old_assign, *then_assign, *else_assign, *old_prf;
+    ids *left_ids;
+    node *return_node;
+
+    DBUG_ENTER ("USSAcond");
+
+    /* traverse to last assignment in then block*/
+    then_node = BLOCK_INSTR (COND_THEN (arg_node));
+    while ((then_node != NULL) && (NODE_TYPE (then_node) != N_empty)
+           && (ASSIGN_NEXT (then_node) != NULL))
+        then_node = ASSIGN_NEXT (then_node);
+
+    /* traverse to last assignment in else block*/
+    else_node = BLOCK_INSTR (COND_ELSE (arg_node));
+    while ((else_node != NULL) && (NODE_TYPE (else_node) != N_empty)
+           && (ASSIGN_NEXT (else_node) != NULL))
+        else_node = ASSIGN_NEXT (else_node);
+
+    /* first phi function*/
+    phifun = ASSIGN_NEXT (INFO_USSA_PHIFUN (arg_info));
+
+    /* find assignment node with return node*/
+    return_node = phifun;
+    while (NODE_TYPE (ASSIGN_INSTR (return_node)) != N_return)
+        return_node = ASSIGN_NEXT (return_node);
+
+    /* when phifun points to the return node, then every phi function was removed */
+    while (NODE_TYPE (ASSIGN_INSTR (phifun)) != N_return) {
+
+        /* check for expected node type */
+        DBUG_ASSERT (NODE_TYPE (ASSIGN_INSTR (phifun)) == N_let, "let node expected");
+
+        old_assign = phifun;
+
+        /* traverse to next node in assignment chain*/
+        phifun = ASSIGN_NEXT (phifun);
+
+        ASSIGN_NEXT (old_assign) = NULL;
+
+        /* pointer to ids */
+        left_ids = LET_IDS (ASSIGN_INSTR (old_assign));
+
+        /* separate prf subtree from assignment */
+        old_prf = LET_EXPR (ASSIGN_INSTR (old_assign));
+        LET_EXPR (ASSIGN_INSTR (old_assign)) = NULL;
+
+        /* reuse original phi-function assign node for then block */
+        then_assign = old_assign;
+
+        /* create let assign for else part with same left side as then part
+           (right side from old prf subtree) */
+        else_assign = MakeAssignLet (StringCopy (VARDEC_OR_ARG_NAME (
+                                       AVIS_VARDECORARG (IDS_AVIS (left_ids)))),
+                                     AVIS_VARDECORARG (IDS_AVIS (left_ids)),
+                                     EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (old_prf))));
+
+        /* add correct id node from prf subtree to assignment for then block */
+        LET_EXPR (ASSIGN_INSTR (then_assign)) = EXPRS_EXPR (PRF_ARGS (old_prf));
+
+        /* delete unused prf subtree */
+        EXPRS_EXPR (PRF_ARGS (old_prf)) = NULL;
+        EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (old_prf))) = NULL;
+        FreeTree (old_prf);
+
+        /* append then_assignment to then block */
+        if (then_node != NULL) {
+            if (NODE_TYPE (then_node) != N_empty) {
+                ASSIGN_NEXT (then_node) = then_assign;
+                then_node = ASSIGN_NEXT (then_node);
+            } else {
+                FreeTree (then_node);
+                BLOCK_INSTR (COND_THEN (arg_node)) = then_assign;
+                then_node = then_assign;
+            }
+        } else {
+            BLOCK_INSTR (COND_THEN (arg_node)) = then_assign;
+            then_node = then_assign;
+        }
+
+        /* append else_assignment to else block */
+        if (else_node != NULL) {
+            if (NODE_TYPE (else_node) != N_empty) {
+                ASSIGN_NEXT (else_node) = else_assign;
+                else_node = ASSIGN_NEXT (else_node);
+            } else {
+                FreeTree (else_node);
+                BLOCK_INSTR (COND_ELSE (arg_node)) = else_assign;
+                else_node = else_assign;
+            }
+        } else {
+            BLOCK_INSTR (COND_ELSE (arg_node)) = else_assign;
+            else_node = else_assign;
+        }
+
+        /* update AVIS/VARDEC node */
+        AVIS_SSAASSIGN (IDS_AVIS (left_ids)) = then_assign;
+        AVIS_SSAASSIGN2 (IDS_AVIS (left_ids)) = else_assign;
+
+        /* set flag if conditional is used inside a loop */
+
+        switch (FUNDEF_STATUS (INFO_USSA_FUNDEF (arg_info))) {
+        case ST_condfun:
+            AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_COND;
+            break;
+
+        case ST_whilefun:
+            AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_DO;
+            break;
+
+        case ST_dofun:
+            AVIS_SSAPHITARGET (IDS_AVIS (left_ids)) = PHIT_WHILE;
+            break;
+
+        default:
+            DBUG_ASSERT ((FALSE), "conditional in reglular function! (no cond, do or "
+                                  "while function)");
+        }
+    }
+
+    /* append return statement behind conditional */
+    ASSIGN_NEXT (INFO_USSA_PHIFUN (arg_info)) = phifun;
 
     DBUG_RETURN (arg_node);
 }
