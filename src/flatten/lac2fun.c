@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2000/03/17 15:59:18  dkr
+ * added call of CleanupDecls()
+ *
  * Revision 1.13  2000/02/24 16:53:28  dkr
  * fixed a bug in InferMasks:
  * in case of do-loops the condition must be traversed *before* the body
@@ -1222,6 +1225,11 @@ Lac2Fun (node *syntax_tree)
     syntax_tree = Trav (syntax_tree, info_node);
 
     info_node = FreeNode (info_node);
+
+    /*
+     * cleanup declarations (remove unused vardecs, ...)
+     */
+    syntax_tree = CleanupDecls (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
