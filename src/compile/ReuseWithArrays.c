@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  2000/02/04 10:23:59  dkr
+ * comment changed
+ *
  * Revision 2.2  2000/01/26 17:30:08  dkr
  * type of traverse-function-table changed.
  *
@@ -382,7 +385,7 @@ ReuseLet (node *arg_node, node *arg_info)
  * description:
  *   Removes 'arg_node' from the reuse-mask ('INFO_REUSE_MASK( arg_info)')
  *   and inserts it into the no-reuse-mask ('INFO_REUSE_NEGMASK( arg_info)'),
- *   because this is an illegal occur of this id.
+ *   because this is an occur on a right hand side of an assignment.
  *
  ******************************************************************************/
 
