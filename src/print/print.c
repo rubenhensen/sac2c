@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.111  2002/08/12 14:59:50  sbs
+ *  N_mop representation changed
+ *
  * Revision 3.110  2002/08/09 16:36:21  sbs
  * basic support for N_mop written.
  *
@@ -2277,21 +2280,33 @@ PrintAp (node *arg_node, node *arg_info)
 node *
 PrintMop (node *arg_node, node *arg_info)
 {
+    node *exprs;
+    ids *fun_ids;
+
     DBUG_ENTER ("PrintMop");
 
     if (MOP_FIX (arg_node)) {
         fprintf (outfile, "(");
     }
 
-    Trav (MOP_ARG1 (arg_node), arg_info);
+    exprs = MOP_EXPRS (arg_node);
+    fun_ids = MOP_OPS (arg_node);
 
-    if (MOP_MOD (arg_node) != NULL) {
-        fprintf (outfile, " %s:%s ", MOP_MOD (arg_node), MOP_NAME (arg_node));
-    } else {
-        fprintf (outfile, " %s ", MOP_NAME (arg_node));
+    while (fun_ids) {
+        Trav (EXPRS_EXPR (exprs), arg_info);
+
+        if (IDS_MOD (fun_ids) != NULL) {
+            fprintf (outfile, " %s:%s ", IDS_MOD (fun_ids), IDS_NAME (fun_ids));
+        } else {
+            fprintf (outfile, " %s ", IDS_NAME (fun_ids));
+        }
+
+        exprs = EXPRS_NEXT (exprs);
+        fun_ids = IDS_NEXT (fun_ids);
     }
-
-    Trav (MOP_ARG2 (arg_node), arg_info);
+    if (exprs) {
+        Trav (EXPRS_EXPR (exprs), arg_info);
+    }
 
     if (MOP_FIX (arg_node)) {
         fprintf (outfile, ")");
