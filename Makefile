@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.44  2000/06/23 16:38:02  nmw
+# map_cwrapper.o inserted
+#
 # Revision 2.43  2000/06/13 13:50:11  dkr
 # Old2NewWith.o renamed into PatchWith.o
 #
@@ -229,7 +232,8 @@ TREE= src/tree/traverse.o src/tree/tree.o src/tree/tree_basic.o src/tree/free.o 
       src/tree/scheduling.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
-PRINT= src/print/print.o src/print/convert.o src/print/print_interface.o
+PRINT= src/print/print.o src/print/convert.o src/print/print_interface.o \
+       src/print/map_cwrapper.o
 FLATTEN= src/flatten/flatten.o src/flatten/lac2fun.o src/flatten/cleanup_decls.o \
          src/flatten/fun2lac.o src/flatten/adjust_ids.o
 TYPECHECK= src/typecheck/typecheck.o src/typecheck/prim_fun.o \
