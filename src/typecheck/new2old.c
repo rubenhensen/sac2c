@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2002/09/02 12:38:55  dkr
+ * new_typecheck.h included
+ *
  * Revision 1.3  2002/08/31 04:56:27  dkr
  * NT2OTarray added: ARRAY_TYPE is set now
  *
@@ -20,6 +23,7 @@
 
 #include "Error.h"
 
+#include "new_typecheck.h"
 #include "new_types.h"
 #include "new2old.h"
 #include "traverse.h"
