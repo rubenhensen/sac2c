@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.14  2000/05/29 14:28:49  dkr
+ * include of pad.h added
+ *
  * Revision 2.13  2000/05/26 14:22:52  sbs
  * WLAA and TSI lifted on module level
  * call to ArrayPadding added.
@@ -147,6 +150,7 @@
 #include "WithloopFolding.h"
 #include "wl_access_analyze.h"
 #include "tile_size_inference.h"
+#include "pad.h"
 
 /*
  * global variables to keep track of optimization's success
