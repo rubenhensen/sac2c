@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/11/09 09:58:49  bs
+ * New function added: MakePragmaWLComp()
+ * TYP_ID changed.
+ *
  * Revision 2.10  1999/08/30 18:31:15  bs
  * Bugs fixed.
  *
@@ -75,13 +79,10 @@
 #include "print.h"
 #include "tile_size_inference.h"
 
-#define TYP_IF(n, d, p, f, sz) sz
-
+#define TYP_IFsize(sz) sz
 static int dtype_size[] = {
 #include "type_info.mac"
 };
-
-#undef TYP_IF
 
 typedef struct ENH_ACCESS {
     int vaddr;
@@ -359,6 +360,49 @@ CalcTilesizeInnerDim (access_t *accesses, node *arg_info)
 /*****************************************************************************
  *
  * function:
+ *   node* MakePragmaWLComp(node* aelems, node* arg_info)
+ *
+ * description:
+ *
+ *
+ *****************************************************************************/
+
+static node *
+MakePragmaWLComp (node *aelems, node *arg_info)
+{
+    node *pragma;
+    char *ap_name;
+    int i, tilesize;
+
+    DBUG_ENTER ("MakePragmaWLComp");
+
+    tilesize = NUM_VAL (aelems);
+
+    if (tilesize > 0) {
+        aelems = MakeExprs (aelems, NULL);
+        for (i = INFO_TSI_ARRAYDIM (arg_info) - 2; i >= 0; i--) {
+            aelems = MakeExprs (MakeNum (tilesize), aelems);
+        }
+        pragma = MakePragma ();
+        ap_name = Malloc (6 * sizeof (char));
+        ap_name = strcpy (ap_name, "BvL0");
+        PRAGMA_WLCOMP_APS (pragma)
+          = MakeExprs (MakeAp (ap_name, NULL, MakeExprs (MakeArray (aelems), NULL)),
+                       NULL);
+    } else {
+        /*
+         *  No #pragma wlcomp required or allowed.
+         */
+        pragma = NULL;
+        FreeNode (aelems);
+    }
+
+    DBUG_RETURN (pragma);
+}
+
+/*****************************************************************************
+ *
+ * function:
  *   node *TileSizeInference(node *arg_node, node *arg_info)
  *
  * description:
@@ -482,6 +526,8 @@ TSIblock (node *arg_node, node *arg_info)
 node *
 TSInwith (node *arg_node, node *arg_info)
 {
+    node *pragma;
+
     DBUG_ENTER ("TSInwith");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Nwith),
@@ -491,17 +537,30 @@ TSInwith (node *arg_node, node *arg_info)
     if ((NWITHOP_TYPE (NWITH_WITHOP (arg_node)) == WO_genarray)
         || (NWITHOP_TYPE (NWITH_WITHOP (arg_node)) == WO_modarray)) {
 
-        INFO_TSI_WLCOMP (arg_info) = NULL;
+        INFO_TSI_WLCOMP (arg_info) = MakeNum (INT_MAX);
+
         NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
-        if (NWITH_PRAGMA (arg_node) == NULL) {
-            NWITH_PRAGMA (arg_node) = INFO_TSI_WLCOMP (arg_info);
-            INFO_TSI_WLCOMP (arg_info) = NULL;
-        } else {
+
+        pragma = MakePragmaWLComp (INFO_TSI_WLCOMP (arg_info), arg_info);
+
+        if (NWITH_PRAGMA (arg_node) != NULL) {
             printf ("*** Tiling, manually set:");
             Print (NWITH_PRAGMA (arg_node));
             printf ("*** Tiling, tsi-proposal:");
-            Print (INFO_TSI_WLCOMP (arg_info));
-            FreePragma (INFO_TSI_WLCOMP (arg_info), NULL);
+            if (pragma != NULL) {
+                Print (pragma);
+                FreePragma (pragma, NULL);
+            } else {
+                printf ("\n*** #pragma wlcomp already existing.\n\n");
+            }
+        } else {
+            NWITH_PRAGMA (arg_node) = pragma;
+            printf ("*** Tiling, tsi-proposal:");
+            if (pragma != NULL) {
+                Print (pragma);
+            } else {
+                printf ("\n*** No tsi-proposal possible.\n\n");
+            }
         }
     }
 
@@ -523,9 +582,7 @@ TSInwith (node *arg_node, node *arg_info)
 node *
 TSIncode (node *arg_node, node *arg_info)
 {
-    int i, tilesize, *cacheparam;
-    char *ap_name;
-    node *pragma, *aelems;
+    int tilesize, *cacheparam;
 
     DBUG_ENTER ("TSIncode");
 
@@ -537,36 +594,23 @@ TSIncode (node *arg_node, node *arg_info)
       = dtype_size[TYPES_BASETYPE (VARDEC_TYPE (NCODE_WLAA_WLARRAY (arg_node)))];
     INFO_TSI_WLARRAY (arg_info) = NCODE_WLAA_WLARRAY (arg_node);
     INFO_TSI_INDEXVAR (arg_info) = NCODE_WLAA_INDEXVAR (arg_node);
-    INFO_TSI_ARRAYDIM (arg_info) = VARDEC_DIM (NCODE_WLAA_WLARRAY (arg_node));
     INFO_TSI_ACCESS (arg_info) = NCODE_WLAA_ACCESS (arg_node);
+    INFO_TSI_FEATURE (arg_info) = NCODE_WLAA_FEATURE (arg_node);
     INFO_TSI_ACCESSCNT (arg_info) = NCODE_WLAA_ACCESSCNT (arg_node);
-    INFO_TSI_ARRAYSHP (arg_info) = VARDEC_SHPSEG (NCODE_WLAA_WLARRAY (arg_node));
 
     DBUG_ASSERT ((INFO_TSI_ARRAYSHP (arg_info) != NULL), ("Array without shape!"));
 
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
-    tilesize = CalcTilesizeInnerDim (NCODE_WLAA_ACCESS (arg_node), arg_info);
-
-    if (tilesize > 0) {
-        aelems = NULL;
-        for (i = INFO_TSI_ARRAYDIM (arg_info) - 1; i >= 0; i--) {
-            aelems = MakeExprs (MakeNum (tilesize), aelems);
-        }
-        pragma = MakePragma ();
-        ap_name = Malloc (6 * sizeof (char));
-        ap_name = strcpy (ap_name, "BvL0");
-        PRAGMA_WLCOMP_APS (pragma)
-          = MakeExprs (MakeAp (ap_name, NULL, MakeExprs (MakeArray (aelems), NULL)),
-                       NULL);
+    if (INFO_TSI_FEATURE (arg_info) == FEATURE_NONE) {
+        tilesize = CalcTilesizeInnerDim (NCODE_WLAA_ACCESS (arg_node), arg_info);
     } else {
-        /*
-         *  No #pragma wlcomp required or allowed.
-         */
-        pragma = NULL;
+        tilesize = 0;
     }
 
-    INFO_TSI_WLCOMP (arg_info) = pragma;
+    if (tilesize < NUM_VAL (INFO_TSI_WLCOMP (arg_info))) {
+        NUM_VAL (INFO_TSI_WLCOMP (arg_info)) = tilesize;
+    }
 
     if (NCODE_NEXT (arg_node) != NULL) {
         NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
