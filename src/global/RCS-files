@@ -1,8 +1,11 @@
 Error.c
 Error.h
 Makefile
+access_macros.h
 free.c
 free.h
+internal_lib.c
+internal_lib.h
 main.c
 my_debug.c
 my_debug.h
