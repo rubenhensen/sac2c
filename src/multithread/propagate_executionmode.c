@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2004/08/26 17:34:24  skt
+ * case MUTH_MULTI_SPECIALIZED added to all corresponding switchs
+ *
  * Revision 1.10  2004/08/19 09:07:33  skt
  * now a N_return gets the same executionmode as its funcion
  *
@@ -463,11 +466,13 @@ UpdateFundefExecmode (node *fundef, mtexecmode_t execmode)
         case MUTH_MULTI:
             FUNDEF_EXECMODE (fundef) = MUTH_EXCLUSIVE;
             break;
+        case MUTH_MULTI_SPECIALIZED:
+            DBUG_ASSERT (FALSE, "execmode must not be MUTH_MULTI_SPECIALIZED");
+            break;
         case MUTH_ANY:
             FUNDEF_EXECMODE (fundef) = MUTH_SINGLE;
             break;
-        default:
-            DBUG_ASSERT (0, "fundef has an invalid executionmode");
+
             break;
         }
         break;
@@ -480,13 +485,15 @@ UpdateFundefExecmode (node *fundef, mtexecmode_t execmode)
             break;
         case MUTH_MULTI:
             break;
+        case MUTH_MULTI_SPECIALIZED:
+            DBUG_ASSERT (FALSE, "execmode must not be MUTH_MULTI_SPECIALIZED");
+            break;
         case MUTH_ANY:
             FUNDEF_EXECMODE (fundef) = MUTH_MULTI;
             break;
-        default:
-            DBUG_ASSERT (0, "fundef has an invalid executionmode");
-            break;
         }
+        break;
+    case MUTH_MULTI_SPECIALIZED:
         break;
     default:
         DBUG_ASSERT (0, "UpdateFundefExecmode expects a valid executionmode");
@@ -519,11 +526,11 @@ UpdateCondExecmode (node *condassign, mtexecmode_t execmode)
             case MUTH_MULTI:
                 ASSIGN_EXECMODE (condassign) = MUTH_EXCLUSIVE;
                 break;
+            case MUTH_MULTI_SPECIALIZED:
+                DBUG_ASSERT (FALSE, "execmode must not be MUTH_MULTI_SPECIALIZED");
+                break;
             case MUTH_ANY:
                 ASSIGN_EXECMODE (condassign) = MUTH_SINGLE;
-                break;
-            default:
-                DBUG_ASSERT (0, "condassign has an invalid executionmode");
                 break;
             }
             break;
@@ -536,16 +543,15 @@ UpdateCondExecmode (node *condassign, mtexecmode_t execmode)
                 break;
             case MUTH_MULTI:
                 break;
+            case MUTH_MULTI_SPECIALIZED:
+                DBUG_ASSERT (FALSE, "execmode must not be MUTH_MULTI_SPECIALIZED");
+                break;
             case MUTH_ANY:
                 ASSIGN_EXECMODE (condassign) = MUTH_SINGLE;
                 break;
-            default:
-                DBUG_ASSERT (0, "condassign has an invalid executionmode");
-                break;
             }
             break;
-        default:
-            DBUG_ASSERT (0, "UpdateCondExecmode expects a valid executionmode");
+        case MUTH_MULTI_SPECIALIZED:
             break;
         }
     } /* if (condassign != NULL) */
@@ -566,38 +572,6 @@ UpdateWithExecmode (node *withloop_assign, mtexecmode_t execmode)
     }
     DBUG_VOID_RETURN;
 }
-
-#if PEM_DEBUG
-/** <!--********************************************************************-->
- *
- * @fn char *DecodeExecmode(mtexecmode_t execmode)
- *
- *   @brief A small helper function to make debug-output more readable
- *          !It must be adapted if the names of the modes change!
- *
- *   @param execmode the executionmode to decode
- *   @return the name of the executionmode as a string
- *
- *****************************************************************************/
-char *
-DecodeExecmode (mtexecmode_t execmode)
-{
-    switch (execmode) {
-    case MUTH_ANY:
-        return ("AT");
-    case MUTH_EXCLUSIVE:
-        return ("EX");
-    case MUTH_SINGLE:
-        return ("ST");
-    case MUTH_MULTI:
-        return ("MT");
-    default:
-        DBUG_ASSERT (0, "DecodeExecmode expects a valid executionmode");
-        break;
-    }
-    return "NN";
-}
-#endif
 
 /**
  * @}
