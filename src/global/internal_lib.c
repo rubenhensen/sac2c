@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/05/29 14:31:10  dkr
+ * second traversal table for precompile added
+ *
  * Revision 2.15  2000/03/15 17:28:05  dkr
  * DBUG_ASSERT for lcm() added
  *
@@ -599,7 +602,9 @@ TmpVar ()
         s = "uniq";
     } else if (act_tab == rmvoid_tab) {
         s = "rmvoid";
-    } else if (act_tab == precomp_tab) {
+    } else if (act_tab == precomp1_tab) {
+        s = "pcomp";
+    } else if (act_tab == precomp2_tab) {
         s = "pcomp";
     } else if (act_tab == readsib_tab) {
         s = "rsib";
