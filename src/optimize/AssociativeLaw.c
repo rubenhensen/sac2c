@@ -1,5 +1,8 @@
 /* *
  * $Log$
+ * Revision 1.29  2004/11/26 21:07:13  mwe
+ * IDS_DECL
+ *
  * Revision 1.28  2004/11/24 12:05:40  mwe
  * changed signature of TBmakeLet
  *
@@ -1425,7 +1428,7 @@ ALprf (node *arg_node, info *arg_info)
              */
             if ((anz_const > 1) && (anz_all > 2) && (anz_const < anz_all)) {
 
-                nodetype = IDS_VARDEC (LET_IDS (INFO_AL_LETNODE (arg_info)));
+                nodetype = IDS_DECL (LET_IDS (INFO_AL_LETNODE (arg_info)));
 
                 if (TYisSimple (VARDEC_NTYPE (nodetype)))
                     basetype = VARDEC_NTYPE (nodetype);
@@ -1504,13 +1507,13 @@ ALprf (node *arg_node, info *arg_info)
                             if (TYisSimple (AVIS_TYPE (
                                   IDS_AVIS (LET_IDS (ASSIGN_INSTR (node1)))))) {
                                 if (TYisSimple (VARDEC_NTYPE (
-                                      IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node2)))))) {
+                                      IDS_DECL (LET_IDS (ASSIGN_INSTR (node2)))))) {
                                     dim = 0;
                                 } else {
                                     dim = 1;
                                 }
                             } else if (TYisSimple (VARDEC_NTYPE (
-                                         IDS_VARDEC (LET_IDS (ASSIGN_INSTR (node2)))))) {
+                                         IDS_DECL (LET_IDS (ASSIGN_INSTR (node2)))))) {
                                 dim = 2;
                             } else {
                                 dim = 3;
