@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2003/03/20 14:01:58  sbs
+ * config.h included; NEED_0x_PREFIX used.
+ *
  * Revision 3.20  2002/09/05 20:29:19  dkr
  * PrefixForTmpVar() added
  *
@@ -120,6 +123,7 @@
 #ifndef _internal_lib_h
 #define _internal_lib_h
 
+#include "config.h"
 #include "types.h"
 
 typedef struct STR_BUF str_buf;
@@ -167,7 +171,7 @@ extern void DbugMemoryLeakCheck (void);
  *********************************/
 
 /* format string for pointers */
-#ifdef SAC_FOR_SOLARIS_SPARC
+#ifdef NEED_0x_PREFIX
 #define F_PTR "0x%p"
 #else
 #define F_PTR "%p"
