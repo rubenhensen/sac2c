@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.23  2003/09/19 12:08:47  dkr
+ * postfix _nt renamed into _NT
+ *
  * Revision 3.22  2003/09/19 12:07:28  dkr
  * code for TAGGED_ARRAYS removed
  *
@@ -140,14 +143,14 @@
  * BEGIN: (BLOCK_LEVEL == 0)
  */
 
-#define SAC_WL_BLOCK_LOOP0_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)             \
+#define SAC_WL_BLOCK_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)             \
     {                                                                                    \
         for (idx_scl = bnd1; idx_scl < bnd2;) {                                          \
             int SAC_WL_VAR (first, idx_scl) = idx_scl;                                   \
             int SAC_WL_VAR (last, idx_scl)                                               \
               = SAC_MIN (SAC_WL_VAR (first, idx_scl) + step, bnd2);
 
-#define SAC_WL_MT_BLOCK_LOOP0_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)          \
+#define SAC_WL_MT_BLOCK_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)          \
     {                                                                                    \
         int SAC_WL_VAR (block_stop, idx_scl)                                             \
           = SAC_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));                               \
@@ -162,7 +165,7 @@
  * BEGIN: (BLOCK_LEVEL > 0)
  */
 
-#define SAC_WL_BLOCK_LOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)              \
+#define SAC_WL_BLOCK_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)              \
     {                                                                                    \
         int SAC_WL_VAR (block_stop, idx_scl) = SAC_WL_VAR (last, idx_scl);               \
         for (idx_scl = SAC_WL_VAR (first, idx_scl) + bnd1;                               \
@@ -172,19 +175,19 @@
               = SAC_MIN (SAC_WL_VAR (first, idx_scl) + step,                             \
                          SAC_WL_VAR (block_stop, idx_scl));
 
-#define SAC_WL_MT_BLOCK_LOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)           \
-    SAC_WL_BLOCK_LOOP_BEGIN (dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_BLOCK_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)           \
+    SAC_WL_BLOCK_LOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
 
 /*
  * END
  */
 
-#define SAC_WL_BLOCK_LOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)                \
+#define SAC_WL_BLOCK_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)                \
     }                                                                                    \
     }
 
-#define SAC_WL_MT_BLOCK_LOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)             \
-    SAC_WL_BLOCK_LOOP_END (dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_BLOCK_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)             \
+    SAC_WL_BLOCK_LOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
 
 /*****************************************************************************/
 
@@ -201,21 +204,21 @@
  * BEGIN
  */
 
-#define SAC_WL_BLOCK_NOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)              \
+#define SAC_WL_BLOCK_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)              \
     {                                                                                    \
         int SAC_WL_VAR (diff, idx_scl) = (bnd2 - bnd1);
 
-#define SAC_WL_MT_BLOCK_NOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)           \
-    SAC_WL_BLOCK_NOOP_BEGIN (dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_BLOCK_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)           \
+    SAC_WL_BLOCK_NOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
 
 /*
  * END
  */
 
-#define SAC_WL_BLOCK_NOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step) }
+#define SAC_WL_BLOCK_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step) }
 
-#define SAC_WL_MT_BLOCK_NOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)             \
-    SAC_WL_BLOCK_NOOP_END (dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_BLOCK_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)             \
+    SAC_WL_BLOCK_NOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
 
 /*****************************************************************************/
 
@@ -240,12 +243,12 @@
  * BEGIN: (UBLOCK_LEVEL == 0)
  */
 
-#define SAC_WL_UBLOCK_LOOP0_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)            \
+#define SAC_WL_UBLOCK_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)            \
     {                                                                                    \
         for (idx_scl = bnd1; idx_scl < bnd2;) {                                          \
             int SAC_WL_VAR (first, idx_scl) = idx_scl;
 
-#define SAC_WL_MT_UBLOCK_LOOP0_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)         \
+#define SAC_WL_MT_UBLOCK_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)         \
     {                                                                                    \
         int SAC_WL_VAR (block_stop, idx_scl)                                             \
           = SAC_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));                               \
@@ -257,25 +260,25 @@
  * BEGIN: (UBLOCK_LEVEL > 0)
  */
 
-#define SAC_WL_UBLOCK_LOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)             \
+#define SAC_WL_UBLOCK_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)             \
     {                                                                                    \
         for (idx_scl = SAC_WL_VAR (first, idx_scl) + bnd1;                               \
              idx_scl < SAC_WL_VAR (last, idx_scl);) {                                    \
             int SAC_WL_VAR (first, idx_scl) = idx_scl;
 
-#define SAC_WL_MT_UBLOCK_LOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)          \
-    SAC_WL_UBLOCK_LOOP_BEGIN (dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_UBLOCK_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)          \
+    SAC_WL_UBLOCK_LOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
 
 /*
  * END
  */
 
-#define SAC_WL_UBLOCK_LOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)               \
+#define SAC_WL_UBLOCK_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)               \
     }                                                                                    \
     }
 
-#define SAC_WL_MT_UBLOCK_LOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)            \
-    SAC_WL_UBLOCK_LOOP_END (dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_UBLOCK_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)            \
+    SAC_WL_UBLOCK_LOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
 
 /*****************************************************************************/
 
@@ -292,21 +295,21 @@
  * BEGIN
  */
 
-#define SAC_WL_UBLOCK_NOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)             \
+#define SAC_WL_UBLOCK_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)             \
     {                                                                                    \
         int SAC_WL_VAR (diff, idx_scl) = (bnd2 - bnd1);
 
-#define SAC_WL_MT_UBLOCK_NOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)          \
-    SAC_WL_UBLOCK_NOOP_BEGIN (dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_UBLOCK_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)          \
+    SAC_WL_UBLOCK_NOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
 
 /*
  * END
  */
 
-#define SAC_WL_UBLOCK_NOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step) }
+#define SAC_WL_UBLOCK_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step) }
 
-#define SAC_WL_MT_UBLOCK_NOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)            \
-    SAC_WL_UBLOCK_NOOP_END (dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_UBLOCK_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)            \
+    SAC_WL_UBLOCK_NOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
 
 /*****************************************************************************/
 
@@ -323,12 +326,12 @@
  * BEGIN: (STRIDE_LEVEL == 0) && (STRIDE_UNROLLING == FALSE)
  */
 
-#define SAC_WL_STRIDE_LOOP0_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)            \
+#define SAC_WL_STRIDE_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)            \
     {                                                                                    \
         int SAC_WL_VAR (stop, idx_scl) = bnd2;                                           \
         for (idx_scl = bnd1; idx_scl < bnd2;) {
 
-#define SAC_WL_MT_STRIDE_LOOP0_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)         \
+#define SAC_WL_MT_STRIDE_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)         \
     {                                                                                    \
         int SAC_WL_VAR (stop, idx_scl) = SAC_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));  \
         for (idx_scl = SAC_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                   \
@@ -341,57 +344,57 @@
 /*
  * the stride is *not* the last one in the current dimension
  */
-#define SAC_WL_STRIDE_LOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)             \
+#define SAC_WL_STRIDE_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)             \
     {                                                                                    \
         int SAC_WL_VAR (stop, idx_scl)                                                   \
           = SAC_MIN (SAC_WL_VAR (first, idx_scl) + bnd2, SAC_WL_VAR (last, idx_scl));    \
         for (idx_scl = SAC_WL_VAR (first, idx_scl) + bnd1;                               \
              idx_scl < SAC_WL_VAR (stop, idx_scl);) {
 
-#define SAC_WL_MT_STRIDE_LOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)          \
-    SAC_WL_STRIDE_LOOP_BEGIN (dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_STRIDE_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)          \
+    SAC_WL_STRIDE_LOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
 
 /*
  * the stride is the last one in the current dimension
  */
-#define SAC_WL_STRIDE_LAST_LOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)        \
+#define SAC_WL_STRIDE_LAST_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)        \
     {                                                                                    \
         int SAC_WL_VAR (stop, idx_scl) = SAC_WL_VAR (last, idx_scl);                     \
         for (idx_scl = SAC_WL_VAR (first, idx_scl) + bnd1;                               \
              idx_scl < SAC_WL_VAR (stop, idx_scl);) {
 
-#define SAC_WL_MT_STRIDE_LAST_LOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)     \
-    SAC_WL_STRIDE_LAST_LOOP_BEGIN (dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_STRIDE_LAST_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)     \
+    SAC_WL_STRIDE_LAST_LOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
 
 /*
  * BEGIN: (STRIDE_UNROLLING == TRUE)
  */
 
-#define SAC_WL_STRIDE_UNROLL_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)           \
+#define SAC_WL_STRIDE_UNROLL_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)           \
     idx_scl = SAC_WL_VAR (first, idx_scl) + bnd1;
 
-#define SAC_WL_MT_STRIDE_UNROLL_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)        \
-    SAC_WL_STRIDE_UNROLL_BEGIN (dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_STRIDE_UNROLL_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)        \
+    SAC_WL_STRIDE_UNROLL_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
 
 /*
  * END: (STRIDE_UNROLLING == FALSE)
  */
 
-#define SAC_WL_STRIDE_LOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)               \
+#define SAC_WL_STRIDE_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)               \
     }                                                                                    \
     }
 
-#define SAC_WL_MT_STRIDE_LOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)            \
-    SAC_WL_STRIDE_LOOP_END (dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_STRIDE_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)            \
+    SAC_WL_STRIDE_LOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
 
 /*
  * END: (STRIDE_UNROLLING == TRUE)
  */
 
-#define SAC_WL_STRIDE_UNROLL_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step) /* empty */
+#define SAC_WL_STRIDE_UNROLL_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step) /* empty */
 
-#define SAC_WL_MT_STRIDE_UNROLL_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)          \
-    SAC_WL_STRIDE_UNROLL_END (dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_STRIDE_UNROLL_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)          \
+    SAC_WL_STRIDE_UNROLL_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
 
 /*****************************************************************************/
 
@@ -408,21 +411,21 @@
  * BEGIN
  */
 
-#define SAC_WL_STRIDE_NOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)             \
+#define SAC_WL_STRIDE_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)             \
     {                                                                                    \
         int SAC_WL_VAR (diff, idx_scl) = (bnd2 - bnd1);
 
-#define SAC_WL_MT_STRIDE_NOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)          \
-    SAC_WL_STRIDE_NOOP_BEGIN (dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_STRIDE_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)          \
+    SAC_WL_STRIDE_NOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
 
 /*
  * END
  */
 
-#define SAC_WL_STRIDE_NOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step) }
+#define SAC_WL_STRIDE_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step) }
 
-#define SAC_WL_MT_STRIDE_NOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)            \
-    SAC_WL_STRIDE_NOOP_END (dim, idx_vec_nt, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_STRIDE_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)            \
+    SAC_WL_STRIDE_NOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
 
 /*****************************************************************************/
 
@@ -484,66 +487,66 @@
  * BEGIN: (GRID_UNROLLING == FALSE) && (fitted already)
  */
 
-#define SAC_WL_GRID_LOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2)                     \
+#define SAC_WL_GRID_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                     \
     {                                                                                    \
         int SAC_WL_VAR (grid_stop, idx_scl) = idx_scl + (bnd2 - bnd1);                   \
         for (; idx_scl < SAC_WL_VAR (grid_stop, idx_scl); idx_scl++) {
 
-#define SAC_WL_MT_GRID_LOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2)                  \
-    SAC_WL_GRID_LOOP_BEGIN (dim, idx_vec_nt, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                  \
+    SAC_WL_GRID_LOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
 
 /*
  * BEGIN: (GRID_UNROLLING == TRUE) && (fitted already)
  */
 
-#define SAC_WL_GRID_UNROLL_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2) /* empty */
+#define SAC_WL_GRID_UNROLL_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2) /* empty */
 
-#define SAC_WL_MT_GRID_UNROLL_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2)                \
-    SAC_WL_GRID_UNROLL_BEGIN (dim, idx_vec_nt, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_UNROLL_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                \
+    SAC_WL_GRID_UNROLL_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
 
 /*
  * BEGIN: (not fitted yet)
  */
 
-#define SAC_WL_GRID_FIT_LOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2)                 \
+#define SAC_WL_GRID_FIT_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                 \
     {                                                                                    \
         int SAC_WL_VAR (grid_stop, idx_scl)                                              \
           = SAC_MIN (idx_scl + (bnd2 - bnd1), SAC_WL_VAR (stop, idx_scl));               \
         for (; idx_scl < SAC_WL_VAR (grid_stop, idx_scl); idx_scl++) {
 
-#define SAC_WL_MT_GRID_FIT_LOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2)              \
-    SAC_WL_GRID_FIT_LOOP_BEGIN (dim, idx_vec_nt, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_FIT_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)              \
+    SAC_WL_GRID_FIT_LOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
 
 /*
  * END: (GRID_UNROLLING == FALSE) && (fitted already)
  */
 
-#define SAC_WL_GRID_LOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2)                       \
+#define SAC_WL_GRID_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                       \
     }                                                                                    \
     }
 
-#define SAC_WL_MT_GRID_LOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2)                    \
-    SAC_WL_GRID_LOOP_END (dim, idx_vec_nt, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                    \
+    SAC_WL_GRID_LOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
 
 /*
  * END: (GRID_UNROLLING == TRUE) && (fitted already)
  */
 
-#define SAC_WL_GRID_UNROLL_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2) idx_scl++;
+#define SAC_WL_GRID_UNROLL_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2) idx_scl++;
 
-#define SAC_WL_MT_GRID_UNROLL_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2)                  \
-    SAC_WL_GRID_UNROLL_END (dim, idx_vec_nt, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_UNROLL_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                  \
+    SAC_WL_GRID_UNROLL_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
 
 /*
  * END: (not fitted yet)
  */
 
-#define SAC_WL_GRID_FIT_LOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2)                   \
+#define SAC_WL_GRID_FIT_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                   \
     }                                                                                    \
     }
 
-#define SAC_WL_MT_GRID_FIT_LOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2)                \
-    SAC_WL_GRID_FIT_LOOP_END (dim, idx_vec_nt, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_FIT_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                \
+    SAC_WL_GRID_FIT_LOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
 
 /*****************************************************************************/
 
@@ -560,44 +563,44 @@
  * BEGIN: (fitted already)
  */
 
-#define SAC_WL_GRID_NOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2)                     \
+#define SAC_WL_GRID_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                     \
     {                                                                                    \
         int SAC_WL_VAR (diff, idx_scl) = (bnd2 - bnd1);                                  \
         idx_scl += SAC_WL_VAR (diff, idx_scl);
 
-#define SAC_WL_MT_GRID_NOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2)                  \
-    SAC_WL_GRID_NOOP_BEGIN (dim, idx_vec_nt, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                  \
+    SAC_WL_GRID_NOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
 
 /*
  * BEGIN: (not fitted yet)
  */
 
-#define SAC_WL_GRID_FIT_NOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2)                 \
+#define SAC_WL_GRID_FIT_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                 \
     {                                                                                    \
         int SAC_WL_VAR (diff, idx_scl)                                                   \
           = SAC_MIN ((bnd2 - bnd1), SAC_WL_VAR (stop, idx_scl) - idx_scl);               \
         idx_scl += SAC_WL_VAR (diff, idx_scl);
 
-#define SAC_WL_MT_GRID_FIT_NOOP_BEGIN(dim, idx_vec_nt, idx_scl, bnd1, bnd2)              \
-    SAC_WL_GRID_FIT_NOOP_BEGIN (dim, idx_vec_nt, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_FIT_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)              \
+    SAC_WL_GRID_FIT_NOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
 
 /*
  * END: (fitted already)
  */
 
-#define SAC_WL_GRID_NOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2) }
+#define SAC_WL_GRID_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2) }
 
-#define SAC_WL_MT_GRID_NOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2)                    \
-    SAC_WL_GRID_NOOP_END (dim, idx_vec_nt, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                    \
+    SAC_WL_GRID_NOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
 
 /*
  * END: (not fitted yet)
  */
 
-#define SAC_WL_GRID_FIT_NOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2) }
+#define SAC_WL_GRID_FIT_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2) }
 
-#define SAC_WL_MT_GRID_FIT_NOOP_END(dim, idx_vec_nt, idx_scl, bnd1, bnd2)                \
-    SAC_WL_GRID_FIT_NOOP_END (dim, idx_vec_nt, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_FIT_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                \
+    SAC_WL_GRID_FIT_NOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
 
 /*****************************************************************************/
 
