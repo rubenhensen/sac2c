@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/10/12 12:25:19  cg
+ * Revision 1.5  1995/10/12 13:45:15  cg
+ * new macros TYPEDEF_STATUS, FUNDEF_STATUS and OBJDEF_STATUS to mark
+ * imported items
+ *
+ * Revision 1.4  1995/10/12  12:25:19  cg
  * bug in N_block macros fixed
  *
  * Revision 1.3  1995/10/06  17:16:50  cg
@@ -434,12 +438,18 @@ extern node *MakeExplist (node *itypes, node *etypes, node *objs, node *funs);
  ***    char*       MOD   (O)
  ***    types*      TYPE
  ***    statustype  ATTRIB
+ ***    statustype  STATUS
  ***
  ***  temporary attributes:
  ***
  ***    types*      IMPL  (O)               (import -> )
  ***                                        ( -> writesib !!)
  ***/
+
+/*
+ *  The STATUS indicates whether a type is defined or imported.
+ *  Possible values: ST_regular | ST_imported
+ */
 
 extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
                           node *next);
@@ -448,6 +458,7 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
 #define TYPEDEF_MOD(n) (n->info.types->id_mod)
 #define TYPEDEF_TYPE(n) (n->info.types)
 #define TYPEDEF_ATTRIB(n) (n->info.types->attrib)
+#define TYPEDEF_STATUS(n) (n->info.types->status)
 #define TYPEDEF_IMPL(n) (n->info.types->next)
 #define TYPEDEF_NEXT(n) (n->node[0])
 
@@ -458,15 +469,21 @@ extern node *MakeTypedef (char *name, char *mod, types *type, statustype attrib,
  ***
  ***  sons:
  ***
- ***    node*   EXPR  (O)  ("N_expr")
- ***    node*   NEXT  (O)  (N_objdef)
+ ***    node*       EXPR  (O)  ("N_expr")
+ ***    node*       NEXT  (O)  (N_objdef)
+ ***    statustype  STATUS
  ***
  ***  permanent attributes:
  ***
- ***    char*   NAME
- ***    char*   MOD   (O)
- ***    types*  TYPE
+ ***    char*       NAME
+ ***    char*       MOD   (O)
+ ***    types*      TYPE
  ***/
+
+/*
+ *  The STATUS indicates whether an object is defined or imported.
+ *  Possible values: ST_regular | ST_imported
+ */
 
 extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *next);
 
@@ -475,6 +492,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 #define OBJDEF_TYPE(n) (n->info.types)
 #define OBJDEF_EXPR(n) (n->node[1])
 #define OBJDEF_NEXT(n) (n->node[0])
+#define OBJDEF_STATUS(n) (n->info.types->status)
 
 /*--------------------------------------------------------------------------*/
 
@@ -483,16 +501,17 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***
  ***  sons:
  ***
- ***    node*      BODY     (O)  (N_block)
- ***    node*      ARGS     (O)  (N_arg)
- ***    node*      NEXT     (O)  (N_fundef)
+ ***    node*       BODY     (O)  (N_block)
+ ***    node*       ARGS     (O)  (N_arg)
+ ***    node*       NEXT     (O)  (N_fundef)
  ***
  ***  permanent attributes:
  ***
- ***    char*      NAME
- ***    char*      MOD      (O)
- ***    char*      ALIAS    (O)
- ***    types*     TYPES
+ ***    char*       NAME
+ ***    char*       MOD      (O)
+ ***    char*       ALIAS    (O)
+ ***    types*      TYPES
+ ***    statustype  STATUS
  ***
  ***  temporary attributes:
  ***
@@ -507,6 +526,11 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***    long*      DEFMASK                   (optimize -> )
  ***    long*      USEMASK                   (optimize -> )
  ***/
+
+/*
+ *  The STATUS indicates whether a function is defined or imported.
+ *  Possible values: ST_regular | ST_imported
+ */
 
 extern node *MakeFundef (char *name, char *mod, char *alias, types *types, node *args,
                          node *body, node *next);
@@ -524,6 +548,7 @@ extern node *MakeFundef (char *name, char *mod, char *alias, types *types, node 
 #define FUNDEF_VARNO(n) (n->varno)
 #define FUNDEF_DEFMASK(n) (n->mask[0])
 #define FUNDEF_USEMASK(n) (n->mask[1])
+#define FUNDEF_STATUS(n) (n->info.types->status)
 
 /*--------------------------------------------------------------------------*/
 
