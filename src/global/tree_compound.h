@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.23  1995/12/18 14:41:51  asi
+ * Revision 1.24  1995/12/20 08:16:50  cg
+ * added compound access macros for N_pragma node
+ *
+ * Revision 1.23  1995/12/18  14:41:51  asi
  * added DO_DEFMASK, DO_USEMASK, DO_TERMMASK, DO_INSTR,
  *       WHILE_DEFMASK, WHILE_USEMASK, WHILE_TERMMASK, WHILE_INSTR
  *
@@ -1117,6 +1120,20 @@ node *Shape2Array (shapes *shp);
 #define PRF_ARG1(n) (EXPRS_EXPR (PRF_ARGS (n)))
 #define PRF_ARG2(n) (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (n))))
 #define PRF_ARG3(n) (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (PRF_ARGS (n)))))
+
+/*--------------------------------------------------------------------------*/
+
+/***
+ ***  N_pragma :
+ ***/
+
+/*
+ *  compound access macros
+ */
+
+#define PRAGMA_LS(n, i) PRAGMA_LINKSIGN (n)[i]
+#define PRAGMA_RC(n, i) PRAGMA_REFCOUNTING (n)[i]
+#define PRAGMA_RO(n, i) PRAGMA_READONLY (n)[i]
 
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
