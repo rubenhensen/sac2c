@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.2  1998/05/28 23:49:56  dkr
+ * FUNDEF_STATUS of the pseudo-fun for a fold with-loop is set to
+ * ST_foldfun
+ *
  * Revision 1.1  1998/05/28 14:55:25  sbs
  * Initial revision
  *
@@ -81,5 +85,7 @@ CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_v
                                                        NULL)),
                                NULL),
                     NULL);
+    FUNDEF_STATUS (new_fundef) = ST_foldfun;
+
     DBUG_RETURN (new_fundef);
 }
