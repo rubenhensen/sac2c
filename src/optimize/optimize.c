@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.31  2001/05/30 14:02:14  nmw
+ * SSAInfereLoopInvariant added, CF after LUR added
+ *
  * Revision 3.30  2001/05/23 15:49:32  nmw
  * break specifier after fundef optimization cycle
  *
@@ -297,6 +300,7 @@
 #include "SSALUR.h"
 #include "SSAWithloopFolding.h"
 #include "rmcasts.h"
+#include "SSAInferLI.h"
 
 /*
  * global variables to keep track of optimization's success
@@ -750,12 +754,14 @@ DONE:
  *        DCR
  *         |<-------\
  * loop1: CSE        |
+ *        SSAILI     |   (only in ssa form)
  *        CF         |
  *        WLT        |
  *        WLF        |
  *        (CF)       |   (applied only if WLF succeeded!)
  *        DCR        |
  *        LUNR/WLUNR |
+ *        (CF)       |   (applied only if Unrolling succeeded!)
  *        UNS        |
  *        LIR        |
  *         |--------/
@@ -922,6 +928,11 @@ OPTfundef (node *arg_node, node *arg_info)
                 goto INFO;
             }
 
+            /* infere loop invariant arguments */
+            if (use_ssaform) {
+                arg_node = SSAInferLoopInvariants (arg_node);
+            }
+
             if (optimize & OPT_CF) {
                 if (use_ssaform) {
                     arg_node
@@ -1035,6 +1046,27 @@ OPTfundef (node *arg_node, node *arg_info)
 
             if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
                 && (0 == strcmp (break_specifier, "lur"))) {
+                goto INFO;
+            }
+
+            if ((wlunr_expr != old_wlunr_expr) || (lunr_expr != old_lunr_expr)) {
+                /*
+                 * this may speed up the optimization phase a lot if a lot of code
+                 * has been inserted by WLF.
+                 */
+                if (optimize & OPT_CF) {
+                    if (use_ssaform) {
+                        arg_node
+                          = SSAConstantFolding (arg_node, INFO_OPT_MODUL (arg_info));
+                    } else {
+                        arg_node = ConstantFolding (arg_node, arg_info); /* cf_tab */
+                        arg_node = GenerateMasks (arg_node, NULL);
+                    }
+                }
+            }
+
+            if ((break_after == PH_sacopt) && (break_cycle_specifier == loop1)
+                && (0 == strcmp (break_specifier, "cf3"))) {
                 goto INFO;
             }
 
