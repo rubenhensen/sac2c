@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.21  1999/01/26 15:22:02  srs
+ * modified last change of removing unreferenced WLs.
+ *
  * Revision 1.20  1999/01/20 09:08:39  srs
  * in WLFAssign: WLs which are not referenced anymore are removed.
  *
@@ -1411,7 +1414,7 @@ WLFfundef (node *arg_node, node *arg_info)
 node *
 WLFassign (node *arg_node, node *arg_info)
 {
-    node *tmpn, *last_assign, *substn, *predn;
+    node *tmpn, *last_assign, *substn;
 
     DBUG_ENTER ("WLFassign");
 
@@ -1429,38 +1432,28 @@ WLFassign (node *arg_node, node *arg_info)
             /*       ASSIGN_NEXT(arg_node)  = Trav(ASSIGN_NEXT(arg_node), arg_info); */
             Trav (ASSIGN_NEXT (arg_node), arg_info);
 
-        /* now is the time when run the once traversed path through the
+        /* now it's the time when we run the once traversed path through the
            syntax tree back.
-           We apply a speed-optimization here by removing WL which - after
-           WLF - are not referenced anymore. DCR could do the same job,
-           but we hope that the mem requirement in GenerateMasks will go
-           down dramatically. */
+           We apply a speed-optimization here by removing WLs which - after WLF -
+           are not referenced anymore. DCR could remove the WLs later, but we
+           hope that the mem requirement in GenerateMasks will go down dramatically.
+           It's not easy to remove the assignment here - so we insert a dummy
+           assignment x = x; */
         if (opt_dcr) {
             tmpn = ASSIGN_INSTR (arg_node);
             if (N_let == NODE_TYPE (tmpn)) {
-                tmpn = LET_EXPR (tmpn);
-                if (N_Nwith == NODE_TYPE (tmpn)
-                    && NWITH_REFERENCED (tmpn) == NWITH_REFERENCES_FOLDED (tmpn)) {
+                if (N_Nwith == NODE_TYPE (LET_EXPR (tmpn))
+                    && NWITH_REFERENCED (LET_EXPR (tmpn))
+                         == NWITH_REFERENCES_FOLDED (LET_EXPR (tmpn))) {
                     /* Now, how to remove the assign-node? It's not possible
-                       to return it because (as u can read above) we ignore
+                       to return it's successor because (as u can read above) we ignore
                        the returned node.
-                       The ony way is to search the predecessor :( */
-                    tmpn = BLOCK_INSTR (FUNDEF_BODY (INFO_WLI_FUNDEF (arg_info)));
-                    /* is this the first assignment? */
-                    if (arg_node == tmpn) {
-                        tmpn = arg_node;
-                        arg_node = ASSIGN_NEXT (arg_node); /* in this special case we
-                                                              return the next node. */
-                        FreeTree (tmpn);
-                    } else {
-                        do {
-                            predn = tmpn;
-                            tmpn = ASSIGN_NEXT (tmpn);
-                        } while (tmpn != arg_node);
-                        ASSIGN_NEXT (predn) = ASSIGN_NEXT (arg_node);
-                        arg_node = predn;
-                        FreeNode (tmpn);
-                    }
+                       The alternative - search the predecessor - is too complex, too.
+                       So we just replace A = WL...; with A=A;*/
+                    FreeTree (LET_EXPR (tmpn));
+                    LET_EXPR (tmpn)
+                      = MakeId (IDS_NAME (LET_IDS (tmpn)), NULL, ST_regular);
+                    ID_VARDEC (LET_EXPR (tmpn)) = IDS_VARDEC (LET_IDS (tmpn));
                 }
             }
         }
