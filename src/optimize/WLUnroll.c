@@ -1,6 +1,10 @@
 /*         $Id$
  *
  * $Log$
+ * Revision 1.7  1998/11/19 12:53:45  srs
+ * WLUnrolling now works with the new WL-body-syntax (empty
+ * bodies contain N_empty nodes).
+ *
  * Revision 1.6  1998/07/16 17:22:44  sbs
  * unrolling of WL-fold-loops now inlines the pseudo-funs generated
  * by the typechecker!
@@ -54,11 +58,31 @@
 #include "DupTree.h"
 #include "WithloopFolding.h"
 
-typedef node *(*funp) (node *, node *);
+/* opfun is a higher oder function called from within ForEachElementHelp()
+   to create explicit code for one single array element. opfun have the
+   following values:
+     - CreateModGenarray()
+     - CreateFodl()
 
-/*
- * Here is a comment of srs missing !!!! 8-))
- */
+   The args of opfun are stored in opfunarg. Both variables are global to
+   reduce function arguments.
+
+
+   Structure of functions in this file:
+   ------------------------------------
+
+   CheckUnrollFold               CHeckUnrollGenarray               CheckUnrollModarray
+         |                                 |                                |
+   DoUnrollFold                  DoUnrollGenarray                  DoUnrollModarray
+                  \                        |                      /
+                   \----------------ForEachElement---------------/ | |
+   | ForEachElementHelp                                       \|/ /                \
+   ` CreateFold     CreateModGenarray      (higher order functions) \                /
+                                   CreateBottomCode
+
+*/
+
+typedef node *(*funp) (node *, node *);
 
 funp opfun;
 void **opfunarg;
@@ -83,7 +107,10 @@ CreateBodyCode (node *partn, node *index)
     DBUG_ENTER ("CreateBodyCode");
 
     coden = NPART_CODE (partn);
-    res = DupTree (BLOCK_INSTR (NCODE_CBLOCK (coden)), NULL);
+    if (N_empty == NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (coden))))
+        res = NULL;
+    else
+        res = DupTree (BLOCK_INSTR (NCODE_CBLOCK (coden)), NULL);
 
     /* index vector */
     if (coden->mask[1][IDS_VARNO (NPART_VEC (partn))]) {
@@ -145,10 +172,13 @@ CreateModGenarray (node *assignn, node *index)
     assignn = MakeAssign (MakeLet (letexpr, DupOneIds (array, NULL)), assignn);
 
     /* append assignn to bodyn */
-    tmpn = bodyn;
-    while (ASSIGN_NEXT (tmpn))
-        tmpn = ASSIGN_NEXT (tmpn);
-    ASSIGN_NEXT (tmpn) = assignn;
+    if (bodyn) {
+        tmpn = bodyn;
+        while (ASSIGN_NEXT (tmpn))
+            tmpn = ASSIGN_NEXT (tmpn);
+        ASSIGN_NEXT (tmpn) = assignn;
+    } else
+        bodyn = assignn;
 
     DBUG_RETURN (bodyn);
 }
@@ -233,7 +263,8 @@ CreateFold (node *assignn, node *index)
     partn = NWITH_PART (wln);
     bodyn = CreateBodyCode (partn, index);
 
-    assignn = AppendAssign (bodyn, assignn);
+    if (bodyn)
+        assignn = AppendAssign (bodyn, assignn);
 
     DBUG_RETURN (assignn);
 }
@@ -402,7 +433,7 @@ CountElements (node *genn)
  *
  * description:
  *   Checks if this modarray WL can be unrolled.
- *   Multiple N_Npart nodes, which are not the identity of the bas earray,
+ *   Multiple N_Npart nodes, which are not the identity of the base array,
  *   may be unrolled simultaneously. These N_Npart nodes are marked in
  *   NPART_COPY
  *
@@ -412,7 +443,7 @@ int
 CheckUnrollModarray (node *wln)
 {
     int ok, elts;
-    node *partn, *genn, *coden, *tmpn;
+    node *partn, *genn, *coden, *tmpn, *exprn;
 
     DBUG_ENTER ("CheckUnrollModarray");
 
@@ -448,17 +479,21 @@ CheckUnrollModarray (node *wln)
            programmer. */
 
         coden = NPART_CODE (partn);
-        tmpn = ASSIGN_INSTR (BLOCK_INSTR (NCODE_CBLOCK (coden)));
-        NPART_COPY (partn)
-          = (N_let == NODE_TYPE (tmpn)
-             && !strcmp (ID_NAME (NCODE_CEXPR (coden)), IDS_NAME (LET_IDS (tmpn)))
-             && N_prf == NODE_TYPE (LET_EXPR (tmpn)) && F_psi == PRF_PRF (LET_EXPR (tmpn))
-             && N_id == NODE_TYPE (PRF_ARG1 (LET_EXPR (tmpn)))
-             && !strcmp (IDS_NAME (NPART_VEC (partn)),
-                         ID_NAME (PRF_ARG1 (LET_EXPR (tmpn))))
-             && N_id == NODE_TYPE (PRF_ARG2 (LET_EXPR (tmpn)))
-             && !strcmp (ID_NAME (NWITHOP_ARRAY (NWITH_WITHOP (wln))),
-                         ID_NAME (PRF_ARG2 (LET_EXPR (tmpn)))));
+        if (N_empty == NODE_TYPE (BLOCK_INSTR (NCODE_CBLOCK (coden))))
+            NPART_COPY (partn) = 0;
+        else {
+            tmpn = ASSIGN_INSTR (BLOCK_INSTR (NCODE_CBLOCK (coden)));
+            exprn = LET_EXPR (tmpn);
+            NPART_COPY (partn)
+              = (N_let == NODE_TYPE (tmpn)
+                 && !strcmp (ID_NAME (NCODE_CEXPR (coden)), IDS_NAME (LET_IDS (tmpn)))
+                 && N_prf == NODE_TYPE (exprn) && F_psi == PRF_PRF (exprn)
+                 && N_id == NODE_TYPE (PRF_ARG1 (exprn))
+                 && !strcmp (IDS_NAME (NPART_VEC (partn)), ID_NAME (PRF_ARG1 (exprn)))
+                 && N_id == NODE_TYPE (PRF_ARG2 (exprn))
+                 && !strcmp (ID_NAME (NWITHOP_ARRAY (NWITH_WITHOP (wln))),
+                             ID_NAME (PRF_ARG2 (exprn))));
+        }
 
         if (!NPART_COPY (partn))
             ok = (elts += CountElements (genn)) <= wlunrnum;
