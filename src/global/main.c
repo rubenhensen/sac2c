@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.48  1995/06/07 15:38:28  hw
+ * Revision 1.49  1995/06/09 15:27:36  hw
+ * new option '-fcheck_boundary'  inserted
+ *
+ * Revision 1.48  1995/06/07  15:38:28  hw
  * gcc-option -Wno-unused inserted
  *
  * Revision 1.47  1995/06/06  09:50:44  sbs
@@ -194,6 +197,8 @@ int show_refcnt = 0;
 int show_idx = 0;
 int show_icm = 0;
 int traceflag = 0;
+
+int check_boundary = 0;
 
 MAIN
 {
@@ -388,6 +393,14 @@ MAIN
         strcpy (cfilename, *argv);
         strcat (cfilename, ".c");
         set_outfile = 1;
+    }
+    NEXTOPT
+    ARG 'f' : PARM
+    {
+        if (!strncmp (*argv, "check_boundary", 13))
+            check_boundary = 1;
+        if (!strncmp (*argv, "CB", 2))
+            check_boundary = 1;
     }
     NEXTOPT
     OTHER
