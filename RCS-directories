@@ -34,3 +34,4 @@ tools/src/icm_tester
 src/tree/xml
 src/xml
 src/serialize
+src/types
