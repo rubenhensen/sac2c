@@ -1,17 +1,27 @@
 /*
  *
  * $Log$
- * Revision 3.23  2003/09/19 12:08:47  dkr
- * postfix _nt renamed into _NT
+ * Revision 3.24  2004/03/09 23:54:04  dkrHH
+ * file sac_wl.tagged.h renamed into sac_wl.h
+ * old backend removed
  *
- * Revision 3.22  2003/09/19 12:07:28  dkr
- * code for TAGGED_ARRAYS removed
+ * Revision 1.4  2003/09/25 13:44:21  dkr
+ * ND_WRITE replaced by ND_WRITE_READ.
  *
- * Revision 3.21  2003/09/15 13:00:51  dkr
+ * Revision 1.3  2003/09/19 12:07:45  dkr
+ * code for old backend removed
+ *
+ * Revision 1.2  2003/09/15 13:01:11  dkr
  * SAC_ND_MIN, SAC_ND_MAX replaced by SAC_MIN, SAC_MAX
  *
- * Revision 3.20  2003/03/14 17:27:45  dkr
- * revision 3.17 fetched back. the TAGGED_ARRAYS code is in sac_wl.tagged.h now
+ * Revision 1.1  2003/03/14 15:40:56  dkr
+ * Initial revision
+ *
+ * Revision 3.19  2003/03/14 13:22:37  dkr
+ * all arguments of WL-ICMs are tagged now
+ *
+ * Revision 3.18  2003/03/14 11:40:26  dkr
+ * support for sac2c flag -minarrayrep added
  *
  * Revision 3.17  2002/10/24 20:37:47  dkr
  * SAC_WL_SHAPE_FACTOR added
@@ -20,7 +30,7 @@
  * prefix for varnames is SAC_ instead of SAC__ now
  *
  * Revision 3.15  2002/07/12 17:17:10  dkr
- * some modifications for TAGGED_ARRAYS done
+ * some modifications for new backend done
  *
  * Revision 3.13  2001/04/03 22:32:12  dkr
  * modification of SAC_WL_MT_BLOCK_LOOP0_BEGIN (revision 3.12) undone
@@ -104,7 +114,7 @@
  *** current array entry.
  ***/
 
-#define SAC_WL_OFFSET(target) CAT0 (target, __off)
+#define SAC_WL_OFFSET(to_NT) CAT0 (NT_NAME (to_NT), __off)
 
 /*****************************************************************************/
 
@@ -112,9 +122,11 @@
  *** these macros is used to generate names of aux-variables
  ***/
 
-#define SAC_WL_VAR(type, idx_scl) CAT0 (CAT0 (CAT0 (SAC_, type), _), idx_scl)
+#define SAC_WL_VAR(type, idx_scl_NT)                                                     \
+    CAT0 (CAT0 (CAT0 (SAC_, type), _), NT_NAME (idx_scl_NT))
 
-#define SAC_WL_SHAPE_FACTOR(res, dim) CAT0 (CAT0 (CAT0 (SAC_, res), _shpfac), dim)
+#define SAC_WL_SHAPE_FACTOR(res_NT, dim)                                                 \
+    CAT0 (CAT0 (CAT0 (SAC_, NT_NAME (res_NT)), _shpfac), dim)
 
 #define SAC_WL_MT_SCHEDULE_START(dim) CAT0 (SAC_schedule_start, dim)
 
@@ -127,67 +139,68 @@
  ***/
 
 /*
- * SAC_WL_VAR( first, idx_scl) contain always the first index of the current
+ * SAC_WL_VAR( first, idx_scl_NT) contain always the first index of the current
  * block and is needed by the ..STRIDE_.._BEGIN.., ..UBLOCK_LOOP_BEGIN..
  * and ..BLOCK_LOOP_BEGIN.. (hierarchical blocking!) macros.
  *
- * SAC_WL_VAR( last, idx_scl) contain always the last index of the current
+ * SAC_WL_VAR( last, idx_scl_NT) contain always the last index of the current
  * block and is needed by the ..STRIDE_LOOP_BEGIN.., ..UBLOCK_LOOP_BEGIN..
  * and ..BLOCK_LOOP_BEGIN.. (hierarchical blocking!) macros.
  *
  * remark:
- *   SAC_WL_VAR( block_stop, idx_scl) is used locally in these macros only!
+ *   SAC_WL_VAR( block_stop, idx_scl_NT) is used locally in these macros only!
  */
 
 /*
  * BEGIN: (BLOCK_LEVEL == 0)
  */
 
-#define SAC_WL_BLOCK_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)             \
+#define SAC_WL_BLOCK_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)          \
     {                                                                                    \
-        for (idx_scl = bnd1; idx_scl < bnd2;) {                                          \
-            int SAC_WL_VAR (first, idx_scl) = idx_scl;                                   \
-            int SAC_WL_VAR (last, idx_scl)                                               \
-              = SAC_MIN (SAC_WL_VAR (first, idx_scl) + step, bnd2);
+        for (SAC_ND_WRITE (idx_scl_NT, 0) = bnd1; SAC_ND_READ (idx_scl_NT, 0) < bnd2;) { \
+            int SAC_WL_VAR (first, idx_scl_NT) = SAC_ND_READ (idx_scl_NT, 0);            \
+            int SAC_WL_VAR (last, idx_scl_NT)                                            \
+              = SAC_MIN (SAC_WL_VAR (first, idx_scl_NT) + step, bnd2);
 
-#define SAC_WL_MT_BLOCK_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)          \
+#define SAC_WL_MT_BLOCK_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)       \
     {                                                                                    \
-        int SAC_WL_VAR (block_stop, idx_scl)                                             \
+        int SAC_WL_VAR (block_stop, idx_scl_NT)                                          \
           = SAC_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));                               \
-        for (idx_scl = SAC_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                   \
-             idx_scl < SAC_WL_VAR (block_stop, idx_scl);) {                              \
-            int SAC_WL_VAR (first, idx_scl) = idx_scl;                                   \
-            int SAC_WL_VAR (last, idx_scl)                                               \
-              = SAC_MIN (SAC_WL_VAR (first, idx_scl) + step,                             \
-                         SAC_WL_VAR (block_stop, idx_scl));
+        for (SAC_ND_WRITE (idx_scl_NT, 0)                                                \
+             = SAC_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                           \
+             SAC_ND_READ (idx_scl_NT, 0) < SAC_WL_VAR (block_stop, idx_scl_NT);) {       \
+            int SAC_WL_VAR (first, idx_scl_NT) = SAC_ND_READ (idx_scl_NT, 0);            \
+            int SAC_WL_VAR (last, idx_scl_NT)                                            \
+              = SAC_MIN (SAC_WL_VAR (first, idx_scl_NT) + step,                          \
+                         SAC_WL_VAR (block_stop, idx_scl_NT));
 
 /*
  * BEGIN: (BLOCK_LEVEL > 0)
  */
 
-#define SAC_WL_BLOCK_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)              \
+#define SAC_WL_BLOCK_LOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)           \
     {                                                                                    \
-        int SAC_WL_VAR (block_stop, idx_scl) = SAC_WL_VAR (last, idx_scl);               \
-        for (idx_scl = SAC_WL_VAR (first, idx_scl) + bnd1;                               \
-             idx_scl < SAC_WL_VAR (block_stop, idx_scl);) {                              \
-            int SAC_WL_VAR (first, idx_scl) = idx_scl;                                   \
-            int SAC_WL_VAR (last, idx_scl)                                               \
-              = SAC_MIN (SAC_WL_VAR (first, idx_scl) + step,                             \
-                         SAC_WL_VAR (block_stop, idx_scl));
+        int SAC_WL_VAR (block_stop, idx_scl_NT) = SAC_WL_VAR (last, idx_scl_NT);         \
+        for (SAC_ND_WRITE (idx_scl_NT, 0) = SAC_WL_VAR (first, idx_scl_NT) + bnd1;       \
+             SAC_ND_READ (idx_scl_NT, 0) < SAC_WL_VAR (block_stop, idx_scl_NT);) {       \
+            int SAC_WL_VAR (first, idx_scl_NT) = SAC_ND_READ (idx_scl_NT, 0);            \
+            int SAC_WL_VAR (last, idx_scl_NT)                                            \
+              = SAC_MIN (SAC_WL_VAR (first, idx_scl_NT) + step,                          \
+                         SAC_WL_VAR (block_stop, idx_scl_NT));
 
-#define SAC_WL_MT_BLOCK_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)           \
-    SAC_WL_BLOCK_LOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_BLOCK_LOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)        \
+    SAC_WL_BLOCK_LOOP_BEGIN (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)
 
 /*
  * END
  */
 
-#define SAC_WL_BLOCK_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)                \
+#define SAC_WL_BLOCK_LOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)             \
     }                                                                                    \
     }
 
-#define SAC_WL_MT_BLOCK_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)             \
-    SAC_WL_BLOCK_LOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_BLOCK_LOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)          \
+    SAC_WL_BLOCK_LOOP_END (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)
 
 /*****************************************************************************/
 
@@ -196,7 +209,7 @@
  ***/
 
 /*
- * SAC_WL_VAR( diff, idx_scl) contain the width of the noop region and
+ * SAC_WL_VAR( diff, idx_scl_NT) contain the width of the noop region and
  * is needed by the SAC_WL_ADJUST_OFFSET macro.
  */
 
@@ -204,21 +217,21 @@
  * BEGIN
  */
 
-#define SAC_WL_BLOCK_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)              \
+#define SAC_WL_BLOCK_NOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)           \
     {                                                                                    \
-        int SAC_WL_VAR (diff, idx_scl) = (bnd2 - bnd1);
+        int SAC_WL_VAR (diff, idx_scl_NT) = (bnd2 - bnd1);
 
-#define SAC_WL_MT_BLOCK_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)           \
-    SAC_WL_BLOCK_NOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_BLOCK_NOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)        \
+    SAC_WL_BLOCK_NOOP_BEGIN (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)
 
 /*
  * END
  */
 
-#define SAC_WL_BLOCK_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step) }
+#define SAC_WL_BLOCK_NOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step) }
 
-#define SAC_WL_MT_BLOCK_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)             \
-    SAC_WL_BLOCK_NOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_BLOCK_NOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)          \
+    SAC_WL_BLOCK_NOOP_END (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)
 
 /*****************************************************************************/
 
@@ -227,58 +240,59 @@
  ***/
 
 /*
- * SAC_WL_VAR( first, idx_scl) contains always the first index of the current
+ * SAC_WL_VAR( first, idx_scl_NT) contains always the first index of the current
  * unrolling-block and is needed by the ..STRIDE_.._BEGIN.. macros.
  *
  * remark:
- *   SAC_WL_VAR( last, idx_scl) is *not* set because this value is not needed
+ *   SAC_WL_VAR( last, idx_scl_NT) is *not* set because this value is not needed
  *   in the loop body. Note that all contained strides are unrolled, i.e.
  *   the ...STRIDE_UNROLL... instead of the ..STRIDE_LOOP.. macros are used!
  *
  * remark:
- *   SAC_WL_VAR( block_stop, idx_scl) is used locally in these macros only!
+ *   SAC_WL_VAR( block_stop, idx_scl_NT) is used locally in these macros only!
  */
 
 /*
  * BEGIN: (UBLOCK_LEVEL == 0)
  */
 
-#define SAC_WL_UBLOCK_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)            \
+#define SAC_WL_UBLOCK_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)         \
     {                                                                                    \
-        for (idx_scl = bnd1; idx_scl < bnd2;) {                                          \
-            int SAC_WL_VAR (first, idx_scl) = idx_scl;
+        for (SAC_ND_WRITE (idx_scl_NT, 0) = bnd1; SAC_ND_READ (idx_scl_NT, 0) < bnd2;) { \
+            int SAC_WL_VAR (first, idx_scl_NT) = SAC_ND_READ (idx_scl_NT, 0);
 
-#define SAC_WL_MT_UBLOCK_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)         \
+#define SAC_WL_MT_UBLOCK_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)      \
     {                                                                                    \
-        int SAC_WL_VAR (block_stop, idx_scl)                                             \
+        int SAC_WL_VAR (block_stop, idx_scl_NT)                                          \
           = SAC_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));                               \
-        for (idx_scl = SAC_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                   \
-             idx_scl < SAC_WL_VAR (block_stop, idx_scl);) {                              \
-            int SAC_WL_VAR (first, idx_scl) = idx_scl;
+        for (SAC_ND_WRITE (idx_scl_NT, 0)                                                \
+             = SAC_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                           \
+             SAC_ND_READ (idx_scl_NT, 0) < SAC_WL_VAR (block_stop, idx_scl_NT);) {       \
+            int SAC_WL_VAR (first, idx_scl_NT) = SAC_ND_READ (idx_scl_NT, 0);
 
 /*
  * BEGIN: (UBLOCK_LEVEL > 0)
  */
 
-#define SAC_WL_UBLOCK_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)             \
+#define SAC_WL_UBLOCK_LOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)          \
     {                                                                                    \
-        for (idx_scl = SAC_WL_VAR (first, idx_scl) + bnd1;                               \
-             idx_scl < SAC_WL_VAR (last, idx_scl);) {                                    \
-            int SAC_WL_VAR (first, idx_scl) = idx_scl;
+        for (SAC_ND_WRITE (idx_scl_NT, 0) = SAC_WL_VAR (first, idx_scl_NT) + bnd1;       \
+             SAC_ND_READ (idx_scl_NT, 0) < SAC_WL_VAR (last, idx_scl_NT);) {             \
+            int SAC_WL_VAR (first, idx_scl_NT) = SAC_ND_READ (idx_scl_NT, 0);
 
-#define SAC_WL_MT_UBLOCK_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)          \
-    SAC_WL_UBLOCK_LOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_UBLOCK_LOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)       \
+    SAC_WL_UBLOCK_LOOP_BEGIN (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)
 
 /*
  * END
  */
 
-#define SAC_WL_UBLOCK_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)               \
+#define SAC_WL_UBLOCK_LOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)            \
     }                                                                                    \
     }
 
-#define SAC_WL_MT_UBLOCK_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)            \
-    SAC_WL_UBLOCK_LOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_UBLOCK_LOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)         \
+    SAC_WL_UBLOCK_LOOP_END (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)
 
 /*****************************************************************************/
 
@@ -287,7 +301,7 @@
  ***/
 
 /*
- * SAC_WL_VAR( diff, idx_scl) contain the width of the noop region and
+ * SAC_WL_VAR( diff, idx_scl_NT) contain the width of the noop region and
  * is needed by the SAC_WL_ADJUST_OFFSET macro.
  */
 
@@ -295,21 +309,21 @@
  * BEGIN
  */
 
-#define SAC_WL_UBLOCK_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)             \
+#define SAC_WL_UBLOCK_NOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)          \
     {                                                                                    \
-        int SAC_WL_VAR (diff, idx_scl) = (bnd2 - bnd1);
+        int SAC_WL_VAR (diff, idx_scl_NT) = (bnd2 - bnd1);
 
-#define SAC_WL_MT_UBLOCK_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)          \
-    SAC_WL_UBLOCK_NOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_UBLOCK_NOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)       \
+    SAC_WL_UBLOCK_NOOP_BEGIN (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)
 
 /*
  * END
  */
 
-#define SAC_WL_UBLOCK_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step) }
+#define SAC_WL_UBLOCK_NOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step) }
 
-#define SAC_WL_MT_UBLOCK_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)            \
-    SAC_WL_UBLOCK_NOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_UBLOCK_NOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)         \
+    SAC_WL_UBLOCK_NOOP_END (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)
 
 /*****************************************************************************/
 
@@ -318,7 +332,7 @@
  ***/
 
 /*
- * SAC_WL_VAR( stop, idx_scl) contain always the upper bound of the current
+ * SAC_WL_VAR( stop, idx_scl_NT) contain always the upper bound of the current
  * stride and is needed by the ..GRID_FIT_..._BEGIN.. macros.
  */
 
@@ -326,16 +340,18 @@
  * BEGIN: (STRIDE_LEVEL == 0) && (STRIDE_UNROLLING == FALSE)
  */
 
-#define SAC_WL_STRIDE_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)            \
+#define SAC_WL_STRIDE_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)         \
     {                                                                                    \
-        int SAC_WL_VAR (stop, idx_scl) = bnd2;                                           \
-        for (idx_scl = bnd1; idx_scl < bnd2;) {
+        int SAC_WL_VAR (stop, idx_scl_NT) = bnd2;                                        \
+        for (SAC_ND_WRITE (idx_scl_NT, 0) = bnd1; SAC_ND_READ (idx_scl_NT, 0) < bnd2;) {
 
-#define SAC_WL_MT_STRIDE_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)         \
+#define SAC_WL_MT_STRIDE_LOOP0_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)      \
     {                                                                                    \
-        int SAC_WL_VAR (stop, idx_scl) = SAC_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));  \
-        for (idx_scl = SAC_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                   \
-             idx_scl < SAC_WL_VAR (stop, idx_scl);) {
+        int SAC_WL_VAR (stop, idx_scl_NT)                                                \
+          = SAC_MIN (bnd2, SAC_WL_MT_SCHEDULE_STOP (dim));                               \
+        for (SAC_ND_WRITE (idx_scl_NT, 0)                                                \
+             = SAC_MAX (bnd1, SAC_WL_MT_SCHEDULE_START (dim));                           \
+             SAC_ND_READ (idx_scl_NT, 0) < SAC_WL_VAR (stop, idx_scl_NT);) {
 
 /*
  * BEGIN: (STRIDE_LEVEL > 0) && (STRIDE_UNROLLING == FALSE)
@@ -344,57 +360,59 @@
 /*
  * the stride is *not* the last one in the current dimension
  */
-#define SAC_WL_STRIDE_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)             \
+#define SAC_WL_STRIDE_LOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)          \
     {                                                                                    \
-        int SAC_WL_VAR (stop, idx_scl)                                                   \
-          = SAC_MIN (SAC_WL_VAR (first, idx_scl) + bnd2, SAC_WL_VAR (last, idx_scl));    \
-        for (idx_scl = SAC_WL_VAR (first, idx_scl) + bnd1;                               \
-             idx_scl < SAC_WL_VAR (stop, idx_scl);) {
+        int SAC_WL_VAR (stop, idx_scl_NT)                                                \
+          = SAC_MIN (SAC_WL_VAR (first, idx_scl_NT) + bnd2,                              \
+                     SAC_WL_VAR (last, idx_scl_NT));                                     \
+        for (SAC_ND_WRITE (idx_scl_NT, 0) = SAC_WL_VAR (first, idx_scl_NT) + bnd1;       \
+             SAC_ND_READ (idx_scl_NT, 0) < SAC_WL_VAR (stop, idx_scl_NT);) {
 
-#define SAC_WL_MT_STRIDE_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)          \
-    SAC_WL_STRIDE_LOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_STRIDE_LOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)       \
+    SAC_WL_STRIDE_LOOP_BEGIN (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)
 
 /*
  * the stride is the last one in the current dimension
  */
-#define SAC_WL_STRIDE_LAST_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)        \
+#define SAC_WL_STRIDE_LAST_LOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)     \
     {                                                                                    \
-        int SAC_WL_VAR (stop, idx_scl) = SAC_WL_VAR (last, idx_scl);                     \
-        for (idx_scl = SAC_WL_VAR (first, idx_scl) + bnd1;                               \
-             idx_scl < SAC_WL_VAR (stop, idx_scl);) {
+        int SAC_WL_VAR (stop, idx_scl_NT) = SAC_WL_VAR (last, idx_scl_NT);               \
+        for (SAC_ND_WRITE (idx_scl_NT, 0) = SAC_WL_VAR (first, idx_scl_NT) + bnd1;       \
+             SAC_ND_READ (idx_scl_NT, 0) < SAC_WL_VAR (stop, idx_scl_NT);) {
 
-#define SAC_WL_MT_STRIDE_LAST_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)     \
-    SAC_WL_STRIDE_LAST_LOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_STRIDE_LAST_LOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)  \
+    SAC_WL_STRIDE_LAST_LOOP_BEGIN (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)
 
 /*
  * BEGIN: (STRIDE_UNROLLING == TRUE)
  */
 
-#define SAC_WL_STRIDE_UNROLL_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)           \
-    idx_scl = SAC_WL_VAR (first, idx_scl) + bnd1;
+#define SAC_WL_STRIDE_UNROLL_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)        \
+    SAC_ND_WRITE (idx_scl_NT, 0) = SAC_WL_VAR (first, idx_scl_NT) + bnd1;
 
-#define SAC_WL_MT_STRIDE_UNROLL_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)        \
-    SAC_WL_STRIDE_UNROLL_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_STRIDE_UNROLL_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)     \
+    SAC_WL_STRIDE_UNROLL_BEGIN (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)
 
 /*
  * END: (STRIDE_UNROLLING == FALSE)
  */
 
-#define SAC_WL_STRIDE_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)               \
+#define SAC_WL_STRIDE_LOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)            \
     }                                                                                    \
     }
 
-#define SAC_WL_MT_STRIDE_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)            \
-    SAC_WL_STRIDE_LOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_STRIDE_LOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)         \
+    SAC_WL_STRIDE_LOOP_END (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)
 
 /*
  * END: (STRIDE_UNROLLING == TRUE)
  */
 
-#define SAC_WL_STRIDE_UNROLL_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step) /* empty */
+#define SAC_WL_STRIDE_UNROLL_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)          \
+    /* empty */
 
-#define SAC_WL_MT_STRIDE_UNROLL_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)          \
-    SAC_WL_STRIDE_UNROLL_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_STRIDE_UNROLL_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)       \
+    SAC_WL_STRIDE_UNROLL_END (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)
 
 /*****************************************************************************/
 
@@ -403,7 +421,7 @@
  ***/
 
 /*
- * SAC_WL_VAR( diff, idx_scl) contain the width of the noop region and
+ * SAC_WL_VAR( diff, idx_scl_NT) contain the width of the noop region and
  * is needed by the SAC_WL_ADJUST_OFFSET macro.
  */
 
@@ -411,21 +429,21 @@
  * BEGIN
  */
 
-#define SAC_WL_STRIDE_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)             \
+#define SAC_WL_STRIDE_NOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)          \
     {                                                                                    \
-        int SAC_WL_VAR (diff, idx_scl) = (bnd2 - bnd1);
+        int SAC_WL_VAR (diff, idx_scl_NT) = (bnd2 - bnd1);
 
-#define SAC_WL_MT_STRIDE_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)          \
-    SAC_WL_STRIDE_NOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_STRIDE_NOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)       \
+    SAC_WL_STRIDE_NOOP_BEGIN (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)
 
 /*
  * END
  */
 
-#define SAC_WL_STRIDE_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step) }
+#define SAC_WL_STRIDE_NOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step) }
 
-#define SAC_WL_MT_STRIDE_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)            \
-    SAC_WL_STRIDE_NOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2, step)
+#define SAC_WL_MT_STRIDE_NOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)         \
+    SAC_WL_STRIDE_NOOP_END (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2, step)
 
 /*****************************************************************************/
 
@@ -480,73 +498,78 @@
 
 /*
  * remark:
- *   SAC_WL_VAR( grid_stop, idx_scl) is used locally in these macros only!
+ *   SAC_WL_VAR( grid_stop, idx_scl_NT) is used locally in these macros only!
  */
 
 /*
  * BEGIN: (GRID_UNROLLING == FALSE) && (fitted already)
  */
 
-#define SAC_WL_GRID_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                     \
+#define SAC_WL_GRID_LOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)                  \
     {                                                                                    \
-        int SAC_WL_VAR (grid_stop, idx_scl) = idx_scl + (bnd2 - bnd1);                   \
-        for (; idx_scl < SAC_WL_VAR (grid_stop, idx_scl); idx_scl++) {
+        int SAC_WL_VAR (grid_stop, idx_scl_NT)                                           \
+          = SAC_ND_READ (idx_scl_NT, 0) + (bnd2 - bnd1);                                 \
+        for (; SAC_ND_READ (idx_scl_NT, 0) < SAC_WL_VAR (grid_stop, idx_scl_NT);         \
+             SAC_ND_WRITE (idx_scl_NT, 0) = SAC_ND_READ (idx_scl_NT, 0) + 1) {
 
-#define SAC_WL_MT_GRID_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                  \
-    SAC_WL_GRID_LOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_LOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)               \
+    SAC_WL_GRID_LOOP_BEGIN (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)
 
 /*
  * BEGIN: (GRID_UNROLLING == TRUE) && (fitted already)
  */
 
-#define SAC_WL_GRID_UNROLL_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2) /* empty */
+#define SAC_WL_GRID_UNROLL_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2) /* empty */
 
-#define SAC_WL_MT_GRID_UNROLL_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                \
-    SAC_WL_GRID_UNROLL_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_UNROLL_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)             \
+    SAC_WL_GRID_UNROLL_BEGIN (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)
 
 /*
  * BEGIN: (not fitted yet)
  */
 
-#define SAC_WL_GRID_FIT_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                 \
+#define SAC_WL_GRID_FIT_LOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)              \
     {                                                                                    \
-        int SAC_WL_VAR (grid_stop, idx_scl)                                              \
-          = SAC_MIN (idx_scl + (bnd2 - bnd1), SAC_WL_VAR (stop, idx_scl));               \
-        for (; idx_scl < SAC_WL_VAR (grid_stop, idx_scl); idx_scl++) {
+        int SAC_WL_VAR (grid_stop, idx_scl_NT)                                           \
+          = SAC_MIN (SAC_ND_READ (idx_scl_NT, 0) + (bnd2 - bnd1),                        \
+                     SAC_WL_VAR (stop, idx_scl_NT));                                     \
+        for (; SAC_ND_READ (idx_scl_NT, 0) < SAC_WL_VAR (grid_stop, idx_scl_NT);         \
+             SAC_ND_WRITE (idx_scl_NT, 0) = SAC_ND_READ (idx_scl_NT, 0) + 1) {
 
-#define SAC_WL_MT_GRID_FIT_LOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)              \
-    SAC_WL_GRID_FIT_LOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_FIT_LOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)           \
+    SAC_WL_GRID_FIT_LOOP_BEGIN (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)
 
 /*
  * END: (GRID_UNROLLING == FALSE) && (fitted already)
  */
 
-#define SAC_WL_GRID_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                       \
+#define SAC_WL_GRID_LOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)                    \
     }                                                                                    \
     }
 
-#define SAC_WL_MT_GRID_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                    \
-    SAC_WL_GRID_LOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_LOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)                 \
+    SAC_WL_GRID_LOOP_END (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)
 
 /*
  * END: (GRID_UNROLLING == TRUE) && (fitted already)
  */
 
-#define SAC_WL_GRID_UNROLL_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2) idx_scl++;
+#define SAC_WL_GRID_UNROLL_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)                  \
+    SAC_ND_WRITE (idx_scl_NT, 0) = SAC_ND_READ (idx_scl_NT, 0) + 1;
 
-#define SAC_WL_MT_GRID_UNROLL_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                  \
-    SAC_WL_GRID_UNROLL_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_UNROLL_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)               \
+    SAC_WL_GRID_UNROLL_END (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)
 
 /*
  * END: (not fitted yet)
  */
 
-#define SAC_WL_GRID_FIT_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                   \
+#define SAC_WL_GRID_FIT_LOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)                \
     }                                                                                    \
     }
 
-#define SAC_WL_MT_GRID_FIT_LOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                \
-    SAC_WL_GRID_FIT_LOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_FIT_LOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)             \
+    SAC_WL_GRID_FIT_LOOP_END (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)
 
 /*****************************************************************************/
 
@@ -555,7 +578,7 @@
  ***/
 
 /*
- * SAC_WL_VAR( diff, idx_scl) contain the width of the noop region and
+ * SAC_WL_VAR( diff, idx_scl_NT) contain the width of the noop region and
  * is needed by the SAC_WL_ADJUST_OFFSET macro.
  */
 
@@ -563,44 +586,47 @@
  * BEGIN: (fitted already)
  */
 
-#define SAC_WL_GRID_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                     \
+#define SAC_WL_GRID_NOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)                  \
     {                                                                                    \
-        int SAC_WL_VAR (diff, idx_scl) = (bnd2 - bnd1);                                  \
-        idx_scl += SAC_WL_VAR (diff, idx_scl);
+        int SAC_WL_VAR (diff, idx_scl_NT) = (bnd2 - bnd1);                               \
+        SAC_ND_WRITE (idx_scl_NT, 0)                                                     \
+          = SAC_ND_READ (idx_scl_NT, 0) + SAC_WL_VAR (diff, idx_scl_NT);
 
-#define SAC_WL_MT_GRID_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                  \
-    SAC_WL_GRID_NOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_NOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)               \
+    SAC_WL_GRID_NOOP_BEGIN (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)
 
 /*
  * BEGIN: (not fitted yet)
  */
 
-#define SAC_WL_GRID_FIT_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                 \
+#define SAC_WL_GRID_FIT_NOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)              \
     {                                                                                    \
-        int SAC_WL_VAR (diff, idx_scl)                                                   \
-          = SAC_MIN ((bnd2 - bnd1), SAC_WL_VAR (stop, idx_scl) - idx_scl);               \
-        idx_scl += SAC_WL_VAR (diff, idx_scl);
+        int SAC_WL_VAR (diff, idx_scl_NT)                                                \
+          = SAC_MIN ((bnd2 - bnd1),                                                      \
+                     SAC_WL_VAR (stop, idx_scl_NT) - SAC_ND_READ (idx_scl_NT, 0));       \
+        SAC_ND_WRITE (idx_scl_NT, 0)                                                     \
+          = SAC_ND_READ (idx_scl_NT, 0) + SAC_WL_VAR (diff, idx_scl_NT);
 
-#define SAC_WL_MT_GRID_FIT_NOOP_BEGIN(dim, idx_vec_NT, idx_scl, bnd1, bnd2)              \
-    SAC_WL_GRID_FIT_NOOP_BEGIN (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_FIT_NOOP_BEGIN(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)           \
+    SAC_WL_GRID_FIT_NOOP_BEGIN (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)
 
 /*
  * END: (fitted already)
  */
 
-#define SAC_WL_GRID_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2) }
+#define SAC_WL_GRID_NOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2) }
 
-#define SAC_WL_MT_GRID_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                    \
-    SAC_WL_GRID_NOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_NOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)                 \
+    SAC_WL_GRID_NOOP_END (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)
 
 /*
  * END: (not fitted yet)
  */
 
-#define SAC_WL_GRID_FIT_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2) }
+#define SAC_WL_GRID_FIT_NOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2) }
 
-#define SAC_WL_MT_GRID_FIT_NOOP_END(dim, idx_vec_NT, idx_scl, bnd1, bnd2)                \
-    SAC_WL_GRID_FIT_NOOP_END (dim, idx_vec_NT, idx_scl, bnd1, bnd2)
+#define SAC_WL_MT_GRID_FIT_NOOP_END(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)             \
+    SAC_WL_GRID_FIT_NOOP_END (dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)
 
 /*****************************************************************************/
 
@@ -609,8 +635,8 @@
  *** with-loop-body.
  ***/
 
-#define SAC_WL_SET_IDXVEC(dim, idx_vec, idx_scl, bnd1, bnd2)                             \
-    SAC_ND_WRITE_ARRAY (idx_vec, dim) = idx_scl;
+#define SAC_WL_SET_IDXVEC(dim, idx_vec_NT, idx_scl_NT, bnd1, bnd2)                       \
+    SAC_ND_WRITE_READ (idx_vec_NT, dim, idx_scl_NT, 0);
 
 /*****************************************************************************/
 
