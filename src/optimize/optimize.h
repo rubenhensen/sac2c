@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.61  1998/04/29 17:15:58  dkr
+ * removed OPTSpmd
+ *
  * Revision 1.60  1998/04/26 21:53:14  dkr
  * removed OPTSync
  *
@@ -312,6 +315,5 @@ extern node *OPTcond (node *arg_node, node *arg_info);
 extern node *OPTloop (node *arg_node, node *arg_info);
 extern node *OPTwith (node *arg_node, node *arg_info);
 extern node *OPTNwith (node *arg_node, node *arg_info);
-extern node *OPTSpmd (node *arg_node, node *arg_info);
 
 #endif /* _sac_optimize_h */
