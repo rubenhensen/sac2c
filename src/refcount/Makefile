@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.33  2004/11/25 19:29:33  ktr
+# added ReuseWithArrays.o
+#
 # Revision 3.32  2004/11/23 15:06:27  ktr
 # Removed INCS
 #
@@ -123,7 +126,7 @@ include $(PROJECT_ROOT)/Makefile.Config
 all: allocation.o alloc.o refcounting.o reuse.o rcopt.o rcphase.o \
      filterrc.o aliasanalysis.o staticreuse.o reuseelimination.o \
      interfaceanalysis.o loopreuseopt.o datareuse.o explicitcopy.o \
-     reusebranching.o
+     reusebranching.o ReuseWithArrays.o
 
 
 %.o: %.c
