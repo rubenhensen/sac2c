@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.122  2002/06/05 12:19:42  sbs
+ * N_tcfuninfo added .
+ *
  * Revision 3.121  2002/06/02 21:46:48  dkr
  * ID_NT_TAG modified
  *
@@ -1045,6 +1048,24 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_IDENTIFIER(n) (n->int_data)
 #define FUNDEF_MT2USE(n) (n->dfmask[1])
 #define FUNDEF_MT2DEF(n) (n->dfmask[2])
+
+/*--------------------------------------------------------------------------*/
+/***
+ ***  N_tcfuninfo:
+ ***
+ ***  sons:
+ ***
+ ***    node*       DEF         (N_fundef)
+ ***    node*       DOWN        (N_fundef)
+ ***    node*       UP          (N_exprs)
+ ***
+ ***/
+
+extern node *MakeTcfuninfo (node *def, node *up, node *down);
+
+#define TCFUNINFO_DEF(n) (n->node[0])
+#define TCFUNINFO_UP(n) (n->node[1])
+#define TCFUNINFO_DOWN(n) (n->node[2])
 
 /*--------------------------------------------------------------------------*/
 

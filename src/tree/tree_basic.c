@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.53  2002/06/05 12:19:42  sbs
+ * N_tcfuninfo added .
+ *
  * Revision 3.52  2002/06/03 11:29:15  dkr
  * MakeId_Copy, MakeIds_Copy: parameter 'name' might be NULL now
  *
@@ -698,6 +701,24 @@ MakeFundef (char *name, char *mod, types *types, node *args, node *body, node *n
 
     DBUG_PRINT ("MAKE",
                 ("%d:nodetype: %s " F_PTR, NODE_LINE (tmp), NODE_TEXT (tmp), tmp));
+
+    DBUG_RETURN (tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+
+node *
+MakeTcfuninfo (node *def, node *up, node *down)
+{
+    node *tmp;
+
+    DBUG_ENTER ("MakeTcfuninfo");
+
+    tmp = CreateCleanNode (N_tcfuninfo);
+
+    TCFUNINFO_DEF (tmp) = def;
+    TCFUNINFO_UP (tmp) = up;
+    TCFUNINFO_DOWN (tmp) = down;
 
     DBUG_RETURN (tmp);
 }
