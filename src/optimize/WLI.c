@@ -1,6 +1,9 @@
 /*    $Id$
  *
  * $Log$
+ * Revision 1.2  1998/04/01 07:43:15  srs
+ * *** empty log message ***
+ *
  * Revision 1.1  1998/03/22 18:21:43  srs
  * Initial revision
  *
@@ -17,6 +20,10 @@
  - node[0]: store old information in nested WLs
  - node[1]: reference to base node of current WL (N_Nwith)
  - node[2]: always the last N_assign node (see WLIassign)
+ - node[3]: pointer to last fundef node. needed to access vardecs.
+ - varno  : number of variables in this function, see optimize.c
+ - mask[0]: DEF mask, see optimize.c
+ - mask[1]: USE mask, see optimize.c
 
  ******************************************************************************/
 
@@ -96,6 +103,10 @@ SimplifyFun (prf prf)
  *   Checks whether the MRD of Id idn is a WL and is foldable (has constant
  *   bounds). If yes, returns the WL-node. Else NULL.
  *
+ * remark:
+ *   We cannot use WL defined inside compound nodes (cond, loops). In these
+ *   cases NULL is returned. See SearchWL() in WithloopFolding.c
+ *
  ******************************************************************************/
 
 node *
@@ -103,10 +114,11 @@ IsIdOfFoldableWL (node *idn)
 {
     node *mrdn, *wln;
     DBUG_ENTER ("IsIdOfFoldableWL");
+    DBUG_ASSERT (N_id == NODE_TYPE (idn), ("not an N_id node."));
 
     wln = NULL;
 
-    /* is the idn a reference to a WL? */
+    /* is the idn a reference to a WL? Better use MRD_GETWLF*/
     mrdn = MRD (ID_VARNO (idn));
     if (mrdn &&                                                      /* exists */
         (mrdn = ASSIGN_INSTR (mrdn)) && N_let == NODE_TYPE (mrdn) && /* is N_let */
@@ -123,18 +135,20 @@ IsIdOfFoldableWL (node *idn)
 /******************************************************************************
  *
  * function:
- *   int CheckArrayFoldable(node *indexn, node *idn, node *arg_info)
+ *   node *CheckArrayFoldable(node *indexn, node *idn, node *arg_info)
  *
  * description:
  *   This function checks whether the application of psi(indexn,idn) inside
- *   a WL can be folded or not. If yes, NWITH_REFERENCED_FOLD is incremented
- *   and 1 is returned.
+ *   a WL can be folded or not. If yes, the WL described by idn is returned,
+ *   else NULL.
+ *
+ * remark:
  *   This function has only to be called if indexn is a known valid index
  *   transformation. This is supposed here and not checked again.
  *
  ******************************************************************************/
 
-int
+node *
 CheckArrayFoldable (node *indexn, node *idn, node *arg_info)
 {
     node *wln1, *wln2;
@@ -148,18 +162,18 @@ CheckArrayFoldable (node *indexn, node *idn, node *arg_info)
     if (wln1) {
         wln2 = INFO_WLI_WL (arg_info);
 
-        /* both WLs have to be foldable */
-        ok = NWITH_FOLDABLE (wln1) && NWITH_FOLDABLE (wln2);
+        /* wln1 is foldable. wln2 has to be foldable, too. */
+        ok = NWITH_FOLDABLE (wln2);
 
         /* The access index and the generator index of the substitution WL
            have to have the same shape. */
         ok = ok && IDS_SHAPE (NPART_VEC (NWITH_PART (wln1)), 0) == ID_SHAPE (indexn, 0);
 
-        if (ok)
-            NWITH_REFERENCED_FOLD (wln1)++;
+        if (!ok)
+            wln1 = NULL;
     }
 
-    DBUG_RETURN (ok);
+    DBUG_RETURN (wln1);
 }
 
 /******************************************************************************
@@ -251,7 +265,7 @@ Scalar2ArrayIndex (node *arrayn, node *wln)
  *   creates an index_info from an Id. This could be an index vector, an
  *   index scalar or just a local valid variable.
  *   If the Id is vaild, the index_info is created/duplicated and assigned
- *   to INDEX(assignn). returns 1 on success.
+ *   to the assign node given by arg_info. Returns 1 on success.
  *
  ******************************************************************************/
 
@@ -527,6 +541,7 @@ WLIfundef (node *arg_node, node *arg_info)
     DBUG_ENTER ("WLIfundef");
 
     INFO_WLI_WL (arg_info) = NULL;
+    INFO_WLI_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node))
         FUNDEF_INSTR (arg_node) = OPTTrav (FUNDEF_INSTR (arg_node), arg_info, arg_node);
@@ -686,8 +701,14 @@ WLIwith (node *arg_node, node *arg_info)
  *   node *WLIid(node *arg_node, node *arg_info)
  *
  * description:
- *   counts all references to WLs
- *
+ *   If this Id is a reference to a WL (N_Nwith) we want to increment
+ *   the number of references to it (NWITH_REFERENCED). Therefore the
+ *   WL node has to be found.
+ *   But this is not always possible (e.g. WLs may be defined in
+ *   a conditional, for more information see SearchWL). Then the flag
+ *   NWITH_NO_CHANCE is marked which means that the WL cannot be used
+ *   for folding anyway so we do not need to count the references. Again
+ *   see SearchWL for more information.
  *
  ******************************************************************************/
 
@@ -695,17 +716,15 @@ node *
 WLIid (node *arg_node, node *arg_info)
 {
     node *mrdn;
+    int valid;
 
     DBUG_ENTER ("WLIid");
 
-    mrdn = MRD (ID_VARNO (arg_node));
-    if (mrdn &&                                                        /* exists */
-        (mrdn = ASSIGN_INSTR (mrdn)) && N_let == NODE_TYPE (mrdn) &&   /* is N_let */
-        0 == strcmp (ID_NAME (arg_node), IDS_NAME (LET_IDS (mrdn))) && /* is right name */
-        N_Nwith == NODE_TYPE (LET_EXPR (mrdn))) {                      /* is WL */
-
-        NWITH_REFERENCED (LET_EXPR (mrdn))++;
-    }
+    valid = 0; /* set != -1 */
+    mrdn = (node *)ASSIGN_MRDMASK (INFO_WLI_ASSIGN (arg_info))[ID_VARNO (arg_node)];
+    mrdn = SearchWL (ID_VARNO (arg_node), mrdn, &valid);
+    if (mrdn) /* WL found */
+        NWITH_REFERENCED (LET_EXPR (ASSIGN_INSTR (mrdn)))++;
 
     DBUG_RETURN (arg_node);
 }
@@ -727,9 +746,8 @@ WLIid (node *arg_node, node *arg_info)
 node *
 WLIlet (node *arg_node, node *arg_info)
 {
-    node *exprn;
+    node *exprn, *tmpn;
     prf prf;
-    index_info *iinfo;
 
     DBUG_ENTER ("WLIlet");
 
@@ -772,32 +790,28 @@ WLIlet (node *arg_node, node *arg_info)
                    could be folded.
                    We have 3 possibilities here:
                    - the array's Id (2nd argument) is not based on a foldable
-                     withloop. So no index_info is created. Else...
+                   withloop. So no index_info is created. Else...
                    - the first argument is the index vector from the generator.
-                     Then no index_info for this transformation exists right now.
-                     Create it.
+                   Then no index_info for this transformation exists right now.
+                   Create it.
                    - the first argument is a reference to a locally defined
-                     valid (or invalid) transformation. If valid, duplicate it. */
+                   valid (or invalid) transformation. If valid, duplicate it. */
                 if (N_id == NODE_TYPE (PRF_ARG1 (exprn))
-                    && IsIdOfFoldableWL (PRF_ARG2 (exprn))) {
-                    iinfo = ValidLocalId (PRF_ARG1 (exprn));
-                    if ((iinfo && iinfo->vector)
-                        || -1
-                             == LocateIndexVar (PRF_ARG1 (exprn), INFO_WLI_WL (arg_info)))
-                        if (CreateIndexInfoId (PRF_ARG1 (exprn), arg_info)) {
-                            /* Now, if this was a valid transformation and we index an
-                               array which is based on a WL, we have to determine if
-                               we finally can fold the array.
-                               If we can, the index_info is kept, else removed. So in the
-                               WLF phase we know for sure that a psi-prf with a
-                               valid index_info can be folded. But that still doesn't
-                               mean that we want to fold. */
-                            if (!CheckArrayFoldable (PRF_ARG1 (exprn), PRF_ARG2 (exprn),
-                                                     arg_info))
-                                FREE_INDEX (INDEX (INFO_WLI_ASSIGN (arg_info)));
-                        }
+                    && CreateIndexInfoId (PRF_ARG1 (exprn), arg_info)) {
+                    /* Now, if this was a valid transformation and we index an
+                         array which is based on a WL, we have to determine if
+                         we finally CAN fold the array.
+                         If we can, the index_info is kept, else removed. So in the
+                         WLF phase we know for sure that a psi-prf with a
+                         valid index_info can be folded. But that still doesn't
+                         mean that we want to fold. */
+                    tmpn
+                      = CheckArrayFoldable (PRF_ARG1 (exprn), PRF_ARG2 (exprn), arg_info);
+                    if (tmpn)
+                        NWITH_REFERENCED_FOLD (tmpn)++;
+                    else
+                        FREE_INDEX (INDEX (INFO_WLI_ASSIGN (arg_info)));
                 }
-
                 break;
 
             default:
@@ -808,10 +822,9 @@ WLIlet (node *arg_node, node *arg_info)
         if (N_id == NODE_TYPE (exprn)) {
             /* The let expr may be an index scalar or the index vector. */
             CreateIndexInfoId (exprn, arg_info);
-            /* Or it is an array Id without indexing. But we cannot fold it in
-               this state because its access index has to be transformed to
-               the shape of its generator index first. */
-            /* CheckArrayFoldable(); */
+            /* Or it is an array Id without indexing. But we cannot fold such
+               unindexed arrays because its access index has to be transformed
+               to the shape of its generator index first. */
         }
 
         /* The let expr still may be a construction of a vector (without a prf). */
@@ -852,7 +865,8 @@ WLINwith (node *arg_node, node *arg_info)
     tmpn->mask[0] = INFO_DEF; /* DEF and USE information have */
     tmpn->mask[1] = INFO_USE; /* to be identical. */
     tmpn->varno = INFO_VARNO;
-
+    INFO_WLI_FUNDEF (tmpn) = INFO_WLI_FUNDEF (arg_info);
+    INFO_WLI_ASSIGN (tmpn) = INFO_WLI_ASSIGN (arg_info);
     INFO_WLI_NEXT (tmpn) = arg_info;
     arg_info = tmpn;
 
@@ -867,6 +881,7 @@ WLINwith (node *arg_node, node *arg_info)
     NWITH_REFERENCED (arg_node) = 0;
     NWITH_REFERENCED_FOLD (arg_node) = 0;
     NWITH_COMPLEX (arg_node) = 0;
+    NWITH_NO_CHANCE (arg_node) = 0;
 
     /* traverse N_Nwithop */
     NWITH_WITHOP (arg_node) = OPTTrav (NWITH_WITHOP (arg_node), arg_info, arg_node);
@@ -888,6 +903,34 @@ WLINwith (node *arg_node, node *arg_info)
     INFO_USE = tmpn->mask[1];
     INFO_VARNO = tmpn->varno;
     FREE (tmpn);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *WLINwithop(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   if op is modarray we have to check whether the base array Id can be
+ *   eleminated by folding. Then NWITH_REFERENCED_FOLD is incremented.
+ *
+ ******************************************************************************/
+
+node *
+WLINwithop (node *arg_node, node *arg_info)
+{
+    node *wln;
+
+    DBUG_ENTER ("WLINwithop");
+
+    if (WO_modarray == NWITHOP_TYPE (arg_node) && NWITH_FOLDABLE (INFO_WLI_WL (arg_info))
+        && /* own WL foldable */
+        (wln = IsIdOfFoldableWL (NWITHOP_ARRAY (arg_node))))
+        NWITH_REFERENCED_FOLD (wln)++;
+
+    arg_node = TravSons (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
