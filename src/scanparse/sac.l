@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 1.50  1997/11/24 18:06:40  sbs
+ * new_with inserted as NWITH token!
+ *
  * Revision 1.49  1997/10/28 10:35:10  dkr
  *  a few <cr>s in lex-rules have been removed
  *  because some (f)lex-implementations can not handle them.
@@ -310,6 +313,9 @@ int start_token;
 "while"				{FILTER( WHILE );}
 "for"				{FILTER( FOR );}
 "with" 				{FILTER( WITH );}
+"new_with" 			{FILTER( NWITH );}
+"step" 				{FILTER( STEP );}
+"width" 			{FILTER( WIDTH );}
 "genarray"			{FILTER7( GENARRAY,prf_name_str[F_genarray] );}
 "modarray"			{FILTER7( MODARRAY,prf_name_str[F_modarray] );}
 "fold"				{FILTER( FOLD );}
