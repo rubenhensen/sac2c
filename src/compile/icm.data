@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/06/03 13:19:00  jhs
+ * Changed parameters for MT_CONTINUE.
+ *
  * Revision 2.2  1999/05/12 14:39:05  cg
  * NO_TRACE renamed to TRACE_NONE
  *
@@ -631,9 +634,11 @@ ICM_END( MT_SYNC_FOLD_NONFOLD, (narg, vararg))
 
 #if defined(MT_CONTINUE) || defined(ICM_ALL)
 ICM_DEF( MT_CONTINUE, TRACE_NONE)
-  ICM_INT(narg)
-  ICM_VAR((2*narg), vararg)
-ICM_END( MT_CONTINUE, (narg, vararg))
+  ICM_INT(nfoldargs)
+  ICM_VAR((2*nfoldargs), vararg)
+  ICM_INT(nsyncargs)
+  ICM_VAR((nsyncargs), syncargs)
+ICM_END( MT_CONTINUE, (nfoldargs, vararg, nsyncargs, syncargs))
 #endif
 
 #if defined(MT_SPMD_STATIC_MODE_BEGIN) || defined(ICM_ALL)
