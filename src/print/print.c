@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.145  2003/11/12 11:58:05  sbs
+ * optional default expression now is printed correctly 8-)
+ *
  * Revision 3.144  2003/11/12 08:47:08  sbs
  * optional default expression is now printed as well
  *
@@ -3511,6 +3514,12 @@ PrintNwith (node *arg_node, node *arg_info)
             fprintf (outfile, ", ");
         }
         Trav (INFO_PRINT_INT_SYN (arg_info), arg_info);
+        if (WO_genarray == NWITH_TYPE (arg_node)) {
+            if (NWITHOP_DEFAULT (arg_node) != NULL) {
+                fprintf (outfile, ", ");
+                Trav (NWITHOP_DEFAULT (NWITH_WITHOP (arg_node)), arg_info);
+            }
+        }
     }
     fprintf (outfile, ")");
 
@@ -3780,10 +3789,6 @@ PrintNwithop (node *arg_node, node *arg_info)
     case WO_genarray:
         fprintf (outfile, "genarray( ");
         Trav (NWITHOP_SHAPE (arg_node), arg_info);
-        if (NWITHOP_DEFAULT (arg_node) != NULL) {
-            fprintf (outfile, ", ");
-            Trav (NWITHOP_DEFAULT (arg_node), arg_info);
-        }
         break;
 
     case WO_modarray:
