@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2004/08/06 16:09:31  khf
+ * CompleteGrid: determination of steps corrected
+ *
  * Revision 1.12  2004/08/04 12:39:05  khf
  * by appliance of Constant Folding: the result of TRAV must not
  * be stored in MODUL_FUNS
@@ -763,6 +766,7 @@ CompleteGrid (node *ls, node *us, node *step, node *width, int dim, node *wln,
 
         stpe = EXPRS_NEXT (stpe);
         wthe = EXPRS_NEXT (wthe);
+        nwe = EXPRS_NEXT (nwe);
     }
 
     nw = FreeTree (nw);
@@ -1443,10 +1447,8 @@ WLPGfundef (node *arg_node, info *arg_info)
 
     } else if (INFO_WLPG_SUBPHASE (arg_info) == SP_mod) {
 
-        if (khf) {
-            if (FUNDEF_BODY (arg_node)) {
-                FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
-            }
+        if (FUNDEF_BODY (arg_node)) {
+            FUNDEF_INSTR (arg_node) = Trav (FUNDEF_INSTR (arg_node), arg_info);
         }
 
         if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -1575,6 +1577,8 @@ WLPGap (node *arg_node, info *arg_info)
             /* stack arg_info */
             tmp = arg_info;
             arg_info = MakeInfo ();
+            /* take current flag SUBPHASE */
+            INFO_WLPG_SUBPHASE (arg_info) = INFO_WLPG_SUBPHASE (tmp);
 
             AP_FUNDEF (arg_node) = Trav (AP_FUNDEF (arg_node), arg_info);
 
