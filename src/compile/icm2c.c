@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.53  1998/03/24 15:31:46  cg
+ * #include "icm2c.h"  removed since file no longer exists.
+ *
  * Revision 1.52  1998/03/24 13:47:20  cg
  * Bug fixed in check_boundary code. A local variable 'idx' was defined
  * for this purpose which may conflict with user-defined variable names.
@@ -187,13 +190,13 @@
 
 #include <malloc.h>
 #include <stdio.h>
+
 #include "print.h"
 #include "dbug.h"
 #include "my_debug.h"
 #include "main.h"
 #include "convert.h"
 #include "globals.h"
-#include "icm2c.h"
 #include "gen_startup_code.h"
 
 #define RetWithScal(res, val)                                                            \
@@ -1198,7 +1201,7 @@ fprintf (outfile, "\n");
 #undef ND_KD_SET_SHAPE
 
 #ifndef TEST_BACKEND
-RT_FREE (s);
+
 DBUG_VOID_RETURN;
 }
 #endif /* no TEST_BACKEND */
@@ -1250,7 +1253,6 @@ if (check_boundary) {
 #undef ND_KD_PSI_CxA_S
 
 #ifndef TEST_BACKEND
-RT_FREE (vi);
 DBUG_VOID_RETURN;
 }
 #endif /* no TEST_BACKEND */
@@ -1330,7 +1332,6 @@ fprintf (outfile, "\n\n");
 #undef ND_KD_PSI_CxA_A
 
 #ifndef TEST_BACKEND
-RT_FREE (vi);
 DBUG_VOID_RETURN;
 }
 #endif /* no TEST_BACKEND */
