@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.47  1998/03/21 19:33:27  dkr
+ * removed unused var in MakeWLseg
+ *
  * Revision 1.46  1998/03/21 18:54:34  srs
  * MakeNWith initializes NWITH_PARTS with -1 instead of 0
  *
@@ -1398,7 +1401,6 @@ node *
 MakeWLseg (int dims, node *contents, node *next)
 {
     node *new_node;
-    int b;
 
     DBUG_ENTER ("MakeWLseg");
     INIT_NODE (new_node);
