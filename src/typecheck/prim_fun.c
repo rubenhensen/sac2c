@@ -1,6 +1,10 @@
 /*
  * $Log$
- * Revision 1.13  1995/06/28 09:25:52  hw
+ * Revision 1.14  1995/06/30 11:29:34  hw
+ * - functions F2I & I2F inserted
+ * - enlarged enum "type_class" with F_I, f_i, I_F, i_f
+ *
+ * Revision 1.13  1995/06/28  09:25:52  hw
  * bug fixed in Shp( userdefined types will be treated correctly)
  *
  * Revision 1.12  1995/06/23  12:36:57  hw
@@ -61,6 +65,7 @@
 #include "internal_lib.h"
 #include "typecheck.h"
 #include "access_macros.h"
+#include "convert.h" /* to use macro MOD_NAME_CON */
 
 extern char filename[]; /* is set in main.c */
 
@@ -86,7 +91,11 @@ enum type_class {
     SxAxA_A,
     B_B,
     SxA_A,
-    SxA_F
+    SxA_F,
+    F_I,
+    f_i,
+    I_F,
+    i_f
 };
 
 #define GEN_TYPE_NODE(node, type)                                                        \
@@ -777,6 +786,62 @@ Cat (node *s_node, types *array1, types *array2)
         ERROR2 (3, ("%s, %d: 1.argument of function `cat` "
                     " should be a constant",
                     filename, s_node->lineno));
+
+    DBUG_RETURN (ret_type);
+}
+
+/*
+ *
+ *  functionname  : F2I
+ *  arguments     : 1) type of array
+ *  description   :  returns the type T_int with shape of 1)
+ *  global vars   :
+ *  internal funs :
+ *  external funs : DuplicateTypes
+ *  macros        : DBUG...,
+ *
+ *  remarks       : is part of macro TT1 and is used in typecheck.c
+ *
+ */
+types *
+F2I (types *array1)
+{
+    types *ret_type = NULL;
+
+    DBUG_ENTER ("F2I");
+
+    GET_BASIC_TYPE (ret_type, array1, 0);
+    ret_type->simpletype = T_int;
+    ret_type->name = NULL; /* has to be set to NULL, because of output */
+    ret_type->name_mod = NULL;
+
+    DBUG_RETURN (ret_type);
+}
+
+/*
+ *
+ *  functionname  : I2F
+ *  arguments     : 1) type of array
+ *  description   :  returns the type T_float with shape of 1)
+ *  global vars   :
+ *  internal funs :
+ *  external funs : DuplicateTypes
+ *  macros        : DBUG...,
+ *
+ *  remarks       : is part of macro TT1 and is used in typecheck.c
+ *
+ */
+types *
+I2F (types *array1)
+{
+    types *ret_type = NULL;
+
+    DBUG_ENTER ("I2F");
+
+    GET_BASIC_TYPE (ret_type, array1, 0);
+    ret_type->simpletype = T_float;
+    ret_type->name = NULL; /* has to be set to NULL, because of output */
+    ret_type->name_mod = NULL;
 
     DBUG_RETURN (ret_type);
 }
