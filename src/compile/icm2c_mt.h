@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/04/03 19:41:07  dkr
+ * MT_ADJUST_SCHEDULER renamed into MT_ADJUST_SCHEDULER__OFFSET.
+ * signature for MT_ADJUST_SCHEDULER_... icms modified.
+ * MT_ADJUST_SCHEDULER icm is not a c- but a h-icm now.
+ *
  * Revision 3.11  2001/03/28 12:51:25  ben
  * param added to MT_SCHEDULER_(Cyclic,Self,AFS)_...
  *
@@ -14,7 +19,8 @@
  * ICMs MT_SCHEDULER_Cyclic_... added
  *
  * Revision 3.7  2001/03/20 16:11:38  ben
- * Just implemented Static renamed to Even, because of existing Static scheduling
+ * Just implemented Static renamed to Even, because of existing Static
+ * scheduling
  *
  * Revision 3.6  2001/03/20 13:18:39  ben
  * ICMs MT_SCHEDULER_Static_... (first version) implemented
@@ -44,7 +50,8 @@
  *
  * Revision 2.4  1999/07/20 16:55:06  jhs
  * Added comments.
- * Changed behaviour of MT_SPMD_SETUP, so shared[_rc] variables are no longer setuped.
+ * Changed behaviour of MT_SPMD_SETUP, so shared[_rc] variables are no longer
+ * setuped.
  * Changed signature of MT_SYNC_FOLD, added barrier_id.
  *
  * Revision 2.3  1999/06/30 16:00:11  jhs
@@ -100,8 +107,8 @@
  *
  *****************************************************************************/
 
-#ifndef _ICM2C_MT_H_
-#define _ICM2C_MT_H_
+#ifndef _SAC_ICM2C_MT_H_
+#define _SAC_ICM2C_MT_H_
 
 extern void ICMCompileMT_SPMD_FUN_DEC (char *name, char *from, int narg, char **vararg);
 extern void ICMCompileMT_SPMD_FUN_RET (int barrier_id, int narg, char **vararg);
@@ -128,9 +135,9 @@ extern void ICMCompileMT_SPMD_BEGIN (char *name);
 extern void ICMCompileMT_SPMD_ALTSEQ (char *name);
 extern void ICMCompileMT_SPMD_END (char *name);
 
-extern void ICMCompileMT_ADJUST_SCHEDULER (int current_dim, int array_dim, char *lower,
-                                           char *upper, char *unrolling, char *array,
-                                           bool adjust_offset);
+extern void ICMCompileMT_ADJUST_SCHEDULER__OFFSET (char *array, int array_dim,
+                                                   int current_dim, char *lower,
+                                                   char *upper, char *unrolling);
 
 extern void ICMCompileMT_SCHEDULER_BEGIN (int dim, char **vararg);
 extern void ICMCompileMT_SCHEDULER_END (int dim, char **vararg);
@@ -152,4 +159,5 @@ extern void ICMCompileMT_SCHEDULER_Self_END (int param, int dim, char **vararg);
 
 extern void ICMCompileMT_SCHEDULER_Afs_BEGIN (int param, int dim, char **vararg);
 extern void ICMCompileMT_SCHEDULER_Afs_END (int param, int dim, char **vararg);
-#endif /* _ICM2C_MT_H_ */
+
+#endif /* _SAC_ICM2C_MT_H_ */
