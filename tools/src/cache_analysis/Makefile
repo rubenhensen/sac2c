@@ -1,13 +1,18 @@
+#
+#
+# $Log$
+# Revision 1.3  2001/11/19 18:20:33  dkr
+# rcs header added
+# Makefile.Config included
+#
+#
+#
 
-LIBDIR  = ../../../lib
-INCDIR  = ../../../inc
-LIBS    = $(LIBDIR)/main_args.o
+include ../../../Makefile.Config
 
-CC      = gcc
-
-gccFLAGS = -Wall -ansi
-ccFLAGS = 
-CCFLAGS = $($(CC)FLAGS) -g -I$(INCDIR)
+INCS   = -I../../../inc
+LIBDIR = ../../../lib
+LIBS   = $(LIBDIR)/main_args.o
 
 all: ../ctest
 
@@ -19,7 +24,7 @@ l2.o: ctest.c l2.h ctest.h l2.c
 bits.o: bits.c bits.h
 
 %.o: %.c
-	$(CC) $(CCFLAGS) -c $<
+	$(CC) $(CCFLAGS) $(INCS) -c $<
 
 ../ctest: accesstime.o ctest.o verbose.o l1.o l2.o bits.o
 	$(CC) $(CCFLAGS) -o $@ $(LIBS) $^
