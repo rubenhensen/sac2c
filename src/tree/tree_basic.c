@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.97  2004/08/18 12:54:21  skt
+ * MakeDataflownode improved
+ *
  * Revision 3.96  2004/08/09 03:47:34  skt
  * again some adaptions for the dataflowgraph
  *
@@ -2291,6 +2294,8 @@ MakeDataflownode (node *graph, node *assignment, char *name)
     DATAFLOWNODE_ASSIGN (tmp) = assignment;
     if (assignment != NULL) {
         DATAFLOWNODE_EXECMODE (tmp) = ASSIGN_EXECMODE (assignment);
+    } else {
+        DATAFLOWNODE_EXECMODE (tmp) = MUTH_ANY;
     }
     DATAFLOWNODE_NAME (tmp) = name;
 
