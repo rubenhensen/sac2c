@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.44  1995/06/26 14:07:56  hw
+ * Revision 1.45  1995/06/30 11:54:52  hw
+ * macros for module_name-access added( they are moved from
+ * typecheck.c & convert.h
+ *
+ * Revision 1.44  1995/06/26  14:07:56  hw
  * added new macros (moved from compile.c )
  *
  * Revision 1.43  1995/06/23  12:18:43  hw
@@ -295,6 +299,15 @@ typedef struct NODE {
 #define MAKENODE_ID_REUSE_IDS(no, Ids)                                                   \
     no = MakeNode (N_id);                                                                \
     no->IDS = Ids
+
+/*
+ * macros for module_name-access
+ */
+
+#define MOD_NAME_CON "__"
+#define MOD(a) (NULL == a) ? "" : a
+#define MOD_CON(a) (NULL == a) ? "" : MOD_NAME_CON
+#define MOD_NAME(a) MOD (a), MOD_CON (a)
 
 extern types *MakeTypes (simpletype simple);
 extern node *MakeNode (nodetype nodetype);
