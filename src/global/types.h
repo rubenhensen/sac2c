@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.29  2004/07/29 15:05:03  sah
+ * added access_info_t structure to annotate acces information
+ * to the syntax tree (instead of using a N_info node). This
+ * fixes the bug introduced by the new INFO structure.
+ *
  * Revision 3.28  2004/07/16 14:41:34  sah
  * switch to new INFO structure
  * PHASE I
@@ -349,6 +354,16 @@ typedef struct ACCESS_T {
     accessdir_t direction;     /* 0 == ADIR_read,  1 == ADIR_write */
     struct ACCESS_T *next;     /* */
 } access_t;
+
+/* this structure is used by wl_access_analyse to anotate
+   some information to N_CODE nodes. See NCODE_WLAA macros */
+typedef struct ACCESS_INFO_T {
+    access_t *access;
+    int accesscnt;
+    int feature;
+    struct NODE *indexvar;
+    struct NODE *wlarray;
+} access_info_t;
 
 typedef struct IDS {
     char *id;

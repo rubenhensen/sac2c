@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.199  2004/07/29 15:05:03  sah
+ * added access_info_t structure to annotate acces information
+ * to the syntax tree (instead of using a N_info node). This
+ * fixes the bug introduced by the new INFO structure.
+ *
  * Revision 3.198  2004/07/28 22:55:21  skt
  * FUNDEF_DATAFLOWGRAPH added
  *
@@ -3986,12 +3991,12 @@ extern node *MakeNCodeExprs (node *block, node *exprs);
 #define NCODE_ID(n) ((n)->refcnt)
 #define NCODE_FLAG(n) ((bool)((n)->flag))
 
-#define NCODE_WLAA_INFO(n) ((node *)((n)->info2))
-#define NCODE_WLAA_ACCESS(n) ((access_t *)(((node *)((n)->info2))->info2))
-#define NCODE_WLAA_ACCESSCNT(n) (((node *)((n)->info2))->counter)
-#define NCODE_WLAA_FEATURE(n) (((node *)((n)->info2))->varno)
-#define NCODE_WLAA_INDEXVAR(n) (((node *)((n)->info2))->node[2])
-#define NCODE_WLAA_WLARRAY(n) (((node *)((n)->info2))->node[3])
+#define NCODE_WLAA_INFO(n) ((access_info_t *)((n)->info2))
+#define NCODE_WLAA_ACCESS(n) ((access_info_t *)((n)->info2))->access
+#define NCODE_WLAA_ACCESSCNT(n) ((access_info_t *)((n)->info2))->accesscnt
+#define NCODE_WLAA_FEATURE(n) ((access_info_t *)((n)->info2))->feature
+#define NCODE_WLAA_INDEXVAR(n) ((access_info_t *)((n)->info2))->indexvar
+#define NCODE_WLAA_WLARRAY(n) ((access_info_t *)((n)->info2))->wlarray
 
 #define NCODE_TSI_TILESHP(n) ((shpseg *)(((node *)((n)->info2))->node[4]))
 

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/07/29 15:05:03  sah
+ * added access_info_t structure to annotate acces information
+ * to the syntax tree (instead of using a N_info node). This
+ * fixes the bug introduced by the new INFO structure.
+ *
  * Revision 3.12  2004/07/19 14:19:38  sah
  * switch to new INFO structure
  * PHASE I
@@ -767,10 +772,12 @@ WLAAncode (node *arg_node, info *arg_info)
         NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
     }
 
-    NCODE_WLAA_INFO (arg_node) = MakeInfo ();
+    NCODE_WLAA_INFO (arg_node) = Malloc (sizeof (access_info_t));
+
     NCODE_WLAA_ACCESS (arg_node) = INFO_WLAA_ACCESS (arg_info);
     NCODE_WLAA_FEATURE (arg_node) = INFO_WLAA_FEATURE (arg_info);
     NCODE_WLAA_ACCESSCNT (arg_node) = INFO_WLAA_COUNT (arg_info);
+
     arg_info = FreeInfo (arg_info);
     arg_info = old_arg_info;
 
