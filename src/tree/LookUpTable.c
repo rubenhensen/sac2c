@@ -1,11 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/08/14 13:43:44  dkr
+ * hash key calculation for pointers optimized
+ *
  * Revision 3.20  2002/08/14 11:59:51  dkr
  * DBUG-output in ComputeHashDiff() modified
- *
- * Revision 3.19  2002/08/13 17:29:31  dkr
- * comment corrected
  *
  * Revision 3.18  2002/08/13 13:21:15  dkr
  * - !!!! string support modified !!!!
@@ -175,6 +175,7 @@
 #include "internal_lib.h"
 #include "free.h"
 #include "dbug.h"
+#include "Error.h"
 
 /*
  * size of a collision table fragment
@@ -237,10 +238,10 @@ GetHashKey_Pointer (void *data)
     DBUG_ENTER ("GetHashKey_Pointer");
 
     /*
-     * hash key: bits 7 .. 4
+     * hash key: bits 8 .. 5
      *  ->  0 <= key < 2^4
      */
-    hash_key = (((hash_key_t)data) & 0xf0) >> 4;
+    hash_key = (((hash_key_t)data >> 5) & 0xf);
 
     DBUG_ASSERT (((hash_key >= 0) && (hash_key < (HASH_KEYS_POINTER))),
                  "hash key for pointers out of bounds!");
@@ -353,53 +354,60 @@ static int
 ComputeHashDiff (lut_t *lut, char *note, int min_key, int max_key)
 {
     int min_k, max_k, k;
-    int min, max;
-    int size, diff, sum;
+    int min_size, max_size, diff_size;
+    double opt_size;
+    int size, sum_size;
 
     DBUG_ENTER ("ComputeHashDiff");
 
     if (lut != NULL) {
-        DBUG_PRINT ("LUT", ("%s ---", note));
+        DBUG_PRINT ("LUT", ("lut " F_PTR ", %s ---", lut, note));
         DBUG_EXECUTE ("LUT", fprintf (stderr, "  key:  ");
-                      for (k = min_key; k < max_key; k++) {
+                      for (k = 0; k < max_key - min_key; k++) {
                           fprintf (stderr, "%4i ", k);
                       } fprintf (stderr, "\n  size: "););
 
-        sum = 0;
-        min = max = lut[min_key].size;
-        min_k = max_k = 0;
+        sum_size = 0;
+        min_size = max_size = lut[min_key].size;
+        min_k = max_k = min_key;
         for (k = min_key; k < max_key; k++) {
-            sum += size = lut[k].size;
+            sum_size += size = lut[k].size;
             DBUG_EXECUTE ("LUT", fprintf (stderr, "%4i ", size););
 
-            if (min > size) {
-                min = size;
+            if (min_size > size) {
+                min_size = size;
                 min_k = k;
             }
-            if (max < size) {
-                max = size;
+            if (max_size < size) {
+                max_size = size;
                 max_k = k;
             }
         }
-        diff = max - min;
+        opt_size = sum_size / ((double)max_key - min_key);
+        diff_size = max_size - min_size;
 
         DBUG_EXECUTE ("LUT",
                       fprintf (stderr,
                                "\n  "
                                "sum size = %i, opt size = %1.1f, lutfrag size = %i",
-                               sum, sum / ((double)max_key - min_key), LUT_SIZE);
+                               sum_size, opt_size, LUT_SIZE);
                       fprintf (stderr,
                                "\n  "
                                "min size (key %i) = %i, max size (key %i) = %i,"
                                " diff = %i\n",
-                               min_k, min, max_k, max, diff););
+                               min_k - min_key, min_size, max_k - min_key, max_size,
+                               diff_size););
 
-        DBUG_ASSERT ((diff <= LUT_SIZE), "LUT: unballanced collision tables detected!");
+        if ((diff_size > LUT_SIZE) && (max_size / opt_size > 2)) {
+            SYSWARN (("LUT: unballanced lut detected!"));
+            CONT_WARN (("(%s: min = %i, max = %i, opt size = %1.1f)", note, min_size,
+                        max_size, opt_size));
+        }
     } else {
-        diff = 0;
+        diff_size = 0;
     }
 
-    DBUG_RETURN (diff);
+    DBUG_RETURN (diff_size);
 }
 
 #endif /* !DBUG_OFF */
@@ -491,7 +499,8 @@ InsertIntoLUT (lut_t *lut, void *old_item, void *new_item, hash_key_t k)
             lut[k].next = *lut[k].next;
         }
 
-        DBUG_PRINT ("LUT", ("finished: new LUT size -> %li", lut[k].size));
+        DBUG_PRINT ("LUT",
+                    ("finished: new LUT size (hash key %i) -> %li", k, lut[k].size));
 
         DBUG_EXECUTE ("LUT_CHECK",
                       /* check quality of hash key function */
@@ -576,7 +585,7 @@ GenerateLUT (void)
         lut[k].size = 0;
     }
 
-    DBUG_PRINT ("LUT", ("finished"));
+    DBUG_PRINT ("LUT", ("finished (lut " F_PTR ")", lut));
 
     DBUG_RETURN (lut);
 }
@@ -692,7 +701,7 @@ RemoveContentLUT (lut_t *lut)
             lut[k].size = 0;
         }
 
-        DBUG_PRINT ("LUT", ("finished"));
+        DBUG_PRINT ("LUT", ("finished (lut " F_PTR ")", lut));
     } else {
         DBUG_PRINT ("LUT", ("FAILED: lut is NULL"));
     }
@@ -728,7 +737,7 @@ RemoveLUT (lut_t *lut)
         }
         lut = Free (lut);
 
-        DBUG_PRINT ("LUT", ("finished"));
+        DBUG_PRINT ("LUT", ("finished (lut " F_PTR ")", lut));
     } else {
         DBUG_PRINT ("LUT", ("FAILED: lut is NULL"));
     }
@@ -1191,7 +1200,7 @@ PrintLUT (FILE *handle, lut_t *lut)
             fprintf (handle, "number of entries: %li\n", lut[k].size);
         }
 
-        DBUG_PRINT ("LUT", ("finished"));
+        DBUG_PRINT ("LUT", ("finished (lut " F_PTR ")", lut));
     } else {
         DBUG_PRINT ("LUT", ("FAILED: lut is NULL"));
     }
