@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.28  2000/03/16 14:27:41  dkr
+ * do_lac_fun_transformation replaced by do_lac2fun, do_fun2lac
+ *
  * Revision 2.27  2000/03/02 18:50:04  cg
  * Added new option -lac2fun that activates lac2fun conversion and
  * vice versa between psi optimizations and precompiling.
@@ -36,7 +39,6 @@
  *
  * Revision 1.1  1995/12/30  14:47:06  cg
  * Initial revision
- *
  *
  */
 
@@ -264,7 +266,7 @@ extern char *my_dbug_str;
 extern int malloc_align_step;
 #endif
 
-extern int do_lac_fun_conversion;
+extern int do_lac2fun[], do_fun2lac[];
 
 extern unsigned int total_allocated_mem;
 extern unsigned int current_allocated_mem;
