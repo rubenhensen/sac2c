@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.19  2004/12/07 14:36:54  sbs
+ * UpdateFixSignature now expects new rather than old types on the N_arg's
+ *
  * Revision 1.18  2004/12/01 18:43:28  sah
  * renamed a function
  *
@@ -202,21 +205,17 @@ UpdateFixSignature (node *fundef, ntype *arg_ts)
     args = FUNDEF_ARGS (fundef);
     while (args) {
         type = TYgetProductMember (arg_ts, i);
-        old_type = TYoldType2Type (ARG_TYPE (args));
-        if (old_type == NULL) {
+        old_type = ARG_NTYPE (args);
+        DBUG_ASSERT (old_type != NULL,
+                     "UpdateFixSignature called on fundef w/o arg type");
+        if (TYleTypes (type, old_type)) {
             new_type = TYcopyType (type);
+            TYfreeType (old_type);
         } else {
-            if (TYleTypes (type, old_type)) {
-                new_type = TYcopyType (type);
-                TYfreeType (old_type);
-            } else {
-                DBUG_ASSERT (TYleTypes (old_type, type),
-                             "UpdateFixSignature called with incompatible args");
-                new_type = old_type;
-            }
+            DBUG_ASSERT (TYleTypes (old_type, type),
+                         "UpdateFixSignature called with incompatible args");
+            new_type = old_type;
         }
-        ARG_TYPE (args) = FREEfreeOneTypes (ARG_TYPE (args));
-        ARG_TYPE (args) = TYtype2OldType (new_type);
         AVIS_TYPE (ARG_AVIS (args)) = new_type;
 
         args = ARG_NEXT (args);
@@ -334,8 +333,8 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
     /* do actually specialize the copy !! */
     UpdateFixSignature (res, args);
 
-    /* convert the return type(s) into AUDs */
-    FUNDEF_RETS (res) = TUrettypes2AUD (FUNDEF_RETS (res));
+    /* convert the return type(s) into Alpha - AUDs */
+    FUNDEF_RETS (res) = TUrettypes2alphaAUD (FUNDEF_RETS (res));
 
     /*
      * Finally, we make the result type variable(s) (a) subtype(s) of the
@@ -348,12 +347,6 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args)
         res_ret = RET_NEXT (res_ret);
         fundef_ret = RET_NEXT (fundef_ret);
     }
-
-    /*
-     * This does not work yet, as TYmakeOverloadedFunType
-     * expcets alphas as return type. So we have to exit here
-     */
-    DBUG_ASSERT (0, "Specialisation is not yet supported in newast mode");
 
     /* insert the new type signature into the wrapper */
     FUNDEF_WRAPPERTYPE (wrapper)
