@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.14  1994/11/22 13:27:27  sbs
+ * Revision 1.15  1994/12/02 11:11:55  hw
+ * deleted declaration of char *type_string[], because it is defined in
+ * my_debug.c now.
+ *
+ * Revision 1.14  1994/11/22  13:27:27  sbs
  * Typo in return value (previously void *) of PrintIds corrected
  *
  * Revision 1.13  1994/11/22  11:45:48  hw
@@ -57,8 +61,6 @@
 
 extern FILE *outfile; /* outputfile for PrintTree defined in main.c*/
 extern funptr print_tab[];
-
-char *type_string[] = {"int", "float", "bool"};
 
 static int indent = 0;
 
