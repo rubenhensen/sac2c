@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.55  2004/06/03 09:25:34  khf
+ * Added support for multioperator WLs (makros adjusted
+ * and setting of ND_USE_GENVAR_OFFSET adjusted)
+ *
  * Revision 3.54  2004/03/10 00:10:17  dkrHH
  * old backend removed
  *
@@ -2423,9 +2427,10 @@ node *
 IdxNcode (node *arg_node, node *arg_info)
 {
     node *with, *idx_decl, *vinfo, *col_vinfo, *new_assign, *let_node, *current_assign,
-      *new_id, *array_id;
-    ids *idxs;
+      *new_id, *array_id, *tmp_withop;
+    ids *idxs, *tmp_ids;
     types *arr_type;
+    bool use_genvar_offset;
 
     DBUG_ENTER ("IdxNcode");
 
@@ -2440,7 +2445,7 @@ IdxNcode (node *arg_node, node *arg_info)
      */
     INFO_IVE_TRANSFORM_VINFO (arg_info) = NULL;
 
-    NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+    NCODE_CEXPRS (arg_node) = Trav (NCODE_CEXPRS (arg_node), arg_info);
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
     DBUG_ASSERT (((NODE_TYPE (let_node) == N_let)
@@ -2463,20 +2468,26 @@ IdxNcode (node *arg_node, node *arg_info)
         while (VINFO_FLAG (vinfo) != DOLLAR) {
 
             if (VINFO_FLAG (vinfo) == IDX) {
-                arr_type = LET_TYPE (let_node);
-                DBUG_ASSERT ((arr_type != NULL), "missing type-info for LHS of let!");
+                tmp_ids = LET_IDS (let_node);
+                tmp_withop = NWITH_WITHOP (with);
+                use_genvar_offset = FALSE;
+
+                while (tmp_ids != NULL) {
+                    arr_type = IDS_TYPE (tmp_ids);
+                    DBUG_ASSERT ((arr_type != NULL), "missing type-info for LHS of let!");
+                    DBUG_ASSERT ((tmp_withop != NULL), "missing N_Nwithop node!");
 
 #if 0
-        /*
-         * dkr: this is dead code, isn't it????
-         */
-        switch (NWITH_TYPE( with)) {
+          /*
+           * dkr: this is dead code, isn't it????
+           */
+          switch (NWITHOP_TYPE( tmp_withop)) {
           case WO_modarray:
-            withop_arr = NWITHOP_ARRAY( NWITH_WITHOP( with));
+            withop_arr = NWITHOP_ARRAY( tmp_withop);
             break;
-
+            
           case WO_genarray:
-            withop_arr = NWITHOP_SHAPE( NWITH_WITHOP( with));
+            withop_arr = NWITHOP_SHAPE( tmp_withop);
             /*
              * dkr: NWITHOP_SHAPE could be a N_id node as well!
              * Moreover, if the new type system is used, you never will find
@@ -2485,51 +2496,61 @@ IdxNcode (node *arg_node, node *arg_info)
             DBUG_ASSERT( (NODE_TYPE( withop_arr) == N_array),
                          "shape of genarray is not N_array");
             break;
-
+            
           case WO_foldprf:
             /* here is no break missing! */
           case WO_foldfun:
             break;
-
+            
           default:
             DBUG_ASSERT( (0), "wrong with-loop type");
-        }
+          }
 #endif
 
-                if (((NWITH_TYPE (with) == WO_modarray)
-                     || (NWITH_TYPE (with) == WO_genarray))
-                    && EqTypes (VINFO_TYPE (vinfo), arr_type)) {
+                    if (((NWITHOP_TYPE (tmp_withop) == WO_modarray)
+                         || (NWITHOP_TYPE (tmp_withop) == WO_genarray))
+                        && EqTypes (VINFO_TYPE (vinfo), arr_type)) {
 
-                    /*
-                     * we can reuse the genvar as index directly!
-                     * therefore we create an ICM of the form:
-                     * ND_USE_GENVAR_OFFSET( <idx-varname>, <result-array-varname>)
-                     */
+                        /*
+                         * we can reuse the genvar as index directly!
+                         * therefore we create an ICM of the form:
+                         * ND_USE_GENVAR_OFFSET( <idx-varname>, <result-array-varname>)
+                         */
 
-                    new_id = MakeId (IdxChangeId (IDS_NAME (NWITH_VEC (with)), arr_type),
-                                     NULL, ST_regular);
-                    col_vinfo = FindIdx (VARDEC_OR_ARG_COLCHN (idx_decl), arr_type);
-                    DBUG_ASSERT (((col_vinfo != NULL)
-                                  && (VINFO_VARDEC (col_vinfo) != NULL)),
-                                 "missing vardec for IDX variable");
-                    ID_VARDEC (new_id) = VINFO_VARDEC (col_vinfo);
-                    array_id = MakeId_Copy (LET_NAME (let_node));
+                        new_id
+                          = MakeId (IdxChangeId (IDS_NAME (NWITH_VEC (with)), arr_type),
+                                    NULL, ST_regular);
+                        col_vinfo = FindIdx (VARDEC_OR_ARG_COLCHN (idx_decl), arr_type);
+                        DBUG_ASSERT (((col_vinfo != NULL)
+                                      && (VINFO_VARDEC (col_vinfo) != NULL)),
+                                     "missing vardec for IDX variable");
+                        ID_VARDEC (new_id) = VINFO_VARDEC (col_vinfo);
+                        array_id = MakeId_Copy (IDS_NAME (tmp_ids));
 
-                    /*
-                     * The backref to declaration of the array-id must set correctly
-                     * because following compilation steps (e.g. AdjustIdentifiers())
-                     * depend on it!
-                     * Therefore RC itself must be patch in order to ignore this icm!
-                     */
-                    ID_VARDEC (array_id) = LET_VARDEC (let_node);
+                        /*
+                         * The backref to declaration of the array-id must set correctly
+                         * because following compilation steps (e.g. AdjustIdentifiers())
+                         * depend on it!
+                         * Therefore RC itself must be patch in order to ignore this icm!
+                         */
+                        ID_VARDEC (array_id) = IDS_VARDEC (tmp_ids);
 
-                    new_id = AddNtTag (new_id);
-                    array_id = AddNtTag (array_id);
+                        new_id = AddNtTag (new_id);
+                        array_id = AddNtTag (array_id);
 
-                    new_assign
-                      = MakeAssign (MakeIcm2 ("ND_USE_GENVAR_OFFSET", new_id, array_id),
-                                    NULL);
-                } else {
+                        new_assign = MakeAssign (MakeIcm2 ("ND_USE_GENVAR_OFFSET", new_id,
+                                                           array_id),
+                                                 NULL);
+
+                        use_genvar_offset = TRUE;
+                        break;
+                    }
+
+                    tmp_ids = IDS_NEXT (tmp_ids);
+                    tmp_withop = NWITHOP_NEXT (tmp_withop);
+                }
+
+                if (!use_genvar_offset) {
                     /*
                      * we have to instanciate the idx-variable by an ICM of the form:
                      *   ND_IDXS2OFFSET( <off-name>, <num idxs>, idx-names,
