@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2004/07/17 19:50:26  sah
+ * switch to INFO structure
+ * PHASE I
+ *
  * Revision 3.20  2004/07/11 18:08:56  sah
  * updated some ast accesses to macro abstraction
  *
@@ -79,6 +83,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include <string.h>
 #include <limits.h>
 
@@ -98,6 +104,45 @@
 
 #include "filemgr.h"
 #include "import.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *module;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_IMP_MODULE(n) (n->module)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_IMP_MODULE (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 #define MODUL_TOF(n, id)                                                                 \
     (id == 0)                                                                            \
@@ -187,6 +232,8 @@ static mod *mod_tab = NULL;
 node *
 Import (node *arg_node)
 {
+    info *info;
+
     DBUG_ENTER ("Import");
 
     act_tab = imp_tab;
@@ -198,7 +245,13 @@ Import (node *arg_node)
      * to be compiled.
      */
 
-    DBUG_RETURN (Trav (arg_node, NULL));
+    info = MakeInfo ();
+
+    arg_node = Trav (arg_node, info);
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (arg_node);
 }
 
 /*******************************************************************************
@@ -776,7 +829,7 @@ ResolvePragmaReadonly (node *arg_node, node *pragma, int count_params)
  */
 
 node *
-IMtypedef (node *arg_node, node *arg_info)
+IMtypedef (node *arg_node, info *arg_info)
 {
     node *pragma = TYPEDEF_PRAGMA (arg_node);
 
@@ -887,7 +940,7 @@ IMtypedef (node *arg_node, node *arg_info)
  */
 
 node *
-IMfundef (node *arg_node, node *arg_info)
+IMfundef (node *arg_node, info *arg_info)
 {
     int count_params = 0;
     node *pragma = FUNDEF_PRAGMA (arg_node);
@@ -951,15 +1004,16 @@ IMfundef (node *arg_node, node *arg_info)
 
             if (PRAGMA_EFFECT (pragma) != NULL) {
                 FUNDEF_NEEDOBJS (arg_node)
-                  = CheckExistObjects (PRAGMA_EFFECT (pragma), arg_info, ST_reference,
-                                       NODE_LINE (arg_node));
+                  = CheckExistObjects (PRAGMA_EFFECT (pragma), INFO_IMP_MODULE (arg_info),
+                                       ST_reference, NODE_LINE (arg_node));
                 PRAGMA_EFFECT (pragma) = NULL;
             }
 
             if (PRAGMA_TOUCH (pragma) != NULL) {
                 FUNDEF_NEEDOBJS (arg_node)
                   = ConcatNodelist (FUNDEF_NEEDOBJS (arg_node),
-                                    CheckExistObjects (PRAGMA_TOUCH (pragma), arg_info,
+                                    CheckExistObjects (PRAGMA_TOUCH (pragma),
+                                                       INFO_IMP_MODULE (arg_info),
                                                        ST_readonly_reference,
                                                        NODE_LINE (arg_node)));
                 PRAGMA_TOUCH (pragma) = NULL;
@@ -990,7 +1044,7 @@ IMfundef (node *arg_node, node *arg_info)
  */
 
 node *
-IMobjdef (node *arg_node, node *arg_info)
+IMobjdef (node *arg_node, info *arg_info)
 {
     node *pragma = OBJDEF_PRAGMA (arg_node);
 
@@ -1040,8 +1094,8 @@ IMobjdef (node *arg_node, node *arg_info)
 
             if (PRAGMA_EFFECT (pragma) != NULL) {
                 OBJDEF_NEEDOBJS (arg_node)
-                  = CheckExistObjects (PRAGMA_EFFECT (pragma), arg_info, ST_reference,
-                                       NODE_LINE (arg_node));
+                  = CheckExistObjects (PRAGMA_EFFECT (pragma), INFO_IMP_MODULE (arg_info),
+                                       ST_reference, NODE_LINE (arg_node));
                 PRAGMA_EFFECT (pragma) = NULL;
             }
 
@@ -1723,9 +1777,10 @@ AddClasstypeOnSelectiveImport (mod *modptr)
  */
 
 node *
-IMmodul (node *arg_node, node *arg_info)
+IMmodul (node *arg_node, info *arg_info)
 {
     mod *modptr;
+    node *oldval;
 
     DBUG_ENTER ("IMmodul");
 
@@ -1761,17 +1816,24 @@ IMmodul (node *arg_node, node *arg_info)
          *  in order to check and resolve pragmas.
          */
 
+        /* save N_modul node in INFO */
+        oldval = INFO_IMP_MODULE (arg_info);
+        INFO_IMP_MODULE (arg_info) = arg_node;
+
         if (MODUL_TYPES (arg_node) != NULL) {
             MODUL_TYPES (arg_node) = Trav (MODUL_TYPES (arg_node), arg_info);
         }
 
         if (MODUL_OBJS (arg_node) != NULL) {
-            MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_node);
+            MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
         }
 
         if (MODUL_FUNDECS (arg_node) != NULL) {
-            MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_node);
+            MODUL_FUNDECS (arg_node) = Trav (MODUL_FUNDECS (arg_node), arg_info);
         }
+
+        /* restore INFO */
+        INFO_IMP_MODULE (arg_info) = oldval;
     }
 
     DBUG_RETURN (arg_node);

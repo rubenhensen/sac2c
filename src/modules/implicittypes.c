@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/07/17 19:50:26  sah
+ * switch to INFO structure
+ * PHASE I
+ *
  * Revision 3.3  2001/05/17 13:08:53  nmw
  * MALLOC/FREE replaced by Malloc/Free, using result of Free()
  *
@@ -41,6 +45,8 @@
  * Initial revision
  *
  */
+
+#define NEW_INFO
 
 #include "types.h"
 #include "tree_basic.h"
@@ -266,7 +272,7 @@ RecoverTypedefs (node *alltypes)
  */
 
 node *
-IMPLmodul (node *arg_node, node *arg_info)
+IMPLmodul (node *arg_node, info *arg_info)
 {
     node *tmp, *new_typedef, *last, *act;
     types *tobefreed, *new_type;

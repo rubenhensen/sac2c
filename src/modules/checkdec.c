@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2004/07/17 19:50:26  sah
+ * switch to INFO structure
+ * PHASE I
+ *
  * Revision 3.12  2002/09/11 23:07:23  dkr
  * printing of PRFs modified, prf_node_info.mac modified.
  *
@@ -154,6 +158,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include <string.h>
 
 #include "types.h"
@@ -174,6 +180,57 @@
 #include "implicittypes.h"
 #include "print.h"
 #include "checkdec.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *modul;
+    node *types;
+    node *objs;
+    node *funs;
+    char *name;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_CDEC_MODUL(n) (n->modul)
+#define INFO_CDEC_TYPES(n) (n->types)
+#define INFO_CDEC_OBJS(n) (n->objs)
+#define INFO_CDEC_FUNS(n) (n->funs)
+#define INFO_CDEC_NAME(n) (n->name)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_CDEC_MODUL (result) = NULL;
+    INFO_CDEC_TYPES (result) = NULL;
+    INFO_CDEC_OBJS (result) = NULL;
+    INFO_CDEC_FUNS (result) = NULL;
+    INFO_CDEC_NAME (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /*
  *
@@ -286,8 +343,15 @@ CheckDec (node *syntax_tree)
 {
     char decfilename[MAX_FILE_NAME], *old_filename;
     node *decl;
+    info *info;
 
     DBUG_ENTER ("CheckDec");
+
+    /*
+     * create a new info structure.
+     * used by WDEC and CDEC!
+     */
+    info = MakeInfo ();
 
     strcpy (decfilename, MODUL_NAME (syntax_tree));
     strcat (decfilename, ".dec");
@@ -333,7 +397,7 @@ CheckDec (node *syntax_tree)
          * variable filename, which is used when opening the .dec-file
          * to be generated!!!
          */
-        syntax_tree = WDECmodul (syntax_tree, NULL);
+        syntax_tree = WDECmodul (syntax_tree, info);
 
         ABORT_ON_ERROR;
 
@@ -358,7 +422,17 @@ CheckDec (node *syntax_tree)
         MODUL_STORE_IMPORTS (syntax_tree) = FreeTree (MODUL_STORE_IMPORTS (syntax_tree));
     }
 
-    MODUL_DECL (syntax_tree) = Trav (decl, syntax_tree);
+    /* set N_modul node (head of tree) */
+    INFO_CDEC_MODUL (info) = syntax_tree;
+    /* set direct links to objs, types and funs */
+    INFO_CDEC_TYPES (info) = MODUL_TYPES (syntax_tree);
+    INFO_CDEC_OBJS (info) = MODUL_OBJS (syntax_tree);
+    INFO_CDEC_FUNS (info) = MODUL_FUNS (syntax_tree);
+
+    MODUL_DECL (syntax_tree) = Trav (decl, info);
+
+    /* free INFO structure again */
+    info = FreeInfo (info);
 
     filename = old_filename;
 
@@ -381,7 +455,7 @@ CheckDec (node *syntax_tree)
  */
 
 node *
-CDECmoddec (node *arg_node, node *arg_info)
+CDECmoddec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CDECmoddec");
 
@@ -409,23 +483,21 @@ CDECmoddec (node *arg_node, node *arg_info)
  */
 
 node *
-CDECexplist (node *arg_node, node *arg_info)
+CDECexplist (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("CDECexplist");
 
     if (EXPLIST_ITYPES (arg_node) != NULL)
-        EXPLIST_ITYPES (arg_node)
-          = Trav (EXPLIST_ITYPES (arg_node), MODUL_TYPES (arg_info));
+        EXPLIST_ITYPES (arg_node) = Trav (EXPLIST_ITYPES (arg_node), arg_info);
 
     if (EXPLIST_ETYPES (arg_node) != NULL)
-        EXPLIST_ETYPES (arg_node)
-          = Trav (EXPLIST_ETYPES (arg_node), MODUL_TYPES (arg_info));
+        EXPLIST_ETYPES (arg_node) = Trav (EXPLIST_ETYPES (arg_node), arg_info);
 
     if (EXPLIST_OBJS (arg_node) != NULL)
-        EXPLIST_OBJS (arg_node) = Trav (EXPLIST_OBJS (arg_node), MODUL_OBJS (arg_info));
+        EXPLIST_OBJS (arg_node) = Trav (EXPLIST_OBJS (arg_node), arg_info);
 
     if (EXPLIST_FUNS (arg_node) != NULL)
-        EXPLIST_FUNS (arg_node) = Trav (EXPLIST_FUNS (arg_node), MODUL_FUNS (arg_info));
+        EXPLIST_FUNS (arg_node) = Trav (EXPLIST_FUNS (arg_node), arg_info);
 
     ABORT_ON_ERROR;
 
@@ -448,7 +520,7 @@ CDECexplist (node *arg_node, node *arg_info)
  */
 
 node *
-CDECtypedef (node *arg_node, node *arg_info)
+CDECtypedef (node *arg_node, info *arg_info)
 {
     node *tdef;
     types *type_impl;
@@ -456,7 +528,8 @@ CDECtypedef (node *arg_node, node *arg_info)
     DBUG_ENTER ("CDECtypedef");
 
     if (TYPEDEF_BASETYPE (arg_node) == T_hidden) {
-        tdef = SearchTypedef (TYPEDEF_NAME (arg_node), TYPEDEF_MOD (arg_node), arg_info);
+        tdef = SearchTypedef (TYPEDEF_NAME (arg_node), TYPEDEF_MOD (arg_node),
+                              INFO_CDEC_TYPES (arg_info));
         if (tdef == NULL) {
             if (NODE_LINE (arg_node) == 0) {
 
@@ -483,7 +556,8 @@ CDECtypedef (node *arg_node, node *arg_info)
 
         TYPEDEC_DEF (arg_node) = tdef;
     } else {
-        tdef = SearchTypedef (TYPEDEF_NAME (arg_node), TYPEDEF_MOD (arg_node), arg_info);
+        tdef = SearchTypedef (TYPEDEF_NAME (arg_node), TYPEDEF_MOD (arg_node),
+                              INFO_CDEC_TYPES (arg_info));
 
         if (tdef == NULL) {
             WARN (NODE_LINE (arg_node),
@@ -496,7 +570,8 @@ CDECtypedef (node *arg_node, node *arg_info)
                         ItemName (arg_node)));
             } else {
                 if (TYPEDEF_BASETYPE (arg_node) == T_user) {
-                    type_impl = SearchImplementation (TYPEDEF_TYPE (arg_node), arg_info);
+                    type_impl = SearchImplementation (TYPEDEF_TYPE (arg_node),
+                                                      INFO_CDEC_TYPES (arg_info));
                 } else {
                     type_impl = TYPEDEF_TYPE (arg_node);
                 }
@@ -546,13 +621,14 @@ CDECtypedef (node *arg_node, node *arg_info)
  */
 
 node *
-CDECobjdef (node *arg_node, node *arg_info)
+CDECobjdef (node *arg_node, info *arg_info)
 {
     node *odef;
 
     DBUG_ENTER ("CDECobjdef");
 
-    odef = SearchObjdef (OBJDEF_NAME (arg_node), OBJDEF_MOD (arg_node), arg_info);
+    odef = SearchObjdef (OBJDEF_NAME (arg_node), OBJDEF_MOD (arg_node),
+                         INFO_CDEC_OBJS (arg_info));
 
     if (odef == NULL) {
         ERROR (NODE_LINE (arg_node),
@@ -597,7 +673,7 @@ CDECobjdef (node *arg_node, node *arg_info)
  */
 
 node *
-CDECfundef (node *arg_node, node *arg_info)
+CDECfundef (node *arg_node, info *arg_info)
 {
     node *fundef;
     types *tmpdec, *tmpdef;
@@ -605,7 +681,7 @@ CDECfundef (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("CDECfundef");
 
-    fundef = SearchFundef (arg_node, arg_info);
+    fundef = SearchFundef (arg_node, INFO_CDEC_FUNS (arg_info));
 
     if (fundef == NULL) {
         ERROR (NODE_LINE (arg_node), ("Implementation of function '%s` missing "
@@ -659,7 +735,7 @@ CDECfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *WDECmodul(node *arg_node, node *arg_info)
+ *   node *WDECmodul(node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -667,7 +743,7 @@ CDECfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-WDECmodul (node *arg_node, node *arg_info)
+WDECmodul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WDECmodul");
 
@@ -693,10 +769,12 @@ WDECmodul (node *arg_node, node *arg_info)
 
     if (MODUL_TYPES (arg_node) != NULL) {
         if (MODUL_FILETYPE (arg_node) == F_classimp) {
-            Trav (MODUL_TYPES (arg_node), (node *)MODUL_NAME (arg_node));
+            /* set class name */
+            INFO_CDEC_NAME (arg_info) = MODUL_NAME (arg_node);
         } else {
-            Trav (MODUL_TYPES (arg_node), NULL);
+            INFO_CDEC_NAME (arg_info) = NULL;
         }
+        Trav (MODUL_TYPES (arg_node), arg_info);
     }
 
     fprintf (outfile, "\nexplicit types:\n");
@@ -704,13 +782,13 @@ WDECmodul (node *arg_node, node *arg_info)
     fprintf (outfile, "\nglobal objects:\n");
 
     if (MODUL_OBJS (arg_node) != NULL) {
-        Trav (MODUL_OBJS (arg_node), (node *)MODUL_NAME (arg_node));
+        Trav (MODUL_OBJS (arg_node), arg_info);
     }
 
     fprintf (outfile, "\nfunctions:\n");
 
     if (MODUL_FUNS (arg_node) != NULL) {
-        Trav (MODUL_FUNS (arg_node), (node *)MODUL_NAME (arg_node));
+        Trav (MODUL_FUNS (arg_node), arg_info);
     }
 
     fprintf (outfile, "}\n");
@@ -723,7 +801,7 @@ WDECmodul (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *WDECtypedef( node *arg_node, node *arg_info)
+ *   node *WDECtypedef( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -731,13 +809,13 @@ WDECmodul (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-WDECtypedef (node *arg_node, node *arg_info)
+WDECtypedef (node *arg_node, info *arg_info)
 {
     char *classname;
 
     DBUG_ENTER ("WDECtypedef");
 
-    classname = (char *)arg_info;
+    classname = INFO_CDEC_NAME (arg_info);
 
     if (TYPEDEF_STATUS (arg_node) == ST_regular) {
         if (classname == NULL) {
@@ -760,7 +838,7 @@ WDECtypedef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *WDECobjdef( node *arg_node, node *arg_info)
+ *   node *WDECobjdef( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -768,14 +846,14 @@ WDECtypedef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-WDECobjdef (node *arg_node, node *arg_info)
+WDECobjdef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WDECobjdef");
 
     if (OBJDEF_STATUS (arg_node) == ST_regular) {
         fprintf (outfile, "  ");
 
-        PrintDecTypes (OBJDEF_TYPE (arg_node), (char *)arg_info);
+        PrintDecTypes (OBJDEF_TYPE (arg_node), INFO_CDEC_NAME (arg_info));
 
         fprintf (outfile, " %s;\n", OBJDEF_NAME (arg_node));
     }
@@ -790,7 +868,7 @@ WDECobjdef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *WDECfundef( node *arg_node, node *arg_info)
+ *   node *WDECfundef( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -798,14 +876,14 @@ WDECobjdef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-WDECfundef (node *arg_node, node *arg_info)
+WDECfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WDECfundef");
 
     if (FUNDEF_STATUS (arg_node) == ST_regular) {
         fprintf (outfile, "  ");
 
-        PrintDecTypes (FUNDEF_TYPES (arg_node), (char *)arg_info);
+        PrintDecTypes (FUNDEF_TYPES (arg_node), INFO_CDEC_NAME (arg_info));
 
         fprintf (outfile, " %s(", FUNDEF_NAME (arg_node));
 
@@ -826,7 +904,7 @@ WDECfundef (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *WDECarg( node *arg_node, node *arg_info)
+ *   node *WDECarg( node *arg_node, info *arg_info)
  *
  * Description:
  *
@@ -834,13 +912,13 @@ WDECfundef (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-WDECarg (node *arg_node, node *arg_info)
+WDECarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("WDECarg");
 
     fprintf (outfile, " ");
 
-    PrintDecTypes (ARG_TYPE (arg_node), (char *)arg_info);
+    PrintDecTypes (ARG_TYPE (arg_node), INFO_CDEC_NAME (arg_info));
 
     if ((ARG_ATTRIB (arg_node) == ST_reference)
         || (ARG_ATTRIB (arg_node) == ST_readonly_reference)) {

@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.2  2004/07/17 19:50:26  sah
+ * switch to INFO structure
+ * PHASE I
+ *
  * Revision 3.1  2000/11/20 18:00:47  sacbase
  * new release made
  *
@@ -22,9 +26,9 @@
  */
 
 extern node *Analysis (node *syntaxtree);
-extern node *ANAmodul (node *arg_node, node *arg_info);
-extern node *ANAfundef (node *arg_node, node *arg_info);
-extern node *ANAvardec (node *arg_node, node *arg_info);
-extern node *ANAid (node *arg_node, node *arg_info);
-extern node *ANAap (node *arg_node, node *arg_info);
-extern node *ANAnwithop (node *arg_node, node *arg_info);
+extern node *ANAmodul (node *arg_node, info *arg_info);
+extern node *ANAfundef (node *arg_node, info *arg_info);
+extern node *ANAvardec (node *arg_node, info *arg_info);
+extern node *ANAid (node *arg_node, info *arg_info);
+extern node *ANAap (node *arg_node, info *arg_info);
+extern node *ANAnwithop (node *arg_node, info *arg_info);

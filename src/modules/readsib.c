@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2004/07/17 19:50:26  sah
+ * switch to INFO structure
+ * PHASE I
+ *
  * Revision 3.7  2004/02/20 08:20:35  mwe
  * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
  * changed tree traversal according to that
@@ -104,6 +108,8 @@
  *
  *****************************************************************************/
 
+#define NEW_INFO
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -121,6 +127,48 @@
 #include "cccall.h" /* for function AddToLinklist */
 #include "resource.h"
 #include "gen_pseudo_fun.h" /* for macro PSEUDO_MOD_FOLD */
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *foldfuns;
+    node *modul;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_RSIB_FOLDFUNS(n) (n->foldfuns)
+#define INFO_RSIB_MODUL(n) (n->modul)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_RSIB_FOLDFUNS (result) = NULL;
+    INFO_RSIB_MODUL (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /*
  *  global variables :
@@ -879,7 +927,7 @@ EnsureExistFuns (node *fundef, node *modul, node *sib)
  */
 
 node *
-RSIBfundef (node *arg_node, node *arg_info)
+RSIBfundef (node *arg_node, info *arg_info)
 {
     node *sib_entry, *sib = NULL, *pragma, *foldfun;
     int count_params;
@@ -1015,7 +1063,7 @@ RSIBfundef (node *arg_node, node *arg_info)
  */
 
 node *
-RSIBobjdef (node *arg_node, node *arg_info)
+RSIBobjdef (node *arg_node, info *arg_info)
 {
     node *sib_entry, *sib = NULL;
 
@@ -1067,7 +1115,7 @@ RSIBobjdef (node *arg_node, node *arg_info)
  */
 
 node *
-RSIBtypedef (node *arg_node, node *arg_info)
+RSIBtypedef (node *arg_node, info *arg_info)
 {
     node *sib_entry;
 
@@ -1111,7 +1159,7 @@ RSIBtypedef (node *arg_node, node *arg_info)
  */
 
 node *
-RSIBmodul (node *arg_node, node *arg_info)
+RSIBmodul (node *arg_node, info *arg_info)
 {
     node *foldfun;
     node *tmp, *next;
@@ -1183,7 +1231,7 @@ RSIBmodul (node *arg_node, node *arg_info)
         MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
     }
 
-    arg_info = FreeNode (arg_info);
+    arg_info = FreeInfo (arg_info);
 
     /*
      * remove functions without body from FUNS to FUNDECS

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2004/07/17 19:50:26  sah
+ * switch to INFO structure
+ * PHASE I
+ *
  * Revision 3.2  2002/10/31 13:42:20  sbs
  * symbolic constants for sym_kind added for better program reading
  *
@@ -140,10 +144,10 @@ extern mods *FindSymbolInModul (char *modname, char *name, int symbkind, mods *f
 extern char *ModulePrefix (char *);
 extern node *ImportOwnDeclaration (char *name, file_type modtype);
 
-extern node *IMmodul (node *, node *);
-extern node *IMfundef (node *, node *);
-extern node *IMtypedef (node *, node *);
-extern node *IMobjdef (node *, node *);
+extern node *IMmodul (node *arg_node, info *arg_info);
+extern node *IMfundef (node *arg_node, info *arg_info);
+extern node *IMtypedef (node *arg_node, info *arg_info);
+extern node *IMobjdef (node *arg_node, info *arg_info);
 extern node *Import (node *);
 
 extern void InsertClassType (node *);

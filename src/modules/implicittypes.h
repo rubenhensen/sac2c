@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/07/17 19:50:26  sah
+ * switch to INFO structure
+ * PHASE I
+ *
  * Revision 3.1  2000/11/20 18:00:53  sacbase
  * new release made
  *
@@ -21,7 +25,7 @@
 #define _sac_implicittypes_h
 
 extern node *RetrieveImplicitTypeInfo (node *arg_node);
-extern node *IMPLmodul (node *arg_node, node *arg_info);
+extern node *IMPLmodul (node *arg_node, info *arg_info);
 extern types *SearchImplementation (types *type, node *alltypes);
 
 #endif /* _sac_implicittypes_h */

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2004/07/17 19:50:26  sah
+ * switch to INFO structure
+ * PHASE I
+ *
  * Revision 3.6  2003/11/18 17:37:23  dkr
  * ANAnwithop(): call of TravSons() added
  *
@@ -80,11 +84,52 @@
  *
  */
 
+#define NEW_INFO
+
 #include "dbug.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *fundef;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_ANA_FUNDEF(n) (n->fundef)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_ANA_FUNDEF (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /*
  *
@@ -103,11 +148,18 @@
 node *
 Analysis (node *syntaxtree)
 {
+    info *info;
+
     DBUG_ENTER ("Analysis");
 
     act_tab = analy_tab;
+    info = MakeInfo ();
 
-    DBUG_RETURN (Trav (syntaxtree, NULL));
+    syntaxtree = Trav (syntaxtree, info);
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (syntaxtree);
 }
 
 /*
@@ -189,7 +241,7 @@ FindAllNeededObjects (node *arg_node)
  */
 
 node *
-ANAmodul (node *arg_node, node *arg_info)
+ANAmodul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANAmodul");
 
@@ -214,14 +266,21 @@ ANAmodul (node *arg_node, node *arg_info)
  */
 
 node *
-ANAfundef (node *arg_node, node *arg_info)
+ANAfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANAfundef");
 
     if ((FUNDEF_STATUS (arg_node) != ST_imported_mod)
         && (FUNDEF_STATUS (arg_node) != ST_imported_class)
         && (FUNDEF_STATUS (arg_node) != ST_ignore) && (FUNDEF_BODY (arg_node) != NULL)) {
-        Trav (FUNDEF_BODY (arg_node), arg_node);
+        /* store fundef in INFO structure */
+        node *oldfundef = INFO_ANA_FUNDEF (arg_info);
+        INFO_ANA_FUNDEF (arg_info) = arg_node;
+
+        Trav (FUNDEF_BODY (arg_node), arg_info);
+
+        /* reset value (should be NULL) */
+        INFO_ANA_FUNDEF (arg_info) = oldfundef;
         FUNDEF_NEEDTYPES (arg_node) = TidyUpNodelist (FUNDEF_NEEDTYPES (arg_node));
     }
 
@@ -244,13 +303,14 @@ ANAfundef (node *arg_node, node *arg_info)
  */
 
 node *
-ANAvardec (node *arg_node, node *arg_info)
+ANAvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANAvardec");
 
-    if (FUNDEF_INLINE (arg_info)) {
+    if (FUNDEF_INLINE (INFO_ANA_FUNDEF (arg_info))) {
         if (VARDEC_TDEF (arg_node) != NULL) {
-            StoreNeededNode (VARDEC_TDEF (arg_node), arg_info, ST_regular);
+            StoreNeededNode (VARDEC_TDEF (arg_node), INFO_ANA_FUNDEF (arg_info),
+                             ST_regular);
         }
 
         if (VARDEC_NEXT (arg_node) != NULL) {
@@ -273,12 +333,12 @@ ANAvardec (node *arg_node, node *arg_info)
  */
 
 node *
-ANAid (node *arg_node, node *arg_info)
+ANAid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANAid");
 
     if (GET_FLAG (ID, arg_node, IS_GLOBAL)) {
-        StoreNeededNode (ID_OBJDEF (arg_node), arg_info, ST_regular);
+        StoreNeededNode (ID_OBJDEF (arg_node), INFO_ANA_FUNDEF (arg_info), ST_regular);
     }
 
     DBUG_RETURN (arg_node);
@@ -295,11 +355,11 @@ ANAid (node *arg_node, node *arg_info)
  */
 
 node *
-ANAap (node *arg_node, node *arg_info)
+ANAap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANAap");
 
-    StoreNeededNode (AP_FUNDEF (arg_node), arg_info, ST_regular);
+    StoreNeededNode (AP_FUNDEF (arg_node), INFO_ANA_FUNDEF (arg_info), ST_regular);
 
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = Trav (AP_ARGS (arg_node), arg_info);
@@ -311,7 +371,7 @@ ANAap (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *ANAnwithop( node *arg_node, node *arg_info)
+ *   node *ANAnwithop( node *arg_node, info *arg_info)
  *
  * Description:
  *   The flattened fold-operation is always required by the function containing
@@ -320,12 +380,13 @@ ANAap (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-ANAnwithop (node *arg_node, node *arg_info)
+ANAnwithop (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ANAnwithop");
 
     if (NWITHOP_IS_FOLD (arg_node)) {
-        StoreNeededNode (NWITHOP_FUNDEF (arg_node), arg_info, ST_regular);
+        StoreNeededNode (NWITHOP_FUNDEF (arg_node), INFO_ANA_FUNDEF (arg_info),
+                         ST_regular);
     }
 
     arg_node = TravSons (arg_node, arg_info);

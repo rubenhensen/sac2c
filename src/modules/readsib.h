@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/07/17 19:50:26  sah
+ * switch to INFO structure
+ * PHASE I
+ *
  * Revision 3.1  2000/11/20 18:00:57  sacbase
  * new release made
  *
@@ -33,9 +37,9 @@
 
 extern node *ReadSib (node *);
 
-extern node *RSIBmodul (node *arg_node, node *arg_info);
-extern node *RSIBtypedef (node *arg_node, node *arg_info);
-extern node *RSIBfundef (node *arg_node, node *arg_info);
-extern node *RSIBobjdef (node *arg_node, node *arg_info);
+extern node *RSIBmodul (node *arg_node, info *arg_info);
+extern node *RSIBtypedef (node *arg_node, info *arg_info);
+extern node *RSIBfundef (node *arg_node, info *arg_info);
+extern node *RSIBobjdef (node *arg_node, info *arg_info);
 
 #endif /* _sac_readsib_h  */

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/07/17 19:50:26  sah
+ * switch to INFO structure
+ * PHASE I
+ *
  * Revision 3.1  2000/11/20 18:00:51  sacbase
  * new release made
  *
@@ -26,16 +30,16 @@
 
 extern node *CheckDec (node *syntax_tree);
 
-extern node *CDECmoddec (node *arg_node, node *arg_info);
-extern node *CDECexplist (node *arg_node, node *arg_info);
-extern node *CDECtypedef (node *arg_node, node *arg_info);
-extern node *CDECobjdef (node *arg_node, node *arg_info);
-extern node *CDECfundef (node *arg_node, node *arg_info);
+extern node *CDECmoddec (node *arg_node, info *arg_info);
+extern node *CDECexplist (node *arg_node, info *arg_info);
+extern node *CDECtypedef (node *arg_node, info *arg_info);
+extern node *CDECobjdef (node *arg_node, info *arg_info);
+extern node *CDECfundef (node *arg_node, info *arg_info);
 
-extern node *WDECmodul (node *arg_node, node *arg_info);
-extern node *WDECtypedef (node *arg_node, node *arg_info);
-extern node *WDECobjdef (node *arg_node, node *arg_info);
-extern node *WDECfundef (node *arg_node, node *arg_info);
-extern node *WDECarg (node *arg_node, node *arg_info);
+extern node *WDECmodul (node *arg_node, info *arg_info);
+extern node *WDECtypedef (node *arg_node, info *arg_info);
+extern node *WDECobjdef (node *arg_node, info *arg_info);
+extern node *WDECfundef (node *arg_node, info *arg_info);
+extern node *WDECarg (node *arg_node, info *arg_info);
 
 #endif /* _sac_checkdec_h */
