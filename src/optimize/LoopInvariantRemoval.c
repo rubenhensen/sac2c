@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2001/02/02 10:26:42  dkr
+ * removed superfluous import of access_macros.h
+ *
  * Revision 3.3  2000/12/12 11:41:18  dkr
  * nodes N_pre, N_post, N_inc, N_dec removed
  *
@@ -124,7 +127,6 @@
  * Revision 1.1  1995/04/05  15:16:10  asi
  * Initial revision
  *
- *
  */
 
 #include <stdio.h>
@@ -138,14 +140,11 @@
 #include "my_debug.h"
 #include "traverse.h"
 #include "typecheck.h"
-#include "access_macros.h"
 
 #include "optimize.h"
 #include "generatemasks.h"
 #include "DupTree.h"
 #include "LoopInvariantRemoval.h"
-
-extern node *MakeNode (nodetype); /* defined in sac.y or y.tab.c respectively */
 
 #define DEF_IN arg_info->mask[0]
 #define USE_IN arg_info->mask[1]
