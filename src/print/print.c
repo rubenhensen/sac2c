@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.73  2002/02/25 17:25:33  dkr
+ * minor changes done
+ *
  * Revision 3.72  2002/02/12 15:45:02  dkr
  * DoPrintAST(): N_avis added
  *
@@ -1156,9 +1159,6 @@ PrintFundef (node *arg_node, node *arg_info)
                     }
 
                     fprintf (outfile, ";\n");
-                    DBUG_EXECUTE ("PRINT_FUNATR",
-                                  fprintf (outfile, "/* ATTRIB = %s */\n",
-                                           mdb_statustype[FUNDEF_ATTRIB (arg_node)]););
 
                     if (FUNDEF_PRAGMA (arg_node) != NULL) {
                         Trav (FUNDEF_PRAGMA (arg_node), arg_info);
@@ -1200,9 +1200,6 @@ PrintFundef (node *arg_node, node *arg_info)
                 }
 
                 fprintf (outfile, "\n");
-                DBUG_EXECUTE ("PRINT_FUNATR",
-                              fprintf (outfile, "/* ATTRIB = %s */\n",
-                                       mdb_statustype[FUNDEF_ATTRIB (arg_node)]););
 
                 /* traverse function body */
                 Trav (FUNDEF_BODY (arg_node), arg_info);
