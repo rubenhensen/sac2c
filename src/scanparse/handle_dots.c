@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2002/08/20 17:31:27  sah
+ * fixed some bugs occuring due to new
+ * scanner/parser.
+ *
  * Revision 1.6  2002/08/13 12:22:56  sbs
  * GRRRR ugly error in HDap did kill N_ap nodes.....
  *
@@ -297,17 +301,13 @@ BuildLeftShape (node *args, node *array, dotinfo *info)
         maxdot = info->tripledot - 1;
 
     for (cnt = maxdot; cnt > 0; cnt--) {
-        result
-          = MakeExprs (MakePrf (F_sel,
-                                MakeExprs (MakeArray (
-                                             MakeExprs (MakeNum (LDot2Pos (cnt, info)
-                                                                 - 1),
-                                                        NULL)),
-                                           MakeExprs (MakePrf (F_shape,
-                                                               MakeExprs (DupTree (array),
-                                                                          NULL)),
-                                                      NULL))),
-                       result);
+        result = MakeExprs (MAKE_BIN_PRF (F_sel,
+                                          MakeArray (
+                                            MakeExprs (MakeNum (LDot2Pos (cnt, info) - 1),
+                                                       NULL)),
+                                          MakePrf (F_shape,
+                                                   MakeExprs (DupTree (array), NULL))),
+                            result);
     }
 
     DBUG_RETURN (result);
@@ -377,12 +377,11 @@ BuildLeftIndex (node *args, node *iv, dotinfo *info)
         if (LIsDot (cnt, info)) {
             /* Make selection iv[ldot-1(cnt)] */
             result
-              = MakeExprs (MakePrf (F_sel,
-                                    MakeExprs (MakeArray (
-                                                 MakeExprs (MakeNum (LIsDot (cnt, info)
-                                                                     - 1),
-                                                            NULL)),
-                                               MakeExprs (DupTree (iv), NULL))),
+              = MakeExprs (MAKE_BIN_PRF (F_sel,
+                                         MakeArray (
+                                           MakeExprs (MakeNum (LIsDot (cnt, info) - 1),
+                                                      NULL)),
+                                         DupTree (iv)),
                            result);
         } else {
             result = MakeExprs (DupTree (GetNthExpr (cnt, args)), result);
@@ -417,10 +416,8 @@ BuildWithLoop (node *shape, node *iv, node *array, node *index)
                                    MakeNGenerator (MakeDot (1), MakeDot (1), F_le, F_le,
                                                    NULL, NULL),
                                    NULL),
-                        MakeNCode (MAKE_EMPTY_BLOCK (),
-                                   MakePrf (F_sel,
-                                            MakeExprs (index, MakeExprs (DupTree (array),
-                                                                         NULL)))),
+                        MakeNCode (MAKE_EMPTY_BLOCK (), MakeAp2 (StringCopy ("sel"), NULL,
+                                                                 index, DupTree (array))),
                         MakeNWithOp (WO_genarray, shape));
 
     NCODE_USED (NWITH_CODE (result))++;
@@ -652,12 +649,12 @@ HDap (node *arg_node, node *arg_info)
 
     /* only sel statements are of interest here, so just return */
     /* on anything else                                         */
-    /* besides ARG2 must be an array. because otherwise there   */
+    /* besides ARG1 must be an array. because otherwise there   */
     /* is no possibility to find any dot...                     */
 
     if ((strcmp (AP_NAME (arg_node), "sel") == 0)
-        && (NODE_TYPE (AP_ARG2 (arg_node)) == N_array)) {
-        dotinfo *info = MakeDotInfo (ARRAY_AELEMS (AP_ARG2 (arg_node)));
+        && (NODE_TYPE (AP_ARG1 (arg_node)) == N_array)) {
+        dotinfo *info = MakeDotInfo (ARRAY_AELEMS (AP_ARG1 (arg_node)));
 
         /* for now, ... is not supported anyway, so check for that*/
 
@@ -672,10 +669,10 @@ HDap (node *arg_node, node *arg_info)
 
             iv = MakeTmpId ();
             shape
-              = BuildShape (ARRAY_AELEMS (AP_ARG2 (arg_node)), AP_ARG1 (arg_node), info);
-            index = BuildIndex (ARRAY_AELEMS (AP_ARG2 (arg_node)), iv, info);
+              = BuildShape (ARRAY_AELEMS (AP_ARG1 (arg_node)), AP_ARG2 (arg_node), info);
+            index = BuildIndex (ARRAY_AELEMS (AP_ARG1 (arg_node)), iv, info);
 
-            result = BuildWithLoop (shape, iv, AP_ARG1 (arg_node), index);
+            result = BuildWithLoop (shape, iv, AP_ARG2 (arg_node), index);
 
             FreeTree (arg_node);
             FreeNode (iv);
@@ -749,7 +746,7 @@ HDprf (node *arg_node, node *arg_info)
     /* dots inside.                                      */
 
     if (NODE_TYPE (result) == N_prf)
-        result = Trav (PRF_ARGS (result), arg_info);
+        PRF_ARGS (result) = Trav (PRF_ARGS (result), arg_info);
     else
         result = Trav (result, arg_info);
 
