@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 3.5  2001/02/13 12:58:38  dkr
+ * AddSpecializedFundef: access macros used
+ *
  * Revision 3.4  2000/11/29 16:21:59  nmw
  * handling of mixed variable identifiers in specialization
  * file for one generic fundef added
@@ -366,12 +369,12 @@ AddSpecializedFundef (node *fundefs, node *spec_fundef, node *gen_fundef)
     old_type = FUNDEF_TYPES (new_fundef);
     FUNDEF_TYPES (new_fundef) = DupTypes (FUNDEF_TYPES (spec_fundef));
 
-    /*transfer fundef data stored in type an free old type*/
-    (FUNDEF_TYPES (new_fundef))->id = old_type->id;
-    (FUNDEF_TYPES (new_fundef))->id_mod = old_type->id_mod;
-    (FUNDEF_TYPES (new_fundef))->id_cmod = old_type->id_cmod;
-    (FUNDEF_TYPES (new_fundef))->status = old_type->status;
-    (FUNDEF_TYPES (new_fundef))->attrib = old_type->attrib;
+    /* transfer fundef data stored in type and free old type */
+    FUNDEF_NAME (new_fundef) = old_type->id;
+    FUNDEF_MOD (new_fundef) = old_type->id_mod;
+    FUNDEF_LINKMOD (new_fundef) = old_type->id_cmod;
+    FUNDEF_STATUS (new_fundef) = old_type->status;
+    FUNDEF_ATTRIB (new_fundef) = old_type->attrib;
 
     old_type = FreeAllTypes (old_type);
 
