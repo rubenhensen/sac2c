@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.38  2000/05/31 16:14:34  mab
+ * added apc, apt for array padding
+ *
  * Revision 1.37  2000/05/30 12:34:06  dkr
  * removed some functions for old with-loop
  *
@@ -136,7 +139,7 @@
  *   func2lac_tab    ai_tab          blkex_tab       mtfin_tab
  *   l2f_lift_tab    blkco_tab       dfa_tab         blkpp_tab
  *   cudecls_tab     barin_tab       blkli_tab       adjca1_tab
- *   adjca2_tab      precomp1_tab
+ *   adjca2_tab      precomp1_tab    apc_tab         apt_tab
  *
  *   nnode
  *
@@ -439,6 +442,12 @@
 #ifndef NIFprecomp1
 #define NIFprecomp1(it_precomp1)
 #endif
+#ifndef NIFapc
+#define NIFapc(it_apc)
+#endif
+#ifndef NIFapt
+#define NIFapt(it_apt)
+#endif
 
 #ifndef NIFnnode
 #define NIFnnode(nnode)
@@ -466,7 +475,7 @@
                                                                                          \
   it_muth, it_schin, it_blkin, it_rfin, it_fun2lac, it_ai, it_blkex, it_mtfin,           \
   it_l2f_lift, it_blkco, it_dfa, it_blkpp, it_cudecls, it_barin, it_blkli, it_adjca1,    \
-  it_adjca2, it_precomp1, it_unusedB, it_unusedC,                                        \
+  it_adjca2, it_precomp1, it_apc, it_apt,                                                \
                                                                                          \
   nnode)                                                                                 \
                                                                                          \
@@ -508,8 +517,10 @@
                                                           NIFadjca1 (it_adjca1)          \
                                                             NIFadjca2 (it_adjca2)        \
                                                               NIFprecomp1 (it_precomp1)  \
+                                                                NIFapc (it_apc)          \
+                                                                  NIFapt (it_apt)        \
                                                                                          \
-                                                                NIFnnode (nnode)
+                                                                    NIFnnode (nnode)
 
 /******************************************************************************
  *
@@ -1523,7 +1534,7 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
        TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons, TravSons,
-       TravSons, TravSons, TravSons, TravSons,
+       TravSons, TravSons, APCNwith, APTNwith,
 
        3),
 
@@ -1916,6 +1927,8 @@ NIF (N_num, "N_num", TravSons, TravSons, PrintNum, TravSons, TravSons, TravSons,
 
 #undef NIFadjca2
 #undef NIFprecomp1
+#undef NIFapc
+#undef NIFapt
 
 #undef NIFnnode
 
