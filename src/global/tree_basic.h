@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.125  1998/04/16 11:46:29  dkr
+ * changed macro INFO_DUPCONT
+ *
  * Revision 1.124  1998/04/16 11:44:06  srs
  * new INFO_WLI* macros,
  * new section of INFO_PRINT* macros
@@ -2163,7 +2166,7 @@ extern node *MakePragma ();
 extern node *MakeInfo ();
 
 /* DupTree */
-#define INFO_DUPCONT(n) (n->flag)
+#define INFO_DUPCONT(n) (n->node[0])
 
 /* TC */
 #define INFO_NEXTASSIGN(n) (n->node[1])
