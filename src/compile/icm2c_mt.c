@@ -1,6 +1,15 @@
 /*
  *
  * $Log$
+ * Revision 3.19  2001/05/04 11:48:42  ben
+ *  MT_SCHEDULER_Even_... deleted
+ *  MT_SCHEDULER_Cyclic_... renamed to _Static_
+ *  MT_SCHEDULER_Afs_... renamed to Affinity
+ * in MT_SCHEDULER_... some variables renamed
+ * in MT_SCHEDULER_... some parmaters renamed
+ * SelectTask renamed to TaskSelector
+ * SAC_MT_SCHEDULER_ uses now ..._FIRST_TASK and ..._NEXT_TASK
+ *
  * Revision 3.18  2001/04/03 22:29:40  dkr
  * some minor changes done
  *
@@ -1314,11 +1323,14 @@ ICMCompileMT_ADJUST_SCHEDULER__OFFSET (char *array, int array_dim, int current_d
  *
  * description:
  *   this funtion sets the boundaries of the withloop
+ *   for all dimensions sparing sched_dim
+ *
+ *   sche_dim==-1 means there is no scheduling dimension
  *
  ******************************************************************************/
 
 static void
-InitializeBoundaries (int dim, char **vararg)
+InitializeBoundaries (int dim, char **vararg, int sched_dim)
 {
     char **lower_bound = vararg;
     char **upper_bound = vararg + dim;
@@ -1328,9 +1340,11 @@ InitializeBoundaries (int dim, char **vararg)
 
     for (i = 0; i < dim; i++) {
         INDENT;
-        fprintf (outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i, lower_bound[i]);
+        if (i != sched_dim)
+            fprintf (outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i, lower_bound[i]);
         INDENT;
-        fprintf (outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i, upper_bound[i]);
+        if (i != sched_dim)
+            fprintf (outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i, upper_bound[i]);
     }
 
     DBUG_VOID_RETURN;
@@ -1339,9 +1353,9 @@ InitializeBoundaries (int dim, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void SelectTask( int dim, char **vararg,
- *                    int strategy, int strategy_param,
- *                    char *num_tasks, char *next_taskid)
+ *   void TaskSelector( int dim, char **vararg,
+ *                    int strategy, int tasks_on_dim,
+ *                    char *num_tasks, char *taskid)
  *
  * description:
  *   this function divides the given withloop (dim,vararg) with the strategy
@@ -1350,31 +1364,30 @@ InitializeBoundaries (int dim, char **vararg)
  *   next task, which should be computated. Please call InitializeBoundaries()
  *   before using this function.
  *
- *   implemented strategies:  (name / meaning of 'strategy_param')
+ *   implemented strategies:  (name / meaning of 'tasks_on_dim')
  *
- *     block:    dimension on which the withloop will be divided into
- *               'num_tasks' blocks
+ *     Even:    dimension on which the withloop will be divided into
+ *               'num_tasks' tasks
  *
  ******************************************************************************/
 
 static void
-SelectTask (int dim, char **vararg, int strategy, int strategy_param, char *num_tasks,
-            char *next_taskid)
+TaskSelector (int dim, char **vararg, int strategy, int tasks_on_dim, char *num_tasks,
+              char *taskid)
 {
     char **lower_bound = vararg;
     char **upper_bound = vararg + dim;
 
-    DBUG_ENTER ("SelectTask");
+    DBUG_ENTER ("TaskSelector");
 
     switch (strategy) {
     case ST_BLOCK:
-        DBUG_ASSERT ((strategy_param >= 0) && (strategy_param < dim),
-                     "Block distribution dimension schould be between 0 and"
+        DBUG_ASSERT ((tasks_on_dim >= 0) && (tasks_on_dim < dim),
+                     "Task Distribution Dimension should be between 0 and"
                      " the dimension of the withloop");
         INDENT;
-        fprintf (outfile, "SAC_MT_SCHEDULER_Select_Block(%d, %s, %s, %s, %s);\n",
-                 strategy_param, lower_bound[strategy_param], upper_bound[strategy_param],
-                 num_tasks, next_taskid);
+        fprintf (outfile, "SAC_MT_SCHEDULER_TS_Even(%d, %s, %s, %s, %s);\n", tasks_on_dim,
+                 lower_bound[tasks_on_dim], upper_bound[tasks_on_dim], num_tasks, taskid);
         break;
 
     default:
@@ -1406,7 +1419,8 @@ ICMCompileMT_SCHEDULER_BEGIN (int dim, char **vararg)
 #include "icm_trace.c"
 #undef MT_SCHEDULER_BEGIN
 
-    InitializeBoundaries (dim, vararg);
+    /* -1 means there is no scheduling dimension */
+    InitializeBoundaries (dim, vararg, -1);
 
     DBUG_VOID_RETURN;
 }
@@ -1551,101 +1565,66 @@ ICMCompileMT_SCHEDULER_BlockVar_END (int dim, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_Even_BEGIN(int dim, char **vararg)
- *   void ICMCompileMT_SCHEDULER_Even_END(int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Static_BEGIN(int tasks_per_thread ,int dim, char
+ ***vararg) void ICMCompileMT_SCHEDULER_Static_END(int tasks_per_thread ,int dim, char
+ ***vararg)
  *
  * description:
- *   These two ICMs implement the scheduling for withloops
+ *   These two ICMs implement one scheduling for withloops
  *
  *   This scheduling is a very simple one that partitions the iteration
  *   space with the strategy specified for SelectTask (at the moment
- *   Blocks on dimension 0).
- *
- ******************************************************************************/
-
-void
-ICMCompileMT_SCHEDULER_Even_BEGIN (int dim, char **vararg)
-{
-    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Even_BEGIN");
-
-#define MT_SCHEDULER_Even_BEGIN
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef MT_SCHEDULER_Even_BEGIN
-
-    InitializeBoundaries (dim, vararg);
-    SelectTask (dim, vararg, ST_BLOCK, 0, "SAC_MT_THREADS()", "SAC_MT_MYTHREAD()");
-
-    DBUG_VOID_RETURN;
-}
-
-void
-ICMCompileMT_SCHEDULER_Even_END (int dim, char **vararg)
-{
-    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Even_END");
-
-#define MT_SCHEDULER_Even_END
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef MT_SCHEDULER_Even_END
-
-    fprintf (outfile, "\n");
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileMT_SCHEDULER_Cyclic_BEGIN(int param ,int dim, char **vararg)
- *   void ICMCompileMT_SCHEDULER_Cyclic_END(int param ,int dim, char **vararg)
- *
- * description:
- *   These two ICMs implement the scheduling for withloops
- *
- *   This scheduling is a very simple one that partitions the iteration
- *   space with the strategy specified for SelectTask (at the moment
- *   param*Number of Threads Blocks on dimension 0.
+ *   tasks_per_thread*Number of Threads Blocks on dimension 0.
  *   These Blcoks will be computated in cyclic order).
  *
  ******************************************************************************/
 
 void
-ICMCompileMT_SCHEDULER_Cyclic_BEGIN (int param, int dim, char **vararg)
+ICMCompileMT_SCHEDULER_Static_BEGIN (int tasks_per_thread, int dim, char **vararg)
 {
     char *numtasks;
 
-    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Cyclic_BEGIN");
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Static_BEGIN");
 
-#define MT_SCHEDULER_Cyclic_BEGIN
+#define MT_SCHEDULER_Static_BEGIN
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef MT_SCHEDULER_Cyclic_BEGIN
+#undef MT_SCHEDULER_Static_BEGIN
 
-    numtasks = (char *)MALLOC (200 * sizeof (char));
-    sprintf (numtasks, "SAC_MT_THREADS()*%d", param);
+    numtasks = (char *)MALLOC (50 * sizeof (char));
+    sprintf (numtasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
     INDENT;
-    fprintf (outfile, "int taskid=SAC_MT_MYTHREAD();\n");
+    fprintf (outfile, "int SAC_MT_taskid,SAC_MT_worktodo;\n");
     INDENT;
-    fprintf (outfile, " while (taskid<SAC_MT_THREADS()*%d){\n", param);
-    InitializeBoundaries (dim, vararg);
-    SelectTask (dim, vararg, ST_BLOCK, 0, numtasks, "taskid");
+    fprintf (outfile,
+             "SAC_MT_SCHEDULER_Static_FIRST_TASK(%d,SAC_MT_taskid,SAC_MT_worktodo);\n",
+             tasks_per_thread);
 
+    InitializeBoundaries (dim, vararg, 0);
+
+    INDENT;
+    fprintf (outfile, " while (SAC_MT_worktodo){\n");
+
+    TaskSelector (dim, vararg, ST_BLOCK, 0, numtasks, "SAC_MT_taskid");
+
+    FREE (numtasks);
     DBUG_VOID_RETURN;
 }
 
 void
-ICMCompileMT_SCHEDULER_Cyclic_END (int param, int dim, char **vararg)
+ICMCompileMT_SCHEDULER_Static_END (int tasks_per_thread, int dim, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Cyclic_END");
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Static_END");
 
-#define MT_SCHEDULER_Cyclic_END
+#define MT_SCHEDULER_Static_END
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef MT_SCHEDULER_Cyclic_END
+#undef MT_SCHEDULER_Static_END
 
     INDENT;
-    fprintf (outfile, "taskid+=SAC_MT_THREADS();\n");
+    fprintf (outfile,
+             "SAC_MT_SCHEDULER_Static_NEXT_TASK(%d,SAC_MT_taskid,SAC_MT_worktodo);\n",
+             tasks_per_thread);
     INDENT;
     fprintf (outfile, "}\n");
     fprintf (outfile, "\n");
@@ -1656,22 +1635,22 @@ ICMCompileMT_SCHEDULER_Cyclic_END (int param, int dim, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_Self_BEGIN(int param ,int dim, char **vararg)
- *   void ICMCompileMT_SCHEDULER_Self_END(int param ,int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Self_BEGIN(int tasks_per_thread ,int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Self_END(int tasks_per_thread ,int dim, char **vararg)
  *
  * description:
- *   These two ICMs implement the scheduling for withloops
+ *   These two ICMs implement one scheduling for withloops
  *
  *   This scheduling is a very simple one that partitions the iteration
  *   space with the strategy specified for SelectTask (at the moment
- *   param* number of Threads Blocks on dimension 0) and gives each
+ *   tasks_per_thread* number of Threads Blocks on dimension 0) and gives each
  *   Thread after the computation of one Block one new to computate
  *   (Selfscheduling).
  *
  ******************************************************************************/
 
 void
-ICMCompileMT_SCHEDULER_Self_BEGIN (int param, int dim, char **vararg)
+ICMCompileMT_SCHEDULER_Self_BEGIN (int tasks_per_thread, int dim, char **vararg)
 {
     char *numtasks;
 
@@ -1682,20 +1661,25 @@ ICMCompileMT_SCHEDULER_Self_BEGIN (int param, int dim, char **vararg)
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Self_BEGIN
 
-    numtasks = (char *)MALLOC (200 * sizeof (char));
-    sprintf (numtasks, "SAC_MT_THREADS()*%d", param);
+    numtasks = (char *)MALLOC (50 * sizeof (char));
+    sprintf (numtasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
     INDENT;
-    fprintf (outfile, "int taskid=SAC_MT_MYTHREAD();\n");
-    InitializeBoundaries (dim, vararg);
+    fprintf (outfile, "int SAC_MT_taskid,SAC_MT_worktodo;\n");
     INDENT;
-    fprintf (outfile, " while (taskid<SAC_MT_THREADS()*%d){\n", param);
-    SelectTask (dim, vararg, ST_BLOCK, 0, numtasks, "taskid");
+    fprintf (outfile,
+             "SAC_MT_SCHEDULER_Self_FIRST_TASK(%d,SAC_MT_taskid,SAC_MT_worktodo);\n",
+             tasks_per_thread);
+    InitializeBoundaries (dim, vararg, 0);
+    INDENT;
+    fprintf (outfile, " while (SAC_MT_worktodo) {\n");
+    TaskSelector (dim, vararg, ST_BLOCK, 0, numtasks, "SAC_MT_taskid");
 
+    FREE (numtasks);
     DBUG_VOID_RETURN;
 }
 
 void
-ICMCompileMT_SCHEDULER_Self_END (int param, int dim, char **vararg)
+ICMCompileMT_SCHEDULER_Self_END (int tasks_per_thread, int dim, char **vararg)
 {
     DBUG_ENTER ("ICMCompileMT_SCHEDULER_Self_END");
 
@@ -1705,17 +1689,9 @@ ICMCompileMT_SCHEDULER_Self_END (int param, int dim, char **vararg)
 #undef MT_SCHEDULER_Self_END
 
     INDENT;
-    fprintf (outfile, "SAC_MT_ACQUIRE_LOCK(SAC_MT_TASKLOCK(0));\n");
-    INDENT;
-    fprintf (outfile, "if (SAC_MT_TASK(0)==0)\n");
-    INDENT;
-    fprintf (outfile, "  SAC_MT_TASK(0)=SAC_MT_THREADS();\n");
-    INDENT;
-    fprintf (outfile, "taskid=SAC_MT_TASK(0);\n");
-    INDENT;
-    fprintf (outfile, " SAC_MT_TASK(0)++;\n");
-    INDENT;
-    fprintf (outfile, "SAC_MT_RELEASE_LOCK(SAC_MT_TASKLOCK(0));\n");
+    fprintf (outfile,
+             " SAC_MT_SCHEDULER_Self_NEXT_TASK(%d,SAC_MT_taskid,SAC_MT_worktodo);\n",
+             tasks_per_thread);
     INDENT;
     fprintf (outfile, "}\n");
     INDENT;
@@ -1728,13 +1704,14 @@ ICMCompileMT_SCHEDULER_Self_END (int param, int dim, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SCHEDULER_Afs_BEGIN(int param ,int dim, char **vararg)
- *   void ICMCompileMT_SCHEDULER_Afs_END(int param ,int dim, char **vararg)
+ *   void ICMCompileMT_SCHEDULER_Affinity_BEGIN(int tasks_per_thread ,int dim, char
+ ***vararg) void ICMCompileMT_SCHEDULER_Affinity_END(int tasks_per_thread ,int dim, char
+ ***vararg)
  *
  * description:
- *   These two ICMs implement the scheduling for withloops
+ *   These two ICMs implement one scheduling for withloops
  *
- *   This scheduling is based on adaptive affinity scheduling, which
+ *   This scheduling is based on affinity scheduling, which
  *   realizes a form of loadbalancing by stealing tasks from the thread,
  *   which has computated the smallest number of tasks. Each Thread has
  *   param own tasks.
@@ -1742,44 +1719,54 @@ ICMCompileMT_SCHEDULER_Self_END (int param, int dim, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileMT_SCHEDULER_Afs_BEGIN (int param, int dim, char **vararg)
+ICMCompileMT_SCHEDULER_Affinity_BEGIN (int tasks_per_thread, int dim, char **vararg)
 {
     char *numtasks;
 
-    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Afs_BEGIN");
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Affinity_BEGIN");
 
-#define MT_SCHEDULER_Afs_BEGIN
+#define MT_SCHEDULER_Affinity_BEGIN
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef MT_SCHEDULER_Afs_BEGIN
+#undef MT_SCHEDULER_Affinity_BEGIN
 
-    numtasks = (char *)MALLOC (200 * sizeof (char));
-    sprintf (numtasks, "SAC_MT_THREADS()*%d", param);
+    numtasks = (char *)MALLOC (50 * sizeof (char));
+    sprintf (numtasks, "SAC_MT_THREADS()*%d", tasks_per_thread);
     INDENT;
-    fprintf (outfile, "int taskid, maxloadthread, mintask, task, worktodo;\n");
-    InitializeBoundaries (dim, vararg);
+    fprintf (outfile, "int SAC_MT_taskid, SAC_MT_maxloadthread, SAC_MT_mintask, "
+                      "SAC_MT_worktodo;\n");
+    InitializeBoundaries (dim, vararg, 0);
     INDENT;
-    fprintf (outfile, "SAC_MT_SCHEDULER_Afs_next_task(%d);\n", param);
-    INDENT;
-    fprintf (outfile, " while (worktodo==1){\n");
-    SelectTask (dim, vararg, ST_BLOCK, 0, numtasks, "taskid");
+    fprintf (
+      outfile,
+      "SAC_MT_SCHEDULER_Affinity_FIRST_TASK(%d,SAC_MT_taskid, SAC_MT_worktodo, SAC_MT_maxloadthread, 
+      SAC_MT_mintask);
+    \n ",tasks_per_thread);
+      INDENT;
+    fprintf (outfile, " while (SAC_MT_worktodo){\n");
+    TaskSelector (dim, vararg, ST_BLOCK, 0, numtasks, "SAC_MT_taskid");
 
+    FREE (numtasks);
     DBUG_VOID_RETURN;
 }
 
 void
-ICMCompileMT_SCHEDULER_Afs_END (int param, int dim, char **vararg)
+ICMCompileMT_SCHEDULER_Affinity_END (int tasks_per_thread, int dim, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Afs_END");
+    DBUG_ENTER ("ICMCompileMT_SCHEDULER_Affinity_END");
 
-#define MT_SCHEDULER_Afs_END
+#define MT_SCHEDULER_Affinity_END
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef MT_SCHEDULER_Afs_END
+#undef MT_SCHEDULER_Affinity_END
 
     INDENT;
-    fprintf (outfile, "SAC_MT_SCHEDULER_Afs_next_task(%d);\n", param);
-    INDENT;
+    fprintf (
+      outfile,
+      "SAC_MT_SCHEDULER_Affinity_NEXT_TASK(%d,SAC_MT_taskid, SAC_MT_worktodo, SAC_MT_maxloadthread, 
+      SAC_MT_mintask);
+    \n ",tasks_per_thread); 
+      INDENT;
     fprintf (outfile, "}\n");
     INDENT;
     fprintf (outfile, "SAC_MT_SCHEDULER_Reset_Tasks();\n");
