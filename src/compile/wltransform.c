@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.96  2004/09/28 12:49:45  khf
+ * fixed bug #63
+ *
  * Revision 3.95  2004/09/22 19:15:24  khf
  * corrected setting of fold_float in WLTRAwith
  *
@@ -7753,13 +7756,19 @@ ConvertWith (node *wl, int iter_dims)
  *       where A represents a scalar
  *     B = with( [] <= iv <= []) fold( f, n, expr);    =>   iv = [];
  *                                                          B = f( n, expr);
+ *     if emm is activated:
+ *      B = with( [] <= iv < [])                       =>   acc = n;
+ *          { acc = accu( iv);                              res = f( acc,expr);
+ *            res = f( acc, expr);                          B = res;
+ *          }:res
+ *          fold(f, n);
  *
  ******************************************************************************/
 
 static node *
 EmptyWl2Expr (node *wl, info *arg_info)
 {
-    node *new_node;
+    node *new_node, *tmp;
 
     DBUG_ENTER ("EmptyWl2Expr");
 
@@ -7779,8 +7788,23 @@ EmptyWl2Expr (node *wl, info *arg_info)
     case WO_foldfun:
         /* here is no break missing! */
     case WO_foldprf:
-        DBUG_ASSERT ((0), "fold-WL with empty shape not yet implemented");
-        new_node = NULL;
+        if (emm) {
+            tmp = BLOCK_INSTR (NWITH_CBLOCK (wl));
+            while (tmp != NULL) {
+                if ((NODE_TYPE (ASSIGN_RHS (tmp)) == N_prf)
+                    && (PRF_PRF (ASSIGN_RHS (tmp)) == F_accu)) {
+                    ASSIGN_RHS (tmp) = FreeNode (ASSIGN_RHS (tmp));
+                    ASSIGN_RHS (tmp) = DupNode (NWITH_NEUTRAL (wl));
+                    break;
+                }
+                tmp = ASSIGN_NEXT (tmp);
+            }
+            INFO_WL_PREASSIGNS (arg_info) = DupTree (BLOCK_INSTR (NWITH_CBLOCK (wl)));
+            new_node = DupNode (NWITH_CEXPR (wl));
+        } else {
+            DBUG_ASSERT ((0), "fold-WL with empty shape not yet implemented");
+            new_node = NULL;
+        }
         break;
 
     default:
