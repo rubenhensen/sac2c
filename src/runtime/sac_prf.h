@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.10  2003/03/09 21:27:09  dkr
+ * SAC_ND_PRF_DIM__DATA modified
+ *
  * Revision 3.9  2003/03/08 20:56:10  dkr
  * macros for TAGGED_ARRAYS revisited
  *
@@ -139,7 +142,7 @@
 
 #define SAC_ND_PRF_DIM__DATA(to_nt, to_sdim, from_nt, from_sdim)                         \
     SAC_TR_PRF_PRINT (                                                                   \
-      ("ND_PRF_DIM__...( %s, %s, %s, %s)\n", #to_nt, #to_sdim, #from_nt, #from_sdim))    \
+      ("ND_PRF_DIM__...( %s, %d, %s, %d)\n", #to_nt, to_sdim, #from_nt, from_sdim))      \
     SAC_ND_CREATE__SCALAR__DATA (to_nt, SAC_ND_A_DIM (from_nt))
 
 /* ND_PRF_SHAPE__DATA( ...) is a C-ICM */
