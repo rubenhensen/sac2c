@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.29  1995/12/29 14:49:00  asi
+ * Revision 1.30  1995/12/29 16:04:12  asi
+ * added ASSIGN_MRDMASK
+ *
+ * Revision 1.29  1995/12/29  14:49:00  asi
  * added ID_VARNO
  *
  * Revision 1.28  1995/12/29  12:53:23  cg
@@ -955,6 +958,7 @@ extern void ObjList2ArgList (node *objdef);
 
 #define ASSIGN_DEFMASK(n) (ASSIGN_MASK (n, 0))
 #define ASSIGN_USEMASK(n) (ASSIGN_MASK (n, 1))
+#define ASSIGN_MRDMASK(n) (ASSIGN_MASK (n, 2))
 #define ASSIGN_INSTRTYPE(n) (NODE_TYPE (ASSIGN_INSTR (n)))
 
 /*
