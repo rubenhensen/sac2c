@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2001/02/14 10:18:31  dkr
+ * access macros used
+ *
  * Revision 3.1  2000/11/20 18:03:04  sacbase
  * new release made
  *
@@ -207,10 +210,9 @@ static int CheckLHSforHeavyTypes(node *let)
     vardec = IDS_VARDEC( letids);
     type = VARDEC_TYPE( vardec);
 
-    DBUG_PRINT( "BLKIN", ("type: %s %i %i", 
+    DBUG_PRINT( "BLKIN", ("type: %s %i", 
                           mdb_type[TYPES_BASETYPE( type)],
-                          type->attrib,
-                          type->status
+                          TYPES_STATUS( type)
     ));
 
     result = result || IsUnique( type);
@@ -247,22 +249,20 @@ static int testfun(node *fun)
   arg = FUNDEF_ARGS( fun);
   while (arg != NULL) {
     type = ARG_TYPE( arg);
-    DBUG_PRINT( "BLKIN", ("a %s type: %s %i %i", 
+    DBUG_PRINT( "BLKIN", ("a %s type: %s %i", 
                           FUNDEF_NAME( fun),
                           mdb_type[TYPES_BASETYPE( type)],
-                          type->attrib,
-                          type->status
+                          TYPES_STATUS( type)
     ));
     arg = ARG_NEXT( arg);
   }
 
   type = FUNDEF_TYPES( fun);
   while (type != NULL) {
-    DBUG_PRINT( "BLKIN", ("r %s type: %s %i %i", 
+    DBUG_PRINT( "BLKIN", ("r %s type: %s %i", 
                           FUNDEF_NAME( fun),
                           mdb_type[TYPES_BASETYPE( type)],
-                          type->attrib,
-                          type->status
+                          TYPES_STATUS( type)
     ));
     type = TYPES_NEXT( type);
   }
