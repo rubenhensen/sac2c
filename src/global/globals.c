@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.24  2000/02/04 14:45:50  jhs
+ * Added -maxrepsize.
+ *
  * Revision 2.23  2000/01/24 12:23:08  jhs
  * Added options to activate/dactivate printing after a break
  * (-noPAB, -doPAB).
@@ -231,6 +234,12 @@ int max_threads = 32;
 int min_parallel_size = 250;
 /*
  * minimum generator size for parallel execution of with-loops.
+ */
+
+int max_replication_size = 250;
+/*
+ *  maximum size of array for replication, otherwise the calculation will be
+ *  executed single-threaded.
  */
 
 /*

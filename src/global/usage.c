@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.21  2000/02/04 14:45:50  jhs
+ * Added -maxrepsize.
+ *
  * Revision 2.20  2000/02/03 16:47:41  cg
  * Added new optimization option MSCA.
  *
@@ -469,6 +472,8 @@ usage ()
             "\t\t\t\t  \"-numthreads\" or dynamically upon application\n"
             "\t\t\t\t  startup using the generic command line option\n"
             "\t\t\t\t  \"-mt <no>\".\n\n"
+            "\t -mtn \t\t\tnew support for multi-threading\n"
+            "\t\t\t\t  UNDER CONSTRUCTION!!!\n\n"
             "\t -numthreads <no>\tstatically specify exact number of threads\n"
             "\t\t\t\tto be used.\n"
             "\t -maxthreads <no>\tmaximum number of threads to be used when exact\n"
@@ -484,8 +489,10 @@ usage ()
             "\t\t\t\t  Default: -maxsyncfold %d.\n"
             "\t -minmtsize <no>\tminimum generator size for parallel execution\n"
             "\t\t\t\tof with-loops.\n"
-            "\t\t\t\t  Default: -minmtsize %d.\n",
-            max_threads, max_sync_fold, min_parallel_size);
+            "\t\t\t\t  Default: -minmtsize %d.\n\n"
+            "\t -maxrepsize <no>\t(-mtn) maximum size for arrays to be replicated\n"
+            "\t\t\t\t  Default: -maxrepsize %d.\n",
+            max_threads, max_sync_fold, min_parallel_size, max_replication_size);
 
     printf (
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.29  2000/02/04 14:45:50  jhs
+ * Added -maxrepsize.
+ *
  * Revision 2.28  2000/02/03 16:45:11  cg
  * Added new optimization option MSCA.
  *
@@ -398,6 +401,8 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_OPTION ("maxae", ARG_NUM (minarray));
 
     ARGS_OPTION ("minmtsize", ARG_NUM (min_parallel_size));
+
+    ARGS_OPTION ("maxrepsize", ARG_NUM (max_replication_size));
 
     ARGS_FLAG ("mt", {
         gen_mt_code = GEN_MT_OLD;

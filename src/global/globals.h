@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.26  2000/02/04 14:45:50  jhs
+ * Added -maxrepsize.
+ *
  * Revision 2.25  2000/02/03 16:45:11  cg
  * Added new optimization option MSCA.
  *
@@ -86,6 +89,8 @@ extern int max_sync_fold;
 extern int needed_sync_fold;
 extern int max_threads;
 extern int min_parallel_size;
+
+extern int max_replication_size;
 
 #define MAX_CPP_VARS 32
 
