@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/02/12 21:22:58  dkr
+ * FUNDEF_EXT_ASSIGN, FUNDEF_INT_ASSIGN added and set correctly
+ *
  * Revision 3.8  2000/12/15 18:24:35  dkr
  * infer_dfms.h renamed into InferDFMs.h
  *
@@ -124,8 +127,8 @@
  * usage of arg_info (INFO_L2F_...):
  *
  *   ...FUNDEF   pointer to the current fundef
+ *   ...ASSIGN   pointer to the current assign
  *
- *   ...ISTRANS  flag: has the current assignment been modified?
  *   ...FUNS     chain of newly generated dummy functions
  *
  *****************************************************************************/
@@ -172,9 +175,10 @@ GetDummyFunName (char *suffix)
 /******************************************************************************
  *
  * function:
- *   node *MakeL2fFundef( char *funname, char *modname, status status,
+ *   node *MakeL2fFundef( char *funname, char *modname,
  *                        node *instr, node *funcall_let,
- *                        DFMmask_t in, DFMmask_t out, DFMmask_t local)
+ *                        DFMmask_t in, DFMmask_t out, DFMmask_t local,
+ *                        node *arg_info)
  *
  * description:
  *   Creates the fundef-node of a dummy function.
@@ -182,12 +186,14 @@ GetDummyFunName (char *suffix)
  ******************************************************************************/
 
 static node *
-MakeL2fFundef (char *funname, char *modname, statustype status, node *instr,
-               node *funcall_let, DFMmask_t in, DFMmask_t out, DFMmask_t local)
+MakeL2fFundef (char *funname, char *modname, node *instr, node *funcall_let, DFMmask_t in,
+               DFMmask_t out, DFMmask_t local, node *arg_info)
 {
     LUT_t lut;
     DFMmask_t tmp_mask;
-    node *args, *vardecs, *ret, *fundef, *assigns, *new_body, *let, *tmp;
+    node *args, *vardecs, *ret, *fundef, *assigns, *new_body, *let, *ass;
+    node *tmp;
+    statustype status;
 
     DBUG_ENTER ("MakeL2fFundef");
 
@@ -314,15 +320,18 @@ MakeL2fFundef (char *funname, char *modname, statustype status, node *instr,
       = MakeFundef (StringCopy (funname), StringCopy (modname), DFM2ReturnTypes (out),
                     args, NULL, /* the block is not complete yet */
                     NULL);
-    FUNDEF_STATUS (fundef) = status;
     FUNDEF_RETURN (fundef) = ASSIGN_INSTR (ret);
+    FUNDEF_INT_ASSIGN (fundef) = NULL;
+    FUNDEF_EXT_ASSIGN (fundef) = INFO_L2F_ASSIGN (arg_info);
 
-    switch (status) {
-    case ST_condfun:
+    switch (NODE_TYPE (instr)) {
+    case N_cond:
+        status = ST_condfun;
         assigns = MakeAssign (DupTreeLUT (instr, lut), ret);
         break;
 
-    case ST_whilefun:
+    case N_while:
+        status = ST_whilefun;
         new_body = DupTreeLUT (WHILE_BODY (instr), lut);
 
         /*
@@ -335,7 +344,9 @@ MakeL2fFundef (char *funname, char *modname, statustype status, node *instr,
             }
             let = DupTreeLUT (funcall_let, lut);
             AP_FUNDEF (LET_EXPR (let)) = fundef;
-            ASSIGN_NEXT (tmp) = MakeAssign (let, NULL);
+            ass = MakeAssign (let, NULL);
+            FUNDEF_INT_ASSIGN (fundef) = ass;
+            ASSIGN_NEXT (tmp) = ass;
         }
 
         assigns = MakeAssign (MakeCond (DupTreeLUT (WHILE_COND (instr), lut), new_body,
@@ -343,7 +354,8 @@ MakeL2fFundef (char *funname, char *modname, statustype status, node *instr,
                               ret);
         break;
 
-    case ST_dofun:
+    case N_do:
+        status = ST_dofun;
         assigns = DupTreeLUT (BLOCK_INSTR (WHILE_BODY (instr)), lut);
 
         /*
@@ -356,24 +368,28 @@ MakeL2fFundef (char *funname, char *modname, statustype status, node *instr,
             }
             let = DupTreeLUT (funcall_let, lut);
             AP_FUNDEF (LET_EXPR (let)) = fundef;
+            ass = MakeAssign (let, NULL);
+            FUNDEF_INT_ASSIGN (fundef) = ass;
             ASSIGN_NEXT (tmp)
               = MakeAssign (MakeCond (DupTreeLUT (WHILE_COND (instr), lut),
-                                      MakeBlock (MakeAssign (let, NULL), NULL),
+                                      MakeBlock (ass, NULL),
                                       MakeBlock (MakeEmpty (), NULL)),
                             ret);
         }
         break;
 
     default:
+        DBUG_ASSERT ((0), "illegal node type found!");
         assigns = NULL;
+        status = ST_regular;
         break;
     }
-    DBUG_ASSERT ((assigns != NULL), "wrong status -> no assigns created");
 
     /*
      * now we can add the body to the fundef
      */
     FUNDEF_BODY (fundef) = MakeBlock (assigns, vardecs);
+    FUNDEF_STATUS (fundef) = status;
 
     lut = RemoveLUT (lut);
 
@@ -426,7 +442,7 @@ MakeL2fFunLet (char *funname, char *modname, DFMmask_t in, DFMmask_t out)
 /******************************************************************************
  *
  * function:
- *   node *DoLifting( char *prefix, statustype status,
+ *   node *DoLifting( char *prefix,
  *                    DFMmask_t in, DFMmask_t out, DFMmask_t local,
  *                    node *arg_node, node *arg_info)
  *
@@ -436,8 +452,8 @@ MakeL2fFunLet (char *funname, char *modname, DFMmask_t in, DFMmask_t out)
  ******************************************************************************/
 
 static node *
-DoLifting (char *prefix, statustype status, DFMmask_t in, DFMmask_t out, DFMmask_t local,
-           node *arg_node, node *arg_info)
+DoLifting (char *prefix, DFMmask_t in, DFMmask_t out, DFMmask_t local, node *arg_node,
+           node *arg_info)
 {
     char *funname, *modname;
     node *fundef, *let;
@@ -461,7 +477,7 @@ DoLifting (char *prefix, statustype status, DFMmask_t in, DFMmask_t out, DFMmask
     /*
      * build new dummy function
      */
-    fundef = MakeL2fFundef (funname, modname, status, arg_node, let, in, out, local);
+    fundef = MakeL2fFundef (funname, modname, arg_node, let, in, out, local, arg_info);
 
     /*
      * set back-references let <-> fundef
@@ -482,7 +498,6 @@ DoLifting (char *prefix, statustype status, DFMmask_t in, DFMmask_t out, DFMmask
     local = DFMRemoveMask (local);
     arg_node = FreeTree (arg_node);
     arg_node = let;
-    INFO_L2F_ISTRANS (arg_info) = 1;
 
     DBUG_RETURN (arg_node);
 }
@@ -509,7 +524,6 @@ L2Ffundef (node *arg_node, node *arg_info)
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_L2F_FUNS (arg_info) = NULL;
-        INFO_L2F_ISTRANS (arg_info) = 0;
 
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
 
@@ -545,30 +559,26 @@ L2Ffundef (node *arg_node, node *arg_info)
  *
  * description:
  *   Bottom-up-traversal of the assignments.
- *   INFO_L2F_ISTRANS indicates whether an assignment has been transformed
- *   into a function call or not. If (INFO_L2F_ISTRANS > 0) is hold, the
- *   assign-node has been modificated and must be correctly inserted into the
- *   AST.
  *
  ******************************************************************************/
 
 node *
 L2Fassign (node *arg_node, node *arg_info)
 {
-    node *assign_next;
+    node *old_assign;
 
     DBUG_ENTER ("L2Fassign");
 
+    old_assign = INFO_L2F_ASSIGN (arg_info);
+    INFO_L2F_ASSIGN (arg_info) = arg_node;
+
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        assign_next = Trav (ASSIGN_NEXT (arg_node), arg_info);
-        if (INFO_L2F_ISTRANS (arg_info)) {
-            ASSIGN_NEXT (assign_next) = ASSIGN_NEXT (ASSIGN_NEXT (arg_node));
-            ASSIGN_NEXT (arg_node) = assign_next;
-            INFO_L2F_ISTRANS (arg_info) = 0;
-        }
+        ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     }
 
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+
+    INFO_L2F_ASSIGN (arg_info) = old_assign;
 
     DBUG_RETURN (arg_node);
 }
@@ -591,9 +601,8 @@ L2Fcond (node *arg_node, node *arg_info)
     COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
     COND_ELSE (arg_node) = Trav (COND_ELSE (arg_node), arg_info);
 
-    arg_node
-      = DoLifting ("Cond", ST_condfun, COND_IN_MASK (arg_node), COND_OUT_MASK (arg_node),
-                   COND_LOCAL_MASK (arg_node), arg_node, arg_info);
+    arg_node = DoLifting ("Cond", COND_IN_MASK (arg_node), COND_OUT_MASK (arg_node),
+                          COND_LOCAL_MASK (arg_node), arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -615,9 +624,8 @@ L2Fwhile (node *arg_node, node *arg_info)
 
     WHILE_BODY (arg_node) = Trav (WHILE_BODY (arg_node), arg_info);
 
-    arg_node = DoLifting ("While", ST_whilefun, WHILE_IN_MASK (arg_node),
-                          WHILE_OUT_MASK (arg_node), WHILE_LOCAL_MASK (arg_node),
-                          arg_node, arg_info);
+    arg_node = DoLifting ("While", WHILE_IN_MASK (arg_node), WHILE_OUT_MASK (arg_node),
+                          WHILE_LOCAL_MASK (arg_node), arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -639,7 +647,7 @@ L2Fdo (node *arg_node, node *arg_info)
 
     DO_BODY (arg_node) = Trav (DO_BODY (arg_node), arg_info);
 
-    arg_node = DoLifting ("Do", ST_dofun, DO_IN_MASK (arg_node), DO_OUT_MASK (arg_node),
+    arg_node = DoLifting ("Do", DO_IN_MASK (arg_node), DO_OUT_MASK (arg_node),
                           DO_LOCAL_MASK (arg_node), arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
