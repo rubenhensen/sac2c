@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.136  1998/04/20 12:28:54  srs
+ * added comment to N_id
+ *
  * Revision 1.135  1998/04/20 00:05:14  dkr
  * changed INFO_PREC_LETIDS
  *
@@ -1797,7 +1800,9 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***
  ***  remarks:
  ***    ID_WL is only used in wli, wlf. But every call of DupTree() initializes
- ***    the copy's WL_ID with a pointer to it's original N_id node.
+ ***    the copy's WL_ID with a pointer to it's original N_id node. The function
+ ***    SearchWL() can define ID_WL in another way (pointer to N_assign node
+ ***   of WL which is referenced by this Id).
  ***
  ***/
 
