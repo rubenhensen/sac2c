@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.3  1994/11/15 13:26:31  sbs
+ * Revision 1.4  1994/11/22 13:48:29  sbs
+ * scnprs.h included in main.c
+ *
+ * Revision 1.3  1994/11/15  13:26:31  sbs
  * changed SAC_LIBRARY into SAC_LIBRARY_PATH and
  * enabled moltiple paths to be specified
  * seperated by ":"
@@ -23,6 +26,7 @@
 #include "usage.h"
 #include "flatten.h"
 #include "print.h"
+#include "scnprs.h"
 
 #include <stdlib.h>
 #include <string.h>
