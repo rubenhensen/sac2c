@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.36  2001/11/13 20:42:42  dkr
+# OSX_MAC added in 'check_os'
+#
 # Revision 3.35  2001/11/13 20:02:35  dkr
 # new system OSX_MAC added
 #
@@ -331,11 +334,12 @@ distrib_product: prod sac2c.prod
 
 check_os:
 	@ if [ "$(OS)" != "SOLARIS_SPARC" -a "$(OS)" != "LINUX_X86" \
-               -a "$(OS)" != "OSF_ALPHA" ]; \
+               -a "$(OS)" != "OSF_ALPHA" -a "$(OS)" != "OSX_MAC" ]; \
 	  then $(ECHO) "*** Unknown OS! Please specify:"; \
                $(ECHO) "SOLARIS_SPARC (default)"; \
                $(ECHO) "LINUX_X86"; \
                $(ECHO) "OSF_ALPHA"; \
+               $(ECHO) "OSX_MAC"; \
 	       exit 1; \
 	  fi
 	@ $(ECHO)
