@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.113  2002/08/30 15:48:18  dkr
+ * DoPrintAST: FUNDEF_RETURN added
+ *
  * Revision 3.112  2002/08/30 10:50:05  dkr
  * PrintPrf: F_type_error added
  *
@@ -4704,6 +4707,10 @@ DoPrintAST (node *arg_node, bool skip_next, bool print_attr)
             fprintf (outfile, ", ");
             fprintf (outfile, "argtab: ");
             PrintArgtab (FUNDEF_ARGTAB (arg_node), TRUE);
+
+            fprintf (outfile, ", ");
+            fprintf (outfile, "return: ");
+            PRINT_POINTER_BRACKETS (outfile, FUNDEF_RETURN (arg_node));
 
             fprintf (outfile, ", ");
             fprintf (outfile, "mask base: ");
