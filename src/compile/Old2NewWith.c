@@ -132,8 +132,7 @@ O2Nwith (node *arg_node, node *arg_info)
     new_expr = SeperateBlockReturn (&new_block);
 
     new_code = MakeNCode (new_block, new_expr);
-    new_part = MakeNPart (new_withid, new_generator);
-    NPART_CODE (new_part) = new_code;
+    new_part = MakeNPart (new_withid, new_generator, new_code);
 
     FreeWith (arg_node, arg_node);
 
@@ -215,7 +214,7 @@ ReadCode (FILE *infile)
 node *
 BuildNpart (FILE *infile, node *arg_node)
 {
-    node *tmp_node, *new_node, *new_code;
+    node *tmp_node, *new_node;
     types *type;
 
     DBUG_ENTER ("BuildNpart");
