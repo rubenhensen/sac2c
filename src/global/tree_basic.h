@@ -1,7 +1,11 @@
 /*
  *
  * $Log$
- * Revision 1.25  1995/12/18 18:27:11  cg
+ * Revision 1.26  1995/12/19 13:38:46  cg
+ * renamed macro WITH_BODY to WITH_OPERATOR
+ * added macros for new N_char node
+ *
+ * Revision 1.25  1995/12/18  18:27:11  cg
  * added macro OBJDEF_ICM
  *
  * Revision 1.24  1995/12/13  13:32:46  asi
@@ -1041,7 +1045,7 @@ extern node *MakeAp (char *name, char *mod, node *args);
  ***  sons:
  ***
  ***    node*  GEN      (N_generator)
- ***    node*  BODY     (N_block)
+ ***    node*  OPERATOR (N_modarray, N_genarray, N_foldprf, N_foldfun)
  ***
  ***  temporary attributes:
  ***
@@ -1051,7 +1055,7 @@ extern node *MakeAp (char *name, char *mod, node *args);
 extern node *MakeWith (node *gen, node *body);
 
 #define WITH_GEN(n) (n->node[0])
-#define WITH_BODY(n) (n->node[1])
+#define WITH_OPERATOR(n) (n->node[1])
 #define WITH_MASK(n, x) (n->mask[x])
 
 /*--------------------------------------------------------------------------*/
@@ -1279,6 +1283,20 @@ extern node *MakeNum (int val);
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***  N_char :
+ ***
+ ***  permanent attributes:
+ ***
+ ***    char  VAL
+ ***/
+
+extern node *MakeChar (char val);
+
+#define CHAR_VAL(n) (n->info.cchar)
+
+/*--------------------------------------------------------------------------*/
+
+/***
  ***  N_float :
  ***
  ***  permanent attributes:
@@ -1446,15 +1464,16 @@ extern node *MakeIcm (char *name, node *args, node *next);
  ***  permanent attributes:
  ***
  ***    char*  LINKNAME     (O)
- ***    nums*  LINKSIGN     (O)
- ***    nums*  REFCOUNTING  (O)
- ***    nums*  READONLY     (O)
+ ***    int[]  LINKSIGN     (O)
+ ***    int[]  REFCOUNTING  (O)
+ ***    int[]  READONLY     (O)
  ***    ids*   EFFECT       (O)
  ***    ids*   TOUCH        (O)
  ***    char*  COPYFUN      (O)
  ***    char*  FREEFUN      (O)
  ***    ids*   NEEDTYPES    (O)
  ***    node*  NEEDFUNS     (O)
+ ***    int    NUMPARAMS    (O)
  ***
  ***/
 
@@ -1464,20 +1483,25 @@ extern node *MakeIcm (char *name, node *args, node *next);
  *  An objdef pragma may contain LINKNAME only.
  *  And a fundef pragma may contain all pragmas except COPYFUN and FREEFUN,
  *  but TYPES and FUNS are only for internal use in SIBS.
+ *
+ *  NUMPARAMS is not a pragma but gives the number of parameters of the
+ *  function (return values + arguments). This is the size of the arrays
+ *  which store the LINKSIGN, REFCOUNTING, and READONLY pragmas.
  */
 
-extern node *MakePragma ();
+extern node *MakePragma (int numparams);
 
 #define PRAGMA_LINKNAME(n) (n->info.id)
-#define PRAGMA_LINKSIGN(n) ((nums *)n->mask[0])
-#define PRAGMA_REFCOUNTING(n) ((nums *)n->mask[1])
-#define PRAGMA_READONLY(n) ((nums *)n->mask[2])
+#define PRAGMA_LINKSIGN(n, i) (((int[])n->mask[0])[i])
+#define PRAGMA_REFCOUNTING(n, i) (((int[])n->mask[1])[i])
+#define PRAGMA_READONLY(n, i) (((int[])n->mask[2])[i])
 #define PRAGMA_EFFECT(n) ((ids *)n->mask[3])
 #define PRAGMA_TOUCH(n) ((ids *)n->mask[4])
 #define PRAGMA_COPYFUN(n) ((char *)n->mask[5])
 #define PRAGMA_FREEFUN(n) ((char *)n->mask[6])
 #define PRAGMA_NEEDTYPES(n) ((ids *)n->node[1])
 #define PRAGMA_NEEDFUNS(n) (n->node[0])
+#define PRAGMA_NUMPARAMS(n) (n->flag)
 
 /*--------------------------------------------------------------------------*/
 
