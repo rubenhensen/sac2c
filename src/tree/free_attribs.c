@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 1.25  2005/03/04 21:21:42  cg
+ * Serious bug fixed in implementation of IDS_TYPE compound
+ * macro. Now, ids referring to N_arg nodes no longer cause
+ * segfaults.
+ *
  * Revision 1.24  2005/01/26 17:32:20  mwe
  * special rules for fungroup and linklist in FREEattribLink added
  *
@@ -303,41 +308,13 @@ FREEattribExtLink (node *attr, node *parent)
     if (attr != NULL) {
         if (NODE_TYPE (attr) == N_fundef) {
             if (attr->attribs.N_fundef != NULL) {
-                DBUG_PRINT ("FREE", ("Decrementing use count for '%s' at " F_PTR,
-                                     FUNDEF_NAME (attr), attr));
                 DBUG_ASSERT ((NODE_TYPE (attr) == N_fundef),
                              "illegal value in AP_FUNDEF found!");
-
-                DBUG_ASSERT (((!FUNDEF_ISLACFUN (attr))
-                              || (FUNDEF_USED (attr) != USED_INACTIVE)),
-                             "FUNDEF_USED must be active for LaC functions!");
-
-                /* check whether this function is use-counted */
-                if ((FUNDEF_USED (attr) != USED_INACTIVE)
-                    && ((!FUNDEF_ISDOFUN (attr)) || (FUNDEF_INT_ASSIGN (attr) == NULL)
-                        || (parent != ASSIGN_RHS (FUNDEF_INT_ASSIGN (attr))))) {
-                    /*
-                     * if the function is no dofun or
-                     * if it is a dofun, but this Ap was not the inner recursive call
-                     * decrement use counter
-                     */
-                    (FUNDEF_USED (attr))--;
-
-                    DBUG_ASSERT ((FUNDEF_USED (attr) >= 0),
-                                 "FUNDEF_USED dropped below 0");
-
-                    DBUG_PRINT ("FREE", ("decrementing used counter of %s to %d",
-                                         FUNDEF_NAME (attr), FUNDEF_USED (attr)));
-
-                    if (FUNDEF_USED (attr) == 0) {
-                        /*
-                         * referenced fundef no longer used
-                         *  -> transform it into a zombie
-                         */
-                        DBUG_PRINT ("FREE", ("Use count reached 0 for '%s' at " F_PTR,
-                                             FUNDEF_NAME (attr), attr));
-                        attr = FREEdoFreeNode (attr);
-                    }
+                if (FUNDEF_ISDOFUN (attr) && (FUNDEF_INT_ASSIGN (attr) != NULL)
+                    && (parent != ASSIGN_RHS (FUNDEF_INT_ASSIGN (attr)))) {
+                    attr = FREEdoFreeNode (attr);
+                } else if (FUNDEF_ISCONDFUN (attr)) {
+                    attr = FREEdoFreeNode (attr);
                 }
             }
         }

@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.187  2005/03/04 21:21:42  cg
+ * Serious bug fixed in implementation of IDS_TYPE compound
+ * macro. Now, ids referring to N_arg nodes no longer cause
+ * segfaults.
+ *
  * Revision 3.186  2004/12/19 23:16:37  ktr
  * removed TCcountFunctionParams
  *
@@ -369,7 +374,7 @@ extern bool TCisNonUniqueHidden (types *type);
 /*
  * TODO: remove
  */
-#define IDS_TYPE(n) VARDEC_TYPE (IDS_DECL (n))
+#define IDS_TYPE(n) VARDEC_OR_ARG_TYPE (IDS_DECL (n))
 #define IDS_SHPSEG(n) TYPES_SHPSEG (VARDEC_OR_ARG_TYPE (IDS_DECL (n)))
 #define IDS_SHAPE(n, x) SHPSEG_SHAPE (IDS_SHPSEG (n), x)
 
