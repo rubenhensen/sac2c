@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2000/07/06 09:23:32  nmw
+ * reference to type_info.mac removed
+ *
  * Revision 1.2  2000/07/06 08:18:57  dkr
  * RCS header added
  * absolute path of type_info.mac-include removed
@@ -16,19 +19,16 @@
 #include "sac_cinterface.h"
 
 /* basetypes (same as in sac2c internally used) */
-typedef enum {
-#define TYP_IFname(name) name
-#include "type_info.mac"
-} SAC_ARG_simpletype;
+typedef int SAC_ARG_simpletype;
 
 /* SAC integer array */
 typedef struct SAC_ARG_STRUCT {
-    SAC_ARG_simpletype type; /* type of argument */
-    int *shpvec;             /* shapevector of argument */
-    int dim;                 /* dim of shape */
-    void *elems;             /* pointer to data elements */
-    int *rc;                 /* pointer to revcounter */
-    int lrc;                 /* local refcounter copy */
+    int type;    /* type of argument */
+    int *shpvec; /* shapevector of argument */
+    int dim;     /* dim of shape */
+    void *elems; /* pointer to data elements */
+    int *rc;     /* pointer to revcounter */
+    int lrc;     /* local refcounter copy */
 } SAC_ARG_STRUCT;
 
 #define SAC_ARG_LRC(a) (a->lrc)
