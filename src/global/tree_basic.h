@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.43  1996/01/22 14:37:45  cg
+ * Revision 1.44  1996/01/22 14:44:44  asi
+ * added ASSIGN_CSE
+ *
+ * Revision 1.43  1996/01/22  14:37:45  cg
  * modified some macros for N_objdef nodes
  *
  * Revision 1.42  1996/01/22  14:04:50  asi
@@ -957,12 +960,15 @@ extern node *MakeVardec (char *name, types *type, node *next);
  ***
  ***    long*  MASK[x]                    (optimize -> )
  ***    int    STATUS                     (dcr1 -> dcr2 !!)
+ ***    node*  CSE                        (cse !!)
+ ***
  ***/
 
 extern node *MakeAssign (node *instr, node *next);
 
 #define ASSIGN_INSTR(n) (n->node[0])
 #define ASSIGN_NEXT(n) (n->node[1])
+#define ASSIGN_CSE(n) (n->node[2])
 #define ASSIGN_MASK(n, x) (n->mask[x])
 #define ASSIGN_STATUS(n) (n->flag)
 
