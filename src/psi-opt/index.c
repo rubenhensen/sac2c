@@ -1,6 +1,12 @@
 
 /*
  * $Log$
+ * Revision 2.12  2000/05/12 15:42:39  dkr
+ * IdxLet():
+ * If the LHS-var is a vector which is neither used as IDX(shp) nor as VECT,
+ * the vardec-COLCHN is marked as VECT in order to prevent an errorneous
+ * vardec-elimination
+ *
  * Revision 2.11  2000/03/15 15:59:27  dkr
  * SET_VARDEC_OR_ARG_COLCHN renamed to L_VARDEC_OR_ARG_COLCHN
  *
@@ -1596,17 +1602,31 @@ IdxLet (node *arg_node, node *arg_info)
                 vinfo = IDS_USE (vars);
                 vardec = IDS_VARDEC (vars);
 
-                while (vinfo != NULL) { /* loop over all "Uses" attributes */
-                    if (VINFO_FLAG (vinfo) == IDX) {
-                        newassign = CreateVect2OffsetIcm (vardec, VINFO_TYPE (vinfo));
+                if ((vinfo != NULL) && (VINFO_FLAG (vinfo) == DOLLAR)) {
+                    /* Now, we now that the LHSvar is a vector which is neither used
+                     * as IDX(shp) nor as VECT!!
+                     * In this case, we mark the VARDEC-COLCHN as VECT in order to
+                     * prevent an errorneous vardec-elimination!! (see IdxVardec)
+                     */
+                    L_VARDEC_OR_ARG_COLCHN (vardec,
+                                            SetVect (VARDEC_OR_ARG_COLCHN (vardec)));
 
-                        current_assign = INFO_IVE_CURRENTASSIGN (arg_info);
-                        ASSIGN_NEXT (newassign) = ASSIGN_NEXT (current_assign);
-                        ASSIGN_NEXT (current_assign) = newassign;
+                } else {
+                    /* Here, we either have a non-vector LHSvar or a vector which
+                     * is used at least once (IDX or VECT!)
+                     */
+                    while (vinfo != NULL) { /* loop over all "Uses" attributes */
+                        if (VINFO_FLAG (vinfo) == IDX) {
+                            newassign = CreateVect2OffsetIcm (vardec, VINFO_TYPE (vinfo));
 
-                        INFO_IVE_CURRENTASSIGN (arg_info) = newassign;
+                            current_assign = INFO_IVE_CURRENTASSIGN (arg_info);
+                            ASSIGN_NEXT (newassign) = ASSIGN_NEXT (current_assign);
+                            ASSIGN_NEXT (current_assign) = newassign;
+
+                            INFO_IVE_CURRENTASSIGN (arg_info) = newassign;
+                        }
+                        vinfo = VINFO_NEXT (vinfo);
                     }
-                    vinfo = VINFO_NEXT (vinfo);
                 }
 
                 /*
