@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.60  2002/10/07 23:34:51  dkr
+ * DBUG_ASSERT about WLSEGVAR_IDX_MIN/MAX added
+ *
  * Revision 3.59  2002/09/16 13:29:39  dkr
  * RenameFunName(): individual names for wrapper functions
  *
@@ -3406,6 +3409,10 @@ PREC4WLsegx (node *arg_node, node *arg_info)
     }
 
     if (NODE_TYPE (arg_node) == N_WLsegVar) {
+        DBUG_ASSERT ((WLSEGVAR_IDX_MIN (arg_node) != NULL),
+                     "WLSEGVAR_IDX_MIN not found!");
+        DBUG_ASSERT ((WLSEGVAR_IDX_MAX (arg_node) != NULL),
+                     "WLSEGVAR_IDX_MAX not found!");
         for (d = 0; d < WLSEGVAR_DIMS (arg_node); d++) {
             (WLSEGVAR_IDX_MIN (arg_node))[d]
               = Trav ((WLSEGVAR_IDX_MIN (arg_node))[d], arg_info);
