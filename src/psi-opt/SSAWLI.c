@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.14  2004/03/26 13:02:12  khf
+ * Attribute NWITH_FOLDABLE is set in SSAWLI now,
+ * therefor SSAWLINgenerator added
+ *
  * Revision 1.13  2002/10/09 02:11:26  dkr
  * constants modul used instead of ID/ARRAY_CONSTVEC
  *
@@ -61,8 +65,8 @@
      is initialized here with 0.
 
    NWITH_FOLDABLE(wl)
-     has already been set in SSAWLT and marks all WL with constant borders,
-     step and so on. only for these WLs withloop folding can be computed.
+     marks all WL with constant borders, step and so on.
+     only for these WLs withloop folding can be computed.
 
  additionally all id get the attribute ID_WL, which is pointing to a definition
  assignment with a WL as RHS or NULL else.
@@ -71,12 +75,13 @@
  *******************************************************************************
 
  Usage of arg_info:
- - node[0]: NEXT  : store old information in nested WLs
- - node[1]: WL    : reference to base node of current WL (N_Nwith)
- - node[2]: ASSIGN: always the last N_assign node (see WLIassign)
- - node[3]: FUNDEF: pointer to last fundef node. needed to access vardecs.
-
+ - node[0]: NEXT    : store old information in nested WLs
+ - node[1]: WL      : reference to base node of current WL (N_Nwith)
+ - node[2]: ASSIGN  : always the last N_assign node (see WLIassign)
+ - node[3]: FUNDEF  : pointer to last fundef node. needed to access vardecs.
+ - counter: FOLDABLE: indicates if current withloop is foldable or not
  ******************************************************************************/
+#define INFO_WLI_FOLDABLE(n) (n->counter)
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -873,15 +878,13 @@ SSAWLINwith (node *arg_node, node *arg_info)
         NCODE_FLAG (tmpn) = FALSE;
         tmpn = NCODE_NEXT (tmpn);
     }
-    /* Attribut FOLDABLE has been set in WLT. The others are initialized here. */
+    /* Attribut FOLDABLE will be set later. The others are initialized here. */
     NWITH_REFERENCED (arg_node) = 0;
     NWITH_REFERENCED_FOLD (arg_node) = 0;
     NWITH_REFERENCES_FOLDED (arg_node) = 0;
 
-    /* traverse N_Nwithop */
-    if (NWITH_WITHOP (arg_node) != NULL) {
-        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
-    }
+    /* initialize determination of FOLDABLE */
+    INFO_WLI_FOLDABLE (arg_info) = TRUE;
 
     /* traverse all parts (and implicitely bodies) */
     DBUG_PRINT ("WLI", ("searching code of  WL in line %d", NODE_LINE (arg_node)));
@@ -889,6 +892,13 @@ SSAWLINwith (node *arg_node, node *arg_info)
         NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
     }
     DBUG_PRINT ("WLI", ("searching done"));
+
+    NWITH_FOLDABLE (arg_node) = INFO_WLI_FOLDABLE (arg_info);
+
+    /* traverse N_Nwithop */
+    if (NWITH_WITHOP (arg_node) != NULL) {
+        NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    }
 
     /* restore arg_info */
     tmpn = arg_info;
@@ -959,6 +969,40 @@ SSAWLINpart (node *arg_node, node *arg_info)
     if (NPART_NEXT (arg_node) != NULL) {
         NPART_NEXT (arg_node) = Trav (NPART_NEXT (arg_node), arg_info);
     }
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SSAWLINgenerator( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   checks whether borders, step and width are constant. The result is stored
+ *   in INFO_WLI_FOLDABLE( arg_info).
+ *
+ ******************************************************************************/
+node *
+SSAWLINgenerator (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("SSAWLINgenerator");
+
+    INFO_WLI_FOLDABLE (arg_info)
+      = INFO_WLI_FOLDABLE (arg_info) && COIsConstant (NGEN_BOUND1 (arg_node));
+    INFO_WLI_FOLDABLE (arg_info)
+      = INFO_WLI_FOLDABLE (arg_info) && COIsConstant (NGEN_BOUND2 (arg_node));
+
+    if (NGEN_STEP (arg_node) != NULL) {
+        INFO_WLI_FOLDABLE (arg_info)
+          = INFO_WLI_FOLDABLE (arg_info) && COIsConstant (NGEN_STEP (arg_node));
+        if (NGEN_WIDTH (arg_node) != NULL) {
+            INFO_WLI_FOLDABLE (arg_info)
+              = INFO_WLI_FOLDABLE (arg_info) && COIsConstant (NGEN_WIDTH (arg_node));
+        }
+    } else {
+        DBUG_ASSERT ((NGEN_WIDTH (arg_node) == NULL), "width vector without step vector");
+    }
+
     DBUG_RETURN (arg_node);
 }
 
