@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.11  2000/08/11 20:58:59  mab
+ * fixed bug in CollectAccessPatterns
+ *
  * Revision 1.10  2000/08/04 11:41:31  mab
  * fixed bug in APCwith and APTwith (case nested with-loops)
  *
@@ -215,9 +218,14 @@ CollectAccessPatterns (node *arg_node)
             if ((COL_ARRAY (col_ptr) == ACCESS_ARRAY (access_ptr))
                 && (COL_CLASS (col_ptr) == ACCESS_CLASS (access_ptr))
                 && (COL_DIR (col_ptr) == ACCESS_DIR (access_ptr))) {
+                /* set current pattern element */
                 pt_ptr = COL_PATTERNS (col_ptr);
+            } else {
+                /* only change current collection element if we
+                 * haven't found pt_ptr yet
+                 */
+                col_ptr = COL_NEXT (col_ptr);
             }
-            col_ptr = COL_NEXT (col_ptr);
         }
 
         /* add access to entry (only known access classes) */
@@ -237,12 +245,15 @@ CollectAccessPatterns (node *arg_node)
                 COL_DIR (collection) = ACCESS_DIR (access_ptr);
                 COL_PATTERNS (collection) = NULL;
                 COL_NEXT (collection) = col_next_ptr;
+                /* set current pattern element */
                 pt_ptr = COL_PATTERNS (collection);
+                /* set current collection element */
+                col_ptr = collection;
             }
 
             offset = DupShpSeg (ACCESS_OFFSET (access_ptr));
             pt_ptr = PIconcatPatterns (pt_ptr, offset);
-            COL_PATTERNS (collection) = pt_ptr;
+            COL_PATTERNS (col_ptr) = pt_ptr;
             break;
         default:
             break;
