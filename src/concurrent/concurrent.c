@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/12/12 12:13:15  dkr
+ * call of InferDFMs added
+ *
  * Revision 3.1  2000/11/20 18:02:24  sacbase
  * new release made
  *
@@ -55,7 +58,6 @@
  * Revision 1.1  1998/06/18 14:35:53  cg
  * Initial revision
  *
- *
  */
 
 /*****************************************************************************
@@ -91,6 +93,7 @@
 #include "globals.h"
 #include "free.h"
 #include "Error.h"
+#include "infer_dfms.h"
 
 /******************************************************************************
  *
@@ -114,12 +117,11 @@ BuildSpmdRegions (node *syntax_tree)
 
     DBUG_ENTER ("BuildSpmdRegions");
 
+    syntax_tree = InferDFMs (syntax_tree);
+
     arg_info = MakeInfo ();
-
     act_tab = conc_tab;
-
     syntax_tree = Trav (syntax_tree, arg_info);
-
     FREE (arg_info);
 
     DBUG_RETURN (syntax_tree);
