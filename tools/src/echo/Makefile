@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.5  2003/04/01 10:53:32  sbs
+# Makefile.Config and Makefile.Deps included properly now.
+#
 # Revision 1.4  2001/12/06 14:39:52  dkr
 # target 'clean' corrected
 #
@@ -15,7 +18,14 @@
 #
 #
 
-include ../../../Makefile.Config
+#######################################################################################
+#
+# include general setup:
+#
+
+PROJECT_ROOT := ../../../
+include $(PROJECT_ROOT)/Makefile.Config
+
 
 TOOLS = ../../
 
@@ -28,3 +38,13 @@ $(TOOLS)/bin/%: %.c
 clean:
 	$(RM) *~ *.o
 	$(RM) $(TOOLS)/bin/echo
+
+#######################################################################################
+#
+# include automatic dependency mechanism
+#
+# - relies on INCS to be set appropriately
+#
+
+include $(PROJECT_ROOT)/Makefile.Deps
+

@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.10  2003/04/01 10:53:32  sbs
+# Makefile.Config and Makefile.Deps included properly now.
+#
 # Revision 1.9  2001/12/06 14:39:38  dkr
 # target 'clean' corrected
 #
@@ -18,7 +21,14 @@
 #
 #
 
-include ../../../Makefile.Config
+#######################################################################################
+#
+# include general setup:
+#
+
+PROJECT_ROOT := ../../../
+include $(PROJECT_ROOT)/Makefile.Config
+
 
 INCS   = -I../../../inc
 LIBDIR = ../../../lib
@@ -42,3 +52,13 @@ $(LIBS):
 clean:
 	$(RM) *~ *.o
 	$(RM) $(TOOLS)/bin/csd $(TOOLS)/bin/cse
+
+#######################################################################################
+#
+# include automatic dependency mechanism
+#
+# - relies on INCS to be set appropriately
+#
+
+include $(PROJECT_ROOT)/Makefile.Deps
+

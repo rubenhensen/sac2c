@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.9  2003/04/01 10:53:32  sbs
+# Makefile.Config and Makefile.Deps included properly now.
+#
 # Revision 1.8  2001/12/06 14:39:46  dkr
 # target 'clean' corrected
 #
@@ -22,7 +25,14 @@
 #
 #
 
-include ../../../Makefile.Config
+#######################################################################################
+#
+# include general setup:
+#
+
+PROJECT_ROOT := ../../../
+include $(PROJECT_ROOT)/Makefile.Config
+
 
 INCS   = -I../../../inc
 LIBDIR = ../../../lib
@@ -31,13 +41,6 @@ LIBS   = $(LIBDIR)/main_args.o
 TOOLS = ../../
 
 all: $(TOOLS)/bin/ctest
-
-verbose.o: verbose.c verbose.h
-accesstime.o: ctest.h accesstime.h verbose.h accesstime.c 
-ctest.o: verbose.h ctest.h accesstime.h l1.h l2.h ctest.c
-l1.o: ctest.c l1.h ctest.h l1.c
-l2.o: ctest.c l2.h ctest.h l2.c
-bits.o: bits.c bits.h
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(INCS) -c $<
@@ -52,3 +55,14 @@ $(LIBS):
 clean:
 	$(RM) *.o *~
 	$(RM) $(TOOLS)/bin/ctest
+
+
+#######################################################################################
+#
+# include automatic dependency mechanism
+#
+# - relies on INCS to be set appropriately
+#
+
+include $(PROJECT_ROOT)/Makefile.Deps
+
