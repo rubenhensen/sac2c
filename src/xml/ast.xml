@@ -101,9 +101,9 @@
         <travsons>
           <node name="Vinfo" />
           <node name="Prf" />
-          <node name="Ssastack" />
-          <node name="Wlblock" />
-          <node name="Wlublock" />
+          <node name="SSAstack" />
+          <node name="WLblock" />
+          <node name="WLublock" />
           <node name="Linklist" />
           <node name="Ids" />
           <node name="Nums" />
@@ -1439,7 +1439,7 @@
           <node name="Arg" />
         </travuser>
       </traversal>
-      <traversal id="TCP" name="Type Conversions" default="sons" include="type_conversions.h">
+      <traversal id="TCP" name="Type Conversions" default="sons" include="typeconv_precompile.h">
         <travuser>
           <node name="Module" />
           <node name="Fundef" />
