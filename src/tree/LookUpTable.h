@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/08/01 15:51:35  sah
+ * changed the type of LUT_t from void*
+ * to struct LUT_T *. This change is
+ * necessary as the new ast uses no
+ * void pointers.
+ *
  * Revision 3.10  2002/08/15 18:46:39  dkr
  * functions SearchInLUT_Next?() added
  *
@@ -123,7 +129,7 @@
 #ifndef _sac_LookUpTable_h_
 #define _sac_LookUpTable_h_
 
-typedef void *LUT_t;
+typedef struct LUT_T *LUT_t;
 
 extern LUT_t GenerateLUT (void);
 extern LUT_t DuplicateLUT (LUT_t lut);
