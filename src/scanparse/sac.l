@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/05/22 15:03:43  hw
+ * Revision 1.15  1995/05/30 08:21:55  cg
+ * sac-grammar version 0.5 tokens inserted.
+ *
+ * Revision 1.14  1995/05/22  15:03:43  hw
  * comments will not be printed anymore
  *
  * Revision 1.13  1995/02/14  12:00:42  sbs
@@ -124,6 +127,8 @@ int start_token;
 "psi"                           {FILTER( PSI );}
 
 "typedef"			{FILTER( TYPEDEF );}
+"constdef"		        {FILTER( CONSTDEF );}
+"objdef"		        {FILTER( OBJDEF );}
 "main"				{FILTER( K_MAIN );}
 "return"			{FILTER( RETURN );}
 "if"				{FILTER( IF );}
@@ -140,6 +145,7 @@ int start_token;
 [mM]odul[dD]ec			{FILTER( MODDEC );}
 [mM]odul			{FILTER( MODIMP );}
 [cC]lass[dD]ec			{FILTER( CLASSDEC );}
+[cC]lass                        {FILTER( CLASSIMP );}
 "import"			{FILTER( IMPORT );}
 "all"				{FILTER( ALL );}
 "implicit"			{FILTER( IMPLICIT );}
@@ -147,16 +153,26 @@ int start_token;
 "types"				{FILTER( TYPES );}
 "funs"				{FILTER( FUNS );}
 "own"				{FILTER( OWN );}
+"extern"                        {FILTER( EXTERN );}
+"constants"                     {FILTER( CONSTANTS );}
+"global"                        {FILTER( GLOBAL );}
+"objects"                       {FILTER( OBJECTS );}
 
 "int"				{FILTER( TYPE_INT );}
 "float"				{FILTER( TYPE_FLOAT );}
 "bool"				{FILTER( TYPE_BOOL );}
 "string"			{FILTER( TYPE_STR );}
+"unsigned" 		        {FILTER( TYPE_UNS );}
+"short"             		{FILTER( TYPE_SHORT );}
+"long"    		        {FILTER( TYPE_LONG );}
+"char"     		        {FILTER( TYPE_CHAR );}
+"double"		        {FILTER( TYPE_DBL );}
+
+"void"		                {FILTER( TYPE_VOID );}
+"..."		                {FILTER( TYPE_DOTS );}
 
 "true"                          {FILTER( TRUE );}
 "false"                         {FILTER( FALSE );}
-
-extern                          {FILTER( EXTERN );}
 
 \"[^"\n]*\"			{FILTER2( STR );}
 [_A-Za-z][_A-Za-z0-9]*		{FILTER2( ID );}
