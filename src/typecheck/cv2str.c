@@ -1,18 +1,23 @@
 /*
+ *
  * $Log$
+ * Revision 1.2  2001/02/27 11:27:07  dkr
+ * no changes done
+ *
  * Revision 1.1  2001/02/23 18:07:49  sbs
  * Initial revision
- *
  *
  */
 
 /*
- * This module provides a set of functions for creating strings from elements of constant
- * vectors The problem with this task is that such a function has to be overloaded on all
- * potential types. Since C does not support such specifications, a function table is
- * created which is parameterized over simpletype. This is done by using the
- * .mac-mechanism     on type_info.mac in order to make sure that all simpletypes are
- * dealt with.
+ * This module provides a set of functions for creating strings from elements
+ * of constant vectors.
+ * The problem with this task is that such a function has to be overloaded on
+ * all potential types.
+ * Since C does not support such specifications, a function table is created
+ * which is parameterized over simpletype.
+ * This is done by using the    .mac-mechanism     on type_info.mac in order
+ * to make sure that all simpletypes are dealt with.
  */
 
 #include <strings.h>
