@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2002/09/09 19:33:25  dkr
+ * prf_name_str renamed into prf_name_string
+ *
  * Revision 3.44  2002/09/09 17:42:51  dkr
  * F_{add,sub,mul,div}_SxS added
  *
@@ -46,105 +49,6 @@
  *
  * Revision 3.30  2001/07/13 13:23:41  cg
  * Some useless DBUG_PRINTs eliminated.
- *
- * Revision 3.29  2001/06/28 07:46:51  cg
- * Primitive function psi() renamed to sel().
- *
- * Revision 3.28  2001/06/07 11:26:54  cg
- * Bug fixed in TC constant propagation: specialized functions
- * now get the module name of the currently compiled module name
- * rather than sticking to their old module name.
- *
- * Revision 3.27  2001/05/25 14:33:41  sbs
- * ARRAY_TYPE adjusted when casting empty arrays.
- * required for SSA optimizations.
- *
- * Revision 3.26  2001/05/17 11:34:07  sbs
- * return value of Free now used ...
- *
- * Revision 3.25  2001/05/17 09:20:42  sbs
- * MALLOC FREE aliminated
- *
- * Revision 3.24  2001/04/24 13:12:49  dkr
- * type 'id' replaced by 'char'
- *
- * Revision 3.23  2001/04/24 09:16:01  dkr
- * P_FORMAT replaced by F_PTR
- *
- * Revision 3.22  2001/04/18 13:17:37  dkr
- * fixed a bug in TClet
- *
- * Revision 3.21  2001/03/22 21:03:58  dkr
- * no changes done
- *
- * Revision 3.19  2001/03/15 20:39:23  dkr
- * TI_ap: '&' for reference objects is no longer printed by Type2String
- *
- * Revision 3.18  2001/03/15 15:17:56  dkr
- * signature of Type2String modified
- *
- * Revision 3.17  2001/03/09 11:16:39  sbs
- * profiling hidden behind PROFILE_IN_TC.
- * Now, profiling is implemented separately!
- *
- * Revision 3.16  2001/03/02 12:54:53  dkr
- * no changes done
- *
- * Revision 3.15  2001/02/23 16:41:42  sbs
- * TO made external
- *
- * Revision 3.14  2001/02/14 17:51:03  dkr
- * redundant VARDEC_TYPEDEF replaced by VARDEC_TDEF
- *
- * Revision 3.13  2001/02/14 10:17:47  dkr
- * MakeNode(N_vardec) replaced by MakeVardec
- *
- * Revision 3.12  2001/02/09 17:11:42  cg
- * Removed type comparison results CMP_different_shapes and
- * CMP_different_dimension due to buggy implementation and general
- * uselessness.
- *
- * Revision 3.11  2001/02/02 10:37:27  dkr
- * access_macros.h inlined (this file is redundant now :-)
- *
- * Revision 3.10  2001/01/23 18:18:51  cg
- * Added support for propagating scalar integer constants in a similar way
- * as constant vectors.
- *
- * Revision 3.9  2000/12/12 11:40:53  dkr
- * nodes N_pre, N_post, N_inc, N_dec removed
- *
- * Revision 3.8  2000/12/08 08:31:16  cg
- * Bug fixed in the handling of typechecker function table.
- *
- * Revision 3.7  2000/12/06 18:26:04  cg
- * Added new functionality to the typechecker that allows to propagate
- * constant integer arrays in certain situations and to successfully
- * typecheck functions whose result type depends on the values of
- * arguments.
- *
- * Revision 3.6  2000/12/06 08:15:02  cg
- * Added some new features that improve casting between user-defined
- * and primitive array types.
- *
- * Revision 3.5  2000/11/28 11:50:29  sbs
- * compiler warnings eliminated 8-)
- *
- * Revision 3.4  2000/11/24 14:54:41  nmw
- * for generic templates of specialized fundefs the
- * status is set to ST_ignore.
- *
- * Revision 3.3  2000/11/23 16:12:19  nmw
- * implementation checked and beautyfied
- *
- * Revision 3.2  2000/11/22 16:22:25  nmw
- * when compiling for a c library, generic functions
- * are not checked anymore to avoid conflicts for the
- * typechecker
- *
- * Revision 3.1  2000/11/20 18:00:18  sacbase
- * new release made
- *
  *
  * ... [eliminated] ...
  *
@@ -4241,7 +4145,7 @@ FindFun (char *fun_name, char *mod_name, types **arg_type, int count_args, node 
                             /* now look if there is a matching userdefined function
                              * with name of primitive function
                              */
-                            fun_name = prf_name_str[*prf_fun];
+                            fun_name = prf_name_string[*prf_fun];
                             fun_p_store = LookupFun (fun_name, NULL, NULL);
                             if (NULL != fun_p_store)
                                 *prf_fun = -1;
@@ -5007,7 +4911,7 @@ TClet (node *arg_node, node *arg_info)
                     type_arg1 = ID_OR_CAST_TYPE (PRF_ARG1 (LET_EXPR (arg_node)));
                     type_arg2 = ID_OR_CAST_TYPE (PRF_ARG2 (LET_EXPR (arg_node)));
 
-                    if (NULL != LookupFun (prf_name_str[F_sel], "Array", NULL)) {
+                    if (NULL != LookupFun (prf_name_string[F_sel], "Array", NULL)) {
                         if ((TYPES_DIM (type) > SCALAR)
                             && (TYPES_DIM (type_arg1) > SCALAR)
                             && (TYPES_DIM (type_arg2) > SCALAR)) {
@@ -5083,7 +4987,7 @@ TClet (node *arg_node, node *arg_info)
                  * be used, the function application is now replaced by an equivalent
                  * with-loop.
                  */
-                if (NULL != LookupFun (prf_name_str[F_take], "Array", NULL)) {
+                if (NULL != LookupFun (prf_name_string[F_take], "Array", NULL)) {
                     if (TYPES_DIM (type) > SCALAR) {
                         /*
                          * The actual replacement is only performed if the result shape
@@ -5129,7 +5033,7 @@ TClet (node *arg_node, node *arg_info)
                  * be used, the function application is now replaced by an equialent
                  * with-loop.
                  */
-                if (NULL != LookupFun (prf_name_str[F_drop], "Array", NULL)) {
+                if (NULL != LookupFun (prf_name_string[F_drop], "Array", NULL)) {
                     if (TYPES_DIM (type) > SCALAR) {
                         /*
                          * The actual replacement is only performed if the result shape
@@ -5175,7 +5079,7 @@ TClet (node *arg_node, node *arg_info)
                  * be used, the function application is now replaced by 2 equivalent
                  * with-loops.
                  */
-                if (NULL != LookupFun (prf_name_str[F_cat], "Array", NULL)) {
+                if (NULL != LookupFun (prf_name_string[F_cat], "Array", NULL)) {
                     if (TYPES_DIM (type) > SCALAR) {
                         /*
                          * The actual replacement is only performed if the result shape

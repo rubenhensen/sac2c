@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/09/09 19:35:40  dkr
+ * prf_name_str renamed into prf_name_string
+ *
  * Revision 3.5  2002/02/20 14:44:34  dkr
  * function DupTypes() renamed into DupAllTypes()
  *
@@ -112,7 +115,7 @@ CreatePseudoFoldFun (types *elem_type, char *fold_fun, prf fold_prf, char *res_v
     } else {
         DBUG_ASSERT (LEGAL_PRF (fold_prf), "fold_prf is out of range!");
         application = MakePrf (fold_prf, args);
-        pseudo_fold_fun = prf_name_str[fold_prf];
+        pseudo_fold_fun = prf_name_string[fold_prf];
     }
 
     /*

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.13  2002/09/09 19:31:30  dkr
+ * prf_name_str renamed into prf_name_string
+ *
  * Revision 1.12  2002/09/03 15:27:16  sbs
  * F_mod supported.
  *
@@ -43,6 +46,7 @@
 #include "dbug.h"
 #include "free.h"
 #include "LookUpTable.h"
+#include "print.h"
 
 static LUT_t prec_lut;
 
@@ -545,7 +549,7 @@ HMAdjustFunNames (ids *funid)
 
         if (found) {
             IDS_NAME (funid) = Free (IDS_NAME (funid));
-            IDS_NAME (funid) = StringCopy (prf_name_str[primfun]);
+            IDS_NAME (funid) = StringCopy (prf_name_string[primfun]);
         }
     }
     if (IDS_NEXT (funid) != NULL) {
