@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/08/10 16:42:59  ktr
+ * All prfs should be handled now.
+ *
  * Revision 1.2  2004/08/10 16:14:33  ktr
  * RIicm added.
  *
@@ -429,8 +432,8 @@ RIlet (node *arg_node, info *arg_info)
     }
 
     if (INFO_RI_ADDLHS (arg_info)) {
-        INFO_RI_CANDIDATES (arg_info) = AppendExprs (Ids2Exprs (INFO_RI_LHS (arg_info)),
-                                                     INFO_RI_CANDIDATES (arg_info));
+        INFO_RI_CANDIDATES (arg_info)
+          = AppendExprs (Ids2Exprs (LET_IDS (arg_node)), INFO_RI_CANDIDATES (arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -455,7 +458,20 @@ RIprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_accu:
+    case F_wl_assign:
+    case F_free:
+    case F_to_unq:
+    case F_from_unq:
+    case F_inc_rc:
+    case F_dec_rc:
         break;
+
+    case F_suballoc:
+        if (INFO_RI_RHSCAND (arg_info) != NULL) {
+            INFO_RI_RHSCAND (arg_info) = FreeTree (INFO_RI_RHSCAND (arg_info));
+        }
+        break;
+
     case F_alloc:
     case F_alloc_or_reuse:
         if (INFO_RI_TRAVMODE (arg_info) == ri_annotate) {
@@ -529,6 +545,8 @@ RIwith2 (node *arg_node, info *arg_info)
     if (NWITH2_CODE (arg_node) != NULL) {
         NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
     }
+
+    INFO_RI_ADDLHS (arg_info) = TRUE;
 
     DBUG_RETURN (arg_node);
 }
