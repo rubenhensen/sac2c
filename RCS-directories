@@ -1,4 +1,3 @@
-.
 doc
 inc
 src/flatten
@@ -19,7 +18,6 @@ distrib
 distrib/src
 distrib/srcpacks
 distrib/binpacks
-
 src/libsac
 src/tools
 src/heapmgr
