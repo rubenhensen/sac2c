@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.55  1997/10/02 13:21:50  cg
+ * option -Mlib explained again.
+ *
  * Revision 1.54  1997/09/13 15:15:24  dkr
  * fixed an error in the desription of the flag -M
  *
@@ -195,15 +198,21 @@ usage (char *prg_name)
 
     printf ("\t -h\t\t\t\tthis helptext\n");
     printf ("\t -libstat\t\t\tprint status information about a SAC library file\n");
-    printf ("\t -D <cpp-var><=value>\t\tset <cpp-var> (to <value>) when running "
-            "C-preprocessor\n");
-    printf ("\t -M\t\t\t\tonly detect dependencies from imported modules/classes\n");
-    printf ("\t\t\t\t\t  and write them to stdout\n");
+    printf ("\t -D <cpp-var><=value>\t\tset <cpp-var> (to <value>) when running\n");
+    printf ("\t\t\t\t\t C-preprocessor\n");
+    printf ("\t -M\t\t\t\tonly detect dependencies from imported\n");
+    printf ("\t\t\t\t\t  modules/classes and write them to stdout.\n");
+    printf ("\t\t\t\t\t  Dependences from declaration files are\n");
+    printf ("\t\t\t\t\t  considered.\n");
+    printf ("\t -Mlib\t\t\t\tonly detect dependencies from imported\n");
+    printf ("\t\t\t\t\t  modules/classes and write them to stdout.\n");
+    printf ("\t\t\t\t\t  Dependences from declaration files as well as\n");
+    printf ("\t\t\t\t\t  library files are (recursively) considered.\n");
     printf ("\t -# <string>\t\t\toptions (string) for DBUG information\n"
             "\t\t\t\t\t  (\"-#<string>\" is equivalent to \"-_DBUG//<string>\")\n");
-    printf ("\t -_DBUG<from>/<to>/<string>\tDBUG information only in compiler phases "
-            "<from>..<to>\n"
-            "\t\t\t\t\t  Default: <from> = 1, <to> = last compiler phase\n");
+    printf ("\t -_DBUG<from>/<to>/<string>\tDBUG information only in compiler phases\n");
+    printf ("\t\t\t\t\t <from>..<to>\n");
+    printf ("\t\t\t\t\t  Default: <from> = 1, <to> = last compiler phase\n");
     printf ("\t -I <path>\t\t\tspecify additional declaration path\n");
     printf ("\t -L <path>\t\t\tspecify additional library path\n");
     printf ("\t -o <name>\t\t\tfor compilation of programs:\n");
