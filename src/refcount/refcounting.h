@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2004/11/28 18:14:21  ktr
+ * changed name of starting function to EMRCdoRefCounting
+ *
  * Revision 1.8  2004/11/23 22:25:39  ktr
  * typo
  *
@@ -57,7 +60,7 @@
  * prefix: EMRC
  *
  *****************************************************************************/
-extern node *EMRCdoRefcounting (node *syntax_tree);
+extern node *EMRCdoRefCounting (node *syntax_tree);
 
 extern node *EMRCap (node *arg_node, info *arg_info);
 extern node *EMRCarg (node *arg_node, info *arg_info);

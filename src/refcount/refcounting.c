@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.29  2004/11/28 18:14:21  ktr
+ * changed name of starting function to EMRCdoRefCounting
+ *
  * Revision 1.28  2004/11/27 03:03:02  ktr
  * typos
  *
@@ -155,8 +158,6 @@
  * This file implements explicit reference counting in SSA form
  *
  */
-#define NEW_INFO
-
 #include "refcounting.h"
 
 #include "types.h"
@@ -287,7 +288,7 @@ FreeInfo (info *info)
 
 /** <!--******************************************************************-->
  *
- * @fn EMRCdoRefCount
+ * @fn EMRCdoRefCounting
  *
  *  @brief Starting function of EM based reference counting inference.
  *
@@ -298,9 +299,9 @@ FreeInfo (info *info)
  *
  ***************************************************************************/
 node *
-EMRCdoRefCount (node *syntax_tree)
+EMRCdoRefCounting (node *syntax_tree)
 {
-    DBUG_ENTER ("EMRCdoRefCount");
+    DBUG_ENTER ("EMRCdoRefCounting");
 
     DBUG_PRINT ("EMRC", ("Starting reference counting inference..."));
 
