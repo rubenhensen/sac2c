@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2003/11/18 16:36:40  dkr
+ * code for FreeNWithOp() brushed
+ *
  * Revision 3.50  2003/11/18 16:17:42  dkr
  * NWITHOP_DEFAULT freed as well now
  *
@@ -2025,23 +2028,28 @@ FreeNWithOp (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("FREE", ("Removing N_Nwithop node ..."));
 
-    /* removes _SHAPE or _ARRAY as well */
-    NWITHOP_NEUTRAL (arg_node) = FREETRAV (NWITHOP_NEUTRAL (arg_node));
-    NWITHOP_DEFAULT (arg_node) = FREETRAV (NWITHOP_DEFAULT (arg_node));
-
-    /*
-     * if WithOp is WO_foldfun the function name has to be freed.
-     * The modul_name is shared.
-     */
-    if (WO_foldfun == NWITHOP_TYPE (arg_node)) {
-        NWITHOP_FUN (arg_node) = Free (NWITHOP_FUN (arg_node));
+    switch (NWITHOP_TYPE (arg_node)) {
+    case WO_genarray:
+        NWITHOP_SHAPE (arg_node) = FREETRAV (NWITHOP_SHAPE (arg_node));
+        NWITHOP_DEFAULT (arg_node) = FREETRAV (NWITHOP_DEFAULT (arg_node));
+        break;
+    case WO_modarray:
+        NWITHOP_ARRAY (arg_node) = FREETRAV (NWITHOP_ARRAY (arg_node));
+        break;
+    case WO_foldfun:
+        NWITHOP_NEUTRAL (arg_node) = FREETRAV (NWITHOP_NEUTRAL (arg_node));
 #if FREE_MODNAMES
         NWITHOP_MOD (arg_node) = Free (NWITHOP_MOD (arg_node));
 #endif
+        NWITHOP_FUN (arg_node) = Free (NWITHOP_FUN (arg_node));
+        break;
+    case WO_foldprf:
+        NWITHOP_NEUTRAL (arg_node) = FREETRAV (NWITHOP_NEUTRAL (arg_node));
+        break;
+    default:
+        DBUG_ASSERT (0, "Unknown N_Nwithop-type found");
+        break;
     }
-
-    /* free mem allocated in MakeNWithOp */
-    arg_node->info2 = Free (arg_node->info2);
 
     arg_node = Free (arg_node);
 
