@@ -74,13 +74,24 @@ PIHmodul (node *arg_node, node *arg_info)
     /* open <module>.h in tmpdir for writing wrapper header*/
     outfile = WriteOpen ("%s/%s.h", tmp_dirname, MODUL_NAME (arg_node));
     fprintf (outfile, "/* Interface SAC <-> C for %s \n", MODUL_NAME (arg_node));
-    fprintf (outfile, " * use this %s.h file with lib%s.a */\n", MODUL_NAME (arg_node),
+    fprintf (outfile, " * use this %s.h file with lib%s.a\n", MODUL_NAME (arg_node),
              MODUL_NAME (arg_node));
-    fprintf (outfile, "#include \"sac_cinterface.h\"\n");
-    fprintf (outfile, "\n");
 
     /*Generate fixed manual and usage hints in headerfile*/
-    /* to be implemented */
+    fprintf (outfile,
+             " * For compiling with this module you need to set up\n"
+             " * your c compiler with searchpaths to:\n"
+             " * -L$SACBASE/runtime (for sac runtime-system)\n"
+             " * -L.                (or where you place 'lib%s.a')\n"
+             " *\n"
+             " * -I$SACBASE/runtime (for include of 'sac_cinterface.h')\n"
+             " *\n"
+             " * when compiling your c code link simply with:\n"
+             " * ... -lsac -l%s\n"
+             " */\n\n",
+             MODUL_NAME (arg_node), MODUL_NAME (arg_node));
+
+    fprintf (outfile, "#include \"sac_cinterface.h\"\n\n");
 
     if (MODUL_CWRAPPER (arg_node) != NULL) {
         /* traverse list of wrappers */
@@ -532,7 +543,10 @@ PIWarg (node *arg_node, node *arg_info)
 
     case PIW_REFCOUNT_ARGS:
         /* create macro, dec-and-free SAC_arg */
-        fprintf (outfile, "  SAC_DECANDFREERC( in%d );\n", INFO_PIW_COUNTER (arg_info));
+        if (ARG_DIM (arg_node) > 0) {
+            /* refcounting only for array types */
+            fprintf (outfile, "  SAC_DECLOCALRC( in%d );\n", INFO_PIW_COUNTER (arg_info));
+        }
         break;
 
     default:
