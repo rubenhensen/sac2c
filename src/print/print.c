@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.76  2002/03/07 21:27:55  dkr
+ * - return statement is printed even for void-functions now
+ * - some brushing done
+ *
  * Revision 3.75  2002/03/05 16:24:45  dkr
  * minor changes done
  *
@@ -123,12 +127,8 @@
  */
 
 #define PRINT_CONT(code_then, code_else)                                                 \
-    if (arg_info != NULL) {                                                              \
-        if (INFO_PRINT_CONT (arg_info) != arg_node) {                                    \
-            code_then;                                                                   \
-        } else {                                                                         \
-            code_else;                                                                   \
-        }                                                                                \
+    if ((arg_info != NULL) && (INFO_PRINT_CONT (arg_info) == arg_node)) {                \
+        code_else;                                                                       \
     } else {                                                                             \
         code_then;                                                                       \
     }
@@ -317,7 +317,7 @@ DbugPrintArray (node *arg_node)
 /******************************************************************************
  *
  * Function:
- *   void WLAAprintAccesses(node* arg_node, node* arg_info)
+ *   void WLAAprintAccesses( node* arg_node, node* arg_info)
  *
  * Description:
  *
@@ -492,7 +492,7 @@ WLAAprintAccesses (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   void TSIprintInfo(node* arg_node, node* arg_info)
+ *   void TSIprintInfo( node* arg_node, node* arg_info)
  *
  * Description:
  *
@@ -1563,7 +1563,7 @@ PrintBlock (node *arg_node, node *arg_info)
      * the main() function initialization code is generated, but not for
      * subsequent blocks of perhaps loops or conditionals.
      */
-    static int not_yet_done_print_main_begin = 1;
+    static int not_yet_done_print_main_begin = TRUE;
 
     int old_indent = indent;
 
@@ -1585,12 +1585,11 @@ PrintBlock (node *arg_node, node *arg_info)
         fprintf (outfile, "\n");
     }
 
-    if (not_yet_done_print_main_begin && (NODE_TYPE (arg_info) == N_info)
-        && (INFO_PRINT_FUNDEF (arg_info) != NULL)
-        && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)
+    if (not_yet_done_print_main_begin && (INFO_PRINT_FUNDEF (arg_info) != NULL)
+        && (!strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main"))
         && (compiler_phase == PH_genccode)) {
         GSCPrintMainBegin ();
-        not_yet_done_print_main_begin = 0;
+        not_yet_done_print_main_begin = FALSE;
     }
 
     if (BLOCK_INSTR (arg_node)) {
@@ -1634,31 +1633,33 @@ PrintReturn (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintReturn");
 
-    if (RETURN_EXPRS (arg_node) != NULL) {
-        if ((NODE_TYPE (arg_info) == N_info) && (compiler_phase == PH_genccode)
-            && (INFO_PRINT_FUNDEF (arg_info) != NULL)
-            && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)) {
-            GSCPrintMainEnd ();
-            INDENT;
-        }
-
-        if (RETURN_USEMASK (arg_node) != NULL) {
-            fprintf (outfile, "/* use:");
-            DFMPrintMask (outfile, " %s", RETURN_USEMASK (arg_node));
-            fprintf (outfile, " */\n");
-            INDENT;
-        }
-        if (RETURN_DEFMASK (arg_node) != NULL) {
-            fprintf (outfile, "/* def:");
-            DFMPrintMask (outfile, " %s", RETURN_DEFMASK (arg_node));
-            fprintf (outfile, " */\n");
-            INDENT;
-        }
-
-        fprintf (outfile, "return (");
-        Trav (RETURN_EXPRS (arg_node), arg_info);
-        fprintf (outfile, ");");
+    if ((INFO_PRINT_FUNDEF (arg_info) != NULL)
+        && (!strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main"))
+        && (compiler_phase == PH_genccode)) {
+        GSCPrintMainEnd ();
+        INDENT;
     }
+
+    if (RETURN_USEMASK (arg_node) != NULL) {
+        fprintf (outfile, "/* use:");
+        DFMPrintMask (outfile, " %s", RETURN_USEMASK (arg_node));
+        fprintf (outfile, " */\n");
+        INDENT;
+    }
+    if (RETURN_DEFMASK (arg_node) != NULL) {
+        fprintf (outfile, "/* def:");
+        DFMPrintMask (outfile, " %s", RETURN_DEFMASK (arg_node));
+        fprintf (outfile, " */\n");
+        INDENT;
+    }
+
+    fprintf (outfile, "return");
+    if (RETURN_EXPRS (arg_node) != NULL) {
+        fprintf (outfile, "( ");
+        Trav (RETURN_EXPRS (arg_node), arg_info);
+        fprintf (outfile, ")");
+    }
+    fprintf (outfile, ";");
 
     DBUG_RETURN (arg_node);
 }
@@ -2367,7 +2368,7 @@ PrintVectInfo (node *arg_node, node *arg_info)
 node *
 PrintIcm (node *arg_node, node *arg_info)
 {
-    int compiled_icm = 0;
+    bool compiled_icm = FALSE;
 
     DBUG_ENTER ("PrintIcm");
 
@@ -2384,7 +2385,7 @@ PrintIcm (node *arg_node, node *arg_info)
         indent -= ICM_INDENT_BEFORE (arg_node);                                          \
         Print##prf (ICM_ARGS (arg_node), arg_info);                                      \
         indent -= ICM_INDENT_AFTER (arg_node);                                           \
-        compiled_icm = 1;                                                                \
+        compiled_icm = TRUE;                                                             \
     } else
 #define ICM_STR(name)
 #define ICM_INT(name)
@@ -2401,27 +2402,16 @@ PrintIcm (node *arg_node, node *arg_info)
 #undef ICM_END
         if (strcmp (ICM_NAME (arg_node), "NOOP") == 0) {
             fprintf (outfile, "/* noop */");
-            compiled_icm = 1;
+            compiled_icm = TRUE;
         }
     }
 
-    if ((compiler_phase != PH_genccode) || (compiled_icm == 0)) {
-        if ((strcmp (ICM_NAME (arg_node), "ND_FUN_RET") == 0)
-            && (INFO_PRINT_FUNDEF (arg_info) != NULL)
-            && (strcmp (FUNDEF_NAME (INFO_PRINT_FUNDEF (arg_info)), "main") == 0)
-            && (compiler_phase == PH_genccode)) {
-            GSCPrintMainEnd ();
-        }
-
+    if (!compiled_icm) {
         fprintf (outfile, "SAC_%s( ", ICM_NAME (arg_node));
         if (ICM_ARGS (arg_node) != NULL) {
             Trav (ICM_ARGS (arg_node), arg_info);
         }
         fprintf (outfile, ")");
-
-        if (ICM_END_OF_STATEMENT (arg_node)) {
-            fprintf (outfile, ";");
-        }
     }
 
     DBUG_RETURN (arg_node);
