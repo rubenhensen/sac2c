@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.28  1999/01/14 14:25:54  cg
+ * added variable opt_tile to enable/disable tiling,
+ * set current sac2c version to v0.8.
+ *
  * Revision 1.27  1999/01/07 14:01:01  sbs
  * more sophisticated breaking facilities inserted;
  * Now, a break in a specific cycle can be triggered!
@@ -132,7 +136,7 @@
  *  Version control
  */
 
-char version_id[] = "v0.7";
+char version_id[] = "v0.8";
 /* version identifier of sac2c */
 
 #if defined(SOLARIS_SPARC)
@@ -324,6 +328,9 @@ int opt_rco = 1;
 
 int opt_uip = 1;
 /* enable/disable update-in-place */
+
+int opt_tile = 1;
+/* enable/disable tiling */
 
 /*
  * Command line options for specifying particular side conditions
