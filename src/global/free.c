@@ -1,7 +1,12 @@
 /*
  *
  * $Log$
- * Revision 1.14  1995/12/18 16:12:44  cg
+ * Revision 1.15  1995/12/20 08:13:05  cg
+ * modified FreePragma with respect to using arrays for pragmas linksign,
+ * refcounting, and readonly.
+ * new function FreeChar for new N_char node
+ *
+ * Revision 1.14  1995/12/18  16:12:44  cg
  * last free() changed to macro FREE().
  * types->id no longer freed by FreeOneTypes and FreeAllTypes
  *
@@ -554,6 +559,8 @@ FreeObjdef (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE",
                 ("Removing contents of N_objdef node %s ...", ItemName (arg_node)));
 
+    tmp = FREECONT (OBJDEF_NEXT (arg_node));
+
     FREETRAV (OBJDEF_EXPR (arg_node));
     FREETRAV (OBJDEF_PRAGMA (arg_node));
 
@@ -872,7 +879,7 @@ FreeWith (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing contents of N_with node ..."));
 
     FREETRAV (WITH_GEN (arg_node));
-    FREETRAV (WITH_BODY (arg_node));
+    FREETRAV (WITH_OPERATOR (arg_node));
     FREEMASK (WITH_MASK);
 
     DBUG_PRINT ("FREE", ("Removing N_with node ..."));
@@ -1075,6 +1082,20 @@ FreeNum (node *arg_node, node *arg_info)
 }
 
 node *
+FreeChar (node *arg_node, node *arg_info)
+{
+    node *tmp = NULL;
+
+    DBUG_ENTER ("FreeChar");
+
+    DBUG_PRINT ("FREE", ("Removing N_char node ..."));
+
+    FREE (arg_node);
+
+    DBUG_RETURN (tmp);
+}
+
+node *
 FreeFloat (node *arg_node, node *arg_info)
 {
     node *tmp = NULL;
@@ -1262,9 +1283,9 @@ FreePragma (node *arg_node, node *arg_info)
 
     DBUG_PRINT ("FREE", ("Removing contents of N_pragma node ..."));
 
-    FreeAllNums (PRAGMA_LINKSIGN (arg_node));
-    FreeAllNums (PRAGMA_READONLY (arg_node));
-    FreeAllNums (PRAGMA_REFCOUNTING (arg_node));
+    FREE (PRAGMA_LINKSIGN (arg_node));
+    FREE (PRAGMA_READONLY (arg_node));
+    FREE (PRAGMA_REFCOUNTING (arg_node));
     FreeAllIds (PRAGMA_EFFECT (arg_node));
     FreeAllIds (PRAGMA_TOUCH (arg_node));
     FREE (PRAGMA_LINKNAME (arg_node));
