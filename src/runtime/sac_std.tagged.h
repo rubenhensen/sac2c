@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.38  2003/08/04 14:01:59  dkr
+ * comment for SAC_ND_PARAM_ added
+ *
  * Revision 3.37  2003/06/12 17:21:54  dkr
  * ICMs CREATE__VECT__... renamed into CREATE__ARRAY__...
  *
@@ -702,6 +705,7 @@ typedef int *SAC_array_descriptor_t;
 /* creates name for formal function parameter */
 #define SAC_NAMEP(name) CAT0 (name, __p)
 
+/* needed for T_dots parameters (ATG_notag) */
 #define SAC_ND_PARAM_(dummy, basetype) basetype
 
 #define SAC_ND_PARAM_in(nt, basetype)                                                    \
