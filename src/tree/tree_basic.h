@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.101  2000/10/31 18:17:51  cg
+ * Added new attributes for re-implementation of dead function removal:
+ *  FUNDEF_EXPORT and INFO_DFR_SPINE.
+ *
  * Revision 1.100  2000/10/27 00:05:10  dkr
  * INFO_COMP_VARDECS removed
  *
@@ -1002,6 +1006,9 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
  ***
  ***    node*           FUNDEC_DEF  (N_fundef)    (checkdec -> writesib !!)
  ***
+ ***    bool            EXPORT                    ( -> dfr !!)
+ ***
+ ***
  ***  temporary attributes for ST_foldfun fundefs only:
  ***
  ***    ---
@@ -1016,6 +1023,7 @@ extern node *MakeObjdef (char *name, char *mod, types *type, node *expr, node *n
 /*
  *  STATUS: ST_regular      function defined in this module
  *          ST_imported     imported function (maybe declaration only)
+ *          ST_exported     function is exported by module/class or program ('main')
  *          ST_Cfun         function implemented in C
  *          ST_objinitfun   generic function for object initialization
  *          ST_classfun     class conversion function
@@ -1080,6 +1088,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
 #define FUNDEF_MASK(n, x) (n->mask[x])
 #define FUNDEF_INLINE(n) (n->flag)
 #define FUNDEF_INLREC(n) (n->refcnt)
+#define FUNDEF_EXPORT(n) (n->int_data)
 #define FUNDEF_DFM_BASE(n) (n->dfmask[0])
 #define FUNDEF_IDENTIFIER(n) ((int)(n->dfmask[1]))
 #define FUNDEF_MT2USE(n) (n->dfmask[2])
@@ -2155,6 +2164,9 @@ extern node *MakePragma ();
  ***    int        NEWACT
  ***    long*      ACT
  ***
+ ***  when used in DeadFunctionRemoval.c:
+ ***    int        SPINE
+ ***
  ***  when used in index.c:
  ***    node *     INFO_IVE_FUNDEF           (N_fundef)
  ***    node *     INFO_IVE_VARDECS          (N_vardec)
@@ -2627,6 +2639,9 @@ extern node *MakeInfo ();
 #define INFO_DCR_TRAVTYPE(n) (n->flag)
 #define INFO_DCR_NEWACT(n) (n->lineno)
 #define INFO_DCR_ACT(n) (n->mask[2])
+
+/* DFR */
+#define INFO_DFR_SPINE(n) (n->flag)
 
 /* Unrolling */
 #define INFO_UNR_ASSIGN(n) (n->node[0])
