@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.5  2000/07/12 15:14:31  dkr
+ * function DuplicateTypes renamed into DupTypes
+ * function SearchDecl moved to tree_compound.c
+ *
  * Revision 2.4  2000/06/23 15:19:11  dkr
  * function DupTree() with argument (arg_info != NULL) is replaced by
  * function DupTreeInfo()
@@ -90,7 +94,6 @@
  * Revision 1.1  1995/05/26  14:22:18  asi
  * Initial revision
  *
- *
  */
 
 #include <stdio.h>
@@ -134,6 +137,7 @@ static int inline_nr = 0;
  *  remarks       : ---
  *
  */
+
 node *
 Inline (node *arg_node, node *arg_info)
 {
@@ -172,6 +176,7 @@ Inline (node *arg_node, node *arg_info)
  *  remarks       : ---
  *
  */
+
 node *
 INLmodul (node *arg_node, node *arg_info)
 {
@@ -197,6 +202,7 @@ INLmodul (node *arg_node, node *arg_info)
  *  remarks       : ---
  *
  */
+
 void
 InlineNo (node *first)
 {
@@ -265,7 +271,7 @@ INLfundef (node *arg_node, node *arg_info)
  *  external funs : Trav            (traverse.h)
  *                  DupTree         (DupTree.h)
  *                  MakeAssignLet   (tree_compound.h)
- *		    AppendNodeChain (tree.h)
+ *                  AppendNodeChain (tree.h)
  *  macros        : AP_NAME, BLOCK_VARDEC, FUNDEF_BODY, AP_FUNDEF, FUNDEF_ARGS,
  *                  DUPTYPE, DUP_NORMAL, ARG_NAME, INL_TYPES, ASSIGN_INSTR, VARDEC_NEXT,
  *                  EXPRS_NEXT, NEWTREE, IDS_NEXT, DUP_INLINE,
@@ -397,13 +403,14 @@ InlineSingleApplication (node *let_node, node *fundef_node)
  *  global vars   : ---
  *  internal funs : DoInline
  *  external funs : Trav            (traverse.h)
- *		    AppendNodeChain (tree.h)
+ *                  AppendNodeChain (tree.h)
  *  macros        : NODE_TYPE, AP_NAME, NODE_LINE, FUNDEF_INLINE, FUNDEF_INLREC,
  *                  AP_FUNDEF, ASSIGN_INSTR, ASSIGN_NEXT,
  *
  *  remarks       : ---
  *
  */
+
 node *
 INLassign (node *arg_node, node *arg_info)
 {
@@ -411,6 +418,7 @@ INLassign (node *arg_node, node *arg_info)
     node *inlined_nodes = NULL;
 
     DBUG_ENTER ("INLassign");
+
     if (N_let == NODE_TYPE (ASSIGN_INSTR (arg_node))) {
         node_behind = NodeBehindCast (LET_EXPR ((ASSIGN_INSTR (arg_node))));
         if (N_ap == NODE_TYPE (node_behind)) {
@@ -419,8 +427,9 @@ INLassign (node *arg_node, node *arg_info)
                          AP_NAME (node_behind), NODE_LINE (arg_node),
                          FUNDEF_INLINE (AP_FUNDEF (node_behind)),
                          FUNDEF_INLREC (AP_FUNDEF (node_behind))));
-            if (0 < FUNDEF_INLREC (AP_FUNDEF (node_behind)))
+            if (0 < FUNDEF_INLREC (AP_FUNDEF (node_behind))) {
                 inlined_nodes = DoInline (ASSIGN_INSTR (arg_node), node_behind, arg_info);
+            }
         }
     }
 
@@ -460,60 +469,21 @@ INLassign (node *arg_node, node *arg_info)
  *  remarks       : ---
  *
  */
+
 char *
 RenameInlinedVar (char *old_name)
 {
     char *new_name;
 
     DBUG_ENTER ("RenameInlinedVar");
+
     new_name = (char *)Malloc (sizeof (char)
                                * (strlen (old_name) + INLINE_PREFIX_LENGTH + 1 + /* _ */
                                   5 +  /* max length of inline_nr */
                                   1)); /* #0 at eol */
     sprintf (new_name, INLINE_PREFIX "%d_%s", inline_nr, old_name);
+
     DBUG_RETURN (new_name);
-}
-
-/*
- *
- *  functionname  : SearchDecl
- *  arguments     : 1) character string
- *                  2) N_vardec - or N_arg - chain
- *                  R) true or false
- *  description   : returns ptr to N_vardec - or N_arg - node  if variable or argument
- *                  with same name as in 1) has been found, else NULL
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : strcmp
- *  macros        : NODE_TYPE, VARDEC_NAME, VARDEC_NEXT, ARG_NAME, ARG_NEXT
- *
- *  remarks       : ---
- *
- */
-node *
-SearchDecl (char *name, node *decl_node)
-{
-    node *found = NULL;
-
-    DBUG_ENTER ("SearchDecl");
-    while (NULL != decl_node) {
-        if (N_vardec == NODE_TYPE (decl_node)) {
-            if (!strcmp (name, VARDEC_NAME (decl_node))) {
-                found = decl_node;
-                decl_node = NULL;
-            } else {
-                decl_node = VARDEC_NEXT (decl_node);
-            }
-        } else {
-            if (!strcmp (name, ARG_NAME (decl_node))) {
-                found = decl_node;
-                decl_node = NULL;
-            } else {
-                decl_node = ARG_NEXT (decl_node);
-            }
-        }
-    }
-    DBUG_RETURN (found);
 }
 
 /*
@@ -525,30 +495,30 @@ SearchDecl (char *name, node *decl_node)
  *  description   : Duplicates and renames 1) for function inlining
  *  global vars   : ---
  *  internal funs : RenameInlinedVar, SearchDecl
- *  external funs : DuplicateTypes (typcheck.h)
- *                  MakeVardec     (tree_basic.h)
- *  macros        : VARDEC_NAME, INL_TYPES, VARDEC_TYPE, ARG_NAME, ARG_TYPE, ARG_NEXT
- *                  FREE, NEWTREE, VARDEC_NEXT, ARG_NEXT
  *
  *  remarks       : ---
  *
  */
+
 node *
 INLarg (node *arg_node, node *arg_info)
 {
     char *new_name;
     types *new_type;
+    node *new_vardec;
 
     DBUG_ENTER ("INLarg");
-    DBUG_ASSERT (N_arg == NODE_TYPE (arg_node), ("wrong node type"));
+
+    DBUG_ASSERT ((N_arg == NODE_TYPE (arg_node)), "wrong node type");
 
     new_name = RenameInlinedVar (ARG_NAME (arg_node));
     if (!SearchDecl (new_name, INFO_INL_TYPES (arg_info))) {
-        new_type = DuplicateTypes (ARG_TYPE (arg_node), 1);
-        /* DuplicateTypes also copies attrib and status information. */
+        new_type = DupTypes (ARG_TYPE (arg_node));
 
-        INFO_INL_TYPES (arg_info)
-          = MakeVardec (new_name, new_type, INFO_INL_TYPES (arg_info));
+        new_vardec = MakeVardec (new_name, new_type, INFO_INL_TYPES (arg_info));
+        VARDEC_STATUS (new_vardec) = ARG_STATUS (arg_node);
+        VARDEC_ATTRIB (new_vardec) = ARG_ATTRIB (arg_node);
+        INFO_INL_TYPES (arg_info) = new_vardec;
 
         VARDEC_OBJDEF (INFO_INL_TYPES (arg_info)) = ARG_OBJDEF (arg_node);
         /*
@@ -558,11 +528,13 @@ INLarg (node *arg_node, node *arg_info)
          * artificial variable declaration.
          */
 
-    } else
+    } else {
         FREE (new_name);
+    }
 
-    if (ARG_NEXT (arg_node))
+    if (ARG_NEXT (arg_node)) {
         ARG_NEXT (arg_node) = Trav (ARG_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -572,19 +544,19 @@ INLvardec (node *arg_node, node *arg_info)
 {
     char *new_name;
     types *new_type;
+    node *new_vardec;
 
     DBUG_ENTER ("INLvardec");
     DBUG_ASSERT (N_vardec == NODE_TYPE (arg_node), ("wrong node type"));
 
     new_name = RenameInlinedVar (VARDEC_NAME (arg_node));
     if (!SearchDecl (new_name, INFO_INL_TYPES (arg_info))) {
-        new_type = DuplicateTypes (VARDEC_TYPE (arg_node), 1);
-        /*
-         * DuplicateTypes also copies attrib and status information.
-         */
+        new_type = DupTypes (VARDEC_TYPE (arg_node));
 
-        INFO_INL_TYPES (arg_info)
-          = MakeVardec (new_name, new_type, INFO_INL_TYPES (arg_info));
+        new_vardec = MakeVardec (new_name, new_type, INFO_INL_TYPES (arg_info));
+        VARDEC_STATUS (new_vardec) = ARG_STATUS (arg_node);
+        VARDEC_ATTRIB (new_vardec) = ARG_ATTRIB (arg_node);
+        INFO_INL_TYPES (arg_info) = new_vardec;
 
         VARDEC_OBJDEF (INFO_INL_TYPES (arg_info)) = VARDEC_OBJDEF (arg_node);
         /*
@@ -593,12 +565,13 @@ INLvardec (node *arg_node, node *arg_info)
          * an artificial function argument is copied to the respective
          * artificial variable declaration.
          */
-
-    } else
+    } else {
         FREE (new_name);
+    }
 
-    if (VARDEC_NEXT (arg_node))
+    if (VARDEC_NEXT (arg_node)) {
         VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
