@@ -1,6 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 2.26  1999/11/12 13:53:04  dkr
+ * FetchNum() changed:
+ *   renamed to FetchElem
+ *   fixed a bug: type of element is taken into account now :))
+ *
  * Revision 2.25  1999/11/11 20:06:01  dkr
  * Signature and name of function IsConstantArray changed.
  * Fixed a bug in CFArray:
@@ -358,7 +363,7 @@ CompareNumArrayType (node *array1, node *array2)
  *   int CompareNumArrayElts(node *array1, node *array2)
  *
  * description:
- *   returnes 1 if both constant arrays have the same elements. Else returnes 0.
+ *   Returns 1 if both constant arrays contains the same elements, 0 otherwise.
  *   Arrays must have type T_int.
  *
  ******************************************************************************/
@@ -1247,6 +1252,8 @@ GetShapeVector (node *array, int *vec_shape)
         for (i = 0; i < SHP_SEG_SIZE; i++) {
             if (expr != NULL) {
                 vec_dim++;
+                DBUG_ASSERT ((NODE_TYPE (ARRAY_AELEMS (expr)) == N_num),
+                             "array element is not N_num");
                 vec_shape[i] = NUM_VAL (ARRAY_AELEMS (expr));
                 if (EXPRS_NEXT (expr) != NULL)
                     expr = EXPRS_NEXT (expr);
@@ -1257,10 +1264,14 @@ GetShapeVector (node *array, int *vec_shape)
         }
     } else {
         vec_dim = ARRAY_VECLEN (array);
-        for (i = 0; i < vec_dim; i++)
+        for (i = 0; i < vec_dim; i++) {
+            DBUG_ASSERT ((ARRAY_VECTYPE (array) == T_int),
+                         "array element do not have type T_int");
             vec_shape[i] = ((int *)ARRAY_CONSTVEC (array))[i];
-        for (i = vec_dim; i < SHP_SEG_SIZE; i++)
+        }
+        for (i = vec_dim; i < SHP_SEG_SIZE; i++) {
             vec_shape[i] = 0;
+        }
     }
 
     DBUG_RETURN (vec_dim);
@@ -1739,7 +1750,7 @@ NoConstScalarPrf (node *arg_node, node *arg_info)
 
 /*
  *
- *  functionname  : FetchNum
+ *  functionname  : FetchElem
  *  arguments     : 1) position in array
  *                  2) ptr to the array
  *                  R) ptr to fetchted element
@@ -1753,26 +1764,39 @@ NoConstScalarPrf (node *arg_node, node *arg_info)
  *
  */
 node *
-FetchNum (int pos, node *array)
+FetchElem (int pos, node *array)
 {
+    node *elem;
     int i;
-    node *tmp;
 
-    DBUG_ENTER ("FetchNum");
+    DBUG_ENTER ("FetchElem");
 
     if (ARRAY_CONSTVEC (array) == NULL) {
-        tmp = ARRAY_AELEMS (array);
-
-        for (i = 0; i < pos; i++)
-            tmp = EXPRS_NEXT (tmp);
-
-        tmp = DupTree (EXPRS_EXPR (tmp), NULL);
+        elem = ARRAY_AELEMS (array);
+        for (i = 0; i < pos; i++) {
+            elem = EXPRS_NEXT (elem);
+        }
+        elem = DupTree (EXPRS_EXPR (elem), NULL);
     } else {
-        i = ((int *)ARRAY_CONSTVEC (array))[pos];
-        tmp = MakeNum (i);
+        switch (ARRAY_VECTYPE (array)) {
+        case T_int:
+            elem = MakeNum (((int *)ARRAY_CONSTVEC (array))[pos]);
+            break;
+        case T_float:
+            elem = MakeFloat (((float *)ARRAY_CONSTVEC (array))[pos]);
+            break;
+        case T_double:
+            elem = MakeDouble (((double *)ARRAY_CONSTVEC (array))[pos]);
+            break;
+        case T_bool:
+            elem = MakeBool (((int *)ARRAY_CONSTVEC (array))[pos]);
+            break;
+        default:
+            DBUG_ASSERT ((0), "fetched element has wrong type");
+        }
     }
 
-    DBUG_RETURN (tmp);
+    DBUG_RETURN (elem);
 }
 
 /*
@@ -1840,7 +1864,7 @@ CalcPsi (node *shape, node *array, types *array_type, node *arg_info)
                 ("start = %d, lenght = %d, arg_length = %d", start, length, arg_length));
     if ((start + length <= arg_length) && (start >= 0)) {
         if (vec_dim == array_dim)
-            res_node = FetchNum (start, array);
+            res_node = FetchElem (start, array);
         else
             res_node = DupPartialArray (start, length, array, arg_info);
     } else {
