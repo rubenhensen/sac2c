@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/16 11:58:44  nmw
+ * ssaphit_t enum type added
+ *
  * Revision 3.4  2001/03/06 13:19:10  nmw
  * type cmptree_t added
  *
@@ -252,6 +255,8 @@ typedef enum { NO_CLSCONV, TO_CLASS, FROM_CLASS } clsconv_t;
 typedef enum { LOC_usr, LOC_stdlib } locationtype;
 
 typedef enum { CMPT_EQ, CMPT_NEQ, CMPT_UKNWN } cmptree_t;
+
+typedef enum { PHIT_NONE, PHIT_COND, PHIT_DO, PHIT_WHILE } ssaphit_t;
 
 /*
  * new nodes for yacc and the syntax tree
