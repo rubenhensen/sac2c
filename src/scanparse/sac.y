@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.101  1995/12/29 10:38:14  cg
+ * Revision 1.102  1996/01/02 15:56:05  cg
+ * The LINKMOD slot of fundef, typedef, and objdef nodes from module/class
+ * declarations are now always set to the respective module/class name
+ *
+ * Revision 1.101  1995/12/29  10:38:14  cg
  * parsing of SIBs entirely re-implemented
  *
  * Revision 1.100  1995/12/21  15:04:43  cg
@@ -381,7 +385,7 @@ node *sib_tree;
 
 
 static char *mod_name="__MAIN";
-static char *c_mod_name=NULL;
+static char *link_mod_name=NULL;
 static node *store_pragma=NULL;
 
 
@@ -542,13 +546,13 @@ modheader: modclass evextern id COLON
              if ($2)
              {
                mod_name=NULL;
-               c_mod_name=$3;
              }
              else
              {
                mod_name=$3;
-               c_mod_name=NULL;
              }
+
+             link_mod_name=$3;
              $$->info.fun_name.id=$3;
              $$->info.fun_name.id_mod=mod_name;
            }
@@ -716,7 +720,7 @@ imptype: id SEMIC pragmas
 
               $$->info.types->id=$1;
               $$->info.types->id_mod=mod_name;
-              $$->info.types->id_cmod=c_mod_name;
+              $$->info.types->id_cmod=link_mod_name;
               $$->info.types->status=ST_imported;
               TYPEDEF_PRAGMA($$)=$3;
               
@@ -740,7 +744,7 @@ exptype: id LET type SEMIC pragmas
             $$->info.types=$3;
             $$->info.types->id=$1;
             $$->info.types->id_mod=mod_name;
-            $$->info.types->id_cmod=c_mod_name;
+            $$->info.types->id_cmod=link_mod_name;
             $$->info.types->status=ST_imported;
             TYPEDEF_PRAGMA($$)=$5;
 
@@ -763,7 +767,7 @@ objdec: type id SEMIC pragmas
              $$->info.types=$1;
              $$->info.types->id=$2;              /* object name */
              $$->info.types->id_mod=mod_name;    /* SAC module name */
-             $$->info.types->id_cmod=c_mod_name; /* external module name */
+             $$->info.types->id_cmod=link_mod_name; /* external module name */
              $$->info.types->status=ST_imported;
              $$->node[1]=NULL;	/* there is no object init here! */
              OBJDEF_PRAGMA($$)=$4;
@@ -792,7 +796,7 @@ fundec: varreturntypes id BRACKET_L fundec2
             $$->info.types=$1;
             $$->info.types->id=$2; /* function name */
             $$->info.types->id_mod=mod_name;    /* SAC modul name */
-            $$->info.types->id_cmod=c_mod_name; /* external modul name */
+            $$->info.types->id_cmod=link_mod_name; /* external modul name */
             $$->info.types->status=ST_imported;
             
             DBUG_PRINT("GENTREE",
@@ -816,7 +820,7 @@ fundec: varreturntypes id BRACKET_L fundec2
                 $$->info.types=$1;
                 $$->info.types->id=$2;              /* function name */
                 $$->info.types->id_mod=mod_name;    /* SAC module name */
-                $$->info.types->id_cmod=c_mod_name; /* external module name */
+                $$->info.types->id_cmod=link_mod_name; /* external module name */
                 $$->info.types->status=ST_imported;
                 
             DBUG_PRINT("GENTREE",
