@@ -1,8 +1,13 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2000/02/09 15:06:05  dkr
+ * the parts of a with-loop are traversed in the correct order now
+ * the modul name of the lifted fundef is set correctly now
+ *
  * Revision 1.6  2000/02/09 09:59:16  dkr
  * FUNDEF_LAC_LET added
+ * global objects are handled correctly now
  *
  * Revision 1.5  2000/02/08 16:40:33  dkr
  * LAC2FUNwith() and LAC2FUNwith2() added
@@ -41,7 +46,7 @@
 /******************************************************************************
  *
  * function:
- *   char *MakeDummyFunName( char *suffix)
+ *   char *GetDummyFunName( char *suffix)
  *
  * description:
  *   Creates a new name for a dummy function. 'suffix' should be one of the
@@ -50,14 +55,16 @@
  ******************************************************************************/
 
 static char *
-MakeDummyFunName (char *suffix)
+GetDummyFunName (char *suffix)
 {
+#define NAMLEN 100
     static int number = 0;
-    char *funname;
+    static char funname[NAMLEN];
 
-    DBUG_ENTER ("MakeDummyFunName");
+    DBUG_ENTER ("GetDummyFunName");
 
-    funname = (char *)MALLOC ((sizeof (char) * (strlen (suffix) + number / 10 + 4)));
+    DBUG_ASSERT (((strlen (suffix) + number / 10 + 4) <= NAMLEN),
+                 "name of dummy function too long");
     sprintf (funname, "__%s%i", suffix, number);
     number++;
 
@@ -67,7 +74,7 @@ MakeDummyFunName (char *suffix)
 /******************************************************************************
  *
  * function:
- *   node *MakeDummyFundef( char *funname, status status,
+ *   node *MakeDummyFundef( char *funname, char *modname, status status,
  *                          node *instr,
  *                          DFMmask_t in, DFMmask_t out, DFMmask_t local)
  *
@@ -77,8 +84,8 @@ MakeDummyFunName (char *suffix)
  ******************************************************************************/
 
 static node *
-MakeDummyFundef (char *funname, statustype status, node *instr, DFMmask_t in,
-                 DFMmask_t out, DFMmask_t local)
+MakeDummyFundef (char *funname, char *modname, statustype status, node *instr,
+                 DFMmask_t in, DFMmask_t out, DFMmask_t local)
 {
     lut_t *lut;
     DFMmask_t tmp_mask;
@@ -113,8 +120,8 @@ MakeDummyFundef (char *funname, statustype status, node *instr, DFMmask_t in,
     }
     DBUG_ASSERT ((assigns != NULL), "wrong status -> no assigns created");
 
-    fundef = MakeFundef (funname, NULL, DFM2Types (out), args,
-                         MakeBlock (assigns, vardecs), NULL);
+    fundef = MakeFundef (StringCopy (funname), StringCopy (modname), DFM2Types (out),
+                         args, MakeBlock (assigns, vardecs), NULL);
     FUNDEF_STATUS (fundef) = status;
     FUNDEF_RETURN (fundef) = ASSIGN_INSTR (ret);
 
@@ -133,13 +140,14 @@ MakeDummyFundef (char *funname, statustype status, node *instr, DFMmask_t in,
  ******************************************************************************/
 
 static node *
-MakeDummyFunLet (char *funname, node *fundef, DFMmask_t in, DFMmask_t out)
+MakeDummyFunLet (char *funname, char *modname, node *fundef, DFMmask_t in, DFMmask_t out)
 {
     node *let;
 
     DBUG_ENTER ("MakeDummyFunLet");
 
-    let = MakeLet (MakeAp (StringCopy (funname), NULL, DFM2Exprs (in, NULL)),
+    let = MakeLet (MakeAp (StringCopy (funname), StringCopy (modname),
+                           DFM2Exprs (in, NULL)),
                    DFM2Ids (out, NULL));
     AP_FUNDEF (LET_EXPR (let)) = fundef;
 
@@ -253,6 +261,8 @@ LAC2FUNfundef (node *arg_node, node *arg_info)
     node *ret, *tmp;
 
     DBUG_ENTER ("LAC2FUNfundef");
+
+    INFO_LAC2FUN_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_LAC2FUN_FUNS (arg_info) = NULL;
@@ -416,11 +426,36 @@ LAC2FUNwithid (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *LAC2FUNcode( node *arg_node, node *arg_info)
+ *
+ * description:
+ *   In order to get a correct bottom-up-traversal, the code-expr must be
+ *   traversed *before* the code-block!
+ *
+ ******************************************************************************/
+
+node *
+LAC2FUNcode (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("LAC2FUNcode");
+
+    NCODE_CEXPR (arg_node) = Trav (NCODE_CEXPR (arg_node), arg_info);
+    NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
+    if (NCODE_NEXT (arg_node) != NULL) {
+        NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *LAC2FUNwith( node *arg_node, node *arg_info)
  *
  * description:
- *   In order to infer the withid-ids as local-vars, code and withop must be
- *   traversed *before* the withid (contained in part)!!
+ *   In order to infer the withid-ids as local-vars, withop and code must be
+ *   traversed *before* the withid (contained in part)!
  *
  ******************************************************************************/
 
@@ -429,8 +464,8 @@ LAC2FUNwith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("LAC2FUNwith");
 
-    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
+    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -442,8 +477,8 @@ LAC2FUNwith (node *arg_node, node *arg_info)
  *   node *LAC2FUNwith2( node *arg_node, node *arg_info)
  *
  * description:
- *   In order to infer the withid-ids as local-vars, the segments, code and
- *   withop must be traversed *before* the withid!!
+ *   In order to infer the withid-ids as local-vars, the withop, segments and
+ *   code must be traversed *before* the withid!
  *
  ******************************************************************************/
 
@@ -452,9 +487,9 @@ LAC2FUNwith2 (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("LAC2FUNwith2");
 
+    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
     NWITH2_SEGS (arg_node) = Trav (NWITH2_SEGS (arg_node), arg_info);
     NWITH2_CODE (arg_node) = Trav (NWITH2_CODE (arg_node), arg_info);
-    NWITH2_WITHOP (arg_node) = Trav (NWITH2_WITHOP (arg_node), arg_info);
     NWITH2_WITHID (arg_node) = Trav (NWITH2_WITHID (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -478,7 +513,7 @@ LAC2FUNcond (node *arg_node, node *arg_info)
     DFMmask_t in_then, out_then, local_then;
     DFMmask_t in_else, out_else, local_else;
     DFMmask_t tmp;
-    char *funname;
+    char *funname, *modname;
     node *fundef;
 
     DBUG_ENTER ("LAC2FUNcond");
@@ -550,9 +585,11 @@ LAC2FUNcond (node *arg_node, node *arg_info)
     /*
      * build new dummy function
      */
-    funname = MakeDummyFunName ("Cond");
-    fundef = MakeDummyFundef (funname, ST_condfun, arg_node, INFO_LAC2FUN_IN (arg_info),
-                              INFO_LAC2FUN_OUT (arg_info), INFO_LAC2FUN_LOCAL (arg_info));
+    funname = GetDummyFunName ("Cond");
+    modname = FUNDEF_MOD (INFO_LAC2FUN_FUNDEF (arg_info));
+    fundef = MakeDummyFundef (funname, modname, ST_condfun, arg_node,
+                              INFO_LAC2FUN_IN (arg_info), INFO_LAC2FUN_OUT (arg_info),
+                              INFO_LAC2FUN_LOCAL (arg_info));
     /*
      * insert new dummy function into INFO_LAC2FUN_FUNS
      */
@@ -563,7 +600,7 @@ LAC2FUNcond (node *arg_node, node *arg_info)
      * replace the conditional by a call of the new dummy function
      */
     arg_node = FreeTree (arg_node);
-    arg_node = MakeDummyFunLet (funname, fundef, INFO_LAC2FUN_IN (arg_info),
+    arg_node = MakeDummyFunLet (funname, modname, fundef, INFO_LAC2FUN_IN (arg_info),
                                 INFO_LAC2FUN_OUT (arg_info));
     FUNDEF_LAC_LET (fundef) = arg_node;
     INFO_LAC2FUN_ISTRANS (arg_info) = 1;
