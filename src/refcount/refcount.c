@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.46  1998/05/05 11:26:28  dkr
+ * added RCNwithop
+ * .
+ *
  * Revision 1.45  1998/05/03 14:02:03  dkr
  * fixed a bug in RCNcode: traverses NEXT-node now
  *
@@ -1401,7 +1405,9 @@ RCNwith (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("RCNwith");
 
+    NWITH_CODE (arg_node) = Trav (NWITH_CODE (arg_node), arg_info);
     NWITH_PART (arg_node) = Trav (NWITH_PART (arg_node), arg_info);
+    NWITH_WITHOP (arg_node) = Trav (NWITH_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1426,9 +1432,8 @@ RCNpart (node *arg_node, node *arg_info)
 
     ref_dump = StoreAndInit (0); /* store refcounts */
 
-    NPART_CODE (arg_node) = Trav (NPART_CODE (arg_node), arg_info);
-    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
     NPART_WITHID (arg_node) = Trav (NPART_WITHID (arg_node), arg_info);
+    NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
 
     with_dump = Store (); /* store refcounts of with-loop */
 
@@ -1562,6 +1567,24 @@ RCNwithid (node *arg_node, node *arg_info)
         }
         my_ids = IDS_NEXT (my_ids);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *RCNwithop( node *arg_node, node *arg_info)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+RCNwithop (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("RCNwithop");
 
     DBUG_RETURN (arg_node);
 }
