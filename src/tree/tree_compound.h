@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.27  2000/07/11 14:50:40  dkr
+ * function IsHidden added
+ *
  * Revision 1.26  2000/07/07 15:44:57  bs
  * The following compound macros moved from tree_basic to tree_compound:
  * INFO_WLAA_ARRAYSHP, INFO_WLAA_INDEXDIM, INFO_WLAA_ARRAYDIM
@@ -192,23 +195,23 @@ extern shpseg *MergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
 /******************************************************************************
  *
  * function:
- *   int IsBoxed(types *type)
- *   int IsUnique(types *type)
- *   int IsArray(types *type)
- *   int IsNonUniqueHidden(types *type)
+ *   int IsBoxed( types *type)
+ *   int IsArray( types *type)
+ *   int IsUnique( types *type)
+ *   int IsHidden( types *type)
+ *   int IsNonUniqueHidden( types *type)
  *
  * description:
- *
  *   These functions may be used to check for particular properties
  *   of a given data type.
  *
- *
  ******************************************************************************/
 
-extern int IsArray (types *type);
-extern int IsNonUniqueHidden (types *type);
 extern int IsBoxed (types *type);
+extern int IsArray (types *type);
 extern int IsUnique (types *type);
+extern int IsHidden (types *type);
+extern int IsNonUniqueHidden (types *type);
 
 /*--------------------------------------------------------------------------*/
 
@@ -241,10 +244,8 @@ extern ids *AppendIdsChain (ids *first, ids *second);
  *   ids *LookupIds(char *name, ids *ids_chain)
  *
  * description:
- *
  *   This function searches for a given identifier name within an ids-chain
  *   of identifiers and returns the ids-structure if found or NULL otherwise.
- *
  *
  ******************************************************************************/
 
@@ -1077,7 +1078,6 @@ extern node *MakeAssignLet (char *var_name, node *vardec_node, node *let_expr);
  *                                    node *arg7)
  *
  * description:
- *
  *   These functions generate an N_assign node with a complete ICM
  *   representations including arguments as body.
  *   Each function argument may be an arbitrary list of single ICM arguments.
@@ -1522,7 +1522,6 @@ extern node *MakePrf3 (prf prf, node *arg1, node *arg2, node *arg3);
  *                              node *arg5, node *arg6, node *arg7)
  *
  * description:
- *
  *   These functions generate complete ICM representations including arguments.
  *   Each function argument may be an arbitrary list of single ICM arguments.
  *   These are concatenated correctly.
