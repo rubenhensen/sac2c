@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.20  1997/11/07 13:32:08  srs
+ * removed unused function PrintLeton
+ *
  * Revision 1.19  1997/05/14 08:14:41  sbs
  * PrintAnnotate added
  *
@@ -102,7 +105,6 @@ extern node *PrintDo (node *, node *);
 extern node *PrintWhile (node *, node *);
 extern node *PrintFor (node *, node *);
 extern node *PrintEmpty (node *, node *);
-extern node *PrintLeton (node *, node *);
 extern node *PrintCond (node *, node *);
 extern node *PrintWith (node *, node *);
 extern node *PrintGenator (node *, node *);

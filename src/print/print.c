@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.134  1997/11/07 13:32:24  srs
+ * removed unused function PrintLeton
+ *
  * Revision 1.133  1997/11/02 13:59:14  dkr
  * with defined NEWTREE, node->nnode is not used anymore
  *
@@ -1411,34 +1414,6 @@ PrintWhile (node *arg_node, node *arg_info)
                   PrintMasks (arg_node->node[1], arg_info););
 
     Trav (arg_node->node[1], arg_info); /* traverse body of loop */
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-PrintLeton (node *arg_node, node *arg_info)
-{
-    DBUG_ENTER ("PrintAddon");
-
-    switch (arg_node->nodetype) {
-    case N_addon:
-        fprintf (outfile, " %s += ", arg_node->info.ids->id);
-        break;
-    case N_subon:
-        fprintf (outfile, " %s -= ", arg_node->info.ids->id);
-        break;
-    case N_mulon:
-        fprintf (outfile, " %s *= ", arg_node->info.ids->id);
-        break;
-    case N_divon:
-        fprintf (outfile, " %s /= ", arg_node->info.ids->id);
-        break;
-    default:
-        Error ("wrong nodetype in PrintLeton", 1);
-        break;
-    }
-    Trav (arg_node->node[0], arg_info);
-    fprintf (outfile, ";");
 
     DBUG_RETURN (arg_node);
 }
