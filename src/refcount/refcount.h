@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/04/19 21:19:40  dkr
+ * FindVardec is now external
+ *
  * Revision 1.14  1998/02/06 18:48:56  dkr
  * new function RCNwithid()
  *
@@ -80,5 +83,7 @@ extern int IsArray (types *type);
 extern int IsNonUniqueHidden (types *type);
 extern int IsBoxed (types *type);
 extern int IsUnique (types *type);
+
+extern node *FindVardec (int varno, node *fundef);
 
 #endif /* _refcount_h */
