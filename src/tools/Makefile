@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.7  2001/11/20 13:37:42  sbs
+# definition of LIBM moved to Makefile.Config as it is platform specific.
+#
 # Revision 3.6  2001/11/20 13:35:23  sbs
 # -lm commented out on MAC_OS
 #
@@ -64,9 +67,6 @@ LIBDIR    := ../libsac
 INCS      := -I../runtime -I../libsac -I../../inc
 LIBS      := -L$(LIBDIR)
 
-ifneq ($(OS),OSX_MAC)
-  LIBM = -lm
-endif
 
 .PHONY: all tar
 
