@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.57  1998/03/02 13:55:08  srs
+ * new macro MAKE_INCDEC_LET
+ *
  * Revision 1.56  1998/02/23 13:05:37  srs
  * added macro for new WL
  *
@@ -1159,6 +1162,10 @@ extern node *GetCompoundNode (node *arg_node);
 
 #define MAKE_OPON_LET(id, expr, op)                                                      \
     MakeLet (MAKE_BIN_PRF (op, MakeId (id, NULL, ST_regular), expr),                     \
+             MakeIds (StringCopy (id), NULL, ST_regular))
+
+#define MAKE_INCDEC_LET(id, op)                                                          \
+    MakeLet (MAKE_BIN_PRF (op, MakeId (id, NULL, ST_regular), MakeNum (1)),              \
              MakeIds (StringCopy (id), NULL, ST_regular))
 
 /*--------------------------------------------------------------------------*/
