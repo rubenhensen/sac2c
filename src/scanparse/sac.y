@@ -3,7 +3,11 @@
 /*
  *
  * $Log$
- * Revision 1.119  1996/09/09 10:06:47  cg
+ * Revision 1.120  1996/09/11 06:18:31  cg
+ * Added a short cut notation for applications of modarray:
+ * A[i]=t is equivalent to A=modarray(A,i,t)
+ *
+ * Revision 1.119  1996/09/09  10:06:47  cg
  * new primitive functions toi, tof, tod, etc. may now be overloaded
  * by library functions.
  *
@@ -1686,6 +1690,34 @@ letassign: ids LET exprORarray
                                     $$->info.ids->id));
 
              }
+         | id SQBR_L exprORarray SQBR_R LET exprORarray
+           {
+            node *exprs1, *exprs2, *exprs3;
+            
+            $$=MakeNode(N_let);
+            $$->info.ids=MakeIds($1, NULL, ST_regular);
+            $$->nnode=1;
+            
+            exprs3=MakeNode(N_exprs);
+            exprs3->node[0]=$6;            /* 3. Argument  */
+            exprs3->nnode=1;
+            exprs2=MakeNode(N_exprs);
+            exprs2->node[0]=$3;           /* 2. Argument  */
+            exprs2->node[1]=exprs3;
+            exprs2->nnode=2;
+            exprs1=MakeNode(N_exprs);
+            exprs1->node[0]=MakeNode(N_id);  /* 1. Argument  */
+            exprs1->node[0]->info.ids=MakeIds($1, NULL, ST_regular);
+            exprs1->node[1]=exprs2;
+            exprs1->nnode=2;
+            
+            $$->node[0]=MakeNode(N_prf);
+            $$->node[0]->info.prf=F_modarray;
+            $$->node[0]->node[0]=exprs1;  
+            $$->node[0]->nnode=1;
+
+           }
+
          | apl 
            {
               $$=MakeNode(N_let);
@@ -2649,7 +2681,9 @@ vartypes:   type COMMA vartypes
            }
        | TYPE_DOTS
            {
-             if((F_extmoddec != file_kind) && (F_extclassdec != file_kind))
+             if ((F_extmoddec != file_kind) 
+                 && (F_extclassdec != file_kind)
+                 && (F_sib != file_kind))
              {
                strcpy(yytext,"...");
                yyerror("syntax error");
