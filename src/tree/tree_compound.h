@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.150  2004/11/25 18:55:55  sbs
+ * OBJDEF macros based on types * eliminated.
+ *
  * Revision 3.149  2004/11/25 18:29:18  khf
  * + marcros
  *
@@ -563,15 +566,6 @@ extern node *TCappendTypedef (node *tdef_chain, node *tdef);
 /*
  *  compound access macros
  */
-
-#define OBJDEF_BASETYPE(n) (TYPES_BASETYPE (OBJDEF_TYPE (n)))
-#define OBJDEF_DIM(n) (TYPES_DIM (OBJDEF_TYPE (n)))
-#define OBJDEF_SHAPE(n, x) (TYPES_SHAPE (OBJDEF_TYPE (n), x))
-#define OBJDEF_SHPSEG(n) (TYPES_SHPSEG (OBJDEF_TYPE (n)))
-#define OBJDEF_TNAME(n) (TYPES_NAME (OBJDEF_TYPE (n)))
-#define OBJDEF_TMOD(n) (TYPES_MOD (OBJDEF_TYPE (n)))
-#define OBJDEF_TDEF(n) (TYPES_TDEF (OBJDEF_TYPE (n)))
-#define OBJDEF_NAME(n) (AVIS_NAME (OBJDEF_AVIS (n)))
 
 #define OBJDEF_LINKNAME(n)                                                               \
     (OBJDEF_PRAGMA (n) == NULL ? NULL : PRAGMA_LINKNAME (OBJDEF_PRAGMA (n)))
