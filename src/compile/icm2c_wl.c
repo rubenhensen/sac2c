@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.15  1998/06/06 15:59:22  dkr
+ * renamed some local vars in ICMs
+ *
  * Revision 1.14  1998/05/24 12:17:14  dkr
  * optimized macros for non-MT (if SAC_DO_MULTITHREAD not defined)
  *
@@ -207,16 +210,17 @@ ICMCompileWL_ASSIGN (int dims_expr, char *expr, int dims_target, char *target,
         indent++;
 
         INDENT;
-        fprintf (outfile, "int __i;\n");
+        fprintf (outfile, "int SAC_i;\n");
 
         INDENT;
-        fprintf (outfile, "for (__i = 0; __i < SAC_ND_A_SIZE( %s); __i++) {\n", expr);
+        fprintf (outfile, "for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE( %s); SAC_i++) {\n",
+                 expr);
         indent++;
 
         INDENT;
         fprintf (outfile,
                  "SAC_ND_A_FIELD( %s)[ %s__destptr++] = "
-                 "SAC_ND_A_FIELD( %s)[ __i];\n",
+                 "SAC_ND_A_FIELD( %s)[ SAC_i];\n",
                  target, target, expr);
 
         indent--;
@@ -275,14 +279,15 @@ ICMCompileWL_ASSIGN_INIT (int dims_target, char *target, char *idx_vec, int dims
         indent++;
 
         INDENT;
-        fprintf (outfile, "int __i;\n");
+        fprintf (outfile, "int SAC_i;\n");
 
         INDENT;
-        fprintf (outfile, "for (__i = 0; __i < SAC_ND_KD_A_SHAPE( %s, %d)", target, dims);
+        fprintf (outfile, "for (SAC_i = 0; SAC_i < SAC_ND_KD_A_SHAPE( %s, %d)", target,
+                 dims);
         for (i = dims + 1; i < dims_target; i++) {
             fprintf (outfile, " * SAC_ND_KD_A_SHAPE( %s, %d)", target, i);
         }
-        fprintf (outfile, "; __i++) {\n");
+        fprintf (outfile, "; SAC_i++) {\n");
         indent++;
     }
 
@@ -343,14 +348,15 @@ ICMCompileWL_ASSIGN_COPY (char *source, int dims_target, char *target, char *idx
         indent++;
 
         INDENT;
-        fprintf (outfile, "int __i;\n");
+        fprintf (outfile, "int SAC_i;\n");
 
         INDENT;
-        fprintf (outfile, "for (__i = 0; __i < SAC_ND_KD_A_SHAPE( %s, %d)", target, dims);
+        fprintf (outfile, "for (SAC_i = 0; SAC_i < SAC_ND_KD_A_SHAPE( %s, %d)", target,
+                 dims);
         for (i = dims + 1; i < dims_target; i++) {
             fprintf (outfile, " * SAC_ND_KD_A_SHAPE( %s, %d)", target, i);
         }
-        fprintf (outfile, "; __i++) {\n");
+        fprintf (outfile, "; SAC_i++) {\n");
         indent++;
     }
 
