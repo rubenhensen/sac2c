@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.16  2001/03/26 15:36:32  nmw
+ * SSALIR traversal added
+ *
  * Revision 3.15  2001/03/22 20:02:17  dkr
  * include of tree.h eliminated
  *
@@ -154,6 +157,7 @@
 #include "compare_tree.h"
 #include "annotate_fun_calls.h"
 #include "SSAConstantFolding.h"
+#include "SSALIR.h"
 
 #include "traverse.h"
 
@@ -1185,6 +1189,17 @@ static funtab ssacf_tab_rec = {{
                                NULL,
                                NULL};
 funtab *ssacf_tab = &ssacf_tab_rec;
+
+/*
+ *  (94) ssalir_tab
+ */
+static funtab ssalir_tab_rec = {{
+#define NIFssalir(it_ssalir) it_ssalir
+#include "node_info.mac"
+                                },
+                                NULL,
+                                NULL};
+funtab *ssalir_tab = &ssalir_tab_rec;
 
 /*
  *  nnode

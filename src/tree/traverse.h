@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/03/26 15:36:32  nmw
+ * SSALIR traversal added
+ *
  * Revision 3.10  2001/03/20 16:15:18  nmw
  * SSACF Constant Folding on ssa from added
  *
@@ -231,6 +234,7 @@ extern funtab *ssacse_tab;
 extern funtab *cmptree_tab;
 extern funtab *profile_tab;
 extern funtab *ssacf_tab;
+extern funtab *ssalir_tab;
 
 extern int nnode[];
 
