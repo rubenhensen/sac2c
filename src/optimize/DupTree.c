@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.107  1998/08/11 14:36:00  dkr
+ * DupWLstriVar, DupWLgridVar changed
+ *
  * Revision 1.106  1998/08/11 12:10:06  dkr
  * DupWLsegVar changed
  *
@@ -1448,7 +1451,7 @@ DupWLstride (node *arg_node, node *arg_info)
                              DUPCONT (WLSTRIDE_NEXT (arg_node)));
 
     WLSTRIDE_PART (new_node) = WLSTRIDE_PART (arg_node);
-    WLSTRIDE_MODIFIED (new_node) = 0;
+    WLSTRIDE_MODIFIED (new_node) = NULL;
 
     DBUG_RETURN (new_node);
 }
@@ -1483,7 +1486,7 @@ DupWLgrid (node *arg_node, node *arg_info)
     /*
      * duplicated grids are not modified yet ;)
      */
-    WLGRID_MODIFIED (new_node) = 0;
+    WLGRID_MODIFIED (new_node) = NULL;
 
     DBUG_RETURN (new_node);
 }
@@ -1562,12 +1565,12 @@ DupWLstriVar (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupWLstriVar");
 
-    new_node
-      = MakeWLstriVar (WLSTRIVAR_DIM (arg_node), DUPTRAV (WLSTRIVAR_BOUND1 (arg_node)),
-                       DUPTRAV (WLSTRIVAR_BOUND2 (arg_node)),
-                       DUPTRAV (WLSTRIVAR_STEP (arg_node)),
-                       DUPTRAV (WLSTRIVAR_CONTENTS (arg_node)),
-                       DUPCONT (WLSTRIVAR_NEXT (arg_node)));
+    new_node = MakeWLstriVar (WLSTRIVAR_LEVEL (arg_node), WLSTRIVAR_DIM (arg_node),
+                              DUPTRAV (WLSTRIVAR_BOUND1 (arg_node)),
+                              DUPTRAV (WLSTRIVAR_BOUND2 (arg_node)),
+                              DUPTRAV (WLSTRIVAR_STEP (arg_node)),
+                              DUPTRAV (WLSTRIVAR_CONTENTS (arg_node)),
+                              DUPCONT (WLSTRIVAR_NEXT (arg_node)));
 
     DBUG_RETURN (new_node);
 }
@@ -1593,11 +1596,11 @@ DupWLgridVar (node *arg_node, node *arg_info)
         }
     }
 
-    new_node
-      = MakeWLgridVar (WLGRIDVAR_DIM (arg_node), DUPTRAV (WLGRIDVAR_BOUND1 (arg_node)),
-                       DUPTRAV (WLGRIDVAR_BOUND2 (arg_node)),
-                       DUPTRAV (WLGRIDVAR_NEXTDIM (arg_node)),
-                       DUPCONT (WLGRIDVAR_NEXT (arg_node)), new_code);
+    new_node = MakeWLgridVar (WLGRIDVAR_LEVEL (arg_node), WLGRIDVAR_DIM (arg_node),
+                              DUPTRAV (WLGRIDVAR_BOUND1 (arg_node)),
+                              DUPTRAV (WLGRIDVAR_BOUND2 (arg_node)),
+                              DUPTRAV (WLGRIDVAR_NEXTDIM (arg_node)),
+                              DUPCONT (WLGRIDVAR_NEXT (arg_node)), new_code);
 
     DBUG_RETURN (new_node);
 }
