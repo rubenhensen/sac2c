@@ -28,3 +28,4 @@ sac_trace.h
 sac_wl.h
 sac_wl.tagged.h
 sac_mt.tagged.h
+sac_heapmgr.tagged.h
