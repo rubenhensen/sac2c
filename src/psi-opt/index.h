@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/07/07 06:02:56  sbs
+ * changed vardec chains into $-stacked chaines.
+ * Appropriate handling of cond/ do / while is not yet included.
+ *
  * Revision 2.1  1999/02/23 12:43:14  sacbase
  * new release made
  *
@@ -39,8 +43,11 @@ extern char *IdxChangeId (char *varname, types *type);
 
 extern node *IdxModul (node *arg_node, node *arg_info);
 extern node *IdxFundef (node *arg_node, node *arg_info);
+extern node *IdxBlock (node *arg_node, node *arg_info);
+extern node *IdxVardec (node *arg_node, node *arg_info);
 extern node *IdxArg (node *arg_node, node *arg_info);
 extern node *IdxAssign (node *arg_node, node *arg_info);
+extern node *IdxReturn (node *arg_node, node *arg_info);
 extern node *IdxWith (node *arg_node, node *arg_info);
 extern node *IdxGenerator (node *arg_node, node *arg_info);
 extern node *IdxLet (node *arg_node, node *arg_info);

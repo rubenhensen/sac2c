@@ -1,6 +1,10 @@
 
 /*
  * $Log$
+ * Revision 2.3  1999/07/07 06:02:56  sbs
+ * changed vardec chains into $-stacked chaines.
+ * Appropriate handling of cond/ do / while is not yet included.
+ *
  * Revision 2.2  1999/04/14 16:23:05  jhs
  * Traversal into NULL with empty arrays removed.
  *
@@ -88,42 +92,9 @@
  * That can happen if an external function is involved that returns an
  * array of unknown shape, e.g. FibreScanIntArray.
  *
- * Revision 1.10  1996/04/23  15:48:33  sbs
- * two bugfixes done:
- * 1) IdxArray: when arg_info == NULL traverse all elements
- *              with NULL as well, since we may have nested
- *              array-definitions!
- * 2) IdxLet: if the LHS variables do not have a vinfo at all,
- *            we still have to traverse the RHS with arg_info NULL
- *            since it may contain array-variables. As a special
- *            case this covers a = b; where both of them are array-
- *            variables and a is not used any further!!!
  *
- * Revision 1.9  1996/02/13  10:15:11  sbs
- * counting of eliminations inserted.
+ * ... [eliminated] ...
  *
- * Revision 1.8  1996/02/12  15:44:46  sbs
- * bug in idxLet fixed; now we have different code for args and vardecs:-)
- *
- * Revision 1.7  1996/02/11  20:17:07  sbs
- * complete revise.
- * should work now on all programs.
- * still some known problems as stated in the file itself.
- *
- * Revision 1.6  1995/10/06  17:07:47  cg
- * adjusted calls to function MakeIds (now 3 parameters)
- *
- * Revision 1.5  1995/10/05  14:55:52  sbs
- * some bug fixes.
- *
- * Revision 1.4  1995/06/26  09:59:28  sbs
- * preliminary version
- *
- * Revision 1.3  1995/06/06  15:18:10  sbs
- * first usable version ; does not include conditional stuff
- *
- * Revision 1.2  1995/06/02  17:05:47  sbs
- * IdxAssign, IdxLet inserted.
  *
  * Revision 1.1  1995/06/02  10:06:56  sbs
  * Initial revision
@@ -144,6 +115,8 @@
 #include "access_macros.h"
 
 #include "compile.h"
+
+static node *idx_act_vardecs;
 
 /*
  * OPEN PROBLEMS:
@@ -201,6 +174,9 @@
  * 2) Attaching the "Uses" attribute
  * ---------------------------------
  *
+ * 2a) assignment chaines
+ * ----------------------
+ *
  * The "Uses" information is stored as follows:
  * During the (bottom up) traversal all information is kept at the N_vardec/N_arg nodes.
  * This is realized by the introduction of a new node: "N_vinfo"
@@ -233,7 +209,237 @@
  * When meeting a "N_let" with an array variable to be defined, the actual info
  * node(s) attached to the variable's declaration( "actual chain")
  * is(are) inserted in the ids structure of the N_let-node [LET_IDS(n)] at
- * ids->use [IDS_USE(i)] => [LET_USE(n)].   ( cmp. tree_compound.h )
+ * ids->use [IDS_USE(i)] => [LET_USE(n)]    ( cmp. tree_compound.h )
+ * and the "actual chain" is freed before traversing the RHS of the N_let.
+ *
+ *
+ * 2b) conditionals
+ * ----------------
+ *
+ * The mechanism described so far does not properly support programs that contain
+ * program parts that may or may not be "executed", i.e., conditionals or loops.
+ * Since we want to replace all psi ops by idx_psi ops, we have to infer all
+ * potential uses rather than only those taken by a particular branch. To achieve
+ * this, different actual chains for the alternative branches have to be created
+ * and merged, e.g.,
+ *
+ *            a= reshape([4,4], [1,2,...,16]);
+ *            b= reshape([8,2], [1,2,...,16]);
+ *            iv = [1];
+ *            if( ...)
+ *              iv = [9];
+ *            else
+ *              z = b[iv];
+ *            a[iv];
+ *
+ * should lead to
+ *
+ *            int[2] iv:IDX(int[8,2]):IDX(int[4,4]) ;
+ *            int[4, 4] a;
+ *            int[8, 2] b;
+ *
+ *            a= reshape([4,4], [1,2,...,16]);
+ *            b= reshape([8,2], [1,2,...,16]);
+ *            iv:IDX(int[8,2]):IDX(int[4,4]) = [1,1];
+ *            if( ...)
+ *              iv:IDX(int[4,4]) = [2,2];
+ *            else
+ *              z = b[iv];
+ *            a[iv];
+ *
+ * To get these results, we have to traverse both branches of the
+ * conditional starting out with an "actual chain" gained by traversing the
+ * rest, which in our example is: IDX(int[4,4]).
+ * The results -- empty / IDX(int[8,2]):IDX(int[4,4])  in our example --
+ * have to be merged, thus yielding IDX(int[8,2]):IDX(int[4,4]) as "actual chain"
+ * when leaving the conditional.
+ *
+ * The implementation of this requires as many "actual chaines" to be kept
+ * simultaneously as we have nestings of conditionals. Therefore, we need a
+ * stacking mechanism. This is done by adding a third type of vinfo node via
+ * a new flag DOLLAR, which marks the end of the current "actual chain".
+ * For consistency reasons, we also initialize the very first "actual chain"
+ * with this flag!
+ *
+ *
+ * When traversing a conditional, we proceed as follows:
+ * First of all, we copy all actual chaines of ALL vardecs(!). This requires
+ * a pointer to the topmost vardec of the actual functions which is kept in
+ * the global variable "idx_act_vardecs", which is static to this module.
+ * For iv of the example given above, we get:
+ *
+ *  IDX(int[4,4]):$:IDX(int[4,4]):$    (bottom considered to be right!!)
+ *
+ * Traversing the then-part, we obtain
+ *
+ *  $:IDX(int[4,4]):$
+ *
+ * since the topmost "actual chain" is attached to the let in the then-part!
+ * After that, the kept "actual chain" of the assignments after the
+ * conditional and the topmost "actual chain" are switched:
+ *
+ *  IDX(int[4,4]):$:$
+ *
+ * Traversing the else-part yields
+ *
+ *  IDX(int[8,2]):IDX(int[4,4]):$:$
+ *
+ * due to the access on b. Finally, the two results have to merged and the
+ * result replaces the two "actual chains" for the different branches:
+ *
+ *  IDX(int[8,2]):IDX(int[4,4]):$
+ *
+ * With this "actual chain" the normal assignment-mechanism proceeds.
+ *
+ * To get a more formal specification of the algorithm, let's assume
+ * A , T, E, and R are sequences of assignments which may contain conditionals
+ * and loops by themselves. Then a program (fragment)
+ *
+ *     A;
+ *     if() {
+ *       T;
+ *     }
+ *     else {
+ *       E;
+ *     }
+ *     R;
+ *
+ * leeds to the following constellations of "actual chaines":
+ *
+ *                       trav( R;) $     enter conditional
+ *           trav( R;) $ trav( R;) $     copy actual chains
+ *        trav( T; R;) $ trav( R;) $     traverse then-part
+ *        trav( R;) $ trav( T; R;) $     switch chains
+ *     trav( E; R;) $ trav( T; R;) $     traverse else-part
+ *           trav( E; R; ++ T; R;) $     merge chains & leave conditional
+ *
+ *
+ *
+ *
+ *
+ * 2c) loops
+ * ---------
+ *
+ * For loops a similar mechanism is rquired; we have to stack the "actual chain"
+ * of the assignments that follow the loop, and we have to merge those with
+ * the "actual chain" obtained from traversing the loop body.
+ *
+ * For example, consider the following code fragment:
+ *
+ *            a= reshape([4,4], [1,2,...,16]);
+ *            b= reshape([8,2], [1,2,...,16]);
+ *            iv = [1];
+ *            while( ...) {
+ *              iv = [2];
+ *              z = b[iv];
+ *            }
+ *            a[iv];
+ *
+ * Traversing "a[iv]" we get the following "actual chain":
+ *
+ *  IDX(int[4,4]):$
+ *
+ * We enter the loop body with:
+ *
+ *  IDX(int[4,4]):$IDX(int[4,4]):$
+ *
+ * which leads to an attributation of the assignment "iv = [2];" by
+ * IDX(int[8,2]):IDX(int[4,4]) and finally results in:
+ *
+ *  $:IDX(int[4,4]):$
+ *
+ * The subsequent merge yields:
+ *
+ * IDX(int[4,4]):$
+ *
+ * So that the entire program segment will be attributed as follows
+ *
+ *            int[2] iv:IDX(int[8,2]):IDX(int[4,4]) ;
+ *            int[4, 4] a;
+ *            int[8, 2] b;
+ *
+ *            a= reshape([4,4], [1,2,...,16]);
+ *            b= reshape([8,2], [1,2,...,16]);
+ *            iv:IDX(int[4,4]) = [1];
+ *            while( ...) {
+ *              iv:IDX(int[8,2]):IDX(int[4,4]) = [2];
+ *              z = b[iv];
+ *            }
+ *            a[iv];
+ *
+ * Unfortunately, this mechanism does not suffice.....
+ * The problem that may arise originates from the fact that the execution
+ * of the loop body may be followed by another execution of the loop body
+ * in which case some uses annotations at array definitions in the loop
+ * body may be missing. This happens if an array is used before it is defined
+ * within a loop. Consider the following example:
+ *
+ *            a= reshape([4,4], [1,2,...,16]);
+ *            b= reshape([8,2], [1,2,...,16]);
+ *            iv = [1];
+ *            while( ...) {
+ *              z = b[iv];
+ *              iv = [2];
+ *            }
+ *            a[iv];
+ *
+ * A straight-forward application of the mechanism described above would yield:
+ *
+ *            int[2] iv:IDX(int[8,2]):IDX(int[4,4]) ;
+ *            int[4, 4] a;
+ *            int[8, 2] b;
+ *
+ *            a= reshape([4,4], [1,2,...,16]);
+ *            b= reshape([8,2], [1,2,...,16]);
+ *            iv:IDX(int[8,2]):IDX(int[4,4]) = [1];
+ *            while( ...) {
+ *              z = b[iv];
+ *              iv:IDX(int[4,4]) = [2];
+ *            }
+ *            a[iv];
+ *
+ * What is missing here is an IDX(int[8,2]) attribute at the assignment to iv
+ * within the loop body.
+ * Therefore, we unfortunately have to traverse the loop body two times!
+ * Rather than going through the details of the above example, a more
+ * formal description similar to that in the end of 2b) is given here:
+ *
+ * A program fragment
+ *
+ *     A;
+ *     while() {
+ *       L;
+ *     }
+ *     R;
+ *
+ * leeds to the following constellations of "actual chaines":
+ *
+ *                                       trv( R;) $    enter while-loop
+ *                            trv( R;) $ trv( R;) $    copy actual chain
+ *                         trv( L; R;) $ trv( R;) $    traverse loop body
+ *                              trv( L; R; ++ R;) $    merge chains
+ *          trv( L; R; ++ R;) $ trv( L; R; ++ R;) $    copy actual chain
+ *     trv( L; (L; R; ++ R;)) $ trv( L; R; ++ R;) $    traverse loop body again
+ *                              trv( L; R; ++ R;) $    delete topmost chain & leave loop
+ *
+ * Since for do-loops we know that the loop will be evaluated at least once,
+ * for these loops
+ *
+ *     A;
+ *     do {
+ *       L;
+ *     } while();
+ *     R;
+ *
+ * leeds to the following constellations of "actual chaines":
+ *
+ *                                 trv( R;) $    enter do-loop
+ *                      trv( R;) $ trv( R;) $    copy actual chain
+ *                   trv( L; R;) $ trv( R;) $    traverse loop body
+ *          trv( L; R; ++ R;) $ trv( L; R;) $    merge chains and copy old top
+ *     trv( L; (L; R; ++ R;)) $ trv( L; R;) $    traverse loop body
+ *                              trv( L; R;) $    delete topmost chain & leave loop
+ *
  *
  *
  *
@@ -294,7 +500,7 @@ node *
 FindVect (node *chain)
 {
     DBUG_ENTER ("FindVect");
-    while (chain && (VINFO_FLAG (chain) != VECT))
+    while (VINFO_FLAG (chain) == IDX)
         chain = VINFO_NEXT (chain);
     DBUG_RETURN (chain);
 }
@@ -355,7 +561,7 @@ node *
 FindIdx (node *chain, types *vshape)
 {
     DBUG_ENTER ("FindIdx");
-    while ((chain != NULL)
+    while ((VINFO_FLAG (chain) != DOLLAR)
            && ((VINFO_FLAG (chain) != IDX) || !EqTypes (VINFO_TYPE (chain), vshape)))
         chain = VINFO_NEXT (chain);
     DBUG_RETURN (chain);
@@ -380,8 +586,8 @@ SetVect (node *chain)
 {
     DBUG_ENTER ("SetVect");
     DBUG_PRINT ("IDX", ("VECT assigned"));
-    if (FindVect (chain) == NULL) {
-        chain = MakeVinfo (VECT, NULL, chain);
+    if (VINFO_FLAG (FindVect (chain)) == DOLLAR) {
+        chain = MakeVinfo (VECT, NULL, chain, VINFO_DOLLAR (chain));
     }
     DBUG_RETURN (chain);
 }
@@ -406,11 +612,37 @@ node *
 SetIdx (node *chain, types *vartype)
 {
     DBUG_ENTER ("SetIdx");
-    if (FindIdx (chain, vartype) == NULL) {
-        chain = MakeVinfo (IDX, vartype, chain);
+    if (VINFO_FLAG (FindIdx (chain, vartype)) == DOLLAR) {
+        chain = MakeVinfo (IDX, vartype, chain, VINFO_DOLLAR (chain));
         DBUG_PRINT ("IDX", ("IDX(%p) assigned", chain));
     }
     DBUG_RETURN (chain);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *CutVinfoChn( node * chain)
+ *
+ * description:
+ *   if we give a cinfo-chain as argument, e.g.
+ *     VECT : IDX([2,2]) : $ : VECT : $
+ *   CutVinfoChn cuts off the first list by setting the NEXT pointer of the first
+ *   $-symbol to NULL, and returns a pointer to the rest of the chain, e.g.
+ *                             VECT : $
+ *
+ ******************************************************************************/
+
+node *
+CutVinfoChn (node *chain)
+{
+    node *rest;
+
+    DBUG_ENTER ("CutVinfoChn");
+    DBUG_ASSERT ((VINFO_DOLLAR (chain) != NULL), "Dollar-ref in vinfo-chain missing!");
+    rest = VINFO_NEXT (VINFO_DOLLAR (chain));
+    VINFO_NEXT (VINFO_DOLLAR (chain)) = NULL;
+    DBUG_RETURN (rest);
 }
 
 /*
@@ -614,16 +846,22 @@ IdxArg (node *arg_node, node *arg_info)
 {
     node *newassign, *newid, *name_node, *dim_node, *dim_node2;
     node *block, *icm_arg, *vinfo;
-    int i;
+    int i, dim;
 
     DBUG_ENTER ("IdxArg");
 
     if (arg_info != NULL) {
         /* This is the first pass; insert backref to fundef
          * and make sure that all ARG_COLCHN-nodes are NULL
-         * before traverswing the body!
+         * before traversing the body!
          */
         ARG_FUNDEF (arg_node) = arg_info;
+        dim = ARG_DIM (arg_node);
+        if ((ARG_BASETYPE (arg_node) == T_int)
+            && ((dim == 1) || (dim == KNOWN_DIM_OFFSET - 1))) {
+            ARG_ACTCHN (arg_node) = MakeVinfoDollar (NULL);
+            ARG_COLCHN (arg_node) = MakeVinfoDollar (NULL);
+        }
     } else {
         /* This is the second pass; insert index-arg initialisations
          * of the form: ND_KS_VECT2OFFSET( <off-name>, <var-name>, <dim>, <dims>, <shape>)
@@ -667,30 +905,108 @@ IdxArg (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : IdxAssign
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * function:
+ *  node * IdxBlock( node *arg_node, node *arg_info )
  *
- *  remarks       :
+ * description:
+ *   set the global variable idx_act_vardecs to the first vardec and traverse
+ *   the vardecs before traversing the body! NB: this is done to initialize
+ *   all int[x] / int[.] vars by DOLLAR!
  *
- */
+ ******************************************************************************/
+
+node *
+IdxBlock (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("IdxBlock");
+
+    idx_act_vardecs = BLOCK_VARDEC (arg_node);
+
+    if (BLOCK_VARDEC (arg_node) != NULL) {
+        BLOCK_VARDEC (arg_node) = Trav (BLOCK_VARDEC (arg_node), arg_info);
+    }
+
+    if (BLOCK_INSTR (arg_node) != NULL) {
+        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node * IdxVardec( node *arg_node, node *arg_info )
+ *
+ * description:
+ *   create an N_vinfo node for all vars with either type int[x]
+ *   or type int[.] (needed for the AKD-case!).
+ *
+ ******************************************************************************/
+
+node *
+IdxVardec (node *arg_node, node *arg_info)
+{
+    int dim;
+
+    DBUG_ENTER ("IdxVardec");
+
+    dim = VARDEC_DIM (arg_node);
+    if ((VARDEC_BASETYPE (arg_node) == T_int)
+        && ((dim == 1) || (dim == KNOWN_DIM_OFFSET - 1))) {
+        /* we are dealing with a potential indexing vector ! */
+        VARDEC_ACTCHN (arg_node) = MakeVinfoDollar (NULL);
+        VARDEC_COLCHN (arg_node) = MakeVinfoDollar (NULL);
+    }
+
+    if (VARDEC_NEXT (arg_node) != NULL) {
+        VARDEC_NEXT (arg_node) = Trav (VARDEC_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node * IdxAssign( node *arg_node, node *arg_info )
+ *
+ * description:
+ *
+ ******************************************************************************/
 
 node *
 IdxAssign (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("IdxAssign");
+
     /* Bottom up traversal!! */
     if (NULL != ASSIGN_NEXT (arg_node)) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_node);
-    } else /* this must be the return-statement!!! */
-        ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), NULL);
+    }
+    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_node);
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  node *IdxReturn(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   initiates the uses-collection. In order to guarantee a "VECT" attribution
+ *   for array-variables, arg_info has to be NULL, when traversing the return
+ *   expressions!
+ *
+ ******************************************************************************/
+
+node *
+IdxReturn (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("IdxReturn");
+    RETURN_EXPRS (arg_node) = Trav (RETURN_EXPRS (arg_node), NULL);
     DBUG_RETURN (arg_node);
 }
 
@@ -714,11 +1030,12 @@ IdxLet (node *arg_node, node *arg_info)
 {
     ids *vars;
     node *vardec, *vinfo, *act_let, *newassign, *newid, *icm_arg, *col_vinfo;
-    node *arg_info1;
+    node *arg_info1, *chain, *rest_chain;
     int i;
 
     DBUG_ENTER ("IdxLet");
-    /* First, we attach the collected uses-attributes( they are in the
+    /*
+     * First, we attach the collected uses-attributes( they are in the
      * actual chain of the vardec) to the variables of the LHS of the
      * assignment!
      */
@@ -726,13 +1043,25 @@ IdxLet (node *arg_node, node *arg_info)
     do {
         vardec = IDS_VARDEC (vars);
         if (NODE_TYPE (vardec) == N_vardec) {
-            IDS_USE (vars) = VARDEC_ACTCHN (vardec);
-            VARDEC_ACTCHN (vardec) = NULL; /* freeing the actual chain! */
+            if (VARDEC_COLCHN (vardec) != NULL) {
+                /* So we are dealing with a potential index var! */
+                chain = VARDEC_ACTCHN (vardec);
+                IDS_USE (vars) = chain;
+                rest_chain = CutVinfoChn (chain);
+                /* Now, re-initialize the actual chain! */
+                VARDEC_ACTCHN (vardec) = MakeVinfoDollar (rest_chain);
+            }
         } else {
             DBUG_ASSERT ((NODE_TYPE (vardec) == N_arg),
                          "backref from let-var neither vardec nor arg!");
-            IDS_USE (vars) = ARG_ACTCHN (vardec);
-            ARG_ACTCHN (vardec) = NULL; /* freeing the actual chain! */
+            if (ARG_COLCHN (vardec) != NULL) {
+                /* So we are dealing with a potential index var! */
+                chain = ARG_ACTCHN (vardec);
+                IDS_USE (vars) = chain;
+                rest_chain = CutVinfoChn (chain);
+                /* Now, re-initialize the actual chain! */
+                ARG_ACTCHN (vardec) = MakeVinfoDollar (rest_chain);
+            }
         }
         vars = IDS_NEXT (vars);
     } while (vars);
@@ -760,7 +1089,7 @@ IdxLet (node *arg_node, node *arg_info)
      */
     vars = LET_IDS (arg_node); /* pick the first LHS variable */
     vinfo = IDS_USE (vars);    /* pick the "Uses"set from the first LHS var */
-    if ((FindVect (vinfo) == NULL) && (vinfo != NULL)
+    if ((vinfo != NULL) && (VINFO_FLAG (FindVect (vinfo)) == DOLLAR)
         && (((NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
              && (F_add_SxA <= PRF_PRF (LET_EXPR (arg_node)))
              && (PRF_PRF (LET_EXPR (arg_node)) <= F_div_AxA)
@@ -788,13 +1117,14 @@ IdxLet (node *arg_node, node *arg_info)
          * in each call as arg_info!
          */
         act_let = arg_node;
-        while (vinfo != NULL) {
+        DBUG_ASSERT ((vinfo != NULL), " non $-terminated N_vinfo chain encountered!");
+        while (VINFO_FLAG (vinfo) != DOLLAR) {
             DBUG_ASSERT (((NODE_TYPE (act_let) == N_let)
                           && (NODE_TYPE (arg_info) == N_assign)),
                          "wrong let/assign node generated in IdxLet!");
             DBUG_ASSERT ((NODE_TYPE (vinfo) == N_vinfo) && (VINFO_FLAG (vinfo) == IDX),
                          "wrong N_vinfo node attached to let-variable!");
-            if (VINFO_NEXT (vinfo) != NULL) {
+            if (VINFO_FLAG (VINFO_NEXT (vinfo)) != DOLLAR) {
                 /* There are more indices needed, so we have to duplicate the let
                  * node and repeat the let-traversal until there are no shapes left!
                  * More precisely, we have to copy the Assign node, who is the father
@@ -812,7 +1142,8 @@ IdxLet (node *arg_node, node *arg_info)
             LET_VARDEC (act_let)
               = VardecIdx (LET_VARDEC (act_let), VINFO_TYPE (vinfo), LET_NAME (act_let));
             vinfo = VINFO_NEXT (vinfo);
-            if (vinfo != NULL) {
+            DBUG_ASSERT ((vinfo != NULL), " non $-terminated N_vinfo chain encountered!");
+            if (VINFO_FLAG (vinfo) != DOLLAR) {
                 arg_info = newassign;
                 act_let = ASSIGN_INSTR (newassign);
             }
@@ -919,7 +1250,7 @@ IdxPrf (node *arg_node, node *arg_info)
          * this is done by traversal with NULL instead of vinfo!
          */
         if (TYPES_SHPSEG (type) != NULL) {
-            vinfo = MakeVinfo (IDX, type, NULL);
+            vinfo = MakeVinfo (IDX, type, NULL, NULL);
             PRF_ARG1 (arg_node) = Trav (arg1, vinfo);
             FREE (vinfo);
             PRF_PRF (arg_node) = F_idx_psi;
@@ -944,7 +1275,7 @@ IdxPrf (node *arg_node, node *arg_info)
          * this is done by traversal with NULL instead of vinfo!
          */
         if (TYPES_SHPSEG (type) != NULL) {
-            vinfo = MakeVinfo (IDX, type, NULL);
+            vinfo = MakeVinfo (IDX, type, NULL, NULL);
             PRF_ARG2 (arg_node) = Trav (arg2, vinfo);
             FREE (vinfo);
             PRF_PRF (arg_node) = F_idx_modarray;
@@ -1032,7 +1363,9 @@ IdxId (node *arg_node, node *arg_info)
     DBUG_ASSERT (((NODE_TYPE (vardec) == N_vardec) || (NODE_TYPE (vardec) == N_arg)),
                  "non vardec/arg node as backref in N_id!");
     if (NODE_TYPE (vardec) == N_vardec) {
-        if (VARDEC_DIM (vardec) == 1) {
+        if ((VARDEC_BASETYPE (vardec) == T_int)
+            && ((VARDEC_DIM (vardec) == 1)
+                || (VARDEC_DIM (vardec) == KNOWN_DIM_OFFSET - 1))) {
             if (arg_info == NULL) {
                 DBUG_PRINT ("IDX", ("assigning VECT to %s:", ID_NAME (arg_node)));
                 VARDEC_ACTCHN (vardec) = SetVect (VARDEC_ACTCHN (vardec));
@@ -1050,7 +1383,8 @@ IdxId (node *arg_node, node *arg_info)
             }
         }
     } else {
-        if (ARG_DIM (vardec) == 1) {
+        if ((ARG_BASETYPE (vardec) == T_int)
+            && ((ARG_DIM (vardec) == 1) || (ARG_DIM (vardec) == KNOWN_DIM_OFFSET - 1))) {
             if (arg_info == NULL) {
                 DBUG_PRINT ("IDX", ("assigning VECT to %s:", ID_NAME (arg_node)));
                 ARG_ACTCHN (vardec) = SetVect (ARG_ACTCHN (vardec));
@@ -1226,7 +1560,7 @@ IdxGenerator (node *arg_node, node *arg_info)
     /* first, we memorize the actuall chain */
     GEN_USE (arg_node) = vinfo;
     /* then, we remove the actual chain! */
-    VARDEC_ACTCHN (vardec) = NULL;
+    VARDEC_ACTCHN (vardec) = MakeVinfoDollar (CutVinfoChn (vinfo));
 
     /* for each IDX-vinfo-node we have to instanciate the respective
      * variable as first statement in the body of the with loop.
@@ -1389,7 +1723,7 @@ IdxNcode (node *arg_node, node *arg_info)
     with = LET_EXPR (arg_info);
     idx_vardec = IDS_VARDEC (NWITH_VEC (with));
     vinfo = VARDEC_ACTCHN (idx_vardec);
-    VARDEC_ACTCHN (idx_vardec) = NULL;
+    VARDEC_ACTCHN (idx_vardec) = MakeVinfoDollar (CutVinfoChn (vinfo));
 
     while (vinfo != NULL) {
 
