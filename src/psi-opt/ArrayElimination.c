@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.4  1999/04/19 11:29:18  jhs
+ * TRUE and FALSE from internal_lib.h ared used from now on.
+ *
  * Revision 2.3  1999/03/31 15:09:00  bs
  * I did some code cosmetics with the MRD_GET... macros.
  *
@@ -79,9 +82,6 @@
 #include "Inline.h"
 #include "LoopInvariantRemoval.h"
 #include "ArrayElimination.h"
-
-#define TRUE 1
-#define FALSE 0
 
 #define AE_PREFIX "__ae_"
 #define AE_PREFIX_LENGTH 5
