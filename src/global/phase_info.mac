@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2004/07/21 12:40:38  khf
+ * removed PH_wlpartgen, added PH_wlenhance
+ *
  * Revision 3.8  2004/07/15 13:36:59  ktr
  * reorganized phases after wltransform.
  *
@@ -89,7 +92,7 @@ PH_SEL (PH_initial, "", 0, 0),
 
   PH_SEL (PH_uniquecheck, "Checking uniqueness property of objects", 0, 0),
 
-  PH_SEL (PH_wlpartgen, "Generating full partitions in with-loops", 0, 0),
+  PH_SEL (PH_wlenhance, "Enhancement of with-loops", 0, 0),
 
   PH_SEL (PH_sacopt, "Running SAC optimizations", 0, 0),
 
