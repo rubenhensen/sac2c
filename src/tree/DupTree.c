@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.44  2001/04/26 01:50:04  dkr
+ * - reference counnting on fundefs works correctly now (FUNDEF_USED)
+ * - DFMs are never duplicated now!!
+ *
  * Revision 3.43  2001/04/24 14:15:01  dkr
  * some DBUG_ASSERTs about FUNDEF_USED added
  *
@@ -9,9 +13,9 @@
  *
  * Revision 3.41  2001/04/06 18:46:17  dkr
  * - DupAvis: call of DupTree replaced by DUPTRAV.
- * - The LUT is no longer allocated and removed for each call of DupTree/DupNode.
- *   Instead, we generate *once* a single LUT and reuse it for further
- *   calls.
+ * - The LUT is no longer allocated and removed for each call of
+ *   DupTree/DupNode. Instead, we generate *once* a single LUT and
+ *   reuse it for further calls.
  *
  * Revision 3.40  2001/04/06 14:54:33  dkr
  * DupVardec,DupArg: call of DupAvis() replaced by DUPTRAV()
@@ -213,24 +217,33 @@
 #include "generatemasks.h"
 #include "constants.h"
 
+/*
+ * DFMs are *not* duplicated for several reasons:
+ *  - Most likely the old DFMs are not suitable for the new context.
+ *  - Only valid DFMs can be duplicated. Therefore, duplicating the
+ *    DFMs requires them to be valid during all compilation phases.
+ *    For the time being this cannot be guaranteed.
+ */
+#define DUP_DFMS 0
+
 static LUT_t dup_lut = NULL;
 
 /*
- *  always traverses son 'node'
+ * always traverses son 'node'
  *
- *  The macro is to be used within traversal functions where arg_node and
- *  arg_info exist.
+ * The macro is to be used within traversal functions where arg_node and
+ * arg_info exist.
  */
 #define DUPTRAV(node) ((node) != NULL) ? Trav (node, arg_info) : NULL
 
 /*
- *  If INFO_DUP_CONT contains the root of syntaxtree
- *    -> traverses son 'node' if and only if its parent is not the root
- *  If INFO_DUP_CONT is NULL
- *    -> traverses son 'node'
+ * If INFO_DUP_CONT contains the root of syntaxtree
+ *   -> traverses son 'node' if and only if its parent is not the root
+ * If INFO_DUP_CONT is NULL
+ *   -> traverses son 'node'
  *
- *  The macro is to be used within traversal functions where arg_node and
- *  arg_info exist.
+ * The macro is to be used within traversal functions where arg_node and
+ * arg_info exist.
  */
 #define DUPCONT(node) (INFO_DUP_CONT (arg_info) != arg_node) ? DUPTRAV (node) : NULL
 
@@ -408,12 +421,16 @@ DupDFMask_ (DFMmask_t mask, node *arg_info)
 
     DBUG_ENTER ("DupDFMask_");
 
+#if DUP_DFMS
     if (mask != NULL) {
         new_mask = DFMDuplicateMask (mask, SearchInLUT_P (INFO_DUP_LUT (arg_info),
                                                           DFMGetMaskBase (mask)));
     } else {
         new_mask = NULL;
     }
+#else
+    new_mask = NULL;
+#endif
 
     DBUG_RETURN (new_mask);
 }
@@ -439,10 +456,11 @@ DupIds_ (ids *arg_ids, node *arg_info)
 
     DBUG_ASSERT ((arg_ids != NULL), "DupIds_: cannot duplicate a NULL pointer");
 
-    new_name
-      = StringCopy (SearchInLUT_S ((arg_info != NULL) ? INFO_DUP_LUT (arg_info) : NULL,
-                                   IDS_NAME (arg_ids)));
-    new_ids = MakeIds (new_name, StringCopy (IDS_MOD (arg_ids)), IDS_STATUS (arg_ids));
+    new_name = SearchInLUT_S ((arg_info != NULL) ? INFO_DUP_LUT (arg_info) : NULL,
+                              IDS_NAME (arg_ids));
+
+    new_ids = MakeIds (StringCopy (new_name), StringCopy (IDS_MOD (arg_ids)),
+                       IDS_STATUS (arg_ids));
 
     IDS_VARDEC (new_ids)
       = SearchInLUT_P ((arg_info != NULL) ? INFO_DUP_LUT (arg_info) : NULL,
@@ -705,10 +723,11 @@ DupId (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("DupId");
 
-    new_name
-      = StringCopy (SearchInLUT_S ((arg_info != NULL) ? INFO_DUP_LUT (arg_info) : NULL,
-                                   ID_NAME (arg_node)));
-    new_node = MakeId (new_name, StringCopy (ID_MOD (arg_node)), ID_STATUS (arg_node));
+    new_name = SearchInLUT_S ((arg_info != NULL) ? INFO_DUP_LUT (arg_info) : NULL,
+                              ID_NAME (arg_node));
+
+    new_node = MakeId (StringCopy (new_name), StringCopy (ID_MOD (arg_node)),
+                       ID_STATUS (arg_node));
 
     /* ID_OBJDEF and ID_VARDEC are mapped to the same data object */
     ID_VARDEC (new_node) = SearchInLUT_P (INFO_DUP_LUT (arg_info), ID_VARDEC (arg_node));
@@ -811,9 +830,6 @@ DupTypedef (node *arg_node, node *arg_info)
                             DupTypes_ (TYPEDEF_TYPE (arg_node), arg_info),
                             TYPEDEF_ATTRIB (arg_node), DUPCONT (TYPEDEF_NEXT (arg_node)));
 
-    INFO_DUP_LUT (arg_info)
-      = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
-
     TYPEDEF_STATUS (new_node) = TYPEDEF_STATUS (arg_node);
 
 #if 0
@@ -825,6 +841,9 @@ DupTypedef (node *arg_node, node *arg_info)
 #endif
 
     CopyCommonNodeData (new_node, arg_node);
+
+    INFO_DUP_LUT (arg_info)
+      = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
 
     DBUG_RETURN (new_node);
 }
@@ -844,9 +863,6 @@ DupObjdef (node *arg_node, node *arg_info)
                     DupTypes_ (OBJDEF_TYPE (arg_node), arg_info),
                     DUPTRAV (OBJDEF_EXPR (arg_node)), DUPCONT (OBJDEF_NEXT (arg_node)));
 
-    INFO_DUP_LUT (arg_info)
-      = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
-
     OBJDEF_LINKMOD (new_node) = StringCopy (OBJDEF_LINKMOD (arg_node));
     OBJDEF_ATTRIB (new_node) = OBJDEF_ATTRIB (arg_node);
     OBJDEF_STATUS (new_node) = OBJDEF_STATUS (arg_node);
@@ -862,6 +878,9 @@ DupObjdef (node *arg_node, node *arg_info)
 #endif
 
     CopyCommonNodeData (new_node, arg_node);
+
+    INFO_DUP_LUT (arg_info)
+      = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
 
     DBUG_RETURN (new_node);
 }
@@ -910,31 +929,6 @@ DupFundef (node *arg_node, node *arg_info)
                            StringCopy (FUNDEF_MOD (arg_node)),
                            DupTypes_ (FUNDEF_TYPES (arg_node), arg_info), NULL, NULL,
                            DUPCONT (FUNDEF_NEXT (arg_node)));
-    /* before duplicating args or vardecs we have to duplicate the ssacounters
-     * (located in the top-block, but traversed here)
-     */
-    if ((FUNDEF_BODY (arg_node) != NULL)
-        && (BLOCK_SSACOUNTER (FUNDEF_BODY (arg_node)) != NULL)) {
-        new_ssacnt = DUPTRAV (BLOCK_SSACOUNTER (FUNDEF_BODY (arg_node)));
-    } else {
-        new_ssacnt = NULL;
-    }
-
-    FUNDEF_ARGS (new_node) = DUPTRAV (FUNDEF_ARGS (arg_node));
-
-    INFO_DUP_LUT (arg_info)
-      = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
-
-    /* copy the body */
-    FUNDEF_BODY (new_node) = DUPTRAV (FUNDEF_BODY (arg_node));
-
-    if (FUNDEF_BODY (new_node) != NULL) {
-        BLOCK_SSACOUNTER (FUNDEF_BODY (new_node)) = new_ssacnt;
-    }
-
-    /* store new DFMbase */
-    FUNDEF_DFM_BASE (new_node)
-      = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_DFM_BASE (arg_node));
 
     /* now we copy all the other things ... */
     FUNDEF_LINKMOD (new_node) = StringCopy (FUNDEF_LINKMOD (arg_node));
@@ -943,19 +937,8 @@ DupFundef (node *arg_node, node *arg_info)
     FUNDEF_INLINE (new_node) = FUNDEF_INLINE (arg_node);
     FUNDEF_FUNNO (new_node) = FUNDEF_FUNNO (arg_node);
     FUNDEF_PRAGMA (new_node) = DUPTRAV (FUNDEF_PRAGMA (arg_node));
-
-    FUNDEF_RETURN (new_node)
-      = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_RETURN (arg_node));
     FUNDEF_NEEDOBJS (new_node) = DupNodelist_ (FUNDEF_NEEDOBJS (arg_node), arg_info);
     FUNDEF_VARNO (new_node) = FUNDEF_VARNO (arg_node);
-
-    if (FUNDEF_IS_LACFUN (new_node)) {
-        FUNDEF_USED (new_node) = 0;
-        FUNDEF_EXT_ASSIGNS (new_node) = NULL;
-        /* caution: has the body been already traversed?? */
-        FUNDEF_INT_ASSIGN (new_node)
-          = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_INT_ASSIGN (arg_node));
-    }
 
 #if 0
   FUNDEF_SIB( new_node) = ???;
@@ -965,6 +948,51 @@ DupFundef (node *arg_node, node *arg_info)
 #endif
 
     CopyCommonNodeData (new_node, arg_node);
+
+    /*
+     * must be done *before* traversal of body!
+     */
+    if (FUNDEF_IS_LACFUN (new_node)) {
+        FUNDEF_USED (new_node) = 0;
+        FUNDEF_EXT_ASSIGNS (new_node) = NULL;
+    }
+
+    /*
+     * before duplicating args or vardecs we have to duplicate the ssacounters
+     * (located in the top-block, but traversed here)
+     */
+    if ((FUNDEF_BODY (arg_node) != NULL)
+        && (BLOCK_SSACOUNTER (FUNDEF_BODY (arg_node)) != NULL)) {
+        new_ssacnt = DUPTRAV (BLOCK_SSACOUNTER (FUNDEF_BODY (arg_node)));
+    } else {
+        new_ssacnt = NULL;
+    }
+
+    INFO_DUP_LUT (arg_info)
+      = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
+
+    FUNDEF_ARGS (new_node) = DUPTRAV (FUNDEF_ARGS (arg_node));
+    FUNDEF_BODY (new_node) = DUPTRAV (FUNDEF_BODY (arg_node));
+
+    if (FUNDEF_BODY (new_node) != NULL) {
+        BLOCK_SSACOUNTER (FUNDEF_BODY (new_node)) = new_ssacnt;
+    }
+
+    /*
+     * must be done *after* traversal of body!
+     */
+#if DUP_DFMS
+    FUNDEF_DFM_BASE (new_node)
+      = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_DFM_BASE (arg_node));
+#else
+    FUNDEF_DFM_BASE (new_node) = NULL;
+#endif
+    FUNDEF_RETURN (new_node)
+      = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_RETURN (arg_node));
+    if (FUNDEF_IS_LACFUN (new_node)) {
+        FUNDEF_INT_ASSIGN (new_node)
+          = SearchInLUT_P (INFO_DUP_LUT (arg_info), FUNDEF_INT_ASSIGN (arg_node));
+    }
 
     INFO_DUP_FUNDEF (arg_info) = old_fundef;
 
@@ -1005,22 +1033,10 @@ DupArg (node *arg_node, node *arg_info)
                         DupTypes_ (ARG_TYPE (arg_node), arg_info), ARG_STATUS (arg_node),
                         ARG_ATTRIB (arg_node), DUPCONT (ARG_NEXT (arg_node)));
 
-    INFO_DUP_LUT (arg_info)
-      = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
-
     ARG_VARNO (new_node) = ARG_VARNO (arg_node);
     ARG_REFCNT (new_node) = ARG_REFCNT (arg_node);
     ARG_NAIVE_REFCNT (new_node) = ARG_NAIVE_REFCNT (arg_node);
     ARG_OBJDEF (new_node) = ARG_OBJDEF (arg_node);
-    if (ARG_AVIS (arg_node) != NULL) {
-        /* we have to duplicate the containing avis node */
-        FreeAvis (ARG_AVIS (new_node), arg_info);
-        ARG_AVIS (new_node) = DUPTRAV (ARG_AVIS (arg_node));
-        /* correct backreferece */
-        AVIS_VARDECORARG (ARG_AVIS (new_node)) = new_node;
-    } else {
-        /* nop, the created empty avis node is ok */
-    }
 
 #if 0
   ARG_TYPESTRING( new_node) = ???;
@@ -1030,6 +1046,19 @@ DupArg (node *arg_node, node *arg_info)
 #endif
 
     CopyCommonNodeData (new_node, arg_node);
+
+    INFO_DUP_LUT (arg_info)
+      = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
+
+    if (ARG_AVIS (arg_node) != NULL) {
+        /* we have to duplicate the containing avis node */
+        FreeAvis (ARG_AVIS (new_node), arg_info);
+        ARG_AVIS (new_node) = DUPTRAV (ARG_AVIS (arg_node));
+        /* correct backreference */
+        AVIS_VARDECORARG (ARG_AVIS (new_node)) = new_node;
+    } else {
+        /* noop, the created empty avis node is ok */
+    }
 
     DBUG_RETURN (new_node);
 }
@@ -1058,12 +1087,15 @@ DupBlock (node *arg_node, node *arg_info)
 {
     node *new_vardecs;
     node *new_node;
+#if DUP_DFMS
     DFMmask_base_t old_base, new_base;
+#endif
 
     DBUG_ENTER ("DupBlock");
 
     new_vardecs = DUPTRAV (BLOCK_VARDEC (arg_node));
 
+#if DUP_DFMS
     if (INFO_DUP_FUNDEF (arg_info) != NULL) {
         old_base = FUNDEF_DFM_BASE (INFO_DUP_FUNDEF (arg_info));
     } else {
@@ -1084,6 +1116,7 @@ DupBlock (node *arg_node, node *arg_info)
         INFO_DUP_LUT (arg_info)
           = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), old_base, new_base);
     }
+#endif
 
     new_node = MakeBlock (DUPTRAV (BLOCK_INSTR (arg_node)), new_vardecs);
     BLOCK_CACHESIM (new_node) = StringCopy (BLOCK_CACHESIM (arg_node));
@@ -1136,9 +1169,6 @@ DupVardec (node *arg_node, node *arg_info)
                            DupTypes_ (VARDEC_TYPE (arg_node), arg_info),
                            DUPCONT (VARDEC_NEXT (arg_node)));
 
-    INFO_DUP_LUT (arg_info)
-      = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
-
     VARDEC_STATUS (new_node) = VARDEC_STATUS (arg_node);
     VARDEC_ATTRIB (new_node) = VARDEC_ATTRIB (arg_node);
     VARDEC_VARNO (new_node) = VARDEC_VARNO (arg_node);
@@ -1146,6 +1176,17 @@ DupVardec (node *arg_node, node *arg_info)
     VARDEC_NAIVE_REFCNT (new_node) = VARDEC_NAIVE_REFCNT (arg_node);
     VARDEC_FLAG (new_node) = VARDEC_FLAG (arg_node);
     VARDEC_OBJDEF (new_node) = VARDEC_OBJDEF (arg_node);
+
+#if 0
+  VARDEC_ACTCHN( new_node) = ???;
+  VARDEC_COLCHN( new_node) = ???;
+#endif
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    INFO_DUP_LUT (arg_info)
+      = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
+
     if (VARDEC_AVIS (arg_node) != NULL) {
         /* we have to duplicate the containing avis node */
         FreeAvis (VARDEC_AVIS (new_node), arg_info);
@@ -1155,13 +1196,6 @@ DupVardec (node *arg_node, node *arg_info)
     } else {
         /* noop, the created empty avis node is ok */
     }
-
-#if 0
-  VARDEC_ACTCHN( new_node) = ???;
-  VARDEC_COLCHN( new_node) = ???;
-#endif
-
-    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1177,15 +1211,15 @@ DupReturn (node *arg_node, node *arg_info)
 
     new_node = MakeReturn (DUPTRAV (RETURN_EXPRS (arg_node)));
 
-    INFO_DUP_LUT (arg_info)
-      = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
-
     RETURN_REFERENCE (new_node) = DUPTRAV (RETURN_REFERENCE (arg_node));
 
     RETURN_USEMASK (new_node) = DupDFMask_ (RETURN_USEMASK (arg_node), arg_info);
     RETURN_DEFMASK (new_node) = DupDFMask_ (RETURN_DEFMASK (arg_node), arg_info);
 
     CopyCommonNodeData (new_node, arg_node);
+
+    INFO_DUP_LUT (arg_info)
+      = InsertIntoLUT_P (INFO_DUP_LUT (arg_info), arg_node, new_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1361,78 +1395,74 @@ DupLet (node *arg_node, node *arg_info)
 node *
 DupAp (node *arg_node, node *arg_info)
 {
+    node *old_fundef, *new_fundef;
     node *new_node;
 
     DBUG_ENTER ("DupAp");
 
+    DBUG_PRINT ("DUP",
+                ("duplicating application of %s ...",
+                 (AP_FUNDEF (arg_node) != NULL) ? FUNDEF_NAME (AP_FUNDEF (arg_node))
+                                                : "?"));
+
+    old_fundef = AP_FUNDEF (arg_node);
+    new_fundef = SearchInLUT_P (INFO_DUP_LUT (arg_info), old_fundef);
+
     new_node = MakeAp (StringCopy (AP_NAME (arg_node)), StringCopy (AP_MOD (arg_node)),
                        DUPTRAV (AP_ARGS (arg_node)));
+
+    AP_FUNDEF (new_node) = new_fundef;
     AP_ATFLAG (new_node) = AP_ATFLAG (arg_node);
 
-    /* first check for correct AP_FUNDEF link (lac2fun does
-     * duptree for incomplete tree parts!):
-     * if this is an application of a special function (cond/do/while)
-     * and it is not the recursive call of a do/while function
-     */
-    DBUG_PRINT ("DUP", ("duplicating application..."));
-    if (AP_FUNDEF (arg_node) != NULL) {
-        DBUG_PRINT ("DUP", ("duplicating application of %s",
-                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
-    }
+    CopyCommonNodeData (new_node, arg_node);
 
     /*
-     * if function application of cond-fundef or
-     * non-recursive application of do/while fundef
+     * A special function is implicit inlined code and we
+     * cannot simply duplicate all dependend functions (due to
+     * the problem where to store the new created fundefs).
+     * Therefore, we add this new application as additional
+     * external reference to the called special function and
+     * increment its used counter. Before we can optimize such a
+     * function with multiple references we have to duplicate it
+     * in a place where we can handle the newly created fundefs.
+     * (usually the XYYap traversal functions in the optimizations)
      */
-    if ((AP_FUNDEF (arg_node) != NULL)
-        && (FUNDEF_IS_CONDFUN (AP_FUNDEF (arg_node))
-            || (FUNDEF_IS_LOOPFUN (AP_FUNDEF (arg_node))
-                && (arg_node
-                    != LET_EXPR (
-                         ASSIGN_INSTR (FUNDEF_INT_ASSIGN (AP_FUNDEF (arg_node)))))))) {
+
+    if (old_fundef != NULL) {
+        DBUG_ASSERT ((new_fundef != NULL), "AP_FUNDEF not found!");
+
+        DBUG_ASSERT (((!FUNDEF_IS_LACFUN (old_fundef))
+                      || (FUNDEF_USED (old_fundef) != USED_INACTIVE)),
+                     "FUNDEF_USED must be active for LaC functions!");
+
+        DBUG_ASSERT (((!FUNDEF_IS_LACFUN (new_fundef))
+                      || (FUNDEF_USED (new_fundef) != USED_INACTIVE)),
+                     "FUNDEF_USED must be active for LaC functions!");
 
         /*
-         * because a special function is implicit inlined code and
-         * we cannot simply duplicate all dependend functions (due to
-         * the problem where to store the new created fundefs).
-         * therefore we add this new application as additional
-         * external reference to the calles special function and
-         * increment its used counter. Before we can optimize this
-         * function with multiple references we have to duplicate it
-         * in a place where we can handle the newly created fundefs.
-         * (usually the XYYap traversal functions in the optimizations)
+         * increment reference counter (FUNDEF_USED)
          */
+        if ((FUNDEF_USED (new_fundef) != USED_INACTIVE)
+            && ((!FUNDEF_IS_LOOPFUN (new_fundef))
+                || (arg_node != ASSIGN_RHS (FUNDEF_INT_ASSIGN (old_fundef))))) {
+            DBUG_ASSERT ((FUNDEF_USED (new_fundef) >= 0), "FUNDEF_USED dropped below 0!");
 
-        AP_FUNDEF (new_node) = AP_FUNDEF (arg_node);
+            (FUNDEF_USED (new_fundef))++;
 
-        DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (new_node)) != USED_INACTIVE),
-                     "FUNDEF_USED must be active for special functions!");
+            DBUG_PRINT ("DUP", ("used counter for %s incremented to %d",
+                                FUNDEF_NAME (new_fundef), FUNDEF_USED (new_fundef)));
 
-        DBUG_ASSERT ((FUNDEF_USED (AP_FUNDEF (new_node)) >= 0),
-                     "FUNDEF_USED dropped below 0!");
+            if (FUNDEF_IS_LACFUN (new_fundef)) {
+                /* add new application to external assignment chain */
+                DBUG_ASSERT ((INFO_DUP_ASSIGN (arg_info) != NULL),
+                             "no corresponding assignment node");
 
-        /* increment reference counter */
-        (FUNDEF_USED (AP_FUNDEF (new_node)))++;
-
-        /* add new application to external assignment chain */
-        DBUG_ASSERT ((FUNDEF_EXT_ASSIGNS (AP_FUNDEF (new_node)) != NULL),
-                     "there is no nodelist to store external assignments anymore");
-        DBUG_ASSERT ((INFO_DUP_ASSIGN (arg_info) != NULL),
-                     "no corresponding assignment node");
-        FUNDEF_EXT_ASSIGNS (AP_FUNDEF (new_node))
-          = NodeListAppend (FUNDEF_EXT_ASSIGNS (AP_FUNDEF (new_node)),
-                            INFO_DUP_ASSIGN (arg_info), NULL);
-
-        DBUG_PRINT ("DUP", ("used counter for %s incremented to %d",
-                            FUNDEF_NAME (AP_FUNDEF (new_node)),
-                            FUNDEF_USED (AP_FUNDEF (new_node))));
-    } else {
-        /* Ooops .... has the fundef node been already traversed ?? */
-        AP_FUNDEF (new_node)
-          = SearchInLUT_P (INFO_DUP_LUT (arg_info), AP_FUNDEF (arg_node));
+                FUNDEF_EXT_ASSIGNS (new_fundef)
+                  = NodeListAppend (FUNDEF_EXT_ASSIGNS (new_fundef),
+                                    INFO_DUP_ASSIGN (arg_info), NULL);
+            }
+        }
     }
-
-    CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2608,7 +2638,7 @@ DupId_Ids (node *old_id)
 /******************************************************************************
  *
  * Function:
- *   node *CheckAndDupSpecialFundef( node* fundef, node *assign)
+ *   node *CheckAndDupSpecialFundef( node *module, node* fundef, node *assign)
  *
  * Returns:
  *   modified module node
@@ -2648,9 +2678,9 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
                  "fundef has no external assignments");
     DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (assign)) == N_let),
                  "assignment contains no let");
-    DBUG_ASSERT ((NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assign))) == N_ap),
+    DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (assign)) == N_ap),
                  "assignment is to application");
-    DBUG_ASSERT ((AP_FUNDEF (LET_EXPR (ASSIGN_INSTR (assign))) == fundef),
+    DBUG_ASSERT ((AP_FUNDEF (ASSIGN_RHS (assign)) == fundef),
                  "application of different fundef than given fundef");
     DBUG_ASSERT ((NodeListFind (FUNDEF_EXT_ASSIGNS (fundef), assign) != NULL),
                  "given assignment is not element of external assignment list");
@@ -2672,12 +2702,11 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
             DBUG_ASSERT ((FUNDEF_INT_ASSIGN (new_fundef) != NULL),
                          "missing link to recursive function call");
 
-            FREE (AP_NAME (LET_EXPR (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (new_fundef)))));
-            AP_NAME (LET_EXPR (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (new_fundef))))
+            FREE (AP_NAME (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef))));
+            AP_NAME (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef)))
               = StringCopy (FUNDEF_NAME (new_fundef));
 
-            AP_FUNDEF (LET_EXPR (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (new_fundef))))
-              = new_fundef;
+            AP_FUNDEF (ASSIGN_RHS (FUNDEF_INT_ASSIGN (new_fundef))) = new_fundef;
         }
 
         /* init external assignment list */
@@ -2685,18 +2714,23 @@ CheckAndDupSpecialFundef (node *module, node *fundef, node *assign)
         FUNDEF_USED (new_fundef) = 1;
 
         /* rename the external assign/funap */
-        FREE (AP_NAME (LET_EXPR (ASSIGN_INSTR (assign))));
-        AP_NAME (LET_EXPR (ASSIGN_INSTR (assign))) = StringCopy (new_name);
-        AP_FUNDEF (LET_EXPR (ASSIGN_INSTR (assign))) = new_fundef;
+        FREE (AP_NAME (ASSIGN_RHS (assign)));
+        AP_NAME (ASSIGN_RHS (assign)) = StringCopy (new_name);
+        AP_FUNDEF (ASSIGN_RHS (assign)) = new_fundef;
 
         /* add new fundef to global chain of fundefs */
         FUNDEF_NEXT (new_fundef) = MODUL_FUNS (module);
         MODUL_FUNS (module) = new_fundef;
 
+        DBUG_ASSERT ((NodeListFind (FUNDEF_EXT_ASSIGNS (fundef), assign) != NULL),
+                     "Assignment not found in FUNDEF_EXT_ASSIGNS!");
+
         /* remove assignment from old external assignment list */
         FUNDEF_EXT_ASSIGNS (fundef)
-          = NodeListDelete (FUNDEF_EXT_ASSIGNS (fundef), assign, 0);
+          = NodeListDelete (FUNDEF_EXT_ASSIGNS (fundef), assign, FALSE);
+
         (FUNDEF_USED (fundef))--;
+
         DBUG_ASSERT ((FUNDEF_USED (fundef) >= 0), "FUNDEF_USED dropped below 0");
     } else {
         /* only single use - no duplication needed */
