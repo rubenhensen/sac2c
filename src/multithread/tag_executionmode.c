@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2004/06/23 15:45:17  skt
+ * TEMreturn, TEMap, TEMarray added and some debugging done
+ *
  * Revision 1.2  2004/06/23 10:18:41  skt
  * a bouquet of new functions added
  *
@@ -25,9 +28,9 @@
  *
  * description:
  *   tags the assignments, wheter their executionmode is MUTH_ANY,
- *   MUTH_SINGLE, MUTH_ONCE or MUTH_MULTI
- *   MUTH_SINGLE: execution by one thread, all other threads idle
- *   MUTH_ONCE: execution by one thread, all other threads work
+ *   MUTH_EXCLUSIVE, MUTH_SINGLE or MUTH_MULTI
+ *   MUTH_EXCLUSIVE: execution by one thread, all other threads idle
+ *   MUTH_SINGLE: execution by one thread, all other threads work
  *   MUTH_MULTI: execution by all threads
  *   MUTH_ANY: decision whether ST, OT or MT to be done later
  *
@@ -68,7 +71,6 @@ TagExecutionmode (node *arg_node, node *arg_info)
     INFO_TEM_ORIGLHS (arg_info) = NULL;
     INFO_TEM_EXECMODE (arg_info) = MUTH_ANY;
     INFO_TEM_WITHDEEP (arg_info) = 0;
-    INFO_TEM_FILLDEEP (arg_info) = 0;
 
     /* push info ... */
     old_tab = act_tab;
@@ -98,21 +100,47 @@ TagExecutionmode (node *arg_node, node *arg_info)
 node *
 TEMassign (node *arg_node, node *arg_info)
 {
+#if TEM_DEBUG
+    char *mode;
+#endif
     DBUG_ENTER ("TEMassign");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign),
                  "TEMassign expects a N_assign as arg_node");
 
     /* reset to default */
-    INFO_TEM_EXECMODE (arg_info) = MUTH_ANY;
+    if (INFO_TEM_WITHDEEP (arg_info) == 0) {
+        INFO_TEM_EXECMODE (arg_info) = MUTH_ANY;
+    }
 
     DBUG_PRINT ("TEM", ("trav into instruction"));
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
     DBUG_PRINT ("TEM", ("trav from instruction"));
 
     /* set the executionmode of the current assignment */
-    ASSIGN_EXECMODE (arg_info) = INFO_TEM_EXECMODE (arg_info);
+    if (INFO_TEM_WITHDEEP (arg_info) == 0) {
+        ASSIGN_EXECMODE (arg_info) = INFO_TEM_EXECMODE (arg_info);
 
+#if TEM_DEBUG
+        switch (INFO_TEM_EXECMODE (arg_info)) {
+        case MUTH_ANY:
+            mode = "AT";
+            break;
+        case MUTH_EXCLUSIVE:
+            mode = "EX";
+            break;
+        case MUTH_SINGLE:
+            mode = "ST";
+            break;
+        case MUTH_MULTI:
+            mode = "MT";
+        }
+        if (INFO_TEM_EXECMODE (arg_info) != MUTH_ANY) {
+            PrintNode (arg_node);
+            fprintf (stdout, "The upper assignment is %s.\n", mode);
+        }
+#endif
+    }
     if (ASSIGN_NEXT (arg_node) != NULL) {
         DBUG_PRINT ("TEM", ("trav into next"));
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
@@ -145,7 +173,7 @@ TEMwith2 (node *arg_node, node *arg_info)
                  "TEMwith2 expects a N_with2 as argument");
 
     /* INFO_TEM_ORIGLHS(arg_info) must contain a minimum of 1 chain member */
-    DBUG_ASSERT ((INFO_TEM_ORIGLHS (arg_info) == NULL),
+    DBUG_ASSERT ((INFO_TEM_ORIGLHS (arg_info) != NULL),
                  "INFO_TEM_ORIGLHS(arg_info) must not be NULL");
 
     if (IsMTAllowed (arg_node) && IsMTClever (INFO_TEM_ORIGLHS (arg_info))) {
@@ -158,7 +186,7 @@ TEMwith2 (node *arg_node, node *arg_info)
     else {
         /* the generator of this with-loop must be big enough to be partitioned
            into max_threads */
-        if (IsGeneratorBigEnough (arg_node)) {
+        if (IsGeneratorBigEnough (INFO_TEM_ORIGLHS (arg_info))) {
             /* the deepness rises... */
             INFO_TEM_WITHDEEP (arg_info)++;
             DBUG_PRINT ("TEM", ("trav into with-loop code"));
@@ -203,7 +231,6 @@ TEMprf (node *arg_node, node *arg_info)
                      "PRF_ARGS(arg_node)) must not be NULL");
         old_lhs = INFO_TEM_ORIGLHS (arg_info);
         INFO_TEM_ORIGLHS (arg_info) = EXPRS_NEXT (PRF_ARGS (arg_node));
-        INFO_TEM_FILLDEEP (arg_info)++;
     }
 
     DBUG_PRINT ("TEM", ("trav into args"));
@@ -211,14 +238,13 @@ TEMprf (node *arg_node, node *arg_info)
     DBUG_PRINT ("TEM", ("trav from args"));
 
     if (PRF_PRF (arg_node) == F_fill) {
-        INFO_TEM_FILLDEEP (arg_info)--;
 
         /* Can the actual assignment executed in mt-mode and are we going back
          * to top-level? => Let's mark the allocations for this assignment as
-         * ot-mode */
+         * exclusive-mode */
         if ((INFO_TEM_EXECMODE (arg_info) == MUTH_MULTI)
             && (INFO_TEM_WITHDEEP (arg_info) == 0)) {
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (PRF_ARGS (arg_info))) == N_Nwith2),
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (PRF_ARGS (arg_node))) == N_Nwith2),
                          "TEMprf would expect a N_with2 here");
             DBUG_ASSERT ((EXPRS_NEXT (PRF_ARGS (arg_node)) != NULL),
                          "TEMprf do not expect a NULL here");
@@ -249,37 +275,75 @@ TEMexprs (node *arg_node, node *arg_info)
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_exprs),
                  "TEMexprs expects a N_exprs as argument");
 
-    /*  if(arg_node != INFO_TEM_ORIGLHS(arg_info)) {
-      DBUG_PRINT( "TEM", ("trav into expr"));
-      EXPRS_EXPR(arg_node) = Trav(EXPRS_EXPR(arg_node), arg_info);
-      DBUG_PRINT( "TEM", ("trav from expr"));
-      }*/
-    /* arg_node is the first node of the original lhs */
-    /*  else {
-      if(INFO_TEM_
-      }*/
+    /*  if(arg_node != INFO_TEM_ORIGLHS(arg_info)) {*/
+    DBUG_PRINT ("TEM", ("trav into expr"));
+    EXPRS_EXPR (arg_node) = Trav (EXPRS_EXPR (arg_node), arg_info);
+    DBUG_PRINT ("TEM", ("trav from expr"));
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *TEMprf(node *arg_node, node *arg_info)
+ * @fn node *TEMreturn(node *arg_node, node *arg_info)
  *
- *   @brief stores PRF_ARGS(arg_node) into arg_info to use them in TEMwith2
+ *   @brief avoids traversing into the expressions of N_return
  *
- *   @param arg_node a N_prf
+ *   @param arg_node a N_return
  *   @param arg_info
- *   @return syntax branch with
+ *   @return arg_node as it came into TEMreturn
  *
  *****************************************************************************/
-/* dummy node *TEMprf(node *arg_node, node *arg_info) {
-   DBUG_ENTER ("TEMprf");
-   DBUG_ASSERT((NODE_TYPE(arg_info) == N_prf),
-   "TEMprf expects a N_prf as argument");
+node *
+TEMreturn (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("TEMreturn");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_return),
+                 "TEMreturn expects a N_return as argument");
 
-   DBUG_RETURN (arg_node);
-   }*/
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *TEMap(node *arg_node, node *arg_info)
+ *
+ *   @brief
+ *
+ *   @param arg_node a N_ap
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
+node *
+TEMap (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("TEMap");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_ap), "TEMap expects a N_ap as argument");
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *TEMarray(node *arg_node, node *arg_info)
+ *
+ *   @brief avoids traversing into the expressions of N_return
+ *
+ *   @param arg_node a N_array
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
+node *
+TEMarray (node *arg_node, node *arg_info)
+{
+    DBUG_ENTER ("TEMarray");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_array),
+                 "TEMarray expects a N_array as argument");
+
+    DBUG_RETURN (arg_node);
+}
 
 /** <!--********************************************************************-->
  *
@@ -446,21 +510,32 @@ TagAllocs (node *exprs)
                  "TagAllocs expects a N_exprs as argument");
 
     tmp = exprs;
+#if TEM_DEBUG
+    fprintf (stdout, "********** TagAllocs start **********\n");
+#endif
     while (tmp != NULL) {
         expr = EXPRS_EXPR (exprs);
 
         DBUG_ASSERT ((NODE_TYPE (expr) == N_id), "TagAlloca expects a N_id here");
         assign = AVIS_SSAASSIGN (ID_AVIS (expr));
 
-        /* no changes, if the executionmode is the stricter MUTH_SINGLE */
-        if (ASSIGN_EXECMODE (assign) != MUTH_SINGLE) {
+        /* no changes, if the executionmode is the stricter MUTH_EXCLUSIVE */
+        if (ASSIGN_EXECMODE (assign) != MUTH_EXCLUSIVE) {
             DBUG_ASSERT ((ASSIGN_EXECMODE (assign) = MUTH_MULTI),
                          "The executionmode of this assignment must'n be MUTH_MULTI");
-            ASSIGN_EXECMODE (assign) = MUTH_ONCE;
+            ASSIGN_EXECMODE (assign) = MUTH_SINGLE;
         }
+
+#if TEM_DEBUG
+        PrintNode (assign);
+        fprintf (stdout, "Executionmode changed into %i\n", ASSIGN_EXECMODE (assign));
+#endif
 
         tmp = EXPRS_NEXT (tmp);
     }
+#if TEM_DEBUG
+    fprintf (stdout, "********** TagAllocs end **********\n");
+#endif
 
     DBUG_RETURN (exprs);
 }
