@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.51  2001/05/18 12:04:52  dkr
+ * no changes done
+ *
  * Revision 3.50  2001/05/17 12:03:24  dkr
  * FREE eliminated
  *
@@ -3123,9 +3126,7 @@ CheckParams (node *seg)
                               (WLSEG_UBV (seg))[d], (WLSEG_SV (seg))[d]));
             }
         }
-
     } else {
-
         DBUG_ASSERT ((WLSEGVAR_IDX_MIN (seg) != NULL), "WLSEGVAR_IDX_MIN not found!");
         DBUG_ASSERT ((WLSEGVAR_IDX_MAX (seg) != NULL), "WLSEGVAR_IDX_MAX not found!");
     }
