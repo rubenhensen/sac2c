@@ -4,7 +4,10 @@
 /*
  *
  * $Log$
- * Revision 1.1  1994/11/22 13:47:03  sbs
+ * Revision 1.2  1994/12/16 14:34:28  sbs
+ * moddec  and start_token inserted
+ *
+ * Revision 1.1  1994/11/22  13:47:03  sbs
  * Initial revision
  *
  *
@@ -16,6 +19,10 @@
  *
  */
 
+#include "y.tab.h"
+
 extern int yyparse ();
+extern FILE *yyin;
+extern int start_token;
 
 #endif /* _scnprs_h */

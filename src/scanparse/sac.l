@@ -3,7 +3,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1994/12/14 10:08:40  sbs
+ * Revision 1.8  1994/12/16 14:34:28  sbs
+ * moddec  and start_token inserted
+ *
+ * Revision 1.7  1994/12/14  10:08:40  sbs
  * typedef inserted
  *
  * Revision 1.6  1994/12/08  17:45:58  sbs
@@ -46,9 +49,22 @@ extern int i;
 char * tmp;
 int linenum=1;
 int commlevel=0;
+int start_token;
 
 %}
 %%
+%{
+
+/* the next view lines allow for smuggling in a start_token! */
+
+     if(start_token) {
+       int mem=start_token;
+
+       start_token=0;
+       return(mem);
+     }
+%}
+
 "{"				{FILTER( BRACE_L );}
 "}"				{FILTER( BRACE_R );}
 "("				{FILTER( BRACKET_L );}
@@ -92,7 +108,7 @@ int commlevel=0;
 "psi"                           {FILTER( PSI );}
 
 "typedef"			{FILTER( TYPEDEF );}
-"main"				{FILTER( MAIN );}
+"main"				{FILTER( K_MAIN );}
 "return"			{FILTER( RETURN );}
 "if"				{FILTER( IF );}
 "else"				{FILTER( ELSE );}
