@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.4  1998/07/07 13:43:12  cg
+ * Global flags SAC_DO_MULTITHREAD, SAC_DO_THREADS_STATC and
+ * settings for multithreaded execution may now be set by the C
+ * compiler instead of being fixed in the C source.
+ * This was necessary to implement the -mt-all command line option.
+ *
  * Revision 1.3  1998/05/11 09:51:22  cg
  * added definition of SPMD frame
  *
@@ -35,6 +41,8 @@
 extern void GSCPrintFileHeader (node *);
 extern void GSCPrintMainBegin ();
 extern void GSCPrintMainEnd ();
+
+extern int GSCCalcMasterclass (int num_threads);
 
 extern node *GSCfundef (node *arg_node, node *arg_info);
 extern node *GSCspmd (node *arg_node, node *arg_info);

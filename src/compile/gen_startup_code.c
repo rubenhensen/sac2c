@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 1.12  1998/07/07 13:43:12  cg
+ * Global flags SAC_DO_MULTITHREAD, SAC_DO_THREADS_STATC and
+ * settings for multithreaded execution may now be set by the C
+ * compiler instead of being fixed in the C source.
+ * This was necessary to implement the -mt-all command line option.
+ *
  * Revision 1.11  1998/07/03 10:18:15  cg
  * Super ICM MT_SPMD_BLOCK replaced by combinations of new ICMs
  * MT_SPMD_[STATIC|DYNAMIC]_MODE_[BEGIN|ALTSEQ|END]
@@ -86,17 +92,19 @@ static int spmd_block_counter;
  *
  ******************************************************************************/
 
-static unsigned int
-CalcMasterclass (int num_threads)
+int
+GSCCalcMasterclass (int num_threads)
 {
     unsigned int res;
 
-    DBUG_ENTER ("CalcMasterclass");
+    DBUG_ENTER ("GSCCalcMasterclass");
 
     for (res = 1; res < num_threads; res <<= 1)
         ;
 
-    DBUG_RETURN (res >> 1);
+    res >>= 1;
+
+    DBUG_RETURN ((int)res);
 }
 
 /******************************************************************************
@@ -145,8 +153,14 @@ PrintGlobalSwitches ()
              (traceflag & TRACE_WL) ? 1 : 0);
     fprintf (outfile, "#define SAC_DO_TRACE_MT        %d\n",
              (traceflag & TRACE_MT) ? 1 : 0);
+
+    fprintf (outfile, "\n#ifndef SAC_DO_MULTITHREAD\n");
     fprintf (outfile, "#define SAC_DO_MULTITHREAD     %d\n", (num_threads == 1) ? 0 : 1);
+    fprintf (outfile, "#endif\n");
+
+    fprintf (outfile, "\n#ifndef SAC_DO_THREADS_STATIC\n");
     fprintf (outfile, "#define SAC_DO_THREADS_STATIC  %d\n", (num_threads == 0) ? 0 : 1);
+    fprintf (outfile, "#endif\n");
 
     DBUG_VOID_RETURN;
 }
@@ -271,11 +285,20 @@ PrintGlobalSettings (node *syntax_tree)
 
     fprintf (outfile, "#define NULL                      (void*) 0\n\n");
 
-    fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD     %d\n", max_sync_fold);
+    fprintf (outfile, "#ifndef SAC_SET_THREADS_MAX\n");
     fprintf (outfile, "#define SAC_SET_THREADS_MAX       %d\n", max_threads);
+    fprintf (outfile, "#endif\n");
+
+    fprintf (outfile, "#ifndef SAC_SET_THREADS\n");
     fprintf (outfile, "#define SAC_SET_THREADS           %d\n", num_threads);
+    fprintf (outfile, "#endif\n");
+
+    fprintf (outfile, "#ifndef SAC_SET_MASTERCLASS\n");
     fprintf (outfile, "#define SAC_SET_MASTERCLASS       %d\n",
-             CalcMasterclass (num_threads));
+             GSCCalcMasterclass (num_threads));
+    fprintf (outfile, "#endif\n");
+
+    fprintf (outfile, "#define SAC_SET_MAX_SYNC_FOLD     %d\n", max_sync_fold);
 
     fprintf (outfile, "#define SAC_SET_CACHE_1_SIZE      %d\n", config.cache1_size);
     fprintf (outfile, "#define SAC_SET_CACHE_1_LINE      %d\n", config.cache1_line);
