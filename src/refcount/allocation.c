@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.5  2004/11/23 19:29:35  ktr
+ * COMPILES!!!
+ *
  * Revision 1.4  2004/11/19 15:44:09  ktr
  * Support for F_alloc_or_reshape added.
  *
@@ -15,10 +18,10 @@
  *
  */
 
-#include "types.h"
+#include "allocation.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "free.h"
 #include "globals.h"
 #include "dbug.h"
 #include "ssa.h"
@@ -34,6 +37,7 @@
 #include "datareuse.h"
 #include "explicitcopy.h"
 #include "reusebranching.h"
+#include <string.h>
 
 /** <!--********************************************************************-->
  *
@@ -51,7 +55,7 @@ ExplicitAllocation (node *syntax_tree)
     node *fundef;
     DBUG_ENTER ("ExplicitAllocation");
 
-    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_modul),
+    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
                  "ExplicitAllocation not started with modul node");
 
     DBUG_PRINT ("EMM", ("Transforming syntax tree into SSA form (l2f, cha, ssa)"));
@@ -62,11 +66,11 @@ ExplicitAllocation (node *syntax_tree)
      * !!! IF THIS BECOMES UNNECESSARY ONE DAY: !!!
      *     CVP and DCR can be removed as well
      */
-    syntax_tree = DoSSA (syntax_tree);
-    if ((break_after == PH_alloc)
-        && ((0 == strcmp (break_specifier, "l2f"))
-            || (0 == strcmp (break_specifier, "cha"))
-            || (0 == strcmp (break_specifier, "ssa")))) {
+    syntax_tree = SSAdoSSA (syntax_tree);
+    if ((global.break_after == PH_alloc)
+        && ((0 == strcmp (global.break_specifier, "l2f"))
+            || (0 == strcmp (global.break_specifier, "cha"))
+            || (0 == strcmp (global.break_specifier, "ssa")))) {
         goto DONE;
     }
 
@@ -77,17 +81,18 @@ ExplicitAllocation (node *syntax_tree)
      *
      * !!! Only needed as long we retransform in SSA form
      */
-    if (optimize & OPT_CVP) {
-        fundef = MODUL_FUNS (syntax_tree);
+    if (global.optimize.docvp) {
+        fundef = MODULE_FUNS (syntax_tree);
         while (fundef != NULL) {
-            if (!(FUNDEF_IS_LACFUN (fundef))) {
-                fundef = ConstVarPropagation (fundef);
+            if (!(FUNDEF_ISLACFUN (fundef))) {
+                fundef = CVPdoConstVarPropagation (fundef);
             }
 
             fundef = FUNDEF_NEXT (fundef);
         }
     }
-    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "cvp"))) {
+    if ((global.break_after == PH_alloc)
+        && (0 == strcmp (global.break_specifier, "cvp"))) {
         goto DONE;
     }
 
@@ -98,15 +103,16 @@ ExplicitAllocation (node *syntax_tree)
      *
      * !!! Only needed as long we retransform in SSA form
      */
-    if (optimize & OPT_DCR) {
-        fundef = MODUL_FUNS (syntax_tree);
+    if (global.optimize.dodcr) {
+        fundef = MODULE_FUNS (syntax_tree);
         while (fundef != NULL) {
-            fundef = SSADeadCodeRemoval (fundef, syntax_tree);
+            fundef = DCRdoDeadCodeRemoval (fundef, syntax_tree);
 
             fundef = FUNDEF_NEXT (fundef);
         }
     }
-    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "dcr"))) {
+    if ((global.break_after == PH_alloc)
+        && (0 == strcmp (global.break_specifier, "dcr"))) {
         goto DONE;
     }
 
@@ -115,8 +121,9 @@ ExplicitAllocation (node *syntax_tree)
     /*
      * Explicit copy
      */
-    syntax_tree = EMECExplicitCopy (syntax_tree);
-    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "copy"))) {
+    syntax_tree = EMECdoExplicitCopy (syntax_tree);
+    if ((global.break_after == PH_alloc)
+        && (0 == strcmp (global.break_specifier, "copy"))) {
         goto DONE;
     }
 
@@ -125,8 +132,9 @@ ExplicitAllocation (node *syntax_tree)
     /*
      * Explicit allocation
      */
-    syntax_tree = EMAllocateFill (syntax_tree);
-    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "alloc"))) {
+    syntax_tree = EMALdoAlloc (syntax_tree);
+    if ((global.break_after == PH_alloc)
+        && (0 == strcmp (global.break_specifier, "alloc"))) {
         goto DONE;
     }
 
@@ -135,15 +143,16 @@ ExplicitAllocation (node *syntax_tree)
     /*
      * Dead code removal
      */
-    if (optimize & OPT_DCR) {
-        fundef = MODUL_FUNS (syntax_tree);
+    if (global.optimize.dodcr) {
+        fundef = MODULE_FUNS (syntax_tree);
         while (fundef != NULL) {
-            fundef = SSADeadCodeRemoval (fundef, syntax_tree);
+            fundef = DCRdoDeadCodeRemoval (fundef, syntax_tree);
 
             fundef = FUNDEF_NEXT (fundef);
         }
     }
-    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "dcr2"))) {
+    if ((global.break_after == PH_alloc)
+        && (0 == strcmp (global.break_specifier, "dcr2"))) {
         goto DONE;
     }
 
@@ -152,10 +161,11 @@ ExplicitAllocation (node *syntax_tree)
     /*
      * Reuse inference
      */
-    if (reuse) {
-        syntax_tree = ReuseInference (syntax_tree);
+    if (global.optimize.douip) {
+        syntax_tree = EMRIdoReuseInference (syntax_tree);
     }
-    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "ri"))) {
+    if ((global.break_after == PH_alloc)
+        && (0 == strcmp (global.break_specifier, "ri"))) {
         goto DONE;
     }
 
@@ -164,10 +174,11 @@ ExplicitAllocation (node *syntax_tree)
     /*
      * Interface analysis
      */
-    if (optimize & OPT_SRF) {
-        syntax_tree = EMIAInterfaceAnalysis (syntax_tree);
+    if (global.optimize.dosrf) {
+        syntax_tree = EMIAdoInterfaceAnalysis (syntax_tree);
     }
-    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "ia"))) {
+    if ((global.break_after == PH_alloc)
+        && (0 == strcmp (global.break_specifier, "ia"))) {
         goto DONE;
     }
 
@@ -176,10 +187,11 @@ ExplicitAllocation (node *syntax_tree)
     /*
      * Loop reuse optimization
      */
-    if ((optimize & OPT_LRO) && (optimize & OPT_SRF)) {
-        syntax_tree = EMLRLoopReuseOptimization (syntax_tree);
+    if ((global.optimize.dolro) && (global.optimize.dosrf)) {
+        syntax_tree = EMLRdoLoopReuseOptimization (syntax_tree);
     }
-    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "lro"))) {
+    if ((global.break_after == PH_alloc)
+        && (0 == strcmp (global.break_specifier, "lro"))) {
         goto DONE;
     }
 
@@ -188,22 +200,12 @@ ExplicitAllocation (node *syntax_tree)
     /*
      * Alias analysis
      */
-    if (optimize & OPT_SRF) {
-        syntax_tree = EMAAAliasAnalysis (syntax_tree);
+    if (global.optimize.dosrf) {
+        syntax_tree = EMAAdoAliasAnalysis (syntax_tree);
     }
-    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "aa"))) {
+    if ((global.break_after == PH_alloc)
+        && (0 == strcmp (global.break_specifier, "aa"))) {
         goto DONE;
-    }
-
-    DBUG_PRINT ("EMM", ("Removing FUNDEF_RETALIAS"));
-
-    /*
-     * Remove FUNDEF_RETALIAS which are no longer needed
-     */
-    fundef = MODUL_FUNS (syntax_tree);
-    while (fundef != NULL) {
-        FUNDEF_RETALIAS (fundef) = FreeNodelist (FUNDEF_RETALIAS (fundef));
-        fundef = FUNDEF_NEXT (fundef);
     }
 
     DBUG_PRINT ("EMM", ("Filtering reuse candidates (frc)"));
@@ -211,8 +213,9 @@ ExplicitAllocation (node *syntax_tree)
     /*
      * Filter reuse candidates
      */
-    syntax_tree = EMFRCFilterReuseCandidates (syntax_tree);
-    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "frc"))) {
+    syntax_tree = EMFRCdoFilterReuseCandidates (syntax_tree);
+    if ((global.break_after == PH_alloc)
+        && (0 == strcmp (global.break_specifier, "frc"))) {
         goto DONE;
     }
 
@@ -221,8 +224,9 @@ ExplicitAllocation (node *syntax_tree)
     /*
      * Static reuse
      */
-    syntax_tree = EMSRStaticReuse (syntax_tree);
-    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "sr"))) {
+    syntax_tree = EMSRdoStaticReuse (syntax_tree);
+    if ((global.break_after == PH_alloc)
+        && (0 == strcmp (global.break_specifier, "sr"))) {
         goto DONE;
     }
 
@@ -231,7 +235,8 @@ ExplicitAllocation (node *syntax_tree)
     /*
      * In Place computation
      */
-    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "ipc"))) {
+    if ((global.break_after == PH_alloc)
+        && (0 == strcmp (global.break_specifier, "ipc"))) {
         goto DONE;
     }
 
@@ -240,8 +245,9 @@ ExplicitAllocation (node *syntax_tree)
     /*
      * Reuse case dependent branching
      */
-    syntax_tree = EMRBReuseBranching (syntax_tree);
-    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "rb"))) {
+    syntax_tree = EMRBdoReuseBranching (syntax_tree);
+    if ((global.break_after == PH_alloc)
+        && (0 == strcmp (global.break_specifier, "rb"))) {
         goto DONE;
     }
 
@@ -250,8 +256,9 @@ ExplicitAllocation (node *syntax_tree)
     /*
      * Data reuse
      */
-    syntax_tree = EMDRDataReuse (syntax_tree);
-    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "dr"))) {
+    syntax_tree = EMDRdoDataReuse (syntax_tree);
+    if ((global.break_after == PH_alloc)
+        && (0 == strcmp (global.break_specifier, "dr"))) {
         goto DONE;
     }
 
@@ -260,15 +267,16 @@ ExplicitAllocation (node *syntax_tree)
     /*
      * Dead code removal
      */
-    if (optimize & OPT_DCR) {
-        fundef = MODUL_FUNS (syntax_tree);
+    if (global.optimize.dodcr) {
+        fundef = MODULE_FUNS (syntax_tree);
         while (fundef != NULL) {
-            fundef = SSADeadCodeRemoval (fundef, syntax_tree);
+            fundef = DCRdoDeadCodeRemoval (fundef, syntax_tree);
 
             fundef = FUNDEF_NEXT (fundef);
         }
     }
-    if ((break_after == PH_alloc) && (0 == strcmp (break_specifier, "dcr3"))) {
+    if ((global.break_after == PH_alloc)
+        && (0 == strcmp (global.break_specifier, "dcr3"))) {
         goto DONE;
     }
 
