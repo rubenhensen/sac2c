@@ -3,7 +3,5 @@ objects.c
 objects.h
 objinit.c
 objinit.h
-rmvoidfun.c
-rmvoidfun.h
 uniquecheck.c
 uniquecheck.h
