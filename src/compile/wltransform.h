@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2001/05/03 17:32:42  dkr
+ * PRINT_SV renamed into PRINT_HOMSV
+ *
  * Revision 3.8  2001/04/03 17:51:30  dkr
  * macro PRINT_SV added
  *
@@ -54,17 +57,18 @@
 #ifndef _sac_wltransform_h
 #define _sac_wltransform_h
 
-#define PRINT_SV(handle, vect, dims, maxhomdim)                                          \
+#define PRINT_HOMSV(handle, vect, dims)                                                  \
     {                                                                                    \
         int d;                                                                           \
         if ((vect) != NULL) {                                                            \
             fprintf (handle, "[ ");                                                      \
             for (d = 0; d < (dims); d++) {                                               \
-                if (d <= maxhomdim) {                                                    \
-                    fprintf (handle, "%i ", (vect)[d]);                                  \
+                if ((vect)[d] > 0) {                                                     \
+                    fprintf (handle, "%i", (vect)[d]);                                   \
                 } else {                                                                 \
-                    fprintf (handle, "(%i) ", (vect)[d]);                                \
+                    fprintf (handle, "?");                                               \
                 }                                                                        \
+                fprintf (handle, " ");                                                   \
             }                                                                            \
             fprintf (handle, "]");                                                       \
         } else {                                                                         \
