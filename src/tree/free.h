@@ -1,11 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2001/04/26 01:39:25  dkr
+ * FreeZombie(), RemoveAllZombies() added
+ *
  * Revision 3.11  2001/04/24 09:15:55  dkr
  * P_FORMAT replaced by F_PTR
- *
- * Revision 3.10  2001/03/27 23:25:01  dkr
- * no changes done
  *
  * Revision 3.9  2001/02/15 16:58:05  nmw
  * FreeSSAstack added
@@ -15,9 +15,6 @@
  *
  * Revision 3.7  2001/02/12 10:53:00  nmw
  * N_ssacnt and N_cseinfo added
- *
- * Revision 3.6  2001/02/02 09:22:42  dkr
- * no changes done
  *
  * Revision 3.5  2001/01/09 17:26:26  dkr
  * N_WLstriVar renamed into N_WLstrideVar
@@ -100,10 +97,24 @@
         tmp = NULL;                                                                      \
     }
 
+/*
+ * user functions for nodes
+ */
+
 extern void Free (void *addr);
 
-extern node *FreeNode (node *);
-extern node *FreeTree (node *);
+extern node *FreeNode (node *arg_node);
+extern node *FreeTree (node *arg_node);
+
+extern node *FreeZombie (node *fundef);
+extern node *RemoveAllZombies (node *arg_node);
+
+/* for compatibility only */
+extern void FreePrf2 (node *arg_node, int arg_no); /* CF */
+
+/*
+ * user functions for non-node data
+ */
 
 extern shpseg *FreeShpseg (shpseg *fr);
 extern types *FreeOneTypes (types *fr);
@@ -120,6 +131,10 @@ extern nodelist *FreeNodelist (nodelist *fr);
 extern nodelist *FreeNodelistNode (nodelist *nl);
 extern access_t *FreeOneAccess (access_t *fr);
 extern access_t *FreeAllAccess (access_t *fr);
+
+/*
+ * traversal functions
+ */
 
 extern node *FreeModul (node *arg_node, node *arg_info);
 extern node *FreeModdec (node *arg_node, node *arg_info);
@@ -185,8 +200,5 @@ extern node *FreeCSEinfo (node *arg_node, node *arg_info);
 extern node *FreeSSAcnt (node *arg_node, node *arg_info);
 extern node *FreeAvis (node *arg_node, node *arg_info);
 extern node *FreeSSAstack (node *arg_node, node *arg_info);
-
-/* special functions */
-extern void FreePrf2 (node *arg_node, int arg_no); /* CF */
 
 #endif /* _sac_free_h */
