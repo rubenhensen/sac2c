@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.26  1999/06/09 13:58:06  jhs
+ * Added new macros to access NAIVE_REFCNT.
+ *
  * Revision 2.25  1999/06/08 08:11:23  cg
  * Added various attributes to the N_info node  for the print and
  * writesib phases.
@@ -420,6 +423,7 @@ extern types *MakeType (simpletype basetype, int dim, shpseg *shpseg, char *name
  ***  temporary attributes:
  ***
  ***    int         REFCNT       (refcount -> )
+ ***    int         NAIVE_REFCNT (refcount -> )
  ***    node*       VARDEC       (typecheck -> )
  ***    node*       DEF          (psi-optimize -> )
  ***    node*       USE          (psi-optimize -> )
@@ -440,6 +444,7 @@ extern ids *MakeIds (char *name, char *mod, statustype status);
 #define IDS_NAME(i) (i->id)
 #define IDS_MOD(i) (i->mod)
 #define IDS_REFCNT(i) (i->refcnt)
+#define IDS_NAIVE_REFCNT(i) (i->naive_refcnt)
 #define IDS_NEXT(i) (i->next)
 #define IDS_VARDEC(i) (i->node)
 #define IDS_DEF(i) (i->def)
@@ -1013,6 +1018,7 @@ extern node *MakeFundef (char *name, char *mod, types *types, node *args, node *
  ***
  ***    int         VARNO                        (optimize -> )
  ***    int         REFCNT                       (refcount -> compile -> )
+ ***    int         NAIVE_REFCNT                 (refcount -> concurrent -> )
  ***    char*       TYPESTRING (O)               (precompile -> )
  ***    node*       OBJDEF     (O)  (N_objdef)   (obj-handling ->
  ***                                             ( -> precompile !!)
@@ -1048,6 +1054,7 @@ extern node *MakeArg (char *name, types *type, statustype status, statustype att
 #define ARG_ATTRIB(n) (n->info.types->attrib)
 #define ARG_VARNO(n) (n->varno)
 #define ARG_REFCNT(n) (n->refcnt)
+#define ARG_NAIVE_REFCNT(n) (n->int_data)
 #define ARG_NEXT(n) (n->node[0])
 #define ARG_TYPESTRING(n) ((char *)(n->node[1]))
 #define ARG_OBJDEF(n) (n->node[2])
@@ -1123,6 +1130,7 @@ extern node *MakeBlock (node *instr, node *vardec);
  ***    node*       ACTCHN   (O)  (N_vinfo)    (psi-optimize -> )
  ***    node*       COLCHN   (O)  (N_vinfo)    (psi-optimize -> )
  ***    int         REFCNT                     (refcount -> compile -> )
+ ***    int         NAIVE_REFCNT               (refcount -> concurrent -> )
  ***    int         VARNO                      (optimize -> )
  ***    statustype  ATTRIB                     (typecheck -> uniquecheck -> )
  ***    int         FLAG                       (ael  -> dcr2 !! )
@@ -1154,6 +1162,7 @@ extern node *MakeVardec (char *name, types *type, node *next);
 #define VARDEC_ATTRIB(n) (n->info.types->attrib)
 #define VARDEC_VARNO(n) (n->varno)
 #define VARDEC_REFCNT(n) (n->refcnt)
+#define VARDEC_NAIVE_REFCNT(n) (n->int_data)
 #define VARDEC_FLAG(n) (n->flag)
 #define VARDEC_NEXT(n) (n->node[0])
 #define VARDEC_TYPEDEF(n) (n->node[1])
@@ -1700,6 +1709,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    node*       OBJDEF    (N_objdef)        (typecheck -> )
  ***                                            ( -> analysis -> )
  ***    int         REFCNT                      (refcount -> compile -> )
+ ***    int         NAIVE_REFCNT                (refcount -> concurrent -> )
  ***    int         MAKEUNIQUE                  (precompile -> compile -> )
  ***    node*       DEF                         (Unroll !, Unswitch !)
  ***    node*       WL          (O)             (wli -> wlf !!)
@@ -1765,6 +1775,7 @@ extern node *MakeId2 (ids *ids_node);
 #define ID_ATTRIB(n) (n->info.ids->attrib)
 #define ID_STATUS(n) (n->info.ids->status)
 #define ID_REFCNT(n) (n->refcnt)
+#define ID_NAIVE_REFCNT(n) (n->info.ids->naive_refcnt)
 #define ID_MAKEUNIQUE(n) (n->flag)
 #define ID_WL(n) (n->node[0])
 
@@ -2401,10 +2412,11 @@ extern node *MakeInfo ();
  ***
  ***  permanent attributes:
  ***
- ***    DFMmask_t  IN
- ***    DFMmask_t  OUT
- ***    DFMmask_t  INOUT
- ***    DFMmask_t  LOCAL
+ ***    DFMmask_t  IN          (spmdinit ->)
+ ***    DFMmask_t  OUT         (spmdinit ->)
+ ***    DFMmask_t  INOUT       (spmdinit ->)
+ ***    DFMmask_t  LOCAL       (spmdinit ->)
+ ***    DFMmask_t  SHARED      (spmdinit ->)
  ***
  ***    node*      FUNDEF      (N_fundef)
  ***
@@ -2434,6 +2446,7 @@ extern node *MakeSpmd (node *region);
 #define SPMD_INOUT(n) ((DFMmask_t)n->dfmask[1])
 #define SPMD_OUT(n) ((DFMmask_t)n->dfmask[2])
 #define SPMD_LOCAL(n) ((DFMmask_t)n->dfmask[3])
+#define SPMD_SHARED(n) ((DFMmask_t)n->dfmask[4])
 
 #define SPMD_FUNDEF(n) (n->node[1])
 #define SPMD_ICM_BEGIN(n) (n->node[2])
