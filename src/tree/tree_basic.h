@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.175  2003/11/18 16:51:44  dkr
+ * definition of NWITHOP_TYPE modified to please sun-CC
+ *
  * Revision 3.174  2003/11/18 16:48:31  dkr
  * definition of ID_FLAGS modified to please sun-CC
  *
@@ -3755,7 +3758,7 @@ extern node *MakeNGenerator (node *bound1, node *bound2, prf op1, prf op2, node 
 
 extern node *MakeNWithOp (WithOpType WithOp, node *shape_array_neutral);
 
-#define NWITHOP_TYPE(n) ((WithOpType) ((n)->dfmask[0]))
+#define NWITHOP_TYPE(n) (*((WithOpType *)(&((n)->dfmask[0])))) /* needed for cc */
 #define NWITHOP_FUN(n) ((n)->info.fun_name.id)
 #define NWITHOP_MOD(n) ((n)->info.fun_name.id_mod)
 #define NWITHOP_PRF(n) ((n)->info.prf)
