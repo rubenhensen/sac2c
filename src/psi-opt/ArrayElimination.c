@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.10  1998/05/12 16:11:43  dkr
+ * fixed a typo in GenPsi: MakeExpr -> MakeExprs
+ *
  * Revision 1.9  1998/05/12 15:43:37  srs
  * added MRD support to enable substitution of
  *   i = [0];
@@ -209,7 +212,7 @@ GenPsi (ids *ids_node, node *arg_info)
     type = ids_node->node->info.types;
     GET_LENGTH (length, type);
     for (i = 0; i < length; i++) {
-        exprn = MakeExpr (MakeNum (i), NULL);
+        exprn = MakeExprs (MakeNum (i), NULL);
         arg[0] = MakeArray (exprn);
 
         /*     arg[1] = MakeNode(N_id); */
