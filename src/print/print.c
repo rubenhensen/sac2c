@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2002/03/08 10:12:54  sbs
+ * printing of xombie functions prevented from declaration section
+ * printing of wrapper functions insrerted
+ *
  * Revision 3.76  2002/03/07 21:27:55  dkr
  * - return statement is printed even for void-functions now
  * - some brushing done
@@ -1272,58 +1276,76 @@ PrintFundef (node *arg_node, node *arg_info)
      */
     INFO_PRINT_FUNDEF (arg_info) = arg_node;
 
-    if (FUNDEF_STATUS (arg_node) == ST_zombiefun) {
-        if (compiler_phase < PH_genccode) {
-            fprintf (outfile, "/*\n");
-            INDENT;
-            fprintf (outfile, " * zombie function:\n");
-            INDENT;
-            fprintf (outfile, " *   ");
-            PrintFunctionHeader (arg_node, arg_info);
-            fprintf (outfile, "\n");
-            INDENT;
-            fprintf (outfile, " */\n\n");
-        } else {
-            /*
-             * do not print zombie code in header files,
-             * do not generate separate files
-             */
+    if (INFO_PRINT_PROTOTYPE (arg_info)) {
+        /*
+         * print function declaration
+         */
+
+        if ((FUNDEF_STATUS (arg_node) != ST_spmdfun)
+            && (FUNDEF_STATUS (arg_node) != ST_wrapperfun)) {
+            if ((FUNDEF_BODY (arg_node) == NULL)
+                || ((FUNDEF_RETURN (arg_node) != NULL)
+                    && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm)
+                    && (strcmp (FUNDEF_NAME (arg_node), "main") != 0))) {
+                fprintf (outfile, "extern ");
+
+                if ((FUNDEF_ICM (arg_node) == NULL)
+                    || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
+                    PrintFunctionHeader (arg_node, arg_info);
+                } else {
+                    /* print N_icm ND_FUN_DEC */
+                    Trav (FUNDEF_ICM (arg_node), arg_info);
+                }
+
+                fprintf (outfile, ";\n");
+
+                if (FUNDEF_PRAGMA (arg_node) != NULL) {
+                    Trav (FUNDEF_PRAGMA (arg_node), arg_info);
+                }
+
+                fprintf (outfile, "\n");
+            }
         }
     } else {
+        /*
+         * print function definition
+         */
 
-        if (INFO_PRINT_PROTOTYPE (arg_info)) {
-            /*
-             * print function declaration
-             */
-
-            if (FUNDEF_STATUS (arg_node) != ST_spmdfun) {
-                if ((FUNDEF_BODY (arg_node) == NULL)
-                    || ((FUNDEF_RETURN (arg_node) != NULL)
-                        && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm)
-                        && (strcmp (FUNDEF_NAME (arg_node), "main") != 0))) {
-                    fprintf (outfile, "extern ");
-
-                    if ((FUNDEF_ICM (arg_node) == NULL)
-                        || (NODE_TYPE (FUNDEF_ICM (arg_node)) != N_icm)) {
-                        PrintFunctionHeader (arg_node, arg_info);
-                    } else {
-                        /* print N_icm ND_FUN_DEC */
-                        Trav (FUNDEF_ICM (arg_node), arg_info);
-                    }
-
-                    fprintf (outfile, ";\n");
-
-                    if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                        Trav (FUNDEF_PRAGMA (arg_node), arg_info);
-                    }
-
-                    fprintf (outfile, "\n");
-                }
+        if (FUNDEF_STATUS (arg_node) == ST_zombiefun) {
+            if (compiler_phase < PH_genccode) {
+                fprintf (outfile, "/*\n");
+                INDENT;
+                fprintf (outfile, " * zombie function:\n");
+                INDENT;
+                fprintf (outfile, " *   ");
+                PrintFunctionHeader (arg_node, arg_info);
+                fprintf (outfile, "\n");
+                INDENT;
+                fprintf (outfile, " */\n\n");
+            } else {
+                /*
+                 * do not print zombie code in header files,
+                 * do not generate separate files
+                 */
+            }
+        } else if (FUNDEF_STATUS (arg_node) == ST_wrapperfun) {
+            if (compiler_phase < PH_genccode) {
+                fprintf (outfile, "/*\n");
+                INDENT;
+                fprintf (outfile, " * wrapper function:\n");
+                INDENT;
+                fprintf (outfile, " *   ");
+                PrintFunctionHeader (arg_node, arg_info);
+                fprintf (outfile, "\n");
+                INDENT;
+                fprintf (outfile, " */\n\n");
+            } else {
+                /*
+                 * do not print wrapper code in header files,
+                 * do not generate separate files
+                 */
             }
         } else {
-            /*
-             * print function definition
-             */
 
             if (FUNDEF_BODY (arg_node) != NULL) {
 
