@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.19  2000/03/16 14:16:43  dkr
+# target types.h updated
+#
 # Revision 2.18  2000/03/01 14:52:32  dkr
 # make deps done
 #
@@ -107,8 +110,7 @@ all: main.o Error.o usage.o my_debug.o internal_lib.o globals.o resource.o types
 # the types.h object is to fool makedepend which does not
 # recognize the dependency between types.h and the .mac files!
 #
-
-types.h: ../tree/type_info.mac ../tree/node_info.mac ../tree/prf_node_info.mac
+types.h: ../global/nt_info.mac ../global/phase_info.mac ../global/status_info.mac ../tree/node_info.mac ../tree/prf_node_info.mac ../tree/type_info.mac
 	touch types.h
 
 interrupt.o: interrupt.c 
