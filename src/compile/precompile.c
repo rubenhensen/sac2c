@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.65  1998/04/29 18:25:14  dkr
+ * include missing header-file
+ *
  * Revision 1.64  1998/04/29 17:19:45  dkr
  * with-loop transformation moved to wltransform.[ch]
  *
@@ -216,6 +219,7 @@
 #include "internal_lib.h"
 #include "convert.h"
 #include "traverse.h"
+#include "refcount.h"
 
 #include "DupTree.h"
 #include "typecheck.h"
