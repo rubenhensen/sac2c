@@ -81,12 +81,9 @@ static node *
 MakeAssignNode (node *newnode, node *arg_info)
 {
 
-    node *newvardec, *newshpseg;
+    node *newvardec;
     types *type;
     char *newname1, *newname2, *newname, *newmod;
-    shpseg *shp;
-    node *shpnode;
-    int shpint;
     ntype *newtype;
 
     DBUG_ENTER ("MakeAssignNode");
