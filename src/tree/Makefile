@@ -1,19 +1,8 @@
 #
+#
 # $Log$
-# Revision 1.22  2000/10/23 11:35:48  dkr
-# make deps done
-#
-# Revision 1.21  2000/08/17 10:17:41  dkr
-# make deps done
-#
-# Revision 1.20  2000/07/28 09:16:29  mab
-# make deps done
-#
-# Revision 1.19  2000/07/11 15:56:40  dkr
-# make deps done
-#
-# Revision 1.18  2000/07/05 14:24:01  dkr
-# make deps done
+# Revision 1.23  2000/11/02 14:42:26  dkr
+# explicit .mac dependencies added
 #
 # Revision 1.17  2000/07/05 11:42:23  nmw
 # moved cinterface files from print to c-interface
@@ -21,44 +10,14 @@
 # Revision 1.16  2000/06/13 13:38:34  dkr
 # path -I../Old2NewWith removed
 #
-# Revision 1.15  2000/06/08 15:47:18  nmw
-# make deps
-#
-# Revision 1.14  2000/05/29 14:36:48  dkr
-# make deps done
-#
-# Revision 1.13  2000/03/31 09:33:50  jhs
-# make deps done
-#
-# Revision 1.12  2000/03/31 09:22:42  cg
-# make deps done
-#
-# Revision 1.11  2000/03/19 11:09:06  dkr
-# make deps done
-#
-# Revision 1.10  2000/03/16 14:32:53  dkr
-# make deps done
-#
-# Revision 1.9  2000/03/01 14:52:44  dkr
-# make deps done
-#
 # Revision 1.8  2000/01/28 13:52:41  jhs
 # Added LookUpTable.o, gmake deps done.
 #
 # Revision 1.7  2000/01/28 12:46:27  dkr
 # LookUpTable.o added
 #
-# Revision 1.6  2000/01/25 13:52:40  dkr
-# make deps done
-#
-# Revision 1.5  2000/01/24 17:58:43  dkr
-# make deps done
-#
 # Revision 1.4  2000/01/24 11:49:49  jhs
 # Added scheduling.o (moved here from concurrent).
-#
-# Revision 1.3  2000/01/21 17:02:17  dkr
-# make deps done
 #
 # Revision 1.2  2000/01/21 16:45:49  dkr
 # tree related stuff moved from directory 'global' into 'tree'
@@ -92,6 +51,18 @@ INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck
 
 all: tree.o tree_basic.o tree_compound.o free.o traverse.o DupTree.o LookUpTable.o \
      DataFlowMask.o DataFlowMaskUtils.o scheduling.o LookUpTable.o
+
+
+#
+# the *.[ch] objects are to fool makedepend which does not
+# recognize the dependency between *.[ch] and the .mac files!
+#
+traverse.c: node_info.mac
+	touch traverse.c
+
+tree_basic.c: prf_node_info.mac
+	touch tree_basic.c
+
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<

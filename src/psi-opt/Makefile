@@ -1,8 +1,8 @@
 #
 #
 # $Log$
-# Revision 2.26  2000/11/02 14:24:14  dkr
-# header compressed
+# Revision 2.27  2000/11/02 14:46:31  dkr
+# explicit .mac dependencies added
 #
 # Revision 2.22  2000/07/11 15:51:50  dkr
 # psi-opt.o removed
@@ -79,6 +79,21 @@ INCS=-I../global -I../../inc -I../tree -I../compile -I../typecheck -I../modules 
 all: index.o ArrayElimination.o wl_access_analyze.o tile_size_inference.o \
      WithloopFolding.o WLT.o WLI.o WLF.o \
      pad.o pad_info.o pad_collect.o pad_infer.o pad_transform.o
+
+
+#
+# the *.[ch] objects are to fool makedepend which does not
+# recognize the dependency between *.[ch] and the .mac files!
+#
+pad_collect.c: ../tree/prf_node_info.mac
+	touch pad_collect.c
+
+pad_infer.c: ../tree/type_info.mac
+	touch pad_infer.c
+
+pad_transform.c: ../tree/prf_node_info.mac
+	touch pad_transform.c
+
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)

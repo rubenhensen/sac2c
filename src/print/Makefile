@@ -1,8 +1,8 @@
 #
 #
 # $Log$
-# Revision 2.23  2000/11/02 14:24:44  dkr
-# header compressed
+# Revision 2.24  2000/11/02 14:49:01  dkr
+# explicit .mac dependencies added
 #
 # Revision 2.20  2000/07/24 14:46:21  dkr
 # suffix rule for .c.o added
@@ -79,6 +79,18 @@ INCS=-I../global -I../tree -I../../inc -I../compile -I../modules -I../concurrent
      -I../psi-opt -I../optimize -I../typecheck -I../c-interface
 
 all: print.o convert.o
+
+
+#
+# the *.[ch] objects are to fool makedepend which does not
+# recognize the dependency between *.[ch] and the .mac files!
+#
+convert.c: ../tree/type_info.mac
+	touch convert.c
+
+print.c: ../tree/prf_node_info.mac
+	touch print.c
+
 
 %.o: %.c
 	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
