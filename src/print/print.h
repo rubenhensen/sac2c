@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.7  1995/03/08 14:03:00  sbs
+ * Revision 1.8  1995/03/08 14:40:10  sbs
+ * include "tree.h" moved from tree.c to tree.h
+ *
+ * Revision 1.7  1995/03/08  14:03:00  sbs
  * INDENT & indent exported!
  *
  * Revision 1.6  1995/02/14  12:22:37  sbs
@@ -25,6 +28,8 @@
 #ifndef _sac_print_h
 
 #define _sac_print_h
+
+#include "tree.h"
 
 extern int indent;
 

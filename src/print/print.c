@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.39  1995/03/08 14:04:01  sbs
+ * Revision 1.40  1995/03/08 14:40:10  sbs
+ * include "tree.h" moved from tree.c to tree.h
+ *
+ * Revision 1.39  1995/03/08  14:04:01  sbs
  * INDENT & indent exported!
  *
  * Revision 1.38  1995/03/08  14:02:20  hw
@@ -117,11 +120,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tree.h"
+#include "print.h"
 #include "my_debug.h"
 #include "dbug.h"
 #include "traverse.h"
-#include "print.h"
 #include "Error.h"
 #include "convert.h"
 #include "optimize.h"
