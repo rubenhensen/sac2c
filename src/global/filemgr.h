@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.9  2005/01/12 15:51:54  cg
+ * Added FMGRcreateTmpDir()
+ *
  * Revision 1.8  2005/01/07 16:49:00  cg
  * Added function FMGRcleanUp.
  *
@@ -114,5 +117,6 @@ extern locationtype FMGRfindLocationOfFile (char *file);
 extern bool FMGRcheckSystemLibrary (char *name);
 extern void FMGRsetFileNames (node *module);
 extern void FMGRcleanUp ();
+extern void FMGRcreateTmpDir ();
 
 #endif /* _SAC_FILEMGR_H_ */

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2005/01/12 15:51:54  cg
+ * Added FMGRcreateTmpDir()
+ *
  * Revision 1.6  2005/01/11 11:28:11  cg
  * Converted output from Error.h to ctinfo.c
  *
@@ -423,23 +426,30 @@ AppendConfigPaths (pathkind_t pathkind, char *path)
     DBUG_VOID_RETURN;
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : FMGRrearrangePaths
- *  arguments     : ---
- *  description   : If additional search paths are provided as command line
- *                  parameters, then these have a higher priority than the
- *                  standard search path (current directory+shell variables).
- *                  This function modifies the internal path representation
- *                  if necessary after scanning the command line.
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
+ * function:
+ *   void FMGRrearrangePaths()
  *
- *  remarks       :
+ * description:
  *
- */
+ * Now, we set our search paths for the source program, module declarations,
+ * and module implementations...
+ *
+ * The original search path is ".".
+ * Then, additional paths specified by the respective compiler options are
+ * appended after having been transformed into absolute paths.
+ * If this has happened, the current directory is moved to the end of the
+ * path list because those paths specified on the command line are intended
+ * to have a higher priority.
+ * At last, the paths specified by environment variables are appended.
+ * These have a lower priority.
+ * At very last, the required paths for using the SAC standard library
+ * relative to the shell variable SAC_HOME are added. These have the
+ * lowest priority.
+ *
+ *
+ ******************************************************************************/
 
 void
 FMGRrearrangePaths ()
@@ -676,6 +686,54 @@ FMGRcleanUp ()
     if (global.cleanup && (global.tmp_dirname != NULL)) {
         ILIBsystemCall ("%s %s", global.config.rmdir, global.tmp_dirname);
     }
+
+    DBUG_VOID_RETURN;
+}
+
+/*
+ * Now, we create tmp directories for files generated during the
+ * compilation process.
+ *
+ * Actually, only one temp directory is created whose name may be
+ * accessed trough the global variable global.tmp_dirname
+ * which is defined in globals.c.
+ */
+
+void
+FMGRcreateTmpDir ()
+{
+    DBUG_ENTER ("FMGRcreateTmpDir");
+
+#ifdef HAVE_MKDTEMP
+    /* mkdtemp is safer than tempnam and recommended */
+    /* on linux/bsd platforms.                       */
+
+    global.tmp_dirname = (char *)ILIBmalloc (strlen (global.config.mkdir) + 12);
+    global.tmp_dirname = strcpy (global.tmp_dirname, global.config.tmpdir);
+    global.tmp_dirname = strcat (global.tmp_dirname, "/SAC_XXXXXX");
+
+    global.tmp_dirname = mkdtemp (global.tmp_dirname);
+
+    if (global.tmp_dirname == NULL) {
+        CTIabort ("System failed to create temporary directory");
+    }
+
+#else /* HAVE_MKDTEMP */
+
+    /* the old way for platforms not */
+    /* supporting mkdtemp            */
+
+    global.tmp_dirname = tempnam (global.config.tmpdir, "SAC_");
+
+    if (global.tmp_dirname == NULL) {
+        CTIabort ("System failed to create temporary directory");
+    }
+
+    ILIBsystemCall ("%s %s", global.config.mkdir, global.tmp_dirname);
+
+    /* Failure of the system call is detected in ILIBsystemCall */
+
+#endif /* HAVE_MKDTEMP */
 
     DBUG_VOID_RETURN;
 }
