@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.180  1998/08/03 10:53:11  cg
+ * Now, MT_ADJUST_SCHEDULER ICMs are generated where necessary.
+ *
  * Revision 1.179  1998/07/16 20:41:40  dkr
  * fixed a bug in COMPsync
  *
@@ -6966,6 +6969,32 @@ COMPWLblock (node *arg_node, node *arg_info)
 
     assigns = MakeAssign (MakeIcm (icm_name, icm_args, NULL), assigns);
 
+    if ((WLBLOCK_LEVEL (arg_node) == 0) && (NWITH2_MT (wl_node))
+        && (SCHAdjustmentRequired (WLBLOCK_DIM (arg_node), wl_seg))) {
+        assigns = MakeAssign (
+          MakeIcm (
+            "MT_ADJUST_SCHEDULER",
+            MakeExprs (MakeNum (WLBLOCK_DIM (arg_node)),
+                       MakeExprs (MakeNum (WLSEG_DIMS (wl_seg)),
+                                  MakeExprs (MakeNum (WLSEG_IDX_MIN (
+                                               wl_seg)[WLBLOCK_DIM (arg_node)]),
+                                             MakeExprs (MakeNum (
+                                                          MAX (WLSEG_SV (
+                                                                 wl_seg)[WLBLOCK_DIM (
+                                                                 arg_node)],
+                                                               WLSEG_UBV (
+                                                                 wl_seg)[WLBLOCK_DIM (
+                                                                 arg_node)])),
+                                                        MakeExprs (MakeId (StringCopy (
+                                                                             IDS_NAME (
+                                                                               wl_ids)),
+                                                                           NULL,
+                                                                           ST_regular),
+                                                                   NULL))))),
+            NULL),
+          assigns);
+    }
+
     if (NWITH2_MT (wl_node)) {
         icm_name = "WL_MT_BLOCK_LOOP_END";
     } else {
@@ -7063,6 +7092,32 @@ COMPWLublock (node *arg_node, node *arg_info)
     }
 
     assigns = MakeAssign (MakeIcm (icm_name, icm_args, NULL), assigns);
+
+    if ((WLUBLOCK_LEVEL (arg_node) == 0) && (NWITH2_MT (wl_node))
+        && (SCHAdjustmentRequired (WLUBLOCK_DIM (arg_node), wl_seg))) {
+        assigns = MakeAssign (
+          MakeIcm (
+            "MT_ADJUST_SCHEDULER",
+            MakeExprs (MakeNum (WLUBLOCK_DIM (arg_node)),
+                       MakeExprs (MakeNum (WLSEG_DIMS (wl_seg)),
+                                  MakeExprs (MakeNum (WLSEG_IDX_MIN (
+                                               wl_seg)[WLUBLOCK_DIM (arg_node)]),
+                                             MakeExprs (MakeNum (
+                                                          MAX (WLSEG_SV (
+                                                                 wl_seg)[WLUBLOCK_DIM (
+                                                                 arg_node)],
+                                                               WLSEG_UBV (
+                                                                 wl_seg)[WLUBLOCK_DIM (
+                                                                 arg_node)])),
+                                                        MakeExprs (MakeId (StringCopy (
+                                                                             IDS_NAME (
+                                                                               wl_ids)),
+                                                                           NULL,
+                                                                           ST_regular),
+                                                                   NULL))))),
+            NULL),
+          assigns);
+    }
 
     if (NWITH2_MT (wl_node)) {
         icm_name = "WL_MT_UBLOCK_LOOP_END";
@@ -7186,6 +7241,32 @@ COMPWLstride (node *arg_node, node *arg_info)
     }
 
     assigns = MakeAssign (MakeIcm (icm_name_begin, icm_args, NULL), assigns);
+
+    if ((WLSTRIDE_LEVEL (arg_node) == 0) && (NWITH2_MT (wl_node))
+        && (SCHAdjustmentRequired (WLSTRIDE_DIM (arg_node), wl_seg))) {
+        assigns = MakeAssign (
+          MakeIcm (
+            "MT_ADJUST_SCHEDULER",
+            MakeExprs (MakeNum (WLSTRIDE_DIM (arg_node)),
+                       MakeExprs (MakeNum (WLSEG_DIMS (wl_seg)),
+                                  MakeExprs (MakeNum (WLSEG_IDX_MIN (
+                                               wl_seg)[WLSTRIDE_DIM (arg_node)]),
+                                             MakeExprs (MakeNum (
+                                                          MAX (WLSEG_SV (
+                                                                 wl_seg)[WLSTRIDE_DIM (
+                                                                 arg_node)],
+                                                               WLSEG_UBV (
+                                                                 wl_seg)[WLSTRIDE_DIM (
+                                                                 arg_node)])),
+                                                        MakeExprs (MakeId (StringCopy (
+                                                                             IDS_NAME (
+                                                                               wl_ids)),
+                                                                           NULL,
+                                                                           ST_regular),
+                                                                   NULL))))),
+            NULL),
+          assigns);
+    }
 
     assigns
       = AppendAssign (assigns,
