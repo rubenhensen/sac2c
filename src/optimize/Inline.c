@@ -1,11 +1,11 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2002/09/05 19:56:19  dkr
+ * INLfundef(): comment about LaC limitation updated
+ *
  * Revision 3.25  2002/09/05 16:54:53  dkr
  * wrapper functions always inlined now
- *
- * Revision 3.24  2002/09/04 13:06:41  dkr
- * INLfundef: comment about LaC limitation updated
  *
  * Revision 3.23  2002/08/31 04:58:27  dkr
  * FUNDEF_INLREC correctly initialized now :)
@@ -661,7 +661,7 @@ INLfundef (node *arg_node, node *arg_info)
      * single application :-((
      *
      * Instead, inlining must detect the recursive nature of the function
-     * 'rec' and generate (maxinl - 1) new conditionals in 'main':
+     * 'rec' and generate 'maxinl' new conditionals in 'main':
      *
      * (maxinl == 1)            (maxinl == 2)
      * -------------            -------------
@@ -669,11 +669,21 @@ INLfundef (node *arg_node, node *arg_info)
      * inline                   inline
      * int rec( x)              int rec( x)
      * {                        {
-     *   x = cond( x);            x = cond2( x);
+     *   x = cond( x);            x = cond( x);
      *   return( x);              return( x);
      * }                        }
      *
-     *                          int cond2( int x)
+     * int cond( int x)         int cond( int x)
+     * {                        {
+     *   if (x > 0) {             if (x > 0) {
+     *     x = rec( x-1);           x = rec( x-1);
+     *   } else {                 } else {
+     *     x = 1;                   x = 1;
+     *   }                        }
+     *   return( x);              return( x);
+     * }                        }
+     *
+     *                          int cond3( int x)
      *                          {
      *                            if (x > 0) {
      *                              x = rec( x-1);
@@ -683,10 +693,10 @@ INLfundef (node *arg_node, node *arg_info)
      *                            return( x);
      *                          }
      *
-     * int cond( int x)         int cond( int x)
+     * int cond2( int x)        int cond2( int x)
      * {                        {
      *   if (x > 0) {             if (x > 0) {
-     *     x = rec( x-1);           x = cond2( x-1);
+     *     x = rec( x-1);           x = cond3( x-1);
      *   } else {                 } else {
      *     x = 1;                   x = 1;
      *   }                        }
@@ -695,7 +705,7 @@ INLfundef (node *arg_node, node *arg_info)
      *
      * int main()               int main()
      * {                        {
-     *   x = cond( 10);           x = cond( 10);
+     *   x = cond2( 10);          x = cond2( 10);
      *   return( x);              return( x);
      * }                        }
      */
