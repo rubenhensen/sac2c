@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.45  2004/11/27 00:53:42  mwe
+ * fixing for linking
+ *
  * Revision 3.44  2004/11/27 00:23:09  cg
  * PRECrenameLocalIdentifiers renamed to RIDrenameLocalIdentifiers
  *
@@ -765,7 +768,7 @@ SCHprecompileScheduling (sched_t *sched)
  ******************************************************************************/
 
 sched_t *
-SCHmarkmemvalScheduling (sched_t *sched, lut_t *lut)
+SCHmarkmemvalsScheduling (sched_t *sched, lut_t *lut)
 {
     int i;
     char *new_name;
@@ -1462,9 +1465,9 @@ SCHprecompileTasksel (tasksel_t *tasksel)
  ******************************************************************************/
 
 tasksel_t *
-SCHmarkmemvalTasksel (tasksel_t *tasksel, lut_t *lut)
+SCHmarkmemvalsTasksel (tasksel_t *tasksel, lut_t *lut)
 {
-    DBUG_ENTER ("SCHmarkmemvalTasksel");
+    DBUG_ENTER ("SCHmarkmemvalsTasksel");
 
     DBUG_RETURN (tasksel);
 }
