@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1995/10/19 10:05:54  cg
+ * Revision 1.5  1995/10/20 13:45:58  cg
+ * added DBUG_PRINT in MakeNodelist
+ *
+ * Revision 1.4  1995/10/19  10:05:54  cg
  * memory allocation now via function 'Malloc` from internal_lib
  *
  * Revision 1.3  1995/10/06  17:16:50  cg
@@ -187,6 +190,9 @@ MakeNodelist (node *node, statustype status, nodelist *next)
 {
     nodelist *tmp;
     DBUG_ENTER ("MakeNodelist");
+
+    DBUG_PRINT ("ANA", ("New nodelist entry : %s (%s)", ItemName (node),
+                        mdb_nodetype[NODE_TYPE (node)]));
 
     ALLOCATE (tmp, nodelist);
     NODELIST_NODE (tmp) = node;
