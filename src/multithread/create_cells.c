@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.5  2004/07/29 13:45:19  skt
+ * Handling of iv & its elements enhanced
+ *
  * Revision 1.4  2004/07/28 23:37:23  skt
  * improved the handling of the indexvectors
  *
@@ -195,7 +198,18 @@ CRECEHandleIv (node *withloop, node *arg_info)
     DBUG_ASSERT ((NODE_TYPE (withloop) == N_Nwith2),
                  "CRECEAddIv expects a N_Nwith2 as argument withloop");
 
+    /* handle the vector */
     iterator = NWITHID_VEC (NWITH2_WITHID (withloop));
+    executionmode = ASSIGN_EXECMODE (AVIS_SSAASSIGN (IDS_AVIS (iterator)));
+    DBUG_ASSERT ((executionmode == MUTH_ANY) || (executionmode == MUTH_MULTI),
+                 "Executionmode of iv-alloc must be MUTH_ANY or MUTH_MULTI");
+    ASSIGN_EXECMODE (AVIS_SSAASSIGN (IDS_AVIS (iterator))) = MUTH_MULTI;
+
+    AVIS_SSAASSIGN (IDS_AVIS (iterator))
+      = MUTHInsertMT (AVIS_SSAASSIGN (IDS_AVIS (iterator)), arg_info);
+
+    /* handle the vector elements */
+    iterator = NWITHID_IDS (NWITH2_WITHID (withloop));
     while (iterator != NULL) {
         executionmode = ASSIGN_EXECMODE (AVIS_SSAASSIGN (IDS_AVIS (iterator)));
         DBUG_ASSERT ((executionmode == MUTH_ANY) || (executionmode == MUTH_MULTI),
