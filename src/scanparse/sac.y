@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2002/08/25 17:06:06  sah
+ * added missing prf ADD_SxS ADD_AxA MUL_SxS MUL_AxA
+ *
  * Revision 3.58  2002/08/14 14:10:01  sbs
  * enabling of debug output during parsing restricted
  * to SOLARIS as only on that architecture parser debugging
@@ -1383,12 +1386,16 @@ prf: foldop   { $$ = $1;         }
    | SEL      { $$ = F_sel;      }
    | RESHAPE  { $$ = F_reshape;  }
    | PRF_MOD  { $$ = F_mod;      }
+   | ADD_SxS  { $$ = F_add_SxS;  }
+   | ADD_AxA  { $$ = F_add_AxA;  }
    | ADD_SxA  { $$ = F_add_SxA;  }
    | ADD_AxS  { $$ = F_add_AxS;  }
    | SUB_SxS  { $$ = F_sub_SxS;  }
    | SUB_SxA  { $$ = F_sub_SxA;  }
    | SUB_AxS  { $$ = F_sub_AxS;  }
    | SUB_AxA  { $$ = F_sub_AxA;  }
+   | MUL_SxS  { $$ = F_mul_SxS;  }
+   | MUL_AxA  { $$ = F_mul_AxA;  }
    | MUL_SxA  { $$ = F_mul_SxA;  }
    | MUL_AxS  { $$ = F_mul_AxS;  }
    | DIV_SxS  { $$ = F_div_SxS;  }
