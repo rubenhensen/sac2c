@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.59  2004/09/18 16:08:34  ktr
+ * Added support for spmdemm_tab
+ *
  * Revision 3.58  2004/09/02 16:06:31  skt
  * support for consolidate_cells (concel_tab) added
  *
@@ -295,7 +298,7 @@ extern funtab *print_tab;
 extern funtab *type_tab;
 extern funtab *genmask_tab;
 extern funtab *mmv_tab;
-extern funtab *unused_tab22;
+extern funtab *spmdemm_tab;
 extern funtab *crece_tab;
 extern funtab *cdfg_tab;
 extern funtab *free_tab;

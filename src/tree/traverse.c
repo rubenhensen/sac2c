@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.74  2004/09/18 16:08:34  ktr
+ * Added support for spmdemm_tab
+ *
  * Revision 3.73  2004/09/02 16:06:31  skt
  * support for consolidate_cells (concel_tab) added
  *
@@ -361,6 +364,7 @@
 #include "WithloopFusion.h"
 #include "detectdependencies.h"
 #include "tagdependencies.h"
+#include "spmd_emm.h"
 
 #include "traverse.h"
 
@@ -459,15 +463,15 @@ static funtab free_tab_rec = {{
 funtab *free_tab = &free_tab_rec;
 
 /*
- *  (9) unused_tab2
+ *  (9) spmdemm_tab
  */
-static funtab unused_tab2_rec = {{
-#define NIFunused_2(it_unused_2) it_unused_2
+static funtab spmdemm_tab_rec = {{
+#define NIFspmdemm(it_spmdemm) it_spmdemm
 #include "node_info.mac"
                                  },
                                  NULL,
                                  NULL};
-funtab *unused_tab2 = &unused_tab2_rec;
+funtab *spmdemm_tab = &spmdemm_tab_rec;
 #ifndef NEW_AST
 /*
  *  (10) refcnt_tab
