@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.12  2001/03/02 14:44:52  sbs
+# constants added to INCS
+#
 # Revision 3.11  2001/03/02 10:36:37  dkr
 # /home/dkr/sac/BASE/sac2c/src/tree/RCS/Makefile,v used in touch-rules
 #
@@ -80,7 +83,7 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck \
      -I../optimize -I../modules -I../global -I../refcount -I../compile \
      -I../psi-opt -I../objects -I../concurrent -I../multithread \
-     -I../c-interface
+     -I../c-interface -I../constants
 
 all: tree.o tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
      DataFlowMask.o DataFlowMaskUtils.o InferDFMs.o CheckAvis.o \
@@ -144,7 +147,7 @@ DupTree.o: ../global/globals.h ../global/internal_lib.h traverse.h free.h
 DupTree.o: ../../inc/dbug.h ../global/my_debug.h DupTree.h LookUpTable.h
 DupTree.o: DataFlowMask.h DataFlowMaskUtils.h ../optimize/Inline.h
 DupTree.o: ../typecheck/typecheck.h scheduling.h ../optimize/generatemasks.h
-DupTree.o: ../typecheck/constants.h ../typecheck/shape.h
+DupTree.o: ../constants/constants.h ../constants/shape.h
 InferDFMs.o: tree.h ../global/types.h tree_basic.h tree_compound.h
 InferDFMs.o: ../global/Error.h /usr/include/stdio.h
 InferDFMs.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
@@ -203,7 +206,7 @@ free.o: /usr/include/stdio_impl.h ../../inc/dbug.h ../global/my_debug.h
 free.o: ../global/types.h tree.h tree_basic.h tree_compound.h
 free.o: ../global/Error.h /usr/include/string.h ../global/globals.h
 free.o: ../global/internal_lib.h traverse.h DataFlowMask.h scheduling.h
-free.o: ../typecheck/constants.h ../typecheck/shape.h free.h
+free.o: ../constants/constants.h ../constants/shape.h free.h
 scheduling.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 scheduling.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 scheduling.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
