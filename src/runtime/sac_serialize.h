@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.7  2004/11/07 18:07:31  sah
+ * added two more funtions
+ *
  * Revision 1.6  2004/11/04 14:53:43  sah
  * implemented dependencies between modules
  *
@@ -34,10 +37,12 @@ extern void *TYDeserializeType (int con, ...);
 extern void *StringCopy (void *s1);
 extern void *MemCopy (int size, void *mem);
 extern void *CreateIds (char *s1, char *s2, int a, int b, int c, int d, void *p1);
+extern void *CreateNums (int s, ...);
+extern void *CreateIntegerArray (int s, ...);
 extern void *SerializeBuildSerStack (void *node);
 extern void *DeserializeLookupFunction (const char *s, const char *t, void *p);
 extern void *STInit ();
 extern void STAdd (char *s1, char *s2, int i, void *table);
-extern void *SSAdd (char *s1, void *p);
+extern void *SSAdd (char *s1, int i, void *p);
 
 #endif /* _SAC_SERIALIZE_H */
