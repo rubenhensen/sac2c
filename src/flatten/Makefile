@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.14  2000/03/17 15:56:56  dkr
+# cleanup_decls.o added
+#
 # Revision 2.13  2000/03/01 14:51:30  dkr
 # make deps done
 #
@@ -104,19 +107,10 @@ CFLAGS    := -D__EXTENSIONS__
 
 INCS=-I../global -I../../inc -I../tree -I../print
 
-all: flatten.o lac2fun.o fun2lac.o adjust_ids.o
+all: flatten.o lac2fun.o cleanup_decls.o fun2lac.o adjust_ids.o
 
-flatten.o: flatten.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o flatten.o -c flatten.c $(INCS)
-
-lac2fun.o: lac2fun.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o lac2fun.o -c lac2fun.c $(INCS)
-
-fun2lac.o: fun2lac.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o fun2lac.o -c fun2lac.c $(INCS)
-
-adjust_ids.o: adjust_ids.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o adjust_ids.o -c adjust_ids.c $(INCS)
+%.o: %.c
+	$(CC) $(CCFLAGS) $(CFLAGS) -o $@ -c $< $(INCS)
 
 deps:
 	makedepend $(INCS) *.c
