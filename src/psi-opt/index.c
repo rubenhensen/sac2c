@@ -1,6 +1,16 @@
 
 /*
  * $Log$
+ * Revision 1.28  1998/12/07 13:45:23  sbs
+ * IdxArg patched due to a problem when compiling:
+ * int f(int[] v, int[]a)
+ * {
+ *   return(a[2*v]);
+ * }
+ *
+ * instead of re-using VINFO_VARDEC( vinfo) from an argument
+ * the decl was searched within the existing vardecs.
+ *
  * Revision 1.27  1998/11/08 15:08:45  dkr
  * IdxNcode:
  *   An assert added to assure non-empty NCODE_CBLOCK fields
@@ -596,7 +606,7 @@ IdxFundef (node *arg_node, node *arg_info)
 node *
 IdxArg (node *arg_node, node *arg_info)
 {
-    node *newassign, *newid, *name_node, *dim_node, *dim_node2, *vardec, *col_vinfo;
+    node *newassign, *newid, *name_node, *dim_node, *dim_node2;
     node *block, *icm_arg, *vinfo;
     int i;
 
@@ -613,38 +623,37 @@ IdxArg (node *arg_node, node *arg_info)
          * of the form: ND_KS_VECT2OFFSET( <off-name>, <var-name>, <dim>, <dims>, <shape>)
          */
         block = FUNDEF_BODY (ARG_FUNDEF (arg_node));
-        vardec = (block != NULL) ? BLOCK_VARDEC (block) : NULL;
-        vinfo = ARG_COLCHN (arg_node);
-        while (vinfo != NULL) { /* loop over all "Uses" attributes */
-            if (VINFO_FLAG (vinfo) == IDX) {
-                newid = MakeId (IdxChangeId (ARG_NAME (arg_node), VINFO_TYPE (vinfo)),
-                                NULL, ST_regular);
-                DBUG_ASSERT ((vardec != NULL), "missing vardecs");
-                col_vinfo = FindIdx (ARG_COLCHN (vardec), VINFO_TYPE (vinfo));
-                DBUG_ASSERT (((col_vinfo != NULL) && (VINFO_VARDEC (col_vinfo) != NULL)),
-                             "missing vardec for index-arg");
-                ID_VARDEC (newid) = VINFO_VARDEC (col_vinfo);
+        if (block != NULL) { /* insertion not necessary for external decls! */
+            vinfo = ARG_COLCHN (arg_node);
+            while (vinfo != NULL) { /* loop over all "Uses" attributes */
+                if (VINFO_FLAG (vinfo) == IDX) {
+                    newid = MakeId (IdxChangeId (ARG_NAME (arg_node), VINFO_TYPE (vinfo)),
+                                    NULL, ST_regular);
+                    ID_VARDEC (newid) = VINFO_VARDEC (vinfo);
 
-                name_node = MakeId (StringCopy (ARG_NAME (arg_node)), NULL, ST_regular);
-                ID_VARDEC (name_node) = arg_node;
+                    name_node
+                      = MakeId (StringCopy (ARG_NAME (arg_node)), NULL, ST_regular);
+                    ID_VARDEC (name_node) = arg_node;
 
-                dim_node = MakeNum (ARG_SHAPE (arg_node, 0));
+                    dim_node = MakeNum (ARG_SHAPE (arg_node, 0));
 
-                dim_node2 = MakeNum (VINFO_DIM (vinfo));
+                    dim_node2 = MakeNum (VINFO_DIM (vinfo));
 
-                CREATE_4_ARY_ICM (newassign, "ND_KS_VECT2OFFSET", newid, /* off-name */
-                                  name_node,                             /* var-name */
-                                  dim_node,                              /* dim of var */
-                                  dim_node2); /* dim of array */
+                    CREATE_4_ARY_ICM (newassign, "ND_KS_VECT2OFFSET",
+                                      newid,      /* off-name */
+                                      name_node,  /* var-name */
+                                      dim_node,   /* dim of var */
+                                      dim_node2); /* dim of array */
 
-                /* Now, we append the shape elems to the ND_KS_VECT2OFFSET-ICM ! */
-                for (i = 0; i < VINFO_DIM (vinfo); i++)
-                    MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (VINFO_SELEMS (vinfo)[i]));
+                    /* Now, we append the shape elems to the ND_KS_VECT2OFFSET-ICM ! */
+                    for (i = 0; i < VINFO_DIM (vinfo); i++)
+                        MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (VINFO_SELEMS (vinfo)[i]));
 
-                ASSIGN_NEXT (newassign) = BLOCK_INSTR (block);
-                BLOCK_INSTR (block) = newassign;
+                    ASSIGN_NEXT (newassign) = BLOCK_INSTR (block);
+                    BLOCK_INSTR (block) = newassign;
+                }
+                vinfo = VINFO_NEXT (vinfo);
             }
-            vinfo = VINFO_NEXT (vinfo);
         }
     }
     if (NULL != ARG_NEXT (arg_node))
