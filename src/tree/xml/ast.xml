@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.42  2004/11/19 10:18:50  sah
+  updated classtype
+
   Revision 1.41  2004/11/17 19:50:33  sah
   added some flags
 
@@ -315,10 +318,10 @@
             <all />
           </phases>
         </attribute>
-        <attribute name="classtype" default="NULL" mandatory="no">
-          <type name="OldType" />
+        <attribute name="Classtype" mandatory="no">
+          <type name="NewType" />
           <phases>
-            <all />
+            <range from="scanparse" to="objinit"/>
           </phases>
         </attribute>
         <attribute name="Decl" mandatory="yes">
@@ -487,7 +490,7 @@
           </phases>
         </attribute>
         <attribute name="Mod" mandatory="yes">
-          <type name="SharedString" />
+          <type name="String" />
           <phases>
             <all />
           </phases>
