@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.68  2004/10/12 10:24:15  ktr
+ * Added emfrc_tab.
+ *
  * Revision 3.67  2004/10/11 15:49:10  sah
  * added BST traversal
  *
@@ -445,7 +448,7 @@ extern funtab *wlsc_tab;
 extern funtab *wlsb_tab;
 extern funtab *wlsw_tab;
 extern funtab *emrco_tab;
-extern funtab *unused_tab11;
+extern funtab *emfrc_tab;
 extern funtab *unused_tab12;
 extern funtab *unused_tab13;
 extern funtab *unused_tab14;

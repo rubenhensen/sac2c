@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.89  2004/10/12 10:24:15  ktr
+ * Added emfrc_tab.
+ *
  * Revision 3.88  2004/10/11 15:49:10  sah
  * added BST traversal
  *
@@ -398,6 +401,7 @@
 #include "serialize.h"
 #include "deserialize.h"
 #include "serialize_buildstack.h"
+#include "filterrc.h"
 
 #include "traverse.h"
 
@@ -1869,15 +1873,15 @@ static funtab emrco_tab_rec = {{
 funtab *emrco_tab = &emrco_tab_rec;
 
 /*
- *  (131) unused_tab11
+ *  (131) emfrc_tab
  */
-static funtab unused_tab11_rec = {{
-#define NIFunused_11(it_unused_11) it_unused_11
+static funtab emfrc_tab_rec = {{
+#define NIFemfrc(it_emfrc) it_emfrc
 #include "node_info.mac"
-                                  },
-                                  NULL,
-                                  NULL};
-funtab *unused_tab11 = &unused_tab11_rec;
+                               },
+                               NULL,
+                               NULL};
+funtab *emfrc_tab = &emfrc_tab_rec;
 
 /*
  *  (132) unused_tab12
