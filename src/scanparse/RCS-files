@@ -1,4 +1,6 @@
 Makefile
+handle_dots.c
+handle_dots.h
 sac.l
 sac.y
 scnprs.c
