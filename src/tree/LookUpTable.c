@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.26  2002/09/13 19:04:35  dkr
+ * bug in UpdateLUT() fixed: 'old_item' is duplicated if it is a string!
+ *
  * Revision 3.25  2002/08/15 20:58:30  dkr
  * comment about implementation modified
  *
@@ -633,8 +636,8 @@ SearchInLUT_state (lut_t *lut, void *old_item, hash_key_t hash_key,
 /******************************************************************************
  *
  * function:
- *   lut_t *InsertIntoLUT_( lut_t *lut, void *old_item, void *new_item,
- *                          hash_key_t hash_key)
+ *   lut_t *InsertIntoLUT_noDBUG( lut_t *lut, void *old_item, void *new_item,
+ *                                hash_key_t hash_key)
  *
  * description:
  *
@@ -642,9 +645,9 @@ SearchInLUT_state (lut_t *lut, void *old_item, hash_key_t hash_key,
  ******************************************************************************/
 
 static lut_t *
-InsertIntoLUT_ (lut_t *lut, void *old_item, void *new_item, hash_key_t hash_key)
+InsertIntoLUT_noDBUG (lut_t *lut, void *old_item, void *new_item, hash_key_t hash_key)
 {
-    DBUG_ENTER ("InsertIntoLUT_");
+    DBUG_ENTER ("InsertIntoLUT_noDBUG");
 
     DBUG_ASSERT ((lut != NULL), "no LUT found!");
 
@@ -688,7 +691,7 @@ InsertIntoLUT (lut_t *lut, void *old_item, void *new_item, hash_key_t hash_key,
 
     if (lut != NULL) {
         DBUG_ASSERT ((old_item != NULL), "NULL not allowed in LUT");
-        lut = InsertIntoLUT_ (lut, old_item, new_item, hash_key);
+        lut = InsertIntoLUT_noDBUG (lut, old_item, new_item, hash_key);
 
         DBUG_EXECUTE ("LUT", fprintf (stderr, "  new data inserted: [ ");
                       fprintf (stderr, old_format, old_item); fprintf (stderr, " -> ");
@@ -737,7 +740,10 @@ UpdateLUT (lut_t *lut, void *old_item, void *new_item, hash_key_t hash_key,
       = SearchInLUT (lut, old_item, hash_key, is_equal_fun, old_format, new_format);
 
     if (found_item_p == NULL) {
-        lut = InsertIntoLUT (lut, old_item, new_item, hash_key, old_format, new_format);
+        lut = InsertIntoLUT (lut,
+                             (hash_key < (HASH_KEYS_POINTER)) ? old_item
+                                                              : StringCopy (old_item),
+                             new_item, hash_key, old_format, new_format);
 
         if (found_item != NULL) {
             (*found_item) = NULL;
@@ -918,7 +924,7 @@ DuplicateLUT (lut_t *lut)
             DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
             tmp = lut[k].first;
             for (i = 0; i < lut[k].size; i++) {
-                new_lut = InsertIntoLUT_ (new_lut, tmp[0], tmp[1], k);
+                new_lut = InsertIntoLUT_noDBUG (new_lut, tmp[0], tmp[1], k);
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
@@ -930,8 +936,8 @@ DuplicateLUT (lut_t *lut)
             DBUG_ASSERT ((lut[k].size >= 0), "illegal LUT size found!");
             tmp = lut[k].first;
             for (i = 0; i < lut[k].size; i++) {
-                new_lut
-                  = InsertIntoLUT_ (new_lut, StringCopy ((char *)(tmp[0])), tmp[1], k);
+                new_lut = InsertIntoLUT_noDBUG (new_lut, StringCopy ((char *)(tmp[0])),
+                                                tmp[1], k);
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
