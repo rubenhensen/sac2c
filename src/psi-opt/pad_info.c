@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.3  2000/06/28 10:43:10  mab
+ * made some code modifications according to code review
+ *
  * Revision 1.2  2000/06/14 10:45:04  mab
  * added methods for accessing data structure
  *
@@ -16,6 +19,7 @@
 #include "traverse.h"
 #include "free.h"
 #include "globals.h"
+#include "DupTree.h"
 
 #include "pad_info.h"
 
@@ -44,7 +48,7 @@
 /*****************************************************************************
  *
  * function:
- *   int PIequalShapes(int dim, shpseg* shape2, shpseg* shape1)
+ *   static int EqualShapes(int dim, shpseg* shape2, shpseg* shape1)
  *
  * description:
  *   compares two shapes, result is TRUE, if shapes are equal
@@ -52,16 +56,17 @@
  *
  *****************************************************************************/
 
-int
-PIequalShapes (int dim, shpseg *shape2, shpseg *shape1)
+static int
+EqualShapes (int dim, shpseg *shape2, shpseg *shape1)
 {
+
     int equalShapes = TRUE;
     int i;
 
-    DBUG_ENTER ("PIequalShapes");
+    DBUG_ENTER ("EqualShapes");
 
     i = 0;
-    while (i < dim && equalShapes == TRUE) {
+    while (i < dim && equalShapes) {
         if (SHPSEG_SHAPE (shape1, i) != SHPSEG_SHAPE (shape2, i)) {
             equalShapes = FALSE;
         }
@@ -74,136 +79,36 @@ PIequalShapes (int dim, shpseg *shape2, shpseg *shape1)
 /*****************************************************************************
  *
  * function:
- *   int PIgetDim(pad_info_t* pi)
+ *   static pad_info_t *GetTableEntry(types *old_type)
  *
  * description:
- *   return dimension of a pad_info_t*
+ *   returns pointer to table entry corrsponding to old_type or NULL
+ *   !internal function only!
  *
  *****************************************************************************/
 
-int
-PIgetDim (pad_info_t *pi)
+static pad_info_t *
+GetTableEntry (types *old_type)
 {
-    DBUG_ENTER ("PIgetDim");
 
-    DBUG_RETURN (PI_DIM (pi));
-}
+    pad_info_t *tmp = pad_info;
+    pad_info_t *matching_entry = NULL;
 
-/*****************************************************************************
- *
- * function:
- *   simpletype PIgetType(pad_info_t* pi)
- *
- * description:
- *   return simpletype of a pad_info_t*
- *
- *****************************************************************************/
+    DBUG_ENTER ("GetTableEntry");
 
-simpletype
-PIgetType (pad_info_t *pi)
-{
-    DBUG_ENTER ("PIgetType");
+    while (tmp != NULL) {
+        if ((PI_TYPE (tmp) == TYPES_BASETYPE (old_type))
+            && (PI_DIM (tmp) == TYPES_DIM (old_type))
+            && EqualShapes (PI_DIM (tmp), PI_OLD_SHAPE (tmp), TYPES_SHPSEG (old_type))) {
 
-    DBUG_RETURN (PI_TYPE (pi));
-}
-
-/*****************************************************************************
- *
- * function:
- *   shpseg* PIgetOldShape(pad_info_t* pi)
- *
- * description:
- *   return pointer to original shape of a pad_info_t*
- *
- *****************************************************************************/
-
-shpseg *
-PIgetOldShape (pad_info_t *pi)
-{
-    DBUG_ENTER ("PIgetOldShape");
-
-    DBUG_RETURN (PI_OLD_SHAPE (pi));
-}
-
-/*****************************************************************************
- *
- * function:
- *   shpseg* PIgetNewShape(pad_info_t* pi)
- *
- * description:
- *   return pointer to newly inferred shape of a pad_info_t*
- *
- *****************************************************************************/
-
-shpseg *
-PIgetNewShape (pad_info_t *pi)
-{
-    DBUG_ENTER ("PIgetNewShape");
-
-    DBUG_RETURN (PI_NEW_SHAPE (pi));
-}
-
-/*****************************************************************************
- *
- * function:
- *   shpseg* PIcopyNewShape(pad_info_t* pi)
- *
- * description:
- *   return copy of new shape contained in pad_info_t
- *
- *****************************************************************************/
-
-shpseg *
-PIcopyNewShape (pad_info_t *pi)
-{
-    shpseg *res;
-    int i;
-
-    DBUG_ENTER ("PIcopyNewShape");
-
-    res = (shpseg *)malloc (sizeof (shpseg *));
-    SHPSEG_NEXT (res) = NULL;
-    for (i = 0; i < SHP_SEG_SIZE; i++) {
-        SHPSEG_SHAPE (res, i) = SHPSEG_SHAPE (PI_NEW_SHAPE (pi), i);
+            matching_entry = tmp;
+            tmp = NULL;
+        } else {
+            tmp = PI_NEXT (tmp);
+        }
     }
 
-    DBUG_RETURN (res);
-}
-
-/*****************************************************************************
- *
- * function:
- *   node* PIgetFUndefPad(pad_info_t* pi)
- *
- * description:
- *   return pointer to fundef-node of padding-function
- *
- *****************************************************************************/
-
-node *
-PIgetFundefPad (pad_info_t *pi)
-{
-    DBUG_ENTER ("PIgetFundefPad");
-
-    DBUG_RETURN (PI_FUNDEF_PAD (pi));
-}
-
-/*****************************************************************************
- *
- * function:
- *   node* PIgetFUndefUnpad(pad_info_t* pi)
- *
- * description:
- *   return pointer to fundef-node of unpadding-function
- *
- *****************************************************************************/
-
-node *
-PIgetFUndefUnpad (pad_info_t *pi)
-{
-    DBUG_ENTER ("PIgetFundefUnpad");
-
-    DBUG_RETURN (PI_FUNDEF_UNPAD (pi));
+    DBUG_RETURN (matching_entry);
 }
 
 /*****************************************************************************
@@ -220,43 +125,11 @@ PIgetFUndefUnpad (pad_info_t *pi)
 void
 PIinit ()
 {
+
     DBUG_ENTER ("PIinit");
 
     pad_info = NULL;
 
-    DBUG_VOID_RETURN;
-}
-
-/*****************************************************************************
- *
- * function:
- *   void PIfree()
- *
- * description:
- *   free abstract data structure
- *   call this after finishing work mith pad_info
- *
- *****************************************************************************/
-
-void
-PIfree ()
-{
-    pad_info_t *next;
-    pad_info_t *current;
-
-    DBUG_ENTER ("PIfree");
-
-    current = pad_info;
-
-    while (current != NULL) {
-        next = PI_NEXT (current);
-
-        PI_OLD_SHAPE (current) = NULL;
-        PI_NEW_SHAPE (current) = NULL;
-        free (current);
-
-        current = next;
-    }
     DBUG_VOID_RETURN;
 }
 
@@ -294,58 +167,114 @@ PIadd (types *old_type, shpseg *new_shape)
 /*****************************************************************************
  *
  * function:
- *   int PIvalid(pad_info_t* pi)
+ *   types* PIgetNewType(types* old_type)
  *
  * description:
- *   check, if a pad_info_t* points to a valid structure
- *   you may want to call this after use of PInewShape
+ *   returns type-structure with padded shape
+ *   or NULL, if old_type can't be padded
+ *   renaming has to be done separately, because only N_arg and N_vardec
+ *   store their names in types-structure, N_id and ids-attribute do not!
+ *   !!! old_type is set free here !!!
  *
  *****************************************************************************/
 
-int
-PIvalid (pad_info_t *pi)
+types *
+PIgetNewType (types *old_type)
 {
 
-    int result;
+    types *new_type = NULL;
+    pad_info_t *table_entry;
 
-    DBUG_ENTER ("PIvalid");
+    DBUG_ENTER ("PIgetNewType");
 
-    result = FALSE;
-    if (pi != NULL)
-        result = TRUE;
+    table_entry = GetTableEntry (old_type);
 
-    DBUG_RETURN (result);
+    if (table_entry != NULL) {
+        new_type = DupTypes (old_type);
+        FreeShpseg (TYPES_SHPSEG (new_type));
+        TYPES_SHPSEG (new_type) = DupShpSeg (PI_NEW_SHAPE (table_entry));
+        FreeOneTypes (old_type);
+    }
+
+    DBUG_RETURN (new_type);
 }
 
 /*****************************************************************************
  *
  * function:
- *   pad_info_t* PInewShape(types* old_type)
+ *   node* PIgetFUndefPad(types *old_type)
  *
  * description:
- *   return newly inferred shape for a given old shape
+ *   return pointer to fundef-node of padding-function
  *
  *****************************************************************************/
 
-pad_info_t *
-PInewShape (types *old_type)
+node *
+PIgetFundefPad (types *old_type)
 {
-    pad_info_t *tmp = pad_info;
-    pad_info_t *res = NULL;
+    pad_info_t *table_entry;
 
-    DBUG_ENTER ("PInewShape");
+    DBUG_ENTER ("PIgetFundefPad");
 
-    while (tmp != NULL) {
-        if ((PI_TYPE (tmp) == TYPES_BASETYPE (old_type))
-            && (PI_DIM (tmp) == TYPES_DIM (old_type))
-            && PIequalShapes (PI_DIM (tmp), PI_OLD_SHAPE (tmp), TYPES_SHPSEG (old_type))
-                 == TRUE) {
-            res = tmp;
-            tmp = NULL;
-        } else {
-            tmp = PI_NEXT (tmp);
-        }
+    table_entry = GetTableEntry (old_type);
+
+    DBUG_RETURN ((table_entry != NULL) ? PI_FUNDEF_PAD (table_entry) : NULL);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   node* PIgetFundefUnpad(pad_info_t* pi)
+ *
+ * description:
+ *   return pointer to fundef-node of unpadding-function
+ *
+ *****************************************************************************/
+
+node *
+PIgetFundefUnpad (types *old_type)
+{
+
+    pad_info_t *table_entry;
+
+    DBUG_ENTER ("PIgetFundefUnpad");
+
+    table_entry = GetTableEntry (old_type);
+
+    DBUG_RETURN ((table_entry != NULL) ? PI_FUNDEF_UNPAD (table_entry) : NULL);
+}
+
+/*****************************************************************************
+ *
+ * function:
+ *   void PIfree()
+ *
+ * description:
+ *   free abstract data structure
+ *   call this after finishing work mith pad_info
+ *
+ *****************************************************************************/
+
+void
+PIfree ()
+{
+
+    pad_info_t *next;
+    pad_info_t *current;
+
+    DBUG_ENTER ("PIfree");
+
+    current = pad_info;
+
+    while (current != NULL) {
+        next = PI_NEXT (current);
+
+        PI_OLD_SHAPE (current) = NULL;
+        PI_NEW_SHAPE (current) = NULL;
+        FREE (current);
+
+        current = next;
     }
 
-    DBUG_RETURN (res);
+    DBUG_VOID_RETURN;
 }
