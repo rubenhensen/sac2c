@@ -46,7 +46,6 @@ serialize_attribs.c
 deserialize.h
 deserialize.c
 deserialize_info.h
-check.h
 check_global.c
 check_lib.c
 check_lib.h
