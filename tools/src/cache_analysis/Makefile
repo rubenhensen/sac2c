@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 1.4  2001/11/20 10:13:38  sacbase
+# new destination directory $(TOOLS)/bin added.
+#
 # Revision 1.3  2001/11/19 18:20:33  dkr
 # rcs header added
 # Makefile.Config included
@@ -14,7 +17,9 @@ INCS   = -I../../../inc
 LIBDIR = ../../../lib
 LIBS   = $(LIBDIR)/main_args.o
 
-all: ../ctest
+TOOLS = ../../
+
+all: $(TOOLS)/bin/ctest
 
 verbose.o: verbose.c verbose.h
 accesstime.o: ctest.h accesstime.h verbose.h accesstime.c 
@@ -26,9 +31,12 @@ bits.o: bits.c bits.h
 %.o: %.c
 	$(CC) $(CCFLAGS) $(INCS) -c $<
 
-../ctest: accesstime.o ctest.o verbose.o l1.o l2.o bits.o
-	$(CC) $(CCFLAGS) -o $@ $(LIBS) $^
+$(TOOLS)/bin/ctest: $(TOOLS)/bin accesstime.o ctest.o verbose.o l1.o l2.o bits.o
+	$(CC) $(CCFLAGS) -o $@ $(LIBS) accesstime.o ctest.o verbose.o l1.o l2.o bits.o
+
+$(TOOLS)/bin:
+	mkdir -p $(TOOLS)/bin
 
 clean:
 	$(RM) *.o *~
-	$(RM) ../ctest
+	$(RM) $(TOOLS)/bin/ctest
