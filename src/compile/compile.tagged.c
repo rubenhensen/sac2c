@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.46  2002/09/09 14:35:04  dkr
+ * COMPPrfTypeError() added
+ *
  * Revision 1.45  2002/09/06 09:37:45  dkr
  * ND_IDXS2OFFSET added
  *
@@ -3947,6 +3950,29 @@ COMPPrfArray (int args_cnt, node *arg_node, node *arg_info, node **check_reuse1,
 /******************************************************************************
  *
  * Function:
+ *   node *COMPPrfTypeError( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfTypeError (node *arg_node, node *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfTypeError");
+
+    ret_node = MakeAssignIcm2 ("TYPE_ERROR", MakeNum (CountExprs (PRF_ARGS (arg_node))),
+                               DupTree (PRF_ARGS (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *COMPPrf( node *arg_node, node *arg_info)
  *
  * Description:
@@ -3976,6 +4002,10 @@ COMP2Prf (node *arg_node, node *arg_info)
                  " refcounted argument occurs also on LHS!");
 
     switch (PRF_PRF (arg_node)) {
+    case F_type_error:
+        ret_node2 = COMPPrfTypeError (arg_node, arg_info);
+        break;
+
         /*
          *  SCALAR_ARGS( PRF_PRF( arg_node))
          */

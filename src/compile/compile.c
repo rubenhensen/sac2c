@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.92  2002/09/09 14:34:57  dkr
+ * COMPPrfTypeError() added
+ *
  * Revision 3.91  2002/09/06 09:37:50  dkr
  * ND_IDXS2OFFSET added
  *
@@ -3366,6 +3369,29 @@ COMPPrfRotate (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
+ *   node *COMPPrfTypeError( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+COMPPrfTypeError (node *arg_node, node *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ("COMPPrfTypeError");
+
+    ret_node = MakeAssignIcm2 ("TYPE_ERROR", MakeNum (CountExprs (PRF_ARGS (arg_node))),
+                               DupTree (PRF_ARGS (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *COMPPrf( node *arg_node, node *arg_info)
  *
  * Description:
@@ -3401,6 +3427,10 @@ COMPPrf (node *arg_node, node *arg_info)
     }
 
     switch (PRF_PRF (arg_node)) {
+    case F_type_error:
+        ret_node2 = COMPPrfTypeError (arg_node, arg_info);
+        break;
+
         /*
          *  SCALAR_ARGS( PRF_PRF( arg_node))
          */
