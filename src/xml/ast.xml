@@ -5479,10 +5479,10 @@
     </node>
 <!--
 
-  N_chk :
+  N_error :
 
 -->
-    <node name="Chk">
+    <node name="Error">
       <sons></sons>
       <attributes></attributes>
       <flags></flags>
