@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.21  1998/02/25 09:05:55  cg
+ * All global variables moved to globals.[ch]
+ *
  * Revision 1.20  1997/04/30 11:48:07  cg
  * MAX_ERROR_MESSAGE_LENGTH set to 2000
  *
@@ -139,7 +142,7 @@
  *  1.5  Compiler phase names
  *
  *  These are stored in the global variable compiler_phase_name[],
- *  which is initialized in Error.c. Make sure, that all new compiler
+ *  which is initialized in globals.c. Make sure, that all new compiler
  *  phases are given names, otherwise the wrong names are used.
  *
  */
@@ -214,7 +217,7 @@
     {                                                                                    \
         fprintf (stderr, "\n*** Compilation failed ***\n");                              \
         fprintf (stderr, "*** Exit code %d (%s)\n", compiler_phase,                      \
-                 compiler_phase_name[compiler_phase]);                                   \
+                 compiler_phase_name[(int)compiler_phase]);                              \
         fprintf (stderr, "*** %d Error(s), %d Warning(s)\n\n", errors, warnings);        \
     }
 
@@ -356,14 +359,14 @@
     {                                                                                    \
         ERROR (line, message);                                                           \
         ABORT_MESSAGE;                                                                   \
-        EXIT (compiler_phase);                                                           \
+        EXIT ((int)compiler_phase);                                                      \
     }
 
 #define SYSABORT(message)                                                                \
     {                                                                                    \
         SYSERROR (message);                                                              \
         ABORT_MESSAGE;                                                                   \
-        EXIT (compiler_phase);                                                           \
+        EXIT ((int)compiler_phase);                                                      \
     }
 
 #define CONT_ERROR(message)                                                              \
@@ -373,7 +376,7 @@
     {                                                                                    \
         if (errors > 0) {                                                                \
             ABORT_MESSAGE;                                                               \
-            EXIT (compiler_phase);                                                       \
+            EXIT ((int)compiler_phase);                                                  \
         }                                                                                \
     }
 
@@ -535,23 +538,9 @@ extern char *ItemName (node *);
  *  SAC2C compile time information system
  ********************************************
  *
- *  10.  External declarations of
- *       global variables and functions
+ *  10.  External declarations of functions
  *
  */
-
-extern int errors;
-extern int warnings;
-extern int last_indent;
-extern int current_line_length;
-extern int message_indent;
-extern int verbose_level;
-extern int compiler_phase;
-extern int max_compiler_phase;
-
-extern char *filename;
-extern char *compiler_phase_name[];
-extern char error_message_buffer[];
 
 extern void ProcessErrorMessage (char *format, ...);
 extern int NumberOfDigits (int);

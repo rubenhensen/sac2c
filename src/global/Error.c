@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  1998/02/25 09:05:55  cg
+ * All global variables moved to globals.[ch]
+ *
  * Revision 1.23  1997/04/25 12:13:52  sbs
  * malloc replaced by Malloc
  *
@@ -95,41 +98,6 @@
 #include "globals.h"
 
 #include "filemgr.h"
-
-/*
- *  Definitions of some global variables necessary for the
- *  glorious SAC2C compile time information system
- */
-
-int errors = 0;         /* counter for number of errors   */
-int warnings = 0;       /* counter for number of warnings */
-int verbose_level = 3;  /* controls compile time output   */
-int compiler_phase = 1; /* counter for compilation phases */
-
-int message_indent = 0;  /* used for formatting compile time output */
-int last_indent = 0;     /* used for formatting compile time output */
-int current_line_length; /* used for formatting compile time output */
-
-char error_message_buffer[MAX_ERROR_MESSAGE_LENGTH];
-/* buffer for generating formatted message */
-
-char *filename; /* current file name */
-
-char *compiler_phase_name[]
-  = {"", "Evaluating command line parameters", "Loading SAC program",
-     "Resolving imports from modules and classes", "Checking required libraries",
-     "Generating generic types and functions", "Simplifying source code",
-     "Running type inference system", "Checking module/class declaration file",
-     "Resolving implicit types", "Analysing functions and global objects",
-     "Generating SAC-Information-Block",
-     "Resolving global objects and reference parameters",
-     "Checking uniqueness property of objects", "Generating purely functional code",
-     "Running SAC optimizations", "Running PSI optimizations",
-     "Running reference count inference system", "Preparing C-code generation",
-     "Generating C-code",
-     /*  "Checking required external module/class implementations", */
-     "Creating C file", "Invoking C compiler", "Creating SAC library",
-     "Writing dependencies to stdout", "Unknown compiler phase"};
 
 /*
  *
