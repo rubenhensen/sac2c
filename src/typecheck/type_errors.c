@@ -1,5 +1,10 @@
 /*
  * $Log$
+ * Revision 1.10  2003/04/14 10:50:29  sbs
+ * the dimensionality of the result of _Reshape_ is determined by its first
+ * arguments shape component rather than its dimensionality (which always
+ * should be 1 8-).
+ *
  * Revision 1.9  2003/04/11 17:59:01  sbs
  * TEAssureProdValMatchesProdShape added.
  *
@@ -583,7 +588,7 @@ TEAssureProdValMatchesProdShape (char *obj1, ntype *type1, char *obj2, ntype *ty
 
     if ((TYGetConstr (type1) == TC_akv)
         && ((TYGetConstr (type2) == TC_aks) || (TYGetConstr (type2) == TC_akv))) {
-        dim = TYGetDim (type1);
+        dim = SHGetExtent (TYGetShape (type1), 0);
         dv = (int *)COGetDataVec (TYGetValue (type1));
         prod = 1;
         for (i = 0; i < dim; i++) {
