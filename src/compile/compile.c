@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.80  1996/03/05 09:27:42  cg
+ * Revision 1.81  1996/03/05 15:31:22  cg
+ * bug fixed in handling of functions with variable argument list
+ *
+ * Revision 1.80  1996/03/05  09:27:42  cg
  * bug fixed in CompAp
  *
  * Revision 1.79  1996/02/27  15:22:04  hw
@@ -1234,7 +1237,7 @@ node *
 CreateApIcm (node *icm, char *name, node **icm_tab, int tab_size)
 {
     int i, cnt_icm = 0;
-    node *icm_arg;
+    node *icm_arg, *tmp;
 
     DBUG_ENTER ("CreateApIcm");
 
@@ -1254,13 +1257,33 @@ CreateApIcm (node *icm, char *name, node **icm_tab, int tab_size)
         APPEND_ICM_ARG (icm_arg, EXPRS_NEXT (icm_tab[1]));
     }
 
-    for (i = 0; i < tab_size; i++) {
-        if ((i != 1) && (icm_tab[i] != NULL)) {
+    /*
+     *  Now, the number of icm arguments is counted.
+     */
+
+    for (i = 2; i < tab_size; i++) {
+        if (icm_tab[i] != NULL) {
             cnt_icm += 1;
         }
     }
 
+    tmp = icm_tab[0];
+
+    while (tmp != NULL) {
+        cnt_icm += 1;
+        tmp = EXPRS_NEXT (EXPRS_NEXT (tmp));
+    }
+
+    /*
+     *  The number od icm arguments is stored within the icm.
+     */
+
     MAKE_NEXT_ICM_ARG (icm_arg, MakeNum (cnt_icm));
+
+    /*
+     *  The icm arguments are extracted from the table and concatenated
+     *  to a list.
+     */
 
     for (i = 2; i < tab_size; i++) {
         if (icm_tab[i] != NULL) {
@@ -5194,7 +5217,7 @@ CompFundef (node *arg_node, node *arg_info)
     }
 
     if ((rettypes != NULL) && (TYPES_BASETYPE (rettypes) == T_dots)) {
-        MAKENODE_ID (tag_node, "out");
+        MAKENODE_ID (tag_node, "in");
         MAKE_ICM_ARG (icm_arg, tag_node);
         icm_tab_entry = icm_arg;
         MAKENODE_ID (type_id_node, MakeTypeString (rettypes));

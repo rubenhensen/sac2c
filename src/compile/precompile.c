@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.10  1996/01/26 15:33:01  cg
+ * Revision 1.11  1996/03/05 15:32:04  cg
+ * bug fixed in handling of functions with variable argument list
+ *
+ * Revision 1.10  1996/01/26  15:33:01  cg
  * applications of class conversion functions are removed
  * where necessary we mark where to copy
  *
@@ -720,7 +723,9 @@ PRECexprs_ap (node *current, node *formal)
     DBUG_ENTER ("PRECexprs_ap");
 
     if (EXPRS_NEXT (current) != NULL) {
-        EXPRS_NEXT (current) = PRECexprs_ap (EXPRS_NEXT (current), ARG_NEXT (formal));
+        EXPRS_NEXT (current)
+          = PRECexprs_ap (EXPRS_NEXT (current),
+                          ARG_BASETYPE (formal) == T_dots ? formal : ARG_NEXT (formal));
     }
 
     /****************************************************************/
