@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.36  2004/11/24 17:42:22  mwe
+ * support for new nodes added
+ *
  * Revision 3.35  2004/11/23 19:07:39  khf
  * SacDevCampDk: compiles!
  *
@@ -207,6 +210,17 @@ extern node *DUPssastack (node *arg_node, info *arg_info);
 extern node *DUPssacnt (node *arg_node, info *arg_info);
 extern node *DUPfuncond (node *arg_node, info *arg_info);
 extern node *DUPcseinfo (node *arg_node, info *arg_info);
+extern node *DUPannotate (node *arg_node, info *arg_info);
+extern node *DUPex (node *arg_node, info *arg_info);
+extern node *DUPcwrapper (node *arg_node, info *arg_info);
+extern node *DUPdataflownode (node *arg_node, info *arg_info);
+extern node *DUPdataflowgraph (node *arg_node, info *arg_info);
+extern node *DUPimport (node *arg_node, info *arg_info);
+extern node *DUPexport (node *arg_node, info *arg_info);
+extern node *DUPuse (node *arg_node, info *arg_info);
+extern node *DUPprovide (node *arg_node, info *arg_info);
+extern node *DUPlinklist (node *arg_node, info *arg_info);
+extern node *DUPnums (node *arg_node, info *arg_info);
 
 /* frontend with-loop */
 extern node *DUPwith (node *arg_node, info *arg_info);
