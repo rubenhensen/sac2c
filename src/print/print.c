@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.65  1995/05/29 09:47:42  sbs
+ * Revision 1.66  1995/05/30 07:04:37  hw
+ * changed PrintFold , because N_foldfun has now two child nodes
+ *
+ * Revision 1.65  1995/05/29  09:47:42  sbs
  * braces around cond's predicates inserted.
  *
  * Revision 1.64  1995/05/24  15:25:15  sbs
@@ -824,8 +827,16 @@ PrintFold (node *arg_node, node *arg_info)
     INDENT;
     if (N_foldprf == arg_node->nodetype)
         fprintf (outfile, "fold( %s )\n", prf_string[arg_node->info.prf]);
-    else
-        fprintf (outfile, "fold( %s )\n", arg_node->info.id);
+    else {
+        if (NULL != arg_node->info.fun_name.id_mod)
+            fprintf (outfile, "fold( %s%s%s, ", arg_node->info.fun_name.id_mod,
+                     MOD_NAME_CON, arg_node->info.fun_name.id);
+        else
+            fprintf (outfile, "fold( %s, ", arg_node->info.fun_name.id);
+        Trav (arg_node->node[1], arg_info);
+        fprintf (outfile, " )\n");
+    }
+
     Trav (arg_node->node[0], arg_info);
 
     DBUG_RETURN (arg_node);
