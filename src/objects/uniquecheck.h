@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.3  2004/07/17 14:30:09  sah
+ * switch to INFO structure
+ * PHASE I
+ *
  * Revision 3.2  2004/02/25 08:17:44  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -28,15 +32,15 @@
 
 extern node *UniquenessCheck (node *syntax_tree);
 
-extern node *UNQmodul (node *arg_node, node *arg_info);
-extern node *UNQfundef (node *arg_node, node *arg_info);
-extern node *UNQblock (node *arg_node, node *arg_info);
-extern node *UNQvardec (node *arg_node, node *arg_info);
-extern node *UNQarg (node *arg_node, node *arg_info);
-extern node *UNQlet (node *arg_node, node *arg_info);
-extern node *UNQid (node *arg_node, node *arg_info);
-extern node *UNQdo (node *arg_node, node *arg_info);
-extern node *UNQcond (node *arg_node, node *arg_info);
-extern node *UNQNwith (node *arg_node, node *arg_info);
+extern node *UNQmodul (node *arg_node, info *arg_info);
+extern node *UNQfundef (node *arg_node, info *arg_info);
+extern node *UNQblock (node *arg_node, info *arg_info);
+extern node *UNQvardec (node *arg_node, info *arg_info);
+extern node *UNQarg (node *arg_node, info *arg_info);
+extern node *UNQlet (node *arg_node, info *arg_info);
+extern node *UNQid (node *arg_node, info *arg_info);
+extern node *UNQdo (node *arg_node, info *arg_info);
+extern node *UNQcond (node *arg_node, info *arg_info);
+extern node *UNQNwith (node *arg_node, info *arg_info);
 
 #endif /*  _sac_uniquecheck_h  */

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2004/07/17 14:30:09  sah
+ * switch to INFO structure
+ * PHASE I
+ *
  * Revision 3.10  2004/02/20 08:27:38  mwe
  * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
  * changed tree traversal according to that
@@ -143,6 +147,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -155,6 +161,55 @@
 #include "CheckAvis.h"
 
 #include <string.h>
+
+/*
+ * enumeration used to distinguish between
+ * traversal phases
+ */
+enum OBJT_phases { T_phase1, T_phase2 };
+typedef enum OBJT_phases objt_phases;
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    objt_phases phase;
+    node *fundef;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_OBJECTS_PHASE(n) (n->phase)
+#define INFO_OBJECTS_FUNDEF(n) (n->fundef)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_OBJECTS_PHASE (result) = T_phase1;
+    INFO_OBJECTS_FUNDEF (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /*
  *
@@ -174,11 +229,15 @@
 node *
 HandleObjects (node *syntax_tree)
 {
+    info *info;
+
     DBUG_ENTER ("HandleObjects");
 
     act_tab = obj_tab;
-    syntax_tree = Trav (syntax_tree, NULL);
+    info = MakeInfo ();
+    syntax_tree = Trav (syntax_tree, info);
     valid_ssaform = FALSE;
+    info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -318,7 +377,7 @@ RearrangeObjdefs (node *objects)
  */
 
 node *
-OBJmodul (node *arg_node, node *arg_info)
+OBJmodul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("OBJmodul");
 
@@ -345,7 +404,8 @@ OBJmodul (node *arg_node, node *arg_info)
  *
  *  functionname  : OBJfundef
  *  arguments     : 1) N_fundef node
- *                  2) arg_info unused
+ *                  2) arg_info used to store fundef for further
+ *                     traversal
  *  description   : For each needed global object an additional parameter
  *                  is added to the function's parameter list with
  *                  status 'ST_artificial' and attribute 'ST_reference'
@@ -375,7 +435,7 @@ OBJmodul (node *arg_node, node *arg_info)
  */
 
 node *
-OBJfundef (node *arg_node, node *arg_info)
+OBJfundef (node *arg_node, info *arg_info)
 {
     nodelist *need_objs;
     node *obj, *new_arg;
@@ -420,7 +480,16 @@ OBJfundef (node *arg_node, node *arg_info)
     DBUG_PRINT ("OBJ", ("Traversing args of function %s", ItemName (arg_node)));
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_node);
+        /* set traversal mode 2 and fundef in info structure */
+        objt_phases oldphase = INFO_OBJECTS_PHASE (arg_info);
+        INFO_OBJECTS_PHASE (arg_info) = T_phase2;
+        INFO_OBJECTS_FUNDEF (arg_info) = arg_node;
+
+        FUNDEF_ARGS (arg_node) = Trav (FUNDEF_ARGS (arg_node), arg_info);
+
+        /* reset to default traversal */
+        INFO_OBJECTS_PHASE (arg_info) = oldphase;
+        INFO_OBJECTS_FUNDEF (arg_info) = NULL;
     }
 
     /*-------------------------------------------------------------*/
@@ -438,10 +507,17 @@ OBJfundef (node *arg_node, node *arg_info)
      */
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), NULL);
+        /* signal first traversal */
+        objt_phases oldphase = INFO_OBJECTS_PHASE (arg_info);
+        INFO_OBJECTS_PHASE (arg_info) = T_phase1;
+
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+
+        INFO_OBJECTS_PHASE (arg_info) = oldphase;
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
+        /* traverse next fundef node */
         FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
     }
 
@@ -451,7 +527,17 @@ OBJfundef (node *arg_node, node *arg_info)
      */
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_node);
+        /* signal second traversal */
+        objt_phases oldphase = INFO_OBJECTS_PHASE (arg_info);
+        INFO_OBJECTS_PHASE (arg_info) = T_phase2;
+
+        /* save fundef as a reference */
+        INFO_OBJECTS_FUNDEF (arg_info) = arg_node;
+        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
+
+        /* back to default traversal mode */
+        INFO_OBJECTS_PHASE (arg_info) = oldphase;
+        INFO_OBJECTS_FUNDEF (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -476,7 +562,7 @@ OBJfundef (node *arg_node, node *arg_info)
  */
 
 node *
-OBJobjdef (node *arg_node, node *arg_info)
+OBJobjdef (node *arg_node, info *arg_info)
 {
     char *buffer;
 
@@ -503,7 +589,8 @@ OBJobjdef (node *arg_node, node *arg_info)
  *
  *  functionname  : OBJarg
  *  arguments     : 1) N_arg node
- *                  2) N_fundef node to which this argument belongs to.
+ *                  2) arg_info containing the fundef this arg belongs
+ *                     to
  *  description   : For each reference parameter, a new expression is
  *                  generated containing the parameter name and is added
  *                  to the list of return expressions.
@@ -517,7 +604,7 @@ OBJobjdef (node *arg_node, node *arg_info)
  */
 
 node *
-OBJarg (node *arg_node, node *arg_info)
+OBJarg (node *arg_node, info *arg_info)
 {
     node *new_return_expr, *ret;
     types *new_return_type;
@@ -535,7 +622,7 @@ OBJarg (node *arg_node, node *arg_info)
                     ARG_NAME (arg_node)));
         }
 
-        ret = FUNDEF_RETURN (arg_info);
+        ret = FUNDEF_RETURN (INFO_OBJECTS_FUNDEF (arg_info));
 
         if (ret != NULL) {
             new_return_expr
@@ -553,25 +640,29 @@ OBJarg (node *arg_node, node *arg_info)
             RETURN_EXPRS (ret) = new_return_expr;
         }
 
-        if (FUNDEF_BASETYPE (arg_info) == T_void) {
-            FUNDEF_BASETYPE (arg_info) = ARG_BASETYPE (arg_node);
-            FUNDEF_DIM (arg_info) = ARG_DIM (arg_node);
-            FUNDEF_SHPSEG (arg_info) = DupShpseg (ARG_SHPSEG (arg_node));
-            FUNDEF_TNAME (arg_info) = StringCopy (ARG_TNAME (arg_node));
-            FUNDEF_TMOD (arg_info) = ARG_TMOD (arg_node);
+        if (FUNDEF_BASETYPE (INFO_OBJECTS_FUNDEF (arg_info)) == T_void) {
+            FUNDEF_BASETYPE (INFO_OBJECTS_FUNDEF (arg_info)) = ARG_BASETYPE (arg_node);
+            FUNDEF_DIM (INFO_OBJECTS_FUNDEF (arg_info)) = ARG_DIM (arg_node);
+            FUNDEF_SHPSEG (INFO_OBJECTS_FUNDEF (arg_info))
+              = DupShpseg (ARG_SHPSEG (arg_node));
+            FUNDEF_TNAME (INFO_OBJECTS_FUNDEF (arg_info))
+              = StringCopy (ARG_TNAME (arg_node));
+            FUNDEF_TMOD (INFO_OBJECTS_FUNDEF (arg_info)) = ARG_TMOD (arg_node);
 
-            TYPES_STATUS (FUNDEF_TYPES (arg_info)) = ST_artificial;
+            TYPES_STATUS (FUNDEF_TYPES (INFO_OBJECTS_FUNDEF (arg_info))) = ST_artificial;
 
             DBUG_PRINT ("OBJ", ("Converted return type void to %s:%s",
-                                FUNDEF_TMOD (arg_info), FUNDEF_TNAME (arg_info)));
+                                FUNDEF_TMOD (INFO_OBJECTS_FUNDEF (arg_info)),
+                                FUNDEF_TNAME (INFO_OBJECTS_FUNDEF (arg_info))));
         } else {
             new_return_type = DupAllTypes (ARG_TYPE (arg_node));
             TYPES_STATUS (new_return_type) = ST_artificial;
-            TYPES_NEXT (new_return_type) = FUNDEF_TYPES (arg_info);
-            FUNDEF_TYPES (arg_info) = new_return_type;
+            TYPES_NEXT (new_return_type) = FUNDEF_TYPES (INFO_OBJECTS_FUNDEF (arg_info));
+            FUNDEF_TYPES (INFO_OBJECTS_FUNDEF (arg_info)) = new_return_type;
 
-            DBUG_PRINT ("OBJ", ("Added return type %s:%s", FUNDEF_TMOD (arg_info),
-                                FUNDEF_TNAME (arg_info)));
+            DBUG_PRINT ("OBJ", ("Added return type %s:%s",
+                                FUNDEF_TMOD (INFO_OBJECTS_FUNDEF (arg_info)),
+                                FUNDEF_TNAME (INFO_OBJECTS_FUNDEF (arg_info))));
         }
 
         ARG_ATTRIB (arg_node) = ST_was_reference;
@@ -592,7 +683,7 @@ OBJarg (node *arg_node, node *arg_info)
  */
 
 node *
-OBJap (node *arg_node, node *arg_info)
+OBJap (node *arg_node, info *arg_info)
 {
     nodelist *need_objs;
     node *obj, *new_arg;
@@ -641,7 +732,7 @@ OBJap (node *arg_node, node *arg_info)
  */
 
 node *
-OBJid (node *arg_node, node *arg_info)
+OBJid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("OBJid");
 
@@ -664,9 +755,11 @@ OBJid (node *arg_node, node *arg_info)
  *
  *  functionname  : OBJlet
  *  arguments     : 1) pointer to N_let node
- *                  2) arg_info used as flag:
- *                     ==NULL traverse right side of '='
- *                     !=NULL resolve reference parameters
+ *                  2) arg_info used to
+ *                     - distinguish between traversal mode
+ *                       - left side of let
+ *                       - resolve reference parameters
+ *                     - store current fundef node
  *  description   : First, the right hand side of the let is traversed.
  *                  If this is a function application, then the additional
  *                  return values of this function are considered and bound
@@ -687,7 +780,7 @@ OBJid (node *arg_node, node *arg_info)
  */
 
 node *
-OBJlet (node *arg_node, node *arg_info)
+OBJlet (node *arg_node, info *arg_info)
 {
     node *args, *params, *let_expr, *arg_id;
     ids *old_ids;
@@ -697,7 +790,7 @@ OBJlet (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("OBJlet");
 
-    if (arg_info == NULL) {
+    if (INFO_OBJECTS_PHASE (arg_info) == T_phase1) {
         if (LET_EXPR (arg_node) != NULL) {
             LET_EXPR (arg_node) = Trav (LET_EXPR (arg_node), arg_info);
         }

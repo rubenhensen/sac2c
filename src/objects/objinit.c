@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/07/17 14:30:09  sah
+ * switch to INFO structure
+ * PHASE I
+ *
  * Revision 3.4  2004/02/20 08:27:38  mwe
  * now functions with (MODUL_FUNS) and without (MODUL_FUNDECS) body are separated
  * changed tree traversal according to that
@@ -78,6 +82,8 @@
  *
  */
 
+#define NEW_INFO
+
 #include <string.h>
 
 #include "types.h"
@@ -91,6 +97,45 @@
 
 #include "DupTree.h"
 #include "filemgr.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *modul;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_OBJINIT_MODUL(n) (n->modul)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_OBJINIT_MODUL (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /*
  *
@@ -112,12 +157,18 @@
  */
 
 node *
-OImodul (node *arg_node, node *arg_info)
+OImodul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("OImodul");
 
     if (MODUL_OBJS (arg_node) != NULL) {
-        MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_node);
+        /* pass on reference to N_modul node */
+        INFO_OBJINIT_MODUL (arg_info) = arg_node;
+
+        MODUL_OBJS (arg_node) = Trav (MODUL_OBJS (arg_node), arg_info);
+
+        /* reset to NULL (mainly for debugging) */
+        INFO_OBJINIT_MODUL (arg_info) = NULL;
     }
 
     if (MODUL_FILETYPE (arg_node) == F_classimp) {
@@ -169,7 +220,8 @@ OImodul (node *arg_node, node *arg_info)
  *
  *  functionname  : OIobjdef
  *  arguments     : 1) pointer to objdef node
- *                  2) pointer to modul node (head of syntax_tree)
+ *                  2) INFO structure containing pointer to N_modul
+ *                     node (head of syntax tree)
  *  description   : A new function definition is generated that has no
  *                  formal parameters, the return type is identical to
  *                  the type of the global object and the initialization
@@ -186,7 +238,7 @@ OImodul (node *arg_node, node *arg_info)
  */
 
 node *
-OIobjdef (node *arg_node, node *arg_info)
+OIobjdef (node *arg_node, info *arg_info)
 {
     node *new_node;
     types *new_fun_type;
@@ -218,7 +270,7 @@ OIobjdef (node *arg_node, node *arg_info)
         NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
         new_node = MakeFundef (new_fun_name, OBJDEF_MOD (arg_node), new_fun_type, NULL,
-                               new_node, MODUL_FUNS (arg_info));
+                               new_node, MODUL_FUNS (INFO_OBJINIT_MODUL (arg_info)));
         NODE_LINE (new_node) = NODE_LINE (OBJDEF_EXPR (arg_node));
 
         FUNDEF_STATUS (new_node) = ST_objinitfun;
@@ -230,12 +282,12 @@ OIobjdef (node *arg_node, node *arg_info)
          * a global object initialization of a SAC-program.
          */
 
-        MODUL_FUNS (arg_info) = new_node;
+        MODUL_FUNS (INFO_OBJINIT_MODUL (arg_info)) = new_node;
 
         new_node = MakeAp (StringCopy (new_fun_name), OBJDEF_MOD (arg_node), NULL);
         OBJDEF_EXPR (arg_node) = new_node;
 
-        AP_FUNDEF (OBJDEF_EXPR (arg_node)) = MODUL_FUNS (arg_info);
+        AP_FUNDEF (OBJDEF_EXPR (arg_node)) = MODUL_FUNS (INFO_OBJINIT_MODUL (arg_info));
 
     } else {
         new_fun_type
@@ -260,16 +312,17 @@ OIobjdef (node *arg_node, node *arg_info)
         }
 
         new_node = MakeFundef (new_fun_name, OBJDEF_MOD (arg_node), new_fun_type, NULL,
-                               NULL, MODUL_FUNDECS (arg_info));
+                               NULL, MODUL_FUNDECS (INFO_OBJINIT_MODUL (arg_info)));
 
         FUNDEF_STATUS (new_node) = ST_objinitfun;
 
-        MODUL_FUNDECS (arg_info) = new_node;
+        MODUL_FUNDECS (INFO_OBJINIT_MODUL (arg_info)) = new_node;
 
         new_node = MakeAp (StringCopy (new_fun_name), OBJDEF_MOD (arg_node), NULL);
         OBJDEF_EXPR (arg_node) = new_node;
 
-        AP_FUNDEF (OBJDEF_EXPR (arg_node)) = MODUL_FUNDECS (arg_info);
+        AP_FUNDEF (OBJDEF_EXPR (arg_node))
+          = MODUL_FUNDECS (INFO_OBJINIT_MODUL (arg_info));
     }
 
     if ((OBJDEF_PRAGMA (arg_node) != NULL)
@@ -287,7 +340,7 @@ OIobjdef (node *arg_node, node *arg_info)
 /*
  *
  *  functionname  : objinit
- *  arguments     : 1) syntax_tree (pointer to N_modul node
+ *  arguments     : 1) syntax_tree (pointer to N_modul node)
  *  description   : starts the traversal mechanism for the objinit
  *                  compilation phase. Here, all initialization expressions
  *                  of global objects are moved to new generated functions
@@ -304,9 +357,16 @@ OIobjdef (node *arg_node, node *arg_info)
 node *
 objinit (node *syntax_tree)
 {
+    info *info;
+
     DBUG_ENTER ("objinit");
 
     act_tab = objinit_tab;
+    info = MakeInfo ();
 
-    DBUG_RETURN (Trav (syntax_tree, NULL));
+    syntax_tree = Trav (syntax_tree, info);
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (syntax_tree);
 }

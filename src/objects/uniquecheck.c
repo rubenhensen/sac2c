@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 3.6  2004/07/17 14:30:09  sah
+ * switch to INFO structure
+ * PHASE I
+ *
  * Revision 3.5  2004/02/25 08:17:44  cg
  * Elimination of while-loops by conversion into do-loops with
  * leading conditional integrated into flatten.
@@ -68,6 +72,8 @@
  * Initial revision
  */
 
+#define NEW_INFO
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -77,6 +83,45 @@
 #include "internal_lib.h"
 #include "Error.h"
 #include "free.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    bool insidewith;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_UNQ_INSIDEWITH(n) (n->insidewith)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo ()
+{
+    info *result;
+
+    DBUG_ENTER ("MakeInfo");
+
+    result = Malloc (sizeof (info));
+
+    INFO_UNQ_INSIDEWITH (result) = FALSE;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ("FreeInfo");
+
+    info = Free (info);
+
+    DBUG_RETURN (info);
+}
 
 /************************************************************************
  *  local type definitions
@@ -230,11 +275,18 @@ static unqstatelist *unqstate;
 node *
 UniquenessCheck (node *syntax_tree)
 {
+    info *info;
+
     DBUG_ENTER ("UniquenessCheck");
 
     act_tab = unique_tab;
+    info = MakeInfo ();
 
-    DBUG_RETURN (Trav (syntax_tree, NULL));
+    syntax_tree = Trav (syntax_tree, info);
+
+    info = FreeInfo (info);
+
+    DBUG_RETURN (syntax_tree);
 }
 
 /************************************************************************
@@ -801,7 +853,7 @@ CheckApplied (node *var)
  */
 
 node *
-UNQmodul (node *arg_node, node *arg_info)
+UNQmodul (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("UNQmodul");
 
@@ -831,7 +883,7 @@ UNQmodul (node *arg_node, node *arg_info)
  */
 
 node *
-UNQfundef (node *arg_node, node *arg_info)
+UNQfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("UNQfundef");
 
@@ -891,7 +943,7 @@ UNQfundef (node *arg_node, node *arg_info)
  */
 
 node *
-UNQblock (node *arg_node, node *arg_info)
+UNQblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("UNQblock");
 
@@ -920,7 +972,7 @@ UNQblock (node *arg_node, node *arg_info)
  */
 
 node *
-UNQvardec (node *arg_node, node *arg_info)
+UNQvardec (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("UNQvardec");
 
@@ -956,7 +1008,7 @@ UNQvardec (node *arg_node, node *arg_info)
  */
 
 node *
-UNQarg (node *arg_node, node *arg_info)
+UNQarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("UNQarg");
 
@@ -978,7 +1030,7 @@ UNQarg (node *arg_node, node *arg_info)
  *
  *  functionname  : UNQlet
  *  arguments     : 1) N_let node of syntax tree
- *                  2) arg_info != NULL used as marker for being inside
+ *                  2) arg_info signals beeing inside
  *                  a with-loop
  *  description   : Checks the defining accesses to unique variables
  *                  for uniqueness violations.
@@ -992,7 +1044,7 @@ UNQarg (node *arg_node, node *arg_info)
  */
 
 node *
-UNQlet (node *arg_node, node *arg_info)
+UNQlet (node *arg_node, info *arg_info)
 {
     ids *tmp;
 
@@ -1005,7 +1057,7 @@ UNQlet (node *arg_node, node *arg_info)
     while (tmp != NULL) {
         if (IDS_IS_UNIQUE (tmp)) {
             CheckDefined (tmp, NODE_LINE (arg_node));
-            if (arg_info != NULL) {
+            if (INFO_UNQ_INSIDEWITH (arg_info)) {
                 WARN (NODE_LINE (arg_node),
                       ("Modification of object '%s` in body of with-loop "
                        "may cause non-deterministic results",
@@ -1026,7 +1078,7 @@ UNQlet (node *arg_node, node *arg_info)
  *
  *  functionname  : UNQid
  *  arguments     : 1) N_id node of syntax tree
- *                  2) arg_info != NULL used as marker for being inside
+ *                  2) arg_info signals beeing inside
  *                  a with-loop
  *  description   : Checks an applied access to a unique variable
  *                  for uniqueness violations.
@@ -1040,7 +1092,7 @@ UNQlet (node *arg_node, node *arg_info)
  */
 
 node *
-UNQid (node *arg_node, node *arg_info)
+UNQid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("UNQid");
 
@@ -1055,7 +1107,7 @@ UNQid (node *arg_node, node *arg_info)
  *
  *  functionname  : UNQdo
  *  arguments     : 1) N_do node of syntax tree
- *                  2) arg_info != NULL used as marker for being inside
+ *                  2) arg_info signals beeing inside
  *                  a with-loop
  *  description   : The body of the do-loop is traversed twice in sequential
  *                  order. This should detect all uniqueness violations
@@ -1070,7 +1122,7 @@ UNQid (node *arg_node, node *arg_info)
  */
 
 node *
-UNQdo (node *arg_node, node *arg_info)
+UNQdo (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("UNQdo");
 
@@ -1095,7 +1147,7 @@ UNQdo (node *arg_node, node *arg_info)
  *
  *  functionname  : UNQcond
  *  arguments     : 1) N_cond node of syntax tree
- *                  2) arg_info != NULL used as marker for being inside
+ *                  2) arg_info signals beeing inside
  *                  a with-loop
  *  description   : First the current unique state is copied.
  *                  The consequence of the conditional is then checked
@@ -1114,7 +1166,7 @@ UNQdo (node *arg_node, node *arg_info)
  */
 
 node *
-UNQcond (node *arg_node, node *arg_info)
+UNQcond (node *arg_node, info *arg_info)
 {
     unqstatelist *then_state, *else_state;
 
@@ -1158,7 +1210,7 @@ UNQcond (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *UNQNwith(node *arg_node, node *arg_info)
+ *   node *UNQNwith(node *arg_node, info *arg_info)
  *
  * description:
  *   compare UNQwith.
@@ -1167,9 +1219,10 @@ UNQcond (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-UNQNwith (node *arg_node, node *arg_info)
+UNQNwith (node *arg_node, info *arg_info)
 {
     unqstatelist *skipped_state;
+    bool oldstate;
 
     DBUG_ENTER ("UNQNwith");
 
@@ -1181,7 +1234,14 @@ UNQNwith (node *arg_node, node *arg_info)
     AddHistory (unqstate, H_with_enter);
     AddHistory (skipped_state, H_with_skipped);
 
-    Trav (NWITH_CODE (arg_node), arg_node);
+    /* signal beeing inside a with-loop body */
+    oldstate = INFO_UNQ_INSIDEWITH (arg_info);
+    INFO_UNQ_INSIDEWITH (arg_info) = TRUE;
+
+    Trav (NWITH_CODE (arg_node), arg_info);
+
+    /* reset state */
+    INFO_UNQ_INSIDEWITH (arg_info) = oldstate;
 
     DBUG_EXECUTE ("UNQ", fprintf (stderr, "\nUnq-state after with\n");
                   PrintUnqstate (unqstate););
