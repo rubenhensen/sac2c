@@ -1,5 +1,8 @@
 /*
  * $Log$
+ * Revision 1.6  2003/12/02 09:53:22  sbs
+ * genarray Wls with non-negative entries will be rejected by the TC now!
+ *
  * Revision 1.5  2003/11/26 14:22:44  sbs
  * default value of new genarray WLs now is checked as well.
  *
@@ -129,6 +132,7 @@ NTCWL_gen (te_info *info, ntype *args)
     dexpr = TYGetProductMember (args, 3);
 
     TEAssureIntVect ("shape expression of genarray with loop", shp);
+    TEAssureNonNegativeValues ("shape expression of genarray with loop", shp);
     idx = TEAssureSameShape ("shape expression", shp,
                              "generator boundaries of genarray with loop", idx);
 
