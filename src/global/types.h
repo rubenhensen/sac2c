@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.27  2004/07/11 17:54:01  sah
+ * added F_unknown filetype
+ *
  * Revision 3.26  2004/07/11 17:41:39  sah
  * added WO_unknown WithOp to model the unset state of
  * NWithOp node
@@ -259,7 +262,8 @@ typedef enum {
     F_classdec,
     F_extclassdec,
     F_sib,
-    F_modspec
+    F_modspec,
+    F_unknown
 } file_type;
 
 typedef enum { CT_normal, CT_ap, CT_array, CT_return, CT_wl } contextflag;
