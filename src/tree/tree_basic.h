@@ -1,11 +1,14 @@
 /*
  *
  * $Log$
+ * Revision 1.37  2000/03/31 12:26:37  jhs
+ * Added INFO_DUP_BASEFUNDEF
+ *
  * Revision 1.36  2000/03/30 15:13:13  jhs
  * Added adjustcalls
  *
  * Revision 1.35  2000/03/29 16:10:49  jhs
- * MT_WORKERFUN and MTMASTERFUN added.
+ * MT_WORKERFUN and MT_MASTERFUN added.
  *
  * Revision 1.34  2000/03/24 00:50:24  dkr
  * INFO_DUP_LUT added
@@ -2370,6 +2373,7 @@ extern node *MakeInfo ();
 /*      INFO_INL_TYPES(n)                      (n->node[2])   See comment!!! */
 #define INFO_DUP_DFMBASE(n) ((DFMmask_base_t) (n->node[3]))
 #define INFO_DUP_FUNDEF(n) (n->node[4])
+#define INFO_DUP_BASEFUNDEF(n) (n->node[4])
 #define INFO_DUP_TYPE(n) (n->flag)
 #define INFO_DUP_ALL(n) (n->int_data)
 #define INFO_DUP_LUT(n) ((LUT_t) (n->dfmask[6]))
