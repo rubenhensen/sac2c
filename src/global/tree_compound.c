@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.34  1998/02/12 10:34:02  srs
+ * changed GetCompoundNode() to work with new WLs
+ *
  * Revision 1.33  1997/11/05 16:30:34  dkr
  * moved nnode[] from tree_compound.[ch] to traverse.[ch]
  *
@@ -671,7 +674,7 @@ GetCompoundNode (node *arg_node)
         arg_node = LET_EXPR (arg_node);
         while (N_cast == NODE_TYPE (arg_node))
             arg_node = CAST_EXPR (arg_node);
-        if (N_with == NODE_TYPE (arg_node))
+        if (N_with == NODE_TYPE (arg_node) || N_Nwith == NODE_TYPE (arg_node))
             compound_node = arg_node;
         else
             compound_node = NULL;
