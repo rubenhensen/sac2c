@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.6  2003/09/17 12:56:52  dkr
+ * postfix _any renamed into _ANY
+ *
  * Revision 1.5  2002/10/29 20:41:21  dkr
  * TYPE_ERROR ICM: 'exit(-1)' replaced by 'return' ...
  *
@@ -31,8 +34,8 @@
 /******************************************************************************
  *
  * function:
- *   void ICMCompileTYPE_ERROR( int cnt_to,   char **to_any,
- *                              int cnt_from, char **from_any)
+ *   void ICMCompileTYPE_ERROR( int cnt_to,   char **to_ANY,
+ *                              int cnt_from, char **from_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -43,8 +46,8 @@
  ******************************************************************************/
 
 void
-ICMCompileTYPE_ERROR (int cnt_to, char **to_any, char *funname, int cnt_from,
-                      char **from_any)
+ICMCompileTYPE_ERROR (int cnt_to, char **to_ANY, char *funname, int cnt_from,
+                      char **from_ANY)
 {
     DBUG_ENTER ("ICMCompileTYPE_ERROR");
 
@@ -65,7 +68,7 @@ ICMCompileTYPE_ERROR (int cnt_to, char **to_any, char *funname, int cnt_from,
   fprintf( outfile, ", ");
   for (i = 0; i < cnt_from; i++) {
     fprintf( outfile, "\"  %%s\", SAC_PrintShape( SAC_ND_A_DESC( %s))",
-                      from_any[i]);
+                      from_ANY[i]);
     if (i < cnt_from - 1) {
       fprintf( outfile, ", ");
     }
