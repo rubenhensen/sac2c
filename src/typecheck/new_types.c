@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.77  2004/11/27 02:17:05  jhb
+ * fixed bug
+ *
  * Revision 3.76  2004/11/27 01:49:24  khf
  * adjusted function names
  *
@@ -3026,7 +3029,7 @@ TYisProdContainingAKV (ntype *args)
 /******************************************************************************
  *
  * function:
- *    int TYCountNonFixedAlpha( ntype *type)
+ *    int TYcountNonFixedAlpha( ntype *type)
  *
  * description:
  *   counts the number of non-fixed type variables contained in the type given.
@@ -3034,17 +3037,17 @@ TYisProdContainingAKV (ntype *args)
  ******************************************************************************/
 
 int
-TYCountNonFixedAlpha (ntype *type)
+TYcountNonFixedAlpha (ntype *type)
 {
     int res = 0;
     int i, n;
 
-    DBUG_ENTER ("TYCountNonFixedAlpha");
+    DBUG_ENTER ("TYcountNonFixedAlpha");
 
     if (TYisProd (type)) {
         n = TYgetProductSize (type);
         for (i = 0; i < n; i++) {
-            res += TYCountNonFixedAlpha (TYgetProductMember (type, i));
+            res += TYcountNonFixedAlpha (TYgetProductMember (type, i));
         }
     } else {
         res += (TYisNonFixedAlpha (type) ? 1 : 0);
@@ -3056,7 +3059,7 @@ TYCountNonFixedAlpha (ntype *type)
 /******************************************************************************
  *
  * function:
- *    int TYCountNoMinAlpha( ntype *type)
+ *    int TYcountNoMinAlpha( ntype *type)
  *
  * description:
  *   counts the number of type variables that do not have a lower limit.
@@ -3064,17 +3067,17 @@ TYCountNonFixedAlpha (ntype *type)
  ******************************************************************************/
 
 int
-TYCountNoMinAlpha (ntype *type)
+TYcountNoMinAlpha (ntype *type)
 {
     int res = 0;
     int i, n;
 
-    DBUG_ENTER ("TYCountNoMinAlpha");
+    DBUG_ENTER ("TYcountNoMinAlpha");
 
     if (TYisProd (type)) {
         n = TYgetProductSize (type);
         for (i = 0; i < n; i++) {
-            res += TYCountNoMinAlpha (TYgetProductMember (type, i));
+            res += TYcountNoMinAlpha (TYgetProductMember (type, i));
         }
     } else {
         res += (TYisAlpha (type) && (SSIgetMin (TYgetAlpha (type)) == NULL) ? 1 : 0);
