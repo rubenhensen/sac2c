@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2004/01/16 12:46:30  skt
+ * handling of do-loops enabled
+ *
  * Revision 3.1  2000/11/20 18:03:03  sacbase
  * new release made
  *
@@ -203,6 +206,10 @@ BLKEXassign (node *arg_node, node *arg_info)
         DBUG_PRINT ("BLKEX", ("trav into cond"));
         this_instr = Trav (this_instr, arg_node);
         DBUG_PRINT ("BLKEX", ("trav from cond"));
+    } else if (NODE_TYPE (this_instr) == N_do) {
+        DBUG_PRINT ("BLKEX", ("trav into do"));
+        this_instr = Trav (this_instr, arg_node);
+        DBUG_PRINT ("BLKEX", ("trav from do"));
     } else {
         DBUG_PRINT ("BLKEX", ("node_type: %s", NODE_TEXT (this_instr)));
         DBUG_ASSERT (0, ("unhandled type of ASSIGN_INSTR (watch BLKEX)"));
