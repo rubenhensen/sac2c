@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.2  1999/05/18 13:08:55  dkr
+ * print.h included (for WLAAprintAccesses() )
+ *
  * Revision 2.1  1999/05/12 14:02:51  bs
  * attribute names for handling constant vectors at N_id, N_array, and N_info
  * nodes adjusted to each other...
@@ -53,6 +56,7 @@
 #include "traverse.h"
 #include "free.h"
 #include "globals.h"
+#include "print.h" /* WLAAprintAccesses */
 #include "wl_access_analyze.h"
 
 #define ACLT(arg)                                                                        \
