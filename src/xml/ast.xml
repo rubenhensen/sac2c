@@ -1,5 +1,8 @@
 <!--
   $Log$
+  Revision 1.72  2004/11/25 15:21:58  khf
+  modified INSVD
+
   Revision 1.71  2004/11/25 15:13:33  ktr
   FUN 2004!!!
 
@@ -291,12 +294,15 @@
       </traversal>
     </phase>
     <phase id="typecheck" name="Running type inference system">
-      <traversal id="INSVD" name="Insert Vardecs" default="sons" include="insert_vardecs.h" >
+      <traversal id="INSVD" name="Insert Vardecs" default="sons" include="insert_vardec.h" >
 	<travuser>
-	  <node name="Fundef" />
-	  <node name="Id" />
-	  <node name="Withid" />
-	  <node name="Let" />
+          <node name="Fundef" />
+          <node name="Id" />
+          <node name="Ids" />
+          <node name="With" />
+          <node name="Let" />
+          <node name="Part" />
+          <node name="Code" />
 	</travuser>
       </traversal>
       <traversal id="CRTWRP" name="Create Wrappers" default="sons" include="create_wrappers.h">
