@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.28  2001/02/07 20:16:07  dkr
+ * InsertNoopNodes(): NOOP optimization added
+ *
  * Revision 3.27  2001/02/06 18:21:39  dkr
  * fixed a bug in Parts2Strides()
  *
@@ -1918,13 +1921,168 @@ GetLcmUnroll (node *nodes, int dim)
 /******************************************************************************
  *
  * Function:
+ *   node *GenerateNodeForGap( node *wlnode)
+ *                             char *name1, int val1, void *pnode1,
+ *                             char *name2, int val2, void *pnode2,
+ *                             bool is_noop)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+GenerateNodeForGap (node *wlnode, char *name1, int val1, void *pnode1, char *name2,
+                    int val2, void *pnode2, bool is_noop)
+{
+    bool is_const;
+    node *gap_node = NULL;
+
+    DBUG_ENTER ("GenerateNodeForGap");
+
+    DBUG_ASSERT ((wlnode != NULL), "no WL node found!");
+
+    if (!NameOrVal_Eq (name1, val1, name2, val2)) {
+        is_const = ((val1 != IDX_OTHER) && (val2 != IDX_OTHER));
+
+        switch (NODE_TYPE (wlnode)) {
+        case N_WLblock:
+            DBUG_ASSERT ((is_const), "non-constant block bounds found!");
+            gap_node = MakeWLblock (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode), val1,
+                                    val2, 1, NULL, NULL, NULL);
+            break;
+
+        case N_WLublock:
+            DBUG_ASSERT ((is_const), "non-constant block bounds found!");
+            gap_node = MakeWLublock (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode), val1,
+                                     val2, 1, NULL, NULL, NULL);
+            break;
+
+        case N_WLstride:
+            /* here is no break missing */
+        case N_WLstrideVar:
+            if (is_const) {
+                gap_node = MakeWLstride (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode), val1,
+                                         val2, 1, FALSE, NULL, NULL);
+            } else {
+                gap_node = MakeWLstrideVar (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode),
+                                            NameOrVal_MakeNode (name1, val1, pnode1),
+                                            NameOrVal_MakeNode (name2, val2, pnode2),
+                                            MakeNum (1), NULL, NULL);
+            }
+            break;
+
+        case N_WLgrid:
+            /* here is no break missing */
+        case N_WLgridVar:
+            if (is_const) {
+                gap_node = MakeWLgrid (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode), val1,
+                                       val2, FALSE, NULL, NULL, NULL);
+            } else {
+                gap_node = MakeWLgridVar (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode),
+                                          NameOrVal_MakeNode (name1, val1, pnode1),
+                                          NameOrVal_MakeNode (name2, val2, pnode2), NULL,
+                                          NULL, NULL);
+            }
+            WLGRIDX_NOOP (gap_node) = is_noop;
+            break;
+
+        default:
+            DBUG_ASSERT ((0), "illegal node type found!");
+            break;
+        }
+    }
+
+    DBUG_RETURN (gap_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *FillGapPred( node **new_node,   // a return value!!
+ *                      node *wlnode,
+ *                      char *name1, int val1, void *pnode1,
+ *                      char *name2, int val2, void *pnode2,
+ *                      bool is_noop)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+FillGapPred (node **new_node, /* a return value!! */
+             node *wlnode, char *name1, int val1, void *pnode1, char *name2, int val2,
+             void *pnode2, bool is_noop)
+{
+    node *gap_node;
+
+    DBUG_ENTER ("FillGapPred");
+
+    DBUG_ASSERT ((wlnode != NULL), "no WL node found!");
+
+    gap_node
+      = GenerateNodeForGap (wlnode, name1, val1, pnode1, name2, val2, pnode2, is_noop);
+
+    if (gap_node != NULL) {
+        WLNODE_NEXT (gap_node) = wlnode;
+        wlnode = gap_node;
+    }
+
+    if (new_node != NULL) {
+        (*new_node) = gap_node;
+    }
+
+    DBUG_RETURN (wlnode);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *FillGapSucc( node **new_node,   // a return value!!
+ *                      node *wlnode,
+ *                      char *name1, int val1, void *pnode1,
+ *                      char *name2, int val2, void *pnode2,
+ *                      bool is_noop)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+FillGapSucc (node **new_node, /* a return value!! */
+             node *wlnode, char *name1, int val1, void *pnode1, char *name2, int val2,
+             void *pnode2, bool is_noop)
+{
+    node *gap_node;
+
+    DBUG_ENTER ("FillGapSucc");
+
+    DBUG_ASSERT ((wlnode != NULL), "no WL node found!");
+
+    gap_node
+      = GenerateNodeForGap (wlnode, name1, val1, pnode1, name2, val2, pnode2, is_noop);
+
+    if (gap_node != NULL) {
+        WLNODE_NEXT (gap_node) = WLNODE_NEXT (wlnode);
+        WLNODE_NEXT (wlnode) = gap_node;
+    }
+
+    if (new_node != NULL) {
+        (*new_node) = gap_node;
+    }
+
+    DBUG_RETURN (wlnode);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *GenerateShapeStrides( int dim, int dims, shpseg* shape)
  *
  * Description:
  *   Returns strides/grids of the size found in 'shape'.
- *
- *   This function is called by 'GenerateCompleteDomain',
- *    'GenerateCompleteDomainVar'.
  *
  ******************************************************************************/
 
@@ -2221,7 +2379,7 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
     node *gen, *code;
     node *bound1, *bound2, *step, *width;
     int dim;
-    bool is_empty, is_noop;
+    bool is_empty;
     node *last_grid = NULL;
 
     DBUG_ENTER ("Parts2Strides");
@@ -2229,7 +2387,6 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
     parts_stride = NULL;
     while (parts != NULL) {
         code = NPART_CODE (parts);
-        is_noop = NCODE_AP_DUMMY_CODE (code);
 
         stride = NULL;
 
@@ -2305,7 +2462,7 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
                 } else {
                     WLGRIDX_NEXTDIM (last_grid) = new_stride;
                 }
-                last_grid = WLSTRIDEX_CONTENTS (new_stride);
+                last_grid = new_grid;
             }
 
             /* go to next dim */
@@ -2316,12 +2473,9 @@ Parts2Strides (node *parts, int dims, shpseg *shape)
         }
 
         if (!is_empty) {
-            WLGRIDX_CODE (last_grid) = code;
+            WLGRIDX_CODE (new_grid) = code;
             NCODE_USED (code)++;
-            if (is_noop) {
-                DBUG_ASSERT ((new_grid != NULL), "no grid found!");
-                WLGRIDX_NOOP (new_grid) = TRUE;
-            }
+            WLGRIDX_NOOP (new_grid) = NCODE_AP_DUMMY_CODE (code);
             parts_stride = InsertWLnodes (parts_stride, stride);
         }
 
@@ -4265,11 +4419,12 @@ NormWL (int dims, node *nodes)
 static node *
 GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
 {
-    node *grid, *new_grid;
+    node *grid;
     void *pnode1, *pnode2;
     char *name1, *name2;
     int val1, val2;
     int shp_idx;
+    node *new_node;
 
     DBUG_ENTER ("GenerateCompleteDomainVar");
 
@@ -4288,23 +4443,13 @@ GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
         NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (stride), pnode2);
 
         /*
-         * is the grid incomplete?
+         * complete grid if needed
          */
-        if ((val1 != IDX_OTHER) && (val2 != IDX_OTHER)) {
-            if (val1 < val2) {
-                WLGRIDX_NEXT (grid)
-                  = MakeWLgrid (WLGRIDX_LEVEL (grid), WLGRIDX_DIM (grid), val1, val2,
-                                FALSE,
-                                GenerateShapeStrides (WLGRID_DIM (grid) + 1, dims, shape),
-                                NULL, NULL);
-            }
-        } else {
-            WLGRIDX_NEXT (grid)
-              = MakeWLgridVar (WLGRID_LEVEL (grid), WLGRID_DIM (grid),
-                               NameOrVal_MakeNode (name1, val1, pnode1),
-                               DupNode (WLSTRIDEVAR_STEP (stride)),
-                               GenerateShapeStrides (WLGRID_DIM (grid) + 1, dims, shape),
-                               NULL, NULL);
+        grid = FillGapSucc (&new_node, grid, name1, val1, pnode1, name2, val2, pnode2,
+                            FALSE);
+        if (new_node != NULL) {
+            WLGRIDX_NEXTDIM (new_node)
+              = GenerateShapeStrides (WLGRID_DIM (grid) + 1, dims, shape);
         }
 
         /*
@@ -4323,49 +4468,27 @@ GenerateCompleteDomainVar (node *stride, int dims, shpseg *shape)
          * append lower part of complement
          */
         shp_idx = GET_SHAPE_IDX (shape, WLSTRIDEVAR_DIM (stride));
-        if (val2 != IDX_OTHER) {
-            if (val2 < shp_idx) {
-                new_grid = MakeWLgrid (0, WLGRIDX_DIM (grid), 0, 1, FALSE,
-                                       GenerateShapeStrides (WLGRIDX_DIM (grid) + 1, dims,
-                                                             shape),
-                                       NULL, NULL);
-                WLSTRIDEVAR_NEXT (stride)
-                  = MakeWLstride (WLSTRIDEVAR_LEVEL (stride), WLSTRIDEVAR_DIM (stride),
-                                  val2, shp_idx, 1, FALSE, new_grid, NULL);
-            }
-        } else {
-            new_grid
-              = MakeWLgrid (0, WLGRIDX_DIM (grid), 0, 1, FALSE,
-                            GenerateShapeStrides (WLGRIDX_DIM (grid) + 1, dims, shape),
+        stride = FillGapSucc (&new_node, stride, name2, val2, pnode2, NULL, shp_idx, NULL,
+                              FALSE);
+        if (new_node != NULL) {
+            WLSTRIDEX_CONTENTS (new_node)
+              = MakeWLgrid (0, WLSTRIDEX_DIM (stride), 0, 1, FALSE,
+                            GenerateShapeStrides (WLSTRIDEX_DIM (stride) + 1, dims,
+                                                  shape),
                             NULL, NULL);
-            WLSTRIDEVAR_NEXT (stride)
-              = MakeWLstrideVar (WLSTRIDEVAR_LEVEL (stride), WLSTRIDEVAR_DIM (stride),
-                                 DupNode (WLSTRIDEVAR_BOUND2 (stride)), MakeNum (shp_idx),
-                                 MakeNum (1), new_grid, NULL);
         }
 
         /*
          * insert upper part of complement
          */
-        if (val1 != IDX_OTHER) {
-            if (val1 > 0) {
-                new_grid = MakeWLgrid (0, WLGRIDX_DIM (grid), 0, 1, FALSE,
-                                       GenerateShapeStrides (WLGRIDX_DIM (grid) + 1, dims,
-                                                             shape),
-                                       NULL, NULL);
-                stride
-                  = MakeWLstride (WLSTRIDEVAR_LEVEL (stride), WLSTRIDEVAR_DIM (stride), 0,
-                                  val1, 1, FALSE, new_grid, stride);
-            }
-        } else {
-            new_grid
-              = MakeWLgrid (0, WLGRIDX_DIM (grid), 0, 1, FALSE,
-                            GenerateShapeStrides (WLGRIDX_DIM (grid) + 1, dims, shape),
+        stride
+          = FillGapPred (&new_node, stride, NULL, 0, NULL, name1, val1, pnode1, FALSE);
+        if (new_node != NULL) {
+            WLSTRIDEX_CONTENTS (new_node)
+              = MakeWLgrid (0, WLSTRIDEX_DIM (stride), 0, 1, FALSE,
+                            GenerateShapeStrides (WLSTRIDEX_DIM (stride) + 1, dims,
+                                                  shape),
                             NULL, NULL);
-            stride
-              = MakeWLstrideVar (WLSTRIDEVAR_LEVEL (stride), WLSTRIDEVAR_DIM (stride),
-                                 MakeNum (0), DupNode (WLSTRIDEVAR_BOUND1 (stride)),
-                                 MakeNum (1), new_grid, stride);
         }
     }
 
@@ -5306,82 +5429,6 @@ ComputeCubes (node *strides)
 /******************************************************************************
  *
  * Function:
- *   node *FillGap( node *wlnode)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-static node *
-FillGap (node *wlnode, char *name1, int val1, void *pnode1, char *name2, int val2,
-         void *pnode2)
-{
-    node *next;
-    bool is_const;
-
-    DBUG_ENTER ("FillGap");
-
-    DBUG_ASSERT ((wlnode != NULL), "no WL node found!");
-
-    next = WLNODE_NEXT (wlnode);
-
-    if (!NameOrVal_Eq (name1, val1, name2, val2)) {
-        is_const = ((val1 != IDX_OTHER) && (val2 != IDX_OTHER));
-
-        switch (NODE_TYPE (wlnode)) {
-        case N_WLblock:
-            DBUG_ASSERT ((is_const), "non-constant block bounds found!");
-            WLNODE_NEXT (wlnode)
-              = MakeWLblock (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode), val1, val2, 1,
-                             NULL, NULL, next);
-            break;
-
-        case N_WLublock:
-            DBUG_ASSERT ((is_const), "non-constant block bounds found!");
-            WLNODE_NEXT (wlnode)
-              = MakeWLublock (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode), val1, val2, 1,
-                              NULL, NULL, next);
-            break;
-
-        case N_WLstride:
-            /* here is no break missing */
-        case N_WLstrideVar:
-            WLNODE_NEXT (wlnode)
-              = (is_const) ? MakeWLstride (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode),
-                                           val1, val2, 1, FALSE, NULL, next)
-                           : MakeWLstrideVar (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode),
-                                              NameOrVal_MakeNode (name1, val1, pnode1),
-                                              NameOrVal_MakeNode (name2, val2, pnode2),
-                                              MakeNum (1), NULL, next);
-            break;
-
-        case N_WLgrid:
-            /* here is no break missing */
-        case N_WLgridVar:
-            WLNODE_NEXT (wlnode)
-              = (is_const) ? MakeWLgrid (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode), val1,
-                                         val2, FALSE, NULL, next, NULL)
-                           : MakeWLgridVar (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode),
-                                            NameOrVal_MakeNode (name1, val1, pnode1),
-                                            NameOrVal_MakeNode (name2, val2, pnode2),
-                                            NULL, next, NULL);
-            break;
-
-        default:
-            DBUG_ASSERT ((0), "illegal node type found!");
-            break;
-        }
-
-        WLNODE_NOOP (WLNODE_NEXT (wlnode)) = TRUE;
-    }
-
-    DBUG_RETURN (wlnode);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *InsertNoopGrids( node *stride)
  *
  * Description:
@@ -5456,7 +5503,8 @@ InsertNoopGrids (node *stride)
             pnode2 = WLGRIDX_GET_ADDR (grid_next, BOUND1);
             NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (grid_next), pnode2);
 
-            grid = FillGap (grid, name1, val1, pnode1, name2, val2, pnode2);
+            grid
+              = FillGapSucc (NULL, grid, name1, val1, pnode1, name2, val2, pnode2, TRUE);
 
             /*
              * next dim
@@ -5475,7 +5523,7 @@ InsertNoopGrids (node *stride)
         pnode2 = WLSTRIDEX_GET_ADDR (stride, STEP);
         NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (stride), pnode2);
 
-        grid = FillGap (grid, name1, val1, pnode1, name2, val2, pnode2);
+        grid = FillGapSucc (NULL, grid, name1, val1, pnode1, name2, val2, pnode2, TRUE);
 
         /*
          * next dim
@@ -5522,7 +5570,8 @@ InsertNoopNode (node *wlnode)
         pnode2 = WLNODE_GET_ADDR (next, BOUND1);
         NodeOrInt_GetNameOrVal (&name2, &val2, NODE_TYPE (next), pnode2);
 
-        wlnode = FillGap (wlnode, name1, val1, pnode1, name2, val2, pnode2);
+        wlnode
+          = FillGapSucc (NULL, wlnode, name1, val1, pnode1, name2, val2, pnode2, TRUE);
     }
 
     DBUG_RETURN (wlnode);
@@ -5531,41 +5580,65 @@ InsertNoopNode (node *wlnode)
 /******************************************************************************
  *
  * Function:
- *   node *InsertNoopNodes( node *wlnode)
+ *   bool InsertNoopNodes( node *wlnode)
  *
  * Description:
  *   Inserts NOOP-N_WLnodes for gaps found in 'wlnode'.
+ *   Sons, which are complete NOOP trees, are freed.
  *
  ******************************************************************************/
 
-static node *
+static bool
 InsertNoopNodes (node *wlnode)
 {
+    bool is_noop;
+
     DBUG_ENTER ("InsertNoopNodes");
 
     if (wlnode != NULL) {
-        WLNODE_NEXT (wlnode) = InsertNoopNodes (WLNODE_NEXT (wlnode));
-
         switch (NODE_TYPE (wlnode)) {
         case N_WLblock:
             /* here is no break missing */
         case N_WLublock:
-            WLXBLOCK_CONTENTS (wlnode) = InsertNoopNodes (WLXBLOCK_CONTENTS (wlnode));
-            WLXBLOCK_NEXTDIM (wlnode) = InsertNoopNodes (WLXBLOCK_NEXTDIM (wlnode));
+            is_noop = InsertNoopNodes (WLXBLOCK_CONTENTS (wlnode));
+            is_noop &= InsertNoopNodes (WLXBLOCK_NEXTDIM (wlnode));
+            if (is_noop) {
+                WLXBLOCK_CONTENTS (wlnode) = FreeTree (WLXBLOCK_CONTENTS (wlnode));
+                WLXBLOCK_NEXTDIM (wlnode) = FreeTree (WLXBLOCK_NEXTDIM (wlnode));
+            }
+
+            is_noop &= InsertNoopNodes (WLXBLOCK_NEXT (wlnode));
+
             wlnode = InsertNoopNode (wlnode);
             break;
 
         case N_WLstride:
             /* here is no break missing */
         case N_WLstrideVar:
-            WLSTRIDEX_CONTENTS (wlnode) = InsertNoopNodes (WLSTRIDEX_CONTENTS (wlnode));
+            is_noop = InsertNoopNodes (WLSTRIDEX_CONTENTS (wlnode));
+            if (is_noop) {
+                WLSTRIDEX_CONTENTS (wlnode) = FreeTree (WLSTRIDEX_CONTENTS (wlnode));
+            }
+
+            is_noop &= InsertNoopNodes (WLSTRIDEX_NEXT (wlnode));
+
             wlnode = InsertNoopNode (wlnode);
             break;
 
         case N_WLgrid:
             /* here is no break missing */
         case N_WLgridVar:
-            WLGRIDX_NEXTDIM (wlnode) = InsertNoopNodes (WLGRIDX_NEXTDIM (wlnode));
+            if (WLGRIDX_NEXTDIM (wlnode) != NULL) {
+                is_noop = InsertNoopNodes (WLGRIDX_NEXTDIM (wlnode));
+                if (is_noop) {
+                    WLGRIDX_NEXTDIM (wlnode) = FreeTree (WLGRIDX_NEXTDIM (wlnode));
+                    WLGRIDX_NOOP (wlnode) = TRUE;
+                }
+            }
+
+            is_noop = WLGRIDX_NOOP (wlnode);
+            is_noop &= InsertNoopNodes (WLGRIDX_NEXT (wlnode));
+
             /*
              * no gaps in grids left after call of InsertNoopGrids() !!!
              *
@@ -5577,9 +5650,11 @@ InsertNoopNodes (node *wlnode)
             DBUG_ASSERT ((0), "illegal node type found!");
             break;
         }
+    } else {
+        is_noop = TRUE;
     }
 
-    DBUG_RETURN (wlnode);
+    DBUG_RETURN (is_noop);
 }
 
 /**
@@ -6280,7 +6355,7 @@ WLTRAwith (node *arg_node, node *arg_info)
                          */
                         DBUG_EXECUTE ("WLtrans",
                                       NOTE (("step 11: filling gaps (all nodes)\n")));
-                        WLSEGX_CONTENTS (seg) = InsertNoopNodes (WLSEGX_CONTENTS (seg));
+                        InsertNoopNodes (WLSEGX_CONTENTS (seg));
                     }
 
                     /* compute GRIDX_FITTED */
