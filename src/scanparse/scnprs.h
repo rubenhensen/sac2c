@@ -4,7 +4,10 @@
 /*
  *
  * $Log$
- * Revision 1.4  1994/12/20 13:49:27  sbs
+ * Revision 1.5  1995/07/26 08:41:02  cg
+ * extern declaration of node *sib_tree added.
+ *
+ * Revision 1.4  1994/12/20  13:49:27  sbs
  * linenum exported...
  *
  * Revision 1.3  1994/12/20  11:24:29  sbs
@@ -34,5 +37,6 @@ extern int start_token;
 
 extern node *syntax_tree;
 extern node *decl_tree;
+extern node *sib_tree;
 
 #endif /* _scnprs_h */
