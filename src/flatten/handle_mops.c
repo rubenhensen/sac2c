@@ -1,8 +1,8 @@
 /*
  *
  * $Log$
- * Revision 1.4  2002/08/13 16:34:08  sbs
- * HMfundef added.
+ * Revision 1.5  2002/08/13 17:14:17  sbs
+ * HMfundef changed into HMAdjustFundef
  *
  * Revision 1.3  2002/08/13 15:16:11  sbs
  * now, unary +, - are handles in the same way the old ugly
@@ -309,7 +309,7 @@ HMmop (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *HMap(node *arg_node, node *arg_info)
+ *    bool Name2Prf( char *name, prf *primfun)
  *
  * description:
  *   this function is only needed for converting the "new prf notation",
@@ -394,6 +394,20 @@ Name2Prf (char *name, prf *primfun)
     DBUG_RETURN (res);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *    node *HMap(node *arg_node, node *arg_info)
+ *
+ * description:
+ *   this function is only needed for converting the "new prf notation",
+ *   which is needed for the new type checker, into the one that is
+ *   required by the old type checker.....8-((
+ *   Once the new TC is as powerful as the old one is, this function
+ *   (and its call in flatten) becomes obsolete 8-)).
+ *
+ ******************************************************************************/
+
 node *
 HMap (node *arg_node, node *arg_info)
 {
@@ -466,7 +480,7 @@ HMNwithop (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * function:
- *    node *HMfundef(node *arg_node, node *arg_info)
+ *    node *HMAdjustFundef(node *fundef)
  *
  * description:
  *   this function is only needed for converting the "new prf notation",
@@ -478,20 +492,12 @@ HMNwithop (node *arg_node, node *arg_info)
  ******************************************************************************/
 
 node *
-HMfundef (node *arg_node, node *arg_info)
+HMAdjustFundef (node *fundef)
 {
     prf primfun;
     bool found;
 
-    DBUG_ENTER ("HMfundef");
-
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
-    }
-
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = Trav (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    DBUG_ENTER ("HMAdjustFundef");
 
     if (sbs != 1) {
 
@@ -499,7 +505,7 @@ HMfundef (node *arg_node, node *arg_info)
 
         if (found) {
             FUNDEF_NAME (arg_node) = Free (FUNDEF_NAME (arg_node));
-            FUNDEF_NAME (arg_node) = prf_name_str[primfun];
+            FUNDEF_NAME (arg_node) = StringCopy (prf_name_str[primfun]);
         }
     }
 

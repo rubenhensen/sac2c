@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.4  2002/08/13 17:14:34  sbs
+ * HMfundef changed into HMAdjustFundef
+ *
  * Revision 1.3  2002/08/13 16:34:08  sbs
  * HMfundef added.
  *
@@ -25,9 +28,10 @@
 
 extern node *HandleMops (node *arg_node);
 
-extern node *HMfundef (node *arg_node, node *arg_info);
+extern node *HMmop (node *arg_node, node *arg_info);
 extern node *HMap (node *arg_node, node *arg_info);
 extern node *HMNwithop (node *arg_node, node *arg_info);
-extern node *HMmop (node *arg_node, node *arg_info);
+
+extern node *HMAdjustFundef (node *fundef);
 
 #endif /* _handle_mops_h */
