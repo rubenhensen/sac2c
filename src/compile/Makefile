@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.18  1996/01/09 09:19:14  cg
+# Revision 1.19  1996/01/18 13:05:43  asi
+# make deps done
+#
+# Revision 1.18  1996/01/09  09:19:14  cg
 # added compilation of libsac.c
 #
 # Revision 1.17  1996/01/04  18:11:10  cg
@@ -116,6 +119,7 @@ icm_args.o: icm.data
 icm_comment.o: icm.data
 icm_decl.o: icm.data
 icm_trace.o: icm.data
+libsac.o: /usr/include/stdio.h /usr/include/malloc.h ../../inc/dbug.h
 precompile.o: ../global/types.h ../global/tree_basic.h
 precompile.o: ../global/tree_compound.h ../global/Error.h
 precompile.o: /usr/include/stdio.h /usr/include/string.h

@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.35  1996/01/04 18:11:05  cg
+# Revision 1.36  1996/01/18 13:05:38  asi
+# make deps done
+#
+# Revision 1.35  1996/01/04  18:11:05  cg
 # make deps done
 #
 # Revision 1.34  1995/12/15  10:41:06  cg
@@ -167,10 +170,6 @@ Error.o: Error.h
 Error.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 Error.o: types.h globals.h tree_basic.h ../../inc/dbug.h internal_lib.h
 Error.o: ../modules/filemgr.h
-a.out.o: ../compile/icm2c.h
-a.out.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/malloc.h
-a.out.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
-a.out.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdarg.h
 free.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdlib.h
 free.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/sys/stdtypes.h
 free.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/stdio.h
@@ -227,10 +226,11 @@ traverse.o: ../optimize/optimize.h free.h
 traverse.o: /usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3/2.6.3/include/malloc.h
 traverse.o: ../optimize/ConstantFolding.h ../optimize/DeadCodeRemoval.h
 traverse.o: ../optimize/WorkReduction.h ../optimize/LoopInvariantRemoval.h
-traverse.o: ../modules/import.h ../refcount/refcount.h ../compile/compile.h
-traverse.o: ../optimize/DupTree.h ../optimize/Inline.h ../optimize/Unroll.h
-traverse.o: ../optimize/Unswitch.h ../psi-opt/ArrayElimination.h
-traverse.o: ../psi-opt/index.h ../modules/writesib.h ../modules/readsib.h
+traverse.o: ../optimize/CSE.h ../modules/import.h ../refcount/refcount.h
+traverse.o: ../compile/compile.h ../optimize/DupTree.h ../optimize/Inline.h
+traverse.o: ../optimize/Unroll.h ../optimize/Unswitch.h
+traverse.o: ../psi-opt/ArrayElimination.h ../psi-opt/index.h
+traverse.o: ../modules/writesib.h ../modules/readsib.h
 traverse.o: ../modules/implicittypes.h ../objects/objinit.h
 traverse.o: ../modules/analysis.h ../modules/checkdec.h ../objects/objects.h
 traverse.o: ../objects/uniquecheck.h ../objects/rmvoidfun.h
