@@ -3,6 +3,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2001/03/22 20:10:22  dkr
+ * include of tree.h eliminated
+ *
  * Revision 3.4  2001/03/21 11:24:33  dkr
  * token DEFAULT removed
  *
@@ -151,12 +154,15 @@
 
 
 #include <stdlib.h>
-#include "tree.h"
+
+#include "types.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "internal_lib.h"
 #include "free.h"
 #include "resource.h"
 #include "y.tab.h"
 #include "Error.h"
-#include "internal_lib.h"
 #include "globals.h"
 
 
