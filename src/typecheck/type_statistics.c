@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2003/09/18 08:57:10  sbs
+ * missing colon after DBUG_VOID_RETURN added.
+ *
  * Revision 1.2  2003/09/17 13:06:26  sbs
  * output reniced.
  *
@@ -116,7 +119,7 @@ PrintStatistics (node *fundef, node *info)
     }
     buf = StrBufFree (buf);
 
-    DBUG_VOID_RETURN
+    DBUG_VOID_RETURN;
 }
 
 /** <!--********************************************************************-->
