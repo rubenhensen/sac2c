@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.16  2000/10/09 19:16:46  dkr
+ * GetUnadjustedFoldCode() renamed into GetFoldCode()
+ *
  * Revision 2.15  2000/07/06 16:28:42  dkr
  * ICM ND_KD_A_SHAPE renamed into ND_A_SHAPE
  *
@@ -133,9 +136,9 @@
 #include "print.h"
 
 #ifndef BEtest
-#include "scnprs.h"   /* for big magic access to syntax tree             */
-#include "traverse.h" /* for traversal of fold operation function        */
-#include "compile.h"  /* for GetUnadjustedFoldCode()                     */
+#include "scnprs.h"   /* for big magic access to syntax tree      */
+#include "traverse.h" /* for traversal of fold operation function */
+#include "compile.h"  /* for GetFoldCode()                        */
 #include "free.h"
 #endif /* BEtest */
 
@@ -147,8 +150,8 @@
  * description:
  *   This function traverses the fundef chain of the syntax tree in order to
  *   find the implementation of the given fold operation. The function
- *   GetUnadjustedFoldCode() is used afterwards to extract the relevant part
- *   of the function definition.
+ *   GetFoldCode() is used afterwards to extract the relevant part of the
+ *   function definition.
  *
  ******************************************************************************/
 
@@ -169,7 +172,7 @@ SearchFoldImplementation (char *foldop)
     DBUG_ASSERT ((fundef != NULL),
                  "Unknown fold operation specified in synchronisation ICM");
 
-    DBUG_RETURN (GetUnadjustedFoldCode (fundef));
+    DBUG_RETURN (GetFoldCode (fundef));
 }
 #endif /* BEtest */
 

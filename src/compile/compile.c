@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.91  2000/10/09 19:20:31  dkr
+ * GetUnadjustedFoldCode() renamed into GetFoldCode()
+ *
  * Revision 2.90  2000/09/27 16:48:31  dkr
  * a = fun( a) is flattened now during flattening phase and not during
  * compilation phase :-)
@@ -657,10 +660,71 @@ GenericFun (int which, types *type)
     DBUG_RETURN (ret);
 }
 
+#if 1
+/******************************************************************************
+ *
+ * Function:
+ *   node *AddVardec( node *vardecs, types *type, node *id, node *fundef)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static node *
+AddVardec (node *vardecs, types *type, node *id, node *fundef)
+{
+    node *new_vardec, *append_vardec_here, *vardec;
+
+    DBUG_ENTER ("AddVardec");
+
+    /* look if there is already a matching vardec */
+    append_vardec_here = NULL;
+    vardec = vardecs;
+    while (vardec != NULL) {
+        if (!strcmp (VARDEC_NAME (vardec), ID_NAME (id))) {
+            append_vardec_here = NULL;
+            break;
+        }
+        append_vardec_here = vardec;
+        vardec = VARDEC_NEXT (vardec);
+    }
+
+    if ((vardecs == NULL) || (append_vardec_here != NULL)) {
+        /*
+         * now insert new vardec node
+         */
+        new_vardec = MakeVardec (StringCopy (ID_NAME (id)), DupTypes (type), NULL);
+        ID_VARDEC (id) = new_vardec;
+
+        if (vardecs != NULL) {
+            VARDEC_NEXT (append_vardec_here) = new_vardec;
+        } else {
+            vardecs = new_vardec;
+
+            /*
+             * if there are no vardecs yet,
+             * store the new one in 'FUNDEF_VARDEC( fundef)'
+             */
+            FUNDEF_VARDEC (fundef) = vardecs;
+        }
+
+        /*
+         * we must update FUNDEF_DFM_BASE!!
+         */
+        FUNDEF_DFM_BASE (fundef)
+          = DFMUpdateMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
+                               FUNDEF_VARDEC (fundef));
+    }
+
+    DBUG_RETURN (vardecs);
+}
+#endif
+
 /******************************************************************************
  *
  * function:
- *   node *GetUnadjustedFoldCode( node *fundef)
+ *   node *GetFoldCode( node *fundef)
  *
  * description:
  *   Returns the foldop-code of the pseudo fold-fun 'fundef'.
@@ -671,19 +735,16 @@ GenericFun (int which, types *type)
  *   This property is *not* hold before the compilation process has been
  *   started!
  *   (Note that Precompile() calls the function AdjustFoldFundef() for each
- *   fold-fundef)
- *
- *   Before the compilation phase the function GetAdjustedFoldCode() should be
- *   used instead!
+ *   fold-fundef!!)
  *
  ******************************************************************************/
 
 node *
-GetUnadjustedFoldCode (node *fundef)
+GetFoldCode (node *fundef)
 {
     node *fold_code, *tmp;
 
-    DBUG_ENTER ("GetUnadjustedFoldCode");
+    DBUG_ENTER ("GetFoldCode");
 
     DBUG_ASSERT ((fundef != NULL), "fundef is NULL!");
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "no fundef found!");
@@ -711,43 +772,6 @@ GetUnadjustedFoldCode (node *fundef)
         tmp = ASSIGN_NEXT (tmp);
     }
     ASSIGN_NEXT (tmp) = FreeNode (ASSIGN_NEXT (tmp));
-
-    DBUG_RETURN (fold_code);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *GetAdjustedFoldCode( node *fundef,
- *                              ids *acc, node *cexpr)
- *
- * description:
- *   Returns the foldop-code of the pseudo fold-fun 'fundef' with adjusted
- *   var-names: returns-value and the first formal argument of the fold-fun
- *   are renamed according to 'acc', the second formal argument is renamed
- *   according to 'cexpr'.
- *
- * note:
- *   Besides the renaming of variables the fold-fun code is simply extracted
- *   from the definition. All back-references (e.g. vardecs) are NOT adjusted.
- *   Therefore this routine should NOT be used in a compiler phase before
- *   the pre-compilation (especially NOT during with-loop-folding) !!!
- *
- * parameters:
- *   'acc' is the accumulator variable.
- *   'cexpr' is the expression in the operation part.
- *
- ******************************************************************************/
-
-node *
-GetAdjustedFoldCode (node *fundef, ids *acc, node *cexpr)
-{
-    node *fold_code;
-
-    DBUG_ENTER ("GetAdjustedFoldCode");
-
-    fundef = AdjustFoldFundef (fundef, acc, cexpr);
-    fold_code = GetUnadjustedFoldCode (fundef);
 
     DBUG_RETURN (fold_code);
 }
@@ -1137,65 +1161,6 @@ IdOrNumToIndex (node *id_or_num, int dim)
     }
 
     DBUG_RETURN (index);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *AddVardec( node *vardecs, types *type, node *id, node *fundef)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-static node *
-AddVardec (node *vardecs, types *type, node *id, node *fundef)
-{
-    node *new_vardec, *append_vardec_here, *vardec;
-
-    DBUG_ENTER ("AddVardec");
-
-    /* look if there is already a matching vardec */
-    append_vardec_here = NULL;
-    vardec = vardecs;
-    while (vardec != NULL) {
-        if (!strcmp (VARDEC_NAME (vardec), ID_NAME (id))) {
-            append_vardec_here = NULL;
-            break;
-        }
-        append_vardec_here = vardec;
-        vardec = VARDEC_NEXT (vardec);
-    }
-
-    if ((vardecs == NULL) || (append_vardec_here != NULL)) {
-        /*
-         * now insert new vardec node
-         */
-        new_vardec = MakeVardec (StringCopy (ID_NAME (id)), DupTypes (type), NULL);
-        ID_VARDEC (id) = new_vardec;
-
-        if (vardecs != NULL) {
-            VARDEC_NEXT (append_vardec_here) = new_vardec;
-        } else {
-            vardecs = new_vardec;
-
-            /*
-             * if there are no vardecs yet,
-             * store the new one in 'FUNDEF_VARDEC( fundef)'
-             */
-            FUNDEF_VARDEC (fundef) = vardecs;
-        }
-
-        /*
-         * we must update FUNDEF_DFM_BASE!!
-         */
-        FUNDEF_DFM_BASE (fundef)
-          = DFMUpdateMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
-                               FUNDEF_VARDEC (fundef));
-    }
-
-    DBUG_RETURN (vardecs);
 }
 
 /*
@@ -1670,6 +1635,7 @@ CreateIcmMT_SPMD_FUN_DEC (char *name, char *from, node **icm_tab, int tab_size)
  *   creates a MT2_FUN_DEC ICM.
  *
  ******************************************************************************/
+
 static node *
 CreateIcmMT2_FUN_DEC (char *kindof, node *fundef, node **icm_tab, int tab_size)
 {
@@ -3292,21 +3258,23 @@ COMPConvert (node *arg_node, node *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/******************************************************************************
  *
- *  functionname  : COMPPrf
- *  arguments     : 1) N_prf node
- *                  2) NULL
- *  description   : transforms N_prf node to N_icm nodes if prf works on
- *                  arrays
- *  remarks       : INFO_COMP_LASTIDS(arg_info) contains name of assigned variable
- *                  INFO_COMP_LASTASSIGN(arg_info) contains pointer to node before
- *                   last assign_node (to get last or next assign node use
- *                                     macros LAST_ASSIGN or NEXT_ASSIGN )
- *                  INFO_COMP_LASTASSIGN(arg_info) is used to insert new assign_nodes
- *                   in front of or after last assign node
- *                  INFO_COMP_LASTLET(arg_info) contains pointer to last N_let
- */
+ * Function:
+ *   node *COMPPrf( node *arg_node, node *arg_info)
+ *
+ * Description:
+ *   Transforms N_prf node to ICMs if needed (e.g. prf works on arrays).
+ *
+ * Remarks:
+ *   INFO_COMP_LASTIDS(arg_info) contains name of assigned variable.
+ *   INFO_COMP_LASTASSIGN(arg_info) contains pointer to node before last assign.
+ *     (to get last or next assign node use macros LAST_ASSIGN or NEXT_ASSIGN)
+ *   INFO_COMP_LASTASSIGN(arg_info) is used to insert new assigns in front of
+ *     or after last assign.
+ *   INFO_COMP_LASTLET(arg_info) contains pointer to last let.
+ *
+ ******************************************************************************/
 
 /*
  * This function is partly (!) adjusted to the new returning convention of
@@ -3329,8 +3297,7 @@ COMPPrf (node *arg_node, node *arg_info)
     node *icms;
     node *array, *scalar, *tmp, *res, *res_ref, *icm_arg, *prf_id_node, *type_id_node,
       *arg1, *arg2, *arg3, *first_assign = NULL, *next_assign = NULL, *last_assign = NULL,
-                           *length_node, *tmp_array1, *tmp_array2, *dim_node, *tmp_rc,
-                           *exprs;
+                           *length_node, *tmp_array1, *tmp_array2, *dim_node, *tmp_rc;
     node *old_arg_node;
     simpletype res_stype = LET_BASETYPE (INFO_COMP_LASTLET (arg_info));
     int dim, is_SxA = 0, n_elems = 0, is_drop = 0, array_is_const = 0;
@@ -3347,8 +3314,14 @@ COMPPrf (node *arg_node, node *arg_info)
      */
     if (PRF_PRF (arg_node) > F_neq) {
         ids *let_ids = INFO_COMP_LASTIDS (arg_info);
-        node *new_assign, *new_id, *old_id;
+
+#if 1
         int insert_assign = 0;
+        /*
+         * For the time beeing this code is crucial!
+         * WLUR inserts unflattened prf-applications!
+         */
+        node *new_assign, *new_id, *old_id, *exprs;
 
         exprs = PRF_ARGS (arg_node);
         /* test whether an identifier occurs on the right and left side of a
@@ -3395,17 +3368,41 @@ COMPPrf (node *arg_node, node *arg_info)
 
             exprs = EXPRS_NEXT (exprs);
         }
+#else
+#ifndef DBUG_OFF
+        /*
+         * Assure that no one of the arguments occurs on the LHS of the
+         * application.
+         */
+        {
+            node *args, *arg_id;
+            args = PRF_ARGS (arg_node);
+            while (args != NULL) {
+                arg_id = EXPRS_EXPR (args);
+                if (NODE_TYPE (arg_id) == N_id) {
+                    if (!strcmp (IDS_NAME (let_ids), ID_NAME (arg_id))) {
+                        DBUG_ASSERT ((0), "argument of application occurs also on LHS!");
+                    }
+                }
+                args = EXPRS_NEXT (args);
+            }
+        }
+#endif
+#endif
 
         /*
          * Select primitive funcction:
          */
         switch (PRF_PRF (arg_node)) {
+
         case F_modarray:
             arg_node = COMPPrfModarray (arg_node, arg_info);
             break;
+
         case F_idx_modarray:
             arg_node = COMPIdxModarray (arg_node, arg_info);
             break;
+
         case F_add_SxA:
         case F_div_SxA:
         case F_sub_SxA:
@@ -3508,6 +3505,7 @@ COMPPrf (node *arg_node, node *arg_info)
             FREE (old_arg_node);
             break;
         }
+
         case F_add_AxA:
         case F_sub_AxA:
         case F_mul_AxA:
@@ -3639,11 +3637,10 @@ COMPPrf (node *arg_node, node *arg_info)
 
             break;
         }
+
         case F_drop:
             is_drop = 1;
-            /*
-             * here is NO break missing
-             */
+            /* here is NO break missing */
         case F_take: {
             node *num;
             /*
@@ -3740,6 +3737,7 @@ COMPPrf (node *arg_node, node *arg_info)
             FREE (old_arg_node);
             break;
         }
+
         case F_reshape: {
             /*
              * this function complies to the NEW returning convention of
@@ -3777,6 +3775,7 @@ COMPPrf (node *arg_node, node *arg_info)
             icms = Ids2DecRcICMs (ID_IDS (arg1), icms);
             break;
         }
+
         case F_psi: {
             /*
              * store arguments and result (res contains refcount and pointer to
@@ -3888,6 +3887,7 @@ COMPPrf (node *arg_node, node *arg_info)
             }
             break;
         }
+
         case F_idx_psi: {
             node *arg2_ref;
             arg1 = arg_node->node[0]->node[0];
@@ -3916,6 +3916,7 @@ COMPPrf (node *arg_node, node *arg_info)
             INSERT_ASSIGN;
             break;
         }
+
         case F_dim: {
             arg1 = arg_node->node[0]->node[0];
             NODE_TYPE (arg_node) = N_num;
@@ -3935,6 +3936,7 @@ COMPPrf (node *arg_node, node *arg_info)
             FreeTree (arg_node->node[0]);
             break;
         }
+
         case F_shape: {
             int dim;
             arg1 = arg_node->node[0]->node[0];
@@ -3973,6 +3975,7 @@ COMPPrf (node *arg_node, node *arg_info)
             INSERT_ASSIGN;
             break;
         }
+
         case F_cat: {
             arg1 = arg_node->node[0]->node[0];
             arg2 = arg_node->node[0]->node[1]->node[0];
@@ -4061,6 +4064,7 @@ COMPPrf (node *arg_node, node *arg_info)
             }
             break;
         }
+
         case F_rotate:
             arg1 = arg_node->node[0]->node[0];
             arg2 = arg_node->node[0]->node[1]->node[0];
@@ -4109,20 +4113,26 @@ COMPPrf (node *arg_node, node *arg_info)
                 FREE (old_arg_node);
             }
             break;
+
         case F_toi_A:
         case F_tod_A:
         case F_tof_A: {
             arg_node = COMPConvert (arg_node, arg_info);
             break;
         }
+
         default:
 #if 0
          DBUG_ASSERT(0,"wrong prf");
 #endif
             break;
         }
-    } else { /* Here, we have (PRF_PRF(arg_node) <= F_neq) */
+    }
+
+    else { /* Here, we have (PRF_PRF(arg_node) <= F_neq) */
+
         switch (PRF_PRF (arg_node)) {
+
         case F_toi:
         case F_tof:
         case F_tod:
@@ -4422,7 +4432,7 @@ COMPId (node *arg_node, node *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *COMPAp(node *arg_node, node *arg_info)
+ *   node *COMPAp( node *arg_node, node *arg_info)
  *
  * Description:
  *   Creates an ICM for function application and insert ICMs to decrement the
@@ -4483,6 +4493,26 @@ COMPAp (node *arg_node, node *arg_info)
 
     while (ids != NULL) {
         DBUG_PRINT ("COMP", ("Handling return value bound to %s", IDS_NAME (ids)));
+
+#ifndef DBUG_OFF
+        /*
+         * Assure that no one of the arguments occurs on the LHS of the
+         * application.
+         */
+        {
+            node *args, *arg_id;
+            args = AP_ARGS (arg_node);
+            while (args != NULL) {
+                arg_id = EXPRS_EXPR (args);
+                if (NODE_TYPE (arg_id) == N_id) {
+                    if (!strcmp (IDS_NAME (ids), ID_NAME (arg_id))) {
+                        DBUG_ASSERT ((0), "argument of application occurs also on LHS!");
+                    }
+                }
+                args = EXPRS_NEXT (args);
+            }
+        }
+#endif
 
         if (IS_REFCOUNTED (IDS, ids)) {
             if (FUN_DOES_REFCOUNT (AP_FUNDEF (arg_node), cnt_param)) {
@@ -4595,6 +4625,13 @@ COMPAp (node *arg_node, node *arg_info)
                     tag = "in";
                 }
 
+#if 0
+        arg = EXPRS_EXPR( exprs);
+        next_assign = MakeAdjustRcICM( ID_NAME( arg),
+                                       ID_TYPE( arg),
+                                       ID_REFCNT( arg),
+                                       -1);
+#else
                 if (ID_REFCNT (EXPRS_EXPR (exprs)) > 1) {
                     CREATE_2_ARY_ICM (next_assign, "ND_DEC_RC",
                                       MakeId1 (ID_NAME (EXPRS_EXPR (exprs))),
@@ -4609,6 +4646,7 @@ COMPAp (node *arg_node, node *arg_info)
                                       MakeId1 (ID_NAME (EXPRS_EXPR (exprs))),
                                       MakeNum (1));
                 }
+#endif
 
                 ASSIGN_NEXT (next_assign) = ASSIGN_NEXT (add_assigns_after);
                 ASSIGN_NEXT (add_assigns_after) = next_assign;
@@ -6290,7 +6328,6 @@ COMPNwith2 (node *arg_node, node *arg_info)
 
         fold_vardecs = GetFoldVardecs (NWITH2_FUNDEF (arg_node));
         if (fold_vardecs != NULL) {
-
             /*
              * insert vardecs of pseudo fold-fun
              */
@@ -7135,8 +7172,7 @@ COMPWLgrid (node *arg_node, node *arg_info)
                 /*
                  * insert code of the pseudo fold-fun
                  */
-                assigns = AppendAssign (assigns,
-                                        GetUnadjustedFoldCode (NWITH2_FUNDEF (wl_node)));
+                assigns = AppendAssign (assigns, GetFoldCode (NWITH2_FUNDEF (wl_node)));
 
                 icm_name = NULL;
                 break;
@@ -7520,8 +7556,7 @@ COMPWLgridVar (node *arg_node, node *arg_info)
                 /*
                  * insert code of the pseudo fold-fun
                  */
-                assigns = AppendAssign (assigns,
-                                        GetUnadjustedFoldCode (NWITH2_FUNDEF (wl_node)));
+                assigns = AppendAssign (assigns, GetFoldCode (NWITH2_FUNDEF (wl_node)));
 
                 icm_name = NULL;
                 break;
