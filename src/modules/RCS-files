@@ -22,3 +22,4 @@ modulemanager.h
 symboltable.c
 symboltable.h
 libstat.c
+libstat.h
