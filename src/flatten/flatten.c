@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.63  1998/02/25 13:20:16  srs
+ * all index variables of new WL are renamed
+ *
  * Revision 1.62  1998/02/19 11:45:22  srs
  * fixed bug in FltnNwith
  *
@@ -1580,6 +1583,14 @@ FltnNwith (node *arg_node, node *arg_info)
  * description:
  *   flattens all N_Npart nodes
  *
+ * remark:
+ *   the index variables are always renamed to unique names (this differs
+ *   from the old WLs). This is done in respect of later Withloop foling.
+ *   There WL bodies are merged and with unique generators name clashes
+ *   are debarred. Example:
+ *   A: with (...i...) { ...B... }
+ *   B: with((...j...) { ...tmp = i... }  i bound outside withloop.
+ *   substitute B in A and i is bound to index variable of A.
  *
  ******************************************************************************/
 node *
@@ -1594,24 +1605,33 @@ FltnNpart (node *arg_node, node *arg_info)
     /* flatten the generator */
     NPART_GEN (arg_node) = Trav (NPART_GEN (arg_node), arg_info);
 
-    /* rename index-vector or index scalars if necessary */
-    _ids = NWITHID_IDS (NPART_WITHID (arg_node));
-    if (!_ids)
-        _ids = NWITHID_VEC (NPART_WITHID (arg_node));
-
+    /* rename index scalars */
+    /* in the old WL renaming was only done if a variable of the same name
+       was found before. Here we rename all index variables. */
+    _ids = NWITHID_VEC (NPART_WITHID (arg_node));
     while (_ids) {
-        lstack = FindId (IDS_NAME (_ids));
-        if (lstack) {
-            old_name = IDS_NAME (_ids);
-            IDS_NAME (_ids) = RenameWithVar (old_name, -with_level);
-            PUSH (old_name, IDS_NAME (_ids), with_level - 1);
-        } else /* to rename index-vector if used later on the left side of a Let */
-            PUSH (IDS_NAME (_ids), IDS_NAME (_ids), with_level - 1);
-
+        /*     lstack = FindId(IDS_NAME(_ids)); */
+        /*     if (lstack) { */
+        old_name = IDS_NAME (_ids);
+        /*     IDS_NAME(_ids)=RenameWithVar(old_name, -with_level); */
+        IDS_NAME (_ids) = TmpVarName (old_name);
+        PUSH (old_name, IDS_NAME (_ids), with_level - 1);
+        /*   } */
+        /*     else  */
+        /*       PUSH(IDS_NAME(_ids), IDS_NAME(_ids), with_level-1); */
         _ids = IDS_NEXT (_ids);
     }
 
-    /* at this eary point there are no other N_Npart nodes */
+    /* rename index-vector */
+    _ids = NWITHID_IDS (NPART_WITHID (arg_node));
+    if (_ids) {
+        old_name = IDS_NAME (_ids);
+        /*     IDS_NAME(_ids) = RenameWithVar(old_name, -with_level); */
+        IDS_NAME (_ids) = TmpVarName (old_name);
+        PUSH (old_name, IDS_NAME (_ids), with_level - 1);
+    }
+
+    /* at this early point there are no other N_Npart nodes */
     DBUG_ASSERT (!NPART_NEXT (arg_node), "NPART_NEXT() should not exist.");
 
     DBUG_RETURN (arg_node);
