@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.31  1995/04/06 11:38:26  asi
+ * Revision 1.32  1995/04/07 05:56:42  sbs
+ * SHP_SEG_SIZE turned from 5 to 16 !
+ *
+ * Revision 1.31  1995/04/06  11:38:26  asi
  * MAX_MASK set to 6
  *
  * Revision 1.30  1995/03/15  18:40:35  asi
@@ -100,7 +103,7 @@
 
 #define _sac_tree_h
 
-#define SHP_SEG_SIZE 5
+#define SHP_SEG_SIZE 16
 
 /*
  *  first some intermediate nodes needed for yacc
