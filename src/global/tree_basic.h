@@ -1,6 +1,9 @@
-/*
+/
  *
  * $Log$
+ * Revision 2.9  1999/04/19 17:09:50  jhs
+ * New Macro ID_CONSTARRAY added.
+ *
  * Revision 2.8  1999/04/12 18:02:35  bs
  * INFO_PRINT_ACCESS modified.
  *
@@ -266,6 +269,7 @@ file can be found in tree_basic.c
  */
 
 #define NEWTREE
+
 
 /*
  *   Decalarations of global variables exported by tree_basic.c
@@ -1657,6 +1661,7 @@ extern node *MakeVinfo (useflag flag, types *type, node *next);
  ***    node*       WL          (O)             (wli -> wlf !!)
  ***    node*       INTVEC      (O) (N_array)   (flatten -> )
  ***    int         VECLEN      (O) (N_array)   (flatten -> )
+ ***    int         CONSTARRAY  (O) (N_array)   (flatten -> )
  ***
  ***  remark:
  ***    ID_WL is only used in wli, wlf. But every call of DupTree() initializes
@@ -1718,6 +1723,7 @@ extern node *MakeId2 (ids *ids_node);
 #define ID_VECLEN(n) (n->counter)
 #define ID_WL(n) (n->node[0])
 #define ID_INTVEC(n) ((int *)n->node[1])
+#define ID_CONSTARRAY(n) (n->varno)
 
 /*--------------------------------------------------------------------------*/
 
