@@ -1,5 +1,9 @@
 /*
  * $Log$
+ * Revision 1.20  2004/09/22 10:03:58  ktr
+ * Modified the comment to point out the common pitfall that COGetDim does
+ * not return a freshly allocated shape structure
+ *
  * Revision 1.19  2004/05/30 13:03:43  khf
  * COIdxSel added
  *
@@ -94,6 +98,8 @@
  *   THIS RULE: - the GETxyz - functions for extracting components of constants
  * - The only function for freeing a shape structure is COFreeConstant!
  * - If the result is a shape structure, it has been freshly allocated!
+ *   IMPORTANT: THIS RULE DOES NOT HOLD FOR COGetShape, WHICH RETURNS A
+ *              POINTER TO THE INTERNAL SHAPE STRUCTURE
  *
  */
 
@@ -126,6 +132,10 @@ extern constant *COMakeFalse (shape *shp);
 
 /*
  * Functions for extracting info from constants:
+ *
+ * IMPORTANT: THESE FUNCTIONS YIELD POINTERS TO INTERNAL STRUCTURES
+ *                        *** TREAT THEM CAREFULLY ***
+ *                        ***** DO NOT FREE THEM *****
  */
 extern simpletype COGetType (constant *a);
 extern int COGetDim (constant *a);
