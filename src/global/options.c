@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.49  2000/08/16 09:04:09  dkr
+ * minor corrections of error messages done
+ *
  * Revision 2.48  2000/08/02 14:22:46  mab
  * added flag "-apdiag"
  *
@@ -462,7 +465,7 @@ AnalyseCommandline (int argc, char *argv[])
                 old_s++;                                                                 \
             } else {                                                                     \
                 if (old_s != ARG) {                                                      \
-                    ARGS_ERROR ("illegal separation symbol found");                      \
+                    ARGS_ERROR ("Illegal separation symbol found");                      \
                     break;                                                               \
                 }                                                                        \
             }                                                                            \
@@ -470,13 +473,13 @@ AnalyseCommandline (int argc, char *argv[])
             phase = strtol (old_s, &new_s, 10);                                          \
                                                                                          \
             if (phase >= PH_final) {                                                     \
-                ARGS_ERROR ("illegal phase number found");                               \
+                ARGS_ERROR ("Illegal phase number found");                               \
                 break;                                                                   \
             } else {                                                                     \
                 if (new_s != old_s) {                                                    \
                     array[phase] = TRUE;                                                 \
                 } else {                                                                 \
-                    ARGS_ERROR ("no phase number found");                                \
+                    ARGS_ERROR ("No phase number found");                                \
                     break;                                                               \
                 }                                                                        \
             }                                                                            \
