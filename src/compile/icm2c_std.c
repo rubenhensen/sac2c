@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.11  1999/07/16 09:34:53  cg
+ * Added const annotations for shape-, dim- and size-variables
+ * in array declarations.
+ *
  * Revision 2.10  1999/07/08 15:01:48  jhs
  * Changed a "]" to ")" in ICMCompileND_PRF_MODARRAY_AxCxS.
  *
@@ -836,19 +840,19 @@ ICMCompileND_DECL_AKS (char *type, char *nt, int dim, char **s)
     INDENT;
     fprintf (outfile, "%s *SAC_ND_A_FIELD(%s);\n", type, nt);
     fprintf (outfile, "SAC_array_descriptor *SAC_ND_A_DESC(%s);\n", nt);
-    fprintf (outfile, "int SAC_ND_A_DIM(%s)=%d;\n", nt, dim);
+    fprintf (outfile, "const int SAC_ND_A_DIM(%s)=%d;\n", nt, dim);
     INDENT;
     /*
      * Define and initialize shape vector scalars
      */
     for (i = 0; i < dim; i++) {
         INDENT;
-        fprintf (outfile, "int SAC_ND_A_SHAPE(%s, %d)=%s;\n", nt, i, s[i]);
+        fprintf (outfile, "const int SAC_ND_A_SHAPE(%s, %d)=%s;\n", nt, i, s[i]);
     }
     /*
      * Initialize array size
      */
-    fprintf (outfile, "int SAC_ND_A_SIZE(%s)=", nt);
+    fprintf (outfile, "const int SAC_ND_A_SIZE(%s)=", nt);
     fprintf (outfile, "%s", s[0]);
     for (i = 1; i < dim; i++)
         fprintf (outfile, "*%s", s[i]);
@@ -887,7 +891,7 @@ ICMCompileND_KS_DECL_ARRAY (char *type, char *name, int dim, char **s)
     INDENT;
     fprintf (outfile, "int SAC_ND_A_RC(%s);\n", name);
     INDENT;
-    fprintf (outfile, "int SAC_ND_A_SIZE(%s)=", name);
+    fprintf (outfile, "const int SAC_ND_A_SIZE(%s)=", name);
     fprintf (outfile, "%s", s[0]);
     {
         int i;
@@ -895,10 +899,10 @@ ICMCompileND_KS_DECL_ARRAY (char *type, char *name, int dim, char **s)
             fprintf (outfile, "*%s", s[i]);
         fprintf (outfile, ";\n");
         INDENT;
-        fprintf (outfile, "int SAC_ND_A_DIM(%s)=%d;\n", name, dim);
+        fprintf (outfile, "const int SAC_ND_A_DIM(%s)=%d;\n", name, dim);
         for (i = 0; i < dim; i++) {
             INDENT;
-            fprintf (outfile, "int SAC_ND_KD_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
+            fprintf (outfile, "const int SAC_ND_KD_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
         }
     }
     fprintf (outfile, "\n");
@@ -953,7 +957,7 @@ ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *type, char *name, int dim, char **s)
         INDENT;
         fprintf (outfile, "int SAC_ND_A_RC(%s);\n", name);
         INDENT;
-        fprintf (outfile, "int SAC_ND_A_SIZE(%s)=", name);
+        fprintf (outfile, "const int SAC_ND_A_SIZE(%s)=", name);
         fprintf (outfile, "%s", s[0]);
         {
             int i;
@@ -961,10 +965,11 @@ ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *type, char *name, int dim, char **s)
                 fprintf (outfile, "*%s", s[i]);
             fprintf (outfile, ";\n");
             INDENT;
-            fprintf (outfile, "int SAC_ND_A_DIM(%s)=%d;\n", name, dim);
+            fprintf (outfile, "const int SAC_ND_A_DIM(%s)=%d;\n", name, dim);
             for (i = 0; i < dim; i++) {
                 INDENT;
-                fprintf (outfile, "int SAC_ND_KD_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
+                fprintf (outfile, "const int SAC_ND_KD_A_SHAPE(%s, %d)=%s;\n", name, i,
+                         s[i]);
             }
         }
         fprintf (outfile, "\n");
@@ -1040,7 +1045,7 @@ ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s)
 #undef ND_KS_DECL_ARRAY_ARG
 
     INDENT;
-    fprintf (outfile, "int SAC_ND_A_SIZE(%s)=", name);
+    fprintf (outfile, "const int SAC_ND_A_SIZE(%s)=", name);
     fprintf (outfile, "%s", s[0]);
     {
         int i;
@@ -1048,13 +1053,13 @@ ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s)
             fprintf (outfile, "*%s", s[i]);
         fprintf (outfile, ";\n");
         INDENT;
-        fprintf (outfile, "int SAC_ND_A_DIM(%s)=%d;\n", name, dim);
+        fprintf (outfile, "const int SAC_ND_A_DIM(%s)=%d;\n", name, dim);
         for (i = 0; i < dim; i++) {
             INDENT;
 #ifdef TAGGED_ARRAYS
-            fprintf (outfile, "int SAC_ND_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
+            fprintf (outfile, "const int SAC_ND_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
 #else  /* TAGGED_ARRAYS */
-            fprintf (outfile, "int SAC_ND_KD_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
+            fprintf (outfile, "const int SAC_ND_KD_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
 #endif /* TAGGED_ARRAYS */
         }
     }
