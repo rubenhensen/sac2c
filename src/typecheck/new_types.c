@@ -1,6 +1,12 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2003/06/17 13:58:40  sbs
+ * inserted DeleteSon. This function is needed in FilterFundefs:
+ * if all potential functions are gone, the respective (non-generic)
+ * branch has to be taken off the list of sons!!!
+ * => bug 17 exploits this requirement!
+ *
  * Revision 3.49  2003/06/11 21:45:46  ktr
  * replaced calls of MakeArray with MakeFlatArray
  *
@@ -435,6 +441,40 @@ MakeNewSon (ntype *father, ntype *son)
         new_sons[i] = NTYPE_SON (father, i);
     }
     new_sons[i] = son;
+    NTYPE_SONS (father) = Free (NTYPE_SONS (father));
+    NTYPE_SONS (father) = new_sons;
+
+    DBUG_RETURN (father);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   ntype *DeleteSon( ntype *father, int son)
+ *
+ * description:
+ *   Internal function for decreasing an ntype's arity.
+ *   Like all Makexxx functions it consumes its argument!!
+ *
+ ******************************************************************************/
+
+ntype *
+DeleteSon (ntype *father, int son)
+{
+    ntype **new_sons;
+    int i, arity;
+
+    DBUG_ENTER ("DeleteSon");
+
+    arity = NTYPE_ARITY (father) - 1;
+    NTYPE_ARITY (father) = arity;
+    new_sons = (ntype **)Malloc (sizeof (ntype *) * arity);
+    for (i = 0; i < son; i++) {
+        new_sons[i] = NTYPE_SON (father, i);
+    }
+    for (; i < arity; i++) {
+        new_sons[i] = NTYPE_SON (father, i + 1);
+    }
     NTYPE_SONS (father) = Free (NTYPE_SONS (father));
     NTYPE_SONS (father) = new_sons;
 
@@ -1196,6 +1236,14 @@ FilterFundefs (ntype *fun, int num_kills, node **kill_list)
             }
             break;
         case TC_ibase:
+            IBASE_GEN (fun) = FilterFundefs (IBASE_GEN (fun), num_kills, kill_list);
+            if (IBASE_GEN (fun) == NULL) {
+                fun = TYFreeType (fun);
+            } else {
+                IBASE_SCAL (fun) = FilterFundefs (IBASE_SCAL (fun), num_kills, kill_list);
+                IBASE_IARR (fun) = FilterFundefs (IBASE_IARR (fun), num_kills, kill_list);
+            }
+            break;
         case TC_iarr:
         case TC_idim:
         case TC_ishape:
@@ -1203,9 +1251,15 @@ FilterFundefs (ntype *fun, int num_kills, node **kill_list)
             if (NTYPE_SON (fun, 0) == NULL) {
                 fun = TYFreeType (fun);
             } else {
-                for (i = 1; i < NTYPE_ARITY (fun); i++) {
+                i = 1;
+                while (i < NTYPE_ARITY (fun)) {
                     NTYPE_SON (fun, i)
                       = FilterFundefs (NTYPE_SON (fun, i), num_kills, kill_list);
+                    if (NTYPE_SON (fun, i) == NULL) {
+                        fun = DeleteSon (fun, i);
+                    } else {
+                        i++;
+                    }
                 }
             }
             break;
