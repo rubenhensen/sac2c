@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.3  1998/04/24 01:17:39  dkr
+ * added second phase
+ * Spmd..() renamed to SpmdInit..()
+ *
  * Revision 1.2  1998/04/17 17:50:59  dkr
  * modified header
  *
@@ -15,10 +19,14 @@
 
 #define _sac_spmdregions_h
 
-extern node *SpmdFundef (node *arg_node, node *arg_info);
-extern node *SpmdAssign (node *arg_node, node *arg_info);
-extern node *SpmdNpart (node *arg_node, node *arg_info);
-extern node *SpmdNcode (node *arg_node, node *arg_info);
+/* init SPMD/sync-regions */
+extern node *SpmdInitFundef (node *arg_node, node *arg_info);
+extern node *SpmdInitAssign (node *arg_node, node *arg_info);
+extern node *SpmdInitNpart (node *arg_node, node *arg_info);
+extern node *SpmdInitNcode (node *arg_node, node *arg_info);
+
+/* optimize SPMD/sync-regions */
+/* not yet implemented */
 
 extern node *SpmdRegions (node *syntax_tree);
 
