@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2004/11/25 14:25:09  khf
+ * SacDevCamp04
+ *
  * Revision 3.13  2004/11/24 19:29:17  skt
  * Compiler Switch during SACDevCampDK 2k4
  *
@@ -184,7 +187,7 @@ CONCdoConcurrent (node *syntax_tree)
 
     DBUG_ENTER ("CONCdoConcurrent");
 
-    syntax_tree = INFDFMSdoInferDFMs (syntax_tree, HIDE_LOCALS_NEVER);
+    syntax_tree = INFDFMSdoInferDfms (syntax_tree, HIDE_LOCALS_NEVER);
 
     arg_info = MakeInfo ();
 
