@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.25  2001/03/27 18:25:39  dkr
+ * argument of MakeBool() is of type 'bool' now
+ *
  * Revision 3.24  2001/03/22 13:15:31  dkr
  * MakeIds(): IDS_AVIS initialized
  *
@@ -1182,7 +1185,7 @@ MakeDouble (double val)
 /*--------------------------------------------------------------------------*/
 
 node *
-MakeBool (int val)
+MakeBool (bool val)
 {
     node *tmp;
 
