@@ -18,11 +18,11 @@
 target default:
  
 CC               :=  cc
-CCFLAGS          :=  "-Wall -Wno-unused -fno-builtin -Wl,-multiply_defined,suppress"
+CCFLAGS          :=  "-Wall -Wno-unused -fno-builtin"
 CCDIR            :=  "-I$SACBASE/runtime/ "
                      "-L$SACBASE/runtime/"
-CCLINK           :=  ""   
-CCMTLINK         :=  -lpthread
+CCLINK           :=  "-Wl,-multiply_defined,suppress"   
+CCMTLINK         :=  "-Wl,-multiply_defined,suppress -lpthread"
  
 OPT_O0           :=  ""
 OPT_O1           :=  -O1
