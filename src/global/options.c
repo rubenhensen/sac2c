@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.30  2000/03/02 18:50:04  cg
+ * Added new option -lac2fun that activates lac2fun conversion and
+ * vice versa between psi optimizations and precompiling.
+ *
  * Revision 2.29  2000/02/04 14:45:50  jhs
  * Added -maxrepsize.
  *
@@ -374,6 +378,8 @@ AnalyseCommandline (int argc, char *argv[])
     ARGS_OPTION ("I", AppendPath (MODDEC_PATH, AbsolutePathname (ARG)));
 
     ARGS_FLAG ("libstat", libstat = 1);
+
+    ARGS_FLAG ("lac2fun", do_lac_fun_conversion = 1);
 
     ARGS_OPTION ("l", { ARG_RANGE (linkstyle, 1, 2); });
 

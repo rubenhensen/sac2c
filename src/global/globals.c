@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.25  2000/03/02 18:50:04  cg
+ * Added new option -lac2fun that activates lac2fun conversion and
+ * vice versa between psi optimizations and precompiling.
+ *
  * Revision 2.24  2000/02/04 14:45:50  jhs
  * Added -maxrepsize.
  *
@@ -474,6 +478,7 @@ char *my_dbug_str = NULL;
 #ifdef SHOW_MALLOC
 int malloc_align_step;
 #endif
+int do_lac_fun_conversion = 0;
 
 /*
  * Memory counters

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.15  2000/03/02 18:50:04  cg
+ * Added new option -lac2fun that activates lac2fun conversion and
+ * vice versa between psi optimizations and precompiling.
+ *
  * Revision 2.14  2000/02/17 16:28:18  cg
  * Added test facility for Fun2Lac().
  *
@@ -194,6 +198,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+
+#define LAC2FUN 1
 
 /*
  *  And now, the main function which triggers the whole compilation.
@@ -395,13 +401,6 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
-#if 0
-  CHECK_DBUG_START;
-  syntax_tree = LaC2Fun( syntax_tree);
-  CHECK_DBUG_STOP;
-  ABORT_ON_ERROR;
-#endif
-
     if (MODUL_FILETYPE (syntax_tree) != F_prog) {
         NOTE_COMPILER_PHASE;
         CHECK_DBUG_START;
@@ -413,13 +412,6 @@ main (int argc, char *argv[])
     if (break_after == PH_checkdec)
         goto BREAK;
     compiler_phase++;
-
-#if 0
-  CHECK_DBUG_START;
-  syntax_tree = Fun2Lac( syntax_tree);
-  CHECK_DBUG_STOP;
-  ABORT_ON_ERROR;
-#endif
 
     NOTE_COMPILER_PHASE;
     CHECK_DBUG_START;
@@ -507,6 +499,13 @@ main (int argc, char *argv[])
         goto BREAK;
     compiler_phase++;
 
+    if (do_lac_fun_conversion) {
+        CHECK_DBUG_START;
+        syntax_tree = Lac2Fun (syntax_tree);
+        CHECK_DBUG_STOP;
+        ABORT_ON_ERROR;
+    }
+
     NOTE_COMPILER_PHASE;
     CHECK_DBUG_START;
     syntax_tree = Refcount (syntax_tree); /* refcnt_tab */
@@ -546,6 +545,13 @@ main (int argc, char *argv[])
         NOTE (("using new version of mt"));
         CHECK_DBUG_START;
         syntax_tree = BuildMultiThread (syntax_tree);
+        CHECK_DBUG_STOP;
+        ABORT_ON_ERROR;
+    }
+
+    if (do_lac_fun_conversion) {
+        CHECK_DBUG_START;
+        syntax_tree = Fun2Lac (syntax_tree);
         CHECK_DBUG_STOP;
         ABORT_ON_ERROR;
     }
