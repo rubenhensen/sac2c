@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <!--
   $Log$
+  Revision 1.4  2004/11/27 03:00:31  sah
+  bugfix
+
   Revision 1.3  2004/11/26 00:20:39  sah
   fixed bug
 
@@ -45,15 +48,15 @@
 
 #define TRAV( son, info)    if (son != NULL) { son = TRAVdo( son, info); }
 
-node *TRAVNone(node *arg_node, info *arg_info)
+node *TRAVnone(node *arg_node, info *arg_info)
 {
-   DBUG_ENTER("TRAV");
+   DBUG_ENTER("TRAVnone");
    DBUG_RETURN(arg_node);
 }
 
-node *TRAVError(node *arg_node, info *arg_info)
+node *TRAVerror(node *arg_node, info *arg_info)
 {
-  DBUG_ENTER("TRAVError");
+  DBUG_ENTER("TRAVerror");
 
   DBUG_ASSERT( (FALSE), "Illegal node type found.");
 
