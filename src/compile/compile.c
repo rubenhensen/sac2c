@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.91  2002/09/06 09:37:50  dkr
+ * ND_IDXS2OFFSET added
+ *
  * Revision 3.90  2002/08/13 16:27:26  dkr
  * DBUG_PRINT in GenericFun() corrected
  *
@@ -4192,7 +4195,14 @@ COMPIcm (node *arg_node, node *arg_info)
     DBUG_ENTER ("COMPIcm");
 
     name = ICM_NAME (arg_node);
-    if (strstr (name, "VECT2OFFSET") != NULL) {
+    if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
+        /*
+         * USE_GENVAR_OFFSET( var, arr) does *not* consume its arguments!
+         * It is expanded to    var = arr__off    , where 'var' is a scalar
+         * and 'arr_off' an internal variable (no reference-counted objects)!
+         *   -> do nothing
+         */
+    } else if (strstr (name, "VECT2OFFSET") != NULL) {
         /*
          * VECT2OFFSET( var, iv, ...) needs RC on all but the first argument.
          * It is expanded to    var = ... iv ...    , where 'var' is a scalar
@@ -4221,12 +4231,12 @@ COMPIcm (node *arg_node, node *arg_info)
             ASSIGN_INSTR (new_assign) = NULL;
             new_assign = FreeTree (new_assign);
         }
-    } else if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
+    } else if (strstr (name, "IDXS2OFFSET") != NULL) {
         /*
-         * USE_GENVAR_OFFSET( var, arr) does *not* consume its arguments!
-         * It is expanded to    var = arr__off    , where 'var' is a scalar
-         * and 'arr_off' an internal variable (no reference-counted objects)!
-         *   -> do nothing
+         * IDXS2OFFSET( var, idxs_cnt, idxs, ...) is expanded to
+         *    var = ... idxs[0] ...    ,
+         * where 'var' and 'idxs[.]' are all scalar variables (no reference-counted
+         * object).   -> no RC needed!
          */
     } else {
         DBUG_PRINT ("COMP", ("ICM not traversed: %s", ICM_NAME (arg_node)));

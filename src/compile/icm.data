@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.50  2002/09/06 09:37:04  dkr
+ * ND_IDXS2OFFSET added
+ *
  * Revision 3.49  2002/08/06 08:58:54  dkr
  * ND_WL_GENARRAY__SHAPE removed if TAGGED_ARRAYS is undefined
  *
@@ -492,6 +495,16 @@ ICM_DEF( ND_VECT2OFFSET, TRACE_PRF)
 ICM_END( ND_VECT2OFFSET, (off_nt, from_size, from_nt, shp_size, shpa_any))
 #endif
 
+#if defined(ND_IDXS2OFFSET) || defined(ICM_ALL)
+ICM_DEF( ND_IDXS2OFFSET, TRACE_PRF)
+  ICM_NT( off_nt)
+  ICM_INT( idxs_size)
+  ICM_VARNT( idxs_size, idxs_nt)
+  ICM_INT( shp_size)
+  ICM_VARANY( shp_size, shpa_any)
+ICM_END( ND_VECT2OFFSET, (off_nt, idxs_size, idxs_nt, shp_size, shpa_any))
+#endif
+
 
 #else /* TAGGED_ARRAYS */
 
@@ -693,6 +706,16 @@ ICM_DEF( ND_KS_VECT2OFFSET, TRACE_PRF)
   ICM_INT( dims)
   ICM_VARANY( dims, shp_any)
 ICM_END( ND_KS_VECT2OFFSET, (off_name, arr_name, dim, dims, shp_any))
+#endif
+
+#if defined(ND_IDXS2OFFSET) || defined(ICM_ALL)
+ICM_DEF( ND_IDXS2OFFSET, TRACE_PRF)
+  ICM_ID( off)
+  ICM_INT( idxs_size)
+  ICM_VARID( idxs_size, idxs)
+  ICM_INT( shp_size)
+  ICM_VARANY( shp_size, shpa_any)
+ICM_END( ND_VECT2OFFSET, (off, idxs_size, idxs, shp_size, shpa_any))
 #endif
 
 

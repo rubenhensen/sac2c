@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.45  2002/09/06 09:37:45  dkr
+ * ND_IDXS2OFFSET added
+ *
  * Revision 1.44  2002/08/14 15:18:27  dkr
  * DBUG_OFF flag used
  *
@@ -4437,7 +4440,27 @@ COMP2Icm (node *arg_node, node *arg_info)
     DBUG_ENTER ("COMPIcm");
 
     name = ICM_NAME (arg_node);
-    if (strstr (name, "VECT2OFFSET") != NULL) {
+    if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
+        /*
+         * USE_GENVAR_OFFSET( off_nt, wl_nt)
+         * does *not* consume its arguments! It is expanded to
+         *      off_nt = wl_nt__off    ,
+         * where 'off_nt' is a scalar and 'wl_nt__off' an internal variable!
+         *   -> alloc memory for the first argument, if needed.
+         *   -> ignore second argument.
+         */
+
+        arg = ICM_ARG1 (arg_node);
+        DBUG_ASSERT ((NODE_TYPE (arg) == N_id),
+                     "1st arg of VECT2OFFSET-icm is no N_id node!");
+        DBUG_ASSERT ((RC_IS_INACTIVE (ID_REFCNT (arg)) || RC_IS_VITAL (ID_REFCNT (arg))),
+                     "1st arg of VECT2OFFSET-icm has illegal RC!");
+
+        arg_node
+          = MakeAllocIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg), MakeNum (0),
+                          MakeIcm2 ("ND_SET__SHAPE", DupId_NT (arg), MakeNum (0)), NULL,
+                          MakeAssign (arg_node, NULL));
+    } else if (strstr (name, "VECT2OFFSET") != NULL) {
         /*
          * VECT2OFFSET( off_nt, ., from_nt, ...)
          * needs RC on all but the first argument. It is expanded to
@@ -4467,26 +4490,36 @@ COMP2Icm (node *arg_node, node *arg_info)
           = MakeAllocIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg), MakeNum (0),
                           MakeIcm2 ("ND_SET__SHAPE", DupId_NT (arg), MakeNum (0)), NULL,
                           MakeAssign (arg_node, new_assigns));
-    } else if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
+    } else if (strstr (name, "IDXS2OFFSET") != NULL) {
         /*
-         * USE_GENVAR_OFFSET( off_nt, wl_nt)
-         * does *not* consume its arguments! It is expanded to
-         *      off_nt = wl_nt__off    ,
-         * where 'off_nt' is a scalar and 'wl_nt__off' an internal variable!
+         * IDXS2OFFSET( off_nt, ., idxs_nt, ...)
+         * needs RC on all but the first argument. It is expanded to
+         *      off_nt = ... idxs_nt[0] ...    ,
+         * where 'off_nt' is a scalar variable.
          *   -> alloc memory for the first argument, if needed.
-         *   -> ignore second argument.
+         *   -> decrement the RCs of all but the first argument, if needed.
          */
+
+        args = ICM_EXPRS2 (arg_node);
+        while (args != NULL) {
+            arg = EXPRS_EXPR (args);
+            if (NODE_TYPE (arg) == N_id) {
+                new_assigns = MakeDecRcIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg),
+                                            1, new_assigns);
+            }
+            args = EXPRS_NEXT (args);
+        }
 
         arg = ICM_ARG1 (arg_node);
         DBUG_ASSERT ((NODE_TYPE (arg) == N_id),
-                     "1st arg of VECT2OFFSET-icm is no N_id node!");
+                     "1st arg of IDXS2OFFSET-icm is no N_id node!");
         DBUG_ASSERT ((RC_IS_INACTIVE (ID_REFCNT (arg)) || RC_IS_VITAL (ID_REFCNT (arg))),
-                     "1st arg of VECT2OFFSET-icm has illegal RC!");
+                     "1st arg of IDXS2OFFSET-icm has illegal RC!");
 
         arg_node
           = MakeAllocIcm (ID_NAME (arg), ID_TYPE (arg), ID_REFCNT (arg), MakeNum (0),
                           MakeIcm2 ("ND_SET__SHAPE", DupId_NT (arg), MakeNum (0)), NULL,
-                          MakeAssign (arg_node, NULL));
+                          MakeAssign (arg_node, new_assigns));
     } else {
         DBUG_PRINT ("COMP", ("ICM not traversed: %s", ICM_NAME (arg_node)));
     }

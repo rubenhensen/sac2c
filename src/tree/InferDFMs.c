@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2002/09/06 09:37:30  dkr
+ * ND_IDXS2OFFSET added
+ *
  * Revision 1.23  2002/07/24 15:06:36  dkr
  * INFDFMSicm() simplified
  *
@@ -1682,7 +1685,7 @@ INFDFMSicm (node *arg_node, node *arg_info)
     } else if (strstr (name, "VECT2OFFSET") != NULL) {
 #ifdef TAGGED_ARRAYS
         /*
-         * VECT2OFFSET( off_nt, ., from_nt, ...):
+         * VECT2OFFSET( off_nt, ., from_nt, ., ...):
          *   off_nt = ... from_nt ...;
          *
          * def: 1st arg
@@ -1692,7 +1695,7 @@ INFDFMSicm (node *arg_node, node *arg_info)
         arg_info = UsedId (arg_info, ICM_ARG3 (arg_node));
 #else
         /*
-         * VECT2OFFSET( off_name, from_name, ...):
+         * VECT2OFFSET( off_name, from_name, ., ., ...):
          *   off_name = ... from_name ...;
          *
          * def: 1st arg
@@ -1701,6 +1704,30 @@ INFDFMSicm (node *arg_node, node *arg_info)
         arg_info = DefinedId (arg_info, ICM_ARG1 (arg_node));
         arg_info = UsedId (arg_info, ICM_ARG2 (arg_node));
 #endif
+    } else if (strstr (name, "IDXS2OFFSET") != NULL) {
+        /*
+         * IDXS2OFFSET( off_nt, i, idxs_nt, ., ...):
+         *   off_nt = ... idxs_nt[0] ... idxs_nt[i-1] ...;
+         *
+         * def: 1st arg
+         * use: 3nd arg (var-arg!!)
+         */
+        node *exprs;
+        int cnt;
+
+        arg_info = DefinedId (arg_info, ICM_ARG1 (arg_node));
+        DBUG_ASSERT (((NODE_TYPE (ICM_ARG2 (arg_node)) == N_num)
+                      && (NUM_VAL (ICM_ARG2 (arg_node)) >= 0)),
+                     "illegal counter for var-arg of IDXS2OFFSET found!");
+        cnt = NUM_VAL (ICM_ARG2 (arg_node));
+        while (cnt > 0) {
+            exprs = ICM_EXPRS3 (arg_node);
+            DBUG_ASSERT ((exprs != NULL), "var-arg of IDXSOFFSET is inconsistant!");
+            arg_info = UsedId (arg_info, EXPRS_EXPR (exprs));
+            cnt--;
+            exprs = EXPRS_NEXT (exprs);
+        }
+        DBUG_ASSERT ((exprs == NULL), "var-arg of IDXSOFFSET is inconsistant!");
     } else {
         DBUG_ASSERT ((0), "unknown ICM found!");
     }

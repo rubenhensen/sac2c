@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.22  2002/09/06 09:37:37  dkr
+ * ND_IDXS2OFFSET added
+ *
  * Revision 3.21  2002/08/09 12:46:19  dkr
  * INFO_RC_... macros moved from tree_basic.h to refcount.c
  *
@@ -1270,9 +1273,21 @@ RCicm (node *arg_node, node *arg_info)
 
     name = ICM_NAME (arg_node);
 
-    if (strstr (name, "VECT2OFFSET") != NULL) {
+    if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
         /*
-         * VECT2OFFSET( off_nt, ., from_nt, ...)
+         * USE_GENVAR_OFFSET( off_nt, wl_nt)
+         * does *not* consume its arguments! It is expanded to
+         *      off_nt = wl_nt__off    ,
+         * where 'off_nt' is a scalar and 'wl_nt__off' an internal variable!
+         *   -> store actual RC of the first argument (defined)
+         *   -> do NOT traverse the second argument (used)
+         */
+        ICM_ARG1 (arg_node) = DefinedId (ICM_ARG1 (arg_node), arg_info);
+
+        INFO_RC_PRF (arg_info) = NULL;
+    } else if (strstr (name, "VECT2OFFSET") != NULL) {
+        /*
+         * VECT2OFFSET( off_nt, ., from_nt, ., ., ...)
          * needs RC on all but the first argument. It is expanded to
          *     off_nt = ... from_nt ...    ,
          * where 'off_nt' is a scalar variable.
@@ -1285,17 +1300,20 @@ RCicm (node *arg_node, node *arg_info)
         INFO_RC_PRF (arg_info) = arg_node;
         ICM_EXPRS2 (arg_node) = Trav (ICM_EXPRS2 (arg_node), arg_info);
         INFO_RC_PRF (arg_info) = NULL;
-    } else if (strstr (name, "USE_GENVAR_OFFSET") != NULL) {
+    } else if (strstr (name, "IDXS2OFFSET") != NULL) {
         /*
-         * USE_GENVAR_OFFSET( off_nt, wl_nt)
-         * does *not* consume its arguments! It is expanded to
-         *      off_nt = wl_nt__off    ,
-         * where 'off_nt' is a scalar and 'wl_nt__off' an internal variable!
-         *   -> store actual RC of the first argument (defined)
-         *   -> do NOT traverse the second argument (used)
+         * IDXS2OFFSET( off_nt, ., idxs_nt, ., ...)
+         * needs RC on all but the first argument. It is expanded to
+         *     off_nt = ... idxs_nt[i] ...    ,
+         * where 'off_nt' is a scalar variable.
+         *  -> store actual RC of the first argument (defined)
+         *  -> traverse all but the first argument (used)
+         *  -> handle ICM like a prf (RCO)
          */
         ICM_ARG1 (arg_node) = DefinedId (ICM_ARG1 (arg_node), arg_info);
 
+        INFO_RC_PRF (arg_info) = arg_node;
+        ICM_EXPRS2 (arg_node) = Trav (ICM_EXPRS2 (arg_node), arg_info);
         INFO_RC_PRF (arg_info) = NULL;
     } else {
         DBUG_ASSERT ((0), "unknown ICM found during RC");

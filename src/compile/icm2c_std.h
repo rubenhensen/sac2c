@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/09/06 09:37:19  dkr
+ * ND_IDXS2OFFSET added
+ *
  * Revision 3.20  2002/08/05 18:22:02  dkr
  * ND_ASSIGN__SHAPE renamed into ND_ASSIGN__DIMSHP
  *
@@ -188,6 +191,9 @@ extern void ICMCompileND_PRF_IDX_MODARRAY__DATA (char *to_nt, int to_sdim, char 
 extern void ICMCompileND_VECT2OFFSET (char *off_nt, int from_size, char *from_nt,
                                       int shp_size, char **shp_any);
 
+extern void ICMCompileND_IDXS2OFFSET (char *off_nt, int idxs_size, char **idxs_nt,
+                                      int shp_size, char **shpa_any);
+
 #else /* TAGGED_ARRAYS */
 
 extern void ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *basetype, char *name, int dim,
@@ -242,5 +248,8 @@ extern void ICMCompileND_PRF_MODARRAY_AxVxA (char *res_btype, int dimres, char *
 
 extern void ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim,
                                          int dims, char **shp_any);
+
+extern void ICMCompileND_KS_IDXS2OFFSET (char *off, int idxs_size, char **idxs,
+                                         int shp_size, char **shpa_any);
 
 #endif /* _icm2c_std_h */

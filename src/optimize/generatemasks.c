@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.17  2002/09/06 09:37:41  dkr
+ * ND_IDXS2OFFSET added
+ *
  * Revision 3.16  2002/07/24 15:03:42  dkr
  * GNMicm() simplified
  *
@@ -2534,7 +2537,13 @@ GNMicm (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("GNMicm");
 
-    if (strstr (ICM_NAME (arg_node), "VECT2OFFSET") != NULL) {
+    if (strstr (ICM_NAME (arg_node), "USE_GENVAR_OFFSET") != NULL) {
+        /*
+         * USE_GENVAR_OFFSET icm
+         */
+        icm_arg = EXPRS_EXPR (ICM_ARGS (arg_node));
+        INC_VAR (arg_info->mask[0], ID_VARNO (icm_arg));
+    } else if (strstr (ICM_NAME (arg_node), "VECT2OFFSET") != NULL) {
         /*
          * VECT2OFFSET icm
          */
@@ -2542,12 +2551,14 @@ GNMicm (node *arg_node, node *arg_info)
         INC_VAR (arg_info->mask[0], ID_VARNO (icm_arg));
 
         ICM_EXPRS2 (arg_node) = Trav (ICM_EXPRS2 (arg_node), arg_info);
-    } else if (strstr (ICM_NAME (arg_node), "USE_GENVAR_OFFSET") != NULL) {
+    } else if (strstr (ICM_NAME (arg_node), "IDXS2OFFSET") != NULL) {
         /*
-         * USE_GENVAR_OFFSET icm
+         * IDXS2OFFSET icm
          */
         icm_arg = EXPRS_EXPR (ICM_ARGS (arg_node));
         INC_VAR (arg_info->mask[0], ID_VARNO (icm_arg));
+
+        ICM_EXPRS2 (arg_node) = Trav (ICM_EXPRS2 (arg_node), arg_info);
     } else {
         DBUG_ASSERT ((0), "unknown ICM found while mask-generation");
     }
