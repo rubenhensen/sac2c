@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.24  1999/07/07 05:57:44  sbs
+ * adjust the function for printing Vinfo-Nodes for the new Dollar separated chains
+ *
  * Revision 2.23  1999/06/15 12:32:14  jhs
  * Added code to print out the naive refcounters, when the normal refcounters
  * are printed. The naive one is introduced by "::" in front, an error message is
@@ -1752,13 +1755,22 @@ PrintVectInfo (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("PrintVectInfo");
     if (show_idx) {
-        if (arg_node->info.use == VECT)
+        switch (VINFO_FLAG (arg_node)) {
+        case DOLLAR:
+            fprintf (outfile, ":$");
+            break;
+        case VECT:
             fprintf (outfile, ":VECT");
-        else {
-            fprintf (outfile, ":IDX(%s)", Type2String ((types *)arg_node->node[1], 0));
+            break;
+        case IDX:
+            fprintf (outfile, ":IDX(%s)", Type2String (VINFO_TYPE (arg_node), 0));
+            break;
+        default:
+            DBUG_ASSERT (0, "illegal N_vinfo-flag!");
         }
-        if (arg_node->node[0]) {
-            Trav (arg_node->node[0], arg_info);
+
+        if (VINFO_NEXT (arg_node)) {
+            Trav (VINFO_NEXT (arg_node), arg_info);
         }
         fprintf (outfile, " ");
     }
