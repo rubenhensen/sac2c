@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.150  2004/12/15 11:40:01  sbs
+ * started implementing AUDwl
+ *
  * Revision 3.149  2004/12/13 18:45:45  ktr
  * works with WITHID containing of N_id and N_exprs of N_id now.
  *
@@ -5499,25 +5502,37 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
  *
  * @fn  node *COMPwith( node *arg_node, info *arg_info)
  *
- * @brief  ...
+ * @brief
+ *   The return value is a N_assign chain of ICMs.
+ *   The old 'arg_node' is removed by COMPLet.
  *
  ******************************************************************************/
 
 node *
 COMPwith (node *arg_node, info *arg_info)
 {
+    node *icm_chain = NULL, *body_icms;
+
     DBUG_ENTER ("COMPwith");
 
     DBUG_ASSERT ((WITH_PARTS (arg_node) < 2),
                  "with-loop with non-AKS withid and multiple generators found!");
 
-    /*
-     * with-loops with non-AKS withid not implemented yet!
-     */
-    DBUG_ASSERT ((0), "with-loops with iteration space of unknown dimension"
-                      " not implemented yet!");
+    DBUG_ASSERT (WITH_CODE (arg_node) != NULL, "missing code in AUD with loop!");
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
-    DBUG_RETURN (arg_node);
+    body_icms = DUPdoDupTree (BLOCK_INSTR (WITH_CBLOCK (arg_node)));
+
+    icm_chain = TCmakeAssignIcm0 ("AUD_WL_END", icm_chain);
+    icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_END", icm_chain);
+    icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_DEFAULT", icm_chain);
+    icm_chain = TCappendAssign (body_icms, icm_chain);
+    icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_BODY", icm_chain);
+    icm_chain = TCmakeAssignIcm0 ("AUD_WL_LUSW_GEN", icm_chain);
+    icm_chain = TCmakeAssignIcm0 ("AUD_WL_LU_GEN", icm_chain);
+    icm_chain = TCmakeAssignIcm0 ("AUD_WL_BEGIN", icm_chain);
+
+    DBUG_RETURN (icm_chain);
 }
 
 /** <!--********************************************************************-->
@@ -5718,9 +5733,14 @@ COMPwith2 (node *arg_node, info *arg_info)
         break;
     }
 
-    /*******************************************
-     * compile all code blocks                 *
-     *******************************************/
+    /************************************************
+     * compile all code blocks                      *
+     *                                              *
+     * NB: The code generated here is put into      *
+     *     the chain of ICMs in COMPwlseg_xx, i.e., *
+     *     when traversing through WITH2_SEGS       *
+     *     down below!                              *
+     ************************************************/
 
     if (WITH2_CODE (arg_node) != NULL) {
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
@@ -6692,7 +6712,7 @@ COMPwlgridvar (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *COMPWLcode( node *arg_node, info *arg_info)
+ * @fn  node *COMPcode( node *arg_node, info *arg_info)
  *
  * @brief  Compiles a N_ncode node.
  *
