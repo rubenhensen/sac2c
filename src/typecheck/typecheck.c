@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.52  2003/12/23 10:58:51  khf
+ * DebugAssert in BuildGenarrayWithLoop inserted.
+ *
  * Revision 3.51  2003/06/13 09:25:25  ktr
  * shape_array is now checked for NULL in Types2Array
  *
@@ -694,6 +697,8 @@ BuildGenarrayWithLoop (node *shp, node *val)
     int i;
 
     DBUG_ENTER ("BuildGenarrayWithLoop");
+    DBUG_ASSERT ((NODE_TYPE (val) != N_exprs),
+                 "BuildGenarrayWithLoop called with N_exprs");
 
     res
       = MakeNWith (MakeNPart (MakeNWithid (MakeIds (TmpVar (), NULL, ST_regular), NULL),
