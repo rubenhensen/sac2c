@@ -1,6 +1,9 @@
 #
 # $Log$
-# Revision 1.12  1995/12/15 10:41:08  cg
+# Revision 1.13  1996/01/02 15:55:15  cg
+# added compilation of scnprs.c
+#
+# Revision 1.12  1995/12/15  10:41:08  cg
 # make deps done
 #
 # Revision 1.11  1995/10/08  11:29:48  sbs
@@ -41,9 +44,9 @@ LEX=lex -n
 YACC=yacc -dv
 LIBS=-ly -ll
 
-INCS=-I../global -I../../inc
+INCS=-I../global -I../../inc -I../modules
 
-all: y.tab.o lex.yy.o
+all: y.tab.o lex.yy.o scnprs.o
 
 y.tab.o: y.tab.c
 	$(CCL) -o y.tab.o -DYYDEBUG -c y.tab.c $(INCS)
@@ -57,12 +60,19 @@ lex.yy.c: sac.l
 y.tab.c y.tab.h: sac.y 
 	$(YACC)  sac.y
 
+scnprs.o: scnprs.c
+	$(CC) -o scnprs.o -c scnprs.c $(INCS)
+
+
+
 deps: y.tab.c lex.yy.c
 	makedepend $(INCS) *.c
 
 
 clean:
 	$(RM) y.tab.h y.tab.c lex.yy.c *.o *.bak y.output
+
+
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
