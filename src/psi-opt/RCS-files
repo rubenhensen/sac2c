@@ -34,3 +34,4 @@ detectdependencies.h
 tagdependencies.c
 tagdependencies.h
 wls.c
+wls.h
