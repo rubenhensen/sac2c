@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.14  2002/11/04 13:21:22  sbs
+ * TYDeNestTypes added !
+ *
  * Revision 3.13  2002/10/30 16:10:35  dkr
  * TYStaticDispatchWrapper() added
  *
@@ -352,6 +355,7 @@ extern ntype *TYDeriveSubtype (ntype *type);
 extern char *TYType2String (ntype *new, bool multiline, int offset);
 extern char *TYType2DebugString (ntype *new, bool multiline, int offset);
 extern ntype *TYNestTypes (ntype *outer, ntype *inner);
+extern ntype *TYDeNestTypes (ntype *nested, ntype *inner);
 
 /*
  * Functions for converting from old to new types and back

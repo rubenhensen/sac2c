@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.40  2002/11/04 13:21:22  sbs
+ * TYDeNestTypes added !
+ *
  * Revision 3.39  2002/10/31 19:46:07  dkr
  * bug in TYCorrectWrapperArgTypes() fixed:
  * old type ARG_TYPE is *not* removed now!!!
@@ -4076,6 +4079,153 @@ TYNestTypes (ntype *outer, ntype *inner)
 }
 
 #endif /* AKD_MAY_CONTAIN_SHAPE */
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype * TYDeNestTypes( ntype *nested, ntype *inner)
+ *
+ * description:
+ *    de-nests (array) types. Since this function is NOT considered a type
+ *    constructing (MakeXYZ) function, it does NOT re-use the argument types
+ *    but inspects them only!
+ *
+ ******************************************************************************/
+
+ntype *
+TYDeNestTypes (ntype *nested, ntype *inner)
+{
+    ntype *res;
+
+    DBUG_ENTER ("TYDeNestTypes");
+
+    DBUG_ASSERT (TYIsAKS (inner),
+                 "TYDeNestTypes with non AKS inner type not yet implemented!");
+
+    switch (NTYPE_CON (nested)) {
+    case TC_aks:
+        /*
+         * AKS{ a, s1}, AKS{ b, s2}      => AKS{ a, drop( [-d2], s1) }
+         * AKS{ a, s1}, AKD{ b, do2, --} => AKS{ a, drop( [-do2], s1) }
+         * AKS{ a, s1}, AUDGZ{ b}        => AUD{ a} / AKS{ a, []}
+         * AKS{ a, s1}, AUD{ b}          => AUD{ a} / AKS{ a, []}
+         * AKS{ a, s1}, b                => AKS{ a, s1}
+         *
+         */
+        switch (NTYPE_CON (inner)) {
+        case TC_aks:
+        case TC_akd:
+            res = TYMakeAKS (TYCopyType (AKS_BASE (nested)),
+                             SHDropFromShape (-TYGetDim (inner), AKS_SHP (nested)));
+            break;
+        case TC_audgz:
+            if (TYGetDim (nested) == 1) {
+                res = TYMakeAKS (TYCopyType (AKS_BASE (nested)), SHMakeShape (0));
+            } else {
+                res = TYMakeAUD (TYCopyType (AKD_BASE (nested)));
+            }
+            break;
+        case TC_aud:
+            if (TYGetDim (nested) == 0) {
+                res = TYMakeAKS (TYCopyType (AKS_BASE (nested)), SHMakeShape (0));
+            } else {
+                res = TYMakeAUD (TYCopyType (AKD_BASE (nested)));
+            }
+            break;
+        default:
+            res = TYCopyType (nested);
+        }
+        break;
+
+    case TC_akd:
+        /*
+         * AKD{ a, do1, --}, AKS{ b, s2}      => AKD{ a, do1-d2, --}} / AKS{ a, []}
+         * AKD{ a, do1, --}, AKD{ b, do2, --} => AKD{ a, do1-do2, --} / AKS{ a, []}
+         * AKD{ a, do1, --}, AUDGZ{ b}        => AUD{ a} / AKS{ a, []}
+         * AKD{ a, do1, --}, AUD{ b}          => AUD{ a} / AKS{ a, []}
+         * AKD{ a, do1, --}, b                => AKD{ a, do1, --}
+         *
+         */
+        switch (NTYPE_CON (inner)) {
+        case TC_aks:
+        case TC_akd:
+            if ((TYGetDim (nested) - TYGetDim (inner)) == 0) {
+                res = TYMakeAKS (TYCopyType (AKS_BASE (nested)), SHMakeShape (0));
+            } else {
+                res = TYMakeAKD (TYCopyType (AKD_BASE (nested)),
+                                 TYGetDim (nested) - TYGetDim (inner), SHMakeShape (0));
+            }
+            break;
+        case TC_audgz:
+            if (TYGetDim (nested) == 1) {
+                res = TYMakeAKS (TYCopyType (AKS_BASE (nested)), SHMakeShape (0));
+            } else {
+                res = TYMakeAUD (TYCopyType (AKD_BASE (nested)));
+            }
+            break;
+        case TC_aud:
+            if (TYGetDim (nested) == 0) {
+                res = TYMakeAKS (TYCopyType (AKS_BASE (nested)), SHMakeShape (0));
+            } else {
+                res = TYMakeAUD (TYCopyType (AKD_BASE (nested)));
+            }
+            break;
+        default:
+            res = TYCopyType (nested);
+        }
+        break;
+
+    case TC_audgz:
+        /*
+         * AUDGZ{ a}, AKS{ b, s2}      => AUD{ a} / AUDGZ{ a}
+         * AUDGZ{ a}, AKD{ b, do2, s2} => AUD{ a} / AUDGZ{ a}
+         * AUDGZ{ a}, AUDGZ{ b}        => AUD{ a}
+         * AUDGZ{ a}, AUD{ b}          => AUD{ a}
+         * AUDGZ{ a}, b                => AUDGZ{ a}
+         *
+         */
+        switch (NTYPE_CON (inner)) {
+        case TC_aks:
+        case TC_akd:
+            if (TYGetDim (inner) == 0) {
+                res = TYMakeAUDGZ (TYCopyType (AKD_BASE (nested)));
+            } else {
+                res = TYMakeAUD (TYCopyType (AKD_BASE (nested)));
+            }
+            break;
+        case TC_audgz:
+        case TC_aud:
+            res = TYMakeAUD (TYCopyType (AKD_BASE (nested)));
+            break;
+        default:
+            res = TYCopyType (nested);
+            break;
+        }
+        break;
+
+    case TC_aud:
+        /*
+         * AUD{ a}, AKS{ b, s2}      => AUD{ a}
+         * AUD{ a}, AKD{ b, do2, s2} => AUD{ a}
+         * AUD{ a}, AUDGZ{ b}        => AUD{ a}
+         * AUD{ a}, AUD{ b}          => AUD{ a}
+         * AUD{ a}, b                => AUD{ a}
+         *
+         */
+        res = TYCopyType (nested);
+        break;
+
+    default:
+        /*
+         * a, b => a
+         *
+         */
+        res = TYCopyType (nested);
+        break;
+    }
+
+    DBUG_RETURN (res);
+}
 
 /******************************************************************************
  *
