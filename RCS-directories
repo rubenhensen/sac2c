@@ -1,6 +1,6 @@
-inc/
-lib/
-src/flatten/
-src/global/
-src/print/
-src/scanparse/
+inc
+lib
+src/flatten
+src/global
+src/print
+src/scanparse
