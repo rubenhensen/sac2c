@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.2  2000/11/27 21:07:35  cg
+ * Added generation of new ICM ND_ALLOC_ARRAY_PLACE.
+ *
  * Revision 3.1  2000/11/20 18:01:07  sacbase
  * new release made
  *
@@ -748,6 +751,7 @@ Ids2AllocArrayICMs (ids *ids_chain, node *next)
             }
             last_assign = assign;
         }
+
         ids_chain = IDS_NEXT (ids_chain);
     }
 
@@ -775,21 +779,41 @@ Ids2AllocArrayICMs (ids *ids_chain, node *next)
  ******************************************************************************/
 
 static node *
-Ids2AllocArrayICMs_reuse (ids *ids_chain, node *next)
+Ids2AllocArrayICMs_reuse (ids *ids_chain, node *next, node *pragma)
 {
     node *assign;
     node *last_assign = NULL;
     node *assigns = NULL;
+    char *id;
+    int offset, size;
+    node *alloc_icm;
 
     DBUG_ENTER ("Ids2AllocArrayICMs_reuse");
 
+    if (pragma != NULL) {
+        id = ID_NAME (EXPRS_EXPR (AP_ARGS (PRAGMA_APL (pragma))));
+        offset = NUM_VAL (EXPRS_EXPR (EXPRS_NEXT (AP_ARGS (PRAGMA_APL (pragma)))));
+        size = NUM_VAL (
+          EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (AP_ARGS (PRAGMA_APL (pragma))))));
+    }
+
     while (ids_chain != NULL) {
         if (IDS_REFCNT (ids_chain) >= 0) {
-            assign = MakeAssign (MakeIcm3 ("ND_ALLOC_ARRAY",
-                                           MakeBasetypeNode (IDS_TYPE (ids_chain)),
-                                           DupIds_Id (ids_chain), MakeNum (0)),
-                                 MakeAssignIcm2 ("ND_INC_RC", DupIds_Id (ids_chain),
-                                                 MakeNum (IDS_REFCNT (ids_chain))));
+            if (pragma == NULL) {
+                alloc_icm
+                  = MakeIcm3 ("ND_ALLOC_ARRAY", MakeBasetypeNode (IDS_TYPE (ids_chain)),
+                              DupIds_Id (ids_chain), MakeNum (0));
+            } else {
+                alloc_icm = MakeIcm6 ("ND_ALLOC_ARRAY_PLACE",
+                                      MakeBasetypeNode (IDS_TYPE (ids_chain)),
+                                      DupIds_Id (ids_chain), MakeNum (0),
+                                      MakeId (StringCopy (id), NULL, ST_regular),
+                                      MakeNum (offset), MakeNum (size));
+            }
+
+            assign
+              = MakeAssign (alloc_icm, MakeAssignIcm2 ("ND_INC_RC", DupIds_Id (ids_chain),
+                                                       MakeNum (IDS_REFCNT (ids_chain))));
 
             if (assigns == NULL) {
                 assigns = assign;
@@ -5200,7 +5224,9 @@ COMPNwith2 (node *arg_node, node *arg_info)
         /*
          * 'ND_ALLOC_ARRAY'
          */
-        assigns = AppendAssign (assigns, Ids2AllocArrayICMs_reuse (wl_ids, NULL));
+        assigns
+          = AppendAssign (assigns, Ids2AllocArrayICMs_reuse (wl_ids, NULL,
+                                                             NWITH2_PRAGMA (arg_node)));
     } else {
         /* fold-with-loop */
 
