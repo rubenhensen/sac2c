@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.9  2002/10/16 13:41:11  sbs
+ * changed DBUG_ASSERT(1, ...) into DBUG_ASSERT(0, ...) for better impact 8-)))
+ *
  * Revision 3.8  2002/09/16 14:26:02  dkr
  * no changes done
  *
@@ -1497,7 +1500,7 @@ WLAAprf (node *arg_node, node *arg_info)
                  */
                 DBUG_PRINT ("WLAA_INFO",
                             ("primitive function F_idx_sel | F_idx_modarray"));
-                DBUG_ASSERT (1, "primitive function idx_sel or idx_modarray found "
+                DBUG_ASSERT (0, "primitive function idx_sel or idx_modarray found "
                                 "during tile size selection");
                 break;
 
