@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 1.24  2001/05/30 14:00:55  nmw
+ * fixed bug, when moving withloops down out of a do loop
+ * loop independend inference moved to SSAInferLI.c
+ *
  * Revision 1.23  2001/05/25 08:43:45  nmw
  * comments added, bug in WLIR of complete withloops fixed
  *
@@ -98,9 +102,9 @@
  *   it is moved up, because this let to fewer arguments/results).
  *   we have to analyse only one loop because one special fundef can contain
  *   only one loop.
- *   first we analyse the functions args to find the loop invariant args. these
+ *   to find the loop invariant args, SSAInferLoopInvariants() checks all
  *   arg arguments that are used unchanged in the recursive loop function call.
- *   all loop invariant args arg marked in AVIS_SSALPINV(avis) == TRUE.
+ *   all loop invariant args arg marked as AVIS_SSALPINV(avis) == TRUE.
  *   this information is used in other optimization phases, too, e.g. constant
  *   propagation in SSACF, copy propagation in SSACSE, loop unrolling analysis
  *   in SSALUR.
@@ -228,6 +232,7 @@
 #define LIRMOVE_UP 0x1
 #define LIRMOVE_DOWN 0x2
 #define LIRMOVE_LOCAL 0x4
+#define LIRMOVE_STAY 0x8
 
 /* AVIS_DEFDEPTH */
 #define DD_UNDEFINED -1
@@ -750,18 +755,6 @@ SSALIRfundef (node *arg_node, node *arg_info)
     /* traverse args of special (loop) functions to infere loop invariant args */
     if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_IS_LOOPFUN (arg_node))) {
 
-        DBUG_ASSERT ((FUNDEF_INT_ASSIGN (arg_node) != NULL),
-                     "missing assignment link to internal recursive call");
-        DBUG_ASSERT ((ASSIGN_INSTR (FUNDEF_INT_ASSIGN (arg_node)) != NULL),
-                     "missing internal assigment instruction");
-        DBUG_ASSERT ((NODE_TYPE (LET_EXPR (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (arg_node))))
-                      == N_ap),
-                     "missing recursive call in do/while special function");
-
-        /* save pointer to argchain of recursive function application */
-        INFO_SSALIR_ARGCHAIN (arg_info) = AP_ARGS (
-          LET_EXPR (ASSIGN_INSTR (FUNDEF_INT_ASSIGN (INFO_SSALIR_FUNDEF (arg_info)))));
-
         DBUG_ASSERT ((FUNDEF_EXT_ASSIGNS (arg_node) != NULL),
                      "missing external function application nodelist");
 
@@ -786,7 +779,6 @@ SSALIRfundef (node *arg_node, node *arg_info)
 
     } else {
         /* non loop function */
-        INFO_SSALIR_ARGCHAIN (arg_info) = NULL;
         INFO_SSALIR_APARGCHAIN (arg_info) = NULL;
     }
 
@@ -834,11 +826,7 @@ SSALIRfundef (node *arg_node, node *arg_info)
  *   node* SSALIRarg(node *arg_node, node *arg_info)
  *
  * description:
- *   in do/while special functions: set the SSALIR attribute for the args by
- *   comparing the args with the corresponding identifier in the recursive
- *   call. if they are identical the args is a loop invariant arg and will be
- *   tagged.
- *   also insert mappings between args and external vardecs for all loop
+ *   insert mappings between args and external vardecs for all loop
  *   invariant arguemnts to move LUT.
  *
  *****************************************************************************/
@@ -846,24 +834,6 @@ node *
 SSALIRarg (node *arg_node, node *arg_info)
 {
     DBUG_ENTER ("SSALIRarg");
-
-    /* infere loop invarinat args */
-    if (INFO_SSALIR_ARGCHAIN (arg_info) != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (INFO_SSALIR_ARGCHAIN (arg_info)))),
-                     "function args are no identifiers");
-
-        /* compare arg and fun-ap argument */
-        if (ARG_AVIS (arg_node)
-            == ID_AVIS (EXPRS_EXPR (INFO_SSALIR_ARGCHAIN (arg_info)))) {
-            DBUG_PRINT ("SSALIR", ("mark %s as loop invariant", ARG_NAME (arg_node)));
-            if (AVIS_SSALPINV (ARG_AVIS (arg_node)) != TRUE) {
-                lir_expr++;
-                AVIS_SSALPINV (ARG_AVIS (arg_node)) = TRUE;
-            }
-        } else {
-            DBUG_PRINT ("SSALIR", ("mark %s as non loop invariant", ARG_NAME (arg_node)));
-        }
-    }
 
     /*
      * build up LUT between args and their corresponding calling vardecs
@@ -908,12 +878,6 @@ SSALIRarg (node *arg_node, node *arg_info)
     AVIS_EXPRESULT (ARG_AVIS (arg_node)) = FALSE;
 
     if (ARG_NEXT (arg_node) != NULL) {
-        /* when checking for LI-args traverse to next parameter of recursive call */
-        if (INFO_SSALIR_ARGCHAIN (arg_info) != NULL) {
-            INFO_SSALIR_ARGCHAIN (arg_info)
-              = EXPRS_NEXT (INFO_SSALIR_ARGCHAIN (arg_info));
-        }
-
         /* when building LUT traverse to next arg pf external call */
         if (INFO_SSALIR_APARGCHAIN (arg_info) != NULL) {
             INFO_SSALIR_APARGCHAIN (arg_info)
@@ -1058,6 +1022,13 @@ SSALIRassign (node *arg_node, node *arg_info)
      * so we let this withloop at its current level and try to move it in the
      * next opt cycle as standalone expression without dependend preassigns.
      */
+    if ((INFO_SSALIR_TOPBLOCK (arg_info) == TRUE)
+        && (NODE_TYPE (ASSIGN_RHS (arg_node)) == N_Nwith) && (pre_assign != NULL)) {
+        /* do not move this withloop in this opt cycle */
+        AVIS_LIRMOVE (IDS_AVIS (LET_IDS (ASSIGN_INSTR (arg_node)))) = LIRMOVE_STAY;
+        LET_LIRFLAG (ASSIGN_INSTR (arg_node)) = LIRMOVE_STAY;
+    }
+
     if ((INFO_SSALIR_MAXDEPTH (arg_info) < INFO_SSALIR_WITHDEPTH (arg_info))
         && (!((NODE_TYPE (ASSIGN_RHS (arg_node)) == N_Nwith) && (pre_assign != NULL)))) {
         wlir_move_up = INFO_SSALIR_MAXDEPTH (arg_info);
@@ -1175,7 +1146,9 @@ SSALIRlet (node *arg_node, node *arg_info)
         /* in topblock mark let statement according to the infered data */
         if ((INFO_SSALIR_NONLIRUSE (arg_info) == 0)
             && (INFO_SSALIR_CONDSTATUS (arg_info) == CONDSTATUS_NOCOND)
-            && (FUNDEF_STATUS (INFO_SSALIR_FUNDEF (arg_info)) == ST_dofun)) {
+            && (FUNDEF_STATUS (INFO_SSALIR_FUNDEF (arg_info)) == ST_dofun)
+            && (!((NODE_TYPE (LET_EXPR (arg_node)) == N_Nwith)
+                  && (INFO_SSALIR_PREASSIGN (arg_info) != NULL)))) {
 
             DBUG_PRINT ("SSALIR",
                         ("loop independend expression detected - mark it for moving up"));
@@ -1191,9 +1164,8 @@ SSALIRlet (node *arg_node, node *arg_info)
             INFO_SSALIR_FLAG (arg_info) = SSALIR_NORMAL;
         }
     } else if (INFO_SSALIR_WITHDEPTH (arg_info) > 0) {
-        /* in other blocks (with-loops) */
-        if ((INFO_SSALIR_NONLIRUSE (arg_info) == 0)
-            && (INFO_SSALIR_CONDSTATUS (arg_info) == CONDSTATUS_NOCOND)) {
+        /* in other blocks (with-loops), marks all definitions as local */
+        if (INFO_SSALIR_CONDSTATUS (arg_info) == CONDSTATUS_NOCOND) {
             DBUG_PRINT ("SSALIR", ("local expression detected - mark it"));
 
             INFO_SSALIR_FLAG (arg_info) = SSALIR_MOVELOCAL;
@@ -1333,7 +1305,8 @@ SSALIRid (node *arg_node, node *arg_info)
                  * move down (see CheckMoveDownFlag()).
                  */
 
-                if (AVIS_NEEDCOUNT (ID_AVIS (id)) == 1) {
+                if ((AVIS_NEEDCOUNT (ID_AVIS (id)) == 1)
+                    && (AVIS_LIRMOVE (ID_AVIS (id)) != LIRMOVE_STAY)) {
 
                     DBUG_PRINT (
                       "SSALIR",
