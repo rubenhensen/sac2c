@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.5  2004/07/26 16:53:07  skt
+ * added support for exclusive cells
+ *
  * Revision 3.4  2004/06/08 14:40:22  skt
  * MUTHGetLastExpression added
  *
@@ -375,7 +378,7 @@ MUTHInsertBlock (node *assign, node *block, node *fundef)
  *   static node *MUTHInsertMT(node *assign, node *arg_info)
  *
  * description:
- *   inserts mt-block around the instruction of the assignment
+ *   inserts mt-cell around the instruction of the assignment
  *
  ******************************************************************************/
 node *
@@ -393,10 +396,31 @@ MUTHInsertMT (node *assign, node *arg_info)
 /******************************************************************************
  *
  * function:
+ *   static node *MUTHInsertEX(node *assign, node *arg_info)
+ *
+ * description:
+ *   inserts ex-cell around the instruction of the assignment
+ *
+ ******************************************************************************/
+node *
+MUTHInsertEX (node *assign, node *arg_info)
+{
+    DBUG_ENTER ("MUTHInsertEX");
+
+    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "assign-node is not a N_assign");
+
+    assign = MUTHInsertBlock (assign, MakeEX (NULL), INFO_MUTH_FUNDEF (arg_info));
+
+    DBUG_RETURN (assign);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   static node *MUTHInsertST(node *assign, node *arg_info)
  *
  * description:
- *   inserts st-block around the instruction of the assignment
+ *   inserts st-cell around the instruction of the assignment
  *
  ******************************************************************************/
 node *

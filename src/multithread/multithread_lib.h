@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.4  2004/07/26 16:53:07  skt
+ * added support for exclusive cells
+ *
  * Revision 3.3  2004/06/08 14:39:11  skt
  * MUTHGetLastExpression added
  *
@@ -56,6 +59,7 @@ extern node *MUTHMeltBlocksOnCopies (node *first_block, node *second_block);
 extern node *MUTHExchangeApplication (node *arg_node, node *new_fundef);
 extern node *MUTHExpandFundefName (node *fundef, char *prefix);
 extern node *MUTHReduceFundefName (node *fundef, int count);
+extern node *MUTHInsertEX (node *assign, node *arg_info);
 extern node *MUTHInsertST (node *assign, node *arg_info);
 extern node *MUTHInsertMT (node *assign, node *arg_info);
 extern node *MUTHGetLastExpression (node *expression);
