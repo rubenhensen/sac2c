@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.171  2004/11/26 16:53:42  skt
+ * killed TCgetArgtabIndexOut/In during SDC2k4
+ *
  * Revision 3.170  2004/11/26 14:11:47  skt
  * made it compilable during SACDevCampDK 2k4
  *
@@ -425,15 +428,6 @@ extern nodelist *TCnodeListAppend (nodelist *nl, node *newnode, void *attrib);
 extern nodelist *TCnodeListDelete (nodelist *nl, node *node, bool free_attrib);
 extern nodelist *TCnodeListFree (nodelist *nl, bool free_attrib);
 extern nodelist *TCnodeListFind (nodelist *nl, node *node);
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  ARGTAB :
- ***/
-
-extern int TCgetArgtabIndexOut (types *type, argtab_t *argtab);
-extern int TCgetArgtabIndexIn (types *type, argtab_t *argtab);
 
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.114  2004/11/26 16:53:42  skt
+ * killed TCgetArgtabIndexOut/In during SDC2k4
+ *
  * Revision 3.113  2004/11/26 14:11:47  skt
  * made it compilable during SACDevCampDK 2k4
  *
@@ -1482,67 +1485,6 @@ TCnodeListFind (nodelist *nl, node *node)
     }
 
     DBUG_RETURN (nl);
-}
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  ARGTAB :
- ***/
-
-/******************************************************************************
- *
- * Function:
- *   int GetArgtabIndexOut( types *type, argtab_t *argtab)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-int
-TCgetArgtabIndexOut (types *type, argtab_t *argtab)
-{
-    int idx;
-
-    DBUG_ENTER ("TCgetArgtabIndexOut");
-
-    idx = 0;
-    while ((argtab->ptr_out[idx] != type) && (idx < argtab->size)) {
-        idx++;
-    }
-    DBUG_ASSERT ((argtab->ptr_out[idx] == type), "no index for out-parameter found!");
-
-    DBUG_RETURN (idx);
-}
-
-/******************************************************************************
- *
- * Function:
- *   int TCgetArgtabIndexIn( types *type, argtab_t *argtab)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-int
-TCgetArgtabIndexIn (types *type, argtab_t *argtab)
-{
-    int idx;
-
-    DBUG_ENTER ("TCgetArgtabIndexIn");
-
-    idx = 0;
-    while (((argtab->ptr_in[idx] == NULL) || (ARG_TYPE (argtab->ptr_in[idx]) != type))
-           && (idx < argtab->size)) {
-        idx++;
-    }
-    DBUG_ASSERT (((argtab->ptr_in[idx] != NULL)
-                  && (ARG_TYPE (argtab->ptr_in[idx]) == type)),
-                 "no index for in-parameter found!");
-
-    DBUG_RETURN (idx);
 }
 
 /*--------------------------------------------------------------------------*/
