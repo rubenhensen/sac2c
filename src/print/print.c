@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 2.99  2000/08/24 12:38:16  dkr
+ * bug fixed: printing of wlcomp-pragmas
+ *
  * Revision 2.98  2000/08/18 11:49:08  dkr
  * PrintIcm(): no seg.fault anymore during printing isolated ND_FUN_RET()
  * ICMs (e.g. in debugging sessions)
@@ -1764,28 +1767,9 @@ PrintAp (node *arg_node, node *arg_info)
     }
     fprintf (outfile, "%s(", AP_NAME (arg_node));
 
-    if (INFO_PRINT_PRAGMA_WLCOMP (arg_info)) {
-        /*
-         * Here, we are printing a wlcomp pragma.
-         */
-        DBUG_ASSERT ((AP_ARGS (arg_node) != NULL),
-                     "No parameter of wlcomp-pragma found!");
+    if (AP_ARGS (arg_node) != NULL) {
         fprintf (outfile, " ");
-        Trav (EXPRS_EXPR (AP_ARGS (arg_node)), arg_info);
-        if (EXPRS_NEXT (AP_ARGS (arg_node)) == NULL) {
-            fprintf (outfile, ", Default");
-        } else {
-            fprintf (outfile, ", ");
-            Trav (EXPRS_EXPR (EXPRS_NEXT (AP_ARGS (arg_node))), arg_info);
-        }
-    } else {
-        /*
-         * Here, we are printing a regular function application.
-         */
-        if (AP_ARGS (arg_node) != NULL) {
-            fprintf (outfile, " ");
-            Trav (AP_ARGS (arg_node), arg_info);
-        }
+        Trav (AP_ARGS (arg_node), arg_info);
     }
 
     fprintf (outfile, ")");
@@ -2447,9 +2431,7 @@ PrintPragma (node *arg_node, node *arg_info)
 
     if (PRAGMA_WLCOMP_APS (arg_node) != NULL) {
         fprintf (outfile, "#pragma wlcomp ");
-        INFO_PRINT_PRAGMA_WLCOMP (arg_info) = 1;
         Trav (PRAGMA_WLCOMP_APS (arg_node), arg_info);
-        INFO_PRINT_PRAGMA_WLCOMP (arg_info) = 0;
         fprintf (outfile, "\n");
     }
 
@@ -2873,7 +2855,7 @@ PrintNwith (node *arg_node, node *arg_info)
         indent--;
     } else {
         /* output format 2 */
-        INFO_PRINT_INT_SYN (arg_info) = (node *)!NULL; /* set != NULL */
+        INFO_PRINT_INT_SYN (arg_info) = arg_node; /* set != NULL */
         fprintf (outfile, "with ");
         Trav (NWITH_PART (arg_node), arg_info);
     }
