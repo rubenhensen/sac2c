@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.21  2002/08/06 12:18:58  dkr
+ * ups, ... error in WL_BEGIN__OFFSET corrected
+ *
  * Revision 3.20  2002/08/06 12:08:09  dkr
  * some cosmetical changes done
  *
@@ -34,27 +37,6 @@
  *
  * Revision 3.9  2001/01/25 12:08:16  dkr
  * layout of ICMs WL_SET_OFFSET and WL_INIT_OFFSET modified.
- *
- * Revision 3.8  2001/01/25 09:42:54  dkr
- * PrintShapeFactor() used wherever possible
- *
- * Revision 3.7  2001/01/22 15:55:24  dkr
- * PrintTraceICM modified
- *
- * Revision 3.6  2001/01/22 13:48:45  dkr
- * bug in WL icms fixed
- *
- * Revision 3.5  2001/01/19 11:54:10  dkr
- * some with-loop ICMs renamed
- *
- * Revision 3.3  2001/01/10 18:33:30  dkr
- * icm WL_ADJUST_OFFSET renamed into WL_SET_OFFSET
- *
- * Revision 3.2  2001/01/09 20:01:25  dkr
- * comment modified
- *
- * Revision 3.1  2000/11/20 18:01:21  sacbase
- * new release made
  *
  * [ eliminated ]
  *
@@ -465,7 +447,7 @@ ICMCompileWL_BEGIN__OFFSET (char *to_nt, char *idx_vec_nt, int dims)
 #undef WL_BEGIN__OFFSET
 
     INDENT;
-    fprintf (outfile, "{ int SAC_WL_OFFSET( %s);\n");
+    fprintf (outfile, "{ int SAC_WL_OFFSET( %s);\n", to_nt);
     indent++;
 
     for (i = 0; i < dims; i++) {
