@@ -4,6 +4,9 @@
 /*
  *
  * $Log$
+ * Revision 3.80  2003/03/20 13:55:25  sbs
+ * config.h included;  MUST_REFERENCE_YYLABELS used.
+ *
  * Revision 3.79  2003/03/19 13:34:26  sbs
  * added missing colons!!!
  *
@@ -149,6 +152,7 @@
 #include <stdlib.h>
 #include <memory.h>
 
+#include "config.h"
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -388,7 +392,7 @@ file: PARSE_PRG  prg       { syntax_tree = $2; }
 eof: { if (commlevel) {
          ABORT( linenum, ("Unterminated comment found"));
 
-#ifdef SAC_FOR_OSF_ALPHA_OBSOLETE
+#ifdef MUST_REFERENCE_YYLABELS
         /*
          * The follwing command is a veeeeeeery ugly trick to avoid warnings
          * on the alpha: the YYBACKUP-macro contains jumps to two labels
@@ -2651,7 +2655,7 @@ int My_yyparse()
   strcpy( tmp, filename);
   filename = tmp;
 
-#ifdef SAC_FOR_SOLARIS_SPARC
+#ifdef YYDEBUG
   DBUG_EXECUTE( "YACC", yydebug=1;);
 #endif
 
