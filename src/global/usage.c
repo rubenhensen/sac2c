@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.37  2003/03/09 19:16:06  dkr
+ * -tracea added
+ *
  * Revision 3.36  2003/02/19 12:48:44  sbs
  * printing TAGGED_ARRAYS info on sac2c -V now!
  *
@@ -627,7 +630,7 @@ usage ()
     printf (
       "\n\nRUNTIME TRACE OPTIONS:\n\n"
 
-      "    -trace [amrfpwt]+\n"
+      "    -trace [amrfpwstc]+\n"
       "                    Incorporate trace output generation into executable program.\n"
       "                    The following flags are supported:\n"
       "                      a: Trace all (same as mrfpowt).\n"
@@ -636,6 +639,7 @@ usage ()
       "                      f: Trace user-defined function calls.\n"
       "                      p: Trace primitive function calls.\n"
       "                      w: Trace with-loop execution.\n"
+      "                      s: Trace array accesses.\n"
       "                      t: Trace multi-threading specific operations.\n"
       "                      c: Trace runtime enviroment init/exit when\n"
       "                         using SAC libraries in C programs.\n");
