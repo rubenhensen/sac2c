@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.3  1999/02/26 10:49:59  bs
+ * BuildGenarrayWithLoop(), BuildTakeWithLoop() and BuildDropWithLoop() prepared
+ * for the work with compact int. vectors.
+ *
  * Revision 2.2  1999/02/25 11:07:23  bs
  * TI_Ngenarray modified. Now this function is able to work with
  * compact integer arrays.
@@ -654,7 +658,7 @@ static int imported_fun; /* is used to check whether to look behind a "hidden"
 /******************************************************************************
  *
  * function:
- *
+ *   Type2Vec(types *type)
  *
  * description:
  *
@@ -831,7 +835,6 @@ BuildGenarrayWithLoop (node *shp, node *val)
                    MakeNCode (MAKE_EMPTY_BLOCK (), val), MakeNWithOp (WO_genarray));
     if (NODE_TYPE (shp) == N_array) {
         NWITHOP_SHAPE (NWITH_WITHOP (res)) = shp;
-        NCODE_USED (NWITH_CODE (res))++;
     } else {
         /*
          * unflatten the array
@@ -845,8 +848,8 @@ BuildGenarrayWithLoop (node *shp, node *val)
           = CopyIntArray (ID_ARRAYLENGTH (shp), ID_CONSTARRAY (shp));
         ARRAY_TYPE (tmp_node) = VARDEC_TYPE (ID_VARDEC (shp));
         NWITHOP_SHAPE (NWITH_WITHOP (res)) = tmp_node;
-        NCODE_USED (NWITH_CODE (res))++;
     }
+    NCODE_USED (NWITH_CODE (res))++;
     /*
      * Finally, we generate the connection between the
      * (only) partition and the (only) code!
@@ -914,7 +917,25 @@ BuildTakeWithLoop (node *take_shp, node *array)
                               MakeId (StringCopy (wl_body_var), NULL, ST_regular)),
                    MakeNWithOp (WO_genarray));
 
-    NWITHOP_SHAPE (NWITH_WITHOP (res)) = take_shp;
+    /* NWITHOP_SHAPE(NWITH_WITHOP(res)) = take_shp; */
+
+    if (NODE_TYPE (take_shp) == N_array) {
+        NWITHOP_SHAPE (NWITH_WITHOP (res)) = take_shp;
+    } else {
+        /*
+         * unflatten the array
+         */
+        int i;
+        node *tmp_node = NULL;
+        for (i = ID_ARRAYLENGTH (take_shp) - 1; i >= 0; i--)
+            tmp_node = MakeExprs (MakeNum (ID_CONSTARRAY (take_shp)[i]), tmp_node);
+        tmp_node = MakeArray (tmp_node);
+        ARRAY_LENGTH (tmp_node) = ID_ARRAYLENGTH (take_shp);
+        ARRAY_INTARRAY (tmp_node)
+          = CopyIntArray (ID_ARRAYLENGTH (take_shp), ID_CONSTARRAY (take_shp));
+        ARRAY_TYPE (tmp_node) = VARDEC_TYPE (ID_VARDEC (take_shp));
+        NWITHOP_SHAPE (NWITH_WITHOP (res)) = tmp_node;
+    }
     NCODE_USED (NWITH_CODE (res))++;
 
     /*
@@ -950,6 +971,11 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
 
     DBUG_ENTER ("BuildDropWithLoop");
 
+    DBUG_ASSERT (((NODE_TYPE (drop_vec) == N_array)
+                  || ((NODE_TYPE (drop_vec) == N_id)
+                      && (ID_ARRAYLENGTH (drop_vec) > SCALAR))),
+                 "First arg of drop should be a constant array!");
+
     wl_body_var_vec = TmpVar ();
     wl_body_var_elem = TmpVar ();
     iv = TmpVar ();
@@ -958,20 +984,23 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
      * First, we expand the length of "drop_vec" to the rank of "array"
      * with 0's.
      */
-    len_vec = TYPES_SHAPE (ARRAY_TYPE (drop_vec), 0);
-    dim_array = TYPES_DIM (new_shape); /* shape(result) == shape(array) !! */
+    if (NODE_TYPE (drop_vec) == N_array) {
+        len_vec = TYPES_SHAPE (ARRAY_TYPE (drop_vec), 0);
+        dim_array = TYPES_DIM (new_shape); /* shape(result) == shape(array) !! */
 
-    if (len_vec < dim_array) {
-        DBUG_ASSERT ((NODE_TYPE (drop_vec) == N_array),
-                     "first arg of drop should be a constant array!");
-        aelem = ARRAY_AELEMS (drop_vec);
-        while (EXPRS_NEXT (aelem) != NULL) {
-            aelem = EXPRS_NEXT (aelem);
+        if (len_vec < dim_array) {
+            aelem = ARRAY_AELEMS (drop_vec);
+            while (EXPRS_NEXT (aelem) != NULL) {
+                aelem = EXPRS_NEXT (aelem);
+            }
+            for (i = len_vec; i < dim_array; i++) {
+                EXPRS_NEXT (aelem) = MakeExprs (MakeNum (0), NULL);
+                aelem = EXPRS_NEXT (aelem);
+            }
         }
-        for (i = len_vec; i < dim_array; i++) {
-            EXPRS_NEXT (aelem) = MakeExprs (MakeNum (0), NULL);
-            aelem = EXPRS_NEXT (aelem);
-        }
+    } else { /* NODE_TYPE(drop_vec) == N_id !! */
+        len_vec = TYPES_SHAPE (VARDEC_TYPE (ID_VARDEC (drop_vec)), 0);
+        dim_array = TYPES_DIM (new_shape); /* shape(result) == shape(array) !! */
     }
 
     body
@@ -1002,7 +1031,6 @@ BuildDropWithLoop (types *new_shape, node *drop_vec, node *array)
      * (only) partition and the (only) code!
      */
     NPART_CODE (NWITH_PART (res)) = NWITH_CODE (res);
-
     DBUG_RETURN (res);
 }
 
@@ -4494,7 +4522,7 @@ TI (node *arg_node, node *arg_info)
 
     DBUG_ENTER ("TI");
 
-    switch (arg_node->nodetype) {
+    switch (NODE_TYPE (arg_node)) {
     case N_prf:
         return_type = TI_prf (arg_node, arg_info);
         break;
@@ -4695,6 +4723,7 @@ TClet (node *arg_node, node *arg_info)
      * look for double identifiers and name clashes with global objects
      */
     INFO_TC_LHSVARS (arg_info) = ids;
+
     type = TI (LET_EXPR (arg_node), arg_info); /* type of right side of let-assign */
 
     if (type == NULL)
