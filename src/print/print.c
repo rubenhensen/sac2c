@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.225  1998/05/15 12:37:10  dkr
+ * removed a bug with 'arg_info' in PrintNwith2
+ *
  * Revision 1.224  1998/05/15 12:33:32  srs
  * added WLI debug info in PrintAssign()
  *
@@ -2618,10 +2621,11 @@ PrintNwithop (node *arg_node, node *arg_info)
 node *
 PrintNwith2 (node *arg_node, node *arg_info)
 {
-    node *code;
+    node *code, *tmp_nwith2;
 
     DBUG_ENTER ("PrintNwith2");
 
+    tmp_nwith2 = INFO_PRINT_NWITH2 (arg_info);
     INFO_PRINT_NWITH2 (arg_info) = arg_node;
     indent++;
 
@@ -2657,6 +2661,7 @@ PrintNwith2 (node *arg_node, node *arg_info)
     fprintf (outfile, ")");
 
     indent--;
+    INFO_PRINT_NWITH2 (arg_info) = tmp_nwith2;
 
     DBUG_RETURN (arg_node);
 }
