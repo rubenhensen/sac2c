@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.30  2002/05/03 14:00:23  dkr
+ * some ICM args renamed
+ *
  * Revision 3.29  2002/05/03 12:48:44  dkr
  * ND_KD_SET_SHAPE removed
  *
@@ -118,27 +121,27 @@ ICM_END( ND_FUN_RET, (retname, narg, arg))
 #if defined(ND_CREATE_CONST_ARRAY_S) || defined(ICM_ALL)
 ICM_DEF( ND_CREATE_CONST_ARRAY_S, TRACE_NONE)
   ICM_STR(name)
-  ICM_INT(dim)
-  ICM_VAR(dim, s)
-ICM_END( ND_CREATE_CONST_ARRAY_S, (name, dim, s))
+  ICM_INT(len)
+  ICM_VAR(len, s)
+ICM_END( ND_CREATE_CONST_ARRAY_S, (name, len, s))
 #endif
 
 #if defined(ND_CREATE_CONST_ARRAY_H) || defined(ICM_ALL)
 ICM_DEF( ND_CREATE_CONST_ARRAY_H, TRACE_NONE)
   ICM_STR(name)
   ICM_STR(copyfun)
-  ICM_INT(dim)
-  ICM_VAR(dim, A)
-ICM_END( ND_CREATE_CONST_ARRAY_H, (name, copyfun, dim, A))
+  ICM_INT(len)
+  ICM_VAR(len, A)
+ICM_END( ND_CREATE_CONST_ARRAY_H, (name, copyfun, len, A))
 #endif
 
 #if defined(ND_CREATE_CONST_ARRAY_A) || defined(ICM_ALL)
 ICM_DEF( ND_CREATE_CONST_ARRAY_A, TRACE_NONE)
   ICM_STR(name)
-  ICM_INT(length)
-  ICM_INT(dim)
-  ICM_VAR( dim, A)
-ICM_END( ND_CREATE_CONST_ARRAY_A, (name, length, dim, A))
+  ICM_INT(len2)
+  ICM_INT(len1)
+  ICM_VAR( len1, A)
+ICM_END( ND_CREATE_CONST_ARRAY_A, (name, len2, len1, A))
 #endif
 
 #ifdef TAGGED_ARRAYS 
@@ -151,7 +154,6 @@ ICM_DEF( ND_DECL_AKS, TRACE_NONE)
   ICM_VAR( dim, s)
 ICM_END( ND_DECL_AKS, (type, nt, dim, s))
 #endif
-
 
 #else  /* TAGGED_ARRAYS */
 

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.6  2002/05/03 14:01:18  dkr
+ * some ICM args renamed
+ *
  * Revision 3.5  2002/05/03 12:48:48  dkr
  * ND_KD_SET_SHAPE removed
  *
@@ -57,12 +60,12 @@ extern void ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg
 
 extern void ICMCompileND_FUN_RET (char *retname, int narg, char **arg);
 
-extern void ICMCompileND_CREATE_CONST_ARRAY_S (char *name, int dim, char **s);
+extern void ICMCompileND_CREATE_CONST_ARRAY_S (char *name, int len, char **s);
 
-extern void ICMCompileND_CREATE_CONST_ARRAY_H (char *name, char *copyfun, int dim,
+extern void ICMCompileND_CREATE_CONST_ARRAY_H (char *name, char *copyfun, int len,
                                                char **A);
 
-extern void ICMCompileND_CREATE_CONST_ARRAY_A (char *name, int length, int dim, char **s);
+extern void ICMCompileND_CREATE_CONST_ARRAY_A (char *name, int len2, int len1, char **s);
 
 #ifdef TAGGED_ARRAYS
 extern void ICMCompileND_DECL_AKS (char *type, char *nt, int dim, char **s);

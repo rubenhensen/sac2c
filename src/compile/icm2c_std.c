@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.12  2002/05/03 14:00:29  dkr
+ * some ICM args renamed
+ *
  * Revision 3.11  2002/05/03 12:48:36  dkr
  * ND_KD_SET_SHAPE removed
  *
@@ -312,17 +315,17 @@ ICMCompileND_FUN_RET (char *retname, int narg, char **arg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_CREATE_CONST_ARRAY_S( char *name, int dim, char **s)
+ *   void ICMCompileND_CREATE_CONST_ARRAY_S( char *name, int len, char **s)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_CREATE_CONST_ARRAY_S( name, dim, s0,..., sn)
+ *   ND_CREATE_CONST_ARRAY_S( name, len, s0,..., sn)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_CREATE_CONST_ARRAY_S (char *name, int dim, char **s)
+ICMCompileND_CREATE_CONST_ARRAY_S (char *name, int len, char **s)
 {
     int i;
 
@@ -333,7 +336,7 @@ ICMCompileND_CREATE_CONST_ARRAY_S (char *name, int dim, char **s)
 #include "icm_trace.c"
 #undef ND_CREATE_CONST_ARRAY_S
 
-    for (i = 0; i < dim; i++) {
+    for (i = 0; i < len; i++) {
         INDENT;
         fprintf (outfile, "SAC_ND_WRITE_ARRAY( %s, %d) = %s;\n", name, i, s[i]);
     }
@@ -345,18 +348,18 @@ ICMCompileND_CREATE_CONST_ARRAY_S (char *name, int dim, char **s)
  *
  * function:
  *   void ICMCompileND_CREATE_CONST_ARRAY_H( char *name, char * copyfun,
- *                                           int dim, char **A)
+ *                                           int len, char **A)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_CREATE_CONST_ARRAY_H( name, copyfun, dim, s0,..., sn)
+ *   ND_CREATE_CONST_ARRAY_H( name, copyfun, len, s0,..., sn)
  *   generates a constant array of refcounted hidden values
  *
  ******************************************************************************/
 
 void
-ICMCompileND_CREATE_CONST_ARRAY_H (char *name, char *copyfun, int dim, char **A)
+ICMCompileND_CREATE_CONST_ARRAY_H (char *name, char *copyfun, int len, char **A)
 {
     int i;
 
@@ -367,7 +370,7 @@ ICMCompileND_CREATE_CONST_ARRAY_H (char *name, char *copyfun, int dim, char **A)
 #include "icm_trace.c"
 #undef ND_CREATE_CONST_ARRAY_H
 
-    for (i = 0; i < dim; i++) {
+    for (i = 0; i < len; i++) {
         INDENT;
         fprintf (outfile, "SAC_ND_NO_RC_MAKE_UNIQUE_HIDDEN( %s, %s[%d], %s);\n", A[i],
                  name, i, copyfun);
@@ -379,20 +382,20 @@ ICMCompileND_CREATE_CONST_ARRAY_H (char *name, char *copyfun, int dim, char **A)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_CREATE_CONST_ARRAY_A( char *name, int length, int dim,
+ *   void ICMCompileND_CREATE_CONST_ARRAY_A( char *name, int len2, int len1,
  *                                           char **A)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_CREATE_CONST_ARRAY_A( name, length, dim, A0,..., An)
+ *   ND_CREATE_CONST_ARRAY_A( name, len2, len1, A0,..., An)
  *   generates a constant array out of arrays
- *   where length is the number of elements of the argument array A
+ *   where len2 is the number of elements of the argument array A
  *
  ******************************************************************************/
 
 void
-ICMCompileND_CREATE_CONST_ARRAY_A (char *name, int length, int dim, char **A)
+ICMCompileND_CREATE_CONST_ARRAY_A (char *name, int len2, int len1, char **A)
 {
     int i;
 
@@ -403,10 +406,10 @@ ICMCompileND_CREATE_CONST_ARRAY_A (char *name, int length, int dim, char **A)
 #include "icm_trace.c"
 #undef ND_CREATE_CONST_ARRAY_A
 
-    for (i = 0; i < dim * length; i++) {
+    for (i = 0; i < len1 * len2; i++) {
         INDENT;
         fprintf (outfile, "SAC_ND_WRITE_ARRAY( %s, %d) = SAC_ND_READ_ARRAY( %s, %d);\n",
-                 name, i, A[i / length], i % length);
+                 name, i, A[i / len2], i % len2);
     }
 
     DBUG_VOID_RETURN;
