@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 1.12  2000/05/29 14:36:46  dkr
+# make deps done
+#
 # Revision 1.11  2000/03/31 09:33:48  jhs
 # make deps done
 #
@@ -118,31 +121,29 @@ cachesim_access.o: /usr/include/memory.h /usr/include/sys/types.h
 cachesim_access.o: /usr/include/sys/isa_defs.h
 cachesim_access.o: /usr/include/sys/feature_tests.h
 cachesim_access.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-cachesim_access.o: /usr/include/sys/select.h /usr/include/sys/time.h
-cachesim_access.o: /usr/include/sys/time.h /usr/include/stdlib.h
-cachesim_access.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-cachesim_access.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-cachesim_access.o: ../runtime/sac_cachesim.h cachesim.h
+cachesim_access.o: /usr/include/stdlib.h /usr/include/stdio.h
+cachesim_access.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+cachesim_access.o: /usr/include/stdio_impl.h ../runtime/sac_cachesim.h
+cachesim_access.o: cachesim.h
 cachesim_basic.o: /usr/include/memory.h /usr/include/sys/types.h
 cachesim_basic.o: /usr/include/sys/isa_defs.h
 cachesim_basic.o: /usr/include/sys/feature_tests.h
 cachesim_basic.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-cachesim_basic.o: /usr/include/sys/select.h /usr/include/sys/time.h
-cachesim_basic.o: /usr/include/sys/time.h /usr/include/stdlib.h
-cachesim_basic.o: /usr/include/stdio.h /usr/include/sys/va_list.h
-cachesim_basic.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-cachesim_basic.o: /usr/include/string.h /usr/include/unistd.h
-cachesim_basic.o: /usr/include/sys/unistd.h ../runtime/sac_cachesim.h
-cachesim_basic.o: ../runtime/sac_message.h cachesim.h ../../inc/main_args.h
+cachesim_basic.o: /usr/include/stdlib.h /usr/include/stdio.h
+cachesim_basic.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+cachesim_basic.o: /usr/include/stdio_impl.h /usr/include/string.h
+cachesim_basic.o: /usr/include/unistd.h /usr/include/sys/unistd.h
+cachesim_basic.o: ../runtime/sac_cachesim.h ../runtime/sac_message.h
+cachesim_basic.o: cachesim.h ../../inc/main_args.h
 message.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 message.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 message.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-message.o: /usr/include/stdarg.h /usr/include/stdlib.h ../runtime/sac_mt.h
+message.o: /usr/include/stdarg.h /usr/include/varargs.h /usr/include/stdlib.h
+message.o: ../runtime/sac_heapmgr.h ../runtime/sac_mt.h
 mt.o: /usr/include/pthread.h /usr/include/sys/types.h
 mt.o: /usr/include/sys/isa_defs.h /usr/include/sys/feature_tests.h
 mt.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-mt.o: /usr/include/sys/select.h /usr/include/sys/time.h
-mt.o: /usr/include/sys/time.h /usr/include/sched.h /usr/include/stdio.h
+mt.o: /usr/include/time.h /usr/include/sched.h /usr/include/stdio.h
 mt.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
 mt.o: /usr/include/stdio_impl.h ../runtime/sac_message.h
 mt.o: ../runtime/sac_trace.h ../runtime/sac_mt.h
@@ -154,9 +155,9 @@ profile.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 profile.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
 profile.o: /usr/include/sys/time.h /usr/include/sys/types.h
 profile.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
-profile.o: /usr/include/sys/select.h /usr/include/sys/time.h
 profile.o: /usr/include/sys/resource.h
 trace.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
 trace.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
 trace.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
-trace.o: /usr/include/stdarg.h /usr/include/string.h ../runtime/sac_mt.h
+trace.o: /usr/include/stdarg.h /usr/include/varargs.h /usr/include/string.h
+trace.o: ../runtime/sac_mt.h

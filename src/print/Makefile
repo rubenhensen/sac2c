@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 2.12  2000/05/29 14:36:36  dkr
+# make deps done
+#
 # Revision 2.11  2000/05/29 14:35:10  dkr
 # make deps done
 #
@@ -122,20 +125,24 @@ clean:
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
 convert.o: /usr/include/string.h /usr/include/sys/feature_tests.h
-convert.o: /usr/include/stdlib.h /usr/include/math.h ../global/internal_lib.h
-convert.o: ../global/types.h ../../inc/dbug.h /usr/include/stdio.h
-convert.o: /usr/include/sys/va_list.h ../tree/tree_basic.h
-convert.o: ../tree/tree_compound.h ../global/Error.h ../global/globals.h
-convert.o: ../tree/type_info.mac
+convert.o: /usr/include/sys/isa_defs.h /usr/include/stdlib.h
+convert.o: /usr/include/math.h ../global/internal_lib.h ../global/types.h
+convert.o: ../../inc/dbug.h /usr/include/stdio.h /usr/include/sys/va_list.h
+convert.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+convert.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
+convert.o: ../global/globals.h ../tree/type_info.mac
 print.o: /usr/include/stdio.h /usr/include/sys/feature_tests.h
-print.o: /usr/include/sys/va_list.h /usr/include/stdlib.h
-print.o: /usr/include/string.h ../tree/tree.h ../global/types.h
-print.o: ../tree/tree_basic.h ../tree/tree_compound.h ../global/Error.h
-print.o: ../global/globals.h ../global/internal_lib.h print.h
-print.o: ../global/my_debug.h ../../inc/dbug.h ../tree/traverse.h convert.h
-print.o: ../tree/DataFlowMask.h ../optimize/optimize.h ../tree/free.h
-print.o: /usr/include/malloc.h ../optimize/generatemasks.h
-print.o: ../modules/filemgr.h ../compile/gen_startup_code.h
-print.o: ../psi-opt/WithloopFolding.h ../tree/scheduling.h
-print.o: ../psi-opt/wl_access_analyze.h ../psi-opt/tile_size_inference.h
-print.o: ../compile/icm.data ../tree/prf_node_info.mac
+print.o: /usr/include/sys/isa_defs.h /usr/include/sys/va_list.h
+print.o: /usr/include/stdio_tag.h /usr/include/stdio_impl.h
+print.o: /usr/include/stdlib.h /usr/include/string.h ../tree/tree.h
+print.o: ../global/types.h ../tree/tree_basic.h ../tree/tree_compound.h
+print.o: ../global/Error.h ../global/globals.h ../global/internal_lib.h
+print.o: print.h ../global/my_debug.h ../../inc/dbug.h ../tree/traverse.h
+print.o: convert.h ../tree/DataFlowMask.h ../optimize/optimize.h
+print.o: ../tree/free.h /usr/include/malloc.h /usr/include/sys/types.h
+print.o: /usr/include/sys/machtypes.h /usr/include/sys/int_types.h
+print.o: ../optimize/generatemasks.h ../modules/filemgr.h
+print.o: ../compile/gen_startup_code.h ../psi-opt/WithloopFolding.h
+print.o: ../tree/scheduling.h ../psi-opt/wl_access_analyze.h
+print.o: ../psi-opt/tile_size_inference.h ../compile/icm.data
+print.o: ../tree/prf_node_info.mac
