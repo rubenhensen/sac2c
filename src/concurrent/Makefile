@@ -1,5 +1,10 @@
 #
 # $Log$
+# Revision 1.14  1998/06/18 13:26:26  cg
+# added compilation of spmd_init.c spmd_opt.c spmd_lift.c sync_init.c
+# sync_opt.c sched.c scheduling.c
+# removed compilation of spmdregions.c
+#
 # Revision 1.13  1998/06/12 14:18:07  cg
 # added compilation of scheduling.c
 #
@@ -39,10 +44,7 @@
 # Revision 1.1  1998/04/03 11:47:26  dkr
 # Initial revision
 #
-# Revision 1.42  1998/04/02 16:07:31  dkr
-#
-#
-# 
+
 
 
 CC        := gcc
@@ -52,19 +54,17 @@ CFLAGS    := -D__EXTENSIONS__
 INCS=-I../global -I../../inc -I../optimize -I../typecheck -I../refcount -I../print  \
      -I../compile
 
-all: spmdregions.o scheduling.o
+all: concurrent.o scheduling.o spmd_init.o spmd_opt.o spmd_lift.o sync_init.o \
+     sync_opt.o schedule.o
 
-spmdregions.o: spmdregions.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o spmdregions.o -c spmdregions.c $(INCS)
-
-scheduling.o: scheduling.c
-	$(CC) $(CCFLAGS) $(CFLAGS) -o scheduling.o -c scheduling.c $(INCS)
+%.o: %.c 
+	$(CC) $(CCFLAGS) $(CFLAGS) $(INCS) -o $@ -c $<
 
 deps:
 	makedepend $(INCS) *.c
 
 clean:
-	$(RM) *.o *.bak
+	$(RM) *.o *.bak *~
 	$(RM) -r .sb
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
