@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2004/03/06 21:17:49  mwe
+ * CON_cond added
+ *
  * Revision 1.2  2004/03/06 20:06:40  mwe
  * CVPfuncond added
  *
@@ -87,9 +90,11 @@
  * traversing from an assign in a let node nreturn:         is set when traversing in a
  * return node ap:              is set when traversing in an ap node primfun:         is
  * set when traversing in a prf node array:           is set when traversing in a array
- * node specialfun:      is set when traversing in a special function (do- or while loop,
- * condition) withloop:        is set when traversing in a nwith node withloop_cexprs: is
- * set when traversing in the cexprs chain of a withloop
+ * node specialfun:      is set when traversing in a argumentlist of a special function
+ *                    (do- or while loop, condition)
+ *   withloop:        is set when traversing in a nwith node
+ *   withloop_cexprs: is set when traversing in the cexprs chain of a withloop
+ *   cond:            is set when traversing in the conditional of a condition
  *
  *
  */
@@ -102,6 +107,7 @@ typedef enum {
     CON_ap,
     CON_primfun,
     CON_specialfun,
+    CON_cond,
     CON_undef
 } context_t;
 
@@ -192,6 +198,7 @@ AskPropagationOracle (node *let, node *arg_info)
     case CON_primfun:
     case CON_let:
     case CON_withloop:
+    case CON_cond:
         /* TRUE iff behind let node is constant value or an id node */
         answer = IsConstant (LET_EXPR (let)) || IsVariable (LET_EXPR (let));
         break;
@@ -431,10 +438,15 @@ CVPap (node *arg_node, node *arg_info)
 node *
 CVPcond (node *arg_node, node *arg_info)
 {
+
+    context_t old;
     DBUG_ENTER ("CVPcond");
 
+    old = INFO_CVP_CONTEXT (arg_info);
+    INFO_CVP_CONTEXT (arg_info) = CON_cond;
     DBUG_ASSERT ((COND_COND (arg_node) != NULL), "conditional without condition");
-    /*  COND_COND(arg_node) = Trav(COND_COND(arg_node), arg_info);*/
+    COND_COND (arg_node) = Trav (COND_COND (arg_node), arg_info);
+    INFO_CVP_CONTEXT (arg_info) = old;
 
     if (COND_THEN (arg_node) != NULL) {
         COND_THEN (arg_node) = Trav (COND_THEN (arg_node), arg_info);
