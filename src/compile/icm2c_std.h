@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.7  2002/05/31 17:25:31  dkr
+ * some ICMs for TAGGED_ARRAYS added
+ *
  * Revision 3.6  2002/05/03 14:01:18  dkr
  * some ICM args renamed
  *
@@ -60,6 +63,25 @@ extern void ICMCompileND_FUN_AP (char *name, char *retname, int narg, char **arg
 
 extern void ICMCompileND_FUN_RET (char *retname, int narg, char **arg);
 
+#ifdef TAGGED_ARRAYS
+
+extern void ICMCompileND_OBJDEF (char *nt, char *basetype, int dim, char **s);
+
+extern void ICMCompileND_OBJDEF_EXTERN (char *nt, char *basetype, int dim);
+
+extern void ICMCompileND_DECL (char *nt, char *basetype, int dim, char **s);
+
+#else /* TAGGED_ARRAYS */
+
+extern void ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *basetype, char *name, int dim,
+                                               char **s);
+
+extern void ICMCompileND_KD_DECL_EXTERN_ARRAY (char *basetype, char *name, int dim);
+
+extern void ICMCompileND_KS_DECL_ARRAY (char *basetype, char *name, int dim, char **s);
+
+extern void ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s);
+
 extern void ICMCompileND_CREATE_CONST_ARRAY_S (char *name, int len, char **s);
 
 extern void ICMCompileND_CREATE_CONST_ARRAY_H (char *name, char *copyfun, int len,
@@ -67,17 +89,7 @@ extern void ICMCompileND_CREATE_CONST_ARRAY_H (char *name, char *copyfun, int le
 
 extern void ICMCompileND_CREATE_CONST_ARRAY_A (char *name, int len2, int len1, char **s);
 
-#ifdef TAGGED_ARRAYS
-extern void ICMCompileND_DECL_AKS (char *type, char *nt, int dim, char **s);
-#else  /* TAGGED_ARRAYS */
-extern void ICMCompileND_KS_DECL_ARRAY (char *type, char *name, int dim, char **s);
 #endif /* TAGGED_ARRAYS */
-
-extern void ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *type, char *name, int dim, char **s);
-
-extern void ICMCompileND_KD_DECL_EXTERN_ARRAY (char *basetype, char *name, int dim);
-
-extern void ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s);
 
 extern void ICMCompileND_KD_SEL_CxA_S (char *a, char *res, int dim, char **vi);
 
@@ -98,17 +110,17 @@ extern void ICMCompileND_KD_CAT_SxAxA_A (int dima, char **ar, char *res, int cat
 extern void ICMCompileND_KD_ROT_CxSxA_A (int rotdim, char **numstr, int dima, char *a,
                                          char *res);
 
-extern void ICMCompileND_PRF_MODARRAY_AxCxS (char *res_type, int dimres, char *res,
+extern void ICMCompileND_PRF_MODARRAY_AxCxS (char *res_btype, int dimres, char *res,
                                              char *old, char **value, int dimv,
                                              char **vi);
 
-extern void ICMCompileND_PRF_MODARRAY_AxVxS (char *res_type, int dimres, char *res,
+extern void ICMCompileND_PRF_MODARRAY_AxVxS (char *res_btype, int dimres, char *res,
                                              char *old, char **value, int dim, char *v);
 
-extern void ICMCompileND_PRF_MODARRAY_AxCxA (char *res_type, int dimres, char *res,
+extern void ICMCompileND_PRF_MODARRAY_AxCxA (char *res_btype, int dimres, char *res,
                                              char *old, char *val, int dimv, char **vi);
 
-extern void ICMCompileND_PRF_MODARRAY_AxVxA (char *res_type, int dimres, char *res,
+extern void ICMCompileND_PRF_MODARRAY_AxVxA (char *res_btype, int dimres, char *res,
                                              char *old, char *val, int dim, char *v);
 
 extern void ICMCompileND_KS_VECT2OFFSET (char *off_name, char *arr_name, int dim,

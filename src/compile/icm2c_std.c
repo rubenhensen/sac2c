@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.13  2002/05/31 17:25:28  dkr
+ * some ICMs for TAGGED_ARRAYS added
+ *
  * Revision 3.12  2002/05/03 14:00:29  dkr
  * some ICM args renamed
  *
@@ -312,6 +315,412 @@ ICMCompileND_FUN_RET (char *retname, int narg, char **arg)
     DBUG_VOID_RETURN;
 }
 
+#ifdef TAGGED_ARRAYS
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_OBJDEF( char *nt, char *basetype, int dim, char **s)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_OBJDEF( nt, basetype, dim, s0,..., sn)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_OBJDEF (char *nt, char *basetype, int dim, char **s)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileND_OBJDEF");
+
+#define ND_OBJDEF
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_OBJDEF
+
+    if (print_objdef_for_header_file) {
+        INDENT;
+        fprintf (outfile, "extern %s *%s;\n", basetype, nt);
+        INDENT;
+        fprintf (outfile, "extern int SAC_ND_A_RC( %s);\n", nt);
+        INDENT;
+        fprintf (outfile, "extern int const SAC_ND_A_SIZE( %s);\n", nt);
+        INDENT;
+        fprintf (outfile, "extern int const SAC_ND_A_DIM( %s);\n", nt);
+        for (i = 0; i < dim; i++) {
+            INDENT;
+            fprintf (outfile, "extern int const SAC_ND_A_SHAPE( %s, %d);\n", nt, i);
+        }
+    } else {
+        INDENT;
+        fprintf (outfile, "%s *%s;\n", basetype, nt);
+        INDENT;
+        fprintf (outfile, "int SAC_ND_A_RC( %s);\n", nt);
+        INDENT;
+        fprintf (outfile, "const int SAC_ND_A_SIZE( %s) = ", nt);
+        fprintf (outfile, "%s", s[0]);
+        for (i = 1; i < dim; i++)
+            fprintf (outfile, "*%s", s[i]);
+        fprintf (outfile, ";\n");
+        INDENT;
+        fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", nt, dim);
+        for (i = 0; i < dim; i++) {
+            INDENT;
+            fprintf (outfile, "const int SAC_ND_A_SHAPE( %s, %d) = %s;\n", nt, i, s[i]);
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_OBJDEF_EXTERN( char *nt, char *basetype, int dim)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_OBJDEF_EXTERN( nt, basetype, dim)
+ *   declares an array which is an imported global object
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_OBJDEF_EXTERN (char *nt, char *basetype, int dim)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileND_OBJDEF_EXTERN");
+
+#define ND_OBJDEF_EXTERN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_OBJDEF_EXTERN
+
+    INDENT;
+    fprintf (outfile, "extern %s *%s;\n", basetype, nt);
+    INDENT;
+    fprintf (outfile, "extern int SAC_ND_A_RC( %s);\n", nt);
+    INDENT;
+    fprintf (outfile, "extern int SAC_ND_A_SIZE( %s);\n", nt);
+    INDENT;
+    fprintf (outfile, "extern int SAC_ND_A_DIM( %s);\n", nt);
+    for (i = 0; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "extern int SAC_ND_A_SHAPE( %s, %d);\n", nt, i);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_DECL( char *nt, char *basetype, int dim, char **s)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_DECL( nt, basetype, dim, s0,..., sn)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_DECL (char *nt, char *basetype, int dim, char **s)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileND_DECL");
+
+#define ND_DECL
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_DECL
+
+    INDENT;
+    fprintf (outfile, "%s *SAC_ND_A_FIELD( %s);\n", basetype, nt);
+
+    switch (ICUGetClass (nt)) {
+    case C_scl:
+        break;
+
+    case C_aks:
+        break;
+
+    case C_akd:
+        break;
+
+    case C_aud:
+        break;
+
+    case C_hid:
+        break;
+
+    default:
+        break;
+    }
+
+    fprintf (outfile, "SAC_array_descriptor *SAC_ND_A_DESC( %s);\n", nt);
+    fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", nt, dim);
+    INDENT;
+    /*
+     * Define and initialize shape vector scalars
+     */
+    for (i = 0; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "const int SAC_ND_A_SHAPE( %s, %d) = %s;\n", nt, i, s[i]);
+    }
+    /*
+     * Initialize array size
+     */
+    fprintf (outfile, "const int SAC_ND_A_SIZE( %s) = ", nt);
+    fprintf (outfile, "%s", s[0]);
+    for (i = 1; i < dim; i++) {
+        fprintf (outfile, "*%s", s[i]);
+    }
+    fprintf (outfile, ";\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_DECL_ARG( char *nt, int dim, char **s)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_DECL_ARG( nt, dim, s0,..., sn)
+ *   declares an array given as arg
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_DECL_ARG (char *nt, int dim, char **s)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileND_DECL_ARG");
+
+#define ND_DECL_ARG
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_DECL_ARG
+
+    INDENT;
+    fprintf (outfile, "const int SAC_ND_A_SIZE(%s)=", nt);
+    fprintf (outfile, "%s", s[0]);
+    for (i = 1; i < dim; i++) {
+        fprintf (outfile, "*%s", s[i]);
+    }
+    fprintf (outfile, ";\n");
+    INDENT;
+    fprintf (outfile, "const int SAC_ND_A_DIM(%s)=%d;\n", nt, dim);
+    for (i = 0; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "const int SAC_ND_A_SHAPE(%s, %d)=%s;\n", nt, i, s[i]);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+#else /* TAGGED_ARRAYS */
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_KS_DECL_GLOBAL_ARRAY( char *basetype, char *name,
+ *                                           int dim, char **s)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_KS_DECL_GLOBAL_ARRAY( basetype, name, dim, s0,..., sn)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *basetype, char *name, int dim, char **s)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileND_KS_DECL_GLOBAL_ARRAY");
+
+#define ND_KS_DECL_GLOBAL_ARRAY
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_KS_DECL_GLOBAL_ARRAY
+
+    if (print_objdef_for_header_file) {
+        INDENT;
+        fprintf (outfile, "extern %s *%s;\n", basetype, name);
+        INDENT;
+        fprintf (outfile, "extern int SAC_ND_A_RC(%s);\n", name);
+        INDENT;
+        fprintf (outfile, "extern int const SAC_ND_A_SIZE(%s);\n", name);
+        INDENT;
+        fprintf (outfile, "extern int const SAC_ND_A_DIM(%s);\n", name);
+        for (i = 0; i < dim; i++) {
+            INDENT;
+            fprintf (outfile, "extern int const SAC_ND_A_SHAPE( %s, %d);\n", name, i);
+        }
+    } else {
+        INDENT;
+        fprintf (outfile, "%s *%s;\n", basetype, name);
+        INDENT;
+        fprintf (outfile, "int SAC_ND_A_RC(%s);\n", name);
+        INDENT;
+        fprintf (outfile, "const int SAC_ND_A_SIZE(%s)=", name);
+        fprintf (outfile, "%s", s[0]);
+        for (i = 1; i < dim; i++)
+            fprintf (outfile, "*%s", s[i]);
+        fprintf (outfile, ";\n");
+        INDENT;
+        fprintf (outfile, "const int SAC_ND_A_DIM(%s)=%d;\n", name, dim);
+        for (i = 0; i < dim; i++) {
+            INDENT;
+            fprintf (outfile, "const int SAC_ND_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
+        }
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_KD_DECL_EXTERN_ARRAY( char *basetype, char *name,
+ *                                           int dim)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_KD_DECL_EXTERN_ARRAY( basetype, name, dim)
+ *   declares an array which is an imported global object
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_KD_DECL_EXTERN_ARRAY (char *basetype, char *name, int dim)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileND_KD_DECL_EXTERN_ARRAY");
+
+#define ND_KD_DECL_EXTERN_ARRAY
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_KD_DECL_EXTERN_ARRAY
+
+    INDENT;
+    fprintf (outfile, "extern %s *%s;\n", basetype, name);
+    INDENT;
+    fprintf (outfile, "extern int SAC_ND_A_RC(%s);\n", name);
+    INDENT;
+    fprintf (outfile, "extern int SAC_ND_A_SIZE(%s);\n", name);
+    INDENT;
+    fprintf (outfile, "extern int SAC_ND_A_DIM(%s);\n", name);
+    for (i = 0; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "extern int SAC_ND_A_SHAPE(%s, %d);\n", name, i);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_KS_DECL_ARRAY( char *basetype, char *name,
+ *                                    int dim, char **s)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_KS_DECL_ARRAY( basetype, name, dim, s0,..., sn)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_KS_DECL_ARRAY (char *basetype, char *name, int dim, char **s)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileND_KS_DECL_ARRAY");
+
+#define ND_KS_DECL_ARRAY
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_KS_DECL_ARRAY
+
+    INDENT;
+    fprintf (outfile, "%s *%s;\n", basetype, name);
+    INDENT;
+    fprintf (outfile, "int SAC_ND_A_RC( %s);\n", name);
+    INDENT;
+    fprintf (outfile, "const int SAC_ND_A_SIZE( %s) = ", name);
+    fprintf (outfile, "%s", s[0]);
+    for (i = 1; i < dim; i++) {
+        fprintf (outfile, "*%s", s[i]);
+    }
+    fprintf (outfile, ";\n");
+    INDENT;
+    fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", name, dim);
+    for (i = 0; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "const int SAC_ND_A_SHAPE( %s, %d) = %s;\n", name, i, s[i]);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_KS_DECL_ARRAY_ARG( char *name, int dim, char **s)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_KS_DECL_ARRAY_ARG( name, dim, s0,..., sn)
+ *   declares an array given as arg
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s)
+{
+    int i;
+
+    DBUG_ENTER ("ICMCompileND_KS_DECL_ARRAY_ARG");
+
+#define ND_KS_DECL_ARRAY_ARG
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_KS_DECL_ARRAY_ARG
+
+    INDENT;
+    fprintf (outfile, "const int SAC_ND_A_SIZE(%s)=", name);
+    fprintf (outfile, "%s", s[0]);
+    for (i = 1; i < dim; i++) {
+        fprintf (outfile, "*%s", s[i]);
+    }
+    fprintf (outfile, ";\n");
+    INDENT;
+    fprintf (outfile, "const int SAC_ND_A_DIM(%s)=%d;\n", name, dim);
+    for (i = 0; i < dim; i++) {
+        INDENT;
+        fprintf (outfile, "const int SAC_ND_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
+    }
+
+    DBUG_VOID_RETURN;
+}
+
 /******************************************************************************
  *
  * function:
@@ -415,283 +824,7 @@ ICMCompileND_CREATE_CONST_ARRAY_A (char *name, int len2, int len1, char **A)
     DBUG_VOID_RETURN;
 }
 
-#ifdef TAGGED_ARRAYS
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_DECL_AKS( char *type, char *nt, int dim, char **s)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_DECL_AKS( basetype, nt, dim, s0,..., sn)
- *
- ******************************************************************************/
-
-void
-ICMCompileND_DECL_AKS (char *type, char *nt, int dim, char **s)
-{
-    int i;
-
-    DBUG_ENTER ("ICMCompileND_DECL_AKS");
-
-#define ND_DECL_AKS
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_DECL_AKS
-
-    INDENT;
-    fprintf (outfile, "%s *SAC_ND_A_FIELD(%s);\n", type, nt);
-    fprintf (outfile, "SAC_array_descriptor *SAC_ND_A_DESC(%s);\n", nt);
-    fprintf (outfile, "const int SAC_ND_A_DIM(%s)=%d;\n", nt, dim);
-    INDENT;
-    /*
-     * Define and initialize shape vector scalars
-     */
-    for (i = 0; i < dim; i++) {
-        INDENT;
-        fprintf (outfile, "const int SAC_ND_A_SHAPE(%s, %d)=%s;\n", nt, i, s[i]);
-    }
-    /*
-     * Initialize array size
-     */
-    fprintf (outfile, "const int SAC_ND_A_SIZE(%s)=", nt);
-    fprintf (outfile, "%s", s[0]);
-    for (i = 1; i < dim; i++) {
-        fprintf (outfile, "*%s", s[i]);
-    }
-    fprintf (outfile, ";\n");
-
-    DBUG_VOID_RETURN;
-}
-
-#else /* TAGGED_ARRAYS */
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_KS_DECL_ARRAY( char *type, char *name, int dim, char **s)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_KS_DECL_ARRAY( basetype, name, dim, s0,..., sn)
- *
- ******************************************************************************/
-
-void
-ICMCompileND_KS_DECL_ARRAY (char *type, char *name, int dim, char **s)
-{
-    int i;
-
-    DBUG_ENTER ("ICMCompileND_KS_DECL_ARRAY");
-
-#define ND_KS_DECL_ARRAY
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_KS_DECL_ARRAY
-
-    INDENT;
-    fprintf (outfile, "%s *%s;\n", type, name);
-    INDENT;
-    fprintf (outfile, "int SAC_ND_A_RC( %s);\n", name);
-    INDENT;
-    fprintf (outfile, "const int SAC_ND_A_SIZE( %s) = ", name);
-    fprintf (outfile, "%s", s[0]);
-    for (i = 1; i < dim; i++) {
-        fprintf (outfile, "*%s", s[i]);
-    }
-    fprintf (outfile, ";\n");
-    INDENT;
-    fprintf (outfile, "const int SAC_ND_A_DIM( %s) = %d;\n", name, dim);
-    for (i = 0; i < dim; i++) {
-        INDENT;
-        fprintf (outfile, "const int SAC_ND_A_SHAPE( %s, %d) = %s;\n", name, i, s[i]);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
 #endif /* TAGGED_ARRAYS */
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_KS_DECL_GLOBAL_ARRAY( char *type, char *name, int dim,
- *                                           char **s)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_KS_DECL_GLOBAL_ARRAY( basetype, name, dim, s0,..., sn)
- *
- ******************************************************************************/
-
-void
-ICMCompileND_KS_DECL_GLOBAL_ARRAY (char *type, char *name, int dim, char **s)
-{
-    int i;
-
-    DBUG_ENTER ("ICMCompileND_KS_DECL_GLOBAL_ARRAY");
-
-#define ND_KS_DECL_GLOBAL_ARRAY
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_KS_DECL_GLOBAL_ARRAY
-
-    if (print_objdef_for_header_file) {
-        INDENT;
-        fprintf (outfile, "extern %s *%s;\n", type, name);
-        INDENT;
-        fprintf (outfile, "extern int SAC_ND_A_RC(%s);\n", name);
-        INDENT;
-        fprintf (outfile, "extern int const SAC_ND_A_SIZE(%s);\n", name);
-        INDENT;
-        fprintf (outfile, "extern int const SAC_ND_A_DIM(%s);\n", name);
-        for (i = 0; i < dim; i++) {
-            INDENT;
-            fprintf (outfile, "extern int const SAC_ND_A_SHAPE( %s, %d);\n", name, i);
-        }
-    } else {
-        INDENT;
-        fprintf (outfile, "%s *%s;\n", type, name);
-        INDENT;
-        fprintf (outfile, "int SAC_ND_A_RC(%s);\n", name);
-        INDENT;
-        fprintf (outfile, "const int SAC_ND_A_SIZE(%s)=", name);
-        fprintf (outfile, "%s", s[0]);
-        for (i = 1; i < dim; i++)
-            fprintf (outfile, "*%s", s[i]);
-        fprintf (outfile, ";\n");
-        INDENT;
-        fprintf (outfile, "const int SAC_ND_A_DIM(%s)=%d;\n", name, dim);
-        for (i = 0; i < dim; i++) {
-            INDENT;
-            fprintf (outfile, "const int SAC_ND_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
-        }
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_KD_DECL_EXTERN_ARRAY( char *type, char *name, int dim)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_KD_DECL_EXTERN_ARRAY( basetype, name, dim)
- *   declares an array which is an imported global object
- *
- ******************************************************************************/
-
-void
-ICMCompileND_KD_DECL_EXTERN_ARRAY (char *type, char *name, int dim)
-{
-    int i;
-
-    DBUG_ENTER ("ICMCompileND_KD_DECL_EXTERN_ARRAY");
-
-#define ND_KD_DECL_EXTERN_ARRAY
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_KD_DECL_EXTERN_ARRAY
-
-    INDENT;
-    fprintf (outfile, "extern %s *%s;\n", type, name);
-    INDENT;
-    fprintf (outfile, "extern int SAC_ND_A_RC(%s);\n", name);
-    INDENT;
-    fprintf (outfile, "extern int SAC_ND_A_SIZE(%s);\n", name);
-    INDENT;
-    fprintf (outfile, "extern int SAC_ND_A_DIM(%s);\n", name);
-    for (i = 0; i < dim; i++) {
-        INDENT;
-        fprintf (outfile, "extern int SAC_ND_A_SHAPE(%s, %d);\n", name, i);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   void ICMCompileND_KS_DECL_ARRAY_ARG( char *name, int dim, char **s)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_KS_DECL_ARRAY_ARG( name, dim, s0,..., sn)
- *   declares an array given as arg
- *
- ******************************************************************************/
-
-#ifdef TAGGED_ARRAYS
-
-void
-ICMCompileND_DECL_ARG (char *name, int dim, char **s)
-{
-    int i;
-
-    DBUG_ENTER ("ICMCompileND_DECL_ARG");
-
-#define ND_DECL_ARG
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_DECL_ARG
-
-    INDENT;
-    fprintf (outfile, "const int SAC_ND_A_SIZE(%s)=", name);
-    fprintf (outfile, "%s", s[0]);
-    for (i = 1; i < dim; i++) {
-        fprintf (outfile, "*%s", s[i]);
-    }
-    fprintf (outfile, ";\n");
-    INDENT;
-    fprintf (outfile, "const int SAC_ND_A_DIM(%s)=%d;\n", name, dim);
-    for (i = 0; i < dim; i++) {
-        INDENT;
-        fprintf (outfile, "const int SAC_ND_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-#else
-
-void
-ICMCompileND_KS_DECL_ARRAY_ARG (char *name, int dim, char **s)
-{
-    int i;
-
-    DBUG_ENTER ("ICMCompileND_KS_DECL_ARRAY_ARG");
-
-#define ND_KS_DECL_ARRAY_ARG
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_KS_DECL_ARRAY_ARG
-
-    INDENT;
-    fprintf (outfile, "const int SAC_ND_A_SIZE(%s)=", name);
-    fprintf (outfile, "%s", s[0]);
-    for (i = 1; i < dim; i++) {
-        fprintf (outfile, "*%s", s[i]);
-    }
-    fprintf (outfile, ";\n");
-    INDENT;
-    fprintf (outfile, "const int SAC_ND_A_DIM(%s)=%d;\n", name, dim);
-    for (i = 0; i < dim; i++) {
-        INDENT;
-        fprintf (outfile, "const int SAC_ND_A_SHAPE(%s, %d)=%s;\n", name, i, s[i]);
-    }
-
-    DBUG_VOID_RETURN;
-}
-
-#endif
 
 /******************************************************************************
  *
@@ -1018,19 +1151,19 @@ ICMCompileND_KD_ROT_CxSxA_A (int rotdim, char **numstr, int dima, char *a, char 
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY_AxCxS( char *res_type, int dimres,
+ *   void ICMCompileND_PRF_MODARRAY_AxCxS( char *res_btype, int dimres,
  *                                         char *res, char *old, char **value,
  *                                         int dimv, char **vi)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY_AxCxS( res_type, dimres, res, old, value, dimv, v0,..., vn)
+ *   ND_PRF_MODARRAY_AxCxS( res_btype, dimres, res, old, value, dimv, v0,..., vn)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_MODARRAY_AxCxS (char *res_type, int dimres, char *res, char *old,
+ICMCompileND_PRF_MODARRAY_AxCxS (char *res_btype, int dimres, char *res, char *old,
                                  char **value, int dimv, char **vi)
 {
     DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxCxS");
@@ -1070,19 +1203,19 @@ ICMCompileND_PRF_MODARRAY_AxCxS (char *res_type, int dimres, char *res, char *ol
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY_AxVxS( char *res_type, int dimres,
+ *   void ICMCompileND_PRF_MODARRAY_AxVxS( char *res_btype, int dimres,
  *                                         char *res, char *old, char **value,
  *                                         int dim, char *v)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY_AxVxS( res_type, dimres, res, old, value, dimv, v)
+ *   ND_PRF_MODARRAY_AxVxS( res_btype, dimres, res, old, value, dimv, v)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_MODARRAY_AxVxS (char *res_type, int dimres, char *res, char *old,
+ICMCompileND_PRF_MODARRAY_AxVxS (char *res_btype, int dimres, char *res, char *old,
                                  char **value, int dim, char *v)
 {
     DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxVxS");
@@ -1121,19 +1254,19 @@ ICMCompileND_PRF_MODARRAY_AxVxS (char *res_type, int dimres, char *res, char *ol
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY_AxCxA( char *res_type, int dimres,
+ *   void ICMCompileND_PRF_MODARRAY_AxCxA( char *res_btype, int dimres,
  *                                         char *res, char *old, char *val,
  *                                         int dimv, char **vi)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY_AxCxA( res_type, dimres, res, old, val, dimv, v0,..., vn)
+ *   ND_PRF_MODARRAY_AxCxA( res_btype, dimres, res, old, val, dimv, v0,..., vn)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_MODARRAY_AxCxA (char *res_type, int dimres, char *res, char *old,
+ICMCompileND_PRF_MODARRAY_AxCxA (char *res_btype, int dimres, char *res, char *old,
                                  char *val, int dimv, char **vi)
 {
     DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxCxA");
@@ -1214,19 +1347,19 @@ ICMCompileND_PRF_MODARRAY_AxCxA (char *res_type, int dimres, char *res, char *ol
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY_AxVxA( char *res_type, int dimres,
+ *   void ICMCompileND_PRF_MODARRAY_AxVxA( char *res_btype, int dimres,
  *                                         char *res, char *old, char *val,
  *                                         int dim, char *v)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY_AxVxA( res_type, dimres, res, old, val, dim, v)
+ *   ND_PRF_MODARRAY_AxVxA( res_btype, dimres, res, old, val, dim, v)
  *
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_MODARRAY_AxVxA (char *res_type, int dimres, char *res, char *old,
+ICMCompileND_PRF_MODARRAY_AxVxA (char *res_btype, int dimres, char *res, char *old,
                                  char *val, int dim, char *v)
 {
     DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxVxA");
