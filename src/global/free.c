@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.35  1998/03/19 19:29:08  dkr
+ * in FreeNPart and FreeWLgrid NCODE_USED is now correctly set
+ *
  * Revision 1.34  1998/03/19 19:06:07  dkr
  * fixed a bug in FreeWLgrid()
  *
@@ -1442,6 +1445,7 @@ FreeNPart (node *arg_node, node *arg_info)
 
     FREETRAV (NPART_WITHID (arg_node));
     FREETRAV (NPART_GEN (arg_node));
+    NCODE_USED (NPART_CODE (arg_node))--;
     tmp = FREECONT (NPART_NEXT (arg_node));
 
     FREE (arg_node);
@@ -1625,9 +1629,7 @@ FreeWLgrid (node *arg_node, node *arg_info)
     DBUG_PRINT ("FREE", ("Removing N_WLgrid node ..."));
 
     FREETRAV (WLGRID_NEXTDIM (arg_node));
-#if 0
-  NCODE_USED(WLGRID_CODE(arg_node))--;
-#endif
+    NCODE_USED (WLGRID_CODE (arg_node))--;
     tmp = FREECONT (WLGRID_NEXT (arg_node));
 
     FREE (arg_node);
