@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.11  2001/03/06 13:17:41  nmw
+ * compare_tree added
+ *
  * Revision 3.10  2001/03/05 16:18:45  nmw
  * SSACSE traversal added
  *
@@ -307,6 +310,7 @@
 #include "UndoSSATransform.h"
 #include "SSADeadCodeRemoval.h"
 #include "SSACSE.h"
+#include "compare_tree.h"
 
 #include "traverse.h"
 
@@ -1305,6 +1309,17 @@ static funtab ssacse_tab_rec = {{
                                 NULL,
                                 NULL};
 funtab *ssacse_tab = &ssacse_tab_rec;
+
+/*
+ *  (91) cmptree_tab
+ */
+static funtab cmptree_tab_rec = {{
+#define NIFcmptree(it_cmptree) it_cmptree
+#include "node_info.mac"
+                                 },
+                                 NULL,
+                                 NULL};
+funtab *cmptree_tab = &cmptree_tab_rec;
 
 /*
  *  nnode

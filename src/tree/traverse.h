@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.8  2001/03/06 13:17:41  nmw
+ * compare_tree added
+ *
  * Revision 3.7  2001/03/05 16:18:45  nmw
  * SSACSE traversal added
  *
@@ -219,6 +222,7 @@ extern funtab *chkavis_tab;
 extern funtab *undossa_tab;
 extern funtab *ssadcr_tab;
 extern funtab *ssacse_tab;
+extern funtab *cmptree_tab;
 
 extern int nnode[];
 

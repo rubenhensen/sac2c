@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.14  2001/03/06 13:17:29  nmw
+# compare_tree added
+#
 # Revision 3.13  2001/03/02 15:50:58  nmw
 # change_signature added
 #
@@ -91,7 +94,8 @@ INCS=-I../../inc -I../tree -I../print -I../flatten -I../scanparse -I../typecheck
 all: tree.o tree_basic.o tree_compound.o free.o DupTree.o traverse.o \
      DataFlowMask.o DataFlowMaskUtils.o InferDFMs.o CheckAvis.o \
      LookUpTable.o adjust_ids.o cleanup_decls.o scheduling.o \
-     SSATransform.o UndoSSATransform.o change_signature.o
+     SSATransform.o UndoSSATransform.o change_signature.o \
+     compare_tree.o
 
 
 #
@@ -211,6 +215,14 @@ cleanup_decls.o: /usr/include/stdlib.h ../global/globals.h
 cleanup_decls.o: ../global/internal_lib.h traverse.h free.h ../../inc/dbug.h
 cleanup_decls.o: ../global/my_debug.h DataFlowMask.h DataFlowMaskUtils.h
 cleanup_decls.o: LookUpTable.h
+compare_tree.o: ../../inc/dbug.h /usr/include/stdio.h
+compare_tree.o: /usr/include/sys/feature_tests.h /usr/include/sys/isa_defs.h
+compare_tree.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
+compare_tree.o: /usr/include/stdio_impl.h tree.h ../global/types.h
+compare_tree.o: tree_basic.h tree_compound.h ../global/Error.h
+compare_tree.o: /usr/include/string.h /usr/include/stdlib.h
+compare_tree.o: ../global/globals.h ../global/internal_lib.h traverse.h
+compare_tree.o: free.h ../global/my_debug.h compare_tree.h
 free.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 free.o: /usr/include/sys/isa_defs.h /usr/include/stdio.h
 free.o: /usr/include/sys/va_list.h /usr/include/stdio_tag.h
@@ -272,7 +284,8 @@ traverse.o: ../c-interface/print_interface_header.h
 traverse.o: ../c-interface/print_interface_wrapper.h
 traverse.o: ../c-interface/map_cwrapper.h
 traverse.o: ../c-interface/import_specialization.h CheckAvis.h SSATransform.h
-traverse.o: UndoSSATransform.h ../optimize/SSADeadCodeRemoval.h traverse.h
+traverse.o: UndoSSATransform.h ../optimize/SSADeadCodeRemoval.h
+traverse.o: ../optimize/SSACSE.h compare_tree.h traverse.h
 tree.o: /usr/include/stdlib.h /usr/include/sys/feature_tests.h
 tree.o: /usr/include/sys/isa_defs.h tree.h ../global/types.h tree_basic.h
 tree.o: tree_compound.h ../global/Error.h /usr/include/stdio.h

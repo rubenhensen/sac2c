@@ -1,6 +1,9 @@
 #
 #
 # $Log$
+# Revision 3.20  2001/03/06 13:19:47  nmw
+# compare_tree added
+#
 # Revision 3.19  2001/03/05 17:01:33  sbs
 # zipcv.o and SSACSE.o added.
 #
@@ -188,7 +191,7 @@ TREE= src/tree/traverse.o src/tree/tree.o src/tree/tree_basic.o src/tree/free.o 
       src/tree/DataFlowMask.o src/tree/DataFlowMaskUtils.o src/tree/InferDFMs.o \
       src/tree/cleanup_decls.o src/tree/adjust_ids.o src/tree/scheduling.o \
       src/tree/CheckAvis.o src/tree/SSATransform.o src/tree/UndoSSATransform.o \
-      src/tree/change_signature.o
+      src/tree/change_signature.o src/tree/compare_tree.o
 SCANP= src/scanparse/y.tab.o src/scanparse/lex.yy.o \
        src/scanparse/scnprs.o
 PRINT= src/print/print.o src/print/convert.o
