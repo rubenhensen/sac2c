@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ * Revision 2.4  2000/02/23 20:24:53  cg
+ * SIB format slightly changed in order to distinguish SIBs
+ * of modules from SIBs of classes when being read in again.
+ *
  * Revision 2.3  2000/02/23 17:27:01  cg
  * The entry TYPES_TDEF of the TYPES data structure now contains a
  * reference to the corresponding N_typedef node for all user-defined
@@ -1050,7 +1054,11 @@ WSIBmodul (node *arg_node, node *arg_info)
 
     sibfile = WriteOpen ("%s/%s.sib", tmp_dirname, MODUL_NAME (arg_node));
 
-    fprintf (sibfile, "<%s>\n\n", MODUL_NAME (arg_node));
+    if (MODUL_FILETYPE (arg_node) == F_classimp) {
+        fprintf (sibfile, "<Class %s>\n\n", MODUL_NAME (arg_node));
+    } else {
+        fprintf (sibfile, "<Module %s>\n\n", MODUL_NAME (arg_node));
+    }
 
     SIBPrintDependencies (sibfile, dependencies, 1);
 
