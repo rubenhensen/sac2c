@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 1.3  2000/08/02 11:51:45  nmw
+ * phase create sac library changed to create library
+ *
  * Revision 1.2  2000/07/11 15:51:15  dkr
  * ph_psiopt removed
  *
@@ -81,7 +84,7 @@ PH_SEL (PH_initial, "", 0, 0),
 
   PH_SEL (PH_invokecc, "Invoking C compiler", 0, 0),
 
-  PH_SEL (PH_createlib, "Creating SAC library", 0, 0),
+  PH_SEL (PH_createlib, "Creating library", 0, 0),
 
   PH_SEL (PH_writedeps, "Writing dependencies to stdout", 0, 0),
 
