@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/02/02 10:16:38  dkr
+ * superfluous import of access_macros.h removed
+ *
  * Revision 3.2  2000/11/23 16:29:17  sbs
  * warnings of product version eliminated.
  *
@@ -111,7 +114,6 @@
 #include "dbug.h"
 #include "my_debug.h"
 #include "traverse.h"
-#include "access_macros.h"
 #include "internal_lib.h"
 
 #include "optimize.h"
@@ -323,8 +325,8 @@ AnalyseLoop (linfo *loop_info, node *id_node, int level)
                 || (F_sub == loop_info->mod_prf) || (F_mul == loop_info->mod_prf))
             && (mod->flag == level)) {
 
-            arg[0] = mod->ARG1;
-            arg[1] = mod->ARG2;
+            arg[0] = PRF_ARG1 (mod);
+            arg[1] = PRF_ARG2 (mod);
 
             if ((N_id == NODE_TYPE (arg[0]))
                 && (VARDEC_VARNO (loop_info->decl_node) == ID_VARNO (arg[0]))

@@ -1,6 +1,9 @@
 /*
  *
  * $Log$
+ * Revision 3.3  2001/02/02 10:13:44  dkr
+ * superfluous import of access_macros.h removed
+ *
  * Revision 3.2  2001/01/26 15:43:01  cg
  * Bug fixed in FindSymbolInModule.
  * Internal module representations arising from SIB interpretation
@@ -269,32 +272,12 @@
 #include "scnprs.h"
 #include "traverse.h"
 
-#undef TYPES /* These macros are defined in scnprs.h as well as   */
-#undef ID    /* in access_macros.h. The latter definition is used */
-#undef DIM   /* in this file.                                     */
-
-#include "access_macros.h"
-
 #include "filemgr.h"
 #include "import.h"
 
 extern void DoImport (node *modul, node *implist, char *mastermod);
 
 static mod *mod_tab = NULL;
-
-/*
- *
- *  functionname  :
- *  arguments     :
- *  description   :
- *  global vars   :
- *  internal funs :
- *  external funs :
- *  macros        :
- *
- *  remarks       :
- *
- */
 
 /*
  *
