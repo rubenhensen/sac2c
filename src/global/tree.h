@@ -1,7 +1,10 @@
 /*
  *
  * $Log$
- * Revision 1.24  1995/02/02 14:54:36  hw
+ * Revision 1.25  1995/02/28 18:25:26  asi
+ * added varno in structure node
+ *
+ * Revision 1.24  1995/02/02  14:54:36  hw
  * bug fixed prf_dec is now a struct
  *
  * Revision 1.23  1995/01/31  14:59:33  asi
@@ -178,7 +181,8 @@ typedef struct NODE {
                            * and result type of primitive functions
                            */
     } info;               /* fu"r spezielle Informationen */
-    long *mask[MAX_MASK]; /* special informations for optimization */
+    int varno;            /* number of vaiables - 1 */
+    long *mask[MAX_MASK]; /* special informations about variables */
     int nnode;            /* Anzahl der benutzten Knoten */
     int lineno;           /* Zeilennummer in der ein Befehl steht */
                           /* later used for variable number while optimizing */
