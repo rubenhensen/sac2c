@@ -3,6 +3,7 @@ Error.h
 Makefile
 NameTuples.c
 NameTuples.h
+argtag_info.mac
 build.h
 globals.c
 globals.h

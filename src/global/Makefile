@@ -1,5 +1,8 @@
 #
 # $Log$
+# Revision 3.13  2002/03/01 02:43:00  dkr
+# file argtag_info.mac added
+#
 # Revision 3.12  2001/11/15 15:36:48  sacbase
 # CLOCK_SKEW_ELIMINATION and PROJECT_ROOT added.
 #
@@ -46,7 +49,7 @@
 #
 #
 
-#######################################################################################
+################################################################################
 #
 # include general setup:
 #
@@ -55,7 +58,7 @@ PROJECT_ROOT := ../..
 include $(PROJECT_ROOT)/Makefile.Config
 
 
-#######################################################################################
+################################################################################
 #
 # local settings:
 #
@@ -71,25 +74,25 @@ all: main.o Error.o usage.o my_debug.o internal_lib.o globals.o resource.o types
 # the *.[ch] objects are to fool makedepend which does not
 # recognize the dependency between *.[ch] and the .mac files!
 #
-types.h: ../tree/type_info.mac ../global/phase_info.mac ../global/status_info.mac \
+types.h: ../tree/type_info.mac phase_info.mac status_info.mac argtag_info.mac \
          ../tree/node_info.mac ../tree/prf_node_info.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-NameTuples.h: ../global/nt_info.mac
+NameTuples.h: nt_info.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-NameTuples.c: ../global/nt_info.mac
+NameTuples.c: nt_info.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
-globals.c: ../tree/type_info.mac ../global/phase_info.mac
+globals.c: ../tree/type_info.mac phase_info.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
 my_debug.c:  ../tree/node_info.mac ../tree/prf_node_info.mac ../tree/type_info.mac \
-             ../global/status_info.mac
+             status_info.mac argtag_info.mac
 	touch $@
 	$(CLOCK_SKEW_ELIMINATION) $@
 
@@ -116,7 +119,7 @@ clean:
 	$(RM) -r .sb SunWS_cache
 
 
-#######################################################################################
+################################################################################
 #
 # include automatic dependency mechanism
 #
